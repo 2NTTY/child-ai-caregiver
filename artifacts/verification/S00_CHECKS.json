@@ -1,0 +1,241 @@
+{
+  "evidence": "EV-001",
+  "checkedAt": "2026-09-19T19:54:42.301Z",
+  "environment": {
+    "node": "v24.11.0",
+    "platform": "win32",
+    "scope": "S00 documentation only"
+  },
+  "result": "PASS",
+  "sourceUnits": 561,
+  "verbatimUnits": 484,
+  "semanticReorganizedUnits": 77,
+  "sourceHeadings": 72,
+  "finalAcceptanceUnits": 55,
+  "shortFiles": [
+    {
+      "file": "AGENTS.md",
+      "lines": 47
+    },
+    {
+      "file": "STATUS.md",
+      "lines": 43
+    }
+  ],
+  "originals": [
+    {
+      "file": "DEVELOPMENT_PLAN.md",
+      "expected": "86c7eabbe18f9f339730fb2fbaf86f2b29ac5f04a36ea20b5c5a239e958388e4",
+      "actual": "86c7eabbe18f9f339730fb2fbaf86f2b29ac5f04a36ea20b5c5a239e958388e4"
+    },
+    {
+      "file": "PROJECT_PROPOSAL.md",
+      "expected": "b62a7e6f6f4c56a71e7d5d337c670ce5132e2016448f2a87ffe48a5c9c2206b8",
+      "actual": "b62a7e6f6f4c56a71e7d5d337c670ce5132e2016448f2a87ffe48a5c9c2206b8"
+    },
+    {
+      "file": "OPEN_SOURCE_REUSE.md",
+      "expected": "6cdd461f045ece714152509fe00bb0ec5221a9e99c9f274e7a0ebcf5a289485c",
+      "actual": "6cdd461f045ece714152509fe00bb0ec5221a9e99c9f274e7a0ebcf5a289485c"
+    },
+    {
+      "file": "PITCH_AND_DEMO.md",
+      "expected": "2d37d7c55c202aa3bc7eaa281b62e8dc590e9e0528efc467d78726dc4849ed95",
+      "actual": "2d37d7c55c202aa3bc7eaa281b62e8dc590e9e0528efc467d78726dc4849ed95"
+    },
+    {
+      "file": "WEEKLY_LOGS.md",
+      "expected": "b685fbae1d60495f5a6b15ab7ba66a4aa94de23118f92a3565bdb9d63da8ce06",
+      "actual": "b685fbae1d60495f5a6b15ab7ba66a4aa94de23118f92a3565bdb9d63da8ce06"
+    }
+  ],
+  "checks": [
+    {
+      "name": "unique anchors AGENTS.md",
+      "count": 6,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors README.md",
+      "count": 4,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors SPEC.md",
+      "count": 240,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors PLAN.md",
+      "count": 42,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors STATUS.md",
+      "count": 0,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors WORKLOG.md",
+      "count": 11,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors docs/ARCHITECTURE.md",
+      "count": 171,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors docs/DATA_MODEL.md",
+      "count": 96,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors docs/API.md",
+      "count": 25,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors docs/DECISIONS.md",
+      "count": 7,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique anchors docs/MIGRATION_MAP.md",
+      "count": 68,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "original five files unchanged",
+      "count": 5,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "all substantive source lines assigned once",
+      "count": 902,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "source unit hashes",
+      "count": 561,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "unique source IDs",
+      "count": 561,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "granular mapping and exact text at target",
+      "count": 561,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "relative Markdown links",
+      "count": 11,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "S00-S17 states and scope",
+      "count": 18,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "STATUS mirrors S00",
+      "count": 1,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "short execution entries",
+      "count": 2,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "STATUS required fields",
+      "count": 11,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "no generation placeholders",
+      "count": 11,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "all baseline final acceptance units",
+      "count": 55,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "no second PROJECT_STATE file",
+      "count": 1,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "final S00 package and M01-M09",
+      "count": 9,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "WORKLOG original prefix unchanged after append",
+      "count": 4801,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "each mapping row has check result",
+      "count": 561,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "Markdown table column consistency",
+      "count": 11,
+      "result": "PASS",
+      "errors": []
+    },
+    {
+      "name": "UTF8 and whitespace",
+      "count": 11,
+      "result": "PASS",
+      "errors": []
+    }
+  ],
+  "documentHashes": {
+    "AGENTS.md": "f6824363f1c4afddb33c70627dfb4c82868f569328ad50731a57a02b82c1f5d8",
+    "README.md": "a82f6a00c77e9f01015e494869f6f5a0afc0005489053ed63a7b59d03a87c9f4",
+    "SPEC.md": "5da5a1c30034b3aec18809e3d385049a97e7b5bee997e93ebc0d8ff05f8c1767",
+    "PLAN.md": "77686bf973075b353143a3935eeeee1c526fc0ec22947fcf01868ba777564c0e",
+    "STATUS.md": "8e8c37ebda549b525ebc32cead62f566b37b1c278a0a9f302a0a731797a3bf9e",
+    "WORKLOG.md": "c222da14e7045c32b40f1ae1ec48b9bda53d08f15d8bbef53104aeddc13e805a",
+    "docs/ARCHITECTURE.md": "e1ca390935ca215d6e7344e462acc24cda0e35beb6ea033ba12e9958660febe9",
+    "docs/DATA_MODEL.md": "5b057b87e886f36e362e6286bc01a390e9d8b129f002b57b444d5f63c82a3c02",
+    "docs/API.md": "2bda1e17cfdbf728fb021eaaf175184699cf5fe05f012b1e324005e9149e6501",
+    "docs/DECISIONS.md": "a076322d25a33fe3a1254323ab4bda0bcdaa464aa4cc8a3300999a026b477c6d",
+    "docs/MIGRATION_MAP.md": "c2a9c20f8c56cded91fe5b0585ac53c9cec8cea42f45c3aedf440b57c5a14f44"
+  }
+}
