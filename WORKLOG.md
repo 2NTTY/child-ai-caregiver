@@ -173,3 +173,42 @@
 
 ### Next Action
 - 保持停止，等待用户安排后续工作。
+
+<a id="log-20260920-004"></a>
+## LOG-20260920-004
+
+- Recorded At：2026-09-20 04:49:50 +08:00（Asia/Hong_Kong）。
+- Work Date：同日。
+- Step / Package：GitHub 基线配置；不属于 S01，S01 保持未开始。
+- Executor：主模型；未调用子代理。
+- Goal：以当前 S00 状态建立 Private GitHub 初始基线，保持主分支名 master，并阻止敏感本地文件进入版本库。
+- AI Assistance：检查 Git 状态与历史、补充忽略规则、创建并连接私有仓库、推送和核验远端元数据。
+- Human Verification：用户明确要求 GitHub 配置并报告 5 小时额度剩余 13%；未进行网页人工核验。
+
+### Actual Work
+- 读取 AGENTS、STATUS 及 PLAN 当前步骤，确认 S00 已完成、S01 未开始，本轮未执行任何 S01 工作。
+- 检查当前及历史文件清单；对历史补丁执行常见 GitHub、OpenAI、Google、AWS 令牌与私钥特征检查，命中数为 0。
+- 新增 `.gitignore`，覆盖环境文件、凭据、私钥、真实家庭数据、私人附件、导出／备份、本地数据库、依赖与构建产物。
+- 通过已连接的 GitHub 账号 `2NTTY` 创建 Private 仓库 `2NTTY/child-ai-caregiver`，设置 `origin`，将本地 master 推送并建立跟踪关系。
+
+### Changes
+- `.gitignore`：新增敏感数据与本地产物防护规则。
+- `STATUS.md`：登记 GitHub 基线结果及最新额度快照。
+- `WORKLOG.md`：仅追加本条实际记录。
+
+### Verification
+- Requirement / Acceptance：用户本轮 GitHub 配置要求；不改变 PLAN 步骤状态。
+- Method：`git status --short --branch`、`git remote -v`、`git log --all --name-only`、历史补丁敏感特征检查、`git check-ignore -v --no-index`、`git push -u origin master`；GitHub 原生仓库元数据读取。
+- Environment / Revision：Windows／Git；敏感文件防护提交 `4f77db9e49c772901e3aaae59c859743ba80ae4f`。
+- Result：通过。推送成功；GitHub 返回 visibility `private`、default_branch `master`；本地 master 跟踪 `origin/master`。
+- Evidence：远端 `https://github.com/2NTTY/child-ai-caregiver`；GitHub 仓库 ID `1377602504`；忽略规则样例 `.env`、私钥、private、uploads、exports、SQLite 与 node_modules 均由 `.gitignore` 命中。
+
+### Limitations / Blockers
+- 本机没有 `gh` CLI；GitHub 连接器不提供创建仓库接口，因此创建仓库使用 Git Credential Manager 中已有凭据调用 GitHub REST API。凭据未输出、未写入工程文件。
+- 未启用分支保护或新增 Actions，因用户要求本轮只做必要 GitHub 配置且额度较低。
+
+### Plan Update
+- 无变化；S00 保持已完成，S01–S17 保持未开始。
+
+### Next Action
+- 本轮停止。后续开发从新分支或 Codex worktree 开始，使用 Codex 自带 Create Pull Request 与 Review 工作流合并到 master。
