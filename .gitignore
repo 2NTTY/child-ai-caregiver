@@ -1,0 +1,48 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+credentials*.json
+service-account*.json
+google-services.json
+secrets/
+private/
+
+# Real family data, local databases, exports, and backups
+data/local/
+uploads/
+attachments/private/
+exports/
+backups/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+
+# Dependencies, build output, caches, and logs
+node_modules/
+.expo/
+.next/
+dist/
+build/
+coverage/
+.cache/
+tmp/
+temp/
+*.log
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
