@@ -212,3 +212,42 @@
 
 ### Next Action
 - 本轮停止。后续开发从新分支或 Codex worktree 开始，使用 Codex 自带 Create Pull Request 与 Review 工作流合并到 master。
+
+<a id="log-20260920-005"></a>
+## LOG-20260920-005
+
+- Recorded At：2026-09-20 12:11:24 +08:00（Asia/Hong_Kong）。
+- Work Date：同日。
+- Step / Package：GitHub CLI 与 Codex PR 前置配置核验；不属于 S01，S01 保持未开始。
+- Executor：主模型；未调用子代理。
+- Goal：确认用户完成的 `gh` 登录可供 Codex 内置 Pull Request 与 Review 工作流使用，并给出正确操作边界。
+- AI Assistance：读取官方 OpenAI 文档；核对 CLI 版本、登录账号、Git 协议、仓库权限、远端、默认分支和现有 PR 状态。
+- Human Verification：用户报告“已经在电脑上登陆 gh cli”；未进行 Create Pull Request 人工点击测试，因为 master 当前没有待合并功能分支。
+
+### Actual Work
+- 确认 GitHub CLI 位于 `C:\Program Files\GitHub CLI\gh.exe`，版本为 2.101.0。
+- `gh auth status` 确认 github.com 活跃账号为 `2NTTY`，凭据保存在系统 keyring，Git 操作协议为 HTTPS；授权包含私有仓库与 workflow 所需范围。
+- 确认 `2NTTY/child-ai-caregiver` 为 Private 仓库，用户权限为 ADMIN，默认分支为 master，本地 `origin` 与 master 跟踪关系正确。
+- `gh pr status` 成功读取仓库；当前 master 无关联 PR，账号没有待处理的开放 PR。
+- 未创建测试分支、测试提交或测试 PR，未开始 S01。
+
+### Changes
+- `STATUS.md`：登记 GitHub CLI 与 Codex PR 前置配置已核验。
+- `WORKLOG.md`：仅追加本条实际记录。
+
+### Verification
+- Requirement / Acceptance：用户要求检查 `gh` 并说明如何使用 Codex 内置 PR 上传流程。
+- Method：`gh --version`、`gh auth status`、`gh config get git_protocol`、`gh repo view`、`gh api user`、`gh pr status`、`git status --short --branch`、`git remote -v` 与分支跟踪配置读取。
+- Environment / Revision：Windows；GitHub CLI 2.101.0；仓库 `2NTTY/child-ai-caregiver`。
+- Result：通过；无需新增 GitHub 或 Git 配置。
+- Evidence：账号 `2NTTY`；仓库 visibility PRIVATE、viewerPermission ADMIN、defaultBranch master；PR 查询成功。
+
+### Limitations / Blockers
+- 尚未实际点击 Codex 的 Create Pull Request，因为当前位于 master 且没有功能分支差异；这种状态下不应创建 PR。
+- Codex 内置按钮的具体位置可能随 App 版本调整，但官方工作流仍是非默认分支 → commit／push → Create Pull Request。
+
+### Plan Update
+- 无变化；S00 保持已完成，S01–S17 保持未开始。
+
+### Next Action
+- 后续获得开发授权时，从新的 `codex/...` 分支或 Codex worktree 开始；完成验证后在 Review／Changes 面板提交、推送并创建目标为 master 的 Pull Request。
