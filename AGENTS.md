@@ -6,6 +6,17 @@
 - 不默认扫描整个仓库或重读全部文档、日志、聊天；先做有范围的搜索，扩大范围必须有具体原因，限制无关工具输出。
 - 已有研究先复用结论和来源，避免重复调查；先看失败原因，避免重复已证明不合适的尝试。
 
+<a id="language"></a>
+## 語言規則
+
+- 使用者需要閱讀和管理的項目文件，預設使用香港繁體中文，包括 AGENTS.md、PLAN.md、STATUS.md、WORKLOG.md、SPEC.md、DEVELOPMENT_PLAN.md 及內部 docs；內部 API、architecture、data-model 文件也適用。
+- 即使使用者以簡體中文提問，日常回覆、進度報告、驗收結果及需要使用者確認的決策或說明，均預設使用香港繁體中文。
+- 面向外部，或主要供開發工具閱讀而使用者通常不需要閱讀的內容，可使用英文；GitHub 對外 README.md 使用英文。
+- 程式碼、variable / function / class / type names、API 識別名稱、code comments、commit messages、branch names、Pull Request titles/descriptions，以及 test names / error messages / developer logs 繼續使用英文。API 文件的敘述語言按讀者及用途決定，不因涉及 API 就一律改用英文。
+- 產品面向香港使用者的 UI、提示、按鈕及使用者可見文案，繼續按 SPEC 使用香港繁體中文，不因程式碼使用英文而改成英文。
+- 技術術語可保留英文，例如 API、Git、PR、SQLite、PostgreSQL、worktree，不必強行翻譯。
+- 不為統一語言批量翻譯或重寫現有內部文件；只在新寫內容或實際需要修改時遵守以上規則，只調整當前任務涉及的內容。
+
 <a id="scope"></a>
 ## 实施范围
 - 一次完成一个可独立验收的工作包；遵守 SPEC 和已确认架构，不擅自重新设计。
@@ -38,11 +49,18 @@
 - 合并完成后再开始依赖它的下一个 Sxx。
 - 不提交 `.env`、API key、密钥、凭据、私人数据或本地数据库。
 
+<a id="document-updates"></a>
+## 项目文档更新边界
+
+- 普通工具操作、Git/GitHub 操作、登录授权、邀请协作者、临时检查、调试命令和验证过程，不属于项目进度，不得因此修改 STATUS.md、WORKLOG.md、PLAN.md、README.md 或其他项目文档。
+- 只有项目实际需求、架构、实现状态、长期决策或正式里程碑发生变化时，才允许更新相应文档。
+- 本节优先于本文其他记录、收尾和额度快照要求；不满足上述条件时，仅在当前对话报告，不触发项目文档更新。
+
 <a id="finish"></a>
 ## 验证与收尾
 - 按 [PLAN 验证制度](PLAN.md#verification) 区分已确认、已实现、已验证、已完成；代码写完不等于完成。
 - 优先相关检查；相关代码改变或新证据表明确有回归风险才重跑，不无故重复全套测试。
-- 结束时按 [WORKLOG 模板](WORKLOG.md#template) 追加实际完成与未完成、修改原因、验证方法／结果、版本／证据、失败原因及下一步，再同步 PLAN 和 STATUS。
+- 仅在符合[项目文档更新边界](#document-updates)时，按 [WORKLOG 模板](WORKLOG.md#template) 追加实际完成与未完成、修改原因、验证方法／结果、版本／证据、失败原因及下一步，并按实际变化更新相应文档，不机械同步 PLAN 和 STATUS。
 - 未通过验收不标已完成；失败、未执行、待人工验收及受阻如实记录。保护当前修改并留下可恢复现场。
 - 密钥、恢复信息、真实家庭正文及私人附件不写入工程或成本日志；人员贡献据实记录。
 - 详细需求留在权威文件，通过短状态定位；本文件保持短小。[AGENTS 参考](https://developers.openai.com/zh-Hans/docs/agent-configuration/agents-md)
