@@ -8,7 +8,9 @@ Planned capabilities include:
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
 - User-controlled storage on a phone, in a browser, or on a designated server, with device pairing, sync, and portable backups.
 
-**Current status: documentation only.** S00 documentation migration is complete; S01 has not started. There is no runnable app, APK, or deployed product service. The agreed scope and acceptance criteria are defined in [SPEC.md](SPEC.md).
+**Current status: documentation only.** S00 documentation migration is complete; S01 has not started. There is no runnable app, APK, or deployed product service, and there is no live product URL. The agreed scope and acceptance criteria are defined in [SPEC.md](SPEC.md).
+
+The current delivery roadmap requires a working web URL when P1 is complete. P2 is the competition-delivery target.
 
 <a id="entry"></a>
 ## Getting started
@@ -30,21 +32,23 @@ Start with [STATUS.md](STATUS.md), then the current step and work package in [PL
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Entities, fields, relationships, invariants, and migration formats |
 | [docs/API.md](docs/API.md) | Interface contracts, authorization, idempotency, errors, and compatibility |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Decision rationale, superseded choices, and their impact |
-| [docs/MIGRATION_MAP.md](docs/MIGRATION_MAP.md) | Clause-level mapping from the original plan to current documents |
 | [artifacts/verification/](artifacts/verification/) | Redacted evidence from checks actually performed |
+| [_archive/README.md](_archive/README.md) | Index of frozen baselines, legacy material, and archived verification evidence |
 
 Maintain each definition in one authoritative document and reference it elsewhere. Preserve stable anchors for traceability; snapshots and verification evidence do not replace specifications.
 
 <a id="historical-assets"></a>
 ## Historical baseline and research
 
-These original files are retained as historical assets. Superseded recommendations are documented in [ADR-002](docs/DECISIONS.md#adr-002); they do not override the current specifications.
+These original files are retained as historical assets. Start with the [archive index](_archive/README.md), then open only the specific source needed. Superseded recommendations are documented in [ADR-002](docs/DECISIONS.md#adr-002); they do not override the current specifications.
 
-- [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md): complete v1.0 baseline, frozen after migration.
-- [PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md): product research, Hong Kong sources, and validation hypotheses.
+- [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md): compatibility entry for the archived complete v1.0 baseline.
+- [PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md): compatibility entry for archived product research, Hong Kong sources, and validation hypotheses.
 - [OPEN_SOURCE_REUSE.md](OPEN_SOURCE_REUSE.md): dated candidate and license research; inclusion does not imply adoption. Adoption decisions belong in DECISIONS.
-- [PITCH_AND_DEMO.md](PITCH_AND_DEMO.md): presentation materials, aligned with SPEC and actual results; simulations must be labeled.
-- [WEEKLY_LOGS.md](WEEKLY_LOGS.md): supervisor log templates, populated from genuine work and individual verification.
+- [PITCH_AND_DEMO.md](PITCH_AND_DEMO.md): compatibility entry for an archived presentation draft; simulations remain labeled.
+- [WEEKLY_LOGS.md](WEEKLY_LOGS.md): compatibility entry for archived supervisor log templates.
+
+Frozen documents keep the relative-link context of their source commit. Their compatibility pages and the archive index provide both the local archived copy and a fixed GitHub source snapshot; the frozen evidence itself is not rewritten.
 
 <a id="run-test"></a>
 ## Running and testing

@@ -5,6 +5,8 @@
 - 每次先读 [STATUS.md](STATUS.md)，再读 [PLAN.md](PLAN.md) 当前步骤及工作包；只按需要读 SPEC、docs 和相关 WORKLOG。
 - 不默认扫描整个仓库或重读全部文档、日志、聊天；先做有范围的搜索，扩大范围必须有具体原因，限制无关工具输出。
 - 已有研究先复用结论和来源，避免重复调查；先看失败原因，避免重复已证明不合适的尝试。
+- 日常不直接掃描 `_archive/**`、歷史相容入口（DEVELOPMENT_PLAN、PROJECT_PROPOSAL、PITCH_AND_DEMO、WEEKLY_LOGS、docs/MIGRATION_MAP）及 `artifacts/verification/S00_*`；需要追溯時先讀 [_archive 索引](_archive/README.md)，再讀指定資料／章節。WORKLOG 只讀當前工作包相關記錄，不預設整本重讀。
+- `OPEN_SOURCE_REUSE.md` 只在 S01 或具體復用核查時按需讀取；S01 完成後才評估歸檔。新文件移入 `_archive/` 或改為 `archived-in-place` 時，必須在同一工作包同步更新 `_archive/README.md` 的用途、路徑、來源版本、校驗值及閱讀條件。
 
 <a id="language"></a>
 ## 語言規則
@@ -23,6 +25,7 @@
 - 已有代码尽量局部修改；网页与 App 共享业务规则及协议，参见 [架构](docs/ARCHITECTURE.md#section-3-1)。
 - 不做无关重构、可选抽象、UI polish 或顺手优化；不提前实现后续步骤需要的完整框架、服务或插件平台。
 - 开源研究、许可和版本结论须保存；生产复用只按 [S01](PLAN.md#s01) 验收边界推进。
+- 領域解耦只作編碼原則：寫到相關功能時集中管理 prompt、知識來源、受限 skills／任務流程及領域規則，避免散落寫死；不另建通用領域模型、動態插件平台、第二主題或獨立解耦工作包。
 
 <a id="models"></a>
 ## 模型與分工
@@ -46,12 +49,12 @@
 
 - 本地仓库是主要开发环境，GitHub 用于阶段备份、PR 和审查。
 - `master` 保持稳定，不直接在 `master` 开发。
-- 开始每个 Sxx 前，从最新 `master` 创建对应分支，例如 `s03-web-vertical-slice`。
-- 一个分支原则上只完成一个 Sxx；过大的步骤才按工作包拆分。
+- 以可獨立驗收的工作包為分支及合併單位；每包從最新穩定 `master` 開分支，例如 `codex/s11-w01-gemini-chat`。文件維護亦使用獨立分支。
+- 同一 Sxx 可跨階段、跨多個工作包及 PR，不等待整個 Sxx 完成才合併；一個分支原則上只完成一個工作包。
 - 开发期间正常本地 commit，不要求每次 commit 都 push。
-- Sxx 达到验收条件后，更新 `PLAN.md` / `STATUS.md` / `WORKLOG.md`，再 push 到 GitHub。
+- 工作包達到相關驗收條件後，按文件更新邊界更新必要的 PLAN／STATUS 並追加 WORKLOG，再 push 到 GitHub；只在全部工作包及原驗收完成後把整個 Sxx 標為已完成。
 - 使用 Codex 原生 Review / Pull Request，将该分支合并回 `master`。
-- 合并完成后再开始依赖它的下一个 Sxx。
+- 工作包記錄明確列出前置工作包；完成 review 並合併後，才開始依賴其成果的下一包。不以整個 Sxx 作跨階段依賴鎖。
 - 不提交 `.env`、API key、密钥、凭据、私人数据或本地数据库。
 
 <a id="document-updates"></a>
@@ -60,6 +63,7 @@
 - 普通工具操作、Git/GitHub 操作、登录授权、邀请协作者、临时检查、调试命令和验证过程，不属于项目进度，不得因此修改 STATUS.md、WORKLOG.md、PLAN.md、README.md 或其他项目文档。
 - 只有项目实际需求、架构、实现状态、长期决策或正式里程碑发生变化时，才允许更新相应文档。
 - 本节优先于本文其他记录、收尾和额度快照要求；不满足上述条件时，仅在当前对话报告，不触发项目文档更新。
+- WORKLOG 嚴格 append-only：既有正文、連結、空白及格式均不回寫；更正只追加新記錄。歸檔透過舊路徑相容入口與索引保持追溯，不以修復連結為理由改寫舊 LOG。S00 JSON 原位凍結、唯一保存，不為目錄整齊搬移後再複製。
 
 <a id="finish"></a>
 ## 验证与收尾

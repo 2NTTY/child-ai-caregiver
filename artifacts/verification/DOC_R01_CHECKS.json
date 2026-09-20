@@ -1,0 +1,249 @@
+{
+  "evidence": "EV-DOC-R01",
+  "checkedAt": "2026-09-20T15:36:01.004Z",
+  "baseRevision": "25244fb44d8e4464af2c8f9600019a7ed1118d6d",
+  "environment": {
+    "node": "v24.11.0",
+    "platform": "win32"
+  },
+  "scope": "Documentation reorganization only; no product implementation or runtime acceptance.",
+  "result": "PASS",
+  "checks": [
+    {
+      "name": "frozen hash: DEVELOPMENT_PLAN.md",
+      "passed": true
+    },
+    {
+      "name": "indexed: DEVELOPMENT_PLAN.md",
+      "passed": true
+    },
+    {
+      "name": "frozen hash: docs/MIGRATION_MAP.md",
+      "passed": true
+    },
+    {
+      "name": "indexed: docs/MIGRATION_MAP.md",
+      "passed": true
+    },
+    {
+      "name": "frozen hash: artifacts/verification/S00_AUDIT.md",
+      "passed": true
+    },
+    {
+      "name": "indexed: artifacts/verification/S00_AUDIT.md",
+      "passed": true
+    },
+    {
+      "name": "frozen hash: PROJECT_PROPOSAL.md",
+      "passed": true
+    },
+    {
+      "name": "indexed: PROJECT_PROPOSAL.md",
+      "passed": true
+    },
+    {
+      "name": "frozen hash: PITCH_AND_DEMO.md",
+      "passed": true
+    },
+    {
+      "name": "indexed: PITCH_AND_DEMO.md",
+      "passed": true
+    },
+    {
+      "name": "frozen hash: WEEKLY_LOGS.md",
+      "passed": true
+    },
+    {
+      "name": "indexed: WEEKLY_LOGS.md",
+      "passed": true
+    },
+    {
+      "name": "frozen hash: artifacts/verification/S00_CHECKS.json",
+      "passed": true
+    },
+    {
+      "name": "indexed: artifacts/verification/S00_CHECKS.json",
+      "passed": true
+    },
+    {
+      "name": "frozen hash: artifacts/verification/S00_SOURCE_INDEX.json",
+      "passed": true
+    },
+    {
+      "name": "indexed: artifacts/verification/S00_SOURCE_INDEX.json",
+      "passed": true
+    },
+    {
+      "name": "frozen hash: OPEN_SOURCE_REUSE.md",
+      "passed": true
+    },
+    {
+      "name": "indexed: OPEN_SOURCE_REUSE.md",
+      "passed": true
+    },
+    {
+      "name": "WORKLOG exact byte prefix",
+      "passed": true,
+      "detail": {
+        "originalBytes": 17408,
+        "currentBytes": 21978
+      }
+    },
+    {
+      "name": "WORKLOG canonical Git prefix",
+      "passed": true
+    },
+    {
+      "name": "single copy: S00_CHECKS.json",
+      "passed": true
+    },
+    {
+      "name": "single copy: S00_SOURCE_INDEX.json",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: _archive/README.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: AGENTS.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: DEVELOPMENT_PLAN.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: OPEN_SOURCE_REUSE.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: PITCH_AND_DEMO.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: PLAN.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: PROJECT_PROPOSAL.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: README.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: SPEC.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: STATUS.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: WEEKLY_LOGS.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: WORKLOG.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: artifacts/verification/S00_AUDIT.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: docs/API.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: docs/ARCHITECTURE.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: docs/DATA_MODEL.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: docs/DECISIONS.md",
+      "passed": true
+    },
+    {
+      "name": "unique explicit anchors: docs/MIGRATION_MAP.md",
+      "passed": true
+    },
+    {
+      "name": "original explicit anchors preserved",
+      "passed": true,
+      "detail": {
+        "count": 678
+      }
+    },
+    {
+      "name": "active and compatibility links",
+      "passed": true,
+      "detail": {
+        "links": 238,
+        "files": 18,
+        "frozenOutgoingLinks": "Original source commit context; frozen bytes retained, not rebased."
+      }
+    },
+    {
+      "name": "all 55 original AC lines unchanged",
+      "passed": true,
+      "detail": {
+        "count": 55
+      }
+    },
+    {
+      "name": "S00 completed and S01-S17 not started",
+      "passed": true
+    },
+    {
+      "name": "package dependency graph",
+      "passed": true,
+      "detail": {
+        "count": 37,
+        "phases": {
+          "P1": 9,
+          "P2": 9,
+          "P3": 10,
+          "P4": 9
+        }
+      }
+    },
+    {
+      "name": "P1 playable flow before encryption and URL gate",
+      "passed": true
+    },
+    {
+      "name": "documentation-only change scope",
+      "passed": true,
+      "detail": {
+        "files": 25,
+        "unexpected": []
+      }
+    },
+    {
+      "name": "git diff --check",
+      "passed": true
+    },
+    {
+      "name": "frozen files protected from newline conversion",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "No product, deployed URL, Gemini, APK, real device or human product acceptance was executed.",
+    "Frozen historical Markdown keeps original source-commit relative-link context.",
+    "This evidence does not replace the S00 evidence."
+  ],
+  "gitIndexVerification": {
+    "result": "PASS",
+    "frozenFiles": 9,
+    "worklogPrefixUnchanged": true,
+    "errors": []
+  }
+}

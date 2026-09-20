@@ -282,3 +282,49 @@
 
 ### Next Action
 - 用户审阅本地文档修改，准备好后使用原生提交与 PR 工作流。
+
+<a id="log-20260920-007"></a>
+## LOG-20260920-007
+
+- Recorded At：2026-09-20 23:36:00 +08:00（Asia/Hong_Kong）。
+- Work Date：2026-09-20；只記錄本次規劃確認後實施，不回填工時。
+- Step / Package：DOC-R01 — 五階段文件重排及歸檔。
+- Executor：主模型整合、修改及驗收；兩個 worker 子代理按 Sol／Medium 參數分別處理契約文件與歸檔；一個 explorer 按 Luna／Max 參數只讀核查內容。這是啟動參數紀錄，不聲稱更換主模型或另有 OS 唯讀沙箱。
+- Goal：落實已確認的五階段、工作包 Git 規則、輕量共享／領域邊界、知識更新與 freshness，實體歸檔並保留 append-only 歷史。
+- AI Assistance：主模型與指定子代理修改文件、核對來源及依賴；未產生產品程式碼。
+- Human Verification：使用者已確認方案及後續修訂並授權執行；本次檔案結果尚未由組員獨立人工覆核，沒有產品或真機人工驗收。
+
+### Actual Work
+- 以目前檔案及基線 commit 為事實，把 S01–S17 分為 37 個跨階段工作包，P2 為比賽必達、P4 保留完整能力；S00 不重新執行。
+- P1 順序先合成資料 Web 持久化與真 Gemini，再加密／最小備份及整階段驗收；試玩網址只列為 P1 完成要求，目前沒有產品 URL。
+- 加入穩定官方知識每周、近期資訊每日的最小更新；媒體只供近期資訊，引用／時間／停用／快取與家庭事實隔離；來源入口的只讀核查不等同產品接通。
+- 六份完整歷史 Markdown 逐位元移入 _archive，舊路徑留相容頁；兩份 S00 JSON 原位唯一凍結、OPEN_SOURCE_REUSE 留作 S01 按需輸入。歸檔索引保存路徑／用途／閱讀条件／commit／SHA。
+- 設定日常先 STATUS／PLAN 當前包、追溯先歸檔索引再指定資料；任何新歸檔或 archived-in-place 變更均須同包同步索引。
+- WORKLOG 舊內容包括連結及換行完全未回寫，本記錄只追加。新增凍結文件的 Git 換行保護，避免日後 checkout 改變歷史雜湊。
+
+### Changes
+- PLAN／AGENTS：五階段、工作包與分支／合併依賴、驗收及閱讀制度。
+- SPEC／ARCHITECTURE／API／DATA_MODEL：階段邊界、公共更新／freshness、薄共享接口及按需領域原則；原 55 AC 保留，新 freshness AC 另加 6 項。
+- DECISIONS：ADR-005／006／007 及受影響的實施細化歸屬。
+- STATUS／README：移除過時任務快照，仍明確只有文件及產品未開始。
+- _archive／六個原路徑相容頁、.gitattributes：凍結歷史、索引與換行保護。
+- 本次證據：[EV-DOC-R01](artifacts/verification/DOC_R01_CHECKS.json)；不覆寫 EV-001／EV-002。
+
+### Verification
+- Requirement / Acceptance：使用者已確認的文件重排、歸檔與後續修訂；[DOC-R01](PLAN.md#doc-r01)、[ADR-005](docs/DECISIONS.md#adr-005) 至 ADR-007。
+- Method：Node 文件核查器（暫存 verify.cjs；依基線、Git 及歸檔索引核對）、git diff --check；另由 Luna 只讀檢查階段／功能邊界。
+- Environment / Revision：Windows、Node v24.11.0；分支 codex/five-stage-roadmap，基於 25244fb44d8e4464af2c8f9600019a7ed1118d6d。
+- Result：49 項文件檢查通過，包括 55 原 AC 原文、678 個原明確錨點、37 工作包依賴、凍結原文雜湊、兩 JSON 唯一原位、WORKLOG 位元組前綴、現行／相容連結與文件限定範圍；最終機器結果及計數見 EV-DOC-R01。
+- 獨立內容核查：發現穩定指引與指定媒體來源界線可更明確，已在 SPEC、PLAN、ARCHITECTURE、DATA_MODEL 補清；主模型另修正草稿中把 PostgreSQL／家庭 worker 誤列 P4 的文字，與 P3 雲端包對齊。
+- 檢查器初稿的預期包數誤寫 36，實際完整清單為 37；修正核對器後依賴檢查通過，沒有刪除工作包以迎合計數。
+
+### Limitations / Blockers
+- 本次只有文件及歸檔驗證，沒有 clone、安裝依賴、產品實作、Gemini 產品調用、部署、真機或家庭試用。
+- 凍結 Markdown 的原始相對鏈按來源 commit 解讀；舊入口及索引提供本地原文及固定歷史版本，不改寫歷史證據。
+- 產品需按各工作包另行驗證；目前用量／周額度未知，未查詢或推算。
+
+### Plan Update
+- DOC-R01 文件驗收完成，後續 review／合併循 Git 工作流；S00 維持已完成，S01–S17 與全部產品包仍未開始。
+
+### Next Action
+- 審閱 DOC-R01 文件分支並合併；其後才可開始 S01-W01，本次停止在文件範圍。

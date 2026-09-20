@@ -19,6 +19,15 @@
 <a id="api-3-3-09"></a>
 这些接口用于隔离差异，不建设复杂插件平台。
 
+<a id="api-3-3-10"></a>
+七個介面按實際產品階段落碼，不為未使用能力建立空實作：P1 落實 `DataStore` 與 `ModelGateway`；P2 落實 `KnowledgeRetriever`、`TaskExecutor` 及先覆蓋站內投遞的 `NotificationGateway`；P3 才落實 `AttachmentStore`、`SyncEngine`，並把 `NotificationGateway` 擴至本地通知、FCM 及 Web Push。介面保持薄身，只隔離端別與供應商差異；共享 domain、validation、orchestration 及 tasks 規則留在業務層。
+
+<a id="api-3-3-11"></a>
+P1 的 `ModelGateway` 經最小 proxy 呼叫真實 Gemini：瀏覽器不接收 provider credential；proxy 對輸入與結構化輸出作驗證，套用配額、總開關及有限重試，日誌不記錄憑據或家庭正文。模型只回傳回答或草稿，不能繞過 `DataStore` 的確認與寫入規則。
+
+<a id="api-3-3-12"></a>
+`KnowledgeRetriever` 接收所需內容類別及適用範圍；一般育兒問答預設穩定指引，近期查詢另用時間窗口。回傳片段連同來源／版本／日期與查核狀態供引用，快取也遵守相同過濾與停用規則。這是結果語義，不預先固定 HTTP 路由或建立第二個知識平台；字段依 [DATA_MODEL](DATA_MODEL.md#section-5-6)。
+
 <a id="section-3-4"></a>
 ## 3.4 身份和权限
 
@@ -66,4 +75,4 @@
 
 已有契约要求区分未授权／已撤权、配对过期或重放、旧世代、版本冲突、校验失败、网络失败和附件未完成；界面映射到 [SPEC 同步状态](../SPEC.md#section-4-7)，失败不能显示成功。以上是业务条件，并未定义 HTTP 状态码或错误字符串。
 
-原计划没有确定 HTTP 路径、完整请求／响应封装、设备凭据格式、分页批量限制、冲突返回体和协议兼容协商。保留为 [D-API-001](DECISIONS.md#d-api-001)，在 S06–S08 按当前工作包确定并写回本文件；迁移包兼容性依据 [版本化格式](DATA_MODEL.md#section-6-2) 与 [恢复检查](ARCHITECTURE.md#section-6-5)。不以补齐标题为理由虚构接口或运行命令。
+原計劃沒有確定 HTTP 路徑、完整請求／回應封裝、裝置憑據格式、分頁批次限制、衝突回傳內容和協議相容協商。保留為 [D-API-001](DECISIONS.md#d-api-001)：早期 Gemini proxy／chat 所需最小路徑在 S06-W01 與 S11-W01 的相應工作包確定；身分、同步及配對細節在 S06–S08 按當前工作包確定，並寫回本文件。遷移包相容性依據[版本化格式](DATA_MODEL.md#section-6-2)與[恢復檢查](ARCHITECTURE.md#section-6-5)。不以補齊標題為理由虛構介面或運行指令。

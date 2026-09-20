@@ -1,0 +1,6 @@
+# Preserve the exact bytes and recorded hashes of frozen historical documents.
+_archive/s00/** -text
+_archive/legacy/** -text
+artifacts/verification/S00_CHECKS.json -text
+artifacts/verification/S00_SOURCE_INDEX.json -text
+OPEN_SOURCE_REUSE.md -text
