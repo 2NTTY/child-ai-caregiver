@@ -7,7 +7,7 @@ S00 — 文档迁移，来源：[PLAN](PLAN.md#s00)。
 已完成
 
 ## Current Goal
-GitHub CLI 与 Codex PR 前置配置已核验，本轮停止，不进入 S01。
+已按用户原文补充 Git 工作流规则；修改保留在本地 `codex/git-workflow-rules` 分支，尚未 commit / push。
 
 ## Verified
 - 561 源单元、72 标题已定位；484 原文单元及 77 整合／替代单元已核对，第 10 章 55 项完成判据保留。
@@ -22,7 +22,7 @@ GitHub CLI 与 Codex PR 前置配置已核验，本轮停止，不进入 S01。
 - 无 S00 阻塞；原有实施细节见 [DECISIONS](docs/DECISIONS.md#deferred)。
 
 ## Next Action
-停止本轮；后续获准开发时从非 master 分支或 Codex worktree 工作，再使用内置 Create Pull Request。
+审阅本地 Git 工作流文档修改；后续开发遵循 [AGENTS Git 工作流](AGENTS.md#git-workflow)，S01 仍未开始。
 
 ## Relevant Files
 - [PLAN 当前工作包](PLAN.md#s00-w01)
@@ -34,14 +34,14 @@ GitHub CLI 与 Codex PR 前置配置已核验，本轮停止，不进入 S01。
 - [EV-001 机器核对](artifacts/verification/S00_CHECKS.json)／[EV-002 独立核查](artifacts/verification/S00_AUDIT.md)
 
 ## Last Updated
-2026-09-20 12:11:24 +08:00（Asia/Hong_Kong；GitHub CLI 与 Codex PR 前置配置核验）
-对应记录：[LOG-20260920-005](WORKLOG.md#log-20260920-005)。
+2026-09-20 12:29:56 +08:00（Asia/Hong_Kong；Git 工作流规则维护）
+对应记录：[LOG-20260920-006](WORKLOG.md#log-20260920-006)。
 
 ## Quota Report
 - 用户最近报告：5 小时额度剩余 13%；报告登记时间 2026-09-20 04:49:50 +08:00，重置时间未提供。
 - 周额度仍未知，周额度档位不判定；不把 5 小时余额当作周余额。
-- 当前只完成用户指定的 GitHub 基线配置，不启动新开发任务；策略见 [AGENTS](AGENTS.md#quota)。
+- 当前仅维护用户指定的 Git 工作流规则；策略见 [AGENTS](AGENTS.md#quota)。
 
 ## Model
 目标：Sol / Medium；实际会话配置未通过配置读取核对，未声称已切换。
-本轮主模型完成 GitHub CLI 与 Codex PR 前置配置核验，未调用子代理。
+本轮主模型维护 Git 工作流文档，未调用子代理。

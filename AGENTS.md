@@ -25,6 +25,19 @@
 - 默认不使用 Computer Use；登录、授权、验证码、扫码、真机安装、Android 权限及简单 GUI，优先提供步骤与预期结果，由用户操作。
 - shell、build、test、lint、typecheck 和机器检查由 Codex 执行；必须记录用户实际反馈，不能假定人工验证通过。
 
+<a id="git-workflow"></a>
+## Git 工作流
+
+- 本地仓库是主要开发环境，GitHub 用于阶段备份、PR 和审查。
+- `master` 保持稳定，不直接在 `master` 开发。
+- 开始每个 Sxx 前，从最新 `master` 创建对应分支，例如 `s03-web-vertical-slice`。
+- 一个分支原则上只完成一个 Sxx；过大的步骤才按工作包拆分。
+- 开发期间正常本地 commit，不要求每次 commit 都 push。
+- Sxx 达到验收条件后，更新 `PLAN.md` / `STATUS.md` / `WORKLOG.md`，再 push 到 GitHub。
+- 使用 Codex 原生 Review / Pull Request，将该分支合并回 `master`。
+- 合并完成后再开始依赖它的下一个 Sxx。
+- 不提交 `.env`、API key、密钥、凭据、私人数据或本地数据库。
+
 <a id="finish"></a>
 ## 验证与收尾
 - 按 [PLAN 验证制度](PLAN.md#verification) 区分已确认、已实现、已验证、已完成；代码写完不等于完成。
