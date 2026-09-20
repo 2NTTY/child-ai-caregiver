@@ -251,3 +251,34 @@
 
 ### Next Action
 - 后续获得开发授权时，从新的 `codex/...` 分支或 Codex worktree 开始；完成验证后在 Review／Changes 面板提交、推送并创建目标为 master 的 Pull Request。
+
+<a id="log-20260920-006"></a>
+## LOG-20260920-006
+
+- Recorded At / Work Date：2026-09-20 12:29:56 +08:00（Asia/Hong_Kong，本轮记录开始时间）。
+- Step / Package：Git 工作流规则维护；S01 未开始。
+- Executor / AI Assistance：主模型编辑文档，未调用子代理。
+- Goal：将用户提供的九条 Git 工作流规则原样加入现有 `AGENTS.md`。
+- Human Verification：规则由用户直接提供；编辑结果未进行人工验收。
+
+### Actual Work
+- 按仓库实际文件名修改 `AGENTS.md`；新增 Git 工作流章节及稳定锚点。
+- 从当前 master 创建本地 `codex/git-workflow-rules` 分支承载此次文档修改。
+
+### Changes
+- `AGENTS.md` 保存原文；`PLAN.md` 增加规则入口；`STATUS.md` 同步本地状态；`WORKLOG.md` 追加本条。
+
+### Verification
+- Requirement / Acceptance：用户提供的九条规则完整保留。
+- Method / Result：逐条核对新增章节、检查 Git diff 与 `git diff --check`；通过。
+- Environment / Revision：Windows；本地 `codex/git-workflow-rules` 分支，基于 `3c5742b`。
+- Evidence：本轮四份文档的本地 diff；无产品代码变化，不重跑 S00 历史验收。
+
+### Limitations / Blockers
+- 无阻塞；尚未 commit、push 或创建 PR，修改保留在本地供用户审阅。
+
+### Plan Update
+- 新增 Git 工作流引用；S00 已完成、S01–S17 未开始的步骤状态不变。
+
+### Next Action
+- 用户审阅本地文档修改，准备好后使用原生提交与 PR 工作流。
