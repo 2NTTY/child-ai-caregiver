@@ -8,9 +8,9 @@ default_subagent_model = "gpt-5.6-sol"
 default_subagent_reasoning_effort = "medium"
 
 [agents.explorer]
-description = "Read-only investigation agent"
+description = "Read-only Luna Max investigation agent"
 config_file = "agents/explorer.toml"
 
 [agents.worker]
-description = "Bounded Sol implementation agent"
+description = "Bounded implementation agent; default Sol Medium, with explicit Sol/Astra settings selected by the primary agent"
 config_file = "agents/worker.toml"
