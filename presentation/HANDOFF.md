@@ -69,3 +69,13 @@ npm --prefix presentation run catalog
 4. 要更新實現現況，只改 `project-status.json` 並引用已合併基線。未合併 worktree 不能寫作 master 功能。
 5. 恢復後才考慮 gallery 瀏覽器檢查、使用者品牌取向 review，以及分支 push／PR。停止點未建立或合併 PR。
 6. 本交接文件取代原擬獨立 `VERIFICATION.md`，避免再整理重複文件。主線 PLAN／STATUS／WORKLOG 保持原樣，額度及停止記錄只留在本工作包。
+
+## 主線接管更新（2026-09-22）
+
+使用者其後授權主線接管、合併及清理，故上文的停止點／未建立 PR 是歷史交接快照。原始素材及已記錄驗收保留，沒有新增插畫或產品功能。
+
+- 已同步 master `39eb5aabe80f09e8c0d44bf58649fa221ad71fc0`（含 S03、CRITICAL 收尾及 Prompt Pack PR #11）。現況改為登入／孩子／文字記錄／PostgreSQL 恢復已接通，P1 暫停待續，AI、加密備份及部署試玩仍未完成。
+- 更新 `project-status.json`、進度頁來源及生成 PPTX／預覽。新 PPTX SHA-256：`54971ca551f4461cdd4aabd59dbeb3b8f61c3e313fd14ab78d3239be83c42693`。
+- 重建 finalizer 的 package integrity／layout 均零 findings，Artifact Tool 重新匯入成功；check 通過 22 SVG、13 頁、98 原生文字元素、12 SVG 圖片實例；瀏覽器重建预覽文字 overflow／SVG 越界均為 0。
+- 主代理目視核對更新後第 10 頁與全稿總圖，其餘 12 頁 PNG 沒有變動；catalog 重新生成成功。沒有桌面 PowerPoint、gallery 互動、實體印刷或產品 integration／E2E／真模型驗收。
+- 本次接管沒有新增子代理，使用者已撤回 Astra 單次例外；原創分工保持上文歷史記錄，長期預設維持 AGENTS／專案 config。

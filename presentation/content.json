@@ -68,7 +68,7 @@
     "verifiedLabel": "已有驗證證據",
     "remainingLabel": "P1 尚待接通與驗收",
     "notes": "本頁所有進度陳述來自 project-status.json。只反映已合併基線，不自動納入其他 worktree 或尚未合併分支。已確認設計、已實現、已驗證及已完成必須分開。視覺資產完成不代表 P1 完成。",
-    "refs": ["STATUS.md", "PLAN.md#verification", "artifacts/verification/S02_W01_CHECKS.json"]
+    "refs": ["STATUS.md", "PLAN.md#verification", "artifacts/verification/S03_W01_CHECKS.json"]
   },
   "demo": {
     "title": "Demo 流程預留",

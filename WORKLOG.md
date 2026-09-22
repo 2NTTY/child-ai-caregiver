@@ -501,3 +501,29 @@
 - Resume：重新核對 master，從 Ready 的 S06-W01 新 branch／worktree 開始；S09-W01 同已解鎖，依 PLAN 前置推進至 S17-W01。後續真服務／高成本驗收按範圍取得批准，不擴大本輪已有批准。
 - Parallel Work：Prompt Pack 草稿 PR #11 未採用，沒有重複或干預另一任務；待正式合併才復用。本輪 Astra 例外不自動延續。
 - Evidence：既有驗收及 [EV-S03-W01](artifacts/verification/S03_W01_CHECKS.json) 保留；本文不重跑產品驗收，STATUS 保存暫停及接續位置，WORKLOG 前綴不改寫。
+
+<a id="log-20260922-106"></a>
+## LOG-20260922-106
+
+- Recorded At：2026-09-22（Asia/Hong_Kong）
+- Work Date：2026-09-22
+- Step / Package：DOC-P01 Prompt Pack 接管；VIS-P01 視覺素材／簡報交付整合。獨立資產分支同步已合併 master，沒有新增產品包依賴。
+- Goal：按使用者指示接管兩個並行任務，保留可復用成果及來源，合併前修正簡報過時快照；P1 仍按 LOG-105 暫停。
+- Executor / AI Assistance：主代理負責主線整合與覆核，沒有新增子代理；原作者／review 分工見 DOC-P01 交付證據及 presentation/HANDOFF。使用者已結束 Astra 單次例外，恢復 AGENTS 預設，沒有改全局或專案模型配置。
+- Human Verification：使用者授權接管／合併／清理，沒有新增產品試玩、桌面 PowerPoint 或印刷驗收。最新用量原值仍為 LOG-105 的 5%，沒有查詢或假設重置。
+
+### Actual Work / Changes
+- Prompt Pack 0.1.1／DOC-P01 已經 PR #11 review 並合併至 39eb5aa：19 模組、8 配方、12 JSON 範例、52 合成場景及獨立 P1 文字入口；不導入舊分支的 PLAN／STATUS／WORKLOG 快照。
+- 接收 22 SVG source、6 生成插畫、22 PNG 匯出、靜態素材目錄及 13 頁可編輯 PPTX。原始素材、提示詞、生成記錄、維護脚本及預覽均保留，沒有接入產品 UI。
+- 簡報進度唯一入口更新至已合併 S03 基線；修正登入／Server 保存仍未完成的過時表述，重新生成成品及第 10 頁預覽。STATUS 增加資產入口，PLAN 產品工作包狀態不變。
+
+### Verification / Evidence
+- Prompt Pack 同步最新主線後 1,497 項靜態斷言通過，內容 hash 維持 2663aa91c45dcc391749dcd128a589fb28c8770e38b27a63792a06d5f5d839d2；原獨立 review 修正及限制見 [交付證據](artifacts/verification/DOC_P01_DELIVERY_CHECKS.json)。
+- 視覺／簡報 package、版面、匯入及輕量 preview 檢查通過；22 SVG、13 頁、98 原生文字元素、12 SVG 實例，overflow／越界零 findings。新成品 hash、歷史與本次核對見 [視覺交接](presentation/HANDOFF.md)。主代理核對更新頁與總圖，其餘 12 頁 PNG 不變。
+- WORKLOG 僅追加，本次沒有重跑既有產品測試或調用模型。
+
+### Failures / Limitations / Next
+- 視覺任務 read_thread 工具連續回傳內部錯誤；改以已提交 HANDOFF、Git 成果及任務清單的 idle 狀態核對。Prompt 任務交接可讀；沒有把工具失敗當作成果不存在。
+- 真 Gemini／工具接入仍未驗證；P1 最小 prompt 留待 S11-W01 按需使用。素材屬準備資產，不構成任何 Sxx 或 P1 完成。
+- 桌面 PowerPoint 尚未開啟驗收，現有預覽是瀏覽器重建而非原生 Office 渲染；gallery 互動及品牌偏好仍未人工確認，不阻止 source 交付。
+- 產品恢復時仍先從 Ready 的 S06-W01 開始，再依 PLAN 依賴推進；後續高成本驗收另按原規則取得批准。

@@ -1,18 +1,50 @@
 {
   "asOf": "2026-09-22",
-  "baselineCommit": "9d18bc7e5ffd387b013ae3a3e186d6a73c03275d",
+  "baselineCommit": "39eb5aabe80f09e8c0d44bf58649fa221ad71fc0",
   "currentPhase": "P1",
-  "phaseState": "進行中",
-  "phaseLabels": { "P1": "進行中", "P2": "規劃中", "P3": "規劃中", "P4": "規劃中", "P5": "可選增值" },
+  "phaseState": "暫停待續",
+  "phaseLabels": {
+    "P1": "進行中",
+    "P2": "規劃中",
+    "P3": "規劃中",
+    "P4": "規劃中",
+    "P5": "可選增值"
+  },
   "mixedPhaseLabel": "分階段規劃",
-  "headline": "最小 Web 工程已建立",
-  "summary": "S02 已完成並合併；P1 產品流程仍未接通。",
-  "implemented": ["Expo Web 基礎畫面", "孩子稱呼／文字記錄輸入驗證", "可配置的公開 API 地址"],
-  "verified": ["已記錄 8／8 單元測試通過", "已記錄 typecheck、Web export 及本機啟動通過"],
-  "notConnected": ["登入與 Server 持久保存", "原始聊天與真 Gemini", "加密備份還原與獨立試玩 URL"],
-  "planned": ["P2 持續 Server Agent", "P3 Android 在線客戶端", "P4 完整部署、報告及搬遷"],
-  "evidence": ["artifacts/verification/S02_W01_CHECKS.json", "Git merge PR #8"],
-  "evidenceNote": "驗證陳述引用既有 S02 證據，本視覺工作包沒有重跑產品測試。",
+  "headline": "登入、孩子與文字記錄已接通",
+  "summary": "S03 已驗收合併，P1 仍未完成。",
+  "implemented": [
+    "Web 註冊／登入及帳號隔離",
+    "建立／切換孩子、確認保存文字記錄",
+    "PostgreSQL 保存，重開後可恢復"
+  ],
+  "verified": [
+    "64 項單元、16 項 HTTP、12 項 Web E2E 通過",
+    "typecheck 及 Web export 通過"
+  ],
+  "notConnected": [
+    "安全 AI API、聊天與真 Gemini",
+    "儲存加密及最小備份還原",
+    "部署與組員獨立試玩 URL"
+  ],
+  "planned": [
+    "P2 持續 Server Agent",
+    "P3 Android 在線客戶端",
+    "P4 完整部署、報告及搬遷"
+  ],
+  "evidence": [
+    "artifacts/verification/S06_W03_CHECKS.json",
+    "artifacts/verification/S03_W01_CHECKS.json",
+    "Git merge PR #10 / #12 / #13"
+  ],
+  "evidenceNote": "驗證陳述引用已合併 S06-W03／S03-W01 證據，本素材整合沒有重跑產品測試。",
   "demoUrl": null,
-  "demoScreenshots": { "login": null, "child": null, "record": null, "chat": null, "persistence": null, "agent": null }
+  "demoScreenshots": {
+    "login": null,
+    "child": null,
+    "record": null,
+    "chat": null,
+    "persistence": null,
+    "agent": null
+  }
 }
