@@ -17,6 +17,8 @@
     "server": "node --env-file-if-exists=.env server/index.ts",
     "db:migrate": "node --env-file-if-exists=.env server/migrate.ts",
     "test:integration": "node --env-file-if-exists=.env scripts/verify-server.mjs",
+    "test:records": "node --env-file-if-exists=.env scripts/verify-server.mjs --records",
+    "test:web": "node --env-file-if-exists=.env scripts/verify-web.mjs",
     "setup:local": "node scripts/setup-local-env.mjs"
   },
   "dependencies": {

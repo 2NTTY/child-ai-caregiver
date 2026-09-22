@@ -460,3 +460,32 @@
 ### Limitations / Next
 - 沒有 browser E2E／真機／Gemini／外部郵件／部署／家庭邀請或備份還原驗收；Web 仍是 S02 基礎畫面。記憶體限流不是分散式限流，代理部署策略由 S06-W01 決定。
 - 本包必要驗收已通過，review／PR 合併後才開始 S03-W01。另一聊天的 Prompt Pack 繼續獨立工作，尚未依賴未合併成果。
+
+<a id="log-20260922-104"></a>
+## LOG-20260922-104
+
+- Recorded At：2026-09-22（Asia/Hong_Kong）
+- Work Date：2026-09-22
+- Step / Package：S03／S03-W01，P1；前置 S06-W03 已於 PR #10 review／合併至 4ba90f3。
+- Executor：主代理 Astra 負責接口、migration、整合及驗收；四名 Astra Max 子代理實作 Server、Web、browser runner 及唯讀整合 review。runtime 已核對，沒有子孫代理或修改長期模型預設。
+- Human Verification：使用者明確批准本次 16 組 HTTP 及隔離 Chromium Web 驗收；沒有組員独立產品試玩。Usage 原值未知，不推算餘額或重置。
+
+### Actual Work
+- 在獨立 s03-w01-web-records worktree／branch 接通註冊／登入、建立／切換孩子、原文檢視確認保存、Server 記錄顯示及關頁重開恢復。
+- 新增 children／text_records 與 002 增量 migration；保留 001 SQL及既有 DB。owner／作者只取 session，每次 SQL 按 workspace owner 限制，保留原文、約數、空白及 Server 時間。
+- Web 只保留當前頁記憶體草稿，按孩子隔離；斷線禁寫、未知結果先讀取及人工核對、登入失效隱藏私人資料、同帳號才恢復草稿，登出成功清理。
+- 沒有加入 AI、家庭邀請、通用框架、完整冪等平台、離線 outbox 或 Prompt Pack 草稿。
+
+### Verification
+- Requirement / Acceptance：PLAN S03／S03-W01；本階段適用的 SPEC 10.2 Web 保存、重開、Server 權威及斷線／未確認狀態。Android與後續配對／一致性 AC 仍屬各自工作包。
+- Environment / Revision：基線 4ba90f3；Windows／Node 24.11.0／PostgreSQL 18.6／Playwright 1.62.1／Edge 153.0.4234.48。版本、hash及項目見 [EV-S03-W01](artifacts/verification/S03_W01_CHECKS.json)。
+- Result：64／64 單元測試、Web／Server typecheck及Web export通過；獲批准的真HTTP 16／16、Web E2E 12／12通過，合成資料與之前測試DB保留，沒有重設。
+- Review：獨立 review 發現跨分頁切換cookie可能把舊帳號孩子草稿寫到新帳號，及取消舊孩子identity check誤清新頁面；新增Server同請求expected-user前置檢查與取消結果忽略，回歸通過，覆核已關閉兩项finding。
+
+### Failures / Decisions
+- Web E2E首次被本機Kaspersky注入外部腳本觸發網絡限制；只把已識別環境origin排除於產品外連失敗判定，請求仍阻擋，沒有更改防毒設定。其餘未知外部origin繼續使驗收失敗；重跑12階段通過。
+- 記錄列表明示最近100則，完整時間軸／搜尋及opId協議按P2工作包；未知寫入不自動重試，避免提前假稱完整一致性。
+
+### Limitations / Next
+- 無真Gemini／Android／部署／加密備份還原／組員獨立試玩，本包不代表P1完成。
+- 本包經PR合併後才開始S06-W01及S09-W01。已收到另一任務Prompt Pack交接，但草稿未採用，保持只依賴正式合併成果。

@@ -8,7 +8,7 @@ Planned capabilities include:
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
 - A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
 
-**Current status: local Web foundation and verified server authentication.** S06-W03 adds a Node/PostgreSQL server with email/password authentication and private account workspaces; all 11 approved real-database acceptance checks passed. The Web screen still states that login and storage are not connected. There is no usable care-record workflow, APK, deployed product service, or live product URL yet. See [STATUS.md](STATUS.md), [the reuse audit](docs/REUSE_AUDIT.md), and [SPEC.md](SPEC.md).
+**Current status: verified local Web record workflow.** The Web interface connects email/password authentication, child creation and text records to the Node/PostgreSQL server. S03-W01 passed 64 unit tests, 16 approved real-database checks and 12 local browser acceptance stages, including reopening saved records and preserving offline drafts. There is no APK, deployed product service, live product URL, or AI response yet. See [STATUS.md](STATUS.md), [the reuse audit](docs/REUSE_AUDIT.md), and [SPEC.md](SPEC.md).
 
 P1 requires a working web URL, server persistence, Gemini chat, and verified encryption/backup safeguards. P2 is the competition-delivery target: a persistent server agent, family permissions, web photo input, current knowledge, and preauthorized Web Push/Telegram follow-ups. Android follows in P3; deployment choice, full reports, migration, and disaster recovery complete P4. These are acceptance requirements, not claims of implemented features.
 
@@ -60,7 +60,7 @@ npm ci
 npm run web
 ```
 
-Open the local address printed by Expo (normally `http://localhost:8081`). This is a foundation screen, not a working login or care-record application. No backend, database, model key, or external account is required for this package.
+Open the local address printed by Expo (normally `http://localhost:8081`). The record workflow requires the local server and database setup below; no model key is needed. Use synthetic data throughout P1.
 
 ```sh
 npm run typecheck
@@ -74,7 +74,7 @@ The tests exercise shared public inputs, API-address and server configuration, a
 
 Code boundaries:
 
-- `app/`: the minimal Expo Router Web entry.
+- `app/`: the Expo Router Web interface.
 - `src/shared/`: platform-independent child and text-record input contracts and validation; no storage or network access.
 - `src/config/`: public deployment-address validation, loaded by the app entry.
 - `server/`: PostgreSQL persistence, Better Auth, and the HTTP authorization boundary.
@@ -93,7 +93,7 @@ npm run db:migrate
 npm run server
 ```
 
-The server listens on `127.0.0.1:3001`, with `/api/health`, `/api/auth/*`, and `/api/workspaces` endpoints. PostgreSQL uses a persistent named volume and a loopback-only port. Migrations are additive, serialized by an advisory lock, and record application SQL checksums. Do not delete volumes to repair a migration or lose the `.env` secret: existing sessions depend on it. The Web product flow is delivered in S03-W01.
+The server listens on `127.0.0.1:3001`, with `/api/health`, `/api/auth/*`, and `/api/workspaces` endpoints. PostgreSQL uses a persistent named volume and a loopback-only port. Migrations are additive, serialized by an advisory lock, and record application SQL checksums. Do not delete volumes to repair a migration or lose the `.env` secret: existing sessions depend on it. The S03-W01 Web product flow uses these same server endpoints.
 
 See [the API contract](docs/API.md#p1-server-http) and [.env.example](.env.example) for required settings. Production requires explicit HTTPS origins and a protected server-only secret. Email verification, password recovery, family invitations, and deployment proxy policy are outside S06-W03.
 
@@ -105,3 +105,11 @@ npm run test:integration
 ```
 
 The runner accepts only `TEST_DATABASE_URL` pointing to a local database whose name begins with `yuban_s06_test`. It uses synthetic accounts, retains those rows, and stops only its own server processes. Scope, costs, and result interpretation are in [S06-W03 acceptance](docs/S06_W03_ACCEPTANCE.md).
+
+## Web record workflow
+
+With both the server and Expo running, register an account or sign in, create a child, and enter a text record. Review the original text and child before confirming the save. Only a successful server response produces a saved receipt. The list displays the latest 100 confirmed records for the selected child; switching children keeps separate unsaved drafts in page memory.
+
+Reopen the page and sign in to the same account to load saved records from the server. Offline mode blocks submission and warns that displayed data may be stale. A failed or uncertain submission keeps its input and requires a fresh read and manual duplicate check before retrying. There is no automatic write retry or persistent browser record store. Closing or refreshing a page with unsaved input shows the browser's warning; successful sign-out clears the page's private state.
+
+The additional approved checks are `npm run test:records` and the local browser workflow in [S03-W01 acceptance](docs/S03_W01_ACCEPTANCE.md). They exercise additive upgrades over the retained synthetic database; do not delete volumes to make tests pass.

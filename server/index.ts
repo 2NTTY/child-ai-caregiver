@@ -4,6 +4,7 @@ import { createRequestHandler } from "./app.ts";
 import { readServerConfig } from "./config.ts";
 import { createPool } from "./database.ts";
 import { createWorkspaceStore } from "./workspaces.ts";
+import { createRecordStore } from "./records.ts";
 
 try {
   const config = readServerConfig(process.env);
@@ -11,6 +12,7 @@ try {
   const auth = createAuth(config, pool);
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
+    records: createRecordStore(pool),
     checkDatabase: async () => { await pool.query("SELECT 1"); },
   });
   const server = createServer((request, response) => {

@@ -50,6 +50,9 @@ async function dispatch(path: string, auth: {
       api: { getSession: auth.getSession ?? unusedAuth },
     } as unknown as HandlerOptions["auth"],
     workspaces,
+    records: new Proxy({} as HandlerOptions["records"], {
+      get() { throw new Error("Record storage must not be accessed"); },
+    }),
     checkDatabase: async () => { throw new Error("Database health must not be queried"); },
   })(request, response as unknown as ServerResponse);
   return { status: response.statusCode, headers, body: body.toString("utf8") };
