@@ -1,0 +1,127 @@
+{
+  "evidenceId": "EV-DOC-P01-DELIVERY",
+  "recordedAt": "2026-09-22T18:45:07.6302713+08:00",
+  "scope": "Prompt Pack 0.1.1 及獨立 P1 提示詞交付；只作文件／靜態驗收。",
+  "stableBaseCommit": "9d18bc7e5ffd387b013ae3a3e186d6a73c03275d",
+  "sourcePromptCommit": "9fbc5e942369463b39a4a92da58fffc4282f6f5a",
+  "previousDeliveryCommit": "b4bf876672340d98e2f490b0fbc9b4cf5804304e",
+  "p1Delivery": {
+    "commit": "1873fba90c599865a911165a33f18435e9f6fe23",
+    "version": "p1-chat/0.1.0",
+    "files": [
+      "prompts/p1/README.md",
+      "prompts/p1/childcare-chat.txt"
+    ],
+    "dependencies": "只有固定文字及 Server 已授權的相關孩子／近期聊天；無 manifest、loader、tool、schema 或完整包依賴。",
+    "authoredStaticScenarios": 9
+  },
+  "staticCheck": {
+    "evidenceId": "EV-DOC-P01",
+    "generatedAt": "2026-09-22T18:45:06.8163975+08:00",
+    "powershellVersion": "7.6.5",
+    "scope": "Static documentation structure and authored fixtures only; no model or product execution.",
+    "packVersion": "0.1.1",
+    "modules": 19,
+    "recipes": 8,
+    "syntheticFixtures": 12,
+    "syntheticCases": 52,
+    "packFiles": 35,
+    "assertions": 1497,
+    "coveredAxes": [
+      "capability_change",
+      "conflict",
+      "cross_module",
+      "human_confirmation",
+      "missing",
+      "normal",
+      "permission",
+      "tool_failure",
+      "uncertainty"
+    ],
+    "packSha256": "2663aa91c45dcc391749dcd128a589fb28c8770e38b27a63792a06d5f5d839d2",
+    "packHashNormalization": "UTF-8 text with LF newlines; sorted relative paths and per-file SHA256 hashes.",
+    "passed": true,
+    "errors": [],
+    "notRun": [
+      "Gemini/model evaluation",
+      "Product integration",
+      "External delivery",
+      "Android/device testing",
+      "High-cost regression"
+    ]
+  },
+  "independentReview": {
+    "reviewer": "沿用明確指定 Astra Max 的 conversation_prompt_review；唯讀指令，不聲稱 OS 唯讀沙箱。",
+    "reviewed": [
+      "19 模組、8 配方、主要契約與 Gemini 接入",
+      "獨立 P1 兩檔",
+      "最新穩定方向與 P1/P2/P3 邊界"
+    ],
+    "findingsResolved": [
+      "背景 no_action 條件只控制主動提示／外發，不阻止使用者主動查詢、記錄、摘要及回覆；C51。",
+      "一般短句可利用授權近期對話理解；只有副作用需要明確事項／版本／授權；C52。",
+      "structured 模式條件必需 outputContract／schema；文字模式無此負擔。",
+      "P1 正文與接入说明明確把孩子、歷史及官方來源正文納入不可信資料邊界；來源不獲指令權限。",
+      "從穩定 master 準備純資產交付，原 PLAN／STATUS／WORKLOG 快照不進入新分支差異。"
+    ],
+    "finalDisposition": "主代理逐項核對修正，沒有尚未處理的交付阻塞；未驗證真模型或產品。"
+  },
+  "stableControlFiles": [
+    {
+      "path": "AGENTS.md",
+      "gitBlob": "a8c3ef93dec9cef33f1eea3c1e9efb7cc001e53b",
+      "unchanged": true
+    },
+    {
+      "path": "PLAN.md",
+      "gitBlob": "8f173203d75304babb03ea1e9f582e1e04bbc276",
+      "unchanged": true
+    },
+    {
+      "path": "STATUS.md",
+      "gitBlob": "90217ee738359499a790b974d1e9d66dca3acd92",
+      "unchanged": true
+    },
+    {
+      "path": "WORKLOG.md",
+      "gitBlob": "add8bf832a2d865280914a1eb028cd58864c9713",
+      "unchanged": true
+    },
+    {
+      "path": "SPEC.md",
+      "gitBlob": "2a2411fe4794a5e64667d8c9f3d67906d88f44d7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "gitBlob": "02903dd8a15d952ab4c76b2beb5b1f8740b4d419",
+      "unchanged": true
+    },
+    {
+      "path": "docs/API.md",
+      "gitBlob": "a7e2398b9bc2acdc2ff09d91887aae94a3b8d09e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/DATA_MODEL.md",
+      "gitBlob": "9502d9ce282edfb8337b2d1946e210d80f8a1ffb",
+      "unchanged": true
+    }
+  ],
+  "coordination": {
+    "outgoingRef": "refs/notes/prompt-to-s01",
+    "incomingRef": "refs/notes/s01-to-prompt",
+    "checkedInbound": "本輪交付前本地及遠端均未見回覆 ref；不是已收到 S01 接受確認。",
+    "s01VisibleWork": "S01-W01／S02-W01 已合併；S06-W03 工作中，未合併實現不當作接口。",
+    "isolation": "只在本代理 worktree 修改；對 S01 只執行 git --no-optional-locks status 及讀取任務狀態，沒有 checkout、編輯、merge 或替其解衝突。",
+    "policy": "每次實際開始／交付先讀最新可見 Git 狀態及 inbound notes；不是背景常駐監控。"
+  },
+  "notRun": [
+    "Gemini/model evaluation",
+    "Product integration",
+    "External delivery",
+    "Android/device testing",
+    "High-cost regression"
+  ],
+  "passed": true
+}
