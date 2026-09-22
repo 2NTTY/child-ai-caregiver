@@ -1,0 +1,97 @@
+{
+  "evidenceId": "EV-DOC-P01",
+  "packageId": "DOC-P01",
+  "recordedAt": "2026-09-22T18:19:12.1897928+08:00",
+  "baselineCommit": "89d864aba33c35fd2749bc4813156f25f5af1123",
+  "scope": "提示詞文件及靜態驗收；不是產品、模型或渠道執行證據。",
+  "staticCheck": {
+    "evidenceId": "EV-DOC-P01",
+    "generatedAt": "2026-09-22T18:19:12.1171703+08:00",
+    "powershellVersion": "7.6.5",
+    "scope": "Static documentation structure and authored fixtures only; no model or product execution.",
+    "packVersion": "0.1.0",
+    "modules": 19,
+    "recipes": 8,
+    "syntheticFixtures": 12,
+    "syntheticCases": 50,
+    "packFiles": 33,
+    "assertions": 1461,
+    "coveredAxes": [
+      "capability_change",
+      "conflict",
+      "cross_module",
+      "human_confirmation",
+      "missing",
+      "normal",
+      "permission",
+      "tool_failure",
+      "uncertainty"
+    ],
+    "packSha256": "ec2c3a681d7cff24fb5ab0627d165eed551abff3fbfe664507d10d8cb996009c",
+    "packHashNormalization": "UTF-8 text with LF newlines; sorted relative paths and per-file SHA256 hashes.",
+    "passed": true,
+    "errors": [],
+    "notRun": [
+      "Gemini/model evaluation",
+      "Product integration",
+      "External delivery",
+      "Android/device testing",
+      "High-cost regression"
+    ]
+  },
+  "worklogAppendOnly": {
+    "passed": true,
+    "originalBytes": 25531,
+    "originalSha256": "c3277c9e910b58ca2d420168fb383c87c852d2f7c22e0f5d11cf25ecde01f25c",
+    "preservedPrefixSha256": "c3277c9e910b58ca2d420168fb383c87c852d2f7c22e0f5d11cf25ecde01f25c"
+  },
+  "productPlanUnchanged": {
+    "passed": true,
+    "stageRows": 17,
+    "packageRows": 47,
+    "allStatuses": "未開始",
+    "comparison": "基線與工作樹的完整產品階段／工作包表格行逐字相同，包括依賴與驗收內容。"
+  },
+  "manualContentReview": {
+    "executor": "主代理逐份閱讀及整合；四份 Astra Max 規劃審閱建議已整合。",
+    "passed": true,
+    "syntheticMultiTurnConversations": 12,
+    "findingsResolved": [
+      "自然對話及確認範圍",
+      "核心／領域分工及固定組合",
+      "來源時效及衝突",
+      "摘要覆蓋、私人聊天及終態",
+      "工具結果誠實性與未知投遞",
+      "回應綁定、撤權、工具變更及 Server 世代",
+      "未接入能力不冒充可用"
+    ],
+    "qualification": "設定、人工指定的預期及文字審查不代表真模型遵循、實際 runtime 模型或作業系統唯讀沙箱證據。"
+  },
+  "notRun": [
+    "Gemini／任何模型執行或模型 E2E",
+    "產品整合／持久資料庫／worker",
+    "真來源擷取／附件 OCR",
+    "真渠道發送／通知／fallback",
+    "Android 真機／部署／高成本回歸"
+  ],
+  "remainingAcceptance": "prompts/review/README.md",
+  "passed": true,
+  "repositoryScope": {
+    "passed": true,
+    "changedFiles": 37,
+    "allowedPaths": [
+      "prompts/**",
+      "PLAN.md",
+      "STATUS.md",
+      "WORKLOG.md",
+      "artifacts/verification/DOC_P01_CHECKS.json"
+    ],
+    "existingProductDocsCodeConfigAndArchivesUnchanged": true,
+    "method": "Git tracked diff names and untracked file names restricted to allowed paths; no archive content scan."
+  },
+  "rootDocumentLinks": {
+    "passed": true,
+    "links": 57,
+    "scope": "PLAN／STATUS 本地連結及本次追加 LOG；歷史 WORKLOG 不重寫。"
+  }
+}

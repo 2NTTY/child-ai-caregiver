@@ -358,3 +358,37 @@
 - 未執行產品實作、依賴安裝、Gemini／真服務／外部訊息／部署／真機／integration／E2E 或深度回歸；文件驗收不代表產品完成。本輪未啟動 Luna／Sol 實例，角色檔是預設，實際權限仍須核對 runtime 覆寫。
 - 沒有新增歸檔項目或移動原檔，因此索引不需變更；未改寫歷史資料。未查詢用量，當前及周餘額未知。
 - DOC-R02 文件與配置驗收完成；S00 已完成，全部產品包仍未開始。下一步 review／合併文件分支，之後才按 S01-W01 前置另行開始產品工作。
+
+<a id="log-20260922-002"></a>
+## LOG-20260922-002
+
+- Recorded At：2026-09-22T18:19:11.8236591+08:00（Asia/Hong_Kong）。
+- Work Date：2026-09-22；本次 DOC-P01 工作。
+- Step / Package：DOC-P01 — 以自然對話為核心的 Agent Prompt Pack。
+- Executor：主代理整合、寫作及靜態驗收；子代理分工見下。
+- Goal：提前備妥可組合、Web／Server／Android 共用且直接給 Agent 閱讀的提示詞，以 Gemini 為首個接入目標；不提前實作產品。
+- AI Assistance：規劃階段四名子代理按明確指定的 Astra Max 設定，分別唯讀審閱自然對話、記憶與契約、知識安全、主動工具行為，交回建議供主代理整合。實作期間曾按原專案預設啟動一名 Sol High 撰寫 10 個行為及 4 個領域模組草稿；使用者其後限定「本次聊天僅使用 Astra Max 子代理」時立即中止，未再啟動或續用其他模型子代理。主代理逐份完整閱讀、修改及驗收這 14 份草稿，並完成核心、契約、配方、Gemini 接入及審查材料。以上模型／effort 是明確請求設定；當前代理清單工具未返回 runtime 模型及 sandbox metadata，不把唯讀指令冒稱為作業系統唯讀沙箱。本次例外不修改專案或全域配置。
+- Human Verification：使用者批准方案並補充自然對話、Gemini 及子代理限制；尚未進行產品人工試用、真機或渠道驗收。
+
+### Actual Work
+- 建立 0.1.0 完整提示詞正文：5 個共用核心、10 個行為模組、4 個 childcare-hk 領域模組；模型正文與開發者備註、權威連結、合成例子分隔。
+- 以 manifest 維護 ID／版本／依賴及 8 種組合配方；定義 Server 注入、capability／tool、結果與結構化輸出語義，未建立 loader、SDK、工具實作或插件平台。
+- 對正常／缺資料／衝突／工具失敗／權限不足／不確定／需人工確認，以及跨家庭、多孩子、主動聯絡、工具變更和 Server 恢復建立預期行為。
+- 整合審查修正：領域身份與來源時效集中在 childcare-hk；短回覆按唯一待確認事項或 reply-to 接續；私人記憶不得透過摘要外洩；摘要覆蓋按 Server 訊息集合核對；發送／送達／回應／完成分離；unknown 保留並核對，不能重發、fallback 或在重啟後清除；工具成功後文字收尾失敗不得重做操作。
+- Gemini 官方接入資料已作唯讀核對，記錄 system instruction、對話／工具 parts、原生 function calling、response schema 與 Server 校驗的分工；模型由日後配置選定，不宣稱本包已在 Gemini 運作。
+
+### Changes
+- [Prompt Pack 入口](prompts/README.md)／[manifest](prompts/manifest.json)／[Gemini 接入](prompts/integration/gemini.md)／[需求映射](prompts/review/traceability.md)。
+- PLAN 加入獨立 DOC-P01，STATUS 反映未接入的提示詞資產；S01–S17 及 47 個產品包的原狀態、內容與依賴不變，沒有把 S11、S13 標成完成。
+- [EV-DOC-P01](artifacts/verification/DOC_P01_CHECKS.json) 保存靜態結果與範圍；本記錄僅追加，歷史正文原位保留。
+
+### Verification
+- Requirement / Acceptance：使用者批准的 DOC-P01 方案；產品 REQ／AC 只作提示詞來源映射，不據此宣稱產品驗收完成。
+- Method：PowerShell 7.6.5 執行只讀 prompts/review/check.ps1；主代理靜態閱讀正文、契約、案例及組合；核對新文件／連結、原產品行列及 WORKLOG 舊位元組前綴。
+- Result：19 個指令模組、8 個配方、12 組合成 JSON fixture、12 組合成多輪對話、50 個合成場景；1,461 項結構／一致性斷言通過。這些是作者指定的輸入／預期資料及靜態斷言，沒有模型執行或模型成功率。
+- WORKLOG 追加前 25,531 位元組的 SHA256 為 c3277c9e910b58ca2d420168fb383c87c852d2f7c22e0f5d11cf25ecde01f25c；追加後原前綴相同。證據檔另記整包 LF 正規化雜湊、既有產品規劃不變及受限修改範圍。
+
+### Limitations / Next
+- 沒有產品功能、Gemini 實測／模型 E2E、真工具／資料庫／worker、外部投遞、Android 真機、部署或高成本回歸；未發現阻塞文件交付的內容衝突。
+- 下一步為 DOC-P01 PR review／合併。日後由相應產品包注入真上下文、權限／版本、工具及來源，並驗證自然對話、結構化校驗、持久記憶、照片／語音、聯絡回應及恢復，見 [真實驗收清單](prompts/review/README.md)。
+- 用量原話（本次對話，訊息精確時間未提供）：「由于额度很多，并且重置快到了，本次聊天特批astra max子代理，且仅使用astra max子代理」。使用者未提供 Usage 剩餘原值或重置時間，數值餘額仍未知；沒有查詢或推算重置。

@@ -169,6 +169,17 @@ P1 按真實流程實作 DataStore／ModelGateway；P2 加入 AttachmentStore／
 - 驗收：現行要求與替代關係一致、舊錨點可追溯、依賴無循環、WORKLOG 舊前綴及歷史資料未改、專案配置可解析與當前 Codex 識別；角色限額與硬配置明確區分。
 - 證據：[LOG-20260922-001](WORKLOG.md#log-20260922-001)／[EV-DOC-R02](artifacts/verification/DOC_R02_CHECKS.json)。
 
+<a id="doc-p01"></a>
+## DOC-P01 — 以自然對話為核心的 Agent Prompt Pack
+
+- 狀態：已完成（提示詞文件與靜態驗收）；待 PR review／合併。
+- 前置：已合併的 DOC-R02 文件基線（本包由穩定 `89d864a` 開始）；使用者明確批准提前建立 Prompt Pack。
+- 範圍：[Prompt Pack](prompts/README.md) `0.1.0`：5 個共用核心、10 個行為模組、4 個 childcare-hk 領域模組、8 種組合配方、注入／工具／結果契約、Gemini 接入說明、合成案例及靜態檢查。
+- 驗收：正文直接對 Agent 下指令；自然對話與結構化結果分開；能力缺失、確認、私隱、來源時效、主動跟進、unknown 投遞及工具變更有一致規則；檔案／依賴／連結／範例可解析，WORKLOG 舊前綴保持原樣。
+- 範圍外：產品 loader、SDK、Server／資料庫、worker、UI／Android／渠道 adapter、模型 E2E、真服務、外部投遞及真機。
+- 狀態界線：這是未接入產品的提示詞資產，S01–S17 及 47 個產品包維持未開始；不代替 S11／S13 等原功能／驗收，也不改變原產品依賴。
+- 證據：[LOG-20260922-002](WORKLOG.md#log-20260922-002)／[EV-DOC-P01](artifacts/verification/DOC_P01_CHECKS.json)；[待真實驗收](prompts/review/README.md)。
+
 <a id="s00-w01"></a>
 ## S00-W01 — 完整文档迁移
 
