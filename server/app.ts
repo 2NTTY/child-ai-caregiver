@@ -1,0 +1,132 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { fromNodeHeaders } from "better-auth/node";
+import type { createAuth } from "./auth.ts";
+import type { ServerConfig } from "./config.ts";
+import { apiError, handleWorkspaceRequest, jsonResponse } from "./workspace-api.ts";
+import type { WorkspaceStore } from "./workspaces.ts";
+
+const MAX_BODY_BYTES = 64 * 1024;
+
+class BodyTooLargeError extends Error {}
+
+function readBody(request: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks: Buffer[] = [];
+    const cleanup = () => {
+      request.off("data", onData);
+      request.off("end", onEnd);
+      request.off("error", onError);
+      request.off("aborted", onAborted);
+    };
+    const onData = (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        cleanup();
+        request.resume();
+        reject(new BodyTooLargeError());
+      } else chunks.push(chunk);
+    };
+    const onEnd = () => { cleanup(); resolve(Buffer.concat(chunks).toString("utf8")); };
+    const onError = () => { cleanup(); reject(new Error("Request stream failed")); };
+    const onAborted = () => { cleanup(); reject(new Error("Request aborted")); };
+    request.on("data", onData);
+    request.once("end", onEnd);
+    request.once("error", onError);
+    request.once("aborted", onAborted);
+  });
+}
+
+async function writeResponse(response: Response, target: ServerResponse, origin: string | null): Promise<void> {
+  target.statusCode = response.status;
+  response.headers.forEach((value, key) => { if (key !== "set-cookie") target.setHeader(key, value); });
+  const cookies = response.headers.getSetCookie();
+  if (cookies.length) target.setHeader("set-cookie", cookies);
+  target.setHeader("cache-control", "no-store");
+  target.setHeader("x-content-type-options", "nosniff");
+  target.setHeader("vary", "Origin");
+  if (origin) {
+    target.setHeader("access-control-allow-origin", origin);
+    target.setHeader("access-control-allow-credentials", "true");
+  }
+  target.end(Buffer.from(await response.arrayBuffer()));
+}
+
+export function createRequestHandler(options: {
+  config: ServerConfig;
+  auth: ReturnType<typeof createAuth>;
+  workspaces: WorkspaceStore;
+  checkDatabase: () => Promise<void>;
+}) {
+  const allowedOrigins = new Set([options.config.publicOrigin, options.config.webOrigin]);
+  return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
+    let permittedOrigin: string | null = null;
+    try {
+      const headers = fromNodeHeaders(request.headers);
+      // Never let an untrusted forwarding header choose the authentication rate-limit key.
+      if (request.socket.remoteAddress) headers.set("x-forwarded-for", request.socket.remoteAddress);
+      else headers.delete("x-forwarded-for");
+      const origin = headers.get("origin");
+      if (origin && !allowedOrigins.has(origin)) {
+        request.resume();
+        await writeResponse(apiError("forbidden_origin", "此來源未獲授權。", 403), response, null);
+        return;
+      }
+      permittedOrigin = origin;
+      const method = request.method ?? "GET";
+      if (!request.url?.startsWith("/") || request.url.startsWith("//")) {
+        request.resume();
+        await writeResponse(apiError("invalid_request", "無效請求。", 400), response, permittedOrigin);
+        return;
+      }
+      const url = new URL(request.url, options.config.publicOrigin);
+      if (method === "OPTIONS") {
+        const preflight = new Response(null, { status: 204, headers: {
+          "access-control-allow-methods": "GET, POST, OPTIONS",
+          "access-control-allow-headers": "content-type",
+        } });
+        await writeResponse(preflight, response, permittedOrigin);
+        return;
+      }
+      if (method !== "GET" && method !== "POST") {
+        request.resume();
+        await writeResponse(apiError("method_not_allowed", "不支援此操作。", 405), response, permittedOrigin);
+        return;
+      }
+      if (method === "POST" && !origin) {
+        request.resume();
+        await writeResponse(apiError("forbidden_origin", "此來源未獲授權。", 403), response, null);
+        return;
+      }
+      const length = Number(headers.get("content-length") ?? "0");
+      if (!Number.isFinite(length) || length > MAX_BODY_BYTES) throw new BodyTooLargeError();
+      const body = method === "POST" ? await readBody(request) : undefined;
+      const webRequest = new Request(url, { method, headers, ...(body ? { body } : {}) });
+      let result: Response;
+      if (url.pathname.startsWith("/api/auth/")) {
+        result = await options.auth.handler(webRequest);
+        if (result.status >= 500) {
+          await result.body?.cancel();
+          result = apiError("service_unavailable", "服務暫時未能處理，請稍後重試。", 503);
+        }
+      } else if (url.pathname === "/api/health" && method === "GET") {
+        await options.checkDatabase();
+        result = jsonResponse({ status: "ok" });
+      } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")) {
+        const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
+        result = await handleWorkspaceRequest(webRequest, sessionResult.response?.user.id ?? null, options.workspaces);
+        for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
+      } else result = apiError("not_found", "找不到此服務。", 404);
+      await writeResponse(result, response, permittedOrigin);
+    } catch (error) {
+      request.resume();
+      if (response.headersSent || response.destroyed) { response.end(); return; }
+      if (error instanceof BodyTooLargeError) {
+        response.setHeader("connection", "close");
+        await writeResponse(apiError("payload_too_large", "請求內容過大。", 413), response, permittedOrigin);
+      } else {
+        await writeResponse(apiError("service_unavailable", "服務暫時未能處理，請稍後重試。", 503), response, permittedOrigin);
+      }
+    }
+  };
+}

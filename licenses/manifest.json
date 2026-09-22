@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S02-W01",
+  "workPackage": "S06-W03",
   "recordedOn": "2026-09-22",
   "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "e5330c997e3c7b21e8a49be2a8bd12d851a12c56cc991f68d2db510625869723"
+    "sha256": "fa6564f38909a4953ba2dd855b105f093f64d504234cb1081a5fc7adece64563"
   },
   "packages": [
     {
@@ -326,18 +326,98 @@
           "source": "node_modules/typescript/ThirdPartyNoticeText.txt"
         }
       ]
+    },
+    {
+      "name": "better-auth",
+      "version": "1.7.5",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/better-auth/better-auth.git",
+        "directory": "packages/better-auth"
+      },
+      "tarball": "https://registry.npmjs.org/better-auth/-/better-auth-1.7.5.tgz",
+      "integrity": "sha512-aKE0Zt2EPTpFvmq4/oATNyG/mAfc6JUqWkW9pzGlrVnzUb0lso7GJ9BPxD6JPhLqYV1a9zOAb0uAz1Q5fm+eHA==",
+      "files": [
+        {
+          "path": "licenses/better-auth/LICENSE.md",
+          "sha256": "7a07f7d9085cb3157e4377d944988c9712933141b0f7201955ceccfac92abde4",
+          "source": "node_modules/better-auth/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "name": "pg",
+      "version": "8.23.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git://github.com/brianc/node-postgres.git",
+        "directory": "packages/pg"
+      },
+      "tarball": "https://registry.npmjs.org/pg/-/pg-8.23.0.tgz",
+      "integrity": "sha512-Ip2EQCngowJLGOfCwkFhPXU7/ljlhn6Rxlmy4XYfL2Y+vyRM59+8uR2xqRWKdYmbXmxCFOAmKxBuSUCdF34qLg==",
+      "files": [
+        {
+          "path": "licenses/pg/LICENSE",
+          "sha256": "192b8f5c96900f04a1271dec39688655d7416c1c6ea84a508e18b50d2b6751f3",
+          "source": "node_modules/pg/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@types/node",
+      "version": "24.13.6",
+      "dependencyType": "devDependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/node"
+      },
+      "tarball": "https://registry.npmjs.org/@types/node/-/node-24.13.6.tgz",
+      "integrity": "sha512-SGrw/h3KPFshy3OE6ZL53LMBG5vGQQ8/gIpiqz/kRZhPJ7HgwCEs8LBuNtWLa8dvGZVpSF7+Bf+c11HUrCb/yg==",
+      "files": [
+        {
+          "path": "licenses/types-node/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "source": "node_modules/@types/node/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@types/pg",
+      "version": "8.23.1",
+      "dependencyType": "devDependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/pg"
+      },
+      "tarball": "https://registry.npmjs.org/@types/pg/-/pg-8.23.1.tgz",
+      "integrity": "sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==",
+      "files": [
+        {
+          "path": "licenses/types-pg/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "source": "node_modules/@types/pg/LICENSE"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 586,
+    "packageEntries": 624,
     "declarations": {
-      "MIT": 503,
-      "ISC": 29,
+      "MIT": 538,
+      "ISC": 31,
       "MIT AND Apache-2.0": 1,
       "BSD-3-Clause": 9,
+      "Apache-2.0": 13,
       "(MIT OR CC0-1.0)": 2,
       "Python-2.0": 1,
-      "Apache-2.0": 12,
       "Unlicense": 2,
       "CC-BY-4.0": 1,
       "(MIT OR Apache-2.0)": 1,

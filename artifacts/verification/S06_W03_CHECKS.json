@@ -1,0 +1,104 @@
+{
+  "id": "EV-S06-W03",
+  "recordedOn": "2026-09-22",
+  "baseline": "9d18bc7e5ffd387b013ae3a3e186d6a73c03275d",
+  "scope": "Minimum Node/PostgreSQL/Better Auth authentication and private account workspaces",
+  "environment": {
+    "node": "24.11.0",
+    "npm": "11.6.1",
+    "dockerEngine": "29.4.0",
+    "postgres": "18.6 (Debian 18.6-1.pgdg12+2)",
+    "image": "postgres:18.6-bookworm",
+    "imageDigest": "sha256:3725f4e2499eef5134592b3b4ab79a543ed7f8e533b05b5b637af926630f6650"
+  },
+  "dependencies": {
+    "betterAuth": "1.7.5",
+    "pg": "8.23.0",
+    "nodeTypes": "24.13.6",
+    "pgTypes": "8.23.1",
+    "lockfileSha256": "fa6564f38909a4953ba2dd855b105f093f64d504234cb1081a5fc7adece64563",
+    "directPackages": 20,
+    "preservedLicenseTexts": 21
+  },
+  "checks": {
+    "typecheck": "passed: Web and server",
+    "unitTests": {
+      "passed": 30,
+      "failed": 0,
+      "command": "npm test",
+      "network": false
+    },
+    "dependencyTree": "npm ls --all: zero problems",
+    "composeSyntax": "passed; dedicated test service only",
+    "integration": {
+      "approvedByUser": true,
+      "approval": "User explicitly approved local synthetic-account integration and reported Docker started.",
+      "command": "npm run test:integration",
+      "passed": 11,
+      "failed": 0,
+      "checks": [
+        "MIGRATIONS",
+        "DATABASE_HEALTH",
+        "UNAUTHENTICATED_REQUESTS",
+        "EMAIL_AUTHENTICATION",
+        "SERVER_OWNED_WORKSPACES",
+        "ACCOUNT_ISOLATION",
+        "REPEATED_CREATION_AND_READ",
+        "ORIGIN_GUARD",
+        "WRONG_PASSWORD",
+        "SESSION_REVOCATION",
+        "RESTART_PERSISTENCE"
+      ],
+      "realPostgres": true,
+      "realBetterAuth": true,
+      "serverRestart": true,
+      "data": "Synthetic example.test accounts retained in dedicated local test volume; no database reset or personal data.",
+      "cleanup": "Runner-owned Node processes stopped."
+    }
+  },
+  "review": {
+    "findings": [
+      "Borrowed PostgreSQL client error listener missing",
+      "Migration unlock error skipped client release",
+      "Workspace API dropped refreshed session Set-Cookie"
+    ],
+    "fixes": [
+      "Persistent sanitized client error listener",
+      "Nested finally release; discard failed client",
+      "Return headers from session lookup and append each cookie"
+    ],
+    "additionalHardening": "Authentication 5xx responses become a fixed 503 without provider details",
+    "regressions": "Seven targeted no-network tests included in the 30 unit tests"
+  },
+  "failuresAndDecisions": [
+    {
+      "failure": "Fast repeated sign-in returned 429; first bounded retry expected Retry-After but installed Better Auth returns X-Retry-After.",
+      "resolution": "Runner accepts either response header with a positive integer <=10 seconds and retries only once. Authentication rate limits remain enabled.",
+      "finalResult": "All 11 integration checks passed."
+    }
+  ],
+  "agents": {
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "max",
+    "verifiedRuntimeModel": "gpt-6-astra",
+    "verifiedRuntimeEffort": "max",
+    "sandbox": "workspace-write",
+    "names": [
+      "s06_auth_config",
+      "s06_acceptance_runner",
+      "s06_security_review",
+      "s06_runtime_regressions"
+    ],
+    "subagentsSpawnedByChildren": false,
+    "projectDefaultsUnchanged": true
+  },
+  "notPerformed": [
+    "Browser E2E",
+    "Android/device testing",
+    "Gemini or external email calls",
+    "Deployment",
+    "Family invitations",
+    "P1 backup/recovery acceptance"
+  ],
+  "nextGate": "Review and merge this work package before S03-W01 begins."
+}
