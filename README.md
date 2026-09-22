@@ -8,7 +8,7 @@ Planned capabilities include:
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
 - A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
 
-**Current status: documentation and reuse audit only.** S00 and the S01-W01 bounded reuse audit are complete. The selected P1 starting point is the official Expo SDK 57 dependency set; no upstream parenting application code has been adopted. There is no runnable app, APK, deployed product service, or live product URL yet. See [the audit](docs/REUSE_AUDIT.md) and [SPEC.md](SPEC.md).
+**Current status: local Web foundation.** S01-W01 is merged; S02-W01 adds an Expo SDK 57 Web entry point, shared child/text input validation, and public API configuration. The screen explicitly states that login and storage are not connected. There is no usable care-record workflow, APK, deployed product service, or live product URL yet. See [STATUS.md](STATUS.md), [the reuse audit](docs/REUSE_AUDIT.md), and [SPEC.md](SPEC.md).
 
 P1 requires a working web URL, server persistence, Gemini chat, and verified encryption/backup safeguards. P2 is the competition-delivery target: a persistent server agent, family permissions, web photo input, current knowledge, and preauthorized Web Push/Telegram follow-ups. Android follows in P3; deployment choice, full reports, migration, and disaster recovery complete P4. These are acceptance requirements, not claims of implemented features.
 
@@ -53,4 +53,30 @@ Frozen documents keep the relative-link context of their source commit. Their co
 <a id="run-test"></a>
 ## Running and testing
 
-Application setup and test commands will be added after the relevant implementation is created and verified. For documentation checks already performed, use [STATUS](STATUS.md) to locate the relevant WORKLOG entry; do not load the entire log as routine context. Documentation acceptance is not evidence of a working product.
+Use Node.js 24.3 or newer within the Node 24 release line, and npm 11. The development baseline is Node 24.11.0 and npm 11.6.1. From the repository root:
+
+```sh
+npm ci
+npm run web
+```
+
+Open the local address printed by Expo (normally `http://localhost:8081`). This is a foundation screen, not a working login or care-record application. No backend, database, model key, or external account is required for this package.
+
+```sh
+npm run typecheck
+npm test
+npm run build:web
+```
+
+The tests exercise shared public inputs and API-address configuration using Node's built-in runner. `build:web` creates a static export under `dist/`; generated output is not committed. These checks do not represent integration, browser E2E, Android, persistence, or live-service acceptance.
+
+`EXPO_PUBLIC_API_BASE_URL` defaults to `/api` for a same-origin deployment. See [.env.example](.env.example) for a local separate-server example. This is a public value embedded in the client bundle: never put provider keys, credentials, or private data in `EXPO_PUBLIC_*`. Only HTTPS remote addresses and HTTP loopback addresses are accepted; embedded credentials, query parameters, and fragments are rejected. This configuration does not implement runtime server switching.
+
+Code boundaries:
+
+- `app/`: the minimal Expo Router Web entry.
+- `src/shared/`: platform-independent child and text-record input contracts and validation; no storage or network access.
+- `src/config/`: public deployment-address validation, loaded by the app entry.
+- `tests/`: focused unit tests for those public boundaries.
+
+Dependency versions and integrity are fixed in `package-lock.json`; attribution and adopted scope are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No coo or other parenting-application code was copied. Use [STATUS](STATUS.md) to locate package verification evidence without loading the full work log.

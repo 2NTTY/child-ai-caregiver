@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 1,
+  "workPackage": "S02-W01",
+  "recordedOn": "2026-09-22",
+  "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
+  "lockfile": {
+    "path": "package-lock.json",
+    "sha256": "e5330c997e3c7b21e8a49be2a8bd12d851a12c56cc991f68d2db510625869723"
+  },
+  "packages": [
+    {
+      "name": "@expo/metro-runtime",
+      "version": "57.0.16",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git"
+      },
+      "tarball": "https://registry.npmjs.org/@expo/metro-runtime/-/metro-runtime-57.0.16.tgz",
+      "integrity": "sha512-x43WgZoICpp37BhDV7vixe0bNxbVPPGaBLHYc98ZJ8MU+UC2dk39Y2XvkfYMRRbAUSIkCIJiwdERnptlPg0Ckw==",
+      "files": [
+        {
+          "path": "licenses/expo-metro-runtime/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/@expo/metro-runtime/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo",
+      "version": "57.0.24",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo"
+      },
+      "tarball": "https://registry.npmjs.org/expo/-/expo-57.0.24.tgz",
+      "integrity": "sha512-LxSnKMv7en/w4XDNxW3VOx7SbtQ2Bs4MyGhtoZCToDsEsBPO7pJXlv5GnQUCd7Wi8118QV/VDwsDLBKTB3Z3iQ==",
+      "files": [
+        {
+          "path": "licenses/expo/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/expo/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-constants",
+      "version": "57.0.19",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-constants"
+      },
+      "tarball": "https://registry.npmjs.org/expo-constants/-/expo-constants-57.0.19.tgz",
+      "integrity": "sha512-3eK1kZRwCdMizQLlM/PPlPwjaPnB5qKvdRDMBMnB1ZxmvWJBf9TB4uEO4DMMfIPaFUxYFs29dsR5fPr1gh3FTQ==",
+      "files": [
+        {
+          "path": "licenses/expo-constants/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/expo-constants/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-linking",
+      "version": "57.0.10",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-linking"
+      },
+      "tarball": "https://registry.npmjs.org/expo-linking/-/expo-linking-57.0.10.tgz",
+      "integrity": "sha512-RzRi4l4pIYzjgoCJKnqkO+lUI+M2YX6qgcMIQkIbLAXdcWrykBoKYwHGlmAkdFHQm89GaYcq329yfxG+c1hv8w==",
+      "files": [
+        {
+          "path": "licenses/expo-linking/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/expo-linking/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-router",
+      "version": "57.0.22",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/expo/expo.git",
+        "type": "git",
+        "directory": "packages/expo-router"
+      },
+      "tarball": "https://registry.npmjs.org/expo-router/-/expo-router-57.0.22.tgz",
+      "integrity": "sha512-kOuS3RjMC73YLyBFiV9BzO0Z5OK1nLhPwmptK2II+tePtWXH7oA4zWaPwdWsdzTJRnmGMs/8Sr8YdTPHm1LUCg==",
+      "files": [
+        {
+          "path": "licenses/expo-router/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "https://raw.githubusercontent.com/expo/expo/7687b07947a5c866adeb11abbceae72403ccb188/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react",
+      "version": "19.2.3",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/facebook/react.git",
+        "directory": "packages/react"
+      },
+      "tarball": "https://registry.npmjs.org/react/-/react-19.2.3.tgz",
+      "integrity": "sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==",
+      "files": [
+        {
+          "path": "licenses/react/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+          "source": "node_modules/react/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.3",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/facebook/react.git",
+        "directory": "packages/react-dom"
+      },
+      "tarball": "https://registry.npmjs.org/react-dom/-/react-dom-19.2.3.tgz",
+      "integrity": "sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg==",
+      "files": [
+        {
+          "path": "licenses/react-dom/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+          "source": "node_modules/react-dom/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native",
+      "version": "0.86.3",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/react/react-native.git",
+        "directory": "packages/react-native"
+      },
+      "tarball": "https://registry.npmjs.org/react-native/-/react-native-0.86.3.tgz",
+      "integrity": "sha512-JR5s3bM9ezud+Mw24GlNXNfthqPIKwrQgPPJcam+L97t2sKjjEavhCzBn+fyqZZRcM5+XlhYxpTxVkK7e1n38Q==",
+      "files": [
+        {
+          "path": "licenses/react-native/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+          "source": "node_modules/react-native/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native-gesture-handler",
+      "version": "2.32.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/software-mansion/react-native-gesture-handler.git"
+      },
+      "tarball": "https://registry.npmjs.org/react-native-gesture-handler/-/react-native-gesture-handler-2.32.0.tgz",
+      "integrity": "sha512-uYIMOKlKENORq2SABE+jIjbPU+h5I/sQKcq2v16zRq848nwEp1fWRVwML4QWqijc8UcXJC25o54S8GQd4Mf2OA==",
+      "files": [
+        {
+          "path": "licenses/react-native-gesture-handler/LICENSE",
+          "sha256": "f1ae22eddd3a96c3b7b8a494ef03749ae6a1e19574bacc9c195d83c916de09e2",
+          "source": "node_modules/react-native-gesture-handler/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native-reanimated",
+      "version": "4.5.1",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/software-mansion/react-native-reanimated.git",
+        "directory": "packages/react-native-reanimated"
+      },
+      "tarball": "https://registry.npmjs.org/react-native-reanimated/-/react-native-reanimated-4.5.1.tgz",
+      "integrity": "sha512-RnMvtDuR+68ig864gAvZCOdZehqhC5rFmMo0kn+ARfgVSTvFeF6IFLBVgMPUu0KwihaapEyW24WRi6nEyy1kSA==",
+      "files": [
+        {
+          "path": "licenses/react-native-reanimated/LICENSE",
+          "sha256": "f1ae22eddd3a96c3b7b8a494ef03749ae6a1e19574bacc9c195d83c916de09e2",
+          "source": "node_modules/react-native-reanimated/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native-safe-area-context",
+      "version": "5.7.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/AppAndFlow/react-native-safe-area-context.git"
+      },
+      "tarball": "https://registry.npmjs.org/react-native-safe-area-context/-/react-native-safe-area-context-5.7.0.tgz",
+      "integrity": "sha512-/9/MtQz8ODphjsLdZ+GZAIcC/RtoqW9EeShf7Uvnfgm/pzYrJ75y3PV/J1wuAV1T5Dye5ygq4EAW20RoBq0ABQ==",
+      "files": [
+        {
+          "path": "licenses/react-native-safe-area-context/LICENSE",
+          "sha256": "f5c7a4d527258e11fdfe3d84eb73cd14fe6d64224ef051e59f6ee21fe378800c",
+          "source": "node_modules/react-native-safe-area-context/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native-screens",
+      "version": "4.26.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/software-mansion/react-native-screens.git"
+      },
+      "tarball": "https://registry.npmjs.org/react-native-screens/-/react-native-screens-4.26.0.tgz",
+      "integrity": "sha512-8DkONnr4496K6ECMfprqyYM4ya1IQO5mA3ROOAJ1P6OVvNL6rVtjD2Elikd/INC7CrePdFTOHUEahOMSHmWgUA==",
+      "files": [
+        {
+          "path": "licenses/react-native-screens/LICENSE",
+          "sha256": "95b52e497653b738fd50e4bd3a8197dc41593c63129acb4f8069dbf49530ef82",
+          "source": "node_modules/react-native-screens/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native-web",
+      "version": "0.21.2",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git://github.com/necolas/react-native-web.git"
+      },
+      "tarball": "https://registry.npmjs.org/react-native-web/-/react-native-web-0.21.2.tgz",
+      "integrity": "sha512-SO2t9/17zM4iEnFvlu2DA9jqNbzNhoUP+AItkoCOyFmDMOhUnBBznBDCYN92fGdfAkfQlWzPoez6+zLxFNsZEg==",
+      "files": [
+        {
+          "path": "licenses/react-native-web/LICENSE",
+          "sha256": "f961d81b4027c179ccd9200e72fa141f8c0575c1f3c93593f36645dc72bf5216",
+          "source": "node_modules/react-native-web/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native-worklets",
+      "version": "0.10.1",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/software-mansion/react-native-reanimated.git",
+        "directory": "packages/react-native-worklets"
+      },
+      "tarball": "https://registry.npmjs.org/react-native-worklets/-/react-native-worklets-0.10.1.tgz",
+      "integrity": "sha512-62mRM19bDpfpdI8HLkEErcdOsrAPDtE9lA/sw+5lLRpzBHNhxaoj9QyY2KjXqUmirelxkX4zuPGTC3VdA0feJA==",
+      "files": [
+        {
+          "path": "licenses/react-native-worklets/LICENSE",
+          "sha256": "92c22d327a6644efda43527bfa6f136f4382359f40bc288eda0764f67be9c269",
+          "source": "node_modules/react-native-worklets/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@types/react",
+      "version": "19.2.4",
+      "dependencyType": "devDependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/react"
+      },
+      "tarball": "https://registry.npmjs.org/@types/react/-/react-19.2.4.tgz",
+      "integrity": "sha512-tBFxBp9Nfyy5rsmefN+WXc1JeW/j2BpBHFdLZbEVfs9wn3E3NRFxwV0pJg8M1qQAexFpvz73hJXFofV0ZAu92A==",
+      "files": [
+        {
+          "path": "licenses/types-react/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "source": "node_modules/@types/react/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "typescript",
+      "version": "6.0.3",
+      "dependencyType": "devDependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/microsoft/TypeScript.git"
+      },
+      "tarball": "https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz",
+      "integrity": "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==",
+      "files": [
+        {
+          "path": "licenses/typescript/LICENSE.txt",
+          "sha256": "a7d00bfd54525bc694b6e32f64c7ebcf5e6b7ae3657be5cc12767bce74654a47",
+          "source": "node_modules/typescript/LICENSE.txt"
+        },
+        {
+          "path": "licenses/typescript/ThirdPartyNoticeText.txt",
+          "sha256": "1af3c68039c57e539422da82a4faada506ce6d0ea6f90e0b699d02dbcdb7a90c",
+          "source": "node_modules/typescript/ThirdPartyNoticeText.txt"
+        }
+      ]
+    }
+  ],
+  "lockfileLicenseDeclarations": {
+    "packageEntries": 586,
+    "declarations": {
+      "MIT": 503,
+      "ISC": 29,
+      "MIT AND Apache-2.0": 1,
+      "BSD-3-Clause": 9,
+      "(MIT OR CC0-1.0)": 2,
+      "Python-2.0": 1,
+      "Apache-2.0": 12,
+      "Unlicense": 2,
+      "CC-BY-4.0": 1,
+      "(MIT OR Apache-2.0)": 1,
+      "BSD-2-Clause": 4,
+      "BlueOak-1.0.0": 6,
+      "0BSD": 2,
+      "MPL-2.0": 12,
+      "(BSD-3-Clause OR GPL-2.0)": 1
+    },
+    "missingDeclarations": []
+  }
+}

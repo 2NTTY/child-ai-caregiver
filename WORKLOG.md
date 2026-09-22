@@ -394,3 +394,39 @@
 
 ### Next Action
 - 完成本包 review／PR／合併，再從最新 master 建立 S02-W01 獨立分支／worktree，開始最小共享工程。
+
+<a id="log-20260922-102"></a>
+## LOG-20260922-102
+
+- Recorded At：2026-09-22（Asia/Hong_Kong）
+- Work Date：2026-09-22
+- Step / Package：S02／S02-W01，P1；前置 S01-W01 已於 PR #7 review／合併至 dc16ebb。
+- Executor：主代理 Astra Ultra 負責共享邊界、整合及驗收；三名 Astra Max 子代理分別實現 Web bootstrap、唯讀共享邊界 review、唯讀入口整合 review；無子孫代理。本輪例外不更改專案配置，sandbox 仍為 workspace-write。
+- Goal：建立最小 Expo／TypeScript Web 工程、共享輸入契約與公開 API 配置，不提前實現 Server、登入、AI 或 Android 產品能力。
+- Human Verification：未進行人工產品試玩；使用者要求持續推進至 P1 完成並再次授權有效 Astra Max 並發。Usage 餘額原值未知，未主動查詢或推算。
+
+### Actual Work
+- 在獨立 s02-w01-web-foundation worktree／branch 建立 Expo SDK 57 Web 工程。畫面以香港繁體中文明示登入、儲存未接通，不提供假保存操作。
+- 共享 child／text input 接受 unknown，限制公開輸入、保留文字原文、拒收權限歸屬欄位；公開 API 地址只容許指定相對入口、HTTPS 或本機 HTTP，不包含憑據。
+- 固定直接依賴與 lockfile，保存 16 個套件的 17 份原始 LICENSE／TypeScript 聲明及 hashes；.gitattributes 保護原文位元組及 lockfile hash。沒有複製 coo 或模板應用程式碼／素材，沒有處理 Prompt Pack。
+
+### Changes
+- app／src／tests、package／lockfile、Expo／TypeScript 配置、.env.example、THIRD_PARTY_NOTICES／licenses。
+- README 補實際可用命令；docs/API 記最小輸入與公開配置邊界；PLAN／STATUS 更新本包狀態。
+- [EV-S02-W01](artifacts/verification/S02_W01_CHECKS.json)／[許可清單](licenses/manifest.json)。
+
+### Verification
+- Requirement / Acceptance：PLAN S02／S02-W01；共享規則與平台邊界、最小 Web 可啟動及必要檢查可執行。不是 P1／登入／持久化驗收。
+- Environment / Revision：Windows，Node 24.11.0／npm 11.6.1；基線 dc16ebb，最終精確版本及 lock hash 見證據。
+- Result：npm test 8／8；typecheck、Expo compatibility、npm ls --all 零問題及 Web export 均通過。本機 npm run web 啟動後，localhost:8081 首頁含育伴港及 entry bundle 均 HTTP 200；檢查後停止開發服務。
+- Review：共享 review 找到空 ?／# 可繞過 URL 檢查，已加最小修正及公開輸入案例；最終整合 review 無 blocking findings。Expo 啟動自動移除不需要的 generated types 入口及 expo-env.d.ts，保留其生成結果後 typecheck 再通過。
+
+### Failures / Decisions
+- S01 固定候選的 RN Web 0.21.0／React types 19.2.2 被 Expo 線上相容檢查要求的 0.21.2／19.2.4 取代；精確版本／許可重新核對，本機 bundled 清單與線上建議的差異如實保存。
+- npm 自動 peer 解析選入 Worklets 0.13，超出 SDK 57 模組接受範圍。先試固定 SDK 版本的 overrides，卻出現 npm 11.6.1 的 12 個 peer 圖 invalid，實際 semver 均符合；一次 npm ci、lock hash 不變後仍重現，排除安裝殘留。
+- 最終保持相同相容版本，把 Gesture Handler 2.32.0／Reanimated 4.5.1／Worklets 0.10.1 列為 Router 必需安裝依賴，移除 overrides；依賴樹及 build 均通過。未使用 force／legacy-peer 掩蓋衝突，未增加相應產品功能。
+
+### Limitations / Next
+- 沒有 integration／E2E／真服務／模型／部署／真機或使用者體驗驗收。傳遞依賴 metadata 清單不冒稱完整交付許可審核。
+- Docker CLI 29.4.0 存在，但 engine 未運行；不把 CLI 存在當 PostgreSQL 可用。S06 驗收前需處理環境並由使用者批准本機 integration。
+- 本包完成必要驗證與 review，經 PR 合併後開始 S06-W03；仍按依賴逐包驗收，不跳過 P1 後續門檻。
