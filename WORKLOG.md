@@ -430,3 +430,74 @@
 - 沒有 integration／E2E／真服務／模型／部署／真機或使用者體驗驗收。傳遞依賴 metadata 清單不冒稱完整交付許可審核。
 - Docker CLI 29.4.0 存在，但 engine 未運行；不把 CLI 存在當 PostgreSQL 可用。S06 驗收前需處理環境並由使用者批准本機 integration。
 - 本包完成必要驗證與 review，經 PR 合併後開始 S06-W03；仍按依賴逐包驗收，不跳過 P1 後續門檻。
+
+<a id="log-20260922-103"></a>
+## LOG-20260922-103
+
+- Recorded At：2026-09-22（Asia/Hong_Kong）
+- Work Date：2026-09-22
+- Step / Package：S06／S06-W03，P1；前置 S02-W01 已於 PR #8 review／合併至 9d18bc7。
+- Executor：主代理 Astra 負責 HTTP／持久化、整合與驗收；四名 Astra Max 子代理分工認證配置、integration runner、安全 review 及故障回歸。實際 runtime 均 Astra Max／workspace-write，子代理未再 spawn，長期配置不變。
+- Goal：最小 Server／PostgreSQL／Better Auth 登入、帳號資料隔離及 Server 重啟持久化。
+- Human Verification：使用者明確批准本機 PostgreSQL integration，並回報 Docker 已啟動；沒有人工 Web 試玩。Usage 原值仍未知，不推算重置或餘額。
+
+### Actual Work
+- 在獨立 s06-w03-server-auth worktree／branch 實作 Node HTTP、固定版本 Better Auth email/password、PostgreSQL private workspace；所有 owner 由已驗證 session 決定，客戶端身份欄位不生效。
+- 增量 migration、advisory lock／SQL checksum、持久 volume、最小 dev/test DB Compose；本機設定產生隨機秘密而不輸出、不覆寫、不提交。沒有家庭邀請、Web 登入畫面、AI 或 Prompt Pack 實現。
+- HTTPS production origin、精確 CORS／POST Origin、64 KiB body cap、固定錯誤與无正文日誌、session DB 查核及 Cookie 回傳；限流保持啟用。
+- 保存新增四個直接依賴許可；共 20 個直接套件、21 份原文。完整交付 notices 留在 P1 交付邊界。
+
+### Verification
+- Requirement / Acceptance：PLAN S06-W03；帳號隔離、未授權拒絕及重啟持久化。
+- Environment / Revision：Windows／Node 24.11.0／npm 11.6.1／Docker 29.4.0／PostgreSQL 18.6，基線 9d18bc7；image digest、lock hash、runtime 見 [EV-S06-W03](artifacts/verification/S06_W03_CHECKS.json)。
+- Result：Web＋Server typecheck、30／30 單元測試、依賴樹零問題、Compose syntax 通過；獲批准的真 PostgreSQL／Better Auth integration 11／11 通過，含登出失效、偽造身份拒絕及 Server 重啟後資料／會話仍在。
+- Review：修補借出 DB client 無 error listener、migration 解鎖失敗漏 release、workspace session 續期 Cookie 丟失三項 findings；另收斂 auth 5xx 為固定 503，七項無網絡故障回歸已通過。
+
+### Failures / Decisions
+- 首次快速重新登入觸發真實 429；數字狀態確認為 Better Auth 每 10 秒三次的端點限流。runner 加一次有限等候；安裝版本實際用 X-Retry-After，修正標頭讀取後 11 項通過，沒有關閉限流或清空資料。
+- 測試僅用隨機合成帳號，資料留在獨立本機 volume；runner 停止自己的 Node 子程序，無刪除或重設 DB。
+
+### Limitations / Next
+- 沒有 browser E2E／真機／Gemini／外部郵件／部署／家庭邀請或備份還原驗收；Web 仍是 S02 基礎畫面。記憶體限流不是分散式限流，代理部署策略由 S06-W01 決定。
+- 本包必要驗收已通過，review／PR 合併後才開始 S03-W01。另一聊天的 Prompt Pack 繼續獨立工作，尚未依賴未合併成果。
+
+<a id="log-20260922-104"></a>
+## LOG-20260922-104
+
+- Recorded At：2026-09-22（Asia/Hong_Kong）
+- Work Date：2026-09-22
+- Step / Package：S03／S03-W01，P1；前置 S06-W03 已於 PR #10 review／合併至 4ba90f3。
+- Executor：主代理 Astra 負責接口、migration、整合及驗收；四名 Astra Max 子代理實作 Server、Web、browser runner 及唯讀整合 review。runtime 已核對，沒有子孫代理或修改長期模型預設。
+- Human Verification：使用者明確批准本次 16 組 HTTP 及隔離 Chromium Web 驗收；沒有組員独立產品試玩。Usage 原值未知，不推算餘額或重置。
+
+### Actual Work
+- 在獨立 s03-w01-web-records worktree／branch 接通註冊／登入、建立／切換孩子、原文檢視確認保存、Server 記錄顯示及關頁重開恢復。
+- 新增 children／text_records 與 002 增量 migration；保留 001 SQL及既有 DB。owner／作者只取 session，每次 SQL 按 workspace owner 限制，保留原文、約數、空白及 Server 時間。
+- Web 只保留當前頁記憶體草稿，按孩子隔離；斷線禁寫、未知結果先讀取及人工核對、登入失效隱藏私人資料、同帳號才恢復草稿，登出成功清理。
+- 沒有加入 AI、家庭邀請、通用框架、完整冪等平台、離線 outbox 或 Prompt Pack 草稿。
+
+### Verification
+- Requirement / Acceptance：PLAN S03／S03-W01；本階段適用的 SPEC 10.2 Web 保存、重開、Server 權威及斷線／未確認狀態。Android與後續配對／一致性 AC 仍屬各自工作包。
+- Environment / Revision：基線 4ba90f3；Windows／Node 24.11.0／PostgreSQL 18.6／Playwright 1.62.1／Edge 153.0.4234.48。版本、hash及項目見 [EV-S03-W01](artifacts/verification/S03_W01_CHECKS.json)。
+- Result：64／64 單元測試、Web／Server typecheck及Web export通過；獲批准的真HTTP 16／16、Web E2E 12／12通過，合成資料與之前測試DB保留，沒有重設。
+- Review：獨立 review 發現跨分頁切換cookie可能把舊帳號孩子草稿寫到新帳號，及取消舊孩子identity check誤清新頁面；新增Server同請求expected-user前置檢查與取消結果忽略，回歸通過，覆核已關閉兩项finding。
+
+### Failures / Decisions
+- Web E2E首次被本機Kaspersky注入外部腳本觸發網絡限制；只把已識別環境origin排除於產品外連失敗判定，請求仍阻擋，沒有更改防毒設定。其餘未知外部origin繼續使驗收失敗；重跑12階段通過。
+- 記錄列表明示最近100則，完整時間軸／搜尋及opId協議按P2工作包；未知寫入不自動重試，避免提前假稱完整一致性。
+
+### Limitations / Next
+- 無真Gemini／Android／部署／加密備份還原／組員獨立試玩，本包不代表P1完成。
+- 本包經PR合併後才開始S06-W01及S09-W01。已收到另一任務Prompt Pack交接，但草稿未採用，保持只依賴正式合併成果。
+
+<a id="log-20260922-105"></a>
+## LOG-20260922-105
+
+- Recorded At：2026-09-22 19:12（Asia/Hong_Kong）
+- Scope：P1 階段接續／CRITICAL 收尾，文件維護獨立分支；不新增功能。
+- User Report：使用者原話「現在額度只有 5% 了，開始收尾吧」；未指定用量窗口，按原值記錄及 CRITICAL 執行，沒有查詢、推算或聲稱重置。
+- Completed Milestones：S01-W01／PR #7、S02-W01／PR #8、S06-W03／PR #10、S03-W01／PR #12 均已驗收、review 及合併。最新產品 master 為 39b4664；S03 證據包括 64 單元測試、16 真 HTTP 及 12 Web E2E 通過。
+- Remaining：P1 尚未完成；S06-W01 僅讀取規格，未修改產品程式碼，PLAN 維持未開始。沒有把額度收尾當作階段完成。
+- Resume：重新核對 master，從 Ready 的 S06-W01 新 branch／worktree 開始；S09-W01 同已解鎖，依 PLAN 前置推進至 S17-W01。後續真服務／高成本驗收按範圍取得批准，不擴大本輪已有批准。
+- Parallel Work：Prompt Pack 草稿 PR #11 未採用，沒有重複或干預另一任務；待正式合併才復用。本輪 Astra 例外不自動延續。
+- Evidence：既有驗收及 [EV-S03-W01](artifacts/verification/S03_W01_CHECKS.json) 保留；本文不重跑產品驗收，STATUS 保存暫停及接續位置，WORKLOG 前綴不改寫。

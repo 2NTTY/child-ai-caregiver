@@ -1,0 +1,409 @@
+{
+  "packId": "child-ai-caregiver-agent-prompts",
+  "version": "0.1.1",
+  "packageId": "DOC-P01",
+  "artifactType": "prompt_documentation",
+  "runtimeStatus": "not_integrated",
+  "validationScope": "static_documentation_only",
+  "promptBoundary": {
+    "begin": "<!-- prompt:begin -->",
+    "end": "<!-- prompt:end -->"
+  },
+  "baseModules": [
+    "core.identity-and-trust",
+    "core.conversation",
+    "core.context-and-privacy",
+    "core.tool-use",
+    "core.output"
+  ],
+  "domain": {
+    "id": "childcare-hk",
+    "requiredModules": [
+      "domain.childcare-hk.profile",
+      "domain.childcare-hk.safety"
+    ]
+  },
+  "modules": [
+    {
+      "id": "core.identity-and-trust",
+      "path": "core/identity-and-trust.md",
+      "version": "0.1.1",
+      "requires": []
+    },
+    {
+      "id": "core.conversation",
+      "path": "core/conversation.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust"
+      ]
+    },
+    {
+      "id": "core.context-and-privacy",
+      "path": "core/context-and-privacy.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust"
+      ]
+    },
+    {
+      "id": "core.tool-use",
+      "path": "core/tool-use.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust"
+      ]
+    },
+    {
+      "id": "core.output",
+      "path": "core/output.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust"
+      ]
+    },
+    {
+      "id": "module.chat",
+      "path": "modules/chat.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output",
+        "core.conversation"
+      ]
+    },
+    {
+      "id": "module.capture-confirmation",
+      "path": "modules/capture-confirmation.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.memory-maintenance",
+      "path": "modules/memory-maintenance.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.knowledge-answering",
+      "path": "modules/knowledge-answering.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.knowledge-maintenance",
+      "path": "modules/knowledge-maintenance.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.multimodal-input",
+      "path": "modules/multimodal-input.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.task-intents",
+      "path": "modules/task-intents.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.proactive-run",
+      "path": "modules/proactive-run.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.authorized-contact",
+      "path": "modules/authorized-contact.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output",
+        "core.conversation"
+      ]
+    },
+    {
+      "id": "module.summary-report",
+      "path": "modules/summary-report.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output",
+        "core.conversation"
+      ]
+    },
+    {
+      "id": "domain.childcare-hk.profile",
+      "path": "domains/childcare-hk/profile.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust"
+      ]
+    },
+    {
+      "id": "domain.childcare-hk.safety",
+      "path": "domains/childcare-hk/safety.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust",
+        "domain.childcare-hk.profile"
+      ]
+    },
+    {
+      "id": "domain.childcare-hk.sources-freshness",
+      "path": "domains/childcare-hk/sources-freshness.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust",
+        "domain.childcare-hk.profile"
+      ]
+    },
+    {
+      "id": "domain.childcare-hk.care-workflows",
+      "path": "domains/childcare-hk/care-workflows.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust",
+        "domain.childcare-hk.profile"
+      ]
+    }
+  ],
+  "recipes": [
+    {
+      "id": "p1-chat",
+      "additionalModules": [
+        "domain.childcare-hk.sources-freshness",
+        "module.chat"
+      ],
+      "outputModes": [
+        "text",
+        "tool_cycle"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "S11-W01"
+      ],
+      "missingCapability": "只回應已有資料及必要補問，不聲稱未接通功能可用。"
+    },
+    {
+      "id": "capture-confirm",
+      "additionalModules": [
+        "domain.childcare-hk.care-workflows",
+        "module.multimodal-input",
+        "module.capture-confirmation",
+        "module.chat"
+      ],
+      "outputModes": [
+        "text",
+        "tool_cycle",
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "context",
+        "evidence",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "S11-W02",
+        "S12-W03",
+        "S12-W01"
+      ],
+      "missingCapability": "可提取已提供文字；附件不可讀就保留未知，不能假稱保存。"
+    },
+    {
+      "id": "knowledge-answer",
+      "additionalModules": [
+        "domain.childcare-hk.sources-freshness",
+        "module.knowledge-answering",
+        "module.chat"
+      ],
+      "outputModes": [
+        "text",
+        "tool_cycle"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "evidence",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "S10-W01",
+        "S10-W02",
+        "S11-W02"
+      ],
+      "missingCapability": "沒有適用已發布來源時說明限制，不補造引用或最新結論。"
+    },
+    {
+      "id": "memory-refresh",
+      "additionalModules": [
+        "module.memory-maintenance"
+      ],
+      "outputModes": [
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "evidence",
+        "capabilities",
+        "outputContract"
+      ],
+      "plannedPackages": [
+        "S09-W02",
+        "S11-W02"
+      ],
+      "missingCapability": "缺覆蓋或來源時停止更新；無寫入工具只形成候選。"
+    },
+    {
+      "id": "proactive-follow-up",
+      "additionalModules": [
+        "domain.childcare-hk.care-workflows",
+        "module.task-intents",
+        "module.proactive-run",
+        "module.authorized-contact"
+      ],
+      "outputModes": [
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "capabilities",
+        "outputContract"
+      ],
+      "plannedPackages": [
+        "S13-W04",
+        "S13-W07",
+        "S11-W02"
+      ],
+      "missingCapability": "no_action、blocked 或 reconcile；不以未授權渠道補問或重發。"
+    },
+    {
+      "id": "contact-reply",
+      "additionalModules": [
+        "domain.childcare-hk.care-workflows",
+        "module.capture-confirmation",
+        "module.task-intents",
+        "module.authorized-contact",
+        "module.chat"
+      ],
+      "outputModes": [
+        "text",
+        "tool_cycle",
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "context",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "S13-W06",
+        "S13-W07",
+        "S13-W02"
+      ],
+      "missingCapability": "原事項／回覆者未核實時不改終態；自然補問，不自動外發。"
+    },
+    {
+      "id": "knowledge-review",
+      "additionalModules": [
+        "domain.childcare-hk.sources-freshness",
+        "module.knowledge-maintenance"
+      ],
+      "outputModes": [
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "evidence",
+        "capabilities",
+        "outputContract"
+      ],
+      "plannedPackages": [
+        "S10-W02",
+        "S10-W03"
+      ],
+      "missingCapability": "僅生成待審建議；無來源／版本證據就標明缺項，不發布。"
+    },
+    {
+      "id": "summary-visit",
+      "additionalModules": [
+        "domain.childcare-hk.care-workflows",
+        "domain.childcare-hk.sources-freshness",
+        "module.summary-report",
+        "module.knowledge-answering",
+        "module.chat"
+      ],
+      "outputModes": [
+        "text",
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "evidence",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "S14-W01",
+        "S14-W02"
+      ],
+      "missingCapability": "用可見事件生成有界正文，缺統計不計總數，未生成PDF不稱可下載。"
+    }
+  ],
+  "outputModeRequirements": {
+    "structured": [
+      "outputContract"
+    ]
+  }
+}
