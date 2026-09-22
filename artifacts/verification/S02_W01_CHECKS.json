@@ -1,0 +1,210 @@
+{
+  "id": "EV-S02-W01",
+  "recordedOn": "2026-09-22",
+  "scope": "Minimum Expo Web foundation; no backend or product-flow acceptance",
+  "environment": {
+    "node": "24.11.0",
+    "npm": "11.6.1",
+    "os": "Windows"
+  },
+  "baseline": "dc16ebb7781e3c9af88ae42131fc9191c7294e46",
+  "exactDirectVersions": [
+    {
+      "name": "@expo/metro-runtime",
+      "version": "57.0.16",
+      "license": "MIT",
+      "integrity": "sha512-x43WgZoICpp37BhDV7vixe0bNxbVPPGaBLHYc98ZJ8MU+UC2dk39Y2XvkfYMRRbAUSIkCIJiwdERnptlPg0Ckw=="
+    },
+    {
+      "name": "expo",
+      "version": "57.0.24",
+      "license": "MIT",
+      "integrity": "sha512-LxSnKMv7en/w4XDNxW3VOx7SbtQ2Bs4MyGhtoZCToDsEsBPO7pJXlv5GnQUCd7Wi8118QV/VDwsDLBKTB3Z3iQ=="
+    },
+    {
+      "name": "expo-constants",
+      "version": "57.0.19",
+      "license": "MIT",
+      "integrity": "sha512-3eK1kZRwCdMizQLlM/PPlPwjaPnB5qKvdRDMBMnB1ZxmvWJBf9TB4uEO4DMMfIPaFUxYFs29dsR5fPr1gh3FTQ=="
+    },
+    {
+      "name": "expo-linking",
+      "version": "57.0.10",
+      "license": "MIT",
+      "integrity": "sha512-RzRi4l4pIYzjgoCJKnqkO+lUI+M2YX6qgcMIQkIbLAXdcWrykBoKYwHGlmAkdFHQm89GaYcq329yfxG+c1hv8w=="
+    },
+    {
+      "name": "expo-router",
+      "version": "57.0.22",
+      "license": "MIT",
+      "integrity": "sha512-kOuS3RjMC73YLyBFiV9BzO0Z5OK1nLhPwmptK2II+tePtWXH7oA4zWaPwdWsdzTJRnmGMs/8Sr8YdTPHm1LUCg=="
+    },
+    {
+      "name": "react",
+      "version": "19.2.3",
+      "license": "MIT",
+      "integrity": "sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA=="
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.3",
+      "license": "MIT",
+      "integrity": "sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg=="
+    },
+    {
+      "name": "react-native",
+      "version": "0.86.3",
+      "license": "MIT",
+      "integrity": "sha512-JR5s3bM9ezud+Mw24GlNXNfthqPIKwrQgPPJcam+L97t2sKjjEavhCzBn+fyqZZRcM5+XlhYxpTxVkK7e1n38Q=="
+    },
+    {
+      "name": "react-native-gesture-handler",
+      "version": "2.32.0",
+      "license": "MIT",
+      "integrity": "sha512-uYIMOKlKENORq2SABE+jIjbPU+h5I/sQKcq2v16zRq848nwEp1fWRVwML4QWqijc8UcXJC25o54S8GQd4Mf2OA=="
+    },
+    {
+      "name": "react-native-reanimated",
+      "version": "4.5.1",
+      "license": "MIT",
+      "integrity": "sha512-RnMvtDuR+68ig864gAvZCOdZehqhC5rFmMo0kn+ARfgVSTvFeF6IFLBVgMPUu0KwihaapEyW24WRi6nEyy1kSA=="
+    },
+    {
+      "name": "react-native-safe-area-context",
+      "version": "5.7.0",
+      "license": "MIT",
+      "integrity": "sha512-/9/MtQz8ODphjsLdZ+GZAIcC/RtoqW9EeShf7Uvnfgm/pzYrJ75y3PV/J1wuAV1T5Dye5ygq4EAW20RoBq0ABQ=="
+    },
+    {
+      "name": "react-native-screens",
+      "version": "4.26.0",
+      "license": "MIT",
+      "integrity": "sha512-8DkONnr4496K6ECMfprqyYM4ya1IQO5mA3ROOAJ1P6OVvNL6rVtjD2Elikd/INC7CrePdFTOHUEahOMSHmWgUA=="
+    },
+    {
+      "name": "react-native-web",
+      "version": "0.21.2",
+      "license": "MIT",
+      "integrity": "sha512-SO2t9/17zM4iEnFvlu2DA9jqNbzNhoUP+AItkoCOyFmDMOhUnBBznBDCYN92fGdfAkfQlWzPoez6+zLxFNsZEg=="
+    },
+    {
+      "name": "react-native-worklets",
+      "version": "0.10.1",
+      "license": "MIT",
+      "integrity": "sha512-62mRM19bDpfpdI8HLkEErcdOsrAPDtE9lA/sw+5lLRpzBHNhxaoj9QyY2KjXqUmirelxkX4zuPGTC3VdA0feJA=="
+    },
+    {
+      "name": "@types/react",
+      "version": "19.2.4",
+      "license": "MIT",
+      "integrity": "sha512-tBFxBp9Nfyy5rsmefN+WXc1JeW/j2BpBHFdLZbEVfs9wn3E3NRFxwV0pJg8M1qQAexFpvz73hJXFofV0ZAu92A=="
+    },
+    {
+      "name": "typescript",
+      "version": "6.0.3",
+      "license": "Apache-2.0",
+      "integrity": "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="
+    }
+  ],
+  "worklogPrefixBytes": 28535,
+  "worklogPrefixPreserved": true,
+  "historicalFilesUnchanged": true,
+  "diffCheck": "pass",
+  "lockfileSha256": "e5330c997e3c7b21e8a49be2a8bd12d851a12c56cc991f68d2db510625869723",
+  "licenses": {
+    "directPackages": 16,
+    "preservedNoticeFiles": 17,
+    "allHashesVerified": true,
+    "fullDistributionAudit": false
+  },
+  "verification": [
+    {
+      "command": "npm test",
+      "result": "pass",
+      "tests": 8,
+      "executor": "primary"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "pass",
+      "executor": "implementation agent and primary after Expo startup adjusted tsconfig"
+    },
+    {
+      "command": "npm ls --all --json",
+      "result": "pass; zero problems",
+      "executor": "s02_web_bootstrap"
+    },
+    {
+      "command": "npx expo install --check",
+      "result": "pass",
+      "executor": "s02_web_bootstrap"
+    },
+    {
+      "command": "npm run build:web",
+      "result": "pass",
+      "executor": "s02_web_bootstrap"
+    },
+    {
+      "command": "npm run web -- --port 8081",
+      "result": "pass; then stopped",
+      "executor": "primary"
+    },
+    {
+      "command": "HTTP GET / and local entry.bundle",
+      "result": "pass",
+      "pageStatus": 200,
+      "bundleStatus": 200,
+      "bundleBytes": 3986204,
+      "renderedTitle": "育伴港",
+      "executor": "primary"
+    }
+  ],
+  "review": {
+    "shared": {
+      "finding": "Empty URL query/fragment delimiters were accepted",
+      "resolution": "Reject raw delimiters; public regression cases pass"
+    },
+    "integration": "No blocking findings",
+    "primary": "Source, documentation, license hashes and local HTTP smoke integrated"
+  },
+  "runtime": {
+    "primary": {
+      "model": "gpt-6-astra",
+      "effort": "ultra"
+    },
+    "agents": [
+      {
+        "task": "s02_web_bootstrap",
+        "role": "default",
+        "model": "gpt-6-astra",
+        "effort": "max"
+      },
+      {
+        "task": "s02_shared_review",
+        "role": "default",
+        "model": "gpt-6-astra",
+        "effort": "max"
+      },
+      {
+        "task": "s02_integration_review",
+        "role": "default",
+        "model": "gpt-6-astra",
+        "effort": "max"
+      }
+    ],
+    "sandbox": "workspace-write; no claim of OS read-only sandbox"
+  },
+  "notRun": [
+    "Integration",
+    "Browser E2E",
+    "Live service",
+    "Models",
+    "Deployment",
+    "Android/device",
+    "Human product trial"
+  ],
+  "nextEnvironment": {
+    "dockerCli": "29.4.0",
+    "dockerEngine": "Not running; PostgreSQL integration not executed"
+  }
+}

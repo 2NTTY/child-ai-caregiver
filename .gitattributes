@@ -4,3 +4,7 @@ _archive/legacy/** -text
 artifacts/verification/S00_CHECKS.json -text
 artifacts/verification/S00_SOURCE_INDEX.json -text
 OPEN_SOURCE_REUSE.md -text
+
+# Preserve upstream license bytes and the recorded dependency-lock hash.
+licenses/** -text -whitespace
+package-lock.json text eol=lf

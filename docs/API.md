@@ -28,6 +28,21 @@ P1 `ModelGateway` 由已登入且通過資源權限檢查的 Server 請求呼叫
 <a id="api-3-3-12"></a>
 `KnowledgeRetriever` 接收所需內容類別及適用範圍；一般育兒問答預設穩定指引，近期查詢另用時間窗口。回傳片段連同來源／版本／日期與查核狀態供引用，快取也遵守相同過濾與停用規則。這是結果語義，不預先固定 HTTP 路由或建立第二個知識平台；字段依 [DATA_MODEL](DATA_MODEL.md#section-5-6)。
 
+<a id="p1-input-contracts"></a>
+## P1 已落碼的最小輸入契約
+
+S02 的 [共享輸入](../src/shared/inputs.ts) 只建立首條縱向流程必要的公開驗證；不代表 HTTP 寫入、身份或持久化已實現。
+
+| 輸入 | 規則 |
+|---|---|
+| `CreateChildInput.displayName` | 字串，去除首尾空白後為 1–80 個 Unicode code point；只需孩子稱呼，不要求法定姓名 |
+| `CreateTextRecordInput.childId` | 1–128 個 ASCII 字母、數字、`_` 或 `-`；只是 ID 格式檢查，不能代替 Server 資源授權 |
+| `CreateTextRecordInput.text` | 非空白字串、最多 10,000 個 Unicode code point；保存原文及首尾空白，不推斷數字、單位或時間 |
+
+驗證接受 `unknown`，回傳 `ok/value` 或帶欄位及固定錯誤碼／繁體中文訊息的 `issues`；錯誤不回顯被拒絕的正文。`workspaceId`、作者、確認狀態及額外欄位不從這些輸入採信，由 S06／S03 的 Server 邊界取得身份及建立權威欄位。未包含的孩子詳細資料、修訂及事件欄位依後續工作包增加。
+
+部署設定 `EXPO_PUBLIC_API_BASE_URL` 預設 `/api`，可指向 HTTPS API，或只在本機開發使用 localhost／loopback HTTP；拒絕內嵌憑據、query、fragment 及不支援路徑。它是建置時公開配置，不放 provider key，也不是 P4 使用者切換 Server 功能。
+
 <a id="section-3-4"></a>
 ## 3.4 身份和权限
 
