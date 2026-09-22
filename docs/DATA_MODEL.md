@@ -15,6 +15,13 @@ S06-W03 的 Better Auth user／session／account／verification schema 由固定
 
 建立資料空間以 unique owner 約束及 upsert 處理重複／並行請求，身份只取 Server session；讀取 SQL 必須同時限制當前帳號。`app_migrations` 保存已套用的應用程式 migration ID／checksum；既有 migration 不回寫，改變時新增 migration。執行 migration 不清空既有帳號或業務資料，重啟沿用同一 PostgreSQL volume。
 
+<a id="p1-child-record-data"></a>
+## P1 孩子與原始文字記錄
+
+S03-W01 的 `children` 屬於既有私人資料空間，保存 UUID、稱呼及 Server 建立時間；`text_records` 關聯孩子與作者，保存 UUID、完整文字原文及 Server 建立時間。這個時間是 Server 收到記錄的時間，不解析或冒充文字描述的事件發生時間。原文不經 trim、數值轉換或 AI 改寫。
+
+讀寫以孩子 → 資料空間 → 已登入 owner 核對權限；作者只由 Server session 決定，不能透過請求 body 代寫別人的資料。新增 `002-child-records` migration，保留 `001-workspaces` 的 SQL 及 checksum；升級不重建資料庫或刪除原有帳號。P2 才加入完整照顧事件、修訂、家庭共享及一致性字段；P1 本包沒有建立空白通用實體框架。
+
 <a id="section-4-3"></a>
 ## 4.3 在線操作及確認字段
 

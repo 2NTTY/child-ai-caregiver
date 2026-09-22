@@ -1,0 +1,117 @@
+{
+  "id": "EV-S03-W01",
+  "recordedOn": "2026-09-22",
+  "baseline": "4ba90f343788573f2db5fcdef795618ee3873a2c",
+  "scope": "Web authentication, child/text records, account isolation, page-memory drafts and reopen/restart persistence",
+  "environment": {
+    "node": "24.11.0",
+    "npm": "11.6.1",
+    "postgres": "18.6",
+    "playwright": "1.62.1",
+    "edge": "153.0.4234.48",
+    "os": "Windows",
+    "browser": "Isolated headless Microsoft Edge context"
+  },
+  "lockfileSha256": "fa6564f38909a4953ba2dd855b105f093f64d504234cb1081a5fc7adece64563",
+  "migrationSha256": "5801665137dace8e672ab262a4737f2743a695a22fb556920816404a6d4c1651",
+  "checks": {
+    "typecheck": "Web and server passed",
+    "webExport": "Passed by Web implementation agent; no dependency versions changed",
+    "unitTests": {
+      "passed": 64,
+      "failed": 0,
+      "command": "npm test",
+      "network": false
+    },
+    "integration": {
+      "approvedByUser": true,
+      "command": "npm run test:records",
+      "passed": 16,
+      "failed": 0,
+      "realPostgres": true,
+      "realBetterAuth": true,
+      "retainedExistingDatabase": true,
+      "checks": [
+        "MIGRATIONS",
+        "DATABASE_HEALTH",
+        "UNAUTHENTICATED_REQUESTS",
+        "EMAIL_AUTHENTICATION",
+        "SERVER_OWNED_WORKSPACES",
+        "ACCOUNT_ISOLATION",
+        "REPEATED_CREATION_AND_READ",
+        "ORIGIN_GUARD",
+        "WRONG_PASSWORD",
+        "CHILD_CREATION_AND_OWNERSHIP",
+        "RAW_TEXT_AND_SERVER_AUTHOR",
+        "CHILD_RECORD_ACCESS_BOUNDARY",
+        "CHILD_RECORD_INPUT_VALIDATION",
+        "ACCOUNT_SWITCH_WRITE_PRECONDITION",
+        "SESSION_REVOCATION",
+        "RESTART_PERSISTENCE"
+      ]
+    },
+    "webAcceptance": {
+      "approvedByUser": true,
+      "command": "npm run test:web",
+      "passed": 12,
+      "failed": 0,
+      "checks": [
+        "PREFLIGHT",
+        "MIGRATIONS",
+        "LOCAL_SERVICES",
+        "BROWSER_START",
+        "SIGN_UP_AND_CREATE_CHILD",
+        "CONFIRMED_ORIGINAL_TEXT",
+        "CLOSE_AND_REOPEN_FROM_SERVER",
+        "SIGN_OUT_AND_SIGN_IN_RESTORE",
+        "OFFLINE_FORM_AND_NO_FALSE_SAVE",
+        "ONLINE_READ_THEN_SAVE",
+        "CHILD_DRAFT_AND_RECORD_ISOLATION",
+        "SIGN_OUT_AND_NEW_ACCOUNT_ISOLATION"
+      ],
+      "data": "Synthetic example.test accounts only; no personal browser profile, screenshots, traces or credentials saved",
+      "cleanup": "Only runner-owned Node and browser processes stopped; synthetic database rows retained"
+    }
+  },
+  "review": {
+    "findings": [
+      "Cookie account switch between preflight and create-child could persist the old account draft under the new account",
+      "Cancelled old-child identity check could gate and cancel the new-child view"
+    ],
+    "fixes": [
+      "Both write requests carry expected user ID; server compares it with actual session before storage and rejects missing/mismatched values with 428/409",
+      "Cancelled identity checks are ignored on both success and failure"
+    ],
+    "regressionTests": "Public server precondition and client state/transport cases passed",
+    "closeOut": "Independent Astra Max re-review closed both findings; no remaining blocker in reviewed scope"
+  },
+  "failuresAndDecisions": [
+    {
+      "failure": "Local antivirus injected an external script into the test page and triggered the no-external-request assertion.",
+      "resolution": "Keep blocking the identified Kaspersky origin; exclude only that known environmental injection from product-request failure. All other external origins still fail. No antivirus/security setting changed.",
+      "finalResult": "All 12 browser stages passed."
+    }
+  ],
+  "agents": {
+    "model": "gpt-6-astra",
+    "effort": "max",
+    "runtimeVerified": true,
+    "sandbox": "workspace-write",
+    "names": [
+      "s03_server_records",
+      "s03_web_flow",
+      "s03_web_acceptance",
+      "s03_security_review"
+    ],
+    "childSpawning": false,
+    "projectModelDefaultsUnchanged": true
+  },
+  "limitations": [
+    "Latest 100 records per child only; full timeline/search deferred to P2",
+    "No automatic write retry or full S07 opId protocol",
+    "No persistent browser business data or offline outbox",
+    "No Android, Gemini, external email, deployment, backup/recovery or independent teammate acceptance",
+    "Prompt Pack draft was not adopted"
+  ],
+  "nextGate": "Merge reviewed S03-W01 before starting S06-W01 or S09-W01"
+}

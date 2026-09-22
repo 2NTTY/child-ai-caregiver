@@ -18,17 +18,19 @@ try {
     await client.query("SELECT pg_advisory_lock(173061, 1)");
     const authMigration = await getMigrations(auth.options);
     await authMigration.runMigrations();
-    const sql = await readFile(new URL("./migrations/001-workspaces.sql", import.meta.url), "utf8");
-    const checksum = createHash("sha256").update(sql).digest("hex");
     await client.query("BEGIN");
     transactionStarted = true;
     await client.query("CREATE TABLE IF NOT EXISTS app_migrations (id text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())");
-    const applied = await client.query<{ checksum: string }>("SELECT checksum FROM app_migrations WHERE id = $1", ["001-workspaces"]);
-    if (applied.rows[0]) {
-      if (applied.rows[0].checksum !== checksum) throw new Error("Migration checksum mismatch");
-    } else {
-      await client.query(sql);
-      await client.query("INSERT INTO app_migrations (id, checksum) VALUES ($1, $2)", ["001-workspaces", checksum]);
+    for (const migrationId of ["001-workspaces", "002-child-records"]) {
+      const sql = await readFile(new URL(`./migrations/${migrationId}.sql`, import.meta.url), "utf8");
+      const checksum = createHash("sha256").update(sql).digest("hex");
+      const applied = await client.query<{ checksum: string }>("SELECT checksum FROM app_migrations WHERE id = $1", [migrationId]);
+      if (applied.rows[0]) {
+        if (applied.rows[0].checksum !== checksum) throw new Error("Migration checksum mismatch");
+      } else {
+        await client.query(sql);
+        await client.query("INSERT INTO app_migrations (id, checksum) VALUES ($1, $2)", [migrationId, checksum]);
+      }
     }
     await client.query("COMMIT");
     transactionStarted = false;

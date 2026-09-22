@@ -10,6 +10,7 @@ const repositoryDirectory = fileURLToPath(new URL("../", import.meta.url));
 const ownedProcesses = new Set();
 const interruption = new AbortController();
 const requestTimeoutMs = 5_000;
+const includeRecords = process.argv.includes("--records");
 let configuration;
 let serverProcess;
 let currentCheck = "PREFLIGHT";
@@ -140,12 +141,13 @@ async function stopOwned(owned) {
   return owned.stopping;
 }
 
-async function request(path, { method = "GET", cookie, body, origin = configuration.webOrigin, headers = {} } = {}) {
+async function request(path, { method = "GET", cookie, body, origin = configuration.webOrigin, headers = {}, expectedUserId } = {}) {
   checkInterruption();
   requireResult(serverProcess?.result === undefined, "SERVER_EXITED");
   const requestHeaders = { accept: "application/json", ...headers };
   if (origin !== null) requestHeaders.origin = origin;
   if (cookie) requestHeaders.cookie = cookie;
+  if (expectedUserId) requestHeaders["x-expected-user-id"] = expectedUserId;
   if (body !== undefined) requestHeaders["content-type"] = "application/json";
   try {
     const response = await fetch(new URL(path, configuration.serverOrigin), {
@@ -280,6 +282,25 @@ async function verifyIntegration() {
   let workspaceA;
   let workspaceB;
   let signedOutCookie;
+  let childA;
+  let childASecond;
+  let childB;
+  let recordA;
+  const originalText = "  下午約三點飲咗半杯水\n孩子話有啲攰，未量體溫。  ";
+
+  const childRecordsPath = (child) => "/api/children/" + encodeURIComponent(child.id) + "/records";
+  const readChildren = async (account) => {
+    const response = await request("/api/children", { cookie: account.cookie });
+    requireStatus(response, 200);
+    requireResult(Array.isArray(response.data?.children), "CHILD_LIST_INVALID");
+    return response.data.children;
+  };
+  const readRecords = async (account, child) => {
+    const response = await request(childRecordsPath(child), { cookie: account.cookie });
+    requireStatus(response, 200);
+    requireResult(Array.isArray(response.data?.records) && response.data.limit === 100, "RECORD_LIST_INVALID");
+    return response.data.records;
+  };
 
   await runCheck("UNAUTHENTICATED_REQUESTS", async () => {
     requireStatus(await request("/api/workspaces", { origin: null }), 401);
@@ -381,11 +402,76 @@ async function verifyIntegration() {
     }), 401);
   });
 
+  if (includeRecords) {
+    await runCheck("CHILD_CREATION_AND_OWNERSHIP", async () => {
+      requireStatus(await request("/api/children", { origin: null }), 401);
+      requireStatus(await request("/api/children", { method: "POST", body: { displayName: "合成孩子" } }), 401);
+      const createChild = async (account, name) => {
+        const response = await request("/api/children", {
+          method: "POST", cookie: account.cookie, expectedUserId: account.id,
+          body: { displayName: name, ownerId: accountB.id, workspaceId: inventedId },
+        });
+        requireStatus(response, 201);
+        requireResult(response.data?.child?.displayName === name.trim(), "CHILD_RESPONSE_INVALID");
+        return response.data.child;
+      };
+      childA = await createChild(accountA, "  合成小晴  ");
+      childASecond = await createChild(accountA, "合成小朗");
+      childB = await createChild(accountB, "合成小欣");
+      requireResult(childA.workspaceId === workspaceA.id && childB.workspaceId === workspaceB.id, "CHILD_OWNER_MISMATCH");
+      const childrenA = await readChildren(accountA);
+      const childrenB = await readChildren(accountB);
+      requireResult(childrenA.length === 2 && childrenB.length === 1, "CHILD_LIST_OWNER_MISMATCH");
+      requireResult(childrenA.some((child) => child.id === childA.id) && childrenB[0]?.id === childB.id, "CHILD_LIST_MISMATCH");
+    });
+    await runCheck("RAW_TEXT_AND_SERVER_AUTHOR", async () => {
+      const response = await request(childRecordsPath(childA), {
+        method: "POST", cookie: accountA.cookie, expectedUserId: accountA.id,
+        body: { text: originalText, childId: childB.id, authorUserId: accountB.id },
+      });
+      requireStatus(response, 201);
+      recordA = response.data?.record;
+      requireResult(recordA?.text === originalText && recordA.childId === childA.id && recordA.authorUserId === accountA.id, "RECORD_OWNERSHIP_OR_TEXT_MISMATCH");
+      requireResult(Number.isFinite(Date.parse(recordA.createdAt)), "RECORD_SERVER_TIME_INVALID");
+      const records = await readRecords(accountA, childA);
+      requireResult(records.length === 1 && records[0]?.id === recordA.id && records[0]?.text === originalText, "RECORD_READ_MISMATCH");
+      requireResult((await readRecords(accountA, childASecond)).length === 0, "CHILD_RECORDS_MIXED");
+    });
+    await runCheck("CHILD_RECORD_ACCESS_BOUNDARY", async () => {
+      requireStatus(await request(childRecordsPath(childA), { cookie: accountB.cookie }), 404);
+      requireStatus(await request(childRecordsPath(childA), {
+        method: "POST", cookie: accountB.cookie, expectedUserId: accountB.id, body: { text: "合成越權輸入", ownerId: accountA.id },
+      }), 404);
+      requireStatus(await request(childRecordsPath(childB), { cookie: accountA.cookie }), 404);
+      requireStatus(await request(childRecordsPath(childA), { origin: null }), 401);
+      requireResult((await readRecords(accountB, childB)).length === 0, "FOREIGN_RECORD_CREATED");
+      requireResult((await readRecords(accountA, childA)).length === 1, "FOREIGN_RECORD_CREATED");
+    });
+    await runCheck("CHILD_RECORD_INPUT_VALIDATION", async () => {
+      requireStatus(await request("/api/children", { method: "POST", cookie: accountA.cookie, expectedUserId: accountA.id, body: { displayName: "  " } }), 400);
+      requireStatus(await request(childRecordsPath(childA), { method: "POST", cookie: accountA.cookie, expectedUserId: accountA.id, body: { text: "  " } }), 400);
+      requireStatus(await request("/api/children/not-a-uuid/records", { cookie: accountA.cookie }), 404);
+      requireResult((await readRecords(accountA, childA)).length === 1, "INVALID_RECORD_CREATED");
+    });
+  }
+
+  if (includeRecords) await runCheck("ACCOUNT_SWITCH_WRITE_PRECONDITION", async () => {
+    requireStatus(await request("/api/children", {
+      method: "POST", cookie: accountB.cookie, expectedUserId: accountA.id, body: { displayName: "不可跨帳號保存的合成草稿" },
+    }), 409);
+    requireStatus(await request(childRecordsPath(childB), {
+      method: "POST", cookie: accountB.cookie, expectedUserId: accountA.id, body: { text: originalText },
+    }), 409);
+    requireStatus(await request("/api/children", { method: "POST", cookie: accountB.cookie, body: { displayName: "無帳號前置" } }), 428);
+    requireResult((await readChildren(accountB)).length === 1 && (await readRecords(accountB, childB)).length === 0, "ACCOUNT_SWITCH_LEAKED_INPUT");
+  });
+
   await runCheck("SESSION_REVOCATION", async () => {
     signedOutCookie = accountA.cookie;
     const response = await request("/api/auth/sign-out", { method: "POST", cookie: signedOutCookie, body: {} });
     requireStatus(response, 200);
     requireStatus(await request("/api/workspaces", { cookie: signedOutCookie, origin: null }), 401);
+    if (includeRecords) requireStatus(await request(childRecordsPath(childA), { cookie: signedOutCookie }), 401);
     requireStatus(await request(workspacePath(workspaceA), { cookie: signedOutCookie, origin: null }), 401);
     await signIn(accountA);
     await requireSession(accountA);
@@ -403,6 +489,13 @@ async function verifyIntegration() {
     await requireWorkspaceList(accountB, [workspaceB]);
     requireStatus(await request(workspacePath(workspaceA), { cookie: accountB.cookie }), 404);
     requireStatus(await request("/api/workspaces", { cookie: signedOutCookie, origin: null }), 401);
+    if (includeRecords) {
+      const children = await readChildren(accountA);
+      const records = await readRecords(accountA, childA);
+      requireResult(children.some((child) => child.id === childA.id), "CHILD_RESTART_MISMATCH");
+      requireResult(records.length === 1 && records[0]?.id === recordA.id && records[0]?.text === originalText, "RECORD_RESTART_MISMATCH");
+      requireStatus(await request(childRecordsPath(childA), { cookie: accountB.cookie }), 404);
+    }
   });
 }
 
@@ -428,5 +521,5 @@ if (failure) {
   console.error("[FAIL] " + currentCheck + ": " + failure);
   process.exitCode = failure === "INTERRUPTED" ? 130 : 1;
 } else {
-  console.log("[PASS] S06-W03 integration acceptance: " + passedChecks + " checks.");
+  console.log("[PASS] " + (includeRecords ? "S03-W01" : "S06-W03") + " integration acceptance: " + passedChecks + " checks.");
 }

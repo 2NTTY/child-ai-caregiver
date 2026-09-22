@@ -4,6 +4,8 @@ import type { createAuth } from "./auth.ts";
 import type { ServerConfig } from "./config.ts";
 import { apiError, handleWorkspaceRequest, jsonResponse } from "./workspace-api.ts";
 import type { WorkspaceStore } from "./workspaces.ts";
+import type { RecordStore } from "./records.ts";
+import { handleRecordRequest } from "./record-api.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -56,6 +58,7 @@ export function createRequestHandler(options: {
   config: ServerConfig;
   auth: ReturnType<typeof createAuth>;
   workspaces: WorkspaceStore;
+  records: RecordStore;
   checkDatabase: () => Promise<void>;
 }) {
   const allowedOrigins = new Set([options.config.publicOrigin, options.config.webOrigin]);
@@ -83,7 +86,7 @@ export function createRequestHandler(options: {
       if (method === "OPTIONS") {
         const preflight = new Response(null, { status: 204, headers: {
           "access-control-allow-methods": "GET, POST, OPTIONS",
-          "access-control-allow-headers": "content-type",
+          "access-control-allow-headers": "content-type, x-expected-user-id",
         } });
         await writeResponse(preflight, response, permittedOrigin);
         return;
@@ -112,9 +115,13 @@ export function createRequestHandler(options: {
       } else if (url.pathname === "/api/health" && method === "GET") {
         await options.checkDatabase();
         result = jsonResponse({ status: "ok" });
-      } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")) {
+      } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
+        || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
-        result = await handleWorkspaceRequest(webRequest, sessionResult.response?.user.id ?? null, options.workspaces);
+        const userId = sessionResult.response?.user.id ?? null;
+        result = url.pathname.startsWith("/api/children")
+          ? await handleRecordRequest(webRequest, userId, options.records)
+          : await handleWorkspaceRequest(webRequest, userId, options.workspaces);
         for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else result = apiError("not_found", "找不到此服務。", 404);
       await writeResponse(result, response, permittedOrigin);

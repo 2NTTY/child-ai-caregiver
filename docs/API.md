@@ -83,6 +83,24 @@ S06-W03 先實現以下端點；實際通過狀態見 STATUS／工作包證據�
 
 限流暫為單程序記憶體計數（100／60 秒加 Better Auth 端點規則），Server 重啟後計數重設；不聲稱分散式限流。以 socket IP 覆寫使用者可偽造的 x-forwarded-for，不默認信任反向代理標頭；部署代理策略在 S06-W01 按實際環境核對。session 在 PostgreSQL，停用 cookie cache，每次權限操作重新讀取會話。
 
+<a id="p1-child-record-http"></a>
+## P1 孩子與文字記錄 HTTP
+
+S03-W01 在同一 `/api` 入口新增以下已登入端點；session、Origin、body 上限及錯誤規則沿用上節。所有孩子與記錄查詢都透過資料空間 owner 限制；客戶端不能指定另一個 owner／作者／Server 時間。
+
+| 方法／路徑 | 輸入 | 成功回應 |
+|---|---|---|
+| GET `/api/children` | 無 | 200 `{ children: Child[] }` |
+| POST `/api/children` | `{ displayName }` | 201 `{ child: Child }` |
+| GET `/api/children/:childId/records` | 孩子 UUID | 200 `{ records: TextRecord[], limit: 100 }`，最新在先 |
+| POST `/api/children/:childId/records` | `{ text }` | 201 `{ record: TextRecord }` |
+
+`Child` 包含 `id`、`workspaceId`、`displayName`、`createdAt`；`TextRecord` 包含 `id`、`childId`、`authorUserId`、`text`、`createdAt`。輸入沿用共享驗證：稱呼 trim 後 1–80 字；文字非空且最多 10,000 字，原文空白、約數及模糊時間完整保存。文字的孩子取自路徑，作者取自 session；body 的身份欄位不能改寫歸屬。
+
+所有本節 POST 必須帶 `x-expected-user-id`，值為表單所屬的已登入帳號 ID。缺少回 428 `account_precondition_required`，與當次真正 session 不符回 409 `session_changed`，在讀寫業務資料前拒絕。此值只作一致性前置檢查，不能授權或選擇 owner；避免另一分頁換帳號後，把原帳號草稿寫入新帳號。
+
+未登入回 401，其他帳號或不存在的孩子均回 404。列表目前只提供最近 100 則，介面明示此限制；這不是完整搜尋或時間軸。客戶端不自動重試寫入，只有收到成功回應才顯示已保存；網絡失敗／結果未知保留當前表單，先重新讀取核對，沒有離線 outbox。完整 opId／版本協議留在 S07-W03。
+
 <a id="section-4-1"></a>
 ## 4.1 配对码与二维码
 
