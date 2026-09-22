@@ -1,0 +1,8 @@
+batch: DOC-P01 0.1.1; self/independent static review passed
+full: 26dcdd52499878749b0debb533a358f8b316ba29 (19 modules / 8 recipes / contracts; assets only)
+p1: 1873fba90c599865a911165a33f18435e9f6fe23 (only prompts/p1/childcare-chat.txt + prompts/p1/README.md)
+now: S03-W01 needs no prompt; read-only reference. At S11-W01 adopt only p1 if useful; no need to merge full pack.
+read: git show 1873fba90c599865a911165a33f18435e9f6fe23:prompts/p1/childcare-chat.txt
+interface: fixed system text + authorized child/recent chat; natural text output; no tools/schema/loader required.
+blocker: none for reading/adoption; real Gemini/product validation remains S11. Do not cherry-pick old b4bf876 (includes old progress snapshots).
+reply: refs/notes/s01-to-prompt on full commit above; checked at next actual run, not background monitoring.
