@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="success-title success-desc">
+  <title id="success-title">Server 已確認保存</title>
+  <desc id="success-desc">Server 的實線確認路徑連向文件，文件前方有清楚的綠色勾號。此圖只適用於 Server 已確認保存成功的狀態，不能用於草稿、送出中、離線或結果未明。</desc>
+  <rect width="640" height="480" fill="#FAF7EF"/>
+  <path d="M122 220C138 152 201 116 269 128C337 89 423 107 474 158C533 214 536 294 481 349C439 390 253 398 189 371C134 348 105 288 122 220Z" fill="#DDE8DB"/>
+  <ellipse cx="314" cy="392" rx="208" ry="17" fill="#DDE8DB"/>
+  <!-- An explicit server acknowledgement gives the success mark its scope. -->
+  <g id="confirming-server" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="392" y="110" width="116" height="135" rx="20" fill="#FAF7EF"/>
+    <rect x="406" y="128" width="88" height="40" rx="9" fill="#FFFFFF"/>
+    <rect x="406" y="182" width="88" height="40" rx="9" fill="#FFFFFF"/>
+    <path d="M420 148H454M420 202H454" fill="none" stroke="#60756E" stroke-width="4"/>
+    <circle cx="478" cy="148" r="4" fill="#287568" stroke="none"/>
+    <circle cx="478" cy="202" r="4" fill="#287568" stroke="none"/>
+  </g>
+  <g id="acknowledgement" fill="none" stroke="#287568" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M450 248C450 263 439 274 424 274H376"/>
+    <path d="M388 262L376 274L388 286"/>
+  </g>
+  <!-- The stored document is the main subject, not a generic celebration. -->
+  <g id="saved-document" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M146 204C146 193 154 185 165 185H227L246 203H350C361 203 369 211 369 222V366C369 378 360 387 348 387H166C155 387 146 378 146 366Z" fill="#287568"/>
+    <path d="M177 147H289L329 187V353C329 363 321 371 311 371H177C167 371 159 363 159 353V165C159 155 167 147 177 147Z" fill="#FFFFFF"/>
+    <path d="M289 147V181C289 185 292 187 296 187H329" fill="#DDE8DB"/>
+    <path d="M188 217H294M188 244H283M188 271H268" fill="none" stroke="#60756E" stroke-width="5"/>
+    <path d="M145 316H224L240 332H369V366C369 378 360 387 348 387H166C155 387 146 378 146 366Z" fill="#DDE8DB"/>
+  </g>
+  <g id="confirmed-only">
+    <circle cx="350" cy="346" r="53" fill="#287568" stroke="#FAF7EF" stroke-width="9"/>
+    <path d="M325 345L343 363L378 328" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <path d="M211 106C214 120 221 127 235 130C221 133 214 140 211 154C208 140 201 133 187 130C201 127 208 120 211 106Z" fill="#D99A3D"/>
+</svg>

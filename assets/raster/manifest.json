@@ -1,0 +1,160 @@
+{
+  "generated": true,
+  "generator": "npm --prefix presentation run export:assets",
+  "assets": [
+    {
+      "source": "brand/app-icon-source.svg",
+      "output": "raster/brand/app-icon-source.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 43061
+    },
+    {
+      "source": "brand/favicon.svg",
+      "output": "raster/brand/favicon.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 31782
+    },
+    {
+      "source": "brand/logo-horizontal.svg",
+      "output": "raster/brand/logo-horizontal.png",
+      "width": 1024,
+      "height": 304,
+      "bytes": 21540
+    },
+    {
+      "source": "brand/mark.svg",
+      "output": "raster/brand/mark.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 30782
+    },
+    {
+      "source": "brand/wordmark.svg",
+      "output": "raster/brand/wordmark.png",
+      "width": 1024,
+      "height": 416,
+      "bytes": 20809
+    },
+    {
+      "source": "diagrams/agent-loop.svg",
+      "output": "raster/diagrams/agent-loop.png",
+      "width": 2400,
+      "height": 1200,
+      "bytes": 220240
+    },
+    {
+      "source": "diagrams/roadmap.svg",
+      "output": "raster/diagrams/roadmap.png",
+      "width": 2400,
+      "height": 1200,
+      "bytes": 233397
+    },
+    {
+      "source": "diagrams/server-architecture.svg",
+      "output": "raster/diagrams/server-architecture.png",
+      "width": 2400,
+      "height": 1200,
+      "bytes": 269106
+    },
+    {
+      "source": "diagrams/traceability.svg",
+      "output": "raster/diagrams/traceability.png",
+      "width": 2400,
+      "height": 1200,
+      "bytes": 220177
+    },
+    {
+      "source": "diagrams/user-journey.svg",
+      "output": "raster/diagrams/user-journey.png",
+      "width": 2400,
+      "height": 1200,
+      "bytes": 220425
+    },
+    {
+      "source": "illustrations/assistant.svg",
+      "output": "raster/illustrations/assistant.png",
+      "width": 1280,
+      "height": 960,
+      "bytes": 72662
+    },
+    {
+      "source": "illustrations/empty-child.svg",
+      "output": "raster/illustrations/empty-child.png",
+      "width": 1280,
+      "height": 960,
+      "bytes": 60099
+    },
+    {
+      "source": "illustrations/empty-record.svg",
+      "output": "raster/illustrations/empty-record.png",
+      "width": 1280,
+      "height": 960,
+      "bytes": 90476
+    },
+    {
+      "source": "illustrations/offline.svg",
+      "output": "raster/illustrations/offline.png",
+      "width": 1280,
+      "height": 960,
+      "bytes": 61614
+    },
+    {
+      "source": "illustrations/proactive-reminder.svg",
+      "output": "raster/illustrations/proactive-reminder.png",
+      "width": 1280,
+      "height": 960,
+      "bytes": 62524
+    },
+    {
+      "source": "illustrations/source.svg",
+      "output": "raster/illustrations/source.png",
+      "width": 1280,
+      "height": 960,
+      "bytes": 69216
+    },
+    {
+      "source": "illustrations/success-confirmation.svg",
+      "output": "raster/illustrations/success-confirmation.png",
+      "width": 1280,
+      "height": 960,
+      "bytes": 60042
+    },
+    {
+      "source": "illustrations/unknown-result.svg",
+      "output": "raster/illustrations/unknown-result.png",
+      "width": 1280,
+      "height": 960,
+      "bytes": 61324
+    },
+    {
+      "source": "illustrations/welcome.svg",
+      "output": "raster/illustrations/welcome.png",
+      "width": 1280,
+      "height": 960,
+      "bytes": 93401
+    },
+    {
+      "source": "posters/project-poster.svg",
+      "output": "raster/posters/project-poster.png",
+      "width": 2376,
+      "height": 3360,
+      "bytes": 582598
+    },
+    {
+      "source": "promo/hero.svg",
+      "output": "raster/promo/hero.png",
+      "width": 2400,
+      "height": 1440,
+      "bytes": 187117
+    },
+    {
+      "source": "promo/problem-solution.svg",
+      "output": "raster/promo/problem-solution.png",
+      "width": 2400,
+      "height": 1440,
+      "bytes": 292080
+    }
+  ]
+}

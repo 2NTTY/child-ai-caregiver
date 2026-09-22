@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="favicon-title favicon-desc" color="#203E3A">
+  <title id="favicon-title">育伴港網站圖標</title>
+  <desc id="favicon-desc">適合小尺寸的單色港灣與指引光圖標。</desc>
+  <path id="harbour" d="M18 32C12 46 17 64 29 74C40 83 56 83 67 74C79 64 84 46 78 32" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+  <path id="light" d="M48 10C50 20 55 25 65 27C55 29 50 34 48 44C46 34 41 29 31 27C41 25 46 20 48 10Z" fill="currentColor"/>
+</svg>

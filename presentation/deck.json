@@ -1,0 +1,19 @@
+{
+  "title": "育伴港",
+  "output": "yuban-gang-project-deck.pptx",
+  "slides": [
+    { "id": "cover", "layout": "cover", "asset": "../assets/promo/hero.svg" },
+    { "id": "problem", "layout": "diagram", "asset": "../assets/promo/problem-solution.svg" },
+    { "id": "audience", "layout": "audience", "asset": "../assets/illustrations/welcome.svg" },
+    { "id": "agent", "layout": "diagram", "asset": "../assets/diagrams/agent-loop.svg", "planned": "P2", "crop": { "top": 0.2222222222 } },
+    { "id": "journey", "layout": "diagram", "asset": "../assets/diagrams/user-journey.svg", "planned": "P1–P4", "crop": { "top": 0.2222222222 } },
+    { "id": "responsibilities", "layout": "responsibilities", "asset": "../assets/illustrations/assistant.svg", "planned": "P2" },
+    { "id": "architecture", "layout": "diagram", "asset": "../assets/diagrams/server-architecture.svg", "planned": "P1–P4", "crop": { "top": 0.2222222222 } },
+    { "id": "safety", "layout": "safety", "asset": "../assets/illustrations/source.svg", "planned": "P1–P4" },
+    { "id": "roadmap", "layout": "diagram", "asset": "../assets/diagrams/roadmap.svg", "planned": "P1–P5", "crop": { "top": 0.2222222222 } },
+    { "id": "status", "layout": "status" },
+    { "id": "demo", "layout": "demo" },
+    { "id": "growth", "layout": "growth", "asset": "../assets/illustrations/proactive-reminder.svg", "planned": "P2–P4" },
+    { "id": "closing", "layout": "closing", "asset": "../assets/promo/hero.svg" }
+  ]
+}

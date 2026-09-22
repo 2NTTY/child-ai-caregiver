@@ -1,0 +1,89 @@
+{
+  "source": "Built-in ImageGen",
+  "generatedOn": "2026-09-22",
+  "synthetic": true,
+  "promptSource": "../image-prompts.json",
+  "promptAuthor": "Astra Max subagent visual_brand",
+  "review": "逐張目視核對構圖、人物互動、照顧關係及明顯文字／UI；不是產品截圖。",
+  "note": "圖片是選定的生成成品；相同提示詞不保證逐像素重現。只在重新生圖並完成 review 後更新日期。",
+  "images": [
+    {
+      "id": "harbour-family-hero",
+      "title": "港灣同行",
+      "file": "images/harbour-family-hero.png",
+      "use": "品牌首頁、簡報封面及長期宣傳橫幅；左側預留外加標題與說明的位置。",
+      "alt": "成年照顧者與學齡孩子牽手走在寧靜的社區海旁，柔和港灣曲線與琥珀色晨光環抱兩人，左側保留大片留白。",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2335736,
+      "sha256": "d2a072b0e68f4e825b50ab95b6074072b3cc847e40b9a08d113a4fd3c8316a9c",
+      "promptId": "harbour-family-hero",
+      "promptSha256": "c5578ea483070801ae192712d51aa60aa651b9c6247709bb1a0862931b6f3812"
+    },
+    {
+      "id": "everyday-recording",
+      "title": "日常記錄",
+      "file": "images/everyday-recording.png",
+      "use": "日常記錄功能的概念插圖、家長情境文章及簡報段落；呈現輕鬆留意生活細節。",
+      "alt": "家長坐在小型住宅的地墊上陪幼兒砌積木，手中的手機自然靠近膝上、螢幕朝內，主要注意力仍放在孩子身上。",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2868982,
+      "sha256": "70e2f8ccfb1ead34578443c1909e66685c7ea7f5a85c95a6085f3c954aa33044",
+      "promptId": "everyday-recording",
+      "promptSha256": "c82dc3a7e3b03b8839621fd68f57537db49161f1e3193af57cc95b164aef4de3"
+    },
+    {
+      "id": "caregiver-handover",
+      "title": "照顧者交接",
+      "file": "images/caregiver-handover.png",
+      "use": "照顧交接、家庭協作及共同跟進的概念插圖；適合功能介紹、文章及簡報。",
+      "alt": "兩位成年照顧者在小型家居餐桌旁平等交流並交接一本筆記簿，學齡孩子在旁整理書包，氣氛自然可信。",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2767858,
+      "sha256": "b0d90d595da7d233cf0d5d36cff706ff1dcdede4680e9a3427adc462156f07fe",
+      "promptId": "caregiver-handover",
+      "promptSha256": "a680816e1948b8563bca7469b0eebc07b490b19cbd1d3694e74ba306d1c61b9a"
+    },
+    {
+      "id": "after-school-routine",
+      "title": "課後陪伴",
+      "file": "images/after-school-routine.png",
+      "use": "6–10 歲孩子的家庭課後日常、成年陪伴及生活節奏主題；適合文章首圖與簡報橫幅。",
+      "alt": "約八歲孩子放學後坐在家中餐桌畫畫，成年照顧者在旁聆聽孩子分享，旁邊放着書包及清水，呈現從容的家庭日常。",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2373164,
+      "sha256": "07ad4f410bf1ee6363b5cc89974c135cf9a8d04f3e3318583c83866bd66be460",
+      "promptId": "after-school-routine",
+      "promptSha256": "02ab8350585c1222f4b79812a0a2f8399c0493d7b53611d9727756cb3487272b"
+    },
+    {
+      "id": "visit-preparation",
+      "title": "赴約前整理",
+      "file": "images/visit-preparation.png",
+      "use": "赴約前整理筆記、回想生活觀察及準備待問事項的概念插圖；適合教學文章或流程簡報。",
+      "alt": "照顧者與孩子在家中桌旁整理筆記簿及幾張未標字的紙卡，兩人一起思考準備提出的問題，畫面沒有醫療器具。",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2700493,
+      "sha256": "cfc6ff2bc735d170caf35d265fe00f3277b9a0e3d55e7c0911ae0948ff60f748",
+      "promptId": "visit-preparation",
+      "promptSha256": "259e4fe5babcf0ba17263c99738ba27c7d975e50d0beaf1767f520e29340a2e8"
+    },
+    {
+      "id": "quiet-evening",
+      "title": "晚間共讀",
+      "file": "images/quiet-evening.png",
+      "use": "0–3 歲親子共讀、晚間日常及安心陪伴主題；適合文章首圖、情緒收束頁或宣傳橫幅。",
+      "alt": "晚間的小型客廳裏，成人把約兩歲幼兒穩妥抱在身旁一起看無字圖畫書，暖色枱燈照亮兩人，照顧者全程陪伴。",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2505727,
+      "sha256": "7af6f1538b2acb87f0c4aab7d0c88134e3187744b365b3043a0a4c1702db1dd9",
+      "promptId": "quiet-evening",
+      "promptSha256": "81f281edcb506e4c75a361fdb5e2ea16d2c5ab2e9bda9b2fb8c6daec3092728d"
+    }
+  ]
+}

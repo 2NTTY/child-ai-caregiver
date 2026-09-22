@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">育伴港：陪伴成長的港灣</title>
+  <desc id="hero-desc">一位成年照顧者牽着學齡孩子沿港灣同行。孩子望向前方的琥珀色指引光；一張簡潔的記錄卡與沿途光點，呼應整理、留意和跟進。畫面不含宣傳文字。</desc>
+  <rect id="paper-background" width="1200" height="720" fill="#FAF7EF"/>
+
+  <g id="harbour-setting">
+    <path d="M227 454C193 347 273 194 423 125C568 59 768 58 916 133C1076 214 1148 381 1080 524C1015 660 823 672 635 665C446 658 268 584 227 454Z" fill="#DDE8DB"/>
+    <path d="M261 445C393 390 526 406 668 441C810 476 954 461 1101 404L1109 539C1004 624 842 644 636 631C462 620 328 554 261 445Z" fill="#FAF7EF"/>
+    <g id="distant-water" fill="none" stroke="#287568" stroke-linecap="round" opacity="0.28">
+      <path d="M286 429C341 421 381 423 420 430" stroke-width="5"/>
+      <path d="M776 486C837 492 885 492 939 485" stroke-width="5"/>
+      <path d="M969 470L1018 463" stroke-width="5"/>
+      <path d="M822 512L897 512" stroke-width="4"/>
+    </g>
+    <path id="embracing-harbour" d="M243 379C215 514 336 640 582 659C838 678 1031 600 1068 432" fill="none" stroke="#287568" stroke-width="17" stroke-linecap="round"/>
+    <path d="M292 597C403 559 544 551 701 569C868 588 998 597 1083 565C1031 649 876 684 671 682C512 680 368 649 292 597Z" fill="#DDE8DB"/>
+    <path d="M383 620C511 606 661 609 811 630" fill="none" stroke="#FAF7EF" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <g id="guidance">
+    <path d="M769 363C807 344 819 317 817 287C815 257 836 234 861 220" fill="none" stroke="#D99A3D" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 17"/>
+    <circle cx="889" cy="181" r="62" fill="#FAF7EF"/>
+    <path d="M889 139C894 165 905 176 931 181C905 186 894 197 889 223C884 197 873 186 847 181C873 176 884 165 889 139Z" fill="#D99A3D"/>
+    <path d="M826 158L814 153M917 122L922 109M946 209L958 215" fill="none" stroke="#D99A3D" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="786" cy="381" r="5" fill="#D99A3D"/>
+  </g>
+
+  <g id="record-card" transform="rotate(8 954 368)">
+    <rect x="896" y="299" width="116" height="140" rx="18" fill="#FAF7EF" stroke="#60756E" stroke-width="3"/>
+    <rect x="916" y="282" width="76" height="28" rx="12" fill="#287568"/>
+    <circle cx="923" cy="341" r="10" fill="#DDE8DB"/>
+    <path d="M919 341L922 344L927 337" fill="none" stroke="#287568" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M946 341H987M918 374H987M918 397H968" fill="none" stroke="#60756E" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="1008" cy="426" r="21" fill="#D99A3D"/>
+    <path d="M999 426L1005 432L1017 419" fill="none" stroke="#FAF7EF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g id="caregiver">
+    <path d="M460 475H507L499 592H467Z" fill="#203E3A"/>
+    <path d="M508 475H547L560 592H526Z" fill="#203E3A"/>
+    <path d="M465 590H499L501 610H451C446 610 445 604 450 600Z" fill="#287568"/>
+    <path d="M526 590H560L577 601C582 605 579 611 574 611H525Z" fill="#287568"/>
+
+    <path d="M494 333C466 337 453 367 450 413L452 481H554L550 361C536 339 518 333 494 333Z" fill="#287568"/>
+    <path d="M473 348C450 361 438 385 432 412L457 424L482 377Z" fill="#287568"/>
+    <path d="M538 350C564 367 588 398 621 409L612 433C577 422 552 407 538 384Z" fill="#287568"/>
+    <path d="M488 334L504 354L522 336" fill="#FAF7EF"/>
+    <path d="M509 365L516 459" fill="none" stroke="#FAF7EF" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+    <path d="M475 435L493 434" fill="none" stroke="#203E3A" stroke-width="3" stroke-linecap="round"/>
+
+    <path d="M497 309H521V341C514 350 502 347 497 340Z" fill="#C86D52"/>
+    <circle cx="512" cy="292" r="35" fill="#C86D52"/>
+    <path d="M477 294C474 264 492 250 514 252C534 253 547 265 547 281C527 284 515 275 508 266C504 280 492 290 477 294Z" fill="#203E3A"/>
+    <path d="M479 287C470 284 466 276 470 266C473 257 483 254 491 259" fill="#203E3A"/>
+    <circle cx="530" cy="292" r="2.5" fill="#203E3A"/>
+    <path d="M530 306C534 307 537 306 539 304" fill="none" stroke="#203E3A" stroke-width="2.5" stroke-linecap="round"/>
+
+    <g id="carried-notebook" transform="rotate(-13 438 415)">
+      <rect x="416" y="390" width="40" height="53" rx="5" fill="#FAF7EF"/>
+      <path d="M425 390V443" fill="none" stroke="#D99A3D" stroke-width="4"/>
+    </g>
+    <ellipse cx="441" cy="419" rx="12" ry="10" transform="rotate(18 441 419)" fill="#C86D52"/>
+    <ellipse cx="619" cy="420" rx="13" ry="10" transform="rotate(25 619 420)" fill="#C86D52"/>
+  </g>
+
+  <g id="child">
+    <path d="M652 489H683L678 591H652Z" fill="#287568"/>
+    <path d="M685 489H717L724 591H697Z" fill="#287568"/>
+    <path d="M651 587H678L680 606H638C633 606 631 601 636 597Z" fill="#203E3A"/>
+    <path d="M698 587H724L738 597C743 601 740 607 735 607H697Z" fill="#203E3A"/>
+
+    <path d="M665 423C653 429 647 452 648 494H722C721 460 715 431 699 423Z" fill="#D99A3D"/>
+    <path d="M667 431L641 411L624 410L613 431L651 460Z" fill="#D99A3D"/>
+    <path d="M700 429C724 424 744 406 754 391L771 403C757 426 738 444 715 455Z" fill="#D99A3D"/>
+    <ellipse cx="762" cy="394" rx="11" ry="9" transform="rotate(-34 762 394)" fill="#C86D52"/>
+    <path d="M757 391L769 379" fill="none" stroke="#C86D52" stroke-width="8" stroke-linecap="round"/>
+    <path d="M678 409H692V429C687 434 680 433 677 428Z" fill="#C86D52"/>
+    <circle cx="684" cy="390" r="27" fill="#C86D52"/>
+    <path d="M657 391C653 371 665 359 683 359C699 359 711 369 711 383C698 386 687 379 682 371C678 383 668 390 657 391Z" fill="#203E3A"/>
+    <circle cx="698" cy="391" r="2.3" fill="#203E3A"/>
+    <path d="M697 403C700 404 703 403 705 401" fill="none" stroke="#203E3A" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M672 464H698" fill="none" stroke="#FAF7EF" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <g id="foreground-details" fill="none" stroke-linecap="round">
+    <path d="M350 600C348 575 338 560 326 552M351 589C361 574 372 566 384 565" stroke="#287568" stroke-width="6"/>
+    <path d="M327 552C326 567 335 577 348 579M383 565C381 577 370 583 354 584" stroke="#287568" stroke-width="6"/>
+    <path d="M814 603H848M844 585H867" stroke="#FAF7EF" stroke-width="6"/>
+  </g>
+</svg>

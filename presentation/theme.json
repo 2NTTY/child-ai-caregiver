@@ -1,0 +1,17 @@
+{
+  "slide": { "width": 1280, "height": 720 },
+  "font": { "family": "Microsoft JhengHei", "fallbacks": ["PingFang TC", "Noto Sans TC", "sans-serif"] },
+  "fontSize": { "cover": 78, "title": 44, "lead": 34, "body": 28, "label": 24, "note": 20 },
+  "fontScale": 1,
+  "spacing": { "margin": 64 },
+  "palette": {
+    "ink": "#203E3A", "teal": "#287568", "paper": "#FAF7EF",
+    "sage": "#DDE8DB", "amber": "#D99A3D", "coral": "#C86D52",
+    "white": "#FFFFFF", "muted": "#60756E"
+  },
+  "assetPalette": {
+    "ink": "#203E3A", "teal": "#287568", "paper": "#FAF7EF",
+    "sage": "#DDE8DB", "amber": "#D99A3D", "coral": "#C86D52",
+    "white": "#FFFFFF", "muted": "#60756E"
+  }
+}

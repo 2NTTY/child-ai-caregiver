@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="welcome-title welcome-desc">
+  <title id="welcome-title">歡迎來到育伴港</title>
+  <desc id="welcome-desc">照顧者與兩位不同年齡的孩子一起翻閱書本，身後有港灣般的弧線及一點指引光，表達陪伴孩子成長的溫暖日常。</desc>
+  <rect width="640" height="480" fill="#FAF7EF"/>
+  <!-- A quiet harbour-shaped backdrop. -->
+  <path d="M82 288C68 210 113 133 206 129C256 77 358 74 414 122C504 120 565 181 557 262C553 332 486 374 390 373H193C126 373 93 340 82 288Z" fill="#DDE8DB"/>
+  <path d="M81 333C129 383 217 405 320 405C427 405 514 379 558 333" fill="none" stroke="#287568" stroke-width="5" stroke-linecap="round"/>
+  <!-- A small guiding light, without a medical or infant-only symbol. -->
+  <g id="guiding-light" stroke="#D99A3D" stroke-width="5" stroke-linecap="round">
+    <circle cx="144" cy="145" r="16" fill="#D99A3D" stroke="none"/>
+    <path d="M144 112V104M144 186V178M112 145H104M184 145H176M120 121L114 115M168 169L174 175M168 121L174 115M120 169L114 175"/>
+  </g>
+  <ellipse cx="324" cy="375" rx="191" ry="17" fill="#DDE8DB"/>
+  <!-- Older child: standing height, a satchel strap and long trousers. -->
+  <g id="older-child" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M422 321L417 365M450 321L456 365" fill="none"/>
+    <path d="M401 369H420M450 369H472" fill="none" stroke-width="9"/>
+    <path d="M410 270C424 260 445 261 458 272L467 324C445 334 423 332 402 324Z" fill="#C86D52"/>
+    <path d="M410 278L393 310L372 308M458 280L477 310" fill="none"/>
+    <path d="M418 267L449 325" fill="none" stroke="#FAF7EF" stroke-width="7"/>
+    <circle cx="434" cy="235" r="30" fill="#FAF7EF"/>
+    <path d="M404 235C401 212 417 199 437 202C457 203 468 215 464 237C452 233 444 223 441 214C432 227 419 233 404 235Z" fill="#203E3A" stroke="none"/>
+    <path d="M430 248C435 252 441 252 446 247" fill="none" stroke-width="3"/>
+    <circle cx="424" cy="238" r="2.5" fill="#203E3A" stroke="none"/>
+    <circle cx="445" cy="238" r="2.5" fill="#203E3A" stroke="none"/>
+  </g>
+  <!-- Caregiver sits at the children's level. -->
+  <g id="caregiver" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M268 337C253 344 252 356 257 369H315L324 339M335 336L365 369H402" fill="#60756E"/>
+    <path d="M274 239C293 226 326 229 344 246L366 324C341 344 283 348 254 326Z" fill="#287568"/>
+    <path d="M277 251L256 299L279 316M340 253L365 287L347 313" fill="none" stroke="#FAF7EF" stroke-width="15"/>
+    <path d="M277 251L256 299L279 316M340 253L365 287L347 313" fill="none"/>
+    <path d="M282 188C272 167 284 146 309 144C334 141 350 160 343 187L342 211H281Z" fill="#203E3A" stroke="none"/>
+    <path d="M279 183C281 205 288 224 309 225C330 226 341 208 341 183C327 181 316 173 309 163C302 175 291 181 279 183Z" fill="#FAF7EF"/>
+    <path d="M301 210C307 215 315 215 321 209" fill="none" stroke-width="3"/>
+    <circle cx="295" cy="193" r="2.5" fill="#203E3A" stroke="none"/>
+    <circle cx="321" cy="193" r="2.5" fill="#203E3A" stroke="none"/>
+  </g>
+  <!-- Younger child is walking-age, not an infant mascot. -->
+  <g id="younger-child" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M204 328L193 368M231 330L241 368" fill="none"/>
+    <path d="M180 371H197M237 371H254" fill="none" stroke-width="9"/>
+    <path d="M193 290C207 281 227 283 238 294L250 332C231 341 205 341 186 331Z" fill="#D99A3D"/>
+    <path d="M196 298L177 321M236 299L256 316L268 308" fill="none"/>
+    <circle cx="214" cy="260" r="26" fill="#FAF7EF"/>
+    <path d="M189 254C189 234 204 227 220 232C231 232 239 242 239 253C227 251 223 244 219 240C211 250 201 253 189 254Z" fill="#203E3A" stroke="none"/>
+    <path d="M209 274C214 278 220 277 224 273" fill="none" stroke-width="3"/>
+    <circle cx="204" cy="261" r="2.5" fill="#203E3A" stroke="none"/>
+    <circle cx="224" cy="261" r="2.5" fill="#203E3A" stroke="none"/>
+  </g>
+  <!-- The shared book connects the family. -->
+  <g id="shared-book" stroke="#203E3A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M265 290C283 288 300 292 313 301C327 292 345 289 361 292L355 334C338 330 325 332 313 339C299 331 284 330 270 333Z" fill="#FFFFFF"/>
+    <path d="M313 301V337" fill="none"/>
+    <path d="M283 306L299 310M282 317L298 320M330 310L345 307M329 321L343 318" fill="none" stroke="#60756E" stroke-width="3"/>
+  </g>
+</svg>

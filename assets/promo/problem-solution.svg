@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">育伴港：從零散日常到有脈絡的照顧</title>
+  <desc id="desc">左方以便條、對話和相片表達家長資料零散，也未必知道要問甚麼；右方以記錄、補問、授權跟進三步，表達育伴港的產品方向。按預先授權執行，並在每次執行前重查權限。此圖是分階段規劃，不代表功能已交付。</desc>
+  <rect width="1200" height="720" fill="#FAF7EF"/>
+  <g font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" fill="#203E3A">
+    <g id="heading">
+      <g id="brand-symbol" transform="translate(64 26) scale(0.36)" color="#287568">
+        <path d="M18 32C12 46 17 64 29 74C40 83 56 83 67 74C79 64 84 46 78 32" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+        <path d="M48 11C50 21 54 25 64 27C54 29 50 33 48 43C46 33 42 29 32 27C42 25 46 21 48 11Z" fill="currentColor"/>
+      </g>
+      <text x="111" y="55" fill="#287568" font-size="20" font-weight="700" letter-spacing="2">育伴港</text>
+      <text x="1136" y="57" text-anchor="end" fill="#60756E" font-size="18">產品方向・分階段規劃</text>
+      <text id="headline" x="64" y="124" font-size="44" font-weight="700">零散的日常，也值得被好好接住。</text>
+      <line x1="64" y1="157" x2="1136" y2="157" stroke="#DDE8DB" stroke-width="2"/>
+    </g>
+
+    <g id="scattered-daily-life">
+      <text x="64" y="216" font-size="28" font-weight="700">記得有事，卻拼不起全貌。</text>
+      <g transform="rotate(-7 178 329)">
+        <rect x="80" y="272" width="188" height="116" rx="5" fill="#FFFFFF" stroke="#60756E" stroke-width="2"/>
+        <rect x="135" y="262" width="74" height="18" rx="2" fill="#DDE8DB"/>
+        <text x="99" y="315" font-size="25" font-weight="700">便條</text>
+        <text x="99" y="352" fill="#60756E" font-size="23">幾點發生？</text>
+      </g>
+      <g transform="rotate(6 362 371)">
+        <path d="M278 308 H428 Q445 308 445 325 V387 Q445 404 428 404 H318 L293 426 V404 H278 Q261 404 261 387 V325 Q261 308 278 308Z" fill="#DDE8DB"/>
+        <text x="280" y="349" font-size="25" font-weight="700">對話</text>
+        <text x="280" y="383" fill="#60756E" font-size="23">還有甚麼？</text>
+      </g>
+      <g transform="rotate(-3 185 494)">
+        <rect x="97" y="437" width="176" height="124" rx="4" fill="#FFFFFF" stroke="#60756E" stroke-width="2"/>
+        <rect x="109" y="449" width="152" height="67" rx="2" fill="#DDE8DB"/>
+        <circle cx="223" cy="468" r="9" fill="#D99A3D"/>
+        <path d="M111 515 152 476 185 502 202 487 250 515Z" fill="#287568"/>
+        <text x="115" y="544" font-size="23">相片</text>
+      </g>
+      <text x="334" y="507" fill="#C86D52" font-size="63" font-weight="700" transform="rotate(8 334 507)">？</text>
+      <path d="M303 536 Q334 552 362 537" fill="none" stroke="#C86D52" stroke-width="3" stroke-linecap="round"/>
+      <text x="64" y="624" fill="#60756E" font-size="25">資料散落在不同地方，</text>
+      <text x="64" y="662" fill="#60756E" font-size="25">也未必知道應該問甚麼。</text>
+    </g>
+
+    <g id="transition" fill="none" stroke="#D99A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="507" y1="289" x2="507" y2="376" stroke="#DDE8DB" stroke-width="2"/>
+      <path d="M489 418 H525 M512 405 525 418 512 431"/>
+      <line x1="507" y1="462" x2="507" y2="555" stroke="#DDE8DB" stroke-width="2"/>
+    </g>
+
+    <g id="connected-care">
+      <text x="571" y="216" font-size="28" font-weight="700">育伴港，接起記、問、跟進。</text>
+      <path d="M604 288 V498 Q604 564 667 564 H1077" fill="none" stroke="#DDE8DB" stroke-width="12" stroke-linecap="round"/>
+      <g id="record">
+        <circle cx="604" cy="301" r="23" fill="#287568"/>
+        <text x="604" y="309" text-anchor="middle" fill="#FFFFFF" font-size="22" font-weight="700">1</text>
+        <text x="654" y="298" font-size="28" font-weight="700">記錄｜先把日常留下</text>
+        <text x="654" y="336" fill="#60756E" font-size="23">保留原文，再整理孩子的脈絡。</text>
+      </g>
+      <g id="clarify">
+        <circle cx="604" cy="407" r="23" fill="#287568"/>
+        <text x="604" y="415" text-anchor="middle" fill="#FFFFFF" font-size="22" font-weight="700">2</text>
+        <text x="654" y="404" font-size="28" font-weight="700">補問｜把要點問清楚</text>
+        <text x="654" y="442" fill="#60756E" font-size="23">缺少細節，找出值得問的事。</text>
+      </g>
+      <g id="follow-up">
+        <circle cx="604" cy="513" r="23" fill="#287568"/>
+        <text x="604" y="521" text-anchor="middle" fill="#FFFFFF" font-size="22" font-weight="700">3</text>
+        <text x="654" y="510" font-size="28" font-weight="700">跟進｜依照你的授權</text>
+        <text x="654" y="548" fill="#60756E" font-size="23">按預先授權執行，每次重查權限。</text>
+      </g>
+      <path d="M1099 592 1105 607 1120 613 1105 619 1099 634 1093 619 1078 613 1093 607Z" fill="#D99A3D"/>
+      <text x="571" y="625" fill="#287568" font-size="26" font-weight="700">少一點反覆翻找，</text>
+      <text x="571" y="662" fill="#287568" font-size="26" font-weight="700">多一點照顧的從容。</text>
+    </g>
+  </g>
+</svg>

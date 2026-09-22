@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="assistant-title assistant-desc">
+  <title id="assistant-title">一起整理下一步</title>
+  <desc id="assistant-desc">照顧者拿着筆記，與帶有指引光的對話框交流。兩個相接的對話框代表理解、補問與草擬，不把助手畫成機械人，也不表示 AI 可自行保存資料。</desc>
+  <rect width="640" height="480" fill="#FAF7EF"/>
+  <path d="M106 259C85 176 148 111 227 120C285 77 371 93 415 135C503 130 555 205 528 276C507 338 429 373 337 374H201C144 365 118 326 106 259Z" fill="#DDE8DB"/>
+  <ellipse cx="312" cy="388" rx="188" ry="17" fill="#DDE8DB"/>
+  <!-- A human caregiver remains the active participant. -->
+  <g id="caregiver" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M170 340L159 383M206 342L217 383" fill="none" stroke-width="12"/>
+    <path d="M145 386H162M214 386H235" fill="none" stroke-width="9"/>
+    <path d="M160 267C179 256 201 257 216 275L235 343C207 355 171 355 145 341Z" fill="#D99A3D"/>
+    <path d="M157 281L137 316L162 331M214 281L233 307L253 295" fill="none"/>
+    <path d="M159 211C151 192 162 172 185 173C210 167 225 188 216 215L213 240H158Z" fill="#203E3A" stroke="none"/>
+    <path d="M158 211C160 234 169 251 188 252C208 251 219 232 216 209C202 210 190 201 186 189C180 201 169 207 158 211Z" fill="#FAF7EF"/>
+    <path d="M182 238C188 242 194 241 199 237" fill="none" stroke-width="3"/>
+    <circle cx="177" cy="223" r="2.5" fill="#203E3A" stroke="none"/>
+    <circle cx="201" cy="222" r="2.5" fill="#203E3A" stroke="none"/>
+  </g>
+  <!-- Notes are held by the caregiver, separate from the conversation. -->
+  <g id="held-notes" transform="rotate(-12 245 327)" stroke="#203E3A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="207" y="288" width="78" height="84" rx="9" fill="#FFFFFF"/>
+    <path d="M224 309H267M224 325H261M224 341H249" fill="none" stroke="#60756E" stroke-width="3"/>
+  </g>
+  <!-- Dialogue and light are the assistant metaphor, never a robot. -->
+  <g id="guiding-dialogue" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M315 111H480C497 111 509 124 509 141V212C509 229 497 242 480 242H414L383 265V242H315C298 242 286 229 286 212V141C286 124 298 111 315 111Z" fill="#287568"/>
+    <path d="M341 143C344 165 355 176 377 179C355 182 344 193 341 215C338 193 327 182 305 179C327 176 338 165 341 143Z" fill="#D99A3D" stroke="none"/>
+    <path d="M396 157H472M396 179H459M396 201H444" fill="none" stroke="#FFFFFF" stroke-width="7"/>
+    <path d="M308 270H424C439 270 450 281 450 296V330C450 345 439 356 424 356H339L315 372V356H308C293 356 282 345 282 330V296C282 281 293 270 308 270Z" fill="#FFFFFF"/>
+    <circle cx="322" cy="313" r="6" fill="#C86D52" stroke="none"/>
+    <circle cx="365" cy="313" r="6" fill="#C86D52" stroke="none"/>
+    <circle cx="408" cy="313" r="6" fill="#C86D52" stroke="none"/>
+  </g>
+  <path d="M476 335C503 324 517 304 518 282" fill="none" stroke="#D99A3D" stroke-width="5" stroke-linecap="round"/>
+</svg>

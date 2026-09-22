@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="152" viewBox="0 0 512 152" role="img" aria-labelledby="logo-title logo-desc" color="#203E3A">
+  <title id="logo-title">育伴港橫向標誌</title>
+  <desc id="logo-desc">左側是環抱港灣與一點指引光，右側是保留為真實文字的育伴港名稱。</desc>
+  <g id="brand-symbol" transform="translate(0 18) scale(1.2083333333)">
+    <path d="M18 32C12 46 17 64 29 74C40 83 56 83 67 74C79 64 84 46 78 32" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+    <path d="M48 11C50 21 54 25 64 27C54 29 50 33 48 43C46 33 42 29 32 27C42 25 46 21 48 11Z" fill="#D99A3D"/>
+  </g>
+  <text id="brand-name" x="138" y="116" fill="currentColor" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-size="108" font-weight="700" letter-spacing="5">育伴港</text>
+</svg>

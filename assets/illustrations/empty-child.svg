@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="empty-child-title empty-child-desc">
+  <title id="empty-child-title">為孩子留一個位置</title>
+  <desc id="empty-child-desc">一個仍然空白的孩子檔案框，以虛線畫出孩子輪廓，旁邊有書包及新增符號，邀請照顧者建立孩子資料，不表示資料已保存。</desc>
+  <rect width="640" height="480" fill="#FAF7EF"/>
+  <path d="M119 214C137 139 197 102 282 111C348 85 428 106 479 160C539 223 527 320 462 367H176C121 336 103 279 119 214Z" fill="#DDE8DB"/>
+  <ellipse cx="321" cy="388" rx="207" ry="17" fill="#DDE8DB"/>
+  <!-- The portrait frame has an intentionally empty, dashed profile. -->
+  <g id="empty-profile" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="186" y="123" width="277" height="244" rx="24" fill="#FFFFFF"/>
+    <path d="M208 148H441" fill="none" stroke="#DDE8DB" stroke-width="8"/>
+    <circle cx="323" cy="215" r="31" fill="#FAF7EF" stroke="#60756E" stroke-width="4" stroke-dasharray="7 9"/>
+    <path d="M267 298C269 267 289 250 323 250C357 250 377 267 379 298Z" fill="#FAF7EF" stroke="#60756E" stroke-width="4" stroke-dasharray="7 9"/>
+    <path d="M286 330H360" fill="none" stroke="#DDE8DB" stroke-width="7"/>
+    <path d="M216 184V291M216 188H229M216 220H224M216 253H229M216 285H224" fill="none" stroke="#D99A3D" stroke-width="4"/>
+  </g>
+  <!-- A school-age cue keeps the scene wider than infant care. -->
+  <g id="satchel" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M134 301V290C134 277 158 277 158 290V300" fill="none"/>
+    <rect x="107" y="297" width="80" height="85" rx="18" fill="#C86D52"/>
+    <path d="M108 311C127 327 166 327 186 311" fill="none"/>
+    <rect x="124" y="340" width="46" height="28" rx="8" fill="#FAF7EF"/>
+    <path d="M147 319V331" fill="none"/>
+  </g>
+  <!-- Adding a profile is distinct from successful saving. -->
+  <g id="add-profile" stroke-linecap="round">
+    <rect x="414" y="291" width="97" height="97" rx="28" fill="#D99A3D" stroke="#203E3A" stroke-width="5"/>
+    <path d="M440 339H485M462.5 316.5V361.5" fill="none" stroke="#FFFFFF" stroke-width="8"/>
+  </g>
+  <path d="M498 184C509 170 520 168 534 170C529 184 518 190 498 184Z" fill="#287568"/>
+  <path d="M505 203C517 196 528 198 535 209C523 216 512 214 505 203Z" fill="#D99A3D"/>
+</svg>

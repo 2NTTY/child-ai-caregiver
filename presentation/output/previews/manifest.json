@@ -1,0 +1,9 @@
+{
+  "generated": true,
+  "source": "../yuban-gang-project-deck.pptx",
+  "sha256": "2274532a876476df4f0ca623f6ce51082b04d622729a84b7c4d90d023318a24b",
+  "slides": 13,
+  "method": "OOXML text/picture geometry rendered by browser; not desktop PowerPoint",
+  "desktopPowerPointVerified": false,
+  "regenerate": "npm --prefix presentation run preview; npm --prefix presentation run catalog"
+}

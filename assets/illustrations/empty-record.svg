@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="empty-record-title empty-record-desc">
+  <title id="empty-record-title">由第一筆日常開始</title>
+  <desc id="empty-record-desc">一本攤開的空白記事簿與一支待用的鉛筆，頁面只有淡色虛線，旁邊的幼芽象徵日常記錄慢慢累積；沒有虛構家庭內容或保存標記。</desc>
+  <rect width="640" height="480" fill="#FAF7EF"/>
+  <path d="M110 231C125 152 216 108 293 130C367 91 468 120 505 190C551 278 502 357 411 380H218C146 370 96 308 110 231Z" fill="#DDE8DB"/>
+  <ellipse cx="312" cy="381" rx="218" ry="19" fill="#DDE8DB"/>
+  <!-- The notebook is blank; dotted guides are not example family data. -->
+  <g id="blank-notebook" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 193C191 180 252 188 312 211C369 188 428 183 483 196L478 365C420 354 365 360 313 380C257 359 196 353 134 365Z" fill="#287568"/>
+    <path d="M134 183C197 168 258 181 312 202C368 180 426 175 478 188L472 350C417 340 363 347 312 366C258 347 202 340 140 352Z" fill="#FFFFFF"/>
+    <path d="M312 202V366" fill="none"/>
+    <path d="M153 360C210 349 261 356 312 374C361 356 414 349 462 358" fill="none" stroke="#60756E" stroke-width="3"/>
+    <path d="M174 226C208 224 239 230 269 241M176 259C210 257 241 263 270 274M177 292C211 291 241 297 269 307M351 240C379 230 407 226 435 228M350 274C379 264 406 261 433 261M350 306C375 298 398 294 420 294" fill="none" stroke="#DDE8DB" stroke-width="5" stroke-dasharray="8 10"/>
+    <path d="M238 184V229L251 220L264 235V191" fill="#D99A3D"/>
+  </g>
+  <!-- A pencil is poised above the page, without implying submission. -->
+  <g id="pencil" transform="rotate(23 474 232)" stroke="#203E3A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="460" y="109" width="28" height="165" rx="6" fill="#D99A3D"/>
+    <path d="M460 133H488M474 135V273" fill="none"/>
+    <path d="M460 274L474 311L488 274Z" fill="#FAF7EF"/>
+    <path d="M469 299L474 311L479 299Z" fill="#203E3A" stroke="none"/>
+    <path d="M461 123H487" fill="none" stroke="#C86D52" stroke-width="13"/>
+  </g>
+  <!-- A modest growth motif. -->
+  <g id="sprout" stroke="#203E3A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M122 215V171" fill="none"/>
+    <path d="M122 187C102 187 92 178 91 165C108 161 121 170 122 187Z" fill="#287568"/>
+    <path d="M122 174C122 157 132 146 149 147C150 163 140 173 122 174Z" fill="#287568"/>
+  </g>
+  <circle cx="349" cy="123" r="7" fill="#D99A3D"/>
+</svg>

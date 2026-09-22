@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="source-title source-desc">
+  <title id="source-title">看清楚資料從哪裏來</title>
+  <desc id="source-desc">參考書與引用文件並列，放大鏡對準文件中的一段來源內容，表達可以追溯及核對的資料。沒有政府認可、醫療診斷或保證正確的標記。</desc>
+  <rect width="640" height="480" fill="#FAF7EF"/>
+  <path d="M105 252C93 177 157 121 235 133C301 93 391 102 442 144C514 143 555 208 534 282C514 353 452 381 349 382H210C148 376 114 324 105 252Z" fill="#DDE8DB"/>
+  <ellipse cx="318" cy="391" rx="213" ry="17" fill="#DDE8DB"/>
+  <!-- Reference paper stays editable; lines stand in for UI-supplied content. -->
+  <g id="reference-paper" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M308 109H453L496 152V334C496 347 486 357 473 357H308C295 357 285 347 285 334V132C285 119 295 109 308 109Z" fill="#FFFFFF"/>
+    <path d="M453 109V146C453 150 456 152 460 152H496" fill="#FAF7EF"/>
+    <path d="M359 163H434M317 197H460M317 223H452M317 249H438M317 308H400" fill="none" stroke="#60756E" stroke-width="5"/>
+    <path d="M317 277H457" fill="none" stroke="#D99A3D" stroke-width="9"/>
+    <path d="M322 147C314 153 312 160 313 170H324V159H316M342 147C334 153 332 160 333 170H344V159H336" fill="#C86D52" stroke="#C86D52" stroke-width="3"/>
+  </g>
+  <!-- The open reference volume and the paper are connected, not certified. -->
+  <g id="reference-book" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M114 272C153 258 188 262 223 278C258 262 295 258 331 272V374C296 367 259 370 224 385C187 370 151 367 114 375Z" fill="#287568"/>
+    <path d="M120 261C157 248 191 253 223 269C258 253 291 248 325 262V361C290 353 256 360 223 373C189 359 156 354 120 363Z" fill="#FAF7EF"/>
+    <path d="M223 269V373" fill="none"/>
+    <path d="M139 288C159 285 179 289 200 296M139 311C159 308 179 312 200 319M141 334C160 332 177 336 191 340M247 296C264 289 283 286 305 287M247 319C264 312 283 309 305 310M247 342C264 335 278 333 293 333" fill="none" stroke="#60756E" stroke-width="3"/>
+    <path d="M264 254V298L275 290L286 294V251" fill="#D99A3D" stroke-width="3"/>
+  </g>
+  <!-- A lens highlights a source passage, without an approval checkmark. -->
+  <g id="source-lens" stroke="#203E3A" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M455 322L499 366" fill="none" stroke-width="19"/>
+    <path d="M455 322L499 366" fill="none" stroke="#287568" stroke-width="10"/>
+    <circle cx="418" cy="285" r="56" fill="#FAF7EF" stroke-width="6"/>
+    <path d="M386 268H449M386 285H449M386 302H432" fill="none" stroke="#60756E" stroke-width="5"/>
+    <path d="M386 285H449" fill="none" stroke="#D99A3D" stroke-width="8"/>
+    <path d="M388 250C397 242 408 239 421 240" fill="none" stroke="#FFFFFF" stroke-width="5"/>
+  </g>
+  <path d="M154 206C167 194 180 191 195 195M158 221C169 212 180 210 192 213" fill="none" stroke="#D99A3D" stroke-width="5" stroke-linecap="round"/>
+</svg>
