@@ -22,6 +22,10 @@ The exact dependency tree and registry integrity values are recorded in [package
 | react-native-worklets | 0.10.1 | MIT | [LICENSE](licenses/react-native-worklets/LICENSE) |
 | @types/react (development) | 19.2.4 | MIT | [LICENSE](licenses/types-react/LICENSE) |
 | typescript (development) | 6.0.3 | Apache-2.0 | [LICENSE](licenses/typescript/LICENSE.txt), [Third-party notice](licenses/typescript/ThirdPartyNoticeText.txt) |
+| better-auth | 1.7.5 | MIT | [LICENSE](licenses/better-auth/LICENSE.md) |
+| pg | 8.23.0 | MIT | [LICENSE](licenses/pg/LICENSE) |
+| @types/node (development) | 24.13.6 | MIT | [LICENSE](licenses/types-node/LICENSE) |
+| @types/pg (development) | 8.23.1 | MIT | [LICENSE](licenses/types-pg/LICENSE) |
 
 The expo-router 57.0.22 npm tarball does not contain a root LICENSE file. Its npm `gitHead` is `7687b07947a5c866adeb11abbceae72403ccb188`; its preserved MIT license comes from the [Expo repository at that exact commit](https://github.com/expo/expo/blob/7687b07947a5c866adeb11abbceae72403ccb188/LICENSE). All other texts above were copied directly from the installed package. The project has not modified these upstream packages.
 
@@ -36,6 +40,8 @@ The initial automatic peer resolution chose Reanimated 4.7.0 and Worklets 0.13.0
 After that repair, `npm ls --all --json` reported zero problems, `npx expo install --check` reported that dependencies were up to date, TypeScript checking passed, and the Web static export passed on Node 24.11.0 / npm 11.6.1. These are scoped build and dependency checks, not native or product acceptance.
 
 ## Transitive dependencies and distribution
+
+S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. The current manifest covers 20 direct packages and 21 original license/notice texts; earlier verification artifacts retain their historical lockfile hashes.
 
 Transitive packages and their individual license files remain in the installed `node_modules` tree. They are not all reproduced in this document, and `node_modules` is not committed. The inventory records every lockfile license declaration, including build tools and optional platform packages; declared metadata is not proof that every file or distribution obligation has been reviewed.
 

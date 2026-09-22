@@ -11,16 +11,24 @@
   },
   "scripts": {
     "web": "expo start --web --localhost",
-    "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.ts",
-    "build:web": "expo export --platform web"
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.server.json",
+    "test": "node --experimental-test-module-mocks --test tests/*.test.ts",
+    "build:web": "expo export --platform web",
+    "server": "node --env-file-if-exists=.env server/index.ts",
+    "db:migrate": "node --env-file-if-exists=.env server/migrate.ts",
+    "test:integration": "node --env-file-if-exists=.env scripts/verify-server.mjs",
+    "test:records": "node --env-file-if-exists=.env scripts/verify-server.mjs --records",
+    "test:web": "node --env-file-if-exists=.env scripts/verify-web.mjs",
+    "setup:local": "node scripts/setup-local-env.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "57.0.16",
+    "better-auth": "1.7.5",
     "expo": "57.0.24",
     "expo-constants": "57.0.19",
     "expo-linking": "57.0.10",
     "expo-router": "57.0.22",
+    "pg": "8.23.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
@@ -32,6 +40,8 @@
     "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
+    "@types/node": "24.13.6",
+    "@types/pg": "8.23.1",
     "@types/react": "19.2.4",
     "typescript": "6.0.3"
   }
