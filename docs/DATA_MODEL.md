@@ -8,6 +8,13 @@
 <a id="data-3-2-11"></a>
 附件记录保存稳定 ID、相对路径、类型、大小和哈希，不依赖某个云厂商的永久 URL。
 
+<a id="p1-account-workspace"></a>
+## P1 帳號與私人資料空間
+
+S06-W03 的 Better Auth user／session／account／verification schema 由固定 1.7.5 adapter 的 migration 管理。應用程式 `workspaces` 表保存 UUID `id`、唯一 `owner_user_id`（外鍵指向 auth user）、UUID `storage_epoch` 及 Server `created_at`；刪除帳號時此表跟隨刪除。P1 每個帳號只有一個私人資料空間；P2 才增加家庭成員及共享權限，不把這個單一 owner 欄位當作完整家庭模型。
+
+建立資料空間以 unique owner 約束及 upsert 處理重複／並行請求，身份只取 Server session；讀取 SQL 必須同時限制當前帳號。`app_migrations` 保存已套用的應用程式 migration ID／checksum；既有 migration 不回寫，改變時新增 migration。執行 migration 不清空既有帳號或業務資料，重啟沿用同一 PostgreSQL volume。
+
 <a id="section-4-3"></a>
 ## 4.3 在線操作及確認字段
 

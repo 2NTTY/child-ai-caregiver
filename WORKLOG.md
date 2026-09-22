@@ -430,3 +430,33 @@
 - 沒有 integration／E2E／真服務／模型／部署／真機或使用者體驗驗收。傳遞依賴 metadata 清單不冒稱完整交付許可審核。
 - Docker CLI 29.4.0 存在，但 engine 未運行；不把 CLI 存在當 PostgreSQL 可用。S06 驗收前需處理環境並由使用者批准本機 integration。
 - 本包完成必要驗證與 review，經 PR 合併後開始 S06-W03；仍按依賴逐包驗收，不跳過 P1 後續門檻。
+
+<a id="log-20260922-103"></a>
+## LOG-20260922-103
+
+- Recorded At：2026-09-22（Asia/Hong_Kong）
+- Work Date：2026-09-22
+- Step / Package：S06／S06-W03，P1；前置 S02-W01 已於 PR #8 review／合併至 9d18bc7。
+- Executor：主代理 Astra 負責 HTTP／持久化、整合與驗收；四名 Astra Max 子代理分工認證配置、integration runner、安全 review 及故障回歸。實際 runtime 均 Astra Max／workspace-write，子代理未再 spawn，長期配置不變。
+- Goal：最小 Server／PostgreSQL／Better Auth 登入、帳號資料隔離及 Server 重啟持久化。
+- Human Verification：使用者明確批准本機 PostgreSQL integration，並回報 Docker 已啟動；沒有人工 Web 試玩。Usage 原值仍未知，不推算重置或餘額。
+
+### Actual Work
+- 在獨立 s06-w03-server-auth worktree／branch 實作 Node HTTP、固定版本 Better Auth email/password、PostgreSQL private workspace；所有 owner 由已驗證 session 決定，客戶端身份欄位不生效。
+- 增量 migration、advisory lock／SQL checksum、持久 volume、最小 dev/test DB Compose；本機設定產生隨機秘密而不輸出、不覆寫、不提交。沒有家庭邀請、Web 登入畫面、AI 或 Prompt Pack 實現。
+- HTTPS production origin、精確 CORS／POST Origin、64 KiB body cap、固定錯誤與无正文日誌、session DB 查核及 Cookie 回傳；限流保持啟用。
+- 保存新增四個直接依賴許可；共 20 個直接套件、21 份原文。完整交付 notices 留在 P1 交付邊界。
+
+### Verification
+- Requirement / Acceptance：PLAN S06-W03；帳號隔離、未授權拒絕及重啟持久化。
+- Environment / Revision：Windows／Node 24.11.0／npm 11.6.1／Docker 29.4.0／PostgreSQL 18.6，基線 9d18bc7；image digest、lock hash、runtime 見 [EV-S06-W03](artifacts/verification/S06_W03_CHECKS.json)。
+- Result：Web＋Server typecheck、30／30 單元測試、依賴樹零問題、Compose syntax 通過；獲批准的真 PostgreSQL／Better Auth integration 11／11 通過，含登出失效、偽造身份拒絕及 Server 重啟後資料／會話仍在。
+- Review：修補借出 DB client 無 error listener、migration 解鎖失敗漏 release、workspace session 續期 Cookie 丟失三項 findings；另收斂 auth 5xx 為固定 503，七項無網絡故障回歸已通過。
+
+### Failures / Decisions
+- 首次快速重新登入觸發真實 429；數字狀態確認為 Better Auth 每 10 秒三次的端點限流。runner 加一次有限等候；安裝版本實際用 X-Retry-After，修正標頭讀取後 11 項通過，沒有關閉限流或清空資料。
+- 測試僅用隨機合成帳號，資料留在獨立本機 volume；runner 停止自己的 Node 子程序，無刪除或重設 DB。
+
+### Limitations / Next
+- 沒有 browser E2E／真機／Gemini／外部郵件／部署／家庭邀請或備份還原驗收；Web 仍是 S02 基礎畫面。記憶體限流不是分散式限流，代理部署策略由 S06-W01 決定。
+- 本包必要驗收已通過，review／PR 合併後才開始 S03-W01。另一聊天的 Prompt Pack 繼續獨立工作，尚未依賴未合併成果。
