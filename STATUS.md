@@ -1,47 +1,29 @@
 # STATUS
 
-## Current Step
-S00 — 文档迁移，来源：[PLAN](PLAN.md#s00)。
+## 當前工作包
+[DOC-R02 — Server 路線與專案代理規則修訂](PLAN.md#doc-r02)
 
-## Status
-已完成
+## 狀態
+已完成（文件與專案配置驗收）；文件分支待 PR review／合併，未開始產品開發。
 
-## Current Goal
-已按用户原文补充 Git 工作流规则；修改保留在本地 `codex/git-workflow-rules` 分支，尚未 commit / push。
+## 產品現況
+- 只有規劃文件；沒有可運行產品、APK、部署服務或試玩網址。
+- S00 已完成；S01–S17 及 47 個產品工作包全部未開始。
+- P1 完成時交付可試玩的 Web URL；P2 是 Web＋持續 Server Agent 比賽目標；P3 Android；P4 自選相容 Server／Windows 部署及完整交付。
+- Server 權威架構依 [ADR-008](docs/DECISIONS.md#adr-008) 正式替代本地主庫、離線 outbox 與手機中繼；原條款 ID 保留作追溯，不代表舊驗收原文未變。
 
-## Verified
-- 561 源单元、72 标题已定位；484 原文单元及 77 整合／替代单元已核对，第 10 章 55 项完成判据保留。
-- 五份原文件 SHA-256 未变；迁移 unresolved 为 0，独立只读核查通过；[LOG-20260920-002](WORKLOG.md#log-20260920-002)。
-- 私有仓库 `2NTTY/child-ai-caregiver` 已连接为 `origin`；GitHub 确认 visibility 为 private、默认分支为 master，S00 基线已推送；[LOG-20260920-004](WORKLOG.md#log-20260920-004)。
-- GitHub CLI 2.101.0 已以 `2NTTY` 登录；当前仓库权限为 ADMIN，HTTPS Git 操作、Private 仓库读取和 PR 查询均通过；[LOG-20260920-005](WORKLOG.md#log-20260920-005)。
+## 核查與限制
+- 文件／配置輕量檢查通過：47 包依賴無循環、原錨點保留、55 個原 AC 識別保留（11 項按新決策修訂）、6 項 freshness AC 未變、WORKLOG 舊前綴及歷史歸檔未改；見 [EV-DOC-R02](artifacts/verification/DOC_R02_CHECKS.json)。
+- Codex 0.155.0-alpha.9.2 的 strict-config／唯讀 config/read 確認總並發 5、Sol High fallback、角色路徑均來自此專案 .codex；未修改全域配置。
+- Explorer 配置為 Luna Max／read-only；worker 為 Sol、High 預設／可顯式 High、Xhigh、Max、workspace-write。3 Luna／2 Sol 的角色並發及累計限額是行為規則；本輪未啟動 Luna／Sol 實例驗證。
+- 本輪按使用者明確例外使用三名 Astra High 子代理，實際 metadata 已核對；其中一名依指令只讀核查，但其 runtime 為 workspace-write，不冒稱 OS 唯讀沙箱。
+- 產品、Gemini、真服務、外部投遞、部署及真機均未驗證；高成本驗收仍須先由使用者決定。
 
-## In Progress
-- 无；[S00-W01](PLAN.md#s00-w01) 已完成，S01–S17 未开始。
+## 下一步
+審閱並合併五階段文件分支的 DOC-R01／DOC-R02 修訂；其後按 [S01-W01](PLAN.md#s01-w01) 及前置另行開始產品開發。當前工作止於文件與專案配置。
 
-## Blocked
-- 无 S00 阻塞；原有实施细节见 [DECISIONS](docs/DECISIONS.md#deferred)。
+## 用量快照
+目前餘額及周額度未知，未查詢或推算；歷史報告只按 [原 LOG](WORKLOG.md#log-20260920-003) 追溯，不當作目前餘額。
 
-## Next Action
-审阅本地 Git 工作流文档修改；后续开发遵循 [AGENTS Git 工作流](AGENTS.md#git-workflow)，S01 仍未开始。
-
-## Relevant Files
-- [PLAN 当前工作包](PLAN.md#s00-w01)
-- [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)
-- [docs/MIGRATION_MAP.md](docs/MIGRATION_MAP.md)
-- [docs/DECISIONS.md](docs/DECISIONS.md)
-- [WORKLOG.md](WORKLOG.md#records)
-- [.gitignore](.gitignore)
-- [EV-001 机器核对](artifacts/verification/S00_CHECKS.json)／[EV-002 独立核查](artifacts/verification/S00_AUDIT.md)
-
-## Last Updated
-2026-09-20 12:29:56 +08:00（Asia/Hong_Kong；Git 工作流规则维护）
-对应记录：[LOG-20260920-006](WORKLOG.md#log-20260920-006)。
-
-## Quota Report
-- 用户最近报告：5 小时额度剩余 13%；报告登记时间 2026-09-20 04:49:50 +08:00，重置时间未提供。
-- 周额度仍未知，周额度档位不判定；不把 5 小时余额当作周余额。
-- 当前仅维护用户指定的 Git 工作流规则；策略见 [AGENTS](AGENTS.md#quota)。
-
-## Model
-目标：Sol / Medium；实际会话配置未通过配置读取核对，未声称已切换。
-本轮主模型维护 Git 工作流文档，未调用子代理。
+## 更新記錄
+2026-09-22（Asia/Hong_Kong）；[LOG-20260922-001](WORKLOG.md#log-20260922-001)。

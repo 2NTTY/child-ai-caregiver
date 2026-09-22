@@ -282,3 +282,79 @@
 
 ### Next Action
 - 用户审阅本地文档修改，准备好后使用原生提交与 PR 工作流。
+
+<a id="log-20260920-007"></a>
+## LOG-20260920-007
+
+- Recorded At：2026-09-20 23:36:00 +08:00（Asia/Hong_Kong）。
+- Work Date：2026-09-20；只記錄本次規劃確認後實施，不回填工時。
+- Step / Package：DOC-R01 — 五階段文件重排及歸檔。
+- Executor：主模型整合、修改及驗收；兩個 worker 子代理按 Sol／Medium 參數分別處理契約文件與歸檔；一個 explorer 按 Luna／Max 參數只讀核查內容。這是啟動參數紀錄，不聲稱更換主模型或另有 OS 唯讀沙箱。
+- Goal：落實已確認的五階段、工作包 Git 規則、輕量共享／領域邊界、知識更新與 freshness，實體歸檔並保留 append-only 歷史。
+- AI Assistance：主模型與指定子代理修改文件、核對來源及依賴；未產生產品程式碼。
+- Human Verification：使用者已確認方案及後續修訂並授權執行；本次檔案結果尚未由組員獨立人工覆核，沒有產品或真機人工驗收。
+
+### Actual Work
+- 以目前檔案及基線 commit 為事實，把 S01–S17 分為 37 個跨階段工作包，P2 為比賽必達、P4 保留完整能力；S00 不重新執行。
+- P1 順序先合成資料 Web 持久化與真 Gemini，再加密／最小備份及整階段驗收；試玩網址只列為 P1 完成要求，目前沒有產品 URL。
+- 加入穩定官方知識每周、近期資訊每日的最小更新；媒體只供近期資訊，引用／時間／停用／快取與家庭事實隔離；來源入口的只讀核查不等同產品接通。
+- 六份完整歷史 Markdown 逐位元移入 _archive，舊路徑留相容頁；兩份 S00 JSON 原位唯一凍結、OPEN_SOURCE_REUSE 留作 S01 按需輸入。歸檔索引保存路徑／用途／閱讀条件／commit／SHA。
+- 設定日常先 STATUS／PLAN 當前包、追溯先歸檔索引再指定資料；任何新歸檔或 archived-in-place 變更均須同包同步索引。
+- WORKLOG 舊內容包括連結及換行完全未回寫，本記錄只追加。新增凍結文件的 Git 換行保護，避免日後 checkout 改變歷史雜湊。
+
+### Changes
+- PLAN／AGENTS：五階段、工作包與分支／合併依賴、驗收及閱讀制度。
+- SPEC／ARCHITECTURE／API／DATA_MODEL：階段邊界、公共更新／freshness、薄共享接口及按需領域原則；原 55 AC 保留，新 freshness AC 另加 6 項。
+- DECISIONS：ADR-005／006／007 及受影響的實施細化歸屬。
+- STATUS／README：移除過時任務快照，仍明確只有文件及產品未開始。
+- _archive／六個原路徑相容頁、.gitattributes：凍結歷史、索引與換行保護。
+- 本次證據：[EV-DOC-R01](artifacts/verification/DOC_R01_CHECKS.json)；不覆寫 EV-001／EV-002。
+
+### Verification
+- Requirement / Acceptance：使用者已確認的文件重排、歸檔與後續修訂；[DOC-R01](PLAN.md#doc-r01)、[ADR-005](docs/DECISIONS.md#adr-005) 至 ADR-007。
+- Method：Node 文件核查器（暫存 verify.cjs；依基線、Git 及歸檔索引核對）、git diff --check；另由 Luna 只讀檢查階段／功能邊界。
+- Environment / Revision：Windows、Node v24.11.0；分支 codex/five-stage-roadmap，基於 25244fb44d8e4464af2c8f9600019a7ed1118d6d。
+- Result：49 項文件檢查通過，包括 55 原 AC 原文、678 個原明確錨點、37 工作包依賴、凍結原文雜湊、兩 JSON 唯一原位、WORKLOG 位元組前綴、現行／相容連結與文件限定範圍；最終機器結果及計數見 EV-DOC-R01。
+- 獨立內容核查：發現穩定指引與指定媒體來源界線可更明確，已在 SPEC、PLAN、ARCHITECTURE、DATA_MODEL 補清；主模型另修正草稿中把 PostgreSQL／家庭 worker 誤列 P4 的文字，與 P3 雲端包對齊。
+- 檢查器初稿的預期包數誤寫 36，實際完整清單為 37；修正核對器後依賴檢查通過，沒有刪除工作包以迎合計數。
+
+### Limitations / Blockers
+- 本次只有文件及歸檔驗證，沒有 clone、安裝依賴、產品實作、Gemini 產品調用、部署、真機或家庭試用。
+- 凍結 Markdown 的原始相對鏈按來源 commit 解讀；舊入口及索引提供本地原文及固定歷史版本，不改寫歷史證據。
+- 產品需按各工作包另行驗證；目前用量／周額度未知，未查詢或推算。
+
+### Plan Update
+- DOC-R01 文件驗收完成，後續 review／合併循 Git 工作流；S00 維持已完成，S01–S17 與全部產品包仍未開始。
+
+### Next Action
+- 審閱 DOC-R01 文件分支並合併；其後才可開始 S01-W01，本次停止在文件範圍。
+
+
+<a id="log-20260922-001"></a>
+## LOG-20260922-001
+
+- Recorded At：2026-09-22 17:07:10 +08:00（Asia/Hong_Kong）
+- Work Date：2026-09-22
+- Step / Package：DOC-R02 — Server 路線與專案代理規則修訂
+- Executor：主代理整合；依本輪使用者明確例外，兩名 Astra High 實現子代理及一名 Astra High 依指令只讀核查。三者實際 model／effort／workspace-write runtime 已核對；唯讀指令不冒稱 OS 唯讀沙箱。
+
+### Decisions / Completed
+- 承接 DOC-R01 文件及歸檔基線，局部修訂五階段；P1 Server 權威資料／身份先行、Web 記錄聊天與 Gemini 先玩通，再完成加密／最低備份還原及 URL 驗收。P2 家庭權限、持續 worker、Web 照片、Web Push／Telegram 與預先授權的找人 fallback；P3 Android 在線；P4 自選相容 Server、Windows Docker／WSL 少步部署及完整 Server 遷移／災備。
+- 正式取代手機／瀏覽器主庫、手機中繼及離線 outbox；斷線僅保留當前畫面文字／照片，重連手動重試，刷新關閉提示。原 ID 保留但條文可按 ADR-008 修訂。
+- PLAN 改為長期路線、47 包（P1 10／P2 17／P3 8／P4 12）、依賴、五狀態與驗收；現況留 STATUS。長期代理為 Luna Max 唯讀／Sol High 預設且可 High、Xhigh、Max；並發及每包累計 3 Luna＋2 Sol，使用者明確要求優先。新增完整一次委派、fork_turns=none、禁子孫代理及進度輪詢、有限 follow-up、兩輪失敗先根因分析與批量操作。
+- WORKLOG 日常禁止全讀且嚴格 append-only；高成本驗證先由使用者決定，未批准必要驗收維持待驗收。
+
+### Files / Evidence
+- 更新 AGENTS、PLAN、SPEC、STATUS、README、ARCHITECTURE、API、DATA_MODEL、DECISIONS；專案 .codex/config.toml 及 worker.toml。explorer.toml 保持原樣；未修改全域配置。
+- [ADR-008](docs/DECISIONS.md#adr-008)／[ADR-009](docs/DECISIONS.md#adr-009)／[EV-DOC-R02](artifacts/verification/DOC_R02_CHECKS.json)。
+
+### Verification
+- 輕量文件檢查全數通過：47 包依賴無循環、舊錨點及連結可追溯、55 個原 AC 識別保留且其中 11 項修訂、6 項 freshness AC 不變、ADR-001 至 007 歷史正文不變、WORKLOG 舊位元組前綴完整、歸檔索引指定九项原文／研究雜湊不變；具體項目及數量以證據檔為準。
+- 獨立 Astra 內容核查無阻塞，主代理整合補齊條款替代索引及新 AC 入口。
+- Codex 0.155.0-alpha.9.2 以 strict-config／唯讀 config/read 確認有效總並發 5、預設 gpt-5.6-sol／high、explorer／worker 路徑的來源皆為本專案 .codex。角色及累計 3／2 限額是行為規則，不虛構額外硬配置。
+- 先前沙箱內配置核查曾無法解析 CODEX_HOME；獲准的本機沙箱外唯讀檢查正常載入，沒有重設 CODEX_HOME 或修改全域配置。
+
+### Limitations / Next
+- 未執行產品實作、依賴安裝、Gemini／真服務／外部訊息／部署／真機／integration／E2E 或深度回歸；文件驗收不代表產品完成。本輪未啟動 Luna／Sol 實例，角色檔是預設，實際權限仍須核對 runtime 覆寫。
+- 沒有新增歸檔項目或移動原檔，因此索引不需變更；未改寫歷史資料。未查詢用量，當前及周餘額未知。
+- DOC-R02 文件與配置驗收完成；S00 已完成，全部產品包仍未開始。下一步 review／合併文件分支，之後才按 S01-W01 前置另行開始產品工作。

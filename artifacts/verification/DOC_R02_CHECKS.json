@@ -1,0 +1,307 @@
+{
+  "evidenceId": "EV-DOC-R02",
+  "recordedAt": "2026-09-22T09:07:10.378Z",
+  "baselineCommit": "f85848706f80be0681c2f7b6af36d18a9ef790d9",
+  "scope": "Documentation and project-scoped Codex configuration only; no product, integration, E2E, real-service, or device tests.",
+  "summary": {
+    "passed": 52,
+    "total": 52,
+    "oldAnchorsPreserved": 689,
+    "productPackages": 47,
+    "packagesByPhase": {
+      "P1": 10,
+      "P2": 17,
+      "P3": 8,
+      "P4": 12
+    },
+    "localLinks": 224,
+    "originalAcIdentifiers": 55,
+    "changedOriginalAc": [
+      "ac-10-2-01",
+      "ac-10-2-02",
+      "ac-10-2-04",
+      "ac-10-2-05",
+      "ac-10-2-06",
+      "ac-10-3-05",
+      "ac-10-3-06",
+      "ac-10-3-07",
+      "ac-10-6-01",
+      "ac-10-6-06",
+      "ac-10-8-06"
+    ]
+  },
+  "configuration": {
+    "codexVersion": "0.155.0-alpha.9.2",
+    "strictConfig": true,
+    "source": ".codex/config.toml",
+    "defaultModel": "gpt-5.6-sol",
+    "defaultReasoning": "high",
+    "totalConcurrentLimit": 5,
+    "roleAndCumulativeLimits": "Behavioral: max 3 Luna and 2 Sol, concurrently and cumulatively per work package; user-explicit exceptions take precedence.",
+    "explorer": {
+      "model": "gpt-5.6-luna",
+      "reasoning": "max",
+      "sandbox": "read-only",
+      "unchanged": true
+    },
+    "worker": {
+      "model": "gpt-5.6-sol",
+      "defaultReasoning": "high",
+      "allowedReasoning": [
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "sandbox": "workspace-write"
+    },
+    "runtimeLimit": "Role files describe configured defaults; parent runtime overrides may affect sandbox. No Luna/Sol child was launched for this configuration test."
+  },
+  "execution": {
+    "userException": "Astra fixed for this execution only",
+    "agents": [
+      {
+        "role": "worker",
+        "model": "gpt-6-astra",
+        "reasoning": "high",
+        "sandbox": "workspace-write"
+      },
+      {
+        "role": "worker",
+        "model": "gpt-6-astra",
+        "reasoning": "high",
+        "sandbox": "workspace-write"
+      },
+      {
+        "role": "default",
+        "model": "gpt-6-astra",
+        "reasoning": "high",
+        "sandbox": "workspace-write",
+        "readOnlyByInstruction": true
+      }
+    ],
+    "metadataVerified": true,
+    "review": "Independent Astra review reported no blockers; primary integration and final checks completed separately."
+  },
+  "results": [
+    {
+      "name": "anchors:AGENTS.md",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "unique-anchors:AGENTS.md",
+      "passed": true
+    },
+    {
+      "name": "anchors:PLAN.md",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "unique-anchors:PLAN.md",
+      "passed": true
+    },
+    {
+      "name": "anchors:STATUS.md",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "unique-anchors:STATUS.md",
+      "passed": true
+    },
+    {
+      "name": "anchors:SPEC.md",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "unique-anchors:SPEC.md",
+      "passed": true
+    },
+    {
+      "name": "anchors:README.md",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "unique-anchors:README.md",
+      "passed": true
+    },
+    {
+      "name": "anchors:docs/API.md",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "unique-anchors:docs/API.md",
+      "passed": true
+    },
+    {
+      "name": "anchors:docs/ARCHITECTURE.md",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "unique-anchors:docs/ARCHITECTURE.md",
+      "passed": true
+    },
+    {
+      "name": "anchors:docs/DATA_MODEL.md",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "unique-anchors:docs/DATA_MODEL.md",
+      "passed": true
+    },
+    {
+      "name": "anchors:docs/DECISIONS.md",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "unique-anchors:docs/DECISIONS.md",
+      "passed": true
+    },
+    {
+      "name": "worklog-append-only",
+      "passed": true
+    },
+    {
+      "name": "frozen:_archive/s00/DEVELOPMENT_PLAN.md",
+      "passed": true
+    },
+    {
+      "name": "frozen:_archive/s00/MIGRATION_MAP.md",
+      "passed": true
+    },
+    {
+      "name": "frozen:_archive/s00/verification/S00_AUDIT.md",
+      "passed": true
+    },
+    {
+      "name": "frozen:_archive/legacy/PROJECT_PROPOSAL.md",
+      "passed": true
+    },
+    {
+      "name": "frozen:_archive/legacy/PITCH_AND_DEMO.md",
+      "passed": true
+    },
+    {
+      "name": "frozen:_archive/legacy/WEEKLY_LOGS.md",
+      "passed": true
+    },
+    {
+      "name": "frozen:artifacts/verification/S00_CHECKS.json",
+      "passed": true
+    },
+    {
+      "name": "frozen:artifacts/verification/S00_SOURCE_INDEX.json",
+      "passed": true
+    },
+    {
+      "name": "frozen:OPEN_SOURCE_REUSE.md",
+      "passed": true
+    },
+    {
+      "name": "archive-index-nine-entries",
+      "passed": true
+    },
+    {
+      "name": "no-archive-or-frozen-evidence-edits",
+      "passed": true
+    },
+    {
+      "name": "docs-and-project-config-only",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "local-links-and-anchors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "original-product-package-ids-retained",
+      "passed": true
+    },
+    {
+      "name": "all-product-packages-not-started",
+      "passed": true
+    },
+    {
+      "name": "dependency-targets-exist",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "dependency-graph-acyclic",
+      "passed": true
+    },
+    {
+      "name": "phase-four-windows-in-acceptance",
+      "passed": true
+    },
+    {
+      "name": "no-temporary-conversation-in-plan",
+      "passed": true
+    },
+    {
+      "name": "plan-uses-status-column",
+      "passed": true
+    },
+    {
+      "name": "original-55-ac-identifiers-retained",
+      "passed": true
+    },
+    {
+      "name": "freshness-ac-unchanged",
+      "passed": true
+    },
+    {
+      "name": "server-agent-ac-linked",
+      "passed": true
+    },
+    {
+      "name": "adr-001-to-007-history-unchanged",
+      "passed": true
+    },
+    {
+      "name": "no-low-or-astra-fallback",
+      "passed": true
+    },
+    {
+      "name": "main-model-not-pinned",
+      "passed": true
+    },
+    {
+      "name": "explorer-existing-bytes-preserved",
+      "passed": true
+    },
+    {
+      "name": "explorer-luna-max-readonly",
+      "passed": true
+    },
+    {
+      "name": "worker-sol-flexible-effort",
+      "passed": true
+    },
+    {
+      "name": "fork-none-and-cumulative-role-limits",
+      "passed": true
+    },
+    {
+      "name": "current-codex-strict-config-read",
+      "passed": true
+    },
+    {
+      "name": "effective-project-defaults",
+      "passed": true
+    },
+    {
+      "name": "effective-agents-from-project",
+      "passed": true
+    }
+  ]
+}
