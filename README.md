@@ -6,11 +6,11 @@ Planned capabilities include:
 
 - Android and web clients with caregiver-confirmed text, Cantonese voice, photo, and shared-content records.
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
-- User-controlled storage on a phone, in a browser, or on a designated server, with device pairing, sync, and portable backups.
+- A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
 
 **Current status: documentation only.** S00 documentation migration is complete; S01 has not started. There is no runnable app, APK, or deployed product service, and there is no live product URL. The agreed scope and acceptance criteria are defined in [SPEC.md](SPEC.md).
 
-The current delivery roadmap requires a working web URL when P1 is complete. P2 is the competition-delivery target.
+P1 requires a working web URL, server persistence, Gemini chat, and verified encryption/backup safeguards. P2 is the competition-delivery target: a persistent server agent, family permissions, web photo input, current knowledge, and preauthorized Web Push/Telegram follow-ups. Android follows in P3; deployment choice, full reports, migration, and disaster recovery complete P4. These are acceptance requirements, not claims of implemented features.
 
 <a id="entry"></a>
 ## Getting started
@@ -53,4 +53,4 @@ Frozen documents keep the relative-link context of their source commit. Their co
 <a id="run-test"></a>
 ## Running and testing
 
-Application setup and test commands will be added after the relevant implementation is created and verified. For documentation checks already performed, see [WORKLOG](WORKLOG.md#records). Documentation acceptance is not evidence of a working product.
+Application setup and test commands will be added after the relevant implementation is created and verified. For documentation checks already performed, use [STATUS](STATUS.md) to locate the relevant WORKLOG entry; do not load the entire log as routine context. Documentation acceptance is not evidence of a working product.

@@ -328,3 +328,33 @@
 
 ### Next Action
 - 審閱 DOC-R01 文件分支並合併；其後才可開始 S01-W01，本次停止在文件範圍。
+
+
+<a id="log-20260922-001"></a>
+## LOG-20260922-001
+
+- Recorded At：2026-09-22 17:07:10 +08:00（Asia/Hong_Kong）
+- Work Date：2026-09-22
+- Step / Package：DOC-R02 — Server 路線與專案代理規則修訂
+- Executor：主代理整合；依本輪使用者明確例外，兩名 Astra High 實現子代理及一名 Astra High 依指令只讀核查。三者實際 model／effort／workspace-write runtime 已核對；唯讀指令不冒稱 OS 唯讀沙箱。
+
+### Decisions / Completed
+- 承接 DOC-R01 文件及歸檔基線，局部修訂五階段；P1 Server 權威資料／身份先行、Web 記錄聊天與 Gemini 先玩通，再完成加密／最低備份還原及 URL 驗收。P2 家庭權限、持續 worker、Web 照片、Web Push／Telegram 與預先授權的找人 fallback；P3 Android 在線；P4 自選相容 Server、Windows Docker／WSL 少步部署及完整 Server 遷移／災備。
+- 正式取代手機／瀏覽器主庫、手機中繼及離線 outbox；斷線僅保留當前畫面文字／照片，重連手動重試，刷新關閉提示。原 ID 保留但條文可按 ADR-008 修訂。
+- PLAN 改為長期路線、47 包（P1 10／P2 17／P3 8／P4 12）、依賴、五狀態與驗收；現況留 STATUS。長期代理為 Luna Max 唯讀／Sol High 預設且可 High、Xhigh、Max；並發及每包累計 3 Luna＋2 Sol，使用者明確要求優先。新增完整一次委派、fork_turns=none、禁子孫代理及進度輪詢、有限 follow-up、兩輪失敗先根因分析與批量操作。
+- WORKLOG 日常禁止全讀且嚴格 append-only；高成本驗證先由使用者決定，未批准必要驗收維持待驗收。
+
+### Files / Evidence
+- 更新 AGENTS、PLAN、SPEC、STATUS、README、ARCHITECTURE、API、DATA_MODEL、DECISIONS；專案 .codex/config.toml 及 worker.toml。explorer.toml 保持原樣；未修改全域配置。
+- [ADR-008](docs/DECISIONS.md#adr-008)／[ADR-009](docs/DECISIONS.md#adr-009)／[EV-DOC-R02](artifacts/verification/DOC_R02_CHECKS.json)。
+
+### Verification
+- 輕量文件檢查全數通過：47 包依賴無循環、舊錨點及連結可追溯、55 個原 AC 識別保留且其中 11 項修訂、6 項 freshness AC 不變、ADR-001 至 007 歷史正文不變、WORKLOG 舊位元組前綴完整、歸檔索引指定九项原文／研究雜湊不變；具體項目及數量以證據檔為準。
+- 獨立 Astra 內容核查無阻塞，主代理整合補齊條款替代索引及新 AC 入口。
+- Codex 0.155.0-alpha.9.2 以 strict-config／唯讀 config/read 確認有效總並發 5、預設 gpt-5.6-sol／high、explorer／worker 路徑的來源皆為本專案 .codex。角色及累計 3／2 限額是行為規則，不虛構額外硬配置。
+- 先前沙箱內配置核查曾無法解析 CODEX_HOME；獲准的本機沙箱外唯讀檢查正常載入，沒有重設 CODEX_HOME 或修改全域配置。
+
+### Limitations / Next
+- 未執行產品實作、依賴安裝、Gemini／真服務／外部訊息／部署／真機／integration／E2E 或深度回歸；文件驗收不代表產品完成。本輪未啟動 Luna／Sol 實例，角色檔是預設，實際權限仍須核對 runtime 覆寫。
+- 沒有新增歸檔項目或移動原檔，因此索引不需變更；未改寫歷史資料。未查詢用量，當前及周餘額未知。
+- DOC-R02 文件與配置驗收完成；S00 已完成，全部產品包仍未開始。下一步 review／合併文件分支，之後才按 S01-W01 前置另行開始產品工作。

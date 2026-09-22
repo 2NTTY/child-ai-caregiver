@@ -2,7 +2,9 @@
 
 只记录为什么、来源与影响；当前行为和实现全文分别在 [SPEC](../SPEC.md)、[ARCHITECTURE](ARCHITECTURE.md)、[DATA_MODEL](DATA_MODEL.md)、[API](API.md)。本文的历史原文不形成另一份现行规范。
 
-ADR-001 至 ADR-004 記錄 S00 當時的授權與決定；其中「本輪」「不得移動」「通過即停止」不代表後續任務限制。五階段、歸檔及新增更新能力以 ADR-005 至 ADR-007 的替代範圍及所連現行規範為準。
+現行入口：[ADR-008](#adr-008) 記錄 Server 權威架構、五階段局部修訂及原 REQ／AC 替代索引；[ADR-009](#adr-009) 記錄工作上下文、測試及最新子代理政策。現行全文仍由以上權威文件及 [AGENTS](../AGENTS.md)／[PLAN](../PLAN.md) 維護。
+
+ADR-001 至 ADR-007 保留當時歷史；其中「本輪」「不得移動」「通過即停止」及 ADR-005／007 的本地架構、原 AC 不改等表述，不覆蓋 ADR-008／009 已明列的修訂。未被替代的歸檔、來源治理及按需領域解耦原則繼續適用。
 
 <a id="adr-001"></a>
 ## ADR-001 — 文档拆分与磁盘基线冻结
@@ -55,9 +57,9 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 
 | 编号 | 尚待确定 | 负责步骤与当前约束 |
 |---|---|---|
-| <a id="d-api-001"></a>D-API-001 | HTTP 路徑、封裝、錯誤碼、設備憑據編碼、批量／兼容協商 | 最小 AI API 於 S06-W01／S11-W01；身份／同步／配對於 S06-W02、S07、S08；[既有 API 契約](API.md#errors-compatibility)不能刪減 |
-| D-DATA-001 | 具体 schema、字段类型、索引和物理约束 | S03–S15 按对象需要逐步确定；[DATA_MODEL](DATA_MODEL.md) 不变量先行 |
-| D-SEC-001 | 本地資料庫／瀏覽器加密實現、密鑰恢復細節 | S05-W01 在合成資料可玩流程後、P1 完成前落實 Web 加密／最小備份；S05-W03 與 S15 落實手機／完整遷移；[加密要求](ARCHITECTURE.md#section-3-2)不降低 |
+| <a id="d-api-001"></a>D-API-001 | HTTP 路徑、封裝、錯誤碼、裝置憑據編碼、批量／相容協商 | P1 S06-W03 身份／Server API，S06-W01／S11-W01 最小 AI proxy；P2 S06-W02 家庭權限、S07-W03 線上一致性；P3 S07-W01 跨端；P4 S06-W04 自選相容 Server、S08-W01 裝置授權及 S07-W02 故障；[API 契約](API.md#errors-compatibility)按 ADR-008 現行語義落實 |
+| D-DATA-001 | 具體 schema、欄位類型、索引和物理約束 | S06-W03 先建立 PostgreSQL 權威儲存，再按 S03–S15 實際物件漸進建立；[DATA_MODEL](DATA_MODEL.md) 不變量先行，不建 SQLite／IndexedDB 業務主庫或離線 outbox |
+| D-SEC-001 | Server 儲存加密、密鑰管理及恢復的實現細節 | P1 S05-W01 在合成資料可玩流程後、P1 完成前落實 Server 加密及最低加密備份／還原；P3 S05-W03 處理在線客戶端附件邊界；P4 S15-W01／W02 落實 Server 搬遷／災備，S17-W05 交付 Windows 部署；[加密要求](ARCHITECTURE.md#section-3-2)不降低 |
 | D-REUSE-001 | 候选固定版本、许可证及可复用清单 | S01；只读旧研究不能当已完成核验或已采用代码 |
 | D-PLATFORM-001 | 實際模型、平台權限、RSS／來源讀取及後台行為驗證 | S06-W01／S11-W01 先核實 Gemini；S10-W02 核實來源與更新；S04／S08／S12／S13 核實平台行為；不把來源入口研究當產品通過 |
 
@@ -96,3 +98,69 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 ## 后续 ADR 模板
 
 编号／日期；状态（已确认或未决）；问题；决定与权威条款链接；依据；考虑过的替代；影响范围；被替代 ADR／条款；验证或实施步骤。不要把未決草案写成当前架构。
+
+<a id="adr-008"></a>
+## ADR-008 — Server 唯一權威與五階段局部修訂
+
+- 日期／狀態：2026-09-22，已確認；依據：使用者本輪確認的 Server 架構及五階段調整，於 DOC-R02 落盤；只修改文件與專案開發設定，不啟動產品實現。
+- 原因：手機／瀏覽器主庫、離線 outbox 及手機中繼增加三種儲存、任務交接與同步的複雜度，也無法承擔 P2 關閉瀏覽器後持續執行的主動照顧流程。
+- 決定：Server 是唯一業務資料權威及 Agent 執行端，PostgreSQL 持久儲存；Web／Android 是同一服務的在線客戶端。正式替代手機／瀏覽器業務主庫、SQLite／IndexedDB 業務持久化、離線 outbox、自動離線重放及手機 WSS 資料中繼。斷線只在當前頁面保留未提交表單／照片，明確標示未保存並由使用者手動重試；重新整理／關閉前提示可能丟失，不承諾跨關閉草稿恢復。Server 確認前不得顯示保存成功。
+- 邊界：只實現育伴港，共享 TypeScript 業務與薄平台 adapter，必要 port 隨功能建立；核心 Server 分層由 [ARCHITECTURE §3.1](ARCHITECTURE.md#section-3-1) 維護，不預建通用平台、第二領域或空框架。
+
+| 階段 | 本次確認的門檻與調整 |
+|---|---|
+| P1 | 最小 Server、PostgreSQL、Better Auth 身份及資料隔離先行；Web 孩子／文字記錄／聊天與真 Gemini 形成合成資料閉環後，完成 Server 儲存加密、最低加密備份／還原及驗收。組員可開啟的試玩網址仍是 P1 完成要求，並非現況；S06-W03 在 S03-W01 前，S06-W01 保持最小 AI proxy 職責 |
+| P2 | 比賽必達：家庭權限、持久 worker、完整 AI orchestration、長期記憶、Web 照片、Web Push＋Telegram 及預授權找人 fallback；按已授權對象／條件執行，不逐次確認，每次執行檢查當前授權及撤權。任務、投遞、閱讀與完成分開，重試不重複發送。社交來源由使用者主動分享公開更新，不自動讀取私密 feed |
+| P3 | Android 在線客戶端、FCM、語音／相機及平台適配，Web／Android 共用同一 Server；跨端一致性、撤權、失敗與真機驗收隨功能完成，不重新建立手機業務主庫 |
+| P4 | 自選相容 Server API；Windows Docker Compose 少步部署，接受 Docker／WSL 前置；裝置配對及臨時會話只作授權、不作中繼；Server 搬遷、災備、保留新寫入的 rollback，完整知識／報告及最終交付 |
+| P5 | 可選增值；不承接 P1–P4 必要驗收，不預建未來平台 |
+
+官方穩定知識／近期資訊的來源隔離、每周／每日查核、七日近期窗口、freshness 與失效規則沿用 [SPEC](../SPEC.md#knowledge-freshness)；持久家庭 worker 不把近期資訊自動變成孩子事實或家庭任務。ADR-007 的知識治理及輕量解耦有效，只有「家庭資料／任務仍在本地」的邊界被替代。
+
+<a id="adr-008-packages"></a>
+本次工作包落點（完整依賴及驗收只維護於 [PLAN](../PLAN.md#roadmap-packages)）：
+
+| 範圍 | 新增／修訂工作包 |
+|---|---|
+| P1 身份與權威儲存 | 新增 S06-W03，置於 S03-W01 之前；S06-W01 仍是 AI proxy；S03-W01／S09-W01／S05-W01 改為 Server 記錄、聊天、加密與最低備份 |
+| P2 家庭與持久執行 | S06-W02 提前至 P2；新增 S07-W03 線上一致性、S13-W04 持久 worker；S13-W01／S11-W02 在 Server 完成確定性任務及 orchestration |
+| P2 輸入、分享與外發 | 新增 S12-W03 Web 照片、S12-W04 公開分享來源、S13-W05 Web Push、S13-W06 Telegram、S13-W07 預授權找人 fallback |
+| P3 跨端 | 原 S04-W01／S05-W03／S07-W01／S09-W03／S12-W01／S13-W02 改為在線 Android、同服務一致性及 FCM／語音相機語義；家庭身份不再延至此階段 |
+| P4 自選 Server 與交付 | 新增 S06-W04 自選相容 Server、S17-W05 Windows 部署；S15-W01 移至 P4 並改為 Server 搬遷，S15-W02 災備／rollback；S08-W01 裝置授權、S07-W02 在線故障、S13-W03 Server 任務切換；完整知識及報告仍由 S10-W03／S14-W02 完成 |
+
+<a id="adr-008-replacements"></a>
+原 REQ／AC 與契約的替代索引：保留原 ID／顯式錨點作現行修訂入口；**保留 ID 不等於原文不變**。修訂前完整文字可在 Git 基線 `f858487` 的相同路徑及 ID 追溯，不回寫舊 ADR 或凍結資料。未受本決定影響的要求繼續有效，不能因改成在線架構刪除權限、衝突、終態、備份或恢復驗收。
+
+| 原位置／穩定 ID 範圍 | 正式替代語義及現行入口 |
+|---|---|
+| SPEC §1.2–1.5，`req-1-2-02..04`、`req-1-3-12`、`req-1-4-01..02`、`req-1-5-01..02` | 產品描述、Server 執行位置及首批外發渠道與新階段一致；社交輸入維持主動提供，不背景讀私人動態；[產品邊界](../SPEC.md#section-1-5) |
+| SPEC §1.6，`req-1-6-*` | P1 Server 身份／儲存先行，P2 持久家庭任務與真外發，P3 在線 Android，P4 自選 Server／部署；[階段要求](../SPEC.md#section-1-6) |
+| SPEC §2.1–2.6，`req-2-1-*` 至 `req-2-6-*` | 手機／電腦／雲三種業務主庫及入口改為同一 Server 的部署／連接選擇；Windows 自託管屬 Server 部署，客戶端不變成資料主節點；[儲存與部署](../SPEC.md#section-2-1) |
+| SPEC §4.1／4.6／4.7，`req-4-1-*`、`req-4-6-*`、`req-4-7-*` | 配對只授權裝置／臨時會話；移除手機中繼及離線副本；斷線保留當頁輸入、手動重試、Server 確認及明確失敗；[配對](../SPEC.md#section-4-1)／[斷線](../SPEC.md#section-4-6)／[狀態](../SPEC.md#section-4-7) |
+| SPEC §6.1，`req-6-1-*` | 手機／電腦／雲主庫互轉改為相容 Server 搬遷、匯出／備份及空環境恢復；[遷移方向](../SPEC.md#section-6-1) |
+| SPEC §4.8，`req-4-8-04..05` | 裝置撤權改為拒絕 Server API 讀寫及新通知；不保留離線上傳途徑；[撤權](../SPEC.md#section-4-8) |
+| SPEC AC §10.2，`ac-10-2-*` | 三種本地儲存／離線同步判據修訂為 Server 持久化、在線一致性、未確認輸入及錯誤不冒充成功；[AC 10.2](../SPEC.md#section-10-2) |
+| SPEC AC §10.3，`ac-10-3-*` | 指定瀏覽器／手機主節點改為持久 Server worker；跨會話記憶、唯一任務、終態及當前撤權檢查不降低；[AC 10.3](../SPEC.md#section-10-3) |
+| SPEC AC §10.6，`ac-10-6-*` | 三庫互轉／待同步 outbox 改為 Server 搬遷、待確認請求、備份恢復及不丟新寫入的 rollback；[AC 10.6](../SPEC.md#section-10-6) |
+| SPEC AC `ac-10-8-06`，新增 `ac-sa-01..06` | Windows 少步部署說明及 Server／授權外發的補充驗收；[交付](../SPEC.md#section-10-8)／[新增 AC](../SPEC.md#ac-server-agent) |
+| ARCH §3.1／3.2／3.5／3.6，`rule-3-*` | 共享核心＋Server 唯一資料／Agent 權威、PostgreSQL、身份隔離、持久 worker 及渠道；[架構](ARCHITECTURE.md#section-3-1) |
+| ARCH §4.2／4.4，`rule-4-2-*`／`rule-4-4-*` | 手機 WSS 中繼及離線 outbox 流程改為授權在線請求、冪等、版本與 Server 確認；[連接](ARCHITECTURE.md#section-4-2)／[確認流程](ARCHITECTURE.md#section-4-4) |
+| ARCH §6.3–6.6、§9.5，`rule-6-*`／`rule-9-5-*` | Server 備份／遷移／災備／rollback，以及按當前權限與資料處理邊界使用快取；[備份](ARCHITECTURE.md#section-6-3)／[遷移](ARCHITECTURE.md#section-6-4)／[快取](ARCHITECTURE.md#section-9-5) |
+| API §3.3／3.4／4.1、`sync-contract` | 共享接口的 Server 端執行、當前身份／權限、短效裝置授權；同步契約改為在線一致性與手動重試，不提供離線自動重放；[共享接口](API.md#section-3-3)／[在線契約](API.md#sync-contract) |
+| DATA §3.2／4.3／4.5／5.4／5.5／6.2，`data-*` 對應段落 | PostgreSQL 權威與 Server 請求／世代／版本／變更游標、記憶／任務；保留衝突／終態與完整遷移格式，移除業務本地庫／outbox 的解釋；[資料儲存](DATA_MODEL.md#section-3-2)／[請求欄位](DATA_MODEL.md#section-4-3)／[遷移格式](DATA_MODEL.md#section-6-2) |
+
+- 替代 ADR：ADR-003 的 S03 不依賴帳號／雲資料庫；ADR-005 的原架構與「原需求／AC 原文不變」範圍；ADR-007 的本地家庭資料／任務邊界。歷史原文保留，ADR-006 的歸檔與不可改寫規則不變。
+- 驗證／實施：DOC-R02 檢查原錨點、局部替代映射、工作包依賴、文件一致性及歷史完整性；產品包全部未開始。各階段實際驗收由 PLAN 的相關 S16／S17 包執行，文件寫入不代表 Server、外發、部署或真機已驗證。
+
+<a id="adr-009"></a>
+## ADR-009 — 有界工作上下文、測試及子代理政策
+
+- 日期／狀態：2026-09-22，已確認；依據：使用者確認最新開發政策。權威規則在 [AGENTS](../AGENTS.md#models) 及 [PLAN 驗證制度](../PLAN.md#verification)，本 ADR 記錄理由與替代範圍。
+- 原因：避免完整歷史反覆載入、過度委派、碎片訊息與無根因重試，控制驗證成本，同時保留必要驗收及人工結果的真實邊界。
+- 上下文與記錄：先 STATUS，再 PLAN 當前包；已有結論先復用，足夠證據即停止。WORKLOG 日常禁止全讀，只讀模板／相關 LOG／追加所需尾部，既有位元組、連結及格式不回寫；只有實質工作包狀態、實現／驗收、重要失敗決策或正式里程碑才追加。普通 Git、格式及臨時檢查不記 LOG。歸檔仍先索引再指定內容，移入或 archived-in-place 同包更新索引；S00 JSON 唯一原位。
+- 分工：主模型 UI 自選 Astra／Sol，不固定或降級。長期子代理只用 Luna Max 唯讀調查與 Sol High（可 High／Xhigh／Max）有界實現；禁止 Terra／Astra，使用者明確指定優先，當輪例外不構成永久許可。Luna 不寫檔、不執行 workspace 寫入或架構決策；所有子代理禁止再 spawn。主模型做簡單搜尋／單檔工作，並負責架構、複雜實現、衝突、整合 review 及最終驗收。
+- 限額與交接：每包同時及累計最多 3 Luna＋2 Sol；重啟／恢復／替代啟動均計入，達限先整合不追加。主模型先完整拆分，明列目標、範圍、路徑、約束、禁止事項、輸出與證據，一次下達；明確角色／模型／effort 與 `fork_turns="none"`。不輪詢進度、不用 `send_message` 追問／重複／零碎補上下文；follow-up 只補會阻塞的關鍵證據。每輪收齊後統一整合，未整合不追加同類。
+- 實際配置：只改專案 `.codex/config.toml` 與角色檔，預設子模型 Sol、effort High、總並發硬上限 5；`explorer` Luna Max／readonly，`worker` 固定 Sol 而不固定 effort。角色數及累計限額屬行為規則，不聲稱 TOML 已提供這些額外硬限制；不改全局。配置檔不證明當前 runtime 或唯讀 sandbox 已生效，必須核對實際啟動結果。
+- 驗證政策：預設只執行修改必要的輕量檢查及公開輸入／輸出單元測試；integration、E2E、真機、真實服務、深度／全量回歸須先交代原因、範圍、成本，由使用者決定。未批准的必要驗收保留「待驗收」，不降低完成門檻。可合併的讀取／搜尋／修改／檢查批量做；連續兩輪修改、驗證、再修改仍失敗，先整理根因、失敗證據及下一方案。
+- 分支／範圍：可獨立驗收工作包（包括文件包）是分支與合併單位，依賴其成果須等 review／合併，不受整個父 Sxx 完成鎖約束；領域解耦按需建立，不增加通用平台或空框架。
+- 替代／驗證：替代先前 AGENTS 的 Sol Medium、通常容許 Astra 實現子代理、最多四代理及未區分測試成本的規則；ADR-004／005 的歷史保留。DOC-R02 只核對政策、專案設定與文件一致性，當前 runtime 未核對部分及未執行驗收須如實報告。

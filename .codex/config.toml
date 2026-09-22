@@ -1,16 +1,15 @@
-# Project-scoped subagent settings; leave the primary UI model untouched.
-# Read-only investigations use explorer. The generic fallback stays at the Sol
-# production-code floor instead of inheriting an expensive primary model.
+# Project-scoped subagent defaults; never override the primary UI model.
+# Per-role concurrent and per-package cumulative limits are scheduled in AGENTS.md.
 [agents]
 enabled = true
-max_concurrent_threads_per_session = 4
+max_concurrent_threads_per_session = 5
 default_subagent_model = "gpt-5.6-sol"
-default_subagent_reasoning_effort = "medium"
+default_subagent_reasoning_effort = "high"
 
 [agents.explorer]
-description = "Read-only Luna Max investigation agent"
+description = "Luna Max read-only investigator for concrete, independent, verifiable tasks"
 config_file = "agents/explorer.toml"
 
 [agents.worker]
-description = "Bounded implementation agent; default Sol Medium, with explicit Sol/Astra settings selected by the primary agent"
+description = "Bounded Sol implementation agent; High by default, explicit High/Xhigh/Max"
 config_file = "agents/worker.toml"

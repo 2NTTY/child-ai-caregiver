@@ -5,7 +5,7 @@
 - 每次先读 [STATUS.md](STATUS.md)，再读 [PLAN.md](PLAN.md) 当前步骤及工作包；只按需要读 SPEC、docs 和相关 WORKLOG。
 - 不默认扫描整个仓库或重读全部文档、日志、聊天；先做有范围的搜索，扩大范围必须有具体原因，限制无关工具输出。
 - 已有研究先复用结论和来源，避免重复调查；先看失败原因，避免重复已证明不合适的尝试。
-- 日常不直接掃描 `_archive/**`、歷史相容入口（DEVELOPMENT_PLAN、PROJECT_PROPOSAL、PITCH_AND_DEMO、WEEKLY_LOGS、docs/MIGRATION_MAP）及 `artifacts/verification/S00_*`；需要追溯時先讀 [_archive 索引](_archive/README.md)，再讀指定資料／章節。WORKLOG 只讀當前工作包相關記錄，不預設整本重讀。
+- 日常不直接掃描 `_archive/**`、歷史相容入口（DEVELOPMENT_PLAN、PROJECT_PROPOSAL、PITCH_AND_DEMO、WEEKLY_LOGS、docs/MIGRATION_MAP）及 `artifacts/verification/S00_*`；需要追溯時先讀 [_archive 索引](_archive/README.md)，再讀指定資料／章節。WORKLOG 日常禁止全讀，只讀模板、當前相關 LOG 或追加所需尾部。
 - `OPEN_SOURCE_REUSE.md` 只在 S01 或具體復用核查時按需讀取；S01 完成後才評估歸檔。新文件移入 `_archive/` 或改為 `archived-in-place` 時，必須在同一工作包同步更新 `_archive/README.md` 的用途、路徑、來源版本、校驗值及閱讀條件。
 
 <a id="language"></a>
@@ -25,24 +25,23 @@
 - 已有代码尽量局部修改；网页与 App 共享业务规则及协议，参见 [架构](docs/ARCHITECTURE.md#section-3-1)。
 - 不做无关重构、可选抽象、UI polish 或顺手优化；不提前实现后续步骤需要的完整框架、服务或插件平台。
 - 开源研究、许可和版本结论须保存；生产复用只按 [S01](PLAN.md#s01) 验收边界推进。
-- 領域解耦只作編碼原則：寫到相關功能時集中管理 prompt、知識來源、受限 skills／任務流程及領域規則，避免散落寫死；不另建通用領域模型、動態插件平台、第二主題或獨立解耦工作包。
+- 只實現育伴港領域；寫到相關功能時集中管理 prompt、知識來源、受限 skills／任務流程及領域規則，共享 TypeScript 業務、薄平台 adapter 及必要 port 按需建立。Server 權威及核心結構見 [ARCHITECTURE](docs/ARCHITECTURE.md#section-3-1)，不另建通用領域模型、插件平台、第二主題、空框架或獨立解耦包。
 
 <a id="models"></a>
 ## 模型與分工
-- 主模型由使用者自行選擇，通常在 Sol～Astra 範圍內；本文件不固定預設主模型，不得擅自降級使用者選擇的模型。
-- 主模型應先規劃及拆分工作包；可獨立且低風險的調查、定位、分析及實現任務優先委派給合適子代理，主模型集中處理架構決策、複雜實現、衝突解決及最終驗收。
-- Luna 使用 Max，只能作為只讀子代理，用於調查、程式碼定位、日誌／測試分析及影響核查；不得修改檔案、寫生產程式碼或決定架構。
-- 實現子代理預設使用 Sol Medium，可按難度選 High／Xhigh；複雜工作可指定 Astra，reasoning 由 Medium 起且不高於已確認的主模型當前等級。主模型等級未知或低於 Medium 時，不自動選 Astra；不得使用 Luna 或更低能力模型寫入生產程式碼。
-- 委派時明確選擇角色、模型及 reasoning；若目前工具只有 `collaboration.spawn_agent`，以 `model`、`reasoning_effort`、`fork_turns="none"` 指定並附上工作包及權限邊界，不能把 `task_name` 當成角色選擇。
-- 角色檔的模型／reasoning 會優先於啟動參數；`worker` 不固定這兩項，以支援上述範圍，未指定時回退至專案設定的 Sol Medium。[配置依據](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-- 只讀指令不等於作業系統唯讀沙箱；須核對實際啟動方式與權限，不能僅憑角色檔存在便聲稱本輪已套用。最多同時開啟 4 個子代理。
-- 主模型負責整合、審查子代理輸出及最終實現。
-- 核對實際主模型與子代理設定，不得僅憑本文件聲稱已切換模型。
+- 主模型由使用者在 UI 選擇，通常為 Astra 或 Sol；不固定、不擅自降級。子代理通常只用 Luna／Sol，禁止 Terra／Astra；使用者明確指定優先，單次例外不成為長期許可。
+- Luna 固定 Max，只做具體、獨立、可驗證的唯讀調查；禁止修改檔案、任何寫入 workspace 的操作、實現或架構決策。Sol 預設 High，只可 High／Xhigh／Max，負責邊界明確的實現；複雜實現、架構、衝突、整合 review 及最終驗收由主模型負責。所有子代理均禁止再 spawn。
+- 每個工作包同時及累計各最多 3 個 Luna＋2 個 Sol，合計最多 5 個；重啟、恢復及替代啟動均計入累計，達限先整合，不追加。數量是上限，不是目標；簡單搜尋、單檔工作由主模型處理，先復用已有結論，證據足夠即停止。
+- 主模型先拆分完整任務，再一次性下達目標、範圍、路徑線索、關鍵約束、禁止事項、預期輸出及驗證證據。spawn 明確指定角色、模型、effort 及 `fork_turns="none"`，不繼承完整對話；`task_name` 不能代替角色設定。
+- 每輪收齊最終結果後統一整合，未整合前不追加同類任務；不輪詢進度，不用 `send_message` 追進度、重複指令或零碎補上下文。follow-up 只用於補齊會阻塞工作的關鍵證據。
+- 實際設定只維護專案 [.codex/config.toml](.codex/config.toml)：預設子模型 `gpt-5.6-sol`、effort `high`、總並發硬上限 5；角色與累計限額由本節行為規則執行，不捏造 config 欄位。`explorer` 保留 Luna Max／readonly；`worker` 固定 Sol、不固定 effort，回退 High 並容許顯式 High／Xhigh／Max；不改全局設定。
+- 配置檔不等於已生效證據；核對實際 runtime 的主模型、子代理與 sandbox。唯讀指令不等於作業系統唯讀沙箱，不僅憑角色檔聲稱本輪已套用或已切換模型。
 
 <a id="operations"></a>
 ## 操作方式
 - 默认不使用 Computer Use；登录、授权、验证码、扫码、真机安装、Android 权限及简单 GUI，优先提供步骤与预期结果，由用户操作。
 - shell、build、test、lint、typecheck 和机器检查由 Codex 执行；必须记录用户实际反馈，不能假定人工验证通过。
+- 可合併的搜尋、讀取、修改及驗證集中批量處理，避免零碎 exec／patch 或等價檢查。連續兩輪「修改 → 執行驗證 → 再修改」仍未解決時，先整理根因、失敗證據及下一方案，再繼續。
 
 <a id="git-workflow"></a>
 ## Git 工作流
@@ -61,14 +60,14 @@
 ## 项目文档更新边界
 
 - 普通工具操作、Git/GitHub 操作、登录授权、邀请协作者、临时检查、调试命令和验证过程，不属于项目进度，不得因此修改 STATUS.md、WORKLOG.md、PLAN.md、README.md 或其他项目文档。
-- 只有项目实际需求、架构、实现状态、长期决策或正式里程碑发生变化时，才允许更新相应文档。
+- 只有實質工作包狀態、需求／架構／實現、驗收、重要失敗決策或正式里程碑變化，才更新相應文件；普通 Git、格式或臨時檢查不記 LOG。
 - 本节优先于本文其他记录、收尾和额度快照要求；不满足上述条件时，仅在当前对话报告，不触发项目文档更新。
 - WORKLOG 嚴格 append-only：既有正文、連結、空白及格式均不回寫；更正只追加新記錄。歸檔透過舊路徑相容入口與索引保持追溯，不以修復連結為理由改寫舊 LOG。S00 JSON 原位凍結、唯一保存，不為目錄整齊搬移後再複製。
 
 <a id="finish"></a>
 ## 验证与收尾
 - 按 [PLAN 验证制度](PLAN.md#verification) 区分已确认、已实现、已验证、已完成；代码写完不等于完成。
-- 优先相关检查；相关代码改变或新证据表明确有回归风险才重跑，不无故重复全套测试。
+- 預設只做修改所需的輕量檢查及針對公開輸入／輸出的單元測試；相關程式碼改變或新證據顯示回歸風險才重跑。integration、E2E、真機、真實服務及深度／全量回歸須先說明原因、範圍及成本，由使用者決定；未批准的必要驗收標「待驗收」，不當作通過或取消。
 - 仅在符合[项目文档更新边界](#document-updates)时，按 [WORKLOG 模板](WORKLOG.md#template) 追加实际完成与未完成、修改原因、验证方法／结果、版本／证据、失败原因及下一步，并按实际变化更新相应文档，不机械同步 PLAN 和 STATUS。
 - 未通过验收不标已完成；失败、未执行、待人工验收及受阻如实记录。保护当前修改并留下可恢复现场。
 - 密钥、恢复信息、真实家庭正文及私人附件不写入工程或成本日志；人员贡献据实记录。
