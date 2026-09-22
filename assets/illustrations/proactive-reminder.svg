@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="reminder-title reminder-desc">
+  <title id="reminder-title">值得跟進的日常</title>
+  <desc id="reminder-desc">一頁日曆、一個安靜響起的提示鈴及書包，表達按已設定的時間跟進日常。圖中沒有完成勾號，提醒送出不等同已讀或事情完成。</desc>
+  <rect width="640" height="480" fill="#FAF7EF"/>
+  <path d="M123 200C147 131 212 105 279 118C343 89 434 109 483 166C528 219 532 296 477 351C438 390 224 395 165 362C107 330 99 262 123 200Z" fill="#DDE8DB"/>
+  <ellipse cx="318" cy="390" rx="204" ry="17" fill="#DDE8DB"/>
+  <!-- A calendar highlights one occurrence without marking it complete. -->
+  <g id="calendar" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="172" y="139" width="269" height="231" rx="24" fill="#FFFFFF"/>
+    <path d="M172 192V163C172 150 183 139 196 139H417C430 139 441 150 441 163V192Z" fill="#287568"/>
+    <path d="M226 121V154M387 121V154" fill="none" stroke-width="10"/>
+    <path d="M224 176H386" fill="none" stroke="#DDE8DB" stroke-width="5"/>
+    <rect x="274" y="221" width="62" height="58" rx="16" fill="#D99A3D" stroke="none"/>
+    <g fill="#DDE8DB" stroke="none">
+      <circle cx="224" cy="248" r="9"/><circle cx="385" cy="248" r="9"/>
+      <circle cx="224" cy="313" r="9"/><circle cx="305" cy="313" r="9"/><circle cx="385" cy="313" r="9"/>
+    </g>
+    <path d="M294 243H316M294 255H308" fill="none" stroke="#FFFFFF" stroke-width="5"/>
+  </g>
+  <!-- The bell denotes a prompt, with no delivery or completion check. -->
+  <g id="reminder-bell" transform="rotate(12 468 160)" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M454 121C454 104 480 104 480 121" fill="none"/>
+    <path d="M432 160C432 138 445 121 467 121C489 121 502 138 502 160V183L513 197H421L432 183Z" fill="#D99A3D"/>
+    <path d="M453 198C453 217 481 217 481 198" fill="#FAF7EF"/>
+    <path d="M414 144L406 136M520 144L528 136" fill="none" stroke="#D99A3D"/>
+  </g>
+  <!-- School bag anchors the abstract reminder in a family routine. -->
+  <g id="school-bag" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M126 298V289C126 275 152 275 152 289V298" fill="none"/>
+    <rect x="99" y="294" width="86" height="94" rx="20" fill="#C86D52"/>
+    <path d="M100 310C122 327 163 327 184 310" fill="none"/>
+    <path d="M142 320V335" fill="none"/>
+    <rect x="118" y="347" width="47" height="25" rx="7" fill="#FAF7EF"/>
+  </g>
+  <g id="clock" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="451" cy="345" r="43" fill="#FAF7EF"/>
+    <path d="M451 319V346L469 356" fill="none" stroke="#287568"/>
+    <path d="M451 305V311M491 345H485M451 385V379M411 345H417" fill="none" stroke-width="3"/>
+  </g>
+</svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
+  <title id="title">育伴港由原始輸入到報告的可追溯流程</title>
+  <desc id="desc">已確認設計及分階段規劃。原始輸入保留原文與來源。AI 抽取草稿並標示缺項，由使用者核對或更正內容。使用者確認不等於持久保存；必須通過 Server 校驗並取得保存確認。摘要及報告保留來源與版本，可回查原始依據，更正後生成新版本。P1 建立原文與 Server 保存，P2 加入草稿、確認及簡單摘要，P4 完整報告。</desc>
+  <rect width="1440" height="720" fill="#FAF7EF"/>
+  <g id="heading">
+    <text x="56" y="78" fill="#203E3A" font-size="44" font-weight="700">每項整理，都能回到依據</text>
+    <rect x="944" y="38" width="440" height="52" rx="26" fill="#DDE8DB"/>
+    <text x="1164" y="73" text-anchor="middle" fill="#203E3A" font-size="28">已確認設計／分階段規劃</text>
+    <text x="56" y="136" fill="#60756E" font-size="30">從原文到報告，保留每一次確認的意義</text>
+  </g>
+  <g id="trace-connections" fill="none" stroke="#287568" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M296 326H315 M309 319L317 326L309 333"/>
+    <path d="M568 326H587 M581 319L589 326L581 333"/>
+    <path d="M840 326H859 M853 319L861 326L853 333"/>
+    <path d="M1112 326H1131 M1125 319L1133 326L1125 333"/>
+    <path d="M1264 438V608H176V452 M168 460L176 450L184 460" stroke-dasharray="9 9"/>
+  </g>
+  <g id="original-evidence">
+    <rect x="56" y="216" width="240" height="222" rx="24" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <circle cx="106" cy="266" r="26" fill="#DDE8DB"/>
+    <text x="106" y="276" text-anchor="middle" fill="#203E3A" font-size="28" font-weight="700">P1</text>
+    <text x="80" y="337" fill="#203E3A" font-size="34" font-weight="700">原始輸入</text>
+    <text x="80" y="393" fill="#60756E" font-size="28">原文・來源</text>
+  </g>
+  <g id="structured-draft">
+    <rect x="328" y="216" width="240" height="222" rx="24" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <rect x="352" y="240" width="58" height="52" rx="13" fill="#287568"/>
+    <text x="381" y="276" text-anchor="middle" fill="#FFFFFF" font-size="28" font-weight="700">P2</text>
+    <text x="352" y="337" fill="#203E3A" font-size="34" font-weight="700">AI 草稿</text>
+    <text x="352" y="393" fill="#60756E" font-size="28">抽取・標示缺項</text>
+  </g>
+  <g id="content-confirmation">
+    <rect x="600" y="216" width="240" height="222" rx="24" fill="#FFFFFF" stroke="#D99A3D" stroke-width="3"/>
+    <rect x="624" y="240" width="58" height="52" rx="13" fill="#287568"/>
+    <text x="653" y="276" text-anchor="middle" fill="#FFFFFF" font-size="28" font-weight="700">P2</text>
+    <text x="624" y="337" fill="#203E3A" font-size="32" font-weight="700">使用者確認</text>
+    <text x="624" y="393" fill="#60756E" font-size="28">核對／更正內容</text>
+  </g>
+  <g id="persistence-confirmation">
+    <rect x="872" y="216" width="240" height="222" rx="24" fill="#DDE8DB" stroke="#287568" stroke-width="3"/>
+    <circle cx="922" cy="266" r="26" fill="#287568"/>
+    <text x="922" y="276" text-anchor="middle" fill="#FFFFFF" font-size="28" font-weight="700">P1</text>
+    <text x="896" y="337" fill="#203E3A" font-size="32" font-weight="700">Server 確認</text>
+    <text x="896" y="393" fill="#203E3A" font-size="28">校驗後持久保存</text>
+  </g>
+  <g id="derived-summary">
+    <rect x="1144" y="216" width="240" height="222" rx="24" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <rect x="1168" y="240" width="122" height="52" rx="13" fill="#DDE8DB"/>
+    <text x="1229" y="276" text-anchor="middle" fill="#203E3A" font-size="28" font-weight="700">P2／P4</text>
+    <text x="1168" y="337" fill="#203E3A" font-size="32" font-weight="700">摘要／報告</text>
+    <text x="1168" y="393" fill="#60756E" font-size="28">保留來源與版本</text>
+  </g>
+  <g id="distinct-confirmations">
+    <rect x="294" y="476" width="854" height="76" rx="22" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="2"/>
+    <text x="721" y="526" text-anchor="middle" fill="#203E3A" font-size="32" font-weight="700">使用者確認內容 ≠ Server 確認保存</text>
+  </g>
+  <g id="provenance-and-revision">
+    <rect x="380" y="584" width="680" height="48" rx="18" fill="#FAF7EF"/>
+    <text x="720" y="618" text-anchor="middle" fill="#287568" font-size="30">回查來源與版本 · 更正後產生新版本</text>
+    <text x="720" y="681" text-anchor="middle" fill="#203E3A" font-size="30">數字由程式計算，AI 負責表達</text>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+{
+  "name": "yuban-gang-presentation",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "preview": "node scripts/preview.mjs",
+    "export:assets": "node scripts/export-assets.mjs",
+    "catalog": "node scripts/catalog.mjs",
+    "test:rebuild": "node scripts/smoke-rebuild.mjs"
+  }
+}

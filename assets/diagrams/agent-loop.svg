@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
+  <title id="title">育伴港持續 Agent 的受授權工作循環</title>
+  <desc id="desc">已確認設計及分階段規劃。P2 的持續 worker 由事件或到期事項觸發，按需呼叫 AI 理解、補問與草擬下一步，再由程式逐次核對授權、工具與任務終態，才執行和記錄。預先授權範圍內自動執行，超出範圍才請求確認。台帳支持有限跟進，完成、取消或撤權即停止。</desc>
+  <rect width="1440" height="720" fill="#FAF7EF"/>
+  <g id="heading">
+    <text x="56" y="78" fill="#203E3A" font-size="44" font-weight="700">每次主動跟進，都有依據</text>
+    <rect x="944" y="38" width="440" height="52" rx="26" fill="#DDE8DB"/>
+    <text x="1164" y="73" text-anchor="middle" fill="#203E3A" font-size="28">已確認設計／分階段規劃</text>
+    <text x="56" y="136" fill="#60756E" font-size="30">P2 持續 Agent · 事件觸發，必要時推理</text>
+  </g>
+  <g id="flow-connectors" fill="none" stroke="#287568" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M352 326H384 M378 319L386 326L378 333"/>
+    <path d="M696 326H728 M722 319L730 326L722 333"/>
+    <path d="M1040 326H1072 M1066 319L1074 326L1066 333"/>
+    <path d="M1236 426V600H204V442 M196 450L204 440L212 450"/>
+  </g>
+  <g id="event-trigger">
+    <rect x="56" y="222" width="296" height="204" rx="26" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <circle cx="100" cy="268" r="21" fill="#DDE8DB"/>
+    <text x="100" y="278" text-anchor="middle" fill="#203E3A" font-size="28" font-weight="700">1</text>
+    <text x="84" y="331" fill="#203E3A" font-size="36" font-weight="700">事件／到期</text>
+    <text x="84" y="382" fill="#60756E" font-size="30">持續 worker 觸發</text>
+  </g>
+  <g id="ai-draft">
+    <rect x="400" y="222" width="296" height="204" rx="26" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <circle cx="444" cy="268" r="21" fill="#DDE8DB"/>
+    <text x="444" y="278" text-anchor="middle" fill="#203E3A" font-size="28" font-weight="700">2</text>
+    <text x="428" y="331" fill="#203E3A" font-size="36" font-weight="700">AI 理解與補問</text>
+    <text x="428" y="382" fill="#60756E" font-size="30">按需草擬下一步</text>
+  </g>
+  <g id="program-check">
+    <rect x="744" y="222" width="296" height="204" rx="26" fill="#DDE8DB" stroke="#287568" stroke-width="3"/>
+    <rect x="766" y="247" width="44" height="42" rx="10" fill="#287568"/>
+    <text x="788" y="278" text-anchor="middle" fill="#FFFFFF" font-size="28" font-weight="700">3</text>
+    <text x="772" y="331" fill="#203E3A" font-size="36" font-weight="700">程式核對</text>
+    <text x="772" y="382" fill="#203E3A" font-size="30">授權・工具・終態</text>
+  </g>
+  <g id="execute-and-record">
+    <rect x="1088" y="222" width="296" height="204" rx="26" fill="#203E3A"/>
+    <circle cx="1132" cy="268" r="21" fill="#D99A3D"/>
+    <text x="1132" y="278" text-anchor="middle" fill="#203E3A" font-size="28" font-weight="700">4</text>
+    <text x="1116" y="331" fill="#FFFFFF" font-size="36" font-weight="700">執行與記錄</text>
+    <text x="1116" y="382" fill="#FFFFFF" font-size="30">權威寫入／投遞</text>
+  </g>
+  <g id="authorization-rule">
+    <rect x="280" y="468" width="880" height="76" rx="20" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="2"/>
+    <circle cx="320" cy="506" r="8" fill="#D99A3D"/>
+    <text x="346" y="517" fill="#203E3A" font-size="32" font-weight="700">授權內自動執行；超出範圍才確認</text>
+  </g>
+  <g id="follow-up-rule">
+    <rect x="334" y="576" width="776" height="48" rx="18" fill="#FAF7EF"/>
+    <text x="722" y="610" text-anchor="middle" fill="#287568" font-size="30">更新台帳 → 按規則有限跟進</text>
+    <text x="720" y="677" text-anchor="middle" fill="#203E3A" font-size="30" font-weight="700">每次重查當前授權 · 完成／取消／撤權即停</text>
+  </g>
+</svg>

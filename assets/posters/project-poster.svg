@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="297mm" height="420mm" viewBox="0 0 1188 1680" role="img" aria-labelledby="title desc">
+  <title id="title">育伴港：每天的照顧，有人幫你理清脈絡</title>
+  <desc id="desc">A3 直向產品海報。育伴港為香港零至十歲孩子的成年照顧者，整理值得記、值得問、值得跟進的事情。主視覺以港灣環抱家人，呈現記錄、補問與授權跟進；下方提供簡化流程和 P1 至 P4 規劃，其中 P2 為比賽目標。海報屬產品方向及分階段規劃，Demo 連結仍待提供，沒有虛構 QR code。</desc>
+  <rect width="1188" height="1680" fill="#FAF7EF"/>
+  <g font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" fill="#203E3A">
+    <g id="masthead">
+      <g id="brand-symbol" transform="translate(72 63) scale(0.72)" color="#203E3A">
+        <path d="M18 32C12 46 17 64 29 74C40 83 56 83 67 74C79 64 84 46 78 32" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+        <path d="M48 11C50 21 54 25 64 27C54 29 50 33 48 43C46 33 42 29 32 27C42 25 46 21 48 11Z" fill="currentColor"/>
+      </g>
+      <text id="brand-name" x="160" y="120" font-size="56" font-weight="700" letter-spacing="4">育伴港</text>
+      <text x="1116" y="94" text-anchor="end" fill="#287568" font-size="21" font-weight="700">產品方向・分階段規劃</text>
+      <text x="1116" y="127" text-anchor="end" fill="#60756E" font-size="20">為香港家庭而設的 AI 照顧助手</text>
+      <line x1="72" y1="159" x2="1116" y2="159" stroke="#DDE8DB" stroke-width="2"/>
+    </g>
+
+    <g id="core-positioning">
+      <text id="headline" x="72" y="245" font-size="62" font-weight="700">每天的照顧，</text>
+      <text x="72" y="324" font-size="62" font-weight="700">有人幫你理清脈絡。</text>
+      <text id="positioning" x="76" y="384" fill="#60756E" font-size="28">幫家長整理值得記、值得問、值得跟進的事情。</text>
+    </g>
+
+    <g id="harbour-family-visual">
+      <ellipse cx="787" cy="633" rx="300" ry="182" fill="#DDE8DB"/>
+      <path d="M286 551 C404 515 454 614 586 597" fill="none" stroke="#D99A3D" stroke-width="3" stroke-linecap="round"/>
+      <g id="daily-note" transform="rotate(-7 214 528)">
+        <rect x="118" y="468" width="202" height="122" rx="5" fill="#FFFFFF" stroke="#60756E" stroke-width="2"/>
+        <rect x="182" y="458" width="71" height="17" rx="2" fill="#DDE8DB"/>
+        <text x="140" y="512" font-size="26" font-weight="700">一天的小事</text>
+        <line x1="140" y1="538" x2="290" y2="538" stroke="#DDE8DB" stroke-width="5" stroke-linecap="round"/>
+        <line x1="140" y1="561" x2="248" y2="561" stroke="#DDE8DB" stroke-width="5" stroke-linecap="round"/>
+      </g>
+      <g id="question-note" transform="rotate(5 297 685)">
+        <path d="M211 625 H359 Q377 625 377 643 V706 Q377 724 359 724 H257 L233 747 V724 H211 Q193 724 193 706 V643 Q193 625 211 625Z" fill="#FFFFFF" stroke="#60756E" stroke-width="2" stroke-linejoin="round"/>
+        <text x="215" y="666" font-size="25" font-weight="700">值得問的事</text>
+        <text x="215" y="702" fill="#60756E" font-size="23">可以一起理清</text>
+      </g>
+      <g id="caregivers">
+        <circle cx="681" cy="561" r="33" fill="#FAF7EF" stroke="#203E3A" stroke-width="5"/>
+        <path d="M650 555 Q657 516 689 529" fill="none" stroke="#203E3A" stroke-width="7" stroke-linecap="round"/>
+        <rect x="635" y="607" width="98" height="126" rx="44" fill="#287568"/>
+        <circle cx="831" cy="546" r="33" fill="#FAF7EF" stroke="#203E3A" stroke-width="5"/>
+        <path d="M801 545 Q802 509 834 510 Q856 512 863 536" fill="none" stroke="#203E3A" stroke-width="7" stroke-linecap="round"/>
+        <rect x="785" y="592" width="98" height="141" rx="44" fill="#C86D52"/>
+        <path d="M650 642 Q685 701 727 707 M867 632 Q843 699 791 712" fill="none" stroke="#203E3A" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <g id="child">
+        <circle cx="756" cy="637" r="28" fill="#D99A3D"/>
+        <rect x="720" y="676" width="75" height="79" rx="31" fill="#FAF7EF" stroke="#203E3A" stroke-width="4"/>
+        <path d="M738 631 Q753 616 770 631" fill="none" stroke="#203E3A" stroke-width="4" stroke-linecap="round"/>
+      </g>
+      <g id="harbour-embrace" fill="none" stroke-linecap="round">
+        <path d="M516 645 C545 832 984 859 1052 628" stroke="#203E3A" stroke-width="12"/>
+        <path d="M553 682 C613 797 930 815 1012 675" stroke="#287568" stroke-width="5"/>
+        <path d="M714 827 Q765 840 814 830" stroke="#287568" stroke-width="4"/>
+      </g>
+      <g id="guiding-light">
+        <path d="M992 469 1002 493 1026 503 1002 513 992 537 982 513 958 503 982 493Z" fill="#D99A3D"/>
+        <circle cx="1047" cy="461" r="6" fill="#D99A3D"/>
+      </g>
+      <text x="76" y="819" fill="#60756E" font-size="24">先留下，再慢慢說清楚。</text>
+    </g>
+
+    <g id="three-values">
+      <g id="value-record">
+        <text x="72" y="914" fill="#287568" font-size="21" font-weight="700" letter-spacing="2">01</text>
+        <text x="72" y="959" font-size="31" font-weight="700">日常有脈絡</text>
+        <text x="72" y="1004" fill="#60756E" font-size="23">把零散記錄整理起來，</text>
+        <text x="72" y="1040" fill="#60756E" font-size="23">保留重要細節與來源。</text>
+      </g>
+      <g id="value-clarify">
+        <text x="435" y="914" fill="#287568" font-size="21" font-weight="700" letter-spacing="2">02</text>
+        <text x="435" y="959" font-size="31" font-weight="700">疑問有方向</text>
+        <text x="435" y="1004" fill="#60756E" font-size="23">找出缺少的資訊，</text>
+        <text x="435" y="1040" fill="#60756E" font-size="23">協助補問與準備問題。</text>
+      </g>
+      <g id="value-follow-up">
+        <text x="798" y="914" fill="#287568" font-size="21" font-weight="700" letter-spacing="2">03</text>
+        <text x="798" y="959" font-size="31" font-weight="700">跟進有邊界</text>
+        <text x="798" y="1004" fill="#60756E" font-size="23">按預先授權持續處理，</text>
+        <text x="798" y="1040" fill="#60756E" font-size="23">每次執行重查權限。</text>
+      </g>
+      <line x1="72" y1="1085" x2="1116" y2="1085" stroke="#DDE8DB" stroke-width="2"/>
+    </g>
+
+    <g id="simple-process">
+      <text x="72" y="1138" font-size="25" font-weight="700">由日常到下一步</text>
+      <line x1="91" y1="1177" x2="993" y2="1177" stroke="#287568" stroke-width="2"/>
+      <path d="M981 1170 993 1177 981 1184" fill="none" stroke="#287568" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <g fill="#287568">
+        <circle cx="91" cy="1177" r="8"/>
+        <circle cx="385" cy="1177" r="8"/>
+        <circle cx="679" cy="1177" r="8"/>
+        <circle cx="973" cy="1177" r="8"/>
+      </g>
+      <text x="72" y="1224" font-size="27" font-weight="700">記低日常</text>
+      <text x="366" y="1224" font-size="27" font-weight="700">整理與補問</text>
+      <text x="660" y="1224" font-size="27" font-weight="700">確認與授權</text>
+      <text x="954" y="1224" font-size="27" font-weight="700">持續跟進</text>
+      <text x="72" y="1267" fill="#60756E" font-size="22">重要資料由你確認；跟進依照已授權範圍。</text>
+    </g>
+
+    <g id="phase-roadmap">
+      <text x="72" y="1326" font-size="25" font-weight="700">分階段，讓陪伴逐步完整。</text>
+      <rect x="72" y="1351" width="1044" height="120" fill="#DDE8DB"/>
+      <rect x="333" y="1351" width="261" height="120" fill="#D99A3D"/>
+      <line x1="594" y1="1368" x2="594" y2="1454" stroke="#FAF7EF" stroke-width="2"/>
+      <line x1="855" y1="1368" x2="855" y2="1454" stroke="#FAF7EF" stroke-width="2"/>
+      <g id="phase-p1">
+        <text x="90" y="1386" fill="#287568" font-size="22" font-weight="700">P1</text>
+        <text x="90" y="1421" font-size="20" font-weight="700">Web・記錄與聊天</text>
+        <text x="90" y="1451" fill="#60756E" font-size="20">保存・加密備份</text>
+      </g>
+      <g id="phase-p2">
+        <text x="351" y="1386" font-size="22" font-weight="700">P2・比賽目標</text>
+        <text x="351" y="1421" font-size="20" font-weight="700">Web＋持續 Agent</text>
+        <text x="351" y="1451" font-size="20">記憶・任務・授權聯絡</text>
+      </g>
+      <g id="phase-p3">
+        <text x="612" y="1386" fill="#287568" font-size="22" font-weight="700">P3</text>
+        <text x="612" y="1421" font-size="20" font-weight="700">Android・跨端接續</text>
+        <text x="612" y="1451" fill="#60756E" font-size="20">語音／相機・家庭交接</text>
+      </g>
+      <g id="phase-p4">
+        <text x="873" y="1386" fill="#287568" font-size="22" font-weight="700">P4</text>
+        <text x="873" y="1421" font-size="20" font-weight="700">知識／分享／報告</text>
+        <text x="873" y="1451" fill="#60756E" font-size="20">自部署・搬遷・災備</text>
+      </g>
+    </g>
+
+    <g id="closing-and-demo">
+      <text x="72" y="1534" fill="#287568" font-size="33" font-weight="700">讓照顧接得住，</text>
+      <text x="72" y="1580" fill="#287568" font-size="33" font-weight="700">也接得上。</text>
+      <text x="583" y="1538" fill="#60756E" font-size="22">為香港 0–10 歲孩子</text>
+      <text x="583" y="1574" fill="#60756E" font-size="22">及成年照顧者而設。</text>
+      <g id="demo-placeholder">
+        <rect x="928" y="1498" width="188" height="122" fill="none" stroke="#60756E" stroke-width="2"/>
+        <text id="demo-link-label" x="1022" y="1567" text-anchor="middle" fill="#60756E" font-size="18">Demo 連結待提供</text>
+      </g>
+    </g>
+  </g>
+</svg>

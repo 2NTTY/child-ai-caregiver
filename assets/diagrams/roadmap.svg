@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
+  <title id="title">育伴港五階段路線圖</title>
+  <desc id="desc">已確認設計及分階段規劃，不表示當前完成狀態。P1 建立 Web 基礎閉環與加密備份。P2 是比賽目標，交付持續 Server Agent、家庭權限、記憶、知識、照片與真實通知。P3 加入 Android、FCM、語音、相機、跨端與家庭交接。P4 完成知識管理、趨勢、PDF、自選 Server、部署、搬遷及災備。P5 為另行確認的可選增值，不能延後 P1 至 P4 的必要驗收。</desc>
+  <rect width="1440" height="720" fill="#FAF7EF"/>
+  <g id="heading">
+    <text x="56" y="78" fill="#203E3A" font-size="44" font-weight="700">先形成閉環，再逐步擴展</text>
+    <rect x="944" y="38" width="440" height="52" rx="26" fill="#DDE8DB"/>
+    <text x="1164" y="73" text-anchor="middle" fill="#203E3A" font-size="28">已確認設計／分階段規劃</text>
+    <text x="56" y="136" fill="#60756E" font-size="30">按工作包及驗收推進 · P2 為比賽目標</text>
+  </g>
+  <g id="phase-connections" fill="none" stroke="#287568" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M358 398H383 M375 390L385 398L375 406"/>
+    <path d="M700 398H725 M717 390L727 398L717 406"/>
+    <path d="M1042 398H1067 M1059 390L1069 398L1059 406"/>
+  </g>
+  <g id="phase-one">
+    <rect x="56" y="216" width="302" height="348" rx="26" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <circle cx="112" cy="276" r="30" fill="#DDE8DB"/>
+    <text x="112" y="287" text-anchor="middle" fill="#203E3A" font-size="30" font-weight="700">P1</text>
+    <text x="84" y="357" fill="#203E3A" font-size="36" font-weight="700">基礎閉環</text>
+    <text x="84" y="417" fill="#60756E" font-size="28">在線 Web＋登入</text>
+    <text x="84" y="464" fill="#60756E" font-size="28">記錄聊天＋Gemini</text>
+    <text x="84" y="511" fill="#60756E" font-size="28">加密備份・試玩 URL</text>
+  </g>
+  <g id="phase-two">
+    <rect x="398" y="216" width="302" height="348" rx="26" fill="#DDE8DB" stroke="#287568" stroke-width="3"/>
+    <rect x="426" y="246" width="60" height="60" rx="15" fill="#287568"/>
+    <text x="456" y="287" text-anchor="middle" fill="#FFFFFF" font-size="30" font-weight="700">P2</text>
+    <rect x="516" y="251" width="152" height="50" rx="25" fill="#203E3A"/>
+    <text x="592" y="286" text-anchor="middle" fill="#FFFFFF" font-size="28" font-weight="700">比賽目標</text>
+    <text x="426" y="357" fill="#203E3A" font-size="36" font-weight="700">持續 Agent</text>
+    <text x="426" y="417" fill="#203E3A" font-size="28">Web＋持續執行</text>
+    <text x="426" y="464" fill="#203E3A" font-size="28">家庭權限・長期記憶</text>
+    <text x="426" y="511" fill="#203E3A" font-size="28">知識・照片・真通知</text>
+  </g>
+  <g id="phase-three">
+    <rect x="740" y="216" width="302" height="348" rx="26" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <path d="M774 250H822L837 276L822 302H774L759 276Z" fill="#D99A3D"/>
+    <text x="798" y="287" text-anchor="middle" fill="#203E3A" font-size="30" font-weight="700">P3</text>
+    <text x="768" y="357" fill="#203E3A" font-size="36" font-weight="700">Android 擴展</text>
+    <text x="768" y="417" fill="#60756E" font-size="28">在線 App＋FCM</text>
+    <text x="768" y="464" fill="#60756E" font-size="28">粵語・相機</text>
+    <text x="768" y="511" fill="#60756E" font-size="28">跨端・完整家庭交接</text>
+  </g>
+  <g id="phase-four">
+    <rect x="1082" y="216" width="302" height="348" rx="26" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <path d="M1140 242L1174 276L1140 310L1106 276Z" fill="#C86D52"/>
+    <text x="1140" y="287" text-anchor="middle" fill="#FFFFFF" font-size="30" font-weight="700">P4</text>
+    <text x="1110" y="357" fill="#203E3A" font-size="36" font-weight="700">完整交付</text>
+    <text x="1110" y="417" fill="#60756E" font-size="28">知識・趨勢・PDF</text>
+    <text x="1110" y="464" fill="#60756E" font-size="28">自選 Server・部署</text>
+    <text x="1110" y="511" fill="#60756E" font-size="28">搬遷・完整災備</text>
+  </g>
+  <g id="phase-five-boundary">
+    <rect x="56" y="612" width="1328" height="76" rx="24" fill="#DDE8DB"/>
+    <text x="84" y="661" fill="#203E3A" font-size="30" font-weight="700">P5</text>
+    <path d="M148 633V667" fill="none" stroke="#60756E" stroke-width="2"/>
+    <text x="176" y="661" fill="#203E3A" font-size="28">可選增值，另行確認；不延後 P1–P4 必要驗收</text>
+  </g>
+</svg>

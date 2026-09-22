@@ -1,0 +1,103 @@
+{
+  "cover": {
+    "title": "育伴港",
+    "eyebrow": "主動式 AI 照護協作助手",
+    "lead": "陪家長發現\n下一件值得處理的事",
+    "caption": "香港家庭成年照顧者 · 0–10 歲",
+    "notes": "核心主張：不只是回答家長的問題，而是主動發現下一件值得處理的事。這是一份產品方向及分階段設計簡報，實現現況集中於『當前進度』頁。沒有成效、用戶數量或市場領先聲稱。",
+    "refs": ["SPEC.md#section-1-1", "SPEC.md#section-1-2"]
+  },
+  "problem": {
+    "title": "家長未必知道甚麼值得問",
+    "notes": "待驗證的使用者問題：忙碌時不方便逐項填寫、不知道甚麼值得記或問、聊天和照片分散、多位照顧者交接遺漏、AI 失去歷史。這些是需求描述，不是已完成用戶研究或量化成效。",
+    "refs": ["SPEC.md#section-1-1"]
+  },
+  "audience": {
+    "title": "陪伴 0–10 歲的不同成長階段",
+    "ages": [
+      { "range": "0–1", "label": "歲", "detail": "日常照顧記錄" },
+      { "range": "1–3", "label": "歲", "detail": "生活節奏與探索" },
+      { "range": "3–6", "label": "歲", "detail": "成長與家庭協作" },
+      { "range": "6–10", "label": "歲", "detail": "學校生活與交接" }
+    ],
+    "lead": "孩子在成長，\n照顧方式也在改變。",
+    "caption": "家長、家人及獲授權的成年照顧者",
+    "notes": "產品以四個年齡段組織資料及入口。四段的短句只是日常情境例子，不是醫療里程碑或適用所有孩子的發展標準。不可直接把嬰兒規則套用至其他年齡。",
+    "refs": ["SPEC.md#section-1-2"]
+  },
+  "agent": {
+    "title": "主動協助的每一步都有邊界",
+    "notes": "Agent 由事件或到期工作觸發，不持續空轉呼叫模型。理解情境、發現缺項、必要時補問，先确认資料和預先授權範圍。授權內可自動執行，每次仍核對當前權限、任務終態及既有投遞。超出範圍才要求新確認；撤權、取消、完成後停止後續動作。",
+    "refs": ["docs/ARCHITECTURE.md#section-3-5", "docs/ARCHITECTURE.md#section-5-5", "SPEC.md#section-1-6"]
+  },
+  "journey": {
+    "title": "由一句記錄，逐步連起日常照顧",
+    "notes": "展示未來完整旅程，並以階段標籤區分：P1 登入、孩子、文字記錄、Server 保存及原始聊天；P2 歷史記憶、主動發現及授權協作；P3 完整跨端家庭交接；P4 一頁摘要、趨勢及 PDF。沒有真產品截圖或真實家庭資料。",
+    "refs": ["PLAN.md#phases", "SPEC.md#staged-delivery"]
+  },
+  "responsibilities": {
+    "title": "AI 理解情境，程式負責執行控制",
+    "aiTitle": "AI 擅長",
+    "ai": ["理解自然語言", "連結相關上下文", "發現缺項與草擬下一步"],
+    "programTitle": "確定性程式負責",
+    "program": ["權限與授權", "數值、狀態及任務終態", "工具執行與持久保存"],
+    "caption": "模型的建議須經工具及權限校驗，不能直接修改權威資料。",
+    "notes": "不讓模型繞過 Server 的工具校驗和權限檢查。保存、計數、重複檢查、排程及任務狀態由程式處理。外部內容是不可信输入，不能直接變成家庭事實或執行授權。",
+    "refs": ["docs/ARCHITECTURE.md#section-3-1", "docs/ARCHITECTURE.md#section-3-5"]
+  },
+  "architecture": {
+    "title": "資料與 Agent 都以 Server 為中心",
+    "notes": "這是已確認架構設計，非運行系統畫面。Web／Android 為在線客戶端，Server 是唯一業務資料權威，PostgreSQL 保存資料。Better Auth、Gemini 接入、Server worker、Knowledge 及通知 adapter 位於 Server 側。沒有手機 SQLite／瀏覽器 IndexedDB 業務主庫、離線 outbox 或 Client Agent。P4 的 Server 搬遷保持單主。",
+    "refs": ["docs/ARCHITECTURE.md#section-3-1", "docs/DECISIONS.md#adr-008", "PLAN.md#phases"]
+  },
+  "safety": {
+    "title": "每個重要結果，都可以回查",
+    "items": ["重要資料先補問或確認", "原始記錄及官方資料保留來源", "執行前重查當前授權", "Server 未確認，就不顯示成功", "照片不作疾病診斷；不做藥物管理"],
+    "caption": "通知已接受、已送達、已讀及事項完成，是不同狀態。",
+    "notes": "資料確認與持久保存確認不同。AI 草稿須經校驗及必要確認，再由 Server 確認寫入。一般育兒指引與近期資訊分開，引用應支持說法。外部資料不等於政府個人病歷接口，亦不代表政府認可。網絡或 AI 失敗時保留當前輸入，結果未知先查核原操作，不盲目重發。可追溯流程另見 assets/diagrams/traceability.svg。",
+    "refs": ["SPEC.md#section-1-5", "SPEC.md#section-4-7", "SPEC.md#knowledge-freshness", "SPEC.md#ac-server-agent"]
+  },
+  "roadmap": {
+    "title": "先形成閉環，再逐階段完善",
+    "notes": "P1 的門檻包括登入隔離、Server 保存、文字記錄與聊天、真 Gemini、加密及最小備份還原、組員可獨立試玩的 URL。P2 是比賽主要目標：家庭權限、長期記憶、照片、官方知識與近期資訊、主動任務、Web Push、Telegram 及授權 fallback。P3 交付 Android／FCM／語音相機及完整交接。P4 包含自選相容 Server、Windows Docker Compose、配對、完整 Knowledge、分享／趨勢／PDF、搬遷、災備及 rollback。P5 不承接任何未完成必要能力。沒有承諾六週完成。",
+    "refs": ["PLAN.md#phases", "SPEC.md#staged-delivery"]
+  },
+  "status": {
+    "title": "當前進度",
+    "implementedLabel": "已實現",
+    "verifiedLabel": "已有驗證證據",
+    "remainingLabel": "P1 尚待接通與驗收",
+    "notes": "本頁所有進度陳述來自 project-status.json。只反映已合併基線，不自動納入其他 worktree 或尚未合併分支。已確認設計、已實現、已驗證及已完成必須分開。視覺資產完成不代表 P1 完成。",
+    "refs": ["STATUS.md", "PLAN.md#verification", "artifacts/verification/S03_W01_CHECKS.json"]
+  },
+  "demo": {
+    "title": "Demo 流程預留",
+    "caption": "概念流程，非運行截圖；日後按實際驗證結果替換。",
+    "steps": [
+      { "id": "login", "title": "登入", "phase": "P1" },
+      { "id": "child", "title": "建立孩子", "phase": "P1" },
+      { "id": "record", "title": "文字記錄", "phase": "P1" },
+      { "id": "chat", "title": "原始聊天", "phase": "P1" },
+      { "id": "persistence", "title": "重開後核對保存", "phase": "P1" },
+      { "id": "agent", "title": "主動 Agent", "phase": "P2" }
+    ],
+    "notes": "所有空白槽均是明示的 screenshot 預留，不是假冒產品介面。替換截圖須記錄來源基線和真實流程狀態，只使用合成資料。即使有 screenshot，也不能單憑畫面宣稱持久保存或 Agent 實際運行。",
+    "refs": ["PLAN.md#phases", "SPEC.md#section-10-1"]
+  },
+  "growth": {
+    "title": "逐步完善能力，維持清楚的領域邊界",
+    "capabilities": ["長期記憶", "任務與工具", "知識來源", "授權通知"],
+    "lead": "現在只實作 childcare-hk",
+    "body": "育兒知識、prompt 及領域規則分開維護，\n按實際流程建立必要邊界。",
+    "caption": "不預建通用插件平台或第二個領域。",
+    "notes": "這裏說明已確認的設計邊界及未來演進方向，不宣稱共享能力已全部實現。記憶、任务、工具、來源與通知按需要建立，Web／Android 共用業務規則，平台 adapter 保持薄身。未來可調整育兒知識、prompt及規則，但當前只做育伴港，沒有第二主題或動態插件平台。",
+    "refs": ["docs/ARCHITECTURE.md#section-3-1", "PLAN.md#phases"]
+  },
+  "closing": {
+    "title": "育伴港",
+    "lead": "在家長還不知道要問甚麼之前，\n一起發現下一件值得處理的事。",
+    "caption": "值得記 · 值得問 · 值得跟進",
+    "notes": "結語重申產品願景，不宣稱 AI 自動照顧孩子或保證健康。所有能力依五階段驗收落地，實現現況以獨立 status snapshot 為準。",
+    "refs": ["SPEC.md#section-1-1"]
+  }
+}

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
+  <title id="title">育伴港 Server 唯一權威架構</title>
+  <desc id="desc">已確認設計及分階段規劃。P1 Web 及 P3 Android 是在線客戶端，共用 TypeScript 規則和協議。Server 的 Better Auth 身份、權限和共享規則控制 PostgreSQL 權威寫入。Server 側包括 P1 Gemini 入口、P2 Agent worker、P2 至 P4 知識檢索與 P2 至 P3 通知出口。AI 不直接控制資料庫或通知投遞。</desc>
+  <rect width="1440" height="720" fill="#FAF7EF"/>
+  <g id="heading">
+    <text x="56" y="78" fill="#203E3A" font-size="44" font-weight="700">同一 Server，唯一資料權威</text>
+    <rect x="944" y="38" width="440" height="52" rx="26" fill="#DDE8DB"/>
+    <text x="1164" y="73" text-anchor="middle" fill="#203E3A" font-size="28">已確認設計／分階段規劃</text>
+    <text x="56" y="136" fill="#60756E" font-size="30">在線客戶端 · 共享 TypeScript 規則與協議</text>
+  </g>
+  <g id="online-clients">
+    <text x="56" y="223" fill="#203E3A" font-size="32" font-weight="700">在線客戶端</text>
+    <rect x="56" y="254" width="272" height="130" rx="24" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <circle cx="104" cy="300" r="23" fill="#DDE8DB"/>
+    <text x="104" y="310" text-anchor="middle" fill="#203E3A" font-size="28" font-weight="700">P1</text>
+    <text x="146" y="311" fill="#203E3A" font-size="36" font-weight="700">Web</text>
+    <text x="84" y="358" fill="#60756E" font-size="30">瀏覽器在線存取</text>
+    <rect x="56" y="416" width="272" height="130" rx="24" fill="#FFFFFF" stroke="#DDE8DB" stroke-width="3"/>
+    <path d="M85 440H123L134 462L123 484H85L74 462Z" fill="#D99A3D"/>
+    <text x="104" y="472" text-anchor="middle" fill="#203E3A" font-size="28" font-weight="700">P3</text>
+    <text x="146" y="473" fill="#203E3A" font-size="34" font-weight="700">Android</text>
+    <text x="84" y="520" fill="#60756E" font-size="30">App 共用服務</text>
+  </g>
+  <g id="server-boundary">
+    <rect x="404" y="188" width="624" height="416" rx="28" fill="#FFFFFF" stroke="#287568" stroke-width="3"/>
+    <path d="M432 188H1000Q1028 188 1028 216V268H404V216Q404 188 432 188Z" fill="#287568"/>
+    <text x="434" y="239" fill="#FFFFFF" font-size="36" font-weight="700">Server · 唯一業務權威</text>
+    <rect x="432" y="292" width="568" height="64" rx="16" fill="#203E3A"/>
+    <text x="716" y="334" text-anchor="middle" fill="#FFFFFF" font-size="32" font-weight="700">Better Auth・權限・規則</text>
+    <rect x="432" y="382" width="270" height="86" rx="16" fill="#FAF7EF"/>
+    <text x="452" y="418" fill="#203E3A" font-size="30" font-weight="700">Gemini 入口</text>
+    <text x="452" y="451" fill="#60756E" font-size="28">P1 · 理解與草擬</text>
+    <rect x="730" y="382" width="270" height="86" rx="16" fill="#DDE8DB"/>
+    <text x="750" y="418" fill="#203E3A" font-size="30" font-weight="700">Agent／worker</text>
+    <text x="750" y="451" fill="#60756E" font-size="28">P2 · 持續執行</text>
+    <rect x="432" y="494" width="270" height="86" rx="16" fill="#FAF7EF"/>
+    <text x="452" y="530" fill="#203E3A" font-size="30" font-weight="700">知識檢索</text>
+    <text x="452" y="563" fill="#60756E" font-size="28">P2 → P4</text>
+    <rect x="730" y="494" width="270" height="86" rx="16" fill="#DDE8DB"/>
+    <text x="750" y="530" fill="#203E3A" font-size="30" font-weight="700">受控通知出口</text>
+    <text x="750" y="563" fill="#60756E" font-size="28">P2 → P3</text>
+  </g>
+  <g id="authority-and-channels">
+    <path d="M1098 267C1098 248 1162 239 1241 239S1384 248 1384 267V390C1384 409 1320 418 1241 418S1098 409 1098 390Z" fill="#DDE8DB" stroke="#287568" stroke-width="3"/>
+    <path d="M1098 267C1098 286 1162 295 1241 295S1384 286 1384 267" fill="none" stroke="#287568" stroke-width="3"/>
+    <text x="1241" y="338" text-anchor="middle" fill="#203E3A" font-size="33" font-weight="700">PostgreSQL</text>
+    <text x="1241" y="381" text-anchor="middle" fill="#203E3A" font-size="29">P1 起 · 權威資料</text>
+    <rect x="1098" y="462" width="286" height="142" rx="24" fill="#FFFFFF" stroke="#D99A3D" stroke-width="3"/>
+    <text x="1120" y="502" fill="#203E3A" font-size="30" font-weight="700">通知渠道</text>
+    <text x="1120" y="544" fill="#60756E" font-size="28">P2 Push／Telegram</text>
+    <text x="1120" y="582" fill="#60756E" font-size="28">P3 FCM</text>
+  </g>
+  <g id="controlled-connections" fill="none" stroke="#287568" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M328 324H416 M408 316L418 324L408 332"/>
+    <path d="M328 480H368V324"/>
+    <path d="M1000 324H1082 M1074 316L1084 324L1074 332"/>
+    <path d="M1000 537H1082 M1074 529L1084 537L1074 545"/>
+  </g>
+  <g id="execution-boundary">
+    <rect x="56" y="640" width="1328" height="56" rx="18" fill="#DDE8DB"/>
+    <text x="720" y="678" text-anchor="middle" fill="#203E3A" font-size="30" font-weight="700">AI 理解與草擬；程式核對權限、工具、狀態與保存</text>
+  </g>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="offline-title offline-desc">
+  <title id="offline-title">暫時未能連線</title>
+  <desc id="offline-desc">左邊裝置保留仍在編輯的文字，右邊是 Server；兩端插頭清楚分開，並有劃線的無線訊號，表示目前沒有連線，不能據此聲稱內容已保存。</desc>
+  <rect width="640" height="480" fill="#FAF7EF"/>
+  <path d="M96 210C115 149 174 126 231 137C285 103 368 110 410 147C483 129 542 186 540 255C536 333 474 375 373 377H207C124 371 76 300 96 210Z" fill="#DDE8DB"/>
+  <ellipse cx="313" cy="390" rx="220" ry="17" fill="#DDE8DB"/>
+  <!-- The draft remains on the device; there is no saved badge. -->
+  <g id="local-draft" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="111" y="163" width="161" height="211" rx="23" fill="#FAF7EF"/>
+    <rect x="125" y="181" width="133" height="164" rx="10" fill="#FFFFFF"/>
+    <path d="M164 163H219M176 359H207" fill="none"/>
+    <path d="M148 219H235M148 242H227M148 265H216M148 288H192" fill="none" stroke="#60756E" stroke-width="5"/>
+    <path d="M203 288V299" fill="none" stroke="#D99A3D" stroke-width="4"/>
+  </g>
+  <!-- A deliberately separated physical connection makes offline explicit. -->
+  <g id="disconnected-link" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M272 311H285C293 311 299 317 299 325V337" fill="none" stroke="#287568" stroke-width="8"/>
+    <path d="M421 312H405C396 312 390 318 390 327V337" fill="none" stroke="#287568" stroke-width="8"/>
+    <path d="M287 340H319V367H296C290 367 287 363 287 357Z" fill="#FFFFFF"/>
+    <path d="M372 340H403V357C403 363 399 367 394 367H372Z" fill="#FFFFFF"/>
+    <path d="M319 346H326M319 361H326M365 346H372M365 361H372" fill="none"/>
+    <path d="M345 324V315M343 384V392" fill="none" stroke="#D99A3D" stroke-width="4"/>
+  </g>
+  <g id="server" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="421" y="215" width="111" height="159" rx="19" fill="#FAF7EF"/>
+    <rect x="435" y="232" width="83" height="43" rx="9" fill="#FFFFFF"/>
+    <rect x="435" y="286" width="83" height="43" rx="9" fill="#FFFFFF"/>
+    <path d="M451 250H478M451 307H478M447 352H506" fill="none" stroke="#60756E" stroke-width="4"/>
+    <circle cx="502" cy="252" r="4" fill="#60756E" stroke="none"/>
+    <circle cx="502" cy="308" r="4" fill="#60756E" stroke="none"/>
+  </g>
+  <!-- Signal slash is supplemental; the plug gap also carries the meaning. -->
+  <g id="no-signal" fill="none" stroke-linecap="round">
+    <path d="M294 161C322 135 364 135 392 161M310 181C329 163 357 163 376 181M327 200C336 192 350 192 359 200" stroke="#60756E" stroke-width="5"/>
+    <circle cx="343" cy="216" r="5" fill="#60756E"/>
+    <path d="M302 135L385 219" stroke="#FAF7EF" stroke-width="13"/>
+    <path d="M302 135L385 219" stroke="#C86D52" stroke-width="5"/>
+  </g>
+</svg>

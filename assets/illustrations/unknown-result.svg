@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="unknown-title unknown-desc">
+  <title id="unknown-title">尚未確認結果</title>
+  <desc id="unknown-desc">由裝置送往 Server 的路徑是實線；回傳路徑在問號旁中斷，表示請求可能已送出，但尚未取得確定結果。這與未連線不同，不表示失敗、成功或可以盲目重送。</desc>
+  <rect width="640" height="480" fill="#FAF7EF"/>
+  <path d="M105 227C104 161 165 108 241 120C307 93 391 114 433 150C498 147 542 202 532 268C521 344 452 379 352 379H208C144 372 107 311 105 227Z" fill="#DDE8DB"/>
+  <ellipse cx="314" cy="390" rx="218" ry="17" fill="#DDE8DB"/>
+  <!-- A sent request is visible and does not rely on a connection error icon. -->
+  <g id="request-path" fill="none" stroke="#287568" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M207 180V163C207 148 218 137 233 137H429C444 137 455 148 455 163V190"/>
+    <path d="M443 178L455 190L467 178"/>
+  </g>
+  <g id="device" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="118" y="189" width="163" height="193" rx="23" fill="#FAF7EF"/>
+    <rect x="132" y="206" width="135" height="145" rx="10" fill="#FFFFFF"/>
+    <path d="M172 367H226" fill="none"/>
+    <path d="M154 235H244M154 259H235M154 283H219" fill="none" stroke="#60756E" stroke-width="5"/>
+    <path d="M180 318H222M211 307L222 318L211 329" fill="none" stroke="#287568" stroke-width="5"/>
+  </g>
+  <g id="server" stroke="#203E3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="410" y="198" width="113" height="148" rx="19" fill="#FAF7EF"/>
+    <rect x="424" y="215" width="85" height="42" rx="9" fill="#FFFFFF"/>
+    <rect x="424" y="269" width="85" height="42" rx="9" fill="#FFFFFF"/>
+    <path d="M438 236H470M438 290H470M437 329H495" fill="none" stroke="#60756E" stroke-width="4"/>
+    <circle cx="492" cy="236" r="4" fill="#D99A3D" stroke="none"/>
+    <circle cx="492" cy="291" r="4" fill="#D99A3D" stroke="none"/>
+  </g>
+  <!-- The dotted return stops at a question, not at a success or retry icon. -->
+  <path id="unconfirmed-return" d="M466 350V360C466 373 456 383 443 383H386" fill="none" stroke="#D99A3D" stroke-width="6" stroke-linecap="round" stroke-dasharray="7 10"/>
+  <g id="unknown-result" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="292" y="305" width="83" height="88" rx="25" fill="#FAF7EF" stroke="#D99A3D" stroke-width="5"/>
+    <path d="M319 335C319 324 327 320 335 320C345 320 352 326 352 335C352 348 334 348 334 360" fill="none" stroke="#203E3A" stroke-width="6"/>
+    <circle cx="334" cy="375" r="3.5" fill="#203E3A"/>
+  </g>
+  <circle cx="323" cy="137" r="7" fill="#D99A3D" stroke="#FAF7EF" stroke-width="5"/>
+  <path d="M329 228H358M339 242H368" fill="none" stroke="#DDE8DB" stroke-width="6" stroke-linecap="round"/>
+</svg>
