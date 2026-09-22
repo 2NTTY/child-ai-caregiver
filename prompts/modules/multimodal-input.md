@@ -1,7 +1,7 @@
 # 多模態輸入
 
 - ID：`module.multimodal-input`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：處理照片、語音轉寫、分享內容或附件提取結果，形成可追溯候選時使用。
 - 依據：[輸入邊界](../../SPEC.md#section-1-5)、[附件在線確認](../../docs/API.md#sync-contract)、[不可信輸入邊界](../../docs/ARCHITECTURE.md#section-5-5)
 - 輸入：Server 已實際讀取的附件或轉寫內容、來源、hash／處理狀態、可見範圍及辨識不確定性。

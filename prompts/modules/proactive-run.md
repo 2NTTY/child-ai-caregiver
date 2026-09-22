@@ -1,7 +1,7 @@
 # 主動執行判斷
 
 - ID：`module.proactive-run`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：Server 因事件或到期工作請求有限推理，以判斷是否需要草擬提示、補問、任務動作或聯絡建議時使用。
 - 依據：[主節點與任務執行](../../docs/ARCHITECTURE.md#section-3-5)、[Server Agent 驗收](../../SPEC.md#ac-server-agent)、[通知契約](../../docs/API.md#notification-contract)
 - 輸入：Server 提供的觸發原因、任務／事件現況、當前授權摘要、已用跟進額度、可用能力及相關證據。

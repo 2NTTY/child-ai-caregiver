@@ -5,7 +5,8 @@
 ## 材料
 
 - [多輪對話](conversations.md)：人機對話、工具結果與收尾的合成例子。
-- [場景矩陣](cases.json)：50 個合成場景，記錄觸發條件、預期／禁止行為及權威 REQ／AC。
+- [場景矩陣](cases.json)：52 個合成場景，記錄觸發條件、預期／禁止行為及權威 REQ／AC。
+- [P1 最小入口](../p1/README.md)：可獨立採用的文字 prompt，另附 9 個靜態情景；不依賴完整包。
 - [契約範例](../contracts/examples.json)：12 個可解析的輸入／輸出 fixture，全部標記 synthetic。
 - [需求映射](traceability.md)：現行產品條款與模組、案例、後續驗收工作包。
 - [靜態檢查](check.ps1)：只讀本包及必要權威文件，輸出 JSON 報告；不呼叫模型、網絡、產品服務或更改檔案。

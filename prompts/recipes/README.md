@@ -8,7 +8,10 @@
 2. 依序載入 `baseModules`、`domain.requiredModules`、recipe 的 `additionalModules`；保留首次出現的位置並去重，核對所有 `requires` 都在集合中。缺檔、版本不符或不相容時，不靜默移除安全模組。
 3. 只取每檔唯一 `prompt:begin`／`prompt:end` 之間的正文；維護說明、合成例子及 repo 文件不整份送入模型。領域／任務模組不能覆蓋共用安全限制。
 4. 另外注入可信 runtime metadata 與有來源的資料內容。沒有啟用的工具不提供宣告；recipe 的階段不是 capability 開關。
-5. 執行端處理輸出校驗、確認、工具及有限循環。多個模組是同一請求的指令組合，不等於依序作多次模型調用。
+5. 所選模式為 `structured` 時，除了 recipe 的 `requiredInputs`，必須提供 `outputContract` 及該次可用的 schema；manifest 的 `outputModeRequirements` 記錄此共同條件。缺 schema 時不發起結構化請求，由應用明確降級至支援的文字模式或回報錯誤；不讓模型猜格式。純文字模式無須 schema。
+6. 執行端處理輸出校驗、確認、工具及有限循環。多個模組是同一請求的指令組合，不等於依序作多次模型調用。
+
+P1 尚不需要組裝時可改用 [獨立文字入口](../p1/README.md)，不用同時載入本表的 `p1-chat` 配方。
 
 ## 八個配方
 

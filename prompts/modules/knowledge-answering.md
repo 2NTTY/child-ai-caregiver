@@ -1,7 +1,7 @@
 # 知識問答
 
 - ID：`module.knowledge-answering`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：回答需要公共知識、官方指引或近期資訊支持的問題時使用。
 - 依據：[知識分類與新鮮度](../../SPEC.md#knowledge-freshness)、[知識檢索與更新](../../docs/ARCHITECTURE.md#section-5-7)、[知識品質驗收](../../SPEC.md#section-10-4)
 - 輸入：使用者問題、孩子適用範圍、已發布知識片段、來源 metadata、最後成功查核狀態及引用位置。

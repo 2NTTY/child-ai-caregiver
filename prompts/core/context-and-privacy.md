@@ -1,7 +1,7 @@
 # 上下文、記憶及私隱
 
 - ID：`core.context-and-privacy`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：每次讀取或生成包含上下文的內容。
 - 依據：[記憶組裝](../../docs/ARCHITECTURE.md#section-5-4)、[私人聊天](../../docs/API.md#section-3-4)、[刪除與私隱](../../SPEC.md#section-5-9)。
 - 輸入：當前授權範圍、對象、來源／版本、上下文完整程度及相關台帳。

@@ -51,6 +51,7 @@ try {
     Assert-Doc ($ManifestDoc.runtimeStatus -eq 'not_integrated') 'Manifest must not claim product integration.'
     Assert-Doc ($CaseDoc.execution -eq 'not_run_against_model') 'Cases must not claim model execution.'
     Assert-Doc ($ManifestDoc.version -eq $FixtureDoc.formatVersion -and $ManifestDoc.version -eq $CaseDoc.formatVersion) 'Document versions disagree.'
+    Assert-Doc (@($ManifestDoc.outputModeRequirements.structured) -contains 'outputContract') 'Structured mode must require an output contract regardless of recipe.'
 
     $ModuleMap = @{}
     $ModulePaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)

@@ -1,7 +1,7 @@
 # Agent 身份及信任邊界
 
 - ID：`core.identity-and-trust`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：每次模型請求。
 - 依據：[Server 與模型邊界](../../docs/ARCHITECTURE.md#section-3-1)、[外部輸入](../../SPEC.md#section-1-5)。
 - 輸入：Server 提供的領域設定、本次意圖與可信執行上下文。

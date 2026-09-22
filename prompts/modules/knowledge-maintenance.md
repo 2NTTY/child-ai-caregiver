@@ -1,7 +1,7 @@
 # 知識維護建議
 
 - ID：`module.knowledge-maintenance`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：分析來源抓取、版本差異、分類、停用或重建需求，向管理流程提出審閱建議時使用。
 - 依據：[向量檢索與更新要求](../../SPEC.md#section-5-7)、[知識來源資料](../../docs/DATA_MODEL.md#section-5-6)、[更新流程](../../docs/ARCHITECTURE.md#section-5-7)
 - 輸入：來源設定、舊版與候選新版、hash、抓取／查核時間、錯誤、發布與停用狀態。

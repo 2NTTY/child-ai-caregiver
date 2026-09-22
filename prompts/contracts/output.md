@@ -1,6 +1,6 @@
 # 輸出契約與結構化例子
 
-Prompt Pack 版本 `0.1.0`。本文件固定本包範例的語義；**不是產品 HTTP response 或資料庫 schema**。正式 ModelGateway 按所選 Gemini 能力提供精簡 response schema／function declarations，並在 Server 校驗輸出。
+Prompt Pack 版本 `0.1.1`。本文件固定本包範例的語義；**不是產品 HTTP response 或資料庫 schema**。正式 ModelGateway 按所選 Gemini 能力提供精簡 response schema／function declarations，並在 Server 校驗輸出。
 
 ## 三種輸出通道
 
@@ -10,7 +10,7 @@ Prompt Pack 版本 `0.1.0`。本文件固定本包範例的語義；**不是產�
 | 原生工具循環 | provider 工具請求 → Server 檢查／執行 → 實際 function response | 必要的真實進度與最終自然回覆，不展示工具協定 |
 | 結構化任務結果 | 指定 schema 的 `AgentResult` 語義 | 互動時只呈現已校驗的 `replyText`；背景可以不呈現 |
 
-不得以從自然語言解析出「已完成」取代工具狀態。不得把一段文字加上 JSON 印在聊天中當作 function call。配方明確指定模式；模型不能自行切換到不存在的結構。
+不得以從自然語言解析出「已完成」取代工具狀態。不得把一段文字加上 JSON 印在聊天中當作 function call。配方明確指定模式；模型不能自行切換到不存在的結構。任何配方選擇 `structured` 時，`outputContract` 與相應 schema 都是條件必需輸入；缺少時由應用在請求前選擇受支援的文字降級或回報錯誤，不能要求模型猜測。純文字模式不需 schema。
 
 ## AgentResult 語義
 
@@ -18,7 +18,7 @@ Prompt Pack 版本 `0.1.0`。本文件固定本包範例的語義；**不是產�
 
 | 欄位 | 語義 |
 |---|---|
-| `contractVersion` | 範例語義版本 `0.1.0`；產品只接受當次宣告的版本 |
+| `contractVersion` | 範例語義版本 `0.1.1`；產品只接受當次宣告的版本 |
 | `decision` | `reply`、`clarify`、`propose`、`no_action`、`blocked`、`reconcile`；只是本次模型結果，不是任務持久狀態 |
 | `replyText` | 給當前互動者的自然文字；不是對第三人的投遞指令，也不能提前宣稱候選已保存 |
 | `candidates` | 待核對的事件／事實／記憶／任務／報告候選；包含種類、對象與來源參照、擬議內容及缺項，不包含模型偽造的確認人／保存結果 |

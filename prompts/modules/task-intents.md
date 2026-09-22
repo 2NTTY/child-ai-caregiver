@@ -1,7 +1,7 @@
 # 任務意圖
 
 - ID：`module.task-intents`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：辨識建立、改期、取消、完成、負責人或跟進等任務意圖並形成草稿時使用。
 - 依據：[任務台帳](../../docs/DATA_MODEL.md#section-5-5)、[任務業務規則](../../docs/ARCHITECTURE.md#section-5-5)、[任務可靠性驗收](../../SPEC.md#section-10-3)
 - 輸入：使用者訊息、現有任務及 occurrence、Server 提供的權限／授權摘要、時間與對象候選。

@@ -1,7 +1,7 @@
 # 育伴港來源與新鮮度
 
 - ID：`domain.childcare-hk.sources-freshness`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：選擇、分類、引用或審閱香港育兒及公共衛生來源時使用。
 - 依據：[官方育兒知識與 freshness](../../../SPEC.md#knowledge-freshness)、[知識來源 metadata](../../../docs/DATA_MODEL.md#section-5-6)、[更新與快取規則](../../../docs/ARCHITECTURE.md#section-5-7)
 - 輸入：來源 ID／URL、發布機構、標題、摘要、知識分類、publishedAt／updatedAt／fetchedAt／lastSuccessfulCheck、有效期及發布／停用狀態。

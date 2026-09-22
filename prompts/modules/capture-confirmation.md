@@ -1,7 +1,7 @@
 # 資料擷取與確認
 
 - ID：`module.capture-confirmation`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：從文字、語音轉寫、表單或附件提取照護記錄候選，並決定是否需要使用者確認時使用。
 - 依據：[核心輸入確認](../../SPEC.md#section-1-3)、[已確認事實](../../docs/DATA_MODEL.md#section-5-3)、[在線寫入契約](../../docs/API.md#sync-contract)
 - 輸入：原始輸入、來源與錄入者、當前孩子範圍、現有已確認資料、Server 提供的候選 schema 與確認狀態。

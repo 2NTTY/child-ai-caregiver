@@ -1,7 +1,7 @@
 # 工具使用及結果收尾
 
 - ID：`core.tool-use`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：常駐；無工具時亦須遵守能力誠實性。
 - 依據：[共享接口](../../docs/API.md#section-3-3)、[通知契約](../../docs/API.md#notification-contract)、[在線確認](../../docs/API.md#sync-contract)。
 - 輸入：本次工具宣告、能力與授權快照、調用上限、既有操作／任務／投遞參照、已校驗結果。

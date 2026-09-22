@@ -1,7 +1,7 @@
 # 長期記憶維護
 
 - ID：`module.memory-maintenance`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：增量整理聊天摘要、已確認事實、話題狀態及任務記憶，或重建模型上下文時使用。
 - 依據：[長期記憶資料規則](../../docs/DATA_MODEL.md#section-5-4)、[長期記憶組合](../../docs/ARCHITECTURE.md#section-5-4)、[記憶與任務驗收](../../SPEC.md#section-10-3)
 - 輸入：Server 提供的已授權原始消息、前一摘要與覆蓋游標、已確認事實、話題及任務現況。

@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "not_integrated",
@@ -27,13 +27,13 @@
     {
       "id": "core.identity-and-trust",
       "path": "core/identity-and-trust.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": []
     },
     {
       "id": "core.conversation",
       "path": "core/conversation.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -41,7 +41,7 @@
     {
       "id": "core.context-and-privacy",
       "path": "core/context-and-privacy.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -49,7 +49,7 @@
     {
       "id": "core.tool-use",
       "path": "core/tool-use.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -57,7 +57,7 @@
     {
       "id": "core.output",
       "path": "core/output.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -65,7 +65,7 @@
     {
       "id": "module.chat",
       "path": "modules/chat.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -76,7 +76,7 @@
     {
       "id": "module.capture-confirmation",
       "path": "modules/capture-confirmation.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -86,7 +86,7 @@
     {
       "id": "module.memory-maintenance",
       "path": "modules/memory-maintenance.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -96,7 +96,7 @@
     {
       "id": "module.knowledge-answering",
       "path": "modules/knowledge-answering.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -106,7 +106,7 @@
     {
       "id": "module.knowledge-maintenance",
       "path": "modules/knowledge-maintenance.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -116,7 +116,7 @@
     {
       "id": "module.multimodal-input",
       "path": "modules/multimodal-input.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -126,7 +126,7 @@
     {
       "id": "module.task-intents",
       "path": "modules/task-intents.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -136,7 +136,7 @@
     {
       "id": "module.proactive-run",
       "path": "modules/proactive-run.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -146,7 +146,7 @@
     {
       "id": "module.authorized-contact",
       "path": "modules/authorized-contact.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -157,7 +157,7 @@
     {
       "id": "module.summary-report",
       "path": "modules/summary-report.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -168,7 +168,7 @@
     {
       "id": "domain.childcare-hk.profile",
       "path": "domains/childcare-hk/profile.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -176,7 +176,7 @@
     {
       "id": "domain.childcare-hk.safety",
       "path": "domains/childcare-hk/safety.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.identity-and-trust",
         "domain.childcare-hk.profile"
@@ -185,7 +185,7 @@
     {
       "id": "domain.childcare-hk.sources-freshness",
       "path": "domains/childcare-hk/sources-freshness.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.identity-and-trust",
         "domain.childcare-hk.profile"
@@ -194,7 +194,7 @@
     {
       "id": "domain.childcare-hk.care-workflows",
       "path": "domains/childcare-hk/care-workflows.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.identity-and-trust",
         "domain.childcare-hk.profile"
@@ -400,5 +400,10 @@
       ],
       "missingCapability": "用可見事件生成有界正文，缺統計不計總數，未生成PDF不稱可下載。"
     }
-  ]
+  ],
+  "outputModeRequirements": {
+    "structured": [
+      "outputContract"
+    ]
+  }
 }

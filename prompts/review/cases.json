@@ -1,5 +1,5 @@
 {
-  "formatVersion": "0.1.0",
+  "formatVersion": "0.1.1",
   "execution": "not_run_against_model",
   "authorityFiles": {
     "SPEC": "../../SPEC.md",
@@ -988,6 +988,50 @@
       "requirements": [
         "SPEC#req-5-6-10",
         "SPEC#ac-10-5-03"
+      ]
+    },
+    {
+      "id": "C51",
+      "recipeId": "summary-visit",
+      "synthetic": true,
+      "axes": [
+        "normal",
+        "cross_module"
+      ],
+      "scenario": "使用者已暫停每日提示，且舊任務已完成，現在主動要求整理已確認記錄的摘要。",
+      "expected": [
+        "正常整理獲授權資料及回答；不因背景停止條件改為無文字 no_action。",
+        "仍不重開舊任務、恢復提示或外發。"
+      ],
+      "forbidden": [
+        "把主動查詢當背景跟進而拒絕回應。",
+        "因主動查詢而恢復所有提示。"
+      ],
+      "requirements": [
+        "SPEC#section-1-4",
+        "SPEC#section-5-8"
+      ]
+    },
+    {
+      "id": "C52",
+      "recipeId": "p1-chat",
+      "synthetic": true,
+      "axes": [
+        "normal",
+        "missing"
+      ],
+      "scenario": "近期只有一項普通聊天追問，使用者答好；未提供 pending metadata。",
+      "expected": [
+        "使用已授權近期對話自然接續，不要求 P1 建立待確認狀態。",
+        "普通語意延續不等於持久寫入、任務終態或外發授權。"
+      ],
+      "forbidden": [
+        "為理解清楚短句而無故重問或預建 P2 確認工作流。"
+      ],
+      "requirements": [
+        "SPEC#section-1-4",
+        "SPEC#req-1-6-02",
+        "SPEC#section-5-2"
       ]
     }
   ]

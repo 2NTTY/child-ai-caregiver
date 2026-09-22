@@ -1,5 +1,5 @@
 {
-  "formatVersion": "0.1.0",
+  "formatVersion": "0.1.1",
   "purpose": "Synthetic contract examples; authored expectations, not model execution results. Provider request schemas are not implemented here.",
   "fixtures": [
     {
@@ -86,14 +86,14 @@
         },
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "clarify",
           "replyText": "記作阿樂剛才飲奶約 120ml，對嗎？",
           "candidates": [
@@ -190,14 +190,14 @@
         },
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "reply",
           "replyText": "已記低阿樂剛才飲奶約 120ml，保留了約數。",
           "candidates": [],
@@ -261,14 +261,14 @@
         },
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "blocked",
           "replyText": "這次未能保存記錄，目前仍未記低。你可保留畫面上的原文，連線恢復後再重試。",
           "candidates": [],
@@ -334,14 +334,14 @@
         },
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "reconcile",
           "replyText": "目前未能確認是否已保存。要先核對剛才那次提交的結果，暫時不要再新增同一筆。",
           "candidates": [],
@@ -417,14 +417,14 @@
         },
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "clarify",
           "replyText": "你剛才更正為約 100ml，我按這個數量記錄，對嗎？",
           "candidates": [],
@@ -484,14 +484,14 @@
         },
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "no_action",
           "replyText": null,
           "candidates": [],
@@ -536,7 +536,7 @@
           "operations": [
             {
               "operationRef": "example-only.contact.request",
-              "contractVersion": "0.1.0",
+              "contractVersion": "0.1.1",
               "available": true,
               "effect": "external_delivery",
               "authorizationVersion": 3
@@ -566,14 +566,14 @@
         },
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "propose",
           "replyText": null,
           "candidates": [],
@@ -641,14 +641,14 @@
         },
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "reconcile",
           "replyText": null,
           "candidates": [],
@@ -769,14 +769,14 @@
         },
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "propose",
           "replyText": "便條可整理為「明天帶水樽」。目前只是草稿，未建立提醒。",
           "candidates": [
@@ -853,14 +853,14 @@
         ],
         "outputContract": {
           "mode": "structured",
-          "version": "0.1.0",
+          "version": "0.1.1",
           "semanticShape": "AgentResult; provider schema is supplied by the future application."
         }
       },
       "expected": {
         "mode": "structured",
         "result": {
-          "contractVersion": "0.1.0",
+          "contractVersion": "0.1.1",
           "decision": "reply",
           "replyText": "目前只有部分日期的記錄，可以先整理已確認的外出事項。這份摘要尚未由你核對，也未有可核實的全週統計。",
           "candidates": [],

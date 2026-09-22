@@ -1,7 +1,7 @@
 # 已授權聯絡
 
 - ID：`module.authorized-contact`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - 使用條件：為預先授權的主動聯絡、有限跟進及 fallback 決定內容與自然語言收尾時使用。
 - 依據：[任務授權與渠道投遞契約](../../docs/API.md#notification-contract)、[任務與投遞模型](../../docs/DATA_MODEL.md#notification-model)、[Server 與授權外發驗收](../../SPEC.md#ac-server-agent)
 - 輸入：Server 已核對的當前授權摘要、任務 occurrence、收件人／渠道綁定、內容範圍、投遞台帳、回應期限及跟進額度。

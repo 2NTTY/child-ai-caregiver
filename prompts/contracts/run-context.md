@@ -1,6 +1,6 @@
 # 執行上下文注入契約
 
-本文件供未來 Server／ModelGateway 實作者使用，**不是要整份送給模型的 prompt**。以下名稱是 Prompt Pack `0.1.0` 的語義欄位；不是已存在的 TypeScript type、HTTP 封裝或資料表。業務欄位仍以 [DATA_MODEL](../../docs/DATA_MODEL.md) 為準。
+本文件供未來 Server／ModelGateway 實作者使用，**不是要整份送給模型的 prompt**。以下名稱是 Prompt Pack `0.1.1` 的語義欄位；不是已存在的 TypeScript type、HTTP 封裝或資料表。業務欄位仍以 [DATA_MODEL](../../docs/DATA_MODEL.md) 為準。
 
 ## 注入分層
 
