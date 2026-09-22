@@ -358,3 +358,39 @@
 - 未執行產品實作、依賴安裝、Gemini／真服務／外部訊息／部署／真機／integration／E2E 或深度回歸；文件驗收不代表產品完成。本輪未啟動 Luna／Sol 實例，角色檔是預設，實際權限仍須核對 runtime 覆寫。
 - 沒有新增歸檔項目或移動原檔，因此索引不需變更；未改寫歷史資料。未查詢用量，當前及周餘額未知。
 - DOC-R02 文件與配置驗收完成；S00 已完成，全部產品包仍未開始。下一步 review／合併文件分支，之後才按 S01-W01 前置另行開始產品工作。
+
+<a id="log-20260922-101"></a>
+## LOG-20260922-101
+
+- Recorded At：2026-09-22（Asia/Hong_Kong）
+- Work Date：2026-09-22
+- Step / Package：S01／S01-W01，P1；前置 S00、DOC-R02，已於 PR #6 合併至 89d864a。
+- Executor：主代理 Astra Ultra；本輪依使用者明確例外啟動兩名 Astra Max 有界唯讀研究子代理，沒有子孫代理。session turn_context 已核對實際 model／effort；sandbox 為 workspace-write，唯讀行為不冒稱 OS 唯讀。
+- Goal：核查 coo 及最小縱向流程必要候選，固定版本／許可及實際採用邊界。
+- Human Verification：未進行人工產品驗收。使用者表示本輪額度充足，未提供 Usage 原值；餘額仍未知，沒有查詢或推算。
+
+### Actual Work
+- 核對 master 89d864a 及已合併 PR #6，修正 STATUS 的過時待合併快照；從最新 master 在隔離 worktree 建立本包分支。
+- 固定 coo 版本，查到缺 LICENSE 正文、缺被引用 models，及 AWS／Twilio／身份差異；按 ADR-REUSE-P1 不採用其程式碼、prompt 或部署檔，沒有反覆啟動除錯。
+- 固定 Expo SDK 57 的官方候選組合、許可與 registry integrity；Better Auth／PostgreSQL／pg 僅作 S06 候選。保留 Baby Buddy 等研究，不複製未核實程式碼。生產程式碼實際採用清單為空。
+- Agent Prompt Pack 由另一獨立任務負責，本包沒有重複實現或引用未合併內容。
+
+### Changes
+- docs/REUSE_AUDIT.md 保存有界調查；docs/DECISIONS.md 記採用決定並結束首輪 D-REUSE-001；PLAN／STATUS／README 按實際工作包變化更新。
+- [EV-S01-W01](artifacts/verification/S01_W01_CHECKS.json) 保存固定候選來源、版本／integrity、runtime 與輕量核查結果；舊研究、歸檔與 WORKLOG 前綴保留。
+
+### Verification
+- Requirement / Acceptance：PLAN S01／S01-W01；SPEC AC-10-8-07 的復用可追溯部分，並非整體交付 AC 已通過。
+- Method：官方 GitHub 固定 commit／tree／LICENSE 與 npm 精確版本 GET；本地連結、47 包數、diff 及 WORKLOG 原位元組前綴核對。
+- Environment / Revision：Windows、Node 24.11.0／npm 11.6.1；基線 89d864a；完整範圍及結果見 EV-S01-W01。
+- Result：來源及範圍核查通過；沒有將許可缺失候選列為可採用。
+
+### Limitations / Blockers
+- 沒有安裝／運行候選或產品、模型請求、真服務、部署、integration／E2E／真機測試。依賴完整 lockfile 與安裝後 LICENSE／notices 留 S02；登入及持久化留 S06-W03。
+- 本輪只讀研究曾遇 web cache miss，改用官方 GitHub API；不是產品執行失敗。沒有程式碼交付物或試玩 URL。
+
+### Plan Update
+- S01-W01 的有界核查完成，S01 結案；review／合併通過後 S02-W01 才 Ready，其他工作包仍受既定依賴約束。
+
+### Next Action
+- 完成本包 review／PR／合併，再從最新 master 建立 S02-W01 獨立分支／worktree，開始最小共享工程。

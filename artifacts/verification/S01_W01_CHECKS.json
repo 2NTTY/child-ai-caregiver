@@ -1,0 +1,181 @@
+{
+  "id": "EV-S01-W01",
+  "date": "2026-09-22",
+  "base": "89d864aba33c35fd2749bc4813156f25f5af1123",
+  "scope": "Static public-source and local documentation checks only; no upstream execution or production adoption.",
+  "packages": [
+    {
+      "name": "expo-template-default",
+      "version": "57.0.26",
+      "license": "0BSD",
+      "gitHead": null,
+      "integrity": "sha512-BwQ+TC5FJkHCOPwf5A2IRuaWvm4lMWQhbvQtc14CUt5t25jMlarYiYmJ1wcvV3OnFOrILyuIyyzTSn8SrcqCHA==",
+      "source": "https://registry.npmjs.org/expo-template-default/57.0.26",
+      "engines": null,
+      "scope": "S02-W01 candidate"
+    },
+    {
+      "name": "expo",
+      "version": "57.0.24",
+      "license": "MIT",
+      "gitHead": "7687b07947a5c866adeb11abbceae72403ccb188",
+      "integrity": "sha512-LxSnKMv7en/w4XDNxW3VOx7SbtQ2Bs4MyGhtoZCToDsEsBPO7pJXlv5GnQUCd7Wi8118QV/VDwsDLBKTB3Z3iQ==",
+      "source": "https://registry.npmjs.org/expo/57.0.24",
+      "engines": null,
+      "scope": "S02-W01 candidate"
+    },
+    {
+      "name": "expo-router",
+      "version": "57.0.22",
+      "license": "MIT",
+      "gitHead": "7687b07947a5c866adeb11abbceae72403ccb188",
+      "integrity": "sha512-kOuS3RjMC73YLyBFiV9BzO0Z5OK1nLhPwmptK2II+tePtWXH7oA4zWaPwdWsdzTJRnmGMs/8Sr8YdTPHm1LUCg==",
+      "source": "https://registry.npmjs.org/expo-router/57.0.22",
+      "engines": null,
+      "scope": "S02-W01 candidate"
+    },
+    {
+      "name": "react",
+      "version": "19.2.3",
+      "license": "MIT",
+      "gitHead": null,
+      "integrity": "sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==",
+      "source": "https://registry.npmjs.org/react/19.2.3",
+      "engines": {
+        "node": ">=0.10.0"
+      },
+      "scope": "S02-W01 candidate"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.3",
+      "license": "MIT",
+      "gitHead": null,
+      "integrity": "sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg==",
+      "source": "https://registry.npmjs.org/react-dom/19.2.3",
+      "engines": null,
+      "scope": "S02-W01 candidate"
+    },
+    {
+      "name": "react-native",
+      "version": "0.86.3",
+      "license": "MIT",
+      "gitHead": "95cffbff2e071e278987c7d7cd51fbc970dd5622",
+      "integrity": "sha512-JR5s3bM9ezud+Mw24GlNXNfthqPIKwrQgPPJcam+L97t2sKjjEavhCzBn+fyqZZRcM5+XlhYxpTxVkK7e1n38Q==",
+      "source": "https://registry.npmjs.org/react-native/0.86.3",
+      "engines": {
+        "node": "^20.19.4 || ^22.13.0 || ^24.3.0 || >= 25.0.0"
+      },
+      "scope": "S02-W01 candidate"
+    },
+    {
+      "name": "react-native-web",
+      "version": "0.21.0",
+      "license": "MIT",
+      "gitHead": "3c27decd16e1cc62736e33d4458372b42f186f42",
+      "integrity": "sha512-S0mtV7wMPeet1kCRnrEmo1bTUJeFsKebleCbRwbBRBUg/BWS64bfsnnm+ArC+QtjlbZFSZmtvv8imzOIuOOa3Q==",
+      "source": "https://registry.npmjs.org/react-native-web/0.21.0",
+      "engines": null,
+      "scope": "S02-W01 candidate"
+    },
+    {
+      "name": "typescript",
+      "version": "6.0.3",
+      "license": "Apache-2.0",
+      "gitHead": "050880ce59e30b356b686bd3144efe24f875ebc8",
+      "integrity": "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==",
+      "source": "https://registry.npmjs.org/typescript/6.0.3",
+      "engines": {
+        "node": ">=14.17"
+      },
+      "scope": "S02-W01 candidate"
+    },
+    {
+      "name": "@types/react",
+      "version": "19.2.2",
+      "license": "MIT",
+      "gitHead": null,
+      "integrity": "sha512-6mDvHUFSjyT2B2yeNx2nUgMxh9LtOWvkhIU3uePn2I2oyNymUAX1NIsdgviM4CH+JSrp2D2hsMvJOkxY+0wNRA==",
+      "source": "https://registry.npmjs.org/%40types%2Freact/19.2.2",
+      "engines": null,
+      "scope": "S02-W01 candidate"
+    },
+    {
+      "name": "better-auth",
+      "version": "1.7.5",
+      "license": "MIT",
+      "gitHead": null,
+      "integrity": "sha512-aKE0Zt2EPTpFvmq4/oATNyG/mAfc6JUqWkW9pzGlrVnzUb0lso7GJ9BPxD6JPhLqYV1a9zOAb0uAz1Q5fm+eHA==",
+      "source": "https://registry.npmjs.org/better-auth/1.7.5",
+      "engines": null,
+      "scope": "S06-W03 candidate"
+    },
+    {
+      "name": "pg",
+      "version": "8.23.0",
+      "license": "MIT",
+      "gitHead": "df274d1ba9ad9d11a8f1079314faeafde7208207",
+      "integrity": "sha512-Ip2EQCngowJLGOfCwkFhPXU7/ljlhn6Rxlmy4XYfL2Y+vyRM59+8uR2xqRWKdYmbXmxCFOAmKxBuSUCdF34qLg==",
+      "source": "https://registry.npmjs.org/pg/8.23.0",
+      "engines": {
+        "node": ">= 16.0.0"
+      },
+      "scope": "S06-W03 candidate"
+    }
+  ],
+  "coo": {
+    "commit": "1fd98f5f1aea6cb0c79f06ed1e254a83626c1eec",
+    "treeTruncated": false,
+    "blobs": 108,
+    "licenseFiles": [],
+    "license": "Unverified; README claims MIT but LICENSE absent",
+    "decision": "Do not copy code, prompts, assets or deployment files"
+  },
+  "postgresql": {
+    "version": "18.6",
+    "commit": "724edf9bde9d356724ad384a2e196edc3c9f80f7",
+    "license": "PostgreSQL",
+    "source": "https://github.com/postgres/postgres/blob/724edf9bde9d356724ad384a2e196edc3c9f80f7/COPYRIGHT",
+    "scope": "S06-W03 candidate"
+  },
+  "runtime": {
+    "primary": {
+      "model": "gpt-6-astra",
+      "effort": "ultra"
+    },
+    "researchAgents": [
+      {
+        "role": "default",
+        "model": "gpt-6-astra",
+        "effort": "max",
+        "task": "s01_coo_audit"
+      },
+      {
+        "role": "default",
+        "model": "gpt-6-astra",
+        "effort": "max",
+        "task": "s01_stack_audit"
+      }
+    ],
+    "sandbox": "workspace-write; network restricted; researchers followed read-only instructions",
+    "evidence": "Matching session_meta parent/task and turn_context model/effort/sandbox fields inspected locally"
+  },
+  "notRun": [
+    "Install or execute upstream projects",
+    "Product tests",
+    "Integration",
+    "E2E",
+    "Model requests",
+    "Deployment",
+    "Device tests"
+  ],
+  "checks": {
+    "base": "89d864aba33c35fd2749bc4813156f25f5af1123",
+    "localLinksChecked": 144,
+    "worklogPrefixBytes": 25531,
+    "worklogPrefixPreserved": true,
+    "historicalFilesUnchanged": true,
+    "packageCount": 47,
+    "diffCheck": "pass"
+  }
+}

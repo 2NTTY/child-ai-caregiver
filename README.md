@@ -8,7 +8,7 @@ Planned capabilities include:
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
 - A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
 
-**Current status: documentation only.** S00 documentation migration is complete; S01 has not started. There is no runnable app, APK, or deployed product service, and there is no live product URL. The agreed scope and acceptance criteria are defined in [SPEC.md](SPEC.md).
+**Current status: documentation and reuse audit only.** S00 and the S01-W01 bounded reuse audit are complete. The selected P1 starting point is the official Expo SDK 57 dependency set; no upstream parenting application code has been adopted. There is no runnable app, APK, deployed product service, or live product URL yet. See [the audit](docs/REUSE_AUDIT.md) and [SPEC.md](SPEC.md).
 
 P1 requires a working web URL, server persistence, Gemini chat, and verified encryption/backup safeguards. P2 is the competition-delivery target: a persistent server agent, family permissions, web photo input, current knowledge, and preauthorized Web Push/Telegram follow-ups. Android follows in P3; deployment choice, full reports, migration, and disaster recovery complete P4. These are acceptance requirements, not claims of implemented features.
 
