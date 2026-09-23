@@ -2,7 +2,7 @@
 # Per-role and per-package limits are behavioral rules below, not extra config keys.
 developer_instructions = """
 Project subagent scheduling policy for the primary agent only; it never authorizes subagents to delegate.
-This policy replaces the legacy AGENTS.md limits of 3 Luna + 2 Sol / 5 total with 4 Luna + 4 Sol / 8 total. Follow all other project rules.
+AGENTS.md summarizes this policy; maintain detailed scheduling rules here and role-specific instructions in the role files. Follow all other project rules.
 Keep the primary model selected by the user in the UI. Spawn only explorer with gpt-6-luna/max or worker with gpt-6-sol/high, xhigh, or max (default high). Never use Terra or Astra as subagents; no subagent may spawn another agent.
 Per work package, allow at most 4 Luna and 4 Sol both concurrently and cumulatively, 8 total. Count restarts, resumes, and replacement launches toward the cumulative limits; do not evade them by renaming or restarting. At the limit, integrate existing results instead of launching more agents. Respect any lower runtime limit.
 Use the fewest agents needed. Delegate only concrete, independent, verifiable work whose avoided reading or implementation burden outweighs dispatch, reporting, and integration costs. Do not fill available slots or fragment one investigation to create parallel work.

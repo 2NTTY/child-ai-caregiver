@@ -31,10 +31,10 @@
 ## 模型與分工
 - 主模型由使用者在 UI 選擇，通常為 Astra 或 Sol；不固定、不擅自降級。子代理通常只用 Luna／Sol，禁止 Terra／Astra；使用者明確指定優先，單次例外不成為長期許可。
 - Luna 固定 Max，只做具體、獨立、可驗證的唯讀調查；禁止修改檔案、任何寫入 workspace 的操作、實現或架構決策。Sol 預設 High，只可 High／Xhigh／Max，負責邊界明確的實現；複雜實現、架構、衝突、整合 review 及最終驗收由主模型負責。所有子代理均禁止再 spawn。
-- 每個工作包同時及累計各最多 3 個 Luna＋2 個 Sol，合計最多 5 個；重啟、恢復及替代啟動均計入累計，達限先整合，不追加。數量是上限，不是目標；簡單搜尋、單檔工作由主模型處理，先復用已有結論，證據足夠即停止。
+- 每個工作包同時及累計各最多 4 個 Luna＋4 個 Sol，合計最多 8 個；重啟、恢復及替代啟動均計入累計，達限先整合，不追加。數量是上限，不是目標；按委派收益使用最少代理，已知位置的小檔案、少量程式碼及單一事實由主模型處理，先復用已有結論，證據足夠即停止。
 - 主模型先拆分完整任務，再一次性下達目標、範圍、路徑線索、關鍵約束、禁止事項、預期輸出及驗證證據。spawn 明確指定角色、模型、effort 及 `fork_turns="none"`，不繼承完整對話；`task_name` 不能代替角色設定。
 - 每輪收齊最終結果後統一整合，未整合前不追加同類任務；不輪詢進度，不用 `send_message` 追進度、重複指令或零碎補上下文。follow-up 只用於補齊會阻塞工作的關鍵證據。
-- 實際設定只維護專案 [.codex/config.toml](.codex/config.toml)：預設子模型 `gpt-6-sol`、effort `high`、總並發硬上限 5；角色與累計限額由本節行為規則執行，不捏造 config 欄位。`explorer` 固定 `gpt-6-luna` Max／readonly；`worker` 固定 `gpt-6-sol`、不固定 effort，回退 High 並容許顯式 High／Xhigh／Max；不改全局設定。
+- 實際設定及詳細調度規則只維護專案 [.codex/config.toml](.codex/config.toml) 及其角色檔，本節保留分工摘要：預設子模型 `gpt-6-sol`、effort `high`、總並發硬上限 8；每角色及累計限額由配置中的行為規則執行，不捏造 config 欄位，實際 runtime 如有限制更低則採較低值。委派門檻、核心原文閱讀、證據回報、並行及等待依該處細則執行。`explorer` 固定 `gpt-6-luna` Max／readonly；`worker` 固定 `gpt-6-sol`、不固定 effort，回退 High 並容許顯式 High／Xhigh／Max；不改全局設定。
 - 配置檔不等於已生效證據；核對實際 runtime 的主模型、子代理與 sandbox。唯讀指令不等於作業系統唯讀沙箱，不僅憑角色檔聲稱本輪已套用或已切換模型。
 
 <a id="operations"></a>
