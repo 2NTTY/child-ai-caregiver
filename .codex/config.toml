@@ -1,14 +1,11 @@
-# Project settings only; primary-agent scheduling rules live in AGENTS.md.
-# Per-role instructions live in agents/*.toml. Never pin the primary UI model here.
-
-# Subagent defaults and total concurrency; per-role/cumulative caps are behavioral.
+# Project settings only. Scheduling: AGENTS.md; role instructions: agents/*.toml.
+# Keep the primary UI model unset; per-role/cumulative caps are behavioral.
 [agents]
 enabled = true
 max_concurrent_threads_per_session = 8
 default_subagent_model = "gpt-6-sol"
 default_subagent_reasoning_effort = "high"
 
-# Role registrations; keep each description aligned with its role file.
 [agents.explorer]
 description = "Luna Max for bounded, reading-heavy investigation and independent evidence checks."
 config_file = "agents/explorer.toml"
