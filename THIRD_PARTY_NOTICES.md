@@ -47,3 +47,8 @@ S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL 
 Transitive packages and their individual license files remain in the installed `node_modules` tree. They are not all reproduced in this document, and `node_modules` is not committed. The inventory records every lockfile license declaration, including build tools and optional platform packages; declared metadata is not proof that every file or distribution obligation has been reviewed.
 
 Before distributing an application build, review the actual shipped dependencies, bundled assets, package-specific notices, and required source or attribution materials. Preserve the applicable original notices with that distribution. This work package does not claim a complete legal, security, or release-license audit.
+
+
+## P1 deployment images
+
+S17 prepares unmodified upstream base images `node:24.19.0-bookworm-slim`, `postgres:18.6-bookworm`, and `caddy:2.11.4-alpine`; container execution and actual image digests remain to be verified. Caddy is used as a reverse proxy/static server under Apache-2.0. Its original [tagged license](https://github.com/caddyserver/caddy/blob/v2.11.4/LICENSE) is preserved in [licenses/caddy/LICENSE](licenses/caddy/LICENSE), SHA-256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`, and copied into the Web image. This image list is separate from the direct npm package inventory; base images retain their own upstream components and notices.

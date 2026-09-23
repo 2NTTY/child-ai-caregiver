@@ -1,0 +1,49 @@
+{
+  "evidenceId": "EV-S17-W01",
+  "workPackage": "S17-W01",
+  "recordedOn": "2026-09-23",
+  "status": "prepared_awaiting_container_and_cloud_approval",
+  "baseCommit": "2b55eb027f25bc2c9479e850c95007bcbfbb4903",
+  "prerequisites": [
+    "S16-W01 / PR #22 merged"
+  ],
+  "prepared": [
+    "Fixed-version app/web/maintenance Docker stages",
+    "Private PostgreSQL network and same-origin Caddy entry",
+    "Linux root-only new secret initialization with UID1000 key mounts",
+    "Concrete GCP resource/cost/7-day-stop proposal",
+    "Independent synthetic teammate trial guide",
+    "Short official-source technical skill",
+    "Caddy original Apache-2.0 license"
+  ],
+  "staticChecks": {
+    "yamlAndSkillFrontmatter": "passed",
+    "pythonAstParse": "passed without executing initializer",
+    "composeConfig": "passed with --no-interpolate --no-env-resolution --no-path-resolution; local Docker config access warning observed",
+    "composeNetworkPortSecretGraph": "passed",
+    "dockerCopySources": "passed",
+    "licenseSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "diffCheck": "passed"
+  },
+  "reviewFixes": [
+    "Use EXPO_NO_TELEMETRY and preserve tsconfig in Web build",
+    "Separate PostgreSQL18 maintenance image; no Docker socket in API",
+    "Document sudo/root Compose execution to retain root-only env_file permissions"
+  ],
+  "userDomain": "ex-machina.eu.org",
+  "proposedHost": "yuban.ex-machina.eu.org",
+  "dnsChangePerformed": false,
+  "containerBuildsPerformed": false,
+  "cloudResourcesCreated": false,
+  "newModelCalls": 0,
+  "liveUrl": null,
+  "independentTrial": null,
+  "stageP1Complete": false,
+  "remainingGates": [
+    "Approved image builds and minimal isolated local container acceptance",
+    "Approved concrete cloud provisioning and spending scope",
+    "DNS A record and trusted HTTPS",
+    "Runtime/storage/firewall/metadata ADC and backup acceptance in actual environment",
+    "Independent teammate trial and final review/merge"
+  ]
+}

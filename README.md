@@ -119,3 +119,8 @@ With both the server and Expo running, register an account or sign in, create a 
 Reopen the page and sign in to the same account to load saved records from the server. Offline mode blocks submission and warns that displayed data may be stale. A failed or uncertain submission keeps its input and requires a fresh read and manual duplicate check before retrying. There is no automatic write retry or persistent browser record store. Closing or refreshing a page with unsaved input shows the browser's warning; successful sign-out clears the page's private state.
 
 The additional approved checks are `npm run test:records` and the local browser workflow in [S03-W01 acceptance](docs/S03_W01_ACCEPTANCE.md). They exercise additive upgrades over the retained synthetic database; do not delete volumes to make tests pass.
+
+
+## P1 pilot delivery preparation
+
+The S17 single-VM team pilot is being prepared; no hosted URL or independent teammate trial is verified yet. See [deployment scope and operations](docs/P1_DELIVERY.md) and [the synthetic-data trial guide](docs/P1_TRIAL.md). Container builds, cloud resources and real-service acceptance require their scoped approval before execution. This is not the P4 Windows self-hosting bundle.

@@ -668,3 +668,23 @@
 ### Failures / Limitations / Next
 - Docker／key 預檢在 sandbox 受限，使用針對已批准檢查的提權後通過；沒有改全局權限。Web 配置沿用實際 EXPO_PUBLIC_API_BASE_URL。
 - S16 本機功能驗收完成；S17 尚需實際交付環境的 HTTPS、密鑰與磁碟／WAL 保護、操作說明及組員獨立試玩。P1 未完成，不以本次驗收替代這些門檻。
+
+
+<a id="log-20260923-007"></a>
+## LOG-20260923-007
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S17-W01；前置 S16／PR #22 已合併，基線 master 2b55eb0。只準備及靜態核查，未部署／未完成。
+- Executor / AI Assistance：Sol High 一個建立有界 Docker app stages，恢復一次做靜態核查；Luna Max 一個只讀官方部署研究，收斂後恢復一次交付既有證據，沒有子派生。主模型處理 Compose／身份與密鑰邊界、maintenance、操作交付、Skill 及整合 review。
+- Human Verification：使用者提供可用網域 ex-machina.eu.org；尚未取得本次容器／雲端資源支出批准，沒有組員試玩回報。
+
+### Actual Work / Verification
+- 準備固定版本的 API／Web／PostgreSQL18 maintenance images、私有 DB network、同源 Caddy HTTPS、工程外新 secrets 初始化、七天 GCE 停止方案及簡短試玩指引；範圍見 [P1 交付](docs/P1_DELIVERY.md)。不預建 P4 Windows 平台。
+- 核對官方 Docker、GCP、Caddy 文件，將會重用的約束壓縮為 gcp-compose-delivery Skill；價格僅保存本次日期的初步估算，不將易變價格放入 Skill。原 Caddy2.11.4 Apache-2.0 license 保存及 hash 通過。
+- Sol 靜態 YAML／frontmatter、Python AST、Compose config、mount／port／network／secret 關係及 COPY 來源通過；主模型修正 telemetry／tsconfig 及 root-only env_file 要用 sudo/root Compose 的說明。
+- [EV-S17-W01](artifacts/verification/S17_W01_CHECKS.json) 明確區分已準備、靜態通過及未執行的 runtime／部署門檻。
+
+### Limitations / Next
+- Caddy IP 預設自簽與公開 IP 證書能力不能混為一談；收到使用者網域後改採標準網域 HTTPS，規劃子網域 yuban，不改根網域。DNS 僅查 NS，沒有寫入。
+- Compute API 尚未啟用；沒有建立或修改 GCP 資源、支出批准、Docker build/run、正式初始化或新模型呼叫。本機既有合成庫／備份／密鑰保留。
+- 待批准後先驗證容器，再按具體方案部署並由使用者設 DNS，最後取得另一組員實際回報；P1 仍未完成。
