@@ -21,7 +21,7 @@ try {
     await client.query("BEGIN");
     transactionStarted = true;
     await client.query("CREATE TABLE IF NOT EXISTS app_migrations (id text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())");
-    for (const migrationId of ["001-workspaces", "002-child-records"]) {
+    for (const migrationId of ["001-workspaces", "002-child-records", "003-ai-usage"]) {
       const sql = await readFile(new URL(`./migrations/${migrationId}.sql`, import.meta.url), "utf8");
       const checksum = createHash("sha256").update(sql).digest("hex");
       const applied = await client.query<{ checksum: string }>("SELECT checksum FROM app_migrations WHERE id = $1", [migrationId]);

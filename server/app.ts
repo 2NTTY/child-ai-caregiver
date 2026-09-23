@@ -6,6 +6,7 @@ import { apiError, handleWorkspaceRequest, jsonResponse } from "./workspace-api.
 import type { WorkspaceStore } from "./workspaces.ts";
 import type { RecordStore } from "./records.ts";
 import { handleRecordRequest } from "./record-api.ts";
+import type { ModelGateway } from "./model-gateway.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -59,6 +60,7 @@ export function createRequestHandler(options: {
   auth: ReturnType<typeof createAuth>;
   workspaces: WorkspaceStore;
   records: RecordStore;
+  modelGateway?: ModelGateway;
   checkDatabase: () => Promise<void>;
 }) {
   const allowedOrigins = new Set([options.config.publicOrigin, options.config.webOrigin]);
@@ -115,6 +117,12 @@ export function createRequestHandler(options: {
       } else if (url.pathname === "/api/health" && method === "GET") {
         await options.checkDatabase();
         result = jsonResponse({ status: "ok" });
+      } else if (url.pathname === "/api/ai/status" && method === "GET") {
+        const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
+        result = sessionResult.response?.user.id
+          ? jsonResponse({ available: options.modelGateway?.available() ?? false })
+          : apiError("unauthorized", "請先登入。", 401);
+        for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
         || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });

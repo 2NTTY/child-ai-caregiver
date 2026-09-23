@@ -101,6 +101,20 @@ S03-W01 在同一 `/api` 入口新增以下已登入端點；session、Origin、
 
 未登入回 401，其他帳號或不存在的孩子均回 404。列表目前只提供最近 100 則，介面明示此限制；這不是完整搜尋或時間軸。客戶端不自動重試寫入，只有收到成功回應才顯示已保存；網絡失敗／結果未知保留當前表單，先重新讀取核對，沒有離線 outbox。完整 opId／版本協議留在 S07-W03。
 
+
+<a id="p1-ai-boundary"></a>
+## P1 模型安全邊界（S06-W01）
+
+`GET /api/ai/status` 須有有效 session，只回 `{available: boolean}`；未登入 401，回應不快取、不公開 project、地點、模型或憑據。S06 先交付 Server 安全邊界，S11 才接真 Vertex provider、聊天上下文及回答路由；只有配置開關不會啟動模型。
+
+`server/model-gateway.ts` 只接受 Server 組裝的指令與有角色的文字訊息。每次嘗試前重新核對 session／孩子授權，回覆前再核對；拒絕超限輸入、空白或無效模型結果。Server 限制每帳號一個、每程序最多四個同時請求。UTC 每日帳號／全站嘗試數在 PostgreSQL 短事務內共同預留，包含重試及結果未知的嘗試；重啟不重設配額，不因失敗退回可能已產生成本的次數。
+
+預設每天每帳號 20／全站 100 次、每請求最多兩次、每次 30 秒、總輸入 10,000 字元、輸出 1,024 tokens。只有明確的 provider 429 可等候 1 秒 後有限重試；網絡異常、逾時及未知結果不自動重試。`AI_ENABLED=false` 為預設及總開關；變更配置須重啟全部 Server 程序。模型 adapter 須關閉自身重試，避免繞過配額。
+
+`003-ai-usage` 遷移新增每日配額及 `ai_attempts`；只保存帳號／孩子 ID、模型、固定結果碼、耗時及已回報 token 數，未知 token 為 null，不保存問題、回答、憑據或 raw error。遷移只新增資料表，不清空既有資料。設定見 `.env.example`；部署須使用 HTTPS、精確 origin、Server ADC 及私網 PostgreSQL，不信任客戶端 forwarding header。
+
+本包只有必要單元／型別檢查證據；真 PostgreSQL 遷移及重啟配額、Vertex 調用與部署環境仍須在 S11／S16 的必要驗收取得實測證據，不能把 fake provider 當真模型。
+
 <a id="section-4-1"></a>
 ## 4.1 配对码与二维码
 

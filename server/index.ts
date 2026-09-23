@@ -5,14 +5,20 @@ import { readServerConfig } from "./config.ts";
 import { createPool } from "./database.ts";
 import { createWorkspaceStore } from "./workspaces.ts";
 import { createRecordStore } from "./records.ts";
+import { readAiConfig } from "./ai-config.ts";
+import { createAiUsageStore } from "./ai-usage.ts";
+import { createModelGateway } from "./model-gateway.ts";
 
 try {
   const config = readServerConfig(process.env);
+  const aiConfig = readAiConfig(process.env);
   const pool = createPool(config);
   const auth = createAuth(config, pool);
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
     records: createRecordStore(pool),
+    // S11 wires the real provider together with authorized chat orchestration.
+    modelGateway: createModelGateway({ config: aiConfig, usage: createAiUsageStore(pool) }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },
   });
   const server = createServer((request, response) => {
