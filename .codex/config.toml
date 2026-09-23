@@ -1,21 +1,5 @@
-# Project-scoped subagent defaults; never override the primary UI model.
-# Per-role and per-package limits are behavioral rules below, not extra config keys.
-developer_instructions = """
-Project subagent scheduling policy for the primary agent only; it never authorizes subagents to delegate.
-AGENTS.md summarizes this policy; maintain detailed scheduling rules here and role-specific instructions in the role files. Follow all other project rules.
-Keep the primary model selected by the user in the UI. Spawn only explorer with gpt-6-luna/max or worker with gpt-6-sol/high, xhigh, or max (default high). Never use Terra or Astra as subagents; no subagent may spawn another agent.
-Per work package, allow at most 4 Luna and 4 Sol both concurrently and cumulatively, 8 total. Count restarts, resumes, and replacement launches toward the cumulative limits; do not evade them by renaming or restarting. At the limit, integrate existing results instead of launching more agents. Respect any lower runtime limit.
-Use the fewest agents needed. Delegate only concrete, independent, verifiable work whose avoided reading or implementation burden outweighs dispatch, reporting, and integration costs. Do not fill available slots or fragment one investigation to create parallel work.
-Use Luna for bounded, reading-heavy investigation of large files, multiple files/directories, call chains, substantial logs, or independent evidence checks. Handle known small files, short code passages, single facts, and code the primary agent is about to edit directly. Do not assign equivalent searches or checks to multiple agents.
-The primary agent reads STATUS.md and the current PLAN.md entry first, and personally reads original architecture, design, state, and handoff passages that determine the task. Luna may locate them but summaries never replace understanding key originals. The primary owns architecture, complex implementation, integration, conflict resolution, review, and final acceptance.
-Decompose the work before dispatch. Supply the complete goal, scope, paths/leads, existing evidence, constraints, prohibitions, stopping conditions, and expected evidence/output once; give Sol explicit file ownership and acceptance criteria. Specify agent_type, model, reasoning_effort, and fork_turns="none" explicitly; task_name is not a role setting.
-Parallelize only independent tasks while the primary does useful independent work. Sol tasks need stable interfaces, distinct file ownership, and no mutual dependencies. Serialize shared-file, permission, synchronization, migration, or tightly coupled changes under the primary agent.
-Collect the round's final reports and integrate them together before adding similar work. Do not chase routine progress, drip-feed context, or use send_message for polling. Follow up only for missing evidence that blocks the primary task; necessary blockers or scope risks may be reported immediately.
-While agents run, do independent work first and prefer completion notifications. When blocking is necessary, use a long reasonable wait allowed by the tool and higher-priority instructions. Avoid short-timeout loops, frequent status queries, routine wake-up messages, and repeated reasoning or narration when no new evidence has arrived.
-Reuse sufficient investigation and verification evidence, then stop. Spot-check cited passages and key originals instead of rereading all delegated material. Expand checks only for contradictions, blocking evidence gaps, relevant changes, or new regression risk; never skip necessary implementation review or acceptance to save context.
-Distinguish parsed configuration, loaded instructions, and observed runtime settings. Check actual model, effort, and sandbox when exposed; mark unavailable evidence unverified. A role file or read-only instruction alone does not prove the active model or OS sandbox. Do not spawn agents merely to demonstrate settings or claim unmeasured time/quota savings.
-"""
-
+# Project settings only; primary-agent scheduling rules live in AGENTS.md.
+# Per-role instructions live in agents/*.toml. Never pin the primary UI model here.
 [agents]
 enabled = true
 max_concurrent_threads_per_session = 8
@@ -23,9 +7,9 @@ default_subagent_model = "gpt-6-sol"
 default_subagent_reasoning_effort = "high"
 
 [agents.explorer]
-description = "Luna Max for bounded, reading-heavy investigations; small known lookups stay with the primary agent"
+description = "Luna Max for bounded, reading-heavy investigation and independent evidence checks."
 config_file = "agents/explorer.toml"
 
 [agents.worker]
-description = "Sol for explicit implementation scope, file ownership, and acceptance; High by default, explicit High/Xhigh/Max"
+description = "Sol for bounded implementation with explicit file ownership and acceptance criteria."
 config_file = "agents/worker.toml"
