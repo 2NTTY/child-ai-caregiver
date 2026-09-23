@@ -1,15 +1,15 @@
-# Project-scoped subagent defaults; never override the primary UI model.
-# Per-role concurrent and per-package cumulative limits are scheduled in AGENTS.md.
+# Project settings only. Scheduling: AGENTS.md; role instructions: agents/*.toml.
+# Keep the primary UI model unset; per-role/cumulative caps are behavioral.
 [agents]
 enabled = true
-max_concurrent_threads_per_session = 5
+max_concurrent_threads_per_session = 8
 default_subagent_model = "gpt-6-sol"
 default_subagent_reasoning_effort = "high"
 
 [agents.explorer]
-description = "Luna Max read-only investigator for concrete, independent, verifiable tasks"
+description = "Luna Max for bounded, reading-heavy investigation and independent evidence checks."
 config_file = "agents/explorer.toml"
 
 [agents.worker]
-description = "Bounded Sol implementation agent; High by default, explicit High/Xhigh/Max"
+description = "Sol for bounded implementation with explicit file ownership and acceptance criteria."
 config_file = "agents/worker.toml"
