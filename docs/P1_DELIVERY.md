@@ -1,6 +1,6 @@
 # P1 雲端試用交付
 
-狀態：已部署至 **https://ex-machina.eu.org**，必要本機及雲端技術驗收通過；S17／P1 仍待另一組員獨立試玩，尚未結案。執行版本 `cc3dae4`；實際 image IDs 及範圍見 [EV-S17-W01](../artifacts/verification/S17_W01_CHECKS.json)。
+狀態：已部署至 **https://ex-machina.eu.org**，必要本機及雲端技術驗收通過；Firefox 登入問題已修正並通過獲准的 15 次 HTTPS 讀取，S17／P1 仍待人工覆核，尚未結案。執行版本 `d654b8f`；實際 image IDs 及範圍見 [EV-S17-W01](../artifacts/verification/S17_W01_CHECKS.json)。
 
 使用者批准七天試用，VM 於 2026-09-23 20:50:44 HKT 啟動，GCE 設定在 **2026-09-30 20:50:44 HKT** 左右 STOP；保留磁碟／固定 IP 仍有費用。續期須另確認，不自動重啟延長。實際 Docker 29.8.1／Compose 5.5.1，20 GiB 磁碟已掛載。
 

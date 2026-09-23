@@ -728,3 +728,16 @@
 - 必要抽查觀察三服務記憶體約 201 MiB、磁碟 5.6/20 GiB；不是壓力或全量測試。Docker29.8.1／Compose5.5.1 的實際 config／啟動通過，補查官方 v5 相容說明並局部更新 Skill。
 - 操作差異：Windows pscp 不展開 ~/，改用已查明的 home 路徑；gcloud.cmd 巢狀引號由 shell 單引號修正。HTTP 308 的 PowerShell 零重導向警告不影響 TLS／實際轉向核對。
 - 未完成：另一組員核心流程／瀏覽器實際回報及依此完成最終 review／合併；P1 未結案。
+
+
+<a id="log-20260923-011"></a>
+## LOG-20260923-011
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）；S17-W01，延續 PR #23。
+- Human Verification：使用者回報 Firefox 可能閒置後呈現登出，再登入顯示嘗試過多，約一分鐘後恢復；觸發不確定，沒有原始 HTTP trace。此回報屬必要修復，不能把前次技術通過當作 P1 完成。
+- Executor：Luna 唯讀核查前端呼叫鏈；主模型核對 Server／套件原文、實作、整合 review 及已批准驗收，沒有新增 Sol 或模型呼叫。
+- Actual Work：修復所有訪客被當作 Caddy IP 的限流來源；Caddy 覆寫 header，API 只信任單一明確代理 peer，Better Auth 只讀清理後的 header。唯讀 session checks 不套用登入限流，登入／註冊限制保留。前端暫時未確認會話使用獨立狀態及重試，私人草稿隱藏並只恢復給同一身份。
+- Verification：38 項相關單元檢查首次通過；auth middleware 測試的首版 fixture 觸發套件啟動 schema 檢查，改為只在測試 wrapper 關閉後單項通過，合計 39 項；沒有真 DB 連線。typecheck／修正後 Server-test typecheck、三映像建置、Compose proxy/subnet 一致性及 diff check 通過。正式 schema 檢查不變。
+- Deployment：d654b8f 已更新至根網域；只重建 API／Web 及 outbound network，PostgreSQL 容器、資料卷及密鑰保持。初次暫存 shell 因 CRLF 在 set 指令停止，未改服務；轉 LF 後更新成功。VM 原啟動及七天 STOP 時間核對未變。
+- Approved Acceptance：使用者批准本次 15 次合成 HTTPS 讀取；12 次交替會話、原文保留、跨帳號 404、匿名 null 全通過，0 次資料寫入／Gemini。主模型 review 5291682091 沒有未解決程式碼發現；證據 EV-S17-W01。
+- Remaining：上述確定缺陷可解釋回報，但不能宣稱已重現原始 Firefox 失敗。仍待修正版人工閒置／切回覆核、其餘核心項目明確結果及最終 review／合併；P1 未完成。

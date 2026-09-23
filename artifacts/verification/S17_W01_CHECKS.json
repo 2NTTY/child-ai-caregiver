@@ -2,7 +2,7 @@
   "evidenceId": "EV-S17-W01",
   "workPackage": "S17-W01",
   "recordedOn": "2026-09-23",
-  "status": "deployed_awaiting_independent_trial",
+  "status": "session_fix_deployed_awaiting_firefox_retest",
   "baseCommit": "2b55eb027f25bc2c9479e850c95007bcbfbb4903",
   "prerequisites": [
     "S16-W01 / PR #22 merged"
@@ -38,14 +38,22 @@
   "cloudResourcesCreated": true,
   "newModelCalls": 2,
   "liveUrl": "https://ex-machina.eu.org",
-  "independentTrial": null,
+  "independentTrial": {
+    "browser": "Firefox",
+    "reportedIssue": "App appeared signed out after possible idle; immediate login reported too many attempts, recovered after about one minute",
+    "trigger": "Uncertain; user reported possibly idle or no action",
+    "reportedBy": "User in response to the independent teammate trial request",
+    "originalHttpTraceCaptured": false,
+    "otherCoreChecks": "Awaiting explicit confirmation",
+    "fixRetest": "pending"
+  },
   "stageP1Complete": false,
   "remainingGates": [
-    "Independent teammate trial with actual results and necessary issue fixes",
-    "Final package review and merge after acceptance"
+    "Firefox idle/focus retest of corrected deployment and confirmation of prior core trial results",
+    "Final package review and merge after human acceptance"
   ],
   "approval": "User explicitly approved local acceptance and seven-day deployment on 2026-09-23; includes bounded model validation and trial calls",
-  "cloudState": "Technical acceptance passed; independent teammate trial pending",
+  "cloudState": "Corrected deployment and 15 authorized synthetic reads passed; Firefox retest and final human confirmation pending",
   "localAcceptance": {
     "commit": "512ba93786ddb421bde91c13b0bcc202b95e4e10",
     "dockerEngine": "29.4.0",
@@ -108,11 +116,11 @@
     "compose": "5.5.1",
     "freeDiskBeforeImagesGiB": 17
   },
-  "deployedCommit": "cc3dae4d0d6b29c5fa924c0cf3eec129ca827c1b",
+  "deployedCommit": "d654b8f8321bf1f6dc816610adb03dc1f0463611",
   "runtimeImageIds": {
-    "api": "sha256:f2db5a2a42444d47ff737bba715fb63beb7b21e9dcacd69f31b77ca68c4578c8",
-    "maintenance": "sha256:77483768bd7af317a59120613dd439e77cfbfc23b5384844457203315d19141f",
-    "web": "sha256:4cde74558d29952c2ec3b2326037afec950d3645857e8848090f347f8cfd4ad8"
+    "api": "sha256:b5716a6d351c6d21bd1f7b14785e2924948b7d4679d7010ac49ac6f2ce451f31",
+    "maintenance": "sha256:09339a3bf728dff02b39b38950b60d993a9d1595820581a84f477e3bc82e9546",
+    "web": "sha256:87a1aac3398ab9e2d2b1b6061d88b23337eb96bf2624bddc33642f29a2bce8ed"
   },
   "modelAcceptance": {
     "attempts": 2,
@@ -150,6 +158,59 @@
     "dataAndWalOnEncryptedPersistentDisk": "passed; PostgreSQL18 data and pg_wal under named volume backed by VM boot disk",
     "maintenanceBackupEmptyRestoreOriginalTextSessionExclusionAndUsage": "passed",
     "offHostRecoveryMaterial": "Separate key archive and encrypted backup downloaded outside the repository; current Windows user-only inherited ACL; archive structure and backup transfer hash verified; temporary remote copies removed",
-    "resourceObservation": "API 84.1 MiB, Caddy 25.95 MiB, PostgreSQL 90.75 MiB; disk 5.6/20 GiB used; one observation, not a load test"
+    "resourceObservation": "API 84.1 MiB, Caddy 25.95 MiB, PostgreSQL 90.75 MiB; disk 5.6/20 GiB used; one observation, not a load test",
+    "commit": "cc3dae4d0d6b29c5fa924c0cf3eec129ca827c1b"
+  },
+  "previousDeployment": {
+    "commit": "cc3dae4d0d6b29c5fa924c0cf3eec129ca827c1b",
+    "runtimeImageIds": {
+      "api": "sha256:f2db5a2a42444d47ff737bba715fb63beb7b21e9dcacd69f31b77ca68c4578c8",
+      "maintenance": "sha256:77483768bd7af317a59120613dd439e77cfbfc23b5384844457203315d19141f",
+      "web": "sha256:4cde74558d29952c2ec3b2326037afec950d3645857e8848090f347f8cfd4ad8"
+    }
+  },
+  "sessionFix": {
+    "commit": "d654b8f8321bf1f6dc816610adb03dc1f0463611",
+    "confirmedDefects": [
+      "Origin overwrote every forwarded client IP with the Caddy peer, sharing authentication rate-limit buckets",
+      "Unavailable session state rendered the login form although session invalidity was unconfirmed"
+    ],
+    "causalityLimit": "These paths can explain the report; exact original Firefox HTTP failure was not captured",
+    "changes": [
+      "Explicit trusted proxy peer; ingress overwrites client IP; direct clients cannot choose auth rate-limit identity",
+      "Exclude read-only session checks from auth rate limiting; preserve sign-in/sign-up limits",
+      "Separate unavailable-session UI and retry; retain hidden drafts only for their original identity"
+    ],
+    "unitChecks": {
+      "passed": 39,
+      "commands": [
+        "node --experimental-test-module-mocks --test tests/auth-rate-limit.test.ts tests/client-controller.test.ts tests/server-config.test.ts tests/server-runtime.test.ts",
+        "node --experimental-test-module-mocks --test tests/auth-rate-limit.test.ts (corrected fixture only)"
+      ],
+      "initialFailure": "Auth unit fixture encountered Better Auth startup schema inspection; test-only wrapper disables schema validation, production setting unchanged, no real DB call",
+      "typecheck": "passed; server/test typecheck repeated after fixture correction"
+    },
+    "builds": "API, maintenance and Web passed",
+    "review": "Main-agent review 5291682091; no unresolved code findings",
+    "deployment": {
+      "trustedProxyIp": "172.30.51.3",
+      "subnet": "172.30.51.0/28",
+      "databaseContainerRecreated": false,
+      "volumesAndSecretsPreserved": true,
+      "vmStartAndSevenDayStopUnchanged": true
+    },
+    "liveReadCheck": {
+      "userApproved": true,
+      "requests": 15,
+      "passed": [
+        "12 alternating authenticated session reads",
+        "preserved original record",
+        "cross-account 404",
+        "anonymous session null"
+      ],
+      "dataWrites": 0,
+      "modelCalls": 0
+    },
+    "firefoxRetest": "pending"
   }
 }
