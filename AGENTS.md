@@ -4,7 +4,7 @@
 ## 读取入口
 - 每次先读 [STATUS.md](STATUS.md)，再读 [PLAN.md](PLAN.md) 当前步骤及工作包；只按需要读 SPEC、docs 和相关 WORKLOG。
 - 不默认扫描整个仓库或重读全部文档、日志、聊天；先做有范围的搜索，扩大范围必须有具体原因，限制无关工具输出。
-- 已有研究先复用结论和来源，避免重复调查；先看失败原因，避免重复已证明不合适的尝试。
+- 已有研究先復用結論和來源，避免重複調查；先看失敗原因，避免重複已證明不合適的嘗試。技術規範的按需核對及沉澱，見[技術研究與 Skill 復用](#technical-skills)。
 - 日常不直接掃描 `_archive/**`、歷史相容入口（DEVELOPMENT_PLAN、PROJECT_PROPOSAL、PITCH_AND_DEMO、WEEKLY_LOGS、docs/MIGRATION_MAP）及 `artifacts/verification/S00_*`；需要追溯時先讀 [_archive 索引](_archive/README.md)，再讀指定資料／章節。WORKLOG 日常禁止全讀，只讀模板、當前相關 LOG 或追加所需尾部。
 - `OPEN_SOURCE_REUSE.md` 只在 S01 或具體復用核查時按需讀取；S01 完成後才評估歸檔。新文件移入 `_archive/` 或改為 `archived-in-place` 時，必須在同一工作包同步更新 `_archive/README.md` 的用途、路徑、來源版本、校驗值及閱讀條件。
 
@@ -26,6 +26,19 @@
 - 不做无关重构、可选抽象、UI polish 或顺手优化；不提前实现后续步骤需要的完整框架、服务或插件平台。
 - 开源研究、许可和版本结论须保存；生产复用只按 [S01](PLAN.md#s01) 验收边界推进。
 - 只實現育伴港領域；寫到相關功能時集中管理 prompt、知識來源、受限 skills／任務流程及領域規則，共享 TypeScript 業務、薄平台 adapter 及必要 port 按需建立。Server 權威及核心結構見 [ARCHITECTURE](docs/ARCHITECTURE.md#section-3-1)，不另建通用領域模型、插件平台、第二主題、空框架或獨立解耦包。
+
+<a id="technical-skills"></a>
+## 技術研究與 Skill 復用
+
+- 實際進入重要 SDK／API、身份驗證、資料保存／遷移、建置或部署任務時，先核對專案使用版本、已有研究及相關 Skill；缺乏適用證據才查官方設計、開發規範及當前任務所需的關鍵約束，不遍查整套技術棧。
+- 規範相對穩定、預期重複使用且會影響實作判斷時，才建立或補充技術 Skill。一次性查詢、一般常識及尚未進入的未來技術不建立 Skill；不為已完成工作補做全面研究。
+- Skill 的版本及範圍吻合時，只讀所需內容；不因換工作包、聊天或代理重做調查，缺項只補查缺項。大版本升級、相關 API／SDK 明顯變更、棄用警告、實際行為衝突或證據不足時，才重核受影響的官方資料並局部更新；價格、服務可用性等易變資訊按需即時查核，不例行全量重查。
+- 大量首次官方資料調查可按[模型與分工](#models)交 Luna，回報來源、版本、必要原文、適用範圍及不確定性；Luna 不寫入 Skill。主模型核對關鍵原文，親自整理或指派修改範圍明確的 Sol，並完成 review；派單附相關 Skill 路徑及已知缺口，不要求重做已有研究。
+- 技術 Skill 放在專案 `.agents/skills/<技術任務>/SKILL.md`，隨 Git 管理；首次確有需要才建目錄。採用 [Codex 原生發現及按需載入](https://learn.chatgpt.com/docs/build-skills)，不另建索引平台、安裝器或全局設定。
+- `name`／`description` 清楚描述技術任務及觸發範圍；正文只保留關鍵實作方法、限制、易錯點及必要驗證，附適用版本、官方來源連結及最後核對日期，區分「文件已核對」與「實作已驗證」。條件性細節較多才拆入 `references/` 並註明閱讀條件；不複製整份手冊、不預建空模板或固定要求額外腳本。
+- 技術 Skill 是開發參考，與產品 Agent Prompt Pack 分開；產品需求、階段、架構、決策及工作規則仍以 SPEC／PLAN／ARCHITECTURE／DECISIONS／AGENTS 為權威，Skill 只引用必要位置，不複製成第二份事實來源或覆蓋已確認決策。
+- 官方約束、Skill 與專案決策衝突時，先指出衝突及影響，由主模型按現有決策流程處理；不擅改架構，也不繼續套用已證實失效的指引。
+- Skill 新增／修訂隨觸發它的工作包交付，不為研究另開聊天、worktree 或獨立流程。
 
 <a id="models"></a>
 ## 模型與分工
