@@ -1,0 +1,29 @@
+{
+  "id": "EV-S09-W01",
+  "date": "2026-09-23",
+  "base": "bea03885cdc5fcd45e62a282cc57e0ac0233d684",
+  "package": "S09-W01",
+  "unitTests": {
+    "chatApi": 7,
+    "httpWiring": 1,
+    "result": "passed"
+  },
+  "serverTypecheck": "passed",
+  "integration": {
+    "userApproval": "批准這次必要本機驗收",
+    "script": "scripts/verify-p1-store.mjs --approved-local",
+    "checks": 6,
+    "result": "passed",
+    "database": "existing local synthetic PostgreSQL",
+    "preservedExistingData": true,
+    "modelCalls": 0,
+    "failureResolved": "Existing test container was stopped; started the same container, then passed.",
+    "migrationChecksumCompatibility": "existing LF/CRLF checksums accepted after normalization; content changes remain rejected"
+  },
+  "unrun": [
+    "Web E2E",
+    "real Vertex",
+    "full server/OS restart",
+    "phase acceptance"
+  ]
+}

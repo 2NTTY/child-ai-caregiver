@@ -28,7 +28,7 @@ const unusedStore = new Proxy({} as WorkspaceStore, {
 async function dispatch(path: string, auth: {
   handler?: (request: Request) => Promise<Response>;
   getSession?: SessionLookup;
-}, workspaces: WorkspaceStore = unusedStore) {
+}, workspaces: WorkspaceStore = unusedStore, chat?: HandlerOptions["chat"]) {
   const headers = new Map<string, string | number | readonly string[]>();
   let body: Buffer = Buffer.alloc(0);
   const request = {
@@ -49,7 +49,7 @@ async function dispatch(path: string, auth: {
       handler: auth.handler ?? unusedAuth,
       api: { getSession: auth.getSession ?? unusedAuth },
     } as unknown as HandlerOptions["auth"],
-    workspaces,
+    workspaces, chat,
     records: new Proxy({} as HandlerOptions["records"], {
       get() { throw new Error("Record storage must not be accessed"); },
     }),
@@ -192,4 +192,16 @@ test("AI availability requires a session and exposes no server configuration", a
   assert.equal(permitted.status, 200);
   assert.deepEqual(JSON.parse(permitted.body), { available: false });
   assert.equal(permitted.headers.get("cache-control"), "no-store");
+});
+test("chat HTTP route uses the current session and preserves renewed cookies", async () => {
+  const cookie = "better-auth.session_token=synthetic-renewed; Path=/; HttpOnly";
+  const response = await dispatch("/api/children/79081f55-9e30-4ee5-91fb-71982b20d6f7/messages",
+    { getSession: sessionLookup({ user: { id: "owner" } }, [cookie]) }, unusedStore, {
+      listForUser: async (userId) => { assert.equal(userId, "owner"); return { messages: [], limit: 100 }; },
+      createUserMessageForUser: async () => { throw new Error("Unexpected write"); },
+      createModelMessageForUser: async () => { throw new Error("Unexpected model write"); },
+    });
+  assert.equal(response.status, 200);
+  assert.deepEqual(JSON.parse(response.body), { messages: [], limit: 100 });
+  assert.deepEqual(response.headers.get("set-cookie"), [cookie]);
 });

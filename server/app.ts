@@ -7,6 +7,8 @@ import type { WorkspaceStore } from "./workspaces.ts";
 import type { RecordStore } from "./records.ts";
 import { handleRecordRequest } from "./record-api.ts";
 import type { ModelGateway } from "./model-gateway.ts";
+import type { ChatStore } from "./chat.ts";
+import { handleChatRequest } from "./chat-api.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -61,6 +63,7 @@ export function createRequestHandler(options: {
   workspaces: WorkspaceStore;
   records: RecordStore;
   modelGateway?: ModelGateway;
+  chat?: ChatStore;
   checkDatabase: () => Promise<void>;
 }) {
   const allowedOrigins = new Set([options.config.publicOrigin, options.config.webOrigin]);
@@ -127,7 +130,9 @@ export function createRequestHandler(options: {
         || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = url.pathname.startsWith("/api/children")
+        result = url.pathname.endsWith("/messages") && options.chat
+          ? await handleChatRequest(webRequest, userId, options.chat)
+          : url.pathname.startsWith("/api/children")
           ? await handleRecordRequest(webRequest, userId, options.records)
           : await handleWorkspaceRequest(webRequest, userId, options.workspaces);
         for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);

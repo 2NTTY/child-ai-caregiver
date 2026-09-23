@@ -553,3 +553,27 @@
 
 - 合併前官方研究覆核：Google 最小重試間隔為一秒，模型頁列出 global／us／eu；已修正間隔及配置，配置測試增加至 6 個，連同 gateway 8 及 Server 8，共 22 個相關情景通過。採用一份短 `vertex-gemini-server` Skill 保存官方來源／版本／日期；所安裝 SDK 的重試欄位留待 S11 核對，沒有把 main 分支當固定版本證據。
 - Skill 附帶 Python validator 因缺 PyYAML 未能執行；改用既有 Node YAML parser 檢查同範圍 frontmatter／名稱／描述／未完成模板，通過。沒有為檢查增裝依賴或啟動子代理。
+
+
+<a id="log-20260923-002"></a>
+## LOG-20260923-002
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S09-W01；P1，前置 S03-W01 已合併；本包基線為已合併 S06-W01／PR #18 的 bea0388。
+- Executor / AI Assistance：主模型負責資料模型／SQL、Server 接線、必要本機验收及 review；Sol High 只負責聊天 API 和必要單元測試，沒有額外 Luna 或 Astra。
+- Human Verification：使用者明確批准「這次必要本機驗收」；不延伸為 E2E、真模型或雲端驗收授權。
+
+### Actual Work / Changes
+- 新增私人聊天原文、孩子／擁有者／作者、user／model 角色與 Server 時間；模型回覆只由 Server 寫入且每原訊息最多一則。HTTP 不接受偽造角色／作者及多餘欄位。
+- 最近 100 則授權讀取／原文寫入 API；未建長期記憶或臨時聊天 UI，S11 一次接上正式文字聊天功能。
+- 004 遷移只新增表／索引；migration checksum 以 LF 為新寫入基準，兼容既有等價 CRLF checksum，避免 Windows 跨 worktree 誤判。沒有改寫已套用 SQL 或清空資料。
+
+### Verification
+- REQ-5-2-01／02／05 及 AC-SA-01 局部驗收：聊天 API 7／7、HTTP 接線 1／1、Server typecheck、git diff --check 通過。
+- 使用者批准 `scripts/verify-p1-store.mjs --approved-local`：新增遷移、原文／角色、帳號隔離、並發配額、白名單統計及新連線持久化六項通過。只沿用既有合成 PostgreSQL，零真模型、零雲端呼叫；資料保留。
+- 首次失敗停在遷移：原 ai-postgres-test-1 容器已停止；啟動原容器後通過，沒有重建 volume。換行相容修正後只重跑既有遷移確認，通過，沒有重跑全組測試。
+- 證據：[EV-S09-W01](artifacts/verification/S09_W01_CHECKS.json)。S06 的持久配額／遷移取得本次局部實測補證；新 pool 不冒充 Server／作業系統重啟驗收。
+
+### Limitations / Next
+- 真 Gemini、Web 聊天／AI 失敗互動及整階段驗收未執行。原始聊天不是已確認照護事件；完整搜尋／修訂留在後續包。
+- review／PR 合併後接 S11-W01，復用已合併的 P1 prompt 和 Vertex 技術 Skill；P1 尚未完成。

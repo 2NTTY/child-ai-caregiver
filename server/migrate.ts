@@ -21,12 +21,15 @@ try {
     await client.query("BEGIN");
     transactionStarted = true;
     await client.query("CREATE TABLE IF NOT EXISTS app_migrations (id text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())");
-    for (const migrationId of ["001-workspaces", "002-child-records", "003-ai-usage"]) {
+    for (const migrationId of ["001-workspaces", "002-child-records", "003-ai-usage", "004-chat-messages"]) {
       const sql = await readFile(new URL(`./migrations/${migrationId}.sql`, import.meta.url), "utf8");
-      const checksum = createHash("sha256").update(sql).digest("hex");
+      const canonicalSql = sql.replace(/\r\n/g, "\n");
+      const checksum = createHash("sha256").update(canonicalSql).digest("hex");
+      // Existing Windows worktrees stored CRLF hashes; accept only equivalent newlines.
+      const windowsChecksum = createHash("sha256").update(canonicalSql.replace(/\n/g, "\r\n")).digest("hex");
       const applied = await client.query<{ checksum: string }>("SELECT checksum FROM app_migrations WHERE id = $1", [migrationId]);
       if (applied.rows[0]) {
-        if (applied.rows[0].checksum !== checksum) throw new Error("Migration checksum mismatch");
+        if (applied.rows[0].checksum !== checksum && applied.rows[0].checksum !== windowsChecksum) throw new Error("Migration checksum mismatch");
       } else {
         await client.query(sql);
         await client.query("INSERT INTO app_migrations (id, checksum) VALUES ($1, $2)", [migrationId, checksum]);
