@@ -124,6 +124,19 @@ S03-W01 在同一 `/api` 入口新增以下已登入端點；session、Origin、
 
 GET／POST 沿用原有 Origin、body 上限、cookie 更新及 no-store 規則。此包沒有瀏覽器主庫、outbox 或自動重試寫入；S11 會接入保存後的聊天 UI／Gemini，P2 才補完整搜尋與長期記憶。
 
+<a id="p1-chat-reply"></a>
+## P1 Gemini 文字聊天（S11-W01）
+
+Web 先保存 user 原文，再 `POST /api/children/:childId/messages/:messageId/reply`，body 只接受 `{}`，帶相同的 `x-expected-user-id`。成功返回已保存的 `{message}`／200；已有回覆直接重用。Server 以 PostgreSQL advisory lock 避免同一訊息並發生成，每程序最多持有四個回覆鎖，保留連線供授權及配額查詢。程序退出會釋放鎖；這不是 S07 的完整冪等協議，模型成功而尚未保存的未知結果不能保證免重複計費。
+
+Server 復用完整 [P1 prompt](../prompts/p1/childcare-chat.txt)，只組合已授權孩子稱呼及私人近期聊天；最多 20 則，按總輸入字元上限由近至遠保留，止於所要求的 user 訊息。孩子資料放在 user 內容，不升為系統指令；不讀照護記錄、其他人的聊天或未來訊息，不提供工具／長期記憶。目標原文連必要指令仍超限時拒絕 AI 呼叫，已保存原文保持不變。
+
+固定 `@google/genai` 2.24.0，Server 使用 ADC、Vertex v1 及 `.env.example` 指定模型／地點，SDK `attempts:1` 關閉額外重試。只接納正常結束的自然文字，移除 thought parts，拒絕工具、空回覆及截斷輸出；回覆保存前再次核對 session／孩子授權。401 表示登入失效，404 表示訊息／孩子不可見，400 表示輸入不適用；429 包括 `ai_busy`／`ai_quota_exceeded`，503 包括 `ai_disabled`／`ai_timeout`／`ai_unavailable`。
+
+`GET /api/ai/usage` 只向當前登入者返回 UTC `day`、`attempts`、`inputTokens`、`outputTokens`、`cachedTokens`、`unknownUsageAttempts`。tokens 為已回報部分的合計，未知次數另列；output 由 total 減 prompt 計算並包含已回報思考 tokens，缺失不推算。這是用量統計，不是帳單或剩餘優惠額度。
+
+草稿只存本頁、按孩子區分；換帳號／登出清除，離線或 AI 失敗保留輸入。原文保存未知時先重讀及人工核對，不自動重送；AI 回覆可用原 message ID 手動再取，已有結果不再呼叫模型。關頁／登出前提示未提交內容，沒有瀏覽器資料主庫或 outbox。介面告知要求回覆會將孩子稱呼及近期聊天送到 Google，P1 試玩只使用合成資料。
+
 <a id="section-4-1"></a>
 ## 4.1 配对码与二维码
 

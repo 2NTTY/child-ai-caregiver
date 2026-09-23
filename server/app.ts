@@ -9,6 +9,8 @@ import { handleRecordRequest } from "./record-api.ts";
 import type { ModelGateway } from "./model-gateway.ts";
 import type { ChatStore } from "./chat.ts";
 import { handleChatRequest } from "./chat-api.ts";
+import { handleChatReply } from "./chat-reply.ts";
+import type { AiUsageStore } from "./ai-usage.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -64,6 +66,9 @@ export function createRequestHandler(options: {
   records: RecordStore;
   modelGateway?: ModelGateway;
   chat?: ChatStore;
+  chatPrompt?: string;
+  aiMaxInputCharacters?: number;
+  aiUsage?: AiUsageStore;
   checkDatabase: () => Promise<void>;
 }) {
   const allowedOrigins = new Set([options.config.publicOrigin, options.config.webOrigin]);
@@ -120,17 +125,25 @@ export function createRequestHandler(options: {
       } else if (url.pathname === "/api/health" && method === "GET") {
         await options.checkDatabase();
         result = jsonResponse({ status: "ok" });
-      } else if (url.pathname === "/api/ai/status" && method === "GET") {
+      } else if (["/api/ai/status", "/api/ai/usage"].includes(url.pathname) && method === "GET") {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         result = sessionResult.response?.user.id
-          ? jsonResponse({ available: options.modelGateway?.available() ?? false })
+          ? url.pathname.endsWith("/usage") && options.aiUsage
+            ? jsonResponse(await options.aiUsage.getForUser(sessionResult.response.user.id))
+            : jsonResponse({ available: options.modelGateway?.available() ?? false })
           : apiError("unauthorized", "請先登入。", 401);
         for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
         || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = url.pathname.endsWith("/messages") && options.chat
+        result = url.pathname.endsWith("/reply") && options.chat && options.modelGateway && options.chatPrompt
+          ? await handleChatReply(webRequest, userId, {
+            chat: options.chat, records: options.records, gateway: options.modelGateway,
+            prompt: options.chatPrompt, maxInputCharacters: options.aiMaxInputCharacters ?? 10000,
+            isCurrentUser: async expectedId => (await options.auth.api.getSession({ headers }))?.user.id === expectedId,
+          })
+          : url.pathname.endsWith("/messages") && options.chat
           ? await handleChatRequest(webRequest, userId, options.chat)
           : url.pathname.startsWith("/api/children")
           ? await handleRecordRequest(webRequest, userId, options.records)

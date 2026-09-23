@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S06-W03",
-  "recordedOn": "2026-09-22",
+  "workPackage": "S11-W01",
+  "recordedOn": "2026-09-23",
   "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "fa6564f38909a4953ba2dd855b105f093f64d504234cb1081a5fc7adece64563"
+    "sha256": "0bff7eafef35cc56a41b3781c979c10e4e528228adb6409b1bab9d5c5661fe1b"
   },
   "packages": [
     {
@@ -406,16 +406,35 @@
           "source": "node_modules/@types/pg/LICENSE"
         }
       ]
+    },
+    {
+      "name": "@google/genai",
+      "version": "2.24.0",
+      "dependencyType": "dependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/googleapis/js-genai.git"
+      },
+      "tarball": "https://registry.npmjs.org/@google/genai/-/genai-2.24.0.tgz",
+      "integrity": "sha512-bIu5eoxF1AaPWs9ivmUJGp1RpDHyapoODvWvnkzRDx2CTIW6UJXFhDdjj0BlRve3ZHMMuEkQBVrA/ALqpW4apA==",
+      "files": [
+        {
+          "path": "licenses/google-genai/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "source": "node_modules/@google/genai/LICENSE"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 624,
+    "packageEntries": 657,
     "declarations": {
-      "MIT": 538,
+      "MIT": 553,
       "ISC": 31,
       "MIT AND Apache-2.0": 1,
-      "BSD-3-Clause": 9,
-      "Apache-2.0": 13,
+      "BSD-3-Clause": 20,
+      "Apache-2.0": 20,
       "(MIT OR CC0-1.0)": 2,
       "Python-2.0": 1,
       "Unlicense": 2,

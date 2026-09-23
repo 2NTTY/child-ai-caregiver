@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { createAuth } from "./auth.ts";
 import { createRequestHandler } from "./app.ts";
@@ -9,18 +10,22 @@ import { readAiConfig } from "./ai-config.ts";
 import { createAiUsageStore } from "./ai-usage.ts";
 import { createChatStore } from "./chat.ts";
 import { createModelGateway } from "./model-gateway.ts";
+import { createVertexProvider } from "./vertex-provider.ts";
 
 try {
   const config = readServerConfig(process.env);
   const aiConfig = readAiConfig(process.env);
+  const chatPrompt = await readFile(new URL("../prompts/p1/childcare-chat.txt", import.meta.url), "utf8");
+  const provider = aiConfig.enabled ? createVertexProvider(aiConfig) : undefined;
   const pool = createPool(config);
+  const aiUsage = createAiUsageStore(pool);
   const auth = createAuth(config, pool);
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
     records: createRecordStore(pool),
     chat: createChatStore(pool),
-    // S11 wires the real provider together with authorized chat orchestration.
-    modelGateway: createModelGateway({ config: aiConfig, usage: createAiUsageStore(pool) }),
+    chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
+    modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },
   });
   const server = createServer((request, response) => {
