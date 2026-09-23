@@ -1,0 +1,182 @@
+{
+  "evidenceId": "EV-S16-W01",
+  "workPackage": "S16-W01",
+  "recordedOn": "2026-09-23",
+  "status": "verified",
+  "baseCommit": "32cf4d8a824c6eb865de7861cd69d91831a08909",
+  "prerequisites": [
+    "S01-W01",
+    "S02-W01",
+    "S06-W03",
+    "S03-W01",
+    "S06-W01",
+    "S09-W01",
+    "S11-W01",
+    "S05-W01 (PR #21 merged)"
+  ],
+  "scope": "P1 implemented functionality and necessary local acceptance; S17 deployment URL and independent teammate trial remain incomplete",
+  "newChecks": {
+    "webExport": {
+      "result": "passed",
+      "command": "npm run build:web",
+      "offline": true,
+      "telemetry": false,
+      "javascriptBundles": 1,
+      "javascriptBytes": 1182844,
+      "apiOrigin": "synthetic loopback",
+      "absentBundleMarkers": [
+        "@google/genai",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "STORAGE_KEY_FILE",
+        "BACKUP_KEY_FILE"
+      ]
+    },
+    "httpIntegration": {
+      "result": "passed",
+      "approvedByUser": true,
+      "command": "node --env-file=<existing synthetic configuration> scripts/verify-server.mjs --records",
+      "runs": 1,
+      "passed": 17,
+      "checks": [
+        "MIGRATIONS",
+        "ENCRYPTED_STORAGE_UPGRADE",
+        "DATABASE_HEALTH",
+        "UNAUTHENTICATED_REQUESTS",
+        "EMAIL_AUTHENTICATION",
+        "SERVER_OWNED_WORKSPACES",
+        "ACCOUNT_ISOLATION",
+        "REPEATED_CREATION_AND_READ",
+        "ORIGIN_GUARD",
+        "WRONG_PASSWORD",
+        "CHILD_CREATION_AND_OWNERSHIP",
+        "RAW_TEXT_AND_SERVER_AUTHOR",
+        "CHILD_RECORD_ACCESS_BOUNDARY",
+        "CHILD_RECORD_INPUT_VALIDATION",
+        "ACCOUNT_SWITCH_WRITE_PRECONDITION",
+        "SESSION_REVOCATION",
+        "RESTART_PERSISTENCE"
+      ],
+      "plannedCount": 16,
+      "countDifference": "Existing script includes encrypted-storage initialization in addition to the original 16 HTTP checks; no new external scope",
+      "sourceAlreadyEncrypted": true,
+      "actualServerProcessRestart": true,
+      "existingRowsRetained": true,
+      "databaseReset": false,
+      "deletedRows": false,
+      "realModelCalls": 0,
+      "cloudCalls": 0
+    }
+  },
+  "coverage": [
+    {
+      "requirement": "REQ-1-6-02 / AC-SA-01: login, account isolation, persistent Server authority",
+      "evidence": [
+        "S06_W03_CHECKS.json",
+        "S03_W01_CHECKS.json",
+        "newChecks.httpIntegration"
+      ],
+      "assessment": "passed; new check exercises latest encrypted HTTP startup, original record text and actual Server restart"
+    },
+    {
+      "requirement": "AC-10-2-01 (P1 Web): reopen and sign-in recovery",
+      "evidence": [
+        "S03_W01_CHECKS.json: webAcceptance CLOSE_AND_REOPEN_FROM_SERVER, SIGN_OUT_AND_SIGN_IN_RESTORE"
+      ],
+      "assessment": "reused; Android is P3 and not claimed"
+    },
+    {
+      "requirement": "AC-10-2-04/05/06 (P1): offline inputs and truthful save states",
+      "evidence": [
+        "S03_W01_CHECKS.json: webAcceptance OFFLINE_FORM_AND_NO_FALSE_SAVE, ONLINE_READ_THEN_SAVE",
+        "S11_W01_CHECKS.json: chatClientUnit"
+      ],
+      "assessment": "reused; current-page drafts only, no durable offline queue"
+    },
+    {
+      "requirement": "REQ-1-6-02: saved private chat and relevant recent context with real Gemini",
+      "evidence": [
+        "S09_W01_CHECKS.json",
+        "S11_W01_CHECKS.json: approvedRealService"
+      ],
+      "assessment": "reused three real calls; S05 verified encryption preserves all prior chat bodies and relations"
+    },
+    {
+      "requirement": "S16-W01: AI failure, authority checks, bounded retry and no false reply",
+      "evidence": [
+        "../../WORKLOG.md#log-20260923-001",
+        "S11_W01_CHECKS.json: chatClientUnit, chatReplyAndProviderUnit",
+        "../../tests/model-gateway.test.ts",
+        "../../tests/chat-client.test.ts"
+      ],
+      "assessment": "reused public-behavior unit evidence; real provider failure was not induced and is not claimed"
+    },
+    {
+      "requirement": "AC-SA-01: durable quota and concurrent reservations",
+      "evidence": [
+        "S09_W01_CHECKS.json",
+        "S05_W01_CHECKS.json: retained quota after deletion and restore"
+      ],
+      "assessment": "concurrent SQL reservations and reconnection/restore verified; no separate quota-after-HTTP-process-restart assertion claimed. Per-request SQL authority has no in-memory daily quota reset; no additional equivalent test required"
+    },
+    {
+      "requirement": "AC-10-5-01/02/03 (P1): owner isolation, private chat and cache boundary",
+      "evidence": [
+        "newChecks.httpIntegration",
+        "S09_W01_CHECKS.json",
+        "S11_W01_CHECKS.json: chatClientUnit",
+        "S05_W01_CHECKS.json: deletionClientUnit, acceptance"
+      ],
+      "assessment": "passed within P1 owner-only scope; family sharing and reports belong to later work packages"
+    },
+    {
+      "requirement": "AC-10-5-05 / AC-SA-01: credentials and logs",
+      "evidence": [
+        "../../WORKLOG.md#log-20260923-001",
+        "S11_W01_CHECKS.json: conversationBodiesLogged=false",
+        "S05_W01_CHECKS.json: credentialsAndBodiesLogged=false",
+        "newChecks.webExport"
+      ],
+      "assessment": "reused sanitization/config tests plus new bundle-boundary check; tests do not claim a universal secret scan"
+    },
+    {
+      "requirement": "AC-SA-01 / AC-10-6-03 (P1 subset): storage encryption, independent encrypted backup and empty restore",
+      "evidence": [
+        "S05_W01_CHECKS.json"
+      ],
+      "assessment": "seven approved PostgreSQL checks passed; Windows key ACL verified. Physical disk/WAL encryption remains a delivery-environment gate"
+    },
+    {
+      "requirement": "AC-10-5-06/AC-10-2-07 (P1 subset): necessary deletion",
+      "evidence": [
+        "S05_W01_CHECKS.json: acceptance, deletionClientUnit",
+        "../../tests/record-api.test.ts"
+      ],
+      "assessment": "owner-only deletion, cascades, other-child preservation and cache cleanup verified; historical backup retention limitation remains explicit"
+    },
+    {
+      "requirement": "S11-W01/S16-W01: real usage and cost boundaries",
+      "evidence": [
+        "S11_W01_CHECKS.json: approvedRealService.usage"
+      ],
+      "assessment": "3 calls, 2749 input and 52 output tokens; cached-token metadata missing for all3. No invoice, promotional-credit remainder, cache benefit or cost saving measured; usage is not a bill"
+    },
+    {
+      "requirement": "S17-W01 / AC-SA-01 / AC-10-7-04: accessible URL and independent teammate trial",
+      "evidence": [],
+      "assessment": "not performed; mandatory S17 delivery gate, P1 is not complete"
+    }
+  ],
+  "review": {
+    "readOnlyAudit": "Luna Max: bounded evidence and changed-path audit",
+    "execution": "Sol High: one web export and one approved HTTP run; no product code changes",
+    "mainDecision": "S05 HTTP/build evidence gap closed by the two new checks. Reuse prior scoped evidence; no extra full regression, E2E or real-model calls. Application verification complete for S16; deployment acceptance and independent trial remain S17 gates."
+  },
+  "limitations": [
+    "No new browser E2E or full regression",
+    "No new real-model calls or provider-failure injection",
+    "No measured invoice or promotional-credit balance",
+    "Delivery TLS, storage/WAL encryption, hosted secret configuration and URL still require S17 environment evidence",
+    "Independent teammate trial is pending"
+  ],
+  "stageP1Complete": false
+}
