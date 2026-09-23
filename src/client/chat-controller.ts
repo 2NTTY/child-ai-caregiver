@@ -91,6 +91,8 @@ export class ChatController {
   private requests = new Set<AbortController>();
   private epoch = 0;
   private view = 0;
+  private blockedChildIds = new Set<string>();
+  private forgottenChildIds = new Set<string>();
 
   constructor(api: ChatApi, online = true) {
     this.api = api;
@@ -124,7 +126,47 @@ export class ChatController {
   private clearIdentity(): void {
     this.epoch += 1;
     this.abortRequests();
+    this.blockedChildIds.clear();
+    this.forgottenChildIds.clear();
     this.update(initialState(this.state.online));
+  }
+
+  beginChildDeletion(childId: string): boolean {
+    if (!this.state.userId || this.state.busy) return false;
+    this.blockedChildIds.add(childId);
+    if (this.state.selectedChildId === childId) {
+      this.abortRequests();
+      this.update({ selectedChildId: null, messages: [], loading: false, loadedAt: null, error: null,
+        replyingMessageId: null, replyError: null });
+    }
+    return true;
+  }
+
+  releaseChildDeletion(childId: string): void {
+    this.blockedChildIds.delete(childId);
+    if (this.state.selectedChildId === childId && this.state.online) void this.reloadMessages();
+  }
+
+  forgetChild(childId: string): void {
+    this.blockedChildIds.delete(childId);
+    this.forgottenChildIds.add(childId);
+    const drafts = { ...this.state.drafts };
+    delete drafts[childId];
+    if (this.state.selectedChildId === childId) {
+      this.abortRequests();
+      this.update({ drafts, selectedChildId: null, messages: [], loading: false, loadedAt: null,
+        error: null, busy: null, replyingMessageId: null, replyError: null });
+    } else this.update({ drafts });
+  }
+
+  reconcileChildren(childIds: string[], pendingDeletionId: string | null): void {
+    const present = new Set(childIds);
+    const known = new Set([...Object.keys(this.state.drafts),
+      ...(this.state.selectedChildId ? [this.state.selectedChildId] : []), ...this.blockedChildIds]);
+    for (const childId of known) {
+      if (!present.has(childId)) this.forgetChild(childId);
+      else if (childId !== pendingDeletionId) this.blockedChildIds.delete(childId);
+    }
   }
 
   private invalidateIdentity(): void {
@@ -176,6 +218,7 @@ export class ChatController {
       this.update({ online });
     }
     if (!userId) return;
+    if (childId && (this.blockedChildIds.has(childId) || this.forgottenChildIds.has(childId))) childId = null;
     if (childId !== this.state.selectedChildId) {
       const previousId = this.state.selectedChildId;
       if (previousId) {

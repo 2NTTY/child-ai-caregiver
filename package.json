@@ -19,7 +19,10 @@
     "test:integration": "node --env-file-if-exists=.env scripts/verify-server.mjs",
     "test:records": "node --env-file-if-exists=.env scripts/verify-server.mjs --records",
     "test:web": "node --env-file-if-exists=.env scripts/verify-web.mjs",
-    "setup:local": "node scripts/setup-local-env.mjs"
+    "setup:local": "node scripts/setup-local-env.mjs",
+    "storage:encrypt": "node --env-file-if-exists=.env scripts/encrypt-storage.mjs",
+    "storage:backup": "node --env-file-if-exists=.env scripts/storage-backup.mjs backup",
+    "storage:restore": "node --env-file-if-exists=.env scripts/storage-backup.mjs restore"
   },
   "dependencies": {
     "@expo/metro-runtime": "57.0.16",

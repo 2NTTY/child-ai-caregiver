@@ -1,3 +1,5 @@
+import { createStorageCipher, readSecretKey } from "../server/storage-crypto.ts";
+import { upgradeEncryptedStorage } from "../server/storage-upgrade.ts";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -31,6 +33,8 @@ try {
     { env, cwd: fileURLToPath(new URL("../", import.meta.url)), stdio: "ignore", windowsHide: true, timeout: 30000 });
   const config = readServerConfig(env);
   pool = createPool(config);
+  const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
+  await upgradeEncryptedStorage(pool, cipher);
   const auth = createAuth(config, pool);
   const accounts = [];
   step = "synthetic_accounts";
@@ -42,8 +46,8 @@ try {
     accounts.push(account.user.id);
   }
   const [owner, other] = accounts;
-  const child = await createRecordStore(pool).createChildForUser(owner, { displayName: "合成聊天驗收" });
-  const chats = createChatStore(pool);
+  const child = await createRecordStore(pool, cipher).createChildForUser(owner, { displayName: "合成聊天驗收" });
+  const chats = createChatStore(pool, cipher);
   const raw = "  合成文字：大約 3 點。\n🙂  ";
   step = "chat_original_and_roles";
   const message = await chats.createUserMessageForUser(owner, child.id, raw);
@@ -70,7 +74,7 @@ try {
   await pool.end();
   pool = createPool(config);
   step = "reopen_persistence";
-  const page = await createChatStore(pool).listForUser(owner, child.id);
+  const page = await createChatStore(pool, cipher).listForUser(owner, child.id);
   assert.equal(page.messages.length, 2);
   assert.equal(page.messages.find(row => row.id === message.id)?.text, raw);
   assert.equal(await createAiUsageStore(pool).reserve(owner, 3, globalLimit), false);

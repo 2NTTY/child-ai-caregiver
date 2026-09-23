@@ -1,3 +1,5 @@
+import { createStorageCipher, readSecretKey } from "../server/storage-crypto.ts";
+import { upgradeEncryptedStorage } from "../server/storage-upgrade.ts";
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
@@ -35,14 +37,16 @@ try {
     AI_DAILY_USER_ATTEMPTS: "3", AI_DAILY_GLOBAL_ATTEMPTS: "100", AI_MAX_ATTEMPTS: "1",
     AI_TIMEOUT_MS: "30000", AI_MAX_INPUT_CHARACTERS: "6000", AI_MAX_OUTPUT_TOKENS: "512" });
   pool = createPool(config);
-  const chat = createChatStore(pool), usage = createAiUsageStore(pool);
+  const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
+  await upgradeEncryptedStorage(pool, cipher);
+  const chat = createChatStore(pool, cipher), usage = createAiUsageStore(pool);
   step = "reply_lock_capacity_and_exclusion";
   const lockId = randomUUID();
   const locks = await Promise.all([lockId, randomUUID(), randomUUID(), randomUUID()].map(id => chat.acquireReplyLock(id)));
   assert.ok(locks.every(Boolean));
   try {
     assert.equal(await chat.acquireReplyLock(randomUUID()), null);
-    assert.equal(await createChatStore(pool).acquireReplyLock(lockId), null);
+    assert.equal(await createChatStore(pool, cipher).acquireReplyLock(lockId), null);
     await pool.query("SELECT 1");
   } finally { await Promise.all(locks.map(release => release?.())); }
   const prompt = await readFile(new URL("../prompts/p1/childcare-chat.txt", import.meta.url), "utf8");
@@ -53,7 +57,7 @@ try {
     return vertex.generate(...args);
   } };
   handler = createRequestHandler({ config, auth: createAuth(config, pool), workspaces: createWorkspaceStore(pool),
-    records: createRecordStore(pool), chat, aiUsage: usage, chatPrompt: prompt, aiMaxInputCharacters: ai.maxInputCharacters,
+    records: createRecordStore(pool, cipher), chat, aiUsage: usage, chatPrompt: prompt, aiMaxInputCharacters: ai.maxInputCharacters,
     modelGateway: createModelGateway({ config: ai, usage, provider }), checkDatabase: async () => { await pool.query("SELECT 1"); } });
   let cookie = "", userId;
   async function request(path, body, expectedStatus = 200, authenticated = true) {
@@ -102,7 +106,7 @@ try {
   assert.ok(actualUsage.outputTokens > 0);
   assert.equal((await request(messagesPath)).messages.length, 6);
   const verificationPool = createPool(config);
-  try { assert.equal((await createChatStore(verificationPool).listForUser(userId, child.id)).messages.length, 6); }
+  try { assert.equal((await createChatStore(verificationPool, cipher).listForUser(userId, child.id)).messages.length, 6); }
   finally { await verificationPool.end(); }
   console.log(JSON.stringify({ result: "passed", checks: 7, realModelCalls: calls, syntheticOnly: true,
     project: ai.project, model: ai.model, location: ai.location, requestMaxInputCharacters: 6000, requestMaxOutputTokens: 512,

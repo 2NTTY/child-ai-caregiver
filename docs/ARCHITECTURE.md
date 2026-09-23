@@ -48,6 +48,13 @@ Server 業務儲存須加密，備份獨立加密及核驗恢復；實際加密�
 <a id="rule-3-2-11"></a>
 P1 最小 Server／PostgreSQL／Better Auth 先支援合成資料可玩流程，之後完成 Server 儲存加密及最小加密備份／還原；P2 加入家庭邀請、私人隔離、附件及持續 worker；P3 Android 重用 Server；P4 完成 pgvector 管理、Server 選擇、Windows 部署、完整遷移及災備。
 
+<a id="p1-storage-protection"></a>
+### P1 加密實作邊界（S05-W01，待驗收）
+
+Server 在 PostgreSQL driver 前，以 Node 24 原生 AES-256-GCM 加密孩子稱呼、文字記錄及私人聊天正文；每次新 nonce、完整 tag 與擁有者／記錄 AAD，授權讀取後才解密。密鑰檔案在工程外受 OS 權限保護；缺失／不符或未完成既有資料轉換時不啟動 Server，不回退明文。IDs、時間、角色、用量及 Better Auth 的索引／身份欄位不屬此正文加密；正式部署仍須加密磁碟、WAL 及備份儲存，不能用本機欄位測試代替環境證據。
+
+P1 備份以 pg_dump custom snapshot 及獨立 key 加密；原 archive 只在記憶體，還原先完整驗證再送入空目標的單一交易。帳號及業務保存，臨時 session／verification 排除；沒有自動切換 Server、密鑰輪替或 P4 搬遷框架。必要限制及實際指令見 [P1 儲存操作](P1_STORAGE.md)。尚未獲准的真 DB／還原驗收不視為通過。
+
 <a id="section-3-5"></a>
 ## 3.5 主节点与任务执行
 

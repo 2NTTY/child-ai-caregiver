@@ -31,6 +31,7 @@ function fixture() {
     signOuts: 0,
   };
   const api: RecordsApi = {
+    deleteChild: async () => { throw new Error("Unexpected deletion"); },
     getSession: async () => values.user,
     authenticate: async () => {},
     signOut: async () => { values.signOuts += 1; values.user = null; },

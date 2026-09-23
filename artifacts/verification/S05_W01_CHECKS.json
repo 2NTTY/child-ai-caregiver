@@ -1,0 +1,61 @@
+{
+  "evidenceId": "EV-S05-W01",
+  "workPackage": "S05-W01",
+  "recordedOn": "2026-09-23",
+  "status": "implemented_awaiting_acceptance",
+  "baseCommit": "e2027d543e51e4514e7a484bc7e8fd2c4a10a8fb",
+  "prerequisites": [
+    "S11-W01 (PR #20 merged)"
+  ],
+  "lightweightChecks": {
+    "storageCryptoUnit": {
+      "passed": 3
+    },
+    "recordApiStoreUnit": {
+      "passed": 17
+    },
+    "deletionClientUnit": {
+      "passed": 5
+    },
+    "agentReportedClientRegression": {
+      "passed": 27,
+      "overlapsDeletionChecks": true
+    },
+    "clientTypecheck": "passed",
+    "serverAndTestTypecheck": "passed",
+    "modifiedScriptSyntax": "passed",
+    "skillFrontmatter": "passed",
+    "diffCheck": "passed"
+  },
+  "reviewFixes": [
+    "Block stale chat actions synchronously when opening deletion confirmation",
+    "Prevent record/child writes while a deletion decision is pending",
+    "Check PostgreSQL tool warnings and reject unsupported connection options",
+    "Refuse unexpected partial encryption state"
+  ],
+  "acceptance": {
+    "decision": "user_deferred",
+    "response": "先保留待驗收",
+    "preparedCommand": "node --env-file=<existing synthetic configuration> scripts/verify-storage.mjs --approved-local-encryption",
+    "notRun": [
+      "existing PostgreSQL conversion and original content equality",
+      "new encrypted writes/isolation",
+      "new synthetic child deletion and cascades",
+      "encrypted backup",
+      "tampered backup rejection before restore",
+      "empty database restore and recovered login",
+      "nonempty-target restore refusal"
+    ]
+  },
+  "liveDataChanged": false,
+  "storageKeysGenerated": false,
+  "realModelCalls": 0,
+  "cloudCalls": 0,
+  "stageP1Complete": false,
+  "limitations": [
+    "No browser E2E or full regression",
+    "No S05 SQL/runtime/ACL/restore evidence yet",
+    "Physical disk/WAL encryption and cloud delivery still require environment verification",
+    "Existing historical backups are not rewritten by child deletion"
+  ]
+}
