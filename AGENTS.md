@@ -34,7 +34,7 @@
 - 每個工作包同時及累計各最多 3 個 Luna＋2 個 Sol，合計最多 5 個；重啟、恢復及替代啟動均計入累計，達限先整合，不追加。數量是上限，不是目標；簡單搜尋、單檔工作由主模型處理，先復用已有結論，證據足夠即停止。
 - 主模型先拆分完整任務，再一次性下達目標、範圍、路徑線索、關鍵約束、禁止事項、預期輸出及驗證證據。spawn 明確指定角色、模型、effort 及 `fork_turns="none"`，不繼承完整對話；`task_name` 不能代替角色設定。
 - 每輪收齊最終結果後統一整合，未整合前不追加同類任務；不輪詢進度，不用 `send_message` 追進度、重複指令或零碎補上下文。follow-up 只用於補齊會阻塞工作的關鍵證據。
-- 實際設定只維護專案 [.codex/config.toml](.codex/config.toml)：預設子模型 `gpt-5.6-sol`、effort `high`、總並發硬上限 5；角色與累計限額由本節行為規則執行，不捏造 config 欄位。`explorer` 保留 Luna Max／readonly；`worker` 固定 Sol、不固定 effort，回退 High 並容許顯式 High／Xhigh／Max；不改全局設定。
+- 實際設定只維護專案 [.codex/config.toml](.codex/config.toml)：預設子模型 `gpt-6-sol`、effort `high`、總並發硬上限 5；角色與累計限額由本節行為規則執行，不捏造 config 欄位。`explorer` 固定 `gpt-6-luna` Max／readonly；`worker` 固定 `gpt-6-sol`、不固定 effort，回退 High 並容許顯式 High／Xhigh／Max；不改全局設定。
 - 配置檔不等於已生效證據；核對實際 runtime 的主模型、子代理與 sandbox。唯讀指令不等於作業系統唯讀沙箱，不僅憑角色檔聲稱本輪已套用或已切換模型。
 
 <a id="operations"></a>
