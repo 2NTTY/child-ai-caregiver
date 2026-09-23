@@ -257,8 +257,10 @@ export class RecordsController {
     const epoch = this.epoch;
     const controller = new AbortController();
     this.requests.add(controller);
+    let authenticated = false;
     try {
       await this.api.authenticate(mode, { ...input, name: input.name.trim(), email: input.email.trim() }, controller.signal);
+      authenticated = true;
       const user = await this.api.getSession(controller.signal);
       if (epoch !== this.epoch) return;
       if (!user) {
@@ -267,9 +269,10 @@ export class RecordsController {
       }
       await this.activate(user);
     } catch (error) {
+      const unconfirmed = isUnknown(error) || (authenticated && !isSessionInvalid(error));
       if (epoch === this.epoch) this.update({
-        busy: null, auth: isUnknown(error) ? "unavailable" : "signedOut",
-        notice: isUnknown(error) ? "登入或註冊結果未能確認，請先重新檢查登入狀態。"
+        busy: null, auth: unconfirmed ? "unavailable" : "signedOut",
+        notice: unconfirmed ? "登入或註冊結果未能確認，請先重新檢查登入狀態。"
           : error instanceof ClientApiError && error.status === 429 ? "嘗試次數過多，請稍後再試。"
           : mode === "signUp" ? "未能完成註冊，請核對資料；如已有帳號，請登入。" : "未能登入，請核對電郵及密碼後再試。",
       });

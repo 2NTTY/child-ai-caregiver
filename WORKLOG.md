@@ -668,3 +668,88 @@
 ### Failures / Limitations / Next
 - Docker／key 預檢在 sandbox 受限，使用針對已批准檢查的提權後通過；沒有改全局權限。Web 配置沿用實際 EXPO_PUBLIC_API_BASE_URL。
 - S16 本機功能驗收完成；S17 尚需實際交付環境的 HTTPS、密鑰與磁碟／WAL 保護、操作說明及組員獨立試玩。P1 未完成，不以本次驗收替代這些門檻。
+
+
+<a id="log-20260923-007"></a>
+## LOG-20260923-007
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S17-W01；前置 S16／PR #22 已合併，基線 master 2b55eb0。只準備及靜態核查，未部署／未完成。
+- Executor / AI Assistance：Sol High 一個建立有界 Docker app stages，恢復一次做靜態核查；Luna Max 一個只讀官方部署研究，收斂後恢復一次交付既有證據，沒有子派生。主模型處理 Compose／身份與密鑰邊界、maintenance、操作交付、Skill 及整合 review。
+- Human Verification：使用者提供可用網域 ex-machina.eu.org；尚未取得本次容器／雲端資源支出批准，沒有組員試玩回報。
+
+### Actual Work / Verification
+- 準備固定版本的 API／Web／PostgreSQL18 maintenance images、私有 DB network、同源 Caddy HTTPS、工程外新 secrets 初始化、七天 GCE 停止方案及簡短試玩指引；範圍見 [P1 交付](docs/P1_DELIVERY.md)。不預建 P4 Windows 平台。
+- 核對官方 Docker、GCP、Caddy 文件，將會重用的約束壓縮為 gcp-compose-delivery Skill；價格僅保存本次日期的初步估算，不將易變價格放入 Skill。原 Caddy2.11.4 Apache-2.0 license 保存及 hash 通過。
+- Sol 靜態 YAML／frontmatter、Python AST、Compose config、mount／port／network／secret 關係及 COPY 來源通過；主模型修正 telemetry／tsconfig 及 root-only env_file 要用 sudo/root Compose 的說明。
+- [EV-S17-W01](artifacts/verification/S17_W01_CHECKS.json) 明確區分已準備、靜態通過及未執行的 runtime／部署門檻。
+
+### Limitations / Next
+- Caddy IP 預設自簽與公開 IP 證書能力不能混為一談；收到使用者網域後改採標準網域 HTTPS，規劃子網域 yuban，不改根網域。DNS 僅查 NS，沒有寫入。
+- Compute API 尚未啟用；沒有建立或修改 GCP 資源、支出批准、Docker build/run、正式初始化或新模型呼叫。本機既有合成庫／備份／密鑰保留。
+- 待批准後先驗證容器，再按具體方案部署並由使用者設 DNS，最後取得另一組員實際回報；P1 仍未完成。
+
+
+<a id="log-20260923-008"></a>
+## LOG-20260923-008
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S17-W01；使用者明確批准「本機驗收及七天部署」，沿用已 review 的範圍。
+- Executor：主模型整合及必要執行；本次沒有新增子代理或全面回歸。
+
+### Actual Work / Verification
+- 三個固定映像建置通過；獨立合成 Docker volumes 驗證本機 HTTPS、Secure／HttpOnly cookie、帳號隔離、原文保存及實際 API 重啟持久化。
+- maintenance 使用 PostgreSQL18 原生工具完成加密備份、新空庫還原、原文解密及 session 排除。既有本機加密庫未修改，沒有 Gemini 呼叫。
+- Windows 本機以 Linux named secret volumes 核對 UID／mode；Linux file-secret initializer 留待實際主機驗收。附加 count 命令一度誤用資料表名，已改以正確 text_records 解密與 session 核查通過；不屬產品失敗。
+- 建立 Compute／IAM／IAP 前置及專用網路、Vertex runtime 身份、80/443 與 IAP-only SSH firewall；固定 IP／VM 建立中。
+- review 補齊靜態 Web 隨附既有 notices／licenses；不重做 Prompt Pack 或美術。
+
+### Remaining
+- 公開 DNS／TLS、實際磁碟／密鑰／備份／metadata ADC、七天停止設定及組員獨立回報仍待完成；P1 未結案。證據見 EV-S17-W01。
+
+
+<a id="log-20260923-009"></a>
+## LOG-20260923-009
+
+- Step / Package：S17-W01；使用者拒絕子網域方案，明確指定根網域 ex-machina.eu.org 並回報 DNS 已設定。同步改入口、初始化參數及現行交付說明；舊 LOG 保留歷史。
+- 公開 DNS 1.1.1.1 查得 A=35.241.127.20，未見 AAAA；Codex 沒有修改 DNS。
+- 香港 e2-small／20 GiB pd-balanced、專用 Vertex 身份及 firewall 已建立；實際啟動 2026-09-23 20:50:44 HKT，GCE 設定 maxRunDuration=604800／STOP，預計 2026-09-30 20:50:44 HKT 停止。保留 disk／IP 仍收費。
+- Docker 29.8.1／Compose 5.5.1 按官方 Debian apt 來源安裝；容量自動擴至 20 GiB。尚未啟動公開 app，映像傳送中，沒有新模型呼叫或組員回報。
+
+
+<a id="log-20260923-010"></a>
+## LOG-20260923-010
+
+- Step / Package：S17-W01；部署版本 cc3dae4，草稿 PR #23；技術通過，組員試玩待驗收。主模型完成必要整合／執行，沒有新子代理、全量或瀏覽器 E2E。
+- 公開根網域 https://ex-machina.eu.org：標準信任 TLS1.3／Let's Encrypt YE2，HTTP 308、Web／notices 200；合成登入 Secure／HttpOnly cookie、原文、帳號隔離及實際 API 重建後資料／會話通過。
+- Linux initializer 與 file-secret mounts 通過，API 非 root／readonly／無公網 port；DB data 與 WAL 都位於該 20 GiB GCP 預設加密磁碟上的持久卷。
+- 用專用附加 service account metadata 而非本機 ADC，兩次 Gemini 均成功並保存／隔離；1,793 input／42 output tokens，兩次 cached metadata 不完整，不宣稱缓存或帳單節省。持久驗收計數防止重跑，沒有自動重試。
+- maintenance 實際加密備份、全新空庫還原、原文解密、session 排除及模型用量記錄通過。恢復 key archive 與加密備份分開保存於工程外受限本機目錄，傳送 hash／archive 結構核對；刪除遠端兩個暫存副本，保留正式資料及密鑰。
+- 必要抽查觀察三服務記憶體約 201 MiB、磁碟 5.6/20 GiB；不是壓力或全量測試。Docker29.8.1／Compose5.5.1 的實際 config／啟動通過，補查官方 v5 相容說明並局部更新 Skill。
+- 操作差異：Windows pscp 不展開 ~/，改用已查明的 home 路徑；gcloud.cmd 巢狀引號由 shell 單引號修正。HTTP 308 的 PowerShell 零重導向警告不影響 TLS／實際轉向核對。
+- 未完成：另一組員核心流程／瀏覽器實際回報及依此完成最終 review／合併；P1 未結案。
+
+
+<a id="log-20260923-011"></a>
+## LOG-20260923-011
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）；S17-W01，延續 PR #23。
+- Human Verification：使用者回報 Firefox 可能閒置後呈現登出，再登入顯示嘗試過多，約一分鐘後恢復；觸發不確定，沒有原始 HTTP trace。此回報屬必要修復，不能把前次技術通過當作 P1 完成。
+- Executor：Luna 唯讀核查前端呼叫鏈；主模型核對 Server／套件原文、實作、整合 review 及已批准驗收，沒有新增 Sol 或模型呼叫。
+- Actual Work：修復所有訪客被當作 Caddy IP 的限流來源；Caddy 覆寫 header，API 只信任單一明確代理 peer，Better Auth 只讀清理後的 header。唯讀 session checks 不套用登入限流，登入／註冊限制保留。前端暫時未確認會話使用獨立狀態及重試，私人草稿隱藏並只恢復給同一身份。
+- Verification：38 項相關單元檢查首次通過；auth middleware 測試的首版 fixture 觸發套件啟動 schema 檢查，改為只在測試 wrapper 關閉後單項通過，合計 39 項；沒有真 DB 連線。typecheck／修正後 Server-test typecheck、三映像建置、Compose proxy/subnet 一致性及 diff check 通過。正式 schema 檢查不變。
+- Deployment：d654b8f 已更新至根網域；只重建 API／Web 及 outbound network，PostgreSQL 容器、資料卷及密鑰保持。初次暫存 shell 因 CRLF 在 set 指令停止，未改服務；轉 LF 後更新成功。VM 原啟動及七天 STOP 時間核對未變。
+- Approved Acceptance：使用者批准本次 15 次合成 HTTPS 讀取；12 次交替會話、原文保留、跨帳號 404、匿名 null 全通過，0 次資料寫入／Gemini。主模型 review 5291682091 沒有未解決程式碼發現；證據 EV-S17-W01。
+- Remaining：上述確定缺陷可解釋回報，但不能宣稱已重現原始 Firefox 失敗。仍待修正版人工閒置／切回覆核、其餘核心項目明確結果及最終 review／合併；P1 未完成。
+
+
+<a id="log-20260923-012"></a>
+## LOG-20260923-012
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）；S17-W01／P1 結案，隨 PR #23 合併 master 生效。
+- Human Verification：使用者先回報「檢查完」及 Firefox 登入問題；修正版 d654b8f 上線後，就 Firefox 閒置／切回覆核及其餘核心結果回覆「没问题了」。記為本次人工試玩通過，不捏造逐步時間、原始 HTTP trace 或個別組員姓名。
+- Executor：主模型核對 P1 要求、既有 S16 覆蓋矩陣、S05／S17 實際證據及 master 工作包合併鏈；沒有新子代理或模型呼叫。
+- Actual Work：P1 十個工作包的必要實作、技術驗收及人工門檻齊備；補齊 STATUS／PLAN／README／交付與试玩說明、EV-S17 完成審核。SPEC 僅移除「產品仍未實現」過時快照並指回權威狀態，沒有變更需求或架構。
+- Verification：沿用本包 39 項針對性單元檢查、typecheck、三映像建置、15 次已批准 HTTPS 讀取及前置包證據；只核對文件 diff／JSON／WORKLOG append-only，不額外重跑 integration／E2E／全量測試。實際 runtime 仍是 d654b8f，結案提交僅改文件。
+- Delivery / Limits：根網域及操作／恢復說明已交付；七天 GCE STOP／保留 disk-IP 費用、合成資料及現有 AI 配額維持。P2–P4、Android、Windows 自部署及 UI 重設不屬本次完成聲明。
+- Next：完成本 PR 的結案 review 及合併，核對 master 後關閉 P1 目標；P2 留待後續工作，不自動開始。

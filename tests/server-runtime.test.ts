@@ -28,13 +28,14 @@ const unusedStore = new Proxy({} as WorkspaceStore, {
 async function dispatch(path: string, auth: {
   handler?: (request: Request) => Promise<Response>;
   getSession?: SessionLookup;
-}, workspaces: WorkspaceStore = unusedStore, chat?: HandlerOptions["chat"]) {
+}, workspaces: WorkspaceStore = unusedStore, chat?: HandlerOptions["chat"],
+  proxy: { peer?: string; forwarded?: string; trusted?: string } = {}) {
   const headers = new Map<string, string | number | readonly string[]>();
   let body: Buffer = Buffer.alloc(0);
   const request = {
     method: "GET", url: path,
-    headers: { origin: config.webOrigin, cookie: "better-auth.session_token=synthetic-session" },
-    socket: { remoteAddress: "127.0.0.1" },
+    headers: { origin: config.webOrigin, cookie: "better-auth.session_token=synthetic-session", "x-forwarded-for": proxy.forwarded },
+    socket: { remoteAddress: proxy.peer ?? "127.0.0.1" },
     resume() {},
   } as unknown as IncomingMessage;
   const response = {
@@ -44,7 +45,7 @@ async function dispatch(path: string, auth: {
   };
   const unusedAuth = async () => { throw new Error("Unexpected authentication call"); };
   await createRequestHandler({
-    config,
+    config: { ...config, trustedProxyIp: proxy.trusted },
     auth: {
       handler: auth.handler ?? unusedAuth,
       api: { getSession: auth.getSession ?? unusedAuth },
@@ -205,4 +206,22 @@ test("chat HTTP route uses the current session and preserves renewed cookies", a
   assert.equal(response.status, 200);
   assert.deepEqual(JSON.parse(response.body), { messages: [], limit: 100 });
   assert.deepEqual(response.headers.get("set-cookie"), [cookie]);
+});
+
+test("only the configured proxy peer can supply a single client IP", async () => {
+  for (const [peer, forwarded, trusted, expected] of [
+    ["172.30.51.3", "203.0.113.10", "172.30.51.3", "203.0.113.10"],
+    ["::ffff:172.30.51.3", "203.0.113.11", "172.30.51.3", "203.0.113.11"],
+    ["172.30.51.3", "2001:db8::10", "172.30.51.3", "2001:db8::10"],
+    ["172.30.51.4", "203.0.113.10", "172.30.51.3", "172.30.51.4"],
+    ["172.30.51.3", "203.0.113.10, 203.0.113.11", "172.30.51.3", "172.30.51.3"],
+    ["172.30.51.3", "invalid", "172.30.51.3", "172.30.51.3"],
+    ["127.0.0.1", "203.0.113.10", undefined, "127.0.0.1"],
+  ]) {
+    const response = await dispatch("/api/auth/get-session", { handler: async request => {
+      assert.equal(request.headers.get("x-forwarded-for"), expected);
+      return Response.json(null);
+    } }, unusedStore, undefined, { peer, forwarded, trusted });
+    assert.equal(response.status, 200);
+  }
 });

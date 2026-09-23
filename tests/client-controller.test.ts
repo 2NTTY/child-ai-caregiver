@@ -327,3 +327,39 @@ test("a failed fresh read cannot unlock an earlier unknown write using stale rec
   assert.equal(controller.getSnapshot().drafts[first.id].outcome, "unknown");
   assert.equal(controller.getSnapshot().drafts[first.id].text, original);
 });
+
+
+test("transient session rechecks hide drafts without signing out and restore only the same identity", async () => {
+  for (const status of [0, 429, 503]) {
+    for (const nextUser of [alice, bob]) {
+      const { api, controller, values } = fixture();
+      await controller.restoreSession();
+      controller.setRecordText(original);
+      api.getSession = async () => { throw new ClientApiError(status); };
+      await controller.restoreSession();
+      assert.equal(controller.getSnapshot().auth, "unavailable");
+      assert.deepEqual(controller.getSnapshot().drafts, {});
+      assert.equal(controller.getSnapshot().hasRetainedInput, true);
+      assert.equal(values.signOuts, 0);
+      api.getSession = async () => nextUser;
+      values.children = nextUser === alice ? [first] : [bobChild];
+      await controller.restoreSession();
+      assert.equal(controller.getSnapshot().auth, "signedIn");
+      assert.equal(controller.getSnapshot().user?.id, nextUser.id);
+      if (nextUser === alice) assert.equal(controller.getSnapshot().drafts[first.id].text, original);
+      else assert.deepEqual(controller.getSnapshot().drafts, {});
+    }
+  }
+});
+
+test("an accepted login with a failed session check is unconfirmed rather than rejected", async () => {
+  const { api, controller, values } = fixture();
+  values.user = null;
+  await controller.restoreSession();
+  api.getSession = async () => { throw new ClientApiError(429); };
+  await controller.authenticate("signIn", { name: "", email: alice.email, password: "synthetic-password" });
+  assert.equal(controller.getSnapshot().auth, "unavailable");
+  api.getSession = async () => alice;
+  await controller.restoreSession();
+  assert.equal(controller.getSnapshot().auth, "signedIn");
+});

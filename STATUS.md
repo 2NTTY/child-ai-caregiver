@@ -1,27 +1,26 @@
 # STATUS
 
-## 當前工作包
-[S16-W01 — P1 必要驗收](PLAN.md#s16-w01)（本機功能驗收已通過，待 review／PR 合併；合併後解鎖 S17-W01）。
+## 當前階段
+**P1 基礎成品驗收完成**；[S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併 master 生效。P2 未開始。
 
-## 狀態
-P1 全部功能包已合併；S05／PR #21 合併至 master 32cf4d8。S16 從該基線建立獨立 `codex/s16-w01-p1-verification` 分支，復用已有驗收，只補最新加密接線後的 HTTP／Server 重啟與 Web 匯出。P1 尚未完成。
+## 現況
+- **試用 URL：https://ex-machina.eu.org**。使用者指定根網域，DNS 由使用者設定；執行版本 `d654b8f`，其後結案修改僅涉及文件。
+- P1 十個工作包的實作及必要驗收齊備；前置包均已合併。共享 Prompt Pack／美術沿用，沒有重做或 UI polish。
+- 本機隔離容器、公開 TLS／登入隔離／原文保存／API 重建持久化、Linux 密鑰權限、磁碟與 WAL、metadata ADC、maintenance 加密備份／空庫還原通過。[EV-S16-W01](artifacts/verification/S16_W01_CHECKS.json)／[EV-S17-W01](artifacts/verification/S17_W01_CHECKS.json)
+- Firefox 試玩曾回報可能閒置後呈現登出及限流；代理來源與未確認會話 UI 已修正。39 項針對性單元檢查、typecheck、建置及獲准的 15 次 HTTPS 讀取通過；使用者修正版覆核回覆「没问题了」，人工試玩門檻通過。未捏造原始 HTTP trace 或逐步時間。
+- 本包兩次 Gemini 驗收成功，合計 1,793 input／42 output tokens；cached metadata 不完整，沒有帳單或優惠餘額證據。AI 每人每日 5 次／全站 20 次，每請求僅 1 次嘗試、6,000 字元／512 output tokens。
+- 加密備份與恢復密鑰分開存於工程外、當前 Windows 使用者專用 ACL 目錄；既有本機合成庫保留。沒有額外 E2E、全量回歸或結案模型呼叫。
 
-## 已核對證據
-- [EV-S16-W01](artifacts/verification/S16_W01_CHECKS.json) 對照登入隔離、保存／重開、斷線／AI 失敗、權限／配額／有限重試、憑據／日誌、加密／刪除／備份還原及真 Gemini 用量。
-- 使用者批准後，Sol High 執行現有 HTTP 腳本一次，17 項通過：比原先 16 項多了既有加密初始化檢查，沒有擴大外部範圍；真正重啟 Server 後記錄仍可讀。原合成庫保留、沒有刪除資料。
-- 最新 Web 匯出通過，沒有 Server SDK／憑據及 storage／backup key 配置標記混入 JS；沒有重新跑瀏覽器 E2E、全量回歸或模型呼叫。Luna Max 只讀核查，主模型完成整合 review。
-- S05 的七項 PostgreSQL 驗收、S03 Web 重開／斷線證據、S09 並發配額及 S11 三次真 Gemini 沿用；不把 mock 失敗情景說成真供應商故障實測。
-
-## 交付門檻與限制
-- S17 尚須交付可開啟的 HTTPS Web URL、部署環境的密鑰／磁碟／WAL 保護與操作說明，並取得另一組員實際獨立試玩結果。
-- 原合成庫已加密，啟動須配置既有工程外 storage key；密鑰及精確還原位置留在本機，不提交工程。
-- 已有真實用量不等於帳單：没有量測實際費用、優惠餘額或 token 節省。Prompt Pack、P1 prompt 及視覺資產繼續復用。
+## 七天試用與限制
+- 香港 e2-small／20 GiB pd-balanced／固定 IP；GCE 已設定 maxRunDuration=604800／STOP，預計 **2026-09-30 20:50:44 HKT** 停止。
+- 初估七天固定費 US$5.28，流量／AI 另計；停機後保留 disk／IP 仍約 US$5.85／月。不是硬性金額上限，不自行續期。
+- [交付及操作](docs/P1_DELIVERY.md)／[組員試玩指引](docs/P1_TRIAL.md)。已收到使用者實際試玩確認；只適用 P1 合成資料範圍。
 
 ## 下一步
-完成 S16 review／合併後，從最新 master 為 S17 建立獨立工作包，先準備最小部署與操作交付；實際建立付費資源及真服務驗收按具體範圍取得批准。組員試玩未回報前不標 P1 完成。
+P1 結案後停在本階段。下一輪按 PLAN 依賴選擇 P2 Ready 工作包；不在本輪自動開始 P2。七天試用到期後，續期或釋放資源均須使用者決定。
 
 ## 用量快照
-最後使用者原值為 2026-09-22 19:12 的「5%」；沒有查詢或推算重置。使用者已恢復 P1，現時餘額未知；沿用 Luna Max／Sol 規則，不延續 Astra 例外。
+最後使用者原值為 2026-09-22 19:12 的「5%」；使用者已恢復 P1，現時餘額未知。沒有查詢或推算重置，沿用 Luna Max／Sol 規則。
 
 ## 更新記錄
-2026-09-23（Asia/Hong_Kong）；[LOG-20260923-006](WORKLOG.md#log-20260923-006)。
+2026-09-23（Asia/Hong_Kong）；[LOG-20260923-012](WORKLOG.md#log-20260923-012)。

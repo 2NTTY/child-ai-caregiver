@@ -1,0 +1,265 @@
+{
+  "evidenceId": "EV-S17-W01",
+  "workPackage": "S17-W01",
+  "recordedOn": "2026-09-23",
+  "status": "acceptance_complete",
+  "baseCommit": "2b55eb027f25bc2c9479e850c95007bcbfbb4903",
+  "prerequisites": [
+    "S16-W01 / PR #22 merged"
+  ],
+  "prepared": [
+    "Fixed-version app/web/maintenance Docker stages",
+    "Private PostgreSQL network and same-origin Caddy entry",
+    "Linux root-only new secret initialization with UID1000 key mounts",
+    "Concrete GCP resource/cost/7-day-stop proposal",
+    "Independent synthetic teammate trial guide",
+    "Short official-source technical skill",
+    "Caddy original Apache-2.0 license"
+  ],
+  "staticChecks": {
+    "yamlAndSkillFrontmatter": "passed",
+    "pythonAstParse": "passed without executing initializer",
+    "composeConfig": "passed with --no-interpolate --no-env-resolution --no-path-resolution; local Docker config access warning observed",
+    "composeNetworkPortSecretGraph": "passed",
+    "dockerCopySources": "passed",
+    "licenseSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "diffCheck": "passed"
+  },
+  "reviewFixes": [
+    "Use EXPO_NO_TELEMETRY and preserve tsconfig in Web build",
+    "Separate PostgreSQL18 maintenance image; no Docker socket in API",
+    "Document sudo/root Compose execution to retain root-only env_file permissions",
+    "Ship existing third-party notices and original licenses with the static Web distribution"
+  ],
+  "userDomain": "ex-machina.eu.org",
+  "proposedHost": "ex-machina.eu.org",
+  "dnsChangePerformed": false,
+  "containerBuildsPerformed": true,
+  "cloudResourcesCreated": true,
+  "newModelCalls": 2,
+  "liveUrl": "https://ex-machina.eu.org",
+  "independentTrial": {
+    "browser": "Firefox",
+    "reportedIssue": "App appeared signed out after possible idle; immediate login reported too many attempts, recovered after about one minute",
+    "trigger": "Uncertain; user reported possibly idle or no action",
+    "reportedBy": "User in response to the independent teammate trial request",
+    "originalHttpTraceCaptured": false,
+    "otherCoreChecks": "User overall confirmation after reporting the trial checked; no per-step timings supplied",
+    "fixRetest": "passed by user confirmation",
+    "finalUserResponse": "没问题了",
+    "confirmationDate": "2026-09-23"
+  },
+  "approval": "User explicitly approved local acceptance and seven-day deployment on 2026-09-23; includes bounded model validation and trial calls",
+  "cloudState": "Corrected deployment, necessary technical acceptance and user trial confirmation passed",
+  "localAcceptance": {
+    "commit": "512ba93786ddb421bde91c13b0bcc202b95e4e10",
+    "dockerEngine": "29.4.0",
+    "dataScope": "New isolated synthetic Docker database and volumes; existing encrypted local database untouched",
+    "checks": [
+      "API, Web and PostgreSQL18 maintenance builds passed",
+      "Trusted local-CA HTTPS Web and API health passed; root installed only for the test Node process",
+      "Secure HttpOnly login cookies and distinct synthetic accounts passed",
+      "Original-text write/read and cross-account rejection passed",
+      "Actual API container restart retained session and record",
+      "Maintenance pg_dump encrypted backup and restore to a newly created empty database passed",
+      "Restored original text decrypted correctly and sessions were excluded",
+      "API UID1000 key access and read-only filesystem; no public API/DB ports"
+    ],
+    "modelCalls": 0,
+    "windowsDifference": "Local named secret volumes enforce Linux UID/mode; actual Linux file-secret initializer/mounts remain a cloud acceptance gate",
+    "commandCorrections": [
+      "An auxiliary count query initially used care_records instead of text_records; corrected restore decryption/session verification passed",
+      "Base-image Docker inspect names were absent from BuildKit image store; immutable base digests read from build output instead"
+    ]
+  },
+  "baseImageDigests": {
+    "node:24.19.0-bookworm-slim": "sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df",
+    "postgres:18.6-bookworm": "sha256:3725f4e2499eef5134592b3b4ab79a543ed7f8e533b05b5b637af926630f6650",
+    "caddy:2.11.4-alpine": "sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b"
+  },
+  "dns": {
+    "userConfirmedSetup": true,
+    "host": "ex-machina.eu.org",
+    "A": [
+      "35.241.127.20"
+    ],
+    "AAAA": [],
+    "resolver": "1.1.1.1",
+    "agentWroteDns": false
+  },
+  "cloud": {
+    "project": "ai-caregivers-for-children",
+    "zone": "asia-east2-a",
+    "vm": "yuban-p1",
+    "machineType": "e2-small",
+    "diskGiB": 20,
+    "diskType": "pd-balanced",
+    "sourceImage": "debian-12-bookworm-v20260921",
+    "encryption": "Google-managed default Persistent Disk encryption; no customer-supplied key configured",
+    "publicIPv4": "35.241.127.20",
+    "publicTcpPorts": [
+      80,
+      443
+    ],
+    "sshSource": "35.235.240.0/20 (IAP)",
+    "serviceAccount": "yuban-p1@ai-caregivers-for-children.iam.gserviceaccount.com",
+    "runtimeRole": "roles/aiplatform.user",
+    "maxRunDurationSeconds": 604800,
+    "terminationAction": "STOP",
+    "lastStartTimestamp": "2026-09-23T05:50:44.169-07:00",
+    "expectedStopHongKong": "2026-09-30 20:50:44 +08:00",
+    "diskAutoDelete": false,
+    "dockerEngine": "29.8.1",
+    "compose": "5.5.1",
+    "freeDiskBeforeImagesGiB": 17
+  },
+  "deployedCommit": "d654b8f8321bf1f6dc816610adb03dc1f0463611",
+  "runtimeImageIds": {
+    "api": "sha256:b5716a6d351c6d21bd1f7b14785e2924948b7d4679d7010ac49ac6f2ce451f31",
+    "maintenance": "sha256:09339a3bf728dff02b39b38950b60d993a9d1595820581a84f477e3bc82e9546",
+    "web": "sha256:87a1aac3398ab9e2d2b1b6061d88b23337eb96bf2624bddc33642f29a2bce8ed"
+  },
+  "modelAcceptance": {
+    "attempts": 2,
+    "succeeded": 2,
+    "model": "gemini-3.1-flash-lite",
+    "inputTokens": 1793,
+    "outputTokens": 42,
+    "cachedTokens": null,
+    "unknownUsageAttempts": 2,
+    "retries": 0,
+    "accountIsolationAndSavedReplies": "passed",
+    "credentials": "Attached service account metadata; no JSON credential file",
+    "limits": {
+      "dailyPerUser": 5,
+      "dailyGlobal": 20,
+      "inputCharacters": 6000,
+      "outputTokens": 512,
+      "attemptsPerRequest": 1
+    },
+    "billingInvoiceVerified": false
+  },
+  "cloudAcceptance": {
+    "tls": {
+      "authorized": true,
+      "protocol": "TLSv1.3",
+      "issuer": "Lets Encrypt YE2",
+      "validUntil": "2026-12-22T12:01:25Z"
+    },
+    "httpRedirect": "308 to https://ex-machina.eu.org/",
+    "webAndNotices": "200",
+    "secureCookiesIdentityIsolationOriginalText": "passed",
+    "apiRecreationSessionAndRecordPersistence": "passed",
+    "linuxInitializerAndKeyMounts": "passed; directory root 0700, env root 0600, independent keys UID1000 0600",
+    "apiReadOnlyAndUnpublishedPort": "passed",
+    "dataAndWalOnEncryptedPersistentDisk": "passed; PostgreSQL18 data and pg_wal under named volume backed by VM boot disk",
+    "maintenanceBackupEmptyRestoreOriginalTextSessionExclusionAndUsage": "passed",
+    "offHostRecoveryMaterial": "Separate key archive and encrypted backup downloaded outside the repository; current Windows user-only inherited ACL; archive structure and backup transfer hash verified; temporary remote copies removed",
+    "resourceObservation": "API 84.1 MiB, Caddy 25.95 MiB, PostgreSQL 90.75 MiB; disk 5.6/20 GiB used; one observation, not a load test",
+    "commit": "cc3dae4d0d6b29c5fa924c0cf3eec129ca827c1b"
+  },
+  "previousDeployment": {
+    "commit": "cc3dae4d0d6b29c5fa924c0cf3eec129ca827c1b",
+    "runtimeImageIds": {
+      "api": "sha256:f2db5a2a42444d47ff737bba715fb63beb7b21e9dcacd69f31b77ca68c4578c8",
+      "maintenance": "sha256:77483768bd7af317a59120613dd439e77cfbfc23b5384844457203315d19141f",
+      "web": "sha256:4cde74558d29952c2ec3b2326037afec950d3645857e8848090f347f8cfd4ad8"
+    }
+  },
+  "sessionFix": {
+    "commit": "d654b8f8321bf1f6dc816610adb03dc1f0463611",
+    "confirmedDefects": [
+      "Origin overwrote every forwarded client IP with the Caddy peer, sharing authentication rate-limit buckets",
+      "Unavailable session state rendered the login form although session invalidity was unconfirmed"
+    ],
+    "causalityLimit": "These paths can explain the report; exact original Firefox HTTP failure was not captured",
+    "changes": [
+      "Explicit trusted proxy peer; ingress overwrites client IP; direct clients cannot choose auth rate-limit identity",
+      "Exclude read-only session checks from auth rate limiting; preserve sign-in/sign-up limits",
+      "Separate unavailable-session UI and retry; retain hidden drafts only for their original identity"
+    ],
+    "unitChecks": {
+      "passed": 39,
+      "commands": [
+        "node --experimental-test-module-mocks --test tests/auth-rate-limit.test.ts tests/client-controller.test.ts tests/server-config.test.ts tests/server-runtime.test.ts",
+        "node --experimental-test-module-mocks --test tests/auth-rate-limit.test.ts (corrected fixture only)"
+      ],
+      "initialFailure": "Auth unit fixture encountered Better Auth startup schema inspection; test-only wrapper disables schema validation, production setting unchanged, no real DB call",
+      "typecheck": "passed; server/test typecheck repeated after fixture correction"
+    },
+    "builds": "API, maintenance and Web passed",
+    "review": "Main-agent review 5291682091; no unresolved code findings",
+    "deployment": {
+      "trustedProxyIp": "172.30.51.3",
+      "subnet": "172.30.51.0/28",
+      "databaseContainerRecreated": false,
+      "volumesAndSecretsPreserved": true,
+      "vmStartAndSevenDayStopUnchanged": true
+    },
+    "liveReadCheck": {
+      "userApproved": true,
+      "requests": 15,
+      "passed": [
+        "12 alternating authenticated session reads",
+        "preserved original record",
+        "cross-account 404",
+        "anonymous session null"
+      ],
+      "dataWrites": 0,
+      "modelCalls": 0
+    },
+    "firefoxRetest": "passed by user confirmation"
+  },
+  "stageP1CompleteOnMerge": true,
+  "completionPullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/23",
+  "completionCondition": "PR #23 merged to master; live GitHub merge state is authoritative",
+  "remainingHumanGates": [],
+  "p1CompletionAudit": [
+    {
+      "scope": "All P1 prerequisite packages",
+      "evidence": "PLAN P1 rows and master merge history #7, #8, #10, #12, #18, #19, #20, #21, #22",
+      "result": "accepted and merged before S17 closeout"
+    },
+    {
+      "scope": "Web login, owner isolation, child/text persistence, reopen and offline draft truthfulness",
+      "evidence": [
+        "S16_W01_CHECKS.json coverage and 17 HTTP/restart checks",
+        "cloudAcceptance",
+        "sessionFix.liveReadCheck",
+        "independentTrial"
+      ],
+      "result": "passed within P1 synthetic-data scope"
+    },
+    {
+      "scope": "Saved chat, real Gemini, credentials, permissions, quota, bounded retries and protected logs",
+      "evidence": [
+        "S16_W01_CHECKS.json coverage",
+        "modelAcceptance",
+        "independentTrial"
+      ],
+      "result": "passed; no invoice or complete cached-token evidence claimed"
+    },
+    {
+      "scope": "Encryption, necessary deletion, encrypted backup and restore, deployed keys/disk/WAL",
+      "evidence": [
+        "S05_W01_CHECKS.json acceptance",
+        "S16_W01_CHECKS.json coverage",
+        "cloudAcceptance"
+      ],
+      "result": "passed; historical backups retain their documented deletion limitation"
+    },
+    {
+      "scope": "Accessible URL, source/configuration, operation guide, reused prompts/art and licenses",
+      "evidence": [
+        "liveUrl",
+        "deployedCommit",
+        "../../Dockerfile",
+        "../../deploy/p1/compose.yaml",
+        "../../docs/P1_DELIVERY.md",
+        "../../docs/P1_TRIAL.md",
+        "../../THIRD_PARTY_NOTICES.md"
+      ],
+      "result": "delivered; independent user confirmation received"
+    }
+  ]
+}

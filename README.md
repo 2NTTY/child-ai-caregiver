@@ -119,3 +119,8 @@ With both the server and Expo running, register an account or sign in, create a 
 Reopen the page and sign in to the same account to load saved records from the server. Offline mode blocks submission and warns that displayed data may be stale. A failed or uncertain submission keeps its input and requires a fresh read and manual duplicate check before retrying. There is no automatic write retry or persistent browser record store. Closing or refreshing a page with unsaved input shows the browser's warning; successful sign-out clears the page's private state.
 
 The additional approved checks are `npm run test:records` and the local browser workflow in [S03-W01 acceptance](docs/S03_W01_ACCEPTANCE.md). They exercise additive upgrades over the retained synthetic database; do not delete volumes to make tests pass.
+
+
+## P1 team pilot
+
+The approved seven-day P1 team pilot is available at [ex-machina.eu.org](https://ex-machina.eu.org). Necessary container, deployed-service and independent trial acceptance passed, including the Firefox login fix retest. P1 closeout takes effect with [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23). Use synthetic data and follow the [trial guide](docs/P1_TRIAL.md). The VM is configured to stop around September 30, 2026, 20:50 Hong Kong time; retained disk/IP charges continue. See [deployment operations and limits](docs/P1_DELIVERY.md).

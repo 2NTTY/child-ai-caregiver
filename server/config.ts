@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 export interface ServerConfig {
   databaseUrl: string;
   authSecret: string;
@@ -6,6 +8,7 @@ export interface ServerConfig {
   host: string;
   port: number;
   production: boolean;
+  trustedProxyIp?: string;
 }
 
 function invalidConfig(name: string): never {
@@ -74,5 +77,9 @@ export function readServerConfig(env: Record<string, string | undefined>): Serve
     invalidConfig("PORT");
   }
 
-  return { databaseUrl, authSecret, publicOrigin, webOrigin, host, port, production };
+  const trustedProxyIp = env.TRUSTED_PROXY_IP || undefined;
+  // P1 has one explicitly addressed IPv4 ingress proxy; never trust a whole private range.
+  if (trustedProxyIp && isIP(trustedProxyIp) !== 4) invalidConfig("TRUSTED_PROXY_IP");
+  return { databaseUrl, authSecret, publicOrigin, webOrigin, host, port, production,
+    ...(trustedProxyIp ? { trustedProxyIp } : {}) };
 }

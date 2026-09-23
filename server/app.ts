@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { fromNodeHeaders } from "better-auth/node";
 import type { createAuth } from "./auth.ts";
@@ -76,8 +77,12 @@ export function createRequestHandler(options: {
     let permittedOrigin: string | null = null;
     try {
       const headers = fromNodeHeaders(request.headers);
-      // Never let an untrusted forwarding header choose the authentication rate-limit key.
-      if (request.socket.remoteAddress) headers.set("x-forwarded-for", request.socket.remoteAddress);
+      // Only the explicitly configured ingress peer may supply a single sanitized client IP.
+      const peerIp = request.socket.remoteAddress?.replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/u, "");
+      const forwardedIp = headers.get("x-forwarded-for")?.trim();
+      const clientIp = options.config.trustedProxyIp && peerIp === options.config.trustedProxyIp
+        && forwardedIp && isIP(forwardedIp) ? forwardedIp : peerIp;
+      if (clientIp) headers.set("x-forwarded-for", clientIp);
       else headers.delete("x-forwarded-for");
       const origin = headers.get("origin");
       if (origin && !allowedOrigins.has(origin)) {
