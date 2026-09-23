@@ -115,6 +115,15 @@ S03-W01 在同一 `/api` 入口新增以下已登入端點；session、Origin、
 
 本包只有必要單元／型別檢查證據；真 PostgreSQL 遷移及重啟配額、Vertex 調用與部署環境仍須在 S11／S16 的必要驗收取得實測證據，不能把 fake provider 當真模型。
 
+<a id="p1-chat-http"></a>
+## P1 私人聊天保存 HTTP（S09-W01）
+
+`GET /api/children/:childId/messages` 返回 `{messages, limit:100}`，每則有 `id/childId/authorUserId/role/text/inReplyTo/createdAt`。只返回當前帳號在該孩子的私人聊天；無權或不存在都 404，未登入 401。
+
+`POST` 同一路徑只接受 `{text}`，保存 1–10,000 Unicode 字元原文；拒絕額外欄位、空白、NUL 或無效 surrogate。須有符合 session 的 `x-expected-user-id`，缺失 428／不同 409；成功回 `{message}` 及 201。作者、角色、ID 和時間由 Server 決定，不能提交模型訊息。訊息本身不是已確認照護記錄，不觸發模型或工具。
+
+GET／POST 沿用原有 Origin、body 上限、cookie 更新及 no-store 規則。此包沒有瀏覽器主庫、outbox 或自動重試寫入；S11 會接入保存後的聊天 UI／Gemini，P2 才補完整搜尋與長期記憶。
+
 <a id="section-4-1"></a>
 ## 4.1 配对码与二维码
 

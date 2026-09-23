@@ -7,6 +7,7 @@ import { createWorkspaceStore } from "./workspaces.ts";
 import { createRecordStore } from "./records.ts";
 import { readAiConfig } from "./ai-config.ts";
 import { createAiUsageStore } from "./ai-usage.ts";
+import { createChatStore } from "./chat.ts";
 import { createModelGateway } from "./model-gateway.ts";
 
 try {
@@ -17,6 +18,7 @@ try {
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
     records: createRecordStore(pool),
+    chat: createChatStore(pool),
     // S11 wires the real provider together with authorized chat orchestration.
     modelGateway: createModelGateway({ config: aiConfig, usage: createAiUsageStore(pool) }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },

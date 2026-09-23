@@ -22,6 +22,13 @@ S03-W01 的 `children` 屬於既有私人資料空間，保存 UUID、稱呼及 
 
 讀寫以孩子 → 資料空間 → 已登入 owner 核對權限；作者只由 Server session 決定，不能透過請求 body 代寫別人的資料。新增 `002-child-records` migration，保留 `001-workspaces` 的 SQL 及 checksum；升級不重建資料庫或刪除原有帳號。P2 才加入完整照顧事件、修訂、家庭共享及一致性字段；P1 本包沒有建立空白通用實體框架。
 
+<a id="p1-chat-data"></a>
+## P1 私人聊天原文
+
+S09-W01 的 `chat_messages` 保存 UUID、孩子、私人聊天擁有者、作者、user／model 角色、完整原文、回覆關係及 Server 時間。user 作者必須等於當前擁有者；model 作者為 null 並引用同孩子、同擁有者的 user 訊息，不能冒稱照顧者。每則 user 訊息最多一則 model 回覆。HTTP 只容許建立 user 訊息；model 寫入只供 Server orchestration。
+
+權限同時限制孩子的私人資料空間及聊天擁有者；不因未來有家庭管理員便公開私人聊天。列表取最近 100 則後依時間由舊至新返回，不按天清除；完整搜尋、修訂及長期記憶仍屬後續包。004 遷移只新增資料表及索引，不改寫原遷移或刪除既有資料。
+
 <a id="section-4-3"></a>
 ## 4.3 在線操作及確認字段
 
