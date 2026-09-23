@@ -648,3 +648,23 @@
 ### Failures / Limitations / Next
 - 首次以單次 icacls 檢查兩個檔案的參數格式不適用，分別核對後成功；沒有重建密鑰或重跑整體驗收。
 - 本次真模型／雲端呼叫為 0；沒有瀏覽器 E2E、全量回歸或部署磁碟／WAL 證據。S16 核對必要驗收缺口，S17 交付 URL／組員試玩；P1 尚未完成。
+
+
+<a id="log-20260923-006"></a>
+## LOG-20260923-006
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S16-W01；P1 全部功能包已合併，基線 S05／PR #21 的 master 32cf4d8。
+- Executor / AI Assistance：Luna Max 一個唯讀對照既有證據；Sol High 一個執行最新 Web 匯出及批准後的本機 HTTP 補驗（授權 follow-up 按兩次啟動計）；主模型定義範圍、核對結果與完成 review。没有子派生或重複測試。
+- Human Verification：使用者明確批准一次必要本機 HTTP 驗收；尚無組員獨立 URL 試玩反馈。
+
+### Actual Work / Verification
+- 建立 [EV-S16-W01](artifacts/verification/S16_W01_CHECKS.json)，逐項區分已實測、可復用單元證據及 S17 交付缺項，不全面重跑已通過的工作包。
+- 最新 npm run build:web 離線匯出通過，1 個 JS bundle；未發現 Server-only SDK／憑據與 storage／backup key 配置標記。沒有修改應用程式或依賴。
+- scripts/verify-server.mjs --records 在已加密的既有合成 PostgreSQL 一次通過 17 項；真正重啟 Server 後資料可讀，登入／隔離／原文保存／登出與帳號切換邊界通過。原預計 16 項，差額是現有腳本新增的加密初始化，不是額外服務或資料操作。
+- 保留所有原合成資料；沒有模型、雲端、刪除、備份重做、瀏覽器 E2E 或全量回歸。S03 Web、S09 quota、S11 真 Gemini 和 S05 備份還原證據按覆蓋範圍復用。
+- 實際 Gemini 用量為此前三次呼叫 2,749 input／52 output tokens，三次 cached metadata 不完整；沒有帳單、優惠餘額或節省比例證據。
+
+### Failures / Limitations / Next
+- Docker／key 預檢在 sandbox 受限，使用針對已批准檢查的提權後通過；沒有改全局權限。Web 配置沿用實際 EXPO_PUBLIC_API_BASE_URL。
+- S16 本機功能驗收完成；S17 尚需實際交付環境的 HTTPS、密鑰與磁碟／WAL 保護、操作說明及組員獨立試玩。P1 未完成，不以本次驗收替代這些門檻。
