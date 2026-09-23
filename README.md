@@ -123,4 +123,4 @@ The additional approved checks are `npm run test:records` and the local browser 
 
 ## P1 team pilot
 
-The approved seven-day P1 team pilot is available at [ex-machina.eu.org](https://ex-machina.eu.org). Necessary container and deployed-service checks passed; independent teammate acceptance is still pending, so P1 is not complete. Use synthetic data and follow the [trial guide](docs/P1_TRIAL.md). The VM is configured to stop around September 30, 2026, 20:50 Hong Kong time; retained disk/IP charges continue. See [deployment operations and limits](docs/P1_DELIVERY.md).
+The approved seven-day P1 team pilot is available at [ex-machina.eu.org](https://ex-machina.eu.org). Necessary container, deployed-service and independent trial acceptance passed, including the Firefox login fix retest. P1 closeout takes effect with [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23). Use synthetic data and follow the [trial guide](docs/P1_TRIAL.md). The VM is configured to stop around September 30, 2026, 20:50 Hong Kong time; retained disk/IP charges continue. See [deployment operations and limits](docs/P1_DELIVERY.md).

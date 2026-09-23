@@ -2,7 +2,7 @@
   "evidenceId": "EV-S17-W01",
   "workPackage": "S17-W01",
   "recordedOn": "2026-09-23",
-  "status": "session_fix_deployed_awaiting_firefox_retest",
+  "status": "acceptance_complete",
   "baseCommit": "2b55eb027f25bc2c9479e850c95007bcbfbb4903",
   "prerequisites": [
     "S16-W01 / PR #22 merged"
@@ -44,16 +44,13 @@
     "trigger": "Uncertain; user reported possibly idle or no action",
     "reportedBy": "User in response to the independent teammate trial request",
     "originalHttpTraceCaptured": false,
-    "otherCoreChecks": "Awaiting explicit confirmation",
-    "fixRetest": "pending"
+    "otherCoreChecks": "User overall confirmation after reporting the trial checked; no per-step timings supplied",
+    "fixRetest": "passed by user confirmation",
+    "finalUserResponse": "没问题了",
+    "confirmationDate": "2026-09-23"
   },
-  "stageP1Complete": false,
-  "remainingGates": [
-    "Firefox idle/focus retest of corrected deployment and confirmation of prior core trial results",
-    "Final package review and merge after human acceptance"
-  ],
   "approval": "User explicitly approved local acceptance and seven-day deployment on 2026-09-23; includes bounded model validation and trial calls",
-  "cloudState": "Corrected deployment and 15 authorized synthetic reads passed; Firefox retest and final human confirmation pending",
+  "cloudState": "Corrected deployment, necessary technical acceptance and user trial confirmation passed",
   "localAcceptance": {
     "commit": "512ba93786ddb421bde91c13b0bcc202b95e4e10",
     "dockerEngine": "29.4.0",
@@ -211,6 +208,58 @@
       "dataWrites": 0,
       "modelCalls": 0
     },
-    "firefoxRetest": "pending"
-  }
+    "firefoxRetest": "passed by user confirmation"
+  },
+  "stageP1CompleteOnMerge": true,
+  "completionPullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/23",
+  "completionCondition": "PR #23 merged to master; live GitHub merge state is authoritative",
+  "remainingHumanGates": [],
+  "p1CompletionAudit": [
+    {
+      "scope": "All P1 prerequisite packages",
+      "evidence": "PLAN P1 rows and master merge history #7, #8, #10, #12, #18, #19, #20, #21, #22",
+      "result": "accepted and merged before S17 closeout"
+    },
+    {
+      "scope": "Web login, owner isolation, child/text persistence, reopen and offline draft truthfulness",
+      "evidence": [
+        "S16_W01_CHECKS.json coverage and 17 HTTP/restart checks",
+        "cloudAcceptance",
+        "sessionFix.liveReadCheck",
+        "independentTrial"
+      ],
+      "result": "passed within P1 synthetic-data scope"
+    },
+    {
+      "scope": "Saved chat, real Gemini, credentials, permissions, quota, bounded retries and protected logs",
+      "evidence": [
+        "S16_W01_CHECKS.json coverage",
+        "modelAcceptance",
+        "independentTrial"
+      ],
+      "result": "passed; no invoice or complete cached-token evidence claimed"
+    },
+    {
+      "scope": "Encryption, necessary deletion, encrypted backup and restore, deployed keys/disk/WAL",
+      "evidence": [
+        "S05_W01_CHECKS.json acceptance",
+        "S16_W01_CHECKS.json coverage",
+        "cloudAcceptance"
+      ],
+      "result": "passed; historical backups retain their documented deletion limitation"
+    },
+    {
+      "scope": "Accessible URL, source/configuration, operation guide, reused prompts/art and licenses",
+      "evidence": [
+        "liveUrl",
+        "deployedCommit",
+        "../../Dockerfile",
+        "../../deploy/p1/compose.yaml",
+        "../../docs/P1_DELIVERY.md",
+        "../../docs/P1_TRIAL.md",
+        "../../THIRD_PARTY_NOTICES.md"
+      ],
+      "result": "delivered; independent user confirmation received"
+    }
+  ]
 }

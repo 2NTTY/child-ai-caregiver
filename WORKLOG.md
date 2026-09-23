@@ -741,3 +741,15 @@
 - Deployment：d654b8f 已更新至根網域；只重建 API／Web 及 outbound network，PostgreSQL 容器、資料卷及密鑰保持。初次暫存 shell 因 CRLF 在 set 指令停止，未改服務；轉 LF 後更新成功。VM 原啟動及七天 STOP 時間核對未變。
 - Approved Acceptance：使用者批准本次 15 次合成 HTTPS 讀取；12 次交替會話、原文保留、跨帳號 404、匿名 null 全通過，0 次資料寫入／Gemini。主模型 review 5291682091 沒有未解決程式碼發現；證據 EV-S17-W01。
 - Remaining：上述確定缺陷可解釋回報，但不能宣稱已重現原始 Firefox 失敗。仍待修正版人工閒置／切回覆核、其餘核心項目明確結果及最終 review／合併；P1 未完成。
+
+
+<a id="log-20260923-012"></a>
+## LOG-20260923-012
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）；S17-W01／P1 結案，隨 PR #23 合併 master 生效。
+- Human Verification：使用者先回報「檢查完」及 Firefox 登入問題；修正版 d654b8f 上線後，就 Firefox 閒置／切回覆核及其餘核心結果回覆「没问题了」。記為本次人工試玩通過，不捏造逐步時間、原始 HTTP trace 或個別組員姓名。
+- Executor：主模型核對 P1 要求、既有 S16 覆蓋矩陣、S05／S17 實際證據及 master 工作包合併鏈；沒有新子代理或模型呼叫。
+- Actual Work：P1 十個工作包的必要實作、技術驗收及人工門檻齊備；補齊 STATUS／PLAN／README／交付與试玩說明、EV-S17 完成審核。SPEC 僅移除「產品仍未實現」過時快照並指回權威狀態，沒有變更需求或架構。
+- Verification：沿用本包 39 項針對性單元檢查、typecheck、三映像建置、15 次已批准 HTTPS 讀取及前置包證據；只核對文件 diff／JSON／WORKLOG append-only，不額外重跑 integration／E2E／全量測試。實際 runtime 仍是 d654b8f，結案提交僅改文件。
+- Delivery / Limits：根網域及操作／恢復說明已交付；七天 GCE STOP／保留 disk-IP 費用、合成資料及現有 AI 配額維持。P2–P4、Android、Windows 自部署及 UI 重設不屬本次完成聲明。
+- Next：完成本 PR 的結案 review 及合併，核對 master 後關閉 P1 目標；P2 留待後續工作，不自動開始。
