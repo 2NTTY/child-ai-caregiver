@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "57.0.16",
+    "@google/genai": "2.24.0",
     "better-auth": "1.7.5",
     "expo": "57.0.24",
     "expo-constants": "57.0.19",

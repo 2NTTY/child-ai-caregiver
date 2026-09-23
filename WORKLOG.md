@@ -577,3 +577,29 @@
 ### Limitations / Next
 - 真 Gemini、Web 聊天／AI 失敗互動及整階段驗收未執行。原始聊天不是已確認照護事件；完整搜尋／修訂留在後續包。
 - review／PR 合併後接 S11-W01，復用已合併的 P1 prompt 和 Vertex 技術 Skill；P1 尚未完成。
+
+
+<a id="log-20260923-003"></a>
+## LOG-20260923-003
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S11-W01；P1，前置 S06-W01／PR #18 及 S09-W01／PR #19 已合併；基線 480a2d4。
+- Executor / AI Assistance：主模型負責 Vertex adapter、Server 編排、統計／鎖、整合 review 及验收；一個 Sol Xhigh 負責明確歸屬的 client／UI／單元測試，沒有額外調查或 Astra。
+- Human Verification：使用者提供 GCP project、完成 Google 登入並明確批准啟用 Vertex AI API 及最多三次合成模型驗收；沒有延伸成雲端部署或後續驗收授權。
+
+### Actual Work / Changes
+- 復用已合併 P1 prompt，固定 @google/genai 2.24.0／Vertex v1／Server ADC，關閉 SDK 自動重試；授權孩子稱呼與最多 20 則近期聊天按輸入上限組裝。
+- 原文先保存，回覆經權限重查／配額／逾時後保存；同訊息資料庫鎖及已保存回覆復用避免已知重複。新增登入者自己的 UTC 用量 API。
+- Web 提供純文字聊天、每孩子本頁草稿、跨帳號清理、AI 失敗手動重取、未知原文保存人工核對及登出／關頁提示。只做必要功能，未重做 UI 設計／提示詞／美術。
+- 更新 API／Skill 的版本及實測證據，保存原 SDK 許可及 lockfile 庫存；沒有把憑據、Google 登入資料或合成對話正文寫入工程／成本日誌。
+
+### Verification
+- client 5、reply／provider 6、HTTP runtime 9，共 20 個相關單元情景通過；雙 TypeScript、Web export、bundle provider 識別檢查及 git diff --check 通過。
+- Review 修正登入核查斷線造成 saving 狀態卡住，以及無上限回覆鎖可能耗盡 pool；前者有公開行為回歸情景，後者隨獲准 PostgreSQL 驗收檢查。
+- 使用者批准的 scripts/verify-gemini-chat.mjs：7 項本機／真服务檢查通過，包括登入、鎖排他／容量、三輪真 Gemini 及上下文、已有回覆復用、未登入拒絕、統計及新連線持久化。
+- 真模型為 global／gemini-3.1-flash-lite；3 次呼叫、零應用及 SDK 重試，回報 2,749 input／52 output tokens。快取 metadata 缺失，3 次保留用量不完整狀態；不推算帳單或優惠餘額。既有合成資料保留。
+- 證據：[EV-S11-W01](artifacts/verification/S11_W01_CHECKS.json)。首次實作 Node 不接受 client parameter property，已改顯式欄位；Server 型別收窄修正後通過。
+
+### Limitations / Next
+- 沒有 E2E／全量回歸、加密備份還原、雲端部署或組員試玩證據；新連線不冒充完整 Server 重啟，三轮成功不代表臨床或完整產品能力。
+- S11 完成 review／PR 合併後解鎖 S05-W01；P1 未完成，继续按工作包依賴推進。

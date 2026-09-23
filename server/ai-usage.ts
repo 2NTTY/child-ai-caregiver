@@ -14,12 +14,31 @@ export interface AttemptRecord extends TokenUsage {
   outcome: AttemptOutcome;
   durationMs: number;
 }
+export interface AiDailyUsage {
+  day: string; attempts: number; inputTokens: number; outputTokens: number; cachedTokens: number; unknownUsageAttempts: number;
+}
 export interface AiUsageStore {
+  getForUser(userId: string): Promise<AiDailyUsage>;
   reserve(userId: string, userLimit: number, globalLimit: number): Promise<boolean>;
   record(attempt: AttemptRecord): Promise<void>;
 }
 export function createAiUsageStore(pool: Pool): AiUsageStore {
   return {
+    async getForUser(userId) {
+      const result = await pool.query<{ day: string; attempts: number; input_tokens: string; output_tokens: string; cached_tokens: string; known: string }>(
+        `SELECT to_char((CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date, 'YYYY-MM-DD') AS day,
+          COALESCE((SELECT attempts FROM ai_daily_usage WHERE day = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date AND scope_key = $2), 0) AS attempts,
+          COALESCE(sum(input_tokens), 0)::text AS input_tokens,
+          COALESCE(sum(output_tokens), 0)::text AS output_tokens,
+          COALESCE(sum(cached_tokens), 0)::text AS cached_tokens,
+          count(*) FILTER (WHERE input_tokens IS NOT NULL AND output_tokens IS NOT NULL AND cached_tokens IS NOT NULL)::text AS known
+         FROM ai_attempts WHERE user_id = $1 AND created_at >= date_trunc('day', CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'`,
+        [userId, `user:${userId}`],
+      );
+      const row = result.rows[0]!;
+      return { day: row.day, attempts: row.attempts, inputTokens: Number(row.input_tokens), outputTokens: Number(row.output_tokens),
+        cachedTokens: Number(row.cached_tokens), unknownUsageAttempts: Math.max(0, row.attempts - Number(row.known)) };
+    },
     async reserve(userId, userLimit, globalLimit) {
       const client = await pool.connect();
       let failed = false;

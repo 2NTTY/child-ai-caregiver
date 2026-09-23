@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import type { ChatMessage, ChatPage } from "../src/shared/chat.ts";
 
 export interface ChatStore {
+  acquireReplyLock(messageId: string): Promise<(() => Promise<void>) | null>;
   listForUser(userId: string, childId: string): Promise<ChatPage | null>;
   createUserMessageForUser(userId: string, childId: string, text: string): Promise<ChatMessage | null>;
   createModelMessageForUser(userId: string, childId: string, inReplyTo: string, text: string): Promise<ChatMessage | null>;
@@ -16,7 +17,29 @@ function toMessage(row: MessageRow): ChatMessage {
     text: row.text, inReplyTo: row.in_reply_to, createdAt: row.created_at.toISOString() };
 }
 export function createChatStore(pool: Pool): ChatStore {
+  // Leave pool capacity for session, quota and message queries while locks are held.
+  let activeLocks = 0;
   return {
+    async acquireReplyLock(messageId) {
+      if (activeLocks >= 4) return null;
+      activeLocks++;
+      let client: PoolClient | undefined;
+      try {
+        client = await pool.connect();
+        const result = await client.query<{ locked: boolean }>("SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS locked", [messageId]);
+        if (!result.rows[0]?.locked) { client.release(); activeLocks--; return null; }
+        const lockedClient = client;
+        let released = false;
+        return async () => {
+          if (released) return;
+          released = true;
+          let failed = false;
+          try { await lockedClient.query("SELECT pg_advisory_unlock(hashtextextended($1, 0))", [messageId]); }
+          catch { failed = true; }
+          finally { lockedClient.release(failed); activeLocks--; }
+        };
+      } catch { client?.release(true); activeLocks--; throw new Error("Chat lock unavailable"); }
+    },
     async listForUser(userId, childId) {
       const result = await pool.query<MessageRow | { id: null }>(
         `SELECT message.id, message.child_id, message.author_user_id, message.role,

@@ -30,7 +30,7 @@ function validUsage(usage: TokenUsage): boolean {
 
 export function createModelGateway(options: {
   config: AiConfig;
-  usage: AiUsageStore;
+  usage: Pick<AiUsageStore, "reserve" | "record">;
   provider?: ModelProvider;
 }) {
   const activeUsers = new Set<string>();

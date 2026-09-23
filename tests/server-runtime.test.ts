@@ -197,6 +197,7 @@ test("chat HTTP route uses the current session and preserves renewed cookies", a
   const cookie = "better-auth.session_token=synthetic-renewed; Path=/; HttpOnly";
   const response = await dispatch("/api/children/79081f55-9e30-4ee5-91fb-71982b20d6f7/messages",
     { getSession: sessionLookup({ user: { id: "owner" } }, [cookie]) }, unusedStore, {
+      acquireReplyLock: async () => { throw new Error("Unexpected generation lock"); },
       listForUser: async (userId) => { assert.equal(userId, "owner"); return { messages: [], limit: 100 }; },
       createUserMessageForUser: async () => { throw new Error("Unexpected write"); },
       createModelMessageForUser: async () => { throw new Error("Unexpected model write"); },

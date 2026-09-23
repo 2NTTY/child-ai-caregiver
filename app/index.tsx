@@ -4,6 +4,9 @@ import { environment } from "../src/config/environment";
 import { createRecordsApi, type AuthMode } from "../src/client/records-api";
 import { RecordsController } from "../src/client/records-controller";
 import { useRecordsBrowser } from "../src/client/use-records-browser";
+import { createChatApi } from "../src/client/chat-api";
+import { ChatController } from "../src/client/chat-controller";
+import { ChatPanel } from "../src/client/ChatPanel";
 
 function Action({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
@@ -19,12 +22,15 @@ function dateTime(value: string): string {
 }
 
 export default function HomeScreen() {
-  const [controller] = useState(() => new RecordsController(createRecordsApi(environment.apiBaseUrl)));
+  const [recordsApi] = useState(() => createRecordsApi(environment.apiBaseUrl));
+  const [controller] = useState(() => new RecordsController(recordsApi));
+  const [chatController] = useState(() => new ChatController(createChatApi(environment.apiBaseUrl, recordsApi.getSession)));
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const [authMode, setAuthMode] = useState<AuthMode>("signIn");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [chatLogoutConfirmation, setChatLogoutConfirmation] = useState(false);
   const serverAddress = useRecordsBrowser(controller, environment.apiBaseUrl, Boolean(name || email || password));
   const busy = state.busy !== null;
   const child = state.children.find(item => item.id === state.selectedChildId);
@@ -40,12 +46,39 @@ export default function HomeScreen() {
     }
   }, [state.user?.id]);
 
+  useEffect(() => {
+    if (state.auth === "signedOut") setChatLogoutConfirmation(false);
+  }, [state.auth]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (chatController.hasUnsavedInput()) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnload);
+      chatController.dispose();
+    };
+  }, [chatController]);
+
+  function requestLogout(): void {
+    if (chatController.hasUnsavedInput()) {
+      setChatLogoutConfirmation(true);
+      return;
+    }
+    void controller.signOut();
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
       <View style={styles.container}>
         <Text accessibilityRole="header" style={styles.title}>育伴港</Text>
         <Text style={styles.body}>孩子與照顧記錄</Text>
-        <Text style={styles.hint}>P1 試玩階段，請只使用合成資料。暫未提供 AI 回覆。</Text>
+        <Text style={styles.hint}>P1 試玩階段，請只使用合成資料。</Text>
         <View style={styles.section}>
           <Text style={styles.label}>目前 Server</Text>
           <Text selectable style={styles.body}>{serverAddress}</Text>
@@ -85,7 +118,12 @@ export default function HomeScreen() {
           <>
             <View style={styles.section}>
               <Text style={styles.body}>已登入：{state.user?.name}（{state.user?.email}）</Text>
-              <Action label={state.busy === "logout" ? "正在登出…" : "登出"} onPress={() => { void controller.signOut(); }} disabled={busy || !state.online} />
+              <Action label={state.busy === "logout" ? "正在登出…" : "登出"} onPress={requestLogout} disabled={busy || !state.online} />
+              {chatLogoutConfirmation && <View style={styles.confirmation}>
+                <Text style={styles.warning}>登出成功後會清除本頁聊天草稿、未完成回覆狀態及其他孩子的照顧記錄草稿；已保存的訊息仍可重新登入讀取。</Text>
+                <Action label="確認捨棄未提交內容並登出" onPress={() => { setChatLogoutConfirmation(false); void controller.signOut(true); }} disabled={busy || !state.online} />
+                <Action label="返回，繼續保留草稿" onPress={() => setChatLogoutConfirmation(false)} disabled={busy} />
+              </View>}
               {state.logoutConfirmation && <View style={styles.confirmation}>
                 <Text style={styles.warning}>登出成功後會清除本頁所有未提交內容，包括其他孩子的草稿；這些內容尚未保存。</Text>
                 <Action label="確認捨棄未提交內容並登出" onPress={() => { void controller.signOut(true); }} disabled={busy || !state.online} />
@@ -159,6 +197,7 @@ export default function HomeScreen() {
             </View>}
           </>
         )}
+        <ChatPanel controller={chatController} auth={state.auth} userId={state.user?.id ?? null} online={state.online} child={child ?? null} />
       </View>
     </ScrollView>
   );
