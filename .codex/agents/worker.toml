@@ -1,6 +1,6 @@
 name = "worker"
 description = "Sol implementation agent for explicitly bounded work packages."
-model = "gpt-5.6-sol"
+model = "gpt-6-sol"
 # Do not pin model_reasoning_effort here: a role-file value overrides spawn values.
 # Explicit high/xhigh/max is allowed; the project fallback is high.
 sandbox_mode = "workspace-write"
