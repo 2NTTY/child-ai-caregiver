@@ -7,9 +7,9 @@ default_subagent_model = "gpt-6-sol"
 default_subagent_reasoning_effort = "high"
 
 [agents.explorer]
-description = "Luna Max for bounded, reading-heavy investigation and independent evidence checks."
+description = "Luna Max for independent, reading-heavy investigation, evidence analysis and existing low-cost, non-critical read-only batch tests."
 config_file = "agents/explorer.toml"
 
 [agents.worker]
-description = "Sol for bounded implementation with explicit file ownership and acceptance criteria."
+description = "Sol for bounded ordinary implementation with a settled approach, explicit file ownership and related lightweight tests."
 config_file = "agents/worker.toml"
