@@ -184,3 +184,12 @@ for (const scenario of ["unlock failure", "rollback failure"] as const) {
     }
   });
 }
+
+test("AI availability requires a session and exposes no server configuration", async () => {
+  const denied = await dispatch("/api/ai/status", { getSession: sessionLookup(null, []) });
+  assert.equal(denied.status, 401);
+  const permitted = await dispatch("/api/ai/status", { getSession: sessionLookup({ user: { id: "owner" } }, []) });
+  assert.equal(permitted.status, 200);
+  assert.deepEqual(JSON.parse(permitted.body), { available: false });
+  assert.equal(permitted.headers.get("cache-control"), "no-store");
+});

@@ -527,3 +527,29 @@
 - 真 Gemini／工具接入仍未驗證；P1 最小 prompt 留待 S11-W01 按需使用。素材屬準備資產，不構成任何 Sxx 或 P1 完成。
 - 桌面 PowerPoint 尚未開啟驗收，現有預覽是瀏覽器重建而非原生 Office 渲染；gallery 互動及品牌偏好仍未人工確認，不阻止 source 交付。
 - 產品恢復時仍先從 Ready 的 S06-W01 開始，再依 PLAN 依賴推進；後續高成本驗收另按原規則取得批准。
+
+
+<a id="log-20260923-001"></a>
+## LOG-20260923-001
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S06-W01；P1，前置 S03-W01 已合併。基線 master 7dae367。
+- Executor / AI Assistance：主模型負責安全邊界、持久配額、API 整合及 review；Sol High 實作三檔配置與必要測試；Luna Max 唯讀調查 Vertex 官方約束，不寫 Skill。
+- Human Verification：使用者要求持續 P1、Web 功能優先、復用提示詞／美術及延後昂貴測試；本包沒有人工或真服務驗收。
+
+### Actual Work / Changes
+- 新增嚴格 Server-only AI 配置、預設總開關關閉；新增 ModelGateway 權限重查、並發限制、有限 429 重試與取消逾時，未知結果不自動重送。
+- 新增 003-ai-usage 非破壞遷移：PostgreSQL 短事務原子預留每日帳號／全站嘗試數；只保存白名單統計，不保存正文或原始錯誤。Server 暫不連真 provider，S11 接既有 P1 prompt 及聊天。
+- 新增登入保護的 AI 可用性 API；更新 API、PLAN／STATUS，本 LOG 僅追加。
+
+### Verification
+- REQ-1-6-02、rule-3-6-10／rule-9-6-10 的安全邊界局部驗收：配置 5、gateway 8、Server runtime 8 個情景通過；必要 Server typecheck 及 git diff --check 通過。
+- 首輪 Node 原生 TypeScript strip-only 拒絕 parameter property，改成顯式欄位並加入 erasableSyntaxOnly 編譯限制；修正後 gateway 8／8 通過。沒有改執行器或引入 transpiler。
+- Node v24.19.0，固定現有依賴；只復用相同 lockfile 的 node_modules，不呼叫模型，不新增昂貴測試。
+
+### Limitations / Next
+- 真 PostgreSQL 遷移與重啟配額、Vertex、部署及階段驗收未執行；unit fake 只證明應用邊界，不替代 S11／S16 真服務證據。
+- 完成 review／PR 合併後接 S09-W01；P1 不宣稱完成，不重做既有 Prompt Pack／美術。
+
+- 合併前官方研究覆核：Google 最小重試間隔為一秒，模型頁列出 global／us／eu；已修正間隔及配置，配置測試增加至 6 個，連同 gateway 8 及 Server 8，共 22 個相關情景通過。採用一份短 `vertex-gemini-server` Skill 保存官方來源／版本／日期；所安裝 SDK 的重試欄位留待 S11 核對，沒有把 main 分支當固定版本證據。
+- Skill 附帶 Python validator 因缺 PyYAML 未能執行；改用既有 Node YAML parser 檢查同範圍 frontmatter／名稱／描述／未完成模板，通過。沒有為檢查增裝依賴或啟動子代理。
