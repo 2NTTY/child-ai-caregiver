@@ -629,3 +629,22 @@
 - 自動批准審查曾拒絕子代理的永久刪除程式碼修改，理由是缺具體範圍授權；沒有繞過。取得使用者明確確認後才恢復該實作。
 - 使用者延後本機驗收：未建立 storage／backup key、未改現有資料、未備份或還原、未跑刪除驗收／E2E／全量回歸／真模型。分支及 draft PR 保留，S05 不標已完成。
 - 檔案正文加密不等於物理磁碟／WAL 或歷史備份抹除；部署環境及資料保留界線已明示。S16／S17 仍須 S05 驗收合併後才開始；P1 尚未完成。
+
+
+<a id="log-20260923-005"></a>
+## LOG-20260923-005
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S05-W01；前置 S11-W01／PR #20 已合併，基線 e2027d5。補足 LOG-20260923-004 延後的本機驗收，實作及必要驗收已完成，PR #21 合併後解鎖 S16。
+- Executor / AI Assistance：Sol High 一個执行已準備的有界驗收及整理證據；主模型核對腳本覆蓋、整合證據、review 及交付，沒有重複執行測試或派生代理。
+- Human Verification：使用者明確批准此前列明的最小本機加密／備份還原驗收；沒有聲稱組員人工試玩已通過。
+
+### Actual Work / Verification
+- 確認 PostgreSQL 18.6 容器健康、來源為既有 loopback 合成資料庫，升級前沒有其他 DB 連線；建立工程外兩把獨立密鑰並核對 Windows 目錄及檔案 ACL。
+- scripts/verify-storage.mjs --approved-local-encryption 一次通過七項檢查：保留既有 8 個孩子／4 筆記錄／8 則聊天原文及關聯，業務明文欄位 0；密文新寫入／隔離、只刪新建一次性合成孩子及 cascade、配額保留、加密備份、篡改拒絕、空庫恢復／登入及非空庫拒絕。
+- 原庫沒有清空；已原位加密，須使用相應 storage key 才能啟動新 Server。還原到新空庫，排除舊 session 後重新登入通過，保留原庫、新還原庫與加密備份；秘密及精確恢復位置不進工程。
+- 證據：[EV-S05-W01](artifacts/verification/S05_W01_CHECKS.json)。此前單元／TypeScript 結果繼續適用，沒有程式碼修改，不額外重跑全量檢查。
+
+### Failures / Limitations / Next
+- 首次以單次 icacls 檢查兩個檔案的參數格式不適用，分別核對後成功；沒有重建密鑰或重跑整體驗收。
+- 本次真模型／雲端呼叫為 0；沒有瀏覽器 E2E、全量回歸或部署磁碟／WAL 證據。S16 核對必要驗收缺口，S17 交付 URL／組員試玩；P1 尚未完成。

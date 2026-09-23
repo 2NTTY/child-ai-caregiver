@@ -5,7 +5,7 @@ description: 修改 Node Server 的 AES-GCM 業務儲存、密鑰檔案、既有
 
 # Node／PostgreSQL 加密與備份
 
-適用 Node 24 node:crypto／PostgreSQL 18；最後核對 2026-09-23。官方資料已核對，Node 24.19.0 的必要 crypto 單元通過；本包真 DB 升級／還原仍待獲准驗收。專案決策及操作看 [架構](../../../docs/ARCHITECTURE.md#section-3-2)、[P1 操作](../../../docs/P1_STORAGE.md)，不在本 Skill 複製產品範圍。
+適用 Node 24 node:crypto／PostgreSQL 18；最後核對 2026-09-23。官方資料已核對，Node 24.19.0 的必要 crypto 單元通過；PostgreSQL 18.6 的既有資料升級、正文一致性、加密備份／空庫還原及 Windows key ACL 已在批准的本機合成驗收核實；不代表部署環境已驗證。專案決策及操作看 [架構](../../../docs/ARCHITECTURE.md#section-3-2)、[P1 操作](../../../docs/P1_STORAGE.md)，不在本 Skill 複製產品範圍。
 
 - 使用 raw random 32-byte AES-256 key、每次新 12-byte nonce、明確 16-byte GCM tag；AAD 綁版本及記錄歸屬，不能只加密而不驗證。隨機 IV 不保證絕無碰撞；同 key 呼叫量須受控，不跨長期無限沿用。[Node crypto](https://nodejs.org/docs/latest-v24.x/api/crypto.html)、[NIST GCM](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf)
 - 先 setAAD，再 update／final；加密 final 後取 tag。解密必須提供相同 AAD／tag，**final 成功前不得把 update 的明文交給業務或還原程序**；損壞、錯 key／context 固定失敗，不 fallback 明文。[Node decipher](https://nodejs.org/docs/latest-v24.x/api/crypto.html#decipherfinaloutputencoding)

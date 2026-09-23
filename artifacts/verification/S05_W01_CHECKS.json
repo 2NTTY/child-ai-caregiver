@@ -2,7 +2,7 @@
   "evidenceId": "EV-S05-W01",
   "workPackage": "S05-W01",
   "recordedOn": "2026-09-23",
-  "status": "implemented_awaiting_acceptance",
+  "status": "verified_main_review_complete",
   "baseCommit": "e2027d543e51e4514e7a484bc7e8fd2c4a10a8fb",
   "prerequisites": [
     "S11-W01 (PR #20 merged)"
@@ -34,28 +34,46 @@
     "Refuse unexpected partial encryption state"
   ],
   "acceptance": {
-    "decision": "user_deferred",
-    "response": "先保留待驗收",
-    "preparedCommand": "node --env-file=<existing synthetic configuration> scripts/verify-storage.mjs --approved-local-encryption",
-    "notRun": [
-      "existing PostgreSQL conversion and original content equality",
-      "new encrypted writes/isolation",
-      "new synthetic child deletion and cascades",
-      "encrypted backup",
-      "tampered backup rejection before restore",
-      "empty database restore and recovered login",
-      "nonempty-target restore refusal"
-    ]
+    "decision": "user_approved_minimal_local_acceptance",
+    "command": "node --env-file=<existing synthetic configuration> scripts/verify-storage.mjs --approved-local-encryption",
+    "environment": {
+      "node": "24",
+      "postgresql": "18.6",
+      "sourceDatabase": "127.0.0.1:5434/yuban_s06_test",
+      "dockerContainer": "ai-postgres-test-1",
+      "otherSourceDatabaseSessionsBeforeConversion": 0,
+      "keyDirectoryAndFilesAcl": "current Windows user only",
+      "keys": "Independent storage and backup keys in protected directory outside repository; exact locations retained locally"
+    },
+    "result": "passed",
+    "checks": 7,
+    "preservedLegacyRows": {
+      "children": 8,
+      "records": 4,
+      "chats": 8
+    },
+    "plaintextBusinessColumnsRemaining": 0,
+    "deletedOnlyNewSyntheticChild": true,
+    "restoredSessionCountBeforeLogin": 0,
+    "restoredBodiesEqual": true,
+    "restoredAuthentication": true,
+    "tamperedBackupRejectedBeforeRestore": true,
+    "nonemptyRestoreRefused": true,
+    "restoredDatabase": "New uniquely named empty local synthetic database; original source retained",
+    "encryptedBackup": "Ignored local backups/*.ybak; exact path retained locally",
+    "syntheticOnly": true,
+    "credentialsAndBodiesLogged": false,
+    "runCount": 1
   },
-  "liveDataChanged": false,
-  "storageKeysGenerated": false,
+  "liveDataChanged": true,
+  "storageKeysGenerated": true,
   "realModelCalls": 0,
   "cloudCalls": 0,
   "stageP1Complete": false,
   "limitations": [
     "No browser E2E or full regression",
-    "No S05 SQL/runtime/ACL/restore evidence yet",
     "Physical disk/WAL encryption and cloud delivery still require environment verification",
     "Existing historical backups are not rewritten by child deletion"
-  ]
+  ],
+  "reviewedBy": "Main agent; inspected acceptance script coverage and Sol execution evidence without duplicating approved integration"
 }

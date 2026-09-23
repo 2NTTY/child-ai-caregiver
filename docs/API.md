@@ -103,7 +103,7 @@ S03-W01 在同一 `/api` 入口新增以下已登入端點；session、Origin、
 
 
 <a id="p1-child-deletion"></a>
-## P1 必要刪除 HTTP（S05-W01，待驗收）
+## P1 必要刪除 HTTP（S05-W01，本機已驗證）
 
 `POST /api/children/:childId/delete` 接受且只接受 `{confirmChildId: childId}`，須有當前 session 及吻合的 `x-expected-user-id`；body 不能指定 owner。成功回 200 `{deleted:true, childId}`，在同一 SQL 中刪除 owned child／相關資料並寫最小標記；外人或不存在均 404。未登入 401、缺預期帳號 428、不同帳號 409、錯誤確認 400。瀏覽器先顯示永久刪除範圍並要求二次確認，離線／提交或 AI 回覆中不得開始。
 
