@@ -21,6 +21,8 @@ uploads/
 attachments/private/
 exports/
 backups/
+*.ybak
+*.ybak.damaged
 *.db
 *.db-*
 *.sqlite

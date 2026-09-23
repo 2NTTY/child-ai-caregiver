@@ -89,9 +89,15 @@ The following setup is for a local database and server. It is not the P4 self-ho
 ```sh
 npm run setup:local
 docker compose -f compose.dev.yaml up -d postgres
+# Generate storage/backup keys in a new private directory outside this repository.
+node scripts/setup-storage-keys.mjs /absolute/private/new-key-directory
+# Add STORAGE_KEY_FILE and BACKUP_KEY_FILE paths to the ignored .env.
 npm run db:migrate
+npm run storage:encrypt -- --server-stopped
 npm run server
 ```
+
+Storage encryption is mandatory: keep the old Server stopped during migration and conversion. The new Server refuses to start without the matching storage key and completed upgrade. See [P1 storage operations](docs/P1_STORAGE.md) for protected keys, encrypted backup/restore, and scope limits. Never regenerate a key to fix a startup error.
 
 The server listens on `127.0.0.1:3001`, with `/api/health`, `/api/auth/*`, and `/api/workspaces` endpoints. PostgreSQL uses a persistent named volume and a loopback-only port. Migrations are additive, serialized by an advisory lock, and record application SQL checksums. Do not delete volumes to repair a migration or lose the `.env` secret: existing sessions depend on it. The S03-W01 Web product flow uses these same server endpoints.
 

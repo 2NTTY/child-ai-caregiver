@@ -30,6 +30,7 @@ export interface RecordsApi {
   signOut(signal: AbortSignal): Promise<void>;
   listChildren(signal: AbortSignal): Promise<Child[]>;
   createChild(displayName: string, signal: AbortSignal, expectedUserId: string): Promise<Child>;
+  deleteChild(childId: string, signal: AbortSignal, expectedUserId: string): Promise<void>;
   listRecords(childId: string, signal: AbortSignal): Promise<RecordList>;
   createRecord(childId: string, text: string, signal: AbortSignal, expectedUserId: string): Promise<TextRecord>;
 }
@@ -119,6 +120,10 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch)
       const value = await request("/children", signal, { displayName }, expectedUserId);
       if (!object(value) || !child(value.child) || value.child.displayName !== displayName) throw new ClientApiError();
       return value.child;
+    },
+    async deleteChild(childId, signal, expectedUserId) {
+      const value = await request(`/children/${encodeURIComponent(childId)}/delete`, signal, { confirmChildId: childId }, expectedUserId);
+      if (!object(value) || value.deleted !== true || value.childId !== childId) throw new ClientApiError();
     },
     async listRecords(childId, signal) {
       const value = await request(`/children/${encodeURIComponent(childId)}/records`, signal);

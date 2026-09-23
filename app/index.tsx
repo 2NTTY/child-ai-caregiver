@@ -23,9 +23,15 @@ function dateTime(value: string): string {
 
 export default function HomeScreen() {
   const [recordsApi] = useState(() => createRecordsApi(environment.apiBaseUrl));
-  const [controller] = useState(() => new RecordsController(recordsApi));
   const [chatController] = useState(() => new ChatController(createChatApi(environment.apiBaseUrl, recordsApi.getSession)));
+  const [controller] = useState(() => new RecordsController(recordsApi, true, {
+    begin: childId => chatController.beginChildDeletion(childId),
+    release: childId => chatController.releaseChildDeletion(childId),
+    forget: childId => chatController.forgetChild(childId),
+    reconcile: (childIds, pendingDeletionId) => chatController.reconcileChildren(childIds, pendingDeletionId),
+  }));
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const chatState = useSyncExternalStore(chatController.subscribe, chatController.getSnapshot, chatController.getSnapshot);
   const [authMode, setAuthMode] = useState<AuthMode>("signIn");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,6 +43,7 @@ export default function HomeScreen() {
   const draft = child ? state.drafts[child.id] : undefined;
   const uncertainRecord = draft?.outcome === "unknown" || draft?.outcome === "checked";
   const uncertainChild = state.childOutcome === "unknown" || state.childOutcome === "checked";
+  const deleting = state.deletion !== null;
 
   useEffect(() => {
     if (state.user) {
@@ -139,7 +146,7 @@ export default function HomeScreen() {
               <View style={styles.row}>
                 {state.children.map(item => <Action key={item.id}
                   label={`${item.id === child?.id ? "目前：" : ""}${item.displayName}${state.drafts[item.id]?.text ? "（有未保存內容）" : ""}`}
-                  onPress={() => { void controller.selectChild(item.id); }} disabled={busy || state.childrenLoading || item.id === child?.id} />)}
+                  onPress={() => { void controller.selectChild(item.id); }} disabled={busy || deleting || state.childrenLoading || item.id === child?.id} />)}
               </View>
               {!state.childrenLoading && state.childrenLoadedAt && state.children.length === 0 && <Text style={styles.body}>尚未有孩子，請先建立。</Text>}
               <Text style={styles.label}>新孩子的稱呼</Text>
@@ -147,7 +154,7 @@ export default function HomeScreen() {
                 editable={!busy && state.childOutcome === "draft"} style={styles.input} />
               <Text style={styles.hint}>確認後會在目前帳號的 Server 資料空間建立孩子。</Text>
               <Action label={state.busy === "createChild" ? "正在提交…" : "確認建立孩子"} onPress={() => { void controller.createChild(); }}
-                disabled={busy || state.childrenLoading || !state.online || uncertainChild} />
+                disabled={busy || deleting || state.childrenLoading || !state.online || uncertainChild} />
               {state.childMessage && <Text accessibilityLiveRegion="polite" style={styles.warning}>{state.childMessage}</Text>}
               {uncertainChild && <Text style={styles.hint}>請先使用「重新讀取孩子列表」核對這次建立是否已完成。</Text>}
               {state.childOutcome === "checked" && <View style={styles.row}>
@@ -157,6 +164,24 @@ export default function HomeScreen() {
             </View>
 
             {child && <View style={styles.section}>
+              <Text accessibilityRole="header" style={styles.heading}>刪除「{child.displayName}」</Text>
+              {!deleting && <Action label="檢視永久刪除孩子及全部資料" onPress={() => controller.reviewDeleteChild()}
+                disabled={busy || state.childrenLoading || !state.online || chatState.busy !== null} />}
+              {state.deletion?.childId === child.id && <View style={styles.confirmation}>
+                <Text style={styles.warning}>永久刪除「{child.displayName}」後，這位孩子及其全部已保存照顧記錄、私人聊天和本頁草稿都會清除，無法復原。其他孩子的草稿會保留。</Text>
+                {state.deletion.message && <Text accessibilityRole="alert" style={styles.warning}>{state.deletion.message}</Text>}
+                {state.deletion.phase === "confirm" && <Action label={state.busy === "deleteChild" ? "正在刪除…" : `再次確認：永久刪除「${child.displayName}」及全部資料`}
+                  onPress={() => { void controller.confirmDeleteChild(); }} disabled={busy || !state.online || chatState.busy !== null} />}
+                {state.deletion.phase === "unknown" && <Action label="重新讀取孩子列表核對刪除結果"
+                  onPress={() => { void controller.reloadChildren(); }} disabled={busy || state.childrenLoading || !state.online} />}
+                {state.deletion.phase === "checked" && <Action label="再次檢視永久刪除"
+                  onPress={() => controller.reviewDeleteChild()} disabled={busy || !state.online} />}
+                {state.deletion.phase !== "unknown" && <Action label="取消刪除，保留孩子"
+                  onPress={() => controller.cancelDeleteChild()} disabled={busy} />}
+              </View>}
+            </View>}
+
+            {child && !deleting && <View style={styles.section}>
               <Text accessibilityRole="header" style={styles.heading}>{child.displayName}的文字記錄</Text>
               <Text style={styles.hint}>請保留約數、單位及原來寫法。草稿只留在本頁；切換孩子會保留各自草稿，重新整理或關閉可能失去內容。</Text>
               <TextInput accessibilityLabel={`為${child.displayName}輸入文字記錄`} value={draft?.text ?? ""}
@@ -197,7 +222,7 @@ export default function HomeScreen() {
             </View>}
           </>
         )}
-        <ChatPanel controller={chatController} auth={state.auth} userId={state.user?.id ?? null} online={state.online} child={child ?? null} />
+        <ChatPanel controller={chatController} auth={state.auth} userId={state.user?.id ?? null} online={state.online} child={deleting ? null : child ?? null} />
       </View>
     </ScrollView>
   );

@@ -10,6 +10,8 @@ import { readAiConfig } from "./ai-config.ts";
 import { createAiUsageStore } from "./ai-usage.ts";
 import { createChatStore } from "./chat.ts";
 import { createModelGateway } from "./model-gateway.ts";
+import { createStorageCipher, readSecretKey } from "./storage-crypto.ts";
+import { verifyEncryptedStorage } from "./storage-upgrade.ts";
 import { createVertexProvider } from "./vertex-provider.ts";
 
 try {
@@ -17,13 +19,15 @@ try {
   const aiConfig = readAiConfig(process.env);
   const chatPrompt = await readFile(new URL("../prompts/p1/childcare-chat.txt", import.meta.url), "utf8");
   const provider = aiConfig.enabled ? createVertexProvider(aiConfig) : undefined;
+  const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
   const pool = createPool(config);
+  try { await verifyEncryptedStorage(pool, cipher); } catch (error) { await pool.end(); throw error; }
   const aiUsage = createAiUsageStore(pool);
   const auth = createAuth(config, pool);
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
-    records: createRecordStore(pool),
-    chat: createChatStore(pool),
+    records: createRecordStore(pool, cipher),
+    chat: createChatStore(pool, cipher),
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },

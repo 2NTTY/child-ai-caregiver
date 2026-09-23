@@ -603,3 +603,48 @@
 ### Limitations / Next
 - 沒有 E2E／全量回歸、加密備份還原、雲端部署或組員試玩證據；新連線不冒充完整 Server 重啟，三轮成功不代表臨床或完整產品能力。
 - S11 完成 review／PR 合併後解鎖 S05-W01；P1 未完成，继续按工作包依賴推進。
+
+
+<a id="log-20260923-004"></a>
+## LOG-20260923-004
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S05-W01；P1，前置 S11-W01 已於 PR #20 合併，基線 e2027d5。已實作／待驗收，不合併、不解鎖依賴包。
+- Executor / AI Assistance：主模型負責加密／升級、SQL、備份還原、整合 review 及文件；Luna Max 一個只核對官方 Node／PostgreSQL 原文；Sol Xhigh 一個負責 Web 刪除，因授權阻塞恢復一次，按上限計兩次啟動，沒有 Astra 或子派生。
+- Human Verification：使用者明確確認實作 owner 二次確認的孩子／全部相關記錄聊天刪除功能；對準備好的本機加密／備份還原驗收回覆「先保留待驗收」。沒有執行該驗收或刪除既有資料。
+
+### Actual Work / Changes
+- 新增 AES-256-GCM／隨機 nonce／AAD、工程外 key 讀取及拒絕明文 fallback；005 schema 與明確停服工具交易式轉換既有孩子稱呼、照護原文和聊天，保留原 ID／關聯並加入 plaintext 禁止約束。
+- 新程式先驗證 key／已完成升級才啟動；新增獨立 backup key 的 pg_dump custom 加密備份與已認證後的空庫 pg_restore，單一交易、不覆蓋非空目標，不在磁碟落原 archive。恢復排除臨時 session／verification，沒有自動啟動新 Server。
+- owner 刪孩子的原子 SQL／最小標記及 UI 二次確認；清理相應記錄聊天／草稿、保留其他孩子及每日已用配額。未知結果先核對；無額外帳號清空或完整版本框架。
+- 把已核對官方約束压縮為一份按需 Skill；補操作／範圍文件、API／資料／架構細化及既有驗收工具的必要 key 接線。沒有新依賴或美術／prompt 生成。
+
+### Verification
+- 主模型實跑 crypto 3／3、record API／store 17／17、刪除 client 5／5；Sol 報告 client／chat／delete 相關 27／27，重疊不作額外統計。雙 TypeScript、相關腳本語法、Skill YAML frontmatter、git diff --check 通過。
+- Review 加入刪除開始時同步阻止舊 chat action，避免等 React effect 才生效；禁止刪除決策中新增寫入；backup 對工具 warnings 及不支援連線參數 fail closed，升級拒絕無狀態的部分密文。
+- 首輪新測試的 callback 赋值被 TypeScript 縮窄為 never，改以已驗證的 request collection，型別檢查通過；Sol 首輪一個 undefined／false 斷言亦已修正。沒有改 runtime 或降級檢查。
+- [EV-S05-W01](artifacts/verification/S05_W01_CHECKS.json) 保留全部必要 SQL／加密升級／備份還原項為未執行，不能用單元或官方資料代表真 DB 通過。
+
+### Failures / Limitations / Next
+- 自動批准審查曾拒絕子代理的永久刪除程式碼修改，理由是缺具體範圍授權；沒有繞過。取得使用者明確確認後才恢復該實作。
+- 使用者延後本機驗收：未建立 storage／backup key、未改現有資料、未備份或還原、未跑刪除驗收／E2E／全量回歸／真模型。分支及 draft PR 保留，S05 不標已完成。
+- 檔案正文加密不等於物理磁碟／WAL 或歷史備份抹除；部署環境及資料保留界線已明示。S16／S17 仍須 S05 驗收合併後才開始；P1 尚未完成。
+
+
+<a id="log-20260923-005"></a>
+## LOG-20260923-005
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S05-W01；前置 S11-W01／PR #20 已合併，基線 e2027d5。補足 LOG-20260923-004 延後的本機驗收，實作及必要驗收已完成，PR #21 合併後解鎖 S16。
+- Executor / AI Assistance：Sol High 一個执行已準備的有界驗收及整理證據；主模型核對腳本覆蓋、整合證據、review 及交付，沒有重複執行測試或派生代理。
+- Human Verification：使用者明確批准此前列明的最小本機加密／備份還原驗收；沒有聲稱組員人工試玩已通過。
+
+### Actual Work / Verification
+- 確認 PostgreSQL 18.6 容器健康、來源為既有 loopback 合成資料庫，升級前沒有其他 DB 連線；建立工程外兩把獨立密鑰並核對 Windows 目錄及檔案 ACL。
+- scripts/verify-storage.mjs --approved-local-encryption 一次通過七項檢查：保留既有 8 個孩子／4 筆記錄／8 則聊天原文及關聯，業務明文欄位 0；密文新寫入／隔離、只刪新建一次性合成孩子及 cascade、配額保留、加密備份、篡改拒絕、空庫恢復／登入及非空庫拒絕。
+- 原庫沒有清空；已原位加密，須使用相應 storage key 才能啟動新 Server。還原到新空庫，排除舊 session 後重新登入通過，保留原庫、新還原庫與加密備份；秘密及精確恢復位置不進工程。
+- 證據：[EV-S05-W01](artifacts/verification/S05_W01_CHECKS.json)。此前單元／TypeScript 結果繼續適用，沒有程式碼修改，不額外重跑全量檢查。
+
+### Failures / Limitations / Next
+- 首次以單次 icacls 檢查兩個檔案的參數格式不適用，分別核對後成功；沒有重建密鑰或重跑整體驗收。
+- 本次真模型／雲端呼叫為 0；沒有瀏覽器 E2E、全量回歸或部署磁碟／WAL 證據。S16 核對必要驗收缺口，S17 交付 URL／組員試玩；P1 尚未完成。

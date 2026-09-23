@@ -120,6 +120,7 @@ function readConfiguration() {
     serverEnvironment: {
       ...baseEnvironment,
       DATABASE_URL: databaseUrl,
+      STORAGE_KEY_FILE: process.env.STORAGE_KEY_FILE,
       BETTER_AUTH_SECRET: randomBytes(32).toString("hex"),
       SERVER_ORIGIN: serverOrigin,
       WEB_ORIGIN: webOrigin,
@@ -398,6 +399,11 @@ async function verifyWeb() {
     const result = await waitForExit(migration, 45_000);
     requireResult(result, "MIGRATION_TIMEOUT");
     requireResult(!result.spawnFailed && result.code === 0, "MIGRATION_FAILED");
+  });
+  await runCheck("ENCRYPTED_STORAGE_UPGRADE", async () => {
+    const upgrade = spawnOwned("scripts/encrypt-storage.mjs", ["--server-stopped"], configuration.serverEnvironment);
+    const result = await waitForExit(upgrade, 60_000);
+    requireResult(result && !result.spawnFailed && result.code === 0, "ENCRYPTION_UPGRADE_FAILED");
   });
   await runCheck("LOCAL_SERVICES", async () => {
     await requireFreePort(serverPort);

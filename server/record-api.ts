@@ -48,6 +48,20 @@ export async function handleRecordRequest(request: Request, userId: string | nul
     return jsonResponse({ child: await store.createChildForUser(userId, input.value) }, 201);
   }
 
+  const deletion = /^\/api\/children\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/delete$/i.exec(pathname);
+  if (deletion) {
+    if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);
+    const body = await readJson(request);
+    if (!body.ok) return body.response;
+    const value = body.value;
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length !== 1
+      || (value as Record<string, unknown>).confirmChildId !== deletion[1]) {
+      return apiError("invalid_input", "請先確認要刪除的孩子及全部相關資料。", 400);
+    }
+    const deleted = await store.deleteChildForUser(userId, deletion[1]!);
+    return deleted ? jsonResponse({ deleted: true, childId: deletion[1] }) : apiError("not_found", "找不到資料。", 404);
+  }
+
   const match = /^\/api\/children\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/records$/i.exec(pathname);
   if (!match) return apiError("not_found", "找不到資料。", 404);
   const childId = match[1]!;

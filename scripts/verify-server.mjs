@@ -71,6 +71,7 @@ function readConfiguration() {
     environment: {
       ...environment,
       DATABASE_URL: databaseUrl,
+      STORAGE_KEY_FILE: process.env.STORAGE_KEY_FILE,
       BETTER_AUTH_SECRET: randomBytes(32).toString("hex"),
       SERVER_ORIGIN: serverOrigin,
       WEB_ORIGIN: webOrigin,
@@ -95,9 +96,9 @@ async function requireFreePort() {
   });
 }
 
-function spawnOwned(relativePath) {
+function spawnOwned(relativePath, args = []) {
   checkInterruption();
-  const child = spawn(process.execPath, [resolve(repositoryDirectory, relativePath)], {
+  const child = spawn(process.execPath, [resolve(repositoryDirectory, relativePath), ...args], {
     cwd: repositoryDirectory,
     env: configuration.environment,
     windowsHide: true,
@@ -265,6 +266,11 @@ async function verifyIntegration() {
     const result = await waitForExit(migration, 60_000);
     requireResult(result, "MIGRATION_TIMEOUT");
     requireResult(!result.spawnFailed && result.code === 0, "MIGRATION_FAILED");
+  });
+  await runCheck("ENCRYPTED_STORAGE_UPGRADE", async () => {
+    const upgrade = spawnOwned("scripts/encrypt-storage.mjs", ["--server-stopped"]);
+    const result = await waitForExit(upgrade, 60_000);
+    requireResult(result && !result.spawnFailed && result.code === 0, "ENCRYPTION_UPGRADE_FAILED");
   });
   await runCheck("DATABASE_HEALTH", startServer);
 

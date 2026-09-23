@@ -14,7 +14,7 @@ export interface RecordsState {
   auth: "checking" | "signedOut" | "signedIn" | "unavailable";
   user: SessionUser | null;
   online: boolean;
-  busy: "auth" | "logout" | "createChild" | "saveRecord" | null;
+  busy: "auth" | "logout" | "createChild" | "saveRecord" | "deleteChild" | null;
   notice: string | null;
   children: Child[];
   childrenLoading: boolean;
@@ -32,7 +32,15 @@ export interface RecordsState {
   drafts: Record<string, RecordDraft>;
   confirmation: { childId: string; text: string } | null;
   logoutConfirmation: boolean;
+  deletion: { childId: string; phase: "confirm" | "unknown" | "checked"; message: string | null } | null;
   hasRetainedInput: boolean;
+}
+
+interface ChildDeletionEvents {
+  begin(childId: string): boolean;
+  release(childId: string): void;
+  forget(childId: string): void;
+  reconcile(childIds: string[], pendingDeletionId: string | null): void;
 }
 
 interface RetainedInput {
@@ -63,7 +71,7 @@ function initialState(online: boolean): RecordsState {
     children: [], childrenLoading: false, childrenError: null, childrenLoadedAt: null,
     selectedChildId: null, childName: "", childOutcome: "draft", childMessage: null,
     records: [], recordsLoading: false, recordsError: null, recordsLoadedAt: null, recordLimit: 100,
-    drafts: {}, confirmation: null, logoutConfirmation: false, hasRetainedInput: false,
+    drafts: {}, confirmation: null, logoutConfirmation: false, deletion: null, hasRetainedInput: false,
   };
 }
 
@@ -89,9 +97,11 @@ export class RecordsController {
   private recordRequest = 0;
   private recordAbort: AbortController | null = null;
   private retained: RetainedInput | null = null;
+  private readonly childDeletion?: ChildDeletionEvents;
 
-  constructor(api: RecordsApi, online = true) {
+  constructor(api: RecordsApi, online = true, childDeletion?: ChildDeletionEvents) {
     this.api = api;
+    this.childDeletion = childDeletion;
     this.state = initialState(online);
   }
 
@@ -111,6 +121,35 @@ export class RecordsController {
 
   private updateDraft(childId: string, patch: Partial<RecordDraft>): void {
     this.update({ drafts: { ...this.state.drafts, [childId]: { ...(this.state.drafts[childId] ?? emptyDraft()), ...patch } } });
+  }
+
+  private forgetChild(childId: string): void {
+    const unresolvedDeletion = this.state.deletion?.childId === childId && this.state.deletion.phase === "unknown";
+    this.childDeletion?.forget(childId);
+    const selected = this.state.selectedChildId === childId;
+    if (selected) {
+      this.recordAbort?.abort();
+      this.recordRequest += 1;
+      this.recordAbort = null;
+    }
+    const drafts = { ...this.state.drafts };
+    delete drafts[childId];
+    if (this.retained) {
+      const retainedDrafts = { ...this.retained.drafts };
+      delete retainedDrafts[childId];
+      this.retained = { ...this.retained, drafts: retainedDrafts,
+        selectedChildId: this.retained.selectedChildId === childId ? null : this.retained.selectedChildId };
+    }
+    this.update({ drafts, selectedChildId: selected ? null : this.state.selectedChildId,
+      records: selected ? [] : this.state.records,
+      recordsLoading: selected ? false : this.state.recordsLoading,
+      recordsError: selected ? null : this.state.recordsError,
+      recordsLoadedAt: selected ? null : this.state.recordsLoadedAt,
+      confirmation: this.state.confirmation?.childId === childId ? null : this.state.confirmation,
+      deletion: this.state.deletion?.childId === childId ? null : this.state.deletion,
+      notice: unresolvedDeletion
+        ? "重新讀取後孩子已不在此帳號列表，本頁相關快取和草稿已清除；先前刪除請求的結果仍無法單獨確認。"
+        : this.state.notice });
   }
 
   private abortRequests(): void {
@@ -256,7 +295,8 @@ export class RecordsController {
   }
 
   async selectChild(childId: string): Promise<void> {
-    if (this.state.auth !== "signedIn" || this.state.busy || this.state.childrenLoading || !this.state.children.some(child => child.id === childId)) return;
+    if (this.state.auth !== "signedIn" || this.state.busy || this.state.childrenLoading || this.state.deletion
+      || !this.state.children.some(child => child.id === childId)) return;
     this.recordAbort?.abort();
     this.recordRequest += 1;
     this.update({ selectedChildId: childId, records: [], recordsError: null, recordsLoadedAt: null, recordsLoading: false, confirmation: null });
@@ -274,13 +314,24 @@ export class RecordsController {
     try {
       const children = await this.api.listChildren(scope.controller.signal);
       if (!await this.verifyIdentity(scope)) return;
+      this.childDeletion?.reconcile(children.map(child => child.id), this.state.deletion?.childId ?? null);
+      const present = new Set(children.map(child => child.id));
+      const known = new Set([...this.state.children.map(child => child.id), ...Object.keys(this.state.drafts),
+        ...(this.state.selectedChildId ? [this.state.selectedChildId] : []),
+        ...(this.state.deletion ? [this.state.deletion.childId] : [])]);
+      for (const childId of known) {
+        if (!present.has(childId)) this.forgetChild(childId);
+      }
       this.update({
         children, childrenLoadedAt: new Date().toISOString(), childrenLoading: false,
         childOutcome: this.state.childOutcome === "unknown" ? "checked" : this.state.childOutcome,
+        deletion: this.state.deletion?.phase === "unknown"
+          ? { ...this.state.deletion, phase: "checked", message: "重新讀取後孩子仍在列表；請核對後才決定是否再次刪除。" }
+          : this.state.deletion,
       });
       const id = children.some(child => child.id === this.state.selectedChildId) ? this.state.selectedChildId : children[0]?.id;
-      if (id) await this.selectChild(id);
-      else this.update({ selectedChildId: null, records: [], recordsLoadedAt: null, recordsError: null });
+      if (id && !this.state.deletion) await this.selectChild(id);
+      else if (!id) this.update({ selectedChildId: null, records: [], recordsLoadedAt: null, recordsError: null });
     } catch (error) {
       if (this.current(scope)) {
         if (isSessionInvalid(error)) this.gate("signedOut", SESSION_EXPIRED);
@@ -288,6 +339,60 @@ export class RecordsController {
       }
     } finally {
       if (this.current(scope)) this.update({ childrenLoading: false });
+      this.release(scope);
+    }
+  }
+
+  reviewDeleteChild(): void {
+    const childId = this.state.selectedChildId;
+    if (this.state.auth !== "signedIn" || this.state.busy || this.state.childrenLoading || !this.state.online
+      || this.state.deletion?.phase === "unknown" || !childId || !this.state.children.some(child => child.id === childId)) return;
+    if (this.childDeletion && !this.childDeletion.begin(childId)) {
+      this.update({ notice: "聊天尚未就緒，或正在提交／等候 AI 回覆；請稍後再試。" });
+      return;
+    }
+    this.update({ deletion: { childId, phase: "confirm", message: null }, confirmation: null, notice: null });
+  }
+
+  cancelDeleteChild(): void {
+    const deletion = this.state.deletion;
+    if (!deletion || this.state.busy || deletion.phase === "unknown") return;
+    this.childDeletion?.release(deletion.childId);
+    this.update({ deletion: null });
+  }
+
+  async confirmDeleteChild(): Promise<void> {
+    const deletion = this.state.deletion;
+    if (!deletion || deletion.phase !== "confirm" || this.state.auth !== "signedIn" || this.state.busy
+      || this.state.childrenLoading || !this.state.online || this.state.selectedChildId !== deletion.childId
+      || !this.state.children.some(child => child.id === deletion.childId)) return;
+    if (this.childDeletion && !this.childDeletion.begin(deletion.childId)) {
+      this.update({ deletion: { ...deletion, message: "聊天尚未就緒，或正在提交／等候 AI 回覆；請稍後再試。" } });
+      return;
+    }
+    const scope = this.scope();
+    this.update({ busy: "deleteChild", deletion: { ...deletion, message: null } });
+    try {
+      if (!await this.verifyIdentity(scope)) return;
+      await this.api.deleteChild(deletion.childId, scope.controller.signal, scope.userId);
+      if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+      this.forgetChild(deletion.childId);
+      const children = this.state.children.filter(child => child.id !== deletion.childId);
+      this.update({ children, busy: null, notice: "Server 已確認永久刪除孩子及其全部已保存照顧記錄與私人聊天；本頁相關草稿已清除。" });
+      if (children[0]) await this.selectChild(children[0].id);
+    } catch (error) {
+      if (this.current(scope)) {
+        if (isSessionInvalid(error)) this.gate("signedOut", SESSION_EXPIRED);
+        else if (isUnknown(error) || (error instanceof ClientApiError && error.status === 404)) {
+          this.update({ deletion: { childId: deletion.childId, phase: "unknown",
+            message: "刪除結果未能確認。請重新讀取孩子列表核對；孩子可能已在 Server 消失。" } });
+        } else {
+          this.childDeletion?.release(deletion.childId);
+          this.update({ deletion: { ...deletion, message: "Server 未接納刪除；請核對後再試。" } });
+        }
+      }
+    } finally {
+      if (this.current(scope)) this.update({ busy: null });
       this.release(scope);
     }
   }
@@ -327,7 +432,7 @@ export class RecordsController {
   }
 
   async createChild(): Promise<void> {
-    if (this.state.auth !== "signedIn" || this.state.busy || this.state.childrenLoading || !this.state.online || this.state.childOutcome !== "draft") return;
+    if (this.state.auth !== "signedIn" || this.state.busy || this.state.deletion || this.state.childrenLoading || !this.state.online || this.state.childOutcome !== "draft") return;
     const validation = validateCreateChild({ displayName: this.state.childName });
     if (!validation.ok) {
       this.update({ childMessage: validation.issues[0].message });
@@ -361,7 +466,7 @@ export class RecordsController {
   reviewRecord(): void {
     const childId = this.state.selectedChildId;
     const draft = childId ? this.state.drafts[childId] ?? emptyDraft() : emptyDraft();
-    if (this.state.auth !== "signedIn" || this.state.busy || this.state.recordsLoading || !this.state.online || draft.outcome !== "draft") return;
+    if (this.state.auth !== "signedIn" || this.state.busy || this.state.deletion || this.state.recordsLoading || !this.state.online || draft.outcome !== "draft") return;
     const validation = validateCreateTextRecord({ childId, text: draft.text });
     if (!validation.ok) {
       if (childId) this.updateDraft(childId, { message: validation.issues[0].message });
@@ -376,7 +481,7 @@ export class RecordsController {
 
   async confirmRecord(): Promise<void> {
     const confirmation = this.state.confirmation;
-    if (!confirmation || this.state.auth !== "signedIn" || this.state.busy || this.state.recordsLoading || !this.state.online) return;
+    if (!confirmation || this.state.auth !== "signedIn" || this.state.busy || this.state.deletion || this.state.recordsLoading || !this.state.online) return;
     const draft = this.state.drafts[confirmation.childId];
     if (!draft || draft.outcome !== "draft" || draft.text !== confirmation.text || this.state.selectedChildId !== confirmation.childId) return;
     const scope = this.scope();

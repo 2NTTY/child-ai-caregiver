@@ -59,7 +59,7 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 |---|---|---|
 | <a id="d-api-001"></a>D-API-001 | HTTP 路徑、封裝、錯誤碼、裝置憑據編碼、批量／相容協商 | P1 S06-W03 身份／Server API，S06-W01／S11-W01 最小 AI proxy；P2 S06-W02 家庭權限、S07-W03 線上一致性；P3 S07-W01 跨端；P4 S06-W04 自選相容 Server、S08-W01 裝置授權及 S07-W02 故障；[API 契約](API.md#errors-compatibility)按 ADR-008 現行語義落實 |
 | D-DATA-001 | 具體 schema、欄位類型、索引和物理約束 | S06-W03 先建立 PostgreSQL 權威儲存，再按 S03–S15 實際物件漸進建立；[DATA_MODEL](DATA_MODEL.md) 不變量先行，不建 SQLite／IndexedDB 業務主庫或離線 outbox |
-| D-SEC-001 | Server 儲存加密、密鑰管理及恢復的實現細節 | P1 S05-W01 在合成資料可玩流程後、P1 完成前落實 Server 加密及最低加密備份／還原；P3 S05-W03 處理在線客戶端附件邊界；P4 S15-W01／W02 落實 Server 搬遷／災備，S17-W05 交付 Windows 部署；[加密要求](ARCHITECTURE.md#section-3-2)不降低 |
+| D-SEC-001 | P1 正文 AES-256-GCM／獨立加密備份已通過本機驗收；後續密鑰輪替及完整災備仍按階段細化 | P1 S05-W01 的 [實作範圍](ARCHITECTURE.md#p1-storage-protection)及[操作](P1_STORAGE.md)已有 [本機驗收證據](../artifacts/verification/S05_W01_CHECKS.json)；P3 S05-W03 處理在線客戶端附件邊界；P4 S15-W01／W02 落實 Server 搬遷／災備，S17-W05 交付 Windows 部署；[加密要求](ARCHITECTURE.md#section-3-2)不降低 |
 | D-REUSE-001 | 首輪有界核查已完成；後續新增／升級依賴各包核對 | [ADR-REUSE-P1](#adr-reuse-p1)／[S01 固定版本及許可證據](REUSE_AUDIT.md)；候選不當作已安裝或已交付 |
 | D-PLATFORM-001 | 實際模型、平台權限、RSS／來源讀取及後台行為驗證 | S06-W01／S11-W01 先核實 Gemini；S10-W02 核實來源與更新；S04／S08／S12／S13 核實平台行為；不把來源入口研究當產品通過 |
 

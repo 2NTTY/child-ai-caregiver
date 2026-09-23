@@ -29,6 +29,13 @@ S09-W01 的 `chat_messages` 保存 UUID、孩子、私人聊天擁有者、作�
 
 權限同時限制孩子的私人資料空間及聊天擁有者；不因未來有家庭管理員便公開私人聊天。列表取最近 100 則後依時間由舊至新返回，不按天清除；完整搜尋、修訂及長期記憶仍屬後續包。004 遷移只新增資料表及索引，不改寫原遷移或刪除既有資料。
 
+<a id="p1-encrypted-data"></a>
+## P1 加密欄位與必要刪除（S05-W01，本機已驗證）
+
+005 新增 `children.display_name_encrypted`、`text_records.text_encrypted` 及 `chat_messages.text_encrypted`；舊欄位先容許 null，另由明確的停服升級工具在交易内轉換原文。成功後密文欄位 NOT NULL、舊欄位 CHECK 必須為 null，`storage_security` 保存版本及受同 key 保護的驗證值。舊 migration 不改寫，轉換失敗回滾，不更換原記錄 ID、作者、時間或關聯。
+
+owner 刪除孩子時，現有外鍵連帶刪除照護記錄、聊天及該孩子的 AI attempt metadata；同一 SQL 保存 `deleted_children(id, workspace_id, deleted_at)` 最小標記。每日使用計數保留，不能藉刪除退回配額。API 不接受 caller 指定新孩子 ID，已刪 ID 的舊寫入失敗；P2 才補完整版本／一致性協議。舊備份的時間點狀態不自動重寫，還原及保留界線見 [操作說明](P1_STORAGE.md)。
+
 <a id="section-4-3"></a>
 ## 4.3 在線操作及確認字段
 
