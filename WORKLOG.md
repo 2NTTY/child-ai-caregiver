@@ -688,3 +688,21 @@
 - Caddy IP 預設自簽與公開 IP 證書能力不能混為一談；收到使用者網域後改採標準網域 HTTPS，規劃子網域 yuban，不改根網域。DNS 僅查 NS，沒有寫入。
 - Compute API 尚未啟用；沒有建立或修改 GCP 資源、支出批准、Docker build/run、正式初始化或新模型呼叫。本機既有合成庫／備份／密鑰保留。
 - 待批准後先驗證容器，再按具體方案部署並由使用者設 DNS，最後取得另一組員實際回報；P1 仍未完成。
+
+
+<a id="log-20260923-008"></a>
+## LOG-20260923-008
+
+- Recorded At / Work Date：2026-09-23（Asia/Hong_Kong）。
+- Step / Package：S17-W01；使用者明確批准「本機驗收及七天部署」，沿用已 review 的範圍。
+- Executor：主模型整合及必要執行；本次沒有新增子代理或全面回歸。
+
+### Actual Work / Verification
+- 三個固定映像建置通過；獨立合成 Docker volumes 驗證本機 HTTPS、Secure／HttpOnly cookie、帳號隔離、原文保存及實際 API 重啟持久化。
+- maintenance 使用 PostgreSQL18 原生工具完成加密備份、新空庫還原、原文解密及 session 排除。既有本機加密庫未修改，沒有 Gemini 呼叫。
+- Windows 本機以 Linux named secret volumes 核對 UID／mode；Linux file-secret initializer 留待實際主機驗收。附加 count 命令一度誤用資料表名，已改以正確 text_records 解密與 session 核查通過；不屬產品失敗。
+- 建立 Compute／IAM／IAP 前置及專用網路、Vertex runtime 身份、80/443 與 IAP-only SSH firewall；固定 IP／VM 建立中。
+- review 補齊靜態 Web 隨附既有 notices／licenses；不重做 Prompt Pack 或美術。
+
+### Remaining
+- 公開 DNS／TLS、實際磁碟／密鑰／備份／metadata ADC、七天停止設定及組員獨立回報仍待完成；P1 未結案。證據見 EV-S17-W01。

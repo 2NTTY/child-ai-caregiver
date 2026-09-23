@@ -50,5 +50,7 @@ FROM caddy:2.11.4-alpine AS web
 COPY --from=web-build /app/dist /srv
 COPY deploy/p1/Caddyfile /etc/caddy/Caddyfile
 COPY licenses/caddy/LICENSE /usr/share/licenses/caddy/LICENSE
+COPY licenses /srv/licenses
+COPY THIRD_PARTY_NOTICES.md /srv/THIRD_PARTY_NOTICES.md
 
 FROM server-runtime AS server

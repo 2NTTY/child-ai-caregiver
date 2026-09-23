@@ -5,7 +5,7 @@ description: 準備或修改 GCP 單 VM 的 Docker Compose Web／Node／PostgreS
 
 # GCP／Compose 交付
 
-適用 Docker Compose v2、Node 24、PostgreSQL 18、Caddy 2.11.4／Compute Engine；官方文件最後核對 2026-09-23。本文約束已核對，容器及雲端實作尚未驗證；產品範圍及環境決策以專案架構／交付文件為準。價格易變，按實際區域即時核對，不在 Skill 固定報價。
+適用 Docker Compose v2、Node 24、PostgreSQL 18、Caddy 2.11.4／Compute Engine；官方文件最後核對 2026-09-23。本文約束已核對，指定映像的本機隔離容器／HTTPS／maintenance 備份還原已驗證；實際雲端部署尚待驗證；產品範圍及環境決策以專案架構／交付文件為準。價格易變，按實際區域即時核對，不在 Skill 固定報價。
 
 - Multi-stage 只把所需 runtime／靜態輸出放入對應映像；不要把 `.env`、ADC、密鑰或本機資料放入 build context。Build ARG／ENV 不能安全傳秘密；需要建置秘密時用 BuildKit secret mount，runtime 則另行提供。[multi-stage](https://docs.docker.com/build/building/multi-stage/)、[build secrets](https://docs.docker.com/build/building/secrets/)
 - Compose file secret 是掛載檔案，不代表 Secret Manager、宿主加密或自動修正 UID／mode；核對映像實際 UID 能讀、其他身分不能讀。只對指定服務授權，API 不掛 backup key 或 Docker socket。[Compose secrets](https://docs.docker.com/compose/how-tos/use-secrets/)
