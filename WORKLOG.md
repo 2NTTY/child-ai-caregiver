@@ -715,3 +715,16 @@
 - 公開 DNS 1.1.1.1 查得 A=35.241.127.20，未見 AAAA；Codex 沒有修改 DNS。
 - 香港 e2-small／20 GiB pd-balanced、專用 Vertex 身份及 firewall 已建立；實際啟動 2026-09-23 20:50:44 HKT，GCE 設定 maxRunDuration=604800／STOP，預計 2026-09-30 20:50:44 HKT 停止。保留 disk／IP 仍收費。
 - Docker 29.8.1／Compose 5.5.1 按官方 Debian apt 來源安裝；容量自動擴至 20 GiB。尚未啟動公開 app，映像傳送中，沒有新模型呼叫或組員回報。
+
+
+<a id="log-20260923-010"></a>
+## LOG-20260923-010
+
+- Step / Package：S17-W01；部署版本 cc3dae4，草稿 PR #23；技術通過，組員試玩待驗收。主模型完成必要整合／執行，沒有新子代理、全量或瀏覽器 E2E。
+- 公開根網域 https://ex-machina.eu.org：標準信任 TLS1.3／Let's Encrypt YE2，HTTP 308、Web／notices 200；合成登入 Secure／HttpOnly cookie、原文、帳號隔離及實際 API 重建後資料／會話通過。
+- Linux initializer 與 file-secret mounts 通過，API 非 root／readonly／無公網 port；DB data 與 WAL 都位於該 20 GiB GCP 預設加密磁碟上的持久卷。
+- 用專用附加 service account metadata 而非本機 ADC，兩次 Gemini 均成功並保存／隔離；1,793 input／42 output tokens，兩次 cached metadata 不完整，不宣稱缓存或帳單節省。持久驗收計數防止重跑，沒有自動重試。
+- maintenance 實際加密備份、全新空庫還原、原文解密、session 排除及模型用量記錄通過。恢復 key archive 與加密備份分開保存於工程外受限本機目錄，傳送 hash／archive 結構核對；刪除遠端兩個暫存副本，保留正式資料及密鑰。
+- 必要抽查觀察三服務記憶體約 201 MiB、磁碟 5.6/20 GiB；不是壓力或全量測試。Docker29.8.1／Compose5.5.1 的實際 config／啟動通過，補查官方 v5 相容說明並局部更新 Skill。
+- 操作差異：Windows pscp 不展開 ~/，改用已查明的 home 路徑；gcloud.cmd 巢狀引號由 shell 單引號修正。HTTP 308 的 PowerShell 零重導向警告不影響 TLS／實際轉向核對。
+- 未完成：另一組員核心流程／瀏覽器實際回報及依此完成最終 review／合併；P1 未結案。

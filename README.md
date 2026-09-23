@@ -121,6 +121,6 @@ Reopen the page and sign in to the same account to load saved records from the s
 The additional approved checks are `npm run test:records` and the local browser workflow in [S03-W01 acceptance](docs/S03_W01_ACCEPTANCE.md). They exercise additive upgrades over the retained synthetic database; do not delete volumes to make tests pass.
 
 
-## P1 pilot delivery preparation
+## P1 team pilot
 
-The S17 single-VM team pilot is being prepared; no hosted URL or independent teammate trial is verified yet. See [deployment scope and operations](docs/P1_DELIVERY.md) and [the synthetic-data trial guide](docs/P1_TRIAL.md). Container builds, cloud resources and real-service acceptance require their scoped approval before execution. This is not the P4 Windows self-hosting bundle.
+The approved seven-day P1 team pilot is available at [ex-machina.eu.org](https://ex-machina.eu.org). Necessary container and deployed-service checks passed; independent teammate acceptance is still pending, so P1 is not complete. Use synthetic data and follow the [trial guide](docs/P1_TRIAL.md). The VM is configured to stop around September 30, 2026, 20:50 Hong Kong time; retained disk/IP charges continue. See [deployment operations and limits](docs/P1_DELIVERY.md).

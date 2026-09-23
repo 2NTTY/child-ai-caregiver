@@ -2,7 +2,7 @@
   "evidenceId": "EV-S17-W01",
   "workPackage": "S17-W01",
   "recordedOn": "2026-09-23",
-  "status": "local_container_passed_cloud_provisioning",
+  "status": "deployed_awaiting_independent_trial",
   "baseCommit": "2b55eb027f25bc2c9479e850c95007bcbfbb4903",
   "prerequisites": [
     "S16-W01 / PR #22 merged"
@@ -36,17 +36,16 @@
   "dnsChangePerformed": false,
   "containerBuildsPerformed": true,
   "cloudResourcesCreated": true,
-  "newModelCalls": 0,
-  "liveUrl": null,
+  "newModelCalls": 2,
+  "liveUrl": "https://ex-machina.eu.org",
   "independentTrial": null,
   "stageP1Complete": false,
   "remainingGates": [
-    "DNS A record and trusted HTTPS",
-    "Runtime/storage/firewall/metadata ADC and backup acceptance in actual environment",
-    "Independent teammate trial and final review/merge"
+    "Independent teammate trial with actual results and necessary issue fixes",
+    "Final package review and merge after acceptance"
   ],
   "approval": "User explicitly approved local acceptance and seven-day deployment on 2026-09-23; includes bounded model validation and trial calls",
-  "cloudState": "VM running; Docker installed; verified image upload in progress",
+  "cloudState": "Technical acceptance passed; independent teammate trial pending",
   "localAcceptance": {
     "commit": "512ba93786ddb421bde91c13b0bcc202b95e4e10",
     "dockerEngine": "29.4.0",
@@ -108,5 +107,49 @@
     "dockerEngine": "29.8.1",
     "compose": "5.5.1",
     "freeDiskBeforeImagesGiB": 17
+  },
+  "deployedCommit": "cc3dae4d0d6b29c5fa924c0cf3eec129ca827c1b",
+  "runtimeImageIds": {
+    "api": "sha256:f2db5a2a42444d47ff737bba715fb63beb7b21e9dcacd69f31b77ca68c4578c8",
+    "maintenance": "sha256:77483768bd7af317a59120613dd439e77cfbfc23b5384844457203315d19141f",
+    "web": "sha256:4cde74558d29952c2ec3b2326037afec950d3645857e8848090f347f8cfd4ad8"
+  },
+  "modelAcceptance": {
+    "attempts": 2,
+    "succeeded": 2,
+    "model": "gemini-3.1-flash-lite",
+    "inputTokens": 1793,
+    "outputTokens": 42,
+    "cachedTokens": null,
+    "unknownUsageAttempts": 2,
+    "retries": 0,
+    "accountIsolationAndSavedReplies": "passed",
+    "credentials": "Attached service account metadata; no JSON credential file",
+    "limits": {
+      "dailyPerUser": 5,
+      "dailyGlobal": 20,
+      "inputCharacters": 6000,
+      "outputTokens": 512,
+      "attemptsPerRequest": 1
+    },
+    "billingInvoiceVerified": false
+  },
+  "cloudAcceptance": {
+    "tls": {
+      "authorized": true,
+      "protocol": "TLSv1.3",
+      "issuer": "Lets Encrypt YE2",
+      "validUntil": "2026-12-22T12:01:25Z"
+    },
+    "httpRedirect": "308 to https://ex-machina.eu.org/",
+    "webAndNotices": "200",
+    "secureCookiesIdentityIsolationOriginalText": "passed",
+    "apiRecreationSessionAndRecordPersistence": "passed",
+    "linuxInitializerAndKeyMounts": "passed; directory root 0700, env root 0600, independent keys UID1000 0600",
+    "apiReadOnlyAndUnpublishedPort": "passed",
+    "dataAndWalOnEncryptedPersistentDisk": "passed; PostgreSQL18 data and pg_wal under named volume backed by VM boot disk",
+    "maintenanceBackupEmptyRestoreOriginalTextSessionExclusionAndUsage": "passed",
+    "offHostRecoveryMaterial": "Separate key archive and encrypted backup downloaded outside the repository; current Windows user-only inherited ACL; archive structure and backup transfer hash verified; temporary remote copies removed",
+    "resourceObservation": "API 84.1 MiB, Caddy 25.95 MiB, PostgreSQL 90.75 MiB; disk 5.6/20 GiB used; one observation, not a load test"
   }
 }
