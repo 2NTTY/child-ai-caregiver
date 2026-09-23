@@ -38,6 +38,12 @@
 5. 使用者已將 Cloudflare 根網域 `A` 記錄 `@` 設為 `35.241.127.20`，採 **DNS only**；只維護已指定的入口，不改郵件或其他記錄。Caddy 只在 DNS 與 80／443 驗證成功後簽發公開信任憑證；不要求組員略過 TLS 警告。
 6. 核對 HTTPS Web、HTTP 轉向、API 健康、登入 cookie、帳號隔離、保存及重開、沒有 DB 公網 port、固定安全日誌與資源用量。經獲准的最多兩次合成 Gemini 呼叫核對 metadata ADC；不搬入私人家庭資料。
 
+## 代理與登入限流
+
+Caddy 使用專用固定 Docker IP（預設 `172.30.51.3`／`172.30.51.0/28`），覆寫 `X-Forwarded-For` 為實際連線來源；API 的 `TRUSTED_PROXY_IP` 只信任該單一 peer，直接本機啟動預設不信任轉送 header。更改網段須先核對宿主網段無衝突，並同步修改 proxy IP 與 subnet；API／DB 繼續不發布公網 port。一般會話讀取不套用登入限流，登入／註冊仍保留 Better Auth 防暴力嘗試限制。
+
+更新這次代理網段時，只停止並移除 API／Web 容器及原 outbound network，再以新配置啟動；保留 PostgreSQL 容器、所有持久卷、密鑰與 GCE 運行期限。先保留舊映像／非秘密配置供回退，不重跑初始化或更換 auth secret。暫時無法確認會話時，頁面隱藏私人資料並提供重試，不宣稱已登出。
+
 ## 備份、停止及試玩
 
 maintenance 只在 `ops` profile 使用，API 不掛 Docker socket 或 backup key。使用上述 compose 前綴加 `--profile ops run --rm maintenance scripts/storage-backup.mjs backup /backups/<新檔名>.ybak`；驗證時只還原到新建空庫，完整步驟沿用 [P1 儲存操作](P1_STORAGE.md)。新 host 的 key、auth secret、必要設定及已驗證的加密 archive 分開保管於工程外，不只留唯一副本在 VM。

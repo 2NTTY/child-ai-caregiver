@@ -4,7 +4,9 @@
     header Referrer-Policy same-origin
     @api path /api /api/*
     handle @api {
-        reverse_proxy api:3001
+        reverse_proxy api:3001 {
+            header_up X-Forwarded-For {remote_host}
+        }
     }
     handle {
         root * /srv

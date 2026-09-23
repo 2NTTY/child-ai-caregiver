@@ -26,6 +26,8 @@ services:
     restart: unless-stopped
     env_file: ['${P1_PRIVATE_DIR:?Set absolute private directory}/server.env']
     secrets: [storage_key]
+    environment:
+      TRUSTED_PROXY_IP: ${P1_PROXY_IP:-172.30.51.3}
     depends_on:
       postgres: {condition: service_healthy}
     networks: [database, outbound]
@@ -48,7 +50,9 @@ services:
     ports: ['80:80', '443:443']
     depends_on:
       api: {condition: service_healthy}
-    networks: [outbound]
+    networks:
+      outbound:
+        ipv4_address: ${P1_PROXY_IP:-172.30.51.3}
     volumes:
       - caddy-data:/data
       - caddy-config:/config
@@ -87,3 +91,6 @@ volumes:
 networks:
   database: {internal: true}
   outbound:
+    ipam:
+      config:
+        - subnet: ${P1_PROXY_SUBNET:-172.30.51.0/28}

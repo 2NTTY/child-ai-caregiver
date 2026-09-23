@@ -99,7 +99,14 @@ export default function HomeScreen() {
 
         {state.auth === "checking" ? (
           <Text accessibilityLiveRegion="polite" style={styles.body}>正在確認登入狀態…</Text>
-        ) : state.auth !== "signedIn" ? (
+        ) : state.auth === "unavailable" ? (
+          <View style={styles.section}>
+            <Text accessibilityRole="header" style={styles.heading}>暫時未能確認登入</Text>
+            <Text style={styles.body}>尚未確認你已登出，請稍後重試現有登入狀態。</Text>
+            {state.hasRetainedInput && <Text style={styles.warning}>未提交內容已隱藏，只保留在本頁；確認為同一帳號後可恢復。請勿重新整理或關閉頁面。</Text>}
+            <Action label="重新確認登入" onPress={() => { void controller.restoreSession(); }} disabled={busy || !state.online} />
+          </View>
+        ) : state.auth === "signedOut" ? (
           <View style={styles.section}>
             <Text accessibilityRole="header" style={styles.heading}>{authMode === "signUp" ? "建立帳號" : "登入"}</Text>
             {state.hasRetainedInput && <Text style={styles.warning}>本頁有已隱藏的未提交內容。登入原帳號可恢復；登入另一帳號會清除原帳號的頁面草稿。</Text>}

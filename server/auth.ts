@@ -21,7 +21,10 @@ export function createAuth(config: ServerConfig, pool: Pool) {
       storage: "memory",
       window: 60,
       max: 100,
+      // Session reads validate an existing cookie; keep brute-force limits on auth mutations.
+      customRules: { "/get-session": false },
     },
+    advanced: { ipAddress: { ipAddressHeaders: ["x-forwarded-for"] } },
     logger: { disabled: true },
   });
 }

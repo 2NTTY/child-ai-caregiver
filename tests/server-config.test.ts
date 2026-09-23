@@ -110,3 +110,11 @@ test("configuration failures identify the setting without revealing rejected val
     });
   }
 });
+
+test("proxy trust defaults off and accepts only one explicit IPv4 peer", () => {
+  assert.equal(readServerConfig(validEnv).trustedProxyIp, undefined);
+  assert.equal(readServerConfig({ ...validEnv, TRUSTED_PROXY_IP: "172.30.51.3" }).trustedProxyIp, "172.30.51.3");
+  for (const value of ["web", "172.30.51.0/28", "0.0.0.0/0", "172.30.51.3,127.0.0.1", " 172.30.51.3", "::1"]) {
+    assert.throws(() => readServerConfig({ ...validEnv, TRUSTED_PROXY_IP: value }), { message: "Invalid TRUSTED_PROXY_IP configuration" });
+  }
+});
