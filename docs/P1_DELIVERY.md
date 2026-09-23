@@ -10,7 +10,7 @@
 | 主機 | 一台 `yuban-p1`，`e2-small`（共享 CPU、2 GiB RAM），Debian 12；實際容量須驗證 |
 | 磁碟 | 20 GiB `pd-balanced`，合計 boot／Docker 資料容量，Google 管理的預設 at-rest 加密；不另開第二塊 20 GiB |
 | 網路 | 專用 VPC／subnet、一個固定 IPv4；公網僅 TCP 80／443，SSH 只限 Google IAP 範圍；PostgreSQL 不發布 port |
-| 入口 | `yuban.ex-machina.eu.org`；使用者提供 `ex-machina.eu.org`，目前 NS 為 Cloudflare；保留根網域用途 |
+| 入口 | `ex-machina.eu.org`；使用者明確指定使用根網域，A 記錄已核對為 `35.241.127.20`，未見 AAAA |
 | 執行身份 | 專用附加 service account，只給 Vertex 使用角色及 cloud-platform scope；ADC 用 metadata，不下載 JSON key |
 | 服務 | Caddy 2.11.4、Node 24.19.0 API、PostgreSQL 18.6；獨立 maintenance image 提供相同 major 的 pg tools |
 | 密鑰 | 新試用庫用新產生的 storage／backup／DB／auth secrets，放工程外受限路徑；不搬移或清空本機合成庫 |
@@ -31,9 +31,9 @@
 
 1. 先在本機建置並驗證 `web`／`server`／`maintenance` 三個 target，記錄 image digest；只用獨立合成資料做一次容器啟動／HTTPS 配置及 maintenance 驗證。不要把 `.env`、ADC、key 或備份放入 build context。
 2. 建立上述雲端資源，核對 VM 身份、磁碟加密、firewall 與 7 天停止設定，傳送已驗證的 image／Compose 及腳本。公網資料庫／API port 不開放，管理走 IAP。
-3. 在新 VM 的新路徑，用 `sudo python3 deploy/p1/init-secrets.py --directory /etc/yuban-p1 --backup-directory /var/backups/yuban-p1 --host yuban.ex-machina.eu.org --project ai-caregivers-for-children` 初始化。工具只接受 Linux root、工程外新目錄；不覆蓋既有密鑰。storage／backup key 為 UID 1000、0600，以唯讀單檔 mount 供非 root 容器讀取。
+3. 在新 VM 的新路徑，用 `sudo python3 deploy/p1/init-secrets.py --directory /etc/yuban-p1 --backup-directory /var/backups/yuban-p1 --host ex-machina.eu.org --project ai-caregivers-for-children` 初始化。工具只接受 Linux root、工程外新目錄；不覆蓋既有密鑰。storage／backup key 為 UID 1000、0600，以唯讀單檔 mount 供非 root 容器讀取。
 4. `server.env` 維持 root:root 0600；每次 Compose 均以 `sudo docker compose`（或 root）執行，不放寬 secret 權限。每次 compose 指令均指定 `--env-file deploy/p1/pilot.env.template -f deploy/p1/compose.yaml`。先 `up -d postgres`，再 `run --rm --no-deps api node server/migrate.ts` 及 `run --rm --no-deps api node scripts/encrypt-storage.mjs --server-stopped`；確認完成才 `up -d api web`。日後已有資料須先停 API 並備份，不以重新產生 key 解決啟動問題。
-5. 固定 IP 取得後，請使用者在 Cloudflare 新增／核對 `A` 記錄 `yuban` 指向該 IP，初次採 **DNS only**。不要覆蓋根網域、郵件或其他記錄。Caddy 只在 DNS 與 80／443 驗證成功後簽發公開信任憑證；不要求組員略過 TLS 警告。
+5. 使用者已將 Cloudflare 根網域 `A` 記錄 `@` 設為 `35.241.127.20`，採 **DNS only**；只維護已指定的入口，不改郵件或其他記錄。Caddy 只在 DNS 與 80／443 驗證成功後簽發公開信任憑證；不要求組員略過 TLS 警告。
 6. 核對 HTTPS Web、HTTP 轉向、API 健康、登入 cookie、帳號隔離、保存及重開、沒有 DB 公網 port、固定安全日誌與資源用量。經獲准的最多兩次合成 Gemini 呼叫核對 metadata ADC；不搬入私人家庭資料。
 
 ## 備份、停止及試玩

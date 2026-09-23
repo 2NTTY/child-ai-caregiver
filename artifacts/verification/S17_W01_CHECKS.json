@@ -32,7 +32,7 @@
     "Ship existing third-party notices and original licenses with the static Web distribution"
   ],
   "userDomain": "ex-machina.eu.org",
-  "proposedHost": "yuban.ex-machina.eu.org",
+  "proposedHost": "ex-machina.eu.org",
   "dnsChangePerformed": false,
   "containerBuildsPerformed": true,
   "cloudResourcesCreated": true,
@@ -46,7 +46,7 @@
     "Independent teammate trial and final review/merge"
   ],
   "approval": "User explicitly approved local acceptance and seven-day deployment on 2026-09-23; includes bounded model validation and trial calls",
-  "cloudState": "Dedicated VPC/subnet, Vertex-only runtime service account, and web/IAP firewall created; VM provisioning in progress",
+  "cloudState": "VM running; Docker installed; verified image upload in progress",
   "localAcceptance": {
     "commit": "512ba93786ddb421bde91c13b0bcc202b95e4e10",
     "dockerEngine": "29.4.0",
@@ -72,5 +72,41 @@
     "node:24.19.0-bookworm-slim": "sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df",
     "postgres:18.6-bookworm": "sha256:3725f4e2499eef5134592b3b4ab79a543ed7f8e533b05b5b637af926630f6650",
     "caddy:2.11.4-alpine": "sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b"
+  },
+  "dns": {
+    "userConfirmedSetup": true,
+    "host": "ex-machina.eu.org",
+    "A": [
+      "35.241.127.20"
+    ],
+    "AAAA": [],
+    "resolver": "1.1.1.1",
+    "agentWroteDns": false
+  },
+  "cloud": {
+    "project": "ai-caregivers-for-children",
+    "zone": "asia-east2-a",
+    "vm": "yuban-p1",
+    "machineType": "e2-small",
+    "diskGiB": 20,
+    "diskType": "pd-balanced",
+    "sourceImage": "debian-12-bookworm-v20260921",
+    "encryption": "Google-managed default Persistent Disk encryption; no customer-supplied key configured",
+    "publicIPv4": "35.241.127.20",
+    "publicTcpPorts": [
+      80,
+      443
+    ],
+    "sshSource": "35.235.240.0/20 (IAP)",
+    "serviceAccount": "yuban-p1@ai-caregivers-for-children.iam.gserviceaccount.com",
+    "runtimeRole": "roles/aiplatform.user",
+    "maxRunDurationSeconds": 604800,
+    "terminationAction": "STOP",
+    "lastStartTimestamp": "2026-09-23T05:50:44.169-07:00",
+    "expectedStopHongKong": "2026-09-30 20:50:44 +08:00",
+    "diskAutoDelete": false,
+    "dockerEngine": "29.8.1",
+    "compose": "5.5.1",
+    "freeDiskBeforeImagesGiB": 17
   }
 }

@@ -8,7 +8,7 @@ S05／PR #21 及 S16／PR #22 已合併；基線 master 為 2b55eb0。S05 七項
 
 ## 已準備交付
 - [P1 雲端交付方案](docs/P1_DELIVERY.md)：一台香港區 GCP VM、私有 PostgreSQL、Caddy HTTPS、非 root API、獨立維護容器、新工程外密鑰與七天停止方案。
-- 使用者提供 `ex-machina.eu.org`；採 `yuban.ex-machina.eu.org` 子網域，DNS 尚未修改。原 Prompt Pack／P1 prompt 及視覺資產沿用，沒有 UI polish。
+- 使用者明確指定根網域 `ex-machina.eu.org`，並回報 DNS 已設定；公開 A 查核為 `35.241.127.20`，未見 AAAA。原 Prompt Pack／P1 prompt 及視覺資產沿用，沒有 UI polish。
 - [組員試玩指引](docs/P1_TRIAL.md) 已準備，但尚無可用 URL 或人工結果。新雲端試用庫不搬移／清空本機已加密合成資料。
 - 首次部署官方研究压縮為一份短 Skill；固定 Caddy 2.11.4 並保存原 Apache-2.0 license。API 不掛 Docker socket／backup key。
 
@@ -16,11 +16,11 @@ S05／PR #21 及 S16／PR #22 已合併；基線 master 為 2b55eb0。S05 七項
 - [EV-S17-W01](artifacts/verification/S17_W01_CHECKS.json)：YAML／Skill frontmatter、Python 語法、Compose 設定、port／secret／network 關係、Docker COPY 來源、license hash 及 diff 檢查通過。
 - review 修正了 root-only server.env 必須由 sudo/root Compose 讀取的操作說明，維持私密權限。
 - 三個映像建置、隔離 HTTPS／身份／原文／重啟及 maintenance 加密備份／空庫還原通過；原本機庫保留。已啟用必要 API 並建立專用網路、身份及 firewall。
-- DNS 未設定、新模型呼叫仍為零；公開 HTTPS、實際 Linux secrets／磁碟／metadata ADC／備份及組員試玩仍需完成。
+- DNS 已核對、新模型呼叫仍為零；公開 HTTPS、實際 Linux secrets／磁碟／metadata ADC／備份及組員試玩仍需完成。
 - 初步固定費約 US$23／月、七天約 US$5.28，流量與 Gemini 另計；停止 VM 後磁碟／固定 IP 仍有費用。不是帳單或硬性金額上限，未核實優惠餘額。
 
 ## 下一步
-繼續已批准的七天 GCP 試用資源建立；取得 IP 後由使用者設定子網域 A 記錄。實際環境通過並收到組員獨立試玩回報後，才完成 S17 review／合併及 P1 結案。
+VM 已建立，繼續傳送及啟動已驗證映像，使用已核對的根網域 DNS。實際環境通過並收到組員獨立試玩回報後，才完成 S17 review／合併及 P1 結案。
 
 ## 用量快照
 最後使用者原值為 2026-09-22 19:12 的「5%」；沒有查詢或推算重置。使用者已恢復 P1，現時餘額未知；沿用 Luna Max／Sol 規則，不延續 Astra 例外。
