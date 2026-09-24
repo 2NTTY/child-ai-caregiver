@@ -8,11 +8,13 @@ Planned capabilities include:
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
 - A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
 
-**Current status: P1 complete; P2 implementation has not started.** The Web and Node/PostgreSQL service support authenticated child records and real Gemini chat. P1 also passed its encryption, backup and restore, deployed-service, and independent synthetic-data pilot acceptance. The [P1 trial URL](https://ex-machina.eu.org) is available for the approved seven-day pilot; see [STATUS.md](STATUS.md) for current availability and limits, [the reuse audit](docs/REUSE_AUDIT.md), and [SPEC.md](SPEC.md) for product requirements.
+**Current status: P1 complete; P2 development in progress.** The Web and Node/PostgreSQL service support authenticated child records and real Gemini chat. P1 also passed its encryption, backup and restore, deployed-service, and independent synthetic-data pilot acceptance. The [P1 trial URL](https://ex-machina.eu.org) is available for the approved seven-day pilot; see [STATUS.md](STATUS.md) for current availability and limits, [the reuse audit](docs/REUSE_AUDIT.md), and [SPEC.md](SPEC.md) for product requirements.
 
 P2 is the competition-delivery target: a Google ADK TypeScript product agent with real multi-step tools, confirmed memory, a minimal pgvector RAG pipeline, persistent background work, family permissions, web photo input, source-backed answers and growth-stage attention, and preauthorized Web Push/Telegram follow-ups. It must demonstrate both a caregiver request and a browser-closed background event progressing through tools, tasks, authorized contact, and real results. The existing Prompt Pack and visual assets will be reused.
 
-Android follows in P3. P4 expands the same RAG core with full knowledge management, bulk operations, and scaling, alongside deployment choice, reports, migration, and disaster recovery. ADK, vector retrieval, and these other future-stage capabilities are approved requirements, not implemented or verified features; see the [work packages](PLAN.md#roadmap-packages) and [design decision](docs/DECISIONS.md#adr-011).
+S11-W03 implements the internal ADK runtime, existing Prompt Pack assembly, bounded native tool calls, quota handling, and cancellation. Its scripted-model checks and approved Vertex tool-cycle acceptance passed; the public P1 chat route is unchanged. The complete product Agent, vector retrieval, family tools, and notifications remain pending. The [UI function and integration checklist](docs/P2_UI_HANDOFF.md) distinguishes available interfaces from planned ones.
+
+Android follows in P3. P4 expands the same RAG core with full knowledge management, bulk operations, and scaling, alongside deployment choice, reports, migration, and disaster recovery; see the [work packages](PLAN.md#roadmap-packages) and [design decision](docs/DECISIONS.md#adr-011).
 
 <a id="entry"></a>
 ## Getting started

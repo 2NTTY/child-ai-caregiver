@@ -1,0 +1,158 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { FinishReason } from "@google/genai";
+import type { LlmRequest, LlmResponse } from "@google/adk";
+import { z } from "zod";
+import { createAgentRuntime } from "../server/agent-runtime.ts";
+import type { AgentRunInput, AgentTool } from "../server/agent-runtime.ts";
+import { readAiConfig } from "../server/ai-config.ts";
+import type { AttemptRecord } from "../server/ai-usage.ts";
+
+const answer = (text: string): LlmResponse => ({ content: { role: "model", parts: [{ text }] }, finishReason: FinishReason.STOP });
+const call = (name = "read_context", args: Record<string, unknown> = { key: "age" }): LlmResponse => ({
+  content: { role: "model", parts: [{ functionCall: { id: "synthetic-call", name, args }, thoughtSignature: "opaque-signature" }] },
+  finishReason: FinishReason.STOP,
+});
+function setup(generate: (request: LlmRequest, index: number, signal: AbortSignal) => Promise<LlmResponse>) {
+  const requests: LlmRequest[] = [];
+  const records: AttemptRecord[] = [];
+  let executed = 0;
+  let reserved = 0;
+  let quotaAvailable = true;
+  const tool: AgentTool = { name: "read_context", description: "Read a synthetic approved context field.",
+    parameters: z.object({ key: z.enum(["age", "region"]) }), authorize: async () => true,
+    execute: async () => { executed++; return { status: "succeeded", reference: "synthetic-record", data: { value: "synthetic context" } }; } };
+  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+    usage: { reserve: async () => { reserved++; return quotaAvailable; }, record: async record => { records.push(record); } },
+    provider: { generate: async (request, signal) => { const index = requests.length; requests.push(structuredClone({ ...request, toolsDict: {} })); return generate(request, index, signal); } } });
+  const input: AgentRunInput = { scope: { userId: "user", childId: "child", workspaceId: "workspace", authorizationVersion: "1", dataVersion: "1" },
+    recipeId: "p1-chat", trigger: { kind: "interactive", reference: "message" },
+    messages: [{ role: "user", text: "Synthetic question" }], tools: [tool], authorize: async () => true };
+  return { runtime, input, tool, requests, records, executions: () => executed, reservations: () => reserved,
+    denyQuota: () => { quotaAvailable = false; } };
+}
+
+test("real ADK Runner performs two tool steps, preserves native signatures and returns text only", async () => {
+  const s = setup(async (_, index) => index < 2 ? call("read_context", { key: index ? "region" : "age" }) : answer("已讀取兩項合成資料。"));
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, "completed", JSON.stringify(result));
+  assert.equal(result.text, "已讀取兩項合成資料。");
+  assert.equal(s.executions(), 2);
+  assert.equal(s.reservations(), 3);
+  assert.deepEqual(result.counts, { modelCalls: 3, toolCalls: 2, queryEmbeddings: 0 });
+  const parts = s.requests[1]!.contents.flatMap(content => content.parts ?? []);
+  assert.ok(parts.some(part => part.thoughtSignature === "opaque-signature"));
+  assert.ok(parts.some(part => part.functionResponse?.id === "synthetic-call"));
+  assert.doesNotMatch(JSON.stringify(result), /opaque-signature|functionCall|systemInstruction/u);
+  assert.doesNotMatch(JSON.stringify(s.records), /Synthetic question|synthetic context/u);
+});
+
+test("invalid parameters and forged scope are rejected before handler execution", async () => {
+  const s = setup(async (_, index) => index ? answer("參數未獲接納。") : call("read_context", { key: "age", userId: "other" }));
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, "completed");
+  assert.equal(result.tools[0]?.status, "rejected");
+  assert.equal(s.executions(), 0);
+  assert.equal(result.counts.toolCalls, 1);
+});
+
+test("tool authorization rejects expired confirmations and unauthorized resources", async () => {
+  const s = setup(async (_, index) => index ? answer("確認已失效。") : call());
+  s.tool.authorize = async () => false;
+  const result = await s.runtime.run(s.input);
+  assert.equal(s.executions(), 0);
+  assert.equal(result.tools[0]?.status, "rejected");
+});
+
+test("unknown tools count as attempts and cannot reach any handler", async () => {
+  const s = setup(async () => call("not_allowed"));
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "invalid_tool");
+  assert.equal(result.counts.toolCalls, 1);
+  assert.equal(s.executions(), 0);
+});
+
+test("model and tool budgets bound scripted loops without extra provider calls", async () => {
+  const s = setup(async () => call());
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "model_limit", JSON.stringify(result));
+  assert.equal(s.requests.length, 4);
+  const many = setup(async () => ({ ...call(), content: { role: "model", parts: Array.from({ length: 9 }, () => call().content!.parts![0]!) } }));
+  assert.equal((await many.runtime.run(many.input)).stopReason, "tool_limit");
+  assert.equal(many.executions(), 0);
+});
+
+test("successful tools survive final model failure without executing again", async () => {
+  const s = setup(async (_, index) => { if (index) throw new Error("secret-provider-error"); return call(); });
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "unavailable");
+  assert.equal(result.tools[0]?.status, "succeeded");
+  assert.equal(result.text, null);
+  assert.equal(s.executions(), 1);
+  assert.doesNotMatch(JSON.stringify(result), /secret-provider-error/u);
+});
+
+test("unknown tool outcomes stop before a model can propose a blind retry", async () => {
+  const s = setup(async () => call());
+  let executions = 0;
+  s.tool.execute = async () => { executions++; throw new Error("uncertain external outcome"); };
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "tool_unknown");
+  assert.equal(result.tools[0]?.status, "unknown");
+  assert.equal(executions, 1);
+  assert.equal(s.requests.length, 1);
+});
+
+test("oversized context is rejected without calling or reserving the model", async () => {
+  const s = setup(async () => answer("unused"));
+  s.input.messages[0]!.text = "x".repeat(32000);
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "input_limit");
+  assert.equal(s.requests.length, 0);
+  assert.equal(s.reservations(), 0);
+});
+
+test("revocation after generation prevents tools and returning private results", async () => {
+  let authorized = true;
+  const s = setup(async () => { authorized = false; return call(); });
+  s.input.authorize = async () => authorized;
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "unauthorized");
+  assert.equal(s.executions(), 0);
+  assert.deepEqual(result.tools, []);
+});
+
+test("quota denial stops before the provider and does not trigger a hidden retry", async () => {
+  const s = setup(async () => answer("unused"));
+  s.denyQuota();
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "quota_exceeded");
+  assert.equal(s.requests.length, 0);
+  assert.equal(s.reservations(), 1);
+  assert.equal(s.records.length, 0);
+});
+
+test("fallback tool progress is hidden when authorization changes during final model failure", async () => {
+  let authorized = true;
+  const s = setup(async (_, index) => {
+    if (!index) return call();
+    authorized = false;
+    throw new Error("synthetic provider failure");
+  });
+  s.input.authorize = async () => authorized;
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "unauthorized");
+  assert.equal(s.executions(), 1);
+  assert.deepEqual(result.tools, []);
+});
+
+test("cancellation reaches provider and no following operation starts", async () => {
+  const controller = new AbortController();
+  let aborted: AbortSignal | undefined;
+  const s = setup(async (_, __, signal) => { aborted = signal; controller.abort(); return new Promise(() => {}); });
+  s.input.signal = controller.signal;
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "cancelled");
+  assert.equal(aborted?.aborted, true);
+  assert.equal(s.executions(), 0);
+});

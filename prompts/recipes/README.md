@@ -1,6 +1,6 @@
 # 組合配方
 
-配方讓 Agent 每次讀到足夠且相關的指令，不載入整套 prompt。以下是靜態組装規格，沒有新增 runtime assembler 或 orchestration 實作。模組路徑、順序、版本、依賴和配方清單以 [manifest](../manifest.json) 為唯一機器可讀來源。
+配方讓 Agent 每次讀到足夠且相關的指令，不載入整套 prompt。以下是組裝規格；S11-W03 的 [Server 組裝器](../../server/agent-prompt.ts) 已實作所需的文字／工具循環組裝，其他接線狀態見 [Pack 入口](../README.md)。模組路徑、順序、版本、依賴和配方清單以 [manifest](../manifest.json) 為唯一機器可讀來源。
 
 ## 組裝規則
 

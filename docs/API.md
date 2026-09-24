@@ -33,7 +33,9 @@ P1 `ModelGateway` 由已登入且通過資源權限檢查的 Server 請求呼叫
 P2 檢索適用範圍包含地區、年齡依據及精度、主題與必要條件，未知保留未知；回傳結果區分有適用證據、無適用證據、來源衝突及檢索不可用，不把空結果當作容許模型補造。育兒知識回答／成長關注／安全求助提示至少一個已核對的適用官方來源，每項重要建議連具體片段／版本；Server 拒絕不存在或已失效引用。語義支持與例外依 [SPEC](../SPEC.md#req-5-6-11)，不宣稱結構校驗消除幻覺。安全求助可用仍適用的預先核對官方內容；不新增醫療分流 API。
 
 <a id="agent-runtime-contract"></a>
-### P2 AgentRuntime／工具契約（尚未落碼）
+### P2 AgentRuntime／工具契約（基礎已落碼，業務接線待完成）
+
+S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止；目前 P1 路由未切換。具體業務工具、跨 run 確認／記憶／冪等及對 UI 的契約隨 S11-W02 和相應功能包落碼。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
 
 - <a id="api-ar-01"></a>內部入口接受受信互動請求或 worker 事件及必要輸入／待確認參照；Server 建立 runId，注入身份、孩子／資料空間、觸發來源、時間／時區、授權及資料版本、配方／工具集合。客戶端正文不能聲稱自己是 worker 或提供可直接採信的權限。
 - <a id="api-ar-02"></a>ModelGateway 的 ADK 路徑傳遞完整模型／工具 parts、呼叫關聯及必要 opaque metadata，不壓成 P1 文字介面。每次生成／查詢 embedding 均受[運行配置](ARCHITECTURE.md#p2-agent-budgets)、全局開關、配額及共享取消／deadline 約束；語料維護另有有限額，不能繞過全局控制。

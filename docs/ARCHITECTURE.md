@@ -96,7 +96,9 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 - <a id="rule-3-6-11"></a>P1 交付最小 Server／PostgreSQL／Better Auth、Web 記錄聊天與 Gemini 簡單 prompt，階段結案時提供真 URL。P2 以 ADK 接通完整當前 orchestration、最小向量 RAG、持續 worker、家庭權限、Web 附件、主動任務、Web Push／Telegram 及公共更新。P3 Android 重用同一 Server，P4 補完整部署／遷移／災備及 RAG 維運擴充；不因使用框架而提前建立未需平台。
 
 <a id="p2-agent-runtime"></a>
-### 3.6A P2 ADK 產品 Agent（已定案，尚未實作）
+### 3.6A P2 ADK 產品 Agent（S11-W03 基礎已實作）
+
+S11-W03 已交付 [內部 AgentRuntime](../server/agent-runtime.ts)、[模型 adapter](../server/agent-model-gateway.ts) 及 [Prompt Pack 組裝器](../server/agent-prompt.ts)，完成真 Runner scripted 檢查及獲批的兩次 Vertex／Gemini 呼叫及一次工具循環驗收，見 [EV-S11-W03](../artifacts/verification/S11_W03_CHECKS.json)。目前只接入 `text`／`tool_cycle` 配方基礎，P1 網頁／聊天路徑及現網保持不變；結構化結果、確認持久化、完整記憶／知識／任務及 worker 接線仍待 S11-W02 等前置包。工具 schema 描述是模型指引，仍由主模型維護。
 
 <a id="rule-adk-01"></a>
 採用 Google ADK TypeScript `@google/adk 2.1.0`，在現有 Node／GCP Compose Server 使用一個產品 `LlmAgent`／`Runner`；按受信入口、事件及所需任務配方暴露 `FunctionTool`，由 ADK 實際執行多步工具循環。S11-W03 先完成相容性基礎，S11-W02 才接通完整記憶／知識／任務能力。沿用 Node 24.19，npm 於 S11-W03 調整至 11.8.0 並同步建置及 lockfile；固定依賴、許可、現有 Gemini 型號／Vertex ADC／TypeScript 相容性須在接入驗證，不把本次文件當成安裝或實測。
