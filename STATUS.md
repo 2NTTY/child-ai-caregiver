@@ -11,7 +11,7 @@
 - 本包兩次 Gemini 驗收成功，合計 1,793 input／42 output tokens；cached metadata 不完整，沒有帳單或優惠餘額證據。AI 每人每日 5 次／全站 20 次，每請求僅 1 次嘗試、6,000 字元／512 output tokens。
 - 加密備份與恢復密鑰分開存於工程外、當前 Windows 使用者專用 ACL 目錄；既有本機合成庫保留。沒有額外 E2E、全量回歸或結案模型呼叫。
 - P2 總計劃已定案，按工作包開始實作；[工作包](PLAN.md#roadmap-packages)／[Agent 規則](SPEC.md#section-5-11)／[ADR-011](docs/DECISIONS.md#adr-011)。S11-W03 已接入 ADK 與既有 Prompt Pack，18 項輕量測試及兩次真 Gemini 呼叫／一次工具循環通過；[證據](artifacts/verification/S11_W03_CHECKS.json)。Prompt Pack／美術未重做，現網仍是 P1。
-- S06-W02 已有家庭邀請／角色／撤權、共享記錄與私人聊天隔離、個人通知偏好及功能 UI；56 項相關輕量測試及兩份 typecheck 通過。新增 migration／真 SQL 尚待批准驗收，未部署、未標已完成。[EV-S06-W02](artifacts/verification/S06_W02_CHECKS.json)。
+- S06-W02 已有家庭邀請／角色／撤權、共享記錄與私人聊天隔離、個人通知偏好及功能 UI；62 項相關輕量測試及兩份 typecheck 通過。新增 migration／真 SQL 尚待批准驗收，未部署、未標已完成。[EV-S06-W02](artifacts/verification/S06_W02_CHECKS.json)。
 - [UI 功能及對接清單](docs/P2_UI_HANDOFF.md) 列出 P2 功能與必要狀態，隨工作包補齊實際對接位置；未接通項目不當作已可用。
 
 ## 七天試用與限制
@@ -26,4 +26,4 @@
 最後使用者原值為 2026-09-22 19:12 的「5%」；使用者已恢復 P1，現時餘額未知。沒有查詢或推算重置，沿用 Luna Max／Sol 規則。
 
 ## 更新記錄
-2026-09-24（Asia/Hong_Kong）；[LOG-20260924-004](WORKLOG.md#log-20260924-004)。
+2026-09-24（Asia/Hong_Kong）；[LOG-20260924-005](WORKLOG.md#log-20260924-005)。

@@ -13,7 +13,7 @@
       "tsc --noEmit passed",
       "tsc --project tsconfig.server.json passed"
     ],
-    "uniqueTestsPassed": 56,
+    "uniqueTestsPassed": 62,
     "suites": {
       "record-api.test.ts": 17,
       "family-api.test.ts": 4,
@@ -21,7 +21,8 @@
       "family-access.test.ts": 2,
       "client-controller.test.ts": 18,
       "chat-reply.test.ts": 7,
-      "chat-client.test.ts": 6
+      "chat-client.test.ts": 7,
+      "deletion-client.test.ts": 5
     },
     "scriptSyntax": "node --check scripts/verify-family.mjs passed",
     "failureAndFix": "A stacked Zod min(1)/min(0) check rejected initial preference version 0. An independent nonnegative version schema fixed it; targeted tests passed.",
@@ -29,7 +30,8 @@
       "links": 163,
       "worklogAppendOnly": true,
       "skillFrontmatter": true
-    }
+    },
+    "followUpReview": "Fresh authorized child lists may restore access after a new invitation, while old drafts remain erased; chat/deletion checks passed. The unexecuted acceptance script now spaces the fourth signup after the existing 3-per-10-second auth window, without changing limits or retrying requests."
   },
   "plannedIntegration": {
     "approval": "requested_not_yet_received",

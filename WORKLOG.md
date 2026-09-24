@@ -802,3 +802,12 @@
 - Verification：[EV-S06-W02](artifacts/verification/S06_W02_CHECKS.json) 記錄 56 項不同的相关輕量測試及兩份 TypeScript 檢查通過；包括共享作者、viewer 拒寫、撤權清理聊天／記錄草稿、鎖後核權、版本與輸入拒絕。首次新增 API 測試發現 Zod 疊加 min(1)／min(0) 未容許偏好初始版本 0，已修正獨立 schema 並覆驗。真 SQL、並發與既有資料保留不以 fake Pool 測試代替。
 - Human Verification / Pending：本輪已準備 scripts/verify-family.mjs，向使用者請求一次 13 組／最多 60 次本機 HTTP、4 個新合成帳號的新增遷移／邀請／角色／撤權／私聊／加密及舊資料保留驗收，批准尚待回覆；不沿用 S11 的批准。未執行該 script、沒有新 migration 落到資料庫，也未部署、呼叫模型／通知或進行 E2E。
 - Limits / Next：本包仍待驗收，未合併及未解鎖 S05-W02。收到本次批准後，用既有工程外合成庫密鑰執行必要驗收、核對結果後完成 PR／合併，再按依賴推進 P2；整體目標保持未完成。
+
+
+<a id="log-20260924-005"></a>
+## LOG-20260924-005
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S06-W02 待驗收期間的必要覆核，接續 LOG-20260924-004，主模型處理。
+- Actual Work：發現先前撤權的孩子即使經新邀請恢復資格，聊天 controller 的已忘記集合仍會拒絕選取；改為只依新取得的授權孩子列表解除頁面封鎖，再重新讀取聊天，不恢復舊草稿。另核對已安裝 Better Auth 的註冊限流為 10 秒內 3 次，驗收腳本第四個註冊前先等候窗口結束，沒有修改安全限流或增加請求重試。
+- Verification：chat-client 7 項及 deletion-client 5 項通過，新增涵蓋重新獲權及舊草稿不復活；本包累計不同輕量測試為 62 項。TypeScript 與驗收腳本 syntax check 通過；其餘未變動測試沿用先前證據，沒有機械全量重跑。
+- Human Verification / Next：本機 PostgreSQL 13 組／最多 60 次 HTTP 驗收批准仍未收到，腳本未執行、migration 未套用，P2 及本工作包均未完成；收到批准後才進行既定驗收與合併。

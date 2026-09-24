@@ -42,6 +42,24 @@ test("revoked child access clears saved chat and unsent page draft", async () =>
   controller.dispose();
 });
 
+test("a fresh authorized child list restores regranted access without restoring old drafts", async () => {
+  const { values, controller } = fixture();
+  values.messages = [userMessage()];
+  controller.syncContext(alice.id, true, firstChild);
+  await settle();
+  controller.setText("discard this old draft");
+  controller.forgetChild(firstChild);
+  controller.syncContext(alice.id, true, firstChild);
+  assert.equal(controller.getSnapshot().selectedChildId, null);
+  controller.reconcileChildren([firstChild], null);
+  controller.syncContext(alice.id, true, firstChild);
+  await settle();
+  assert.equal(controller.getSnapshot().selectedChildId, firstChild);
+  assert.equal(controller.getSnapshot().messages[0].text, original);
+  assert.equal(controller.getSnapshot().drafts[firstChild], undefined);
+  controller.dispose();
+});
+
 function fixture() {
   const values = { user: alice as typeof alice | null, messages: [] as ChatMessage[], saves: 0, replies: 0 };
   const api: ChatApi = {

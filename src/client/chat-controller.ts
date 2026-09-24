@@ -165,6 +165,11 @@ export class ChatController {
 
   reconcileChildren(childIds: string[], pendingDeletionId: string | null): void {
     const present = new Set(childIds);
+    // A fresh authorized list can include a child after a new invitation restores access.
+    // Old drafts/messages remain cleared; selecting it performs a new authorized read.
+    for (const childId of present) {
+      if (childId !== pendingDeletionId) this.forgottenChildIds.delete(childId);
+    }
     const known = new Set([...Object.keys(this.state.drafts),
       ...(this.state.selectedChildId ? [this.state.selectedChildId] : []), ...this.blockedChildIds]);
     for (const childId of known) {

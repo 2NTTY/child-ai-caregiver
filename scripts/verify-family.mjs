@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
+import { setTimeout as delay } from "node:timers/promises";
 import { createPool } from "../server/database.ts";
 import { readServerConfig } from "../server/config.ts";
 import { createAuth } from "../server/auth.ts";
@@ -51,6 +52,8 @@ try {
   const users = [];
   await check("four_synthetic_authenticated_accounts", async () => {
     for (let index = 0; index < 4; index++) {
+      // Better Auth limits signup to 3 requests per 10 seconds; preserve the real limit.
+      if (index === 3) await delay(10100);
       const email = `family-${randomUUID()}@example.test`;
       const response = await request(null, "/auth/sign-up/email", { name: `合成家庭成員 ${index}`, email, password: randomBytes(24).toString("hex") });
       users.push({ id: response.data.user.id, email, cookie: response.headers.getSetCookie().map(value => value.split(";", 1)[0]).join("; ") });
