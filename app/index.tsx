@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { environment } from "../src/config/environment";
 import { createRecordsApi, type AuthMode } from "../src/client/records-api";
@@ -8,6 +8,8 @@ import { createChatApi } from "../src/client/chat-api";
 import { ChatController } from "../src/client/chat-controller";
 import { ChatPanel } from "../src/client/ChatPanel";
 import { FamilyPanel } from "../src/client/FamilyPanel";
+import { CarePanel } from "../src/client/CarePanel";
+import { retainCareScope, type CareScope } from "../src/client/care-scope";
 
 function Action({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
@@ -41,11 +43,12 @@ export default function HomeScreen() {
   const serverAddress = useRecordsBrowser(controller, environment.apiBaseUrl, Boolean(name || email || password));
   const busy = state.busy !== null;
   const child = state.children.find(item => item.id === state.selectedChildId);
-  const draft = child ? state.drafts[child.id] : undefined;
-  const uncertainRecord = draft?.outcome === "unknown" || draft?.outcome === "checked";
   const uncertainChild = state.childOutcome === "unknown" || state.childOutcome === "checked";
   const deleting = state.deletion !== null;
-  const readOnly = child?.accessRole === "viewer";
+  const retainedCare = useRef<CareScope | null>(null);
+  retainedCare.current = retainCareScope(retainedCare.current, state);
+  const careScope = retainedCare.current;
+  const careVisible = state.auth === "signedIn" && child?.id === careScope?.child.id && !deleting;
 
   useEffect(() => {
     if (state.user) {
@@ -192,48 +195,14 @@ export default function HomeScreen() {
               </View>}
             </View>}
 
-            {child && !deleting && <View style={styles.section}>
-              <Text accessibilityRole="header" style={styles.heading}>{child.displayName}的文字記錄</Text>
-              {readOnly && <Text style={styles.hint}>你目前是檢視者，只可閱讀這個家庭的共享記錄。私人聊天仍屬你自己。</Text>}
-              <Text style={styles.hint}>請保留約數、單位及原來寫法。草稿只留在本頁；切換孩子會保留各自草稿，重新整理或關閉可能失去內容。</Text>
-              <TextInput accessibilityLabel={`為${child.displayName}輸入文字記錄`} value={draft?.text ?? ""}
-                onChangeText={value => controller.setRecordText(value)} editable={!readOnly && !busy && !uncertainRecord}
-                multiline numberOfLines={5} style={[styles.input, styles.textArea]} />
-              <Text accessibilityLiveRegion="polite" style={styles.hint}>
-                {state.busy === "saveRecord" ? "正在提交，等候 Server 確認…" : uncertainRecord ? "尚未確認保存，結果未知。" : draft?.text ? "尚未保存。" : "輸入文字後，請先檢視並確認保存。"}
-              </Text>
-              {draft?.message && <Text accessibilityRole="alert" style={styles.warning}>{draft.message}</Text>}
-              {draft?.receipt && <Text accessibilityLiveRegion="polite" style={styles.body}>
-                Server 已確認保存：{dateTime(draft.receipt.createdAt)}{"\n"}記錄編號：{draft.receipt.id}
-              </Text>}
-              <Action label="檢視並確認保存" onPress={() => controller.reviewRecord()} disabled={readOnly || busy || state.recordsLoading || !state.online || uncertainRecord} />
-              {state.confirmation && <View style={styles.confirmation}>
-                <Text style={styles.label}>請確認保存到「{child.displayName}」</Text>
-                <Text selectable style={styles.recordText}>{state.confirmation.text}</Text>
-                <Text style={styles.hint}>以下操作會把這段原文保存到上方顯示的 Server。</Text>
-                <Action label={state.busy === "saveRecord" ? "正在提交…" : "確認保存到 Server"} onPress={() => { void controller.confirmRecord(); }} disabled={busy || !state.online} />
-                <Action label="返回修改" onPress={() => controller.cancelReview()} disabled={busy} />
-              </View>}
-              {uncertainRecord && <Text style={styles.hint}>先重新讀取下方記錄。只有最近 {state.recordLimit} 則可在此核對；如果未能確定，請保留草稿，避免重複提交。</Text>}
-              {draft?.outcome === "checked" && <View style={styles.row}>
-                <Action label="已找到記錄，清除草稿" onPress={() => controller.resolveUnknownRecord(true)} disabled={busy || state.recordsLoading} />
-                <Action label="已核對未見記錄，解鎖重試" onPress={() => controller.resolveUnknownRecord(false)} disabled={busy || state.recordsLoading} />
-              </View>}
-
-              <Text accessibilityRole="header" style={styles.heading}>最近 {state.recordLimit} 則記錄</Text>
-              <Action label={state.recordsLoading ? "正在讀取記錄…" : uncertainRecord ? "重新讀取記錄並核對" : "重新讀取記錄"}
-                onPress={() => { void controller.reloadRecords(); }} disabled={busy || state.recordsLoading || !state.online} />
-              {state.recordsError && <Text accessibilityRole="alert" style={styles.warning}>{state.recordsError}</Text>}
-              {state.recordsLoadedAt && <Text style={styles.hint}>記錄列表最後讀取：{dateTime(state.recordsLoadedAt)}。只顯示 Server 已確認的記錄。</Text>}
-              {!state.recordsLoading && state.recordsLoadedAt && state.records.length === 0 && <Text style={styles.body}>尚未有已保存的文字記錄。</Text>}
-              {state.records.map(record => <View key={record.id} style={styles.record}>
-                <Text style={styles.label}>Server 保存時間：{dateTime(record.createdAt)}</Text>
-                <Text selectable style={styles.recordText}>{record.text}</Text>
-                <Text selectable style={styles.hint}>記錄編號：{record.id}</Text>
-              </View>)}
-            </View>}
           </>
         )}
+        {careScope && <View style={!careVisible ? { display: "none" } : undefined}>
+          <CarePanel key={`${careScope.userId}:${careScope.child.id}`} userId={careScope.userId} child={careScope.child}
+            online={state.online && careVisible} apiBaseUrl={environment.apiBaseUrl}
+            onChanged={() => { void controller.reloadRecords(); }}
+            onAccessLost={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />
+        </View>}
         <ChatPanel controller={chatController} auth={state.auth} userId={state.user?.id ?? null} online={state.online} child={deleting ? null : child ?? null} />
       </View>
     </ScrollView>
