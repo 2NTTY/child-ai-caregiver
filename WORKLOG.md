@@ -878,3 +878,12 @@
 - Verification：[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json)；Node 24.19.0 的 21 項必要純單元及兩份 typecheck 通過，CLI／兩份驗收腳本語法和 Compose YAML 解析通過。Python Skill validator 因環境缺 PyYAML 未能啟動，改以現有 js-yaml 核對 frontmatter 並人工覆核內容及本機連結。沒有把文件或 mock 當作真服務證據。
 - Review / Failure：發布重新讀取鎖後狀態，避免與停用競爭；補上來源日期字樣、公共 document hash、失敗缺失向量數及排他年齡上限。撤權用量結果改為 unauthorized 後更新一項舊測試預期；Node mock 的棄用 options 已按官方新 exports 寫法修正。最終針對性測試通過。0.4 召回閾值仍待實際標註問題核對，不宣稱臨床效果。
 - Delivery / Limits：必要驗收已準備並提出批准請求：同卷映像升級、原加密資料保留、最多 16 次 embedding（預計 15）、四年齡段改寫問題、來源停用／局部更新、重連及擴展加密備份／空庫還原。尚未獲批或執行，未建置映像、套 migration、呼叫模型、部署或跑 E2E；本包為待驗收，不解鎖依賴包。API／DATA_MODEL／UI 對接清單與操作文件已更新；P2 未完成，餘額未知。
+
+<a id="log-20260924-012"></a>
+## LOG-20260924-012
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S10-W01 必要驗收續接 LOG-20260924-009，使用者明確回覆「批准S10-W01驗收」，沿用最多 16 次 embedding／每次 4,000 字元／不重試、120 次 store、本機既有合成資料保留及新空庫還原的範圍；完成本包後繼續暫停，不開下一包。
+- Integration / Executor：主模型整合最新 master `2964f59`，保留 008／010／011 並加入 009，歷史 LOG 不回寫；原 Luna Max 作有界唯讀腳本 preflight，沒有新建代理或交付最終驗收。發現 recovery 的 store 操作未計數後，由主模型納入同一 120 次上限，並把通過輸出移至 recovery 完成後；兩份 typecheck、腳本語法及 diff 檢查通過，未重跑不變的 21 項單元。整合與修正已保存於 `bb80401`／draft PR #35。
+- Actual Acceptance：工程外受保護目錄已保存原庫加密備份及 23 張業務表雜湊，包括 S07／S09 新表；本機仍為原 PostgreSQL 18.6 容器及原 volume。只讀 preflight 確認原有 migrations 齊備及當日配額足夠；正確既有 ADC 可用，沒有改全局設定。模型呼叫 0、未套 009、未換容器、未清資料、未還原或部署。
+- Build Blocker / User Input：固定來源 pgvector 映像首建需約 184 MB 編譯套件，多個 Debian 下載持續逾時；主機直接下載亦未在診斷期限內完成，不能把原因斷言為程式錯誤。使用者要求可下載壓縮包的話由其下載，主模型已停止原建置並提供 PGDG 官方 PostgreSQL 18／Debian 12 amd64 的 pgvector 0.8.6 預編譯 .deb（269,856 bytes）。官方目錄已核對；小型 buildinfo 下載亦逾時，套件 hash／依賴及建置相容性尚未驗證，Dockerfile 尚未改用它。
+- Evidence / Next：[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json) 分列已批准／部分已執行／未通過；官方價格核對後，本次有限 embedding 估計低於 US$0.02，未有新模型帳單。待使用者下載檔案後核對來源、hash 與相容性，續接已批准的向量檢索及加密還原；不重新索取同一驗收批准，不標本包或 P2 完成。

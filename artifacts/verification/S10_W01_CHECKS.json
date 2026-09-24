@@ -2,18 +2,36 @@
   "evidenceId": "EV-S10-W01",
   "workPackage": "S10-W01",
   "recordedOn": "2026-09-24",
-  "baseCommit": "1df0745780a9fd3aede05659aec1326de3f0c699",
-  "prerequisites": ["S17-W01 merged"],
-  "status": "implemented_pending_approved_acceptance",
+  "baseCommit": "2964f59ad5d802820d453875c27a2f6274c55982",
+  "prerequisites": [
+    "S17-W01 merged"
+  ],
+  "status": "approved_acceptance_pending_image",
   "scope": "Public official knowledge lifecycle, fixed pgvector image, Vertex embedding gateway, exact cosine and keyword RRF retrieval, operator CLI and restore acceptance preparation",
   "lightweight": {
     "testsPassed": 21,
-    "tests": {"knowledge-ranking.test.ts": 8, "knowledge-runtime.test.ts": 6, "vertex-embedding.test.ts": 7},
+    "tests": {
+      "knowledge-ranking.test.ts": 8,
+      "knowledge-runtime.test.ts": 6,
+      "vertex-embedding.test.ts": 7
+    },
     "node": "24.19.0",
-    "typechecks": ["tsc --noEmit passed", "tsc --project tsconfig.server.json passed"],
-    "scriptSyntax": ["scripts/knowledge.mjs", "scripts/verify-knowledge.mjs", "scripts/verify-knowledge-storage.mjs"],
+    "typechecks": [
+      "tsc --noEmit passed",
+      "tsc --project tsconfig.server.json passed"
+    ],
+    "scriptSyntax": [
+      "scripts/knowledge.mjs",
+      "scripts/verify-knowledge.mjs",
+      "scripts/verify-knowledge-storage.mjs"
+    ],
     "compose": "Both modified YAML files parsed without connecting to a database or building an image",
-    "corpus": {"officialSources": 4, "chunks": 5, "prelabelledQueries": 9, "review": "Primary agent read the official pages and conditions; short source excerpts are distinct from reviewed paraphrases"},
+    "corpus": {
+      "officialSources": 4,
+      "chunks": 5,
+      "prelabelledQueries": 9,
+      "review": "Primary agent read the official pages and conditions; short source excerpts are distinct from reviewed paraphrases"
+    },
     "skillValidation": "Official Python validator cannot run because bundled Python lacks PyYAML; frontmatter and local references checked separately with existing js-yaml",
     "scopeLimit": "Mocks and metadata checks do not prove semantic support, live model compatibility, clinical effectiveness or database correctness"
   },
@@ -34,20 +52,64 @@
     "Keep public document hashes and explicit failed vector counts without logging private queries",
     "Use exclusive age upper bounds where the source service age requires them",
     "Record revoked authorization distinctly; update the affected unit assertion",
-    "Use Node runtime mock exports option after checking its deprecation notice; no runtime or type-package upgrade"
+    "Use Node runtime mock exports option after checking its deprecation notice; no runtime or type-package upgrade",
+    "Count seed recovery store methods within the same 120-call cap and report success only after recovery; safe failure name/code retained."
   ],
   "acceptance": {
-    "approval": "requested_pending",
-    "executed": false,
+    "approval": "User approved S10-W01 acceptance; approval persists for the stated bounded scope.",
+    "executed": true,
     "plannedModelCallsMax": 16,
     "expectedModelCalls": 15,
     "maxCharactersPerCall": 4000,
     "sdkAttempts": 1,
     "dailyQuotaIncrease": false,
     "database": "Existing encrypted localhost synthetic PostgreSQL, same volume; new empty restore database only",
-    "plannedChecks": ["Preimage encrypted backup and private row digests", "Fixed image and migration 009", "Four-age-group real vector recall and unrelated question", "Hard filters, withdrawal and cached citations", "Incremental update and unchanged reuse", "Explicit mock-only embedding failure fallback", "Reconnect and preserved private rows", "Encrypted backup restore including extension and actual vector query"]
+    "plannedChecks": [
+      "Preimage encrypted backup and private row digests",
+      "Fixed image and migration 009",
+      "Four-age-group real vector recall and unrelated question",
+      "Hard filters, withdrawal and cached citations",
+      "Incremental update and unchanged reuse",
+      "Explicit mock-only embedding failure fallback",
+      "Reconnect and preserved private rows",
+      "Encrypted backup restore including extension and actual vector query"
+    ],
+    "completed": false,
+    "preimageBackup": {
+      "passed": true,
+      "privateTablesCaptured": 23,
+      "location": "protected directory outside the repository",
+      "includes": "Existing S07/S09 tables; migrations 008/010/011 already applied"
+    },
+    "imageBuild": {
+      "attempted": true,
+      "completed": false,
+      "stopped": true,
+      "reason": "Repeated Debian dependency download timeouts; user offered to download an archive/package manually. Existing database container and volume were not changed."
+    },
+    "actualModelCalls": 0,
+    "modelCostEstimateUsdUpper": 0.02,
+    "priceSource": "https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing",
+    "manualPackageCandidate": {
+      "url": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/postgresql-18-pgvector_0.8.6-1.pgdg12%2B2_amd64.deb",
+      "sizeBytes": 269856,
+      "verified": "Official package directory entry only; file, checksum, compatibility and local image build remain pending. Not yet adopted in Dockerfile."
+    }
   },
-  "notExecuted": ["Docker image build/recreation", "Migration 009", "Real embedding", "PostgreSQL integration", "Encrypted restore", "Browser E2E", "Deployment"],
-  "remainingPackages": ["S10-W02 source update worker", "S11-W02 Agent and UI integration", "S13-W08 growth rules and corresponding evidence expansion"],
-  "relatedPendingWork": "S09-W02 is an independent draft PR #34; migration 008 and unmerged code were not imported into this branch"
+  "notExecuted": [
+    "Successful Docker image build and container replacement",
+    "Migration 009",
+    "Real embedding",
+    "Vector PostgreSQL integration",
+    "Encrypted restore",
+    "Browser E2E",
+    "Deployment"
+  ],
+  "remainingPackages": [
+    "S10-W02 source update worker",
+    "S11-W02 Agent and UI integration",
+    "S13-W08 growth rules and corresponding evidence expansion"
+  ],
+  "relatedPendingWork": "S07-W03 and S09-W02 are merged and integrated; existing migration checksums retained.",
+  "integrationCommit": "bb80401"
 }
