@@ -62,6 +62,10 @@ function unknownSave(error: unknown): boolean {
   return !(error instanceof ChatApiError) || error.status === 0 || error.status >= 500;
 }
 
+function childAccessDenied(error: unknown): boolean {
+  return error instanceof ChatApiError && (error.status === 403 || error.status === 404);
+}
+
 function saveErrorMessage(error: unknown): string {
   if (error instanceof ChatApiError && error.code === "invalid_input") return "訊息格式未獲接納，請檢查輸入。";
   if (error instanceof ChatApiError && error.code === "not_found") return "找不到這位孩子，請重新讀取孩子列表。";
@@ -286,6 +290,10 @@ export class ChatController {
     } catch (error) {
       if (this.current(scope)) {
         if (sessionError(error)) this.invalidateIdentity();
+        else if (childAccessDenied(error)) {
+          this.forgetChild(childId);
+          this.update({ error: "孩子存取權已失效或資料已刪除，本頁聊天與草稿已清除。" });
+        }
         else this.update({ error: "未能讀取聊天記錄；請檢查連線後再試。" });
       }
     } finally {
@@ -329,6 +337,7 @@ export class ChatController {
         this.invalidateIdentity();
         return;
       }
+      if (childAccessDenied(error)) { this.forgetChild(childId); return; }
       const notice = replyErrorMessage(error);
       this.update({ replyError: notice });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
@@ -376,6 +385,7 @@ export class ChatController {
         this.invalidateIdentity();
         return;
       }
+      if (childAccessDenied(error)) { this.forgetChild(childId); return; }
       const uncertain = unknownSave(error);
       this.updateDraft(childId, { phase: uncertain ? "save_unknown" : "draft",
         notice: uncertain ? UNKNOWN_SAVE : saveErrorMessage(error) });

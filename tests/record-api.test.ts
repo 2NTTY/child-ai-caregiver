@@ -197,25 +197,51 @@ test("record routes reject malformed identifiers, extra path segments and unsupp
 });
 
 test("record storage maps an empty owned child separately from an unavailable child", async () => {
-  let rows: unknown[] = [{ id: null, child_id: null, author_user_id: null, text: null, created_at: null }];
-  const pool = { query: async () => ({ rows }) } as unknown as Pool;
+  let accessible = true;
+  let rows: unknown[] = [];
+  const pool = {
+    query: async () => ({ rows: accessible ? [{ workspace_id: child.workspaceId }] : [] }),
+    connect: async () => ({
+      query: async (sql: string) => {
+        if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rows: [] };
+        if (sql.includes("FROM workspaces WHERE id=$1 FOR SHARE")) return { rows: [{ owner_user_id: "owner", access_version: 1 }] };
+        if (sql.includes("SELECT 1 FROM children")) return { rowCount: accessible ? 1 : 0, rows: [] };
+        if (sql.includes("FROM text_records")) return { rows };
+        throw new Error(`Unexpected SQL: ${sql}`);
+      },
+      release: () => undefined,
+    }),
+  } as unknown as Pool;
   const store = createRecordStore(pool, cipher);
   assert.deepEqual(await store.listRecordsForUser("owner", child.id), { records: [], limit: 100 });
-  rows = [];
+  accessible = false;
   assert.equal(await store.listRecordsForUser("other", child.id), null);
+  accessible = true;
   rows = [{ id: record.id, child_id: record.childId, author_user_id: record.authorUserId, text: cipher.encrypt(record.text, `text_records:${record.id}:${record.childId}:${record.authorUserId}:text`), created_at: new Date(record.createdAt) }];
   assert.deepEqual(await store.listRecordsForUser("owner", child.id), { records: [record], limit: 100 });
 });
 
 test("record storage encrypts SQL payloads and returns authenticated server values", async () => {
-  const pool = { query: async (sql: string, values: unknown[]) => {
-    assert.ok(!sql.includes(record.text));
-    assert.ok(!values.includes(record.text));
-    assert.equal(cipher.decrypt(values[3] as string, `text_records:${values[0]}:${child.id}:owner:text`), record.text);
-    assert.ok(values.includes("owner"));
-    assert.ok(values.includes(child.id));
-    return { rows: [{ id: record.id, child_id: record.childId, author_user_id: record.authorUserId, text: cipher.encrypt(record.text, `text_records:${record.id}:${record.childId}:${record.authorUserId}:text`), created_at: new Date(record.createdAt) }] };
-  } } as unknown as Pool;
+  const pool = {
+    query: async () => ({ rows: [{ workspace_id: child.workspaceId }] }),
+    connect: async () => ({
+      query: async (sql: string, values: unknown[] = []) => {
+        assert.ok(!sql.includes(record.text));
+        assert.ok(!values.includes(record.text));
+        if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rows: [] };
+        if (sql.includes("FROM workspaces WHERE id=$1 FOR SHARE")) return { rows: [{ owner_user_id: "owner", access_version: 1 }] };
+        if (sql.includes("SELECT 1 FROM children")) return { rowCount: 1, rows: [] };
+        if (sql.includes("INSERT INTO text_records")) {
+          assert.equal(cipher.decrypt(values[3] as string, `text_records:${values[0]}:${child.id}:owner:text`), record.text);
+          assert.ok(values.includes("owner"));
+          assert.ok(values.includes(child.id));
+          return { rows: [{ id: record.id, child_id: record.childId, author_user_id: record.authorUserId, text: cipher.encrypt(record.text, `text_records:${record.id}:${record.childId}:${record.authorUserId}:text`), created_at: new Date(record.createdAt) }] };
+        }
+        throw new Error(`Unexpected SQL: ${sql}`);
+      },
+      release: () => undefined,
+    }),
+  } as unknown as Pool;
   const stored = await createRecordStore(pool, cipher).createRecordForUser("owner", { childId: child.id, text: record.text });
   assert.deepEqual(stored, record);
 });
@@ -223,7 +249,19 @@ test("record storage encrypts SQL payloads and returns authenticated server valu
 test("storage failures propagate without retrying a potentially committed record", async () => {
   let attempts = 0;
   const failure = new Error("Synthetic database failure");
-  const pool = { query: async () => { attempts++; throw failure; } } as unknown as Pool;
+  const pool = {
+    query: async () => ({ rows: [{ workspace_id: child.workspaceId }] }),
+    connect: async () => ({
+      query: async (sql: string) => {
+        if (sql === "BEGIN" || sql === "ROLLBACK") return { rows: [] };
+        if (sql.includes("FROM workspaces WHERE id=$1 FOR SHARE")) return { rows: [{ owner_user_id: "owner", access_version: 1 }] };
+        if (sql.includes("SELECT 1 FROM children")) return { rowCount: 1, rows: [] };
+        if (sql.includes("INSERT INTO text_records")) { attempts++; throw failure; }
+        throw new Error(`Unexpected SQL: ${sql}`);
+      },
+      release: () => undefined,
+    }),
+  } as unknown as Pool;
   const store = createRecordStore(pool, cipher);
   await assert.rejects(store.createRecordForUser("owner", { childId: child.id, text: record.text }), (error: unknown) => error === failure);
   assert.equal(attempts, 1);

@@ -87,7 +87,7 @@ S03 依賴最小 Server 身份及資料能力，不依賴 Gemini、家庭邀請�
 | <a id="s16-w01"></a>S16-W01 | P1 | 已完成 | P1 全部功能包 | 核心流程、持久化、斷線／AI 失敗、憑據／日誌與備份還原的必要驗收；實際模型及服務驗證先取得批准 |
 | <a id="s17-w01"></a>S17-W01 | P1 | 已完成 | S16-W01 | 交付組員可開啟的 Web URL、操作說明及證據；另一位組員獨立試玩通過才算 P1 完成 |
 | <a id="s11-w03"></a>S11-W03 | P2 | 已完成 | S17-W01 | ADK 基礎與相容性：固定依賴／許可、npm 與建置版本、既有 Prompt Pack 組裝、真 Runner／FunctionTool 有界循環、配額及取消；必要 scripted model 輕量檢查與另行批准的最小真 Gemini 驗收分開記錄；[EV-S11-W03](artifacts/verification/S11_W03_CHECKS.json) 通過，完整記憶／知識／任務接線留 S11-W02 |
-| <a id="s06-w02"></a>S06-W02 | P2 | 未開始 | S17-W01 | 家庭邀請／owner、caregiver、viewer 角色及按需孩子資料入口；owner／caregiver 可確認更正共享事實及改期／完成／關閉事項，僅 owner 可邀請／變更或撤銷成員權限／刪整個孩子，viewer 唯讀；個人通知偏好可管理，私人聊天不因家庭管理權而共享 |
+| <a id="s06-w02"></a>S06-W02 | P2 | 待驗收 | S17-W01 | 家庭邀請／owner、caregiver、viewer 角色及按需孩子資料入口；owner／caregiver 可確認更正共享事實及改期／完成／關閉事項，僅 owner 可邀請／變更或撤銷成員權限／刪整個孩子，viewer 唯讀；個人通知偏好可管理，私人聊天不因家庭管理權而共享 |
 | <a id="s05-w02"></a>S05-W02 | P2 | 未開始 | S06-W02 | 確認／更正歷史、來源及精度、時間軸／快捷記錄／搜尋與原文／約數／單位／模糊時間；出生日期按需，約數年齡保留精度與日期基準，不猜精準窗口；私人聊天不自動轉共享事實；新持久資料納入刪除／備份 |
 | <a id="s09-w02"></a>S09-W02 | P2 | 未開始 | S05-W02 | 長期確認事實及來源／年齡日期基準、摘要覆蓋、話題／任務記憶及已解決／暫緩話題的再問條件，供後續關注復用；新會話及清空模型快取不重問已解決事項；摘要不改終態，已關閉事項不復活 |
 | <a id="s07-w03"></a>S07-W03 | P2 | 未開始 | S06-W02、S05-W02 | 在線請求冪等／版本確認、並行修改與重連、刪除及撤權；重試不重建，衝突可見；不建離線 outbox |
@@ -129,7 +129,7 @@ S03 依賴最小 Server 身份及資料能力，不依賴 Gemini、家庭邀請�
 <a id="extension-boundaries"></a>
 ## 共享邊界與漸進實作
 
-S11-W03 已完成必要驗收，隨本包 PR 合併生效；下一批 Ready 包為 **S06-W02、S10-W01**，目前未開始。按依賴推進，不按 Sxx／Wxx 數字排序；未完成必要驗收及合併前不解鎖依賴包。ADK 選型與初始限額見[架構](docs/ARCHITECTURE.md#p2-agent-runtime)；實作與真服務驗收分開記錄。
+S11-W03 已驗收並合併（PR #30）；S06-W02 家庭權限已實作，待獲批的本機 PostgreSQL 驗收，未解鎖 S05-W02。S10-W01 亦 Ready、未開始。按依賴推進，不按 Sxx／Wxx 數字排序；未完成必要驗收及合併前不解鎖依賴包。ADK 選型與初始限額見[架構](docs/ARCHITECTURE.md#p2-agent-runtime)；實作與真服務驗收分開記錄。
 
 P1 按真實流程實作 DataStore／ModelGateway；P2 加入 AgentRuntime／AttachmentStore／KnowledgeRetriever／TaskExecutor／渠道無關的 NotificationGateway。在線更新／版本／確認沿用 SyncEngine 契約名稱，不保留離線同步框架。詳細職責由 [API](docs/API.md#section-3-3) 維護。
 

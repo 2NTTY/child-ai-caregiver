@@ -7,6 +7,7 @@ import { useRecordsBrowser } from "../src/client/use-records-browser";
 import { createChatApi } from "../src/client/chat-api";
 import { ChatController } from "../src/client/chat-controller";
 import { ChatPanel } from "../src/client/ChatPanel";
+import { FamilyPanel } from "../src/client/FamilyPanel";
 
 function Action({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
@@ -44,6 +45,7 @@ export default function HomeScreen() {
   const uncertainRecord = draft?.outcome === "unknown" || draft?.outcome === "checked";
   const uncertainChild = state.childOutcome === "unknown" || state.childOutcome === "checked";
   const deleting = state.deletion !== null;
+  const readOnly = child?.accessRole === "viewer";
 
   useEffect(() => {
     if (state.user) {
@@ -85,7 +87,7 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <Text accessibilityRole="header" style={styles.title}>育伴港</Text>
         <Text style={styles.body}>孩子與照顧記錄</Text>
-        <Text style={styles.hint}>P1 試玩階段，請只使用合成資料。</Text>
+        <Text style={styles.hint}>試玩階段，請只使用合成資料。</Text>
         <View style={styles.section}>
           <Text style={styles.label}>目前 Server</Text>
           <Text selectable style={styles.body}>{serverAddress}</Text>
@@ -130,6 +132,8 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
+            <FamilyPanel key={state.user!.id} userId={state.user!.id} online={state.online} apiBaseUrl={environment.apiBaseUrl}
+              onChanged={() => { void controller.reloadChildren(); }} />
             <View style={styles.section}>
               <Text style={styles.body}>已登入：{state.user?.name}（{state.user?.email}）</Text>
               <Action label={state.busy === "logout" ? "正在登出…" : "登出"} onPress={requestLogout} disabled={busy || !state.online} />
@@ -170,7 +174,7 @@ export default function HomeScreen() {
               </View>}
             </View>
 
-            {child && <View style={styles.section}>
+            {child && (!child.accessRole || child.accessRole === "owner") && <View style={styles.section}>
               <Text accessibilityRole="header" style={styles.heading}>刪除「{child.displayName}」</Text>
               {!deleting && <Action label="檢視永久刪除孩子及全部資料" onPress={() => controller.reviewDeleteChild()}
                 disabled={busy || state.childrenLoading || !state.online || chatState.busy !== null} />}
@@ -190,9 +194,10 @@ export default function HomeScreen() {
 
             {child && !deleting && <View style={styles.section}>
               <Text accessibilityRole="header" style={styles.heading}>{child.displayName}的文字記錄</Text>
+              {readOnly && <Text style={styles.hint}>你目前是檢視者，只可閱讀這個家庭的共享記錄。私人聊天仍屬你自己。</Text>}
               <Text style={styles.hint}>請保留約數、單位及原來寫法。草稿只留在本頁；切換孩子會保留各自草稿，重新整理或關閉可能失去內容。</Text>
               <TextInput accessibilityLabel={`為${child.displayName}輸入文字記錄`} value={draft?.text ?? ""}
-                onChangeText={value => controller.setRecordText(value)} editable={!busy && !uncertainRecord}
+                onChangeText={value => controller.setRecordText(value)} editable={!readOnly && !busy && !uncertainRecord}
                 multiline numberOfLines={5} style={[styles.input, styles.textArea]} />
               <Text accessibilityLiveRegion="polite" style={styles.hint}>
                 {state.busy === "saveRecord" ? "正在提交，等候 Server 確認…" : uncertainRecord ? "尚未確認保存，結果未知。" : draft?.text ? "尚未保存。" : "輸入文字後，請先檢視並確認保存。"}
@@ -201,7 +206,7 @@ export default function HomeScreen() {
               {draft?.receipt && <Text accessibilityLiveRegion="polite" style={styles.body}>
                 Server 已確認保存：{dateTime(draft.receipt.createdAt)}{"\n"}記錄編號：{draft.receipt.id}
               </Text>}
-              <Action label="檢視並確認保存" onPress={() => controller.reviewRecord()} disabled={busy || state.recordsLoading || !state.online || uncertainRecord} />
+              <Action label="檢視並確認保存" onPress={() => controller.reviewRecord()} disabled={readOnly || busy || state.recordsLoading || !state.online || uncertainRecord} />
               {state.confirmation && <View style={styles.confirmation}>
                 <Text style={styles.label}>請確認保存到「{child.displayName}」</Text>
                 <Text selectable style={styles.recordText}>{state.confirmation.text}</Text>

@@ -15,6 +15,17 @@ S06-W03 的 Better Auth user／session／account／verification schema 由固定
 
 建立資料空間以 unique owner 約束及 upsert 處理重複／並行請求，身份只取 Server session；讀取 SQL 必須同時限制當前帳號。`app_migrations` 保存已套用的應用程式 migration ID／checksum；既有 migration 不回寫，改變時新增 migration。執行 migration 不清空既有帳號或業務資料，重啟沿用同一 PostgreSQL volume。
 
+<a id="p2-family-data"></a>
+### S06-W02 家庭延伸
+
+新增 `006-family-access`，不改寫 P1 migration 或重建資料。`workspaces.owner_user_id` 保留唯一 owner 及原孩子加密歸屬，新增 `access_version`；`family_members(workspace_id,user_id)` 唯一保存 caregiver／viewer。撤權刪除資格，不刪該成員的私人聊天；失去孩子存取權後不能再讀寫，其他成員亦不能取得其私聊。
+
+`family_invitations` 保存 UUID、workspace、token SHA-256、加密收件電郵、角色、建立者／時間、到期、接受者／時間及撤銷時間。只在建立回應提供 32-byte 隨機碼，原碼不落 DB／URL／日誌；已接受與已撤銷互斥，終態不還原成 pending。電郵密文 AAD 綁 workspace／invitation，接受及角色修改在 workspace 排他鎖內核對。owner 管理邀請與成員時更新權限版本；接受的原終態保留，以防舊碼恢復撤權。
+
+`notification_preferences` 以 user ID 唯一保存加密偏好、version 及更新時間；沒有資料時回預設 version=0，首次保存後為 1。偏好與成員角色、任務外發授權及渠道訂閱分離。新表由既有完整 pg_dump／加密還原涵蓋；workspace／user 外鍵維持刪除關係，不引入另一份明文備份。
+
+新增資料讀寫以 [API 家庭範圍](API.md#p2-family-http) 為準。孩子稱呼 AAD 仍用 workspace 原 owner，文字記錄仍用原作者；授權新照顧者讀取時不重加密、也不以 caller 改變歸屬。以下 P1 章節保留原落地背景，其 owner-only 讀取由 S06-W02 的角色授權延伸。
+
 <a id="p1-child-record-data"></a>
 ## P1 孩子與原始文字記錄
 

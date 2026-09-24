@@ -64,11 +64,12 @@ export async function handleChatReply(request: Request, userId: string | null, o
     const original = page?.messages.find(message => message.id === messageId && message.role === "user");
     if (!original) return apiError("not_found", "找不到資料，請重新讀取聊天。", 404);
     const existing = page!.messages.find(message => message.inReplyTo === messageId && message.role === "model");
-    if (existing) return jsonResponse({ message: existing });
+    if (existing) return await authorize() ? jsonResponse({ message: existing }) : apiError("unauthorized", "存取權已改變，請重新讀取。", 401);
     const input = buildChatInput(options.prompt, child, page!.messages, messageId, options.maxInputCharacters);
     const reply = await options.gateway.generate(userId, childId, input, authorize);
     if (!await authorize()) return apiError("unauthorized", "登入已失效，請重新登入。", 401);
     const saved = await options.chat.createModelMessageForUser(userId, childId, messageId, reply.text);
+    if (!await authorize()) return apiError("unauthorized", "存取權已改變，請重新讀取。", 401);
     return saved ? jsonResponse({ message: saved }) : apiError("ai_unavailable", "未能確認回覆保存，請先重新讀取聊天。", 503);
   } catch (error) {
     if (error instanceof AiFailure) {

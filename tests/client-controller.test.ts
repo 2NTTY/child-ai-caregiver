@@ -43,6 +43,36 @@ function fixture() {
   return { values, api, controller: new RecordsController(api) };
 }
 
+test("authorized family records retain other caregiver authors and viewer cannot submit or delete", async () => {
+  const { controller, values } = fixture();
+  values.children = [{ ...first, accessRole: "viewer" }];
+  values.records = [makeRecord(first.id, original, bob.id)];
+  await controller.restoreSession();
+  assert.equal(controller.getSnapshot().auth, "signedIn");
+  assert.equal(controller.getSnapshot().records[0]?.authorUserId, bob.id);
+  controller.setRecordText("unsaved");
+  controller.reviewRecord();
+  await controller.confirmRecord();
+  controller.reviewDeleteChild();
+  assert.equal(values.writes, 0);
+  assert.equal(controller.getSnapshot().confirmation, null);
+  assert.equal(controller.getSnapshot().deletion, null);
+  controller.dispose();
+});
+
+test("a forbidden record refresh clears revoked child data and drafts", async () => {
+  const { controller, values, api } = fixture();
+  values.records = [makeRecord()];
+  await controller.restoreSession();
+  controller.setRecordText("private page draft");
+  api.listRecords = async () => { throw new ClientApiError(404); };
+  await controller.reloadRecords();
+  assert.equal(controller.getSnapshot().selectedChildId, null);
+  assert.deepEqual(controller.getSnapshot().records, []);
+  assert.equal(controller.getSnapshot().drafts[first.id], undefined);
+  controller.dispose();
+});
+
 test("record saving needs explicit confirmation and only clears exact input after the server confirms", async () => {
   const { api, controller, values } = fixture();
   const pending = deferred<TextRecord>();

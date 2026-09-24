@@ -1,0 +1,70 @@
+{
+  "evidenceId": "EV-S06-W02",
+  "workPackage": "S06-W02",
+  "recordedOn": "2026-09-24",
+  "baseCommit": "3c4cd78217b012d48b830f13c1379a43276439c8",
+  "prerequisites": [
+    "S17-W01 merged"
+  ],
+  "status": "pending_local_integration",
+  "scope": "Family invitations, roles and revocation, authorized shared records, private chat isolation, personal notification preferences and functional UI",
+  "lightweight": {
+    "typechecks": [
+      "tsc --noEmit passed",
+      "tsc --project tsconfig.server.json passed"
+    ],
+    "uniqueTestsPassed": 56,
+    "suites": {
+      "record-api.test.ts": 17,
+      "family-api.test.ts": 4,
+      "family-client.test.ts": 2,
+      "family-access.test.ts": 2,
+      "client-controller.test.ts": 18,
+      "chat-reply.test.ts": 7,
+      "chat-client.test.ts": 6
+    },
+    "scriptSyntax": "node --check scripts/verify-family.mjs passed",
+    "failureAndFix": "A stacked Zod min(1)/min(0) check rejected initial preference version 0. An independent nonnegative version schema fixed it; targeted tests passed.",
+    "documentChecks": {
+      "links": 163,
+      "worklogAppendOnly": true,
+      "skillFrontmatter": true
+    }
+  },
+  "plannedIntegration": {
+    "approval": "requested_not_yet_received",
+    "command": "node --env-file=<existing synthetic configuration> scripts/verify-family.mjs --approved-family",
+    "database": "Existing encrypted local synthetic PostgreSQL only",
+    "checks": 13,
+    "maxHttpRequests": 60,
+    "newSyntheticAccounts": 4,
+    "migration": "006-family-access",
+    "scope": [
+      "existing encrypted data preserved",
+      "targeted, expired and revoked invitations",
+      "concurrent acceptance without duplicate membership",
+      "owner/caregiver/viewer authorization and stale versions",
+      "cross-family and private chat isolation",
+      "revocation and old invitation cannot restore access",
+      "personal preferences and ciphertext storage"
+    ],
+    "modelCalls": 0,
+    "notificationCalls": 0,
+    "databaseCleared": false,
+    "executed": false
+  },
+  "notRun": [
+    "real PostgreSQL acceptance",
+    "browser E2E",
+    "cloud deployment",
+    "model or notification service calls",
+    "full regression",
+    "new backup/restore exercise"
+  ],
+  "remainingScope": [
+    "Approval and necessary local SQL acceptance before completion/merge",
+    "S05-W02 age/context confirmation history",
+    "S07-W03 full online consistency",
+    "S13 notification execution and channels"
+  ]
+}

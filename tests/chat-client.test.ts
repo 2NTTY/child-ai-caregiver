@@ -28,6 +28,20 @@ async function settle(): Promise<void> {
   await new Promise<void>(resolve => setTimeout(resolve, 0));
 }
 
+test("revoked child access clears saved chat and unsent page draft", async () => {
+  const { values, api, controller } = fixture();
+  values.messages = [userMessage()];
+  controller.syncContext(alice.id, true, firstChild);
+  await settle();
+  controller.setText("unsent private text");
+  api.listMessages = async () => { throw new ChatApiError(404, "not_found"); };
+  await controller.reloadMessages();
+  assert.deepEqual(controller.getSnapshot().messages, []);
+  assert.equal(controller.getSnapshot().drafts[firstChild], undefined);
+  assert.equal(controller.getSnapshot().selectedChildId, null);
+  controller.dispose();
+});
+
 function fixture() {
   const values = { user: alice as typeof alice | null, messages: [] as ChatMessage[], saves: 0, replies: 0 };
   const api: ChatApi = {

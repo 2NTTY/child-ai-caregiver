@@ -13,6 +13,7 @@ import { createModelGateway } from "./model-gateway.ts";
 import { createStorageCipher, readSecretKey } from "./storage-crypto.ts";
 import { verifyEncryptedStorage } from "./storage-upgrade.ts";
 import { createVertexProvider } from "./vertex-provider.ts";
+import { createFamilyStore } from "./families.ts";
 
 try {
   const config = readServerConfig(process.env);
@@ -27,6 +28,7 @@ try {
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
     records: createRecordStore(pool, cipher),
+    families: createFamilyStore(pool, cipher),
     chat: createChatStore(pool, cipher),
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),

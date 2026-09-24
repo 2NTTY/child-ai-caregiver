@@ -49,7 +49,8 @@ function timestamp(value: unknown): value is string {
 
 function child(value: unknown): value is Child {
   return object(value) && identifier(value.id) && identifier(value.workspaceId)
-    && typeof value.displayName === "string" && timestamp(value.createdAt);
+    && typeof value.displayName === "string" && timestamp(value.createdAt)
+    && (value.accessRole === undefined || ["owner", "caregiver", "viewer"].includes(value.accessRole as string));
 }
 
 function record(value: unknown): value is TextRecord {

@@ -97,3 +97,14 @@ test("Vertex parsing excludes thought text, preserves actual usage and rejects i
     { finishReason: "STOP", content: { parts: [{ functionCall: { name: "save" } }] } },
   ]) assert.throws(() => readVertexReply({ candidates: [candidate] } as GenerateContentResponse), { kind: "invalid_response" });
 });
+
+test("revocation after reading a saved reply prevents disclosing it", async () => {
+  const s = setup();
+  let authorized = true;
+  s.options.isCurrentUser = async () => authorized;
+  s.options.chat.listForUser = async () => { authorized = false; return { messages: [userMessage, modelMessage], limit: 100 }; };
+  const result = await handleChatReply(request(), "owner", s.options);
+  assert.equal(result.status, 401);
+  assert.equal(s.counts().calls, 0);
+  assert.ok(!JSON.stringify(await result.json()).includes(modelMessage.text));
+});

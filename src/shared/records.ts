@@ -3,6 +3,7 @@ export interface Child {
   workspaceId: string;
   displayName: string;
   createdAt: string;
+  accessRole?: "owner" | "caregiver" | "viewer";
 }
 
 export interface TextRecord {

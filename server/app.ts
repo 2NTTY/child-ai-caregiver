@@ -12,6 +12,7 @@ import type { ChatStore } from "./chat.ts";
 import { handleChatRequest } from "./chat-api.ts";
 import { handleChatReply } from "./chat-reply.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
+import { handleFamilyRequest } from "./family-api.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -65,6 +66,7 @@ export function createRequestHandler(options: {
   auth: ReturnType<typeof createAuth>;
   workspaces: WorkspaceStore;
   records: RecordStore;
+  families?: import("./families.ts").FamilyStore;
   modelGateway?: ModelGateway;
   chat?: ChatStore;
   chatPrompt?: string;
@@ -139,10 +141,13 @@ export function createRequestHandler(options: {
           : apiError("unauthorized", "請先登入。", 401);
         for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
-        || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")) {
+        || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")
+        || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences") {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = url.pathname.endsWith("/reply") && options.chat && options.modelGateway && options.chatPrompt
+        result = (url.pathname.startsWith("/api/families") || url.pathname === "/api/notification-preferences") && options.families
+          ? await handleFamilyRequest(webRequest, userId, options.families, options.records)
+          : url.pathname.endsWith("/reply") && options.chat && options.modelGateway && options.chatPrompt
           ? await handleChatReply(webRequest, userId, {
             chat: options.chat, records: options.records, gateway: options.modelGateway,
             prompt: options.chatPrompt, maxInputCharacters: options.aiMaxInputCharacters ?? 10000,
