@@ -832,3 +832,14 @@
 - Verification：[EV-S05-W02](artifacts/verification/S05_W02_CHECKS.json) 記錄 17 項必要輕量測試及兩份 typecheck 通過；使用者批准本機新增 migration、3 帳號／1 孩子／54 記錄、最多 60 HTTP。實際 13 組／39 次 HTTP 通過，核對並發更正、viewer／家庭隔離、原文／精度／歷史、微秒游標、私人聊天不共享、重啟持久化、加密及僅新建孩子的連帶刪除；所有原有資料保留。沒有模型、通知或雲端費用。
 - Review / Fixes：未知提交保持鎖定並要求明確核對；更正衝突保留草稿及比較新版；孩子檔案草稿基準與刷新值分離，避免無聲覆蓋；登入重新確認期間草稿在本頁隱藏保留，登出／換人／撤權清除。測試 fake-store 型別及 UI 替換的殘留 JSX 編譯問題已定位修正，最終 typecheck 通過。狀態互動由主模型覆核，未冒稱瀏覽器驗收。
 - Delivery / Limits：同步 API／DATA_MODEL、PLAN／STATUS 及 UI 功能對接清單；WORKLOG 只追加。未部署、未跑 E2E／全量回歸／新的備份還原；完整候選記憶、opId／changeSeq 分別由 S09／S11、S07 後續包交付。本包完成隨 PR 合併生效，P2 尚未完成；合併後接續 S09-W02，S07-W03／S10-W01 亦 Ready。
+
+
+<a id="log-20260924-008"></a>
+## LOG-20260924-008
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S09-W02 長期記憶，前置 S05-W02 已隨 PR #32 合併；基線 `1df0745`，獨立分支／worktree `codex/s09-w02-long-term-memory`。
+- Executor / Reuse：主模型處理權限、資料／摘要覆蓋、遷移、API、整合、review 及權威文件；一個 Luna Max 唯讀定位既有 Prompt Pack／聊天記憶約束；兩個 Sol Xhigh 分別完成獨立 UI／client 及有限本機驗收腳本。使用者新建 Sol 預設 Xhigh 已按 PR #33 生效於專案設定，派單明確指定；沒有為驗證設定額外啟動代理。沿用加密及 PostgreSQL 資源授權 Skill，沒有重做 Prompt Pack／美術或提前改 P1 聊天。
+- Actual Work：新增 migration 008、加密事實與修訂、本人摘要及精確訊息覆蓋、話題終態／暫緩／明確重開；家庭角色及私聊來源逐次檢查，共享前候選歷史不公開。來源更正、過期及權威版本變更停止使用衍生事實／摘要；摘要不能修改事實或任務狀態。UI 提供來源、版本、確認／停用／刪除、話題及摘要覆蓋，功能對接清單同步更新。
+- Review / Corrections：自動批准審查拒絕單項刪除連帶清除整個孩子摘要的初稿，該 patch 未套用；改為保留摘要並標記失效，重建只重設本人覆蓋關聯。覆核另修正家庭背景來源 ID 遮蔽、確認後 UI 舊版本、寫入中斷線的 unknown 狀態、未知操作確認完成後清除該次表單，以及刪除衝突後使用明確核對的新版本。這些 UI 行為由程式 review／typecheck 核對，未冒稱瀏覽器實測。
+- Verification：[EV-S09-W02](artifacts/verification/S09_W02_CHECKS.json) 記錄 7 項 Server／3 項 client 輕量測試、兩份 typecheck 及腳本 syntax check 通過。沒有機械重跑未改動的 client 測試；模型摘要本身未呼叫或驗收。真 PostgreSQL 不能由單元或腳本 syntax 成功代替。
+- Pending / Next：已向使用者請求本包 16 組、最多 60 HTTP／100 store 呼叫，3 合成帳號及 1 新孩子的必要本機驗收；批准尚未收到，腳本／migration 008 未執行，未部署、通知或呼叫模型，原庫未清空。保留現場待本次批准，完成驗收／review／PR 合併後優先 S07-W03；S10-W01 亦 Ready。S11-W02 接線模型記憶／摘要，S13-W01 交付任務權威；本包及 P2 仍未完成。

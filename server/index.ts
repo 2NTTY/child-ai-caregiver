@@ -15,6 +15,7 @@ import { verifyEncryptedStorage } from "./storage-upgrade.ts";
 import { createVertexProvider } from "./vertex-provider.ts";
 import { createFamilyStore } from "./families.ts";
 import { createCareStore } from "./care.ts";
+import { createMemoryStore } from "./memory.ts";
 
 try {
   const config = readServerConfig(process.env);
@@ -31,6 +32,7 @@ try {
     records: createRecordStore(pool, cipher),
     families: createFamilyStore(pool, cipher),
     care: createCareStore(pool, cipher),
+    memory: createMemoryStore(pool, cipher),
     chat: createChatStore(pool, cipher),
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),

@@ -1,0 +1,32 @@
+{
+  "workPackage": "S09-W02",
+  "status": "pending_local_acceptance",
+  "date": "2026-09-24",
+  "baseCommit": "1df0745780a9fd3aede05659aec1326de3f0c699",
+  "prerequisites": [{ "workPackage": "S05-W02", "mergedPr": 32 }],
+  "lightweight": {
+    "serverTests": { "file": "tests/memory.test.ts", "passed": 7 },
+    "clientTests": { "file": "tests/memory-client.test.ts", "passed": 3 },
+    "typecheck": ["tsc --noEmit", "tsc --project tsconfig.server.json"],
+    "scriptSyntax": "node --check scripts/verify-memory.mjs",
+    "runtime": "Node 24.19.0"
+  },
+  "localAcceptance": {
+    "executed": false,
+    "approval": "requested_for_this_package_pending",
+    "script": "scripts/verify-memory.mjs --approved-memory",
+    "groups": 16,
+    "limits": { "httpRequests": 60, "directStoreCalls": 100, "accounts": 3, "children": 1, "facts": 6, "topics": 5, "chatMessages": 6, "careRecords": 2, "summaries": 4 },
+    "migration": "008-long-term-memory",
+    "databaseCleared": false,
+    "modelCalls": 0,
+    "notificationCalls": 0,
+    "deployment": false
+  },
+  "review": {
+    "performedBy": "implementing primary model; not an independent human approval",
+    "focus": ["fresh family authorization and private candidate history", "source and expected-version checks", "encrypted bodies and exact summary coverage", "terminal topics and explicit reopen", "unknown UI submissions and account cleanup"],
+    "saferDeletion": "Scoped memory deletion invalidates derived summaries without deleting unrelated summary contents. An earlier broader deletion patch was rejected by automatic approval review and was not applied."
+  },
+  "limits": ["No real PostgreSQL execution for this package yet", "No browser E2E or deployment", "No live model-generated summary", "S11-W02 still owns Agent memory tools and model context integration", "S13-W01 still owns task and occurrence authority", "No new backup restoration acceptance"]
+}

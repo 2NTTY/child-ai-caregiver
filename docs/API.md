@@ -278,6 +278,33 @@ TaskExecutor 同時核對接收者時區、安靜時段、合併及跟進上限�
 - <a id="api-ga-03"></a>重新提出已關閉主題須有規則允許的新實質依據，回傳新原因及前次處理關聯；舊終態維持，永久停用須明確重開。來源失效、依據不足、衝突、越權及已不適用均有明確結果，不冒充新候選或操作成功。
 - <a id="api-ga-04"></a>資料語義見 [DATA_MODEL](DATA_MODEL.md#growth-attention-model)，執行次序見 [ARCHITECTURE](ARCHITECTURE.md#growth-attention-flow)。沿用既有共享介面及在線更新，不在文件階段預建 HTTP 路由、完整 schema 或新增平台。
 
+## S09-W02 記憶介面
+
+<a id="p2-memory-http"></a>
+使用現有登入 cookie、來源檢查及 POST 的 `x-expected-user-id`；每次交易重新核對家庭權限。以下路徑前綴為 `/api/children/:childId/memory`，正文型別見 [memory.ts](../src/shared/memory.ts)。沒有公開摘要寫入路由，也不能從請求指定模型身份／工具權限。
+
+| 方法／後綴 | 輸入與結果 |
+|---|---|
+| GET `/facts`、`/topics` | 可選 `afterId`；每頁最多 50 項，回傳 `items`／`nextAfterId`；只包含家庭共享及本人私人資料 |
+| POST `/facts` | `FactCreate`；建立私人候選，保存 `intendedVisibility`，尚不作已確認事實；回傳 `{ fact }` |
+| POST `/facts/:id/confirm` | `FactConfirm`；預期版本、明確確認及共享確認，重核來源；候選／停用事實才可確認 |
+| POST `/facts/:id/revise` | `FactRevise`；新內容／來源、更正原因及版本，保留原可見範圍和狀態；停用資料須另行確認才恢復 |
+| POST `/facts/:id/deactivate` | `FactDeactivate`；保存原因及新版本，停止作為適用事實 |
+| POST `/topics` | `TopicCreate`；私人或明確共享的待處理話題，回傳 `{ topic }` |
+| POST `/topics/:id/change` | `TopicChange`；待處理／暫緩可改為已回答、已解決或指定未來時間暫緩；終態拒絕改回待處理 |
+| POST `/topics/:id/reopen` | `TopicReopen`；明確原因及原版本，另建關聯話題；保留原終態，同一舊話題只重開一次 |
+| GET `/facts/:id/history`、`/topics/:id/history` | 可選 `beforeVersion`，`HistoryPage` 每頁 50；其他家庭成員看不到共享前的私人候選版本 |
+| POST `/facts/:id/delete`、`/topics/:id/delete` | `MemoryDelete`；預期版本及二次確認，只刪指定資料與其修訂；保留最小刪除標記 |
+| GET `/summary` | `{ summary }`，只回傳本人有效摘要，未生成／失效時為 `null` |
+
+owner／caregiver 可管理共享記憶；viewer 只能管理本人私人記憶。任何成員均不能管理他人的私人資料。私聊來源只接受本人、同一孩子的訊息；轉共享只公開明確確認的內容／來源描述，不公開原始訊息或私人候選歷史；對其他成員隱藏私人訊息 ID。引用照顧記錄需核對當前版本，更正後衍生事實標記 `sourceState=changed`、`applicable=false`，須重新核對。過期、停用及候選亦不進入適用事實集合。
+
+同一範圍的已確認事實不能有重複標準化 key；不同私人／共享範圍同 key 的衝突由內部 context 明示，不靜默擇一。這不是自然語言矛盾檢測器；孩子年齡、日期基準等既有結構資料仍以 S05 檔案為準，不能由摘要推算或覆蓋。
+
+錯誤沿用 401（未登入）、428（缺身份前置）、409（身份／版本／來源／終態衝突）、404（不存在或無權）、400（輸入／確認不完整）。客戶端不自動重試寫入；斷線後保留本頁草稿及未知狀態，需重新讀取並明確核對。完整操作冪等由 S07-W03 接續。
+
+內部 `MemoryStore.prepareSummary` 回傳前一有效摘要、當前權威版本摘要值 `basis`、`previousVersion` 及按 Server 次序排列的最多 50 條未覆蓋訊息；`saveSummary` 只接受完全吻合的實際 ID 清單及版本。資料變化、缺段、越權、重複或過時輸入均不當作成功。摘要不寫入事實／話題／任務狀態。`context` 分開私人及家庭模式；家庭模式不含私人聊天／摘要，亦不提供私人來源 ID。超過 200 項事實或話題時拒絕無篩選 context，不能靜默省略終態；訊息未全部覆蓋以 `truncated.messages` 明示。S11-W02 接入模型時必須處理這些狀態、有效性及 `conflictingKeys`，本包未改 P1 聊天入口或宣稱已由 Gemini 生成摘要。
+
 <a id="errors-compatibility"></a>
 ## 错误、兼容和未确定的实现细节
 

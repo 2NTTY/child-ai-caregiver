@@ -14,6 +14,7 @@ import { handleChatReply } from "./chat-reply.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { handleFamilyRequest } from "./family-api.ts";
 import { handleCareRequest } from "./care-api.ts";
+import { handleMemoryRequest } from "./memory-api.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -69,6 +70,7 @@ export function createRequestHandler(options: {
   records: RecordStore;
   families?: import("./families.ts").FamilyStore;
   care?: import("./care.ts").CareStore;
+  memory?: import("./memory.ts").MemoryStore;
   modelGateway?: ModelGateway;
   chat?: ChatStore;
   chatPrompt?: string;
@@ -147,7 +149,9 @@ export function createRequestHandler(options: {
         || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences") {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = /^\/api\/children\/[^/]+\/(care|profile)(\/|$)/u.test(url.pathname) && options.care
+        result = /^\/api\/children\/[^/]+\/memory(\/|$)/u.test(url.pathname) && options.memory
+          ? await handleMemoryRequest(webRequest, userId, options.memory)
+          : /^\/api\/children\/[^/]+\/(care|profile)(\/|$)/u.test(url.pathname) && options.care
           ? await handleCareRequest(webRequest, userId, options.care)
           : (url.pathname.startsWith("/api/families") || url.pathname === "/api/notification-preferences") && options.families
           ? await handleFamilyRequest(webRequest, userId, options.families, options.records)
