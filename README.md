@@ -10,7 +10,9 @@ Planned capabilities include:
 
 **Current status: P1 complete; P2 implementation has not started.** The Web and Node/PostgreSQL service support authenticated child records and real Gemini chat. P1 also passed its encryption, backup and restore, deployed-service, and independent synthetic-data pilot acceptance. The [P1 trial URL](https://ex-machina.eu.org) is available for the approved seven-day pilot; see [STATUS.md](STATUS.md) for current availability and limits, [the reuse audit](docs/REUSE_AUDIT.md), and [SPEC.md](SPEC.md) for product requirements.
 
-P2 is the competition-delivery target: a persistent server agent, family permissions, web photo input, source-backed parenting answers and growth-stage attention, current knowledge, and preauthorized Web Push/Telegram follow-ups. Android follows in P3; deployment choice, full vector knowledge management, reports, migration, and disaster recovery complete P4. These future-stage capabilities are acceptance requirements, not claims of implemented features.
+P2 is the competition-delivery target: a Google ADK TypeScript product agent with real multi-step tools, confirmed memory, a minimal pgvector RAG pipeline, persistent background work, family permissions, web photo input, source-backed answers and growth-stage attention, and preauthorized Web Push/Telegram follow-ups. It must demonstrate both a caregiver request and a browser-closed background event progressing through tools, tasks, authorized contact, and real results. The existing Prompt Pack and visual assets will be reused.
+
+Android follows in P3. P4 expands the same RAG core with full knowledge management, bulk operations, and scaling, alongside deployment choice, reports, migration, and disaster recovery. ADK, vector retrieval, and these other future-stage capabilities are approved requirements, not implemented or verified features; see the [work packages](PLAN.md#roadmap-packages) and [design decision](docs/DECISIONS.md#adr-011).
 
 <a id="entry"></a>
 ## Getting started

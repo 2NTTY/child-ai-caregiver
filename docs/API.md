@@ -15,12 +15,13 @@
 - <a id="api-3-3-06"></a>`KnowledgeRetriever`：查询官方知识及引用；
 - <a id="api-3-3-07"></a>`NotificationGateway`：渠道無關的投遞邊界，P2 支援 Web Push／Telegram，P3 加 FCM；
 - <a id="api-3-3-08"></a>`TaskExecutor`：在 Server 重查授權、終態及執行租約，執行獲授權任務；
+- <a id="api-3-3-14"></a>`AgentRuntime`：P2 的內部互動／worker 共用入口，組裝已授權上下文及配方，執行有界 ADK 工具循環；
 
 <a id="api-3-3-09"></a>
 这些接口用于隔离差异，不建设复杂插件平台。
 
 <a id="api-3-3-10"></a>
-介面按實際流程落碼：P1 `DataStore`／`ModelGateway`；P2 `AttachmentStore`／`KnowledgeRetriever`／`TaskExecutor`／`NotificationGateway` 及在線一致性所需 `SyncEngine`；P3 只增加 Android 平台 adapter，P4 補相容 Server 切換。共享核心隔離平台、資料庫與渠道；選人、任務及升級／fallback 規則不進渠道 adapter。
+介面按實際流程落碼：P1 `DataStore`／`ModelGateway`；P2 `AgentRuntime`／`AttachmentStore`／`KnowledgeRetriever`／`TaskExecutor`／`NotificationGateway` 及在線一致性所需 `SyncEngine`；P3 只增加 Android 平台 adapter，P4 補相容 Server 切換。共享核心隔離平台、資料庫與渠道；選人、任務及升級／fallback 規則不進渠道 adapter。
 
 <a id="api-3-3-11"></a>
 P1 `ModelGateway` 由已登入且通過資源權限檢查的 Server 請求呼叫真 Gemini／簡單 prompt。瀏覽器不接收 provider credential；Server 驗證輸入及模型結果，套用配額、總開關及有限重試，日誌不保存憑據或家庭正文。模型只回傳回答或草稿，不能繞過權威寫入及授權規則。
@@ -30,6 +31,24 @@ P1 `ModelGateway` 由已登入且通過資源權限檢查的 Server 請求呼叫
 
 <a id="api-3-3-13"></a>
 P2 檢索適用範圍包含地區、年齡依據及精度、主題與必要條件，未知保留未知；回傳結果區分有適用證據、無適用證據、來源衝突及檢索不可用，不把空結果當作容許模型補造。育兒知識回答／成長關注／安全求助提示至少一個已核對的適用官方來源，每項重要建議連具體片段／版本；Server 拒絕不存在或已失效引用。語義支持與例外依 [SPEC](../SPEC.md#req-5-6-11)，不宣稱結構校驗消除幻覺。安全求助可用仍適用的預先核對官方內容；不新增醫療分流 API。
+
+<a id="agent-runtime-contract"></a>
+### P2 AgentRuntime／工具契約（尚未落碼）
+
+- <a id="api-ar-01"></a>內部入口接受受信互動請求或 worker 事件及必要輸入／待確認參照；Server 建立 runId，注入身份、孩子／資料空間、觸發來源、時間／時區、授權及資料版本、配方／工具集合。客戶端正文不能聲稱自己是 worker 或提供可直接採信的權限。
+- <a id="api-ar-02"></a>ModelGateway 的 ADK 路徑傳遞完整模型／工具 parts、呼叫關聯及必要 opaque metadata，不壓成 P1 文字介面。每次生成／查詢 embedding 均受[運行配置](ARCHITECTURE.md#p2-agent-budgets)、全局開關、配額及共享取消／deadline 約束；語料維護另有有限額，不能繞過全局控制。
+- <a id="api-ar-03"></a>FunctionTool 只映射本次允許的業務操作；呼叫必須核對 schema、資源及來源權限、授權版本、終態、確認參照和穩定 opId／occurrenceId。結果區分成功、部分成功、拒絕、衝突、失敗及 unknown，帶實際操作參照；框架自動呼叫工具不豁免校驗。
+- <a id="api-ar-04"></a>原生工具呼叫是副作用入口；收尾的文字／actionRequests 不能再次執行同一操作。必要結構化結果使用宣告 schema；不支援同次工具／schema 時的獨立收尾仍計同一預算。收尾失敗從台帳呈現已確認結果，不重做工具。
+- <a id="api-ar-05"></a>待確認參照綁種類、原事項／訊息、對象、內容版本、可見範圍及有效性，跨 run 持久保存。確認回覆重新核對指向、發言者與當前權限；多個可能指向先補問。事實確認、任務確認、完成及外發授權不可互換。
+- <a id="api-ar-06"></a>輸出供 UI 使用的 runId、狀態／停止原因、可理解結果、可引用來源及最小工具進度，須在呈現前重新核對權限及版本。進度只取實際工具／台帳證據，不回傳原始 provider 協定、內部推理、憑據或無權資料。API 路由與完整序列化隨工作包落碼，不把 Prompt Pack 語義直接當現有 wire format。
+
+<a id="knowledge-retrieval-contract"></a>
+### P2 最小向量檢索契約
+
+- <a id="api-kr-01"></a>KnowledgeRetriever 接收必要問題語義及 Server 核定的適用條件，未知保持未知；不把整份聊天或孩子檔案作 embedding 輸入。內部封裝向量／關鍵詞與 RRF，ADK 只調用同一個渠道／模型無關的檢索工具。
+- <a id="api-kr-02"></a>回傳片段識別、原文／章節、來源／版本、官方日期、查核及適用狀態，以及向量＋關鍵詞、關鍵詞降級或不可用等實際檢索狀態。最多六項、適用性及引用門檻依[架構](ARCHITECTURE.md#p2-vector-rag)；排名／距離只作檢索資訊，不作語義支持保證。
+- <a id="api-kr-03"></a>兩種檢索及任何復用結果套用相同分類、年齡／地區、已發布、有效版本及停用條件。embedding 失敗可回傳合格關鍵詞結果與降級原因；無適用證據／衝突／不可用不回傳模型補造的來源。
+- <a id="api-kr-04"></a>維護指令預覽片段數，按固定模型／維度／處理版本有限生成及核對發布；保存失敗及未完成狀態，hash 未變不重算。P2 提供實際匯入／發布／停用邊界，P4 管理頁及批量維運沿用它，不另建一套管理 API 權威。
 
 <a id="p1-input-contracts"></a>
 ## P1 已落碼的最小輸入契約
@@ -190,7 +209,7 @@ Server 復用完整 [P1 prompt](../prompts/p1/childcare-chat.txt)，只組合已
 ## 任務授權與渠道投遞契約
 
 <a id="api-notification-01"></a>
-`TaskExecutor` 在 Server 根據事件或到期工作取得有限租約，每次執行均重查任務終態、授權版本及資源權限。模型只提供受限建議；選人、內容範圍、時機、重試及 fallback／升級由任務業務規則決定，不交給渠道 adapter。預先授權範圍內自動執行，範圍外先確認。
+`TaskExecutor` 在 Server 根據事件或到期工作取得有限租約，每次執行均重查任務終態、授權版本及資源權限。Agent 可在 Server 提供的合資格照顧者中提出選擇及理由；服務按明確指派、預設負責人及預授權備援規則核准，缺資料先補問，不猜測誰有空。內容範圍、時機、重試及 fallback／升級由任務業務規則決定，不交給渠道 adapter。預先授權範圍內自動執行，範圍外先確認。
 
 <a id="api-notification-02"></a>
 `NotificationGateway` 接收已核准的穩定任務／發生實例、收件人、渠道綁定、內容及投遞識別；回傳渠道接受／拒絕／結果未知、可用回執及其時間，不回傳虛構的送達或已讀。供應商不支援的證據保持未知；投遞結果不直接把任務改為完成。
