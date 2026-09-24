@@ -59,18 +59,30 @@ test("delete API sends the selected ID and expected account and requires a match
   const sentRequests: Request[] = [];
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
     sentRequests.push(new Request(input, init));
-    return Response.json({ deleted: true, childId: first.id });
+    if (String(input).endsWith("/online/context")) return Response.json({ workspaceId: first.id, storageEpoch: "79081f55-9e30-4ee5-91fb-71982b20d6f7" });
+    const body = JSON.parse(String(init?.body));
+    return Response.json({ state: "confirmed", operation: body.operation, changeSeq: "1", statusCode: 200,
+      result: { deleted: true, childId: first.id } });
   }) as typeof fetch;
   const api = createRecordsApi("http://localhost", fetcher);
   await api.deleteChild(first.id, new AbortController().signal, user.id);
-  const sent = sentRequests[0];
+  assert.equal(sentRequests[0].url, "http://localhost/api/online/context");
+  assert.deepEqual(await sentRequests[0].json(), { path: `/api/children/${first.id}/delete`, payload: { confirmChildId: first.id } });
+  const sent = sentRequests[1];
   assert.ok(sent);
-  assert.equal(sent.url, `http://localhost/api/children/${first.id}/delete`);
+  assert.equal(sent.url, "http://localhost/api/online/submit");
   assert.equal(sent.method, "POST");
   assert.equal(sent.headers.get("x-expected-user-id"), user.id);
-  assert.deepEqual(await sent.json(), { confirmChildId: first.id });
+  const submission = await sent.json();
+  assert.equal(submission.path, `/api/children/${first.id}/delete`);
+  assert.deepEqual(submission.payload, { confirmChildId: first.id });
 
-  const invalid = createRecordsApi("http://localhost", (async () => Response.json({ deleted: true, childId: second.id })) as typeof fetch);
+  const invalid = createRecordsApi("http://localhost", (async (input, init) => {
+    if (String(input).endsWith("/online/context")) return Response.json({ workspaceId: first.id, storageEpoch: "79081f55-9e30-4ee5-91fb-71982b20d6f7" });
+    const operation = JSON.parse(String(init?.body)).operation;
+    return Response.json({ state: "confirmed", operation, changeSeq: "1", statusCode: 200,
+      result: { deleted: true, childId: second.id } });
+  }) as typeof fetch);
   await assert.rejects(invalid.deleteChild(first.id, new AbortController().signal, user.id), ClientApiError);
 });
 

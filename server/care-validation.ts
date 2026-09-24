@@ -32,4 +32,4 @@ export const careReviseSchema = careValuesSchema.extend({ confirmShared: z.liter
 export const profileSaveSchema = z.object({ data: profileDataSchema, confirmShared: z.literal(true), expectedVersion: versionSchema, reason: required(500) }).strict();
 export const deleteCareSchema = z.object({ expectedVersion: versionSchema, confirmDelete: z.literal(true) }).strict();
 export const careSearchSchema = z.object({ query: text(200).optional(), kind: z.enum(CARE_KINDS).optional(),
-  cursor: z.object({ createdAt: timestamp, id: z.uuid() }).strict().optional() }).strict();
+  cursor: z.object({ createdAt: timestamp, id: z.uuid(), changeSeq: z.string().regex(/^(0|[1-9][0-9]{0,18})$/u).optional() }).strict().optional() }).strict();

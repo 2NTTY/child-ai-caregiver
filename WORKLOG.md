@@ -832,3 +832,16 @@
 - Verification：[EV-S05-W02](artifacts/verification/S05_W02_CHECKS.json) 記錄 17 項必要輕量測試及兩份 typecheck 通過；使用者批准本機新增 migration、3 帳號／1 孩子／54 記錄、最多 60 HTTP。實際 13 組／39 次 HTTP 通過，核對並發更正、viewer／家庭隔離、原文／精度／歷史、微秒游標、私人聊天不共享、重啟持久化、加密及僅新建孩子的連帶刪除；所有原有資料保留。沒有模型、通知或雲端費用。
 - Review / Fixes：未知提交保持鎖定並要求明確核對；更正衝突保留草稿及比較新版；孩子檔案草稿基準與刷新值分離，避免無聲覆蓋；登入重新確認期間草稿在本頁隱藏保留，登出／換人／撤權清除。測試 fake-store 型別及 UI 替換的殘留 JSX 編譯問題已定位修正，最終 typecheck 通過。狀態互動由主模型覆核，未冒稱瀏覽器驗收。
 - Delivery / Limits：同步 API／DATA_MODEL、PLAN／STATUS 及 UI 功能對接清單；WORKLOG 只追加。未部署、未跑 E2E／全量回歸／新的備份還原；完整候選記憶、opId／changeSeq 分別由 S09／S11、S07 後續包交付。本包完成隨 PR 合併生效，P2 尚未完成；合併後接續 S09-W02，S07-W03／S10-W01 亦 Ready。
+
+
+<a id="log-20260924-010"></a>
+## LOG-20260924-010
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S07-W03 在線一致性，基線 `1df0745`，前置 S06-W02／S05-W02 已隨 PR #31／#32 合併，獨立分支及 worktree `codex/s07-w03-online-consistency`。
+- Executor：主模型處理交易／授權／遷移、UI 整合、review、必要本機驗收及全部契約／計劃文件；一個 Luna Max 唯讀定位提交入口，一個 Sol Xhigh 完成既定 transport／adapter 及直接相關單元測試。沿用資源授權 Skill、既有 Prompt Pack／美術，沒有重建。
+- Actual Work：新增 migration 010、本人 opId 唯一收據、加密 fingerprint／結果及無正文變更台帳。既有短交易在同一 connection 以 savepoint 整合；父鎖後重新核權，業務／changeSeq／收據共同提交。刪除抹除收據正文而保留冪等識別；撤權阻止讀回及重試。Web 未知結果查原收據後才明確重試，版本／分頁衝突不靜默覆蓋，焦點／重連／可見頁面週期刷新。沒有持久 outbox、模型／通知接線或 UI polish。
+- Compatibility / Review：保留舊 API，migration 存在才啟用 tracking／新入口。自動批准審核曾拒絕全面封鎖舊 POST 及無條件依賴新表的草案，原因是相容及未遷移環境風險；兩項均未套用，已改為可逐步啟用方案。另修正鎖後收據重讀、已確認聊天遇後續 session 讀取失敗不重送、衝突讀取不誤當寫入成功及忙碌頁面漏更新的恢復。
+- Human Verification：使用者明確批准本包既有合成 PostgreSQL、migration 010、最多 60 次 HTTP、3 帳號／1 孩子／3 記錄／1 聊天及只刪新孩子。主模型按此範圍執行；不是人工瀏覽器試玩或跨包驗收授權。
+- Verification：[EV-S07-W03](artifacts/verification/S07_W03_CHECKS.json) 記錄針對性 server／transport／adapter／controller 輕量測試、兩份 typecheck 及實際 SQL 證據。首次 8 組通過後，第 45 次請求在重啟後讀取失敗而停止；原腳本未保留错误類型，不能斷言確切根因。只讀確認原資料／收據仍在後，沿用同一批資料續驗 4 組，累計 54 次 HTTP 嘗試（不新增第二批帳號、孩子或記錄），重新啟動 Server／pool、原收據重讀、記錄／孩子刪除及原建立重試不復活均通過。續驗用既有合成 session 為新測試 secret 重簽 cookie，仍經真 Better Auth；不把此視作額外登入流程證據。
+- Preservation / Limits：初次 in-memory 前綴快照隨腳本退出而失去，未冒稱完成初始全庫逐位元比較；所有業務寫入限定新孩子，續驗前後其餘資料逐列不變，原加密儲存核對通過。沒有清庫、正文日誌、模型／通知費用、E2E、部署、全量回歸或額外備份還原。acceptance script 改為關閉每次 HTTP connection 並保留安全错误類型，以改善下次重啟驗收診斷；本輪未重跑整批。
+- Delivery / Next：API／DATA_MODEL／ARCHITECTURE 及 UI 功能對接清單補實際邊界；本包完成隨 review／PR 合併生效，P2 仍未完成。S09-W02（draft PR #34）及 S10-W01（draft PR #35）已各自實作、待必要驗收批准，尚未合併；不得啟動依賴未完成前置的 S13-W01。後續按真實依賴及批准範圍推進。

@@ -4,6 +4,7 @@ import type { Child } from "../shared/records.ts";
 import { CARE_KINDS, emptyCareDetails } from "../shared/care.ts";
 import type { AgeBasis, CareCursor, CareKind, CareRecord, CareRevision, CareValues, ChildProfile, ChildProfileData } from "../shared/care.ts";
 import { CareApiError, createCareApi } from "./care-api.ts";
+import { ONLINE_REFRESH_EVENT } from "./use-online-updates.ts";
 
 interface Props { userId: string; child: Child; online: boolean; apiBaseUrl?: string; onChanged: () => void; onAccessLost: () => void }
 type WriteKind = "care-create" | "care-revise" | "care-delete" | "profile-save" | "profile-delete";
@@ -35,6 +36,9 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
   const latestScope = useRef(scope);
   latestScope.current = scope;
   const api = useMemo(() => createCareApi(apiBaseUrl), [apiBaseUrl]);
+  const refreshRef = useRef<() => void>(() => {});
+  const confirmedUnknown = useRef(false);
+  const activeWrite = useRef<WriteKind | null>(null);
   const generation = useRef(0);
   const requests = useRef(new Set<AbortController>());
   const inFlight = useRef(false);
@@ -79,6 +83,7 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
   const ready = online && !draftLocked;
 
   const clear = useCallback(() => {
+    confirmedUnknown.current = false;
     setProfile(null); setProfileBasis(null); setProfileDraft(emptyProfile()); setProfileReason(""); setProfilePreview(false); setProfileDeleteConfirm(false);
     setProfileHistory([]); setProfileHistoryCursor(null); setProfileHistoryOpen(false);
     setRecords([]); setCursor(null); setSearched(false); setQuery(""); setFilterKind("all"); setActiveQuery(""); setActiveKind("all");
@@ -90,6 +95,7 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
   const verified = useCallback(async <T,>(operation: (signal: AbortSignal) => Promise<T>, signal: AbortSignal): Promise<T> => {
     if (await api.getSession(signal) !== userId) throw new CareApiError(401);
     const result = await operation(signal);
+    if (activeWrite.current) confirmedUnknown.current = true;
     if (await api.getSession(signal) !== userId) throw new CareApiError(401);
     return result;
   }, [api, userId]);
@@ -97,6 +103,8 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
   const run = useCallback(async (label: string, operation: (signal: AbortSignal, current: () => boolean) => Promise<void>, write: WriteKind | null = null) => {
     if (!online || inFlight.current || (write && (uncertain || conflict))) return;
     inFlight.current = true;
+    activeWrite.current = write;
+    if (write) confirmedUnknown.current = false;
     const started = generation.current;
     const requestScope = scope;
     const controller = new AbortController();
@@ -106,13 +114,26 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
     try {
       await operation(controller.signal, current);
     } catch (error) {
+      activeWrite.current = null;
       if (!current()) return;
       const status = error instanceof CareApiError ? error.status : 0;
       if (status === 401 || status === 403 || status === 404) {
+        api.resetOnline?.();
         clear(); setUncertain(null); setUncertainReviewed(false); setConflict(null);
         setNotice("登入或孩子權限已改變，資料及表單已清除。請重新登入或選擇孩子。");
         onAccessLost();
       } else if (status === 409) {
+        if (error instanceof CareApiError && error.onlineCode === "cursor_stale") {
+          setCursor(null); setNotice("列表期間已有新資料，未拼接不同版本的頁面。請從首頁重新搜尋；草稿仍保留。");
+          return;
+        }
+        if (error instanceof CareApiError && error.onlineCode && error.onlineCode !== "version_conflict" && error.onlineCode !== "session_changed") {
+          confirmedUnknown.current = error.confirmed;
+          if (write) { setUncertain(write); setUncertainReviewed(false); }
+          setNotice(error.confirmed ? "Server 已確認原操作；結果已改變或刪除，請重新讀取，毋須重建。"
+            : "原操作或 Server 世代需要核對。草稿保留；請先重新讀取，不能更換識別直接重送。");
+          return;
+        }
         let sameSession: boolean | null = null;
         try { sameSession = await api.getSession(controller.signal) === userId; } catch { /* Keep the write blocked until identity can be checked. */ }
         if (!current()) return;
@@ -141,7 +162,7 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
       }
     } finally {
       requests.current.delete(controller);
-      if (current()) { inFlight.current = false; setBusy(""); }
+      if (current()) { inFlight.current = false; activeWrite.current = null; setBusy(""); }
     }
   }, [online, uncertain, conflict, scope, clear, onAccessLost, editing, profile, profileBasis, api, userId]);
 
@@ -164,7 +185,8 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
     for (const request of requests.current) request.abort();
     requests.current.clear(); inFlight.current = false;
     clear(); setVisibleScope(scope); setBusy(""); setNotice(""); setUncertain(null); setUncertainReviewed(false); setConflict(null);
-    return () => { generation.current += 1; for (const request of requests.current) request.abort(); requests.current.clear(); inFlight.current = false; };
+    api.resetOnline?.();
+    return () => { generation.current += 1; for (const request of requests.current) request.abort(); requests.current.clear(); inFlight.current = false; api.resetOnline?.(); };
   }, [scope, clear]);
 
   useEffect(() => {
@@ -175,11 +197,20 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
   }, [scope, visibleScope]);
 
   const refresh = () => { void run("重新讀取", async (signal, current) => {
+    const receipt = uncertain ? await verified(next => api.reconcilePending?.(next, userId) ?? Promise.resolve(null), signal) : null;
     const loaded = await load(signal, current, true);
     if (!current() || !loaded) return;
     if (uncertain) {
-      setUncertainReviewed(true);
-      setNotice("已重新讀取。請核對目前資料及搜尋結果，再明確選擇如何處理這次結果未知的操作。");
+      if (receipt?.state === "confirmed" || confirmedUnknown.current) {
+        confirmedUnknown.current = false;
+        if (uncertain.startsWith("care-")) resetCare();
+        else { setProfileBasis(loaded.nextProfile); setProfileDraft(loaded.nextProfile.data ?? emptyProfile()); setProfileReason(""); }
+        setUncertain(null); setUncertainReviewed(false);
+        setNotice("Server 已確認原操作。已重新讀取目前資料，毋須再次提交。");
+      } else {
+        setUncertainReviewed(true);
+        setNotice("原操作尚無確認。草稿仍保留，可明確重試相同操作；不會自動重送或另建副本。");
+      }
     }
     if (conflict?.kind === "profile") {
       setConflict({ ...conflict, latest: loaded.nextProfile, reviewed: true });
@@ -197,6 +228,24 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
       setNotice("孩子資料在重新讀取時已有新版本。本地草稿仍在；請比較舊版、最新版後明確選擇。");
     }
   }); };
+  refreshRef.current = refresh;
+  useEffect(() => {
+    if (typeof window === "undefined" || !online) return;
+    const update = () => refreshRef.current();
+    window.addEventListener(ONLINE_REFRESH_EVENT, update);
+    return () => window.removeEventListener(ONLINE_REFRESH_EVENT, update);
+  }, [scope, online]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const leave = (event: BeforeUnloadEvent) => {
+      if (text || source || reason || profileReason || uncertain || api.hasPendingOnline?.()
+        || JSON.stringify(profileDraft) !== JSON.stringify(profileBasis?.data ?? emptyProfile())) {
+        event.preventDefault(); event.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", leave);
+    return () => window.removeEventListener("beforeunload", leave);
+  }, [text, source, reason, profileReason, profileDraft, profileBasis, uncertain, api]);
   const search = (nextCursor: CareCursor | null = null) => {
     const nextQuery = nextCursor ? activeQuery : query;
     const nextKind = nextCursor ? activeKind : filterKind;
@@ -216,6 +265,7 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
   const resetCare = () => { setEditing(null); setText(""); setKind("note"); setQuantityRaw(""); setQuantityUnit(""); setQuantityPrecision("approximate"); setEventRaw(""); setSource(""); setReason(""); setCarePreview(false); setCareDeleteConfirm(false); };
   const resolveUnknown = (completed: boolean) => {
     if (!uncertain || !uncertainReviewed) return;
+    if (completed && api.reconcilePending) return;
     if (completed) {
       if (uncertain.startsWith("care-")) resetCare();
       else { setProfileBasis(profile); setProfileDraft(profile?.data ?? emptyProfile()); setProfileReason(""); setProfilePreview(false); setProfileDeleteConfirm(false); }
@@ -284,8 +334,7 @@ export function CarePanel({ userId, child, online, apiBaseUrl = "", onChanged, o
     {!!notice && <Text accessibilityRole="alert" style={styles.warning}>{notice}</Text>}
     {uncertain && <View style={styles.confirmation}>
       <Text style={styles.warning}>結果未知的操作：{({ "care-create": "新增照顧記錄", "care-revise": "更正照顧記錄", "care-delete": "刪除照顧記錄及歷史", "profile-save": "保存孩子資料", "profile-delete": "刪除孩子資料及歷史" } satisfies Record<WriteKind, string>)[uncertain]}。請先重新讀取，必要時用搜尋及歷史核對；系統不會自動重送。</Text>
-      <Action label="已找到／操作已完成，清除這次操作草稿" onPress={() => resolveUnknown(true)} disabled={!online || !!busy || !uncertainReviewed} />
-      <Action label="已核對未完成，保留草稿重新檢視" onPress={() => resolveUnknown(false)} disabled={!online || !!busy || !uncertainReviewed} />
+      <Action label="尚無確認，保留原操作重新檢視及重試" onPress={() => resolveUnknown(false)} disabled={!online || !!busy || !uncertainReviewed} />
     </View>}
     {conflict?.kind === "profile" && <View style={styles.confirmation}>
       <Text style={styles.warning}>孩子資料版本衝突：原版本 {conflict.original.version}（{conflict.original.data ? profileText(conflict.original.data) : "沒有資料"}）；{conflict.latest ? `最新版本 ${conflict.latest.version}（${conflict.latest.data ? profileText(conflict.latest.data) : "沒有資料"}）` : "最新版本尚未核對"}；本地草稿：{profileText(profileDraft)}。</Text>

@@ -57,7 +57,7 @@ interface RequestScope {
   controller: AbortController;
 }
 
-const UNKNOWN_WRITE = "尚未確認保存，結果未知。請先重新讀取並核對；這次請求仍可能已在 Server 完成，直接重試可能重複建立。";
+const UNKNOWN_WRITE = "尚未確認保存，結果未知。請先重新讀取；系統會查核原操作，再讓你重試同一項提交。";
 const SESSION_EXPIRED = "登入已失效或帳號已改變。未提交內容已隱藏，只留在本頁；登入同一帳號後才能恢復。";
 const OFFLINE = "目前未能連線，畫面資料可能過期；輸入尚未保存，請連線後重新讀取。";
 
@@ -76,11 +76,12 @@ function initialState(online: boolean): RecordsState {
 }
 
 function isUnknown(error: unknown): boolean {
-  return !(error instanceof ClientApiError) || error.status === 0 || error.status >= 500;
+  return !(error instanceof ClientApiError) || error.status === 0 || error.status >= 500
+    || ["operation_pending", "operation_busy", "operation_mismatch", "storage_epoch_changed"].includes(error.onlineCode ?? "");
 }
 
 function isSessionInvalid(error: unknown): boolean {
-  return error instanceof ClientApiError && (error.status === 401 || error.status === 409);
+  return error instanceof ClientApiError && (error.status === 401 || error.status === 409 && (!error.onlineCode || error.onlineCode === "session_changed"));
 }
 
 function hasInput(input: { childName: string; drafts: Record<string, RecordDraft> }): boolean {
@@ -113,6 +114,21 @@ export class RecordsController {
   };
 
   hasUnsavedInput = (): boolean => hasInput(this.state) || Boolean(this.retained && hasInput(this.retained));
+  usesOnlineReceipts = (): boolean => Boolean(this.api.reconcilePending);
+
+  private async reconcileOnline(scope: RequestScope): Promise<void> {
+    if (!this.api.reconcilePending || !this.api.hasPendingOnline?.()) return;
+    const receipt = await this.api.reconcilePending(scope.controller.signal, scope.userId);
+    if (!this.current(scope) || !await this.verifyIdentity(scope) || receipt?.state !== "confirmed") return;
+    const path = receipt.path ?? "";
+    if (path === "/api/children") {
+      this.update({ childName: "", childOutcome: "draft", childMessage: "Server 已確認原來的建立操作；以下顯示目前仍可存取的孩子。" });
+    } else {
+      const match = /^\/api\/children\/([^/]+)\/(records|delete)$/u.exec(path);
+      if (match?.[2] === "records") this.updateDraft(match[1], { text: "", outcome: "draft", receipt: null, message: "Server 已確認原提交；以下重新讀取目前記錄，毋須再提交。" });
+      if (match?.[2] === "delete") this.forgetChild(match[1]);
+    }
+  }
 
   private update(patch: Partial<RecordsState>): void {
     this.state = { ...this.state, ...patch };
@@ -315,6 +331,8 @@ export class RecordsController {
     const scope = this.scope();
     this.update({ childrenLoading: true, childrenError: null, childOutcome: this.state.childOutcome === "checked" ? "unknown" : this.state.childOutcome });
     try {
+      await this.reconcileOnline(scope);
+      if (!this.current(scope)) return;
       const children = await this.api.listChildren(scope.controller.signal);
       if (!await this.verifyIdentity(scope)) return;
       this.childDeletion?.reconcile(children.map(child => child.id), this.state.deletion?.childId ?? null);
@@ -418,6 +436,8 @@ export class RecordsController {
     this.update({ recordsLoading: true, recordsError: null, confirmation: null });
     if (this.state.drafts[childId]?.outcome === "checked") this.updateDraft(childId, { outcome: "unknown" });
     try {
+      await this.reconcileOnline(scope);
+      if (!this.current(scope)) return;
       const list = await this.api.listRecords(childId, scope.controller.signal);
       if (!this.current(scope) || sequence !== this.recordRequest || this.state.selectedChildId !== childId) return;
       if (!await this.verifyIdentity(scope) || sequence !== this.recordRequest || this.state.selectedChildId !== childId) return;
@@ -451,7 +471,10 @@ export class RecordsController {
       if (!await this.verifyIdentity(scope)) return;
       this.update({ childOutcome: "sending" });
       const child = await this.api.createChild(validation.value.displayName, scope.controller.signal, scope.userId);
-      if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+      if (!this.current(scope)) return;
+      // A later session-read outage cannot turn a confirmed create back into a new draft.
+      this.update({ childName: "", childOutcome: "draft" });
+      if (!await this.verifyIdentity(scope)) return;
       this.update({
         children: [...this.state.children, child], childName: "", childOutcome: "draft",
         childMessage: `Server 已確認建立孩子，時間：${child.createdAt}`, busy: null,
@@ -506,6 +529,7 @@ export class RecordsController {
         this.gate("signedOut", SESSION_EXPIRED);
         return;
       }
+      this.updateDraft(confirmation.childId, { text: "", outcome: "draft", message: null, receipt: null });
       if (!await this.verifyIdentity(scope)) return;
       this.updateDraft(confirmation.childId, { text: "", outcome: "draft", message: null, receipt: record });
       this.update({ records: [record, ...this.state.records.filter(item => item.id !== record.id)].slice(0, this.state.recordLimit), confirmation: null });
@@ -530,12 +554,14 @@ export class RecordsController {
     const id = this.state.selectedChildId;
     const draft = id ? this.state.drafts[id] : null;
     if (this.state.busy || !id || !draft || draft.outcome !== "checked") return;
-    this.updateDraft(id, { text: found ? "" : draft.text, outcome: "draft", message: found ? "已按你的核對清除本頁草稿。" : "已完成核對。再次保存會建立一則新記錄，請確認沒有重複。" });
+    if (found && this.api.reconcilePending) return;
+    this.updateDraft(id, { text: found ? "" : draft.text, outcome: "draft", message: found ? "已按你的核對清除本頁草稿。" : "可重試原操作；尚未確認的提交會沿用原識別，不會另建重複記錄。" });
   }
 
   resolveUnknownChild(found: boolean): void {
     if (this.state.busy || this.state.childOutcome !== "checked") return;
-    this.update({ childName: found ? "" : this.state.childName, childOutcome: "draft", childMessage: found ? "已按你的核對清除本頁稱呼。" : "已完成核對。再次建立會新增一位孩子，請確認沒有重複。" });
+    if (found && this.api.reconcilePending) return;
+    this.update({ childName: found ? "" : this.state.childName, childOutcome: "draft", childMessage: found ? "已按你的核對清除本頁稱呼。" : "可重試原操作；請保持原輸入，系統會核對原確認記錄。" });
   }
 
   cancelLogout(): void {
@@ -571,5 +597,6 @@ export class RecordsController {
 
   dispose(): void {
     this.abortRequests();
+    this.api.resetOnline?.();
   }
 }

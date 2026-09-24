@@ -54,12 +54,13 @@ function initialState(online: boolean): ChatState {
 }
 
 function sessionError(error: unknown): boolean {
-  return error instanceof ChatApiError && (error.status === 401 || error.status === 409
+  return error instanceof ChatApiError && (error.status === 401 || error.status === 409 && (!error.onlineCode || error.onlineCode === "session_changed")
     || error.code === "unauthorized" || error.code === "session_changed");
 }
 
 function unknownSave(error: unknown): boolean {
-  return !(error instanceof ChatApiError) || error.status === 0 || error.status >= 500;
+  return !(error instanceof ChatApiError) || error.status === 0 || error.status >= 500
+    || ["operation_pending", "operation_busy", "operation_mismatch", "storage_epoch_changed"].includes(error.onlineCode ?? "");
 }
 
 function childAccessDenied(error: unknown): boolean {
@@ -130,6 +131,7 @@ export class ChatController {
   private clearIdentity(): void {
     this.epoch += 1;
     this.abortRequests();
+    this.api.resetOnline?.();
     this.blockedChildIds.clear();
     this.forgottenChildIds.clear();
     this.update(initialState(this.state.online));
@@ -267,6 +269,22 @@ export class ChatController {
     this.update({ loading: true, error: null });
     try {
       if (!await this.verifyIdentity(scope)) return;
+      if (this.api.reconcilePending && this.api.hasPendingOnline?.()) {
+        const receipt = await this.api.reconcilePending(scope.controller.signal, scope.userId);
+        if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+        if (receipt?.state === "confirmed") {
+          const target = /^\/api\/children\/([^/]+)\/messages$/u.exec(receipt.path ?? "")?.[1];
+          if (target) {
+            const value = receipt.result as { message?: ChatMessage } | null;
+            const message = value?.message;
+            if (message?.childId === target && message.authorUserId === scope.userId && message.role === "user") {
+              this.updateDraft(target, { phase: "reply_failed", savedUserMessageId: message.id, candidateMessageId: null,
+                notice: "Server 已確認原訊息保存；尚未要求 AI 回覆，可按需要繼續。", knownIds: [] });
+            } else this.updateDraft(target, { text: "", phase: "draft", savedUserMessageId: null, candidateMessageId: null,
+              notice: "Server 已確認原操作；原結果已不可用，請以最新聊天為準。", knownIds: [] });
+          }
+        }
+      }
       const page = await this.api.listMessages(childId, scope.controller.signal);
       if (!this.current(scope)) return;
       if (page.messages.some(item => item.role === "user" && item.authorUserId !== scope.userId)) {
@@ -281,6 +299,10 @@ export class ChatController {
           notice: "已在聊天記錄找到 AI 回覆。", knownIds: [] });
       }
       if (draft?.phase === "save_unknown" || draft?.phase === "checked") {
+        if (this.api.reconcilePending) {
+          this.updateDraft(childId, { phase: "checked", candidateMessageId: null,
+            notice: "原操作尚無確認。可以保留相同原文重試，系統會沿用原識別；不會按文字相同猜測已保存。" });
+        } else {
         const matches = page.messages.filter(item => item.role === "user" && item.authorUserId === scope.userId
           && item.text === draft.text && !draft.knownIds.includes(item.id));
         if (matches.length === 1) {
@@ -290,6 +312,7 @@ export class ChatController {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: null, notice: matches.length > 1
             ? "找到多則相同訊息，無法確認哪則屬於這次提交；請檢視聊天記錄。"
             : "最近聊天未找到這次訊息，仍無法確定 Server 是否保存。請檢視後才決定是否重新發送。" });
+        }
         }
       }
     } catch (error) {
@@ -379,7 +402,10 @@ export class ChatController {
       this.updateDraft(childId, { phase: "saving", notice: null, candidateMessageId: null,
         knownIds: this.state.messages.map(item => item.id) });
       const saved = await this.api.saveMessage(childId, draft.text, scope.controller.signal, scope.userId);
-      if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+      if (!this.current(scope)) return;
+      this.updateDraft(childId, { phase: "reply_failed", savedUserMessageId: saved.id, candidateMessageId: null,
+        notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });
+      if (!await this.verifyIdentity(scope)) return;
       this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved].slice(-this.state.limit),
         busy: "reply", replyingMessageId: saved.id });
       this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, notice: "聊天已保存，正在等候 AI 回覆。" });
@@ -432,7 +458,7 @@ export class ChatController {
     const childId = this.state.selectedChildId;
     if (!childId || this.state.busy || this.state.drafts[childId]?.phase !== "checked") return;
     this.updateDraft(childId, { phase: "draft", savedUserMessageId: null, candidateMessageId: null, knownIds: [],
-      notice: "已解鎖。再次發送可能建立重複訊息，請先核對聊天記錄。" });
+      notice: "可重試原訊息；請保留原文，系統會先核對原操作，毋須另建重複訊息。" });
   }
 
   confirmFoundMessage(): void {
