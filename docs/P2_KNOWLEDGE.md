@@ -1,6 +1,6 @@
 # P2 小型官方知識庫
 
-S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢索。真 PostgreSQL／embedding／備份還原已獲本包批准，升級前加密備份完成；映像下載受阻，待手動套件校驗後續接，真向量及還原尚未通過；目前未部署。Agent 工具接入及面向家長的引用 UI 在 S11-W02，定期來源檢查在 S10-W02；本包指令不等於這些功能已接通。
+S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢索。獲批的真 PostgreSQL／embedding／備份還原已通過：7 組檢查、15 次 embedding、79 次 store 呼叫；原 23 張業務表保留，31 張表空庫還原及向量查詢成功，詳見 [驗收證據](../artifacts/verification/S10_W01_CHECKS.json)。目前未部署。Agent 工具接入及面向家長的引用 UI 在 S11-W02，定期來源檢查在 S10-W02；本包指令不等於這些功能已接通。
 
 ## 首批內容與適用性
 
@@ -43,7 +43,16 @@ S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢
 
 `Dockerfile` 的 `postgres-vector` target 固定 PostgreSQL 18.6／pgvector 0.8.6；來源 commit 與許可見 [notices](../THIRD_PARTY_NOTICES.md#p2-vector-extension-and-public-knowledge)。Compose volume 及 PGDATA 不變，不能刪 volume 或另建空庫冒充升級。
 
-本機獲批後：先以 `verify-knowledge-storage.mjs capture --approved-knowledge-storage` 建工程外加密備份及既有表 hash；再建置並只重建合成 DB 容器，保留原 volume；執行 migration 009（008 屬獨立 S09，合併時保留兩者）；然後 `verify-knowledge.mjs --approved-knowledge`。它預標四年齡段八條改寫問題及一條無關問題，最多 16 次 embedding、120 次 store 操作，失敗不自動重試或上調額度。原私人資料保留；測試新版本及歷史不刪除，最後恢复核對過的 seed 版本。
+若 Debian 編譯依賴下載受阻，Debian 12／amd64 可用 [Dockerfile.package](../deploy/postgres/Dockerfile.package) 離線建置。下載 [PGDG 套件](https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/postgresql-18-pgvector_0.8.6-1.pgdg12%2B2_amd64.deb)，以 [官方 buildinfo](https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/pgvector_0.8.6-1.pgdg12%2B2_amd64.buildinfo) 核對：269,856 bytes、SHA-256 `c014676900ce4af14f85e4c438ba2d488a4dcb8f684bc03ff908bac184910081`。工程外的獨立建置目錄只放改名的 `pgvector.deb` 及本專案 `licenses/pgvector/LICENSE`，不可將備份／密鑰所在父目錄當作 context。基底 `postgres:18.6-bookworm` 須已在本機：
+
+```text
+docker build --network=none --file deploy/postgres/Dockerfile.package --tag yuban-postgres:18.6-pgvector0.8.6 <獨立建置目錄>
+```
+
+映像會檢查 hash、版本、架構及動態依賴；不執行套件 maintainer scripts。這條套件建置、同卷啟動及還原路徑已實測；原 source-build 路徑因下載逾時未完成，不冒稱通過。使用既有 Compose project／環境檔，以 `up -d --no-deps --no-build --wait postgres-test` 只替換獲准的合成容器，避免再走 source build；不能另改 project 名稱而誤建新 volume。其他平台不套用 amd64 套件。
+
+
+本機獲批後：先以 `verify-knowledge-storage.mjs capture --approved-knowledge-storage` 建工程外加密備份及既有表 hash；再建置並只重建合成 DB 容器，保留原 volume；執行 migration 009（既有 008／010／011 保持原 checksum）；然後 `verify-knowledge.mjs --approved-knowledge`。它預標四年齡段八條改寫問題及一條無關問題，最多 16 次 embedding、120 次 store 操作，失敗不自動重試或上調額度。原私人資料保留；測試新版本及歷史不刪除，最後恢复核對過的 seed 版本。
 
 最後 `verify-knowledge-storage.mjs restore --approved-knowledge-storage` 驗證既有資料、全庫加密備份及新空目標還原，實際查詢 pgvector，再只移除本次新建的還原庫。備份目錄由 `KNOWLEDGE_ACCEPTANCE_DIR` 指定、必須在工程外，沿用獨立 storage／backup key。必要環境用現有 `TEST_DATABASE_URL`、`PG_TOOL_CONTAINER`；不把它們寫入 Git。
 

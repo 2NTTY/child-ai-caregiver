@@ -887,3 +887,14 @@
 - Actual Acceptance：工程外受保護目錄已保存原庫加密備份及 23 張業務表雜湊，包括 S07／S09 新表；本機仍為原 PostgreSQL 18.6 容器及原 volume。只讀 preflight 確認原有 migrations 齊備及當日配額足夠；正確既有 ADC 可用，沒有改全局設定。模型呼叫 0、未套 009、未換容器、未清資料、未還原或部署。
 - Build Blocker / User Input：固定來源 pgvector 映像首建需約 184 MB 編譯套件，多個 Debian 下載持續逾時；主機直接下載亦未在診斷期限內完成，不能把原因斷言為程式錯誤。使用者要求可下載壓縮包的話由其下載，主模型已停止原建置並提供 PGDG 官方 PostgreSQL 18／Debian 12 amd64 的 pgvector 0.8.6 預編譯 .deb（269,856 bytes）。官方目錄已核對；小型 buildinfo 下載亦逾時，套件 hash／依賴及建置相容性尚未驗證，Dockerfile 尚未改用它。
 - Evidence / Next：[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json) 分列已批准／部分已執行／未通過；官方價格核對後，本次有限 embedding 估計低於 US$0.02，未有新模型帳單。待使用者下載檔案後核對來源、hash 與相容性，續接已批准的向量檢索及加密還原；不重新索取同一驗收批准，不標本包或 P2 完成。
+
+
+<a id="log-20260924-013"></a>
+## LOG-20260924-013
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S10-W01 接續 LOG-20260924-012，使用者回覆「已下載」後按既有批准完成必要驗收；基線 master `2964f59`，原分支／PR #35，不擴大工作包或真服務次數。
+- Package / Image：手動下載的 PGDG Debian 12 amd64／PostgreSQL 18 套件為 pgvector `0.8.6-1.pgdg12+2`，269,856 bytes；SHA-256 `c014676900ce4af14f85e4c438ba2d488a4dcb8f684bc03ff908bac184910081` 與官方 buildinfo 相符。新增固定 hash／版本／架構／動態依賴檢查的離線 Dockerfile；只用套件及許可組成工程外 context，原套件 copyright 保留。不執行 maintainer scripts，沒有將下載物或密鑰提交。原 source build 因網絡下載逾時未完成，與已通過的套件建置分開記錄。
+- Actual Verification：[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json)。保留原 volume 切換 PostgreSQL 18.6 容器、health 及 migration 009 通過，008／010／011 checksum 保持一致。真 embedding 驗收 7 組全部通過、15 次服務呼叫／79 次 store（包括恢復 seed），四年齡段八條改寫及一條無關問題、硬性適用過濾、停用後快取／引用失效、局部更新、未變內容復用及重連均有實際證據；embedding 不可用降級只用明示 mock，不冒稱服務故障實測。
+- Usage / Preservation：服務回報 773 input tokens／1,036 billable characters，15 筆用量無未知欄；SDK 每次一次 attempt，沒有提高每日額度或補打額外模型。估計低於 US$0.02，實際帳單未核對。升級前 23 張業務表逐列雜湊不變；全庫加密備份還原到新空庫，31 張表逐列比較、session 清除、pgvector 0.8.6 及實際向量查詢通過，只刪本次新還原庫。原庫與工程外受保護備份保留。
+- Executor / Review：主模型執行關鍵驗收、覆核交易／發布停用／來源與配額邊界，親自更新 Skill、操作指引、許可、UI 對接清單及狀態；本輪沒有新建子代理。復用先前 21 項單元與最新整合後兩份 typecheck，不機械重跑；新增映像已實際建置，文件／證據及 diff 作必要靜態檢查。歷史 WORKLOG 原位保留。
+- Delivery / Pause：本包完成隨 PR #35 review／合併生效；現網仍是 P1，沒有部署、通知、瀏覽器 E2E、全量回歸或重做 Prompt Pack／美術。有限語料召回不代表一般醫療能力或完整 Agent 已接通。依使用者要求繼續階段性暫停；S13-W01 Ready 但不開始，S10-W02 仍待 S13-W04，P2 未完成。

@@ -499,7 +499,17 @@
       "path": "licenses/pgvector/LICENSE",
       "sha256": "6bba9ebeb73e27477463b05e5ef1bf303bccbddb3db9bbc95905d351604d6a87",
       "source": "https://github.com/pgvector/pgvector/blob/v0.8.6/LICENSE",
-      "modifiedUpstreamSource": false
+      "modifiedUpstreamSource": false,
+      "verifiedBinaryPackage": {
+        "name": "postgresql-18-pgvector",
+        "version": "0.8.6-1.pgdg12+2",
+        "architecture": "amd64",
+        "distribution": "Debian 12",
+        "url": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/postgresql-18-pgvector_0.8.6-1.pgdg12%2B2_amd64.deb",
+        "sha256": "c014676900ce4af14f85e4c438ba2d488a4dcb8f684bc03ff908bac184910081",
+        "preservedCopyright": "/usr/share/doc/postgresql-18-pgvector/copyright",
+        "license": "PostgreSQL"
+      }
     }
   ]
 }

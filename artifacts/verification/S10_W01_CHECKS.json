@@ -6,8 +6,8 @@
   "prerequisites": [
     "S17-W01 merged"
   ],
-  "status": "approved_acceptance_pending_image",
-  "scope": "Public official knowledge lifecycle, fixed pgvector image, Vertex embedding gateway, exact cosine and keyword RRF retrieval, operator CLI and restore acceptance preparation",
+  "status": "necessary_acceptance_passed_complete_on_pr_merge",
+  "scope": "Public official knowledge lifecycle, fixed pgvector image, Vertex embedding gateway, exact cosine and keyword RRF retrieval, operator CLI and encrypted extension restore",
   "lightweight": {
     "testsPassed": 21,
     "tests": {
@@ -74,7 +74,7 @@
       "Reconnect and preserved private rows",
       "Encrypted backup restore including extension and actual vector query"
     ],
-    "completed": false,
+    "completed": true,
     "preimageBackup": {
       "passed": true,
       "privateTablesCaptured": 23,
@@ -82,28 +82,80 @@
       "includes": "Existing S07/S09 tables; migrations 008/010/011 already applied"
     },
     "imageBuild": {
-      "attempted": true,
-      "completed": false,
-      "stopped": true,
-      "reason": "Repeated Debian dependency download timeouts; user offered to download an archive/package manually. Existing database container and volume were not changed."
+      "sourceBuild": {
+        "completed": false,
+        "stopped": true,
+        "reason": "Repeated Debian build dependency download timeouts; no database mutation before the verified offline alternative."
+      },
+      "offlinePackageBuild": {
+        "completed": true,
+        "dockerfile": "deploy/postgres/Dockerfile.package",
+        "network": "none for build instructions; base image already cached",
+        "checks": [
+          "PGDG buildinfo SHA-256 and size match",
+          "package/version/amd64 match",
+          "vector.so dynamic dependencies resolved",
+          "original package copyright preserved"
+        ],
+        "baseImage": "postgres:18.6-bookworm@sha256:3725f4e2499eef5134592b3b4ab79a543ed7f8e533b05b5b637af926630f6650",
+        "imageId": "sha256:932c5117c1b8dd483600a6caf5680d3d0f0538617720127e99d4699662018743"
+      },
+      "containerReplacement": {
+        "passed": true,
+        "health": "healthy",
+        "sameVolume": true,
+        "postgres": "18.6",
+        "extension": "0.8.6",
+        "migration009": "passed",
+        "existing008010011ChecksumsPreserved": true
+      }
     },
-    "actualModelCalls": 0,
+    "actualModelCalls": 15,
     "modelCostEstimateUsdUpper": 0.02,
     "priceSource": "https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing",
-    "manualPackageCandidate": {
+    "usage": {
+      "reportedInputTokens": 773,
+      "reportedBillableCharacters": 1036,
+      "attemptsWithUnknownUsage": 0,
+      "actualInvoiceVerified": false
+    },
+    "retrieval": {
+      "passed": true,
+      "groups": 7,
+      "storeCallsIncludingRecovery": 79,
+      "maxStoreCalls": 120,
+      "labelledRelevantCases": 8,
+      "unrelatedCases": 1,
+      "allRealEmbeddingsSucceeded": true,
+      "automaticRetries": 0,
+      "fallbackEvidence": "Explicit mock unavailable only, no extra service call",
+      "privateQueryTextLogged": false
+    },
+    "restore": {
+      "passed": true,
+      "originalBusinessTablesCompared": 23,
+      "originalRowsUnchanged": true,
+      "restoredTablesCompared": 31,
+      "extension": "0.8.6",
+      "actualVectorQueryPassed": true,
+      "temporaryRestoreDatabaseRemoved": true,
+      "originalDatabaseRetained": true,
+      "backupLocation": "protected directory outside repository"
+    },
+    "verifiedPackage": {
       "url": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/postgresql-18-pgvector_0.8.6-1.pgdg12%2B2_amd64.deb",
       "sizeBytes": 269856,
-      "verified": "Official package directory entry only; file, checksum, compatibility and local image build remain pending. Not yet adopted in Dockerfile."
+      "verified": "Downloaded by user; official buildinfo size/hash, package metadata, image build, migration, retrieval and restore passed.",
+      "sha256": "c014676900ce4af14f85e4c438ba2d488a4dcb8f684bc03ff908bac184910081",
+      "checksumSource": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/pgvector_0.8.6-1.pgdg12%2B2_amd64.buildinfo"
     }
   },
   "notExecuted": [
-    "Successful Docker image build and container replacement",
-    "Migration 009",
-    "Real embedding",
-    "Vector PostgreSQL integration",
-    "Encrypted restore",
+    "Completed source-compile image path",
     "Browser E2E",
-    "Deployment"
+    "Deployment",
+    "Agent and citation UI integration",
+    "Automatic source refresh worker"
   ],
   "remainingPackages": [
     "S10-W02 source update worker",
@@ -111,5 +163,6 @@
     "S13-W08 growth rules and corresponding evidence expansion"
   ],
   "relatedPendingWork": "S07-W03 and S09-W02 are merged and integrated; existing migration checksums retained.",
-  "integrationCommit": "bb80401"
+  "integrationCommit": "bb80401",
+  "limits": "Finite labelled corpus and retrieval checks are not general recall, citation-generation quality or clinical-effectiveness evidence. No full regression or additional service calls."
 }
