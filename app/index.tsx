@@ -10,6 +10,7 @@ import { ChatPanel } from "../src/client/ChatPanel";
 import { FamilyPanel } from "../src/client/FamilyPanel";
 import { CarePanel } from "../src/client/CarePanel";
 import { retainCareScope, type CareScope } from "../src/client/care-scope";
+import { useOnlineUpdates } from "../src/client/use-online-updates";
 
 function Action({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
@@ -49,6 +50,10 @@ export default function HomeScreen() {
   retainedCare.current = retainCareScope(retainedCare.current, state);
   const careScope = retainedCare.current;
   const careVisible = state.auth === "signedIn" && child?.id === careScope?.child.id && !deleting;
+  useOnlineUpdates(environment.apiBaseUrl, state.auth === "signedIn" ? state.user!.id : null, state.online, async () => {
+    await controller.reloadChildren();
+    await chatController.reloadMessages();
+  });
 
   useEffect(() => {
     if (state.user) {
@@ -172,8 +177,8 @@ export default function HomeScreen() {
               {state.childMessage && <Text accessibilityLiveRegion="polite" style={styles.warning}>{state.childMessage}</Text>}
               {uncertainChild && <Text style={styles.hint}>請先使用「重新讀取孩子列表」核對這次建立是否已完成。</Text>}
               {state.childOutcome === "checked" && <View style={styles.row}>
-                <Action label="已找到孩子，清除稱呼" onPress={() => controller.resolveUnknownChild(true)} disabled={busy || state.childrenLoading} />
-                <Action label="已核對未見孩子，解鎖重試" onPress={() => controller.resolveUnknownChild(false)} disabled={busy || state.childrenLoading} />
+                {!controller.usesOnlineReceipts() && <Action label="已找到孩子，清除稱呼" onPress={() => controller.resolveUnknownChild(true)} disabled={busy || state.childrenLoading} />}
+                <Action label="尚無確認，保留原操作重試" onPress={() => controller.resolveUnknownChild(false)} disabled={busy || state.childrenLoading} />
               </View>}
             </View>
 

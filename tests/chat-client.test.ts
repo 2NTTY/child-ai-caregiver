@@ -28,6 +28,24 @@ async function settle(): Promise<void> {
   await new Promise<void>(resolve => setTimeout(resolve, 0));
 }
 
+test("online receipt recovery uses the original message identity and does not infer from equal text", async () => {
+  const { values, api, controller } = fixture();
+  let pending = false;
+  api.hasPendingOnline = () => pending;
+  api.saveMessage = async () => { values.saves++; pending = true; throw new ChatApiError(); };
+  api.reconcilePending = async () => {
+    pending = false;
+    return { state: "confirmed", path: `/api/children/${firstChild}/messages`, statusCode: 201, changeSeq: "1", result: { message: userMessage(firstChild, original, "actual-message") },
+      operation: { opId: firstChild, deviceId: firstChild, workspaceId: firstChild, storageEpoch: firstChild } };
+  };
+  controller.syncContext(alice.id, true, firstChild); await settle(); controller.setText(original); await controller.send();
+  values.messages = [userMessage(firstChild, original, "unrelated-identical-text")];
+  await controller.reloadMessages();
+  const draft = controller.getSnapshot().drafts[firstChild];
+  assert.equal(draft.savedUserMessageId, "actual-message"); assert.equal(draft.phase, "reply_failed");
+  assert.equal(draft.candidateMessageId, null); assert.equal(values.saves, 1); assert.equal(values.replies, 0); controller.dispose();
+});
+
 test("revoked child access clears saved chat and unsent page draft", async () => {
   const { values, api, controller } = fixture();
   values.messages = [userMessage()];
@@ -176,7 +194,7 @@ test("offline submission keeps the current child's draft and makes no request", 
 });
 
 
-test("a session-check outage after saving leaves recoverable input instead of a stuck saving state", async () => {
+test("a session-check outage after a confirmed save keeps its message identity without reposting", async () => {
   const { api, values, controller } = fixture();
   controller.syncContext(alice.id, true, firstChild);
   await settle();
@@ -189,11 +207,13 @@ test("a session-check outage after saving leaves recoverable input instead of a 
   };
   await controller.send();
   assert.equal(controller.getSnapshot().busy, null);
-  assert.equal(controller.getSnapshot().drafts[firstChild].phase, "save_unknown");
+  assert.equal(controller.getSnapshot().drafts[firstChild].phase, "reply_failed");
+  assert.equal(controller.getSnapshot().drafts[firstChild].savedUserMessageId, "message-1");
   assert.equal(controller.getSnapshot().drafts[firstChild].text, original);
+  assert.equal(values.saves, 1);
+  assert.equal(values.replies, 0);
   api.getSession = async () => alice;
   await controller.reloadMessages();
-  controller.confirmFoundMessage();
   await controller.requestReply("message-1");
   assert.equal(values.saves, 1);
   assert.equal(values.replies, 1);

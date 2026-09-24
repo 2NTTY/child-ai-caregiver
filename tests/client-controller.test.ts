@@ -43,6 +43,34 @@ function fixture() {
   return { values, api, controller: new RecordsController(api) };
 }
 
+test("online receipt recovery clears only the confirmed record draft without another write", async () => {
+  const { values, api, controller } = fixture();
+  let pending = false;
+  api.hasPendingOnline = () => pending;
+  api.createRecord = async () => { values.writes++; pending = true; throw new ClientApiError(); };
+  api.reconcilePending = async () => {
+    pending = false;
+    return { state: "confirmed", path: `/api/children/${first.id}/records`, statusCode: 201, changeSeq: "1", result: { record: makeRecord() },
+      operation: { opId: first.id, deviceId: first.id, workspaceId: first.id, storageEpoch: first.id } };
+  };
+  await controller.restoreSession();
+  controller.setRecordText(original); controller.reviewRecord(); await controller.confirmRecord();
+  assert.equal(controller.getSnapshot().drafts[first.id].outcome, "unknown");
+  await controller.reloadRecords();
+  assert.equal(controller.getSnapshot().drafts[first.id].text, "");
+  assert.equal(controller.getSnapshot().drafts[first.id].outcome, "draft");
+  assert.equal(values.writes, 1); controller.dispose();
+});
+
+test("an online epoch conflict keeps the account and unconfirmed input instead of logging out", async () => {
+  const { api, controller } = fixture();
+  api.createRecord = async () => { throw new ClientApiError(409, "storage_epoch_changed"); };
+  await controller.restoreSession(); controller.setRecordText(original); controller.reviewRecord(); await controller.confirmRecord();
+  assert.equal(controller.getSnapshot().auth, "signedIn");
+  assert.equal(controller.getSnapshot().drafts[first.id].text, original);
+  assert.equal(controller.getSnapshot().drafts[first.id].outcome, "unknown"); controller.dispose();
+});
+
 test("authorized family records retain other caregiver authors and viewer cannot submit or delete", async () => {
   const { controller, values } = fixture();
   values.children = [{ ...first, accessRole: "viewer" }];

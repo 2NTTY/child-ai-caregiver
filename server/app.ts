@@ -14,6 +14,8 @@ import { handleChatReply } from "./chat-reply.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { handleFamilyRequest } from "./family-api.ts";
 import { handleCareRequest } from "./care-api.ts";
+import { handleOnlineRequest } from "./online-api.ts";
+import type { OnlineStore } from "./online.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -69,6 +71,7 @@ export function createRequestHandler(options: {
   records: RecordStore;
   families?: import("./families.ts").FamilyStore;
   care?: import("./care.ts").CareStore;
+  online?: OnlineStore;
   modelGateway?: ModelGateway;
   chat?: ChatStore;
   chatPrompt?: string;
@@ -144,10 +147,13 @@ export function createRequestHandler(options: {
         for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
         || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")
-        || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences") {
+        || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences"
+        || url.pathname.startsWith("/api/online/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = /^\/api\/children\/[^/]+\/(care|profile)(\/|$)/u.test(url.pathname) && options.care
+        result = url.pathname.startsWith("/api/online/") && options.online
+          ? await handleOnlineRequest(webRequest, userId, options.online)
+          : /^\/api\/children\/[^/]+\/(care|profile)(\/|$)/u.test(url.pathname) && options.care
           ? await handleCareRequest(webRequest, userId, options.care)
           : (url.pathname.startsWith("/api/families") || url.pathname === "/api/notification-preferences") && options.families
           ? await handleFamilyRequest(webRequest, userId, options.families, options.records)

@@ -70,7 +70,7 @@ S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime
 
 實際型別見 [care.ts](../src/shared/care.ts)，schema 見 [care-validation](../server/care-validation.ts)。未登入 401，帳號 precondition 缺失 428／改變 409，輸入無效 400，其他家庭、viewer 寫入或不存在目標均 404。純更正與永久刪除是不同動作；模糊時間不得帶假精準 timestamp，約數年齡不生成出生日，也不自動計算矯正年齡。
 
-來源欄由使用者描述，不自動讀私人聊天或冒充官方知識引用；既有私人聊天仍私有。長期候選／記憶接線屬 S09／S11。未知寫入結果先查核，不能自動重送；衝突保留本地輸入並明確核對新版。完整 opId／changeSeq 及跨裝置一致性留 S07-W03。下列 P1 原始契約仍可用，其最新文字由更正後的目前值提供。
+來源欄由使用者描述，不自動讀私人聊天或冒充官方知識引用；既有私人聊天仍私有。長期候選／記憶接線屬 S09／S11。未知寫入結果先查核，不能自動重送；衝突保留本地輸入並明確核對新版。S07-W03 已接[在線確認](#online-http)；下列 P1 原始契約仍可用，其最新文字由更正後的目前值提供。
 
 <a id="p1-input-contracts"></a>
 ## P1 已落碼的最小輸入契約
@@ -182,7 +182,7 @@ S03-W01 在同一 `/api` 入口新增以下已登入端點；session、Origin、
 
 所有本節 POST 必須帶 `x-expected-user-id`，值為表單所屬的已登入帳號 ID。缺少回 428 `account_precondition_required`，與當次真正 session 不符回 409 `session_changed`，在讀寫業務資料前拒絕。此值只作一致性前置檢查，不能授權或選擇 owner；避免另一分頁換帳號後，把原帳號草稿寫入新帳號。
 
-未登入回 401，其他帳號或不存在的孩子均回 404。列表目前只提供最近 100 則，介面明示此限制；這不是完整搜尋或時間軸。客戶端不自動重試寫入，只有收到成功回應才顯示已保存；網絡失敗／結果未知保留當前表單，先重新讀取核對，沒有離線 outbox。完整 opId／版本協議留在 S07-W03。
+未登入回 401，其他帳號或不存在的孩子均回 404。列表目前只提供最近 100 則，介面明示此限制；這不是完整搜尋或時間軸。客戶端不自動重試寫入，只有收到成功回應才顯示已保存；網絡失敗／結果未知保留當前表單，先按[原 opId 查核](#online-http)，沒有離線 outbox。舊直接 POST 仍相容，但不提供新操作收據的冪等保證。
 
 
 <a id="p1-child-deletion"></a>
@@ -238,6 +238,27 @@ Server 復用完整 [P1 prompt](../prompts/p1/childcare-chat.txt)，只組合已
 
 <a id="sync-contract"></a>
 ## 在線寫入及更新契約
+
+<a id="online-http"></a>
+### S07-W03 已實作入口
+
+下列入口沿用 session／Origin／64 KiB JSON 上限及 `no-store`；包括 GET 在內均要求 `x-expected-user-id`。Server 以登入身份重新核權，請求身份欄不能授權。migration 010 套用後啟用；未套用時保留舊服務行為，不以 428 一次封鎖舊路由。
+
+| 入口 | 請求及結果 |
+|---|---|
+| `GET /api/online/spaces` | 目前有權的 workspace／storageEpoch；不回傳私人正文 |
+| `POST /api/online/context` | `{path, payload}` 只接受白名單業務寫入；核對目標後返回 `{workspaceId, storageEpoch}`，不執行該業務操作 |
+| `POST /api/online/submit` | `{path, payload, operation:{workspaceId, storageEpoch, deviceId, opId}}`；entity／action 沿用既有路徑，baseVersion 沿用 payload 的 `expectedVersion`，不重複傳兩套欄位 |
+| `GET /api/online/operations/:opId` | 只查本人操作，回 `{state:"unconfirmed"}` 或已確認收據；每次重查現在權限及 storageEpoch |
+| `GET /api/online/changes?workspaceId=…&storageEpoch=…&cursor=…` | cursor 初值字串 `"0"`；每頁最多 100 項無正文變更，含 changeSeq／kind／childId／deleted、accessVersion、下一 cursor／hasMore。私人聊天／偏好只回本人，邀請細節變更僅 owner 可見 |
+
+已確認收據為 `{state:"confirmed", path, operation, changeSeq, statusCode, result}`；外層 HTTP 200，`statusCode` 保留原業務的 2xx。業務寫入、變更序號及加密收據在同一交易提交。相同 opId／deviceId／範圍／內容重試回原結果；不同 opId 仍代表不同真實事件，不按文字相同去重。刪除正文後收據的 `result` 可為 null：操作仍已確認，不能解讀為「沒有保存」而另建。收據是當時確認，現況須重新讀取。
+
+白名單涵蓋孩子建立／刪除、文字及照護記錄、孩子檔案、私人聊天原文、家庭邀請／接受／撤權／成員角色及本人通知偏好；不接受模型生成、外發、身份操作或任意 URL。模型回覆仍沿用 messageId 專用入口，其費用／未知結果限制不因本包消失。
+
+`operation_mismatch`、`storage_epoch_changed`、版本衝突均 409；不得換 opId 強行重送。照護搜尋的新 cursor 帶 changeSeq，列表期間資料改變回 `cursor_stale`／409，從首頁重讀而不拼接不同版本。舊 cursor 仍相容，不聲稱具有新快照保護。缺身份前提 428、帳號改變 409、未登入 401、失去權限／不存在 404、無效輸入 400。
+
+Web transport 在本頁記憶體保留原操作；未知結果先查收據，只有使用者明確重試才沿用相同識別提交。重新連線／頁面取得焦點及可見期間每 30 秒重新核對授權與資料，忙碌畫面可於下一次讀取更新；不宣稱即時推送。失敗不推論保存／刪除／登出；換人、登出、撤權清理本頁狀態。刷新或關閉不保證恢復草稿／操作識別，不建立持久 outbox。實際型別及 transport 見 [online.ts](../src/shared/online.ts)／[online-transport.ts](../src/client/online-transport.ts)。
 
 | 调用面 | 请求／返回的既定语义 | 权威依据 |
 |---|---|---|

@@ -10,7 +10,7 @@ export interface CareRevision extends CareValues {
   version: number; confirmedBy: string; confirmedAt: string; reason: string;
 }
 export interface CareRecord extends CareRevision { id: string; childId: string; authorUserId: string; createdAt: string }
-export interface CareCursor { createdAt: string; id: string }
+export interface CareCursor { createdAt: string; id: string; changeSeq?: string }
 export interface CarePage { records: CareRecord[]; nextCursor: CareCursor | null; scanned: number; limit: number }
 export type AgeBasis = { kind: "unknown" } | { kind: "birth_date"; date: string }
   | { kind: "approximate"; rawValue: string; unit: "days" | "weeks" | "months" | "years"; asOf: string };

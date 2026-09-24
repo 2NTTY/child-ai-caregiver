@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { FamilySpace, InvitationPreview, MemberRole, NotificationPreferences } from "../shared/family.ts";
 import { createFamilyApi, FamilyApiError } from "./family-api.ts";
+import { ONLINE_REFRESH_EVENT } from "./use-online-updates.ts";
 
 interface Props { userId: string; online: boolean; apiBaseUrl: string; onChanged: () => void }
 type PendingMember = { userId: string; name: string; role: MemberRole | "revoked" };
@@ -22,6 +23,12 @@ function Action({ label, onPress, disabled = false }: { label: string; onPress: 
 export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
   const scope = `${userId}\n${apiBaseUrl}`;
   const api = useMemo(() => createFamilyApi(apiBaseUrl), [apiBaseUrl]);
+  const refreshRef = useRef<() => void>(() => {});
+  const preferencesDirty = useRef(false);
+  const preferenceBasis = useRef<NotificationPreferences | null>(null);
+  const activeWrite = useRef(false);
+  const writeConfirmed = useRef(false);
+  const [preferenceConflict, setPreferenceConflict] = useState(false);
   const generation = useRef(0);
   const requests = useRef(new Set<AbortController>());
   const inFlight = useRef(false);
@@ -43,16 +50,22 @@ export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
   const [quietStart, setQuietStart] = useState("22:00");
   const [quietEnd, setQuietEnd] = useState("08:00");
   const [allowAppointmentDuringQuiet, setAllowAppointmentDuringQuiet] = useState(false);
+  preferencesDirty.current = Boolean(data.preferences && (timeZone !== data.preferences.timeZone || quietStart !== data.preferences.quietStart
+    || quietEnd !== data.preferences.quietEnd || allowAppointmentDuringQuiet !== data.preferences.allowAppointmentDuringQuiet));
 
   const clearPrivate = useCallback(() => {
+    api.resetOnline?.();
+    writeConfirmed.current = false;
+    preferenceBasis.current = null; setPreferenceConflict(false);
     selectedIdRef.current = null;
     setData(empty(scope)); setSelectedId(null); setCreatedToken(""); setIncomingToken("");
     setPreview(null); setInviteEmail(""); setShareConfirmed(false); setPendingMember(null); setChildName("");
     setTimeZone("Asia/Hong_Kong"); setQuietStart("22:00"); setQuietEnd("08:00"); setAllowAppointmentDuringQuiet(false);
-  }, [scope]);
+  }, [scope, api]);
 
   const verified = useCallback(async <T,>(operation: (signal: AbortSignal) => Promise<T>, signal: AbortSignal): Promise<T> => {
     const result = await operation(signal);
+    if (activeWrite.current) writeConfirmed.current = true;
     if (await api.getSession(signal) !== userId) throw new FamilyApiError(401);
     return result;
   }, [api, userId]);
@@ -60,6 +73,8 @@ export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
   const run = async (kind: string, operation: (signal: AbortSignal, current: () => boolean) => Promise<void>, write = false) => {
     if (!online || busy || inFlight.current || (write && uncertain)) return;
     inFlight.current = true;
+    activeWrite.current = write;
+    if (write) writeConfirmed.current = false;
     const currentGeneration = generation.current;
     const controller = new AbortController();
     requests.current.add(controller);
@@ -68,6 +83,7 @@ export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
     try {
       await operation(controller.signal, current);
     } catch (error) {
+      activeWrite.current = false;
       if (!current()) return;
       const status = error instanceof FamilyApiError ? error.status : 0;
       if (kind === "預覽邀請" || kind === "接受邀請") setPreview(null);
@@ -77,6 +93,12 @@ export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
         clearPrivate(); setUncertain(false); setNotice("邀請已失效或家庭權限已改變，資料已清除。請重新讀取。");
         onChanged();
       } else if (status === 409) {
+        if (error instanceof FamilyApiError && error.onlineCode && error.onlineCode !== "version_conflict" && error.onlineCode !== "session_changed") {
+          writeConfirmed.current ||= error.confirmed;
+          setUncertain(true);
+          setNotice(error.confirmed ? "Server 已確認原操作；結果需要重新讀取，毋須另建。" : "原操作或 Server 世代需要核對；保留輸入，先讀取原確認記錄再決定重試。");
+          return;
+        }
         setCreatedToken(""); setPreview(null); setPendingMember(null);
         setUncertain(true);
         try {
@@ -97,11 +119,12 @@ export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
         setNotice("請求未被接納，請核對後再試。");
       } else {
         if (write) setUncertain(true);
-        setNotice(write ? "提交結果未能確認。請先重新讀取並核對，系統不會自動重送。" : "讀取失敗，請稍後重新讀取。");
+        setNotice(writeConfirmed.current && write ? "Server 已確認保存，但後續讀取失敗。請重新讀取，毋須再提交。"
+          : write ? "提交結果未能確認。請先重新讀取並核對，系統不會自動重送。" : "讀取失敗，請稍後重新讀取。");
       }
     } finally {
       requests.current.delete(controller);
-      if (current()) { inFlight.current = false; setBusy(null); }
+      if (current()) { inFlight.current = false; activeWrite.current = false; setBusy(null); }
     }
   };
 
@@ -110,7 +133,8 @@ export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
     if (!current()) return;
     const previousSelected = families.find(item => item.id === selectedIdRef.current);
     if (!previousSelected || previousSelected.role !== "owner") {
-      setCreatedToken(""); setPendingMember(null); setShareConfirmed(false);
+      setCreatedToken(""); setPendingMember(null); setShareConfirmed(false); setInviteEmail("");
+      if (!previousSelected && selectedIdRef.current) setChildName("");
     }
     const nextSelectedId = previousSelected?.id ?? families[0]?.id ?? null;
     selectedIdRef.current = nextSelectedId;
@@ -119,9 +143,11 @@ export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
     const preferences = await verified(next => api.getPreferences(next), signal);
     if (!current()) return;
     setData({ scope, families, preferences });
-    setTimeZone(preferences.timeZone); setQuietStart(preferences.quietStart); setQuietEnd(preferences.quietEnd);
-    setAllowAppointmentDuringQuiet(preferences.allowAppointmentDuringQuiet);
-    setUncertain(false);
+    if (!preferencesDirty.current) {
+      preferenceBasis.current = preferences; setPreferenceConflict(false);
+      setTimeZone(preferences.timeZone); setQuietStart(preferences.quietStart); setQuietEnd(preferences.quietEnd);
+      setAllowAppointmentDuringQuiet(preferences.allowAppointmentDuringQuiet);
+    } else if (preferenceBasis.current?.version !== preferences.version) setPreferenceConflict(true);
   }, [api, scope, verified]);
 
   useEffect(() => {
@@ -154,9 +180,46 @@ export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
       requests.current.clear();
       inFlight.current = false;
     };
-  }, [scope, online, reload, clearPrivate]);
+  }, [scope, reload, clearPrivate]);
 
-  const refresh = () => { void run("讀取", reload); };
+  const refresh = () => { void run("讀取", async (signal, current) => {
+    const receipt = await verified(next => api.reconcilePending?.(next, userId) ?? Promise.resolve(null), signal);
+    await reload(signal, current);
+    if (!current()) return;
+    if (receipt?.state === "confirmed" || writeConfirmed.current && uncertain) {
+      writeConfirmed.current = false;
+      const result = receipt?.state === "confirmed" ? receipt.result as { token?: string; child?: unknown; preferences?: unknown; joined?: boolean } | null : null;
+      if (typeof result?.token === "string") { setCreatedToken(result.token); setInviteEmail(""); }
+      if (result?.child) setChildName("");
+      if (result?.joined) { setIncomingToken(""); setPreview(null); }
+      setPendingMember(null); setUncertain(false);
+      if (!result) { setInviteEmail(""); setChildName(""); setIncomingToken(""); setPreview(null); }
+      setNotice("Server 已確認原操作，毋須再提交；目前家庭資料已重新讀取。");
+      onChanged();
+    } else {
+      setUncertain(false);
+      if (receipt?.state === "unconfirmed") setNotice("原操作尚無確認。可保持原輸入重試同一操作；不會自動重送。");
+    }
+  }); };
+  refreshRef.current = refresh;
+  useEffect(() => {
+    if (!online || typeof window === "undefined") return;
+    const update = () => refreshRef.current();
+    window.addEventListener(ONLINE_REFRESH_EVENT, update);
+    // Reconnection only reads; the scope effect above no longer erases forms.
+    update();
+    return () => window.removeEventListener(ONLINE_REFRESH_EVENT, update);
+  }, [online, scope]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const leave = (event: BeforeUnloadEvent) => {
+      if (inviteEmail || incomingToken || childName || pendingMember || preferencesDirty.current || uncertain || api.hasPendingOnline?.()) {
+        event.preventDefault(); event.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", leave);
+    return () => window.removeEventListener("beforeunload", leave);
+  }, [inviteEmail, incomingToken, childName, pendingMember, uncertain, api]);
   const selected = data.scope === scope ? data.families.find(item => item.id === selectedId) ?? null : null;
   const preferences = data.scope === scope ? data.preferences : null;
   const ready = online && !busy && !uncertain;
@@ -257,8 +320,16 @@ export function FamilyPanel({ userId, online, apiBaseUrl, onChanged }: Props) {
       <Text style={styles.label}>安靜時段結束（HH:mm）</Text><TextInput accessibilityLabel="安靜時段結束" value={quietEnd} onChangeText={setQuietEnd} editable={!busy} style={styles.input} />
       <Action label={`容許已明確設定的預約提醒在安靜時段內發送：${allowAppointmentDuringQuiet ? "是" : "否"}`}
         onPress={() => setAllowAppointmentDuringQuiet(value => !value)} disabled={!!busy} />
-      <Action label="保存個人通知偏好" disabled={!ready || !preferences || !timeZone.trim() || !timeValid.test(quietStart) || !timeValid.test(quietEnd)}
-        onPress={() => mutate("保存偏好", async signal => { await api.savePreferences({ timeZone: timeZone.trim(), quietStart, quietEnd, allowAppointmentDuringQuiet, expectedVersion: preferences!.version }, signal, userId); }, () => undefined)} />
+      {preferenceConflict && preferences && <View style={styles.confirmation}>
+        <Text style={styles.warning}>通知偏好已有新版本 {preferences.version}：{preferences.timeZone}，安靜時段 {preferences.quietStart}–{preferences.quietEnd}，預約例外{preferences.allowAppointmentDuringQuiet ? "開啟" : "關閉"}。本頁草稿仍保留。</Text>
+        <Action label="已比較最新版，保留草稿重新確認" disabled={!online || !!busy}
+          onPress={() => { preferenceBasis.current = preferences; setPreferenceConflict(false); }} />
+      </View>}
+      <Action label="保存個人通知偏好" disabled={!ready || preferenceConflict || !preferences || !timeZone.trim() || !timeValid.test(quietStart) || !timeValid.test(quietEnd)}
+        onPress={() => mutate("保存偏好", async signal => {
+          const saved = await api.savePreferences({ timeZone: timeZone.trim(), quietStart, quietEnd, allowAppointmentDuringQuiet, expectedVersion: preferenceBasis.current?.version ?? preferences!.version }, signal, userId);
+          preferenceBasis.current = saved; setPreferenceConflict(false);
+        }, () => undefined)} />
     </View>
   </View>;
 }

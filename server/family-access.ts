@@ -32,14 +32,14 @@ export async function withWorkspaceAccess<T>(pool: Pool, userId: string, workspa
 }
 
 export async function withChildAccess<T>(pool: Pool, userId: string, childId: string,
-  roles: readonly FamilyRole[], operation: (client: PoolClient, role: FamilyRole) => Promise<T>): Promise<T | null> {
+  roles: readonly FamilyRole[], operation: (client: PoolClient, role: FamilyRole, workspaceId: string) => Promise<T>, exclusive = false): Promise<T | null> {
   const row = (await pool.query<{ workspace_id: string }>("SELECT workspace_id FROM children WHERE id=$1", [childId])).rows[0];
   if (!row) return null;
   try {
     return await withWorkspaceAccess(pool, userId, row.workspace_id, roles, async (client, role) => {
       if (!(await client.query("SELECT 1 FROM children WHERE id=$1 AND workspace_id=$2", [childId, row.workspace_id])).rowCount) return null;
-      return operation(client, role);
-    });
+      return operation(client, role, row.workspace_id);
+    }, exclusive);
   } catch (error) { if (error instanceof FamilyError && error.status === 404) return null; throw error; }
 }
 

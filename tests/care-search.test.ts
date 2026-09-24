@@ -6,7 +6,7 @@ import { createStorageCipher } from "../server/storage-crypto.ts";
 
 const cipher = createStorageCipher(Buffer.alloc(32, 7));
 const childId = "f5aad9ca-7cda-4c06-9398-a0e01b09e690";
-function fixture(total: number, match: boolean) {
+function fixture(total: number, match: boolean, trackChanges = false) {
   const rows = Array.from({ length: total }, (_, index) => {
     const id = `15eb043b-d7a9-4b1c-afc1-${index.toString().padStart(12, "0")}`;
     return { id, child_id: childId, author_user_id: "owner", created_at: new Date("2026-09-01T00:00:00.123Z"), cursor_created_at: "2026-09-01T00:00:00.123456Z",
@@ -17,11 +17,12 @@ function fixture(total: number, match: boolean) {
     if (sql.startsWith("SELECT owner_user_id")) return { rows: [{ owner_user_id: "owner", access_version: 1 }] };
     if (sql.startsWith("SELECT 1 FROM children")) return { rows: [{}], rowCount: 1 };
     if (sql.startsWith("SELECT profile_version")) return { rows: [{ profile_version: 0 }] };
+    if (sql.startsWith("SELECT change_seq")) return { rows: [{ change_seq: "12" }] };
     if (sql.startsWith("SELECT *,to_char")) return { rows };
     return { rows: [], rowCount: 0 };
   } };
   const pool = { connect: async () => client, query: async () => ({ rows: [{ workspace_id: "family" }] }) } as unknown as Pool;
-  return { store: createCareStore(pool, cipher), rows };
+  return { store: createCareStore(pool, cipher, trackChanges), rows };
 }
 test("an empty bounded encrypted search continues from the last scanned row", async () => {
   const { store, rows } = fixture(201, false);
@@ -39,4 +40,11 @@ test("exhausted search pages expose no continuation", async () => {
   const { store } = fixture(2, true);
   const page = await store.search("owner", childId, { query: "目標" });
   assert.equal(page?.records.length, 2); assert.equal(page?.nextCursor, null);
+});
+
+test("online pagination carries its change sequence and refuses mixed-version pages", async () => {
+  const { store } = fixture(52, true, true);
+  const page = await store.search("owner", childId, {});
+  assert.equal(page?.nextCursor?.changeSeq, "12");
+  await assert.rejects(store.search("owner", childId, { cursor: { ...page!.nextCursor!, changeSeq: "11" } }), { code: "cursor_stale" });
 });
