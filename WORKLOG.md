@@ -765,3 +765,16 @@
 - Changes / Acceptance：SPEC 的 REQ-5-10、AC-GA／AC-KQ 及既有局部條款；docs/ARCHITECTURE、DATA_MODEL、API、DECISIONS；PLAN／STATUS／README 與本 LOG。P1 完成、部署執行版本及證據不變，P2 全部實作未開始；新增驗收情景是後續要求，不宣稱通過。
 - Verification：主模型文件檢查已通過 8 份需求／契約／概覽文件的 diff check、732 個既有錨點保留、48 工作包依賴無循環、P1 工作包列未改、P2 未開始及 Ready 僅 S06-W02／S10-W01；新增本 LOG 前唯一待解連結是本條錨點。ADR 歷史只追加；新增本條後再檢查全部連結及 WORKLOG 原位元組前綴。來源核對及有限驗收邊界見 ADR-010。
 - Limits / Next：未執行產品、Gemini、integration、E2E、部署或全量測試；沒有程式、Prompt Pack、美術、技術 Skill 或子代理設定改動。完成本文件包 review／PR／合併後保留 P1 已完成、P2 實作未開始，後續按依賴及適用驗收逐包推進。
+
+
+<a id="log-20260924-002"></a>
+## LOG-20260924-002
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；P2 ADK／向量 RAG 總計劃文件包，基線 master `c67d969`，分支 `codex/p2-adk-rag-design`。
+- Goal / Human Verification：使用者批准合併後總計劃，並回覆「先完成文件定案及合併（建議）」；其後明確要求指導／計劃文件及供 AI 使用的提示詞由主模型處理。沒有新增產品試玩、模型效果或臨床核驗。
+- Executor / AI Assistance：規劃階段一個 Luna Max 唯讀核查 ADK 官方原文；本次一個 Sol High 曾產生 PLAN／README 未 commit 草稿，收到使用者分工修正後已撤回，主模型從基線重新撰寫。最終所有文件由主模型直接修改及 review；不重做已有來源研究。
+- Actual Work：在既有權威文件整合 ADK 單 Agent 多步工具、Prompt Pack 接線、Server 權威及 session／長期記憶分離、確認／終態、生成／工具／查詢 embedding 限額與維護配額；將最小 pgvector RAG 核心提前到 P2，保留來源治理、關鍵詞補充、增量更新及必要恢復，P4 擴充同一核心的管理／規模／維運。新增 S11-W03 及 S11-W02 前置，兩條真實展示流程與其他 P2 功能共同驗收。
+- Changes：SPEC／ARCHITECTURE／DATA_MODEL／API 的 REQ／AC 與契約，PLAN／STATUS／README，追加 ADR-011 及本 LOG。AGENTS 加入指導／計劃／技術 Skill／所有 AI 提示詞由主模型親寫及核對的規則，取消技術 Skill 可交 Sol 撰寫的舊條款；三份 TOML 不改，既有 Prompt Pack／美術不重寫。
+- Verification：主模型 scoped diff 與引用／依賴 review 未發現未解決衝突；git diff --check 通過。追加本 LOG 前，9 份修改文件的 806 個既有錨點保留、65 個新增錨點、51 個新增／修改本地連結除本 LOG 待追加外有效；49 工作包無缺依賴或循環，P1 工作包列逐字保留，P2 全部未開始，Ready 為 S11-W03／S06-W02／S10-W01。追加後再核對 LOG 引用及歷史前綴；檢查程式位於工程外暫存目錄，不新增產品測試。
+- Preservation：歷史 ADR 及 WORKLOG 只追加，原正文／錨點不回寫；來源及未驗證限制由 ADR-011 連結至架構的官方研究依據。沒有程式碼、依賴、lockfile、部署、產品 prompt、素材或驗收證據檔案改動。
+- Limits / Next：未安裝 ADK／pgvector、生成向量、呼叫 Gemini／embedding、執行 integration／E2E 或變更部署。完成本文件包 PR／合併後保留 P1 已完成、P2 實作未開始；後續優先 S11-W03，真服務驗收另列範圍及成本批准，不沿用 P1 的批准。

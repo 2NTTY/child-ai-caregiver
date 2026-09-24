@@ -46,7 +46,7 @@
 Server 業務儲存須加密，備份獨立加密及核驗恢復；實際加密機制按工作包細化。Android 憑據使用平台安全儲存，Web 會話遵守安全會話設定。密鑰、密碼及恢復資料不寫入程式碼、日誌或一般導出。
 
 <a id="rule-3-2-11"></a>
-P1 最小 Server／PostgreSQL／Better Auth 先支援合成資料可玩流程，之後完成 Server 儲存加密及最小加密備份／還原；P2 加入家庭邀請、私人隔離、附件及持續 worker；P3 Android 重用 Server；P4 完成 pgvector 管理、Server 選擇、Windows 部署、完整遷移及災備。
+P1 最小 Server／PostgreSQL／Better Auth 先支援合成資料可玩流程，之後完成 Server 儲存加密及最小加密備份／還原；P2 加入家庭邀請、私人隔離、附件、持續 worker、ADK 及最小 pgvector RAG；P3 Android 重用 Server；P4 擴充既有 RAG 管理／規模及維運，完成 Server 選擇、Windows 部署、完整遷移及災備。
 
 <a id="p1-storage-protection"></a>
 ### P1 加密實作邊界（S05-W01，本機已驗證）
@@ -93,7 +93,49 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 - <a id="rule-3-6-09"></a>不把数据库直接暴露到公网；远程连接使用 HTTPS／WSS。
 
 - <a id="rule-3-6-10"></a>首次 Server／模型請求起便有登入及資源權限檢查、憑據隔離、應用配額、總開關及有限重試。供應商憑據只留 Server；日誌不記錄憑據、家庭正文或私人附件。
-- <a id="rule-3-6-11"></a>P1 交付最小 Server／PostgreSQL／Better Auth、Web 記錄聊天與 Gemini 簡單 prompt，階段結案時提供真 URL。P2 加入完整當前 orchestration、持續 worker、家庭權限、Web 附件、主動任務、Web Push／Telegram 及公共更新。P3 Android 重用同一 Server，P4 補完整部署／遷移／災備；不因使用 Server 而提前建立未需功能。
+- <a id="rule-3-6-11"></a>P1 交付最小 Server／PostgreSQL／Better Auth、Web 記錄聊天與 Gemini 簡單 prompt，階段結案時提供真 URL。P2 以 ADK 接通完整當前 orchestration、最小向量 RAG、持續 worker、家庭權限、Web 附件、主動任務、Web Push／Telegram 及公共更新。P3 Android 重用同一 Server，P4 補完整部署／遷移／災備及 RAG 維運擴充；不因使用框架而提前建立未需平台。
+
+<a id="p2-agent-runtime"></a>
+### 3.6A P2 ADK 產品 Agent（已定案，尚未實作）
+
+<a id="rule-adk-01"></a>
+採用 Google ADK TypeScript `@google/adk 2.1.0`，在現有 Node／GCP Compose Server 使用一個產品 `LlmAgent`／`Runner`；按受信入口、事件及所需任務配方暴露 `FunctionTool`，由 ADK 實際執行多步工具循環。S11-W03 先完成相容性基礎，S11-W02 才接通完整記憶／知識／任務能力。沿用 Node 24.19，npm 於 S11-W03 調整至 11.8.0 並同步建置及 lockfile；固定依賴、許可、現有 Gemini 型號／Vertex ADC／TypeScript 相容性須在接入驗證，不把本次文件當成安裝或實測。
+
+<a id="rule-adk-02"></a>
+Server 的 `AgentRuntime` 統一接收互動或 worker 事件，注入身份、孩子／資料空間、觸發及授權／資料版本、工具集合。ADK 處理理解、選擇工具及依結果繼續推理；每個工具處理器仍經 DataStore、KnowledgeRetriever、TaskExecutor 等服務校驗參數、權限、來源、終態及冪等後才執行。權威 SQL、排程及投遞不交給模型或框架 session。未知工具、非法參數及資料正文中的指令不能擴大能力。
+
+<a id="rule-adk-03"></a>
+產品 skills 是既有 [Prompt Pack manifest／配方](../prompts/README.md) 的任務指引、受限工具及輸出契約；依 manifest 組裝、依賴核對及去重，只載入所需正文並保留安全核心／香港育兒語氣。ADK 原生 SkillToolset 尚屬實驗性，首版核心不依賴它，也不宣稱已使用。開發技術 Skill 依 AGENTS 按需沉澱，不能代替產品配方或項目權威。
+
+<a id="rule-adk-04"></a>
+ModelGateway 的 ADK 接入保留原始 function call／response parts、呼叫關聯及 provider 必需的 opaque metadata，不能沿用 P1 的純文字 flatten／拒絕工具路徑。Vertex API v1、ADC、SDK 自動重試關閉、逾時／取消及每次調用配額由接入層維持；opaque metadata 不解讀、不展示、不寫入一般日誌。工具參數用 schema，候選／確認／背景結果按需結構化，一般聊天仍可自然文字；工具與最終 schema 若不支援同次組合，必要獨立收尾仍計入同一運行預算，不固定為每輪純聊天加一次呼叫。
+
+<a id="rule-adk-05"></a>
+ADK session 首版只保存單次運行協定上下文；Server 保存已確認事實、摘要、待確認事項及操作／投遞台帳。背景工作只取得可向目標範圍披露的已確認資料。回覆確認須重查原事項、內容版本及權限；重啟先核對既有操作／未知投遞，再由權威資料建立新運行，不依賴框架原生暫停續跑或恢復模型推理。重建 run 不重設邏輯工作原有的有限重試／跟進上限。
+
+<a id="rule-adk-06"></a>
+原生工具呼叫是本運行副作用入口；最終 `actionRequests` 或文字只是候選／結果語義，不再觸發第二次執行。工具已成功而文字生成失敗，按台帳交代已完成、未完成或 unknown。UI 只顯示經權限／版本核對的來源及工具／任務進度，不把模型內部推理或未核對串流當執行證據。
+
+<a id="p2-agent-budgets"></a>
+### 3.6B P2 初始有界運行配置
+
+| 限制 | 初始值／計算範圍 |
+|---|---|
+| 生成模型呼叫 | 每 run 最多 4 次，包含修正／獨立收尾 |
+| 工具調用 | 每 run 最多 8 次，失敗、被拒絕及未知工具嘗試也計入 |
+| 查詢 embedding | 每 run 最多 2 次 API 嘗試；相同查詢／模型／維度在該 run 內復用 |
+| 總期限 | 90 秒，模型、embedding 及工具共用同一 deadline |
+| 生成輸出 | 每次最多 1,024 output tokens |
+| 文字上下文 | 每次最多 32,000 字元，含指令、文字資料及工具 schema；不把字元當 token |
+
+<a id="rule-adk-07"></a>
+上述為 P2 接入初始配置，不能沿用 ADK 寬鬆預設或讓 SDK 隱藏重試。取消／到期阻止新操作，但不保證撤回已接受的外部投遞；保留並核對實際結果。超限時不靜默刪除必要授權、來源條件或未完成 call／response 配對，不擅自提高上限。
+
+<a id="rule-adk-08"></a>
+所有前景／背景／維護呼叫記實際使用量並受全局開關及配額控制，不能把整個 Agent run 當一次 API。語料向量建立是獨立、有有限批次及次數上限的維護工作，不套用每 run 兩次查詢限制；執行前預覽片段數及必要成本，未變 hash 不重算。P1 現網額度不因文件定案而上調；P2 啟用額度及真服務驗收另按批准範圍處理。
+
+<a id="p2-adk-evidence"></a>
+2026-09-24 已核對官方 [TypeScript 要求](https://adk.dev/get-started/typescript/)、[2.1.0 固定依賴／許可](https://github.com/google/adk-js/blob/adk-v2.1.0/core/package.json)、[模型接入](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/models/google_llm.ts)、[RunConfig](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/agents/run_config.ts)、[工具安全](https://adk.dev/safety/)及[實驗性 Skills](https://adk.dev/skills/)。這是文件／原文依據；真 Runner scripted 測試與真 Gemini 是不同驗收，不能假設其他語言的原生 resume／confirmation 行為已在本產品 TypeScript 路徑驗證。
 
 <a id="section-4-2"></a>
 ## 4.2 裝置授權與 Server 連接
@@ -152,7 +194,7 @@ P2 的孩子上下文保留年齡精度、日期基準及實際／矯正年齡�
 模型行動建議先與現有任務及當前授權比較。預先確認的對象、內容、渠道及 fallback 範圍內可自動建立、跟進及外發，毋須逐次人工確認；超出範圍才請求確認。普通聊天或外部內容不直接變更排程或執行授權。
 
 <a id="rule-5-5-11"></a>
-任務服務負責選人、時間、有限跟進及 fallback／升級決策；NotificationGateway adapter 只按已決定的收件人和內容投遞及回報證據。每次外發前核對授權版本、家庭成員權限、渠道綁定、任務終態及既有投遞；Telegram 接收者須先啟動 bot 並完成綁定。
+Agent 可從 Server 提供的合資格照顧者中提出選擇及理由；任務服務按明確指派、預設負責人及預授權備援規則核准，資料不足先補問，不猜測誰有空。任務服務仍負責時間、有限跟進及 fallback／升級決策；NotificationGateway adapter 只按已核准對象和內容投遞。每次外發前核對授權版本、家庭成員權限、渠道綁定、任務終態及既有投遞；Telegram 接收者須先啟動 bot 並完成綁定。
 
 <a id="rule-5-5-12"></a>
 渠道接受不等同送達、已讀或任務完成。已知可重試失敗按有限規則處理；結果未知先查核供應商回執或既有投遞，不盲目重發或換渠道。fallback 必須在預先授權範圍內，記錄原因與終止狀態；撤權、取消、完成或授權不符即停止。已被渠道接受的內容不能保證撤回，須如實記錄競態結果。
@@ -180,7 +222,7 @@ P2 的孩子上下文保留年齡精度、日期基準及實際／矯正年齡�
 **登记来源 → 获取正文 → 清洗 → 分段 → 保存版本 → 生成向量 → 审核发布 → 检索引用 → 检查更新。**
 
 <a id="rule-5-6-09"></a>
-知識分三層交付：S10-W01／P2 小型可引用官方檢索；S10-W02／P2 公共來源最小排程更新；S10-W03／P4 完整管理頁、pgvector、向量重建、發布及停用管線。PostgreSQL 自 P1 起使用，完整向量管線不是早期前置。
+知識分三層交付：S10-W01／P2 直接建立小型官方 pgvector RAG 核心，含 embedding、版本、核對發布、停用及必要恢復；S10-W02／P2 接共用 worker 作公共來源排程及受影響片段更新；S10-W03／P4 擴充完整管理頁、大規模導入、批量重建管理、效能及完整遷移。三者沿用同一份知識／向量／引用，不建另一套過渡核心。P2 可用可重複執行的匯入、核對及發布指令，不提前建管理平台。
 
 <a id="rule-5-6-10"></a>
 P2 問答 orchestration 必須取得適用的已發布官方片段及引用識別，限制模型只引用提供的證據；Server 校驗引用存在、版本／適用條件及來源啟用狀態，缺失時拒絕無依據的具體建議並呈現限制。每項重要說法是否真正獲片段支持仍須在內容 review 及驗收中核對，不把 metadata 校驗當成語義正確性保證。純澄清／操作確認／家庭資料回述不硬配公共引用；近期資訊保留分類邊界。
@@ -191,12 +233,15 @@ P2 問答 orchestration 必須取得適用的已發布官方片段及引用識�
 <a id="section-5-7"></a>
 ## 5.7 向量检索与更新
 
-- <a id="rule-5-7-01"></a>使用 PostgreSQL＋pgvector，减少额外服务依赖。
-- <a id="rule-5-7-02"></a>初始 embedding 使用 `gemini-embedding-001`、1024 维。
+<a id="p2-vector-rag"></a>
+P2 最小向量 RAG 的資料／接口語義分別見 [DATA_MODEL](DATA_MODEL.md#knowledge-vector-model)／[API](API.md#knowledge-retrieval-contract)，此處維護選型及處理次序。
+
+- <a id="rule-5-7-01"></a>P2 在現有 PostgreSQL 18.6 同 major 映像加入固定版本 pgvector；固定版本及許可在 S10-W01 落實，保留資料目錄及既有正文保護。備份與空庫還原目標須具備相容擴展；本次文件不代表已升級或驗證。
+- <a id="rule-5-7-02"></a>初始 embedding 使用 `gemini-embedding-001`、1024 維，沿用 Server Vertex ADC；文件使用 RETRIEVAL_DOCUMENT，查詢使用 RETRIEVAL_QUERY。超長內容重新分段，不靜默截斷限定條件；只向量化公共知識，不注入整份聊天／孩子檔案。
 - <a id="rule-5-7-03"></a>按标题和语义分段，保留限定条件及必要上下文。
-- <a id="rule-5-7-04"></a>先按年龄、主题和已发布状态过滤，再做语义检索。
-- <a id="rule-5-7-05"></a>同时保留标题及主题关键词匹配。
-- <a id="rule-5-7-06"></a>初始每次取约六个相关片段，再按上下文预算裁剪。
+- <a id="rule-5-7-04"></a>先按年齡依據／精度、地區、主題、知識分類、已發布及有效版本作硬性過濾，再以 cosine distance 做精確向量搜尋；相似度不繞過適用條件。小型庫先不用近似索引，後續按實測延遲／規模加入 HNSW 等索引，沿用既有向量。
+- <a id="rule-5-7-05"></a>同時保留標題及主題關鍵詞匹配，與向量檢索共用硬性過濾，以 RRF 合併排序及去重；關鍵詞為長期補充，不另建資料模型。
+- <a id="rule-5-7-06"></a>每次最多提供六個相關片段，按上下文預算保留完整必要條件；不足便補問／明示限制，不將最近似片段當正確答案，也不為湊數放入無關內容。
 - <a id="rule-5-7-07"></a>答案引用具体来源片段，不能只附一个无关首页链接。
 
 <a id="rule-5-7-08"></a>
@@ -213,6 +258,12 @@ P2 問答 orchestration 必須取得適用的已發布官方片段及引用識�
 - <a id="rule-5-7-17"></a>發佈／修訂時間、擷取時間與最後成功檢查時間分開保存；近期來源超過 24 小時未成功查核不得稱為最新。官方有效期另存，七日窗口不得當成官方或法定期限；缺來源發布日期不以抓取時間代填。
 - <a id="rule-5-7-18"></a>已知失效來源停用；抓取失敗保留最後成功版本及狀態。近期資訊只供按需展示與引用，不寫入長期育兒規則、孩子事實或自動家庭任務。
 - <a id="rule-5-7-19"></a>共用抓取與引用工具，不合併兩類的發布／檢索／快取有效性。快取結果也須檢查分類、查詢窗口、來源版本、停用及新鮮度；讀取快取不刷新成功查核時間。P2 不為更新來源建立消息隊列、完整爬取平台或新聞分析服務。
+
+<a id="rule-5-7-20"></a>
+embedding 暫時不可用時，可返回仍符合相同條件的關鍵詞結果並標示降級／原因；不足時明示限制。降級不算向量流程通過。候選新版須完成核對及向量生成才發布；生成失敗不冒充完成，已知失效舊版即停用，歷史引用仍能追溯。
+
+<a id="p2-rag-evidence"></a>
+2026-09-24 核對 [pgvector 精確搜尋／過濾及索引](https://github.com/pgvector/pgvector#querying)、[固定版本建置參考](https://github.com/pgvector/pgvector/blob/v0.8.6/Dockerfile)、[Gemini embedding 維度](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/get-text-embeddings)及[task types](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/task-types)。S10-W01 仍須核對固定版本與本產品 GenAI SDK／地區的實際接線、資料保留及備份還原；本次沒有建立向量、下載映像或呼叫服務。技術 Skill 待真正接入時按 AGENTS 整理，文件依據不當作實測證據。
 
 <a id="section-5-8"></a>
 ## 5.8 摘要与报告

@@ -196,3 +196,18 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 - 契約及工作包：[ARCHITECTURE](ARCHITECTURE.md#growth-attention-flow)、[DATA_MODEL](DATA_MODEL.md#growth-attention-model)、[API](API.md#growth-attention-contract) 定義必要語義，不預建完整 schema／路由。既有 P2 包承接年齡／確認／角色／引用／提醒控制；新增 [S13-W08](../PLAN.md#s13-w08)，前置 S11-W02，並加入 S13-W07 前置及 S16-W02 驗收。全數 P2 實作仍未開始。
 - 保留／替代：局部修訂原產品定位、P2 關注及驗收要求；ADR-008 的 Server 唯一權威、預授權外發、終態及私人隔離繼續有效。P2 小型官方檢索、P4 完整 pgvector／遷移不變；本輪不改 AGENTS、模型設定、程式碼、Prompt Pack 或美術。後續 P2 包復用已合併 Pack，只隨能力接線作必要適配。
 - 驗證／實施：本次僅文件 diff、錨點／連結、依賴及歷史保留檢查；產品情景由 [成長關注 AC](../SPEC.md#ac-growth-attention)及[回答依據 AC](../SPEC.md#ac-p2-knowledge)維護，在相應 P2 包驗收，不以文件完成宣稱功能通過。
+
+
+<a id="adr-011"></a>
+## ADR-011 — P2 ADK 產品 Agent 與最小向量 RAG
+
+- 日期／狀態：2026-09-24，已確認；使用者批准合併後的總計劃，並確認本輪只做文件定案及合併。P1 已完成，P2 實作未開始；套件、映像、模型及產品效果均不因文件採納而視為已驗證。
+- 原因：比賽重點是能調用工具、使用孩子記憶及可靠知識、在預授權內聯絡並追蹤結果的產品 Agent。使用者沒有向量 RAG 比賽硬性要求，但希望直接建立可延續的最終核心，避免先做日後要拆掉的替代品。
+- Agent 決定：採 Google ADK TypeScript 的單一 LlmAgent／Runner／FunctionTool，復用既有 Prompt Pack；框架編排推理與工具循環，Server 仍掌管身份、確認事實、任務、授權、冪等及投遞。ADK session 只作單次協定上下文，恢復依持久台帳，不把 session 當長期記憶或依賴未驗證的原生 resume。SkillToolset 尚屬實驗性，產品 skills 首版採配方與受限工具集合。
+- 有界接入：S11-W03 核對 ADK 2.1.0、Node 24.19／npm 11.8.0、固定依賴許可及 Vertex／現有 Gemini／TypeScript 相容性，保留完整工具 parts；配置只由[架構](ARCHITECTURE.md#p2-agent-budgets)維護，SDK 隱藏重試關閉，每次生成／embedding／工具都受適用上限及全局控制。現網 P1 配額不隨本次修改上調。
+- RAG 決定：P2 S10-W01 加入既有 PostgreSQL 同 major 的固定 pgvector、gemini-embedding-001／1024 維、精確向量搜尋及標題／主題關鍵詞 RRF 補充；同一份經核對的公共片段／版本／適用性／發布停用／引用延續到 P4。來源治理原本就需在 P2 交付，新增向量接入有復用價值；小型庫先不需近似索引。家庭記憶不順帶向量化，相似度不替代支持證據或成長規則。
+- P4 邊界：完整管理介面、大規模導入、批量重建管理、效能擴展及完整遷移沿用 P2 核心；P2 必須已有發布／停用、局部更新及擴展備份還原能力，不能以 P4 維運為由延後必要正確性。
+- 保留／替代：明確取代 ADR-007／ADR-010 中把 pgvector 核心及全部向量管線留待 P4 的範圍文字；上述 ADR 的來源分類／有效性、ADR-008 的唯一 Server／預授權外發，以及 ADR-010 的非醫療分流、資料確認、私人隔離、成長關注與家長控制均保留。歷史 ADR 與 WORKLOG 不回寫，現行全文只在各權威文件維護。
+- 工作包／驗收：新增 S11-W03（前置 S17-W01），S11-W02 增加此前置並保留 S09-W02／S13-W04／S10-W02；S10-W01／W02／W03 調整 RAG 核心、更新及維運分工，其餘 P2 依賴及照片／分享／摘要等功能保留。新增 [Agent AC](../SPEC.md#ac-p2-agent-loop)及[向量 AC](../SPEC.md#ac-p2-vector-rag)；兩條真實展示流程不能代替全部 P2 功能驗收。
+- 證據／限制：沿用本次規劃已核對的 [ADK 官方／固定版本來源](ARCHITECTURE.md#p2-adk-evidence)及 [pgvector／embedding 來源](ARCHITECTURE.md#p2-rag-evidence)。本文件包只做 diff、連結／錨點、依賴及歷史保留核對；未安裝依賴、生成向量、呼叫 Gemini 或變更部署。後續真 DB、模型／embedding、渠道及瀏覽器驗收另列原因、範圍及成本取得批准，不沿用 P1 批准。
+- 本輪分工補充：使用者進一步指定指導文件、計劃及供 AI 使用的提示詞由主模型親自撰寫／修改；現行規則已加入 [AGENTS](../AGENTS.md#models)，同時取消技術 Skill 可委派 Sol 撰寫的條款。三份 TOML 與既有 Prompt Pack 不改，不回寫舊 ADR 的當時政策。
