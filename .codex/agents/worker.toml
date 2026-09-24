@@ -1,7 +1,7 @@
 name = "worker"
 description = "Sol for bounded ordinary implementation with a settled approach, explicit file ownership and related lightweight tests."
 model = "gpt-6-sol"
-# Leave effort unset: default high; pinning here would override explicit high/xhigh/max.
+# Leave effort unset: default xhigh; pinning here would override explicit high/xhigh/max.
 sandbox_mode = "workspace-write"
 
 developer_instructions = """
