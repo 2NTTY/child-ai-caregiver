@@ -14,11 +14,11 @@ export function useRecordsBrowser(controller: RecordsController, apiBaseUrl: str
     controller.setOnline(window.navigator.onLine);
     void controller.restoreSession();
 
-    const online = () => controller.setOnline(true);
+    const online = () => { controller.setOnline(true); void controller.reloadChildren(); };
     const offline = () => controller.setOnline(false);
     const focus = () => {
       if (document.visibilityState === "visible" && controller.getSnapshot().online && controller.getSnapshot().auth === "signedIn") {
-        void controller.restoreSession();
+        void controller.reloadChildren();
       }
     };
     const beforeUnload = (event: BeforeUnloadEvent) => {

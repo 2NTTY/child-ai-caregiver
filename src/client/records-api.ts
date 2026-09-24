@@ -1,4 +1,6 @@
 import type { Child, RecordList, TextRecord } from "../shared/records.ts";
+import type { OnlineReceipt } from "../shared/online.ts";
+import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export interface SessionUser {
   id: string;
@@ -16,11 +18,15 @@ export type AuthMode = "signIn" | "signUp";
 
 export class ClientApiError extends Error {
   readonly status: number;
+  readonly onlineCode: string | null;
+  readonly confirmed: boolean;
 
-  constructor(status = 0) {
+  constructor(status = 0, onlineCode: string | null = null, confirmed = false) {
     super("Server request could not be confirmed");
     this.name = "ClientApiError";
     this.status = status;
+    this.onlineCode = onlineCode;
+    this.confirmed = confirmed;
   }
 }
 
@@ -33,6 +39,9 @@ export interface RecordsApi {
   deleteChild(childId: string, signal: AbortSignal, expectedUserId: string): Promise<void>;
   listRecords(childId: string, signal: AbortSignal): Promise<RecordList>;
   createRecord(childId: string, text: string, signal: AbortSignal, expectedUserId: string): Promise<TextRecord>;
+  reconcilePending?(signal: AbortSignal, userId: string): Promise<OnlineReceipt | { state: "unconfirmed" } | null>;
+  resetOnline?(): void;
+  hasPendingOnline?(): boolean;
 }
 
 function object(value: unknown): value is Record<string, unknown> {
@@ -61,6 +70,29 @@ function record(value: unknown): value is TextRecord {
 export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch): RecordsApi {
   const base = baseUrl.replace(/\/$/, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
+  const online = createOnlineTransport(apiUrl, fetcher);
+  let observedUserId: string | null = null;
+
+  async function onlineCall<T>(signal: AbortSignal, action: (outerSignal: AbortSignal) => Promise<T>): Promise<T> {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) controller.abort();
+    const timeout = setTimeout(abort, 20_000);
+    try { return await action(controller.signal); }
+    catch (error) {
+      if (error instanceof OnlineTransportError) throw new ClientApiError(error.status, error.code, error.confirmed);
+      throw new ClientApiError();
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abort);
+    }
+  }
+  function mutate(path: string, body: unknown, signal: AbortSignal, userId: string): Promise<unknown> {
+    observedUserId = userId;
+    return onlineCall(signal, outerSignal => online.submit({ path: `/api${path}`, payload: body }, outerSignal, userId));
+  }
+  function resetOnline(): void { online.reset(); observedUserId = null; }
 
   async function request(path: string, signal: AbortSignal, body?: unknown, expectedUserId?: string): Promise<unknown> {
     const controller = new AbortController();
@@ -94,6 +126,9 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch)
   }
 
   return {
+    reconcilePending: (signal, userId) => onlineCall(signal, outerSignal => online.checkPending(outerSignal, userId)),
+    resetOnline,
+    hasPendingOnline: () => online.hasPending(),
     async getSession(signal) {
       const value = await request("/auth/get-session", signal);
       if (value === null) return null;
@@ -101,6 +136,8 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch)
         || typeof value.user.name !== "string" || typeof value.user.email !== "string") {
         throw new ClientApiError();
       }
+      if (observedUserId !== null && observedUserId !== value.user.id) online.reset();
+      observedUserId = value.user.id;
       return { id: value.user.id, name: value.user.name, email: value.user.email };
     },
     async authenticate(mode, input, signal) {
@@ -109,6 +146,7 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch)
     },
     async signOut(signal) {
       await request("/auth/sign-out", signal, {});
+      resetOnline();
     },
     async listChildren(signal) {
       const value = await request("/children", signal);
@@ -118,12 +156,12 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch)
       return value.children;
     },
     async createChild(displayName, signal, expectedUserId) {
-      const value = await request("/children", signal, { displayName }, expectedUserId);
+      const value = await mutate("/children", { displayName }, signal, expectedUserId);
       if (!object(value) || !child(value.child) || value.child.displayName !== displayName) throw new ClientApiError();
       return value.child;
     },
     async deleteChild(childId, signal, expectedUserId) {
-      const value = await request(`/children/${encodeURIComponent(childId)}/delete`, signal, { confirmChildId: childId }, expectedUserId);
+      const value = await mutate(`/children/${encodeURIComponent(childId)}/delete`, { confirmChildId: childId }, signal, expectedUserId);
       if (!object(value) || value.deleted !== true || value.childId !== childId) throw new ClientApiError();
     },
     async listRecords(childId, signal) {
@@ -137,7 +175,7 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch)
       return { records: value.records, limit: value.limit as number };
     },
     async createRecord(childId, text, signal, expectedUserId) {
-      const value = await request(`/children/${encodeURIComponent(childId)}/records`, signal, { text }, expectedUserId);
+      const value = await mutate(`/children/${encodeURIComponent(childId)}/records`, { text }, signal, expectedUserId);
       if (!object(value) || !record(value.record) || value.record.childId !== childId || value.record.text !== text) {
         throw new ClientApiError();
       }

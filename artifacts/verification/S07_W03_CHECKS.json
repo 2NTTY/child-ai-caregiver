@@ -1,0 +1,65 @@
+{
+  "package": "S07-W03",
+  "date": "2026-09-24",
+  "timezone": "Asia/Hong_Kong",
+  "baseCommit": "1df0745780a9fd3aede05659aec1326de3f0c699",
+  "prerequisites": ["S06-W02 (PR #31)", "S05-W02 (PR #32)"],
+  "status": "required acceptance passed; completion takes effect on PR merge",
+  "implementation": {
+    "operationReceipt": "Authenticated user/opId uniqueness, canonical encrypted request fingerprint, atomic business/change/receipt commit on one connection, current permissions and storageEpoch rechecked",
+    "client": "Page-memory pending operation, receipt lookup before explicit same-operation retry, no text-equality inference or durable outbox",
+    "deletion": "Deleted content redacts receipt results; minimal operation identity prevents replay from recreating the original child or records",
+    "updates": "Content-free scoped change feed; visible-page periodic/focus/reconnect reads; version conflicts and stale care pages require review",
+    "compatibility": "Migration 010 gates new routes/tracking; legacy endpoints remain available without claiming receipt idempotency",
+    "exclusions": ["unmerged S09 memory", "unmerged S10 RAG", "model calls inside transactions", "notifications", "durable offline storage"]
+  },
+  "lightweightChecks": {
+    "counting": "Batches include targeted reruns; counts must not be added as a unique-test total",
+    "serverAndAccessBatch": { "passed": 11, "scope": "online-server, family-access and care-search unit checks" },
+    "relatedRegressionBatch": { "passed": 53, "scope": "existing affected care/family/chat APIs, reply and client controller behavior; scripted dependencies only" },
+    "transportBatch": { "passed": 11, "scope": "online transport identity, receipt recovery, bounded concurrency and known errors" },
+    "adapterBatch": { "passed": 16, "scope": "affected client adapters and deletion behavior; subsequent targeted fixes rechecked" },
+    "finalControllerSubset": { "passed": 7, "scope": "receipt recovery, storage epoch, save confirmation, rejection, expired identity and session-read outage after a confirmed chat save" },
+    "clientTypecheck": "passed",
+    "serverTypecheck": "passed",
+    "acceptanceScriptSyntax": "passed",
+    "uiReview": "Source review only; no browser E2E or claim of executed visual interaction"
+  },
+  "localPostgresAcceptance": {
+    "approval": "User explicitly approved this S07 run: existing encrypted synthetic PostgreSQL, migration 010, at most 60 HTTP requests, 3 accounts/1 child/3 care records/1 chat; delete only that new child",
+    "environment": { "node": "24.19.0", "postgres": "18.6-bookworm", "container": "ai-postgres-test-1", "keys": "Existing protected files outside the repository; paths and credentials not recorded here" },
+    "migrationApplied": "010-online-operations",
+    "firstRun": {
+      "command": "node --env-file=<existing-synthetic-env> scripts/verify-online.mjs --approved-online",
+      "passedGroups": 8,
+      "httpAttempts": 45,
+      "stoppedAt": "server_restart_and_record_erasure, first post-restart HTTP lookup",
+      "limitation": "Original harness emitted no error detail. Its exact transient failure cause was not retained; it is not reported as a proven product or transport defect. Read-only lookup afterwards confirmed the original receipt and record persisted."
+    },
+    "boundedResume": {
+      "passedGroups": 4,
+      "additionalHttpAttempts": 9,
+      "method": "One-off local recovery using the same synthetic child, records, original operations and real Better Auth. Existing synthetic session token was re-signed for the replacement harness secret; no auth bypass or new session/account. HTTP connections explicitly closed between requests.",
+      "checks": ["Fresh HTTP receipt lookup, then another actual Server/pool restart and identical receipt", "Delete the original new record and confirm receipt redaction/tombstone", "Delete only the original new child; lookup and replay its create operation return confirmed/null without recreation", "All non-test-child rows unchanged during resume; existing storage encryption verification passed"],
+      "newAccounts": 0,
+      "newChildren": 0,
+      "newRecords": 0,
+      "newChatMessages": 0
+    },
+    "totalHttpAttempts": 54,
+    "accountsCreated": 3,
+    "childrenCreated": 1,
+    "recordsCreated": 3,
+    "chatMessagesCreated": 1,
+    "covered": ["simultaneous same-op creates commit once", "different opIds with identical text remain distinct events", "payload/epoch mismatch", "viewer write rejection and receipt isolation", "optimistic version conflict and stale-page rejection", "profile receipt erasure", "private chat change filtering and encrypted receipts", "revocation blocks lookup/replay/change feed", "restart persistence", "delete does not resurrect"],
+    "preservationLimit": "Initial before-snapshot was lost when the first harness exited; do not claim a completed byte-for-byte initial-baseline comparison. Operations were scoped to the new child; all remaining storage decrypts, and the resume compared every unrelated business row without changes.",
+    "deletedOnlyNewSyntheticChild": true,
+    "databaseCleared": false,
+    "modelCalls": 0,
+    "notificationCalls": 0,
+    "privateBodiesLogged": false
+  },
+  "reviewFixes": ["Read receipt again after acquiring parent lock so concurrent deletion cannot expose an earlier unredacted copy", "Do not erase known chat save identity after a later session-read failure", "Conflict recovery reads cannot become false write acknowledgements", "Dirty preference input keeps its original version for explicit comparison", "Periodic visible reads recover invalidations missed while UI is busy", "Do not break legacy routes or databases before migration 010"],
+  "notExecuted": ["browser E2E", "deployment", "full regression suite", "new backup/restore exercise", "S09 integration", "S10 pgvector/embedding acceptance"],
+  "p2Complete": false
+}

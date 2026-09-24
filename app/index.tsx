@@ -9,7 +9,10 @@ import { ChatController } from "../src/client/chat-controller";
 import { ChatPanel } from "../src/client/ChatPanel";
 import { FamilyPanel } from "../src/client/FamilyPanel";
 import { CarePanel } from "../src/client/CarePanel";
+import { MemoryPanel } from "../src/client/MemoryPanel";
+import { createMemoryApi } from "../src/client/memory-api";
 import { retainCareScope, type CareScope } from "../src/client/care-scope";
+import { useOnlineUpdates } from "../src/client/use-online-updates";
 
 function Action({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
@@ -26,6 +29,7 @@ function dateTime(value: string): string {
 
 export default function HomeScreen() {
   const [recordsApi] = useState(() => createRecordsApi(environment.apiBaseUrl));
+  const [memoryApi] = useState(() => createMemoryApi(environment.apiBaseUrl));
   const [chatController] = useState(() => new ChatController(createChatApi(environment.apiBaseUrl, recordsApi.getSession)));
   const [controller] = useState(() => new RecordsController(recordsApi, true, {
     begin: childId => chatController.beginChildDeletion(childId),
@@ -49,6 +53,10 @@ export default function HomeScreen() {
   retainedCare.current = retainCareScope(retainedCare.current, state);
   const careScope = retainedCare.current;
   const careVisible = state.auth === "signedIn" && child?.id === careScope?.child.id && !deleting;
+  useOnlineUpdates(environment.apiBaseUrl, state.auth === "signedIn" ? state.user!.id : null, state.online, async () => {
+    await controller.reloadChildren();
+    await chatController.reloadMessages();
+  });
 
   useEffect(() => {
     if (state.user) {
@@ -172,8 +180,8 @@ export default function HomeScreen() {
               {state.childMessage && <Text accessibilityLiveRegion="polite" style={styles.warning}>{state.childMessage}</Text>}
               {uncertainChild && <Text style={styles.hint}>請先使用「重新讀取孩子列表」核對這次建立是否已完成。</Text>}
               {state.childOutcome === "checked" && <View style={styles.row}>
-                <Action label="已找到孩子，清除稱呼" onPress={() => controller.resolveUnknownChild(true)} disabled={busy || state.childrenLoading} />
-                <Action label="已核對未見孩子，解鎖重試" onPress={() => controller.resolveUnknownChild(false)} disabled={busy || state.childrenLoading} />
+                {!controller.usesOnlineReceipts() && <Action label="已找到孩子，清除稱呼" onPress={() => controller.resolveUnknownChild(true)} disabled={busy || state.childrenLoading} />}
+                <Action label="尚無確認，保留原操作重試" onPress={() => controller.resolveUnknownChild(false)} disabled={busy || state.childrenLoading} />
               </View>}
             </View>
 
@@ -202,6 +210,9 @@ export default function HomeScreen() {
             online={state.online && careVisible} apiBaseUrl={environment.apiBaseUrl}
             onChanged={() => { void controller.reloadRecords(); }}
             onAccessLost={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />
+          <MemoryPanel key={`memory:${careScope.userId}:${careScope.child.id}`} userId={careScope.userId} childId={careScope.child.id}
+            role={careScope.child.accessRole} api={memoryApi} active={state.online && careVisible}
+            onSessionChanged={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />
         </View>}
         <ChatPanel controller={chatController} auth={state.auth} userId={state.user?.id ?? null} online={state.online} child={deleting ? null : child ?? null} />
       </View>

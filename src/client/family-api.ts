@@ -1,12 +1,18 @@
 import type { FamilyInvitation, FamilySpace, InvitationPreview, MemberRole, NotificationPreferences } from "../shared/family.ts";
 import type { Child } from "../shared/records.ts";
+import type { OnlineReceipt } from "../shared/online.ts";
+import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export class FamilyApiError extends Error {
   readonly status: number;
-  constructor(status = 0) {
+  readonly onlineCode: string | null;
+  readonly confirmed: boolean;
+  constructor(status = 0, onlineCode: string | null = null, confirmed = false) {
     super("Family request could not be confirmed");
     this.name = "FamilyApiError";
     this.status = status;
+    this.onlineCode = onlineCode;
+    this.confirmed = confirmed;
   }
 }
 
@@ -21,6 +27,9 @@ export interface FamilyApi {
   previewInvitation(token: string, signal: AbortSignal, userId: string): Promise<InvitationPreview>;
   acceptInvitation(token: string, confirmWorkspaceId: string, signal: AbortSignal, userId: string): Promise<void>;
   createChild(familyId: string, displayName: string, signal: AbortSignal, userId: string): Promise<Child>;
+  reconcilePending?(signal: AbortSignal, userId: string): Promise<OnlineReceipt | { state: "unconfirmed" } | null>;
+  resetOnline?(): void;
+  hasPendingOnline?(): boolean;
 }
 
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -43,6 +52,24 @@ function checked<T>(value: unknown, guard: (value: unknown) => value is T): T {
 export function createFamilyApi(baseUrl: string, fetcher: typeof fetch = fetch): FamilyApi {
   const base = baseUrl.replace(/\/$/, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
+  const online = createOnlineTransport(apiUrl, fetcher);
+  async function onlineCall<T>(signal: AbortSignal, action: (outerSignal: AbortSignal) => Promise<T>): Promise<T> {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) controller.abort();
+    const timeout = setTimeout(abort, 20_000);
+    try { return await action(controller.signal); }
+    catch (error) {
+      if (error instanceof OnlineTransportError) throw new FamilyApiError(error.status, error.code, error.confirmed);
+      throw new FamilyApiError();
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abort);
+    }
+  }
+  const mutate = (path: string, payload: unknown, signal: AbortSignal, userId: string) =>
+    onlineCall(signal, outerSignal => online.submit({ path: `/api${path}`, payload }, outerSignal, userId));
   async function request(path: string, signal: AbortSignal, body?: unknown, userId?: string): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -67,6 +94,9 @@ export function createFamilyApi(baseUrl: string, fetcher: typeof fetch = fetch):
   }
   const familyPath = (familyId: string) => `/families/${encodeURIComponent(familyId)}`;
   return {
+    reconcilePending: (signal, userId) => onlineCall(signal, outerSignal => online.checkPending(outerSignal, userId)),
+    resetOnline: () => online.reset(),
+    hasPendingOnline: () => online.hasPending(),
     async getSession(signal) {
       const value = await request("/auth/get-session", signal);
       if (value === null) return null;
@@ -84,21 +114,21 @@ export function createFamilyApi(baseUrl: string, fetcher: typeof fetch = fetch):
       return checked(value.preferences, preferences);
     },
     async savePreferences(input, signal, userId) {
-      const value = await request("/notification-preferences", signal, input, userId);
+      const value = await mutate("/notification-preferences", input, signal, userId);
       if (!object(value)) throw new FamilyApiError();
       return checked(value.preferences, preferences);
     },
     async createInvitation(familyId, email, inviteRole, expectedVersion, signal, userId) {
-      const value = await request(`${familyPath(familyId)}/invitations`, signal, { email, role: inviteRole, expectedVersion }, userId);
+      const value = await mutate(`${familyPath(familyId)}/invitations`, { email, role: inviteRole, expectedVersion }, signal, userId);
       if (!object(value) || !invitation(value.invitation) || typeof value.token !== "string" || !value.token) throw new FamilyApiError();
       return { invitation: value.invitation, token: value.token };
     },
     async revokeInvitation(familyId, inviteId, expectedVersion, signal, userId) {
-      const value = await request(`${familyPath(familyId)}/invitations/${encodeURIComponent(inviteId)}/revoke`, signal, { expectedVersion }, userId);
+      const value = await mutate(`${familyPath(familyId)}/invitations/${encodeURIComponent(inviteId)}/revoke`, { expectedVersion }, signal, userId);
       if (!object(value) || value.updated !== true) throw new FamilyApiError();
     },
     async changeMember(familyId, memberUserId, memberRole, expectedVersion, signal, userId) {
-      const value = await request(`${familyPath(familyId)}/members/${encodeURIComponent(memberUserId)}`, signal, { role: memberRole, expectedVersion }, userId);
+      const value = await mutate(`${familyPath(familyId)}/members/${encodeURIComponent(memberUserId)}`, { role: memberRole, expectedVersion }, signal, userId);
       if (!object(value) || value.updated !== true) throw new FamilyApiError();
     },
     async previewInvitation(token, signal, userId) {
@@ -107,11 +137,11 @@ export function createFamilyApi(baseUrl: string, fetcher: typeof fetch = fetch):
       return checked(value.invitation, preview);
     },
     async acceptInvitation(token, confirmWorkspaceId, signal, userId) {
-      const value = await request("/families/invitations/accept", signal, { token, confirmWorkspaceId }, userId);
+      const value = await mutate("/families/invitations/accept", { token, confirmWorkspaceId }, signal, userId);
       if (!object(value) || value.joined !== true) throw new FamilyApiError();
     },
     async createChild(familyId, displayName, signal, userId) {
-      const value = await request(`${familyPath(familyId)}/children`, signal, { displayName }, userId);
+      const value = await mutate(`${familyPath(familyId)}/children`, { displayName }, signal, userId);
       if (!object(value)) throw new FamilyApiError();
       const created = checked(value.child, child);
       if (created.workspaceId !== familyId || created.displayName !== displayName) throw new FamilyApiError();

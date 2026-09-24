@@ -4,6 +4,7 @@ import type { FamilyInvitation, FamilySpace, InvitationPreview, MemberRole, Noti
 import { DEFAULT_NOTIFICATION_PREFERENCES } from "../src/shared/family.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { FamilyError, READ_ROLES, requireFamilyVersion, withWorkspaceAccess } from "./family-access.ts";
+import { appendOnlineChange } from "./online-change.ts";
 
 interface InviteRow {
   id: string; workspace_id: string; email_encrypted: string; role: MemberRole; expires_at: Date;
@@ -13,7 +14,7 @@ const emailContext = (row: Pick<InviteRow, "id" | "workspace_id">) => `family-in
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 const emailKey = (email: string) => email.trim().toLowerCase();
 
-export function createFamilyStore(pool: Pool, cipher: StorageCipher) {
+export function createFamilyStore(pool: Pool, cipher: StorageCipher, trackChanges = false) {
   function invitation(row: InviteRow): FamilyInvitation {
     return { id: row.id, email: cipher.decrypt(row.email_encrypted, emailContext(row)), role: row.role,
       expiresAt: row.expires_at.toISOString(), status: row.revoked_at ? "revoked" : row.accepted_at ? "accepted"
@@ -42,6 +43,7 @@ export function createFamilyStore(pool: Pool, cipher: StorageCipher) {
         await client.query("INSERT INTO family_members(workspace_id,user_id,role) VALUES($1,$2,$3)", [row.workspace_id, userId, row.role]);
         await client.query("UPDATE family_invitations SET accepted_at=now(),accepted_by=$2 WHERE id=$1", [row.id, userId]);
         await client.query("UPDATE workspaces SET access_version=access_version+1 WHERE id=$1", [row.workspace_id]);
+        if (trackChanges) await appendOnlineChange(client, row.workspace_id, "family");
       }
       const owner = (await client.query<{ name: string }>('SELECT name FROM "user" WHERE id=$1', [space.owner_user_id])).rows[0];
       await client.query("COMMIT");
@@ -78,6 +80,7 @@ export function createFamilyStore(pool: Pool, cipher: StorageCipher) {
         const row = (await client.query<InviteRow>(`INSERT INTO family_invitations(id,workspace_id,token_hash,email_encrypted,role,created_by)
           VALUES($1,$2,$3,$4,$5,$6) RETURNING *`, [id, workspaceId, hashToken(token), cipher.encrypt(emailKey(email), emailContext({ id, workspace_id: workspaceId })), role, userId])).rows[0];
         await client.query("UPDATE workspaces SET access_version=access_version+1 WHERE id=$1", [workspaceId]);
+        if (trackChanges) await appendOnlineChange(client, workspaceId, "family", null, false, null, true);
         return { invitation: invitation(row), token };
       }, true);
     },
@@ -88,6 +91,7 @@ export function createFamilyStore(pool: Pool, cipher: StorageCipher) {
         requireFamilyVersion(version, expectedVersion);
         if (!(await client.query("UPDATE family_invitations SET revoked_at=now() WHERE id=$1 AND workspace_id=$2 AND accepted_at IS NULL AND revoked_at IS NULL RETURNING id", [id, workspaceId])).rowCount) throw new FamilyError(404, "not_found");
         await client.query("UPDATE workspaces SET access_version=access_version+1 WHERE id=$1", [workspaceId]);
+        if (trackChanges) await appendOnlineChange(client, workspaceId, "family", null, false, null, true);
       }, true);
     },
     async setMember(userId: string, workspaceId: string, memberId: string, role: MemberRole | "revoked", expectedVersion: number) {
@@ -99,6 +103,7 @@ export function createFamilyStore(pool: Pool, cipher: StorageCipher) {
           : await client.query("UPDATE family_members SET role=$3 WHERE workspace_id=$1 AND user_id=$2 RETURNING user_id", [workspaceId, memberId, role]);
         if (!updated.rowCount) throw new FamilyError(404, "not_found");
         await client.query("UPDATE workspaces SET access_version=access_version+1 WHERE id=$1", [workspaceId]);
+        if (trackChanges) await appendOnlineChange(client, workspaceId, "family");
       }, true);
     },
     async preferences(userId: string): Promise<NotificationPreferences> {
@@ -111,6 +116,7 @@ export function createFamilyStore(pool: Pool, cipher: StorageCipher) {
       try {
         await client.query("BEGIN");
         await client.query("SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='5s'");
+        const workspace = trackChanges ? (await client.query<{ id: string }>("SELECT id FROM workspaces WHERE owner_user_id=$1 FOR UPDATE", [userId])).rows[0] : null;
         await client.query('SELECT id FROM "user" WHERE id=$1 FOR UPDATE', [userId]);
         const current = (await client.query<{ version: number }>("SELECT version FROM notification_preferences WHERE user_id=$1", [userId])).rows[0]?.version ?? 0;
         requireFamilyVersion(current, expectedVersion);
@@ -118,6 +124,7 @@ export function createFamilyStore(pool: Pool, cipher: StorageCipher) {
         await client.query(`INSERT INTO notification_preferences(user_id,preferences_encrypted,version) VALUES($1,$2,$3)
           ON CONFLICT(user_id) DO UPDATE SET preferences_encrypted=EXCLUDED.preferences_encrypted,version=EXCLUDED.version,updated_at=now()`,
         [userId, cipher.encrypt(JSON.stringify(values), `notification-preferences:${userId}`), version]);
+        if (workspace) await appendOnlineChange(client, workspace.id, "preferences", null, false, userId);
         await client.query("COMMIT");
         return { ...values, version };
       } catch (error) { try { await client.query("ROLLBACK"); } catch { discard = true; } throw error; }

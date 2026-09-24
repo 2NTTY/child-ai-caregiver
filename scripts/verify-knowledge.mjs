@@ -11,6 +11,8 @@ import { createKnowledgeRetriever } from "../server/knowledge-retriever.ts";
 import { AgentBudget } from "../server/agent-budget.ts";
 
 let pool, step = "preflight", groups = 0, calls = 0, storeCalls = 0;
+let accepted = false;
+const countStoreCall = () => { if (storeCalls >= 120) throw new Error("Store scope exhausted"); storeCalls++; };
 const budgets = [], originals = [];
 const check = async (name, action) => { step = name; await action(); groups++; };
 const filter = (months, topics = []) => ({ region: "HK", classification: "official_guidance", age: { basis: "actual", minMonths: months, maxMonths: months }, topics });
@@ -50,7 +52,7 @@ try {
     const raw = createKnowledgeStore(connection);
     return new Proxy(raw, { get(target, name) {
       const method = target[name];
-      return typeof method === "function" ? (...args) => { if (++storeCalls > 120) throw new Error("Store scope exhausted"); return method(...args); } : method;
+      return typeof method === "function" ? (...args) => { countStoreCall(); return method(...args); } : method;
     } });
   };
   let store = tracked(pool);
@@ -154,17 +156,20 @@ try {
     assert.equal(usage.attempts, calls);
     console.log(JSON.stringify({ event: "knowledge_acceptance_usage", ...usage }));
   });
-  console.log(JSON.stringify({ event: "knowledge_acceptance_passed", groups, calls, storeCalls, restoredDatabase: false, deployed: false }));
-} catch { console.error(JSON.stringify({ event: "knowledge_acceptance_failed", step, groups, calls, storeCalls, recovery: "Keep existing private data; inspect partial public draft state before another approved run" })); process.exitCode = 1; }
+  accepted = true;
+} catch (error) { console.error(JSON.stringify({ event: "knowledge_acceptance_failed", step, groups, calls, storeCalls,
+  errorName: error instanceof Error ? error.name : "unknown", failureCode: error instanceof EmbeddingFailure ? error.code : null,
+  recovery: "Keep existing private data; inspect partial public draft state before another approved run" })); process.exitCode = 1; }
 finally {
   budgets.forEach(budget => budget.close());
   if (pool && originals.length) {
     // Restore only seed versions that this run fully published. No private data or historical edition is deleted.
     const recovery = createKnowledgeStore(pool);
     for (const entry of originals) {
-      try { await recovery.review(entry.versionId, entry.hash, "primary-source-review"); await recovery.publish(entry.versionId, entry.hash); }
+      try { countStoreCall(); await recovery.review(entry.versionId, entry.hash, "primary-source-review"); countStoreCall(); await recovery.publish(entry.versionId, entry.hash); }
       catch { console.error("knowledge_seed_recovery_incomplete_keep_acceptance_pending"); process.exitCode = 1; }
     }
   }
   await pool?.end();
 }
+if (accepted && !process.exitCode) console.log(JSON.stringify({ event: "knowledge_acceptance_passed", groups, calls, storeCalls, restoredDatabase: false, deployed: false }));
