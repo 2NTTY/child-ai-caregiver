@@ -811,3 +811,13 @@
 - Actual Work：發現先前撤權的孩子即使經新邀請恢復資格，聊天 controller 的已忘記集合仍會拒絕選取；改為只依新取得的授權孩子列表解除頁面封鎖，再重新讀取聊天，不恢復舊草稿。另核對已安裝 Better Auth 的註冊限流為 10 秒內 3 次，驗收腳本第四個註冊前先等候窗口結束，沒有修改安全限流或增加請求重試。
 - Verification：chat-client 7 項及 deletion-client 5 項通過，新增涵蓋重新獲權及舊草稿不復活；本包累計不同輕量測試為 62 項。TypeScript 與驗收腳本 syntax check 通過；其餘未變動測試沿用先前證據，沒有機械全量重跑。
 - Human Verification / Next：本機 PostgreSQL 13 組／最多 60 次 HTTP 驗收批准仍未收到，腳本未執行、migration 未套用，P2 及本工作包均未完成；收到批准後才進行既定驗收與合併。
+
+
+<a id="log-20260924-006"></a>
+## LOG-20260924-006
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S06-W02 必要驗收及結案，接續 LOG-20260924-005，實作版本 `0c9daa4`；前置 S17-W01 已合併。
+- Human Verification：使用者明確回覆「批准」，涵蓋既有合成 PostgreSQL、4 個新合成帳號、最多 60 次本機 HTTP 及新增 migration；本次沒有沿用其他工作包批准。
+- Verification：主模型執行已準備的 verify-family.mjs，13 組檢查、51 次 HTTP 全部通過；包括一次性／並發邀請、角色及撤權、跨家庭／私人聊天隔離、個人偏好、加密及既有資料逐列保留。新增 006-family-access 成功，未清空原庫、未刪原有孩子、未記錄正文，沒有模型、通知或雲端呼叫。62 項輕量測試及兩份 typecheck 沿用未變動程式的既有證據，沒有重跑。
+- Review / Delivery：主模型覆核交易內鎖後核權、原作者加密歸屬、邀請終態及敏感資料邊界，未見未處理的合併阻塞；更新 EV-S06-W02、PLAN、STATUS 及 UI 功能清單。本包完成隨 PR 合併生效，並不代表 P2 已完成。
+- Limits / Next：沒有部署、瀏覽器 E2E、全量回歸或新的備份還原演練。合併後從最新 master 開始 S05-W02；S10-W01 亦 Ready，按真實依賴逐包推進，後續真服務驗收另行批准。

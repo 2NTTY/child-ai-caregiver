@@ -1,7 +1,7 @@
 # STATUS
 
 ## 當前階段
-**P1 基礎成品驗收完成；P2 開發進行中**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；目前 S06-W02 家庭權限已實作，等待批准本機必要驗收。
+**P1 基礎成品驗收完成；P2 開發進行中**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 家庭權限已通過必要驗收，完成隨本包 PR 合併生效。
 
 ## 現況
 - **試用 URL：https://ex-machina.eu.org**。使用者指定根網域，DNS 由使用者設定；執行版本 `d654b8f`，其後結案修改僅涉及文件。
@@ -11,7 +11,7 @@
 - 本包兩次 Gemini 驗收成功，合計 1,793 input／42 output tokens；cached metadata 不完整，沒有帳單或優惠餘額證據。AI 每人每日 5 次／全站 20 次，每請求僅 1 次嘗試、6,000 字元／512 output tokens。
 - 加密備份與恢復密鑰分開存於工程外、當前 Windows 使用者專用 ACL 目錄；既有本機合成庫保留。沒有額外 E2E、全量回歸或結案模型呼叫。
 - P2 總計劃已定案，按工作包開始實作；[工作包](PLAN.md#roadmap-packages)／[Agent 規則](SPEC.md#section-5-11)／[ADR-011](docs/DECISIONS.md#adr-011)。S11-W03 已接入 ADK 與既有 Prompt Pack，18 項輕量測試及兩次真 Gemini 呼叫／一次工具循環通過；[證據](artifacts/verification/S11_W03_CHECKS.json)。Prompt Pack／美術未重做，現網仍是 P1。
-- S06-W02 已有家庭邀請／角色／撤權、共享記錄與私人聊天隔離、個人通知偏好及功能 UI；62 項相關輕量測試及兩份 typecheck 通過。新增 migration／真 SQL 尚待批准驗收，未部署、未標已完成。[EV-S06-W02](artifacts/verification/S06_W02_CHECKS.json)。
+- S06-W02 已有家庭邀請／角色／撤權、共享記錄與私人聊天隔離、個人通知偏好及功能 UI；62 項相關輕量測試及兩份 typecheck 通過。獲批本機 PostgreSQL 驗收 13 組／51 次 HTTP 通過，新增 migration、角色／撤權及私人聊天隔離正常，既有加密資料保留；未部署。[EV-S06-W02](artifacts/verification/S06_W02_CHECKS.json)。
 - [UI 功能及對接清單](docs/P2_UI_HANDOFF.md) 列出 P2 功能與必要狀態，隨工作包補齊實際對接位置；未接通項目不當作已可用。
 
 ## 七天試用與限制
@@ -20,10 +20,10 @@
 - [交付及操作](docs/P1_DELIVERY.md)／[組員試玩指引](docs/P1_TRIAL.md)。已收到使用者實際試玩確認；只適用 P1 合成資料範圍。
 
 ## 下一步
-完成 [S06-W02](PLAN.md#s06-w02) 已準備的本機必要驗收，再 review／PR／合併；前置未完成前不啟動 S05-W02。[S10-W01](PLAN.md#s10-w01) 亦已 Ready，依工作包逐一推進，前置驗收並合併後才解鎖依賴包。指導／計劃／AI 提示詞由主模型親自處理。真服務及高成本驗收先列明範圍及成本待批准；七天試用不自行續期。
+[S06-W02](PLAN.md#s06-w02) review／PR 合併後，接續 [S05-W02](PLAN.md#s05-w02) 資料確認及更正歷史。[S10-W01](PLAN.md#s10-w01) 亦已 Ready，依工作包逐一推進，前置驗收並合併後才解鎖依賴包。指導／計劃／AI 提示詞由主模型親自處理。真服務及高成本驗收先列明範圍及成本待批准；七天試用不自行續期。
 
 ## 用量快照
 最後使用者原值為 2026-09-22 19:12 的「5%」；使用者已恢復 P1，現時餘額未知。沒有查詢或推算重置，沿用 Luna Max／Sol 規則。
 
 ## 更新記錄
-2026-09-24（Asia/Hong_Kong）；[LOG-20260924-005](WORKLOG.md#log-20260924-005)。
+2026-09-24（Asia/Hong_Kong）；[LOG-20260924-006](WORKLOG.md#log-20260924-006)。

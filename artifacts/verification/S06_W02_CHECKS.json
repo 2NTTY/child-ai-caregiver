@@ -6,7 +6,7 @@
   "prerequisites": [
     "S17-W01 merged"
   ],
-  "status": "pending_local_integration",
+  "status": "passed",
   "scope": "Family invitations, roles and revocation, authorized shared records, private chat isolation, personal notification preferences and functional UI",
   "lightweight": {
     "typechecks": [
@@ -34,7 +34,7 @@
     "followUpReview": "Fresh authorized child lists may restore access after a new invitation, while old drafts remain erased; chat/deletion checks passed. The unexecuted acceptance script now spaces the fourth signup after the existing 3-per-10-second auth window, without changing limits or retrying requests."
   },
   "plannedIntegration": {
-    "approval": "requested_not_yet_received",
+    "approval": "explicit_user_approval_received_2026-09-24",
     "command": "node --env-file=<existing synthetic configuration> scripts/verify-family.mjs --approved-family",
     "database": "Existing encrypted local synthetic PostgreSQL only",
     "checks": 13,
@@ -53,10 +53,16 @@
     "modelCalls": 0,
     "notificationCalls": 0,
     "databaseCleared": false,
-    "executed": false
+    "executed": true,
+    "result": "passed",
+    "actualChecks": 13,
+    "actualHttpRequests": 51,
+    "actualAccountsCreated": 4,
+    "existingDataPreserved": true,
+    "bodiesLogged": false,
+    "implementationCommit": "0c9daa4"
   },
   "notRun": [
-    "real PostgreSQL acceptance",
     "browser E2E",
     "cloud deployment",
     "model or notification service calls",
@@ -64,7 +70,6 @@
     "new backup/restore exercise"
   ],
   "remainingScope": [
-    "Approval and necessary local SQL acceptance before completion/merge",
     "S05-W02 age/context confirmation history",
     "S07-W03 full online consistency",
     "S13 notification execution and channels"
