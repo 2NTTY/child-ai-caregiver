@@ -1,6 +1,6 @@
 # 育伴港
 
-A planned AI-assisted care coordination app for adult caregivers of children aged 0–10 in Hong Kong.
+An AI companion centered on source-backed parenting answers for adult caregivers of children aged 0–10 in Hong Kong. It uses confirmed child and family context to answer everyday questions and surface relevant growth-stage concerns; records, collaboration, memory, and notifications support that experience.
 
 Planned capabilities include:
 
@@ -8,9 +8,9 @@ Planned capabilities include:
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
 - A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
 
-**Current status: verified local Web record workflow.** The Web interface connects email/password authentication, child creation and text records to the Node/PostgreSQL server. S03-W01 passed 64 unit tests, 16 approved real-database checks and 12 local browser acceptance stages, including reopening saved records and preserving offline drafts. There is no APK, deployed product service, live product URL, or AI response yet. See [STATUS.md](STATUS.md), [the reuse audit](docs/REUSE_AUDIT.md), and [SPEC.md](SPEC.md).
+**Current status: P1 complete; P2 implementation has not started.** The Web and Node/PostgreSQL service support authenticated child records and real Gemini chat. P1 also passed its encryption, backup and restore, deployed-service, and independent synthetic-data pilot acceptance. The [P1 trial URL](https://ex-machina.eu.org) is available for the approved seven-day pilot; see [STATUS.md](STATUS.md) for current availability and limits, [the reuse audit](docs/REUSE_AUDIT.md), and [SPEC.md](SPEC.md) for product requirements.
 
-P1 requires a working web URL, server persistence, Gemini chat, and verified encryption/backup safeguards. P2 is the competition-delivery target: a persistent server agent, family permissions, web photo input, current knowledge, and preauthorized Web Push/Telegram follow-ups. Android follows in P3; deployment choice, full reports, migration, and disaster recovery complete P4. These are acceptance requirements, not claims of implemented features.
+P2 is the competition-delivery target: a persistent server agent, family permissions, web photo input, source-backed parenting answers and growth-stage attention, current knowledge, and preauthorized Web Push/Telegram follow-ups. Android follows in P3; deployment choice, full vector knowledge management, reports, migration, and disaster recovery complete P4. These future-stage capabilities are acceptance requirements, not claims of implemented features.
 
 <a id="entry"></a>
 ## Getting started

@@ -753,3 +753,15 @@
 - Verification：沿用本包 39 項針對性單元檢查、typecheck、三映像建置、15 次已批准 HTTPS 讀取及前置包證據；只核對文件 diff／JSON／WORKLOG append-only，不額外重跑 integration／E2E／全量測試。實際 runtime 仍是 d654b8f，結案提交僅改文件。
 - Delivery / Limits：根網域及操作／恢復說明已交付；七天 GCE STOP／保留 disk-IP 費用、合成資料及現有 AI 配額維持。P2–P4、Android、Windows 自部署及 UI 重設不屬本次完成聲明。
 - Next：完成本 PR 的結案 review 及合併，核對 master 後關閉 P1 目標；P2 留待後續工作，不自動開始。
+
+
+<a id="log-20260924-001"></a>
+## LOG-20260924-001
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；P2 需求整合文件包，基線 master `25c710f`，分支 `codex/p2-agent-requirements`。
+- Goal / Human Verification：使用者批准以有來源育兒問答為核心的完整文件方案，明確選擇非醫療分流、年齡按需補充、照顧者共同管理及只因新實質依據再提關注；沒有新增產品人工試玩或專業臨床審核。
+- Executor / AI Assistance：規劃時一個 Luna Max 唯讀核對契約及既有 Prompt Pack；本次一個 Sol High 更新 PLAN／STATUS／README，主模型處理 SPEC／架構／資料／API／ADR、整合及必要覆核，沒有重做已完成調查或另建 Pack。
+- Actual Work：加入 P2 官方來源門檻、年齡精度與確認／分享邊界、四年齡段關注、候選／任務／投遞分離、關閉抑制／永久停用、角色權限、安靜時段及家庭完成同步；新增 S13-W08 與下游依賴，修正 README 首頁過時 P1 描述。ADR-010 記錄採納及未採納邊界；公開來源失效不冒充取消已確認預約。
+- Changes / Acceptance：SPEC 的 REQ-5-10、AC-GA／AC-KQ 及既有局部條款；docs/ARCHITECTURE、DATA_MODEL、API、DECISIONS；PLAN／STATUS／README 與本 LOG。P1 完成、部署執行版本及證據不變，P2 全部實作未開始；新增驗收情景是後續要求，不宣稱通過。
+- Verification：主模型文件檢查已通過 8 份需求／契約／概覽文件的 diff check、732 個既有錨點保留、48 工作包依賴無循環、P1 工作包列未改、P2 未開始及 Ready 僅 S06-W02／S10-W01；新增本 LOG 前唯一待解連結是本條錨點。ADR 歷史只追加；新增本條後再檢查全部連結及 WORKLOG 原位元組前綴。來源核對及有限驗收邊界見 ADR-010。
+- Limits / Next：未執行產品、Gemini、integration、E2E、部署或全量測試；沒有程式、Prompt Pack、美術、技術 Skill 或子代理設定改動。完成本文件包 review／PR／合併後保留 P1 已完成、P2 實作未開始，後續按依賴及適用驗收逐包推進。
