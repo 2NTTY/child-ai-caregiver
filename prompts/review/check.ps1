@@ -48,7 +48,7 @@ try {
     $ManifestDoc = (Read-Doc (Join-Path $PackRootPath 'manifest.json')) | ConvertFrom-Json -Depth 50 -ErrorAction Stop
     $FixtureDoc = (Read-Doc (Join-Path $PackRootPath 'contracts/examples.json')) | ConvertFrom-Json -Depth 50 -ErrorAction Stop
     $CaseDoc = (Read-Doc (Join-Path $PackRootPath 'review/cases.json')) | ConvertFrom-Json -Depth 50 -ErrorAction Stop
-    Assert-Doc ($ManifestDoc.runtimeStatus -eq 'not_integrated') 'Manifest must not claim product integration.'
+    Assert-Doc ($ManifestDoc.runtimeStatus -eq 'partially_integrated') 'Manifest must distinguish foundation integration from the complete product Agent.'
     Assert-Doc ($CaseDoc.execution -eq 'not_run_against_model') 'Cases must not claim model execution.'
     Assert-Doc ($ManifestDoc.version -eq $FixtureDoc.formatVersion -and $ManifestDoc.version -eq $CaseDoc.formatVersion) 'Document versions disagree.'
     Assert-Doc (@($ManifestDoc.outputModeRequirements.structured) -contains 'outputContract') 'Structured mode must require an output contract regardless of recipe.'

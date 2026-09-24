@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S11-W01",
-  "recordedOn": "2026-09-23",
+  "workPackage": "S11-W03",
+  "recordedOn": "2026-09-24",
   "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "0bff7eafef35cc56a41b3781c979c10e4e528228adb6409b1bab9d5c5661fe1b"
+    "sha256": "2f45e239a58114b02502ab9b02a60737a4d654c615378cb368fb3093c55158ae"
   },
   "packages": [
     {
@@ -425,19 +425,57 @@
           "source": "node_modules/@google/genai/LICENSE"
         }
       ]
+    },
+    {
+      "name": "@google/adk",
+      "version": "2.1.0",
+      "dependencyType": "dependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/google/adk-js"
+      },
+      "tarball": "https://registry.npmjs.org/@google/adk/-/adk-2.1.0.tgz",
+      "integrity": "sha512-+dMsMonJpkOS7iYhOIyUI5RTQtn6Q/Y5GM5zu00uEwKNcOPuv8ZeLexvrMkltwV10bz/BDlIKXOXavM4UHPdVw==",
+      "files": [
+        {
+          "path": "licenses/google-adk/LICENSE",
+          "sha256": "c9101a1075c03a45a28d04a0b0b6cbb410a5e433e9e5d43d03c927ecd9afc40c",
+          "source": "node_modules/@google/adk/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "zod",
+      "version": "4.5.4",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/colinhacks/zod.git"
+      },
+      "tarball": "https://registry.npmjs.org/zod/-/zod-4.5.4.tgz",
+      "integrity": "sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==",
+      "files": [
+        {
+          "path": "licenses/zod/LICENSE",
+          "sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8",
+          "source": "node_modules/zod/LICENSE"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 657,
+    "packageEntries": 761,
     "declarations": {
-      "MIT": 553,
-      "ISC": 31,
+      "Apache-2.0": 55,
+      "MIT": 611,
+      "ISC": 36,
       "MIT AND Apache-2.0": 1,
-      "BSD-3-Clause": 20,
-      "Apache-2.0": 20,
+      "BSD-3-Clause": 22,
       "(MIT OR CC0-1.0)": 2,
       "Python-2.0": 1,
-      "Unlicense": 2,
+      "Unlicense": 3,
       "CC-BY-4.0": 1,
       "(MIT OR Apache-2.0)": 1,
       "BSD-2-Clause": 4,
@@ -446,6 +484,10 @@
       "MPL-2.0": 12,
       "(BSD-3-Clause OR GPL-2.0)": 1
     },
-    "missingDeclarations": []
+    "missingDeclarations": [
+      "node_modules/buildcheck",
+      "node_modules/cpu-features",
+      "node_modules/ssh2"
+    ]
   }
 }

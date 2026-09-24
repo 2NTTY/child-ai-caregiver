@@ -2,7 +2,8 @@ FROM node:24.19.0-bookworm-slim AS deps
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+RUN npm install --global npm@11.8.0 --no-audit --no-fund \
+    && npm ci --no-audit --no-fund
 
 FROM deps AS web-build
 
@@ -24,12 +25,13 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --no-audit --no-fund \
+RUN npm install --global npm@11.8.0 --no-audit --no-fund \
+    && npm ci --omit=dev --no-audit --no-fund \
     && npm cache clean --force
 
 COPY server ./server
 COPY src/shared ./src/shared
-COPY prompts/p1/childcare-chat.txt ./prompts/p1/childcare-chat.txt
+COPY prompts ./prompts
 COPY scripts/encrypt-storage.mjs scripts/storage-backup.mjs ./scripts/
 
 USER node

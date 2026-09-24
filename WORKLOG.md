@@ -778,3 +778,16 @@
 - Verification：主模型 scoped diff 與引用／依賴 review 未發現未解決衝突；git diff --check 通過。追加本 LOG 前，9 份修改文件的 806 個既有錨點保留、65 個新增錨點、51 個新增／修改本地連結除本 LOG 待追加外有效；49 工作包無缺依賴或循環，P1 工作包列逐字保留，P2 全部未開始，Ready 為 S11-W03／S06-W02／S10-W01。追加後再核對 LOG 引用及歷史前綴；檢查程式位於工程外暫存目錄，不新增產品測試。
 - Preservation：歷史 ADR 及 WORKLOG 只追加，原正文／錨點不回寫；來源及未驗證限制由 ADR-011 連結至架構的官方研究依據。沒有程式碼、依賴、lockfile、部署、產品 prompt、素材或驗收證據檔案改動。
 - Limits / Next：未安裝 ADK／pgvector、生成向量、呼叫 Gemini／embedding、執行 integration／E2E 或變更部署。完成本文件包 PR／合併後保留 P1 已完成、P2 實作未開始；後續優先 S11-W03，真服務驗收另列範圍及成本批准，不沿用 P1 的批准。
+
+
+<a id="log-20260924-003"></a>
+## LOG-20260924-003
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S11-W03 ADK 基礎與相容性，前置 S17-W01 已合併，基線 master `27e303a`，分支 `codex/s11-w03-adk-foundation`。
+- Goal / Human Verification：使用者授權持續完成 P2、功能 UI 及供後續設計的功能清單，沿用既有 Prompt Pack／美術；本包另獲最多 3 次真 Gemini 呼叫、每次 12,000 字元／512 output tokens、無重試及既有合成庫最小讀取／用量寫入批准，估計低於 US$0.02。使用者啟動 Docker；沒有新增 UI 試玩或臨床核驗。
+- Executor / AI Assistance：一個 Luna Max 唯讀核對固定 ADK 版本的關鍵 API／行為；一個 Sol High 處理依賴、lockfile、Node／npm 及 Dockerfile。主模型核對原文、實作 runtime／模型 adapter／組裝器／限額與相關必要測試，負責技術 Skill、指導／契約／狀態文件、Prompt Pack 接線狀態、整合、review 及最終驗收。
+- Actual Work：固定 ADK 2.1.0、Zod 4.5.4、Node 24.19.0／npm 11.8.0；接通真 Runner／FunctionTool、原生 parts 與關聯、4 次模型／8 次工具／2 次查詢 embedding 計數、90 秒共同期限、Server 授權、配額及取消。復用原 Pack 正文；新增可復用 ADK 技術 Skill。工具未知結果停止，不因收尾失敗重做；ADK 預設正文 spans 及 logger 關閉。P1 公開聊天路由未切換。
+- Changes：server/agent-*、對應三份 tests、scripts/verify-adk.mjs、依賴／建置及許可清單；局部更新 PLAN／STATUS／README／ARCHITECTURE／API 和 Pack 接線狀態；新增 [UI 功能及對接清單](docs/P2_UI_HANDOFF.md)，未接通功能明確標示。沒有重寫 prompt 正文／配方、美術或已完成 P1。
+- Verification：[EV-S11-W03](artifacts/verification/S11_W03_CHECKS.json) 記錄兩份 typecheck、18 項必要輕量測試及獲批真 Vertex ADK 工具循環通過。真驗收成功兩次模型呼叫、一次合成唯讀工具；input tokens 4,759／4,791，output tokens 18／8，cached 分別未知／4,016，未核對實際帳單。既有合成資料保留，每日配額未提高，沒有部署、embedding、通知或 E2E。
+- Findings / Recovery：ADK 將模型錯誤轉成 event、包裹 callback 錯誤，已以應用安全停止原因處理並驗證。環境原 ADC override 指向不存在檔案，先前一次 provider 入口在 HTTP 前失敗；只在驗收子程序改用已授權 ADC，餘下上限兩次，沒有超過批准次數。Skill Python 檢查器缺 PyYAML，改用已安裝 js-yaml 執行同範圍 frontmatter 檢查，不聲稱原檢查器通過。
+- Limits / Next：本包是內部 Agent 基礎，完整業務工具／長期記憶／RAG／跨 run 確認／持久冪等／背景及通知仍按後續包實作驗收；Docker 建置、全量回歸及瀏覽器測試未執行。完成 review／PR／合併後開始 Ready 的 S06-W02，S10-W01 亦 Ready；P2 尚未完成，真服務批准不延伸至下一包。

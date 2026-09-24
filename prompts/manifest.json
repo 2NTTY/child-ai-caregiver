@@ -3,8 +3,8 @@
   "version": "0.1.1",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
-  "runtimeStatus": "not_integrated",
-  "validationScope": "static_documentation_only",
+  "runtimeStatus": "partially_integrated",
+  "validationScope": "static_documentation_and_s11_w03_foundation",
   "promptBoundary": {
     "begin": "<!-- prompt:begin -->",
     "end": "<!-- prompt:end -->"

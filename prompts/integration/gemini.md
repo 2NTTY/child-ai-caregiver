@@ -1,6 +1,6 @@
 # Gemini／Vertex AI 接入說明
 
-這是後續 S06／S11 實作者的接入契約，沒有實作 SDK、呼叫 Gemini 或驗證任何模型效果。沿用 [現行架構](../../docs/ARCHITECTURE.md#section-3-6)：Server 接入 Gemini，provider 憑據不進 Web／Android；初始模型名稱是既有計劃基準，實際模型和能力須在接入時核實，集中配置，不寫入 prompt 正文。
+這是 S06／S11 的接入契約；S11-W03 已完成 [ADK 基礎及最小真工具循環驗收](../../artifacts/verification/S11_W03_CHECKS.json)，不代表全部配方或產品能力已驗收。沿用 [現行架構](../../docs/ARCHITECTURE.md#section-3-6)：Server 接入 Gemini，provider 憑據不進 Web／Android；模型和能力須按實際接入版本核實，集中配置，不寫入 prompt 正文。
 
 ## 請求怎樣組裝
 

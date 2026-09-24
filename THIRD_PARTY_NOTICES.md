@@ -23,6 +23,8 @@ The exact dependency tree and registry integrity values are recorded in [package
 | @types/react (development) | 19.2.4 | MIT | [LICENSE](licenses/types-react/LICENSE) |
 | typescript (development) | 6.0.3 | Apache-2.0 | [LICENSE](licenses/typescript/LICENSE.txt), [Third-party notice](licenses/typescript/ThirdPartyNoticeText.txt) |
 | @google/genai | 2.24.0 | Apache-2.0 | [LICENSE](licenses/google-genai/LICENSE) |
+| @google/adk | 2.1.0 | Apache-2.0 | [LICENSE](licenses/google-adk/LICENSE) |
+| zod | 4.5.4 | MIT | [LICENSE](licenses/zod/LICENSE) |
 | better-auth | 1.7.5 | MIT | [LICENSE](licenses/better-auth/LICENSE.md) |
 | pg | 8.23.0 | MIT | [LICENSE](licenses/pg/LICENSE) |
 | @types/node (development) | 24.13.6 | MIT | [LICENSE](licenses/types-node/LICENSE) |
@@ -42,7 +44,7 @@ After that repair, `npm ls --all --json` reported zero problems, `npx expo insta
 
 ## Transitive dependencies and distribution
 
-S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. The current manifest covers 21 direct packages and 22 original license/notice texts; earlier verification artifacts retain their historical lockfile hashes.
+S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. The current manifest covers 23 direct packages and 24 original license/notice texts; earlier verification artifacts retain their historical lockfile hashes.
 
 Transitive packages and their individual license files remain in the installed `node_modules` tree. They are not all reproduced in this document, and `node_modules` is not committed. The inventory records every lockfile license declaration, including build tools and optional platform packages; declared metadata is not proof that every file or distribution obligation has been reviewed.
 

@@ -1,0 +1,113 @@
+{
+  "evidenceId": "EV-S11-W03",
+  "workPackage": "S11-W03",
+  "recordedOn": "2026-09-24",
+  "status": "verified",
+  "baseCommit": "27e303ac96ebbeeb5dc9ac2cb588814eaa591500",
+  "prerequisites": [
+    "S17-W01 (merged)"
+  ],
+  "scope": "Internal ADK foundation; public P1 chat remains unchanged. Full business tools, memory, RAG, durable confirmations and worker integration remain later packages.",
+  "versions": {
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "adk": "2.1.0",
+    "genaiDirect": "2.24.0",
+    "zodDirect": "4.5.4",
+    "promptPack": "0.1.1"
+  },
+  "lightweight": {
+    "dependencyInstall": "npm ci --no-audit --no-fund passed using the recorded Node/npm versions",
+    "dependencyInventory": "npm ls and ADK LlmAgent/Runner/FunctionTool imports passed; direct licenses copied without modification",
+    "typechecks": [
+      "tsc --noEmit passed",
+      "tsc --project tsconfig.server.json passed"
+    ],
+    "tests": {
+      "command": "node --test tests/agent-budget.test.ts tests/agent-prompt.test.ts tests/agent-runtime.test.ts",
+      "passed": 18,
+      "failed": 0
+    },
+    "coverage": [
+      "real Runner with scripted multi-step native tool protocol and opaque signature preservation",
+      "invalid arguments and forged scope rejected",
+      "authorization and stale-confirmation callback denial",
+      "unknown tool counted without executing a handler",
+      "model/tool/embedding counters and shared deadline",
+      "tool success retained after final-generation failure without repeating execution",
+      "uncertain handler outcome stops before another model call",
+      "input limit checked before provider and quota reservation",
+      "quota denial without hidden retry",
+      "revocation after generation and during failed final generation hides protected results",
+      "cancellation stops waiting and prevents subsequent operations",
+      "existing Prompt Pack ordering, deduplication, version and boundary validation"
+    ],
+    "skillMetadata": "Scoped js-yaml frontmatter/name/description validation passed. Bundled Python quick_validate could not run because PyYAML is absent.",
+    "promptDocumentation": {
+      "assertions": 1503,
+      "passed": true,
+      "scope": "Static documentation only; separate from model validation"
+    },
+    "documentChecks": {
+      "localLinksChecked": 199,
+      "worklogAppendOnly": true
+    }
+  },
+  "realService": {
+    "approvedByUser": true,
+    "approvedScope": "At most 3 Gemini calls, 12000 input characters and 512 output tokens per call, no retries; existing synthetic PostgreSQL permissions reads and usage writes; no care-data changes, deployment or E2E; estimate below USD 0.02",
+    "command": "node --env-file=<existing synthetic configuration> scripts/verify-adk.mjs --approved-adk --max-model-calls=2",
+    "result": "passed",
+    "checks": 4,
+    "project": "ai-caregivers-for-children",
+    "model": "gemini-3.1-flash-lite",
+    "location": "global",
+    "successfulModelCalls": 2,
+    "successfulToolCalls": 1,
+    "providerEntryAttemptsAcrossRuns": 3,
+    "preHttpCredentialFailures": 1,
+    "applicationRetries": 0,
+    "sdkRetries": 0,
+    "usage": [
+      {
+        "inputTokens": 4759,
+        "outputTokens": 18,
+        "cachedTokens": null
+      },
+      {
+        "inputTokens": 4791,
+        "outputTokens": 8,
+        "cachedTokens": 4016
+      }
+    ],
+    "actualBillChecked": false,
+    "existingDataPreserved": true,
+    "bodiesLogged": false,
+    "quotaUnchanged": {
+      "perUserDailyAttempts": 5,
+      "globalDailyAttempts": 20
+    },
+    "failuresAndRecovery": [
+      "Docker engine was initially stopped; user started it. Existing synthetic test container was then started without replacing its data volume.",
+      "An inherited GOOGLE_APPLICATION_CREDENTIALS pointed to a missing file. One provider attempt failed locally before HTTP; no model tokens were returned. The validation child process used the existing authorized ADC file and capped its remaining calls at two."
+    ]
+  },
+  "implementationFindings": [
+    "ADK 2.1 may surface model failures as error events and wrap callback failures; the adapter preserves a safe typed stop reason.",
+    "ADK default body capture and logger are explicitly disabled; no telemetry exporter was configured. This does not assert that every SDK diagnostic mechanism is universally disabled."
+  ],
+  "notRun": [
+    "Docker image build",
+    "browser E2E",
+    "full P1 regression",
+    "cloud deployment",
+    "embedding or notification calls",
+    "complete Prompt Pack model evaluation",
+    "clinical safety validation"
+  ],
+  "remainingScope": [
+    "S11-W02 real business tools and complete interactive/background Agent",
+    "persistent operation idempotency and confirmations in their owning packages",
+    "public UI wiring and all other P2 functionality"
+  ]
+}
