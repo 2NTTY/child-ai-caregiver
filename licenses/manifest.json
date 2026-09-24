@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S11-W03",
+  "workPackage": "S10-W01",
   "recordedOn": "2026-09-24",
   "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
@@ -489,5 +489,17 @@
       "node_modules/cpu-features",
       "node_modules/ssh2"
     ]
-  }
+  },
+  "deploymentComponents": [
+    {
+      "name": "pgvector",
+      "version": "0.8.6",
+      "commit": "8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c",
+      "license": "PostgreSQL",
+      "path": "licenses/pgvector/LICENSE",
+      "sha256": "6bba9ebeb73e27477463b05e5ef1bf303bccbddb3db9bbc95905d351604d6a87",
+      "source": "https://github.com/pgvector/pgvector/blob/v0.8.6/LICENSE",
+      "modifiedUpstreamSource": false
+    }
+  ]
 }

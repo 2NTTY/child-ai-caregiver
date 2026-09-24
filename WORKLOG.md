@@ -832,3 +832,13 @@
 - Verification：[EV-S05-W02](artifacts/verification/S05_W02_CHECKS.json) 記錄 17 項必要輕量測試及兩份 typecheck 通過；使用者批准本機新增 migration、3 帳號／1 孩子／54 記錄、最多 60 HTTP。實際 13 組／39 次 HTTP 通過，核對並發更正、viewer／家庭隔離、原文／精度／歷史、微秒游標、私人聊天不共享、重啟持久化、加密及僅新建孩子的連帶刪除；所有原有資料保留。沒有模型、通知或雲端費用。
 - Review / Fixes：未知提交保持鎖定並要求明確核對；更正衝突保留草稿及比較新版；孩子檔案草稿基準與刷新值分離，避免無聲覆蓋；登入重新確認期間草稿在本頁隱藏保留，登出／換人／撤權清除。測試 fake-store 型別及 UI 替換的殘留 JSX 編譯問題已定位修正，最終 typecheck 通過。狀態互動由主模型覆核，未冒稱瀏覽器驗收。
 - Delivery / Limits：同步 API／DATA_MODEL、PLAN／STATUS 及 UI 功能對接清單；WORKLOG 只追加。未部署、未跑 E2E／全量回歸／新的備份還原；完整候選記憶、opId／changeSeq 分別由 S09／S11、S07 後續包交付。本包完成隨 PR 合併生效，P2 尚未完成；合併後接續 S09-W02，S07-W03／S10-W01 亦 Ready。
+
+<a id="log-20260924-009"></a>
+## LOG-20260924-009
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S10-W01 最小向量 RAG，前置 S17-W01 已合併；基線 `1df0745`，獨立 `codex/s10-w01-vector-rag`／同名 worktree。S09-W02 draft PR #34 仍待批准驗收，本包不使用其未合併內容，migration 009 不占用其 008。
+- Executor：主模型處理架構、SQL／版本與配額、CLI、官方原文及內容核對、所有指導文件／Skill、必要驗收腳本及 review。兩個 Luna Max 唯讀調查固定 SDK／官方來源；兩個 Sol Xhigh 完成普通排序／adapter及相關輕量測試。Sol 發現真 DB／服務驗收編排超出普通實作邊界後停寫，主模型接手；沒有再派生、額外驗證代理或重做 Prompt Pack／美術。
+- Actual Work：固定 PostgreSQL 18.6／pgvector 0.8.6 與許可，保留既有 volume；公共來源／版本／片段／向量及用量表，核對與向量完成後才發布，停用保留舊版且須重核才能復用。4 個 FHS 來源／5 片段，短原文與核對轉述分開、日期精度和年齡條件保留。精確 cosine／關鍵詞 RRF 最多 6 片段、每 run 向量快取但重新查權限和有效性；query／maintenance 共用原全站配額，不向量化私人資料。Agent／UI 接線及 worker 更新仍屬後續包。
+- Verification：[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json)；Node 24.19.0 的 21 項必要純單元及兩份 typecheck 通過，CLI／兩份驗收腳本語法和 Compose YAML 解析通過。Python Skill validator 因環境缺 PyYAML 未能啟動，改以現有 js-yaml 核對 frontmatter 並人工覆核內容及本機連結。沒有把文件或 mock 當作真服務證據。
+- Review / Failure：發布重新讀取鎖後狀態，避免與停用競爭；補上來源日期字樣、公共 document hash、失敗缺失向量數及排他年齡上限。撤權用量結果改為 unauthorized 後更新一項舊測試預期；Node mock 的棄用 options 已按官方新 exports 寫法修正。最終針對性測試通過。0.4 召回閾值仍待實際標註問題核對，不宣稱臨床效果。
+- Delivery / Limits：必要驗收已準備並提出批准請求：同卷映像升級、原加密資料保留、最多 16 次 embedding（預計 15）、四年齡段改寫問題、來源停用／局部更新、重連及擴展加密備份／空庫還原。尚未獲批或執行，未建置映像、套 migration、呼叫模型、部署或跑 E2E；本包為待驗收，不解鎖依賴包。API／DATA_MODEL／UI 對接清單與操作文件已更新；P2 未完成，餘額未知。

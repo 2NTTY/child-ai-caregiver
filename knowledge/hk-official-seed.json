@@ -1,0 +1,98 @@
+[
+  {
+    "sourceId": "fhs-solid-food",
+    "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html",
+    "title": "嬰幼兒飲食－引進固體食物過渡期",
+    "publisher": "香港特別行政區政府衞生署家庭健康服務",
+    "classification": "official_guidance",
+    "sourcePublishedAt": null,
+    "sourceUpdatedAt": null,
+    "sourceDateText": "02/2026 修訂內容；未列確切日期",
+    "fetchedAt": "2026-09-24T12:09:34Z",
+    "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
+    "chunks": [
+      {
+        "key": "starting-solids",
+        "section": "引進固體食物的時間與質感",
+        "sourceExcerpt": "未足四個月大的寶寶不應吃奶以外的食物",
+        "text": "衞生署家庭健康服務指出，孩子約六個月時，單靠母乳已不足以滿足營養需要，應開始加入固體食物；初期可用匙羹餵稀滑質感食物，再按適應情況逐漸增加稠度。未滿四個月不應加入奶以外食物。這是一般餵養指引；對孩子的飲食有疑問，應詢問醫護人員。",
+        "keywords": ["加固", "固體食物", "米糊", "六個月", "BB食嘢"],
+        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 0, "maxAgeMonths": 12, "topics": ["feeding"], "conditions": ["按實際月齡理解約六個月及未滿四個月的不同限制；本檢索範圍不是提醒窗口。", "沒有個別過敏或特殊醫療需要的個人化處方；不把未記錄加固當成尚未加固。"]}
+      }
+    ]
+  },
+  {
+    "sourceId": "fhs-toddler-development",
+    "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15654.html",
+    "title": "兒童發展6——一至兩歲大兒童的發展",
+    "publisher": "香港特別行政區政府衞生署家庭健康服務",
+    "classification": "official_guidance",
+    "sourcePublishedAt": null,
+    "sourceUpdatedAt": null,
+    "sourceDateText": "02/2023 修訂內容；02/2026 重印；未列確切日期",
+    "fetchedAt": "2026-09-24T12:09:34Z",
+    "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
+    "chunks": [
+      {
+        "key": "play-and-language",
+        "section": "促進孩子的發展／你可以做的／個別發展差異",
+        "sourceExcerpt": "你的孩子是獨一無二的，有自己的發展速度。",
+        "text": "一至兩歲幼童需要安全環境、成人引導和穩定常規。家長可透過日常談話、一起看圖畫書、唱童謠及玩積木或扮演遊戲，支持探索和學習。各孩子的發展速度不同，表現清單只供參考，不能單憑一項差異判定疾病。若擔心孩子的發展，可向母嬰健康院或家庭／兒科醫生查詢。",
+        "keywords": ["一歲", "歲半", "遊戲", "玩具", "語言", "講嘢", "發展"],
+        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 12, "maxAgeMonths": 24, "topics": ["development", "play"], "conditions": ["官方本頁對象是一至兩歲，不外推為整個一至三歲的發展指標。", "發展差異不等於診斷；不憑此片段建立醫療分流。"]}
+      }
+    ]
+  },
+  {
+    "sourceId": "fhs-preschool-development",
+    "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14821.html",
+    "title": "兒童發展知多少——給學前兒童的家長",
+    "publisher": "香港特別行政區政府衞生署家庭健康服務",
+    "classification": "official_guidance",
+    "sourcePublishedAt": null,
+    "sourceUpdatedAt": null,
+    "sourceDateText": "04/2025 修訂網上內容；未列確切日期",
+    "fetchedAt": "2026-09-24T12:09:34Z",
+    "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
+    "chunks": [
+      {
+        "key": "persistent-concerns",
+        "section": "觀察發展的重點／持續出現多項問題的跟進",
+        "sourceExcerpt": "假如孩子出現以上多項問題，而且情況持續",
+        "text": "學前兒童在不同環境的表現和發展速度可以不同，家長宜與老師溝通，也要考慮孩子適應學校所需的時間。若多項發展或學習問題持續出現，應盡快經老師轉介，或聯絡所屬母嬰健康院約見護士檢查。這個跟進條件不是把短暫或單一表現直接當成發展障礙。",
+        "keywords": ["學前", "幼稚園", "發展", "學習", "老師", "母嬰健康院"],
+        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 36, "maxAgeMonths": 72, "topics": ["development"], "conditions": ["本頁分別討論約三至四、四至五、五至六歲；此片段只涵蓋一般觀察及求助途徑。", "轉介段落須保留多項問題並且持續的限制，不構成診斷或急症分流。"]}
+      }
+    ]
+  },
+  {
+    "sourceId": "fhs-child-vision",
+    "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14812.html",
+    "title": "學前兒童視力普查",
+    "publisher": "香港特別行政區政府衞生署家庭健康服務",
+    "classification": "official_guidance",
+    "sourcePublishedAt": null,
+    "sourceUpdatedAt": null,
+    "sourceDateText": "02/2022 修訂內容；02/2026 重印；未列確切日期",
+    "fetchedAt": "2026-09-24T12:09:34Z",
+    "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
+    "chunks": [
+      {
+        "key": "preschool-screening",
+        "section": "服務對象／檢查項目／普查限制",
+        "sourceExcerpt": "為四至五歲的學前兒童提供",
+        "text": "家庭健康服務的學前視力普查面向四至五歲孩子，檢查視力及雙眼協調；不包括色覺、眼疾檢查或近視等度數評估。已戴眼鏡的孩子應依視光師或眼科醫生指示跟進。普查通過也不能保證日後沒有視力問題；出現眼睛異常應盡快求醫，不要等候普查預約。",
+        "keywords": ["視力普查", "驗眼", "四歲", "五歲", "預約", "眼鏡"],
+        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 48, "maxAgeMonths": 72, "maxAgeMonthsExclusive": true, "topics": ["vision", "checkup"], "conditions": ["產品用足四歲至未滿六歲對應四至五歲；這是檢索篩選換算，不是另訂官方期限。", "不把沒有普查記錄當成未曾接受普查。"]}
+      },
+      {
+        "key": "school-eye-care",
+        "section": "通過視力普查代表甚麼／如何保護眼睛",
+        "sourceExcerpt": "若眼睛或視力有毛病，應請教醫生或視光師。",
+        "text": "學前普查正常不表示之後一定沒有視力問題。家長可在孩子小學一年級時參加學生健康服務的視力檢查。平日閱讀宜有足夠光線，閱讀或看屏幕一段時間後要休息和望遠；若懷疑視力問題，應詢問醫生或視光師。",
+        "keywords": ["小學", "學童", "護眼", "閱讀", "視力檢查", "望遠", "睇書"],
+        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 72, "maxAgeMonths": 120, "topics": ["vision", "checkup"], "conditions": ["六至十歲是本產品學童檢索範圍；小一檢查按就讀年級判斷，不能把所有六至十歲孩子當小一生。", "一般護眼及後續檢查建議不會把四至五歲普查的服務資格擴大至學童。"]}
+      }
+    ]
+  }
+]

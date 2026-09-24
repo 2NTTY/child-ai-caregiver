@@ -1,0 +1,11 @@
+[
+  {"ageMonths":6,"query":"六個月嬰兒何時開始固體食物？","topics":["feeding"],"sourceId":"fhs-solid-food","key":"starting-solids"},
+  {"ageMonths":6,"query":"BB啱啱半歲，想開始加固食米糊，要留意啲乜？","topics":["feeding"],"sourceId":"fhs-solid-food","key":"starting-solids"},
+  {"ageMonths":18,"query":"歲半孩子可以一起玩甚麼遊戲幫助語言發展？","topics":["play"],"sourceId":"fhs-toddler-development","key":"play-and-language"},
+  {"ageMonths":18,"query":"一歲半小朋友平時點樣邊玩邊學講嘢？","topics":["development"],"sourceId":"fhs-toddler-development","key":"play-and-language"},
+  {"ageMonths":50,"query":"幼稚園孩子持續出現多項發展困難，可向誰求助？","topics":["development"],"sourceId":"fhs-preschool-development","key":"persistent-concerns"},
+  {"ageMonths":50,"query":"四歲小朋友返咗學一段時間，多方面學習問題一直都冇改善，可以搵邊個？","topics":["development"],"sourceId":"fhs-preschool-development","key":"persistent-concerns"},
+  {"ageMonths":96,"query":"小學生閱讀時如何保護眼睛，視力有疑問向誰查詢？","topics":["vision"],"sourceId":"fhs-child-vision","key":"school-eye-care"},
+  {"ageMonths":96,"query":"八歲小朋友成日睇書，點樣護眼？睇嘢唔清可以搵邊個？","topics":["vision"],"sourceId":"fhs-child-vision","key":"school-eye-care"},
+  {"ageMonths":6,"query":"火星機械人的核融合引擎燃料比例怎樣計算？","topics":[],"sourceId":null,"key":null}
+]

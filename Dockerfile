@@ -1,3 +1,21 @@
+FROM postgres:18.6-bookworm AS vector-build
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates git build-essential "postgresql-server-dev-18=${PG_VERSION}" \
+    && git init /tmp/pgvector \
+    && git -C /tmp/pgvector remote add origin https://github.com/pgvector/pgvector.git \
+    && git -C /tmp/pgvector fetch --depth 1 origin 8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c \
+    && git -C /tmp/pgvector checkout --detach FETCH_HEAD \
+    && make -C /tmp/pgvector OPTFLAGS="" \
+    && make -C /tmp/pgvector OPTFLAGS="" install
+
+FROM postgres:18.6-bookworm AS postgres-vector
+LABEL org.opencontainers.image.description="PostgreSQL 18.6 with pgvector 0.8.6" \
+    org.opencontainers.image.source="https://github.com/pgvector/pgvector" \
+    org.opencontainers.image.revision="8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c"
+COPY --from=vector-build /usr/lib/postgresql/18/lib/vector.so /usr/lib/postgresql/18/lib/vector.so
+COPY --from=vector-build /usr/share/postgresql/18/extension/vector* /usr/share/postgresql/18/extension/
+COPY --from=vector-build /tmp/pgvector/LICENSE /usr/share/doc/pgvector/LICENSE
+
 FROM node:24.19.0-bookworm-slim AS deps
 
 WORKDIR /app
@@ -32,7 +50,8 @@ RUN npm install --global npm@11.8.0 --no-audit --no-fund \
 COPY server ./server
 COPY src/shared ./src/shared
 COPY prompts ./prompts
-COPY scripts/encrypt-storage.mjs scripts/storage-backup.mjs ./scripts/
+COPY knowledge ./knowledge
+COPY scripts/encrypt-storage.mjs scripts/storage-backup.mjs scripts/knowledge.mjs ./scripts/
 
 USER node
 EXPOSE 3001
