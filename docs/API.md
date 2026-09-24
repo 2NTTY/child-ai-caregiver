@@ -52,6 +52,11 @@ S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime
 - <a id="api-kr-03"></a>兩種檢索及任何復用結果套用相同分類、年齡／地區、已發布、有效版本及停用條件。embedding 失敗可回傳合格關鍵詞結果與降級原因；無適用證據／衝突／不可用不回傳模型補造的來源。
 - <a id="api-kr-04"></a>維護指令預覽片段數，按固定模型／維度／處理版本有限生成及核對發布；保存失敗及未完成狀態，hash 未變不重算。P2 提供實際匯入／發布／停用邊界，P4 管理頁及批量維運沿用它，不另建一套管理 API 權威。
 
+<a id="knowledge-w01-implementation"></a>
+### S10-W01 實作入口（待真服務驗收）
+
+[KnowledgeRetriever](../server/knowledge-retriever.ts) 的 `createRun({actor,budget,authorize})` 接收 Server 權威身份、既有運行預算及即時權限回查。`search(query, filter)` 回傳 [KnowledgeResult](../src/shared/knowledge.ts)，包括實際模式、片段短原文 `sourceExcerpt`、經核對精簡轉述 `text`、來源及版本；不是新增 HTTP 或已接通的 ADK 工具。`revalidateCitations` 在交付前重查片段／版本／hash 和適用性，不作內容語義判定。四來源五片段、維護 CLI、限額及未完成接線見 [操作文件](P2_KNOWLEDGE.md)；S11-W02 才整合聊天及背景 Agent。
+
 <a id="p2-care-http"></a>
 ## P2 確認記錄及孩子檔案 HTTP（S05-W02）
 

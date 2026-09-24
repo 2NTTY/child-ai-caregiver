@@ -1,0 +1,168 @@
+{
+  "evidenceId": "EV-S10-W01",
+  "workPackage": "S10-W01",
+  "recordedOn": "2026-09-24",
+  "baseCommit": "2964f59ad5d802820d453875c27a2f6274c55982",
+  "prerequisites": [
+    "S17-W01 merged"
+  ],
+  "status": "necessary_acceptance_passed_complete_on_pr_merge",
+  "scope": "Public official knowledge lifecycle, fixed pgvector image, Vertex embedding gateway, exact cosine and keyword RRF retrieval, operator CLI and encrypted extension restore",
+  "lightweight": {
+    "testsPassed": 21,
+    "tests": {
+      "knowledge-ranking.test.ts": 8,
+      "knowledge-runtime.test.ts": 6,
+      "vertex-embedding.test.ts": 7
+    },
+    "node": "24.19.0",
+    "typechecks": [
+      "tsc --noEmit passed",
+      "tsc --project tsconfig.server.json passed"
+    ],
+    "scriptSyntax": [
+      "scripts/knowledge.mjs",
+      "scripts/verify-knowledge.mjs",
+      "scripts/verify-knowledge-storage.mjs"
+    ],
+    "compose": "Both modified YAML files parsed without connecting to a database or building an image",
+    "corpus": {
+      "officialSources": 4,
+      "chunks": 5,
+      "prelabelledQueries": 9,
+      "review": "Primary agent read the official pages and conditions; short source excerpts are distinct from reviewed paraphrases"
+    },
+    "skillValidation": "Official Python validator cannot run because bundled Python lacks PyYAML; frontmatter and local references checked separately with existing js-yaml",
+    "scopeLimit": "Mocks and metadata checks do not prove semantic support, live model compatibility, clinical effectiveness or database correctness"
+  },
+  "fixedDependencies": {
+    "postgres": "18.6-bookworm",
+    "pgvector": "0.8.6",
+    "pgvectorCommit": "8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c",
+    "licenseSha256": "6bba9ebeb73e27477463b05e5ef1bf303bccbddb3db9bbc95905d351604d6a87",
+    "genai": "2.24.0",
+    "embedding": "gemini-embedding-001",
+    "dimensions": 1024
+  },
+  "reviewFixes": [
+    "Keep source publication date precision and reviewed summaries distinct from short verbatim source excerpts",
+    "Serialize source publication against withdrawal and require renewed review before republishing a withdrawn edition",
+    "Cache only per-run query vectors and reread publication/applicability for every retrieval and citation check",
+    "Record generation, query embedding and corpus maintenance against the existing global quota",
+    "Keep public document hashes and explicit failed vector counts without logging private queries",
+    "Use exclusive age upper bounds where the source service age requires them",
+    "Record revoked authorization distinctly; update the affected unit assertion",
+    "Use Node runtime mock exports option after checking its deprecation notice; no runtime or type-package upgrade",
+    "Count seed recovery store methods within the same 120-call cap and report success only after recovery; safe failure name/code retained."
+  ],
+  "acceptance": {
+    "approval": "User approved S10-W01 acceptance; approval persists for the stated bounded scope.",
+    "executed": true,
+    "plannedModelCallsMax": 16,
+    "expectedModelCalls": 15,
+    "maxCharactersPerCall": 4000,
+    "sdkAttempts": 1,
+    "dailyQuotaIncrease": false,
+    "database": "Existing encrypted localhost synthetic PostgreSQL, same volume; new empty restore database only",
+    "plannedChecks": [
+      "Preimage encrypted backup and private row digests",
+      "Fixed image and migration 009",
+      "Four-age-group real vector recall and unrelated question",
+      "Hard filters, withdrawal and cached citations",
+      "Incremental update and unchanged reuse",
+      "Explicit mock-only embedding failure fallback",
+      "Reconnect and preserved private rows",
+      "Encrypted backup restore including extension and actual vector query"
+    ],
+    "completed": true,
+    "preimageBackup": {
+      "passed": true,
+      "privateTablesCaptured": 23,
+      "location": "protected directory outside the repository",
+      "includes": "Existing S07/S09 tables; migrations 008/010/011 already applied"
+    },
+    "imageBuild": {
+      "sourceBuild": {
+        "completed": false,
+        "stopped": true,
+        "reason": "Repeated Debian build dependency download timeouts; no database mutation before the verified offline alternative."
+      },
+      "offlinePackageBuild": {
+        "completed": true,
+        "dockerfile": "deploy/postgres/Dockerfile.package",
+        "network": "none for build instructions; base image already cached",
+        "checks": [
+          "PGDG buildinfo SHA-256 and size match",
+          "package/version/amd64 match",
+          "vector.so dynamic dependencies resolved",
+          "original package copyright preserved"
+        ],
+        "baseImage": "postgres:18.6-bookworm@sha256:3725f4e2499eef5134592b3b4ab79a543ed7f8e533b05b5b637af926630f6650",
+        "imageId": "sha256:932c5117c1b8dd483600a6caf5680d3d0f0538617720127e99d4699662018743"
+      },
+      "containerReplacement": {
+        "passed": true,
+        "health": "healthy",
+        "sameVolume": true,
+        "postgres": "18.6",
+        "extension": "0.8.6",
+        "migration009": "passed",
+        "existing008010011ChecksumsPreserved": true
+      }
+    },
+    "actualModelCalls": 15,
+    "modelCostEstimateUsdUpper": 0.02,
+    "priceSource": "https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing",
+    "usage": {
+      "reportedInputTokens": 773,
+      "reportedBillableCharacters": 1036,
+      "attemptsWithUnknownUsage": 0,
+      "actualInvoiceVerified": false
+    },
+    "retrieval": {
+      "passed": true,
+      "groups": 7,
+      "storeCallsIncludingRecovery": 79,
+      "maxStoreCalls": 120,
+      "labelledRelevantCases": 8,
+      "unrelatedCases": 1,
+      "allRealEmbeddingsSucceeded": true,
+      "automaticRetries": 0,
+      "fallbackEvidence": "Explicit mock unavailable only, no extra service call",
+      "privateQueryTextLogged": false
+    },
+    "restore": {
+      "passed": true,
+      "originalBusinessTablesCompared": 23,
+      "originalRowsUnchanged": true,
+      "restoredTablesCompared": 31,
+      "extension": "0.8.6",
+      "actualVectorQueryPassed": true,
+      "temporaryRestoreDatabaseRemoved": true,
+      "originalDatabaseRetained": true,
+      "backupLocation": "protected directory outside repository"
+    },
+    "verifiedPackage": {
+      "url": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/postgresql-18-pgvector_0.8.6-1.pgdg12%2B2_amd64.deb",
+      "sizeBytes": 269856,
+      "verified": "Downloaded by user; official buildinfo size/hash, package metadata, image build, migration, retrieval and restore passed.",
+      "sha256": "c014676900ce4af14f85e4c438ba2d488a4dcb8f684bc03ff908bac184910081",
+      "checksumSource": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/pgvector/pgvector_0.8.6-1.pgdg12%2B2_amd64.buildinfo"
+    }
+  },
+  "notExecuted": [
+    "Completed source-compile image path",
+    "Browser E2E",
+    "Deployment",
+    "Agent and citation UI integration",
+    "Automatic source refresh worker"
+  ],
+  "remainingPackages": [
+    "S10-W02 source update worker",
+    "S11-W02 Agent and UI integration",
+    "S13-W08 growth rules and corresponding evidence expansion"
+  ],
+  "relatedPendingWork": "S07-W03 and S09-W02 are merged and integrated; existing migration checksums retained.",
+  "integrationCommit": "bb80401",
+  "limits": "Finite labelled corpus and retrieval checks are not general recall, citation-generation quality or clinical-effectiveness evidence. No full regression or additional service calls."
+}

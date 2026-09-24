@@ -278,6 +278,8 @@ P2 任務及外發須保存以下必要語義；實際表名、欄名及枚舉�
 - <a id="data-kv-04"></a>檢索結果關聯片段／來源版本及實際檢索模式、降級／不可用原因；向量距離或排名不等於建議支持證據。正文仍須可逐項引用，模型不能產生不存在的片段識別。
 - <a id="data-kv-05"></a>P2 記錄相容 PostgreSQL／pgvector 版本及必要恢復前置，空目標先具備相容擴展，不能缺擴展仍宣稱還原完成。P4 的管理／批量維運及完整遷移沿用這些資料，不建立第二套向量／引用事實來源。
 
+S10-W01 的 [009 migration](../server/migrations/009-public-knowledge.sql) 已實作、待真 DB 驗收：`knowledge_sources` 保存啟用狀態／活躍版本；`knowledge_versions` 保存不可變內容、核對／發布及日期語義；`knowledge_chunks` 保存短原文、核對轉述、適用性及 hash；`knowledge_vectors` 以真正 embedding 輸入 hash＋模型／維度／pipeline 重用。`embedding_attempts` 分 query／maintenance，公共文件可記 document hash，私人查詢不保存正文或 hash。停用標 withdrawn 且保留舊正文／核對依據；重新發布先重核。這些公共資料不替換原私人加密表；備份還原須涵蓋 vector extension 及全部表。
+
 <a id="section-6-2"></a>
 ## 6.2 通用迁移格式
 

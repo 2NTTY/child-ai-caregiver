@@ -867,3 +867,34 @@
 - Verification：[EV-S09-W02](artifacts/verification/S09_W02_CHECKS.json) 記錄 8 項 memory Server、6 項受影響 online Server、5 項 memory client 輕量測試及兩份 typecheck 通過。主模型執行已準備腳本，16 組全部通過：實際 59 HTTP／35 store、3 新帳號／1 新孩子、6 事實／4 話題／5 聊天／1 照顧記錄／3 摘要。008／011 真 SQL、隔離、來源及並發版本、精確摘要覆蓋、撤權、實際 Server／pool 重啟、同操作並發去重及刪除不復活均通過；完整驗收前後既有業務列比較不變，只刪新建孩子及其連帶資料。3 個合成帳號保留，沒有清庫、正文日誌、模型／通知／雲端呼叫、E2E 或部署。
 - Delivery / Limits：主模型覆核關鍵 diff 與實際證據，更新 API／DATA_MODEL、UI 功能及對接清單、PLAN／STATUS；本包完成隨 PR #34 合併生效。未知提交、衝突及草稿的 UI 行為由程式 review／typecheck 支持，未冒稱瀏覽器實測；沒有重跑全量測試或新增備份還原。S11-W02 仍負責模型摘要及 Agent 記憶工具，S13-W01 仍負責任務／occurrence 權威，P2 未完成。
 - Pause / Next：依使用者要求，本包合併後階段性暫停。S10-W01 保留 draft PR #35 及分支／worktree，必要 pgvector／embedding／還原驗收待獨立批准，本輪不執行；S13-W01 在 S09 合併後 Ready，但未開始。既有七天 P1 試用期限及配額不變，沒有自行續期。
+
+
+<a id="log-20260924-009"></a>
+## LOG-20260924-009
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S10-W01 最小向量 RAG，前置 S17-W01 已合併；基線 `1df0745`，獨立 `codex/s10-w01-vector-rag`／同名 worktree。S09-W02 draft PR #34 仍待批准驗收，本包不使用其未合併內容，migration 009 不占用其 008。
+- Executor：主模型處理架構、SQL／版本與配額、CLI、官方原文及內容核對、所有指導文件／Skill、必要驗收腳本及 review。兩個 Luna Max 唯讀調查固定 SDK／官方來源；兩個 Sol Xhigh 完成普通排序／adapter及相關輕量測試。Sol 發現真 DB／服務驗收編排超出普通實作邊界後停寫，主模型接手；沒有再派生、額外驗證代理或重做 Prompt Pack／美術。
+- Actual Work：固定 PostgreSQL 18.6／pgvector 0.8.6 與許可，保留既有 volume；公共來源／版本／片段／向量及用量表，核對與向量完成後才發布，停用保留舊版且須重核才能復用。4 個 FHS 來源／5 片段，短原文與核對轉述分開、日期精度和年齡條件保留。精確 cosine／關鍵詞 RRF 最多 6 片段、每 run 向量快取但重新查權限和有效性；query／maintenance 共用原全站配額，不向量化私人資料。Agent／UI 接線及 worker 更新仍屬後續包。
+- Verification：[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json)；Node 24.19.0 的 21 項必要純單元及兩份 typecheck 通過，CLI／兩份驗收腳本語法和 Compose YAML 解析通過。Python Skill validator 因環境缺 PyYAML 未能啟動，改以現有 js-yaml 核對 frontmatter 並人工覆核內容及本機連結。沒有把文件或 mock 當作真服務證據。
+- Review / Failure：發布重新讀取鎖後狀態，避免與停用競爭；補上來源日期字樣、公共 document hash、失敗缺失向量數及排他年齡上限。撤權用量結果改為 unauthorized 後更新一項舊測試預期；Node mock 的棄用 options 已按官方新 exports 寫法修正。最終針對性測試通過。0.4 召回閾值仍待實際標註問題核對，不宣稱臨床效果。
+- Delivery / Limits：必要驗收已準備並提出批准請求：同卷映像升級、原加密資料保留、最多 16 次 embedding（預計 15）、四年齡段改寫問題、來源停用／局部更新、重連及擴展加密備份／空庫還原。尚未獲批或執行，未建置映像、套 migration、呼叫模型、部署或跑 E2E；本包為待驗收，不解鎖依賴包。API／DATA_MODEL／UI 對接清單與操作文件已更新；P2 未完成，餘額未知。
+
+<a id="log-20260924-012"></a>
+## LOG-20260924-012
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S10-W01 必要驗收續接 LOG-20260924-009，使用者明確回覆「批准S10-W01驗收」，沿用最多 16 次 embedding／每次 4,000 字元／不重試、120 次 store、本機既有合成資料保留及新空庫還原的範圍；完成本包後繼續暫停，不開下一包。
+- Integration / Executor：主模型整合最新 master `2964f59`，保留 008／010／011 並加入 009，歷史 LOG 不回寫；原 Luna Max 作有界唯讀腳本 preflight，沒有新建代理或交付最終驗收。發現 recovery 的 store 操作未計數後，由主模型納入同一 120 次上限，並把通過輸出移至 recovery 完成後；兩份 typecheck、腳本語法及 diff 檢查通過，未重跑不變的 21 項單元。整合與修正已保存於 `bb80401`／draft PR #35。
+- Actual Acceptance：工程外受保護目錄已保存原庫加密備份及 23 張業務表雜湊，包括 S07／S09 新表；本機仍為原 PostgreSQL 18.6 容器及原 volume。只讀 preflight 確認原有 migrations 齊備及當日配額足夠；正確既有 ADC 可用，沒有改全局設定。模型呼叫 0、未套 009、未換容器、未清資料、未還原或部署。
+- Build Blocker / User Input：固定來源 pgvector 映像首建需約 184 MB 編譯套件，多個 Debian 下載持續逾時；主機直接下載亦未在診斷期限內完成，不能把原因斷言為程式錯誤。使用者要求可下載壓縮包的話由其下載，主模型已停止原建置並提供 PGDG 官方 PostgreSQL 18／Debian 12 amd64 的 pgvector 0.8.6 預編譯 .deb（269,856 bytes）。官方目錄已核對；小型 buildinfo 下載亦逾時，套件 hash／依賴及建置相容性尚未驗證，Dockerfile 尚未改用它。
+- Evidence / Next：[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json) 分列已批准／部分已執行／未通過；官方價格核對後，本次有限 embedding 估計低於 US$0.02，未有新模型帳單。待使用者下載檔案後核對來源、hash 與相容性，續接已批准的向量檢索及加密還原；不重新索取同一驗收批准，不標本包或 P2 完成。
+
+
+<a id="log-20260924-013"></a>
+## LOG-20260924-013
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S10-W01 接續 LOG-20260924-012，使用者回覆「已下載」後按既有批准完成必要驗收；基線 master `2964f59`，原分支／PR #35，不擴大工作包或真服務次數。
+- Package / Image：手動下載的 PGDG Debian 12 amd64／PostgreSQL 18 套件為 pgvector `0.8.6-1.pgdg12+2`，269,856 bytes；SHA-256 `c014676900ce4af14f85e4c438ba2d488a4dcb8f684bc03ff908bac184910081` 與官方 buildinfo 相符。新增固定 hash／版本／架構／動態依賴檢查的離線 Dockerfile；只用套件及許可組成工程外 context，原套件 copyright 保留。不執行 maintainer scripts，沒有將下載物或密鑰提交。原 source build 因網絡下載逾時未完成，與已通過的套件建置分開記錄。
+- Actual Verification：[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json)。保留原 volume 切換 PostgreSQL 18.6 容器、health 及 migration 009 通過，008／010／011 checksum 保持一致。真 embedding 驗收 7 組全部通過、15 次服務呼叫／79 次 store（包括恢復 seed），四年齡段八條改寫及一條無關問題、硬性適用過濾、停用後快取／引用失效、局部更新、未變內容復用及重連均有實際證據；embedding 不可用降級只用明示 mock，不冒稱服務故障實測。
+- Usage / Preservation：服務回報 773 input tokens／1,036 billable characters，15 筆用量無未知欄；SDK 每次一次 attempt，沒有提高每日額度或補打額外模型。估計低於 US$0.02，實際帳單未核對。升級前 23 張業務表逐列雜湊不變；全庫加密備份還原到新空庫，31 張表逐列比較、session 清除、pgvector 0.8.6 及實際向量查詢通過，只刪本次新還原庫。原庫與工程外受保護備份保留。
+- Executor / Review：主模型執行關鍵驗收、覆核交易／發布停用／來源與配額邊界，親自更新 Skill、操作指引、許可、UI 對接清單及狀態；本輪沒有新建子代理。復用先前 21 項單元與最新整合後兩份 typecheck，不機械重跑；新增映像已實際建置，文件／證據及 diff 作必要靜態檢查。歷史 WORKLOG 原位保留。
+- Delivery / Pause：本包完成隨 PR #35 review／合併生效；現網仍是 P1，沒有部署、通知、瀏覽器 E2E、全量回歸或重做 Prompt Pack／美術。有限語料召回不代表一般醫療能力或完整 Agent 已接通。依使用者要求繼續階段性暫停；S13-W01 Ready 但不開始，S10-W02 仍待 S13-W04，P2 未完成。

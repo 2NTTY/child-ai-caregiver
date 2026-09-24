@@ -1,0 +1,71 @@
+import { randomUUID } from "node:crypto";
+import { readFile, stat } from "node:fs/promises";
+import { readServerConfig } from "../server/config.ts";
+import { readAiConfig } from "../server/ai-config.ts";
+import { createPool } from "../server/database.ts";
+import { createKnowledgeStore } from "../server/knowledge-store.ts";
+import { createEmbeddingGateway, createEmbeddingUsage } from "../server/embedding-gateway.ts";
+import { createVertexEmbeddingProvider } from "../server/vertex-embedding.ts";
+import { createKnowledgeRetriever } from "../server/knowledge-retriever.ts";
+import { AgentBudget } from "../server/agent-budget.ts";
+
+const args = process.argv.slice(2);
+const operation = args[0];
+const option = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
+let pool, budget;
+try {
+  if (!["list", "import", "review", "embed", "publish", "disable", "search"].includes(operation)) throw new Error("Invalid operation");
+  // These are authenticated host-operator commands, never model-callable tools or a browser admin endpoint.
+  if (operation !== "list" && !args.includes("--operator-confirmed")) throw new Error("Operator confirmation required");
+  const reviewer = option("--operator");
+  if (operation !== "list" && (!reviewer || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$/.test(reviewer))) throw new Error("Operator alias required");
+  pool = createPool(readServerConfig(process.env));
+  const store = createKnowledgeStore(pool);
+  const readJson = async file => {
+    if (!file || (await stat(file)).size > 256000) throw new Error("Invalid knowledge input file");
+    return JSON.parse(await readFile(file, "utf8"));
+  };
+  if (operation === "list") console.log(JSON.stringify(await store.listVersions()));
+  if (operation === "import") {
+    const input = await readJson(args[1]);
+    const sources = Array.isArray(input) ? input : [input];
+    if (!sources.length || sources.length > 8) throw new Error("Import at most eight sources");
+    for (const source of sources) console.log(JSON.stringify({ sourceId: source.sourceId, ...await store.importSource(source) }));
+  }
+  if (operation === "review") {
+    if (!args.includes("--source-and-terms-checked")) throw new Error("Source and terms review required");
+    await store.review(args[1], option("--hash"), reviewer);
+    console.log("knowledge_version_reviewed");
+  }
+  if (operation === "publish") { await store.publish(args[1], option("--hash")); console.log("knowledge_version_published"); }
+  if (operation === "disable") { await store.disable(args[1], option("--reason") ?? ""); console.log("knowledge_source_disabled"); }
+  if (operation === "embed" || operation === "search") {
+    if (!args.includes("--approved-cost")) throw new Error("Model cost approval required");
+    const config = readAiConfig(process.env);
+    if (!config.enabled) throw new Error("Embedding disabled");
+    const gateway = createEmbeddingGateway({ config, provider: createVertexEmbeddingProvider(config), usage: createEmbeddingUsage(pool) });
+    if (operation === "embed") {
+      const max = Number(option("--max-calls"));
+      if (!Number.isInteger(max) || max < 1 || max > 16) throw new Error("Specify a finite maintenance call limit (1-16)");
+      const pending = await store.missingDocuments(args[1]);
+      if (pending.length > max) throw new Error("Pending corpus exceeds the approved call limit");
+      const actor = { kind: "corpus_maintenance", actorId: `operator:${reviewer}`, operationId: randomUUID() };
+      const signal = AbortSignal.timeout(Math.min(900000, max * config.timeoutMs));
+      let generated = 0;
+      for (const document of pending) {
+        const result = await store.embedDocument(document, () => gateway.embed({ text: document.text, title: document.title, task: "RETRIEVAL_DOCUMENT" }, actor, signal, async () => true));
+        if (!result.reused) generated++;
+      }
+      console.log(JSON.stringify({ event: "knowledge_embedding_finished", generated, remaining: (await store.missingDocuments(args[1])).length }));
+    } else {
+      const input = await readJson(args[1]);
+      budget = new AgentBudget();
+      const run = createKnowledgeRetriever(store, gateway).createRun({ actor: { kind: "query_embedding", actorId: `operator:${reviewer}`, operationId: randomUUID() }, budget, authorize: async () => true });
+      const result = await run.search(input.query, input.filter);
+      // Operator results contain public evidence only; never echo the potentially private query into logs.
+      console.log(JSON.stringify({ mode: result.mode, degradationReason: result.degradationReason,
+        chunks: result.chunks.map(chunk => ({ chunkId: chunk.chunkId, sourceId: chunk.sourceId, versionId: chunk.versionId, key: chunk.key, url: chunk.url })) }));
+    }
+  }
+} catch { console.error("knowledge_operation_failed_check_scope_version_quota_and_source_review"); process.exitCode = 1; }
+finally { budget?.close(); await pool?.end(); }

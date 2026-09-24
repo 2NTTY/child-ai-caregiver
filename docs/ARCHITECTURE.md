@@ -276,7 +276,9 @@ P2 最小向量 RAG 的資料／接口語義分別見 [DATA_MODEL](DATA_MODEL.md
 embedding 暫時不可用時，可返回仍符合相同條件的關鍵詞結果並標示降級／原因；不足時明示限制。降級不算向量流程通過。候選新版須完成核對及向量生成才發布；生成失敗不冒充完成，已知失效舊版即停用，歷史引用仍能追溯。
 
 <a id="p2-rag-evidence"></a>
-2026-09-24 核對 [pgvector 精確搜尋／過濾及索引](https://github.com/pgvector/pgvector#querying)、[固定版本建置參考](https://github.com/pgvector/pgvector/blob/v0.8.6/Dockerfile)、[Gemini embedding 維度](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/get-text-embeddings)及[task types](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/task-types)。S10-W01 仍須核對固定版本與本產品 GenAI SDK／地區的實際接線、資料保留及備份還原；本次沒有建立向量、下載映像或呼叫服務。技術 Skill 待真正接入時按 AGENTS 整理，文件依據不當作實測證據。
+S10-W01 已在實作固定 pgvector `0.8.6`／commit `8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c`；採用同版 PostgreSQL multi-stage 映像及公共資料 migration，既有 volume 保留。有限語料、指令、精確／RRF 排序、用量與降級見 [操作與限制](P2_KNOWLEDGE.md)，可復用 SDK／擴展約束見 [技術 Skill](../.agents/skills/postgres-vector-knowledge/SKILL.md)。目前僅純單元及型別接線已驗證；真擴展、embedding、資料保留及備份還原待批准，不代表現網已變更。
+
+2026-09-24 核對 [pgvector 精確搜尋／過濾及索引](https://github.com/pgvector/pgvector#querying)、[固定版本建置參考](https://github.com/pgvector/pgvector/blob/v0.8.6/Dockerfile)、[Gemini embedding 維度](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/get-text-embeddings)及[task types](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/task-types)；其後亦核對固定 GenAI 2.24.0 的參數／回應映射。這些文件與 SDK 原始碼依據不當作真服務證據。
 
 <a id="section-5-8"></a>
 ## 5.8 摘要与报告
