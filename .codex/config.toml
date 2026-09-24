@@ -4,7 +4,7 @@
 enabled = true
 max_concurrent_threads_per_session = 8
 default_subagent_model = "gpt-6-sol"
-default_subagent_reasoning_effort = "high"
+default_subagent_reasoning_effort = "xhigh"
 
 [agents.explorer]
 description = "Luna Max for independent, reading-heavy investigation, evidence analysis and existing low-cost, non-critical read-only batch tests."
