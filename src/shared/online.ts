@@ -14,7 +14,7 @@ export interface OnlineReceipt {
 }
 export interface OnlineChange {
   changeSeq: string;
-  kind: "children" | "care" | "profile" | "chat" | "family" | "preferences";
+  kind: "children" | "care" | "profile" | "chat" | "family" | "preferences" | "memory";
   childId: string | null;
   deleted: boolean;
 }

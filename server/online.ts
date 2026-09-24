@@ -13,6 +13,8 @@ import { handleCareRequest } from "./care-api.ts";
 import { handleFamilyRequest } from "./family-api.ts";
 import { handleRecordRequest } from "./record-api.ts";
 import { handleChatRequest } from "./chat-api.ts";
+import { handleMemoryRequest } from "./memory-api.ts";
+import { createMemoryStore } from "./memory.ts";
 import { transactionPool } from "./transaction-pool.ts";
 import { canonicalJson, onlineRoute } from "./online-routing.ts";
 import type { OnlineRoute } from "./online-routing.ts";
@@ -58,6 +60,7 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher) {
     if (!row) throw missing(); return row.id;
   }
   async function authorize(client: PoolClient, userId: string, space: SpaceRow, route: OnlineRoute, command: OnlineCommand | null, replay: boolean) {
+    if (route.kind === "memory" && !(await client.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount) throw missing();
     const role = await roleFor(client, userId, space);
     if (route.scope === "invitation" && !replay && command) {
       const borrowed = transactionPool(client);
@@ -91,7 +94,9 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher) {
   async function dispatch(client: PoolClient, userId: string, command: OnlineCommand): Promise<Response> {
     const borrowed = transactionPool(client), records = createRecordStore(borrowed.pool, cipher, true);
     const request = new Request(`http://online.internal${command.path}`, { method: "POST", headers: { "content-type": "application/json", "x-expected-user-id": userId }, body: JSON.stringify(command.payload) });
-    const response = /^\/api\/children\/[^/]+\/(care|profile)(\/|$)/u.test(command.path)
+    const response = /^\/api\/children\/[^/]+\/memory\//u.test(command.path)
+      ? await handleMemoryRequest(request, userId, createMemoryStore(borrowed.pool, cipher, true))
+      : /^\/api\/children\/[^/]+\/(care|profile)(\/|$)/u.test(command.path)
       ? await handleCareRequest(request, userId, createCareStore(borrowed.pool, cipher, true))
       : command.path.startsWith("/api/families/") || command.path === "/api/notification-preferences"
       ? await handleFamilyRequest(request, userId, createFamilyStore(borrowed.pool, cipher, true), records)

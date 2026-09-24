@@ -11,11 +11,13 @@ import type { OnlineReceipt } from "../src/shared/online.ts";
 
 test("the online command boundary excludes models, read operations and caller-defined identity", () => {
   const id = randomUUID();
-  for (const path of ["https://elsewhere/api/children", "/api/auth/sign-out", `/api/children/${id}/care/search`, `/api/children/${id}/messages/${id}/reply`]) {
+  for (const path of ["https://elsewhere/api/children", "/api/auth/sign-out", `/api/children/${id}/care/search`, `/api/children/${id}/messages/${id}/reply`, `/api/children/${id}/memory/summary`, `/api/children/${id}/memory/facts/${id}/history`]) {
     assert.throws(() => onlineRoute({ path, payload: {} }));
   }
   assert.deepEqual(onlineRoute({ path: `/api/children/${id}/messages`, payload: {} }).roles, ["owner", "caregiver", "viewer"]);
   assert.deepEqual(onlineRoute({ path: `/api/children/${id}/delete`, payload: {} }).roles, ["owner"]);
+  assert.equal(onlineRoute({ path: `/api/children/${id}/memory/facts`, payload: {} }).kind, "memory");
+  assert.equal(onlineRoute({ path: `/api/children/${id}/memory/topics/${id}/reopen`, payload: {} }).kind, "memory");
   const command = { path: "/api/children", payload: { displayName: "  原文\n" }, operation: { opId: id, deviceId: id, workspaceId: id, storageEpoch: id } };
   assert.equal(onlineSubmissionSchema.safeParse({ ...command, userId: "forged" }).success, false);
   assert.equal(canonicalJson({ b: [2, 1], a: "  原文\n" }), canonicalJson({ a: "  原文\n", b: [2, 1] }));

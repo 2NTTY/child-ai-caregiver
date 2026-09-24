@@ -1,0 +1,112 @@
+{
+  "workPackage": "S09-W02",
+  "status": "verified_completion_effective_on_pr_merge",
+  "date": "2026-09-24",
+  "baseCommit": "2d1a286fcdfa45b92f4c365cce12899a788ab55d",
+  "prerequisites": [
+    {
+      "workPackage": "S05-W02",
+      "mergedPr": 32
+    },
+    {
+      "workPackage": "S07-W03",
+      "mergedPr": 36,
+      "reason": "Reuse online operation receipts for memory writes after S07 merged first"
+    }
+  ],
+  "lightweight": {
+    "serverTests": {
+      "file": "tests/memory.test.ts",
+      "passed": 8
+    },
+    "clientTests": {
+      "file": "tests/memory-client.test.ts",
+      "passed": 5
+    },
+    "typecheck": [
+      "tsc --noEmit",
+      "tsc --project tsconfig.server.json"
+    ],
+    "scriptSyntax": "node --check scripts/verify-memory.mjs",
+    "runtime": "Node 24.19.0",
+    "onlineServerTests": {
+      "file": "tests/online-server.test.ts",
+      "passed": 6,
+      "scope": "memory allowlist plus existing online transaction boundary affected by the new dispatch"
+    }
+  },
+  "localAcceptance": {
+    "executed": true,
+    "approval": "User explicitly approved the updated S09 scope including migrations 008 and 011; not inherited from S07.",
+    "script": "scripts/verify-memory.mjs --approved-memory",
+    "groups": 16,
+    "limits": {
+      "httpRequests": 60,
+      "directStoreCalls": 100,
+      "accounts": 3,
+      "children": 1,
+      "facts": 6,
+      "topics": 5,
+      "chatMessages": 6,
+      "careRecords": 2,
+      "summaries": 4
+    },
+    "migration": [
+      "008-long-term-memory",
+      "011-memory-online"
+    ],
+    "databaseCleared": false,
+    "modelCalls": 0,
+    "notificationCalls": 0,
+    "deployment": false,
+    "result": "passed",
+    "actual": {
+      "httpRequests": 59,
+      "directStoreCalls": 35,
+      "accountsCreated": 3,
+      "childrenCreated": 1,
+      "facts": 6,
+      "topics": 4,
+      "chatMessages": 5,
+      "careRecords": 1,
+      "summaries": 3,
+      "existingRowsPreserved": true,
+      "deletedOnlyNewChild": true,
+      "serverRestarted": true,
+      "bodiesLogged": false
+    },
+    "verified": [
+      "Encrypted migration and prior business rows retained",
+      "Family roles, private candidate history and private source identifier redaction",
+      "Source version, expiry and concurrent expected-version checks",
+      "Terminal topics and explicit linked reopen",
+      "Exact private incremental summary coverage and stale summary rebuild",
+      "Real Server and pool restart persistence",
+      "Revocation and new child cascade deletion",
+      "Concurrent original memory operation receipt reuse and private change feed isolation",
+      "Memory and child deletion redact receipts; original operations cannot resurrect deleted data"
+    ]
+  },
+  "review": {
+    "performedBy": "implementing primary model; not an independent human approval",
+    "focus": [
+      "fresh family authorization and private candidate history",
+      "source and expected-version checks",
+      "encrypted bodies and exact summary coverage",
+      "terminal topics and explicit reopen",
+      "unknown UI submissions and account cleanup",
+      "Memory online retry and deletion receipt integration",
+      "Mutation responses redact another author's private message identifier"
+    ],
+    "saferDeletion": "Scoped memory deletion invalidates derived summaries without deleting unrelated summary contents. An earlier broader deletion patch was rejected by automatic approval review and was not applied."
+  },
+  "limits": [
+    "No browser E2E or deployment",
+    "No live model-generated summary",
+    "S11-W02 still owns Agent memory tools and model context integration",
+    "S13-W01 still owns task and occurrence authority",
+    "No new backup restoration acceptance",
+    "P2 paused after this package at user request; S10 acceptance remains unapproved"
+  ],
+  "pullRequest": 34
+}

@@ -15,6 +15,7 @@ import { verifyEncryptedStorage } from "./storage-upgrade.ts";
 import { createVertexProvider } from "./vertex-provider.ts";
 import { createFamilyStore } from "./families.ts";
 import { createCareStore } from "./care.ts";
+import { createMemoryStore } from "./memory.ts";
 import { createOnlineStore } from "./online.ts";
 
 try {
@@ -37,6 +38,7 @@ try {
     care: createCareStore(pool, cipher, onlineEnabled),
     online: onlineEnabled ? createOnlineStore(pool, cipher) : undefined,
     chat: createChatStore(pool, cipher, onlineEnabled),
+    memory: createMemoryStore(pool, cipher, onlineEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount)),
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },

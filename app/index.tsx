@@ -9,6 +9,8 @@ import { ChatController } from "../src/client/chat-controller";
 import { ChatPanel } from "../src/client/ChatPanel";
 import { FamilyPanel } from "../src/client/FamilyPanel";
 import { CarePanel } from "../src/client/CarePanel";
+import { MemoryPanel } from "../src/client/MemoryPanel";
+import { createMemoryApi } from "../src/client/memory-api";
 import { retainCareScope, type CareScope } from "../src/client/care-scope";
 import { useOnlineUpdates } from "../src/client/use-online-updates";
 
@@ -27,6 +29,7 @@ function dateTime(value: string): string {
 
 export default function HomeScreen() {
   const [recordsApi] = useState(() => createRecordsApi(environment.apiBaseUrl));
+  const [memoryApi] = useState(() => createMemoryApi(environment.apiBaseUrl));
   const [chatController] = useState(() => new ChatController(createChatApi(environment.apiBaseUrl, recordsApi.getSession)));
   const [controller] = useState(() => new RecordsController(recordsApi, true, {
     begin: childId => chatController.beginChildDeletion(childId),
@@ -207,6 +210,9 @@ export default function HomeScreen() {
             online={state.online && careVisible} apiBaseUrl={environment.apiBaseUrl}
             onChanged={() => { void controller.reloadRecords(); }}
             onAccessLost={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />
+          <MemoryPanel key={`memory:${careScope.userId}:${careScope.child.id}`} userId={careScope.userId} childId={careScope.child.id}
+            role={careScope.child.accessRole} api={memoryApi} active={state.online && careVisible}
+            onSessionChanged={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />
         </View>}
         <ChatPanel controller={chatController} auth={state.auth} userId={state.user?.id ?? null} online={state.online} child={deleting ? null : child ?? null} />
       </View>
