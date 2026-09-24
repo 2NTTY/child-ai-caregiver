@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
 import type { ChatMessage, ChatPage } from "../src/shared/chat.ts";
+import { READ_ROLES, withChildAccess } from "./family-access.ts";
 
 export interface ChatStore {
   acquireReplyLock(messageId: string): Promise<(() => Promise<void>) | null>;
@@ -42,49 +43,41 @@ export function createChatStore(pool: Pool, cipher: StorageCipher): ChatStore {
       } catch { client?.release(true); activeLocks--; throw new Error("Chat lock unavailable"); }
     },
     async listForUser(userId, childId) {
-      const result = await pool.query<MessageRow | { id: null }>(
-        `SELECT message.id, message.child_id, message.author_user_id, message.role,
-                message.text, message.in_reply_to, message.created_at
-         FROM children AS child
-         JOIN workspaces AS workspace ON workspace.id = child.workspace_id
-         LEFT JOIN LATERAL (
-           SELECT id, child_id, author_user_id, role, text_encrypted AS text, in_reply_to, created_at
-           FROM chat_messages
-           WHERE child_id = child.id AND owner_user_id = $1
-           ORDER BY created_at DESC, id DESC LIMIT 100
-         ) AS message ON true
-         WHERE workspace.owner_user_id = $1 AND child.id = $2
-         ORDER BY message.created_at DESC, message.id DESC`, [userId, childId],
+      return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
+      const result = await client.query<MessageRow>(
+        `SELECT id,child_id,author_user_id,role,text_encrypted AS text,in_reply_to,created_at FROM chat_messages
+         WHERE owner_user_id=$1 AND child_id=$2 ORDER BY created_at DESC,id DESC LIMIT 100`, [userId, childId],
       );
-      if (!result.rows.length) return null;
-      return { messages: result.rows.filter((row): row is MessageRow => row.id !== null).map(row => toMessage(row, userId, cipher)).reverse(), limit: 100 };
+      return { messages: result.rows.map(row => toMessage(row, userId, cipher)).reverse(), limit: 100 };
+      });
     },
     async createUserMessageForUser(userId, childId, text) {
+      return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
       const messageId = randomUUID();
-      const result = await pool.query<MessageRow>(
+      const result = await client.query<MessageRow>(
         `INSERT INTO chat_messages (id, child_id, owner_user_id, author_user_id, role, text_encrypted)
-         SELECT $1, child.id, $2, $2, 'user', $4
-         FROM children AS child JOIN workspaces AS workspace ON workspace.id = child.workspace_id
-         WHERE workspace.owner_user_id = $2 AND child.id = $3
+         VALUES($1,$3,$2,$2,'user',$4)
          RETURNING id, child_id, author_user_id, role, text_encrypted AS text, in_reply_to, created_at`,
         [messageId, userId, childId, cipher.encrypt(text, `chat_messages:${messageId}:${childId}:${userId}:user::text`)],
       );
       return result.rows[0] ? toMessage(result.rows[0], userId, cipher) : null;
+      });
     },
     async createModelMessageForUser(userId, childId, inReplyTo, text) {
+      return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
       const messageId = randomUUID();
-      const result = await pool.query<MessageRow>(
+      const result = await client.query<MessageRow>(
         `INSERT INTO chat_messages (id, child_id, owner_user_id, author_user_id, role, text_encrypted, in_reply_to)
-         SELECT $1, child.id, $2, NULL, 'model', $5, original.id
-         FROM children AS child JOIN workspaces AS workspace ON workspace.id = child.workspace_id
-         JOIN chat_messages AS original ON original.child_id = child.id
-         WHERE workspace.owner_user_id = $2 AND child.id = $3
+         SELECT $1, original.child_id, $2, NULL, 'model', $5, original.id
+         FROM chat_messages AS original
+         WHERE original.child_id = $3
            AND original.id = $4 AND original.owner_user_id = $2 AND original.role = 'user'
          ON CONFLICT (in_reply_to) DO NOTHING
          RETURNING id, child_id, author_user_id, role, text_encrypted AS text, in_reply_to, created_at`,
         [messageId, userId, childId, inReplyTo, cipher.encrypt(text, `chat_messages:${messageId}:${childId}:${userId}:model:${inReplyTo}:text`)],
       );
       return result.rows[0] ? toMessage(result.rows[0], userId, cipher) : null;
+      });
     },
   };
 }

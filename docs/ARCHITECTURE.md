@@ -48,6 +48,13 @@ Server 業務儲存須加密，備份獨立加密及核驗恢復；實際加密�
 <a id="rule-3-2-11"></a>
 P1 最小 Server／PostgreSQL／Better Auth 先支援合成資料可玩流程，之後完成 Server 儲存加密及最小加密備份／還原；P2 加入家庭邀請、私人隔離、附件、持續 worker、ADK 及最小 pgvector RAG；P3 Android 重用 Server；P4 擴充既有 RAG 管理／規模及維運，完成 Server 選擇、Windows 部署、完整遷移及災備。
 
+<a id="p2-family-access"></a>
+### S06-W02 家庭授權
+
+Server 會話提供身份，業務每次按 workspace owner／目前 membership 核權；資料寫入及單一孩子讀取以 `family-access` 短交易持 workspace `FOR SHARE`，成員管理／接受邀請持 `FOR UPDATE`，取得鎖後另查 membership，與撤權串行。採用 PostgreSQL 18 的 [READ COMMITTED](https://www.postgresql.org/docs/18/transaction-iso.html) 及 [row locks](https://www.postgresql.org/docs/18/explicit-locking.html#LOCKING-ROWS)；不在持鎖期間呼叫模型或外部渠道。私人聊天另限自身擁有者，長時間生成前後及讀取既有回覆後重新核權。
+
+撤權前已送達的資料不能從裝置收回；新操作以 Server 當前權限為準，客戶端重讀發現孩子消失／收到權限拒絕時清除該孩子緩存與草稿，不把 stale UI 當作授權。完整在線版本／重連協議留 S07-W03。邀請共享範圍、短期碼及個人偏好契約見 [API](API.md#p2-family-http)。
+
 <a id="p1-storage-protection"></a>
 ### P1 加密實作邊界（S05-W01，本機已驗證）
 

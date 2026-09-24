@@ -791,3 +791,33 @@
 - Verification：[EV-S11-W03](artifacts/verification/S11_W03_CHECKS.json) 記錄兩份 typecheck、18 項必要輕量測試及獲批真 Vertex ADK 工具循環通過。真驗收成功兩次模型呼叫、一次合成唯讀工具；input tokens 4,759／4,791，output tokens 18／8，cached 分別未知／4,016，未核對實際帳單。既有合成資料保留，每日配額未提高，沒有部署、embedding、通知或 E2E。
 - Findings / Recovery：ADK 將模型錯誤轉成 event、包裹 callback 錯誤，已以應用安全停止原因處理並驗證。環境原 ADC override 指向不存在檔案，先前一次 provider 入口在 HTTP 前失敗；只在驗收子程序改用已授權 ADC，餘下上限兩次，沒有超過批准次數。Skill Python 檢查器缺 PyYAML，改用已安裝 js-yaml 執行同範圍 frontmatter 檢查，不聲稱原檢查器通過。
 - Limits / Next：本包是內部 Agent 基礎，完整業務工具／長期記憶／RAG／跨 run 確認／持久冪等／背景及通知仍按後續包實作驗收；Docker 建置、全量回歸及瀏覽器測試未執行。完成 review／PR／合併後開始 Ready 的 S06-W02，S10-W01 亦 Ready；P2 尚未完成，真服務批准不延伸至下一包。
+
+
+<a id="log-20260924-004"></a>
+## LOG-20260924-004
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S06-W02 家庭權限，前置 S17-W01 已合併；S11-W03 已隨 PR #30 合併，基線 `3c4cd78`，獨立 worktree／branch `codex/s06-w02-family-access`。
+- Goal / Executor：延續使用者完成 P2 的目標，主模型負責家庭範圍、授權／撤權交易、遷移、加密歸屬、私人聊天及整合；一個 Luna Max 唯讀定位 owner-only 呼叫鏈及測試，一個 Sol High 完成邊界固定的 FamilyPanel／client adapter 及普通相關測試。指導／計劃／契約／技術 Skill 均由主模型撰寫及 review，沒有重做 Prompt Pack／美術。
+- Actual Work：加入 owner／caregiver／viewer、指定帳號的一次性七日邀請、接受預覽／確認、版本拒絕與撤權；共享家庭孩子及照顧記錄，私人聊天仍按本人讀寫。孩子解密保留原 owner AAD，共享記錄保留原作者。新增 006 migration、加密邀請電郵及個人通知偏好；UI 功能清單補實際路由、型別與未接通界線。最少孩子入口已接家庭，年齡／地區及確認歷史留 S05-W02。
+- Verification：[EV-S06-W02](artifacts/verification/S06_W02_CHECKS.json) 記錄 56 項不同的相关輕量測試及兩份 TypeScript 檢查通過；包括共享作者、viewer 拒寫、撤權清理聊天／記錄草稿、鎖後核權、版本與輸入拒絕。首次新增 API 測試發現 Zod 疊加 min(1)／min(0) 未容許偏好初始版本 0，已修正獨立 schema 並覆驗。真 SQL、並發與既有資料保留不以 fake Pool 測試代替。
+- Human Verification / Pending：本輪已準備 scripts/verify-family.mjs，向使用者請求一次 13 組／最多 60 次本機 HTTP、4 個新合成帳號的新增遷移／邀請／角色／撤權／私聊／加密及舊資料保留驗收，批准尚待回覆；不沿用 S11 的批准。未執行該 script、沒有新 migration 落到資料庫，也未部署、呼叫模型／通知或進行 E2E。
+- Limits / Next：本包仍待驗收，未合併及未解鎖 S05-W02。收到本次批准後，用既有工程外合成庫密鑰執行必要驗收、核對結果後完成 PR／合併，再按依賴推進 P2；整體目標保持未完成。
+
+
+<a id="log-20260924-005"></a>
+## LOG-20260924-005
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S06-W02 待驗收期間的必要覆核，接續 LOG-20260924-004，主模型處理。
+- Actual Work：發現先前撤權的孩子即使經新邀請恢復資格，聊天 controller 的已忘記集合仍會拒絕選取；改為只依新取得的授權孩子列表解除頁面封鎖，再重新讀取聊天，不恢復舊草稿。另核對已安裝 Better Auth 的註冊限流為 10 秒內 3 次，驗收腳本第四個註冊前先等候窗口結束，沒有修改安全限流或增加請求重試。
+- Verification：chat-client 7 項及 deletion-client 5 項通過，新增涵蓋重新獲權及舊草稿不復活；本包累計不同輕量測試為 62 項。TypeScript 與驗收腳本 syntax check 通過；其餘未變動測試沿用先前證據，沒有機械全量重跑。
+- Human Verification / Next：本機 PostgreSQL 13 組／最多 60 次 HTTP 驗收批准仍未收到，腳本未執行、migration 未套用，P2 及本工作包均未完成；收到批准後才進行既定驗收與合併。
+
+
+<a id="log-20260924-006"></a>
+## LOG-20260924-006
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S06-W02 必要驗收及結案，接續 LOG-20260924-005，實作版本 `0c9daa4`；前置 S17-W01 已合併。
+- Human Verification：使用者明確回覆「批准」，涵蓋既有合成 PostgreSQL、4 個新合成帳號、最多 60 次本機 HTTP 及新增 migration；本次沒有沿用其他工作包批准。
+- Verification：主模型執行已準備的 verify-family.mjs，13 組檢查、51 次 HTTP 全部通過；包括一次性／並發邀請、角色及撤權、跨家庭／私人聊天隔離、個人偏好、加密及既有資料逐列保留。新增 006-family-access 成功，未清空原庫、未刪原有孩子、未記錄正文，沒有模型、通知或雲端呼叫。62 項輕量測試及兩份 typecheck 沿用未變動程式的既有證據，沒有重跑。
+- Review / Delivery：主模型覆核交易內鎖後核權、原作者加密歸屬、邀請終態及敏感資料邊界，未見未處理的合併阻塞；更新 EV-S06-W02、PLAN、STATUS 及 UI 功能清單。本包完成隨 PR 合併生效，並不代表 P2 已完成。
+- Limits / Next：沒有部署、瀏覽器 E2E、全量回歸或新的備份還原演練。合併後從最新 master 開始 S05-W02；S10-W01 亦 Ready，按真實依賴逐包推進，後續真服務驗收另行批准。

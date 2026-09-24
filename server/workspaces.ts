@@ -27,13 +27,15 @@ export function createWorkspaceStore(pool: Pool): WorkspaceStore {
   return {
     async listForUser(userId) {
       const result = await pool.query<WorkspaceRow>(
-        "SELECT id, storage_epoch, created_at FROM workspaces WHERE owner_user_id = $1 ORDER BY created_at", [userId],
+        `SELECT w.id,w.storage_epoch,w.created_at FROM workspaces w WHERE w.owner_user_id=$1
+          OR EXISTS(SELECT 1 FROM family_members m WHERE m.workspace_id=w.id AND m.user_id=$1) ORDER BY w.created_at`, [userId],
       );
       return result.rows.map(toWorkspace);
     },
     async getForUser(userId, workspaceId) {
       const result = await pool.query<WorkspaceRow>(
-        "SELECT id, storage_epoch, created_at FROM workspaces WHERE owner_user_id = $1 AND id = $2", [userId, workspaceId],
+        `SELECT w.id,w.storage_epoch,w.created_at FROM workspaces w WHERE w.id=$2 AND (w.owner_user_id=$1
+          OR EXISTS(SELECT 1 FROM family_members m WHERE m.workspace_id=w.id AND m.user_id=$1))`, [userId, workspaceId],
       );
       return result.rows[0] ? toWorkspace(result.rows[0]) : null;
     },

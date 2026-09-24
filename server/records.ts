@@ -3,6 +3,8 @@ import type { Pool } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
 import type { CreateChildInput, CreateTextRecordInput } from "../src/shared/inputs.ts";
 import type { Child, RecordList, TextRecord } from "../src/shared/records.ts";
+import { READ_ROLES, WRITE_ROLES, withChildAccess, withWorkspaceAccess } from "./family-access.ts";
+import { createWorkspaceStore } from "./workspaces.ts";
 
 const RECORD_LIST_LIMIT = 100;
 
@@ -10,7 +12,7 @@ export interface RecordStore {
   deleteChildForUser(userId: string, childId: string): Promise<boolean>;
   listChildrenForUser(userId: string): Promise<Child[]>;
   getChildForUser(userId: string, childId: string): Promise<Child | null>;
-  createChildForUser(userId: string, input: CreateChildInput): Promise<Child>;
+  createChildForUser(userId: string, input: CreateChildInput, workspaceId?: string): Promise<Child>;
   listRecordsForUser(userId: string, childId: string): Promise<RecordList | null>;
   createRecordForUser(userId: string, input: CreateTextRecordInput): Promise<TextRecord | null>;
 }
@@ -20,6 +22,8 @@ interface ChildRow {
   workspace_id: string;
   display_name: string;
   created_at: Date;
+  owner_user_id: string;
+  access_role: "owner" | "caregiver" | "viewer";
 }
 
 interface RecordRow {
@@ -30,12 +34,10 @@ interface RecordRow {
   created_at: Date;
 }
 
-type RecordPageRow = RecordRow | { [Key in keyof RecordRow]: null };
-
 export function createRecordStore(pool: Pool, cipher: StorageCipher): RecordStore {
-  function toChild(row: ChildRow, userId: string): Child {
+  function toChild(row: ChildRow): Child {
     return { id: row.id, workspaceId: row.workspace_id,
-      displayName: cipher.decrypt(row.display_name, `children:${row.id}:${userId}:display_name`),
+      displayName: cipher.decrypt(row.display_name, `children:${row.id}:${row.owner_user_id}:display_name`), accessRole: row.access_role,
       createdAt: row.created_at.toISOString() };
   }
   function toRecord(row: RecordRow): TextRecord {
@@ -45,7 +47,8 @@ export function createRecordStore(pool: Pool, cipher: StorageCipher): RecordStor
   }
   return {
     async deleteChildForUser(userId, childId) {
-      const result = await pool.query(
+      return (await withChildAccess(pool, userId, childId, ["owner"], async client => {
+      const result = await client.query(
         `WITH removed AS (
            DELETE FROM children child USING workspaces workspace
            WHERE child.workspace_id = workspace.id AND workspace.owner_user_id = $1 AND child.id = $2
@@ -53,77 +56,69 @@ export function createRecordStore(pool: Pool, cipher: StorageCipher): RecordStor
          ) INSERT INTO deleted_children (id, workspace_id)
            SELECT id, workspace_id FROM removed RETURNING id`, [userId, childId]);
       return result.rowCount === 1;
+      })) ?? false;
     },
     async listChildrenForUser(userId) {
       const result = await pool.query<ChildRow>(
-        `SELECT child.id, child.workspace_id, child.display_name_encrypted AS display_name, child.created_at
+        `SELECT child.id, child.workspace_id, child.display_name_encrypted AS display_name, child.created_at, workspace.owner_user_id,
+          CASE WHEN workspace.owner_user_id=$1 THEN 'owner' ELSE member.role END AS access_role
          FROM children AS child
          JOIN workspaces AS workspace ON workspace.id = child.workspace_id
-         WHERE workspace.owner_user_id = $1
+         LEFT JOIN family_members member ON member.workspace_id=workspace.id AND member.user_id=$1
+         WHERE workspace.owner_user_id = $1 OR member.user_id IS NOT NULL
          ORDER BY child.created_at, child.id`,
         [userId],
       );
-      return result.rows.map(row => toChild(row, userId));
+      return result.rows.map(toChild);
     },
     async getChildForUser(userId, childId) {
-      const result = await pool.query<ChildRow>(
+      return withChildAccess(pool, userId, childId, READ_ROLES, async (client, role) => {
+      const result = await client.query<ChildRow>(
         `SELECT child.id, child.workspace_id, child.display_name_encrypted AS display_name, child.created_at
          FROM children AS child
          JOIN workspaces AS workspace ON workspace.id = child.workspace_id
-         WHERE workspace.owner_user_id = $1 AND child.id = $2`,
-        [userId, childId],
+         WHERE child.id = $1`,
+        [childId],
       );
-      return result.rows[0] ? toChild(result.rows[0], userId) : null;
+      if (!result.rows[0]) return null;
+      const owner = (await client.query<{ owner_user_id: string }>("SELECT owner_user_id FROM workspaces WHERE id=$1", [result.rows[0].workspace_id])).rows[0];
+      return toChild({ ...result.rows[0], owner_user_id: owner.owner_user_id, access_role: role });
+      });
     },
-    async createChildForUser(userId, input) {
+    async createChildForUser(userId, input, workspaceId) {
+      const target = workspaceId ?? (await createWorkspaceStore(pool).ensureForUser(userId)).id;
+      return withWorkspaceAccess(pool, userId, target, WRITE_ROLES, async (client, role) => {
       const childId = randomUUID();
-      const result = await pool.query<ChildRow>(
-        `WITH owned_workspace AS (
-           INSERT INTO workspaces (id, owner_user_id, storage_epoch)
-           VALUES ($1, $2, $3)
-           ON CONFLICT (owner_user_id) DO UPDATE SET owner_user_id = EXCLUDED.owner_user_id
-           RETURNING id, owner_user_id
-         )
-         INSERT INTO children (id, workspace_id, display_name_encrypted)
-         SELECT $4, id, $5 FROM owned_workspace WHERE owner_user_id = $2
-         RETURNING id, workspace_id, display_name_encrypted AS display_name, created_at`,
-        [randomUUID(), userId, randomUUID(), childId, cipher.encrypt(input.displayName, `children:${childId}:${userId}:display_name`)],
+      const owner = (await client.query<{ owner_user_id: string }>("SELECT owner_user_id FROM workspaces WHERE id=$1", [target])).rows[0].owner_user_id;
+      const result = await client.query<ChildRow>(
+        `INSERT INTO children(id,workspace_id,display_name_encrypted) VALUES($1,$2,$3)
+         RETURNING id,workspace_id,display_name_encrypted AS display_name,created_at`,
+        [childId, target, cipher.encrypt(input.displayName, `children:${childId}:${owner}:display_name`)],
       );
-      return toChild(result.rows[0]!, userId);
+      return toChild({ ...result.rows[0], owner_user_id: owner, access_role: role });
+      });
     },
     async listRecordsForUser(userId, childId) {
-      const result = await pool.query<RecordPageRow>(
-        `SELECT record.id, record.child_id, record.author_user_id, record.text, record.created_at
-         FROM children AS child
-         JOIN workspaces AS workspace ON workspace.id = child.workspace_id
-         LEFT JOIN LATERAL (
-           SELECT id, child_id, author_user_id, text_encrypted AS text, created_at
-           FROM text_records
-           WHERE child_id = child.id
-           ORDER BY created_at DESC, id DESC
-           LIMIT $3
-         ) AS record ON true
-         WHERE workspace.owner_user_id = $1 AND child.id = $2
-         ORDER BY record.created_at DESC, record.id DESC`,
-        [userId, childId, RECORD_LIST_LIMIT],
+      return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
+      const result = await client.query<RecordRow>(
+        `SELECT id,child_id,author_user_id,text_encrypted AS text,created_at FROM text_records
+         WHERE child_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2`,
+        [childId, RECORD_LIST_LIMIT],
       );
-      if (result.rows.length === 0) return null;
-      // The lateral join returns one null row for an owned child without records.
-      const records = result.rows.filter((row): row is RecordRow => row.id !== null).map(toRecord);
-      return { records, limit: RECORD_LIST_LIMIT };
+      return { records: result.rows.map(toRecord), limit: RECORD_LIST_LIMIT };
+      });
     },
     async createRecordForUser(userId, input) {
+      return withChildAccess(pool, userId, input.childId, WRITE_ROLES, async client => {
       const recordId = randomUUID();
-      const result = await pool.query<RecordRow>(
+      const result = await client.query<RecordRow>(
         `INSERT INTO text_records (id, child_id, author_user_id, text_encrypted)
-         SELECT $1, child.id, $2, $4
-         FROM children AS child
-         JOIN workspaces AS workspace ON workspace.id = child.workspace_id
-         WHERE workspace.owner_user_id = $2 AND child.id = $3
+         VALUES($1,$3,$2,$4)
          RETURNING id, child_id, author_user_id, text_encrypted AS text, created_at`,
         [recordId, userId, input.childId, cipher.encrypt(input.text, `text_records:${recordId}:${input.childId}:${userId}:text`)],
       );
       return result.rows[0] ? toRecord(result.rows[0]) : null;
+      });
     },
   };
 }

@@ -91,7 +91,7 @@ Web／App 均先連接 Server 並登入；資料空間明確綁定帳號及授�
 <a id="p2-family-permissions"></a>
 ### P2 家庭操作權限
 
-以下為業務角色契約，不代表 P1 已有家庭 API；Better Auth 會話不能代替每次資源及操作授權。
+以下為業務角色契約，S06-W02 開始落實家庭 API；Better Auth 會話不能代替每次資源及操作授權。
 
 | 操作 | owner | caregiver | viewer |
 |---|---|---|---|
@@ -104,6 +104,28 @@ Web／App 均先連接 Server 並登入；資料空間明確綁定帳號及授�
 
 <a id="api-family-01"></a>
 所有「可」仍受當前家庭／資源範圍及版本檢查約束；不能以角色要求讀取其他人的私人聊天。確認共享事實、指派對象及綁定渠道均不等於通知外發授權；收件人及內容仍按[任務授權](#notification-contract)核對。分享私人候選時，確認入口須明示目標範圍，Server 先驗證來源讀取及目標寫入權限。
+
+<a id="p2-family-http"></a>
+### S06-W02 家庭 HTTP 接線
+
+沿用 Origin、session、無快取、64 KiB body 上限及 POST 的 `x-expected-user-id`。新 body 嚴格拒絕未定義欄位；識別／角色／預期版本只供 Server 核對，不能代替權限。共享型別見 [family.ts](../src/shared/family.ts)，入口見 [FamilyPanel](../src/client/FamilyPanel.tsx)。實作與真驗收狀態看 [STATUS](../STATUS.md)。
+
+| 方法／路徑 | 輸入與結果 |
+|---|---|
+| GET `/api/families` | `{families: FamilySpace[]}`，包含自己及已加入家庭的目前角色、成員及權限版本；僅 owner 收到邀請電郵及狀態 |
+| POST `/api/families/:id/invitations` | owner 提交 `{email,role,expectedVersion}`；角色只可 caregiver／viewer，回 `{invitation,token}`。UI 先確認全家庭共享範圍，邀請碼只顯示一次，不自動發電郵 |
+| POST `/api/families/invitations/preview` | `{token}`，須登入指定電郵帳號，回 `{invitation: {workspaceId,ownerName,role,expiresAt}}`；不預先披露孩子／記錄正文 |
+| POST `/api/families/invitations/accept` | `{token,confirmWorkspaceId}`；使用者檢視範圍後確認，回 `{joined:true}`。同帳號重複確認不新增成員，舊邀請不能恢復已撤權資格 |
+| POST `/api/families/:id/invitations/:inviteId/revoke` | owner 提交 `{expectedVersion}`；只撤銷未接受邀請，回 `{updated:true}` |
+| POST `/api/families/:id/members/:userId` | owner 提交 `{role,expectedVersion}`；role 為 caregiver／viewer／revoked，不能改動／刪除 owner，回 `{updated:true}` |
+| POST `/api/families/:id/children` | owner／caregiver 提交 `{displayName}`，回 `{child}`。最少孩子資料入口；年齡／地區及確認歷史由 S05-W02 接入 |
+| GET／POST `/api/notification-preferences` | 僅本人；GET 回 `{preferences}`，POST `{timeZone,quietStart,quietEnd,allowAppointmentDuringQuiet,expectedVersion}` 回新版本。初始 version=0；quiet 為不同的 HH:mm，時區須有效 |
+
+家庭由原有 workspace 延伸，owner 仍唯一；加入即涵蓋該家庭現在及日後孩子／共享記錄，UI 建立及接受邀請前均明示。此包不加入 owner 轉移、不同孩子的子權限或電郵發送；一次性 256-bit 邀請碼綁指定電郵，七天失效，同家庭最多 20 個有效未接受邀請，同一電郵不能重複 pending。錯碼、錯收件人、過期或撤銷均回固定 404。必須同時持碼及登入指定帳號；本包不新增電郵信箱驗證服務，不能把帳號電郵當成已核實法定身份。
+
+新管理寫入以 workspace 權限版本拒絕舊畫面，409 要求重讀；400／415／428 是明確拒絕，網絡／5xx 結果未知，不自動重送。既有 `/children` GET 及 workspace GET 擴為目前可存取的家庭資料，`Child.accessRole` 表示目前角色；舊 POST `/children` 保留建立至自己 workspace。共享記錄保留各作者，整個孩子刪除仍只准 owner。viewer 可使用自己的私人聊天，但不能寫共享資料；這不授予查看其他成員私人聊天的權限。
+
+偏好預設 `Asia/Hong_Kong`、22:00–08:00、`allowAppointmentDuringQuiet=false`；true 只表示使用者允許已明確設定的預約提醒在安靜時段內例外投遞，不能代替逐項任務／內容／對象授權。此包只保存偏好，通知及頻率控制仍隨 S13 接線。
 
 <a id="p1-server-http"></a>
 ## P1 最小 Server HTTP 邊界

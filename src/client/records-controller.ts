@@ -348,6 +348,8 @@ export class RecordsController {
 
   reviewDeleteChild(): void {
     const childId = this.state.selectedChildId;
+    const role = this.state.children.find(child => child.id === childId)?.accessRole;
+    if (role && role !== "owner") return;
     if (this.state.auth !== "signedIn" || this.state.busy || this.state.childrenLoading || !this.state.online
       || this.state.deletion?.phase === "unknown" || !childId || !this.state.children.some(child => child.id === childId)) return;
     if (this.childDeletion && !this.childDeletion.begin(childId)) {
@@ -366,6 +368,8 @@ export class RecordsController {
 
   async confirmDeleteChild(): Promise<void> {
     const deletion = this.state.deletion;
+    const role = this.state.children.find(child => child.id === deletion?.childId)?.accessRole;
+    if (role && role !== "owner") { this.cancelDeleteChild(); return; }
     if (!deletion || deletion.phase !== "confirm" || this.state.auth !== "signedIn" || this.state.busy
       || this.state.childrenLoading || !this.state.online || this.state.selectedChildId !== deletion.childId
       || !this.state.children.some(child => child.id === deletion.childId)) return;
@@ -416,16 +420,16 @@ export class RecordsController {
     try {
       const list = await this.api.listRecords(childId, scope.controller.signal);
       if (!this.current(scope) || sequence !== this.recordRequest || this.state.selectedChildId !== childId) return;
-      if (list.records.some(record => record.authorUserId !== scope.userId)) {
-        this.gate("signedOut", SESSION_EXPIRED);
-        return;
-      }
       if (!await this.verifyIdentity(scope) || sequence !== this.recordRequest || this.state.selectedChildId !== childId) return;
       this.update({ records: list.records, recordLimit: list.limit, recordsLoadedAt: new Date().toISOString() });
       if (this.state.drafts[childId]?.outcome === "unknown") this.updateDraft(childId, { outcome: "checked" });
     } catch (error) {
       if (this.current(scope) && sequence === this.recordRequest) {
         if (isSessionInvalid(error)) this.gate("signedOut", SESSION_EXPIRED);
+        else if (error instanceof ClientApiError && (error.status === 403 || error.status === 404)) {
+          this.forgetChild(childId);
+          this.update({ children: this.state.children.filter(child => child.id !== childId), notice: "孩子的存取權已失效或資料已刪除，本頁相關內容已清除。" });
+        }
         else this.update({ recordsError: "未能讀取記錄；畫面資料可能過期，請重新讀取。" });
       }
     } finally {
@@ -468,6 +472,7 @@ export class RecordsController {
 
   reviewRecord(): void {
     const childId = this.state.selectedChildId;
+    if (this.state.children.find(child => child.id === childId)?.accessRole === "viewer") return;
     const draft = childId ? this.state.drafts[childId] ?? emptyDraft() : emptyDraft();
     if (this.state.auth !== "signedIn" || this.state.busy || this.state.deletion || this.state.recordsLoading || !this.state.online || draft.outcome !== "draft") return;
     const validation = validateCreateTextRecord({ childId, text: draft.text });
@@ -484,6 +489,9 @@ export class RecordsController {
 
   async confirmRecord(): Promise<void> {
     const confirmation = this.state.confirmation;
+    if (this.state.children.find(child => child.id === confirmation?.childId)?.accessRole === "viewer") {
+      this.update({ confirmation: null }); return;
+    }
     if (!confirmation || this.state.auth !== "signedIn" || this.state.busy || this.state.deletion || this.state.recordsLoading || !this.state.online) return;
     const draft = this.state.drafts[confirmation.childId];
     if (!draft || draft.outcome !== "draft" || draft.text !== confirmation.text || this.state.selectedChildId !== confirmation.childId) return;
@@ -507,6 +515,9 @@ export class RecordsController {
         if (isSessionInvalid(error)) {
           this.updateDraft(confirmation.childId, { outcome: "draft" });
           this.gate("signedOut", SESSION_EXPIRED);
+        } else if (error instanceof ClientApiError && (error.status === 403 || error.status === 404)) {
+          this.forgetChild(confirmation.childId);
+          this.update({ children: this.state.children.filter(child => child.id !== confirmation.childId), notice: "存取權已改變，請重新讀取孩子列表。" });
         } else this.updateDraft(confirmation.childId, { outcome: isUnknown(error) ? "unknown" : "draft", message: isUnknown(error) ? UNKNOWN_WRITE : "提交未獲接納，尚未保存。請核對輸入或重新讀取後再試。" });
       }
     } finally {
