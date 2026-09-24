@@ -1,5 +1,7 @@
 import type { ChatMessage, ChatPage } from "../shared/chat.ts";
+import type { OnlineReceipt } from "../shared/online.ts";
 import type { SessionUser } from "./records-api.ts";
+import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export type ChatErrorCode = "ai_disabled" | "ai_busy" | "ai_quota_exceeded" | "ai_timeout" | "ai_unavailable"
   | "invalid_input" | "unauthorized" | "session_changed" | "not_found";
@@ -12,12 +14,16 @@ const knownCodes = new Set<ChatErrorCode>([
 export class ChatApiError extends Error {
   readonly status: number;
   readonly code: ChatErrorCode | null;
+  readonly onlineCode: string | null;
+  readonly confirmed: boolean;
 
-  constructor(status = 0, code: ChatErrorCode | null = null) {
+  constructor(status = 0, code: ChatErrorCode | null = null, onlineCode: string | null = null, confirmed = false) {
     super("Chat request could not be confirmed");
     this.name = "ChatApiError";
     this.status = status;
     this.code = code;
+    this.onlineCode = onlineCode;
+    this.confirmed = confirmed;
   }
 }
 
@@ -37,6 +43,9 @@ export interface ChatApi {
   requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<ChatMessage>;
   getStatus(signal: AbortSignal): Promise<boolean>;
   getUsage(signal: AbortSignal): Promise<ChatUsage>;
+  reconcilePending?(signal: AbortSignal, userId: string): Promise<OnlineReceipt | { state: "unconfirmed" } | null>;
+  resetOnline?(): void;
+  hasPendingOnline?(): boolean;
 }
 
 function object(value: unknown): value is Record<string, unknown> {
@@ -65,6 +74,23 @@ function nonnegativeInteger(value: unknown): value is number {
 export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"], fetcher: typeof fetch = fetch): ChatApi {
   const base = baseUrl.replace(/\/$/, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
+  const online = createOnlineTransport(apiUrl, fetcher);
+
+  async function onlineCall<T>(signal: AbortSignal, action: (outerSignal: AbortSignal) => Promise<T>): Promise<T> {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) controller.abort();
+    const timeout = setTimeout(abort, 20_000);
+    try { return await action(controller.signal); }
+    catch (error) {
+      if (error instanceof OnlineTransportError) throw new ChatApiError(error.status, null, error.code, error.confirmed);
+      throw new ChatApiError();
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abort);
+    }
+  }
 
   async function request(path: string, signal: AbortSignal, body?: unknown, expectedUserId?: string, timeoutMs = 20_000): Promise<unknown> {
     const controller = new AbortController();
@@ -106,6 +132,9 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
 
   return {
     getSession,
+    reconcilePending: (signal, userId) => onlineCall(signal, outerSignal => online.checkPending(outerSignal, userId)),
+    resetOnline: () => online.reset(),
+    hasPendingOnline: () => online.hasPending(),
     async listMessages(childId, signal) {
       const value = await request(`/children/${encodeURIComponent(childId)}/messages`, signal);
       if (!object(value) || !Array.isArray(value.messages) || !value.messages.every(message)
@@ -115,7 +144,7 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
       return { messages: value.messages, limit: value.limit as number };
     },
     async saveMessage(childId, text, signal, expectedUserId) {
-      const value = await request(`/children/${encodeURIComponent(childId)}/messages`, signal, { text }, expectedUserId);
+      const value = await onlineCall(signal, outerSignal => online.submit({ path: `/api/children/${encodeURIComponent(childId)}/messages`, payload: { text } }, outerSignal, expectedUserId));
       if (!object(value) || !message(value.message) || value.message.childId !== childId
         || value.message.role !== "user" || value.message.authorUserId !== expectedUserId || value.message.text !== text) {
         throw new ChatApiError();

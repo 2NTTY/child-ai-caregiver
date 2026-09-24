@@ -5,6 +5,7 @@ import type { CreateChildInput, CreateTextRecordInput } from "../src/shared/inpu
 import type { Child, RecordList, TextRecord } from "../src/shared/records.ts";
 import { READ_ROLES, WRITE_ROLES, withChildAccess, withWorkspaceAccess } from "./family-access.ts";
 import { createWorkspaceStore } from "./workspaces.ts";
+import { appendOnlineChange } from "./online-change.ts";
 
 const RECORD_LIST_LIMIT = 100;
 
@@ -34,7 +35,7 @@ interface RecordRow {
   created_at: Date;
 }
 
-export function createRecordStore(pool: Pool, cipher: StorageCipher): RecordStore {
+export function createRecordStore(pool: Pool, cipher: StorageCipher, trackChanges = false): RecordStore {
   function toChild(row: ChildRow): Child {
     return { id: row.id, workspaceId: row.workspace_id,
       displayName: cipher.decrypt(row.display_name, `children:${row.id}:${row.owner_user_id}:display_name`), accessRole: row.access_role,
@@ -47,7 +48,7 @@ export function createRecordStore(pool: Pool, cipher: StorageCipher): RecordStor
   }
   return {
     async deleteChildForUser(userId, childId) {
-      return (await withChildAccess(pool, userId, childId, ["owner"], async client => {
+      return (await withChildAccess(pool, userId, childId, ["owner"], async (client, _role, workspaceId) => {
       const result = await client.query(
         `WITH removed AS (
            DELETE FROM children child USING workspaces workspace
@@ -55,8 +56,9 @@ export function createRecordStore(pool: Pool, cipher: StorageCipher): RecordStor
            RETURNING child.id, child.workspace_id
          ) INSERT INTO deleted_children (id, workspace_id)
            SELECT id, workspace_id FROM removed RETURNING id`, [userId, childId]);
+      if (trackChanges && result.rowCount === 1) await appendOnlineChange(client, workspaceId, "children", childId, true);
       return result.rowCount === 1;
-      })) ?? false;
+      }, trackChanges)) ?? false;
     },
     async listChildrenForUser(userId) {
       const result = await pool.query<ChildRow>(
@@ -95,8 +97,9 @@ export function createRecordStore(pool: Pool, cipher: StorageCipher): RecordStor
          RETURNING id,workspace_id,display_name_encrypted AS display_name,created_at`,
         [childId, target, cipher.encrypt(input.displayName, `children:${childId}:${owner}:display_name`)],
       );
+      if (trackChanges) await appendOnlineChange(client, target, "children", childId);
       return toChild({ ...result.rows[0], owner_user_id: owner, access_role: role });
-      });
+      }, trackChanges);
     },
     async listRecordsForUser(userId, childId) {
       return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
@@ -109,7 +112,7 @@ export function createRecordStore(pool: Pool, cipher: StorageCipher): RecordStor
       });
     },
     async createRecordForUser(userId, input) {
-      return withChildAccess(pool, userId, input.childId, WRITE_ROLES, async client => {
+      return withChildAccess(pool, userId, input.childId, WRITE_ROLES, async (client, _role, workspaceId) => {
       const recordId = randomUUID();
       const result = await client.query<RecordRow>(
         `INSERT INTO text_records (id, child_id, author_user_id, text_encrypted)
@@ -117,8 +120,9 @@ export function createRecordStore(pool: Pool, cipher: StorageCipher): RecordStor
          RETURNING id, child_id, author_user_id, text_encrypted AS text, created_at`,
         [recordId, userId, input.childId, cipher.encrypt(input.text, `text_records:${recordId}:${input.childId}:${userId}:text`)],
       );
+      if (trackChanges && result.rows[0]) await appendOnlineChange(client, workspaceId, "care", input.childId);
       return result.rows[0] ? toRecord(result.rows[0]) : null;
-      });
+      }, trackChanges);
     },
   };
 }

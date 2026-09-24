@@ -8,6 +8,7 @@ import { FamilyError, READ_ROLES, WRITE_ROLES, requireFamilyVersion, withChildAc
 import { factIsApplicable, normalizedFactKey, profileIsApplicable, requireTopicTransition, topicMayAsk } from "./memory-policy.ts";
 import { factCreateSchema, factConfirmSchema, factReviseSchema, factDeactivateSchema, topicCreateSchema, topicChangeSchema, topicReopenSchema } from "./memory-validation.ts";
 import { readSummary, summaryInput, saveSummary } from "./memory-summary.ts";
+import { appendOnlineChange } from "./online-change.ts";
 
 interface Row { id: string; child_id: string; created_by: string; visibility: "private" | "family"; version: number; payload_encrypted: string }
 type Kind = "facts" | "topics";
@@ -20,13 +21,22 @@ function requireSharing(role: FamilyRole, visibility: "private" | "family", conf
   if (visibility === "family" && !WRITE_ROLES.includes(role)) throw new FamilyError(404, "not_found");
   if (visibility === "family" && !confirmed) throw new FamilyError(400, "sharing_confirmation_required");
 }
-export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
+export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChanges = false) {
   async function transaction<T>(userId: string, childId: string, write: boolean, operation: (client: PoolClient, role: FamilyRole, profileVersion: number) => Promise<T>) {
     return withChildAccess(pool, userId, childId, READ_ROLES, async (client, role) => {
       const child = (await client.query<{ profile_version: number }>(`SELECT profile_version FROM children WHERE id=$1 FOR ${write ? "UPDATE" : "SHARE"}`, [childId])).rows[0];
       if (!child) throw new FamilyError(404, "not_found");
       return operation(client, role, child.profile_version);
-    });
+    }, write && trackChanges);
+  }
+  async function changed(client: PoolClient, childId: string, visibility: "private" | "family", author: string, deleted = false) {
+    if (!trackChanges) return;
+    const row = (await client.query<{ workspace_id: string }>("SELECT workspace_id FROM children WHERE id=$1", [childId])).rows[0];
+    await appendOnlineChange(client, row.workspace_id, "memory", childId, deleted, visibility === "private" ? author : null);
+  }
+  function visibleFact(value: MemoryFact, userId: string): MemoryFact {
+    return value.createdBy !== userId && value.source.kind === "private_chat"
+      ? { ...value, source: { kind: "private_chat", description: value.source.description } } : value;
   }
   function decode<T>(kind: Kind, row: Row): T { return JSON.parse(cipher.decrypt(row.payload_encrypted, aad(kind, row.child_id, row.id, row.version))); }
   async function sourceState(client: PoolClient, childId: string, source: FactSource): Promise<"current" | "changed"> {
@@ -41,8 +51,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
   async function factResult(client: PoolClient, row: Row, userId: string): Promise<MemoryFact> {
     const value = decode<MemoryFact>("facts", row);
     value.sourceState = await sourceState(client, row.child_id, value.source); value.applicable = factIsApplicable(value);
-    if (value.createdBy !== userId && value.source.kind === "private_chat") value.source = { kind: "private_chat", description: value.source.description };
-    return value;
+    return visibleFact(value, userId);
   }
   function topicResult(row: Row): MemoryTopic { const value = decode<MemoryTopic>("topics", row); return { ...value, mayAsk: topicMayAsk(value) }; }
   async function find(client: PoolClient, kind: Kind, userId: string, childId: string, id: string) {
@@ -64,6 +73,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
     else await client.query("UPDATE memory_facts SET visibility=$2,status=$3,version=$4,source_message_id=$5,source_record_id=$6,source_record_version=$7,payload_encrypted=$8 WHERE id=$1",
       [value.id, value.visibility, value.status, value.version, message, record, sourceVersion, payload]);
     await client.query("INSERT INTO memory_fact_revisions(fact_id,version,visibility,payload_encrypted) VALUES($1,$2,$3,$4)", [value.id, value.version, value.visibility, payload]);
+    await changed(client, value.childId, value.visibility, value.createdBy);
   }
   async function writeTopic(client: PoolClient, value: MemoryTopic, creator: string, isNew = false) {
     const payload = cipher.encrypt(JSON.stringify(value), aad("topics", value.childId, value.id, value.version));
@@ -71,6 +81,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
       [value.id, value.childId, creator, value.visibility, value.status, value.version, value.reopenedFrom, payload]);
     else await client.query("UPDATE memory_topics SET status=$2,version=$3,payload_encrypted=$4,updated_at=now() WHERE id=$1", [value.id, value.status, value.version, payload]);
     await client.query("INSERT INTO memory_topic_revisions(topic_id,version,payload_encrypted) VALUES($1,$2,$3)", [value.id, value.version, payload]);
+    await changed(client, value.childId, value.visibility, creator);
   }
   async function facts(client: PoolClient, userId: string, childId: string, after?: string, limit = 50, familyOnly = false): Promise<MemoryPage<MemoryFact>> {
     const rows = (await client.query<Row>(`SELECT * FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR (NOT $5::boolean AND created_by=$2))
@@ -88,7 +99,10 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
     topics: (userId: string, childId: string, after?: string) => transaction(userId, childId, false, client => topics(client, userId, childId, after)),
     summary: (userId: string, childId: string) => transaction(userId, childId, false, async client => ({ summary: await readSummary(client, cipher, userId, childId) })),
     prepareSummary: (userId: string, childId: string) => transaction(userId, childId, false, client => summaryInput(client, cipher, userId, childId)),
-    saveSummary: (userId: string, childId: string, input: unknown) => transaction(userId, childId, true, client => saveSummary(client, cipher, userId, childId, input)),
+    saveSummary: (userId: string, childId: string, input: unknown) => transaction(userId, childId, true, async client => {
+      const value = await saveSummary(client, cipher, userId, childId, input);
+      await changed(client, childId, "private", userId); return value;
+    }),
     async createFact(userId: string, childId: string, raw: FactCreate) {
       const input = factCreateSchema.parse(raw);
       return transaction(userId, childId, true, async (client, role) => {
@@ -96,7 +110,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
         await checkSource(client, userId, childId, input.values.source);
         const value: MemoryFact = { ...input.values, id: randomUUID(), childId, visibility: "private", intendedVisibility: input.intendedVisibility,
           status: "candidate", version: 1, createdBy: userId, confirmedBy: null, confirmedAt: null, reason: "候選，尚未確認", applicable: false, sourceState: "current" };
-        await writeFact(client, value, true); return value;
+        await writeFact(client, value, true); return visibleFact(value, userId);
       });
     },
     async confirmFact(userId: string, childId: string, id: string, raw: FactConfirm) {
@@ -109,7 +123,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
         requireSharing(role, old.intendedVisibility, input.confirmShared); await checkSource(client, userId, childId, old.source);
         const value: MemoryFact = { ...old, visibility: old.intendedVisibility, status: "confirmed", version: old.version + 1,
           confirmedBy: userId, confirmedAt: new Date().toISOString(), reason: "使用者確認", sourceState: "current", applicable: false };
-        value.applicable = factIsApplicable(value); await uniqueFact(client, value); await writeFact(client, value); return value;
+        value.applicable = factIsApplicable(value); await uniqueFact(client, value); await writeFact(client, value); return visibleFact(value, userId);
       });
     },
     async reviseFact(userId: string, childId: string, id: string, raw: FactRevise) {
@@ -122,7 +136,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
         const value: MemoryFact = { ...old, ...input.values, version: old.version + 1, reason: input.reason, sourceState: "current",
           confirmedBy: old.status === "confirmed" ? userId : old.confirmedBy, confirmedAt: old.status === "confirmed" ? new Date().toISOString() : old.confirmedAt };
         value.applicable = factIsApplicable(value); if (value.status === "confirmed") await uniqueFact(client, value);
-        await writeFact(client, value); return value;
+        await writeFact(client, value); return visibleFact(value, userId);
       });
     },
     async deactivateFact(userId: string, childId: string, id: string, raw: FactDeactivate) {
@@ -132,7 +146,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
         requireWrite(role, row, userId); requireFamilyVersion(row.version, input.expectedVersion);
         const value = { ...decode<MemoryFact>("facts", row), version: row.version + 1, status: "inactive" as const, reason: input.reason, applicable: false };
         value.sourceState = await sourceState(client, childId, value.source);
-        await writeFact(client, value); return value;
+        await writeFact(client, value); return visibleFact(value, userId);
       });
     },
     async createTopic(userId: string, childId: string, raw: TopicCreate) {
@@ -187,6 +201,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher) {
         await client.query(`DELETE FROM memory_${kind} WHERE id=$1`, [id]);
         // Retain unrelated summary contents; invalid text cannot return to model context.
         await client.query("UPDATE conversation_summaries SET invalidated=true WHERE child_id=$1 AND ($2::boolean OR owner_user_id=$3)", [childId, row.visibility === "family", userId]);
+        await changed(client, childId, row.visibility, row.created_by, true);
         return true;
       });
     },

@@ -13,13 +13,14 @@ import { createFamilyStore } from "../server/families.ts";
 import { createCareStore } from "../server/care.ts";
 import { createChatStore } from "../server/chat.ts";
 import { createMemoryStore } from "../server/memory.ts";
+import { createOnlineStore } from "../server/online.ts";
 import { createStorageCipher, readSecretKey } from "../server/storage-crypto.ts";
 import { verifyEncryptedStorage } from "../server/storage-upgrade.ts";
 import { emptyCareDetails } from "../src/shared/care.ts";
 
 const limits = { http: 60, store: 100, facts: 6, topics: 5, chatMessages: 6, careRecords: 2, summaries: 4 };
 const counts = { http: 0, store: 0, facts: 0, topics: 0, chatMessages: 0, careRecords: 0, summaries: 0 };
-let pool, server, memory, step = "preflight", checks = 0;
+let pool, server, memory, online, step = "preflight", checks = 0;
 const check = async (name, action) => { step = name; await action(); checks++; };
 const count = key => { if (++counts[key] > limits[key]) throw new Error("Scope cap reached"); };
 const manual = (key, content, validUntil = null) => ({ key, content, source: { kind: "manual", description: "合成家長確認" }, validUntil });
@@ -42,15 +43,16 @@ try {
   for (const table of ["children", "text_records", "chat_messages"]) {
     for (const row of (await pool.query(`SELECT * FROM ${table}`)).rows) prior.set(`${table}:${row.id}`, row);
   }
-  await check("migration_008_and_existing_encryption", async () => {
+  await check("memory_migrations_and_existing_encryption", async () => {
     execFileSync(process.execPath, ["server/migrate.ts"], { cwd: fileURLToPath(new URL("../", import.meta.url)), env, stdio: "ignore", timeout: 60000, windowsHide: true });
     await verifyEncryptedStorage(pool, cipher);
     assert.equal((await pool.query("SELECT 1 FROM app_migrations WHERE id='008-long-term-memory'")).rowCount, 1);
+    assert.equal((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount, 1);
   });
   const start = async () => {
-    memory = createMemoryStore(pool, cipher);
-    const handler = createRequestHandler({ config, auth: createAuth(config, pool), workspaces: createWorkspaceStore(pool), records: createRecordStore(pool, cipher),
-      families: createFamilyStore(pool, cipher), care: createCareStore(pool, cipher), chat: createChatStore(pool, cipher), memory,
+    memory = createMemoryStore(pool, cipher, true); online = createOnlineStore(pool, cipher);
+    const handler = createRequestHandler({ config, auth: createAuth(config, pool), workspaces: createWorkspaceStore(pool), records: createRecordStore(pool, cipher, true),
+      families: createFamilyStore(pool, cipher, true), care: createCareStore(pool, cipher, true), chat: createChatStore(pool, cipher, true), memory, online,
       checkDatabase: async () => { await pool.query("SELECT 1"); } });
     server = createServer((request, response) => { void handler(request, response); });
     await new Promise((resolve, reject) => { server.once("error", reject); server.listen(3099, "127.0.0.1", resolve); });
@@ -59,12 +61,13 @@ try {
   async function request(account, path, body, expected = 200) {
     count("http");
     const response = await fetch(`${config.publicOrigin}/api${path}`, { method: body === undefined ? "GET" : "POST", signal: AbortSignal.timeout(10000),
-      headers: { origin: config.publicOrigin, ...(account ? { cookie: account.cookie, "x-expected-user-id": account.id } : {}),
+      headers: { origin: config.publicOrigin, connection: "close", ...(account ? { cookie: account.cookie, "x-expected-user-id": account.id } : {}),
         ...(body === undefined ? {} : { "content-type": "application/json" }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
     if (expected !== null) assert.equal(response.status, expected);
     return { data: await response.json(), status: response.status, headers: response.headers };
   }
   async function direct(method, ...args) { count("store"); return memory[method](...args); }
+  async function directOnline(method, ...args) { count("store"); return online[method](...args); }
   async function expectStoreConflict(method, ...args) { await assert.rejects(direct(method, ...args), isConflict); }
   const users = [];
   await check("synthetic_family", async () => {
@@ -75,7 +78,7 @@ try {
     }
   });
   const [owner, caregiver, viewer] = users;
-  let child, prefix, familyId, ownerMessage, caregiverMessage, sharedFact, careFact, careRecord, terminal, reopened, snoozed, deletedMemoryId;
+  let child, prefix, familyId, ownerMessage, caregiverMessage, sharedFact, careFact, careRecord, terminal, reopened, snoozed, deletedMemoryId, candidateOperation;
   await check("family_roles", async () => {
     child = (await request(owner, "/children", { displayName: "S09 新建合成孩子" }, 201)).data.child;
     prefix = `/children/${child.id}`; familyId = child.workspaceId;
@@ -87,10 +90,21 @@ try {
     }
   });
   await check("candidate_excluded_and_viewer_private", async () => {
-    const candidate = (await request(owner, `${prefix}/memory/facts`, factCreate(manual("睡眠候選", "尚待家長確認")), 201)).data.fact; count("facts");
+    const command = { path: `/api${prefix}/memory/facts`, payload: factCreate(manual("睡眠候選", "尚待家長確認")) };
+    const context = (await request(owner, "/online/context", command)).data;
+    candidateOperation = { ...command, operation: { ...context, opId: randomUUID(), deviceId: randomUUID() } };
+    const receipts = await Promise.all([request(owner, "/online/submit", candidateOperation), request(owner, "/online/submit", candidateOperation)]);
+    assert.deepEqual(receipts[0].data, receipts[1].data);
+    const candidate = receipts[0].data.result.fact; count("facts");
+    assert.equal((await directOnline("lookup", owner.id, candidateOperation.operation.opId)).result.fact.id, candidate.id);
+    const privateFeed = await directOnline("changes", caregiver.id, familyId, context.storageEpoch, "0");
+    assert.ok(privateFeed.changes.every(item => item.kind !== "memory"));
     assert.equal(candidate.status, "candidate"); assert.equal(candidate.visibility, "private");
     assert.equal((await direct("context", owner.id, child.id, "private")).facts.some(item => item.id === candidate.id), false);
     assert.equal((await request(caregiver, `${prefix}/memory/facts`)).data.items.some(item => item.id === candidate.id), false);
+    assert.equal(await direct("delete", owner.id, child.id, "facts", candidate.id, 1), true);
+    assert.equal((await directOnline("lookup", owner.id, candidateOperation.operation.opId)).result, null);
+    assert.equal((await directOnline("submit", owner.id, candidateOperation)).result, null);
     const ownTopic = (await request(viewer, `${prefix}/memory/topics`, { title: "私人待辦", note: "合成", visibility: "private", confirmShared: false }, 201)).data.topic; count("topics");
     assert.equal(ownTopic.visibility, "private");
     await request(viewer, `${prefix}/memory/topics`, { title: "不可共享", note: "合成", visibility: "family", confirmShared: true }, 404);
@@ -248,6 +262,8 @@ try {
   await check("new_child_cascade_and_prior_rows", async () => {
     assert.equal((await pool.query("SELECT 1 FROM deleted_memories WHERE id=$1 AND child_id=$2", [deletedMemoryId, child.id])).rowCount, 1);
     await request(owner, `${prefix}/delete`, { confirmChildId: child.id });
+    assert.equal((await directOnline("lookup", owner.id, candidateOperation.operation.opId)).result, null);
+    assert.equal((await directOnline("submit", owner.id, candidateOperation)).result, null);
     for (const table of ["memory_facts", "memory_topics", "conversation_summaries", "deleted_memories", "text_records", "chat_messages"]) {
       assert.equal((await pool.query(`SELECT 1 FROM ${table} WHERE child_id=$1`, [child.id])).rowCount, 0);
     }
@@ -263,10 +279,13 @@ try {
     assert.equal(prior.size, 0);
   });
   console.log(JSON.stringify({ result: "passed", checks, ...counts, accountsCreated: 3, childrenCreated: 1,
-    migration: "008-long-term-memory", existingRowsPreserved: true, deletedOnlyNewChild: true, serverRestarted: true,
+    migrations: ["008-long-term-memory", "011-memory-online"], existingRowsPreserved: true, deletedOnlyNewChild: true, serverRestarted: true,
     modelCalls: 0, notificationCalls: 0, bodiesLogged: false }));
-} catch {
-  console.error(JSON.stringify({ result: "failed", step, checks, ...counts, bodiesLogged: false }));
+} catch (error) {
+  const code = error?.cause?.code ?? error?.code;
+  console.error(JSON.stringify({ result: "failed", step, checks, ...counts,
+    errorKind: ["AssertionError", "TypeError", "Error"].includes(error?.name) ? error.name : "OtherError",
+    errorCode: typeof code === "string" && /^[A-Z_0-9]{1,40}$/u.test(code) ? code : null, bodiesLogged: false }));
   process.exitCode = 1;
 } finally {
   if (server?.listening) await new Promise(resolve => { server.close(resolve); server.closeAllConnections(); });

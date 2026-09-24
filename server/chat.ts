@@ -3,6 +3,7 @@ import type { Pool, PoolClient } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
 import type { ChatMessage, ChatPage } from "../src/shared/chat.ts";
 import { READ_ROLES, withChildAccess } from "./family-access.ts";
+import { appendOnlineChange } from "./online-change.ts";
 
 export interface ChatStore {
   acquireReplyLock(messageId: string): Promise<(() => Promise<void>) | null>;
@@ -18,7 +19,7 @@ function toMessage(row: MessageRow, userId: string, cipher: StorageCipher): Chat
   return { id: row.id, childId: row.child_id, authorUserId: row.author_user_id, role: row.role,
     text: cipher.decrypt(row.text, `chat_messages:${row.id}:${row.child_id}:${userId}:${row.role}:${row.in_reply_to ?? ""}:text`), inReplyTo: row.in_reply_to, createdAt: row.created_at.toISOString() };
 }
-export function createChatStore(pool: Pool, cipher: StorageCipher): ChatStore {
+export function createChatStore(pool: Pool, cipher: StorageCipher, trackChanges = false): ChatStore {
   // Leave pool capacity for session, quota and message queries while locks are held.
   let activeLocks = 0;
   return {
@@ -52,7 +53,7 @@ export function createChatStore(pool: Pool, cipher: StorageCipher): ChatStore {
       });
     },
     async createUserMessageForUser(userId, childId, text) {
-      return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
+      return withChildAccess(pool, userId, childId, READ_ROLES, async (client, _role, workspaceId) => {
       const messageId = randomUUID();
       const result = await client.query<MessageRow>(
         `INSERT INTO chat_messages (id, child_id, owner_user_id, author_user_id, role, text_encrypted)
@@ -60,11 +61,12 @@ export function createChatStore(pool: Pool, cipher: StorageCipher): ChatStore {
          RETURNING id, child_id, author_user_id, role, text_encrypted AS text, in_reply_to, created_at`,
         [messageId, userId, childId, cipher.encrypt(text, `chat_messages:${messageId}:${childId}:${userId}:user::text`)],
       );
+      if (trackChanges && result.rows[0]) await appendOnlineChange(client, workspaceId, "chat", childId, false, userId);
       return result.rows[0] ? toMessage(result.rows[0], userId, cipher) : null;
-      });
+      }, trackChanges);
     },
     async createModelMessageForUser(userId, childId, inReplyTo, text) {
-      return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
+      return withChildAccess(pool, userId, childId, READ_ROLES, async (client, _role, workspaceId) => {
       const messageId = randomUUID();
       const result = await client.query<MessageRow>(
         `INSERT INTO chat_messages (id, child_id, owner_user_id, author_user_id, role, text_encrypted, in_reply_to)
@@ -76,8 +78,9 @@ export function createChatStore(pool: Pool, cipher: StorageCipher): ChatStore {
          RETURNING id, child_id, author_user_id, role, text_encrypted AS text, in_reply_to, created_at`,
         [messageId, userId, childId, inReplyTo, cipher.encrypt(text, `chat_messages:${messageId}:${childId}:${userId}:model:${inReplyTo}:text`)],
       );
+      if (trackChanges && result.rows[0]) await appendOnlineChange(client, workspaceId, "chat", childId, false, userId);
       return result.rows[0] ? toMessage(result.rows[0], userId, cipher) : null;
-      });
+      }, trackChanges);
     },
   };
 }

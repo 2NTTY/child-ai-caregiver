@@ -16,6 +16,7 @@ import { createVertexProvider } from "./vertex-provider.ts";
 import { createFamilyStore } from "./families.ts";
 import { createCareStore } from "./care.ts";
 import { createMemoryStore } from "./memory.ts";
+import { createOnlineStore } from "./online.ts";
 
 try {
   const config = readServerConfig(process.env);
@@ -25,15 +26,19 @@ try {
   const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
   const pool = createPool(config);
   try { await verifyEncryptedStorage(pool, cipher); } catch (error) { await pool.end(); throw error; }
+  // Additive rollout: older databases keep their existing stores until the new
+  // migration has completed. Never make ordinary writes depend on missing tables.
+  const onlineEnabled = (await pool.query<{ ready: boolean }>("SELECT EXISTS(SELECT 1 FROM app_migrations WHERE id='010-online-operations') AS ready")).rows[0].ready;
   const aiUsage = createAiUsageStore(pool);
   const auth = createAuth(config, pool);
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
-    records: createRecordStore(pool, cipher),
-    families: createFamilyStore(pool, cipher),
-    care: createCareStore(pool, cipher),
-    memory: createMemoryStore(pool, cipher),
-    chat: createChatStore(pool, cipher),
+    records: createRecordStore(pool, cipher, onlineEnabled),
+    families: createFamilyStore(pool, cipher, onlineEnabled),
+    care: createCareStore(pool, cipher, onlineEnabled),
+    online: onlineEnabled ? createOnlineStore(pool, cipher) : undefined,
+    chat: createChatStore(pool, cipher, onlineEnabled),
+    memory: createMemoryStore(pool, cipher, onlineEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount)),
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },

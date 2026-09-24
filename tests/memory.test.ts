@@ -6,6 +6,10 @@ import { factValuesSchema, summarySaveSchema } from "../server/memory-validation
 import { handleMemoryRequest } from "../server/memory-api.ts";
 import type { MemoryStore } from "../server/memory.ts";
 import { FamilyError } from "../server/family-access.ts";
+import { createMemoryStore } from "../server/memory.ts";
+import { createStorageCipher } from "../server/storage-crypto.ts";
+import type { Pool } from "pg";
+import type { MemoryFact } from "../src/shared/memory.ts";
 
 test("only confirmed, current and unexpired facts are applicable", () => {
   const base = { status: "confirmed" as const, sourceState: "current" as const, validUntil: null };
@@ -65,4 +69,31 @@ test("summary writes need exact coverage metadata and cannot carry fact or task 
   assert.deepEqual(summarySaveSchema.parse(value), value);
   assert.equal(summarySaveSchema.safeParse({ ...value, taskStatus: "completed" }).success, false);
   assert.equal(summarySaveSchema.safeParse({ ...value, coveredMessageIds: [] }).success, false);
+});
+
+test("deactivating shared memory hides another author's private message identifier and publishes only metadata", async () => {
+  const child = randomUUID(), factId = randomUUID(), workspace = randomUUID(), messageId = randomUUID();
+  const cipher = createStorageCipher(Buffer.alloc(32, 31));
+  const value: MemoryFact = { id: factId, childId: child, createdBy: "author", visibility: "family", intendedVisibility: "family", status: "confirmed",
+    version: 2, key: "作息", content: "已獲確認的合成內容", source: { kind: "private_chat", messageId, description: "主動分享" }, validUntil: null,
+    confirmedBy: "author", confirmedAt: "2026-09-24T00:00:00Z", reason: "確認", applicable: true, sourceState: "current" };
+  const row = { id: factId, child_id: child, created_by: "author", visibility: "family", version: 2,
+    payload_encrypted: cipher.encrypt(JSON.stringify(value), `memory-fact:${child}:${factId}:2`) };
+  let change: unknown[] | undefined, parentLocked = false;
+  const client = { release() {}, async query(sql: string, params?: unknown[]) {
+    if (sql.includes("FROM workspaces")) { parentLocked = sql.endsWith("FOR UPDATE"); return { rows: [{ owner_user_id: "owner", access_version: 1 }], rowCount: 1 }; }
+    if (sql.includes("FROM family_members")) { assert.ok(parentLocked); return { rows: [{ role: "caregiver" }], rowCount: 1 }; }
+    if (sql.startsWith("SELECT workspace_id")) return { rows: [{ workspace_id: workspace }], rowCount: 1 };
+    if (sql.includes("FROM children")) return { rows: [{ profile_version: 0 }], rowCount: 1 };
+    if (sql.includes("FROM memory_facts")) return { rows: [row], rowCount: 1 };
+    if (sql.startsWith("UPDATE workspaces")) return { rows: [{ change_seq: "8" }], rowCount: 1 };
+    if (sql.startsWith("INSERT INTO online_changes")) change = params;
+    return { rows: [], rowCount: 1 };
+  } };
+  const pool = { query: client.query, connect: async () => client } as unknown as Pool;
+  const result = await createMemoryStore(pool, cipher, true).deactivateFact("caregiver", child, factId, { expectedVersion: 2, reason: "更正使用範圍" });
+  assert.equal(result?.status, "inactive");
+  assert.deepEqual(result?.source, { kind: "private_chat", description: "主動分享" });
+  assert.deepEqual(change, [workspace, "8", "memory", child, null, false, false]);
+  assert.ok(!JSON.stringify(change).includes(messageId));
 });

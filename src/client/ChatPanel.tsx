@@ -59,7 +59,7 @@ export function ChatPanel({ controller, auth, userId, online, child }: Props) {
       {phase === "reply_failed" && <Action label="開始新訊息" onPress={() => controller.startNewMessage()} disabled={busy} />}
     </View>
     {phase === "save_unknown" && <Text style={styles.warning}>保存結果仍未確認；先重新讀取聊天核對，不會自動重送這段原文。</Text>}
-    {phase === "checked" && <Text style={styles.warning}>已重新讀取聊天；請核對下方訊息，再決定確認已保存或解鎖重新發送。</Text>}
+    {phase === "checked" && <Text style={styles.warning}>已核對原提交。尚無確認時，可保留原文重試；不會自動發送。</Text>}
     {phase === "checked" && draft?.candidateMessageId && <Action label="已核對，確認這則聊天已保存"
       onPress={() => controller.confirmFoundMessage()} disabled={busy} />}
     {phase === "checked" && <Action label="已核對，解鎖重新發送" onPress={() => controller.unlockCheckedSave()} disabled={busy || !online} />}

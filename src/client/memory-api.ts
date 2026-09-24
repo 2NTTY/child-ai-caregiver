@@ -1,12 +1,18 @@
 import type { HistoryPage } from "../shared/care.ts";
 import type { ConversationSummary, FactConfirm, FactCreate, FactDeactivate, FactRevise, MemoryDelete, MemoryFact, MemoryPage, MemoryTopic, TopicChange, TopicCreate, TopicReopen } from "../shared/memory.ts";
+import type { OnlineReceipt } from "../shared/online.ts";
+import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export class MemoryApiError extends Error {
   readonly status: number;
-  constructor(status = 0) {
+  readonly onlineCode: string | null;
+  readonly confirmed: boolean;
+  constructor(status = 0, onlineCode: string | null = null, confirmed = false) {
     super("Memory request could not be confirmed");
     this.name = "MemoryApiError";
     this.status = status;
+    this.onlineCode = onlineCode;
+    this.confirmed = confirmed;
   }
 }
 
@@ -26,6 +32,9 @@ export interface MemoryApi {
   changeTopic(childId: string, topicId: string, input: TopicChange, signal: AbortSignal, userId: string): Promise<MemoryTopic>;
   reopenTopic(childId: string, topicId: string, input: TopicReopen, signal: AbortSignal, userId: string): Promise<MemoryTopic>;
   deleteTopic(childId: string, topicId: string, input: MemoryDelete, signal: AbortSignal, userId: string): Promise<void>;
+  reconcilePending?(signal: AbortSignal, userId: string): Promise<OnlineReceipt | { state: "unconfirmed" } | null>;
+  resetOnline?(): void;
+  hasPendingOnline?(): boolean;
 }
 
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -58,6 +67,24 @@ function history<T>(value: unknown, guard: (value: unknown) => value is T, child
 export function createMemoryApi(baseUrl = "", fetcher: typeof fetch = fetch): MemoryApi {
   const base = baseUrl.replace(/\/$/, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
+  const online = createOnlineTransport(apiUrl, fetcher);
+  async function onlineCall<T>(signal: AbortSignal, action: (outerSignal: AbortSignal) => Promise<T>): Promise<T> {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) controller.abort();
+    const timeout = setTimeout(abort, 20_000);
+    try { return await action(controller.signal); }
+    catch (error) {
+      if (error instanceof OnlineTransportError) throw new MemoryApiError(error.status, error.code, error.confirmed);
+      throw new MemoryApiError();
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abort);
+    }
+  }
+  const mutate = (path: string, payload: unknown, signal: AbortSignal, userId: string) =>
+    onlineCall(signal, outerSignal => online.submit({ path: `/api${path}`, payload }, outerSignal, userId));
   async function request(path: string, signal: AbortSignal, body?: unknown, userId?: string): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -84,15 +111,18 @@ export function createMemoryApi(baseUrl = "", fetcher: typeof fetch = fetch): Me
   const entity = (childId: string, kind: "facts" | "topics", id: string) => `${child(childId)}/${kind}/${encodeURIComponent(id)}`;
   const cursor = (name: string, value: string | number | null) => value === null ? "" : `?${name}=${encodeURIComponent(value)}`;
   function checkedFact(value: unknown, childId: string, id?: string, previousVersion?: number) {
-    if (!object(value) || !fact(value.fact) || value.fact.childId !== childId || (id && value.fact.id !== id) || (previousVersion !== undefined && value.fact.version <= previousVersion)) throw new MemoryApiError();
+    if (!object(value) || !fact(value.fact) || value.fact.childId !== childId || (id && value.fact.id !== id) || (previousVersion !== undefined && value.fact.version <= previousVersion)) throw new MemoryApiError(0, null, true);
     return value.fact;
   }
   function checkedTopic(value: unknown, childId: string, id?: string, previousVersion?: number) {
-    if (!object(value) || !topic(value.topic) || value.topic.childId !== childId || (id && value.topic.id !== id) || (previousVersion !== undefined && value.topic.version <= previousVersion)) throw new MemoryApiError();
+    if (!object(value) || !topic(value.topic) || value.topic.childId !== childId || (id && value.topic.id !== id) || (previousVersion !== undefined && value.topic.version <= previousVersion)) throw new MemoryApiError(0, null, true);
     return value.topic;
   }
-  function deleted(value: unknown) { if (!object(value) || value.deleted !== true) throw new MemoryApiError(); }
+  function deleted(value: unknown) { if (!object(value) || value.deleted !== true) throw new MemoryApiError(0, null, true); }
   return {
+    reconcilePending: (signal, userId) => onlineCall(signal, outerSignal => online.checkPending(outerSignal, userId)),
+    resetOnline: () => online.reset(),
+    hasPendingOnline: () => online.hasPending(),
     async getSession(signal) {
       const value = await request("/auth/get-session", signal);
       if (value === null) return null;
@@ -108,18 +138,18 @@ export function createMemoryApi(baseUrl = "", fetcher: typeof fetch = fetch): Me
     },
     async factHistory(childId, factId, beforeVersion, signal) { return history(await request(`${entity(childId, "facts", factId)}/history${cursor("beforeVersion", beforeVersion)}`, signal), fact, childId, factId); },
     async topicHistory(childId, topicId, beforeVersion, signal) { return history(await request(`${entity(childId, "topics", topicId)}/history${cursor("beforeVersion", beforeVersion)}`, signal), topic, childId, topicId); },
-    async createFact(childId, input, signal, userId) { return checkedFact(await request(`${child(childId)}/facts`, signal, input, userId), childId); },
-    async confirmFact(childId, factId, input, signal, userId) { return checkedFact(await request(`${entity(childId, "facts", factId)}/confirm`, signal, input, userId), childId, factId, input.expectedVersion); },
-    async reviseFact(childId, factId, input, signal, userId) { return checkedFact(await request(`${entity(childId, "facts", factId)}/revise`, signal, input, userId), childId, factId, input.expectedVersion); },
-    async deactivateFact(childId, factId, input, signal, userId) { return checkedFact(await request(`${entity(childId, "facts", factId)}/deactivate`, signal, input, userId), childId, factId, input.expectedVersion); },
-    async deleteFact(childId, factId, input, signal, userId) { deleted(await request(`${entity(childId, "facts", factId)}/delete`, signal, input, userId)); },
-    async createTopic(childId, input, signal, userId) { return checkedTopic(await request(`${child(childId)}/topics`, signal, input, userId), childId); },
-    async changeTopic(childId, topicId, input, signal, userId) { return checkedTopic(await request(`${entity(childId, "topics", topicId)}/change`, signal, input, userId), childId, topicId, input.expectedVersion); },
+    async createFact(childId, input, signal, userId) { return checkedFact(await mutate(`${child(childId)}/facts`, input, signal, userId), childId); },
+    async confirmFact(childId, factId, input, signal, userId) { return checkedFact(await mutate(`${entity(childId, "facts", factId)}/confirm`, input, signal, userId), childId, factId, input.expectedVersion); },
+    async reviseFact(childId, factId, input, signal, userId) { return checkedFact(await mutate(`${entity(childId, "facts", factId)}/revise`, input, signal, userId), childId, factId, input.expectedVersion); },
+    async deactivateFact(childId, factId, input, signal, userId) { return checkedFact(await mutate(`${entity(childId, "facts", factId)}/deactivate`, input, signal, userId), childId, factId, input.expectedVersion); },
+    async deleteFact(childId, factId, input, signal, userId) { deleted(await mutate(`${entity(childId, "facts", factId)}/delete`, input, signal, userId)); },
+    async createTopic(childId, input, signal, userId) { return checkedTopic(await mutate(`${child(childId)}/topics`, input, signal, userId), childId); },
+    async changeTopic(childId, topicId, input, signal, userId) { return checkedTopic(await mutate(`${entity(childId, "topics", topicId)}/change`, input, signal, userId), childId, topicId, input.expectedVersion); },
     async reopenTopic(childId, topicId, input, signal, userId) {
-      const result = checkedTopic(await request(`${entity(childId, "topics", topicId)}/reopen`, signal, input, userId), childId);
-      if (result.reopenedFrom !== topicId || result.id === topicId || result.status !== "pending") throw new MemoryApiError();
+      const result = checkedTopic(await mutate(`${entity(childId, "topics", topicId)}/reopen`, input, signal, userId), childId);
+      if (result.reopenedFrom !== topicId || result.id === topicId || result.status !== "pending") throw new MemoryApiError(0, null, true);
       return result;
     },
-    async deleteTopic(childId, topicId, input, signal, userId) { deleted(await request(`${entity(childId, "topics", topicId)}/delete`, signal, input, userId)); },
+    async deleteTopic(childId, topicId, input, signal, userId) { deleted(await mutate(`${entity(childId, "topics", topicId)}/delete`, input, signal, userId)); },
   };
 }

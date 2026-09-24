@@ -4,11 +4,13 @@ import type { HistoryPage } from "../shared/care.ts";
 import type { ConversationSummary, FactSource, FactValues, MemoryFact, MemoryTopic, MemoryVisibility, TopicStatus } from "../shared/memory.ts";
 import type { Child } from "../shared/records.ts";
 import { MemoryApiError, type MemoryApi } from "./memory-api.ts";
+import { ONLINE_REFRESH_EVENT } from "./use-online-updates.ts";
 
 type Role = Child["accessRole"];
 interface Props { userId: string; childId: string; role: Role; api: MemoryApi; onSessionChanged: () => void; active?: boolean }
 type Entity = { kind: "fact"; item: MemoryFact } | { kind: "topic"; item: MemoryTopic };
 type Write = { label: string; kind: "fact" | "topic"; target?: Entity };
+type WriteOperation = (signal: AbortSignal, current: () => boolean) => Promise<void>;
 type Conflict = { original: Entity; latest: Entity | null; reviewed: boolean };
 const emptyValues = (): FactValues => ({ key: "", content: "", source: { kind: "manual", description: "" }, validUntil: null });
 const factStatus: Record<MemoryFact["status"], string> = { candidate: "待確認候選", confirmed: "已確認", inactive: "不活躍" };
@@ -36,6 +38,10 @@ export function MemoryPanel({ userId, childId, role, api, onSessionChanged, acti
   const requests = useRef(new Set<AbortController>());
   const inFlight = useRef(false);
   const pendingWrite = useRef<{ write: Write; controller: AbortController } | null>(null);
+  const pendingAttempt = useRef<{ label: string; operation: WriteOperation; write: Write } | null>(null);
+  const activeWrite = useRef<Write | null>(null);
+  const confirmedUnknown = useRef(false);
+  const refreshRef = useRef<() => void>(() => {});
   const [visibleScope, setVisibleScope] = useState(scope);
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
@@ -82,38 +88,68 @@ export function MemoryPanel({ userId, childId, role, api, onSessionChanged, acti
   const verified = useCallback(async <T,>(operation: (signal: AbortSignal) => Promise<T>, signal: AbortSignal) => {
     if (await api.getSession(signal) !== userId) throw new MemoryApiError(401);
     const result = await operation(signal);
+    if (activeWrite.current) confirmedUnknown.current = true;
     if (await api.getSession(signal) !== userId) throw new MemoryApiError(401);
     return result;
   }, [api, userId]);
-  const run = useCallback(async (label: string, operation: (signal: AbortSignal, current: () => boolean) => Promise<void>, write?: Write) => {
-    if (!active || inFlight.current || (write && (uncertain || conflict))) return;
+  const run = useCallback(async (label: string, operation: WriteOperation, write?: Write, retry = false) => {
+    if (!active || inFlight.current || (write && (conflict || (uncertain && !retry)))) return;
     inFlight.current = true;
     const started = generation.current, requestScope = scope;
     const controller = new AbortController(); requests.current.add(controller);
-    if (write) pendingWrite.current = { write, controller };
+    if (write) {
+      pendingWrite.current = { write, controller };
+      pendingAttempt.current = { label, operation, write };
+      activeWrite.current = write;
+      confirmedUnknown.current = false;
+      if (retry) { setUncertain(null); setUncertainReviewed(false); }
+    }
     const current = () => activeRef.current && !controller.signal.aborted && generation.current === started && scopeRef.current === requestScope;
     setBusy(label); setNotice("");
-    try { await operation(controller.signal, current); }
+    try {
+      await operation(controller.signal, current);
+      if (write && current()) {
+        pendingAttempt.current = null; confirmedUnknown.current = false;
+        setUncertain(null); setUncertainReviewed(false);
+      }
+    }
     catch (error) {
       if (!current()) return;
       const status = error instanceof MemoryApiError ? error.status : 0;
+      const code = error instanceof MemoryApiError ? error.onlineCode : null;
+      if (error instanceof MemoryApiError && error.confirmed) confirmedUnknown.current = true;
       if ([401, 403, 404].includes(status)) {
+        api.resetOnline?.(); pendingAttempt.current = null; confirmedUnknown.current = false;
         clear(); setUncertain(null); setConflict(null); setNotice("登入帳號或孩子權限已改變，資料及表單已清除。請重新選擇孩子。"); onSessionChanged();
-      } else if (status === 409) {
+      } else if (write && confirmedUnknown.current) {
+        setUncertain(write); setUncertainReviewed(false); setSummary(null);
+        setNotice("Server 已確認原操作，但結果或會話讀取未能完成。請查收據並重新讀取；毋須再次提交。");
+      } else if (status === 409 && write && code === "version_conflict" && write.target) {
         let sameUser: boolean | null = null;
         try { sameUser = await api.getSession(controller.signal) === userId; } catch { /* Keep the draft blocked until identity can be checked. */ }
         if (!current()) return;
-        if (sameUser === false) { clear(); setUncertain(null); setConflict(null); setNotice("登入帳號已改變，資料及表單已清除。"); onSessionChanged(); }
-        else if (sameUser && write?.target) { setConflict({ original: write.target, latest: null, reviewed: false }); setFactPreview(false); setTopicPreview(false); setNotice("版本已改變。草稿仍在；請重新讀取最新版本，再比較及明確重新套用。"); }
-        else { if (write) { setUncertain(write); setUncertainReviewed(false); } setNotice("暫未能核對帳號或提交結果。草稿仍在，請重新讀取及核對；系統不會自動重送。"); }
+        if (sameUser === false) { api.resetOnline?.(); pendingAttempt.current = null; clear(); setUncertain(null); setConflict(null); setNotice("登入帳號已改變，資料及表單已清除。"); onSessionChanged(); }
+        else if (sameUser) { pendingAttempt.current = null; setConflict({ original: write.target, latest: null, reviewed: false }); setFactPreview(false); setTopicPreview(false); setNotice("版本已改變。草稿仍在；請重新讀取最新版本，再比較及明確重新套用。"); }
+        else { setUncertain(write); setUncertainReviewed(false); setNotice("暫未能核對登入帳號。草稿保留；請先查收據。"); }
+      } else if (status === 409 && write && code === "session_changed") {
+        let sameUser: boolean | null = null;
+        try { sameUser = await api.getSession(controller.signal) === userId; } catch { /* Keep the draft blocked. */ }
+        if (!current()) return;
+        if (sameUser === false) { api.resetOnline?.(); pendingAttempt.current = null; clear(); setUncertain(null); setConflict(null); setNotice("登入帳號已改變，資料及表單已清除。"); onSessionChanged(); }
+        else { setUncertain(write); setUncertainReviewed(false); setNotice("登入狀態或原操作尚待核對，草稿保留；不能當作版本更正。"); }
+      } else if (status === 409 && write) {
+        setUncertain(write); setUncertainReviewed(false);
+        setNotice(code === "storage_epoch_changed" || code === "operation_mismatch"
+          ? "Server 世代或原操作識別不符。草稿及操作識別保留；請先查收據，不能當作版本更正或另建副本。"
+          : "原操作尚待核對。草稿及操作識別保留；請重新讀取收據，不會自動重送。");
       } else if (status === 400 || status === 415 || status === 428) setNotice("輸入未被接納，請核對內容及登入帳號後再試。");
       else if (status >= 400 && status < 500) setNotice("操作未被接納，請核對權限及內容。");
-      else { if (write) { setUncertain(write); setUncertainReviewed(false); } setNotice(write ? "提交結果未知。草稿仍在；請重新讀取並核對，系統不會自動重送。" : "讀取失敗，請稍後重新讀取；表單已保留。"); }
+      else { if (write) { setUncertain(write); setUncertainReviewed(false); } setNotice(write ? "提交結果未知。草稿及原操作識別保留；請先查收據，系統不會自動重送。" : "讀取失敗，請稍後重新讀取；表單已保留。"); }
     } finally {
       requests.current.delete(controller);
       if (pendingWrite.current?.controller === controller) {
         if (!activeRef.current && scopeRef.current === requestScope) { setUncertain(pendingWrite.current.write); setUncertainReviewed(false); setSummary(null); }
-        pendingWrite.current = null;
+        pendingWrite.current = null; activeWrite.current = null;
       }
       if (current()) { inFlight.current = false; setBusy(""); }
     }
@@ -127,12 +163,16 @@ export function MemoryPanel({ userId, childId, role, api, onSessionChanged, acti
     generation.current++;
     for (const request of requests.current) request.abort(); requests.current.clear(); inFlight.current = false;
     clear(); setVisibleScope(scope); setBusy(""); setNotice(""); setUncertain(null); setUncertainReviewed(false); setConflict(null);
-    pendingWrite.current = null;
-    return () => { generation.current++; for (const request of requests.current) request.abort(); requests.current.clear(); inFlight.current = false; };
+    pendingWrite.current = null; pendingAttempt.current = null; activeWrite.current = null; confirmedUnknown.current = false;
+    api.resetOnline?.();
+    return () => {
+      generation.current++; for (const request of requests.current) request.abort(); requests.current.clear(); inFlight.current = false;
+      pendingWrite.current = null; pendingAttempt.current = null; activeWrite.current = null; confirmedUnknown.current = false; api.resetOnline?.();
+    };
   }, [scope, clear]);
   useEffect(() => {
     if (active) return;
-    if (pendingWrite.current) { setUncertain(pendingWrite.current.write); setUncertainReviewed(false); pendingWrite.current = null; setSummary(null); }
+    if (pendingWrite.current) { setUncertain(pendingWrite.current.write); setUncertainReviewed(false); pendingWrite.current = null; activeWrite.current = null; setSummary(null); }
     generation.current++;
     for (const request of requests.current) request.abort();
     requests.current.clear(); inFlight.current = false; setBusy("");
@@ -144,9 +184,43 @@ export function MemoryPanel({ userId, childId, role, api, onSessionChanged, acti
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, visibleScope, active]);
   const refresh = () => { void run("重新讀取", async (signal, current) => {
+    let receipt: Awaited<ReturnType<NonNullable<MemoryApi["reconcilePending"]>>> = null;
+    let lookupIssue: string | null = null;
+    if (uncertain && !confirmedUnknown.current && api.reconcilePending) {
+      if (await api.getSession(signal) !== userId) throw new MemoryApiError(401);
+      try { receipt = await api.reconcilePending(signal, userId); }
+      catch (error) {
+        if (error instanceof MemoryApiError && (error.onlineCode === "storage_epoch_changed" || error.onlineCode === "operation_mismatch")) lookupIssue = error.onlineCode;
+        else throw error;
+      }
+      if (receipt?.state === "confirmed") confirmedUnknown.current = true;
+      if (await api.getSession(signal) !== userId) throw new MemoryApiError(401);
+    }
+    if (uncertain && (receipt?.state === "confirmed" || confirmedUnknown.current)) {
+      if (!current()) return;
+      if (uncertain.kind === "fact") resetFact(); else resetTopic();
+      setDeleteTarget(null); setHistoryTarget(null); setHistoryItems([]); setHistoryCursor(null);
+      setUncertain(null); setUncertainReviewed(false); setSummary(null); pendingAttempt.current = null; confirmedUnknown.current = false;
+      try { await loadAll(signal, current); }
+      catch (error) {
+        if (error instanceof MemoryApiError && [401, 403, 404].includes(error.status)) throw error;
+        if (current()) setNotice("Server 已確認原操作。清單重新讀取失敗，請稍後手動讀取；毋須再次提交。");
+        return;
+      }
+      if (current()) setNotice("Server 已確認原操作，已清除這次操作草稿並重新讀取；毋須再次提交。");
+      return;
+    }
     await loadAll(signal, current);
     if (!current()) return;
-    if (conflict) {
+    if (uncertain) {
+      if (lookupIssue) { setUncertainReviewed(false); setNotice("原操作識別或 Server 世代尚未核對。已更新清單，草稿保留；不能另建副本或當作版本更正。"); }
+      else {
+        setUncertainReviewed(true);
+        setNotice(receipt?.state === "unconfirmed"
+          ? "原操作尚未確認。已核對清單；如要重試，須明確沿原操作識別提交。"
+          : "沒有待核對的操作識別。已核對清單，草稿保留；請明確處理這次未送出的提交。");
+      }
+    } else if (conflict) {
       const { original } = conflict;
       const page = original.kind === "fact"
         ? await verified(next => api.factHistory(childId, original.item.id, null, next), signal)
@@ -156,9 +230,15 @@ export function MemoryPanel({ userId, childId, role, api, onSessionChanged, acti
       const latest = item ? ({ kind: original.kind, item } as Entity) : null;
       setConflict({ original, latest, reviewed: !!latest });
       setNotice(latest ? "已讀取最新版本。請比較原版本、最新版本及草稿，然後明確重新套用。" : "未找到最新版本，不能重新套用草稿；可保留草稿另行核對。");
-    } else if (uncertain) { setUncertainReviewed(true); setNotice("已重新讀取。請核對清單和歷史，明確選擇提交是否完成。"); }
-    else setNotice("資料已更新；未提交草稿仍保留。");
+    } else setNotice("資料已更新；未提交草稿仍保留。");
   }); };
+  refreshRef.current = () => { void run("更新記憶", async (signal, current) => { await loadAll(signal, current); }); };
+  useEffect(() => {
+    if (!active || typeof window === "undefined") return;
+    const update = () => refreshRef.current();
+    window.addEventListener(ONLINE_REFRESH_EVENT, update);
+    return () => window.removeEventListener(ONLINE_REFRESH_EVENT, update);
+  }, [active, scope]);
   const nextFacts = () => { if (!factCursor) return; void run("載入事實", async (signal, current) => { const page = await verified(next => api.facts(childId, factCursor, next), signal); if (current()) { setFacts(previous => [...previous, ...page.items.filter(item => !previous.some(existing => existing.id === item.id))]); setFactCursor(page.nextAfterId); } }); };
   const nextTopics = () => { if (!topicCursor) return; void run("載入話題", async (signal, current) => { const page = await verified(next => api.topics(childId, topicCursor, next), signal); if (current()) { setTopics(previous => [...previous, ...page.items.filter(item => !previous.some(existing => existing.id === item.id))]); setTopicCursor(page.nextAfterId); } }); };
   const showHistory = (target: Entity, before: number | null = null) => { void run("讀取歷史", async (signal, current) => {
@@ -205,6 +285,17 @@ export function MemoryPanel({ userId, childId, role, api, onSessionChanged, acti
     else await verified(next => api.deleteTopic(childId, target.item.id, { expectedVersion: target.item.version, confirmDelete: true }, next, userId), signal);
     if (current()) { if (target.kind === "fact") { setFacts(previous => previous.filter(item => item.id !== target.item.id)); resetFact(); } else { setTopics(previous => previous.filter(item => item.id !== target.item.id)); resetTopic(); } setSummary(null); setDeleteTarget(null); setHistoryTarget(null); setHistoryItems([]); setNotice("記憶及全部歷史已永久刪除。"); }
   }, { kind: target.kind, label: "永久刪除", target }); };
+  const retryUnknown = () => {
+    const attempt = pendingAttempt.current;
+    if (!active || !uncertain || !uncertainReviewed || confirmedUnknown.current || !api.hasPendingOnline?.() || !attempt || attempt.write.kind !== uncertain.kind) return;
+    void run(attempt.label, attempt.operation, attempt.write, true);
+  };
+  const dismissUnsent = () => {
+    if (!active || !uncertain || !uncertainReviewed || confirmedUnknown.current || api.hasPendingOnline?.()) return;
+    pendingAttempt.current = null; setUncertain(null); setUncertainReviewed(false);
+    setFactPreview(false); setTopicPreview(false);
+    setNotice("這次提交沒有建立待核對的操作識別。草稿仍在；如需提交，請重新預覽及確認。");
+  };
   const setFactField = (key: "key" | "content", value: string) => { setFactDraft(previous => ({ ...previous, [key]: value })); setFactPreview(false); };
   const sourceChange = (description: string) => { setFactDraft(previous => ({ ...previous, source: { kind: "manual", description } })); setFactPreview(false); };
   const factDirty = factBasis
@@ -213,7 +304,7 @@ export function MemoryPanel({ userId, childId, role, api, onSessionChanged, acti
   const topicDirty = topicBasis
     ? topicTitle !== topicBasis.title || topicNote !== topicBasis.note || topicVisibility !== topicBasis.visibility || topicStatus !== topicBasis.status || resumeAfter !== (topicBasis.resumeAfter ?? "") || !!topicReason.trim()
     : !!topicTitle || !!topicNote || topicVisibility !== "private";
-  const hasUnsavedWork = factDirty || topicDirty || !!uncertain || !!conflict;
+  const hasUnsavedWork = factDirty || topicDirty || !!uncertain || !!conflict || !!pendingWrite.current || !!api.hasPendingOnline?.();
   useEffect(() => {
     if (!hasUnsavedWork || typeof window === "undefined") return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
@@ -229,9 +320,9 @@ export function MemoryPanel({ userId, childId, role, api, onSessionChanged, acti
     <Action label={busy === "重新讀取" ? "正在讀取…" : "重新讀取並核對"} onPress={refresh} disabled={!active || !!busy} />
     {!!notice && <Text accessibilityRole="alert" style={styles.warning}>{notice}</Text>}
     {uncertain && <View style={styles.confirmation}>
-      <Text style={styles.warning}>「{uncertain.label}」的結果未知。請重新讀取並檢查清單及歷史；系統不會自動重送。</Text>
-      <Action label="已核對操作完成，清除該次提交表單" onPress={() => { if (uncertain.kind === "fact") resetFact(); else resetTopic(); setDeleteTarget(null); setUncertain(null); setUncertainReviewed(false); setNotice("已清除該次提交表單，避免重複提交。"); }} disabled={!active || !uncertainReviewed || !!busy} />
-      <Action label="已核對操作未完成，保留草稿重新檢視" onPress={() => { setUncertain(null); setUncertainReviewed(false); setFactPreview(false); setTopicPreview(false); setNotice("草稿已保留，請重新預覽後提交。"); }} disabled={!active || !uncertainReviewed || !!busy} />
+      <Text style={styles.warning}>「{uncertain.label}」的結果未知。請先重新讀取並查核原操作收據；系統不會自動重送。</Text>
+      <Action label="明確重試原操作識別" onPress={retryUnknown} disabled={!active || !uncertainReviewed || !api.hasPendingOnline?.() || confirmedUnknown.current || !!busy} />
+      <Action label="沒有待核對操作，保留草稿重新預覽" onPress={dismissUnsent} disabled={!active || !uncertainReviewed || !!api.hasPendingOnline?.() || confirmedUnknown.current || !!busy} />
     </View>}
     {conflict && <View style={styles.confirmation}>
       <Text style={styles.warning}>版本衝突。原版本：{conflict.original.kind === "fact" ? factText(conflict.original.item) : topicText(conflict.original.item)}。最新版本：{conflict.latest ? conflict.latest.kind === "fact" ? factText(conflict.latest.item) : topicText(conflict.latest.item) : "尚未核對"}。本地草稿：{conflict.original.kind === "fact" ? `${factDraft.key}：${factDraft.content}；${sourceText(factDraft.source)}；原因：${factReason}` : `${topicTitle}；${topicNote}；狀態：${topicStatusText[topicStatus]}；原因：${topicReason}`}。</Text>

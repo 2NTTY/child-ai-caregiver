@@ -44,7 +44,7 @@ S03-W01 的 `children` 屬於既有私人資料空間，保存 UUID、稱呼及 
 
 上述新增正文及來源全部加密，AAD 綁孩子／記錄／版本；原文字段仍綁原作者。按權限永久刪除一則記錄會刪全部修訂並保留 `deleted_records` 最小 ID／孩子／版本／時間標記；永久刪除檔案清除全部檔案版本，孩子上的版本繼續遞增以拒絕舊寫入。更正不是永久刪除。owner 刪除孩子時外鍵連帶清除上述資料；既有完整加密 pg_dump 涵蓋新表，備份時間點及保留政策不變。
 
-時間軸按 Server 首次加入時間排序，事件時間另呈現；搜尋只在有權孩子範圍內，Server 每頁最多解密 200 筆、回最多 50 筆匹配，游標保留 PostgreSQL 微秒及 ID。同一分頁可能無匹配但仍有下一頁，不能宣稱整庫無結果；不建立明文全文索引，也不保證分頁期間的快照一致性。在線完整一致性仍由 S07-W03 補齊。
+時間軸按 Server 首次加入時間排序，事件時間另呈現；搜尋只在有權孩子範圍內，Server 每頁最多解密 200 筆、回最多 50 筆匹配，游標保留 PostgreSQL 微秒及 ID。同一分頁可能無匹配但仍有下一頁，不能宣稱整庫無結果；不建立明文全文索引。S07-W03 啟用後，新 cursor 加入 workspace changeSeq，資料改變即拒絕續頁並要求重讀；這是拒絕混合頁面，並非長期保留資料庫 snapshot。舊 cursor 相容但沒有此保證。
 
 <a id="p1-chat-data"></a>
 ## P1 私人聊天原文
@@ -86,6 +86,19 @@ owner 刪除孩子時，現有外鍵連帶刪除照護記錄、聊天及該孩�
 
 <a id="data-4-3-18"></a>
 不使用设备时间来决定谁的修改一定正确。
+
+<a id="online-storage"></a>
+### S07-W03 持久操作與變更
+
+`010-online-operations` 加入 workspace `change_seq`（bigint，HTTP 用十進位字串避免精度流失）、`online_operations` 及 `online_changes`。識別及版本契約見 [API](API.md#online-http)。Web 的 deviceId 是本頁傳輸實例識別，不是授權憑據或 P4 裝置登記。
+
+- 操作以 `(user_id, op_id)` 唯一，保存 device／workspace／epoch、路徑、孩子關聯、業務狀態及 changeSeq。正規化請求 hash 及結果使用既有 cipher 加密；不另存明文業務 payload，AAD 綁本人／opId／欄位。原記錄原文不因 hash 正規化而修改。
+- 變更以 `(workspace_id, change_seq)` 唯一；僅記種類、孩子識別、刪除旗標及可見範圍。查詢在目前授權下過濾，游標可越過本人無權讀取的序號；空頁不代表整個家庭沒有私人活動，不回傳其內容。
+- 操作收據與業務變更共用一個 PostgreSQL connection／交易；外層才 commit。既有 store 的局部交易改作 savepoint，不使用另一 connection 或在持鎖期間呼叫模型／通知。
+- 刪整個孩子時清除相關收據正文；刪一筆記錄時保守清除該孩子 care 類收據正文，刪檔案歷史時清除 profile 類正文。保留最少操作識別及加密 fingerprint，阻止舊建立操作復活；result=null 不是未確認。新台帳隨既有全庫備份保存，本包沒有新增備份還原演練。
+- 舊直接寫入在 migration 啟用後也追加變更，但不獲得不存在的 opId 冪等保證。新記憶、任務及附件須由各自工作包接上相同授權／確認邊界，本包不預先實作它們。
+
+S09-W02 的 `011-memory-online` 擴充既有台帳的 `memory` 種類，沿用相同原子提交及目前授權，不改寫已套用的 010 migration。記憶寫入取得 workspace UPDATE 後再鎖孩子；共享事件只含孩子及種類，私人事件綁本人。刪除單一事實／話題時，保守抹除該孩子所有 memory 收據正文而保留去重識別；此擴展已與 008 記憶資料完成獲准本機 SQL／重啟／刪除驗收，見 [EV-S09-W02](../artifacts/verification/S09_W02_CHECKS.json)；未部署。
 
 <a id="section-4-5"></a>
 ## 4.5 冲突规则
