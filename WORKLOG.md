@@ -821,3 +821,14 @@
 - Verification：主模型執行已準備的 verify-family.mjs，13 組檢查、51 次 HTTP 全部通過；包括一次性／並發邀請、角色及撤權、跨家庭／私人聊天隔離、個人偏好、加密及既有資料逐列保留。新增 006-family-access 成功，未清空原庫、未刪原有孩子、未記錄正文，沒有模型、通知或雲端呼叫。62 項輕量測試及兩份 typecheck 沿用未變動程式的既有證據，沒有重跑。
 - Review / Delivery：主模型覆核交易內鎖後核權、原作者加密歸屬、邀請終態及敏感資料邊界，未見未處理的合併阻塞；更新 EV-S06-W02、PLAN、STATUS 及 UI 功能清單。本包完成隨 PR 合併生效，並不代表 P2 已完成。
 - Limits / Next：沒有部署、瀏覽器 E2E、全量回歸或新的備份還原演練。合併後從最新 master 開始 S05-W02；S10-W01 亦 Ready，按真實依賴逐包推進，後續真服務驗收另行批准。
+
+
+<a id="log-20260924-007"></a>
+## LOG-20260924-007
+
+- Recorded At / Work Date：2026-09-24（Asia/Hong_Kong）；S05-W02 確認記錄與孩子檔案，前置 S06-W02 已隨 PR #31 合併，基線 `bd46095`，獨立分支／worktree `codex/s05-w02-confirmed-records`。
+- Executor / Human Verification：主模型處理資料／權限、migration、API、整合／review、必要本機驗收及權威文件；一個 Luna Max 唯讀定位既有程式表面，一個 Sol High 完成普通 UI／adapter 及相關測試。使用者本包後續指示新建 Sol 改為 Xhigh，本包既有代理已建立，沒有為設定驗證重啟。沿用現有加密及資源授權 Skill、Prompt Pack／美術，沒有重做研究或素材。
+- Actual Work：新增 007 migration；現有文字記錄按原 ID／作者保存完整原文及修訂，更正有版本／來源／確認人／原因，舊 P1 入口讀最新文字。孩子檔案分開未知／出生日期／約數及日期基準，不推算出生日／矯正年齡。功能 UI 提供快捷種類、確認、歷史、搜尋與永久刪除；新資料全部加密並納入既有外鍵刪除／完整備份，搜尋不建立明文副本。
+- Verification：[EV-S05-W02](artifacts/verification/S05_W02_CHECKS.json) 記錄 17 項必要輕量測試及兩份 typecheck 通過；使用者批准本機新增 migration、3 帳號／1 孩子／54 記錄、最多 60 HTTP。實際 13 組／39 次 HTTP 通過，核對並發更正、viewer／家庭隔離、原文／精度／歷史、微秒游標、私人聊天不共享、重啟持久化、加密及僅新建孩子的連帶刪除；所有原有資料保留。沒有模型、通知或雲端費用。
+- Review / Fixes：未知提交保持鎖定並要求明確核對；更正衝突保留草稿及比較新版；孩子檔案草稿基準與刷新值分離，避免無聲覆蓋；登入重新確認期間草稿在本頁隱藏保留，登出／換人／撤權清除。測試 fake-store 型別及 UI 替換的殘留 JSX 編譯問題已定位修正，最終 typecheck 通過。狀態互動由主模型覆核，未冒稱瀏覽器驗收。
+- Delivery / Limits：同步 API／DATA_MODEL、PLAN／STATUS 及 UI 功能對接清單；WORKLOG 只追加。未部署、未跑 E2E／全量回歸／新的備份還原；完整候選記憶、opId／changeSeq 分別由 S09／S11、S07 後續包交付。本包完成隨 PR 合併生效，P2 尚未完成；合併後接續 S09-W02，S07-W03／S10-W01 亦 Ready。

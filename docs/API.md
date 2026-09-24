@@ -52,6 +52,26 @@ S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime
 - <a id="api-kr-03"></a>兩種檢索及任何復用結果套用相同分類、年齡／地區、已發布、有效版本及停用條件。embedding 失敗可回傳合格關鍵詞結果與降級原因；無適用證據／衝突／不可用不回傳模型補造的來源。
 - <a id="api-kr-04"></a>維護指令預覽片段數，按固定模型／維度／處理版本有限生成及核對發布；保存失敗及未完成狀態，hash 未變不重算。P2 提供實際匯入／發布／停用邊界，P4 管理頁及批量維運沿用它，不另建一套管理 API 權威。
 
+<a id="p2-care-http"></a>
+## P2 確認記錄及孩子檔案 HTTP（S05-W02）
+
+以下路由均以 `/api/children/:childId` 為前綴，使用當前 Server session／孩子權限；owner、caregiver 可確認／更正／刪除，viewer 唯讀。所有 POST（包括搜尋）需 `x-expected-user-id`、JSON 及合法 Origin，沿用 64 KiB／no-store；讀取或寫入前與撤權使用同一家庭鎖協調。共享範圍須明確確認，並不構成外發授權。
+
+| 路由 | 輸入／結果 |
+|---|---|
+| POST `/care/search` | `{query?,kind?,cursor?}` → `CarePage`，搜尋字串不放 URL；每頁最多掃描 200 筆加密記錄、回 50 筆，`nextCursor` 非 null 時需繼續，空頁不等於無結果 |
+| POST `/care` | `CareValues`＋`confirmShared:true` → 201 `{record}`；來源、原文、種類、數量原值／單位／精度及事件時間原文分開 |
+| POST `/care/:recordId/revise` | 上述值＋`expectedVersion`、`reason` → `{record}`；同交易保存舊版／更新目前值，版本不符 409 |
+| GET `/care/:recordId/history` | 可選 `beforeVersion` → `HistoryPage<CareRevision>`；每頁 50 版，保留來源、確認者／時間及原因 |
+| POST `/care/:recordId/delete` | `{expectedVersion,confirmDelete:true}` → `{deleted:true}`；永久清除正文及全部歷史，保留最小刪除標記 |
+| GET／POST `/profile` | GET → `{profile}`；POST `{data,expectedVersion,reason,confirmShared:true}` → `{profile}`；首次版本 0，資料欄位可未知 |
+| GET `/profile/history` | 可選 `beforeVersion` → `HistoryPage<ChildProfile>`，每頁 50 版 |
+| POST `/profile/delete` | `{expectedVersion,confirmDelete:true}` → 空 `{profile}`；清除全部檔案正文／歷史，版本繼續遞增，其他記錄不刪 |
+
+實際型別見 [care.ts](../src/shared/care.ts)，schema 見 [care-validation](../server/care-validation.ts)。未登入 401，帳號 precondition 缺失 428／改變 409，輸入無效 400，其他家庭、viewer 寫入或不存在目標均 404。純更正與永久刪除是不同動作；模糊時間不得帶假精準 timestamp，約數年齡不生成出生日，也不自動計算矯正年齡。
+
+來源欄由使用者描述，不自動讀私人聊天或冒充官方知識引用；既有私人聊天仍私有。長期候選／記憶接線屬 S09／S11。未知寫入結果先查核，不能自動重送；衝突保留本地輸入並明確核對新版。完整 opId／changeSeq 及跨裝置一致性留 S07-W03。下列 P1 原始契約仍可用，其最新文字由更正後的目前值提供。
+
 <a id="p1-input-contracts"></a>
 ## P1 已落碼的最小輸入契約
 

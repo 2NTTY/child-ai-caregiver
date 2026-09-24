@@ -13,6 +13,7 @@ import { handleChatRequest } from "./chat-api.ts";
 import { handleChatReply } from "./chat-reply.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { handleFamilyRequest } from "./family-api.ts";
+import { handleCareRequest } from "./care-api.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -67,6 +68,7 @@ export function createRequestHandler(options: {
   workspaces: WorkspaceStore;
   records: RecordStore;
   families?: import("./families.ts").FamilyStore;
+  care?: import("./care.ts").CareStore;
   modelGateway?: ModelGateway;
   chat?: ChatStore;
   chatPrompt?: string;
@@ -145,7 +147,9 @@ export function createRequestHandler(options: {
         || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences") {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = (url.pathname.startsWith("/api/families") || url.pathname === "/api/notification-preferences") && options.families
+        result = /^\/api\/children\/[^/]+\/(care|profile)(\/|$)/u.test(url.pathname) && options.care
+          ? await handleCareRequest(webRequest, userId, options.care)
+          : (url.pathname.startsWith("/api/families") || url.pathname === "/api/notification-preferences") && options.families
           ? await handleFamilyRequest(webRequest, userId, options.families, options.records)
           : url.pathname.endsWith("/reply") && options.chat && options.modelGateway && options.chatPrompt
           ? await handleChatReply(webRequest, userId, {

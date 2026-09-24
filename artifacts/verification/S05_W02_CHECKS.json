@@ -1,0 +1,72 @@
+{
+  "evidenceId": "EV-S05-W02",
+  "workPackage": "S05-W02",
+  "recordedOn": "2026-09-24",
+  "baseCommit": "bd46095da04b845cebf6db3e9ccdc2739bb9a04d",
+  "prerequisites": [
+    "S06-W02 merged in PR #31"
+  ],
+  "status": "passed",
+  "scope": "Confirmed shared care records and child profiles, revision history, encrypted paginated search, precision-preserving inputs, permanent erasure and functional UI",
+  "lightweight": {
+    "uniqueTestsPassed": 17,
+    "suites": {
+      "care-api.test.ts": 10,
+      "care-search.test.ts": 3,
+      "care-scope.test.ts": 2,
+      "care-client.test.ts": 2
+    },
+    "typechecks": [
+      "tsc --noEmit passed",
+      "tsc -p tsconfig.server.json --noEmit passed"
+    ],
+    "scriptSyntax": "node --check scripts/verify-care.mjs passed",
+    "reviewFixes": [
+      "Keep unknown writes locked until explicit reconciliation",
+      "Preserve correction drafts with an explicitly selected fresh base version",
+      "Do not advance profile draft version during unrelated record refresh",
+      "Retain hidden drafts during session checks, discard after logout/account change/revocation",
+      "Preserve PostgreSQL microseconds in keyset cursors"
+    ],
+    "initialCheckFailures": "Test fake-store assertions and leftover JSX from page replacement were corrected; final typechecks passed."
+  },
+  "localIntegration": {
+    "approval": "explicit_user_approval_2026-09-24",
+    "command": "node --env-file=<existing synthetic configuration> scripts/verify-care.mjs --approved-care",
+    "result": "passed",
+    "checks": 13,
+    "httpRequests": 39,
+    "approvedMaxHttpRequests": 60,
+    "accountsCreated": 3,
+    "syntheticRecordsCreated": 54,
+    "migrations": [
+      "007-confirmed-records"
+    ],
+    "existingDataPreserved": true,
+    "deletedOnlyNewSyntheticChild": true,
+    "restarted": true,
+    "modelCalls": 0,
+    "notificationCalls": 0,
+    "databaseCleared": false,
+    "bodiesLogged": false
+  },
+  "notRun": [
+    "browser E2E",
+    "cloud deployment",
+    "model or notification services",
+    "full regression",
+    "new backup/restore exercise"
+  ],
+  "limits": [
+    "UI interaction states reviewed and typechecked, not browser-accepted",
+    "Full online idempotency/change sequence remains S07-W03",
+    "Candidate facts and long-term memory remain S09-W02 / S11-W02",
+    "Whole-database encrypted backup includes added tables; no new restore exercise in this package"
+  ],
+  "integrationCoreSha256": {
+    "server/care.ts": "84fd15e90e1e3318109f18f5fece9f83ff92c5353d1d3528ed53d49ed9b846e5",
+    "server/care-validation.ts": "a592aa4a4e0086f409351b4481d60b46d3ef6621e6110ea3ba5c6be194015713",
+    "server/migrations/007-confirmed-records.sql": "6eccddec9339ea65f9b2ea539b2a3f786db73e2507b1a937e399a1b95415917e",
+    "scripts/verify-care.mjs": "7e77bbcfc489094ec3f995a9768f4af806834f7e2a88d373a73c3d8e3452c11f"
+  }
+}
