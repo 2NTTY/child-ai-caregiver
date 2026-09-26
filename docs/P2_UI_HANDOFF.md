@@ -5,17 +5,21 @@
 <a id="chat-handoff"></a>
 ## 前端聊天接手入口
 
-使用者另行安排前端聊天，主聊天負責後端；修改歸屬、共享契約／依賴及記錄協調依 [AGENTS](../AGENTS.md#frontend-backend)。先讀 STATUS、PLAN 當前工作包及本表，再按需要讀 [前端選型證據](TECH_REUSE.md#frontend)，不用重新調查整套技術棧。此交接文件不自動授權開始未解鎖的功能包。
+前端 task 為「檢查育伴港前端現況」。2026-09-26 對齊其最新計劃：先在 `frontend/` 完成隔離 Web 預覽，正式 API 接線由主聊天整合；整套 Web 經使用者明確確認滿意且符合 P3 前置後，才開始 Android 前端。修改歸屬依 [AGENTS](../AGENTS.md#frontend-backend)。先讀根 STATUS、PLAN 當前工作包及本表，再按需要讀 [前端選型證據](TECH_REUSE.md#frontend)；本文件不自動授權開包。
 
 | 交付 | 負責範圍 | 交接與完成條件 |
 |---|---|---|
-| 前端聊天 | `app/**`、`src/client/**` 的 Web／Android UI、表單、客戶端快取、Expo 平台接入及瀏覽器測試 | 按既有 API／型別接線，呈現失敗、unknown、版本衝突及撤權；交付可操作流程及已驗／未驗項 |
-| 主聊天 | `server/**`、`deploy/**`、後端測試及資料／Agent／任務／安全規則 | 提供實際契約與錯誤語義、受控合成測試資料及後端證據；統籌整包整合與必要驗收 |
-| 共享變更 | `src/shared/**`、根依賴／lockfile／配置、API／資料契約及權威文件 | 先由主聊天定修改次序與歸屬，避免兩邊同時寫入；使用各自 worktree／分支，不各自發明相容協定 |
+| 前端聊天 | 當前 FE-W01 的 `frontend/**` 元件、主題、路由預覽、view model／回調、合成資料、獨立依賴／配置及前端文件 | 不呼叫真 Server、不改正式 App 或根文件；展示真實運行的合成預覽，交付可重用元件及已驗／未驗項 |
+| 主聊天 | Server／Agent／資料庫／安全，以及正式 `app/**`／`src/client/**` 的接線與整合 | 對照既有 API 審核前端交付，保留控制器／草稿／opId；處理根依賴、正式狀態及真 API 驗收，不從截圖重做 UI |
+| 共享契約 | `src/shared/**`、API／資料契約、根依賴／lockfile／配置及權威文件 | 主聊天負責；前端只讀及列出缺口，不把 view model 當新 wire contract。各用獨立 worktree／分支，前端不自行 merge |
 
-每次交接只列：基線 commit／工作包、實際 API 與共享型別、合成範例及錯誤狀態、opId／unknown／重試行為、待接線項及驗收證據。契約尚未交付時可設計 UI 狀態，但不提供假路由或以 mock 結案；同包接線可依核對後的穩定契約推進，前置工作包仍須先驗收合併。
+前端開包時自行建立 `frontend/STATUS.md`、`PLAN.md`、`DESIGN_SYSTEM.md`、`WORKFLOW.md` 及 `HANDOFF.md`；目前這些是預定交付，不能當作已存在。前端文件只管 FE 工作包，不複製產品總規格或自行將 Sxx 包標完成。主聊天本輪不代建該目錄。
 
-近期前端優先順序：S13-W01 新複雜表單小範圍驗 RHF＋Zod／Paper；S16-W05 可利用已完成 S06-W02／S07-W03 提前建 Playwright Web 基礎；P3 S07-W01 才導入讀取用途的 TanStack Query。Expo UI Universal 有 Web fallback，但原生控制、RHF 同步及 Android 尚待實測。沿用 P1 頁面、原 opId transport 與手動 validator，按新增能力局部接入；整合或瀏覽器／真機必需驗收未做，整包不能標完成。
+`frontend/HANDOFF.md` 每次列基線／交付 commit、元件入口、安裝與預覽命令、view model／操作回調及 API／型別對照、必要狀態與未有契約項、驗收證據。逐項標示「前端已完成」「只屬合成預覽」「待主聊天接線」「未有後端契約」。主聊天接線時保留原操作 ID、unknown 查核、頁面草稿、切孩子／登出／撤權的取消及清理；合成資料入口與正式資料來源分開，正式配置不能意外啟用預覽 fixture。前端 view model 只承載呈現資料，不另實作授權／終態／投遞規則。
+
+近期次序依前端最新計劃從 FE-W01 Web 主頁開始，之後逐頁設計；首包優先試既定 Paper 候選，複雜表單需要時再驗 RHF＋Zod。主聊天的 S13-W01 台帳及 S16-W05 正式 Web 測試仍按根 PLAN；P3 S07-W01 才導入讀取用途的 Query，無須為預覽提前建快取／同步框架。前端新依賴先留在隔離專案，正式整合時由主聊天核對根版本／許可／相容性，不把整份預覽 lockfile 覆蓋到根目錄。
+
+Web 預覽檢查 1440／1024／390／320 CSS px、鍵盤、溢出及必要狀態，提供實際運行畫面；390／320 是手機瀏覽器尺寸，不算 Android 驗收。前端自行維護的 preview 測試與主聊天 S16-W05 的真 API 流程分開記證據，可復用場景，不能互相冒充。僅完成預覽或確認單頁，不代表整套 Web 獲確認、P3 前置完成或 P2 已完成。
 
 ## 狀態與使用方式
 

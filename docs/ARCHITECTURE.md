@@ -36,6 +36,8 @@
 
 新複雜表單優先驗證 React Hook Form＋現有 Zod；新增共用頁面先小範圍試 React Native Paper，Expo UI Universal 留作有原生控制需要的局部候選，兩者均須核對 Web／Expo 57／Android，P1 不批量換 UI。P3 TanStack Query 首批限讀取快取與失效管理，沿用原 opId／收據寫入 transport；權限／Server 切換必須取消及清理快取，不能形成離線 mutation queue。P2 先建 Playwright Test 共用 Web 測試基礎，延用至 P4；保留 node:test／既有腳本，不能替代 Android 原生驗收。
 
+當前前端另在 `frontend/` 建隔離 Web 預覽，以 view model／操作回調及合成資料交付元件；它不是第二個業務客戶端或新的 API 權威。主聊天按 [交接清單](P2_UI_HANDOFF.md#chat-handoff) 接入正式 App／既有控制器，審核根依賴及保持預覽資料與正式來源分離；不將整份獨立專案或 lockfile 直接覆蓋正式工程。Web 預覽驗收與正式 API／Android 驗收分開。
+
 <a id="section-3-2"></a>
 ## 3.2 数据存储
 

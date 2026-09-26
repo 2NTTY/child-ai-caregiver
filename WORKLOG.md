@@ -908,3 +908,12 @@
 - Changes：[AGENTS](AGENTS.md#technical-skills) 加有界「先復用、再自建」規則及聊天分工；[PLAN](PLAN.md#doc-r03) 補相應工作包採用條件、新增前置 S06-W02／S07-W03 的 S16-W05，並納入 S16-W02 依賴；[架構](docs/ARCHITECTURE.md#reuse-boundaries) 保留業務權威及本地部署邊界；追加 [ADR-012](docs/DECISIONS.md#adr-012)，更新 [前端交接](docs/P2_UI_HANDOFF.md#chat-handoff)，本 LOG 僅追加。沒有改 API wire contract、程式、package／lockfile、Prompt Pack、美術、Skill 或部署。
 - Verification：Windows PowerShell／Node 24.11.0，針對本包 Markdown 執行本機路徑／錨點、舊錨點保留、50 個工作包依賴與新包未開始狀態、修改範圍及歷史保留檢查；`git diff --check` 通過。STATUS SHA-256 保持 `835b9c95edfd5702874e9c383cbb7c53c5c5b2a076fd197023267da210940f21`；追加前 WORKLOG 的 98,851 bytes 舊前綴逐位元組相同，DECISIONS 舊正文保留。候選／已驗分類由主模型對照固定來源及既有 EV 覆核，不把文件檢查當產品相容性驗收。
 - Limits / Next：沒有安裝、migration、DB／模型／通知呼叫、瀏覽器 E2E、真機、部署或額外全量測試；未宣稱 token 節省比例。DOC-R03 文件驗收通過，交付隨本包 PR review／合併生效；新功能包仍未開始，下一後端包仍為 S13-W01，S10-W02 仍須等待 S13-W04。使用者要求本包不改 STATUS，以本 LOG 與 PLAN 留下可恢復記錄。
+
+<a id="log-20260926-002"></a>
+## LOG-20260926-002
+
+- Recorded At / Work Date：2026-09-26（Asia/Hong_Kong）；DOC-R03／PR #38 接續 LOG-20260926-001，基線 `7766c98`。使用者指定前端 task「檢查育伴港前端現況」（`01a0d8fc-2813-7892-927f-bc6fdb65cc2a`），要求核對交接合作；主模型讀取該 task，並補核同一 task 本機紀錄中工具未返回的近期內容，沒有新建代理。
+- Actual Work：最新前端計劃為 FE-W01 隔離 Web 主頁預覽，逐頁完成 Web 後待使用者明確確認，再開始 Android；前端不改後端、正式 App 或根指導／進度文件，真 API 接線由主聊天負責。核對時前端 worktree `45a2` 仍在 `80cf50c`、乾淨且未建立 frontend 目錄；PR #38 仍 open，原稿允許前端直接正式接線的分工需要修訂，不能宣稱雙方已實際整合。
+- Changes：主模型親自更新 AGENTS、PLAN、ARCHITECTURE、TECH_REUSE 及 P2_UI_HANDOFF，於 ADR-012 追加分工補充。前端專用程式／依賴／配置／測試／STATUS／PLAN／DESIGN_SYSTEM／WORKFLOW／HANDOFF 由前端在 frontend 內交付；view model／回調對照既有 API，不另定業務契約。主聊天接正式 UI／Server、根依賴及 S16-W05 真 API 瀏覽器測試，保留草稿、opId／unknown、權限及切換清理；預覽與正式證據分開，窄尺寸 Web 不當作 Android 通過。
+- Verification：本包本機連結／錨點、406 個既有明示錨點保留、50 個工作包依賴及候選／實作分級核對通過；`git diff --check` 通過。STATUS 的 SHA-256 維持上一 LOG 原值，本輪追加前 WORKLOG 的 101,815 bytes 舊前綴逐位元組保留，既有 ADR 正文只追加。沒有改前端 worktree、產品程式、依賴、部署或 API wire contract。
+- Human Verification / Limits：依使用者所指 task 的最新要求對齊規劃；本輪沒有 UI／真 API／Android 驗收或安裝。未代前端建立資料夾、開包或 merge；前端新文件仍是待交付清單。保持根 STATUS 不變，產品工作包未開始，DOC-R03 修訂隨同一 PR review／合併交付。
