@@ -29,6 +29,13 @@
 <a id="rule-3-1-11"></a>
 共享核心保持平台、資料庫及渠道解耦；育伴港是唯一實作領域，將領域模型、prompt、來源及受限 skills／任務流程集中管理。只在相關功能使用邊界，不建通用實體模型、動態插件平台、registry 或第二主題。日後可從來源碼層替換領域或 adapter，不預建平台。
 
+<a id="reuse-boundaries"></a>
+### 通用能力復用邊界
+
+保留已驗收的 ADK、Expo Router、Better Auth、Zod、pgvector、家庭授權／在線收據／加密／知識發布等成果。新增通用能力按 [AGENTS 復用規則](../AGENTS.md#technical-skills) 選型；[固定版本研究與相容性閘](TECH_REUSE.md#decisions) 是證據，不表示候選已安裝或通過本工程驗收。
+
+新複雜表單優先驗證 React Hook Form＋現有 Zod；新增共用頁面先小範圍試 React Native Paper，Expo UI Universal 留作有原生控制需要的局部候選，兩者均須核對 Web／Expo 57／Android，P1 不批量換 UI。P3 TanStack Query 首批限讀取快取與失效管理，沿用原 opId／收據寫入 transport；權限／Server 切換必須取消及清理快取，不能形成離線 mutation queue。P2 先建 Playwright Test 共用 Web 測試基礎，延用至 P4；保留 node:test／既有腳本，不能替代 Android 原生驗收。
+
 <a id="section-3-2"></a>
 ## 3.2 数据存储
 
@@ -86,6 +93,13 @@ Server 自 P2 起以持續 worker 處理事件及到期工作，瀏覽器關閉�
 <a id="rule-3-5-11"></a>
 Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等協調取得工作；重啟按台帳恢復，執行前重查最新授權及完成／取消狀態。只有事件或到期事項需要推理時才作有限 AI 呼叫；不以模型空轉輪詢，也不建大型 Agent 平台。外發結果未知時先核對投遞嘗試，不以租約到期作盲目重發理由。
 
+<a id="p2-worker-reuse"></a>
+### S13-W04 worker 採用邊界
+
+優先驗證 pg-boss 12.34.0 作 PostgreSQL worker；Graphile Worker 0.17.3 作比較候選，其預設 hard-kill 恢復不合本次數分鐘恢復目標。框架負責 job 持久化、排程／領取、heartbeat、有限重試及停止；項目保留家庭授權／世代、occurrenceId、終態、投遞去重／unknown、安靜時段／跟進上限及全邏輯工作重試預算。job 完成不等於照護任務完成，框架唯一 job 亦不保證外部副作用 exactly-once。
+
+業務台帳與入列須共用 PostgreSQL transaction，job 只保存 ID／參照；每次執行重新核權及台帳，外部呼叫不持有業務交易。S10-W02 復用同一 worker 與既有知識 hash／發布流程。採用須通過交易回滾、雙 worker、hard-kill／分鐘級恢復、取消／撤權、unknown 不重發及備份還原不復活終態等驗證；具體版本／配置假設與成本見 [worker 研究](TECH_REUSE.md#worker)，目前未實作。
+
 <a id="section-3-6"></a>
 ## 3.6 AI、通知与部署
 
@@ -101,6 +115,11 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 
 - <a id="rule-3-6-10"></a>首次 Server／模型請求起便有登入及資源權限檢查、憑據隔離、應用配額、總開關及有限重試。供應商憑據只留 Server；日誌不記錄憑據、家庭正文或私人附件。
 - <a id="rule-3-6-11"></a>P1 交付最小 Server／PostgreSQL／Better Auth、Web 記錄聊天與 Gemini 簡單 prompt，階段結案時提供真 URL。P2 以 ADK 接通完整當前 orchestration、最小向量 RAG、持續 worker、家庭權限、Web 附件、主動任務、Web Push／Telegram 及公共更新。P3 Android 重用同一 Server，P4 補完整部署／遷移／災備及 RAG 維運擴充；不因使用框架而提前建立未需平台。
+
+<a id="portable-core"></a>
+核心資料、任務、附件、權限及確定性規則由自有 Node／PostgreSQL／pgvector／worker／Compose 承載，不依賴只能在 GCP 運行的核心服務。Gemini 維持既定 Vertex 接入，可使用 GCP 以外 ADC；自部署不代表離線 Gemini。S17-W05 須驗證沒有 GCP 附加身份、關閉 AI 時核心資料與確定性任務仍可用，模型及外部通知另按憑據／授權驗證。
+
+渠道薄 adapter 優先驗證 web-push、grammY 及 Expo Notifications；FCM Server 先用官方 Google Auth＋單次 HTTP v1 請求，以免 SDK 隱藏重試繞過 unknown／去重規則。版本、許可及 Firebase Admin 未優先採用的證據見 [渠道研究](TECH_REUSE.md#channels)。選人、授權、排程、fallback 與投遞台帳仍由項目控制；所有候選尚待各包驗收。
 
 <a id="p2-agent-runtime"></a>
 ### 3.6A P2 ADK 產品 Agent（S11-W03 基礎已實作）
@@ -124,6 +143,13 @@ ADK session 首版只保存單次運行協定上下文；Server 保存已確認�
 
 <a id="rule-adk-06"></a>
 原生工具呼叫是本運行副作用入口；最終 `actionRequests` 或文字只是候選／結果語義，不再觸發第二次執行。工具已成功而文字生成失敗，按台帳交代已完成、未完成或 unknown。UI 只顯示經權限／版本核對的來源及工具／任務進度，不把模型內部推理或未核對串流當執行證據。
+
+<a id="p2-adk-native-reuse"></a>
+### ADK 原生能力的採用條件
+
+已核對 TypeScript 2.1.0 的 DatabaseSessionService／PostgreSQL 支援，現時仍沿用已實測的單次 InMemorySession：持久 Session 會增加 ORM driver、另一組 JSON 表及加密／刪除／備份責任，尚無必需使用情境。SkillToolset 已調查但屬 experimental，維持現有 Prompt Pack／受限工具，不重建技能平台。
+
+S11-W02 優先以 BasePlugin 及 ADK 原生 spans 接最小 metadata 診斷，可用單一標準 OpenTelemetry provider／本地 OTLP；不預設開啟會記正文的 LoggingPlugin、通用自動重試或 GCP exporter。observer 不得短路／改寫業務結果，診斷 sink 失敗不阻斷業務；保留 content capture 關閉，另驗 exporter allowlist。TS devtools 已有 conformance 工具，但不能直接充當產品品質評測；S16-W02 復用現有 scripted Runner 與有限真 Gemini 情境。官方原碼、版本、實驗性範圍及未驗證項見 [ADK 研究](TECH_REUSE.md#adk)。
 
 <a id="p2-agent-budgets"></a>
 ### 3.6B P2 初始有界運行配置

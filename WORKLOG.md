@@ -898,3 +898,13 @@
 - Usage / Preservation：服務回報 773 input tokens／1,036 billable characters，15 筆用量無未知欄；SDK 每次一次 attempt，沒有提高每日額度或補打額外模型。估計低於 US$0.02，實際帳單未核對。升級前 23 張業務表逐列雜湊不變；全庫加密備份還原到新空庫，31 張表逐列比較、session 清除、pgvector 0.8.6 及實際向量查詢通過，只刪本次新還原庫。原庫與工程外受保護備份保留。
 - Executor / Review：主模型執行關鍵驗收、覆核交易／發布停用／來源與配額邊界，親自更新 Skill、操作指引、許可、UI 對接清單及狀態；本輪沒有新建子代理。復用先前 21 項單元與最新整合後兩份 typecheck，不機械重跑；新增映像已實際建置，文件／證據及 diff 作必要靜態檢查。歷史 WORKLOG 原位保留。
 - Delivery / Pause：本包完成隨 PR #35 review／合併生效；現網仍是 P1，沒有部署、通知、瀏覽器 E2E、全量回歸或重做 Prompt Pack／美術。有限語料召回不代表一般醫療能力或完整 Agent 已接通。依使用者要求繼續階段性暫停；S13-W01 Ready 但不開始，S10-W02 仍待 S13-W04，P2 未完成。
+
+<a id="log-20260926-001"></a>
+## LOG-20260926-001
+
+- Recorded At / Work Date：2026-09-26（Asia/Hong_Kong）；選型研究於 2026-09-25 至 26 核對，DOC-R03 文件落實基於本地／遠端 master `80cf50c08ee044e734d2463fe9a22ae30eeb786d`，分支 `codex/p1-p4-reuse-plan`。使用者要求開始執行選型與工作包調整，明確保留 STATUS、不安裝依賴或開始產品實作，另安排前端聊天、主聊天負責後端。
+- Goal / Actual Work：保存 [P1–P4 決策表及官方證據](docs/TECH_REUSE.md#decisions)，先復用已完成實作／六份 Skill，再查同版 Google／Expo 能力及必要開源候選。pg-boss 優先驗證但不接管業務台帳；核對 ADK TS 2.1 的 Session／Plugins／Skills／conformance，保留已驗收 Runner／Prompt Pack；補 RHF／Paper／Expo UI、Query、Playwright 及通知 SDK 的版本／許可／相容性／成本與採用閘。核心 Node／PostgreSQL／worker／pgvector 支援自部署，Gemini 仍是外部服務。
+- Executor / AI Assistance：主模型親讀最新狀態／計劃、相關架構／實作及六份 Skill，核對關鍵官方原碼及整合結論，親自撰寫所有本包文件。前段兩個 Luna Max 只讀調查分別提供前端／測試及通知來源；文件落實階段沒有再建代理、委派指導文件或修改模型配置。Human Verification：使用者確認工作方向與前後端分工；本輪未作產品人工／真機驗收。
+- Changes：[AGENTS](AGENTS.md#technical-skills) 加有界「先復用、再自建」規則及聊天分工；[PLAN](PLAN.md#doc-r03) 補相應工作包採用條件、新增前置 S06-W02／S07-W03 的 S16-W05，並納入 S16-W02 依賴；[架構](docs/ARCHITECTURE.md#reuse-boundaries) 保留業務權威及本地部署邊界；追加 [ADR-012](docs/DECISIONS.md#adr-012)，更新 [前端交接](docs/P2_UI_HANDOFF.md#chat-handoff)，本 LOG 僅追加。沒有改 API wire contract、程式、package／lockfile、Prompt Pack、美術、Skill 或部署。
+- Verification：Windows PowerShell／Node 24.11.0，針對本包 Markdown 執行本機路徑／錨點、舊錨點保留、50 個工作包依賴與新包未開始狀態、修改範圍及歷史保留檢查；`git diff --check` 通過。STATUS SHA-256 保持 `835b9c95edfd5702874e9c383cbb7c53c5c5b2a076fd197023267da210940f21`；追加前 WORKLOG 的 98,851 bytes 舊前綴逐位元組相同，DECISIONS 舊正文保留。候選／已驗分類由主模型對照固定來源及既有 EV 覆核，不把文件檢查當產品相容性驗收。
+- Limits / Next：沒有安裝、migration、DB／模型／通知呼叫、瀏覽器 E2E、真機、部署或額外全量測試；未宣稱 token 節省比例。DOC-R03 文件驗收通過，交付隨本包 PR review／合併生效；新功能包仍未開始，下一後端包仍為 S13-W01，S10-W02 仍須等待 S13-W04。使用者要求本包不改 STATUS，以本 LOG 與 PLAN 留下可恢復記錄。
