@@ -1,6 +1,6 @@
 # FE-W01 Web 主頁交接
 
-**歸屬**：本文件與實作只在 `frontend/**`；根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 及正式 API／共享型別是功能權威。基線 commit：`3e15d04`（`master`）；交付分支：`codex/fe-w01-web-home`。交付 commit：本包完成本地提交後填入。本包不修改 P1 正式首頁、不呼叫 Server、不自行 merge。
+**歸屬**：本文件與實作只在 `frontend/**`；根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 及正式 API／共享型別是功能權威。基線 commit：`3e15d04`（`master`）；交付分支：`codex/fe-w01-web-home`；畫面、程式與驗證交付 commit：`48cc95c`。本包不修改 P1 正式首頁、不呼叫 Server、不自行 merge。
 
 | 項目 | 狀態 | 入口／說明 |
 |---|---|---|
