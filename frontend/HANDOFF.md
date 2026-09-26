@@ -1,6 +1,6 @@
 # 育伴港 Web 前端交接
 
-本文件交接 frontend/** 的獨立畫面包，不改變根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 或正式 API／共享型別的權威。FE-W04 分支 codex/fe-w04-shell-child-guide 由 FE-W03 commit 2671a9b 延伸；四包都尚待使用者視覺確認，未自行 merge。正式 P1 登入、孩子、文字記錄及基本聊天在主 App 已可用；P2 有部分功能已落碼並具本機證據，現網仍是 P1，Agent 對話接線、任務、通知等不能從本預覽推斷為已可用。
+本文件交接 frontend/** 的獨立畫面包，不改變根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 或正式 API／共享型別的權威。FE-W05 分支 codex/fe-w05-motion-preview 由 FE-W04 commit 591a23d 延伸；先前四包尚待使用者視覺確認，本包只待動態方向選擇，未自行 merge。正式 P1 登入、孩子、文字記錄及基本聊天在主 App 已可用；P2 有部分功能已落碼並具本機證據，現網仍是 P1，Agent 對話接線、任務、通知等不能從本預覽推斷為已可用。
 
 ## 前端入口與結構
 
@@ -10,6 +10,7 @@
 | [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 前端已完成；資料只屬合成預覽 | 左導覽、置中可返回主頁的 Logo、孩子選擇及關鍵摘要、單一右欄開關、左下對話入口、條件式引導入口與內頁版式 |
 | [PreviewTodoCard.tsx](src/components/PreviewTodoCard.tsx)、[NotificationBell.tsx](src/components/NotificationBell.tsx) | 只屬合成預覽 | 右欄按孩子顯示可本地勾選的清單；頂部鈴鐺按原操作狀態顯示提示及角標，不是 S13 任務或通知資料 |
 | [screens](src/screens) | 前端已完成；資料只屬合成預覽 | 主頁以 [HomeDashboard.tsx](src/components/HomeDashboard.tsx) 組成；對話、照顧記錄、子女檔案、家庭協調、記憶與話題、設定、[使用引導](src/screens/guideScreen.tsx)及登入各自有畫面檔 |
+| [motionPreviewScreen.tsx](src/screens/motionPreviewScreen.tsx)、[MOTION_OPTIONS.md](MOTION_OPTIONS.md) | 只屬合成選型預覽 | `/motion-preview` 在同一示例中比較三種動態；沒有寫入其他畫面的共用規則，也不讀取真孩子或任務 |
 | [theme.ts](src/theme.ts)、[ui.tsx](src/components/ui.tsx) | 前端已完成 | 單一 token／Paper 主題，品牌按鈕、表單、卡片、共用分頁、連線與操作狀態；全畫面無硬編碼色值 |
 | [view-model.ts](src/view-model.ts)、[preview](src/preview) | 只屬合成預覽 | 孩子、記錄、操作狀態、本地草稿及待辦示例；不是 wire contract、Server 收據或正式資料源 |
 | [verify-web.mjs](scripts/verify-web.mjs)、[screenshots](verification/screenshots) | 前端已完成 | Playwright Core 只測本機合成預覽與瀏覽器版式，不能代替真 API／正式 E2E |
@@ -24,6 +25,8 @@ Expo 57.0.24、Router 57.0.22、React Native Web 0.21.2 與正式 repo 現行版
     $env:EXPO_NO_TELEMETRY = '1'
 
 預設瀏覽 http://localhost:8081；若已佔用可用 npm run web -- --port 8082，驗證前設定 FRONTEND_PREVIEW_URL=http://localhost:8082。另執行 npm run typecheck、npm run build:web、npm run verify:web；瀏覽器腳本預設使用本機 Edge，其他環境可設定 BROWSER_EXECUTABLE 指向 Chromium。FE-W04 的 typecheck、Web build 與瀏覽器檢查均通過；腳本覆蓋 1586／1440／1024／390／320 CSS px、九個 dashboard／登入路由與側欄、待辦、鈴鐺、孩子切換、首次登入／設定未完成引導、草稿、設定及登入的本地互動，未見整頁橫向溢出。截圖在 [verification/screenshots](verification/screenshots)；使用者視覺比較尚待完成。
+
+FE-W05 另以 `npm run verify:motion` 檢查 1440／1024／390／320 CSS px 的 A／B／C 切換、孩子資料同步、鍵盤展開與手動／系統減少動態；typecheck、Web build、此針對性瀏覽器檢查均通過，截圖在 [verification/motion-preview](verification/motion-preview)。本包只新增隔離路由與腳本，未改既有產品路由或 view model；選型待使用者決定，正式頁面尚未採用動態。
 
 ## 各畫面及正式落點
 
