@@ -1,6 +1,6 @@
 # 育伴港 Web 前端交接
 
-本文件交接 frontend/** 的獨立畫面包，不改變根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 或正式 API／共享型別的權威。FE-W05 分支 codex/fe-w05-motion-preview 由 FE-W04 commit 591a23d 延伸；先前四包尚待使用者視覺確認，本包只待動態方向選擇，未自行 merge。正式 P1 登入、孩子、文字記錄及基本聊天在主 App 已可用；P2 有部分功能已落碼並具本機證據，現網仍是 P1，Agent 對話接線、任務、通知等不能從本預覽推斷為已可用。
+本文件交接 frontend/** 的獨立畫面包，不改變根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 或正式 API／共享型別的權威。FE-W05 分支 codex/fe-w05-motion-preview 由 FE-W04 commit 591a23d 延伸；先前四包尚待使用者視覺確認，使用者已決定暫不採用動態，FE-W05 只保留獨立比較頁，未自行 merge，亦非靜態 Web 接線的前置條件。正式 P1 登入、孩子、文字記錄及基本聊天在主 App 已可用；P2 有部分功能已落碼並具本機證據，現網仍是 P1，Agent 對話接線、任務、通知等不能從本預覽推斷為已可用。
 
 ## 前端入口與結構
 
@@ -26,7 +26,7 @@ Expo 57.0.24、Router 57.0.22、React Native Web 0.21.2 與正式 repo 現行版
 
 預設瀏覽 http://localhost:8081；若已佔用可用 npm run web -- --port 8082，驗證前設定 FRONTEND_PREVIEW_URL=http://localhost:8082。另執行 npm run typecheck、npm run build:web、npm run verify:web；瀏覽器腳本預設使用本機 Edge，其他環境可設定 BROWSER_EXECUTABLE 指向 Chromium。FE-W04 的 typecheck、Web build 與瀏覽器檢查均通過；腳本覆蓋 1586／1440／1024／390／320 CSS px、九個 dashboard／登入路由與側欄、待辦、鈴鐺、孩子切換、首次登入／設定未完成引導、草稿、設定及登入的本地互動，未見整頁橫向溢出。截圖在 [verification/screenshots](verification/screenshots)；使用者視覺比較尚待完成。
 
-FE-W05 另以 `npm run verify:motion` 檢查 1440／1024／390／320 CSS px 的 A／B／C 切換、孩子資料同步、鍵盤展開與手動／系統減少動態；typecheck、Web build、此針對性瀏覽器檢查均通過，截圖在 [verification/motion-preview](verification/motion-preview)。本包只新增隔離路由與腳本，未改既有產品路由或 view model；選型待使用者決定，正式頁面尚未採用動態。
+FE-W05 另以 `npm run verify:motion` 檢查 1440／1024／390／320 CSS px 的 A／B／C 切換、孩子資料同步、鍵盤展開與手動／系統減少動態；typecheck、Web build、此針對性瀏覽器檢查均通過，截圖在 [verification/motion-preview](verification/motion-preview)。本包只新增隔離路由與腳本，未改既有產品路由或 view model；使用者已選擇暫時保持靜態，正式頁面不採用動態。
 
 ## 各畫面及正式落點
 
