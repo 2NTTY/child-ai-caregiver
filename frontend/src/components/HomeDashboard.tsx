@@ -72,9 +72,10 @@ export function HomeDashboard({ model, actions }: { model: HomeViewModel; action
   const { width: windowWidth } = useWindowDimensions();
   const [width, setWidth] = useState(900);
   const stacked = Math.min(width, windowWidth) < 760;
+  const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <View style={[styles.introCard, stacked && styles.introStack]}>
-      <View style={styles.introText}><Text style={styles.eyebrow}>育伴港 · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label="開始基本聊天" onPress={() => actions.open("chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
+      <View style={styles.introText}><Text style={styles.eyebrow}>育伴港 · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
       <Image source={harbourArt} resizeMode="cover" accessibilityLabel="照顧者與孩子在香港海旁同行" style={[styles.introArt, stacked && styles.introArtStack]} />
     </View>
     <View style={[styles.grid, stacked && styles.gridStack]}>
