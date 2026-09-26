@@ -211,3 +211,15 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 - 工作包／驗收：新增 S11-W03（前置 S17-W01），S11-W02 增加此前置並保留 S09-W02／S13-W04／S10-W02；S10-W01／W02／W03 調整 RAG 核心、更新及維運分工，其餘 P2 依賴及照片／分享／摘要等功能保留。新增 [Agent AC](../SPEC.md#ac-p2-agent-loop)及[向量 AC](../SPEC.md#ac-p2-vector-rag)；兩條真實展示流程不能代替全部 P2 功能驗收。
 - 證據／限制：沿用本次規劃已核對的 [ADK 官方／固定版本來源](ARCHITECTURE.md#p2-adk-evidence)及 [pgvector／embedding 來源](ARCHITECTURE.md#p2-rag-evidence)。本文件包只做 diff、連結／錨點、依賴及歷史保留核對；未安裝依賴、生成向量、呼叫 Gemini 或變更部署。後續真 DB、模型／embedding、渠道及瀏覽器驗收另列原因、範圍及成本取得批准，不沿用 P1 批准。
 - 本輪分工補充：使用者進一步指定指導文件、計劃及供 AI 使用的提示詞由主模型親自撰寫／修改；現行規則已加入 [AGENTS](../AGENTS.md#models)，同時取消技術 Skill 可委派 Sol 撰寫的條款。三份 TOML 與既有 Prompt Pack 不改，不回寫舊 ADR 的當時政策。
+
+<a id="adr-012"></a>
+## ADR-012 — 先復用的技術選型與前後端分工
+
+- 日期／狀態：2026-09-26，選型及工作包調整已確認；使用者要求開始執行本次文件落實，仍不安裝依賴或開始功能實作，並明確要求不改 STATUS。候選的文件相容與已驗收實作分開記錄。
+- 原因：減少通用能力的重複實作及開發 token，保留可靠的已驗收成果；產品 Agent 使用 Gemini，須先核對已接入 Google ADK 的同版原生能力，不能因未調查而再建相同機制。未來本地部署要求核心資料、任務及規則不依賴 GCP 專屬服務。
+- 選型理由：pg-boss 優先於 Graphile Worker，主要因後者預設 hard-kill 恢復不合使用者選定的數分鐘目標；框架只承擔執行機制，業務台帳繼續掌管授權、終態與外發去重／unknown。ADK TS 2.1.0 已有持久 Session、Plugins、experimental SkillToolset 及 devtools conformance，逐項核對後保留單次 Session／Prompt Pack，先使用最小 Plugins／原生 spans 診斷，不開通用 skill／session 平台。
+- 前端與驗證理由：新複雜表單優先 RHF＋現有 Zod，共用新頁面小範圍試 Paper；Expo UI Universal 的 Web 能力已確認，原生控制仍按場景驗證。P3 Query 先管理讀取，不接管既有 opId 寫入；提前建立 S16-W05 Playwright Web 基礎，P2–P4 延用，Android 原生仍有獨立驗收。通知優先 web-push／grammY／Expo Notifications，FCM Server 先採官方 Auth＋單次 HTTP v1，避免 Admin SDK 的隱藏重試。
+- 分工決定：使用者安排新聊天負責前端，主聊天負責後端；共享 API／型別／依賴／根配置及權威文件由主聊天統籌次序。穩定接口且修改範圍不重疊的工作才並行，整包驗收包含前後端整合，不能把單方 UI 或 mock 當完成。
+- 保留／影響：ADR-008／010／011 的產品範圍、Server 權威、家庭安全、非醫療分流、ADK／pgvector 及已完成 P1／P2 成果保留；不重選 Better Auth／Expo Router／Zod，不批量改寫既有 UI、validator、Prompt Pack 或測試。新增 S16-W05（前置 S06-W02／S07-W03），S16-W02 加此前置，其餘包只補採用及驗證邊界，不提前解鎖依賴。
+- 追溯：當期官方版本／許可、候選成本、已驗／未驗及採用閘保存於 [TECH_REUSE](TECH_REUSE.md)；現行選擇與責任只在 [架構](ARCHITECTURE.md#reuse-boundaries)、[PLAN](../PLAN.md#roadmap-packages)及 [AGENTS](../AGENTS.md#frontend-backend) 維護。新工具須隨所屬工作包完成實際相容性驗證，本 ADR 不是安裝、產品驗收或節省比例的證據。
+- 前端交接補充（2026-09-26）：使用者要求對齊前端 task「檢查育伴港前端現況」的最新計劃。FE-W01 改以 `frontend/` 隔離 Expo Web 合成預覽及專用文件交付，由主聊天負責正式 UI／API 接線、根依賴及整合；前端不改後端、共享業務或根文件。先逐頁完成 Web，整套 Web 經使用者明確確認且符合 P3 前置後才開 Android；窄尺寸 Web 不等於原生驗收。此補充細化上述分工，不新增第二套產品權威；原生候選仍可研究，產品包前置與已完成成果不變。

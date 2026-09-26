@@ -898,3 +898,22 @@
 - Usage / Preservation：服務回報 773 input tokens／1,036 billable characters，15 筆用量無未知欄；SDK 每次一次 attempt，沒有提高每日額度或補打額外模型。估計低於 US$0.02，實際帳單未核對。升級前 23 張業務表逐列雜湊不變；全庫加密備份還原到新空庫，31 張表逐列比較、session 清除、pgvector 0.8.6 及實際向量查詢通過，只刪本次新還原庫。原庫與工程外受保護備份保留。
 - Executor / Review：主模型執行關鍵驗收、覆核交易／發布停用／來源與配額邊界，親自更新 Skill、操作指引、許可、UI 對接清單及狀態；本輪沒有新建子代理。復用先前 21 項單元與最新整合後兩份 typecheck，不機械重跑；新增映像已實際建置，文件／證據及 diff 作必要靜態檢查。歷史 WORKLOG 原位保留。
 - Delivery / Pause：本包完成隨 PR #35 review／合併生效；現網仍是 P1，沒有部署、通知、瀏覽器 E2E、全量回歸或重做 Prompt Pack／美術。有限語料召回不代表一般醫療能力或完整 Agent 已接通。依使用者要求繼續階段性暫停；S13-W01 Ready 但不開始，S10-W02 仍待 S13-W04，P2 未完成。
+
+<a id="log-20260926-001"></a>
+## LOG-20260926-001
+
+- Recorded At / Work Date：2026-09-26（Asia/Hong_Kong）；選型研究於 2026-09-25 至 26 核對，DOC-R03 文件落實基於本地／遠端 master `80cf50c08ee044e734d2463fe9a22ae30eeb786d`，分支 `codex/p1-p4-reuse-plan`。使用者要求開始執行選型與工作包調整，明確保留 STATUS、不安裝依賴或開始產品實作，另安排前端聊天、主聊天負責後端。
+- Goal / Actual Work：保存 [P1–P4 決策表及官方證據](docs/TECH_REUSE.md#decisions)，先復用已完成實作／六份 Skill，再查同版 Google／Expo 能力及必要開源候選。pg-boss 優先驗證但不接管業務台帳；核對 ADK TS 2.1 的 Session／Plugins／Skills／conformance，保留已驗收 Runner／Prompt Pack；補 RHF／Paper／Expo UI、Query、Playwright 及通知 SDK 的版本／許可／相容性／成本與採用閘。核心 Node／PostgreSQL／worker／pgvector 支援自部署，Gemini 仍是外部服務。
+- Executor / AI Assistance：主模型親讀最新狀態／計劃、相關架構／實作及六份 Skill，核對關鍵官方原碼及整合結論，親自撰寫所有本包文件。前段兩個 Luna Max 只讀調查分別提供前端／測試及通知來源；文件落實階段沒有再建代理、委派指導文件或修改模型配置。Human Verification：使用者確認工作方向與前後端分工；本輪未作產品人工／真機驗收。
+- Changes：[AGENTS](AGENTS.md#technical-skills) 加有界「先復用、再自建」規則及聊天分工；[PLAN](PLAN.md#doc-r03) 補相應工作包採用條件、新增前置 S06-W02／S07-W03 的 S16-W05，並納入 S16-W02 依賴；[架構](docs/ARCHITECTURE.md#reuse-boundaries) 保留業務權威及本地部署邊界；追加 [ADR-012](docs/DECISIONS.md#adr-012)，更新 [前端交接](docs/P2_UI_HANDOFF.md#chat-handoff)，本 LOG 僅追加。沒有改 API wire contract、程式、package／lockfile、Prompt Pack、美術、Skill 或部署。
+- Verification：Windows PowerShell／Node 24.11.0，針對本包 Markdown 執行本機路徑／錨點、舊錨點保留、50 個工作包依賴與新包未開始狀態、修改範圍及歷史保留檢查；`git diff --check` 通過。STATUS SHA-256 保持 `835b9c95edfd5702874e9c383cbb7c53c5c5b2a076fd197023267da210940f21`；追加前 WORKLOG 的 98,851 bytes 舊前綴逐位元組相同，DECISIONS 舊正文保留。候選／已驗分類由主模型對照固定來源及既有 EV 覆核，不把文件檢查當產品相容性驗收。
+- Limits / Next：沒有安裝、migration、DB／模型／通知呼叫、瀏覽器 E2E、真機、部署或額外全量測試；未宣稱 token 節省比例。DOC-R03 文件驗收通過，交付隨本包 PR review／合併生效；新功能包仍未開始，下一後端包仍為 S13-W01，S10-W02 仍須等待 S13-W04。使用者要求本包不改 STATUS，以本 LOG 與 PLAN 留下可恢復記錄。
+
+<a id="log-20260926-002"></a>
+## LOG-20260926-002
+
+- Recorded At / Work Date：2026-09-26（Asia/Hong_Kong）；DOC-R03／PR #38 接續 LOG-20260926-001，基線 `7766c98`。使用者指定前端 task「檢查育伴港前端現況」（`01a0d8fc-2813-7892-927f-bc6fdb65cc2a`），要求核對交接合作；主模型讀取該 task，並補核同一 task 本機紀錄中工具未返回的近期內容，沒有新建代理。
+- Actual Work：最新前端計劃為 FE-W01 隔離 Web 主頁預覽，逐頁完成 Web 後待使用者明確確認，再開始 Android；前端不改後端、正式 App 或根指導／進度文件，真 API 接線由主聊天負責。核對時前端 worktree `45a2` 仍在 `80cf50c`、乾淨且未建立 frontend 目錄；PR #38 仍 open，原稿允許前端直接正式接線的分工需要修訂，不能宣稱雙方已實際整合。
+- Changes：主模型親自更新 AGENTS、PLAN、ARCHITECTURE、TECH_REUSE 及 P2_UI_HANDOFF，於 ADR-012 追加分工補充。前端專用程式／依賴／配置／測試／STATUS／PLAN／DESIGN_SYSTEM／WORKFLOW／HANDOFF 由前端在 frontend 內交付；view model／回調對照既有 API，不另定業務契約。主聊天接正式 UI／Server、根依賴及 S16-W05 真 API 瀏覽器測試，保留草稿、opId／unknown、權限及切換清理；預覽與正式證據分開，窄尺寸 Web 不當作 Android 通過。
+- Verification：本包本機連結／錨點、406 個既有明示錨點保留、50 個工作包依賴及候選／實作分級核對通過；`git diff --check` 通過。STATUS 的 SHA-256 維持上一 LOG 原值，本輪追加前 WORKLOG 的 101,815 bytes 舊前綴逐位元組保留，既有 ADR 正文只追加。沒有改前端 worktree、產品程式、依賴、部署或 API wire contract。
+- Human Verification / Limits：依使用者所指 task 的最新要求對齊規劃；本輪沒有 UI／真 API／Android 驗收或安裝。未代前端建立資料夾、開包或 merge；前端新文件仍是待交付清單。保持根 STATUS 不變，產品工作包未開始，DOC-R03 修訂隨同一 PR review／合併交付。
