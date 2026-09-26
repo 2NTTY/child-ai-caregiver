@@ -95,9 +95,19 @@
 - 同一 Sxx 可跨階段、跨多個工作包及 PR，不等待整個 Sxx 完成才合併；一個分支原則上只完成一個工作包。
 - 开发期间正常本地 commit，不要求每次 commit 都 push。
 - 工作包達到相關驗收條件後，按文件更新邊界更新必要的 PLAN／STATUS 並追加 WORKLOG，再 push 到 GitHub；只在全部工作包及原驗收完成後把整個 Sxx 標為已完成。
-- 使用 Codex 原生 Review / Pull Request，将该分支合并回 `master`。
+- 使用 Codex 原生 Review / Pull Request，預設以 Merge commit 將分支合併回 `master`；合併前後按[四人協作及署名](#team-contributions)核對，不以合併提交的 Verified 代替開發提交驗證。
 - 工作包記錄明確列出前置工作包；完成 review 並合併後，才開始依賴其成果的下一包。不以整個 Sxx 作跨階段依賴鎖。
 - 不提交 `.env`、API key、密钥、凭据、私人数据或本地数据库。
+
+<a id="team-contributions"></a>
+## 四人協作及署名
+
+- 人類成員 A（使用者）／B／C／D 的約定開發比例為 40%／25%／25%／10%；A 負責核心 Agent、提示詞及工具，B 負責 Web／App 客戶端，C 負責 Server，D 以 S13-W06 Telegram 作中等功能候選，測試執行／人工驗收／PPT 另列。詳細責任、身份及操作只在需要分配或交付時讀[四人協作流程](docs/TEAM_CONTRIBUTIONS.md)。
+- 人類責任與 GitHub 署名不等於模型／子代理角色或前後端聊天的修改權限；沿用既有工作包前置、聊天範圍及主模型覆核規則。A 統一管理共用 AI 和 GitHub 操作，不能據此假稱其他組員親自執行；歷史 WORKLOG 保留當時事實。
+- 每包由 AI 建議負責人、共同參與者、1／2／3／5 級相對開發權重及共同責任份額，交 A 確認；約定比例與完成證據分開，靠後續合適工作平衡，不按 commit 數／行數湊比例或倒改歷史。只按實際參與、成果認領及確認署名，共同改動才用 `Co-authored-by`。
+- 沿用現有 GitHub 帳號與協作者，先確認成員的 username／署名 email。獨立改動以相應成員作 Author，A 代操作時保留真實 Committer；共同改動加入實際共同作者。PR 預設由 A 統一建立並列明負責人及 AI／代操作；不要求逐人登入或另建認證環境，PR 建立者以 `gh api user` 及遠端結果為準，不冒稱為其他帳號。
+- 每次交付直接查 GitHub，完整核對本包全部新增開發提交的 Author／Committer、已識別共同作者及簽署結果，另查 PR 建立者、head／base、狀態、合併者及正式 merge SHA；新增提交須重查。開發提交、PR 合併提交、API 簽名結果與網頁徽章分開報告，`Partially verified`／未核對不能寫成完整 Verified。
+- 依使用者簡化要求，不新增 SSH／GPG 金鑰、不更改帳號或全局認證設定；已有適用簽署可沿用，unsigned／未驗證如實報告，不單因缺少 Verified 阻塞交付。身份錯配、漏署或核對缺項須明示並處理，不為修飾歷史自動 amend／rebase／force-push。此節不取代產品驗收；普通 Git 核對只在對話回報，不因此更新 STATUS／WORKLOG。基線及操作見[流程文件](docs/TEAM_CONTRIBUTIONS.md#baseline)。
 
 <a id="document-updates"></a>
 ## 项目文档更新边界
