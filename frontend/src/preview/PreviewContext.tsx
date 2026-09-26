@@ -12,6 +12,8 @@ type PreviewContextValue = {
   dismissNotice: () => void;
   chatDraft: string;
   setChatDraft: (value: string) => void;
+  checkedPreviewItems: Record<string, boolean>;
+  togglePreviewItem: (id: string) => void;
 };
 
 const PreviewContext = createContext<PreviewContextValue | null>(null);
@@ -26,6 +28,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const [selectedChildId, setSelectedChildId] = useState("preview-child-1");
   const [notice, setNotice] = useState<string | null>(null);
   const [chatDrafts, setChatDrafts] = useState<Record<string, string>>({});
+  const [checkedPreviewItems, setCheckedPreviewItems] = useState<Record<string, boolean>>({});
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); }, []);
 
@@ -65,6 +68,11 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     model, scenario, setScenario, actions, notice, dismissNotice: () => setNotice(null),
     chatDraft: chatDrafts[draftKey] ?? "",
     setChatDraft: value => setChatDrafts(previous => ({ ...previous, [draftKey]: value })),
+    checkedPreviewItems,
+    togglePreviewItem: id => {
+      setCheckedPreviewItems(previous => ({ ...previous, [id]: !previous[id] }));
+      setNotice("只在這個合成預覽標記；沒有保存正式任務，也沒有通知家庭成員。");
+    },
   }}>{children}</PreviewContext.Provider>;
 }
 

@@ -71,15 +71,32 @@ try {
   }
 
   const desktop = await openPage("/", 1440, 900);
+  const previewTodo = desktop.getByRole("checkbox", { name: "在預覽中標記核對本週睡眠觀察" });
+  await previewTodo.waitFor();
+  assert.equal(await previewTodo.isChecked(), false);
+  await previewTodo.focus();
+  await desktop.keyboard.press("Space");
+  assert.equal(await previewTodo.isChecked(), true);
+  await desktop.getByText("只在這個合成預覽標記；沒有保存正式任務", { exact: false }).waitFor();
+  await desktop.getByRole("button", { name: "關閉預覽提示" }).click();
+  await desktop.getByRole("button", { name: /開啟訊息提示/ }).click();
+  await desktop.getByText("目前沒有需要處理的操作提示。").waitFor();
+  await desktop.getByRole("button", { name: "關閉", exact: true }).last().click();
   await desktop.getByRole("button", { name: "關閉資訊側欄" }).focus();
   await desktop.keyboard.press("Enter");
   await desktop.getByRole("button", { name: "開啟資訊側欄" }).focus();
   await desktop.keyboard.press("Enter");
   await desktop.getByText("資訊與提醒", { exact: true }).waitFor();
+  assert.equal(await desktop.getByRole("checkbox", { name: "在預覽中標記核對本週睡眠觀察" }).isChecked(), true);
   await desktop.getByRole("button", { name: "切換合成預覽情境" }).focus();
   await desktop.keyboard.press("Enter");
   await desktop.getByRole("button", { name: "結果未知", exact: true }).click();
   await desktop.getByText("提交結果尚未確認", { exact: true }).first().waitFor();
+  await desktop.getByRole("button", { name: "開啟訊息提示：1 項合成狀態需留意" }).click();
+  await desktop.getByText("角標只表示此預覽有需留意的狀態", { exact: false }).waitFor();
+  await desktop.waitForTimeout(450);
+  await desktop.screenshot({ path: resolve(screenshotDir, "home-1440-bell-unknown.png") });
+  await desktop.getByRole("button", { name: "查核原操作", exact: true }).last().click();
   await desktop.getByRole("button", { name: "查核原操作", exact: true }).first().click();
   await desktop.getByText("結果未知：正式操作須以原 opId 查核", { exact: false }).waitFor();
   await desktop.screenshot({ path: resolve(screenshotDir, "home-1440-unknown.png") });
@@ -94,12 +111,23 @@ try {
   ]) {
     await desktop.getByRole("button", { name: scenario, exact: true }).click();
     await desktop.getByText(copy, { exact: false }).first().waitFor();
+    const expectedAttention = scenario === "待確認" || scenario === "失敗";
+    assert.equal(await desktop.getByRole("button", { name: "開啟訊息提示：1 項合成狀態需留意" }).count(), expectedAttention ? 1 : 0);
   }
   await desktop.close();
 
   const child = await openPage("/", 390, 844);
+  await child.getByRole("button", { name: "開啟資訊側欄" }).click();
+  await child.getByText("待辦事項", { exact: true }).waitFor();
+  await child.waitForTimeout(450);
+  await child.screenshot({ path: resolve(screenshotDir, "home-390-rail.png") });
+  await child.getByRole("button", { name: "關閉資訊側欄" }).click();
   await child.getByRole("button", { name: /選擇孩子/ }).click();
   await child.getByRole("radio", { name: "阿樂 · 約 8 歲 · 截至 2026 年 9 月" }).click();
+  await child.getByRole("button", { name: "開啟資訊側欄" }).click();
+  await child.getByText("整理課後觀察", { exact: true }).waitFor();
+  assert.equal(await child.getByText("核對本週睡眠觀察", { exact: true }).count(), 0);
+  await child.getByRole("button", { name: "關閉資訊側欄" }).click();
   await child.getByText("課後記錄", { exact: true }).first().waitFor();
   await child.getByRole("textbox", { name: "篩選下方已載入的記錄" }).fill("不存在的資料");
   await child.getByText("這幾項已載入記錄中沒有符合的內容。", { exact: true }).waitFor();
@@ -116,6 +144,14 @@ try {
   await mobileMore.getByRole("button", { name: "記憶與話題" }).click();
   await mobileMore.getByText("記憶與話題", { exact: true }).first().waitFor();
   await mobileMore.close();
+
+  const tinyBell = await openPage("/", 320, 720);
+  await tinyBell.getByRole("button", { name: /開啟訊息提示/ }).click();
+  await tinyBell.getByText("訊息提示", { exact: true }).waitFor();
+  await tinyBell.waitForTimeout(450);
+  await assertFits(tinyBell, 320, "bell 320");
+  await tinyBell.screenshot({ path: resolve(screenshotDir, "home-320-bell.png") });
+  await tinyBell.close();
 
   const settings = await openPage("/settings", 1440, 900);
   await settings.getByRole("tab", { name: "應用偏好" }).click();

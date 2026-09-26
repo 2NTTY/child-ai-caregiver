@@ -3,9 +3,12 @@ import { usePathname, useRouter } from "expo-router";
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Dialog, Divider, Modal, Portal, RadioButton, Text } from "react-native-paper";
 import { ConnectionPill, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
+import { NotificationBell } from "./NotificationBell";
+import { PreviewTodoCard } from "./PreviewTodoCard";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
-import { scenarioLabels, type PreviewScenario } from "../preview/fixture";
+import { previewChecklist, scenarioLabels, type PreviewScenario } from "../preview/fixture";
 import { usePreview } from "../preview/PreviewContext";
+import type { HomeActions, HomeViewModel } from "../view-model";
 
 const logo = require("../../assets/brand/logo-horizontal.png");
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
@@ -84,10 +87,16 @@ function PreviewToolbar() {
   </View>;
 }
 
-function RightRail({ onClose }: { onClose: () => void }) {
-  const { model, actions } = usePreview();
+function RightRail({ model, actions, checkedPreviewItems, togglePreviewItem, onClose }: {
+  model: HomeViewModel;
+  actions: HomeActions;
+  checkedPreviewItems: Record<string, boolean>;
+  togglePreviewItem: (id: string) => void;
+  onClose: () => void;
+}) {
   const child = model.children.find(item => item.id === model.selectedChildId);
   const records = model.records.filter(item => item.childId === model.selectedChildId).slice(0, 3);
+  const checklist = previewChecklist.filter(item => item.childId === model.selectedChildId);
   return <View style={styles.rail}>
     <View style={styles.railHeader}>
       <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>資訊與提醒</Text></View>
@@ -101,6 +110,7 @@ function RightRail({ onClose }: { onClose: () => void }) {
           <View style={styles.railIdentityText}><Text style={styles.railRecordTitle}>{child.displayName}</Text><Text style={styles.railMeta}>{child.ageLabel}</Text><Text style={styles.railMeta}>{child.regionLabel} · {child.profileConfirmed ? "檔案已確認" : "檔案待核對"}</Text></View>
         </View> : <Text style={styles.railMeta}>尚未選擇孩子；請先建立檔案。</Text>}
       </SectionCard>
+      <PreviewTodoCard items={checklist} checked={checkedPreviewItems} onToggle={togglePreviewItem} onOpen={actions.open} />
       <SectionCard>
         <SectionHeader title="近期已確認記錄" action={<TextLink label="查看全部" onPress={() => actions.open("care")} />} />
         {model.recordsLoad === "loading" ? <Text style={styles.railMeta}>正在讀取記錄…</Text> : records.length === 0 ? <Text style={styles.railMeta}>目前沒有已載入記錄。</Text> : records.map((record, index) => <View key={record.id}>
@@ -131,9 +141,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const compact = width < 900;
-  const tiny = width < 360;
+  const tiny = width < 390;
   const wide = width >= 1280;
-  const { model, notice, dismissNotice } = usePreview();
+  const { model, actions, checkedPreviewItems, togglePreviewItem, notice, dismissNotice } = usePreview();
+  const railProps = { model, actions, checkedPreviewItems, togglePreviewItem };
   const [railOpen, setRailOpen] = useState(true);
   const [railModal, setRailModal] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -166,18 +177,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!compact ? <Text numberOfLines={1} style={styles.topContext}>用資料陪伴每一步</Text> : null}
         <View style={styles.topActions}>
           {!compact ? <ConnectionPill state={model.connection} /> : null}
+          <NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <Pressable accessibilityRole="button" accessibilityLabel={wide && railOpen ? "收起資訊側欄" : "開啟資訊側欄"}
             accessibilityState={{ expanded: wide ? railOpen : railModal }}
             onPress={() => wide ? setRailOpen(value => !value) : setRailModal(true)}
             style={({ pressed }) => [styles.infoAction, tiny && styles.infoActionTiny, pressed && styles.pressed]}><Text style={styles.infoActionText}>☷</Text></Pressable>
-          {compact ? <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" onPress={() => setAccountOpen(true)} style={({ pressed }) => [styles.smallAccount, tiny && styles.smallAccountTiny, pressed && styles.pressed]}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></Pressable> : null}
         </View>
       </View>
       <PreviewToolbar />
       {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}　×</Text></Pressable> : null}
       <View style={styles.body}>
         <View style={styles.content}>{children}</View>
-        {wide && railOpen ? <RightRail onClose={() => setRailOpen(false)} /> : null}
+        {wide && railOpen ? <RightRail {...railProps} onClose={() => setRailOpen(false)} /> : null}
       </View>
       {compact ? <View style={styles.bottomNav}>
         {navigation.slice(0, 4).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
@@ -186,7 +197,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     </View>
     <Portal>
       <Modal visible={railModal && !wide} onDismiss={() => setRailModal(false)} contentContainerStyle={styles.railModal}>
-        <RightRail onClose={() => setRailModal(false)} />
+        <RightRail {...railProps} onClose={() => setRailModal(false)} />
       </Modal>
       <Dialog visible={accountOpen} onDismiss={() => setAccountOpen(false)}>
         <Dialog.Title>用戶與帳戶</Dialog.Title>
@@ -203,6 +214,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Button onPress={() => { setMoreOpen(false); router.push("/family"); }}>家庭協調</Button>
           <Button onPress={() => { setMoreOpen(false); router.push("/memory"); }}>記憶與話題</Button>
           <Button onPress={() => { setMoreOpen(false); router.push("/settings"); }}>設定</Button>
+          <Button onPress={() => { setMoreOpen(false); setAccountOpen(true); }}>用戶與帳戶</Button>
         </Dialog.Content>
         <Dialog.Actions><Button onPress={() => setMoreOpen(false)}>關閉</Button></Dialog.Actions>
       </Dialog>
@@ -252,8 +264,6 @@ const styles = StyleSheet.create({
   infoAction: { minWidth: 44, minHeight: 44, backgroundColor: colors.quietSurface, borderRadius: radius.small, alignItems: "center", justifyContent: "center" },
   infoActionTiny: { minWidth: 38, minHeight: 40 },
   infoActionText: { color: colors.deepTeal, fontSize: 23 },
-  smallAccount: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.paleAmber, alignItems: "center", justifyContent: "center" },
-  smallAccountTiny: { width: 36, height: 36, borderRadius: 18 },
   previewArea: { backgroundColor: colors.previewSurface, borderBottomWidth: 1, borderBottomColor: colors.line },
   previewLine: { minHeight: 36, paddingHorizontal: spacing.lg, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   previewLabel: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, flexShrink: 1 },
