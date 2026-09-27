@@ -1,28 +1,35 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { Button, Text } from "react-native-paper";
+import { Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { Button, Text, TextInput } from "react-native-paper";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import type { ConnectionState, OperationState } from "../view-model";
 
-export function AppButton({ label, onPress, variant = "primary", disabled = false }: {
+export function AppButton({ label, onPress, variant = "primary", disabled = false, loading = false, style }: {
   label: string;
   onPress: () => void;
   variant?: "primary" | "secondary" | "quiet";
   disabled?: boolean;
+  loading?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <Button
       mode={variant === "primary" ? "contained" : variant === "secondary" ? "outlined" : "text"}
       onPress={onPress}
-      disabled={disabled}
+      disabled={disabled || loading}
+      loading={loading}
       contentStyle={styles.buttonContent}
       labelStyle={styles.buttonLabel}
-      style={variant === "secondary" ? styles.outlineButton : undefined}
+      style={[variant === "secondary" && styles.outlineButton, style]}
       accessibilityLabel={label}
     >
       {label}
     </Button>
   );
+}
+
+export function AppTextField({ style, outlineStyle, mode, ...props }: React.ComponentProps<typeof TextInput>) {
+  return <TextInput {...props} mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={[styles.inputOutline, outlineStyle]} />;
 }
 
 export function SectionCard({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -73,10 +80,24 @@ export function ConnectionPill({ state }: { state: ConnectionState }) {
 
 export function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.link}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.link, pressed && styles.linkPressed]}>
       <Text style={styles.linkText}>{label}  →</Text>
     </Pressable>
   );
+}
+
+export function UnderlineTabs<T extends string>({ items, value, onChange }: {
+  items: ReadonlyArray<{ key: T; label: string }>;
+  value: T;
+  onChange: (next: T) => void;
+}) {
+  return <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabs}>
+    {items.map(item => <Pressable
+      key={item.key} accessibilityRole="tab" accessibilityLabel={item.label}
+      accessibilityState={{ selected: value === item.key }} onPress={() => onChange(item.key)}
+      style={({ pressed }) => [styles.tab, value === item.key && styles.tabActive, pressed && styles.linkPressed]}
+    ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
+  </ScrollView>;
 }
 
 const styles = StyleSheet.create({
@@ -90,7 +111,7 @@ const styles = StyleSheet.create({
   sectionSubtitle: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 21 },
   pill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 6 },
   pillText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },
-  neutralPill: { backgroundColor: "#F0F3F1" },
+  neutralPill: { backgroundColor: colors.neutralSurface },
   tealPill: { backgroundColor: colors.paleTeal },
   amberPill: { backgroundColor: colors.paleAmber },
   coralPill: { backgroundColor: colors.paleCoral },
@@ -98,6 +119,15 @@ const styles = StyleSheet.create({
   tealDot: { backgroundColor: colors.teal },
   amberDot: { backgroundColor: colors.amber },
   neutralDot: { backgroundColor: colors.muted },
-  link: { minHeight: 32, justifyContent: "center" },
+  link: { minHeight: 44, justifyContent: "center" },
+  linkPressed: { opacity: 0.6 },
   linkText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, lineHeight: 21, fontWeight: "700" },
+  tabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.line },
+  tabs: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  tab: { minHeight: 46, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
+  tabActive: { borderBottomColor: colors.teal },
+  tabText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },
+  tabTextActive: { color: colors.deepTeal, fontWeight: "800" },
+  input: { backgroundColor: colors.white, fontFamily: chineseFont },
+  inputOutline: { borderColor: colors.line, borderRadius: radius.small },
 });

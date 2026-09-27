@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { MD3LightTheme } from "react-native-paper";
+import { MD3LightTheme, configureFonts } from "react-native-paper";
 
 export const colors = {
   ink: "#203E3A",
@@ -17,6 +17,18 @@ export const colors = {
   muted: "#60756E",
   line: "#DCE8E3",
   softLine: "#EDF2EE",
+  neutralSurface: "#F0F3F1",
+  sidebar: "#F6FAF8",
+  selectedNav: "#DCEFE9",
+  quietSurface: "#F3F8F6",
+  mintSurface: "#EDF6F2",
+  previewSurface: "#E9F1EC",
+  statusWarm: "#FFFAF8",
+  statusUnknown: "#FFFCF7",
+  statusWarmLine: "#F2E2DD",
+  statusUnknownLine: "#EFDBBB",
+  statusFailedLine: "#F2D9D0",
+  warningInk: "#775425",
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, hero: 40 } as const;
@@ -27,6 +39,9 @@ export const chineseFont = Platform.select({ web: "'Noto Sans TC', 'Microsoft Jh
 export const paperTheme = {
   ...MD3LightTheme,
   roundness: radius.medium,
+  fonts: Platform.OS === "web" && chineseFont
+    ? configureFonts({ config: { fontFamily: chineseFont } })
+    : MD3LightTheme.fonts,
   colors: {
     ...MD3LightTheme.colors,
     primary: colors.teal,

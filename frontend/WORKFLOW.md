@@ -1,10 +1,9 @@
 # 前端逐屏工作流程
 
-1. **開包及確認歸屬**：先讀根目錄 `STATUS.md`、`PLAN.md` 的當前步驟，再按需要讀 `SPEC.md`、`docs/P2_UI_HANDOFF.md`、相關 API／程式碼。重查 Git 分支、active worktree 和待修改檔案；與其他工作包重疊便先指出具體路徑。每包用獨立 `codex/` 分支，不在 `master` 直接開發。
-2. **辨別功能真況**：列清楚現網可用、repo 已實作但未部署、只有契約、尚未接通；每個視覺操作都要有真實語義。`frontend/**` 只做呈現 view model、回調和合成預覽，不碰 Server、Agent、資料庫、根依賴、正式 `app/**`／`src/client/**` 或根指導／進度文件。
-3. **提取圖片規則**：先比較共同色彩、字體層次、密度、卡片、按鈕、輸入與狀態，更新 [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) 的可重用規則；辨認與育伴港品牌、功能或權限不相容的元素，不照圖創作不存在的 API。
-4. **先復用再補自訂**：優先 Expo／React Native Web 與 Paper 的成熟控制項，已有共用元件直接使用。只為品牌呈現、響應式容器或明確欠缺的狀態做薄封裝；新依賴只進 `frontend/`，正式整合時由主聊天再核對版本與許可。
-5. **逐頁實作與檢查**：畫面由明確資料模型及操作回調驅動；合成 fixture 與正式來源分離。檢查載入、空、離線、待確認、處理中、已保存、失敗和結果未知等適用狀態；保留鍵盤焦點、可讀標籤、香港繁體中文。只做改動所需的 typecheck、Web build 和前端預覽互動檢查；至少量度 1440／1024／390／320 CSS px 與橫向溢出。
-6. **展示及交接**：提供實際運行畫面、檢查結果和未驗項；更新 [STATUS.md](STATUS.md)、[PLAN.md](PLAN.md)、[HANDOFF.md](HANDOFF.md)。使用者比較當頁後才指定下一頁。正式真 API 接線、部署與跨端驗收由主聊天負責；前端不自行 merge。
+本流程只管 frontend/**。可重用的技術操作見 [Web 畫面 Skill](.agents/skills/web-screen-delivery/SKILL.md)，產品事實仍以根目錄文件與實際程式碼為準。
 
-整套 Web 經使用者明確確認後才另開 Android 前端計劃。手機瀏覽器尺寸、Expo Web build 或合成預覽都不算 Android App／真機驗收。
+1. **確認工作包與邊界**：先讀根目錄 STATUS、PLAN 的當前狀態，按需讀 SPEC、P2 UI 清單及相關 API／程式碼。重查 Git、active worktree 及具體檔案重疊；只在獨立前端分支修改 frontend/**，不碰主聊天 Server／Agent／資料庫／正式 App。
+2. **提取圖片規則**：比較色彩、字體層次、導覽、卡片、按鈕、輸入及狀態，先更新 [DESIGN_SYSTEM](DESIGN_SYSTEM.md) 的共用規則。圖片不是功能契約；圖中未落碼的操作列入交接，不造假互動。
+3. **先組裝成熟元件**：用 Expo Router 路由與共同 layout、Paper 控件及現有 token。路由檔只做入口，畫面在 src/screens，狀態由 view model／回調驅動，合成 fixture 留在 src/preview。需要新依賴時先核對本目錄版本與官方文件；可重複且穩定的本項目做法才更新 Skill，不複製整份官方手冊。
+4. **逐屏檢查**：確認 1440／1024／390／320 CSS px 無整頁橫向捲動；檢查鍵盤、孩子切換、右欄開關、草稿及適用的空／載入／離線／操作狀態。執行 typecheck、Web build 和只讀合成預覽瀏覽器腳本；真 API／正式 E2E／Android 真機驗收由主聊天或後續工作包處理。
+5. **展示與交接**：附實際運行截圖、驗證結果、待接線功能及具體組件／接口。更新本目錄 STATUS、PLAN、HANDOFF；使用者比較視覺與流程後再作下一輪調整。整套 Web 獲明確確認後才開始 Android 前端。
