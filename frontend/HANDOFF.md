@@ -1,6 +1,6 @@
 # 育伴港 Web 前端交接
 
-本文件交接 frontend/** 的獨立畫面包，不改變根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 或正式 API／共享型別的權威。FE-W02 分支 codex/fe-w02-web-shell-chat-settings-auth 由 FE-W01 commit e70a13d 延伸；兩包都尚待使用者視覺確認，未自行 merge。正式 P1 登入、孩子、文字記錄及基本聊天在主 App 已可用；P2 有部分功能已落碼並具本機證據，現網仍是 P1，Agent 對話接線、任務、通知等不能從本預覽推斷為已可用。
+本文件交接 frontend/** 的獨立畫面包，不改變根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 或正式 API／共享型別的權威。FE-W03 分支 codex/fe-w03-dashboard-todos-notifications 由 FE-W02 commit 271f10b 延伸；三包都尚待使用者視覺確認，未自行 merge。正式 P1 登入、孩子、文字記錄及基本聊天在主 App 已可用；P2 有部分功能已落碼並具本機證據，現網仍是 P1，Agent 對話接線、任務、通知等不能從本預覽推斷為已可用。
 
 ## 前端入口與結構
 
@@ -8,9 +8,10 @@
 |---|---|---|
 | [app](app)、[app/_layout.tsx](app/_layout.tsx) | 前端已完成 | Expo Router 薄路由與 PaperProvider；群組 layout 共用 PreviewProvider／AppShell |
 | [AppShell.tsx](src/components/AppShell.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 前端已完成 | 左導覽、左下設定／用戶、孩子選擇、右資訊欄及窄屏面板、預覽情境、內頁版式 |
+| [PreviewTodoCard.tsx](src/components/PreviewTodoCard.tsx)、[NotificationBell.tsx](src/components/NotificationBell.tsx) | 只屬合成預覽 | 右欄按孩子顯示可本地勾選的清單；頂部鈴鐺按原操作狀態顯示提示及角標，不是 S13 任務或通知資料 |
 | [screens](src/screens) | 前端已完成 | 主頁以 [HomeDashboard.tsx](src/components/HomeDashboard.tsx) 組成；對話、照顧記錄、子女檔案、家庭協調、記憶與話題、設定及登入各自有畫面檔 |
 | [theme.ts](src/theme.ts)、[ui.tsx](src/components/ui.tsx) | 前端已完成 | 單一 token／Paper 主題，品牌按鈕、表單、卡片、共用分頁、連線與操作狀態；全畫面無硬編碼色值 |
-| [view-model.ts](src/view-model.ts)、[preview](src/preview) | 只屬合成預覽 | 孩子、記錄、操作狀態及本地草稿；不是 wire contract、Server 收據或正式資料源 |
+| [view-model.ts](src/view-model.ts)、[preview](src/preview) | 只屬合成預覽 | 孩子、記錄、操作狀態、本地草稿及待辦示例；不是 wire contract、Server 收據或正式資料源 |
 | [verify-web.mjs](scripts/verify-web.mjs)、[screenshots](verification/screenshots) | 前端已完成 | Playwright Core 只測本機合成預覽與瀏覽器版式，不能代替真 API／正式 E2E |
 
 Expo 57.0.24、Router 57.0.22、React Native Web 0.21.2 與正式 repo 現行版本相同。隔離預覽額外使用 React Native Paper 5.15.3 及 Expo SDK 相容的 @expo/vector-icons 15.x；主聊天整合時須核對根依賴與許可，不能直接覆蓋根 package-lock。React Native Web 樣式以 StyleSheet.create 與畫面共置；沒有單一 HTML 或巨型 CSS 檔。
@@ -22,13 +23,13 @@ Expo 57.0.24、Router 57.0.22、React Native Web 0.21.2 與正式 repo 現行版
     $env:__UNSAFE_EXPO_HOME_DIRECTORY = (Join-Path (Get-Location) '.expo-home')
     $env:EXPO_NO_TELEMETRY = '1'
 
-預設瀏覽 http://localhost:8081；若已佔用可用 npm run web -- --port 8082，驗證前設定 FRONTEND_PREVIEW_URL=http://localhost:8082。另執行 npm run typecheck、npm run build:web、npm run verify:web；瀏覽器腳本預設使用本機 Edge，其他環境可設定 BROWSER_EXECUTABLE 指向 Chromium。腳本檢查 1586／1440／1024／390／320 CSS px，八路由在 1440 和 320 px 無整頁橫向溢出，並檢查側欄、情境、孩子切換、草稿、設定及登入的本地互動。截圖在 [verification/screenshots](verification/screenshots)；使用者視覺比較尚待完成。
+預設瀏覽 http://localhost:8081；若已佔用可用 npm run web -- --port 8082，驗證前設定 FRONTEND_PREVIEW_URL=http://localhost:8082。另執行 npm run typecheck、npm run build:web、npm run verify:web；瀏覽器腳本預設使用本機 Edge，其他環境可設定 BROWSER_EXECUTABLE 指向 Chromium。FE-W03 的三項檢查均通過；腳本檢查 1586／1440／1024／390／320 CSS px，八路由在 1440 和 320 px 無整頁橫向溢出，並檢查側欄、待辦勾選、鈴鐺、情境、孩子切換、草稿、設定及登入的本地互動。截圖在 [verification/screenshots](verification/screenshots)，包括桌面鈴鐺及 390 px 右欄；使用者視覺比較尚待完成。
 
 ## 各畫面及正式落點
 
 | Web 預覽 | 前端現況 | 主聊天接線時對照 |
 |---|---|---|
-| / 主頁及右資訊欄 | 合成孩子、已確認記錄投影、最近操作；右欄可關閉／重開 | [RecordsController](../src/client/records-controller.ts)、[CarePanel](../src/client/CarePanel.tsx)、[OnlineReceipt](../src/shared/online.ts)；同一資料來源投影，不另建背景任務／通知台帳 |
+| / 主頁及右資訊欄 | 合成孩子、已確認記錄投影、最近操作；右欄可關閉／重開，新增本地待辦示例；頂部鈴鐺只按原操作狀態提示 | [RecordsController](../src/client/records-controller.ts)、[CarePanel](../src/client/CarePanel.tsx)、[OnlineReceipt](../src/shared/online.ts)；待辦／通知須等 S13 正式契約，不另建前端背景台帳 |
 | /login | 電郵登入／註冊畫面及本地格式檢查；密碼不發送 | [身份 API](../docs/API.md#p1-input-contracts)、[records-api](../src/client/records-api.ts) 與現有 Better Auth；登入／登出、session、錯誤及角色以正式 App 為準 |
 | /chat | 可寫本地未送出問題、示例對話版式；示例回答明示不是 Agent 建議 | P1 [ChatPanel](../src/client/ChatPanel.tsx) 及聊天保存；P2 S11-W02 Agent／引用接線尚待交付，不能把示例當作模型結果 |
 | /care | 已確認記錄時間軸、篩選、詳情及本地共享草稿預覽 | [CarePanel](../src/client/CarePanel.tsx)、[CareRecord](../src/shared/care.ts)；保留原文、來源、事件／加入時間、精度、版本、更正及候選確認 |
@@ -38,6 +39,24 @@ Expo 57.0.24、Router 57.0.22、React Native Web 0.21.2 與正式 repo 現行版
 | /settings | 帳戶、孩子、家庭、偏好、私隱分頁；本地顯示名稱／安靜時段／預約例外預覽 | 現有身份與 S06-W02 本人偏好／家庭資料；正式保存、權限與各通知渠道須按 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 接線 |
 
 主聊天整合時由正式控制器投影資料到畫面，將合成 fixture 排除於正式資料來源。切換孩子要先隔離舊孩子的可見資料／未完成請求；預覽只示意孩子分開及當頁草稿隔離，沒有驗證 Server 授權。登出、撤權、刪除及帳號切換須沿用正式控制器清理規則。
+
+## 已有功能與 Web 預覽之間的缺口
+
+以下比較對象是 frontend/** 的隔離預覽，並非聲稱主 App 沒有畫面。優先按根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 及 [PLAN](../PLAN.md) 的實際工作包狀態對接；參考圖中的 Google／Apple 登入、儲存用量與疫苗百分比沒有現成產品契約，不列為已承諾功能。
+
+| 功能與目前正式狀態 | 此預覽仍缺的操作 | 後續責任 |
+|---|---|---|
+| P1 登入／基本聊天已可用；S07-W03 原操作收據與刷新已落碼 | /login 不建立真 session，/chat 只新增本地未送出文字；全畫面沒有真 opId 查核、跨端刷新和權限失效流程 | 主聊天沿現有身份、ChatPanel、online transport 接線及真服務驗收；前端按真狀態補齊畫面 |
+| S05-W02 孩子檔案、已確認記錄、更正歷史、時間軸及搜尋已落碼 | /care 只有對已載入示例的本地篩選，沒有跨頁搜尋／搜尋 cursor 失效、原文來源、版本、更正操作與歷史；/profile 只預覽自由文字草稿，未有結構化年齡基準及共享範圍表單 | 下一個相關 Web 畫面包應先設計真搜尋與記錄／檔案細節；主聊天按 CarePanel／共享型別接線 |
+| S06-W02 家庭角色／邀請／撤權及本人通知偏好已落碼 | /family 只預覽邀請內容，沒有接受邀請、成員角色變更及撤權流程；/settings 偏好輸入不保存 | 前端補真操作狀態；主聊天接 FamilyPanel、本人偏好及權限清理 |
+| S09-W02 記憶事實、話題終態及摘要覆蓋已落碼 | /memory 只示意候選／話題，沒有確認、共享、更正、停用／刪除、重開、版本衝突及摘要覆蓋操作 | 前端按 MemoryPanel 已交付契約補完整控制；主聊天接線與驗收 |
+| S13-W01 任務與 occurrence、S13-W04 執行台帳尚未開始 | 新增右欄待辦只是按孩子分隔的本地示例；沒有建立、到期／時區、指派、改期、完成、取消、跨成員同步或正式任務頁 | 待 S13 契約交付後另立前端任務包；主聊天處理 Server／worker／正式接線 |
+| S06-W02 只有通知偏好；S13-W05 Web Push、S13-W06 Telegram 及投遞台帳尚未開始 | 鈴鐺只提示合成原操作狀態；沒有通知識別碼、未讀數、訂閱、安靜時段執行、投遞／已讀／回應證據 | 待通知契約交付再建立真訊息中心及渠道設定；主聊天接通知服務與接收者授權 |
+| S11-W02 Agent／引用、S12-W03／W04 照片與分享、S13-W08 成長關注、S14-W01 到診摘要尚未開始 | /chat 沒有真 Agent 結果／官方片段／附件；沒有照片確認、成長關注處理及到診摘要專頁 | 等相關業務包交付，再逐屏做 Web；不能由截圖造百分比或可信來源 |
+
+本地待辦的勾選只保存在 PreviewProvider 記憶體，重新載入即重置；切換孩子只顯示該孩子的項目，沒有改動正式資料。鈴鐺角標只在「待確認／失敗／結果未知」出現，數字是合成狀態提示數，不是未讀訊息數。正式任務的「完成」要依 S13 occurrence 終態；訊息的「接受／送達／已讀／回應」與照護完成須各有獨立證據，不能用本地勾選推導。Web 上 Paper Checkbox 5.15.3 的裸控制項未提供此組合需要的 Space 與 aria-checked，預覽外層 Pressable 補上 Web 鍵盤及可讀取狀態；日後升級須重驗。
+
+窄屏右欄由 Paper Portal 顯示。FE-W03 檢查發現 Portal 內的右欄直接呼叫 usePreview 會失去 Provider 而報錯，現由 AppShell 傳入資料與回調；正式接線及其他彈出層應沿用此邊界，並實測開啟與關閉。
 
 ## 狀態語義與未接功能
 
@@ -49,6 +68,6 @@ Expo 57.0.24、Router 57.0.22、React Native Web 0.21.2 與正式 repo 現行版
 | 失敗 | 確知原操作未成功；保留輸入供使用者處理 | 保留預覽草稿 |
 | 結果未知 | 原操作終態未查明 | 顯示「查核原操作」；正式版須以原 opId 查核，不換 ID 自動重送 |
 
-參考圖中以下元素尚未在本包做成真操作：Agent 工具進度／百分比、官方來源引用與生成建議、附件／照片／咪高峰、背景任務與到期提醒、通知 badge／Web Push／Telegram、疫苗或成長數據分析、跨資料搜尋、手機／Google／Apple 登入與忘記密碼、儲存用量／方案／匯出／刪除帳戶。P2 相關工作包及目前可用範圍見根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md)；無完整契約的項目不應僅依參考圖補假按鈕。
+參考圖中以下元素尚未在本包做成真操作：Agent 工具進度／百分比、官方來源引用與生成建議、附件／照片／咪高峰、正式背景任務與到期提醒、真未讀通知／Web Push／Telegram、疫苗或成長數據分析、跨資料搜尋、手機／Google／Apple 登入與忘記密碼、儲存用量／方案／匯出／刪除帳戶。P2 相關工作包及目前可用範圍見根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md)；無完整契約的項目不應僅依參考圖補假按鈕。
 
 正式接線完成還需要主聊天核對真 API、session／權限、原操作收據、切換孩子及登出清理，並執行其 S16-W05 正式瀏覽器測試。前端預覽驗證與正式 E2E 分開；整套 Web 視覺尚待使用者確認，Android 尚未開始。
