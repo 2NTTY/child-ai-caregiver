@@ -1,6 +1,6 @@
 # 育伴港前端單一計劃
 
-本計劃只管理 frontend/** 的設計與前端實作。產品功能、正式 API、權限與跨模組驗收，以根目錄 [AGENTS](../AGENTS.md)、[STATUS](../STATUS.md)、[PLAN](../PLAN.md)、[SPEC](../SPEC.md) 及 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 為準。前端不修改 Server、Agent、資料庫、根目錄依賴或正式 App，不自行 merge。
+本計劃只管理 frontend/** 的設計與前端實作。產品功能、正式 API、權限與跨模組驗收，以根目錄 [AGENTS](../AGENTS.md)、[STATUS](../STATUS.md)、[PLAN](../PLAN.md)、[SPEC](../SPEC.md) 及 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 為準。前端不修改 Server、Agent、資料庫、根目錄依賴或正式 App；合併只按使用者明確指示進行。
 
 | 次序 | 前端工作包 | 狀態 | 交付及關口 |
 |---|---|---|---|
@@ -16,4 +16,4 @@
 
 FE-W04 的可獨立驗收範圍是外殼調整、孩子摘要與引導頁的前端投影、條件顯示、Web 響應式／鍵盤檢查及正式接線交接；不宣稱孩子摘要已取得 Server 資料或引導完成狀態已有正式來源。下一批真正任務／通知流程仍須先核對所屬業務包的已交付契約，不依參考圖推造任務完成或訊息送達。
 
-每包依 [WORKFLOW](WORKFLOW.md) 核對 active worktree、提取設計規則、實作、typecheck／Web build／預覽檢查及展示畫面。正式靜態 Web 的既有依賴順序為 FE-W01 → FE-W02 → FE-W03 → FE-W04；FE-W05 是分開保留的動態比較樣本，並非後續靜態 Web 工作包或正式接線的前置條件。Web 及 Android 先保持靜態；如日後採用動態，另立工作包從共用元件逐步加入，分別驗收 Web 與 Android。
+每包依 [WORKFLOW](WORKFLOW.md) 核對 active worktree、提取設計規則、實作、typecheck／Web build／預覽檢查及展示畫面。正式靜態 Web 的既有依賴順序為 FE-W01 → FE-W02 → FE-W03 → FE-W04，源碼已隨 PR #40–#43 合併；FE-W05 是分開保留的動態比較樣本，並非後續靜態 Web 工作包或正式接線的前置條件。使用者選擇先繼續後端，前端後續工作待另行提出。Web 及 Android 先保持靜態；如日後採用動態，另立工作包從共用元件逐步加入，分別驗收 Web 與 Android。
