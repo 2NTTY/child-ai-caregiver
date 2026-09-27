@@ -1,0 +1,8 @@
+node_modules/
+.expo/
+dist/
+web-build/
+npm-debug.log*
+.npm-cache/
+.expo-home/
+.edge-profile*/
