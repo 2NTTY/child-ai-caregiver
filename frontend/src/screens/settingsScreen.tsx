@@ -54,6 +54,10 @@ export default function SettingsPage() {
           <Text style={styles.body}>目前展示的是合成孩子與記錄。真資料是否已保存，以原操作收據和授權讀取結果為準。</Text>
           <TextLink label="查看資料與私隱" onPress={() => setTab("privacy")} />
         </SectionCard>
+        <SectionCard><SectionHeader title="使用引導" subtitle="即使完成初始設定，也可隨時重看操作次序。" />
+          <Text style={styles.body}>查看孩子資料、已確認記錄及家庭偏好的入口。</Text>
+          <TextLink label="開啟使用引導" onPress={() => actions.open("guide")} />
+        </SectionCard>
         <View style={styles.helpCard}><Text style={styles.helpTitle}>需要協助？</Text><Text style={styles.body}>正式支援入口須由產品提供；預覽不會開啟不存在的客服渠道。</Text></View>
       </View>
     </View> : null}

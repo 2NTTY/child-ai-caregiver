@@ -1,6 +1,6 @@
-import type { HomeChild, HomeOperation, HomeRecord, HomeViewModel, OperationState } from "../view-model";
+import type { GuideStatus, HomeChild, HomeOperation, HomeRecord, HomeViewModel, OperationState } from "../view-model";
 
-export type PreviewScenario = "normal" | "empty" | "loading" | "offline" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown";
+export type PreviewScenario = "normal" | "first_login" | "setup_incomplete" | "empty" | "loading" | "offline" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown";
 
 // Local checklist examples for layout review. These are not S13 tasks or occurrences.
 export interface PreviewChecklistItem {
@@ -18,13 +18,13 @@ export const previewChecklist: PreviewChecklistItem[] = [
 ];
 
 export const scenarioLabels: Record<PreviewScenario, string> = {
-  normal: "一般", empty: "尚無孩子", loading: "讀取中", offline: "離線",
+  normal: "一般", first_login: "首次登入", setup_incomplete: "設定未完成", empty: "尚無孩子", loading: "讀取中", offline: "離線",
   needs_confirmation: "待確認", saving: "處理中", saved: "已保存", failed: "失敗", unknown: "結果未知",
 };
 
 const children: HomeChild[] = [
-  { id: "preview-child-1", displayName: "小昕", ageLabel: "約 3 歲 2 個月 · 截至 2026 年 9 月", regionLabel: "香港", profileConfirmed: true },
-  { id: "preview-child-2", displayName: "阿樂", ageLabel: "約 8 歲 · 截至 2026 年 9 月", regionLabel: "未提供", profileConfirmed: false },
+  { id: "preview-child-1", displayName: "小昕", ageLabel: "約 3 歲 2 個月 · 截至 2026 年 9 月", regionLabel: "香港", allergiesLabel: null, profileConfirmed: true },
+  { id: "preview-child-2", displayName: "阿樂", ageLabel: "約 8 歲 · 截至 2026 年 9 月", regionLabel: "未提供", allergiesLabel: null, profileConfirmed: false },
 ];
 
 const records: HomeRecord[] = [
@@ -43,7 +43,7 @@ const operationCopy: Record<OperationState, HomeOperation> = {
   unknown: { state: "unknown", title: "提交結果尚未確認", detail: "先按原操作 ID 查核結果，不要因為等候逾時，就重新建立同一筆記錄。" },
 };
 
-export function createPreviewModel(scenario: PreviewScenario, selectedChildId: string): HomeViewModel {
+export function createPreviewModel(scenario: PreviewScenario, selectedChildId: string, guideStatus: GuideStatus): HomeViewModel {
   const isEmpty = scenario === "empty";
   return {
     caregiverName: "媽媽",
@@ -51,8 +51,10 @@ export function createPreviewModel(scenario: PreviewScenario, selectedChildId: s
     selectedChildId: isEmpty ? null : selectedChildId,
     connection: scenario === "offline" ? "offline" : "online",
     recordsLoad: scenario === "loading" ? "loading" : "ready",
+    profileLoad: scenario === "loading" ? "loading" : "ready",
     records: scenario === "loading" ? [] : records,
     lastReadLabel: scenario === "loading" ? null : "2026 年 9 月 26 日 10:24",
     operation: operationCopy[scenario in operationCopy ? scenario as OperationState : "none"],
+    guideStatus,
   };
 }

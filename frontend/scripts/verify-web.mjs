@@ -23,6 +23,7 @@ const routes = [
   { path: "/family", name: "family", text: "家庭協調" },
   { path: "/memory", name: "memory", text: "記憶與話題" },
   { path: "/settings", name: "settings", text: "設定" },
+  { path: "/guide", name: "guide", text: "使用引導" },
   { path: "/login", name: "login", text: "歡迎回來" },
 ];
 
@@ -57,8 +58,8 @@ try {
     const height = width >= 1024 ? 992 : width === 390 ? 844 : 720;
     for (const route of routes) {
       if (width === 1586 && route.name !== "home") continue;
-      if (width === 1024 && !["home", "chat", "settings", "login"].includes(route.name)) continue;
-      if (width === 390 && !["home", "chat", "settings", "login"].includes(route.name)) continue;
+      if (width === 1024 && !["home", "chat", "settings", "guide", "login"].includes(route.name)) continue;
+      if (width === 390 && !["home", "chat", "settings", "guide", "login"].includes(route.name)) continue;
       const page = await openPage(route.path, width, height);
       await page.getByText(route.text, { exact: true }).first().waitFor({ timeout: 60_000 });
       await assertFits(page, width, route.name + " " + width);
@@ -71,6 +72,8 @@ try {
   }
 
   const desktop = await openPage("/", 1440, 900);
+  await desktop.getByText("已連接", { exact: true }).waitFor();
+  await desktop.getByRole("button", { name: "進行對話" }).waitFor();
   const previewTodo = desktop.getByRole("checkbox", { name: "在預覽中標記核對本週睡眠觀察" });
   await previewTodo.waitFor();
   assert.equal(await previewTodo.isChecked(), false);
@@ -82,7 +85,8 @@ try {
   await desktop.getByRole("button", { name: /開啟訊息提示/ }).click();
   await desktop.getByText("目前沒有需要處理的操作提示。").waitFor();
   await desktop.getByRole("button", { name: "關閉", exact: true }).last().click();
-  await desktop.getByRole("button", { name: "關閉資訊側欄" }).focus();
+  assert.equal(await desktop.getByRole("button", { name: "關閉資訊側欄" }).count(), 0);
+  await desktop.getByRole("button", { name: "收起資訊側欄" }).focus();
   await desktop.keyboard.press("Enter");
   await desktop.getByRole("button", { name: "開啟資訊側欄" }).focus();
   await desktop.keyboard.press("Enter");
@@ -116,18 +120,39 @@ try {
   }
   await desktop.close();
 
+  const guide = await openPage("/", 1440, 900);
+  await guide.getByRole("button", { name: "切換合成預覽情境" }).click();
+  await guide.getByRole("button", { name: "首次登入" }).click();
+  await guide.getByRole("link", { name: "使用引導" }).waitFor();
+  await guide.screenshot({ path: resolve(screenshotDir, "home-1440-first-login.png") });
+  await guide.getByRole("button", { name: "前往使用引導" }).click();
+  await guide.getByText("先把基本資料整理好", { exact: true }).waitFor();
+  await guide.screenshot({ path: resolve(screenshotDir, "guide-1440-first-login.png") });
+  await guide.getByRole("button", { name: "模擬設定已完成" }).click();
+  await guide.getByRole("link", { name: "使用引導" }).waitFor({ state: "hidden" });
+  await guide.getByRole("button", { name: "設定未完成" }).click();
+  await guide.getByRole("link", { name: "使用引導" }).waitFor();
+  await guide.getByRole("button", { name: "一般" }).click();
+  await guide.getByRole("link", { name: "使用引導" }).waitFor({ state: "hidden" });
+  await guide.getByRole("link", { name: "育伴港，返回主頁" }).click();
+  await guide.getByRole("button", { name: "進行對話" }).waitFor();
+  await guide.getByRole("link", { name: "設定" }).click();
+  await guide.getByRole("button", { name: "開啟使用引導" }).waitFor();
+  await guide.close();
+
   const child = await openPage("/", 390, 844);
   await child.getByRole("button", { name: "開啟資訊側欄" }).click();
   await child.getByText("待辦事項", { exact: true }).waitFor();
   await child.waitForTimeout(450);
   await child.screenshot({ path: resolve(screenshotDir, "home-390-rail.png") });
-  await child.getByRole("button", { name: "關閉資訊側欄" }).click();
+  await child.getByRole("button", { name: "收起資訊側欄" }).click();
   await child.getByRole("button", { name: /選擇孩子/ }).click();
   await child.getByRole("radio", { name: "阿樂 · 約 8 歲 · 截至 2026 年 9 月" }).click();
+  await child.locator('[aria-label="阿樂的關鍵資料"]').waitFor();
   await child.getByRole("button", { name: "開啟資訊側欄" }).click();
   await child.getByText("整理課後觀察", { exact: true }).waitFor();
   assert.equal(await child.getByText("核對本週睡眠觀察", { exact: true }).count(), 0);
-  await child.getByRole("button", { name: "關閉資訊側欄" }).click();
+  await child.getByRole("button", { name: "收起資訊側欄" }).click();
   await child.getByText("課後記錄", { exact: true }).first().waitFor();
   await child.getByRole("textbox", { name: "篩選下方已載入的記錄" }).fill("不存在的資料");
   await child.getByText("這幾項已載入記錄中沒有符合的內容。", { exact: true }).waitFor();

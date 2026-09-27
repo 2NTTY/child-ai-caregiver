@@ -7,14 +7,16 @@ import type { ConnectionState, OperationState } from "../view-model";
 export function AppButton({ label, onPress, variant = "primary", disabled = false, loading = false, style }: {
   label: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "quiet";
+  variant?: "primary" | "secondary" | "quiet" | "accent";
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
     <Button
-      mode={variant === "primary" ? "contained" : variant === "secondary" ? "outlined" : "text"}
+      mode={variant === "primary" || variant === "accent" ? "contained" : variant === "secondary" ? "outlined" : "text"}
+      buttonColor={variant === "accent" ? colors.deepTeal : undefined}
+      textColor={variant === "accent" ? colors.white : undefined}
       onPress={onPress}
       disabled={disabled || loading}
       loading={loading}
@@ -69,9 +71,9 @@ export function OperationPill({ state }: { state: OperationState }) {
 }
 
 export function ConnectionPill({ state }: { state: ConnectionState }) {
-  const label = state === "online" ? "網絡可用" : state === "offline" ? "目前離線" : "正在檢查連線";
+  const label = state === "online" ? "已連接" : state === "offline" ? "目前離線" : "正在檢查連線";
   return (
-    <View accessibilityRole="text" accessibilityLabel={label} style={[styles.pill, state === "online" ? styles.tealPill : state === "offline" ? styles.amberPill : styles.neutralPill]}>
+    <View accessibilityRole="text" accessibilityLabel={label} style={[styles.pill, styles.connectionPill, state === "online" ? styles.tealPill : state === "offline" ? styles.amberPill : styles.neutralPill]}>
       <View style={[styles.dot, state === "online" ? styles.tealDot : state === "offline" ? styles.amberDot : styles.neutralDot]} />
       <Text style={styles.pillText}>{label}</Text>
     </View>
@@ -110,6 +112,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 29, fontWeight: "700" },
   sectionSubtitle: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 21 },
   pill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 6 },
+  connectionPill: { alignSelf: "center" },
   pillText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },
   neutralPill: { backgroundColor: colors.neutralSurface },
   tealPill: { backgroundColor: colors.paleTeal },

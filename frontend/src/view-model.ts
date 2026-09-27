@@ -2,12 +2,14 @@
 export type ConnectionState = "online" | "offline" | "checking";
 export type RecordsLoadState = "ready" | "loading" | "error";
 export type OperationState = "none" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown";
+export type GuideStatus = "first_login" | "incomplete" | "complete" | "unknown";
 
 export interface HomeChild {
   id: string;
   displayName: string;
   ageLabel: string;
   regionLabel: string;
+  allergiesLabel: string | null;
   profileConfirmed: boolean;
 }
 
@@ -33,16 +35,19 @@ export interface HomeViewModel {
   selectedChildId: string | null;
   connection: ConnectionState;
   recordsLoad: RecordsLoadState;
+  profileLoad: RecordsLoadState;
   records: HomeRecord[];
   lastReadLabel: string | null;
   operation: HomeOperation;
+  guideStatus: GuideStatus;
 }
 
-export type HomeDestination = "chat" | "care" | "profile" | "family" | "memory";
+export type HomeDestination = "chat" | "care" | "profile" | "family" | "memory" | "settings" | "guide";
 
 export interface HomeActions {
   selectChild(id: string): void;
   refresh(): void;
   reviewOperation(): void;
   open(destination: HomeDestination): void;
+  completeGuidePreview(): void;
 }

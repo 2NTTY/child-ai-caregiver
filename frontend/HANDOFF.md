@@ -1,15 +1,15 @@
 # 育伴港 Web 前端交接
 
-本文件交接 frontend/** 的獨立畫面包，不改變根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 或正式 API／共享型別的權威。FE-W03 分支 codex/fe-w03-dashboard-todos-notifications 由 FE-W02 commit 271f10b 延伸；三包都尚待使用者視覺確認，未自行 merge。正式 P1 登入、孩子、文字記錄及基本聊天在主 App 已可用；P2 有部分功能已落碼並具本機證據，現網仍是 P1，Agent 對話接線、任務、通知等不能從本預覽推斷為已可用。
+本文件交接 frontend/** 的獨立畫面包，不改變根目錄 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 或正式 API／共享型別的權威。FE-W04 分支 codex/fe-w04-shell-child-guide 由 FE-W03 commit 2671a9b 延伸；四包都尚待使用者視覺確認，未自行 merge。正式 P1 登入、孩子、文字記錄及基本聊天在主 App 已可用；P2 有部分功能已落碼並具本機證據，現網仍是 P1，Agent 對話接線、任務、通知等不能從本預覽推斷為已可用。
 
 ## 前端入口與結構
 
 | 位置 | 狀態 | 用途 |
 |---|---|---|
 | [app](app)、[app/_layout.tsx](app/_layout.tsx) | 前端已完成 | Expo Router 薄路由與 PaperProvider；群組 layout 共用 PreviewProvider／AppShell |
-| [AppShell.tsx](src/components/AppShell.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 前端已完成 | 左導覽、左下設定／用戶、孩子選擇、右資訊欄及窄屏面板、預覽情境、內頁版式 |
+| [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 前端已完成；資料只屬合成預覽 | 左導覽、置中可返回主頁的 Logo、孩子選擇及關鍵摘要、單一右欄開關、左下對話入口、條件式引導入口與內頁版式 |
 | [PreviewTodoCard.tsx](src/components/PreviewTodoCard.tsx)、[NotificationBell.tsx](src/components/NotificationBell.tsx) | 只屬合成預覽 | 右欄按孩子顯示可本地勾選的清單；頂部鈴鐺按原操作狀態顯示提示及角標，不是 S13 任務或通知資料 |
-| [screens](src/screens) | 前端已完成 | 主頁以 [HomeDashboard.tsx](src/components/HomeDashboard.tsx) 組成；對話、照顧記錄、子女檔案、家庭協調、記憶與話題、設定及登入各自有畫面檔 |
+| [screens](src/screens) | 前端已完成；資料只屬合成預覽 | 主頁以 [HomeDashboard.tsx](src/components/HomeDashboard.tsx) 組成；對話、照顧記錄、子女檔案、家庭協調、記憶與話題、設定、[使用引導](src/screens/guideScreen.tsx)及登入各自有畫面檔 |
 | [theme.ts](src/theme.ts)、[ui.tsx](src/components/ui.tsx) | 前端已完成 | 單一 token／Paper 主題，品牌按鈕、表單、卡片、共用分頁、連線與操作狀態；全畫面無硬編碼色值 |
 | [view-model.ts](src/view-model.ts)、[preview](src/preview) | 只屬合成預覽 | 孩子、記錄、操作狀態、本地草稿及待辦示例；不是 wire contract、Server 收據或正式資料源 |
 | [verify-web.mjs](scripts/verify-web.mjs)、[screenshots](verification/screenshots) | 前端已完成 | Playwright Core 只測本機合成預覽與瀏覽器版式，不能代替真 API／正式 E2E |
@@ -23,13 +23,15 @@ Expo 57.0.24、Router 57.0.22、React Native Web 0.21.2 與正式 repo 現行版
     $env:__UNSAFE_EXPO_HOME_DIRECTORY = (Join-Path (Get-Location) '.expo-home')
     $env:EXPO_NO_TELEMETRY = '1'
 
-預設瀏覽 http://localhost:8081；若已佔用可用 npm run web -- --port 8082，驗證前設定 FRONTEND_PREVIEW_URL=http://localhost:8082。另執行 npm run typecheck、npm run build:web、npm run verify:web；瀏覽器腳本預設使用本機 Edge，其他環境可設定 BROWSER_EXECUTABLE 指向 Chromium。FE-W03 的三項檢查均通過；腳本檢查 1586／1440／1024／390／320 CSS px，八路由在 1440 和 320 px 無整頁橫向溢出，並檢查側欄、待辦勾選、鈴鐺、情境、孩子切換、草稿、設定及登入的本地互動。截圖在 [verification/screenshots](verification/screenshots)，包括桌面鈴鐺及 390 px 右欄；使用者視覺比較尚待完成。
+預設瀏覽 http://localhost:8081；若已佔用可用 npm run web -- --port 8082，驗證前設定 FRONTEND_PREVIEW_URL=http://localhost:8082。另執行 npm run typecheck、npm run build:web、npm run verify:web；瀏覽器腳本預設使用本機 Edge，其他環境可設定 BROWSER_EXECUTABLE 指向 Chromium。FE-W04 的 typecheck、Web build 與瀏覽器檢查均通過；腳本覆蓋 1586／1440／1024／390／320 CSS px、九個 dashboard／登入路由與側欄、待辦、鈴鐺、孩子切換、首次登入／設定未完成引導、草稿、設定及登入的本地互動，未見整頁橫向溢出。截圖在 [verification/screenshots](verification/screenshots)；使用者視覺比較尚待完成。
 
 ## 各畫面及正式落點
 
 | Web 預覽 | 前端現況 | 主聊天接線時對照 |
 |---|---|---|
 | / 主頁及右資訊欄 | 合成孩子、已確認記錄投影、最近操作；右欄可關閉／重開，新增本地待辦示例；頂部鈴鐺只按原操作狀態提示 | [RecordsController](../src/client/records-controller.ts)、[CarePanel](../src/client/CarePanel.tsx)、[OnlineReceipt](../src/shared/online.ts)；待辦／通知須等 S13 正式契約，不另建前端背景台帳 |
+| 頂部孩子選擇與關鍵摘要 | 孩子稱呼／約齡、地區、檔案核對及過敏欄位由同一個 selectedChildId 的 view-model 驅動；讀取中隱藏舊摘要，未知過敏明示「未提供」；目前全是 fixture | 先經登入會話取得授權的 `GET /api/children`，再依所選 ID 取得 `GET /api/children/:childId/profile`；按 [Child](../src/shared/records.ts) 與 [ChildProfile](../src/shared/care.ts) 投影年齡基準、地區與過敏資料。切換 ID 立即清除舊摘要、取消或忽略舊請求，才展示新 ID 的資料；Server 的權限與最新值為準 |
+| /guide 使用引導 | 首次登入／設定未完成時左下導覽及首頁 CTA 指向引導；完成時只保留設定入口。三步內容與「模擬設定已完成」只屬本地示意，未保存設定 | 現有 API／SPEC 沒有權威 `first_login / incomplete / complete` 來源；主聊天須按正式身份及配置流程決定狀態來源、初始化完成條件、跨裝置持續性與權限失效處理，再投影到 `guideStatus`。不可從瀏覽器記憶體或「看過頁面」推斷已完成 |
 | /login | 電郵登入／註冊畫面及本地格式檢查；密碼不發送 | [身份 API](../docs/API.md#p1-input-contracts)、[records-api](../src/client/records-api.ts) 與現有 Better Auth；登入／登出、session、錯誤及角色以正式 App 為準 |
 | /chat | 可寫本地未送出問題、示例對話版式；示例回答明示不是 Agent 建議 | P1 [ChatPanel](../src/client/ChatPanel.tsx) 及聊天保存；P2 S11-W02 Agent／引用接線尚待交付，不能把示例當作模型結果 |
 | /care | 已確認記錄時間軸、篩選、詳情及本地共享草稿預覽 | [CarePanel](../src/client/CarePanel.tsx)、[CareRecord](../src/shared/care.ts)；保留原文、來源、事件／加入時間、精度、版本、更正及候選確認 |
@@ -39,6 +41,8 @@ Expo 57.0.24、Router 57.0.22、React Native Web 0.21.2 與正式 repo 現行版
 | /settings | 帳戶、孩子、家庭、偏好、私隱分頁；本地顯示名稱／安靜時段／預約例外預覽 | 現有身份與 S06-W02 本人偏好／家庭資料；正式保存、權限與各通知渠道須按 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 接線 |
 
 主聊天整合時由正式控制器投影資料到畫面，將合成 fixture 排除於正式資料來源。切換孩子要先隔離舊孩子的可見資料／未完成請求；預覽只示意孩子分開及當頁草稿隔離，沒有驗證 Server 授權。登出、撤權、刪除及帳號切換須沿用正式控制器清理規則。
+
+`HomeViewModel.profileLoad` 及 `HomeChild.allergiesLabel` 是顯示層欄位，不是新 wire contract。真 profile 錯誤或未回覆時須顯示讀取／錯誤，不可沿用上一位孩子的關鍵資料；沒有過敏資料時應顯示「未提供」，不可改寫成「無過敏」。連線標籤「已連接」只反映連線狀態，不能代替保存收據。前端沒有登入會話，故本包沒有直接呼叫上述 API；接線只由主聊天在正式 App 的既有身份、授權和控制器邊界內處理。
 
 ## 已有功能與 Web 預覽之間的缺口
 
@@ -56,7 +60,7 @@ Expo 57.0.24、Router 57.0.22、React Native Web 0.21.2 與正式 repo 現行版
 
 本地待辦的勾選只保存在 PreviewProvider 記憶體，重新載入即重置；切換孩子只顯示該孩子的項目，沒有改動正式資料。鈴鐺角標只在「待確認／失敗／結果未知」出現，數字是合成狀態提示數，不是未讀訊息數。正式任務的「完成」要依 S13 occurrence 終態；訊息的「接受／送達／已讀／回應」與照護完成須各有獨立證據，不能用本地勾選推導。Web 上 Paper Checkbox 5.15.3 的裸控制項未提供此組合需要的 Space 與 aria-checked，預覽外層 Pressable 補上 Web 鍵盤及可讀取狀態；日後升級須重驗。
 
-窄屏右欄由 Paper Portal 顯示。FE-W03 檢查發現 Portal 內的右欄直接呼叫 usePreview 會失去 Provider 而報錯，現由 AppShell 傳入資料與回調；正式接線及其他彈出層應沿用此邊界，並實測開啟與關閉。
+FE-W04 把窄屏右欄改為外殼內的覆蓋面板，讓頂部同一按鈕在開啟後仍可關閉；右欄本身沒有 X。FE-W03 曾發現 Paper Portal 內的右欄直接呼叫 usePreview 會失去 Provider 而報錯；現仍由 AppShell 傳入資料與回調，正式接線及其他彈出層應沿用此邊界並實測開關。
 
 ## 狀態語義與未接功能
 
