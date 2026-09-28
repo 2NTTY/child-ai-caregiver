@@ -222,7 +222,7 @@
     {
       "id": "module.shared-capture",
       "path": "modules/shared-capture.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "module.multimodal-input",
         "module.capture-confirmation"
