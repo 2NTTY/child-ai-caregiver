@@ -23,8 +23,8 @@ export const scenarioLabels: Record<PreviewScenario, string> = {
 };
 
 const children: HomeChild[] = [
-  { id: "preview-child-1", displayName: "小昕", ageLabel: "約 3 歲 2 個月 · 截至 2026 年 9 月", regionLabel: "香港", allergiesLabel: null, profileConfirmed: true },
-  { id: "preview-child-2", displayName: "阿樂", ageLabel: "約 8 歲 · 截至 2026 年 9 月", regionLabel: "未提供", allergiesLabel: null, profileConfirmed: false },
+  { id: "preview-child-1", displayName: "小昕", ageLabel: "約 3 歲 2 個月 · 截至 2026 年 9 月", regionLabel: "香港", allergiesLabel: null, profileConfirmed: true, accessRole: "owner" },
+  { id: "preview-child-2", displayName: "阿樂", ageLabel: "約 8 歲 · 截至 2026 年 9 月", regionLabel: "未提供", allergiesLabel: null, profileConfirmed: false, accessRole: "caregiver" },
 ];
 
 const records: HomeRecord[] = [

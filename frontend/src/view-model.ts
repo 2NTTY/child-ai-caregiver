@@ -5,6 +5,7 @@ export type OperationState = "none" | "needs_confirmation" | "saving" | "saved" 
 export type GuideStatus = "first_login" | "incomplete" | "complete" | "unknown";
 
 export interface HomeChild {
+  accessRole?: "owner" | "caregiver" | "viewer";
   id: string;
   displayName: string;
   ageLabel: string;
@@ -42,12 +43,16 @@ export interface HomeViewModel {
   guideStatus: GuideStatus;
 }
 
-export type HomeDestination = "chat" | "care" | "profile" | "family" | "memory" | "settings" | "guide";
+export type HomeDestination = "chat" | "care" | "profile" | "family" | "memory" | "settings" | "guide" | "tasks";
 
 export interface HomeActions {
   selectChild(id: string): void;
   refresh(): void;
   reviewOperation(): void;
   open(destination: HomeDestination): void;
+  composeCare(kind: HomeRecord["kind"]): void;
+  prepareQuestion(question: string): void;
+  createChildPreview(displayName: string): void;
+  deleteChildPreview(childId: string): void;
   completeGuidePreview(): void;
 }

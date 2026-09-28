@@ -1,9 +1,10 @@
 {
   "expo": {
-    "name": "育伴港 · Web 前端預覽",
+    "name": "育伴港 · 前端預覽",
     "slug": "yuban-hk-frontend-preview",
     "version": "0.1.0",
-    "platforms": ["web"],
+    "platforms": ["web", "android"],
+    "android": { "package": "org.yuban.frontendpreview", "softwareKeyboardLayoutMode": "resize" },
     "plugins": ["expo-router"],
     "web": {
       "bundler": "metro",

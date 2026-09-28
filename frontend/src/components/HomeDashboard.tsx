@@ -4,6 +4,7 @@ import { ActivityIndicator, Divider, Text } from "react-native-paper";
 import { AppButton, AppTextField, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import type { HomeActions, HomeRecord, HomeViewModel } from "../view-model";
+import { MobileHomeDashboard } from "./MobileHomeDashboard";
 
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
 const recordGlyph: Record<HomeRecord["kind"], string> = { sleep: "☾", feeding: "◌", measurement: "↗", note: "✎", appointment: "▣" };
@@ -73,6 +74,7 @@ export function HomeDashboard({ model, actions }: { model: HomeViewModel; action
   const [width, setWidth] = useState(900);
   const stacked = Math.min(width, windowWidth) < 760;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
+  if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} />;
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <View style={[styles.introCard, stacked && styles.introStack]}>
       <View style={styles.introText}><Text style={styles.eyebrow}>育伴港 · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>

@@ -29,6 +29,7 @@ export const colors = {
   statusUnknownLine: "#EFDBBB",
   statusFailedLine: "#F2D9D0",
   warningInk: "#775425",
+  overlay: "rgba(13, 44, 41, 0.28)",
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, hero: 40 } as const;
