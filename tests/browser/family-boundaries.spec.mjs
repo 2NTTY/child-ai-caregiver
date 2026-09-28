@@ -8,7 +8,7 @@ test("family isolation, original-operation recovery and revoked UI",async({famil
   await write(owner,"/children/"+child.id+"/care",{text:seed,source:"S16 合成觀察",details,confirmShared:true});
   await open(caregiver);
   await expect(caregiver.page.getByRole("button",{name:new RegExp(child.displayName)})).toHaveCount(0);
-  await request(caregiver,"/children/"+child.id+"/care",undefined,404);
+  await request(caregiver,"/children/"+child.id+"/care/search",{},404);
   await invite(caregiver,"caregiver");await invite(viewer,"viewer");
   await caregiver.page.getByRole("button",{name:"重新讀取孩子列表",exact:true}).click();
   await open(viewer);
@@ -41,7 +41,7 @@ test("family isolation, original-operation recovery and revoked UI",async({famil
   await expect(carePanel.getByText(/結果未知的操作：新增照顧記錄/u)).toBeVisible();
   await carePanel.getByRole("button",{name:"重新讀取並核對",exact:true}).click();
   await expect(carePanel.getByText("Server 已確認原操作。已重新讀取目前資料，毋須再次提交。",{exact:true})).toBeVisible();
-  const saved=(await request(owner,"/children/"+child.id+"/care")).records.filter(record=>record.text===text);
+  const saved=(await request(owner,"/children/"+child.id+"/care/search",{},200)).records.filter(record=>record.text===text);
   expect(saved.length).toBe(1);expect(submissions).toBe(1);expect(opId!==null&&lookups.has(opId)).toBe(true);
 
   await carePanel.getByLabel("記錄原文",{exact:true}).fill("撤權後必須清除的合成草稿");
@@ -50,5 +50,5 @@ test("family isolation, original-operation recovery and revoked UI",async({famil
   await expect(carePanel.getByLabel("記錄原文",{exact:true})).toHaveCount(0);
   await expect(caregiver.page.getByText(seed,{exact:true})).toHaveCount(0);
   await expect(caregiver.page.getByRole("button",{name:new RegExp(child.displayName)})).toHaveCount(0);
-  await request(caregiver,"/children/"+child.id+"/care",undefined,404);
+  await request(caregiver,"/children/"+child.id+"/care/search",{},404);
 });

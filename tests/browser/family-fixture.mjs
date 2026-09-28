@@ -10,14 +10,18 @@ export const test=base.extend({
     check(process.env.P2_BROWSER_APPROVED==="true","Consolidated acceptance approval required");
     // Preserve the real three-signups-per-ten-seconds limit between browser projects.
     if(testInfo.project.name==="firefox")await delay(10100);
-    let requests=0,confirmedNewAccounts=0,childDeleted=false,unexpectedNetwork=false,child;
+    let requests=0,confirmedNewAccounts=0,childDeleted=false,unexpectedNetwork=false,child,failureStep=null;
     const contexts=[];
     const count=()=>check(++requests<=180,"Browser acceptance HTTP cap reached");
     const request=async(person,path,body,status=200)=>{
       count();
       const response=await person.context.request.fetch(api+"/api"+path,{method:body===undefined?"GET":"POST",timeout:10000,maxRetries:0,maxRedirects:0,
         headers:{origin:api,...(person.id?{"x-expected-user-id":person.id}:{})},...(body===undefined?{}:{data:body})});
-      check(response.status()===status,"Synthetic API response status mismatch");
+      const actualStatus=response.status();
+      if(actualStatus!==status){
+        failureStep??={code:"api_status_mismatch",requestAttempt:requests,method:body===undefined?"GET":"POST",actualStatus,expectedStatus:status};
+        throw new Error("Synthetic API response status mismatch: actual "+actualStatus+", expected "+status);
+      }
       return response.json();
     };
     const write=async(person,path,payload)=>{
@@ -56,7 +60,7 @@ export const test=base.extend({
     }finally{
       try{if(child&&owner){await write(owner,"/children/"+child.id+"/delete",{confirmChildId:child.id});childDeleted=true;}}
       finally{
-        try{await testInfo.attach("synthetic-boundary-metadata",{contentType:"application/json",body:Buffer.from(JSON.stringify({requestAttempts:requests,httpCap:180,confirmedNewAccounts,childId:child?.id??null,childDeleted,unexpectedNetwork}))});}
+        try{await testInfo.attach("synthetic-boundary-metadata",{contentType:"application/json",body:Buffer.from(JSON.stringify({requestAttempts:requests,httpCap:180,confirmedNewAccounts,childId:child?.id??null,childDeleted,unexpectedNetwork,failureStep}))});}
         finally{await Promise.all(contexts.map(context=>context.close()));}
       }
     }
