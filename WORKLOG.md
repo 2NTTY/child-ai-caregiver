@@ -959,3 +959,11 @@
 - Review / Failure：修正 JSONB 重排 key 對 hash 的影響、SQL CHECK 的 NULL 缺口、發布讀取觀察的鎖定次序、首次未觀察／核對來源的檢索閘及 internal 預設隔離；先前 typecheck 的 optional schedule options／HTTPS option 相容問題已修正。研究下載曾遇 sandbox Schannel 憑據錯誤，受限公開讀取在允許環境成功；沒有放寬 TLS／DNS 邊界或把研究下載算作產品驗收。
 - Pending / Next：必要驗收腳本已由主模型 review，獨立批准申請已提出；最多 4 個合成登記／6 來源 ID、120 業務呼叫／180 唯讀輪詢／1 worker、6 次真來源取得（連同 redirect 最多 18 GET），先備份及 migration 014，驗合成向量增量、公開／組內隔離、日期、停用與真 minute cron。尚未執行 SQL／worker／真來源 adapter 驗收，不部署、跑 E2E 或呼叫 Gemini／embedding；先保留原庫及備份，結束暫停 worker。驗收及 PR 合併前不標完成、不解鎖 S11-W02。P2 未完成，現網仍 P1，七天試用不自行續期，額度未知。
 - Human Decision（同日後續）：使用者回覆「先保留待驗收」。本包 SQL／worker／真來源 adapter 驗收不執行，保留上述實作與腳本；仍未完成或合併，S11-W02 不解鎖。
+
+<a id="log-20260928-005"></a>
+## LOG-20260928-005
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S10-W02 待驗收補充 review，基於本機 checkpoint `38239f2`，沿用 A 60%／C 40% 分工及使用者「先保留待驗收」決定。
+- Actual Work / Finding：發現 register 改變用途／條款等來源定義時只換 revision，未撤銷既有內容批准；改回原設定可能令舊批准重新生效。主模型改為同一交易內更新登記與撤銷批准，啟用中的相同定義保持原批准。局部更新契約及操作文件，不改來源範圍或新增框架。
+- Verification：Server typecheck、必要驗收腳本語法及 diff whitespace 檢查通過。待驗腳本沿原配置變更情景，改以已批准來源核對 in-flight 寫入被拒、批准撤銷及改回 public 不復活；原業務呼叫、來源／worker／網絡上限不變。SQL 實際行為仍待驗收，不以 typecheck 當通過；[EV-S10-W02](artifacts/verification/S10_W02_CHECKS.json)分列補充證據。
+- Limits / Next：沒有 DB、worker、真來源、模型、embedding、部署或 E2E 執行；未推送／合併，本包保持待驗收，S11-W02 尚未解鎖。

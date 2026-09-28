@@ -354,16 +354,20 @@ try {
     const stopped = await processCheck(refresh, data(guarded), null, async () => { await refresh.disable(guarded.id); return { status: "ok", items: [{ ...guardItem, text: "Must never replace the observation" }] }; });
     assert.equal(stopped.value.status, "superseded"); assert.deepEqual(await observation(guarded.id), before);
     await register(refresh, guarded.id); jobs = await refresh.jobs();
-    const changedCatalog = tracked(createKnowledgeRefreshStore(pool, definitions.map(definition => definition.id === guarded.id ? { ...definition, publisher: "Synthetic changed configuration" } : definition)));
-    const changed = await processCheck(refresh, data(guarded), null, async () => { await changedCatalog.register(guarded.id, operator); return { status: "ok", items: [{ ...guardItem, text: "Must never replace the observation" }] }; });
-    assert.equal(changed.value.status, "superseded"); assert.deepEqual(await observation(guarded.id), before);
-    await register(refresh, guarded.id); jobs = await refresh.jobs(); const previousData = data(guarded);
+    const guidanceBefore = await observation(guidance.id); assert.equal(guidanceBefore.approved_version_id, secondEdition.versionId);
+    const changedCatalog = tracked(createKnowledgeRefreshStore(pool, definitions.map(definition => definition.id === guidance.id ? { ...definition, audience: "internal_noncommercial" } : definition)));
+    const changed = await processCheck(refresh, data(guidance), null, async () => { await changedCatalog.register(guidance.id, operator); return { status: "ok", items: [{ ...changedItem, text: "Must never replace the observation" }] }; });
+    assert.equal(changed.value.status, "superseded"); assert.deepEqual(await observation(guidance.id), { ...guidanceBefore,
+      approved_hash: null, approved_version_id: null, approved_by: null, approved_at: null });
+    await register(refresh, guidance.id); jobs = await refresh.jobs(); const previousData = data(guarded);
+    // Switching the registration back to public cannot revive its previous approval.
+    assert.equal((await publicStore.candidates(filter("official_guidance"), vector)).length, 0);
     const paused = await processCheck(refresh, previousData, null, async () => { await control(false, true); return { status: "ok", items: [{ ...guardItem, text: "Must never replace the observation" }] }; });
     assert.equal(paused.value.status, "superseded"); assert.deepEqual(await observation(guarded.id), before); assert.deepEqual(await refresh.jobs(), []);
     await control(true); jobs = await refresh.jobs();
     let staleFetch = false;
     assert.equal((await refresh.process(previousData, randomUUID(), async () => { staleFetch = true; throw new Error("unexpected_old_generation_fetch"); }, signal)).status, "inactive"); assert.equal(staleFetch, false);
-    await refresh.disable(guidance.id); assert.equal((await publicStore.candidates(filter("official_guidance"), vector)).length, 0);
+    await refresh.disable(guidance.id); assert.equal((await watch(guidance.id)).enabled, false);
     await register(refresh, guidance.id); jobs = await refresh.jobs();
   });
   await check("native_schedules_and_queued_metadata_survive_producer_restart", async () => {

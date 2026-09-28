@@ -62,7 +62,7 @@ S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime
 
 共用 worker 以 pg-boss 原生每週／每日排程檢查固定、經條款核對的來源；job 只帶 watch ID、配置版本及 worker 世代。暫停、還原或配置失效後不抓取，網絡等待不持有 SQL 交易；回寫前再次核對。`knowledge-refresh.mjs` 只供主機操作者使用，沒有新增 Web 路由或模型可調用的管理工具。
 
-抓取結果是公共來源觀察資料，並非已發布知識。首次／變更內容須經操作者核對，將 observation hash 綁定至既有 reviewed version，再沿用有限 embedding／publish；hash 未變不重算向量，受影響片段以既有 embedding hash 去重。已登記來源的觀察版本不符、停用或 404／410 均不供引用；暫時抓取失敗保留先前內容及成功查核時間。候選新聞不自動寫入家庭事實或任務。
+抓取結果是公共來源觀察資料，並非已發布知識。首次／變更內容須經操作者核對，將 observation hash 綁定至既有 reviewed version，再沿用有限 embedding／publish；hash 未變不重算向量，受影響片段以既有 embedding hash 去重。已登記來源的觀察版本不符、停用或 404／410 均不供引用；重新啟用或登記定義改變時，同一交易內撤銷舊內容批准，即使再改回原設定也不自動恢復。暫時抓取失敗保留先前內容及成功查核時間。候選新聞不自動寫入家庭事實或任務。
 
 `KnowledgeEvidence.checkedAt` 保持人工核對時間；新增 `lastSuccessfulCheckAt` 表示成功來源抓取，未建立證據為 null。來源發布／修訂時間另存，缺日期不代填；近期資訊只取已核對發布、七日內且 24 小時內成功查核的項目。CHP／RTHK 來源只容許主機操作者明確使用 internal audience；公開 store 預設排除，usageScope 不由模型或瀏覽器選擇。這些 metadata 檢查不等於語義支持核對。操作與待驗項見 [P2_KNOWLEDGE](P2_KNOWLEDGE.md#source-refresh)。
 

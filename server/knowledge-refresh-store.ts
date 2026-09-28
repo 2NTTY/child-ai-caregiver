@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { knowledgeHash } from "./knowledge-inputs.ts";
@@ -40,9 +41,16 @@ export function createKnowledgeRefreshStore(pool: Pool, definitions: readonly So
     async register(id: string, operator: string) {
       operatorAlias(operator); const definition = catalog.get(id);
       if (!definition) throw new Error("knowledge_watch_not_in_catalog");
-      await pool.query(`INSERT INTO knowledge_watches (id,definition,enabled,registered_by) VALUES ($1,$2,true,$3)
-        ON CONFLICT (id) DO UPDATE SET definition=$2,enabled=true,registered_by=$3,terms_checked_at=now(),
-          revision=CASE WHEN knowledge_watches.enabled AND knowledge_watches.definition=$2::jsonb THEN knowledge_watches.revision ELSE gen_random_uuid() END,updated_at=now()`, [id, definition, operator]);
+      await tx(pool, async client => {
+        const revision = randomUUID();
+        const result = await client.query<{ revision: string }>(`INSERT INTO knowledge_watches (id,definition,enabled,registered_by,revision) VALUES ($1,$2,true,$3,$4)
+          ON CONFLICT (id) DO UPDATE SET definition=$2,enabled=true,registered_by=$3,terms_checked_at=now(),
+            revision=CASE WHEN knowledge_watches.enabled AND knowledge_watches.definition=$2::jsonb THEN knowledge_watches.revision ELSE EXCLUDED.revision END,updated_at=now()
+          RETURNING revision`, [id, definition, operator, revision]);
+        // A changed scope or reactivation must not inherit approval from the prior registration.
+        if (result.rows[0]?.revision === revision) await client.query(`UPDATE knowledge_observations
+          SET approved_hash=NULL,approved_version_id=NULL,approved_by=NULL,approved_at=NULL WHERE watch_id=$1`, [id]);
+      });
     },
     async disable(id: string) {
       await tx(pool, async client => {

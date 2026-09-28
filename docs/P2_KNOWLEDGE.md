@@ -73,7 +73,7 @@ docker build --network=none --file deploy/postgres/Dockerfile.package --tag yuba
 
 新增 [knowledge-refresh.mjs](../scripts/knowledge-refresh.mjs)，延用工程外設定與主機權限。catalog／list／inspect SOURCE_ID 唯讀；其他操作須 --operator ALIAS --operator-confirmed。
 
-1. register WATCH_ID --source-and-terms-checked：只登記固定清單的來源及用途；需要同時啟用共用 worker 時按 [worker 操作](P2_WORKER.md)確認目標及唯一執行者，不在此指令偷偷啟用。新登記來源在首次抓取／核對前不供引用。
+1. register WATCH_ID --source-and-terms-checked：只登記固定清單的來源及用途；需要同時啟用共用 worker 時按 [worker 操作](P2_WORKER.md)確認目標及唯一執行者，不在此指令偷偷啟用。新登記來源在首次抓取／核對前不供引用。已啟用且定義相同時保留批准；定義變更或重新啟用則原子撤銷舊批准，不因改回原設定而自動恢復引用。
 2. check WATCH_ID --approved-source-check：以目前 watch revision／worker generation 入列一次；queued 或 already_pending 均不等於抓取完成。list 查工作實際結果；亦可等候正常每週／每日排程。
 3. inspect SOURCE_ID：查看受大小限制的公共觀察正文、原日期、content hash 及抓取時間。首次／實質變更後人工整理受影響片段，沿用原 knowledge.mjs import／review；不把整頁自動發表。原版失效或待新 hash 核對時停止引用，已保存版本不刪除。
 4. approve SOURCE_ID --observation-hash HASH --version UUID --version-hash HASH --source-and-terms-checked：把確切觀察版本與已核對知識版本綁定。日期、URL、分類、發布者及條款要一致；版本或觀察已變即拒絕，不能用舊確認批准新內容。
