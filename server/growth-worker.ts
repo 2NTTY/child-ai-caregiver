@@ -56,7 +56,7 @@ export function createGrowthWorker(pool:Pool,boss:PgBoss,store:GrowthStore,agent
           try{
             const current=()=>store.backgroundInput(data.userId,data.childId,data.id,data);
             const item=await current();if(!item || item.version!==data.version || stopping)continue;
-            await agent.background({userId:data.userId,childId:data.childId,reference:"growth:"+item.id,
+            await agent.background({userId:data.userId,childId:data.childId,reference:item.id,
               context:{eventType:"growth_attention",attention:item,policy:"Server-reviewed applicability; no medical rule generation, task execution or external notification"},
               authorize:async()=>!stopping&&(await current())?.version===data.version,signal:controller.signal});
           }catch{throw new Error("growth_agent_failed");}
