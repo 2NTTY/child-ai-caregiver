@@ -68,8 +68,15 @@ test("background Runner exposes only family reads and presentation, without priv
     provider: { generate: async request => {
       assert.deepEqual(Object.keys(request.toolsDict).sort(), ["present_answer", "read_context", "search_knowledge"]);
       const index = calls++;
-      const functionCall = index === 0 ? { id: "context-call", name: "read_context", args: {} }
-        : index === 1 ? { id: "answer-call", name: "present_answer", args: { kind: "record_restatement",
+      if (index === 1) {
+        const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse)?.functionResponse?.response;
+        assert.equal(response?.status, "rejected");
+        assert.deepEqual(response?.data && { code: response.data.code, nextAction: response.data.nextAction, citationField: response.data.citationField },
+          { code: "invalid_citation", nextAction: "search_knowledge", citationField: "chunks[].chunkId" });
+      }
+      const functionCall = index === 0 ? { id: "invalid-source", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: "未有有效引用的合成建議", citationIds: ["source-metadata-id"] }] } }
+        : index === 1 ? { id: "context-call", name: "read_context", args: {} }
+        : index === 2 ? { id: "answer-call", name: "present_answer", args: { kind: "record_restatement",
           paragraphs: [{ text: "原任務已到期，完成狀態仍待你確認。", citationIds: [] }] } } : null;
       return { content: { role: "model", parts: functionCall ? [{ functionCall }] : [{ text: "完成說明。" }] }, finishReason: FinishReason.STOP };
     } } });
@@ -93,5 +100,5 @@ test("background Runner exposes only family reads and presentation, without priv
   assert.equal(result?.status, "completed", JSON.stringify(result));
   assert.equal(result.provenance?.recipeId, "product-background");
   assert.equal(result.text, "原任務已到期，完成狀態仍待你確認。");
-  assert.equal(reads, 1); assert.equal(calls, 3); assert.deepEqual(result.proposals, []);
+  assert.equal(reads, 1); assert.equal(calls, 4); assert.deepEqual(result.proposals, []);
 });

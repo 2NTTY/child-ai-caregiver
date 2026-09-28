@@ -53,6 +53,7 @@ export function createProductAgentTools(options: {
     try { return { status: "succeeded", data: { result: await operation() } }; }
     catch (error) {
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
+      if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code, nextAction: "search_knowledge", citationField: "chunks[].chunkId", message: "引用只能取本次 search_knowledge 結果的原始 chunkId；背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
       if (error instanceof FamilyError) return { status: error.status === 409 ? "conflict" : "rejected", data: { code: error.code } };
       throw error;
     }
@@ -119,7 +120,7 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-    { name: "present_answer", description: "提交供畫面顯示的自然文字段落及引用 ID。每項育兒／安全建議必須對應實際支持的官方片段；純澄清、操作或家庭記錄回述可無公共引用。不能用這工具执行其他操作或聲稱未完成事項成功。",
+    { name: "present_answer", description: "提交供畫面顯示的自然文字段落；citationIds 只用本 run search_knowledge 結果的 chunkId，不能用背景來源標籤或拼接 ID。每項育兒／安全建議必須對應實際支持的官方片段；純澄清、操作或家庭記錄回述可無公共引用。不能用這工具执行其他操作或聲稱未完成事項成功。",
       parameters: agentAnswerSchema, authorize: permitted,
       execute: args => guard(async () => {
         const parsed = agentAnswerSchema.parse(args);
