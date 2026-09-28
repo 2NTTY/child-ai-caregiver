@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "workPackage": "S13-W05",
+  "recordedOn": "2026-09-30",
+  "baseCommit": "70dda826aa7aeedef5b48595fe05f0fb488cb577",
+  "status": "verified_completion_on_merge",
+  "scope": [
+    "own encrypted browser subscriptions and revocation",
+    "fixed explicitly requested self-test notification",
+    "transactional pg-boss enqueue and at-most-one HTTP attempt per delivery",
+    "provider accepted/rejected/unknown evidence",
+    "browser identity fencing and functional UI"
+  ],
+  "ownership": {
+    "lead": "D",
+    "weight": 3,
+    "shares": {
+      "D": 45,
+      "C": 35,
+      "B": 20
+    },
+    "operation": "Shared AI operated by A; not evidence of individual manual coding or human acceptance."
+  },
+  "dependencies": {
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "webPush": "3.6.7",
+    "webPushTypes": "3.6.4",
+    "pgBoss": "12.34.0",
+    "schema": 42,
+    "migration": "015-web-push",
+    "doesNotDependOnPendingMigration014": true
+  },
+  "lightChecks": {
+    "testGroups": [
+      {
+        "files": [
+          "tests/web-push-client.test.ts"
+        ],
+        "passed": 13,
+        "executor": "Sol xhigh",
+        "coverage": "mock client IO, identity, receipts and allowed error codes"
+      },
+      {
+        "files": [
+          "tests/web-push-gateway.test.ts"
+        ],
+        "passed": 10,
+        "executor": "Sol xhigh",
+        "coverage": "mock DNS/HTTPS, cryptography preparation, provider status, no retry, 15s mock-timer deadline"
+      },
+      {
+        "files": [
+          "tests/web-push-api.test.ts"
+        ],
+        "passed": 8,
+        "executor": "Sol xhigh",
+        "coverage": "mock API auth, strict input, receipt gate and uppercase action regression"
+      },
+      {
+        "files": [
+          "tests/web-push-service-worker.test.ts",
+          "tests/online-server.test.ts",
+          "tests/worker-queue-adapter.test.ts"
+        ],
+        "passed": 12,
+        "executor": "primary",
+        "coverage": "3 SW VM public-event tests, 6 existing receipt tests, 3 existing queue adapter tests"
+      }
+    ],
+    "totalPassed": 43,
+    "clientTypecheck": "passed",
+    "serverTypecheck": "passed",
+    "expoOfflineExport": "passed",
+    "exportBundle": "entry-43e6697170557e80825ba23a050949d4.js",
+    "serviceWorkerCopied": "passed",
+    "licensePackages": 29,
+    "licenseTexts": 30,
+    "localLinkTargets": 172,
+    "skillFrontmatter": "validated using installed YAML parser; no extra agent",
+    "diffCheck": "passed"
+  },
+  "acceptance": {
+    "localPostgres": {
+      "status": "passed",
+      "script": "scripts/verify-web-push.mjs",
+      "scriptSha256": "b008ff3664488f75e027664395056517efb9d003702fd3cb8e0e093f48a39882",
+      "scriptSyntax": "passed",
+      "primaryReview": "reviewed target gate, synthetic-only mutations, atomic enqueue, result-loss fault and cleanup; added existing storage sentinel validation",
+      "limits": {
+        "syntheticUsers": 2,
+        "syntheticBindings": 3,
+        "enqueueAttempts": 8,
+        "businessCalls": 80,
+        "polls": 120,
+        "pushOnlyConsumers": 1,
+        "scriptedSends": 3
+      },
+      "prerequisites": [
+        "encrypted backup",
+        "apply migration 015",
+        "existing worker paused and no foreign sessions"
+      ],
+      "externalDns": 0,
+      "externalHttp": 0,
+      "realPush": false,
+      "models": 0,
+      "restores": false,
+      "userDecision": "先保留待驗收",
+      "executedOn": "2026-09-30",
+      "result": {
+        "status": "passed",
+        "results": [
+          {
+            "number": 1,
+            "assertion": "01_approved_local_paused_preflight",
+            "passed": true
+          },
+          {
+            "number": 2,
+            "assertion": "02_registration_idempotence_encryption_and_owner_isolation",
+            "passed": true
+          },
+          {
+            "number": 3,
+            "assertion": "03_paused_version_ownership_and_real_enqueue_rollback",
+            "passed": true
+          },
+          {
+            "number": 4,
+            "assertion": "04_one_framework_consumer_201_and_no_duplicate_send",
+            "passed": true
+          },
+          {
+            "number": 5,
+            "assertion": "05_minute_daily_quota_and_paused_generation_fences",
+            "passed": true
+          },
+          {
+            "number": 6,
+            "assertion": "06_queued_revocation_410_invalidation_and_isolation",
+            "passed": true
+          },
+          {
+            "number": 7,
+            "assertion": "07_result_loss_sending_reentry_becomes_unknown_without_resend",
+            "passed": true
+          },
+          {
+            "number": 8,
+            "assertion": "08_fresh_pool_store_persistence",
+            "passed": true
+          },
+          {
+            "number": 9,
+            "assertion": "09_parent_cascade_and_exact_prior_rows_preserved",
+            "passed": true
+          }
+        ],
+        "assertionGroups": 9,
+        "counts": {
+          "users": 2,
+          "bindings": 3,
+          "deliveries": 7,
+          "business": 49,
+          "polls": 2,
+          "consumers": 1,
+          "scriptedSends": 3,
+          "atomicEnqueues": 7
+        },
+        "limits": {
+          "users": 2,
+          "bindings": 3,
+          "deliveries": 8,
+          "business": 80,
+          "polls": 120,
+          "consumers": 1,
+          "scriptedSends": 3
+        },
+        "cleanup": {
+          "ownConsumerStopped": true,
+          "controlRestored": true,
+          "syntheticUsersRemoved": true,
+          "syntheticPushRowsCascaded": true,
+          "ownJobsRemoved": true,
+          "priorRowsPreserved": true,
+          "ownPoolsClosed": true
+        },
+        "databaseRetained": true,
+        "migrationsRun": 0,
+        "backupsRun": 0,
+        "externalHttp": 0,
+        "externalDns": 0,
+        "models": 0,
+        "taskWorkers": 0,
+        "realPush": false,
+        "browser": false,
+        "hardKill": false,
+        "fullServerRestart": false
+      },
+      "prerequisiteEvidence": "Shared S16 acceptance applied migration 015 preserving original data and verified encrypted backup/empty restore; not repeated here."
+    },
+    "realPushBrowser": {
+      "status": "passed",
+      "provider": "updates.push.services.mozilla.com",
+      "providerStatus": 201,
+      "deliveryStatus": "accepted",
+      "realSends": 1,
+      "closedPageReportedByUser": true,
+      "userConfirmedReceipt": true,
+      "userConfirmedCleanup": true,
+      "bindingRevoked": true,
+      "businessCalls": 3,
+      "modelCalls": 0,
+      "scope": "Local product browser module, service worker, store, real producer/consumer and gateway; not public HTTPS deployment or full UI E2E",
+      "executedOn": "2026-09-30",
+      "browser": "Existing user Firefox; manually operated by user",
+      "preliminaryFailure": "IAB subscription used jmt17.google.com staging host; rejected before binding/send and unsubscribed. Chrome unavailable. No production allowlist expansion."
+    },
+    "deployment": "not_run"
+  },
+  "review": {
+    "primary": "Reviewed authorization, transactional queue, single-attempt gateway and browser identity fencing. Core files match the accepted integration; its later care payload branch is excluded and the undefined-kind test path is unchanged.",
+    "fixedFindings": [
+      "case-insensitive REVOKE no longer dispatches test",
+      "GET identity error preserved so stale account state clears",
+      "late render filters status by current user",
+      "15s DNS deadline demonstrated without real waiting"
+    ]
+  },
+  "limits": [
+    "Actual Firefox closed-page receipt and revocation verified; not a full Firefox compatibility/E2E suite or all-provider claim.",
+    "Public HTTPS origin, deployment secrets and live delivery remain S17-W02.",
+    "No task selection, preauthorization, fallback or family payload is delivered by this package; these remain S13-W07.",
+    "No extra full regression or full Server restart; existing worker recovery evidence reused."
+  ],
+  "deliveryBase": "bade067",
+  "testedIntegrationCommit": "1896277180630ab51776a0a517979483ca8b59c8",
+  "historicalSourceDeferral": {
+    "workPackage": "S10-W02",
+    "branch": "codex/s10-w02-knowledge-refresh",
+    "localCommit": "2173a7b5e526fbe2e9f2f1c55f849976052f06a9",
+    "decision": "User deferred acceptance; unchanged, not merged, does not unlock S11-W02."
+  },
+  "sourceStatus": "S10-W02 subsequently accepted and merged as PR #51; Web Push has no dependency on knowledge refresh.",
+  "deliveryChecks": {
+    "serverTypecheck": "passed once after reusing installed integration dependencies; initial setup failed because cache parent directory was absent, leaving old modules and missing cheerio; no product tests executed",
+    "lockfile": "Both source trees preserved, root versions match package.json; no upgrade or download.",
+    "licenseInventory": {
+      "directPackages": 31,
+      "preservedFileEntries": 34,
+      "hashes": "verified",
+      "playwright": "Existing S16-W05 notices added to unified inventory; no new dependency."
+    },
+    "review": "Main reviewed merged worker startup/shutdown, queue registration, migration 014+015 and unchanged authorization/gateway paths."
+  }
+}

@@ -994,3 +994,23 @@
 - Result：Chromium 在整合版本 2b6e0bf 的單一真 API 情景通過，147 HTTP／3 帳號／1 孩子已清理，家庭隔離／viewer、原 opId 單筆恢复、撤權清 UI／草稿可核對；零非預期外網／模型／通知，服務已停。原 locator／搜尋路由失敗保留，不放寬斷言。
 - Scope Decision：使用者明確確認 Firefox 專項延後作相容性驗收，不阻塞 P2；如實保留未驗。後續必要功能檢查使用 Codex 內置瀏覽器，已過 Chromium 不重跑；停止 Windows loader 診斷。Firefox runner 改為明確選入，旗標不代替批准。
 - Delivery：從最新 master e75a294 在獨立交付分支只重放本包四個提交，原整合 checkpoint 保留；未帶入其他待驗 P2 功能。三個固定開發依賴及測試正文沿用受驗版本，只做必要離線配置／diff 核對。完成隨本包 PR 合併生效，不代表 P2 整體完成；現網未部署或續期。
+
+<a id="log-20260928-006"></a>
+## LOG-20260928-006
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S13-W05 Web Push，前置 S06-W02／S13-W04 已驗收合併，基線 master 70dda82。S10-W02 依使用者選擇凍結在獨立分支 2173a7b 待驗收，本包不引用其未合併程式、不執行 014 或解鎖 S11-W02。
+- Ownership：按已授權的自行分配，D 主責、權重 3，D 45%／C 35%／B 20%；對應渠道 adapter、加密訂閱／worker／授權及功能 UI。共用 AI 由 A 統籌，不冒稱各人手寫或已做人手驗收。
+- Actual Work：固定 web-push 3.6.7／types 3.6.4，訂閱私密正文加密、本人及版本校驗、原 opId、migration 015／pg-boss 同交易入列、一次 HTTPS、結果未知不重發及失效清理。一般測試明確按鈕授權，不含照護資料；完整任務聯絡／fallback 仍留 W07。SW 有身份失效世代、去重及固定目的頁；正式 App 已接功能介面，未改獨立 frontend／既有 Prompt Pack／美術。
+- Executor / Reuse：兩個 Luna 只讀定位／官方調查；三個 Sol xhigh 分別處理 client API／純展示、mock 測試及待批准的本機腳本。主模型處理關鍵授權／SQL／外發／SW／整合、review 及全部權威文件／短 Skill，復用既有加密／收據／pg-boss，不重建排程或離線平台。
+- Verification：[EV-S13-W05](artifacts/verification/S13_W05_CHECKS.json)。43 項針對性輕量檢查、兩份 typecheck、離線 Web export 及 SW 原檔一致、172 個本機連結目標、29 套件／30 份許可 hash、Skill frontmatter 及 diff 空白核對通過。新增腳本僅 node --check；fixed 原碼／RFC 與相容性結論已入 TECH_REUSE／Skill。
+- Review / Failure：修正大小寫 REVOKE 會誤派 test 的分支、GET 換帳號錯誤碼遺失，以及狀態渲染的帳號邊界。插入路由時 JS replace 的 dollar 展開曾造成語法錯誤，已精確修補並重驗；mock 的方法替身及 tsc invocation 錯誤已修正，不把初次失敗當通過。沒有真 DNS／HTTP／Push／SQL 驗收。
+- Pending / Next：本機驗收腳本已 review：先備份／015，最多 2 合成帳號、3 綁定、8 入列嘗試、80 業務呼叫／120 輪詢、1 個 Web Push consumer，scripted 201／410／結果落庫遺失及新 pool 持久化；只刪本輪資料並恢復暫停，不啟動任務 worker。真 Push／瀏覽器另列範圍批准。W05 待驗收、不合併，不用 mock／export 代替真送達；未部署、跑 E2E 或延長 P1 試用。P2 未完成，額度未知。
+
+
+<a id="log-20260930-005"></a>
+## LOG-20260930-005
+
+- Work Package / Delivery：S13-W05，從最新 master bade067 在原工作樹獨立重放 af82dd7；不帶入後續 Agent／Telegram／Contact。沿用 D 主責、權重 3、D 45%／C 35%／B 20%，共用 AI 由 A 操作，D 帳號負責推送／PR／合併，主模型最終 review。
+- Evidence：復用 015／原資料保留及配對加密還原；SQL 49 業務／2 輪詢、2 帳號／3 綁定／7 入列通過，原子入列、隔離、失效、unknown 不重發及持久化可核對。自己的資料清理、worker 暫停。[EV-S13-W05](artifacts/verification/S13_W05_CHECKS.json)。
+- True Receipt：Firefox 只发一則無孩子資料通知，HTTP 201；使用者回覆關頁後「已收到通知」及「已清理」，Server 綁定已核對撤銷。內置瀏覽器的 Google staging 端點先被拒並清理，無發送；沒有安裝 Chrome、擴大 provider 或重跑 Firefox 相容性。
+- Review / Limits：接受整合版本 1896277；核心服務／client 與原包一致，後續 care payload 分支不納入，本包普通測試路徑不變。只合併最新 master 接線及核對依賴，不重跑已通過服務。公開 origin／部署留 S17-W02，P2 未完成，現網未更改或續期；開發提交與合併簽署分開核對。

@@ -8,6 +8,9 @@ import { createChatApi } from "../src/client/chat-api";
 import { ChatController } from "../src/client/chat-controller";
 import { ChatPanel } from "../src/client/ChatPanel";
 import { FamilyPanel } from "../src/client/FamilyPanel";
+import { WebPushPanel } from "../src/client/WebPushPanel";
+import { useWebPush } from "../src/client/use-web-push";
+import { suspendPushBrowser } from "../src/client/push-browser";
 import { CarePanel } from "../src/client/CarePanel";
 import { MemoryPanel } from "../src/client/MemoryPanel";
 import { createMemoryApi } from "../src/client/memory-api";
@@ -48,6 +51,7 @@ export default function HomeScreen() {
   const [password, setPassword] = useState("");
   const [chatLogoutConfirmation, setChatLogoutConfirmation] = useState(false);
   const serverAddress = useRecordsBrowser(controller, environment.apiBaseUrl, Boolean(name || email || password));
+  const push = useWebPush(environment.apiBaseUrl, state.auth === "signedIn" && state.busy !== "logout" ? state.user!.id : null, state.online);
   const busy = state.busy !== null;
   const child = state.children.find(item => item.id === state.selectedChildId);
   const uncertainChild = state.childOutcome === "unknown" || state.childOutcome === "checked";
@@ -88,12 +92,16 @@ export default function HomeScreen() {
     };
   }, [chatController]);
 
+  async function signOut(discard = false): Promise<void> {
+    await suspendPushBrowser().catch(() => {});
+    await controller.signOut(discard);
+  }
   function requestLogout(): void {
     if (chatController.hasUnsavedInput()) {
       setChatLogoutConfirmation(true);
       return;
     }
-    void controller.signOut();
+    void signOut();
   }
 
   return (
@@ -146,6 +154,7 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
+            <WebPushPanel {...push} />
             <FamilyPanel key={state.user!.id} userId={state.user!.id} online={state.online} apiBaseUrl={environment.apiBaseUrl}
               onChanged={() => { void controller.reloadChildren(); }} />
             <View style={styles.section}>
@@ -153,12 +162,12 @@ export default function HomeScreen() {
               <Action label={state.busy === "logout" ? "正在登出…" : "登出"} onPress={requestLogout} disabled={busy || !state.online} />
               {chatLogoutConfirmation && <View style={styles.confirmation}>
                 <Text style={styles.warning}>登出成功後會清除本頁聊天草稿、未完成回覆狀態及其他孩子的照顧記錄草稿；已保存的訊息仍可重新登入讀取。</Text>
-                <Action label="確認捨棄未提交內容並登出" onPress={() => { setChatLogoutConfirmation(false); void controller.signOut(true); }} disabled={busy || !state.online} />
+                <Action label="確認捨棄未提交內容並登出" onPress={() => { setChatLogoutConfirmation(false); void signOut(true); }} disabled={busy || !state.online} />
                 <Action label="返回，繼續保留草稿" onPress={() => setChatLogoutConfirmation(false)} disabled={busy} />
               </View>}
               {state.logoutConfirmation && <View style={styles.confirmation}>
                 <Text style={styles.warning}>登出成功後會清除本頁所有未提交內容，包括其他孩子的草稿；這些內容尚未保存。</Text>
-                <Action label="確認捨棄未提交內容並登出" onPress={() => { void controller.signOut(true); }} disabled={busy || !state.online} />
+                <Action label="確認捨棄未提交內容並登出" onPress={() => { void signOut(true); }} disabled={busy || !state.online} />
                 <Action label="返回，繼續保留草稿" onPress={() => controller.cancelLogout()} disabled={busy} />
               </View>}
             </View>

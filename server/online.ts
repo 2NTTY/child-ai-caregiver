@@ -18,6 +18,8 @@ import { createMemoryStore } from "./memory.ts";
 import { createTaskStore, type TaskScheduling } from "./tasks.ts";
 import { handleTaskRequest } from "./task-api.ts";
 import { transactionPool } from "./transaction-pool.ts";
+import { createWebPushStore, type WebPushServices } from "./web-push-store.ts";
+import { handleWebPushRequest } from "./web-push-api.ts";
 import { canonicalJson, onlineRoute } from "./online-routing.ts";
 import type { OnlineRoute } from "./online-routing.ts";
 
@@ -30,7 +32,7 @@ interface SpaceRow { id: string; owner_user_id: string; storage_epoch: string; a
 const receiptContext = (userId: string, opId: string, field: string) => `online-operation:${userId}:${opId}:${field}`;
 const missing = () => new FamilyError(404, "not_found");
 
-export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskScheduling?: TaskScheduling) {
+export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskScheduling?: TaskScheduling, pushServices?: WebPushServices) {
   async function transaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await pool.connect(); let discard = false;
     try {
@@ -64,6 +66,7 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskSchedul
   async function authorize(client: PoolClient, userId: string, space: SpaceRow, route: OnlineRoute, command: OnlineCommand | null, replay: boolean) {
     if (route.kind === "memory" && !(await client.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount) throw missing();
     if (route.kind === "tasks" && !(await client.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount) throw missing();
+    if (command?.path.startsWith("/api/web-push/") && (!pushServices || !(await client.query("SELECT 1 FROM app_migrations WHERE id='015-web-push'")).rowCount)) throw missing();
     const role = await roleFor(client, userId, space);
     if (route.scope === "invitation" && !replay && command) {
       const borrowed = transactionPool(client);
@@ -97,7 +100,9 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskSchedul
   async function dispatch(client: PoolClient, userId: string, command: OnlineCommand): Promise<Response> {
     const borrowed = transactionPool(client), records = createRecordStore(borrowed.pool, cipher, true);
     const request = new Request(`http://online.internal${command.path}`, { method: "POST", headers: { "content-type": "application/json", "x-expected-user-id": userId }, body: JSON.stringify(command.payload) });
-    const response = /^\/api\/children\/[^/]+\/tasks(\/|$)/u.test(command.path)
+    const response = command.path.startsWith("/api/web-push/") && pushServices
+      ? await handleWebPushRequest(request, userId, createWebPushStore(borrowed.pool, cipher, pushServices, true), true)
+      : /^\/api\/children\/[^/]+\/tasks(\/|$)/u.test(command.path)
       ? await handleTaskRequest(request, userId, createTaskStore(borrowed.pool, cipher, taskScheduling), true)
       : /^\/api\/children\/[^/]+\/memory\//u.test(command.path)
       ? await handleMemoryRequest(request, userId, createMemoryStore(borrowed.pool, cipher, true))

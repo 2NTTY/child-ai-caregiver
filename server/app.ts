@@ -1,3 +1,4 @@
+import { handleWebPushRequest } from "./web-push-api.ts";
 import { isIP } from "node:net";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { fromNodeHeaders } from "better-auth/node";
@@ -76,6 +77,7 @@ export function createRequestHandler(options: {
   memory?: import("./memory.ts").MemoryStore;
   tasks?: import("./tasks.ts").TaskStore;
   online?: OnlineStore;
+  webPush?: import("./web-push-store.ts").WebPushStore;
   modelGateway?: ModelGateway;
   chat?: ChatStore;
   chatPrompt?: string;
@@ -152,11 +154,13 @@ export function createRequestHandler(options: {
       } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
         || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")
         || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences"
-        || url.pathname.startsWith("/api/online/")) {
+        || url.pathname.startsWith("/api/online/") || url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
         result = url.pathname.startsWith("/api/online/") && options.online
           ? await handleOnlineRequest(webRequest, userId, options.online)
+          : (url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/")) && options.webPush
+            ? await handleWebPushRequest(webRequest, userId, options.webPush)
           : /^\/api\/children\/[^/]+\/tasks(\/|$)/u.test(url.pathname) && options.tasks
             ? await handleTaskRequest(webRequest, userId, options.tasks)
           : /^\/api\/children\/[^/]+\/memory(\/|$)/u.test(url.pathname) && options.memory
