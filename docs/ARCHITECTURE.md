@@ -100,7 +100,7 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 
 優先驗證 pg-boss 12.34.0 作 PostgreSQL worker；Graphile Worker 0.17.3 作比較候選，其預設 hard-kill 恢復不合本次數分鐘恢復目標。框架負責 job 持久化、排程／領取、heartbeat、有限重試及停止；項目保留家庭授權／世代、occurrenceId、終態、投遞去重／unknown、安靜時段／跟進上限及全邏輯工作重試預算。job 完成不等於照護任務完成，框架唯一 job 亦不保證外部副作用 exactly-once。
 
-業務台帳與入列須共用 PostgreSQL transaction，job 只保存 ID／參照；每次執行重新核權及台帳，外部呼叫不持有業務交易。S10-W02 復用同一 worker 與既有知識 hash／發布流程。採用須通過交易回滾、雙 worker、hard-kill／分鐘級恢復、取消／撤權、unknown 不重發及備份還原不復活終態等驗證；具體版本／配置假設與成本見 [worker 研究](TECH_REUSE.md#worker)，目前未實作。
+業務台帳與入列須共用 PostgreSQL transaction，job 只保存 ID／參照；每次執行重新核權及台帳，外部呼叫不持有業務交易。S10-W02 復用同一 worker 與既有知識 hash／發布流程。採用須通過交易回滾、雙 worker、hard-kill／分鐘級恢復、取消／撤權、unknown 不重發及備份還原不復活終態等驗證；具體版本／配置假設與成本見 [worker 研究](TECH_REUSE.md#worker)。S13-W04 已隨 PR #48 合併並通過必要本機驗收；S10-W02 接入同一 pg-boss 原生 cron，來源觀察、人工核對與發布仍分開，新增接線待本包驗收。
 
 <a id="section-3-6"></a>
 ## 3.6 AI、通知与部署

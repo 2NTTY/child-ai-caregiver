@@ -1,0 +1,64 @@
+{
+  "evidenceId": "EV-S10-W02",
+  "workPackage": "S10-W02",
+  "recordedOn": "2026-09-28",
+  "baseCommit": "70dda826aa7aeedef5b48595fe05f0fb488cb577",
+  "prerequisites": ["S10-W01 merged in PR #35", "S13-W04 merged in PR #48"],
+  "status": "implemented_pending_necessary_acceptance",
+  "scope": "Reviewed public-source observations, native pg-boss source schedules, bounded HTTPS acquisition, incremental knowledge publication gates and internal-only recent information",
+  "responsibility": {"lead": "A", "weight": 3, "shares": {"A": 60, "C": 40}, "execution": "Shared AI coordinated by A; primary agent owns policy, critical persistence, integration, review and authority documents"},
+  "lightweight": {
+    "node": "24.19.0",
+    "testsPassed": 41,
+    "tests": {
+      "knowledge-refresh.test.ts": 3,
+      "knowledge-source-parser.test.ts": 14,
+      "knowledge-refresh-cli.test.ts": 7,
+      "knowledge-runtime.test.ts": 6,
+      "knowledge-ranking.test.ts": 8,
+      "worker-queue-adapter.test.ts": 3
+    },
+    "typechecks": ["tsc --noEmit passed", "tsc --project tsconfig.server.json passed"],
+    "scriptSyntax": ["scripts/knowledge.mjs passed", "scripts/knowledge-refresh.mjs passed", "scripts/verify-knowledge-refresh.mjs passed", "scripts/fixtures/knowledge-refresh-worker.mjs passed"],
+    "dependencyReview": "Cheerio 1.2.0 pinned; 22 new lock entries, no existing package version changes. safer-buffer becomes a runtime dependency. 29 retained license file hashes checked.",
+    "skillValidation": "Official Python validator unavailable because bundled Python lacks PyYAML; existing Node YAML parser validated the two edited Skill frontmatters. Body-only changes; no new skill scaffold.",
+    "limits": "Mocked transport, parser examples and scripted queue tests do not prove the live network adapter, SQL migration or native cron execution. No clinical effectiveness claim."
+  },
+  "fixedDependencies": {
+    "cheerio": "1.2.0",
+    "cheerioLicense": "MIT",
+    "cheerioLicenseSha256": "61c1e21d3a8ff20f9b69abe15104a75584688080febc22f60a4cbf3854becf4e",
+    "lockfileSha256": "fc1234cd6b781ad904d5ccd2dc4adada30f0e7fd037e54de3439d1d38d7818b7",
+    "pgBoss": "12.34.0",
+    "pgBossSchema": 42,
+    "dependencyWarning": "Transitive whatwg-encoding 3.1.1 is deprecated; retained under the fixed upstream dependency instead of an unrelated override or upgrade."
+  },
+  "sourceResearch": {
+    "offlineParse": "Six downloaded official HTML/RSS responses parsed successfully with the production parser; research files remain outside tracked artifacts.",
+    "fhs": "Four registered pages retain month-only source dates as unknown exact dates; no day is invented.",
+    "chp": "Feed contains older entries; retrieval time cannot replace publication time.",
+    "rthk": "Descriptions include full sentence paragraphs; not represented as title-only content.",
+    "usageDecision": "User explicitly limited CHP/RTHK to internal noncommercial group trial; public publication and retrieval remain disabled (ADR-013).",
+    "limits": "Format research is not production source-fetch acceptance or a claim of permission for public redistribution."
+  },
+  "reviewFixes": [
+    "Compare explicit ordered fields when hashing definitions and observations round-tripped through PostgreSQL JSONB",
+    "Require complete approval fields instead of allowing SQL CHECK null semantics to admit partial approval",
+    "Read the current observation after locking the watch when publishing",
+    "Exclude registered but not yet successfully observed/reviewed sources from retrieval",
+    "Keep internal-only sources excluded by default, including restricted source URLs independent of watch labels",
+    "Use successful source-check timestamps for recent freshness; human review is not a substitute for a successful fetch",
+    "Use checked IPv4 DNS addresses without unchecked secondary resolution and preserve an overall request deadline"
+  ],
+  "acceptance": {
+    "approval": "User replied on 2026-09-28: keep pending acceptance. Integration and live source calls are not authorized; the source-usage decision is separate.",
+    "scriptReview": "Primary agent reviewed target and ACL preflight, original-row preservation, SQL assertions, cleanup reserve, synthetic vector labeling, IPC worker scope and real minute cron wait. Only syntax has been executed.",
+    "limits": {"syntheticWatches": 4, "syntheticSourceIds": 6, "businessCalls": 120, "readOnlyPolls": 180, "childWorkers": 1, "sourceFetchCalls": 6, "httpGetMaximumIncludingRedirects": 18, "cronWaitSeconds": 100, "totalSeconds": 480},
+    "planned": "Encrypted prechange backup; migration 014; preserve existing rows; hash/review/publication, incremental vector reuse using synthetic vectors, failure/date/internal gates, in-flight invalidation, persisted queue metadata and actual minute cron, six bounded public-source GET operations without persisting returned bodies; finish with original worker paused and synthetic sources disabled. No restore, family writes or real embedding.",
+    "executed": false,
+    "modelCalls": 0,
+    "embeddingCalls": 0,
+    "deployment": false,
+    "e2e": false
+  }
+}

@@ -55,6 +55,9 @@ export interface KnowledgeEvidence extends KnowledgeChunkInput {
   validUntil?: string | null;
   fetchedAt: string;
   checkedAt: string;
+  /** Successful source retrieval, independent of the human content review timestamp. */
+  lastSuccessfulCheckAt?: string | null;
+  usageScope?: "public_noncommercial" | "internal_noncommercial";
   reviewState: "reviewed";
 }
 export interface KnowledgeCandidate extends KnowledgeEvidence {

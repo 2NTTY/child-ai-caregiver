@@ -2,6 +2,7 @@ import { PgBoss, type Db, type JobWithMetadata } from "pg-boss";
 import type { Pool, PoolClient } from "pg";
 import { z } from "zod";
 import type { TaskQueue } from "./task-worker.ts";
+import { KNOWLEDGE_REFRESH_QUEUE, REFRESH_JOB_OPTIONS } from "./knowledge-refresh-types.ts";
 
 export const TASK_QUEUE = "task-due-v1", FAILED_QUEUE = "task-failed-v1";
 export const JOB_OPTIONS = { heartbeatSeconds: 60, expireInSeconds: 90, retryLimit: 2, retryDelay: 5,
@@ -20,7 +21,7 @@ export function databaseAdapter(connection: Pool | PoolClient): Db {
 /** Only the migration command may install/upgrade framework tables. */
 export function createWorkerQueue(pool: Pool, mode: "producer" | "worker" | "migrate") {
   const boss = new PgBoss({ db: databaseAdapter(pool), schema: "pgboss", migrate: mode === "migrate",
-    supervise: mode === "worker", schedule: false, monitorIntervalSeconds: 60, superviseIntervalSeconds: 60,
+    supervise: mode === "worker", schedule: mode === "worker", monitorIntervalSeconds: 60, superviseIntervalSeconds: 60,
     persistWarnings: false, persistQueueStats: false });
   // Never log arbitrary SDK errors, stacks, payloads, SQL or connection strings.
   boss.on("error", () => console.error("worker_queue_error"));
@@ -49,6 +50,7 @@ export function createWorkerQueue(pool: Pool, mode: "producer" | "worker" | "mig
       if (mode === "migrate") {
         await boss.createQueue(FAILED_QUEUE, JOB_OPTIONS);
         await boss.createQueue(TASK_QUEUE, { ...JOB_OPTIONS, deadLetter: FAILED_QUEUE });
+        await boss.createQueue(KNOWLEDGE_REFRESH_QUEUE, { ...REFRESH_JOB_OPTIONS, policy: "exclusive" });
         if ((await boss.getBamEntries()).some(entry => entry.status !== "completed")) throw new Error("worker_schema_maintenance_pending");
       } else if (!await boss.getQueue(TASK_QUEUE) || !await boss.getQueue(FAILED_QUEUE)) throw new Error("worker_queues_missing");
     },

@@ -20,7 +20,7 @@ try {
   const reviewer = option("--operator");
   if (operation !== "list" && (!reviewer || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$/.test(reviewer))) throw new Error("Operator alias required");
   pool = createPool(readServerConfig(process.env));
-  const store = createKnowledgeStore(pool);
+  const store = createKnowledgeStore(pool, { audience: args.includes("--internal-source-review") ? "internal" : "public" });
   const readJson = async file => {
     if (!file || (await stat(file)).size > 256000) throw new Error("Invalid knowledge input file");
     return JSON.parse(await readFile(file, "utf8"));

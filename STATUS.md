@@ -1,7 +1,7 @@
 # STATUS
 
 ## 當前階段
-**P1 基礎成品驗收完成；依使用者 2026-09-28 指示恢復 P2，S13-W01 已隨 PR #47 合併；S13-W04 持久 worker 必要驗收通過，完成隨本包 PR 合併生效**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
+**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02 知識來源更新已實作、待驗收**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
 
 ## 現況
 - **試用 URL：https://ex-machina.eu.org**。使用者指定根網域，DNS 由使用者設定；執行版本 `d654b8f`，其後結案修改僅涉及文件。
@@ -26,10 +26,12 @@
 - [交付及操作](docs/P1_DELIVERY.md)／[組員試玩指引](docs/P1_TRIAL.md)。已收到使用者實際試玩確認；只適用 P1 合成資料範圍。
 
 ## 下一步
-S13-W01 已交付手動任務／發生實例、版本／終態／衝突、確定性提醒資格及功能表單；27 項相關輕量檢查、兩份 typecheck、Web export 及獲准的 11 組／47 次 HTTP 通過，原有 33 筆業務資料不變。S13-W01 已隨 [PR #47](https://github.com/2NTTY/child-ai-caregiver/pull/47) 合併；S13-W04 已在 master `a591f87` 基線接上 pg-boss／原子入列、重啟去重、站內提醒及暫停還原；27 項相關輕量檢查、兩份 typecheck、腳本語法及必要靜態檢查通過。獲批 PostgreSQL 驗收經同範圍補驗通過：累計 12 次 HTTP／72 次業務呼叫，hard-kill 恢復 68.895 秒，加密備份／空庫還原暫停及原資料保留有證據，[範圍及證據](artifacts/verification/S13_W04_CHECKS.json)；完成隨本包 PR 合併生效；尚未驗真通知。S16-W05 已 Ready，仍未開始；S10-W02 須等待 S13-W04。沿用既有 Prompt Pack／美術及獨立前端預覽，維護 UI 功能／API 對接清單，不在本包重設 UI。P2 未完成，現網仍是 P1；新真服務／integration 驗收另列範圍批准，七天試用不自行續期。
+S13-W01 已隨 [PR #47](https://github.com/2NTTY/child-ai-caregiver/pull/47) 合併；S13-W04 的 pg-boss／原子入列、重啟去重、站內提醒及暫停還原已隨 [PR #48](https://github.com/2NTTY/child-ai-caregiver/pull/48) 合併。W04 的 27 項輕量檢查及獲批分段 PostgreSQL 驗收通過，包含 hard-kill 68.895 秒恢復及加密空庫還原，[範圍及證據](artifacts/verification/S13_W04_CHECKS.json)；尚未驗真通知。
+
+S10-W02 從最新 master `70dda82` 開始，A 主責、權重 3，A 60%／C 40%；主模型負責更新政策、來源核對及整合，子代理只承擔獨立調查／普通實作。沿用同一 worker、hash 與版本／核對／向量發布機制，41 項相關輕量檢查及兩份 typecheck 通過；必要本機／真來源驗收腳本已 review，使用者選擇先保留待驗收，尚未執行，[EV-S10-W02](artifacts/verification/S10_W02_CHECKS.json)。使用者確認 CHP／RTHK 先限組內試用、公開保持關閉，見 [ADR-013](docs/DECISIONS.md#adr-013)。S11-W02 仍待本包驗收合併；S13-W05／W06、S16-W05 已 Ready，未開始。沿用 Prompt Pack、美術及獨立前端預覽，維護功能／API 清單。P2 未完成、現網仍是 P1；七天試用不自行續期。
 
 ## 用量快照
 最後使用者原值為 2026-09-22 19:12 的「5%」；使用者已恢復 P2，現時餘額未知。沒有查詢或推算重置，沿用 Luna Max／Sol 規則。
 
 ## 更新記錄
-2026-09-28（Asia/Hong_Kong）：S13-W04 必要驗收通過及交付準備；[證據](artifacts/verification/S13_W04_CHECKS.json)／[LOG-20260928-003](WORKLOG.md#log-20260928-003)。
+2026-09-28（Asia/Hong_Kong）：S10-W02 實作、近期來源使用範圍定案及必要驗收準備；[證據](artifacts/verification/S10_W02_CHECKS.json)／[LOG-20260928-004](WORKLOG.md#log-20260928-004)。

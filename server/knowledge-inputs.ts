@@ -18,21 +18,22 @@ const applicability = z.strictObject({
     ctx.addIssue({ code: "custom", message: "Invalid age applicability" });
   }
 });
-const officialUrl = z.url().refine(value => {
+const publicSourceUrl = z.url().refine(value => {
   const url = new URL(value);
   return url.protocol === "https:" && !url.username && !url.password && !url.port
-    && ["www.fhs.gov.hk", "www.studenthealth.gov.hk", "www.chp.gov.hk", "www.dh.gov.hk"].includes(url.hostname);
+    && ["www.fhs.gov.hk", "www.studenthealth.gov.hk", "www.chp.gov.hk", "www.dh.gov.hk", "news.rthk.hk", "rthk.hk", "www.rthk.hk"].includes(url.hostname);
 });
 const sourceSchema = z.strictObject({
-  sourceId: id, url: officialUrl, title: text(300), publisher: text(160),
+  sourceId: id, url: publicSourceUrl, title: text(300), publisher: text(160),
   classification: z.enum(["official_guidance", "recent_information"]),
   sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(), sourceDateText: text(200).nullable().optional(),
-  validUntil: date.nullable().optional(), fetchedAt: date, termsUrl: officialUrl,
+  validUntil: date.nullable().optional(), fetchedAt: date, termsUrl: publicSourceUrl,
   chunks: z.array(z.strictObject({ key: id, section: text(240), sourceExcerpt: text(300), text: text(4000),
     keywords: z.array(text(80)).min(1).max(24), applicability })).min(1).max(32),
 }).superRefine((value, ctx) => {
   if (new Set(value.chunks.map(chunk => chunk.key)).size !== value.chunks.length) ctx.addIssue({ code: "custom", message: "Duplicate section key" });
-  if (value.classification === "recent_information" && value.sourcePublishedAt === null) ctx.addIssue({ code: "custom", message: "Recent information needs an official publication date" });
+  // Unknown publication dates stay unknown and are excluded from recent retrieval, not fabricated at import.
+  if (value.classification === "official_guidance" && /(^|\.)rthk\.hk$/.test(new URL(value.url).hostname)) ctx.addIssue({ code: "custom", message: "Media cannot be official care guidance" });
   if ([value.sourcePublishedAt, value.sourceUpdatedAt].some(value => value !== null && Date.parse(value) > Date.now())
     || Date.parse(value.fetchedAt) > Date.now()) ctx.addIssue({ code: "custom", message: "Future source date" });
 });
@@ -42,6 +43,10 @@ const filterSchema = z.strictObject({ region, classification: z.enum(["official_
 export function parseKnowledgeSource(input: unknown): KnowledgeSourceInput { return sourceSchema.parse(input); }
 export function parseKnowledgeFilter(input: unknown): KnowledgeFilter { return filterSchema.parse(input); }
 export function parseKnowledgeQuery(input: unknown): string { return text(2000).parse(input); }
+export function internalKnowledgeSource(url: string): boolean {
+  const host = new URL(url).hostname;
+  return host === "www.chp.gov.hk" || /(^|\.)rthk\.hk$/.test(host);
+}
 export function knowledgeHash(value: unknown): string { return createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
 export function sourceVersionHash(source: KnowledgeSourceInput): string {
   // Fetch/check timestamps do not turn unchanged public content into a new edition.

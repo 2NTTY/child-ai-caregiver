@@ -51,7 +51,7 @@ P2 由 ADK 實際編排受限產品工具，按預先確認的對象／內容／
 | <a id="s07"></a>**S07 在線更新與一致性** | 未開始 | 請求冪等、版本／衝突、跨端更新、附件狀態、刪除與撤權 | 中斷／重試／並行操作不靜默丟資料，終態不復活；[一致性驗收](SPEC.md#section-10-2) |
 | <a id="s08"></a>**S08 裝置配對與臨時會話** | 未開始 | QR／短碼、已登入裝置確認、臨時電腦、裝置管理及撤權 | 拒絕過期／重放／未批准連線；裝置直接連 Server；[配對契約](docs/API.md#section-4-1) |
 | <a id="s09"></a>**S09 聊天與長期記憶** | 進行中 | 原始聊天、確認事實、摘要、話題與任務台帳 | 新會話／換端／清空模型快取後從 Server 重建授權記憶；[記憶驗收](SPEC.md#section-10-3) |
-| <a id="s10"></a>**S10 知識與資訊更新** | 未開始 | 官方來源、pgvector／embedding、引用、版本、近期資訊、定期更新及管理擴充 | 最小向量 RAG、穩定／近期隔離、發布／停用及 freshness 正確；[知識驗收](SPEC.md#section-10-4)／[向量驗收](SPEC.md#ac-p2-vector-rag) |
+| <a id="s10"></a>**S10 知識與資訊更新** | 進行中 | 官方來源、pgvector／embedding、引用、版本、近期資訊、定期更新及管理擴充 | 最小向量 RAG、穩定／近期隔離、發布／停用及 freshness 正確；[知識驗收](SPEC.md#section-10-4)／[向量驗收](SPEC.md#ac-p2-vector-rag) |
 | <a id="s11"></a>**S11 Gemini 與 Agent 編排** | 進行中 | P1 文字聊天；P2 ADK 基礎、Prompt Pack 接線、結構化草稿／確認及互動／背景工具循環 | 真實工具及結果回饋，模型不能繞過權限；配額及失敗可核對；[Agent 驗收](SPEC.md#ac-p2-agent-loop) |
 | <a id="s12"></a>**S12 照片、語音與分享輸入** | 未開始 | Web 照片、主動分享、公開來源及 Android 語音／相機／系統分享 | 來源可追溯；數字及不確定內容確認；拒絕權限與失敗明確；[輸入邊界](SPEC.md#section-1-5) |
 | <a id="s13"></a>**S13 主動任務、聯絡與家庭交接** | 進行中 | Server worker、任務／授權、成長階段關注、Web Push／Telegram／FCM、fallback 與交接 | 唯一執行、撤權即停、終態不復活；發送／回應／完成分開；[任務驗收](SPEC.md#section-10-3)／[成長關注驗收](SPEC.md#ac-growth-attention) |
@@ -96,7 +96,7 @@ S03 依賴最小 Server 身份及資料能力，不依賴 Gemini、家庭邀請�
 | <a id="s13-w01"></a>S13-W01 | P2 | 已完成 | S09-W02、S07-W03 | Server 任務／對象／時間、穩定 occurrenceId、改期／取消／完成及站內台帳；任務、occurrence 與投遞分開，與後續關注候選保持獨立語義，家庭成員完成狀態同步；每日普通提示合併一次、普通任務最多跟進一次，安靜時段預設 Asia/Hong_Kong 22:00–08:00 可調，預約例外須明確選擇；先由手動入口驗收確定性規則，不在本包自建通用 worker；新 TaskPanel 接入 RHF＋Zod／Paper，保留既有 UI；[EV-S13-W01](artifacts/verification/S13_W01_CHECKS.json) 必要驗收通過，完成隨本包 PR 合併生效；持久 worker／投遞另由 W04／W07 交付 |
 | <a id="s13-w04"></a>S13-W04 | P2 | 已完成 | S13-W01 | 持久 worker、事件／到期觸發、分鐘級故障恢復及有限重試，業務有效結果唯一；優先驗證 pg-boss，業務台帳與入列同交易，job 只存參照；授權／終態／外發去重／unknown 由項目掌管。雙 worker、hard-kill、取消撤權、重試上限及備份還原按 [採用閘](docs/TECH_REUSE.md#worker) 驗收；Web 關閉仍執行，框架成功不代表任務完成；[EV-S13-W04](artifacts/verification/S13_W04_CHECKS.json) 27 項輕量檢查及獲批分段本機驗收通過，hard-kill 恢復 68.895 秒；完成隨本包 PR 合併生效 |
 | <a id="s10-w01"></a>S10-W01 | P2 | 已完成 | S17-W01 | 最小向量 RAG：有限官方知識分段／版本／適用性、固定 pgvector、embedding、精確向量＋關鍵詞／RRF 及最多六片段引用；可重複匯入／核對發布／停用指令、失敗／降級、既有資料保留及擴展備份還原必要驗收；不建完整管理平台；[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json) 必要本機／真 embedding／擴展還原通過，完成隨 PR #35 合併生效；Agent／引用 UI 在 S11-W02 接線 |
-| <a id="s10-w02"></a>S10-W02 | P2 | 未開始 | S10-W01、S13-W04 | 共用 worker 定期檢查：官方穩定每週、官方＋指定媒體近期每日；未變 hash 不重算向量，變更只更新受影響片段且核對後發布；驗收無變／失敗／停用／過期／日期／分類隔離，不做新聞分析平台 |
+| <a id="s10-w02"></a>S10-W02 | P2 | 待驗收 | S10-W01、S13-W04 | 共用 worker 定期檢查：官方穩定每週、官方＋指定媒體近期每日；未變 hash 不重算向量，變更只更新受影響片段且核對後發布；驗收無變／失敗／停用／過期／日期／分類隔離；依使用者確認，CHP／RTHK 只限組內試用，公開檢索預設排除，見 [ADR-013](docs/DECISIONS.md#adr-013)；不做新聞分析平台 |
 | <a id="s11-w02"></a>S11-W02 | P2 | 未開始 | S11-W03、S09-W02、S13-W04、S10-W02 | 接通互動／背景共用 AgentRuntime、已確認記憶、真向量檢索及任務工具；復用 Prompt Pack 的草稿／補問／確認／結構化結果，工具授權、版本、配額及取消一致；育兒問答／成長關注／安全求助引用適用官方片段，不足時明示；原生工具與收尾不重複執行副作用，不建立醫療分流；依 [ADK 原生能力核查](docs/TECH_REUSE.md#adk) 保留單次 Session／Pack，優先 BasePlugin＋原生 spans 最小診斷並驗無正文外洩，不另建 session／skill 平台 |
 | <a id="s12-w03"></a>S12-W03 | P2 | 未開始 | S06-W02、S11-W02 | Web 照片上傳／附件識別與授權、提取及確認；原檔／hash／來源／刪除／備份／容量限制與失敗保留當前輸入 |
 | <a id="s12-w04"></a>S12-W04 | P2 | 未開始 | S12-W03 | 使用者主動分享／貼上／上傳及指定公開來源輸入；保存來源／時間，不背景讀私人動態，不把帖子直接當家庭事實或執行授權 |
@@ -201,7 +201,7 @@ S03 依賴最小 Server 身份及資料能力，不依賴 Gemini、家庭邀請�
 <a id="extension-boundaries"></a>
 ## 共享邊界與漸進實作
 
-S11-W03／S06-W02／S05-W02／S07-W03 已分別隨 PR #30／#31／#32／#36 合併。S09-W02 必要驗收通過，完成隨 PR #34 合併生效；因接入相同操作收據，加入已完成的 S07-W03 作前置。S09-W02 已隨 PR #34 合併；使用者於 2026-09-28 恢復 P2，S13-W01 從 master `54e53d6` 開始。使用者另行批准 S10-W01 必要驗收及收尾；已整合最新 master，真 embedding、同卷升級、原資料保留及加密擴展還原通過，完成隨 PR #35 合併生效；先前暫停已由本次使用者恢復指示解除。S10-W02 仍待 S13-W04，不提前開始。按依賴推進，不按 Sxx／Wxx 數字排序；未完成必要驗收及合併前不解鎖依賴包。ADK 選型與初始限額見[架構](docs/ARCHITECTURE.md#p2-agent-runtime)；實作與真服務驗收分開記錄。
+S11-W03／S06-W02／S05-W02／S07-W03 已分別隨 PR #30／#31／#32／#36 合併。S09-W02 必要驗收通過，完成隨 PR #34 合併生效；因接入相同操作收據，加入已完成的 S07-W03 作前置。S09-W02 已隨 PR #34 合併；使用者於 2026-09-28 恢復 P2，S13-W01 從 master `54e53d6` 開始。使用者另行批准 S10-W01 必要驗收及收尾；已整合最新 master，真 embedding、同卷升級、原資料保留及加密擴展還原通過，完成隨 PR #35 合併生效；先前暫停已由本次使用者恢復指示解除。S13-W04 已隨 PR #48 合併；S10-W02 從 master `70dda82` 開始，權重 3、A 60%／C 40%，主模型統籌必要驗收。按依賴推進，不按 Sxx／Wxx 數字排序；未完成必要驗收及合併前不解鎖依賴包。ADK 選型與初始限額見[架構](docs/ARCHITECTURE.md#p2-agent-runtime)；實作與真服務驗收分開記錄。
 
 P1 按真實流程實作 DataStore／ModelGateway；P2 加入 AgentRuntime／AttachmentStore／KnowledgeRetriever／TaskExecutor／渠道無關的 NotificationGateway。在線更新／版本／確認沿用 SyncEngine 契約名稱，不保留離線同步框架。詳細職責由 [API](docs/API.md#section-3-3) 維護。
 

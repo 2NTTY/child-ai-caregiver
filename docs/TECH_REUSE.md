@@ -93,3 +93,14 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定性規則可由自有 Compose 承載，不以 Cloud Tasks、Vertex Session／Memory Bank 或代管 RAG 作核心前置。沿用 GCP 初期部署成果；S17-W05 驗證不附加 GCP 身份且關閉 AI 時仍能登入、管理資料／任務及執行確定性規則。Gemini 仍是外部模型服務，私有部署不代表離線推理；Google 官方支援 [GCP 以外 ADC](https://docs.cloud.google.com/docs/authentication/set-up-adc-on-premises)，具體憑據配置及模型授權須在交付驗證。FCM／Telegram／Web Push 亦是可失敗的外部渠道，不是資料權威。
 
 每個候選先做該包最小接入及必要輕量 typecheck／unit／build；有真服務、資料庫 integration、E2E 或真機成本時，按 [PLAN 驗證制度](../PLAN.md#verification) 先列明原因、範圍、次數／成本。通過才把「文件相容」更新為指定場景實測；失敗保留版本及原因，僅回查缺口。若既有實作已足夠，記一句復用結論便繼續，不為每個小功能建大型框架比較表。
+
+<a id="knowledge-refresh"></a>
+## S10-W02：沿用知識核心與原生來源排程
+
+2026-09-28：沿用 S10-W01 的 import／review／hash／incremental embedding／publish、S13-W04 的 pg-boss 12.34.0／schema 42 及還原暫停機制。新來源檢查用原生 schedule(name,cron,data,{key,tz,missed:'once'})；主模型已核對固定 [scheduling 文件](https://github.com/timgit/pg-boss/blob/12.34.0/docs/api/scheduling.md)及本機 timekeeper／型別，不另建計時領取器。文件相容、合成單元與必要真 DB 接線證據分開；目前新增 SQL／cron 真接線待驗。
+
+根依賴沒有可直接採用的 HTML／RSS parser，Node 24 也沒有 DOMParser。選 Cheerio 1.2.0（MIT；固定版本 Node >=20.18.1，已安裝並鎖定）同時處理 HTML selector 與 XML；不以 main branch 的較新 Node 要求代替 [v1.2.0](https://github.com/cheeriojs/cheerio/blob/v1.2.0/package.json)。其一般 load 不執行 JS／讀取外部資源，XML 模式用 htmlparser2；來源抓取另外套用固定 host、DNS、redirect、大小及期限邊界。比較的 fast-xml-parser 5.11.1（MIT）適合 XML object，但不提供目前需要的 CSS selector；本包不為 RSS 再引第二 parser。DTD 的特定展開行為未由文件確認，產品直接拒絕 RSS DTD／ENTITY。Cheerio 新增 22 個 lockfile entries；安裝出現其傳遞 whatwg-encoding 的棄用提示，沒有因此全量升級或另加 override。
+
+來源格式已以 curl 唯讀取得原 HTML／XML，並離線解析：四 FHS 頁正文為 #content，內容月份標籤為 #content-rev-date；CHP／RTHK 項目使用 title/link/description/pubDate，CHP 有相對 URL 及空摘要，不把其舊項目冒充當日新聞。Cheerio 合成 parser 檢查通過，仍不代替真網絡 adapter／DB 驗收。來源使用條款由 [ADR-013](DECISIONS.md#adr-013)及 [操作文件](P2_KNOWLEDGE.md#source-refresh)維護；不把 parser 可讀當成內容再發布權利。
+
+自建部分限於固定來源定義、日期／使用範圍、觀察批准及既有版本的連結；這些是項目領域規則。向量 hash、全局模型限額、家庭資料、Prompt Pack 及正式前端架構保持原有權威，不另建全站爬蟲、新聞分析或來源管理平台。

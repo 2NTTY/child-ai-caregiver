@@ -14,4 +14,5 @@ description: 接入或修改 pg-boss 的 PostgreSQL 交易入列、worker 領取
 - 框架 claim／heartbeat 不能替代領取後的業務核權、版本、終態及唯一效果檢查。cancel 更新 job 不保證中止 active handler；unschedule 也不撤回已產生的工作。singleton 不等於永久或外部 exactly-once。先定義穩定業務識別與可查核的結果，再處理重領／回應丟失。短 SQL 效果可評估 work transactional 原生選項；已有權威交易／冪等台帳時不另包互不協調的交易。
 - 自行接 SIGTERM／SIGINT 並 await stop，然後關自訂 pool；停止可能標記活躍工作失敗並 abort，handler 應有界且能重領。job data／錯誤／output 都可能持久保存；僅放必要參照，進入 SDK 前清理任意錯誤文字，log 使用 allowlist。
 - 完整備份包含 framework schema／version／active job，restore 不是排空或自動重新入列。還原目標先保持停止，阻擋舊工作自動執行；核對業務台帳、執行者世代及唯一有效來源後，才啟用重排。官方沒有專門 restore 保證，這是從持久 schema／過期 SQL 得出的操作約束，必須實測。
+- 原生 cron 按分鐘判斷；只有 schedule:true 的 instance 運行 timekeeper。以 (name,key) 管理各來源，missed:'once' 可把停機期間多次漏跑合併成一次，並非重播全部；它也可能與當前到期 job 並存，仍要業務去重及過期世代檢查。cron 改動／unschedule 不撤回已生成的工作，還原保留 schedule 也不代表准許繼續網絡副作用。配置同步與排程執行分開，不自建第二個計時器領取器。[12.34.0 scheduling](https://github.com/timgit/pg-boss/blob/12.34.0/docs/api/scheduling.md)。2026-09-28 文件／原碼已核對，S10-W02 新 cron 接線尚待本機驗收。
 - 必要驗證：交易回滾、雙程序、hard-kill 真時間恢復、終態／撤權、有限重試、成功後確認丟失及空庫還原。fake DB／mock success 不能當作真 PostgreSQL 證據；執行成本及批准仍按 AGENTS。

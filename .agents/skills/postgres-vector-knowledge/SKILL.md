@@ -14,4 +14,7 @@ description: 修改 PostgreSQL 公共知識向量、版本發布／停用、混�
 - 向量重用鍵須包含真正送出的內容／title、模型、維度及處理版本。查詢向量可於同一有界運行重用；每次仍重新校驗來源停用、版本、分類及時效。失敗／額度不足不可標成向量成功；有關鍵詞降級時必須顯示實際模式。
 - 發布指向必須原子切換至已核對且向量完整的版本；內容、引用及舊版本保持可追溯。已知失效立即停止檢索，不能因新向量尚未完成而延續錯誤內容。月份精度的來源日期不可杜撰為某日，抓取／核對時間不可冒充出版時間。
 
+- 來源變更檢查先界定可重用條款、固定 host／正文 selector 與日期精度；CSS／feed 可讀不能代替內容授權。Cheerio 1.2.0 可用同一依賴解析 HTML（parse5）／XML（htmlparser2），一般 load 不執行 JS 或抓外部資源；不要改用其網絡 helper 繞過既有 DNS、redirect、大小及期限邊界。RSS 拒絕 DTD／ENTITY，保留缺失或不完整日期，不將頻道 lastBuildDate 套成每項發布時間。[固定版本](https://github.com/cheeriojs/cheerio/blob/v1.2.0/package.json)／[解析模式](https://cheerio.js.org/docs/advanced/configuring-cheerio/)。2026-09-28 已核對，新增產品抓取流程待驗。
+- JSONB 可能重排 object keys。比較登記定義或正文指紋時用固定欄位／canonical 表示，不把原始 JSON.stringify 的 key order 當內容差異；網絡成功時間不進正文 hash。抓取快照、人工批准及發布版本分開，失敗不刷新成功時間，未知發布日期不進最新窗口；先鎖更新登記再重讀觀察資料，避免核對舊 snapshot 後發布競態。
+
 以上是技術實作約束；語料適用性、引用是否支持建議與來源重用條款仍需另作內容 review。mock、單元及文件證據均不代替真服務驗收。

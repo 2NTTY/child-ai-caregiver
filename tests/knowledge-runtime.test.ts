@@ -229,5 +229,5 @@ test("input parsing keeps unknown age and date precision while unchanged fetch t
   assert.notEqual(sourceVersionHash(parsed), sourceVersionHash(parseKnowledgeSource({
     ...source, chunks: [{ ...source.chunks[0]!, text: "另一段合成內容" }],
   })));
-  assert.throws(() => parseKnowledgeSource({ ...source, classification: "recent_information" }));
+  assert.equal(parseKnowledgeSource({ ...source, classification: "recent_information" }).sourcePublishedAt, null);
 });

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { KnowledgeCandidate, KnowledgeChunkInput, KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
-import { embeddingDocument, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
+import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 
 interface VersionRow { id: string; source_id: string; version_hash: string; document: KnowledgeSourceInput; review_state: "draft" | "reviewed" | "withdrawn"; checked_at: Date | null }
 export function vectorLiteral(values: readonly number[]): string {
@@ -24,9 +24,12 @@ async function version(client: Pick<Pool, "query"> | PoolClient, versionId: stri
 }
 const vectorJoin = `JOIN knowledge_vectors e ON e.input_hash = c.embedding_hash AND e.model = $1 AND e.dimensions = $2 AND e.pipeline = $3`;
 const embeddingKey = [KNOWLEDGE_EMBEDDING.model, KNOWLEDGE_EMBEDDING.dimensions, KNOWLEDGE_EMBEDDING.pipeline];
+const restrictedSource = `(v.document->>'url' ~* '^https://(www[.]chp[.]gov[.]hk|([a-z]+[.])?rthk[.]hk)(/|$)')`;
 
 /** Operator-only maintenance methods are not exposed as browser/Agent tools. */
-export function createKnowledgeStore(pool: Pool) {
+export function createKnowledgeStore(pool: Pool, options: { audience?: "public" | "internal" } = {}) {
+  // Only a trusted host operator may select internal review. This is never a model/browser filter.
+  const internal = options.audience === "internal";
   return {
     async importSource(input: unknown) {
       const document = parseKnowledgeSource(input);
@@ -65,6 +68,15 @@ export function createKnowledgeStore(pool: Pool) {
         row = await version(client, versionId);
         if (row.review_state !== "reviewed" || row.version_hash !== expectedHash) throw new Error("Unreviewed knowledge version");
         if (row.document.validUntil && Date.parse(row.document.validUntil) <= Date.now()) throw new Error("Knowledge version expired");
+        const watch = (await client.query<{ enabled: boolean; audience: string }>(`SELECT w.enabled,w.definition->>'audience' AS audience FROM knowledge_watches w
+          WHERE w.id=(SELECT watch_id FROM knowledge_observations WHERE source_id=$1)
+            OR (w.definition->>'kind'='page' AND w.id=$1) FOR SHARE`, [row.source_id])).rows[0];
+        // Read after acquiring the watch lock: a concurrent successful fetch may have replaced the observation.
+        const observation = watch && (await client.query<{ approved: boolean }>(`SELECT
+          (NOT unavailable AND approved_hash=content_hash AND approved_version_id=$2) AS approved
+          FROM knowledge_observations WHERE source_id=$1 FOR SHARE`, [row.source_id, versionId])).rows[0];
+        if (watch ? !watch.enabled || !observation?.approved : row.document.classification === "recent_information") throw new Error("Knowledge source observation needs review");
+        if (!internal && (watch?.audience === "internal_noncommercial" || internalKnowledgeSource(row.document.url))) throw new Error("Knowledge source is restricted to internal review");
         const readiness = await client.query<{ missing: string }>(
           `SELECT count(*)::text AS missing FROM knowledge_chunks c WHERE c.version_id = $4 AND NOT EXISTS
            (SELECT 1 FROM knowledge_vectors e WHERE e.input_hash = c.embedding_hash AND e.model = $1 AND e.dimensions = $2 AND e.pipeline = $3)`,
@@ -130,12 +142,19 @@ export function createKnowledgeStore(pool: Pool) {
       const filter = parseKnowledgeFilter(input);
       const values = vector === null ? null : vectorLiteral(vector);
       const rows = await pool.query<{ id: string; source_id: string; version_id: string; version_hash: string; content_hash: string;
-        source_document: KnowledgeSourceInput; document: KnowledgeChunkInput; checked_at: Date; distance: number | null }>(
+        source_document: KnowledgeSourceInput; document: KnowledgeChunkInput; checked_at: Date; last_successful_check_at: Date | null;
+        usage_scope: "public_noncommercial" | "internal_noncommercial"; distance: number | null }>(
         `SELECT c.id,c.version_id,c.content_hash,c.document,v.source_id,v.version_hash,v.document AS source_document,v.checked_at,
+         o.last_successful_check_at,CASE WHEN ${restrictedSource} THEN 'internal_noncommercial'
+           ELSE COALESCE(w.definition->>'audience','public_noncommercial') END AS usage_scope,
          CASE WHEN $4::vector IS NULL THEN NULL ELSE e.embedding <=> $4::vector END AS distance
          FROM knowledge_sources s JOIN knowledge_versions v ON v.id = s.active_version_id AND v.source_id = s.id
          JOIN knowledge_chunks c ON c.version_id = v.id ${vectorJoin}
+         LEFT JOIN knowledge_observations o ON o.source_id=s.id
+         LEFT JOIN knowledge_watches w ON w.id=COALESCE(o.watch_id,s.id)
          WHERE s.enabled AND v.review_state = 'reviewed' AND v.published_at IS NOT NULL
+           AND (w.id IS NULL OR (o.source_id IS NOT NULL AND w.enabled AND NOT o.unavailable AND o.approved_hash=o.content_hash AND o.approved_version_id=v.id))
+           AND ($11::boolean OR (w.definition->>'audience' IS DISTINCT FROM 'internal_noncommercial' AND NOT ${restrictedSource}))
            AND (v.document->>'validUntil' IS NULL OR (v.document->>'validUntil')::timestamptz > now())
            AND v.document->>'classification' = $5 AND c.document->'applicability'->>'region' = $6
            AND (c.document->'applicability'->>'ageBasis' = 'any' OR ($7::text IS NOT NULL
@@ -146,17 +165,19 @@ export function createKnowledgeStore(pool: Pool) {
                ELSE (c.document->'applicability'->>'maxAgeMonths')::numeric >= $9 END))
            AND (cardinality($10::text[]) = 0 OR c.document->'applicability'->'topics' ?| $10::text[])
            AND ($5 <> 'recent_information' OR ((v.document->>'sourcePublishedAt')::timestamptz >= now() - interval '7 days'
-             AND (v.document->>'sourcePublishedAt')::timestamptz <= now() AND s.last_checked_at >= now() - interval '24 hours'))
+             AND (v.document->>'sourcePublishedAt')::timestamptz <= now() AND o.last_successful_check_at >= now() - interval '24 hours'))
          ORDER BY c.id LIMIT 1001`,
         [...embeddingKey, values, filter.classification, filter.region, filter.age?.basis ?? null,
-          filter.age?.minMonths ?? null, filter.age?.maxMonths ?? null, filter.topics]);
+          filter.age?.minMonths ?? null, filter.age?.maxMonths ?? null, filter.topics, internal]);
       if (rows.rows.length > 1000) throw new Error("Knowledge corpus exceeds the reviewed exact-search capacity");
       return rows.rows.map(row => ({ ...row.document, chunkId: row.id, sourceId: row.source_id, versionId: row.version_id,
         versionHash: row.version_hash, contentHash: row.content_hash, url: row.source_document.url, title: row.source_document.title,
         publisher: row.source_document.publisher, classification: row.source_document.classification,
         sourcePublishedAt: row.source_document.sourcePublishedAt, sourceUpdatedAt: row.source_document.sourceUpdatedAt,
         sourceDateText: row.source_document.sourceDateText ?? null, validUntil: row.source_document.validUntil ?? null,
-        fetchedAt: row.source_document.fetchedAt, checkedAt: row.checked_at.toISOString(), reviewState: "reviewed", distance: row.distance }));
+        fetchedAt: row.source_document.fetchedAt, checkedAt: row.checked_at.toISOString(),
+        lastSuccessfulCheckAt: row.last_successful_check_at?.toISOString() ?? null, usageScope: row.usage_scope,
+        reviewState: "reviewed", distance: row.distance }));
     },
   };
 }

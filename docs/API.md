@@ -53,9 +53,18 @@ S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime
 - <a id="api-kr-04"></a>維護指令預覽片段數，按固定模型／維度／處理版本有限生成及核對發布；保存失敗及未完成狀態，hash 未變不重算。P2 提供實際匯入／發布／停用邊界，P4 管理頁及批量維運沿用它，不另建一套管理 API 權威。
 
 <a id="knowledge-w01-implementation"></a>
-### S10-W01 實作入口（待真服務驗收）
+### S10-W01 實作入口（必要真服務驗收已通過）
 
 [KnowledgeRetriever](../server/knowledge-retriever.ts) 的 `createRun({actor,budget,authorize})` 接收 Server 權威身份、既有運行預算及即時權限回查。`search(query, filter)` 回傳 [KnowledgeResult](../src/shared/knowledge.ts)，包括實際模式、片段短原文 `sourceExcerpt`、經核對精簡轉述 `text`、來源及版本；不是新增 HTTP 或已接通的 ADK 工具。`revalidateCitations` 在交付前重查片段／版本／hash 和適用性，不作內容語義判定。四來源五片段、維護 CLI、限額及未完成接線見 [操作文件](P2_KNOWLEDGE.md)；S11-W02 才整合聊天及背景 Agent。
+
+<a id="knowledge-refresh-contract"></a>
+### S10-W02 來源更新邊界
+
+共用 worker 以 pg-boss 原生每週／每日排程檢查固定、經條款核對的來源；job 只帶 watch ID、配置版本及 worker 世代。暫停、還原或配置失效後不抓取，網絡等待不持有 SQL 交易；回寫前再次核對。`knowledge-refresh.mjs` 只供主機操作者使用，沒有新增 Web 路由或模型可調用的管理工具。
+
+抓取結果是公共來源觀察資料，並非已發布知識。首次／變更內容須經操作者核對，將 observation hash 綁定至既有 reviewed version，再沿用有限 embedding／publish；hash 未變不重算向量，受影響片段以既有 embedding hash 去重。已登記來源的觀察版本不符、停用或 404／410 均不供引用；暫時抓取失敗保留先前內容及成功查核時間。候選新聞不自動寫入家庭事實或任務。
+
+`KnowledgeEvidence.checkedAt` 保持人工核對時間；新增 `lastSuccessfulCheckAt` 表示成功來源抓取，未建立證據為 null。來源發布／修訂時間另存，缺日期不代填；近期資訊只取已核對發布、七日內且 24 小時內成功查核的項目。CHP／RTHK 來源只容許主機操作者明確使用 internal audience；公開 store 預設排除，usageScope 不由模型或瀏覽器選擇。這些 metadata 檢查不等於語義支持核對。操作與待驗項見 [P2_KNOWLEDGE](P2_KNOWLEDGE.md#source-refresh)。
 
 <a id="p2-care-http"></a>
 ## P2 確認記錄及孩子檔案 HTTP（S05-W02）
