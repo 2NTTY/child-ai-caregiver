@@ -22,6 +22,7 @@ export interface OnlineTransport {
 
 interface PendingOperation { userId: string; command: OnlineCommand; canonical: string; operation: OnlineIdentity }
 const safeCodes = new Set([
+  "inputs_capacity", "input_processing",
   "operation_mismatch", "storage_epoch_changed", "session_changed", "version_conflict",
   "not_found", "forbidden", "invalid_input", "validation_error", "operation_result_unavailable",
   "unauthorized", "account_precondition_required", "unsupported_media_type", "invalid_json",

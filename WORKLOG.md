@@ -1104,3 +1104,13 @@
 - Verification：[EV-S12-W03](artifacts/verification/S12_W03_CHECKS.json) 分列 021／原資料保留、39 HTTP 中原圖／確認／隔離、單次真照片候選與配對備份空庫還原。十份照片核心檔與已驗整合版本相同；沿用既有資料，不再呼叫 SQL、Gemini、embedding 或通知。刪除功能及自己的清理通過，舊腳本最後的全行快照比較失敗原因已定位，原失敗保留，不補稱成功。
 - Limits：完整照片 UI 瀏覽器、公開 Linux volume／權限及部署未驗；MIME 簽名不等於完整圖片解碼。完成隨本包 PR 合併生效，P2 未完成，不續期／部署，不重做 Prompt Pack 或美術。
 - Delivery Check：唯一一次 Server no-emit 型別通過；photo-capture 0.1.14 離線載入 12 模組／7,761 字元，零模型；新增 17 處本機連結、append-only 日誌及 diff 檢查通過。沒有再跑 client／build／unit。
+
+<a id="log-20260929-002"></a>
+## LOG-20260929-002
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；S12-W04，分支 `codex/s12-w04-shared-inputs`，隔離基線 S12-W03 `1c6591a0b9aa4f1383a648b75e0240666dc07640`。依集中驗收例外接續，承接 014–021 未驗項，沒有視為穩定 master 已合併。
+- Responsibility / Executor：B 主責、權重 3，B 50%／C 25%／A 25%；A 統籌共用 AI，不假稱組員親手操作。主模型處理 SQL／權限、來源及 Agent 接線、所有文件／prompt 與 review；一個 Sol xhigh 負責普通功能 UI／client API，沒有額外驗證代理。
+- Actual Work：主動貼上原文與來源／日期、固定已核准 FHS 公開來源、私人解析正文／hash／取得時間、使用者選定片段、受限 ADK 提取及人工候選確認。外部參考強制 note，不計成孩子數值／事件；實際孩子記錄需額外確認。022 加密來源／候選、原操作、版本及刪除關係已接；沒有背景讀私人動態、任意 URL 抓取或自動事實／任務。
+- Reuse / UI：復用既有來源 fetcher／catalog、storage cipher、online 收據及 ADK runtime。Pack 0.1.6 僅新增短 shared-capture 接線；照片上傳沿用 S12-W03。正式 SharedInputPanel 已掛載，功能清單／契約已補，獨立 frontend 與美術不變。
+- Verification / Review：見 [EV-S12-W04](artifacts/verification/S12_W04_CHECKS.json)。Server／client 型別各一輪實際編譯通過；最初 Server 指令路徑誤寫，編譯未啟動，改用根 tsconfig.server.json 後通過。配方離線載入一次通過，12 模組／7,820 字元，零模型。沒有新增或執行單元測試、lint／build／完整回歸。主模型 review 修正初次來源日期回傳誤拒及 unknown 查核缺退出入口，局部覆核後不重跑已充分的型別證據。
+- Pending / Next：022／真 SQL、私人隔離／原操作、公開抓取與模型品質、刪除／加密還原及瀏覽器均待 P2 集中驗收。尚未 push／merge／部署或延長 P1 試用；先保存固定 checkpoint，接續最小瀏覽器基礎與集中缺項整合，不逐包詢問驗收。

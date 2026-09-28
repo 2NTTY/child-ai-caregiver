@@ -1,0 +1,58 @@
+{
+  "package": "S12-W04",
+  "status": "implemented_pending_consolidated_acceptance",
+  "date": "2026-09-29",
+  "base": "1c6591a0b9aa4f1383a648b75e0240666dc07640",
+  "branch": "codex/s12-w04-shared-inputs",
+  "checks": [
+    {
+      "kind": "server_typecheck",
+      "command": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.server.json",
+      "exitCode": 0,
+      "seconds": 3.1993872,
+      "note": "An earlier command used a nonexistent server/tsconfig.json and exited before compilation; corrected once."
+    },
+    {
+      "kind": "client_typecheck",
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "exitCode": 0,
+      "executions": 1,
+      "executor": "Sol xhigh",
+      "includes": "formal app mount; before two local review fixes"
+    },
+    {
+      "kind": "recipe_load",
+      "recipe": "shared-capture",
+      "packVersion": "0.1.6",
+      "modules": 12,
+      "characters": 7820,
+      "exitCode": 0,
+      "modelCalls": 0
+    },
+    {
+      "kind": "review",
+      "result": "source/date fetch transition and explicit exit from checked unknown fixed; final local conditions reviewed without repeating typecheck"
+    }
+  ],
+  "unitTestsAdded": 0,
+  "unitTestsExecuted": 0,
+  "integrationExecuted": false,
+  "browserExecuted": false,
+  "realSourceFetches": 0,
+  "modelCalls": 0,
+  "migrationsApplied": [],
+  "pending": [
+    "022 PostgreSQL and existing data preservation",
+    "private source isolation/revocation/version/receipt",
+    "approved public fetch and bounded real extraction",
+    "manual/reference versus actual-child confirmation",
+    "browser draft/unknown/role clearing",
+    "delete and encrypted backup restore"
+  ],
+  "limits": [
+    "Source fetch stores parsed text, not original HTML",
+    "Public catalog excludes internal-only CHP/RTHK feeds",
+    "No arbitrary URL fetching, private-feed access, vectorization or autonomous task authorization",
+    "No merge to master or deployment"
+  ]
+}

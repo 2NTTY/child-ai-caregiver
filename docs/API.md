@@ -472,3 +472,17 @@ Agent 的唯讀 `read_care_summary` 復用同一服務、身份與運行預算�
 AI 候選不是事實，原圖共享也不自動公開上傳者的私人提取候選；確認畫面明確說明原圖及已核對記錄會共享。提取受同一 Agent／模型配額控制，最多四次生成、八次工具及 90 秒；單張二進位大小另限，32,000 字元仍計全部文字、schema 及協定 metadata。模型只能交候選，不能建立任務或外發。
 
 上傳／提取回應遺失先 GET 原 ID；確認／刪除查原 opId。未知結果不改新識別重做。未提交檔案及文字只留本頁，斷線保留，換孩子／帳號／Server、撤權或登出清理；重開不保證草稿恢復。原圖缺失／hash 錯誤不得宣稱成功。大小及 MIME 簽名檢查不是完整影像解碼或辨識品質證據。
+
+<a id="p2-shared-inputs"></a>
+## S12-W04 主動分享輸入（待集中驗收）
+
+集合為 `/api/children/:childId/inputs`，共用 [型別](../src/shared/shared-inputs.ts)。登入及 `x-expected-user-id` 必須一致；每次核對家庭權限，只有輸入者可讀自己的原文／候選，其他家庭成員不能讀取，即使已產生共享記錄。
+
+- GET 集合回 `{inputs,sources,canCreate}`，最多 50 項；GET `/:id` 回 `{input}`。來源清單只包含既有已核准、可公開非商業使用的 FHS 頁面，CHP／RTHK 未擴大使用範圍。
+- POST 集合走原 opId 收據：`paste` 保存最多 10,000 字元原文、來源名稱、可選 HTTPS 來源網址及原始日期文字；`public_source` 只接受清單 sourceId。貼上的網址不自動抓取。
+- POST `/:id/fetch` 須 `expectedVersion／confirmFetch:true`；選定來源以既有 20 秒、1 MiB、最多兩次 redirect 的受限 fetcher 取得，沒有 cookies／私人登入或自動重試。保存解析正文、來源網址、日期文字、取得時間及正文 hash，不宣稱保留原 HTML 格式；解析正文最多 64,000 字元。
+- POST `/:id/extract` 須 `expectedVersion／confirmModel:true／excerpt`；片段必須是已保存原文的精確非空子字串、最多 10,000 字元。長文由使用者選擇，不靜默截斷；共用 ADK runtime 限額。只有 `present_shared_draft`，不能寫事實、建任務或外發。
+- POST `/:id/confirm` 走收據，須 `expectedVersion／confirmShared:true／kind／confirmChildFact／values`。`reference` 強制 note、沒有數值或事件時間；`family_record` 另須本人確認確與孩子有關。兩者均由家長核對正文；來源欄由 Server 注入類型、原輸入 ID、hash、保存時間及來源名稱。完整原文、網址／原日期及 AI 候選維持私人，不自動形成長期事實或任務授權。
+- POST `/:id/delete` 走收據，須版本及 `confirmDelete:true`；刪除本人輸入及連結照護記錄。刪除連結記錄／孩子亦連帶清除輸入；共享記錄的更正由原 Care API 管理。
+
+owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀本人既存輸入。fetch／extract 在交易外執行，claim／結果均核對權限及期限；running 超時顯示 unknown，回查不重開，只有明確 failed 的當前版本可由使用者重試。原 opId 未解決前不建立另一份輸入。一般網絡失敗保留當前草稿，換身份／孩子／Server 或撤權則清除，不建離線 outbox。

@@ -107,3 +107,17 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 - 孩子／帳號／Server 切換、撤權清理檔案、blob URL 及候選；不將私人原圖寫入持久 Web 快取。
 
 共用型別見 [photos](../src/shared/photos.ts)，API 以 [照片契約](API.md#p2-photos) 為準。真 API 原圖、確認／隔離及一次合成 Gemini 候選品質已有必要證據；瀏覽器選檔／預覽完整情景未驗，不以型別檢查或 API 代替。
+
+<a id="shared-input-handoff"></a>
+## 主動分享輸入（S12-W04）
+
+[SharedInputPanel](../src/client/SharedInputPanel.tsx)／[shared-input-api](../src/client/shared-input-api.ts) 掛在正式基本頁；props 與照片面板一致。獨立 frontend 可依 [契約](API.md#p2-shared-inputs) 替換視覺，未修改其預覽。
+
+- 貼上原文、來源名稱、可選 HTTPS 網址／原日期；明示網址僅保存，沒有任意網頁抓取。照片上傳沿用同頁 PhotoPanel。
+- 選既定公開來源、明確取得、呈現原文／來源／日期／hash；not_requested、running、ready、failed、unknown 分開顯示。
+- 選取原文片段後，明確送模型；長文不自動截斷。候選可採用／編輯，約數、時間及不確定處保留；可跳過 AI 直接人工填寫。
+- 預設「外部參考」；選「孩子實際記錄」須額外明確確認孩子關係。確認前呈現共享內容，原文／網址及私人候選不跟著公開。
+- 原 opId 回查、版本衝突、失敗草稿保留、身份／孩子切換及撤權清理；viewer 唯讀。刪除明示連結記錄範圍，兩次確認。
+- 不將來源發布日期、本站保存日期及取得日期混成一個日期；不把待提取／候選／確認當作同一狀態。
+
+型別與靜態 review 不代表瀏覽器、真 SQL 或提取品質驗收；待集中處理。S12-W04 不增加系統分享、新聞自動閱讀、PDF／Android 或 UI polish。
