@@ -967,3 +967,11 @@
 - Actual Work / Finding：發現 register 改變用途／條款等來源定義時只換 revision，未撤銷既有內容批准；改回原設定可能令舊批准重新生效。主模型改為同一交易內更新登記與撤銷批准，啟用中的相同定義保持原批准。局部更新契約及操作文件，不改來源範圍或新增框架。
 - Verification：Server typecheck、必要驗收腳本語法及 diff whitespace 檢查通過。待驗腳本沿原配置變更情景，改以已批准來源核對 in-flight 寫入被拒、批准撤銷及改回 public 不復活；原業務呼叫、來源／worker／網絡上限不變。SQL 實際行為仍待驗收，不以 typecheck 當通過；[EV-S10-W02](artifacts/verification/S10_W02_CHECKS.json)分列補充證據。
 - Limits / Next：沒有 DB、worker、真來源、模型、embedding、部署或 E2E 執行；未推送／合併，本包保持待驗收，S11-W02 尚未解鎖。
+
+<a id="log-20260929-012"></a>
+## LOG-20260929-012
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；S10-W02 集中必要驗收結案，從已 review checkpoint 892c74c 及最新穩定 master 22f5c66 交付；前置 S10-W01／S13-W04 均已合併。
+- Evidence：014／原資料保留及配對還原復用 S16 共用證據；來源 hash／發布／向量復用／停用及真 minute cron 29 業務／7 輪詢，公開／組內／25h 過期隔離 16 業務，另批來源暫失／410／登記改動撤回批准 24 業務，後者零模型／embedding／外網。四份向量 callback 明示合成，不冒稱真服務；沒有重跑已通過案例或原大型驗收腳本。
+- Failure / Review：初始合成 URL 唯一約束失敗及 RTHK 降級／跨主機轉址均保留；只修固定 HTTPS 位址並補驗該來源，六來源現均取回成功，真正文不保留。登記改動與批准撤回同交易；改回舊設定不復活批准。已核对相關核心檔與受驗整合版本一致；有限驗收不代表全量回歸。[EV-S10-W02](artifacts/verification/S10_W02_CHECKS.json)。
+- Responsibility / Delivery：沿用已確認 A 60%／C 40%，A 統籌 AI 與關鍵 review，不假稱 D 親自測試。使用 A 的現有帳號獨立推送／PR／合併，開發與合併簽署另核對；完成隨 PR 合併生效。合成來源已停用、worker 暫停，原庫／還原庫／加密備份保留；無通知或部署，其他 P2 包不因本包結案而標完成。

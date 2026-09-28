@@ -1,12 +1,23 @@
 {
   "evidenceId": "EV-S10-W02",
   "workPackage": "S10-W02",
-  "recordedOn": "2026-09-28",
+  "recordedOn": "2026-09-29",
   "baseCommit": "70dda826aa7aeedef5b48595fe05f0fb488cb577",
-  "prerequisites": ["S10-W01 merged in PR #35", "S13-W04 merged in PR #48"],
-  "status": "implemented_pending_necessary_acceptance",
+  "prerequisites": [
+    "S10-W01 merged in PR #35",
+    "S13-W04 merged in PR #48"
+  ],
+  "status": "necessary_acceptance_passed_completion_on_merge",
   "scope": "Reviewed public-source observations, native pg-boss source schedules, bounded HTTPS acquisition, incremental knowledge publication gates and internal-only recent information",
-  "responsibility": {"lead": "A", "weight": 3, "shares": {"A": 60, "C": 40}, "execution": "Shared AI coordinated by A; primary agent owns policy, critical persistence, integration, review and authority documents"},
+  "responsibility": {
+    "lead": "A",
+    "weight": 3,
+    "shares": {
+      "A": 60,
+      "C": 40
+    },
+    "execution": "Shared AI coordinated by A; primary agent owns policy, critical persistence, integration, review and authority documents"
+  },
   "lightweight": {
     "node": "24.19.0",
     "testsPassed": 41,
@@ -18,8 +29,16 @@
       "knowledge-ranking.test.ts": 8,
       "worker-queue-adapter.test.ts": 3
     },
-    "typechecks": ["tsc --noEmit passed", "tsc --project tsconfig.server.json passed"],
-    "scriptSyntax": ["scripts/knowledge.mjs passed", "scripts/knowledge-refresh.mjs passed", "scripts/verify-knowledge-refresh.mjs passed", "scripts/fixtures/knowledge-refresh-worker.mjs passed"],
+    "typechecks": [
+      "tsc --noEmit passed",
+      "tsc --project tsconfig.server.json passed"
+    ],
+    "scriptSyntax": [
+      "scripts/knowledge.mjs passed",
+      "scripts/knowledge-refresh.mjs passed",
+      "scripts/verify-knowledge-refresh.mjs passed",
+      "scripts/fixtures/knowledge-refresh-worker.mjs passed"
+    ],
     "dependencyReview": "Cheerio 1.2.0 pinned; 22 new lock entries, no existing package version changes. safer-buffer becomes a runtime dependency. 29 retained license file hashes checked.",
     "skillValidation": "Official Python validator unavailable because bundled Python lacks PyYAML; existing Node YAML parser validated the two edited Skill frontmatters. Body-only changes; no new skill scaffold.",
     "limits": "Mocked transport, parser examples and scripted queue tests do not prove the live network adapter, SQL migration or native cron execution. No clinical effectiveness claim."
@@ -54,19 +73,177 @@
   "postCheckpointReview": {
     "base": "38239f24184739495ab4f3a3cb52c74a55cd55a2",
     "finding": "Registration revision changed without clearing existing content approvals, allowing old approval reuse after a scope change.",
-    "checks": ["Server typecheck passed", "Acceptance script syntax passed", "git diff --check passed"],
+    "checks": [
+      "Server typecheck passed",
+      "Acceptance script syntax passed",
+      "git diff --check passed"
+    ],
     "acceptanceChange": "Existing configuration-in-flight scenario now uses a previously approved source, verifies grant removal and no resurrection on return to public. Business-call and source/worker/network caps unchanged.",
-    "limit": "SQL behavior remains unexecuted pending the user's acceptance approval."
+    "limit": "Registration scope-change revocation and returning to the former scope were exercised in source-gates-result.json; no old approval resurrection."
   },
   "acceptance": {
-    "approval": "User replied on 2026-09-28: keep pending acceptance. Integration and live source calls are not authorized; the source-usage decision is separate.",
-    "scriptReview": "Primary agent reviewed target and ACL preflight, original-row preservation, SQL assertions, cleanup reserve, synthetic vector labeling, IPC worker scope and real minute cron wait. Only syntax has been executed.",
-    "limits": {"syntheticWatches": 4, "syntheticSourceIds": 6, "businessCalls": 120, "readOnlyPolls": 180, "childWorkers": 1, "sourceFetchCalls": 6, "httpGetMaximumIncludingRedirects": 18, "cronWaitSeconds": 100, "totalSeconds": 480},
-    "planned": "Encrypted prechange backup; migration 014; preserve existing rows; hash/review/publication, incremental vector reuse using synthetic vectors, failure/date/internal gates, in-flight invalidation, persisted queue metadata and actual minute cron, six bounded public-source GET operations without persisting returned bodies; finish with original worker paused and synthetic sources disabled. No restore, family writes or real embedding.",
-    "executed": false,
-    "modelCalls": 0,
-    "embeddingCalls": 0,
-    "deployment": false,
-    "e2e": false
+    "approval": "User approved consolidated necessary acceptance and the later bounded remaining-source-gates supplement on 2026-09-29.",
+    "executed": true,
+    "status": "passed",
+    "migration": "014 included in preserved-row migration 014–022; existing 39 tables/386 rows preserved; paired restore passed in S16.",
+    "successfulStoreSegments": [
+      29,
+      16,
+      24
+    ],
+    "successfulPolls": 7,
+    "syntheticVectors": "3 incremental fixtures plus 1 internal fixture; no true embedding or source re-embedding",
+    "sourceChecks": "All six fixed sources fetched through production adapters; RTHK failed on old redirect and passed once corrected to pinned HTTPS host. Real bodies not retained.",
+    "retainedEvidence": [
+      {
+        "name": "source_update_and_native_cron",
+        "status": "failed",
+        "stage": "official_source_adapter",
+        "code": "assertion_failed",
+        "checks": [
+          "exact_observation_review_publication_unchanged_and_job_deduplication",
+          "changed_source_hides_old_version_reuses_unchanged_vector",
+          "native_cron_after_producer_restart_single_knowledge_consumer_no_task_handler",
+          "disabled_watch_excluded_and_old_job_inactive"
+        ],
+        "cronEvidence": {
+          "jobId": "4287f173-c706-4790-9232-05a16600202c",
+          "elapsedMs": 6089
+        },
+        "sources": [
+          {
+            "id": "fhs-solid-food",
+            "status": "ok",
+            "items": 1,
+            "datedItems": 0
+          },
+          {
+            "id": "fhs-toddler-development",
+            "status": "ok",
+            "items": 1,
+            "datedItems": 0
+          },
+          {
+            "id": "fhs-preschool-development",
+            "status": "ok",
+            "items": 1,
+            "datedItems": 0
+          },
+          {
+            "id": "fhs-child-vision",
+            "status": "ok",
+            "items": 1,
+            "datedItems": 0
+          },
+          {
+            "id": "chp-recent",
+            "status": "ok",
+            "items": 10,
+            "datedItems": 10
+          },
+          {
+            "id": "rthk-recent",
+            "status": "failed",
+            "reason": "network"
+          }
+        ],
+        "business": 29,
+        "polls": 7,
+        "syntheticVectors": 3,
+        "realEmbeddingCalls": 0,
+        "models": 0,
+        "taskHandlerStarted": false,
+        "workerPaused": true,
+        "database": "yuban_s16_restore_20260929",
+        "originalDatabaseUntouched": true,
+        "initialFixtureFailure": "Synthetic source reused an existing unique official URL; corrected to a dedicated synthetic URL without changing product code.",
+        "sourceBodyPersistence": "Synthetic only; five successful real source bodies discarded.",
+        "scope": "Isolated already-approved restored database; no original task consumer started."
+      },
+      {
+        "name": "rthk_https_correction",
+        "status": "passed",
+        "diagnosis": {
+          "status": "failed",
+          "reason": "network",
+          "items": null,
+          "durationMs": 1060,
+          "requests": 1,
+          "code": "source_url_rejected",
+          "responses": [
+            {
+              "status": 301,
+              "encoding": null,
+              "contentType": "text/html; charset=iso-8859-1",
+              "redirect": true
+            }
+          ],
+          "retry": false,
+          "bodiesSaved": false
+        },
+        "result": {
+          "status": "ok",
+          "url": "https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml",
+          "durationMs": 90,
+          "items": 20,
+          "reason": null,
+          "bodiesSaved": false,
+          "retry": false,
+          "modelCalls": 0,
+          "databaseCalls": 0,
+          "safetyBoundary": "HTTPS and registered exact host remain required"
+        },
+        "reason": "The advertised HTTPS RSS endpoint redirects to HTTP on rthk9.rthk.hk; the production guard rejected the downgrade and host change. Registered the verified HTTPS destination directly; exact-host and HTTPS rules remain.",
+        "changes": [
+          "server/knowledge-source-catalog.ts",
+          "server/knowledge-source-fetch.ts",
+          "docs/P2_KNOWLEDGE.md"
+        ],
+        "transportAssertions": "HTTPS endpoint allowed; HTTP downgrade and another RTHK subdomain rejected.",
+        "scope": "Only the failed source: one diagnostic GET, two metadata-only HEAD calls, and one successful corrective fetch. No repeat of source SQL, cron or the other five sources; no source body stored."
+      },
+      {
+        "name": "internal_source_visibility_and_freshness",
+        "status": "passed",
+        "stage": "expired_successful_observation",
+        "code": null,
+        "checks": [
+          "internal_publication_visible_internally_but_not_public",
+          "stale_recent_observation_excluded"
+        ],
+        "businessCalls": 16,
+        "syntheticVectors": 1,
+        "models": 0,
+        "realEmbeddings": 0,
+        "externalRequests": 0,
+        "familyWrites": 0,
+        "workerStarted": false,
+        "workerPaused": true,
+        "watchId": "s16-internal-20260929",
+        "sourceId": "s16-internal-20260929-b04d43931dbabe106f7bcb106aaeda5a",
+        "database": "yuban_s16_restore_20260929",
+        "limit": "One synthetic source in the existing restored database; not a full source suite or permission to republish real content."
+      }
+    ],
+    "sourceGates": {
+      "status": "passed",
+      "stage": "registration_scope_change",
+      "businessCalls": 24,
+      "checks": [
+        "temporary_failure_keeps_last_success_and_existing_approval",
+        "unavailable_source_revokes_approval_and_retrieval",
+        "registration_change_clears_approval_and_old_scope_cannot_resurrect"
+      ],
+      "models": 0,
+      "embeddings": 0,
+      "network": 0,
+      "newSources": 0,
+      "workerStarted": false,
+      "originalDatabaseUntouched": true,
+      "workerPaused": true
+    },
+    "review": "Relevant persistence, source catalog/parser, retriever and refresh-worker implementations are identical between package checkpoint 892c74c and the tested integration. Later shared transport extraction belongs to S12-W04, not this package.",
+    "limits": "Focused cases only; no full legacy 120-call script, load matrix, real model/embedding, notifications or deployment. Earlier failed fixture and RTHK result remain in consolidated evidence.",
+    "cleanup": "Synthetic sources disabled, original and restored databases retained, restored worker paused."
   }
 }
