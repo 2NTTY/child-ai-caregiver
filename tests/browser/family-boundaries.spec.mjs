@@ -34,7 +34,7 @@ test("family isolation, original-operation recovery and revoked UI",async({famil
     lost=true;await route.abort("failed");
   });
   await caregiver.page.getByLabel("記錄原文",{exact:true}).fill(text);
-  await caregiver.page.getByLabel("資料來源（由你描述）",{exact:true}).fill("S16 原操作合成觀察");
+  await caregiver.page.getByRole("heading",{name:"新增共享記錄",exact:true}).locator("xpath=..").getByLabel("資料來源（由你描述）",{exact:true}).fill("S16 原操作合成觀察");
   await caregiver.page.getByRole("button",{name:"預覽共享記錄",exact:true}).click();
   await caregiver.page.getByRole("button",{name:"我已核對，確認共享保存",exact:true}).click();
   await expect(caregiver.page.getByText(/結果未知的操作：新增照顧記錄/u)).toBeVisible();
