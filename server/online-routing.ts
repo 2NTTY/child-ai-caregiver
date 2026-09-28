@@ -42,6 +42,8 @@ export function onlineRoute(command: OnlineCommand): OnlineRoute {
   const memory = new RegExp(`^/api/children/(${uuid})/memory/(?:facts(?:/${uuid}/(?:confirm|revise|deactivate|delete))?|topics(?:/${uuid}/(?:change|reopen|delete))?)$`, "i").exec(path);
   if (memory) return { kind: "memory", scope: "child", targetId: memory[1].toLowerCase(), roles: READ_ROLES,
     privateResult: true, deleted: path.endsWith("/delete") };
+  const photo = new RegExp("^/api/children/("+uuid+")/photos(?:/"+uuid+"/(?:confirm|delete))?$","i").exec(path);
+  if(photo)return {kind:"care",scope:"child",targetId:photo[1].toLowerCase(),roles:WRITE_ROLES,privateResult:true,deleted:path.endsWith("/delete")};
   const preparation = new RegExp("^/api/children/("+uuid+")/visit-preparation$","i").exec(path);
   if(preparation)return {kind:"care",scope:"child",targetId:preparation[1].toLowerCase(),roles:WRITE_ROLES,privateResult:false,deleted:false};
   const task = new RegExp(`^/api/children/(${uuid})/tasks(?:/${uuid}/change)?$`, "i").exec(path);

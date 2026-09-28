@@ -19,12 +19,13 @@ import type { GrowthStore } from "./growth-store.ts";
 
 export function createProductAgentServices(pool: Pool, cipher: StorageCipher, config: AiConfig, scheduling?: TaskScheduling, diagnostics = false, growth?: GrowthStore, summary?:import("./care-summary-store.ts").CareSummaryStore) {
   const store = createProductAgentStore(pool, cipher, scheduling);
+  const runtime = createAgentRuntime({ config, usage: createAiUsageStore(pool), provider: createVertexAgentProvider(config),
+    diagnostics: diagnostics ? event => { console.info("agent_diagnostic", JSON.stringify(event)); } : undefined });
   const agent = createProductAgent({ store, growth, summary, memory: createMemoryStore(pool, cipher, true),
     tasks: createTaskStore(pool, cipher, scheduling), chat: createChatStore(pool, cipher, true, true),
-    runtime: createAgentRuntime({ config, usage: createAiUsageStore(pool), provider: createVertexAgentProvider(config),
-      diagnostics: diagnostics ? event => { console.info("agent_diagnostic", JSON.stringify(event)); } : undefined }),
+    runtime,
     knowledge: createKnowledgeRetriever(createKnowledgeStore(pool), createEmbeddingGateway({ config,
       usage: createEmbeddingUsage(pool), provider: config.enabled ? createVertexEmbeddingProvider(config) : undefined })),
   });
-  return { store, agent };
+  return { store, agent, runtime };
 }

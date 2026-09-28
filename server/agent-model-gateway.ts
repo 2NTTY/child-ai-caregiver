@@ -3,6 +3,7 @@ import type { LlmRequest, LlmResponse } from "@google/adk";
 import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
+import { decodePhoto } from "./photo-files.ts";
 import { AGENT_LIMITS, AgentBudget, AgentStopped } from "./agent-budget.ts";
 
 export interface AgentModelProvider {
@@ -56,8 +57,16 @@ export class AgentGatewayModel extends BaseLlm {
     budget.check();
     if (!config.enabled) throw new AgentStopped("unavailable");
     if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
-    // Conservatively include serialized schemas, instructions and all protocol parts; never trim pairs.
-    if (JSON.stringify({ contents: request.contents, config: request.config }).length > AGENT_LIMITS.inputCharacters) {
+    // Binary media has its own bounded allowance; all text, schemas and opaque protocol metadata remain counted.
+    let images = 0;
+    const contents = request.contents.map(content => ({...content,parts:content.parts?.map(part=>{
+      if(part.fileData)throw new AgentStopped("input_limit");
+      if(!part.inlineData)return part;
+      if(content.role!=="user"||++images>1)throw new AgentStopped("input_limit");
+      try{decodePhoto(part.inlineData.data??"",part.inlineData.mimeType??"");}catch{throw new AgentStopped("input_limit");}
+      return {...part,inlineData:{...part.inlineData,data:"[bounded image bytes]"}};
+    })}));
+    if (JSON.stringify({ contents, config: request.config }).length > AGENT_LIMITS.inputCharacters) {
       throw new AgentStopped("input_limit");
     }
     budget.take("modelCalls");

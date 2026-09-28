@@ -1086,3 +1086,21 @@
 - Verification：[EV-S13-W08](artifacts/verification/S13_W08_CHECKS.json) 分開保存原失敗與通過證據。復用 migration／原資料／空庫還原、真背景檢索與重啟去重、關閉抑制及實質新依據；只補四年齡段有限規則及一次家長控制 SQL 流程，未重跑模型、通知或瀏覽器。引用品質曾失敗；已合併 S11 的 Server 呈現修正以三個 Runner 檢查及真回應離線重播核對，沒有冒稱新的真服務全流程。
 - Delivery / Limits：功能清單保留既有任務選擇器未提供、最近 30 項歷史及完整 GrowthPanel 瀏覽器未驗等限制。完成隨本包 PR 合併生效；預授權聯絡／公開部署及独立試玩仍有前置，P2 未完成、不續期。沒有重做 Prompt Pack／美術或擴大 UI polish。
 - 本包交付補記：再整合 S14 的正式合併 `6683d37`，保留摘要、渠道及成長接線；只因參數合併補一次必要 Server 型別檢查，通過。Pack 0.1.12 離線載入 12 模組／9,699 字元，成長引用指引一次。家長控制單輪 34 次呼叫（15 store／19 SQL）、11 項斷言；只新增一孩子／一任務並清理，原行保留、worker 暫停、pool 關閉，零模型／embedding／HTTP／通知。
+
+<a id="log-20260929-001"></a>
+## LOG-20260929-001
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；S12-W03 Web 照片，分支 `codex/s12-w03-photo-capture`，固定隔離基線 S14-W01 `ce990ae6b70455a5a7695d903d1f86b09015fb4b`，其中包含本包所需 S06-W02／S11-W02。按 P2 集中驗收例外接續，承接 014–020 未驗項，不視為 master 已合併。
+- Responsibility / Executor：A 主責、權重 5，A 50%／C 30%／B 20%；A 統籌共用 AI，不表示各組員親自手寫或操作。主模型處理 SQL／授權／原檔保存、ADK 整合、全部 prompt／Skill／權威文件及最終 review；一個 Luna Max 唯讀補核固定 SDK／官方影像限制，兩個 Sol xhigh 分別做功能 UI 與方案已定的備份 adapter。
+- Actual Work：metadata 預留／原圖分離傳輸、固定 ID／hash、工程外原檔加密及容量、私人候選／手動確認、明確模型外送、家庭分享及刪除持久清理已接；021 尚未執行。共用既有 ADK runtime／配額，圖片 parts 與文字預算分開；復用 capture-confirm／multimodal，只新增短接線模組，Pack 0.1.5，未重做美術或前端設計。
+- Backup / UI：停服配對 DB／原圖備份、獨立備份加密／清單綁定、空庫完整預驗及拒絕舊 DB-only 成功宣稱；恢復從已核 hash 的私有臨時 DB ciphertext 副本執行，避免檢查後換檔。正式 PhotoPanel 接入，保留原檔／草稿、原 ID／opId、明確版本及未知結果；外部 frontend 預覽未修改。
+- Verification / Review：見 [EV-S12-W03](artifacts/verification/S12_W03_CHECKS.json)。僅一項真 Runner＋scripted provider 照片傳輸案例，單次通過，沒有真模型；Server 型別一次通過。前端初次 nullable 型別錯誤修正後通過；review 修正重選檔案丟 ID、以 hash 猜配未知收據及相同版本回查等接線缺口，未新增測試矩陣。小型目錄邊界更正由主模型靜態覆核，沒有機械重跑全部檢查。
+- Limits / Next：SQL／原檔真讀寫、角色並發、真照片辨識、瀏覽器、容量及配對備份還原均待集中验收；未做 migration、integration、E2E、真模型／通知、部署或現網變更。Windows ACL 未驗；MIME 簽名檢查不等於完整影像解碼。先交付本包固定 checkpoint，再按依賴處理 S12-W04；不逐包詢問測試，不宣稱 P2 完成。
+
+<a id="log-20260930-012"></a>
+## LOG-20260930-012
+
+- Delivery：S12-W03 從 master `fa8f237` 整理既有 `1c6591a` 照片實作，保留已合併成長／摘要／渠道，不帶入未交付 contact／分享包。人員責任沿原 LOG-20260929-001；共用 AI 由 A 操作，Sol 僅處理已定方案的接線衝突，主模型親自維護指導與 prompt、核對核心 diff 及證據。
+- Verification：[EV-S12-W03](artifacts/verification/S12_W03_CHECKS.json) 分列 021／原資料保留、39 HTTP 中原圖／確認／隔離、單次真照片候選與配對備份空庫還原。十份照片核心檔與已驗整合版本相同；沿用既有資料，不再呼叫 SQL、Gemini、embedding 或通知。刪除功能及自己的清理通過，舊腳本最後的全行快照比較失敗原因已定位，原失敗保留，不補稱成功。
+- Limits：完整照片 UI 瀏覽器、公開 Linux volume／權限及部署未驗；MIME 簽名不等於完整圖片解碼。完成隨本包 PR 合併生效，P2 未完成，不續期／部署，不重做 Prompt Pack 或美術。
+- Delivery Check：唯一一次 Server no-emit 型別通過；photo-capture 0.1.14 離線載入 12 模組／7,761 字元，零模型；新增 17 處本機連結、append-only 日誌及 diff 檢查通過。沒有再跑 client／build／unit。

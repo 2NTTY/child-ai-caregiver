@@ -453,3 +453,22 @@ POST `/api/children/:childId/visit-preparation` 只經 S07 收據（直接 POST 
 GET 同一權限交易取得資料與版本；每孩子最多掃 2,000 筆記錄／500 任務，超限明示不產生部分總計；窗口最多 200 筆，超限可改單日。未知時間數量屬全部已掃孩子記錄，不冒稱特定期間缺失。數量只接受明確十進位及已列單位，保留約數；不混加單位、不解析便條數字。原文、source、確認與更正版本保留於記錄索引；既有 care history 入口可取完整修訂。
 
 Agent 的唯讀 `read_care_summary` 復用同一服務、身份與運行預算；模型不能改數字或保存核對狀態。特定摘要需求載入既有 summary-visit 配方，沒有新增模型生成 HTTP、PDF、分享或推送。
+
+<a id="p2-photos"></a>
+## P2 照片（S12-W03）
+
+所有路徑在 `/api/children/:childId/photos` 下，須登入及 `x-expected-user-id`。先透過原 opId 收據建立 metadata，再獨立傳原檔；原檔確認與家庭記錄確認分開。
+
+| 操作 | 請求及結果 |
+|---|---|
+| GET 集合／`/:id` | 目前有權附件清單／單項；私人附件只回上傳者，共享原圖回目前家庭成員 |
+| POST 集合（online 收據） | `fileName,mimeType,bytes,sha256,source`；回 private／reserved 附件。JPEG／PNG，單張 4 MiB，每孩子 100 張／100 MiB，全站 10,000 張／原始容量 512 MiB；預留及待清理原檔亦計額 |
+| POST `/:id/content` | `{base64}`；只對已核權、同一穩定 ID 的原圖放寬 HTTP 大小。Server 核格式簽名、長度及 SHA-256，再確認 ready；相同原檔可明確重傳，不准換原檔 |
+| GET `/:id/content` | 重新核權、解密及核 hash 的原始 JPEG／PNG；no-store，不回永久公開 URL |
+| POST `/:id/extract` | `{expectedVersion,confirmModel:true}`；只有原上傳者可把私人原圖送到既有 Vertex／ADK。running／unknown 只查原狀態，已知 failed 可用目前版本明確重試；不自動重試模型 |
+| POST `/:id/confirm`（online 收據） | `{expectedVersion,confirmShared:true,values:CareValues}`；家長核對文字、種類、約數／單位／模糊時間後，在同交易建立照護記錄及共享原圖；source 由 Server 綁 ID／hash／上傳時間／原來源，不接受偽造來源 |
+| POST `/:id/delete`（online 收據） | `{expectedVersion,confirmDelete:true}`；私人原圖由上傳者管理，共享原圖由 owner／caregiver 管理；同時刪相關照護記錄／修訂及附件 metadata，原檔進持久刪除清單，回 cleanupPending，不謊稱磁碟已即時清除 |
+
+AI 候選不是事實，原圖共享也不自動公開上傳者的私人提取候選；確認畫面明確說明原圖及已核對記錄會共享。提取受同一 Agent／模型配額控制，最多四次生成、八次工具及 90 秒；單張二進位大小另限，32,000 字元仍計全部文字、schema 及協定 metadata。模型只能交候選，不能建立任務或外發。
+
+上傳／提取回應遺失先 GET 原 ID；確認／刪除查原 opId。未知結果不改新識別重做。未提交檔案及文字只留本頁，斷線保留，換孩子／帳號／Server、撤權或登出清理；重開不保證草稿恢復。原圖缺失／hash 錯誤不得宣稱成功。大小及 MIME 簽名檢查不是完整影像解碼或辨識品質證據。

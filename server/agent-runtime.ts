@@ -41,6 +41,8 @@ export interface AgentRunInput {
   trigger: { kind: "interactive" | "worker"; reference: string };
   recipeId: string;
   messages: { role: "user" | "model"; text: string }[];
+  /** One server-authorized original; no client URLs or arbitrary content parts. */
+  image?: { mimeType: "image/jpeg" | "image/png"; data: string };
   tools: AgentTool[] | ((context: AgentRunContext) => AgentTool[]);
   authorize: () => Promise<boolean>;
   signal?: AbortSignal;
@@ -142,7 +144,7 @@ export function createAgentRuntime(options: {
             plugins: [createAgentObserver({ runId, toolNames: [...definitions.keys()], sink: options.diagnostics })] });
           try {
             for await (const event of runner.runAsync({ userId: scope.userId, sessionId: runId,
-              newMessage: { role: "user", parts: [{ text: input.messages.at(-1)!.text }] }, abortSignal: budget.signal,
+              newMessage: { role: "user", parts: [{ text: input.messages.at(-1)!.text }, ...(input.image ? [{ inlineData: input.image }] : [])] }, abortSignal: budget.signal,
               runConfig: { maxLlmCalls: AGENT_LIMITS.modelCalls, streamingMode: StreamingMode.NONE, saveInputBlobsAsArtifacts: false } })) {
               budget.check();
               if (event.errorCode) throw model.failure ?? new AgentStopped(budget.counts.modelCalls >= AGENT_LIMITS.modelCalls ? "model_limit" : "unavailable");

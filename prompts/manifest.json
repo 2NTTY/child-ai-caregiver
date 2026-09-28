@@ -1,10 +1,10 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.12",
+  "version": "0.1.14",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
-  "validationScope": "s11_foundation_and_w02_scripted_checks; growth_event_binding_pending_service_acceptance",
+  "validationScope": "delivered_s11_growth_summary_and_photo_evidence; full_panel_browser_and_public_delivery_tracked_separately",
   "promptBoundary": {
     "begin": "<!-- prompt:begin -->",
     "end": "<!-- prompt:end -->"
@@ -208,6 +208,15 @@
         "core.tool-use",
         "core.output",
         "module.knowledge-answering"
+      ]
+    },
+    {
+      "id": "module.photo-capture",
+      "path": "modules/photo-capture.md",
+      "version": "0.1.0",
+      "requires": [
+        "module.multimodal-input",
+        "module.capture-confirmation"
       ]
     }
   ],
@@ -466,6 +475,33 @@
         "S13-W07"
       ],
       "missingCapability": "只按 Server 可用工具處理站內結果；沒有通知或任務寫入工具時不執行或聲稱已外發。"
+    },
+    {
+      "id": "photo-capture",
+      "additionalModules": [
+        "domain.childcare-hk.care-workflows",
+        "module.multimodal-input",
+        "module.capture-confirmation",
+        "module.chat",
+        "module.photo-capture"
+      ],
+      "outputModes": [
+        "tool_cycle"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "context",
+        "evidence",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "S11-W02",
+        "S12-W03",
+        "S12-W01"
+      ],
+      "missingCapability": "可提取已提供文字；附件不可讀就保留未知，不能假稱保存。"
     }
   ],
   "outputModeRequirements": {

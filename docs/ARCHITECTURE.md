@@ -518,3 +518,12 @@ S10-W01 已在實作固定 pgvector `0.8.6`／commit `8ee86c96f0fd72390f890aa8a3
 pg-boss 的 minute cron 只取已到期或目錄版本改變的孩子，短交易完成適用／抑制判斷及新候選；不是每日對全家庭呼叫模型。新基準與 `growth-agent-v1` 原子入列，原 worker generation／storage epoch／candidate version 隨工作保存；模型開始及運行中重查權限、關注與來源。背景復用 S11 ADK，只給家庭資料、讀取／知識／呈現工具，站內結果仍只屬其原運行使用者；沒有共享私人摘要、醫療規則生成或外發。相同 candidate 的 run claim 不會因 worker 重領重做模型。
 
 API 與 worker 均須既有 P2 啟用旗標及 migration 017；DB 維護指令建立兩個新 queue，runtime 不自行 migration。還原後沿既有 worker 暫停與世代核對；必要 SQL、原資料／還原及真背景恢復已有分項證據；完整失敗矩陣未執行，見 [W08 驗收範圍](../artifacts/verification/S13_W08_CHECKS.json)。
+
+<a id="p2-photo-flow"></a>
+## S12-W03 照片接線
+
+沿用 [附件目錄](#section-3-2)、既有 storage cipher／online 收據及 ADK runtime。metadata 預留與原檔傳輸分兩步；Server 授權後才接最多一張 4 MiB 圖，單程序最多兩個內容上傳，普通 JSON 仍限 64 KiB。原檔獨立加密、保留 SHA-256，無公開靜態路徑；短 SQL 交易內只做本機有界檔案操作，不持鎖呼叫 Gemini。不可變檔案及 reserved 狀態讓中斷後核對原 ID；DB 刪除清單解決 SQL／檔案不能共用交易的清理恢復。
+
+原生 inlineData 由 Server 注入當次 ADK user message，保留現有 parts／配額／取消／診斷保護；共用同一前景 runtime 並發控制。只載入既有 capture-confirm／multimodal 模組及簡短 photo-capture 接線模組；受限工具只接候選。家長編輯、確認及原圖分享經業務服務完成，AI 不能直接写入共享照護資料。原圖外送須明確操作，不因已上傳便呼叫模型。
+
+本包只做原生 Web File 選取與功能確認表單；不加入圖片套件、雲端物件服務、相機／Android 或 UI polish。已核官方資料與真服務證據分列，必要照片／配對還原通過，完整面板及公開部署未驗；[接口](API.md#p2-photos)／[保存](DATA_MODEL.md#p2-photo-data)／[恢復操作](P2_PHOTOS.md)。
