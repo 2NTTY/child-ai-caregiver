@@ -5,7 +5,7 @@ description: 修改 Playwright Test 的正式 Web／真 API 瀏覽器驗收、�
 
 # Playwright Web 驗收
 
-適用 @playwright/test／playwright／playwright-core 1.63.0、Node 24；最後核對 2026-09-29。官方 API、npm 版本／Apache-2.0 及本機 --list 載入已核對；真瀏覽器尚未執行，不能把列出案例當作通過。
+適用 @playwright/test／playwright／playwright-core 1.63.0、Node 24；最後核對 2026-09-29。官方 API、npm 版本／Apache-2.0 已核對；本機單一 Chromium 真 API 情景已驗證，Firefox 未驗。實際證據及範圍見驗收操作，不能把 --list 當作通過。
 
 - 優先沿用現有 fixture／locator／Server 入口，只補必要缺口。用一個 worker、零 retry 及有界 timeout；同一串接流程可覆蓋相依邊界，不為覆蓋率增加矩陣。
 - 每次用獨立 BrowserContext 與合成帳號；APIRequestContext 可共用該 context cookies 建立前置。storageState 如需傳遞留在記憶體，不把密碼、token、cookie、真家庭資料寫進 repo、trace 或快照。[Fixtures](https://playwright.dev/docs/test-fixtures)

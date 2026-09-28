@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { isAbsolute } from "node:path";
 
 const listOnly=process.argv.includes("--list");
+const includeFirefox=process.env.P2_FIREFOX_APPROVED==="true";
 const api="http://localhost:3101",web="http://localhost:8181";
 if(!listOnly){
   if(Number(process.versions.node.split(".")[0])!==24)throw new Error("Node 24 required");
@@ -23,7 +24,7 @@ export default defineConfig({
   timeout:150000,globalTimeout:420000,expect:{timeout:8000},forbidOnly:true,
   reporter:[["line"]],outputDir:".cache/browser-results",
   use:{baseURL:web,trace:"off",screenshot:"off",video:"off",serviceWorkers:"block",actionTimeout:10000,navigationTimeout:20000},
-  projects:[{name:"chromium",use:{browserName:"chromium"}},{name:"firefox",use:{browserName:"firefox"}}],
+  projects:[{name:"chromium",use:{browserName:"chromium"}},...(includeFirefox?[{name:"firefox",use:{browserName:"firefox"}}]:[])],
   webServer:listOnly?undefined:[
     {command:quote(process.execPath)+" server/index.ts",url:api+"/api/health",env,timeout:30000,reuseExistingServer:false,stdout:"ignore",stderr:"pipe"},
     {command:quote(process.execPath)+" node_modules/expo/bin/cli start --web --localhost --port 8181",

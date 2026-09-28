@@ -985,3 +985,12 @@
 - Actual Work：固定 Playwright Test 1.63.0，保留既有 P1／node:test；一個串接情景提供 Chromium／Firefox 入口，單 worker、零 retry、首次失敗停，不擴充矩陣。真保存後只中斷回應再查原 opId，不用假成功代替保存。隔離合成帳號、固定本機 API／Web／資料庫、自有程序及清理範圍、關閉模型／渠道及 trace 已備妥。
 - Research / Checks：沿用 TECH_REUSE 選型，補核官方 configuration／fixtures／network、npm 固定版及 Apache-2.0，保存原許可與短 Skill。[EV-S16-W05](artifacts/verification/S16_W05_CHECKS.json)。唯一輕量命令 `--list` 一次通過，列出一檔兩入口，實際執行情景數為零。沒有瀏覽器下載、Server／資料庫啟動、帳號建立、integration／E2E 或模型／通知。未重跑 typecheck／lint／build／unit suites。
 - Pending / Next：真執行連同所有 P2 包缺項在 S16-W02 合併重複情景後一次列出次數與成本供使用者決定。S16-W05 只標待驗收；S17-W02／正式 P2 完成仍未達標，沒有 push／merge／部署或延長試用。
+
+
+<a id="log-20260929-015"></a>
+## LOG-20260929-015
+
+- Work Package / Responsibility：S16-W05；沿用 C 主責、B 配合正式介面、A 統籌整合及權威文件。共用 AI 由 A 操作；主模型覆核證據，原 Sol 只處理有界測試修正，D 未執行人工驗收。
+- Result：Chromium 在整合版本 2b6e0bf 的單一真 API 情景通過，147 HTTP／3 帳號／1 孩子已清理，家庭隔離／viewer、原 opId 單筆恢复、撤權清 UI／草稿可核對；零非預期外網／模型／通知，服務已停。原 locator／搜尋路由失敗保留，不放寬斷言。
+- Scope Decision：使用者明確確認 Firefox 專項延後作相容性驗收，不阻塞 P2；如實保留未驗。後續必要功能檢查使用 Codex 內置瀏覽器，已過 Chromium 不重跑；停止 Windows loader 診斷。Firefox runner 改為明確選入，旗標不代替批准。
+- Delivery：從最新 master e75a294 在獨立交付分支只重放本包四個提交，原整合 checkpoint 保留；未帶入其他待驗 P2 功能。三個固定開發依賴及測試正文沿用受驗版本，只做必要離線配置／diff 核對。完成隨本包 PR 合併生效，不代表 P2 整體完成；現網未部署或續期。
