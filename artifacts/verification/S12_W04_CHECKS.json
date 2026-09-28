@@ -34,20 +34,19 @@
       "result": "source/date fetch transition and explicit exit from checked unknown fixed; final local conditions reviewed without repeating typecheck"
     }
   ],
-  "unitTestsAdded": 0,
-  "unitTestsExecuted": 0,
-  "integrationExecuted": false,
+  "unitTestsAdded": 1,
+  "unitTestsExecuted": 2,
+  "integrationExecuted": true,
   "browserExecuted": false,
-  "realSourceFetches": 0,
-  "modelCalls": 0,
-  "migrationsApplied": [],
+  "realSourceFetches": 1,
+  "modelCalls": 2,
+  "migrationsApplied": [
+    "022-shared-inputs",
+    "023-personal-sources"
+  ],
   "pending": [
-    "022 PostgreSQL and existing data preservation",
-    "private source isolation/revocation/version/receipt",
-    "approved public fetch and bounded real extraction",
-    "manual/reference versus actual-child confirmation",
-    "browser draft/unknown/role clearing",
-    "delete and encrypted backup restore"
+    "Shared text candidate event time versus publication date after prompt 0.1.7 correction",
+    "Personal-source live UI connection; operation recovery and revoked UI browser completion"
   ],
   "limits": [
     "Source fetch stores parsed text, not original HTML",
@@ -102,6 +101,80 @@
       "023 constraint migration and preservation of existing encrypted rows",
       "private source save/read/owner isolation and URL-only state through real store",
       "new UI live connection; existing S16 acceptance remains separately recorded"
-    ]
+    ],
+    "acceptance": {
+      "testedRevision": "fa09af6",
+      "status": "passed",
+      "stage": "complete",
+      "code": null,
+      "startedAt": "2026-09-28T19:19:24.384Z",
+      "durationMs": 511,
+      "storeCalls": 20,
+      "maxStoreCalls": 20,
+      "personalFetchCalls": 1,
+      "maxOutboundGets": 3,
+      "actualOutboundGets": null,
+      "fetchLimits": {
+        "deadlineMs": 20000,
+        "bodyBytes": 1048576,
+        "redirects": 2
+      },
+      "newAccounts": 0,
+      "maxNewChildren": 1,
+      "childCreationAttempted": true,
+      "childId": "c54d8ba6-ae7b-4e0b-8b47-908ca9a282a5",
+      "childDeleted": true,
+      "sources": [
+        {
+          "label": "url_only",
+          "id": "6c7271a3-78f4-4328-be8d-055d69335eb6",
+          "deleted": true
+        },
+        {
+          "label": "supplied_text",
+          "id": "d7f0b35b-c43a-4a6c-8a70-e795bfb8e148",
+          "deleted": true
+        }
+      ],
+      "fetched": {
+        "id": "6c7271a3-78f4-4328-be8d-055d69335eb6",
+        "sha256": "13e81222319f645f035b617ee1635a428ca50bf61abe0bf74cedbb8cbc3e8cd8",
+        "retrievedAt": "2026-09-28T19:19:24.775Z",
+        "characters": 518,
+        "originalUrlPreserved": true
+      },
+      "checks": [
+        "existing_accounts_share_workspace",
+        "caregiver_has_parent_access",
+        "url_only_readable_without_body",
+        "private_fetch_ready_hash_time_original_url",
+        "caregiver_cannot_read_personal_sources",
+        "reconstructed_store_preserves_text_notes_and_fetch",
+        "only_new_sources_and_child_cleaned"
+      ],
+      "modelCalls": 0,
+      "notifications": 0,
+      "publicKnowledgeWrites": 0,
+      "migrationsExecuted": 0,
+      "automaticRetry": false,
+      "contentReview": "518-character fetched body hash matches the previously reviewed FHS HTML parsed locally; no extra external request."
+    }
+  },
+  "sharedExtraction": {
+    "testedPack": "0.1.6",
+    "runtime": "passed",
+    "quality": "needs_correction",
+    "modelCalls": 2,
+    "toolCalls": 1,
+    "embeddingCalls": 0,
+    "familyRecordsUnchanged": true,
+    "finding": "Draft correctly marked external reference and uncertainty, but timeRaw used the publication date instead of the approximately 09:00 event time in the selected text.",
+    "correction": {
+      "commit": "69e6410",
+      "packVersion": "0.1.7",
+      "moduleVersion": "0.1.1",
+      "offlineRecipe": "passed",
+      "realModel": "not_rerun"
+    }
   }
 }
