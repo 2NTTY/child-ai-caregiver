@@ -76,12 +76,12 @@ export function createProductAgentTools(options: {
           tasks: page.items, eligibleAssignees: page.eligibleAssignees, tasksHaveMore: Boolean(page.nextAfterId) };
       }) },
     { name: "search_knowledge", description: "以不含身份／私人正文的短主題問題搜尋已發布的公共知識。年齡、地區及公開使用範圍由 Server 決定。每 run 最多兩個查詢；無適用片段不可憑常識補造。",
-      parameters: z.object({ query: shortText(300), topics: z.array(shortText(60)).max(6),
+      parameters: z.object({ query: shortText(300),
         classification: z.enum(["official_guidance", "recent_information"]) }), authorize: permitted,
       execute: args => guard(async () => {
         const query = args.query as string;
         if (/@|https?:|[0-9a-f]{8}-[0-9a-f-]{27}|(?:\d[ -]?){8}/iu.test(query)) throw new FamilyError(400, "public_query_required");
-        const filter = { ...agentKnowledgeFilter(await current()), topics: args.topics as string[],
+        const filter = { ...agentKnowledgeFilter(await current()),
           classification: args.classification as KnowledgeFilter["classification"] };
         const result = await retrieval.search(query, filter);
         if (result.mode === "keyword_degraded" || mode === "not_used") mode = result.mode;
@@ -95,7 +95,7 @@ export function createProductAgentTools(options: {
         if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
       }) },
     { name: "propose_task_change", description: "提出改期、完成或取消既有家庭任務的候選；必須指向 read_context 的原任務及版本，使用者明確確認後才執行。「收到」不代表完成。",
-      parameters: z.object({ taskId: z.uuid(), expectedVersion: z.number().int().positive(),
+      parameters: z.object({ taskId: z.uuid(), expectedVersion: z.number().int().min(1),
         action: z.enum(["complete", "cancel", "reschedule"]), note: z.string().max(1000),
         dueAt: z.string().nullable(), timeZone: z.string().nullable(), assigneeUserId: z.string().nullable() }),
       authorize: permitted, execute: (args, context) => guard(async () => {
