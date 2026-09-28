@@ -11,6 +11,7 @@ import { FamilyPanel } from "../src/client/FamilyPanel";
 import { WebPushPanel } from "../src/client/WebPushPanel";
 import { useWebPush } from "../src/client/use-web-push";
 import { suspendPushBrowser } from "../src/client/push-browser";
+import { TelegramPanel } from "../src/client/TelegramPanel";
 import { CarePanel } from "../src/client/CarePanel";
 import { MemoryPanel } from "../src/client/MemoryPanel";
 import { createMemoryApi } from "../src/client/memory-api";
@@ -157,6 +158,7 @@ export default function HomeScreen() {
             <WebPushPanel {...push} />
             <FamilyPanel key={state.user!.id} userId={state.user!.id} online={state.online} apiBaseUrl={environment.apiBaseUrl}
               onChanged={() => { void controller.reloadChildren(); }} />
+            <TelegramPanel key={state.user!.id} userId={state.user!.id} online={state.online} apiBaseUrl={environment.apiBaseUrl} />
             <View style={styles.section}>
               <Text style={styles.body}>已登入：{state.user?.name}（{state.user?.email}）</Text>
               <Action label={state.busy === "logout" ? "正在登出…" : "登出"} onPress={requestLogout} disabled={busy || !state.online} />

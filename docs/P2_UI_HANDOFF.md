@@ -37,8 +37,8 @@ Web 預覽檢查 1440／1024／390／320 CSS px、鍵盤、溢出及必要狀態
 | UI-P2-08 任務與預約 | 查看、確認、指派、改期、完成、取消、衝突覆核及歷史 | 任務／穩定發生實例、含 offset 時間／IANA 時區、合資格負責人、原版本、原因／備註及終態；過期不等於完成 | S13-W01 [API](API.md#p2-task-http)／[型別](../src/shared/tasks.ts) 已接 [TaskPanel](../src/client/TaskPanel.tsx)／[client API](../src/client/task-api.ts)，本機 HTTP 及 Web export 通過；瀏覽器互動待 S16 |
 | UI-P2-09 聯絡授權 | 設定或撤回預授權，核對對象、內容、渠道及 fallback | 授權範圍／版本、合資格對象、待確認的超範圍動作 | S13-W07；待接通 |
 | UI-P2-10 通知偏好 | 個別設定渠道、安靜時段及明確的預約例外 | 香港時間預設 22:00–08:00、普通提示合併及跟進限制 | S06-W02 已有偏好保存；S13-W04 已接站內持久批次及執行，必要 DB 驗收通過；渠道控制待 W05／W06／W07 |
-| UI-P2-11 Web Push | 訂閱、退訂及查看裝置渠道狀態 | 未授權／已拒絕／不支援／已訂閱／訂閱失效，站內仍可查事項 | S13-W05 [WebPushPanel](../src/client/WebPushPanel.tsx)／[HTTP](API.md#p2-web-push-http)／[型別](../src/shared/web-push.ts) 已落碼：本人訂閱／撤銷、固定測試、原操作查核及投遞狀態；DB／真 Push／瀏覽器待驗收 |
-| UI-P2-12 Telegram | 啟動 bot 後完成綁定、解除綁定及回覆正確事項 | 綁定狀態、接收者、事項關聯；收到回覆不自動當作照護完成 | S13-W06；待接通 |
+| UI-P2-11 Web Push | 訂閱、退訂及查看裝置渠道狀態 | 未授權／已拒絕／不支援／已訂閱／訂閱失效，站內仍可查事項 | S13-W05 [WebPushPanel](../src/client/WebPushPanel.tsx)／[HTTP](API.md#p2-web-push-http)／[型別](../src/shared/web-push.ts) 已落碼：本人訂閱／撤銷、固定測試、原操作查核及投遞狀態；SQL／一次 Firefox 真 Push 及撤銷通過；公開 origin 留 S17 |
+| UI-P2-12 Telegram | 啟動 bot 後完成綁定、解除綁定及回覆正確事項 | 綁定狀態、接收者、事項關聯；收到回覆不自動當作照護完成 | S13-W06 本人雙向綁定／撤銷、一般測試及原操作查核已落碼；[功能及未驗項](#telegram-ui-handoff)，SQL 及真本人接收／回覆通過；公開 webhook／正式 UI E2E 未驗 |
 | UI-P2-13 執行與投遞台帳 | 查看實際聯絡進度及待處理結果 | 渠道接受、送達、已讀、回應、照護完成各自的證據；unknown 不冒充失敗 | S13-W04 已接站內提醒／處理狀態，必要 DB 驗收通過；真渠道台帳待 W07 |
 | UI-P2-14 照片輸入 | 選圖、上傳、查看提取結果、修正及確認 | 原檔／來源、上傳與提取狀態、不確定欄位、容量／權限錯誤 | S12-W03；待接通 |
 | UI-P2-15 分享輸入 | 貼上、上傳或主動分享指定來源 | 原文、來源／時間、可讀性、候選與確認；不背景讀私人動態 | S12-W04；待接通 |
@@ -61,3 +61,11 @@ S13-W01 任務設計需預留：家庭共享新增確認、ordinary／appointmen
 - S07 已在孩子／記錄、CarePanel、FamilyPanel 及 ChatPanel 接入原操作確認；S09 MemoryPanel 復用相同收據及刷新入口。可見頁面每 30 秒、重連及取得焦點時刷新；新讀取不覆蓋尚未確認的表單。跨端修改以版本衝突或最新狀態呈現，搜尋 cursor 失效須從首頁重新搜尋。Server 已確認保存而後續讀取失敗時，顯示「已確認，需重讀」，不可引導新增第二份。
 
 已交付的 P1 介面見 [API](API.md#p1-input-contracts)；P2 語義邊界見 [Agent](API.md#agent-runtime-contract)、[知識](API.md#knowledge-retrieval-contract)，各功能落碼後再附具體實作位置。
+
+<a id="telegram-ui-handoff"></a>
+## Telegram 功能對接
+
+- 正式基本入口：src/client/TelegramPanel.tsx／telegram-api.ts，掛在已登入帳號區；是本人渠道，切孩子不重綁、切帳號／Server 清理舊狀態。
+- 可操作功能：明確開始私人綁定、開啟 10 分鐘 bot 連結、回站內刷新、核對候選帳號後確認、撤銷、明確一般測試、查投遞及收到時間。沿用 S07 同一 opId／原操作查核，不自動輪詢或重送。
+- 新設計須區分未配置、等待 Telegram 啟動、待網頁確認、active／revoked／blocked、worker 暫停及各投遞狀態。API 接受不標已讀；callback 收到不標照護完成。
+- [實際 HTTP／型別](API.md#telegram-http) 是本包對接契約；一般測試無家庭正文，主動聯絡與事項 callback 由 S13-W07 補齊。獨立 frontend 預覽未被替換，SQL／本人真渠道已驗；正式 UI E2E 與公開 webhook 未驗，見 [驗收界線](P2_TELEGRAM.md)。

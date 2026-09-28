@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S13-W05",
+  "workPackage": "S13-W06",
   "recordedOn": "2026-09-30",
   "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "9e23bbdb7b0d8d40db616de8a2cd2fe21e83732f503555f3217aff63f0944340"
+    "sha256": "58ee71424d3287e34cc4a6905c8d18952c10e016f9d6e04facb0bb3e881f8dba"
   },
   "packages": [
     {
@@ -626,13 +626,51 @@
           "source": "Previously preserved by S16-W05"
         }
       ]
+    },
+    {
+      "name": "grammy",
+      "version": "1.46.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/grammyjs/grammY.git"
+      },
+      "tarball": "https://registry.npmjs.org/grammy/-/grammy-1.46.0.tgz",
+      "integrity": "sha512-/8Qw+iisrUdOMk+p2mjEHouMm/BBdBEN1DHh16wiTpRUZkxDG3PxexdjCvR+wvK3LWPdrEvnQbdrwpU954sPhg==",
+      "files": [
+        {
+          "path": "licenses/grammy/LICENSE",
+          "sha256": "025bc2c612e74a74c55a4bf24aa22d0c71a5ae93c81d8194aa6f7532985d4880",
+          "source": "node_modules/grammy/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@grammyjs/types",
+      "version": "5.0.0",
+      "dependencyType": "transitive",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/grammyjs/types.git"
+      },
+      "tarball": "https://registry.npmjs.org/@grammyjs/types/-/types-5.0.0.tgz",
+      "integrity": "sha512-iq1Qrq1iPKkB8yAa0qSuIURMZOCuqTY5pWy5gHpCeL1oQ+GPadGhw/cDTVE8waJwuCzacUzuIjRv1sESvk7u7A==",
+      "files": [
+        {
+          "path": "licenses/grammyjs-types/LICENSE",
+          "sha256": "025bc2c612e74a74c55a4bf24aa22d0c71a5ae93c81d8194aa6f7532985d4880",
+          "source": "node_modules/@grammyjs/types/LICENSE"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 811,
+    "packageEntries": 813,
     "declarations": {
       "Apache-2.0": 59,
-      "MIT": 643,
+      "MIT": 645,
       "ISC": 38,
       "MIT AND Apache-2.0": 1,
       "BSD-3-Clause": 22,

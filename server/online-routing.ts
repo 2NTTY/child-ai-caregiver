@@ -25,6 +25,9 @@ export function onlineRoute(command: OnlineCommand): OnlineRoute {
   if (path === "/api/web-push/subscriptions" || new RegExp(`^/api/web-push/subscriptions/${uuid}/(?:revoke|test)$`, "i").test(path)) return {
     kind: "preferences", scope: "personal", roles: ["owner"], privateResult: true, deleted: false,
   };
+  if(new RegExp(`^/api/telegram/(?:challenges(?:/${uuid}/confirm)?|bindings/${uuid}/(?:revoke|test))$`,"i").test(path))return {
+    kind:"preferences",scope:"personal",roles:["owner"],privateResult:true,deleted:false,
+  };
   if (path === "/api/families/invitations/accept") {
     const target = z.object({ confirmWorkspaceId: z.uuid(), token: z.string().regex(/^[A-Za-z0-9_-]{43}$/u) }).strict().parse(command.payload);
     return { kind: "family", scope: "invitation", targetId: target.confirmWorkspaceId, roles: READ_ROLES, privateResult: true, deleted: false };

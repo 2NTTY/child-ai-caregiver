@@ -387,3 +387,23 @@ S13-W05 [共享契約](../src/shared/web-push.ts) 只管理本人訂閱及明確
 契約要求區分未授權／已撤權、配對過期或重放、舊世代、版本衝突、校驗失敗、網絡失敗、結果未知及附件未完成；界面映射到 [SPEC 確認狀態](../SPEC.md#section-4-7)，失敗或未知不能顯示成功。以上是業務條件，未固定 HTTP 狀態碼或錯誤字串。
 
 HTTP 路徑、完整封裝、裝置憑據格式、批次限制、衝突內容及相容協商仍由 [D-API-001](DECISIONS.md#d-api-001) 追蹤：P1 S06-W03 定最小登入／資料介面，S06-W01／S11-W01 定安全 AI 入口；P2 S07-W03 定在線一致性，S13-W04 至 W07 定 worker／通知／授權 fallback；P4 S06-W04／S08-W01 定 Server 選擇及裝置授權。僅實作所需部分，寫回本文件。遷移格式及恢復要求依 [DATA_MODEL](DATA_MODEL.md#section-6-2) 與 [ARCHITECTURE](ARCHITECTURE.md#section-6-5)，不虛構已運行路由或指令。
+
+<a id="telegram-http"></a>
+## P2 Telegram 本人渠道
+
+S13-W06 的 [共享型別](../src/shared/telegram.ts) 接本人私人渠道；綁定本身不授予讀取家庭資料或任意聯絡權。以下登入 HTTP 均核對 cookie 及 x-expected-user-id，POST 只經既有 S07 原操作收據；直接 POST 回 428。網絡外發在交易提交後由 worker 執行。
+
+| 路徑 | 輸入與回應 |
+|---|---|
+| GET /api/telegram | TelegramStatus：本人綁定、未過期連結／候選帳號、最近 20 筆投遞、配置／worker 狀態；不回原 chat ID、bot token 或 webhook secret |
+| POST /api/telegram/challenges | confirmPrivateChannel:true → { challenge }；10 分鐘私聊連結，每人每小時最多 6 個，取代尚未完成連結 |
+| POST /api/telegram/challenges/:id/confirm | expectedVersion、confirmAccount:true → { binding }；須在 Telegram 啟動 bot，再於網頁確認候選名稱／身份尾碼；版本／epoch／期限重查 |
+| POST /api/telegram/bindings/:id/revoke | expectedVersion → { binding }；清除渠道身份密文及索引，停止尚未開始投遞 |
+| POST /api/telegram/bindings/:id/test | expectedVersion、confirmImmediate:true → { delivery }；固定無家庭正文測試、每日最多 3 次、至少相隔 60 秒；排隊與 job 同交易 |
+| POST /api/telegram/webhook | 唯一免瀏覽器 Origin／會話的渠道入口；必須先通過 Telegram secret header，再讀取最多 64 KiB JSON；無有效 secret 不讀正文 |
+
+一人最多一個 active 綁定，同一 bot 的同一私人 chat 不能由另一產品帳號接管；換帳號先撤銷。只處理私人 /start、/stop、bot 封鎖及本人匹配的 opaque callback；不保存無關聊天。/stop／封鎖也取消已識別、尚待網頁確認的連結。
+
+queued、sending、accepted、rejected、unknown、stopped 與 acknowledgedAt 分開；「收到測試」只記收到，不改任何照護任務。sendMessage 逾時或重領 sending 保留 unknown，不重發／不切換渠道；API 接受不是送達或已讀。同一綁定仍有 queued／sending 或未收到回應的 unknown 時，Server 拒絕另建一般測試。原 opId 回應丟失先查收據；即使現況改變，仍可明確用相同原操作取得既有成功或 Server 拒絕，不另建操作猜結果。
+
+本包未接家庭授權聯絡或任務完成 callback；這些在 S13-W07 以當前權限／事項重新校驗後接線。功能已落碼，SQL／真 webhook／Telegram／瀏覽器均待集中驗收。

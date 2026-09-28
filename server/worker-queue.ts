@@ -1,4 +1,5 @@
 import { PgBoss, type Db, type JobWithMetadata } from "pg-boss";
+import { TELEGRAM_QUEUE,TELEGRAM_JOB_OPTIONS } from "./telegram-events.ts";
 import type { Pool, PoolClient } from "pg";
 import { z } from "zod";
 import type { TaskQueue } from "./task-worker.ts";
@@ -50,6 +51,7 @@ export function createWorkerQueue(pool: Pool, mode: "producer" | "worker" | "mig
       await boss.start();
       if (mode === "migrate") {
         await boss.createQueue(WEB_PUSH_QUEUE, WEB_PUSH_JOB_OPTIONS);
+        await boss.createQueue(TELEGRAM_QUEUE, TELEGRAM_JOB_OPTIONS);
         await boss.createQueue(FAILED_QUEUE, JOB_OPTIONS);
         await boss.createQueue(TASK_QUEUE, { ...JOB_OPTIONS, deadLetter: FAILED_QUEUE });
         await boss.createQueue(KNOWLEDGE_REFRESH_QUEUE, { ...REFRESH_JOB_OPTIONS, policy: "exclusive" });

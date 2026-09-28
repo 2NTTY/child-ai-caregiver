@@ -20,6 +20,11 @@ import { handleTaskRequest } from "./task-api.ts";
 import { handleOnlineRequest } from "./online-api.ts";
 import type { OnlineStore } from "./online.ts";
 
+import type { TelegramConfig,TelegramGateway } from "./telegram-types.ts";
+import type { TelegramStore } from "./telegram-store.ts";
+import { telegramWebhookAuthorized } from "./telegram-config.ts";
+import { handleTelegramRequest } from "./telegram-api.ts";
+import { handleTelegramWebhook } from "./telegram-webhook.ts";
 const MAX_BODY_BYTES = 64 * 1024;
 
 class BodyTooLargeError extends Error {}
@@ -78,6 +83,7 @@ export function createRequestHandler(options: {
   tasks?: import("./tasks.ts").TaskStore;
   online?: OnlineStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
+  telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
   modelGateway?: ModelGateway;
   chat?: ChatStore;
   chatPrompt?: string;
@@ -124,7 +130,13 @@ export function createRequestHandler(options: {
         await writeResponse(apiError("method_not_allowed", "不支援此操作。", 405), response, permittedOrigin);
         return;
       }
-      if (method === "POST" && !origin) {
+      const telegramWebhook=url.pathname==="/api/telegram/webhook";
+      if(telegramWebhook && (method!=="POST" || !telegramWebhookAuthorized(headers.get("x-telegram-bot-api-secret-token"),options.telegram?.config??null))){
+        request.resume();
+        await writeResponse(apiError("forbidden","無效渠道請求。",403),response,null);
+        return;
+      }
+      if (method === "POST" && !origin && !telegramWebhook) {
         request.resume();
         await writeResponse(apiError("forbidden_origin", "此來源未獲授權。", 403), response, null);
         return;
@@ -134,7 +146,9 @@ export function createRequestHandler(options: {
       const body = method === "POST" ? await readBody(request) : undefined;
       const webRequest = new Request(url, { method, headers, ...(body ? { body } : {}) });
       let result: Response;
-      if (url.pathname.startsWith("/api/auth/")) {
+      if(telegramWebhook && options.telegram?.config){
+        result=await handleTelegramWebhook(webRequest,options.telegram.store,options.telegram.gateway,options.telegram.config.botId);
+      } else if (url.pathname.startsWith("/api/auth/")) {
         result = await options.auth.handler(webRequest);
         if (result.status >= 500) {
           await result.body?.cancel();
@@ -154,10 +168,13 @@ export function createRequestHandler(options: {
       } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
         || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")
         || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences"
-        || url.pathname.startsWith("/api/online/") || url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/")) {
+        || url.pathname.startsWith("/api/online/") || url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/")
+        || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = url.pathname.startsWith("/api/online/") && options.online
+        result = (url.pathname==="/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
+          ? await handleTelegramRequest(webRequest,userId,options.telegram.store)
+          : url.pathname.startsWith("/api/online/") && options.online
           ? await handleOnlineRequest(webRequest, userId, options.online)
           : (url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/")) && options.webPush
             ? await handleWebPushRequest(webRequest, userId, options.webPush)

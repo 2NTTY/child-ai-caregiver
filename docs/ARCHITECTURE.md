@@ -472,3 +472,12 @@ S10-W01 已在實作固定 pgvector `0.8.6`／commit `8ee86c96f0fd72390f890aa8a3
 | Gemini 费用与缓存 | [统计字段](DATA_MODEL.md#section-9-6)、[用户费用视图](../SPEC.md#section-9-6)；Codex 额度规则只在 [AGENTS](../AGENTS.md#quota) |
 
 本文约 US$300 GCP 资源和模型名称是原计划基准记录，不是本轮查询到的实时余额或可用性。保留初始方案，使用前按对应步骤核对。
+
+<a id="telegram-wiring"></a>
+## S13-W06 Telegram 接線
+
+沿用已選 grammY 1.46.0／MIT，Node Server 用 Api 及受限 transport，沒有 Bot 自動初始化、long polling、auto-retry 或 webhook reply。server/telegram-* 接本人綁定、原操作收據、加密台帳及 pg-boss；功能旗標 TELEGRAM_ENABLED 預設關閉。Server／worker 共用受保護 JSON 配置，原 bot ID／綁定版本及執行世代每次重新核對。
+
+一般測試只發固定無孩子正文訊息，使用者點回應只記 acknowledgedAt。此包接通渠道邊界，S13-W07 才把已核准家庭事項與聯絡決策接入；不讓渠道 adapter 決定照顧者、醫療事項、fallback 或完成狀態。網頁可關閉，已確認 queued 由 worker 處理；發送不確定時停止重發，不能承諾外部 exactly-once。
+
+原文核對及實作方法見 [Telegram Skill](../.agents/skills/telegram-bot-api/SKILL.md)，帳號操作／上線條件見 [操作指引](P2_TELEGRAM.md)。S13-W06 的 SQL、真 webhook／訊息及恢復仍待 P2 集中驗收。

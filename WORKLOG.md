@@ -1014,3 +1014,21 @@
 - Evidence：復用 015／原資料保留及配對加密還原；SQL 49 業務／2 輪詢、2 帳號／3 綁定／7 入列通過，原子入列、隔離、失效、unknown 不重發及持久化可核對。自己的資料清理、worker 暫停。[EV-S13-W05](artifacts/verification/S13_W05_CHECKS.json)。
 - True Receipt：Firefox 只发一則無孩子資料通知，HTTP 201；使用者回覆關頁後「已收到通知」及「已清理」，Server 綁定已核對撤銷。內置瀏覽器的 Google staging 端點先被拒並清理，無發送；沒有安裝 Chrome、擴大 provider 或重跑 Firefox 相容性。
 - Review / Limits：接受整合版本 1896277；核心服務／client 與原包一致，後續 care payload 分支不納入，本包普通測試路徑不變。只合併最新 master 接線及核對依賴，不重跑已通過服務。公開 origin／部署留 S17-W02，P2 未完成，現網未更改或續期；開發提交與合併簽署分開核對。
+
+<a id="log-20260928-009"></a>
+## LOG-20260928-009
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S13-W06 Telegram，基線 master `22f5c667887e8c5a926df59686a460fc3d281c6d`，分支 `codex/s13-w06-telegram`。前置 S06-W02／S13-W04 已合併；S10-W02、S11-W02、S13-W05／W08 的未驗實作仍在其他隔離分支，沒有誤當本分支內容。
+- Responsibility / Executor：D 主責、權重 3，D 60%／C 30%／B 10%；A 統籌共用 AI，不表示組員各自手寫或操作。主模型處理 SQL／權限、協定整合、review 及全部權威文件／Skill；一個 Luna Max 查固定官方 SDK 缺口，兩個 Sol xhigh 分別接本人功能 UI 及方案已定的 SDK adapter。
+- Actual Work：固定 grammY 1.46.0／@grammyjs/types 5.0.0，原 MIT 許可保存；無隱藏重試或 webhook reply。10 分鐘私人 deep link 經 bot 啟動、網頁核對後才綁定；唯一目標、撤銷／封鎖、同 opId 查核、加密身份與 HMAC 索引、webhook update 原子去重已接。只處理明確私人命令／opaque callback，不保存其他聊天。
+- Delivery / UI：固定无孩子資料測試需本人明確確認，有限次數／間隔、交易入列、原世代／epoch／綁定重查；網絡不持資料鎖。sending 重領或不可信回應保存 unknown，不重發；失效 job 有台帳復核。callback 只記收到，不完成照護任務；家庭授權、內容及任務聯絡留 S13-W07。正式基本 UI 及對接清單已更新，未替換 frontend 預覽或重做美術／Prompt Pack。
+- Verification / Review：[EV-S13-W06](artifacts/verification/S13_W06_CHECKS.json)。前端型別一次通過；Server 首次發現 grammY AbortSignal shim／fetch 參數型別不合，第一輪只修到 sendMessage，補齊同一原因的 answerCallbackQuery 後通過。只有一項離線 gateway 公開案例，由 Sol 在其實作修改前後跑兩次，均通過；主模型核對後未重跑，不當作原生 HTTPS／真 bot 或 SQL 證據。review 補齊 pending 候選撤銷、並發綁定、unknown 新測試限制、blocked 解除及原操作 stale 後仍可獲 Server 裁決。
+- Skill / Limits：主模型保存短 Telegram Skill；沿用已知缺 PyYAML 的結果，僅以現有 YAML parser 核對 frontmatter，不宣稱官方 validator 通過。沒有 integration、migration、真 Telegram／Gemini、瀏覽器、部署、全量測試或額外測試矩陣。018 未執行、功能預設關閉、本包待驗收；後續與 P2 合併必要情景及成本再集中安排，未合併 master 或延長試用。
+
+<a id="log-20260930-006"></a>
+## LOG-20260930-006
+
+- Work / Base：S13-W06 Telegram 獨立交付，從最新 master `720342e` 整合原 `ee01c8b`；不帶入 W07 家庭聯絡。D 主責、權重 3，D 60%／C 30%／B 10%；共享 AI 由 A 操作，實際 Committer 保留。
+- Evidence：[EV-S13-W06](artifacts/verification/S13_W06_CHECKS.json)。沿用 S16 已取得的 018／原資料／加密空庫還原；45 業務／2 輪詢／1 consumer、2 合成帳號、2 綁定、3 入列、2 scripted sends 通過，自己的資料清理、原行保留、worker 暫停。沒有重跑同一 DB 驗收。
+- Real Channel：一次真訊息 HTTP 200，使用者確認本人身份、看到訊息及按「收到測試」；持久 acknowledged 可核對，不完成照護任務。即時 answerCallbackQuery 未成功，原因未保留；公開 webhook／即時回應留 S17，沒有重發或宣稱完整 UI E2E 通過。
+- Review / Delivery：主模型復用既有 Telegram Skill、核對權限／一次嘗試／unknown／終態；Sol 按明確邊界合併最新 Server／worker 接線，未改權威文件。主模型維護文件、許可及證據。完成隨本包 PR 合併生效，按 D 帳號推送／PR／合併；P2 未完成、現網 P1 未改，沒有續期或部署。
