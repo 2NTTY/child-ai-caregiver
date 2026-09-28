@@ -36,6 +36,8 @@ export function onlineRoute(command: OnlineCommand): OnlineRoute {
   const memory = new RegExp(`^/api/children/(${uuid})/memory/(?:facts(?:/${uuid}/(?:confirm|revise|deactivate|delete))?|topics(?:/${uuid}/(?:change|reopen|delete))?)$`, "i").exec(path);
   if (memory) return { kind: "memory", scope: "child", targetId: memory[1].toLowerCase(), roles: READ_ROLES,
     privateResult: true, deleted: path.endsWith("/delete") };
+  const task = new RegExp(`^/api/children/(${uuid})/tasks(?:/${uuid}/change)?$`, "i").exec(path);
+  if (task) return { kind: "tasks", scope: "child", targetId: task[1].toLowerCase(), roles: WRITE_ROLES, privateResult: false, deleted: false };
   const family = new RegExp(`^/api/families/(${uuid})/(children|invitations(?:/${uuid}/revoke)?|members/[A-Za-z0-9_-]{1,128})$`, "i").exec(path);
   if (family) return { kind: family[2] === "children" ? "children" : "family", scope: "workspace", targetId: family[1].toLowerCase(),
     roles: family[2] === "children" ? WRITE_ROLES : ["owner"], privateResult: false, deleted: false };

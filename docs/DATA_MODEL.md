@@ -207,6 +207,11 @@ ADK session 只供單次工具循環使用，不取代已確認事實、摘要�
 <a id="data-5-5-08"></a>
 每次发生使用稳定 `occurrenceId`。通知投递还包含收件人和渠道，不能因为技术重试另建任务。
 
+<a id="task-ledger-storage"></a>
+S13-W01 的 migration 012 使用 `care_tasks` 保存安排、`task_occurrences` 保存本次發生、`task_revisions` 保存每次動作及快照。首版手動安排一項對應一個 occurrence，不預建通用週期引擎；投遞、關注候選及關注處理結果不混入任務狀態。標題、正文、負責人、時區、原因／完成備註及 revision 均加密；只留識別、版本、到期時間及狀態供查詢。AAD 綁定孩子／任務／版本／occurrence，與當前讀取者無關。
+
+安排及 occurrence 共用一個版本，寫入在 workspace 排他鎖後重新核對成員及指派資格；台帳、revision、change feed 及原 opId 收據同交易。完成／取消的同基準並發保留兩個事件並進入 `needs_review`，顯式 resolve 只能落到 completed／cancelled；舊終態不復活。改期不改識別。所有三表隨孩子刪除 cascade，舊收據正文沿用孩子刪除 trigger 清除；全庫加密備份自動包含新增表，擴展後空庫還原仍須按後續批准範圍驗收。[實際 HTTP 契約](API.md#p2-task-http)
+
 <a id="notification-model"></a>
 <a id="data-5-5-09"></a>
 P2 任務及外發須保存以下必要語義；實際表名、欄名及枚舉於相應工作包定稿，不建立通用渠道或授權平台：

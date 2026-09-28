@@ -1,0 +1,90 @@
+{
+  "workPackage": "S13-W01",
+  "status": "verified_completion_effective_on_pr_merge",
+  "date": "2026-09-28",
+  "baseCommit": "54e53d6b6375af2230ff0c009aa53c691c4d71b4",
+  "prerequisites": [
+    "S09-W02 (PR 34)",
+    "S07-W03 (PR 36)"
+  ],
+  "lightweight": {
+    "taskPolicyAndHttpTests": {
+      "file": "tests/task-policy.test.ts",
+      "passed": 9
+    },
+    "existingOnlineBoundaryTests": {
+      "file": "tests/online-server.test.ts",
+      "passed": 6
+    },
+    "clientTests": {
+      "files": [
+        "tests/tasks-client.test.ts",
+        "tests/tasks-ui.test.ts"
+      ],
+      "passed": 12,
+      "executor": "Sol worker; main reviewed source and reported evidence"
+    },
+    "typecheck": [
+      "tsc --noEmit",
+      "tsc --project tsconfig.server.json"
+    ],
+    "scriptSyntax": "node --check scripts/verify-tasks.mjs",
+    "webExport": "passed: Expo Metro static Web export, 3 routes; no browser E2E"
+  },
+  "approvedLocalAcceptance": {
+    "script": "scripts/verify-tasks.mjs --approved-tasks",
+    "approval": "User approved this S13 package scope and confirmed Docker started",
+    "database": "existing encrypted local synthetic PostgreSQL 18.6 with pgvector 0.8.6",
+    "migration": "012-task-ledger",
+    "checksPassed": 11,
+    "httpRequests": 47,
+    "limits": {
+      "httpRequests": 60,
+      "accounts": 3,
+      "children": 1,
+      "tasks": 3
+    },
+    "created": {
+      "accounts": 3,
+      "children": 1,
+      "tasks": 1
+    },
+    "preservedOriginalBusinessRows": 33,
+    "coverage": [
+      "Migration and existing encrypted storage verification",
+      "Owner/caregiver/viewer and unrelated account access",
+      "Explicit confirmation and eligible assignee validation",
+      "Concurrent same opId creates one task and one stable occurrence",
+      "Reschedule preserves occurrence identity and rejects stale writes",
+      "Opposing terminal operations preserve both events and require review",
+      "Explicit conflict resolution cannot reopen a terminal task",
+      "Shared change feed and original receipt versus current task state",
+      "HTTP Server recreation and pool reconnection retain exact data",
+      "Revocation blocks reads and old receipt replay",
+      "Only the newly created child is deleted; cascades and redacted receipts prevent resurrection",
+      "Existing child/record/chat/fact/topic/summary rows remain unchanged"
+    ],
+    "initialAttempt": "Preflight connection failed while the original container was stopped; zero HTTP/accounts/tasks. Started the same existing container, then the approved run passed.",
+    "models": 0,
+    "notifications": 0,
+    "deployed": false
+  },
+  "review": {
+    "executor": "main model",
+    "notes": [
+      "Workspace lock and post-lock membership check serialize task changes with revocation and deletion",
+      "Task/occurrence/revision/change/receipt share the online transaction",
+      "Conflicting terminal writes return a confirmed needs_review result rather than a rollback-producing error",
+      "UUID casing normalized before encryption context; focused HTTP test passed after review",
+      "Original opId and unknown outcome controls retained in client; UI source reviewed",
+      "Reused frontend accessible confirmation pattern; inactive assignee warning preserves terminal history semantics"
+    ]
+  },
+  "limits": [
+    "No real browser/E2E or Android acceptance; resolver tests do not validate rendered interaction",
+    "No worker, external notification, Agent task tools or recurring scheduler in this package",
+    "Reminder decision tests use supplied evidence; durable recipient-wide batch limits and dispatch are later worker/contact integration",
+    "Whole-database backup includes new tables; no new backup/empty-database restore was run in this scope",
+    "Formal app remains functional UI; independent frontend preview and existing art/Prompt Pack were not reimplemented"
+  ]
+}

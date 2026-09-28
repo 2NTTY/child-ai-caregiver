@@ -66,6 +66,8 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 <a id="frontend"></a>
 ## Web、Expo 57 與 Android
 
+2026-09-28 S13-W01 採用補充：根專案已固定安裝 React Hook Form 7.88.0／resolvers 5.9.1／Paper 5.15.3，核對實際套件 manifest、MIT 原文並保存 tarball integrity／許可 hash（[清單](../licenses/manifest.json)）。只用於新 TaskPanel，不批量改 P1 UI；任務屬性及 Server 驗證復用同一 Zod schema，原 opId transport 繼續掌管寫入。resolver 的有效輸入／原因／時區錯誤及 scoped client 輕量檢查通過；正式瀏覽器鍵盤、畫面互動及 Android 尚未驗收，不能把 typecheck／合成 preview 當真產品 UI 驗收。後續結果以 [S13-W01 證據](../artifacts/verification/S13_W01_CHECKS.json) 為準，以下保留首次文件核查的條件及限制。
+
 前端執行次序已按其專責 task 對齊：先在 `frontend/` 逐頁做獨立 Web 預覽，主聊天接正式 API；整套 Web 獲使用者明確確認且符合 P3 前置後才開始 Android。以下跨平台核查是選型輸入，不是現在開始 Android 或修改正式 App 的授權。Preview 驗證不能升格為正式整合證據，詳細交付界線見 [交接文件](P2_UI_HANDOFF.md#chat-handoff)。
 
 - **RHF＋Zod：**[RHF 7.88.0 manifest](https://github.com/react-hook-form/react-hook-form/blob/v7.88.0/package.json) 支援 React 19、Node ≥18；[resolvers 5.9.1 官方 registry](https://registry.npmjs.org/@hookform/resolvers/5.9.1) 支援 RHF ^7.55、Zod ^3.25／^4，MIT。該 tag 的 repo manifest 曾顯示較舊版本號，registry 5.9.1 的 gitHead 為 `f18ddfbb5f75a24b77c408565ad767eba4dd6704`；尚未核驗安裝 tarball。採用 gate 包括實際 artifact／TS 6 typecheck、Zod 4 input／output、RN Controller 的 `onChangeText`、reset／陣列／非同步錯誤及重連表單保留。不批量改寫舊手動 validator，不讓 RHF 重設原 opId 或自行重送 unknown 寫入。

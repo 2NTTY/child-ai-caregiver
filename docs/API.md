@@ -278,6 +278,25 @@ Web transport 在本頁記憶體保留原操作；未知結果先查收據，只
 <a id="notification-contract"></a>
 ## 任務授權與渠道投遞契約
 
+<a id="p2-task-http"></a>
+### S13-W01 手動任務台帳
+
+實際型別與欄位驗證見 [tasks.ts](../src/shared/tasks.ts)。所有路由以已登入帳號及孩子家庭權限核對；owner／caregiver 可寫，viewer 可讀。這個入口確認的是家庭共享安排，不代表向其他人外發的授權。
+
+| 入口 | 輸入及結果 |
+|---|---|
+| `GET /api/children/:childId/tasks` | `afterId` 可選；每頁最多 50 個，回傳 `items / eligibleAssignees / nextAfterId`。合資格指派對象只有該家庭 owner／caregiver |
+| `GET /api/children/:childId/tasks/:id` | 回傳當前 `{task}`；收據內的舊結果不能代替本次讀取 |
+| `GET /api/children/:childId/tasks/:id/history` | `beforeVersion` 可選；最多 50 筆 revision，包含當時完整快照、操作人、操作、原版本、原因／備註及 Server 時間 |
+| `POST /api/children/:childId/tasks` | `values` 為標題、正文、ordinary／appointment、負責人、含 offset 的 `dueAt`、IANA `timeZone`；`confirm:true` 後建立一次安排及穩定 occurrence |
+| `POST /api/children/:childId/tasks/:id/change` | `expectedVersion / confirm:true / action`；reschedule 帶時間、時區、負責人及原因，complete 可留備註，cancel 必填原因；resolve 只處理待覆核衝突，明確選 completed／cancelled 及原因 |
+
+POST 是 [在線收據](#online-http) 的 command path，須經 `/api/online/context`、`/api/online/submit` 執行；直接 POST 回 428，避免沒有原 opId 的重試重建事項。讀回、撤權及刪除沿用同一權限與結果清除規則；失去回應先查原操作，不以文字相同推定成功。
+
+改期／轉派保留 taskId 及 occurrenceId，過期仍是 scheduled；沒有自動完成。一般舊版本回 409。唯一例外是同一 scheduled 版本上的相反 complete／cancel：保留兩筆 revision，第二筆回已確認的 `needs_review`（HTTP 200 收據），並停止提醒；不能把它顯示成照護已完成。明確 resolve 只選終態，不重新排程。已結束事項如需另做，須明確建立新事項。
+
+S13-W01 不外發或自行建立週期排程。`task-policy.ts` 提供可重用的確定性提醒資格判斷：收件人本地日的普通合併上限、最多一次跨日跟進、安靜時段及明確預約例外；已撤權／終態／unknown 均阻止新投遞。跨事項／孩子／渠道的持久批次、資格重新核對及原子去重由 S13-W04／W07 接入，不能將純判斷測試當作 worker 或真通知已通過。
+
 <a id="api-notification-01"></a>
 `TaskExecutor` 在 Server 根據事件或到期工作取得有限租約，每次執行均重查任務終態、授權版本及資源權限。Agent 可在 Server 提供的合資格照顧者中提出選擇及理由；服務按明確指派、預設負責人及預授權備援規則核准，缺資料先補問，不猜測誰有空。內容範圍、時機、重試及 fallback／升級由任務業務規則決定，不交給渠道 adapter。預先授權範圍內自動執行，範圍外先確認。
 
