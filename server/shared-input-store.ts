@@ -14,7 +14,7 @@ import type { AgentScope } from "./agent-runtime.ts";
 
 export const publicInputSources=SOURCE_WATCHES.filter(source=>source.kind==="page"&&source.audience==="public_noncommercial");
 interface Payload {
-  sourceLabel:string;sourceUrl:string|null;sourceDateText:string|null;text:string;sha256:string|null;retrievedAt:string|null;
+  sourceNotes?:string;sourceLabel:string;sourceUrl:string|null;sourceDateText:string|null;text:string;sha256:string|null;retrievedAt:string|null;
   excerpt:string|null;draft:PhotoDraft|null;stopReason:string|null;processedAt:string|null;model:string|null;
 }
 interface Row {
@@ -32,7 +32,7 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
   function decode(row:Row,role:string):SharedInput {
     const data=payload(row);
     return {id:row.id,childId:row.child_id,ownerUserId:row.owner_user_id,version:row.version,createdAt:row.created_at.toISOString(),
-      canManage:role!=="viewer",kind:row.kind,sourceId:row.source_id,sourceLabel:data.sourceLabel,sourceUrl:data.sourceUrl,
+      canManage:role!=="viewer",kind:row.kind,sourceNotes:data.sourceNotes??"",sourceId:row.source_id,sourceLabel:data.sourceLabel,sourceUrl:data.sourceUrl,
       sourceDateText:data.sourceDateText,text:data.text,sha256:data.sha256,retrievedAt:data.retrievedAt,
       fetchState:row.fetch_state==="running"&&row.fetch_expires_at!<=new Date()?"unknown":row.fetch_state,
       extraction:{state:row.extraction_state==="running"&&row.extraction_expires_at!<=new Date()?"unknown":row.extraction_state,
@@ -64,19 +64,22 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
         if(Number(count.count)>=50)throw new FamilyError(409,"inputs_capacity");
         const source=input.kind==="public_source"?publicInputSources.find(source=>source.id===input.sourceId):undefined;
         if(input.kind==="public_source"&&!source)throw new FamilyError(400,"invalid_input");
-        const data:Payload={sourceLabel:input.kind==="paste"?input.sourceLabel:source!.publisher,sourceUrl:input.kind==="paste"?input.sourceUrl:source!.url,
-          sourceDateText:input.kind==="paste"?input.sourceDateText:null,text:input.kind==="paste"?input.text:"",sha256:input.kind==="paste"?hash(input.text):null,
+        const supplied=input.kind!=="public_source";
+        const data:Payload={sourceLabel:supplied?input.sourceLabel:source!.publisher,sourceUrl:supplied?input.sourceUrl:source!.url,
+          sourceDateText:supplied?input.sourceDateText:null,sourceNotes:input.kind==="personal_source"?input.sourceNotes:"",
+          text:supplied?input.text:"",sha256:supplied&&input.text.trim()?hash(input.text):null,
           retrievedAt:null,excerpt:null,draft:null,stopReason:null,processedAt:null,model:null};
+        const ready=Boolean(data.text.trim());
         const id=randomUUID(),row=(await client.query<Row>(`INSERT INTO shared_inputs(id,child_id,owner_user_id,kind,source_id,payload_encrypted,fetch_state)
           VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,[id,childId,userId,input.kind,source?.id??null,
-          cipher.encrypt(JSON.stringify(data),aad(id)),input.kind==="paste"?"ready":"not_requested"])).rows[0];
+          cipher.encrypt(JSON.stringify(data),aad(id)),ready?"ready":"not_requested"])).rows[0];
         await appendOnlineChange(client,space,"care",childId,false,userId);return decode(row,role);
       });
     },
     async claim(userId:string,childId:string,id:string,phase:Phase,expectedVersion:number,excerpt?:string) {
       return access(userId,childId,true,async(client,role,space)=>{
         const row=await rowFor(client,userId,childId,id);
-        if(row.record_id||phase==="fetch"&&row.kind!=="public_source"||phase==="extraction"&&row.fetch_state!=="ready")throw missing();
+        if(row.record_id||phase==="fetch"&&!["public_source","personal_source"].includes(row.kind)||phase==="extraction"&&row.fetch_state!=="ready")throw missing();
         const state=row[phase+"_state" as "fetch_state"|"extraction_state"];
         // A lost response never launches a new run. Only an explicit failed/current-version retry can do that.
         if(state!=="not_requested"&&(state!=="failed"||row.version!==expectedVersion))return {created:false,input:decode(row,role),scope:null,runId:null};
@@ -85,7 +88,7 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
         if(phase==="extraction"){
           if(!excerpt?.trim()||excerpt.length>10000||!data.text.includes(excerpt))throw new FamilyError(400,"invalid_input");
           data.excerpt=excerpt;data.draft=null;data.stopReason=null;data.processedAt=null;data.model=null;
-        }else if(!publicInputSources.some(source=>source.id===row.source_id))throw missing();
+        }else if(row.kind==="public_source"?!publicInputSources.some(source=>source.id===row.source_id):!data.sourceUrl)throw missing();
         const version=await versions(client,space),runId=randomUUID();
         // phase is a closed internal union, never a request field.
         const changed=(await client.query<Row>(`UPDATE shared_inputs SET ${phase}_state='running',${phase}_run_id=$2,
@@ -114,7 +117,7 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
         const data=payload(row);
         if(content&&allowed){
           if(!content.text.trim()||content.text.length>64000||/[\u0000\uD800-\uDFFF]/u.test(content.text)||content.url!==data.sourceUrl)throw new FamilyError(400,"invalid_input");
-          data.text=content.text;data.sha256=hash(content.text);data.retrievedAt=new Date().toISOString();data.sourceDateText=content.sourceDateText;
+          data.text=content.text;data.sha256=hash(content.text);data.retrievedAt=new Date().toISOString();data.sourceDateText=content.sourceDateText??data.sourceDateText;
         }
         const state=allowed&&content?"ready":!allowed||uncertain?"unknown":"failed";
         const changed=(await client.query<Row>("UPDATE shared_inputs SET fetch_state=$2,payload_encrypted=$3,version=version+1 WHERE id=$1 RETURNING *",

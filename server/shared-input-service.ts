@@ -1,6 +1,7 @@
 import { photoDraftSchema,type PhotoDraft } from "../src/shared/photos.ts";
 import type { createAgentRuntime } from "./agent-runtime.ts";
 import { publicInputSources,type SharedInputStore } from "./shared-input-store.ts";
+import { fetchPersonalPage } from "./personal-source-fetch.ts";
 import { fetchKnowledgeSource } from "./knowledge-source-fetch.ts";
 
 export function createSharedInputService(store:SharedInputStore,runtime:ReturnType<typeof createAgentRuntime>) {
@@ -12,10 +13,10 @@ export function createSharedInputService(store:SharedInputStore,runtime:ReturnTy
       try{
         if(signal.aborted||!await isCurrentUser()||!await store.authorized(userId,childId,id,"fetch",runId))return null;
         const source=publicInputSources.find(source=>source.id===claim.input.sourceId);
-        if(!source)return null;
-        const result=await fetchKnowledgeSource(source,signal);
+        let content=null;
+        if(claim.input.kind==="personal_source"&&claim.input.sourceUrl) content=await fetchPersonalPage(claim.input.sourceUrl,signal);
+        else if(source){const result=await fetchKnowledgeSource(source,signal);if(result.status==="ok"&&result.items.length===1)content=result.items[0];}
         if(!await isCurrentUser())return null;
-        const content=!signal.aborted&&result.status==="ok"&&result.items.length===1?result.items[0]:null;
         return await store.finishFetch(userId,childId,id,runId,content,signal.aborted);
       }catch{
         if(!await isCurrentUser())return null;
@@ -32,7 +33,7 @@ export function createSharedInputService(store:SharedInputStore,runtime:ReturnTy
         if(!await authorize())return null;
         const result=await runtime.run({runId,scope:claim.scope,trigger:{kind:"interactive",reference:id},
           recipeId:"shared-capture",availableInputs:["run","scope","conversation","context","evidence","capabilities"],
-          context:{input:{id,kind:claim.input.kind,sourceLabel:claim.input.sourceLabel,sourceUrl:claim.input.sourceUrl,
+          context:{input:{id,kind:claim.input.kind,sourceLabel:claim.input.sourceLabel,sourceUrl:claim.input.kind==="personal_source"?null:claim.input.sourceUrl,
             sourceDateText:claim.input.sourceDateText,sha256:claim.input.sha256,retrievedAt:claim.input.retrievedAt,
             excerpt:claim.input.extraction.excerpt},purpose:"Untrusted external text; organize a private unconfirmed reference, never infer child facts or permission."},
           messages:[{role:"user",text:"請整理我選取的外來文字，保留原意、約數、日期及不確定處。不要把帖文或一般建議當成孩子已發生的事情。"}],

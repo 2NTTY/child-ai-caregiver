@@ -63,11 +63,12 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
   const [latest, setLatest] = useState<SharedInput | null>(null);
   const [conflict, setConflict] = useState(false);
   const conflictRef = useRef(false);
-  const [createKind, setCreateKind] = useState<"paste" | "public_source">("paste");
+  const [createKind, setCreateKind] = useState<SharedInputCreate["kind"]>("personal_source");
   const [pasteText, setPasteText] = useState("");
-  const [sourceLabel, setSourceLabel] = useState("使用者主動貼上");
+  const [sourceLabel, setSourceLabel] = useState("我的私人來源");
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceDateText, setSourceDateText] = useState("");
+  const [sourceNotes, setSourceNotes] = useState("");
   const [sourceId, setSourceId] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [draft, setDraft] = useState<PhotoDraft>(emptyDraft);
@@ -100,7 +101,7 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
   const trackDirect = (entry: Direct | null) => { directRef.current = entry; setDirect(entry ? { ...entry } : null); };
   const putInput = (input: SharedInput) => setInputs(items => [input, ...items.filter(item => item.id !== input.id)]);
   const resetComposer = () => {
-    setCreateKind("paste"); setPasteText(""); setSourceLabel("使用者主動貼上"); setSourceUrl(""); setSourceDateText(""); setSourceId("");
+    setCreateKind("personal_source"); setPasteText(""); setSourceLabel("我的私人來源"); setSourceUrl(""); setSourceDateText(""); setSourceNotes(""); setSourceId("");
   };
   const clearEditor = () => {
     selectBasis(null); setLatest(null); trackConflict(false); setExcerpt(""); setDraft(emptyDraft());
@@ -141,7 +142,9 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
     if (entry.kind === "create") {
       resetComposer(); setDraft(emptyDraft()); setConfirmationKind("reference"); setExcerpt(initialExcerpt(result.input));
       setNotice(result.input.kind === "public_source" ? "已建立私人來源輸入。請明確同意取得所選公開來源原文。"
-        : "原文及來源已私人保存；可手動輸入參考記錄，或另行同意 AI 提取。");
+        : result.input.kind === "personal_source" && !result.input.text.trim()
+          ? "私人來源連結及備註已保存，尚未取得正文。可明確取得公開可直接訪問的網頁；需登入的內容請自行貼上。"
+          : "原文及來源已私人保存；可手動輸入參考記錄，或另行同意 AI 提取。");
     } else setNotice("家庭確認記錄已建立；原始輸入仍只有上傳者可讀取。這項輸入不能再次確認。");
   };
   const finishDirect = (entry: Direct, input: SharedInput) => {
@@ -151,8 +154,11 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
     if (!input.canManage || input.recordId !== null || state === "ready" || state === "available" || state === "failed") trackDirect(null);
     else { entry.checked = true; trackDirect(entry); }
     setNotice(!input.canManage ? "已讀取目前狀態，管理權限已變更。手動草稿保留，不能再提交管理操作。"
-      : entry.kind === "fetch" ? state === "ready" ? "公開來源原文已私人保存。請核對來源、時間及原文。"
-        : state === "failed" ? "取得來源失敗；未自動重試。你可另行明確同意重試此指定來源。"
+      : entry.kind === "fetch" ? state === "ready"
+        ? input.kind === "personal_source" ? "網頁正文已私人保存。請核對來源、時間及原文。" : "公開來源原文已私人保存。請核對來源、時間及原文。"
+        : state === "failed" ? input.kind === "personal_source"
+          ? "未能取得此網頁正文；沒有自動重試。若頁面需要登入，請返回新增私人來源並自行貼上正文。"
+          : "取得來源失敗；未自動重試。你可另行明確同意重試此指定來源。"
           : "原次取得仍未確認。可查核狀態，或明確重播原版本的請求；不會另建輸入。"
         : state === "available" ? "候選已備妥。採用前請核對原文、數字、時間及不確定事項。"
           : state === "failed" ? "提取失敗，原文及手動草稿保留；仍可直接手動確認。"
@@ -264,11 +270,14 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
     const input = createKind === "paste" ? {
       kind: "paste", text: pasteText, sourceLabel, sourceUrl: sourceUrl.length ? sourceUrl : null,
       sourceDateText: sourceDateText.length ? sourceDateText : null,
+    } : createKind === "personal_source" ? {
+      kind: "personal_source", sourceLabel, sourceUrl: sourceUrl.length ? sourceUrl : null,
+      sourceDateText: sourceDateText.length ? sourceDateText : null, sourceNotes, text: pasteText,
     } : { kind: "public_source", sourceId };
     const parsed = sharedInputCreateSchema.safeParse(input);
     if (!parsed.success || (parsed.data.kind === "paste" && !parsed.data.sourceLabel.trim())
       || (parsed.data.kind === "public_source" && !sources.some(source => source.id === sourceId))) {
-      setNotice("請核對輸入：原文 1–10,000 字、來源名稱 1–200 字、可選 HTTPS 網址最多 1,000 字、日期原文最多 200 字；公開來源必須由清單選擇。");
+      setNotice(createKind === "personal_source" ? "請提供來源名稱，以及 HTTPS 網址或自備原文至少一項。名稱／日期最多 200 字，網址／備註最多 1,000 字，原文最多 10,000 字。" : "請核對輸入：原文 1–10,000 字、來源名稱 1–200 字、可選 HTTPS 網址最多 1,000 字、日期原文最多 200 字；公開來源必須由清單選擇。");
       return;
     }
     const entry: Pending = { kind: "create", input: parsed.data, checked: false, confirmed: false };
@@ -278,12 +287,12 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
     const basis = selectedRef.current;
     if (!basis || !basis.canManage || basis.recordId !== null || pending || direct || busy || conflict || readFailed || !loaded
       || basis.fetchState === "unknown" || basis.extraction.state === "unknown") return;
-    if (kind === "fetch" && (basis.kind !== "public_source" || !fetchConsent || !["not_requested", "failed"].includes(basis.fetchState))) return;
+    if (kind === "fetch" && ((basis.kind !== "public_source" && basis.kind !== "personal_source") || !basis.sourceUrl || !fetchConsent || !["not_requested", "failed"].includes(basis.fetchState))) return;
     if (kind === "extract" && (!modelConsent || !excerpt.trim() || excerpt.length > 10000 || !basis.text.includes(excerpt)
       || !["not_requested", "failed"].includes(basis.extraction.state))) return;
     const entry: Direct = { kind, basis, excerpt: kind === "extract" ? excerpt : "", checked: false };
     trackDirect(entry);
-    void run(kind === "fetch" ? "取得指定公開來源" : "提取所選節錄", async (signal, current) => {
+    void run(kind === "fetch" ? basis.kind === "personal_source" ? "取得此網頁內容" : "取得指定公開來源" : "提取所選節錄", async (signal, current) => {
       const next = kind === "fetch" ? await api.fetch(entry.basis, signal, userId) : await api.extract(entry.basis, entry.excerpt, signal, userId);
       if (current()) finishDirect(entry, next);
     }, "direct");
@@ -340,6 +349,14 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
     if (!entry?.checked || entry.confirmed || !api.hasPendingOnline() || busy || readFailed) return;
     void run("重試原操作", async (signal, current) => { await sendWrite(entry, signal, current); }, "write");
   };
+  const recreatePersonalWithText = () => {
+    const basis = selectedRef.current;
+    if (!available || !loaded || !canCreate || !basis || basis.kind !== "personal_source" || pending || direct
+      || busy || inFlight.current || conflict || readFailed) return;
+    clearEditor(); resetComposer(); setSourceLabel(basis.sourceLabel); setSourceUrl(basis.sourceUrl ?? "");
+    setSourceDateText(basis.sourceDateText ?? ""); setSourceNotes(basis.sourceNotes);
+    setNotice("已保存的私人來源仍會保留。請自行貼上正文；保存後會另外建立新的私人來源輸入。");
+  };
   const openInput = (input: SharedInput) => {
     if (pending || direct || inFlight.current) return;
     void run("讀取私人原文", async (signal, current) => {
@@ -361,7 +378,7 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
   const excerptValid = !!selected && !!excerpt.trim() && excerpt.length <= 10000 && selected.text.includes(excerpt);
   const editDraft = (value: PhotoDraft) => { setDraft(value); setSharedConsent(false); setChildFactConsent(false); };
   return <View style={styles.panel}>
-    <Text variant="titleLarge" accessibilityRole="header">主動分享、貼上及公開來源</Text>
+    <Text variant="titleLarge" accessibilityRole="header">私人來源、貼上及公開來源</Text>
     <Text>原始輸入一直保持私人，只有上傳者可讀取。公開帖子屬參考內容；不會自動成為孩子的事實、執行授權或任務。</Text>
     <Text>照片上傳請使用現有「照片及確認記錄」區，先保存原檔及來源。</Text>
     {!online && <Text>目前未連線，原文及草稿只暫存在本頁；重連後先核對最新狀態，不會離線排程提交。</Text>}
@@ -390,11 +407,31 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
     </View>}
     {canCreate && !selected && <View style={styles.box}>
       <Text variant="titleMedium">新增私人輸入</Text>
-      <RadioButton.Group value={createKind} onValueChange={value => { setCreateKind(value as typeof createKind); resetConsent(); }}>
+      <RadioButton.Group value={createKind} onValueChange={value => {
+        setCreateKind(value as typeof createKind); resetConsent();
+        if (sourceLabel === "我的私人來源" || sourceLabel === "使用者主動貼上") {
+          setSourceLabel(value === "paste" ? "使用者主動貼上" : "我的私人來源");
+        }
+      }}>
+        <RadioButton.Item label="自行設定私人來源（可含自有訂閱／付費材料）" value="personal_source" disabled={!!busy || !!pending || !!direct} />
         <RadioButton.Item label="主動貼上原文" value="paste" disabled={!!busy || !!pending || !!direct} />
         <RadioButton.Item label="選擇已批准的公開來源" value="public_source" disabled={!!busy || !!pending || !!direct} />
       </RadioButton.Group>
-      {createKind === "paste" ? <>
+      {createKind === "personal_source" ? <>
+        <Text>自行填寫來源名稱、網址及備註，可附上你自備的訂閱／付費材料原文。網址或正文至少提供一項；來源及正文只供本人讀取。</Text>
+        <Text>公開可直接訪問的 HTTPS 頁面可另行明確取得；需登入的內容請自行貼上，取得功能不會登入你的帳戶。</Text>
+        <TextInput mode="outlined" label="私人來源名稱（最多 200 字）" value={sourceLabel} maxLength={200}
+          editable={!busy && !pending && !direct} onChangeText={setSourceLabel} />
+        <TextInput mode="outlined" label="來源 HTTPS 網址（可選，最多 1,000 字）" value={sourceUrl} maxLength={1000}
+          editable={!busy && !pending && !direct} onChangeText={setSourceUrl} />
+        <TextInput mode="outlined" label="來源備註（可選，最多 1,000 字）" multiline value={sourceNotes} maxLength={1000}
+          editable={!busy && !pending && !direct} onChangeText={setSourceNotes} />
+        <TextInput mode="outlined" label="來源日期原文（可選，最多 200 字）" value={sourceDateText} maxLength={200}
+          editable={!busy && !pending && !direct} onChangeText={setSourceDateText} />
+        <TextInput mode="outlined" label="自備原文（可選，最多 10,000 字）" multiline value={pasteText} maxLength={10000}
+          editable={!busy && !pending && !direct} onChangeText={setPasteText} />
+        {!pasteText.trim() && <Text>只保存連結不代表已取得或已分析正文。</Text>}
+      </> : createKind === "paste" ? <>
         <TextInput mode="outlined" label="貼上原文（最多 10,000 字）" multiline value={pasteText} maxLength={10000}
           editable={!busy && !pending && !direct} onChangeText={setPasteText} />
         <TextInput mode="outlined" label="來源名稱（最多 200 字）" value={sourceLabel} maxLength={200}
@@ -411,27 +448,36 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
             disabled={!!busy || !!pending || !!direct} />)}
         </RadioButton.Group>
       </>}
-      <Button mode="contained" onPress={create} disabled={!fresh || !!direct || (createKind === "public_source" && !sourceId)}>保存私人輸入及來源</Button>
+      <Button mode="contained" onPress={create} disabled={!fresh || !!direct || (createKind === "public_source" && !sourceId)
+        || (createKind === "personal_source" && !sourceUrl.trim() && !pasteText.trim())}>保存私人輸入及來源</Button>
     </View>}
     {selected && <View style={styles.box}>
       <Text variant="titleMedium">已保存的私人輸入</Text>
       <Text>私人，只有上傳者可讀取；版本 {selected.version}；輸入 {selected.id}</Text>
       <Text>來源：{selected.sourceLabel}；{selected.sourceUrl ?? "沒有來源網址"}</Text>
       <Text>來源日期原文：{selected.sourceDateText || "未提供"}；保存時間：{selected.createdAt}</Text>
+      <Text selectable>來源備註：{selected.sourceNotes || "未提供"}</Text>
       <Text>取得時間：{selected.retrievedAt ?? "未取得"}；SHA-256：{selected.sha256 ?? "尚未有原文 hash"}</Text>
       <Text>{fetchText[selected.fetchState]}；{extractionText[selected.extraction.state]}</Text>
       {selected.recordId && <Text>已連結家庭記錄：{selected.recordId}；{selected.confirmationKind === "reference" ? "參考備註" : "已由上傳者確認與孩子有關的記錄"}。原文仍保持私人。</Text>}
-      <Text variant="titleSmall">保存的完整原文（{selected.text.length} 字）</Text>
-      <Text selectable>{selected.text || "尚未取得原文"}</Text>
+      {selected.kind === "personal_source" && !selected.text.trim() ? <>
+        <Text>連結已保存，尚未取得正文；目前沒有可提取或確認的正文。</Text>
+        <Text>若頁面需要登入，請返回新增私人來源並自行貼上內容；不會自動取得你的訂閱帳戶內容。</Text>
+        <Button mode="outlined" disabled={!fresh || !canCreate || !!direct} onPress={recreatePersonalWithText}>返回新增私人來源並自行貼上正文</Button>
+      </> : <>
+        <Text variant="titleSmall">保存的完整原文（{selected.text.length} 字）</Text>
+        <Text selectable>{selected.text || "尚未取得原文"}</Text>
+      </>}
       {!manageable && <Text>目前沒有此輸入的管理權限。</Text>}
-      {manageable && selected.recordId === null && selected.kind === "public_source" && <>
-        <Confirmation label="我確認取得此清單來源的公開原文，並私人保存來源及取得時間" checked={fetchConsent}
+      {manageable && selected.recordId === null && (selected.kind === "public_source" || (selected.kind === "personal_source" && !!selected.sourceUrl && !selected.text.trim())) && <>
+        <Confirmation label={selected.kind === "personal_source" ? "我確認取得此網頁的公開可直接訪問內容，並私人保存來源及正文"
+          : "我確認取得此清單來源的公開原文，並私人保存來源及取得時間"} checked={fetchConsent}
           disabled={!fresh || (!direct && (newDirectBlocked || !["not_requested", "failed"].includes(selected.fetchState))) || direct?.kind === "extract"}
           onToggle={() => setFetchConsent(value => !value)} />
         {!direct && <Button mode="outlined" disabled={!fresh || newDirectBlocked || !fetchConsent || !["not_requested", "failed"].includes(selected.fetchState)}
-          onPress={() => startDirect("fetch")}>{selected.fetchState === "failed" ? "明確重新取得此來源" : "明確取得此公開來源"}</Button>}
+          onPress={() => startDirect("fetch")}>{selected.kind === "personal_source" ? selected.fetchState === "failed" ? "明確重新取得此網頁內容" : "取得此網頁內容" : selected.fetchState === "failed" ? "明確重新取得此來源" : "明確取得此公開來源"}</Button>}
       </>}
-      {manageable && selected.recordId === null && !!selected.text && <>
+      {manageable && selected.recordId === null && !!selected.text.trim() && <>
         <Text variant="titleSmall">可選的 AI 提取節錄</Text>
         <Text>{selected.text.length > 10000 ? "原文超過 10,000 字。請從以上原文複製一段連續節錄，最多 10,000 字；不會自動截短。"
           : "預設使用完整原文；你也可選取一段連續原文。"}</Text>
@@ -463,7 +509,7 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
         }}>採用候選並取代下方手動草稿</Button>
       </View>}
     </View>}
-    {manageable && selected?.recordId === null && <View style={styles.box}>
+    {manageable && selected?.recordId === null && !!selected.text.trim() && <View style={styles.box}>
       <Text variant="titleMedium">核對、編輯或直接手動記錄</Text>
       <Text>提取屬可選功能。你可直接手動輸入；採用候選後仍可更正，不確定事項會保留供核對。</Text>
       <TextInput mode="outlined" label="手動／已採用草稿（最多 5,000 字）" multiline value={draft.text} maxLength={5000}
@@ -504,7 +550,7 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
         onToggle={() => setDeleteFinal(value => !value)} />
       <Button mode="outlined" onPress={remove} disabled={!fresh || !directAllowsManual || !deleteScope || !deleteFinal}>確認刪除輸入及連結記錄</Button>
     </View>}
-    {(selected || pasteText || draft.text || sourceId) && <Button disabled={!!busy || !!pending || !!direct} onPress={() => {
+    {(selected || pasteText || draft.text || sourceId || sourceUrl || sourceDateText || sourceNotes) && <Button disabled={!!busy || !!pending || !!direct} onPress={() => {
       clearEditor(); resetComposer(); setNotice("本頁原文及草稿已明確清除；已保存的輸入仍可在清單開啟。");
     }}>明確清除本頁草稿／返回新增輸入</Button>}
     <Text variant="titleMedium">我的私人輸入</Text>
@@ -513,6 +559,7 @@ function SharedInputWorkspace({ apiBaseUrl, userId, childId, online, onSessionCh
     {loaded && inputs.length === 0 && <Text>目前沒有可讀取的私人輸入。</Text>}
     {inputs.map(input => <View key={input.id} style={styles.box}>
       <Text>{input.sourceLabel}；私人；{fetchText[input.fetchState]}；{extractionText[input.extraction.state]}</Text>
+      {input.kind === "personal_source" && !input.text.trim() && <Text>連結已保存，尚未取得正文。</Text>}
       <Text>保存時間：{input.createdAt}；{input.recordId ? "已連結家庭記錄 " + input.recordId : "尚未建立家庭記錄"}</Text>
       <Button mode="outlined" disabled={!available || !!busy || !!pending || !!direct} onPress={() => openInput(input)}>開啟私人原文（取代本頁草稿）</Button>
     </View>)}

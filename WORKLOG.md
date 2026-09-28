@@ -1114,3 +1114,13 @@
 - Reuse / UI：復用既有來源 fetcher／catalog、storage cipher、online 收據及 ADK runtime。Pack 0.1.6 僅新增短 shared-capture 接線；照片上傳沿用 S12-W03。正式 SharedInputPanel 已掛載，功能清單／契約已補，獨立 frontend 與美術不變。
 - Verification / Review：見 [EV-S12-W04](artifacts/verification/S12_W04_CHECKS.json)。Server／client 型別各一輪實際編譯通過；最初 Server 指令路徑誤寫，編譯未啟動，改用根 tsconfig.server.json 後通過。配方離線載入一次通過，12 模組／7,820 字元，零模型。沒有新增或執行單元測試、lint／build／完整回歸。主模型 review 修正初次來源日期回傳誤拒及 unknown 查核缺退出入口，局部覆核後不重跑已充分的型別證據。
 - Pending / Next：022／真 SQL、私人隔離／原操作、公開抓取與模型品質、刪除／加密還原及瀏覽器均待 P2 集中驗收。尚未 push／merge／部署或延長 P1 試用；先保存固定 checkpoint，接續最小瀏覽器基礎與集中缺項整合，不逐包詢問驗收。
+
+
+<a id="log-20260929-009"></a>
+## LOG-20260929-009
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；依使用者要求擴充 S12-W04，讓家長管理自己的私人來源，包括自備訂閱／付費材料。承接本包 checkpoint d2a9c6c；P2 集中驗收的既有結果不重跑。
+- Actual Work：新增 personal_source 的名稱／HTTPS 網址／備註／日期及可選正文，URL-only 不假稱已取得或分析。復用既有加密、owner 隔離、原 opId 及明確家庭確認；共用原受限 transport，一次性取得可直接訪問的公開 HTML。需登入內容由家長貼上，沒有網站帳密或背景訂閱接線，私人網址／備註不傳模型；公共來源與 RAG 使用範圍不變。新增 023 kind 約束，未套用。
+- Responsibility / Executor：沿用 B 主責、A 負責提取／確認邊界及全部權威文件、C 負責保存／取得服務；A 統籌 AI。主模型親自處理契約、資料及網絡邊界、整合與 review；復用原 Sol xhigh 只修改 SharedInputPanel。没有新增代理、重做 Prompt Pack／美術或改獨立 frontend。
+- Necessary Verification：只執行一項既有 transport 檢查及一項新增輸入／HTML／client API 檢查；均通過。Server typecheck 一次通過；client 首次指出回應驗證缺新 kind／notes，局部補齊後通過。新增 client 斷言載入既有 parameter property 時需 Node transform-types；修正命令後單一檢查通過，載入失敗未執行情景。git diff --check 通過；零 SQL／真來源／模型／通知／瀏覽器呼叫。
+- Pending：023 遷移與原資料保留、私人來源真保存／隔離及 UI 接線仍待集中必要補驗；[EV-S12-W04](artifacts/verification/S12_W04_CHECKS.json)／[ADR-014](docs/DECISIONS.md#adr-014)／[功能清單](docs/P2_UI_HANDOFF.md#shared-input-handoff)。未 push／PR／merge／部署，原已批模型運行上限不因新增功能而重置。

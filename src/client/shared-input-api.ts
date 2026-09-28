@@ -38,7 +38,7 @@ const httpsUrl = safeText(1000).refine(value => {
 const sourceSchema = z.object({ id: z.string().regex(/^[a-z0-9-]{1,80}$/u), url: httpsUrl, publisher: safeText(200).min(1) }).strict();
 const inputSchema = z.object({
   id: z.uuid(), childId: z.uuid(), ownerUserId: user, version, createdAt: dateTime, canManage: z.boolean(),
-  kind: z.enum(["paste", "public_source"]), sourceId: sourceSchema.shape.id.nullable(),
+  kind: z.enum(["paste", "public_source", "personal_source"]), sourceNotes: safeText(1000).default(""), sourceId: sourceSchema.shape.id.nullable(),
   sourceLabel: safeText(200).min(1), sourceUrl: httpsUrl.nullable(), sourceDateText: safeText(200).nullable(),
   text: safeText(64000), sha256: z.string().regex(/^[a-f0-9]{64}$/u).nullable(), retrievedAt: dateTime.nullable(),
   fetchState: z.enum(["not_requested", "running", "ready", "failed", "unknown"]),
@@ -59,7 +59,7 @@ type Target = {
 const codes = new Set(["inputs_capacity", "input_processing", "version_conflict", "invalid_input", "session_changed", "not_found", "forbidden"]);
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const sameSourceOrigin = (left: SharedInput, right: SharedInput) => left.kind === right.kind && left.sourceId === right.sourceId
-  && left.sourceLabel === right.sourceLabel && left.sourceUrl === right.sourceUrl && left.createdAt === right.createdAt;
+  && left.sourceNotes === right.sourceNotes && left.sourceLabel === right.sourceLabel && left.sourceUrl === right.sourceUrl && left.createdAt === right.createdAt;
 const sameSource = (left: SharedInput, right: SharedInput) => sameSourceOrigin(left, right)
   && left.sourceDateText === right.sourceDateText;
 
@@ -67,7 +67,7 @@ function checkedInput(value: unknown, childId: string, userId: string, inputId?:
   const parsed = resultSchema.safeParse(value);
   if (!parsed.success || parsed.data.input.childId !== childId || parsed.data.input.ownerUserId !== userId
     || (inputId !== undefined && parsed.data.input.id !== inputId)
-    || (parsed.data.input.kind === "paste" ? parsed.data.input.sourceId !== null : parsed.data.input.sourceId === null)
+    || (parsed.data.input.kind === "public_source" ? parsed.data.input.sourceId === null : parsed.data.input.sourceId !== null)
     || ((parsed.data.input.recordId === null) !== (parsed.data.input.confirmationKind === null))) {
     throw new SharedInputApiError(0, null, confirmed);
   }
@@ -94,7 +94,7 @@ function checkedWrite(value: unknown, target: Target): SharedInputWriteResult {
   if (!created || input.kind !== created.kind || input.recordId !== null
     || (created.kind === "public_source" ? input.sourceId !== created.sourceId
       : input.text !== created.text || input.sourceLabel !== created.sourceLabel || input.sourceUrl !== created.sourceUrl
-        || input.sourceDateText !== created.sourceDateText)) throw new SharedInputApiError(0, null, true);
+        || input.sourceDateText !== created.sourceDateText || (created.kind === "personal_source" && input.sourceNotes !== created.sourceNotes))) throw new SharedInputApiError(0, null, true);
   return { input };
 }
 
@@ -207,7 +207,7 @@ export function createSharedInputApi(baseUrl = "", fetcher: typeof fetch = fetch
     },
     async fetch(input, signal, userId) {
       manageable(input, userId);
-      if (input.kind !== "public_source" || input.recordId !== null) throw new SharedInputApiError(400, "invalid_input");
+      if ((input.kind !== "public_source" && input.kind !== "personal_source") || !input.sourceUrl || input.recordId !== null) throw new SharedInputApiError(400, "invalid_input");
       const next = checkedInput(await request(entity(input.childId, input.id) + "/fetch", signal, userId,
         { expectedVersion: input.version, confirmFetch: true }, 25_000), input.childId, userId, input.id);
       if (!sameSourceOrigin(next, input) || next.version < input.version) throw new SharedInputApiError();

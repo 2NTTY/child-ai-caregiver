@@ -52,7 +52,56 @@
   "limits": [
     "Source fetch stores parsed text, not original HTML",
     "Public catalog excludes internal-only CHP/RTHK feeds",
-    "No arbitrary URL fetching, private-feed access, vectorization or autonomous task authorization",
+    "Personal sources allow explicit bounded public HTTPS HTML retrieval; no website login, background private subscription, public vectorization or autonomous authorization",
     "No merge to master or deployment"
-  ]
+  ],
+  "personalSourceRevision": {
+    "date": "2026-09-29",
+    "base": "d2a9c6c87bba7c3233a157f0a17c71156f7e92b4",
+    "status": "implemented_pending_consolidated_acceptance",
+    "scope": [
+      "owner-private source name, HTTPS URL, notes/date and optional supplied text",
+      "one-off public HTML retrieval through existing bounded network transport",
+      "supplied subscription/paid material; no authenticated connector",
+      "no private URL/notes in model context; no public RAG ingestion"
+    ],
+    "checks": [
+      {
+        "kind": "existing transport boundary test",
+        "selectedTests": 1,
+        "result": "passed",
+        "executions": 1,
+        "networkCalls": 0
+      },
+      {
+        "kind": "new personal-source test",
+        "selectedTests": 1,
+        "result": "passed",
+        "note": "Initial input/parser test passed; after adding client protocol assertions the loader required --experimental-transform-types. Corrected command passed; no product or network scenario ran in the failed load."
+      },
+      {
+        "kind": "server typecheck",
+        "executions": 1,
+        "result": "passed"
+      },
+      {
+        "kind": "client typecheck",
+        "executions": 2,
+        "result": "passed after updating response kind/notes and fetch validation"
+      },
+      {
+        "kind": "diff check",
+        "result": "passed"
+      }
+    ],
+    "migrationsApplied": [],
+    "modelCalls": 0,
+    "realSourceFetches": 0,
+    "browserExecuted": false,
+    "pending": [
+      "023 constraint migration and preservation of existing encrypted rows",
+      "private source save/read/owner isolation and URL-only state through real store",
+      "new UI live connection; existing S16 acceptance remains separately recorded"
+    ]
+  }
 }

@@ -479,10 +479,11 @@ AI 候選不是事實，原圖共享也不自動公開上傳者的私人提取�
 集合為 `/api/children/:childId/inputs`，共用 [型別](../src/shared/shared-inputs.ts)。登入及 `x-expected-user-id` 必須一致；每次核對家庭權限，只有輸入者可讀自己的原文／候選，其他家庭成員不能讀取，即使已產生共享記錄。
 
 - GET 集合回 `{inputs,sources,canCreate}`，最多 50 項；GET `/:id` 回 `{input}`。來源清單只包含既有已核准、可公開非商業使用的 FHS 頁面，CHP／RTHK 未擴大使用範圍。
+- POST 集合新增 `personal_source`：`sourceLabel` 非空、最多 200 字元；`sourceUrl` 可為 null，否則是最多 1,000 字元的 HTTPS URL、不含帳密；`sourceDateText` 可為 null、最多 200 字元；`sourceNotes` 最多 1,000 字元；`text` 最多 10,000 字元，網址或非空正文至少一項。適用自備訂閱／付費材料及一般私人來源；只有同意 AI 提取時才傳選取正文，私人網址／備註不傳模型。尚無正文時只保存來源，不能提取或確認成記錄。
 - POST 集合走原 opId 收據：`paste` 保存最多 10,000 字元原文、來源名稱、可選 HTTPS 來源網址及原始日期文字；`public_source` 只接受清單 sourceId。貼上的網址不自動抓取。
-- POST `/:id/fetch` 須 `expectedVersion／confirmFetch:true`；選定來源以既有 20 秒、1 MiB、最多兩次 redirect 的受限 fetcher 取得，沒有 cookies／私人登入或自動重試。保存解析正文、來源網址、日期文字、取得時間及正文 hash，不宣稱保留原 HTML 格式；解析正文最多 64,000 字元。
+- POST `/:id/fetch` 須 `expectedVersion／confirmFetch:true`；`public_source` 仍限清單，`personal_source` 可取得本人提供的 URL；兩者共用既有 20 秒、1 MiB、最多兩次同主機 HTTPS redirect 的受限 transport。DNS 逐次只准公共 IPv4 並固定已核對地址，不接受私人網段、URL 帳密或非標準 port。私人頁面只解析 UTF-8 HTML，沒有 cookies／私人登入、JavaScript、PDF 或自動重試。保存解析正文、來源網址、日期文字、取得時間及正文 hash，不宣稱保留原 HTML 格式；解析正文最多 64,000 字元，超限拒絕而非截短；私人頁面不推定來源日期，保留家長所填日期並分開記錄取得時間。登入／訂閱提示頁不代表取得付費正文，家長須核對實際保存內容。
 - POST `/:id/extract` 須 `expectedVersion／confirmModel:true／excerpt`；片段必須是已保存原文的精確非空子字串、最多 10,000 字元。長文由使用者選擇，不靜默截斷；共用 ADK runtime 限額。只有 `present_shared_draft`，不能寫事實、建任務或外發。
 - POST `/:id/confirm` 走收據，須 `expectedVersion／confirmShared:true／kind／confirmChildFact／values`。`reference` 強制 note、沒有數值或事件時間；`family_record` 另須本人確認確與孩子有關。兩者均由家長核對正文；來源欄由 Server 注入類型、原輸入 ID、hash、保存時間及來源名稱。完整原文、網址／原日期及 AI 候選維持私人，不自動形成長期事實或任務授權。
 - POST `/:id/delete` 走收據，須版本及 `confirmDelete:true`；刪除本人輸入及連結照護記錄。刪除連結記錄／孩子亦連帶清除輸入；共享記錄的更正由原 Care API 管理。
 
-owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀本人既存輸入。fetch／extract 在交易外執行，claim／結果均核對權限及期限；running 超時顯示 unknown，回查不重開，只有明確 failed 的當前版本可由使用者重試。原 opId 未解決前不建立另一份輸入。一般網絡失敗保留當前草稿，換身份／孩子／Server 或撤權則清除，不建離線 outbox。
+owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀本人既存輸入。fetch／extract 在交易外執行，claim／結果均核對權限及期限；running 超時顯示 unknown，回查不重開，只有明確 failed 的當前版本可由使用者重試。來源快照 ready 後不覆寫；需要補正文時可由現有 UI 帶回來源資料建立另一份私人輸入，明示原項保留，不冒稱原地更新或持續訂閱。原 opId 未解決前不建立另一份輸入。一般網絡失敗保留當前草稿，換身份／孩子／Server 或撤權則清除，不建離線 outbox。
