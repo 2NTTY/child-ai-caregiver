@@ -65,7 +65,7 @@ docker build --network=none --file deploy/postgres/Dockerfile.package --tag yuba
 
 ### 使用範圍
 
-- FHS 沿用非商業、註明出處的項目用途。CHP [RSS](https://www.chp.gov.hk/rss/pressreleases_zh_tw_RSS.xml)及 RTHK [本地 RSS](https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml) 依 [ADR-013](DECISIONS.md#adr-013)只限組內非商業試用；公開版不提供其摘要或檢索片段。是否可再公開使用須另取得權利證據，不把操作者確認旗標當成授權來源。
+- FHS 沿用非商業、註明出處的項目用途。CHP [RSS](https://www.chp.gov.hk/rss/pressreleases_zh_tw_RSS.xml)及 RTHK [本地 RSS](https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml) 依 [ADR-013](DECISIONS.md#adr-013)只限組內非商業試用；公開版不提供其摘要或檢索片段。是否可再公開使用須另取得權利證據，不把操作者確認旗標當成授權來源。
 - createKnowledgeStore 的預設 audience 為 public；internal 只能由受信任主機操作者明確選擇。現階段用既有 knowledge.mjs 的 --internal-source-review 作組內檢索／發布，沒有瀏覽器可選權限或公開近期資訊 UI。新結果帶 usageScope；S11 不得把 internal 結果移入公開對話。取得新公開來源前，公開的近期查詢應如實顯示沒有可用內容。
 - 原始觀察只供內容核對。RSS 原文／來源日期不改寫；轉述、章節及適用條件仍由操作者核對，不把 RSS description 或整篇新聞直接當育兒指引。沒有摘要時僅保留標題，不編造摘要。近期資料不建家庭事實、長期規則或任務。
 

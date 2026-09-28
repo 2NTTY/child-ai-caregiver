@@ -13,7 +13,7 @@ export function publicSourceAddress(address: string): boolean { return isIP(addr
 export function sourceFetchUrl(value: string, definition: SourceWatchDefinition): URL {
   const url = new URL(value), registered = new URL(definition.url);
   if (url.protocol !== "https:" || url.username || url.password || url.port || url.hash
-    || url.hostname !== registered.hostname || !["www.fhs.gov.hk","www.chp.gov.hk","news.rthk.hk","rthk.hk"].includes(url.hostname)) {
+    || url.hostname !== registered.hostname || !["www.fhs.gov.hk","www.chp.gov.hk","news.rthk.hk","rthk9.rthk.hk"].includes(url.hostname)) {
     throw new Error("source_url_rejected");
   }
   return url;

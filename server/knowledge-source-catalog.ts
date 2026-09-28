@@ -10,7 +10,7 @@ export const SOURCE_WATCHES: readonly SourceWatchDefinition[] = ([
   { id: "chp-recent", url: "https://www.chp.gov.hk/rss/pressreleases_zh_tw_RSS.xml", kind: "rss",
     classification: "recent_information", publisher: "香港特別行政區政府衞生署衞生防護中心",
     termsUrl: "https://www.chp.gov.hk/tc/static/24027.html", itemHosts: ["www.chp.gov.hk"], audience: "internal_noncommercial" },
-  { id: "rthk-recent", url: "https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml", kind: "rss",
+  { id: "rthk-recent", url: "https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml", kind: "rss",
     classification: "recent_information", publisher: "香港電台", termsUrl: "https://www.rthk.hk/copyright/preview/index.html",
     itemHosts: ["news.rthk.hk"], audience: "internal_noncommercial" },
 ]);
