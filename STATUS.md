@@ -26,6 +26,8 @@
 - [交付及操作](docs/P1_DELIVERY.md)／[組員試玩指引](docs/P1_TRIAL.md)。已收到使用者實際試玩確認；只適用 P1 合成資料範圍。
 
 ## 下一步
+
+S16-W05 已建立最小正式瀏覽器入口，真實結果隨本包收尾更新。
 S13-W01 已隨 [PR #47](https://github.com/2NTTY/child-ai-caregiver/pull/47) 合併；S13-W04 的 pg-boss／原子入列、重啟去重、站內提醒及暫停還原已隨 [PR #48](https://github.com/2NTTY/child-ai-caregiver/pull/48) 合併。W04 的 27 項輕量檢查及獲批分段 PostgreSQL 驗收通過，包含 hard-kill 68.895 秒恢復及加密空庫還原，[範圍及證據](artifacts/verification/S13_W04_CHECKS.json)；尚未驗真通知。
 
 S10-W02 必要集中驗收通過：014／原資料保留、來源發布及 hash 去重／向量復用、一次真 cron、六來源 adapter、公開／組內及過期隔離，以及暫時失敗／410／登記改動撤回批准。沿用 A 主責、權重 3、A 60%／C 40%，完成隨本包 PR 合併生效；[證據](artifacts/verification/S10_W02_CHECKS.json)。原失敗及 RTHK HTTPS 修正保留，沒有重跑整套舊腳本或模型。CHP／RTHK 維持組內限制。後續 P2 功能已按集中驗收例外在隔離分支接續，按各包證據及依賴逐一交付，不能把本包通過當成 P2 完成；現網仍 P1，沒有續期或部署。

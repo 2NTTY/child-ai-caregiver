@@ -1,0 +1,45 @@
+{
+  "package": "S16-W05",
+  "status": "implemented_pending_consolidated_acceptance",
+  "date": "2026-09-29",
+  "base": "65bebd270dd30cdfe349192118b09325fe1d321e",
+  "branch": "codex/s16-w05-browser-foundation",
+  "dependencies": {
+    "framework": "@playwright/test",
+    "version": "1.63.0",
+    "license": "Apache-2.0",
+    "node": ">=20; project Node24",
+    "newLockfilePackages": 3
+  },
+  "checks": [
+    {
+      "command": "node node_modules/@playwright/test/cli.js test --config=playwright.config.mjs --list",
+      "exitCode": 0,
+      "seconds": 0.9973028,
+      "listed": 2,
+      "files": 1,
+      "executed": 0,
+      "note": "No browser, server, database or fixture started; later small runtime guard/rate-limit wait statically reviewed."
+    }
+  ],
+  "prepared": [
+    "one connected scenario covering family isolation/viewer read-only, committed write response lost and original opId reconciliation, revocation clears UI/draft",
+    "Chromium and Firefox projects, one worker, no retries, stop after first failure",
+    "synthetic contexts and bounded local fixture; original records untouched; only owned child cleanup"
+  ],
+  "browserDownloads": 0,
+  "browserExecutions": 0,
+  "modelCalls": 0,
+  "notificationCalls": 0,
+  "migrationsApplied": [],
+  "unitTestsAdded": 0,
+  "pending": [
+    "Actual Chromium/Firefox executables and runtime",
+    "True local P2 API/browser acceptance after migrations and backup",
+    "Cleanup and blocked external-network evidence"
+  ],
+  "limitations": [
+    "--list is only configuration/case loading, not passing tests",
+    "No Android, visual polish, preview acceptance or full regression"
+  ]
+}
