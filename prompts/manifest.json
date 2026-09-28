@@ -136,7 +136,7 @@
     {
       "id": "module.proactive-run",
       "path": "modules/proactive-run.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
