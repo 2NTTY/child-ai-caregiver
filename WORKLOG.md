@@ -917,3 +917,15 @@
 - Changes：主模型親自更新 AGENTS、PLAN、ARCHITECTURE、TECH_REUSE 及 P2_UI_HANDOFF，於 ADR-012 追加分工補充。前端專用程式／依賴／配置／測試／STATUS／PLAN／DESIGN_SYSTEM／WORKFLOW／HANDOFF 由前端在 frontend 內交付；view model／回調對照既有 API，不另定業務契約。主聊天接正式 UI／Server、根依賴及 S16-W05 真 API 瀏覽器測試，保留草稿、opId／unknown、權限及切換清理；預覽與正式證據分開，窄尺寸 Web 不當作 Android 通過。
 - Verification：本包本機連結／錨點、406 個既有明示錨點保留、50 個工作包依賴及候選／實作分級核對通過；`git diff --check` 通過。STATUS 的 SHA-256 維持上一 LOG 原值，本輪追加前 WORKLOG 的 101,815 bytes 舊前綴逐位元組保留，既有 ADR 正文只追加。沒有改前端 worktree、產品程式、依賴、部署或 API wire contract。
 - Human Verification / Limits：依使用者所指 task 的最新要求對齊規劃；本輪沒有 UI／真 API／Android 驗收或安裝。未代前端建立資料夾、開包或 merge；前端新文件仍是待交付清單。保持根 STATUS 不變，產品工作包未開始，DOC-R03 修訂隨同一 PR review／合併交付。
+
+
+<a id="log-20260928-001"></a>
+## LOG-20260928-001
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S13-W01，前置 S09-W02／S07-W03 已合併，基線 master `54e53d6`，分支 `codex/s13-w01-task-ledger`。使用者恢復 P2，並確認權重 3、C 主責 70%／B 20%／A 10%；對應 Server／功能 UI／任務語義與整合。共用 AI 由 A 統籌及代操作，不宣稱各人親自手寫或執行驗收。
+- Actual Work：加密任務安排／穩定 occurrence／逐版事件，手動確認、指派、改期、完成、取消、歷史及衝突覆核；同基準相反終態保留兩筆事件並停催，終態不復活。復用家庭鎖後授權、S07 原 opId 收據及 change feed；孩子刪除 cascade 與收據正文清除。確定性提醒資格涵蓋 recipient 本地日、普通一次跟進、安靜時段及明確預約例外；持久批次／worker／外發仍留 W04／W07。
+- UI / Reuse：新 TaskPanel 接 RHF 7.88.0／resolvers 5.9.1／Paper 5.15.3，正式 App 有功能入口，未替換獨立前端視覺預覽；沿用其鍵盤確認選項做法。保存 MIT 原文、lock integrity 及許可清單，更新 API／資料契約與 UI 功能對接清單。既有 Prompt Pack、美術及 P1 UI 未重做。
+- Executor：主模型親寫共享語義、SQL／權限／收據整合、必要驗收腳本及所有權威文件，作最終 review。1 Luna Max 只定位；1 Sol Xhigh 處理 client／表單及直接相關測試，原代理補兩個局部 UI 缺口。沒有重複派單、再派生或額外測試代理。
+- Verification：[EV-S13-W01](artifacts/verification/S13_W01_CHECKS.json)。Node 24.19.0；27 項相關單元／client／resolver 檢查、兩份 typecheck、腳本語法及 Expo Web export 通過。使用者批准本包本機 integration 並開啟 Docker；11 組／47 次 HTTP 通過，migration 012、同操作並發、終態衝突、角色／撤權、HTTP Server 重建及 pool 重連、原文、刪除後不復活均有證據。新增 3 個合成帳號、1 個孩子／1 項任務，僅刪本次孩子及連帶資料；原 33 筆業務資料逐列不變。
+- Review / Failure：首次 preflight 因原容器停止而失敗，未發 HTTP 或新增資料；沿用原 volume 啟動容器後通過。review 補 UUID 正規化避免大小寫影響加密 AAD，針對性 HTTP 單元通過；UI 補失效負責人提示及鍵盤確認入口。完成收據只是原操作結果，須重讀當前終態；衝突回 confirmed needs_review，不能以 HTTP error 導致事件 rollback。
+- Limits / Next：本包完成隨 review／PR 合併生效，之後解鎖 S13-W04。沒有真模型／embedding／通知、部署、瀏覽器 E2E、Android、全量回歸或本輪新備份／空庫還原；Web export／resolver 不代表畫面互動驗收。P2 未完成，現網仍 P1，七天部署不自行續期，Codex 餘額未知。

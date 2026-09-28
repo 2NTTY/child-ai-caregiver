@@ -15,6 +15,7 @@ import type { AiUsageStore } from "./ai-usage.ts";
 import { handleFamilyRequest } from "./family-api.ts";
 import { handleCareRequest } from "./care-api.ts";
 import { handleMemoryRequest } from "./memory-api.ts";
+import { handleTaskRequest } from "./task-api.ts";
 import { handleOnlineRequest } from "./online-api.ts";
 import type { OnlineStore } from "./online.ts";
 
@@ -73,6 +74,7 @@ export function createRequestHandler(options: {
   families?: import("./families.ts").FamilyStore;
   care?: import("./care.ts").CareStore;
   memory?: import("./memory.ts").MemoryStore;
+  tasks?: import("./tasks.ts").TaskStore;
   online?: OnlineStore;
   modelGateway?: ModelGateway;
   chat?: ChatStore;
@@ -155,6 +157,8 @@ export function createRequestHandler(options: {
         const userId = sessionResult.response?.user.id ?? null;
         result = url.pathname.startsWith("/api/online/") && options.online
           ? await handleOnlineRequest(webRequest, userId, options.online)
+          : /^\/api\/children\/[^/]+\/tasks(\/|$)/u.test(url.pathname) && options.tasks
+            ? await handleTaskRequest(webRequest, userId, options.tasks)
           : /^\/api\/children\/[^/]+\/memory(\/|$)/u.test(url.pathname) && options.memory
             ? await handleMemoryRequest(webRequest, userId, options.memory)
           : /^\/api\/children\/[^/]+\/(care|profile)(\/|$)/u.test(url.pathname) && options.care

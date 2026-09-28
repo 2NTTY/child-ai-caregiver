@@ -16,6 +16,7 @@ import { createVertexProvider } from "./vertex-provider.ts";
 import { createFamilyStore } from "./families.ts";
 import { createCareStore } from "./care.ts";
 import { createMemoryStore } from "./memory.ts";
+import { createTaskStore } from "./tasks.ts";
 import { createOnlineStore } from "./online.ts";
 
 try {
@@ -37,6 +38,7 @@ try {
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
     online: onlineEnabled ? createOnlineStore(pool, cipher) : undefined,
+    tasks: onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher) : undefined,
     chat: createChatStore(pool, cipher, onlineEnabled),
     memory: createMemoryStore(pool, cipher, onlineEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount)),
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,

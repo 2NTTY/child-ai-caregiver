@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S10-W01",
-  "recordedOn": "2026-09-24",
+  "workPackage": "S13-W01",
+  "recordedOn": "2026-09-28",
   "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "2f45e239a58114b02502ab9b02a60737a4d654c615378cb368fb3093c55158ae"
+    "sha256": "25ab0c71b07e63f7ced60c2e5d6d13058fca87bbb5901f79dbd327bbf70ec174"
   },
   "packages": [
     {
@@ -463,13 +463,70 @@
           "source": "node_modules/zod/LICENSE"
         }
       ]
+    },
+    {
+      "name": "react-hook-form",
+      "version": "7.88.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/react-hook-form/react-hook-form"
+      },
+      "tarball": "https://registry.npmjs.org/react-hook-form/-/react-hook-form-7.88.0.tgz",
+      "integrity": "sha512-QRaLOWhX93YCnMiRfnOFRSwWXZNt8qhm2JTZwypoDvKpSffTJHmpzMXt8U6PV5UThvL3IiiLDUWe2nHMtz6Mmw==",
+      "files": [
+        {
+          "path": "licenses/react-hook-form/LICENSE",
+          "sha256": "e8eeb472f0a5889c2c51625b86a3f9b8630680adb9f49a125352e2e426392780",
+          "source": "node_modules/react-hook-form/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@hookform/resolvers",
+      "version": "5.9.1",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/react-hook-form/resolvers.git"
+      },
+      "tarball": "https://registry.npmjs.org/@hookform/resolvers/-/resolvers-5.9.1.tgz",
+      "integrity": "sha512-7b7vsbraJxKgjVSA1Nur9tLwj539WGJUBLA7QNvXnFoT2pM5Z7G+6rlukk4B2/QrTZy6huRtH6wKeESPKuIr6w==",
+      "files": [
+        {
+          "path": "licenses/hookform-resolvers/LICENSE",
+          "sha256": "e8eeb472f0a5889c2c51625b86a3f9b8630680adb9f49a125352e2e426392780",
+          "source": "node_modules/@hookform/resolvers/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native-paper",
+      "version": "5.15.3",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/callstack/react-native-paper.git"
+      },
+      "tarball": "https://registry.npmjs.org/react-native-paper/-/react-native-paper-5.15.3.tgz",
+      "integrity": "sha512-GEyNTmWElIZgnYw09AjjCNupRYzCmP79uAAyGSyCEUZz7KBz1wtJcC0wVUkozR1Rn3PK/td/9LlR6+F1hzmYvA==",
+      "files": [
+        {
+          "path": "licenses/react-native-paper/LICENSE.md",
+          "sha256": "5ff9b6c134d037c82810b926727c717e22103f4274547db1cddbd5d27da7612c",
+          "source": "node_modules/react-native-paper/LICENSE.md"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 761,
+    "packageEntries": 770,
     "declarations": {
       "Apache-2.0": 55,
-      "MIT": 611,
+      "MIT": 620,
       "ISC": 36,
       "MIT AND Apache-2.0": 1,
       "BSD-3-Clause": 22,
