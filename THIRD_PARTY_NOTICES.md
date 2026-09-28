@@ -31,6 +31,7 @@ The exact dependency tree and registry integrity values are recorded in [package
 | better-auth | 1.7.5 | MIT | [LICENSE](licenses/better-auth/LICENSE.md) |
 | pg | 8.23.0 | MIT | [LICENSE](licenses/pg/LICENSE) |
 | pg-boss | 12.34.0 | MIT | [LICENSE](licenses/pg-boss/LICENSE) |
+| cheerio | 1.2.0 | MIT | [LICENSE](licenses/cheerio/LICENSE) |
 | @types/node (development) | 24.13.6 | MIT | [LICENSE](licenses/types-node/LICENSE) |
 | @types/pg (development) | 8.23.1 | MIT | [LICENSE](licenses/types-pg/LICENSE) |
 
@@ -48,7 +49,7 @@ After that repair, `npm ls --all --json` reported zero problems, `npx expo insta
 
 ## Transitive dependencies and distribution
 
-S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. The current manifest covers 27 direct packages and 28 original license/notice texts; earlier verification artifacts retain their historical lockfile hashes.
+S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. S10-W02 adds unmodified Cheerio 1.2.0 for bounded Server-side HTML/RSS parsing. The current manifest covers 28 direct packages and 29 original license/notice texts; earlier verification artifacts retain their historical lockfile hashes.
 
 Transitive packages and their individual license files remain in the installed `node_modules` tree. They are not all reproduced in this document, and `node_modules` is not committed. The inventory records every lockfile license declaration, including build tools and optional platform packages; declared metadata is not proof that every file or distribution obligation has been reviewed.
 
@@ -64,3 +65,5 @@ The initial public knowledge summaries acknowledge the Hong Kong Department of H
 ## P1 deployment images
 
 S17 prepares unmodified upstream base images `node:24.19.0-bookworm-slim`, `postgres:18.6-bookworm`, and `caddy:2.11.4-alpine`; local container build/runtime acceptance passed; immutable base digests are recorded in [S17 evidence](artifacts/verification/S17_W01_CHECKS.json). The Web distribution also includes the existing notices and original license texts under `/THIRD_PARTY_NOTICES.md` and `/licenses/`. Caddy is used as a reverse proxy/static server under Apache-2.0. Its original [tagged license](https://github.com/caddyserver/caddy/blob/v2.11.4/LICENSE) is preserved in [licenses/caddy/LICENSE](licenses/caddy/LICENSE), SHA-256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`, and copied into the Web image. This image list is separate from the direct npm package inventory; base images retain their own upstream components and notices.
+
+S10-W02 registers CHP and RTHK RSS only for internal non-commercial review. Their general notices do not establish permission for this project to publicly redistribute summaries; the user confirmed that public retrieval remains disabled. This restriction is independent of technical feed access and is retained in [ADR-013](docs/DECISIONS.md#adr-013).

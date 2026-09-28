@@ -57,3 +57,35 @@ docker build --network=none --file deploy/postgres/Dockerfile.package --tag yuba
 最後 `verify-knowledge-storage.mjs restore --approved-knowledge-storage` 驗證既有資料、全庫加密備份及新空目標還原，實際查詢 pgvector，再只移除本次新建的還原庫。備份目錄由 `KNOWLEDGE_ACCEPTANCE_DIR` 指定、必須在工程外，沿用獨立 storage／backup key。必要環境用現有 `TEST_DATABASE_URL`、`PG_TOOL_CONTAINER`；不把它們寫入 Git。
 
 缺擴展、錯版本、pg_restore 錯誤或資料 hash 不符均不得標成功。上述腳本語法／純單元不是此驗收的替代品；S10-W01 證據會分列真服務、DB、還原及未執行項目。
+
+<a id="source-refresh"></a>
+## S10-W02 定期來源檢查（已實作、待必要驗收）
+
+固定來源登記見 [catalog](../server/knowledge-source-catalog.ts)。四個 FHS 穩定頁每週一香港時間 09:00 檢查；CHP／RTHK 近期 RSS 每日香港時間 09:00 檢查。使用同一 pg-boss 的原生 cron／missed:once，停機漏跑合併為一次，不另建 scheduler。worker 啟動及每分鐘同步登記／暫停狀態，真正到期由原生 timekeeper 處理；網頁關閉仍運行，worker 本身須開啟。初始 migration 不自動登記或啟用來源。
+
+### 使用範圍
+
+- FHS 沿用非商業、註明出處的項目用途。CHP [RSS](https://www.chp.gov.hk/rss/pressreleases_zh_tw_RSS.xml)及 RTHK [本地 RSS](https://rthk9.rthk.hk/rthk/news/rss/c_expressnews_clocal.xml) 依 [ADR-013](DECISIONS.md#adr-013)只限組內非商業試用；公開版不提供其摘要或檢索片段。是否可再公開使用須另取得權利證據，不把操作者確認旗標當成授權來源。
+- createKnowledgeStore 的預設 audience 為 public；internal 只能由受信任主機操作者明確選擇。現階段用既有 knowledge.mjs 的 --internal-source-review 作組內檢索／發布，沒有瀏覽器可選權限或公開近期資訊 UI。新結果帶 usageScope；S11 不得把 internal 結果移入公開對話。取得新公開來源前，公開的近期查詢應如實顯示沒有可用內容。
+- 原始觀察只供內容核對。RSS 原文／來源日期不改寫；轉述、章節及適用條件仍由操作者核對，不把 RSS description 或整篇新聞直接當育兒指引。沒有摘要時僅保留標題，不編造摘要。近期資料不建家庭事實、長期規則或任務。
+
+### 維護流程
+
+新增 [knowledge-refresh.mjs](../scripts/knowledge-refresh.mjs)，延用工程外設定與主機權限。catalog／list／inspect SOURCE_ID 唯讀；其他操作須 --operator ALIAS --operator-confirmed。
+
+1. register WATCH_ID --source-and-terms-checked：只登記固定清單的來源及用途；需要同時啟用共用 worker 時按 [worker 操作](P2_WORKER.md)確認目標及唯一執行者，不在此指令偷偷啟用。新登記來源在首次抓取／核對前不供引用。已啟用且定義相同時保留批准；定義變更或重新啟用則原子撤銷舊批准，不因改回原設定而自動恢復引用。
+2. check WATCH_ID --approved-source-check：以目前 watch revision／worker generation 入列一次；queued 或 already_pending 均不等於抓取完成。list 查工作實際結果；亦可等候正常每週／每日排程。
+3. inspect SOURCE_ID：查看受大小限制的公共觀察正文、原日期、content hash 及抓取時間。首次／實質變更後人工整理受影響片段，沿用原 knowledge.mjs import／review；不把整頁自動發表。原版失效或待新 hash 核對時停止引用，已保存版本不刪除。
+4. approve SOURCE_ID --observation-hash HASH --version UUID --version-hash HASH --source-and-terms-checked：把確切觀察版本與已核對知識版本綁定。日期、URL、分類、發布者及條款要一致；版本或觀察已變即拒絕，不能用舊確認批准新內容。
+5. 沿用 knowledge.mjs embed 的 --approved-cost／有限 max-calls，再 publish；internal 來源需明確帶 --internal-source-review。未變 title／片段 text／模型／pipeline 復用既有向量；正文觀察有變但核對後片段不變，可再批准原版，不為此重算。這些旗標不代替 AGENTS 的本輪服務成本批准。
+6. disable WATCH_ID：立即停止該登記的後續查詢及排程，撤銷觀察批准。停用單個既有知識來源仍用 knowledge.mjs disable SOURCE；任何重新發布先核對，不因來源重現而自動復活。
+
+### 失敗、日期與恢復
+
+抓取固定 HTTPS host，IPv4 DNS 檢查及地址固定、最多兩次同 host redirect；每次來源呼叫總計 20 秒、1 MiB、最多 50 個 RSS 項目。Cheerio 1.2.0 只解析內容，拒絕 RSS DTD／ENTITY；FHS 明確使用 #content，頁尾／導覽變動不應成為育兒正文。XML 各項 pubDate 分別保存；月份／無日期保持未知，不套用頻道 lastBuildDate。正文過長明確失敗，不靜默裁去限制條件。
+
+觀察的 fetched_at 與 last_successful_check_at、來源發布／修訂日期及既有版本 checked_at（人工核對）分開。hash 未變只更新成功抓取 metadata，沒有向量呼叫；失敗保留最後成功內容與時間。404／410 或停用立即排除，恢復後也需重新批准。feed 不再列某項不自動判斷官方撤回，其成功時間停止前進；超過 24 小時或七日發布窗口便不進近期結果。
+
+SQL 回寫前重查登記／世代／全局暫停，job ID 唯一結果；網絡請求不持有 SQL 交易。每日／每週取回都是有界 GET，沒有模型或私人家庭資料外送。還原保留三張維護表及 pg-boss schedules/jobs，沿用 worker_control 關閉／新世代；核對唯一來源後才重新啟用，操作者可用 check 補查，不能把還原舊抓取時間當最新。
+
+目前已核對六份原 HTML／RSS 的 selector／日期欄位，並完成離線解析：四 FHS 月份精度保持未知日期；CHP 原 feed 有舊項目，不能因今天取回而寫成最新；RTHK description 有完整句段，不能冒充僅標題。這是來源格式研究及離線檢查，並非新 SQL／真 worker／網絡 adapter 驗收。[必要驗收腳本](../scripts/verify-knowledge-refresh.mjs)已準備並 review，使用者於 2026-09-28 選擇先保留待驗收，尚未執行；使用工程外受保護目錄、原加密合成庫、先備份及單次批准標記，檢查上限及已驗／未驗見 [EV-S10-W02](../artifacts/verification/S10_W02_CHECKS.json)。增量向量檢查使用明示合成向量，真來源只取回解析、不保存正文；沒有新 Gemini／embedding 呼叫、E2E 或部署。

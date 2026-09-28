@@ -2,6 +2,8 @@
 
 S13-W04 使用 pg-boss 12.34.0（schema 42）、Node 24.19、pg 8.23、PostgreSQL 18.6。只接任務到期與站內提醒，不呼叫模型或真通知；實作與必要本機驗收分開。功能／資料契約見 [API](API.md#p2-task-worker-http)／[DATA_MODEL](DATA_MODEL.md#task-worker-storage)。
 
+S10-W02 在同一程序加入[知識來源更新](P2_KNOWLEDGE.md#source-refresh)，共用全局暫停及 generation；其來源登記、核對與發布仍獨立於照護任務。以下任務重試與恢復證據只屬 S13-W04；知識更新的必要驗收另列，不沿用為已通過。
+
 ## 啟用與停止
 
 在已核准的目標環境、既有 storage key 及 DATABASE_URL 下操作；不要把環境檔或密鑰放入 Git。
@@ -13,6 +15,8 @@ S13-W04 使用 pg-boss 12.34.0（schema 42）、Node 24.19、pg 8.23、PostgreSQ
 5. `npm run worker:control -- pause` 持久暫停並輪換 generation；SIGTERM／SIGINT 執行 graceful stop（框架等待 15 秒，整個程序 20 秒硬期限），之後關 pool。Compose 給 25 秒停止期限；硬期限退出仍須由框架恢復，不冒充優雅停止。程序輸出只含固定事件名稱。
 
 Compose 維護映像亦包含控制指令：以既有 private env／secret 設定執行 `docker compose -f deploy/p1/compose.yaml --profile ops run --rm maintenance scripts/worker-control.mjs status`；pause／activate 沿相同入口及上述核對條件。新的 worker profile／映像尚未作容器部署驗收。
+
+知識來源須先由操作員核對及登記。啟用 worker 後，原生 cron 按每週／每日安排執行；啟用本身不強制立即取得所有來源，臨時檢查須另用明確的 `check` 指令。知識排程配置每 60 秒核對一次；暫停或撤銷登記後，已入列工作仍須在取得內容前及寫入前重查資格，不因排程尚未移除而繼續寫入。
 
 ## 恢復及狀態
 

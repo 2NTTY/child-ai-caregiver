@@ -947,3 +947,31 @@
 - Verification：[EV-S13-W04](artifacts/verification/S13_W04_CHECKS.json)。新增 3 項 adapter 輕量回歸後合計 27 項，Server typecheck 再通過；必要驗收以受保護 checkpoint 承接原兩個合成帳號、孩子及累計計數。12 項任務、12 HTTP／72 業務呼叫、411 次有限查核；18 次 fixture 啟動、同時最多兩個。交易回滾、HTTP 收據、雙程序／唯一批次、安靜時段、撤權／終態、有限失敗及確認丟失有證據；修正後同一邏輯任務實測 hard-kill 恢復 68.895 秒。
 - Persistence / Limits：原始遷移前逐列保留檢查沿首輪；補驗排除精確合成身份及已核對 FK 後保存 hash 基線，結束時其餘資料保留，不宣稱另還原原備份作第二次比較。另一次 active-job 加密備份還原至新空庫，資料／密文及 schema 42 相符，輪換 generation、worker 暫停並啟動後無業務重做。只刪本次孩子及連帶資料，原庫、備份及還原庫保留，來源恢復暫停。
 - Review / Next：主模型核對關鍵原碼、diff 及實際分段結果；普通腳本續跑由原 Sol 補充，主模型處理恢復缺陷、最後補驗、權威文件及 Skill。完成隨本包 PR 合併生效，之後才解鎖下一包。沒有模型／真通知、部署、E2E、全量回歸或延長試用；P2 未完成，功能／UI 接口清單已更新，既有 Prompt Pack／美術未重做。
+
+<a id="log-20260928-004"></a>
+## LOG-20260928-004
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S10-W02，前置 S10-W01／S13-W04 已隨 PR #35／#48 合併，基線 master `70dda82`，分支 `codex/s10-w02-knowledge-refresh`。A 確認權重 3、A 主責 60%／C 40%；後續工作包依使用者授權由 AI 自行分配，不再逐包確認。共用 AI 由 A 統籌，不宣稱組員各自手寫或執行測試。
+- Actual Work：固定 FHS 穩定頁每週／CHP 與 RTHK RSS 每日來源清單，共用 pg-boss 原生 cron／missed:once、暫停世代與版本閘；三張維護表保存原始觀察、核對 hash 及唯一工作結果。取得內容不直接匯入、embedding 或發布；變更先停止舊引用，再由操作員核對受影響片段並沿用既有增量向量機制。404／410、失敗、原始日期精度、24 小時與七日窗口分開處理。
+- Source Decision：使用者確認 CHP／RTHK 先限組內非商業試用，公開保持關閉；Server 預設 public，內部選項只供受信任主機操作，來源 URL 亦作限制。[ADR-013](docs/DECISIONS.md#adr-013)記錄條款證據及公開替代來源未確認的限制；沒有把 RSS 可讀推定為公开發布授權，沒有新聞自動生成家庭事實或任務。
+- Executor / Reuse：1 Luna Max 唯讀定位／來源及候選研究，3 Sol xhigh 分別處理嚴格 CLI、Cheerio parser 與有限驗收腳本；主模型親寫 Server 交易／發布閘／網絡邊界／worker 整合、所有權威文件及 Skill 補充，核對關鍵原碼及腳本。沿用既有 RAG、Prompt Pack、美術及前端分工，沒有新管理平台、模型配置或 UI polish。
+- Verification：[EV-S10-W02](artifacts/verification/S10_W02_CHECKS.json)。Node 24.19.0；41 項相關 parser／CLI／更新／檢索／queue adapter 輕量檢查、根及 Server typecheck、四份腳本語法通過。六份已取得官方 HTML／RSS 離線解析正常，月份精度不猜日期、舊 feed 不冒充近期；這不是正式網絡 adapter 驗收。固定 Cheerio 1.2.0／MIT，29 份許可 hash 核對；PyYAML 缺失使官方 Skill validator 未執行，改由既有 YAML parser 核對 frontmatter，不聲稱原指令通過。
+- Review / Failure：修正 JSONB 重排 key 對 hash 的影響、SQL CHECK 的 NULL 缺口、發布讀取觀察的鎖定次序、首次未觀察／核對來源的檢索閘及 internal 預設隔離；先前 typecheck 的 optional schedule options／HTTPS option 相容問題已修正。研究下載曾遇 sandbox Schannel 憑據錯誤，受限公開讀取在允許環境成功；沒有放寬 TLS／DNS 邊界或把研究下載算作產品驗收。
+- Pending / Next：必要驗收腳本已由主模型 review，獨立批准申請已提出；最多 4 個合成登記／6 來源 ID、120 業務呼叫／180 唯讀輪詢／1 worker、6 次真來源取得（連同 redirect 最多 18 GET），先備份及 migration 014，驗合成向量增量、公開／組內隔離、日期、停用與真 minute cron。尚未執行 SQL／worker／真來源 adapter 驗收，不部署、跑 E2E 或呼叫 Gemini／embedding；先保留原庫及備份，結束暫停 worker。驗收及 PR 合併前不標完成、不解鎖 S11-W02。P2 未完成，現網仍 P1，七天試用不自行續期，額度未知。
+- Human Decision（同日後續）：使用者回覆「先保留待驗收」。本包 SQL／worker／真來源 adapter 驗收不執行，保留上述實作與腳本；仍未完成或合併，S11-W02 不解鎖。
+
+<a id="log-20260928-005"></a>
+## LOG-20260928-005
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S10-W02 待驗收補充 review，基於本機 checkpoint `38239f2`，沿用 A 60%／C 40% 分工及使用者「先保留待驗收」決定。
+- Actual Work / Finding：發現 register 改變用途／條款等來源定義時只換 revision，未撤銷既有內容批准；改回原設定可能令舊批准重新生效。主模型改為同一交易內更新登記與撤銷批准，啟用中的相同定義保持原批准。局部更新契約及操作文件，不改來源範圍或新增框架。
+- Verification：Server typecheck、必要驗收腳本語法及 diff whitespace 檢查通過。待驗腳本沿原配置變更情景，改以已批准來源核對 in-flight 寫入被拒、批准撤銷及改回 public 不復活；原業務呼叫、來源／worker／網絡上限不變。SQL 實際行為仍待驗收，不以 typecheck 當通過；[EV-S10-W02](artifacts/verification/S10_W02_CHECKS.json)分列補充證據。
+- Limits / Next：沒有 DB、worker、真來源、模型、embedding、部署或 E2E 執行；未推送／合併，本包保持待驗收，S11-W02 尚未解鎖。
+
+<a id="log-20260929-012"></a>
+## LOG-20260929-012
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；S10-W02 集中必要驗收結案，從已 review checkpoint 892c74c 及最新穩定 master 22f5c66 交付；前置 S10-W01／S13-W04 均已合併。
+- Evidence：014／原資料保留及配對還原復用 S16 共用證據；來源 hash／發布／向量復用／停用及真 minute cron 29 業務／7 輪詢，公開／組內／25h 過期隔離 16 業務，另批來源暫失／410／登記改動撤回批准 24 業務，後者零模型／embedding／外網。四份向量 callback 明示合成，不冒稱真服務；沒有重跑已通過案例或原大型驗收腳本。
+- Failure / Review：初始合成 URL 唯一約束失敗及 RTHK 降級／跨主機轉址均保留；只修固定 HTTPS 位址並補驗該來源，六來源現均取回成功，真正文不保留。登記改動與批准撤回同交易；改回舊設定不復活批准。已核对相關核心檔與受驗整合版本一致；有限驗收不代表全量回歸。[EV-S10-W02](artifacts/verification/S10_W02_CHECKS.json)。
+- Responsibility / Delivery：沿用已確認 A 60%／C 40%，A 統籌 AI 與關鍵 review，不假稱 D 親自測試。使用 A 的現有帳號獨立推送／PR／合併，開發與合併簽署另核對；完成隨 PR 合併生效。合成來源已停用、worker 暫停，原庫／還原庫／加密備份保留；無通知或部署，其他 P2 包不因本包結案而標完成。
