@@ -12,6 +12,7 @@ import type { ModelGateway } from "./model-gateway.ts";
 import type { ChatStore } from "./chat.ts";
 import { handleChatRequest } from "./chat-api.ts";
 import { handleChatReply } from "./chat-reply.ts";
+import { handleProductAgentRequest } from "./product-agent-api.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { handleFamilyRequest } from "./family-api.ts";
 import { handleCareRequest } from "./care-api.ts";
@@ -84,6 +85,8 @@ export function createRequestHandler(options: {
   online?: OnlineStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
   telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
+  productAgent?: import("./product-agent.ts").ProductAgent;
+  productAgentStore?: import("./product-agent-store.ts").ProductAgentStore;
   modelGateway?: ModelGateway;
   chat?: ChatStore;
   chatPrompt?: string;
@@ -144,7 +147,9 @@ export function createRequestHandler(options: {
       const length = Number(headers.get("content-length") ?? "0");
       if (!Number.isFinite(length) || length > MAX_BODY_BYTES) throw new BodyTooLargeError();
       const body = method === "POST" ? await readBody(request) : undefined;
-      const webRequest = new Request(url, { method, headers, ...(body ? { body } : {}) });
+      const aborted = new AbortController();
+      response.once("close", () => { if (!response.writableEnded) aborted.abort(); });
+      const webRequest = new Request(url, { method, headers, signal: aborted.signal, ...(body ? { body } : {}) });
       let result: Response;
       if(telegramWebhook && options.telegram?.config){
         result=await handleTelegramWebhook(webRequest,options.telegram.store,options.telegram.gateway,options.telegram.config.botId);
@@ -174,6 +179,10 @@ export function createRequestHandler(options: {
         const userId = sessionResult.response?.user.id ?? null;
         result = (url.pathname==="/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
           ? await handleTelegramRequest(webRequest,userId,options.telegram.store)
+          : options.productAgent && options.productAgentStore && options.chat
+          && (/^\/api\/children\/[^/]+\/agent\//u.test(url.pathname) || /^\/api\/children\/[^/]+\/messages\/[^/]+\/reply$/u.test(url.pathname))
+          ? await handleProductAgentRequest(webRequest, userId, { agent: options.productAgent, store: options.productAgentStore, chat: options.chat,
+            isCurrentUser: async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected })
           : url.pathname.startsWith("/api/online/") && options.online
           ? await handleOnlineRequest(webRequest, userId, options.online)
           : (url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/")) && options.webPush

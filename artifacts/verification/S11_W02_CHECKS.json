@@ -1,0 +1,130 @@
+{
+  "id": "EV-S11-W02",
+  "package": "S11-W02",
+  "status": "implemented_pending_acceptance",
+  "recordedAt": "2026-09-28T21:24:00+08:00",
+  "baseCommit": "1b9158ec972ffd0de7092f575b6f628ed939b2a8",
+  "branch": "codex/s11-w02-product-agent",
+  "inheritedUnverified": [
+    "S10-W02 / migration 014; isolated reviewed implementation only",
+    "S13-W05 / migration 015 is separate and not included"
+  ],
+  "implemented": [
+    "Shared interactive and worker ADK runtime; existing public vector retriever and Prompt Pack",
+    "Encrypted run/proposal ledger; explicit private/family confirmation with transactional task/fact writes",
+    "Private derived summary staging and exact coverage/version validation",
+    "Due-reminder atomic queue insertion; original worker generation/epoch, membership, assignment and terminal guards",
+    "Functional run/citation/proposal UI, unknown-write reconciliation, private scope clearing and background inbox",
+    "Always-visible official emergency help; metadata-only BasePlugin observer"
+  ],
+  "verification": [
+    {
+      "kind": "typecheck",
+      "commands": [
+        "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.server.json",
+        "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json"
+      ],
+      "result": "passed",
+      "scope": "final implementation including optional countsKnown metadata"
+    },
+    {
+      "kind": "focused_scripted_runner",
+      "command": "node --test tests/product-agent.test.ts",
+      "result": "interactive passed; background initially rejected invalid recipe before any generation",
+      "followup": "Fixed sources-freshness module reference; node --test --test-name-pattern='background Runner' tests/product-agent.test.ts passed",
+      "cases": 2,
+      "scope": "Real ADK Runner with scripted provider and synthetic in-memory service doubles; not PostgreSQL or real Gemini"
+    },
+    {
+      "kind": "observer_callback",
+      "command": "node --test tests/agent-observer.test.ts",
+      "result": "passed",
+      "cases": 1,
+      "executedBy": "Sol implementation agent; evidence and key code reviewed by primary; not rerun",
+      "scope": "Allowlisted metadata, private sentinel exclusion, diagnostic sink rejection/pending isolation"
+    },
+    {
+      "kind": "diff",
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "review": [
+    "Primary reviewed persistence/confirmation transaction, current authorization, queue restore identity and terminal guards",
+    "UI scope reset, original-run reconciliation, HTTPS source opening and typed response boundaries reviewed",
+    "No optional test matrix, full lint/build/unit suite or E2E run"
+  ],
+  "corrections": [
+    "Fixed TypeScript callback narrowing and client online prop",
+    "Background recipe referenced an absent module; corrected to the existing module ID",
+    "Serialized background timestamps as ISO; bound queued work to original generation/epoch",
+    "Interrupted unpersisted counters are explicitly unknown, not zero"
+  ],
+  "pendingAcceptance": [
+    "Apply migration 016 alongside reviewed predecessors on synthetic PostgreSQL; preserve existing data and encrypted backup/empty restore",
+    "Run/proposal isolation, exact confirmation retry, version/conflict/expiry, deletion cascade and source-change behavior",
+    "Summary exact coverage and concurrent message/version changes against real storage",
+    "Due-event atomic queue, restart/hard-stop, restore-generation invalidation, revoked assignment/terminal rejection; no duplicate model run",
+    "Bounded real ADK/Gemini + embedding retrieval and citation support; absent/withdrawn evidence and keyword degradation",
+    "Actual browser/API run/proposal flow, identity/child switching and fixed help visibility; minimal consolidated scenarios"
+  ],
+  "notExecuted": [
+    "PostgreSQL migrations or integration",
+    "Gemini or embedding API",
+    "Live worker/notifications",
+    "Browser E2E",
+    "Deployment"
+  ],
+  "rollout": {
+    "enabledByDefault": false,
+    "flag": "P2_AGENT_ENABLED=true",
+    "diagnosticsFlag": "AGENT_DIAGNOSTICS=true",
+    "masterMerged": false,
+    "liveProduct": "P1 unchanged",
+    "quotaRaised": false
+  },
+  "sources": [
+    {
+      "url": "https://www.hkfsd.gov.hk/chi/fire_ambulance_services/responder.html",
+      "checkedOn": "2026-09-28"
+    },
+    {
+      "url": "https://www.hkfsd.gov.hk/chi/fire_ambulance_services/fire_information.html",
+      "checkedOn": "2026-09-28"
+    }
+  ],
+  "limits": "No claim of clinical validity, semantic citation guarantee, real-service acceptance or measured token savings. Deferred tests require consolidated approval once P2 wiring is ready.",
+  "normalizedLfSha256": {
+    "prompts/modules/product-tools.md": "66d2ae3306956251a5caf375124240989fb172e4abd228dc863ddf9216cce76b",
+    "server/agent-event-types.ts": "390ea3ab83fba6d1f197488fbff1463b32f4cef57d5cfd173b2357dfca9b9d79",
+    "server/agent-observer.ts": "4d2f5ed103ef1eaf2701d1c65935cba4128e0ad928eb21ee1503adbf34a52ada",
+    "server/migrations/016-product-agent.sql": "d754c7b7f91df7ea7407e52595637a611475ed35733b137d2046eb62f4f0715b",
+    "server/product-agent-api.ts": "64f06f6068f301fce28445bb7ca08f7b5a6379110c488666d1aed8311fe33dbb",
+    "server/product-agent-background.ts": "592632bdac3e37c40fd61a874dae794649c928ab8cf53096b4c2479137181d44",
+    "server/product-agent-services.ts": "e7b13993d9f461cc3b062794a8fe5489df9b1d9e1f5098d81f2dfd5d93d2d1d2",
+    "server/product-agent-store.ts": "5937de0e7e43bfbdecb6a3c79e95bef1233c7a95d4a5cb5679fa8cce23d6e722",
+    "server/product-agent-tools.ts": "146451e5c999de10b4c72e685193e8070c66917a968d9070c662e60c3c646aff",
+    "server/product-agent.ts": "c681ae5f1c17a7326b860b7aa77e7ef1b3f67485355edd99aea2d2cdd3ead11a",
+    "src/client/AgentInbox.tsx": "30aa665f9892f9e76ad468c3483d50e51ee3788986a99b390617ca63bc94adaf",
+    "src/client/AgentRunPanel.tsx": "8e05072562543526e036f8c5f2ef8394e9ee131654be6bd6905896ce982db564",
+    "src/client/EmergencyHelp.tsx": "5efe2f6ce1920495f13c841785d79875ab767f0dd823ea08afc270eaf038ff83",
+    "src/client/product-agent-api.ts": "dacf0f3161b2037afc99c93c6cc784a8b436f6de712b574c6aa6bc66fefa1c23",
+    "src/shared/emergency-help.ts": "5b6211cef1b74e429a4e00f314b601401e02dabb964277389c75d9e84e2bc04d",
+    "src/shared/product-agent.ts": "f55a500794cacea5d22d08cded4dc169e876a7ed4298c6fb1d20f61eb72636d6",
+    "tests/agent-observer.test.ts": "57d006a773102bf14370483e9ab8067addebe49ca69e648796ed4a675863c572",
+    "tests/product-agent.test.ts": "ab3b3de2b0c8f41f6e0cad9f06fc4ab519858ca8b89bd404e7d9c0fa206e0456",
+    "app/index.tsx": "7dba41dae89a05be86d7b06b705aa663f33f46deae9b1f7fa5d89c6c9f6f804b",
+    "prompts/manifest.json": "ec32f2f148a58d547e6b6add36609a54d2e73766b6a17b4c99d8ed5058a1a13a",
+    "server/agent-runtime.ts": "46a92c435c911c90478a6a9ed849689cad5548f4527254f96a60aca01490012d",
+    "server/app.ts": "3f862b16aa1a281617f270adba145c26aae98707c50fc9a79e6d1f7798d092c8",
+    "server/chat.ts": "b80bb282c2182c7e1529f82de600ad614d74606cf008355587ebcf9e415a1b22",
+    "server/index.ts": "7bb91612df5b3f0f26659078581ec73953849bb153a3eb1bc566318cc45ac053",
+    "server/migrate.ts": "55b43155e06b7a0e8c57a3c206cfcf80864705c150c1a238285a5f5c820b3f3d",
+    "server/task-worker.ts": "5144986495f1528203ee99ae2c051d644bb17b99957fbdd63f63282549cc593c",
+    "server/worker-main.ts": "71eedcae196c926c9519b8a28eb7e110de43a494ece9eae353ab461bd9f7c36b",
+    "server/worker-queue.ts": "47391ded55476ad1e31236d6a39c25d8bcdbff4dbca2945bb12048ba96978baf",
+    "src/client/ChatPanel.tsx": "a7d5a6743d4db683105a7e0ab28345b839ef3ce3ec576af4d04dc20be98255b0",
+    "src/client/chat-api.ts": "f396ca2fdcb6b84ac06a6f00ca9583070dc74fd119435d51ecee45c784398014",
+    "src/shared/chat.ts": "b7f2cbc246ca308aa12af406c0f7998f6e58c9dc5cdeda0fcc8dfdf47a942137"
+  }
+}

@@ -37,7 +37,8 @@ export function createTaskScheduling(cipher: StorageCipher, queue: TaskQueue): T
   };
 }
 
-export function createTaskWorker(pool: Pool, cipher: StorageCipher, queue: TaskQueue) {
+export function createTaskWorker(pool: Pool, cipher: StorageCipher, queue: TaskQueue,
+  onReminder?: (client: PoolClient, workId: string, reminderId: string) => Promise<void>) {
   async function locked<T>(workId: string, operation: (client: PoolClient, work: Work, workspace: { id: string; owner_user_id: string; storage_epoch: string }) => Promise<T>): Promise<T | undefined> {
     const client = await pool.connect(); let discard = false;
     try {
@@ -105,8 +106,9 @@ export function createTaskWorker(pool: Pool, cipher: StorageCipher, queue: TaskQ
         }
         const batchId = batch?.id ?? randomUUID();
         if (!batch) await client.query("INSERT INTO task_reminder_batches(id,recipient_user_id,category,batch_key) VALUES($1,$2,$3,$4)", [batchId, task.assigneeUserId, task.kind, key]);
-        await client.query(`INSERT INTO task_reminders(id,batch_id,task_id,occurrence_id,task_version,phase) VALUES($1,$2,$3,$4,$5,$6)
-          ON CONFLICT(occurrence_id,phase) DO NOTHING`, [randomUUID(), batchId, task.id, task.occurrence.id, task.version, decision]);
+        const inserted = await client.query<{ id: string }>(`INSERT INTO task_reminders(id,batch_id,task_id,occurrence_id,task_version,phase) VALUES($1,$2,$3,$4,$5,$6)
+          ON CONFLICT(occurrence_id,phase) DO NOTHING RETURNING id`, [randomUUID(), batchId, task.id, task.occurrence.id, task.version, decision]);
+        if (inserted.rows[0] && onReminder) await onReminder(client, work.id, inserted.rows[0].id);
         await appendOnlineChange(client, space.id, "tasks", task.childId, false, task.assigneeUserId);
         if (task.kind === "ordinary" && decision === "initial") {
           await defer(nextReminderCheck(task, prefs, { ...evidence, initialAt: now }, now));

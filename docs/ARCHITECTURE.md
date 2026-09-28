@@ -126,7 +126,15 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 <a id="p2-agent-runtime"></a>
 ### 3.6A P2 ADK 產品 Agent（S11-W03 基礎已實作）
 
-S11-W03 已交付 [內部 AgentRuntime](../server/agent-runtime.ts)、[模型 adapter](../server/agent-model-gateway.ts) 及 [Prompt Pack 組裝器](../server/agent-prompt.ts)，完成真 Runner scripted 檢查及獲批的兩次 Vertex／Gemini 呼叫及一次工具循環驗收，見 [EV-S11-W03](../artifacts/verification/S11_W03_CHECKS.json)。目前只接入 `text`／`tool_cycle` 配方基礎，P1 網頁／聊天路徑及現網保持不變；結構化結果、確認持久化、完整記憶／知識／任務及 worker 接線仍待 S11-W02 等前置包。工具 schema 描述是模型指引，仍由主模型維護。
+S11-W03 已交付 [內部 AgentRuntime](../server/agent-runtime.ts)、[模型 adapter](../server/agent-model-gateway.ts) 及 [Prompt Pack 組裝器](../server/agent-prompt.ts)，完成真 Runner scripted 檢查及獲批的兩次 Vertex／Gemini 呼叫及一次工具循環驗收，見 [EV-S11-W03](../artifacts/verification/S11_W03_CHECKS.json)。目前只接入 `text`／`tool_cycle` 配方基礎，P1 網頁／聊天路徑及現網保持不變；S11-W02 的後續接線狀態見下文，未部署至現網。工具 schema 描述是模型指引，仍由主模型維護。
+
+S11-W02 已在隔離分支接通互動／背景 [產品 Agent](../server/product-agent.ts)、[受限工具](../server/product-agent-tools.ts)及[確認台帳](../server/product-agent-store.ts)，仍待集中驗收，沒有合併或部署。API 與 worker 共用服務組裝、配额及運行限額；以 `P2_AGENT_ENABLED=true` 明確啟用，預設保留 P1。Prompt Pack 按 product-interactive／product-background 配方復用，最終文字不作第二次副作用入口。
+
+到期提醒與 `agent-task-due-v1` 入列共用原交易，只带 reminder／work ID 及原 worker generation／storage epoch；模型等待不持有 SQL 交易。領取及每次工具前重查任務版本／發生實例／終態、指派人及原授權人；還原後舊事件不能因重新啟用而復活。固定事件只建立一個 run，重啟查原台帳，已開始的模型循環不盲目重跑。背景先提供只屬原照顧者的站內說明；外發及成長候選待各自工作包。
+
+本人互動只載入必要近期訊息、已確認事實及可追溯摘要；背景只用家庭 scope。完整摘要批次在既有覆蓋規則下核對保存，與 run 完結共用交易，不自動提升推斷或改話題／任務終態。功能 UI 的官方求助入口在模型／檢索前保持可見，來源是 2026-09-28 核對的[消防處先遣急救員資料](https://www.hkfsd.gov.hk/chi/fire_ambulance_services/responder.html)及[召喚救護指引](https://www.hkfsd.gov.hk/chi/fire_ambulance_services/fire_information.html)，不建立症狀分類、診斷或自動致電。
+
+診斷採原生 BasePlugin，僅允許 runId、階段、已知工具名／狀態及耗時；預設停用，`AGENT_DIAGNOSTICS=true` 才寫 metadata。保留 ADK content capture 關閉，沒有新增 OTel exporter／憑據；sink 失敗不影響流程。已做最少 scripted Runner／observer 檢查，真服務、SQL、取消／重啟及通知端到端證據仍欠缺。
 
 <a id="rule-adk-01"></a>
 採用 Google ADK TypeScript `@google/adk 2.1.0`，在現有 Node／GCP Compose Server 使用一個產品 `LlmAgent`／`Runner`；按受信入口、事件及所需任務配方暴露 `FunctionTool`，由 ADK 實際執行多步工具循環。S11-W03 先完成相容性基礎，S11-W02 才接通完整記憶／知識／任務能力。沿用 Node 24.19，npm 於 S11-W03 調整至 11.8.0 並同步建置及 lockfile；固定依賴、許可、現有 Gemini 型號／Vertex ADC／TypeScript 相容性須在接入驗證，不把本次文件當成安裝或實測。

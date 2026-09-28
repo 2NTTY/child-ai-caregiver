@@ -3,6 +3,9 @@ import { readServerConfig } from "./config.ts";
 import { createStorageCipher, readSecretKey } from "./storage-crypto.ts";
 import { verifyEncryptedStorage } from "./storage-upgrade.ts";
 import { createWorkerQueue } from "./worker-queue.ts";
+import { readAiConfig } from "./ai-config.ts";
+import { createProductAgentServices } from "./product-agent-services.ts";
+import { createAgentBackground } from "./product-agent-background.ts";
 import { createTaskWorker } from "./task-worker.ts";
 import { createKnowledgeRefreshStore } from "./knowledge-refresh-store.ts";
 import { createKnowledgeRefreshWorker } from "./knowledge-refresh-worker.ts";
@@ -22,10 +25,12 @@ let pool: ReturnType<typeof createPool> | undefined;
 let queue: ReturnType<typeof createWorkerQueue> | undefined;
 let knowledgeWorker: ReturnType<typeof createKnowledgeRefreshWorker> | undefined;
 let pushQueue: ReturnType<typeof createWebPushQueue> | undefined;
+let agentBackground: ReturnType<typeof createAgentBackground> | undefined;
 let stopping: Promise<void> | undefined;
 const stop = () => stopping ??= (async () => {
   telegramAbort.abort();
   const deadline = setTimeout(() => { console.error("worker_stop_deadline"); process.exit(1); }, 20000).unref();
+  agentBackground?.stop();
   try { await knowledgeWorker?.stop(); } finally {
     try { await pushQueue?.stop(); } finally {
       try { await telegramConsumer?.stop(); } finally {
@@ -43,7 +48,13 @@ try {
   if (!ready) throw new Error("worker_migration_required");
   queue = createWorkerQueue(pool, "worker");
   await queue.start();
-  await queue.work(createTaskWorker(pool, cipher, queue.queue));
+  if (process.env.P2_AGENT_ENABLED === "true") {
+    if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='016-product-agent'")).rowCount) throw new Error("agent_migration_required");
+    const services = createProductAgentServices(pool, cipher, readAiConfig(process.env), undefined, process.env.AGENT_DIAGNOSTICS === "true");
+    agentBackground = createAgentBackground(pool, cipher, queue.boss, services.agent);
+    await agentBackground.start();
+  }
+  await queue.work(createTaskWorker(pool, cipher, queue.queue, agentBackground?.enqueue));
   if (!await queue.boss.getQueue("knowledge-source-check-v1")) throw new Error("knowledge_queue_missing");
   knowledgeWorker = createKnowledgeRefreshWorker(queue.boss, createKnowledgeRefreshStore(pool, SOURCE_WATCHES), fetchKnowledgeSource);
   await knowledgeWorker.start();

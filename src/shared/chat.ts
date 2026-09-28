@@ -6,6 +6,7 @@ export interface ChatMessage {
   text: string;
   inReplyTo: string | null;
   createdAt: string;
+  agentRunId?: string;
 }
 export interface ChatPage {
   messages: ChatMessage[];

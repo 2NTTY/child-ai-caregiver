@@ -60,6 +60,7 @@ function message(value: unknown): value is ChatMessage {
   return object(value) && id(value.id) && id(value.childId)
     && (value.authorUserId === null || id(value.authorUserId))
     && (value.role === "user" || value.role === "model")
+    && (value.agentRunId === undefined || id(value.agentRunId))
     && typeof value.text === "string"
     && (value.inReplyTo === null || id(value.inReplyTo))
     && typeof value.createdAt === "string" && Number.isFinite(Date.parse(value.createdAt))

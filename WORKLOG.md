@@ -1032,3 +1032,13 @@
 - Evidence：[EV-S13-W06](artifacts/verification/S13_W06_CHECKS.json)。沿用 S16 已取得的 018／原資料／加密空庫還原；45 業務／2 輪詢／1 consumer、2 合成帳號、2 綁定、3 入列、2 scripted sends 通過，自己的資料清理、原行保留、worker 暫停。沒有重跑同一 DB 驗收。
 - Real Channel：一次真訊息 HTTP 200，使用者確認本人身份、看到訊息及按「收到測試」；持久 acknowledged 可核對，不完成照護任務。即時 answerCallbackQuery 未成功，原因未保留；公開 webhook／即時回應留 S17，沒有重發或宣稱完整 UI E2E 通過。
 - Review / Delivery：主模型復用既有 Telegram Skill、核對權限／一次嘗試／unknown／終態；Sol 按明確邊界合併最新 Server／worker 接線，未改權威文件。主模型維護文件、許可及證據。完成隨本包 PR 合併生效，按 D 帳號推送／PR／合併；P2 未完成、現網 P1 未改，沒有續期或部署。
+
+<a id="log-20260928-007"></a>
+## LOG-20260928-007
+
+- Recorded At / Work Date：2026-09-28 21:25（Asia/Hong_Kong）；S11-W02 產品 Agent 接線，基線 `1b9158ec972ffd0de7092f575b6f628ed939b2a8`（含 S10-W02 未驗實作及 PR #50 的集中驗收规则）。前置 S11-W03／S09-W02／S13-W04 已合併，S10-W02 只按隔離接續例外使用；不改寫舊 LOG 的當時鎖定狀態。006 留予先行 S13-W05 分支的紀錄。
+- Responsibility / Executor：A 主責，權重 5、A 70%／C 20%／B 10%；共用 AI 由 A 統籌，不表示各人親自手寫或執行測試。主模型完成架構、SQL／權限、工具 schema、所有 prompt／契約、整合與 review；一個 Luna Max 只定位，兩個 Sol xhigh 做 metadata observer 及 API／功能 UI，沒有子代理撰寫指導文件。
+- Actual Work：接既有 ADK Runner／Prompt Pack／向量 retriever，新增本人互動及受核准到期事件的共同服務；原生工具保存私有候選，原候選 ID／版本確認與任務或確認事實在同一交易寫入。新摘要按來源版本及完整消息批次校驗保存，不轉為共享或已確認事實。背景只讀家庭資料，原提醒與 Agent queue 原子入列，世代／epoch／授權／終態重查；沒有新事件不呼叫模型，重啟不重做已開始 run。
+- Interface / Safety：Web 已有來源／候選／共享確認／未知提交查核／背景結果入口；身份／孩子切換清空舊畫面。固定官方求助入口在等模型前可見，2026-09-28 核對香港消防處兩個來源；沒有醫療分流或自動聯絡。API、資料、架構及 UI 功能清單局部更新；Prompt Pack 只新增實際產品工具配方，未重做既有正文或美術。
+- Verification / Review：兩份 typecheck、前景及背景共兩項 scripted Runner 公開流程、Sol 一項 observer callback 檢查通過；沒有 lint／build／全量 unit／E2E 擴測。前景證明候選仍待確認及原 run 重取，背景證明只暴露家庭讀取／檢索／呈現，不讀私人聊天；不作 SQL／模型品質證據。首次 background 配方因來源模組名稱錯誤在 0 次模型呼叫前停止，改為既有 sources-freshness 名稱後只重跑該案例通過。review 同時修正 ISO 日期、還原後原世代綁定及未保存統計不能當零；證據及未驗範圍見 [EV-S11-W02](artifacts/verification/S11_W02_CHECKS.json)。
+- Limits / Next：本包已實作、待驗收，migration 016 未執行；同時承接 S10-W02／014 未驗收限制，S13-W05／015 留另一分支。依使用者指示，SQL／重啟／還原、真 Gemini／embedding、引用內容品質及瀏覽器留 S16-W02 集中安排，不逐包詢問或自行執行。不合併／部署未驗功能；P2 未完成，现網 P1 不變，額度未知。

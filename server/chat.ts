@@ -13,13 +13,13 @@ export interface ChatStore {
 }
 interface MessageRow {
   id: string; child_id: string; author_user_id: string | null;
-  role: "user" | "model"; text: string; in_reply_to: string | null; created_at: Date;
+  role: "user" | "model"; text: string; in_reply_to: string | null; created_at: Date; agent_run_id?: string | null;
 }
 function toMessage(row: MessageRow, userId: string, cipher: StorageCipher): ChatMessage {
   return { id: row.id, childId: row.child_id, authorUserId: row.author_user_id, role: row.role,
-    text: cipher.decrypt(row.text, `chat_messages:${row.id}:${row.child_id}:${userId}:${row.role}:${row.in_reply_to ?? ""}:text`), inReplyTo: row.in_reply_to, createdAt: row.created_at.toISOString() };
+    text: cipher.decrypt(row.text, `chat_messages:${row.id}:${row.child_id}:${userId}:${row.role}:${row.in_reply_to ?? ""}:text`), inReplyTo: row.in_reply_to, createdAt: row.created_at.toISOString(), ...(row.agent_run_id ? { agentRunId: row.agent_run_id } : {}) };
 }
-export function createChatStore(pool: Pool, cipher: StorageCipher, trackChanges = false): ChatStore {
+export function createChatStore(pool: Pool, cipher: StorageCipher, trackChanges = false, agentRuns = false): ChatStore {
   // Leave pool capacity for session, quota and message queries while locks are held.
   let activeLocks = 0;
   return {
@@ -46,8 +46,9 @@ export function createChatStore(pool: Pool, cipher: StorageCipher, trackChanges 
     async listForUser(userId, childId) {
       return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
       const result = await client.query<MessageRow>(
-        `SELECT id,child_id,author_user_id,role,text_encrypted AS text,in_reply_to,created_at FROM chat_messages
-         WHERE owner_user_id=$1 AND child_id=$2 ORDER BY created_at DESC,id DESC LIMIT 100`, [userId, childId],
+        `SELECT m.id,m.child_id,m.author_user_id,m.role,m.text_encrypted AS text,m.in_reply_to,m.created_at
+         ${agentRuns ? ",(SELECT r.id FROM agent_runs r WHERE r.owner_user_id=m.owner_user_id AND r.child_id=m.child_id AND r.trigger_kind='interactive' AND r.trigger_reference=m.in_reply_to) AS agent_run_id" : ""}
+         FROM chat_messages m WHERE m.owner_user_id=$1 AND m.child_id=$2 ORDER BY m.created_at DESC,m.id DESC LIMIT 100`, [userId, childId],
       );
       return { messages: result.rows.map(row => toMessage(row, userId, cipher)).reverse(), limit: 100 };
       });

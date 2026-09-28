@@ -1,0 +1,70 @@
+import { z } from "zod";
+import type { ProductAgent } from "./product-agent.ts";
+import type { ProductAgentStore } from "./product-agent-store.ts";
+import type { ChatStore } from "./chat.ts";
+import { agentDecisionSchema } from "../src/shared/product-agent.ts";
+import { FamilyError } from "./family-access.ts";
+import { apiError, jsonResponse } from "./workspace-api.ts";
+
+const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const runRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs/(" + uuid + ")(?:/proposals/(" + uuid + ")/decide)?$", "i");
+const listRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs$", "i");
+const replyRoute = new RegExp("^/api/children/(" + uuid + ")/messages/(" + uuid + ")/reply$", "i");
+export async function handleProductAgentRequest(request: Request, userId: string | null, options: {
+  agent: ProductAgent; store: ProductAgentStore; chat: ChatStore; isCurrentUser: (userId: string) => Promise<boolean>;
+}): Promise<Response> {
+  if (!userId) return apiError("unauthorized", "請先登入。", 401);
+  const expected = request.headers.get("x-expected-user-id");
+  if (!expected) return apiError("account_precondition_required", "請重新確認登入帳號。", 428);
+  if (expected !== userId || !await options.isCurrentUser(userId)) return apiError("session_changed", "登入帳號已改變。", 409);
+  const path = new URL(request.url).pathname, reply = replyRoute.exec(path), run = runRoute.exec(path), list = listRoute.exec(path);
+  if (!reply && !run && !list) return apiError("not_found", "找不到資料。", 404);
+  const childId = (reply ?? run ?? list)![1].toLowerCase();
+  try {
+    if (list) {
+      if (request.method !== "GET") return apiError("method_not_allowed", "不支援此操作。", 405);
+      const runs = await options.store.backgroundRuns(userId, childId);
+      return runs && await options.isCurrentUser(userId) ? jsonResponse({ runs }) : apiError("not_found", "找不到可讀取的結果。", 404);
+    }
+    let body: unknown;
+    if (request.method === "POST") {
+      if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") return apiError("unsupported_media_type", "請以 JSON 提交。", 415);
+      try { body = await request.json(); } catch { return apiError("invalid_json", "請檢查輸入。", 400); }
+    }
+    if (reply) {
+      if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);
+      if (!z.object({}).strict().safeParse(body).success) return apiError("invalid_input", "請檢查輸入。", 400);
+      const messageId = reply[2].toLowerCase();
+      const page = await options.chat.listForUser(userId, childId);
+      const old = page?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
+      if (old) return await options.isCurrentUser(userId) ? jsonResponse({ message: old }) : apiError("unauthorized", "存取權已改變。", 401);
+      const result = await options.agent.reply(userId, childId, messageId, () => options.isCurrentUser(userId), request.signal);
+      if (!result) return apiError("not_found", "存取權或資料已改變，請重新讀取。", 404);
+      if (result.status === "running") return apiError("ai_busy", "Agent 正在處理這則訊息；請稍後查核原結果。", 429);
+      if (!await options.isCurrentUser(userId)) return apiError("unauthorized", "登入已失效。", 401);
+      const text = result.text || (result.proposals.length
+        ? "Agent 未完成文字回覆，但已保存待你核對的候選；尚未確認的事項不代表已執行。請查看來源與待確認事項。"
+        : result.status === "unknown" ? "這次 Agent 運行中斷，結果未知；沒有自動重新執行。請查核原運行結果。"
+        : "Agent 暫未能完成回覆；原訊息仍已保存。請查看運行狀態及未完成事項。");
+      const saved = await options.chat.createModelMessageForUser(userId, childId, messageId, text);
+      const message = saved ?? (await options.chat.listForUser(userId, childId))?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
+      if (!message || !await options.isCurrentUser(userId)) return apiError("ai_unavailable", "未能確認回覆保存，請重新讀取。", 503);
+      return jsonResponse({ message: { ...message, agentRunId: result.runId } });
+    }
+    if (run![3]) {
+      if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);
+      const input = agentDecisionSchema.safeParse(body);
+      if (!input.success) return apiError("invalid_input", "請核對確認事項。", 400);
+      const proposal = await options.store.decide(userId, childId, run![2].toLowerCase(), run![3].toLowerCase(), input.data);
+      if (!proposal || !await options.isCurrentUser(userId)) return apiError("not_found", "找不到可確認的事項。", 404);
+      return jsonResponse({ proposal });
+    }
+    if (request.method !== "GET") return apiError("method_not_allowed", "不支援此操作。", 405);
+    const result = await options.store.get(userId, childId, run![2].toLowerCase());
+    return result && await options.isCurrentUser(userId) ? jsonResponse({ result }) : apiError("not_found", "找不到運行結果。", 404);
+  } catch (error) {
+    if (error instanceof FamilyError) return apiError(error.code, error.status === 409 ? "事項、權限或版本已改變，請重新讀取並核對。" : "無法處理此事項，請核對資料與權限。", error.status);
+    if (error instanceof z.ZodError) return apiError("invalid_input", "請檢查輸入。", 400);
+    return apiError("ai_unavailable", "未能確認操作結果，請先查核原運行；不要另建重複操作。", 503);
+  }
+}

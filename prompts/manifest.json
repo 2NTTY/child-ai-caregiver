@@ -4,7 +4,7 @@
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
-  "validationScope": "static_documentation_and_s11_w03_foundation",
+  "validationScope": "static_documentation_and_s11_foundation_with_w02_focused_scripted_checks",
   "promptBoundary": {
     "begin": "<!-- prompt:begin -->",
     "end": "<!-- prompt:end -->"
@@ -198,6 +198,16 @@
       "requires": [
         "core.identity-and-trust",
         "domain.childcare-hk.profile"
+      ]
+    },
+    {
+      "id": "module.product-tools",
+      "path": "modules/product-tools.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.tool-use",
+        "core.output",
+        "module.knowledge-answering"
       ]
     }
   ],
@@ -399,6 +409,61 @@
         "S14-W02"
       ],
       "missingCapability": "用可見事件生成有界正文，缺統計不計總數，未生成PDF不稱可下載。"
+    },
+    {
+      "id": "product-interactive",
+      "additionalModules": [
+        "domain.childcare-hk.sources-freshness",
+        "domain.childcare-hk.care-workflows",
+        "module.knowledge-answering",
+        "module.chat",
+        "module.capture-confirmation",
+        "module.task-intents",
+        "module.product-tools",
+        "module.memory-maintenance"
+      ],
+      "outputModes": [
+        "tool_cycle"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "context",
+        "evidence",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "S11-W02"
+      ],
+      "missingCapability": "缺權限、引用、明確确认或目前可用工具時停止相關操作，回報限制。"
+    },
+    {
+      "id": "product-background",
+      "additionalModules": [
+        "domain.childcare-hk.sources-freshness",
+        "domain.childcare-hk.care-workflows",
+        "module.knowledge-answering",
+        "module.proactive-run",
+        "module.product-tools"
+      ],
+      "outputModes": [
+        "tool_cycle"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "context",
+        "evidence",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "S11-W02",
+        "S13-W08",
+        "S13-W07"
+      ],
+      "missingCapability": "只按 Server 可用工具處理站內結果；沒有通知或任務寫入工具時不執行或聲稱已外發。"
     }
   ],
   "outputModeRequirements": {

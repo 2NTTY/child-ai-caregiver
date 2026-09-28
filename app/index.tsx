@@ -6,6 +6,8 @@ import { RecordsController } from "../src/client/records-controller";
 import { useRecordsBrowser } from "../src/client/use-records-browser";
 import { createChatApi } from "../src/client/chat-api";
 import { ChatController } from "../src/client/chat-controller";
+import { AgentInbox } from "../src/client/AgentInbox";
+import { EmergencyHelp } from "../src/client/EmergencyHelp";
 import { ChatPanel } from "../src/client/ChatPanel";
 import { FamilyPanel } from "../src/client/FamilyPanel";
 import { WebPushPanel } from "../src/client/WebPushPanel";
@@ -231,7 +233,12 @@ export default function HomeScreen() {
             role={careScope.child.accessRole} api={taskApi} active={state.online && careVisible}
             onSessionChanged={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />
         </View>}
-        <ChatPanel controller={chatController} auth={state.auth} userId={state.user?.id ?? null} online={state.online} child={deleting ? null : child ?? null} />
+        {careScope && <>
+          <EmergencyHelp />
+          <AgentInbox key={`agent-inbox:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
+            userId={careScope.userId} childId={careScope.child.id} online={state.online && !deleting} />
+        </>}
+        <ChatPanel apiBaseUrl={environment.apiBaseUrl} controller={chatController} auth={state.auth} userId={state.user?.id ?? null} online={state.online} child={deleting ? null : child ?? null} />
       </View>
     </ScrollView>
   );
