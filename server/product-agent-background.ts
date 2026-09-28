@@ -9,8 +9,16 @@ import { createTaskStore } from "./tasks.ts";
 import { transactionPool } from "./transaction-pool.ts";
 
 import { AGENT_DUE_QUEUE, AGENT_DUE_OPTIONS } from "./agent-event-types.ts";
-const inputSchema = z.object({ workId: z.uuid(), reminderId: z.uuid(), workerGeneration: z.uuid(), storageEpoch: z.uuid() }).strict();
+const inputSchema = z.object({ workId: z.uuid(), reminderId: z.uuid(), workerGeneration: z.uuid(), storageEpoch: z.uuid(), eventId:z.uuid().optional() }).strict();
 type EventReference = z.infer<typeof inputSchema>;
+
+export async function enqueueAgentReminder(boss:PgBoss,client:PoolClient,workId:string,reminderId:string,eventId=reminderId){
+  const original=(await client.query<{worker_generation:string;storage_epoch:string}>("SELECT worker_generation,storage_epoch FROM task_work WHERE id=$1",[workId])).rows[0];
+  if(!original)throw new Error("agent_event_source_missing");
+  const data=inputSchema.parse({workId,reminderId,workerGeneration:original.worker_generation,storageEpoch:original.storage_epoch,eventId});
+  const sent=await boss.send(AGENT_DUE_QUEUE,data,{...AGENT_DUE_OPTIONS,id:eventId,db:databaseAdapter(client)});
+  if(sent!==eventId)throw new Error("agent_event_enqueue_unconfirmed");
+}
 
 export function createAgentBackground(pool: Pool, cipher: StorageCipher, boss: PgBoss, agent: ProductAgent) {
   const cancellation = new AbortController();
@@ -35,23 +43,19 @@ export function createAgentBackground(pool: Pool, cipher: StorageCipher, boss: P
   }
   return {
     async enqueue(client: PoolClient, workId: string, reminderId: string) {
-      const original = (await client.query<{ worker_generation: string; storage_epoch: string }>("SELECT worker_generation,storage_epoch FROM task_work WHERE id=$1", [workId])).rows[0];
-      if (!original) throw new Error("agent_event_source_missing");
-      const data = inputSchema.parse({ workId, reminderId, workerGeneration: original.worker_generation, storageEpoch: original.storage_epoch });
-      const sent = await boss.send(AGENT_DUE_QUEUE, data, { ...AGENT_DUE_OPTIONS, id: reminderId, db: databaseAdapter(client) });
-      if (sent !== reminderId) throw new Error("agent_event_enqueue_unconfirmed");
+      await enqueueAgentReminder(boss,client,workId,reminderId);
     },
     async start() {
       if (!await boss.getQueue(AGENT_DUE_QUEUE)) throw new Error("agent_event_queue_missing");
       await boss.work<EventReference>(AGENT_DUE_QUEUE, { batchSize: 1, localConcurrency: 1, pollingIntervalSeconds: 2 }, async jobs => {
         for (const job of jobs) {
           const reference = inputSchema.parse(job.data);
-          if (job.id !== reference.reminderId) throw new Error("agent_event_invalid");
+          if (job.id !== (reference.eventId ?? reference.reminderId)) throw new Error("agent_event_invalid");
           const event = await current(reference);
           if (!event) continue;
           // No transaction remains open while the model or embedding service is called.
-          await agent.background({ userId: event.userId, childId: event.childId, reference: reference.reminderId,
-            context: { task: event.task, phase: event.phase, purpose: "station_only_due_task_briefing", externalContactAuthorized: false },
+          await agent.background({ userId: event.userId, childId: event.childId, reference: reference.eventId ?? reference.reminderId,
+            context: { task: event.task, phase: event.phase, purpose: "due_task_with_server_checked_contact_options", externalContactAuthorized: "read_contact_options_required" },
             authorize: async () => Boolean(await current(reference)), signal: cancellation.signal });
         }
       });

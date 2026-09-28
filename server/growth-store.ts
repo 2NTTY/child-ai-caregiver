@@ -228,6 +228,17 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
         if(changed) await appendOnlineChange(client,workspaceId,"growth",childId);
       });
     },
+    async taskAllowed(userId:string,childId:string,taskId:string){
+      return access(userId,childId,false,async(client)=>{
+        const linked=(await all(client,childId)).filter(value=>value.item.taskId===taskId);
+        if(!linked.length)return true;
+        const loaded=await load(client,userId,childId);
+        for(const {item} of linked){
+          const disabled=(await client.query<TopicRow>("SELECT * FROM growth_topics WHERE child_id=$1 AND topic_id=$2",[childId,item.topicId])).rows[0]?.disabled;
+          if(disabled || ["dismissed","snoozed","inapplicable"].includes(item.state) || !(await visible(item,loaded,userId)).sourceAvailable)return false;
+        }return true;
+      });
+    },
     async backgroundInput(userId: string,childId: string,id: string,scope:GrowthWorkerScope){
       return access(userId,childId,false,async(client,workspaceId)=>{
         if(!await control(client,workspaceId,scope)) return null;

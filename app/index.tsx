@@ -1,4 +1,3 @@
-import { CareSummaryPanel } from "../src/client/CareSummaryPanel";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { environment } from "../src/config/environment";
@@ -9,6 +8,8 @@ import { createChatApi } from "../src/client/chat-api";
 import { ChatController } from "../src/client/chat-controller";
 import { SharedInputPanel } from "../src/client/SharedInputPanel";
 import { PhotoPanel } from "../src/client/PhotoPanel";
+import { CareSummaryPanel } from "../src/client/CareSummaryPanel";
+import { ContactPanel } from "../src/client/ContactPanel";
 import { GrowthPanel } from "../src/client/GrowthPanel";
 import { AgentInbox } from "../src/client/AgentInbox";
 import { EmergencyHelp } from "../src/client/EmergencyHelp";
@@ -239,6 +240,9 @@ export default function HomeScreen() {
         </View>}
         {careScope && careVisible && <GrowthPanel key={`growth:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
           userId={careScope.userId} childId={careScope.child.id} online={state.online} />}
+        {careScope && careVisible && <ContactPanel key={`contact:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
+          userId={careScope.userId} childId={careScope.child.id} online={state.online}
+          onSessionChanged={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />}
         {careScope && careVisible && <PhotoPanel key={`photo:${environment.apiBaseUrl}:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
           userId={careScope.userId} childId={careScope.child.id} online={state.online}
           onSessionChanged={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />}

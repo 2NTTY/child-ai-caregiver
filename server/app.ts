@@ -2,6 +2,7 @@ import { handleSharedInputRequest } from "./shared-input-api.ts";
 import { handlePhotoRequest } from "./photo-api.ts";
 import { PHOTO_LIMITS } from "../src/shared/photos.ts";
 import { handleCareSummaryRequest } from "./care-summary-api.ts";
+import { handleContactRequest } from "./contact-api.ts";
 import { handleWebPushRequest } from "./web-push-api.ts";
 import { isIP } from "node:net";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -91,11 +92,12 @@ export function createRequestHandler(options: {
   inputs?:{store:import("./shared-input-store.ts").SharedInputStore;service:import("./shared-input-service.ts").SharedInputService};
   photos?:{store:import("./photo-store.ts").PhotoStore;agent:import("./photo-agent.ts").PhotoAgent};
   summary?:import("./care-summary-store.ts").CareSummaryStore;
-  webPush?: import("./web-push-store.ts").WebPushStore;
-  telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
+  contact?:import("./contact-store.ts").ContactStore;
   growth?: import("./growth-store.ts").GrowthStore;
   productAgent?: import("./product-agent.ts").ProductAgent;
   productAgentStore?: import("./product-agent-store.ts").ProductAgentStore;
+  webPush?: import("./web-push-store.ts").WebPushStore;
+  telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
   modelGateway?: ModelGateway;
   chat?: ChatStore;
   chatPrompt?: string;
@@ -175,7 +177,7 @@ export function createRequestHandler(options: {
       const webRequest = new Request(url, { method, headers, signal: aborted.signal, ...(body ? { body } : {}) });
       let result: Response;
       if(telegramWebhook && options.telegram?.config){
-        result=await handleTelegramWebhook(webRequest,options.telegram.store,options.telegram.gateway,options.telegram.config.botId);
+        result=await handleTelegramWebhook(webRequest,options.telegram.store,options.telegram.gateway,options.telegram.config.botId,options.contact);
       } else if (url.pathname.startsWith("/api/auth/")) {
         result = await options.auth.handler(webRequest);
         if (result.status >= 500) {
@@ -196,8 +198,7 @@ export function createRequestHandler(options: {
       } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
         || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")
         || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences"
-        || url.pathname.startsWith("/api/online/") || url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/")
-        || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
+        || url.pathname.startsWith("/api/online/") || url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/") || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
         result = /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(url.pathname)&&options.inputs
@@ -208,7 +209,9 @@ export function createRequestHandler(options: {
               isCurrentUser:async()=>Boolean(userId)&&(await options.auth.api.getSession({headers}))?.user.id===userId})
           : /^\/api\/children\/[^/]+\/(summary|visit-preparation)$/u.test(url.pathname) && options.summary
           ? await handleCareSummaryRequest(webRequest,userId,options.summary)
-          : (url.pathname==="/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
+          : /\/api\/children\/[^/]+\/contact(\/|$)/u.test(url.pathname) && options.contact
+          ? await handleContactRequest(webRequest,userId,options.contact)
+          : (url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
           ? await handleTelegramRequest(webRequest,userId,options.telegram.store)
           : /^\/api\/children\/[^/]+\/growth(\/|$)/u.test(url.pathname) && options.growth
           ? await handleGrowthRequest(webRequest,userId,options.growth,async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)

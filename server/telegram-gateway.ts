@@ -9,6 +9,7 @@ const RESPONSE_LIMIT = 32 * 1024;
 const REQUEST_TIMEOUT_MS = 10_000;
 const SEND_TIMEOUT_MS = 15_000;
 const TEST_MESSAGE = "育伴港渠道測試：這是你剛才確認發送的一般測試，沒有孩子資料。按下『收到測試』只記錄收到，不代表照護事項完成。";
+const CARE_MESSAGE = "育伴港有新的提示。請開啟育伴港查看實際事項。按下『收到提示』只記錄收到，不代表照護事項完成。";
 const ACK_MESSAGE = "已記錄收到；不代表完成照護事項。";
 const BLOCKED_DESCRIPTION = "Forbidden: bot was blocked by the user";
 
@@ -132,13 +133,15 @@ export function createTelegramGateway(config: TelegramConfig | null, transport: 
       const state = { attempted: false, providerStatus: null as number | null };
       try {
         if (scope.signal.aborted) return result("stopped", "worker_interrupted");
-        if (!Number.isSafeInteger(input.chatId) || input.chatId <= 0 || !/^[A-Za-z0-9_-]{32}$/u.test(input.callbackToken)) return result("rejected", "provider_rejected");
+        if (!Number.isSafeInteger(input.chatId) || input.chatId <= 0 || !/^[A-Za-z0-9_-]{32}$/u.test(input.callbackToken)
+          || (input.kind !== undefined && input.kind !== "test" && input.kind !== "care")) return result("rejected", "provider_rejected");
         if (!await bounded(stillAuthorized(), scope.signal)) return result("stopped", "revoked");
         if (scope.signal.aborted) return result("stopped", "worker_interrupted");
         const api = apiFor(config, transport, state);
-        const reply: unknown = await bounded(api.sendMessage(input.chatId, TEST_MESSAGE, {
+        const care = input.kind === "care";
+        const reply: unknown = await bounded(api.sendMessage(input.chatId, care ? CARE_MESSAGE : TEST_MESSAGE, {
           link_preview_options: { is_disabled: true }, protect_content: true,
-          reply_markup: { inline_keyboard: [[{ text: "收到測試", callback_data: "ack:" + input.callbackToken }]] },
+          reply_markup: { inline_keyboard: [[{ text: care ? "收到提示" : "收到測試", callback_data: (care ? "contact:" : "ack:") + input.callbackToken }]] },
         }, scope.signal as unknown as SdkSignal), scope.signal);
         if (scope.signal.aborted || !record(reply) || !record(reply.chat) || reply.chat.id !== input.chatId
           || !Number.isSafeInteger(reply.message_id) || Number(reply.message_id) <= 0) return result("unknown", "transport_unknown", state.providerStatus);

@@ -1,10 +1,10 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
-  "validationScope": "delivered_s11_growth_summary_photo_and_shared_input_evidence; public_delivery_tracked_separately",
+  "validationScope": "delivered_p2_feature_evidence; public_deployment_and_complete_ui_tracked_separately",
   "promptBoundary": {
     "begin": "<!-- prompt:begin -->",
     "end": "<!-- prompt:end -->"
@@ -203,7 +203,7 @@
     {
       "id": "module.product-tools",
       "path": "modules/product-tools.md",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "requires": [
         "core.tool-use",
         "core.output",

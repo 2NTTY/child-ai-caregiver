@@ -24,6 +24,7 @@ export async function assembleAgentPrompt(options: {
 }): Promise<AssembledPrompt> {
   const { manifest, recipeId, mode, availableInputs, readModule } = options;
   const invalid = () => new Error("Invalid agent prompt configuration");
+  if (!/^\d+\.\d+\.\d+$/u.test(manifest.version)) throw invalid();
   const recipe = manifest.recipes.find(item => item.id === recipeId);
   if (!recipe || !recipe.outputModes.includes(mode)) throw invalid();
   const required = [...recipe.requiredInputs, ...(manifest.outputModeRequirements[mode] ?? [])];

@@ -61,13 +61,15 @@ self.addEventListener("push", event => {
     let payload;
     try { payload = event.data.json(); } catch { return; }
     if (payload?.v !== 1 || !uuid.test(payload.bindingId) || !uuid.test(payload.deliveryId) || !Number.isSafeInteger(payload.bindingVersion)) return;
+    if (payload.kind !== undefined && !["test", "care"].includes(payload.kind)) return;
     const current = await state();
     if (!current.active || current.active.id !== payload.bindingId || current.active.version !== payload.bindingVersion
       || current.seen.includes(payload.deliveryId)) return;
     await state(previous => ({ ...previous, seen: [...previous.seen.slice(-19), payload.deliveryId] }));
-    await self.registration.showNotification("育伴港通知測試", {
-      body: "這是你剛才要求的測試通知，不代表照護事項已完成。",
-      tag: "yuban-test-" + payload.deliveryId,
+    const care = payload.kind === "care";
+    await self.registration.showNotification(care ? "育伴港照護提示" : "育伴港通知測試", {
+      body: care ? "你有獲授權的照護事項提示，請開啟育伴港查看。收到提示不代表事項已完成。" : "這是你剛才要求的測試通知，不代表照護事項已完成。",
+      tag: (care ? "yuban-care-" : "yuban-test-") + payload.deliveryId,
       data: { bindingId: payload.bindingId, bindingVersion: payload.bindingVersion },
     });
   });

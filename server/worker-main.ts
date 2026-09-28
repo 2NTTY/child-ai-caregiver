@@ -1,3 +1,5 @@
+import { createContactStore } from "./contact-store.ts";
+import { contactQueue,startContactWorker } from "./contact-worker.ts";
 import { createGrowthStore } from "./growth-store.ts";
 import { createGrowthWorker } from "./growth-worker.ts";
 import { createPool } from "./database.ts";
@@ -9,26 +11,28 @@ import { readAiConfig } from "./ai-config.ts";
 import { createProductAgentServices } from "./product-agent-services.ts";
 import { createAgentBackground } from "./product-agent-background.ts";
 import { createTaskWorker } from "./task-worker.ts";
+import { createWebPushQueue } from "./web-push-queue.ts";
+import { createWebPushWorker } from "./web-push-store.ts";
+import { createWebPushGateway, readWebPushConfig } from "./web-push-gateway.ts";
+
 import { createKnowledgeRefreshStore } from "./knowledge-refresh-store.ts";
 import { createKnowledgeRefreshWorker } from "./knowledge-refresh-worker.ts";
 import { SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
 import { fetchKnowledgeSource } from "./knowledge-source-fetch.ts";
-import { createWebPushQueue } from "./web-push-queue.ts";
-import { createWebPushWorker } from "./web-push-store.ts";
-import { createWebPushGateway, readWebPushConfig } from "./web-push-gateway.ts";
 
 import { readTelegramConfig } from "./telegram-config.ts";
 import { createTelegramStore } from "./telegram-store.ts";
 import { createTelegramGateway } from "./telegram-gateway.ts";
 import { telegramQueue,startTelegramWorker } from "./telegram-worker.ts";
 const telegramAbort=new AbortController();
+let contactConsumer:Awaited<ReturnType<typeof startContactWorker>>|undefined;
 let telegramConsumer:Awaited<ReturnType<typeof startTelegramWorker>>|undefined;
 let pool: ReturnType<typeof createPool> | undefined;
 let queue: ReturnType<typeof createWorkerQueue> | undefined;
 let knowledgeWorker: ReturnType<typeof createKnowledgeRefreshWorker> | undefined;
-let pushQueue: ReturnType<typeof createWebPushQueue> | undefined;
 let growthWorker: ReturnType<typeof createGrowthWorker> | undefined;
 let agentBackground: ReturnType<typeof createAgentBackground> | undefined;
+let pushQueue: ReturnType<typeof createWebPushQueue> | undefined;
 let stopping: Promise<void> | undefined;
 const stop = () => stopping ??= (async () => {
   telegramAbort.abort();
@@ -36,16 +40,13 @@ const stop = () => stopping ??= (async () => {
   agentBackground?.stop();
   try { await growthWorker?.stop(); } finally {
     try { await knowledgeWorker?.stop(); } finally {
-      try { await pushQueue?.stop(); } finally {
-        try { await telegramConsumer?.stop(); } finally {
-          try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } }
-        }
-      }
+      try { await pushQueue?.stop(); } finally { try { await telegramConsumer?.stop(); } finally { try { await contactConsumer?.stop(); } finally { try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } } } } }
     }
   }
 })();
 try {
   const telegramConfig=await readTelegramConfig(process.env);
+  const pushConfig=await readWebPushConfig(process.env);
   const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
   pool = createPool(readServerConfig(process.env));
   await verifyEncryptedStorage(pool, cipher);
@@ -56,7 +57,9 @@ try {
   if (process.env.P2_AGENT_ENABLED === "true") {
     if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='016-product-agent'")).rowCount) throw new Error("agent_migration_required");
     const growth=(await pool.query("SELECT 1 FROM app_migrations WHERE id='017-growth-attention'")).rowCount ? createGrowthStore(pool,cipher) : undefined;
-    const services = createProductAgentServices(pool, cipher, readAiConfig(process.env), undefined, process.env.AGENT_DIAGNOSTICS === "true",growth);
+    const contact=(await pool.query("SELECT 1 FROM app_migrations WHERE id='019-proactive-contact'")).rowCount ? createContactStore(pool,cipher,{queue:contactQueue(queue.boss),pushKey:pushConfig?.publicKey??null,telegramBotId:telegramConfig?.botId??null}) : undefined;
+    if(contact)contactConsumer=await startContactWorker(queue.boss,contact,{push:createWebPushGateway(pushConfig),telegram:createTelegramGateway(telegramConfig)},telegramAbort.signal);
+    const services = createProductAgentServices(pool, cipher, readAiConfig(process.env), undefined, process.env.AGENT_DIAGNOSTICS === "true",growth,contact);
     if(growth){growthWorker=createGrowthWorker(pool,queue.boss,growth,services.agent);await growthWorker.start();}
     agentBackground = createAgentBackground(pool, cipher, queue.boss, services.agent);
     await agentBackground.start();
@@ -67,7 +70,7 @@ try {
   await knowledgeWorker.start();
   if ((await pool.query("SELECT 1 FROM app_migrations WHERE id='015-web-push'")).rowCount) {
     pushQueue = createWebPushQueue(pool, queue.boss);
-    await pushQueue.work(createWebPushWorker(pool, cipher, createWebPushGateway(await readWebPushConfig(process.env))));
+    await pushQueue.work(createWebPushWorker(pool, cipher, createWebPushGateway(pushConfig)));
   }
   if(telegramConfig){
     if(!(await pool.query("SELECT 1 FROM app_migrations WHERE id='018-telegram-channel'")).rowCount)throw new Error("telegram_migration_required");

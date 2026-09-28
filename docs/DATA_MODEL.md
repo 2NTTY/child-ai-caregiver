@@ -422,3 +422,15 @@ migration `022-shared-inputs` 新增 `shared_inputs`：孩子／輸入者／來�
 原文永久維持輸入者私有；確認只新增家長核對的共享 CareRecord，不把原文改為家庭可讀。`reference` 明確標外部參考、數字及時間不進摘要計算；`family_record` 須另確認實際孩子關係，也不自動建立 MemoryFact／任務或外發授權。既有 Care 更正歷史及版本繼續適用。
 
 新增／確認／刪除沿用私人收據；刪除移除相應回傳正文。記錄／孩子 FK cascade 及 DB 加密備份涵蓋新表，歷史備份仍保留當時快照；還原及資料保留真證據待集中驗收。[契約](API.md#p2-shared-inputs)
+
+<a id="proactive-contact-storage"></a>
+## S13-W07 聯絡台帳（019，未執行遷移）
+
+[019-proactive-contact.sql](../server/migrations/019-proactive-contact.sql) 把本人接收同意、精確任務授權、聯絡請求與渠道嘗試分開：
+- `contact_consents／contact_consent_revisions` 綁孩子、本人、版本、渠道順序及家庭權限版本；`contact_grants／contact_grant_revisions` 保存任務版本、確認人、對象／同意／綁定版本、披露範圍、期限及 fallback。正文以既有 cipher 及種類／資源／版本 AAD 加密。
+- `contact_requests` 每個 reminder 唯一，保存 run／task／occurrence、原 worker generation／storage epoch、job、授權快照及狀態；`contact_attempts` 保存每次已授權渠道的實際證據。先提交 sending 再外發；worker 中斷只能轉 unknown，不能假定未送。
+- `contact_daily_slots` 以接收者／本地日限制普通通知，刪除原孩子後仍保留已消耗的無正文名額；`contact_updates` 只保存 bot／update ID 去重，不保存原始 webhook。
+- 孩子／任務刪除連帶清理相關正文及聯絡資料；投遞只用 opaque ID 和固定通知。callback token 加密保存、查找用 hash，完成嘗試後清除 token 正文。
+- 模型工具與請求／job 同交易；只有這筆受信交易可更新自身 run 的 data version。其他資料變化使舊生成結果失效；如已有成功入列，只可保存重新核權後的固定操作回報，不保存舊上下文、候選或摘要。
+
+019 與 014–018 一同列入集中 migration／加密備份及空庫還原驗收；還原後既有 worker 暫停／世代規則繼續適用。型別及 scripted case 不代替 SQL、刪除或恢復證據。

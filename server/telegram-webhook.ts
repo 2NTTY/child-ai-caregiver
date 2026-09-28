@@ -15,9 +15,9 @@ export function parseTelegramUpdate(input:unknown,botId:string):TelegramEvent{
  const {update_id:updateId}=update.parse(input);
  const cb=callback.safeParse(input);
  if(cb.success){
-  const v=cb.data.callback_query,token=/^ack:([A-Za-z0-9_-]{32})$/u.exec(v.data)?.[1];
+  const v=cb.data.callback_query,matched=/^(ack|contact):([A-Za-z0-9_-]{32})$/u.exec(v.data),token=matched?.[2];
   if(token&&!v.from.is_bot&&v.message.from.is_bot&&String(v.message.from.id)===botId)
-   return {kind:"ack",updateId,chatId:v.message.chat.id,senderId:v.from.id,messageId:v.message.message_id,callbackQueryId:v.id,token};
+   return {kind:matched![1]==="contact"?"contact_ack":"ack",updateId,chatId:v.message.chat.id,senderId:v.from.id,messageId:v.message.message_id,callbackQueryId:v.id,token};
   return {kind:"ignore",updateId};
  }
  const member=membership.safeParse(input);
@@ -38,10 +38,10 @@ export function parseTelegramUpdate(input:unknown,botId:string):TelegramEvent{
  return {kind:"ignore",updateId};
 }
 /** Ingress already checked the constant-time webhook secret before reading a bounded body. */
-export async function handleTelegramWebhook(request:Request,store:TelegramStore,gateway:TelegramGateway,botId:string):Promise<Response>{
+export async function handleTelegramWebhook(request:Request,store:TelegramStore,gateway:TelegramGateway,botId:string,contact?:import("./contact-store.ts").ContactStore):Promise<Response>{
  if(request.headers.get("content-type")?.split(";",1)[0]?.trim().toLowerCase()!=="application/json")return apiError("invalid_webhook","無效渠道請求。",400);
  let event:TelegramEvent;try{event=parseTelegramUpdate(await request.json(),botId);}catch{return apiError("invalid_webhook","無效渠道請求。",400);}
- const ack=await store.webhook(event);
+ const ack=event.kind==="contact_ack" ? await contact?.telegramAcknowledgement(event) : await store.webhook(event);
  if(ack){try{await gateway.acknowledge(ack,AbortSignal.timeout(5000));}catch{/* Durable acknowledgement is authoritative; never resend the message. */}}
  return jsonResponse({ok:true});
 }

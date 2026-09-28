@@ -35,5 +35,5 @@ export const webPushStatusSchema = z.object({
 }).strict();
 export type WebPushStatus = z.infer<typeof webPushStatusSchema>;
 /** Fixed, non-sensitive wake-up reference. Never include family/chat text or a navigation URL. */
-export interface PushPayload { v: 1; bindingId: string; bindingVersion: number; deliveryId: string }
+export interface PushPayload { v: 1; kind?: "test" | "care"; bindingId: string; bindingVersion: number; deliveryId: string }
 export interface PushBrowserBinding { userId: string; id: string; version: number }

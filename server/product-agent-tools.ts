@@ -1,5 +1,5 @@
-import { summaryQuery } from "../src/shared/care-summary.ts";
 import { z } from "zod";
+import { summaryQuery } from "../src/shared/care-summary.ts";
 import type { MemoryContext, SummaryInput } from "../src/shared/memory.ts";
 import { agentAnswerSchema } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation } from "../src/shared/product-agent.ts";
@@ -37,8 +37,9 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
-  growth?: import("./growth-store.ts").GrowthStore;
   summary?:import("./care-summary-store.ts").CareSummaryStore;
+  contact?:import("./contact-store.ts").ContactStore;
+  growth?: import("./growth-store.ts").GrowthStore;
   run: AgentRunContext; memory: MemoryStore; tasks: TaskStore; store: ProductAgentStore;
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
   reviewedGrowthPresentation?: boolean;
@@ -146,6 +147,7 @@ export function createProductAgentTools(options: {
           ? { presentationPolicy: "reviewed_evidence", modelTextUsed: false } : {}) };
       }) },
   ];
+
   if(options.summary)tools.splice(tools.length-1,0,{
     name:"read_care_summary",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",
     parameters:summaryQuery,authorize:permitted,execute:args=>guard(async()=>{
@@ -156,8 +158,20 @@ export function createProductAgentTools(options: {
         appointments:value.appointments,conflicts:value.conflicts,preparation:value.preparation,reviewCurrent:value.reviewCurrent};
     }),
   });
+  let contactReference:string|null=null;
+  if(options.contact)tools.splice(tools.length-1,0,
+    {name:"read_contact_options",description:"讀取指定已確認家庭任務的當前聯絡資格。Server 核對到期事件、任務版本、明確授權、接收者自己同意及可用渠道；只返回合資格對象及指定／備援原因，不推測誰有空。",
+     parameters:z.object({taskId:z.uuid()}).strict(),authorize:permitted,
+     execute:args=>guard(async()=>{const value=await options.contact!.options(scope.userId,scope.childId,args.taskId as string);if(!value)throw new AgentStopped("unauthorized");return value;})},
+    {name:"contact_caregiver",description:"只按 read_contact_options 當次回傳的任務、版本及收件人建立唯一聯絡請求。queued 只是持久入列，不是送達或完成；Server worker 會再查授權、安靜時段與終態，只發固定一般提示。缺授權須請使用者到聯絡設定明確確認。",
+     parameters:z.object({taskId:z.uuid(),taskVersion:z.number().int().min(1),grantVersion:z.number().int().min(1),recipientUserId:shortText(128)}).strict(),authorize:permitted,
+     execute:async args=>{
+      const response=await guard(async()=>{const value=await options.contact!.request(scope.userId,scope.childId,{taskId:args.taskId as string,taskVersion:args.taskVersion as number,grantVersion:args.grantVersion as number,recipientUserId:args.recipientUserId as string,runId});if(!value)throw new AgentStopped("unauthorized");contactReference=value.id;return value;});
+      return {...response,...(response.status==="succeeded"&&contactReference?{reference:contactReference}:{})};
+     }},
+  );
   return {
-    tools: options.visibility === "family" ? tools.filter(tool => ["read_context", "search_knowledge", "read_care_summary", "present_answer"].includes(tool.name)) : tools,
+    tools: options.visibility === "family" ? tools.filter(tool => ["read_context", "search_knowledge", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name)) : tools,
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
       coveredMessageIds: summaryInput.messages.map(message => message.id), text: summaryText } : undefined,
     async presentation(): Promise<AgentPresentation | null> {
