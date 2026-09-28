@@ -6,6 +6,7 @@ import { RecordsController } from "../src/client/records-controller";
 import { useRecordsBrowser } from "../src/client/use-records-browser";
 import { createChatApi } from "../src/client/chat-api";
 import { ChatController } from "../src/client/chat-controller";
+import { GrowthPanel } from "../src/client/GrowthPanel";
 import { AgentInbox } from "../src/client/AgentInbox";
 import { EmergencyHelp } from "../src/client/EmergencyHelp";
 import { ChatPanel } from "../src/client/ChatPanel";
@@ -233,6 +234,8 @@ export default function HomeScreen() {
             role={careScope.child.accessRole} api={taskApi} active={state.online && careVisible}
             onSessionChanged={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />
         </View>}
+        {careScope && careVisible && <GrowthPanel key={`growth:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
+          userId={careScope.userId} childId={careScope.child.id} online={state.online} />}
         {careScope && <>
           <EmergencyHelp />
           <AgentInbox key={`agent-inbox:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}

@@ -1051,3 +1051,13 @@
 - Quality：原真背景答案把母乳範圍擴大，prompt-only 補驗仍過度概括；失敗保留。`6c865f1` 改成 Server 對成長事件呈現已重核的官方片段，3 項必要 scripted Runner 及擷取真答案的離線重播通過；不宣稱新完整真服務運行、互動零幻覺或臨床有效性。
 - Review / Delivery：主模型核對 ADK／工具／權限／引用及全部指導、契約與提示詞；原 Sol 只處理已定義的 Server／worker 接線衝突，保留 knowledge、Web Push、Telegram。完成隨本包 PR 合併生效；真照護聯絡留 W07、公開部署留 S17，P2 未完成，未續期或部署。沒有為交付重跑模型或完整回歸。
 - Necessary Check：交付接線 Server typecheck 首次發現既有測試對 SDK unknown data 的三個 TS2339 欄位存取；只補局部型別宣告，斷言／產品行為不變。一次補查通過；沒有再跑 Runner、DB、模型或其他測試。
+
+<a id="log-20260928-008"></a>
+## LOG-20260928-008
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S13-W08 成長階段關注，基線 `b816d30450b886ecbe63e2f3fbc899396d41dd1a`，分支 `codex/s13-w08-growth-attention`。前置 S11-W02 實作已 review，按集中驗收例外接續，承接 S10-W02／014、S11-W02／016 未驗項；S13-W05／015 在另一分支。
+- Responsibility / Executor：A 主責、權重 5、A 60%／C 30%／B 10%；共用 AI 由 A 統籌，不表示各人親自手寫。主模型處理規則、SQL／權限、事件／ADK 整合、提示詞／契約及 review；Luna Max 唯讀核對四個官方來源，Sol xhigh 接功能 UI／API client，沒有委派指導文件或追加測試矩陣。
+- Actual Work：以現有 FHS 已核對片段及精確 hash 建立四段有限規則；實際年齡及產品窗口與官方条件分開，未記錄保持未知，不推斷學年或把約數年齡套入精準窗口。候選／加密修訂、接受／暫緩／關閉／永久停用、明確共享事實、原版本重試及任務連結已接；相同依據不重提，失去資料不當新依據，實質變更保留舊終態並交代原因。私人聊天不作共享背景輸入。
+- Background / Interface：共用 pg-boss 因相關事件或到期評估，有限失敗預算、原世代／epoch 與當前授權／來源重查；新候選才原子入列 ADK 站內解釋，不外發或自創醫療規則。UI 有來源／未知提交查核／共享確認／版本衝突及身份切換清理，草稿重讀不覆寫；可接受後不建任務或明確建立任務，既有任務選擇 API 已有、選擇器 UI 尚未提供，見 handoff。
+- Verification / Review：[EV-S13-W08](artifacts/verification/S13_W08_CHECKS.json)。Server／前端型別檢查通過；兩項純規則測試只跑一次，驗精確年齡／已核對片段和關閉依據抑制，不代替 SQL、模型或醫療有效性。主模型覆核來源關鍵原文、交易／授權、事件及 UI 關鍵 diff；修正原共享事實 refs／權限版本、已知未完成任務連結、來源摘要支持、有限失敗及資料到期時點。只因相關實作變更重跑型別檢查，沒有 lint／build／全量測試或 E2E。
+- Limits / Next：本包已實作、待驗收，017 未執行；真 PostgreSQL／worker 重啟／還原、撤權／來源停用、跨照顧者操作及真 ADK／瀏覽器留 P2 集中驗收。沒有呼叫模型／embedding／通知、部署、推送或合併；現網仍 P1，不延長試用。功能及對接清單已更新；不重做 Prompt Pack 或美術，不把有限規則描述成完整醫療監察。

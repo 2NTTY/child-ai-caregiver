@@ -4,7 +4,7 @@
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
-  "validationScope": "static_documentation_and_s11_foundation_with_w02_focused_scripted_checks",
+  "validationScope": "s11_foundation_and_w02_scripted_checks; growth_event_binding_pending_service_acceptance",
   "promptBoundary": {
     "begin": "<!-- prompt:begin -->",
     "end": "<!-- prompt:end -->"

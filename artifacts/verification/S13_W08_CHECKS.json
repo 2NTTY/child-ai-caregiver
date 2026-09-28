@@ -1,0 +1,87 @@
+{
+  "id": "EV-S13-W08",
+  "package": "S13-W08",
+  "status": "implemented_pending_acceptance",
+  "recordedAt": "2026-09-28T14:19:20.573Z",
+  "baseCommit": "b816d30450b886ecbe63e2f3fbc899396d41dd1a",
+  "branch": "codex/s13-w08-growth-attention",
+  "inheritedUnverified": [
+    "S10-W02 / migration 014",
+    "S11-W02 / migration 016",
+    "S13-W05 / 015 separate, not included"
+  ],
+  "verification": [
+    {
+      "kind": "typecheck",
+      "commands": [
+        "node node_modules/typescript/bin/tsc -p tsconfig.server.json --noEmit",
+        "node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit"
+      ],
+      "result": "passed",
+      "scope": "final source and UI follow-up; no runtime/SQL claim"
+    },
+    {
+      "kind": "pure_rules",
+      "command": "node --test tests/growth-policy.test.ts",
+      "cases": 2,
+      "executions": 1,
+      "result": "passed",
+      "durationMs": 668,
+      "scope": "exact age/reviewed chunk guard and material basis change; later store/worker/UI fixes only typechecked and reviewed"
+    },
+    {
+      "kind": "diff_and_new_links",
+      "result": "passed",
+      "scope": "git diff --cached --check; 24 added local document links/anchors; append-only log check"
+    }
+  ],
+  "reviewedOfficialSources": [
+    "https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html",
+    "https://www.fhs.gov.hk/tc_chi/health_info/child/15654.html",
+    "https://www.fhs.gov.hk/tc_chi/health_info/child/14821.html",
+    "https://www.fhs.gov.hk/tc_chi/health_info/child/14812.html"
+  ],
+  "sourceReviewDate": "2026-09-28",
+  "catalogRevision": "hk-growth-20260928-v1",
+  "implemented": [
+    "Finite applicability tied to four reviewed official chunks; exact DOB and confirmed family context only",
+    "Encrypted candidates, revisions, topic controls and optimistic authority/fact basis",
+    "Accept/snooze/dismiss/disable; closed-basis suppression and substantive change reasons",
+    "Atomic optional task connection and due/event worker enqueue; original generation and epoch",
+    "Functional source/control UI; preserved drafts, current scope clearing and exact unknown replay"
+  ],
+  "pendingAcceptance": [
+    "Migration 017 with preserved existing encrypted data, prior migrations and empty restore",
+    "Shared role/authority, fact conflict, same-operation replay, task linkage and terminal races against PostgreSQL",
+    "Event/age/expiry/snooze/source triggers, three-failure limit, worker restart/generation restore and no duplicate model run",
+    "Private data isolation, revocation, source invalidation and cross-caregiver completion",
+    "Real ADK citation-supported background result and scoped browser flow; no clinical effectiveness claim"
+  ],
+  "knownUiLimits": [
+    "Existing task selection API implemented; no existing-task picker in basic UI",
+    "At most 30 recent terminal cards plus active items; full terminal records retained by Server"
+  ],
+  "notExecuted": [
+    "PostgreSQL / migrations / worker integration",
+    "Gemini / embedding / notifications",
+    "Browser E2E / build / full regression",
+    "Deployment"
+  ],
+  "rollout": {
+    "flag": "P2_AGENT_ENABLED=true",
+    "enabledByDefault": false,
+    "masterMerged": false,
+    "liveProduct": "P1 unchanged"
+  },
+  "sourceHashes": {
+    "server/growth-rules.ts": "a41050ec39ad7d580d646d59a643eba5457caafa92c79b9797027dc0f9bf7ddb",
+    "server/growth-store.ts": "607b0f9aa2781695e9fc3bcb9d29d90f5d3023b0c3bc71576aa0e7101e24b426",
+    "server/growth-worker.ts": "f627cbe6528db2949b96a7d85f5576f320c0f7ccd44906f3c544594c71586833",
+    "server/growth-api.ts": "02758967ca8e8cc96ef3e56fe573ee33964e52304fc59e89d8585271712216a1",
+    "server/migrations/017-growth-attention.sql": "bb9ed011887ac43e0d3099662fdecd157d214e8182a939ced362051fa6118c46",
+    "src/shared/growth.ts": "207e75e847f025997f6ef333941b1532f6714af4f2a51629ff0cb6b1307aa6f1",
+    "src/client/growth-api.ts": "defda8ab99c258a6ec47089ee95eabf14e72325f4bb6425056107e4c49cd6a7d",
+    "src/client/GrowthPanel.tsx": "84b7d21f8608bce06effb734cf81c9d84a4e6b9f8dda068accc70c50d56f20b6",
+    "tests/growth-policy.test.ts": "57c78a822a97151f6994c1b74a96e72b2c727ac7e139aca97dc4d92e07ae0a26"
+  }
+}

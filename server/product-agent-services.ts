@@ -15,9 +15,11 @@ import { createTaskStore } from "./tasks.ts";
 import { createMemoryStore } from "./memory.ts";
 import { createChatStore } from "./chat.ts";
 
-export function createProductAgentServices(pool: Pool, cipher: StorageCipher, config: AiConfig, scheduling?: TaskScheduling, diagnostics = false) {
+import type { GrowthStore } from "./growth-store.ts";
+
+export function createProductAgentServices(pool: Pool, cipher: StorageCipher, config: AiConfig, scheduling?: TaskScheduling, diagnostics = false, growth?: GrowthStore) {
   const store = createProductAgentStore(pool, cipher, scheduling);
-  const agent = createProductAgent({ store, memory: createMemoryStore(pool, cipher, true),
+  const agent = createProductAgent({ store, growth, memory: createMemoryStore(pool, cipher, true),
     tasks: createTaskStore(pool, cipher, scheduling), chat: createChatStore(pool, cipher, true, true),
     runtime: createAgentRuntime({ config, usage: createAiUsageStore(pool), provider: createVertexAgentProvider(config),
       diagnostics: diagnostics ? event => { console.info("agent_diagnostic", JSON.stringify(event)); } : undefined }),

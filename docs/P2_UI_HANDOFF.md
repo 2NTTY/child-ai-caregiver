@@ -33,7 +33,7 @@ Web 預覽檢查 1440／1024／390／320 CSS px、鍵盤、溢出及必要狀態
 | UI-P2-04 記憶與話題 | 新增候選、明確確認／共享、更正／停用／刪除；管理話題終態與按原因重開，查看本人摘要覆蓋 | 候選不作事實，來源變更／過期／版本衝突，私有候選歷史遮蔽；暫緩日期、舊終態保留；未知提交先核對 | S09-W02 [MemoryPanel](../src/client/MemoryPanel.tsx)／[API](API.md#p2-memory-http)／[型別](../src/shared/memory.ts) 已接通，必要本機驗收通過，完成隨 PR #34 合併生效；瀏覽器驗收及部署未執行，S11-W02 已接 AI 摘要暫存／覆蓋校驗與候選確認工具，必要核心證據分列於本包驗收記錄 |
 | UI-P2-05 Agent 對話 | 提出照護需求、核對候選完整內容及共享範圍、明確接受／略過、查核未知提交；手動查看背景結果 | 運行／工具結果、候選／實際任務分開、版本衝突、停止／unknown、統計未知，不展示內部推理 | S11-W02 [ChatPanel](../src/client/ChatPanel.tsx)、[AgentRunPanel](../src/client/AgentRunPanel.tsx)、[AgentInbox](../src/client/AgentInbox.tsx)／[HTTP](API.md#product-agent-http)／[型別](../src/shared/product-agent.ts) 已接線，必要核心證據見 [EV-S11-W02](../artifacts/verification/S11_W02_CHECKS.json)；完整 Agent UI E2E 未驗，P2_AGENT_ENABLED 預設關閉 |
 | UI-P2-06 知識引用 | 從原回答查看支持片段及官方頁、辨認降級／來源時間；使用固定緊急求助入口 | 標題、章節、短原文、版本／核對時間、來源分類、降級；原引用不保證目前仍適用 | S11-W02 [AgentRunPanel](../src/client/AgentRunPanel.tsx) 已接既有 public [retriever](../server/knowledge-retriever.ts)；[EmergencyHelp](../src/client/EmergencyHelp.tsx) 在模型回覆前可見。S10-W02 已驗；本包有限真引用樣例及成長引用修正的離線證據分列，完整 UI／公開部署未驗，CHP／RTHK 組內限制不變 |
-| UI-P2-07 成長關注 | 閱讀「為何現在」、接受、暫緩、關閉或永久停用主題 | 所依據的已確認資料、觀察／安排／諮詢建議、來源、處理結果及新提示原因 | S13-W08；待接通 |
+| UI-P2-07 成長關注 | 閱讀「為何現在」、接受、暫緩、關閉或永久停用主題 | 所依據的已確認資料、觀察／安排／諮詢建議、來源、處理結果及新提示原因 | S13-W08 [GrowthPanel](../src/client/GrowthPanel.tsx)／[HTTP](API.md#growth-attention-http)／[型別](../src/shared/growth.ts) 已接線、待集中驗收；[功能清單](#growth-ui-handoff) |
 | UI-P2-08 任務與預約 | 查看、確認、指派、改期、完成、取消、衝突覆核及歷史 | 任務／穩定發生實例、含 offset 時間／IANA 時區、合資格負責人、原版本、原因／備註及終態；過期不等於完成 | S13-W01 [API](API.md#p2-task-http)／[型別](../src/shared/tasks.ts) 已接 [TaskPanel](../src/client/TaskPanel.tsx)／[client API](../src/client/task-api.ts)，本機 HTTP 及 Web export 通過；瀏覽器互動待 S16 |
 | UI-P2-09 聯絡授權 | 設定或撤回預授權，核對對象、內容、渠道及 fallback | 授權範圍／版本、合資格對象、待確認的超範圍動作 | S13-W07；待接通 |
 | UI-P2-10 通知偏好 | 個別設定渠道、安靜時段及明確的預約例外 | 香港時間預設 22:00–08:00、普通提示合併及跟進限制 | S06-W02 已有偏好保存；S13-W04 已接站內持久批次及執行，必要 DB 驗收通過；渠道控制待 W05／W06／W07 |
@@ -69,3 +69,16 @@ S13-W01 任務設計需預留：家庭共享新增確認、ordinary／appointmen
 - 可操作功能：明確開始私人綁定、開啟 10 分鐘 bot 連結、回站內刷新、核對候選帳號後確認、撤銷、明確一般測試、查投遞及收到時間。沿用 S07 同一 opId／原操作查核，不自動輪詢或重送。
 - 新設計須區分未配置、等待 Telegram 啟動、待網頁確認、active／revoked／blocked、worker 暫停及各投遞狀態。API 接受不標已讀；callback 收到不標照護完成。
 - [實際 HTTP／型別](API.md#telegram-http) 是本包對接契約；一般測試無家庭正文，主動聯絡與事項 callback 由 S13-W07 補齊。獨立 frontend 預覽未被替換，SQL／本人真渠道已驗；正式 UI E2E 與公開 webhook 未驗，見 [驗收界線](P2_TELEGRAM.md)。
+
+<a id="growth-ui-handoff"></a>
+## S13-W08 功能接線清單（已實作、待驗收）
+
+[GrowthPanel](../src/client/GrowthPanel.tsx)／[growth-api](../src/client/growth-api.ts)／[共享型別](../src/shared/growth.ts)／[HTTP](API.md#growth-attention-http)。正式 App 以帳號及孩子掛載，使用既有 online refresh；未變更 `frontend/**` 的視覺預覽。
+
+- 查看四主題的關注理由、建議、限制、官方片段／版本、前次關係及真實狀態；來源／依據失效時顯示歷史限制，停止現行建議及操作。
+- 接受只作知悉，或經明確核對新增已確認任務；API 亦支援連接指定版本既有任務。顯示任務 ID／實際終態，改期／完成／取消到既有任務區。没有另建不存在的任務導航路由。
+- 暫緩至明確時間、關閉、永久停用主題及明確重新啟用；相同依據不復活。只把到期暫緩改回原候選，不另建任務。
+- 以頁面有限選項補充近況；「供家庭共享」須明確勾選，寫入既有確認事實及更正歷史。未知不預填否定；衝突／已失效事實到記憶區覆核。
+- viewer 唯讀、離線禁提交、帳號／孩子切換清理；unknown 先重讀再選擇原 body 重試，凍結項目版本、授權版本及原 fact refs。歷史顯示上限及 worker 失敗均如實提示。
+
+介面型別通過不代表瀏覽器、真 SQL、worker、模型或通知驗收通過；本包不含外發渠道／預授權聯絡，仍由 W05／W06／W07 交付。

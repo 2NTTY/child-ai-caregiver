@@ -9,6 +9,7 @@ import type { AgentPresentation, ProductAgentResult } from "../src/shared/produc
 import { AgentStopped } from "./agent-budget.ts";
 
 export function createProductAgent(options: {
+  growth?: import("./growth-store.ts").GrowthStore;
   runtime: ReturnType<typeof createAgentRuntime>; store: ProductAgentStore;
   memory: MemoryStore; tasks: TaskStore; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
 }) {
@@ -25,7 +26,7 @@ export function createProductAgent(options: {
         deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())),
         trigger: { kind: "worker", reference: input.reference }, recipeId: "product-background",
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context: input.context,
-        messages: [{ role: "user", text: "這是 Server 核准的已確認任務到期事件。按需要讀取家庭共享資料，提供供原指派照顧者在站內查看的簡短任務說明；不推斷未完成、不自動改任務、不外發通知或披露私人資料。" }],
+        messages: [{ role: "user", text: "這是 Server 核准的背景事件（context.eventType 或事件資料）。按需要讀取家庭共享資料，提供站內說明。若是成長關注，只解釋 Server 已核對的規則、適用性和來源；不創造醫療规则或把未知當未做。不自動改任務、不外發通知或披露私人資料。" }],
         tools: run => { tools = createProductAgentTools({ ...options, run, authorize, visibility: "family",
           reviewedGrowthPresentation: input.context.eventType === "growth_attention" }); return tools.tools; },
         authorize, signal: input.signal, finalize: async () => { rendered.value = await tools!.presentation();
