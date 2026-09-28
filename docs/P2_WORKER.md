@@ -26,3 +26,5 @@ Compose 維護映像亦包含控制指令：以既有 private env／secret 設�
 ## 驗收邊界
 
 必要驗收腳本會另列合成資料、HTTP／store 上限、雙 worker、hard-kill、回應遺失、權限／終態／重試及加密空庫還原範圍，獲批准後才執行。單元／typecheck 不代替真 PostgreSQL；沒有另獲批准的 Gemini、通知、部署、E2E 或全量回歸。
+
+2026-09-28：本包必要本機驗收通過，實際版本及分段證據見 [S13-W04](../artifacts/verification/S13_W04_CHECKS.json)。hard-kill 恢復 68.895 秒，只刪本次合成孩子，原庫、加密備份及暫停的空庫還原成果保留。首次實測發現 adapter 丟失 pg 多段 SQL 結果，修正後保留正式期限補驗通過；這是本機樣例，並非恢復 SLA 或外部投遞保證。

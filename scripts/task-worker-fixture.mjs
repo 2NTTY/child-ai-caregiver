@@ -9,7 +9,7 @@ import { createWorkerQueue } from "../server/worker-queue.ts";
 const modes = ["normal", "stall-before-process", "fail-before-process", "process-then-throw-once"];
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const pendingCalls = new Map(), stalled = new Map();
-let pool, queue, stopping, closing = false, thrown = false;
+let pool, queue, stopping, closing = false, thrown = false, stalledOnce = false;
 const emit = value => { if (process.connected) process.send(value); };
 const stop = () => stopping ??= (async () => {
   closing = true;
@@ -48,9 +48,9 @@ process.once("SIGTERM", () => { void stop().catch(() => { process.exitCode = 1; 
 process.once("SIGINT", () => { void stop().catch(() => { process.exitCode = 1; }); });
 
 try {
-  const mode = process.argv[2], target = process.env.WORKER_FIXTURE_TARGET_WORK_ID;
+  const mode = process.argv[2], target = process.env.WORKER_FIXTURE_TARGET_WORK_ID, targetJob = process.env.WORKER_FIXTURE_TARGET_JOB_ID;
   if (!process.argv.includes("--worker-fixture") || !process.send || !modes.includes(mode)
-    || !uuid.test(process.env.WORKER_ACCEPTANCE_RUN_ID ?? "") || mode !== "normal" && !uuid.test(target ?? "")) {
+    || !uuid.test(process.env.WORKER_ACCEPTANCE_RUN_ID ?? "") || mode !== "normal" && (!uuid.test(target ?? "") || !uuid.test(targetJob ?? ""))) {
     throw new Error("fixture_configuration_invalid");
   }
   const url = new URL(process.env.DATABASE_URL);
@@ -71,14 +71,15 @@ try {
     ...worker,
     async process(workId, jobId, retryCount) {
       emit({ type: "claimed", workId, jobId, retryCount });
-      if (workId === target && mode === "stall-before-process") {
+      if (workId === target && jobId === targetJob && mode === "stall-before-process" && !stalledOnce) {
+        stalledOnce = true;
         const proceed = await new Promise(resolve => { stalled.set(jobId, resolve); });
         stalled.delete(jobId);
         if (!proceed || closing) return;
       }
-      if (workId === target && mode === "fail-before-process") throw new Error("fixture_process_failure");
+      if (workId === target && jobId === targetJob && mode === "fail-before-process") throw new Error("fixture_process_failure");
       await business("process", () => worker.process(workId, jobId, retryCount));
-      if (workId === target && mode === "process-then-throw-once" && !thrown) {
+      if (workId === target && jobId === targetJob && mode === "process-then-throw-once" && !thrown) {
         thrown = true;
         // The business transaction committed; only framework settlement is lost.
         throw new Error("fixture_settlement_ack_lost");

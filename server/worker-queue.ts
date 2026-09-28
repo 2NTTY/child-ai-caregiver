@@ -9,7 +9,12 @@ export const JOB_OPTIONS = { heartbeatSeconds: 60, expireInSeconds: 90, retryLim
 export const jobDataSchema = z.object({ workId: z.uuid(), jobId: z.uuid() }).strict();
 export type TaskJobData = z.infer<typeof jobDataSchema>;
 export function databaseAdapter(connection: Pool | PoolClient): Db {
-  return { async executeSql(text, values) { return { rows: (await connection.query(text, values)).rows }; } };
+  return { async executeSql(text, values) {
+    const result = await connection.query(text, values);
+    // pg returns one result per statement for the supervisor's transaction batches.
+    // Preserve their rows just as pg-boss's native unwrapSQLResult does.
+    return { rows: Array.isArray(result) ? result.flatMap(part => part.rows) : result.rows };
+  } };
 }
 
 /** Only the migration command may install/upgrade framework tables. */

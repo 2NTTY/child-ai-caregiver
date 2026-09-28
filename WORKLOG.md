@@ -938,3 +938,12 @@
 - Executor / Reuse：一個 Luna Max 唯讀官方證據，兩個 Sol xhigh 分別處理有限 UI 和必要驗收腳本；主模型核對固定原碼、親寫架構／交易／恢復及所有指導文件、短 worker Skill 和前端交接。復用既有授權、加密、收據、Prompt Pack／美術；沒有修改獨立 frontend 或模型配置。
 - Verification：[EV-S13-W04](artifacts/verification/S13_W04_CHECKS.json)。24 項相關政策／client 單元檢查、根及 Server typecheck、Node 24.19 腳本語法、無 DB 的 SDK 建構／參照驗證、Compose YAML 隔離、205 個本機文件連結及 28 份許可 hash 通過。Skill 的 bundled Python validator 缺 PyYAML，改用既有 YAML parser 檢查 frontmatter；不宣稱該 validator 通過。
 - Pending / Next：真 PostgreSQL 腳本已完成 review 並提出獨立批准，最多 3 帳號／1 孩子／12 任務、50 HTTP／100 業務呼叫、兩 worker、600 次有限查核及一個空還原庫，含原子回滾、真 HTTP 收據、hard-kill、有限失敗、撤權／終態及加密還原。尚未執行、不把 scripted 故障當真外部通知證據。未部署、呼叫模型／通知、跑 E2E／全量回歸或延長七天試用。驗收通過並完成 review／PR 合併前，S13-W04 不標完成，S10-W02 不解鎖。P2 目標仍持續；本次僅等待必要驗收批准，額度未知。
+
+<a id="log-20260928-003"></a>
+## LOG-20260928-003
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S13-W04 必要驗收及交付，前置／分工沿 LOG-20260928-002，使用者已批准本包有限 PostgreSQL／worker／備份還原範圍。
+- Actual Work / Failure：預檢發現 PowerShell 子程序繼承不相容模組路徑，僅調整子程序環境；fixture 原先會攔住同 work 的重複 job，改為精確 work／job 及首次暫停。真 hard-kill 首輪超過 180 秒，定位到 adapter 丟失 pg 多段 SQL 結果、監測在到期恢復前失敗；按固定 SDK 的結果正規化修正，沒有放寬期限、縮短正式心跳或重設終態／失敗預算。
+- Verification：[EV-S13-W04](artifacts/verification/S13_W04_CHECKS.json)。新增 3 項 adapter 輕量回歸後合計 27 項，Server typecheck 再通過；必要驗收以受保護 checkpoint 承接原兩個合成帳號、孩子及累計計數。12 項任務、12 HTTP／72 業務呼叫、411 次有限查核；18 次 fixture 啟動、同時最多兩個。交易回滾、HTTP 收據、雙程序／唯一批次、安靜時段、撤權／終態、有限失敗及確認丟失有證據；修正後同一邏輯任務實測 hard-kill 恢復 68.895 秒。
+- Persistence / Limits：原始遷移前逐列保留檢查沿首輪；補驗排除精確合成身份及已核對 FK 後保存 hash 基線，結束時其餘資料保留，不宣稱另還原原備份作第二次比較。另一次 active-job 加密備份還原至新空庫，資料／密文及 schema 42 相符，輪換 generation、worker 暫停並啟動後無業務重做。只刪本次孩子及連帶資料，原庫、備份及還原庫保留，來源恢復暫停。
+- Review / Next：主模型核對關鍵原碼、diff 及實際分段結果；普通腳本續跑由原 Sol 補充，主模型處理恢復缺陷、最後補驗、權威文件及 Skill。完成隨本包 PR 合併生效，之後才解鎖下一包。沒有模型／真通知、部署、E2E、全量回歸或延長試用；P2 未完成，功能／UI 接口清單已更新，既有 Prompt Pack／美術未重做。
