@@ -30,6 +30,7 @@ The exact dependency tree and registry integrity values are recorded in [package
 | react-native-paper | 5.15.3 | MIT | [LICENSE](licenses/react-native-paper/LICENSE.md) |
 | better-auth | 1.7.5 | MIT | [LICENSE](licenses/better-auth/LICENSE.md) |
 | pg | 8.23.0 | MIT | [LICENSE](licenses/pg/LICENSE) |
+| pg-boss | 12.34.0 | MIT | [LICENSE](licenses/pg-boss/LICENSE) |
 | @types/node (development) | 24.13.6 | MIT | [LICENSE](licenses/types-node/LICENSE) |
 | @types/pg (development) | 8.23.1 | MIT | [LICENSE](licenses/types-pg/LICENSE) |
 
@@ -47,7 +48,7 @@ After that repair, `npm ls --all --json` reported zero problems, `npx expo insta
 
 ## Transitive dependencies and distribution
 
-S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. The current manifest covers 26 direct packages and 27 original license/notice texts; earlier verification artifacts retain their historical lockfile hashes.
+S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. The current manifest covers 27 direct packages and 28 original license/notice texts; earlier verification artifacts retain their historical lockfile hashes.
 
 Transitive packages and their individual license files remain in the installed `node_modules` tree. They are not all reproduced in this document, and `node_modules` is not committed. The inventory records every lockfile license declaration, including build tools and optional platform packages; declared metadata is not proof that every file or distribution obligation has been reviewed.
 

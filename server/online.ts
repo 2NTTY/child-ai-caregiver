@@ -15,7 +15,7 @@ import { handleRecordRequest } from "./record-api.ts";
 import { handleChatRequest } from "./chat-api.ts";
 import { handleMemoryRequest } from "./memory-api.ts";
 import { createMemoryStore } from "./memory.ts";
-import { createTaskStore } from "./tasks.ts";
+import { createTaskStore, type TaskScheduling } from "./tasks.ts";
 import { handleTaskRequest } from "./task-api.ts";
 import { transactionPool } from "./transaction-pool.ts";
 import { canonicalJson, onlineRoute } from "./online-routing.ts";
@@ -30,7 +30,7 @@ interface SpaceRow { id: string; owner_user_id: string; storage_epoch: string; a
 const receiptContext = (userId: string, opId: string, field: string) => `online-operation:${userId}:${opId}:${field}`;
 const missing = () => new FamilyError(404, "not_found");
 
-export function createOnlineStore(pool: Pool, cipher: StorageCipher) {
+export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskScheduling?: TaskScheduling) {
   async function transaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await pool.connect(); let discard = false;
     try {
@@ -98,7 +98,7 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher) {
     const borrowed = transactionPool(client), records = createRecordStore(borrowed.pool, cipher, true);
     const request = new Request(`http://online.internal${command.path}`, { method: "POST", headers: { "content-type": "application/json", "x-expected-user-id": userId }, body: JSON.stringify(command.payload) });
     const response = /^\/api\/children\/[^/]+\/tasks(\/|$)/u.test(command.path)
-      ? await handleTaskRequest(request, userId, createTaskStore(borrowed.pool, cipher), true)
+      ? await handleTaskRequest(request, userId, createTaskStore(borrowed.pool, cipher, taskScheduling), true)
       : /^\/api\/children\/[^/]+\/memory\//u.test(command.path)
       ? await handleMemoryRequest(request, userId, createMemoryStore(borrowed.pool, cipher, true))
       : /^\/api\/children\/[^/]+\/(care|profile)(\/|$)/u.test(command.path)

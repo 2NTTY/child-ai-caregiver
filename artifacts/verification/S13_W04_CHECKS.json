@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "workPackage": "S13-W04",
+  "recordedOn": "2026-09-28",
+  "status": "implemented_pending_integration_approval",
+  "baseCommit": "a591f87492d13f0399471f9f17a8594c9825798f",
+  "branch": "codex/s13-w04-persistent-worker",
+  "prerequisites": [
+    "S13-W01 / PR #47"
+  ],
+  "ownership": {
+    "lead": "C",
+    "weight": 3,
+    "shares": {
+      "C": 80,
+      "A": 20
+    },
+    "confirmedBy": "A"
+  },
+  "versions": {
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "pgBoss": "12.34.0",
+    "pgBossSchema": 42,
+    "pg": "8.23.0",
+    "targetPostgreSQL": "18.6"
+  },
+  "lightChecks": {
+    "unitTests": {
+      "passed": 24,
+      "files": [
+        "tests/task-policy.test.ts (9)",
+        "tests/task-worker-policy.test.ts (3)",
+        "tests/tasks-client.test.ts (12; Sol evidence)"
+      ],
+      "limits": "Public policy/client checks only; not real SQL or browser evidence"
+    },
+    "rootTypecheck": "passed",
+    "serverTypecheck": "passed",
+    "acceptanceScriptSyntax": "passed on Node 24.19.0",
+    "pinnedSdkConstructor": "passed without database calls",
+    "composeWorkerYaml": "parsed; profile/network/secret/port boundary assertions passed, not a container build",
+    "skillFrontmatter": "YAML assertions passed; bundled Python validator could not run because PyYAML is absent",
+    "localLinks": 205,
+    "licenseTexts": 28,
+    "lockfileHash": "matched",
+    "worklogPreservation": "Append-only write; Git-canonical previous content unchanged. Existing checkout prefix has 919 CRLF and 12 LF lines, so initial raw/fully-filtered byte comparisons were unsuitable; no history or line endings rewritten."
+  },
+  "implementation": [
+    "Same-transaction task/work/pg-boss enqueue with ID-only jobs",
+    "Separate worker with framework heartbeat/retry/dead-letter and business generation/version/role/terminal checks",
+    "In-app recipient-local daily batches and one follow-up per occurrence",
+    "Read-only task list metadata and current-scope UI clearing",
+    "Paused first install/restore and explicit activation; no automatic terminal/failed/unknown replay"
+  ],
+  "necessaryAcceptance": {
+    "status": "awaiting_user_approval",
+    "script": "scripts/verify-task-worker.mjs",
+    "limits": {
+      "accounts": 3,
+      "children": 1,
+      "tasks": 12,
+      "http": 50,
+      "businessCalls": 100,
+      "concurrentWorkers": 2,
+      "restoreDatabases": 1,
+      "polls": 600
+    },
+    "scope": [
+      "Encrypted backup before additive migration",
+      "Real HTTP receipt replay and transactional enqueue rollback",
+      "Two worker processes, ordinary batching, quiet time, cancel/reschedule/revocation",
+      "Bounded failures and success followed by lost framework acknowledgement",
+      "Hard-kill recovery using production 60-second heartbeat/monitor",
+      "Encrypted backup with active job and empty restore paused after restart",
+      "Existing business rows preserved and only new child removed"
+    ],
+    "models": 0,
+    "notifications": 0,
+    "deployed": false
+  },
+  "review": {
+    "executor": "main model",
+    "status": "source review complete; actual integration results still required",
+    "agents": {
+      "lunaReadOnlyResearch": 1,
+      "solOrdinaryUiAndScripts": 2
+    },
+    "notes": [
+      "Authority docs, Skill, runtime architecture and critical transaction code written/reviewed by main",
+      "No Prompt Pack/artwork or independent frontend preview changes",
+      "No current Docker image/build/browser/real-channel acceptance claim"
+    ]
+  },
+  "next": "Obtain bounded integration approval; execute and review; update evidence and package status before PR/merge"
+}

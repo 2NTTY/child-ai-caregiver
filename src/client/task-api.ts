@@ -36,8 +36,14 @@ const taskSchema = taskValuesSchema.omit({ dueAt: true, timeZone: true }).extend
     state: z.enum(["scheduled", "completed", "cancelled", "needs_review"]), terminalBasisVersion: version.nullable() }),
 });
 const taskResultSchema = z.object({ task: taskSchema });
+const reminderSchema = z.object({ id: z.uuid(), batchId: z.uuid(), taskId: z.uuid(), occurrenceId: z.uuid(), taskVersion: version,
+  phase: z.enum(["initial", "follow_up"]), createdAt: dateTime });
+const workSchema = z.object({ taskId: z.uuid(), taskVersion: version,
+  status: z.enum(["pending", "processed", "stopped", "failed", "unknown"]), nextAt: dateTime,
+  failures: z.number().int().min(0).max(2147483647) });
 const pageSchema = z.object({ items: z.array(taskSchema),
-  eligibleAssignees: z.array(z.object({ userId: z.string().min(1).max(128), name: z.string() })), nextAfterId: z.uuid().nullable() });
+  eligibleAssignees: z.array(z.object({ userId: z.string().min(1).max(128), name: z.string() })), nextAfterId: z.uuid().nullable(),
+  reminders: z.array(reminderSchema).optional(), work: z.array(workSchema).optional(), workerEnabled: z.boolean().optional() });
 const historySchema = z.object({ revisions: z.array(z.object({ task: taskSchema,
   action: z.enum(["create", "reschedule", "complete", "cancel", "resolve"]), actorUserId: z.string().min(1).max(128),
   basisVersion: z.number().int().min(0).max(2147483646), note: z.string().max(1000), at: dateTime })), nextBeforeVersion: version.nullable() });
@@ -143,6 +149,12 @@ export function createTaskApi(baseUrl = "", fetcher: typeof fetch = fetch): Task
     async tasks(childId, afterId, signal) {
       const parsed = pageSchema.safeParse(await request(`${child(childId)}${cursor("afterId", afterId)}`, signal));
       if (!parsed.success || parsed.data.items.some(item => item.childId !== childId)) throw new TaskApiError();
+      const tasks = new Map(parsed.data.items.map(item => [item.id, item]));
+      if (parsed.data.reminders?.some(reminder => {
+        const task = tasks.get(reminder.taskId);
+        return !task || task.version !== reminder.taskVersion || task.occurrence.id !== reminder.occurrenceId
+          || task.occurrence.state !== "scheduled";
+      }) || parsed.data.work?.some(work => tasks.get(work.taskId)?.version !== work.taskVersion)) throw new TaskApiError();
       return parsed.data;
     },
     async task(childId, taskId, signal) { return checkedTask(await request(entity(childId, taskId), signal), { childId, taskId }); },

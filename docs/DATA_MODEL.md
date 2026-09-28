@@ -66,7 +66,7 @@ owner 刪除孩子時，現有外鍵連帶刪除照護記錄、聊天及該孩�
 | <a id="data-4-3-01"></a>字段 | 用途 |
 |---|---|
 | <a id="data-4-3-03"></a>`workspaceId` | 确定资料空间及权限边界 |
-| <a id="data-4-3-04"></a>`storageEpoch` | 标识当前存储世代，阻止旧环境直接回放操作 |
+| <a id="data-4-3-04"></a>`storageEpoch` | 标识當前存储世代，阻止旧环境直接回放操作 |
 | <a id="data-4-3-05"></a>`deviceId` | 识别发起设备 |
 | <a id="data-4-3-06"></a>`opId` | 标识一次逻辑操作，重试时不改变 |
 | <a id="data-4-3-07"></a>`entityId` | 标识被操作的记录、聊天或任务 |
@@ -213,6 +213,11 @@ S13-W01 的 migration 012 使用 `care_tasks` 保存安排、`task_occurrences` 
 安排及 occurrence 共用一個版本，寫入在 workspace 排他鎖後重新核對成員及指派資格；台帳、revision、change feed 及原 opId 收據同交易。完成／取消的同基準並發保留兩個事件並進入 `needs_review`，顯式 resolve 只能落到 completed／cancelled；舊終態不復活。改期不改識別。所有三表隨孩子刪除 cascade，舊收據正文沿用孩子刪除 trigger 清除；全庫加密備份自動包含新增表，擴展後空庫還原仍須按後續批准範圍驗收。[實際 HTTP 契約](API.md#p2-task-http)
 
 <a id="notification-model"></a>
+<a id="task-worker-storage"></a>
+S13-W04 的 migration 013 新增 `task_work`（task＋version 唯一、occurrence、workspace storage epoch、worker generation、目前 framework jobId、檢查時間、累積失敗及加密確認者參照）、`worker_control`（執行開關及世代）、`task_reminder_batches`（收件人／類型／本地日或 occurrence 的唯一站內批次）及 `task_reminders`（occurrence＋initial／follow_up 唯一）。提醒無重複正文；確認者 payload AAD 綁 workId，取正文仍經原任務權限。任務刪除 cascade 工作及提醒；空批次只留不含孩子／正文的分類 metadata。pg-boss schema 42 保存 UUID 參照及框架狀態，成功／失敗保留及清理由固定框架配置處理，不複製私人正文。
+
+同一收件人的普通提示按其本地日合併到一個 open 站內批次；sealed 預留後續外發快照的封存語義，本包不自動封存或外發。改期保留 occurrence，不能重置一次 initial／一次 follow_up 的上限。終態、版本不符或指派失效的舊提醒不在當前清單呈現。還原包含兩套 schema，完成後輪換 worker generation 並強制暫停；人工核對啟用只重排有效 pending 工作，不自動重開 failed／unknown／stopped 或照護終態。框架租約不是產品授權，備份中的 active job 亦不是已完成證據。
+
 <a id="data-5-5-09"></a>
 P2 任務及外發須保存以下必要語義；實際表名、欄名及枚舉於相應工作包定稿，不建立通用渠道或授權平台：
 

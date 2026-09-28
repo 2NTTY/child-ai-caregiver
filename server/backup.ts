@@ -6,7 +6,7 @@ const MAX_DUMP_BYTES = 64 * 1024 * 1024;
 const CONTEXT = "yuban-postgresql-backup:v1";
 export interface PgTools { databaseUrl: string; container?: string }
 
-async function runPgTool(options: PgTools, tool: "pg_dump" | "pg_restore", args: string[], input?: Buffer): Promise<Buffer> {
+async function runPgTool(options: PgTools, tool: "pg_dump" | "pg_restore" | "psql", args: string[], input?: Buffer): Promise<Buffer> {
   const url = new URL(options.databaseUrl);
   if (!["postgres:", "postgresql:"].includes(url.protocol)) throw new Error("Invalid backup database");
   if (!/^[A-Za-z0-9_]+$/.test(decodeURIComponent(url.pathname.slice(1)))
@@ -52,4 +52,13 @@ export async function restoreEncryptedBackup(options: PgTools, inputPath: string
   const database = decodeURIComponent(new URL(options.databaseUrl).pathname.slice(1));
   await runPgTool(options, "pg_restore", ["--no-password", "--dbname", database,
     "--single-transaction", "--exit-on-error", "--no-owner", "--no-privileges"], dump);
+  // The stopped target must never replay the backup's old jobs on first startup.
+  // Failure here is a failed restore: keep both API and worker stopped.
+  await runPgTool(options, "psql", ["--no-password", "-X", "-q", "-v", "ON_ERROR_STOP=1"], Buffer.from(`
+DO $restore$ BEGIN
+  IF to_regclass('public.worker_control') IS NOT NULL THEN
+    UPDATE public.worker_control SET enabled=false,generation=gen_random_uuid() WHERE id=1;
+  END IF;
+END $restore$;
+`));
 }

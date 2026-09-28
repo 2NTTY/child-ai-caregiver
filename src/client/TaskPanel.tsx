@@ -4,7 +4,7 @@ import { Button, Checkbox, HelperText, PaperProvider, RadioButton, Text, TextInp
 import { Controller, useForm, type Control, type FieldValues, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Child } from "../shared/records.ts";
-import { taskChangeSchema, taskValuesSchema, type CareTask, type TaskAssignee, type TaskChange, type TaskCreate, type TaskRevision, type TaskState, type TaskValues } from "../shared/tasks.ts";
+import { taskChangeSchema, taskValuesSchema, type CareTask, type TaskAssignee, type TaskChange, type TaskCreate, type TaskReminder, type TaskRevision, type TaskState, type TaskValues, type TaskWorkState } from "../shared/tasks.ts";
 import { TaskApiError, type TaskApi } from "./task-api.ts";
 import { ONLINE_REFRESH_EVENT } from "./use-online-updates.ts";
 
@@ -13,6 +13,7 @@ type Attempt = { kind: "create"; input: TaskCreate; label: string } | { kind: "c
 type Conflict = { attempt: Extract<Attempt, { kind: "change" }>; latest: CareTask | null };
 type Current = () => boolean;
 const stateText: Record<TaskState, string> = { scheduled: "待處理", completed: "已完成", cancelled: "已取消", needs_review: "待覆核，已停催" };
+const workStateText: Record<TaskWorkState["status"], string> = { pending: "待處理", processed: "已處理", stopped: "已停止", failed: "失敗", unknown: "結果未知" };
 const actionText: Record<TaskChange["action"] | "create", string> = { create: "建立", reschedule: "改期／轉派", complete: "完成", cancel: "取消", resolve: "覆核" };
 const emptyValues = (): TaskValues => ({ title: "", details: "", kind: "ordinary", assigneeUserId: "", dueAt: "", timeZone: "Asia/Hong_Kong" });
 const emptyChange = (): TaskChange => ({ action: "complete", expectedVersion: 1, confirm: true, note: "" });
@@ -80,6 +81,9 @@ function TaskWorkspace({ userId, childId, role, api, active = true, onSessionCha
   const changeForm = useForm<TaskChange>({ resolver: zodResolver(taskChangeSchema), defaultValues: emptyChange() });
   const createReset = createForm.reset, changeReset = changeForm.reset;
   const [items, setItems] = useState<CareTask[]>([]);
+  const [reminders, setReminders] = useState<TaskReminder[]>([]);
+  const [work, setWork] = useState<TaskWorkState[]>([]);
+  const [workerEnabled, setWorkerEnabled] = useState<boolean | undefined>(undefined);
   const [assignees, setAssignees] = useState<TaskAssignee[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -110,6 +114,7 @@ function TaskWorkspace({ userId, childId, role, api, active = true, onSessionCha
   const clear = useCallback(() => {
     createReset(emptyValues()); changeReset(emptyChange());
     setItems([]); setAssignees([]); setCursor(null); setLoaded(false); setBasis(null); setHistory(null);
+    setReminders([]); setWork([]); setWorkerEnabled(undefined);
     setCreateConfirmed(false); setChangeConfirmed(false); setUnknown(null); setConflict(null);
   }, [createReset, changeReset]);
   const resetAttemptDraft = (attempt: Attempt) => {
@@ -185,6 +190,7 @@ function TaskWorkspace({ userId, childId, role, api, active = true, onSessionCha
     const page = await verified(next => api.tasks(childId, null, next), signal);
     if (!current()) return;
     setItems(page.items); setAssignees(page.eligibleAssignees); setCursor(page.nextAfterId); setLoaded(true);
+    setReminders(page.reminders ?? []); setWork(page.work ?? []); setWorkerEnabled(page.workerEnabled);
   }, [api, childId, verified]);
   useEffect(() => {
     mounted.current = true; generation.current++;
@@ -255,6 +261,8 @@ function TaskWorkspace({ userId, childId, role, api, active = true, onSessionCha
       : api.changeTask(childId, attempt.basis.id, attempt.input, next, userId), signal, true);
     if (!current()) return;
     setItems(previous => [task, ...previous.filter(item => item.id !== task.id)]); resetAttemptDraft(attempt);
+    setReminders(previous => previous.filter(item => item.taskId !== task.id));
+    setWork(previous => previous.filter(item => item.taskId !== task.id));
     setHistory(null);
     setNotice(task.occurrence.state === "needs_review" ? "完成與取消出現衝突，任務待覆核並已停催。請明確覆核終態。" : `已確認${attempt.label}；狀態：${stateText[task.occurrence.state]}。`);
   }, attempt, retry); };
@@ -279,6 +287,10 @@ function TaskWorkspace({ userId, childId, role, api, active = true, onSessionCha
     const page = await verified(next => api.tasks(childId, cursor, next), signal);
     if (!current()) return;
     setItems(previous => [...previous, ...page.items.filter(item => !previous.some(old => old.id === item.id))]);
+    const pageIds = new Set(page.items.map(item => item.id));
+    setReminders(previous => [...previous.filter(item => !pageIds.has(item.taskId)), ...(page.reminders ?? [])]);
+    setWork(previous => [...previous.filter(item => !pageIds.has(item.taskId)), ...(page.work ?? [])]);
+    setWorkerEnabled(page.workerEnabled);
     setAssignees(page.eligibleAssignees); setCursor(page.nextAfterId);
   }); };
   const showHistory = (task: CareTask, before: number | null = null) => { void run("讀取任務歷史", async (signal, current) => {
@@ -315,7 +327,10 @@ function TaskWorkspace({ userId, childId, role, api, active = true, onSessionCha
   if (!authorized) return <View style={styles.panel}><Text accessibilityRole="alert">{notice}</Text></View>;
   return <View style={styles.panel}>
     <Text variant="titleLarge">任務台帳</Text>
-    <Text>本頁顯示站內任務及歷史。提醒 worker 及外部通知尚未接通。</Text>
+    <Text>本頁顯示站內任務、提醒及歷史。外部通知尚未接通；站內可見不代表已推送、已讀或任務完成。</Text>
+    {loaded && <Text>{workerEnabled === true ? "已接上站內背景處理；實際處理狀態請核對下方 Server 台帳。"
+      : workerEnabled === false ? "站內背景處理未啟用或還原後暫停；請查核 Server 設定。"
+        : "Server 未提供背景處理啟用狀態；請查核是否尚未啟用或還原後暫停。"}</Text>}
     {!active && <Text>目前未在線核對，草稿已保留；重新啟用後先讀取最新資料。</Text>}
     {role === "viewer" && <Text>目前為唯讀權限。</Text>}
     {!!notice && <Text accessibilityRole="alert">{notice}</Text>}
@@ -367,8 +382,17 @@ function TaskWorkspace({ userId, childId, role, api, active = true, onSessionCha
     </View>}
     {!loaded && <Text>尚未成功讀取任務清單。</Text>}
     {loaded && items.length === 0 && <Text>目前沒有任務。</Text>}
-    {items.map(task => <View key={task.id} style={styles.box}>
+    {items.map(task => {
+      const currentWork = work.find(item => item.taskId === task.id && item.taskVersion === task.version);
+      const currentReminders = task.occurrence.state === "scheduled" ? reminders.filter(item => item.taskId === task.id
+        && item.taskVersion === task.version && item.occurrenceId === task.occurrence.id) : [];
+      return <View key={task.id} style={styles.box}>
       <TaskText task={task} assignees={assignees} />
+      {currentWork ? <View style={styles.stack}>
+        <Text>Server 背景處理台帳：{workStateText[currentWork.status]}；版本 {currentWork.taskVersion}</Text>
+        <Text>台帳記錄的排定檢查時間：{currentWork.nextAt}；失敗次數：{currentWork.failures}</Text>
+      </View> : <Text>此版本尚未有 Server 背景處理紀錄。</Text>}
+      {currentReminders.map(reminder => <Text key={reminder.id}>站內提醒（{reminder.phase === "initial" ? "初次" : "一次跟進"}）；記錄時間：{reminder.createdAt}</Text>)}
       <View style={styles.row}>
         <Button onPress={() => showHistory(task)} disabled={!active || !!busy}>歷史</Button>
         {canManage && task.occurrence.state === "scheduled" && <>
@@ -378,7 +402,8 @@ function TaskWorkspace({ userId, childId, role, api, active = true, onSessionCha
         </>}
         {canManage && task.occurrence.state === "needs_review" && <Button onPress={() => beginChange(task, "resolve")} disabled={locked}>明確覆核終態</Button>}
       </View>
-    </View>)}
+    </View>;
+    })}
     {cursor && <Button onPress={nextPage} disabled={!active || !!busy}>載入更多任務</Button>}
     {history && <View style={styles.box}>
       <Text variant="titleMedium">{history.task.title}：修改歷史</Text>

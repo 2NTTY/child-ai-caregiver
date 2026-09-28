@@ -94,7 +94,7 @@ S03 依賴最小 Server 身份及資料能力，不依賴 Gemini、家庭邀請�
 | <a id="s09-w02"></a>S09-W02 | P2 | 已完成 | S05-W02、S07-W03 | 長期確認事實及來源／年齡日期基準、摘要覆蓋、話題／任務記憶及已解決／暫緩話題的再問條件，供後續關注復用；新會話及清空模型快取不重問已解決事項；摘要不改終態，已關閉事項不復活；[EV-S09-W02](artifacts/verification/S09_W02_CHECKS.json) 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效 |
 | <a id="s07-w03"></a>S07-W03 | P2 | 已完成 | S06-W02、S05-W02 | 在線請求冪等／版本確認、並行修改與重連、刪除及撤權；重試不重建，衝突可見；不建離線 outbox；[EV-S07-W03](artifacts/verification/S07_W03_CHECKS.json) 必要驗收通過，已隨 PR #36 合併 |
 | <a id="s13-w01"></a>S13-W01 | P2 | 已完成 | S09-W02、S07-W03 | Server 任務／對象／時間、穩定 occurrenceId、改期／取消／完成及站內台帳；任務、occurrence 與投遞分開，與後續關注候選保持獨立語義，家庭成員完成狀態同步；每日普通提示合併一次、普通任務最多跟進一次，安靜時段預設 Asia/Hong_Kong 22:00–08:00 可調，預約例外須明確選擇；先由手動入口驗收確定性規則，不在本包自建通用 worker；新 TaskPanel 接入 RHF＋Zod／Paper，保留既有 UI；[EV-S13-W01](artifacts/verification/S13_W01_CHECKS.json) 必要驗收通過，完成隨本包 PR 合併生效；持久 worker／投遞另由 W04／W07 交付 |
-| <a id="s13-w04"></a>S13-W04 | P2 | 未開始 | S13-W01 | 持久 worker、事件／到期觸發、分鐘級故障恢復及有限重試，業務有效結果唯一；優先驗證 pg-boss，業務台帳與入列同交易，job 只存參照；授權／終態／外發去重／unknown 由項目掌管。雙 worker、hard-kill、取消撤權、重試上限及備份還原按 [採用閘](docs/TECH_REUSE.md#worker) 驗收；Web 關閉仍執行，框架成功不代表任務完成 |
+| <a id="s13-w04"></a>S13-W04 | P2 | 進行中 | S13-W01 | 持久 worker、事件／到期觸發、分鐘級故障恢復及有限重試，業務有效結果唯一；優先驗證 pg-boss，業務台帳與入列同交易，job 只存參照；授權／終態／外發去重／unknown 由項目掌管。雙 worker、hard-kill、取消撤權、重試上限及備份還原按 [採用閘](docs/TECH_REUSE.md#worker) 驗收；Web 關閉仍執行，框架成功不代表任務完成；[EV-S13-W04](artifacts/verification/S13_W04_CHECKS.json) 已實作／輕量檢查通過，必要本機驗收待批准 |
 | <a id="s10-w01"></a>S10-W01 | P2 | 已完成 | S17-W01 | 最小向量 RAG：有限官方知識分段／版本／適用性、固定 pgvector、embedding、精確向量＋關鍵詞／RRF 及最多六片段引用；可重複匯入／核對發布／停用指令、失敗／降級、既有資料保留及擴展備份還原必要驗收；不建完整管理平台；[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json) 必要本機／真 embedding／擴展還原通過，完成隨 PR #35 合併生效；Agent／引用 UI 在 S11-W02 接線 |
 | <a id="s10-w02"></a>S10-W02 | P2 | 未開始 | S10-W01、S13-W04 | 共用 worker 定期檢查：官方穩定每週、官方＋指定媒體近期每日；未變 hash 不重算向量，變更只更新受影響片段且核對後發布；驗收無變／失敗／停用／過期／日期／分類隔離，不做新聞分析平台 |
 | <a id="s11-w02"></a>S11-W02 | P2 | 未開始 | S11-W03、S09-W02、S13-W04、S10-W02 | 接通互動／背景共用 AgentRuntime、已確認記憶、真向量檢索及任務工具；復用 Prompt Pack 的草稿／補問／確認／結構化結果，工具授權、版本、配額及取消一致；育兒問答／成長關注／安全求助引用適用官方片段，不足時明示；原生工具與收尾不重複執行副作用，不建立醫療分流；依 [ADK 原生能力核查](docs/TECH_REUSE.md#adk) 保留單次 Session／Pack，優先 BasePlugin＋原生 spans 最小診斷並驗無正文外洩，不另建 session／skill 平台 |
@@ -166,7 +166,7 @@ S03 依賴最小 Server 身份及資料能力，不依賴 Gemini、家庭邀請�
 | [S16-W02](#s16-w02) P2 整體驗收 | A | B／C／D：按所屬功能處理缺口；D：人工驗收與證據整理；不代替各包必要驗收 |
 | [S17-W02](#s17-w02) 比賽交付 | C | A：Agent 展示及能力界線；B：Web 交付；D：獨立試玩、PPT 及展示材料 |
 
-2026-09-28 使用者恢復 P2，S13-W01 必要驗收通過，完成隨本包 PR 合併生效；其後解鎖 S13-W04。S16-W05 亦已 Ready，仍未開始；分配給不同人不解除前置。S13-W01 分工已由 A 確認：權重 3，C 70%／B 20%／A 10%；實際 Server／UI／整合均有交付，主模型統籌技術驗收。
+2026-09-28 使用者恢復 P2，S13-W01 必要驗收通過，完成隨本包 PR 合併生效；已隨 [PR #47](https://github.com/2NTTY/child-ai-caregiver/pull/47) 合併，S13-W04 從 master `a591f87` 開始，A 確認權重 3、C 80%／A 20%。S16-W05 亦已 Ready，仍未開始；分配給不同人不解除前置。S13-W01 分工已由 A 確認：權重 3，C 70%／B 20%／A 10%；實際 Server／UI／整合均有交付，主模型統籌技術驗收。
 
 ### P3 工作包
 

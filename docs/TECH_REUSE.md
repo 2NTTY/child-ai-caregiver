@@ -36,6 +36,8 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 <a id="worker"></a>
 ## S13-W04：框架與業務台帳的分界
 
+2026-09-28 接入補充：已固定安裝 pg-boss 12.34.0／schema 42，原 MIT 許可及 tarball integrity 已入 [清單](../licenses/manifest.json)；Node 24／pg 8.23 的型別接線通過，真 PostgreSQL 採用閘仍待本包批准及執行。主模型已核對安裝套件的 createJob、constructor／stop、schema check、heartbeat／重試及 keep_until SQL；固定來源與可復用約束見 [worker Skill](../.agents/skills/postgres-durable-worker/SKILL.md)。使用既有交易 client 的 send、框架原生領取／heartbeat／dead letter，業務僅保存授權及唯一效果。原生 transactional work 適合短 SQL handler，但本包已有 workspace／opId 交易與可重領台帳，不另建第二套互不協調的交易。產品操作見 [P2_WORKER](P2_WORKER.md)。
+
 | 方案 | 官方證據與相容性 | 判斷 |
 |---|---|---|
 | pg-boss 12.34.0 | [固定 release](https://github.com/timgit/pg-boss/releases/tag/12.34.0)／[manifest](https://github.com/timgit/pg-boss/blob/12.34.0/package.json)：MIT、Node ≥22.12、PostgreSQL ≥13、pg 8.23 系列，與本工程 Node 24／PG 18／ESM 文件相容；[jobs](https://pgboss.io/api/jobs) 支援經 `db.executeSql` 使用既有交易 client，[queues](https://pgboss.io/api/queues) 有 heartbeat | 首選相容性驗證。心跳 60 秒＋監測 60 秒是約 1–2 分鐘偵測的驗證起點，不是已量測的恢復 SLA；須連同 timeout、retry delay 及重領條件核對 |

@@ -40,5 +40,16 @@ export interface TaskRevision {
   basisVersion: number; note: string; at: string;
 }
 export interface TaskAssignee { userId: string; name: string }
-export interface TaskPage { items: CareTask[]; eligibleAssignees: TaskAssignee[]; nextAfterId: string | null }
+export interface TaskReminder {
+  id: string; batchId: string; taskId: string; occurrenceId: string; taskVersion: number;
+  phase: "initial" | "follow_up"; createdAt: string;
+}
+export interface TaskWorkState {
+  taskId: string; taskVersion: number; status: "pending" | "processed" | "stopped" | "failed" | "unknown";
+  nextAt: string; failures: number;
+}
+export interface TaskPage {
+  items: CareTask[]; eligibleAssignees: TaskAssignee[]; nextAfterId: string | null;
+  reminders?: TaskReminder[]; work?: TaskWorkState[]; workerEnabled?: boolean;
+}
 export interface TaskHistory { revisions: TaskRevision[]; nextBeforeVersion: number | null }

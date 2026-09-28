@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S13-W01",
+  "workPackage": "S13-W04",
   "recordedOn": "2026-09-28",
   "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "25ab0c71b07e63f7ced60c2e5d6d13058fca87bbb5901f79dbd327bbf70ec174"
+    "sha256": "43b0baa86674cb218408955a933b9643171871a4ff5e3897270e2feb12288a37"
   },
   "packages": [
     {
@@ -520,17 +520,36 @@
           "source": "node_modules/react-native-paper/LICENSE.md"
         }
       ]
+    },
+    {
+      "name": "pg-boss",
+      "version": "12.34.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/timgit/pg-boss.git"
+      },
+      "tarball": "https://registry.npmjs.org/pg-boss/-/pg-boss-12.34.0.tgz",
+      "integrity": "sha512-03boJOWLiiHEQPgXCPgrMv6My5Qv6ieD85AOrm/adi475oo74kn//gHOheYqWiU/2guCJMRpKQpD6F7Oln1aWQ==",
+      "files": [
+        {
+          "path": "licenses/pg-boss/LICENSE",
+          "sha256": "51ad77d655782ec9ea2a624529a37f25cb82bd41ae38d85d15cdb0d4dd9c5689",
+          "source": "node_modules/pg-boss/LICENSE"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 770,
+    "packageEntries": 779,
     "declarations": {
-      "Apache-2.0": 55,
-      "MIT": 620,
+      "Apache-2.0": 56,
+      "MIT": 627,
       "ISC": 36,
       "MIT AND Apache-2.0": 1,
       "BSD-3-Clause": 22,
-      "(MIT OR CC0-1.0)": 2,
+      "(MIT OR CC0-1.0)": 3,
       "Python-2.0": 1,
       "Unlicense": 3,
       "CC-BY-4.0": 1,
