@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "workPackage": "S13-W04",
+  "recordedOn": "2026-09-28",
+  "status": "verified_completion_effective_on_pr_merge",
+  "baseCommit": "a591f87492d13f0399471f9f17a8594c9825798f",
+  "branch": "codex/s13-w04-persistent-worker",
+  "prerequisites": [
+    "S13-W01 / PR #47"
+  ],
+  "ownership": {
+    "lead": "C",
+    "weight": 3,
+    "shares": {
+      "C": 80,
+      "A": 20
+    },
+    "confirmedBy": "A"
+  },
+  "versions": {
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "pgBoss": "12.34.0",
+    "pgBossSchema": 42,
+    "pg": "8.23.0",
+    "targetPostgreSQL": "18.6"
+  },
+  "lightChecks": {
+    "unitTests": {
+      "passed": 27,
+      "files": [
+        "tests/task-policy.test.ts (9)",
+        "tests/task-worker-policy.test.ts (3)",
+        "tests/tasks-client.test.ts (12; Sol evidence)",
+        "tests/worker-queue-adapter.test.ts (3)"
+      ],
+      "limits": "Public policy/client checks only; not real SQL or browser evidence"
+    },
+    "rootTypecheck": "passed again after final adapter/fixture changes",
+    "serverTypecheck": "passed again after multi-statement adapter fix",
+    "acceptanceScriptSyntax": "passed on Node 24.19.0",
+    "pinnedSdkConstructor": "passed without database calls",
+    "composeWorkerYaml": "parsed; profile/network/secret/port boundary assertions passed, not a container build",
+    "skillFrontmatter": "YAML assertions passed; bundled Python validator could not run because PyYAML is absent",
+    "localLinks": 341,
+    "licenseTexts": 28,
+    "lockfileHash": "matched",
+    "worklogPreservation": "Append-only write; Git-canonical previous content unchanged. Existing checkout prefix has 919 CRLF and 12 LF lines, so initial raw/fully-filtered byte comparisons were unsuitable; no history or line endings rewritten."
+  },
+  "implementation": [
+    "Same-transaction task/work/pg-boss enqueue with ID-only jobs",
+    "Separate worker with framework heartbeat/retry/dead-letter and business generation/version/role/terminal checks",
+    "In-app recipient-local daily batches and one follow-up per occurrence",
+    "Read-only task list metadata and current-scope UI clearing",
+    "Paused first install/restore and explicit activation; no automatic terminal/failed/unknown replay"
+  ],
+  "necessaryAcceptance": {
+    "status": "passed_in_bounded_continuations",
+    "script": "scripts/verify-task-worker.mjs",
+    "limits": {
+      "accounts": 3,
+      "children": 1,
+      "tasks": 12,
+      "http": 50,
+      "businessCalls": 100,
+      "concurrentWorkers": 2,
+      "restoreDatabases": 1,
+      "polls": 600
+    },
+    "scope": [
+      "Encrypted backup before additive migration",
+      "Real HTTP receipt replay and transactional enqueue rollback",
+      "Two worker processes, ordinary batching, quiet time, cancel/reschedule/revocation",
+      "Bounded failures and success followed by lost framework acknowledgement",
+      "Hard-kill recovery using production 60-second heartbeat/monitor",
+      "Encrypted backup with active job and empty restore paused after restart",
+      "Existing business rows preserved and only new child removed"
+    ],
+    "models": 0,
+    "notifications": 0,
+    "deployed": false,
+    "approvedOn": "2026-09-28",
+    "initialAttempt": {
+      "status": "stopped_at_two_processes_backfill_merge_and_duplicate_refs",
+      "passed": [
+        "prior_encrypted_backup",
+        "migration_and_prior_business_rows",
+        "bounded_synthetic_family_and_preferences",
+        "atomic_task_receipt_and_job_rollback"
+      ],
+      "counts": {
+        "accounts": 2,
+        "children": 1,
+        "tasks": 2,
+        "http": 7,
+        "business": 15,
+        "workersStarted": 2,
+        "restoreDatabases": 0,
+        "polls": 69
+      },
+      "cause": "The stall fixture stalled a later duplicate reference for the same work. SQL metadata shows two unique initial reminders and pending next-day work. Continuation retains the same synthetic family and total caps; remaining checks are not yet passed."
+    },
+    "preflight": "Two zero-data preflight failures: Windows PowerShell inherited incompatible PSModulePath. Fixed only child module discovery; native ACL guard passed.",
+    "result": {
+      "checks": [
+        "prior_encrypted_backup",
+        "migration_and_prior_business_rows",
+        "bounded_synthetic_family_and_preferences",
+        "atomic_task_receipt_and_job_rollback",
+        "resume_scope_baseline_and_synthetic_sign_in",
+        "resumed_two_processes_duplicate_refs_and_http_metadata",
+        "lost_settlement_ack_does_not_duplicate_result",
+        "quiet_time_defers_same_work",
+        "claimed_cancel_and_reschedule_fences",
+        "claimed_assignee_and_issuer_revocation_fences",
+        "finite_failure_budget_and_activation_preservation",
+        "hard_kill_recovery_production_heartbeat",
+        "stopped_worker_persistence_and_http_closed",
+        "encrypted_backup_active_job_and_paused_restore_restart",
+        "job_refs_only_and_new_child_only_cleanup"
+      ],
+      "counts": {
+        "accounts": 2,
+        "children": 1,
+        "tasks": 12,
+        "http": 12,
+        "business": 72,
+        "workersStarted": 18,
+        "restoreDatabases": 1,
+        "polls": 411
+      },
+      "concurrentWorkersMax": 2,
+      "recoveryMilliseconds": 68895,
+      "sourceControlEnabled": false,
+      "restoredWorkerPaused": true,
+      "syntheticChildDeleted": true,
+      "originalDatabaseRetained": true,
+      "continuationNonSyntheticRowsPreserved": true
+    },
+    "evidence": {
+      "protectedDirectory": "C:/Users/2NTTY/.codex/s13-worker-acceptance/run-20260928-01",
+      "finalReport": "worker_acceptance_36a2cbbfde86-checks.json",
+      "finalReportSha256": "c9a73ec12d93e5afb2bb2eda0c2b0895e2c9c85b8a9abde81c5f4574792796a0",
+      "initialReportSha256": "dab5aad8719c18a4acada69beda0639bf0506299d5f81f8f8791adf8194cf87b",
+      "intermediateReportSha256": "5827012ebe8d8a18e555318f9f3e252fbaed7ce74bf0c0d6a456946ac0459a15",
+      "beforeBackupSha256": "bf89efe9898fac39dfa31c3e76b1dcbbebca263885e6c490e5945ac112ddb53e",
+      "activeBackupSha256": "936ef59ea1df05c8eee9f95fe11dbda69dcb124c44f0922062e681c06eb7bdc3",
+      "restoreDatabase": "yuban_s06_test_worker_restore_2c96e52b376c"
+    },
+    "proofBoundaries": [
+      "Initial migration preserved pre-existing row hashes. Continuation saved a non-synthetic baseline after validating exact identities and FK columns; final hashes preserved it. The pre-migration backup was not restored for a second comparison.",
+      "Initial two-process phase created one reminder per task in one ordinary batch. Main reviewed original code and SQL state; continuation revalidated those effects, real receipt replay and two competing processes consuming a duplicate without another effect.",
+      "Initial hard-kill recovery failed its 180-second deadline. The pg adapter discarded multi-statement results; supervisor monitoring stopped before expiry recovery. Fixed normalization matches the pinned SDK behavior.",
+      "A later continuation reused the same pending logical task via explicit activation, then killed its own newly stalled process; production 60-second heartbeat/monitor recovered in 68.895 seconds with one result. No deadline or fake-clock relaxation.",
+      "Only the final two tasks were added in the last continuation. Total worker starts were 18 across fault scenarios; no more than two ran concurrently.",
+      "Active-job encrypted backup restored to one new empty database with framework schema 42, business/ciphertext parity and paused rotated generation; a restarted restored worker produced no business effect."
+    ]
+  },
+  "review": {
+    "executor": "main model",
+    "status": "main source/diff and actual acceptance evidence reviewed; ready for PR",
+    "agents": {
+      "lunaReadOnlyResearch": 1,
+      "solOrdinaryUiAndScripts": 2
+    },
+    "notes": [
+      "Authority docs, Skill, runtime architecture and critical transaction code written/reviewed by main",
+      "No Prompt Pack/artwork or independent frontend preview changes",
+      "No current Docker image/build/browser/real-channel acceptance claim",
+      "Fixed adapter result-shape defect found by real hard-kill acceptance; added three focused regressions. Fixtures target exact work/job and first stall only."
+    ]
+  },
+  "next": "Merge reviewed PR; unlock dependent work packages only after merge."
+}

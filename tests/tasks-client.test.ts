@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createTaskApi, TaskApiError } from "../src/client/task-api.ts";
-import type { CareTask, TaskChange, TaskCreate, TaskPage } from "../src/shared/tasks.ts";
+import type { CareTask, TaskChange, TaskCreate, TaskPage, TaskReminder, TaskWorkState } from "../src/shared/tasks.ts";
 
 const childId = "f5aad9ca-7cda-4c06-9398-a0e01b09e690";
 const taskId = "15eb043b-d7a9-4b1c-afc1-25d1a92a2dca";
@@ -17,6 +17,10 @@ const task: CareTask = { id: taskId, childId, version: 1, title: values.title, d
   occurrence: { id: occurrenceId, dueAt: values.dueAt, timeZone: values.timeZone, state: "scheduled", terminalBasisVersion: null } };
 const completed: CareTask = { ...task, version: 2, occurrence: { ...task.occurrence, state: "completed", terminalBasisVersion: 1 } };
 const page: TaskPage = { items: [task], eligibleAssignees: [{ userId: "alice", name: "合成家長" }], nextAfterId: null };
+const reminder: TaskReminder = { id: "c9c7d3fb-4237-423d-9155-8a65592d1190", batchId: "df5d68d7-e8e3-414e-bb4d-3420a136f30b",
+  taskId, occurrenceId, taskVersion: 1, phase: "initial", createdAt: "2026-10-01T01:00:00Z" };
+const work: TaskWorkState = { taskId, taskVersion: 1, status: "pending", nextAt: "2026-10-01T01:01:00Z", failures: 0 };
+const workerPage: TaskPage = { ...page, reminders: [reminder], work: [work], workerEnabled: true };
 const onlineResult = (result: unknown): typeof fetch => async (input, init) => {
   if (String(input).endsWith("/online/context")) return Response.json(context);
   const operation = JSON.parse(String(init?.body)).operation;
@@ -70,6 +74,40 @@ test("task client rejects malformed, wrong-child and wrong-task reads without re
   await assert.rejects(invalid({ revisions: [{ task: { ...task, id: otherId }, action: "create", actorUserId: "alice", basisVersion: 0, note: "", at: task.createdAt }], nextBeforeVersion: null })
     .history(childId, taskId, null, signal()), TaskApiError);
   await assert.rejects(invalid({ revisions: [], nextBeforeVersion: 0 }).history(childId, taskId, null, signal()), TaskApiError);
+});
+
+test("task list reads preserve optional reminders and every recorded worker status without changing older responses", async () => {
+  const read = (value: unknown) => createTaskApi("/api", async () => Response.json(value)).tasks(childId, null, signal());
+  assert.deepEqual(await read(page), page);
+  for (const status of ["pending", "processed", "stopped", "failed", "unknown"] as const) {
+    const value: TaskPage = { ...workerPage, work: [{ ...work, status, failures: 2 }], workerEnabled: status !== "stopped",
+      reminders: [reminder, { ...reminder, id: "e4c0f88f-0f2a-4884-b87a-e24cafafc3b6", phase: "follow_up", createdAt: "2026-10-01T02:00:00Z" }] };
+    assert.deepEqual(await read(value), value);
+  }
+  assert.deepEqual(await read({ ...page, reminders: [], work: [], workerEnabled: false }), { ...page, reminders: [], work: [], workerEnabled: false });
+});
+
+test("task list reads reject malformed or stale metadata instead of treating it as an empty success", async () => {
+  const invalidReminders = [
+    { ...reminder, taskId: otherId }, { ...reminder, occurrenceId: otherId }, { ...reminder, taskVersion: 2 },
+    { ...reminder, taskVersion: 0 }, { ...reminder, id: "bad-id" }, { ...reminder, batchId: "bad-batch" },
+    { ...reminder, phase: "unknown" }, { ...reminder, createdAt: "2026-10-01T09:00:00" },
+  ];
+  const invalidWork = [
+    { ...work, taskId: otherId }, { ...work, taskVersion: 2 }, { ...work, taskVersion: 0 }, { ...work, status: "not_a_status" },
+    { ...work, failures: -1 }, { ...work, failures: 1.5 }, { ...work, nextAt: "tomorrow" },
+  ];
+  const invalidPages = [
+    ...invalidReminders.map(value => ({ ...workerPage, reminders: [value] })),
+    ...invalidWork.map(value => ({ ...workerPage, work: [value] })),
+    { ...workerPage, reminders: null }, { ...workerPage, work: null }, { ...workerPage, workerEnabled: "true" },
+    ...["completed", "cancelled", "needs_review"].map(state => ({ ...workerPage, items: [{ ...task, occurrence: { ...task.occurrence, state } }] })),
+    { ...workerPage, items: [] },
+  ];
+  for (const value of invalidPages) {
+    const api = createTaskApi("/api", async () => Response.json(value));
+    await assert.rejects(api.tasks(childId, null, signal()), error => error instanceof TaskApiError && error.status === 0 && !error.confirmed);
+  }
 });
 
 test("confirmed task writes require the right scope and a newer version and preserve needs_review", async () => {
@@ -171,7 +209,7 @@ test("reset and abort suppress delayed task reads even when the fetcher ignores 
     const controller = new AbortController();
     const reading = api.tasks(childId, null, controller.signal);
     if (mode === "reset") api.resetOnline(); else controller.abort();
-    finish(Response.json(page));
+    finish(Response.json(workerPage));
     await assert.rejects(reading, TaskApiError);
   }
 });

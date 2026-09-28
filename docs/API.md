@@ -297,6 +297,11 @@ POST 是 [在線收據](#online-http) 的 command path，須經 `/api/online/con
 
 S13-W01 不外發或自行建立週期排程。`task-policy.ts` 提供可重用的確定性提醒資格判斷：收件人本地日的普通合併上限、最多一次跨日跟進、安靜時段及明確預約例外；已撤權／終態／unknown 均阻止新投遞。跨事項／孩子／渠道的持久批次、資格重新核對及原子去重由 S13-W04／W07 接入，不能將純判斷測試當作 worker 或真通知已通過。
 
+<a id="p2-task-worker-http"></a>
+S13-W04 在 migration 013 後擴充上述清單回應：`reminders` 只含本人在本頁的當前版本、仍 scheduled 且仍有執行資格的站內提醒；每筆有 `id / batchId / taskId / occurrenceId / taskVersion / phase / createdAt`，phase 為 initial／follow_up。`work` 包含本頁當前版本的 `taskId / taskVersion / status / nextAt / failures`；status 為 pending／processed／stopped／failed／unknown。`nextAt` 是排定檢查時間，processed 不代表照護完成，unknown 不允許自動重做。`workerEnabled` 是持久執行開關，並非在線／健康證明。舊資料庫缺少這些 optional metadata 時，UI 不宣稱 worker 已接通。
+
+建立／改期在既有收據交易內寫 task_work 及 pg-boss job；入列失敗整筆回滾，不能回報已安排。首次遷移及還原保持執行暫停，期間可保存安排，經維護核對再啟用。沒有新增公開的 worker 管理 HTTP 路由；[操作與未驗範圍](P2_WORKER.md)。站內提醒不構成 Web Push／Telegram 的外發授權或投遞證據。
+
 <a id="api-notification-01"></a>
 `TaskExecutor` 在 Server 根據事件或到期工作取得有限租約，每次執行均重查任務終態、授權版本及資源權限。Agent 可在 Server 提供的合資格照顧者中提出選擇及理由；服務按明確指派、預設負責人及預授權備援規則核准，缺資料先補問，不猜測誰有空。內容範圍、時機、重試及 fallback／升級由任務業務規則決定，不交給渠道 adapter。預先授權範圍內自動執行，範圍外先確認。
 

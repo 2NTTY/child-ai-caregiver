@@ -7,13 +7,24 @@ import type { StorageCipher } from "./storage-crypto.ts";
 import { appendOnlineChange } from "./online-change.ts";
 import { changeTask } from "./task-policy.ts";
 
-interface TaskRow { id: string; child_id: string; version: number; payload_encrypted: string; occurrence_id: string; occurrence_encrypted: string }
-const selection = `SELECT t.id,t.child_id,t.version,t.payload_encrypted,o.id AS occurrence_id,o.payload_encrypted AS occurrence_encrypted
+export interface TaskRow { id: string; child_id: string; version: number; payload_encrypted: string; occurrence_id: string; occurrence_encrypted: string }
+export const taskSelection = `SELECT t.id,t.child_id,t.version,t.payload_encrypted,o.id AS occurrence_id,o.payload_encrypted AS occurrence_encrypted
   FROM care_tasks t JOIN task_occurrences o ON o.task_id=t.id`;
 const context = (childId: string, id: string, version: number) => `care-task:${childId}:${id}:${version}`;
 const occurrenceContext = (task: Pick<CareTask, "childId" | "id" | "version" | "occurrence">) => `${context(task.childId, task.id, task.version)}:occurrence:${task.occurrence.id}`;
 
-export function createTaskStore(pool: Pool, cipher: StorageCipher) {
+export function decodeTask(row: TaskRow, cipher: StorageCipher): CareTask {
+  const value = JSON.parse(cipher.decrypt(row.payload_encrypted, context(row.child_id, row.id, row.version))) as Omit<CareTask, "occurrence">;
+  const occurrence = JSON.parse(cipher.decrypt(row.occurrence_encrypted, `${context(row.child_id, row.id, row.version)}:occurrence:${row.occurrence_id}`));
+  return { ...value, occurrence };
+}
+
+export interface TaskScheduling {
+  changed(client: PoolClient, workspaceId: string, actorUserId: string, task: CareTask): Promise<void>;
+  view(client: PoolClient, userId: string, taskIds: string[]): Promise<Pick<TaskPage, "reminders" | "work" | "workerEnabled">>;
+}
+
+export function createTaskStore(pool: Pool, cipher: StorageCipher, scheduling?: TaskScheduling) {
   const transaction = <T>(userId: string, childId: string, write: boolean, operation: (client: PoolClient, workspaceId: string) => Promise<T>) =>
     withChildAccess(pool, userId, childId, write ? WRITE_ROLES : READ_ROLES, (client, _role, workspaceId) => operation(client, workspaceId), write);
   async function assignees(client: PoolClient, workspaceId: string): Promise<TaskAssignee[]> {
@@ -24,12 +35,10 @@ export function createTaskStore(pool: Pool, cipher: StorageCipher) {
     if (!(await assignees(client, workspaceId)).some(member => member.userId === userId)) throw new FamilyError(400, "invalid_input");
   }
   function decode(row: TaskRow): CareTask {
-    const value = JSON.parse(cipher.decrypt(row.payload_encrypted, context(row.child_id, row.id, row.version))) as Omit<CareTask, "occurrence">;
-    const occurrence = JSON.parse(cipher.decrypt(row.occurrence_encrypted, `${context(row.child_id, row.id, row.version)}:occurrence:${row.occurrence_id}`));
-    return { ...value, occurrence };
+    return decodeTask(row, cipher);
   }
   async function find(client: PoolClient, childId: string, id: string): Promise<CareTask | null> {
-    const row = (await client.query<TaskRow>(`${selection} WHERE t.child_id=$1 AND t.id=$2`, [childId, id])).rows[0];
+    const row = (await client.query<TaskRow>(`${taskSelection} WHERE t.child_id=$1 AND t.id=$2`, [childId, id])).rows[0];
     return row ? decode(row) : null;
   }
   async function save(client: PoolClient, workspaceId: string, revision: TaskRevision, create: boolean) {
@@ -50,9 +59,10 @@ export function createTaskStore(pool: Pool, cipher: StorageCipher) {
   return {
     list(userId: string, childId: string, afterId?: string): Promise<TaskPage | null> {
       return transaction(userId, childId, false, async (client, workspaceId) => {
-        const rows = (await client.query<TaskRow>(`${selection} WHERE t.child_id=$1 AND ($2::uuid IS NULL OR t.id>$2) ORDER BY t.id LIMIT 51`, [childId, afterId ?? null])).rows;
+        const rows = (await client.query<TaskRow>(`${taskSelection} WHERE t.child_id=$1 AND ($2::uuid IS NULL OR t.id>$2) ORDER BY t.id LIMIT 51`, [childId, afterId ?? null])).rows;
         const items = rows.slice(0, 50).map(decode);
-        return { items, eligibleAssignees: await assignees(client, workspaceId), nextAfterId: rows.length > 50 ? items.at(-1)!.id : null };
+        return { items, eligibleAssignees: await assignees(client, workspaceId), nextAfterId: rows.length > 50 ? items.at(-1)!.id : null,
+          ...(scheduling ? await scheduling.view(client, userId, items.map(item => item.id)) : { workerEnabled: false }) };
       });
     },
     get: (userId: string, childId: string, id: string) => transaction(userId, childId, false, client => find(client, childId, id)),
@@ -74,6 +84,7 @@ export function createTaskStore(pool: Pool, cipher: StorageCipher) {
         const task: CareTask = { ...values, id: randomUUID(), childId, version: 1, createdBy: userId, createdAt: now, updatedAt: now,
           occurrence: { id: randomUUID(), dueAt, timeZone, state: "scheduled", terminalBasisVersion: null } };
         await save(client, workspaceId, { task, action: "create", actorUserId: userId, basisVersion: 0, note: "", at: now }, true);
+        await scheduling?.changed(client, workspaceId, userId, task);
         return task;
       });
     },
@@ -85,6 +96,7 @@ export function createTaskStore(pool: Pool, cipher: StorageCipher) {
         if (input.action === "reschedule") await requireAssignee(client, workspaceId, input.assigneeUserId);
         const now = new Date().toISOString(), task = changeTask(current, input, now);
         await save(client, workspaceId, { task, action: input.action, actorUserId: userId, basisVersion: input.expectedVersion, note: input.note, at: now }, false);
+        await scheduling?.changed(client, workspaceId, userId, task);
         return task;
       });
     },

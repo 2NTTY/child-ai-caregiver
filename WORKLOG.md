@@ -929,3 +929,21 @@
 - Verification：[EV-S13-W01](artifacts/verification/S13_W01_CHECKS.json)。Node 24.19.0；27 項相關單元／client／resolver 檢查、兩份 typecheck、腳本語法及 Expo Web export 通過。使用者批准本包本機 integration 並開啟 Docker；11 組／47 次 HTTP 通過，migration 012、同操作並發、終態衝突、角色／撤權、HTTP Server 重建及 pool 重連、原文、刪除後不復活均有證據。新增 3 個合成帳號、1 個孩子／1 項任務，僅刪本次孩子及連帶資料；原 33 筆業務資料逐列不變。
 - Review / Failure：首次 preflight 因原容器停止而失敗，未發 HTTP 或新增資料；沿用原 volume 啟動容器後通過。review 補 UUID 正規化避免大小寫影響加密 AAD，針對性 HTTP 單元通過；UI 補失效負責人提示及鍵盤確認入口。完成收據只是原操作結果，須重讀當前終態；衝突回 confirmed needs_review，不能以 HTTP error 導致事件 rollback。
 - Limits / Next：本包完成隨 review／PR 合併生效，之後解鎖 S13-W04。沒有真模型／embedding／通知、部署、瀏覽器 E2E、Android、全量回歸或本輪新備份／空庫還原；Web export／resolver 不代表畫面互動驗收。P2 未完成，現網仍 P1，七天部署不自行續期，Codex 餘額未知。
+
+<a id="log-20260928-002"></a>
+## LOG-20260928-002
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S13-W04 前置 S13-W01 已隨 PR #47／master `a591f87` 合併，分支 `codex/s13-w04-persistent-worker`。A 確認權重 3、C 80%／A 20%，共用 AI 實作及 A 統籌，未宣稱組員各自手寫或親自測試。
+- Actual Work：固定 pg-boss 12.34.0／schema 42、許可及同交易入列；新增 migration 013、獨立 worker、加密工作參照、世代／版本／權限／終態與唯一站內效果。普通提示每日批次、一次跨日跟進、有限失敗、框架失敗／遺失核對、首次／還原暫停及顯式啟用；UI 顯示實際台帳 metadata，沒有外發、模型或照護完成的假成功。
+- Executor / Reuse：一個 Luna Max 唯讀官方證據，兩個 Sol xhigh 分別處理有限 UI 和必要驗收腳本；主模型核對固定原碼、親寫架構／交易／恢復及所有指導文件、短 worker Skill 和前端交接。復用既有授權、加密、收據、Prompt Pack／美術；沒有修改獨立 frontend 或模型配置。
+- Verification：[EV-S13-W04](artifacts/verification/S13_W04_CHECKS.json)。24 項相關政策／client 單元檢查、根及 Server typecheck、Node 24.19 腳本語法、無 DB 的 SDK 建構／參照驗證、Compose YAML 隔離、205 個本機文件連結及 28 份許可 hash 通過。Skill 的 bundled Python validator 缺 PyYAML，改用既有 YAML parser 檢查 frontmatter；不宣稱該 validator 通過。
+- Pending / Next：真 PostgreSQL 腳本已完成 review 並提出獨立批准，最多 3 帳號／1 孩子／12 任務、50 HTTP／100 業務呼叫、兩 worker、600 次有限查核及一個空還原庫，含原子回滾、真 HTTP 收據、hard-kill、有限失敗、撤權／終態及加密還原。尚未執行、不把 scripted 故障當真外部通知證據。未部署、呼叫模型／通知、跑 E2E／全量回歸或延長七天試用。驗收通過並完成 review／PR 合併前，S13-W04 不標完成，S10-W02 不解鎖。P2 目標仍持續；本次僅等待必要驗收批准，額度未知。
+
+<a id="log-20260928-003"></a>
+## LOG-20260928-003
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S13-W04 必要驗收及交付，前置／分工沿 LOG-20260928-002，使用者已批准本包有限 PostgreSQL／worker／備份還原範圍。
+- Actual Work / Failure：預檢發現 PowerShell 子程序繼承不相容模組路徑，僅調整子程序環境；fixture 原先會攔住同 work 的重複 job，改為精確 work／job 及首次暫停。真 hard-kill 首輪超過 180 秒，定位到 adapter 丟失 pg 多段 SQL 結果、監測在到期恢復前失敗；按固定 SDK 的結果正規化修正，沒有放寬期限、縮短正式心跳或重設終態／失敗預算。
+- Verification：[EV-S13-W04](artifacts/verification/S13_W04_CHECKS.json)。新增 3 項 adapter 輕量回歸後合計 27 項，Server typecheck 再通過；必要驗收以受保護 checkpoint 承接原兩個合成帳號、孩子及累計計數。12 項任務、12 HTTP／72 業務呼叫、411 次有限查核；18 次 fixture 啟動、同時最多兩個。交易回滾、HTTP 收據、雙程序／唯一批次、安靜時段、撤權／終態、有限失敗及確認丟失有證據；修正後同一邏輯任務實測 hard-kill 恢復 68.895 秒。
+- Persistence / Limits：原始遷移前逐列保留檢查沿首輪；補驗排除精確合成身份及已核對 FK 後保存 hash 基線，結束時其餘資料保留，不宣稱另還原原備份作第二次比較。另一次 active-job 加密備份還原至新空庫，資料／密文及 schema 42 相符，輪換 generation、worker 暫停並啟動後無業務重做。只刪本次孩子及連帶資料，原庫、備份及還原庫保留，來源恢復暫停。
+- Review / Next：主模型核對關鍵原碼、diff 及實際分段結果；普通腳本續跑由原 Sol 補充，主模型處理恢復缺陷、最後補驗、權威文件及 Skill。完成隨本包 PR 合併生效，之後才解鎖下一包。沒有模型／真通知、部署、E2E、全量回歸或延長試用；P2 未完成，功能／UI 接口清單已更新，既有 Prompt Pack／美術未重做。

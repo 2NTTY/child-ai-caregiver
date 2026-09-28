@@ -18,6 +18,10 @@ import { createCareStore } from "./care.ts";
 import { createMemoryStore } from "./memory.ts";
 import { createTaskStore } from "./tasks.ts";
 import { createOnlineStore } from "./online.ts";
+import { createWorkerQueue } from "./worker-queue.ts";
+import { createTaskScheduling } from "./task-worker.ts";
+
+let startupCleanup: (() => Promise<void>) | undefined;
 
 try {
   const config = readServerConfig(process.env);
@@ -26,10 +30,15 @@ try {
   const provider = aiConfig.enabled ? createVertexProvider(aiConfig) : undefined;
   const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
   const pool = createPool(config);
-  try { await verifyEncryptedStorage(pool, cipher); } catch (error) { await pool.end(); throw error; }
+  startupCleanup = () => pool.end();
+  await verifyEncryptedStorage(pool, cipher);
   // Additive rollout: older databases keep their existing stores until the new
   // migration has completed. Never make ordinary writes depend on missing tables.
   const onlineEnabled = (await pool.query<{ ready: boolean }>("SELECT EXISTS(SELECT 1 FROM app_migrations WHERE id='010-online-operations') AS ready")).rows[0].ready;
+  const queue = (await pool.query("SELECT 1 FROM app_migrations WHERE id='013-task-worker'")).rowCount ? createWorkerQueue(pool, "producer") : undefined;
+  startupCleanup = async () => { try { await queue?.stop(); } finally { await pool.end(); } };
+  await queue?.start();
+  const taskScheduling = queue ? createTaskScheduling(cipher, queue.queue) : undefined;
   const aiUsage = createAiUsageStore(pool);
   const auth = createAuth(config, pool);
   const handler = createRequestHandler({
@@ -37,8 +46,8 @@ try {
     records: createRecordStore(pool, cipher, onlineEnabled),
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
-    online: onlineEnabled ? createOnlineStore(pool, cipher) : undefined,
-    tasks: onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher) : undefined,
+    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling) : undefined,
+    tasks: onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher, taskScheduling) : undefined,
     chat: createChatStore(pool, cipher, onlineEnabled),
     memory: createMemoryStore(pool, cipher, onlineEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount)),
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
@@ -52,7 +61,7 @@ try {
   server.requestTimeout = 15000;
   server.headersTimeout = 10000;
   let poolClosing: Promise<void> | undefined;
-  const closePool = () => { poolClosing ??= pool.end().catch(() => { process.exitCode = 1; }); return poolClosing; };
+  const closePool = () => { poolClosing ??= (async () => { try { await queue?.stop(); } finally { await pool.end(); } })().catch(() => { process.exitCode = 1; }); return poolClosing; };
   server.on("error", () => { console.error("server_start_failed"); void closePool(); process.exitCode = 1; });
   server.listen(config.port, config.host, () => { console.info("server_started"); });
   let stopping = false;
@@ -66,5 +75,6 @@ try {
   process.once("SIGINT", stop);
 } catch {
   console.error("server_configuration_failed");
+  await startupCleanup?.().catch(() => {});
   process.exitCode = 1;
 }

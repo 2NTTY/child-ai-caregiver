@@ -20,7 +20,7 @@ P／A／架分別表示需要調整 PLAN／AGENTS／架構；本次已落實文�
 
 | 優先／工作包 | 候選 | 推薦與理由／成熟程度 | 節省的自寫工作 | 風險、代價及證據 | 文件調整 |
 |---|---|---|---|---|---|
-| 1 · S13-W04；S10-W02 復用 | pg-boss 12.34.0、Graphile Worker 0.17.3、現有業務台帳＋自寫執行器 | 優先驗證 pg-boss；PostgreSQL 原生佇列符合本地部署，心跳方向適合數分鐘故障恢復。現有台帳繼續使用 | 通用領取、持久排程、存活檢查、重試及停止程序 | MIT；新增 schema／連線／備份成本；兩個候選均只有文件相容，Graphile 的 hard-kill 恢復預設不合所選時限，詳見下節 | P／架；A 共通規則 |
+| 1 · S13-W04；S10-W02 復用 | pg-boss 12.34.0、Graphile Worker 0.17.3、現有業務台帳＋自寫執行器 | 優先驗證 pg-boss；PostgreSQL 原生佇列符合本地部署，心跳方向適合數分鐘故障恢復。現有台帳繼續使用 | 通用領取、持久排程、存活檢查、重試及停止程序 | MIT；新增 schema／連線／備份成本；pg-boss 已通過 S13-W04 必要本機驗收，Graphile 僅文件相容且 hard-kill 恢復預設不合所選時限，詳見下節 | P／架；A 共通規則 |
 | 1 · S11-W02；S16-W02 | 已接 ADK 的 Session、Plugins、Skills、conformance；自建對應能力 | 保留 Runner／Prompt Pack／單次 InMemorySession；優先 BasePlugin＋原生 spans 作最小診斷，按下表取捨原生能力 | 不重建 agent loop、session 協定、callback／trace 管線或技能載入器 | Apache-2.0；現有 Runner 實測，其餘接線待驗；持久 Session 另有 ORM／加密缺口；實驗性功能不成核心依賴 | P／架 |
 | 1 · S13-W01；S12-W03；P4 S10-W03 | 手動表單、React Hook Form 7.88.0＋resolvers 5.9.1＋現有 Zod | 新複雜表單優先 RHF；成熟的欄位／錯誤狀態管理，保留既有驗證契約 | dirty／touched／欄位陣列、錯誤映射及表單重設 | MIT；React 19／Zod 4 在 peer 範圍，TS 6／RN 控制元件仍待本工程驗證；不把 Server 校驗移到表單 | P／架 |
 | 2 · 上述新增共用頁面；P3 S04-W01／S12-W01 | 現有 RN 元件、React Native Paper 5.15.3、Expo UI 57.0.19／57.0.20 | 新增複雜共用頁面先小範圍試 Paper；Expo UI 用於確有原生控制需要的局部。不要同包引入兩套完整設計系統 | 主題、表單控制、dialog／menu／無障礙基礎；原生控制 adapter | 均 MIT；Paper 穩定 v5，但無 RN 0.86 實測證據；Expo UI Universal 有 Web fallback，仍需 Web／Android／RHF 接線驗證 | P／架 |
@@ -35,6 +35,8 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 
 <a id="worker"></a>
 ## S13-W04：框架與業務台帳的分界
+
+2026-09-28 接入補充：已固定安裝 pg-boss 12.34.0／schema 42，原 MIT 許可及 tarball integrity 已入 [清單](../licenses/manifest.json)；Node 24／pg 8.23 的型別接線通過，真 PostgreSQL 採用閘已獲批准並通過分段驗收，hard-kill 恢復 68.895 秒，詳見 [證據](../artifacts/verification/S13_W04_CHECKS.json)。主模型已核對安裝套件的 createJob、constructor／stop、schema check、heartbeat／重試及 keep_until SQL；固定來源與可復用約束見 [worker Skill](../.agents/skills/postgres-durable-worker/SKILL.md)。使用既有交易 client 的 send、框架原生領取／heartbeat／dead letter，業務僅保存授權及唯一效果。原生 transactional work 適合短 SQL handler，但本包已有 workspace／opId 交易與可重領台帳，不另建第二套互不協調的交易。產品操作見 [P2_WORKER](P2_WORKER.md)。
 
 | 方案 | 官方證據與相容性 | 判斷 |
 |---|---|---|

@@ -243,6 +243,11 @@ Agent 可從 Server 提供的合資格照顧者中提出選擇及理由；任務
 <a id="rule-5-5-13"></a>
 分享、貼上、上傳、公開來源及附件解析內容均屬不可信輸入。Server 保留來源及確認邊界，內容不能自行取得工具權限、覆寫 prompt／穩定規則、成為孩子事實或建立未授權動作。
 
+<a id="persistent-worker"></a>
+S13-W04 以獨立 Node worker 及固定 pg-boss 12.34.0 接上手動任務。API、opId 收據、任務變更、業務工作與 `boss.send({db})` 共用同一交易 client；worker 不依賴 Web 存活。框架負責到期領取、heartbeat、有限重試及 shutdown，業務在 workspace 排他鎖後重查確認者／負責人資格、epoch／generation、版本及終態，再寫唯一站內提醒。改期或完成令舊 job 失效；處理成功但框架確認回應遺失時，重領先核對台帳，不新增第二筆有效結果。SQL 交易內沒有模型或外部渠道呼叫。
+
+安靜時段及普通提示上限以收件人偏好計算下一個 UTC 檢查點；不靠空轉模型輪詢。每個邏輯工作最多三次失敗，延期不重置累積預算；framework 失敗／遺失反映為 failed／unknown，不能當照護完成。新安裝與備份還原預設暫停，世代及 jobId 防止舊工作重放；啟用前須確認唯一有效來源及恢復資料。[操作](P2_WORKER.md)／[資料](DATA_MODEL.md#task-worker-storage)／[介面](API.md#p2-task-worker-http)。這包只接站內效果，Gemini、知識更新、外發及 fallback 留在其既有後續工作包，不宣稱外部 exactly-once。
+
 <a id="growth-attention-flow"></a>
 ### 5.5A 成長階段關注流程（S13-W08／P2）
 
