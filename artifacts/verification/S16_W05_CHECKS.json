@@ -1,0 +1,102 @@
+{
+  "package": "S16-W05",
+  "status": "necessary_acceptance_passed_completion_on_merge",
+  "date": "2026-09-29",
+  "base": "65bebd270dd30cdfe349192118b09325fe1d321e",
+  "branch": "codex/s16-w05-browser-foundation",
+  "dependencies": {
+    "framework": "@playwright/test",
+    "version": "1.63.0",
+    "license": "Apache-2.0",
+    "node": ">=20; project Node24",
+    "newLockfilePackages": 3
+  },
+  "checks": [
+    {
+      "command": "node node_modules/@playwright/test/cli.js test --config=playwright.config.mjs --list",
+      "exitCode": 0,
+      "seconds": 0.9973028,
+      "listed": 2,
+      "files": 1,
+      "executed": 0,
+      "note": "No browser, server, database or fixture started; later small runtime guard/rate-limit wait statically reviewed."
+    },
+    {
+      "name": "chromium_supported_care_search",
+      "testedRevision": "2b6e0bf",
+      "status": "passed",
+      "browser": "chromium",
+      "scenarioCount": 1,
+      "retries": 0,
+      "maxFailures": 1,
+      "httpCap": 180,
+      "newAccountsMaximum": 3,
+      "newChildrenMaximum": 1,
+      "models": 0,
+      "notifications": 0,
+      "confirmedNewAccounts": 3,
+      "requestAttempts": 147,
+      "childId": "4e267c43-b18d-4ab8-8817-9c0756031176",
+      "childDeleted": true,
+      "unexpectedNetwork": false,
+      "metadataMeasurement": "attachment",
+      "failureStep": null,
+      "exitCode": 0,
+      "passedScenarios": 1,
+      "elapsedMs": 23511,
+      "failure": null,
+      "servicesStopped": true,
+      "checks": [
+        "family_isolation_and_viewer_read_only",
+        "lost_response_recovered_by_original_opId_one_persisted_record",
+        "revoked_member_UI_draft_and_server_access_cleared"
+      ]
+    },
+    {
+      "command": "node node_modules/@playwright/test/cli.js test --config=playwright.config.mjs --list",
+      "result": "passed",
+      "listed": 1,
+      "executed": 0,
+      "purpose": "After user deferral, default project is Chromium; no services/browser/model started."
+    }
+  ],
+  "prepared": [
+    "one connected scenario covering family isolation/viewer read-only, committed write response lost and original opId reconciliation, revocation clears UI/draft",
+    "Chromium and Firefox projects, one worker, no retries, stop after first failure",
+    "synthetic contexts and bounded local fixture; original records untouched; only owned child cleanup"
+  ],
+  "browserDownloads": "Fixed Chromium and Firefox cached locally; no binary committed",
+  "browserExecutions": "One successful Chromium scenario after earlier stopped locator/route failures; Firefox scenario never started",
+  "modelCalls": 0,
+  "notificationCalls": 0,
+  "migrationsApplied": [],
+  "unitTestsAdded": 0,
+  "pending": [],
+  "limitations": [
+    "--list is only configuration/case loading, not passing tests",
+    "No Android, visual polish, preview acceptance or full regression"
+  ],
+  "deliveryBase": "e75a294e5473cd4440902b0b11e8381fa76f0608",
+  "deliveryBranch": "codex/s16-w05-browser-delivery",
+  "deferred": [
+    {
+      "scope": "Firefox compatibility",
+      "reason": "Windows private assembly startup failure; user explicitly deferred on 2026-09-29",
+      "blocksP2": false,
+      "passed": false
+    }
+  ],
+  "futureFunctionalChecks": "Use Codex in-app browser only for necessary uncovered UI behavior; do not repeat the accepted Chromium scenario.",
+  "review": {
+    "preservedOriginalCheckpoint": "c6c09507dcd3a7ad9d5d5abe6f43674e841eb81d",
+    "replayedOnlyPackageCommits": [
+      "9da4e89",
+      "83b411d",
+      "3557c5b",
+      "c6c0950"
+    ],
+    "testedIntegration": "2b6e0bf",
+    "testSourcesIdentical": true,
+    "limits": "No claim of Firefox, model, notification, photo quality or independent human trial acceptance."
+  }
+}

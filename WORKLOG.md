@@ -975,3 +975,22 @@
 - Evidence：014／原資料保留及配對還原復用 S16 共用證據；來源 hash／發布／向量復用／停用及真 minute cron 29 業務／7 輪詢，公開／組內／25h 過期隔離 16 業務，另批來源暫失／410／登記改動撤回批准 24 業務，後者零模型／embedding／外網。四份向量 callback 明示合成，不冒稱真服務；沒有重跑已通過案例或原大型驗收腳本。
 - Failure / Review：初始合成 URL 唯一約束失敗及 RTHK 降級／跨主機轉址均保留；只修固定 HTTPS 位址並補驗該來源，六來源現均取回成功，真正文不保留。登記改動與批准撤回同交易；改回舊設定不復活批准。已核对相關核心檔與受驗整合版本一致；有限驗收不代表全量回歸。[EV-S10-W02](artifacts/verification/S10_W02_CHECKS.json)。
 - Responsibility / Delivery：沿用已確認 A 60%／C 40%，A 統籌 AI 與關鍵 review，不假稱 D 親自測試。使用 A 的現有帳號獨立推送／PR／合併，開發與合併簽署另核對；完成隨 PR 合併生效。合成來源已停用、worker 暫停，原庫／還原庫／加密備份保留；無通知或部署，其他 P2 包不因本包結案而標完成。
+
+
+<a id="log-20260929-003"></a>
+## LOG-20260929-003
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；S16-W05，分支 `codex/s16-w05-browser-foundation`。前置 S06-W02／S07-W03 已合併；從剛核對的 master `22f5c66` 開始，隔離分支再 fast-forward 到已 review 的 P2 固定 checkpoint `65bebd270dd30cdfe349192118b09325fe1d321e`，承接 014–022 待驗。未把未驗成果合併 master。
+- Responsibility / Executor：C 主責、權重 2，C 70%／B 20%／A 10%；A 統籌共用 AI。主模型處理有限 fixture／三條功能邊界、正式環境限制、全部文件／短 Skill 及 review；一個 Luna Max 只定位已有腳本、API 及 accessible 入口。D 的後續實際測試／人工驗收另記，本次未代填或署名其未執行工作。
+- Actual Work：固定 Playwright Test 1.63.0，保留既有 P1／node:test；一個串接情景提供 Chromium／Firefox 入口，單 worker、零 retry、首次失敗停，不擴充矩陣。真保存後只中斷回應再查原 opId，不用假成功代替保存。隔離合成帳號、固定本機 API／Web／資料庫、自有程序及清理範圍、關閉模型／渠道及 trace 已備妥。
+- Research / Checks：沿用 TECH_REUSE 選型，補核官方 configuration／fixtures／network、npm 固定版及 Apache-2.0，保存原許可與短 Skill。[EV-S16-W05](artifacts/verification/S16_W05_CHECKS.json)。唯一輕量命令 `--list` 一次通過，列出一檔兩入口，實際執行情景數為零。沒有瀏覽器下載、Server／資料庫啟動、帳號建立、integration／E2E 或模型／通知。未重跑 typecheck／lint／build／unit suites。
+- Pending / Next：真執行連同所有 P2 包缺項在 S16-W02 合併重複情景後一次列出次數與成本供使用者決定。S16-W05 只標待驗收；S17-W02／正式 P2 完成仍未達標，沒有 push／merge／部署或延長試用。
+
+
+<a id="log-20260929-015"></a>
+## LOG-20260929-015
+
+- Work Package / Responsibility：S16-W05；沿用 C 主責、B 配合正式介面、A 統籌整合及權威文件。共用 AI 由 A 操作；主模型覆核證據，原 Sol 只處理有界測試修正，D 未執行人工驗收。
+- Result：Chromium 在整合版本 2b6e0bf 的單一真 API 情景通過，147 HTTP／3 帳號／1 孩子已清理，家庭隔離／viewer、原 opId 單筆恢复、撤權清 UI／草稿可核對；零非預期外網／模型／通知，服務已停。原 locator／搜尋路由失敗保留，不放寬斷言。
+- Scope Decision：使用者明確確認 Firefox 專項延後作相容性驗收，不阻塞 P2；如實保留未驗。後續必要功能檢查使用 Codex 內置瀏覽器，已過 Chromium 不重跑；停止 Windows loader 診斷。Firefox runner 改為明確選入，旗標不代替批准。
+- Delivery：從最新 master e75a294 在獨立交付分支只重放本包四個提交，原整合 checkpoint 保留；未帶入其他待驗 P2 功能。三個固定開發依賴及測試正文沿用受驗版本，只做必要離線配置／diff 核對。完成隨本包 PR 合併生效，不代表 P2 整體完成；現網未部署或續期。
