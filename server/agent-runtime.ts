@@ -37,6 +37,8 @@ export interface AgentRunInput {
   availableInputs?: readonly string[];
   context?: Record<string, unknown>;
   finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext) => Promise<string | null>;
+  /** Opt-in Server presentation after a confirmed model limit; never retries tools. */
+  finalizeOnModelLimit?: boolean;
   scope: AgentScope;
   trigger: { kind: "interactive" | "worker"; reference: string };
   recipeId: string;
@@ -143,20 +145,45 @@ export function createAgentRuntime(options: {
           const runner = new Runner({ appName, agent, sessionService,
             plugins: [createAgentObserver({ runId, toolNames: [...definitions.keys()], sink: options.diagnostics })] });
           try {
-            for await (const event of runner.runAsync({ userId: scope.userId, sessionId: runId,
-              newMessage: { role: "user", parts: [{ text: input.messages.at(-1)!.text }, ...(input.image ? [{ inlineData: input.image }] : [])] }, abortSignal: budget.signal,
-              runConfig: { maxLlmCalls: AGENT_LIMITS.modelCalls, streamingMode: StreamingMode.NONE, saveInputBlobsAsArtifacts: false } })) {
-              budget.check();
-              if (event.errorCode) throw model.failure ?? new AgentStopped(budget.counts.modelCalls >= AGENT_LIMITS.modelCalls ? "model_limit" : "unavailable");
-              if (event.content?.role === "model" && !event.content.parts?.some(part => part.functionCall)) {
-                const text = event.content.parts?.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("");
-                if (text?.trim()) result.text = text;
+            let finalizeAfterModelLimit = false;
+            let confirmedFrameworkModelLimit = false;
+            try {
+              for await (const event of runner.runAsync({ userId: scope.userId, sessionId: runId,
+                newMessage: { role: "user", parts: [{ text: input.messages.at(-1)!.text }, ...(input.image ? [{ inlineData: input.image }] : [])] }, abortSignal: budget.signal,
+                runConfig: { maxLlmCalls: AGENT_LIMITS.modelCalls, streamingMode: StreamingMode.NONE, saveInputBlobsAsArtifacts: false } })) {
+                budget.check();
+                if (event.errorCode) {
+                  // ADK 2.1.0 wraps its exact limit exception in an UNKNOWN_ERROR event.
+                  confirmedFrameworkModelLimit = !model.failure && event.errorCode === "UNKNOWN_ERROR"
+                    && event.errorMessage === `Max number of llm calls limit of ${AGENT_LIMITS.modelCalls} exceeded`
+                    && budget.counts.modelCalls === AGENT_LIMITS.modelCalls;
+                  throw model.failure ?? new AgentStopped(budget.counts.modelCalls >= AGENT_LIMITS.modelCalls ? "model_limit" : "unavailable");
+                }
+                if (event.content?.role === "model" && !event.content.parts?.some(part => part.functionCall)) {
+                  const text = event.content.parts?.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("");
+                  if (text?.trim()) result.text = text;
+                }
               }
+            } catch (error) {
+              // An inferred error event at the call count alone is not a confirmed model limit.
+              const modelLimit = error instanceof AgentStopped
+                ? error.reason === "model_limit" && (confirmedFrameworkModelLimit || model.failure?.reason === "model_limit")
+                : error instanceof Error && /LlmCallsLimit/u.test(error.name);
+              if (!input.finalizeOnModelLimit || !input.finalize || !modelLimit || toolFailure
+                || result.tools.some(tool => tool.status !== "succeeded")) throw error;
+              finalizeAfterModelLimit = true;
+              result.text = null;
             }
             if (!await budget.wait(input.authorize)) throw new AgentStopped("unauthorized");
+            // Keep finalize outside the Runner catch so its errors can never invoke it twice.
             if (input.finalize) result.text = await budget.wait(() => input.finalize!(result, runContext));
-            if (!result.text) throw new AgentStopped("invalid_response");
+            if (!result.text || finalizeAfterModelLimit && !result.text.trim()) throw new AgentStopped("invalid_response");
+            if (finalizeAfterModelLimit) {
+              if (!await budget.wait(input.authorize)) throw new AgentStopped("unauthorized");
+              budget.check();
+            }
             result.status = "completed";
+            delete result.stopReason;
           } finally {
             await sessionService.deleteSession({ appName, userId: scope.userId, sessionId: runId });
           }

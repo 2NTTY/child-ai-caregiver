@@ -33,6 +33,7 @@ COPY app.json tsconfig.json ./
 COPY app ./app
 COPY assets ./assets
 COPY src ./src
+COPY public ./public
 RUN npm run build:web
 
 FROM node:24.19.0-bookworm-slim AS server-runtime
@@ -51,7 +52,7 @@ COPY server ./server
 COPY src/shared ./src/shared
 COPY prompts ./prompts
 COPY knowledge ./knowledge
-COPY scripts/encrypt-storage.mjs scripts/storage-backup.mjs scripts/knowledge.mjs scripts/knowledge-refresh.mjs scripts/worker-control.mjs ./scripts/
+COPY scripts/encrypt-storage.mjs scripts/storage-backup.mjs scripts/photos-backup.mjs scripts/knowledge.mjs scripts/knowledge-refresh.mjs scripts/worker-control.mjs ./scripts/
 
 USER node
 EXPOSE 3001

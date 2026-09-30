@@ -58,6 +58,64 @@ test("product reply uses native tools, keeps proposals unconfirmed, validates di
   assert.equal(calls, 3); assert.equal(writes, 1);
 });
 
+test("product reply preserves validated citations at the model limit without confirming its task candidate", async () => {
+  const userId = "synthetic-user", childId = "1ebcb39d-a2db-4b8c-a432-7ffcb3de5808";
+  const runId = "d4a1b662-d13d-476b-bf52-40a28aa1a1a7", messageId = "7de5a0e8-e106-4485-b7d2-3b572741da39";
+  const scope = { userId, childId, workspaceId: "synthetic-workspace", authorizationVersion: "1", dataVersion: "epoch:1" };
+  const chunk = { chunkId: "reviewed-chunk", classification: "official_guidance", text: "已核對的合成照護說明。" };
+  const values = { title: "合成跟進候選", details: "尚待本人明確確認。", kind: "ordinary", assigneeUserId: userId,
+    dueAt: new Date(Date.now() + 3600000).toISOString(), timeZone: "Asia/Hong_Kong" };
+  const steps = [
+    { id: "context-call", name: "read_context", args: {} },
+    { id: "search-call", name: "search_knowledge", args: { query: "合成照護主題", classification: "official_guidance" } },
+    { id: "answer-call", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: chunk.text, citationIds: [chunk.chunkId] }] } },
+    { id: "candidate-call", name: "propose_task", args: { values } },
+  ];
+  let calls = 0, writes = 0, revalidations = 0, claimed = false, saved: ProductAgentResult | null = null;
+  const proposals: AgentProposal[] = [];
+  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+    usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async () => {
+      const step = steps[calls++];
+      assert.ok(step, "A fifth provider call must not start");
+      return { content: { role: "model", parts: [{ functionCall: step }] }, finishReason: FinishReason.STOP };
+    } } });
+  const options = { runtime,
+    store: {
+      claim: async () => { const created = !claimed; claimed = true; return { runId, scope, created, state: "running", expiresAt: new Date(Date.now() + 90000).toISOString() }; },
+      authorize: async () => true,
+      propose: async (_scope: unknown, originalRun: string, callId: string, value: AgentProposal["value"]) => {
+        assert.equal(originalRun, runId); assert.equal(callId, "candidate-call"); assert.equal(value.kind, "task_create"); writes++;
+        const proposal: AgentProposal = { id: "f49a222e-77e4-4980-ae87-4c335b2b5c39", runId, childId, version: 1,
+          status: "pending", createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(), value, result: null, targetLabel: null };
+        proposals.push(proposal); return proposal;
+      },
+      finish: async (_scope: unknown, result: ProductAgentResult) => { saved = { ...result, proposals }; return true; },
+      get: async () => saved,
+    },
+    memory: { context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+      facts: [], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+      truncated: { facts: false, topics: false, messages: false } }) },
+    chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: "請整理合成照護說明及待確認跟進。" }] }) },
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [{ userId, name: "Synthetic caregiver" }], nextAfterId: null }) },
+    knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
+      revalidateCitations: async (items: unknown[]) => { revalidations++; assert.deepEqual(items, [chunk]); return true; } }) },
+  } as unknown as Parameters<typeof createProductAgent>[0];
+  const service = createProductAgent(options);
+  const result = await service.reply(userId, childId, messageId, async () => true);
+  assert.equal(result?.status, "completed", JSON.stringify(result));
+  assert.equal(result.stopReason, null);
+  assert.equal(result.text, chunk.text + " [1]");
+  assert.deepEqual(result.citations, [chunk]);
+  assert.deepEqual(result.tools.map(tool => ({ name: tool.name, status: tool.status })),
+    steps.map(step => ({ name: step.name, status: "succeeded" })));
+  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
+  assert.equal(result.proposals[0].status, "pending");
+  assert.equal(result.proposals[0].result, null);
+  assert.equal(calls, 4); assert.equal(writes, 1); assert.equal(revalidations, 1);
+  assert.deepEqual(await service.reply(userId, childId, messageId, async () => true), result);
+  assert.equal(calls, 4); assert.equal(writes, 1); assert.equal(revalidations, 1);
+});
+
 for (const growth of [false, true]) test(growth
   ? "growth Runner renders reviewed evidence without model embellishment or classification bypass"
   : "background Runner exposes only family reads and presentation, without private chat or mutation tools", async () => {

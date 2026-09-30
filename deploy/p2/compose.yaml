@@ -1,0 +1,34 @@
+# Incremental P2 extension; always combine with deploy/p1/compose.yaml.
+services:
+  api:
+    image: ${P2_API_IMAGE:?Set the reviewed P2 API image}
+    environment: &p2-runtime-environment
+      ATTACHMENTS_DIR: /var/lib/yuban/attachments
+      WEB_PUSH_VAPID_FILE: /run/secrets/web_push_vapid
+      TELEGRAM_CONFIG_FILE: /run/secrets/telegram_config
+    secrets: [web_push_vapid, telegram_config]
+    volumes: &p2-attachments
+      - type: bind
+        source: ${P2_ATTACHMENTS_DIR:?Set absolute protected attachment directory}
+        target: /var/lib/yuban/attachments
+        read_only: false
+        bind: {create_host_path: false}
+  worker:
+    image: ${P2_API_IMAGE:?Set the reviewed P2 API image}
+    environment: *p2-runtime-environment
+    secrets: [web_push_vapid, telegram_config]
+    volumes: *p2-attachments
+  maintenance:
+    image: ${P2_MAINTENANCE_IMAGE:?Set the reviewed P2 maintenance image}
+    environment:
+      ATTACHMENTS_DIR: /var/lib/yuban/attachments
+      TMPDIR: /backups
+    command: [scripts/photos-backup.mjs]
+    volumes: *p2-attachments
+  web:
+    image: ${P2_WEB_IMAGE:?Set the reviewed P2 Web image}
+secrets:
+  web_push_vapid:
+    file: ${P1_PRIVATE_DIR:?Set absolute private directory}/vapid.json
+  telegram_config:
+    file: ${P1_PRIVATE_DIR:?Set absolute private directory}/telegram.json
