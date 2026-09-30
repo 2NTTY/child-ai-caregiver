@@ -427,7 +427,7 @@ queued、sending、accepted、rejected、unknown、stopped 與 acknowledgedAt �
 本包未接家庭授權聯絡或任務完成 callback；這些在 S13-W07 以當前權限／事項重新校驗後接線。功能已落碼，SQL／真 webhook／Telegram／瀏覽器均待集中驗收。
 
 <a id="care-summary-http"></a>
-## S14-W01 摘要與到診準備（待集中驗收）
+## S14-W01 摘要與到診準備
 
 需 P2 開關及 migration 020。GET `/api/children/:childId/summary?startDay=YYYY-MM-DD&period=day|week&timeZone=Asia/Hong_Kong` 回 [CareSummary](../src/shared/care-summary.ts)；登入並核對 expected user、孩子可讀角色。日期窗口為當地一日／連續七個曆日，結束日不包含；數字只從已確認、具有事件時間的當前版本計算。未知時間另外計數，不拿輸入／確認日期冒充事件日期。零紀錄不等於事件沒有發生。
 

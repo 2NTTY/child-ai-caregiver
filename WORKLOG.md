@@ -1061,3 +1061,10 @@
 - Agent / UI：既有 summary-visit／summary-report 配方復用為 tool_cycle；新增唯讀摘要工具，不做額外週報模型排程或推送。功能面板已掛載，前端清單更新；未改獨立 frontend、不做 UI polish／PDF 或重寫 Prompt Pack。
 - Verification / Review：[EV-S14-W01](artifacts/verification/S14_W01_CHECKS.json)。純計算只有一項案例、一次通過；Server／client 型別各一次通過，client 包含掛載；配方離線載入一次通過（13 模組／10,216 字元），零模型呼叫。主模型發現 client 曾錯把成功保存後的新依據版本要求等於舊值，修正為核對真實回應及重新 GET；亦補 UUID 一致、上限錯誤及配方觸發範圍，沒有機械重跑已通過案例。
 - Pending / Next：真 SQL／權限與撤銷／原操作、020 重啟／刪除／加密還原、瀏覽器及真 Agent 摘要效果留 P2 集中驗收。照片、分享仍未開始，P2 未完成。沒有 push／合併 master／部署、延長 P1 試用、新依賴、全量測試或額度推算。
+
+<a id="log-20260930-010"></a>
+## LOG-20260930-010
+
+- Work / Responsibility：S14-W01 以已合併 S11 的 `5bbf530` 整理獨立交付；A 主責、權重 3，A 50%／B 30%／C 20%，共用 AI 由 A 操作，保留原共同作者與真實 Committer。主模型核對契約、統計／版本服務、接線及提示詞，沿用原 Sol 實作，沒有另開驗證代理。
+- Verification：復用 S16 的 39 次 HTTP 合成內容流程，涵蓋日摘要、到診草稿保存、原來源刪除後核對失效；020／原資料保留／加密空庫還原及真 Agent 的 read_care_summary 已核對，原模型失敗仍保留。交付僅一次 Server no-emit 型別及一次無模型 summary-visit 配方載入（13 模組、10,028 字元），沒有重跑 SQL、模型、embedding 或瀏覽器。[EV-S14-W01](artifacts/verification/S14_W01_CHECKS.json)。
+- Limits / Delivery：完整 CareSummaryPanel E2E 未驗，不以其他面板情景代填；統計缺項、來源版本及時區語義保留，PDF／分享仍按 P4。完成隨本包 PR 合併生效，P2 尚未完成；現網仍 P1，沒有續期／部署或新增通知。
