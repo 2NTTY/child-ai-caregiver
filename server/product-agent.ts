@@ -26,7 +26,8 @@ export function createProductAgent(options: {
         trigger: { kind: "worker", reference: input.reference }, recipeId: "product-background",
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context: input.context,
         messages: [{ role: "user", text: "這是 Server 核准的已確認任務到期事件。按需要讀取家庭共享資料，提供供原指派照顧者在站內查看的簡短任務說明；不推斷未完成、不自動改任務、不外發通知或披露私人資料。" }],
-        tools: run => { tools = createProductAgentTools({ ...options, run, authorize, visibility: "family" }); return tools.tools; },
+        tools: run => { tools = createProductAgentTools({ ...options, run, authorize, visibility: "family",
+          reviewedGrowthPresentation: input.context.eventType === "growth_attention" }); return tools.tools; },
         authorize, signal: input.signal, finalize: async () => { rendered.value = await tools!.presentation();
           if (!rendered.value) throw new AgentStopped("invalid_response"); return rendered.value.text; },
       });

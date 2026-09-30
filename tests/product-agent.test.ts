@@ -58,11 +58,15 @@ test("product reply uses native tools, keeps proposals unconfirmed, validates di
   assert.equal(calls, 3); assert.equal(writes, 1);
 });
 
-test("background Runner exposes only family reads and presentation, without private chat or mutation tools", async () => {
+for (const growth of [false, true]) test(growth
+  ? "growth Runner renders reviewed evidence without model embellishment or classification bypass"
+  : "background Runner exposes only family reads and presentation, without private chat or mutation tools", async () => {
   const userId = "synthetic-caregiver", childId = "1ebcb39d-a2db-4b8c-a432-7ffcb3de5808";
   const runId = "d4a1b662-d13d-476b-bf52-40a28aa1a1a7", reference = "7de5a0e8-e106-4485-b7d2-3b572741da39";
   const scope = { userId, childId, workspaceId: "synthetic-workspace", authorizationVersion: "1", dataVersion: "epoch:1" };
   let calls = 0, reads = 0, saved: ProductAgentResult | null = null;
+  const chunk = { chunkId: "reviewed-chunk", classification: "official_guidance",
+    text: "約六個月時，單靠母乳已不足以滿足營養需要，應開始加入固體食物。" };
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
     usage: { reserve: async () => true, record: async () => {} },
     provider: { generate: async request => {
@@ -75,9 +79,12 @@ test("background Runner exposes only family reads and presentation, without priv
           { code: "invalid_citation", nextAction: "search_knowledge", citationField: "chunks[].chunkId" });
       }
       const functionCall = index === 0 ? { id: "invalid-source", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: "未有有效引用的合成建議", citationIds: ["source-metadata-id"] }] } }
-        : index === 1 ? { id: "context-call", name: "read_context", args: {} }
+        : index === 1 ? (growth ? { id: "search-call", name: "search_knowledge", args: {
+          query: "約六個月加固", classification: "official_guidance" } } : { id: "context-call", name: "read_context", args: {} })
         : index === 2 ? { id: "answer-call", name: "present_answer", args: { kind: "record_restatement",
-          paragraphs: [{ text: "原任務已到期，完成狀態仍待你確認。", citationIds: [] }] } } : null;
+          paragraphs: growth ? [{ text: "配方奶也不足，而且要立即加固。", citationIds: [chunk.chunkId] },
+            { text: "另一項未經核對的照護建議。", citationIds: [] }]
+            : [{ text: "原任務已到期，完成狀態仍待你確認。", citationIds: [] }] } } : null;
       return { content: { role: "model", parts: functionCall ? [{ functionCall }] : [{ text: "完成說明。" }] }, finishReason: FinishReason.STOP };
     } } });
   const options = { runtime,
@@ -93,12 +100,13 @@ test("background Runner exposes only family reads and presentation, without priv
     } },
     chat: { listForUser: async () => { throw new Error("Private chat must not be read by background"); } },
     tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
-    knowledge: { createRun: () => ({ revalidateCitations: async () => true }) },
+    knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
+      revalidateCitations: async (items: unknown[]) => { assert.deepEqual(items, [chunk]); return true; } }) },
   } as unknown as Parameters<typeof createProductAgent>[0];
   const result = await createProductAgent(options).background({ userId, childId, reference,
-    context: { purpose: "station_only_due_task_briefing" }, authorize: async () => true });
+    context: { eventType: growth ? "growth_attention" : "task_due", purpose: "station_only_due_task_briefing" }, authorize: async () => true });
   assert.equal(result?.status, "completed", JSON.stringify(result));
   assert.equal(result.provenance?.recipeId, "product-background");
-  assert.equal(result.text, "原任務已到期，完成狀態仍待你確認。");
+  assert.equal(result.text, growth ? chunk.text + " [1]" : "原任務已到期，完成狀態仍待你確認。");
   assert.equal(reads, 1); assert.equal(calls, 4); assert.deepEqual(result.proposals, []);
 });

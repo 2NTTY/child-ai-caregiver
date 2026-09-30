@@ -38,6 +38,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 export function createProductAgentTools(options: {
   run: AgentRunContext; memory: MemoryStore; tasks: TaskStore; store: ProductAgentStore;
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
+  reviewedGrowthPresentation?: boolean;
 }) {
   const { run, memory, tasks, store, authorize } = options, { scope, budget, runId } = run;
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
@@ -120,13 +121,14 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-    { name: "present_answer", description: "提交供畫面顯示的自然文字段落；citationIds 只用本 run search_knowledge 結果的 chunkId，不能用背景來源標籤或拼接 ID。每項育兒／安全建議必須對應實際支持的官方片段；純澄清、操作或家庭記錄回述可無公共引用。不能用這工具执行其他操作或聲稱未完成事項成功。",
+    { name: "present_answer", description: "提交供畫面顯示的自然文字段落；citationIds 只用本 run search_knowledge 結果的 chunkId，不能用背景來源標籤或拼接 ID。每項育兒／安全建議必須對應實際支持的官方片段；純澄清、操作或家庭記錄回述可無公共引用。不能用這工具执行其他操作或聲稱未完成事項成功。" + (options.reviewedGrowthPresentation
+        ? " 本次是成長關注：選取支持此關注的官方 chunkId；Server 只呈現片段的已核對正文，不使用你改寫的 text。沒有可用片段時呈現固定限制說明。" : ""),
       parameters: agentAnswerSchema, authorize: permitted,
       execute: args => guard(async () => {
         const parsed = agentAnswerSchema.parse(args);
-        const official = parsed.kind === "caregiving" || parsed.kind === "safety_help";
+        const official = options.reviewedGrowthPresentation || parsed.kind === "caregiving" || parsed.kind === "safety_help";
         for (const paragraph of parsed.paragraphs) {
-          if (official && !paragraph.citationIds.length) throw new FamilyError(400, "citation_required");
+          if ((parsed.kind === "caregiving" || parsed.kind === "safety_help") && !paragraph.citationIds.length) throw new FamilyError(400, "citation_required");
           if (/https?:\/\/|www\./iu.test(paragraph.text)) throw new FamilyError(400, "use_citation_ids");
           for (const id of paragraph.citationIds) {
             const item = evidence.get(id);
@@ -135,7 +137,8 @@ export function createProductAgentTools(options: {
         }
         if (new Set(parsed.paragraphs.flatMap(p => p.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
         answer = parsed;
-        return { acceptedForValidation: true };
+        return { acceptedForValidation: true, ...(options.reviewedGrowthPresentation
+          ? { presentationPolicy: "reviewed_evidence", modelTextUsed: false } : {}) };
       }) },
   ];
   return {
@@ -150,7 +153,12 @@ export function createProductAgentTools(options: {
         if (!await retrieval.revalidateCitations([chunk], filter)) throw new AgentStopped("invalid_response");
       }
       if (!await authorize()) throw new AgentStopped("unauthorized");
-      const rendered = answer.paragraphs.map(paragraph => paragraph.text + (paragraph.citationIds.length
+      // Growth advice uses the reviewed source wording; model labels cannot bypass this policy.
+      const paragraphs = options.reviewedGrowthPresentation
+        ? (citations.length ? citations.map(({ chunk }) => ({ text: chunk.text, citationIds: [chunk.chunkId] }))
+          : [{ text: "暫時未有可引用的補充說明。請查看關注卡片的適用依據及來源。", citationIds: [] }])
+        : answer.paragraphs;
+      const rendered = paragraphs.map(paragraph => paragraph.text + (paragraph.citationIds.length
         ? " " + paragraph.citationIds.map(id => "[" + (ids.indexOf(id) + 1) + "]").join("") : "")).join("\n\n");
       return { text: rendered, citations: citations.map(item => item.chunk), retrievalMode: mode };
     },
