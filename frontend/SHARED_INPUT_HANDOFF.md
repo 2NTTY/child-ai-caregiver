@@ -1,6 +1,6 @@
 # 私人來源與共享核對前端交接
 
-更新：2026-10-01。FE-W14 基線 `c09c22b4cde784cf9f31f349b204038b063ed3d4`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)，不自行 merge。源碼／驗證 commit：待本包提交。主責 B；只交付 `frontend/**` 的顯示、表單及合成操作，沒有改 Server、Agent、正式 App、共用業務型別或根文件。
+更新：2026-10-01。FE-W14 基線 `c09c22b4cde784cf9f31f349b204038b063ed3d4`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)，不自行 merge。源碼／驗證 commit：`d00a6bb0bd5c48834a00fa3057c5793bd49cf650`。主責 B；只交付 `frontend/**` 的顯示、表單及合成操作，沒有改 Server、Agent、正式 App、共用業務型別或根文件。
 
 ## 權威來源
 

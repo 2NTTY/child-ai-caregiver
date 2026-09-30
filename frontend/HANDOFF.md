@@ -55,7 +55,7 @@ typecheck、三項安全／command 輕量檢查、四尺寸／鍵盤／unknown �
 
 ### FE-W14 私人來源與共享核對
 
-沿 `c09c22b` 及現有 draft PR #73；直接核對 GitHub `ce87370` UI-P2-15／API／型別／正式 Panel／封裝。/sources 以私人保存、正文取得、私人候選、人工核對及家庭共享分開呈現；reference 預設備註，family_record 需孩子關係及共享兩份明確同意。候選不確定內容、原日期及原片段保留，無自動採納、網頁抓取、模型呼叫或新增協定。版本／原收據 unknown、已確認但結果不可讀及直接 unknown 的原版本查回沿正式控制器；細節見 [SHARED_INPUT_HANDOFF](SHARED_INPUT_HANDOFF.md)。
+沿 `c09c22b` 及現有 draft PR #73，源碼／驗證 `d00a6bb0bd5c48834a00fa3057c5793bd49cf650`；直接核對 GitHub `ce87370` UI-P2-15／API／型別／正式 Panel／封裝。/sources 以私人保存、正文取得、私人候選、人工核對及家庭共享分開呈現；reference 預設備註，family_record 需孩子關係及共享兩份明確同意。候選不確定內容、原日期及原片段保留，無自動採納、網頁抓取、模型呼叫或新增協定。版本／原收據 unknown、已確認但結果不可讀及直接 unknown 的原版本查回沿正式控制器；細節見 [SHARED_INPUT_HANDOFF](SHARED_INPUT_HANDOFF.md)。
 
 照片及來源共用 [RecordDraftFields](src/components/RecordDraftFields.tsx)，不另造表單。AppTextField 使用 Paper 5.x 公開 contentStyle 處理多行捲動內容與浮動標籤，保留字體伸縮。四項來源／三項照片規則、48 個四尺寸重排、關鍵來源互動／390 及 320 放大文字、typecheck 及 Web 27 路由／Android 31 資產 export 通過；實際檔案／bundle 及重用證據見 [build-checks](verification/fe-w14/build-checks.json)。使用者視覺、真 API／跨頁及 OS share／原生真機仍待接線／驗收。
 

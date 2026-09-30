@@ -2,7 +2,7 @@
   "scope": "Private source/shared-record frontend projection; synthetic only, no Server/website/model/device acceptance",
   "verifiedAt": "2026-09-30T21:52:47.501Z",
   "baselineCommit": "c09c22b4cde784cf9f31f349b204038b063ed3d4",
-  "sourceCommit": null,
+  "sourceCommit": "d00a6bb0bd5c48834a00fa3057c5793bd49cf650",
   "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
   "authoritySources": [
     {
