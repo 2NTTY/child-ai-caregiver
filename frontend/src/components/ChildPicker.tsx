@@ -1,19 +1,20 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Portal, RadioButton, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { AppIcon } from "./AppIcon";
 import type { HomeChild } from "../view-model";
-import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileLayout, radius, spacing, typeScale } from "../theme";
 
-export function ChildPicker({ children, selectedId, onSelect, compact = false, tiny = false, switchOnly = false }: {
-  children: HomeChild[]; selectedId: string | null; onSelect: (id: string) => void; compact?: boolean; tiny?: boolean; switchOnly?: boolean;
+export function ChildPicker({ children, selectedId, onSelect, compact = false, tiny = false, switchOnly = false, shortSwitchLabel = false }: {
+  children: HomeChild[]; selectedId: string | null; onSelect: (id: string) => void; compact?: boolean; tiny?: boolean; switchOnly?: boolean; shortSwitchLabel?: boolean;
 }) {
   const [visible, setVisible] = useState(false);
+  const mobile = useWindowDimensions().width < mobileLayout.breakpoint;
   const selected = children.find(child => child.id === selectedId);
   return <><Pressable accessibilityRole="button" accessibilityLabel={`選擇孩子，目前${selected?.displayName ?? "尚未有孩子"}`} accessibilityState={{ expanded: visible, disabled: children.length === 0 }} aria-expanded={visible} aria-disabled={children.length === 0} disabled={children.length === 0}
-    onPress={() => setVisible(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, visible && styles.open, children.length === 0 && styles.disabled, pressed && styles.pressed]}>
-    {switchOnly ? <><AppIcon name="swap-horizontal" size={20} color={colors.deepTeal} /><Text style={styles.name}>切換孩子</Text></> : <>
+    onPress={() => setVisible(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, visible && styles.open, children.length === 0 && styles.disabled, pressed && styles.pressed]}>
+    {switchOnly ? <><AppIcon name="swap-horizontal" size={20} color={colors.deepTeal} /><Text style={styles.name}>{shortSwitchLabel ? "切換" : "切換孩子"}</Text></> : <>
       <View style={[styles.avatar, compact && styles.avatarCompact, tiny && styles.avatarTiny]}><Text style={styles.initial}>{selected?.displayName.slice(0, 1) ?? "育"}</Text></View>
       <View style={styles.copy}><Text numberOfLines={1} style={styles.name}>{selected?.displayName ?? "尚未有孩子"}</Text>{!compact && selected ? <Text numberOfLines={1} style={styles.age}>{selected.ageLabel}</Text> : null}</View>
       <AppIcon name="chevron-down" size={18} color={visible ? colors.teal : colors.muted} />
@@ -27,6 +28,9 @@ const styles = StyleSheet.create({
   compact: { width: 152, minHeight: 44, paddingHorizontal: 10, borderRadius: radius.small },
   tiny: { width: 132, paddingHorizontal: spacing.sm },
   switchOnly: { width: "auto", minHeight: 44, alignSelf: "flex-start" },
+  mobile: { minHeight: mobileLayout.touchTarget },
+  mobileCompact: { width: 132 },
+  shortSwitch: { paddingHorizontal: spacing.sm, gap: spacing.xs },
   open: { borderColor: colors.teal, backgroundColor: colors.white },
   disabled: { opacity: 0.5 }, pressed: { backgroundColor: colors.selectedNav },
   avatar: { width: 36, height: 36, flexShrink: 0, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },

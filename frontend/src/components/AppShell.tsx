@@ -11,7 +11,7 @@ import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 import { NotificationBell } from "./NotificationBell";
 import { PreviewTodoCard } from "./PreviewTodoCard";
-import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 import { previewChecklist, scenarioLabels, type PreviewScenario } from "../preview/fixture";
 import { usePreview } from "../preview/PreviewContext";
 import type { HomeActions, HomeViewModel } from "../view-model";
@@ -36,7 +36,7 @@ function NavItem({ item, active, compact = false }: { item: typeof navigation[nu
     onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
     style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.pressed])}
   >
-    <AppIcon name={item.icon} size={compact ? 24 : 21} color={active ? colors.deepTeal : colors.muted} />
+    <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
     <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
   </Pressable></Link>;
 }
@@ -155,11 +155,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         <View style={styles.topActions}>
           {!compact ? <ConnectionPill state={model.connection} /> : null}
           <NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
-          {compact ? <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" onPress={() => setAccountOpen(true)} style={styles.accountAction}><View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable> : null}
+          {compact ? <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" onPress={() => setAccountOpen(true)} style={[styles.accountAction, width < mobileLayout.breakpoint && styles.mobileAction]}><View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable> : null}
           <Pressable accessibilityRole="button" accessibilityLabel={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
             accessibilityState={{ expanded: railExpanded }} aria-expanded={railExpanded}
             onPress={() => wide ? setRailOpen(value => !value) : setRailModal(value => !value)}
-            style={({ pressed }) => [styles.infoAction, tiny && styles.infoActionTiny, pressed && styles.pressed]}>
+            style={({ pressed }) => [styles.infoAction, tiny && styles.infoActionTiny, width < mobileLayout.breakpoint && styles.mobileAction, pressed && styles.pressed]}>
             <AppIcon name="page-layout-sidebar-right" size={22} />
           </Pressable>
         </View>
@@ -173,7 +173,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </View>
       {compact ? <View style={styles.bottomNav}>
         {navigation.filter(item => ["/", "/chat", "/tasks", "/memory"].includes(item.href)).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
-        <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={24} color={["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={mobileIcons.navigation} color={["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
       </View> : null}
       {railModal && !wide ? <View style={[styles.railOverlay, compact ? styles.railOverlayCompact : styles.railOverlayDesktop]}>
         <Pressable accessibilityRole="button" accessibilityLabel="關閉資訊側欄背景" onPress={() => setRailModal(false)} style={styles.railScrim} />
@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
   account: { minHeight: 56, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white, paddingHorizontal: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   accountAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
   accountAction: { width: 44, height: 44, flexShrink: 0, alignItems: "center", justifyContent: "center" },
+  mobileAction: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, minWidth: mobileLayout.touchTarget, minHeight: mobileLayout.touchTarget },
   accountAvatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" },
   accountCopy: { flex: 1, minWidth: 0 },
   accountName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "700" },
@@ -281,8 +282,8 @@ const styles = StyleSheet.create({
   railScrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.overlay },
   railDrawer: { width: "92%", maxWidth: 370, height: "100%", backgroundColor: colors.sidebar },
   dialogBody: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
-  bottomNav: { height: 68, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line, flexDirection: "row" },
-  bottomNavItem: { flex: 1, minWidth: 0, alignItems: "center", justifyContent: "center", gap: 2 },
+  bottomNav: { minHeight: mobileLayout.tabMinHeight, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line, flexDirection: "row" },
+  bottomNavItem: { flex: 1, minWidth: mobileLayout.touchTarget, paddingVertical: spacing.sm, alignItems: "center", justifyContent: "center", gap: spacing.xs },
   bottomGlyph: { fontSize: 22, color: colors.muted },
-  bottomLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: 11, fontWeight: "700" },
+  bottomLabel: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption, fontWeight: "700" },
 });

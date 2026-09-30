@@ -1,0 +1,112 @@
+{
+  "scope": "Isolated synthetic frontend mobile sizing; no Server/provider/device acceptance",
+  "verifiedAt": "2026-09-30T14:08:15.969Z",
+  "baselineCommit": "0ff9533e1c0afaf7a79cccaaa70854e72b9107fc",
+  "contractCommit": "90dacd4e5c0a8be9e490fa7d94830ea369c57521",
+  "sources": [
+    {
+      "path": "src/theme.ts",
+      "sha256": "7f931fdd7ddeacfb2ba1a615bf81aabf1804f595a0266491d02e46825f532688"
+    },
+    {
+      "path": "src/view-model.ts",
+      "sha256": "fcc796dd12de017a4a44cbad5ed64b638a64d0aa683dd0791804081a4768412d"
+    },
+    {
+      "path": "src/preview/fixture.ts",
+      "sha256": "aa0683b1e69ea845558d78517ae9bf0ced1dd25a00d9a0047732bf91bce51d40"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "1bd8df83c2568c008bdd9682b2834b8dcc9936bb5659e0b97697d693ee0f8d89"
+    },
+    {
+      "path": "src/components/AppCheckbox.tsx",
+      "sha256": "1efb6cf18e16d9de1d1952322a0bee7682dd647f68501fcdecc7323cbc088e0e"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256": "e86fcb0df57ec4f51e60c6f2002b8cecde964697764c67527374aaff7d4683bb"
+    },
+    {
+      "path": "src/components/ChildPicker.tsx",
+      "sha256": "afad0de7dfdc11eb7c75b7179a7c00d1021bc695dd39ff95bf12b816260360a6"
+    },
+    {
+      "path": "src/components/MobileHomeDashboard.tsx",
+      "sha256": "f088ed15fe51b0d99f69a78052ab8b2a9e1c62a27e8ed5515f6d9691f4f5c187"
+    },
+    {
+      "path": "src/components/NativeAppShell.tsx",
+      "sha256": "0b160eee6800bfb655f39aa07d46a9faeb6ef7e6369ef6fff3f08fee7a153ede"
+    },
+    {
+      "path": "src/components/NotificationBell.tsx",
+      "sha256": "639c86a25e1383ece98c6bb9bf45db9244eab98146dbaacd815aacbac1fafe00"
+    },
+    {
+      "path": "src/components/PageFrame.tsx",
+      "sha256": "2bbfef2fb5c0f4d5b385922ee9b8658a35d3b61553cc1d5535531d11cf4c5c48"
+    },
+    {
+      "path": "src/screens/chatScreen.tsx",
+      "sha256": "69ce24dcf89358de7adf7b92fb262494b8cec14aac0d9c6cc2ecbce026eca89c"
+    },
+    {
+      "path": "app/(dashboard)/_layout.tsx",
+      "sha256": "84d30c177d5c30dfe055189b1e52d83b4b5d49421f610daf6d591a05e80e6d1e"
+    },
+    {
+      "path": "scripts/flows/mobile-density.mjs",
+      "sha256": "7cc532a977d628227adc35dbbd0345dcccddb482d0fbc8fb62d68f9a4a3aba6b"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "5f59914f82f2536bd3771f47acdbc20b186115ce73116811a02e96c4a221861f"
+    }
+  ],
+  "sourceSnapshotSha256": "56b99ddd802ca92979e94c41ffe69219487233a1cad1a2fd6041b37827084fa5",
+  "versions": {
+    "expo": "57.0.24",
+    "router": "57.0.22",
+    "reactNative": "0.86.3",
+    "paper": "5.15.3",
+    "svg": "15.15.4",
+    "lucide": "1.49.0"
+  },
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "webExport": {
+      "exitCode": 0,
+      "staticRoutes": 23,
+      "bundles": [
+        "entry-06e554d16493f2ff004c7d4a02426fad.js"
+      ]
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "assets": 31,
+      "bundles": [
+        "entry-6e58ff21486ad78685706d86cd65c7f7.hbc"
+      ]
+    },
+    "syntheticUi": {
+      "exitCode": 0,
+      "checkCount": 41,
+      "proof": "checks-layout-mobile-density.json",
+      "failures": []
+    },
+    "reuse": [
+      "FE-W06 19 form/domain unit checks: unchanged rules",
+      "FE-W07 18 contrast checks: unchanged colors"
+    ]
+  },
+  "testRepair": "Initial mobile selector clicked Paper radio label text; final test uses the radio control. No force click.",
+  "limits": [
+    "Web screenshots and 150% text are not Android device/system font evidence",
+    "No APK/TalkBack/system keyboard/real session or API acceptance",
+    "Visual approval pending"
+  ]
+}
