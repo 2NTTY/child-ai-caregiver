@@ -46,7 +46,7 @@ export interface HomeViewModel {
   guideStatus: GuideStatus;
 }
 
-export type HomeDestination = "chat" | "care" | "profile" | "family" | "memory" | "settings" | "guide" | "tasks" | "photos";
+export type HomeDestination = "chat" | "care" | "profile" | "family" | "memory" | "settings" | "guide" | "tasks" | "photos" | "sources";
 
 export interface HomeActions {
   selectChild(id: string): void;

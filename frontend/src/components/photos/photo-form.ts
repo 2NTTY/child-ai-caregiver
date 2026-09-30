@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { PhotoDraftFields } from "../../photo-view-model";
 
 export const photoDraftSchema = z.object({
-  text: z.string().max(5000, "照片記錄最多 5,000 字。").refine(value => !!value.trim(), "請填寫記錄原文。"),
+  text: z.string().max(5000, "記錄原文最多 5,000 字。").refine(value => !!value.trim(), "請填寫記錄原文。"),
   kind: z.enum(["note", "feeding", "sleep", "diaper", "temperature", "measurement", "appointment"]),
   rawValue: z.string().max(100, "數值原文最多 100 字。"), unit: z.string().max(50, "單位最多 50 字。"),
   approximate: z.boolean(), timeRaw: z.string().max(300, "時間原文最多 300 字。"),

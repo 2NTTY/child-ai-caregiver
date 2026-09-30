@@ -37,9 +37,10 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
 }
 
 type AppTextFieldProps = Omit<React.ComponentProps<typeof TextInput>, "ref"> & { ref?: Ref<React.ComponentRef<typeof TextInput>> };
-export function AppTextField({ style, outlineStyle, mode, ref, ...props }: AppTextFieldProps) {
-  return <TextInput {...props} ref={(instance: React.ComponentRef<typeof TextInput> | null) => { if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }}
-    mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={[styles.inputOutline, outlineStyle]} />;
+export function AppTextField({ style, outlineStyle, contentStyle, multiline, label, mode, ref, ...props }: AppTextFieldProps) {
+  return <TextInput {...props} multiline={multiline} label={label} ref={(instance: React.ComponentRef<typeof TextInput> | null) => { if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }}
+    mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={[styles.inputOutline, outlineStyle]}
+    contentStyle={[multiline && label ? styles.multilineContent : undefined, contentStyle]} />;
 }
 
 export function AppSelectionTrigger({ label, onPress, disabled = false, expanded, ref, calendar = false }: {
@@ -195,6 +196,8 @@ const styles = StyleSheet.create({
   tabText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },
   tabTextActive: { color: colors.deepTeal, fontWeight: "800" },
   input: { backgroundColor: colors.white, fontFamily: chineseFont },
+  // Keep the scrolling textarea below its floating label, including enlarged text.
+  multilineContent: { marginTop: spacing.md },
   inputOutline: { borderColor: colors.controlOutline, borderRadius: radius.small },
   selectDialog: { maxWidth: 440, width: "90%", alignSelf: "center", marginHorizontal: 0 },
   selectList: { maxHeight: 360 },

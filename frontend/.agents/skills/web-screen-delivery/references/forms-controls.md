@@ -4,6 +4,7 @@
 
 - 沿 Controller 接 AppTextField／AppSelect，將 field.ref 傳到實際欄位。ref callback 不回傳 RHF ref 的任意結果，避免 React 19 視為 cleanup。handleSubmit 的原值不為顯示而 trim／parse 後覆寫，schema 只驗證；錯誤靠近欄位。
 - 秘密欄沿 AppTextField 的 secureTextEntry，明確停用 autofill／自動修正；送出、失敗、離線、身份／Server 切換及卸載清理。只在當次直接 request 使用，不寫 browser storage、合成 metadata、timeout closure 或重試正文。本人設定按身份／Server 隔離，孩子切換不清本人草稿；沿原契約處理 unknown，不能通用地假定都有 opId。Paper 標籤的實際動畫須穩定才截圖，不因中間幀 fork vendor；本包證據見 [MODEL_SETTINGS_HANDOFF](../../../../MODEL_SETTINGS_HANDOFF.md)。
+- 有標籤的多行 AppTextField 沿 Paper 5.x 公開 `contentStyle` 為實際輸入／捲動區預留頂部間距；不要只改整個 TextInput 容器，亦不限制字體伸縮。核對實際標籤和 textarea 位置，待動畫穩定再判斷。2026-10-01 局部核對 [Paper 5.x TextInput](https://oss.callstack.com/react-native-paper/docs/components/TextInput/TextInput) 及 [RN 0.86 allowFontScaling](https://reactnative.dev/docs/0.86/text#allowfontscaling)，本項目實作／150% Web 重排證據見 [SHARED_INPUT_HANDOFF](../../../../SHARED_INPUT_HANDOFF.md)；沒有宣稱原生系統字體已驗。
 - 日期是 YYYY-MM-DD，用 local noon carrier 給日曆而非當作 instant；安排時刻是帶 offset 的 ISO 字串加 IANA timeZone。沿 components/date-time.ts 的 Luxon 轉換，拒絕无效日、DST gap／ambiguous 本地時間，沒有自行選第一個 offset。未改時間保留原 ISO。
 - Paper Dates 註冊 zh-HK translation（沿 zhTW，局部香港按鈕文案）；使用 DatePickerModal／TimePickerModal 原生及 Web 公開 API。其標準時間 modal 寬度至少 328，小於 360 用公開 TimePicker 的 keyboard inputType 放 AppDialog，不修改 node_modules。保留有 label 的手填日期／HH:mm 欄位。
 - Paper 官方 Modal 說明需要 accessible modal 時用 React Native Modal。AppDialog 使用 RN Modal 包 Paper Dialog 視覺，Web 沿內建 focus trap／Escape／焦點還原；不要把所有 Portal 當成有 modal semantics。嵌套日曆／時鐘只關最上層，驗關閉後能回原欄位。

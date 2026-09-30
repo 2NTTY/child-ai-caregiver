@@ -17,12 +17,13 @@ import { usePreview } from "../preview/PreviewContext";
 import type { HomeActions, HomeViewModel } from "../view-model";
 
 const logo = require("../../assets/brand/logo-horizontal.png");
-type AppPath = "/" | "/chat" | "/care" | "/photos" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks";
+type AppPath = "/" | "/chat" | "/care" | "/photos" | "/sources" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks";
 const navigation: { href: AppPath; label: string; short: string; icon: React.ComponentProps<typeof AppIcon>["name"] }[] = [
   { href: "/", label: "主頁", short: "主頁", icon: "home-outline" },
   { href: "/chat", label: "與 Agent 對話", short: "對話", icon: "message-text-outline" },
   { href: "/care", label: "照顧記錄", short: "記錄", icon: "notebook-outline" },
   { href: "/photos", label: "照片與記錄", short: "照片", icon: "image-outline" },
+  { href: "/sources", label: "私人來源", short: "來源", icon: "link-variant" },
   { href: "/tasks", label: "任務與預約", short: "待辦", icon: "clipboard-check-outline" },
   { href: "/profile", label: "子女檔案", short: "孩子", icon: "account-child-outline" },
   { href: "/family", label: "家庭協調", short: "家庭", icon: "account-group-outline" },
@@ -174,7 +175,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </View>
       {compact ? <View style={styles.bottomNav}>
         {navigation.filter(item => ["/", "/chat", "/tasks", "/memory"].includes(item.href)).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
-        <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={mobileIcons.navigation} color={["/care", "/photos", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/photos", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={mobileIcons.navigation} color={["/care", "/photos", "/sources", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/photos", "/sources", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
       </View> : null}
       {railModal && !wide ? <View style={[styles.railOverlay, compact ? styles.railOverlayCompact : styles.railOverlayDesktop]}>
         <Pressable accessibilityRole="button" accessibilityLabel="關閉資訊側欄背景" onPress={() => setRailModal(false)} style={styles.railScrim} />
@@ -195,7 +196,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Dialog.Title>更多頁面</Dialog.Title>
         <Dialog.Content>
           <AppMenuList items={[
-            ...navigation.filter(item => ["/family", "/care", "/photos", "/profile", "/memory"].includes(item.href)).map(item => ({ key: item.href, label: item.label, icon: item.icon, onPress: () => { setMoreOpen(false); router.push(item.href); } })),
+            ...navigation.filter(item => ["/family", "/care", "/photos", "/sources", "/profile", "/memory"].includes(item.href)).map(item => ({ key: item.href, label: item.label, icon: item.icon, onPress: () => { setMoreOpen(false); router.push(item.href); } })),
             { key: "settings", label: "設定", icon: "cog-outline", onPress: () => { setMoreOpen(false); router.push("/settings"); } },
             ...(showGuideNav ? [{ key: "guide", label: "使用引導", icon: "compass-outline" as const, onPress: () => { setMoreOpen(false); router.push("/guide"); } }] : []),
             { key: "account", label: "用戶與帳戶", icon: "account-outline", onPress: () => { setMoreOpen(false); setAccountOpen(true); } },

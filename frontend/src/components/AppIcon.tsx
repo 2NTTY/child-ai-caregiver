@@ -32,6 +32,7 @@ import House from "lucide-react-native/icons/house";
 import ImageIcon from "lucide-react-native/icons/image";
 import Info from "lucide-react-native/icons/info";
 import Keyboard from "lucide-react-native/icons/keyboard";
+import Link2 from "lucide-react-native/icons/link-2";
 import LockKeyhole from "lucide-react-native/icons/lock-keyhole";
 import Mail from "lucide-react-native/icons/mail";
 import MessageCircle from "lucide-react-native/icons/message-circle";
@@ -62,6 +63,7 @@ const icons = {
   "home-outline": House,
   "message-text-outline": MessageCircle,
   "notebook-outline": NotebookPen,
+  "link-variant": Link2,
   "clipboard-check-outline": ClipboardCheck,
   "clipboard-check": ClipboardCheck,
   "account-child-outline": Baby,

@@ -1,30 +1,20 @@
 import { View } from "react-native";
-import { HelperText, Text } from "react-native-paper";
-import { Controller, useForm } from "react-hook-form";
+import { Text } from "react-native-paper";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { careKindOptions } from "../../care-view-model";
 import type { PhotoDraftFields, PhotosActions, PhotosViewModel } from "../../photo-view-model";
 import { AppCheckbox } from "../AppCheckbox";
-import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from "../ui";
+import { AppButton, SectionCard, SectionHeader } from "../ui";
+import { RecordDraftFields } from "../RecordDraftFields";
 import { photoDraftSchema } from "./photo-form";
 import { photoStyles as s } from "./photo-styles";
 
 export function PhotoRecordForm({ model, actions }: { model: PhotosViewModel; actions: PhotosActions }) {
   const { control, handleSubmit, getValues } = useForm<PhotoDraftFields>({ defaultValues: model.draft, resolver: zodResolver(photoDraftSchema), mode: "onBlur" });
   function change<K extends keyof PhotoDraftFields>(name: K, value: PhotoDraftFields[K]) { actions.editDraft({ ...getValues(), [name]: value }); }
-  function textField(name: "text" | "rawValue" | "unit" | "timeRaw", label: string, help?: string) {
-    return <Controller name={name} control={control} render={({ field, fieldState }) => <View>
-      <AppTextField ref={field.ref} label={label} accessibilityLabel={label} value={field.value} multiline={name === "text"} disabled={model.formLocked} error={!!fieldState.error}
-        onBlur={field.onBlur} onChangeText={value => { field.onChange(value); change(name, value); }} />
-      {fieldState.error || help ? <HelperText type={fieldState.error ? "error" : "info"} visible>{fieldState.error?.message ?? help}</HelperText> : null}
-    </View>} />;
-  }
   return <SectionCard testID="photo-record-form"><SectionHeader title="核對記錄內容" subtitle="本頁手動草稿尚未共享；提取失敗或結果未知也可手動整理。" icon="pencil-outline" />
-    <Controller name="kind" control={control} render={({ field }) => <AppSelect label="照片記錄種類" value={field.value} options={careKindOptions} disabled={model.formLocked} onChange={value => { field.onChange(value); change("kind", value); }} />} />
-    {textField("text", "照片記錄原文", "最多 5,000 字。保留原文字，不自動補寫事實。")}
-    <View style={s.quantities}><View style={s.quantity}>{textField("rawValue", "照片數值原文")}</View><View style={s.quantity}>{textField("unit", "照片數值單位")}</View></View>
-    <Controller name="approximate" control={control} render={({ field }) => <AppCheckbox label="內容含約數或約略時間" checked={field.value} disabled={model.formLocked} onChange={value => { field.onChange(value); change("approximate", value); }} />} />
-    {textField("timeRaw", "照片事件時間原文", "保留原時間說法。日期未確定時，不會推算成精準時間。")}
+    <RecordDraftFields control={control} locked={model.formLocked} prefix="照片" onFieldChange={change} />
     <Text style={s.meta}>資料來源：{model.selected?.source ?? model.source}。更改草稿後須重新預覽及勾選共享範圍。</Text>
     <Text style={s.meta}>離開這頁、切換孩子或重新載入會清除本次原檔及草稿；沒有離線寫入隊列。</Text>
     <AppButton label="預覽共享" accessibilityLabel="預覽照片共享內容" disabled={model.formLocked} onPress={handleSubmit(actions.reviewDraft)} />

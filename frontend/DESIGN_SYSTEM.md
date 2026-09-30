@@ -22,6 +22,7 @@
 | 選單、勾選及彈窗 | AppSelect／AppSelectionTrigger、[AppCheckbox](src/components/AppCheckbox.tsx)、[AppDialog](src/components/AppDialog.tsx)、[AppMenuList](src/components/AppMenuList.tsx)、[ChildPicker](src/components/ChildPicker.tsx) | 集中選擇、選項列、明確狀態、Space／Escape、focus trap 與還原；Web ARIA 與原生 accessibilityState 分開核對 |
 | SVG 圖標 | [AppIcon](src/components/AppIcon.tsx)、theme 的 iconTokens | 統一尺寸、線寬與名稱映射；PaperSvgIcon 同時供 PaperProvider 使用 |
 | 日期、時間及表單 | [DateTimeFields](src/components/DateTimeFields.tsx)、[date-time](src/components/date-time.ts)、各頁 RHF／Zod schema | 共用 Paper Dates 0.24.0 的日曆／時鐘／窄屏鍵盤輸入，IANA 時區沿 Luxon 3.7.2；不逐頁手寫日期控制 |
+| 原文核對欄位 | [RecordDraftFields](src/components/RecordDraftFields.tsx) | 照片和私人來源共用種類、原文、數值／單位、約數及時間原文；隱藏參考備註不適用的欄位，驗證／同意沿各功能契約 |
 | 原生外殼及手機首頁 | [NativeAppShell](src/components/NativeAppShell.tsx)、[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) | Safe Area、更多／資訊面板、Expo Router Tabs、問候／孩子卡片／提問／重點／待辦／快捷記錄；與 Web 共享資料模型和功能元件 |
 | 共同外殼 | [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 左導覽、孩子切換及其授權摘要、資訊欄、預覽情境、內頁標題與內容間距 |
 | Agent 主要入口 | [AgentEntryButton](src/components/AgentEntryButton.tsx) | 桌面側欄的固定入口、主操作層次、SVG、焦點／目前頁面；復用 Paper TouchableRipple 與既有 token，不改一般 AppButton |
@@ -51,6 +52,8 @@
 ## 表單與互動一致性
 
 重要表單使用 RHF／Zod，錯誤放在欄位旁，原文不經 trim 或數值轉換覆寫。日期本身不轉成 UTC；時刻由明確 IANA 時區換算，無效或 DST 重複／不存在時間須要求使用者釐清。小於 360 的時間彈窗採同一 Paper Dates 公開鍵盤控件，避免其標準 328 px 時鐘溢出。
+
+有浮動標籤的多行 AppTextField 透過 Paper 5.x 公開 contentStyle 留出標籤空間，原文捲動在其下方；不關閉字體伸縮、不修改套件。390／320 的 150% Web 文字檢查須包含實際標籤／輸入區幾何與畫面，單看控制邊界不足以確認重疊；證據見 FE-W14，Android 系統大字體仍待驗。
 
 Dialog 採 Paper 視覺配 RN Modal 的焦點／返回鍵行為；選單及勾選用共同封裝提供 Web 明確 ARIA。刪檔案、刪單筆記錄與刪整位孩子各有範圍提示及再次確認；確認結果前保留資料，unknown 鎖定並查原操作，版本改變先比較再重新核對。
 
