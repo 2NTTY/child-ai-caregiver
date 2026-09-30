@@ -1,3 +1,4 @@
+import { summaryQuery } from "../src/shared/care-summary.ts";
 import { z } from "zod";
 import type { MemoryContext, SummaryInput } from "../src/shared/memory.ts";
 import { agentAnswerSchema } from "../src/shared/product-agent.ts";
@@ -36,6 +37,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  summary?:import("./care-summary-store.ts").CareSummaryStore;
   run: AgentRunContext; memory: MemoryStore; tasks: TaskStore; store: ProductAgentStore;
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
   reviewedGrowthPresentation?: boolean;
@@ -141,8 +143,18 @@ export function createProductAgentTools(options: {
           ? { presentationPolicy: "reviewed_evidence", modelTextUsed: false } : {}) };
       }) },
   ];
+  if(options.summary)tools.splice(tools.length-1,0,{
+    name:"read_care_summary",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",
+    parameters:summaryQuery,authorize:permitted,execute:args=>guard(async()=>{
+      const value=await options.summary!.get(scope.userId,scope.childId,summaryQuery.parse(args));if(!value)throw new AgentStopped("unauthorized");
+      return {childId:value.childId,childName:value.childName,profile:value.profile,period:value.period,endDayExclusive:value.endDayExclusive,
+        generatedAt:value.generatedAt,basisVersion:value.basisVersion,counts:value.counts,metrics:value.metrics,missing:value.missing,
+        sources:value.records.map(r=>({recordId:r.id,version:r.version,kind:r.details.kind,eventTime:r.details.eventTime,source:r.source,corrected:r.version>1})),
+        appointments:value.appointments,conflicts:value.conflicts,preparation:value.preparation,reviewCurrent:value.reviewCurrent};
+    }),
+  });
   return {
-    tools: options.visibility === "family" ? tools.filter(tool => ["read_context", "search_knowledge", "present_answer"].includes(tool.name)) : tools,
+    tools: options.visibility === "family" ? tools.filter(tool => ["read_context", "search_knowledge", "read_care_summary", "present_answer"].includes(tool.name)) : tools,
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
       coveredMessageIds: summaryInput.messages.map(message => message.id), text: summaryText } : undefined,
     async presentation(): Promise<AgentPresentation | null> {

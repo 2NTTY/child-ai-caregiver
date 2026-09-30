@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.9",
+  "version": "0.1.11",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -203,7 +203,7 @@
     {
       "id": "module.product-tools",
       "path": "modules/product-tools.md",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "requires": [
         "core.tool-use",
         "core.output",
@@ -391,11 +391,13 @@
         "domain.childcare-hk.sources-freshness",
         "module.summary-report",
         "module.knowledge-answering",
-        "module.chat"
+        "module.chat",
+        "module.product-tools"
       ],
       "outputModes": [
         "text",
-        "structured"
+        "structured",
+        "tool_cycle"
       ],
       "requiredInputs": [
         "run",

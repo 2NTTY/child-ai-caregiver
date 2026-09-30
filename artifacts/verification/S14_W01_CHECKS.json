@@ -1,0 +1,85 @@
+{
+  "id": "EV-S14-W01",
+  "package": "S14-W01",
+  "status": "implemented_pending_acceptance",
+  "recordedAt": "2026-09-28T15:47:08.010Z",
+  "branch": "codex/s14-w01-care-summaries",
+  "baseCommit": "aa0fd838e86fd4b4950234d5e1eef447a742b9bf",
+  "verification": [
+    {
+      "kind": "pure_policy",
+      "command": "node --test tests/care-summary-policy.test.ts",
+      "cases": 1,
+      "executions": 1,
+      "result": "passed",
+      "scope": "Local-day range, unknown time separation, exact 0.1+0.2 and preserved record/source/version; no database/model"
+    },
+    {
+      "kind": "server_typecheck",
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.server.json --noEmit",
+      "executions": 1,
+      "result": "passed",
+      "scope": "Core storage/API/Agent integration; subsequent UUID casing and recipe trigger refinements reviewed"
+    },
+    {
+      "kind": "client_typecheck",
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "executions": 1,
+      "result": "passed",
+      "scope": "Sol implementation plus main mount; final post-write-basis and bounded-error predicates manually reviewed"
+    },
+    {
+      "kind": "prompt_assembly",
+      "recipe": "summary-visit",
+      "pack": "0.1.4",
+      "modules": 13,
+      "characters": 10216,
+      "executions": 1,
+      "result": "passed",
+      "scope": "Offline real loader, no model call"
+    },
+    {
+      "kind": "document_diff",
+      "addedLocalLinks": 14,
+      "appendOnlyLog": true,
+      "result": "passed"
+    }
+  ],
+  "reuse": [
+    "Existing child switching and account/scope cleanup",
+    "CareStore confirmed record decoder and version history",
+    "Task ledger, family authority locks, storage cipher and online receipts",
+    "Existing summary-visit and summary-report Prompt Pack"
+  ],
+  "review": [
+    "Coherent snapshot serialized with authorization/source changes",
+    "Encrypted per-child preparation and version history; child deletion cascades",
+    "Own save advances review basis to post-write seq; unrelated source updates invalidate review",
+    "Fixed client acknowledgement validation to accept the server's post-write basis",
+    "Unknown time remains outside date totals; no inference from record creation time",
+    "Bounded source scan rejects excess rather than returning partial totals",
+    "No private chat in shared report; real appointment confirmation not implied"
+  ],
+  "limits": {
+    "childRecords": 2000,
+    "childTasks": 500,
+    "periodRecords": 200,
+    "questions": 12,
+    "checklist": 16
+  },
+  "pending": [
+    "Migrations 014-020, real SQL consistency/authorization/original operation, child delete and restart",
+    "Encrypted backup/empty restore including visit preparations",
+    "True API browser switching, draft/unknown and changed basis",
+    "Real Agent summary tool and source-supported wording in consolidated service acceptance"
+  ],
+  "notRun": [
+    "integration",
+    "E2E",
+    "real services",
+    "build",
+    "lint",
+    "full regression",
+    "deployment"
+  ]
+}
