@@ -1,0 +1,395 @@
+{
+  "at": "2026-09-30T11:13:39.860Z",
+  "scope": "Token pairs used by this light preview; not a full accessibility audit",
+  "themeSha256": "fcab0b21017af3cbab3e7eab6ef7720d00315cd7e4788d376f0f0a8ae98a9ae0",
+  "colors": {
+    "ink": {
+      "hex": "#203E3A",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.33905181070865353,
+        "c": 0.036824950686736045,
+        "h": 184.68712801817952
+      }
+    },
+    "teal": {
+      "hex": "#287568",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.5116441821106902,
+        "c": 0.07748622106770765,
+        "h": 179.81508796367154
+      }
+    },
+    "deepTeal": {
+      "hex": "#025D51",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.4288936125370528,
+        "c": 0.07720155084449222,
+        "h": 179.95807086767078
+      }
+    },
+    "paper": {
+      "hex": "#FAF7EF",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9762512803236281,
+        "c": 0.011048472122681651,
+        "h": 89.72126257322306
+      }
+    },
+    "canvas": {
+      "hex": "#F9F7F3",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9765627366306107,
+        "c": 0.005718519657310038,
+        "h": 84.5660735218969
+      }
+    },
+    "sage": {
+      "hex": "#DDE8DB",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9190871106811298,
+        "c": 0.020970684967306686,
+        "h": 140.89614648305306
+      }
+    },
+    "paleTeal": {
+      "hex": "#E9F7F4",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9649026229756859,
+        "c": 0.015269953393894036,
+        "h": 181.78294801621482
+      }
+    },
+    "amber": {
+      "hex": "#D99A3D",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.7311291843605425,
+        "c": 0.13043621304101974,
+        "h": 73.3398638490174
+      }
+    },
+    "paleAmber": {
+      "hex": "#FEF0DE",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9614047712580568,
+        "c": 0.028192570027059584,
+        "h": 74.30818684137118
+      }
+    },
+    "coral": {
+      "hex": "#C86D52",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.6325864565154883,
+        "c": 0.12233346627907203,
+        "h": 37.34234074599775
+      }
+    },
+    "paleCoral": {
+      "hex": "#FFF0EB",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9655865750105951,
+        "c": 0.017627938024461824,
+        "h": 39.40076183563682
+      }
+    },
+    "errorInk": {
+      "hex": "#954026",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.4800605833888124,
+        "c": 0.12128722317984607,
+        "h": 37.5047562134366
+      }
+    },
+    "white": {
+      "hex": "#FFFFFF",
+      "oklch": {
+        "mode": "oklch",
+        "l": 1.0000000000000002,
+        "c": 0
+      }
+    },
+    "muted": {
+      "hex": "#596E67",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.5189094190881546,
+        "c": 0.02731088361345812,
+        "h": 172.95365436389076
+      }
+    },
+    "line": {
+      "hex": "#DAD7D0",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.879567355032123,
+        "c": 0.010054186340246006,
+        "h": 87.47675968844847
+      }
+    },
+    "softLine": {
+      "hex": "#EEECE6",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9429690621066197,
+        "c": 0.008289229559327599,
+        "h": 91.48514778568206
+      }
+    },
+    "controlOutline": {
+      "hex": "#76847F",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.6003412561944899,
+        "c": 0.018046525108820172,
+        "h": 172.24317944452886
+      }
+    },
+    "neutralSurface": {
+      "hex": "#F9F7F3",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9765627366306107,
+        "c": 0.005718519657310038,
+        "h": 84.5660735218969
+      }
+    },
+    "sidebar": {
+      "hex": "#F6F4EC",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9664931782314033,
+        "c": 0.01080337879155415,
+        "h": 95.16348169320443
+      }
+    },
+    "selectedNav": {
+      "hex": "#DBF1EC",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9405878459891756,
+        "c": 0.024071833905050195,
+        "h": 180.62876023749504
+      }
+    },
+    "quietSurface": {
+      "hex": "#F6F4EC",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9664931782314033,
+        "c": 0.01080337879155415,
+        "h": 95.16348169320443
+      }
+    },
+    "mintSurface": {
+      "hex": "#F6F4EC",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9664931782314033,
+        "c": 0.01080337879155415,
+        "h": 95.16348169320443
+      }
+    },
+    "previewSurface": {
+      "hex": "#F9F7F3",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9765627366306107,
+        "c": 0.005718519657310038,
+        "h": 84.5660735218969
+      }
+    },
+    "statusWarm": {
+      "hex": "#FEF0DE",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9614047712580568,
+        "c": 0.028192570027059584,
+        "h": 74.30818684137118
+      }
+    },
+    "statusUnknown": {
+      "hex": "#FEF0DE",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.9614047712580568,
+        "c": 0.028192570027059584,
+        "h": 74.30818684137118
+      }
+    },
+    "statusWarmLine": {
+      "hex": "#D99A3D",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.7311291843605425,
+        "c": 0.13043621304101974,
+        "h": 73.3398638490174
+      }
+    },
+    "statusUnknownLine": {
+      "hex": "#D99A3D",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.7311291843605425,
+        "c": 0.13043621304101974,
+        "h": 73.3398638490174
+      }
+    },
+    "statusFailedLine": {
+      "hex": "#C86D52",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.6325864565154883,
+        "c": 0.12233346627907203,
+        "h": 37.34234074599775
+      }
+    },
+    "warningInk": {
+      "hex": "#6A4815",
+      "oklch": {
+        "mode": "oklch",
+        "l": 0.42989890278976906,
+        "c": 0.07975038316996445,
+        "h": 73.0507928475052
+      }
+    }
+  },
+  "pairs": [
+    {
+      "label": "body on card",
+      "foreground": "#203E3A",
+      "background": "#FFFFFF",
+      "ratio": 11.592201752372334,
+      "minimum": 4.5
+    },
+    {
+      "label": "body on canvas",
+      "foreground": "#203E3A",
+      "background": "#F9F7F3",
+      "ratio": 10.833997820862939,
+      "minimum": 4.5
+    },
+    {
+      "label": "secondary on card",
+      "foreground": "#596E67",
+      "background": "#FFFFFF",
+      "ratio": 5.453134640222813,
+      "minimum": 4.5
+    },
+    {
+      "label": "secondary on canvas",
+      "foreground": "#596E67",
+      "background": "#F9F7F3",
+      "ratio": 5.096464853793253,
+      "minimum": 4.5
+    },
+    {
+      "label": "secondary on menu",
+      "foreground": "#596E67",
+      "background": "#F6F4EC",
+      "ratio": 4.9519825468694645,
+      "minimum": 4.5
+    },
+    {
+      "label": "secondary on green tint",
+      "foreground": "#596E67",
+      "background": "#E9F7F4",
+      "ratio": 4.953358506405924,
+      "minimum": 4.5
+    },
+    {
+      "label": "secondary on selected tint",
+      "foreground": "#596E67",
+      "background": "#DBF1EC",
+      "ratio": 4.623572210596337,
+      "minimum": 4.5
+    },
+    {
+      "label": "secondary on warning tint",
+      "foreground": "#596E67",
+      "background": "#FEF0DE",
+      "ratio": 4.864452318151259,
+      "minimum": 4.5
+    },
+    {
+      "label": "secondary on error tint",
+      "foreground": "#596E67",
+      "background": "#FFF0EB",
+      "ratio": 4.911889467844733,
+      "minimum": 4.5
+    },
+    {
+      "label": "primary button",
+      "foreground": "#FFFFFF",
+      "background": "#287568",
+      "ratio": 5.476402150404574,
+      "minimum": 4.5
+    },
+    {
+      "label": "emphasized button",
+      "foreground": "#FFFFFF",
+      "background": "#025D51",
+      "ratio": 7.815006926482862,
+      "minimum": 4.5
+    },
+    {
+      "label": "error text",
+      "foreground": "#954026",
+      "background": "#FFF0EB",
+      "ratio": 6.223776582944008,
+      "minimum": 4.5
+    },
+    {
+      "label": "warning text",
+      "foreground": "#6A4815",
+      "background": "#FEF0DE",
+      "ratio": 7.344515863479774,
+      "minimum": 4.5
+    },
+    {
+      "label": "selected navigation",
+      "foreground": "#025D51",
+      "background": "#DBF1EC",
+      "ratio": 6.62614280314701,
+      "minimum": 4.5
+    },
+    {
+      "label": "input boundary on card",
+      "foreground": "#76847F",
+      "background": "#FFFFFF",
+      "ratio": 3.905322170457882,
+      "minimum": 3
+    },
+    {
+      "label": "input boundary on canvas",
+      "foreground": "#76847F",
+      "background": "#F9F7F3",
+      "ratio": 3.6498891917447573,
+      "minimum": 3
+    },
+    {
+      "label": "control icon on menu",
+      "foreground": "#025D51",
+      "background": "#F6F4EC",
+      "ratio": 7.0967948632982685,
+      "minimum": 3
+    },
+    {
+      "label": "control icon on card",
+      "foreground": "#287568",
+      "background": "#FFFFFF",
+      "ratio": 5.476402150404574,
+      "minimum": 3
+    }
+  ]
+}

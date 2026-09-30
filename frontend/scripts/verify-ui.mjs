@@ -7,6 +7,7 @@ import { verifyTasks, verifyMemory } from "./flows/tasks-memory.mjs";
 import { verifyShell, verifySettings, verifyDatesAndIsolation, verifyLogin } from "./flows/shell-settings.mjs";
 import { verifyDeletion } from "./flows/deletion.mjs";
 import { verifyDesign } from "./flows/design.mjs";
+import { verifyChannels } from "./flows/channels.mjs";
 
 const directory = resolve(process.env.FRONTEND_VERIFICATION_DIR ?? "verification/fe-w06");
 await mkdir(directory, { recursive: true });
@@ -97,7 +98,7 @@ try {
     await narrow.screenshot({ path: resolve(directory, "care-320-confirmation.png") });
     passed.push("care: 320 form validation and keyboard confirmation"); console.log(passed.at(-1)); await narrow.close();
   }
-  for (const [name, verify] of [["profile", verifyProfile], ["family", verifyFamily], ["tasks", verifyTasks], ["memory", verifyMemory], ["shell", verifyShell], ["settings", verifySettings], ["shared", verifyDatesAndIsolation], ["login", verifyLogin], ["deletion", verifyDeletion], ["design", verifyDesign]]) {
+  for (const [name, verify] of [["profile", verifyProfile], ["family", verifyFamily], ["tasks", verifyTasks], ["memory", verifyMemory], ["shell", verifyShell], ["settings", verifySettings], ["shared", verifyDatesAndIsolation], ["login", verifyLogin], ["deletion", verifyDeletion], ["design", verifyDesign], ["channels", verifyChannels]]) {
     if (run(name)) { passed.push(await verify(browser, failures, directory)); console.log(passed.at(-1)); }
   }
   assert.deepEqual(failures, []);

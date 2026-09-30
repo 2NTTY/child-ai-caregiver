@@ -3,16 +3,18 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Divider, Text } from "react-native-paper";
 import { PreferencesPreview } from "../components/PreferencesPreview";
+import { ChannelSettingsPreview } from "../components/notifications/ChannelSettingsPreview";
+import { useChannelSettingsPreview } from "../preview/useChannelSettingsPreview";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTextField, SectionCard, SectionHeader, TextLink, UnderlineTabs } from "../components/ui";
 import { usePreview } from "../preview/PreviewContext";
 import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
-type SettingsTab = "account" | "children" | "family" | "preferences" | "privacy";
+type SettingsTab = "account" | "children" | "family" | "preferences" | "notifications" | "privacy";
 const tabs: { key: SettingsTab; label: string }[] = [
   { key: "account", label: "個人與帳戶" }, { key: "children", label: "孩子設定" },
-  { key: "family", label: "家庭成員" }, { key: "preferences", label: "應用偏好" },
+  { key: "family", label: "家庭成員" }, { key: "preferences", label: "應用偏好" }, { key: "notifications", label: "通知渠道" },
   { key: "privacy", label: "資料與私隱" },
 ];
 
@@ -24,6 +26,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const [width, setWidth] = useState(0);
   const { model, actions } = usePreview();
+  const channels = useChannelSettingsPreview(model.connection === "online");
   const [tab, setTab] = useState<SettingsTab>("account");
   const [displayName, setDisplayName] = useState(model.caregiverName);
   const stacked = width < 850;
@@ -72,11 +75,13 @@ export default function SettingsPage() {
         <PreferencesPreview online={model.connection === "online"} />
       </View><View style={[styles.column, stacked && styles.fullColumn]}>
         <SectionCard><SectionHeader title="通知渠道" />
-          <LabeledValue label="站內狀態" value="依原事項／收據顯示" /><LabeledValue label="Web Push" value="待 S13-W05 接線" /><LabeledValue label="Telegram" value="待 S13-W06 接線" />
-          <Text style={styles.body}>渠道接受、送達、已讀、回應和照護完成是不同狀態；目前不提供虛假的訂閱開關。</Text>
+          <LabeledValue label="站內狀態" value="依原事項／收據顯示" />
+          <Text style={styles.body}>本人綁定與安靜時段分開設定。Web Push／Telegram 可比較合成流程，真渠道尚未接駁此介面。</Text>
+          <TextLink label="查看本人通知渠道" onPress={() => setTab("notifications")} />
         </SectionCard>
       </View>
     </View> : null}
+    {tab === "notifications" ? <ChannelSettingsPreview controller={channels} /> : null}
     {tab === "privacy" ? <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}><SectionCard><SectionHeader title="資料與私隱" />
         <Text style={styles.body}>孩子資料、已確認記錄與私人聊天的可見範圍，須按目前身份與家庭角色重新檢查。退出或撤權後，正式 App 必須清除不再可見的資料。</Text>

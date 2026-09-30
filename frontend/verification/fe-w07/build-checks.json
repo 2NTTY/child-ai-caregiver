@@ -1,0 +1,447 @@
+{
+  "scope": "Isolated synthetic personal notification settings only; no Server, provider or device acceptance",
+  "verifiedAt": "2026-09-30T11:17:24.371Z",
+  "baselineCommit": "6c7216f2c1b04f0ecebb3cedde7abf7e131b1f2d",
+  "contractBaseline": "34892c7",
+  "sourceSnapshotSha256": "7f2b9a2b3375df939db1e925d7531457ef41449a2555f2ecbdc48d81eeaa2f24",
+  "sources": [
+    {
+      "path": "app.json",
+      "sha256": "fb3c0500b09f4dc15436f869dfa80d4eefcf885aac29f46969ea86ec6df49931"
+    },
+    {
+      "path": "app/(dashboard)/_layout.tsx",
+      "sha256": "3581d300f0392ffa1ccbb3371b336b9338b4231d161d445bb4a2fa790a95d92b"
+    },
+    {
+      "path": "app/(dashboard)/care.tsx",
+      "sha256": "3942dc4873f6f59891d10028dfb662f7fc0b077093cfeb7863a0d33a07c3eaef"
+    },
+    {
+      "path": "app/(dashboard)/chat.tsx",
+      "sha256": "46a3735fa90999195ee02ac71e42dda3ffb184aeea66e6230fe37b08934c7205"
+    },
+    {
+      "path": "app/(dashboard)/family.tsx",
+      "sha256": "805143211e981bc3f1392b1b8e26c013e54ed277e0d46b92bafd6d7484685938"
+    },
+    {
+      "path": "app/(dashboard)/guide.tsx",
+      "sha256": "6739419ae6b8e1bfb9151cabefab53129be1c524ab4d310e07d09276c0a13903"
+    },
+    {
+      "path": "app/(dashboard)/index.tsx",
+      "sha256": "32c92ec0d280aa23cb058557904f8a12c5f50cec5b60cb4fc93a7c1849164b49"
+    },
+    {
+      "path": "app/(dashboard)/memory.tsx",
+      "sha256": "58ffb345880d49cc3ec9cd4c300b4efe86b5dfdbbb062915c51146bf0020b922"
+    },
+    {
+      "path": "app/(dashboard)/motion-preview.tsx",
+      "sha256": "8550c3df6ed0f089d7b2bf070230182fb29ec8fd3ca643eff508c7069eaa3f3b"
+    },
+    {
+      "path": "app/(dashboard)/profile.tsx",
+      "sha256": "60afd30bb6185f79796d08f8a4fe5196ceb80e95d0f5fb3c7838ae6f6b1e23a0"
+    },
+    {
+      "path": "app/(dashboard)/settings.tsx",
+      "sha256": "11628b4be959b172d6cf6daf9603bb2ba9186c7cc7dc7beb9e3b1bd06e65fb3e"
+    },
+    {
+      "path": "app/(dashboard)/tasks.tsx",
+      "sha256": "cc74e560d831c098b384af096c9c45651c0f2206bbc7934c2f1abf3adb9135b1"
+    },
+    {
+      "path": "app/_layout.tsx",
+      "sha256": "5baee74fdb27a2beb8b26176220d1226caa3b203609956b019b2c2434057f2bf"
+    },
+    {
+      "path": "app/login.tsx",
+      "sha256": "2fe6769fb98d70d294f8cc87e4c87a693829b07ddb3a61a581577613601d1d5d"
+    },
+    {
+      "path": "assets/brand/favicon.png",
+      "sha256": "f99ab81275f01114dfc481ed88250165e490eda0b1ba7f4362d0872c0ab16f06"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "539308d4c82f44876ba3a459c74b30107de20810cfacf48a78786cb2df567ca0"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940"
+    },
+    {
+      "path": "scripts/flows/channels.mjs",
+      "sha256": "1a3f5a7ee204e9a21e8e751ea223c934d3b700a3906057606ee47900339fde8e"
+    },
+    {
+      "path": "scripts/verify-colors.mjs",
+      "sha256": "00e01cb9cdf1581aeb1757fbf48e6c2810c3421f9d878a35384a1321b18a7ab6"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "75b53f7ca406af33f1e5e712dc8296da17cd1bac2a094cc6c7f2a06045bb5bfa"
+    },
+    {
+      "path": "src/care-view-model.ts",
+      "sha256": "11671d6fd74efc9f3ed28bb5da1bf548d29eb4f18eab0f167afa097d32f1c06f"
+    },
+    {
+      "path": "src/channel-view-model.ts",
+      "sha256": "fbdb2ff827d61ebee55ebd207c4bd06d9b4ae7a4fe4cc42e97ea511ccb8a3b43"
+    },
+    {
+      "path": "src/components/AppCheckbox.tsx",
+      "sha256": "71ddf0e083e229900dce3756e1bc28f1dcba230713680acad54ab7392f5dad5b"
+    },
+    {
+      "path": "src/components/AppDialog.tsx",
+      "sha256": "4feca9014c7d746bd4c125a49b445933108f68cdbe39ab1e334ddf704d7153a3"
+    },
+    {
+      "path": "src/components/AppIcon.tsx",
+      "sha256": "5843746f59c98b4c2b1dc5a5790ca7f38e7c41f0dac523e62a6edc1ca63bfd23"
+    },
+    {
+      "path": "src/components/AppMenuList.tsx",
+      "sha256": "345351fd165ae2e1b35fdcd9a5ee7e80bfd1eec57d65e5d1dce95e3553ad0ec2"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256": "6f7774cdb58f4f65dfe2afef7dd293c58c0d918c968e0ff4bbbf49c1177894e9"
+    },
+    {
+      "path": "src/components/ChildKeyFacts.tsx",
+      "sha256": "7e6e68447ff00f90455bc823b0d34d883ef8c5c3be5b43686977280a4ce5ef38"
+    },
+    {
+      "path": "src/components/ChildPicker.tsx",
+      "sha256": "e9c7643e14d065c093618f5173fcc991206f3409439d5d2705004e53b342628c"
+    },
+    {
+      "path": "src/components/CreateChildPreview.tsx",
+      "sha256": "0843781562e907eccafc79c94d68e63b844376042da4285e750f115b0c023e25"
+    },
+    {
+      "path": "src/components/DateTimeFields.tsx",
+      "sha256": "5f3ec91da26d653f84cc1459497a3ceb2ac0ad85580fe90f732299ad0c29b6f4"
+    },
+    {
+      "path": "src/components/DeleteChildPreview.tsx",
+      "sha256": "90e1fc35ef1d7de3e87d8fac5f1a6d4c281a089209352c86dafaf75df9c31ce0"
+    },
+    {
+      "path": "src/components/HomeDashboard.tsx",
+      "sha256": "eb5fa66bb7314b62546aec37433633ed63da1223b4e9f9cfa06e06f01b3c9f28"
+    },
+    {
+      "path": "src/components/MobileHomeDashboard.tsx",
+      "sha256": "8b6c55fc50d22ef187108966e747bea5e052e5dacc8939a03fa7b724f2f86e9d"
+    },
+    {
+      "path": "src/components/NativeAppShell.tsx",
+      "sha256": "1b7b22c80983796faeaaaab59b74801383e54c41b9e579db737664c49e7a9bb0"
+    },
+    {
+      "path": "src/components/NotificationBell.tsx",
+      "sha256": "773bd4fec77c359df589ec11399757f75ccb6e4fceebad58173175d06d901621"
+    },
+    {
+      "path": "src/components/PageFrame.tsx",
+      "sha256": "62ab4079a99b434ff2d73d1acec30c14a3d80cec40f65e9a13be3999cb3c83ef"
+    },
+    {
+      "path": "src/components/PreferencesPreview.tsx",
+      "sha256": "51909b89c1a7f54bc09371a729d4aee95c7262ef8c1574fdf7ad6a6679e8b083"
+    },
+    {
+      "path": "src/components/PreviewTodoCard.tsx",
+      "sha256": "45d4663d1724ee04482ae5058cad05957d2298fc8d1b7bae78e9739ee4959749"
+    },
+    {
+      "path": "src/components/PreviewWritePanel.tsx",
+      "sha256": "0cd8e5068d75d0bf6f5fedbff60c27c2e7af78acce9626fabc47bd63563d4f01"
+    },
+    {
+      "path": "src/components/care/CareRecordDelete.tsx",
+      "sha256": "85901abc7ccead09918a05a3682bd1d10ec405f70e9847ba9e79a9486de67ba1"
+    },
+    {
+      "path": "src/components/care/CareRecordDetail.tsx",
+      "sha256": "0ff5f168a50eaa9321b34bd429ca389edda21e91f0fb402f6efa56f8e1435eb6"
+    },
+    {
+      "path": "src/components/care/CareRecordForm.tsx",
+      "sha256": "808781deec85cc8a8e52b6926afddfdacad93c6d0d927bad39abbda986bbad7a"
+    },
+    {
+      "path": "src/components/care/CareRecordsView.tsx",
+      "sha256": "6e68871fe41a7bcbcc27f39ef52faaeed84e4962621710d20f36fac34a6e2834"
+    },
+    {
+      "path": "src/components/care/care-form.ts",
+      "sha256": "b4b4d3603fc15ef7cc9072e0ae69db2594dc4d1b09f369a2981bf30724b03464"
+    },
+    {
+      "path": "src/components/date-time.ts",
+      "sha256": "be2822d8a4d00afd91d50fcfa9735e9d7f90bfd1cc6d684e9b75d900fb793d6a"
+    },
+    {
+      "path": "src/components/family/FamilyView.tsx",
+      "sha256": "02f75d48c435369772b2752d2949541112952876095c88a2710b92ea36643e01"
+    },
+    {
+      "path": "src/components/memory/MemoryCards.tsx",
+      "sha256": "6380e003a4bc50d89269093f058e5cb858fb10b7b40176f65c17f4dad691ef2a"
+    },
+    {
+      "path": "src/components/memory/MemoryEditor.tsx",
+      "sha256": "14850814d41265920d8534fbbd5eaba346796e84c5d6386eb24bd71b32324c1f"
+    },
+    {
+      "path": "src/components/notifications/ChannelCards.tsx",
+      "sha256": "a6a6a26e12f3e3b13823b331b469352d478f9de710fc9f2bfb66075f6c20d841"
+    },
+    {
+      "path": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "sha256": "9f6109bc720a4fb668c6993a1ac6e39df566fa495fa12cddff9f3905fd31fa5d"
+    },
+    {
+      "path": "src/components/profile/ProfileForm.tsx",
+      "sha256": "39ca65037361ed6b9d6be8d45457e8cc5d6643b7a986e2eed2494f04a6596deb"
+    },
+    {
+      "path": "src/components/profile/ProfileSummary.tsx",
+      "sha256": "cbc21774e3cb1e6673ed9f56f954c1e27aa21ad6ee6fd1637a6125512579e5e3"
+    },
+    {
+      "path": "src/components/profile/ProfileView.tsx",
+      "sha256": "b28b786a612719d78f93eb536ce8b8711d549f79fc22f47df83618d97d1f8128"
+    },
+    {
+      "path": "src/components/profile/profile-form.ts",
+      "sha256": "96ea776b7004d8da4cfa765a5ed9abe17af19f4658c43a2101809f6b85e8c192"
+    },
+    {
+      "path": "src/components/tasks/TaskContent.tsx",
+      "sha256": "7623b45e623b2d39400bac3469869b2f3b4a7e752978b5f5dfcf0098c6f0a44a"
+    },
+    {
+      "path": "src/components/tasks/TaskDetail.tsx",
+      "sha256": "e217894e43cf9db0126aa7088c9ff21a7b6867799e3192c3e9dbcd8d83c4c0fa"
+    },
+    {
+      "path": "src/components/tasks/TaskForm.tsx",
+      "sha256": "3b861b12d4c701bc3c085e37a3ecfdf89c155c7debaca2b77c0a6d3a9b84e121"
+    },
+    {
+      "path": "src/components/tasks/TasksView.tsx",
+      "sha256": "b6d86c4308b1b2a6a797a5803d87990e914c960d60ecff6bfd480f6cb8aae05a"
+    },
+    {
+      "path": "src/components/tasks/task-form.ts",
+      "sha256": "5a40a277b2a95f588410999c51185a789d02c8a5f8f5b09378829ceb968dbb0f"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "cb1bf67586973aa76c891be35119efeb6ab52d4e23ebfec509dab7c96346c008"
+    },
+    {
+      "path": "src/family-view-model.ts",
+      "sha256": "0a012ba56d085b1f81d621920464b75c90947baa1aed8fc57b12d5f8c929bdcd"
+    },
+    {
+      "path": "src/memory-view-model.ts",
+      "sha256": "7253a2e6209450a4dd02edf59a1094f0f51d5d8f1957bb6aa1f33367f24dc412"
+    },
+    {
+      "path": "src/preview/PreviewContext.tsx",
+      "sha256": "f85089a4ed502d90fbde71aa551c8c72c4a745fde3e40ec5aef29d2b563800f4"
+    },
+    {
+      "path": "src/preview/care-fixture.ts",
+      "sha256": "c5aa1a97809500b1b7cee0dd3fe37cf4b30d9633ed31aecfeadc22fb683c6872"
+    },
+    {
+      "path": "src/preview/family-fixture.ts",
+      "sha256": "302c4d2c7c776d572b2124be3e2f95764ac175850e2404cd7b9c378304fa33ac"
+    },
+    {
+      "path": "src/preview/fixture.ts",
+      "sha256": "be2a0357201f58c02659ba660a9f242f1ef393fed5a7e2ec8c4451d40b675bfc"
+    },
+    {
+      "path": "src/preview/memory-fixture.ts",
+      "sha256": "2d952fce01f45f27625cc1c7e536596704533224f6223711f035e2163d933a3c"
+    },
+    {
+      "path": "src/preview/profile-fixture.ts",
+      "sha256": "14244201ba4b1c47c2a1ec082782d9026e35beb7e70f1f1cec1eda05d1de8082"
+    },
+    {
+      "path": "src/preview/task-fixture.ts",
+      "sha256": "c31701153b76b288be60411899667d237c7bc0ae7178ff4f72232275b947950e"
+    },
+    {
+      "path": "src/preview/useCarePreview.ts",
+      "sha256": "53dac865c26ddd82541a2b69de0a0cc01f634ccf1a76b105cc60e149179e53e7"
+    },
+    {
+      "path": "src/preview/useChannelSettingsPreview.ts",
+      "sha256": "fe6d5f33db8cf8856de4a16d6252f3143f36fe1f3fadb5a0c82ddd470b3bfc62"
+    },
+    {
+      "path": "src/preview/useFamilyPreview.ts",
+      "sha256": "d3fc3cbb0f301ca2f6d89dfaf5b24c1eec13c3d3e3094477d2b4d77607abe7b9"
+    },
+    {
+      "path": "src/preview/useMemoryPreview.ts",
+      "sha256": "6661d046dc614461bd7140094b8f59bca080c42efda86d0ea70ec7914ae9d1f4"
+    },
+    {
+      "path": "src/preview/usePreviewOperation.ts",
+      "sha256": "35b49ee18e2e2f4741472317e0bd906ae4e133a0f129b5a7fec575da0dbf777d"
+    },
+    {
+      "path": "src/preview/useProfilePreview.ts",
+      "sha256": "425c74fd3a3653365e9f51c732eab39a923050c81b0e8556de4a26ed3a96a7e2"
+    },
+    {
+      "path": "src/preview/usePushSettingsPreview.ts",
+      "sha256": "1ff4f4079e91407bfdef68a26bef27d06a1e98ad043901ea619d5febfdce7fd7"
+    },
+    {
+      "path": "src/preview/useTasksPreview.ts",
+      "sha256": "d482d7bc359fb27ee27cbf2ecfc89fc7899f398fec9a07c598a4d5bd0acf3c4e"
+    },
+    {
+      "path": "src/preview/useTelegramSettingsPreview.ts",
+      "sha256": "abd38f0a5f6810e69fd62f656e8597dc18ae90e2746b11165476e483709d5ec0"
+    },
+    {
+      "path": "src/profile-view-model.ts",
+      "sha256": "f5150007c5b3520702e6fc19ce322f44da480a9168a9f44c24d2f826ce43150b"
+    },
+    {
+      "path": "src/screens/careScreen.tsx",
+      "sha256": "1062d092eac8d251e304bc72c9ec927df782acbc173b95387148de62fe0bf4f0"
+    },
+    {
+      "path": "src/screens/chatScreen.tsx",
+      "sha256": "c331d330056807af6a34163daff7ec3c274fea1a9d97d1faeadf6974eb7aa9d2"
+    },
+    {
+      "path": "src/screens/familyScreen.tsx",
+      "sha256": "3a28dd9f756c601329151457b659bdfb1fbb7e475d3a858e8178dcb95cc788e1"
+    },
+    {
+      "path": "src/screens/guideScreen.tsx",
+      "sha256": "5e8f8353938cacd4e86d56ea7abf0990b2d80910751e0d1e0581cffe9880339d"
+    },
+    {
+      "path": "src/screens/loginScreen.tsx",
+      "sha256": "c674c7f7c00da0dcbcfd189d35e4d59d008e8f18e6516c41cc46001083d484d9"
+    },
+    {
+      "path": "src/screens/memoryScreen.tsx",
+      "sha256": "020efce16043872628258d351ddff63a7dbc8fa4b6fc9e61a85a3e5d11819b37"
+    },
+    {
+      "path": "src/screens/motionPreviewScreen.tsx",
+      "sha256": "8a3d5f6a29192fc295c340712fcf042268c389dcfc392afb5bcb69f6d81886ac"
+    },
+    {
+      "path": "src/screens/profileScreen.tsx",
+      "sha256": "3d7da5471e7b1b368a2f8ad80f69d89515faaf1ec067eb9389a203706e1164c3"
+    },
+    {
+      "path": "src/screens/settingsScreen.tsx",
+      "sha256": "f87f3e142da391f2e5971c2b63faca8f69ab24e5b4bc954acde4aa9ddaf800b9"
+    },
+    {
+      "path": "src/screens/tasksScreen.tsx",
+      "sha256": "1751fec05071982c1778ef402de2a35f6ca00a539c314ac61267290823319596"
+    },
+    {
+      "path": "src/task-view-model.ts",
+      "sha256": "a6d4c2cf6a95b236d8e32c93800ca0988bf6e2e7b81546e1da5221d41d9faee0"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "fcab0b21017af3cbab3e7eab6ef7720d00315cd7e4788d376f0f0a8ae98a9ae0"
+    },
+    {
+      "path": "src/view-model.ts",
+      "sha256": "602c903727db888be8c99aba5d3edae2e071efce34336a06e7cd638ec0564e4a"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "df6a55cff09919fbbf68da0c5afadfcda59ee1122fb64334037261f247b1deb1"
+    }
+  ],
+  "versions": {
+    "expo": "57.0.24",
+    "paper": "5.15.3",
+    "reactHookForm": "7.88.0",
+    "zod": "4.5.4"
+  },
+  "typecheck": {
+    "result": "passed",
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  "colorChecks": {
+    "result": "passed",
+    "pairs": 18,
+    "evidence": "color-checks.json"
+  },
+  "webExport": {
+    "result": "passed",
+    "command": "npm run build:web",
+    "exitCode": 0,
+    "staticRoutes": 23,
+    "bundle": {
+      "path": "_expo/static/js/web/entry-4bffc6f06c13dc66c613c05069318c72.js",
+      "bytes": 3771206,
+      "writtenAt": "2026-09-30T11:13:56.677Z",
+      "sha256": "38f386cee1c84cd21c337af29579ddba2765e9faaefb15c99b8bd38c10586b02"
+    }
+  },
+  "androidExport": {
+    "result": "passed",
+    "command": "npm run build:android-ui",
+    "exitCode": 0,
+    "assets": 31,
+    "bundle": {
+      "path": "_expo/static/js/android/entry-e6dcb2b0aaba00d59e0d383004f5876f.hbc",
+      "bytes": 5986514,
+      "writtenAt": "2026-09-30T11:14:54.063Z",
+      "sha256": "f6b3490dd246ed6e22198248b330805dbba79485b80a774200719f1384056b94"
+    }
+  },
+  "productionPreview": {
+    "result": "passed",
+    "previewUrl": "http://localhost:8083",
+    "widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "groups": [
+      "channels"
+    ],
+    "evidence": "checks-channels.json",
+    "failures": []
+  },
+  "retainedEvidence": "FE-W06-design and FE-W06 form checks apply to unchanged routes and business rules; no repeated all-route or 19-unit run.",
+  "pending": [
+    "User visual acceptance",
+    "Formal API and browser permission integration",
+    "Real Web Push and Telegram delivery acceptance",
+    "Android FCM, APK and device acceptance"
+  ]
+}
