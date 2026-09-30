@@ -1,0 +1,303 @@
+{
+  "id": "EV-S13-W06",
+  "package": "S13-W06",
+  "status": "necessary_channel_acceptance_passed_pending_pr_merge",
+  "recordedAt": "2026-09-30",
+  "baseCommit": "22f5c667887e8c5a926df59686a460fc3d281c6d",
+  "branch": "codex/s13-w06-telegram",
+  "dependencies": {
+    "grammy": "1.46.0",
+    "types": "5.0.0",
+    "license": "MIT"
+  },
+  "implemented": [
+    "Two-step private Telegram/account binding, explicit confirmation, revoke/block and encrypted identity",
+    "Existing personal online opId receipt and atomic queued delivery",
+    "Single-attempt grammY adapter, fixed generic test, callback acknowledgment distinct from task completion",
+    "Persisted webhook update deduplication and worker/epoch/binding revalidation",
+    "Functional UI, explicit original-operation reconciliation and no automatic retry",
+    "Bounded unavailable-job reconciliation and unknown safety"
+  ],
+  "verification": [
+    {
+      "kind": "typecheck",
+      "commands": [
+        "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
+        "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.server.json"
+      ],
+      "result": "passed",
+      "history": "Client passed once; Server passed on third invocation after two narrow SDK signal/fetch type corrections; later client unknown/ack boolean guard reviewed, not mechanically rerun"
+    },
+    {
+      "kind": "scripted_gateway",
+      "command": "node --test tests/telegram-gateway.test.ts",
+      "cases": 1,
+      "executions": 2,
+      "executedBy": "Sol gateway implementer; main reviewed source and evidence without rerun",
+      "result": "passed both times",
+      "scope": "Injected transport failure proves one attempt and safe unknown; no native HTTPS/Telegram/SQL claim. Later type-only SDK casts do not alter case behavior."
+    },
+    {
+      "kind": "skill_frontmatter",
+      "result": "passed using installed YAML parser",
+      "limitation": "Known unavailable PyYAML; official Python validator not rerun"
+    },
+    {
+      "kind": "document_links",
+      "result": "passed",
+      "newLocalLinks": 20,
+      "scope": "new links only; log append-only"
+    },
+    {
+      "kind": "diff",
+      "result": "passed",
+      "command": "git diff --cached --check"
+    },
+    {
+      "kind": "local_postgresql",
+      "result": "passed",
+      "evidence": {
+        "phase": "passed",
+        "counters": {
+          "counts": {
+            "users": 2,
+            "workspaces": 2,
+            "challenges": 2,
+            "bindings": 2,
+            "deliveries": 3,
+            "businessCalls": 45,
+            "polls": 2,
+            "consumers": 1,
+            "scriptedSends": 2,
+            "atomicEnqueues": 3,
+            "preflightQueries": 11,
+            "snapshotQueries": 20,
+            "cleanupQueries": 1
+          },
+          "limits": {
+            "users": 2,
+            "workspaces": 2,
+            "challenges": 3,
+            "bindings": 2,
+            "deliveries": 3,
+            "businessCalls": 60,
+            "polls": 120,
+            "consumers": 1,
+            "scriptedSends": 2,
+            "totalMs": 180000
+          }
+        },
+        "ids": {
+          "botId": "synthetic_s16_telegram_local_28c75b8ad170",
+          "users": [
+            "s16_telegram_local_28c75b8ad170_0",
+            "s16_telegram_local_28c75b8ad170_1"
+          ],
+          "workspaces": [
+            "761e32ed-b211-483d-ba46-3af6a4dfe3f2",
+            "b031c640-6e7b-42e0-8516-e6eb593c5b54"
+          ],
+          "challenges": [
+            "1ec5ea69-48a8-4a8c-bcff-ad6b1adb0c85",
+            "f5722f49-9495-43dc-909d-875ef32cf397"
+          ],
+          "bindings": [
+            "02b7de2a-b897-4fa3-95b7-5a0a524ced07",
+            "5ad58c19-b9a9-4345-a2ca-23fa02867c3b"
+          ],
+          "deliveries": [
+            "bb3a0716-fcdb-47b0-bd14-91456a5a23b5",
+            "facf8238-a38b-42e2-a741-ad148d77fe00",
+            "944ab84e-25da-498e-988c-29908b506de3"
+          ],
+          "updates": [
+            1,
+            2
+          ]
+        },
+        "assertions": [
+          {
+            "name": "paused_local_preflight",
+            "passed": true
+          },
+          {
+            "name": "same_update_does_not_repeat",
+            "passed": true
+          },
+          {
+            "name": "two_way_owner_binding_and_isolation",
+            "passed": true
+          },
+          {
+            "name": "accepted_queue_consumed_once",
+            "passed": true
+          },
+          {
+            "name": "unknown_reentry_does_not_resend",
+            "passed": true
+          },
+          {
+            "name": "queued_revocation_does_not_send",
+            "passed": true
+          },
+          {
+            "name": "rebuilt_store_retains_terminal_states",
+            "passed": true
+          }
+        ],
+        "cleanup": {
+          "consumerStopped": true,
+          "workerPaused": true,
+          "ownRowsRemoved": true,
+          "priorRowsPreserved": true,
+          "poolsClosed": true,
+          "evidenceRetained": true,
+          "failureCodes": []
+        }
+      },
+      "testedCode": "S16 integration of ee01c8b; generic delivery protocol unchanged; later W07 care extensions excluded from this package"
+    },
+    {
+      "kind": "real_telegram_personal_channel",
+      "result": "receipt_and_durable_ack_passed",
+      "send": {
+        "stage": "send-confirmed",
+        "status": "accepted_pending_user_receipt",
+        "sendAttempts": 1,
+        "ackApiCalls": 0,
+        "polls": 2,
+        "newAccounts": 0,
+        "newChildren": 0,
+        "publicWebhookVerified": false,
+        "providerStatus": 200,
+        "deliveryStatus": "accepted",
+        "workerPaused": true,
+        "poolsClosed": true
+      },
+      "ack": {
+        "stage": "ack",
+        "status": "passed",
+        "sendAttempts": 0,
+        "ackApiCalls": 1,
+        "polls": 0,
+        "newAccounts": 0,
+        "newChildren": 0,
+        "publicWebhookVerified": false,
+        "callbackAcknowledged": false,
+        "deliveryStatus": "accepted",
+        "acknowledged": true,
+        "taskCompleted": false,
+        "poolsClosed": true
+      },
+      "userEvidence": [
+        "已開始",
+        "是，這是我的帳號",
+        "已收到並按下"
+      ],
+      "publicWebhookVerified": false,
+      "limitation": "answerCallbackQuery did not succeed; reason not retained, no resend. Public HTTPS ingress and immediate callback response remain S17-W02. Test used local channel modules and bounded getUpdates, not the complete Web UI."
+    },
+    {
+      "kind": "migration_and_restore",
+      "result": "passed_existing_evidence",
+      "evidence": [
+        {
+          "name": "migrations_014_022_original_data_preserved",
+          "status": "passed",
+          "stage": "existing_data",
+          "added": [
+            "014-knowledge-refresh",
+            "015-web-push",
+            "016-product-agent",
+            "017-growth-attention",
+            "018-telegram-channel",
+            "019-proactive-contact",
+            "020-care-summaries",
+            "021-photo-attachments",
+            "022-shared-inputs"
+          ],
+          "tablesPreserved": 39,
+          "rowsPreserved": 386,
+          "workerPaused": true,
+          "backupCreated": true
+        },
+        {
+          "name": "paired_encrypted_backup_empty_restore",
+          "status": "passed",
+          "stage": "restored_evidence",
+          "code": null,
+          "durationMs": 1307,
+          "photoId": "cb392032-c749-4659-b516-d930df5cfd9d",
+          "restoreDatabase": "yuban_s16_restore_20260929",
+          "originalRetained": true,
+          "backupRetained": true,
+          "restoreRetained": true,
+          "workerStarted": false,
+          "modelsCalled": 0,
+          "notifications": 0
+        }
+      ],
+      "scope": "Existing 014–023 migration, original data and encrypted backup/empty restore evidence includes Telegram 018. Not rerun for package delivery."
+    },
+    {
+      "kind": "delivery_server_typecheck",
+      "result": "passed",
+      "command": "Node 24: tsc --noEmit -p tsconfig.server.json",
+      "history": "First invocation could not resolve cheerio/web-push in the older worktree dependencies; reused the existing pinned installed modules, then one follow-up passed. No download, code changes or product retests."
+    }
+  ],
+  "rollout": {
+    "flag": "TELEGRAM_ENABLED",
+    "enabledByDefault": false,
+    "masterMerged": false,
+    "liveProduct": "P1 unchanged",
+    "completion": "Effective only after this package PR merges; default disabled; live P1 unchanged"
+  },
+  "sourceHashes": {
+    "server/telegram-store.ts": "e1a5dd437ebe4401483c3706828c90fe7791a2b9cabe212f2273461fd67d9f73",
+    "server/telegram-gateway.ts": "6c9f8cd779db50e814833c5f51db9cb158527c49fec7a68012cf64be2b619b4a",
+    "server/telegram-webhook.ts": "e646fb1ac7e7796bdeaded0eab131f4ea0e41a6c1fde249e57a9dbc509c72bb3",
+    "server/telegram-config.ts": "4f78848aab64315d4512c5cd95bce42023472dc5490bc15ac4db7c5fedd0910b",
+    "server/telegram-worker.ts": "fc9833a9671ad1422e79d51155bdeedd26525e51226cac73fe887ea44d02b1e3",
+    "server/migrations/018-telegram-channel.sql": "db3a525011b50346b6147de2e9fb4a006497f9a6f64c587c6a9c04f6dc7a890e",
+    "src/shared/telegram.ts": "d8caefd0be5feee187a45027cbcb34c7b78622e51a08f5565a113bf9630de12d",
+    "src/client/TelegramPanel.tsx": "711cac9db57e0f390ecb26bcb3f97a2133d7dc6b8f055c7c74f7e12bc43df86d",
+    "src/client/telegram-api.ts": "e7eff07f724235ccb7238c50f32358cc762fad37abd4cbd88ac4528ed11e0e96",
+    "tests/telegram-gateway.test.ts": "ea887e097cc88da055a563b1da21f674ae6205c60fd6099f88c1767d249b67a3"
+  },
+  "deliveryBaseCommit": "720342e43a9c4eab10470de3985034b904022f97",
+  "deliveryBranch": "codex/s13-w06-telegram-delivery",
+  "initialPendingAcceptance": [
+    "Apply migration 018 with preserved synthetic data and encrypted backup/empty restore",
+    "Private account/channel binding, duplicate update, concurrent target conflict, stop/block and authority/receipt isolation",
+    "Atomic queue, revoke, worker pause/generation restore, hard-stop sending unknown, terminal job reconciliation",
+    "Bounded real bot identity/webhook/send/ack, native transport cancellation and actual UI flow",
+    "Integrate S13-W07 family permissions, task context and contact decision; generic test does not claim completion"
+  ],
+  "initialNotExecuted": [
+    "Database migrations/integration",
+    "Real Telegram HTTP / bot / webhook / notifications",
+    "Gemini/embedding",
+    "Browser/E2E / lint / build / full regression",
+    "Deployment"
+  ],
+  "pendingAcceptance": [
+    "Public HTTPS webhook and immediate callback response in S17-W02",
+    "W07 true Agent/contact task flow and task-bound acknowledgement",
+    "Complete Telegram browser UI flow remains unverified; functional UI typecheck and source review are separate from manual bot interaction"
+  ],
+  "notExecuted": [
+    "Full regression or whole-stage retest",
+    "Deployment or cloud renewal"
+  ],
+  "responsibility": {
+    "lead": "D",
+    "weight": 3,
+    "shares": {
+      "D": 60,
+      "C": 30,
+      "B": 10
+    },
+    "operation": "Shared AI operated by A; actual committer preserved; D account for GitHub push/PR/merge"
+  }
+}

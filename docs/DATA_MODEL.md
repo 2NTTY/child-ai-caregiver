@@ -363,3 +363,16 @@ web_push_deliveries 保存本人、綁定及版本、worker_generation、嘗試�
 | 删除／撤权 → 副本、索引、缓存清理 | [删除与隐私](../SPEC.md#section-5-9)、[设备撤权](../SPEC.md#section-4-8)，保留必要防复活标记 |
 
 SyncOperation 保留為在線操作字段組的引用名，不代表離線同步框架。上述新增授權／投遞語義尚未固定 schema；更細的合法轉換在 S07、S09、S13 相應包補充，須符合完成／取消不復活、執行重查授權及未知投遞不盲重發等不變量。
+
+<a id="telegram-storage"></a>
+## P2 Telegram 持久資料
+
+migration 018（S13-W06，未執行）加入 telegram_challenges、telegram_bindings、telegram_deliveries、telegram_updates 及 telegram_meta。沿用本人 workspace／user 的固定鎖順序、原 opId 收據及私有 preferences 變更事件；不建立新的家庭角色。
+
+- challenge 保存期限、原 storage epoch、版本、token hash，token／候選身份以既有 AES-GCM 及本人／ID AAD 加密；seen 並不代表已綁定，須網頁明確確認。
+- binding 的 chat／sender ID 分開加密，名稱只作顯示；以加密保存的隨機 HMAC key 建立穩定身份索引，避免將可枚舉的數字身份直接 hash。撤銷／封鎖清除身份密文及索引，歷史投遞仍留狀態。
+- delivery 保存原 binding 版本、worker generation／storage epoch、狀態／時間及 provider message ID；callback secret 加密，queue 只存 delivery ID。發送前先保存 sending，再短交易重查資格後單次外發；不在持鎖時呼叫 Telegram。
+- update 以 bot ID＋update_id 唯一，與綁定／回應效果同交易，保存固定 outcome 而非正文。不依賴 ID 永遠遞增；不將 callback 或 answerCallbackQuery 當任務完成。
+- 再領 sending 成為 unknown；框架 job 已失效／取消／不存在時，有限批次復核將 queued 轉 stopped、sending 轉 unknown。已撤銷、世代或 epoch 不符的 queued 不外發，還原沿用 worker 暫停閘。密鑰、備份及空庫還原行為仍待集中真 DB 核對。
+
+個人綁定不是家庭授權。S13-W07 才加入任務／對象／披露範圍與渠道的連結，不能從本包的一般測試推論已完成主動聯絡。

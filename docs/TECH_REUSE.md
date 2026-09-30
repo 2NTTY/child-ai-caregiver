@@ -104,3 +104,10 @@ Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定�
 來源格式已以 curl 唯讀取得原 HTML／XML，並離線解析：四 FHS 頁正文為 #content，內容月份標籤為 #content-rev-date；CHP／RTHK 項目使用 title/link/description/pubDate，CHP 有相對 URL 及空摘要，不把其舊項目冒充當日新聞。Cheerio 合成 parser 檢查通過，仍不代替真網絡 adapter／DB 驗收。來源使用條款由 [ADR-013](DECISIONS.md#adr-013)及 [操作文件](P2_KNOWLEDGE.md#source-refresh)維護；不把 parser 可讀當成內容再發布權利。
 
 自建部分限於固定來源定義、日期／使用範圍、觀察批准及既有版本的連結；這些是項目領域規則。向量 hash、全局模型限額、家庭資料、Prompt Pack 及正式前端架構保持原有權威，不另建全站爬蟲、新聞分析或來源管理平台。
+
+<a id="telegram-adoption"></a>
+## S13-W06：grammY 有界渠道接入
+
+2026-09-28 沿用候選 grammY 1.46.0，直接依賴固定；新增 @grammyjs/types 5.0.0，兩份 MIT 原文及 lockfile integrity 已保存。沿用既有 node:https、Zod、AES-GCM、S07 收據及 pg-boss，沒有另選 bot framework 或引入 auto-retry。
+
+主模型核對固定 client.ts 的一次 fetch／timeout／webhook reply 路徑及 Telegram 的 private chat、start payload、callback／update_id 契約。SDK 沒有家庭綁定、業務持久去重或 sendMessage 通用冪等 key，因此這些保留在產品服務。HTTP 回覆、Telegram API 接受與任務完成分開；403 不能一律當作封鎖。短實作參考見 [Skill](../.agents/skills/telegram-bot-api/SKILL.md)。文件相容、離線 scripted transport 及真 bot／DB 驗收分列，不將套件成功安裝寫成渠道通過。

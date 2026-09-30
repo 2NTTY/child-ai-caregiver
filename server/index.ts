@@ -24,11 +24,16 @@ import { createWebPushQueue } from "./web-push-queue.ts";
 import { createWebPushStore } from "./web-push-store.ts";
 import { readWebPushConfig } from "./web-push-gateway.ts";
 
+import { readTelegramConfig } from "./telegram-config.ts";
+import { createTelegramStore } from "./telegram-store.ts";
+import { createTelegramGateway } from "./telegram-gateway.ts";
+import { telegramQueue } from "./telegram-worker.ts";
 let startupCleanup: (() => Promise<void>) | undefined;
 
 try {
   const config = readServerConfig(process.env);
   const aiConfig = readAiConfig(process.env);
+  const telegramConfig = await readTelegramConfig(process.env);
   const chatPrompt = await readFile(new URL("../prompts/p1/childcare-chat.txt", import.meta.url), "utf8");
   const provider = aiConfig.enabled ? createVertexProvider(aiConfig) : undefined;
   const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
@@ -45,6 +50,10 @@ try {
   const pushConfig = await readWebPushConfig(process.env);
   const pushReady = Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='015-web-push'")).rowCount);
   const pushServices = pushReady ? { publicKey: pushConfig?.publicKey ?? null, queue: queue ? createWebPushQueue(pool, queue.boss).queue : undefined } : undefined;
+  const telegramReady = Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='018-telegram-channel'")).rowCount);
+  if(telegramConfig && !telegramReady)throw new Error("telegram_migration_required");
+  const telegramServices=telegramReady?{config:telegramConfig,queue:queue?telegramQueue(queue.boss):undefined}:undefined;
+  const telegram=telegramServices?{store:createTelegramStore(pool,cipher,telegramServices),config:telegramConfig,gateway:createTelegramGateway(telegramConfig)}:undefined;
   const aiUsage = createAiUsageStore(pool);
   const auth = createAuth(config, pool);
   const handler = createRequestHandler({
@@ -53,7 +62,8 @@ try {
     records: createRecordStore(pool, cipher, onlineEnabled),
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
-    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices) : undefined,
+    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices) : undefined,
+    telegram,
     tasks: onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher, taskScheduling) : undefined,
     chat: createChatStore(pool, cipher, onlineEnabled),
     memory: createMemoryStore(pool, cipher, onlineEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount)),

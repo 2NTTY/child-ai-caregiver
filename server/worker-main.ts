@@ -12,20 +12,30 @@ import { createWebPushQueue } from "./web-push-queue.ts";
 import { createWebPushWorker } from "./web-push-store.ts";
 import { createWebPushGateway, readWebPushConfig } from "./web-push-gateway.ts";
 
+import { readTelegramConfig } from "./telegram-config.ts";
+import { createTelegramStore } from "./telegram-store.ts";
+import { createTelegramGateway } from "./telegram-gateway.ts";
+import { telegramQueue,startTelegramWorker } from "./telegram-worker.ts";
+const telegramAbort=new AbortController();
+let telegramConsumer:Awaited<ReturnType<typeof startTelegramWorker>>|undefined;
 let pool: ReturnType<typeof createPool> | undefined;
 let queue: ReturnType<typeof createWorkerQueue> | undefined;
 let knowledgeWorker: ReturnType<typeof createKnowledgeRefreshWorker> | undefined;
 let pushQueue: ReturnType<typeof createWebPushQueue> | undefined;
 let stopping: Promise<void> | undefined;
 const stop = () => stopping ??= (async () => {
+  telegramAbort.abort();
   const deadline = setTimeout(() => { console.error("worker_stop_deadline"); process.exit(1); }, 20000).unref();
   try { await knowledgeWorker?.stop(); } finally {
     try { await pushQueue?.stop(); } finally {
-      try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } }
+      try { await telegramConsumer?.stop(); } finally {
+        try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } }
+      }
     }
   }
 })();
 try {
+  const telegramConfig=await readTelegramConfig(process.env);
   const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
   pool = createPool(readServerConfig(process.env));
   await verifyEncryptedStorage(pool, cipher);
@@ -40,6 +50,11 @@ try {
   if ((await pool.query("SELECT 1 FROM app_migrations WHERE id='015-web-push'")).rowCount) {
     pushQueue = createWebPushQueue(pool, queue.boss);
     await pushQueue.work(createWebPushWorker(pool, cipher, createWebPushGateway(await readWebPushConfig(process.env))));
+  }
+  if(telegramConfig){
+    if(!(await pool.query("SELECT 1 FROM app_migrations WHERE id='018-telegram-channel'")).rowCount)throw new Error("telegram_migration_required");
+    const telegram=createTelegramStore(pool,cipher,{config:telegramConfig,queue:telegramQueue(queue.boss)});
+    telegramConsumer=await startTelegramWorker(queue.boss,telegram,createTelegramGateway(telegramConfig),telegramAbort.signal);
   }
   const shutdown = () => { void stop().catch(() => { console.error("worker_stop_failed"); process.exitCode = 1; }); };
   process.once("SIGTERM", shutdown);

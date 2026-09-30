@@ -1,7 +1,7 @@
 # STATUS
 
 ## 當前階段
-**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 Web Push 必要驗收通過，完成隨本包 PR 合併生效**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
+**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 必要渠道驗收通過，完成隨本包 PR 合併生效**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
 
 ## 現況
 - **試用 URL：https://ex-machina.eu.org**。使用者指定根網域，DNS 由使用者設定；執行版本 `d654b8f`，其後結案修改僅涉及文件。
@@ -33,6 +33,8 @@ S13-W01 已隨 [PR #47](https://github.com/2NTTY/child-ai-caregiver/pull/47) 合
 S10-W02 必要集中驗收通過：014／原資料保留、來源發布及 hash 去重／向量復用、一次真 cron、六來源 adapter、公開／組內及過期隔離，以及暫時失敗／410／登記改動撤回批准。沿用 A 主責、權重 3、A 60%／C 40%，完成隨本包 PR 合併生效；[證據](artifacts/verification/S10_W02_CHECKS.json)。原失敗及 RTHK HTTPS 修正保留，沒有重跑整套舊腳本或模型。CHP／RTHK 維持組內限制。後續 P2 功能已按集中驗收例外在隔離分支接續，按各包證據及依賴逐一交付，不能把本包通過當成 P2 完成；現網仍 P1，沒有續期或部署。
 
 S13-W05 Web Push：SQL 49 業務／2 輪詢通過，原子入列、隔離、失效／撤銷、unknown 不重發及持久化可核對；本輪合成資料清理、原行保留。一次 Firefox 真通知 HTTP 201，使用者確認關頁後收到及清理，Server 綁定撤銷已核對。內置瀏覽器 staging 訂閱被拒並清理，未擴大 provider；Firefox 整套相容性仍延後。沿用 D 主責、權重 3、D 45%／C 35%／B 20%，[證據](artifacts/verification/S13_W05_CHECKS.json)。未部署或續期，P2 未完成。
+
+S13-W06 Telegram：沿用 D 主責、權重 3，D 60%／C 30%／B 10%。migration／配對備份空庫還原已有 S16 證據；45 業務／2 輪詢 SQL 核對本人綁定、update 去重、unknown、撤銷及持久化，合成資料清理、原行保留。一次真訊息 HTTP 200，使用者確認收到及按鈕回覆，持久台帳 acknowledged；不冒充照護完成。即時 answerCallbackQuery 未成功，公開 webhook 與該回覆接線留 S17-W02，未重發或部署。[證據](artifacts/verification/S13_W06_CHECKS.json)。
 
 ## 用量快照
 2026-09-30 使用者表示「有额度了，继续开始任务」；沒有提供百分比，餘額未知，不推算重置。沿用最新 Luna Max／GPT-6.1 Sol 分工規則。
