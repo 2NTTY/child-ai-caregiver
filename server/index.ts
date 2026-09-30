@@ -24,6 +24,7 @@ import { createTaskScheduling } from "./task-worker.ts";
 import { createWebPushQueue } from "./web-push-queue.ts";
 import { createWebPushStore } from "./web-push-store.ts";
 import { readWebPushConfig } from "./web-push-gateway.ts";
+import { createGrowthStore } from "./growth-store.ts";
 import { createProductAgentServices } from "./product-agent-services.ts";
 
 import { readTelegramConfig } from "./telegram-config.ts";
@@ -63,9 +64,11 @@ try {
   const chat = createChatStore(pool, cipher, onlineEnabled, agentEnabled);
   const memory = createMemoryStore(pool, cipher, onlineEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount));
   const tasks = onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher, taskScheduling) : undefined;
+  const growthEnabled=agentEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='017-growth-attention'")).rowCount);
+  const growth=growthEnabled ? createGrowthStore(pool,cipher,taskScheduling) : undefined;
   const summaryEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='020-care-summaries'")).rowCount);
   const summary=summaryEnabled?createCareSummaryStore(pool,cipher):undefined;
-  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true", summary) : undefined;
+  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true", growth, summary) : undefined;
   const productAgentStore = productServices?.store, productAgent = productServices?.agent;
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
@@ -75,7 +78,7 @@ try {
     care: createCareStore(pool, cipher, onlineEnabled),
     online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, summaryEnabled) : undefined,
     telegram,
-    tasks, chat, memory, productAgent, productAgentStore, summary,
+    tasks, chat, memory, productAgent, productAgentStore, growth, summary,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },

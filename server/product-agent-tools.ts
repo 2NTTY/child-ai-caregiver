@@ -37,6 +37,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  growth?: import("./growth-store.ts").GrowthStore;
   summary?:import("./care-summary-store.ts").CareSummaryStore;
   run: AgentRunContext; memory: MemoryStore; tasks: TaskStore; store: ProductAgentStore;
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
@@ -73,7 +74,9 @@ export function createProductAgentTools(options: {
           // Never truncate coverage or raw source text to fit a summary. Oversized batches stay pending.
           if (prepared && JSON.stringify(prepared).length <= 16000) summaryInput = prepared;
         }
-        return { profile: context.profileApplicable ? context.profile : null,
+        const growth = options.growth ? await options.growth.list(scope.userId,scope.childId) : null;
+        return { growth: growth ? {items:growth.items.map(item=>({id:item.id,topicId:item.topicId,state:item.state,sourceAvailable:item.sourceAvailable,taskId:item.taskId,taskState:item.taskState})),disabledTopics:growth.topics.filter(topic=>topic.disabled).map(topic=>topic.id)} : null,
+          profile: context.profileApplicable ? context.profile : null,
           facts: context.facts, conflictingKeys: context.conflictingKeys, unavailableFactKeys: context.unavailableFactKeys,
           topics: context.topics, summary: context.summary, earlierMessagesNotFullySummarized: context.truncated.messages,
           privateSummaryInput: summaryInput ? { previous: summaryInput.previous, messages: summaryInput.messages, moreUncovered: summaryInput.moreUncovered } : null,

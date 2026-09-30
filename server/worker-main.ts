@@ -1,3 +1,5 @@
+import { createGrowthStore } from "./growth-store.ts";
+import { createGrowthWorker } from "./growth-worker.ts";
 import { createPool } from "./database.ts";
 import { readServerConfig } from "./config.ts";
 import { createStorageCipher, readSecretKey } from "./storage-crypto.ts";
@@ -25,16 +27,19 @@ let pool: ReturnType<typeof createPool> | undefined;
 let queue: ReturnType<typeof createWorkerQueue> | undefined;
 let knowledgeWorker: ReturnType<typeof createKnowledgeRefreshWorker> | undefined;
 let pushQueue: ReturnType<typeof createWebPushQueue> | undefined;
+let growthWorker: ReturnType<typeof createGrowthWorker> | undefined;
 let agentBackground: ReturnType<typeof createAgentBackground> | undefined;
 let stopping: Promise<void> | undefined;
 const stop = () => stopping ??= (async () => {
   telegramAbort.abort();
   const deadline = setTimeout(() => { console.error("worker_stop_deadline"); process.exit(1); }, 20000).unref();
   agentBackground?.stop();
-  try { await knowledgeWorker?.stop(); } finally {
-    try { await pushQueue?.stop(); } finally {
-      try { await telegramConsumer?.stop(); } finally {
-        try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } }
+  try { await growthWorker?.stop(); } finally {
+    try { await knowledgeWorker?.stop(); } finally {
+      try { await pushQueue?.stop(); } finally {
+        try { await telegramConsumer?.stop(); } finally {
+          try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } }
+        }
       }
     }
   }
@@ -50,7 +55,9 @@ try {
   await queue.start();
   if (process.env.P2_AGENT_ENABLED === "true") {
     if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='016-product-agent'")).rowCount) throw new Error("agent_migration_required");
-    const services = createProductAgentServices(pool, cipher, readAiConfig(process.env), undefined, process.env.AGENT_DIAGNOSTICS === "true");
+    const growth=(await pool.query("SELECT 1 FROM app_migrations WHERE id='017-growth-attention'")).rowCount ? createGrowthStore(pool,cipher) : undefined;
+    const services = createProductAgentServices(pool, cipher, readAiConfig(process.env), undefined, process.env.AGENT_DIAGNOSTICS === "true",growth);
+    if(growth){growthWorker=createGrowthWorker(pool,queue.boss,growth,services.agent);await growthWorker.start();}
     agentBackground = createAgentBackground(pool, cipher, queue.boss, services.agent);
     await agentBackground.start();
   }

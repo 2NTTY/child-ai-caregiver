@@ -1068,3 +1068,21 @@
 - Work / Responsibility：S14-W01 以已合併 S11 的 `5bbf530` 整理獨立交付；A 主責、權重 3，A 50%／B 30%／C 20%，共用 AI 由 A 操作，保留原共同作者與真實 Committer。主模型核對契約、統計／版本服務、接線及提示詞，沿用原 Sol 實作，沒有另開驗證代理。
 - Verification：復用 S16 的 39 次 HTTP 合成內容流程，涵蓋日摘要、到診草稿保存、原來源刪除後核對失效；020／原資料保留／加密空庫還原及真 Agent 的 read_care_summary 已核對，原模型失敗仍保留。交付僅一次 Server no-emit 型別及一次無模型 summary-visit 配方載入（13 模組、10,028 字元），沒有重跑 SQL、模型、embedding 或瀏覽器。[EV-S14-W01](artifacts/verification/S14_W01_CHECKS.json)。
 - Limits / Delivery：完整 CareSummaryPanel E2E 未驗，不以其他面板情景代填；統計缺項、來源版本及時區語義保留，PDF／分享仍按 P4。完成隨本包 PR 合併生效，P2 尚未完成；現網仍 P1，沒有續期／部署或新增通知。
+
+<a id="log-20260928-008"></a>
+## LOG-20260928-008
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S13-W08 成長階段關注，基線 `b816d30450b886ecbe63e2f3fbc899396d41dd1a`，分支 `codex/s13-w08-growth-attention`。前置 S11-W02 實作已 review，按集中驗收例外接續，承接 S10-W02／014、S11-W02／016 未驗項；S13-W05／015 在另一分支。
+- Responsibility / Executor：A 主責、權重 5、A 60%／C 30%／B 10%；共用 AI 由 A 統籌，不表示各人親自手寫。主模型處理規則、SQL／權限、事件／ADK 整合、提示詞／契約及 review；Luna Max 唯讀核對四個官方來源，Sol xhigh 接功能 UI／API client，沒有委派指導文件或追加測試矩陣。
+- Actual Work：以現有 FHS 已核對片段及精確 hash 建立四段有限規則；實際年齡及產品窗口與官方条件分開，未記錄保持未知，不推斷學年或把約數年齡套入精準窗口。候選／加密修訂、接受／暫緩／關閉／永久停用、明確共享事實、原版本重試及任務連結已接；相同依據不重提，失去資料不當新依據，實質變更保留舊終態並交代原因。私人聊天不作共享背景輸入。
+- Background / Interface：共用 pg-boss 因相關事件或到期評估，有限失敗預算、原世代／epoch 與當前授權／來源重查；新候選才原子入列 ADK 站內解釋，不外發或自創醫療規則。UI 有來源／未知提交查核／共享確認／版本衝突及身份切換清理，草稿重讀不覆寫；可接受後不建任務或明確建立任務，既有任務選擇 API 已有、選擇器 UI 尚未提供，見 handoff。
+- Verification / Review：[EV-S13-W08](artifacts/verification/S13_W08_CHECKS.json)。Server／前端型別檢查通過；兩項純規則測試只跑一次，驗精確年齡／已核對片段和關閉依據抑制，不代替 SQL、模型或醫療有效性。主模型覆核來源關鍵原文、交易／授權、事件及 UI 關鍵 diff；修正原共享事實 refs／權限版本、已知未完成任務連結、來源摘要支持、有限失敗及資料到期時點。只因相關實作變更重跑型別檢查，沒有 lint／build／全量測試或 E2E。
+- Limits / Next：本包已實作、待驗收，017 未執行；真 PostgreSQL／worker 重啟／還原、撤權／來源停用、跨照顧者操作及真 ADK／瀏覽器留 P2 集中驗收。沒有呼叫模型／embedding／通知、部署、推送或合併；現網仍 P1，不延長試用。功能及對接清單已更新；不重做 Prompt Pack 或美術，不把有限規則描述成完整醫療監察。
+
+<a id="log-20260930-009"></a>
+## LOG-20260930-009
+
+- Work / Responsibility：S13-W08 從已合併 S11-W02 的 `5bbf530` 整理獨立交付；A 主責、權重 5，A 60%／C 30%／B 10%。共用 AI 由 A 操作；Sol 按主模型方法處理五個 Server 接線衝突及最小控制驗收，主模型親自整合提示詞／權威文件、核對來源／交易／UI 與 review。
+- Verification：[EV-S13-W08](artifacts/verification/S13_W08_CHECKS.json) 分開保存原失敗與通過證據。復用 migration／原資料／空庫還原、真背景檢索與重啟去重、關閉抑制及實質新依據；只補四年齡段有限規則及一次家長控制 SQL 流程，未重跑模型、通知或瀏覽器。引用品質曾失敗；已合併 S11 的 Server 呈現修正以三個 Runner 檢查及真回應離線重播核對，沒有冒稱新的真服務全流程。
+- Delivery / Limits：功能清單保留既有任務選擇器未提供、最近 30 項歷史及完整 GrowthPanel 瀏覽器未驗等限制。完成隨本包 PR 合併生效；預授權聯絡／公開部署及独立試玩仍有前置，P2 未完成、不續期。沒有重做 Prompt Pack／美術或擴大 UI polish。
+- 本包交付補記：再整合 S14 的正式合併 `6683d37`，保留摘要、渠道及成長接線；只因參數合併補一次必要 Server 型別檢查，通過。Pack 0.1.12 離線載入 12 模組／9,699 字元，成長引用指引一次。家長控制單輪 34 次呼叫（15 store／19 SQL）、11 項斷言；只新增一孩子／一任務並清理，原行保留、worker 暫停、pool 關閉，零模型／embedding／HTTP／通知。

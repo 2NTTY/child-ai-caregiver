@@ -13,6 +13,7 @@ import type { ModelGateway } from "./model-gateway.ts";
 import type { ChatStore } from "./chat.ts";
 import { handleChatRequest } from "./chat-api.ts";
 import { handleChatReply } from "./chat-reply.ts";
+import { handleGrowthRequest } from "./growth-api.ts";
 import { handleProductAgentRequest } from "./product-agent-api.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { handleFamilyRequest } from "./family-api.ts";
@@ -87,6 +88,7 @@ export function createRequestHandler(options: {
   summary?:import("./care-summary-store.ts").CareSummaryStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
   telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
+  growth?: import("./growth-store.ts").GrowthStore;
   productAgent?: import("./product-agent.ts").ProductAgent;
   productAgentStore?: import("./product-agent-store.ts").ProductAgentStore;
   modelGateway?: ModelGateway;
@@ -183,6 +185,8 @@ export function createRequestHandler(options: {
           ? await handleCareSummaryRequest(webRequest,userId,options.summary)
           : (url.pathname==="/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
           ? await handleTelegramRequest(webRequest,userId,options.telegram.store)
+          : /^\/api\/children\/[^/]+\/growth(\/|$)/u.test(url.pathname) && options.growth
+          ? await handleGrowthRequest(webRequest,userId,options.growth,async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)
           : options.productAgent && options.productAgentStore && options.chat
           && (/^\/api\/children\/[^/]+\/agent\//u.test(url.pathname) || /^\/api\/children\/[^/]+\/messages\/[^/]+\/reply$/u.test(url.pathname))
           ? await handleProductAgentRequest(webRequest, userId, { agent: options.productAgent, store: options.productAgentStore, chat: options.chat,

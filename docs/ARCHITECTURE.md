@@ -498,3 +498,23 @@ S10-W01 已在實作固定 pgvector `0.8.6`／commit `8ee86c96f0fd72390f890aa8a3
 到診草稿加密保存，核對版本隨來源變化失效；圖表、PDF 及完整報告輸出仍按 P4 工作包。日／週入口不需 Gemini；使用者明確問摘要時才以 summary-visit 配方及唯讀摘要工具加入既有 ADK 循環，原全局配額及上限不變。沒有背景週報推送或額外模型排程。
 
 純計算／型別／配方載入與真 API／Agent／加密還原證據分列 [S14 驗收](../artifacts/verification/S14_W01_CHECKS.json)；完整摘要面板瀏覽器情景未驗，不冒用其他面板的 Chromium 結果。
+
+<a id="growth-attention-wiring"></a>
+#### S13-W08 接線與首批規則
+
+實作位於 [growth-rules](../server/growth-rules.ts)、[growth-store](../server/growth-store.ts) 及 [growth-worker](../server/growth-worker.ts)。復用公共 KnowledgeStore 的發布／適用條件過濾與既有向量證據，確定性規則判斷本身不需要另做 embedding；Agent 仍可按需要使用同一 KnowledgeRetriever。規則綁來源 ID、官方 URL、已核對片段 hash 及個別規則版本；內容改變要重新核對相應規則，不能只換最新連結繼續使用。
+
+2026-09-28 主模型核對四份 FHS 官方內容，沿用既有種子片段；產品提示窗口與官方適用條件分開：
+
+| 年齡段／主題 | 本批產品窗口及必要限制 | 官方來源 |
+|---|---|---|
+| 0–1：引入固體食物 | 實際 6 至未滿 12 個月；約六個月的官方內容不是「5.5–6.5」產品期限。是否已開始未知時先問；已開始或有個別醫護計劃則停止本項 | [FHS 飲食](https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html) |
+| 1–3：遊戲與溝通 | 此來源只覆蓋 12 至未滿 24 個月；不擴展到整個 1–3 歲或逐項發展診斷 | [FHS 一至兩歲](https://www.fhs.gov.hk/tc_chi/health_info/child/15654.html) |
+| 3–6：發展觀察 | 36 至未滿 72 個月；未知時補觀察。建議諮詢保留「官方所列多項問題且持續」條件，不把短暫一項問題當異常 | [FHS 學前發展](https://www.fhs.gov.hk/tc_chi/health_info/child/14821.html) |
+| 6–10：視力 | 72 至未滿 120 個月；小一安排需明確年級，不能由年齡猜測。已有專業跟進／相關檢查完成則停止本項 | [FHS 視力](https://www.fhs.gov.hk/tc_chi/health_info/child/14812.html) |
+
+本批只用有效出生日期的實際年齡及香港地區；約數保留且明示需要資料，不產生狹窄窗口判斷。沒有把矯正年齡套入四項規則，亦不宣稱每個月齡都有關注。近況選項由照顧者明確確認到既有共享事實：`growth.solid_food`、`growth.play`、`growth.development_concern`、`growth.school_year`／`growth.vision`；無記錄、衝突或不識別值維持未知。
+
+pg-boss 的 minute cron 只取已到期或目錄版本改變的孩子，短交易完成適用／抑制判斷及新候選；不是每日對全家庭呼叫模型。新基準與 `growth-agent-v1` 原子入列，原 worker generation／storage epoch／candidate version 隨工作保存；模型開始及運行中重查權限、關注與來源。背景復用 S11 ADK，只給家庭資料、讀取／知識／呈現工具，站內結果仍只屬其原運行使用者；沒有共享私人摘要、醫療規則生成或外發。相同 candidate 的 run claim 不會因 worker 重領重做模型。
+
+API 與 worker 均須既有 P2 啟用旗標及 migration 017；DB 維護指令建立兩個新 queue，runtime 不自行 migration。還原後沿既有 worker 暫停與世代核對；必要 SQL、原資料／還原及真背景恢復已有分項證據；完整失敗矩陣未執行，見 [W08 驗收範圍](../artifacts/verification/S13_W08_CHECKS.json)。
