@@ -1,7 +1,7 @@
 # STATUS
 
 ## 當前階段
-**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 已隨 PR #59 合併；S11-W02／S14-W01／S13-W08／S12-W03 已分別隨 PR #60／#61／#62／#63 合併；S12-W04 已隨 PR #64 合併；S13-W07 必要驗收通過、正交付**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
+**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 已隨 PR #59 合併；S11-W02／S14-W01／S13-W08／S12-W03 已分別隨 PR #60／#61／#62／#63 合併；S12-W04 已隨 PR #64 合併；S13-W07 已隨 PR #66 合併；S16 必要本機及真服務驗收已完成，完成隨本包 PR 合併生效**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
 
 ## 現況
 - **試用 URL：https://ex-machina.eu.org**。使用者指定根網域，DNS 由使用者設定；執行版本 `d654b8f`，其後結案修改僅涉及文件。
@@ -21,7 +21,7 @@
 - S10-W01 必要驗收通過，完成隨 [PR #35](https://github.com/2NTTY/child-ai-caregiver/pull/35) 合併生效：官方套件 hash／相容性及離線映像核對通過，原 volume 保留、009 migration 成功；7 組／15 次真 embedding／79 次 store，原 23 張業務表不變，31 表加密備份／空庫還原及向量查詢通過。[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json)。Agent／引用 UI 接線及來源更新仍待後續包；未部署或跑 E2E。
 
 ## 七天試用與限制
-- 香港 e2-small／20 GiB pd-balanced／固定 IP；GCE 已設定 maxRunDuration=604800／STOP，預計 **2026-09-30 20:50:44 HKT** 停止。
+- 香港 e2-small／20 GiB pd-balanced／固定 IP；GCE 已設定 maxRunDuration=604800／STOP，原定 2026-09-30 20:50:44 HKT 停止；使用者於 2026-09-30 明確批准續期三天，GCP 已改為 **2026-10-03 20:50:44 HKT** 固定時間 STOP，主機恢復 RUNNING、HTTPS health 200。只續期，未部署 P2。
 - 初估七天固定費 US$5.28，流量／AI 另計；停機後保留 disk／IP 仍約 US$5.85／月。不是硬性金額上限，不自行續期。
 - [交付及操作](docs/P1_DELIVERY.md)／[組員試玩指引](docs/P1_TRIAL.md)。已收到使用者實際試玩確認；只適用 P1 合成資料範圍。
 
@@ -55,3 +55,7 @@ S12-W04 必要驗收通過，完成隨本包 PR 合併生效；照片前置已�
 S12-W04 已接家長本人私人來源（名稱／URL／正文／日期／備註）及明確公開 HTML 取得；原文僅本人讀取，不入公共知識庫、不代登入付費來源，必要既有驗收已歸回本包。
 
 S13-W07 必要驗收通過，完成隨本包 PR 合併生效。沿用 SQL 70 業務的 fallback／撤權／終態及 unknown 證據；一次真背景 Agent／Telegram 發送、本人收到及明確完成已核對。完成階段觸及原累計 80 次上限後停止，僅補剩餘清理，沒有新模型或訊息；原失敗與補清理分開保存。合成孩子／任務清理、測試綁定撤銷及原資料保留可核對；[證據](artifacts/verification/S13_W07_CHECKS.json)。公開 webhook、正常部署 worker 及 S17 交付仍待完成，P2 未完成。
+
+S16 已接回全部正式功能包；實作與真聯絡使用的 `e0653d3` 相同，沒有為合併重跑測試。累計 11 Agent 運行／33 生成嘗試／10 embedding 嘗試／3 真通知；新聯絡 4 次生成的 token 細項未在該回報提供，保留已有已知用量，不當作完整帳單。UI 功能清單見 P2_UI_HANDOFF；公開部署及組員完整演示仍未完成。
+
+下一包為 S17-W02：先準備可 review 的 P2 部署與來源初始化、密鑰掛載、正常 worker／公開 webhook／HTTPS Push 及最小組員演示，再取得具體部署授權。續期僅延長既有主機至 10 月 3 日，未批准更新現網。
