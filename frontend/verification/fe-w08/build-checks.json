@@ -1,0 +1,97 @@
+{
+  "scope": "Isolated frontend Agent navigation and shell only; no Server or device acceptance",
+  "verifiedAt": "2026-09-30T11:49:20.206Z",
+  "baselineCommit": "1e1fb7b07a5333ce15843acea10ef670a27de562",
+  "changedSourceSnapshotSha256": "046e6ec9a1740e0780ccd8ccd58105069d2cb5ba4043e46aeadeb87f9cb70ab9",
+  "sources": [
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256": "af15801429c78c3e5894bbd92447aae385ab7c067fb649c9332e113fdeed57e4"
+    },
+    {
+      "path": "src/components/AgentEntryButton.tsx",
+      "sha256": "5a1030f2b62de901b2d44eae6efa4459ee25c38e87999cb64815a98deeefa1db"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "fcab0b21017af3cbab3e7eab6ef7720d00315cd7e4788d376f0f0a8ae98a9ae0"
+    },
+    {
+      "path": "src/components/AppIcon.tsx",
+      "sha256": "5843746f59c98b4c2b1dc5a5790ca7f38e7c41f0dac523e62a6edc1ca63bfd23"
+    },
+    {
+      "path": "scripts/flows/shell-settings.mjs",
+      "sha256": "fcc947ac1b66f6758d214fe8ba5a9123dbc7527b952882c1fac634877923ab1e"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "3db6a0d3aee9afef2c7a28009c70211ff302d2828091f4564501935ff0e80e3a"
+    }
+  ],
+  "versions": {
+    "expo": "57.0.24",
+    "router": "57.0.22",
+    "paper": "5.15.3",
+    "reactNativeWeb": "0.21.2"
+  },
+  "typecheck": {
+    "result": "passed",
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  "webExport": {
+    "result": "passed",
+    "command": "npm run build:web",
+    "exitCode": 0,
+    "staticRoutes": 23,
+    "bundle": {
+      "path": "_expo/static/js/web/entry-3d9f88d01ed33ad7870c31ce1b9a1489.js",
+      "bytes": 3771775,
+      "writtenAt": "2026-09-30T11:39:09.988Z",
+      "sha256": "b30ac0bd9958f7271ac40a6692d601d28bbbb80cfad8f2495b16fbce779d232e"
+    }
+  },
+  "androidExport": {
+    "result": "passed",
+    "command": "npm run build:android-ui",
+    "exitCode": 0,
+    "assets": 31,
+    "bundle": {
+      "path": "_expo/static/js/android/entry-2539cac77e75bf99e5e635fe74cdd49d.hbc",
+      "bytes": 5988189,
+      "writtenAt": "2026-09-30T11:41:17.407Z",
+      "sha256": "05a9d5324b6db36c4dd293770d5dcb0cfcfcbdd8f3b3f408125edaac2afeeb5c"
+    }
+  },
+  "productionPreview": {
+    "result": "passed",
+    "previewUrl": "http://localhost:8083",
+    "layoutChecks": 40,
+    "widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "groups": [
+      "layout",
+      "agent"
+    ],
+    "evidence": [
+      "checks-layout.json",
+      "checks-agent.json"
+    ],
+    "failures": []
+  },
+  "repairedFailures": [
+    "A div with only role=link did not activate on Enter in RN Web. Expo Link asChild now supplies a real href and framework navigation.",
+    "Router Slot merges direct child styles via Radix; array styles generated indexed CSS properties and functional styles lost layout. Direct child styles now use StyleSheet.flatten; pressed styles use component state."
+  ],
+  "retainedEvidence": "Unchanged palette and form rules retain FE-W07 18 contrast pairs and FE-W06 unit evidence. Full route reflow was rerun because the common shell changed.",
+  "pending": [
+    "User visual acceptance",
+    "Formal API integration",
+    "Android APK and device acceptance"
+  ]
+}

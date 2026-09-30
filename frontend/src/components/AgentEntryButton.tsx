@@ -1,0 +1,41 @@
+import { useState } from "react";
+import { Link } from "expo-router";
+import { StyleSheet, View } from "react-native";
+import { Text, TouchableRipple } from "react-native-paper";
+import { AppIcon } from "./AppIcon";
+import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
+
+export function AgentEntryButton({ active }: { active: boolean }) {
+  const [focused, setFocused] = useState(false);
+  return <Link href="/chat" asChild><TouchableRipple
+    testID="agent-entry"
+    accessibilityRole="link"
+    accessibilityLabel="與 Agent 對話"
+    accessibilityHint="前往對話，提問或整理照顧事項"
+    accessibilityState={{ selected: active }}
+    aria-current={active ? "page" : undefined}
+    onFocus={() => setFocused(true)}
+    onBlur={() => setFocused(false)}
+    rippleColor={colors.sage}
+    style={StyleSheet.flatten([styles.button, (active || focused) && styles.highlighted])}
+  >
+    <View style={styles.content}>
+      <View style={styles.icon}><AppIcon name="star-four-points" size={23} color={colors.white} /></View>
+      <View style={styles.copy}>
+        <Text numberOfLines={1} style={styles.label}>與 Agent 對話</Text>
+        <Text numberOfLines={1} style={styles.hint}>提問・整理・規劃</Text>
+      </View>
+      <AppIcon name="chevron-right" size={16} color={colors.white} />
+    </View>
+  </TouchableRipple></Link>;
+}
+
+const styles = StyleSheet.create({
+  button: { width: "100%", backgroundColor: colors.deepTeal, borderRadius: radius.medium, borderWidth: 2, borderColor: colors.deepTeal, overflow: "hidden" },
+  highlighted: { borderColor: colors.sage },
+  content: { minHeight: 72, paddingHorizontal: 10, paddingVertical: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  icon: { width: 36, height: 36, flexShrink: 0, alignItems: "center", justifyContent: "center", backgroundColor: colors.teal, borderRadius: radius.small },
+  copy: { flex: 1, minWidth: 0, gap: 2 },
+  label: { fontFamily: chineseFont, color: colors.white, fontSize: typeScale.small, fontWeight: "800", lineHeight: 21 },
+  hint: { fontFamily: chineseFont, color: colors.white, fontSize: typeScale.caption, lineHeight: 18 },
+});

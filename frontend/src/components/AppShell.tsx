@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { usePathname, useRouter } from "expo-router";
+import { Link, usePathname, useRouter } from "expo-router";
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Divider, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { AppIcon } from "./AppIcon";
 import { AppMenuList } from "./AppMenuList";
+import { AgentEntryButton } from "./AgentEntryButton";
 import { AppButton, ConnectionPill, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
@@ -29,15 +30,15 @@ const navigation: { href: AppPath; label: string; short: string; icon: React.Com
 const scenarios: PreviewScenario[] = ["normal", "first_login", "setup_incomplete", "empty", "loading", "offline", "needs_confirmation", "saving", "saved", "failed", "unknown"];
 
 function NavItem({ item, active, compact = false }: { item: typeof navigation[number]; active: boolean; compact?: boolean }) {
-  const router = useRouter();
-  return <Pressable
+  const [pressed, setPressed] = useState(false);
+  return <Link href={item.href} asChild><Pressable
     accessibilityRole="link" accessibilityLabel={item.label} accessibilityState={{ selected: active }} aria-current={active ? "page" : undefined}
-    onPress={() => router.push(item.href)}
-    style={({ pressed }) => [compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.pressed]}
+    onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
+    style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.pressed])}
   >
     <AppIcon name={item.icon} size={compact ? 24 : 21} color={active ? colors.deepTeal : colors.muted} />
     <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
-  </Pressable>;
+  </Pressable></Link>;
 }
 
 export function PreviewToolbar() {
@@ -129,19 +130,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const railExpanded = wide ? railOpen : railModal;
 
   return <View style={styles.root}>
-    {!compact ? <View style={styles.sidebar}>
-      <Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" onPress={() => router.push("/")} style={({ pressed }) => [styles.brandLink, pressed && styles.pressed]}>
+    {!compact ? <View testID="web-sidebar" style={styles.sidebar}>
+      <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" style={styles.brandLink}>
         <Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={styles.logo} />
         <Text style={styles.brandLine}>用資料 · 陪伴成長</Text>
-      </Pressable>
-      <View style={styles.navList}>{navigation.map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}</View>
+      </Pressable></Link>
+      <View style={styles.navList}>{navigation.filter(item => item.href !== "/chat").map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}</View>
       <View style={styles.sidebarBottom}>
-        <AppButton label="與 Agent 對話" variant="accent" onPress={() => actions.open("chat")} style={styles.chatCta} />
+        <AgentEntryButton active={active("/chat")} />
       </View>
-      <Pressable accessibilityRole="link" accessibilityLabel="設定" accessibilityState={{ selected: active("/settings") }} onPress={() => router.push("/settings")}
-        style={({ pressed }) => [styles.navItem, active("/settings") && styles.navActive, pressed && styles.pressed]}>
-        <AppIcon name="cog-outline" size={21} color={active("/settings") ? colors.deepTeal : colors.muted} /><Text style={[styles.navLabel, active("/settings") && styles.navActiveText]}>設定</Text>
-      </Pressable>
+      <NavItem item={{ href: "/settings", label: "設定", short: "設定", icon: "cog-outline" }} active={active("/settings")} />
       <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" accessibilityState={{ expanded: accountOpen }} onPress={() => setAccountOpen(true)} style={({ pressed }) => [styles.account, pressed && styles.pressed]}>
         <View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View>
         <View style={styles.accountCopy}><Text style={styles.accountName}>{model.caregiverName}</Text><Text style={styles.accountHint}>合成預覽帳戶</Text></View>
@@ -151,7 +149,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     </View> : null}
     <View style={styles.stage}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
-        {compact ? <Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" onPress={() => router.push("/")} style={({ pressed }) => [styles.topBrandLink, tiny && styles.topBrandLinkTiny, pressed && styles.pressed]}><Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={[styles.topLogo, tiny && styles.topLogoTiny]} /></Pressable> : null}
+        {compact ? <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={[styles.topLogo, tiny && styles.topLogoTiny]} /></Pressable></Link> : null}
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts child={selectedChild} load={model.profileLoad} /> : null}
         <View style={styles.topActions}>
@@ -222,7 +220,6 @@ const styles = StyleSheet.create({
   navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
   sidebarBottom: { marginTop: "auto", paddingBottom: spacing.sm },
-  chatCta: { width: "100%", borderRadius: radius.medium },
   account: { minHeight: 56, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white, paddingHorizontal: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   accountAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
   accountAction: { width: 44, height: 44, flexShrink: 0, alignItems: "center", justifyContent: "center" },

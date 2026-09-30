@@ -11,7 +11,8 @@
 | 5 | FE-W05 Web 動態方向比較 | 比較已完成；暫不採用 | 從 FE-W04 commit 591a23d 建 `codex/fe-w05-motion-preview`；只在 `/motion-preview` 示範 A／B／C 三種節奏，核對 reduced motion／鍵盤／320px，詳見 [MOTION_OPTIONS](MOTION_OPTIONS.md)。保留獨立比較頁作日後參考，不套入正式畫面 |
 | 6 | FE-W06 既有契約流程與跨尺寸介面 | 實作及輕量檢查完成；待使用者視覺驗收 | 基於 master `22f5c66`，分支 `codex/fe-w06-care-record-flows`；/care、/profile、/family、/memory、/tasks 及 /settings 本人偏好投影已實作。新增品牌／OKLCH 配色位置、完整 MD3、SVG、Dialog／選單及孩子切換比例修訂，10 頁四種 Web 寬度、共用互動與 Web／Android export 通過；所有寫入仍未接真 API |
 | 7a | FE-W07 本人渠道設定前端 | 實作及輕量檢查完成；待視覺／正式接線 | 前置已 review 的 FE-W06 `6c7216f`，分支 `codex/fe-w07-notification-settings`；主線 `34892c7` 已合併 S13-W05／W06（PR #58／#59）。/settings 的本人 Web Push 訂閱／撤銷／明確測試、Telegram 開始私人綁定／候選核對／撤銷／投遞及回覆分開已實作；四 Web 寬度、合成關鍵流程及 Web／Android export 通過。不觸發真權限、訂閱、bot 或外發 |
-| 7b | Web 待業務契約的畫面 | 等候所屬工作包 | S13-W01／W04 已在第 6 項完成投影，渠道設定按 7a 接續。真未讀／通知中心、S11 Agent／引用、S12 照片／分享、S13 成長關注及 S14 摘要須先有已交付契約；active 分支不當作已合併主線，不從截圖推造功能 |
+| 7b | FE-W08 Agent 主要入口 | 實作及輕量檢查完成；待視覺驗收 | 前置已 review 的 FE-W07 `1e1fb7b`（draft PR #65），分支 `codex/fe-w08-agent-entry`；移除桌面導覽第二項，統一下方固定的深綠 SVG／雙層文字入口，保留手機對話分頁及原草稿。外殼導航沿 Expo Link asChild，修復只有 link 角色而無 href 的鍵盤問題；typecheck、40 個重排及四尺寸 Agent 互動、Web／Android export 通過 |
+| 7c | 下一批 Web 功能畫面 | 按已合併契約逐包接續 | 主線 `134962a` 已有 Agent／引用、照片／分享、成長關注及到診摘要的型別和 client API；下一包先投影 Agent 對話的執行／候選／來源，不改 Server 或正式 App。未讀／通知中心及主動聯絡授權／fallback 仍需核對所屬契約；active 分支不當作已合併主線，正式接線／真服務及完整驗收繼續由主聊天統籌 |
 | 8 | Web 整套確認與正式接線 | 待主聊天及使用者 | 使用者比較全部 Web 畫面並明確確認；主聊天按 [HANDOFF](HANDOFF.md) 對正式 App 的既有 API／控制器接線與真服務驗收。未接通 P2 功能須等其業務包交付，不以預覽代替 |
 | 9 | FE-W06 手機軟件介面 | 源碼及 bundle 完成；待視覺及真機驗收 | 按使用者 2026-09-29 指示提前做手機畫面；手機首頁依參考圖的品牌／問候、孩子卡片、提問、重點、待辦、快捷記錄及底部導航組裝。共用 React Native 元件、Expo Router Tabs／Safe Area／鍵盤及最終 Android bundle 通過；正式 P3 接線／APK／實機驗收仍待主聊天及後續條件 |
 

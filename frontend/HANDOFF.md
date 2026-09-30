@@ -85,7 +85,8 @@ HomeChild.profileConfirmed／ageLabel／allergiesLabel 只投影同一 selectedC
 ## 待主聊天接續
 
 - 所有真 session／API／opId／跨畫面及跨成員同步、正式 UI 掛載，以及接線後針對新增介面的必要瀏覽器驗收。主線已經 `9f0febd` 合併既有正式 App 的 S16-W05 Chromium 情景；該證據可按未變部分復用，但沒有驗過本包隔離介面，不要求無理由重跑整套舊情景。
-- S13-W05／W06 的本人渠道已在 FE-W07 投影，待接正式 adapter；真通知中心／未讀及 W07 聯絡授權／fallback 台帳沒有新協定。S11-W02 真 Agent／引用、S12 照片／分享來源、S13 成長關注、S14 到診摘要等仍須已 review 契約／基線；active 分支落碼不等同已合併交付，不代改其程式碼。
+- S13-W05／W06 的本人渠道已在 FE-W07 投影，待接正式 adapter；真通知中心／未讀及 W07 聯絡授權／fallback 台帳另核對所屬交付。active 分支落碼不等同已合併交付，不代改其程式碼。
+- 其後同步主線 `134962a`，上述 Agent／照片／分享、成長及摘要已出現合併的共享型別與 client API；前端下一包按來源原文逐項投影，仍未在本預覽實作，也未接真服務。P2 UI 清單部分總表文字尚待主聊天對齊，不能只憑一個「待接通」表格值忽略其後的具體接線段落；以已合併實際 API、根 STATUS／PLAN 及所屬必要驗收核對，不修改主聊天文件。
 - 真通知中心、Web Push／Telegram／FCM 及未讀。鈴鐺只提示合成原操作，右欄勾選只是本地清單；/tasks 的合成流程另列，不能互相冒充。
 - 圖中的第三方／手機登入、忘記密碼、方案／儲存用量、帳戶匯出／刪除、疫苗百分比及知識首頁，不能憑圖片當已承諾 API。手機首頁暫用已有記憶／話題入口，沒有假醫療建議、附件或咪高峰操作。
 - 正式 P3 共用服務、APK／簽署、實機畫面／鍵盤／返回鍵／Safe Area／TalkBack／大字體、登入及相機／通知權限。Android JS bundle 不代表上述已驗收。
@@ -114,3 +115,7 @@ npm run web -- --port 8082
 共用設計修訂另見 [verification/fe-w06-design](verification/fe-w06-design)：typecheck、16 個 token 對比、Web 23 個路由輸出及 Android Hermes／31 項資產 export 通過；固定輸出在 40 個版面及 shell／shared／design 檢查通過（包含 840／744／390／320 的更多選單），沒有 pageerror、console.error 或 /api/ 請求。實際源碼及產物 hash 在該目錄 build-checks.json；19 項未變表單規則沿原證據。曾發現的 SVG accessible DOM、SSR 首次渲染及 favicon 問題已修復並針對性驗證，不以建置成功取代執行畫面。
 
 FE-W07 沿 FE-W06 `6c7216f` 隔離接續；/settings 通知渠道的四尺寸、明確勾選、失敗草稿、同一原操作、切孩子保留／換帳戶清理、候選版本／過期／封鎖及接受／回覆語義通過。Web／Android export 通過；[verification/fe-w07](verification/fe-w07) 保存結果及產物 hash。共用 PreviewWriteNotice 容器按 saved／failed／待確認或 unknown 採淡青綠／淡珊瑚／淡琥珀，處理中維持中性，不再所有狀態都是警告底。操作邏輯未變，沒有重新跑整套舊檢查。
+
+FE-W08 沿 FE-W07 `1e1fb7b`（draft PR #65）隔離接續，只處理使用者最新 Agent 導覽要求：桌面上方去除重複入口，下方 [AgentEntryButton](src/components/AgentEntryButton.tsx) 固定在設定及帳戶上方。沿 Paper TouchableRipple、共用 SVG／原有深綠／字級 token，72 px 內容高度、短用途說明及箭嘴；手機底部分頁保留。沒有改 Agent、資料或業務回調語義。
+
+外殼導覽與 Logo 使用 Expo Link asChild，輸出真 href；Slot 的直接子元件先 flatten style，避免本版 Router／Radix 合併 array／function style。原先只有 role=link 的 div 按 Enter 無效，之後 array style 曾令 export 頁出現 indexed CSS 錯誤；修復後 typecheck、Web／Android export、40 個重排及四尺寸單一入口／Enter／目前頁面／草稿保留通過。證據見 [verification/fe-w08](verification/fe-w08)。正式接線須保留這些共用導航與樣式規則；一般業務寫入繼續由既有 controller／回調驅動，不能因外殼導航而重置草稿或假發送訊息。
