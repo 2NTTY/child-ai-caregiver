@@ -1134,3 +1134,11 @@
 - Media Review：兩個 Agent 運行共 4 次生成／2 工具／0 embedding，26,339 input／454 output tokens；兩者家庭記錄均未變。主模型對照原圖核對照片的 120 ml 約數、09:00 約數及日期不明通過。文字候選正確保留外部參考／不確定性，但把發布日放入事件時間欄，品質不算通過；主模型僅補 shared-capture 的日期邊界，Pack 0.1.7／module 0.1.1 離線載入通過，未增加第三個模型運行。原候選保留，沒有自動確認。
 - Browser / Correction：Chromium 原情景再次因同名「重新讀取並核對」按鈕多匹配而停止；初段隔離／viewer／遺失保存回應已進行，原 opId 回查及撤權仍未驗。主模型一次核對餘下 selectors，統一限定 Care 面板，並讓 fixture 保存最少帳號／HTTP／清理 metadata；只做語法檢查，未再啟動瀏覽器。本輪新孩子已唯讀核對刪除、服務已停；舊入口沒有保存實際 HTTP 計數，不推定精確數字。
 - Pending：修正版文字提取、完整 Chromium／Firefox、背景 Agent／新 queue、受控真通知及部署仍未完成。本次 2 個新增模型運行及單次瀏覽器授權已使用，不從剩餘生成次數推導額外運行；未通知、push／merge 或部署。相關程式修正均回存原工作包分支再接入 S16，公開来源限制維持。[EV-S12-W04](artifacts/verification/S12_W04_CHECKS.json)。
+
+<a id="log-20260930-013"></a>
+## LOG-20260930-013
+
+- Delivery / Responsibility：S12-W04 從已交付照片的 master `a6c3789` 整理原分享、私人來源與日期修正；B 主責、權重 3，B 50%／C 25%／A 25%，共享 AI 由 A 操作。保留原作者／共同作者及真實 Committer；由 B 帳號推送／PR／合併。Sol 只接既定 Server 接線及必要型別檢查；主模型親自處理全部提示詞／權威文件及 review。
+- Evidence：[EV-S12-W04](artifacts/verification/S12_W04_CHECKS.json) 保留原日期提取失敗，修正版真候選已通過；復用 022／023／原資料、39 HTTP 中的原文／確認、20 store／一次私人來源取得與隔離／重建，以及加密還原證據。十二份核心及 prompt 與已驗整合來源相同；帶回 SharedInputApiError 的明確字段語法修正，預設值及行為不變。沒有新模型、embedding、來源 GET、通知、DB 或瀏覽器驗收。
+- Limits：完整分享面板 UI 未驗；私人來源不進公共庫，不代登入、取得付費權限或保證條款適用，不新增背景訂閱／全文爬蟲。UI 功能與狀態已列入 handoff，未改 frontend 預覽。完成隨本包 PR 合併生效，P2 尚未完成，不部署或續期。
+- Delivery Check：一次 Server no-emit 型別通過；shared-capture 0.1.15 離線載入 12 模組／7,957 字元，日期修正版模組 0.1.1；18 個新增本機連結、append-only 日誌及 diff 通過，零模型。

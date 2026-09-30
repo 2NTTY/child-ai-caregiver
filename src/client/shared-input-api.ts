@@ -6,8 +6,14 @@ import {
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export class SharedInputApiError extends Error {
-  constructor(readonly status = 0, readonly onlineCode: string | null = null, readonly confirmed = false) {
+  readonly status: number;
+  readonly onlineCode: string | null;
+  readonly confirmed: boolean;
+  constructor(status = 0, onlineCode: string | null = null, confirmed = false) {
     super("Shared input request could not be confirmed");
+    this.status = status;
+    this.onlineCode = onlineCode;
+    this.confirmed = confirmed;
     this.name = "SharedInputApiError";
   }
 }

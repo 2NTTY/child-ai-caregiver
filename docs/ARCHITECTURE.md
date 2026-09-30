@@ -535,4 +535,4 @@ API 與 worker 均須既有 P2 啟用旗標及 migration 017；DB 維護指令�
 
 Server 只從固定 catalog 選公開來源，沿用 DNS／IP／HTTPS／redirect／內容上限保護；fetch 與模型呼叫均在資料庫交易外，短交易 claim 及結果核權。原文與選取片段當作不可信資料注入；既有 capture-confirmation／multimodal 模組加一個短 shared-capture 接線配方，工具只回私人候選。來源不足不能借提取包裝成育兒建議。
 
-家長可人工填寫，或採用候選再確認；外部參考與孩子實際記錄分開。完整來源快照私有，確認文字共享，沒有背景讀私人動態、帖子直接授權任務或全量向量化。功能 UI 交接見 [清單](P2_UI_HANDOFF.md#shared-input-handoff)；真網絡／SQL／模型與瀏覽器仍待集中驗收。
+家長可人工填寫，或採用候選再確認；外部參考與孩子實際記錄分開。完整來源快照私有，確認文字共享，沒有背景讀私人動態、帖子直接授權任務或全量向量化。功能 UI 交接見 [清單](P2_UI_HANDOFF.md#shared-input-handoff)；必要私人來源取得／隔離、SQL／保存及真提取修正版證據見 [S12-W04](../artifacts/verification/S12_W04_CHECKS.json)；完整分享面板瀏覽器仍未驗。
