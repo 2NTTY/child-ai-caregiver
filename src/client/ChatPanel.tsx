@@ -1,7 +1,8 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { Child } from "../shared/records.ts";
 import type { ChatController } from "./chat-controller.ts";
+import { AgentRunPanel } from "./AgentRunPanel.tsx";
 
 interface Props {
   controller: ChatController;
@@ -9,6 +10,7 @@ interface Props {
   userId: string | null;
   online: boolean;
   child: Child | null;
+  apiBaseUrl?: string;
 }
 
 function Action({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
@@ -22,13 +24,17 @@ function dateTime(value: string): string {
   return new Date(value).toLocaleString("zh-HK", { hour12: false });
 }
 
-export function ChatPanel({ controller, auth, userId, online, child }: Props) {
+export function ChatPanel({ controller, auth, userId, online, child, apiBaseUrl }: Props) {
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
+  const contextKey = JSON.stringify([auth, userId, child?.id, apiBaseUrl]);
+  const [selectedRun, setSelectedRun] = useState<{ contextKey: string; runId: string } | null>(null);
 
   useEffect(() => {
     if (auth === "signedIn") controller.syncContext(userId, online, child?.id ?? null);
     else if (auth === "signedOut") controller.syncContext(null, online, null);
   }, [controller, auth, userId, online, child?.id]);
+
+  useEffect(() => { setSelectedRun(null); }, [auth, userId, child?.id, apiBaseUrl, state.userId, state.selectedChildId]);
 
   // A prop change can render before the effect runs. Keep the previous account and child hidden.
   if (auth !== "signedIn" || !userId || !child || state.userId !== userId || state.selectedChildId !== child.id) return null;
@@ -37,6 +43,8 @@ export function ChatPanel({ controller, auth, userId, online, child }: Props) {
   const phase = draft?.phase ?? "draft";
   const unresolved = phase === "save_unknown" || phase === "checked";
   const busy = state.busy !== null;
+  const selectedRunId = selectedRun?.contextKey === contextKey && state.messages.some(message => message.agentRunId === selectedRun.runId)
+    ? selectedRun.runId : null;
 
   return <View style={styles.section}>
     <Text accessibilityRole="header" style={styles.heading}>{child.displayName}的 AI 聊天</Text>
@@ -75,10 +83,16 @@ export function ChatPanel({ controller, auth, userId, online, child }: Props) {
       return <View key={message.id} style={styles.message}>
         <Text style={styles.label}>{message.role === "user" ? "你" : "AI"} · {dateTime(message.createdAt)}</Text>
         <Text selectable style={styles.body}>{message.text}</Text>
+        {message.agentRunId && apiBaseUrl !== undefined && <Action label="來源與待確認事項"
+          onPress={() => setSelectedRun({ contextKey, runId: message.agentRunId! })} />}
         {pending && <Action label={state.replyingMessageId === message.id ? "正在等候 AI…" : "要求這則訊息的 AI 回覆"}
           onPress={() => { void controller.requestReply(message.id); }} disabled={busy || !online} />}
       </View>;
     })}
+    {selectedRunId && apiBaseUrl !== undefined && <>
+      <Action label="收起來源與待確認事項" onPress={() => setSelectedRun(null)} />
+      <AgentRunPanel apiBaseUrl={apiBaseUrl} userId={userId} childId={child.id} runId={selectedRunId} online={online} />
+    </>}
   </View>;
 }
 

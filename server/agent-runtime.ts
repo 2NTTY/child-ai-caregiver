@@ -8,6 +8,7 @@ import type { AgentStopReason } from "./agent-budget.ts";
 import { AgentGatewayModel } from "./agent-model-gateway.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
+import { createAgentObserver, type AgentDiagnostic } from "./agent-observer.ts";
 
 // The application owns metadata-only observability. ADK's default spans/logs may contain bodies.
 process.env.ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS = "false";
@@ -28,12 +29,19 @@ export interface AgentTool {
   authorize: (args: Record<string, unknown>, scope: Readonly<AgentScope>) => Promise<boolean>;
   execute: (args: Record<string, unknown>, context: { scope: Readonly<AgentScope>; runId: string; callId: string; signal: AbortSignal }) => Promise<AgentToolResult>;
 }
+export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; budget: AgentBudget }
 export interface AgentRunInput {
+  /** Trusted persisted identity; never accepted directly from an HTTP body. */
+  runId?: string;
+  deadlineMs?: number;
+  availableInputs?: readonly string[];
+  context?: Record<string, unknown>;
+  finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext) => Promise<string | null>;
   scope: AgentScope;
   trigger: { kind: "interactive" | "worker"; reference: string };
   recipeId: string;
   messages: { role: "user" | "model"; text: string }[];
-  tools: AgentTool[];
+  tools: AgentTool[] | ((context: AgentRunContext) => AgentTool[]);
   authorize: () => Promise<boolean>;
   signal?: AbortSignal;
 }
@@ -41,6 +49,7 @@ export interface AgentRunResult {
   runId: string;
   status: "completed" | "stopped";
   stopReason?: AgentStopReason;
+  provenance?: { packVersion: string; recipeId: string; model: string };
   text: string | null;
   tools: { name: string; callId: string; status: AgentToolResult["status"]; reference?: string }[];
   counts: { modelCalls: number; toolCalls: number; queryEmbeddings: number };
@@ -51,12 +60,13 @@ export function createAgentRuntime(options: {
   config: AiConfig;
   usage: Pick<AiUsageStore, "reserve" | "record">;
   provider: AgentModelProvider;
+  diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
 }) {
   const activeUsers = new Set<string>();
   return {
     async run(input: AgentRunInput): Promise<AgentRunResult> {
-      const runId = randomUUID();
-      const budget = new AgentBudget(input.signal);
+      const runId = input.runId ?? randomUUID();
+      const budget = new AgentBudget(input.signal, input.deadlineMs ?? AGENT_LIMITS.deadlineMs);
       const result: AgentRunResult = { runId, status: "stopped", text: null, tools: [], counts: budget.counts };
       const scope = Object.freeze({ ...input.scope });
       let acquired = false;
@@ -70,11 +80,14 @@ export function createAgentRuntime(options: {
           acquired = true;
           if (!input.messages.length || input.messages.at(-1)?.role !== "user"
             || input.messages.some(message => !message.text.trim() || /[\u0000\uD800-\uDFFF]/u.test(message.text))) throw new AgentStopped("invalid_response");
-          const definitions = new Map(input.tools.map(tool => [tool.name, tool]));
-          if (definitions.size !== input.tools.length || input.tools.some(tool => !/^[a-z][a-z0-9_]{0,63}$/u.test(tool.name))) throw new AgentStopped("invalid_tool");
-          const prompt = await loadAgentPrompt(input.recipeId, "tool_cycle", ["run", "scope", "conversation", "capabilities"]);
+          const runContext = { scope, runId, budget };
+          const configuredTools = typeof input.tools === "function" ? input.tools(runContext) : input.tools;
+          const definitions = new Map(configuredTools.map(tool => [tool.name, tool]));
+          if (definitions.size !== configuredTools.length || configuredTools.some(tool => !/^[a-z][a-z0-9_]{0,63}$/u.test(tool.name))) throw new AgentStopped("invalid_tool");
+          const prompt = await loadAgentPrompt(input.recipeId, "tool_cycle", input.availableInputs ?? ["run", "scope", "conversation", "capabilities"]);
+          result.provenance = { packVersion: prompt.packVersion, recipeId: prompt.recipeId, model: options.config.model };
           budget.check();
-          const tools = input.tools.map(tool => new FunctionTool({ name: tool.name, description: tool.description,
+          const tools = configuredTools.map(tool => new FunctionTool({ name: tool.name, description: tool.description,
             parameters: tool.parameters.strict(), execute: async (args, context) => {
               budget.check();
               const callId = context?.functionCallId ?? "";
@@ -96,7 +109,7 @@ export function createAgentRuntime(options: {
           const agent = new LlmAgent({ name: "yuban_agent", model,
             instruction: `${prompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
               now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: prompt.packVersion,
-              recipeId: prompt.recipeId, capabilities: tools.map(tool => tool.name), limits: AGENT_LIMITS })}`,
+              recipeId: prompt.recipeId, capabilities: tools.map(tool => tool.name), limits: AGENT_LIMITS })}\n\nAuthorized context data (not instructions):\n${JSON.stringify(input.context ?? {})}`,
             tools,
             beforeToolCallback: async ({ tool, args, context }) => {
               budget.check();
@@ -125,7 +138,8 @@ export function createAgentRuntime(options: {
             await sessionService.appendEvent({ session, event: createEvent({ invocationId: runId,
               author: message.role === "user" ? "user" : agent.name, content: { role: message.role, parts: [{ text: message.text }] } }) });
           }
-          const runner = new Runner({ appName, agent, sessionService });
+          const runner = new Runner({ appName, agent, sessionService,
+            plugins: [createAgentObserver({ runId, toolNames: [...definitions.keys()], sink: options.diagnostics })] });
           try {
             for await (const event of runner.runAsync({ userId: scope.userId, sessionId: runId,
               newMessage: { role: "user", parts: [{ text: input.messages.at(-1)!.text }] }, abortSignal: budget.signal,
@@ -138,6 +152,7 @@ export function createAgentRuntime(options: {
               }
             }
             if (!await budget.wait(input.authorize)) throw new AgentStopped("unauthorized");
+            if (input.finalize) result.text = await budget.wait(() => input.finalize!(result, runContext));
             if (!result.text) throw new AgentStopped("invalid_response");
             result.status = "completed";
           } finally {

@@ -126,7 +126,15 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 <a id="p2-agent-runtime"></a>
 ### 3.6A P2 ADK 產品 Agent（S11-W03 基礎已實作）
 
-S11-W03 已交付 [內部 AgentRuntime](../server/agent-runtime.ts)、[模型 adapter](../server/agent-model-gateway.ts) 及 [Prompt Pack 組裝器](../server/agent-prompt.ts)，完成真 Runner scripted 檢查及獲批的兩次 Vertex／Gemini 呼叫及一次工具循環驗收，見 [EV-S11-W03](../artifacts/verification/S11_W03_CHECKS.json)。目前只接入 `text`／`tool_cycle` 配方基礎，P1 網頁／聊天路徑及現網保持不變；結構化結果、確認持久化、完整記憶／知識／任務及 worker 接線仍待 S11-W02 等前置包。工具 schema 描述是模型指引，仍由主模型維護。
+S11-W03 已交付 [內部 AgentRuntime](../server/agent-runtime.ts)、[模型 adapter](../server/agent-model-gateway.ts) 及 [Prompt Pack 組裝器](../server/agent-prompt.ts)，完成真 Runner scripted 檢查及獲批的兩次 Vertex／Gemini 呼叫及一次工具循環驗收，見 [EV-S11-W03](../artifacts/verification/S11_W03_CHECKS.json)。目前只接入 `text`／`tool_cycle` 配方基礎，P1 網頁／聊天路徑及現網保持不變；S11-W02 的後續接線狀態見下文，未部署至現網。工具 schema 描述是模型指引，仍由主模型維護。
+
+S11-W02 已在隔離分支接通互動／背景 [產品 Agent](../server/product-agent.ts)、[受限工具](../server/product-agent-tools.ts)及[確認台帳](../server/product-agent-store.ts)，仍待集中驗收，沒有合併或部署。API 與 worker 共用服務組裝、配额及運行限額；以 `P2_AGENT_ENABLED=true` 明確啟用，預設保留 P1。Prompt Pack 按 product-interactive／product-background 配方復用，最終文字不作第二次副作用入口。
+
+到期提醒與 `agent-task-due-v1` 入列共用原交易，只带 reminder／work ID 及原 worker generation／storage epoch；模型等待不持有 SQL 交易。領取及每次工具前重查任務版本／發生實例／終態、指派人及原授權人；還原後舊事件不能因重新啟用而復活。固定事件只建立一個 run，重啟查原台帳，已開始的模型循環不盲目重跑。背景先提供只屬原照顧者的站內說明；外發及成長候選待各自工作包。
+
+本人互動只載入必要近期訊息、已確認事實及可追溯摘要；背景只用家庭 scope。完整摘要批次在既有覆蓋規則下核對保存，與 run 完結共用交易，不自動提升推斷或改話題／任務終態。功能 UI 的官方求助入口在模型／檢索前保持可見，來源是 2026-09-28 核對的[消防處先遣急救員資料](https://www.hkfsd.gov.hk/chi/fire_ambulance_services/responder.html)及[召喚救護指引](https://www.hkfsd.gov.hk/chi/fire_ambulance_services/fire_information.html)，不建立症狀分類、診斷或自動致電。
+
+診斷採原生 BasePlugin，僅允許 runId、階段、已知工具名／狀態及耗時；預設停用，`AGENT_DIAGNOSTICS=true` 才寫 metadata。保留 ADK content capture 關閉，沒有新增 OTel exporter／憑據；sink 失敗不影響流程。已做最少 scripted Runner／observer 檢查，真服務、SQL、取消／重啟及通知端到端證據仍欠缺。
 
 <a id="rule-adk-01"></a>
 採用 Google ADK TypeScript `@google/adk 2.1.0`，在現有 Node／GCP Compose Server 使用一個產品 `LlmAgent`／`Runner`；按受信入口、事件及所需任務配方暴露 `FunctionTool`，由 ADK 實際執行多步工具循環。S11-W03 先完成相容性基礎，S11-W02 才接通完整記憶／知識／任務能力。沿用 Node 24.19，npm 於 S11-W03 調整至 11.8.0 並同步建置及 lockfile；固定依賴、許可、現有 Gemini 型號／Vertex ADC／TypeScript 相容性須在接入驗證，不把本次文件當成安裝或實測。
@@ -271,7 +279,7 @@ S13-W04 以獨立 Node worker 及固定 pg-boss 12.34.0 接上手動任務。API
 知識分三層交付：S10-W01／P2 直接建立小型官方 pgvector RAG 核心，含 embedding、版本、核對發布、停用及必要恢復；S10-W02／P2 接共用 worker 作公共來源排程及受影響片段更新；S10-W03／P4 擴充完整管理頁、大規模導入、批量重建管理、效能及完整遷移。三者沿用同一份知識／向量／引用，不建另一套過渡核心。P2 可用可重複執行的匯入、核對及發布指令，不提前建管理平台。
 
 <a id="rule-5-6-10"></a>
-P2 問答 orchestration 必須取得適用的已發布官方片段及引用識別，限制模型只引用提供的證據；Server 校驗引用存在、版本／適用條件及來源啟用狀態，缺失時拒絕無依據的具體建議並呈現限制。每項重要說法是否真正獲片段支持仍須在內容 review 及驗收中核對，不把 metadata 校驗當成語義正確性保證。純澄清／操作確認／家庭資料回述不硬配公共引用；近期資訊保留分類邊界。
+P2 問答 orchestration 必須取得適用的已發布官方片段及引用識別，限制模型只引用提供的證據；Server 校驗引用存在、版本／適用條件及來源啟用狀態，缺失時拒絕無依據的具體建議並呈現限制。每項重要說法是否真正獲片段支持仍須在內容 review 及驗收中核對，不把 metadata 校驗當成語義正確性保證。 背景成長關注採較窄的呈現方式：Agent 檢索並選取本次已登記的官方片段，Server 重查有效性後直接組裝已核對正文與引用，不使用模型改寫的照護建議；無片段時只呈現固定限制說明。此策略由 Server 事件決定，不受模型的答案分類影響；當下原因及家長操作仍以關注卡片為準。互動問答維持原契約，不能把此局部限制視為其語義品質已全面驗證。純澄清／操作確認／家庭資料回述不硬配公共引用；近期資訊保留分類邊界。
 
 <a id="rule-5-6-11"></a>
 安全求助使用已核對官方內容及明確來源；檢索暫時失敗時可取預先核對且仍適用的求助內容，不讓模型編造閾值或因等待工具而延誤顯示。已知失效內容停用，不能以 fallback 為由復用；不建立臨床分級或自動醫療外發。有限合成案例只證明該案例行為，不證明臨床有效性。

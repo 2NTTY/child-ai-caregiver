@@ -1,0 +1,44 @@
+import { z } from "zod";
+import { taskChangeSchema, taskValuesSchema } from "./tasks.ts";
+import type { KnowledgeEvidence } from "./knowledge.ts";
+
+const text = (max: number) => z.string().min(1).max(max).refine(value => value.trim().length > 0);
+export const agentProposalSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("task_create"), values: taskValuesSchema }).strict(),
+  z.object({ kind: z.literal("task_change"), taskId: z.uuid(), change: taskChangeSchema }).strict(),
+  z.object({ kind: z.literal("memory_fact"), key: text(100), content: text(2000),
+    intendedVisibility: z.enum(["private", "family"]), validUntil: z.iso.datetime({ offset: true }).nullable() }).strict(),
+]);
+export type AgentProposalValue = z.infer<typeof agentProposalSchema>;
+export const agentDecisionSchema = z.object({
+  expectedVersion: z.number().int().positive(), decision: z.enum(["accept", "dismiss"]),
+  confirmShared: z.boolean(),
+}).strict();
+export type AgentDecision = z.infer<typeof agentDecisionSchema>;
+export interface AgentProposal {
+  id: string; runId: string; childId: string; version: number;
+  status: "pending" | "accepted" | "dismissed" | "expired";
+  createdAt: string; expiresAt: string; value: AgentProposalValue; targetLabel: string | null;
+  result: { kind: "task" | "memory_fact"; id: string; version: number } | null;
+}
+export const agentAnswerSchema = z.object({
+  kind: z.enum(["caregiving", "safety_help", "clarification", "operation", "record_restatement"]),
+  paragraphs: z.array(z.object({ text: text(1800), citationIds: z.array(z.string().min(1).max(80)).max(6) }).strict()).min(1).max(6),
+}).strict();
+export type AgentAnswer = z.infer<typeof agentAnswerSchema>;
+export interface AgentPresentation {
+  text: string;
+  citations: KnowledgeEvidence[];
+  retrievalMode: "vector_keyword" | "keyword_degraded" | "not_used";
+}
+export interface ProductAgentResult extends AgentPresentation {
+  runId: string;
+  provenance: { packVersion: string; recipeId: string; model: string } | null;
+  status: "running" | "completed" | "stopped" | "unknown";
+  stopReason: string | null;
+  tools: { name: string; status: "succeeded" | "rejected" | "conflict" | "failed" | "unknown"; reference?: string }[];
+  /** False when an interrupted run never persisted its counters. */
+  countsKnown?: boolean;
+  counts: { modelCalls: number; toolCalls: number; queryEmbeddings: number };
+  proposals: AgentProposal[];
+}

@@ -23,6 +23,7 @@ import { createTaskScheduling } from "./task-worker.ts";
 import { createWebPushQueue } from "./web-push-queue.ts";
 import { createWebPushStore } from "./web-push-store.ts";
 import { readWebPushConfig } from "./web-push-gateway.ts";
+import { createProductAgentServices } from "./product-agent-services.ts";
 
 import { readTelegramConfig } from "./telegram-config.ts";
 import { createTelegramStore } from "./telegram-store.ts";
@@ -56,6 +57,13 @@ try {
   const telegram=telegramServices?{store:createTelegramStore(pool,cipher,telegramServices),config:telegramConfig,gateway:createTelegramGateway(telegramConfig)}:undefined;
   const aiUsage = createAiUsageStore(pool);
   const auth = createAuth(config, pool);
+  const agentEnabled = process.env.P2_AGENT_ENABLED === "true";
+  if (agentEnabled && !(await pool.query("SELECT 1 FROM app_migrations WHERE id='016-product-agent'")).rowCount) throw new Error("agent_migration_required");
+  const chat = createChatStore(pool, cipher, onlineEnabled, agentEnabled);
+  const memory = createMemoryStore(pool, cipher, onlineEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount));
+  const tasks = onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher, taskScheduling) : undefined;
+  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true") : undefined;
+  const productAgentStore = productServices?.store, productAgent = productServices?.agent;
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
     webPush: pushServices ? createWebPushStore(pool, cipher, pushServices, true) : undefined,
@@ -64,9 +72,7 @@ try {
     care: createCareStore(pool, cipher, onlineEnabled),
     online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices) : undefined,
     telegram,
-    tasks: onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher, taskScheduling) : undefined,
-    chat: createChatStore(pool, cipher, onlineEnabled),
-    memory: createMemoryStore(pool, cipher, onlineEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount)),
+    tasks, chat, memory, productAgent, productAgentStore,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },

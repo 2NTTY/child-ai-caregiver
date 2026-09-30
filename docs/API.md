@@ -33,9 +33,9 @@ P1 `ModelGateway` 由已登入且通過資源權限檢查的 Server 請求呼叫
 P2 檢索適用範圍包含地區、年齡依據及精度、主題與必要條件，未知保留未知；回傳結果區分有適用證據、無適用證據、來源衝突及檢索不可用，不把空結果當作容許模型補造。育兒知識回答／成長關注／安全求助提示至少一個已核對的適用官方來源，每項重要建議連具體片段／版本；Server 拒絕不存在或已失效引用。語義支持與例外依 [SPEC](../SPEC.md#req-5-6-11)，不宣稱結構校驗消除幻覺。安全求助可用仍適用的預先核對官方內容；不新增醫療分流 API。
 
 <a id="agent-runtime-contract"></a>
-### P2 AgentRuntime／工具契約（基礎已落碼，業務接線待完成）
+### P2 AgentRuntime／工具契約（基礎已驗，產品接線待集中驗收）
 
-S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止；目前 P1 路由未切換。具體業務工具、跨 run 確認／記憶／冪等及對 UI 的契約隨 S11-W02 和相應功能包落碼。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
+S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止；目前 P1 路由未切換。S11-W02 已接業務工具及跨 run 確認／記憶；HTTP 與待驗界線见下文。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
 
 - <a id="api-ar-01"></a>內部入口接受受信互動請求或 worker 事件及必要輸入／待確認參照；Server 建立 runId，注入身份、孩子／資料空間、觸發來源、時間／時區、授權及資料版本、配方／工具集合。客戶端正文不能聲稱自己是 worker 或提供可直接採信的權限。
 - <a id="api-ar-02"></a>ModelGateway 的 ADK 路徑傳遞完整模型／工具 parts、呼叫關聯及必要 opaque metadata，不壓成 P1 文字介面。每次生成／查詢 embedding 均受[運行配置](ARCHITECTURE.md#p2-agent-budgets)、全局開關、配額及共享取消／deadline 約束；語料維護另有有限額，不能繞過全局控制。
@@ -43,6 +43,24 @@ S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime
 - <a id="api-ar-04"></a>原生工具呼叫是副作用入口；收尾的文字／actionRequests 不能再次執行同一操作。必要結構化結果使用宣告 schema；不支援同次工具／schema 時的獨立收尾仍計同一預算。收尾失敗從台帳呈現已確認結果，不重做工具。
 - <a id="api-ar-05"></a>待確認參照綁種類、原事項／訊息、對象、內容版本、可見範圍及有效性，跨 run 持久保存。確認回覆重新核對指向、發言者與當前權限；多個可能指向先補問。事實確認、任務確認、完成及外發授權不可互換。
 - <a id="api-ar-06"></a>輸出供 UI 使用的 runId、狀態／停止原因、可理解結果、可引用來源及最小工具進度，須在呈現前重新核對權限及版本。進度只取實際工具／台帳證據，不回傳原始 provider 協定、內部推理、憑據或無權資料。API 路由與完整序列化隨工作包落碼，不把 Prompt Pack 語義直接當現有 wire format。
+
+<a id="product-agent-http"></a>
+### S11-W02 產品 Agent 接線（已實作，待集中驗收）
+
+Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 016；未啟用維持 P1 聊天。共用組裝入口為 [product-agent-services](../server/product-agent-services.ts)，共享結果見 [product-agent](../src/shared/product-agent.ts)。GET／POST 均核對 session 與 `x-expected-user-id`，POST 另沿用 JSON／Origin 規則；模型不能提供身份、配方或權限。
+
+| 路由 | 真實行為 |
+|---|---|
+| POST `/api/children/:childId/messages/:messageId/reply` | 空物件；沿用原訊息，進入 product-interactive。相同訊息重取同一持久運行，不重新呼叫模型；返回聊天訊息及 `agentRunId` |
+| GET `/api/children/:childId/agent/runs/:runId` | `{result}`：本人運行、工具狀態、當時引用、候選及停止原因；中斷且未保存統計以 `countsKnown=false` 表示未知 |
+| POST `/api/children/:childId/agent/runs/:runId/proposals/:proposalId/decide` | `{expectedVersion,decision:accept\|dismiss,confirmShared}` → `{proposal}`；精確重試返回原結果，過期／內容或權限版本改變拒絕 |
+| GET `/api/children/:childId/agent/runs` | `{runs:[{runId,createdAt}]}`：本人最近最多 20 次背景運行，供手動重讀；不是啟動 Agent 的入口 |
+
+`propose_task／propose_task_change／propose_fact` 只保存私人候選。明確接受後，任務／已確認事實與候選結果在同一交易寫入；家庭共享需額外明確確認。尚無通知工具，工具成功與照護完成、聯絡成功分開。候選 24 小時過期；任務改期／完成／取消沿用原版本及終態規則，事實保留原私人訊息來源，不靠最終文字重做副作用。
+
+`read_context` 按入口區分本人／家庭；私人摘要只在取得完整批次時透過 `stage_private_summary` 暫存，運行結束再核對來源版本及精確覆蓋，衝突保留原摘要。摘要及候選不成為確認事實。`search_knowledge` 使用既有 public retriever 與同一運行預算；`present_answer` 核對引用 ID、官方類別及當前有效版本，回傳結構不等於已驗證語義支持。
+
+背景 product-background 只因已核准到期提醒入列，讀取家庭共享上下文並保存本人站內說明；不讀私人聊天、建立新任務或發出外部通知。成長關注及預授權聯絡分別留 S13-W08／W07。真 SQL、Gemini／embedding、worker 恢復及瀏覽器接線待 S16-W02 集中驗收；既有 W03／W01 證據不代替本包。
 
 <a id="knowledge-retrieval-contract"></a>
 ### P2 最小向量檢索契約
@@ -55,7 +73,7 @@ S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime
 <a id="knowledge-w01-implementation"></a>
 ### S10-W01 實作入口（必要真服務驗收已通過）
 
-[KnowledgeRetriever](../server/knowledge-retriever.ts) 的 `createRun({actor,budget,authorize})` 接收 Server 權威身份、既有運行預算及即時權限回查。`search(query, filter)` 回傳 [KnowledgeResult](../src/shared/knowledge.ts)，包括實際模式、片段短原文 `sourceExcerpt`、經核對精簡轉述 `text`、來源及版本；不是新增 HTTP 或已接通的 ADK 工具。`revalidateCitations` 在交付前重查片段／版本／hash 和適用性，不作內容語義判定。四來源五片段、維護 CLI、限額及未完成接線見 [操作文件](P2_KNOWLEDGE.md)；S11-W02 才整合聊天及背景 Agent。
+[KnowledgeRetriever](../server/knowledge-retriever.ts) 的 `createRun({actor,budget,authorize})` 接收 Server 權威身份、既有運行預算及即時權限回查。`search(query, filter)` 回傳 [KnowledgeResult](../src/shared/knowledge.ts)，包括實際模式、片段短原文 `sourceExcerpt`、經核對精簡轉述 `text`、來源及版本；此處是內部檢索契約，S11-W02 的 ADK／HTTP 接線見上文。`revalidateCitations` 在交付前重查片段／版本／hash 和適用性，不作內容語義判定。四來源五片段、維護 CLI、限額及未完成接線見 [操作文件](P2_KNOWLEDGE.md)；S11-W02 已接聊天及背景 Agent，新增接線仍待集中驗收。
 
 <a id="knowledge-refresh-contract"></a>
 ### S10-W02 來源更新邊界
