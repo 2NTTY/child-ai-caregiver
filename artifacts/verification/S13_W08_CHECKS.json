@@ -1,15 +1,7 @@
 {
   "id": "EV-S13-W08",
   "package": "S13-W08",
-  "status": "implemented_pending_acceptance",
-  "recordedAt": "2026-09-28T14:19:20.573Z",
-  "baseCommit": "b816d30450b886ecbe63e2f3fbc899396d41dd1a",
-  "branch": "codex/s13-w08-growth-attention",
-  "inheritedUnverified": [
-    "S10-W02 / migration 014",
-    "S11-W02 / migration 016",
-    "S13-W05 / 015 separate, not included"
-  ],
+  "status": "necessary_acceptance_passed_completion_on_pr_merge",
   "verification": [
     {
       "kind": "typecheck",
@@ -50,22 +42,9 @@
     "Atomic optional task connection and due/event worker enqueue; original generation and epoch",
     "Functional source/control UI; preserved drafts, current scope clearing and exact unknown replay"
   ],
-  "pendingAcceptance": [
-    "Migration 017 with preserved existing encrypted data, prior migrations and empty restore",
-    "Shared role/authority, fact conflict, same-operation replay, task linkage and terminal races against PostgreSQL",
-    "Event/age/expiry/snooze/source triggers, three-failure limit, worker restart/generation restore and no duplicate model run",
-    "Private data isolation, revocation, source invalidation and cross-caregiver completion",
-    "Real ADK citation-supported background result and scoped browser flow; no clinical effectiveness claim"
-  ],
   "knownUiLimits": [
     "Existing task selection API implemented; no existing-task picker in basic UI",
     "At most 30 recent terminal cards plus active items; full terminal records retained by Server"
-  ],
-  "notExecuted": [
-    "PostgreSQL / migrations / worker integration",
-    "Gemini / embedding / notifications",
-    "Browser E2E / build / full regression",
-    "Deployment"
   ],
   "rollout": {
     "flag": "P2_AGENT_ENABLED=true",
@@ -73,15 +52,560 @@
     "masterMerged": false,
     "liveProduct": "P1 unchanged"
   },
-  "sourceHashes": {
+  "initialImplementationSnapshot": {
+    "recordedAt": "2026-09-28T14:19:20.573Z",
+    "baseCommit": "b816d30450b886ecbe63e2f3fbc899396d41dd1a",
+    "branch": "codex/s13-w08-growth-attention",
+    "inheritedUnverified": [
+      "S10-W02 / migration 014",
+      "S11-W02 / migration 016",
+      "S13-W05 / 015 separate, not included"
+    ],
+    "pendingAcceptance": [
+      "Migration 017 with preserved existing encrypted data, prior migrations and empty restore",
+      "Shared role/authority, fact conflict, same-operation replay, task linkage and terminal races against PostgreSQL",
+      "Event/age/expiry/snooze/source triggers, three-failure limit, worker restart/generation restore and no duplicate model run",
+      "Private data isolation, revocation, source invalidation and cross-caregiver completion",
+      "Real ADK citation-supported background result and scoped browser flow; no clinical effectiveness claim"
+    ],
+    "notExecuted": [
+      "PostgreSQL / migrations / worker integration",
+      "Gemini / embedding / notifications",
+      "Browser E2E / build / full regression",
+      "Deployment"
+    ],
+    "sourceHashes": {
+      "server/growth-rules.ts": "a41050ec39ad7d580d646d59a643eba5457caafa92c79b9797027dc0f9bf7ddb",
+      "server/growth-store.ts": "607b0f9aa2781695e9fc3bcb9d29d90f5d3023b0c3bc71576aa0e7101e24b426",
+      "server/growth-worker.ts": "f627cbe6528db2949b96a7d85f5576f320c0f7ccd44906f3c544594c71586833",
+      "server/growth-api.ts": "02758967ca8e8cc96ef3e56fe573ee33964e52304fc59e89d8585271712216a1",
+      "server/migrations/017-growth-attention.sql": "bb9ed011887ac43e0d3099662fdecd157d214e8182a939ced362051fa6118c46",
+      "src/shared/growth.ts": "207e75e847f025997f6ef333941b1532f6714af4f2a51629ff0cb6b1307aa6f1",
+      "src/client/growth-api.ts": "defda8ab99c258a6ec47089ee95eabf14e72325f4bb6425056107e4c49cd6a7d",
+      "src/client/GrowthPanel.tsx": "84b7d21f8608bce06effb734cf81c9d84a4e6b9f8dda068accc70c50d56f20b6",
+      "tests/growth-policy.test.ts": "57c78a822a97151f6994c1b74a96e72b2c727ac7e139aca97dc4d92e07ae0a26"
+    }
+  },
+  "recordedAt": "2026-09-30",
+  "branch": "codex/s13-w08-growth-attention-delivery",
+  "baseCommit": "6683d37b92bac9b9fd15d3803d94cd109afd6b72",
+  "reusedIntegratedEvidence": [
+    {
+      "name": "migrations_014_022_original_data_preserved",
+      "status": "passed",
+      "stage": "existing_data",
+      "added": [
+        "014-knowledge-refresh",
+        "015-web-push",
+        "016-product-agent",
+        "017-growth-attention",
+        "018-telegram-channel",
+        "019-proactive-contact",
+        "020-care-summaries",
+        "021-photo-attachments",
+        "022-shared-inputs"
+      ],
+      "tablesPreserved": 39,
+      "rowsPreserved": 386,
+      "workerPaused": true,
+      "backupCreated": true
+    },
+    {
+      "name": "paired_encrypted_backup_empty_restore",
+      "status": "passed",
+      "stage": "restored_evidence",
+      "code": null,
+      "durationMs": 1307,
+      "photoId": "cb392032-c749-4659-b516-d930df5cfd9d",
+      "restoreDatabase": "yuban_s16_restore_20260929",
+      "originalRetained": true,
+      "backupRetained": true,
+      "restoreRetained": true,
+      "workerStarted": false,
+      "modelsCalled": 0,
+      "notifications": 0
+    },
+    {
+      "name": "background_citation_fixture_starvation",
+      "testedRevision": "fdc5d35",
+      "status": "failed",
+      "businessCalls": 5,
+      "polls": 120,
+      "agentInvocations": 0,
+      "runtimeCalls": 0,
+      "generationCalls": 0,
+      "embeddingCalls": 0,
+      "workerPaused": true,
+      "checks": [
+        "closed_unknown_basis_suppressed_before_new_parent_confirmed_fact"
+      ],
+      "rootCause": "Acceptance scope skipped other restored children without advancing them; target ranked 14 while real worker selected the first 10. This is a harness setup failure, not proof of production starvation.",
+      "fix": "Resume preserves old terminal and new confirmed fact, pins only the existing synthetic target due time, and verifies first-batch eligibility before startup."
+    },
+    {
+      "name": "background_citation_resume_shared_quota_stop",
+      "testedRevision": "fdc5d35",
+      "status": "failed",
+      "businessCalls": 40,
+      "polls": 27,
+      "agentInvocations": 1,
+      "runtimeCalls": 1,
+      "generationCalls": 2,
+      "embeddingCalls": 1,
+      "workerPaused": true,
+      "runId": "260d9ef8-7957-44e5-85fe-96d041da3725",
+      "result": "stopped/quota_exceeded",
+      "generationUsage": {
+        "inputTokens": 16345,
+        "outputTokens": 190,
+        "cachedTokens": 7917
+      },
+      "embeddingUsage": {
+        "outcome": "succeeded",
+        "inputTokens": 6,
+        "billableCharacters": 10
+      },
+      "toolEvidence": [
+        {
+          "name": "present_answer",
+          "status": "rejected"
+        },
+        {
+          "name": "search_knowledge",
+          "status": "succeeded"
+        }
+      ],
+      "runtimeCounts": {
+        "modelCalls": 3,
+        "toolCalls": 2,
+        "queryEmbeddings": 1
+      },
+      "countDistinction": "The third model budget slot was taken, but shared daily quota rejected it before provider invocation. Only two generation requests reached the provider.",
+      "quota": {
+        "configuredLocalUserLimit": 26,
+        "configuredLocalGlobalLimit": 26,
+        "actualGlobalAttempts": 26,
+        "actualFixtureUserAttempts": 21,
+        "liveConfigChanged": false,
+        "countersReset": false
+      },
+      "rootCause": "Harness did not preflight enough shared daily headroom for generation plus embedding. The quota guard stopped correctly.",
+      "stateEvidence": {
+        "oldAttention": "58b63a33-5c01-4715-b46e-7161f8646ef9",
+        "oldState": "dismissed",
+        "newAttention": "75061836-b47c-45a7-9e5a-c3a338418548",
+        "newState": "proposed",
+        "newBasis": "growth.solid_food=not_started",
+        "previousIdPreserved": true,
+        "newReasonPresent": true
+      },
+      "limit": "No accepted answer or citation; retrievalMode remains not_used in final result. Restart dedup still pending. Old runs and data retained; zero new accounts/children/notifications/deployments."
+    },
+    {
+      "name": "background_final_technical_and_quality_review",
+      "date": "2026-09-30",
+      "testedRevision": "2cd876e",
+      "technicalStatus": "passed",
+      "qualityStatus": "failed_scope_extension",
+      "result": {
+        "status": "passed",
+        "stage": "completed",
+        "businessCalls": 80,
+        "polls": 34,
+        "cleanupQueries": 2,
+        "agentInvocations": 2,
+        "runtimeCalls": 1,
+        "generationCalls": 4,
+        "embeddingCalls": 1,
+        "checks": [
+          "existing_usage_preserved_and_full_six_attempt_headroom_before_fixture",
+          "new_exact_birth_date_hk_profile_and_confirmed_not_started_without_attention",
+          "dedicated_child_due_1970_is_in_actual_first_worker_batch",
+          "true_worker_candidate_and_search_knowledge_present_answer_citations",
+          "recreated_worker_same_job_reference_reuses_run_without_generation_or_embedding",
+          "original_child_and_old_terminals_preserved_and_shared_usage_retained",
+          "only_dedicated_child_deleted_after_success"
+        ],
+        "newAccounts": 0,
+        "newChildren": 1,
+        "newChildId": "a1156b70-4b33-466e-b362-ba36fbdf3b21",
+        "childDeleted": true,
+        "notifications": 0,
+        "originalChildId": "dce9bbde-39e5-48a0-8756-54b852c03c63",
+        "restoreDatabaseOnly": true,
+        "limits": {
+          "businessCalls": 80,
+          "polls": 120,
+          "totalMs": 240000,
+          "generationCalls": 4,
+          "embeddingCalls": 2,
+          "runtimeCalls": 1,
+          "newAccounts": 0,
+          "newChildren": 1,
+          "dailyUserAttempts": 26,
+          "dailyGlobalAttempts": 26,
+          "sdkRetries": 0
+        },
+        "quotaBefore": {
+          "day": "2026-09-30",
+          "global": 0,
+          "owner": 0
+        },
+        "quotaHeadroom": {
+          "global": 26,
+          "owner": 26,
+          "required": 6
+        },
+        "firstBatchPosition": 1,
+        "checkJobId": "7cc65285-03d4-4129-b75d-65bfdf20a084",
+        "agentJobId": "b891c027-423e-434e-b16b-0b8ee5d3826b",
+        "attentionId": "c216993f-dd41-4e47-8871-4eea32623177",
+        "runId": "f137a819-6aab-4488-b8b8-4f1b004d0dda",
+        "citationCount": 1,
+        "toolCounts": {
+          "modelCalls": 4,
+          "toolCalls": 3,
+          "queryEmbeddings": 1
+        },
+        "queueStopped": true,
+        "duplicateJobId": "e0ccb8a9-db79-4798-8ce0-c08bdb476042",
+        "workerPaused": true,
+        "originalChildPreserved": true,
+        "quotaAfter": {
+          "day": "2026-09-30",
+          "global": 5,
+          "owner": 5
+        },
+        "privateEvidenceFile": "C:/Users/2NTTY/.codex/s16-p2-acceptance-20260929/background-final-private.enc",
+        "poolClosed": true,
+        "elapsedMs": 30722
+      },
+      "primaryReview": "Actual chunk IDs, vector+keyword retrieval and worker reconstruction dedup passed. Manual review found that the final answer extends the cited breastfeeding-only claim to formula feeding; the cited chunk and official page do not support that addition. No clinical effectiveness claim.",
+      "usage": {
+        "generationAttempts": 4,
+        "inputTokens": 33993,
+        "outputTokens": 440,
+        "cachedTokensObserved": 15575,
+        "embeddingAttempts": 1,
+        "embeddingInputTokens": 12,
+        "embeddingBillableCharacters": 17
+      },
+      "correction": {
+        "packageCommit": "4da312a",
+        "integrationCommit": "cebcf03",
+        "packVersion": "0.1.9",
+        "scope": "knowledge-answering only: preserve audience, conditions, timing and strength; delete unsupported additions",
+        "offlineCheck": "12 modules, 9954 chars, scope rule loaded once; no model call",
+        "pending": "one-generation quality probe from previously retrieved synthetic context; not a repeat of worker/embedding acceptance"
+      }
+    }
+  ],
+  "reviewedRenderingCorrection": {
+    "packageCommit": "6c865f1",
+    "integrationCommit": "ed6a319",
+    "strategy": "Server growth events render selected, revalidated official chunk text instead of model paraphrases; model answer labels cannot bypass the policy. Interactive answers keep their existing contract.",
+    "necessaryScriptedRunnerTests": {
+      "passed": 3,
+      "realModelCalls": 0,
+      "limitations": "First launch in original package lacked dependencies; merge-time launch encountered unresolved conflict. Neither entered a Runner. After retaining later growth/contact wiring, the same three checks passed."
+    },
+    "capturedRealResponseReplay": {
+      "status": "passed",
+      "kind": "offline_real_response_replay",
+      "modelCalls": 0,
+      "embeddingCalls": 0,
+      "databaseCalls": 0,
+      "sourceFreshnessRechecked": false,
+      "input": "captured real retrieval and generated present_answer; no protocol replay to provider",
+      "text": "衞生署家庭健康服務指出，孩子約六個月時，單靠母乳已不足以滿足營養需要，應開始加入固體食物；初期可用匙羹餵稀滑質感食物，再按適應情況逐漸增加稠度。未滿四個月不應加入奶以外食物。這是一般餵養指引；對孩子的飲食有疑問，應詢問醫護人員。 [1]",
+      "citationIds": [
+        "73596563-33db-4dee-88e2-9aa2b9cadc88"
+      ],
+      "result": "rendered reviewed chunk verbatim; unsupported expansion removed; prior true SQL/retrieval/restart evidence remains separate"
+    }
+  },
+  "minimalControlsAcceptance": {
+    "phase": "completed",
+    "status": "passed",
+    "failureCode": null,
+    "limits": {
+      "totalMs": 120000,
+      "businessCalls": 40,
+      "newChildren": 1,
+      "newTasks": 1
+    },
+    "counters": {
+      "businessCalls": 34,
+      "storeCalls": 15,
+      "sqlCalls": 19,
+      "applicabilityChecks": 4,
+      "newChildren": 1,
+      "newTasks": 1,
+      "accounts": 0,
+      "consumers": 0,
+      "enqueues": 0,
+      "models": 0,
+      "embeddings": 0,
+      "http": 0,
+      "notifications": 0
+    },
+    "ids": {
+      "originalChildId": "dce9bbde-39e5-48a0-8756-54b852c03c63",
+      "workspaceId": "5638fcf5-1687-44f9-86b4-823764aa7c05",
+      "childId": "5cb6eb08-ae57-44c2-aa5b-2453b1d751fa",
+      "attentionId": "01e9bde0-c57d-451b-90e7-fb04d0ce4e76",
+      "taskId": "af3ee75d-51ad-4920-aeb7-4905eafc4acc"
+    },
+    "assertions": [
+      {
+        "name": "exact_six_month_hk_confirmed_profile",
+        "passed": true
+      },
+      {
+        "name": "age_9_months_solid_food",
+        "passed": true,
+        "kind": "arrange"
+      },
+      {
+        "name": "age_18_months_toddler_play",
+        "passed": true,
+        "kind": "observe"
+      },
+      {
+        "name": "age_48_months_preschool_development",
+        "passed": true,
+        "kind": "consult",
+        "syntheticFactReference": {
+          "id": "8a12a16c-34cf-4b81-8653-d050301fa64c",
+          "version": 1
+        }
+      },
+      {
+        "name": "age_84_months_school_vision",
+        "passed": true,
+        "kind": "observe"
+      },
+      {
+        "name": "direct_sql_attention_without_agent_or_enqueue",
+        "passed": true
+      },
+      {
+        "name": "same_attention_snoozed",
+        "passed": true
+      },
+      {
+        "name": "accepted_identical_original_retry_has_one_task",
+        "passed": true
+      },
+      {
+        "name": "accepted_task_and_topic_disable_survive_store_reconstruction",
+        "passed": true
+      },
+      {
+        "name": "existing_rows_and_queue_unchanged_before_cleanup",
+        "passed": true
+      },
+      {
+        "name": "only_new_child_cleaned_and_original_rows_preserved",
+        "passed": true
+      }
+    ],
+    "cleanup": {
+      "childDeleted": true,
+      "workerPaused": true,
+      "poolClosed": true,
+      "originalRowsPreserved": true,
+      "fixturePreserved": false,
+      "failureCodes": []
+    },
+    "snapshots": {
+      "before": {
+        "children": {
+          "count": "14",
+          "hash": "9e56bb5aff87ea9b7fe733c054e1b058"
+        },
+        "deleted_children": {
+          "count": "10",
+          "hash": "69b50f4ce2741ea9933051a21bc119b3"
+        },
+        "child_profile_revisions": {
+          "count": "1",
+          "hash": "4210f243fb7c8b18bdbc6fd80a774218"
+        },
+        "growth_attention": {
+          "count": "2",
+          "hash": "47514049cf80bfdc661ca50e6e00ad9c"
+        },
+        "growth_revisions": {
+          "count": "3",
+          "hash": "f4d7e98e9f07bed0a1d56d03dab61812"
+        },
+        "growth_topics": {
+          "count": "1",
+          "hash": "8d39d339e5385cfde049024bcb8a9dc1"
+        },
+        "growth_topic_revisions": {
+          "count": "1",
+          "hash": "c761aa974649c4b8f71c86d0f4d3e2d8"
+        },
+        "growth_checks": {
+          "count": "14",
+          "hash": "aa8f92fe2d6cdf1ccb8be8763d2eeb7b"
+        },
+        "care_tasks": {
+          "count": "1",
+          "hash": "8977ea3fb3a4de780d35aa61565de560"
+        },
+        "task_occurrences": {
+          "count": "1",
+          "hash": "6dbf2fa2bfd0f02530d6c4c5a1769714"
+        },
+        "task_revisions": {
+          "count": "1",
+          "hash": "df088cd0d5bf690dbe06711a934749d7"
+        },
+        "task_work": {
+          "count": "0",
+          "hash": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        "online_changes": {
+          "count": "165",
+          "hash": "f95f6e059123de1c66a342a73475b520"
+        },
+        "online_operations": {
+          "count": "46",
+          "hash": "0459f0e832a949466a00d612dffafea9"
+        },
+        "agent_runs": {
+          "count": "6",
+          "hash": "bf1f463027211ac3dbf834b6ab0eca88"
+        },
+        "pgboss.job": {
+          "count": "43",
+          "hash": "8df7d7f8082fe1b10380bf54d6749dda"
+        },
+        "worker_control": {
+          "count": "1",
+          "hash": "f28eb4db79d8edc4a71daa7cfef2d886"
+        }
+      },
+      "workspaceBefore": {
+        "stable": "31ad11a06e796437eed40f24eaf67324",
+        "seq": "40",
+        "own_changes": "0"
+      },
+      "after": {
+        "children": {
+          "count": "14",
+          "hash": "9e56bb5aff87ea9b7fe733c054e1b058"
+        },
+        "deleted_children": {
+          "count": "10",
+          "hash": "69b50f4ce2741ea9933051a21bc119b3"
+        },
+        "child_profile_revisions": {
+          "count": "1",
+          "hash": "4210f243fb7c8b18bdbc6fd80a774218"
+        },
+        "growth_attention": {
+          "count": "2",
+          "hash": "47514049cf80bfdc661ca50e6e00ad9c"
+        },
+        "growth_revisions": {
+          "count": "3",
+          "hash": "f4d7e98e9f07bed0a1d56d03dab61812"
+        },
+        "growth_topics": {
+          "count": "1",
+          "hash": "8d39d339e5385cfde049024bcb8a9dc1"
+        },
+        "growth_topic_revisions": {
+          "count": "1",
+          "hash": "c761aa974649c4b8f71c86d0f4d3e2d8"
+        },
+        "growth_checks": {
+          "count": "14",
+          "hash": "aa8f92fe2d6cdf1ccb8be8763d2eeb7b"
+        },
+        "care_tasks": {
+          "count": "1",
+          "hash": "8977ea3fb3a4de780d35aa61565de560"
+        },
+        "task_occurrences": {
+          "count": "1",
+          "hash": "6dbf2fa2bfd0f02530d6c4c5a1769714"
+        },
+        "task_revisions": {
+          "count": "1",
+          "hash": "df088cd0d5bf690dbe06711a934749d7"
+        },
+        "task_work": {
+          "count": "0",
+          "hash": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        "online_changes": {
+          "count": "165",
+          "hash": "f95f6e059123de1c66a342a73475b520"
+        },
+        "online_operations": {
+          "count": "46",
+          "hash": "0459f0e832a949466a00d612dffafea9"
+        },
+        "agent_runs": {
+          "count": "6",
+          "hash": "bf1f463027211ac3dbf834b6ab0eca88"
+        },
+        "pgboss.job": {
+          "count": "43",
+          "hash": "8df7d7f8082fe1b10380bf54d6749dda"
+        },
+        "worker_control": {
+          "count": "1",
+          "hash": "f28eb4db79d8edc4a71daa7cfef2d886"
+        }
+      },
+      "workspaceAfter": {
+        "stable": "31ad11a06e796437eed40f24eaf67324",
+        "seq": "48",
+        "own_changes": "8"
+      }
+    }
+  },
+  "acceptanceBoundary": [
+    "Four finite age rules and parental control happy path; existing source/role/transaction checks reused, no exhaustive matrix.",
+    "Real background retrieval and reconstructed-worker dedup passed before reviewed-source presentation correction; correction verified by three scripted Runner checks and offline captured-response rendering, not another full real-service run.",
+    "Original failed runs remain failed; limited cases are not evidence of clinical effectiveness.",
+    "Full growth-panel browser interaction remains unverified; frontend redesign is separate. External contact and public deployment remain S13-W07/S17-W02."
+  ],
+  "remaining": [
+    "S13-W07 authorized contact and true caregiver completion loop",
+    "S17-W02 public deployment and independent trial",
+    "Optional full growth-panel browser/regression coverage not performed"
+  ],
+  "sourceHashesNormalizedLf": {
     "server/growth-rules.ts": "a41050ec39ad7d580d646d59a643eba5457caafa92c79b9797027dc0f9bf7ddb",
     "server/growth-store.ts": "607b0f9aa2781695e9fc3bcb9d29d90f5d3023b0c3bc71576aa0e7101e24b426",
-    "server/growth-worker.ts": "f627cbe6528db2949b96a7d85f5576f320c0f7ccd44906f3c544594c71586833",
+    "server/growth-worker.ts": "de93f7c1e6163d3264a0c2ac45bd9861a4ad7b63f558cb5f315c55b658d8c457",
     "server/growth-api.ts": "02758967ca8e8cc96ef3e56fe573ee33964e52304fc59e89d8585271712216a1",
     "server/migrations/017-growth-attention.sql": "bb9ed011887ac43e0d3099662fdecd157d214e8182a939ced362051fa6118c46",
     "src/shared/growth.ts": "207e75e847f025997f6ef333941b1532f6714af4f2a51629ff0cb6b1307aa6f1",
     "src/client/growth-api.ts": "defda8ab99c258a6ec47089ee95eabf14e72325f4bb6425056107e4c49cd6a7d",
     "src/client/GrowthPanel.tsx": "84b7d21f8608bce06effb734cf81c9d84a4e6b9f8dda068accc70c50d56f20b6",
     "tests/growth-policy.test.ts": "57c78a822a97151f6994c1b74a96e72b2c727ac7e139aca97dc4d92e07ae0a26"
+  },
+  "deliveryChecks": {
+    "serverTypecheck": {
+      "successfulExecutions": 2,
+      "scope": "First resolved growth wiring, then the necessary summary/growth signature reconciliation after S14 merged. Initial attempt used old incomplete dependencies because cache parent was missing; no product correction required."
+    },
+    "promptLoad": {
+      "pack": "0.1.12",
+      "modules": 12,
+      "characters": 9699,
+      "growthCitationRuleCount": 1,
+      "modelCalls": 0,
+      "result": "passed"
+    },
+    "sourceComparison": "Core Growth rule/store/worker/API/migration/client files match original 47e8f48 and the integrated acceptance version; delivery changes only shared wiring/docs and existing prompt composition."
   }
 }

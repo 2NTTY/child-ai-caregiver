@@ -35,4 +35,3 @@
 
 - 真背景運行誤把事件來源 metadata 當成本 run 引用，四次 present_answer 均被拒絕；主模型局部補 proactive-run 0.1.2，先檢索並使用結果的原始 chunkId，不猜測或重送 ID。
 - Server 引用閘維持不變；錯誤回應加入可執行的補查方向，仍受同一運行限額。修正版尚未重跑真服務，不以 scripted Runner 通過代表品質完成。
-

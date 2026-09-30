@@ -82,7 +82,7 @@ viewer 唯讀；未保存草稿不因一般重新讀取悄悄覆蓋，unknown �
 S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [驗收](../artifacts/verification/S14_W01_CHECKS.json)；未另跑整套 UI，不以純計算或型別結果冒充瀏覽器接線通過。
 
 <a id="growth-ui-handoff"></a>
-## S13-W08 功能接線清單（已實作、待驗收）
+## S13-W08 功能接線清單（必要後端驗收通過；完整 UI 情景未驗）
 
 [GrowthPanel](../src/client/GrowthPanel.tsx)／[growth-api](../src/client/growth-api.ts)／[共享型別](../src/shared/growth.ts)／[HTTP](API.md#growth-attention-http)。正式 App 以帳號及孩子掛載，使用既有 online refresh；未變更 `frontend/**` 的視覺預覽。
 
@@ -92,4 +92,4 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 - 以頁面有限選項補充近況；「供家庭共享」須明確勾選，寫入既有確認事實及更正歷史。未知不預填否定；衝突／已失效事實到記憶區覆核。
 - viewer 唯讀、離線禁提交、帳號／孩子切換清理；unknown 先重讀再選擇原 body 重試，凍結項目版本、授權版本及原 fact refs。歷史顯示上限及 worker 失敗均如實提示。
 
-介面型別通過不代表瀏覽器、真 SQL、worker、模型或通知驗收通過；本包不含外發渠道／預授權聯絡，仍由 W05／W06／W07 交付。
+必要 SQL／背景及呈現修正的證據見 [W08](../artifacts/verification/S13_W08_CHECKS.json)。完整關注面板的瀏覽器互動未驗，不能以型別或其他面板的 Chromium 證據代替；本包不含外發，預授權联絡由 W07 交付。

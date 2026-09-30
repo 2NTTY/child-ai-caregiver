@@ -517,4 +517,4 @@ S10-W01 已在實作固定 pgvector `0.8.6`／commit `8ee86c96f0fd72390f890aa8a3
 
 pg-boss 的 minute cron 只取已到期或目錄版本改變的孩子，短交易完成適用／抑制判斷及新候選；不是每日對全家庭呼叫模型。新基準與 `growth-agent-v1` 原子入列，原 worker generation／storage epoch／candidate version 隨工作保存；模型開始及運行中重查權限、關注與來源。背景復用 S11 ADK，只給家庭資料、讀取／知識／呈現工具，站內結果仍只屬其原運行使用者；沒有共享私人摘要、醫療規則生成或外發。相同 candidate 的 run claim 不會因 worker 重領重做模型。
 
-API 與 worker 均須既有 P2 啟用旗標及 migration 017；DB 維護指令建立兩個新 queue，runtime 不自行 migration。還原後沿既有 worker 暫停與世代核對；失效、有限失敗及真正恢復留集中驗收，不能以輕量檢查代替。
+API 與 worker 均須既有 P2 啟用旗標及 migration 017；DB 維護指令建立兩個新 queue，runtime 不自行 migration。還原後沿既有 worker 暫停與世代核對；必要 SQL、原資料／還原及真背景恢復已有分項證據；完整失敗矩陣未執行，見 [W08 驗收範圍](../artifacts/verification/S13_W08_CHECKS.json)。

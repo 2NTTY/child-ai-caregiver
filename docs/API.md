@@ -60,7 +60,7 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 
 `read_context` 按入口區分本人／家庭；私人摘要只在取得完整批次時透過 `stage_private_summary` 暫存，運行結束再核對來源版本及精確覆蓋，衝突保留原摘要。摘要及候選不成為確認事實。`search_knowledge` 使用既有 public retriever 與同一運行預算；`present_answer` 核對引用 ID、官方類別及當前有效版本，回傳結構不等於已驗證語義支持。
 
-背景 product-background 因已核准到期提醒或 S13-W08 新關注基準入列，讀取家庭共享上下文並保存本人站內說明；不讀私人聊天、建立新任務或發出外部通知。成長關注接線見 S13-W08；預授權聯絡仍留 W07。真 SQL、Gemini／embedding、worker 恢復及瀏覽器接線待 S16-W02 集中驗收；既有 W03／W01 證據不代替本包。
+背景 product-background 因已核准到期提醒或 S13-W08 新關注基準入列，讀取家庭共享上下文並保存本人站內說明；不讀私人聊天、建立新任務或發出外部通知。成長關注接線見 S13-W08；預授權聯絡仍留 W07。必要真 SQL、Gemini／embedding、worker 恢復與修正範圍分列 [S11 證據](../artifacts/verification/S11_W02_CHECKS.json)及 [W08 證據](../artifacts/verification/S13_W08_CHECKS.json)；完整 Agent／關注 UI 情景未驗，不以其他包的瀏覽器證據代替。
 
 <a id="knowledge-retrieval-contract"></a>
 ### P2 最小向量檢索契約
@@ -355,7 +355,7 @@ TaskExecutor 同時核對接收者時區、安靜時段、合併及跟進上限�
 - <a id="api-ga-03"></a>重新提出已關閉主題須有規則允許的新實質依據，回傳新原因及前次處理關聯；舊終態維持，永久停用須明確重開。來源失效、依據不足、衝突、越權及已不適用均有明確結果，不冒充新候選或操作成功。
 - <a id="api-ga-04"></a>資料語義見 [DATA_MODEL](DATA_MODEL.md#growth-attention-model)，執行次序見 [ARCHITECTURE](ARCHITECTURE.md#growth-attention-flow)。沿用既有共享介面及在線更新；本包實際路由見下方，不新增通用平台。
 <a id="growth-attention-http"></a>
-### S13-W08 實際接線（待集中驗收）
+### S13-W08 實際接線
 
 僅在 `P2_AGENT_ENABLED=true` 且 migration 017 已套用時接線。沿用登入 cookie、`x-expected-user-id`、JSON／Origin 及家庭角色校驗；共享關注對目前成員可見，owner／caregiver 可管理，viewer 唯讀。
 

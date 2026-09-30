@@ -255,7 +255,7 @@ P2 任務及外發須保存以下必要語義；實際表名、欄名及枚舉�
 
 
 <a id="growth-attention-storage"></a>
-#### S13-W08 保存實作（migration 017；未驗 SQL）
+#### S13-W08 保存實作（migration 017）
 
 - `growth_attention`／`growth_revisions` 保存候選與處理版本；`growth_topics`／`growth_topic_revisions` 保存永久停用及明確近況操作；正文用既有 cipher／穩定 child、項目及 revision AAD 加密。孩子刪除連帶清除。每孩子／主題只有一個 proposed 或 snoozed；accepted、dismissed、inapplicable 終態不復活。
 - 基準由階段、該規則實質版本、已核對片段 hash 及有限枚舉近況構成；原始記憶正文、私人聊天、原私人引用不複製到關注。另存 profile／相關已確認共享 fact ID 及版本供追溯。來源抓取時間、無關事實版本、更正文案不單獨構成新依據；變回歷史相同基準也不重提。只剩未知不當作新的已確認資料。
