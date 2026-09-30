@@ -527,3 +527,12 @@ API 與 worker 均須既有 P2 啟用旗標及 migration 017；DB 維護指令�
 原生 inlineData 由 Server 注入當次 ADK user message，保留現有 parts／配額／取消／診斷保護；共用同一前景 runtime 並發控制。只載入既有 capture-confirm／multimodal 模組及簡短 photo-capture 接線模組；受限工具只接候選。家長編輯、確認及原圖分享經業務服務完成，AI 不能直接写入共享照護資料。原圖外送須明確操作，不因已上傳便呼叫模型。
 
 本包只做原生 Web File 選取與功能確認表單；不加入圖片套件、雲端物件服務、相機／Android 或 UI polish。已核官方資料與真服務證據分列，必要照片／配對還原通過，完整面板及公開部署未驗；[接口](API.md#p2-photos)／[保存](DATA_MODEL.md#p2-photo-data)／[恢復操作](P2_PHOTOS.md)。
+
+<a id="p2-shared-input-flow"></a>
+## S12-W04 分享輸入接線
+
+復用 [來源 fetcher](../server/knowledge-source-fetch.ts)、既有 online 收據、私人 storage cipher 及共用 ADK runtime；不增加網頁爬蟲／PDF parser 或通用 ingestion 平台。手動貼文、已核准公開頁面及 [照片上傳](#p2-photo-flow) 提供 P2 使用者主動輸入；作業系統分享 adapter 仍留 P4。
+
+Server 只從固定 catalog 選公開來源，沿用 DNS／IP／HTTPS／redirect／內容上限保護；fetch 與模型呼叫均在資料庫交易外，短交易 claim 及結果核權。原文與選取片段當作不可信資料注入；既有 capture-confirmation／multimodal 模組加一個短 shared-capture 接線配方，工具只回私人候選。來源不足不能借提取包裝成育兒建議。
+
+家長可人工填寫，或採用候選再確認；外部參考與孩子實際記錄分開。完整來源快照私有，確認文字共享，沒有背景讀私人動態、帖子直接授權任務或全量向量化。功能 UI 交接見 [清單](P2_UI_HANDOFF.md#shared-input-handoff)；必要私人來源取得／隔離、SQL／保存及真提取修正版證據見 [S12-W04](../artifacts/verification/S12_W04_CHECKS.json)；完整分享面板瀏覽器仍未驗。

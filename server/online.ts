@@ -1,3 +1,5 @@
+import { createSharedInputStore } from "./shared-input-store.ts";
+import { handleSharedInputRequest } from "./shared-input-api.ts";
 import { createPhotoStore } from "./photo-store.ts";
 import { handlePhotoRequest } from "./photo-api.ts";
 import type { PhotoFiles } from "./photo-files.ts";
@@ -40,7 +42,7 @@ interface SpaceRow { id: string; owner_user_id: string; storage_epoch: string; a
 const receiptContext = (userId: string, opId: string, field: string) => `online-operation:${userId}:${opId}:${field}`;
 const missing = () => new FamilyError(404, "not_found");
 
-export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskScheduling?: TaskScheduling, pushServices?: WebPushServices, telegram?: TelegramServices, summaryEnabled=false, photoFiles?:PhotoFiles) {
+export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskScheduling?: TaskScheduling, pushServices?: WebPushServices, telegram?: TelegramServices, summaryEnabled=false, photoFiles?:PhotoFiles, sharedInputsEnabled=false) {
   async function transaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await pool.connect(); let discard = false;
     try {
@@ -72,6 +74,7 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskSchedul
     if (!row) throw missing(); return row.id;
   }
   async function authorize(client: PoolClient, userId: string, space: SpaceRow, route: OnlineRoute, command: OnlineCommand | null, replay: boolean) {
+    if(command && /\/inputs(?:\/|$)/u.test(command.path) && (!sharedInputsEnabled || !(await client.query("SELECT 1 FROM app_migrations WHERE id='022-shared-inputs'")).rowCount))throw missing();
     if(command && /\/photos(?:\/|$)/u.test(command.path) && (!photoFiles || !(await client.query("SELECT 1 FROM app_migrations WHERE id='021-photo-attachments'")).rowCount))throw missing();
     if(command?.path.endsWith("/visit-preparation")&&(!summaryEnabled||!(await client.query("SELECT 1 FROM app_migrations WHERE id='020-care-summaries'")).rowCount))throw missing();
     if(command?.path.startsWith("/api/telegram/") && (!telegram || !(await client.query("SELECT 1 FROM app_migrations WHERE id='018-telegram-channel'")).rowCount))throw missing();
@@ -111,7 +114,9 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskSchedul
   async function dispatch(client: PoolClient, userId: string, command: OnlineCommand): Promise<Response> {
     const borrowed = transactionPool(client), records = createRecordStore(borrowed.pool, cipher, true);
     const request = new Request(`http://online.internal${command.path}`, { method: "POST", headers: { "content-type": "application/json", "x-expected-user-id": userId }, body: JSON.stringify(command.payload) });
-    const response = /\/photos(?:\/|$)/u.test(command.path)&&photoFiles
+    const response = /\/inputs(?:\/|$)/u.test(command.path)&&sharedInputsEnabled
+      ? await handleSharedInputRequest(request,userId,createSharedInputStore(borrowed.pool,cipher),{inReceipt:true})
+      : /\/photos(?:\/|$)/u.test(command.path)&&photoFiles
       ? await handlePhotoRequest(request,userId,createPhotoStore(borrowed.pool,cipher,photoFiles),{inReceipt:true})
       : command.path.endsWith("/visit-preparation")&&summaryEnabled
       ? await handleCareSummaryRequest(request,userId,createCareSummaryStore(borrowed.pool,cipher),true)

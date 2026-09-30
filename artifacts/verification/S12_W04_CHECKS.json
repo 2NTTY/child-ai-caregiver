@@ -1,0 +1,486 @@
+{
+  "workPackage": "S12-W04",
+  "recordedAt": "2026-09-30",
+  "status": "necessary_acceptance_passed_completion_on_pr_merge",
+  "baseline": "a6c37895ad618d1679bc5f9bfb03ec1df53636a2",
+  "sourceImplementation": "0cd2da9",
+  "branch": "codex/s12-w04-shared-input-delivery",
+  "originalImplementationSnapshot": {
+    "package": "S12-W04",
+    "status": "implemented_pending_consolidated_acceptance",
+    "date": "2026-09-29",
+    "base": "1c6591a0b9aa4f1383a648b75e0240666dc07640",
+    "branch": "codex/s12-w04-shared-inputs",
+    "checks": [
+      {
+        "kind": "server_typecheck",
+        "command": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.server.json",
+        "exitCode": 0,
+        "seconds": 3.1993872,
+        "note": "An earlier command used a nonexistent server/tsconfig.json and exited before compilation; corrected once."
+      },
+      {
+        "kind": "client_typecheck",
+        "command": "node node_modules/typescript/bin/tsc --noEmit",
+        "exitCode": 0,
+        "executions": 1,
+        "executor": "Sol xhigh",
+        "includes": "formal app mount; before two local review fixes"
+      },
+      {
+        "kind": "recipe_load",
+        "recipe": "shared-capture",
+        "packVersion": "0.1.6",
+        "modules": 12,
+        "characters": 7820,
+        "exitCode": 0,
+        "modelCalls": 0
+      },
+      {
+        "kind": "review",
+        "result": "source/date fetch transition and explicit exit from checked unknown fixed; final local conditions reviewed without repeating typecheck"
+      }
+    ],
+    "unitTestsAdded": 1,
+    "unitTestsExecuted": 2,
+    "integrationExecuted": true,
+    "browserExecuted": false,
+    "realSourceFetches": 1,
+    "modelCalls": 2,
+    "migrationsApplied": [
+      "022-shared-inputs",
+      "023-personal-sources"
+    ],
+    "pending": [
+      "Shared text candidate event time versus publication date after prompt 0.1.7 correction",
+      "Personal-source live UI connection; operation recovery and revoked UI browser completion"
+    ],
+    "limits": [
+      "Source fetch stores parsed text, not original HTML",
+      "Public catalog excludes internal-only CHP/RTHK feeds",
+      "Personal sources allow explicit bounded public HTTPS HTML retrieval; no website login, background private subscription, public vectorization or autonomous authorization",
+      "No merge to master or deployment"
+    ],
+    "personalSourceRevision": {
+      "date": "2026-09-29",
+      "base": "d2a9c6c87bba7c3233a157f0a17c71156f7e92b4",
+      "status": "implemented_pending_consolidated_acceptance",
+      "scope": [
+        "owner-private source name, HTTPS URL, notes/date and optional supplied text",
+        "one-off public HTML retrieval through existing bounded network transport",
+        "supplied subscription/paid material; no authenticated connector",
+        "no private URL/notes in model context; no public RAG ingestion"
+      ],
+      "checks": [
+        {
+          "kind": "existing transport boundary test",
+          "selectedTests": 1,
+          "result": "passed",
+          "executions": 1,
+          "networkCalls": 0
+        },
+        {
+          "kind": "new personal-source test",
+          "selectedTests": 1,
+          "result": "passed",
+          "note": "Initial input/parser test passed; after adding client protocol assertions the loader required --experimental-transform-types. Corrected command passed; no product or network scenario ran in the failed load."
+        },
+        {
+          "kind": "server typecheck",
+          "executions": 1,
+          "result": "passed"
+        },
+        {
+          "kind": "client typecheck",
+          "executions": 2,
+          "result": "passed after updating response kind/notes and fetch validation"
+        },
+        {
+          "kind": "diff check",
+          "result": "passed"
+        }
+      ],
+      "migrationsApplied": [],
+      "modelCalls": 0,
+      "realSourceFetches": 0,
+      "browserExecuted": false,
+      "pending": [
+        "023 constraint migration and preservation of existing encrypted rows",
+        "private source save/read/owner isolation and URL-only state through real store",
+        "new UI live connection; existing S16 acceptance remains separately recorded"
+      ],
+      "acceptance": {
+        "testedRevision": "fa09af6",
+        "status": "passed",
+        "stage": "complete",
+        "code": null,
+        "startedAt": "2026-09-28T19:19:24.384Z",
+        "durationMs": 511,
+        "storeCalls": 20,
+        "maxStoreCalls": 20,
+        "personalFetchCalls": 1,
+        "maxOutboundGets": 3,
+        "actualOutboundGets": null,
+        "fetchLimits": {
+          "deadlineMs": 20000,
+          "bodyBytes": 1048576,
+          "redirects": 2
+        },
+        "newAccounts": 0,
+        "maxNewChildren": 1,
+        "childCreationAttempted": true,
+        "childId": "c54d8ba6-ae7b-4e0b-8b47-908ca9a282a5",
+        "childDeleted": true,
+        "sources": [
+          {
+            "label": "url_only",
+            "id": "6c7271a3-78f4-4328-be8d-055d69335eb6",
+            "deleted": true
+          },
+          {
+            "label": "supplied_text",
+            "id": "d7f0b35b-c43a-4a6c-8a70-e795bfb8e148",
+            "deleted": true
+          }
+        ],
+        "fetched": {
+          "id": "6c7271a3-78f4-4328-be8d-055d69335eb6",
+          "sha256": "13e81222319f645f035b617ee1635a428ca50bf61abe0bf74cedbb8cbc3e8cd8",
+          "retrievedAt": "2026-09-28T19:19:24.775Z",
+          "characters": 518,
+          "originalUrlPreserved": true
+        },
+        "checks": [
+          "existing_accounts_share_workspace",
+          "caregiver_has_parent_access",
+          "url_only_readable_without_body",
+          "private_fetch_ready_hash_time_original_url",
+          "caregiver_cannot_read_personal_sources",
+          "reconstructed_store_preserves_text_notes_and_fetch",
+          "only_new_sources_and_child_cleaned"
+        ],
+        "modelCalls": 0,
+        "notifications": 0,
+        "publicKnowledgeWrites": 0,
+        "migrationsExecuted": 0,
+        "automaticRetry": false,
+        "contentReview": "518-character fetched body hash matches the previously reviewed FHS HTML parsed locally; no extra external request."
+      }
+    },
+    "sharedExtraction": {
+      "testedPack": "0.1.6",
+      "runtime": "passed",
+      "quality": "needs_correction",
+      "modelCalls": 2,
+      "toolCalls": 1,
+      "embeddingCalls": 0,
+      "familyRecordsUnchanged": true,
+      "finding": "Draft correctly marked external reference and uncertainty, but timeRaw used the publication date instead of the approximately 09:00 event time in the selected text.",
+      "correction": {
+        "commit": "69e6410",
+        "packVersion": "0.1.7",
+        "moduleVersion": "0.1.1",
+        "offlineRecipe": "passed",
+        "realModel": "not_rerun"
+      }
+    }
+  },
+  "reusedIntegrationEvidence": [
+    {
+      "name": "migrations_014_022_original_data_preserved",
+      "status": "passed",
+      "stage": "existing_data",
+      "added": [
+        "014-knowledge-refresh",
+        "015-web-push",
+        "016-product-agent",
+        "017-growth-attention",
+        "018-telegram-channel",
+        "019-proactive-contact",
+        "020-care-summaries",
+        "021-photo-attachments",
+        "022-shared-inputs"
+      ],
+      "tablesPreserved": 39,
+      "rowsPreserved": 386,
+      "workerPaused": true,
+      "backupCreated": true
+    },
+    {
+      "name": "single_content_api_flow",
+      "testedRevision": "ff4058dae3d01255936e5dc38e0a9108949cd499",
+      "command": "node scripts/verify-p2-content.mjs --approved-content",
+      "elapsedMs": 10361,
+      "processExitCode": 0,
+      "processSignal": null,
+      "status": "passed",
+      "checks": [
+        "photo_private_upload_metadata_integrity",
+        "photo_manual_confirmation_shared",
+        "paste_original_text_and_source_metadata_preserved",
+        "reference_shared_note_has_no_quantity_or_event_time",
+        "hong_kong_day_summary_only_approximate_120ml_feeding",
+        "visit_preparation_persisted_and_current",
+        "module_input_photo_and_linked_records_deleted",
+        "deleted_sources_invalidate_summary_review"
+      ],
+      "businessHttp": 39,
+      "healthReads": 18,
+      "accountsCreated": 2,
+      "childrenCreated": 1,
+      "createdChildDeleted": true,
+      "modelCalls": 0,
+      "notifications": 0,
+      "migrationsAppliedByEntry": 0
+    },
+    {
+      "name": "paired_encrypted_backup_empty_restore",
+      "status": "passed",
+      "stage": "restored_evidence",
+      "code": null,
+      "durationMs": 1307,
+      "photoId": "cb392032-c749-4659-b516-d930df5cfd9d",
+      "restoreDatabase": "yuban_s16_restore_20260929",
+      "originalRetained": true,
+      "backupRetained": true,
+      "restoreRetained": true,
+      "workerStarted": false,
+      "modelsCalled": 0,
+      "notifications": 0
+    },
+    {
+      "name": "personal_source_migration_023",
+      "status": "passed",
+      "stage": "preservation",
+      "newMigration": "023-personal-sources",
+      "models": 0,
+      "networkFetches": 0,
+      "notifications": 0,
+      "existingPhotoRows": 1,
+      "backupKind": "database_and_photos",
+      "backupCreated": true,
+      "existingSourcesPreserved": 0,
+      "workerPaused": true,
+      "initialPreparationFailure": "DB-only backup correctly refused existing photo attachments before any migration; corrected to the existing paired backup path, original failure retained."
+    },
+    {
+      "name": "personal_source_supplement",
+      "testedRevision": "fa09af6",
+      "status": "passed",
+      "stage": "complete",
+      "code": null,
+      "startedAt": "2026-09-28T19:19:24.384Z",
+      "durationMs": 511,
+      "storeCalls": 20,
+      "maxStoreCalls": 20,
+      "personalFetchCalls": 1,
+      "maxOutboundGets": 3,
+      "actualOutboundGets": null,
+      "fetchLimits": {
+        "deadlineMs": 20000,
+        "bodyBytes": 1048576,
+        "redirects": 2
+      },
+      "newAccounts": 0,
+      "maxNewChildren": 1,
+      "childCreationAttempted": true,
+      "childId": "c54d8ba6-ae7b-4e0b-8b47-908ca9a282a5",
+      "childDeleted": true,
+      "sources": [
+        {
+          "label": "url_only",
+          "id": "6c7271a3-78f4-4328-be8d-055d69335eb6",
+          "deleted": true
+        },
+        {
+          "label": "supplied_text",
+          "id": "d7f0b35b-c43a-4a6c-8a70-e795bfb8e148",
+          "deleted": true
+        }
+      ],
+      "fetched": {
+        "id": "6c7271a3-78f4-4328-be8d-055d69335eb6",
+        "sha256": "13e81222319f645f035b617ee1635a428ca50bf61abe0bf74cedbb8cbc3e8cd8",
+        "retrievedAt": "2026-09-28T19:19:24.775Z",
+        "characters": 518,
+        "originalUrlPreserved": true
+      },
+      "checks": [
+        "existing_accounts_share_workspace",
+        "caregiver_has_parent_access",
+        "url_only_readable_without_body",
+        "private_fetch_ready_hash_time_original_url",
+        "caregiver_cannot_read_personal_sources",
+        "reconstructed_store_preserves_text_notes_and_fetch",
+        "only_new_sources_and_child_cleaned"
+      ],
+      "modelCalls": 0,
+      "notifications": 0,
+      "publicKnowledgeWrites": 0,
+      "migrationsExecuted": 0,
+      "automaticRetry": false,
+      "contentReview": "Fetched body hash matches the 518-character text parsed from the existing reviewed FHS HTML; no extra GET for review."
+    },
+    {
+      "name": "shared_real_extraction_supplement",
+      "testedRevision": "fa09af6",
+      "kind": "shared",
+      "status": "needs_quality_correction",
+      "stage": "awaiting_manual_review",
+      "code": null,
+      "startedAt": "2026-09-28T19:19:50.252Z",
+      "durationMs": 2728,
+      "childId": "dce9bbde-39e5-48a0-8756-54b852c03c63",
+      "artifactId": "67ca6fdc-80bf-4d69-92df-57c4ef2f0c59",
+      "runId": "46af001d-974b-46a2-a104-751017a05a39",
+      "extractCalls": 1,
+      "runtimeCalls": 1,
+      "providerCalls": 2,
+      "counts": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "recordCountBefore": 1,
+      "recordCountAfter": 1,
+      "familyRecordsUnchanged": true,
+      "newAccounts": 0,
+      "newChildren": 0,
+      "automaticConfirmation": false,
+      "automaticRetry": false,
+      "manualCandidateReview": "Private note/uncertainty correctly preserved, but timeRaw used source publication date instead of selected-text event time; not accepted as quality pass.",
+      "limits": {
+        "modelCalls": 4,
+        "toolCalls": 8,
+        "queryEmbeddings": 0,
+        "deadlineMs": 90000,
+        "outputTokens": 1024,
+        "inputCharacters": 32000,
+        "sdkAttempts": 1
+      },
+      "scriptAssertions": "passed",
+      "promptCorrection": {
+        "originalCommit": "69e6410",
+        "integratedCommit": "8813419",
+        "pack": "0.1.7",
+        "offlineRecipe": "passed",
+        "realModel": "not_rerun"
+      }
+    },
+    {
+      "name": "shared_date_prompt_correction",
+      "testedRevision": "0071e76 (prompt Pack 0.1.7 unchanged from 8813419)",
+      "kind": "shared",
+      "status": "passed",
+      "stage": "awaiting_manual_review",
+      "code": null,
+      "startedAt": "2026-09-28T19:47:02.162Z",
+      "durationMs": 6284,
+      "childId": "dce9bbde-39e5-48a0-8756-54b852c03c63",
+      "originalArtifactId": "67ca6fdc-80bf-4d69-92df-57c4ef2f0c59",
+      "artifactId": "9df42145-b525-44a3-b678-0c1f09b38f1f",
+      "runId": "c1d5ab37-f21b-446c-856c-54486488b5c1",
+      "requiredPackVersion": "0.1.7",
+      "actualPackVersion": "0.1.7",
+      "extractCalls": 1,
+      "runtimeCalls": 1,
+      "providerCalls": 2,
+      "counts": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "dateChecks": {
+        "eventTimeHas0900": true,
+        "eventTimeExcludesPublicationDate": true
+      },
+      "recordCountBefore": 1,
+      "recordCountAfter": 1,
+      "familyRecordsUnchanged": true,
+      "newAccounts": 0,
+      "newChildren": 0,
+      "automaticConfirmation": false,
+      "automaticRetry": false,
+      "manualCandidateReview": "passed: event time about 09:00; publication date separate; approximate amount and unknown event date preserved; external reference not confirmed as family observation",
+      "limits": {
+        "modelCalls": 4,
+        "toolCalls": 8,
+        "queryEmbeddings": 0,
+        "deadlineMs": 90000,
+        "outputTokens": 1024,
+        "inputCharacters": 32000,
+        "sdkAttempts": 1
+      },
+      "usage": {
+        "inputTokens": 12431,
+        "outputTokens": 269,
+        "cachedTokens": 5953
+      }
+    }
+  ],
+  "sourceComparison": {
+    "integrationRevision": "e0653d3",
+    "normalizedLfSha256": {
+      "server/shared-input-api.ts": "9de332ede2c3d9f2a0652101ec9fa0283fcb8becfc55368789d6cc5b9bbd763c",
+      "server/shared-input-store.ts": "1a5a4145c36b841cadd45356f0d1ceb0a345adc7f847e20b8adda48ccbbf1e2d",
+      "server/shared-input-service.ts": "a187e7309dc7b6b9d95893dd72433cc83c20da8ca7744116bb07052a08056486",
+      "server/personal-source-fetch.ts": "d37da286fe0b601df95e2351c588329f77d2151850feadba04a5efc7f0029cd3",
+      "server/public-source-transport.ts": "5cc5c8fddb809fc7c98ec41797e0bb0da843834592e4e3621af83239b1a7649e",
+      "server/knowledge-source-fetch.ts": "617f25cd836b2def19a85190079c75f363e853f0b226594af1f02284e4b21c32",
+      "server/migrations/022-shared-inputs.sql": "e5cf8455390e6e2ace137cfd4b42b76d6865d4a5ebe5b54790ea47ebd4a9cade",
+      "server/migrations/023-personal-sources.sql": "c4b495985d9758a256bee0899d345d37bf688b3dd5959c6da5e7ea0a410156fd",
+      "src/client/SharedInputPanel.tsx": "90b5db9e702911b6f5f44d1e5d89af3ef88b1657176d6582654197f97debd95c",
+      "src/client/shared-input-api.ts": "ce67495b858b824c5460579801aa9a854c5a0664adcb59a3fe743d792a209b87",
+      "src/shared/shared-inputs.ts": "e25f48fc693a44f7d81f5d0d7fbd9059bbf4391ba43b615b5b914c7e536ff5c1",
+      "prompts/modules/shared-capture.md": "28f36476f27b892a259fb94772261031a385ad2ba2750fc2925230dae13e6163"
+    },
+    "result": "Final shared input, private source, prompt and client sources identical; type-only constructor repair retained; current service wiring reviewed separately."
+  },
+  "deliveryChecks": [
+    {
+      "kind": "server_typecheck",
+      "executions": 1,
+      "exitCode": 0,
+      "executor": "GPT-6.1 Sol; main reviewed service wiring and reused existing source behavior evidence"
+    },
+    {
+      "kind": "offline_prompt_load",
+      "recipe": "shared-capture",
+      "version": "0.1.15",
+      "modules": 12,
+      "characters": 7957,
+      "modelCalls": 0
+    },
+    {
+      "kind": "documentation",
+      "newLocalLinks": 18,
+      "worklogAppendOnly": true,
+      "diffCheck": "passed"
+    }
+  ],
+  "newCallsForDelivery": {
+    "model": 0,
+    "embedding": 0,
+    "notification": 0,
+    "databaseAcceptance": 0,
+    "browser": 0,
+    "outboundSourceFetch": 0
+  },
+  "responsibility": {
+    "lead": "B",
+    "weight": 3,
+    "shares": {
+      "B": 50,
+      "C": 25,
+      "A": 25
+    },
+    "execution": "Shared AI operated by A; B account performs push/PR/merge, original author/coauthors retained and actual committer reported."
+  },
+  "limitations": [
+    "Full SharedInputPanel browser workflow unverified; Chromium family/care evidence does not cover this panel.",
+    "Personal source URL entry is not a guarantee of licensing or access rights. No credentials/paywall session import; signed-in content supplied by the parent.",
+    "Only explicit public HTTPS HTML retrieval, not background subscriptions, public knowledge publication or automatic family fact confirmation.",
+    "Initial extraction confused publication date and event time; failure retained, corrected same bounded extraction passed.",
+    "Public deployment remains S17-W02; no P1 renewal."
+  ]
+}

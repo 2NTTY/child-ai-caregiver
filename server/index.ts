@@ -1,3 +1,5 @@
+import { createSharedInputStore } from "./shared-input-store.ts";
+import { createSharedInputService } from "./shared-input-service.ts";
 import { createPhotoFiles } from "./photo-files.ts";
 import { createPhotoStore } from "./photo-store.ts";
 import { createPhotoAgent } from "./photo-agent.ts";
@@ -78,6 +80,9 @@ try {
   const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true", growth, summary) : undefined;
   const productAgentStore = productServices?.store, productAgent = productServices?.agent;
   const photos=photoStore&&productServices?{store:photoStore,agent:createPhotoAgent(photoStore,productServices.runtime)}:undefined;
+  const inputsEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='022-shared-inputs'")).rowCount);
+  const inputStore=inputsEnabled?createSharedInputStore(pool,cipher):undefined;
+  const inputs=inputStore&&productServices?{store:inputStore,service:createSharedInputService(inputStore,productServices.runtime)}:undefined;
   if(photos){
     let purging=false;
     const purge=async()=>{if(purging)return;purging=true;try{await photos.store.purgeDeleted();}catch{console.warn("attachment_cleanup_pending");}finally{purging=false;}};
@@ -89,9 +94,9 @@ try {
     records: createRecordStore(pool, cipher, onlineEnabled),
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
-    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, summaryEnabled, photoFiles) : undefined,
+    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, summaryEnabled, photoFiles, Boolean(inputs)) : undefined,
     telegram,
-    tasks, chat, memory, productAgent, productAgentStore, growth, summary, photos,
+    tasks, chat, memory, productAgent, productAgentStore, growth, summary, photos, inputs,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },

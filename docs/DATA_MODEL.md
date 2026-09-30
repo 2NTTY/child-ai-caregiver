@@ -409,3 +409,16 @@ migration 018（S13-W06，未執行）加入 telegram_challenges、telegram_bind
 檔案先持久寫入，SQL 才標 ready；SQL 未確認時保留 reserved，可對相同 ID／hash 重送並核對已有檔案。私人原圖及候選不進向量知識庫；原圖共享必須有使用者明確確認，家庭成員只見共享原圖及已核對照護記錄，其他人的未確認候選不公開。記錄與附件外鍵關聯，刪記錄、孩子或附件連帶清除關係；觸發器保存 `photo_file_deletions` 最小 ID，Server 啟動及定期清理原檔，失败保留清單，不復活舊收據。
 
 提取 run ID、權限版本及到期時間由 Server 保存，模型不決定。原權限改變、刪除、逾時及未知結果不能沿用舊 run 再呼叫；已知失敗只有使用者依目前版本再要求才開新 run。pending／unknown 原檔仍可人工核對成記錄。備份须包含資料庫、原圖及配對清單；純 pg_dump 不代表附件備份，操作見 [照片備份](P2_PHOTOS.md)。
+
+<a id="p2-shared-input-data"></a>
+## S12-W04 私人分享來源
+
+migration `022-shared-inputs` 新增 `shared_inputs`：孩子／輸入者／來源類型、版本、fetch 與 extraction 的獨立 run ID／期限／授權版本、可選共享記錄連結及確認類型。每個孩子最多 50 項，以 workspace 寫鎖串行核對上限。
+
+新增 `023-personal-sources` 只擴充 kind／source_id 約束，加入 `personal_source`；它和 paste 的 source_id 均為 null，不註冊公共來源。023 本機遷移及新來源保存／隔離已通過；022 的集中驗收結果另見 [S16 集中驗收](../PLAN.md#s16-w02)，不能當成 023 通過。資料仍按孩子及輸入者隔離，不新增跨孩子訂閱或帳密資料表。
+
+原文、來源名稱／網址／日期／私人備註、hash／取得時間、選取片段及 AI 候選以既有 storage cipher 加密，AAD 綁穩定輸入 ID；不放公共向量庫。貼上字串原樣保存；抓取保存明確標示的解析正文。來源快照一旦 ready 不背景刷新，來源日期未知保持 null，保存日期不代替原文日期。舊加密 payload 缺 sourceNotes 時讀為空字串；家長提供的正文保留原樣，URL-only 明示 not_requested，沒有正文不能提取或確認。
+
+原文永久維持輸入者私有；確認只新增家長核對的共享 CareRecord，不把原文改為家庭可讀。`reference` 明確標外部參考、數字及時間不進摘要計算；`family_record` 須另確認實際孩子關係，也不自動建立 MemoryFact／任務或外發授權。既有 Care 更正歷史及版本繼續適用。
+
+新增／確認／刪除沿用私人收據；刪除移除相應回傳正文。記錄／孩子 FK cascade 及 DB 加密備份涵蓋新表，歷史備份仍保留當時快照；還原及資料保留真證據待集中驗收。[契約](API.md#p2-shared-inputs)

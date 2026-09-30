@@ -7,6 +7,7 @@ import { RecordsController } from "../src/client/records-controller";
 import { useRecordsBrowser } from "../src/client/use-records-browser";
 import { createChatApi } from "../src/client/chat-api";
 import { ChatController } from "../src/client/chat-controller";
+import { SharedInputPanel } from "../src/client/SharedInputPanel";
 import { PhotoPanel } from "../src/client/PhotoPanel";
 import { GrowthPanel } from "../src/client/GrowthPanel";
 import { AgentInbox } from "../src/client/AgentInbox";
@@ -239,6 +240,9 @@ export default function HomeScreen() {
         {careScope && careVisible && <GrowthPanel key={`growth:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
           userId={careScope.userId} childId={careScope.child.id} online={state.online} />}
         {careScope && careVisible && <PhotoPanel key={`photo:${environment.apiBaseUrl}:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
+          userId={careScope.userId} childId={careScope.child.id} online={state.online}
+          onSessionChanged={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />}
+        {careScope && careVisible && <SharedInputPanel key={`input:${environment.apiBaseUrl}:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
           userId={careScope.userId} childId={careScope.child.id} online={state.online}
           onSessionChanged={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />}
         {careScope && careVisible && <CareSummaryPanel key={`summary:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}

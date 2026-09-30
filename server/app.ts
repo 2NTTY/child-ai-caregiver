@@ -1,3 +1,4 @@
+import { handleSharedInputRequest } from "./shared-input-api.ts";
 import { handlePhotoRequest } from "./photo-api.ts";
 import { PHOTO_LIMITS } from "../src/shared/photos.ts";
 import { handleCareSummaryRequest } from "./care-summary-api.ts";
@@ -87,6 +88,7 @@ export function createRequestHandler(options: {
   memory?: import("./memory.ts").MemoryStore;
   tasks?: import("./tasks.ts").TaskStore;
   online?: OnlineStore;
+  inputs?:{store:import("./shared-input-store.ts").SharedInputStore;service:import("./shared-input-service.ts").SharedInputService};
   photos?:{store:import("./photo-store.ts").PhotoStore;agent:import("./photo-agent.ts").PhotoAgent};
   summary?:import("./care-summary-store.ts").CareSummaryStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
@@ -198,7 +200,10 @@ export function createRequestHandler(options: {
         || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = /^\/api\/children\/[^/]+\/photos(?:\/|$)/u.test(url.pathname)&&options.photos
+        result = /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(url.pathname)&&options.inputs
+          ? await handleSharedInputRequest(webRequest,userId,options.inputs.store,{service:options.inputs.service,
+              isCurrentUser:async()=>Boolean(userId)&&(await options.auth.api.getSession({headers}))?.user.id===userId})
+          : /^\/api\/children\/[^/]+\/photos(?:\/|$)/u.test(url.pathname)&&options.photos
           ? await handlePhotoRequest(webRequest,userId,options.photos.store,{agent:options.photos.agent,
               isCurrentUser:async()=>Boolean(userId)&&(await options.auth.api.getSession({headers}))?.user.id===userId})
           : /^\/api\/children\/[^/]+\/(summary|visit-preparation)$/u.test(url.pathname) && options.summary

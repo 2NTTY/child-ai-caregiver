@@ -1,7 +1,7 @@
 # STATUS
 
 ## 當前階段
-**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 已隨 PR #59 合併；S11-W02 已隨 PR #60 合併**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
+**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 已隨 PR #59 合併；S11-W02／S14-W01／S13-W08／S12-W03 已分別隨 PR #60／#61／#62／#63 合併；S12-W04 必要驗收通過、正交付**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
 
 ## 現況
 - **試用 URL：https://ex-machina.eu.org**。使用者指定根網域，DNS 由使用者設定；執行版本 `d654b8f`，其後結案修改僅涉及文件。
@@ -49,3 +49,7 @@ S13-W08 成長關注必要驗收通過，完成隨本包 PR 合併生效。有�
 S11-W02：真互動 ADK／向量引用／確認任務、背景 Runtime／重啟去重沿用 S16 分列證據。成長回答曾過度延伸來源，單改 prompt 仍未通過；Server 改呈現已核對片段，3 項必要 Runner 及擷取真回應的離線重播通過，沒有再呼叫模型。整合驗收中的摘要／成長工具分屬後續包，不把本 PR 寫成整個 P2 已可用。沿用 A 主責、權重 5，A 70%／C 20%／B 10%；[證據](artifacts/verification/S11_W02_CHECKS.json)。完整 Agent UI／真照護聯絡／公開部署仍按其範圍交付。
 
 S12-W03 必要驗收通過，完成隨本包 PR 合併生效：復用 39 HTTP 中照片原圖／確認／隔離、單次真照片候選及配對備份／空庫還原證據。刪除原檔／queue 功能通過，舊腳本最終快照因 NULL 選集不一致失敗，限制如實保留；完整照片面板瀏覽器未驗。沒有新模型、通知或部署；[證據](artifacts/verification/S12_W03_CHECKS.json)。
+
+S12-W04 必要驗收通過，完成隨本包 PR 合併生效；照片前置已隨 PR #63 合併。復用 022／023、私人来源保存／取得／隔離、39 HTTP 原文／明確確認及還原證據；原提取日期錯誤保留，修正版真提取通過。完整分享面板瀏覽器未驗，零新增模型或來源 GET；[證據](artifacts/verification/S12_W04_CHECKS.json)。
+
+S12-W04 已接家長本人私人來源（名稱／URL／正文／日期／備註）及明確公開 HTML 取得；原文僅本人讀取，不入公共知識庫、不代登入付費來源，必要既有驗收已歸回本包。

@@ -1,10 +1,10 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
-  "validationScope": "delivered_s11_growth_summary_and_photo_evidence; full_panel_browser_and_public_delivery_tracked_separately",
+  "validationScope": "delivered_s11_growth_summary_photo_and_shared_input_evidence; public_delivery_tracked_separately",
   "promptBoundary": {
     "begin": "<!-- prompt:begin -->",
     "end": "<!-- prompt:end -->"
@@ -214,6 +214,15 @@
       "id": "module.photo-capture",
       "path": "modules/photo-capture.md",
       "version": "0.1.0",
+      "requires": [
+        "module.multimodal-input",
+        "module.capture-confirmation"
+      ]
+    },
+    {
+      "id": "module.shared-capture",
+      "path": "modules/shared-capture.md",
+      "version": "0.1.1",
       "requires": [
         "module.multimodal-input",
         "module.capture-confirmation"
@@ -502,6 +511,32 @@
         "S12-W01"
       ],
       "missingCapability": "可提取已提供文字；附件不可讀就保留未知，不能假稱保存。"
+    },
+    {
+      "id": "shared-capture",
+      "additionalModules": [
+        "domain.childcare-hk.care-workflows",
+        "module.multimodal-input",
+        "module.capture-confirmation",
+        "module.chat",
+        "module.shared-capture"
+      ],
+      "outputModes": [
+        "tool_cycle"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "context",
+        "evidence",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "S12-W04",
+        "S12-W02"
+      ],
+      "missingCapability": "只整理已提供文字為私人候選；不能抓取任意網址、背景讀私人動態或把帖子當家庭事實。"
     }
   ],
   "outputModeRequirements": {
