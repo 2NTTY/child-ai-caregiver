@@ -31,7 +31,7 @@ export function createProductAgent(options: {
         messages: [{ role: "user", text: "這是 Server 核准的背景事件（context.eventType 或事件資料）。按需要讀取家庭共享資料，提供站內說明。若是成長關注，只解釋 Server 已核對的規則、適用性和來源；不創造醫療规则或把未知當未做。不自動改任務或披露私人資料。若是到期任務，按需要用 read_contact_options 及 contact_caregiver 在目前預授權內入列；缺授權只作站內說明。" }],
         tools: run => { tools = createProductAgentTools({ ...options, run, authorize, visibility: "family",
           reviewedGrowthPresentation: input.context.eventType === "growth_attention" }); return tools.tools; },
-        authorize, signal: input.signal, finalize: async () => { rendered.value = await tools!.presentation();
+        authorize, signal: input.signal, finalizeOnModelLimit: true, finalize: async () => { rendered.value = await tools!.presentation();
           if (!rendered.value) throw new AgentStopped("invalid_response"); return rendered.value.text; },
       });
       if(result.status==="stopped" && options.contact && await input.authorize()){
@@ -67,7 +67,7 @@ export function createProductAgent(options: {
         tools: run => {
           tools = createProductAgentTools({ ...options, run, authorize });
           return tools.tools;
-        }, authorize, signal,
+        }, authorize, signal, finalizeOnModelLimit: true,
         finalize: async () => {
           rendered.value = await tools!.presentation();
           if (!rendered.value) throw new AgentStopped("invalid_response");

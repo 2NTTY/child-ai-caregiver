@@ -57,11 +57,16 @@ test("invalid parameters and forged scope are rejected before handler execution"
 });
 
 test("tool authorization rejects expired confirmations and unauthorized resources", async () => {
-  const s = setup(async (_, index) => index ? answer("確認已失效。") : call());
+  const s = setup(async () => call());
+  let finalized = 0;
   s.tool.authorize = async () => false;
+  s.input.finalizeOnModelLimit = true;
+  s.input.finalize = async () => { finalized++; return "Must not complete rejected tools."; };
   const result = await s.runtime.run(s.input);
   assert.equal(s.executions(), 0);
   assert.equal(result.tools[0]?.status, "rejected");
+  assert.equal(result.stopReason, "model_limit");
+  assert.equal(finalized, 0);
 });
 
 test("unknown tools count as attempts and cannot reach any handler", async () => {
@@ -82,25 +87,73 @@ test("model and tool budgets bound scripted loops without extra provider calls",
   assert.equal(many.executions(), 0);
 });
 
+test("model limit finalizes four successful tool steps once without a fifth provider call", async () => {
+  const names = ["read_context", "search_knowledge", "present_answer", "propose_task"];
+  const s = setup(async (_, index) => call(names[index]));
+  const executed: string[] = [];
+  let finalized = 0;
+  s.input.tools = names.map(name => ({ ...s.tool, name, execute: async (args, context) => {
+    executed.push(name); return s.tool.execute(args, context);
+  } }));
+  s.input.finalizeOnModelLimit = true;
+  s.input.finalize = async (result, context) => {
+    finalized++;
+    assert.deepEqual(result.tools.map(tool => tool.status), names.map(() => "succeeded"));
+    assert.deepEqual(context.budget.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
+    return "Server validated presentation.";
+  };
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, "completed", JSON.stringify(result));
+  assert.equal(result.stopReason, undefined);
+  assert.equal(result.text, "Server validated presentation.");
+  assert.deepEqual(executed, names);
+  assert.equal(finalized, 1);
+  assert.equal(s.requests.length, 4);
+  assert.equal(s.reservations(), 4);
+  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
+});
+
+test("model limit with no prepared finalization text stays stopped", async () => {
+  const s = setup(async () => call());
+  let finalized = 0;
+  s.input.finalizeOnModelLimit = true;
+  s.input.finalize = async () => { finalized++; return null; };
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, "stopped");
+  assert.equal(result.stopReason, "invalid_response");
+  assert.equal(result.text, null);
+  assert.equal(finalized, 1);
+  assert.equal(s.requests.length, 4);
+});
+
 test("successful tools survive final model failure without executing again", async () => {
-  const s = setup(async (_, index) => { if (index) throw new Error("secret-provider-error"); return call(); });
+  const s = setup(async (_, index) => { if (index === 3) throw new Error("secret-provider-error"); return call(); });
+  let finalized = 0;
+  s.input.finalizeOnModelLimit = true;
+  s.input.finalize = async () => { finalized++; return "Must not complete an unavailable model."; };
   const result = await s.runtime.run(s.input);
   assert.equal(result.stopReason, "unavailable");
   assert.equal(result.tools[0]?.status, "succeeded");
   assert.equal(result.text, null);
-  assert.equal(s.executions(), 1);
+  assert.equal(s.executions(), 3);
+  assert.equal(result.counts.modelCalls, 4);
+  assert.equal(finalized, 0);
   assert.doesNotMatch(JSON.stringify(result), /secret-provider-error/u);
 });
 
 test("unknown tool outcomes stop before a model can propose a blind retry", async () => {
   const s = setup(async () => call());
   let executions = 0;
+  let finalized = 0;
+  s.input.finalizeOnModelLimit = true;
+  s.input.finalize = async () => { finalized++; return "Must not complete an unknown outcome."; };
   s.tool.execute = async () => { executions++; throw new Error("uncertain external outcome"); };
   const result = await s.runtime.run(s.input);
   assert.equal(result.stopReason, "tool_unknown");
   assert.equal(result.tools[0]?.status, "unknown");
   assert.equal(executions, 1);
   assert.equal(s.requests.length, 1);
+  assert.equal(finalized, 0);
 });
 
 test("oversized context is rejected without calling or reserving the model", async () => {
@@ -132,17 +185,18 @@ test("quota denial stops before the provider and does not trigger a hidden retry
   assert.equal(s.records.length, 0);
 });
 
-test("fallback tool progress is hidden when authorization changes during final model failure", async () => {
+test("fallback tool progress is hidden when authorization changes during model limit finalization", async () => {
   let authorized = true;
-  const s = setup(async (_, index) => {
-    if (!index) return call();
-    authorized = false;
-    throw new Error("synthetic provider failure");
-  });
+  let finalized = 0;
+  const s = setup(async () => call());
   s.input.authorize = async () => authorized;
+  s.input.finalizeOnModelLimit = true;
+  s.input.finalize = async () => { finalized++; authorized = false; return "Private prepared presentation."; };
   const result = await s.runtime.run(s.input);
   assert.equal(result.stopReason, "unauthorized");
-  assert.equal(s.executions(), 1);
+  assert.equal(s.executions(), 4);
+  assert.equal(finalized, 1);
+  assert.equal(result.text, null);
   assert.deepEqual(result.tools, []);
 });
 
@@ -151,6 +205,8 @@ test("cancellation reaches provider and no following operation starts", async ()
   let aborted: AbortSignal | undefined;
   const s = setup(async (_, __, signal) => { aborted = signal; controller.abort(); return new Promise(() => {}); });
   s.input.signal = controller.signal;
+  s.input.finalizeOnModelLimit = true;
+  s.input.finalize = async () => { throw new Error("Finalization must not follow cancellation"); };
   const result = await s.runtime.run(s.input);
   assert.equal(result.stopReason, "cancelled");
   assert.equal(aborted?.aborted, true);
