@@ -1,3 +1,4 @@
+import { handleCareSummaryRequest } from "./care-summary-api.ts";
 import { handleWebPushRequest } from "./web-push-api.ts";
 import { isIP } from "node:net";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -84,6 +85,7 @@ export function createRequestHandler(options: {
   memory?: import("./memory.ts").MemoryStore;
   tasks?: import("./tasks.ts").TaskStore;
   online?: OnlineStore;
+  summary?:import("./care-summary-store.ts").CareSummaryStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
   telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
   growth?: import("./growth-store.ts").GrowthStore;
@@ -179,7 +181,9 @@ export function createRequestHandler(options: {
         || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = (url.pathname==="/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
+        result = /^\/api\/children\/[^/]+\/(summary|visit-preparation)$/u.test(url.pathname) && options.summary
+          ? await handleCareSummaryRequest(webRequest,userId,options.summary)
+          : (url.pathname==="/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
           ? await handleTelegramRequest(webRequest,userId,options.telegram.store)
           : /^\/api\/children\/[^/]+\/growth(\/|$)/u.test(url.pathname) && options.growth
           ? await handleGrowthRequest(webRequest,userId,options.growth,async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)

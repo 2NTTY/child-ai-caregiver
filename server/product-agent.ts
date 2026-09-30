@@ -10,6 +10,7 @@ import { AgentStopped } from "./agent-budget.ts";
 
 export function createProductAgent(options: {
   growth?: import("./growth-store.ts").GrowthStore;
+  summary?:import("./care-summary-store.ts").CareSummaryStore;
   runtime: ReturnType<typeof createAgentRuntime>; store: ProductAgentStore;
   memory: MemoryStore; tasks: TaskStore; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
 }) {
@@ -43,14 +44,15 @@ export function createProductAgent(options: {
       const page = await options.chat.listForUser(userId, childId), context = await options.memory.context(userId, childId, "private");
       const index = page?.messages.findIndex(item => item.id === messageId && item.role === "user") ?? -1;
       if (!page || index < 0 || !context || !await isCurrentUser()) return null;
-      const claim = await options.store.claim(userId, childId, { kind: "interactive", reference: messageId }, "product-interactive");
+      const recipeId=options.summary&&/摘要|總結|总结|報告|报告|(?:到診|到诊|覆診|复诊).{0,4}(?:準備|准备|問題|问题)|summary|report/iu.test(page.messages[index].text)?"summary-visit":"product-interactive";
+      const claim = await options.store.claim(userId, childId, { kind: "interactive", reference: messageId }, recipeId);
       if (!claim) return null;
       if (!claim.created) return options.store.get(userId, childId, claim.runId);
       const authorize = async () => await isCurrentUser() && await options.store.authorize(claim.scope);
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
       const result = await options.runtime.run({
-        scope: claim.scope, runId: claim.runId, deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId: "product-interactive",
+        scope: claim.scope, runId: claim.runId, deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
         context: { currentMessageId: messageId, memoryAvailability: { hasSummary: Boolean(context.summary),
           earlierMessagesNotFullySummarized: context.truncated.messages }, confirmationPolicy: "explicit_selection_only",

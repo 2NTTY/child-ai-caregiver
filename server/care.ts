@@ -37,6 +37,14 @@ export function createCareStore(pool: Pool, cipher: StorageCipher, trackChanges 
       : { childId, version, data: null, confirmedBy: null, confirmedAt: null, reason: null };
   }
   return {
+    async reportSource(userId:string,childId:string) {
+      return withChildAccess(pool,userId,childId,READ_ROLES,async client=>{
+        const profile=await currentProfile(client,childId,await lockChild(client,childId));
+        const rows=(await client.query<Row>("SELECT * FROM text_records WHERE child_id=$1 ORDER BY created_at,id LIMIT 2001",[childId])).rows;
+        if(rows.length>2000)throw new FamilyError(409,"summary_scope_too_large");
+        return {profile,records:rows.map(record)};
+      });
+    },
     async search(userId: string, childId: string, input: CareSearch): Promise<CarePage | null> {
       return withChildAccess(pool, userId, childId, READ_ROLES, async (client, _role, workspaceId) => {
         await lockChild(client, childId);

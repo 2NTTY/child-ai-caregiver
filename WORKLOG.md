@@ -1052,6 +1052,23 @@
 - Review / Delivery：主模型核對 ADK／工具／權限／引用及全部指導、契約與提示詞；原 Sol 只處理已定義的 Server／worker 接線衝突，保留 knowledge、Web Push、Telegram。完成隨本包 PR 合併生效；真照護聯絡留 W07、公開部署留 S17，P2 未完成，未續期或部署。沒有為交付重跑模型或完整回歸。
 - Necessary Check：交付接線 Server typecheck 首次發現既有測試對 SDK unknown data 的三個 TS2339 欄位存取；只補局部型別宣告，斷言／產品行為不變。一次補查通過；沒有再跑 Runner、DB、模型或其他測試。
 
+<a id="log-20260928-011"></a>
+## LOG-20260928-011
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S14-W01，分支 `codex/s14-w01-care-summaries`，獨立閒置 worktree 復用，固定基線 `aa0fd838e86fd4b4950234d5e1eef447a742b9bf`。正式前置 S11-W02 已 review；基線亦含來源／關注／渠道／聯絡等隔離實作，014–019 的未驗範圍承接，未當作已合併主線。
+- Responsibility / Executor：A 主責、權重 3，A 50%／B 30%／C 20%；A 統籌共用 AI。主模型處理契約、SQL／權限、Agent 接線、review 及所有文件／prompt；一個 Luna Max 只定位既有入口，兩個 Sol xhigh 分別做純計算及功能 UI，沒有額外驗證代理。
+- Actual Work：復用多孩子切換、CareStore 當前確認版本與任務；一日／七曆日摘要、原文／來源／更正索引、缺項及預約／衝突、共享到診問題／準備與家長核對。數字以千分位整數計算，約數及單位保留，未知時間不冒用建立日期；有明示容量上限，超限不回部分總計。020 加密準備及版本歷史、同 opId 保存、來源版本失效已接。
+- Agent / UI：既有 summary-visit／summary-report 配方復用為 tool_cycle；新增唯讀摘要工具，不做額外週報模型排程或推送。功能面板已掛載，前端清單更新；未改獨立 frontend、不做 UI polish／PDF 或重寫 Prompt Pack。
+- Verification / Review：[EV-S14-W01](artifacts/verification/S14_W01_CHECKS.json)。純計算只有一項案例、一次通過；Server／client 型別各一次通過，client 包含掛載；配方離線載入一次通過（13 模組／10,216 字元），零模型呼叫。主模型發現 client 曾錯把成功保存後的新依據版本要求等於舊值，修正為核對真實回應及重新 GET；亦補 UUID 一致、上限錯誤及配方觸發範圍，沒有機械重跑已通過案例。
+- Pending / Next：真 SQL／權限與撤銷／原操作、020 重啟／刪除／加密還原、瀏覽器及真 Agent 摘要效果留 P2 集中驗收。照片、分享仍未開始，P2 未完成。沒有 push／合併 master／部署、延長 P1 試用、新依賴、全量測試或額度推算。
+
+<a id="log-20260930-010"></a>
+## LOG-20260930-010
+
+- Work / Responsibility：S14-W01 以已合併 S11 的 `5bbf530` 整理獨立交付；A 主責、權重 3，A 50%／B 30%／C 20%，共用 AI 由 A 操作，保留原共同作者與真實 Committer。主模型核對契約、統計／版本服務、接線及提示詞，沿用原 Sol 實作，沒有另開驗證代理。
+- Verification：復用 S16 的 39 次 HTTP 合成內容流程，涵蓋日摘要、到診草稿保存、原來源刪除後核對失效；020／原資料保留／加密空庫還原及真 Agent 的 read_care_summary 已核對，原模型失敗仍保留。交付僅一次 Server no-emit 型別及一次無模型 summary-visit 配方載入（13 模組、10,028 字元），沒有重跑 SQL、模型、embedding 或瀏覽器。[EV-S14-W01](artifacts/verification/S14_W01_CHECKS.json)。
+- Limits / Delivery：完整 CareSummaryPanel E2E 未驗，不以其他面板情景代填；統計缺項、來源版本及時區語義保留，PDF／分享仍按 P4。完成隨本包 PR 合併生效，P2 尚未完成；現網仍 P1，沒有續期／部署或新增通知。
+
 <a id="log-20260928-008"></a>
 ## LOG-20260928-008
 

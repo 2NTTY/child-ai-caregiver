@@ -1,3 +1,4 @@
+import { CareSummaryPanel } from "../src/client/CareSummaryPanel";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { environment } from "../src/config/environment";
@@ -236,6 +237,9 @@ export default function HomeScreen() {
         </View>}
         {careScope && careVisible && <GrowthPanel key={`growth:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
           userId={careScope.userId} childId={careScope.child.id} online={state.online} />}
+        {careScope && careVisible && <CareSummaryPanel key={`summary:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}
+          userId={careScope.userId} childId={careScope.child.id} online={state.online}
+          onSessionChanged={() => { retainedCare.current = null; chatController.forgetChild(careScope.child.id); void controller.restoreSession(); }} />}
         {careScope && <>
           <EmergencyHelp />
           <AgentInbox key={`agent-inbox:${careScope.userId}:${careScope.child.id}`} apiBaseUrl={environment.apiBaseUrl}

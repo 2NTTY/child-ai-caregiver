@@ -1,3 +1,4 @@
+import { createCareSummaryStore } from "./care-summary-store.ts";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { createAuth } from "./auth.ts";
@@ -65,7 +66,9 @@ try {
   const tasks = onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher, taskScheduling) : undefined;
   const growthEnabled=agentEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='017-growth-attention'")).rowCount);
   const growth=growthEnabled ? createGrowthStore(pool,cipher,taskScheduling) : undefined;
-  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true",growth) : undefined;
+  const summaryEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='020-care-summaries'")).rowCount);
+  const summary=summaryEnabled?createCareSummaryStore(pool,cipher):undefined;
+  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true", growth, summary) : undefined;
   const productAgentStore = productServices?.store, productAgent = productServices?.agent;
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
@@ -73,9 +76,9 @@ try {
     records: createRecordStore(pool, cipher, onlineEnabled),
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
-    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices) : undefined,
+    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, summaryEnabled) : undefined,
     telegram,
-    tasks, chat, memory, productAgent, productAgentStore, growth,
+    tasks, chat, memory, productAgent, productAgentStore, growth, summary,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },

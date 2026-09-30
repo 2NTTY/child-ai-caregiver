@@ -36,6 +36,8 @@ S13-W05 Web Push：SQL 49 業務／2 輪詢通過，原子入列、隔離、失�
 
 S13-W06 Telegram：沿用 D 主責、權重 3，D 60%／C 30%／B 10%。migration／配對備份空庫還原已有 S16 證據；45 業務／2 輪詢 SQL 核對本人綁定、update 去重、unknown、撤銷及持久化，合成資料清理、原行保留。一次真訊息 HTTP 200，使用者確認收到及按鈕回覆，持久台帳 acknowledged；不冒充照護完成。即時 answerCallbackQuery 未成功，公開 webhook 與該回覆接線留 S17-W02，未重發或部署。[證據](artifacts/verification/S13_W06_CHECKS.json)。
 
+S14-W01 必要驗收通過，完成隨本包 PR 合併生效：香港日／七日摘要、到診準備保存及來源刪除後核對失效，沿用 39 次 HTTP 的合成內容流程；020 migration／加密還原及真 Agent 的 read_care_summary 已核對。交付只補 Server 型別及無模型配方載入，不重跑模型或瀏覽器。A 主責、權重 3，A 50%／B 30%／C 20%；[證據](artifacts/verification/S14_W01_CHECKS.json)。完整摘要 UI 情景未驗、PDF／分享留 P4；P2 未完成。
+
 S13-W08 成長關注已實作，正在按已有 S16 證據核對必要家長控制驗收；P2 仍未完成。
 
 ## 用量快照

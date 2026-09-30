@@ -391,3 +391,12 @@ migration 018（S13-W06，未執行）加入 telegram_challenges、telegram_bind
 - 再領 sending 成為 unknown；框架 job 已失效／取消／不存在時，有限批次復核將 queued 轉 stopped、sending 轉 unknown。已撤銷、世代或 epoch 不符的 queued 不外發，還原沿用 worker 暫停閘。密鑰、備份及空庫還原行為仍待集中真 DB 核對。
 
 個人綁定不是家庭授權。S13-W07 才加入任務／對象／披露範圍與渠道的連結，不能從本包的一般測試推論已完成主動聯絡。
+
+<a id="care-summary-storage"></a>
+## S14-W01 摘要來源與到診草稿
+
+摘要每次從當前已確認記錄／檔案及任務計算，不另存第二份家庭事實或把私人聊天提升為共享。來源帶 record ID／version／source／更正原因；孩子年齡沿用原精度及日期基準。現行寫入只容許 exact 事件時間有 at，約數／未知事件時間不列入期間統計；quantity 的約數保留。純計算函式可保留型別容許的約數時間輸入，不改既有寫入規則。
+
+[020-care-summaries.sql](../server/migrations/020-care-summaries.sql) 保存每孩子目前一份 `visit_preparations` 及加密版本歷史，含問題、準備項、可選預約、核對人／時間／期間及資料依據版本。家長可切換目前準備的預約；這是共享草稿，不是新的照護事實、完成確認或外發授權。AAD 綁孩子／版本，刪孩子連帶清理；備份沿用既有整庫加密流程，020 已隨合成庫配對備份／空庫還原核對。
+
+核對狀態綁 storage epoch／家庭 change seq／所選期間；任何來源或家庭資料變化後保守失效，需重新讀取及明確核對。自身保存造成的 seq 變化在同一交易納入新依據；還原或跨範圍不能沿用舊核對。數字與原始記錄同一快照取得，已刪或已更正來源不沿用舊計算。
