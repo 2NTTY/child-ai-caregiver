@@ -1,6 +1,6 @@
 # 照顧摘要與到診準備前端交接
 
-更新：2026-10-01。FE-W16 基線 `e61bca203784d2ed87b81fe3e7294998933fcea7`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；源碼／驗證 commit 待本包提交。主責 B，只修改 `frontend/**`，沒有修改 Server、Agent、正式 App、根文件或規則。不自行 merge。
+更新：2026-10-01。FE-W16 基線 `e61bca203784d2ed87b81fe3e7294998933fcea7`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；源碼／驗證 commit `10aa70bdb3565b4f92e978f99afbe96604f55bf5`。主責 B，只修改 `frontend/**`，沒有修改 Server、Agent、正式 App、根文件或規則。不自行 merge。
 
 ## 核對依據及入口
 

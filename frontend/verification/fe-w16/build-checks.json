@@ -2,7 +2,7 @@
   "scope": "Care summary and visit preparation frontend projection; synthetic only, no aggregation service/API/Agent/device acceptance",
   "verifiedAt": "2026-09-30T23:46:11.503Z",
   "baselineCommit": "e61bca203784d2ed87b81fe3e7294998933fcea7",
-  "sourceCommit": null,
+  "sourceCommit": "10aa70bdb3565b4f92e978f99afbe96604f55bf5",
   "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
   "authoritySources": [
     {

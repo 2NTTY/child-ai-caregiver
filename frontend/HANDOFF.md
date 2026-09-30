@@ -69,7 +69,7 @@ typecheck、三項關鍵規則、四尺寸及 390／320 放大文字／導航／
 
 ### FE-W16 照顧摘要與到診準備
 
-沿 `e61bca2`／現有 draft PR #73，直接讀 GitHub `ce87370` 的 S14-W01 交接及 CareSummaryPanel／API／型別。/summary 顯示 Server 統計、完整來源及原期間，不重新聚合或把未知事件時間歸入當週；RHF useFieldArray 管問題及準備清單，保留原草稿，另核對根契約規範內容及家庭共享。原 opId／confirmed-unread、來源／準備／期間基準比較、失效預約及清理見 [SUMMARY_HANDOFF](SUMMARY_HANDOFF.md)。
+源碼／驗證 `10aa70b`，沿 `e61bca2`／現有 draft PR #73，直接讀 GitHub `ce87370` 的 S14-W01 交接及 CareSummaryPanel／API／型別。/summary 顯示 Server 統計、完整來源及原期間，不重新聚合或把未知事件時間歸入當週；RHF useFieldArray 管問題及準備清單，保留原草稿，另核對根契約規範內容及家庭共享。原 opId／confirmed-unread、來源／準備／期間基準比較、失效預約及清理見 [SUMMARY_HANDOFF](SUMMARY_HANDOFF.md)。
 
 typecheck、兩項規則、四尺寸／150% Web 文字／動態增刪及必要互動、Web 31 路由／Android 31 資產 export 通過；[證據](verification/fe-w16/build-checks.json)。沿既有 Paper／RHF／Zod、日期／時區及 SVG／OKLCH，沒有新依賴。使用者視覺、真 API／控制器／統計、精確導航／跨頁及 APK／真機待驗。主動聯絡接續，不以此取代產品驗收。
 
