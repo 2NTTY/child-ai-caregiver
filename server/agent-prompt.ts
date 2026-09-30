@@ -37,7 +37,7 @@ export async function assembleAgentPrompt(options: {
   for (const id of ids) {
     const entry = modules.get(id);
     if (!entry || !/^[a-z0-9-]+(?:\/[a-z0-9-]+)+\.md$/u.test(entry.path)
-      || entry.version !== manifest.version || entry.requires.some(dependency => !ids.includes(dependency))) throw invalid();
+      || !/^\d+\.\d+\.\d+$/u.test(entry.version) || entry.requires.some(dependency => !ids.includes(dependency))) throw invalid();
     const document = await readModule(entry.path);
     if (!document.includes(`- ID：\`${id}\``) || !document.includes(`- 版本：\`${entry.version}\``)) throw invalid();
     const start = document.indexOf(begin);
