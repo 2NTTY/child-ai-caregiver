@@ -1,0 +1,227 @@
+{
+  "id": "EV-S14-W01",
+  "package": "S14-W01",
+  "status": "necessary_acceptance_passed_completion_on_pr_merge",
+  "verification": [
+    {
+      "kind": "pure_policy",
+      "command": "node --test tests/care-summary-policy.test.ts",
+      "cases": 1,
+      "executions": 1,
+      "result": "passed",
+      "scope": "Local-day range, unknown time separation, exact 0.1+0.2 and preserved record/source/version; no database/model"
+    },
+    {
+      "kind": "server_typecheck",
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.server.json --noEmit",
+      "executions": 1,
+      "result": "passed",
+      "scope": "Core storage/API/Agent integration; subsequent UUID casing and recipe trigger refinements reviewed"
+    },
+    {
+      "kind": "client_typecheck",
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "executions": 1,
+      "result": "passed",
+      "scope": "Sol implementation plus main mount; final post-write-basis and bounded-error predicates manually reviewed"
+    },
+    {
+      "kind": "prompt_assembly",
+      "recipe": "summary-visit",
+      "pack": "0.1.4",
+      "modules": 13,
+      "characters": 10216,
+      "executions": 1,
+      "result": "passed",
+      "scope": "Offline real loader, no model call"
+    },
+    {
+      "kind": "document_diff",
+      "addedLocalLinks": 14,
+      "appendOnlyLog": true,
+      "result": "passed"
+    }
+  ],
+  "reuse": [
+    "Existing child switching and account/scope cleanup",
+    "CareStore confirmed record decoder and version history",
+    "Task ledger, family authority locks, storage cipher and online receipts",
+    "Existing summary-visit and summary-report Prompt Pack"
+  ],
+  "review": [
+    "Coherent snapshot serialized with authorization/source changes",
+    "Encrypted per-child preparation and version history; child deletion cascades",
+    "Own save advances review basis to post-write seq; unrelated source updates invalidate review",
+    "Fixed client acknowledgement validation to accept the server's post-write basis",
+    "Unknown time remains outside date totals; no inference from record creation time",
+    "Bounded source scan rejects excess rather than returning partial totals",
+    "No private chat in shared report; real appointment confirmation not implied"
+  ],
+  "limits": {
+    "childRecords": 2000,
+    "childTasks": 500,
+    "periodRecords": 200,
+    "questions": 12,
+    "checklist": 16
+  },
+  "initialImplementationSnapshot": {
+    "recordedAt": "2026-09-28T15:47:08.010Z",
+    "branch": "codex/s14-w01-care-summaries",
+    "baseCommit": "aa0fd838e86fd4b4950234d5e1eef447a742b9bf",
+    "pending": [
+      "Migrations 014-020, real SQL consistency/authorization/original operation, child delete and restart",
+      "Encrypted backup/empty restore including visit preparations",
+      "True API browser switching, draft/unknown and changed basis",
+      "Real Agent summary tool and source-supported wording in consolidated service acceptance"
+    ],
+    "notRun": [
+      "integration",
+      "E2E",
+      "real services",
+      "build",
+      "lint",
+      "full regression",
+      "deployment"
+    ]
+  },
+  "recordedAt": "2026-09-30",
+  "branch": "codex/s14-w01-care-summaries-delivery",
+  "baseCommit": "5bbf53016954497170ee9a73e676ef3ec2c1d19d",
+  "reusedIntegratedEvidence": [
+    {
+      "name": "migrations_014_022_original_data_preserved",
+      "status": "passed",
+      "stage": "existing_data",
+      "added": [
+        "014-knowledge-refresh",
+        "015-web-push",
+        "016-product-agent",
+        "017-growth-attention",
+        "018-telegram-channel",
+        "019-proactive-contact",
+        "020-care-summaries",
+        "021-photo-attachments",
+        "022-shared-inputs"
+      ],
+      "tablesPreserved": 39,
+      "rowsPreserved": 386,
+      "workerPaused": true,
+      "backupCreated": true
+    },
+    {
+      "name": "single_content_api_flow",
+      "testedRevision": "ff4058dae3d01255936e5dc38e0a9108949cd499",
+      "command": "node scripts/verify-p2-content.mjs --approved-content",
+      "elapsedMs": 10361,
+      "processExitCode": 0,
+      "processSignal": null,
+      "status": "passed",
+      "checks": [
+        "photo_private_upload_metadata_integrity",
+        "photo_manual_confirmation_shared",
+        "paste_original_text_and_source_metadata_preserved",
+        "reference_shared_note_has_no_quantity_or_event_time",
+        "hong_kong_day_summary_only_approximate_120ml_feeding",
+        "visit_preparation_persisted_and_current",
+        "module_input_photo_and_linked_records_deleted",
+        "deleted_sources_invalidate_summary_review"
+      ],
+      "businessHttp": 39,
+      "healthReads": 18,
+      "accountsCreated": 2,
+      "childrenCreated": 1,
+      "createdChildDeleted": true,
+      "modelCalls": 0,
+      "notifications": 0,
+      "migrationsAppliedByEntry": 0
+    },
+    {
+      "name": "paired_encrypted_backup_empty_restore",
+      "status": "passed",
+      "stage": "restored_evidence",
+      "code": null,
+      "durationMs": 1307,
+      "photoId": "cb392032-c749-4659-b516-d930df5cfd9d",
+      "restoreDatabase": "yuban_s16_restore_20260929",
+      "originalRetained": true,
+      "backupRetained": true,
+      "restoreRetained": true,
+      "workerStarted": false,
+      "modelsCalled": 0,
+      "notifications": 0
+    },
+    {
+      "name": "interactive_agent",
+      "status": "passed_after_bounded_corrections",
+      "failedRuns": [
+        {
+          "modelCalls": 1,
+          "tools": 0,
+          "reason": "unavailable",
+          "upstreamHttpStatus": "not retained"
+        },
+        {
+          "modelCalls": 4,
+          "tools": 6,
+          "queryEmbeddings": 0,
+          "reason": "model_limit",
+          "knowledgeCallsRejected": 3
+        },
+        {
+          "modelCalls": 3,
+          "tools": 5,
+          "queryEmbeddings": 2,
+          "reason": "tool_unknown",
+          "evidence": "Model-invented topic filter produced empty results; third search exceeded embedding allowance."
+        }
+      ],
+      "passedRun": {
+        "modelCalls": 3,
+        "toolCalls": 5,
+        "queryEmbeddings": 1,
+        "tools": [
+          "read_context",
+          "read_care_summary",
+          "search_knowledge",
+          "present_answer",
+          "propose_task"
+        ],
+        "taskConfirmedExplicitly": true,
+        "caregiverSeesConfirmedTask": true
+      },
+      "transport": "Initial HTTP entry failed; successful correction uses real product service and PostgreSQL directly, not a repeated HTTP fixture.",
+      "citationReview": "Returned FHS chunk and original official page support the answer; limited example, not clinical effectiveness."
+    }
+  ],
+  "deliveryChecks": {
+    "serverTypecheck": {
+      "command": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.server.json",
+      "result": "passed",
+      "executions": 1
+    },
+    "summaryRecipe": {
+      "pack": "0.1.11",
+      "modules": 13,
+      "characters": 10028,
+      "summaryRuleCount": 1,
+      "modelCalls": 0,
+      "result": "passed"
+    },
+    "mainReview": "Original summary store/policy/client match the integrated acceptance version; bounded Server and Agent wiring retains delivered channel and citation controls."
+  },
+  "remaining": [
+    "Full CareSummaryPanel browser interaction, child-switch/unknown-specific E2E not executed; existing shared-scope/browser evidence is separate.",
+    "P4 PDF/share/report output not implemented by this package.",
+    "S17 public deployment and independent P2 trial remain pending; no P2 completion claim."
+  ],
+  "acceptanceBoundary": "True API evidence is one integrated synthetic content flow; read_care_summary was executed by the actual Agent in an integrated run. Other tool modules present in that run are not claimed as delivered by this PR. No new integration/model/browser or full regression run for delivery.",
+  "sourceHashesNormalizedLf": {
+    "server/care-summary-store.ts": "c96e57dbfaf1be02896e7c26ce8528f726e0e9948665c85a6a66da2b54a10722",
+    "server/care-summary-policy.ts": "cbf39c9d92db59a2317bfa4a6e3760ba52c440e476161592ec87683daf34471d",
+    "server/care-summary-api.ts": "a34b0c9c25f471bc60c8b7993888e810c8799cf439aeed360ce6b4cfa5ed8af3",
+    "server/migrations/020-care-summaries.sql": "005fba8cbba375152307e0780ea146c14100225af413add2ea2bc966bca9770f",
+    "src/shared/care-summary.ts": "180cc551ec087645618563595bc51669416d95a8f501aefa56af4a7438dbbe5e",
+    "src/client/CareSummaryPanel.tsx": "8e4c1b6a20530d72c766aab6b223a703a836b90bc807cd49e7b03fdf030b5b32",
+    "src/client/care-summary-api.ts": "15491c2e2f17bc50069a4ae2cbd33aeb91137c4d4a1397602c3fa86989339969"
+  }
+}

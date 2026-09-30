@@ -1,3 +1,5 @@
+import { createCareSummaryStore } from "./care-summary-store.ts";
+import { handleCareSummaryRequest } from "./care-summary-api.ts";
 import { createHash } from "node:crypto";
 import { createTelegramStore } from "./telegram-store.ts";
 import { handleTelegramRequest } from "./telegram-api.ts";
@@ -35,7 +37,7 @@ interface SpaceRow { id: string; owner_user_id: string; storage_epoch: string; a
 const receiptContext = (userId: string, opId: string, field: string) => `online-operation:${userId}:${opId}:${field}`;
 const missing = () => new FamilyError(404, "not_found");
 
-export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskScheduling?: TaskScheduling, pushServices?: WebPushServices, telegram?: TelegramServices) {
+export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskScheduling?: TaskScheduling, pushServices?: WebPushServices, telegram?: TelegramServices, summaryEnabled=false) {
   async function transaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await pool.connect(); let discard = false;
     try {
@@ -67,6 +69,7 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskSchedul
     if (!row) throw missing(); return row.id;
   }
   async function authorize(client: PoolClient, userId: string, space: SpaceRow, route: OnlineRoute, command: OnlineCommand | null, replay: boolean) {
+    if(command?.path.endsWith("/visit-preparation")&&(!summaryEnabled||!(await client.query("SELECT 1 FROM app_migrations WHERE id='020-care-summaries'")).rowCount))throw missing();
     if(command?.path.startsWith("/api/telegram/") && (!telegram || !(await client.query("SELECT 1 FROM app_migrations WHERE id='018-telegram-channel'")).rowCount))throw missing();
     if (route.kind === "memory" && !(await client.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount) throw missing();
     if (route.kind === "tasks" && !(await client.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount) throw missing();
@@ -104,7 +107,9 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskSchedul
   async function dispatch(client: PoolClient, userId: string, command: OnlineCommand): Promise<Response> {
     const borrowed = transactionPool(client), records = createRecordStore(borrowed.pool, cipher, true);
     const request = new Request(`http://online.internal${command.path}`, { method: "POST", headers: { "content-type": "application/json", "x-expected-user-id": userId }, body: JSON.stringify(command.payload) });
-    const response = command.path.startsWith("/api/web-push/") && pushServices
+    const response = command.path.endsWith("/visit-preparation")&&summaryEnabled
+      ? await handleCareSummaryRequest(request,userId,createCareSummaryStore(borrowed.pool,cipher),true)
+      : command.path.startsWith("/api/web-push/") && pushServices
       ? await handleWebPushRequest(request, userId, createWebPushStore(borrowed.pool, cipher, pushServices, true), true)
       : command.path.startsWith("/api/telegram/") && telegram
       ? await handleTelegramRequest(request, userId, createTelegramStore(borrowed.pool, cipher, telegram), true)

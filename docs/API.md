@@ -425,3 +425,14 @@ S13-W06 的 [共享型別](../src/shared/telegram.ts) 接本人私人渠道；�
 queued、sending、accepted、rejected、unknown、stopped 與 acknowledgedAt 分開；「收到測試」只記收到，不改任何照護任務。sendMessage 逾時或重領 sending 保留 unknown，不重發／不切換渠道；API 接受不是送達或已讀。同一綁定仍有 queued／sending 或未收到回應的 unknown 時，Server 拒絕另建一般測試。原 opId 回應丟失先查收據；即使現況改變，仍可明確用相同原操作取得既有成功或 Server 拒絕，不另建操作猜結果。
 
 本包未接家庭授權聯絡或任務完成 callback；這些在 S13-W07 以當前權限／事項重新校驗後接線。功能已落碼，SQL／真 webhook／Telegram／瀏覽器均待集中驗收。
+
+<a id="care-summary-http"></a>
+## S14-W01 摘要與到診準備
+
+需 P2 開關及 migration 020。GET `/api/children/:childId/summary?startDay=YYYY-MM-DD&period=day|week&timeZone=Asia/Hong_Kong` 回 [CareSummary](../src/shared/care-summary.ts)；登入並核對 expected user、孩子可讀角色。日期窗口為當地一日／連續七個曆日，結束日不包含；數字只從已確認、具有事件時間的當前版本計算。未知時間另外計數，不拿輸入／確認日期冒充事件日期。零紀錄不等於事件沒有發生。
+
+POST `/api/children/:childId/visit-preparation` 只經 S07 收據（直接 POST 428）：`PreparationInput` 帶 expectedVersion、basisVersion、period、明確共享確認、可選已確認且仍 scheduled 的預約 task ID、最多 12 問題／16 清單項及家長核對狀態。只有 owner／caregiver 可寫；回 `{preparation}`。來源或版本改變回 409，原 opId 查核／重試，不自動套新版本。
+
+GET 同一權限交易取得資料與版本；每孩子最多掃 2,000 筆記錄／500 任務，超限明示不產生部分總計；窗口最多 200 筆，超限可改單日。未知時間數量屬全部已掃孩子記錄，不冒稱特定期間缺失。數量只接受明確十進位及已列單位，保留約數；不混加單位、不解析便條數字。原文、source、確認與更正版本保留於記錄索引；既有 care history 入口可取完整修訂。
+
+Agent 的唯讀 `read_care_summary` 復用同一服務、身份與運行預算；模型不能改數字或保存核對狀態。特定摘要需求載入既有 summary-visit 配方，沒有新增模型生成 HTTP、PDF、分享或推送。

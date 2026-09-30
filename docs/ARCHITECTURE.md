@@ -489,3 +489,12 @@ S10-W01 已在實作固定 pgvector `0.8.6`／commit `8ee86c96f0fd72390f890aa8a3
 一般測試只發固定無孩子正文訊息，使用者點回應只記 acknowledgedAt。此包接通渠道邊界，S13-W07 才把已核准家庭事項與聯絡決策接入；不讓渠道 adapter 決定照顧者、醫療事項、fallback 或完成狀態。網頁可關閉，已確認 queued 由 worker 處理；發送不確定時停止重發，不能承諾外部 exactly-once。
 
 原文核對及實作方法見 [Telegram Skill](../.agents/skills/telegram-bot-api/SKILL.md)，帳號操作／上線條件見 [操作指引](P2_TELEGRAM.md)。S13-W06 的 SQL、真 webhook／訊息及恢復仍待 P2 集中驗收。
+
+<a id="care-summary-flow"></a>
+## S14-W01 統計及到診準備接線
+
+復用已驗收的孩子切換、CareStore 解密／確認版本、任務台帳、家庭授權及 online receipts。短交易讀當前孩子來源與依據，純函式按時區曆日分組及千分位整數計算；Server 提供總數，模型只可解釋，不從自由文字猜數值。不新增統計框架、快取層或 PDF 依賴，沿用 [TECH_REUSE](TECH_REUSE.md#decisions) 的領域統計安排。
+
+到診草稿加密保存，核對版本隨來源變化失效；圖表、PDF 及完整報告輸出仍按 P4 工作包。日／週入口不需 Gemini；使用者明確問摘要時才以 summary-visit 配方及唯讀摘要工具加入既有 ADK 循環，原全局配額及上限不變。沒有背景週報推送或額外模型排程。
+
+純計算／型別／配方載入與真 API／Agent／加密還原證據分列 [S14 驗收](../artifacts/verification/S14_W01_CHECKS.json)；完整摘要面板瀏覽器情景未驗，不冒用其他面板的 Chromium 結果。
