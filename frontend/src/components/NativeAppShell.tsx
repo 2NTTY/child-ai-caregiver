@@ -51,7 +51,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
 }
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.canvas },
-  header: { minHeight: mobileLayout.headerMinHeight, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  header: { minHeight: mobileLayout.headerMinHeight, backgroundColor: colors.sidebar, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   brand: { flexShrink: 1, minWidth: 0, justifyContent: "center", minHeight: 48 },
   logo: { width: 124, height: 44 },
   actions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   avatar: { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.teal, justifyContent: "center", alignItems: "center" },
   initial: { fontFamily: chineseFont, color: colors.white, fontSize: typeScale.body, fontWeight: "700" },
   railButton: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center", borderRadius: radius.small, backgroundColor: colors.quietSurface },
-  childStrip: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
+  childStrip: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingBottom: spacing.sm, backgroundColor: colors.sidebar },
   content: { flex: 1 },
   notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },

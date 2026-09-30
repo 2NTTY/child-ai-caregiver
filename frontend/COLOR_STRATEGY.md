@@ -15,7 +15,7 @@ OKLCH 的 L／C／h 分別描述感知明度、彩度及色相，方便有規則
 | 角色 | 本次規則 | 原因 |
 |---|---|---|
 | 畫布 | paper 派生的 neutralSurface #F9F7F3 | 作為內容的中性底，不與主操作爭注意力 |
-| 左導覽／右資訊欄 | paper 派生的 quietSurface #F6F4EC | 常駐區較安靜；品牌暖白 #FAF7EF 留在首頁品牌／海旁美術區 |
+| 左導覽／頂部欄／右資訊欄 | paper 派生的 quietSurface／sidebar #F6F4EC | 同一常駐導覽區沿用相同底色；品牌暖白 #FAF7EF 留在首頁品牌／海旁美術區 |
 | 卡片／彈窗 | 白色；暖灰裝飾分隔 | 讓內容層次來自留白、邊界及字級 |
 | 主要操作 | teal；強調入口用同色相較深的 deepTeal | 集中使用綠色標示可操作入口 |
 | 文字 | ink 作主要文字；muted 種子降低 L 得到可讀的次要文字 | 小字在暖白及淡色容器上仍可辨讀 |
@@ -31,6 +31,7 @@ OKLCH 的 L／C／h 分別描述感知明度、彩度及色相，方便有規則
 使用者認為色階已改善，但放置仍不順眼。本次保留同一組 OKLCH 派生值，重新分配用途。成熟方案的共通點是讓大部分內容、導航和次要操作使用中性色，再以品牌色及狀態色表達少量明確意義；不是把每張卡片、每個圖標或每個連結都染成品牌色。[Atlassian 色彩角色及強度](https://atlassian.design/foundations/color)、[Carbon 層次與色彩角色](https://carbondesignsystem.com/elements/color/overview/)
 
 - 常駐側欄採較安靜的中性暖灰，主畫布稍亮，資料卡片和彈窗採白色。各區靠留白、邊界及字級區分；不將「增加色塊」當作增加層次。這是沿成熟方案的角色分工作本項目映射，沒有照搬它們的品牌色。[Atlassian elevation](https://atlassian.design/foundations/elevation)、[Material 3 surface／container](https://developer.android.com/codelabs/m3-design-theming?hl=en)
+- 頂部欄、窄屏孩子摘要列及原生頂部沿用左導覽的 sidebar 色；內容卡片保持白色，讓常駐導航、主畫布、內容形成穩定層次。Carbon 的淺色主題可交替使用白與 Gray 10，深色主題才逐層變亮；本項目按表面用途映射，不把層次誤當成所有主題都必須單向變亮。[Carbon layering](https://carbondesignsystem.com/elements/color/overview/)
 - 主要提交／對話入口使用 teal／deepTeal；次要按鈕、一般連結及孩子摘要用 ink，普通圖標用 muted。選中的導航和有效焦點才用淡青綠容器。
 - 首頁品牌美術區保留 paper；手機「今日重點」用 paleTeal，讓其位置有清楚視覺主次。內頁說明、記憶內容、預覽工具維持中性。
 - 琥珀只對應待確認／結果未知，珊瑚只對應明確失敗。不同狀態仍須文案與操作區分；「結果未知」不能靠改色變成已知失敗。

@@ -40,11 +40,11 @@
 
 必要 typecheck、三項照片原文／數值單元、Web 25 路由／Android Hermes 31 資產 export、44 個重排及照片／手機關鍵互動通過，沒有 pageerror、console.error 或 API 請求。見 [checks](verification/fe-w11/checks-layout-photos-mobile-density.json)／[build-checks](verification/fe-w11/build-checks.json)；[1440 照片](verification/fe-w11/photos-1440.png)／[320 草稿](verification/fe-w11/photos-320-manual-review.png)。未知結果、刪除清理、私人候選、原文與 scope 清除等語義須按照片交接保留；正式 UI 接線及原生實機未驗。
 
-### FE-W12 手機問候插畫增補
+### FE-W12 手機背景及外殼層次增補
 
-按使用者 2026-10-01 意見，以桌面主頁的海旁家庭美術取代 MobileHomeDashboard 的小草圖標；前置 `933530a`，這個小修訂沿現有 draft PR #73 交付。原圖在 `assets/images/harbour-family-hero.png`，文字可換行、人物靠右呈現，裝飾略過朗讀及鍵盤。使用現有 RN Image／品牌素材，不涉及資料或 API 接線。
+按使用者 2026-10-01 意見，以桌面主頁的海旁家庭美術鋪滿 MobileHomeDashboard 問候區背景；基線 `685cdfc`，沿現有 draft PR #73 交付。原圖在 `assets/images/harbour-family-hero.png`，文字可換行；RN Image 100% 寬高／cover 配 SVG 漸變，左側淡至 canvas、底部接回畫布，裝飾不攔截操作或朗讀。AppShell 的 topbar／compactFacts 及 NativeAppShell 的 header／childStrip 使用相同 sidebar 色；只重新安排現有表面角色，沒有新增色值或資料接口。
 
-typecheck、Web 25 路由／Android Hermes 31 資產 export 及 390／320／150% Web 文字、必要手機互動通過；[證據](verification/fe-w12/build-checks.json)／[390](verification/fe-w12/home-390.png)／[320](verification/fe-w12/home-320.png)，真機及視覺仍待驗。下一包接續已從 GitHub 讀取的本人模型設定契約，輸入／模式／費用同意與 unknown 不重播等語義按 UI-P2-18 核對。
+typecheck、Web 25 路由／Android Hermes 31 資產 export、44 個共用外殼重排通過；最終圖片尺寸修正後重驗 390／320／150% Web 文字及必要手機互動。其他頁和照片規則沿用未變範圍，不新增單元測試。[證據](verification/fe-w12/build-checks.json)／[桌面](verification/fe-w12/home-1440.png)／[390](verification/fe-w12/home-390.png)／[320](verification/fe-w12/home-320.png)，真機及使用者視覺仍待驗。下一包接續已從 GitHub 讀取的本人模型設定契約，輸入／模式／費用同意與 unknown 不重播等語義按 UI-P2-18 核對。
 
 ## 共用元件與成熟方案
 

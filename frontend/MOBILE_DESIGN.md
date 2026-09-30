@@ -50,6 +50,6 @@ typecheck、Web 23 個路由輸出及 Android Hermes／31 項資產輸出通過�
 
 ## FE-W12 問候區品牌插畫
 
-2026-10-01 使用者要求問候區改用桌面主頁的海旁家庭美術。MobileHomeDashboard 直接復用 `harbour-family-hero.png`，文字與圖片排兩欄；圖片框佔可用寬度 34%、最多 120、高 108，靠右顯示照顧者及孩子。文字欄可換行並隨內容增高，沿原有字級；插畫屬裝飾，略過朗讀及鍵盤操作。
+2026-10-01 使用者要求問候區以桌面主頁的海旁家庭美術作完整背景。MobileHomeDashboard 復用 `harbour-family-hero.png`，背景橫跨問候區；左側用現有 canvas 色的 SVG 透明度漸變保護文字，右側保留人物，底部漸淡接回畫布。問候區最小高度 168、文字佔內容寬度 60%，可換行並隨內容增高，沿原有字級；背景不攔截操作，裝飾略過朗讀及鍵盤。
 
-沿用成熟 RN Image／現有品牌素材，毋須新組件庫或美術。390／320 手機密度、原年齡基準／孩子切換／草稿／快捷記錄及 150% Web 文字通過；typecheck、Web 25 路由及 Android Hermes 31 資產 export 通過。證據在 [FE-W12 checks](verification/fe-w12/checks-mobile-density.json)／[build-checks](verification/fe-w12/build-checks.json)，實際 [390](verification/fe-w12/home-390.png)／[320](verification/fe-w12/home-320.png)。只驗共用源碼與 Web／bundle，使用者視覺及原生實機仍待驗。
+沿用 RN Image 與已採用的 react-native-svg 15.15.4，不加新庫或美術；Image 明確設 100% 寬高及 cover，避免靜態素材原尺寸覆蓋絕對定位。頂部、孩子摘要列與常駐側欄使用相同 sidebar 色，畫布及白色卡片形成下一層；現有 OKLCH 色值未變。共用外殼 44 個重排通過；修正圖片尺寸後，390／320、原年齡基準／孩子切換／草稿／快捷記錄及 150% Web 文字再次通過。typecheck、Web 25 路由及 Android Hermes 31 資產 export 通過；[外殼檢查](verification/fe-w12/checks-layout-mobile-density.json)／[最終手機檢查](verification/fe-w12/checks-mobile-density.json)／[建置](verification/fe-w12/build-checks.json)，實際 [桌面](verification/fe-w12/home-1440.png)／[390](verification/fe-w12/home-390.png)／[320](verification/fe-w12/home-320.png)。使用者視覺及原生實機仍待驗。

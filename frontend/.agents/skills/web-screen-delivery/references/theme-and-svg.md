@@ -1,9 +1,11 @@
 # 品牌主題與 SVG 圖標
 
-適用 frontend 的 Paper 5.15.3／Expo 57.0.24／Lucide React Native 1.49.0／react-native-svg 15.15.4。最後核對：2026-09-30；只在修改主題、彈窗、選單或圖標時讀。產品／狀態語義沿根契約。
+適用 frontend 的 Paper 5.15.3／Expo 57.0.24／Lucide React Native 1.49.0／react-native-svg 15.15.4。最後核對：2026-10-01；只在修改主題、彈窗、選單、圖標或背景漸變時讀。產品／狀態語義沿根契約。
 
 - 配色先讀 assets/BRIEF.md 及 frontend/COLOR_STRATEGY.md。執行色值集中 theme.ts；保持品牌來源及語義角色，不逐頁加 HEX 或因參考圖而另造品牌色。OKLCH 用於有用途的候選色及明暗色階，色相旋轉不保證語義、色域或對比。原生輸出用已核對的 sRGB HEX。
 - 色階與放置分開判斷。沿 Material／Carbon／Atlassian 的用途分工：畫布及常駐側欄用中性色，內容卡片／彈窗用白色，次要操作及普通 SVG 保持中性；品牌色集中於主要操作和選中，琥珀／珊瑚只作相應狀態。用留白、字級、邊界和少量表面層次建立主次，不能將每個標題／圖標／卡片都染成主色。成熟方案提供角色原則，不覆蓋育伴港品牌色或產品語義。
+- 同一常駐導航區的頂部／側欄沿用 sidebar，內容畫布及白色卡片按用途分層。Carbon 的 light layers 可交替，dark layers 才逐層變亮；不為模仿層次而每個區域另造色值。
+- 全幅品牌背景沿 RN Image 配現有 SVG LinearGradient：Defs 內以 useId 產生唯一 id，Rect 透過 fill URL 引用；Stop 使用既有 canvas token 及 stopOpacity，橫向漸淡保護文字，必要時加底部漸淡接回畫布。Image 明確設 100% 寬高／cover；RN Web 0.21.2 實測只設 absoluteFill 仍保留靜態素材 1672×941 原尺寸，須檢查實際人物構圖而不只看無溢出。背景 pointerEvents=none、略過朗讀及焦點；文字可換行、容器以 minHeight 隨大字體增高。官方 API 已核對：[SVG LinearGradient](https://github.com/software-mansion/react-native-svg/blob/main/USAGE.md#lineargradient)，執行證據見 frontend/verification/fe-w12；Web 截圖不當作原生實機通過。
 - MD3 的 primary 不會自動更新其餘 surface／elevation／on*／backdrop／disabled 色。完整覆蓋品牌角色，不能遺留預設紫色。Paper 5.15.3 的 Dialog 使用 7 × roundness；roundness 保持倍率基數 4，AppDialog 用共用卡片 radius.large，不能將 16 px 卡片圓角直接當倍率。
 - 反覆導航選單沿 AppMenuList；左圖标、文字、右箭嘴及觸控高度一致。彈窗標題、白底、圓角及 Actions 集中 AppDialog，沿原 RN Modal 焦點／Escape，不以逐頁 CSS 修補 Paper internals。
 - 圖標沿 AppIcon 的 Lucide 公開單圖標入口 `lucide-react-native/icons/<canonical-name>` 和統一 stroke／尺寸 token；PaperProvider 的 settings.icon 同樣指向 PaperSvgIcon。新增名稱補同一映射，不載入全量索引。1.49.0 的 CircleHelp／History／Trash2 是別名，實際入口是 circle-question-mark／rotate-ccw-clock／trash；按已安裝套件 exports 及 esm 入口核對，不能由 TypeScript 別名猜路徑。Lucide 採 ISC，部分 Feather 來源採 MIT；react-native-svg 採 MIT。

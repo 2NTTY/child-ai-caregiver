@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
+import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { AppIcon } from "./AppIcon";
 import type { HomeActions, HomeViewModel } from "../view-model";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing } from "../theme";
@@ -26,19 +27,37 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
   const viewportWidth = useWindowDimensions().width;
   const [quickWidth, setQuickWidth] = useState(0);
   const [childWidth, setChildWidth] = useState(0);
+  const greetingFadeId = useId();
+  const greetingBottomFadeId = `${greetingFadeId}-bottom`;
   const fourQuickColumns = quickWidth >= 290;
   const shortSwitch = childWidth ? childWidth < 300 : viewportWidth < 360;
   const splitAge = Boolean(child?.ageSummaryLabel && child?.ageReferenceLabel);
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-    <View style={styles.greeting}>
+    <View testID="mobile-home-greeting" style={styles.greeting}>
+      <View aria-hidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <Image source={harbourArt} accessible={false} resizeMode="cover" style={styles.greetingArt} />
+        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} aria-hidden focusable={false}>
+          <Defs>
+            <LinearGradient id={greetingFadeId} x1={0} y1={0} x2={1} y2={0}>
+              <Stop offset={0} stopColor={colors.canvas} stopOpacity={1} />
+              <Stop offset={0.56} stopColor={colors.canvas} stopOpacity={1} />
+              <Stop offset={0.72} stopColor={colors.canvas} stopOpacity={0} />
+              <Stop offset={1} stopColor={colors.canvas} stopOpacity={0} />
+            </LinearGradient>
+            <LinearGradient id={greetingBottomFadeId} x1={0} y1={0} x2={0} y2={1}>
+              <Stop offset={0.7} stopColor={colors.canvas} stopOpacity={0} />
+              <Stop offset={1} stopColor={colors.canvas} stopOpacity={1} />
+            </LinearGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill={`url(#${greetingFadeId})`} />
+          <Rect width="100%" height="100%" fill={`url(#${greetingBottomFadeId})`} />
+        </Svg>
+      </View>
       <View style={styles.greetingCopy}>
         <Text accessibilityRole="header" style={styles.heading}>你好，{model.caregiverName}！</Text>
         <Text style={styles.subtitle}>{child ? `一起整理${child.displayName}的照顧日常。` : "先把基本資料整理好，再開始記錄。"}</Text>
         <Text style={styles.motto}>每個小日常，都值得好好記下。</Text>
-      </View>
-      <View aria-hidden importantForAccessibility="no-hide-descendants" style={styles.greetingArtFrame}>
-        <Image source={harbourArt} accessible={false} resizeMode="cover" style={styles.greetingArt} />
       </View>
     </View>
 
@@ -124,13 +143,12 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.canvas },
   page: { padding: mobileLayout.pageInset, gap: mobileLayout.sectionGap, width: "100%", maxWidth: mobileLayout.breakpoint, alignSelf: "center" },
-  greeting: { paddingVertical: spacing.xs, flexDirection: "row", alignItems: "center", gap: spacing.md },
-  greetingCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+  greeting: { position: "relative", minHeight: 168, marginHorizontal: -mobileLayout.pageInset, marginTop: -mobileLayout.pageInset, paddingHorizontal: mobileLayout.pageInset, paddingVertical: spacing.lg, justifyContent: "center", overflow: "hidden" },
+  greetingCopy: { width: "60%", minWidth: 0, gap: spacing.xs },
+  greetingArt: { ...StyleSheet.absoluteFill, width: "100%", height: "100%" },
   heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.heading, fontWeight: "800" },
   subtitle: { fontFamily: chineseFont, color: colors.ink, ...mobileType.body },
   motto: { fontFamily: chineseFont, color: colors.teal, ...mobileType.caption },
-  greetingArtFrame: { width: "34%", maxWidth: 120, height: 108, borderRadius: radius.small, overflow: "hidden", alignItems: "flex-end" },
-  greetingArt: { width: 192, height: 108, flexShrink: 0 },
   childCardRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   identity: { flex: 1, minWidth: 0, minHeight: mobileLayout.touchTarget, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   avatar: { width: mobileLayout.childAvatar, height: mobileLayout.childAvatar, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
