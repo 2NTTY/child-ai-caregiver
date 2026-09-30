@@ -366,6 +366,21 @@ migration 011 啟用 `memory` 類無正文變更及收據刪除；私人候選�
 
 內部 `MemoryStore.prepareSummary` 回傳前一有效摘要、當前權威版本摘要值 `basis`、`previousVersion` 及按 Server 次序排列的最多 50 條未覆蓋訊息；`saveSummary` 只接受完全吻合的實際 ID 清單及版本。資料變化、缺段、越權、重複或過時輸入均不當作成功。摘要不寫入事實／話題／任務狀態。`context` 分開私人及家庭模式；家庭模式不含私人聊天／摘要，亦不提供私人來源 ID。超過 200 項事實或話題時拒絕無篩選 context，不能靜默省略終態；訊息未全部覆蓋以 `truncated.messages` 明示。S11-W02 接入模型時必須處理這些狀態、有效性及 `conflictingKeys`，本包未改 P1 聊天入口或宣稱已由 Gemini 生成摘要。
 
+
+<a id="p2-web-push-http"></a>
+## P2 本人 Web Push 渠道
+
+S13-W05 [共享契約](../src/shared/web-push.ts) 只管理本人訂閱及明確一般測試；不授予聯絡其他照顧者的權限。全部讀寫要求登入及相符的 x-expected-user-id；POST 只透過 [S07 收據](#online-http) command 白名單，直接 POST 回 428。私人 preferences 變更只向本人可見。
+
+| 路徑 | 輸入／回應 |
+|---|---|
+| GET /api/web-push | WebPushStatus：本人綁定、最近最多 20 項投遞、public VAPID key、provider、配置／worker 旗標及測試額度；不回 endpoint／auth key |
+| POST /api/web-push/subscriptions | PushRegistrationInput：subscription（endpoint、keys、expirationTime）及 label；回 { binding }；相同本人端點及 key 冪等，不接管他人綁定 |
+| POST /api/web-push/subscriptions/:id/revoke | expectedVersion；回 { binding }，清除 hash／密文並停止尚未開始投遞 |
+| POST /api/web-push/subscriptions/:id/test | expectedVersion、confirmImmediate:true；回 { delivery }，同交易保存 queued 與 job，不在收據交易外發 |
+
+配額、provider、加密配置及限制見[操作說明](P2_WEB_PUSH.md)。版本／綁定／額度／worker 不符為 409，不自動更新版本；他人／不存在資源為 404，schema 無效 400。S13-W07 才將核准照護任務交渠道，不能把 test 入口當成 Agent 任意外發工具。accepted 不等於送達、已讀或完成；unknown 不重發，已在途請求不能保證撤回。
+
 <a id="errors-compatibility"></a>
 ## 错误、兼容和未确定的实现细节
 

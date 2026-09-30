@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S10-W02",
-  "recordedOn": "2026-09-28",
+  "workPackage": "S13-W05",
+  "recordedOn": "2026-09-30",
   "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "fc1234cd6b781ad904d5ccd2dc4adada30f0e7fd037e54de3439d1d38d7818b7"
+    "sha256": "9e23bbdb7b0d8d40db616de8a2cd2fe21e83732f503555f3217aff63f0944340"
   },
   "packages": [
     {
@@ -558,14 +558,82 @@
           "source": "node_modules/cheerio/LICENSE"
         }
       ]
+    },
+    {
+      "name": "web-push",
+      "version": "3.6.7",
+      "dependencyType": "dependency",
+      "license": "MPL-2.0",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/web-push-libs/web-push.git"
+      },
+      "tarball": "https://registry.npmjs.org/web-push/-/web-push-3.6.7.tgz",
+      "integrity": "sha512-OpiIUe8cuGjrj3mMBFWY+e4MMIkW3SVT+7vEIjvD9kejGUypv8GPDf84JdPWskK8zMRIJ6xYGm+Kxr8YkPyA0A==",
+      "files": [
+        {
+          "path": "licenses/web-push/LICENSE",
+          "sha256": "1fe5dbc03ffe518da23f1297de78ab5612532eddca93cca287a8dfaf4ad7ddce",
+          "source": "node_modules/web-push/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@types/web-push",
+      "version": "3.6.4",
+      "dependencyType": "devDependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/web-push"
+      },
+      "tarball": "https://registry.npmjs.org/@types/web-push/-/web-push-3.6.4.tgz",
+      "integrity": "sha512-GnJmSr40H3RAnj0s34FNTcJi1hmWFV5KXugE0mYWnYhgTAHLJ/dJKAwDmvPJYMke0RplY2XE9LnM4hqSqKIjhQ==",
+      "files": [
+        {
+          "path": "licenses/types-web-push/LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+          "source": "node_modules/@types/web-push/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@playwright/test",
+      "version": "1.63.0",
+      "dependencyType": "devDependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/microsoft/playwright.git"
+      },
+      "tarball": "https://registry.npmjs.org/@playwright/test/-/test-1.63.0.tgz",
+      "integrity": "sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==",
+      "files": [
+        {
+          "path": "licenses/playwright/LICENSE",
+          "sha256": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb",
+          "source": "Previously preserved by S16-W05"
+        },
+        {
+          "path": "licenses/playwright/NOTICE",
+          "sha256": "6d602191187b35b9b01d2cffa01c8469c2c8d9de8a96f1bf868e0f264f51c81d",
+          "source": "Previously preserved by S16-W05"
+        },
+        {
+          "path": "licenses/playwright-runner/ThirdPartyNotices.txt",
+          "sha256": "b17ac0bd6f4b8207e440639cc8e0ba1bf1d9eaf9b12236764ab93b346c7abd8e",
+          "source": "Previously preserved by S16-W05"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 801,
+    "packageEntries": 811,
     "declarations": {
-      "Apache-2.0": 56,
-      "MIT": 638,
-      "ISC": 37,
+      "Apache-2.0": 59,
+      "MIT": 643,
+      "ISC": 38,
       "MIT AND Apache-2.0": 1,
       "BSD-3-Clause": 22,
       "(MIT OR CC0-1.0)": 3,
@@ -576,7 +644,7 @@
       "(MIT OR Apache-2.0)": 1,
       "BlueOak-1.0.0": 6,
       "0BSD": 2,
-      "MPL-2.0": 12,
+      "MPL-2.0": 13,
       "(BSD-3-Clause OR GPL-2.0)": 1
     },
     "missingDeclarations": [

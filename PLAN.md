@@ -100,7 +100,7 @@ S03 依賴最小 Server 身份及資料能力，不依賴 Gemini、家庭邀請�
 | <a id="s11-w02"></a>S11-W02 | P2 | 未開始 | S11-W03、S09-W02、S13-W04、S10-W02 | 接通互動／背景共用 AgentRuntime、已確認記憶、真向量檢索及任務工具；復用 Prompt Pack 的草稿／補問／確認／結構化結果，工具授權、版本、配額及取消一致；育兒問答／成長關注／安全求助引用適用官方片段，不足時明示；原生工具與收尾不重複執行副作用，不建立醫療分流；依 [ADK 原生能力核查](docs/TECH_REUSE.md#adk) 保留單次 Session／Pack，優先 BasePlugin＋原生 spans 最小診斷並驗無正文外洩，不另建 session／skill 平台 |
 | <a id="s12-w03"></a>S12-W03 | P2 | 未開始 | S06-W02、S11-W02 | Web 照片上傳／附件識別與授權、提取及確認；原檔／hash／來源／刪除／備份／容量限制與失敗保留當前輸入 |
 | <a id="s12-w04"></a>S12-W04 | P2 | 未開始 | S12-W03 | 使用者主動分享／貼上／上傳及指定公開來源輸入；保存來源／時間，不背景讀私人動態，不把帖子直接當家庭事實或執行授權 |
-| <a id="s13-w05"></a>S13-W05 | P2 | 未開始 | S06-W02、S13-W04 | Web Push adapter：優先 web-push 處理 VAPID／協定；家庭成員訂閱／授權／撤銷、站內狀態與失敗回報；發送不冒充已讀或完成，依 [渠道採用閘](docs/TECH_REUSE.md#channels) 驗證重試／unknown 及許可 |
+| <a id="s13-w05"></a>S13-W05 | P2 | 已完成 | S06-W02、S13-W04 | Web Push adapter：優先 web-push 處理 VAPID／協定；家庭成員訂閱／授權／撤銷、站內狀態與失敗回報；發送不冒充已讀或完成，依 [渠道採用閘](docs/TECH_REUSE.md#channels) 驗證重試／unknown 及許可；49 業務／2 輪詢 SQL 與一次 Firefox 關頁後真通知／撤銷通過；完成隨本包 PR 合併生效，公開 origin 留 S17-W02，見 [EV-S13-W05](artifacts/verification/S13_W05_CHECKS.json) |
 | <a id="s13-w06"></a>S13-W06 | P2 | 未開始 | S06-W02、S13-W04 | Telegram adapter：優先 grammY，不預設開自動重試；接收者先啟動 bot 並綁定、授權／撤銷、發送／回應及錯誤狀態；憑據／最小通知內容保護、webhook 去重及 unknown 依 [渠道採用閘](docs/TECH_REUSE.md#channels) 驗證 |
 | <a id="s13-w08"></a>S13-W08 | P2 | 未開始 | S11-W02 | 四年齡段有限且已核對的非醫療分流的成長關注規則、按已確認孩子情況判斷適用；站內候選生命週期及來源，關閉後同階段同依據不再催，新階段／實質新確認資料／官方規則實質變更才產生新候選並說明原因；舊終態不復活，可永久停用主題；[成長關注驗收](SPEC.md#ac-growth-attention) |
 | <a id="s13-w07"></a>S13-W07 | P2 | 未開始 | S11-W02、S13-W08、S13-W05、S13-W06 | 預先授權的對象／內容／渠道／fallback 及 S13-W01 提醒控制規則內主動聯絡；每次重查授權，失敗／回應／逾時按規則處理，完成／取消／撤權即停，未知結果不盲重發；沒新事件不空轉模型 |

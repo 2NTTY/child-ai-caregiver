@@ -20,6 +20,9 @@ import { createTaskStore } from "./tasks.ts";
 import { createOnlineStore } from "./online.ts";
 import { createWorkerQueue } from "./worker-queue.ts";
 import { createTaskScheduling } from "./task-worker.ts";
+import { createWebPushQueue } from "./web-push-queue.ts";
+import { createWebPushStore } from "./web-push-store.ts";
+import { readWebPushConfig } from "./web-push-gateway.ts";
 
 let startupCleanup: (() => Promise<void>) | undefined;
 
@@ -39,14 +42,18 @@ try {
   startupCleanup = async () => { try { await queue?.stop(); } finally { await pool.end(); } };
   await queue?.start();
   const taskScheduling = queue ? createTaskScheduling(cipher, queue.queue) : undefined;
+  const pushConfig = await readWebPushConfig(process.env);
+  const pushReady = Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='015-web-push'")).rowCount);
+  const pushServices = pushReady ? { publicKey: pushConfig?.publicKey ?? null, queue: queue ? createWebPushQueue(pool, queue.boss).queue : undefined } : undefined;
   const aiUsage = createAiUsageStore(pool);
   const auth = createAuth(config, pool);
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
+    webPush: pushServices ? createWebPushStore(pool, cipher, pushServices, true) : undefined,
     records: createRecordStore(pool, cipher, onlineEnabled),
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
-    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling) : undefined,
+    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices) : undefined,
     tasks: onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher, taskScheduling) : undefined,
     chat: createChatStore(pool, cipher, onlineEnabled),
     memory: createMemoryStore(pool, cipher, onlineEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='011-memory-online'")).rowCount)),

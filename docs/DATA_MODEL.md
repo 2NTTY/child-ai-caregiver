@@ -336,6 +336,16 @@ S10-W02 的 [014 migration](../server/migrations/014-knowledge-refresh.sql) 增�
 <a id="data-9-6-09"></a>
 P2 使用量區分生成、查詢 embedding 及語料維護；按實際 API 嘗試記錄並關聯 run／維護工作及獲授權歸屬，不把整個 Agent run 當一次呼叫。拒絕／失敗工具也計入運行上限，維護批次另有有限額並受全局控制；成本欄位不保存查詢正文、私人資料或憑據。配置唯一來源見[架構](ARCHITECTURE.md#p2-agent-budgets)。
 
+
+<a id="p2-web-push-storage"></a>
+### P2 Web Push 持久化（S13-W05）
+
+migration 015 的 web_push_subscriptions 以 user_id 歸屬本人，保存版本、狀態、provider、public VAPID key 及時間。endpoint／keys／標籤用既有 AES-GCM 加密，AAD 綁本人及 subscription ID；active 保存唯一 endpoint SHA-256，撤銷／供應商失效清除 hash／密文。其他家庭成員無讀取權。
+
+web_push_deliveries 保存本人、綁定及版本、worker_generation、嘗試／結束時間、有限原因／HTTP status；job 只存 deliveryId，同 ID 原子入列。先 commit sending，外發前重核綁定／世代；重新領取 sending 標 unknown，不再外發。還原沿用 worker 暫停／新世代，舊投遞不能重發。刪 user cascade 綁定／投遞；刪孩子不等於撤銷本人通用渠道。
+
+本包僅固定一般測試，不保存家庭正文或更改照護任務終態。[HTTP 契約](API.md#p2-web-push-http)／[通知模型](#notification-model)。
+
 <a id="relations"></a>
 ## 已确认关系的索引
 

@@ -32,6 +32,8 @@ The exact dependency tree and registry integrity values are recorded in [package
 | pg | 8.23.0 | MIT | [LICENSE](licenses/pg/LICENSE) |
 | pg-boss | 12.34.0 | MIT | [LICENSE](licenses/pg-boss/LICENSE) |
 | cheerio | 1.2.0 | MIT | [LICENSE](licenses/cheerio/LICENSE) |
+| web-push | 3.6.7 | MPL-2.0 | [LICENSE](licenses/web-push/LICENSE) |
+| @types/web-push (development) | 3.6.4 | MIT | [LICENSE](licenses/types-web-push/LICENSE) |
 | @types/node (development) | 24.13.6 | MIT | [LICENSE](licenses/types-node/LICENSE) |
 | @types/pg (development) | 8.23.1 | MIT | [LICENSE](licenses/types-pg/LICENSE) |
 
@@ -49,7 +51,7 @@ After that repair, `npm ls --all --json` reported zero problems, `npx expo insta
 
 ## Transitive dependencies and distribution
 
-S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. S10-W02 adds unmodified Cheerio 1.2.0 for bounded Server-side HTML/RSS parsing. The current manifest covers 28 direct packages and 29 original license/notice texts; earlier verification artifacts retain their historical lockfile hashes.
+S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. S10-W02 adds unmodified Cheerio 1.2.0 for bounded Server-side HTML/RSS parsing. S13-W05 adds unmodified web-push 3.6.7 (MPL-2.0) and its development types 3.6.4 (MIT). The current manifest covers 31 direct packages and 34 original license/notice file entries; earlier verification artifacts retain their historical lockfile hashes.
 
 Transitive packages and their individual license files remain in the installed `node_modules` tree. They are not all reproduced in this document, and `node_modules` is not committed. The inventory records every lockfile license declaration, including build tools and optional platform packages; declared metadata is not proof that every file or distribution obligation has been reviewed.
 

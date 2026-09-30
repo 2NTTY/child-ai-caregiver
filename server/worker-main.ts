@@ -8,15 +8,21 @@ import { createKnowledgeRefreshStore } from "./knowledge-refresh-store.ts";
 import { createKnowledgeRefreshWorker } from "./knowledge-refresh-worker.ts";
 import { SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
 import { fetchKnowledgeSource } from "./knowledge-source-fetch.ts";
+import { createWebPushQueue } from "./web-push-queue.ts";
+import { createWebPushWorker } from "./web-push-store.ts";
+import { createWebPushGateway, readWebPushConfig } from "./web-push-gateway.ts";
 
 let pool: ReturnType<typeof createPool> | undefined;
 let queue: ReturnType<typeof createWorkerQueue> | undefined;
 let knowledgeWorker: ReturnType<typeof createKnowledgeRefreshWorker> | undefined;
+let pushQueue: ReturnType<typeof createWebPushQueue> | undefined;
 let stopping: Promise<void> | undefined;
 const stop = () => stopping ??= (async () => {
   const deadline = setTimeout(() => { console.error("worker_stop_deadline"); process.exit(1); }, 20000).unref();
   try { await knowledgeWorker?.stop(); } finally {
-    try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } }
+    try { await pushQueue?.stop(); } finally {
+      try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } }
+    }
   }
 })();
 try {
@@ -31,6 +37,10 @@ try {
   if (!await queue.boss.getQueue("knowledge-source-check-v1")) throw new Error("knowledge_queue_missing");
   knowledgeWorker = createKnowledgeRefreshWorker(queue.boss, createKnowledgeRefreshStore(pool, SOURCE_WATCHES), fetchKnowledgeSource);
   await knowledgeWorker.start();
+  if ((await pool.query("SELECT 1 FROM app_migrations WHERE id='015-web-push'")).rowCount) {
+    pushQueue = createWebPushQueue(pool, queue.boss);
+    await pushQueue.work(createWebPushWorker(pool, cipher, createWebPushGateway(await readWebPushConfig(process.env))));
+  }
   const shutdown = () => { void stop().catch(() => { console.error("worker_stop_failed"); process.exitCode = 1; }); };
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);

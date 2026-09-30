@@ -3,6 +3,7 @@ import type { Pool, PoolClient } from "pg";
 import { z } from "zod";
 import type { TaskQueue } from "./task-worker.ts";
 import { KNOWLEDGE_REFRESH_QUEUE, REFRESH_JOB_OPTIONS } from "./knowledge-refresh-types.ts";
+import { WEB_PUSH_QUEUE, WEB_PUSH_JOB_OPTIONS } from "./web-push-types.ts";
 
 export const TASK_QUEUE = "task-due-v1", FAILED_QUEUE = "task-failed-v1";
 export const JOB_OPTIONS = { heartbeatSeconds: 60, expireInSeconds: 90, retryLimit: 2, retryDelay: 5,
@@ -48,6 +49,7 @@ export function createWorkerQueue(pool: Pool, mode: "producer" | "worker" | "mig
       }
       await boss.start();
       if (mode === "migrate") {
+        await boss.createQueue(WEB_PUSH_QUEUE, WEB_PUSH_JOB_OPTIONS);
         await boss.createQueue(FAILED_QUEUE, JOB_OPTIONS);
         await boss.createQueue(TASK_QUEUE, { ...JOB_OPTIONS, deadLetter: FAILED_QUEUE });
         await boss.createQueue(KNOWLEDGE_REFRESH_QUEUE, { ...REFRESH_JOB_OPTIONS, policy: "exclusive" });
