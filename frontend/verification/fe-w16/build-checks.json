@@ -1,0 +1,281 @@
+{
+  "scope": "Care summary and visit preparation frontend projection; synthetic only, no aggregation service/API/Agent/device acceptance",
+  "verifiedAt": "2026-09-30T23:46:11.503Z",
+  "baselineCommit": "e61bca203784d2ed87b81fe3e7294998933fcea7",
+  "sourceCommit": null,
+  "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "authoritySources": [
+    {
+      "path": "docs/P2_UI_HANDOFF.md",
+      "githubBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1"
+    },
+    {
+      "path": "docs/API.md",
+      "githubBlob": "69fd07e18f649e4862030001837662d5e2fdc19b"
+    },
+    {
+      "path": "src/shared/care-summary.ts",
+      "githubBlob": "295d3c4bd7d7f3ada0aecaca95bc77016038bd51"
+    },
+    {
+      "path": "src/client/care-summary-api.ts",
+      "githubBlob": "1d234e9fa3774a1b8e0aa789b41eb9ece55dda41"
+    },
+    {
+      "path": "src/client/CareSummaryPanel.tsx",
+      "githubBlob": "da2ef6617bf86d13b748f710f54d0684f48caa33"
+    }
+  ],
+  "sources": [
+    {
+      "path": "app/(dashboard)/_layout.tsx",
+      "sha256": "d365f880fa30679e02f436818fdd9b8bf90fa461c349dd85b6c2d9f3295408cf"
+    },
+    {
+      "path": "app/(dashboard)/summary.tsx",
+      "sha256": "49e418dcc39af3d3682749213c6549bd4805baaae50d0d111d9c1eb35b641c12"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940"
+    },
+    {
+      "path": "scripts/flows/summary.mjs",
+      "sha256": "32ec8ee536996bd39250a47e4af7f31df8f40cf43726aec2618390d0a0c951f6"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "e954c90a3d702f43cc55fea67de6f923ff180b35b06285d7bf0b7f95b59420d8"
+    },
+    {
+      "path": "src/care-view-model.ts",
+      "sha256": "11671d6fd74efc9f3ed28bb5da1bf548d29eb4f18eab0f167afa097d32f1c06f"
+    },
+    {
+      "path": "src/components/AppCheckbox.tsx",
+      "sha256": "1efb6cf18e16d9de1d1952322a0bee7682dd647f68501fcdecc7323cbc088e0e"
+    },
+    {
+      "path": "src/components/AppIcon.tsx",
+      "sha256": "79a0c4c939e57590570b30efbab0f0f2996e10c5aeb963ca8f68e7f3d987bbe4"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256": "cdef2442c4149f83bd5b54047049c4ff6a99b718688008c204686b2acefb42f6"
+    },
+    {
+      "path": "src/components/DateTimeFields.tsx",
+      "sha256": "5f3ec91da26d653f84cc1459497a3ceb2ac0ad85580fe90f732299ad0c29b6f4"
+    },
+    {
+      "path": "src/components/NativeAppShell.tsx",
+      "sha256": "5ea736b94fa93239f83d06da83e2c26dfbf693416190c88303498f1b774bafba"
+    },
+    {
+      "path": "src/components/summary/PreparationCard.tsx",
+      "sha256": "1106a115758f4a13fc2d6789b39a2ff72cea87da98162d82b3745b1ed7c0b8a0"
+    },
+    {
+      "path": "src/components/summary/SummaryRecords.tsx",
+      "sha256": "8b5627dc6e4213ed18b60119d016cbf91c95c5d77f35ff38932776115aa07965"
+    },
+    {
+      "path": "src/components/summary/SummaryView.tsx",
+      "sha256": "128c64dbd49583554651c0e42ce84fc8daacedbbe62a210bc92502200ae79b86"
+    },
+    {
+      "path": "src/components/summary/summary-form.test.mjs",
+      "sha256": "b6b798418500cbca360cd64a16267446a3a77414939191b73ee87414093dfd43"
+    },
+    {
+      "path": "src/components/summary/summary-form.ts",
+      "sha256": "28eead590c9e6154b528b358112a0e127fcbfe615f0b18f511a6b7220008c2e5"
+    },
+    {
+      "path": "src/components/summary/summary-styles.ts",
+      "sha256": "deda3572d34a6c0a847ba5b47433592a773fad648d0a3d11bf1b44af95bafdf8"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "d9309f724e6b17fbbe33016d247754ec3d1b1414eaabce18f4ccdfd15d8d6997"
+    },
+    {
+      "path": "src/preview/PreviewContext.tsx",
+      "sha256": "65285dd589ebf179684ba144889fd0fee17f36a90d39595f511f8f158ef6fed6"
+    },
+    {
+      "path": "src/preview/summaryFixture.ts",
+      "sha256": "23ac32d7c0fafb3e91023874ab1f33436d0d3fa5d5c79f0db0de6017277b0f02"
+    },
+    {
+      "path": "src/preview/useSummaryPreview.ts",
+      "sha256": "dfcaaef68c291614b45defc1729a850089c31742c095a46a35daa38aba77d7c3"
+    },
+    {
+      "path": "src/screens/SummaryScreen.tsx",
+      "sha256": "3657f4ff5f32e24f04267f9bc2453c5b0e6e263a69d44bd5aefd2a069787afe7"
+    },
+    {
+      "path": "src/summary-view-model.ts",
+      "sha256": "3f06255e516338631f9023c7febe8557afabc14a461b2033f8e8d3c465ccb3e0"
+    },
+    {
+      "path": "src/task-view-model.ts",
+      "sha256": "a6d4c2cf6a95b236d8e32c93800ca0988bf6e2e7b81546e1da5221d41d9faee0"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "7f931fdd7ddeacfb2ba1a615bf81aabf1804f595a0266491d02e46825f532688"
+    },
+    {
+      "path": "src/view-model.ts",
+      "sha256": "8589302e55e085bd1abfe2366277f21876d062868355c4aeed4ec45885617ffc"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d"
+    }
+  ],
+  "snapshotDigest": "340a9297e08ebd86b0d665d5b171eb1e511a6211865284c464734df364caa36f",
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "summaryUnit": {
+      "exitCode": 0,
+      "passed": 2,
+      "command": "node --experimental-strip-types --test src/components/summary/summary-form.test.mjs"
+    },
+    "webExport": {
+      "exitCode": 0,
+      "staticRoutes": 31,
+      "bundles": [
+        {
+          "name": "entry-e4fea2148c0a4d486967a4cbbec08a26.js",
+          "sha256": "dac2cce6676dd196575a30e26eaf04b4e3279df811705986f642a07e72c0ff99"
+        }
+      ]
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "assets": 31,
+      "bundles": [
+        {
+          "name": "entry-02c77602bf417ba4cc05a55663463967.hbc",
+          "sha256": "702db7beb7d0592e67ab4f0477877c026616b48860f7013871baf15b95890127"
+        }
+      ]
+    },
+    "summaryUi": {
+      "exitCode": 0,
+      "proof": "checks-summary-summary-text.json",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "textScale": {
+        "webOnly": true,
+        "scale": 1.5,
+        "widths": [
+          390,
+          320
+        ]
+      },
+      "passed": [
+        "summary: four widths/navigation, period and source versions, stable dynamic fields, contract-normalized review and explicit sharing, original receipt/confirmed-unread recovery, stale basis/appointment review, limits and offline/identity/Server/child/access cleanup; no API calls",
+        "summary text: 390/320 synthetic 150% Web text, stable dynamic fields and shared multiline label/control reflow; not native font acceptance"
+      ],
+      "failures": []
+    },
+    "skill": {
+      "frontmatter": "Passed using existing yaml package; official Python validator has no PyYAML in this runtime",
+      "localReferences": 18
+    }
+  },
+  "screenshots": [
+    {
+      "name": "summary-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "90372b08d770ee0c5f792fff572c19e7d5ab8dd587b71e912cb9c07f5140a9a7"
+    },
+    {
+      "name": "summary-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "197120efb9ca149ba75bbf47dfa8e6b421bc519698a0fd4060cd9a084d0595e5"
+    },
+    {
+      "name": "summary-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "aef4f0b8caef3da7eb6d61754d6891f4bbc435c5a21562da4bf0deb29df68c67"
+    },
+    {
+      "name": "summary-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "04915238c68609f7dd04923c36d2eb5bc8f4c0091cb3a6a6dba952ce79003138"
+    },
+    {
+      "name": "summary-form-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "8cc5c2c5d0b3e6e9e2a48a519f87120abce0498865e01b5470fbdbdbe9dfc15f"
+    },
+    {
+      "name": "summary-large-text-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "47732f01d537473a9d47c9d7b9645e7f13bb0f8aa9ef82ed6813479f5286f0dd"
+    },
+    {
+      "name": "summary-large-text-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "e2155cd828afa0d6fffb553f84968150d809f4e821e27f966444df9a9e634ab2"
+    }
+  ],
+  "reuse": [
+    "Existing Paper/RHF/Zod/DateTime controls and OKLCH palette retained",
+    "RHF official repository dynamic array/stable id example and installed 7.88.0 public types checked; documentation site returned 403",
+    "FE-W14 common control/48-layout and FE-W15 existing growth evidence retained; no unrelated suite rerun"
+  ],
+  "versions": {
+    "@expo/metro-runtime": "57.0.16",
+    "@expo/vector-icons": "^15.0.2",
+    "@hookform/resolvers": "5.9.1",
+    "expo": "57.0.24",
+    "expo-constants": "57.0.19",
+    "expo-linking": "57.0.10",
+    "expo-router": "57.0.22",
+    "lucide-react-native": "1.49.0",
+    "luxon": "3.7.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "7.88.0",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-paper": "5.15.3",
+    "react-native-paper-dates": "0.24.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "0.21.2",
+    "react-native-worklets": "0.10.1",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "playwrightCore": "^1.63.0"
+  },
+  "pending": [
+    "User visual acceptance",
+    "Formal CareSummaryApi/controller/display adapters, source statistics and online receipt integration",
+    "Exact Care/task navigation and cross-page synchronization",
+    "PDF/download/clipboard/OS sharing not in the delivered product contract",
+    "APK/device and native keyboard/back/Safe Area/TalkBack/system font acceptance",
+    "Remaining proactive contact frontend projection"
+  ]
+}

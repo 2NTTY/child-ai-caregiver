@@ -18,6 +18,7 @@
 | `/memory`：[memoryScreen](src/screens/memoryScreen.tsx)、[MemoryCards](src/components/memory/MemoryCards.tsx)、[memory-view-model](src/memory-view-model.ts) | 私人候選、確認家庭共享、來源版本／過期阻擋、更正／停用／刪除／歷史、話題暫緩／終態／明確重開、私人摘要覆蓋明細 | [MemoryPanel](../src/client/MemoryPanel.tsx)、[memory-api](../src/client/memory-api.ts)、[memory 型別](../src/shared/memory.ts) |
 | `/tasks`：[TasksView](src/components/tasks/TasksView.tsx)、[task-view-model](src/task-view-model.ts) | 建立共享事項、負責人／時間／時區、改期／轉派、完成／取消、needs_review 明確覆核、版本／歷史／分頁；worker 與提醒資格分開 | [TaskPanel](../src/client/TaskPanel.tsx)、[task-api](../src/client/task-api.ts)、[task 型別](../src/shared/tasks.ts)；對照 S13-W01／W04 |
 | `/growth`：[GrowthView](src/components/growth/GrowthView.tsx)、[growth-view-model](src/growth-view-model.ts) | 理由／來源及狀態、知悉／共享任務、暫緩／關閉、有限近況／主題設定、原內容／授權／fact 版本查回及草稿清理 | 原 GrowthPanel／growth-api／growth 型別；[GROWTH_HANDOFF](GROWTH_HANDOFF.md)。不在前端評估規則、背景執行或外發 |
+| `/summary`：[SummaryView](src/components/summary/SummaryView.tsx)、[summary-view-model](src/summary-view-model.ts) | 期間、原單位／未知時間／完整來源、有限預約、動態問題／清單及共享核對、原收據／草稿／來源基準清理 | 原 CareSummaryPanel／care-summary-api／care-summary 型別；[SUMMARY_HANDOFF](SUMMARY_HANDOFF.md)。統計由 Server 掌管，沒有 PDF／分享假操作 |
 | `/settings`：[PreferencesPreview](src/components/PreferencesPreview.tsx)、[ModelSettingsView](src/components/model-settings/ModelSettingsView.tsx) | 本人安靜時段、時區、預約例外；渠道及模型模式／密鑰／費用同意／個人上限、分開用量與 metadata-only 查核；帳戶及引導重看入口 | family-api 的 getPreferences／savePreferences；本人渠道沿 [CHANNELS_HANDOFF](CHANNELS_HANDOFF.md)，模型沿原 ModelSettingsPanel／model-settings-api，詳見 [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md) |
 | `/chat`：[AgentRunView](src/components/agent/AgentRunView.tsx)、[AgentInboxView](src/components/agent/AgentInboxView.tsx) | 對話版式／當頁問題；合成運行／完整候選／引用快照、明確共享、原決定查核、手動私人背景結果 | 原 ChatPanel／chat-controller／product-agent-api／AgentRunPanel／AgentInbox；詳見 [AGENT_HANDOFF](AGENT_HANDOFF.md)。不是通用 opId 流程，真聊天及 Agent 回覆仍待接線 |
 | `/login`、`/guide` | 登入／註冊本地格式檢查，引導條件及重看入口 | Better Auth；引導完成來源仍待接線，不把「看過引導」當真初始化完成 |
@@ -66,12 +67,18 @@ typecheck、三項安全／command 輕量檢查、四尺寸／鍵盤／unknown �
 
 typecheck、三項關鍵規則、四尺寸及 390／320 放大文字／導航／互動、Web 29 路由／Android 31 資產 export 通過；[實際證據](verification/fe-w15/build-checks.json)。沿 Paper／RHF／Zod、日期時間和 SVG，沒有新依賴或色彩。使用者視覺及真 API／refresh／跨頁、APK／真機仍待驗。
 
+### FE-W16 照顧摘要與到診準備
+
+沿 `e61bca2`／現有 draft PR #73，直接讀 GitHub `ce87370` 的 S14-W01 交接及 CareSummaryPanel／API／型別。/summary 顯示 Server 統計、完整來源及原期間，不重新聚合或把未知事件時間歸入當週；RHF useFieldArray 管問題及準備清單，保留原草稿，另核對根契約規範內容及家庭共享。原 opId／confirmed-unread、來源／準備／期間基準比較、失效預約及清理見 [SUMMARY_HANDOFF](SUMMARY_HANDOFF.md)。
+
+typecheck、兩項規則、四尺寸／150% Web 文字／動態增刪及必要互動、Web 31 路由／Android 31 資產 export 通過；[證據](verification/fe-w16/build-checks.json)。沿既有 Paper／RHF／Zod、日期／時區及 SVG／OKLCH，沒有新依賴。使用者視覺、真 API／控制器／統計、精確導航／跨頁及 APK／真機待驗。主動聯絡接續，不以此取代產品驗收。
+
 ## 共用元件與成熟方案
 
 - [theme.ts](src/theme.ts) 是色彩、字級、間距、圓角及 Paper 主題唯一入口；[ui.tsx](src/components/ui.tsx) 集中品牌按鈕、輸入、選單、卡片、標題、分頁和狀態。
 - [AppDialog](src/components/AppDialog.tsx) 以 React Native Modal 承載 Paper Dialog，沿其 Web focus trap／Escape／焦點還原。Paper 的 [Modal 官方文件](https://oss.callstack.com/react-native-paper/docs/components/Modal) 要求 accessible modal 採 RN Modal；不用裸 Paper Modal 假設焦點已被限制。
 - [AppCheckbox](src/components/AppCheckbox.tsx) 集中勾選、Space、disabled、Web aria-checked 與原生 accessibilityState；[ChildPicker](src/components/ChildPicker.tsx) 集中孩子切換。RN Web 0.21.2 須明確提供相應 ARIA，不因 TypeScript 接受 accessibilityState 就當 DOM 已有狀態。
-- 複雜表單沿根工程已採用 RHF 7.88.0／resolvers 5.9.1／Zod 4.5.4；schema 在各功能組件目錄，Controller 接共用欄位，原文不被 trim／數值轉換覆寫。
+- 複雜表單沿根工程已採用 RHF 7.88.0／resolvers 5.9.1／Zod 4.5.4；schema 在各功能組件目錄，Controller 接共用欄位，原草稿不為顯示而 trim／數值轉換覆寫；根契約明確規範值時另行核對實際保存內容。
 - [DateTimeFields](src/components/DateTimeFields.tsx) 復用 MIT 的 Paper Dates **0.24.0** 日曆／時間輸入及 zh-HK 文案。標準時鐘視窗最小寬度 328，因此小於 360 的容器用同庫公開 TimePicker 的鍵盤模式和共用 Dialog；保留可手填欄位。
 - [date-time](src/components/date-time.ts) 透過 MIT Luxon **3.7.2** 處理 IANA 時區轉換；日期本身不变成 UTC instant。安排時間需明確 offset／時區，拒絕無效日、DST 不存在或重複的本地時間，不按電腦時區暗中偏移。未改動的原值保留。
 - 基線仍是 Expo 57.0.24／Router 57.0.22／RN 0.86.3／RN Web 0.21.2／Paper 5.15.3。依賴在本目錄鎖版本，不複製 lockfile 覆蓋根檔。路由／畫面／元件／狀態分檔，StyleSheet.create 與組件共置，沒有單一 HTML 巨檔。
@@ -132,7 +139,7 @@ HomeChild.profileConfirmed／ageLabel／allergiesLabel 只投影同一 selectedC
 
 - 所有真 session／API／opId／跨畫面及跨成員同步、正式 UI 掛載，以及接線後針對新增介面的必要瀏覽器驗收。主線已經 `9f0febd` 合併既有正式 App 的 S16-W05 Chromium 情景；該證據可按未變部分復用，但沒有驗過本包隔離介面，不要求無理由重跑整套舊情景。
 - S13-W05／W06 的本人渠道已在 FE-W07 投影，待接正式 adapter；真通知中心／未讀及 W07 聯絡授權／fallback 台帳另核對所屬交付。active 分支落碼不等同已合併交付，不代改其程式碼。
-- 最新直接讀 GitHub `ce87370`：P2 正式結案／交付已隨 PR #71 合併，PR #72 新增本人模型 key／可調上限，P2 UI 總表已更新；既有功能未接本包隔離畫面不代表後端未實作。FE-W09 已投影 Agent，FE-W11 已投影照片，FE-W13 已投影本人模型設定，FE-W14 已投影私人來源／共享核對，FE-W15 已投影成長關注；摘要及主動聯絡待後續前端包。全部隔離畫面仍待正式 adapter／跨畫面接線與必要驗收；P3 未因 Android bundle 啟動或完成，不修改主聊天權威文件。
+- 最新直接讀 GitHub `ce87370`：P2 正式結案／交付已隨 PR #71 合併，PR #72 新增本人模型 key／可調上限，P2 UI 總表已更新；既有功能未接本包隔離畫面不代表後端未實作。FE-W09 已投影 Agent，FE-W11 已投影照片，FE-W13 已投影本人模型設定，FE-W14 已投影私人來源／共享核對，FE-W15 已投影成長關注，FE-W16 已投影摘要及到診準備；主動聯絡待下一前端包。全部隔離畫面仍待正式 adapter／跨畫面接線與必要驗收；P3 未因 Android bundle 啟動或完成，不修改主聊天權威文件。
 - 真通知中心、Web Push／Telegram／FCM 及未讀。鈴鐺只提示合成原操作，右欄勾選只是本地清單；/tasks 的合成流程另列，不能互相冒充。
 - 圖中的第三方／手機登入、忘記密碼、方案／儲存用量、帳戶匯出／刪除、疫苗百分比及知識首頁，不能憑圖片當已承諾 API。手機首頁暫用已有記憶／話題入口；照片已可進入 FE-W11 原檔預覽，沒有假醫療建議、真上傳或咪高峰操作。
 - 正式 P3 共用服務、APK／簽署、實機畫面／鍵盤／返回鍵／Safe Area／TalkBack／大字體、登入及相機／通知權限。Android JS bundle 不代表上述已驗收。

@@ -2,7 +2,8 @@
 
 適用 frontend/ 的 Paper 5.15.3／RN Web 0.21.2／RHF 7.88.0／resolvers 5.9.1／Zod 4.5.4／Paper Dates 0.24.0／Luxon 3.7.2；最後核對 2026-09-29。改表單／選單／日期／彈窗時才讀，產品及 payload 仍以根契約為準。
 
-- 沿 Controller 接 AppTextField／AppSelect，將 field.ref 傳到實際欄位。ref callback 不回傳 RHF ref 的任意結果，避免 React 19 視為 cleanup。handleSubmit 的原值不為顯示而 trim／parse 後覆寫，schema 只驗證；錯誤靠近欄位。
+- 沿 Controller 接 AppTextField／AppSelect，將 field.ref 傳到實際欄位。ref callback 不回傳 RHF ref 的任意結果，避免 React 19 視為 cleanup。原值不為顯示而 trim／parse 後覆寫，schema 預設只驗證；根契約明確規範值時保留原草稿，另顯示實際規範內容再取得同意，不默改正文。錯誤靠近欄位。
+- 可增刪的問題／清單沿 RHF `useFieldArray`，以 `field.id` 作 React key；append 完整 UI 物件，Controller 名稱沿陣列路徑，回調才映回根契約的 string 陣列。GET 不 reset dirty 表單，身份切換／成功保存／明確放棄才採新的 form epoch。2026-10-01 已核對 [官方實作](https://github.com/react-hook-form/react-hook-form/blob/master/src/useFieldArray.ts)、本機 7.88.0 公開型別及實際增刪／草稿／原收據流程；官方文件站此次 403。入口及規範值例外見 [SUMMARY_HANDOFF](../../../../SUMMARY_HANDOFF.md)。
 - API 提供的有限欄位 key 不直接當 RHF path：用穩定本地欄位名，再映回原 key／選項，保存未知與未選，凍結原 fact refs／授權及顯示名稱。2026-10-01 已以本機 RHF 7.88.0 公開 set() 核對 dotted name 的 nested path 行為；官方頁此次未能讀取，不重做既有選型。實作／證據及生效邊界見 [GROWTH_HANDOFF](../../../../GROWTH_HANDOFF.md)。
 - 秘密欄沿 AppTextField 的 secureTextEntry，明確停用 autofill／自動修正；送出、失敗、離線、身份／Server 切換及卸載清理。只在當次直接 request 使用，不寫 browser storage、合成 metadata、timeout closure 或重試正文。本人設定按身份／Server 隔離，孩子切換不清本人草稿；沿原契約處理 unknown，不能通用地假定都有 opId。Paper 標籤的實際動畫須穩定才截圖，不因中間幀 fork vendor；本包證據見 [MODEL_SETTINGS_HANDOFF](../../../../MODEL_SETTINGS_HANDOFF.md)。
 - 有標籤的多行 AppTextField 沿 Paper 5.x 公開 `contentStyle` 為實際輸入／捲動區預留頂部間距；不要只改整個 TextInput 容器，亦不限制字體伸縮。核對實際標籤和 textarea 位置，待動畫穩定再判斷。2026-10-01 局部核對 [Paper 5.x TextInput](https://oss.callstack.com/react-native-paper/docs/components/TextInput/TextInput) 及 [RN 0.86 allowFontScaling](https://reactnative.dev/docs/0.86/text#allowfontscaling)，本項目實作／150% Web 重排證據見 [SHARED_INPUT_HANDOFF](../../../../SHARED_INPUT_HANDOFF.md)；沒有宣稱原生系統字體已驗。
