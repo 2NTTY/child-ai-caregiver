@@ -2,7 +2,7 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**FE-W14 私人來源／共享核對源碼及驗證 `d00a6bb` 已交付，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)。** FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗。所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件。持續目標接續成長、摘要及主動聯絡。
+**FE-W15 成長關注實作及必要輕量檢查通過，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；待本包提交。** FE-W14 `d00a6bb`、FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗。所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件。持續目標接續摘要及主動聯絡。
 
 | 工作包 | 現況 | 待接續 |
 |---|---|---|
@@ -19,7 +19,8 @@
 | FE-W12 手機背景及外殼層次 | 源碼／驗證已交付 `62b07fd`。海旁家庭插畫鋪滿問候背景，左側及底部漸淡；頂部／孩子摘要列與側欄同色，現有 OKLCH 色階未改。44 個外殼重排、最終 390／320／150% Web 文字、typecheck 及 Web／Android export 通過，沿用 draft PR #73 | [MOBILE_DESIGN](MOBILE_DESIGN.md)／[COLOR_STRATEGY](COLOR_STRATEGY.md)；背景及表面規則已補既有 Skill，待使用者視覺及真機驗收 |
 | FE-W13 本人模型設定 | 源碼／驗證 `095f135`，沿 `433d312`／draft PR #73，核對 GitHub `ce87370` 的 UI-P2-18、API／型別／Panel／封裝。模型模式、密鑰及費用／背景同意、上限、分開用量、metadata-only 查核、刪除／unknown 重讀及範圍清理已實作；三項單元、四尺寸及放大文字、typecheck、Web／Android export 通過 | [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md)；合成資料與無密鑰 metadata，真 API、Google／帳單、使用者視覺及原生真機待接線／驗收 |
 | FE-W14 私人來源／共享核對 | 沿 `c09c22b`，直接讀 GitHub `ce87370` UI-P2-15／API／型別／Panel／封裝；私人保存、原日期、指定正文取得、精確片段／候選、參考／孩子實際記錄分開核對、刪除、原收據／直接 unknown 及範圍清理已實作。四項來源／三項照片規則、48 個重排及關鍵來源流程／放大文字、typecheck、Web／Android export 通過 | [SHARED_INPUT_HANDOFF](SHARED_INPUT_HANDOFF.md)；全部合成，真 API／正式清單／跨頁同步、OS share、視覺及原生真機待接線／驗收 |
-| 尚未投影的已合併畫面 | GitHub master `ce87370` 已有成長關注、到診摘要及主動聯絡；正式 P2 結案已合併 | 逐項投影；正式整合、未讀及產品整包狀態由主聊天統籌 |
+| FE-W15 成長階段關注 | 沿 `3e153a7`，直接讀 GitHub `ce87370` UI-P2-07／API／型別／Panel。理由／來源／真正狀態、知悉／共享任務分開、暫緩／關閉、四主題及有限近況／共享同意、凍結原 body 查回、版本／草稿／權限及範圍清理已實作；三項單元、四尺寸／150% Web 文字、typecheck 及 Web／Android export 通過 | [GROWTH_HANDOFF](GROWTH_HANDOFF.md)；真 API／規則／refresh、精確任務／記憶及首頁／跨頁、使用者視覺及原生真機待接線／驗收 |
+| 尚未投影的已合併畫面 | GitHub master `ce87370` 已有到診摘要及主動聯絡；正式 P2 結案已合併 | 逐項投影；正式整合、未讀及產品整包狀態由主聊天統籌 |
 
 ## 已驗證及限制
 
@@ -37,4 +38,4 @@
 
 先讀本文件、[PLAN](PLAN.md) 及 [HANDOFF](HANDOFF.md)，fetch GitHub 並核對其他 active worktree 的 frontend 重疊。現場分支 `codex/fe-w11-photos`，已 review 的前置 `596c657`（FE-W10 draft PR #70）；直接從 GitHub 讀 P2 UI 交接，再讀照片 API／型別／封裝，交付前已重核最新 master `ce87370`，照片章節及型別／封裝未變，沒有依賴主聊天本機是否已拉取。另外 14 個 active worktree 未見 frontend 重疊；P2 隔離接續沒有豁免正式合併／驗收。B 負責前端交付，使用 `CherylNg-2526` 核對及推送，保留真實 Committer，不改全局認證或 Git 身份。
 
-讓使用者比較 [桌面層次](verification/fe-w12/home-1440.png)、[390 背景插畫](verification/fe-w12/home-390.png)、[桌面照片](verification/fe-w11/photos-1440.png)、[模型設定](verification/fe-w13/model-settings-1440.png)，以及 [私人來源桌面](verification/fe-w14/sources-composer-1440.png)／[320 放大文字](verification/fe-w14/sources-large-text-320.png)。FE-W12／W13 的未變證據保留；FE-W14 因共用多行輸入修訂核對 12 頁四尺寸，最後只補受影響的來源狀態及放大文字，測試 bundle 和重用範圍在 [證據](verification/fe-w14/build-checks.json)。下一包投影成長，再處理摘要及主動聯絡；真接線、正式驗收及 P3 真機仍由主聊天統籌，不自行 merge。
+讓使用者比較 [桌面層次](verification/fe-w12/home-1440.png)、[390 背景插畫](verification/fe-w12/home-390.png)、[桌面照片](verification/fe-w11/photos-1440.png)、[模型設定](verification/fe-w13/model-settings-1440.png)、[私人來源](verification/fe-w14/sources-composer-1440.png) 和 [成長桌面](verification/fe-w15/growth-1440.png)／[320 放大文字](verification/fe-w15/growth-large-text-320.png)。FE-W14 的共用多行輸入／48 重排證據保留；FE-W15 只核對受影響成長頁及導航，原草稿／凍結 body／版本／權限和字體伸縮見 [證據](verification/fe-w15/build-checks.json)，沒有機械重跑其他頁業務。下一包投影到診摘要，再處理主動聯絡；真接線、正式驗收及 P3 真機仍由主聊天統籌，不自行 merge。

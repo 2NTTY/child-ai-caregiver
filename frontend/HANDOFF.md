@@ -17,6 +17,7 @@
 | `/family`：[FamilyView](src/components/family/FamilyView.tsx)、[family-view-model](src/family-view-model.ts) | owner／caregiver／viewer、邀請與一次顯示的無效合成碼、預覽／接受邀請、範圍核對、角色調整、撤權及版本比較 | [FamilyPanel](../src/client/FamilyPanel.tsx)、[family-api](../src/client/family-api.ts)、[family 型別](../src/shared/family.ts) |
 | `/memory`：[memoryScreen](src/screens/memoryScreen.tsx)、[MemoryCards](src/components/memory/MemoryCards.tsx)、[memory-view-model](src/memory-view-model.ts) | 私人候選、確認家庭共享、來源版本／過期阻擋、更正／停用／刪除／歷史、話題暫緩／終態／明確重開、私人摘要覆蓋明細 | [MemoryPanel](../src/client/MemoryPanel.tsx)、[memory-api](../src/client/memory-api.ts)、[memory 型別](../src/shared/memory.ts) |
 | `/tasks`：[TasksView](src/components/tasks/TasksView.tsx)、[task-view-model](src/task-view-model.ts) | 建立共享事項、負責人／時間／時區、改期／轉派、完成／取消、needs_review 明確覆核、版本／歷史／分頁；worker 與提醒資格分開 | [TaskPanel](../src/client/TaskPanel.tsx)、[task-api](../src/client/task-api.ts)、[task 型別](../src/shared/tasks.ts)；對照 S13-W01／W04 |
+| `/growth`：[GrowthView](src/components/growth/GrowthView.tsx)、[growth-view-model](src/growth-view-model.ts) | 理由／來源及狀態、知悉／共享任務、暫緩／關閉、有限近況／主題設定、原內容／授權／fact 版本查回及草稿清理 | 原 GrowthPanel／growth-api／growth 型別；[GROWTH_HANDOFF](GROWTH_HANDOFF.md)。不在前端評估規則、背景執行或外發 |
 | `/settings`：[PreferencesPreview](src/components/PreferencesPreview.tsx)、[ModelSettingsView](src/components/model-settings/ModelSettingsView.tsx) | 本人安靜時段、時區、預約例外；渠道及模型模式／密鑰／費用同意／個人上限、分開用量與 metadata-only 查核；帳戶及引導重看入口 | family-api 的 getPreferences／savePreferences；本人渠道沿 [CHANNELS_HANDOFF](CHANNELS_HANDOFF.md)，模型沿原 ModelSettingsPanel／model-settings-api，詳見 [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md) |
 | `/chat`：[AgentRunView](src/components/agent/AgentRunView.tsx)、[AgentInboxView](src/components/agent/AgentInboxView.tsx) | 對話版式／當頁問題；合成運行／完整候選／引用快照、明確共享、原決定查核、手動私人背景結果 | 原 ChatPanel／chat-controller／product-agent-api／AgentRunPanel／AgentInbox；詳見 [AGENT_HANDOFF](AGENT_HANDOFF.md)。不是通用 opId 流程，真聊天及 Agent 回覆仍待接線 |
 | `/login`、`/guide` | 登入／註冊本地格式檢查，引導條件及重看入口 | Better Auth；引導完成來源仍待接線，不把「看過引導」當真初始化完成 |
@@ -58,6 +59,12 @@ typecheck、三項安全／command 輕量檢查、四尺寸／鍵盤／unknown �
 沿 `c09c22b` 及現有 draft PR #73，源碼／驗證 `d00a6bb0bd5c48834a00fa3057c5793bd49cf650`；直接核對 GitHub `ce87370` UI-P2-15／API／型別／正式 Panel／封裝。/sources 以私人保存、正文取得、私人候選、人工核對及家庭共享分開呈現；reference 預設備註，family_record 需孩子關係及共享兩份明確同意。候選不確定內容、原日期及原片段保留，無自動採納、網頁抓取、模型呼叫或新增協定。版本／原收據 unknown、已確認但結果不可讀及直接 unknown 的原版本查回沿正式控制器；細節見 [SHARED_INPUT_HANDOFF](SHARED_INPUT_HANDOFF.md)。
 
 照片及來源共用 [RecordDraftFields](src/components/RecordDraftFields.tsx)，不另造表單。AppTextField 使用 Paper 5.x 公開 contentStyle 處理多行捲動內容與浮動標籤，保留字體伸縮。四項來源／三項照片規則、48 個四尺寸重排、關鍵來源互動／390 及 320 放大文字、typecheck 及 Web 27 路由／Android 31 資產 export 通過；實際檔案／bundle 及重用證據見 [build-checks](verification/fe-w14/build-checks.json)。使用者視覺、真 API／跨頁及 OS share／原生真機仍待接線／驗收。
+
+### FE-W15 成長階段關注
+
+沿 `3e153a7`／現有 draft PR #73，核對 GitHub `ce87370` 的 UI-P2-07、正式 GrowthPanel／growth-api／型別。/growth 按資料模型呈現理由／來源及真正狀態，展開處理選項，知悉與建立共享任務分開；四主題及有限近況沿 API，不預填否定。原完整 body、項目／授權／fact 基準、unknown 和草稿清理沿正式控制器，不套 opId 收據或重做規則。回調、版本／來源失效、精確任務／記憶導航和跨頁缺口見 [GROWTH_HANDOFF](GROWTH_HANDOFF.md)。
+
+typecheck、三項關鍵規則、四尺寸及 390／320 放大文字／導航／互動、Web 29 路由／Android 31 資產 export 通過；[實際證據](verification/fe-w15/build-checks.json)。沿 Paper／RHF／Zod、日期時間和 SVG，沒有新依賴或色彩。使用者視覺及真 API／refresh／跨頁、APK／真機仍待驗。
 
 ## 共用元件與成熟方案
 
@@ -125,7 +132,7 @@ HomeChild.profileConfirmed／ageLabel／allergiesLabel 只投影同一 selectedC
 
 - 所有真 session／API／opId／跨畫面及跨成員同步、正式 UI 掛載，以及接線後針對新增介面的必要瀏覽器驗收。主線已經 `9f0febd` 合併既有正式 App 的 S16-W05 Chromium 情景；該證據可按未變部分復用，但沒有驗過本包隔離介面，不要求無理由重跑整套舊情景。
 - S13-W05／W06 的本人渠道已在 FE-W07 投影，待接正式 adapter；真通知中心／未讀及 W07 聯絡授權／fallback 台帳另核對所屬交付。active 分支落碼不等同已合併交付，不代改其程式碼。
-- 最新直接讀 GitHub `ce87370`：P2 正式結案／交付已隨 PR #71 合併，PR #72 新增本人模型 key／可調上限，P2 UI 總表已更新；既有功能未接本包隔離畫面不代表後端未實作。FE-W09 已投影 Agent，FE-W11 已投影照片，FE-W13 已投影本人模型設定，FE-W14 已投影私人來源／共享核對；成長、摘要及主動聯絡待後續前端包。全部隔離畫面仍待正式 adapter／跨畫面接線與必要驗收；P3 未因 Android bundle 啟動或完成，不修改主聊天權威文件。
+- 最新直接讀 GitHub `ce87370`：P2 正式結案／交付已隨 PR #71 合併，PR #72 新增本人模型 key／可調上限，P2 UI 總表已更新；既有功能未接本包隔離畫面不代表後端未實作。FE-W09 已投影 Agent，FE-W11 已投影照片，FE-W13 已投影本人模型設定，FE-W14 已投影私人來源／共享核對，FE-W15 已投影成長關注；摘要及主動聯絡待後續前端包。全部隔離畫面仍待正式 adapter／跨畫面接線與必要驗收；P3 未因 Android bundle 啟動或完成，不修改主聊天權威文件。
 - 真通知中心、Web Push／Telegram／FCM 及未讀。鈴鐺只提示合成原操作，右欄勾選只是本地清單；/tasks 的合成流程另列，不能互相冒充。
 - 圖中的第三方／手機登入、忘記密碼、方案／儲存用量、帳戶匯出／刪除、疫苗百分比及知識首頁，不能憑圖片當已承諾 API。手機首頁暫用已有記憶／話題入口；照片已可進入 FE-W11 原檔預覽，沒有假醫療建議、真上傳或咪高峰操作。
 - 正式 P3 共用服務、APK／簽署、實機畫面／鍵盤／返回鍵／Safe Area／TalkBack／大字體、登入及相機／通知權限。Android JS bundle 不代表上述已驗收。

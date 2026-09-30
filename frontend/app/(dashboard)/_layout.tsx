@@ -20,6 +20,6 @@ function NativeDashboardTabs() {
       <Tabs.Screen name="chat" options={{ title: "對話", tabBarIcon: ({ color }) => <AppIcon name="message-text-outline" color={color} size={mobileIcons.navigation} /> }} />
       <Tabs.Screen name="tasks" options={{ title: "待辦", tabBarIcon: ({ color }) => <AppIcon name="clipboard-check-outline" color={color} size={mobileIcons.navigation} /> }} />
       <Tabs.Screen name="memory" options={{ title: "記憶", tabBarIcon: ({ color }) => <AppIcon name="book-open-page-variant-outline" color={color} size={mobileIcons.navigation} /> }} />
-      {["care", "photos", "sources", "profile", "family", "settings", "guide", "motion-preview"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
+      {["care", "photos", "sources", "growth", "profile", "family", "settings", "guide", "motion-preview"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
     </Tabs>;
 }

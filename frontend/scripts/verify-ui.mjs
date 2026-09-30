@@ -13,6 +13,7 @@ import { verifyMobileDensity } from "./flows/mobile-density.mjs";
 import { verifyPhotos } from "./flows/photos.mjs";
 import { verifyModelSettings, verifyModelSettingsText } from "./flows/model-settings.mjs";
 import { verifySources, verifySourcesText } from "./flows/shared-inputs.mjs";
+import { verifyGrowth, verifyGrowthText } from "./flows/growth.mjs";
 
 const directory = resolve(process.env.FRONTEND_VERIFICATION_DIR ?? "verification/fe-w06");
 await mkdir(directory, { recursive: true });
@@ -21,7 +22,7 @@ const failures = [];
 const passed = [];
 const requested = new Set(process.argv.slice(2));
 const run = name => !requested.size || requested.has(name);
-const routes = ["/", "/care", "/photos", "/sources", "/profile", "/family", "/memory", "/tasks", "/settings", "/chat", "/guide", "/login"];
+const routes = ["/", "/care", "/photos", "/sources", "/growth", "/profile", "/family", "/memory", "/tasks", "/settings", "/chat", "/guide", "/login"];
 try {
   if (run("layout")) {
     for (const width of [1440, 1024, 390, 320]) for (const path of routes) {
@@ -103,7 +104,7 @@ try {
     await narrow.screenshot({ path: resolve(directory, "care-320-confirmation.png") });
     passed.push("care: 320 form validation and keyboard confirmation"); console.log(passed.at(-1)); await narrow.close();
   }
-  for (const [name, verify] of [["profile", verifyProfile], ["family", verifyFamily], ["tasks", verifyTasks], ["memory", verifyMemory], ["shell", verifyShell], ["settings", verifySettings], ["shared", verifyDatesAndIsolation], ["login", verifyLogin], ["deletion", verifyDeletion], ["design", verifyDesign], ["channels", verifyChannels], ["agent", verifyAgentEntry], ["agent-flow", verifyAgentConversation], ["mobile-density", verifyMobileDensity], ["photos", verifyPhotos], ["model-settings", verifyModelSettings], ["model-settings-text", verifyModelSettingsText], ["sources", verifySources], ["sources-text", verifySourcesText]]) {
+  for (const [name, verify] of [["profile", verifyProfile], ["family", verifyFamily], ["tasks", verifyTasks], ["memory", verifyMemory], ["shell", verifyShell], ["settings", verifySettings], ["shared", verifyDatesAndIsolation], ["login", verifyLogin], ["deletion", verifyDeletion], ["design", verifyDesign], ["channels", verifyChannels], ["agent", verifyAgentEntry], ["agent-flow", verifyAgentConversation], ["mobile-density", verifyMobileDensity], ["photos", verifyPhotos], ["model-settings", verifyModelSettings], ["model-settings-text", verifyModelSettingsText], ["sources", verifySources], ["sources-text", verifySourcesText], ["growth", verifyGrowth], ["growth-text", verifyGrowthText]]) {
     if (run(name)) { passed.push(await verify(browser, failures, directory)); console.log(passed.at(-1)); }
   }
   assert.deepEqual(failures, []);
