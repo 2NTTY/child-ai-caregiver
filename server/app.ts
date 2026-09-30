@@ -1,3 +1,5 @@
+import { handlePhotoRequest } from "./photo-api.ts";
+import { PHOTO_LIMITS } from "../src/shared/photos.ts";
 import { handleCareSummaryRequest } from "./care-summary-api.ts";
 import { handleWebPushRequest } from "./web-push-api.ts";
 import { isIP } from "node:net";
@@ -32,7 +34,7 @@ const MAX_BODY_BYTES = 64 * 1024;
 
 class BodyTooLargeError extends Error {}
 
-function readBody(request: IncomingMessage): Promise<string> {
+function readBody(request: IncomingMessage,limit=MAX_BODY_BYTES): Promise<string> {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks: Buffer[] = [];
@@ -44,7 +46,7 @@ function readBody(request: IncomingMessage): Promise<string> {
     };
     const onData = (chunk: Buffer) => {
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > limit) {
         cleanup();
         request.resume();
         reject(new BodyTooLargeError());
@@ -85,6 +87,7 @@ export function createRequestHandler(options: {
   memory?: import("./memory.ts").MemoryStore;
   tasks?: import("./tasks.ts").TaskStore;
   online?: OnlineStore;
+  photos?:{store:import("./photo-store.ts").PhotoStore;agent:import("./photo-agent.ts").PhotoAgent};
   summary?:import("./care-summary-store.ts").CareSummaryStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
   telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
@@ -98,9 +101,11 @@ export function createRequestHandler(options: {
   aiUsage?: AiUsageStore;
   checkDatabase: () => Promise<void>;
 }) {
+  let photoUploads = 0;
   const allowedOrigins = new Set([options.config.publicOrigin, options.config.webOrigin]);
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     let permittedOrigin: string | null = null;
+    let photoSlot = false;
     try {
       const headers = fromNodeHeaders(request.headers);
       // Only the explicitly configured ingress peer may supply a single sanitized client IP.
@@ -148,9 +153,21 @@ export function createRequestHandler(options: {
         await writeResponse(apiError("forbidden_origin", "此來源未獲授權。", 403), response, null);
         return;
       }
+      let bodyLimit=MAX_BODY_BYTES;
+      const upload=method==="POST" ? /^\/api\/children\/([a-f0-9-]{36})\/photos\/([a-f0-9-]{36})\/content$/u.exec(url.pathname):null;
+      if(upload&&options.photos){
+        const session=await options.auth.api.getSession({headers});
+        const id=session?.user.id;
+        const photo=id&&headers.get("x-expected-user-id")===id?await options.photos.store.get(id,upload[1],upload[2]):null;
+        if(!photo||photo.ownerUserId!==id||!photo.canManage||photoUploads>=2){
+          request.resume();await writeResponse(apiError("upload_unavailable","照片暫時未能上傳，請確認權限或稍後重試。",photo?429:404),response,permittedOrigin);return;
+        }
+        photoUploads++;photoSlot=true;
+        bodyLimit=Math.ceil(PHOTO_LIMITS.bytes/3)*4+128;
+      }
       const length = Number(headers.get("content-length") ?? "0");
-      if (!Number.isFinite(length) || length > MAX_BODY_BYTES) throw new BodyTooLargeError();
-      const body = method === "POST" ? await readBody(request) : undefined;
+      if (!Number.isFinite(length) || length < 0 || length > bodyLimit) throw new BodyTooLargeError();
+      const body = method === "POST" ? await readBody(request,bodyLimit) : undefined;
       const aborted = new AbortController();
       response.once("close", () => { if (!response.writableEnded) aborted.abort(); });
       const webRequest = new Request(url, { method, headers, signal: aborted.signal, ...(body ? { body } : {}) });
@@ -181,7 +198,10 @@ export function createRequestHandler(options: {
         || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = /^\/api\/children\/[^/]+\/(summary|visit-preparation)$/u.test(url.pathname) && options.summary
+        result = /^\/api\/children\/[^/]+\/photos(?:\/|$)/u.test(url.pathname)&&options.photos
+          ? await handlePhotoRequest(webRequest,userId,options.photos.store,{agent:options.photos.agent,
+              isCurrentUser:async()=>Boolean(userId)&&(await options.auth.api.getSession({headers}))?.user.id===userId})
+          : /^\/api\/children\/[^/]+\/(summary|visit-preparation)$/u.test(url.pathname) && options.summary
           ? await handleCareSummaryRequest(webRequest,userId,options.summary)
           : (url.pathname==="/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
           ? await handleTelegramRequest(webRequest,userId,options.telegram.store)
@@ -226,6 +246,6 @@ export function createRequestHandler(options: {
       } else {
         await writeResponse(apiError("service_unavailable", "服務暫時未能處理，請稍後重試。", 503), response, permittedOrigin);
       }
-    }
+    } finally { if(photoSlot)photoUploads--; }
   };
 }

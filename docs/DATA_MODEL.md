@@ -400,3 +400,12 @@ migration 018（S13-W06，未執行）加入 telegram_challenges、telegram_bind
 [020-care-summaries.sql](../server/migrations/020-care-summaries.sql) 保存每孩子目前一份 `visit_preparations` 及加密版本歷史，含問題、準備項、可選預約、核對人／時間／期間及資料依據版本。家長可切換目前準備的預約；這是共享草稿，不是新的照護事實、完成確認或外發授權。AAD 綁孩子／版本，刪孩子連帶清理；備份沿用既有整庫加密流程，020 已隨合成庫配對備份／空庫還原核對。
 
 核對狀態綁 storage epoch／家庭 change seq／所選期間；任何來源或家庭資料變化後保守失效，需重新讀取及明確核對。自身保存造成的 seq 變化在同一交易納入新依據；還原或跨範圍不能沿用舊核對。數字與原始記錄同一快照取得，已刪或已更正來源不沿用舊計算。
+
+<a id="p2-photo-data"></a>
+## P2 附件保存與刪除（021）
+
+`photo_attachments` 保存孩子、上傳者、原始 byte size／SHA-256、MIME、穩定 `<uuid>.enc` 相對路徑、版本及 reserved／ready 狀態。檔名／來源、模型候選及處理說明用既有 cipher 加密；原圖在工程外 `ATTACHMENTS_DIR` 以獨立 nonce 的相同 storage cipher 保存，AAD 綁固定附件 ID，保留原 bytes，不自動壓縮或剝除 metadata。產品限制及 HTTP 語義只見 [照片契約](API.md#p2-photos)。
+
+檔案先持久寫入，SQL 才標 ready；SQL 未確認時保留 reserved，可對相同 ID／hash 重送並核對已有檔案。私人原圖及候選不進向量知識庫；原圖共享必須有使用者明確確認，家庭成員只見共享原圖及已核對照護記錄，其他人的未確認候選不公開。記錄與附件外鍵關聯，刪記錄、孩子或附件連帶清除關係；觸發器保存 `photo_file_deletions` 最小 ID，Server 啟動及定期清理原檔，失败保留清單，不復活舊收據。
+
+提取 run ID、權限版本及到期時間由 Server 保存，模型不決定。原權限改變、刪除、逾時及未知結果不能沿用舊 run 再呼叫；已知失敗只有使用者依目前版本再要求才開新 run。pending／unknown 原檔仍可人工核對成記錄。備份须包含資料庫、原圖及配對清單；純 pg_dump 不代表附件備份，操作見 [照片備份](P2_PHOTOS.md)。

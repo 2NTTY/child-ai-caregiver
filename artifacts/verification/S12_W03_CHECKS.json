@@ -1,0 +1,324 @@
+{
+  "workPackage": "S12-W03",
+  "recordedAt": "2026-09-30",
+  "status": "necessary_acceptance_passed_completion_on_pr_merge",
+  "baseline": "fa8f23742544a367966766ac140887a04b2e7527",
+  "sourceImplementation": "1c6591a",
+  "branch": "codex/s12-w03-photo-delivery",
+  "originalImplementationSnapshot": {
+    "workPackage": "S12-W03",
+    "recordedAt": "2026-09-29",
+    "timeZone": "Asia/Hong_Kong",
+    "status": "implemented_pending_consolidated_acceptance",
+    "baseline": "ce990ae6b70455a5a7695d903d1f86b09015fb4b",
+    "branch": "codex/s12-w03-photo-capture",
+    "checks": [
+      {
+        "kind": "scripted_adk",
+        "command": "node --test --test-name-pattern='photo transport keeps bounded' tests/agent-runtime.test.ts",
+        "executions": 1,
+        "tests": 1,
+        "passed": 1,
+        "realModelCalls": 0,
+        "durationMs": 2071.8401,
+        "scope": "Synthetic signature fixture transport through real Runner; image parts retained outside text budget. Not image decoding, recognition, SQL or real Vertex evidence."
+      },
+      {
+        "kind": "server_typecheck",
+        "command": "node node_modules/typescript/bin/tsc -p tsconfig.server.json --noEmit",
+        "executions": 1,
+        "exitCode": 0,
+        "wallSeconds": 4.0909683,
+        "scope": "S12 server/shared code and test types; later small directory restrictions reviewed statically."
+      },
+      {
+        "kind": "client_typecheck",
+        "command": "node node_modules/typescript/bin/tsc --noEmit --project tsconfig.json",
+        "executor": "Sol worker; main reviewed critical implementation and reused result",
+        "executions": 3,
+        "results": [
+          "two nullable errors in first execution",
+          "passed after type guard fix",
+          "passed after targeted UI recovery review fixes"
+        ],
+        "scope": "Includes main App mount. No browser/HTTP calls."
+      },
+      {
+        "kind": "main_review",
+        "scope": [
+          "file-before-ready confirmation and immutable replay",
+          "current authorization and private candidate boundaries",
+          "versioned manual sharing and linked deletion",
+          "capacity includes reservations and deletion backlog",
+          "bounded native image parts and shared model quotas",
+          "paired authenticated DB/photo backup and empty target restore",
+          "original ID recovery and no hash guessing for unidentified receipts"
+        ]
+      },
+      {
+        "kind": "documentation",
+        "stagedDiffCheck": "passed",
+        "newLocalLinks": 20,
+        "worklogAppendOnly": true
+      }
+    ],
+    "notExecuted": [
+      "migration 021 and inherited 014-020",
+      "PostgreSQL integration",
+      "real image file lifecycle and concurrent access",
+      "real Gemini photo recognition",
+      "browser/E2E",
+      "paired backup/empty database restore",
+      "Windows ACL validation",
+      "deployment",
+      "lint/build/full test suites"
+    ],
+    "limitations": [
+      "MIME signatures do not validate full image decoding.",
+      "API/worker must remain stopped for paired backup/restore.",
+      "Original file deletion is a durable pending cleanup, not instant disk erasure.",
+      "Existing P1 live system unchanged."
+    ]
+  },
+  "reusedIntegrationEvidence": [
+    {
+      "name": "migrations_014_022_original_data_preserved",
+      "status": "passed",
+      "stage": "existing_data",
+      "added": [
+        "014-knowledge-refresh",
+        "015-web-push",
+        "016-product-agent",
+        "017-growth-attention",
+        "018-telegram-channel",
+        "019-proactive-contact",
+        "020-care-summaries",
+        "021-photo-attachments",
+        "022-shared-inputs"
+      ],
+      "tablesPreserved": 39,
+      "rowsPreserved": 386,
+      "workerPaused": true,
+      "backupCreated": true
+    },
+    {
+      "name": "single_content_api_flow",
+      "testedRevision": "ff4058dae3d01255936e5dc38e0a9108949cd499",
+      "command": "node scripts/verify-p2-content.mjs --approved-content",
+      "elapsedMs": 10361,
+      "processExitCode": 0,
+      "processSignal": null,
+      "status": "passed",
+      "checks": [
+        "photo_private_upload_metadata_integrity",
+        "photo_manual_confirmation_shared",
+        "paste_original_text_and_source_metadata_preserved",
+        "reference_shared_note_has_no_quantity_or_event_time",
+        "hong_kong_day_summary_only_approximate_120ml_feeding",
+        "visit_preparation_persisted_and_current",
+        "module_input_photo_and_linked_records_deleted",
+        "deleted_sources_invalidate_summary_review"
+      ],
+      "businessHttp": 39,
+      "healthReads": 18,
+      "accountsCreated": 2,
+      "childrenCreated": 1,
+      "createdChildDeleted": true,
+      "modelCalls": 0,
+      "notifications": 0,
+      "migrationsAppliedByEntry": 0
+    },
+    {
+      "name": "paired_encrypted_backup_empty_restore",
+      "status": "passed",
+      "stage": "restored_evidence",
+      "code": null,
+      "durationMs": 1307,
+      "photoId": "cb392032-c749-4659-b516-d930df5cfd9d",
+      "restoreDatabase": "yuban_s16_restore_20260929",
+      "originalRetained": true,
+      "backupRetained": true,
+      "restoreRetained": true,
+      "workerStarted": false,
+      "modelsCalled": 0,
+      "notifications": 0
+    },
+    {
+      "name": "photo_real_extraction_supplement",
+      "testedRevision": "fa09af6",
+      "kind": "photo",
+      "status": "passed",
+      "stage": "awaiting_manual_review",
+      "code": null,
+      "startedAt": "2026-09-28T19:19:42.986Z",
+      "durationMs": 7264,
+      "childId": "dce9bbde-39e5-48a0-8756-54b852c03c63",
+      "artifactId": "5bab5f8a-5cc3-45b7-8c4d-12c72bee6d49",
+      "runId": "3d30fb3e-eb60-4e59-93c2-eb9b45d65b8f",
+      "extractCalls": 1,
+      "runtimeCalls": 1,
+      "providerCalls": 2,
+      "counts": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "recordCountBefore": 1,
+      "recordCountAfter": 1,
+      "familyRecordsUnchanged": true,
+      "newAccounts": 0,
+      "newChildren": 0,
+      "automaticConfirmation": false,
+      "automaticRetry": false,
+      "manualCandidateReview": "Primary compared against synthetic image: approximate 120 ml, around 09:00 and unknown date preserved.",
+      "limits": {
+        "modelCalls": 4,
+        "toolCalls": 8,
+        "queryEmbeddings": 0,
+        "deadlineMs": 90000,
+        "outputTokens": 1024,
+        "inputCharacters": 32000,
+        "sdkAttempts": 1
+      },
+      "scriptAssertions": "passed",
+      "promptCorrection": null
+    },
+    {
+      "kind": "photo_cleanup_read_only_diagnosis",
+      "result": "harness_selection_mismatch_identified",
+      "productResult": "Encrypted upload, queued deletion and product purge passed; new child/photo/queue removed, normal deletion tombstone retained",
+      "cause": "Baseline child_id IS DISTINCT FROM NULL excluded existing NULL child rows; final child_id IS DISTINCT FROM own UUID included them. The row sets were unequal.",
+      "evidence": {
+        "readOnlyTransaction": "on",
+        "childRows": 0,
+        "photoRows": 0,
+        "photoQueueRows": 0,
+        "tombstoneRows": 1,
+        "ownChanges": 3,
+        "baselineOnlineChanges": 26,
+        "finalPredicateOnlineChanges": 35,
+        "baselineOnlineOperations": 6,
+        "finalPredicateOnlineOperations": 8,
+        "workerPaused": true
+      },
+      "limits": "Original in-memory snapshot was not persisted; complete prior-row hash comparison cannot be recovered. Original failed result retained; no product rerun or additional model/browser/notification."
+    },
+    {
+      "name": "photo_delete_original_result",
+      "result": {
+        "phase": "failed",
+        "counts": {
+          "storeCalls": 6,
+          "newChildren": 1,
+          "photos": 1,
+          "fileWrites": 1,
+          "fileReads": 1,
+          "fileRemoves": 1,
+          "scopedQueueReads": 1,
+          "scopedQueueDeletes": 1
+        },
+        "limits": {
+          "storeCalls": 15,
+          "newChildren": 1,
+          "photos": 1
+        },
+        "ids": {
+          "childId": "8508c504-5d93-4ea1-a20a-0f25d4ba6954",
+          "photoId": "69e4890f-8707-4ff3-afa5-a413775b0117"
+        },
+        "attachmentDirectory": "photo-deletion-44d7854c-64d3-45e2-9d29-fe5bd50fec55",
+        "scopedPurge": true,
+        "assertions": [
+          {
+            "name": "restore_database_paused_existing_owner",
+            "passed": true
+          },
+          {
+            "name": "one_photo_uploaded_as_authenticated_encrypted_file",
+            "passed": true
+          },
+          {
+            "name": "delete_committed_with_queue_and_file_still_present",
+            "passed": true
+          },
+          {
+            "name": "scoped_product_purge_removed_encrypted_file_and_queue",
+            "passed": true
+          }
+        ],
+        "cleanup": {
+          "childDeleted": true,
+          "originalRowsPreserved": false,
+          "workerRemainedPaused": true,
+          "poolsClosed": true,
+          "failureCodes": [
+            "assertion_failed"
+          ]
+        }
+      },
+      "scope": "Original final snapshot assertion failed; functional deletion and later read-only diagnosis are recorded separately. No rerun."
+    }
+  ],
+  "sourceComparison": {
+    "integrationRevision": "1a1a88f",
+    "normalizedLfSha256": {
+      "server/photo-agent.ts": "227fdc5752124343e5b47f67eada065db52fde12663709a2737c4b625dae390b",
+      "server/photo-api.ts": "43011bd07dfa9d4e127314fc8d375efe7e8011c888bf6eccded528c8a9394c11",
+      "server/photo-backup.ts": "605f2e9697a12b48309cf1be53229cce929caf4c73f94105a02722eec10d835e",
+      "server/photo-files.ts": "d1c4dda8fecade6eb21442b2371a9084c354025645e53758c2d05004a73f1270",
+      "server/photo-store.ts": "f409e95719a2ee1666728e1ac311c99924e32de131a8a525167d565858ae01b9",
+      "server/migrations/021-photo-attachments.sql": "2c9ff3d5d9e7f2ceb3387c5441c943e95dd79a8d85c4a7d6bb453b443691a39c",
+      "src/client/PhotoPanel.tsx": "c45273ad41485fd5396fdf7834a722803053d99d53d4a39825185984068fc055",
+      "src/client/photo-api.ts": "f6481f4533a78316aca2f1935446d2db24865e8d67c640664494087af813cb53",
+      "src/shared/photos.ts": "572d1c9c718461270ab73ba41fc05bd03b0645144302f674837571a0ab5bc9de",
+      "scripts/photos-backup.mjs": "b7271d2f9a8810aba5f433e18e6cffa3746307718000994727de696cc88a3780"
+    },
+    "result": "photo domain, API, original file, backup, UI and migration sources identical; current master service wiring reviewed separately"
+  },
+  "deliveryChecks": [
+    {
+      "kind": "server_typecheck",
+      "executions": 1,
+      "exitCode": 0,
+      "executor": "GPT-6.1 Sol; main reviewed wiring diff"
+    },
+    {
+      "kind": "offline_prompt_load",
+      "recipe": "photo-capture",
+      "packVersion": "0.1.14",
+      "modules": 12,
+      "characters": 7761,
+      "modelCalls": 0
+    },
+    {
+      "kind": "documentation",
+      "newLocalLinkTargets": 17,
+      "worklogAppendOnly": true,
+      "diffCheck": "passed"
+    }
+  ],
+  "limitations": [
+    "Full PhotoPanel browser upload/preview and device picker not verified; API and candidate quality evidence do not replace it.",
+    "Original delete harness final snapshot failed because NULL selection changed; original in-memory full-row hash comparison unrecoverable. Own file/child/queue cleanup independently confirmed.",
+    "MIME signature checks are not full image decoding.",
+    "Public Linux attachment permissions, volume and HTTPS delivery remain S17-W02; no deployment or renewal."
+  ],
+  "newCallsForDelivery": {
+    "model": 0,
+    "embedding": 0,
+    "notification": 0,
+    "databaseAcceptance": 0,
+    "browser": 0
+  },
+  "responsibility": {
+    "lead": "A",
+    "weight": 5,
+    "shares": {
+      "A": 50,
+      "C": 30,
+      "B": 20
+    },
+    "execution": "Shared AI operated by A; primary authors authority documents/prompts and final review.",
+    "record": "See original LOG-20260929-001; no new human participation inferred."
+  }
+}

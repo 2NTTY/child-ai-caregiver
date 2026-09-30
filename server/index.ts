@@ -1,3 +1,6 @@
+import { createPhotoFiles } from "./photo-files.ts";
+import { createPhotoStore } from "./photo-store.ts";
+import { createPhotoAgent } from "./photo-agent.ts";
 import { createCareSummaryStore } from "./care-summary-store.ts";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -31,6 +34,7 @@ import { readTelegramConfig } from "./telegram-config.ts";
 import { createTelegramStore } from "./telegram-store.ts";
 import { createTelegramGateway } from "./telegram-gateway.ts";
 import { telegramQueue } from "./telegram-worker.ts";
+let photoCleanupTimer:ReturnType<typeof setInterval>|undefined;
 let startupCleanup: (() => Promise<void>) | undefined;
 
 try {
@@ -68,17 +72,26 @@ try {
   const growth=growthEnabled ? createGrowthStore(pool,cipher,taskScheduling) : undefined;
   const summaryEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='020-care-summaries'")).rowCount);
   const summary=summaryEnabled?createCareSummaryStore(pool,cipher):undefined;
+  const photosEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='021-photo-attachments'")).rowCount);
+  const photoFiles=photosEnabled?await createPhotoFiles(process.env.ATTACHMENTS_DIR??"",cipher):undefined;
+  const photoStore=photoFiles?createPhotoStore(pool,cipher,photoFiles):undefined;
   const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true", growth, summary) : undefined;
   const productAgentStore = productServices?.store, productAgent = productServices?.agent;
+  const photos=photoStore&&productServices?{store:photoStore,agent:createPhotoAgent(photoStore,productServices.runtime)}:undefined;
+  if(photos){
+    let purging=false;
+    const purge=async()=>{if(purging)return;purging=true;try{await photos.store.purgeDeleted();}catch{console.warn("attachment_cleanup_pending");}finally{purging=false;}};
+    await purge();photoCleanupTimer=setInterval(()=>{void purge();},30000);photoCleanupTimer.unref();
+  }
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
     webPush: pushServices ? createWebPushStore(pool, cipher, pushServices, true) : undefined,
     records: createRecordStore(pool, cipher, onlineEnabled),
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
-    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, summaryEnabled) : undefined,
+    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, summaryEnabled, photoFiles) : undefined,
     telegram,
-    tasks, chat, memory, productAgent, productAgentStore, growth, summary,
+    tasks, chat, memory, productAgent, productAgentStore, growth, summary, photos,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },
@@ -90,7 +103,7 @@ try {
   server.requestTimeout = 15000;
   server.headersTimeout = 10000;
   let poolClosing: Promise<void> | undefined;
-  const closePool = () => { poolClosing ??= (async () => { try { await queue?.stop(); } finally { await pool.end(); } })().catch(() => { process.exitCode = 1; }); return poolClosing; };
+  const closePool = () => { clearInterval(photoCleanupTimer); poolClosing ??= (async () => { try { await queue?.stop(); } finally { await pool.end(); } })().catch(() => { process.exitCode = 1; }); return poolClosing; };
   server.on("error", () => { console.error("server_start_failed"); void closePool(); process.exitCode = 1; });
   server.listen(config.port, config.host, () => { console.info("server_started"); });
   let stopping = false;
@@ -103,6 +116,7 @@ try {
   process.once("SIGTERM", stop);
   process.once("SIGINT", stop);
 } catch {
+  clearInterval(photoCleanupTimer);
   console.error("server_configuration_failed");
   await startupCleanup?.().catch(() => {});
   process.exitCode = 1;

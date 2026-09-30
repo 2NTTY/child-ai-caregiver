@@ -47,3 +47,5 @@ S13-W08 成長關注必要驗收通過，完成隨本包 PR 合併生效。有�
 2026-09-28（Asia/Hong_Kong）：S10-W02 實作、近期來源使用範圍定案及必要驗收準備；[證據](artifacts/verification/S10_W02_CHECKS.json)／[LOG-20260928-004](WORKLOG.md#log-20260928-004)。
 
 S11-W02：真互動 ADK／向量引用／確認任務、背景 Runtime／重啟去重沿用 S16 分列證據。成長回答曾過度延伸來源，單改 prompt 仍未通過；Server 改呈現已核對片段，3 項必要 Runner 及擷取真回應的離線重播通過，沒有再呼叫模型。整合驗收中的摘要／成長工具分屬後續包，不把本 PR 寫成整個 P2 已可用。沿用 A 主責、權重 5，A 70%／C 20%／B 10%；[證據](artifacts/verification/S11_W02_CHECKS.json)。完整 Agent UI／真照護聯絡／公開部署仍按其範圍交付。
+
+S12-W03 必要驗收通過，完成隨本包 PR 合併生效：復用 39 HTTP 中照片原圖／確認／隔離、單次真照片候選及配對備份／空庫還原證據。刪除原檔／queue 功能通過，舊腳本最終快照因 NULL 選集不一致失敗，限制如實保留；完整照片面板瀏覽器未驗。沒有新模型、通知或部署；[證據](artifacts/verification/S12_W03_CHECKS.json)。

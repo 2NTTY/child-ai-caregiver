@@ -156,3 +156,19 @@ test("cancellation reaches provider and no following operation starts", async ()
   assert.equal(aborted?.aborted, true);
   assert.equal(s.executions(), 0);
 });
+
+test("photo transport keeps bounded image bytes outside text budget through the real Runner tool cycle", async () => {
+  // A synthetic signature fixture tests transport only, not image recognition or decoding.
+  const bytes=Buffer.alloc(33000);bytes[0]=255;bytes[1]=216;bytes[2]=255;
+  const image={mimeType:"image/jpeg" as const,data:bytes.toString("base64")};
+  const s=setup(async(request,index)=>{
+    assert.deepEqual(request.contents.flatMap(content=>content.parts??[]).find(part=>part.inlineData)?.inlineData,image);
+    return index===0?call():answer("候選待核對。");
+  });
+  s.input.recipeId="photo-capture";
+  s.input.availableInputs=["run","scope","conversation","context","evidence","capabilities"];
+  s.input.image=image;
+  const result=await s.runtime.run(s.input);
+  assert.equal(result.status,"completed",JSON.stringify(result));
+  assert.equal(s.executions(),1);assert.equal(s.reservations(),2);
+});
