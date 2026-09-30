@@ -2,7 +2,7 @@
   "scope": "Growth attention frontend projection; synthetic only, no Server/rules/worker or device acceptance",
   "verifiedAt": "2026-09-30T22:47:20.531Z",
   "baselineCommit": "3e153a7c5f8682429e380d6e8816ae5be128175d",
-  "sourceCommit": null,
+  "sourceCommit": "ef536e8e1c71e5b28dd2e337ab4e6b478fbc489a",
   "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
   "authoritySources": [
     {

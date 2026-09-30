@@ -1,6 +1,6 @@
 # 成長階段關注前端交接
 
-更新：2026-10-01。FE-W15 基線 `3e153a7c5f8682429e380d6e8816ae5be128175d`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；源碼／驗證 commit：待本包提交。主責 B，只修改 `frontend/**`，沒有改 Server、Agent、正式 App、根文件或業務規則。使用者視覺及真接線由原責任方驗收，不自行 merge。
+更新：2026-10-01。FE-W15 基線 `3e153a7c5f8682429e380d6e8816ae5be128175d`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；源碼／驗證 commit：`ef536e8e1c71e5b28dd2e337ab4e6b478fbc489a`。主責 B，只修改 `frontend/**`，沒有改 Server、Agent、正式 App、根文件或業務規則。使用者視覺及真接線由原責任方驗收，不自行 merge。
 
 ## 已核對依據
 

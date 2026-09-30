@@ -2,7 +2,7 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**FE-W15 成長關注實作及必要輕量檢查通過，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；待本包提交。** FE-W14 `d00a6bb`、FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗。所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件。持續目標接續摘要及主動聯絡。
+**FE-W15 成長關注源碼／驗證 `ef536e8` 已交付，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)。** FE-W14 `d00a6bb`、FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗。所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件。持續目標接續摘要及主動聯絡。
 
 | 工作包 | 現況 | 待接續 |
 |---|---|---|

@@ -62,7 +62,7 @@ typecheck、三項安全／command 輕量檢查、四尺寸／鍵盤／unknown �
 
 ### FE-W15 成長階段關注
 
-沿 `3e153a7`／現有 draft PR #73，核對 GitHub `ce87370` 的 UI-P2-07、正式 GrowthPanel／growth-api／型別。/growth 按資料模型呈現理由／來源及真正狀態，展開處理選項，知悉與建立共享任務分開；四主題及有限近況沿 API，不預填否定。原完整 body、項目／授權／fact 基準、unknown 和草稿清理沿正式控制器，不套 opId 收據或重做規則。回調、版本／來源失效、精確任務／記憶導航和跨頁缺口見 [GROWTH_HANDOFF](GROWTH_HANDOFF.md)。
+源碼／驗證 `ef536e8`，沿 `3e153a7`／現有 draft PR #73，核對 GitHub `ce87370` 的 UI-P2-07、正式 GrowthPanel／growth-api／型別。/growth 按資料模型呈現理由／來源及真正狀態，展開處理選項，知悉與建立共享任務分開；四主題及有限近況沿 API，不預填否定。原完整 body、項目／授權／fact 基準、unknown 和草稿清理沿正式控制器，不套 opId 收據或重做規則。回調、版本／來源失效、精確任務／記憶導航和跨頁缺口見 [GROWTH_HANDOFF](GROWTH_HANDOFF.md)。
 
 typecheck、三項關鍵規則、四尺寸及 390／320 放大文字／導航／互動、Web 29 路由／Android 31 資產 export 通過；[實際證據](verification/fe-w15/build-checks.json)。沿 Paper／RHF／Zod、日期時間和 SVG，沒有新依賴或色彩。使用者視覺及真 API／refresh／跨頁、APK／真機仍待驗。
 
