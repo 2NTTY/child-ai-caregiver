@@ -1,7 +1,7 @@
 # 已接通的產品工具
 
 - ID：`module.product-tools`
-- 版本：`0.1.1`
+- 版本：`0.1.2`
 - 使用條件：S11-W02 的 product-interactive／product-background 配方。
 - 依據：[Agent 契約](../../docs/API.md#agent-runtime-contract)。
 - 驗證狀態：已接本機代碼及 scripted Runner；真模型、資料庫及瀏覽器待集中驗收。
