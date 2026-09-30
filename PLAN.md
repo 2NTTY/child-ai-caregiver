@@ -19,6 +19,8 @@ P1 驗收於 2026-09-23 通過；本次結案隨 [PR #23](https://github.com/2NT
 
 P2 的 20 個工作包必要驗收於 2026-09-30 齊備，結案隨 S17-W02 PR 合併生效；[公開交付證據](artifacts/verification/S17_W02_CHECKS.json)。前端隔離預覽尚未接回正式 App，Firefox 全套相容性依使用者決定延後，不自動啟動 P3。
 
+2026-09-30 使用者在 P2 結案後新增必備項：**網站／軟件可設定本人模型 key**。另以 S06-W05 作 P2 增補包，立即實作及獨立驗收；原 20 包的完成證據保留。此包不列入已結案 S16-W02 的「P2 全部功能包」前置集合，避免反向循環；其驗收由本包承擔。Android 在 P3 復用同一設定契約，P4 自選 Server 為另一項功能。
+
 Server 從 P1 起保存權威資料；Web／App 在線存取，業務 Agent 在 Server 執行。斷線只保留當前表單及所選照片、提示刷新／關閉風險，恢復連線後由使用者重試；不建立跨關閉恢復草稿或離線寫入隊列。P1 以合成資料驗收；首次模型請求起即有權限、憑據、配額、有限重試及日誌保護。
 
 P2 由 ADK 實際編排受限產品工具，按預先確認的對象／內容／渠道及 fallback 規則自動聯絡，不逐次要求人工確認；每次執行重查授權。P2 直接建立可延續的最小 pgvector RAG，官方穩定知識與近期資訊分開更新／引用，支援可信育兒問答及非醫療分流的成長關注；P4 擴充管理介面、大規模導入、批量重建管理、效能及完整遷移，不重建另一套核心。總決定見 [ADR-011](docs/DECISIONS.md#adr-011)，行為見 [SPEC](SPEC.md#section-5-11)／[freshness](SPEC.md#knowledge-freshness)。P4 自部署接受 Docker Desktop／WSL2 前置，保留既定模型外送及通知授權要求。
@@ -110,7 +112,8 @@ S03 依賴最小 Server 身份及資料能力，不依賴 Gemini、家庭邀請�
 | <a id="s16-w05"></a>S16-W05 | P2 | 已完成 | S06-W02、S07-W03 | 提前建立共用 Playwright Test Web 測試基礎：隔離合成資料、單 test worker、Chromium；Firefox 依 2026-09-29 使用者確認延後作相容性驗收，不阻塞 P2；先驗家庭隔離／角色、遺失寫入回應後查原 opId、撤權後清 UI 三條流程。主聊天負責正式 App／真 API 瀏覽器層及受控測試資料，前端 preview 測試另記；保留 node:test／P1 腳本，不以 mock 或 Web 代替真服務／Android；E2E 執行仍先按驗證制度批准；Chromium 單一真 API 情景通過；後續必要功能檢查用 Codex 內置瀏覽器，不重跑已通過項，Firefox 保留未驗；完成隨本包 PR 合併生效，見 [EV-S16-W05](artifacts/verification/S16_W05_CHECKS.json) |
 | <a id="s16-w02"></a>S16-W02 | P2 | 已完成 | P2 全部功能包、S16-W05 | 真 ADK 工具循環、四年齡段向量召回／引用、成長關注與抑制、記憶／任務、worker 恢復、家庭隔離、照片／來源、freshness、通知／fallback、失敗及成本必要驗收；復用 S16-W05 瀏覽器基礎及既有 scripted Runner，有限真 Gemini 情境另驗，不把 TS conformance 或靜態 Pack 當產品品質證據；證明家長需求與網頁關閉後背景事件兩條完整流程，高成本項先批准；必要本機／真服務證據已按包收束，全部功能包已合併；一次真聯絡與明確完成／清理已通過，原失敗保留，主模型最終證據核對通過，完成隨本包 PR 合併生效，見 [EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)。公開 HTTPS／正常部署接線及組員展示仍由 S17-W02 驗收 |
 | <a id="s17-w02"></a>S17-W02 | P2 | 已完成 | S16-W02 | Web＋ADK 產品 Agent＋最小向量 RAG 比賽成品；演示家長需求及背景觸發的工具／任務／真實聯絡／回報，交付來源與操作／投遞證據及限制；不以 mock、靜態 Pack 或兩條演示取代真服務及其他 P2 驗收。S16 已隨 PR #67 合併；[部署及交付](docs/P2_DELIVERY.md)／[EV-S17-W02](artifacts/verification/S17_W02_CHECKS.json)，P2 `43ab10c` 已部署，原資料保留／023／向量初始化、23 次合成 HTTP 及配對備份空庫還原通過；兩條公開 ADK／來源／任務／關頁後真聯絡流程、本人 Push／Telegram 收到、明確完成及清理通過；原失敗及修正保留，配額恢復 12／20；必要驗收已齊，完成隨本包 PR 合併生效 |
-| <a id="s04-w01"></a>S04-W01 | P3 | 未開始 | S17-W02 | Android 在線登入／孩子／記錄／聊天、APK 與使用者真機流程；重用同一 Server 和業務，不建 SQLite 主庫；另須使用者明確確認整套 Web 滿意才開始 Android 前端，手機瀏覽器尺寸／單頁確認不能代替此關口 |
+| <a id="s06-w05"></a>S06-W05 | P2 增補 | 已完成 | S17-W02 | 本人模型 key 必備入口：首版 Gemini Developer API，保留平台 Vertex；Web 設定／替換／停用／刪除、帳號隔離及加密、明確同意／背景 opt-in、執行期版本重核、生成與查詢向量同一付費來源、分開配額／用量且無靜默 fallback；共用語料維護仍用平台。個人每日／單次生成／query embedding 上限可在 UI 調整並真正約束運行；平台上限不變。本次依使用者追加確認，只驗保存／隔離／刪除、原資料保留、scripted Runner 限額及撤回後停止；Google 地區限制下真 key 生成／向量保留待驗，不阻塞此次設定與接線交付。024／10 HTTP／31 store及必要 Runner 已通過，完成隨本包 PR 合併生效；[證據](artifacts/verification/S06_W05_CHECKS.json)。C 主責，權重 3，C 60%／A 25%／B 15%；主模型整合及最終驗收。軟件端於 S04-W01 復用，無需先自部署或切換 Server |
+| <a id="s04-w01"></a>S04-W01 | P3 | 未開始 | S17-W02、S06-W05 | Android 在線登入／孩子／記錄／聊天、APK 與使用者真機流程；重用同一 Server 和業務，不建 SQLite 主庫；另須使用者明確確認整套 Web 滿意才開始 Android 前端，手機瀏覽器尺寸／單頁確認不能代替此關口 |
 | <a id="s05-w03"></a>S05-W03 | P3 | 未開始 | S04-W01 | Android 憑據安全保存、附件暫存／清理及退出／撤權處理；平台 adapter 不成為權威業務資料庫 |
 | <a id="s07-w01"></a>S07-W01 | P3 | 未開始 | S05-W03、S07-W03 | Web／Android 在線更新、並行修改、重連與附件狀態；首批優先 TanStack Query 讀取快取／失效及 RN focus／online adapter，沿用 opId 寫入 transport；版本／刪除／撤權／終態一致，驗身份／Server 切換、撤權／late response 清理及單一刷新機制，不實作離線操作隊列 |
 | <a id="s09-w03"></a>S09-W03 | P3 | 未開始 | S07-W01 | 跨端授權歷史與記憶恢復，新會話／摘要／模型快取場景；不把清空業務資料庫當清快取 |

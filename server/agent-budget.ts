@@ -1,3 +1,5 @@
+import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
+
 export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: 8, queryEmbeddings: 2,
   deadlineMs: 90000, outputTokens: 1024, inputCharacters: 32000 });
 
@@ -11,6 +13,8 @@ export class AgentStopped extends Error {
 export class AgentBudget {
   readonly signal: AbortSignal;
   private readonly used = { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 };
+  private configured = false;
+  private selectedLimits: { [K in keyof typeof AGENT_LIMITS]: number } = { ...AGENT_LIMITS };
   private readonly expiresAt: number;
   private readonly controller = new AbortController();
   private readonly timer: ReturnType<typeof setTimeout>;
@@ -32,10 +36,21 @@ export class AgentBudget {
     if (this.signal.aborted) throw this.signal.reason;
   }
   get counts() { return { ...this.used }; }
+  get limits() { return { ...this.selectedLimits }; }
+  /** Only the Server-resolved, versioned personal settings may raise the default counts. */
+  configurePersonal(limits: { modelCalls: number; queryEmbeddings: number }) {
+    if (this.configured || Object.values(this.used).some(count => count !== 0)) throw new Error("Agent limits already selected");
+    for (const key of ["modelCalls", "queryEmbeddings"] as const) {
+      const value = limits[key], range = PERSONAL_RUN_LIMITS[key];
+      if (!Number.isSafeInteger(value) || value < range.min || value > range.max) throw new Error("Invalid personal agent limits");
+    }
+    this.selectedLimits = { ...AGENT_LIMITS, ...limits };
+    this.configured = true;
+  }
   take(kind: keyof AgentBudget["counts"], amount = 1) {
     this.check();
     if (!Number.isSafeInteger(amount) || amount < 1) throw new Error("Invalid attempt count");
-    if (this.used[kind] + amount > AGENT_LIMITS[kind]) {
+    if (this.used[kind] + amount > this.selectedLimits[kind]) {
       throw new AgentStopped(kind === "modelCalls" ? "model_limit" : kind === "toolCalls" ? "tool_limit" : "embedding_limit");
     }
     this.used[kind] += amount;

@@ -1,0 +1,80 @@
+{
+  "package": "S06-W05",
+  "baseline": "5098d64f0b714901cce765bb686cf30b3a19d741",
+  "recordedAt": "2026-09-30T15:30:02.535Z",
+  "scope": "Account model-key settings, adjustable personal call limits and local integration; real service deferred by user",
+  "local": {
+    "result": "passed",
+    "checks": [
+      "migration_already_applied_and_storage_authenticated",
+      "two_synthetic_authenticated_accounts",
+      "initial_settings_direct_write_and_secret_free_get",
+      "account_isolation_session_binding_and_version_conflict",
+      "personal_and_platform_quotas_separate_then_roll_back",
+      "changed_settings_revoke_snapshots_and_disable_worker",
+      "remove_key_has_no_fallback_and_reconnect_preserves_limits",
+      "settings_bypass_online_receipts_and_preserve_original_rows",
+      "delete_only_synthetic_accounts_and_their_counter_rows"
+    ],
+    "httpRequests": 10,
+    "storeCalls": 31,
+    "accountsCreated": 2,
+    "childrenCreated": 0,
+    "existingDataPreserved": true,
+    "syntheticCleanupCompleted": true,
+    "backup": "Encrypted database and synthetic photo backup retained outside repository before migration 024",
+    "modelCalls": 0,
+    "notifications": 0,
+    "preservedTables": [
+      "user",
+      "model_settings",
+      "ai_daily_usage",
+      "ai_attempts",
+      "embedding_attempts",
+      "online_operations",
+      "children",
+      "text_records",
+      "chat_messages"
+    ]
+  },
+  "lightweight": {
+    "storage": 4,
+    "providerSDK": 3,
+    "client": 3,
+    "scriptedRunner": 2,
+    "serverTypecheck": "passed",
+    "clientTypecheck": "passed",
+    "diffCheck": "passed"
+  },
+  "reviewFixes": [
+    "Strict client usage schema accepts the explicit billing source",
+    "POST 5xx is an unknown save requiring re-read, never automatic replay",
+    "Resolved account settings cover API, worker, P1 gateway, ADK tools and query embeddings"
+  ],
+  "realService": {
+    "metadataReads": 2,
+    "result": "blocked",
+    "httpStatus": 400,
+    "reason": "User location is not supported for the API use.",
+    "generationCalls": 0,
+    "embeddingCalls": 0,
+    "temporaryRestrictedKeyDeleted": true,
+    "localSecretRemoved": true,
+    "userDecision": "Finish settings and local integration; real service remains pending"
+  },
+  "notVerified": [
+    "Real personal-key Gemini generation and embedding",
+    "Public deployment of S06-W05",
+    "Full browser E2E or Android"
+  ],
+  "ownership": {
+    "lead": "C",
+    "weight": 3,
+    "shares": {
+      "C": 60,
+      "A": 25,
+      "B": 15
+    },
+    "actualOperator": "A with Codex and scoped Sol/Luna assistance"
+  }
+}

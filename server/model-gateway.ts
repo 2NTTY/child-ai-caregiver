@@ -32,14 +32,19 @@ export function createModelGateway(options: {
   config: AiConfig;
   usage: Pick<AiUsageStore, "reserve" | "record">;
   provider?: ModelProvider;
+  resolve?: import("./model-routing.ts").ModelRouting["resolve"];
 }) {
   const activeUsers = new Set<string>();
   return {
     available: () => options.config.enabled && Boolean(options.provider),
     /** Input is assembled by server orchestration, never a raw browser prompt envelope. */
     async generate(userId: string, childId: string, input: ModelInput, authorize: () => Promise<boolean>): Promise<ModelReply> {
-      const { config, provider, usage } = options;
       if (!await authorize()) throw new AiFailure("unauthorized");
+      const selected = options.resolve ? await options.resolve(userId, "interactive") : undefined;
+      const { config, usage } = selected ?? options;
+      const provider = selected?.model ?? options.provider;
+      const resourceAccess = authorize;
+      if (selected) authorize = async () => await resourceAccess() && await selected.authorize();
       if (!config.enabled || !provider) throw new AiFailure("ai_disabled");
       const characters = input.systemInstruction.length + input.messages.reduce((sum, message) => sum + message.text.length, 0);
       if (!input.messages.length || input.messages.at(-1)?.role !== "user"

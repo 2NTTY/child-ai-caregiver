@@ -434,3 +434,10 @@ migration `022-shared-inputs` 新增 `shared_inputs`：孩子／輸入者／來�
 - 模型工具與請求／job 同交易；只有這筆受信交易可更新自身 run 的 data version。其他資料變化使舊生成結果失效；如已有成功入列，只可保存重新核權後的固定操作回報，不保存舊上下文、候選或摘要。
 
 019 與 014–018 一同列入集中 migration／加密備份及空庫還原驗收；還原後既有 worker 暫停／世代規則繼續適用。型別及 scripted case 不代替 SQL、刪除或恢復證據。
+
+<a id="personal-model-settings"></a>
+## S06-W05 本人模型設定與計數（024）
+
+`model_settings` 以本人 user_id 唯一保存，跟隨帳號刪除；不是孩子／家庭資料，其他家庭成員不可存取。欄位包括 version、mode、背景 opt-in、三種可調限額、更新時間及 api_key_encrypted。初次版本 0；保存時鎖帳號並 CAS，成功遞增版本。AES-GCM 沿用現有 cipher，AAD 綁帳號及版本；沒有明文、尾碼或 hash 回傳。一般停用保留 key，刪除清空密文並停用，歷史備份中的密文須按既有保留政策管理；供應商撤銷 key 是另一項操作。
+
+`ai_attempts`／`embedding_attempts.billing_source` 由 Server factory 決定，既有列標 platform；原 counters 不清零。personal 使用 `personal:global`／`personal:user:<id>`，與平台 global／user 分開。公共語料維護僅用 platform；個人 key 不進工作佇列、Agent session、prompt、候選、online receipt 或一般日誌。每次運行只在記憶體持有快照，背景使用受信事件的執行帳號並檢查 opt-in。

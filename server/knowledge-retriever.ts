@@ -9,7 +9,7 @@ import type { KnowledgeStore } from "./knowledge-store.ts";
 export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates">, embeddings: EmbeddingGateway) {
   return {
     /** One instance per authorized Agent run; never share queries or caches between families. */
-    createRun(options: { actor: EmbeddingActor; budget: AgentBudget; authorize: () => Promise<boolean> }) {
+    createRun(options: { actor: EmbeddingActor; budget: AgentBudget; authorize: () => Promise<boolean>; embeddings?: EmbeddingGateway }) {
       if (options.actor.kind !== "query_embedding") throw new Error("Invalid knowledge query actor");
       const { actor, budget, authorize } = options;
       const cache = new Map<string, Promise<number[] | null>>();
@@ -22,7 +22,7 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           let pending = cache.get(query);
           if (!pending) {
             budget.take("queryEmbeddings");
-            pending = embeddings.embed({ task: "RETRIEVAL_QUERY", text: query }, actor, budget.signal, authorize)
+            pending = (options.embeddings ?? embeddings).embed({ task: "RETRIEVAL_QUERY", text: query }, actor, budget.signal, authorize)
               .catch(error => { if (error instanceof EmbeddingFailure && error.code === "unavailable") return null; throw error; });
             cache.set(query, pending);
           }

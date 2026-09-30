@@ -503,3 +503,22 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 綁定、本人同意、任務授權是三個獨立條件。授權固定主接收者為任務負責人；後備須本人另外同意及授權人明確選擇。接收同意或家庭權限版本變更使舊授權不能外發。模型只有 `read_contact_options`／`contact_caregiver`：後者只按 Server 提供的任務／授權版本及對象，在到期事件存在時原子入列；不能寫同意、擴大披露內容或提供任意地址。回傳台帳 ID，入列並不等於送達。
 
 投遞前重查終態、來源、權限、同意、綁定、期限、worker 世代及通知偏好。僅明確拒絕可按已授權順序轉下一渠道／後備，最多四個綁定嘗試；unknown／已在途中斷不盲重發。普通通知按接收者本地日跨孩子合併，後續事項保留站內；`coalesced` 只表示沒有另發，不能推論首則成功。收到、渠道接受與照護完成分開；Telegram `contact:` callback 只在身份／事項匹配時記錄收到。來源／任務失效停止後續催辦；已在途外部請求不能保證撤回。
+
+<a id="personal-model-http"></a>
+## S06-W05 本人模型設定
+
+所有路由需登入；GET／POST 均帶 `x-expected-user-id`，身份不符回 403。POST 沿用 Origin／JSON 檢查及 2 KiB 上限；不進 online opId／收據，不保留可重播的 key 正文。
+
+| 路由 | 輸入／結果 |
+|---|---|
+| `GET /api/ai/settings` | 本人無密鑰 metadata、版本、平台／個人可用開關及分開用量 |
+| `POST /api/ai/settings` | `ModelSettingsCommand`：expectedVersion、mode、可選 apiKey／removeKey、背景同意、dailyLimit、maxModelCalls、maxQueryEmbeddings、consent；只回保存後的 `ModelSettings` |
+| `POST /api/ai/settings/check` | expectedVersion；只用已保存 key 做一次模型 metadata GET，回 accessible／unavailable，不代表生成／embedding／帳單已驗證 |
+
+精確型別見 [model-settings.ts](../src/shared/model-settings.ts)。`platform / personal / disabled` 需明確選擇；personal 須同意費用及資料外送，背景另行 opt-in。key 不讀回。刪除必須 removeKey=true、mode=disabled，不可同時傳新 key；停用與刪除後不自動使用平台。
+
+版本衝突回 409；保存回應失聯先重讀版本，由使用者核對，不自動重送 key。輸入框在送出／失敗／斷線／身份或 Server 變更時清除。存取檢查每帳號每分鐘一次，Server 最多保留四個當分鐘槽位；逾限回 429。
+
+個人每日上限 1–1000（預設 100）、每次 Agent 生成 1–12（預設 4）、查詢 embedding 1–6（預設 2），UI 可編輯並經 Server 驗證。只有 personal 模式採用這些限額；平台維持原配額及每次 4／2。工具 8 次、90 秒、輸出 1024 tokens／次及上下文 32000 字元仍是固定安全上限。每個運行固定選定版本，後續模型／向量／工具及回報重查；撤回不能取消供應商已接受的呼叫。
+
+`/api/ai/status`、`/api/ai/usage` 依本人目前模式回報；設定頁同時列兩種來源。UTC 每日 00:00（香港 08:00）重置計數；生成與查詢 embedding 的嘗試均計次，用量 metadata 不代表完整供應商帳單。

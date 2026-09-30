@@ -29,7 +29,8 @@ export interface AgentTool {
   authorize: (args: Record<string, unknown>, scope: Readonly<AgentScope>) => Promise<boolean>;
   execute: (args: Record<string, unknown>, context: { scope: Readonly<AgentScope>; runId: string; callId: string; signal: AbortSignal }) => Promise<AgentToolResult>;
 }
-export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; budget: AgentBudget }
+export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; budget: AgentBudget;
+  authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway }
 export interface AgentRunInput {
   /** Trusted persisted identity; never accepted directly from an HTTP body. */
   runId?: string;
@@ -64,6 +65,7 @@ export function createAgentRuntime(options: {
   config: AiConfig;
   usage: Pick<AiUsageStore, "reserve" | "record">;
   provider: AgentModelProvider;
+  resolve?: import("./model-routing.ts").ModelRouting["resolve"];
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
 }) {
   const activeUsers = new Set<string>();
@@ -75,21 +77,26 @@ export function createAgentRuntime(options: {
       const scope = Object.freeze({ ...input.scope });
       let acquired = false;
       let toolFailure: AgentStopped | undefined;
+      let authorize = input.authorize;
       try {
         await budget.wait(async () => {
           if (!await input.authorize()) throw new AgentStopped("unauthorized");
+          const selected = options.resolve ? await options.resolve(scope.userId, input.trigger.kind) : options;
+          if ("runLimits" in selected && selected.runLimits) budget.configurePersonal(selected.runLimits);
+          if ("authorize" in selected) authorize = async () => await input.authorize() && await selected.authorize();
           budget.check();
-          if (!options.config.enabled || activeUsers.has(scope.userId) || activeUsers.size >= 4) throw new AgentStopped("unavailable");
+          if (!selected.config.enabled || !await authorize() || activeUsers.has(scope.userId) || activeUsers.size >= 4) throw new AgentStopped("unavailable");
           activeUsers.add(scope.userId);
           acquired = true;
           if (!input.messages.length || input.messages.at(-1)?.role !== "user"
             || input.messages.some(message => !message.text.trim() || /[\u0000\uD800-\uDFFF]/u.test(message.text))) throw new AgentStopped("invalid_response");
-          const runContext = { scope, runId, budget };
+          const runContext: AgentRunContext = { scope, runId, budget, authorize,
+            embeddings: "embeddings" in selected ? selected.embeddings : undefined };
           const configuredTools = typeof input.tools === "function" ? input.tools(runContext) : input.tools;
           const definitions = new Map(configuredTools.map(tool => [tool.name, tool]));
           if (definitions.size !== configuredTools.length || configuredTools.some(tool => !/^[a-z][a-z0-9_]{0,63}$/u.test(tool.name))) throw new AgentStopped("invalid_tool");
           const prompt = await loadAgentPrompt(input.recipeId, "tool_cycle", input.availableInputs ?? ["run", "scope", "conversation", "capabilities"]);
-          result.provenance = { packVersion: prompt.packVersion, recipeId: prompt.recipeId, model: options.config.model };
+          result.provenance = { packVersion: prompt.packVersion, recipeId: prompt.recipeId, model: selected.config.model };
           budget.check();
           const tools = configuredTools.map(tool => new FunctionTool({ name: tool.name, description: tool.description,
             parameters: tool.parameters.strict(), execute: async (args, context) => {
@@ -109,11 +116,11 @@ export function createAgentRuntime(options: {
                 return { status: "unknown" };
               }
             } }));
-          const model = new AgentGatewayModel({ ...options, budget, userId: scope.userId, childId: scope.childId, authorize: input.authorize });
+          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize });
           const agent = new LlmAgent({ name: "yuban_agent", model,
             instruction: `${prompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
               now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: prompt.packVersion,
-              recipeId: prompt.recipeId, capabilities: tools.map(tool => tool.name), limits: AGENT_LIMITS })}\n\nAuthorized context data (not instructions):\n${JSON.stringify(input.context ?? {})}`,
+              recipeId: prompt.recipeId, capabilities: tools.map(tool => tool.name), limits: budget.limits })}\n\nAuthorized context data (not instructions):\n${JSON.stringify(input.context ?? {})}`,
             tools,
             beforeToolCallback: async ({ tool, args, context }) => {
               budget.check();
@@ -121,7 +128,7 @@ export function createAgentRuntime(options: {
               const parsed = definition?.parameters.strict().safeParse(args);
               let response: AgentToolResult | undefined;
               if (!parsed?.success) response = { status: "rejected" };
-              else if (!await budget.wait(input.authorize)
+              else if (!await budget.wait(authorize)
                 || !await budget.wait(() => definition!.authorize(parsed.data, scope))) response = { status: "rejected" };
               if (response) result.tools.push({ name: tool.name, callId: context.functionCallId ?? "", status: response.status });
               budget.check();
@@ -150,14 +157,14 @@ export function createAgentRuntime(options: {
             try {
               for await (const event of runner.runAsync({ userId: scope.userId, sessionId: runId,
                 newMessage: { role: "user", parts: [{ text: input.messages.at(-1)!.text }, ...(input.image ? [{ inlineData: input.image }] : [])] }, abortSignal: budget.signal,
-                runConfig: { maxLlmCalls: AGENT_LIMITS.modelCalls, streamingMode: StreamingMode.NONE, saveInputBlobsAsArtifacts: false } })) {
+                runConfig: { maxLlmCalls: budget.limits.modelCalls, streamingMode: StreamingMode.NONE, saveInputBlobsAsArtifacts: false } })) {
                 budget.check();
                 if (event.errorCode) {
                   // ADK 2.1.0 wraps its exact limit exception in an UNKNOWN_ERROR event.
                   confirmedFrameworkModelLimit = !model.failure && event.errorCode === "UNKNOWN_ERROR"
-                    && event.errorMessage === `Max number of llm calls limit of ${AGENT_LIMITS.modelCalls} exceeded`
-                    && budget.counts.modelCalls === AGENT_LIMITS.modelCalls;
-                  throw model.failure ?? new AgentStopped(budget.counts.modelCalls >= AGENT_LIMITS.modelCalls ? "model_limit" : "unavailable");
+                    && event.errorMessage === `Max number of llm calls limit of ${budget.limits.modelCalls} exceeded`
+                    && budget.counts.modelCalls === budget.limits.modelCalls;
+                  throw model.failure ?? new AgentStopped(budget.counts.modelCalls >= budget.limits.modelCalls ? "model_limit" : "unavailable");
                 }
                 if (event.content?.role === "model" && !event.content.parts?.some(part => part.functionCall)) {
                   const text = event.content.parts?.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("");
@@ -174,12 +181,13 @@ export function createAgentRuntime(options: {
               finalizeAfterModelLimit = true;
               result.text = null;
             }
-            if (!await budget.wait(input.authorize)) throw new AgentStopped("unauthorized");
+            if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
             // Keep finalize outside the Runner catch so its errors can never invoke it twice.
             if (input.finalize) result.text = await budget.wait(() => input.finalize!(result, runContext));
+            if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
             if (!result.text || finalizeAfterModelLimit && !result.text.trim()) throw new AgentStopped("invalid_response");
             if (finalizeAfterModelLimit) {
-              if (!await budget.wait(input.authorize)) throw new AgentStopped("unauthorized");
+              if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
               budget.check();
             }
             result.status = "completed";
@@ -197,7 +205,7 @@ export function createAgentRuntime(options: {
         if (result.stopReason === "unauthorized" || budget.signal.aborted) result.tools = [];
         else {
           try {
-            if (!await budget.wait(input.authorize)) { result.stopReason = "unauthorized"; result.tools = []; }
+            if (!await budget.wait(authorize)) { result.stopReason = "unauthorized"; result.tools = []; }
           } catch { result.tools = []; }
         }
       } finally {

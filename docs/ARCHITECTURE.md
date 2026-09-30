@@ -105,7 +105,7 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 <a id="section-3-6"></a>
 ## 3.6 AI、通知与部署
 
-- <a id="rule-3-6-01"></a>Gemini 通过 Vertex AI 接入，初始验证 `gemini-3.1-flash-lite`；模型名称集中配置。
+- <a id="rule-3-6-01"></a>平台 Gemini 經 Vertex ADC 接入；S06-W05 增補本人 Gemini Developer API key 模式，首版同為 `gemini-3.1-flash-lite`，模型由 Server 固定相容清單，不接受任意網址或 headers。兩模式共用既有 ADK／工具／來源及單次限額，模型 key 模式不另建 Agent。
 - <a id="rule-3-6-02"></a>使用结构化输出生成记录或任务草稿，经过校验和必要确认后写入。
 - <a id="rule-3-6-03"></a>数量统计、权限、排程、重复检查和完成状态由程序处理。
 - <a id="rule-3-6-04"></a>P2 經渠道無關的 NotificationGateway 送出 Web Push 及 Telegram，P3 增加 FCM；Android adapter 不承擔選人、排程或 fallback 決策。
@@ -119,7 +119,7 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 - <a id="rule-3-6-11"></a>P1 交付最小 Server／PostgreSQL／Better Auth、Web 記錄聊天與 Gemini 簡單 prompt，階段結案時提供真 URL。P2 以 ADK 接通完整當前 orchestration、最小向量 RAG、持續 worker、家庭權限、Web 附件、主動任務、Web Push／Telegram 及公共更新。P3 Android 重用同一 Server，P4 補完整部署／遷移／災備及 RAG 維運擴充；不因使用框架而提前建立未需平台。
 
 <a id="portable-core"></a>
-核心資料、任務、附件、權限及確定性規則由自有 Node／PostgreSQL／pgvector／worker／Compose 承載，不依賴只能在 GCP 運行的核心服務。Gemini 維持既定 Vertex 接入，可使用 GCP 以外 ADC；自部署不代表離線 Gemini。S17-W05 須驗證沒有 GCP 附加身份、關閉 AI 時核心資料與確定性任務仍可用，模型及外部通知另按憑據／授權驗證。
+核心資料、任務、附件、權限及確定性規則由自有 Node／PostgreSQL／pgvector／worker／Compose 承載，不依賴只能在 GCP 運行的核心服務。平台 Gemini 維持 Vertex，可使用 GCP 以外 ADC；個人 key 接入見 [S06-W05](#personal-model-routing)。自部署不代表離線 Gemini。S17-W05 須驗證沒有 GCP 附加身份、關閉 AI 時核心資料與確定性任務仍可用，模型及外部通知另按憑據／授權驗證。
 
 渠道薄 adapter 優先驗證 web-push、grammY 及 Expo Notifications；FCM Server 先用官方 Google Auth＋單次 HTTP v1 請求，以免 SDK 隱藏重試繞過 unknown／去重規則。版本、許可及 Firebase Admin 未優先採用的證據見 [渠道研究](TECH_REUSE.md#channels)。選人、授權、排程、fallback 與投遞台帳仍由項目控制；所有候選尚待各包驗收。
 
@@ -291,7 +291,7 @@ P2 問答 orchestration 必須取得適用的已發布官方片段及引用識�
 P2 最小向量 RAG 的資料／接口語義分別見 [DATA_MODEL](DATA_MODEL.md#knowledge-vector-model)／[API](API.md#knowledge-retrieval-contract)，此處維護選型及處理次序。
 
 - <a id="rule-5-7-01"></a>P2 在現有 PostgreSQL 18.6 同 major 映像加入固定版本 pgvector；固定版本及許可在 S10-W01 落實，保留資料目錄及既有正文保護。備份與空庫還原目標須具備相容擴展；本次文件不代表已升級或驗證。
-- <a id="rule-5-7-02"></a>初始 embedding 使用 `gemini-embedding-001`、1024 維，沿用 Server Vertex ADC；文件使用 RETRIEVAL_DOCUMENT，查詢使用 RETRIEVAL_QUERY。超長內容重新分段，不靜默截斷限定條件；只向量化公共知識，不注入整份聊天／孩子檔案。
+- <a id="rule-5-7-02"></a>初始 embedding 使用 `gemini-embedding-001`、1024 維，公共語料維護沿用 Server Vertex ADC，查詢按 [本人模型路由](#personal-model-routing) 選擇；文件使用 RETRIEVAL_DOCUMENT，查詢使用 RETRIEVAL_QUERY。超長內容重新分段，不靜默截斷限定條件；只向量化公共知識，不注入整份聊天／孩子檔案。
 - <a id="rule-5-7-03"></a>按标题和语义分段，保留限定条件及必要上下文。
 - <a id="rule-5-7-04"></a>先按年齡依據／精度、地區、主題、知識分類、已發布及有效版本作硬性過濾，再以 cosine distance 做精確向量搜尋；相似度不繞過適用條件。小型庫先不用近似索引，後續按實測延遲／規模加入 HNSW 等索引，沿用既有向量。
 - <a id="rule-5-7-05"></a>同時保留標題及主題關鍵詞匹配，與向量檢索共用硬性過濾，以 RRF 合併排序及去重；關鍵詞為長期補充，不另建資料模型。
@@ -547,3 +547,12 @@ Server 只從固定 catalog 選公開來源，沿用 DNS／IP／HTTPS／redirect
 Prompt Pack 只補產品工具範圍；工具是唯一副作用入口。收尾失敗從台帳回報已入列，既有操作不重做。包版本與模組正文版本分開，loader 仍精確校驗模組 header／manifest／依賴。Push／Telegram 都只傳固定無家庭正文提示，點開後由站內權限控制資料；回應不改照護終態。渠道接受、收到與任務完成分開展示，瀏覽器關閉不影響已入列工作。
 
 目前只有最少離線工具／型別證據；真渠道、SQL／重啟／撤權競態及瀏覽器接線待 S16 集中核對。P2 開關保持預設關閉，未部署。
+
+<a id="personal-model-routing"></a>
+## S06-W05 本人 key 的共用路由
+
+`model-routing` 在 Server 按登入／worker 受信帳號解析一次設定，為 ADK／P1 gateway 及查詢 embedding 提供相同付費來源；不讓模型選 key、provider、網址或擴權。私人 key 使用既有 Google Gen AI SDK 2.24.0 的 Developer API v1beta；平台及語料維護維持 Vertex ADC。SDK 重試關閉；同一運行的版本變更即阻止後續呼叫，不靜默 fallback。
+
+個人 key 模式的 UI 可調每日及每次運行生成／query embedding 次數，範圍見 [API](API.md#personal-model-http)；本節取代前述 4／2 對 personal 模式不可變的假設，平台預設不變。全站個人服務安全上限由 `AI_PERSONAL_DAILY_GLOBAL_ATTEMPTS` 管理，預設 1000，UI 顯示但普通使用者不能改全站配置；全局 AI_ENABLED 仍有效。接線版本啟動前須 migration 024，避免憑據或計數服務悄悄退回舊路徑。
+
+2026-09-30 真 key 的 metadata GET 回覆地區不支援；使用者確認本包先交付設定及本機接線，真生成／向量留待可用供應商條件。不能把 Vertex ADC 通過或 metadata GET 當私人 key 真服務通過；未新增 Vertex key 路由或繞過地區限制。

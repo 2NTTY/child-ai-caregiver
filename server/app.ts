@@ -1,4 +1,5 @@
 import { handleSharedInputRequest } from "./shared-input-api.ts";
+import { handleModelSettingsRequest } from "./model-settings-api.ts";
 import { handlePhotoRequest } from "./photo-api.ts";
 import { PHOTO_LIMITS } from "../src/shared/photos.ts";
 import { handleCareSummaryRequest } from "./care-summary-api.ts";
@@ -99,6 +100,7 @@ export function createRequestHandler(options: {
   webPush?: import("./web-push-store.ts").WebPushStore;
   telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
   modelGateway?: ModelGateway;
+  modelRouting?: import("./model-routing.ts").ModelRouting;
   chat?: ChatStore;
   chatPrompt?: string;
   aiMaxInputCharacters?: number;
@@ -158,6 +160,7 @@ export function createRequestHandler(options: {
         return;
       }
       let bodyLimit=MAX_BODY_BYTES;
+      if (url.pathname.startsWith("/api/ai/settings")) bodyLimit = 2048;
       const upload=method==="POST" ? /^\/api\/children\/([a-f0-9-]{36})\/photos\/([a-f0-9-]{36})\/content$/u.exec(url.pathname):null;
       if(upload&&options.photos){
         const session=await options.auth.api.getSession({headers});
@@ -187,12 +190,16 @@ export function createRequestHandler(options: {
       } else if (url.pathname === "/api/health" && method === "GET") {
         await options.checkDatabase();
         result = jsonResponse({ status: "ok" });
+      } else if (["/api/ai/settings", "/api/ai/settings/check"].includes(url.pathname) && options.modelRouting) {
+        const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
+        result = await handleModelSettingsRequest(webRequest, sessionResult.response?.user.id ?? null, options.modelRouting);
+        for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (["/api/ai/status", "/api/ai/usage"].includes(url.pathname) && method === "GET") {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         result = sessionResult.response?.user.id
           ? url.pathname.endsWith("/usage") && options.aiUsage
-            ? jsonResponse(await options.aiUsage.getForUser(sessionResult.response.user.id))
-            : jsonResponse({ available: options.modelGateway?.available() ?? false })
+            ? jsonResponse(options.modelRouting ? await options.modelRouting.currentUsage(sessionResult.response.user.id) : await options.aiUsage.getForUser(sessionResult.response.user.id))
+            : jsonResponse({ available: options.modelRouting ? await options.modelRouting.available(sessionResult.response.user.id) : options.modelGateway?.available() ?? false })
           : apiError("unauthorized", "請先登入。", 401);
         for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (url.pathname === "/api/workspaces" || url.pathname.startsWith("/api/workspaces/")
