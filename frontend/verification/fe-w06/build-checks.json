@@ -3,13 +3,29 @@
     "passed": 19,
     "failed": 0
   },
-  "androidExport": "passed before final mobile suggestion layout change",
-  "webExport": "passed before final mobile suggestion layout change",
-  "at": "2026-09-28T20:41:52.2737946Z",
+  "androidExport": {
+    "result": "passed",
+    "command": "npm run build:android-ui",
+    "exitCode": 0,
+    "bundle": "_expo/static/js/android/entry-abcb0b448f1456454ecf45adc9ebcfa3.hbc",
+    "assets": 49,
+    "bundleWrittenAt": "2026-09-30T07:55:57Z"
+  },
+  "webExport": {
+    "result": "passed",
+    "command": "npm run build:web",
+    "exitCode": 0,
+    "bundle": "_expo/static/js/web/entry-3689cad0316114b255f6465688ec60d6.js",
+    "staticRoutes": 23,
+    "bundleWrittenAt": "2026-09-30T07:55:48Z"
+  },
+  "sourceCommit": "4739b9e8594b70e78bbea19fe03d80e8cb34fa74",
+  "verifiedOn": "2026-09-30",
   "scope": "Synthetic frontend only",
   "typecheck": "passed after final mobile change",
+  "existingCheckEvidenceAt": "2026-09-28T20:41:52.2737946Z",
+  "note": "Final exports completed on resume. Existing typecheck, unit and layout checks are retained; no source changes since the checkpoint.",
   "pending": [
-    "Final Web and Android exports after mobile suggestion change",
     "User visual acceptance",
     "Formal API integration",
     "Android device and APK acceptance"

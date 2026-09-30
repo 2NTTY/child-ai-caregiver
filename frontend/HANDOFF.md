@@ -1,6 +1,6 @@
 # 育伴港 Web／手機介面交接
 
-更新：2026-09-29。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
+更新：2026-09-30。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
 
 ## 交付範圍及入口
 
@@ -61,6 +61,8 @@
 
 基線已合併 S05-W02、S06-W02、S07-W03、S09-W02、S13-W01 及 S13-W04；未接線不表示後端沒有實作。詳細 payload 沿既有型別，不另抄第二份協定。
 
+2026-09-30 同步核對主線 `fe7ac9e`：上述 client API／型別沒有變動；S10-W02 已補知識證據的 lastSuccessfulCheckAt／usageScope，仍沒有獨立知識 Web 路由。後續引用畫面須保留公開／組內用途限制，不能把 CHP／RTHK 組內來源當成公開知識卡片。主線的模型規則更新由主聊天管理，本包沒有回寫。
+
 | 領域 | 主聊天應復用 |
 |---|---|
 | 孩子／身份／私人聊天 | records-api／records-controller 的 session、children、createChild、deleteChild、原 ChatPanel；保留身份及刪除 gate |
@@ -74,7 +76,7 @@ HomeChild.profileConfirmed／ageLabel／allergiesLabel 只投影同一 selectedC
 
 ## 待主聊天接續
 
-- 所有真 session／API／opId／跨畫面及跨成員同步、正式 UI 掛載和 S16-W05 瀏覽器驗收。
+- 所有真 session／API／opId／跨畫面及跨成員同步、正式 UI 掛載，以及接線後針對新增介面的必要瀏覽器驗收。主線已經 `9f0febd` 合併既有正式 App 的 S16-W05 Chromium 情景；該證據可按未變部分復用，但沒有驗過本包隔離介面，不要求無理由重跑整套舊情景。
 - S11-W02 真 Agent 多步結果／引用、S12 照片／分享来源核對、S13 通知渠道／投遞及成長關注、S14 到診摘要等：active 分支落碼不等同已合併交付。收到已 review 契約／基線再安排相應前端包，不代改其程式碼。
 - 真通知中心、Web Push／Telegram／FCM 及未讀。鈴鐺只提示合成原操作，右欄勾選只是本地清單；/tasks 的合成流程另列，不能互相冒充。
 - 圖中的第三方／手機登入、忘記密碼、方案／儲存用量、帳戶匯出／刪除、疫苗百分比及知識首頁，不能憑圖片當已承諾 API。手機首頁暫用已有記憶／話題入口，沒有假醫療建議、附件或咪高峰操作。
@@ -97,4 +99,4 @@ npm run web -- --port 8082
 
 證據及截圖在 [verification/fe-w06](verification/fe-w06)，實際結果以 JSON 及 [STATUS](STATUS.md) 為準。手機截圖是共享 React Native 畫面的 Web 執行結果；Android 另有資產／Hermes bundle 建置證據，未跑 emulator／實機。視覺仍待使用者比較，P2／P3 未因前端交付完成。
 
-2026-09-29 使用者因沒額度要求暫時收尾。40 個版面／11 組流程及其後手機首頁針對性檢查、最新 typecheck、19 項單元檢查已通過；兩個 export 在最後手機問題捷徑的小調整前通過。**下次先重跑最後版本的 Web／Android export**，再視新證據補驗，不從暫存推斷已完成全部驗收。交付 commit 及遠端備份以本分支 Git 記錄和此次對話為準。
+2026-09-30 已接續上次未完成的收尾，對源碼 checkpoint `4739b9e` 補跑最後版本的 Web／Android export，兩者 exit 0；產物版本見 [build-checks](verification/fe-w06/build-checks.json)。40 個版面／11 組流程及其後手機首頁針對性檢查、typecheck、19 項單元結果沿用，沒有因恢復聊天重跑整套檢查。全部真 API、視覺確認及 Android 實機仍待驗收；交付及文件補完 commit 以本分支 Git 記錄為準。
