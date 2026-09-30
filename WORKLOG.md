@@ -1308,3 +1308,42 @@
 - Host：使用者明確批准既有試用主機續期三天；官方 Compute stop／setScheduling／start 已完成，固定 STOP 於 2026-10-03 20:50:44 HKT，原主機／磁碟／IP 保留，HTTPS health 200。唯讀核對現網仍 `d654b8f`／migration 001–005，原卷及 5／20 配額保留，可用磁碟約 12.6 GB。續期不包括 P2 部署。
 - Validation：Compose 5.1.2 合成配置／秘密及掛載圖通過；Web／API／maintenance 三個必要映像各建置一次成功，一次離線核對 Node 24.19.0、npm 11.8.0、PG client 18.6、Caddy 2.11.4、service worker／Prompt Pack／備份入口。配置工具只做語法及一個合成 env 核對，Linux 主機操作未驗。主模型核對關鍵 diff 與實際日誌，補新 P2 映像引用後只重驗受影響 Compose；沒有重跑 S16。既有 Caddy header／格式警告保留。
 - Pending：P2 映像已在本機打包，尚未傳送或部署；公開 webhook／Push、正常部署 worker、原資料升級、配對備份／空庫還原及真實組員展示仍待執行。全站每日 20 次不自行提高；12 次個人額度／1,024 output tokens 及限定展示成本列為待批准配置。零新增模型／embedding／通知，P2 未完成。
+
+<a id="log-20260930-018"></a>
+## LOG-20260930-018
+
+- Delivery：經具體部署及檔案／設定傳送批准，S17 版本 `635a545` 已部署至既有根網域／同一 VM；原八張 P1 表的固定欄位 hash／數量保留，migration 006–023、PG18.6／pgvector0.8.6、原密鑰及持久卷核對通過。停止期限維持 2026-10-03 20:50:44 HKT。
+- Knowledge / Usage：正常 worker 取得四個 FHS 來源，主模型核對實際正文及 observation hash，五片段完成核對／向量／發布。五次文件 embedding 成功，522 input tokens／705 billable characters；展示前實查全站用量 5、0 Agent／生成／查詢 embedding／通知。每人 12／全站 20、output 1,024 按使用者批准啟用，不清零。
+- Verification：公開 health／service worker 200；一次 23 HTTP 合成登入、確認事實、孩子／記錄／收據及照片原檔讀回通過。Telegram 公開 webhook 登記成功，不冒充真 callback 或收到。一次 DB＋照片加密備份／空庫還原確認 23 migrations、vector、照片 hash 及還原 worker 暫停；原服務恢復。配對密文另獲使用者明確批准下載至工程外受保護目錄，hash 相同，密鑰分開保存。[交付與恢復](docs/P2_DELIVERY.md)／[EV-S17-W02](artifacts/verification/S17_W02_CHECKS.json)。
+- Failures：初次 Web 啟動因 API 先佔固定 IP 失敗，改為先保留 Web 位址再啟動 API／worker 後通過；沒有重跑 migration／embedding。合成 HTTP 入口先有兩次零 HTTP 的舊 PowerShell ACL 前置失敗，選現有 pwsh 後通過。備份外存首次錯把附件目錄當檔案，核對實作後只補打包，沒有重做備份／還原。
+- Pending：同一合成孩子的两段公開 Agent 流程、本人公開渠道及組員實際回報、明確完成／清理、最終 review 及 C 帳號 PR／合併。P2 尚未結案；不把部署技術通過代填人工展示，不啟動 P3，也不接回另一聊天的前端預覽。
+
+<a id="log-20260930-019"></a>
+## LOG-20260930-019
+
+- Public Trial：使用者在 Firefox 登入專用合成帳號，回報 Telegram 已綁定、Firefox 已啟用；另手動按了一次 Telegram 一般測試並確認收到。Server 台帳 HTTP 200／acknowledged 可核對，公開 webhook 回覆成立，不重發。使用者其後明確批准 Telegram 總數由一則改為兩則，保留一則指定照護提示；其他次數上限不變。
+- Failure：第一個公開互動運行 `d3aeb890-cc77-45fb-ba9a-006b311224a5` 的 read_context／search_knowledge／present_answer／propose_task 均成功，四次生成後 ADK 還需收尾，model_limit 阻止第五次；原程式未執行已備妥的 Server 呈現／引用校驗，導致回答及來源沒有保留。候選仍 pending，沒有正式任務或照護外發，使用者已要求先停止，不重送。
+- Usage / Next：實查四次生成 41,398 input／289 output tokens，一次查詢 embedding 6 input tokens；連同五次語料向量，全站目前 10 次。主模型界定方法，由原 Sol 處理 runtime／產品接線及必要 scripted 重現；只在上限時、原期限及權限／來源仍有效且已有可呈現結果，才以 Server 收尾，不增加模型或重做工具。修正尚未驗收／部署；原失敗保留，P2 未完成。
+- Clarification：上述停批由主模型按首次失敗停止規則提出；使用者沒有要求暫停 P2 目標，後續修正工作繼續。
+
+<a id="log-20260930-020"></a>
+## LOG-20260930-020
+
+- Correction：S17 公開四工具流程的收尾修正已提交為 `43ab10c`；主模型界定有界方法，由原 GPT-6.1 Sol 實作 runtime／接線及直接相關檢查，主模型親讀關鍵 diff、固定 ADK 原碼及引用／授權路徑完成 review。只在已確認限額停止、所有工具成功、原期限及授權仍有效時執行既有 Server finalizer，保留引用及 pending 候選，不增加生成或重做工具。C 實作、A 方法及整合覆核，未改提示詞。
+- Validation：首次針對性 Runner 檢查 8 通過／4 失敗；ADK 2.1.0 的限額實際以一般 UNKNOWN_ERROR 事件回傳，核對精確訊息後同一範圍 12／12 通過。主模型追加 Server 型別檢查因本機缺少既有 grammy／web-push 及衍生 Telegram 型別診斷失敗，沒有當作通過或重新安裝依賴；`git diff --check` 通過。部署包已按实际封裝位元組核對 hash，沒有外部部署或真服務呼叫。
+- Pending：現網仍 `635a545`，四次單次上限及 12／20 每日上限未改；原公開失敗、已用配額及未確認候選保留。另提出最小修正部署、一次互動補驗及原背景運行、暫時 17／22 後恢復的具體批准；尚未收到前不执行。P2 仍未完成。
+
+<a id="log-20260930-021"></a>
+## LOG-20260930-021
+
+- Deployment：使用者明確批准 `43ab10c` 的 60 KiB 私有修正包及清單經 IAP 傳至原本人 VM；實際部署成功，API／maintenance 新層 hash 符合，API healthy、worker running。Web／DB／密鑰及資料不變，沒有 migration、模型或通知重跑。
+- Scope：另批准最多兩個新運行／八次生成／四次查詢 embedding，失敗即停；暫時每日每人 17／全站 22，結束恢復 12／20，歷史用量不清零。Telegram 總数仍二、Firefox 一；主機期限不變。兩次 GET 核對 Telegram 本人綁定有效、原一般訊息已接受及收到；Firefox 台帳暫無訂閱，使用者回報與 Server 證據差異保留，須補綁定，尚未發 Push。公開補驗／P2 仍未完成。
+
+<a id="log-20260930-022"></a>
+## LOG-20260930-022
+
+- Public Acceptance：`43ab10c` 的互動運行 `83471cd3-aeea-47f7-ad05-43e084594dbf` 完成（4 生成／4 工具／1 查詢 embedding）；使用者在 Firefox 回覆「有來源，已確認 22:40 預約」。主模型核对实际 FHS 片段／版本與回答支持，accepted 候選建立同一任務。首次上限收尾失敗保留，沒有把補驗改寫成首次通過。
+- Background / Channels：使用者確認預約安靜時段例外及本人 Telegram；台帳未見任務 grant，主聊天按同一明確批准透過既有 API 補存，後按另行批准把同一任務提早至 22:27 HKT 並重核版本。關頁後正常 worker 運行 `c70669a7-8d0c-498b-a398-a8e1370e7b78` 完成（4 生成／3 工具／0 embedding），Telegram HTTP 200／callback 與本人「收到提示」對應。公開 Firefox 一則 HTTP 201，使用者已確認收到並關頁；不冒稱完整聯絡面板純 UI 驗收或完整 Firefox 相容性。
+- Explicit Completion / Cleanup：使用者另明確回覆「確認完成並清理本次驗收資料」。主模型已 review 的入口執行 14 次 HTTP，核對任務 v3 completed、無待催辦，撤銷 Telegram／Push Server 綁定，刪專用合成孩子及附屬資料，其他孩子保留；零模型／通知。未刪帳號或操作瀏覽器權限／provider 退訂；備份早於公開展示，不能聲稱涵蓋其後聊天。
+- Usage / Limits：S17 實際累計含首次失敗為 3 運行／12 生成／2 查詢 embedding／5 文件 embedding，Telegram 2 則（一般測試及照護各一）／Firefox Push 1 則。驗收帳號當日 14 attempts、115,559 input／998 output／51,289 cached tokens，8 attempts 用量未知；帳號聚合不當成生成專屬完整用量或帳單。已恢復每人 12／全站 20，API healthy／worker running，不清零用量；該帳號今日超過恢復後上限。主機停止仍為 2026-10-03 20:50:44 HKT。
+- Delivery / Limits：P2 20 包必要驗收齊備；沿用 C 主責、權重 3、C 60%／A 30%／B 10%，共用 AI 由 A 統籌，沒有代填 D 的獨立試玩。主模型完成關鍵實作／真服務／人工回覆 review，只補交付文件與 UI 功能／API 清單，結案隨本包 PR 合併生效；不再重跑模型、S16 或備份。12 項相關 Runner 通過，本機完整 Server typecheck 因既有缺失通知套件受阻，沒有當通過。Firefox 全套、各面板完整 E2E 及新前端整合未完成；不啟動 P3。[EV-S17-W02](artifacts/verification/S17_W02_CHECKS.json)／[實際回報](docs/P2_TRIAL.md)／[UI 交接](docs/P2_UI_HANDOFF.md)。

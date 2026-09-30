@@ -1,10 +1,22 @@
 # STATUS
 
 ## 當前階段
-**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 已隨 PR #59 合併；S11-W02／S14-W01／S13-W08／S12-W03 已分別隨 PR #60／#61／#62／#63 合併；S12-W04 已隨 PR #64 合併；S13-W07 已隨 PR #66 合併；S16 必要本機及真服務驗收已隨 PR #67 合併，S17-W02 部署準備中**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
+**P1 已完成；P2 的 20 個工作包實作及必要驗收已齊，階段結案隨 S17-W02 的 PR 合併生效。** S16 已隨 [PR #67](https://github.com/2NTTY/child-ai-caregiver/pull/67) 合併；S17 公開兩段 Agent 流程、真通知、明確完成及清理均通過。不啟動 P3；後續先接續獨立前端聊天的 Web 設計與正式整合。
 
 ## 現況
-- **試用 URL：https://ex-machina.eu.org**。使用者指定根網域，DNS 由使用者設定；執行版本 `d654b8f`，其後結案修改僅涉及文件。
+- **試用 URL：https://ex-machina.eu.org**。正式功能 Web／Server 執行 **`43ab10c`**，保留原帳號、資料卷及密鑰；新前端的隔離預覽尚未取代正式 App。
+- 原八張 P1 表的欄位摘要保留、migration 至 023、pgvector 0.8.6、四來源／五片段向量發布、23 次合成 HTTP 及一次 DB＋照片配對備份／空庫還原均通過；正常 worker 已運行。
+- 公開展示 A：使用者在 Firefox 確認有 FHS 來源及接受任務候選；真 ADK／記憶／向量檢索／工具成功。展示 B：關頁後正常 worker 處理已授權到期預約，Telegram 接受、本人收到及 callback 均可核對；一次公開 Firefox Push 亦已確認收到。
+- 首次公開互動因四次生成後未執行 Server 收尾而失敗，保留原失敗；修正只接回既有授權／引用 finalizer，不增加單次上限或重做工具。12 項必要 Runner 檢查及兩條公開補驗通過；完整本機 Server typecheck 因缺少既有通知套件受阻，未當作通過。
+- 使用者明確確認後，合成預約已完成且無待催辦工作；專用孩子及附屬資料清理，Telegram／Push 的 Server 綁定撤銷。沒有刪原資料、沒有再發訊息；未操作 Firefox 本身的通知權限或 provider 退訂。
+- S17 累計 3 個 Agent 運行（含首次失敗）、12 次生成、2 次查詢及 5 次文件 embedding，Telegram 2 則、Firefox Push 1 則。每日上限已恢復每人 **12／全站 20**，不清零用量；驗收帳號當日 14 次已超過恢復後個人上限，今日不能再發 AI 請求。用量 metadata 不完整，不當作完整帳單。
+- 加密配對備份已按明確批准存於本機工程外並核對 hash，密鑰分開保存。主機固定於 **2026-10-03 20:50:44 HKT** 停止。[交付與限制](docs/P2_DELIVERY.md)／[實際展示回報](docs/P2_TRIAL.md)／[S17 證據](artifacts/verification/S17_W02_CHECKS.json)／[UI 功能與 API 清單](docs/P2_UI_HANDOFF.md)。
+
+
+## P1 及分包歷史驗收
+
+以下描述各包當時的驗收範圍；其中「未部署」等註記不代表上述現網狀態。
+
 - P1 十個工作包的實作及必要驗收齊備；前置包均已合併。共享 Prompt Pack／美術沿用，沒有重做或 UI polish。
 - 本機隔離容器、公開 TLS／登入隔離／原文保存／API 重建持久化、Linux 密鑰權限、磁碟與 WAL、metadata ADC、maintenance 加密備份／空庫還原通過。[EV-S16-W01](artifacts/verification/S16_W01_CHECKS.json)／[EV-S17-W01](artifacts/verification/S17_W01_CHECKS.json)
 - Firefox 試玩曾回報可能閒置後呈現登出及限流；代理來源與未確認會話 UI 已修正。39 項針對性單元檢查、typecheck、建置及獲准的 15 次 HTTPS 讀取通過；使用者修正版覆核回覆「没问题了」，人工試玩門檻通過。未捏造原始 HTTP trace 或逐步時間。
@@ -21,11 +33,11 @@
 - S10-W01 必要驗收通過，完成隨 [PR #35](https://github.com/2NTTY/child-ai-caregiver/pull/35) 合併生效：官方套件 hash／相容性及離線映像核對通過，原 volume 保留、009 migration 成功；7 組／15 次真 embedding／79 次 store，原 23 張業務表不變，31 表加密備份／空庫還原及向量查詢通過。[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json)。Agent／引用 UI 接線及來源更新仍待後續包；未部署或跑 E2E。
 
 ## 七天試用與限制
-- 香港 e2-small／20 GiB pd-balanced／固定 IP；GCE 已設定 maxRunDuration=604800／STOP，原定 2026-09-30 20:50:44 HKT 停止；使用者於 2026-09-30 明確批准續期三天，GCP 已改為 **2026-10-03 20:50:44 HKT** 固定時間 STOP，主機恢復 RUNNING、HTTPS health 200。只續期，未部署 P2。
+- 香港 e2-small／20 GiB pd-balanced／固定 IP；GCE 已設定 maxRunDuration=604800／STOP，原定 2026-09-30 20:50:44 HKT 停止；使用者於 2026-09-30 明確批准續期三天，GCP 已改為 **2026-10-03 20:50:44 HKT** 固定時間 STOP，主機恢復 RUNNING、HTTPS health 200。續期後已按另行批准部署 P2，停止時間不變。
 - 初估七天固定費 US$5.28，流量／AI 另計；停機後保留 disk／IP 仍約 US$5.85／月。不是硬性金額上限，不自行續期。
 - [交付及操作](docs/P1_DELIVERY.md)／[組員試玩指引](docs/P1_TRIAL.md)。已收到使用者實際試玩確認；只適用 P1 合成資料範圍。
 
-## 下一步
+## 已合併工作包的驗收紀錄
 
 S16-W05 的 Chromium 單一真 API 情景已通過：家庭隔離／viewer、原 opId 唯一恢復、撤權清 UI／草稿，147 HTTP；新孩子清理、服務停止。使用者確認 Firefox 專項延後，不阻塞 P2，後續必要功能檢查用 Codex 內置瀏覽器。完成隨本包 PR 合併生效；[證據](artifacts/verification/S16_W05_CHECKS.json)。未重跑已通過項、未改現網。
 S13-W01 已隨 [PR #47](https://github.com/2NTTY/child-ai-caregiver/pull/47) 合併；S13-W04 的 pg-boss／原子入列、重啟去重、站內提醒及暫停還原已隨 [PR #48](https://github.com/2NTTY/child-ai-caregiver/pull/48) 合併。W04 的 27 項輕量檢查及獲批分段 PostgreSQL 驗收通過，包含 hard-kill 68.895 秒恢復及加密空庫還原，[範圍及證據](artifacts/verification/S13_W04_CHECKS.json)；尚未驗真通知。
@@ -58,4 +70,4 @@ S13-W07 必要驗收通過，完成隨本包 PR 合併生效。沿用 SQL 70 業
 
 S16 已接回全部正式功能包；實作與真聯絡使用的 `e0653d3` 相同，沒有為合併重跑測試。累計 11 Agent 運行／33 生成嘗試／10 embedding 嘗試／3 真通知；新聯絡 4 次生成的 token 細項未在該回報提供，保留已有已知用量，不當作完整帳單。UI 功能清單見 P2_UI_HANDOFF；公開部署及組員完整演示仍未完成。
 
-目前為 S17-W02：[部署準備](docs/P2_DELIVERY.md) 已開始，先備妥 P2 映像與來源初始化、密鑰掛載、正常 worker／公開 webhook／HTTPS Push 及最小組員演示，再取得具體部署授權。現網唯讀核對仍為 P1／migration 001–005，原資料卷保留，磁碟可用約 12.6 GB。續期僅延長既有主機至 10 月 3 日，未批准更新現網。
+P2 必要驗收及交付記錄已完成，結案隨 S17-W02 PR 合併生效。後續 Web 前端整合沿用 UI 功能與 API 清單；Firefox 全套相容性及各面板完整 E2E 未全驗，新前端未整合，不啟動 P3。

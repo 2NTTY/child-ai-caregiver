@@ -23,31 +23,31 @@ Web 預覽檢查 1440／1024／390／320 CSS px、鍵盤、溢出及必要狀態
 
 ## 狀態與使用方式
 
-目前 P1 登入、孩子、文字記錄及基本聊天可用；S11-W03 已完成 ADK 內部基礎，S11-W02 隔離分支已接 Web 聊天入口，仍待驗收及明確啟用。S06-W02 家庭管理／偏好、S05-W02 孩子檔案／確認更正／搜尋、S07-W03 在線收據／刷新、S09-W02 記憶／話題及 S10-W01 內部知識檢索均已有對應實作與必要本機證據，實際入口及限制見下表；不因此宣稱瀏覽器 E2E、Agent 全接線或部署通過。其餘 P2 功能仍待所屬工作包接通。每包交付時補上實際 API／共享型別及可操作狀態，未落碼的項目不提供假路由；接線只能採用已交付契約。
+P2 功能包及 S16 必要本機／真服務驗收已合併；2026-09-30 正式 Web／Server 已部署版本 `43ab10c`，啟用 ADK、既有 Prompt Pack、最小向量 RAG 及正常 worker，原資料保留／公開 HTTP／配對還原通過。S17-W02 的兩條公開展示、本人來源／任務確認及真通知回報已通過，完整照片／分享／摘要等面板瀏覽器情景未另行全驗。下表區分已落碼介面及具體證據，不能把單一 HTTP／模型結果當整套 UI 驗收；功能 API 已接通不代表隔離前端設計已接回。最新進度見 [P2 交付](P2_DELIVERY.md)。
 
 | 功能 | 使用者可做的事 | 必須能呈現的資料及狀態 | 工作包／對接落點 |
 |---|---|---|---|
 | UI-P2-01 家庭與成員 | 邀請、接受邀請、查看成員；owner 變更角色或撤權 | owner／caregiver／viewer、邀請有效性、權限失效；一次性碼及共享範圍二次確認 | S06-W02 [FamilyPanel](../src/client/FamilyPanel.tsx)／[API](API.md#p2-family-http)／[型別](../src/shared/family.ts) 已落碼 |
 | UI-P2-02 孩子檔案 | 切換孩子，按需要補充及確認年齡、地區和照護資料 | 精確／約數年齡及日期基準、未知、實際／矯正年齡、共享範圍 | S06-W02 家庭建立／切換；S05-W02 [CarePanel](../src/client/CarePanel.tsx)／[API](API.md#p2-care-http)／[型別](../src/shared/care.ts) 已接確認檔案、版本及歷史 |
-| UI-P2-03 記錄與確認 | 快捷新增、確認候選、更正、搜尋及查看時間軸 | 原文、來源、精度、確認人、版本、更正歷史；候選不冒充已保存 | S05-W02 [CarePanel](../src/client/CarePanel.tsx)／[API](API.md#p2-care-http) 已接；按加入時間分頁，事件原時間分開；尚未接 AI 提取候選 |
-| UI-P2-04 記憶與話題 | 新增候選、明確確認／共享、更正／停用／刪除；管理話題終態與按原因重開，查看本人摘要覆蓋 | 候選不作事實，來源變更／過期／版本衝突，私有候選歷史遮蔽；暫緩日期、舊終態保留；未知提交先核對 | S09-W02 [MemoryPanel](../src/client/MemoryPanel.tsx)／[API](API.md#p2-memory-http)／[型別](../src/shared/memory.ts) 已接通，必要本機驗收通過，完成隨 PR #34 合併生效；瀏覽器驗收及部署未執行，S11-W02 已接 AI 摘要暫存／覆蓋校驗與候選確認工具，必要核心證據分列於本包驗收記錄 |
-| UI-P2-05 Agent 對話 | 提出照護需求、核對候選完整內容及共享範圍、明確接受／略過、查核未知提交；手動查看背景結果 | 運行／工具結果、候選／實際任務分開、版本衝突、停止／unknown、統計未知，不展示內部推理 | S11-W02 [ChatPanel](../src/client/ChatPanel.tsx)、[AgentRunPanel](../src/client/AgentRunPanel.tsx)、[AgentInbox](../src/client/AgentInbox.tsx)／[HTTP](API.md#product-agent-http)／[型別](../src/shared/product-agent.ts) 已接線，必要核心證據見 [EV-S11-W02](../artifacts/verification/S11_W02_CHECKS.json)；完整 Agent UI E2E 未驗，P2_AGENT_ENABLED 預設關閉 |
-| UI-P2-06 知識引用 | 從原回答查看支持片段及官方頁、辨認降級／來源時間；使用固定緊急求助入口 | 標題、章節、短原文、版本／核對時間、來源分類、降級；原引用不保證目前仍適用 | S11-W02 [AgentRunPanel](../src/client/AgentRunPanel.tsx) 已接既有 public [retriever](../server/knowledge-retriever.ts)；[EmergencyHelp](../src/client/EmergencyHelp.tsx) 在模型回覆前可見。S10-W02 已驗；本包有限真引用樣例及成長引用修正的離線證據分列，完整 UI／公開部署未驗，CHP／RTHK 組內限制不變 |
-| UI-P2-07 成長關注 | 閱讀「為何現在」、接受、暫緩、關閉或永久停用主題 | 所依據的已確認資料、觀察／安排／諮詢建議、來源、處理結果及新提示原因 | S13-W08；待接通 |
-| UI-P2-08 任務與預約 | 查看、確認、指派、改期、完成、取消、衝突覆核及歷史 | 任務／穩定發生實例、含 offset 時間／IANA 時區、合資格負責人、原版本、原因／備註及終態；過期不等於完成 | S13-W01 [API](API.md#p2-task-http)／[型別](../src/shared/tasks.ts) 已接 [TaskPanel](../src/client/TaskPanel.tsx)／[client API](../src/client/task-api.ts)，本機 HTTP 及 Web export 通過；瀏覽器互動待 S16 |
-| UI-P2-09 聯絡授權 | 設定或撤回預授權，核對對象、內容、渠道及 fallback | 授權範圍／版本、合資格對象、待確認的超範圍動作 | S13-W07 [ContactPanel](../src/client/ContactPanel.tsx)／[對接](#contact-handoff) 已接線、待驗收 |
-| UI-P2-10 通知偏好 | 個別設定渠道、安靜時段及明確的預約例外 | 香港時間預設 22:00–08:00、普通提示合併及跟進限制 | S06-W02 已有偏好保存；S13-W04 已接站內持久批次及執行，必要 DB 驗收通過；渠道控制待 W05／W06／W07 |
-| UI-P2-11 Web Push | 訂閱、退訂及查看裝置渠道狀態 | 未授權／已拒絕／不支援／已訂閱／訂閱失效，站內仍可查事項 | S13-W05 [WebPushPanel](../src/client/WebPushPanel.tsx)／[HTTP](API.md#p2-web-push-http)／[型別](../src/shared/web-push.ts) 已落碼：本人訂閱／撤銷、固定測試、原操作查核及投遞狀態；SQL／一次 Firefox 真 Push 及撤銷通過；公開 origin 留 S17 |
-| UI-P2-12 Telegram | 啟動 bot 後完成綁定、解除綁定及回覆正確事項 | 綁定狀態、接收者、事項關聯；收到回覆不自動當作照護完成 | S13-W06 本人雙向綁定／撤銷、一般測試及原操作查核已落碼；[功能及未驗項](#telegram-ui-handoff)，SQL 及真本人接收／回覆通過；公開 webhook／正式 UI E2E 未驗 |
-| UI-P2-13 執行與投遞台帳 | 查看實際聯絡進度及待處理結果 | 渠道接受、送達、已讀、回應、照護完成各自的證據；unknown 不冒充失敗 | S13-W04 已接站內提醒／處理狀態，必要 DB 驗收通過；真渠道台帳待 W07 |
-| UI-P2-14 照片輸入 | 選圖、上傳、查看提取結果、修正及確認 | 原檔／來源、上傳與提取狀態、不確定欄位、容量／權限錯誤 | S12-W03；待接通 |
-| UI-P2-15 分享輸入 | 貼上、上傳或主動分享指定來源 | 原文、來源／時間、可讀性、候選與確認；不背景讀私人動態 | S12-W04；待接通 |
+| UI-P2-03 記錄與確認 | 快捷新增、確認候選、更正、搜尋及查看時間軸 | 原文、來源、精度、確認人、版本、更正歷史；候選不冒充已保存 | S05-W02 [CarePanel](../src/client/CarePanel.tsx)／[API](API.md#p2-care-http) 已接；按加入時間分頁，事件原時間分開；AI 提取／核對入口已分別接入照片及分享面板，沿用明確確認後保存 |
+| UI-P2-04 記憶與話題 | 新增候選、明確確認／共享、更正／停用／刪除；管理話題終態與按原因重開，查看本人摘要覆蓋 | 候選不作事實，來源變更／過期／版本衝突，私有候選歷史遮蔽；暫緩日期、舊終態保留；未知提交先核對 | S09-W02 [MemoryPanel](../src/client/MemoryPanel.tsx)／[API](API.md#p2-memory-http)／[型別](../src/shared/memory.ts) 已接通，必要本機驗收通過，完成隨 PR #34 合併生效；完整記憶面板瀏覽器情景未驗，S11-W02 已接 AI 摘要暫存／覆蓋校驗與候選確認工具，必要核心證據分列於本包驗收記錄 |
+| UI-P2-05 Agent 對話 | 提出照護需求、核對候選完整內容及共享範圍、明確接受／略過、查核未知提交；手動查看背景結果 | 運行／工具結果、候選／實際任務分開、版本衝突、停止／unknown、統計未知，不展示內部推理 | S11-W02 [ChatPanel](../src/client/ChatPanel.tsx)、[AgentRunPanel](../src/client/AgentRunPanel.tsx)、[AgentInbox](../src/client/AgentInbox.tsx)／[HTTP](API.md#product-agent-http)／[型別](../src/shared/product-agent.ts) 已接線，必要核心證據見 [EV-S11-W02](../artifacts/verification/S11_W02_CHECKS.json)；完整 Agent UI 情景未全驗；設定預設關閉，現網已明確啟用 |
+| UI-P2-06 知識引用 | 從原回答查看支持片段及官方頁、辨認降級／來源時間；使用固定緊急求助入口 | 標題、章節、短原文、版本／核對時間、來源分類、降級；原引用不保證目前仍適用 | S11-W02 [AgentRunPanel](../src/client/AgentRunPanel.tsx) 已接既有 public [retriever](../server/knowledge-retriever.ts)；[EmergencyHelp](../src/client/EmergencyHelp.tsx) 在模型回覆前可見。S10-W02 已驗；本包有限真引用樣例及成長引用修正的離線證據分列，完整 UI 情景未全驗，公開部署已完成；CHP／RTHK 組內限制不變 |
+| UI-P2-07 成長關注 | 閱讀「為何現在」、接受、暫緩、關閉或永久停用主題 | 所依據的已確認資料、觀察／安排／諮詢建議、來源、處理結果及新提示原因 | S13-W08 [GrowthPanel](../src/client/GrowthPanel.tsx)／[對接](#growth-ui-handoff) 已接線，必要規則／真背景及抑制驗收通過；完整面板瀏覽器情景未驗 |
+| UI-P2-08 任務與預約 | 查看、確認、指派、改期、完成、取消、衝突覆核及歷史 | 任務／穩定發生實例、含 offset 時間／IANA 時區、合資格負責人、原版本、原因／備註及終態；過期不等於完成 | S13-W01 [API](API.md#p2-task-http)／[型別](../src/shared/tasks.ts) 已接 [TaskPanel](../src/client/TaskPanel.tsx)／[client API](../src/client/task-api.ts)，本機 HTTP 及 Web export 通過；公開候選確認建任務已通過；改期／完成以使用者批准後的 API 核對，不冒充全 TaskPanel E2E |
+| UI-P2-09 聯絡授權 | 設定或撤回預授權，核對對象、內容、渠道及 fallback | 授權範圍／版本、合資格對象、待確認的超範圍動作 | S13-W07 [ContactPanel](../src/client/ContactPanel.tsx)／[對接](#contact-handoff) 已接線，本機真 Agent 聯絡／收到／明確完成通過；公開真聯絡已通過；任務 grant 按使用者批准以 API 補存，完整面板操作未全驗 |
+| UI-P2-10 通知偏好 | 個別設定渠道、安靜時段及明確的預約例外 | 香港時間預設 22:00–08:00、普通提示合併及跟進限制 | S06-W02 已有偏好保存；S13-W04 已接站內持久批次及執行，必要 DB 驗收通過；W05／W06／W07 已接渠道授權與執行時偏好檢查 |
+| UI-P2-11 Web Push | 訂閱、退訂及查看裝置渠道狀態 | 未授權／已拒絕／不支援／已訂閱／訂閱失效，站內仍可查事項 | S13-W05 [WebPushPanel](../src/client/WebPushPanel.tsx)／[HTTP](API.md#p2-web-push-http)／[型別](../src/shared/web-push.ts) 已落碼：本人訂閱／撤銷、固定測試、原操作查核及投遞狀態；SQL／一次 Firefox 真 Push 及撤銷通過；公開 origin 一則 Firefox Push 已收到，Server 綁定已撤銷；未操作瀏覽器 provider 退訂 |
+| UI-P2-12 Telegram | 啟動 bot 後完成綁定、解除綁定及回覆正確事項 | 綁定狀態、接收者、事項關聯；收到回覆不自動當作照護完成 | S13-W06 本人雙向綁定／撤銷、一般測試及原操作查核已落碼；[功能及未驗項](#telegram-ui-handoff)，SQL 及真本人接收／回覆通過；公開 webhook／本人綁定／一般訊息 callback 已通過；公開照護聯絡／本人 callback 及明確完成已通過 |
+| UI-P2-13 執行與投遞台帳 | 查看實際聯絡進度及待處理結果 | 渠道接受、送達、已讀、回應、照護完成各自的證據；unknown 不冒充失敗 | S13-W04 已接站內提醒／處理狀態，必要 DB 驗收通過；W07 已接真渠道台帳、收到及完成分開呈現 |
+| UI-P2-14 照片輸入 | 選圖、上傳、查看提取結果、修正及確認 | 原檔／來源、上傳與提取狀態、不確定欄位、容量／權限錯誤 | S12-W03 [PhotoPanel](../src/client/PhotoPanel.tsx)／[對接](#photo-handoff) 已接線，原圖／真提取／確認及備份必要證據已驗；完整面板瀏覽器情景未驗 |
+| UI-P2-15 分享輸入 | 貼上、上傳或主動分享指定來源；管理本人私人資料來源 | 原文、來源／時間、可讀性、候選與確認；不背景讀私人動態 | S12-W04 [SharedInputPanel](../src/client/SharedInputPanel.tsx)／[對接](#shared-input-handoff) 已接線，文字提取及私人來源保存／取得／隔離必要驗收通過；完整面板瀏覽器情景未驗 |
 | UI-P2-16 到診準備與摘要 | 選孩子／期間，查看到診問題、準備清單及日／週摘要 | 程式計算的數字、來源、缺項、版本、更正後更新 | S14-W01 [CareSummaryPanel](../src/client/CareSummaryPanel.tsx)／[對接](#care-summary-handoff)，必要 API／Agent 驗收通過、完整面板 E2E 未驗 |
-| UI-P2-17 在線確認與更新 | 查核未知提交、沿原操作重試、查看最新資料及比較版本 | 未提交／未知／已確認但結果不可用、版本／世代衝突、搜尋頁面失效、權限變更；不可按文字相同猜測成功 | S07-W03 [API](API.md#online-http)／[型別](../src/shared/online.ts)／[transport](../src/client/online-transport.ts) 已接；本機 PostgreSQL／HTTP 通過，瀏覽器 E2E 未執行 |
+| UI-P2-17 在線確認與更新 | 查核未知提交、沿原操作重試、查看最新資料及比較版本 | 未提交／未知／已確認但結果不可用、版本／世代衝突、搜尋頁面失效、權限變更；不可按文字相同猜測成功 | S07-W03 [API](API.md#online-http)／[型別](../src/shared/online.ts)／[transport](../src/client/online-transport.ts) 已接；本機 PostgreSQL／HTTP 及 S16-W05 Chromium 原 opId／撤權情景通過；不代表所有面板已全驗 |
 
 ## 共同互動與對接要求
 
-S13-W04 在既有 TaskPanel 增加[清單 metadata](API.md#p2-task-worker-http)：每項可顯示站內 initial／follow_up 時間、worker pending／processed／stopped／failed／unknown、排定檢查時間及失敗次數。`workerEnabled=false` 或欄位尚不存在時顯示未啟用／恢復後暫停；true 亦不代表程序在線。站內提醒只給當前有權的本人，改期／終態後隱藏舊版本，換帳號／孩子／角色或撤權時清除。沿既有可見頁面刷新，不新增用戶端背景排程；前端改版可用同一 view model。外發送達／已讀／照護完成繼續分開，真正渠道台帳仍待 S13-W07。
+S13-W04 在既有 TaskPanel 增加[清單 metadata](API.md#p2-task-worker-http)：每項可顯示站內 initial／follow_up 時間、worker pending／processed／stopped／failed／unknown、排定檢查時間及失敗次數。`workerEnabled=false` 或欄位尚不存在時顯示未啟用／恢復後暫停；true 亦不代表程序在線。站內提醒只給當前有權的本人，改期／終態後隱藏舊版本，換帳號／孩子／角色或撤權時清除。沿既有可見頁面刷新，不新增用戶端背景排程；前端改版可用同一 view model。外發送達／已讀／照護完成繼續分開，真正渠道台帳已由 S13-W07 接通，見[聯絡對接](#contact-handoff)。
 
 S13-W01 任務設計需預留：家庭共享新增確認、ordinary／appointment、owner／caregiver 指派清單、時間及時區、改期／轉派原因、完成備註、取消原因、逐版歷史、`needs_review` 的相反操作及明確終態選擇。已撤權負責人須顯示需要重新指派，不代表仍可聯絡。建立事項不代表預約機構確認或已通知照顧者；worker 及渠道未接前不能顯示假送達。unknown 先查原 opId，409 比較最新版本後再明確提交，不能自動套新版本。
 
