@@ -1,6 +1,6 @@
 # 照片前端交接
 
-FE-W11：`codex/fe-w11-photos`；前置 FE-W10 `596c657fa7c67eb264c31bc65538c6822c360df2`（draft PR #70）。只改 `frontend/**`，主責 B，責任份額 100%、權重 5；AI 實作及驗證，不冒稱 B 親自操作。視覺由使用者確認，正式 Web／P3 接線由主聊天負責，不自行 merge。
+FE-W11：`codex/fe-w11-photos`；源碼及驗證 commit `ddcf651d820c12f6f46b2c1c01357afb6789fc1f`，由 B 帳號 `CherylNg-2526` 推送及建立 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)，前置 FE-W10 `596c657fa7c67eb264c31bc65538c6822c360df2`（draft PR #70）。只改 `frontend/**`，主責 B，責任份額 100%、權重 5；AI 實作及驗證，實際 Committer 為 `2NTTY`，沒有聲稱 B 親自操作或 Verified 簽章。視覺由使用者確認，正式 Web／P3 接線由主聊天負責，不自行 merge。
 
 ## 契約及範圍
 

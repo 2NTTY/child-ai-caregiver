@@ -34,7 +34,7 @@
 
 ### FE-W11 照片接續
 
-前置 FE-W10 `596c657fa7c67eb264c31bc65538c6822c360df2`（draft PR #70）；分支 `codex/fe-w11-photos`。按使用者要求直接讀 GitHub master 的 P2 UI 交接，再讀照片 API／型別／封裝；交付前重核最新 `ce87370`。固定來源連結、元件／操作映射和待接線項見 [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)。照片章節及型別／封裝未變，總表新增本人模型設定，沒有依賴主聊天 checkout 是否已拉取。
+前置 FE-W10 `596c657fa7c67eb264c31bc65538c6822c360df2`（draft PR #70）；分支 `codex/fe-w11-photos`，源碼／驗證 `ddcf651d820c12f6f46b2c1c01357afb6789fc1f`，由 `CherylNg-2526` 推送及建立 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)。按使用者要求直接讀 GitHub master 的 P2 UI 交接，再讀照片 API／型別／封裝；交付前重核最新 `ce87370`。固定來源連結、元件／操作映射和待接線項見 [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)。照片章節及型別／封裝未變，總表新增本人模型設定，沒有依賴主聊天 checkout 是否已拉取。
 
 `/photos` 採純 view model／回調、RHF／Zod、共用 Paper／MD3／SVG。Web 真正選擇原檔、hash 及 blob 預覽，本頁沒有 Server／模型呼叫。原生預留 `selectOriginal` 薄 port，未接 adapter 時明確停用；沒有假相機、相簿或權限操作。手機快速格改為記錄情況／原照片／身高體重／睡眠，仍沿四格／兩列及最小 88 的共用密度規則。
 

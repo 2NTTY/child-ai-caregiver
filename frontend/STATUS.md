@@ -2,7 +2,7 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**FE-W06 已交付 `6c7216f`；FE-W07 本人渠道已交付 `1e1fb7b`（draft PR #65）；FE-W08 單一 Agent 入口已交付 `83106c0`（#68）；FE-W09 Agent 投影已交付 `0ff9533`（#69）；FE-W10 手機密度已交付 `596c657`（#70）；FE-W11 照片畫面已實作，必要合成檢查及 Web／Android export 通過。** 視覺、真 API 和原生實機仍待驗。所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件；持續目標按已合併契約及使用者回饋接續。
+**FE-W06 已交付 `6c7216f`；FE-W07 本人渠道已交付 `1e1fb7b`（draft PR #65）；FE-W08 單一 Agent 入口已交付 `83106c0`（#68）；FE-W09 Agent 投影已交付 `0ff9533`（#69）；FE-W10 手機密度已交付 `596c657`（#70）；FE-W11 照片源碼／驗證已交付 `ddcf651`（[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)），必要合成檢查及 Web／Android export 通過。** 視覺、真 API 和原生實機仍待驗。所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件；持續目標按已合併契約及使用者回饋接續。
 
 | 工作包 | 現況 | 待接續 |
 |---|---|---|
