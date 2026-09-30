@@ -1,7 +1,7 @@
 # STATUS
 
 ## 當前階段
-**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 已隨 PR #59 合併；S11-W02／S14-W01／S13-W08／S12-W03 已分別隨 PR #60／#61／#62／#63 合併；S12-W04 已隨 PR #64 合併；S13-W07 已隨 PR #66 合併；S16 必要本機及真服務驗收已完成，完成隨本包 PR 合併生效**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
+**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 已隨 PR #59 合併；S11-W02／S14-W01／S13-W08／S12-W03 已分別隨 PR #60／#61／#62／#63 合併；S12-W04 已隨 PR #64 合併；S13-W07 已隨 PR #66 合併；S16 必要本機及真服務驗收已隨 PR #67 合併，S17-W02 部署準備中**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
 
 ## 現況
 - **試用 URL：https://ex-machina.eu.org**。使用者指定根網域，DNS 由使用者設定；執行版本 `d654b8f`，其後結案修改僅涉及文件。
@@ -58,4 +58,4 @@ S13-W07 必要驗收通過，完成隨本包 PR 合併生效。沿用 SQL 70 業
 
 S16 已接回全部正式功能包；實作與真聯絡使用的 `e0653d3` 相同，沒有為合併重跑測試。累計 11 Agent 運行／33 生成嘗試／10 embedding 嘗試／3 真通知；新聯絡 4 次生成的 token 細項未在該回報提供，保留已有已知用量，不當作完整帳單。UI 功能清單見 P2_UI_HANDOFF；公開部署及組員完整演示仍未完成。
 
-下一包為 S17-W02：先準備可 review 的 P2 部署與來源初始化、密鑰掛載、正常 worker／公開 webhook／HTTPS Push 及最小組員演示，再取得具體部署授權。續期僅延長既有主機至 10 月 3 日，未批准更新現網。
+目前為 S17-W02：[部署準備](docs/P2_DELIVERY.md) 已開始，先備妥 P2 映像與來源初始化、密鑰掛載、正常 worker／公開 webhook／HTTPS Push 及最小組員演示，再取得具體部署授權。現網唯讀核對仍為 P1／migration 001–005，原資料卷保留，磁碟可用約 12.6 GB。續期僅延長既有主機至 10 月 3 日，未批准更新現網。

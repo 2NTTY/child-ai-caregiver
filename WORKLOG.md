@@ -1299,3 +1299,12 @@
 
 - Delivery：S16-W02 從最新 master `ac45ca0` 只帶回驗收入口、必要 schema 檢查、結果及狀態；原整合歷史保留於 `2baeaca`，不重新提交已交付功能。A 主責、相對權重 3，A 60%（範圍／品質／最終裁決與文件）、C 40%（原共用驗收入口），按原提交保留 C 共同作者；共享 AI 由 A 操作，已確認的人手回饋逐次記錄，不聲稱 D 已做獨立試玩。A 帳號推送／PR／合併。
 - Validation：沿用全部已 review 的實際結果，沒有為交付加跑模型、DB、瀏覽器或全量套件；工作樹／產品程式以最新 master 為準。只檢查新增文件連結、JSON 及日誌 append-only／diff。S17 的公開部署及兩條完整 UI 演示仍待獨立核對，P2 未完成。
+
+<a id="log-20260930-017"></a>
+## LOG-20260930-017
+
+- Work：S17-W02 從已合併 S16 的 `90dacd4` 開始，準備保留 P1 資料／密鑰的 P2 Compose override、通知及附件掛載、配對備份入口、主機增量配置與八張 P1 原表欄位摘要。[部署方案](docs/P2_DELIVERY.md)／[組員展示](docs/P2_TRIAL.md)／[EV-S17-W02](artifacts/verification/S17_W02_CHECKS.json)。既有 Prompt Pack、美術、功能清單及各包證據直接復用，未整合隔離前端預覽。
+- Responsibility：C 主責，權重 3，C 60%（部署／資料保留／配置）、A 30%（Agent、來源、交付界線及整合 review）、B 10%（正式 Web 靜態入口交付）；D 的獨立試玩／材料另記實際結果。共用 AI 由 A 操作，不描述為四人各自手寫或已完成人工測試。交付時使用 C 的實際 GitHub 身份。
+- Host：使用者明確批准既有試用主機續期三天；官方 Compute stop／setScheduling／start 已完成，固定 STOP 於 2026-10-03 20:50:44 HKT，原主機／磁碟／IP 保留，HTTPS health 200。唯讀核對現網仍 `d654b8f`／migration 001–005，原卷及 5／20 配額保留，可用磁碟約 12.6 GB。續期不包括 P2 部署。
+- Validation：Compose 5.1.2 合成配置／秘密及掛載圖通過；Web／API／maintenance 三個必要映像各建置一次成功，一次離線核對 Node 24.19.0、npm 11.8.0、PG client 18.6、Caddy 2.11.4、service worker／Prompt Pack／備份入口。配置工具只做語法及一個合成 env 核對，Linux 主機操作未驗。主模型核對關鍵 diff 與實際日誌，補新 P2 映像引用後只重驗受影響 Compose；沒有重跑 S16。既有 Caddy header／格式警告保留。
+- Pending：P2 映像已在本機打包，尚未傳送或部署；公開 webhook／Push、正常部署 worker、原資料升級、配對備份／空庫還原及真實組員展示仍待執行。全站每日 20 次不自行提高；12 次個人額度／1,024 output tokens 及限定展示成本列為待批准配置。零新增模型／embedding／通知，P2 未完成。

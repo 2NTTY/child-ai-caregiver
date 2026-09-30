@@ -1,0 +1,60 @@
+{
+  "evidenceId": "EV-S17-W02",
+  "workPackage": "S17-W02",
+  "recordedOn": "2026-09-30",
+  "status": "preparing_not_deployed",
+  "baseCommit": "90dacd4e5c0a8be9e490fa7d94830ea369c57521",
+  "prerequisites": ["S16-W02 / PR #67 merged"],
+  "hostExtension": {
+    "authorizedDays": 3,
+    "terminationTime": "2026-10-03T12:50:44Z",
+    "terminationAction": "STOP",
+    "status": "RUNNING",
+    "httpsHealth": 200,
+    "deploymentAuthorized": false
+  },
+  "readOnlyLivePreflight": {
+    "method": "Existing Google Cloud SDK / IAP / SSH, existing ADC; temporary token removed",
+    "deployedCommit": "d654b8f8321bf1f6dc816610adb03dc1f0463611",
+    "services": ["web running", "api healthy", "postgres healthy"],
+    "postgres": "18.6 (Debian 18.6-1.pgdg12+2)",
+    "migrations": ["001-workspaces", "002-child-records", "003-ai-usage", "004-chat-messages", "005-encrypted-storage"],
+    "databaseBytes": 8705727,
+    "databaseVolume": "yuban-p1_postgres-data",
+    "diskFreeBytes": 12625596416,
+    "dailyUserAttempts": 5,
+    "dailyGlobalAttempts": 20,
+    "maxAttempts": 1,
+    "model": "gemini-3.1-flash-lite",
+    "region": "global",
+    "secretFileModes": "server.env / storage.key / backup.key: 0600",
+    "mutations": 0
+  },
+  "prepared": [
+    "Incremental P2 Compose override; unchanged project, database volume, proxy and original secrets",
+    "Persistent attachment mount and paired photo backup CLI in runtime",
+    "Web image includes public/push-sw.js",
+    "Deployment, rollback and minimal teammate demonstration guides",
+    "Original P1 column snapshot for migration preservation; not yet executed"
+  ],
+  "checks": [
+    {"name":"compose_static","result":"passed","version":"Docker Compose 5.1.2","scope":"Synthetic env/files; merged secret and mount graph. No services started"},
+    {"name":"three_image_builds","result":"passed","targets":["server","maintenance","web"],"attemptsPerTarget":1},
+    {"name":"offline_runtime_artifacts","result":"passed","scope":"One network-none check; Node 24.19.0, npm 11.8.0, pg_dump/pg_restore 18.6, Caddy 2.11.4, Prompt Pack/knowledge/photo backup CLI/push-sw.js present"},
+    {"name":"prior_local_images","result":"preserved","scope":"P1 tags and existing PostgreSQL/vector image retained"},
+    {"name":"p2_image_references","result":"passed","scope":"After main review, P2 override explicitly selects newly built P2 tags for API/worker/Web/maintenance; same yuban-p1 project"},
+    {"name":"host_config_helper","result":"passed_limited","scope":"Python AST and one synthetic env check; main reviewed validation and atomic allowlisted replacement. Linux root operations unrun"}
+  ],
+  "images": {
+    "api":{"tag":"yuban-p2-api:s17","id":"sha256:94ec079e426f31d01a8840041bb4ee7848184cb2c52e0b6702116a825efefecc"},
+    "maintenance":{"tag":"yuban-p2-maintenance:s17","id":"sha256:b781eb34fc316ca24ca264164ee65ca923a5b864b99b191e5b7097d93de39daf"},
+    "web":{"tag":"yuban-p2-web:s17","id":"sha256:91433e7c213bb3df0ec8644cc74c5958dbf12afcd93af09b0f0d51d2a54b6951"},
+    "postgres":{"tag":"yuban-postgres:18.6-pgvector0.8.6","idPrefix":"932c5117c1b8","scope":"Reuse the previously verified image, no rebuild"}
+  },
+  "warnings": ["Existing Caddy X-Forwarded-For redundancy and formatting notices; explicit proxy behavior retained"],
+  "reviewFixes": ["Set explicit P2 image references in the override so loading new tags cannot accidentally restart old P1 images; only affected Compose parse was repeated"],
+  "imageBundle": {"bytes":649197345,"sha256":"7118ec40d05c945e4b1b642ab8f642908b18cf72d040c778b3e488e6860e3580","location":"Ignored local staging, not uploaded"},
+  "newServiceUsage": {"generations": 0, "embeddings": 0, "notifications": 0, "deployments": 0},
+  "pending": ["Explicit P2 deployment approval", "Live data-preserving upgrade and public wiring", "Paired backup / empty-target restore", "Two public demonstration flows and actual teammate feedback"],
+  "limitations": ["P1 continuation and S16 evidence do not prove P2 public deployment", "No original data or local synthetic bindings moved", "P2 is not complete"]
+}
