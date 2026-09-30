@@ -1160,3 +1160,142 @@
 - Evidence：[EV-S13-W07](artifacts/verification/S13_W07_CHECKS.json) 保留原 scripted Runner／渠道、019／備份還原與 SQL 70 業務的真資料邊界；另有一次真 Agent／4 生成／0 embedding／唯一一則已明確批准的 Telegram 照護提示。使用者確認收到並按鍵後仍維持 scheduled，另獲使用者明確確認才完成合成預約。完整流程與剩餘清理結果分開記錄，原累計 80 次呼叫上限失敗不抹去，沒有整套重跑或多發訊息。
 - Review：十七份核心／客戶端／prompt 與 `e0653d3` 驗收版本相同；主模型核對當前 grant／同意／身份、投遞前重查、unknown 不重發及已完成終態，並核對所有入口參數與 shutdown。一次 Server 型別及無模型配方組裝作交付檢查，不重跑已通過套件。
 - Limits：測試只領取精確合成 job 的原生 consumer；公開 HTTPS webhook／正常部署 worker 仍留 S17，完整 ContactPanel 瀏覽器未驗，即時 callback 回覆失敗如實保留。UI 功能／對接已列清單，沒有 frontend 視覺改動。完成隨本包 PR 合併生效，P2 尚未完成。
+
+<a id="log-20260929-004"></a>
+## LOG-20260929-004
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；S16-W02 準備，分支 `codex/s16-w02-p2-acceptance`，隔離基線 `9da4e89f43097dbf9170b7650d3f1ca4f8fba5e4`；承接 014–022 未驗項，穩定 master 仍 `22f5c66`。
+- Responsibility / Executor：A 主責、權重 3，A 60%／C 40%；A 統籌共用 AI。主模型整合原始缺項、執行控制、全部文件及 review；一個 Luna Max 唯讀核對既有驗收證據，一個 Sol xhigh 準備單一內容 API 串接 module。D 的實際執行／人工回饋尚未發生，未代填通過或署名。
+- Actual Work：[集中必要範圍](docs/P2_ACCEPTANCE.md) 復用已完成的家庭權限／記憶／向量／worker 核心證據；內容保存串接一條流程，原圖 hash／隔離／確認、私人分享參考、摘要及到診準備合併，沒有另建完整測試框架。主模型加受限本機入口，固定合成庫、自有程序、原 opId、零重試及呼叫上限；每包舊腳本不預設重跑。
+- Verification：只執行一次離線 `--preview`，exit 0，實際情景／服務／模型／通知均為零；[EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)。不跑單元套件、lint、typecheck、build、integration 或 E2E。價格只核對官方資料，未呼叫產品模型。
+- Pending / Next：集中必要本機／真服務範圍待批准；Telegram bot／受控接收者配置待確認。公開 webhook／origin／部署另留 S17-W02 的具體交付批准，現網 P1 及既定停止時間不變。本次只是準備，不宣稱功能驗收或 P2 完成，未 push／merge／部署。
+
+<a id="log-20260929-005"></a>
+## LOG-20260929-005
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；S16-W02 集中必要驗收，承接 `ff4058d`。使用者批准集中範圍並再次要求只做必要測試；未擴大部署或舊測試矩陣。
+- Actual Work / Evidence：014–022 遷移成功，原 39 表／386 列保留；發現 022 缺 migration runner 登記，於 S12-W04 原分支修正並接入。單一內容 API 39 業務／18 health 通過；四年齡段真向量召回、真互動 Agent 記憶／摘要／引用及待確認任務、本人確認後照顧者共享通過。配對加密備份／新空庫還原核對正文、事實、任務、照片 hash、pgvector 及 worker 暫停通過；原庫與兩份備份／還原庫保留。詳見 [EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)。
+- Failures / Corrections：繼承的 ADC 環境路徑不存在，只在驗收 process 指向既有已授權 ADC。Agent 首輪 unavailable 的上游 HTTP 狀態未留存；核對 ADK 原碼及官方 Schema 後將整數 `.positive()` 等價改 `.min(1)`，真生成隨後成功。檢索先有參數拒絕，後保存的合成協定證明模型臆造 topic ID 造成空結果並耗盡 embedding 上限；移除該模型參數，保留 Server 篩選及混合排序後，第三次局部補驗通過。沒有自動 retry 或提高運行上限。
+- Verification Limits：4 個 Agent 運行合計 11 次生成，已知 99,464 input／1,099 output tokens；8 次 embedding，已知 102 input tokens／131 billable characters。各有一次失敗沒有 usage，沒有帳單證據。唯一新增離線契約測試在相關兩次修改後各跑一次，均通過；未跑整套 unit／lint／typecheck／build。Chromium 初段隔離／viewer 通過，來源欄位 strict locator 多匹配失敗即停，原 opId／撤權未執行，本輪孩子已清理。Firefox 的原單一入口另按既定上限執行，結果後續追加。
+- Responsibility / Pending：沿用 A 主責、A 60%／C 40%；主模型負責關鍵覆核／修正、Skill 及全部權威文件，原 Sol xhigh 執行內容及必要瀏覽器流程，Luna 唯讀定位，不代填 D 人工驗收。真照片／貼上提取、背景 Agent、來源更新／cron、新 queue／成長關注、真渠道及完整瀏覽器仍待驗。原 4 個 Agent 運行上限已用完，後續模型補驗須另列範圍；不把 16 次生成上限當作額外運行授權。尚未 push／PR／merge／部署；正式交付仍須切換各包主責帳號並核對。
+
+<a id="log-20260929-006"></a>
+## LOG-20260929-006
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；延續同次 S16-W02 集中批准，沒有新增模型運行或重跑通過項。
+- Necessary Evidence：在已建立的還原庫完成單一來源串接：核對發布、同 hash／job 去重、變更後撤下舊引用、只新增一個受影響片段向量、producer 重建及一次真 minute cron、停用後舊 job 不執行。29 次業務／7 次輪詢；向量為三次明示合成 callback，不當成真 embedding。首次 fixture URL 撞原唯一約束，在尚未發布前停止；依原驗收腳本改獨立合成 URL 後續做，原失敗保留。四 FHS／CHP 真取回成功，RTHK network failure 即停，未保存真正文。合成來源已停用、還原庫 worker 暫停、原庫未改。
+- Browser：原 Sol xhigh 只修改來源欄位的一行 locator，Firefox 單次啟動回 spawn UNKNOWN；情景未開始、零新帳號／孩子，服務關閉。主模型唯讀核對 exe 為 AMD64 PE、無下載 Zone stream；未因此判定環境根因或重跑。Chromium 前輪新孩子／照顧記錄已確認清理；真恢復 opId／撤權情景仍待验，不把 locator 修正當通過。
+- Pending：Agent 運行批准上限已用完；其餘真提取／背景、渠道配置／人工接收、完整瀏覽器及 RTHK 成功取回仍待必要補驗。只保存實際證據，P2 未完成；未 push／merge／部署。[EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)。
+
+<a id="log-20260929-007"></a>
+## LOG-20260929-007
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；S16-W02 延續，使用者再次要求只做必要驗收，不重跑已通過流程。
+- Correction / Verification：RTHK 舊 HTTPS 入口返回跨主機 HTTP 轉址，正式抓取器因安全邊界拒絕；直接登記已核對的官方目的地主機 HTTPS 位址，僅改兩行程式及一處操作連結。一次補驗解析 20 項，HTTPS／同主機邊界核對通過，沒有保存正文、SQL／cron 重跑或模型呼叫。原 S10-W02 分支同步保留同一修正；內部使用範圍及公開關閉不變。
+- Browser Evidence / Limit：Windows SideBySide 33 指向 mozglue assembly；exe／DLL CRC32 與官方固定版本 ZIP 一致且均有內嵌 manifest。只做兩次 -version 診斷，未進產品情景；沒有重裝、改安全設定或自行補 manifest，確切 Windows 根因仍未定。Firefox 未通過，不能以檔案一致代替真瀏覽器驗收。
+- Pending：原四個 Agent 運行批准已用盡，照片／貼上及背景仍待最小補驗；真通知配置／人工接收與 S17 部署前置仍缺。P2 未完成，沒有 push／merge／部署。詳見 [EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)及[集中範圍](docs/P2_ACCEPTANCE.md)。
+
+<a id="log-20260929-008"></a>
+## LOG-20260929-008
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；S16-W02 原批准範圍內的必要來源隔離補核。
+- Evidence：只在既有還原庫新增一份合成來源，確認公開發布拒絕、公開檢索不可見、組內可見，以及 25 小時未成功更新後不可見；16 次業務呼叫、一個合成向量，無真 embedding／模型／外網／家庭資料改動。来源已停用、worker 暫停；不重跑已通過的來源／cron 或其他套件。[EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)。
+- Pending：真媒體提取的兩個單次入口已由原 Sol 準備，主模型 review；Chromium locator 修正的單次補驗入口亦已備妥。只有離線語法核對，未啟動補驗，原模型運行批准上限仍然用盡。使用者提出私人連結入口，正核對實際用途及來源條款；沒有把使用者貼上連結當成內容再利用授權，亦未改公共來源限制。
+
+<a id="log-20260929-011"></a>
+## LOG-20260929-011
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；使用者批准文字日期、背景 Agent 及 Chromium 單次補驗，主模型執行及裁決，未增加裝置／案例矩陣。
+- Passed：文字 Pack 0.1.7 單次提取，2 生成／1 工具／0 embedding，12,431 input／269 output tokens。主模型對照合成原文，事件 09:00 與來源發布日分開，約數／未知事件日期／外部參考身份正確；家庭記錄不變。
+- Background Failure / Fix：真持久 queue 已建立關注，worker 到 Agent 台帳時因帶前綴 reference 與 uuid 欄位不相容停止；4 業務／7 輪詢、0 runtime／模型／embedding。唯讀核對無背景 Agent 列、worker 暫停。S13-W08 c7d4df5 改用原候選 UUID，整合 0071e76，沒有新 migration；僅語法及 diff 核對，未重跑。
+- Browser Failure / Fix：141 HTTP／3 帳號／1 孩子，原操作確認 UI 通過後，腳本 GET /care 非正式路由而失敗；應為 POST /care/search。原 metadata 由整份報告字串誤判 timeout，保留原結果並註明實際狀態錯誤。孩子已清理、兩服務已停；撤權未執行。原 Sol 只修測試路由及無敏感正文的錯誤證據，不改產品或權威文件，未再跑 E2E。
+- Pending：修正後背景／完整瀏覽器及來源失效／登記閘待最小補驗；真通知配置／人工接收、Firefox 啟動及 P2 部署仍缺。文字不再重跑；不以有限樣例代替全部 P2 完成。按包保留各自分支，未 push／merge／部署，交付仍切換相應實際 GitHub 帳號。
+
+<a id="log-20260929-013"></a>
+## LOG-20260929-013
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；使用者批准剩餘必要背景／Chromium／來源閘補驗。主模型統籌及最終覆核，不重跑媒體、向量、備份或 cron。
+- Passed：Chromium 147 HTTP／3 新帳號／1 新孩子，隔離／viewer、原 opId 單筆恢復及撤權清 UI／草稿全流程通過，孩子清理及服務停止可核對。來源失效／設定改動撤銷批准 24 業務、零網絡／模型通過，S10-W02 依其獨立證據完成 PR #51 合併；詳見該包 LOG-20260929-012，不把其他包標完成。
+- Background / Fix：UUID 入口修正後真運行到模型，四次 present_answer 以 source metadata 猜引用而被拒；達 4 次上限即 stopped，0 embedding，32,297 input／669 output tokens。原終態保留，沒有發布答案或自動重試。主模型局部補 proactive-run 0.1.2／Pack 0.1.8 及 invalid_citation 修正提示，保留严格來源閘。
+- Necessary Check：只擴充既有一項 scripted background Runner 並通過；原分支缺 node_modules 的首次載入失敗未進測試，改在已有依賴的整合樹執行，沒有重新安裝或跑全套。Prompt Pack 只有一次離線配方載入通過。程式修正回原 S11-W02（54fc481）、S13-W08（47e8f48）、S16-W05（c6c0950）分支，整合衝突只保留現有模組及加入新背景段落。
+- Pending：單一背景引用修正版另候批准；Firefox Side-by-Side 啟動阻塞、真通知設定／人工接收、P2 部署仍未解，不宣稱 P2 已完成。現網未部署或續期；各包獨立交付並核對責任帳號。
+
+<a id="log-20260929-014"></a>
+## LOG-20260929-014
+
+- Recorded At / Work Date：2026-09-29（Asia/Hong_Kong）；兩次單一背景補驗各獲使用者批准，主模型執行及最終覆核，失敗即停。
+- Fixture Failure：第一輪 5 業務／120 輪詢、零模型，確認舊關閉依據抑制；新事實已保存。唯讀發現腳本略過其他還原孩子但未讓目標進入 worker 首批，目標排第 14／每批 10。只修腳本的目標到期順序與啟動前核對，不改產品排程或其他孩子。
+- Resume / Quota：恢復輪 40 業務／27 輪詢、1 運行／2 真生成／1 embedding；無效引用被拒後 search_knowledge 成功，但第三次生成在 provider 前被共用本機 daily quota 26/26 拒絕。16,345 input／190 output tokens，embedding 6 tokens／10 billable characters。驗收開始前欠共用配額預檢屬準備缺口；沒有自行調高上限、清零計數或再開運行。
+- State / Limits：新 not_started 候選指向舊 dismissed 關注、附新原因，舊終態保留；worker 暫停，零新帳號／孩子／通知／部署。最終引用答案及重啟去重仍待驗，不把搜尋成功寫成整個 Agent 通過。Firefox trace 啟動工具回報失敗，未重跑瀏覽器或更改系統設定。
+- Next：補足受批入口的配額及 fixture 預檢；任何新增真運行及必要本機配額變動須明示範圍，不自動重試舊終態。真通知配置／人工接收、Firefox 與 P2 部署仍未解；各包依據實際證據按責任帳號分別交付。
+
+<a id="log-20260929-016"></a>
+## LOG-20260929-016
+
+- User Request / Quota：2026-09-29 使用者原話「暂时性收尾，我没额度了」；沒有提供百分比，不推算餘額或重置。按要求階段性暫停 P2，未完成。
+- Completed Delivery：S16-W05 按既有 Chromium 完整流程證據及使用者明確同意的 Firefox 延後安排，獨立交付 PR #52；Firefox 未驗且不阻塞 P2，後續必要頁面檢查改用 Codex 內置瀏覽器，不重跑已通過項。
+- Preserved State：主模型保存背景兩次補驗的實際失敗及用量（LOG-20260929-014），worker 已暫停；Telegram 使用者回覆未準備。停止代理及新驗收，未清庫、重置模型台帳／用量或部署。
+- Resume：先將最新 master 9f0febd／PR #52 合入 S16 整合分支，再 review 被中止的最小背景 runner 草稿；必須核對共用配額、fixture 排序及新批准。其餘必要 SQL／queue、真通知及交付缺項見 P2_ACCEPTANCE；不標 P2 完成，不把未驗收功能合併 master。
+
+<a id="log-20260930-001"></a>
+## LOG-20260930-001
+
+- User Request / Quota：使用者原話「有额度了，继续开始任务」，要求接續上次未完成的收尾；未提供百分比，餘額未知，不推算重置。S16-W02 恢復進行，P2 未完成。
+- Recovered State：接回已驗收 PR #52／Chromium、Firefox 延後安排及 PR #53／GPT-6.1 Sol 規則，保留其他未合併產品包與既有 WORKLOG 原文；整合 `95c90ba`，穩定 master `fe7ac9e`。沒有重跑 Chromium 或已通過項。
+- Background Preparation：主模型 review 被中止的背景 runner，移除尚未批准的 32 次上限及上一日用量前置，保留原 26 次上限；新專用合成孩子、六次 headroom、首批排序、原終態保留、一次真運行及重啟去重、成功限定清理均有界。只做語法檢查，未執行。既有資料庫容器原為停止，恢復後唯讀查得 2026-09-30 UTC 當日共用／本人用量為 0、worker 暫停及零其他連線；沒有清零或修改配額台帳。
+- Pending：新背景運行須另獲具體批准；Telegram 配置仍待使用者；剩餘 SQL／queue、真通知及部署門檻繼續保留。現網未部署或續期，P1 原停機時間仍為 2026-09-30 20:50:44 HKT。
+
+<a id="log-20260930-002"></a>
+## LOG-20260930-002
+
+- Scope / Approval：使用者另批一次背景補驗，沿用既有還原庫／帳號、新建 1 個合成孩子；1 運行／4 生成／2 embedding、80 業務／120 輪詢上限。實際 4 生成／1 embedding、80 業務／34 輪詢，30.7 秒。新孩子已刪、原孩子與舊終態保留、worker 暫停，原上限 26 未改。
+- Result：真向量＋關鍵詞檢索、註冊 chunk ID、背景成長關注及重建 worker 同工作不重複生成通過；主模型逐句覆核則發現答案把母乳擴寫至來源未提的配方奶，引用品質未通過。原失敗及本次技術成功分開保留；[EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)。
+- Actual Usage：生成 33,993 input／440 output，觀測到 15,575 cached tokens；embedding 12 input tokens／17 billable characters。沒有實際帳單證據、真通知或部署。只建一個新合成孩子並已刪，無新帳號。
+- Correction：主模型在 S11 原包提交 4da312a，局部補知識問答的對象／條件／強度不得擴寫；復用整合版既有逐模組版本檢查，接回 cebcf03。Pack 0.1.9 離線載入 12 模組／9,954 字元、單次規則，沒有重跑模型或其他測試。準備一次生成品質補核及既有 Web Push SQL 入口，具體補充批准待回覆。
+- Telegram / Delegation：使用者用官方 BotFather 及本機隱藏輸入工具準備專用 bot，格式與本人 ACL 核對通過，不輸出憑據。新 GPT-6.1 Sol xhigh（S13-W06 第 3 個 Sol）只準備有界 SQL 入口，不執行服務／測試或改權威文件；主模型負責 review／批准範圍及最終驗收。P2 未完成。
+
+<a id="log-20260930-003"></a>
+## LOG-20260930-003
+
+- Scope：恢復按包驗收；本聊天由使用者明確授權直接做最少必要檢查，其他聊天先詢問，部署／續期不包括在內。S16-W02 仍未完成，既有分支按依賴交付。
+- Citation Failure / Correction：提示詞補核的首次準備因 CRLF 比對停止，下一 provider 嘗試 unavailable；核對繼承 ADC 不同並修正後一次生成成功，但仍將來源母乳擴為奶類，主模型品質 review 不通過。兩次 provider 嘗試、一次已知 usage 8,892 input／148 output，零新 Agent run／embedding。沒有再呼叫模型試錯。
+- Implementation / Verification：主模型在 S11 `6c865f1` 補背景成長關注的 Server 呈現政策：Agent 選取登記官方片段，Server 重查後直接顯示已核對正文，無片段呈現固定限制，模型分類不能繞過。整合 `ed6a319` 保留後續 contact 接線；三個必要 scripted Runner 通過，既有真回答的離線呈現重播忠於片段，零新真服務。原包缺依賴及合併衝突載入失敗保留，不算產品測試通過；互動問答仍須內容 review，無臨床或零幻覺宣稱。
+- Channels：Web Push 49 業務／2 輪詢、2 新帳號／3 綁定／7 入列／1 consumer；Telegram 45 業務／2 輪詢、2 新帳號／2 綁定／3 入列／1 consumer。各自基本隔離、原子入列、unknown 不重發、撤銷及持久化通過；新資料清理、原行不變、worker 暫停。零真通知、模型、遷移及部署。[EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)。
+- Delegation / Next：原 GPT-6.1 Sol xhigh 只準備 Telegram 腳本及一次語法檢查；主模型親讀关键邏輯並執行最終 SQL 驗收。仍需照片刪除 queue、contact、真渠道與按包交付；不把 scripted gateway 當成實際送達。提示詞、Skill、權威文件由主模型處理。
+
+<a id="log-20260930-004"></a>
+## LOG-20260930-004
+
+- Channels：Telegram 一次真測試 HTTP 200，使用者確認本人、實際收到及按下收到，持久 acknowledgement 可核對；即時 callback 回應未成功，公開 webhook 留 S17，沒有重发。內置瀏覽器 staging 訂閱先被拒並撤銷；使用者現有 Firefox 關頁後一次真 Push HTTP 201／接收／退訂通過，Server 綁定已撤銷。不擴大 provider、不恢復 Firefox 整套驗收。[EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)。
+- Contact：主模型 review Sol 準備的最小入口並執行一次，70 業務／3 scripted sends、7 原子 jobs，基本授權 fallback、unknown 不重發、完成與撤 grant 停止通過。1 新帳號／孩子及自己的 jobs 已清理、原行保留、worker 暫停；不是真 Agent／渠道編排。pg 同 client 並行 query 棄用提示保留。
+- Photo：單張合成照片加密上傳、刪除入列、產品檔案 purge 通過，6 store 呼叫，新孩子已刪。但最後清理 assertion_failed，既有 snapshot 只在記憶體，未宣稱原行保存核對成功；原 Sol 只讀定位，沒有重跑照片。
+- State / Delivery：真通知累計 2 次、沒有新增模型／embedding或部署；Telegram 本人綁定保留供原定一次照護流程。各包按前置及責任帳號獨立交付，P2 未完成，现網仍 P1。
+
+<a id="log-20260930-007"></a>
+## LOG-20260930-007
+
+- Work：S16-W02 整合已合併 Web Push PR #58 及最新 PR #57 規則；既有 Agent／成長／聯絡接線保留，沒有重跑已通過項。
+- Diagnosis：照片功能上傳／刪除入列／產品 purge 均通過；最後快照失敗由原 Sol 唯讀定位，主模型核對原碼及證據。基線 NULL 排除條件與收尾自己的 UUID 選集不同；新孩子／附件／queue 已清理、正常 tombstone 保留。原快照未保存，不能回溯補稱所有原行 hash 一致，原失敗保留。
+- Verification / Limits：文件 diff、來源與依賴清單局部核對；零新模型／embedding／通知／瀏覽器或部署。下一步逐包交付、完成既定一次真 Agent 照護聯絡及 S17 部署門檻；P2 未完成。
+
+<a id="log-20260930-011"></a>
+## LOG-20260930-011
+
+- Integration：接回 master `fa8f237` 的已交付 S11／摘要／成長，保留隔離聯絡、照片及私人来源；只補 SDK 測試 data 型別及接線衝突，主模型維護全部提示詞／權威文件。各包獨立 PR，不把整合分支當已交付。
+- Evidence：S13-W08 最少控制補核 34 次（15 store／19 SQL），四年齡有限例子、暫緩／接受／原請求唯一任務、重建／停用保存通過；一新孩子／任務清理、原行保留。零模型、embedding、HTTP、通知、瀏覽器或部署；見 [S16 證據](artifacts/verification/S16_W02_CHECKS.json)。
+- Pending：真 Agent 照護聯絡入口只準備，未發訊息；使用者離開期間不要求或代填本人收到／完成。其餘已實作包按既有證據收束，P2 尚未完成，現網不續期。
+- Integration Check：第一次 Server 型別發現 auto-merge 重複 growth import 及既有 SharedInputApiError parameter properties 不符 erasableSyntaxOnly；兩處局部修正後一次補查通過。背景配方 0.1.13 離線載入 12 模組／9,940 字元，27 個新增連結與日誌／diff 通過，未呼叫模型。
+
+<a id="log-20260930-015"></a>
+## LOG-20260930-015
+
+- Integration：S16 接回已正式交付的照片／分享／聯絡 PR #63／#64／#66，保留全部既有 WORKLOG 前綴，只追加缺少的交付記錄；產品程式與真聯絡受測 `e0653d3` 相同，配方元資料採正式 Pack 0.1.16，沒有重跑已通過測試。
+- Evidence：真照護聯絡只有 1 Agent 運行／4 生成／0 embedding／1 訊息，收到與明確完成分開。原累計 80 次上限在清理階段停止，另以 7 次呼叫完成已授權剩餘清理；舊報告保留、原資料及用量不變、綁定撤銷、worker 暫停。累計 33 次生成中的 4 次未在回報提供 token 細項，不冒稱已取得完整帳單。
+- Limits：S16 作最終證據核對，S17 公開 HTTPS／正常部署 worker／組員演示未驗；完整功能面板瀏覽器未驗，不以既有家庭 Chromium 情景代填。沒有因本次合併新增模型、通知、DB 或瀏覽器測試。
+- Final Review：主模型按既有實作、各包真服務／SQL／持久化與來源證據作組合核對；S16 必要本機驗收結案隨本包 PR 合併生效。整體公開 UI 兩流程、正常部署 worker 與組員獨立試玩由 S17 執行，不冒稱已重跑。只保留驗收入口／證據及必要狀態差異，移除無關 license 排序及文件空白差異。
+
+<a id="log-20260930-016"></a>
+## LOG-20260930-016
+
+- Delivery：S16-W02 從最新 master `ac45ca0` 只帶回驗收入口、必要 schema 檢查、結果及狀態；原整合歷史保留於 `2baeaca`，不重新提交已交付功能。A 主責、相對權重 3，A 60%（範圍／品質／最終裁決與文件）、C 40%（原共用驗收入口），按原提交保留 C 共同作者；共享 AI 由 A 操作，已確認的人手回饋逐次記錄，不聲稱 D 已做獨立試玩。A 帳號推送／PR／合併。
+- Validation：沿用全部已 review 的實際結果，沒有為交付加跑模型、DB、瀏覽器或全量套件；工作樹／產品程式以最新 master 為準。只檢查新增文件連結、JSON 及日誌 append-only／diff。S17 的公開部署及兩條完整 UI 演示仍待獨立核對，P2 未完成。
