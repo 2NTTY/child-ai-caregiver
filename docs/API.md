@@ -56,7 +56,7 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 | POST `/api/children/:childId/agent/runs/:runId/proposals/:proposalId/decide` | `{expectedVersion,decision:accept\|dismiss,confirmShared}` → `{proposal}`；精確重試返回原結果，過期／內容或權限版本改變拒絕 |
 | GET `/api/children/:childId/agent/runs` | `{runs:[{runId,createdAt}]}`：本人最近最多 20 次背景運行，供手動重讀；不是啟動 Agent 的入口 |
 
-`propose_task／propose_task_change／propose_fact` 只保存私人候選。明確接受後，任務／已確認事實與候選結果在同一交易寫入；家庭共享需額外明確確認。尚無通知工具，工具成功與照護完成、聯絡成功分開。候選 24 小時過期；任務改期／完成／取消沿用原版本及終態規則，事實保留原私人訊息來源，不靠最終文字重做副作用。
+`propose_task／propose_task_change／propose_fact` 只保存私人候選。明確接受後，任務／已確認事實與候選結果在同一交易寫入；家庭共享需額外明確確認。受限聯絡工具按 [W07 授權](#proactive-contact-http) 執行，入列、聯絡結果與照護完成分開。候選 24 小時過期；任務改期／完成／取消沿用原版本及終態規則，事實保留原私人訊息來源，不靠最終文字重做副作用。
 
 `read_context` 按入口區分本人／家庭；私人摘要只在取得完整批次時透過 `stage_private_summary` 暫存，運行結束再核對來源版本及精確覆蓋，衝突保留原摘要。摘要及候選不成為確認事實。`search_knowledge` 使用既有 public retriever 與同一運行預算；`present_answer` 核對引用 ID、官方類別及當前有效版本，回傳結構不等於已驗證語義支持。
 
@@ -441,7 +441,7 @@ S13-W06 的 [共享型別](../src/shared/telegram.ts) 接本人私人渠道；�
 
 queued、sending、accepted、rejected、unknown、stopped 與 acknowledgedAt 分開；「收到測試」只記收到，不改任何照護任務。sendMessage 逾時或重領 sending 保留 unknown，不重發／不切換渠道；API 接受不是送達或已讀。同一綁定仍有 queued／sending 或未收到回應的 unknown 時，Server 拒絕另建一般測試。原 opId 回應丟失先查收據；即使現況改變，仍可明確用相同原操作取得既有成功或 Server 拒絕，不另建操作猜結果。
 
-本包未接家庭授權聯絡或任務完成 callback；這些在 S13-W07 以當前權限／事項重新校驗後接線。功能已落碼，SQL／真 webhook／Telegram／瀏覽器均待集中驗收。
+家庭授權聯絡由 S13-W07 接線，callback 只記收到；任務完成仍須明確確認。功能已落碼，SQL／真 webhook／Telegram／瀏覽器均待集中驗收。
 
 <a id="care-summary-http"></a>
 ## S14-W01 摘要與到診準備
@@ -487,3 +487,19 @@ AI 候選不是事實，原圖共享也不自動公開上傳者的私人提取�
 - POST `/:id/delete` 走收據，須版本及 `confirmDelete:true`；刪除本人輸入及連結照護記錄。刪除連結記錄／孩子亦連帶清除輸入；共享記錄的更正由原 Care API 管理。
 
 owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀本人既存輸入。fetch／extract 在交易外執行，claim／結果均核對權限及期限；running 超時顯示 unknown，回查不重開，只有明確 failed 的當前版本可由使用者重試。來源快照 ready 後不覆寫；需要補正文時可由現有 UI 帶回來源資料建立另一份私人輸入，明示原項保留，不冒稱原地更新或持續訂閱。原 opId 未解決前不建立另一份輸入。一般網絡失敗保留當前草稿，換身份／孩子／Server 或撤權則清除，不建離線 outbox。
+
+<a id="proactive-contact-http"></a>
+## S13-W07 預授權主動聯絡
+
+型別見 [contact.ts](../src/shared/contact.ts)。需 `P2_AGENT_ENABLED=true`、migration 019、渠道配置與 worker；功能 UI 不代表真渠道已驗證。以下前綴為 `/api/children/:childId/contact`，GET 核對本人及家庭可讀權；POST 僅 owner／caregiver，須經 S07 原操作收據、`x-expected-user-id` 及 JSON／Origin，直接 POST 回 428。
+
+| 方法／路徑 | 行為 |
+|---|---|
+| GET 前綴 | 本人同意、本人可用綁定、合資格接收者、任務／授權、最近聯絡及渠道證據；每頁任務／聯絡最多 50 筆，超出有明示 |
+| POST `/consent` | 本人同意／撤銷；expectedVersion、enabled、allowBackup、bindings、confirm；每渠道最多選一個綁定，次序即 fallback 次序 |
+| POST `/tasks/:taskId/authorization` | 精確任務版本及授權版本、到期觸發、固定無家庭正文通知、跟進／fallback／後備對象及明確到期時間；首次最多 365 日，改期／轉派須重新授權 |
+| POST `/attempts/:id/acknowledge` | 只可確認本人收到該次通知；不完成照護事項 |
+
+綁定、本人同意、任務授權是三個獨立條件。授權固定主接收者為任務負責人；後備須本人另外同意及授權人明確選擇。接收同意或家庭權限版本變更使舊授權不能外發。模型只有 `read_contact_options`／`contact_caregiver`：後者只按 Server 提供的任務／授權版本及對象，在到期事件存在時原子入列；不能寫同意、擴大披露內容或提供任意地址。回傳台帳 ID，入列並不等於送達。
+
+投遞前重查終態、來源、權限、同意、綁定、期限、worker 世代及通知偏好。僅明確拒絕可按已授權順序轉下一渠道／後備，最多四個綁定嘗試；unknown／已在途中斷不盲重發。普通通知按接收者本地日跨孩子合併，後續事項保留站內；`coalesced` 只表示沒有另發，不能推論首則成功。收到、渠道接受與照護完成分開；Telegram `contact:` callback 只在身份／事項匹配時記錄收到。來源／任務失效停止後續催辦；已在途外部請求不能保證撤回。

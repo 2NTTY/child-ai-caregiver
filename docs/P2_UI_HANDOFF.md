@@ -35,7 +35,7 @@ Web 預覽檢查 1440／1024／390／320 CSS px、鍵盤、溢出及必要狀態
 | UI-P2-06 知識引用 | 從原回答查看支持片段及官方頁、辨認降級／來源時間；使用固定緊急求助入口 | 標題、章節、短原文、版本／核對時間、來源分類、降級；原引用不保證目前仍適用 | S11-W02 [AgentRunPanel](../src/client/AgentRunPanel.tsx) 已接既有 public [retriever](../server/knowledge-retriever.ts)；[EmergencyHelp](../src/client/EmergencyHelp.tsx) 在模型回覆前可見。S10-W02 已驗；本包有限真引用樣例及成長引用修正的離線證據分列，完整 UI／公開部署未驗，CHP／RTHK 組內限制不變 |
 | UI-P2-07 成長關注 | 閱讀「為何現在」、接受、暫緩、關閉或永久停用主題 | 所依據的已確認資料、觀察／安排／諮詢建議、來源、處理結果及新提示原因 | S13-W08；待接通 |
 | UI-P2-08 任務與預約 | 查看、確認、指派、改期、完成、取消、衝突覆核及歷史 | 任務／穩定發生實例、含 offset 時間／IANA 時區、合資格負責人、原版本、原因／備註及終態；過期不等於完成 | S13-W01 [API](API.md#p2-task-http)／[型別](../src/shared/tasks.ts) 已接 [TaskPanel](../src/client/TaskPanel.tsx)／[client API](../src/client/task-api.ts)，本機 HTTP 及 Web export 通過；瀏覽器互動待 S16 |
-| UI-P2-09 聯絡授權 | 設定或撤回預授權，核對對象、內容、渠道及 fallback | 授權範圍／版本、合資格對象、待確認的超範圍動作 | S13-W07；待接通 |
+| UI-P2-09 聯絡授權 | 設定或撤回預授權，核對對象、內容、渠道及 fallback | 授權範圍／版本、合資格對象、待確認的超範圍動作 | S13-W07 [ContactPanel](../src/client/ContactPanel.tsx)／[對接](#contact-handoff) 已接線、待驗收 |
 | UI-P2-10 通知偏好 | 個別設定渠道、安靜時段及明確的預約例外 | 香港時間預設 22:00–08:00、普通提示合併及跟進限制 | S06-W02 已有偏好保存；S13-W04 已接站內持久批次及執行，必要 DB 驗收通過；渠道控制待 W05／W06／W07 |
 | UI-P2-11 Web Push | 訂閱、退訂及查看裝置渠道狀態 | 未授權／已拒絕／不支援／已訂閱／訂閱失效，站內仍可查事項 | S13-W05 [WebPushPanel](../src/client/WebPushPanel.tsx)／[HTTP](API.md#p2-web-push-http)／[型別](../src/shared/web-push.ts) 已落碼：本人訂閱／撤銷、固定測試、原操作查核及投遞狀態；SQL／一次 Firefox 真 Push 及撤銷通過；公開 origin 留 S17 |
 | UI-P2-12 Telegram | 啟動 bot 後完成綁定、解除綁定及回覆正確事項 | 綁定狀態、接收者、事項關聯；收到回覆不自動當作照護完成 | S13-W06 本人雙向綁定／撤銷、一般測試及原操作查核已落碼；[功能及未驗項](#telegram-ui-handoff)，SQL 及真本人接收／回覆通過；公開 webhook／正式 UI E2E 未驗 |
@@ -123,3 +123,14 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 - 不將來源發布日期、本站保存日期及取得日期混成一個日期；不把待提取／候選／確認當作同一狀態。
 
 必要真 SQL、私人來源取得／隔離及日期修正版提取已有證據；完整面板瀏覽器未驗，不以型別或其他面板情景代替。S12-W04 不增加系統分享、新聞自動閱讀、PDF／Android 或 UI polish。
+
+<a id="contact-handoff"></a>
+## S13-W07 聯絡功能交接
+
+[ContactPanel](../src/client/ContactPanel.tsx) 已掛正式基本頁，props 為 apiBaseUrl／userId／childId／online／onSessionChanged；[contact-api](../src/client/contact-api.ts) 復用原操作收據，wire contract 見 [API](API.md#proactive-contact-http)。獨立 frontend 可按此對接，沒有改動其預覽。
+
+- 本人同意：可選已綁定的 Web Push／Telegram 及順序、後備資格、明確保存／撤銷；綁定本身不是同意。
+- 每項任務：顯示負責人與版本、明確期限、最多一次跟進、已知失敗 fallback 及可選後備；超期／改期／轉派須重新確認。viewer 唯讀。
+- 結果：pending／sending／accepted／rejected／unknown／stopped，以及每日已有普通提示而未另發的 coalesced；只顯示真實台帳。本人可確認收到，完成仍在任務入口；不展示模型內部推理。
+- 離線停用提交；unknown 保留原內容與 opId，先查收據和 GET，再由使用者明確重試。換帳號／孩子／Server、失去權限時清除資料及草稿。手動重新讀取最新狀態，不加客戶端背景排程。
+- 當前有最多 50 任務及最近 50 聯絡的顯示上限，不能假稱完整歷史。型別與掛載 review 已核對；真 API／渠道／瀏覽器未驗。沿用既有美術，不做 UI polish。

@@ -97,7 +97,7 @@ export function createTelegramStore(pool:Pool,cipher:StorageCipher,services:Tele
    const next=(await client.query<DeliveryRow>("INSERT INTO telegram_deliveries(id,user_id,binding_id,binding_version,bot_id,storage_epoch,worker_generation,callback_hash,callback_encrypted) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *",[deliveryId,userId,id,version,config.botId,space.storage_epoch,ctl.generation,hash(token),cipher.encrypt(token,aad("callback",userId,deliveryId))])).rows[0];
    await services.queue.enqueue(client,deliveryId);await changed(client,userId,space.id);return delivery(next);
   });},
-  async webhook(event:TelegramEvent):Promise<string|null>{
+  async webhook(event:Exclude<TelegramEvent,{kind:"contact_ack"}>):Promise<string|null>{
    if(!config||event.kind==="ignore")return null;
    return transaction(pool,async client=>{
     const inserted=await client.query("INSERT INTO telegram_updates(bot_id,update_id,outcome) VALUES($1,$2,'ignored') ON CONFLICT DO NOTHING",[config.botId,event.updateId]);if(!inserted.rowCount)return null;

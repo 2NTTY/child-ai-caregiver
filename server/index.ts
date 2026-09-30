@@ -4,6 +4,8 @@ import { createPhotoFiles } from "./photo-files.ts";
 import { createPhotoStore } from "./photo-store.ts";
 import { createPhotoAgent } from "./photo-agent.ts";
 import { createCareSummaryStore } from "./care-summary-store.ts";
+import { createContactStore } from "./contact-store.ts";
+import { contactQueue } from "./contact-worker.ts";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { createAuth } from "./auth.ts";
@@ -26,11 +28,11 @@ import { createTaskStore } from "./tasks.ts";
 import { createOnlineStore } from "./online.ts";
 import { createWorkerQueue } from "./worker-queue.ts";
 import { createTaskScheduling } from "./task-worker.ts";
+import { createGrowthStore } from "./growth-store.ts";
+import { createProductAgentServices } from "./product-agent-services.ts";
 import { createWebPushQueue } from "./web-push-queue.ts";
 import { createWebPushStore } from "./web-push-store.ts";
 import { readWebPushConfig } from "./web-push-gateway.ts";
-import { createGrowthStore } from "./growth-store.ts";
-import { createProductAgentServices } from "./product-agent-services.ts";
 
 import { readTelegramConfig } from "./telegram-config.ts";
 import { createTelegramStore } from "./telegram-store.ts";
@@ -72,12 +74,14 @@ try {
   const tasks = onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher, taskScheduling) : undefined;
   const growthEnabled=agentEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='017-growth-attention'")).rowCount);
   const growth=growthEnabled ? createGrowthStore(pool,cipher,taskScheduling) : undefined;
+  const contactServices=agentEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='019-proactive-contact'")).rowCount ? {queue:queue?contactQueue(queue.boss):undefined,pushKey:pushConfig?.publicKey??null,telegramBotId:telegramConfig?.botId??null} : undefined;
+  const contact=contactServices?createContactStore(pool,cipher,contactServices):undefined;
   const summaryEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='020-care-summaries'")).rowCount);
   const summary=summaryEnabled?createCareSummaryStore(pool,cipher):undefined;
   const photosEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='021-photo-attachments'")).rowCount);
   const photoFiles=photosEnabled?await createPhotoFiles(process.env.ATTACHMENTS_DIR??"",cipher):undefined;
   const photoStore=photoFiles?createPhotoStore(pool,cipher,photoFiles):undefined;
-  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true", growth, summary) : undefined;
+  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true",growth,contact,summary) : undefined;
   const productAgentStore = productServices?.store, productAgent = productServices?.agent;
   const photos=photoStore&&productServices?{store:photoStore,agent:createPhotoAgent(photoStore,productServices.runtime)}:undefined;
   const inputsEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='022-shared-inputs'")).rowCount);
@@ -94,9 +98,8 @@ try {
     records: createRecordStore(pool, cipher, onlineEnabled),
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
-    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, summaryEnabled, photoFiles, Boolean(inputs)) : undefined,
-    telegram,
-    tasks, chat, memory, productAgent, productAgentStore, growth, summary, photos, inputs,
+    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, contactServices,summaryEnabled,photoFiles,Boolean(inputs)) : undefined,
+    tasks, chat, memory, productAgent, productAgentStore, growth, telegram, contact, summary, photos, inputs,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },

@@ -1,0 +1,525 @@
+{
+  "workPackage": "S13-W07",
+  "recordedAt": "2026-09-30",
+  "status": "necessary_acceptance_passed_completion_on_pr_merge",
+  "baseline": "134962a7683a1ea852b74c1a654aae00a22b18a0",
+  "sourceImplementation": [
+    "aa0fd83",
+    "aca884a"
+  ],
+  "branch": "codex/s13-w07-contact-delivery",
+  "originalImplementationSnapshot": {
+    "id": "EV-S13-W07",
+    "package": "S13-W07",
+    "status": "implemented_pending_acceptance",
+    "recordedAt": "2026-09-28T15:25:51.492Z",
+    "branch": "codex/s13-w07-proactive-contact",
+    "baseCommit": "827a48e3802156cc7ea8957c914487564c073aca",
+    "precursors": {
+      "growth": "704e6c51d02d09cdeb37dfaeff7c2cc7f2b04959",
+      "webPush": "769b3b7",
+      "telegram": "ee01c8b"
+    },
+    "verification": [
+      {
+        "kind": "typecheck",
+        "stage": "merged_precursors",
+        "serverSeconds": 4.3839,
+        "clientSeconds": 2.6474,
+        "result": "passed"
+      },
+      {
+        "kind": "typecheck",
+        "stage": "core_integration",
+        "serverSeconds": 2.719,
+        "result": "passed"
+      },
+      {
+        "kind": "typecheck",
+        "stage": "final_server_review",
+        "command": "node node_modules/typescript/bin/tsc -p tsconfig.server.json --noEmit",
+        "seconds": 2.728,
+        "result": "passed"
+      },
+      {
+        "kind": "typecheck",
+        "stage": "contact_ui",
+        "command": "node node_modules/typescript/bin/tsc --noEmit",
+        "executions": 1,
+        "result": "passed",
+        "scope": "Sol component/API; main subsequently reviewed basic-page mount and truthful coalesced copy, no browser claim"
+      },
+      {
+        "kind": "scripted_gateway",
+        "command": "node --test tests/telegram-gateway.test.ts",
+        "cases": 1,
+        "executions": 1,
+        "result": "passed",
+        "scope": "Sol's existing public adapter case extended for care payload; no network"
+      },
+      {
+        "kind": "scripted_agent",
+        "command": "node --test tests/contact-agent.test.ts",
+        "cases": 1,
+        "executions": 2,
+        "firstResult": "failed_before_model",
+        "cause": "Pack/module version equality rejected independently versioned modules",
+        "repair": "Validate each module header against its manifest version, without forcing the pack release version",
+        "finalResult": "passed",
+        "scope": "Real ADK Runner, scripted read/contact/closing failure, recorded operation and replay; no database/model/channel service"
+      },
+      {
+        "kind": "scoped_document_review",
+        "result": "passed",
+        "addedLocalLinks": 24,
+        "appendOnlyLog": true,
+        "checkerNote": "Accepted existing Markdown heading anchors and retained repository CRLF conversion; no source change for checker-only failures.",
+        "diffCheck": "passed"
+      }
+    ],
+    "review": [
+      "Explicit current recipient consent and exact task grant; authority/version changes stop sending",
+      "Atomic intent and job, bounded ordered fallback only for known rejection, unknown never replayed",
+      "Daily ordinary slot and quiet hours; coalesced does not imply delivery",
+      "Callback receipt/message ID preserved if gateway result arrives later; conflicting provider failure cannot trigger fallback",
+      "Own ledger write advances only the same trusted run; unrelated changes discard old context",
+      "Borrowed online transactions preserve original opId; scope/permission changes clear UI"
+    ],
+    "pending": [
+      "Migrations 014-019 and encrypted backup/empty restore",
+      "Real PostgreSQL atomicity, revocation, task terminal/source invalidation, delete and crash recovery",
+      "Real Gemini/background budget and recipient/tool loop",
+      "True Web Push/Telegram callback and provider evidence",
+      "Browser/API wiring and cross-account clearing"
+    ],
+    "notRun": [
+      "integration",
+      "E2E",
+      "real services",
+      "build",
+      "lint",
+      "full regression",
+      "deployment"
+    ],
+    "deployment": "P2 disabled by default; live P1 unchanged"
+  },
+  "reusedIntegrationEvidence": [
+    {
+      "name": "migrations_014_022_original_data_preserved",
+      "status": "passed",
+      "stage": "existing_data",
+      "added": [
+        "014-knowledge-refresh",
+        "015-web-push",
+        "016-product-agent",
+        "017-growth-attention",
+        "018-telegram-channel",
+        "019-proactive-contact",
+        "020-care-summaries",
+        "021-photo-attachments",
+        "022-shared-inputs"
+      ],
+      "tablesPreserved": 39,
+      "rowsPreserved": 386,
+      "workerPaused": true,
+      "backupCreated": true
+    },
+    {
+      "name": "paired_encrypted_backup_empty_restore",
+      "status": "passed",
+      "stage": "restored_evidence",
+      "code": null,
+      "durationMs": 1307,
+      "photoId": "cb392032-c749-4659-b516-d930df5cfd9d",
+      "restoreDatabase": "yuban_s16_restore_20260929",
+      "originalRetained": true,
+      "backupRetained": true,
+      "restoreRetained": true,
+      "workerStarted": false,
+      "modelsCalled": 0,
+      "notifications": 0
+    }
+  ],
+  "contactSql": {
+    "phase": "passed",
+    "counters": {
+      "counts": {
+        "users": 1,
+        "workspaces": 1,
+        "children": 1,
+        "tasks": 3,
+        "pushBindings": 1,
+        "telegramBindings": 1,
+        "requests": 3,
+        "runs": 3,
+        "jobs": 7,
+        "businessCalls": 70,
+        "scriptedSends": 3,
+        "consumers": 0,
+        "httpRequests": 0,
+        "modelCalls": 0,
+        "atomicEnqueues": 7,
+        "gatewayChecks": 3,
+        "pushSends": 2,
+        "telegramSends": 1,
+        "preflightQueries": 7,
+        "snapshotQueries": 60,
+        "cleanupQueries": 19
+      },
+      "limits": {
+        "users": 1,
+        "workspaces": 1,
+        "children": 1,
+        "tasks": 3,
+        "pushBindings": 1,
+        "telegramBindings": 1,
+        "requests": 3,
+        "runs": 3,
+        "jobs": 7,
+        "businessCalls": 80,
+        "scriptedSends": 3,
+        "consumers": 0,
+        "httpRequests": 0,
+        "modelCalls": 0
+      }
+    },
+    "assertions": [
+      {
+        "name": "paused_local_preflight",
+        "passed": true
+      },
+      {
+        "name": "consent_and_synthetic_bindings",
+        "passed": true
+      },
+      {
+        "name": "authorized_rejection_fallback_and_completed_task",
+        "passed": true
+      },
+      {
+        "name": "unknown_rebuild_does_not_resend_or_fallback",
+        "passed": true
+      },
+      {
+        "name": "queued_grant_revocation_stops_without_gateway",
+        "passed": true
+      }
+    ],
+    "cleanup": {
+      "workerPaused": true,
+      "producerStopped": true,
+      "ownRowsRemoved": true,
+      "priorRowsPreserved": true,
+      "poolsClosed": true,
+      "evidenceRetained": true,
+      "failureCodes": []
+    }
+  },
+  "realContact": {
+    "run": {
+      "stage": "run",
+      "status": "accepted_pending_user_receipt",
+      "dedicatedPriorityConsumer": true,
+      "normalFullSchedulingVerified": false,
+      "publicWebhookVerified": false,
+      "limits": {
+        "agentRuns": 1,
+        "runtimeCalls": 1,
+        "generationCalls": 4,
+        "embeddingCalls": 2,
+        "telegramSends": 1,
+        "businessCalls": 80,
+        "polls": 120,
+        "children": 1,
+        "tasks": 1,
+        "jobs": 3,
+        "getUpdatesCalls": 1,
+        "callbackApiCalls": 1,
+        "outputTokens": 1024,
+        "inputCharacters": 32000,
+        "runMs": 90000,
+        "phaseMs": 240000,
+        "dailyAttempts": 26
+      },
+      "checks": [
+        "real_due_event_and_runtime_claim",
+        "successful_contact_tools_in_ledger",
+        "single_actual_care_send",
+        "receipt_does_not_complete_task"
+      ],
+      "quotaBefore": {
+        "day": "2026-09-30",
+        "global": 7,
+        "owner": 7
+      },
+      "quotaAfter": {
+        "day": "2026-09-30",
+        "global": 11,
+        "owner": 11
+      },
+      "agentStatus": "completed",
+      "agentStopReason": null,
+      "requiredToolAssertions": {
+        "readContactOptions": true,
+        "contactCaregiver": true
+      },
+      "workerPaused": true,
+      "consumersClosed": true,
+      "poolsClosed": true,
+      "counts": {
+        "agentRuns": 1,
+        "runtimeCalls": 1,
+        "generationCalls": 4,
+        "embeddingCalls": 0,
+        "telegramSends": 1,
+        "businessCalls": 49,
+        "polls": 41,
+        "children": 1,
+        "tasks": 1,
+        "jobs": 3,
+        "getUpdatesCalls": 0,
+        "callbackApiCalls": 0
+      }
+    },
+    "receive": {
+      "stage": "receive",
+      "status": "receipt_verified_pending_user_completion",
+      "dedicatedPriorityConsumer": true,
+      "normalFullSchedulingVerified": false,
+      "publicWebhookVerified": false,
+      "limits": {
+        "agentRuns": 1,
+        "runtimeCalls": 1,
+        "generationCalls": 4,
+        "embeddingCalls": 2,
+        "telegramSends": 1,
+        "businessCalls": 80,
+        "polls": 120,
+        "children": 1,
+        "tasks": 1,
+        "jobs": 3,
+        "getUpdatesCalls": 1,
+        "callbackApiCalls": 1,
+        "outputTokens": 1024,
+        "inputCharacters": 32000,
+        "runMs": 90000,
+        "phaseMs": 240000,
+        "dailyAttempts": 26
+      },
+      "checks": [
+        "actual_received_callback_parsed",
+        "durable_acknowledgement",
+        "received_is_still_scheduled"
+      ],
+      "quotaBefore": {
+        "day": "2026-09-30",
+        "global": 11,
+        "owner": 11
+      },
+      "quotaAfter": {
+        "day": "2026-09-30",
+        "global": 11,
+        "owner": 11
+      },
+      "workerPaused": true,
+      "consumersClosed": true,
+      "poolsClosed": true,
+      "counts": {
+        "agentRuns": 1,
+        "runtimeCalls": 1,
+        "generationCalls": 4,
+        "embeddingCalls": 0,
+        "telegramSends": 1,
+        "businessCalls": 61,
+        "polls": 41,
+        "children": 1,
+        "tasks": 1,
+        "jobs": 3,
+        "getUpdatesCalls": 1,
+        "callbackApiCalls": 1
+      },
+      "callbackApiAcknowledged": false
+    },
+    "complete": {
+      "stage": "complete",
+      "status": "stopped",
+      "dedicatedPriorityConsumer": true,
+      "normalFullSchedulingVerified": false,
+      "publicWebhookVerified": false,
+      "limits": {
+        "agentRuns": 1,
+        "runtimeCalls": 1,
+        "generationCalls": 4,
+        "embeddingCalls": 2,
+        "telegramSends": 1,
+        "businessCalls": 80,
+        "polls": 120,
+        "children": 1,
+        "tasks": 1,
+        "jobs": 3,
+        "getUpdatesCalls": 1,
+        "callbackApiCalls": 1,
+        "outputTokens": 1024,
+        "inputCharacters": 32000,
+        "runMs": 90000,
+        "phaseMs": 240000,
+        "dailyAttempts": 26
+      },
+      "checks": [],
+      "quotaBefore": {
+        "day": "2026-09-30",
+        "global": 11,
+        "owner": 11
+      },
+      "workerPaused": true,
+      "consumersClosed": true,
+      "poolsClosed": true,
+      "counts": {
+        "agentRuns": 1,
+        "runtimeCalls": 1,
+        "generationCalls": 4,
+        "embeddingCalls": 0,
+        "telegramSends": 1,
+        "businessCalls": 80,
+        "polls": 41,
+        "children": 1,
+        "tasks": 1,
+        "jobs": 3,
+        "getUpdatesCalls": 1,
+        "callbackApiCalls": 1
+      },
+      "error": "businessCalls_limit"
+    },
+    "cleanup": {
+      "phase": "cleanup",
+      "status": "passed",
+      "testedSha": "e0653d32dc3b73e93a6b9e1374f65cacf0244420",
+      "limits": {
+        "businessCalls": 12,
+        "estimatedMaximumCalls": 7,
+        "phaseMs": 120000
+      },
+      "counts": {
+        "businessCalls": 7,
+        "storeCalls": 2,
+        "modelCalls": 0,
+        "sends": 0,
+        "consumers": 0
+      },
+      "checks": [
+        "saved_completed_and_received_ledger",
+        "original_failed_report_retained",
+        "no_new_send_or_run_evidence",
+        "exact_ids_and_paused_worker_preflight",
+        "live_completed_received_or_already_removed",
+        "only_remaining_own_data_removed",
+        "exact_binding_revoked_last",
+        "six_original_snapshots_match",
+        "historical_generic_deliveries_preserved",
+        "worker_stayed_paused",
+        "usage_not_reset_or_increased"
+      ],
+      "cleanup": {
+        "workerPaused": true,
+        "jobsRemoved": 0,
+        "updatesRemoved": 1,
+        "childDeleted": true,
+        "batchDeleted": true,
+        "bindingRevoked": true,
+        "originalSnapshotMatch": true,
+        "ownRemainingZero": true,
+        "poolsClosed": true,
+        "originalEvidenceUnchanged": true
+      },
+      "originalFailure": {
+        "status": "stopped",
+        "error": "businessCalls_limit",
+        "businessCalls": 80
+      },
+      "core": {
+        "completedVersion": 2,
+        "received": true,
+        "sends": 1,
+        "generationCalls": 4,
+        "embeddingCalls": 0
+      },
+      "preflight": {
+        "childExists": true,
+        "jobs": 0,
+        "updateExists": true,
+        "batchExists": true,
+        "bindingAlreadyRevoked": false
+      }
+    },
+    "humanConfirmation": {
+      "identity": true,
+      "receivedAndClicked": true,
+      "explicitSyntheticAppointmentCompletionAndCleanup": true
+    },
+    "usageLimitations": "The four generation attempts are recorded. Per-call input/output usage is absent from these protected reports; daily global/owner attempt counters were 7 before and 11 after. No billing claim."
+  },
+  "sourceComparison": {
+    "integrationRevision": "e0653d3",
+    "normalizedLfSha256": {
+      "server/contact-api.ts": "d5f83e0db3ac7b0d636cf1423f8ec14819107d576e3fbc0218626d085e697ebe",
+      "server/contact-events.ts": "f1e53b3903bae226cde8ab13510081bc069f0c7890b43c50f4e472a2547f2dc2",
+      "server/contact-store.ts": "0daefed10cc0696f923b448fbb0608246010811bb42d302c1b3aef95babe5d50",
+      "server/contact-worker.ts": "041c75a857c85291e667dc9049dcf2ed6e429a22c4b00f73f454ebb29af892f5",
+      "server/migrations/019-proactive-contact.sql": "bbd56c39ad476ddc77baa839c50276afa63ecdb6c6dfbbc7d297707c3b6a27ea",
+      "server/product-agent.ts": "e77a9bfe424d428f2511f761251fe0eccf3b4382ba33c0f8ebbe0052db31ff2a",
+      "server/product-agent-tools.ts": "732c28e4adfcf650f9188d0bc9e71c652d51486f8e3c5f21500bedb3905a8f02",
+      "server/product-agent-store.ts": "1d1d3bb1211c0f6bc3b4b59fae652d726e332a6b5cac6eae304d11352df2300e",
+      "server/product-agent-background.ts": "3c42ddbf523f17f99fae5dfd65c382ece4c757df260eff9d67d66ee1dda402b8",
+      "server/telegram-gateway.ts": "3d633403dbff95c018efc35cdf51c147b48709cc81081aae4ac17974e591ac97",
+      "server/telegram-store.ts": "c31b4679a235e5aa68e3ba5b973a67f630716a436567f58053c78bb49a5c704c",
+      "server/telegram-types.ts": "3dfa762b73023ae0087ef0ae88cc538281f54ddc618bafb0ff47bb0e61d124b1",
+      "server/telegram-webhook.ts": "bf6b8942df68f0c376a8a983cf6fbb3156aec48e9ae0c1bbba55b92a1f71a1d4",
+      "src/client/ContactPanel.tsx": "a6ff9c1d722cc33d5422768d75a855c013fb0f9953c07aad784d146deb9c08cb",
+      "src/client/contact-api.ts": "2062d1b09d328ead610c1eeae8c38948b62b5e1e4a8d010e8b742e5133df6d0a",
+      "src/shared/contact.ts": "1b690951bbe2a30082ef4fae35d4030a6adc6d656009fb7da393f1242459c6f1",
+      "prompts/modules/product-tools.md": "2cb80a0cfb912f6708a5b8b1737a192bcaf9950c70ff04fc1577d66b9c82fa73"
+    },
+    "result": "Seventeen core/client/prompt sources match the integration used for true contact; final entry-point argument order reviewed separately."
+  },
+  "deliveryChecks": [
+    {
+      "kind": "server_typecheck",
+      "executions": 1,
+      "result": "passed",
+      "executor": "Scoped GPT-6.1 Sol under primary review"
+    },
+    {
+      "kind": "offline_prompt_load",
+      "recipe": "product-background",
+      "version": "0.1.16",
+      "modules": 12,
+      "characters": 9940,
+      "modelCalls": 0,
+      "result": "passed"
+    },
+    {
+      "kind": "document_diff_review",
+      "addedLocalLinks": 13,
+      "worklogAppendOnly": true,
+      "diffCheck": "passed"
+    }
+  ],
+  "responsibility": {
+    "lead": "A",
+    "weight": 5,
+    "shares": {
+      "A": 50,
+      "C": 30,
+      "D": 10,
+      "B": 10
+    },
+    "execution": "Shared AI operated by A; A account push/PR/merge with original coauthors and actual committer."
+  },
+  "limitations": [
+    "The bounded true flow uses real ADK and targeted native pg-boss consumers with exact IDs/priority, not the full public deployment scheduler.",
+    "Telegram callbacks were fetched once and persisted; immediate callback acknowledgement unsuccessful. Public HTTPS webhook remains S17-W02.",
+    "Full ContactPanel browser workflow unverified; existing Chromium family/care scenario does not cover this panel.",
+    "pg 8.23 concurrent-client query deprecation warning retained; no unrelated refactor.",
+    "No P2 deployment, new model rerun or notification beyond the single explicitly approved care message."
+  ]
+}

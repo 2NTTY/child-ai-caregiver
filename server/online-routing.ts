@@ -48,6 +48,8 @@ export function onlineRoute(command: OnlineCommand): OnlineRoute {
   if(photo)return {kind:"care",scope:"child",targetId:photo[1].toLowerCase(),roles:WRITE_ROLES,privateResult:true,deleted:path.endsWith("/delete")};
   const preparation = new RegExp("^/api/children/("+uuid+")/visit-preparation$","i").exec(path);
   if(preparation)return {kind:"care",scope:"child",targetId:preparation[1].toLowerCase(),roles:WRITE_ROLES,privateResult:false,deleted:false};
+  const contact = new RegExp("^/api/children/("+uuid+")/contact/(?:consent|tasks/"+uuid+"/authorization|attempts/"+uuid+"/acknowledge)$","i").exec(path);
+  if(contact)return {kind:"tasks",scope:"child",targetId:contact[1].toLowerCase(),roles:WRITE_ROLES,privateResult:true,deleted:false};
   const task = new RegExp(`^/api/children/(${uuid})/tasks(?:/${uuid}/change)?$`, "i").exec(path);
   if (task) return { kind: "tasks", scope: "child", targetId: task[1].toLowerCase(), roles: WRITE_ROLES, privateResult: false, deleted: false };
   const family = new RegExp(`^/api/families/(${uuid})/(children|invitations(?:/${uuid}/revoke)?|members/[A-Za-z0-9_-]{1,128})$`, "i").exec(path);

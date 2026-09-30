@@ -536,3 +536,14 @@ API 與 worker 均須既有 P2 啟用旗標及 migration 017；DB 維護指令�
 Server 只從固定 catalog 選公開來源，沿用 DNS／IP／HTTPS／redirect／內容上限保護；fetch 與模型呼叫均在資料庫交易外，短交易 claim 及結果核權。原文與選取片段當作不可信資料注入；既有 capture-confirmation／multimodal 模組加一個短 shared-capture 接線配方，工具只回私人候選。來源不足不能借提取包裝成育兒建議。
 
 家長可人工填寫，或採用候選再確認；外部參考與孩子實際記錄分開。完整來源快照私有，確認文字共享，沒有背景讀私人動態、帖子直接授權任務或全量向量化。功能 UI 交接見 [清單](P2_UI_HANDOFF.md#shared-input-handoff)；必要私人來源取得／隔離、SQL／保存及真提取修正版證據見 [S12-W04](../artifacts/verification/S12_W04_CHECKS.json)；完整分享面板瀏覽器仍未驗。
+
+<a id="proactive-contact-flow"></a>
+## S13-W07 預授權聯絡接線（待集中驗收）
+
+到期事件 → 共用 ADK 讀取 Server 聯絡選項 → 原生工具建立唯一聯絡請求／pg-boss job → worker 核權及偏好 → 渠道單次呼叫 → 持久結果／本人收到確認。對已到期事項新增明確授權可建立一個新事件；同一提醒的外發請求仍唯一，不重跑舊模型運行。無新事件不空轉模型。
+
+[contact-store](../server/contact-store.ts) 擁有選人、授權／終態、來源適用、每日合併、安靜時段、unknown 及有界 fallback；復用既有任務、成長規則、pg-boss、加密與渠道 adapter。主對象是任務負責人，後備與順序須事先確認；不猜測誰有空。網絡呼叫不持 SQL 鎖，緊接外發前再次核權；重領 sending 保留未知結果，已知拒絕才可走核准的下一綁定。
+
+Prompt Pack 只補產品工具範圍；工具是唯一副作用入口。收尾失敗從台帳回報已入列，既有操作不重做。包版本與模組正文版本分開，loader 仍精確校驗模組 header／manifest／依賴。Push／Telegram 都只傳固定無家庭正文提示，點開後由站內權限控制資料；回應不改照護終態。渠道接受、收到與任務完成分開展示，瀏覽器關閉不影響已入列工作。
+
+目前只有最少離線工具／型別證據；真渠道、SQL／重啟／撤權競態及瀏覽器接線待 S16 集中核對。P2 開關保持預設關閉，未部署。

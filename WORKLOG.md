@@ -1142,3 +1142,21 @@
 - Evidence：[EV-S12-W04](artifacts/verification/S12_W04_CHECKS.json) 保留原日期提取失敗，修正版真候選已通過；復用 022／023／原資料、39 HTTP 中的原文／確認、20 store／一次私人來源取得與隔離／重建，以及加密還原證據。十二份核心及 prompt 與已驗整合來源相同；帶回 SharedInputApiError 的明確字段語法修正，預設值及行為不變。沒有新模型、embedding、來源 GET、通知、DB 或瀏覽器驗收。
 - Limits：完整分享面板 UI 未驗；私人來源不進公共庫，不代登入、取得付費權限或保證條款適用，不新增背景訂閱／全文爬蟲。UI 功能與狀態已列入 handoff，未改 frontend 預覽。完成隨本包 PR 合併生效，P2 尚未完成，不部署或續期。
 - Delivery Check：一次 Server no-emit 型別通過；shared-capture 0.1.15 離線載入 12 模組／7,957 字元，日期修正版模組 0.1.1；18 個新增本機連結、append-only 日誌及 diff 通過，零模型。
+
+<a id="log-20260928-010"></a>
+## LOG-20260928-010
+
+- Recorded At / Work Date：2026-09-28（Asia/Hong_Kong）；S13-W07 預授權主動聯絡，分支 `codex/s13-w07-proactive-contact`。固定前置：成長 `704e6c5`（含 S11-W02／S10-W02）、Web Push `769b3b7`、Telegram `ee01c8b`；隔離整合基線 `827a48e`，按 P2 集中驗收例外承接，不當作 master 已合併。
+- Responsibility / Executor：A 主責、權重 5，A 50%／C 30%／D 10%／B 10%；A 統籌共用 AI，不表示各組員親自手寫或執行。主模型負責 SQL／授權／模型整合、review 及文件；兩個 Sol xhigh 分別處理固定 Telegram adapter 及本人同意／聯絡 UI。
+- Actual Work：本人同意、精確任務預授權、期限／渠道／後備及版本、受限 Agent 工具、同交易請求／job、持久 worker 及投遞台帳；沿用普通提示每日合併、最多一次跟進、安靜時段及任務／来源終態。unknown 不重發或切換；已知拒絕才執行有界 fallback。Telegram 回應先到時保留證據，回應不完成任務。正式基本頁已掛 ContactPanel，功能清單已補，未碰 frontend 預覽。
+- Failure / Review：必要單一 ADK scripted 案例首次在模型前失敗：loader 錯把 pack 版本當所有模組版本，既有成長 checkpoint 升版已觸發此問題。修正為整包與模組版本獨立、逐模組 header／manifest 一致後，只重跑該案例一次通過；不重做 Prompt Pack。review 同時保留已入列操作在收尾失敗後的真實回報，及其他資料變更後不保存舊上下文。
+- Verification：[EV-S13-W07](artifacts/verification/S13_W07_CHECKS.json)。合併前置後兩份型別通過；核心接線後 Server 型別及最終關鍵修改後 Server 型別各一次通過。Sol 的單一離線 gateway 案例一次通過、UI 型別一次通過；主模型覆核後未重跑其證據。新 ADK 案例一項、合計兩次執行（首次失敗、修正後通過），沒有測試矩陣／build／lint／全套回歸。
+- Pending / Next：014–019 migration、真 SQL／還原／撤權／worker 中斷、Gemini／渠道／瀏覽器均留待 P2 實作齊備後集中驗收；本包只標待驗收。未 push／合併 master／部署、未延長 P1 試用；照片、分享及摘要仍未完成。沒有增加依賴或重做美術，額度未知。
+
+<a id="log-20260930-014"></a>
+## LOG-20260930-014
+
+- Delivery / Responsibility：S13-W07 從 master `134962a` 接回原 `aa0fd83`／`aca884a` 的聯絡及 Vertex 相容修正；前置均已正式合併。A 主責、權重 5，A 50%／C 30%／D 10%／B 10%，共享 AI 由 A 操作，依原共同責任署名，A 帳號推送／PR／合併。主模型親寫提示詞及權威文件、裁定整合與驗收；Sol 執行限定接線／型別及已 review 的必要驗收。
+- Evidence：[EV-S13-W07](artifacts/verification/S13_W07_CHECKS.json) 保留原 scripted Runner／渠道、019／備份還原與 SQL 70 業務的真資料邊界；另有一次真 Agent／4 生成／0 embedding／唯一一則已明確批准的 Telegram 照護提示。使用者確認收到並按鍵後仍維持 scheduled，另獲使用者明確確認才完成合成預約。完整流程與剩餘清理結果分開記錄，原累計 80 次呼叫上限失敗不抹去，沒有整套重跑或多發訊息。
+- Review：十七份核心／客戶端／prompt 與 `e0653d3` 驗收版本相同；主模型核對當前 grant／同意／身份、投遞前重查、unknown 不重發及已完成終態，並核對所有入口參數與 shutdown。一次 Server 型別及無模型配方組裝作交付檢查，不重跑已通過套件。
+- Limits：測試只領取精確合成 job 的原生 consumer；公開 HTTPS webhook／正常部署 worker 仍留 S17，完整 ContactPanel 瀏覽器未驗，即時 callback 回覆失敗如實保留。UI 功能／對接已列清單，沒有 frontend 視覺改動。完成隨本包 PR 合併生效，P2 尚未完成。

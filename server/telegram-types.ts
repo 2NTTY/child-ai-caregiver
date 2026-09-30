@@ -2,7 +2,7 @@ import type { PoolClient } from "pg";
 export interface TelegramConfig {
   token:string;botId:string;botUsername:string;webhookSecret:string;
 }
-export interface TelegramSendInput { chatId:number; callbackToken:string }
+export interface TelegramSendInput { chatId:number; callbackToken:string; kind?:"test"|"care" }
 export interface TelegramSendResult {
   status:"accepted"|"rejected"|"unknown"|"stopped";
   reason:"blocked"|"rate_limited"|"provider_rejected"|"transport_unknown"|"configuration_unavailable"|"revoked"|"worker_interrupted"|null;
@@ -17,6 +17,7 @@ export interface TelegramServices { config:TelegramConfig|null; queue?:TelegramQ
 export type TelegramEvent =
  | {kind:"start";updateId:number;chatId:number;senderId:number;token:string;label:string}
  | {kind:"stop";updateId:number;chatId:number;senderId:number}
+ | {kind:"contact_ack";updateId:number;chatId:number;senderId:number;messageId:number;callbackQueryId:string;token:string}
  | {kind:"ack";updateId:number;chatId:number;senderId:number;messageId:number;callbackQueryId:string;token:string}
  | {kind:"blocked";updateId:number;chatId:number;senderId:number}
  | {kind:"ignore";updateId:number};

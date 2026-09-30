@@ -76,12 +76,15 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           created: Boolean(inserted.rowCount), sourceMessageId: row.source_message_id, state: row.state, expiresAt: row.expires_at.toISOString() };
       });
     },
-    async authorize(scope: AgentScope): Promise<boolean> {
+    async authorize(scope: AgentScope, runId?:string): Promise<boolean> {
       return Boolean(await access(scope.userId, scope.childId, false, async (client, workspaceId) => {
         const current = await currentScope(client, workspaceId, scope.userId, scope.childId);
+        const liveRun=runId?(await client.query<RunRow>("SELECT * FROM agent_runs WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND state='running' AND expires_at>now()",[runId,scope.childId,scope.userId])).rows[0]:undefined;
+        if(runId&&!liveRun)return false;
+        // Only a trusted tool transaction can advance this run past its own ledger write.
         // Revoke/reinvite and restore both invalidate an in-flight run.
         return current.workspaceId === scope.workspaceId && current.authorizationVersion === scope.authorizationVersion
-          && current.dataVersion === scope.dataVersion;
+          && current.dataVersion === (liveRun?.data_version ?? scope.dataVersion);
       }));
     },
     async get(userId: string, childId: string, runId: string): Promise<ProductAgentResult | null> {
@@ -103,7 +106,13 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         const row = await runFor(client, scope.userId, scope.childId, value.runId);
         const current = await currentScope(client, workspaceId, scope.userId, scope.childId);
         if (row.state !== "running" || row.authorization_version.toString() !== current.authorizationVersion
-          || row.data_version !== current.dataVersion) return false;
+          || row.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) return false;
+        if(row.data_version !== current.dataVersion){
+          const contact=value.tools.filter(tool=>tool.name==="contact_caregiver" && tool.status==="succeeded" && tool.reference);
+          if(!contact.length)return false;
+          value={...value,status:"stopped",stopReason:"unauthorized",text:"已記錄聯絡請求；資料隨後有變，請到聯絡台帳核對目前投遞結果。入列不代表送達或完成。",citations:[],retrievalMode:"not_used",proposals:[],tools:contact};
+          summary=undefined;
+        }
         if (summary && row.trigger_kind === "interactive" && value.status === "completed") {
           const borrowed = transactionPool(client);
           try {
