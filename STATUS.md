@@ -1,7 +1,7 @@
 # STATUS
 
 ## 當前階段
-**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 必要渠道驗收通過，完成隨本包 PR 合併生效**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
+**P1 基礎成品驗收完成；P2 持續開發，S13-W01／S13-W04 已隨 PR #47／#48 合併，S10-W02／S16-W05 已隨 PR #51／#52 合併；S13-W05 已隨 PR #58 合併；S13-W06 已隨 PR #59 合併；S11-W02 必要核心驗收通過，完成隨本包 PR 合併生效**。P1 [S17-W01](PLAN.md#s17-w01) 結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效；[S11-W03](PLAN.md#s11-w03) 已隨 [PR #30](https://github.com/2NTTY/child-ai-caregiver/pull/30) 合併；S06-W02 已隨 [PR #31](https://github.com/2NTTY/child-ai-caregiver/pull/31) 合併；S05-W02 已隨 [PR #32](https://github.com/2NTTY/child-ai-caregiver/pull/32) 合併。S07-W03 已隨 [PR #36](https://github.com/2NTTY/child-ai-caregiver/pull/36) 合併；S09-W02 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效。
 
 ## 現況
 - **試用 URL：https://ex-machina.eu.org**。使用者指定根網域，DNS 由使用者設定；執行版本 `d654b8f`，其後結案修改僅涉及文件。
@@ -42,4 +42,4 @@ S13-W06 Telegram：沿用 D 主責、權重 3，D 60%／C 30%／B 10%。migratio
 ## 更新記錄
 2026-09-28（Asia/Hong_Kong）：S10-W02 實作、近期來源使用範圍定案及必要驗收準備；[證據](artifacts/verification/S10_W02_CHECKS.json)／[LOG-20260928-004](WORKLOG.md#log-20260928-004)。
 
-S11-W02 原有互動／背景 Agent 及引用修正正獨立整合至最新 master；按 S16 已有證據逐項覆核，不把尚待整合或真聯絡的部分當完成。
+S11-W02：真互動 ADK／向量引用／確認任務、背景 Runtime／重啟去重沿用 S16 分列證據。成長回答曾過度延伸來源，單改 prompt 仍未通過；Server 改呈現已核對片段，3 項必要 Runner 及擷取真回應的離線重播通過，沒有再呼叫模型。整合驗收中的摘要／成長工具分屬後續包，不把本 PR 寫成整個 P2 已可用。沿用 A 主責、權重 5，A 70%／C 20%／B 10%；[證據](artifacts/verification/S11_W02_CHECKS.json)。完整 Agent UI／真照護聯絡／公開部署仍按其範圍交付。

@@ -75,7 +75,8 @@ for (const growth of [false, true]) test(growth
       if (index === 1) {
         const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse)?.functionResponse?.response;
         assert.equal(response?.status, "rejected");
-        assert.deepEqual(response?.data && { code: response.data.code, nextAction: response.data.nextAction, citationField: response.data.citationField },
+        const data = response?.data as Record<string, unknown> | undefined;
+        assert.deepEqual(data && { code: data.code, nextAction: data.nextAction, citationField: data.citationField },
           { code: "invalid_citation", nextAction: "search_knowledge", citationField: "chunks[].chunkId" });
       }
       const functionCall = index === 0 ? { id: "invalid-source", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: "未有有效引用的合成建議", citationIds: ["source-metadata-id"] }] } }

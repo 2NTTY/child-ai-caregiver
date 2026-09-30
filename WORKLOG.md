@@ -1042,3 +1042,12 @@
 - Interface / Safety：Web 已有來源／候選／共享確認／未知提交查核／背景結果入口；身份／孩子切換清空舊畫面。固定官方求助入口在等模型前可見，2026-09-28 核對香港消防處兩個來源；沒有醫療分流或自動聯絡。API、資料、架構及 UI 功能清單局部更新；Prompt Pack 只新增實際產品工具配方，未重做既有正文或美術。
 - Verification / Review：兩份 typecheck、前景及背景共兩項 scripted Runner 公開流程、Sol 一項 observer callback 檢查通過；沒有 lint／build／全量 unit／E2E 擴測。前景證明候選仍待確認及原 run 重取，背景證明只暴露家庭讀取／檢索／呈現，不讀私人聊天；不作 SQL／模型品質證據。首次 background 配方因來源模組名稱錯誤在 0 次模型呼叫前停止，改為既有 sources-freshness 名稱後只重跑該案例通過。review 同時修正 ISO 日期、還原後原世代綁定及未保存統計不能當零；證據及未驗範圍見 [EV-S11-W02](artifacts/verification/S11_W02_CHECKS.json)。
 - Limits / Next：本包已實作、待驗收，migration 016 未執行；同時承接 S10-W02／014 未驗收限制，S13-W05／015 留另一分支。依使用者指示，SQL／重啟／還原、真 Gemini／embedding、引用內容品質及瀏覽器留 S16-W02 集中安排，不逐包詢問或自行執行。不合併／部署未驗功能；P2 未完成，现網 P1 不變，額度未知。
+
+<a id="log-20260930-008"></a>
+## LOG-20260930-008
+
+- Work / Base：S11-W02 從最新 master `34892c7` 獨立交付，保留原 `b816d30` 與四項工具／引用修正；沒有重做 Prompt Pack 或美術。A 主責、權重 5，A 70%／C 20%／B 10%，共享 AI 由 A 操作。
+- Evidence：[EV-S11-W02](artifacts/verification/S11_W02_CHECKS.json)。沿用 S16 的 016／原資料／配對還原、四年齡段向量、真互動 3 生成／5 工具／1 embedding 及明確任務確認；該整合情景含 S14 摘要工具，這裏只歸屬共用核心證據。背景共用 Runtime 真檢索及重新建立 worker 後不重做已驗，成長規則／生命週期歸 W08。
+- Quality：原真背景答案把母乳範圍擴大，prompt-only 補驗仍過度概括；失敗保留。`6c865f1` 改成 Server 對成長事件呈現已重核的官方片段，3 項必要 scripted Runner 及擷取真答案的離線重播通過；不宣稱新完整真服務運行、互動零幻覺或臨床有效性。
+- Review / Delivery：主模型核對 ADK／工具／權限／引用及全部指導、契約與提示詞；原 Sol 只處理已定義的 Server／worker 接線衝突，保留 knowledge、Web Push、Telegram。完成隨本包 PR 合併生效；真照護聯絡留 W07、公開部署留 S17，P2 未完成，未續期或部署。沒有為交付重跑模型或完整回歸。
+- Necessary Check：交付接線 Server typecheck 首次發現既有測試對 SDK unknown data 的三個 TS2339 欄位存取；只補局部型別宣告，斷言／產品行為不變。一次補查通過；沒有再跑 Runner、DB、模型或其他測試。
