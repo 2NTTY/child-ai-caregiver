@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Pool } from "pg";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
+import type { ModelBillingSource } from "../src/shared/model-settings.ts";
 import type { AiConfig } from "./ai-config.ts";
 import { createAiUsageStore } from "./ai-usage.ts";
 import { vectorLiteral } from "./knowledge-store.ts";
@@ -27,15 +28,24 @@ export interface EmbeddingUsage {
   reserve(actor: EmbeddingActor, userLimit: number, globalLimit: number): Promise<boolean>;
   record(attempt: EmbeddingAttempt): Promise<void>;
 }
-export function createEmbeddingUsage(pool: Pool): EmbeddingUsage {
-  const counters = createAiUsageStore(pool);
+export function createEmbeddingUsage(pool: Pool, source: ModelBillingSource = "platform"): EmbeddingUsage {
+  const counters = createAiUsageStore(pool, source);
+  function requireActor(actor: EmbeddingActor) {
+    if (source === "personal" && actor.kind === "corpus_maintenance") throw new EmbeddingFailure("unauthorized");
+  }
   return {
-    // The same global lock/counter covers generation, query embeddings and corpus maintenance.
-    reserve: (actor, userLimit, globalLimit) => counters.reserve(actor.kind === "query_embedding" ? actor.actorId : "system:knowledge-maintenance", userLimit, globalLimit),
+    // Generation and query embeddings share their billing source counters and the existing global lock.
+    async reserve(actor, userLimit, globalLimit) {
+      requireActor(actor);
+      return counters.reserve(actor.kind === "query_embedding" ? actor.actorId : "system:knowledge-maintenance", userLimit, globalLimit);
+    },
     async record(attempt) {
-      await pool.query(`INSERT INTO embedding_attempts (id,kind,actor_id,operation_id,model,dimensions,outcome,input_tokens,billable_characters,duration_ms,document_hash)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, [randomUUID(), attempt.kind, attempt.actorId, attempt.operationId,
-        KNOWLEDGE_EMBEDDING.model, KNOWLEDGE_EMBEDDING.dimensions, attempt.outcome, attempt.inputTokens, attempt.billableCharacters, attempt.durationMs, attempt.documentHash]);
+      requireActor(attempt);
+      try {
+        await pool.query(`INSERT INTO embedding_attempts (id,kind,actor_id,operation_id,model,dimensions,outcome,input_tokens,billable_characters,duration_ms,document_hash,billing_source)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`, [randomUUID(), attempt.kind, attempt.actorId, attempt.operationId,
+          KNOWLEDGE_EMBEDDING.model, KNOWLEDGE_EMBEDDING.dimensions, attempt.outcome, attempt.inputTokens, attempt.billableCharacters, attempt.durationMs, attempt.documentHash, source]);
+      } catch { throw new Error("Embedding usage storage unavailable"); }
     },
   };
 }

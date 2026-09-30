@@ -18,6 +18,7 @@ import { readAiConfig } from "./ai-config.ts";
 import { createAiUsageStore } from "./ai-usage.ts";
 import { createChatStore } from "./chat.ts";
 import { createModelGateway } from "./model-gateway.ts";
+import { createModelRouting } from "./model-routing.ts";
 import { createStorageCipher, readSecretKey } from "./storage-crypto.ts";
 import { verifyEncryptedStorage } from "./storage-upgrade.ts";
 import { createVertexProvider } from "./vertex-provider.ts";
@@ -51,6 +52,8 @@ try {
   const pool = createPool(config);
   startupCleanup = () => pool.end();
   await verifyEncryptedStorage(pool, cipher);
+  if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='024-personal-model-settings'")).rowCount) throw new Error("model_settings_migration_required");
+  const modelRouting = createModelRouting(pool, cipher, aiConfig);
   // Additive rollout: older databases keep their existing stores until the new
   // migration has completed. Never make ordinary writes depend on missing tables.
   const onlineEnabled = (await pool.query<{ ready: boolean }>("SELECT EXISTS(SELECT 1 FROM app_migrations WHERE id='010-online-operations') AS ready")).rows[0].ready;
@@ -81,7 +84,7 @@ try {
   const photosEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='021-photo-attachments'")).rowCount);
   const photoFiles=photosEnabled?await createPhotoFiles(process.env.ATTACHMENTS_DIR??"",cipher):undefined;
   const photoStore=photoFiles?createPhotoStore(pool,cipher,photoFiles):undefined;
-  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true",growth,contact,summary) : undefined;
+  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true",growth,contact,summary,modelRouting) : undefined;
   const productAgentStore = productServices?.store, productAgent = productServices?.agent;
   const photos=photoStore&&productServices?{store:photoStore,agent:createPhotoAgent(photoStore,productServices.runtime)}:undefined;
   const inputsEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='022-shared-inputs'")).rowCount);
@@ -101,7 +104,8 @@ try {
     online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, contactServices,summaryEnabled,photoFiles,Boolean(inputs)) : undefined,
     tasks, chat, memory, productAgent, productAgentStore, growth, telegram, contact, summary, photos, inputs,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
-    modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider }),
+    modelRouting,
+    modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider, resolve: modelRouting.resolve }),
     checkDatabase: async () => { await pool.query("SELECT 1"); },
   });
   const server = createServer((request, response) => {

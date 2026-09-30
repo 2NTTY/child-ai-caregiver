@@ -111,3 +111,10 @@ Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定�
 2026-09-28 沿用候選 grammY 1.46.0，直接依賴固定；新增 @grammyjs/types 5.0.0，兩份 MIT 原文及 lockfile integrity 已保存。沿用既有 node:https、Zod、AES-GCM、S07 收據及 pg-boss，沒有另選 bot framework 或引入 auto-retry。
 
 主模型核對固定 client.ts 的一次 fetch／timeout／webhook reply 路徑及 Telegram 的 private chat、start payload、callback／update_id 契約。SDK 沒有家庭綁定、業務持久去重或 sendMessage 通用冪等 key，因此這些保留在產品服務。HTTP 回覆、Telegram API 接受與任務完成分開；403 不能一律當作封鎖。短實作參考見 [Skill](../.agents/skills/telegram-bot-api/SKILL.md)。文件相容、離線 scripted transport 及真 bot／DB 驗收分列，不將套件成功安裝寫成渠道通過。
+
+<a id="personal-model-key-reuse"></a>
+## S06-W05：沿用 SDK 的 key 接入
+
+2026-09-30 核對 `@google/genai 2.24.0` 已同時支援 Vertex／Developer API，沿用現有 ADK adapter、AES-GCM 及 PostgreSQL，無新增依賴。Developer API 用固定官方 baseUrl／v1beta／apiKey、關閉自動重試；不可沿用 Vertex 專用 autoTruncate 參數。query 限 2000 UTF-8 bytes，gemini-embedding-001 的 1024 維結果做 L2 normalization；metadata 缺失保持未知。
+
+官方依據：[key 與保密](https://ai.google.dev/gemini-api/docs/api-key)、[embedding](https://ai.google.dev/gemini-api/docs/embeddings)、[地區](https://ai.google.dev/gemini-api/docs/available-regions)、[Google key 類型](https://docs.cloud.google.com/docs/authentication/api-keys)、[Vertex key](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/start/api-keys)。文件／固定 SDK 原文已核對；真 Developer API metadata 於本機回覆地區不支援，不能把框架相容當真服務通過。依使用者確認，後續可用供應商接入另行處理，本包保留限制。

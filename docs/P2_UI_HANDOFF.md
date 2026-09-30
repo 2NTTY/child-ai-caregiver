@@ -134,3 +134,14 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 - 結果：pending／sending／accepted／rejected／unknown／stopped，以及每日已有普通提示而未另發的 coalesced；只顯示真實台帳。本人可確認收到，完成仍在任務入口；不展示模型內部推理。
 - 離線停用提交；unknown 保留原內容與 opId，先查收據和 GET，再由使用者明確重試。換帳號／孩子／Server、失去權限時清除資料及草稿。手動重新讀取最新狀態，不加客戶端背景排程。
 - 當前有最多 50 任務及最近 50 聯絡的顯示上限，不能假稱完整歷史。型別與掛載 review 已核對；真 API／渠道／瀏覽器未驗。沿用既有美術，不做 UI polish。
+
+<a id="personal-model-ui"></a>
+## UI-P2-18 本人模型 key 與可調上限（S06-W05 增補）
+
+入口：[ModelSettingsPanel](../src/client/ModelSettingsPanel.tsx)，props userId／online／apiBaseUrl，掛於正式 Web 登入帳號區；[API](API.md#personal-model-http)／[共用型別](../src/shared/model-settings.ts)。獨立前端後續接此 view model，毋須接觸或讀回密鑰。
+
+- 選平台／個人 key／停用，輸入或替換 key、明確費用／外送同意、背景 opt-in、二次確認刪除。
+- 可編輯個人每日總呼叫數、每次 Agent 生成呼叫數及查詢 embedding 數；顯示目前版本、全站個人安全上限、固定工具／逾時／輸出限額及 UTC 重置時間。
+- 分別呈現平台／私人用量、metadata 未知及供應商限制；key 保存不等於連線成功，metadata 可讀不等於生成／embedding 已驗。
+- 保存 unknown 不重播，清除密鑰輸入後重讀版本；身份／Server／離線切換清除輸入及舊請求，孩子切換不切換本人 key。
+- 本包先完成設定及本機接線；Google Developer API 地區限制導致真服務待驗。正式試用網站尚未部署此增補，Android 於 S04-W01 復用，不以共用 RN 元件當作真機已驗。

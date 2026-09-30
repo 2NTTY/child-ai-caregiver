@@ -1,7 +1,11 @@
 # STATUS
 
 ## 當前階段
-**P1 已完成；P2 的 20 個工作包實作及必要驗收已齊，階段結案隨 S17-W02 的 PR 合併生效。** S16 已隨 [PR #67](https://github.com/2NTTY/child-ai-caregiver/pull/67) 合併；S17 公開兩段 Agent 流程、真通知、明確完成及清理均通過。不啟動 P3；後續先接續獨立前端聊天的 Web 設計與正式整合。
+**P1 已完成；P2 的 20 個工作包已隨 PR #71／5098d64 結案。** S16 已隨 [PR #67](https://github.com/2NTTY/child-ai-caregiver/pull/67) 合併；S17 公開兩段 Agent 流程、真通知、明確完成及清理均通過。不啟動 P3；後續先接續獨立前端聊天的 Web 設計與正式整合。
+
+## 最近交付的增補
+
+S06-W05：本人 Gemini key 設定、加密保存、用量分流及 UI 可調每日／單次生成／query embedding 上限已接通。024 遷移、10 HTTP／31 store及必要 scripted Runner 驗收通過，原合成資料保留，新資料已清理；本次設定／本機接線交付隨 PR 合併生效。[證據](artifacts/verification/S06_W05_CHECKS.json)／[UI 功能清單](docs/P2_UI_HANDOFF.md#personal-model-ui)。Google Developer API 回覆地區不支援；依使用者確認，真生成／向量保留待驗，測試 key 已刪除。增補尚未部署至公開網站；不啟動 P3或取代前端聊天。
 
 ## 現況
 - **試用 URL：https://ex-machina.eu.org**。正式功能 Web／Server 執行 **`43ab10c`**，保留原帳號、資料卷及密鑰；新前端的隔離預覽尚未取代正式 App。

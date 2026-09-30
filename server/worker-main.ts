@@ -8,6 +8,7 @@ import { createStorageCipher, readSecretKey } from "./storage-crypto.ts";
 import { verifyEncryptedStorage } from "./storage-upgrade.ts";
 import { createWorkerQueue } from "./worker-queue.ts";
 import { readAiConfig } from "./ai-config.ts";
+import { createModelRouting } from "./model-routing.ts";
 import { createProductAgentServices } from "./product-agent-services.ts";
 import { createAgentBackground } from "./product-agent-background.ts";
 import { createTaskWorker } from "./task-worker.ts";
@@ -50,6 +51,7 @@ try {
   const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
   pool = createPool(readServerConfig(process.env));
   await verifyEncryptedStorage(pool, cipher);
+  if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='024-personal-model-settings'")).rowCount) throw new Error("model_settings_migration_required");
   const ready = (await pool.query("SELECT 1 FROM app_migrations WHERE id='014-knowledge-refresh'")).rowCount;
   if (!ready) throw new Error("worker_migration_required");
   queue = createWorkerQueue(pool, "worker");
@@ -59,7 +61,8 @@ try {
     const growth=(await pool.query("SELECT 1 FROM app_migrations WHERE id='017-growth-attention'")).rowCount ? createGrowthStore(pool,cipher) : undefined;
     const contact=(await pool.query("SELECT 1 FROM app_migrations WHERE id='019-proactive-contact'")).rowCount ? createContactStore(pool,cipher,{queue:contactQueue(queue.boss),pushKey:pushConfig?.publicKey??null,telegramBotId:telegramConfig?.botId??null}) : undefined;
     if(contact)contactConsumer=await startContactWorker(queue.boss,contact,{push:createWebPushGateway(pushConfig),telegram:createTelegramGateway(telegramConfig)},telegramAbort.signal);
-    const services = createProductAgentServices(pool, cipher, readAiConfig(process.env), undefined, process.env.AGENT_DIAGNOSTICS === "true",growth,contact);
+    const aiConfig = readAiConfig(process.env);
+    const services = createProductAgentServices(pool, cipher, aiConfig, undefined, process.env.AGENT_DIAGNOSTICS === "true",growth,contact,undefined,createModelRouting(pool,cipher,aiConfig));
     if(growth){growthWorker=createGrowthWorker(pool,queue.boss,growth,services.agent);await growthWorker.start();}
     agentBackground = createAgentBackground(pool, cipher, queue.boss, services.agent);
     await agentBackground.start();

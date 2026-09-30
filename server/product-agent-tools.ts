@@ -44,9 +44,10 @@ export function createProductAgentTools(options: {
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
   reviewedGrowthPresentation?: boolean;
 }) {
-  const { run, memory, tasks, store, authorize } = options, { scope, budget, runId } = run;
+  const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
+  const authorize = run.authorize ?? options.authorize;
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
-    budget, authorize });
+    budget, authorize, embeddings: run.embeddings });
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: AgentAnswer | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;

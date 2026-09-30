@@ -1347,3 +1347,19 @@
 - Explicit Completion / Cleanup：使用者另明確回覆「確認完成並清理本次驗收資料」。主模型已 review 的入口執行 14 次 HTTP，核對任務 v3 completed、無待催辦，撤銷 Telegram／Push Server 綁定，刪專用合成孩子及附屬資料，其他孩子保留；零模型／通知。未刪帳號或操作瀏覽器權限／provider 退訂；備份早於公開展示，不能聲稱涵蓋其後聊天。
 - Usage / Limits：S17 實際累計含首次失敗為 3 運行／12 生成／2 查詢 embedding／5 文件 embedding，Telegram 2 則（一般測試及照護各一）／Firefox Push 1 則。驗收帳號當日 14 attempts、115,559 input／998 output／51,289 cached tokens，8 attempts 用量未知；帳號聚合不當成生成專屬完整用量或帳單。已恢復每人 12／全站 20，API healthy／worker running，不清零用量；該帳號今日超過恢復後上限。主機停止仍為 2026-10-03 20:50:44 HKT。
 - Delivery / Limits：P2 20 包必要驗收齊備；沿用 C 主責、權重 3、C 60%／A 30%／B 10%，共用 AI 由 A 統籌，沒有代填 D 的獨立試玩。主模型完成關鍵實作／真服務／人工回覆 review，只補交付文件與 UI 功能／API 清單，結案隨本包 PR 合併生效；不再重跑模型、S16 或備份。12 項相關 Runner 通過，本機完整 Server typecheck 因既有缺失通知套件受阻，沒有當通過。Firefox 全套、各面板完整 E2E 及新前端整合未完成；不啟動 P3。[EV-S17-W02](artifacts/verification/S17_W02_CHECKS.json)／[實際回報](docs/P2_TRIAL.md)／[UI 交接](docs/P2_UI_HANDOFF.md)。
+
+
+<a id="log-20260930-023"></a>
+## LOG-20260930-023
+
+- Recorded At：2026-09-30 23:30 HKT；Work Date：2026-09-30。
+- Step / Package：S06-W05，P2 結案後的本人模型 key 增補；前置 S17-W02／PR #71／5098d64。
+- Goal / Actual Work：依使用者要求新增網站／軟件本人 key 入口；其後明確追加可調呼叫限制。共用 Gemini SDK／ADK／現有 cipher，完成帳號私有加密設定、版本 CAS、替換／停用／刪除、背景 opt-in、生成與 query embedding 同一 key／計數来源，以及 Runner 真正採用 UI 設定的每日／每次呼叫限額。平台配額、Prompt Pack、美術及其他前端成果保留。
+- AI Assistance / Responsibility：主模型親寫 PLAN／SPEC／架構／API／資料／ADR-015／交接，負責 routing／runtime、review及最後驗收；1 Luna 只定位、3 Sol 6.1 xhigh 分別做 storage、SDK adapter及功能 UI，原代理處理返修及一個最小 SQL 入口。C 主責、權重3、C60%／A25%／B15%，共用 AI 由 A 統籌操作，未宣稱組員親手編碼或獨立驗收。
+- Verification：storage 4、provider SDK 3、client 3及 Runner 2項必要檢查通過；Server／client typecheck 通過。首輪 Runner fixture 的 JSON quoting assertion及 TS literal型別／fixture缺欄問題修正後通過，沒有真模型失敗重試。整合 review 補齊 strict usage 欄位、POST 5xx unknown及帳號 header清理。
+- Local Acceptance：先對合成 PostgreSQL／兩張合成照片加密備份，再套用024；9組通常情景、10 HTTP／31 store通過，兩個新合成帳號、零孩子。九表原列摘要核對、版本／隔離、分開配額（驗證交易全部回滾）、worker opt-in／撤回、刪除／重連及零 online receipt通過；僅清理本次帳號，備份保留工程外，零模型／通知／雲端部署。
+- Real Service / Decision：按使用者要求在本人 GCP 建立只限 Gemini API的暫時key。兩次 metadata GET後確認所在地區不支援，零生成／embedding；沒有換代理繞過，也不把Vertex ADC成功當本項通過。使用者選擇先完成設定及本機接線，真服務保留待驗；暫時key及本機明文檔已刪除。此範圍調整見 ADR-015，完整自備key AC仍有真服務待驗部分。
+- Changes / Evidence：[EV-S06-W05](artifacts/verification/S06_W05_CHECKS.json)／[設定契約](docs/API.md#personal-model-http)／[UI-P2-18](docs/P2_UI_HANDOFF.md#personal-model-ui)。工作包按確認後的本機交付範圍完成，隨本包PR合併生效；不宣稱公開已部署、Android或完整瀏覽器E2E已驗。
+- Next Action：前端可按新增清單接設定面板；正式使用私人 Gemini key 前仍須處理供應商可用地區及真生成／向量驗收。
+
+- Recorded At 更正：本條實際寫入時間為 2026-09-30T23:31:23+08:00（檔案寫入時間）；上列 23:30 為錯置分鐘，不作實際完成時間證據。

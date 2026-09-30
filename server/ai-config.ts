@@ -5,6 +5,7 @@ export interface AiConfig {
   model: string;
   dailyUserAttempts: number;
   dailyGlobalAttempts: number;
+  personalDailyGlobalAttempts?: number;
   maxAttempts: number;
   timeoutMs: number;
   maxInputCharacters: number;
@@ -50,6 +51,7 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
     model: readIdentifier(env.GEMINI_MODEL, "GEMINI_MODEL", "gemini-3.1-flash-lite", /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/u, 128),
     dailyUserAttempts: readInteger(env.AI_DAILY_USER_ATTEMPTS, "AI_DAILY_USER_ATTEMPTS", 20, 1, 1000),
     dailyGlobalAttempts: readInteger(env.AI_DAILY_GLOBAL_ATTEMPTS, "AI_DAILY_GLOBAL_ATTEMPTS", 100, 1, 10000),
+    personalDailyGlobalAttempts: readInteger(env.AI_PERSONAL_DAILY_GLOBAL_ATTEMPTS, "AI_PERSONAL_DAILY_GLOBAL_ATTEMPTS", 1000, 1, 10000),
     maxAttempts: readInteger(env.AI_MAX_ATTEMPTS, "AI_MAX_ATTEMPTS", 2, 1, 2),
     timeoutMs: readInteger(env.AI_TIMEOUT_MS, "AI_TIMEOUT_MS", 30000, 1000, 60000),
     maxInputCharacters: readInteger(env.AI_MAX_INPUT_CHARACTERS, "AI_MAX_INPUT_CHARACTERS", 10000, 1, 20000),
