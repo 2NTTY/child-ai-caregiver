@@ -16,7 +16,8 @@
 | `/memory`：[memoryScreen](src/screens/memoryScreen.tsx)、[MemoryCards](src/components/memory/MemoryCards.tsx)、[memory-view-model](src/memory-view-model.ts) | 私人候選、確認家庭共享、來源版本／過期阻擋、更正／停用／刪除／歷史、話題暫緩／終態／明確重開、私人摘要覆蓋明細 | [MemoryPanel](../src/client/MemoryPanel.tsx)、[memory-api](../src/client/memory-api.ts)、[memory 型別](../src/shared/memory.ts) |
 | `/tasks`：[TasksView](src/components/tasks/TasksView.tsx)、[task-view-model](src/task-view-model.ts) | 建立共享事項、負責人／時間／時區、改期／轉派、完成／取消、needs_review 明確覆核、版本／歷史／分頁；worker 與提醒資格分開 | [TaskPanel](../src/client/TaskPanel.tsx)、[task-api](../src/client/task-api.ts)、[task 型別](../src/shared/tasks.ts)；對照 S13-W01／W04 |
 | `/settings`：[PreferencesPreview](src/components/PreferencesPreview.tsx) | 本人安靜時段、時區、預約例外及合成操作；帳戶／孩子／家庭／私隱分頁與引導重看入口 | family-api 的 getPreferences／savePreferences 及 family 型別；身份、渠道操作沿正式服務 |
-| `/chat`、`/login`、`/guide` | 對話版式／當頁未送出問題，登入／註冊本地格式檢查，引導條件及重看入口 | 已驗收 ChatPanel／Better Auth；Agent 引用和引導完成來源仍待接線，不把示例回答或「看過引導」當真結果 |
+| `/chat`：[AgentRunView](src/components/agent/AgentRunView.tsx)、[AgentInboxView](src/components/agent/AgentInboxView.tsx) | 對話版式／當頁問題；合成運行／完整候選／引用快照、明確共享、原決定查核、手動私人背景結果 | 原 ChatPanel／chat-controller／product-agent-api／AgentRunPanel／AgentInbox；詳見 [AGENT_HANDOFF](AGENT_HANDOFF.md)。不是通用 opId 流程，真聊天及 Agent 回覆仍待接線 |
+| `/login`、`/guide` | 登入／註冊本地格式檢查，引導條件及重看入口 | Better Auth；引導完成來源仍待接線，不把「看過引導」當真初始化完成 |
 
 桌面內容以 onLayout 的實際可用寬度重排；手機首頁在 Web 小於 650 px 或原生入口使用。390 px 快速記錄四格，較窄容器改兩列；孩子卡片可換行，不固定截圖尺寸。原生使用 SafeAreaProvider／useSafeAreaInsets、Expo Router JavaScript Tabs、Android window resize／tabBarHideOnKeyboard 及返回鍵關抽屜；沒有假系統狀態欄。手機 Web 截圖不是 Android 實機證據。
 
@@ -86,7 +87,7 @@ HomeChild.profileConfirmed／ageLabel／allergiesLabel 只投影同一 selectedC
 
 - 所有真 session／API／opId／跨畫面及跨成員同步、正式 UI 掛載，以及接線後針對新增介面的必要瀏覽器驗收。主線已經 `9f0febd` 合併既有正式 App 的 S16-W05 Chromium 情景；該證據可按未變部分復用，但沒有驗過本包隔離介面，不要求無理由重跑整套舊情景。
 - S13-W05／W06 的本人渠道已在 FE-W07 投影，待接正式 adapter；真通知中心／未讀及 W07 聯絡授權／fallback 台帳另核對所屬交付。active 分支落碼不等同已合併交付，不代改其程式碼。
-- 其後同步主線 `134962a`，上述 Agent／照片／分享、成長及摘要已出現合併的共享型別與 client API；前端下一包按來源原文逐項投影，仍未在本預覽實作，也未接真服務。P2 UI 清單部分總表文字尚待主聊天對齊，不能只憑一個「待接通」表格值忽略其後的具體接線段落；以已合併實際 API、根 STATUS／PLAN 及所屬必要驗收核對，不修改主聊天文件。
+- 其後同步主線 `90dacd4`，Agent／照片／分享、成長／摘要及主動聯絡已有已合併型別和 client API。FE-W09 已按原文投影 Agent；其餘領域待後續包，全部仍未接真服務。P2 UI 清單部分總表文字尚待主聊天對齊，不能只憑一個「待接通」表格值忽略其後的具體接線段落；以已合併實際 API、根 STATUS／PLAN 及所屬驗收核對，不修改主聊天文件。
 - 真通知中心、Web Push／Telegram／FCM 及未讀。鈴鐺只提示合成原操作，右欄勾選只是本地清單；/tasks 的合成流程另列，不能互相冒充。
 - 圖中的第三方／手機登入、忘記密碼、方案／儲存用量、帳戶匯出／刪除、疫苗百分比及知識首頁，不能憑圖片當已承諾 API。手機首頁暫用已有記憶／話題入口，沒有假醫療建議、附件或咪高峰操作。
 - 正式 P3 共用服務、APK／簽署、實機畫面／鍵盤／返回鍵／Safe Area／TalkBack／大字體、登入及相機／通知權限。Android JS bundle 不代表上述已驗收。

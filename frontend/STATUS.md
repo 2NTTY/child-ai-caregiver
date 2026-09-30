@@ -2,7 +2,7 @@
 
 更新：2026-09-30。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**FE-W06 配色位置、SVG 與共用控件已交付 commit `6c7216f`；FE-W07 本人渠道設定已交付 `1e1fb7b`（draft PR #65）；FE-W08 單一 Agent 入口已實作及通過必要輕量檢查，待視覺驗收。** 所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件；持續目標按已合併契約及使用者回饋接續。
+**FE-W06 配色位置、SVG 與共用控件已交付 `6c7216f`；FE-W07 本人渠道設定已交付 `1e1fb7b`（draft PR #65）；FE-W08 單一 Agent 入口已交付 `83106c0`（draft PR #68）；FE-W09 Agent 執行／候選／引用及私人結果已實作，必要合成檢查通過，待視覺及正式接線。** 所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件；持續目標按已合併契約及使用者回饋接續。
 
 | 工作包 | 現況 | 待接續 |
 |---|---|---|
@@ -13,7 +13,9 @@
 | FE-W06 共用設計修訂 | 沿原品牌 OKLCH 色階重新安排中性側欄／畫布、白色資料卡片與主操作；完整 MD3、統一 22 px Dialog／導航選單、SVG 圖標及孩子切換比例。固定輸出預覽通過 | 使用者比較顏色放置；完整可存取及實機仍待驗 |
 | FE-W07 渠道設定前端 | 基於已 review 的前端 `6c7216f`；核對主線 `34892c7` 已合併的 S13-W05／W06。新增 /settings 通知渠道、Web Push 權限／訂閱／撤銷／明確測試、Telegram 私人綁定／候選核對／撤銷／投遞與回覆分開；共用控件與合成原操作查核，四尺寸及建置通過 | 使用者視覺驗收；主聊天以本人身份接真 API／瀏覽器 adapter。沒有請求系統權限、Push 訂閱、bot 或真外發 |
 | FE-W08 Agent 入口 | 桌面側欄只保留下方主要入口，深綠／SVG／雙層文字及箭嘴；手機對話分頁保留。共用導航改用真 Expo Link，Enter、目前頁面及問題草稿保留通過 | 使用者比較；沒有改 Agent 行為或業務接口 |
-| 尚未投影的已合併畫面 | 主線 `134962a` 已有 Agent／引用、照片／分享、成長關注及到診摘要型別與 client API | 下一包先處理 Agent 對話投影；正式接線及真服務由主聊天統籌，未讀／完整聯絡台帳另核對 |
+| FE-W09 Agent 對話投影 | 基於 `83106c0`；核對主線 `90dacd4` 的 Agent API／Panel／Inbox。共用運行、完整候選、明確共享、原決定查核／重試、來源快照與手動私人結果已實作，四尺寸及建置通過 | [AGENT_HANDOFF](AGENT_HANDOFF.md)；composer 仍只預覽輸入，真聊天／回覆／引用／跨頁同步待主聊天沿原控制器接線 |
+| 最新手機比例意見 | 使用者要求重新整理大小與密度；已重看手機參考圖及 Android／Apple 官方佈局、觸控、字級資料 | 下一包 FE-W10 手機比例與密度，沿品牌／OKLCH及成熟共用元件；不可冒稱已獲視覺確認 |
+| 尚未投影的已合併畫面 | 主線 `90dacd4` 已有照片／分享、成長關注、到診摘要及主動聯絡型別與 client API | FE-W10 後逐項投影；真服務、正式整合、未讀及整包驗收由主聊天統籌 |
 
 ## 已驗證及限制
 
@@ -29,6 +31,6 @@
 
 ## 接續入口
 
-先讀本文件、[PLAN](PLAN.md) 及 [HANDOFF](HANDOFF.md)，fetch GitHub 並核對其他 active worktree 的 frontend 重疊。現場分支 `codex/fe-w08-agent-entry`，已 review 的前置 `1e1fb7b`（FE-W07 draft PR #65），主線已同步至 `134962a`；P2 隔離接續沒有豁免正式合併／驗收。B 負責前端交付，保留真實 Committer，不改全局認證或 Git 身份。
+先讀本文件、[PLAN](PLAN.md) 及 [HANDOFF](HANDOFF.md)，fetch GitHub 並核對其他 active worktree 的 frontend 重疊。現場分支 `codex/fe-w09-agent-conversation`，已 review 的前置 `83106c0`（FE-W08 draft PR #68），主線已同步至 `90dacd4`；P2 隔離接續沒有豁免正式合併／驗收。B 負責前端交付，保留真實 Committer，不改全局認證或 Git 身份。
 
 讓使用者比較最新 [桌面主頁及 Agent 入口](verification/fe-w08/home-1440.png)、[側欄](verification/fe-w08/sidebar-1440.png)、[手機完整排列](verification/fe-w06-design/home-390-full-layout.png) 和 [本人渠道設定](verification/fe-w07/channels-1440.png)。持續目標接續已交付契約或實際回饋，不預造未合併的聯絡協定。既有檢查不例行重跑；真接線、正式驗收及 P3 真機仍由主聊天統籌，不自行 merge。
