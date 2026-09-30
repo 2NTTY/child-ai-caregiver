@@ -234,7 +234,7 @@
     "No task selection, preauthorization, fallback or family payload is delivered by this package; these remain S13-W07.",
     "No extra full regression or full Server restart; existing worker recovery evidence reused."
   ],
-  "deliveryBase": "bade067",
+  "deliveryBase": "af4125f",
   "testedIntegrationCommit": "1896277180630ab51776a0a517979483ca8b59c8",
   "historicalSourceDeferral": {
     "workPackage": "S10-W02",
@@ -253,6 +253,7 @@
       "playwright": "Existing S16-W05 notices added to unified inventory; no new dependency."
     },
     "review": "Main reviewed merged worker startup/shutdown, queue registration, migration 014+015 and unchanged authorization/gateway paths.",
-    "documentRecovery": "Pre-push diff review found an over-broad conflict-marker regex removed PLAN/STATUS sections. Restored both from current master and reapplied only W05 entries; original WORKLOG prefix remains byte-identical."
+    "documentRecovery": "Pre-push diff review found an over-broad conflict-marker regex removed PLAN/STATUS sections. Restored both from current master and reapplied only W05 entries; original WORKLOG prefix remains byte-identical.",
+    "latestRules": "PR #57 merged before delivery; no rule configuration changes authored by this package."
   }
 }
