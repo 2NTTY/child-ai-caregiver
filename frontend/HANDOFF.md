@@ -48,7 +48,7 @@ typecheck、Web 25 路由／Android Hermes 31 資產 export、44 個共用外殼
 
 ### FE-W13 本人模型設定
 
-沿 `433d312` 及現有 draft PR #73，直接核對 GitHub `ce87370` 的 UI-P2-18／API／共用型別／正式 ModelSettingsPanel 和 transport，內容未變。新增 /settings「模型設定」及帳戶內入口：平台／個人／停用、秘密欄清理、費用與背景 opt-in、個人上限、平台及個人分開用量、metadata-only 查核及二次刪除。全部仍是無 Server／Google 呼叫的合成預覽，沒有保存真密鑰或建立新業務協定。
+沿 `433d312` 及現有 draft PR #73，源碼／驗證 `095f1356c1f1d1b9ad62ee1ad589b2d7e23582cb`；直接核對 GitHub `ce87370` 的 UI-P2-18／API／共用型別／正式 ModelSettingsPanel 和 transport，內容未變。新增 /settings「模型設定」及帳戶內入口：平台／個人／停用、秘密欄清理、費用與背景 opt-in、個人上限、平台及個人分開用量、metadata-only 查核及二次刪除。全部仍是無 Server／Google 呼叫的合成預覽，沒有保存真密鑰或建立新業務協定。
 
 typecheck、三項安全／command 輕量檢查、四尺寸／鍵盤／unknown 重讀版本／範圍清理及 390／320 放大文字、Web／Android export 通過，沿共用 Paper／RHF／Zod，沒有新依賴或色階。元件入口、直接 API 回調、無 opId／密鑰重播、已保存後用量讀取失敗、正式接線及真機限制見 [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md)／[證據](verification/fe-w13/build-checks.json)。使用者視覺及真 API 仍待驗收。
 

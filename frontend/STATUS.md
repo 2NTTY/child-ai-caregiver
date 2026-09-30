@@ -2,7 +2,7 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**FE-W06 已交付 `6c7216f`；FE-W07 本人渠道已交付 `1e1fb7b`（draft PR #65）；FE-W08 單一 Agent 入口已交付 `83106c0`（#68）；FE-W09 Agent 投影已交付 `0ff9533`（#69）；FE-W10 手機密度已交付 `596c657`（#70）；FE-W11 照片源碼／驗證已交付 `ddcf651`（[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)），必要合成檢查及 Web／Android export 通過。** 視覺、真 API 和原生實機仍待驗。所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件；持續目標按已合併契約及使用者回饋接續。
+**FE-W13 本人模型設定源碼／驗證已交付 `095f135`，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；其照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。** 必要合成檢查及 Web／Android export 通過，視覺、真 API 和原生實機仍待驗。較早前端包的交付在下表；所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件。持續目標接續分享、成長、摘要及主動聯絡。
 
 | 工作包 | 現況 | 待接續 |
 |---|---|---|
@@ -17,7 +17,7 @@
 | FE-W10 手機比例與密度 | 依最新意見及手機參考，復用 Paper 5.15.3 MD3：主標 22、區塊 16、正文 14–16、次層 12、SVG 20–24，主要控制觸控至少 48；孩子卡片 390／320 均 110 高，快捷格 88。40 個重排、手機關鍵互動／150% Web 文字及 Web／Android export 通過 | [MOBILE_DESIGN](MOBILE_DESIGN.md)；等待視覺比較與原生實機。色階／業務規則未改，正式接線仍由主聊天統籌 |
 | FE-W11 照片與記錄 | 原圖選擇／hash／預覽、私人保存、提取同意／候選、人工原文、明確家庭共享、原操作查核、版本／刪除／清理及範圍清除已實作；三項原文單元、44 個重排及照片／手機互動通過 | [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)；真附件／模型／原生選圖 adapter 及使用者視覺待接線／驗收 |
 | FE-W12 手機背景及外殼層次 | 源碼／驗證已交付 `62b07fd`。海旁家庭插畫鋪滿問候背景，左側及底部漸淡；頂部／孩子摘要列與側欄同色，現有 OKLCH 色階未改。44 個外殼重排、最終 390／320／150% Web 文字、typecheck 及 Web／Android export 通過，沿用 draft PR #73 | [MOBILE_DESIGN](MOBILE_DESIGN.md)／[COLOR_STRATEGY](COLOR_STRATEGY.md)；背景及表面規則已補既有 Skill，待使用者視覺及真機驗收 |
-| FE-W13 本人模型設定 | 沿 `433d312`／draft PR #73，核對 GitHub `ce87370` 的 UI-P2-18、API／型別／Panel／封裝。模型模式、密鑰及費用／背景同意、上限、分開用量、metadata-only 查核、刪除／unknown 重讀及範圍清理已實作；三項單元、四尺寸及放大文字、typecheck、Web／Android export 通過 | [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md)；合成資料與無密鑰 metadata，真 API、Google／帳單、使用者視覺及原生真機待接線／驗收 |
+| FE-W13 本人模型設定 | 源碼／驗證 `095f135`，沿 `433d312`／draft PR #73，核對 GitHub `ce87370` 的 UI-P2-18、API／型別／Panel／封裝。模型模式、密鑰及費用／背景同意、上限、分開用量、metadata-only 查核、刪除／unknown 重讀及範圍清理已實作；三項單元、四尺寸及放大文字、typecheck、Web／Android export 通過 | [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md)；合成資料與無密鑰 metadata，真 API、Google／帳單、使用者視覺及原生真機待接線／驗收 |
 | 尚未投影的已合併畫面 | GitHub master `ce87370` 已有分享、成長關注、到診摘要及主動聯絡；正式 P2 結案已合併 | 逐項投影；正式整合、未讀及產品整包狀態由主聊天統籌 |
 
 ## 已驗證及限制

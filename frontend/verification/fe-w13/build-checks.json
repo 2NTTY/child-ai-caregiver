@@ -2,6 +2,7 @@
   "scope": "Personal model settings frontend projection on existing draft PR #73; synthetic only, no Server/provider/device acceptance",
   "verifiedAt": "2026-09-30T19:22:15.075Z",
   "baselineCommit": "433d31202b6e56e97f742e626e37bed3ade451dd",
+  "sourceCommit": "095f1356c1f1d1b9ad62ee1ad589b2d7e23582cb",
   "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
   "authoritySources": [
     {
