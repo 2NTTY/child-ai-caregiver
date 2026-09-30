@@ -6,8 +6,9 @@ import { verifyProfile, verifyFamily } from "./flows/profile-family.mjs";
 import { verifyTasks, verifyMemory } from "./flows/tasks-memory.mjs";
 import { verifyShell, verifySettings, verifyDatesAndIsolation, verifyLogin } from "./flows/shell-settings.mjs";
 import { verifyDeletion } from "./flows/deletion.mjs";
+import { verifyDesign } from "./flows/design.mjs";
 
-const directory = resolve("verification/fe-w06");
+const directory = resolve(process.env.FRONTEND_VERIFICATION_DIR ?? "verification/fe-w06");
 await mkdir(directory, { recursive: true });
 const browser = await launchPreviewBrowser();
 const failures = [];
@@ -96,9 +97,9 @@ try {
     await narrow.screenshot({ path: resolve(directory, "care-320-confirmation.png") });
     passed.push("care: 320 form validation and keyboard confirmation"); console.log(passed.at(-1)); await narrow.close();
   }
-  for (const [name, verify] of [["profile", verifyProfile], ["family", verifyFamily], ["tasks", verifyTasks], ["memory", verifyMemory], ["shell", verifyShell], ["settings", verifySettings], ["shared", verifyDatesAndIsolation], ["login", verifyLogin], ["deletion", verifyDeletion]]) {
+  for (const [name, verify] of [["profile", verifyProfile], ["family", verifyFamily], ["tasks", verifyTasks], ["memory", verifyMemory], ["shell", verifyShell], ["settings", verifySettings], ["shared", verifyDatesAndIsolation], ["login", verifyLogin], ["deletion", verifyDeletion], ["design", verifyDesign]]) {
     if (run(name)) { passed.push(await verify(browser, failures, directory)); console.log(passed.at(-1)); }
   }
   assert.deepEqual(failures, []);
-  await writeFile(resolve(directory, `checks-${requested.size ? [...requested].join("-") : "all"}.json`), JSON.stringify({ scope: "Synthetic frontend only; no Server or device acceptance", at: new Date().toISOString(), passed, failures }, null, 2) + "\n");
+  await writeFile(resolve(directory, `checks-${requested.size ? [...requested].join("-") : "all"}.json`), JSON.stringify({ scope: "Synthetic frontend only; no Server or device acceptance", previewUrl: process.env.FRONTEND_PREVIEW_URL ?? "http://localhost:8082", at: new Date().toISOString(), passed, failures }, null, 2) + "\n");
 } finally { await browser.close(); }

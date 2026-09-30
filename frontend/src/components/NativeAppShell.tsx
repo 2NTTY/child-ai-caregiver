@@ -3,7 +3,8 @@ import { usePathname, useRouter } from "expo-router";
 import { BackHandler, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { Button, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AppIcon } from "./AppIcon";
+import { AppMenuList } from "./AppMenuList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePreview } from "../preview/PreviewContext";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
@@ -30,7 +31,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
       <View style={styles.header}><Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" onPress={() => router.push("/")} style={styles.brand}><Image source={require("../../assets/brand/logo-horizontal.png")} resizeMode="contain" style={styles.logo} /></Pressable>
         <View style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <Pressable accessibilityRole="button" accessibilityLabel="用戶與更多頁面" onPress={() => setMenuOpen(true)} style={styles.avatar}><Text style={styles.initial}>{model.caregiverName.slice(0, 1)}</Text></Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel={railOpen ? "收起資訊側欄" : "開啟資訊側欄"} accessibilityState={{ expanded: railOpen }} onPress={() => setRailOpen(value => !value)} style={styles.railButton}><MaterialCommunityIcons name="page-layout-sidebar-right" color={colors.deepTeal} size={23} /></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={railOpen ? "收起資訊側欄" : "開啟資訊側欄"} accessibilityState={{ expanded: railOpen }} onPress={() => setRailOpen(value => !value)} style={styles.railButton}><AppIcon name="page-layout-sidebar-right" color={colors.deepTeal} size={23} /></Pressable>
         </View>
       </View>
       {pathname !== "/" ? <View style={styles.childStrip}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /><ChildKeyFacts child={model.children.find(item => item.id === model.selectedChildId)} load={model.profileLoad} /></View> : null}
@@ -41,8 +42,10 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
     {railOpen ? <View style={[styles.overlay, { top: insets.top + headerHeight, bottom: insets.bottom }]}><Pressable accessibilityRole="button" accessibilityLabel="關閉資訊側欄背景" onPress={() => setRailOpen(false)} style={styles.scrim} /><View style={styles.drawer}><RightRail model={model} actions={actions} checkedPreviewItems={checkedPreviewItems} togglePreviewItem={togglePreviewItem} overlay /></View></View> : null}
     <Portal><Dialog visible={menuOpen} onDismiss={() => setMenuOpen(false)}><Dialog.Title>你的照顧空間</Dialog.Title><Dialog.Content>
       <Text style={styles.meta}>{model.caregiverName} · 合成預覽帳戶</Text>
-      {([{ key: "profile", label: "子女檔案" }, { key: "care", label: "照顧記錄" }, { key: "family", label: "家庭協調" }, { key: "settings", label: "設定" }, { key: "guide", label: "使用引導" }] as const).map(item => <Button key={item.key} onPress={() => { setMenuOpen(false); actions.open(item.key); }}>{item.label}</Button>)}
-      <Button onPress={() => { setMenuOpen(false); router.push("/login"); }}>登入畫面</Button>
+      <AppMenuList items={[
+        ...([{ key: "profile", label: "子女檔案", icon: "account-child-outline" }, { key: "care", label: "照顧記錄", icon: "notebook-outline" }, { key: "family", label: "家庭協調", icon: "account-group-outline" }, { key: "settings", label: "設定", icon: "cog-outline" }, { key: "guide", label: "使用引導", icon: "compass-outline" }] as const).map(item => ({ ...item, onPress: () => { setMenuOpen(false); actions.open(item.key); } })),
+        { key: "login", label: "登入畫面", icon: "account-outline", onPress: () => { setMenuOpen(false); router.push("/login"); } },
+      ]} />
     </Dialog.Content><Dialog.Actions><Button onPress={() => setMenuOpen(false)}>關閉</Button></Dialog.Actions></Dialog></Portal>
   </View>;
 }

@@ -1,6 +1,6 @@
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AppIcon } from "./AppIcon";
 import { chineseFont, colors, spacing, typeScale } from "../theme";
 
 export function AppCheckbox({ label, accessibilityLabel = label, description, checked, disabled = false, onChange, strikeThrough = false }: {
@@ -12,7 +12,7 @@ export function AppCheckbox({ label, accessibilityLabel = label, description, ch
     {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => {
       if ((event.nativeEvent?.key ?? event.key) === " ") { event.preventDefault(); toggle(); }
     } } : {})}>
-    <View aria-hidden importantForAccessibility="no-hide-descendants"><MaterialCommunityIcons name={checked ? "checkbox-marked" : "checkbox-blank-outline"} size={24} color={disabled ? colors.muted : colors.teal} /></View>
+    <View aria-hidden importantForAccessibility="no-hide-descendants"><AppIcon name={checked ? "checkbox-marked" : "checkbox-blank-outline"} size={24} color={disabled ? colors.muted : colors.teal} /></View>
     <View style={styles.copy}><Text style={[styles.label, checked && strikeThrough && styles.completed]}>{label}</Text>{description ? <Text style={styles.description}>{description}</Text> : null}</View>
   </Pressable>;
 }

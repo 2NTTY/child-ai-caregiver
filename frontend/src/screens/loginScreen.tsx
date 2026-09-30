@@ -4,6 +4,7 @@ import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "react-native-paper";
 import { AppButton, AppTextField } from "../components/ui";
+import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
 const logo = require("../../assets/brand/logo-horizontal.png");
@@ -39,10 +40,10 @@ export default function LoginPage() {
         <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>用 AI，{narrow ? "" : "\n"}更輕鬆做好育兒大小事。</Text>
         <Text style={styles.storyLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
         {!narrow ? <View style={styles.features}>
-          <Text style={styles.feature}>✦　隨時整理照顧問題與記錄</Text>
-          <Text style={styles.feature}>▤　清楚區分候選與已確認資料</Text>
-          <Text style={styles.feature}>◇　按權限與家人協調</Text>
-          <Text style={styles.feature}>◉　保留原文、時間及資料來源</Text>
+          <View style={styles.featureRow}><AppIcon name="message-text-outline" /><Text style={styles.feature}>隨時整理照顧問題與記錄</Text></View>
+          <View style={styles.featureRow}><AppIcon name="file-document-outline" /><Text style={styles.feature}>清楚區分候選與已確認資料</Text></View>
+          <View style={styles.featureRow}><AppIcon name="account-group-outline" /><Text style={styles.feature}>按權限與家人協調</Text></View>
+          <View style={styles.featureRow}><AppIcon name="shield-check-outline" /><Text style={styles.feature}>保留原文、時間及資料來源</Text></View>
         </View> : null}
       </View>
     </View>
@@ -63,7 +64,7 @@ export default function LoginPage() {
         <Text style={styles.formNote}>本頁只檢查輸入及展示介面；不會傳送密碼，也不會建立登入狀態。</Text>
         <View style={styles.divider} />
         <Text style={styles.unavailable}>參考圖中的手機、Google／Apple 登入和忘記密碼尚未有本項目可用的正式接線，因此不提供假按鈕。</Text>
-        <Pressable accessibilityRole="link" accessibilityLabel="返回主頁合成預覽" onPress={() => router.replace("/")} style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}><Text style={styles.backLinkText}>返回 Web 主頁預覽 →</Text></Pressable>
+        <Pressable accessibilityRole="link" accessibilityLabel="返回主頁合成預覽" onPress={() => router.replace("/")} style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}><Text style={styles.backLinkText}>返回 Web 主頁預覽</Text><AppIcon name="arrow-right" size={18} /></Pressable>
       </View>
       <Text style={styles.footer}>育伴港 · 用資料陪伴成長</Text>
     </View>
@@ -71,8 +72,9 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
+  featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { opacity: 0.65 },
   story: { width: "52%", minHeight: 760, backgroundColor: colors.paper, overflow: "hidden" }, storyCompact: { width: "100%", minHeight: 310 }, storyImage: { position: "absolute", width: "100%", height: "100%", opacity: 0.55 }, storyContent: { flex: 1, paddingHorizontal: spacing.hero, paddingVertical: spacing.xxl, justifyContent: "center", gap: spacing.md }, storyLogo: { width: 190, height: 60, alignSelf: "flex-start" }, storyEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.small, fontWeight: "800" }, storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.hero, lineHeight: 48, fontWeight: "800", maxWidth: 600 }, storyTitleCompact: { fontSize: typeScale.heading, lineHeight: 38 }, storyLead: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 26, maxWidth: 570 }, features: { marginTop: spacing.lg, gap: spacing.lg }, feature: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },
   formSide: { flex: 1, minWidth: 0, minHeight: 760, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { alignItems: "center", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 500, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.large, backgroundColor: colors.white, padding: spacing.xl, gap: spacing.md }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
-  modeTabs: { flexDirection: "row", borderRadius: radius.small, backgroundColor: colors.neutralSurface, padding: spacing.xs, gap: spacing.xs }, modeTab: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.small }, modeActive: { backgroundColor: colors.white, borderBottomWidth: 2, borderBottomColor: colors.teal }, modeText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" }, modeTextActive: { color: colors.deepTeal }, passwordBlock: { gap: spacing.xs }, passwordToggle: { alignSelf: "flex-end", minHeight: 44, paddingHorizontal: spacing.sm, justifyContent: "center" }, passwordToggleText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "700" }, result: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.paleTeal, borderRadius: radius.small, padding: spacing.md, fontSize: typeScale.small, lineHeight: 22 }, formNote: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 }, divider: { height: 1, backgroundColor: colors.line }, unavailable: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 }, backLink: { minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }, backLinkText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" }, footer: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
+  modeTabs: { flexDirection: "row", borderRadius: radius.small, backgroundColor: colors.neutralSurface, padding: spacing.xs, gap: spacing.xs }, modeTab: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.small }, modeActive: { backgroundColor: colors.white, borderBottomWidth: 2, borderBottomColor: colors.teal }, modeText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" }, modeTextActive: { color: colors.deepTeal }, passwordBlock: { gap: spacing.xs }, passwordToggle: { alignSelf: "flex-end", minHeight: 44, paddingHorizontal: spacing.sm, justifyContent: "center" }, passwordToggleText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "700" }, result: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.paleTeal, borderRadius: radius.small, padding: spacing.md, fontSize: typeScale.small, lineHeight: 22 }, formNote: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 }, divider: { height: 1, backgroundColor: colors.line }, unavailable: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 }, backLink: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.sm, alignSelf: "flex-start" }, backLinkText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" }, footer: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
 });

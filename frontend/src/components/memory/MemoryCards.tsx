@@ -91,7 +91,7 @@ export function MemoryHistoryCard({ preview }: { preview: MemoryPreviewControlle
 }
 
 const styles = StyleSheet.create({
-  entry: { backgroundColor: colors.quietSurface, padding: spacing.md, borderRadius: radius.small, gap: spacing.sm, minWidth: 0 },
+  entry: { backgroundColor: colors.neutralSurface, padding: spacing.md, borderRadius: radius.small, gap: spacing.sm, minWidth: 0 },
   top: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 22, fontWeight: "800", flexShrink: 1 },
   body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, flexShrink: 1 },

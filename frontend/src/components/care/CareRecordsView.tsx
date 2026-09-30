@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AppIcon } from "../AppIcon";
 import { careKindOptions, type CareFilter, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
 import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
 import { PageFrame } from "../PageFrame";
@@ -43,8 +43,8 @@ export function CareRecordsView({ model, actions, previewControls }: { model: Ca
           {model.list.records.length === 0 ? <Text style={styles.body}>{model.list.hasMore ? "這一頁未找到符合內容，但仍有未掃描的記錄；請載入下一頁。" : "已載入範圍沒有符合條件的已確認記錄。"}</Text> : model.list.records.map(record => {
             const option = careKindOptions.find(item => item.value === record.current.values.kind)!;
             return <Pressable key={record.id} accessibilityRole="button" accessibilityLabel={`查看${record.title}`} disabled={occupied} onPress={() => actions.openRecord(record.id)} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-              <View style={styles.icon}><MaterialCommunityIcons name={option.icon} size={23} color={colors.teal} /></View><View style={styles.rowCopy}><Text style={styles.rowTitle}>{record.title}</Text><Text numberOfLines={2} style={styles.body}>{record.current.values.text}</Text>
-                <Text style={styles.meta}>事件：{record.current.values.eventTimeRaw || "未知"}</Text><Text style={styles.meta}>加入：{record.createdAtLabel}</Text><Text style={styles.version}>已確認 · 版本 {record.current.version}</Text></View><Text style={styles.arrow}>›</Text>
+              <View style={styles.icon}><AppIcon name={option.icon} size={23} color={colors.teal} /></View><View style={styles.rowCopy}><Text style={styles.rowTitle}>{record.title}</Text><Text numberOfLines={2} style={styles.body}>{record.current.values.text}</Text>
+                <Text style={styles.meta}>事件：{record.current.values.eventTimeRaw || "未知"}</Text><Text style={styles.meta}>加入：{record.createdAtLabel}</Text><Text style={styles.version}>已確認 · 版本 {record.current.version}</Text></View><AppIcon name="chevron-right" size={18} />
             </Pressable>;
           })}
         </>}

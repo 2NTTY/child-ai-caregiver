@@ -32,6 +32,12 @@
 
 重複使用的方法與官方來源在 [前端 Skill](.agents/skills/web-screen-delivery/SKILL.md) 及其原生／表單參考；不重選框架，不把 Skill 變成第二份需求或協定。
 
+2026-09-30 的樣式修訂沿 [COLOR_STRATEGY](COLOR_STRATEGY.md)：原品牌種子、OKLCH 明暗派生與已核對 HEX 集中 theme.ts；完整 MD3 角色及 elevation 防止預設紫色漏入。Paper roundness 是倍率基數 4，Dialog 的實際圓角由 AppDialog 統一為 22 px。AppMenuList 統一導覽列；ChildPicker 的文字層次、方形頭像及 44／52 px 高度集中一處。
+
+使用者認為色階改善後，本次按 Material／Carbon／Atlassian 官方的角色分工重新安排位置：常駐側欄／畫布用 paper 派生中性色，資料卡片／彈窗用白色；次要操作／孩子摘要用 ink，普通圖標用 muted，teal 集中於主要操作、選中及手機重點。既有色階與業務回調保留，狀態不互換；成熟方案與理由見 COLOR_STRATEGY。
+
+[AppIcon](src/components/AppIcon.tsx) 使用 Lucide 1.49.0 公開單圖標入口及 react-native-svg 15.15.4；根 PaperProvider 的 settings.icon 接 PaperSvgIcon，日期、單選及其他內建圖標也沿映射。線寬／尺寸改 iconTokens；新增名稱補此映射。SVG 的 Web 屬性與原生 accessibility 分開，沒有改業務回調。套件仍可能攜帶內建 fallback 字體資產；本包沒有 fork vendor 或以資產存在推斷畫面用了字體圖標。Culori 4.0.2 僅供開發時檢查，不進 runtime。
+
 ## 接線及狀態邊界
 
 *-view-model.ts 是顯示模型和回調，不是 wire contract。[preview](src/preview) 的 fixture／use*Preview、[usePreviewOperation](src/preview/usePreviewOperation.ts) 只供展示，不得充當正式 transport。正式版由既有 API／控制器投影畫面，回調交給原 online transport；root shared 型別、Server 授權、收據及版本規則不改。
@@ -63,6 +69,8 @@
 
 2026-09-30 同步核對主線 `fe7ac9e`：上述 client API／型別沒有變動；S10-W02 已補知識證據的 lastSuccessfulCheckAt／usageScope，仍沒有獨立知識 Web 路由。後續引用畫面須保留公開／組內用途限制，不能把 CHP／RTHK 組內來源當成公開知識卡片。主線的模型規則更新由主聊天管理，本包沒有回寫。
 
+其後同步主線 `34892c7`，PR #58／#59 已合併 Web Push／Telegram：已核對 src/shared/web-push.ts／telegram.ts 和 src/client/web-push-api.ts／telegram-api.ts。FE-W07 可沿本人渠道 API 的 status、register／begin、confirm、revoke、test、reconcilePending 建顯示模型；不呼叫實際服務、不複製成另一套 wire contract。切孩子不重綁本人渠道，切帳號／Server 清理舊狀態；accepted 不是已讀，acknowledgedAt 不是照護完成。投遞及主動聯絡完整台帳仍沿 W07，不自行新增未讀協定。
+
 | 領域 | 主聊天應復用 |
 |---|---|
 | 孩子／身份／私人聊天 | records-api／records-controller 的 session、children、createChild、deleteChild、原 ChatPanel；保留身份及刪除 gate |
@@ -93,10 +101,14 @@ $env:EXPO_NO_TELEMETRY = '1'
 npm run web -- --port 8082
 ```
 
-瀏覽 http://localhost:8082。另外執行 npm run typecheck、npm run test:forms、npm run build:web、npm run build:android-ui。npm run verify:web 只验本機合成畫面；可用 node scripts/verify-ui.mjs care，或 profile／family／tasks／memory／shell／settings／shared／login／deletion 選群組。預設 Edge；其他 Chromium 設 BROWSER_EXECUTABLE，其他埠設 FRONTEND_PREVIEW_URL。
+瀏覽 http://localhost:8082。另外按變更執行 npm run typecheck、npm run test:forms、npm run verify:colors、npm run build:web、npm run build:android-ui。npm run verify:web 只驗本機合成畫面；可用 node scripts/verify-ui.mjs care，或 profile／family／tasks／memory／shell／settings／shared／login／deletion／design 選群組。新證據可設定 FRONTEND_VERIFICATION_DIR，避免覆寫舊版本。預設 Edge；其他 Chromium 設 BROWSER_EXECUTABLE，其他埠設 FRONTEND_PREVIEW_URL。
 
-共用控件／外殼變更已檢查 **10 個靜態路由 × 1440／1024／390／320 CSS px**，另查表單／歷史／搜尋、確認／失敗／unknown／409、角色／撤權、孩子切換、邀請及終態。腳本監察 pageerror 和 /api/ 請求，沒有呼叫 Server。19 項單元檢查涵蓋日期／時區／DST、檔案原文／未知、家庭角色／邀請、記憶及任務終態；不是正式服務測試。
+本次固定輸出以 `node node_modules/expo/bin/cli serve --port 8083` 預覽；先執行 build:web，再設 FRONTEND_PREVIEW_URL=http://localhost:8083 檢查。修復 export 的 desktop hydration 418：root 在 Web SSR／首次 client render 顯示同一品牌啟動畫面，effect 後才掛載依 viewport 重排的路由；原生入口不延遲。這是私人隔離預覽的 client UI，需 JavaScript；不是公開內容頁完整 SSR／SEO 方案，也沒有忽略錯誤。app.json 的 favicon 指向 frontend 內原有品牌副本。
+
+共用控件／外殼變更已檢查 **10 個靜態路由 × 1440／1024／390／320 CSS px**，另查表單／歷史／搜尋、確認／失敗／unknown／409、角色／撤權、孩子切換、邀請及終態。腳本監察 pageerror、console.error 和 /api/ 請求，沒有呼叫 Server。19 項單元檢查涵蓋日期／時區／DST、檔案原文／未知、家庭角色／邀請、記憶及任務終態；不是正式服務測試。
 
 證據及截圖在 [verification/fe-w06](verification/fe-w06)，實際結果以 JSON 及 [STATUS](STATUS.md) 為準。手機截圖是共享 React Native 畫面的 Web 執行結果；Android 另有資產／Hermes bundle 建置證據，未跑 emulator／實機。視覺仍待使用者比較，P2／P3 未因前端交付完成。
 
 2026-09-30 已接續上次未完成的收尾，對源碼 checkpoint `4739b9e` 補跑最後版本的 Web／Android export，兩者 exit 0；產物版本見 [build-checks](verification/fe-w06/build-checks.json)。40 個版面／11 組流程及其後手機首頁針對性檢查、typecheck、19 項單元結果沿用，沒有因恢復聊天重跑整套檢查。全部真 API、視覺確認及 Android 實機仍待驗收；交付及文件補完 commit 以本分支 Git 記錄為準。
+
+共用設計修訂另見 [verification/fe-w06-design](verification/fe-w06-design)：typecheck、16 個 token 對比、Web 23 個路由輸出及 Android Hermes／31 項資產 export 通過；固定輸出在 40 個版面及 shell／shared／design 檢查通過（包含 840／744／390／320 的更多選單），沒有 pageerror、console.error 或 /api/ 請求。實際源碼及產物 hash 在該目錄 build-checks.json；19 項未變表單規則沿原證據。曾發現的 SVG accessible DOM、SSR 首次渲染及 favicon 問題已修復並針對性驗證，不以建置成功取代執行畫面。

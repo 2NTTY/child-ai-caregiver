@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode, type Ref } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AppIcon } from "./AppIcon";
 import { Button, Portal, RadioButton, Text, TextInput } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
@@ -20,7 +20,7 @@ export function AppButton({ label, onPress, variant = "primary", disabled = fals
       ref={ref}
       mode={variant === "primary" || variant === "accent" ? "contained" : variant === "secondary" ? "outlined" : "text"}
       buttonColor={variant === "accent" ? colors.deepTeal : undefined}
-      textColor={variant === "accent" ? colors.white : undefined}
+      textColor={variant === "accent" ? colors.white : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
       onPress={onPress}
       disabled={disabled || loading}
       loading={loading}
@@ -46,7 +46,7 @@ export function AppSelectionTrigger({ label, onPress, disabled = false, expanded
   // Paper 5.15 Button replaces expanded state on its inner control; expose it on the selection trigger itself.
   return <Pressable ref={ref} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ expanded, disabled }} aria-expanded={expanded} aria-disabled={disabled} disabled={disabled}
     onPress={onPress} style={({ pressed }) => [styles.selectionTrigger, disabled && styles.selectionDisabled, pressed && styles.linkPressed]}>
-    <Text style={styles.selectionLabel}>{label}</Text><MaterialCommunityIcons name={calendar ? "calendar-clock-outline" : "chevron-down"} size={20} color={colors.deepTeal} />
+    <Text style={styles.selectionLabel}>{label}</Text><AppIcon name={calendar ? "calendar-clock-outline" : "chevron-down"} size={20} color={colors.deepTeal} />
   </Pressable>;
 }
 
@@ -76,11 +76,11 @@ export function SectionCard({ children, style }: { children: ReactNode; style?: 
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-export function SectionHeader({ title, subtitle, action, icon }: { title: string; subtitle?: string; action?: ReactNode; icon?: React.ComponentProps<typeof MaterialCommunityIcons>["name"] }) {
+export function SectionHeader({ title, subtitle, action, icon }: { title: string; subtitle?: string; action?: ReactNode; icon?: React.ComponentProps<typeof AppIcon>["name"] }) {
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.headerText}>
-        <View style={styles.sectionTitleRow}>{icon ? <MaterialCommunityIcons name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text></View>
+        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text></View>
         {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
       </View>
       {action}
@@ -121,7 +121,7 @@ export function ConnectionPill({ state }: { state: ConnectionState }) {
 export function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.link, pressed && styles.linkPressed]}>
-      <Text style={styles.linkText}>{label}  →</Text>
+      <Text style={styles.linkText}>{label}</Text><AppIcon name="arrow-right" size={17} color={colors.ink} />
     </Pressable>
   );
 }
@@ -162,9 +162,9 @@ const styles = StyleSheet.create({
   tealDot: { backgroundColor: colors.teal },
   amberDot: { backgroundColor: colors.amber },
   neutralDot: { backgroundColor: colors.muted },
-  link: { minHeight: 44, justifyContent: "center" },
+  link: { minHeight: 44, flexDirection: "row", gap: spacing.sm, alignItems: "center", justifyContent: "center" },
   linkPressed: { opacity: 0.6 },
-  linkText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, lineHeight: 21, fontWeight: "700" },
+  linkText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 21, fontWeight: "700" },
   tabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.line },
   tabs: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   tab: { minHeight: 46, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
@@ -172,10 +172,10 @@ const styles = StyleSheet.create({
   tabText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },
   tabTextActive: { color: colors.deepTeal, fontWeight: "800" },
   input: { backgroundColor: colors.white, fontFamily: chineseFont },
-  inputOutline: { borderColor: colors.line, borderRadius: radius.small },
+  inputOutline: { borderColor: colors.controlOutline, borderRadius: radius.small },
   selectDialog: { maxWidth: 440, width: "90%", alignSelf: "center", marginHorizontal: 0 },
   selectList: { maxHeight: 360 },
-  selectionTrigger: { minHeight: 44, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small, backgroundColor: colors.white },
-  selectionLabel: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "600", lineHeight: 22 },
+  selectionTrigger: { minHeight: 44, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small, backgroundColor: colors.white },
+  selectionLabel: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "600", lineHeight: 22 },
   selectionDisabled: { opacity: 0.5 },
 });

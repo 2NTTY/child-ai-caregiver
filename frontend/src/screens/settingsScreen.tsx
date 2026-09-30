@@ -6,6 +6,7 @@ import { PreferencesPreview } from "../components/PreferencesPreview";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTextField, SectionCard, SectionHeader, TextLink, UnderlineTabs } from "../components/ui";
 import { usePreview } from "../preview/PreviewContext";
+import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
 type SettingsTab = "account" | "children" | "family" | "preferences" | "privacy";
@@ -60,7 +61,7 @@ export default function SettingsPage() {
       </View>
     </View> : null}
     {tab === "children" ? <SectionCard><SectionHeader title="孩子設定" subtitle="切換孩子時必須隔離另一位孩子的資料與草稿。" />
-      {model.children.length === 0 ? <Text style={styles.body}>目前沒有孩子檔案。</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => { actions.selectChild(child.id); actions.open("profile"); }} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><Text style={styles.chevron}>→</Text></Pressable>)}
+      {model.children.length === 0 ? <Text style={styles.body}>目前沒有孩子檔案。</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => { actions.selectChild(child.id); actions.open("profile"); }} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
       <Text style={styles.draftNote}>新增、刪除及共享孩子資料屬正式 API 與權限控制；此預覽不執行。</Text>
     </SectionCard> : null}
     {tab === "family" ? <SectionCard><SectionHeader title="家庭成員" subtitle="共享記錄與私人聊天的權限分開處理。" />

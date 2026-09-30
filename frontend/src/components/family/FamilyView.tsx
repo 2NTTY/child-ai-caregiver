@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
   warning: { padding: spacing.md, backgroundColor: colors.paleAmber, borderRadius: radius.small },
   warningText: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, lineHeight: 22 },
-  error: { fontFamily: chineseFont, color: colors.coral, fontSize: typeScale.small, lineHeight: 21 },
+  error: { fontFamily: chineseFont, color: colors.errorInk, fontSize: typeScale.small, lineHeight: 21 },
   form: { gap: spacing.sm, minWidth: 0 }, member: { paddingVertical: spacing.md, gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   memberIdentity: { flexDirection: "row", alignItems: "center", gap: spacing.md }, flexCopy: { flex: 1, minWidth: 0 },
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },

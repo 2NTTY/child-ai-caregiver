@@ -3,7 +3,8 @@ import { usePathname, useRouter } from "expo-router";
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Divider, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AppIcon } from "./AppIcon";
+import { AppMenuList } from "./AppMenuList";
 import { AppButton, ConnectionPill, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
@@ -16,7 +17,7 @@ import type { HomeActions, HomeViewModel } from "../view-model";
 
 const logo = require("../../assets/brand/logo-horizontal.png");
 type AppPath = "/" | "/chat" | "/care" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks";
-const navigation: { href: AppPath; label: string; short: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"] }[] = [
+const navigation: { href: AppPath; label: string; short: string; icon: React.ComponentProps<typeof AppIcon>["name"] }[] = [
   { href: "/", label: "主頁", short: "主頁", icon: "home-outline" },
   { href: "/chat", label: "與 Agent 對話", short: "對話", icon: "message-text-outline" },
   { href: "/care", label: "照顧記錄", short: "記錄", icon: "notebook-outline" },
@@ -34,7 +35,7 @@ function NavItem({ item, active, compact = false }: { item: typeof navigation[nu
     onPress={() => router.push(item.href)}
     style={({ pressed }) => [compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.pressed]}
   >
-    <MaterialCommunityIcons name={item.icon} size={compact ? 24 : 21} color={active ? colors.deepTeal : colors.muted} />
+    <AppIcon name={item.icon} size={compact ? 24 : 21} color={active ? colors.deepTeal : colors.muted} />
     <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
   </Pressable>;
 }
@@ -47,7 +48,7 @@ export function PreviewToolbar() {
       <Text style={styles.previewLabel}>介面預覽 · 合成資料 · 未接駁 Server</Text>
       <Pressable accessibilityRole="button" accessibilityLabel="切換合成預覽情境" accessibilityState={{ expanded }} aria-expanded={expanded}
         onPress={() => setExpanded(value => !value)} style={({ pressed }) => [styles.previewToggle, pressed && styles.pressed]}>
-        <Text style={styles.previewToggleText}>{scenarioLabels[scenario]}　{expanded ? "收起 ↑" : "切換情境 ↓"}</Text>
+        <Text style={styles.previewToggleText}>{scenarioLabels[scenario]}　{expanded ? "收起" : "切換情境"}</Text><AppIcon name={expanded ? "chevron-up" : "chevron-down"} size={16} />
       </Pressable>
     </View>
     {expanded ? <View style={styles.scenarios}>{scenarios.map(item => <Pressable
@@ -87,7 +88,7 @@ export function RightRail({ model, actions, checkedPreviewItems, togglePreviewIt
         {model.recordsLoad === "loading" ? <Text style={styles.railMeta}>正在讀取記錄…</Text> : records.length === 0 ? <Text style={styles.railMeta}>目前沒有已載入記錄。</Text> : records.map((record, index) => <View key={record.id}>
           {index > 0 ? <Divider style={styles.divider} /> : null}
           <Pressable accessibilityRole="button" accessibilityLabel={`查看${record.title}`} onPress={() => actions.open("care")} style={({ pressed }) => [styles.railRecord, pressed && styles.pressed]}>
-            <View style={styles.recordMark}><Text style={styles.recordMarkText}>▤</Text></View>
+            <View style={styles.recordMark}><AppIcon name="file-document-outline" size={20} /></View>
             <View style={styles.railIdentityText}><Text style={styles.railRecordTitle}>{record.title}</Text><Text numberOfLines={2} style={styles.railMeta}>{record.eventTimeLabel} · {record.detail}</Text></View>
           </Pressable>
         </View>)}
@@ -139,12 +140,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </View>
       <Pressable accessibilityRole="link" accessibilityLabel="設定" accessibilityState={{ selected: active("/settings") }} onPress={() => router.push("/settings")}
         style={({ pressed }) => [styles.navItem, active("/settings") && styles.navActive, pressed && styles.pressed]}>
-        <MaterialCommunityIcons name="cog-outline" size={21} color={active("/settings") ? colors.deepTeal : colors.muted} /><Text style={[styles.navLabel, active("/settings") && styles.navActiveText]}>設定</Text>
+        <AppIcon name="cog-outline" size={21} color={active("/settings") ? colors.deepTeal : colors.muted} /><Text style={[styles.navLabel, active("/settings") && styles.navActiveText]}>設定</Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" accessibilityState={{ expanded: accountOpen }} onPress={() => setAccountOpen(true)} style={({ pressed }) => [styles.account, pressed && styles.pressed]}>
         <View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View>
         <View style={styles.accountCopy}><Text style={styles.accountName}>{model.caregiverName}</Text><Text style={styles.accountHint}>合成預覽帳戶</Text></View>
-        <Text style={styles.accountArrow}>⌄</Text>
+        <AppIcon name="chevron-down" size={18} />
       </Pressable>
       {showGuideNav ? <NavItem item={{ href: "/guide", label: "使用引導", short: "引導", icon: "compass-outline" }} active={active("/guide")} /> : null}
     </View> : null}
@@ -156,25 +157,25 @@ export function AppShell({ children }: { children: ReactNode }) {
         <View style={styles.topActions}>
           {!compact ? <ConnectionPill state={model.connection} /> : null}
           <NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
-          {compact ? <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" onPress={() => setAccountOpen(true)} style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></Pressable> : null}
+          {compact ? <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" onPress={() => setAccountOpen(true)} style={styles.accountAction}><View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable> : null}
           <Pressable accessibilityRole="button" accessibilityLabel={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
             accessibilityState={{ expanded: railExpanded }} aria-expanded={railExpanded}
             onPress={() => wide ? setRailOpen(value => !value) : setRailModal(value => !value)}
             style={({ pressed }) => [styles.infoAction, tiny && styles.infoActionTiny, pressed && styles.pressed]}>
-            <View style={styles.panelIcon}><View style={styles.panelIconDivider} /></View>
+            <AppIcon name="page-layout-sidebar-right" size={22} />
           </Pressable>
         </View>
       </View>
       {compact && !mobileHome ? <View style={styles.compactFacts}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /><ChildKeyFacts child={selectedChild} load={model.profileLoad} /></View> : null}
       <PreviewToolbar />
-      {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}　×</Text></Pressable> : null}
+      {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
       <View style={styles.body}>
         <View style={styles.content}>{children}</View>
         {wide && railOpen ? <RightRail {...railProps} /> : null}
       </View>
       {compact ? <View style={styles.bottomNav}>
         {navigation.filter(item => ["/", "/chat", "/tasks", "/memory"].includes(item.href)).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
-        <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><MaterialCommunityIcons name="dots-horizontal" size={24} color={["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={24} color={["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
       </View> : null}
       {railModal && !wide ? <View style={[styles.railOverlay, compact ? styles.railOverlayCompact : styles.railOverlayDesktop]}>
         <Pressable accessibilityRole="button" accessibilityLabel="關閉資訊側欄背景" onPress={() => setRailModal(false)} style={styles.railScrim} />
@@ -191,16 +192,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Button onPress={() => setAccountOpen(false)}>關閉</Button>
         </Dialog.Actions>
       </Dialog>
-      <Dialog visible={moreOpen} onDismiss={() => setMoreOpen(false)}>
+      <Dialog visible={moreOpen} onDismiss={() => setMoreOpen(false)} style={styles.menuDialog}>
         <Dialog.Title>更多頁面</Dialog.Title>
         <Dialog.Content>
-          <Button onPress={() => { setMoreOpen(false); router.push("/family"); }}>家庭協調</Button>
-          <Button onPress={() => { setMoreOpen(false); router.push("/care"); }}>照顧記錄</Button>
-          <Button onPress={() => { setMoreOpen(false); router.push("/profile"); }}>子女檔案</Button>
-          <Button onPress={() => { setMoreOpen(false); router.push("/memory"); }}>記憶與話題</Button>
-          <Button onPress={() => { setMoreOpen(false); router.push("/settings"); }}>設定</Button>
-          {showGuideNav ? <Button onPress={() => { setMoreOpen(false); router.push("/guide"); }}>使用引導</Button> : null}
-          <Button onPress={() => { setMoreOpen(false); setAccountOpen(true); }}>用戶與帳戶</Button>
+          <AppMenuList items={[
+            ...navigation.filter(item => ["/family", "/care", "/profile", "/memory"].includes(item.href)).map(item => ({ key: item.href, label: item.label, icon: item.icon, onPress: () => { setMoreOpen(false); router.push(item.href); } })),
+            { key: "settings", label: "設定", icon: "cog-outline", onPress: () => { setMoreOpen(false); router.push("/settings"); } },
+            ...(showGuideNav ? [{ key: "guide", label: "使用引導", icon: "compass-outline" as const, onPress: () => { setMoreOpen(false); router.push("/guide"); } }] : []),
+            { key: "account", label: "用戶與帳戶", icon: "account-outline", onPress: () => { setMoreOpen(false); setAccountOpen(true); } },
+          ]} />
         </Dialog.Content>
         <Dialog.Actions><Button onPress={() => setMoreOpen(false)}>關閉</Button></Dialog.Actions>
       </Dialog>
@@ -225,6 +225,7 @@ const styles = StyleSheet.create({
   chatCta: { width: "100%", borderRadius: radius.medium },
   account: { minHeight: 56, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white, paddingHorizontal: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   accountAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
+  accountAction: { width: 44, height: 44, flexShrink: 0, alignItems: "center", justifyContent: "center" },
   accountAvatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" },
   accountCopy: { flex: 1, minWidth: 0 },
   accountName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "700" },
@@ -243,19 +244,20 @@ const styles = StyleSheet.create({
   infoActionTiny: { minWidth: 38, minHeight: 40 },
   panelIcon: { width: 20, height: 17, borderWidth: 1.7, borderColor: colors.deepTeal, borderRadius: 4, alignItems: "flex-end", justifyContent: "center" },
   panelIconDivider: { width: 6, height: 15, borderLeftWidth: 1.7, borderLeftColor: colors.deepTeal },
-  compactFacts: { minHeight: 42, paddingHorizontal: spacing.sm, flexDirection: "row", alignItems: "center", backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.softLine },
+  compactFacts: { minHeight: 52, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, gap: spacing.md, flexDirection: "row", alignItems: "center", backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.softLine },
+  menuDialog: { maxWidth: 400 },
   previewArea: { backgroundColor: colors.previewSurface, borderBottomWidth: 1, borderBottomColor: colors.line },
   previewLine: { minHeight: 36, paddingHorizontal: spacing.lg, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  previewLabel: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, flexShrink: 1 },
-  previewToggle: { minHeight: 32, justifyContent: "center", paddingHorizontal: spacing.sm },
-  previewToggleText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "700" },
+  previewLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, flexShrink: 1 },
+  previewToggle: { minHeight: 32, flexDirection: "row", alignItems: "center", gap: spacing.xs, justifyContent: "center", paddingHorizontal: spacing.sm },
+  previewToggleText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, fontWeight: "700" },
   scenarios: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   scenario: { minHeight: 36, paddingHorizontal: spacing.md, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white, justifyContent: "center" },
   scenarioSelected: { backgroundColor: colors.teal, borderColor: colors.teal },
   scenarioText: { fontFamily: chineseFont, fontSize: typeScale.caption, color: colors.ink, fontWeight: "700" },
   scenarioSelectedText: { color: colors.white },
-  notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-  noticeText: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption },
+  notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.md },
+  noticeText: { flex: 1, fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption },
   body: { flex: 1, flexDirection: "row", minHeight: 0 },
   content: { flex: 1, minWidth: 0, minHeight: 0 },
   rail: { width: 310, height: "100%", backgroundColor: colors.sidebar, borderLeftWidth: 1, borderLeftColor: colors.line },

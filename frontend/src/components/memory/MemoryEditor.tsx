@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23 },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
   warning: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, lineHeight: 23 },
-  error: { fontFamily: chineseFont, color: colors.coral, fontSize: typeScale.caption, lineHeight: 20 },
+  error: { fontFamily: chineseFont, color: colors.errorInk, fontSize: typeScale.caption, lineHeight: 20 },
   acknowledgement: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small, padding: spacing.md, minHeight: 44, minWidth: 0 },
   acknowledged: { borderColor: colors.teal, backgroundColor: colors.paleTeal }, ackMark: { fontSize: 18, color: colors.deepTeal },
   ackText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 22, flex: 1, minWidth: 0 }, pressed: { opacity: 0.68 },

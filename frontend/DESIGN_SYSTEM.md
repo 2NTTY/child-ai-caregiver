@@ -4,7 +4,7 @@
 
 ## 共通設計語言
 
-- 暖白、淡綠作大面積背景；深綠文字；青綠只標示主要操作。琥珀代表待確認／結果未知，珊瑚代表明確失敗；顏色必配文字，不以顏色單獨傳達狀態。
+- paper 派生的中性色作畫布，較安靜的暖灰承載常駐側欄，白色承載資料卡片與彈窗；品牌暖白保留在首頁美術區。青綠集中於主要操作、選中及重點；普通文字／次要操作用 ink，普通 SVG 用 muted。琥珀代表待確認／結果未知，珊瑚代表明確失敗；顏色必配文字。OKLCH 派生、成熟方案的角色分工和對比門檻沿 [配色策略](COLOR_STRATEGY.md)。
 - 一個頁面只有清楚的主標題，下面用短說明交代資料範圍；卡片標題、內容、來源／時間次序固定。對話有訊息氣泡、來源區和底部輸入；設定有分頁、資料列及明確未保存提示；登入以品牌故事與表單分區。
 - 寬桌面用左導覽、主內容、常駐右資訊欄。設定與用戶固定在左下；右欄可關閉及重開。中寬或窄視窗的右欄改為可開啟面板，手機瀏覽器用底部導覽與「更多」入口，不遺失家庭／記憶／設定路由。
 - 右資訊欄先顯示目前孩子與待辦摘要，再顯示已確認記錄及原操作狀態。待辦示例的勾選只在本地預覽有效；頂部鈴鐺的角標只代表需留意的原操作狀態，不代表通知已送達或未讀。窄視窗保留鈴鐺及資訊面板入口，帳戶入口放在底部「更多」。
@@ -18,7 +18,8 @@
 |---|---|---|
 | 色彩、字體與尺寸 | [theme.ts](src/theme.ts) | 所有使用 token 的畫面、Paper 按鈕／表單／Dialog；新增狀態色先加語義 token，不逐頁寫色碼 |
 | 基本控制項 | [ui.tsx](src/components/ui.tsx) 的 AppButton、AppTextField、SectionCard、SectionHeader、TextLink、UnderlineTabs、OperationPill、ConnectionPill | 按鈕高度／字重、輸入框、卡片、設定／記憶分頁與狀態標籤；只封裝品牌及重複語義 |
-| 選單、勾選及彈窗 | AppSelect／AppSelectionTrigger、[AppCheckbox](src/components/AppCheckbox.tsx)、[AppDialog](src/components/AppDialog.tsx)、[ChildPicker](src/components/ChildPicker.tsx) | 集中選擇、明確狀態、Space／Escape、focus trap 與還原；Web ARIA 與原生 accessibilityState 分開核對 |
+| 選單、勾選及彈窗 | AppSelect／AppSelectionTrigger、[AppCheckbox](src/components/AppCheckbox.tsx)、[AppDialog](src/components/AppDialog.tsx)、[AppMenuList](src/components/AppMenuList.tsx)、[ChildPicker](src/components/ChildPicker.tsx) | 集中選擇、選項列、明確狀態、Space／Escape、focus trap 與還原；Web ARIA 與原生 accessibilityState 分開核對 |
+| SVG 圖標 | [AppIcon](src/components/AppIcon.tsx)、theme 的 iconTokens | 統一尺寸、線寬與名稱映射；PaperSvgIcon 同時供 PaperProvider 使用 |
 | 日期、時間及表單 | [DateTimeFields](src/components/DateTimeFields.tsx)、[date-time](src/components/date-time.ts)、各頁 RHF／Zod schema | 共用 Paper Dates 0.24.0 的日曆／時鐘／窄屏鍵盤輸入，IANA 時區沿 Luxon 3.7.2；不逐頁手寫日期控制 |
 | 原生外殼及手機首頁 | [NativeAppShell](src/components/NativeAppShell.tsx)、[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) | Safe Area、更多／資訊面板、Expo Router Tabs、問候／孩子卡片／提問／重點／待辦／快捷記錄；與 Web 共享資料模型和功能元件 |
 | 共同外殼 | [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 左導覽、孩子切換及其授權摘要、資訊欄、預覽情境、內頁標題與內容間距 |
@@ -26,7 +27,9 @@
 | 畫面與路由 | [screens](src/screens)、[app](app) | 每頁只組合現有元件；app 內只保留路由與 layout 入口 |
 | 合成狀態 | [view-model.ts](src/view-model.ts)、[preview](src/preview) | 孩子、記錄、連線及原操作展示；不是 Server 契約或正式資料源 |
 
-基礎控制項採 React Native Paper 5.x，圖示依 Expo SDK 相容的 @expo/vector-icons；路由採 Expo Router，樣式用 React Native StyleSheet.create 與組件共置。這是 React Native Web 的成熟做法，毋須把 CSS 集中在一個 HTML 檔。結構參考 [Expo Router 官方規則](https://docs.expo.dev/router/basics/core-concepts/)、[Expo 設計系統 Skill](https://github.com/expo/skills/blob/main/plugins/expo/skills/expo-design-system/SKILL.md) 和 [Paper 主題](https://oss.callstack.com/react-native-paper/docs/guides/theming)。
+基礎控制項採 React Native Paper 5.x；介面圖示統一由 [AppIcon](src/components/AppIcon.tsx) 的 Lucide 1.49.0／react-native-svg 15.15.4 輸出 SVG，線寬／尺寸沿 theme 的 iconTokens。Paper 內建鈴鐺、日期及 radio 同樣走此映射，不混用字體或 Unicode 圖標；帳戶與孩子的文字頭像仍是資料內容。路由採 Expo Router，樣式用 React Native StyleSheet.create 與組件共置，沒有單一 HTML 巨檔。結構參考 [Expo Router 官方規則](https://docs.expo.dev/router/basics/core-concepts/)、[Expo 設計系統 Skill](https://github.com/expo/skills/blob/main/plugins/expo/skills/expo-design-system/SKILL.md) 和 [Paper 主題](https://oss.callstack.com/react-native-paper/docs/guides/theming)。
+
+2026-09-30 按視覺回饋修訂：[配色策略](COLOR_STRATEGY.md) 保留原有八個品牌種子與 OKLCH 色階，以中性層次、白色資料卡片和完整 MD3 語義色取代過量淡綠及預設紫浮層。使用者認為色階改善後，進一步按官方成熟方案降低常駐區及次要控件的強度，把品牌色集中於主要操作和選中位置。Dialog 使用卡片圓角與標題字級，AppMenuList 統一左 SVG／文字／右箭嘴。孩子切換的頭像不縮扁，窄版觸控高度 44；寬版保留雙行資料。只改 theme／共用元件即可同步各頁，沒有逐頁另造配色。
 
 ## 狀態與圖片差異
 

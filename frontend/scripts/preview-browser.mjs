@@ -9,6 +9,7 @@ export async function openPreview(browser, path, width = 1440, height = 992, fai
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
   page.setDefaultTimeout(15000);
   page.on("pageerror", error => failures.push(`${path} ${width}: ${error.message}`));
+  page.on("console", message => { if (message.type() === "error") failures.push(`${path} ${width}: console ${message.text().slice(0, 600)} (${message.location().url})`); });
   page.on("request", request => { if (new URL(request.url()).pathname.startsWith("/api/")) failures.push(`Unexpected API call: ${request.method()}`); });
   await page.goto(new URL(path, process.env.FRONTEND_PREVIEW_URL ?? "http://localhost:8082").toString(), { waitUntil: "domcontentloaded", timeout: 60000 });
   if (path !== "/login") await page.getByText("介面預覽 · 合成資料 · 未接駁 Server", { exact: true }).waitFor({ timeout: 60000 });
