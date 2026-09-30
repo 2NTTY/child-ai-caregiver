@@ -11,5 +11,5 @@ description = "Luna Max for location-only file discovery, reading-heavy investig
 config_file = "agents/explorer.toml"
 
 [agents.worker]
-description = "GPT-6.1 Sol for bounded ordinary implementation with a settled approach, explicit file ownership and related lightweight tests; default xhigh, with high/xhigh/max selected by the primary agent."
+description = "GPT-6.1 Sol for guided implementation and debugging, including complex multi-file work, with owned paths and minimal necessary checks; default xhigh, with high/xhigh/max selected by the primary agent."
 config_file = "agents/worker.toml"
