@@ -16,7 +16,7 @@
 | FE-W09 Agent 對話投影 | 基於 `83106c0`；核對主線 `90dacd4` 的 Agent API／Panel／Inbox。共用運行、完整候選、明確共享、原決定查核／重試、來源快照與手動私人結果已實作，四尺寸及建置通過 | [AGENT_HANDOFF](AGENT_HANDOFF.md)；composer 仍只預覽輸入，真聊天／回覆／引用／跨頁同步待主聊天沿原控制器接線 |
 | FE-W10 手機比例與密度 | 依最新意見及手機參考，復用 Paper 5.15.3 MD3：主標 22、區塊 16、正文 14–16、次層 12、SVG 20–24，主要控制觸控至少 48；孩子卡片 390／320 均 110 高，快捷格 88。40 個重排、手機關鍵互動／150% Web 文字及 Web／Android export 通過 | [MOBILE_DESIGN](MOBILE_DESIGN.md)；等待視覺比較與原生實機。色階／業務規則未改，正式接線仍由主聊天統籌 |
 | FE-W11 照片與記錄 | 原圖選擇／hash／預覽、私人保存、提取同意／候選、人工原文、明確家庭共享、原操作查核、版本／刪除／清理及範圍清除已實作；三項原文單元、44 個重排及照片／手機互動通過 | [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)；真附件／模型／原生選圖 adapter 及使用者視覺待接線／驗收 |
-| FE-W12 手機背景及外殼層次 | 按使用者 2026-10-01 意見，海旁家庭插畫鋪滿問候背景，左側及底部漸淡；頂部／孩子摘要列與側欄同色，現有 OKLCH 色階未改。44 個外殼重排、最終 390／320／150% Web 文字、typecheck 及 Web／Android export 通過，沿用 draft PR #73 | [MOBILE_DESIGN](MOBILE_DESIGN.md)／[COLOR_STRATEGY](COLOR_STRATEGY.md)；背景及表面規則已補既有 Skill，待使用者視覺及真機驗收 |
+| FE-W12 手機背景及外殼層次 | 源碼／驗證已交付 `62b07fd`。海旁家庭插畫鋪滿問候背景，左側及底部漸淡；頂部／孩子摘要列與側欄同色，現有 OKLCH 色階未改。44 個外殼重排、最終 390／320／150% Web 文字、typecheck 及 Web／Android export 通過，沿用 draft PR #73 | [MOBILE_DESIGN](MOBILE_DESIGN.md)／[COLOR_STRATEGY](COLOR_STRATEGY.md)；背景及表面規則已補既有 Skill，待使用者視覺及真機驗收 |
 | 尚未投影的已合併畫面 | GitHub master `ce87370` 已有分享、成長關注、到診摘要、主動聯絡及新增的本人模型 key／可調上限；正式 P2 結案已合併 | FE-W11 後逐項投影；正式整合、未讀及產品整包狀態由主聊天統籌 |
 
 ## 已驗證及限制

@@ -42,7 +42,7 @@
 
 ### FE-W12 手機背景及外殼層次增補
 
-按使用者 2026-10-01 意見，以桌面主頁的海旁家庭美術鋪滿 MobileHomeDashboard 問候區背景；基線 `685cdfc`，沿現有 draft PR #73 交付。原圖在 `assets/images/harbour-family-hero.png`，文字可換行；RN Image 100% 寬高／cover 配 SVG 漸變，左側淡至 canvas、底部接回畫布，裝飾不攔截操作或朗讀。AppShell 的 topbar／compactFacts 及 NativeAppShell 的 header／childStrip 使用相同 sidebar 色；只重新安排現有表面角色，沒有新增色值或資料接口。
+按使用者 2026-10-01 意見，以桌面主頁的海旁家庭美術鋪滿 MobileHomeDashboard 問候區背景；基線 `685cdfc`，源碼／驗證交付 `62b07fd`，沿現有 draft PR #73 交付，未合併。原圖在 `assets/images/harbour-family-hero.png`，文字可換行；RN Image 100% 寬高／cover 配 SVG 漸變，左側淡至 canvas、底部接回畫布，裝飾不攔截操作或朗讀。AppShell 的 topbar／compactFacts 及 NativeAppShell 的 header／childStrip 使用相同 sidebar 色；只重新安排現有表面角色，沒有新增色值或資料接口。
 
 typecheck、Web 25 路由／Android Hermes 31 資產 export、44 個共用外殼重排通過；最終圖片尺寸修正後重驗 390／320／150% Web 文字及必要手機互動。其他頁和照片規則沿用未變範圍，不新增單元測試。[證據](verification/fe-w12/build-checks.json)／[桌面](verification/fe-w12/home-1440.png)／[390](verification/fe-w12/home-390.png)／[320](verification/fe-w12/home-320.png)，真機及使用者視覺仍待驗。下一包接續已從 GitHub 讀取的本人模型設定契約，輸入／模式／費用同意與 unknown 不重播等語義按 UI-P2-18 核對。
 
