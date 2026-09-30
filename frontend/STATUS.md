@@ -17,7 +17,8 @@
 | FE-W10 手機比例與密度 | 依最新意見及手機參考，復用 Paper 5.15.3 MD3：主標 22、區塊 16、正文 14–16、次層 12、SVG 20–24，主要控制觸控至少 48；孩子卡片 390／320 均 110 高，快捷格 88。40 個重排、手機關鍵互動／150% Web 文字及 Web／Android export 通過 | [MOBILE_DESIGN](MOBILE_DESIGN.md)；等待視覺比較與原生實機。色階／業務規則未改，正式接線仍由主聊天統籌 |
 | FE-W11 照片與記錄 | 原圖選擇／hash／預覽、私人保存、提取同意／候選、人工原文、明確家庭共享、原操作查核、版本／刪除／清理及範圍清除已實作；三項原文單元、44 個重排及照片／手機互動通過 | [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)；真附件／模型／原生選圖 adapter 及使用者視覺待接線／驗收 |
 | FE-W12 手機背景及外殼層次 | 源碼／驗證已交付 `62b07fd`。海旁家庭插畫鋪滿問候背景，左側及底部漸淡；頂部／孩子摘要列與側欄同色，現有 OKLCH 色階未改。44 個外殼重排、最終 390／320／150% Web 文字、typecheck 及 Web／Android export 通過，沿用 draft PR #73 | [MOBILE_DESIGN](MOBILE_DESIGN.md)／[COLOR_STRATEGY](COLOR_STRATEGY.md)；背景及表面規則已補既有 Skill，待使用者視覺及真機驗收 |
-| 尚未投影的已合併畫面 | GitHub master `ce87370` 已有分享、成長關注、到診摘要、主動聯絡及新增的本人模型 key／可調上限；正式 P2 結案已合併 | FE-W11 後逐項投影；正式整合、未讀及產品整包狀態由主聊天統籌 |
+| FE-W13 本人模型設定 | 沿 `433d312`／draft PR #73，核對 GitHub `ce87370` 的 UI-P2-18、API／型別／Panel／封裝。模型模式、密鑰及費用／背景同意、上限、分開用量、metadata-only 查核、刪除／unknown 重讀及範圍清理已實作；三項單元、四尺寸及放大文字、typecheck、Web／Android export 通過 | [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md)；合成資料與無密鑰 metadata，真 API、Google／帳單、使用者視覺及原生真機待接線／驗收 |
+| 尚未投影的已合併畫面 | GitHub master `ce87370` 已有分享、成長關注、到診摘要及主動聯絡；正式 P2 結案已合併 | 逐項投影；正式整合、未讀及產品整包狀態由主聊天統籌 |
 
 ## 已驗證及限制
 
@@ -35,4 +36,4 @@
 
 先讀本文件、[PLAN](PLAN.md) 及 [HANDOFF](HANDOFF.md)，fetch GitHub 並核對其他 active worktree 的 frontend 重疊。現場分支 `codex/fe-w11-photos`，已 review 的前置 `596c657`（FE-W10 draft PR #70）；直接從 GitHub 讀 P2 UI 交接，再讀照片 API／型別／封裝，交付前已重核最新 master `ce87370`，照片章節及型別／封裝未變，沒有依賴主聊天本機是否已拉取。另外 14 個 active worktree 未見 frontend 重疊；P2 隔離接續沒有豁免正式合併／驗收。B 負責前端交付，使用 `CherylNg-2526` 核對及推送，保留真實 Committer，不改全局認證或 Git 身份。
 
-讓使用者比較 [桌面層次](verification/fe-w12/home-1440.png)、[390 背景插畫](verification/fe-w12/home-390.png)、[320](verification/fe-w12/home-320.png) 及 [桌面照片](verification/fe-w11/photos-1440.png)。FE-W12 的 [44 個外殼重排](verification/fe-w12/checks-layout-mobile-density.json)、[最終手機檢查](verification/fe-w12/checks-mobile-density.json)／[建置](verification/fe-w12/build-checks.json) 通過；最後圖片尺寸修正只再驗手機受影響範圍，其他頁及 FE-W11 照片規則沿用未變證據。下一包先補 GitHub 已交付的本人模型 key／可調上限設定，再投影分享、成長、摘要及主動聯絡；真接線、正式驗收及 P3 真機仍由主聊天統籌，不自行 merge。
+讓使用者比較 [桌面層次](verification/fe-w12/home-1440.png)、[390 背景插畫](verification/fe-w12/home-390.png)、[桌面照片](verification/fe-w11/photos-1440.png) 及 [模型設定](verification/fe-w13/model-settings-1440.png)／[320 放大文字](verification/fe-w13/model-settings-large-text-320.png)。FE-W12 的 [44 個外殼重排](verification/fe-w12/checks-layout-mobile-density.json)、[最終手機檢查](verification/fe-w12/checks-mobile-density.json)／[建置](verification/fe-w12/build-checks.json) 沿用；FE-W13 只查受影響設定及秘密／版本行為，見 [證據](verification/fe-w13/build-checks.json)，沒有機械重跑其他頁。下一包投影分享，再處理成長、摘要及主動聯絡；真接線、正式驗收及 P3 真機仍由主聊天統籌，不自行 merge。

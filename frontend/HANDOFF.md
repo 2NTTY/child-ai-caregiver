@@ -16,7 +16,7 @@
 | `/family`：[FamilyView](src/components/family/FamilyView.tsx)、[family-view-model](src/family-view-model.ts) | owner／caregiver／viewer、邀請與一次顯示的無效合成碼、預覽／接受邀請、範圍核對、角色調整、撤權及版本比較 | [FamilyPanel](../src/client/FamilyPanel.tsx)、[family-api](../src/client/family-api.ts)、[family 型別](../src/shared/family.ts) |
 | `/memory`：[memoryScreen](src/screens/memoryScreen.tsx)、[MemoryCards](src/components/memory/MemoryCards.tsx)、[memory-view-model](src/memory-view-model.ts) | 私人候選、確認家庭共享、來源版本／過期阻擋、更正／停用／刪除／歷史、話題暫緩／終態／明確重開、私人摘要覆蓋明細 | [MemoryPanel](../src/client/MemoryPanel.tsx)、[memory-api](../src/client/memory-api.ts)、[memory 型別](../src/shared/memory.ts) |
 | `/tasks`：[TasksView](src/components/tasks/TasksView.tsx)、[task-view-model](src/task-view-model.ts) | 建立共享事項、負責人／時間／時區、改期／轉派、完成／取消、needs_review 明確覆核、版本／歷史／分頁；worker 與提醒資格分開 | [TaskPanel](../src/client/TaskPanel.tsx)、[task-api](../src/client/task-api.ts)、[task 型別](../src/shared/tasks.ts)；對照 S13-W01／W04 |
-| `/settings`：[PreferencesPreview](src/components/PreferencesPreview.tsx) | 本人安靜時段、時區、預約例外及合成操作；帳戶／孩子／家庭／私隱分頁與引導重看入口 | family-api 的 getPreferences／savePreferences 及 family 型別；身份、渠道操作沿正式服務 |
+| `/settings`：[PreferencesPreview](src/components/PreferencesPreview.tsx)、[ModelSettingsView](src/components/model-settings/ModelSettingsView.tsx) | 本人安靜時段、時區、預約例外；渠道及模型模式／密鑰／費用同意／個人上限、分開用量與 metadata-only 查核；帳戶及引導重看入口 | family-api 的 getPreferences／savePreferences；本人渠道沿 [CHANNELS_HANDOFF](CHANNELS_HANDOFF.md)，模型沿原 ModelSettingsPanel／model-settings-api，詳見 [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md) |
 | `/chat`：[AgentRunView](src/components/agent/AgentRunView.tsx)、[AgentInboxView](src/components/agent/AgentInboxView.tsx) | 對話版式／當頁問題；合成運行／完整候選／引用快照、明確共享、原決定查核、手動私人背景結果 | 原 ChatPanel／chat-controller／product-agent-api／AgentRunPanel／AgentInbox；詳見 [AGENT_HANDOFF](AGENT_HANDOFF.md)。不是通用 opId 流程，真聊天及 Agent 回覆仍待接線 |
 | `/login`、`/guide` | 登入／註冊本地格式檢查，引導條件及重看入口 | Better Auth；引導完成來源仍待接線，不把「看過引導」當真初始化完成 |
 
@@ -44,7 +44,13 @@
 
 按使用者 2026-10-01 意見，以桌面主頁的海旁家庭美術鋪滿 MobileHomeDashboard 問候區背景；基線 `685cdfc`，源碼／驗證交付 `62b07fd`，沿現有 draft PR #73 交付，未合併。原圖在 `assets/images/harbour-family-hero.png`，文字可換行；RN Image 100% 寬高／cover 配 SVG 漸變，左側淡至 canvas、底部接回畫布，裝飾不攔截操作或朗讀。AppShell 的 topbar／compactFacts 及 NativeAppShell 的 header／childStrip 使用相同 sidebar 色；只重新安排現有表面角色，沒有新增色值或資料接口。
 
-typecheck、Web 25 路由／Android Hermes 31 資產 export、44 個共用外殼重排通過；最終圖片尺寸修正後重驗 390／320／150% Web 文字及必要手機互動。其他頁和照片規則沿用未變範圍，不新增單元測試。[證據](verification/fe-w12/build-checks.json)／[桌面](verification/fe-w12/home-1440.png)／[390](verification/fe-w12/home-390.png)／[320](verification/fe-w12/home-320.png)，真機及使用者視覺仍待驗。下一包接續已從 GitHub 讀取的本人模型設定契約，輸入／模式／費用同意與 unknown 不重播等語義按 UI-P2-18 核對。
+typecheck、Web 25 路由／Android Hermes 31 資產 export、44 個共用外殼重排通過；最終圖片尺寸修正後重驗 390／320／150% Web 文字及必要手機互動。其他頁和照片規則沿用未變範圍，不新增單元測試。[證據](verification/fe-w12/build-checks.json)／[桌面](verification/fe-w12/home-1440.png)／[390](verification/fe-w12/home-390.png)／[320](verification/fe-w12/home-320.png)，真機及使用者視覺仍待驗。
+
+### FE-W13 本人模型設定
+
+沿 `433d312` 及現有 draft PR #73，直接核對 GitHub `ce87370` 的 UI-P2-18／API／共用型別／正式 ModelSettingsPanel 和 transport，內容未變。新增 /settings「模型設定」及帳戶內入口：平台／個人／停用、秘密欄清理、費用與背景 opt-in、個人上限、平台及個人分開用量、metadata-only 查核及二次刪除。全部仍是無 Server／Google 呼叫的合成預覽，沒有保存真密鑰或建立新業務協定。
+
+typecheck、三項安全／command 輕量檢查、四尺寸／鍵盤／unknown 重讀版本／範圍清理及 390／320 放大文字、Web／Android export 通過，沿共用 Paper／RHF／Zod，沒有新依賴或色階。元件入口、直接 API 回調、無 opId／密鑰重播、已保存後用量讀取失敗、正式接線及真機限制見 [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md)／[證據](verification/fe-w13/build-checks.json)。使用者視覺及真 API 仍待驗收。
 
 ## 共用元件與成熟方案
 
@@ -112,7 +118,7 @@ HomeChild.profileConfirmed／ageLabel／allergiesLabel 只投影同一 selectedC
 
 - 所有真 session／API／opId／跨畫面及跨成員同步、正式 UI 掛載，以及接線後針對新增介面的必要瀏覽器驗收。主線已經 `9f0febd` 合併既有正式 App 的 S16-W05 Chromium 情景；該證據可按未變部分復用，但沒有驗過本包隔離介面，不要求無理由重跑整套舊情景。
 - S13-W05／W06 的本人渠道已在 FE-W07 投影，待接正式 adapter；真通知中心／未讀及 W07 聯絡授權／fallback 台帳另核對所屬交付。active 分支落碼不等同已合併交付，不代改其程式碼。
-- 最新直接讀 GitHub `ce87370`：P2 正式結案／交付已隨 PR #71 合併，PR #72 新增本人模型 key／可調上限，P2 UI 總表已更新；既有功能未接本包隔離畫面不代表後端未實作。FE-W09 已投影 Agent，FE-W11 已投影照片；分享、成長、摘要、主動聯絡及本人模型設定待後續前端包。全部隔離畫面仍待正式 adapter／跨畫面接線與必要驗收；P3 未因 Android bundle 啟動或完成，不修改主聊天權威文件。
+- 最新直接讀 GitHub `ce87370`：P2 正式結案／交付已隨 PR #71 合併，PR #72 新增本人模型 key／可調上限，P2 UI 總表已更新；既有功能未接本包隔離畫面不代表後端未實作。FE-W09 已投影 Agent，FE-W11 已投影照片，FE-W13 已投影本人模型設定；分享、成長、摘要及主動聯絡待後續前端包。全部隔離畫面仍待正式 adapter／跨畫面接線與必要驗收；P3 未因 Android bundle 啟動或完成，不修改主聊天權威文件。
 - 真通知中心、Web Push／Telegram／FCM 及未讀。鈴鐺只提示合成原操作，右欄勾選只是本地清單；/tasks 的合成流程另列，不能互相冒充。
 - 圖中的第三方／手機登入、忘記密碼、方案／儲存用量、帳戶匯出／刪除、疫苗百分比及知識首頁，不能憑圖片當已承諾 API。手機首頁暫用已有記憶／話題入口；照片已可進入 FE-W11 原檔預覽，沒有假醫療建議、真上傳或咪高峰操作。
 - 正式 P3 共用服務、APK／簽署、實機畫面／鍵盤／返回鍵／Safe Area／TalkBack／大字體、登入及相機／通知權限。Android JS bundle 不代表上述已驗收。

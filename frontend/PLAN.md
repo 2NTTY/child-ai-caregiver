@@ -16,7 +16,8 @@
 | 7d | FE-W10 手機比例與密度 | 實作及輕量檢查完成；待視覺／真機驗收 | 前置已 review 的 FE-W09 `0ff9533`（draft PR #69），分支 `codex/fe-w10-mobile-density`。核對 Android／Apple／Paper 5.15.3 MD3 與 Lucide：集中手機字級／圖標／觸控及卡片規則，調整孩子年齡／基準、標題動作、快速記錄與窄 composer；10 頁四尺寸及必要手機互動／150% Web 文字、Web／Android export 通過。研究存 [MOBILE_DESIGN](MOBILE_DESIGN.md) 並補既有 Skill；沒有改色階或後端 |
 | 7e | FE-W11 照片與記錄前端 | `ddcf651`／draft PR #73 已交付；待視覺／正式接線 | 前置 FE-W10 `596c657`（draft PR #70），分支 `codex/fe-w11-photos`。直接讀 GitHub master 的 P2 UI 交接及照片契約，交付前重核 `ce87370` 未改照片章節／型別／封裝；原圖／私人保存／候選／人工原文／家庭共享／查核及刪除投影、Web 選圖與原生薄 port 已實作。三項原文單元、11 頁四尺寸、必要照片／手機互動及 Web／Android export 通過；真 API／原生選圖／裝置權限待主聊天 |
 | 7f | FE-W12 手機背景及外殼層次 | 實作及輕量檢查通過，追加現有 draft PR #73 | 依使用者 2026-10-01 意見，手機問候使用全幅海旁背景與左側／底部漸淡；常駐頂部／側欄同色，沿現有 OKLCH 表面角色。修訂基線 `685cdfc`，沿同一前端 draft 分支；44 個外殼重排、最終 390／320／150% Web 文字、typecheck、Web／Android export 通過，沒有新增依賴或單元測試 |
-| 7g | 本人模型設定及後續投影 | 按契約逐包接續 | GitHub `ce87370` 已有本人模型 key／可調上限、分享、成長關注、到診摘要及主動聯絡。本人模型設定已直接讀 UI-P2-18／API／型別，先完成其前端，再處理其餘投影；未讀／正式通知中心仍按產品契約確認，真整合、必要驗收及整包狀態由主聊天統籌 |
+| 7g | FE-W13 本人模型設定 | 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `433d312`，直接讀 GitHub `ce87370` UI-P2-18／API／型別／Panel／封裝；平台／個人／停用、密鑰及費用同意、背景 opt-in、個人上限、分開用量、模型 metadata-only 查核及二次刪除已投影。typecheck、三項 command 檢查、四尺寸／鍵盤／unknown 重讀／範圍清理、390／320 放大文字及 Web／Android export 通過；[MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md)，待視覺及真接線／真機 |
+| 7h | 分享、成長、摘要及主動聯絡投影 | 按契約逐包接續 | GitHub `ce87370` 已交付相關功能，先處理分享，再逐項投影；未讀／正式通知中心仍按產品契約確認，真整合、必要驗收及整包狀態由主聊天統籌 |
 | 8 | Web 整套確認與正式接線 | 待主聊天及使用者 | 使用者比較全部 Web 畫面並明確確認；主聊天按 [HANDOFF](HANDOFF.md) 對正式 App 的既有 API／控制器接線與真服務驗收。未接通 P2 功能須等其業務包交付，不以預覽代替 |
 | 9 | FE-W06 手機軟件介面 | 源碼及 bundle 完成；待視覺及真機驗收 | 按使用者 2026-09-29 指示提前做手機畫面；手機首頁依參考圖的品牌／問候、孩子卡片、提問、重點、待辦、快捷記錄及底部導航組裝。共用 React Native 元件、Expo Router Tabs／Safe Area／鍵盤及最終 Android bundle 通過；正式 P3 接線／APK／實機驗收仍待主聊天及後續條件 |
 

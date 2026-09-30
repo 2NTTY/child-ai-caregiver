@@ -5,17 +5,19 @@ import { Divider, Text } from "react-native-paper";
 import { PreferencesPreview } from "../components/PreferencesPreview";
 import { ChannelSettingsPreview } from "../components/notifications/ChannelSettingsPreview";
 import { useChannelSettingsPreview } from "../preview/useChannelSettingsPreview";
+import { ModelSettingsPreview } from "../components/model-settings/ModelSettingsPreview";
+import { useModelSettingsPreview } from "../preview/useModelSettingsPreview";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTextField, SectionCard, SectionHeader, TextLink, UnderlineTabs } from "../components/ui";
 import { usePreview } from "../preview/PreviewContext";
 import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
-type SettingsTab = "account" | "children" | "family" | "preferences" | "notifications" | "privacy";
+type SettingsTab = "account" | "children" | "family" | "preferences" | "notifications" | "model" | "privacy";
 const tabs: { key: SettingsTab; label: string }[] = [
   { key: "account", label: "個人與帳戶" }, { key: "children", label: "孩子設定" },
   { key: "family", label: "家庭成員" }, { key: "preferences", label: "應用偏好" }, { key: "notifications", label: "通知渠道" },
-  { key: "privacy", label: "資料與私隱" },
+  { key: "model", label: "模型設定" }, { key: "privacy", label: "資料與私隱" },
 ];
 
 function LabeledValue({ label, value }: { label: string; value: string }) {
@@ -27,6 +29,7 @@ export default function SettingsPage() {
   const [width, setWidth] = useState(0);
   const { model, actions } = usePreview();
   const channels = useChannelSettingsPreview(model.connection === "online");
+  const modelSettings = useModelSettingsPreview(model.connection === "online", channels.identity);
   const [tab, setTab] = useState<SettingsTab>("account");
   const [displayName, setDisplayName] = useState(model.caregiverName);
   const stacked = width < 850;
@@ -51,6 +54,9 @@ export default function SettingsPage() {
         <SectionCard><SectionHeader title="登入與安全" />
           <Text style={styles.body}>正式版的登入、登出、權限及會話由主聊天接現有 Better Auth 與控制器；預覽不會改動真帳戶。</Text>
           <AppButton label="查看登入預覽" variant="secondary" onPress={() => router.push("/login")} />
+        </SectionCard>
+        <SectionCard><SectionHeader title="模型服務" subtitle="管理平台服務、個人密鑰及呼叫上限。" />
+          <AppButton label="管理模型設定" variant="secondary" onPress={() => setTab("model")} />
         </SectionCard>
         <SectionCard><SectionHeader title="資料狀態" />
           <Text style={styles.body}>目前展示的是合成孩子與記錄。真資料是否已保存，以原操作收據和授權讀取結果為準。</Text>
@@ -82,6 +88,7 @@ export default function SettingsPage() {
       </View>
     </View> : null}
     {tab === "notifications" ? <ChannelSettingsPreview controller={channels} /> : null}
+    {tab === "model" ? <ModelSettingsPreview controller={modelSettings} onSwitchAccount={channels.switchAccount} /> : null}
     {tab === "privacy" ? <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}><SectionCard><SectionHeader title="資料與私隱" />
         <Text style={styles.body}>孩子資料、已確認記錄與私人聊天的可見範圍，須按目前身份與家庭角色重新檢查。退出或撤權後，正式 App 必須清除不再可見的資料。</Text>

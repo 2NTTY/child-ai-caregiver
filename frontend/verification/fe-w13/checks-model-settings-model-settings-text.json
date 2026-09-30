@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-09-30T19:18:23.216Z",
+  "passed": [
+    "model settings: four sizes, keyboard/consent/budgets, metadata-only check/429, removal, unknown/version reread, known failure drafts, child/account/Server/offline isolation and no key storage",
+    "model settings text: 390/320 synthetic 150% Web text and field reflow; not Android font acceptance"
+  ],
+  "failures": []
+}

@@ -1,0 +1,238 @@
+{
+  "scope": "Personal model settings frontend projection on existing draft PR #73; synthetic only, no Server/provider/device acceptance",
+  "verifiedAt": "2026-09-30T19:22:15.075Z",
+  "baselineCommit": "433d31202b6e56e97f742e626e37bed3ade451dd",
+  "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "authoritySources": [
+    {
+      "path": "docs/P2_UI_HANDOFF.md",
+      "githubBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1"
+    },
+    {
+      "path": "docs/API.md",
+      "githubBlob": "69fd07e18f649e4862030001837662d5e2fdc19b"
+    },
+    {
+      "path": "src/shared/model-settings.ts",
+      "githubBlob": "4554d289898965b1f5c5883341a0bc924ef4a365"
+    },
+    {
+      "path": "src/client/ModelSettingsPanel.tsx",
+      "githubBlob": "7ee57f66a0bb63226577e68a71431f67eff095d5"
+    },
+    {
+      "path": "src/client/model-settings-api.ts",
+      "githubBlob": "378ef398f3a8871e3430c4b137970cee67962c8d"
+    }
+  ],
+  "sources": [
+    {
+      "path": "src/model-settings-view-model.ts",
+      "sha256": "598cd9629effc6d5a8c6262539064610df084cda39a07545e19066de319520f3"
+    },
+    {
+      "path": "src/preview/useModelSettingsPreview.ts",
+      "sha256": "72e92cd48a16786e6cb45f1f75ff1ec584c92a883fc7d85c8382200714b53176"
+    },
+    {
+      "path": "src/components/model-settings/ModelSettingsView.tsx",
+      "sha256": "aedaf38d1ad970c699911b14104a37739425f90f78b955bb37d62eda46cf88bd"
+    },
+    {
+      "path": "src/components/model-settings/ModelSettingsPreview.tsx",
+      "sha256": "45d84b662568d8aa51710ba66aba03fa61b08cf7cc54a5fc29ffbd16e42ddaa9"
+    },
+    {
+      "path": "src/components/model-settings/model-settings-form.ts",
+      "sha256": "9a09b18faf2608ffda1c8f5f0605d4c1dff3c6da007172a34605788f99ab71dc"
+    },
+    {
+      "path": "src/screens/settingsScreen.tsx",
+      "sha256": "a90d7c1b28934a0048e03eba42dd3f615f2058cccfc1d9b2def212a0003e686b"
+    },
+    {
+      "path": "scripts/model-settings-form.test.mjs",
+      "sha256": "a97372370a7c3ba914e839ade8d72343c1c325c3141c1a43b7f427312346cafb"
+    },
+    {
+      "path": "scripts/flows/model-settings.mjs",
+      "sha256": "4b87279e9b6aac875c1e0e2ed672cc318bee0210c09348caf16c39a3a322a765"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "86bc702ef66e15b8ff0bb003feaef600fcef12b1f8fa4b96b698373d29835f9d"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "7f931fdd7ddeacfb2ba1a615bf81aabf1804f595a0266491d02e46825f532688"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "1bd8df83c2568c008bdd9682b2834b8dcc9936bb5659e0b97697d693ee0f8d89"
+    },
+    {
+      "path": "src/components/AppCheckbox.tsx",
+      "sha256": "1efb6cf18e16d9de1d1952322a0bee7682dd647f68501fcdecc7323cbc088e0e"
+    },
+    {
+      "path": "src/components/AppDialog.tsx",
+      "sha256": "4feca9014c7d746bd4c125a49b445933108f68cdbe39ab1e334ddf704d7153a3"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940"
+    }
+  ],
+  "snapshotDigest": "62f4f7ab65121d3d2a7110359613dbb75ba107626a81d91d6e7038c486c04667",
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "commandUnit": {
+      "exitCode": 0,
+      "passed": 3,
+      "command": "node --experimental-strip-types --test scripts/model-settings-form.test.mjs"
+    },
+    "webExport": {
+      "exitCode": 0,
+      "staticRoutes": 25,
+      "bundles": [
+        {
+          "name": "entry-de40fce9574102dcea76fcf23e7c4ca6.js",
+          "sha256": "55aa7aa74aa580626d2a85b3d66e7a69c5a1bfe65c6d979ea8366135ec89faa1"
+        }
+      ]
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "assets": 31,
+      "bundles": [
+        {
+          "name": "entry-c5e72f2c546acde2c1fe218f955cec09.hbc",
+          "sha256": "5f96ad78b9a237b65612a492c69645fe8ec4837e0d425636b19e1b7d39b65298"
+        }
+      ]
+    },
+    "settingsUi": {
+      "exitCode": 0,
+      "proof": "checks-model-settings-model-settings-text.json",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "textScale": {
+        "webOnly": true,
+        "scale": 1.5,
+        "widths": [
+          390,
+          320
+        ]
+      },
+      "passed": [
+        "model settings: four sizes, keyboard/consent/budgets, metadata-only check/429, removal, unknown/version reread, known failure drafts, child/account/Server/offline isolation and no key storage",
+        "model settings text: 390/320 synthetic 150% Web text and field reflow; not Android font acceptance"
+      ],
+      "failures": []
+    }
+  },
+  "screenshots": [
+    {
+      "name": "model-settings-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "0c6c185a9303e6163b75e0dd07b0ac339454542a024c5c6df540ace6fbfa97a3"
+    },
+    {
+      "name": "model-settings-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "a70752eae7ec24f599617e15b7512b53f12cf54ee456f6c17b80111548307132"
+    },
+    {
+      "name": "model-settings-320.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "8c7b5f87c0d20521e5d4f02cfb9f62aeff87378d9125c2e66902ccce88ce13eb"
+    },
+    {
+      "name": "model-settings-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "485fff9dde413a6635d88a8e20b57b426a3e169a20d0636ecd54ea67ba9e8a3f"
+    },
+    {
+      "name": "model-settings-large-text-320.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "9b2e23b336c1a7db73e55ca7c9857f37f2d722cd373a4d31d7dd5e6088a15f8d"
+    },
+    {
+      "name": "model-settings-large-text-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "08aea18b2a7c5ecac0ea5e3547925171e2eca6e1eb9ae2b2130c316a869994b4"
+    },
+    {
+      "name": "model-settings-saved-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "d333d7b21a497c63c8014b9aaa958256767e3264a6603147735c0f5b0fb185b5"
+    },
+    {
+      "name": "model-settings-unknown-3-320.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "7c79bf9546412ed0b8cebd38a2263fc3c8454286730b86c9a00109e771cb81ff"
+    },
+    {
+      "name": "model-settings-unknown-4-320.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "7c79bf9546412ed0b8cebd38a2263fc3c8454286730b86c9a00109e771cb81ff"
+    }
+  ],
+  "reuse": [
+    "Paper/RHF/Zod and existing shared controls",
+    "Unchanged OKLCH theme: 18 contrast checks from FE-W11/FE-W12",
+    "Unchanged other screens: existing frontend proofs; not rerun"
+  ],
+  "versions": {
+    "@expo/metro-runtime": "57.0.16",
+    "@expo/vector-icons": "^15.0.2",
+    "@hookform/resolvers": "5.9.1",
+    "expo": "57.0.24",
+    "expo-constants": "57.0.19",
+    "expo-linking": "57.0.10",
+    "expo-router": "57.0.22",
+    "lucide-react-native": "1.49.0",
+    "luxon": "3.7.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "7.88.0",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-paper": "5.15.3",
+    "react-native-paper-dates": "0.24.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "0.21.2",
+    "react-native-worklets": "0.10.1",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "playwrightCore": "^1.63.0"
+  },
+  "pending": [
+    "User visual acceptance",
+    "Formal API/controller and cross-page integration",
+    "Provider generation/embedding, regional availability and billing",
+    "APK, device, native keyboard/secure input, TalkBack and system font scaling"
+  ]
+}
