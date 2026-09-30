@@ -252,6 +252,7 @@
       "hashes": "verified",
       "playwright": "Existing S16-W05 notices added to unified inventory; no new dependency."
     },
-    "review": "Main reviewed merged worker startup/shutdown, queue registration, migration 014+015 and unchanged authorization/gateway paths."
+    "review": "Main reviewed merged worker startup/shutdown, queue registration, migration 014+015 and unchanged authorization/gateway paths.",
+    "documentRecovery": "Pre-push diff review found an over-broad conflict-marker regex removed PLAN/STATUS sections. Restored both from current master and reapplied only W05 entries; original WORKLOG prefix remains byte-identical."
   }
 }
