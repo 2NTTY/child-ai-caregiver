@@ -41,3 +41,9 @@ typecheck、Web 23 個路由輸出及 Android Hermes／31 項資產輸出通過�
 實際運行畫面：[390 主頁](verification/fe-w10/home-390.png)、[320 主頁](verification/fe-w10/home-320.png)、[完整排列](verification/fe-w10/home-390-full-layout.png)、[320 對話](verification/fe-w10/chat-320.png)、[150% 文字孩子卡片](verification/fe-w10/child-large-text-320.png)。使用者的視覺確認仍待回饋。
 
 窄 Web 使用同一個手機首頁 React Native 元件，但外殼仍是 Web。Android bundle 只驗打包；原生系統字體、安全區、鍵盤／返回鍵、TalkBack、APK 和真 API 均需主聊天另行驗收，不能從 Web 截圖推斷已通過。
+
+## FE-W11 照片入口接續
+
+手機主頁第二格改成「照片記錄」，符合參考圖的快速記錄排列，仍使用同一個 SVG／88 最小高度／四或兩格規則。照片頁按原圖、人工核對、清單排單欄；短按鈕文字配完整 accessible label，主要控制仍至少 48，正文／次層沿 14／12。原生更多選單及照顧記錄也可到達；原生相簿／相機的 `selectOriginal` adapter 未接，不冒稱選圖權限已驗。
+
+共用密度及照片增加後，44 個重排與 390／320 手機必要互動、快捷入口、150% Web 文字均通過；見 [FE-W11 checks](verification/fe-w11/checks-layout-photos-mobile-density.json)／[metrics](verification/fe-w11/after-metrics.json)／[完整手機首頁](verification/fe-w11/home-390-full-layout.png)。Web 25 路由及 Android Hermes／31 資產 export 通過，原生真機門檻保持待驗。

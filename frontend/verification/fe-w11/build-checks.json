@@ -1,0 +1,246 @@
+{
+  "scope": "Isolated synthetic photos frontend; no Server, provider or device acceptance",
+  "verifiedAt": "2026-09-30T16:02:49.764Z",
+  "baselineCommit": "596c657fa7c67eb264c31bc65538c6822c360df2",
+  "contractCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "githubContractSources": [
+    {
+      "githubBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/docs/P2_UI_HANDOFF.md",
+      "path": "docs/P2_UI_HANDOFF.md",
+      "sameAsPrevious": false,
+      "commit": "ce87370b6375b25e45f016f2218d924b44f06f3c"
+    },
+    {
+      "githubBlob": "69fd07e18f649e4862030001837662d5e2fdc19b",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/docs/API.md",
+      "path": "docs/API.md",
+      "sameAsPrevious": false,
+      "commit": "ce87370b6375b25e45f016f2218d924b44f06f3c"
+    },
+    {
+      "githubBlob": "8c0808ef91a7f82cab64228984dadc48b549e62a",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/shared/photos.ts",
+      "path": "src/shared/photos.ts",
+      "sameAsPrevious": true,
+      "commit": "ce87370b6375b25e45f016f2218d924b44f06f3c"
+    },
+    {
+      "githubBlob": "ee6e8ca2d653276d7ff1362c62376eb17c3cb498",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/client/photo-api.ts",
+      "path": "src/client/photo-api.ts",
+      "sameAsPrevious": true,
+      "commit": "ce87370b6375b25e45f016f2218d924b44f06f3c"
+    }
+  ],
+  "photoSectionUnchangedSince5098d64": true,
+  "sources": [
+    {
+      "path": "src/photo-view-model.ts",
+      "sha256": "fdc883271ad04533dd2de1519439d15a78016a6f710095ab717f06f56c762a5f"
+    },
+    {
+      "path": "src/components/photos/photo-form.ts",
+      "sha256": "97d13dcaa9f99afaf74cb340e3e2ca2b33a278e4fb9fd2b3b43701ac4ab96c46"
+    },
+    {
+      "path": "src/components/photos/photo-styles.ts",
+      "sha256": "0df2620a1abdbc4d1e9ecb2d477365d132509eb555cb4d1c5a64c742009b4aaf"
+    },
+    {
+      "path": "src/components/photos/PhotosView.tsx",
+      "sha256": "5bd6ba32b42f70b8b9b6ff4634c306172a4b7a4ce9a2680487485b4b0d1d8fc7"
+    },
+    {
+      "path": "src/components/photos/PhotoRecordForm.tsx",
+      "sha256": "ddd6ddf0064d74c592462ff99e2647084d29602308c9d6abe02500e5b37d9ad7"
+    },
+    {
+      "path": "src/components/photos/PhotoFilePicker.web.tsx",
+      "sha256": "4fadda38a5813093fb740c9a1d43858059d16e10947b1b3325a21e5dd46bcaea"
+    },
+    {
+      "path": "src/components/photos/PhotoFilePicker.tsx",
+      "sha256": "d1847e9bd0248185cb7d4f7831a917a7eeaad05dd68f437f44024184564e78de"
+    },
+    {
+      "path": "src/preview/usePhotosPreview.ts",
+      "sha256": "5087f6494fcee70c572dab0d8c2aaddf0dc34715024fac01d39323ffb93318ce"
+    },
+    {
+      "path": "src/preview/photoFixture.ts",
+      "sha256": "3673bf90bf1f1f3734f5996d619109ff638b2920a5b1181b21d18bc0c1641ae2"
+    },
+    {
+      "path": "src/screens/photosScreen.tsx",
+      "sha256": "6804fcada3da57e02064e6c99646e076f23888a75f4d5d13e4ea0c03063f3857"
+    },
+    {
+      "path": "app/(dashboard)/photos.tsx",
+      "sha256": "12aef594198fe4d6ae9ab587dbb3674331347b77c8d5f3b41592f666ffa6d610"
+    },
+    {
+      "path": "app/(dashboard)/_layout.tsx",
+      "sha256": "f8d8f75fa736c5d9b94d2b6838d4ca89c700c26c25f1e541b6367b647b6a2992"
+    },
+    {
+      "path": "src/components/AppIcon.tsx",
+      "sha256": "58d3685aa6680805c9d1b750fc43d1ad12c8c599f1bd9a57a619f7221e15ecc4"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256": "c3de724af1c049d14420b8cb848626166d7a2e3ae1255323c075b45ed7f93f73"
+    },
+    {
+      "path": "src/components/NativeAppShell.tsx",
+      "sha256": "3176c9574bfbdc9cc3c5daa6b2dbe36314afdcdfc36dabc3936fec60da7a25ec"
+    },
+    {
+      "path": "src/components/MobileHomeDashboard.tsx",
+      "sha256": "226b2ed9f1ec445ff21ada68a5b0c37e104448151853f461c109e7f1bcd9b048"
+    },
+    {
+      "path": "src/components/care/CareRecordsView.tsx",
+      "sha256": "37340795b047b462994f63e64ec67fa62347bd489bafd17b88f504ec39caf133"
+    },
+    {
+      "path": "src/screens/careScreen.tsx",
+      "sha256": "3c09abac609ab556de03eeeea0b41f91a5665fadfadee98ea66933b427687c9f"
+    },
+    {
+      "path": "src/preview/PreviewContext.tsx",
+      "sha256": "9359b834fee56d150dad8b63b0da533a08f1f90f572b7151d91378e4ef9b3361"
+    },
+    {
+      "path": "src/view-model.ts",
+      "sha256": "68eced069f7f5d0749d3c11429f4cf37a20db38036ee37cdfa0d997a5d201a26"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "7f931fdd7ddeacfb2ba1a615bf81aabf1804f595a0266491d02e46825f532688"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "1bd8df83c2568c008bdd9682b2834b8dcc9936bb5659e0b97697d693ee0f8d89"
+    },
+    {
+      "path": "src/components/AppCheckbox.tsx",
+      "sha256": "1efb6cf18e16d9de1d1952322a0bee7682dd647f68501fcdecc7323cbc088e0e"
+    },
+    {
+      "path": "src/components/AppDialog.tsx",
+      "sha256": "4feca9014c7d746bd4c125a49b445933108f68cdbe39ab1e334ddf704d7153a3"
+    },
+    {
+      "path": "src/components/PageFrame.tsx",
+      "sha256": "2bbfef2fb5c0f4d5b385922ee9b8658a35d3b61553cc1d5535531d11cf4c5c48"
+    },
+    {
+      "path": "scripts/photo-form.test.mts",
+      "sha256": "9a2b7b519b458cd68248aeaf46a5260728eb28fac6d03efe173404684738ee5b"
+    },
+    {
+      "path": "scripts/flows/photos.mjs",
+      "sha256": "ab4731886e9eb94be646259632aeadd7c866097b096bf1508b8f7e60eb258286"
+    },
+    {
+      "path": "scripts/flows/mobile-density.mjs",
+      "sha256": "28ee9c690c01eba43b5130febc9472f8b128ca3f1ef10d8eeeef1fa521ba7481"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "790a4af6017f3f605eaac9d18611350e48f4568588746c84e885045fc111c922"
+    },
+    {
+      "path": "scripts/preview-browser.mjs",
+      "sha256": "fe49ce8ffce72bce7683a762d2e94eee7a0bc57c40d924026ab4117dab76fb41"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940"
+    },
+    {
+      "path": "assets/images/harbour-family-hero.png",
+      "sha256": "d2a072b0e68f4e825b50ab95b6074072b3cc847e40b9a08d113a4fd3c8316a9c"
+    }
+  ],
+  "snapshotDigest": "fe829948e44c82e94e62d789a4256f6437ea32f9caa974a110a177abcfa25dfc",
+  "packageVersions": {
+    "@expo/metro-runtime": "57.0.16",
+    "@expo/vector-icons": "^15.0.2",
+    "@hookform/resolvers": "5.9.1",
+    "expo": "57.0.24",
+    "expo-constants": "57.0.19",
+    "expo-linking": "57.0.10",
+    "expo-router": "57.0.22",
+    "lucide-react-native": "1.49.0",
+    "luxon": "3.7.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "7.88.0",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-paper": "5.15.3",
+    "react-native-paper-dates": "0.24.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "0.21.2",
+    "react-native-worklets": "0.10.1",
+    "zod": "4.5.4"
+  },
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "photoFormUnit": {
+      "exitCode": 0,
+      "passed": 3
+    },
+    "webExport": {
+      "exitCode": 0,
+      "staticRoutes": 25,
+      "bundles": [
+        {
+          "name": "entry-07e0b0e360e9a263aa437ea813129164.js",
+          "sha256": "f570454552126f213be54a7eb94baee77d2b405a606b9b3fada5556eabf2f595"
+        }
+      ]
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "assets": 31,
+      "bundles": [
+        {
+          "name": "entry-c3c7743cb49c604500d143d3f147df72.hbc",
+          "sha256": "97f9d30d795ffdfed133520fe34c0ebd94ff7f036c21fdd1de7a514084c6988a"
+        }
+      ]
+    },
+    "syntheticUi": {
+      "exitCode": 0,
+      "checkCount": 46,
+      "layoutCount": 44,
+      "proof": "checks-layout-photos-mobile-density.json",
+      "failures": []
+    },
+    "finalPhotoScreenshots": {
+      "exitCode": 0,
+      "proof": "checks-photos.json",
+      "verifiedAt": "2026-09-30T15:51:51.598Z",
+      "failures": []
+    },
+    "reuse": [
+      "FE-W06 19 unchanged form/domain unit checks",
+      "FE-W07 18 unchanged color contrast checks"
+    ]
+  },
+  "testRepair": "Initial checks assumed DOM disabled for a Paper readonly field and missed reopening remounted synthetic controls. Final selectors use isEditable and explicitly reopen controls. No force click. Photo screenshots wait 200ms for Paper floating labels; runtime source unchanged after combined check.",
+  "limits": [
+    "All reserve/upload/extract/confirm/delete outcomes are synthetic; only Web local file reading, hashing and object URL preview operate on a real selected file",
+    "Native selectOriginal adapter, real camera/gallery permissions, APK, Safe Area, keyboard, TalkBack and device screenshots pending",
+    "Formal session/API/opId, cross-screen state and new browser integration acceptance are main-chat responsibilities",
+    "Visual approval pending"
+  ]
+}

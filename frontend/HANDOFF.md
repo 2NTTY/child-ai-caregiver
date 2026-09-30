@@ -1,6 +1,6 @@
 # 育伴港 Web／手機介面交接
 
-更新：2026-09-30。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
+更新：2026-10-01。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
 
 ## 交付範圍及入口
 
@@ -11,6 +11,7 @@
 | `/`：[HomeDashboard](src/components/HomeDashboard.tsx)、[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) | 桌面主頁、手機參考圖的問候／孩子卡片／提問捷徑／今日重點／待辦／快速記錄；未知及載入分開。捷徑只準備問題，有原草稿時保留 | [records-controller](../src/client/records-controller.ts) 授權投影；HomeViewModel／HomeActions 在 [view-model](src/view-model.ts) |
 | 共用外殼：[AppShell](src/components/AppShell.tsx)、[NativeAppShell](src/components/NativeAppShell.tsx)、[dashboard layout](app/(dashboard)/_layout.tsx) | 左下設定／帳戶與深綠對話入口，置中可返回主頁的 Logo，單一右欄開關，頂部孩子摘要、鈴鐺；原生四個 Tabs 和更多入口 | 正式控制器提供孩子、檔案、任務、操作及身份；不從 fixture 推斷權限 |
 | `/care`：[CareRecordsView](src/components/care/CareRecordsView.tsx)、[care-view-model](src/care-view-model.ts) | 分頁搜尋／種類篩選、空頁續載、失敗／游標失效、詳情／歷史、新增／更正、原文及單位精度、共享核對、單筆永久刪除及衝突比較 | [CarePanel](../src/client/CarePanel.tsx)、[care-api](../src/client/care-api.ts)、[CareValues](../src/shared/care.ts) |
+| `/photos`：[PhotosView](src/components/photos/PhotosView.tsx)、[photo-view-model](src/photo-view-model.ts) | 原檔／私人保存、模型同意／候選、人工草稿、原圖與記錄家庭共享、原操作／版本查核及兩步刪除；手機快速記錄可到達 | 原 PhotoPanel／photo-api／photos 型別；詳細接口、直接上傳與 opId 分工見 [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md) |
 | `/profile`：[ProfileView](src/components/profile/ProfileView.tsx)、[profile-view-model](src/profile-view-model.ts) | 未知／生日／約數年齡與日期基準、早產原文、來源、有效期、家庭共享、歷史、更正／檔案刪除；另有新增孩子及擁有人整位孩子刪除確認 | CarePanel／care-api 的 profile；[records-api](../src/client/records-api.ts) 及 records-controller 的孩子建立／刪除 |
 | `/family`：[FamilyView](src/components/family/FamilyView.tsx)、[family-view-model](src/family-view-model.ts) | owner／caregiver／viewer、邀請與一次顯示的無效合成碼、預覽／接受邀請、範圍核對、角色調整、撤權及版本比較 | [FamilyPanel](../src/client/FamilyPanel.tsx)、[family-api](../src/client/family-api.ts)、[family 型別](../src/shared/family.ts) |
 | `/memory`：[memoryScreen](src/screens/memoryScreen.tsx)、[MemoryCards](src/components/memory/MemoryCards.tsx)、[memory-view-model](src/memory-view-model.ts) | 私人候選、確認家庭共享、來源版本／過期阻擋、更正／停用／刪除／歷史、話題暫緩／終態／明確重開、私人摘要覆蓋明細 | [MemoryPanel](../src/client/MemoryPanel.tsx)、[memory-api](../src/client/memory-api.ts)、[memory 型別](../src/shared/memory.ts) |
@@ -30,6 +31,14 @@
 - 手機 composer 的「預覽」仍是本地輸入預覽；accessible label 是「預覽輸入」，沒有送出或保存。提問捷徑是獨立橫向列，鍵盤能到達；已有草稿仍禁用，孩子切換／原文保留沿原控制器要求。不要把短按鈕接成第二套 chat transport。
 - NativeDashboardTabs 的最小內容高度與 safe-area bottom 分開，底部仍由 Router Tabs 處理；原生外殼只處理頂部／左右 inset。字體保留系統伸縮，沒有固定整頁比例、PixelRatio 補償或虛構系統狀態欄。Android 真字體、鍵盤、返回鍵、TalkBack 和安全區仍待主聊天安排。
 - typecheck、Web 23 路由／Android Hermes 31 資產輸出、40 個重排及手機必要互動／150% Web 文字通過；沒有 API、pageerror 或 console.error。證據：[checks](verification/fe-w10/checks-layout-mobile-density.json)／[build-checks](verification/fe-w10/build-checks.json)，[390 主頁](verification/fe-w10/home-390.png)、[320](verification/fe-w10/home-320.png)、[完整排列](verification/fe-w10/home-390-full-layout.png)。Web 放大文字不當作 Android 系統字體驗收。
+
+### FE-W11 照片接續
+
+前置 FE-W10 `596c657fa7c67eb264c31bc65538c6822c360df2`（draft PR #70）；分支 `codex/fe-w11-photos`。按使用者要求直接讀 GitHub master 的 P2 UI 交接，再讀照片 API／型別／封裝；交付前重核最新 `ce87370`。固定來源連結、元件／操作映射和待接線項見 [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)。照片章節及型別／封裝未變，總表新增本人模型設定，沒有依賴主聊天 checkout 是否已拉取。
+
+`/photos` 採純 view model／回調、RHF／Zod、共用 Paper／MD3／SVG。Web 真正選擇原檔、hash 及 blob 預覽，本頁沒有 Server／模型呼叫。原生預留 `selectOriginal` 薄 port，未接 adapter 時明確停用；沒有假相機、相簿或權限操作。手機快速格改為記錄情況／原照片／身高體重／睡眠，仍沿四格／兩列及最小 88 的共用密度規則。
+
+必要 typecheck、三項照片原文／數值單元、Web 25 路由／Android Hermes 31 資產 export、44 個重排及照片／手機關鍵互動通過，沒有 pageerror、console.error 或 API 請求。見 [checks](verification/fe-w11/checks-layout-photos-mobile-density.json)／[build-checks](verification/fe-w11/build-checks.json)；[1440 照片](verification/fe-w11/photos-1440.png)／[320 草稿](verification/fe-w11/photos-320-manual-review.png)。未知結果、刪除清理、私人候選、原文與 scope 清除等語義須按照片交接保留；正式 UI 接線及原生實機未驗。
 
 ## 共用元件與成熟方案
 
@@ -97,9 +106,9 @@ HomeChild.profileConfirmed／ageLabel／allergiesLabel 只投影同一 selectedC
 
 - 所有真 session／API／opId／跨畫面及跨成員同步、正式 UI 掛載，以及接線後針對新增介面的必要瀏覽器驗收。主線已經 `9f0febd` 合併既有正式 App 的 S16-W05 Chromium 情景；該證據可按未變部分復用，但沒有驗過本包隔離介面，不要求無理由重跑整套舊情景。
 - S13-W05／W06 的本人渠道已在 FE-W07 投影，待接正式 adapter；真通知中心／未讀及 W07 聯絡授權／fallback 台帳另核對所屬交付。active 分支落碼不等同已合併交付，不代改其程式碼。
-- 其後同步主線 `90dacd4`，Agent／照片／分享、成長／摘要及主動聯絡已有已合併型別和 client API。FE-W09 已按原文投影 Agent；其餘領域待後續包，全部仍未接真服務。P2 UI 清單部分總表文字尚待主聊天對齊，不能只憑一個「待接通」表格值忽略其後的具體接線段落；以已合併實際 API、根 STATUS／PLAN 及所屬驗收核對，不修改主聊天文件。
+- 最新直接讀 GitHub `ce87370`：P2 正式結案／交付已隨 PR #71 合併，PR #72 新增本人模型 key／可調上限，P2 UI 總表已更新；既有功能未接本包隔離畫面不代表後端未實作。FE-W09 已投影 Agent，FE-W11 已投影照片；分享、成長、摘要、主動聯絡及本人模型設定待後續前端包。全部隔離畫面仍待正式 adapter／跨畫面接線與必要驗收；P3 未因 Android bundle 啟動或完成，不修改主聊天權威文件。
 - 真通知中心、Web Push／Telegram／FCM 及未讀。鈴鐺只提示合成原操作，右欄勾選只是本地清單；/tasks 的合成流程另列，不能互相冒充。
-- 圖中的第三方／手機登入、忘記密碼、方案／儲存用量、帳戶匯出／刪除、疫苗百分比及知識首頁，不能憑圖片當已承諾 API。手機首頁暫用已有記憶／話題入口，沒有假醫療建議、附件或咪高峰操作。
+- 圖中的第三方／手機登入、忘記密碼、方案／儲存用量、帳戶匯出／刪除、疫苗百分比及知識首頁，不能憑圖片當已承諾 API。手機首頁暫用已有記憶／話題入口；照片已可進入 FE-W11 原檔預覽，沒有假醫療建議、真上傳或咪高峰操作。
 - 正式 P3 共用服務、APK／簽署、實機畫面／鍵盤／返回鍵／Safe Area／TalkBack／大字體、登入及相機／通知權限。Android JS bundle 不代表上述已驗收。
 
 ## 預覽及驗證

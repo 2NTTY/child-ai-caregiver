@@ -11,9 +11,9 @@ import { previewChecklist } from "../preview/fixture";
 const questions = ["整理最近的睡眠", "記錄孩子的飲食", "下次檢查的問題"];
 const quickActions = [
   { kind: "note", label: "記錄情況", hint: "日常觀察", icon: "notebook-outline" },
-  { kind: "sleep", label: "記錄睡眠", hint: "時間原文", icon: "weather-night" },
+  { kind: "photos", label: "照片記錄", hint: "原圖及草稿", icon: "image-outline" },
   { kind: "measurement", label: "身高體重", hint: "約數及單位", icon: "chart-bar" },
-  { kind: "feeding", label: "飲食記錄", hint: "份量與來源", icon: "silverware-fork-knife" },
+  { kind: "sleep", label: "記錄睡眠", hint: "時間原文", icon: "weather-night" },
 ] as const;
 
 export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; actions: HomeActions }) {
@@ -101,7 +101,7 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
     <SectionCard>
       <SectionHeader title="快速記錄" icon="pencil" />
       <View testID="mobile-quick-actions" style={styles.quickGrid} onLayout={event => setQuickWidth(event.nativeEvent.layout.width)}>
-        {quickActions.map(item => <Pressable key={item.kind} accessibilityRole="button" accessibilityLabel={`快速${item.label}`} disabled={!child} onPress={() => actions.composeCare(item.kind)} style={({ pressed }) => [styles.quick, fourQuickColumns && styles.fourColumns, !child && styles.disabled, pressed && styles.pressed]}>
+        {quickActions.map(item => <Pressable key={item.kind} accessibilityRole="button" accessibilityLabel={`快速${item.label}`} disabled={!child} onPress={() => item.kind === "photos" ? actions.open("photos") : actions.composeCare(item.kind)} style={({ pressed }) => [styles.quick, fourQuickColumns && styles.fourColumns, !child && styles.disabled, pressed && styles.pressed]}>
           <AppIcon name={item.icon} size={mobileIcons.content} color={colors.teal} /><Text style={styles.quickLabel}>{item.label}</Text><Text style={styles.quickHint}>{item.hint}</Text>
         </Pressable>)}
       </View>

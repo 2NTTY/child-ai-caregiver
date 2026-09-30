@@ -29,6 +29,7 @@ import EyeOff from "lucide-react-native/icons/eye-off";
 import FileText from "lucide-react-native/icons/file-text";
 import History from "lucide-react-native/icons/rotate-ccw-clock";
 import House from "lucide-react-native/icons/house";
+import ImageIcon from "lucide-react-native/icons/image";
 import Info from "lucide-react-native/icons/info";
 import Keyboard from "lucide-react-native/icons/keyboard";
 import LockKeyhole from "lucide-react-native/icons/lock-keyhole";
@@ -114,6 +115,7 @@ const icons = {
   "thermometer": Thermometer,
   "ruler": Ruler,
   "file-document-outline": FileText,
+  "image-outline": ImageIcon,
   "history": History,
   "information-outline": Info,
   "help-circle": CircleHelp,

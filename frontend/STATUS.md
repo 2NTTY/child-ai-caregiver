@@ -1,8 +1,8 @@
 # 育伴港前端狀態
 
-更新：2026-09-30。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
+更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**FE-W06 已交付 `6c7216f`；FE-W07 本人渠道已交付 `1e1fb7b`（draft PR #65）；FE-W08 單一 Agent 入口已交付 `83106c0`（#68）；FE-W09 Agent 投影已交付 `0ff9533`（#69）；FE-W10 手機比例、MD3 字級／SVG／觸控、卡片及窄 composer 已實作，必要合成檢查通過。** 視覺、真 API 和原生實機仍待驗。所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件；持續目標按已合併契約及使用者回饋接續。
+**FE-W06 已交付 `6c7216f`；FE-W07 本人渠道已交付 `1e1fb7b`（draft PR #65）；FE-W08 單一 Agent 入口已交付 `83106c0`（#68）；FE-W09 Agent 投影已交付 `0ff9533`（#69）；FE-W10 手機密度已交付 `596c657`（#70）；FE-W11 照片畫面已實作，必要合成檢查及 Web／Android export 通過。** 視覺、真 API 和原生實機仍待驗。所有修改只在 frontend，沒有改 Server／Agent／正式 App、根依賴、根目錄 AGENTS 或子代理規則文件；持續目標按已合併契約及使用者回饋接續。
 
 | 工作包 | 現況 | 待接續 |
 |---|---|---|
@@ -15,7 +15,8 @@
 | FE-W08 Agent 入口 | 桌面側欄只保留下方主要入口，深綠／SVG／雙層文字及箭嘴；手機對話分頁保留。共用導航改用真 Expo Link，Enter、目前頁面及問題草稿保留通過 | 使用者比較；沒有改 Agent 行為或業務接口 |
 | FE-W09 Agent 對話投影 | 基於 `83106c0`；核對主線 `90dacd4` 的 Agent API／Panel／Inbox。共用運行、完整候選、明確共享、原決定查核／重試、來源快照與手動私人結果已實作，四尺寸及建置通過 | [AGENT_HANDOFF](AGENT_HANDOFF.md)；composer 仍只預覽輸入，真聊天／回覆／引用／跨頁同步待主聊天沿原控制器接線 |
 | FE-W10 手機比例與密度 | 依最新意見及手機參考，復用 Paper 5.15.3 MD3：主標 22、區塊 16、正文 14–16、次層 12、SVG 20–24，主要控制觸控至少 48；孩子卡片 390／320 均 110 高，快捷格 88。40 個重排、手機關鍵互動／150% Web 文字及 Web／Android export 通過 | [MOBILE_DESIGN](MOBILE_DESIGN.md)；等待視覺比較與原生實機。色階／業務規則未改，正式接線仍由主聊天統籌 |
-| 尚未投影的已合併畫面 | 主線 `90dacd4` 已有照片／分享、成長關注、到診摘要及主動聯絡型別與 client API | FE-W10 後逐項投影；真服務、正式整合、未讀及整包驗收由主聊天統籌 |
+| FE-W11 照片與記錄 | 原圖選擇／hash／預覽、私人保存、提取同意／候選、人工原文、明確家庭共享、原操作查核、版本／刪除／清理及範圍清除已實作；三項原文單元、44 個重排及照片／手機互動通過 | [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)；真附件／模型／原生選圖 adapter 及使用者視覺待接線／驗收 |
+| 尚未投影的已合併畫面 | GitHub master `ce87370` 已有分享、成長關注、到診摘要、主動聯絡及新增的本人模型 key／可調上限；正式 P2 結案已合併 | FE-W11 後逐項投影；正式整合、未讀及產品整包狀態由主聊天統籌 |
 
 ## 已驗證及限制
 
@@ -31,6 +32,6 @@
 
 ## 接續入口
 
-先讀本文件、[PLAN](PLAN.md) 及 [HANDOFF](HANDOFF.md)，fetch GitHub 並核對其他 active worktree 的 frontend 重疊。現場分支 `codex/fe-w10-mobile-density`，已 review 的前置 `0ff9533`（FE-W09 draft PR #69），主線已同步至 `90dacd4`，未見其他 active worktree 的 frontend 重疊；P2 隔離接續沒有豁免正式合併／驗收。B 負責前端交付，保留真實 Committer，不改全局認證或 Git 身份。
+先讀本文件、[PLAN](PLAN.md) 及 [HANDOFF](HANDOFF.md)，fetch GitHub 並核對其他 active worktree 的 frontend 重疊。現場分支 `codex/fe-w11-photos`，已 review 的前置 `596c657`（FE-W10 draft PR #70）；直接從 GitHub 讀 P2 UI 交接，再讀照片 API／型別／封裝，交付前已重核最新 master `ce87370`，照片章節及型別／封裝未變，沒有依賴主聊天本機是否已拉取。另外 14 個 active worktree 未見 frontend 重疊；P2 隔離接續沒有豁免正式合併／驗收。B 負責前端交付，使用 `CherylNg-2526` 核對及推送，保留真實 Committer，不改全局認證或 Git 身份。
 
-讓使用者比較最新 [390 手機主頁](verification/fe-w10/home-390.png)、[320 主頁](verification/fe-w10/home-320.png)、[完整排列](verification/fe-w10/home-390-full-layout.png) 及 [320 對話](verification/fe-w10/chat-320.png)。FE-W10 typecheck、Web／Android export 及 [40 個重排／手機互動](verification/fe-w10/checks-layout-mobile-density.json) 通過；原來 19 項規則單元及 18 組色階對比沿用，沒有機械重跑。其後逐包投影已合併的照片／分享、成長、摘要與主動聯絡；真接線、正式驗收及 P3 真機仍由主聊天統籌，不自行 merge。
+讓使用者比較 [桌面照片](verification/fe-w11/photos-1440.png)、[320 原圖](verification/fe-w11/photos-320.png)、[320 草稿](verification/fe-w11/photos-320-manual-review.png) 及 [390 手機首頁](verification/fe-w11/home-390-full-layout.png)。FE-W11 typecheck、Web 25 路由／Android export、三項照片原文單元及 [44 個重排／照片／手機互動](verification/fe-w11/checks-layout-photos-mobile-density.json) 通過；既有 19 項規則及 18 組色階對比沿用，沒有機械重跑。其後逐包投影分享、成長、摘要、主動聯絡及新增的本人模型設定；真接線、正式驗收及 P3 真機仍由主聊天統籌，不自行 merge。

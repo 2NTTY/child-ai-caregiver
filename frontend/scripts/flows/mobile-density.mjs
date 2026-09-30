@@ -21,7 +21,7 @@ export async function verifyMobileDensity(browser, failures, directory) {
     const title = await page.getByRole("heading", { name: "待辦事項", exact: true }).boundingBox();
     const action = await page.getByRole("button", { name: "查看全部", exact: true }).boundingBox();
     assert.ok(title.y < action.y + action.height && action.y < title.y + title.height, "Task title and action align on one row");
-    const quick = page.getByRole("button", { name: /^快速(記錄情況|記錄睡眠|身高體重|飲食記錄)$/ });
+    const quick = page.getByRole("button", { name: /^快速(記錄情況|記錄睡眠|身高體重|照片記錄)$/ });
     const quickBounds = await quick.evaluateAll(elements => elements.map(element => {
       const bounds = element.getBoundingClientRect();
       return { width: bounds.width, height: bounds.height, y: bounds.y };
