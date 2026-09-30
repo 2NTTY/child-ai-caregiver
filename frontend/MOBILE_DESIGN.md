@@ -47,3 +47,9 @@ typecheck、Web 23 個路由輸出及 Android Hermes／31 項資產輸出通過�
 手機主頁第二格改成「照片記錄」，符合參考圖的快速記錄排列，仍使用同一個 SVG／88 最小高度／四或兩格規則。照片頁按原圖、人工核對、清單排單欄；短按鈕文字配完整 accessible label，主要控制仍至少 48，正文／次層沿 14／12。原生更多選單及照顧記錄也可到達；原生相簿／相機的 `selectOriginal` adapter 未接，不冒稱選圖權限已驗。
 
 共用密度及照片增加後，44 個重排與 390／320 手機必要互動、快捷入口、150% Web 文字均通過；見 [FE-W11 checks](verification/fe-w11/checks-layout-photos-mobile-density.json)／[metrics](verification/fe-w11/after-metrics.json)／[完整手機首頁](verification/fe-w11/home-390-full-layout.png)。Web 25 路由及 Android Hermes／31 資產 export 通過，原生真機門檻保持待驗。
+
+## FE-W12 問候區品牌插畫
+
+2026-10-01 使用者要求問候區改用桌面主頁的海旁家庭美術。MobileHomeDashboard 直接復用 `harbour-family-hero.png`，文字與圖片排兩欄；圖片框佔可用寬度 34%、最多 120、高 108，靠右顯示照顧者及孩子。文字欄可換行並隨內容增高，沿原有字級；插畫屬裝飾，略過朗讀及鍵盤操作。
+
+沿用成熟 RN Image／現有品牌素材，毋須新組件庫或美術。390／320 手機密度、原年齡基準／孩子切換／草稿／快捷記錄及 150% Web 文字通過；typecheck、Web 25 路由及 Android Hermes 31 資產 export 通過。證據在 [FE-W12 checks](verification/fe-w12/checks-mobile-density.json)／[build-checks](verification/fe-w12/build-checks.json)，實際 [390](verification/fe-w12/home-390.png)／[320](verification/fe-w12/home-320.png)。只驗共用源碼與 Web／bundle，使用者視覺及原生實機仍待驗。

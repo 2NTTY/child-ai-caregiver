@@ -1,0 +1,100 @@
+{
+  "scope": "Requested mobile greeting artwork follow-up on existing frontend draft PR #73; no Server or device acceptance",
+  "verifiedAt": "2026-09-30T16:26:09.170Z",
+  "baselineCommit": "933530a5b86ffc2a22a1c2c0fd0db7db22989cca",
+  "sources": [
+    {
+      "path": "src/components/MobileHomeDashboard.tsx",
+      "sha256": "e7896fc523a7831ffef6776656a7c5b98d439f15017ed66f118367656adbb9b7"
+    },
+    {
+      "path": "src/components/HomeDashboard.tsx",
+      "sha256": "eb5fa66bb7314b62546aec37433633ed63da1223b4e9f9cfa06e06f01b3c9f28"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "7f931fdd7ddeacfb2ba1a615bf81aabf1804f595a0266491d02e46825f532688"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "1bd8df83c2568c008bdd9682b2834b8dcc9936bb5659e0b97697d693ee0f8d89"
+    },
+    {
+      "path": "src/components/ChildPicker.tsx",
+      "sha256": "afad0de7dfdc11eb7c75b7179a7c00d1021bc695dd39ff95bf12b816260360a6"
+    },
+    {
+      "path": "src/view-model.ts",
+      "sha256": "68eced069f7f5d0749d3c11429f4cf37a20db38036ee37cdfa0d997a5d201a26"
+    },
+    {
+      "path": "scripts/flows/mobile-density.mjs",
+      "sha256": "28ee9c690c01eba43b5130febc9472f8b128ca3f1ef10d8eeeef1fa521ba7481"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "790a4af6017f3f605eaac9d18611350e48f4568588746c84e885045fc111c922"
+    },
+    {
+      "path": "assets/images/harbour-family-hero.png",
+      "sha256": "d2a072b0e68f4e825b50ab95b6074072b3cc847e40b9a08d113a4fd3c8316a9c"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940"
+    }
+  ],
+  "snapshotDigest": "9d3902bb6f43bf97992344b03a8fc8f3de0fac47cccd5044a0615a76a63d39cc",
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "webExport": {
+      "exitCode": 0,
+      "staticRoutes": 25,
+      "bundles": [
+        {
+          "name": "entry-3058b7b5678517ef5a096f93d29ab61f.js",
+          "sha256": "3ed11a84d41ea86cdbcb9ca28cb465256436bb7ceb4539335722a108071b5bb7"
+        }
+      ]
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "assets": 31,
+      "bundles": [
+        {
+          "name": "entry-26cefa1f05b0e3c449a54ad4b04bdfff.hbc",
+          "sha256": "4906d92cf426530fddd4b5d64af7f0a5521d0b32b87ea9fab6fd30a1ea129e0c"
+        }
+      ]
+    },
+    "syntheticUi": {
+      "exitCode": 0,
+      "proof": "checks-mobile-density.json",
+      "failures": [],
+      "passed": [
+        "mobile density: 390/320 targets/age basis/header alignment/four-or-two quick actions/child picker/keyboard suggestions/original draft/quick form/150% Web text reflow"
+      ]
+    },
+    "visualReview": {
+      "widths": [
+        390,
+        320
+      ],
+      "actualScreenshots": [
+        "home-390.png",
+        "home-320.png"
+      ],
+      "result": "Same existing harbour-family artwork visible beside greeting; no sprout icon"
+    },
+    "reuse": [
+      "FE-W11 photo interactions and 44 layouts: unaffected except mobile greeting, covered by this follow-up mobile check",
+      "No new unit tests for this reversible artwork change"
+    ]
+  },
+  "limits": [
+    "Web image/layout screenshots do not prove Android device behavior",
+    "User visual approval and native device acceptance pending"
+  ]
+}

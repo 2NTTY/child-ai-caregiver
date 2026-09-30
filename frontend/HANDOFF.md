@@ -40,6 +40,12 @@
 
 必要 typecheck、三項照片原文／數值單元、Web 25 路由／Android Hermes 31 資產 export、44 個重排及照片／手機關鍵互動通過，沒有 pageerror、console.error 或 API 請求。見 [checks](verification/fe-w11/checks-layout-photos-mobile-density.json)／[build-checks](verification/fe-w11/build-checks.json)；[1440 照片](verification/fe-w11/photos-1440.png)／[320 草稿](verification/fe-w11/photos-320-manual-review.png)。未知結果、刪除清理、私人候選、原文與 scope 清除等語義須按照片交接保留；正式 UI 接線及原生實機未驗。
 
+### FE-W12 手機問候插畫增補
+
+按使用者 2026-10-01 意見，以桌面主頁的海旁家庭美術取代 MobileHomeDashboard 的小草圖標；前置 `933530a`，這個小修訂沿現有 draft PR #73 交付。原圖在 `assets/images/harbour-family-hero.png`，文字可換行、人物靠右呈現，裝飾略過朗讀及鍵盤。使用現有 RN Image／品牌素材，不涉及資料或 API 接線。
+
+typecheck、Web 25 路由／Android Hermes 31 資產 export 及 390／320／150% Web 文字、必要手機互動通過；[證據](verification/fe-w12/build-checks.json)／[390](verification/fe-w12/home-390.png)／[320](verification/fe-w12/home-320.png)，真機及視覺仍待驗。下一包接續已從 GitHub 讀取的本人模型設定契約，輸入／模式／費用同意與 unknown 不重播等語義按 UI-P2-18 核對。
+
 ## 共用元件與成熟方案
 
 - [theme.ts](src/theme.ts) 是色彩、字級、間距、圓角及 Paper 主題唯一入口；[ui.tsx](src/components/ui.tsx) 集中品牌按鈕、輸入、選單、卡片、標題、分頁和狀態。

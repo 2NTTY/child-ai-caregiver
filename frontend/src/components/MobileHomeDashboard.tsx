@@ -8,6 +8,7 @@ import { AppButton, OperationPill, SectionCard, SectionHeader, TextLink } from "
 import { ChildPicker } from "./ChildPicker";
 import { previewChecklist } from "../preview/fixture";
 
+const harbourArt = require("../../assets/images/harbour-family-hero.png");
 const questions = ["整理最近的睡眠", "記錄孩子的飲食", "下次檢查的問題"];
 const quickActions = [
   { kind: "note", label: "記錄情況", hint: "日常觀察", icon: "notebook-outline" },
@@ -31,12 +32,14 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <View style={styles.greeting}>
-      <View style={styles.greetingTop}>
+      <View style={styles.greetingCopy}>
         <Text accessibilityRole="header" style={styles.heading}>你好，{model.caregiverName}！</Text>
-        <View aria-hidden importantForAccessibility="no-hide-descendants" style={styles.sprout}><AppIcon name="sprout" size={mobileIcons.primary} color={colors.teal} /></View>
+        <Text style={styles.subtitle}>{child ? `一起整理${child.displayName}的照顧日常。` : "先把基本資料整理好，再開始記錄。"}</Text>
+        <Text style={styles.motto}>每個小日常，都值得好好記下。</Text>
       </View>
-      <Text style={styles.subtitle}>{child ? `一起整理${child.displayName}的照顧日常。` : "先把基本資料整理好，再開始記錄。"}</Text>
-      <Text style={styles.motto}>每個小日常，都值得好好記下。</Text>
+      <View aria-hidden importantForAccessibility="no-hide-descendants" style={styles.greetingArtFrame}>
+        <Image source={harbourArt} accessible={false} resizeMode="cover" style={styles.greetingArt} />
+      </View>
     </View>
 
     <SectionCard testID="mobile-child-card">
@@ -121,12 +124,13 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.canvas },
   page: { padding: mobileLayout.pageInset, gap: mobileLayout.sectionGap, width: "100%", maxWidth: mobileLayout.breakpoint, alignSelf: "center" },
-  greeting: { paddingVertical: spacing.xs, gap: spacing.xs },
-  greetingTop: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.heading, fontWeight: "800", flex: 1 },
+  greeting: { paddingVertical: spacing.xs, flexDirection: "row", alignItems: "center", gap: spacing.md },
+  greetingCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+  heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.heading, fontWeight: "800" },
   subtitle: { fontFamily: chineseFont, color: colors.ink, ...mobileType.body },
   motto: { fontFamily: chineseFont, color: colors.teal, ...mobileType.caption },
-  sprout: { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
+  greetingArtFrame: { width: "34%", maxWidth: 120, height: 108, borderRadius: radius.small, overflow: "hidden", alignItems: "flex-end" },
+  greetingArt: { width: 192, height: 108, flexShrink: 0 },
   childCardRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   identity: { flex: 1, minWidth: 0, minHeight: mobileLayout.touchTarget, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   avatar: { width: mobileLayout.childAvatar, height: mobileLayout.childAvatar, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
