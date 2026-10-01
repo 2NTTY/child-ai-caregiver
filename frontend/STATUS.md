@@ -2,7 +2,7 @@
 
 更新：2026-10-02。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W23 原版還原後調整（2026-10-02）：** 依使用者要求，先將登入頁及四份相關前端文件還原至改登入前 `cab2841`，五檔 Git blob 一致已核對，再重新調整。保留原左介紹／右登入、表單上方品牌及 0.55 圖片透明度；桌面右欄 36%／至少 400，圖片裁切重心 95%，向左移並為指尖預留位置。2206／1440／1024／900／390／320、既有本地驗證／鍵盤及 Web／Android export 通過；[交接](HANDOFF.md#login-original-reset)／[還原證據](verification/fe-w23-reset/restore-checks.json)／[建置](verification/fe-w23-reset/build-checks.json)。前兩次登入改版已取代，Git 歷史及證據保留；真登入、使用者視覺及原生實機仍待接線／驗收。
+**最新 FE-W23 固定圖片右邊界（2026-10-02）：** 沿用已從 `cab2841` 精確還原的左介紹／右登入、表單品牌及 0.55 圖片透明度；桌面右欄仍為 36%／至少 400。按使用者補充要求，改以原圖 x=1552 作固定可見右邊界，排除太陽並保留指尖；視窗變窄只從左側裁切，窄版仍為上下排列。七個尺寸（包含 1024 × 1237 窄高視窗）、五次同頁 CSS 縮放等效重排、本地驗證／鍵盤、typecheck 及 Web／Android export 通過；[交接](HANDOFF.md#login-original-reset)／[原版還原證據](verification/fe-w23-reset/restore-checks.json)／[本次建置](verification/fe-w23-anchor/build-checks.json)。舊裁切證據保留；真登入、使用者視覺及原生實機仍待接線／驗收，未宣稱操作瀏覽器原生 Zoom 選單。
 
 **最新 FE-W22（2026-10-01）：** 鈴鐺／資訊欄開關改用同一 [ToolbarIconButton](src/components/ToolbarIconButton.tsx)，白底／邊框／22 px SVG 一致，桌面實際點擊 44、手機 48；「已連接」同表面並置中。共用 danger 按鈕／Dialog 已套用刪除確認；刪整位孩子採紅色彈窗、完整稱呼及範圍勾選，unknown 保留查核。四尺寸、Enter／Escape／焦點、照片二次確認、記錄／孩子失敗及 unknown 檢查、typecheck 及 Web／Android export 通過；[交接及刪除保障清單](HANDOFF.md#toolbar-delete-safeguards)／[證據](verification/fe-w22/build-checks.json)。只有合成操作，帳戶刪除及真正密碼／身份重新驗證尚未實作，待主聊天接線；原生實機及使用者視覺仍待驗收。
 
@@ -42,7 +42,7 @@
 | FE-W20 配色及自選背景入口 | 第 14 款逐區角色／實際畫面已核對；共用 MD3／SVG／Agent／卡片／導航同步，Web 本地選圖／錯誤保留／跨頁／恢復及 blob 清理已實作，必要輕量檢查通過 | [APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)；當前偏好 API 沒有背景欄位，正式保存／帳戶隔離／原生 adapter／視覺及實機待接線／驗收 |
 | FE-W21 前端品牌更名 | 共用名稱／SVG Logo、各頁文案、Web／Expo 顯示名稱及相應 selector 已同步；四尺寸、鍵盤及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#brand-rename-pending)；使用者視覺、Android 字體／App 顯示名稱實機與正式品牌整合待驗收／接線 |
 | FE-W22 頂部控件及刪除保障 | 共用鈴鐺／側欄按鈕、置中狀態、danger 樣式及整位孩子稱呼／範圍確認已實作；四尺寸、必要合成操作及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#toolbar-delete-safeguards)；帳戶刪除／Server 身份重新驗證、真 API、視覺與實機待接續／驗收 |
-| FE-W23 登入原版還原及裁切 | 先核對還原五檔，再保留原結構及較淡照片，調整桌面比例／裁切讓指尖留白；六尺寸、既有本地操作及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#login-original-reset)；真身份、使用者視覺及原生實機待接線／驗收 |
+| FE-W23 登入原版還原及裁切 | 五檔精確還原證據保留；固定圖片右邊界，排除太陽並保留指尖，變窄由左側裁切；七尺寸、同頁重排、本地操作及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#login-original-reset)；真身份、使用者視覺及原生實機待接線／驗收 |
 
 ## 已驗證及限制
 

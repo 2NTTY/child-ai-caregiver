@@ -7,15 +7,19 @@
 <a id="login-original-reset"></a>
 <a id="login-story-balance"></a>
 <a id="login-background-layout"></a>
-### FE-W23 登入原版還原及裁切（2026-10-02，現行版本）
+### FE-W23 登入原版還原及固定右側裁切（2026-10-02，現行版本）
 
 使用者要求先還原檔案再改；工作 HEAD `4496f47e9880a61a1d70e990895925837de150d6`。已先將 LoginPage、STATUS、PLAN、HANDOFF、DESIGN_SYSTEM 這五個 frontend 檔案還原至登入改版前 `cab28414a39a2b6e25c77c68e349024247623122`，逐一核對 Git blob 一致後才重新修改，見 [還原記錄](verification/fe-w23-reset/restore-checks.json)。Git 歷史及先前 verification 保留；`87d82dc`／`4496f47` 的排列已取代，舊錨點指向本節。只交付前端，沿 draft PR #73，主責 B。
 
-[LoginPage](src/screens/loginScreen.tsx) 保留原品牌介紹／四項功能、右側表單上方 Logo、共用 AppTextField／AppButton 及原 0.55 圖片透明度；沒有新全幅背景、SVG 漸淡層或重組表單。桌面右欄 36%／至少 400、卡片最寬 500，左側取得餘下展示空間；介紹的閱讀寬度另限在左側。原圖 1672 × 941 按 onLayout 容器計算 cover，`harbourCropFocus=0.95` 把圖片再往左移，為指尖保留空間；若更換原圖尺寸，須同步比例。900 px 以下回到原版的上方故事／下方表單，不套用已撤回的單一品牌卡片。
+[LoginPage](src/screens/loginScreen.tsx) 保留原品牌介紹／四項功能、右側表單上方 Logo、共用 AppTextField／AppButton 及原 0.55 圖片透明度。桌面右欄 36%／至少 400、卡片最寬 500，左側取得餘下展示空間；介紹的閱讀寬度另限在左側。先前 95% 裁切重心在窄而高的容器仍會裁掉部分右側，本次從 `8295fa7` 改為固定右邊界。
+
+原圖尺寸由 `harbourSourceSize` 記錄（1672 × 941）；`harbourRightEdge=1552` 是已排除太陽、仍保留指尖的可見右邊界。onLayout 取得實際容器，按這個可見範圍計算等比 cover；右側位置固定、垂直置中，視窗變窄只裁掉更多左側，圖片原檔不改。首幀未量得尺寸時先隱藏圖片，避免閃出未裁切版本。若更換素材，須重核尺寸、指尖及太陽的邊界。900 px 以下仍為原版上方故事／下方表單；保留指尖，但「朝向右側登入」只適用於雙欄佈局。
 
 本地登入／註冊驗證、密碼顯示及返回主頁的程式保留原內容，沒有 Server／session、密碼保存或新 API／背景偏好。正式認證／初始化仍由主聊天接線。直接重核 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 UI 清單（blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`）；其他 14 個 worktree 未見 frontend 重疊。
 
-**驗證：** 2206 × 1252（使用者截圖尺寸）、1440 × 900、1024 × 768、900 × 800、390 × 844、320 × 720 的重排／比例／模式切換及既有 320 本地驗證／密碼顯示／Enter 通過；typecheck、Web 33 路由及 Android Hermes／30 資產 export 通過。桌面按原圖指尖約 x=1510 的視覺定位估算，右側約有 92–175 CSS px 留白，實際截圖已對照，並非新的業務資料。沒有 pageerror、console.error 或 API 請求。見 [版面](verification/fe-w23-reset/layout-checks.json)、[登入](verification/fe-w23-reset/checks-login.json)、[source/build](verification/fe-w23-reset/build-checks.json) 及 [桌面](verification/fe-w23-reset/login-1440.png)。使用者視覺、真身份及原生實機仍待驗收；未重跑無關業務。
+**本次驗證：** 2237 × 1265、1440 × 900、1024 × 1237／768、900 × 1237、390 × 844、320 × 720 共七個尺寸的重排／比例／登入及註冊模式切換通過，包含使用者指出的窄高情況。同頁按 1600 × 1000 視窗的 100%／125%／150%／200% 縮放等效 CSS 尺寸重排，再回原尺寸；這是佈局驗證，沒有操作瀏覽器原生 Zoom 選單，也不把 DPR 當作 zoom。每次右側都停在原圖約 x=1552，指尖完整、太陽在可見範圍外，實際截圖已對照；視覺定位數值並非業務資料。既有 320 本地驗證／密碼顯示／Enter、typecheck、Web 33 路由及 Android Hermes／30 資產 export 通過；沒有 pageerror、console.error 或 API 請求。
+
+見 [版面及重排](verification/fe-w23-anchor/layout-checks.json)、[登入](verification/fe-w23-anchor/checks-login.json)、[source/build](verification/fe-w23-anchor/build-checks.json)、[桌面](verification/fe-w23-anchor/login-1440x900.png) 及 [窄高視窗](verification/fe-w23-anchor/login-1024x1237.png)。上一版 [fe-w23-reset](verification/fe-w23-reset/build-checks.json) 的還原及裁切證據保留；使用者視覺、真身份及原生實機仍待驗收，未重跑無關業務。
 
 <a id="toolbar-delete-safeguards"></a>
 ### FE-W22 頂部控件及刪除保障（2026-10-01）

@@ -1,0 +1,365 @@
+{
+  "at": "2026-10-01T18:23:29.884Z",
+  "scope": "Isolated frontend login: fixed right source crop, left-only resize cropping, fingertip retained and sun excluded",
+  "landmarks": {
+    "sourceWidth": 1672,
+    "sourceHeight": 941,
+    "approximateFingertip": {
+      "x": 1510,
+      "y": 386
+    },
+    "sunRegionStartsBeyondX": 1570
+  },
+  "passed": [
+    {
+      "width": 2237,
+      "height": 1265,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 1431.671875,
+        "height": 1265
+      },
+      "form": {
+        "x": 1431.671875,
+        "y": 0,
+        "width": 805.3125,
+        "height": 1265
+      },
+      "picture": {
+        "x": -654.703125,
+        "y": 0,
+        "width": 2247.6875,
+        "height": 1265
+      },
+      "visibleRight": 1552.0035592136362,
+      "fingertip": {
+        "x": 1375.2060406698565,
+        "y": 518.9039324162679
+      },
+      "rightClearance": 56.46583433014348
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 921.59375,
+        "height": 900
+      },
+      "form": {
+        "x": 921.59375,
+        "y": 0,
+        "width": 518.390625,
+        "height": 900
+      },
+      "picture": {
+        "x": -562.78125,
+        "y": 0,
+        "width": 1599.140625,
+        "height": 900
+      },
+      "visibleRight": 1552.0054716888953,
+      "fingertip": {
+        "x": 881.4187163576555,
+        "y": 369.1795940490431
+      },
+      "rightClearance": 40.17503364234449
+    },
+    {
+      "width": 1024,
+      "height": 1237,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 624,
+        "height": 1237
+      },
+      "form": {
+        "x": 624,
+        "y": 0,
+        "width": 400,
+        "height": 1237
+      },
+      "picture": {
+        "x": -1416.203125,
+        "y": 0,
+        "width": 2197.9375,
+        "height": 1237
+      },
+      "visibleRight": 1552.00938379731,
+      "fingertip": {
+        "x": 568.7763157894738,
+        "y": 507.41858552631584
+      },
+      "rightClearance": 55.223684210526244
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 624,
+        "height": 805
+      },
+      "form": {
+        "x": 624,
+        "y": 0,
+        "width": 400,
+        "height": 805
+      },
+      "picture": {
+        "x": -703.6875,
+        "y": 0,
+        "width": 1430.34375,
+        "height": 805
+      },
+      "visibleRight": 1552,
+      "fingertip": {
+        "x": 588.0703125,
+        "y": 330.2109375
+      },
+      "rightClearance": 35.9296875
+    },
+    {
+      "width": 900,
+      "height": 1237,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 500,
+        "height": 1237
+      },
+      "form": {
+        "x": 500,
+        "y": 0,
+        "width": 400,
+        "height": 1237
+      },
+      "picture": {
+        "x": -1540.203125,
+        "y": 0,
+        "width": 2197.9375,
+        "height": 1237
+      },
+      "visibleRight": 1552.00938379731,
+      "fingertip": {
+        "x": 444.77631578947376,
+        "y": 507.41858552631584
+      },
+      "rightClearance": 55.223684210526244
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 310
+      },
+      "form": {
+        "x": 0,
+        "y": 310,
+        "width": 390,
+        "height": 809
+      },
+      "picture": {
+        "x": -121.28125,
+        "y": 0,
+        "width": 550.8125,
+        "height": 310
+      },
+      "visibleRight": 1552.0022693747874,
+      "fingertip": {
+        "x": 376.163053229665,
+        "y": 127.16125897129186
+      },
+      "rightClearance": 13.836946770334976
+    },
+    {
+      "width": 320,
+      "height": 720,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 333
+      },
+      "form": {
+        "x": 0,
+        "y": 333,
+        "width": 320,
+        "height": 851
+      },
+      "picture": {
+        "x": -229.21875,
+        "y": 0,
+        "width": 591.671875,
+        "height": 333
+      },
+      "visibleRight": 1552.0321123933768,
+      "fingertip": {
+        "x": 305.1260653409091,
+        "y": 136.59410511363637
+      },
+      "rightClearance": 14.873934659090878
+    }
+  ],
+  "resized": [
+    {
+      "zoomEquivalent": 1,
+      "width": 1600,
+      "height": 1000,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 1024,
+        "height": 1000
+      },
+      "form": {
+        "x": 1024,
+        "y": 0,
+        "width": 576,
+        "height": 1000
+      },
+      "picture": {
+        "x": -625.3125,
+        "y": 0,
+        "width": 1776.828125,
+        "height": 1000
+      },
+      "visibleRight": 1552.007457108436,
+      "fingertip": {
+        "x": 979.3588329844497,
+        "y": 410.2007513456938
+      },
+      "rightClearance": 44.64116701555031
+    },
+    {
+      "zoomEquivalent": 1.25,
+      "width": 1280,
+      "height": 800,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 819.1875,
+        "height": 805
+      },
+      "form": {
+        "x": 819.1875,
+        "y": 0,
+        "width": 460.796875,
+        "height": 805
+      },
+      "picture": {
+        "x": -508.5,
+        "y": 0,
+        "width": 1430.34375,
+        "height": 805
+      },
+      "visibleRight": 1552,
+      "fingertip": {
+        "x": 783.2578125,
+        "y": 330.2109375
+      },
+      "rightClearance": 35.9296875
+    },
+    {
+      "zoomEquivalent": 1.5,
+      "width": 1067,
+      "height": 667,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 667,
+        "height": 805
+      },
+      "form": {
+        "x": 667,
+        "y": 0,
+        "width": 400,
+        "height": 805
+      },
+      "picture": {
+        "x": -660.6875,
+        "y": 0,
+        "width": 1430.34375,
+        "height": 805
+      },
+      "visibleRight": 1552,
+      "fingertip": {
+        "x": 631.0703125,
+        "y": 330.2109375
+      },
+      "rightClearance": 35.9296875
+    },
+    {
+      "zoomEquivalent": 2,
+      "width": 800,
+      "height": 500,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 800,
+        "height": 310
+      },
+      "form": {
+        "x": 0,
+        "y": 310,
+        "width": 800,
+        "height": 786
+      },
+      "picture": {
+        "x": 0,
+        "y": -87.515625,
+        "width": 861.84375,
+        "height": 485.046875
+      },
+      "visibleRight": 1552.0214656078901,
+      "fingertip": {
+        "x": 778.3397502990431,
+        "y": 111.45069527511961
+      },
+      "rightClearance": 21.66024970095691
+    },
+    {
+      "zoomEquivalent": 1,
+      "width": 1600,
+      "height": 1000,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 1024,
+        "height": 1000
+      },
+      "form": {
+        "x": 1024,
+        "y": 0,
+        "width": 576,
+        "height": 1000
+      },
+      "picture": {
+        "x": -625.3125,
+        "y": 0,
+        "width": 1776.828125,
+        "height": 1000
+      },
+      "visibleRight": 1552.007457108436,
+      "fingertip": {
+        "x": 979.3588329844497,
+        "y": 410.2007513456938
+      },
+      "rightClearance": 44.64116701555031
+    }
+  ],
+  "failures": [],
+  "limitations": [
+    "Landmarks are visual estimates checked against screenshots",
+    "Zoom-equivalent CSS viewport reflow was checked, not the native browser Zoom menu",
+    "Narrow Web keeps the original stacked story/form; literal pointing toward a right-hand form applies only to the two-column layout",
+    "No real authentication, Server or physical-device test"
+  ]
+}

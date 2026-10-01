@@ -10,8 +10,9 @@ import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
-const harbourAspectRatio = 1672 / 941;
-const harbourCropFocus = 0.95;
+const harbourSourceSize = { width: 1672, height: 941 };
+// Keep the fingertip inside the frame and the sun beyond its fixed right crop.
+const harbourRightEdge = 1552;
 type Mode = "signIn" | "signUp";
 
 export default function LoginPage() {
@@ -20,8 +21,9 @@ export default function LoginPage() {
   const { width } = useWindowDimensions();
   const narrow = width < 900;
   const [storySize, setStorySize] = useState({ width: 0, height: 0 });
-  const artworkWidth = Math.max(storySize.width, storySize.height * harbourAspectRatio);
-  const artworkHeight = artworkWidth / harbourAspectRatio;
+  const artworkScale = Math.max(storySize.width / harbourRightEdge, storySize.height / harbourSourceSize.height);
+  const artworkWidth = harbourSourceSize.width * artworkScale;
+  const artworkHeight = harbourSourceSize.height * artworkScale;
   const [mode, setMode] = useState<Mode>("signIn");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -39,7 +41,7 @@ export default function LoginPage() {
 
   return <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView style={styles.scroll} contentContainerStyle={[styles.root, narrow && styles.rootStack, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
     <View testID="login-story-column" style={[styles.story, narrow ? styles.storyCompact : styles.storyDesktop]} onLayout={({ nativeEvent: { layout } }) => setStorySize(current => current.width === layout.width && current.height === layout.height ? current : { width: layout.width, height: layout.height })}>
-      <Image testID="login-background-image" source={harbourArt} resizeMode="cover" accessibilityLabel="香港海旁照顧者與孩子插畫" style={[styles.storyImage, !narrow && artworkWidth > 0 && { width: artworkWidth, height: artworkHeight, left: (storySize.width - artworkWidth) * harbourCropFocus, top: (storySize.height - artworkHeight) / 2 }]} />
+      <Image testID="login-background-image" source={harbourArt} resizeMode="cover" accessibilityLabel="香港海旁照顧者與孩子插畫" style={[styles.storyImage, { opacity: artworkScale > 0 ? 0.55 : 0, width: artworkWidth, height: artworkHeight, right: (harbourRightEdge - harbourSourceSize.width) * artworkScale, top: (storySize.height - artworkHeight) / 2 }]} />
       <View testID="login-story-content" style={[styles.storyContent, !narrow && styles.storyReadingWidth]}>
         <BrandLogo style={styles.storyLogo} />
         <Text style={styles.storyEyebrow}>用資料 · 陪伴成長</Text>

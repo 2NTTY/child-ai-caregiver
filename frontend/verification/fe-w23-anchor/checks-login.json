@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-01T18:27:47.559Z",
+  "passed": [
+    "login: accessible local validation/password visibility/keyboard submission without a Server request at 320"
+  ],
+  "failures": []
+}

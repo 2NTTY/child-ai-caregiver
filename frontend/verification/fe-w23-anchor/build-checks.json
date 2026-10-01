@@ -1,0 +1,200 @@
+{
+  "at": "2026-10-01T18:36:52.116Z",
+  "package": "FE-W23 fixed right crop retains fingertip and excludes sun",
+  "baseline": "8295fa7fd5a96012562426344a1f9219da7f464d",
+  "restoreBaseline": "cab28414a39a2b6e25c77c68e349024247623122",
+  "scope": "Frontend login illustration crop only; retain restored story/form layout and unchanged local validation. Fix the visible right source edge at x=1552 for desktop and stacked narrow Web; width changes crop from the left.",
+  "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+  "uiHandoffBlob": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+  "otherWorktreesChecked": 14,
+  "frontendOverlaps": [],
+  "sources": [
+    {
+      "path": "frontend/src/screens/loginScreen.tsx",
+      "gitBlob": "7d66c8caa7fd923e2e91da77ffa8e1e7038d4e98",
+      "sha256": "6d806ee5134fb7c66dca9ab64dbac10646681049daeab7db2fbbfff0fd95eeb9"
+    }
+  ],
+  "unchangedOriginalCode": {
+    "authStateAndValidation": true,
+    "formMarkup": true
+  },
+  "unchangedArtwork": {
+    "path": "frontend/assets/images/harbour-family-hero.png",
+    "gitBlob": "8b280c4e124ab05568bb9bf509200b6719f9b90d"
+  },
+  "previousRestorationEvidence": "verification/fe-w23-reset/restore-checks.json",
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "webExport": {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "routes": 33,
+      "bundles": [
+        {
+          "path": "dist/_expo/static/js/web/entry-6ebbf651e81c21a49582c726001a301c.js",
+          "sha256": "8e609ea87c52518c8382de71cec00a6201fe0ad3c1b5b2cfd0dbd041a210556e",
+          "bytes": 4136780
+        }
+      ]
+    },
+    "androidExport": {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundles": [
+        {
+          "path": "dist-android/_expo/static/js/android/entry-24615e8783ed72ddff1b96a2c377712d.hbc",
+          "sha256": "ef4ff84a1bbd790134d3cdff5788781dd22a87dcc382bb4210d633fd387d3343",
+          "bytes": 6371691
+        }
+      ]
+    },
+    "layout": {
+      "kind": "Ad hoc headless synthetic UI check with existing preview helper",
+      "evidence": "verification/fe-w23-anchor/layout-checks.json",
+      "viewports": [
+        {
+          "width": 2237,
+          "height": 1265
+        },
+        {
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "width": 1024,
+          "height": 1237
+        },
+        {
+          "width": 1024,
+          "height": 768
+        },
+        {
+          "width": 900,
+          "height": 1237
+        },
+        {
+          "width": 390,
+          "height": 844
+        },
+        {
+          "width": 320,
+          "height": 720
+        }
+      ],
+      "samePageReflows": [
+        {
+          "zoomEquivalent": 1,
+          "width": 1600,
+          "height": 1000
+        },
+        {
+          "zoomEquivalent": 1.25,
+          "width": 1280,
+          "height": 800
+        },
+        {
+          "zoomEquivalent": 1.5,
+          "width": 1067,
+          "height": 667
+        },
+        {
+          "zoomEquivalent": 2,
+          "width": 800,
+          "height": 500
+        },
+        {
+          "zoomEquivalent": 1,
+          "width": 1600,
+          "height": 1000
+        }
+      ],
+      "assertions": [
+        "Fixed right source crop, with left-only crop changes on resizing",
+        "Original source aspect ratio and 0.55 opacity",
+        "Approximate fingertip remains visible and sun is beyond the right clip",
+        "Original two-column proportions and narrow story/form stack",
+        "Sign-in/sign-up switching; no horizontal overflow, runtime errors or API requests"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-6ebbf651e81c21a49582c726001a301c.js"
+    },
+    "login": {
+      "command": "node scripts/verify-ui.mjs login",
+      "exitCode": 0,
+      "evidence": "verification/fe-w23-anchor/checks-login.json",
+      "passed": [
+        "login: accessible local validation/password visibility/keyboard submission without a Server request at 320"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-6ebbf651e81c21a49582c726001a301c.js"
+    }
+  },
+  "screenshots": [
+    {
+      "path": "verification/fe-w23-anchor/login-1024x1237.png",
+      "sha256": "14a1cac083b41251c63bec9eb091361745577f709c68f00a36110b79c9d074da",
+      "bytes": 969202
+    },
+    {
+      "path": "verification/fe-w23-anchor/login-1024x768.png",
+      "sha256": "6ea936c7f004c1d2a340ce9cc86aa192ccddc6f2f3469f045e01f0026a5056ed",
+      "bytes": 764342
+    },
+    {
+      "path": "verification/fe-w23-anchor/login-1440x900.png",
+      "sha256": "5be140e041a8693e86f85b739dcfdd4629d5dea04625e3d1e62897daff007c3e",
+      "bytes": 1195838
+    },
+    {
+      "path": "verification/fe-w23-anchor/login-2237x1265.png",
+      "sha256": "40398a08ed09bcc97fbf3b272861b2d6eed1cee88e588095513eccb66652c3c1",
+      "bytes": 2105326
+    },
+    {
+      "path": "verification/fe-w23-anchor/login-320x720.png",
+      "sha256": "d725872b1ecd3944a9e6e52cd16d16c2337e36c653b8b74f24b88b1b77d266f9",
+      "bytes": 203397
+    },
+    {
+      "path": "verification/fe-w23-anchor/login-390x844.png",
+      "sha256": "ed736bf2702cebdcbbd85a6557983a2d6685dca9ff3d2268555ffe6300330e56",
+      "bytes": 214231
+    },
+    {
+      "path": "verification/fe-w23-anchor/login-900x1237.png",
+      "sha256": "6f834b527914bc7d0314a7d33a309b76cc8c36890154d02fae4f78fdd13226c1",
+      "bytes": 790314
+    },
+    {
+      "path": "verification/fe-w23-anchor/login-form-320.png",
+      "sha256": "d5d6c2c21705765f2afadd88e7047077955e9a0c3249eb65dd5eb23f14f1a2e1",
+      "bytes": 28370
+    },
+    {
+      "path": "verification/fe-w23-anchor/login-form-390.png",
+      "sha256": "3a9f91a38ef4630b0180505b180c8a5f20cca9c1d846d3705ebef08ccde51c99",
+      "bytes": 210629
+    }
+  ],
+  "limitations": [
+    "Landmarks are visual estimates checked against screenshots",
+    "Zoom-equivalent CSS viewport reflow was checked, not the native browser Zoom menu",
+    "Narrow Web keeps the original stacked story/form; literal pointing toward a right-hand form applies only to the two-column layout",
+    "No real authentication, Server or physical-device test",
+    "Android export is bundle evidence only; device/user visual acceptance pending",
+    "Original auth/form code was compared with the restored commit; no unrelated business regression rerun"
+  ],
+  "delivery": {
+    "branch": "codex/fe-w11-photos",
+    "pullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/73",
+    "draft": true,
+    "merged": false,
+    "author": "CherylNg-2526 <250349656@stu.vtc.edu.hk>",
+    "actualCommitter": "2NTTY <2nttyfor2b@gmail.com>"
+  }
+}
