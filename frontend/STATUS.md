@@ -2,6 +2,8 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**暫時收尾（2026-10-01）：** 使用者準備重啟電腦，暫停前端工作。帳戶導覽源碼及四尺寸證據已交付 `cb9112edf0823ccb7a017d82198cd89c1d9a5ec0`／draft PR #73，工作目錄沒有未提交源碼。使用者新指定名稱「育有方」：FE-W21 只完成限定範圍檢查，品牌文案、Logo 文字、Web／Expo 顯示名稱及驗證 selector **尚未更改**。恢復時先按 [PLAN](PLAN.md)／[改名交接](HANDOFF.md#brand-rename-pending) 接續，不重做已交付的帳戶／ripple 修正；預覽伺服器重啟後須重新啟動。
+
 **FE-W20 帳戶導覽補修：** 左下帳戶卡片及重複帳戶選單已移除，Agent 固定在設定上方；切換入口集中在「設定 → 個人與帳戶 → 登入與安全」，窄 Web 頭像開設定。四尺寸首頁／設定、Enter／登入預覽、typecheck 及 Web／Android export 通過，見 [交接](HANDOFF.md#account-navigation-follow-up)。真登入／登出／身份切換仍待主聊天，原生只驗 bundle。
 
 **FE-W20 按下效果補修：** Agent 入口移除遺留的實色青色 ripple，復用 Paper 5.15.3 由 onAccent 生成的 12% 透明深色；按住保留黃底與文字。1440／1024 的八項按下／清理、共用 accent／secondary 及鍵盤／草稿檢查、typecheck、Web／Android export 通過，見 [交接補修](APPEARANCE_HANDOFF.md#ripple-follow-up)。沒有新增動畫系統或修改業務／後端；原生實際按下仍待驗。

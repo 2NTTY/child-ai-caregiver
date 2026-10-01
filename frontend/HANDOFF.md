@@ -4,6 +4,11 @@
 
 ## 交付範圍及入口
 
+<a id="brand-rename-pending"></a>
+**FE-W21 暫停／改名待辦（2026-10-01）：** 使用者指定前端名稱改為「育有方」，隨後要求重啟電腦及暫時收尾；目前只查明範圍，尚無改名源碼。帳戶導覽交付 `cb9112e` 已由 B 推送並核對 draft PR #73，未合併。恢復後先 fetch／查 frontend 重疊，再集中品牌文字，更新 AppShell／NativeAppShell、RootLayout 啟動畫面、LoginPage、各 PageFrame／Agent 標題、背景／模型／照片示例及 app.json 顯示名稱。現有 PNG Logo 含舊名稱，須同時改可見 Logo；可復用只讀根 assets/brand/logo-horizontal.svg 的原圖形，以 frontend 共用 SVG 文字呈現新名稱，保持原比例／置中和無障礙名稱。不得只換文字標籤而仍顯示舊字圖。
+
+同步當前前端文件的名稱及 scripts/flows 的相應 selector，歷史 verification 證據保留原樣。前端內部 slug／Android package、根目錄／Server／正式 App、GitHub repo 的名稱不因顯示品牌更名而自動遷移。完成後驗受影響畫面 1440／1024／390／320、鍵盤及 Web／Android export，展示實際畫面；原生實機及正式身份／API 接線仍待原關口。電腦重啟後先在 frontend 執行 `npx expo serve --port 8083` 可恢復已 export 的畫面；改名實作後須重新 build:web，不把舊 export 當新名稱已完成。
+
 <a id="account-navigation-follow-up"></a>
 **FE-W20 帳戶導覽補修**（2026-10-01，基線 `24a54c6465ef9b1e84ff2895b3bbac0308b1d047`）：依使用者要求，[AppShell](src/components/AppShell.tsx) 移除左下帳戶卡片／Dialog 及「更多」的重複帳戶項，窄 Web 頭像以 Expo Link 開設定；[SettingsPage](src/screens/settingsScreen.tsx) 的「個人與帳戶 → 登入與安全」提供唯一切換帳戶入口，沿共用 AppButton 開既有 `/login` 預覽。原生更多頁面保留各功能／設定，僅移除直接登入項，避免遺失其他頁面的入口。
 
