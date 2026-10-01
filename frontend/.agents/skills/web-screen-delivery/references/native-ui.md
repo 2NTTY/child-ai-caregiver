@@ -1,6 +1,6 @@
 # 共用 Android 介面
 
-適用 `frontend/` 的手機畫面與平台外殼，基線 Expo 57.0.24／Router 57.0.22／React Native 0.86.3／Paper 5.15.3／safe-area-context 5.7.0，最後核對 2026-09-30。只有需要原生介面時讀本檔；不處理正式 Server 接線、FCM、APK 簽署或實機驗收。
+適用 `frontend/` 的手機畫面與平台外殼，基線 Expo 57.0.24／Router 57.0.22／React Native 0.86.3／Paper 5.15.3／safe-area-context 5.7.0，最後補核 2026-10-01。只有需要原生介面或平台拍照時讀本檔；不處理正式 Server 接線、FCM、APK 簽署或實機驗收。
 
 - 共用模型、Paper 控件、表單 schema、theme token 和畫面。Web 的 AppShell／Slot 與原生 NativeAppShell／Tabs 在 dashboard layout 按 Platform 選擇，不复制另一套業務狀態。
 - 採用 Expo Router 的 JavaScript Tabs（React Navigation bottom tabs）；圖示沿現有 AppIcon／PaperSvgIcon 的 SVG 映射，非主要頁用 `href: null` 保留路由，由帳戶／更多選單開啟。不能把圖中尚無正式來源的「知識庫」或醫療重點變成假操作。
@@ -8,7 +8,9 @@
 - viewport 只決定組件如何重排；頁內多欄由 onLayout 的內容寬度決定。320 的容器、表單與選单都要檢查，不能只看整頁 scrollWidth 而漏掉被裁切的控件。字體採原生預設可伸縮字體，不為套截圖固定全部尺寸。
 - Web 僅在 Platform 為 web 時使用 window／beforeunload；原生不能直接執行 DOM 或瀏覽器 API。返回鍵先關已開抽屜，帳戶和身份變更沿正式控制器清理；不把本地記憶體或 Expo bundle 當已登入／已保存。
 - 照片／拍照入口復用 `PhotoFilePicker` 的讀檔、原檔校驗與清理。Web 用明確按下的原生 file input；拍照偏好只在相機用的 input 加 `capture=environment`，另留普通選檔。capture 相容性有限，手機可能提供系統拍照、桌面通常只提供選檔，不能宣稱 Webcam 或實機相機已驗；不在路由載入時自動開相機。原生的 `selectOriginal`／`captureOriginal` 是分開的薄 port，未注入時停用，不能用相簿 adapter 冒充相機。
-- Agent 工具列只提供已有流程入口及真實能力說明。語音未接通時顯示未接通並保留文字草稿，不畫假錄音／轉文字；PDF／Word 不由照片 MIME 或分享文字契約推造支援。URI 只帶有限入口 intent，不帶私人問題、原文、檔名或 blob URL。官方參考：[MDN capture](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/capture)／[Expo ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)，2026-10-01 補核；本包未安裝 ImagePicker，官方方案相容性不代表原生 adapter 已實作。
+- Agent 拍照採當頁相機／預覽，不能以跳管理頁代替。Web 沿 `PhotoFilePicker.renderTrigger` 復用讀取校驗和 blob，只有明確點擊才掛相機／要求 `getUserMedia`；HTTPS／localhost、`audio: false`、環境鏡頭用 ideal、等待仍可取消，拒絕／無裝置保留原輸入，重試另按。系統拍照／選圖後備仍需在點擊 handler 同步開 file input，不用 effect／延時自動開。
+- Web 串流不發送到 Server，拍攝以完整 video frame 轉 JPEG／實際 PNG MIME，再沿相同 JPEG／PNG、4 MiB／hash 管道；不裁切或改原圖尺寸。相機放在 Modal／Portal 時，用 callback ref 接 `srcObject`，effect 可能早於 DOM 掛載。拍攝、取消、卸載、頁面隱藏及遲到權限回應必須停止全部 tracks 並清 `srcObject`；取消途中編碼亦不得回填。當頁本地照片在更換／移除／範圍或離頁時釋放 object URL，文字草稿沿原規則保留。不得用顯示名稱當正式 user／session scope，不把本地照片說成已上傳／送出或模型已分析。
+- Agent 語音未接通時顯示未接通並保留文字草稿，不畫假錄音／轉文字；PDF／Word 不由照片 MIME 或分享文字契約推造支援。URI 只帶有限入口 intent，不帶私人問題、原文、檔名或 blob URL。官方參考：[MDN capture](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/capture)／[getUserMedia](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)／[toBlob](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob)／[track.stop](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack/stop)／[Expo ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)，2026-10-01 補核。FE-W19 合成畫布串流及 file fallback 已驗；真相機／權限／原生仍未驗，本包未安裝 ImagePicker，文件相容不代表 adapter 已實作。
 - `expo export --platform android` 只驗 JS／資產 bundle；Android Web 預覽只驗共享畫面。APK 安裝、系統字體／鍵盤／返回鍵／安全區／TalkBack、帳戶和相機／通知權限另列待驗收，不能據 bundle 成功標 P3 已完成。
 
 官方資料已核對：[JavaScript Tabs](https://docs.expo.dev/router/advanced/tabs/)、[Safe Areas](https://docs.expo.dev/develop/user-interface/safe-areas/)。本項目實作檢查及限制見 [HANDOFF](../../../../HANDOFF.md)；實際證據獨立記錄，文件相容不代表真機通過。

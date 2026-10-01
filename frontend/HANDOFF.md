@@ -4,9 +4,11 @@
 
 ## 交付範圍及入口
 
-**最新 FE-W18**（源碼／驗證 `eb9b48c17160066f585c4fcbd7ad871a27d9045d`；基線 `f3ba9e35b718e68b5a23bf73072ec437cd746d22`／現有 draft PR #73）：內嵌控制、資料標籤和側欄開關統一 `controlSurface`；`quietSurface` 留給另一層內容，不改品牌 OKLCH 值。Agent 新增 [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx)，照片／拍照入口沿原 `PhotosView`／`PhotoFilePicker`，文字／網址沿原 `/sources`；全部仍未送入 Chat API。入口回調、capture fallback、語音／PDF／Word 未支援及保留草稿要求見 [AGENT_HANDOFF](AGENT_HANDOFF.md)，原生相機 port 見 [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)。正式相機／語音／任意文件與對話附件須另行接線，不能把此導覽當聊天已支持多模態。
+**最新 FE-W19**（基線 `bed1342`／現有 draft PR #73）：按使用者要求，Agent 拍照改成直接開頁內 Web 相機，完整 frame 經原 JPEG／PNG／4 MiB／hash／blob 流程後回原輸入框預覽；等待／取消／權限拒絕／系統選圖後備、原問題保留、track／blob 與遲到回應清理已實作。新增 [AgentComposer](src/components/agent/AgentComposer.tsx) 的私有範圍及 [WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx)，不改後端／聊天契約或依賴。[AGENT_HANDOFF](AGENT_HANDOFF.md) 列回調、清理及能力；[最終檢查](verification/fe-w19/checks-composer-surfaces-camera.json)／[來源及產物 hash](verification/fe-w19/build-checks.json)。typecheck、Web／Android export、四尺寸合成串流／原檔及放大文字通過；沒有真相機、系統權限、上傳或模型呼叫。Webcam／手機權限及視覺待裝置驗收；原生 adapter、正式上傳及真正對話附件待主聊天接線。
 
-本包只改 frontend。必要 typecheck、20 組對比、15 頁四尺寸共 60 個重排、輸入／草稿／48 觸控與 150% Web 文字、六寬度 Dialog／SVG／選單及 Web／Android export 通過；實際 PNG／結果與產物／23 檔案 hash 見 [build-checks](verification/fe-w18/build-checks.json)／[最終檢查](verification/fe-w18/checks-layout-design-composer-surfaces.json)。首輪發現並修正 Modal 焦點先還原開啟者的競態；Web 已驗、原生未驗。未呼叫 Server、模型、相機／咪高峰或真通知，使用者視覺及正式整合仍待驗收。
+**FE-W18**（源碼／驗證 `eb9b48c17160066f585c4fcbd7ad871a27d9045d`；基線 `f3ba9e35b718e68b5a23bf73072ec437cd746d22`）：內嵌控制、資料標籤和側欄開關統一 `controlSurface`；`quietSurface` 留給另一層內容，不改品牌 OKLCH 值。Agent 新增 [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx)，文字／網址沿原 `/sources`；拍照跳頁已由 FE-W19 取代，檔案選單仍可到 `/photos` 管理原檔。語音／PDF／Word 未支援及保留草稿要求見 [AGENT_HANDOFF](AGENT_HANDOFF.md)，原生相機 port 見 [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)。正式語音／任意文件及對話附件仍須接線，不能把本地選圖／拍攝當聊天已支持多模態。
+
+FE-W18 只改 frontend。必要 typecheck、20 組對比、15 頁四尺寸共 60 個重排、輸入／草稿／48 觸控與 150% Web 文字、六寬度 Dialog／SVG／選單及 Web／Android export 通過；實際 PNG／結果與產物／23 檔案 hash 見 [build-checks](verification/fe-w18/build-checks.json)／[最終檢查](verification/fe-w18/checks-layout-design-composer-surfaces.json)。首輪發現並修正 Modal 焦點先還原開啟者的競態；Web 已驗、原生未驗。FE-W19 色值／外殼與業務規則未變，沿用上述對比與整頁證據，只補受影響拍攝／輸入流程。
 
 **已實作前端源碼；全部資料操作只屬合成預覽，尚未接真 API。** Web／Android 維持靜態，`/motion-preview` 只保留舊比較樣本。所有新增依賴、設定、測試、Skill 和文件均在本目錄；不替換已驗收正式首頁，不修改其他聊天的後端／Agent 或權威文件，不自行 merge。
 

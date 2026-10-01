@@ -1,21 +1,16 @@
-import { useRef, useState, type ComponentRef } from "react";
-import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { Text, TextInput } from "react-native-paper";
-import { AppButton, AppTextField, SectionCard } from "../components/ui";
+import { useState } from "react";
+import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Text } from "react-native-paper";
+import { AppButton, SectionCard } from "../components/ui";
 import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";
 import { EmergencyHelpView } from "../components/agent/EmergencyHelpView";
-import { AgentInputToolbar } from "../components/agent/AgentInputToolbar";
+import { AgentComposer } from "../components/agent/AgentComposer";
 import { emergencyHelpSnapshot } from "../preview/emergency-help-data";
 import { usePreview } from "../preview/PreviewContext";
 import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 
-const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄", "先列出想問的問題"];
-
 export default function ChatPage() {
-  const router = useRouter();
-  const input = useRef<ComponentRef<typeof TextInput>>(null);
   const { model, actions, chatDraft, setChatDraft } = usePreview();
   const [localMessages, setLocalMessages] = useState<Record<string, string[]>>({});
   const viewportWidth = useWindowDimensions().width;
@@ -56,32 +51,18 @@ export default function ChatPage() {
         <AgentConversationPreview key={child.id} childId={child.id} online={model.connection === "online"} />
       </>}
     </ScrollView>
-    <View testID="chat-composer" style={[styles.composer, compact && styles.mobileComposer]}>
-      <View style={styles.composerTop}><Text style={styles.composerLabel}>撰寫問題</Text><Text style={styles.composerHint}>只供本地預覽；不會發送或保存</Text></View>
-      <View style={styles.composerRow}><AppTextField ref={input} multiline accessibilityLabel="撰寫對話問題" placeholder="輸入你想討論的照顧問題…" value={chatDraft} onChangeText={setChatDraft} style={[styles.composerInput, compact && styles.mobileComposerInput]} disabled={!child} /></View>
-      <View style={styles.composerActions}><AgentInputToolbar key={JSON.stringify([child?.id, model.caregiverName])} disabled={!child} compact={compact}
-        onPhotos={camera => camera ? router.push({ pathname: "/photos", params: { input: "camera" } }) : actions.open("photos")}
-        onSources={() => actions.open("sources")} onUseText={() => input.current?.focus()} />
-        <AppButton label={compact ? "預覽" : "預覽輸入"} accessibilityLabel="預覽輸入" onPress={previewMessage} disabled={!child || !chatDraft.trim()} /></View>
-      <ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll} contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled"><Text style={styles.suggestionLabel}>建議提問：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={item} disabled={!!chatDraft.trim() || !child} onPress={() => setChatDraft(item)} style={({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (!!chatDraft.trim() || !child) && styles.suggestionDisabled, pressed && styles.pressed]}><Text style={styles.suggestionText}>{item}</Text></Pressable>)}</ScrollView>
-    </View>
+    <AgentComposer key={JSON.stringify([child?.id, model.caregiverName, child?.accessRole])} enabled={!!child} compact={compact}
+      draft={chatDraft} onChangeDraft={setChatDraft} onPreview={previewMessage} onPhotos={() => actions.open("photos")} onSources={() => actions.open("sources")} />
   </View>;
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, minHeight: 0, backgroundColor: colors.canvas }, pressed: { opacity: 0.68 }, scroll: { flex: 1 },
+  root: { flex: 1, minHeight: 0, backgroundColor: colors.canvas }, scroll: { flex: 1 },
   page: { width: "100%", maxWidth: 1060, alignSelf: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, gap: spacing.lg },
   mobilePage: { paddingHorizontal: mobileLayout.pageInset },
-  mobileComposer: { paddingHorizontal: mobileLayout.pageInset, paddingVertical: spacing.sm },
-  mobileComposerInput: { minWidth: 0, fontSize: mobileType.body.fontSize },
-  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" },
-  suggestionScroll: { flexGrow: 0 },
-  mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm },
-  mobileSuggestion: { minHeight: mobileLayout.touchTarget, flexShrink: 0 },
   headingCard: { gap: spacing.sm }, headingRow: { flexDirection: "row", alignItems: "center", gap: spacing.md }, headingCopy: { flex: 1, minWidth: 0 },
   agentMark: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" }, agentMarkSmall: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" }, agentGlyph: { color: colors.teal, fontSize: 28 },
   title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, fontWeight: "800" }, subtitle: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 }, previewNote: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.mintSurface, alignSelf: "flex-start", paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, fontSize: typeScale.caption, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 }, questionRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "flex-start", gap: spacing.sm }, questionBubble: { maxWidth: "82%", backgroundColor: colors.paleTeal, borderRadius: radius.medium, padding: spacing.md, gap: spacing.xs }, localBubble: { maxWidth: "82%", backgroundColor: colors.neutralSurface, borderRadius: radius.medium, padding: spacing.md, gap: spacing.xs }, questionText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23 }, bubbleMeta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, textAlign: "right" }, personMark: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.paleAmber, alignItems: "center", justifyContent: "center" }, personGlyph: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "800" },
   answerRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm }, answerCard: { flex: 1, minWidth: 0, borderWidth: 1, borderColor: colors.softLine, backgroundColor: colors.white, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md }, answerEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, fontWeight: "800" }, answerIntro: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 24 }, usedData: { backgroundColor: colors.quietSurface, padding: spacing.md, borderRadius: radius.small, gap: spacing.xs }, usedDataTitle: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "800" }, usedDataText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 }, answerSteps: { gap: spacing.xs }, stepTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "800", marginTop: spacing.xs }, stepBody: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 }, answerFooter: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm }, footerText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
-  composer: { backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, gap: spacing.sm }, composerTop: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.xs }, composerLabel: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "800" }, composerHint: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption }, composerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" }, composerInput: { flex: 1, minWidth: 185, maxHeight: 110, backgroundColor: colors.white, fontFamily: chineseFont }, suggestions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.xs }, suggestionLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption }, suggestion: { minHeight: 34, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.pill, justifyContent: "center" }, suggestionDisabled: { opacity: 0.5 }, suggestionText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption },
 });

@@ -1,15 +1,23 @@
 # Agent 對話及私人結果交接
 
-更新：2026-09-30。FE-W09 前置為已 review 的前端 `83106c0`（draft PR #68），分支 `codex/fe-w09-agent-conversation`。正式契約核對穩定主線 `90dacd4e5c0a8be9e490fa7d94830ea369c57521`；只讀 API／控制器，沒有改 Server、正式 App 或根文件。
+更新：2026-10-01。FE-W09 前置為已 review 的前端 `83106c0`（draft PR #68），分支 `codex/fe-w09-agent-conversation`。正式契約核對穩定主線 `90dacd4e5c0a8be9e490fa7d94830ea369c57521`；只讀 API／控制器，沒有改 Server、正式 App 或根文件。
 
-2026-10-01 FE-W18 增補：源碼／驗證 `eb9b48c17160066f585c4fcbd7ad871a27d9045d`，基線 `f3ba9e35b718e68b5a23bf73072ec437cd746d22`；重核 GitHub `ce87370` 的 UI-P2-14／15，新增 [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx)，仍不把檔案附到 Chat API 或自動送模型。入口及限制如下；共用表面修正在 [COLOR_STRATEGY](COLOR_STRATEGY.md)。
+**FE-W19 最新增補：原對話頁直接拍照。** 基線 `bed134271e70529a0d90878292daf2fc228fc885`，直接重核 GitHub master `ce87370` 的 P2 交接；照片／聊天協定未改。新增 [AgentComposer](src/components/agent/AgentComposer.tsx) 管理當頁選圖和資源，復用 [PhotoFilePicker](src/components/photos/PhotoFilePicker.web.tsx) 的校驗／hash／blob。[WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx) 只在明確按下後掛載並要求 `getUserMedia`，`audio: false`，後置鏡頭為偏好；相機畫面沿共用 AppDialog／AppButton。這項取代 FE-W18 的拍照跳頁，沒有新增依賴或修改後端。
+
+Web 在 HTTPS／localhost 且瀏覽器允許相機時可頁內拍攝；等待權限仍可取消，拒絕／缺裝置／不可用顯示具體提示，重試須另按。系統拍照／選圖由明確點擊原 `capture=environment` input 提供後備；桌面可能只提供選檔，原生 `captureOriginal` 未注入仍停用。拍攝以完整 video frame 編碼 JPEG（瀏覽器回退 PNG 時保留真正 MIME），不裁切／改尺寸；再沿相同原檔檢查，沒有自動上傳、保存、分析或發送聊天。檔名時間只是本地命名，不可推作照顧事件時間。
+
+本地照片與文字草稿分開：取消／失敗保留上一張照片及原問題，更換／移除釋放舊 blob，切換孩子／身份／授權範圍或離頁清除照片；相機在拍攝／取消／卸載／頁面隱藏時停止所有 tracks。未完成的權限回應／編碼／讀檔不能回填新範圍；不要在網址、localStorage 或工程日誌保存照片。`ChatPage` 的 key 只代表合成孩子／稱呼／角色；正式版須用 Server／本人身份／session／孩子／授權範圍，不可拿顯示名稱代替身份。問題文字仍沿原 provider 的按孩子草稿規則，不改已驗收的 ChatController。
+
+FE-W19 typecheck、Web 33 路由／Android 31 資產 export、四 Web 寬度的一按開相機／完整合成 frame／取消／拒絕及明確重試、原檔後備／草稿／blob／遲到結果、鍵盤及 390／320 的 150% Web 文字通過。[最終檢查](verification/fe-w19/checks-composer-surfaces-camera.json)／[版本及產物](verification/fe-w19/build-checks.json)，[390 相機彈窗](verification/fe-w19/camera-open-390.png)／[拍攝後](verification/fe-w19/captured-photo-390.png)。串流來自測試畫布，沒有使用真相機或請求裝置權限；Webcam／手機、原生 adapter／APK、正式上傳及聊天多模態仍待驗收／接線。首輪發現 Portal 延後掛載令 effect 早於 video DOM，已改 callback ref 接入並通過。
+
+2026-10-01 FE-W18 增補：源碼／驗證 `eb9b48c17160066f585c4fcbd7ad871a27d9045d`，基線 `f3ba9e35b718e68b5a23bf73072ec437cd746d22`；重核 GitHub `ce87370` 的 UI-P2-14／15，新增 [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx)。下表已按 FE-W19 更新拍照及回調；共用表面修正在 [COLOR_STRATEGY](COLOR_STRATEGY.md)。
 
 | 輸入入口 | 本包已實作／交接界線 |
 |---|---|
-| 拍照 | 進入 `/photos?input=camera`；query 只有有限 intent。復用原 JPEG／PNG、4 MiB、hash、blob 預覽及清理流程；使用者再次明確按「拍照或選圖」才開 file input。Web `capture=environment` 只是系統拍照偏好，桌面通常退回選檔；沒有 Webcam 操作或實機相機證據 |
+| 拍照 | 直接開頁內相機，不跳頁；拍下後回原 composer 作本地未送出預覽。系統拍照／選圖為明確操作的後備，沿原 JPEG／PNG、4 MiB、hash 和 blob 清理；實際相機／裝置權限仍未驗 |
 | 檔案與來源 | 共用 AppDialog／AppMenuList 分流至原照片選檔和私人文字／網址來源；返回對話保留原問題。PDF／Word 尚無本期支援，不能給任意文件新增上傳／模型協定；照片也不因此成為已發送的對話附件 |
 | 語音輸入 | SVG 入口及未接通提示已完成，返回文字輸入不清草稿；沒有咪高峰、錄音或轉文字 adapter。正式實作須另核 P3／平台權限及真 API，不能以本按鈕宣稱語音已接通 |
-| 正式接線 | `onPhotos(camera)`／`onSources()` 是現有流程導航，`onUseText()` 只回到輸入欄。主聊天若接對話附件，須明確分開選取、私人保存、模型同意、共享及實際聊天送出，沿既有附件／Agent 契約；原 opId／unknown、孩子／本人／Server 清理照舊 |
+| 正式接線 | `AgentComposer` 接問題及預覽／導航回調；工具列的 `onPickPhoto(PhotoOriginal)`／`onPhotoError(message)` 接當頁結果，`captureOriginal` 是原生薄 port；`onPhotos()`／`onSources()` 只供檔案選單導航，`onUseText()` 回文字欄。正式對話附件須明確分開選取、私人保存、模型同意、共享及實際送出，沿既有附件／Agent 契約；原 opId／unknown、孩子／本人／Server 清理照舊 |
 
 FE-W18 必要輕量檢查：typecheck、20 組 token 對比、Web／Android export、四尺寸輸入入口／草稿／SVG／48 觸控及 390／320 的 150% Web 文字通過；共用選單／Dialog 另復用六寬度檢查。首次焦點檢查發現 Modal 還原開啟者蓋過同 frame 的輸入聚焦，改沿 `AppDialog.onClosed` 後 Web 回到文字欄通過。實際證據見 [checks](verification/fe-w18/checks-composer-surfaces.json)，正式 API、相機／咪高峰、PDF／Word、原生焦點與系統權限仍未驗。
 

@@ -4,22 +4,23 @@ import { Portal, Text } from "react-native-paper";
 import { AppDialog } from "../AppDialog";
 import { AppIcon, type AppIconName } from "../AppIcon";
 import { AppMenuList } from "../AppMenuList";
+import { PhotoFilePicker, type PhotoFilePickerProps } from "../photos/PhotoFilePicker";
 import { AppButton } from "../ui";
 import { chineseFont, colors, mobileIcons, mobileLayout, radius, spacing, typeScale } from "../../theme";
 
-// Navigation callbacks reuse the photo/source workflows; they do not attach files to chat.
-export function AgentInputToolbar({ disabled, compact, onPhotos, onSources, onUseText }: {
-  disabled: boolean; compact: boolean; onPhotos: (camera: boolean) => void; onSources: () => void; onUseText: () => void;
+// Capture stays in the composer; the other callbacks open existing photo/source workflows.
+export function AgentInputToolbar({ disabled, compact, onPhotos, onSources, onUseText, onPickPhoto, onPhotoError, captureOriginal }: {
+  disabled: boolean; compact: boolean; onPhotos: () => void; onSources: () => void; onUseText: () => void;
+  onPickPhoto: PhotoFilePickerProps["onPick"]; onPhotoError: PhotoFilePickerProps["onError"]; captureOriginal?: PhotoFilePickerProps["captureOriginal"];
 }) {
   const [dialog, setDialog] = useState<"files" | "voice" | null>(null);
   const returnToText = useRef(false);
   useEffect(() => { if (disabled) setDialog(null); }, [disabled]);
   const controls: { key: string; label: string; icon: AppIconName; onPress: () => void }[] = [
-    { key: "camera", label: "拍照", icon: "camera-outline", onPress: () => onPhotos(true) },
     { key: "files", label: "檔案與來源", icon: "paperclip", onPress: () => setDialog("files") },
     { key: "voice", label: "語音輸入", icon: "microphone-outline", onPress: () => setDialog("voice") },
   ];
-  function openPhotos() { setDialog(null); onPhotos(false); }
+  function openPhotos() { setDialog(null); onPhotos(); }
   function openSources() { setDialog(null); onSources(); }
   function focusTextAfterClose() {
     if (!returnToText.current) return;
@@ -33,12 +34,10 @@ export function AgentInputToolbar({ disabled, compact, onPhotos, onSources, onUs
     if (Platform.OS === "android") focusTextAfterClose();
   }
   return <><View testID="agent-input-toolbar" style={styles.controls}>
-    {controls.map(control => <Pressable key={control.key} accessibilityRole="button" accessibilityLabel={control.label}
-      accessibilityState={control.key === "camera" ? { disabled } : { disabled, expanded: control.key === dialog }} aria-disabled={disabled}
-      aria-expanded={control.key === "camera" ? undefined : control.key === dialog} disabled={disabled}
-      onPress={control.onPress} style={({ pressed }) => [styles.control, disabled && styles.disabled, pressed && styles.pressed]}>
-      <AppIcon name={control.icon} size={mobileIcons.content} color={colors.ink} />{!compact ? <Text style={styles.label}>{control.label}</Text> : null}
-    </Pressable>)}
+    <PhotoFilePicker disabled={disabled} capturePreferred captureOriginal={captureOriginal} onPick={onPickPhoto} onError={onPhotoError}
+      renderTrigger={trigger => <InputControl label={trigger.reading ? "正在讀取原照片" : "拍照"} icon="camera-outline" compact={compact}
+        disabled={trigger.disabled} busy={trigger.reading} hint={trigger.unavailableReason} onPress={trigger.onPress} />} />
+    {controls.map(({ key, ...control }) => <InputControl key={key} {...control} compact={compact} disabled={disabled} expanded={key === dialog} />)}
   </View><Portal><AppDialog visible={dialog === "files" && !disabled} onDismiss={() => setDialog(null)}>
     <AppDialog.Title>檔案與來源</AppDialog.Title>
     <AppDialog.Content><View style={styles.content}>
@@ -57,6 +56,16 @@ export function AgentInputToolbar({ disabled, compact, onPhotos, onSources, onUs
     </View></AppDialog.Content>
     <AppDialog.Actions><AppButton label="繼續輸入文字" onPress={useText} /></AppDialog.Actions>
   </AppDialog></Portal></>;
+}
+
+function InputControl({ label, icon, onPress, compact, disabled, expanded, busy = false, hint }: {
+  label: string; icon: AppIconName; onPress: () => void; compact: boolean; disabled: boolean; expanded?: boolean; busy?: boolean; hint?: string;
+}) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hint}
+    accessibilityState={{ disabled, busy, ...(expanded === undefined ? {} : { expanded }) }} aria-disabled={disabled} aria-expanded={expanded} aria-busy={busy}
+    disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.control, disabled && styles.disabled, pressed && styles.pressed]}>
+    <AppIcon name={icon} size={mobileIcons.content} color={colors.ink} />{!compact ? <Text style={styles.label}>{label}</Text> : null}
+  </Pressable>;
 }
 
 const styles = StyleSheet.create({

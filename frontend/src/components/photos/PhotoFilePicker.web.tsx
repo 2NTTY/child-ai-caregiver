@@ -5,17 +5,23 @@ import { photoLimits } from "../../photo-view-model";
 import { AppButton } from "../ui";
 import type { PhotoFilePickerProps } from "./PhotoFilePicker";
 import { photoStyles } from "./photo-styles";
+import { WebCameraCapture } from "./WebCameraCapture.web";
 
-export function PhotoFilePicker({ disabled, onPick, onError, capturePreferred = false }: PhotoFilePickerProps) {
+export function PhotoFilePicker({ disabled, onPick, onError, capturePreferred = false, renderTrigger }: PhotoFilePickerProps) {
   const input = useRef<HTMLInputElement>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
   const generation = useRef(0);
   const [reading, setReading] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const disabledRef = useRef(disabled); disabledRef.current = disabled;
   useEffect(() => () => { generation.current++; }, []);
+  useEffect(() => { if (disabled) setCameraOpen(false); }, [disabled]);
   async function choose(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0]; event.currentTarget.value = "";
-    if (!file || disabledRef.current || reading) return;
+    if (file) await readOriginal(file);
+  }
+  async function readOriginal(file: File) {
+    if (disabledRef.current || reading) return;
     if (!["image/jpeg", "image/png"].includes(file.type) || file.size < 1 || file.size > photoLimits.bytes || file.name.length > 200) {
       onError("只接受 JPEG／PNG 原照片，每張最多 4 MiB，檔名最多 200 字。現有照片與草稿保留。"); return;
     }
@@ -39,8 +45,14 @@ export function PhotoFilePicker({ disabled, onPick, onError, capturePreferred = 
     } catch { if (generation.current === started) onError("未能讀取原照片或核對完整性。請使用安全連線並明確重選；現有輸入保留。"); }
     finally { if (generation.current === started) setReading(false); }
   }
-  return <View style={photoStyles.stack}><input ref={input} type="file" accept="image/jpeg,image/png" aria-label="選擇照片原檔" tabIndex={-1} hidden disabled={disabled || reading} onChange={choose} />
-    {capturePreferred ? <><input ref={cameraInput} type="file" accept="image/jpeg,image/png" capture="environment" aria-label="拍照原檔" tabIndex={-1} hidden disabled={disabled || reading} onChange={choose} />
+  const ordinaryInput = <input ref={input} type="file" accept="image/jpeg,image/png" aria-label="選擇照片原檔" tabIndex={-1} hidden disabled={disabled || reading} onChange={choose} />;
+  const captureInput = <input ref={cameraInput} type="file" accept="image/jpeg,image/png" capture="environment" aria-label="拍照原檔" tabIndex={-1} hidden disabled={disabled || reading} onChange={choose} />;
+  if (renderTrigger) return <>{capturePreferred ? captureInput : ordinaryInput}
+    {renderTrigger({ onPress: () => capturePreferred ? setCameraOpen(true) : input.current?.click(), disabled: disabled || reading, reading })}
+    {cameraOpen && !disabled ? <WebCameraCapture onDismiss={() => setCameraOpen(false)} onChooseFile={() => { setCameraOpen(false); cameraInput.current?.click(); }}
+      onCapture={file => { setCameraOpen(false); void readOriginal(file); }} /> : null}</>;
+  return <View style={photoStyles.stack}>{ordinaryInput}
+    {capturePreferred ? <>{captureInput}
       <AppButton label={reading ? "正在讀取原照片" : "拍照或選圖"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => cameraInput.current?.click()} />
       <Text style={photoStyles.meta}>手機瀏覽器可由系統提供拍照；是否可用由瀏覽器決定。電腦通常會開啟選檔，也可改用下方選擇原照片。</Text></> : null}
     <AppButton label={reading ? "正在讀取原照片" : "選擇原照片"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => input.current?.click()} />

@@ -2,7 +2,7 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W18 `eb9b48c`：共用內嵌控制改用較亮的 `controlSurface`，修正與導航背景混在一起；Agent 輸入框補拍照、檔案／來源及語音 SVG 入口。** 拍照／選檔與來源沿既有前端流程，語音／PDF／Word 和真正對話附件未接通，不改後端；入口和限制見 [AGENT_HANDOFF](AGENT_HANDOFF.md)。typecheck、20 組對比、60 個四尺寸重排／150% Web 文字、六寬度共用 Dialog／選單及 Web／Android export 通過，視覺及實機仍待確認。
+**最新 FE-W19：Web 對話的拍照按鈕直接開啟頁內相機，不再跳照片頁。** 按下後才請求相機權限，拍攝回到原輸入框作本地預覽；取消、沒有相機／拒絕權限、系統拍照／選圖後備、移除及切換孩子／離頁清理已實作。復用原 JPEG／PNG、4 MiB、hash／blob 與 Paper／SVG，不新增依賴或後端協定。typecheck、Web／Android export、四尺寸合成串流／原檔與 390／320 放大文字通過；[交接及證據](AGENT_HANDOFF.md)。實際裝置相機／權限待驗收；原生 adapter、上傳及對話附件待接線。
 
 **本期隔離 Web／共用手機前端的已授權實作與必要輕量檢查已齊備，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)。** FE-W17 `ebcaa73` 補齊本人同意／任務聯絡授權／投遞台帳，並在對話頁補固定緊急入口；[本包交接](CONTACT_HANDOFF.md)。FE-W16 `10aa70b`、FE-W15 `ef536e8`、FE-W14 `d00a6bb`、FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗，未標產品或整套 Web 驗收完成。全部修改只在 frontend，不改 Server／Agent／正式 App、根依賴或指導文件，不自行 merge。
 
@@ -25,6 +25,7 @@
 | FE-W16 照顧摘要／到診準備 | 沿 `e61bca2`，直接讀 GitHub `ce87370` 的 S14-W01 交接／API／型別／Panel；完整期間／來源／原單位、有限預約、RHF 動態問題／清單、規範內容／共享核對、原收據及草稿／基準／範圍清理已投影；兩項規則、四尺寸／150% Web 文字、typecheck 及 Web／Android export 通過 | [SUMMARY_HANDOFF](SUMMARY_HANDOFF.md)；真 API／統計與控制器、精確記錄／任務及跨頁、使用者視覺和原生真機待接線／驗收 |
 | FE-W17 主動聯絡及功能補缺 | 本人渠道同意／次序／撤回、任務 grant／期限／後備／撤回、台帳／本人 ack 分開、原收據與版本／草稿／範圍清理已投影；UI-P2-06 固定求助入口補齊。三項規則、四尺寸／150% Web 文字、typecheck 及 Web／Android export 通過 | [CONTACT_HANDOFF](CONTACT_HANDOFF.md)；真 API、正式面板 clearDrafts 差異、精確導航、worker／通知及視覺／實機待接線／驗收 |
 | FE-W18 表面／輸入入口 | 白色控制與暖灰導航分層，孩子／資料／側欄和共用次要按鈕一致；拍照／檔案／語音工具列、照片 capture／來源導航、草稿及 Modal 關閉後 Web 焦點已實作，輕量檢查通過 | [AGENT_HANDOFF](AGENT_HANDOFF.md)／[證據](verification/fe-w18)；Web capture 實際相機、原生 adapter／焦點、語音、PDF／Word及真對話附件待接續／驗收 |
+| FE-W19 對話頁直接拍照 | 沿 `bed1342`；直接重核 GitHub `ce87370`，其他 worktree 無 frontend 重疊。Web 相機／等待／拒絕／後備選圖、原頁照片預覽／原草稿、track／blob 清理及遲到結果隔離已實作；四尺寸合成串流／原檔與必要 build 通過 | [AGENT_HANDOFF](AGENT_HANDOFF.md)／[證據](verification/fe-w19)；取代 FE-W18 拍照跳頁。真相機／權限、原生 adapter、上傳及正式聊天多模態待接線／驗收 |
 | 當前功能覆蓋 | 已對照 GitHub `ce87370` UI-P2-01–18，既有契約的本期隔離畫面已投影，見 [覆蓋及界線](HANDOFF.md#p2-coverage) | 接線／跨頁、正式通知中心／未讀與無契約功能由主聊天統籌；不因後端已合併便宣稱預覽接通 |
 
 ## 已驗證及限制
