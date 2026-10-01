@@ -2,6 +2,8 @@
 
 日期：2026-10-01。前置 `0ae397636342b57d7f474ff9d4ee7cc210b57ea1`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)，主責 B。只改 frontend，不改正式 App、Server／Agent、根依賴、品牌素材或指導文件。
 
+交付源碼／驗證 checkpoint：`3ae41c769e03d3f0f2b61fe30443f668a2eddc50`。19 項當前改動的源碼 SHA／Git blob、最終 Web／Android 產物及覆核範圍見 [build-checks](verification/fe-w20/build-checks.json)；source snapshot SHA-256 為 `c07a119e266b3cbcd38c801e1e507c0d41ee8e28f094add672c55672b6a38002`。60 個重排證據早於最後插畫定位／頭像底色修正，最終設計／背景／composer 局部檢查已補驗，不冒稱每頁都重跑業務。
+
 ## 已實作／只屬預覽
 
 - 共用主題採 [Happy Hues 14](https://www.happyhues.co/palettes/14)，網站角色、本項目映射及 OKLCH 參數在 [COLOR_STRATEGY](COLOR_STRATEGY.md)，唯一色值入口是 [theme](src/theme.ts)。普通提交深底白字，Agent 強調入口黃底深字，其他頁面共用同一主題。

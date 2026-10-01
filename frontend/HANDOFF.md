@@ -4,7 +4,7 @@
 
 ## 交付範圍及入口
 
-**最新 FE-W20**：依使用者指定 [Happy Hues 14](https://www.happyhues.co/palettes/14) 及逐區用色指導替換共用 UI 色盤，保留 Logo／美術與 OKLCH 派生；Agent 用黃底深字，一般提交用深底白字，白卡／白控件與青色導航分層。Web 設定的首頁背景入口可本地換圖／恢復，桌面及手機共用，沒有上傳／保存或新 API。元件／原生 pickImage port、路由區 blur／blob 清理、當前偏好無背景契約及待接線，見 [APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)／[FE-W20 證據](verification/fe-w20)。不修改主聊天範圍或自行 merge。
+**最新 FE-W20**（源碼／驗證 `3ae41c7`）：依使用者指定 [Happy Hues 14](https://www.happyhues.co/palettes/14) 及逐區用色指導替換共用 UI 色盤，保留 Logo／美術與 OKLCH 派生；Agent 用黃底深字，一般提交用深底白字，白卡／白控件與青色導航分層。Web 設定的首頁背景入口可本地換圖／恢復，桌面及手機共用，沒有上傳／保存或新 API。元件／原生 pickImage port、路由區 blur／blob 清理、當前偏好無背景契約及待接線，見 [APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)／[FE-W20 證據](verification/fe-w20)。不修改主聊天範圍或自行 merge。
 
 **FE-W19**（源碼／驗證 `f541a2da0f97e2cf463f380d3f8449dad3525892`；基線 `bed1342`／現有 draft PR #73）：按使用者要求，Agent 拍照改成直接開頁內 Web 相機，完整 frame 經原 JPEG／PNG／4 MiB／hash／blob 流程後回原輸入框預覽；等待／取消／權限拒絕／系統選圖後備、原問題保留、track／blob 與遲到回應清理已實作。新增 [AgentComposer](src/components/agent/AgentComposer.tsx) 的私有範圍及 [WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx)，不改後端／聊天契約或依賴。[AGENT_HANDOFF](AGENT_HANDOFF.md) 列回調、清理及能力；[最終檢查](verification/fe-w19/checks-composer-surfaces-camera.json)／[來源及產物 hash](verification/fe-w19/build-checks.json)。typecheck、Web／Android export、四尺寸合成串流／原檔及放大文字通過；沒有真相機、系統權限、上傳或模型呼叫。Webcam／手機權限及視覺待裝置驗收；原生 adapter、正式上傳及真正對話附件待主聊天接線。
 

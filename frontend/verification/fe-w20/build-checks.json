@@ -1,0 +1,169 @@
+{
+  "at": "2026-10-01T11:39:05.596Z",
+  "package": "FE-W20",
+  "baseline": "0ae397636342b57d7f474ff9d4ee7cc210b57ea1",
+  "sourceCommit": "3ae41c769e03d3f0f2b61fe30443f668a2eddc50",
+  "scope": "frontend only; isolated view and local background selection; no Server or formal App changes",
+  "paletteSource": "https://www.happyhues.co/palettes/14",
+  "otherPalettePagesVisited": false,
+  "sourceSnapshotSha256": "c07a119e266b3cbcd38c801e1e507c0d41ee8e28f094add672c55672b6a38002",
+  "sources": [
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "gitBlob": "fa66c1d8c1753a51a13812b2a4bd241dcb8a13dd",
+      "sha256": "a8a5594238408994dd6190dfbc282d181afde9f6ddd273f5b76dcb645e64e9f7"
+    },
+    {
+      "path": "frontend/scripts/flows/appearance.mjs",
+      "gitBlob": "8a010d831c25ab8a4234174a2e0c7e5b3a4a3888",
+      "sha256": "ea854a3316adb07449af4c636e450928e856f7c33a18ce3c736cd902ca8a874d"
+    },
+    {
+      "path": "frontend/scripts/flows/composer-surfaces.mjs",
+      "gitBlob": "d09905d8214a9a1627213d5a8034fd22c16c49db",
+      "sha256": "a83afe43265c614fd3f18fbbb14460ee6aabb11bd092d28ac3e895270479315d"
+    },
+    {
+      "path": "frontend/scripts/flows/design.mjs",
+      "gitBlob": "9e534636e57c92a8f24ac0b2061b12ada6ead7bf",
+      "sha256": "06614d2bcd03bd07dc70d090a2bfb9a0528e254276e5e5c25d13c29e1a6bdd38"
+    },
+    {
+      "path": "frontend/scripts/verify-colors.mjs",
+      "gitBlob": "4dc3e9742d44d28a01a61253e757ec8d2ab6ed9c",
+      "sha256": "1fce47b7daa0f348e33523611135e18f8a25348e81f67537e0695296cfd72e67"
+    },
+    {
+      "path": "frontend/scripts/verify-ui.mjs",
+      "gitBlob": "ad4156aae81a5d4f0433e0bd8aad2260276e0921",
+      "sha256": "f1f6f5eced404277e8b15a7af7c51cefbd0007d7d44aebb8b48c3ea4f5bfc5ce"
+    },
+    {
+      "path": "frontend/src/background-view-model.ts",
+      "gitBlob": "68a298c13b233871966c98b43d8a463352ff8c5b",
+      "sha256": "42d6fb12695e7480c760e4f7fad0984d57be58d114de7b97edc1b6933d2ce088"
+    },
+    {
+      "path": "frontend/src/components/AgentEntryButton.tsx",
+      "gitBlob": "488b4de35e4cc2994f0d044d1671396dc226e4fe",
+      "sha256": "8230eb02afacaff8dec625283a91f83d44b98f83bda9f5ccc28ac1b49ed223d3"
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "gitBlob": "aeab9b7ea8a2dd7ebed94ae4f1b820a7127f9487",
+      "sha256": "3b00cee482533daa8b7d24c322f54a75257028448b107fb8c65bea9d66c8d45b"
+    },
+    {
+      "path": "frontend/src/components/HomeDashboard.tsx",
+      "gitBlob": "da14636e2e96911e3716f6451e99f74d1c1380f4",
+      "sha256": "64d6345a3b2896c76e1e8fd391fbbef940a8852334849220d3090ea4c9cd5ef8"
+    },
+    {
+      "path": "frontend/src/components/MobileHomeDashboard.tsx",
+      "gitBlob": "5c4e5e3fd3e069fe7a1004f53291864f2031b429",
+      "sha256": "1b8d8bacfa92ccc320deedc792568d83b76df80932c33e5d591c1b499ce10a58"
+    },
+    {
+      "path": "frontend/src/components/appearance/BackgroundImagePicker.tsx",
+      "gitBlob": "8d153865ca106c5ccab35576b61a62097857bdc4",
+      "sha256": "ce8643f3508796c2cd583ee4f9529d870d30d2860c2de11711e3424e818f55c5"
+    },
+    {
+      "path": "frontend/src/components/appearance/BackgroundImagePicker.web.tsx",
+      "gitBlob": "75369c229231dfcfdb2549a4a762364f51c6c404",
+      "sha256": "f5a204bd2660f82bfa04a3c405427d73ec00c32b90f32e9c3e15f4b9a42a7250"
+    },
+    {
+      "path": "frontend/src/components/appearance/BackgroundSettings.tsx",
+      "gitBlob": "91a8f91682f8f2b81185677e98cc117ff878abf9",
+      "sha256": "0216c847d16c16fe9cd8af98821b12fa556e5c0e510f92b82f72309033a2da1d"
+    },
+    {
+      "path": "frontend/src/components/appearance/HomeBackground.tsx",
+      "gitBlob": "124f827b7f045d33c1b8574f6db3f90324e9ff66",
+      "sha256": "25eeb41e6bb7c4b1e3eb154da07ce16d38bb08b119fb7b205ea9299eea4e786c"
+    },
+    {
+      "path": "frontend/src/components/ui.tsx",
+      "gitBlob": "513a51b680612bfd43f59fc76367a769ffda0546",
+      "sha256": "2ca50d2bd82461ffc8ad0a15c45b35a36ef3a185d9ca0a58793006d35d3d8575"
+    },
+    {
+      "path": "frontend/src/preview/BackgroundContext.tsx",
+      "gitBlob": "6091c349ab086b3f84f8a4881308b25b90e694b4",
+      "sha256": "74d0af49b4d0bb08bbac0aca873d95fa298f1f394e3b0e33744f09a6bf7257dc"
+    },
+    {
+      "path": "frontend/src/screens/settingsScreen.tsx",
+      "gitBlob": "939dcd34b4266548b2e109831fcb1c4257fcfd87",
+      "sha256": "3982dcdbebc28f007ebc6a1d09f0bcda013cc9c2e077840392ff7213aa2aea6b"
+    },
+    {
+      "path": "frontend/src/theme.ts",
+      "gitBlob": "f2d617150223c6ebc3cc3138b96973bab19b5bc0",
+      "sha256": "226e8740d8a34d74c9eeced66e37815bb374a0eba7b261a9bafea319cadabe05"
+    }
+  ],
+  "versions": {
+    "expo": "57.0.24",
+    "expo-router": "57.0.22",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-web": "0.21.2",
+    "react-native-paper": "5.15.3",
+    "react-native-svg": "15.15.4",
+    "lucide-react-native": "1.49.0"
+  },
+  "typecheck": {
+    "exitCode": 0,
+    "scope": "final frontend TypeScript"
+  },
+  "contrast": {
+    "path": "color-checks.json",
+    "pairs": 22,
+    "exitCode": 0
+  },
+  "web": {
+    "exitCode": 0,
+    "staticRoutes": 33,
+    "path": "dist/_expo/static/js/web/entry-c72fb806ce70ee7e126c0a122c2c051e.js",
+    "sha256": "2b673db9bd1f693c4871bc16524d5b9560ca330fa72581c5a524ff74068e1ea8"
+  },
+  "android": {
+    "exitCode": 0,
+    "assets": 31,
+    "path": "dist-android/_expo/static/js/android/entry-e0e4f8b6ada65af259eb729d01b78a9c.hbc",
+    "sha256": "3c57d7c294af516192452cf397684d75673a2fb960201684d90cc0207647b315",
+    "limitation": "Hermes/asset export only, not APK/device/permissions"
+  },
+  "previewChecks": [
+    {
+      "path": "checks-layout-design-appearance.json",
+      "failures": [],
+      "scope": "60 reflow checks plus shared design/background; before final picture-position/account-avatar-only correction"
+    },
+    {
+      "path": "checks-design-appearance-composer-surfaces.json",
+      "failures": [],
+      "scope": "final code: six-width design, four-width home/background picture geometry and interaction, composer surfaces/keyboard and 150% mobile Web text"
+    }
+  ],
+  "resolved": [
+    "Router Stack retains inactive screens: route-group blur now clears local background resources as well as unmount.",
+    "RNW absoluteFill left cannot be cleared with undefined: default desktop illustration now explicitly starts at 50%, preserving figures beyond the opaque fade."
+  ],
+  "priorBusinessEvidence": "Existing FE-W11 through FE-W19 operation and camera rules unchanged; no full business regression rerun",
+  "pending": [
+    "User visual acceptance",
+    "Formal background preference API/storage/auth-scoped integration",
+    "Native background selection adapter",
+    "Native device/accessibility/permission acceptance"
+  ],
+  "identity": {
+    "deliveryAccount": "CherylNg-2526",
+    "author": "CherylNg-2526 <250349656@stu.vtc.edu.hk>",
+    "committer": "2NTTY <2nttyfor2b@gmail.com>",
+    "signature": "N",
+    "noMerge": true
+  }
+}

@@ -2,7 +2,7 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W20：共用色盤改為使用者指定的 Happy Hues 14，按用途分配白色內容、淺青導航、深色文字／普通提交、黃色 Agent 入口。** OKLCH 保留給必要派生色，Logo／美術不改；Web「設定 → 應用偏好 → 首頁背景」可本地選圖／恢復，桌面及手機首頁一起套用。typecheck、22 組對比、Web／Android export、60 個重排、六寬度 Dialog／SVG 及四尺寸背景／150% Web 文字通過；[配色](COLOR_STRATEGY.md)／[交接](APPEARANCE_HANDOFF.md)。未上傳／保存，原生選圖及正式背景保存待接線；使用者視覺及真機仍待驗收。
+**最新 FE-W20 `3ae41c7`：共用色盤改為使用者指定的 Happy Hues 14，按用途分配白色內容、淺青導航、深色文字／普通提交、黃色 Agent 入口。** OKLCH 保留給必要派生色，Logo／美術不改；Web「設定 → 應用偏好 → 首頁背景」可本地選圖／恢復，桌面及手機首頁一起套用。typecheck、22 組對比、Web／Android export、60 個重排、六寬度 Dialog／SVG 及四尺寸背景／150% Web 文字通過；[配色](COLOR_STRATEGY.md)／[交接](APPEARANCE_HANDOFF.md)。未上傳／保存，原生選圖及正式背景保存待接線；使用者視覺及真機仍待驗收。
 
 **FE-W19 `f541a2d`：Web 對話的拍照按鈕直接開啟頁內相機，不再跳照片頁。** 按下後才請求相機權限，拍攝回到原輸入框作本地預覽；取消、沒有相機／拒絕權限、系統拍照／選圖後備、移除及切換孩子／離頁清理已實作。復用原 JPEG／PNG、4 MiB、hash／blob 與 Paper／SVG，不新增依賴或後端協定。typecheck、Web／Android export、四尺寸合成串流／原檔與 390／320 放大文字通過；[交接及證據](AGENT_HANDOFF.md)。實際裝置相機／權限待驗收；原生 adapter、上傳及對話附件待接線。
 
