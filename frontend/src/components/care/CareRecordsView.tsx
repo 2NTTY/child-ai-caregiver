@@ -1,3 +1,4 @@
+import { brand } from "../../branding";
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
@@ -20,7 +21,7 @@ export function CareRecordsView({ model, actions, previewControls, onPhotos }: {
   const showPanel = !!(model.detail || model.draft || model.deletion);
   const split = width >= 780;
   const search = () => actions.search(query, kind);
-  return <PageFrame title="照顧記錄" description="保留日常觀察的原文與來源；事件時間、加入時間及更正版本分開顯示。" eyebrow="育伴港 · 孩子資料">
+  return <PageFrame title="照顧記錄" description="保留日常觀察的原文與來源；事件時間、加入時間及更正版本分開顯示。" eyebrow={`${brand.name} · 孩子資料`}>
     <View style={styles.context}><View style={styles.contextCopy}><Text style={styles.title}>{model.child.name}的記錄</Text><Text style={styles.body}>{model.child.summary}</Text></View>
       <View style={styles.actions}>{onPhotos ? <AppButton label="照片與記錄" variant="secondary" onPress={onPhotos} disabled={occupied || loading} /> : null}<AppButton label="新增記錄" onPress={actions.startCreate} disabled={model.access !== "editable" || occupied || loading} /></View></View>
     <Text style={styles.meta}>{model.dataLabel}</Text>

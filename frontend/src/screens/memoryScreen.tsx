@@ -1,3 +1,4 @@
+import { brand } from "../branding";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -63,7 +64,7 @@ function MemoryChildScope({ childId, childName, online, loading }: { childId: st
 export default function MemoryPage() {
   const { model, actions } = usePreview();
   const child = model.children.find(item => item.id === model.selectedChildId);
-  return <PageFrame title="記憶與話題" description="候選事實未確認前只供本人；來源、期限與版本須核對。話題狀態不代表任何任務已完成。" eyebrow="育伴港 · 記憶與話題">
+  return <PageFrame title="記憶與話題" description="候選事實未確認前只供本人；來源、期限與版本須核對。話題狀態不代表任何任務已完成。" eyebrow={`${brand.name} · 記憶與話題`}>
     {child ? <MemoryChildScope key={child.id} childId={child.id} childName={child.displayName} online={model.connection === "online"} loading={model.recordsLoad === "loading"} />
       : <SectionCard><Text style={styles.body}>選擇孩子後才可查看對應記憶；不會顯示上一位孩子的資料或草稿。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard>}
   </PageFrame>;

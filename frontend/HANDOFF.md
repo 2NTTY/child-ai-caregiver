@@ -1,13 +1,17 @@
-# 育伴港 Web／手機介面交接
+# 育有方 Web／手機介面交接
 
 更新：2026-10-01。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
 
 ## 交付範圍及入口
 
 <a id="brand-rename-pending"></a>
-**FE-W21 暫停／改名待辦（2026-10-01）：** 使用者指定前端名稱改為「育有方」，隨後要求重啟電腦及暫時收尾；目前只查明範圍，尚無改名源碼。帳戶導覽交付 `cb9112e` 已由 B 推送並核對 draft PR #73，未合併。恢復後先 fetch／查 frontend 重疊，再集中品牌文字，更新 AppShell／NativeAppShell、RootLayout 啟動畫面、LoginPage、各 PageFrame／Agent 標題、背景／模型／照片示例及 app.json 顯示名稱。現有 PNG Logo 含舊名稱，須同時改可見 Logo；可復用只讀根 assets/brand/logo-horizontal.svg 的原圖形，以 frontend 共用 SVG 文字呈現新名稱，保持原比例／置中和無障礙名稱。不得只換文字標籤而仍顯示舊字圖。
+**FE-W21 前端品牌更名（2026-10-01，恢復基線 `6f367657179d2d38f4d5ceef6627482658680646`）：** 前端顯示名稱已改為「育有方」，沿 draft PR #73。集中入口是 [branding.ts](src/branding.ts)，各頁標題、平台服務、背景恢復、照片合成名稱及無障礙名稱引用同一來源。[BrandLogo](src/components/BrandLogo.tsx) 復用只讀根 `assets/brand/logo-horizontal.svg` 的弧線／引導光、原 512 × 152 比例與顏色，用 react-native-svg 的文字呈現新名稱。AppShell／NativeAppShell、RootLayout 啟動畫面及 LoginPage 共用此元件；首頁 Logo 保留真路由及鍵盤操作。舊 PNG 留作原素材／測試樣本，已沒有運行時 Logo 引用。
 
-同步當前前端文件的名稱及 scripts/flows 的相應 selector，歷史 verification 證據保留原樣。前端內部 slug／Android package、根目錄／Server／正式 App、GitHub repo 的名稱不因顯示品牌更名而自動遷移。完成後驗受影響畫面 1440／1024／390／320、鍵盤及 Web／Android export，展示實際畫面；原生實機及正式身份／API 接線仍待原關口。電腦重啟後先在 frontend 執行 `npx expo serve --port 8083` 可恢復已 export 的畫面；改名實作後須重新 build:web，不把舊 export 當新名稱已完成。
+RootLayout 透過已安裝的 Expo Router `Head` 統一 Web 標題；[app.json](app.json) 的靜態 Expo 顯示名稱同步為「育有方 · 前端預覽」，日後須與 brand.previewName 一起維護。各頁及 scripts/flows selector 已同步；合成照片的原檔／hash 不變。當前前端文件／既有 Skill 名稱已更新，歷史 verification 與先前動態建議保留當時名稱。Happy Hues 14、背景和功能語義不變。
+
+typecheck、Web 33 路由 export、Android Hermes／30 項資產 export、15 頁四尺寸共 60 重排、共用 Dialog／SVG／孩子切換及 Agent 導覽通過。最終 1440／1024／390／320 的 SVG 名稱／字框、Web 標題、首頁 Logo 的 Enter 返回及背景／模型／照片名稱通過，沒有 pageerror、console.error 或 API 請求；[brand-checks](verification/fe-w21/brand-checks.json)／[source and build](verification/fe-w21/build-checks.json)。首輪 SVG 字框檢查發現字體度量在小尺寸有不足 1 個 viewBox 單位的上方越界，基線由 116 調至 118 後保留內邊；全頁重排證據在此微調前，最終字框及受影響首頁／登入畫面另驗。登入窄版沿原結構仍有故事／表單兩個 Logo，已修正檢查預期，沒有為測試改畫面排列。
+
+此包沒有遷移內部 slug／Android package、根目錄／Server／正式 App、session／API、GitHub repo 或網域。主聊天正式整合時可復用上述品牌入口，另處理正式 metadata／素材／文檔；Android 字體度量及 App 顯示名稱須在實機核對，bundle 不代替 APK／實機驗收。預覽：在 frontend 執行 `npm run build:web`，再 `npx expo serve --port 8083`；目前已按新名稱重新輸出。使用者視覺、正式身份／API 和原生實機仍待原關口。
 
 <a id="account-navigation-follow-up"></a>
 **FE-W20 帳戶導覽補修**（2026-10-01，基線 `24a54c6465ef9b1e84ff2895b3bbac0308b1d047`）：依使用者要求，[AppShell](src/components/AppShell.tsx) 移除左下帳戶卡片／Dialog 及「更多」的重複帳戶項，窄 Web 頭像以 Expo Link 開設定；[SettingsPage](src/screens/settingsScreen.tsx) 的「個人與帳戶 → 登入與安全」提供唯一切換帳戶入口，沿共用 AppButton 開既有 `/login` 預覽。原生更多頁面保留各功能／設定，僅移除直接登入項，避免遺失其他頁面的入口。

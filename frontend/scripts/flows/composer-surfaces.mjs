@@ -1,3 +1,4 @@
+import { brand } from "../../src/branding.ts";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -76,7 +77,7 @@ export async function verifyComposerSurfaces(browser, failures, directory) {
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "hidden" });
     assert.equal(await input.inputValue(), draft);
-    await page.getByText("育伴港 Agent 對話", { exact: true }).click();
+    await page.getByText(brand.agentTitle, { exact: true }).click();
     await assertFits(page, `composer and surfaces ${width}`);
     if (width < 400) {
       const tools = await toolbar.boundingBox();

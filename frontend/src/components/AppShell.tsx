@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, usePathname, useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { brand } from "../branding";
+import { BrandLogo } from "./BrandLogo";
 import { Button, Divider, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { AppIcon } from "./AppIcon";
@@ -16,7 +18,6 @@ import { previewChecklist, scenarioLabels, type PreviewScenario } from "../previ
 import { usePreview } from "../preview/PreviewContext";
 import type { HomeActions, HomeViewModel } from "../view-model";
 
-const logo = require("../../assets/brand/logo-horizontal.png");
 type AppPath = "/" | "/chat" | "/care" | "/photos" | "/sources" | "/growth" | "/summary" | "/contact" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks";
 const navigation: { href: AppPath; label: string; short: string; icon: React.ComponentProps<typeof AppIcon>["name"] }[] = [
   { href: "/", label: "主頁", short: "主頁", icon: "home-outline" },
@@ -135,8 +136,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return <View style={styles.root}>
     {!compact ? <View testID="web-sidebar" style={styles.sidebar}>
-      <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" style={styles.brandLink}>
-        <Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={styles.logo} />
+      <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={styles.brandLink}>
+        <BrandLogo style={styles.logo} decorative />
         <Text style={styles.brandLine}>用資料 · 陪伴成長</Text>
       </Pressable></Link>
       <View style={styles.navList}>{navigation.filter(item => item.href !== "/chat").map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}</View>
@@ -148,7 +149,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     </View> : null}
     <View style={styles.stage}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
-        {compact ? <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={[styles.topLogo, tiny && styles.topLogoTiny]} /></Pressable></Link> : null}
+        {compact ? <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></Link> : null}
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts child={selectedChild} load={model.profileLoad} /> : null}
         <View style={styles.topActions}>

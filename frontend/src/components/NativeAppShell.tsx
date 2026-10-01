@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
-import { BackHandler, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
+import { BackHandler, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
+import { brand } from "../branding";
+import { BrandLogo } from "./BrandLogo";
 import { Button, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { AppIcon } from "./AppIcon";
@@ -28,7 +30,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   }, [railOpen]);
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}>
-      <View style={styles.header}><Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" onPress={() => router.push("/")} style={styles.brand}><Image source={require("../../assets/brand/logo-horizontal.png")} resizeMode="contain" style={styles.logo} /></Pressable>
+      <View style={styles.header}><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => router.push("/")} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>
         <View style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <Pressable accessibilityRole="button" accessibilityLabel="用戶與更多頁面" onPress={() => setMenuOpen(true)} style={styles.accountAction}><View style={styles.avatar}><Text style={styles.initial}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={railOpen ? "收起資訊側欄" : "開啟資訊側欄"} accessibilityState={{ expanded: railOpen }} onPress={() => setRailOpen(value => !value)} style={styles.railButton}><AppIcon name="page-layout-sidebar-right" color={colors.deepTeal} size={mobileIcons.navigation} /></Pressable>

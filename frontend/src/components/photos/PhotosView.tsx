@@ -1,3 +1,4 @@
+import { brand } from "../../branding";
 import { useState, type ReactNode } from "react";
 import { Image, View } from "react-native";
 import { ActivityIndicator, Dialog, Portal, Text } from "react-native-paper";
@@ -22,7 +23,7 @@ export function PhotosView({ model, actions, onCare, previewControls, selectOrig
   const editable = model.access === "editable" && (!selected || selected.visibility === "private" && selected.isUploader && selected.canManage && !selected.recordId);
   const candidate = selected?.extraction.candidate;
   const locked = model.busy || ["unknown", "unconfirmed", "confirmed_unavailable", "conflict"].includes(model.operation.state);
-  return <PageFrame title="照片與記錄" description="先保存私人原照片，再核對內容。只有你明確確認，才與家庭共享照片及記錄。" eyebrow="育伴港 · 孩子資料">
+  return <PageFrame title="照片與記錄" description="先保存私人原照片，再核對內容。只有你明確確認，才與家庭共享照片及記錄。" eyebrow={`${brand.name} · 孩子資料`}>
     <View style={s.context}><Text style={s.title}>{model.childName}的照片</Text><View style={s.row}><AppButton label="重新讀取照片" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /><AppButton label="返回記錄" accessibilityLabel="返回照顧記錄" variant="quiet" onPress={onCare} disabled={locked} /></View></View>
     <View style={s.row}>{["選擇原照片", "私人保存", "核對草稿", "家庭共享"].map((label, index) => <View key={label} style={s.step}><Text style={s.stepNumber}>{index + 1}</Text><Text style={s.meta}>{label}</Text></View>)}</View>
     {!model.online ? <View style={s.notice}><Text style={s.warning}>目前離線，已選原照片及草稿保留。重連後先核對最新狀態，不會自動重送。</Text></View> : null}

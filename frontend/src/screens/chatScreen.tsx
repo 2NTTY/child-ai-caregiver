@@ -1,3 +1,4 @@
+import { brand } from "../branding";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
@@ -30,7 +31,7 @@ export default function ChatPage() {
   return <View onLayout={event => setPaneWidth(event.nativeEvent.layout.width)} style={styles.root}>
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled">
       <SectionCard style={styles.headingCard}>
-        <View style={styles.headingRow}><View style={styles.agentMark}><AppIcon name="star-four-points" size={28} /></View><View style={styles.headingCopy}><Text accessibilityRole="header" style={[styles.title, compact && mobileType.sectionTitle]}>育伴港 Agent 對話</Text><Text style={[styles.subtitle, compact && mobileType.body]}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
+        <View style={styles.headingRow}><View style={styles.agentMark}><AppIcon name="star-four-points" size={28} /></View><View style={styles.headingCopy}><Text accessibilityRole="header" style={[styles.title, compact && mobileType.sectionTitle]}>{brand.agentTitle}</Text><Text style={[styles.subtitle, compact && mobileType.body]}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
         <Text style={styles.previewNote}>合成畫面示例 · 尚未連接 Agent 或發送訊息</Text>
       </SectionCard>
       <EmergencyHelpView help={emergencyHelpSnapshot} />

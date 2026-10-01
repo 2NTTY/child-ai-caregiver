@@ -1,4 +1,4 @@
-# 育伴港前端工作入口
+# 育有方前端工作入口
 
 本目錄是獨立的 Expo／React Native Web 前端預覽。先讀本目錄 [STATUS.md](STATUS.md)、[PLAN.md](PLAN.md) 的當前工作包，再按畫面讀 [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)、[WORKFLOW.md](WORKFLOW.md) 與 [HANDOFF.md](HANDOFF.md)。產品功能、正式 API 及驗收仍以根目錄 AGENTS／STATUS／PLAN／SPEC、P2 UI 清單和實際程式碼為準。
 

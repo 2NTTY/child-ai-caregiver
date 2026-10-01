@@ -1,3 +1,4 @@
+import { brand } from "../branding";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -45,7 +46,7 @@ export default function FamilyPage() {
   const { model, scenario, actions } = usePreview();
   const [perspective, setPerspective] = useState<FamilyPerspective>("owner");
   const [incomingCondition, setIncomingCondition] = useState<IncomingInvitationCondition>("pending");
-  return <PageFrame title="家庭協調" description="把共享記錄與私人聊天分清楚；邀請、接受及權限更改都先核對範圍。" eyebrow="育伴港 · 家庭">
+  return <PageFrame title="家庭協調" description="把共享記錄與私人聊天分清楚；邀請、接受及權限更改都先核對範圍。" eyebrow={`${brand.name} · 家庭`}>
     <FamilyWorkspace key={`${scenario}:${perspective}:${incomingCondition}`} perspective={perspective} incomingCondition={incomingCondition}
       setPerspective={setPerspective} setIncomingCondition={setIncomingCondition} ownerName={model.caregiverName}
       children={model.children} online={model.connection === "online"} reading={model.recordsLoad === "loading"} onProfile={() => actions.open("profile")} />

@@ -1,3 +1,4 @@
+import { brand } from "../branding";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -34,7 +35,7 @@ export default function SettingsPage() {
   const [tab, setTab] = useState<SettingsTab>("account");
   const [displayName, setDisplayName] = useState(model.caregiverName);
   const stacked = width < 850;
-  return <PageFrame title="設定" description="管理個人偏好、孩子與家庭資料；此獨立 Web 預覽沒有連接帳戶或保存設定。" eyebrow="育伴港 · 個人空間">
+  return <PageFrame title="設定" description="管理個人偏好、孩子與家庭資料；此獨立 Web 預覽沒有連接帳戶或保存設定。" eyebrow={`${brand.name} · 個人空間`}>
     <UnderlineTabs items={tabs} value={tab} onChange={setTab} />
     {tab === "account" ? <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}>

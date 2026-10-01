@@ -1,3 +1,4 @@
+import { brand } from "../branding";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
 import { PageFrame } from "../components/PageFrame";
@@ -17,7 +18,7 @@ export default function GuideScreen() {
   const { model, actions } = usePreview();
   const narrow = width < 760;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
-  return <PageFrame title="使用引導" description="先認識孩子資料、照顧記錄和設定，再開始與 Agent 對話。你之後仍可在設定重新開啟本頁。" eyebrow="育伴港 · 開始使用">
+  return <PageFrame title="使用引導" description="先認識孩子資料、照顧記錄和設定，再開始與 Agent 對話。你之後仍可在設定重新開啟本頁。" eyebrow={`${brand.name} · 開始使用`}>
     <SectionCard style={styles.intro}>
       <SectionHeader title={needsGuide ? "先把基本資料整理好" : "隨時回來查看使用方法"} subtitle="此頁是獨立 Web 合成預覽；正式完成狀態須由 Server 提供。" />
       {model.guideStatus === "first_login" ? <Text style={styles.body}>這是首次登入的預覽狀態。先核對孩子檔案，再決定要記下甚麼或向 Agent 提問。</Text> : null}

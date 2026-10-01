@@ -1,0 +1,189 @@
+{
+  "results": [
+    {
+      "path": "/",
+      "width": 1440,
+      "title": "育有方 · 前端預覽",
+      "logos": [
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 2.487804889678955,
+          "width": 338.9755859375,
+          "height": 143.60975646972656,
+          "frameWidth": 512,
+          "frameHeight": 152
+        }
+      ],
+      "oldNames": false,
+      "logoKeyboardReturn": true
+    },
+    {
+      "path": "/login",
+      "width": 1440,
+      "title": "育有方 · 前端預覽",
+      "logos": [
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 2.1263158321380615,
+          "width": 338.9473876953125,
+          "height": 142.82106018066406,
+          "frameWidth": 512,
+          "frameHeight": 152
+        },
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 1.3777778148651123,
+          "width": 338.933349609375,
+          "height": 145.06666564941406,
+          "frameWidth": 512,
+          "frameHeight": 152
+        }
+      ],
+      "oldNames": false
+    },
+    {
+      "path": "/",
+      "width": 1024,
+      "title": "育有方 · 前端預覽",
+      "logos": [
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 2.487804889678955,
+          "width": 338.9755859375,
+          "height": 143.60975646972656,
+          "frameWidth": 512,
+          "frameHeight": 152
+        }
+      ],
+      "oldNames": false,
+      "logoKeyboardReturn": true
+    },
+    {
+      "path": "/login",
+      "width": 1024,
+      "title": "育有方 · 前端預覽",
+      "logos": [
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 2.1263158321380615,
+          "width": 338.9473876953125,
+          "height": 142.82106018066406,
+          "frameWidth": 512,
+          "frameHeight": 152
+        },
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 1.3777778148651123,
+          "width": 338.933349609375,
+          "height": 145.06666564941406,
+          "frameWidth": 512,
+          "frameHeight": 152
+        }
+      ],
+      "oldNames": false
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "title": "育有方 · 前端預覽",
+      "logos": [
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 2.387096643447876,
+          "width": 338.9677429199219,
+          "height": 144.51612854003906,
+          "frameWidth": 512,
+          "frameHeight": 152
+        }
+      ],
+      "oldNames": false,
+      "logoKeyboardReturn": true
+    },
+    {
+      "path": "/login",
+      "width": 390,
+      "title": "育有方 · 前端預覽",
+      "logos": [
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 2.1263158321380615,
+          "width": 338.9473876953125,
+          "height": 142.82106018066406,
+          "frameWidth": 512,
+          "frameHeight": 152
+        },
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 1.3777778148651123,
+          "width": 338.933349609375,
+          "height": 145.06666564941406,
+          "frameWidth": 512,
+          "frameHeight": 152
+        }
+      ],
+      "oldNames": false
+    },
+    {
+      "path": "/",
+      "width": 320,
+      "title": "育有方 · 前端預覽",
+      "logos": [
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 1.2280701398849487,
+          "width": 338.9473571777344,
+          "height": 143.71929931640625,
+          "frameWidth": 512,
+          "frameHeight": 152
+        }
+      ],
+      "oldNames": false,
+      "logoKeyboardReturn": true
+    },
+    {
+      "path": "/login",
+      "width": 320,
+      "title": "育有方 · 前端預覽",
+      "logos": [
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 2.1263158321380615,
+          "width": 338.9473876953125,
+          "height": 142.82106018066406,
+          "frameWidth": 512,
+          "frameHeight": 152
+        },
+        {
+          "text": "育有方",
+          "x": 138,
+          "y": 1.3777778148651123,
+          "width": 338.933349609375,
+          "height": 145.06666564941406,
+          "frameWidth": 512,
+          "frameHeight": 152
+        }
+      ],
+      "oldNames": false
+    },
+    {
+      "path": "/settings",
+      "labels": "background/model passed"
+    },
+    {
+      "path": "/photos",
+      "labels": "photo fixture passed"
+    }
+  ],
+  "failures": []
+}

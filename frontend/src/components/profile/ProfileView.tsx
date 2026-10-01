@@ -1,3 +1,4 @@
+import { brand } from "../../branding";
 import { useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -19,7 +20,7 @@ export function ProfileView({ model, actions, childPicker, writeNotice, previewC
   const canReview = model.access === "editable" && !model.reading && !pending && !conflict
     && (!model.child || model.online && !model.needsRefresh);
   const editable = model.access === "editable" && !model.reading && !pending && !conflict && model.intent !== "delete";
-  const frame = (children: ReactNode) => <PageFrame title="子女檔案" description="只填已知資料；年齡原值、日期基準與未知欄位如實保留。" eyebrow="育伴港 · 孩子資料">{children}</PageFrame>;
+  const frame = (children: ReactNode) => <PageFrame title="子女檔案" description="只填已知資料；年齡原值、日期基準與未知欄位如實保留。" eyebrow={`${brand.name} · 孩子資料`}>{children}</PageFrame>;
   if (model.access === "lost") return frame(<>
     <SectionCard><SectionHeader title="孩子權限已失效" /><Text style={styles.body}>本頁檔案、歷史、草稿及未完成操作已清除。請重新核對家庭權限，或切換至有權查看的孩子。</Text></SectionCard>
     {childPicker}{previewControls}

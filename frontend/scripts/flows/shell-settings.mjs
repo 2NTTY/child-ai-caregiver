@@ -1,3 +1,4 @@
+import { brand } from "../../src/branding.ts";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { openPreview, assertFits, selectOption } from "../preview-browser.mjs";
@@ -24,7 +25,7 @@ export async function verifyAgentEntry(browser, failures, directory) {
     await question.waitFor();
     assert.equal(await page.getByRole("link", { name: "與 Agent 對話", exact: true }).getAttribute("aria-current"), "page");
     await question.fill("保留我的照顧問題");
-    await page.getByRole("link", { name: "育伴港，返回主頁", exact: true }).click();
+    await page.getByRole("link", { name: brand.homeLabel, exact: true }).click();
     await page.getByRole("link", { name: "與 Agent 對話", exact: true }).click();
     assert.equal(await question.inputValue(), "保留我的照顧問題");
     await page.screenshot({ path: resolve(directory, "agent-chat-" + width + ".png") });
@@ -57,7 +58,7 @@ export async function verifyShell(browser, failures, directory) {
   await page.getByRole("link", { name: "設定", exact: true }).click();
   await page.getByRole("button", { name: "開啟使用引導", exact: true }).click();
   await page.getByText("隨時回來查看使用方法", { exact: true }).waitFor();
-  await page.getByRole("link", { name: "育伴港，返回主頁", exact: true }).click();
+  await page.getByRole("link", { name: brand.homeLabel, exact: true }).click();
   await page.getByText("把每天的細節，慢慢整理清楚。", { exact: true }).waitFor();
   await page.close();
 

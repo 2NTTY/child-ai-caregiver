@@ -1,8 +1,8 @@
-# 育伴港前端狀態
+# 育有方前端狀態
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**暫時收尾（2026-10-01）：** 使用者準備重啟電腦，暫停前端工作。帳戶導覽源碼及四尺寸證據已交付 `cb9112edf0823ccb7a017d82198cd89c1d9a5ec0`／draft PR #73，工作目錄沒有未提交源碼。使用者新指定名稱「育有方」：FE-W21 只完成限定範圍檢查，品牌文案、Logo 文字、Web／Expo 顯示名稱及驗證 selector **尚未更改**。恢復時先按 [PLAN](PLAN.md)／[改名交接](HANDOFF.md#brand-rename-pending) 接續，不重做已交付的帳戶／ripple 修正；預覽伺服器重啟後須重新啟動。
+**最新 FE-W21（2026-10-01）：** 從暫時收尾基線 `6f36765` 接續，前端顯示品牌已改為「育有方」。[branding.ts](src/branding.ts) 集中名稱及衍生文案，[BrandLogo](src/components/BrandLogo.tsx) 共用原 SVG 圖形與新字樣；Web／原生外殼、登入／啟動畫面、內頁、背景／模型／照片示例及 Web／Expo 顯示名稱同步。typecheck、Web／Android export、60 個重排、共用設計／Agent 導覽及四尺寸 Logo／標題／鍵盤返回通過；[交接](HANDOFF.md#brand-rename-pending)／[證據](verification/fe-w21/build-checks.json)。沿現有 draft PR #73，使用者視覺及原生實機仍待驗收；正式品牌／API 整合由主聊天處理。
 
 **FE-W20 帳戶導覽補修：** 左下帳戶卡片及重複帳戶選單已移除，Agent 固定在設定上方；切換入口集中在「設定 → 個人與帳戶 → 登入與安全」，窄 Web 頭像開設定。四尺寸首頁／設定、Enter／登入預覽、typecheck 及 Web／Android export 通過，見 [交接](HANDOFF.md#account-navigation-follow-up)。真登入／登出／身份切換仍待主聊天，原生只驗 bundle。
 
@@ -36,6 +36,7 @@
 | FE-W19 對話頁直接拍照 | 沿 `bed1342`；直接重核 GitHub `ce87370`，其他 worktree 無 frontend 重疊。Web 相機／等待／拒絕／後備選圖、原頁照片預覽／原草稿、track／blob 清理及遲到結果隔離已實作；四尺寸合成串流／原檔與必要 build 通過 | [AGENT_HANDOFF](AGENT_HANDOFF.md)／[證據](verification/fe-w19)；取代 FE-W18 拍照跳頁。真相機／權限、原生 adapter、上傳及正式聊天多模態待接線／驗收 |
 | 當前功能覆蓋 | 已對照 GitHub `ce87370` UI-P2-01–18，既有契約的本期隔離畫面已投影，見 [覆蓋及界線](HANDOFF.md#p2-coverage) | 接線／跨頁、正式通知中心／未讀與無契約功能由主聊天統籌；不因後端已合併便宣稱預覽接通 |
 | FE-W20 配色及自選背景入口 | 第 14 款逐區角色／實際畫面已核對；共用 MD3／SVG／Agent／卡片／導航同步，Web 本地選圖／錯誤保留／跨頁／恢復及 blob 清理已實作，必要輕量檢查通過 | [APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)；當前偏好 API 沒有背景欄位，正式保存／帳戶隔離／原生 adapter／視覺及實機待接線／驗收 |
+| FE-W21 前端品牌更名 | 共用名稱／SVG Logo、各頁文案、Web／Expo 顯示名稱及相應 selector 已同步；四尺寸、鍵盤及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#brand-rename-pending)；使用者視覺、Android 字體／App 顯示名稱實機與正式品牌整合待驗收／接線 |
 
 ## 已驗證及限制
 

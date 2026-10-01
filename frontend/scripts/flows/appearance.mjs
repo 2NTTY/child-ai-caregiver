@@ -1,3 +1,4 @@
+import { brand } from "../../src/branding.ts";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { openPreview, assertFits } from "../preview-browser.mjs";
@@ -68,7 +69,7 @@ export async function verifyAppearance(browser, failures, directory) {
     await chooseImage(page, { name: "corrupt.png", mimeType: "image/png", buffer: Buffer.from("not an image") });
     await card.getByText("未能讀取這張背景圖片，原有背景仍然保留。請選擇另一張圖片。", { exact: true }).waitFor();
     assert.equal(await imageUri(page), selected, "Unreadable image preserves the current image");
-    await page.getByRole("link", { name: "育伴港，返回主頁", exact: true }).click();
+    await page.getByRole("link", { name: brand.homeLabel, exact: true }).click();
     await page.waitForURL(/\/\/?$/);
     assert.equal(await imageUri(page), selected, "Background survives navigation within the preview");
     await assertFits(page, "custom homepage " + width);
@@ -78,10 +79,10 @@ export async function verifyAppearance(browser, failures, directory) {
     await card.getByText("本次背景：replacement.png", { exact: true }).waitFor();
     const replacement = await imageUri(page);
     assert.ok(await page.evaluate(uri => window.backgroundReleases.includes(uri), selected), "Replaced object URL released");
-    await card.getByRole("button", { name: "恢復育伴港原圖", exact: true }).click();
+    await card.getByRole("button", { name: brand.restoreBackgroundLabel, exact: true }).click();
     assert.equal(await imageUri(page), original);
     assert.ok(await page.evaluate(uri => window.backgroundReleases.includes(uri), replacement), "Restored object URL released");
-    assert.equal(await card.getByRole("button", { name: "恢復育伴港原圖", exact: true }).isEnabled(), false);
+    assert.equal(await card.getByRole("button", { name: brand.restoreBackgroundLabel, exact: true }).isEnabled(), false);
     if (width === 390 || width === 320) {
       await page.evaluate(() => {
         for (const element of document.querySelectorAll('input,textarea,[dir="auto"]')) {

@@ -1,3 +1,4 @@
+import { brand } from "../../branding";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +13,7 @@ import { modelCommandFromDraft, modelSettingsDraft, modelSettingsSchema, removeM
 
 const empty: ModelSettings = { version: 0, mode: "disabled", provider: "gemini", model: "gemini-3.1-flash-lite", keyConfigured: false,
   backgroundEnabled: false, dailyLimit: personalLimits.daily.default, maxModelCalls: personalLimits.modelCalls.default, maxQueryEmbeddings: personalLimits.queryEmbeddings.default, updatedAt: null };
-const modeLabels: Record<ModelMode, string> = { platform: "育伴港平台服務", personal: "我的個人密鑰", disabled: "停用 AI" };
+const modeLabels: Record<ModelMode, string> = { platform: brand.platformServiceLabel, personal: "我的個人密鑰", disabled: "停用 AI" };
 function FieldError({ message }: { message?: string }) { return message ? <Text accessibilityRole="alert" style={styles.error}>{message}</Text> : null; }
 function UsageCard({ label, usage }: { label: string; usage: ModelSettingsUsage }) {
   return <SectionCard><SectionHeader title={label} subtitle={`計數日：${usage.day}（UTC）；資料來自最後讀取。`} />

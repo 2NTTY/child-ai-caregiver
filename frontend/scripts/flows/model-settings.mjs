@@ -1,3 +1,4 @@
+import { brand } from "../../src/branding.ts";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { openPreview, assertFits, selectOption } from "../preview-browser.mjs";
@@ -9,7 +10,7 @@ async function modelPage(browser, failures, width = 390) {
   const page = await openPreview(browser, "/settings", width, width < 400 ? 844 : 992, failures);
   await assertFits(page, `settings account ${width}`);
   await page.getByRole("button", { name: "管理模型設定", exact: true }).click();
-  await page.getByText("最後讀到的版本：3 · 育伴港平台服務", { exact: true }).waitFor();
+  await page.getByText(`最後讀到的版本：3 · ${brand.platformServiceLabel}`, { exact: true }).waitFor();
   return page;
 }
 async function personal(page) { await selectOption(page, "模型模式", "我的個人密鑰"); }
@@ -111,11 +112,11 @@ export async function verifyModelSettings(browser, failures, directory) {
   await saveButton(scoped).click(); await scoped.getByText("正在保存模型設定…", { exact: true }).waitFor();
   await scoped.getByRole("button", { name: "切換模型合成帳戶", exact: true }).click();
   await scoped.getByText("適用於爸爸", { exact: false }).waitFor();
-  await scoped.getByText("最後讀到的版本：3 · 育伴港平台服務", { exact: true }).waitFor();
+  await scoped.getByText(`最後讀到的版本：3 · ${brand.platformServiceLabel}`, { exact: true }).waitFor();
   await personal(scoped); assert.equal(await keyInput(scoped).inputValue(), "");
   await keyInput(scoped).fill(sample); await scoped.getByRole("button", { name: "切換模型合成 Server", exact: true }).click();
   await scoped.getByText("合成 Server B", { exact: false }).waitFor();
-  await scoped.getByText("最後讀到的版本：3 · 育伴港平台服務", { exact: true }).waitFor();
+  await scoped.getByText(`最後讀到的版本：3 · ${brand.platformServiceLabel}`, { exact: true }).waitFor();
   await personal(scoped); assert.equal(await keyInput(scoped).inputValue(), "");
   await selectOption(scoped, "模型保存結果", "身份或權限改變"); await keyInput(scoped).fill(sample); await consent(scoped);
   await saveButton(scoped).click(); await scoped.getByText("本人身份或權限已改變，請重新登入。", { exact: true }).waitFor();

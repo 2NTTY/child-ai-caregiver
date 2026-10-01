@@ -1,12 +1,13 @@
 import { Stack } from "expo-router";
+import Head from "expo-router/head";
+import { brand } from "../src/branding";
+import { BrandLogo } from "../src/components/BrandLogo";
 import { PaperProvider } from "react-native-paper";
 import { chineseFont, colors, paperTheme, spacing, typeScale } from "../src/theme";
 import { PaperSvgIcon } from "../src/components/AppIcon";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
-import { Image, Platform, StyleSheet, Text, View } from "react-native";
-
-const logo = require("../assets/brand/logo-horizontal.png");
+import { Platform, StyleSheet, Text, View } from "react-native";
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -15,10 +16,11 @@ export default function RootLayout() {
   const renderRoutes = Platform.OS !== "web" || ready;
   return (
     <SafeAreaProvider><PaperProvider theme={paperTheme} settings={{ icon: PaperSvgIcon }}>
+      <Head><title>{brand.previewName}</title></Head>
       <View style={styles.root} testID={ready ? "frontend-preview-ready" : undefined}>
         {renderRoutes ? <Stack screenOptions={{ headerShown: false, animation: "none" }} /> : <View style={styles.launch}>
-          <Image source={logo} resizeMode="contain" style={styles.logo} accessible={false} />
-          <Text accessibilityRole="text" style={styles.launchText}>正在開啟育伴港…</Text>
+          <BrandLogo style={styles.logo} decorative />
+          <Text accessibilityRole="text" style={styles.launchText}>正在開啟{brand.name}…</Text>
         </View>}
       </View>
     </PaperProvider></SafeAreaProvider>

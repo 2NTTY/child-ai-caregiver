@@ -1,4 +1,4 @@
-# 育伴港前端單一計劃
+# 育有方前端單一計劃
 
 本計劃只管理 frontend/** 的設計與前端實作。產品功能、正式 API、權限與跨模組驗收，以根目錄 [AGENTS](../AGENTS.md)、[STATUS](../STATUS.md)、[PLAN](../PLAN.md)、[SPEC](../SPEC.md) 及 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 為準。前端不修改 Server、Agent、資料庫、根目錄依賴或正式 App；合併只按使用者明確指示進行。
 
@@ -24,7 +24,7 @@
 | 7l | FE-W18 表面層次及 Agent 輸入入口 | `eb9b48c` 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `f3ba9e3`，重核 GitHub `ce87370` 的照片／來源交接及 API。控制／資料標籤與外層導航分色；三項 SVG 輸入入口、照片 capture／普通選檔、來源導航及語音未接通提示，原草稿保留。typecheck、20 組色彩、60 個四尺寸重排／放大文字、六寬度 Dialog／選單及 Web／Android export 通過；[AGENT_HANDOFF](AGENT_HANDOFF.md)，真聊天附件／任意文件、語音／原生相機與實機仍待接續 |
 | 7m | FE-W19 原對話頁直接拍照 | `f541a2d` 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `bed1342`；依使用者要求取消拍照跳頁。明確按下才開頁內 Web 相機，拍攝／取消／權限拒絕／後備選圖、原頁未送出預覽、草稿保留、track／blob 及遲到結果清理已實作。typecheck、Web／Android export、1440／1024／390／320 合成串流及原檔、鍵盤和 390／320 放大文字通過；[AGENT_HANDOFF](AGENT_HANDOFF.md)。實際裝置相機／系統權限、原生 adapter 和真正對話附件仍待接線／驗收 |
 | 7n | FE-W20 Happy Hues 14／首頁背景 | 實作及輕量檢查通過；追加現有 draft PR #73 | 前置 `0ae3976`，只研究使用者指定第 14 款，按網站角色落實共用配色，必要派生仍用 OKLCH；Web 應用偏好可本地選圖／恢復及跨尺寸首頁套用，原生薄 port 已預留。typecheck／22 組對比／60 重排／Dialog、四尺寸背景／150% 文字與 Web／Android export 通過；[APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)。正式保存無契約，不污染通知偏好／照片 API；視覺、原生 adapter 及真機待驗 |
-| 7o | FE-W21 育有方前端品牌更名 | 未開始；依使用者重啟要求暫停 | 前置 `cb9112e`。只改 frontend 的顯示名稱、共用 Logo 文字、頁面／提示／合成示例及當前前端文件；品牌文字集中管理，沿用原 SVG 圖形、美術與 Happy Hues 14。同步 selector，檢查四尺寸／鍵盤／Web 與 Android bundle。根文件、後端、正式 App、GitHub repo 及身份／業務協定由主聊天處理；[待辦範圍](HANDOFF.md#brand-rename-pending) |
+| 7o | FE-W21 育有方前端品牌更名 | 實作及必要輕量檢查通過；待使用者視覺驗收 | 前置 `cb9112e`，從收尾基線 `6f36765` 恢復。品牌文字集中 branding.ts，原 SVG 圖形／比例共用 BrandLogo；各頁／提示／合成示例、Web／Expo 顯示名稱、當前前端文件及 selector 已同步，沿用美術與 Happy Hues 14。60 個重排、共用設計／Agent、四尺寸 Logo／鍵盤返回、typecheck 及 Web／Android bundle 通過；[交接](HANDOFF.md#brand-rename-pending)。原生實機／正式品牌整合待主聊天；根文件、後端及技術身份未遷移 |
 | 8 | Web 整套確認與正式接線 | 待主聊天及使用者 | 使用者比較全部 Web 畫面並明確確認；主聊天按 [HANDOFF](HANDOFF.md) 對正式 App 的既有 API／控制器接線與真服務驗收。未接通 P2 功能須等其業務包交付，不以預覽代替 |
 | 9 | FE-W06 手機軟件介面 | 源碼及 bundle 完成；待視覺及真機驗收 | 按使用者 2026-09-29 指示提前做手機畫面；手機首頁依參考圖的品牌／問候、孩子卡片、提問、重點、待辦、快捷記錄及底部導航組裝。共用 React Native 元件、Expo Router Tabs／Safe Area／鍵盤及最終 Android bundle 通過；正式 P3 接線／APK／實機驗收仍待主聊天及後續條件 |
 

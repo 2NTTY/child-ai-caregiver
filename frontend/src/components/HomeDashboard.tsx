@@ -1,3 +1,4 @@
+import { brand } from "../branding";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { ActivityIndicator, Divider, Text } from "react-native-paper";
@@ -79,13 +80,13 @@ export function HomeDashboard({ model, actions }: { model: HomeViewModel; action
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <View testID="desktop-home-banner" style={[styles.introCard, stacked && styles.introStack]}>
       <HomeBackground surface={colors.paper} protectFullWidth={stacked} wideIllustration />
-      <View style={[styles.introText, stacked && styles.introTextWide]}><Text style={styles.eyebrow}>育伴港 · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} variant="accent" onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
+      <View style={[styles.introText, stacked && styles.introTextWide]}><Text style={styles.eyebrow}>{brand.name} · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} variant="accent" onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
     </View>
     <View style={[styles.grid, stacked && styles.gridStack]}>
       <View style={styles.column}><DataOverview model={model} actions={actions} /><RecentRecords model={model} actions={actions} /></View>
       <View style={styles.column}><Highlight model={model} actions={actions} /><SectionCard><SectionHeader title="常用入口" subtitle="從已掌握的資料繼續。" /><DashboardLink icon="message-text-outline" title="基本聊天" detail="整理需要討論的問題" onPress={() => actions.open("chat")} /><DashboardLink icon="notebook-outline" title="照顧記錄" detail="查看已確認的內容" onPress={() => actions.open("care")} /><DashboardLink icon="account-group-outline" title="家庭協調" detail="查看成員與共享範圍" onPress={() => actions.open("family")} /></SectionCard></View>
     </View>
-    <Text style={styles.footer}>育伴港 · 用資料陪伴成長</Text>
+    <Text style={styles.footer}>{brand.name} · 用資料陪伴成長</Text>
   </ScrollView>;
 }
 

@@ -1,3 +1,4 @@
+import { brand } from "../../src/branding.ts";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { openPreview, assertFits, selectOption } from "../preview-browser.mjs";
@@ -135,7 +136,7 @@ export async function verifySources(browser, failures, directory) {
   await selectOption(scoped, "來源情境", "權限失效"); assert.equal(await scoped.getByTestId("source-details").count(), 0); assert.equal(await field(scoped, "自備來源原文").count(), 0); await scoped.close();
 
   const photo = await openPreview(browser, "/photos", 320, 844, failures);
-  await button(photo, "開啟照片：私人 · 育伴港美術示例.png").click(); await field(photo, "照片記錄原文").fill(raw);
+  await button(photo, `開啟照片：私人 · ${brand.illustrationFilename}`).click(); await field(photo, "照片記錄原文").fill(raw);
   await selectOption(photo, "照片記錄種類", "身高／體重"); await field(photo, "照片數值原文").fill("  約十四  "); await field(photo, "照片數值單位").fill(" kg ");
   await field(photo, "照片事件時間原文").fill(" 昨晚 "); await checkbox(photo, "內容含約數或約略時間").focus(); await photo.keyboard.press("Space");
   await button(photo, "預覽照片共享內容").click(); await photo.getByTestId("photo-shared-review").waitFor();

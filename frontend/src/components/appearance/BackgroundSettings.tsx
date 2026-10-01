@@ -1,3 +1,4 @@
+import { brand } from "../../branding";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -18,10 +19,10 @@ export function BackgroundSettings({ pickImage }: { pickImage?: PickBackgroundIm
       <HomeBackground surface={colors.canvas} fadeBottom />
       <View style={styles.copy}><Text style={styles.heading}>你好，歡迎回來！</Text><Text style={styles.body}>每個小日常，都值得好好記下。</Text></View>
     </View>
-    <Text style={styles.body}>{background.selected ? `本次背景：${background.selected.filename}` : "目前使用育伴港海旁家庭插畫。"}</Text>
+    <Text style={styles.body}>{background.selected ? `本次背景：${background.selected.filename}` : `目前使用${brand.name}海旁家庭插畫。`}</Text>
     <View style={styles.actions}>
       <BackgroundImagePicker pickImage={pickImage} onReadingChange={setReading} onError={setError} onSelected={image => { background.select(image); setError(null); }} />
-      <AppButton label="恢復育伴港原圖" variant="quiet" disabled={!background.selected || reading} onPress={() => { background.restore(); setError(null); }} />
+      <AppButton label={brand.restoreBackgroundLabel} variant="quiet" disabled={!background.selected || reading} onPress={() => { background.restore(); setError(null); }} />
     </View>
     {error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
     <Text style={styles.note}>JPG／PNG／WebP · 最多 4 MiB。圖片只留在本次介面預覽，沒有上傳；重新整理或退出預覽會恢復原圖。正式保存及手機選圖待接線。</Text>

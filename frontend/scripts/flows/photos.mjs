@@ -1,3 +1,4 @@
+import { brand } from "../../src/branding.ts";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -9,7 +10,7 @@ const record = page => page.getByRole("textbox", { name: "照片記錄原文", e
 const raw = "  約九點多休息；仍須核對。  ";
 async function tools(page) { if (await button(page, "顯示照片情境").count()) await button(page, "顯示照片情境").click(); }
 async function fault(page, phase, outcome) { await tools(page); await selectOption(page, "模擬問題階段", phase); await selectOption(page, "模擬照片結果", outcome); }
-async function openPrivate(page) { await button(page, "開啟照片：私人 · 育伴港美術示例.png").click(); await record(page).waitFor(); }
+async function openPrivate(page) { await button(page, `開啟照片：私人 · ${brand.illustrationFilename}`).click(); await record(page).waitFor(); }
 async function review(page) { await record(page).fill(raw); await button(page, "預覽照片共享內容").click(); await page.getByTestId("photo-shared-review").waitFor(); }
 async function confirm(page) { await checkbox(page, "我確認原照片及這份記錄與孩子所屬家庭共享").click(); await button(page, "確認照片及記錄家庭共享").click(); }
 async function imageLoaded(page) { await page.waitForFunction(() => [...document.images].filter(image => image.src.startsWith("blob:")).every(image => image.complete && image.naturalWidth > 0)); }
@@ -96,8 +97,8 @@ export async function verifyPhotos(browser, failures, directory) {
   await button(scoped, "選擇孩子，目前小昕").click(); await scoped.getByRole("radio", { name: "阿樂 · 約 8 歲 · 截至 2026 年 9 月", exact: true }).click();
   assert.equal(await record(scoped).count(), 0); await scoped.getByText("阿樂的照片", { exact: true }).waitFor();
   await tools(scoped);
-  await selectOption(scoped, "照片情境", "唯讀角色"); assert.equal(await button(scoped, "開啟照片：私人 · 育伴港美術示例.png").count(), 0);
-  await button(scoped, "開啟照片：共享 · 育伴港美術示例.png").click(); assert.equal(await button(scoped, "刪除照片及連結記錄").count(), 0);
+  await selectOption(scoped, "照片情境", "唯讀角色"); assert.equal(await button(scoped, `開啟照片：私人 · ${brand.illustrationFilename}`).count(), 0);
+  await button(scoped, `開啟照片：共享 · ${brand.illustrationFilename}`).click(); assert.equal(await button(scoped, "刪除照片及連結記錄").count(), 0);
   await selectOption(scoped, "照片情境", "權限失效"); await scoped.getByRole("heading", { name: "已無權查看這個孩子", exact: true }).waitFor(); assert.equal(await scoped.getByTestId("photo-list").count(), 0); await scoped.close();
 
   const home = await openPreview(browser, "/", 320, 720, failures);

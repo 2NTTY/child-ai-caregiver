@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { brand } from "../branding";
+import { BrandLogo } from "../components/BrandLogo";
 import { useRouter } from "expo-router";
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,7 +9,6 @@ import { AppButton, AppTextField } from "../components/ui";
 import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
-const logo = require("../../assets/brand/logo-horizontal.png");
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
 type Mode = "signIn" | "signUp";
 
@@ -35,7 +36,7 @@ export default function LoginPage() {
     <View style={[styles.story, narrow && styles.storyCompact]}>
       <Image source={harbourArt} resizeMode="cover" accessibilityLabel="香港海旁照顧者與孩子插畫" style={styles.storyImage} />
       <View style={styles.storyContent}>
-        <Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={styles.storyLogo} />
+        <BrandLogo style={styles.storyLogo} />
         <Text style={styles.storyEyebrow}>用資料 · 陪伴成長</Text>
         <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>用 AI，{narrow ? "" : "\n"}更輕鬆做好育兒大小事。</Text>
         <Text style={styles.storyLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
@@ -48,7 +49,7 @@ export default function LoginPage() {
       </View>
     </View>
     <View style={styles.formSide}>
-      <View style={styles.formHeader}><Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
+      <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
       <View style={styles.formCard}>
         <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
         <Text style={styles.formIntro}>{mode === "signIn" ? "登入後，繼續整理孩子的照顧資料。" : "先建立自己的帳戶，再新增孩子的資料。"}</Text>
@@ -66,7 +67,7 @@ export default function LoginPage() {
         <Text style={styles.unavailable}>參考圖中的手機、Google／Apple 登入和忘記密碼尚未有本項目可用的正式接線，因此不提供假按鈕。</Text>
         <Pressable accessibilityRole="link" accessibilityLabel="返回主頁合成預覽" onPress={() => router.replace("/")} style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}><Text style={styles.backLinkText}>返回 Web 主頁預覽</Text><AppIcon name="arrow-right" size={18} /></Pressable>
       </View>
-      <Text style={styles.footer}>育伴港 · 用資料陪伴成長</Text>
+      <Text style={styles.footer}>{brand.name} · 用資料陪伴成長</Text>
     </View>
   </ScrollView></KeyboardAvoidingView>;
 }

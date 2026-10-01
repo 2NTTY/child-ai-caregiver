@@ -6,7 +6,7 @@ FE-W10；2026-09-30。依使用者手機參考圖及現有 Paper／Expo 結構�
 
 ## 成熟方案與取捨
 
-採用現有 React Native Paper 5.15.3、Expo Router 57.0.22 及 React Native 0.86.3，沒有新增 UI 框架。官方方案解決可伸縮尺寸、字體層次、觸控及安全區；參考圖決定育伴港的排列與密度。
+採用現有 React Native Paper 5.15.3、Expo Router 57.0.22 及 React Native 0.86.3，沒有新增 UI 框架。官方方案解決可伸縮尺寸、字體層次、觸控及安全區；參考圖決定育有方的排列與密度。
 
 使用者再提出圖標／組件／文字偏大的疑慮後，對照 [Paper 5.15.3 原始 tokens](https://github.com/callstack/react-native-paper/blob/v5.15.3/src/styles/themes/v3/tokens.tsx) 及 [Material Android 官方字級](https://github.com/material-components/material-components-android/blob/master/docs/theming/Typography.md)，將首輪 24／18／15 收斂為 MD3 的 22／16／14。這是本工程選用的角色，不是聲稱所有手機正文必須 14。[Lucide](https://lucide.dev/guide/lucide/basics/sizing) 的預設為 24；本工程按角色取 20–24，與可按範圍分開。
 

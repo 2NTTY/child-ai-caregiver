@@ -1,4 +1,4 @@
-# 育伴港 Web／手機設計規則
+# 育有方 Web／手機設計規則
 
 本版綜合主頁、Agent 對話、設定及登入參考圖；圖片只決定視覺與組件細節，產品語義仍以根目錄 [SPEC](../SPEC.md) 和 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 為準。畫面沿用項目 Logo、香港海旁美術及香港繁體中文，不照搬參考圖的嫩芽標誌、人物或虛構數據。
 
@@ -19,6 +19,7 @@
 
 | 層 | 共用入口 | 修改一處會影響甚麼 |
 |---|---|---|
+| 品牌文字及 Logo | [branding.ts](src/branding.ts)、[BrandLogo](src/components/BrandLogo.tsx) | 共用顯示名稱、頁面／提示／無障礙文案、Web／原生／登入 Logo；原圖形及美術沿用，Expo 靜態 name 另同步，不遷移技術身份 |
 | 色彩、字體與尺寸 | [theme.ts](src/theme.ts) | 所有使用 token 的畫面、Paper 按鈕／表單／Dialog；新增狀態色先加語義 token，不逐頁寫色碼 |
 | 基本控制項 | [ui.tsx](src/components/ui.tsx) 的 AppButton、AppTextField、SectionCard、SectionHeader、TextLink、UnderlineTabs、OperationPill、ConnectionPill | 按鈕高度／字重、輸入框、卡片、設定／記憶分頁與狀態標籤；只封裝品牌及重複語義 |
 | 選單、勾選及彈窗 | AppSelect／AppSelectionTrigger、[AppCheckbox](src/components/AppCheckbox.tsx)、[AppDialog](src/components/AppDialog.tsx)、[AppMenuList](src/components/AppMenuList.tsx)、[ChildPicker](src/components/ChildPicker.tsx) | 集中選擇、選項列、明確狀態、Space／Escape、focus trap 與還原；Web ARIA 與原生 accessibilityState 分開核對 |

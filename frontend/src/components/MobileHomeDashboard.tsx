@@ -1,3 +1,4 @@
+import { brand } from "../branding";
 import { useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
@@ -111,7 +112,7 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
     <SectionCard>
       <SectionHeader title="記憶與話題" icon="book-open-page-variant-outline" action={<TextLink label="查看更多" onPress={() => actions.open("memory")} />} />
       <View style={styles.memoryRow}>
-        <Image source={require("../../assets/images/assistant.png")} resizeMode="contain" style={styles.assistant} accessibilityLabel="育伴港助手插畫" />
+        <Image source={require("../../assets/images/assistant.png")} resizeMode="contain" style={styles.assistant} accessibilityLabel={`${brand.name}助手插畫`} />
         <View style={styles.copy}><Text style={styles.title}>把待核對的內容整理在一起</Text><Text style={styles.body}>候選先核對，已確認資料保留來源；私人聊天和家庭共享分開處理。</Text></View>
       </View>
     </SectionCard>
