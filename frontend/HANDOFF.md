@@ -1,8 +1,21 @@
 # 育有方 Web／手機介面交接
 
-更新：2026-10-01。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
+更新：2026-10-02。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
 
 ## 交付範圍及入口
+
+<a id="login-background-layout"></a>
+### FE-W23 登入背景及排列（2026-10-02）
+
+基線 `cab28414a39a2b6e25c77c68e349024247623122`，沿現有 draft PR #73，主責 B。使用者放寬左右翻轉要求，改以全幅原圖、文字清楚及登入順手為準。只改 [LoginPage](src/screens/loginScreen.tsx) 排列，復用 BrandLogo、AppTextField、AppButton、Paper 及 Happy Hues 14；沒有新增依賴、認證 payload 或背景設定。
+
+原 `assets/images/harbour-family-hero.png` 以 RN Image／cover、完整透明度鋪滿 KeyboardAvoidingView，放在 ScrollView 外；直接用圖片本身的漸淡，裝飾不攔截點擊或朗讀。900 px 以上表單欄佔左側 48%，品牌、簡短介紹及表單收在同一白卡，最寬 500；右側透明留白展示人物。900 px 以下改全寬單欄，保留安全區及垂直捲動，不設額外故事區或重複 Logo。不同長寬比會按 cover 裁切原圖，不拉伸人物或宣稱窄版顯示全張原圖；白卡保障文字可讀。此包取代 FE-W21 登入頁兩個 Logo 的舊排列。
+
+登入／註冊切換、稱呼／電郵／密碼的既有本地格式檢查、密碼顯示及返回主頁保持原行為。登入仍未接真身份或 Server，沒有保存／提交密碼，也沒有新登入供應商、忘記密碼或 session 流程。正式整合由主聊天沿既有認證控制器接線；首頁自選背景仍只屬原入口，不把登入裝飾連到私人照片或背景保存 API。
+
+開包及交付前 fetch GitHub；直接讀 [當前 P2 UI 清單](https://github.com/2NTTY/child-ai-caregiver/blob/d3213e6dde2b72fd34a955b5ceebab1f046f3f6e/docs/P2_UI_HANDOFF.md)，master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e`／blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`；沿 FE-W22 同 master 已核對的 API blob `69fd07e18f649e4862030001837662d5e2fdc19b`，無契約變更。14 個其他 worktree 未見 frontend 修改重疊，沒有修改主聊天 checkout 或 root 文件。
+
+**已驗／未驗：** typecheck、Web 33 路由及 Android Hermes／30 資產 export 通過。實際 Web 輸出在 2217 × 1230、1440 × 900、1024 × 768、390 × 844、320 × 720 核對背景滿版／透明度、左右排列／單欄、單一 Logo、登入／註冊切換及無橫向溢出；既有 320 本地驗證、密碼顯示及 Enter 提交通過。沒有 pageerror、console.error 或 API 請求。見 [版面](verification/fe-w23/layout-checks.json)、[既有登入流程](verification/fe-w23/checks-login.json)、[source/build](verification/fe-w23/build-checks.json) 及 [桌面](verification/fe-w23/login-1440.png)／[390](verification/fe-w23/login-390.png)。僅合成介面檢查，使用者視覺、真認證及 Android 鍵盤／系統／實機仍待驗收；沒有重跑無關業務回歸。
 
 <a id="toolbar-delete-safeguards"></a>
 ### FE-W22 頂部控件及刪除保障（2026-10-01）
