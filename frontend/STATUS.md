@@ -2,7 +2,7 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W18：共用內嵌控制改用較亮的 `controlSurface`，修正與導航背景混在一起；Agent 輸入框補拍照、檔案／來源及語音 SVG 入口。** 拍照／選檔與來源沿既有前端流程，語音／PDF／Word 和真正對話附件未接通，不改後端；入口和限制見 [AGENT_HANDOFF](AGENT_HANDOFF.md)。typecheck、20 組對比、四尺寸／150% Web 文字、六寬度共用 Dialog／選單及 Web／Android export 通過，視覺及實機仍待確認。
+**最新 FE-W18 `eb9b48c`：共用內嵌控制改用較亮的 `controlSurface`，修正與導航背景混在一起；Agent 輸入框補拍照、檔案／來源及語音 SVG 入口。** 拍照／選檔與來源沿既有前端流程，語音／PDF／Word 和真正對話附件未接通，不改後端；入口和限制見 [AGENT_HANDOFF](AGENT_HANDOFF.md)。typecheck、20 組對比、60 個四尺寸重排／150% Web 文字、六寬度共用 Dialog／選單及 Web／Android export 通過，視覺及實機仍待確認。
 
 **本期隔離 Web／共用手機前端的已授權實作與必要輕量檢查已齊備，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)。** FE-W17 `ebcaa73` 補齊本人同意／任務聯絡授權／投遞台帳，並在對話頁補固定緊急入口；[本包交接](CONTACT_HANDOFF.md)。FE-W16 `10aa70b`、FE-W15 `ef536e8`、FE-W14 `d00a6bb`、FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗，未標產品或整套 Web 驗收完成。全部修改只在 frontend，不改 Server／Agent／正式 App、根依賴或指導文件，不自行 merge。
 

@@ -2,7 +2,7 @@
 
 更新：2026-09-30。FE-W09 前置為已 review 的前端 `83106c0`（draft PR #68），分支 `codex/fe-w09-agent-conversation`。正式契約核對穩定主線 `90dacd4e5c0a8be9e490fa7d94830ea369c57521`；只讀 API／控制器，沒有改 Server、正式 App 或根文件。
 
-2026-10-01 FE-W18 增補：基線 `f3ba9e35b718e68b5a23bf73072ec437cd746d22`，重核 GitHub `ce87370` 的 UI-P2-14／15；新增 [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx)，仍不把檔案附到 Chat API 或自動送模型。入口及限制如下；共用表面修正在 [COLOR_STRATEGY](COLOR_STRATEGY.md)。
+2026-10-01 FE-W18 增補：源碼／驗證 `eb9b48c17160066f585c4fcbd7ad871a27d9045d`，基線 `f3ba9e35b718e68b5a23bf73072ec437cd746d22`；重核 GitHub `ce87370` 的 UI-P2-14／15，新增 [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx)，仍不把檔案附到 Chat API 或自動送模型。入口及限制如下；共用表面修正在 [COLOR_STRATEGY](COLOR_STRATEGY.md)。
 
 | 輸入入口 | 本包已實作／交接界線 |
 |---|---|

@@ -189,5 +189,6 @@
     "PDF/Word and actual chat attachments unsupported, no new protocol",
     "Android export only, no APK/device/system-permission acceptance",
     "User visual approval and formal integration pending"
-  ]
+  ],
+  "sourceCommit": "eb9b48c17160066f585c4fcbd7ad871a27d9045d"
 }
