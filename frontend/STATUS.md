@@ -2,7 +2,7 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**本期隔離 Web／共用手機前端的已授權實作與必要輕量檢查已齊備，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)。** FE-W17 補齊本人同意／任務聯絡授權／投遞台帳，並在對話頁補固定緊急入口；[本包交接](CONTACT_HANDOFF.md)。FE-W16 `10aa70b`、FE-W15 `ef536e8`、FE-W14 `d00a6bb`、FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗，未標產品或整套 Web 驗收完成。全部修改只在 frontend，不改 Server／Agent／正式 App、根依賴或指導文件，不自行 merge。
+**本期隔離 Web／共用手機前端的已授權實作與必要輕量檢查已齊備，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)。** FE-W17 `ebcaa73` 補齊本人同意／任務聯絡授權／投遞台帳，並在對話頁補固定緊急入口；[本包交接](CONTACT_HANDOFF.md)。FE-W16 `10aa70b`、FE-W15 `ef536e8`、FE-W14 `d00a6bb`、FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗，未標產品或整套 Web 驗收完成。全部修改只在 frontend，不改 Server／Agent／正式 App、根依賴或指導文件，不自行 merge。
 
 | 工作包 | 現況 | 待接續 |
 |---|---|---|

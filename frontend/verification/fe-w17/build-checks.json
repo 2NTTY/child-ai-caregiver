@@ -2,7 +2,7 @@
   "scope": "Proactive contact authorization, delivery ledger, self acknowledgement and fixed emergency-help display; synthetic frontend only, no dispatch or device acceptance",
   "verifiedAt": "2026-10-01T00:54:46.624Z",
   "baselineCommit": "3d4badfe07fdb4cee0574e802923178f071013be",
-  "sourceCommit": null,
+  "sourceCommit": "ebcaa7359a932bd41bea050b5969a514619deca1",
   "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
   "authoritySources": [
     {

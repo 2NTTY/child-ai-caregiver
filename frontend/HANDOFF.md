@@ -78,7 +78,7 @@ typecheck、兩項規則、四尺寸／150% Web 文字／動態增刪及必要�
 
 ### FE-W17 主動聯絡及固定求助
 
-前置 `3d4badf`，直接讀 GitHub `ce87370` 的 ContactPage／ContactApi／ContactPanel。本人渠道同意／次序／後備資格、任務固定 generic_notice／task_due／期限／跟進／撤回，以及實際台帳／本人收到確認分開；原 opId／409／unknown／confirmed-unread、最新版本、dirty 選項及範圍清理見 [CONTACT_HANDOFF](CONTACT_HANDOFF.md)。正式 ContactPanel 會在 GET／離線清草稿，主聊天不能直接把該畫面行為套回新視圖。
+源碼／驗證 `ebcaa73`，前置 `3d4badf`，直接讀 GitHub `ce87370` 的 ContactPage／ContactApi／ContactPanel。本人渠道同意／次序／後備資格、任務固定 generic_notice／task_due／期限／跟進／撤回，以及實際台帳／本人收到確認分開；原 opId／409／unknown／confirmed-unread、最新版本、dirty 選項及範圍清理見 [CONTACT_HANDOFF](CONTACT_HANDOFF.md)。正式 ContactPanel 會在 GET／離線清草稿，主聊天不能直接把該畫面行為套回新視圖。
 
 UI-P2-06 固定緊急入口補在 `/chat` 的模型結果前，資料由根 EMERGENCY_HELP 提供、原核對日期保留；官方連結沿 Expo Link／RN Web hrefAttrs。typecheck、三項契約規則、四尺寸／150% Web 文字／關鍵合成操作及固定入口、Web 33 靜態路由／Android 31 資產 export 通過；[證據](verification/fe-w17/build-checks.json)。沒有真 API、網站點擊、模型／通知呼叫或 Client worker。
 

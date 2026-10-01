@@ -1,6 +1,6 @@
 # 主動聯絡授權前端交接
 
-更新：2026-10-01。FE-W17 基線 `3d4badfe07fdb4cee0574e802923178f071013be`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)，主責 B。全部修改只在 `frontend/**`；沒有修改 Server、Agent、正式 App 或根文件，不自行 merge。
+更新：2026-10-01。FE-W17 基線 `3d4badfe07fdb4cee0574e802923178f071013be`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)，源碼／驗證 commit `ebcaa7359a932bd41bea050b5969a514619deca1`，主責 B。全部修改只在 `frontend/**`；沒有修改 Server、Agent、正式 App 或根文件，不自行 merge。
 
 ## 權威及入口
 
