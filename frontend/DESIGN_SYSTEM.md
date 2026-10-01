@@ -69,7 +69,7 @@ FE-W22：不可恢復操作的最後提交用 AppButton `variant="danger"`，沿
 
 FE-W20 的 [首頁背景設定](APPEARANCE_HANDOFF.md) 復用 HomeBackground、現有 Paper 按鈕及 SVG 漸淡；本地換圖／恢復、桌面／手機同步預覽。沒有背景保存 API，原生 pickImage port 待接線，不與照顧照片／通知偏好混用。
 
-FE-W23 登入頁沿原插畫的內置漸淡鋪滿視窗，不再降低整張圖透明度。品牌、簡短介紹與表單集中同一白色卡片，避免文字蓋人物及重複 Logo；桌面左卡右圖，900 px 以下單欄及垂直捲動。輸入／按鈕／文字沿共用 token，圖片按比例 cover，不因背景需要自建表單或新增色階；[排列及接線界線](HANDOFF.md#login-background-layout)。
+FE-W23 最新登入排列：桌面左側介紹／插畫、右側登入；右欄 36%／至少 400，表單最寬 500，讓圖片佔更多空間。圖片按實際容器及原比例 cover，裁切聚焦母子；原內置漸淡配既有 SVG／paper 保護左側文字，人物保持完整透明度。900 px 以下保留單欄白卡中的品牌／介紹／表單，不重複 Logo 或加長故事區。輸入／按鈕／文字沿共用 token，不因背景需要自建表單或新增色階；[現行排列及接線界線](HANDOFF.md#login-story-balance)。
 
 ## 照片與原文核對
 

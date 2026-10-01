@@ -2,7 +2,9 @@
 
 更新：2026-10-02。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W23（2026-10-02）：** 登入頁改用原海旁家庭插畫鋪滿視窗，直接保留圖片漸淡與原透明度；品牌、簡短介紹及表單合成左側白色卡片，移除重複 Logo，右側留給人物。900 px 以下採單欄及正常垂直捲動。2217／1440／1024／390／320、登入／註冊切換、既有本地驗證／密碼顯示／鍵盤提交、typecheck 及 Web／Android export 通過；[交接](HANDOFF.md#login-background-layout)／[證據](verification/fe-w23/build-checks.json)。只有前端排列修訂，真登入、使用者視覺及原生實機仍待接線／驗收。
+**最新 FE-W23 排列補修（2026-10-02）：** 按最新意見恢復左側插畫／介紹、右側登入。右欄由原 48% 改為 36%（至少 400），把表單向右移並擴闊展示區；圖片按實際容器及原比例裁切，重心移向母子。左側漸淡保護文字，手機保留單欄／單一 Logo。六尺寸、既有登入／註冊及鍵盤、本地驗證、typecheck 和 Web／Android export 通過；[交接](HANDOFF.md#login-story-balance)／[證據](verification/fe-w23-balance/build-checks.json)。真身份接線及使用者視覺／原生實機仍待驗收。
+
+**FE-W23 初版（2026-10-02，排列已由補修取代）：** 登入頁改用原海旁家庭插畫鋪滿視窗，直接保留圖片漸淡與原透明度；品牌、簡短介紹及表單合成左側白色卡片，移除重複 Logo，右側留給人物。900 px 以下採單欄及正常垂直捲動。2217／1440／1024／390／320、登入／註冊切換、既有本地驗證／密碼顯示／鍵盤提交、typecheck 及 Web／Android export 通過；[交接](HANDOFF.md#login-background-layout)／[證據](verification/fe-w23/build-checks.json)。只有前端排列修訂，真登入、使用者視覺及原生實機仍待接線／驗收。
 
 **最新 FE-W22（2026-10-01）：** 鈴鐺／資訊欄開關改用同一 [ToolbarIconButton](src/components/ToolbarIconButton.tsx)，白底／邊框／22 px SVG 一致，桌面實際點擊 44、手機 48；「已連接」同表面並置中。共用 danger 按鈕／Dialog 已套用刪除確認；刪整位孩子採紅色彈窗、完整稱呼及範圍勾選，unknown 保留查核。四尺寸、Enter／Escape／焦點、照片二次確認、記錄／孩子失敗及 unknown 檢查、typecheck 及 Web／Android export 通過；[交接及刪除保障清單](HANDOFF.md#toolbar-delete-safeguards)／[證據](verification/fe-w22/build-checks.json)。只有合成操作，帳戶刪除及真正密碼／身份重新驗證尚未實作，待主聊天接線；原生實機及使用者視覺仍待驗收。
 
@@ -42,7 +44,7 @@
 | FE-W20 配色及自選背景入口 | 第 14 款逐區角色／實際畫面已核對；共用 MD3／SVG／Agent／卡片／導航同步，Web 本地選圖／錯誤保留／跨頁／恢復及 blob 清理已實作，必要輕量檢查通過 | [APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)；當前偏好 API 沒有背景欄位，正式保存／帳戶隔離／原生 adapter／視覺及實機待接線／驗收 |
 | FE-W21 前端品牌更名 | 共用名稱／SVG Logo、各頁文案、Web／Expo 顯示名稱及相應 selector 已同步；四尺寸、鍵盤及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#brand-rename-pending)；使用者視覺、Android 字體／App 顯示名稱實機與正式品牌整合待驗收／接線 |
 | FE-W22 頂部控件及刪除保障 | 共用鈴鐺／側欄按鈕、置中狀態、danger 樣式及整位孩子稱呼／範圍確認已實作；四尺寸、必要合成操作及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#toolbar-delete-safeguards)；帳戶刪除／Server 身份重新驗證、真 API、視覺與實機待接續／驗收 |
-| FE-W23 登入背景及排列 | 全幅原插畫、左側單一品牌／介紹／登入卡片、窄版單欄；五尺寸、本地操作及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#login-background-layout)；真身份、使用者視覺及原生實機待接線／驗收 |
+| FE-W23 登入背景及排列 | 最新補修恢復左介紹／插畫與右登入，右欄 36%／至少 400、原比例裁切聚焦母子；窄版單欄。六尺寸、本地操作及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#login-story-balance)；真身份、使用者視覺及原生實機待接線／驗收 |
 
 ## 已驗證及限制
 

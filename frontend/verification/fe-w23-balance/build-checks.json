@@ -1,0 +1,154 @@
+{
+  "at": "2026-10-01T17:02:55.816Z",
+  "package": "FE-W23 login story/right-form proportions follow-up",
+  "baseline": "87d82dc79294dd39c12be68d989fc342fdb77fe6",
+  "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+  "uiHandoffBlob": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+  "apiBlob": "69fd07e18f649e4862030001837662d5e2fdc19b",
+  "scope": "frontend only; wider left story/artwork, right form at 36% with 400 minimum, layout-measured cover crop focused on family, narrow single card unchanged; no backend/API/auth/background preference changes",
+  "otherWorktreesChecked": 14,
+  "frontendOverlaps": [],
+  "sources": [
+    {
+      "path": "frontend/src/screens/loginScreen.tsx",
+      "gitBlob": "8d78ddf3cedcd6baca89e6af4335503807e9d37b",
+      "sha256": "bf2c52bbaa90de729f5f3721450415fe4ddd5ee701ba0a2a5e1c4a44186ae69d"
+    }
+  ],
+  "originalArtwork": {
+    "path": "assets/images/harbour-family-hero.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "d2a072b0e68f4e825b50ab95b6074072b3cc847e40b9a08d113a4fd3c8316a9c",
+    "modified": false,
+    "horizontalCropFocus": 0.75
+  },
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "webExport": {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "routes": 33,
+      "bundles": [
+        {
+          "path": "dist/_expo/static/js/web/entry-97c17c260e6e3b76eb3fe7a286621188.js",
+          "sha256": "639f2d82ca804cefdbb8c016434b5b763c2cc0c5c9918ba8c95955c02f581c7b",
+          "bytes": 4138162
+        }
+      ]
+    },
+    "androidExport": {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundles": [
+        {
+          "path": "dist-android/_expo/static/js/android/entry-5c8348fbaf66006b62956f6191333191.hbc",
+          "sha256": "c4b9af2902f69ccd4ed8864cf1f215b2a60c054ba2ccb6f65b11deefdfa1cd7b",
+          "bytes": 6372827
+        }
+      ]
+    },
+    "layout": {
+      "kind": "Ad hoc headless check of the exported synthetic login UI using the existing preview browser helper",
+      "evidence": "verification/fe-w23-balance/layout-checks.json",
+      "viewports": [
+        {
+          "width": 2217,
+          "height": 1230
+        },
+        {
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "width": 1024,
+          "height": 768
+        },
+        {
+          "width": 900,
+          "height": 800
+        },
+        {
+          "width": 390,
+          "height": 844
+        },
+        {
+          "width": 320,
+          "height": 720
+        }
+      ],
+      "assertions": [
+        "Left story is wider than original 52% split",
+        "Right form has its stated width and reaches the right edge",
+        "Measured cover artwork keeps original aspect ratio and covers its clipped container at opacity 1",
+        "Story content remains in its column without text overflow",
+        "Narrow single card with one accessible SVG wordmark",
+        "Sign-in and sign-up field switching",
+        "No horizontal overflow, pageerror, console.error or API requests"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-97c17c260e6e3b76eb3fe7a286621188.js"
+    },
+    "login": {
+      "command": "node scripts/verify-ui.mjs login",
+      "exitCode": 0,
+      "evidence": "verification/fe-w23-balance/checks-login.json",
+      "passed": [
+        "login: accessible local validation/password visibility/keyboard submission without a Server request at 320"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-97c17c260e6e3b76eb3fe7a286621188.js"
+    }
+  },
+  "screenshots": [
+    {
+      "path": "verification/fe-w23-balance/login-1024.png",
+      "sha256": "ac69179eb106afbd10b9bfb202271fa42c1f36035182bc0ed371ced4cb999c0f",
+      "bytes": 813267
+    },
+    {
+      "path": "verification/fe-w23-balance/login-1440.png",
+      "sha256": "29f430ab5c1ba42b9202104b7cf1a1b35e360c1e9e2b05ae01d825e309216dbc",
+      "bytes": 1256829
+    },
+    {
+      "path": "verification/fe-w23-balance/login-2217.png",
+      "sha256": "1ee31d1cddc0e6adced036430da7ca0d7900d835a247f940ab363bef75b16619",
+      "bytes": 2255952
+    },
+    {
+      "path": "verification/fe-w23-balance/login-320.png",
+      "sha256": "b3ab9d8a351c40b02f33e23997e5a314dadf7f152d7b71f3c9b763eaaa8a5861",
+      "bytes": 109453
+    },
+    {
+      "path": "verification/fe-w23-balance/login-390.png",
+      "sha256": "75af3fa48a9bb4eff5518b1abbf1015369e58cc523ecbb83ddbbcdbc6c4b3108",
+      "bytes": 137113
+    },
+    {
+      "path": "verification/fe-w23-balance/login-900.png",
+      "sha256": "f30f65c03f017d91e3dfa91a780bdc878c54e213d1c9926d4ea9ab0893dd4fc9",
+      "bytes": 681714
+    }
+  ],
+  "resolvedVisualIssue": "The initial widened column still cropped the child with a centered cover image. onLayout sizing and a 75% horizontal focus keep both people visible; final scoped layout and bundles were rechecked.",
+  "limitations": [
+    "Synthetic Web checks only; real authentication/session, Server and account creation are unconnected",
+    "Android export is bundle evidence only; OS keyboard, device and user visual acceptance pending",
+    "Cover may crop the outstretched arm or outer edges at narrower desktop ratios",
+    "No unrelated business regression rerun"
+  ],
+  "delivery": {
+    "branch": "codex/fe-w11-photos",
+    "pullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/73",
+    "draft": true,
+    "merged": false,
+    "author": "CherylNg-2526 <250349656@stu.vtc.edu.hk>",
+    "actualCommitter": "2NTTY <2nttyfor2b@gmail.com>"
+  }
+}

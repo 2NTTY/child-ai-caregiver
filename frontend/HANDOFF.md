@@ -4,8 +4,21 @@
 
 ## 交付範圍及入口
 
+<a id="login-story-balance"></a>
+### FE-W23 登入排列補修（2026-10-02，現行排列）
+
+基線 `87d82dc79294dd39c12be68d989fc342fdb77fe6`，沿 draft PR #73，主責 B。按使用者最新指示恢復左側介紹／插畫、右側登入，取代下面初版的左側登入卡片。只修改 [LoginPage](src/screens/loginScreen.tsx) 及前端交接／證據；原素材、品牌、色盤、共用表單與認證行為不變。
+
+900 px 以上右欄佔 36%、至少 400，表單卡片最寬仍為 500；左側取得餘下空間，寬桌面約 64%，比原 52% 展示區更闊。左側文字保留獨立閱讀寬度及原四項介紹，Logo 只出現一次。圖片保留完整透明度，沿 onLayout 的實際大小及原素材 1672 × 941 比例計算 cover，水平裁切重心 75%，避免預設置中遮住孩子；圖片更換尺寸時須同步原比例。既有 SVG 漸淡方法及 paper token 只保護左側文字，不把人物整體變淡或拉伸。較窄桌面仍可能裁切伸出的手臂／邊緣，不宣稱所有比例均展示全張原圖。
+
+900 px 以下保留初版緊湊單欄，品牌介紹放在表單白卡上方，沒有額外故事長頁；原 Safe Area／KeyboardAvoidingView／垂直捲動保留。手機截圖屬 Web，共用原生程式只驗 bundle。沒有登入供應商、Server／session、密碼保存、背景偏好或新 API；正式接線沿既有主聊天認證流程。
+
+直接重讀 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 清單，blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`；沿同版本已核對契約，不重做 API 研究。其他 14 個 worktree 未見 frontend 修改重疊，主聊天 checkout／root 文件未改。
+
+**驗證：** 最終 2217 × 1230、1440 × 900、1024 × 768、900 × 800、390 × 844、320 × 720 的欄位位置、圖片比例／覆蓋、文字範圍、單一 Logo、登入／註冊切換及無橫向溢出通過；既有 320 本地驗證／密碼顯示／Enter 通過。typecheck、Web 33 路由及 Android Hermes／30 資產 export 通過；沒有 pageerror、console.error 或 API 請求。第一輪視覺對照仍裁切孩子，調整圖片焦點後重驗受影響排列與建置，未增加業務測試。見 [source/build](verification/fe-w23-balance/build-checks.json)、[版面](verification/fe-w23-balance/layout-checks.json)、[登入](verification/fe-w23-balance/checks-login.json) 及 [1440](verification/fe-w23-balance/login-1440.png)／[2217](verification/fe-w23-balance/login-2217.png)。使用者視覺、正式身份及原生實機仍待驗收。
+
 <a id="login-background-layout"></a>
-### FE-W23 登入背景及排列（2026-10-02）
+### FE-W23 登入背景初版（2026-10-02，桌面排列已取代）
 
 基線 `cab28414a39a2b6e25c77c68e349024247623122`，沿現有 draft PR #73，主責 B。使用者放寬左右翻轉要求，改以全幅原圖、文字清楚及登入順手為準。只改 [LoginPage](src/screens/loginScreen.tsx) 排列，復用 BrandLogo、AppTextField、AppButton、Paper 及 Happy Hues 14；沒有新增依賴、認證 payload 或背景設定。
 
