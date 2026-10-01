@@ -5,7 +5,7 @@
 1. 由負責組員在 Telegram 的官方 BotFather 建立／選用 bot。token 不貼進聊天或工程；保存於工程外的受保護 JSON，Windows 限本人 ACL、Linux 僅服務帳號可讀。字段為 token、botId（字串）、botUsername（不含 @）、webhookSecret（32–128 個英數／底線／連字號，使用隨機值）。token 的 ID 前綴須與 botId 相符。
 2. Server 與 worker 設 TELEGRAM_ENABLED=true、TELEGRAM_CONFIG_FILE 指向同一受保護檔案；未批准前不啟用。bot 身份先透過官方 getMe 核對，不能把手填名字當驗證；[官方 API](https://core.telegram.org/bots/api#getme)。
 3. 經批准先加密備份，再套用 migration 018／queue。Server 的 webhook 為 HTTPS 根入口下 /api/telegram/webhook；不開另一資料 API、不放寬其他 POST 的 Origin 驗證。以官方 setWebhook 設同一 secret_token，allowed_updates 限 message、callback_query、my_chat_member；可設 max_connections=1 降低並行，但應用仍持久去重。不要透過含 token 的命令 URL／終端輸出洩漏憑據，使用受保護檔案讀取及不打印請求的管理操作。
-4. 接收者先登入育伴港開始連結，在 Telegram 按 Start，再回網頁刷新並核對顯示身份後確認。這只完成本人渠道綁定，沒有授予家庭聯絡權。換 Telegram 帳號先解除既有綁定；/stop 或封鎖 bot 會撤銷已識別綁定及候選。
+4. 接收者先登入育有方開始連結，在 Telegram 按 Start，再回網頁刷新並核對顯示身份後確認。這只完成本人渠道綁定，沒有授予家庭聯絡權。換 Telegram 帳號先解除既有綁定；/stop 或封鎖 bot 會撤銷已識別綁定及候選。
 5. 一般測試需本人明確即時確認，每人 24 小時最多 3 次且相隔至少 60 秒；只發固定無孩子資料訊息。Telegram 的收到按鈕只回報 acknowledgement，不完成照護任務。停用 TELEGRAM_ENABLED 可停止新 adapter 執行，worker 全局暫停／restore 世代沿用 [既有流程](P2_WORKER.md)。
 
 結果 unknown 不重發、不盲目切渠道。檢查站內台帳及 Telegram 實際訊息後，集中驗收／維護人員再判斷後續，不手改成 accepted。送出前已進入網絡的訊息不能靠撤銷追回；provider 接受不能當作送達或已讀。更換 bot 身份須先撤銷舊綁定；同 bot token 輪換保留 bot ID 但須重新核對 secret／webhook 配置。

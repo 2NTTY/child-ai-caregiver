@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
-  <title id="title">育伴港由原始輸入到報告的可追溯流程</title>
+  <title id="title">育有方由原始輸入到報告的可追溯流程</title>
   <desc id="desc">已確認設計及分階段規劃。原始輸入保留原文與來源。AI 抽取草稿並標示缺項，由使用者核對或更正內容。使用者確認不等於持久保存；必須通過 Server 校驗並取得保存確認。摘要及報告保留來源與版本，可回查原始依據，更正後生成新版本。P1 建立原文與 Server 保存，P2 加入草稿、確認及簡單摘要，P4 完整報告。</desc>
   <rect width="1440" height="720" fill="#FAF7EF"/>
   <g id="heading">

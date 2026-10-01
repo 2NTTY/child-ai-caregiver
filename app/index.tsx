@@ -116,7 +116,7 @@ export default function HomeScreen() {
   return (
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
       <View style={styles.container}>
-        <Text accessibilityRole="header" style={styles.title}>育伴港</Text>
+        <Text accessibilityRole="header" style={styles.title}>育有方</Text>
         <Text style={styles.body}>孩子與照顧記錄</Text>
         <Text style={styles.hint}>試玩階段，請只使用合成資料。</Text>
         <View style={styles.section}>

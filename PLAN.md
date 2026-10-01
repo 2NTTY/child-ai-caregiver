@@ -212,7 +212,7 @@ S11-W03／S06-W02／S05-W02／S07-W03 已分別隨 PR #30／#31／#32／#36 合�
 
 P1 按真實流程實作 DataStore／ModelGateway；P2 加入 AgentRuntime／AttachmentStore／KnowledgeRetriever／TaskExecutor／渠道無關的 NotificationGateway。在線更新／版本／確認沿用 SyncEngine 契約名稱，不保留離線同步框架。詳細職責由 [API](docs/API.md#section-3-3) 維護。
 
-共享 TypeScript 承載業務、驗證、AI orchestration 與任務規則；Web／Android UI、資料 driver、相機／通知／分享保持薄 adapter。Agent／權威寫入在 Server，不把平台或資料庫 SDK 寫進核心。育伴港仍是唯一領域實作；集中領域模型、prompt、來源及受限 skills，不建立插件平台或第二主題。Android、相容 Server 選擇、配對與完整災備只在相應階段實作；之前保留必要識別、版本、權限與接口責任。
+共享 TypeScript 承載業務、驗證、AI orchestration 與任務規則；Web／Android UI、資料 driver、相機／通知／分享保持薄 adapter。Agent／權威寫入在 Server，不把平台或資料庫 SDK 寫進核心。育有方仍是唯一領域實作；集中領域模型、prompt、來源及受限 skills，不建立插件平台或第二主題。Android、相容 Server 選擇、配對與完整災備只在相應階段實作；之前保留必要識別、版本、權限與接口責任。
 
 <a id="packages"></a>
 ## 工作包与有限并行

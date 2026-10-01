@@ -1363,3 +1363,31 @@
 - Next Action：前端可按新增清單接設定面板；正式使用私人 Gemini key 前仍須處理供應商可用地區及真生成／向量驗收。
 
 - Recorded At 更正：本條實際寫入時間為 2026-09-30T23:31:23+08:00（檔案寫入時間）；上列 23:30 為錯置分鐘，不作實際完成時間證據。
+
+
+<a id="log-20261001-001"></a>
+## LOG-20261001-001
+
+- Recorded At：2026-10-01T22:34:53+08:00（HKT）；Work Date：2026-10-01。
+- Step / Package：使用者指定的品牌維護；分支 `codex/docs-yuyoufang-readme`，基線 `ce87370`；不改 P1–P4 功能範圍或完成門檻。
+- Executor / AI Assistance：本聊天主模型；沒有子代理、沒有代填組員人工驗收。
+- Goal：項目現行中文名稱由「育伴港」改為「育有方」；保留歷史文件及技術識別。英文品牌尚未定案。
+
+### Actual Work
+- 更新 README、SPEC、現行 AGENTS／架構與 PLAN 領域名稱、正式 Expo／首頁、P1／P2 提示詞、Telegram／Web Push 品牌文案、SVG／PNG 品牌素材及現行素材索引；P2 UI 交接只新增現行品牌說明，保留原聊天標題。
+- Prompt Pack 升為 0.1.17；profile／sources-freshness 升為 0.1.2，獨立 P1 入口為 p1-chat/0.1.1。配方、模組 ID、工具與權限不變；CHANGELOG 只新增本版記錄。
+- 簡報 source 更新名稱，新成品另存 `presentation/output/yuyoufang-project-deck.pptx`，新版預覽另存 `presentation/output/yuyoufang-project-deck-previews/`。舊 PPT／預覽、presentation/HANDOFF 及 2026-09-22 project-status snapshot 保留；新版只改品牌，仍承載該歷史狀態，不冒充最新 P2 報告。
+- 原前端聊天正在同一獨立 worktree 完成 FE-W21：共用 branding／Logo、Web／Expo 名稱與相關畫面、selector 及交接；其回報四尺寸、Web／Android bundle 等檢查通過，準備提交現有 draft PR。沒有修改、複製或合併其工作區，主線的舊 frontend 副本留待該正式交付整合。
+
+### Verification
+- Node 24.19.0：現有 agent-prompt 3 項通過；Prompt manifest 與各模組版本一致。
+- Telegram 單元檢查受阻：根工作區缺少既有 grammy 套件，未執行其測試情景；沒有為改名安裝依賴或呼叫真 Telegram。品牌常數與現有測試預期文字的靜態一致性檢查通過。
+- 沿用原 presentation runtime／腳本：22 SVG／22 PNG 匯出、13 頁 PPT build／finalizer／check 通過；13 頁預覽文字溢出 0、SVG 越界 0；目視核對改名的封面、問題圖及結尾頁並掃描總覽。桌面 PowerPoint 人工開啟未驗。
+- 99 個既有歷史檔案的 SHA-256 與修改前一致，包括歸檔、既有驗收證據、原 PPT／預覽、歷史決策及簡報快照；WORKLOG 修改前正文 byte prefix 保留，僅追加本條。git diff --check 通過。
+- 保留 package／slug、Server／資料庫／Docker volume、加密 context、Push channel／儲存識別及原有 GitHub 倉庫／域名；沒有資料遷移、真模型／通知呼叫或雲端部署。
+
+### Limitations / Next Action
+- 本分支尚未提交／推送／合併，GitHub master 及公開試用網站仍未因本次修改更新。前端 FE-W21 的交付／合併由原前端聊天及主聊天統籌；公開品牌需部署對應版本。
+- 沒有重跑完整產品 E2E 或模型效果驗收；本次不把字串／素材檢查當作全功能重新驗收。
+
+- 驗收補充（2026-10-01，使用者回覆）：使用者以 PowerPoint 開啟確認圖片正常；先前缺圖只出現在 Codex 直接預覽。此為圖片顯示確認，不代填整份簡報內容或逐頁驗收。

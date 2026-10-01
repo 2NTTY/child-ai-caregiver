@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="297mm" height="420mm" viewBox="0 0 1188 1680" role="img" aria-labelledby="title desc">
-  <title id="title">育伴港：每天的照顧，有人幫你理清脈絡</title>
-  <desc id="desc">A3 直向產品海報。育伴港為香港零至十歲孩子的成年照顧者，整理值得記、值得問、值得跟進的事情。主視覺以港灣環抱家人，呈現記錄、補問與授權跟進；下方提供簡化流程和 P1 至 P4 規劃，其中 P2 為比賽目標。海報屬產品方向及分階段規劃，Demo 連結仍待提供，沒有虛構 QR code。</desc>
+  <title id="title">育有方：每天的照顧，有人幫你理清脈絡</title>
+  <desc id="desc">A3 直向產品海報。育有方為香港零至十歲孩子的成年照顧者，整理值得記、值得問、值得跟進的事情。主視覺以港灣環抱家人，呈現記錄、補問與授權跟進；下方提供簡化流程和 P1 至 P4 規劃，其中 P2 為比賽目標。海報屬產品方向及分階段規劃，Demo 連結仍待提供，沒有虛構 QR code。</desc>
   <rect width="1188" height="1680" fill="#FAF7EF"/>
   <g font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" fill="#203E3A">
     <g id="masthead">
@@ -9,7 +9,7 @@
         <path d="M18 32C12 46 17 64 29 74C40 83 56 83 67 74C79 64 84 46 78 32" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
         <path d="M48 11C50 21 54 25 64 27C54 29 50 33 48 43C46 33 42 29 32 27C42 25 46 21 48 11Z" fill="currentColor"/>
       </g>
-      <text id="brand-name" x="160" y="120" font-size="56" font-weight="700" letter-spacing="4">育伴港</text>
+      <text id="brand-name" x="160" y="120" font-size="56" font-weight="700" letter-spacing="4">育有方</text>
       <text x="1116" y="94" text-anchor="end" fill="#287568" font-size="21" font-weight="700">產品方向・分階段規劃</text>
       <text x="1116" y="127" text-anchor="end" fill="#60756E" font-size="20">為香港家庭而設的 AI 照顧助手</text>
       <line x1="72" y1="159" x2="1116" y2="159" stroke="#DDE8DB" stroke-width="2"/>

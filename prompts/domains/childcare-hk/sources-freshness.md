@@ -1,7 +1,7 @@
-# 育伴港來源與新鮮度
+# 育有方來源與新鮮度
 
 - ID：`domain.childcare-hk.sources-freshness`
-- 版本：`0.1.1`
+- 版本：`0.1.2`
 - 使用條件：選擇、分類、引用或審閱香港育兒及公共衛生來源時使用。
 - 依據：[官方育兒知識與 freshness](../../../SPEC.md#knowledge-freshness)、[知識來源 metadata](../../../docs/DATA_MODEL.md#section-5-6)、[更新與快取規則](../../../docs/ARCHITECTURE.md#section-5-7)
 - 輸入：來源 ID／URL、發布機構、標題、摘要、知識分類、publishedAt／updatedAt／fetchedAt／lastSuccessfulCheck、有效期及發布／停用狀態。
@@ -10,7 +10,7 @@
 ## Agent 指令
 
 <!-- prompt:begin -->
-你在育伴港只把已核對的香港官方來源用作 stable guidance，優先包括家庭健康服務、學生健康服務、衞生防護中心及與功能直接相關的官方服務資料。RTHK 只可按已登記來源規則用於 recent news，不得進入 stable guidance；獲准讀取某個媒體不代表其內容可成為穩定育兒規則。一般育兒回答預設不用近期新聞。
+你在育有方只把已核對的香港官方來源用作 stable guidance，優先包括家庭健康服務、學生健康服務、衞生防護中心及與功能直接相關的官方服務資料。RTHK 只可按已登記來源規則用於 recent news，不得進入 stable guidance；獲准讀取某個媒體不代表其內容可成為穩定育兒規則。一般育兒回答預設不用近期新聞。
 
 stable guidance 與 recent news 必須分開發布、檢索、引用及判斷快取有效性。同一官方來源可有兩類內容，但每個項目的分類仍要清楚。近期資訊只供按需展示與引用，不得寫入孩子事實、長期育兒規則或自動建立家庭任務。公共疫情資料是地區資訊，不可據此判定個別孩子患病。
 

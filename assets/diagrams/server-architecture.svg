@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
-  <title id="title">育伴港 Server 唯一權威架構</title>
+  <title id="title">育有方 Server 唯一權威架構</title>
   <desc id="desc">已確認設計及分階段規劃。P1 Web 及 P3 Android 是在線客戶端，共用 TypeScript 規則和協議。Server 的 Better Auth 身份、權限和共享規則控制 PostgreSQL 權威寫入。Server 側包括 P1 Gemini 入口、P2 Agent worker、P2 至 P4 知識檢索與 P2 至 P3 通知出口。AI 不直接控制資料庫或通知投遞。</desc>
   <rect width="1440" height="720" fill="#FAF7EF"/>
   <g id="heading">

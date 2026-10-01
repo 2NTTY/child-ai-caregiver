@@ -21,7 +21,7 @@
       "output": "raster/brand/logo-horizontal.png",
       "width": 1024,
       "height": 304,
-      "bytes": 21540
+      "bytes": 19503
     },
     {
       "source": "brand/mark.svg",
@@ -35,7 +35,7 @@
       "output": "raster/brand/wordmark.png",
       "width": 1024,
       "height": 416,
-      "bytes": 20809
+      "bytes": 18267
     },
     {
       "source": "diagrams/agent-loop.svg",
@@ -140,7 +140,7 @@
       "output": "raster/posters/project-poster.png",
       "width": 2376,
       "height": 3360,
-      "bytes": 582598
+      "bytes": 580932
     },
     {
       "source": "promo/hero.svg",
@@ -154,7 +154,7 @@
       "output": "raster/promo/problem-solution.png",
       "width": 2400,
       "height": 1440,
-      "bytes": 292080
+      "bytes": 290689
     }
   ]
 }
