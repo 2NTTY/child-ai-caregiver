@@ -3,14 +3,20 @@ import { Platform } from "react-native";
 import { AppIcon } from "../../src/components/AppIcon";
 import { AppShell } from "../../src/components/AppShell";
 import { NativeAppShell } from "../../src/components/NativeAppShell";
-import { PreviewProvider } from "../../src/preview/PreviewContext";
+import { PreviewProvider, usePreview } from "../../src/preview/PreviewContext";
+import { BackgroundProvider } from "../../src/preview/BackgroundContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, mobileIcons, mobileLayout, mobileType } from "../../src/theme";
 
 export default function DashboardLayout() {
-  return <PreviewProvider>{Platform.OS === "web" ? <AppShell><Slot /></AppShell> : <NativeAppShell>
+  return <PreviewProvider><PreviewAppearance>{Platform.OS === "web" ? <AppShell><Slot /></AppShell> : <NativeAppShell>
     <NativeDashboardTabs />
-  </NativeAppShell>}</PreviewProvider>;
+  </NativeAppShell>}</PreviewAppearance></PreviewProvider>;
+}
+
+function PreviewAppearance({ children }: { children: React.ReactNode }) {
+  const { model } = usePreview();
+  return <BackgroundProvider key={model.caregiverName}>{children}</BackgroundProvider>;
 }
 
 function NativeDashboardTabs() {

@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
   sidebarBottom: { marginTop: "auto", paddingBottom: spacing.sm },
   account: { minHeight: 56, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white, paddingHorizontal: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  accountAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
+  accountAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
   accountAction: { width: 44, height: 44, flexShrink: 0, alignItems: "center", justifyContent: "center" },
   mobileAction: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, minWidth: mobileLayout.touchTarget, minHeight: mobileLayout.touchTarget },
   accountAvatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" },

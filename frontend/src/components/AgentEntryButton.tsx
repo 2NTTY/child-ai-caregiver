@@ -25,17 +25,17 @@ export function AgentEntryButton({ active }: { active: boolean }) {
         <Text numberOfLines={1} style={styles.label}>與 Agent 對話</Text>
         <Text numberOfLines={1} style={styles.hint}>提問・整理・規劃</Text>
       </View>
-      <AppIcon name="chevron-right" size={16} color={colors.white} />
+      <AppIcon name="chevron-right" size={16} color={colors.onAccent} />
     </View>
   </TouchableRipple></Link>;
 }
 
 const styles = StyleSheet.create({
-  button: { width: "100%", backgroundColor: colors.deepTeal, borderRadius: radius.medium, borderWidth: 2, borderColor: colors.deepTeal, overflow: "hidden" },
-  highlighted: { borderColor: colors.sage },
+  button: { width: "100%", backgroundColor: colors.accent, borderRadius: radius.medium, borderWidth: 2, borderColor: colors.ink, overflow: "hidden" },
+  highlighted: { borderColor: colors.ink, outlineColor: colors.ink, outlineWidth: 2, outlineOffset: 3 },
   content: { minHeight: 72, paddingHorizontal: 10, paddingVertical: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   icon: { width: 36, height: 36, flexShrink: 0, alignItems: "center", justifyContent: "center", backgroundColor: colors.teal, borderRadius: radius.small },
   copy: { flex: 1, minWidth: 0, gap: 2 },
-  label: { fontFamily: chineseFont, color: colors.white, fontSize: typeScale.small, fontWeight: "800", lineHeight: 21 },
-  hint: { fontFamily: chineseFont, color: colors.white, fontSize: typeScale.caption, lineHeight: 18 },
+  label: { fontFamily: chineseFont, color: colors.onAccent, fontSize: typeScale.small, fontWeight: "800", lineHeight: 21 },
+  hint: { fontFamily: chineseFont, color: colors.onAccent, fontSize: typeScale.caption, lineHeight: 18 },
 });

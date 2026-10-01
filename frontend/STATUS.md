@@ -2,7 +2,9 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W19 `f541a2d`：Web 對話的拍照按鈕直接開啟頁內相機，不再跳照片頁。** 按下後才請求相機權限，拍攝回到原輸入框作本地預覽；取消、沒有相機／拒絕權限、系統拍照／選圖後備、移除及切換孩子／離頁清理已實作。復用原 JPEG／PNG、4 MiB、hash／blob 與 Paper／SVG，不新增依賴或後端協定。typecheck、Web／Android export、四尺寸合成串流／原檔與 390／320 放大文字通過；[交接及證據](AGENT_HANDOFF.md)。實際裝置相機／權限待驗收；原生 adapter、上傳及對話附件待接線。
+**最新 FE-W20：共用色盤改為使用者指定的 Happy Hues 14，按用途分配白色內容、淺青導航、深色文字／普通提交、黃色 Agent 入口。** OKLCH 保留給必要派生色，Logo／美術不改；Web「設定 → 應用偏好 → 首頁背景」可本地選圖／恢復，桌面及手機首頁一起套用。typecheck、22 組對比、Web／Android export、60 個重排、六寬度 Dialog／SVG 及四尺寸背景／150% Web 文字通過；[配色](COLOR_STRATEGY.md)／[交接](APPEARANCE_HANDOFF.md)。未上傳／保存，原生選圖及正式背景保存待接線；使用者視覺及真機仍待驗收。
+
+**FE-W19 `f541a2d`：Web 對話的拍照按鈕直接開啟頁內相機，不再跳照片頁。** 按下後才請求相機權限，拍攝回到原輸入框作本地預覽；取消、沒有相機／拒絕權限、系統拍照／選圖後備、移除及切換孩子／離頁清理已實作。復用原 JPEG／PNG、4 MiB、hash／blob 與 Paper／SVG，不新增依賴或後端協定。typecheck、Web／Android export、四尺寸合成串流／原檔與 390／320 放大文字通過；[交接及證據](AGENT_HANDOFF.md)。實際裝置相機／權限待驗收；原生 adapter、上傳及對話附件待接線。
 
 **本期隔離 Web／共用手機前端的已授權實作與必要輕量檢查已齊備，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)。** FE-W17 `ebcaa73` 補齊本人同意／任務聯絡授權／投遞台帳，並在對話頁補固定緊急入口；[本包交接](CONTACT_HANDOFF.md)。FE-W16 `10aa70b`、FE-W15 `ef536e8`、FE-W14 `d00a6bb`、FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗，未標產品或整套 Web 驗收完成。全部修改只在 frontend，不改 Server／Agent／正式 App、根依賴或指導文件，不自行 merge。
 
@@ -27,6 +29,7 @@
 | FE-W18 表面／輸入入口 | 白色控制與暖灰導航分層，孩子／資料／側欄和共用次要按鈕一致；拍照／檔案／語音工具列、照片 capture／來源導航、草稿及 Modal 關閉後 Web 焦點已實作，輕量檢查通過 | [AGENT_HANDOFF](AGENT_HANDOFF.md)／[證據](verification/fe-w18)；Web capture 實際相機、原生 adapter／焦點、語音、PDF／Word及真對話附件待接續／驗收 |
 | FE-W19 對話頁直接拍照 | 沿 `bed1342`；直接重核 GitHub `ce87370`，其他 worktree 無 frontend 重疊。Web 相機／等待／拒絕／後備選圖、原頁照片預覽／原草稿、track／blob 清理及遲到結果隔離已實作；四尺寸合成串流／原檔與必要 build 通過 | [AGENT_HANDOFF](AGENT_HANDOFF.md)／[證據](verification/fe-w19)；取代 FE-W18 拍照跳頁。真相機／權限、原生 adapter、上傳及正式聊天多模態待接線／驗收 |
 | 當前功能覆蓋 | 已對照 GitHub `ce87370` UI-P2-01–18，既有契約的本期隔離畫面已投影，見 [覆蓋及界線](HANDOFF.md#p2-coverage) | 接線／跨頁、正式通知中心／未讀與無契約功能由主聊天統籌；不因後端已合併便宣稱預覽接通 |
+| FE-W20 配色及自選背景入口 | 第 14 款逐區角色／實際畫面已核對；共用 MD3／SVG／Agent／卡片／導航同步，Web 本地選圖／錯誤保留／跨頁／恢復及 blob 清理已實作，必要輕量檢查通過 | [APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)；當前偏好 API 沒有背景欄位，正式保存／帳戶隔離／原生 adapter／視覺及實機待接線／驗收 |
 
 ## 已驗證及限制
 

@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Divider, Text } from "react-native-paper";
 import { PreferencesPreview } from "../components/PreferencesPreview";
+import { BackgroundSettings } from "../components/appearance/BackgroundSettings";
 import { ChannelSettingsPreview } from "../components/notifications/ChannelSettingsPreview";
 import { useChannelSettingsPreview } from "../preview/useChannelSettingsPreview";
 import { ModelSettingsPreview } from "../components/model-settings/ModelSettingsPreview";
@@ -79,6 +80,7 @@ export default function SettingsPage() {
     {tab === "preferences" ? <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}>
         <PreferencesPreview online={model.connection === "online"} />
+        <BackgroundSettings />
       </View><View style={[styles.column, stacked && styles.fullColumn]}>
         <SectionCard><SectionHeader title="通知渠道" />
           <LabeledValue label="站內狀態" value="依原事項／收據顯示" />

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { ActivityIndicator, Divider, Text } from "react-native-paper";
 import { AppButton, AppTextField, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import type { HomeActions, HomeRecord, HomeViewModel } from "../view-model";
 import { MobileHomeDashboard } from "./MobileHomeDashboard";
 import { AppIcon, type AppIconName } from "./AppIcon";
+import { HomeBackground } from "./appearance/HomeBackground";
 
-const harbourArt = require("../../assets/images/harbour-family-hero.png");
 const recordIcons: Record<HomeRecord["kind"], AppIconName> = { sleep: "weather-night", feeding: "silverware-fork-knife", measurement: "chart-bar", note: "notebook-outline", appointment: "calendar-outline" };
 
 function DashboardLink({ icon, title, detail, onPress }: { icon: AppIconName; title: string; detail: string; onPress: () => void }) {
@@ -77,9 +77,9 @@ export function HomeDashboard({ model, actions }: { model: HomeViewModel; action
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} />;
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-    <View style={[styles.introCard, stacked && styles.introStack]}>
-      <View style={styles.introText}><Text style={styles.eyebrow}>育伴港 · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
-      <Image source={harbourArt} resizeMode="cover" accessibilityLabel="照顧者與孩子在香港海旁同行" style={[styles.introArt, stacked && styles.introArtStack]} />
+    <View testID="desktop-home-banner" style={[styles.introCard, stacked && styles.introStack]}>
+      <HomeBackground surface={colors.paper} protectFullWidth={stacked} wideIllustration />
+      <View style={[styles.introText, stacked && styles.introTextWide]}><Text style={styles.eyebrow}>育伴港 · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} variant="accent" onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
     </View>
     <View style={[styles.grid, stacked && styles.gridStack]}>
       <View style={styles.column}><DataOverview model={model} actions={actions} /><RecentRecords model={model} actions={actions} /></View>
@@ -93,9 +93,9 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 }, page: { width: "100%", maxWidth: 1260, alignSelf: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xl, gap: spacing.lg },
   pressed: { opacity: 0.68 },
   introCard: { minHeight: 235, backgroundColor: colors.paper, borderRadius: radius.large, overflow: "hidden", flexDirection: "row", borderWidth: 1, borderColor: colors.softLine },
-  introStack: { flexDirection: "column-reverse" },
-  introText: { flex: 1, minWidth: 0, padding: spacing.xl, justifyContent: "center", gap: spacing.md },
-  introArt: { width: "38%", height: 235, minHeight: 235 }, introArtStack: { width: "100%", height: 135, minHeight: 135 },
+  introStack: { flexDirection: "column" },
+  introText: { width: "64%", minWidth: 0, padding: spacing.xl, justifyContent: "center", gap: spacing.md },
+  introTextWide: { width: "100%" },
   eyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, fontWeight: "800" },
   introTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, lineHeight: 37, fontWeight: "800" },
   body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },

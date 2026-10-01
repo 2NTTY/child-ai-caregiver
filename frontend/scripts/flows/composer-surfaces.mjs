@@ -44,8 +44,8 @@ export async function verifyComposerSurfaces(browser, failures, directory) {
       control: getComputedStyle(element).backgroundColor,
       navigation: getComputedStyle(element.parentElement).backgroundColor,
     }));
-    assert.equal(surfaces.control, "rgb(255, 255, 255)");
-    assert.equal(surfaces.navigation, "rgb(246, 244, 236)");
+    assert.equal(surfaces.control, "rgb(255, 255, 254)");
+    assert.equal(surfaces.navigation, "rgb(227, 246, 245)");
     const fact = picker.locator("..").getByText("地區", { exact: true }).locator("..");
     assert.equal(await fact.evaluate(element => getComputedStyle(element).backgroundColor), surfaces.control);
     const rail = page.getByRole("button", { name: /資訊側欄/ });

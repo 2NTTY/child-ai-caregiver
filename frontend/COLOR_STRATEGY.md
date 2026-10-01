@@ -1,70 +1,43 @@
 # 育伴港配色策略
 
-核對日期：2026-10-01。這份文件記錄使用者參考圖的策略及前端採用理由；色值唯一實作入口是 [theme.ts](src/theme.ts)，品牌來源是 [原有美術簡要](../assets/BRIEF.md)，沒有改動正式品牌素材。
+更新：2026-10-01，FE-W20。使用者指定 [Happy Hues 第 14 款](https://www.happyhues.co/palettes/14)，取代原綠色／暖灰 UI 色盤。只讀這一頁的用色指導並核對實際畫面，沒有翻看其他配色。Logo／美術保留；色值唯一入口是 [theme.ts](src/theme.ts)。
 
-## 研究結論
+## 網站分工與育伴港映射
 
-先復用品牌色，再按用途派生色階，適合本項目。現有八個種子是 ink #203E3A、teal #287568、paper #FAF7EF、sage #DDE8DB、amber #D99A3D、coral #C86D52、white #FFFFFF、muted #60756E。先前問題主要是背景過多淡綠、浮層留下 Paper 預設紫色，以及部分淺底上的次要文字對比不足。
+網站分別示範白底主視覺、淺青色區的白卡、白底上的深色資訊卡，以及青色表單區配白欄位／深色提交。黃色集中在主入口及插畫亮點，不要求所有按鈕都用黃色。[第 14 款指導](https://www.happyhues.co/palettes/14)
 
-OKLCH 的 L／C／h 分別描述感知明度、彩度及色相，方便有規則地建立色階；「保持 L／C、旋轉 h」只是一種候選色探索方式。它不保證 WCAG 對比、不保證仍在 sRGB 色域，也不決定成功／警告／失敗的語義。補色、圖表分類色或狀態色須先有用途，再檢查實際組合。[W3C CSS Color 4](https://www.w3.org/TR/css-color-4/#ok-lab)
-
-育伴港本次保持種子色相，調整明度及必要彩度；超出 sRGB 時沿 Culori 的 OKLCH chroma clamp，將結果存成 HEX。React Native 和 Web 共用這些常量，沒有把 CSS oklch() 字串送進原生控制項。[Culori API](https://culorijs.org/api/)、[React Native 顏色格式](https://reactnative.dev/docs/colors)
-
-## 色彩角色與使用範圍
-
-| 角色 | 本次規則 | 原因 |
+| 原值 | 網站用途 | 育伴港的實作映射 |
 |---|---|---|
-| 畫布 | paper 派生的 neutralSurface #F9F7F3 | 作為內容的中性底，不與主操作爭注意力 |
-| 左導覽／頂部欄／右資訊欄 | paper 派生的 quietSurface／sidebar #F6F4EC | 同一常駐導覽區沿用相同底色；品牌暖白 #FAF7EF 留在首頁品牌／海旁美術區 |
-| 卡片／彈窗 | 白色；暖灰裝飾分隔 | 讓內容層次來自留白、邊界及字級 |
-| 內嵌控制／資料標籤 | `controlSurface` 沿品牌 white；保留邊界、文字及選中角色 | 與暖灰導航分層，避免子女選擇器、資料標籤及側欄開關融入外層底色 |
-| 主要操作 | teal；強調入口用同色相較深的 deepTeal | 集中使用綠色標示可操作入口 |
-| 文字 | ink 作主要文字；muted 種子降低 L 得到可讀的次要文字 | 小字在暖白及淡色容器上仍可辨讀 |
-| 選中／提示底 | 同品牌色的低彩度淺色階 | 選中不靠大面積飽和色或顏色單獨表達 |
-| 待確認／結果未知 | amber 淺底配深 warningInk 及明確文案 | 保留兩種狀態的操作差別 |
-| 明確失敗 | coral 淺底配深 errorInk 及文案 | 原 coral 作小字時對比不足，需要深色階 |
-| 輸入邊界／控制圖標 | controlOutline；一般 SVG 用 muted，選中／主要操作才用 teal | 保留辨識度，減少每個圖標都在強調的感覺 |
+| `#FFFFFE` | 背景、卡片、欄位、深底文字 | 卡片／Dialog／輸入框／次要按鈕及導航內控件 |
+| `#272343` | 標題、線條、黃底文字、表單按鈕底 | 標題／SVG／焦點；普通提交深底白字，Agent 黃底深字 |
+| `#2D334A` | 正文、次標題 | 正文及說明；主次靠字級、粗幼、留白 |
+| `#FFD803` | 主入口、插畫 highlight | 固定 Agent 入口、首頁進行對話、手機提問箭嘴 |
+| `#E3F6F5` | 區塊背景、secondary | 常駐左／頂／右導航及首頁重點 |
+| `#BAE8E8` | tertiary、標籤、highlight、表單區 | 選中導航／容器及頭像底 |
 
-深綠、琥珀、珊瑚的種子不互換用途。一般內容維持中性暖白；新增畫面只用既有語義 token，新增色階須有缺口及來源。這與 Material 按語義分配 primary／surface／container 等角色的做法相符。[Google Material 配色指引](https://codelabs.developers.google.com/customizing-material-color)
+以上映射是本項目的用途選擇。淺青導航框住接近白色的畫布，白卡／白控件浮在區塊上；不把每張卡片都改成深色。AppButton 的 primary 為深底白字，accent 為黃底深字，secondary 為白底描邊，quiet 為深色文字。黃色只強調 Agent，保留深色邊界；不作正文、細線或大面積底色。MD3 primary 保持深色，使選項／焦點／文字按鈕仍可辨讀。
 
-## 顏色放置與視覺主次
+## OKLCH 與狀態
 
-使用者認為色階已改善，但放置仍不順眼。本次保留同一組 OKLCH 派生值，重新分配用途。成熟方案的共通點是讓大部分內容、導航和次要操作使用中性色，再以品牌色及狀態色表達少量明確意義；不是把每張卡片、每個圖標或每個連結都染成品牌色。[Atlassian 色彩角色及強度](https://atlassian.design/foundations/color)、[Carbon 層次與色彩角色](https://carbondesignsystem.com/elements/color/overview/)
+六個主色直接採原值，不用 OKLCH 重新近似。額外色階以 Culori 4.0.2 轉 OKLCH，保留種子 h、指定 L／C，超出 sRGB 時 clamp chroma，輸出共用 HEX。沿用已核對的 [Culori](https://culorijs.org/api/)／[CSS Color 4](https://www.w3.org/TR/css-color-4/#ok-lab)／[RN 顏色](https://reactnative.dev/docs/colors) 結論，這輪沒有重查其他設計網站。
 
-- 常駐側欄採較安靜的中性暖灰，主畫布稍亮，資料卡片和彈窗採白色。各區靠留白、邊界及字級區分；不將「增加色塊」當作增加層次。這是沿成熟方案的角色分工作本項目映射，沒有照搬它們的品牌色。[Atlassian elevation](https://atlassian.design/foundations/elevation)、[Material 3 surface／container](https://developer.android.com/codelabs/m3-design-theming?hl=en)
-- 頂部欄、窄屏孩子摘要列及原生頂部沿用左導覽的 sidebar 色；內容卡片保持白色，讓常駐導航、主畫布、內容形成穩定層次。Carbon 的淺色主題可交替使用白與 Gray 10，深色主題才逐層變亮；本項目按表面用途映射，不把層次誤當成所有主題都必須單向變亮。[Carbon layering](https://carbondesignsystem.com/elements/color/overview/)
-- FE-W18 修正：同色的導航區不代表內嵌組件也用同色。`ChildPicker`、`ChildKeyFacts`、Web／原生側欄開關及共用表單／次要按鈕使用 `controlSurface`；只作既有白色的語義別名，不改 OKLCH 派生值。`quietSurface` 保留給白色卡片內的安靜內容及選單列，不能全域替換成白色而令另一層又融在一起。
-- 主要提交／對話入口使用 teal／deepTeal；次要按鈕、一般連結及孩子摘要用 ink，普通圖標用 muted。選中的導航和有效焦點才用淡青綠容器。
-- 首頁品牌美術區保留 paper；手機「今日重點」用 paleTeal，讓其位置有清楚視覺主次。內頁說明、記憶內容、預覽工具維持中性。
-- 琥珀只對應待確認／結果未知，珊瑚只對應明確失敗。不同狀態仍須文案與操作區分；「結果未知」不能靠改色變成已知失敗。
+| 派生角色 | 種子 | L | C | HEX |
+|---|---|---|---|---|
+| canvas／neutralSurface／previewSurface | `#E3F6F5` | 0.987 | 0.005 | `#F7FCFC` |
+| quietSurface | `#E3F6F5` | 0.975 | 0.013 | `#EDFAF9` |
+| line | `#272343` | 0.84 | 0.015 | `#CAC9D4` |
+| softLine | `#272343` | 0.925 | 0.006 | `#E6E6EA` |
+| controlOutline | `#272343` | 0.56 | 0.027 | `#737284` |
+| amber／warning boundary | `#FFD803` | 0.64 | 0.125 | `#A38B19` |
+| paleAmber／unknown container | `#FFD803` | 0.975 | 0.043 | `#FFF7D8` |
+| warningInk | `#FFD803` | 0.43 | 0.083 | `#5E4F0C` |
 
-以上規則落在 theme 和共用控件；少量內容容器按用途選用現有 token。各頁不新增獨立色盤，也不改業務回調。
+第 14 款沒有失敗色，故沿用既有 coral／paleCoral／errorInk，只作明確失敗／錯誤。待確認及結果未知採黃色派生淺底、深警告字及原操作文案；不改候選、保存、失敗、unknown 的操作語義，也不只靠顏色區分。
 
-## 本次派生參數
+teal／deepTeal 是既有程式的角色別名，現值均為 `#272343`，不是保留另一組綠色。新強調用 accent／onAccent；完整 MD3 on*、surface、elevation、disabled、scrim／backdrop 已覆蓋，SVG 仍由 AppIcon 輸出。不能逐頁加 HEX 或留下預設紫色。
 
-以 Culori 4.0.2 轉為 OKLCH，保留種子 h；下表 C「原值」表示沿種子彩度。數值是本次設計記錄，執行中的值仍讀 theme.ts。
+## 背景與證據
 
-| token | 種子 | L | C |
-|---|---|---|---|
-| deepTeal | teal | 0.43 | 原值 |
-| muted | 原 muted | 0.52 | 原值 |
-| paleTeal／selectedNav | teal | 0.965／0.94 | 0.016／0.024 |
-| neutralSurface／quietSurface | paper | 0.976／0.966 | 0.006／0.010 |
-| line／softLine | paper | 0.88／0.942 | 0.010／0.008 |
-| controlOutline | 原 muted | 0.60 | 0.018 |
-| paleAmber／warningInk | amber | 0.962／0.43 | 0.028／0.08 |
-| paleCoral／errorInk | coral | 0.965／0.48 | 0.018／原值 |
+HomeBackground 共用圖片及 SVG 漸淡。文字區完全不透明，手機底部接回 canvas；原插畫在寬桌面保留人物構圖，自選圖片鋪滿背景。「設定 → 應用偏好 → 首頁背景」可本地選圖／恢復，沒有上傳或保存；原生選圖／正式保存待接線，見 [APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)。
 
-mintSurface、previewSurface 和操作狀態容器沿上述色階作語義別名，沒有逐頁加新顏色。
-
-## 驗證與限制
-
-在 frontend 執行 npm run verify:colors。Culori 只屬 devDependency；檢查程式讀 theme.ts，核對已列明的文字／背景、按鈕及控制圖標組合，記錄未四捨五入的對比及 source hash。FE-W06 首輪核對 16 組；FE-W07 補查狀態容器內的兩組文字，共 18 組，沒有新增色值。
-
-FE-W18 增加共用 `controlSurface` 的文字及控制邊界兩組，共 20 組通過；仍沿品牌白色而非另造色階，見 [color-checks](verification/fe-w18/color-checks.json)。
-
-一般文字至少 4.5:1；辨識控制項／狀態所需的非文字視覺至少 3:1。裝飾分隔線、未啟用項目和整個產品的其他可存取要求不由這份 token 檢查代替。[WCAG 文字對比](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)、[非文字對比](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
-
-Paper 採完整 MD3 色彩角色，包含 elevation、backdrop、on* 和 disabled；只覆蓋 primary 不會重新產生其他預設色。roundness 是元件倍率基數，採 4；AppDialog 另用共用卡片的 22 px 圓角，防止再次放大。[Paper 主題](https://oss.callstack.com/react-native-paper/docs/guides/theming)
-
-這是待使用者比較的前端配色修訂。視覺滿意與否由實際畫面決定；token 對比通過不代表整套 WCAG、正式 API 或 Android 實機驗收通過。
+[color-checks](verification/fe-w20/color-checks.json) 的 22 組文字／控制項對比通過，含黃底深字與邊界；15 頁四尺寸重排、六寬度 Dialog／SVG、四尺寸背景／150% Web 文字和 Web／Android export 見 [FE-W20](verification/fe-w20)。歷史 FE-W06–W19 證據保留，不能當作新色盤已驗。完整無障礙、使用者視覺及原生實機仍待驗收。

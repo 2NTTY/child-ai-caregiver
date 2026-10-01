@@ -21,14 +21,14 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
     <Button
       ref={ref}
       mode={variant === "primary" || variant === "accent" ? "contained" : variant === "secondary" ? "outlined" : "text"}
-      buttonColor={variant === "accent" ? colors.deepTeal : variant === "secondary" ? colors.controlSurface : undefined}
-      textColor={variant === "accent" ? colors.white : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
+      buttonColor={variant === "accent" ? colors.accent : variant === "secondary" ? colors.controlSurface : undefined}
+      textColor={variant === "accent" ? colors.onAccent : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
       onPress={onPress}
       disabled={disabled || loading}
       loading={loading}
       contentStyle={[styles.buttonContent, compact && styles.mobileTarget]}
       labelStyle={[styles.buttonLabel, compact && mobileType.itemTitle]}
-      style={[styles.button, variant === "secondary" && styles.outlineButton, style]}
+      style={[styles.button, variant === "secondary" && styles.outlineButton, variant === "accent" && styles.accentButton, style]}
       accessibilityLabel={accessibilityLabel}
     >
       {label}
@@ -161,6 +161,7 @@ const styles = StyleSheet.create({
   buttonContent: { minHeight: 44, paddingHorizontal: 4 },
   buttonLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "700" },
   outlineButton: { borderColor: colors.line },
+  accentButton: { borderWidth: 1, borderColor: colors.ink },
   card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
   mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
   sectionHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap" },

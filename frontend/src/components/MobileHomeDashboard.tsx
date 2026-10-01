@@ -1,7 +1,7 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+import { HomeBackground } from "./appearance/HomeBackground";
 import { AppIcon } from "./AppIcon";
 import type { HomeActions, HomeViewModel } from "../view-model";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing } from "../theme";
@@ -9,7 +9,6 @@ import { AppButton, OperationPill, SectionCard, SectionHeader, TextLink } from "
 import { ChildPicker } from "./ChildPicker";
 import { previewChecklist } from "../preview/fixture";
 
-const harbourArt = require("../../assets/images/harbour-family-hero.png");
 const questions = ["整理最近的睡眠", "記錄孩子的飲食", "下次檢查的問題"];
 const quickActions = [
   { kind: "note", label: "記錄情況", hint: "日常觀察", icon: "notebook-outline" },
@@ -27,33 +26,13 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
   const viewportWidth = useWindowDimensions().width;
   const [quickWidth, setQuickWidth] = useState(0);
   const [childWidth, setChildWidth] = useState(0);
-  const greetingFadeId = useId();
-  const greetingBottomFadeId = `${greetingFadeId}-bottom`;
   const fourQuickColumns = quickWidth >= 290;
   const shortSwitch = childWidth ? childWidth < 300 : viewportWidth < 360;
   const splitAge = Boolean(child?.ageSummaryLabel && child?.ageReferenceLabel);
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <View testID="mobile-home-greeting" style={styles.greeting}>
-      <View aria-hidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <Image source={harbourArt} accessible={false} resizeMode="cover" style={styles.greetingArt} />
-        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} aria-hidden focusable={false}>
-          <Defs>
-            <LinearGradient id={greetingFadeId} x1={0} y1={0} x2={1} y2={0}>
-              <Stop offset={0} stopColor={colors.canvas} stopOpacity={1} />
-              <Stop offset={0.56} stopColor={colors.canvas} stopOpacity={1} />
-              <Stop offset={0.72} stopColor={colors.canvas} stopOpacity={0} />
-              <Stop offset={1} stopColor={colors.canvas} stopOpacity={0} />
-            </LinearGradient>
-            <LinearGradient id={greetingBottomFadeId} x1={0} y1={0} x2={0} y2={1}>
-              <Stop offset={0.7} stopColor={colors.canvas} stopOpacity={0} />
-              <Stop offset={1} stopColor={colors.canvas} stopOpacity={1} />
-            </LinearGradient>
-          </Defs>
-          <Rect width="100%" height="100%" fill={`url(#${greetingFadeId})`} />
-          <Rect width="100%" height="100%" fill={`url(#${greetingBottomFadeId})`} />
-        </Svg>
-      </View>
+      <HomeBackground surface={colors.canvas} fadeBottom />
       <View style={styles.greetingCopy}>
         <Text accessibilityRole="header" style={styles.heading}>你好，{model.caregiverName}！</Text>
         <Text style={styles.subtitle}>{child ? `一起整理${child.displayName}的照顧日常。` : "先把基本資料整理好，再開始記錄。"}</Text>
@@ -89,7 +68,7 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
       <AppButton label="前往使用引導" onPress={() => actions.open("guide")} />
     </SectionCard> : <Pressable accessibilityRole="button" accessibilityLabel="進行對話" onPress={() => actions.open("chat")} style={({ pressed }) => [styles.ask, pressed && styles.pressed]}>
       <AppIcon name="magnify" size={mobileIcons.content} color={colors.muted} /><Text style={styles.askText}>問我關於孩子的問題…</Text>
-      <View style={styles.send}><AppIcon name="send" size={mobileIcons.content} color={colors.white} /></View>
+      <View style={styles.send}><AppIcon name="send" size={mobileIcons.content} color={colors.onAccent} /></View>
     </Pressable>}
     {child && !guide ? <View style={styles.suggestions}>
       {questions.map(question => <Pressable key={question} accessibilityRole="button" accessibilityLabel={`準備問題：${question}`} onPress={() => actions.prepareQuestion(question)} style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}>
@@ -145,7 +124,6 @@ const styles = StyleSheet.create({
   page: { padding: mobileLayout.pageInset, gap: mobileLayout.sectionGap, width: "100%", maxWidth: mobileLayout.breakpoint, alignSelf: "center" },
   greeting: { position: "relative", minHeight: 168, marginHorizontal: -mobileLayout.pageInset, marginTop: -mobileLayout.pageInset, paddingHorizontal: mobileLayout.pageInset, paddingVertical: spacing.lg, justifyContent: "center", overflow: "hidden" },
   greetingCopy: { width: "60%", minWidth: 0, gap: spacing.xs },
-  greetingArt: { ...StyleSheet.absoluteFill, width: "100%", height: "100%" },
   heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.heading, fontWeight: "800" },
   subtitle: { fontFamily: chineseFont, color: colors.ink, ...mobileType.body },
   motto: { fontFamily: chineseFont, color: colors.teal, ...mobileType.caption },
@@ -167,7 +145,7 @@ const styles = StyleSheet.create({
   suggestionText: { fontFamily: chineseFont, color: colors.deepTeal, ...mobileType.label, textAlign: "center" },
   ask: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.sm, borderWidth: 1, borderColor: colors.line, borderRadius: radius.pill, backgroundColor: colors.white, minHeight: mobileLayout.askMinHeight },
   askText: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.muted, ...mobileType.body },
-  send: { width: 40, height: 40, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", backgroundColor: colors.teal },
+  send: { width: 40, height: 40, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", backgroundColor: colors.accent, borderWidth: 1, borderColor: colors.ink },
   focus: { backgroundColor: colors.paleTeal },
   focusInner: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, backgroundColor: colors.white, borderRadius: radius.small, padding: spacing.md },
   focusIcon: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
