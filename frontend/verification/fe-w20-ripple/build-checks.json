@@ -1,0 +1,47 @@
+{
+  "at": "2026-10-01T12:30:16.4486501Z",
+  "package": "FE-W20 ripple follow-up",
+  "baseline": "2362228d000220b0094795f5cdc645aaa5d49058",
+  "scope": "frontend only; Agent sidebar interaction theme, no business/API/native adapter changes",
+  "source": {
+    "path": "frontend/src/components/AgentEntryButton.tsx",
+    "gitBlob": "299291fe7aea054799f0e40e4e23ccf8fd91ec26",
+    "sha256": "bfe7f4ebeefb192ceb0b28f99f9245c6f1d46d0cee93798e782a729f8191296d"
+  },
+  "paperVersion": "5.15.3",
+  "frameworkBehavior": "Button derives ripple from textColor at 12% alpha; MD3 TouchableRipple derives from onSurface at 12% alpha, also used by the native underlay fallback",
+  "implementation": "Set the Agent entry local onSurface role to colors.onAccent; remove opaque colors.sage ripple override",
+  "typecheck": {
+    "exitCode": 0
+  },
+  "web": {
+    "exitCode": 0,
+    "routes": 33,
+    "path": "dist/_expo/static/js/web/entry-35e1a5848631b333ac393bdcc53ed1a0.js",
+    "sha256": "4966d7ff88234600a0c96c129505dc0e3a72b2536582a2a5bd8edb3780cacf3d"
+  },
+  "android": {
+    "exitCode": 0,
+    "assets": 31,
+    "path": "dist-android/_expo/static/js/android/entry-261528ae35aca64fd260ba2f85bf4bee.hbc",
+    "sha256": "ba98b881c5403083985275d783715f1eabd5c036ae084883c4a40a37ace9ba18",
+    "limitation": "Hermes/asset export only; no native press or device acceptance"
+  },
+  "preview": {
+    "path": "pressed-checks.json",
+    "widths": [
+      1440,
+      1024
+    ],
+    "checks": 8,
+    "failures": [],
+    "scope": "Held press/transparent layer/opaque parent surface/release cleanup on Agent, shared accent and secondary; Enter/current-page and draft preservation"
+  },
+  "priorEvidence": "No full route/business/mobile reflow rerun: only the desktop Agent entry changed; FE-W20 evidence remains applicable to unchanged code",
+  "pending": [
+    "User visual acceptance",
+    "Native interaction and device acceptance"
+  ],
+  "deliveryAccount": "CherylNg-2526",
+  "mergePerformed": false
+}

@@ -34,3 +34,10 @@
 typecheck、22 組對比、Web export、Android Hermes／31 資產 export、15 頁四尺寸重排、六寬度 Dialog／SVG，背景取消／有效／格式錯誤／損壞／替換／恢復／跨頁及離開清理，以及 390／320 的 150% Web 文字通過，見 [FE-W20 證據](verification/fe-w20)。沒有 API、真家庭資料／登入／上傳、模型、原生選圖或 Android 實機驗收。
 
 首次檢查發現 Stack 保留舊路由，單靠 unmount 清理不足；已加 blur 清理並重驗。業務操作源碼未改，沿用 FE-W11–W19 規則證據。配色不取代正式接線／完整無障礙／使用者視覺確認；交付源碼及產物身份記於 build-checks。
+
+<a id="ripple-follow-up"></a>
+## FE-W20 按下效果補修
+
+2026-10-01，基線 `2362228d000220b0094795f5cdc645aaa5d49058`。使用者指出 Agent 按鈕按下變成實色青色；原因是 [AgentEntryButton](src/components/AgentEntryButton.tsx) 遺留 rippleColor=colors.sage。改為局部 onSurface=colors.onAccent，復用 Paper 5.15.3 的 12% alpha ripple 及原生 underlay 後備；共用 AppButton 原本已按 textColor 自動產生透明層，毋須重寫。黃色及深色文字／SVG 保持原角色，不新增顏色或動畫框架。
+
+實際 Web export 在 1440／1024 的八項檢查通過：Agent、共用 accent／secondary 的按住透明層／父層底色、放開清理，Agent Enter／目前頁面及原草稿。無 pageerror、console.error 或 API 請求；[pressed-checks](verification/fe-w20-ripple/pressed-checks.json)，[按住](verification/fe-w20-ripple/agent-pressed-1440.png)／[放開](verification/fe-w20-ripple/agent-rest-1440.png)。typecheck、Web 33 路由及 Android Hermes／31 資產 export 通過，當前源碼及產物身份見 [build-checks](verification/fe-w20-ripple/build-checks.json)。只改桌面側欄入口，窄 Web 底部分頁沒有使用此元件；沿用 FE-W20 的手機重排證據，不宣稱重跑全站或原生實際按下。

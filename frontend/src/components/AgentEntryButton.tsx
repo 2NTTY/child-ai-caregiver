@@ -16,7 +16,7 @@ export function AgentEntryButton({ active }: { active: boolean }) {
     aria-current={active ? "page" : undefined}
     onFocus={() => setFocused(true)}
     onBlur={() => setFocused(false)}
-    rippleColor={colors.sage}
+    theme={{ colors: { onSurface: colors.onAccent } }}
     style={StyleSheet.flatten([styles.button, (active || focused) && styles.highlighted])}
   >
     <View style={styles.content}>

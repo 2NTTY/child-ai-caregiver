@@ -17,6 +17,8 @@
 
 以上映射是本項目的用途選擇。淺青導航框住接近白色的畫布，白卡／白控件浮在區塊上；不把每張卡片都改成深色。AppButton 的 primary 為深底白字，accent 為黃底深字，secondary 為白底描邊，quiet 為深色文字。黃色只強調 Agent，保留深色邊界；不作正文、細線或大面積底色。MD3 primary 保持深色，使選項／焦點／文字按鈕仍可辨讀。
 
+按下／擴散效果沿 Paper 5.15.3 的半透明文字色，不另造不透明底色：AppButton 原生以當前 textColor 的 12% alpha 產生 ripple；AgentEntryButton 將局部主題 onSurface 對應 colors.onAccent，沿 TouchableRipple 的相同預設及原生 underlay 後備。黃底只稍微變深，深底普通提交用白色透明層；沒有覆寫全站 onSurface。FE-W20 補修移除 Agent 入口遺留的實色青色 ripple，按住／放開及鍵盤導航證據見 [pressed-checks](verification/fe-w20-ripple/pressed-checks.json)。比例來自已安裝套件，沒有自建動畫或新增顏色種子。
+
 ## OKLCH 與狀態
 
 六個主色直接採原值，不用 OKLCH 重新近似。額外色階以 Culori 4.0.2 轉 OKLCH，保留種子 h、指定 L／C，超出 sRGB 時 clamp chroma，輸出共用 HEX。沿用已核對的 [Culori](https://culorijs.org/api/)／[CSS Color 4](https://www.w3.org/TR/css-color-4/#ok-lab)／[RN 顏色](https://reactnative.dev/docs/colors) 結論，這輪沒有重查其他設計網站。
