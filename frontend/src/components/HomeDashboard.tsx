@@ -1,6 +1,7 @@
 import { brand } from "../branding";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { ActivityIndicator, Divider, Text } from "react-native-paper";
 import { AppButton, AppTextField, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
@@ -82,9 +83,9 @@ export function HomeDashboard({ model, actions }: { model: HomeViewModel; action
       <HomeBackground surface={colors.paper} protectFullWidth={stacked} wideIllustration />
       <View style={[styles.introText, stacked && styles.introTextWide]}><Text style={styles.eyebrow}>{brand.name} · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} variant="accent" onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
     </View>
-    <View style={[styles.grid, stacked && styles.gridStack]}>
-      <View style={styles.column}><DataOverview model={model} actions={actions} /><RecentRecords model={model} actions={actions} /></View>
-      <View style={styles.column}><Highlight model={model} actions={actions} /><SectionCard><SectionHeader title="常用入口" subtitle="從已掌握的資料繼續。" /><DashboardLink icon="message-text-outline" title="基本聊天" detail="整理需要討論的問題" onPress={() => actions.open("chat")} /><DashboardLink icon="notebook-outline" title="照顧記錄" detail="查看已確認的內容" onPress={() => actions.open("care")} /><DashboardLink icon="account-group-outline" title="家庭協調" detail="查看成員與共享範圍" onPress={() => actions.open("family")} /></SectionCard></View>
+    <View testID="desktop-home-grid" style={[styles.grid, stacked && styles.gridStack]}>
+      <View testID="home-records-column" style={[styles.column, stacked && styles.stackedColumn]}><DataOverview model={model} actions={actions} /><RecentRecords model={model} actions={actions} /></View>
+      <View testID="home-actions-column" style={[styles.column, stacked && styles.stackedColumn]}><Highlight model={model} actions={actions} /><SectionCard><SectionHeader title="常用入口" subtitle="從已掌握的資料繼續。" /><DashboardLink icon="message-text-outline" title="基本聊天" detail="整理需要討論的問題" onPress={() => actions.open("chat")} /><DashboardLink icon="notebook-outline" title="照顧記錄" detail="查看已確認的內容" onPress={() => actions.open("care")} /><DashboardLink icon="account-group-outline" title="家庭協調" detail="查看成員與共享範圍" onPress={() => actions.open("family")} /></SectionCard></View>
     </View>
     <Text style={styles.footer}>{brand.name} · 用資料陪伴成長</Text>
   </ScrollView>;
@@ -103,6 +104,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   actionsNarrow: { flexDirection: "column", alignItems: "stretch" },
   grid: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, gridStack: { flexDirection: "column" }, column: { flex: 1, minWidth: 0, width: "100%", gap: spacing.lg },
+  stackedColumn: { flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   highlightUnknown: { backgroundColor: colors.statusUnknown, borderColor: colors.statusUnknownLine }, highlightFailed: { backgroundColor: colors.paleCoral, borderColor: colors.statusFailedLine }, highlightConfirmation: { backgroundColor: colors.statusWarm, borderColor: colors.statusWarmLine },
   highlightTop: { flexDirection: "row", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" }, highlightTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 29, fontWeight: "800" },
   linkRow: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.sm, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.small },

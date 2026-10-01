@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import type { HomeChild } from "../view-model";
 import { usePreviewOperation } from "../preview/usePreviewOperation";

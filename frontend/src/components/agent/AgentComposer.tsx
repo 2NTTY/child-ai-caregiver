@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ComponentRef } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
+import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Text, TextInput } from "react-native-paper";
 import type { PhotoOriginal } from "../../photo-view-model";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../../theme";

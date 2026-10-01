@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode, type Ref } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { AppIcon } from "./AppIcon";
 import { Button, Portal, RadioButton, Text, TextInput } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";

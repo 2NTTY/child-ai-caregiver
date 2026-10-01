@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import { chineseFont, colors, mobileLayout, mobileType, spacing, typeScale } from "../theme";
 

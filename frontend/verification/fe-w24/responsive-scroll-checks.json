@@ -1,0 +1,589 @@
+{
+  "at": "2026-10-01T20:20:16.004Z",
+  "kind": "Bounded local synthetic preview checks; no true service or device acceptance",
+  "passed": [
+    "Desktop single-column card heights/gaps at six same-page resizes and filtered/empty/loading/unknown content",
+    "Original full homepage illustration contained at 320/390/640, with original asset dimensions and aspect ratio",
+    "User-selected background retains cover and route preservation after the original illustration fit change",
+    "Phone login hides story/illustration; desktop glass panel blurs its background while keeping fixed x=1552 crop",
+    "Overflow appearing/disappearing does not move the login fields or reserve scrollbar width",
+    "Native wheel/PageDown, draggable thumb, independently scrolling right rail and adapter cleanup on route change",
+    "Low-height menu retains scrolling, Escape and focus return"
+  ],
+  "measurements": [
+    {
+      "label": "home 650",
+      "columns": {
+        "direction": "column",
+        "boxes": [
+          {
+            "top": 429,
+            "bottom": 1238,
+            "height": 809,
+            "children": [
+              {
+                "top": 429,
+                "bottom": 729
+              },
+              {
+                "top": 745,
+                "bottom": 1238
+              }
+            ]
+          },
+          {
+            "top": 1254,
+            "bottom": 1753,
+            "height": 499,
+            "children": [
+              {
+                "top": 1254,
+                "bottom": 1427
+              },
+              {
+                "top": 1443,
+                "bottom": 1753
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "home 744",
+      "columns": {
+        "direction": "column",
+        "boxes": [
+          {
+            "top": 429,
+            "bottom": 1238,
+            "height": 809,
+            "children": [
+              {
+                "top": 429,
+                "bottom": 729
+              },
+              {
+                "top": 745,
+                "bottom": 1238
+              }
+            ]
+          },
+          {
+            "top": 1254,
+            "bottom": 1753,
+            "height": 499,
+            "children": [
+              {
+                "top": 1254,
+                "bottom": 1427
+              },
+              {
+                "top": 1443,
+                "bottom": 1753
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "home 840",
+      "columns": {
+        "direction": "column",
+        "boxes": [
+          {
+            "top": 429,
+            "bottom": 1238,
+            "height": 809,
+            "children": [
+              {
+                "top": 429,
+                "bottom": 729
+              },
+              {
+                "top": 745,
+                "bottom": 1238
+              }
+            ]
+          },
+          {
+            "top": 1254,
+            "bottom": 1753,
+            "height": 499,
+            "children": [
+              {
+                "top": 1254,
+                "bottom": 1427
+              },
+              {
+                "top": 1443,
+                "bottom": 1753
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "home 1024",
+      "columns": {
+        "direction": "row",
+        "boxes": [
+          {
+            "top": 429,
+            "bottom": 1238,
+            "height": 809,
+            "children": [
+              {
+                "top": 429,
+                "bottom": 729
+              },
+              {
+                "top": 745,
+                "bottom": 1238
+              }
+            ]
+          },
+          {
+            "top": 429,
+            "bottom": 928,
+            "height": 499,
+            "children": [
+              {
+                "top": 429,
+                "bottom": 602
+              },
+              {
+                "top": 618,
+                "bottom": 928
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "home 1440",
+      "columns": {
+        "direction": "row",
+        "boxes": [
+          {
+            "top": 382,
+            "bottom": 1191,
+            "height": 809,
+            "children": [
+              {
+                "top": 382,
+                "bottom": 682
+              },
+              {
+                "top": 698,
+                "bottom": 1191
+              }
+            ]
+          },
+          {
+            "top": 382,
+            "bottom": 881,
+            "height": 499,
+            "children": [
+              {
+                "top": 382,
+                "bottom": 555
+              },
+              {
+                "top": 571,
+                "bottom": 881
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "home 744",
+      "columns": {
+        "direction": "row",
+        "boxes": [
+          {
+            "top": 875,
+            "bottom": 4201,
+            "height": 3326,
+            "children": [
+              {
+                "top": 875,
+                "bottom": 2255
+              },
+              {
+                "top": 2271,
+                "bottom": 4201
+              }
+            ]
+          },
+          {
+            "top": 875,
+            "bottom": 2459,
+            "height": 1584,
+            "children": [
+              {
+                "top": 875,
+                "bottom": 1466
+              },
+              {
+                "top": 1482,
+                "bottom": 2459
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "filtered records",
+      "columns": {
+        "direction": "column",
+        "boxes": [
+          {
+            "top": 398,
+            "bottom": 997,
+            "height": 599,
+            "children": [
+              {
+                "top": 398,
+                "bottom": 698
+              },
+              {
+                "top": 714,
+                "bottom": 997
+              }
+            ]
+          },
+          {
+            "top": 1013,
+            "bottom": 1512,
+            "height": 499,
+            "children": [
+              {
+                "top": 1013,
+                "bottom": 1186
+              },
+              {
+                "top": 1202,
+                "bottom": 1512
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "empty filtered records",
+      "columns": {
+        "direction": "column",
+        "boxes": [
+          {
+            "top": 398,
+            "bottom": 927,
+            "height": 529,
+            "children": [
+              {
+                "top": 398,
+                "bottom": 698
+              },
+              {
+                "top": 714,
+                "bottom": 927
+              }
+            ]
+          },
+          {
+            "top": 943,
+            "bottom": 1442,
+            "height": 499,
+            "children": [
+              {
+                "top": 943,
+                "bottom": 1116
+              },
+              {
+                "top": 1132,
+                "bottom": 1442
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "restored records",
+      "columns": {
+        "direction": "column",
+        "boxes": [
+          {
+            "top": 398,
+            "bottom": 1207,
+            "height": 809,
+            "children": [
+              {
+                "top": 398,
+                "bottom": 698
+              },
+              {
+                "top": 714,
+                "bottom": 1207
+              }
+            ]
+          },
+          {
+            "top": 1223,
+            "bottom": 1722,
+            "height": 499,
+            "children": [
+              {
+                "top": 1223,
+                "bottom": 1396
+              },
+              {
+                "top": 1412,
+                "bottom": 1722
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "unknown operation",
+      "columns": {
+        "direction": "column",
+        "boxes": [
+          {
+            "top": 486,
+            "bottom": 1295,
+            "height": 809,
+            "children": [
+              {
+                "top": 486,
+                "bottom": 786
+              },
+              {
+                "top": 802,
+                "bottom": 1295
+              }
+            ]
+          },
+          {
+            "top": 1311,
+            "bottom": 1810,
+            "height": 499,
+            "children": [
+              {
+                "top": 1311,
+                "bottom": 1484
+              },
+              {
+                "top": 1500,
+                "bottom": 1810
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "loading records",
+      "columns": {
+        "direction": "column",
+        "boxes": [
+          {
+            "top": 486,
+            "bottom": 957,
+            "height": 471,
+            "children": [
+              {
+                "top": 486,
+                "bottom": 786
+              },
+              {
+                "top": 802,
+                "bottom": 957
+              }
+            ]
+          },
+          {
+            "top": 973,
+            "bottom": 1472,
+            "height": 499,
+            "children": [
+              {
+                "top": 973,
+                "bottom": 1146
+              },
+              {
+                "top": 1162,
+                "bottom": 1472
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "normal restored",
+      "columns": {
+        "direction": "column",
+        "boxes": [
+          {
+            "top": 398,
+            "bottom": 1207,
+            "height": 809,
+            "children": [
+              {
+                "top": 398,
+                "bottom": 698
+              },
+              {
+                "top": 714,
+                "bottom": 1207
+              }
+            ]
+          },
+          {
+            "top": 1223,
+            "bottom": 1722,
+            "height": 499,
+            "children": [
+              {
+                "top": 1223,
+                "bottom": 1396
+              },
+              {
+                "top": 1412,
+                "bottom": 1722
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "whole home illustration 320",
+      "image": {
+        "left": 21.5,
+        "right": 320,
+        "top": 101,
+        "bottom": 269,
+        "width": 298.5,
+        "height": 168,
+        "naturalWidth": 1672,
+        "naturalHeight": 941,
+        "fit": "contain",
+        "greeting": {
+          "left": 0,
+          "right": 320,
+          "top": 101,
+          "bottom": 269
+        }
+      }
+    },
+    {
+      "label": "whole home illustration 390",
+      "image": {
+        "left": 91.5,
+        "right": 390,
+        "top": 101,
+        "bottom": 269,
+        "width": 298.5,
+        "height": 168,
+        "naturalWidth": 1672,
+        "naturalHeight": 941,
+        "fit": "contain",
+        "greeting": {
+          "left": 0,
+          "right": 390,
+          "top": 101,
+          "bottom": 269
+        }
+      }
+    },
+    {
+      "label": "whole home illustration 640",
+      "image": {
+        "left": 341.5,
+        "right": 640,
+        "top": 101,
+        "bottom": 269,
+        "width": 298.5,
+        "height": 168,
+        "naturalWidth": 1672,
+        "naturalHeight": 941,
+        "fit": "contain",
+        "greeting": {
+          "left": 0,
+          "right": 640,
+          "top": 101,
+          "bottom": 269
+        }
+      }
+    },
+    {
+      "label": "login glass/crop 1440",
+      "panel": {
+        "filter": "saturate(1.8) blur(6.4px)",
+        "background": "rgba(249, 249, 249, 0.25)"
+      },
+      "crop": {
+        "sourceRight": 1552.0054716888953,
+        "sourceLeft": 588.4224534662172,
+        "fingerX": 881.4187163576555,
+        "fingerY": 369.1795940490431,
+        "frame": {
+          "left": 0,
+          "right": 921.59375,
+          "top": 0,
+          "bottom": 900
+        }
+      }
+    },
+    {
+      "label": "login glass/crop 1024",
+      "panel": {
+        "filter": "saturate(1.8) blur(6.4px)",
+        "background": "rgba(249, 249, 249, 0.25)"
+      },
+      "crop": {
+        "sourceRight": 1552.00938379731,
+        "sourceLeft": 1077.3243665936816,
+        "fingerX": 568.7763157894738,
+        "fingerY": 507.41858552631584,
+        "frame": {
+          "left": 0,
+          "right": 624,
+          "top": 0,
+          "bottom": 1237
+        }
+      }
+    },
+    {
+      "label": "login glass/crop 900",
+      "panel": {
+        "filter": "saturate(1.8) blur(6.4px)",
+        "background": "rgba(249, 249, 249, 0.25)"
+      },
+      "crop": {
+        "sourceRight": 1552.00938379731,
+        "sourceLeft": 1171.6527994995308,
+        "fingerX": 444.77631578947376,
+        "fingerY": 507.41858552631584,
+        "frame": {
+          "left": 0,
+          "right": 500,
+          "top": 0,
+          "bottom": 1237
+        }
+      }
+    }
+  ],
+  "failures": []
+}

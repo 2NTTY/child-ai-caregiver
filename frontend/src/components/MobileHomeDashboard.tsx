@@ -1,6 +1,7 @@
 import { brand } from "../branding";
 import { useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Image, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import { HomeBackground } from "./appearance/HomeBackground";
 import { AppIcon } from "./AppIcon";
@@ -33,7 +34,7 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <View testID="mobile-home-greeting" style={styles.greeting}>
-      <HomeBackground surface={colors.canvas} fadeBottom />
+      <HomeBackground surface={colors.canvas} fadeBottom fitIllustration />
       <View style={styles.greetingCopy}>
         <Text accessibilityRole="header" style={styles.heading}>你好，{model.caregiverName}！</Text>
         <Text style={styles.subtitle}>{child ? `一起整理${child.displayName}的照顧日常。` : "先把基本資料整理好，再開始記錄。"}</Text>

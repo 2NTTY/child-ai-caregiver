@@ -2,7 +2,9 @@
 
 更新：2026-10-02。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W23 固定圖片右邊界（2026-10-02）：** 沿用已從 `cab2841` 精確還原的左介紹／右登入、表單品牌及 0.55 圖片透明度；桌面右欄仍為 36%／至少 400。按使用者補充要求，改以原圖 x=1552 作固定可見右邊界，排除太陽並保留指尖；視窗變窄只從左側裁切，窄版仍為上下排列。七個尺寸（包含 1024 × 1237 窄高視窗）、五次同頁 CSS 縮放等效重排、本地驗證／鍵盤、typecheck 及 Web／Android export 通過；[交接](HANDOFF.md#login-original-reset)／[原版還原證據](verification/fe-w23-reset/restore-checks.json)／[本次建置](verification/fe-w23-anchor/build-checks.json)。舊裁切證據保留；真登入、使用者視覺及原生實機仍待接線／驗收，未宣稱操作瀏覽器原生 Zoom 選單。
+**最新 FE-W24 捲動及響應式修補（2026-10-02）：** 900 以下的登入頁只保留品牌／表單，桌面介紹文字加 Expo BlurView 半透明模糊面板，續用固定右側裁切。Web 垂直捲動復用 OverlayScrollbars，透明軌道覆蓋內容、不預留寬度；原生及橫向捲動保留 RN ScrollView。桌面首頁轉單欄採自然高度，修正記錄／確認卡片重疊；手機首頁完整等比顯示兩位人物，左側漸淡。15 頁四尺寸重排、登入／共用選單、局部高度／圖片／滑鼠／鍵盤／清理及 Web／Android export 通過；[交接](HANDOFF.md#responsive-scroll)／[證據](verification/fe-w24/build-checks.json)。使用者視覺、Android 實機及原生 BlurTargetView 尚待驗收／接續。
+
+**FE-W23 固定圖片右邊界（上一版）：** 沿用已從 `cab2841` 精確還原的左介紹／右登入、表單品牌及 0.55 圖片透明度；桌面右欄仍為 36%／至少 400。按使用者補充要求，改以原圖 x=1552 作固定可見右邊界，排除太陽並保留指尖；視窗變窄只從左側裁切。當時窄版上下排列已由 FE-W24 的表單單欄取代。七個尺寸（包含 1024 × 1237 窄高視窗）、五次同頁 CSS 縮放等效重排、本地驗證／鍵盤、typecheck 及 Web／Android export 通過；[交接](HANDOFF.md#login-original-reset)／[原版還原證據](verification/fe-w23-reset/restore-checks.json)／[本次建置](verification/fe-w23-anchor/build-checks.json)。舊裁切證據保留；真登入、使用者視覺及原生實機仍待接線／驗收，未宣稱操作瀏覽器原生 Zoom 選單。
 
 **最新 FE-W22（2026-10-01）：** 鈴鐺／資訊欄開關改用同一 [ToolbarIconButton](src/components/ToolbarIconButton.tsx)，白底／邊框／22 px SVG 一致，桌面實際點擊 44、手機 48；「已連接」同表面並置中。共用 danger 按鈕／Dialog 已套用刪除確認；刪整位孩子採紅色彈窗、完整稱呼及範圍勾選，unknown 保留查核。四尺寸、Enter／Escape／焦點、照片二次確認、記錄／孩子失敗及 unknown 檢查、typecheck 及 Web／Android export 通過；[交接及刪除保障清單](HANDOFF.md#toolbar-delete-safeguards)／[證據](verification/fe-w22/build-checks.json)。只有合成操作，帳戶刪除及真正密碼／身份重新驗證尚未實作，待主聊天接線；原生實機及使用者視覺仍待驗收。
 
@@ -43,6 +45,7 @@
 | FE-W21 前端品牌更名 | 共用名稱／SVG Logo、各頁文案、Web／Expo 顯示名稱及相應 selector 已同步；四尺寸、鍵盤及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#brand-rename-pending)；使用者視覺、Android 字體／App 顯示名稱實機與正式品牌整合待驗收／接線 |
 | FE-W22 頂部控件及刪除保障 | 共用鈴鐺／側欄按鈕、置中狀態、danger 樣式及整位孩子稱呼／範圍確認已實作；四尺寸、必要合成操作及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#toolbar-delete-safeguards)；帳戶刪除／Server 身份重新驗證、真 API、視覺與實機待接續／驗收 |
 | FE-W23 登入原版還原及裁切 | 五檔精確還原證據保留；固定圖片右邊界，排除太陽並保留指尖，變窄由左側裁切；七尺寸、同頁重排、本地操作及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#login-original-reset)；真身份、使用者視覺及原生實機待接線／驗收 |
+| FE-W24 捲動及響應修補 | Web 透明覆蓋捲動、桌面介紹模糊面板、窄登入表單、首頁自然高度／完整手機插畫已實作；60 重排及局部互動／Web／Android export 通過 | [HANDOFF](HANDOFF.md#responsive-scroll)；使用者視覺、其他瀏覽器／輔助技術及原生實機待驗 |
 
 ## 已驗證及限制
 

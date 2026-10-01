@@ -1,6 +1,7 @@
 import { brand } from "../branding";
 import { useState } from "react";
-import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "../components/AppScrollView";
 import { Text } from "react-native-paper";
 import { AppButton, SectionCard } from "../components/ui";
 import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";

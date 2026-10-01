@@ -4,16 +4,29 @@
 
 ## 交付範圍及入口
 
+<a id="responsive-scroll"></a>
+### FE-W24 捲動及響應式修補（2026-10-02，現行版本）
+
+基線 `5b77d907fd827198e53f8f41f44c209e12f62310`，只修改 frontend，沿 draft PR #73，主責 B。重核 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 清單，blob 仍為 `6488b8c53ae58e37a12e7a3683aea94924aa3981`；此包屬視覺及共用捲動修補，不增加 API。來源、建置及同期 worktree 核對見 [build-checks](verification/fe-w24/build-checks.json)。
+
+- [AppScrollView.web](src/components/AppScrollView.web.tsx) 保留 RN Web 原 viewport、onScroll 和 ScrollView ref，只讓 OverlayScrollbars 2.16.0 在同一區域提供覆蓋式垂直捲動條。[局部 CSS](src/components/appScrollView.css) 統一透明軌道及既有 theme 的滑塊色，卸載時 destroy；主要內容、右欄、Dialog／選單及長來源使用同一入口。橫向捲動直接沿 RN，[原生檔](src/components/AppScrollView.tsx) 亦直接導出 RN ScrollView，沒有 DOM／CSS 原生依賴。
+- [LoginPage](src/screens/loginScreen.tsx) 在 900 以下只展示單一品牌及表單，移除頂部宣傳故事／插畫；桌面介紹在 Expo BlurView 57.0.3 的半透明面板內，文字本身不模糊。沿用 Expo 57 官方相容版本及 Paper／SVG；原圖固定 x=1552 右界／0.55 透明度、右欄比例及本地登入驗證不變。Android 大尺寸若顯示介紹，目前只有 tint 後備，實際模糊需再接 SDK 57 的 BlurTargetView；手機不渲染此區。
+- [HomeDashboard](src/components/HomeDashboard.tsx) 的單欄列取消 `flex: 1` 的高度壓縮，卡片按內容自然增高；雙欄維持原比例。[手機主頁](src/components/MobileHomeDashboard.tsx) 使用 [HomeBackground](src/components/appearance/HomeBackground.tsx) 的 fitIllustration，原圖等比 contain、靠右及垂直置中，兩位人物、手指和腳完整保留，漸淡從實際圖片左緣銜接畫布。這與移除手機登入的宣傳圖片分開；使用者自選背景仍沿原 cover 行為，沒有裁切／改寫圖片原檔或修改保存契約。
+
+**已驗／未驗：** 15 個頁面在 1440／1024／390／320 共 60 次重排、320 本地登入及六尺寸共用 Dialog／SVG／選單檢查通過。最後只再調整完整插畫的漸淡起點，沿用上述不受影響的共用證據；最終 bundle 的局部檢查再次確認桌面六次同頁縮放重排、篩選／空結果／讀取／unknown 高度，320／390／640 完整插畫，桌面模糊及窄登入、無 gutter／透明軌道、溢出有無的欄位不位移、滾輪／PageDown／拖滑塊、右欄獨立捲動、路由清理及 390 × 600 選單焦點。沒有 pageerror、console.error 或 API 請求。typecheck、Web 33 路由及 Android Hermes／30 資產 export 通過；Android export 只證明打包。
+
+見 [重排與既有流程](verification/fe-w24/checks-layout-login-design.json)、[局部檢查](verification/fe-w24/responsive-scroll-checks.json)、[完整 390 圖片](verification/fe-w24/home-whole-390.png)、[縮窄桌面卡片](verification/fe-w24/home-stacked-744.png)、[桌面模糊面板](verification/fe-w24/login-responsive-1440.png)。共用研究已補 [web-screen-delivery Skill](.agents/skills/web-screen-delivery/references/scroll-and-blur.md)。使用者視覺、其他瀏覽器／輔助技術、原生 BlurTargetView 及實機仍待確認；真身份／API 和正式 App 整合維持由主聊天處理。
+
 <a id="login-original-reset"></a>
 <a id="login-story-balance"></a>
 <a id="login-background-layout"></a>
-### FE-W23 登入原版還原及固定右側裁切（2026-10-02，現行版本）
+### FE-W23 登入原版還原及固定右側裁切（2026-10-02，上一版；裁切規則續用）
 
 使用者要求先還原檔案再改；工作 HEAD `4496f47e9880a61a1d70e990895925837de150d6`。已先將 LoginPage、STATUS、PLAN、HANDOFF、DESIGN_SYSTEM 這五個 frontend 檔案還原至登入改版前 `cab28414a39a2b6e25c77c68e349024247623122`，逐一核對 Git blob 一致後才重新修改，見 [還原記錄](verification/fe-w23-reset/restore-checks.json)。Git 歷史及先前 verification 保留；`87d82dc`／`4496f47` 的排列已取代，舊錨點指向本節。只交付前端，沿 draft PR #73，主責 B。
 
 [LoginPage](src/screens/loginScreen.tsx) 保留原品牌介紹／四項功能、右側表單上方 Logo、共用 AppTextField／AppButton 及原 0.55 圖片透明度。桌面右欄 36%／至少 400、卡片最寬 500，左側取得餘下展示空間；介紹的閱讀寬度另限在左側。先前 95% 裁切重心在窄而高的容器仍會裁掉部分右側，本次從 `8295fa7` 改為固定右邊界。
 
-原圖尺寸由 `harbourSourceSize` 記錄（1672 × 941）；`harbourRightEdge=1552` 是已排除太陽、仍保留指尖的可見右邊界。onLayout 取得實際容器，按這個可見範圍計算等比 cover；右側位置固定、垂直置中，視窗變窄只裁掉更多左側，圖片原檔不改。首幀未量得尺寸時先隱藏圖片，避免閃出未裁切版本。若更換素材，須重核尺寸、指尖及太陽的邊界。900 px 以下仍為原版上方故事／下方表單；保留指尖，但「朝向右側登入」只適用於雙欄佈局。
+原圖尺寸由 `harbourSourceSize` 記錄（1672 × 941）；`harbourRightEdge=1552` 是已排除太陽、仍保留指尖的可見右邊界。onLayout 取得實際容器，按這個可見範圍計算等比 cover；右側位置固定、垂直置中，視窗變窄只裁掉更多左側，圖片原檔不改。首幀未量得尺寸時先隱藏圖片，避免閃出未裁切版本。若更換素材，須重核尺寸、指尖及太陽的邊界。此版當時的 900 px 以下故事／表單上下排列，已由 FE-W24 的單欄表單取代；以下窄版截圖只屬歷史證據。
 
 本地登入／註冊驗證、密碼顯示及返回主頁的程式保留原內容，沒有 Server／session、密碼保存或新 API／背景偏好。正式認證／初始化仍由主聊天接線。直接重核 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 UI 清單（blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`）；其他 14 個 worktree 未見 frontend 重疊。
 

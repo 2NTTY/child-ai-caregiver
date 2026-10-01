@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Portal, Text } from "react-native-paper";
 import { colors, mobileType, radius, spacing, chineseFont } from "../../theme";
 import { AppDialog } from "../AppDialog";

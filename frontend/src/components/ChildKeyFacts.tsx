@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import type { HomeChild, RecordsLoadState } from "../view-model";

@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { BlurView } from "expo-blur";
 import { brand } from "../branding";
 import { BrandLogo } from "../components/BrandLogo";
 import { useRouter } from "expo-router";
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "../components/AppScrollView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "react-native-paper";
 import { AppButton, AppTextField } from "../components/ui";
@@ -40,22 +42,24 @@ export default function LoginPage() {
   }
 
   return <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView style={styles.scroll} contentContainerStyle={[styles.root, narrow && styles.rootStack, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
-    <View testID="login-story-column" style={[styles.story, narrow ? styles.storyCompact : styles.storyDesktop]} onLayout={({ nativeEvent: { layout } }) => setStorySize(current => current.width === layout.width && current.height === layout.height ? current : { width: layout.width, height: layout.height })}>
+    {!narrow ? <View testID="login-story-column" style={[styles.story, styles.storyDesktop]} onLayout={({ nativeEvent: { layout } }) => setStorySize(current => current.width === layout.width && current.height === layout.height ? current : { width: layout.width, height: layout.height })}>
       <Image testID="login-background-image" source={harbourArt} resizeMode="cover" accessibilityLabel="香港海旁照顧者與孩子插畫" style={[styles.storyImage, { opacity: artworkScale > 0 ? 0.55 : 0, width: artworkWidth, height: artworkHeight, right: (harbourRightEdge - harbourSourceSize.width) * artworkScale, top: (storySize.height - artworkHeight) / 2 }]} />
-      <View testID="login-story-content" style={[styles.storyContent, !narrow && styles.storyReadingWidth]}>
+      <View testID="login-story-content" style={[styles.storyContent, styles.storyReadingWidth]}>
+        <BlurView testID="login-story-panel" intensity={32} tint="light" style={styles.storyPanel}>
         <BrandLogo style={styles.storyLogo} />
         <Text style={styles.storyEyebrow}>用資料 · 陪伴成長</Text>
         <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>用 AI，{narrow ? "" : "\n"}更輕鬆做好育兒大小事。</Text>
         <Text style={styles.storyLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
-        {!narrow ? <View style={styles.features}>
+        <View style={styles.features}>
           <View style={styles.featureRow}><AppIcon name="message-text-outline" /><Text style={styles.feature}>隨時整理照顧問題與記錄</Text></View>
           <View style={styles.featureRow}><AppIcon name="file-document-outline" /><Text style={styles.feature}>清楚區分候選與已確認資料</Text></View>
           <View style={styles.featureRow}><AppIcon name="account-group-outline" /><Text style={styles.feature}>按權限與家人協調</Text></View>
           <View style={styles.featureRow}><AppIcon name="shield-check-outline" /><Text style={styles.feature}>保留原文、時間及資料來源</Text></View>
-        </View> : null}
+        </View>
+        </BlurView>
       </View>
-    </View>
-    <View testID="login-form-column" style={[styles.formSide, !narrow && styles.formDesktop]}>
+    </View> : null}
+    <View testID="login-form-column" style={[styles.formSide, narrow ? styles.formCompact : styles.formDesktop]}>
       <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
       <View style={styles.formCard}>
         <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
@@ -80,8 +84,10 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
+  storyPanel: { padding: spacing.xl, gap: spacing.md, borderRadius: radius.large, overflow: "hidden", borderWidth: 1, borderColor: colors.white },
+  formCompact: { minHeight: 0, paddingVertical: spacing.xl },
   storyDesktop: { width: "64%", minWidth: 0, flexShrink: 1 },
-  storyReadingWidth: { width: "52%", minWidth: 320, maxWidth: 480 },
+  storyReadingWidth: { width: "52%", minWidth: 360, maxWidth: 520 },
   formDesktop: { flexGrow: 0, flexShrink: 0, flexBasis: "36%", minWidth: 400, paddingHorizontal: spacing.xxl },
   featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { opacity: 0.65 },

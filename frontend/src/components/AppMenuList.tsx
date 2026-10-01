@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import { AppIcon, type AppIconName } from "./AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";

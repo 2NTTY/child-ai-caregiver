@@ -29,6 +29,7 @@
 | 原文核對欄位 | [RecordDraftFields](src/components/RecordDraftFields.tsx) | 照片和私人來源共用種類、原文、數值／單位、約數及時間原文；隱藏參考備註不適用的欄位，驗證／同意沿各功能契約 |
 | 原生外殼及手機首頁 | [NativeAppShell](src/components/NativeAppShell.tsx)、[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) | Safe Area、更多／資訊面板、Expo Router Tabs、問候／孩子卡片／提問／重點／待辦／快捷記錄；與 Web 共享資料模型和功能元件 |
 | 共同外殼 | [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 左導覽、孩子切換及其授權摘要、資訊欄、預覽情境、內頁標題與內容間距 |
+| 捲動區域 | [AppScrollView.web](src/components/AppScrollView.web.tsx)、[原生入口](src/components/AppScrollView.tsx) | Web 垂直滑塊覆蓋內容、透明軌道及不預留寬度；保留 RN viewport／事件／ref。原生及橫向捲動維持 RN ScrollView |
 | Agent 主要入口 | [AgentEntryButton](src/components/AgentEntryButton.tsx) | 桌面側欄的固定入口、主操作層次、SVG、焦點／目前頁面；復用 Paper TouchableRipple 與既有 token，不改一般 AppButton |
 | 待辦與提示 | [PreviewTodoCard.tsx](src/components/PreviewTodoCard.tsx)、[NotificationBell.tsx](src/components/NotificationBell.tsx) | 跨頁一致的右欄待辦示例及頂部原操作提示；兩者只處理展示與本地交互，不擔當正式任務／通知協議 |
 | 本人渠道設定 | [ChannelCards](src/components/notifications/ChannelCards.tsx)、[channel-view-model](src/channel-view-model.ts) | Web Push／Telegram 的狀態、核對、本人撤銷、明確測試及投遞；沿相同卡片／表單／狀態控件，與安靜時段和任務完成分開 |
@@ -69,7 +70,9 @@ FE-W22：不可恢復操作的最後提交用 AppButton `variant="danger"`，沿
 
 FE-W20 的 [首頁背景設定](APPEARANCE_HANDOFF.md) 復用 HomeBackground、現有 Paper 按鈕及 SVG 漸淡；本地換圖／恢復、桌面／手機同步預覽。沒有背景保存 API，原生 pickImage port 待接線，不與照顧照片／通知偏好混用。
 
-FE-W23 先精確還原登入改版前檔案，再從原左介紹／右登入結構調整：桌面右欄 36%／至少 400、表單最寬 500。圖片沿原 0.55 透明度，以原圖 x=1552 作固定可見右邊界，排除太陽並保留指尖；按容器等比 cover、垂直置中，變窄只由左側裁切。這取代會在窄高視窗裁掉右側的 95% 重心。窄版保留原故事／表單上下排列及同一圖片邊界，品牌、表單及共用色彩不重組；[規則及還原證據](HANDOFF.md#login-original-reset)。
+FE-W23 先精確還原登入改版前檔案，再從原左介紹／右登入結構調整：桌面右欄 36%／至少 400、表單最寬 500。圖片沿原 0.55 透明度，以原圖 x=1552 作固定可見右邊界，排除太陽並保留指尖；按容器等比 cover、垂直置中，變窄只由左側裁切。FE-W24 在桌面介紹文字下面加半透明模糊面板；900 以下移除整個宣傳故事／插畫，只保留表單上方品牌及登入內容。[現行交接](HANDOFF.md#responsive-scroll)／[還原證據](HANDOFF.md#login-original-reset)。
+
+FE-W24：Web 垂直捲動區使用共用 AppScrollView，透明軌道及 10 px 覆蓋區不佔內容寬度，滑塊顏色沿 controlOutline／ink；內容保持原本邊距，控制不放到滑塊下面。頁面、右欄及選單獨立捲動，保留原生鍵盤／滾輪及焦點；不以 stable gutter 預留空白。桌面首頁轉單欄時列採自然高度，區塊保留 16 間距，不用固定高度遮掉記錄。手機首頁原插畫 contain 完整展示，靠右、左緣及底部漸淡；自選背景維持 cover。研究及平台界線見 [捲動／模糊指引](.agents/skills/web-screen-delivery/references/scroll-and-blur.md)。
 
 ## 照片與原文核對
 

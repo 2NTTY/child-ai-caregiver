@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, usePathname, useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { brand } from "../branding";
 import { BrandLogo } from "./BrandLogo";
 import { Button, Divider, Portal, Text } from "react-native-paper";
