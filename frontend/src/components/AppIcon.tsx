@@ -10,6 +10,7 @@ import Bell from "lucide-react-native/icons/bell";
 import BookOpen from "lucide-react-native/icons/book-open";
 import Calendar from "lucide-react-native/icons/calendar";
 import CalendarClock from "lucide-react-native/icons/calendar-clock";
+import Camera from "lucide-react-native/icons/camera";
 import ChartColumnIncreasing from "lucide-react-native/icons/chart-column-increasing";
 import Check from "lucide-react-native/icons/check";
 import ChevronDown from "lucide-react-native/icons/chevron-down";
@@ -36,9 +37,11 @@ import Link2 from "lucide-react-native/icons/link-2";
 import LockKeyhole from "lucide-react-native/icons/lock-keyhole";
 import Mail from "lucide-react-native/icons/mail";
 import MessageCircle from "lucide-react-native/icons/message-circle";
+import Mic from "lucide-react-native/icons/mic";
 import Moon from "lucide-react-native/icons/moon";
 import NotebookPen from "lucide-react-native/icons/notebook-pen";
 import PanelRight from "lucide-react-native/icons/panel-right";
+import Paperclip from "lucide-react-native/icons/paperclip";
 import Pencil from "lucide-react-native/icons/pencil";
 import Plus from "lucide-react-native/icons/plus";
 import Ruler from "lucide-react-native/icons/ruler";
@@ -118,6 +121,9 @@ const icons = {
   "ruler": Ruler,
   "file-document-outline": FileText,
   "image-outline": ImageIcon,
+  "camera-outline": Camera,
+  "microphone-outline": Mic,
+  "paperclip": Paperclip,
   "history": History,
   "information-outline": Info,
   "help-circle": CircleHelp,

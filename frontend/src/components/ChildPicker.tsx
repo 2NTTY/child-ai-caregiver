@@ -24,7 +24,7 @@ export function ChildPicker({ children, selectedId, onSelect, compact = false, t
   </ScrollView></Dialog.ScrollArea><Dialog.Actions><Button onPress={() => setVisible(false)}>關閉</Button></Dialog.Actions></Dialog></Portal></>;
 }
 const styles = StyleSheet.create({
-  picker: { width: 276, minHeight: 52, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.quietSurface, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium },
+  picker: { width: 276, minHeight: 52, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.controlSurface, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium },
   compact: { width: 152, minHeight: 44, paddingHorizontal: 10, borderRadius: radius.small },
   tiny: { width: 132, paddingHorizontal: spacing.sm },
   switchOnly: { width: "auto", minHeight: 44, alignSelf: "flex-start" },

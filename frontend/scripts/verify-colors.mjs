@@ -14,6 +14,8 @@ const pairs = [
   ["secondary on card", "muted", "white", 4.5],
   ["secondary on canvas", "muted", "canvas", 4.5],
   ["secondary on menu", "muted", "quietSurface", 4.5],
+  ["control label", "ink", "controlSurface", 4.5],
+  ["control outline", "controlOutline", "controlSurface", 3],
   ["secondary on green tint", "muted", "paleTeal", 4.5],
   ["secondary on selected tint", "muted", "selectedNav", 4.5],
   ["secondary on warning tint", "muted", "paleAmber", 4.5],

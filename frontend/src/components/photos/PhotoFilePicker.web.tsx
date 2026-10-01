@@ -6,8 +6,9 @@ import { AppButton } from "../ui";
 import type { PhotoFilePickerProps } from "./PhotoFilePicker";
 import { photoStyles } from "./photo-styles";
 
-export function PhotoFilePicker({ disabled, onPick, onError }: PhotoFilePickerProps) {
+export function PhotoFilePicker({ disabled, onPick, onError, capturePreferred = false }: PhotoFilePickerProps) {
   const input = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
   const generation = useRef(0);
   const [reading, setReading] = useState(false);
   const disabledRef = useRef(disabled); disabledRef.current = disabled;
@@ -39,6 +40,9 @@ export function PhotoFilePicker({ disabled, onPick, onError }: PhotoFilePickerPr
     finally { if (generation.current === started) setReading(false); }
   }
   return <View style={photoStyles.stack}><input ref={input} type="file" accept="image/jpeg,image/png" aria-label="選擇照片原檔" tabIndex={-1} hidden disabled={disabled || reading} onChange={choose} />
+    {capturePreferred ? <><input ref={cameraInput} type="file" accept="image/jpeg,image/png" capture="environment" aria-label="拍照原檔" tabIndex={-1} hidden disabled={disabled || reading} onChange={choose} />
+      <AppButton label={reading ? "正在讀取原照片" : "拍照或選圖"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => cameraInput.current?.click()} />
+      <Text style={photoStyles.meta}>手機瀏覽器可由系統提供拍照；是否可用由瀏覽器決定。電腦通常會開啟選檔，也可改用下方選擇原照片。</Text></> : null}
     <AppButton label={reading ? "正在讀取原照片" : "選擇原照片"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => input.current?.click()} />
     <Text style={photoStyles.meta}>只讀取你所選的原檔。此隔離預覽不會上傳照片；關閉或重新載入會清除本次輸入。</Text>
   </View>;

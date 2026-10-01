@@ -12,8 +12,8 @@ function Actions({ style, ...props }: ComponentProps<typeof PaperDialog.Actions>
 }
 
 // Paper supplies the appearance; RN Modal owns the modal focus and platform close behavior.
-export const AppDialog = Object.assign(function AppDialog(props: ComponentProps<typeof PaperDialog>) {
-  return <Modal visible={props.visible} transparent animationType="none" onRequestClose={props.onDismiss}>
+export const AppDialog = Object.assign(function AppDialog({ onClosed, ...props }: ComponentProps<typeof PaperDialog> & { onClosed?: () => void }) {
+  return <Modal visible={props.visible} transparent animationType="none" onRequestClose={props.onDismiss} onDismiss={onClosed}>
     <View style={styles.root}><PaperDialog {...props} testID={props.testID ?? "app-dialog"} style={[styles.dialog, props.style]} /></View>
   </Modal>;
 }, { Title, Content: PaperDialog.Content, Actions, ScrollArea: PaperDialog.ScrollArea, Icon: PaperDialog.Icon });

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 import { Text } from "react-native-paper";
 import { PageFrame } from "../components/PageFrame";
 import { PhotosView } from "../components/photos/PhotosView";
@@ -10,7 +11,7 @@ import { photoPreviewOriginal } from "../preview/photoFixture";
 import type { PhotoPhase } from "../photo-view-model";
 import type { HomeChild } from "../view-model";
 
-function PhotoWorkspace({ child, online, reading, onCare }: { child: HomeChild; online: boolean; reading: boolean; onCare: () => void }) {
+function PhotoWorkspace({ child, online, reading, onCare, capturePreferred }: { child: HomeChild; online: boolean; reading: boolean; onCare: () => void; capturePreferred: boolean }) {
   const preview = usePhotosPreview(child, online, reading);
   const [controlsOpen, setControlsOpen] = useState(false);
   const conditions: { value: PhotoPreviewCondition; label: string }[] = [{ value: "normal", label: "一般" }, { value: "empty", label: "沒有照片" }, { value: "loading", label: "載入中" }, { value: "read_error", label: "讀取失敗" }, { value: "read_only", label: "唯讀角色" }, { value: "capacity", label: "新增容量限制" }, { value: "access_lost", label: "權限失效" }];
@@ -20,7 +21,7 @@ function PhotoWorkspace({ child, online, reading, onCare }: { child: HomeChild; 
     ...(preview.faultPhase === "confirm" || preview.faultPhase === "delete" ? [{ value: "conflict" as const, label: "版本衝突" }] : []),
     ...(!["upload", "extract"].includes(preview.faultPhase) ? [{ value: "confirmed_unavailable" as const, label: "已確認但結果不可讀" }] : []),
   ];
-  return <PhotosView model={preview.model} actions={preview.actions} onCare={onCare} previewControls={<SectionCard>
+  return <PhotosView model={preview.model} actions={preview.actions} onCare={onCare} capturePreferred={capturePreferred} previewControls={<SectionCard>
     <SectionHeader title="合成預覽情境" subtitle="不呼叫 Server、Gemini 或裝置權限。" action={<AppButton label={controlsOpen ? "收起照片情境" : "顯示照片情境"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
     {controlsOpen ? <><AppButton label="使用品牌示例原圖" variant="secondary" disabled={!preview.model.canPick} onPress={() => preview.actions.pickOriginal({ ...photoPreviewOriginal })} />
       <AppSelect label="照片情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} />
@@ -31,8 +32,9 @@ function PhotoWorkspace({ child, online, reading, onCare }: { child: HomeChild; 
   </SectionCard>} />;
 }
 export default function PhotosPage() {
+  const { input } = useLocalSearchParams<{ input?: string }>();
   const { model, actions } = usePreview();
   const child = model.children.find(item => item.id === model.selectedChildId);
-  return child ? <PhotoWorkspace key={JSON.stringify([child.id, model.caregiverName])} child={child} online={model.connection === "online"} reading={model.recordsLoad === "loading"} onCare={() => actions.open("care")} /> :
+  return child ? <PhotoWorkspace key={JSON.stringify([child.id, model.caregiverName])} child={child} online={model.connection === "online"} reading={model.recordsLoad === "loading"} capturePreferred={input === "camera"} onCare={() => actions.open("care")} /> :
     <PageFrame title="照片與記錄" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不會顯示其他孩子的照片。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

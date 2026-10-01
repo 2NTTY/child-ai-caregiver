@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   accountAction: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center" },
   avatar: { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.teal, justifyContent: "center", alignItems: "center" },
   initial: { fontFamily: chineseFont, color: colors.white, fontSize: typeScale.body, fontWeight: "700" },
-  railButton: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center", borderRadius: radius.small, backgroundColor: colors.quietSurface },
+  railButton: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center", borderRadius: radius.small, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.line },
   childStrip: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingBottom: spacing.sm, backgroundColor: colors.sidebar },
   content: { flex: 1 },
   notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },

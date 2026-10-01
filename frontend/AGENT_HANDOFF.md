@@ -2,6 +2,17 @@
 
 更新：2026-09-30。FE-W09 前置為已 review 的前端 `83106c0`（draft PR #68），分支 `codex/fe-w09-agent-conversation`。正式契約核對穩定主線 `90dacd4e5c0a8be9e490fa7d94830ea369c57521`；只讀 API／控制器，沒有改 Server、正式 App 或根文件。
 
+2026-10-01 FE-W18 增補：基線 `f3ba9e35b718e68b5a23bf73072ec437cd746d22`，重核 GitHub `ce87370` 的 UI-P2-14／15；新增 [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx)，仍不把檔案附到 Chat API 或自動送模型。入口及限制如下；共用表面修正在 [COLOR_STRATEGY](COLOR_STRATEGY.md)。
+
+| 輸入入口 | 本包已實作／交接界線 |
+|---|---|
+| 拍照 | 進入 `/photos?input=camera`；query 只有有限 intent。復用原 JPEG／PNG、4 MiB、hash、blob 預覽及清理流程；使用者再次明確按「拍照或選圖」才開 file input。Web `capture=environment` 只是系統拍照偏好，桌面通常退回選檔；沒有 Webcam 操作或實機相機證據 |
+| 檔案與來源 | 共用 AppDialog／AppMenuList 分流至原照片選檔和私人文字／網址來源；返回對話保留原問題。PDF／Word 尚無本期支援，不能給任意文件新增上傳／模型協定；照片也不因此成為已發送的對話附件 |
+| 語音輸入 | SVG 入口及未接通提示已完成，返回文字輸入不清草稿；沒有咪高峰、錄音或轉文字 adapter。正式實作須另核 P3／平台權限及真 API，不能以本按鈕宣稱語音已接通 |
+| 正式接線 | `onPhotos(camera)`／`onSources()` 是現有流程導航，`onUseText()` 只回到輸入欄。主聊天若接對話附件，須明確分開選取、私人保存、模型同意、共享及實際聊天送出，沿既有附件／Agent 契約；原 opId／unknown、孩子／本人／Server 清理照舊 |
+
+FE-W18 必要輕量檢查：typecheck、20 組 token 對比、Web／Android export、四尺寸輸入入口／草稿／SVG／48 觸控及 390／320 的 150% Web 文字通過；共用選單／Dialog 另復用六寬度檢查。首次焦點檢查發現 Modal 還原開啟者蓋過同 frame 的輸入聚焦，改沿 `AppDialog.onClosed` 後 Web 回到文字欄通過。實際證據見 [checks](verification/fe-w18/checks-composer-surfaces.json)，正式 API、相機／咪高峰、PDF／Word、原生焦點與系統權限仍未驗。
+
 ## 交付與預覽
 
 開啟 `/chat` →「查看來源與候選」。[AgentRunView](src/components/agent/AgentRunView.tsx) 和 [AgentInboxView](src/components/agent/AgentInboxView.tsx) 是受資料模型／回調驅動的共用 React Native 畫面；[agent-view-model](src/agent-view-model.ts) 是顯示投影，不是 HTTP 協定。共用 Paper 按鈕、勾選、選單、卡片、SVG 和既有 OKLCH tokens，沒有新依賴或第二套色盤。

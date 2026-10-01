@@ -1,6 +1,6 @@
 # 育伴港配色策略
 
-核對日期：2026-09-30。這份文件記錄使用者參考圖的策略及前端採用理由；色值唯一實作入口是 [theme.ts](src/theme.ts)，品牌來源是 [原有美術簡要](../assets/BRIEF.md)，沒有改動正式品牌素材。
+核對日期：2026-10-01。這份文件記錄使用者參考圖的策略及前端採用理由；色值唯一實作入口是 [theme.ts](src/theme.ts)，品牌來源是 [原有美術簡要](../assets/BRIEF.md)，沒有改動正式品牌素材。
 
 ## 研究結論
 
@@ -17,6 +17,7 @@ OKLCH 的 L／C／h 分別描述感知明度、彩度及色相，方便有規則
 | 畫布 | paper 派生的 neutralSurface #F9F7F3 | 作為內容的中性底，不與主操作爭注意力 |
 | 左導覽／頂部欄／右資訊欄 | paper 派生的 quietSurface／sidebar #F6F4EC | 同一常駐導覽區沿用相同底色；品牌暖白 #FAF7EF 留在首頁品牌／海旁美術區 |
 | 卡片／彈窗 | 白色；暖灰裝飾分隔 | 讓內容層次來自留白、邊界及字級 |
+| 內嵌控制／資料標籤 | `controlSurface` 沿品牌 white；保留邊界、文字及選中角色 | 與暖灰導航分層，避免子女選擇器、資料標籤及側欄開關融入外層底色 |
 | 主要操作 | teal；強調入口用同色相較深的 deepTeal | 集中使用綠色標示可操作入口 |
 | 文字 | ink 作主要文字；muted 種子降低 L 得到可讀的次要文字 | 小字在暖白及淡色容器上仍可辨讀 |
 | 選中／提示底 | 同品牌色的低彩度淺色階 | 選中不靠大面積飽和色或顏色單獨表達 |
@@ -32,6 +33,7 @@ OKLCH 的 L／C／h 分別描述感知明度、彩度及色相，方便有規則
 
 - 常駐側欄採較安靜的中性暖灰，主畫布稍亮，資料卡片和彈窗採白色。各區靠留白、邊界及字級區分；不將「增加色塊」當作增加層次。這是沿成熟方案的角色分工作本項目映射，沒有照搬它們的品牌色。[Atlassian elevation](https://atlassian.design/foundations/elevation)、[Material 3 surface／container](https://developer.android.com/codelabs/m3-design-theming?hl=en)
 - 頂部欄、窄屏孩子摘要列及原生頂部沿用左導覽的 sidebar 色；內容卡片保持白色，讓常駐導航、主畫布、內容形成穩定層次。Carbon 的淺色主題可交替使用白與 Gray 10，深色主題才逐層變亮；本項目按表面用途映射，不把層次誤當成所有主題都必須單向變亮。[Carbon layering](https://carbondesignsystem.com/elements/color/overview/)
+- FE-W18 修正：同色的導航區不代表內嵌組件也用同色。`ChildPicker`、`ChildKeyFacts`、Web／原生側欄開關及共用表單／次要按鈕使用 `controlSurface`；只作既有白色的語義別名，不改 OKLCH 派生值。`quietSurface` 保留給白色卡片內的安靜內容及選單列，不能全域替換成白色而令另一層又融在一起。
 - 主要提交／對話入口使用 teal／deepTeal；次要按鈕、一般連結及孩子摘要用 ink，普通圖標用 muted。選中的導航和有效焦點才用淡青綠容器。
 - 首頁品牌美術區保留 paper；手機「今日重點」用 paleTeal，讓其位置有清楚視覺主次。內頁說明、記憶內容、預覽工具維持中性。
 - 琥珀只對應待確認／結果未知，珊瑚只對應明確失敗。不同狀態仍須文案與操作區分；「結果未知」不能靠改色變成已知失敗。
@@ -58,6 +60,8 @@ mintSurface、previewSurface 和操作狀態容器沿上述色階作語義別名
 ## 驗證與限制
 
 在 frontend 執行 npm run verify:colors。Culori 只屬 devDependency；檢查程式讀 theme.ts，核對已列明的文字／背景、按鈕及控制圖標組合，記錄未四捨五入的對比及 source hash。FE-W06 首輪核對 16 組；FE-W07 補查狀態容器內的兩組文字，共 18 組，沒有新增色值。
+
+FE-W18 增加共用 `controlSurface` 的文字及控制邊界兩組，共 20 組通過；仍沿品牌白色而非另造色階，見 [color-checks](verification/fe-w18/color-checks.json)。
 
 一般文字至少 4.5:1；辨識控制項／狀態所需的非文字視覺至少 3:1。裝飾分隔線、未啟用項目和整個產品的其他可存取要求不由這份 token 檢查代替。[WCAG 文字對比](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)、[非文字對比](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
 

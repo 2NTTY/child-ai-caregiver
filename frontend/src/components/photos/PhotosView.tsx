@@ -14,7 +14,7 @@ import { PhotoRecordForm } from "./PhotoRecordForm";
 import { photoStyles as s } from "./photo-styles";
 
 const operationLabels: Record<PhotosViewModel["operation"]["state"], string> = { none: "", saving: "處理中 · 尚未確認", saved: "已確認（合成預覽）", failed: "失敗 · 原輸入保留", unknown: "結果未知 · 先查核", unconfirmed: "查核尚無確認結果", conflict: "版本衝突 · 尚未保存", confirmed_unavailable: "原操作已確認 · 結果不可讀" };
-export function PhotosView({ model, actions, onCare, previewControls, selectOriginal }: { model: PhotosViewModel; actions: PhotosActions; onCare: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"] }) {
+export function PhotosView({ model, actions, onCare, previewControls, selectOriginal, capturePreferred, captureOriginal }: { model: PhotosViewModel; actions: PhotosActions; onCare: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"]; capturePreferred?: boolean; captureOriginal?: PhotoFilePickerProps["captureOriginal"] }) {
   const [width, setWidth] = useState(0);
   const split = width >= 780, compact = width < mobileLayout.breakpoint;
   const selected = model.selected;
@@ -47,7 +47,7 @@ export function PhotosView({ model, actions, onCare, previewControls, selectOrig
             {model.capacityReached ? <Text style={s.warning}>已模擬達到新增容量限制。可核對現有附件，不能再新增照片。</Text> : null}
             {model.reservationUnidentified ? <Text style={s.warning}>已確認操作的附件結果未能識別。保留原檔，不會再次建立；請逐項核對清單或明確清除本頁。</Text> : null}
             {(!selected || selected.state === "reserved") && model.access === "editable" ? <>
-              <PhotoFilePicker disabled={!model.canPick} onPick={actions.pickOriginal} onError={actions.reportFileError} selectOriginal={selectOriginal} />
+              <PhotoFilePicker disabled={!model.canPick} onPick={actions.pickOriginal} onError={actions.reportFileError} selectOriginal={selectOriginal} capturePreferred={capturePreferred} captureOriginal={captureOriginal} />
               {!selected ? <><AppTextField label="照片來源" accessibilityLabel="照片來源" value={model.source} disabled={model.formLocked} onChangeText={actions.editSource} error={!!model.sourceError} /><Text style={model.sourceError ? s.warning : s.meta}>{model.sourceError || "保留原文字；私人保存後沿用原來源。"}</Text></> : <Text style={s.meta}>待上傳附件只接受相同類型、大小及 SHA-256 的原檔；來源及附件識別保持原樣。</Text>}
               <AppButton label={selected ? "繼續上傳同一原檔" : "私人保存原照片"} disabled={!model.canUpload} onPress={actions.upload} />
             </> : null}

@@ -21,7 +21,7 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
     <Button
       ref={ref}
       mode={variant === "primary" || variant === "accent" ? "contained" : variant === "secondary" ? "outlined" : "text"}
-      buttonColor={variant === "accent" ? colors.deepTeal : undefined}
+      buttonColor={variant === "accent" ? colors.deepTeal : variant === "secondary" ? colors.controlSurface : undefined}
       textColor={variant === "accent" ? colors.white : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
       onPress={onPress}
       disabled={disabled || loading}
@@ -195,13 +195,13 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: colors.teal },
   tabText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },
   tabTextActive: { color: colors.deepTeal, fontWeight: "800" },
-  input: { backgroundColor: colors.white, fontFamily: chineseFont },
+  input: { backgroundColor: colors.controlSurface, fontFamily: chineseFont },
   // Keep the scrolling textarea below its floating label, including enlarged text.
   multilineContent: { marginTop: spacing.md },
   inputOutline: { borderColor: colors.controlOutline, borderRadius: radius.small },
   selectDialog: { maxWidth: 440, width: "90%", alignSelf: "center", marginHorizontal: 0 },
   selectList: { maxHeight: 360 },
-  selectionTrigger: { minHeight: 44, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small, backgroundColor: colors.white },
+  selectionTrigger: { minHeight: 44, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small, backgroundColor: colors.controlSurface },
   selectionLabel: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "600", lineHeight: 22 },
   selectionDisabled: { opacity: 0.5 },
 });

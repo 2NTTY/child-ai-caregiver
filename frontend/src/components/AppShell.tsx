@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   topLogo: { width: 124, height: 44 },
   topLogoTiny: { width: 114 },
   topActions: { marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  infoAction: { minWidth: 44, minHeight: 44, backgroundColor: colors.quietSurface, borderRadius: radius.small, alignItems: "center", justifyContent: "center" },
+  infoAction: { minWidth: 44, minHeight: 44, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small, alignItems: "center", justifyContent: "center" },
   infoActionTiny: { minWidth: 38, minHeight: 40 },
   panelIcon: { width: 20, height: 17, borderWidth: 1.7, borderColor: colors.deepTeal, borderRadius: 4, alignItems: "flex-end", justifyContent: "center" },
   panelIconDivider: { width: 6, height: 15, borderLeftWidth: 1.7, borderLeftColor: colors.deepTeal },

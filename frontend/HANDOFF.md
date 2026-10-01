@@ -4,6 +4,10 @@
 
 ## 交付範圍及入口
 
+**最新 FE-W18**（基線 `f3ba9e35b718e68b5a23bf73072ec437cd746d22`／現有 draft PR #73）：內嵌控制、資料標籤和側欄開關統一 `controlSurface`；`quietSurface` 留給另一層內容，不改品牌 OKLCH 值。Agent 新增 [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx)，照片／拍照入口沿原 `PhotosView`／`PhotoFilePicker`，文字／網址沿原 `/sources`；全部仍未送入 Chat API。入口回調、capture fallback、語音／PDF／Word未支援及保留草稿要求見 [AGENT_HANDOFF](AGENT_HANDOFF.md)，原生相機 port 見 [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)。正式相機／語音／任意文件與對話附件須另行接線，不能把此導覽當聊天已支持多模態。
+
+本包只改 frontend。必要 typecheck、20 組對比、15 頁四尺寸共 60 個重排、輸入／草稿／48 觸控與 150% Web 文字、六寬度 Dialog／SVG／選單及 Web／Android export 通過；實際 PNG／結果與產物／23 檔案 hash 見 [build-checks](verification/fe-w18/build-checks.json)／[最終檢查](verification/fe-w18/checks-layout-design-composer-surfaces.json)。首輪發現並修正 Modal 焦點先還原開啟者的競態；Web 已驗、原生未驗。未呼叫 Server、模型、相機／咪高峰或真通知，使用者視覺及正式整合仍待驗收。
+
 **已實作前端源碼；全部資料操作只屬合成預覽，尚未接真 API。** Web／Android 維持靜態，`/motion-preview` 只保留舊比較樣本。所有新增依賴、設定、測試、Skill 和文件均在本目錄；不替換已驗收正式首頁，不修改其他聊天的後端／Agent 或權威文件，不自行 merge。
 
 2026-10-01 已按 GitHub `ce87370` 對照 UI-P2-01–18，補齊本期隔離前端範圍；目前交付仍在 `codex/fe-w11-photos`／draft PR #73，與正式 App 分開。最新新增聯絡及固定求助的入口／控制器差異見 [CONTACT_HANDOFF](CONTACT_HANDOFF.md)，各源碼／證據版本按功能包保存。

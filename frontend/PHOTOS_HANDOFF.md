@@ -1,5 +1,7 @@
 # 照片前端交接
 
+2026-10-01 FE-W18 增補：Agent 的拍照入口帶有限 `/photos?input=camera` intent，照片／檔案入口仍復用下述原檔及狀態流程。[PhotoFilePicker.web](src/components/photos/PhotoFilePicker.web.tsx) 在拍照偏好時多提供 `capture=environment` 的 file input，另保留普通選檔；不在路由載入時自動開相機。原生 `captureOriginal(): Promise<PhotoOriginal | null>` 與既有 `selectOriginal` 分開，未注入的相機按鈕停用；正式 adapter／權限由主聊天接續。來源／私人保存／提取／共享及 unknown 行為未改；相關導航與限制見 [AGENT_HANDOFF](AGENT_HANDOFF.md)。
+
 FE-W11：`codex/fe-w11-photos`；源碼及驗證 commit `ddcf651d820c12f6f46b2c1c01357afb6789fc1f`，由 B 帳號 `CherylNg-2526` 推送及建立 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)，前置 FE-W10 `596c657fa7c67eb264c31bc65538c6822c360df2`（draft PR #70）。只改 `frontend/**`，主責 B，責任份額 100%、權重 5；AI 實作及驗證，實際 Committer 為 `2NTTY`，沒有聲稱 B 親自操作或 Verified 簽章。視覺由使用者確認，正式 Web／P3 接線由主聊天負責，不自行 merge。
 
 ## 契約及範圍

@@ -20,6 +20,8 @@ export const colors = {
   line: "#DAD7D0",
   softLine: "#EEECE6",
   controlOutline: "#76847F",
+  // Inset controls stay distinct from the warm navigation surface.
+  controlSurface: "#FFFFFF",
   neutralSurface: "#F9F7F3",
   sidebar: "#F6F4EC",
   selectedNav: "#DBF1EC",

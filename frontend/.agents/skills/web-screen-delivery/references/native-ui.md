@@ -7,6 +7,8 @@
 - Root 使用 SafeAreaProvider；原生外殼透過 useSafeAreaInsets 處理自訂頂欄及抽屜，Tabs 保留自身的底部安全區。不要重複加入底部 inset 或畫假的系統狀態欄。Android 表單沿 window resize，Tabs 使用 tabBarHideOnKeyboard；這些配置仍須實機驗證。
 - viewport 只決定組件如何重排；頁內多欄由 onLayout 的內容寬度決定。320 的容器、表單與選单都要檢查，不能只看整頁 scrollWidth 而漏掉被裁切的控件。字體採原生預設可伸縮字體，不為套截圖固定全部尺寸。
 - Web 僅在 Platform 為 web 時使用 window／beforeunload；原生不能直接執行 DOM 或瀏覽器 API。返回鍵先關已開抽屜，帳戶和身份變更沿正式控制器清理；不把本地記憶體或 Expo bundle 當已登入／已保存。
+- 照片／拍照入口復用 `PhotoFilePicker` 的讀檔、原檔校驗與清理。Web 用明確按下的原生 file input；拍照偏好只在相機用的 input 加 `capture=environment`，另留普通選檔。capture 相容性有限，手機可能提供系統拍照、桌面通常只提供選檔，不能宣稱 Webcam 或實機相機已驗；不在路由載入時自動開相機。原生的 `selectOriginal`／`captureOriginal` 是分開的薄 port，未注入時停用，不能用相簿 adapter 冒充相機。
+- Agent 工具列只提供已有流程入口及真實能力說明。語音未接通時顯示未接通並保留文字草稿，不畫假錄音／轉文字；PDF／Word 不由照片 MIME 或分享文字契約推造支援。URI 只帶有限入口 intent，不帶私人問題、原文、檔名或 blob URL。官方參考：[MDN capture](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/capture)／[Expo ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)，2026-10-01 補核；本包未安裝 ImagePicker，官方方案相容性不代表原生 adapter 已實作。
 - `expo export --platform android` 只驗 JS／資產 bundle；Android Web 預覽只驗共享畫面。APK 安裝、系統字體／鍵盤／返回鍵／安全區／TalkBack、帳戶和相機／通知權限另列待驗收，不能據 bundle 成功標 P3 已完成。
 
 官方資料已核對：[JavaScript Tabs](https://docs.expo.dev/router/advanced/tabs/)、[Safe Areas](https://docs.expo.dev/develop/user-interface/safe-areas/)。本項目實作檢查及限制見 [HANDOFF](../../../../HANDOFF.md)；實際證據獨立記錄，文件相容不代表真機通過。

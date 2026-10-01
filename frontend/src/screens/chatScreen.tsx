@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState, type ComponentRef } from "react";
+import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { Text } from "react-native-paper";
+import { Text, TextInput } from "react-native-paper";
 import { AppButton, AppTextField, SectionCard } from "../components/ui";
 import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";
 import { EmergencyHelpView } from "../components/agent/EmergencyHelpView";
+import { AgentInputToolbar } from "../components/agent/AgentInputToolbar";
 import { emergencyHelpSnapshot } from "../preview/emergency-help-data";
 import { usePreview } from "../preview/PreviewContext";
 import { AppIcon } from "../components/AppIcon";
@@ -12,6 +14,8 @@ import { chineseFont, colors, mobileLayout, mobileType, radius, spacing, typeSca
 const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄", "先列出想問的問題"];
 
 export default function ChatPage() {
+  const router = useRouter();
+  const input = useRef<ComponentRef<typeof TextInput>>(null);
   const { model, actions, chatDraft, setChatDraft } = usePreview();
   const [localMessages, setLocalMessages] = useState<Record<string, string[]>>({});
   const viewportWidth = useWindowDimensions().width;
@@ -54,7 +58,11 @@ export default function ChatPage() {
     </ScrollView>
     <View testID="chat-composer" style={[styles.composer, compact && styles.mobileComposer]}>
       <View style={styles.composerTop}><Text style={styles.composerLabel}>撰寫問題</Text><Text style={styles.composerHint}>只供本地預覽；不會發送或保存</Text></View>
-      <View style={styles.composerRow}><AppTextField multiline accessibilityLabel="撰寫對話問題" placeholder="輸入你想討論的照顧問題…" value={chatDraft} onChangeText={setChatDraft} style={[styles.composerInput, compact && styles.mobileComposerInput]} disabled={!child} /><AppButton label={compact ? "預覽" : "預覽輸入"} accessibilityLabel="預覽輸入" onPress={previewMessage} disabled={!child || !chatDraft.trim()} /></View>
+      <View style={styles.composerRow}><AppTextField ref={input} multiline accessibilityLabel="撰寫對話問題" placeholder="輸入你想討論的照顧問題…" value={chatDraft} onChangeText={setChatDraft} style={[styles.composerInput, compact && styles.mobileComposerInput]} disabled={!child} /></View>
+      <View style={styles.composerActions}><AgentInputToolbar key={JSON.stringify([child?.id, model.caregiverName])} disabled={!child} compact={compact}
+        onPhotos={camera => camera ? router.push({ pathname: "/photos", params: { input: "camera" } }) : actions.open("photos")}
+        onSources={() => actions.open("sources")} onUseText={() => input.current?.focus()} />
+        <AppButton label={compact ? "預覽" : "預覽輸入"} accessibilityLabel="預覽輸入" onPress={previewMessage} disabled={!child || !chatDraft.trim()} /></View>
       <ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll} contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled"><Text style={styles.suggestionLabel}>建議提問：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={item} disabled={!!chatDraft.trim() || !child} onPress={() => setChatDraft(item)} style={({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (!!chatDraft.trim() || !child) && styles.suggestionDisabled, pressed && styles.pressed]}><Text style={styles.suggestionText}>{item}</Text></Pressable>)}</ScrollView>
     </View>
   </View>;
@@ -66,6 +74,7 @@ const styles = StyleSheet.create({
   mobilePage: { paddingHorizontal: mobileLayout.pageInset },
   mobileComposer: { paddingHorizontal: mobileLayout.pageInset, paddingVertical: spacing.sm },
   mobileComposerInput: { minWidth: 0, fontSize: mobileType.body.fontSize },
+  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" },
   suggestionScroll: { flexGrow: 0 },
   mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm },
   mobileSuggestion: { minHeight: mobileLayout.touchTarget, flexShrink: 0 },

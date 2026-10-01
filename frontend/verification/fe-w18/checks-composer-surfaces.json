@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-01T07:48:32.370Z",
+  "passed": [
+    "composer/surfaces: 4 widths, distinct shared controls, SVG/48 targets, keyboard/file/voice statuses, camera picker/file preview, source navigation, retained question and 150% Web text; no real camera/microphone/Server"
+  ],
+  "failures": []
+}

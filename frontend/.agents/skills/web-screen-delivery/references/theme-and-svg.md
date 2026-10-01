@@ -5,6 +5,8 @@
 - 配色先讀 assets/BRIEF.md 及 frontend/COLOR_STRATEGY.md。執行色值集中 theme.ts；保持品牌來源及語義角色，不逐頁加 HEX 或因參考圖而另造品牌色。OKLCH 用於有用途的候選色及明暗色階，色相旋轉不保證語義、色域或對比。原生輸出用已核對的 sRGB HEX。
 - 色階與放置分開判斷。沿 Material／Carbon／Atlassian 的用途分工：畫布及常駐側欄用中性色，內容卡片／彈窗用白色，次要操作及普通 SVG 保持中性；品牌色集中於主要操作和選中，琥珀／珊瑚只作相應狀態。用留白、字級、邊界和少量表面層次建立主次，不能將每個標題／圖標／卡片都染成主色。成熟方案提供角色原則，不覆蓋育伴港品牌色或產品語義。
 - 同一常駐導航區的頂部／側欄沿用 sidebar，內容畫布及白色卡片按用途分層。Carbon 的 light layers 可交替，dark layers 才逐層變亮；不為模仿層次而每個區域另造色值。
+- 內嵌控制與其外層分開選表面：暖灰導航內的孩子切換、資料標籤及側欄開關沿 `controlSurface`（既有白色別名），保留邊界／文字／選中角色；共用輸入及次要按鈕同樣沿此 token。`quietSurface` 仍可放在白色卡片內的內容或選單列，不全域換色。改表面後核對實際父／子底色，而非只檢查 primary 或 theme 常量。
+- 明確要求轉移焦點時，不能在關閉 Modal 的同一 frame 搶焦點。RN Web 0.21.2 的 focus trap 會先還原開啟者；沿 `AppDialog.onClosed`（RN Modal.onDismiss）在關閉後轉移。RN 0.86 的 onDismiss 只適用 iOS，Android 分開處理且仍需實機驗；沒有明確轉移要求時保留原焦點還原。FE-W18 已核對本機 0.21.2 原文及 Web 行為；[RN Web Modal](https://necolas.github.io/react-native-web/docs/modal/) 文件目前是 0.21.3，不能當作該版本實測；[RN Modal](https://reactnative.dev/docs/0.86/modal#ondismiss)。
 - 全幅品牌背景沿 RN Image 配現有 SVG LinearGradient：Defs 內以 useId 產生唯一 id，Rect 透過 fill URL 引用；Stop 使用既有 canvas token 及 stopOpacity，橫向漸淡保護文字，必要時加底部漸淡接回畫布。Image 明確設 100% 寬高／cover；RN Web 0.21.2 實測只設 absoluteFill 仍保留靜態素材 1672×941 原尺寸，須檢查實際人物構圖而不只看無溢出。背景 pointerEvents=none、略過朗讀及焦點；文字可換行、容器以 minHeight 隨大字體增高。官方 API 已核對：[SVG LinearGradient](https://github.com/software-mansion/react-native-svg/blob/main/USAGE.md#lineargradient)，執行證據見 frontend/verification/fe-w12；Web 截圖不當作原生實機通過。
 - MD3 的 primary 不會自動更新其餘 surface／elevation／on*／backdrop／disabled 色。完整覆蓋品牌角色，不能遺留預設紫色。Paper 5.15.3 的 Dialog 使用 7 × roundness；roundness 保持倍率基數 4，AppDialog 用共用卡片 radius.large，不能將 16 px 卡片圓角直接當倍率。
 - 反覆導航選單沿 AppMenuList；左圖标、文字、右箭嘴及觸控高度一致。彈窗標題、白底、圓角及 Actions 集中 AppDialog，沿原 RN Modal 焦點／Escape，不以逐頁 CSS 修補 Paper internals。
@@ -20,3 +22,5 @@
 角色及輸出核對來源：[Material 3 主題](https://developer.android.com/codelabs/m3-design-theming?hl=en)、[Carbon 色彩](https://carbondesignsystem.com/elements/color/overview/)、[Atlassian 色彩](https://atlassian.design/foundations/color)／[層次](https://atlassian.design/foundations/elevation)、[React SSR 首次渲染](https://react.dev/reference/react/useEffect#displaying-different-content-on-the-server-and-the-client)、[Expo Web export 預覽](https://docs.expo.dev/guides/publishing-websites/)。
 
 已核對套件源碼及版本；FE-W06 核對 16 個 token 對比，FE-W07 補查狀態容器後共 18 組。執行畫面／建置證據見 frontend/verification/fe-w06-design、fe-w07 及 HANDOFF。真 API、完整可存取驗收和 Android 實機未因本研究通過。
+
+FE-W18 增補 controlSurface 兩組，共 20 組通過；父／子表面、輸入入口、Web 焦點及六寬度共用 Dialog／選單證據見 frontend/verification/fe-w18。沒有實機相機／咪高峰或正式服務驗收。

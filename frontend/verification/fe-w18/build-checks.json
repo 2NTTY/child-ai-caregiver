@@ -1,0 +1,193 @@
+{
+  "scope": "Shared component surfaces and Agent input navigation; isolated synthetic frontend only, no backend integration or device acceptance",
+  "verifiedAt": "2026-10-01T08:08:08.518Z",
+  "baselineCommit": "f3ba9e35b718e68b5a23bf73072ec437cd746d22",
+  "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "authoritySources": [
+    {
+      "path": "docs/P2_UI_HANDOFF.md",
+      "githubBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1"
+    },
+    {
+      "path": "docs/API.md",
+      "githubBlob": "69fd07e18f649e4862030001837662d5e2fdc19b"
+    },
+    {
+      "path": "src/shared/photos.ts",
+      "githubBlob": "8c0808ef91a7f82cab64228984dadc48b549e62a"
+    },
+    {
+      "path": "src/shared/shared-inputs.ts",
+      "githubBlob": "2ea4a6a123c4a9889c4a6a08aca6d0294ddbe9a1"
+    }
+  ],
+  "sourceSnapshot": {
+    "files": [
+      {
+        "path": "frontend/src/theme.ts",
+        "sha256": "6ce10cb0ef466a86193a1285fde3f7a29a07a46a1859501e5497e2e962dd23ed"
+      },
+      {
+        "path": "frontend/src/components/ui.tsx",
+        "sha256": "1bd1613c2c51753d802dcdc279a6b9bed3ecc5a80f0d367801d5335a6a22dd0c"
+      },
+      {
+        "path": "frontend/src/components/AppDialog.tsx",
+        "sha256": "bce79e176eaa4d62cef770c04c490b6a75e2bc198e8bc314287231f63776efb0"
+      },
+      {
+        "path": "frontend/src/components/AppIcon.tsx",
+        "sha256": "a475e230bf11d8030198cb1e0f3e2d80a4cfd2fad0d603fc48a0b28d99308602"
+      },
+      {
+        "path": "frontend/src/components/AppShell.tsx",
+        "sha256": "0c86e43f10fb3dd79da06d6fd417e96b35ee7dabf38265a8935b4f5a574b1e26"
+      },
+      {
+        "path": "frontend/src/components/NativeAppShell.tsx",
+        "sha256": "a8db9e9a93a2f4e3762def22dcda0cd355471c1581c815ddcd5d10a25d70a978"
+      },
+      {
+        "path": "frontend/src/components/ChildPicker.tsx",
+        "sha256": "c9df9ff6deeaa8bf6ba8fa9bc71327a9b4225156e401e30569d1ce3198d23c1a"
+      },
+      {
+        "path": "frontend/src/components/ChildKeyFacts.tsx",
+        "sha256": "eef3e7a897d98b81c9cab1c9af5e7fa2d530e8397c487f52a7a8e993aa9efaea"
+      },
+      {
+        "path": "frontend/src/components/AppMenuList.tsx",
+        "sha256": "345351fd165ae2e1b35fdcd9a5ee7e80bfd1eec57d65e5d1dce95e3553ad0ec2"
+      },
+      {
+        "path": "frontend/src/components/agent/AgentInputToolbar.tsx",
+        "sha256": "36d7a3aa386e2c21581abd81f2c70ecaab1af7f1335d62d701d0bbe57cc5ffb9"
+      },
+      {
+        "path": "frontend/src/components/photos/PhotoFilePicker.tsx",
+        "sha256": "6859f118557e740fe53d01db999af68f084c17852deb4c75a84a1813f6a04e70"
+      },
+      {
+        "path": "frontend/src/components/photos/PhotoFilePicker.web.tsx",
+        "sha256": "509c5ba2038dd3d76a0f818986f862d006574d75289bb7556e8d6817d138d41f"
+      },
+      {
+        "path": "frontend/src/components/photos/PhotosView.tsx",
+        "sha256": "cbce22edd7ed3b18e25f9abb95ad4b80b641825ca346909b16a28cd3cfa9332c"
+      },
+      {
+        "path": "frontend/src/screens/chatScreen.tsx",
+        "sha256": "81bce8ea404bfba4423ff6806bc1786d39fe95a95923f5bf67c2b44e97b28d4e"
+      },
+      {
+        "path": "frontend/src/screens/photosScreen.tsx",
+        "sha256": "7a246723aa1ae045da7941dfd83b0d6eab67a02dc1360f4862ee350c60dea39e"
+      },
+      {
+        "path": "frontend/src/photo-view-model.ts",
+        "sha256": "fdc883271ad04533dd2de1519439d15a78016a6f710095ab717f06f56c762a5f"
+      },
+      {
+        "path": "frontend/src/preview/usePhotosPreview.ts",
+        "sha256": "5087f6494fcee70c572dab0d8c2aaddf0dc34715024fac01d39323ffb93318ce"
+      },
+      {
+        "path": "frontend/src/preview/PreviewContext.tsx",
+        "sha256": "216c8d9951b26cf484bea86820ca2955a6dfcff8e30dd8299dfa49d53e232a55"
+      },
+      {
+        "path": "frontend/scripts/verify-ui.mjs",
+        "sha256": "778c15d6ef94535bc64629ecf21c737b61349148a03e2c18fa1ae42e76aaca82"
+      },
+      {
+        "path": "frontend/scripts/preview-browser.mjs",
+        "sha256": "fe49ce8ffce72bce7683a762d2e94eee7a0bc57c40d924026ab4117dab76fb41"
+      },
+      {
+        "path": "frontend/scripts/verify-colors.mjs",
+        "sha256": "bb9eae9df70dbb35664e59dd8fa560a551b20d0f189c405afd6133858050422e"
+      },
+      {
+        "path": "frontend/scripts/flows/design.mjs",
+        "sha256": "d6a4ff8070664741cab36fc3ea640c23a80a47c09a75aaf6a313841c198f5da5"
+      },
+      {
+        "path": "frontend/scripts/flows/composer-surfaces.mjs",
+        "sha256": "c320243ca51a85687579ffccc04453f76c6365deb274f98141f6ff7477332cad"
+      }
+    ],
+    "sha256": "30a662319cf54d66bd7b9fec481d92259c1c5a6301792ab43261dd0633815208"
+  },
+  "versions": {
+    "expo": "57.0.24",
+    "expo-router": "57.0.22",
+    "react-native": "0.86.3",
+    "react-native-web": "0.21.2",
+    "react-native-paper": "5.15.3",
+    "lucide-react-native": "1.49.0",
+    "react-native-svg": "15.15.4"
+  },
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run verify:colors",
+      "exitCode": 0,
+      "pairs": 20,
+      "evidence": "color-checks.json"
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build:android-ui",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/verify-ui.mjs layout design composer-surfaces",
+      "exitCode": 0,
+      "evidence": "checks-layout-design-composer-surfaces.json",
+      "layouts": 60,
+      "designWidths": [
+        1440,
+        1024,
+        840,
+        744,
+        390,
+        320
+      ],
+      "inputWidths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "webTextScalingWidths": [
+        390,
+        320
+      ]
+    }
+  ],
+  "web": {
+    "path": "dist/_expo/static/js/web/entry-08c58a94cf231c654cebe8d5a9b57dd8.js",
+    "sha256": "2a734e97ee17bc2fd1b3912b283b035f95b9dc05748598295405db2adbbb19f5",
+    "htmlRoutes": 33
+  },
+  "android": {
+    "path": "dist-android/_expo/static/js/android/entry-17361e3bfa09b33d5521d11e0a6bf40c.hbc",
+    "sha256": "d94490a9437dd04edfc7bb49fa3eddcba2f52358623bc89988c066a30fad5d56",
+    "assets": 31
+  },
+  "failureAndResolution": "First input check found Modal focus restoration overriding the same-frame textarea focus; AppDialog.onClosed waits for Web Modal dismissal before moving focus. Final Web keyboard checks passed. Native focus/device behavior is unverified.",
+  "limits": [
+    "No Server, model, upload or notification call",
+    "Capture attribute/file preview checked with a synthetic PNG, no actual camera use",
+    "Voice entry shows unconnected status, no microphone/recording/transcription",
+    "PDF/Word and actual chat attachments unsupported, no new protocol",
+    "Android export only, no APK/device/system-permission acceptance",
+    "User visual approval and formal integration pending"
+  ]
+}
