@@ -1,11 +1,11 @@
 import { brand } from "../../branding";
 import { useState, type ReactNode } from "react";
 import { Image, View } from "react-native";
-import { ActivityIndicator, Dialog, Portal, Text } from "react-native-paper";
+import { ActivityIndicator, Portal, Text } from "react-native-paper";
 import type { PhotosActions, PhotosViewModel } from "../../photo-view-model";
 import { photoExtractionLabels } from "../../photo-view-model";
 import { colors, mobileLayout } from "../../theme";
-import { AppDialog } from "../AppDialog";
+import { AppDialog, AppDialog as Dialog } from "../AppDialog";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
 import { PageFrame } from "../PageFrame";
@@ -77,14 +77,14 @@ export function PhotosView({ model, actions, onCare, previewControls, selectOrig
       <Dialog.Title>取代本頁原檔與草稿？</Dialog.Title><Dialog.Content><Text style={s.body}>這個動作會清除目前編輯器的原檔及未共享草稿。已保存的合成附件仍在清單；結果未知時不能用更換照片避開查核。</Text></Dialog.Content>
       <Dialog.Actions style={s.row}><AppButton label="保留目前草稿" variant="quiet" onPress={actions.cancelReplacement} /><AppButton label="確認取代本頁" onPress={actions.confirmReplacement} /></Dialog.Actions>
     </AppDialog>
-      <AppDialog visible={model.deletion} onDismiss={actions.closeDeletion}>
-        <Dialog.Title>刪除照片及連結記錄</Dialog.Title><Dialog.Content><View style={s.stack}><Text style={s.body}>{selected?.fileName} · 版本 {selected?.version}</Text>
+      <AppDialog danger visible={model.deletion} onDismiss={actions.closeDeletion}>
+        <Dialog.Title danger>刪除照片及連結記錄</Dialog.Title><Dialog.Content><View style={s.stack}><Text style={s.body}>{selected?.fileName} · 版本 {selected?.version}</Text>
           <Text style={s.body}>{selected?.recordId ? "這會移除原照片及已連結的家庭確認記錄，家庭成員將不能再讀取。" : "這會移除這份附件及原照片；它尚未連結家庭確認記錄。"}</Text>
           <AppCheckbox label="我已核對照片與連結記錄的刪除範圍" checked={model.deleteScope} disabled={locked} onChange={actions.setDeleteScope} />
           <AppCheckbox label="我確認要刪除這份照片及連結記錄" checked={model.deleteFinal} disabled={locked} onChange={actions.setDeleteFinal} />
           <Text style={s.meta}>刪除確認不等於實體檔案及備份即時清理完成。結果未知時先查核原操作。</Text>
           {model.operation.phase === "delete" && ["unknown", "unconfirmed"].includes(model.operation.state) ? <AppButton label="查核原照片刪除" disabled={!model.online || model.busy} onPress={actions.checkOriginal} /> : null}
-        </View></Dialog.Content><Dialog.Actions style={s.row}><AppButton label="返回照片" variant="quiet" disabled={model.busy} onPress={actions.closeDeletion} /><AppButton label="確認刪除" accessibilityLabel="確認刪除照片" disabled={!model.canDelete || !model.deleteScope || !model.deleteFinal} onPress={actions.deletePhoto} /></Dialog.Actions>
+        </View></Dialog.Content><Dialog.Actions style={s.row}><AppButton label="返回照片" variant="quiet" disabled={model.busy} onPress={actions.closeDeletion} /><AppButton label="確認刪除" accessibilityLabel="確認刪除照片" variant="danger" disabled={!model.canDelete || !model.deleteScope || !model.deleteFinal} onPress={actions.deletePhoto} /></Dialog.Actions>
       </AppDialog></Portal>
   </PageFrame>;
 }

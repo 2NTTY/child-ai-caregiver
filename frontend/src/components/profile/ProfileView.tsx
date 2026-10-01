@@ -72,9 +72,9 @@ export function ProfileView({ model, actions, childPicker, writeNotice, previewC
             <AppButton label="已比較，使用最新基準" onPress={actions.useLatestVersion} disabled={!model.latest || !model.online || model.reading} />
           </View> : null}
           {model.child && model.current?.data ? <AppButton label="永久刪除檔案及歷史" variant="quiet" onPress={actions.reviewDeletion} disabled={!canReview || model.intent === "delete"} /> : null}
-          {model.operation.state === "needs_confirmation" && model.intent === "delete" ? <View style={styles.confirmation}>
-            <Text style={styles.confirmationTitle}>再次確認永久刪除</Text><Text style={styles.body}>會清除整個檔案及全部更正歷史，不能從歷史復原。孩子及照顧記錄仍會保留。</Text>
-            <AppButton label="確認永久刪除檔案及歷史" onPress={actions.submitReviewed} disabled={!canReview} />
+          {model.operation.state === "needs_confirmation" && model.intent === "delete" ? <View style={[styles.confirmation, styles.deletionConfirmation]}>
+            <Text style={[styles.confirmationTitle, styles.deletionTitle]}>再次確認永久刪除</Text><Text style={styles.body}>會清除整個檔案及全部更正歷史，不能從歷史復原。孩子及照顧記錄仍會保留。</Text>
+            <AppButton label="確認永久刪除檔案及歷史" variant="danger" onPress={actions.submitReviewed} disabled={!canReview} />
             <AppButton label="取消刪除" variant="quiet" onPress={actions.cancelReview} />
           </View> : null}
           {model.operation.state === "failed" && model.intent === "delete" ? <AppButton label="返回檔案草稿" variant="secondary" onPress={actions.cancelReview} /> : null}
@@ -94,6 +94,8 @@ const styles = StyleSheet.create({
   label: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
   warning: { backgroundColor: colors.paleAmber, padding: spacing.md, gap: spacing.sm, borderRadius: radius.small },
   confirmation: { backgroundColor: colors.paleAmber, padding: spacing.md, borderRadius: radius.small, gap: spacing.md, minWidth: 0 },
+  deletionConfirmation: { backgroundColor: colors.paleCoral },
+  deletionTitle: { color: colors.errorInk },
   confirmationTitle: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
   historyItem: { borderTopWidth: 1, borderColor: colors.line, paddingTop: spacing.md },
 });

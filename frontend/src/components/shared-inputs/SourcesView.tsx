@@ -64,7 +64,7 @@ export function SourcesView({ model, actions, onPhotos, onRecord, previewControl
       </SectionCard></View>
     </View>
     {previewControls}
-    <AppDialog visible={model.deleteOpen} onDismiss={actions.closeDeletion}><AppDialog.Title>刪除私人來源</AppDialog.Title><AppDialog.ScrollArea><ScrollView contentContainerStyle={s.stack}>
+    <AppDialog danger visible={model.deleteOpen} onDismiss={actions.closeDeletion}><AppDialog.Title danger>刪除私人來源</AppDialog.Title><AppDialog.ScrollArea><ScrollView contentContainerStyle={s.stack}>
       <Text style={s.body}>將刪除「{model.selected?.sourceLabel}」及已連結的家庭記錄：{model.selected?.recordId ?? "目前沒有連結記錄"}。沒有刪除其他私人來源或家庭資料。</Text>
       <AppCheckbox label="我明白刪除範圍包含原文及已連結記錄" checked={model.deleteScope} disabled={!model.canDelete} onChange={value => { actions.setDeleteScope(value); actions.setDeleteFinal(false); }} />
       <AppCheckbox label="我再次確認刪除此來源及連結記錄" checked={model.deleteFinal} disabled={!model.canDelete || !model.deleteScope} onChange={actions.setDeleteFinal} />
@@ -74,7 +74,7 @@ export function SourcesView({ model, actions, onPhotos, onRecord, previewControl
         {model.operation.state === "confirmed_unavailable" ? <AppButton label="結束已確認刪除" variant="secondary" disabled={!model.operation.checked || !model.online || model.load !== "ready" || model.busy} onPress={actions.finishUnavailable} /> : null}
       </> : null}
     </ScrollView></AppDialog.ScrollArea><AppDialog.Actions><AppButton label="返回來源" variant="quiet" disabled={model.busy} onPress={actions.closeDeletion} />
-      <AppButton label="確認刪除來源及連結記錄" disabled={!model.canDelete || !model.deleteScope || !model.deleteFinal} onPress={actions.remove} />
+      <AppButton label="確認刪除來源及連結記錄" variant="danger" disabled={!model.canDelete || !model.deleteScope || !model.deleteFinal} onPress={actions.remove} />
     </AppDialog.Actions></AppDialog>
   </PageFrame>;
 }

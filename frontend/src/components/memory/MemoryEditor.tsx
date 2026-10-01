@@ -152,7 +152,7 @@ function LifecycleEditor({ preview, editor, online }: { preview: MemoryPreviewCo
       <Text style={styles.title}>{deleting ? "第二次確認 · 永久刪除" : deactivating ? "明確確認停用" : "明確確認這項事實"}</Text>
       {deactivating ? <Text style={styles.body}>原因：{reviewed.reason}</Text> : null}
       {deleting || shared ? <Acknowledgement label={deleting ? "我明白會永久刪除這項記憶及全部版本" : "我已核對將公開的家庭共享內容及來源"} checked={acknowledged} onChange={() => setAcknowledged(value => !value)} disabled={disabled} /> : null}
-      <AppButton label={deleting ? "確認永久刪除" : deactivating ? "確認停用事實" : "確認為已核對事實"} disabled={disabled || (deleting || shared) && !acknowledged} onPress={() => {
+      <AppButton label={deleting ? "確認永久刪除" : deactivating ? "確認停用事實" : "確認為已核對事實"} variant={deleting ? "danger" : "primary"} disabled={disabled || (deleting || shared) && !acknowledged} onPress={() => {
         if (editor.kind === "fact" && "key" in basis) {
           if (deleting) preview.submit({ kind: "delete_fact", basis });
           else if (deactivating) preview.submit({ kind: "deactivate_fact", basis, reason: reviewed.reason });

@@ -10,7 +10,7 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   label: string;
   accessibilityLabel?: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "quiet" | "accent";
+  variant?: "primary" | "secondary" | "quiet" | "accent" | "danger";
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -20,9 +20,9 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   return (
     <Button
       ref={ref}
-      mode={variant === "primary" || variant === "accent" ? "contained" : variant === "secondary" ? "outlined" : "text"}
-      buttonColor={variant === "accent" ? colors.accent : variant === "secondary" ? colors.controlSurface : undefined}
-      textColor={variant === "accent" ? colors.onAccent : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
+      mode={variant === "primary" || variant === "accent" || variant === "danger" ? "contained" : variant === "secondary" ? "outlined" : "text"}
+      buttonColor={variant === "danger" ? colors.errorInk : variant === "accent" ? colors.accent : variant === "secondary" ? colors.controlSurface : undefined}
+      textColor={variant === "danger" ? colors.white : variant === "accent" ? colors.onAccent : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
       onPress={onPress}
       disabled={disabled || loading}
       loading={loading}
@@ -125,7 +125,7 @@ export function OperationPill({ state }: { state: OperationState }) {
 export function ConnectionPill({ state }: { state: ConnectionState }) {
   const label = state === "online" ? "已連接" : state === "offline" ? "目前離線" : "正在檢查連線";
   return (
-    <View accessibilityRole="text" accessibilityLabel={label} style={[styles.pill, styles.connectionPill, state === "online" ? styles.tealPill : state === "offline" ? styles.amberPill : styles.neutralPill]}>
+    <View accessibilityRole="text" accessibilityLabel={label} style={[styles.pill, styles.connectionPill, state === "offline" ? styles.amberPill : state === "checking" ? styles.neutralPill : styles.onlineConnection]}>
       <View style={[styles.dot, state === "online" ? styles.tealDot : state === "offline" ? styles.amberDot : styles.neutralDot]} />
       <Text style={styles.pillText}>{label}</Text>
     </View>
@@ -177,7 +177,8 @@ const styles = StyleSheet.create({
   count: { minWidth: 24, paddingHorizontal: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.paleTeal, alignItems: "center" },
   countText: { fontFamily: chineseFont, color: colors.deepTeal, ...mobileType.caption, fontWeight: "700" },
   pill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 6 },
-  connectionPill: { alignSelf: "center" },
+  connectionPill: { alignSelf: "center", borderWidth: 1, borderColor: colors.line },
+  onlineConnection: { backgroundColor: colors.controlSurface },
   pillText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },
   neutralPill: { backgroundColor: colors.neutralSurface },
   tealPill: { backgroundColor: colors.paleTeal },

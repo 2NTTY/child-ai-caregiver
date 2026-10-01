@@ -2,6 +2,8 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**最新 FE-W22（2026-10-01）：** 鈴鐺／資訊欄開關改用同一 [ToolbarIconButton](src/components/ToolbarIconButton.tsx)，白底／邊框／22 px SVG 一致，桌面實際點擊 44、手機 48；「已連接」同表面並置中。共用 danger 按鈕／Dialog 已套用刪除確認；刪整位孩子採紅色彈窗、完整稱呼及範圍勾選，unknown 保留查核。四尺寸、Enter／Escape／焦點、照片二次確認、記錄／孩子失敗及 unknown 檢查、typecheck 及 Web／Android export 通過；[交接及刪除保障清單](HANDOFF.md#toolbar-delete-safeguards)／[證據](verification/fe-w22/build-checks.json)。只有合成操作，帳戶刪除及真正密碼／身份重新驗證尚未實作，待主聊天接線；原生實機及使用者視覺仍待驗收。
+
 **最新 FE-W21（2026-10-01）：** 從暫時收尾基線 `6f36765` 接續，前端顯示品牌已改為「育有方」。[branding.ts](src/branding.ts) 集中名稱及衍生文案，[BrandLogo](src/components/BrandLogo.tsx) 共用原 SVG 圖形與新字樣；Web／原生外殼、登入／啟動畫面、內頁、背景／模型／照片示例及 Web／Expo 顯示名稱同步。typecheck、Web／Android export、60 個重排、共用設計／Agent 導覽及四尺寸 Logo／標題／鍵盤返回通過；[交接](HANDOFF.md#brand-rename-pending)／[證據](verification/fe-w21/build-checks.json)。沿現有 draft PR #73，使用者視覺及原生實機仍待驗收；正式品牌／API 整合由主聊天處理。
 
 **FE-W20 帳戶導覽補修：** 左下帳戶卡片及重複帳戶選單已移除，Agent 固定在設定上方；切換入口集中在「設定 → 個人與帳戶 → 登入與安全」，窄 Web 頭像開設定。四尺寸首頁／設定、Enter／登入預覽、typecheck 及 Web／Android export 通過，見 [交接](HANDOFF.md#account-navigation-follow-up)。真登入／登出／身份切換仍待主聊天，原生只驗 bundle。
@@ -37,6 +39,7 @@
 | 當前功能覆蓋 | 已對照 GitHub `ce87370` UI-P2-01–18，既有契約的本期隔離畫面已投影，見 [覆蓋及界線](HANDOFF.md#p2-coverage) | 接線／跨頁、正式通知中心／未讀與無契約功能由主聊天統籌；不因後端已合併便宣稱預覽接通 |
 | FE-W20 配色及自選背景入口 | 第 14 款逐區角色／實際畫面已核對；共用 MD3／SVG／Agent／卡片／導航同步，Web 本地選圖／錯誤保留／跨頁／恢復及 blob 清理已實作，必要輕量檢查通過 | [APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)；當前偏好 API 沒有背景欄位，正式保存／帳戶隔離／原生 adapter／視覺及實機待接線／驗收 |
 | FE-W21 前端品牌更名 | 共用名稱／SVG Logo、各頁文案、Web／Expo 顯示名稱及相應 selector 已同步；四尺寸、鍵盤及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#brand-rename-pending)；使用者視覺、Android 字體／App 顯示名稱實機與正式品牌整合待驗收／接線 |
+| FE-W22 頂部控件及刪除保障 | 共用鈴鐺／側欄按鈕、置中狀態、danger 樣式及整位孩子稱呼／範圍確認已實作；四尺寸、必要合成操作及 Web／Android export 通過 | [HANDOFF](HANDOFF.md#toolbar-delete-safeguards)；帳戶刪除／Server 身份重新驗證、真 API、視覺與實機待接續／驗收 |
 
 ## 已驗證及限制
 

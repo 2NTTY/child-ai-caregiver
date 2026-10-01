@@ -4,6 +4,32 @@
 
 ## 交付範圍及入口
 
+<a id="toolbar-delete-safeguards"></a>
+### FE-W22 頂部控件及刪除保障（2026-10-01）
+
+基線 `d2f1124fe157d147857b0e644351f3bfbd827b97`，沿現有 draft PR #73，主責 B。只修改 frontend；未改後端、正式 App、權限／刪除協定或依賴。交付前直接重核 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 [P2 UI 清單](https://github.com/2NTTY/child-ai-caregiver/blob/d3213e6dde2b72fd34a955b5ceebab1f046f3f6e/docs/P2_UI_HANDOFF.md)（blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`）及 [API](https://github.com/2NTTY/child-ai-caregiver/blob/d3213e6dde2b72fd34a955b5ceebab1f046f3f6e/docs/API.md)（blob `69fd07e18f649e4862030001837662d5e2fdc19b`）。相對開包的 `ce87370`，UI 清單只新增育有方品牌說明，API blob 不變；14 個其他 worktree 沒有 frontend 修改重疊。
+
+**頂部入口：** [ToolbarIconButton](src/components/ToolbarIconButton.tsx) 復用 Paper 5.15.3 IconButton，Web／原生鈴鐺及資訊欄開關共用白底／邊框／圓角及 22 px SVG。桌面實際點擊區 44 × 44，手機 48 × 48；用公開 contentStyle 將邊框放在 TouchableRipple 內，不縮小點擊區。Web 明確 aria-expanded；按 Enter 開關資訊欄，Escape 關訊息 Dialog 後回鈴鐺。ConnectionPill 同表面、置中，仍是不可點擊狀態。角色、提示角標、側欄與導航行為不變。
+
+**目前刪除保障清單：以下全屬合成預覽，沒有真正密碼／身份重新驗證。**
+
+| 刪除範圍 | 前端已實作 | 接線／限制 |
+|---|---|---|
+| 整位孩子及關聯資料 | owner 才有入口；紅色 AppDialog；清楚顯示不可恢復範圍；完整稱呼與範圍勾選都符合才可提交；離線／有其他提交時停用。失敗重新核對；處理中／unknown 不能取消或用 Escape 避開查核 | [DeleteChildPreview](src/components/DeleteChildPreview.tsx) 的 onDeleted／onActiveChange 只屬預覽。正式刪除只用原 `{confirmChildId}`、session 及 x-expected-user-id；網絡失敗／unknown 重讀孩子清單，不把預覽參考當 Server opId |
+| 孩子檔案及其歷史 | 頁內顯示原版本與範圍、第二次明確按鈕確認，紅色最終按鈕；不等於刪孩子或全部記錄 | ProfileView／原 profile actions；沿 expectedVersion／confirmDelete、權限及原操作查核 |
+| 單筆照顧記錄及其歷史 | 頁內顯示名稱、版本及不可恢復範圍、勾選、紅色最終按鈕；版本衝突先比較，unknown 保留原操作 | CareRecordDelete；原 record actions／版本／收據不變，其他孩子與記錄保留 |
+| 記憶事實／話題 | 原內容、版本、範圍及再次核對／勾選，刪除最後按鈕為紅色；停用／終態與刪除不同 | MemoryEditor 的既有 delete_fact／delete_topic、版本／收據；話題完成不會自行刪除記憶 |
+| 照片及連結記錄 | 紅色 AppDialog／標題／最後按鈕；原附件／版本與範圍，兩次明確勾選 | PhotosView 原 actions／版本／查核；UI 確認不表示實體檔案／備份已即時清理 |
+| 私人來源及連結記錄 | 紅色 AppDialog／標題／最後按鈕；原來源／版本與範圍，兩次明確勾選 | SourcesView 原 actions／收據及 unknown；私人原文不可因預覽同意而自行家庭共享 |
+| 個人模型密鑰 | 紅色 AppDialog／標題／最後按鈕及範圍勾選；刪除並停用 AI | ModelSettingsView；秘密立即清理，unknown 重讀 metadata／版本；沒有業務 opId，不通用重送 |
+| 整個帳戶 | 未提供可操作刪除按鈕；設定清楚說明尚無完整契約 | 主聊天需處理完整帳戶刪除政策與正式流程；預覽不假收密碼、不清空真帳戶 |
+
+**待主聊天：真正身份重新驗證。** [OWASP Authentication](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#require-re-authentication-for-sensitive-features) 建議敏感操作重新驗證身份；[Carbon Remove](https://carbondesignsystem.com/community/patterns/remove-pattern/) 對重大不可逆刪除採資源名稱核對。2026-10-01 已讀官方原文。依此建議，刪整位孩子／帳戶等高影響操作須由 Server 執行相應登入方式的重新驗證，並限制有效期、當前身份及目標資源；必要時另用第二因素。輸入名稱／勾選是防誤操作，前端密碼格式檢查不是安全驗證。
+
+目前根 API 的孩子刪除 body 只接受 confirmChildId，沒有此流程的密碼重新驗證欄位／接線；勿任加 password／自定 reauth token。正式整合須沿既有 Better Auth 1.7.5 評估原生能力，由主聊天補權威契約／Server 控制及測試，再將身份驗證結果接確認步驟。維持 owner／session／帳號一致性、原版本、草稿／孩子清理及遲到回覆隔離；unknown 先查原請求的正式來源，不能因重新登入而自動再刪。密碼不進 URL、storage、日誌、收據或一般重試正文。
+
+**已驗／未驗：** typecheck、Web 33 路由／Android Hermes 30 資產 export；1440／1024／390／320 的同表面／SVG／點擊區／置中、鍵盤開關與焦點、紅色孩子 Dialog／稱呼及範圍／取消保留、320 照片兩次確認通過；記錄及孩子失敗／衝突／unknown／owner 隔離沿針對性合成檢查通過。首輪發現舊外殼測試仍找已被照片格取代的飲食格，已對齊現有功能；新樣式測量改為 Paper 公開 surface，關閉檢查等待 React 更新。未為測試更改產品行為。見 [checks](verification/fe-w22/checks-toolbar-safety.json)、[刪除狀態](verification/fe-w22/checks-deletion.json) 及 [sources/build](verification/fe-w22/build-checks.json)，[頂部截圖](verification/fe-w22/toolbar-1440.png)／[刪除確認](verification/fe-w22/child-delete-dialog-1440.png)。使用者視覺、真 API／身份重新驗證、帳戶刪除及 Android 系統／實機仍待驗收；沒有呼叫真 Server 或執行真刪除。
+
 <a id="brand-rename-pending"></a>
 **FE-W21 前端品牌更名（2026-10-01，恢復基線 `6f367657179d2d38f4d5ceef6627482658680646`）：** 前端顯示名稱已改為「育有方」，沿 draft PR #73。集中入口是 [branding.ts](src/branding.ts)，各頁標題、平台服務、背景恢復、照片合成名稱及無障礙名稱引用同一來源。[BrandLogo](src/components/BrandLogo.tsx) 復用只讀根 `assets/brand/logo-horizontal.svg` 的弧線／引導光、原 512 × 152 比例與顏色，用 react-native-svg 的文字呈現新名稱。AppShell／NativeAppShell、RootLayout 啟動畫面及 LoginPage 共用此元件；首頁 Logo 保留真路由及鍵盤操作。舊 PNG 留作原素材／測試樣本，已沒有運行時 Logo 引用。
 

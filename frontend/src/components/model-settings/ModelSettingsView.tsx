@@ -113,12 +113,12 @@ export function ModelSettingsView({ model, actions }: { model: ModelSettingsView
         </SectionCard>
       </View>
     </View> : null}
-    <Dialog visible={deleteOpen} onDismiss={() => setDeleteOpen(false)}>
-      <Dialog.Title>刪除個人密鑰並停用 AI</Dialog.Title><Dialog.Content>
+    <Dialog danger visible={deleteOpen} onDismiss={() => setDeleteOpen(false)}>
+      <Dialog.Title danger>刪除個人密鑰並停用 AI</Dialog.Title><Dialog.Content>
         <Text style={styles.body}>將刪除目前版本 {settings.version} 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。</Text>
         <AppCheckbox label="我確認刪除密鑰並停用 AI" checked={deleteConfirmed} onChange={setDeleteConfirmed} disabled={locked} />
       </Dialog.Content><Dialog.Actions><AppButton label="取消" variant="quiet" onPress={() => setDeleteOpen(false)} />
-        <AppButton label="確認刪除並停用" disabled={locked || !deleteConfirmed} onPress={() => { if (locked || !deleteConfirmed) return; clearSecret(); setDeleteOpen(false); actions.save(removeModelKeyCommand(settings)); }} />
+        <AppButton label="確認刪除並停用" variant="danger" disabled={locked || !deleteConfirmed} onPress={() => { if (locked || !deleteConfirmed) return; clearSecret(); setDeleteOpen(false); actions.save(removeModelKeyCommand(settings)); }} />
       </Dialog.Actions>
     </Dialog>
   </View>;

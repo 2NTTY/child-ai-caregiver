@@ -63,7 +63,7 @@ export async function verifyShell(browser, failures, directory) {
   await page.close();
 
   const phone = await openPreview(browser, "/", 390, 844, failures);
-  const quick = phone.getByRole("button", { name: /^快速(記錄情況|記錄睡眠|身高體重|飲食記錄)$/ });
+  const quick = phone.getByRole("button", { name: /^快速(記錄情況|記錄睡眠|身高體重|照片記錄)$/ });
   const quickRows = await quick.evaluateAll(elements => elements.map(element => Math.round(element.getBoundingClientRect().top)));
   assert.equal(quickRows.length, 4); assert.equal(new Set(quickRows).size, 1, "390 homepage uses four quick actions on one row");
   await phone.getByRole("button", { name: "準備問題：整理最近的睡眠", exact: true }).click();

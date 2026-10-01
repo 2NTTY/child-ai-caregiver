@@ -22,6 +22,7 @@
 | 品牌文字及 Logo | [branding.ts](src/branding.ts)、[BrandLogo](src/components/BrandLogo.tsx) | 共用顯示名稱、頁面／提示／無障礙文案、Web／原生／登入 Logo；原圖形及美術沿用，Expo 靜態 name 另同步，不遷移技術身份 |
 | 色彩、字體與尺寸 | [theme.ts](src/theme.ts) | 所有使用 token 的畫面、Paper 按鈕／表單／Dialog；新增狀態色先加語義 token，不逐頁寫色碼 |
 | 基本控制項 | [ui.tsx](src/components/ui.tsx) 的 AppButton、AppTextField、SectionCard、SectionHeader、TextLink、UnderlineTabs、OperationPill、ConnectionPill | 按鈕高度／字重、輸入框、卡片、設定／記憶分頁與狀態標籤；只封裝品牌及重複語義 |
+| 頂部工具按鈕 | [ToolbarIconButton](src/components/ToolbarIconButton.tsx) | 鈴鐺／側欄共用 Paper IconButton 白底、邊框、圓角、22 px SVG；桌面實際點擊 44、手機 48。沿公開 contentStyle 把邊框放在可點區，避免外框扣掉 2 px |
 | 選單、勾選及彈窗 | AppSelect／AppSelectionTrigger、[AppCheckbox](src/components/AppCheckbox.tsx)、[AppDialog](src/components/AppDialog.tsx)、[AppMenuList](src/components/AppMenuList.tsx)、[ChildPicker](src/components/ChildPicker.tsx) | 集中選擇、選項列、明確狀態、Space／Escape、focus trap 與還原；Web ARIA 與原生 accessibilityState 分開核對 |
 | SVG 圖標 | [AppIcon](src/components/AppIcon.tsx)、theme 的 iconTokens | 統一尺寸、線寬與名稱映射；PaperSvgIcon 同時供 PaperProvider 使用 |
 | 日期、時間及表單 | [DateTimeFields](src/components/DateTimeFields.tsx)、[date-time](src/components/date-time.ts)、各頁 RHF／Zod schema | 共用 Paper Dates 0.24.0 的日曆／時鐘／窄屏鍵盤輸入，IANA 時區沿 Luxon 3.7.2；不逐頁手寫日期控制 |
@@ -59,6 +60,10 @@
 有浮動標籤的多行 AppTextField 透過 Paper 5.x 公開 contentStyle 留出標籤空間，原文捲動在其下方；不關閉字體伸縮、不修改套件。390／320 的 150% Web 文字檢查須包含實際標籤／輸入區幾何與畫面，單看控制邊界不足以確認重疊；證據見 FE-W14，Android 系統大字體仍待驗。
 
 Dialog 採 Paper 視覺配 RN Modal 的焦點／返回鍵行為；選單及勾選用共同封裝提供 Web 明確 ARIA。刪檔案、刪單筆記錄與刪整位孩子各有範圍提示及再次確認；確認結果前保留資料，unknown 鎖定並查原操作，版本改變先比較再重新核對。
+
+FE-W22：不可恢復操作的最後提交用 AppButton `variant="danger"`，沿 errorInk／white；刪除 Dialog 用 `danger` 和 `Title danger`，白色表面、紅色邊框／標題，內容仍清楚可讀。單筆記錄／檔案／事實保留既有頁內核對，不為同一操作再疊彈窗；整位孩子的高影響刪除用 AppDialog，輸入完整稱呼及勾選範圍才啟用按鈕。風險分層參考 [Carbon Remove](https://carbondesignsystem.com/community/patterns/remove-pattern/)，2026-10-01 已核對。稱呼與勾選只防誤操作，不能代替 Server 身份重新驗證；缺口見 [交接](HANDOFF.md#toolbar-delete-safeguards)。
+
+「已連接」是狀態標籤，與工具按鈕同用白色表面及邊框、垂直置中，保留膠囊外形；不加點擊或製造保存成功語義。離線／檢查中仍沿原狀態色。
 
 共用操作提示按語義分配：已保存用淡青色，明確失敗用淡珊瑚，待確認／unknown／衝突用黃色派生淺底及深警告字，處理中／說明保持安靜。狀態文案及原操作查核不因配色改變。
 

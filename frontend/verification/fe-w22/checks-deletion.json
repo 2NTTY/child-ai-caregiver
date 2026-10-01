@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-01T15:08:35.206Z",
+  "passed": [
+    "deletion: record scope/checkbox keyboard/failure/explicit conflict review/same-operation lookup/owner-only child deletion/isolation"
+  ],
+  "failures": []
+}

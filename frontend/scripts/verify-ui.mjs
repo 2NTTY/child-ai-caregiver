@@ -20,6 +20,7 @@ import { verifyEmergencyHelp } from "./flows/emergency-help.mjs";
 import { verifyComposerSurfaces } from "./flows/composer-surfaces.mjs";
 import { verifyCameraCapture } from "./flows/camera-capture.mjs";
 import { verifyAppearance } from "./flows/appearance.mjs";
+import { verifyToolbarSafety } from "./flows/toolbar-safety.mjs";
 
 const directory = resolve(process.env.FRONTEND_VERIFICATION_DIR ?? "verification/fe-w06");
 await mkdir(directory, { recursive: true });
@@ -110,7 +111,7 @@ try {
     await narrow.screenshot({ path: resolve(directory, "care-320-confirmation.png") });
     passed.push("care: 320 form validation and keyboard confirmation"); console.log(passed.at(-1)); await narrow.close();
   }
-  for (const [name, verify] of [["profile", verifyProfile], ["family", verifyFamily], ["tasks", verifyTasks], ["memory", verifyMemory], ["shell", verifyShell], ["settings", verifySettings], ["shared", verifyDatesAndIsolation], ["login", verifyLogin], ["deletion", verifyDeletion], ["design", verifyDesign], ["channels", verifyChannels], ["agent", verifyAgentEntry], ["agent-flow", verifyAgentConversation], ["mobile-density", verifyMobileDensity], ["photos", verifyPhotos], ["model-settings", verifyModelSettings], ["model-settings-text", verifyModelSettingsText], ["sources", verifySources], ["sources-text", verifySourcesText], ["growth", verifyGrowth], ["growth-text", verifyGrowthText], ["summary", verifySummary], ["summary-text", verifySummaryText], ["contact", verifyContact], ["contact-text", verifyContactText], ["emergency-help", verifyEmergencyHelp], ["composer-surfaces", verifyComposerSurfaces], ["camera", verifyCameraCapture], ["appearance", verifyAppearance]]) {
+  for (const [name, verify] of [["profile", verifyProfile], ["family", verifyFamily], ["tasks", verifyTasks], ["memory", verifyMemory], ["shell", verifyShell], ["settings", verifySettings], ["shared", verifyDatesAndIsolation], ["login", verifyLogin], ["deletion", verifyDeletion], ["design", verifyDesign], ["channels", verifyChannels], ["agent", verifyAgentEntry], ["agent-flow", verifyAgentConversation], ["mobile-density", verifyMobileDensity], ["photos", verifyPhotos], ["model-settings", verifyModelSettings], ["model-settings-text", verifyModelSettingsText], ["sources", verifySources], ["sources-text", verifySourcesText], ["growth", verifyGrowth], ["growth-text", verifyGrowthText], ["summary", verifySummary], ["summary-text", verifySummaryText], ["contact", verifyContact], ["contact-text", verifyContactText], ["emergency-help", verifyEmergencyHelp], ["composer-surfaces", verifyComposerSurfaces], ["camera", verifyCameraCapture], ["appearance", verifyAppearance], ["toolbar-safety", verifyToolbarSafety]]) {
     if (run(name)) { passed.push(await verify(browser, failures, directory)); console.log(passed.at(-1)); }
   }
   assert.deepEqual(failures, []);

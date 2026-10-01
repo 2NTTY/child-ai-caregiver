@@ -12,6 +12,7 @@ import { AppButton, ConnectionPill, OperationPill, SectionCard, SectionHeader, T
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 import { NotificationBell } from "./NotificationBell";
+import { ToolbarIconButton } from "./ToolbarIconButton";
 import { PreviewTodoCard } from "./PreviewTodoCard";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 import { previewChecklist, scenarioLabels, type PreviewScenario } from "../preview/fixture";
@@ -152,16 +153,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         {compact ? <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></Link> : null}
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts child={selectedChild} load={model.profileLoad} /> : null}
-        <View style={styles.topActions}>
+        <View testID="header-actions" style={styles.topActions}>
           {!compact ? <ConnectionPill state={model.connection} /> : null}
           <NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           {compact ? <Link href="/settings" asChild><Pressable accessibilityRole="link" accessibilityLabel="開啟設定" style={StyleSheet.flatten([styles.accountAction, width < mobileLayout.breakpoint && styles.mobileAction])}><View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable></Link> : null}
-          <Pressable accessibilityRole="button" accessibilityLabel={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
-            accessibilityState={{ expanded: railExpanded }} aria-expanded={railExpanded}
-            onPress={() => wide ? setRailOpen(value => !value) : setRailModal(value => !value)}
-            style={({ pressed }) => [styles.infoAction, tiny && styles.infoActionTiny, width < mobileLayout.breakpoint && styles.mobileAction, pressed && styles.pressed]}>
-            <AppIcon name="page-layout-sidebar-right" size={22} />
-          </Pressable>
+          <ToolbarIconButton icon="page-layout-sidebar-right" label={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
+            expanded={railExpanded} onPress={() => wide ? setRailOpen(value => !value) : setRailModal(value => !value)} />
         </View>
       </View>
       {compact && !mobileHome ? <View style={styles.compactFacts}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /><ChildKeyFacts child={selectedChild} load={model.profileLoad} /></View> : null}
@@ -223,8 +220,6 @@ const styles = StyleSheet.create({
   topLogo: { width: 124, height: 44 },
   topLogoTiny: { width: 114 },
   topActions: { marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  infoAction: { minWidth: 44, minHeight: 44, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small, alignItems: "center", justifyContent: "center" },
-  infoActionTiny: { minWidth: 38, minHeight: 40 },
   panelIcon: { width: 20, height: 17, borderWidth: 1.7, borderColor: colors.deepTeal, borderRadius: 4, alignItems: "flex-end", justifyContent: "center" },
   panelIconDivider: { width: 6, height: 15, borderLeftWidth: 1.7, borderLeftColor: colors.deepTeal },
   compactFacts: { minHeight: 52, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, gap: spacing.md, flexDirection: "row", alignItems: "center", backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine },
