@@ -2,7 +2,7 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W19：Web 對話的拍照按鈕直接開啟頁內相機，不再跳照片頁。** 按下後才請求相機權限，拍攝回到原輸入框作本地預覽；取消、沒有相機／拒絕權限、系統拍照／選圖後備、移除及切換孩子／離頁清理已實作。復用原 JPEG／PNG、4 MiB、hash／blob 與 Paper／SVG，不新增依賴或後端協定。typecheck、Web／Android export、四尺寸合成串流／原檔與 390／320 放大文字通過；[交接及證據](AGENT_HANDOFF.md)。實際裝置相機／權限待驗收；原生 adapter、上傳及對話附件待接線。
+**最新 FE-W19 `f541a2d`：Web 對話的拍照按鈕直接開啟頁內相機，不再跳照片頁。** 按下後才請求相機權限，拍攝回到原輸入框作本地預覽；取消、沒有相機／拒絕權限、系統拍照／選圖後備、移除及切換孩子／離頁清理已實作。復用原 JPEG／PNG、4 MiB、hash／blob 與 Paper／SVG，不新增依賴或後端協定。typecheck、Web／Android export、四尺寸合成串流／原檔與 390／320 放大文字通過；[交接及證據](AGENT_HANDOFF.md)。實際裝置相機／權限待驗收；原生 adapter、上傳及對話附件待接線。
 
 **本期隔離 Web／共用手機前端的已授權實作與必要輕量檢查已齊備，沿現有 [draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)。** FE-W17 `ebcaa73` 補齊本人同意／任務聯絡授權／投遞台帳，並在對話頁補固定緊急入口；[本包交接](CONTACT_HANDOFF.md)。FE-W16 `10aa70b`、FE-W15 `ef536e8`、FE-W14 `d00a6bb`、FE-W13 `095f135`、照片 `ddcf651` 及手機背景／外殼 `62b07fd` 的證據保留。視覺、真 API 和原生實機仍待驗，未標產品或整套 Web 驗收完成。全部修改只在 frontend，不改 Server／Agent／正式 App、根依賴或指導文件，不自行 merge。
 

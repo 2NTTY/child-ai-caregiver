@@ -2,7 +2,7 @@
 
 更新：2026-10-01。FE-W09 前置為已 review 的前端 `83106c0`（draft PR #68），分支 `codex/fe-w09-agent-conversation`。正式契約核對穩定主線 `90dacd4e5c0a8be9e490fa7d94830ea369c57521`；只讀 API／控制器，沒有改 Server、正式 App 或根文件。
 
-**FE-W19 最新增補：原對話頁直接拍照。** 基線 `bed134271e70529a0d90878292daf2fc228fc885`，直接重核 GitHub master `ce87370` 的 P2 交接；照片／聊天協定未改。新增 [AgentComposer](src/components/agent/AgentComposer.tsx) 管理當頁選圖和資源，復用 [PhotoFilePicker](src/components/photos/PhotoFilePicker.web.tsx) 的校驗／hash／blob。[WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx) 只在明確按下後掛載並要求 `getUserMedia`，`audio: false`，後置鏡頭為偏好；相機畫面沿共用 AppDialog／AppButton。這項取代 FE-W18 的拍照跳頁，沒有新增依賴或修改後端。
+**FE-W19 最新增補：原對話頁直接拍照。** 源碼／驗證 `f541a2da0f97e2cf463f380d3f8449dad3525892`；基線 `bed134271e70529a0d90878292daf2fc228fc885`，直接重核 GitHub master `ce87370` 的 P2 交接；照片／聊天協定未改。新增 [AgentComposer](src/components/agent/AgentComposer.tsx) 管理當頁選圖和資源，復用 [PhotoFilePicker](src/components/photos/PhotoFilePicker.web.tsx) 的校驗／hash／blob。[WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx) 只在明確按下後掛載並要求 `getUserMedia`，`audio: false`，後置鏡頭為偏好；相機畫面沿共用 AppDialog／AppButton。這項取代 FE-W18 的拍照跳頁，沒有新增依賴或修改後端。
 
 Web 在 HTTPS／localhost 且瀏覽器允許相機時可頁內拍攝；等待權限仍可取消，拒絕／缺裝置／不可用顯示具體提示，重試須另按。系統拍照／選圖由明確點擊原 `capture=environment` input 提供後備；桌面可能只提供選檔，原生 `captureOriginal` 未注入仍停用。拍攝以完整 video frame 編碼 JPEG（瀏覽器回退 PNG 時保留真正 MIME），不裁切／改尺寸；再沿相同原檔檢查，沒有自動上傳、保存、分析或發送聊天。檔名時間只是本地命名，不可推作照顧事件時間。
 

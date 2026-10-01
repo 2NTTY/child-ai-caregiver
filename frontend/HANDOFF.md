@@ -4,7 +4,7 @@
 
 ## 交付範圍及入口
 
-**最新 FE-W19**（基線 `bed1342`／現有 draft PR #73）：按使用者要求，Agent 拍照改成直接開頁內 Web 相機，完整 frame 經原 JPEG／PNG／4 MiB／hash／blob 流程後回原輸入框預覽；等待／取消／權限拒絕／系統選圖後備、原問題保留、track／blob 與遲到回應清理已實作。新增 [AgentComposer](src/components/agent/AgentComposer.tsx) 的私有範圍及 [WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx)，不改後端／聊天契約或依賴。[AGENT_HANDOFF](AGENT_HANDOFF.md) 列回調、清理及能力；[最終檢查](verification/fe-w19/checks-composer-surfaces-camera.json)／[來源及產物 hash](verification/fe-w19/build-checks.json)。typecheck、Web／Android export、四尺寸合成串流／原檔及放大文字通過；沒有真相機、系統權限、上傳或模型呼叫。Webcam／手機權限及視覺待裝置驗收；原生 adapter、正式上傳及真正對話附件待主聊天接線。
+**最新 FE-W19**（源碼／驗證 `f541a2da0f97e2cf463f380d3f8449dad3525892`；基線 `bed1342`／現有 draft PR #73）：按使用者要求，Agent 拍照改成直接開頁內 Web 相機，完整 frame 經原 JPEG／PNG／4 MiB／hash／blob 流程後回原輸入框預覽；等待／取消／權限拒絕／系統選圖後備、原問題保留、track／blob 與遲到回應清理已實作。新增 [AgentComposer](src/components/agent/AgentComposer.tsx) 的私有範圍及 [WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx)，不改後端／聊天契約或依賴。[AGENT_HANDOFF](AGENT_HANDOFF.md) 列回調、清理及能力；[最終檢查](verification/fe-w19/checks-composer-surfaces-camera.json)／[來源及產物 hash](verification/fe-w19/build-checks.json)。typecheck、Web／Android export、四尺寸合成串流／原檔及放大文字通過；沒有真相機、系統權限、上傳或模型呼叫。Webcam／手機權限及視覺待裝置驗收；原生 adapter、正式上傳及真正對話附件待主聊天接線。
 
 **FE-W18**（源碼／驗證 `eb9b48c17160066f585c4fcbd7ad871a27d9045d`；基線 `f3ba9e35b718e68b5a23bf73072ec437cd746d22`）：內嵌控制、資料標籤和側欄開關統一 `controlSurface`；`quietSurface` 留給另一層內容，不改品牌 OKLCH 值。Agent 新增 [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx)，文字／網址沿原 `/sources`；拍照跳頁已由 FE-W19 取代，檔案選單仍可到 `/photos` 管理原檔。語音／PDF／Word 未支援及保留草稿要求見 [AGENT_HANDOFF](AGENT_HANDOFF.md)，原生相機 port 見 [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md)。正式語音／任意文件及對話附件仍須接線，不能把本地選圖／拍攝當聊天已支持多模態。
 
