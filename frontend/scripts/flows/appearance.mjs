@@ -98,7 +98,7 @@ export async function verifyAppearance(browser, failures, directory) {
       await card.getByText("本次背景：synthetic-background.png", { exact: true }).waitFor();
       const lastImage = await imageUri(page);
       await page.getByRole("tab", { name: "個人與帳戶", exact: true }).click();
-      await page.getByRole("button", { name: "查看登入預覽", exact: true }).click();
+      await page.getByRole("button", { name: "切換帳戶", exact: true }).click();
       await page.waitForURL("**/login");
       await page.getByRole("button", { name: "登入（預覽）", exact: true }).waitFor();
       await page.waitForFunction(uri => window.backgroundReleases.includes(uri), lastImage, { timeout: 4000 });

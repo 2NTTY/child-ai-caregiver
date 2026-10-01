@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "width": 1440,
+      "home": "passed",
+      "settings": "passed",
+      "keyboard": "passed",
+      "loginPreview": "passed",
+      "noSidebarAccount": true,
+      "noDuplicateMenu": true
+    },
+    {
+      "width": 1024,
+      "home": "passed",
+      "settings": "passed",
+      "keyboard": "passed",
+      "loginPreview": "passed",
+      "noSidebarAccount": true,
+      "noDuplicateMenu": true
+    },
+    {
+      "width": 390,
+      "home": "passed",
+      "settings": "passed",
+      "keyboard": "passed",
+      "loginPreview": "passed",
+      "noSidebarAccount": true,
+      "noDuplicateMenu": true
+    },
+    {
+      "width": 320,
+      "home": "passed",
+      "settings": "passed",
+      "keyboard": "passed",
+      "loginPreview": "passed",
+      "noSidebarAccount": true,
+      "noDuplicateMenu": true
+    }
+  ],
+  "failures": []
+}

@@ -4,6 +4,11 @@
 
 ## 交付範圍及入口
 
+<a id="account-navigation-follow-up"></a>
+**FE-W20 帳戶導覽補修**（2026-10-01，基線 `24a54c6465ef9b1e84ff2895b3bbac0308b1d047`）：依使用者要求，[AppShell](src/components/AppShell.tsx) 移除左下帳戶卡片／Dialog 及「更多」的重複帳戶項，窄 Web 頭像以 Expo Link 開設定；[SettingsPage](src/screens/settingsScreen.tsx) 的「個人與帳戶 → 登入與安全」提供唯一切換帳戶入口，沿共用 AppButton 開既有 `/login` 預覽。原生更多頁面保留各功能／設定，僅移除直接登入項，避免遺失其他頁面的入口。
+
+此按鈕目前不呼叫 signOut、不切換真身份；正式版由主聊天將其 onPress 接既有登入／退出控制器，沿原規則處理未保存草稿／unknown，取消舊身份讀取並清理私人資料、渠道／模型設定、照片／背景 URI，不能只 router.push 後沿用舊 session。直接核對的 GitHub master 仍為 `ce87370`，P2 UI 交接 blob `8124bf61b31ed402d5b3f1cd264079f931eeeac1`；未改 API／業務協定。1440／1024／390／320 的首頁／設定重排、單一入口／手機 48 觸控／Enter／登入預覽及 typecheck、Web／Android export 通過，見 [account-checks](verification/fe-w20-account-nav/account-checks.json)／[source and build](verification/fe-w20-account-nav/build-checks.json)。兩份既有流程的 selector 已對齊新入口，沒有重跑全部業務／背景測試；原生實機／真帳戶切換及使用者視覺仍待驗收。
+
 **最新 FE-W20**（源碼／驗證 `3ae41c7`）：依使用者指定 [Happy Hues 14](https://www.happyhues.co/palettes/14) 及逐區用色指導替換共用 UI 色盤，保留 Logo／美術與 OKLCH 派生；Agent 用黃底深字，一般提交用深底白字，白卡／白控件與青色導航分層。Web 設定的首頁背景入口可本地換圖／恢復，桌面及手機共用，沒有上傳／保存或新 API。元件／原生 pickImage port、路由區 blur／blob 清理、當前偏好無背景契約及待接線，見 [APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)／[FE-W20 證據](verification/fe-w20)。不修改主聊天範圍或自行 merge。
 
 **FE-W19**（源碼／驗證 `f541a2da0f97e2cf463f380d3f8449dad3525892`；基線 `bed1342`／現有 draft PR #73）：按使用者要求，Agent 拍照改成直接開頁內 Web 相機，完整 frame 經原 JPEG／PNG／4 MiB／hash／blob 流程後回原輸入框預覽；等待／取消／權限拒絕／系統選圖後備、原問題保留、track／blob 與遲到回應清理已實作。新增 [AgentComposer](src/components/agent/AgentComposer.tsx) 的私有範圍及 [WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx)，不改後端／聊天契約或依賴。[AGENT_HANDOFF](AGENT_HANDOFF.md) 列回調、清理及能力；[最終檢查](verification/fe-w19/checks-composer-surfaces-camera.json)／[來源及產物 hash](verification/fe-w19/build-checks.json)。typecheck、Web／Android export、四尺寸合成串流／原檔及放大文字通過；沒有真相機、系統權限、上傳或模型呼叫。Webcam／手機權限及視覺待裝置驗收；原生 adapter、正式上傳及真正對話附件待主聊天接線。

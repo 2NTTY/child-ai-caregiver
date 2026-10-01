@@ -1,0 +1,70 @@
+{
+  "at": "2026-10-01T13:09:01.2230518Z",
+  "package": "FE-W20 account navigation follow-up",
+  "baseline": "24a54c6465ef9b1e84ff2895b3bbac0308b1d047",
+  "githubMaster": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "uiHandoffBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1",
+  "scope": "frontend only; sidebar/account route entry; no Server/auth/API/business change",
+  "sources": [
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "gitBlob": "2f4c5af3365f1b9e3c94b1d0c9c5a3c0334ef729",
+      "sha256": "8fac4fa8916e353d04f90f64288706778b5ece3cfdd7fea1e23ab891ead09444"
+    },
+    {
+      "path": "frontend/src/components/NativeAppShell.tsx",
+      "gitBlob": "c5526b15c29b639c68523f404dcd992737fbb683",
+      "sha256": "d74c0c84ab07a318010a2dd3893b8fbb37fe5ca24779429f0e839edef2663519"
+    },
+    {
+      "path": "frontend/src/screens/settingsScreen.tsx",
+      "gitBlob": "0732686c8c98129bbb91848190a29af524a217a2",
+      "sha256": "9a5c351c8b27cf8c7e5b46d20f80aa41de9b85a3574a4cff490ce15e1d19f2fe"
+    },
+    {
+      "path": "frontend/scripts/flows/mobile-density.mjs",
+      "gitBlob": "2415257422061c49d33db253d5f0a10d66869ee3",
+      "sha256": "98471f9b227fef1ef646c0ea849058194d574a0235f88dc6d9e809688821940c"
+    },
+    {
+      "path": "frontend/scripts/flows/appearance.mjs",
+      "gitBlob": "2f355b3112f6d86a7e376bebd56644149c023a92",
+      "sha256": "9851533fd80023c0cf786c6998d94b08cc689b45aa379eaed2f4a94fc9b8a960"
+    }
+  ],
+  "typecheck": {
+    "exitCode": 0
+  },
+  "web": {
+    "exitCode": 0,
+    "routes": 33,
+    "path": "dist/_expo/static/js/web/entry-7c84144c208b1a4b1369cf9c7b5a99e2.js",
+    "sha256": "c66eb21e55306b9e6c7b3501f9483fe8ccee20917a8a568b4e305e28c791af89"
+  },
+  "android": {
+    "exitCode": 0,
+    "assets": 31,
+    "path": "dist-android/_expo/static/js/android/entry-f076ad382f69941fcf410cd83c52f315.hbc",
+    "sha256": "00e232701ef728e9adc20feb10e284adb06e223fa577b56f3070fb02570362e6",
+    "limitation": "Bundle/asset export only; no native menu/device acceptance"
+  },
+  "preview": {
+    "path": "account-checks.json",
+    "widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "scope": "Home/settings overflow; no sidebar account or duplicate Web account menu; Agent above settings; mobile shortcut 48 target; Enter to settings and login preview",
+    "failures": []
+  },
+  "priorEvidence": "Existing business/background behavior unchanged; related selector names updated without a full regression rerun",
+  "pending": [
+    "User visual acceptance",
+    "Formal sign-out/account-switch/session and resource-scope integration",
+    "Native menu/device acceptance"
+  ],
+  "deliveryAccount": "CherylNg-2526",
+  "mergePerformed": false
+}

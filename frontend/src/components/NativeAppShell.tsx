@@ -44,7 +44,6 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
       <Text style={styles.meta}>{model.caregiverName} · 合成預覽帳戶</Text>
       <AppMenuList items={[
         ...([{ key: "profile", label: "子女檔案", icon: "account-child-outline" }, { key: "care", label: "照顧記錄", icon: "notebook-outline" }, { key: "photos", label: "照片與記錄", icon: "image-outline" }, { key: "sources", label: "私人來源", icon: "link-variant" }, { key: "growth", label: "成長關注", icon: "chart-bar" }, { key: "summary", label: "照顧摘要", icon: "clipboard-check-outline" }, { key: "contact", label: "聯絡授權", icon: "bell-outline" }, { key: "family", label: "家庭協調", icon: "account-group-outline" }, { key: "settings", label: "設定", icon: "cog-outline" }, { key: "guide", label: "使用引導", icon: "compass-outline" }] as const).map(item => ({ ...item, onPress: () => { setMenuOpen(false); actions.open(item.key); } })),
-        { key: "login", label: "登入畫面", icon: "account-outline", onPress: () => { setMenuOpen(false); router.push("/login"); } },
       ]} />
     </Dialog.Content><Dialog.Actions><Button onPress={() => setMenuOpen(false)}>關閉</Button></Dialog.Actions></Dialog></Portal>
   </View>;

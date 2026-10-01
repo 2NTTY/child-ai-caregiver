@@ -2,6 +2,8 @@
 
 更新：2026-10-01。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**FE-W20 帳戶導覽補修：** 左下帳戶卡片及重複帳戶選單已移除，Agent 固定在設定上方；切換入口集中在「設定 → 個人與帳戶 → 登入與安全」，窄 Web 頭像開設定。四尺寸首頁／設定、Enter／登入預覽、typecheck 及 Web／Android export 通過，見 [交接](HANDOFF.md#account-navigation-follow-up)。真登入／登出／身份切換仍待主聊天，原生只驗 bundle。
+
 **FE-W20 按下效果補修：** Agent 入口移除遺留的實色青色 ripple，復用 Paper 5.15.3 由 onAccent 生成的 12% 透明深色；按住保留黃底與文字。1440／1024 的八項按下／清理、共用 accent／secondary 及鍵盤／草稿檢查、typecheck、Web／Android export 通過，見 [交接補修](APPEARANCE_HANDOFF.md#ripple-follow-up)。沒有新增動畫系統或修改業務／後端；原生實際按下仍待驗。
 
 **最新 FE-W20 `3ae41c7`：共用色盤改為使用者指定的 Happy Hues 14，按用途分配白色內容、淺青導航、深色文字／普通提交、黃色 Agent 入口。** OKLCH 保留給必要派生色，Logo／美術不改；Web「設定 → 應用偏好 → 首頁背景」可本地選圖／恢復，桌面及手機首頁一起套用。typecheck、22 組對比、Web／Android export、60 個重排、六寬度 Dialog／SVG 及四尺寸背景／150% Web 文字通過；[配色](COLOR_STRATEGY.md)／[交接](APPEARANCE_HANDOFF.md)。未上傳／保存，原生選圖及正式背景保存待接線；使用者視覺及真機仍待驗收。

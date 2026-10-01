@@ -125,7 +125,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const railProps = { model, actions, checkedPreviewItems, togglePreviewItem };
   const [railOpen, setRailOpen] = useState(true);
   const [railModal, setRailModal] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   useEffect(() => { if (wide) setRailModal(false); }, [wide]);
   const active = (path: AppPath) => pathname === path;
@@ -145,11 +144,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <AgentEntryButton active={active("/chat")} />
       </View>
       <NavItem item={{ href: "/settings", label: "設定", short: "設定", icon: "cog-outline" }} active={active("/settings")} />
-      <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" accessibilityState={{ expanded: accountOpen }} onPress={() => setAccountOpen(true)} style={({ pressed }) => [styles.account, pressed && styles.pressed]}>
-        <View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View>
-        <View style={styles.accountCopy}><Text style={styles.accountName}>{model.caregiverName}</Text><Text style={styles.accountHint}>合成預覽帳戶</Text></View>
-        <AppIcon name="chevron-down" size={18} />
-      </Pressable>
       {showGuideNav ? <NavItem item={{ href: "/guide", label: "使用引導", short: "引導", icon: "compass-outline" }} active={active("/guide")} /> : null}
     </View> : null}
     <View style={styles.stage}>
@@ -160,7 +154,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <View style={styles.topActions}>
           {!compact ? <ConnectionPill state={model.connection} /> : null}
           <NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
-          {compact ? <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" onPress={() => setAccountOpen(true)} style={[styles.accountAction, width < mobileLayout.breakpoint && styles.mobileAction]}><View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable> : null}
+          {compact ? <Link href="/settings" asChild><Pressable accessibilityRole="link" accessibilityLabel="開啟設定" style={StyleSheet.flatten([styles.accountAction, width < mobileLayout.breakpoint && styles.mobileAction])}><View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable></Link> : null}
           <Pressable accessibilityRole="button" accessibilityLabel={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
             accessibilityState={{ expanded: railExpanded }} aria-expanded={railExpanded}
             onPress={() => wide ? setRailOpen(value => !value) : setRailModal(value => !value)}
@@ -186,15 +180,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       </View> : null}
     </View>
     <Portal>
-      <Dialog visible={accountOpen} onDismiss={() => setAccountOpen(false)}>
-        <Dialog.Title>用戶與帳戶</Dialog.Title>
-        <Dialog.Content><Text style={styles.dialogBody}>{model.caregiverName} · 合成預覽帳戶。正式登入、登出及權限由主聊天接線。</Text></Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={() => { setAccountOpen(false); router.push("/login"); }}>查看登入畫面</Button>
-          <Button onPress={() => { setAccountOpen(false); router.push("/settings"); }}>設定</Button>
-          <Button onPress={() => setAccountOpen(false)}>關閉</Button>
-        </Dialog.Actions>
-      </Dialog>
       <Dialog visible={moreOpen} onDismiss={() => setMoreOpen(false)} style={styles.menuDialog}>
         <Dialog.Title>更多頁面</Dialog.Title>
         <Dialog.Content>
@@ -202,7 +187,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             ...navigation.filter(item => ["/family", "/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/memory"].includes(item.href)).map(item => ({ key: item.href, label: item.label, icon: item.icon, onPress: () => { setMoreOpen(false); router.push(item.href); } })),
             { key: "settings", label: "設定", icon: "cog-outline", onPress: () => { setMoreOpen(false); router.push("/settings"); } },
             ...(showGuideNav ? [{ key: "guide", label: "使用引導", icon: "compass-outline" as const, onPress: () => { setMoreOpen(false); router.push("/guide"); } }] : []),
-            { key: "account", label: "用戶與帳戶", icon: "account-outline", onPress: () => { setMoreOpen(false); setAccountOpen(true); } },
           ]} />
         </Dialog.Content>
         <Dialog.Actions><Button onPress={() => setMoreOpen(false)}>關閉</Button></Dialog.Actions>
@@ -225,15 +209,10 @@ const styles = StyleSheet.create({
   navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
   sidebarBottom: { marginTop: "auto", paddingBottom: spacing.sm },
-  account: { minHeight: 56, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white, paddingHorizontal: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   accountAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
   accountAction: { width: 44, height: 44, flexShrink: 0, alignItems: "center", justifyContent: "center" },
   mobileAction: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, minWidth: mobileLayout.touchTarget, minHeight: mobileLayout.touchTarget },
   accountAvatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" },
-  accountCopy: { flex: 1, minWidth: 0 },
-  accountName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "700" },
-  accountHint: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
-  accountArrow: { color: colors.deepTeal, fontSize: typeScale.title },
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
   topbar: { height: 70, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
   topbarCompact: { height: 64, paddingHorizontal: spacing.md, gap: spacing.sm },
@@ -286,7 +265,6 @@ const styles = StyleSheet.create({
   railOverlayDesktop: { top: 70 },
   railScrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.overlay },
   railDrawer: { width: "92%", maxWidth: 370, height: "100%", backgroundColor: colors.sidebar },
-  dialogBody: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
   bottomNav: { minHeight: mobileLayout.tabMinHeight, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line, flexDirection: "row" },
   bottomNavItem: { flex: 1, minWidth: mobileLayout.touchTarget, paddingVertical: spacing.sm, alignItems: "center", justifyContent: "center", gap: spacing.xs },
   bottomGlyph: { fontSize: 22, color: colors.muted },

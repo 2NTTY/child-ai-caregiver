@@ -15,9 +15,10 @@ export async function verifyMobileDensity(browser, failures, directory) {
     const childCard = page.getByTestId("mobile-child-card");
     await childCard.getByText("約 3 歲 2 個月", { exact: true }).waitFor();
     await childCard.getByText("截至 2026 年 9 月", { exact: true }).waitFor();
-    for (const name of ["查看小昕的孩子檔案", "選擇孩子，目前小昕", "進行對話", "開啟訊息提示", "用戶選單", "開啟資訊側欄"]) {
+    for (const name of ["查看小昕的孩子檔案", "選擇孩子，目前小昕", "進行對話", "開啟訊息提示", "開啟資訊側欄"]) {
       await target(page.getByRole("button", { name, exact: true }), name);
     }
+    await target(page.getByRole("link", { name: "開啟設定", exact: true }), "開啟設定");
     const title = await page.getByRole("heading", { name: "待辦事項", exact: true }).boundingBox();
     const action = await page.getByRole("button", { name: "查看全部", exact: true }).boundingBox();
     assert.ok(title.y < action.y + action.height && action.y < title.y + title.height, "Task title and action align on one row");

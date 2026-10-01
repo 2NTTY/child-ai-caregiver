@@ -45,16 +45,15 @@ export default function SettingsPage() {
           <Text style={styles.draftNote}>修改只在此畫面預覽；未保存至帳戶。正式版須沿用既有身份契約。</Text>
           <LabeledValue label="電郵地址" value="preview@example.invalid（合成）" />
           <LabeledValue label="登入方式" value="電郵與密碼（正式 App 已支援）" />
-          <TextLink label="查看登入畫面" onPress={() => router.push("/login")} />
         </SectionCard>
         <SectionCard><SectionHeader title="語言與地區" subtitle="畫面現以香港繁體中文呈現；偏好尚未接線。" />
           <LabeledValue label="介面語言" value="繁體中文（香港）" /><LabeledValue label="地區" value="香港" /><LabeledValue label="時間顯示" value="24 小時制 · Asia/Hong_Kong" />
         </SectionCard>
       </View>
       <View style={[styles.column, stacked && styles.fullColumn]}>
-        <SectionCard><SectionHeader title="登入與安全" />
-          <Text style={styles.body}>正式版的登入、登出、權限及會話由主聊天接現有 Better Auth 與控制器；預覽不會改動真帳戶。</Text>
-          <AppButton label="查看登入預覽" variant="secondary" onPress={() => router.push("/login")} />
+        <SectionCard testID="account-settings"><SectionHeader title="登入與安全" subtitle="切換帳戶入口集中在這裏。" />
+          <Text style={styles.body}>下方會開啟登入預覽，目前不會登出或切換真帳戶。</Text>
+          <AppButton label="切換帳戶" variant="secondary" onPress={() => router.push("/login")} />
         </SectionCard>
         <SectionCard><SectionHeader title="模型服務" subtitle="管理平台服務、個人密鑰及呼叫上限。" />
           <AppButton label="管理模型設定" variant="secondary" onPress={() => setTab("model")} />
