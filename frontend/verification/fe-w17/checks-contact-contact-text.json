@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-01T00:38:05.881Z",
+  "passed": [
+    "contact: four widths/navigation, explicit personal consent and binding order/revoke, task eligibility/backup/expiry/revoke, truthful ledger and self acknowledgement, same original receipt/confirmed-unread/no-pending recovery, stale drafts, worker pause and offline/identity/Server/child/access cleanup; no API calls",
+    "contact text: 390/320 synthetic 150% Web text and shared selection/date controls reflow; not native system font acceptance"
+  ],
+  "failures": []
+}

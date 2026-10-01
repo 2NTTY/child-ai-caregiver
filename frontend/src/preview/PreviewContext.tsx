@@ -18,8 +18,8 @@ type PreviewContextValue = {
 
 const PreviewContext = createContext<PreviewContextValue | null>(null);
 
-const routes: Record<HomeDestination, "/chat" | "/care" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks" | "/photos" | "/sources" | "/growth" | "/summary"> = {
-  chat: "/chat", care: "/care", profile: "/profile", family: "/family", memory: "/memory", settings: "/settings", guide: "/guide", tasks: "/tasks", photos: "/photos", sources: "/sources", growth: "/growth", summary: "/summary",
+const routes: Record<HomeDestination, "/chat" | "/care" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks" | "/photos" | "/sources" | "/growth" | "/summary" | "/contact"> = {
+  chat: "/chat", care: "/care", profile: "/profile", family: "/family", memory: "/memory", settings: "/settings", guide: "/guide", tasks: "/tasks", photos: "/photos", sources: "/sources", growth: "/growth", summary: "/summary", contact: "/contact",
 };
 
 export function PreviewProvider({ children }: { children: ReactNode }) {

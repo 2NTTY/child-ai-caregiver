@@ -15,6 +15,7 @@ description: 在育伴港 frontend/ 隔離 Expo 工程中，依參考圖實作�
    照片及來源的原文控件沿 RecordDraftFields；私人來源的取得／提取沒有 opId，沿 [SHARED_INPUT_HANDOFF](../../../SHARED_INPUT_HANDOFF.md) 已核對的原版本／片段及查核分支，不由共用狀態提示推造 retry 協定。已確認但結果不能核對時先 GET 並明確結束，不按正文／hash 猜測或重送。候選不確定內容保留，來源日期不派生自取得時間。
    成長操作沿 [GROWTH_HANDOFF](../../../GROWTH_HANDOFF.md) 的原完整 body／項目／授權／fact 基準；GET 不代表 unknown 已成功，放棄表單不清未知原請求。來源或適用依據失效不呈現舊建議為現行內容，接受不等於任務／預約／外發完成。
    摘要沿 [SUMMARY_HANDOFF](../../../SUMMARY_HANDOFF.md) 的 Server 統計／完整來源及原期間，unknown 查原收據；保存已確認但摘要未讀回不能重送。RHF 動態清單保留 stable id／草稿與舊基準，根契約的規範內容另行核對，不覆寫原草稿或自動採新版本。
+   聯絡沿 [CONTACT_HANDOFF](../../../CONTACT_HANDOFF.md) 的本人同意／任務 grant／台帳，固定 generic_notice／task_due；accepted、本人 ack 和事項完成分開。GET／離線保留 dirty 選項及原版本，正式 ContactPanel 的 clearDrafts 接線差異須明確處理；receipt confirmed 不能覆寫較新版本。有限清單不能推斷原任務已刪除；固定緊急入口在模型回覆前保持可用，不新增症狀分類。
 6. 依變更執行必要 typecheck／build／針對性合成預覽。共用外殼變更才擴至所有靜態路由；不因換工作包例行重跑完整舊測試。至少檢查受影響頁的 1440／1024／390／320 CSS px、鍵盤及適用操作狀態，區分 document overflow 與容器裁切的內容溢出。展示實際截圖，更新前端 STATUS／PLAN／HANDOFF。真服務／正式 E2E 沿主聊天 P2 集中驗收安排。
 7. 需要手機軟件介面時讀 [原生介面指引](references/native-ui.md)。手機 Web、Android bundle、Android 實機三份證據不可混用。開包、整合前及交付前同步 GitHub 遠端引用，核對 frontend 重疊；不改其他聊天 checkout 或 root 指導文件。
 

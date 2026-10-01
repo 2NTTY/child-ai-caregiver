@@ -3,6 +3,8 @@ import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "re
 import { Text } from "react-native-paper";
 import { AppButton, AppTextField, SectionCard } from "../components/ui";
 import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";
+import { EmergencyHelpView } from "../components/agent/EmergencyHelpView";
+import { emergencyHelpSnapshot } from "../preview/emergency-help-data";
 import { usePreview } from "../preview/PreviewContext";
 import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
@@ -32,6 +34,7 @@ export default function ChatPage() {
         <View style={styles.headingRow}><View style={styles.agentMark}><AppIcon name="star-four-points" size={28} /></View><View style={styles.headingCopy}><Text accessibilityRole="header" style={[styles.title, compact && mobileType.sectionTitle]}>育伴港 Agent 對話</Text><Text style={[styles.subtitle, compact && mobileType.body]}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
         <Text style={styles.previewNote}>合成畫面示例 · 尚未連接 Agent 或發送訊息</Text>
       </SectionCard>
+      <EmergencyHelpView help={emergencyHelpSnapshot} />
       {!child ? <SectionCard><Text style={styles.body}>請先選擇孩子；不同孩子的私人對話不能混在一起。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard> : <>
         <View style={styles.questionRow}><View style={styles.questionBubble}><Text style={styles.questionText}>最近一星期孩子晚上比較難入睡。我應該先整理哪些資料，才方便討論睡前流程？</Text><Text style={styles.bubbleMeta}>合成問題示例 · 未向 Server 發送</Text></View><View style={styles.personMark}><Text style={styles.personGlyph}>媽</Text></View></View>
         <View style={styles.answerRow}><View style={styles.agentMarkSmall}><AppIcon name="star-four-points" size={24} /></View><View style={styles.answerCard}>

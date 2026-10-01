@@ -1,0 +1,367 @@
+{
+  "scope": "Proactive contact authorization, delivery ledger, self acknowledgement and fixed emergency-help display; synthetic frontend only, no dispatch or device acceptance",
+  "verifiedAt": "2026-10-01T00:54:46.624Z",
+  "baselineCommit": "3d4badfe07fdb4cee0574e802923178f071013be",
+  "sourceCommit": null,
+  "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "authoritySources": [
+    {
+      "path": "docs/P2_UI_HANDOFF.md",
+      "githubBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1"
+    },
+    {
+      "path": "docs/API.md",
+      "githubBlob": "69fd07e18f649e4862030001837662d5e2fdc19b"
+    },
+    {
+      "path": "src/shared/contact.ts",
+      "githubBlob": "4603cfda49395ac679006ce599678e7467e7d4b4"
+    },
+    {
+      "path": "src/client/contact-api.ts",
+      "githubBlob": "0b5316e85ab16969094ef71a53272f6def01574a"
+    },
+    {
+      "path": "src/client/ContactPanel.tsx",
+      "githubBlob": "c0537090792d74890daf4c7ad4e73caf2c5e111d"
+    },
+    {
+      "path": "src/client/EmergencyHelp.tsx",
+      "githubBlob": "eefb7eeb5c0af078ac1de049c779b3c05720ffb1"
+    },
+    {
+      "path": "src/shared/emergency-help.ts",
+      "githubBlob": "f4697e3bd7e05b6a31cb2c1fde46fd95720daec0"
+    }
+  ],
+  "sources": [
+    {
+      "path": "app/(dashboard)/_layout.tsx",
+      "sha256": "4ddf28f54bf083795d44cd66a7c649909dc7c151b06a03f3cd846be27d99402c"
+    },
+    {
+      "path": "app/(dashboard)/contact.tsx",
+      "sha256": "4cb90881921a350d989d753acebc0348c95ab7c45114322a81ac2e3e8825270d"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "539308d4c82f44876ba3a459c74b30107de20810cfacf48a78786cb2df567ca0"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940"
+    },
+    {
+      "path": "scripts/contact-form.test.mjs",
+      "sha256": "4cd2a7835d91ac5c936e6385810978efa54e0822218524d7ca743fed2c78c253"
+    },
+    {
+      "path": "scripts/flows/contact.mjs",
+      "sha256": "81047cb6526243d2fa35fae89c12cc2cfccf4934525310427a1c05898d123036"
+    },
+    {
+      "path": "scripts/flows/emergency-help.mjs",
+      "sha256": "0346862b6ccd6dff563c8f4ff849b333377d612cf31fd5985ca300dbc88e1c7e"
+    },
+    {
+      "path": "scripts/preview-browser.mjs",
+      "sha256": "fe49ce8ffce72bce7683a762d2e94eee7a0bc57c40d924026ab4117dab76fb41"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "fde4db37e6ac57d66a796f7301b6e6a62bc9f032fffba330573108957e2ba36c"
+    },
+    {
+      "path": "src/channel-view-model.ts",
+      "sha256": "fbdb2ff827d61ebee55ebd207c4bd06d9b4ae7a4fe4cc42e97ea511ccb8a3b43"
+    },
+    {
+      "path": "src/components/AppCheckbox.tsx",
+      "sha256": "1efb6cf18e16d9de1d1952322a0bee7682dd647f68501fcdecc7323cbc088e0e"
+    },
+    {
+      "path": "src/components/AppIcon.tsx",
+      "sha256": "79a0c4c939e57590570b30efbab0f0f2996e10c5aeb963ca8f68e7f3d987bbe4"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256": "fe5860f1112d3f499be35640d6c34d0e73d91c249748491377c54e2dea5f077e"
+    },
+    {
+      "path": "src/components/DateTimeFields.tsx",
+      "sha256": "5f3ec91da26d653f84cc1459497a3ceb2ac0ad85580fe90f732299ad0c29b6f4"
+    },
+    {
+      "path": "src/components/NativeAppShell.tsx",
+      "sha256": "bd9e4370c71b0a30619de9cb76fc824eb7dc5109a35f29f0764d4933c6ea0137"
+    },
+    {
+      "path": "src/components/agent/EmergencyHelpView.tsx",
+      "sha256": "e5a8999fedcc52761597eef2bcf4793ef4746bf24058f222a34236504de0b36f"
+    },
+    {
+      "path": "src/components/contact/ContactConsentCard.tsx",
+      "sha256": "da40530a91e24475bcb811ca8e1c52d6e0ae35ff8fb0920f1bbef74332e172ff"
+    },
+    {
+      "path": "src/components/contact/ContactHistory.tsx",
+      "sha256": "2dd8f09cf14c0cef8e173d09b101d092ed54d6827c217f1b00c6fe1c9031c42e"
+    },
+    {
+      "path": "src/components/contact/ContactTaskCard.tsx",
+      "sha256": "5f7e79643b118965ace9de3a547d068afb0612da3fbdeddd1b41cc285685ff49"
+    },
+    {
+      "path": "src/components/contact/ContactView.tsx",
+      "sha256": "eb84273d52367dd209722a51805599c81ba7ab06f53afef47b2970dba0527619"
+    },
+    {
+      "path": "src/components/contact/contact-form.ts",
+      "sha256": "1b0b697a6ed9bdb7982f74aa55f105004f860a1d1468dedf2bfee097c7ca2d18"
+    },
+    {
+      "path": "src/components/contact/contact-styles.ts",
+      "sha256": "7ec37aaa565b64521cd23fbfade8fe089e1d961f830e725aa8c93cf82a83c075"
+    },
+    {
+      "path": "src/components/date-time.ts",
+      "sha256": "be2822d8a4d00afd91d50fcfa9735e9d7f90bfd1cc6d684e9b75d900fb793d6a"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "d9309f724e6b17fbbe33016d247754ec3d1b1414eaabce18f4ccdfd15d8d6997"
+    },
+    {
+      "path": "src/contact-view-model.ts",
+      "sha256": "f7d4d53314b9590b506211d3c61f3f483a1fe19dc8d84ba2cf7a6ef13d8dc0dc"
+    },
+    {
+      "path": "src/preview/PreviewContext.tsx",
+      "sha256": "216c8d9951b26cf484bea86820ca2955a6dfcff8e30dd8299dfa49d53e232a55"
+    },
+    {
+      "path": "src/preview/contactFixture.ts",
+      "sha256": "49fcba0b24b614c4240e5de635b6f65dc631dbfe737e8140cf35ceb7aac3dbb0"
+    },
+    {
+      "path": "src/preview/emergency-help-data.ts",
+      "sha256": "534ac58468cec2c690ecb113d958d87de1acc836be018099151252c46803092a"
+    },
+    {
+      "path": "src/preview/useContactPreview.ts",
+      "sha256": "d79102eee51963eaf269ec4761b059b1219a6ec3a5f0825054a6244c9a20aaf0"
+    },
+    {
+      "path": "src/screens/ContactScreen.tsx",
+      "sha256": "b729d44a677826244b0112ee38b50243c949559c4deb7b6e5fde1799829e8128"
+    },
+    {
+      "path": "src/screens/chatScreen.tsx",
+      "sha256": "ccb8eebc007c30e99af52169aea201a14bec5f316f29fafde50eaa4ed5895e38"
+    },
+    {
+      "path": "src/summary-view-model.ts",
+      "sha256": "3f06255e516338631f9023c7febe8557afabc14a461b2033f8e8d3c465ccb3e0"
+    },
+    {
+      "path": "src/task-view-model.ts",
+      "sha256": "a6d4c2cf6a95b236d8e32c93800ca0988bf6e2e7b81546e1da5221d41d9faee0"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "7f931fdd7ddeacfb2ba1a615bf81aabf1804f595a0266491d02e46825f532688"
+    },
+    {
+      "path": "src/view-model.ts",
+      "sha256": "ea8f899fc53de3014c73339ab869c7f0787c80967ea523df82b28fb84307a641"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d"
+    }
+  ],
+  "snapshotDigest": "219a71765b0c8fd3471fa78196fb1b66b1e0aa19cee5b73601eceeda29d4a642",
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "contactUnit": {
+      "exitCode": 0,
+      "passed": 3,
+      "command": "node --test scripts/contact-form.test.mjs"
+    },
+    "webExport": {
+      "exitCode": 0,
+      "staticRoutes": 33,
+      "bundles": [
+        {
+          "name": "entry-770b0fba43854b30f6467817bc68e178.js",
+          "sha256": "d7e313685556cda5a38dff8170df8df04aefcf3942d43886af5ad976f126bfed"
+        }
+      ]
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "assets": 31,
+      "bundles": [
+        {
+          "name": "entry-75656c117fec8a8083dffc7c0183e3c9.hbc",
+          "sha256": "89e2a9733d9ad9ccd4c82e311b8229ba2e3d07c8803ba42864d38dcbc96bcc80"
+        }
+      ]
+    },
+    "ui": {
+      "exitCode": 0,
+      "proof": "checks-contact-contact-text-emergency-help.json",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "textScale": {
+        "webOnly": true,
+        "scale": 1.5,
+        "widths": [
+          390,
+          320
+        ]
+      },
+      "passed": [
+        "contact: four widths/navigation, explicit personal consent and binding order/revoke, task eligibility/backup/expiry/revoke, truthful ledger and self acknowledgement, same original receipt/confirmed-unread/no-pending recovery, stale drafts, worker pause and offline/identity/Server/child/access cleanup; no API calls",
+        "contact text: 390/320 synthetic 150% Web text and shared selection/date controls reflow; not native system font acceptance",
+        "emergency help: four widths, fixed root display data before Agent/offline, real focusable official links with safe target attributes; no website clicks, calls or classifier"
+      ],
+      "failures": []
+    },
+    "skill": {
+      "frontmatter": "Passed using existing yaml package; official Python validator has no PyYAML in this runtime",
+      "localReferences": 20
+    }
+  },
+  "screenshots": [
+    {
+      "name": "contact-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "ca2f2896a824017dbca2f8e3f8d853cc231ceb3ea37d5ea3182eb07ab19ef1f9"
+    },
+    {
+      "name": "contact-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "d95f43dff2427ee2a8cb1ab3ac21f30397feb18beac57bb54c323f2a40853fdc"
+    },
+    {
+      "name": "contact-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "c4486e046889527f772296f3ac0e8e26e0fa0ba2cbd18b739a5c282f7866f7ff"
+    },
+    {
+      "name": "contact-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "0a6354e909c36bc36a52f94bb9dff2ef7b8183b801230a8987c7e9a4a177f593"
+    },
+    {
+      "name": "contact-large-text-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "2b42666e4eb73cb3c89066b55b3ff47a64cf35ae2e32b67fc79831b2a6d06f3f"
+    },
+    {
+      "name": "contact-large-text-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "039009822a7415231fd7651c9337d2d173311bcab2e0c9d3331fdb072e4d9240"
+    },
+    {
+      "name": "contact-original-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "d661b4710e05ffbb761d6be0db38681a2ced05f5f1a2c8c08e3c02416d68def6"
+    },
+    {
+      "name": "contact-task-options-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "cf38b4ef6e1fbe937261e1d47b062f584b7549b165cac87b5d48aa2e2d8e0917"
+    },
+    {
+      "name": "emergency-help-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "13c230437e8c5fb78ea3dd759d2b03fb0bfc3a75d2dd95959f7878a3ad5c4cb7"
+    },
+    {
+      "name": "emergency-help-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "b20b3a4bde3541363d3ef657a6e9d506b56cd827a464ea4642ea5b745a4286c9"
+    },
+    {
+      "name": "emergency-help-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "5ff1f147c5394a50ad8ae45c44dc7a3c3c348cd50fc683ede3e0bfa201c711c5"
+    },
+    {
+      "name": "emergency-help-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "141c3959197c90bc2de4b280c790205d416fc0d63b195f460eb103c8ba92f40a"
+    }
+  ],
+  "research": {
+    "reuse": "Existing Paper/RHF/Zod/DateTime/Luxon/Expo Link/OKLCH/SVG maintained; no new dependencies",
+    "officialView": "https://necolas.github.io/react-native-web/docs/view/",
+    "viewEvidence": "Current official page 0.21.3 and installed 0.21.2 public View implementation checked; hrefAttrs/anchor focus/target/rel verified",
+    "fixedHelpSources": [
+      "https://www.hkfsd.gov.hk/chi/fire_ambulance_services/responder.html",
+      "https://www.hkfsd.gov.hk/chi/fire_ambulance_services/fire_information.html"
+    ],
+    "checkedOn": "2026-10-01",
+    "productHelpDatePreserved": "2026-09-28"
+  },
+  "reuse": [
+    "FE-W14 common controls and 48-layout evidence retained",
+    "FE-W15 growth and FE-W16 summary/local flow evidence retained; no full unrelated regression or new all-route matrix"
+  ],
+  "versions": {
+    "@expo/metro-runtime": "57.0.16",
+    "@expo/vector-icons": "^15.0.2",
+    "@hookform/resolvers": "5.9.1",
+    "expo": "57.0.24",
+    "expo-constants": "57.0.19",
+    "expo-linking": "57.0.10",
+    "expo-router": "57.0.22",
+    "lucide-react-native": "1.49.0",
+    "luxon": "3.7.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "7.88.0",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-paper": "5.15.3",
+    "react-native-paper-dates": "0.24.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "0.21.2",
+    "react-native-worklets": "0.10.1",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "playwrightCore": "^1.63.0"
+  },
+  "pending": [
+    "User visual acceptance for the whole Web/mobile design",
+    "Formal ContactApi/controller adapters and specific clearDrafts integration difference",
+    "Exact task navigation, session/receipt/refresh and cross-page synchronization",
+    "Real worker/Web Push/Telegram dispatch and native notification permissions",
+    "Formal new-interface browser/service acceptance",
+    "APK/device/native keyboard/back/Safe Area/TalkBack/system font acceptance",
+    "Contract-undelivered account/knowledge/PDF/OS-share extras listed in HANDOFF.md"
+  ]
+}
