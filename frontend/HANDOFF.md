@@ -4,31 +4,18 @@
 
 ## 交付範圍及入口
 
+<a id="login-original-reset"></a>
 <a id="login-story-balance"></a>
-### FE-W23 登入排列補修（2026-10-02，現行排列）
-
-基線 `87d82dc79294dd39c12be68d989fc342fdb77fe6`，沿 draft PR #73，主責 B。按使用者最新指示恢復左側介紹／插畫、右側登入，取代下面初版的左側登入卡片。只修改 [LoginPage](src/screens/loginScreen.tsx) 及前端交接／證據；原素材、品牌、色盤、共用表單與認證行為不變。
-
-900 px 以上右欄佔 36%、至少 400，表單卡片最寬仍為 500；左側取得餘下空間，寬桌面約 64%，比原 52% 展示區更闊。左側文字保留獨立閱讀寬度及原四項介紹，Logo 只出現一次。圖片保留完整透明度，沿 onLayout 的實際大小及原素材 1672 × 941 比例計算 cover，水平裁切重心 75%，避免預設置中遮住孩子；圖片更換尺寸時須同步原比例。既有 SVG 漸淡方法及 paper token 只保護左側文字，不把人物整體變淡或拉伸。較窄桌面仍可能裁切伸出的手臂／邊緣，不宣稱所有比例均展示全張原圖。
-
-900 px 以下保留初版緊湊單欄，品牌介紹放在表單白卡上方，沒有額外故事長頁；原 Safe Area／KeyboardAvoidingView／垂直捲動保留。手機截圖屬 Web，共用原生程式只驗 bundle。沒有登入供應商、Server／session、密碼保存、背景偏好或新 API；正式接線沿既有主聊天認證流程。
-
-直接重讀 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 清單，blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`；沿同版本已核對契約，不重做 API 研究。其他 14 個 worktree 未見 frontend 修改重疊，主聊天 checkout／root 文件未改。
-
-**驗證：** 最終 2217 × 1230、1440 × 900、1024 × 768、900 × 800、390 × 844、320 × 720 的欄位位置、圖片比例／覆蓋、文字範圍、單一 Logo、登入／註冊切換及無橫向溢出通過；既有 320 本地驗證／密碼顯示／Enter 通過。typecheck、Web 33 路由及 Android Hermes／30 資產 export 通過；沒有 pageerror、console.error 或 API 請求。第一輪視覺對照仍裁切孩子，調整圖片焦點後重驗受影響排列與建置，未增加業務測試。見 [source/build](verification/fe-w23-balance/build-checks.json)、[版面](verification/fe-w23-balance/layout-checks.json)、[登入](verification/fe-w23-balance/checks-login.json) 及 [1440](verification/fe-w23-balance/login-1440.png)／[2217](verification/fe-w23-balance/login-2217.png)。使用者視覺、正式身份及原生實機仍待驗收。
-
 <a id="login-background-layout"></a>
-### FE-W23 登入背景初版（2026-10-02，桌面排列已取代）
+### FE-W23 登入原版還原及裁切（2026-10-02，現行版本）
 
-基線 `cab28414a39a2b6e25c77c68e349024247623122`，沿現有 draft PR #73，主責 B。使用者放寬左右翻轉要求，改以全幅原圖、文字清楚及登入順手為準。只改 [LoginPage](src/screens/loginScreen.tsx) 排列，復用 BrandLogo、AppTextField、AppButton、Paper 及 Happy Hues 14；沒有新增依賴、認證 payload 或背景設定。
+使用者要求先還原檔案再改；工作 HEAD `4496f47e9880a61a1d70e990895925837de150d6`。已先將 LoginPage、STATUS、PLAN、HANDOFF、DESIGN_SYSTEM 這五個 frontend 檔案還原至登入改版前 `cab28414a39a2b6e25c77c68e349024247623122`，逐一核對 Git blob 一致後才重新修改，見 [還原記錄](verification/fe-w23-reset/restore-checks.json)。Git 歷史及先前 verification 保留；`87d82dc`／`4496f47` 的排列已取代，舊錨點指向本節。只交付前端，沿 draft PR #73，主責 B。
 
-原 `assets/images/harbour-family-hero.png` 以 RN Image／cover、完整透明度鋪滿 KeyboardAvoidingView，放在 ScrollView 外；直接用圖片本身的漸淡，裝飾不攔截點擊或朗讀。900 px 以上表單欄佔左側 48%，品牌、簡短介紹及表單收在同一白卡，最寬 500；右側透明留白展示人物。900 px 以下改全寬單欄，保留安全區及垂直捲動，不設額外故事區或重複 Logo。不同長寬比會按 cover 裁切原圖，不拉伸人物或宣稱窄版顯示全張原圖；白卡保障文字可讀。此包取代 FE-W21 登入頁兩個 Logo 的舊排列。
+[LoginPage](src/screens/loginScreen.tsx) 保留原品牌介紹／四項功能、右側表單上方 Logo、共用 AppTextField／AppButton 及原 0.55 圖片透明度；沒有新全幅背景、SVG 漸淡層或重組表單。桌面右欄 36%／至少 400、卡片最寬 500，左側取得餘下展示空間；介紹的閱讀寬度另限在左側。原圖 1672 × 941 按 onLayout 容器計算 cover，`harbourCropFocus=0.95` 把圖片再往左移，為指尖保留空間；若更換原圖尺寸，須同步比例。900 px 以下回到原版的上方故事／下方表單，不套用已撤回的單一品牌卡片。
 
-登入／註冊切換、稱呼／電郵／密碼的既有本地格式檢查、密碼顯示及返回主頁保持原行為。登入仍未接真身份或 Server，沒有保存／提交密碼，也沒有新登入供應商、忘記密碼或 session 流程。正式整合由主聊天沿既有認證控制器接線；首頁自選背景仍只屬原入口，不把登入裝飾連到私人照片或背景保存 API。
+本地登入／註冊驗證、密碼顯示及返回主頁的程式保留原內容，沒有 Server／session、密碼保存或新 API／背景偏好。正式認證／初始化仍由主聊天接線。直接重核 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 UI 清單（blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`）；其他 14 個 worktree 未見 frontend 重疊。
 
-開包及交付前 fetch GitHub；直接讀 [當前 P2 UI 清單](https://github.com/2NTTY/child-ai-caregiver/blob/d3213e6dde2b72fd34a955b5ceebab1f046f3f6e/docs/P2_UI_HANDOFF.md)，master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e`／blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`；沿 FE-W22 同 master 已核對的 API blob `69fd07e18f649e4862030001837662d5e2fdc19b`，無契約變更。14 個其他 worktree 未見 frontend 修改重疊，沒有修改主聊天 checkout 或 root 文件。
-
-**已驗／未驗：** typecheck、Web 33 路由及 Android Hermes／30 資產 export 通過。實際 Web 輸出在 2217 × 1230、1440 × 900、1024 × 768、390 × 844、320 × 720 核對背景滿版／透明度、左右排列／單欄、單一 Logo、登入／註冊切換及無橫向溢出；既有 320 本地驗證、密碼顯示及 Enter 提交通過。沒有 pageerror、console.error 或 API 請求。見 [版面](verification/fe-w23/layout-checks.json)、[既有登入流程](verification/fe-w23/checks-login.json)、[source/build](verification/fe-w23/build-checks.json) 及 [桌面](verification/fe-w23/login-1440.png)／[390](verification/fe-w23/login-390.png)。僅合成介面檢查，使用者視覺、真認證及 Android 鍵盤／系統／實機仍待驗收；沒有重跑無關業務回歸。
+**驗證：** 2206 × 1252（使用者截圖尺寸）、1440 × 900、1024 × 768、900 × 800、390 × 844、320 × 720 的重排／比例／模式切換及既有 320 本地驗證／密碼顯示／Enter 通過；typecheck、Web 33 路由及 Android Hermes／30 資產 export 通過。桌面按原圖指尖約 x=1510 的視覺定位估算，右側約有 92–175 CSS px 留白，實際截圖已對照，並非新的業務資料。沒有 pageerror、console.error 或 API 請求。見 [版面](verification/fe-w23-reset/layout-checks.json)、[登入](verification/fe-w23-reset/checks-login.json)、[source/build](verification/fe-w23-reset/build-checks.json) 及 [桌面](verification/fe-w23-reset/login-1440.png)。使用者視覺、真身份及原生實機仍待驗收；未重跑無關業務。
 
 <a id="toolbar-delete-safeguards"></a>
 ### FE-W22 頂部控件及刪除保障（2026-10-01）

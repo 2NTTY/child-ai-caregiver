@@ -5,13 +5,13 @@ import { useRouter } from "expo-router";
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "react-native-paper";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { AppButton, AppTextField } from "../components/ui";
 import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
 const harbourAspectRatio = 1672 / 941;
+const harbourCropFocus = 0.95;
 type Mode = "signIn" | "signUp";
 
 export default function LoginPage() {
@@ -37,44 +37,25 @@ export default function LoginPage() {
     setResult(`表單格式已通過；此預覽沒有連接 Server，未有${mode === "signIn" ? "登入" : "建立帳戶"}。`);
   }
 
-  return <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-    {narrow ? <View pointerEvents="none" aria-hidden importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
-      <Image testID="login-background-image" source={harbourArt} accessible={false} resizeMode="cover" style={styles.backgroundImage} />
-    </View> : null}
-    <ScrollView style={styles.scrollContent} contentContainerStyle={[styles.root, narrow && styles.rootStack, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
-    {!narrow ? <View testID="login-story-column" style={styles.story} onLayout={({ nativeEvent: { layout } }) => setStorySize(current => current.width === layout.width && current.height === layout.height ? current : { width: layout.width, height: layout.height })}>
-      <View pointerEvents="none" aria-hidden importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
-        <Image testID="login-background-image" source={harbourArt} accessible={false} resizeMode="cover" style={artworkWidth > 0 ? { position: "absolute", width: artworkWidth, height: artworkHeight, left: (storySize.width - artworkWidth) * 0.75, top: (storySize.height - artworkHeight) / 2 } : styles.backgroundImage} />
-        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-          <Defs><LinearGradient id="login-story-fade" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor={colors.paper} stopOpacity={0.85} />
-            <Stop offset="0.32" stopColor={colors.paper} stopOpacity={0.65} />
-            <Stop offset="0.58" stopColor={colors.paper} stopOpacity={0} />
-          </LinearGradient></Defs>
-          <Rect width="100%" height="100%" fill="url(#login-story-fade)" />
-        </Svg>
-      </View>
-      <View testID="login-story-content" style={styles.storyContent}>
+  return <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView style={styles.scroll} contentContainerStyle={[styles.root, narrow && styles.rootStack, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
+    <View testID="login-story-column" style={[styles.story, narrow ? styles.storyCompact : styles.storyDesktop]} onLayout={({ nativeEvent: { layout } }) => setStorySize(current => current.width === layout.width && current.height === layout.height ? current : { width: layout.width, height: layout.height })}>
+      <Image testID="login-background-image" source={harbourArt} resizeMode="cover" accessibilityLabel="香港海旁照顧者與孩子插畫" style={[styles.storyImage, !narrow && artworkWidth > 0 && { width: artworkWidth, height: artworkHeight, left: (storySize.width - artworkWidth) * harbourCropFocus, top: (storySize.height - artworkHeight) / 2 }]} />
+      <View testID="login-story-content" style={[styles.storyContent, !narrow && styles.storyReadingWidth]}>
         <BrandLogo style={styles.storyLogo} />
         <Text style={styles.storyEyebrow}>用資料 · 陪伴成長</Text>
-        <Text accessibilityRole="header" style={[styles.storyTitle, width < 1200 && styles.storyTitleCompact]}>用 AI，{"\n"}更輕鬆做好育兒大小事。</Text>
+        <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>用 AI，{narrow ? "" : "\n"}更輕鬆做好育兒大小事。</Text>
         <Text style={styles.storyLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
-        <View style={styles.features}>
+        {!narrow ? <View style={styles.features}>
           <View style={styles.featureRow}><AppIcon name="message-text-outline" /><Text style={styles.feature}>隨時整理照顧問題與記錄</Text></View>
           <View style={styles.featureRow}><AppIcon name="file-document-outline" /><Text style={styles.feature}>清楚區分候選與已確認資料</Text></View>
           <View style={styles.featureRow}><AppIcon name="account-group-outline" /><Text style={styles.feature}>按權限與家人協調</Text></View>
           <View style={styles.featureRow}><AppIcon name="shield-check-outline" /><Text style={styles.feature}>保留原文、時間及資料來源</Text></View>
-        </View>
+        </View> : null}
       </View>
-    </View> : null}
-    <View testID="login-form-column" style={[styles.formSide, !narrow && styles.formSideSplit]}>
+    </View>
+    <View testID="login-form-column" style={[styles.formSide, !narrow && styles.formDesktop]}>
+      <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
       <View style={styles.formCard}>
-        {narrow ? <><View style={styles.formHeader}>
-          <BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text>
-          <Text style={styles.brandTitle}>用 AI，更輕鬆做好育兒大小事。</Text>
-          <Text style={styles.brandLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
-        </View>
-        <View style={styles.divider} /></> : null}
         <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
         <Text style={styles.formIntro}>{mode === "signIn" ? "登入後，繼續整理孩子的照顧資料。" : "先建立自己的帳戶，再新增孩子的資料。"}</Text>
         <View style={styles.modeTabs}>
@@ -97,17 +78,12 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.paper }, scrollContent: { flex: 1 }, backgroundImage: { ...StyleSheet.absoluteFill, width: "100%", height: "100%" },
-  root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { opacity: 0.65 },
-  story: { flex: 1, minWidth: 0, minHeight: 760, backgroundColor: colors.paper, overflow: "hidden" },
-  storyContent: { flex: 1, width: "52%", minWidth: 320, maxWidth: 480, paddingHorizontal: spacing.hero, paddingVertical: spacing.xxl, justifyContent: "center", gap: spacing.md },
-  storyLogo: { width: 190, height: 60 }, storyEyebrow: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },
-  storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.hero, lineHeight: 44, fontWeight: "800" }, storyTitleCompact: { fontSize: typeScale.heading, lineHeight: 36 },
-  storyLead: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.body, lineHeight: 26 }, features: { marginTop: spacing.lg, gap: spacing.lg },
-  featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.md }, feature: { flex: 1, fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },
-  formSide: { width: "100%", minWidth: 0, minHeight: 760, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formSideSplit: { width: "36%", minWidth: 400, backgroundColor: colors.paper, paddingHorizontal: spacing.xxl },
-  formHeader: { alignItems: "center", gap: spacing.sm }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small },
-  brandTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 28, fontWeight: "700", textAlign: "center" }, brandLead: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22, textAlign: "center" },
-  formCard: { width: "100%", maxWidth: 500, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.large, backgroundColor: colors.white, padding: spacing.xl, gap: spacing.md }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
+  storyDesktop: { width: "64%", minWidth: 0, flexShrink: 1 },
+  storyReadingWidth: { width: "52%", minWidth: 320, maxWidth: 480 },
+  formDesktop: { flexGrow: 0, flexShrink: 0, flexBasis: "36%", minWidth: 400, paddingHorizontal: spacing.xxl },
+  featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { opacity: 0.65 },
+  story: { width: "52%", minHeight: 760, backgroundColor: colors.paper, overflow: "hidden" }, storyCompact: { width: "100%", minHeight: 310 }, storyImage: { position: "absolute", width: "100%", height: "100%", opacity: 0.55 }, storyContent: { flex: 1, paddingHorizontal: spacing.hero, paddingVertical: spacing.xxl, justifyContent: "center", gap: spacing.md }, storyLogo: { width: 190, height: 60, alignSelf: "flex-start" }, storyEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.small, fontWeight: "800" }, storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.hero, lineHeight: 48, fontWeight: "800", maxWidth: 600 }, storyTitleCompact: { fontSize: typeScale.heading, lineHeight: 38 }, storyLead: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 26, maxWidth: 570 }, features: { marginTop: spacing.lg, gap: spacing.lg }, feature: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },
+  formSide: { flex: 1, minWidth: 0, minHeight: 760, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { alignItems: "center", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 500, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.large, backgroundColor: colors.white, padding: spacing.xl, gap: spacing.md }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
   modeTabs: { flexDirection: "row", borderRadius: radius.small, backgroundColor: colors.neutralSurface, padding: spacing.xs, gap: spacing.xs }, modeTab: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.small }, modeActive: { backgroundColor: colors.white, borderBottomWidth: 2, borderBottomColor: colors.teal }, modeText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" }, modeTextActive: { color: colors.deepTeal }, passwordBlock: { gap: spacing.xs }, passwordToggle: { alignSelf: "flex-end", minHeight: 44, paddingHorizontal: spacing.sm, justifyContent: "center" }, passwordToggleText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "700" }, result: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.paleTeal, borderRadius: radius.small, padding: spacing.md, fontSize: typeScale.small, lineHeight: 22 }, formNote: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 }, divider: { height: 1, backgroundColor: colors.line }, unavailable: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 }, backLink: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.sm, alignSelf: "flex-start" }, backLinkText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" }, footer: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
 });
