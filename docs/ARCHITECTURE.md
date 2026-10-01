@@ -27,7 +27,7 @@
 六層按 P1 至 P4 的實際流程落實；P1 須具備最小 Server、PostgreSQL 及身份隔離。Web／Android 共用 TypeScript domain、validation 與協議；權威業務校驗、AI orchestration、記憶及 tasks 在 Server 執行，不能放在 UI component 或資料庫／平台／渠道 adapter。
 
 <a id="rule-3-1-11"></a>
-共享核心保持平台、資料庫及渠道解耦；育伴港是唯一實作領域，將領域模型、prompt、來源及受限 skills／任務流程集中管理。只在相關功能使用邊界，不建通用實體模型、動態插件平台、registry 或第二主題。日後可從來源碼層替換領域或 adapter，不預建平台。
+共享核心保持平台、資料庫及渠道解耦；育有方是唯一實作領域，將領域模型、prompt、來源及受限 skills／任務流程集中管理。只在相關功能使用邊界，不建通用實體模型、動態插件平台、registry 或第二主題。日後可從來源碼層替換領域或 adapter，不預建平台。
 
 <a id="reuse-boundaries"></a>
 ### 通用能力復用邊界

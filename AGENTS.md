@@ -25,7 +25,7 @@
 - 已有代码尽量局部修改；网页与 App 共享业务规则及协议，参见 [架构](docs/ARCHITECTURE.md#section-3-1)。
 - 不做无关重构、可选抽象、UI polish 或顺手优化；不提前实现后续步骤需要的完整框架、服务或插件平台。
 - 开源研究、许可和版本结论须保存；生产复用只按 [S01](PLAN.md#s01) 验收边界推进。
-- 只實現育伴港領域；寫到相關功能時集中管理 prompt、知識來源、受限 skills／任務流程及領域規則，共享 TypeScript 業務、薄平台 adapter 及必要 port 按需建立。Server 權威及核心結構見 [ARCHITECTURE](docs/ARCHITECTURE.md#section-3-1)，不另建通用領域模型、插件平台、第二主題、空框架或獨立解耦包。
+- 只實現育有方領域；寫到相關功能時集中管理 prompt、知識來源、受限 skills／任務流程及領域規則，共享 TypeScript 業務、薄平台 adapter 及必要 port 按需建立。Server 權威及核心結構見 [ARCHITECTURE](docs/ARCHITECTURE.md#section-3-1)，不另建通用領域模型、插件平台、第二主題、空框架或獨立解耦包。
 
 <a id="technical-skills"></a>
 ## 技術研究與 Skill 復用

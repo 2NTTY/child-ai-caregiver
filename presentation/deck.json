@@ -1,6 +1,6 @@
 {
-  "title": "育伴港",
-  "output": "yuban-gang-project-deck.pptx",
+  "title": "育有方",
+  "output": "yuyoufang-project-deck.pptx",
   "slides": [
     { "id": "cover", "layout": "cover", "asset": "../assets/promo/hero.svg" },
     { "id": "problem", "layout": "diagram", "asset": "../assets/promo/problem-solution.svg" },

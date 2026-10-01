@@ -11,7 +11,7 @@ test("existing prompt recipe includes safety once and excludes maintenance examp
   assert.ok(result.moduleIds.includes("domain.childcare-hk.safety"));
   assert.ok(result.moduleIds.includes("core.identity-and-trust"));
   assert.doesNotMatch(result.text, /<!-- prompt:|## 維護與靜態例子|^- ID：/mu);
-  assert.match(result.text, /育伴港/u);
+  assert.match(result.text, /育有方/u);
   assert.ok(result.text.length < 32000);
 });
 

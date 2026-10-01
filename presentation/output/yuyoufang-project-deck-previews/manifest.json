@@ -1,0 +1,9 @@
+{
+  "generated": true,
+  "source": "../yuyoufang-project-deck.pptx",
+  "sha256": "4861161dbf90c7f497863971bc0bdbad6c74776abd98cc72eb151fbff7cad4e9",
+  "slides": 13,
+  "method": "OOXML text/picture geometry rendered by browser; not desktop PowerPoint",
+  "desktopPowerPointVerified": false,
+  "regenerate": "npm --prefix presentation run preview; npm --prefix presentation run catalog"
+}

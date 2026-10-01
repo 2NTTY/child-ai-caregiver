@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
-  <title id="title">育伴港五階段路線圖</title>
+  <title id="title">育有方五階段路線圖</title>
   <desc id="desc">已確認設計及分階段規劃，不表示當前完成狀態。P1 建立 Web 基礎閉環與加密備份。P2 是比賽目標，交付持續 Server Agent、家庭權限、記憶、知識、照片與真實通知。P3 加入 Android、FCM、語音、相機、跨端與家庭交接。P4 完成知識管理、趨勢、PDF、自選 Server、部署、搬遷及災備。P5 為另行確認的可選增值，不能延後 P1 至 P4 的必要驗收。</desc>
   <rect width="1440" height="720" fill="#FAF7EF"/>
   <g id="heading">

@@ -1,6 +1,8 @@
-# 育伴港簡報來源
+# 育有方簡報來源
 
-13 頁、16:9、香港繁體中文。這份簡報介紹未來產品方向，實現現況由獨立 snapshot 提供。所有圖形只是視覺 source，未接入產品。
+13 頁、16:9、香港繁體中文。
+
+2026-10-01 品牌由「育伴港」改為「育有方」。新版另存 `output/yuyoufang-project-deck.pptx`；舊 PPT／預覽及 `project-status.json` 的 2026-09-22 歷史基線保留。此次只更新名稱，簡報中的階段現況仍是該歷史快照，不能當作最新 P2 狀態。這份簡報介紹未來產品方向，實現現況由獨立 snapshot 提供。所有圖形只是視覺 source，未接入產品。
 
 ## 修改入口
 
@@ -30,7 +32,7 @@ npm --prefix presentation run check
 npm --prefix presentation run preview
 ```
 
-預設輸出：`output/yuban-gang-project-deck.pptx`。build 先在 `.build/run-*/` 生成、嵌入 SVG、驗證及重新匯入，全部通過後才替換正式 generated output；失敗保留原成品及可恢復的中間檔。
+預設輸出：`output/yuyoufang-project-deck.pptx`。build 先在 `.build/run-*/` 生成、嵌入 SVG、驗證及重新匯入，全部通過後才替換正式 generated output；失敗保留原成品及可恢復的中間檔。
 
 工具預設解析目前使用者的 bundled runtime 路徑，沒有硬寫 Windows 使用者名稱。若其他機器不同，先由 Codex 呼叫 `load_workspace_dependencies`，設定：
 
@@ -66,4 +68,4 @@ node presentation/scripts/build.mjs --status presentation/.build/example-status.
 - 暫存：`.build/` 的候選、重建試驗、HTML、逐頁 PNG、工具 reports，全部忽略。
 - 本輪驗收、6% CRITICAL 停止記錄及主進度交接：`HANDOFF.md`。它只記本視覺工作包，不更新 PLAN／STATUS／WORKLOG。
 
-素材總覽在 `../assets/index.html`。SVG 的 PNG 匯出用 `npm --prefix presentation run export:assets`；執行 preview 後，以 `npm --prefix presentation run catalog` 更新總覽、圖片 manifest 及 `output/previews/`。六張生活插畫在 `../assets/images/`，提示詞獨立保存在 `../assets/image-prompts.json`。
+素材總覽在 `../assets/index.html`。SVG 的 PNG 匯出用 `npm --prefix presentation run export:assets`；執行 preview 後，以 `npm --prefix presentation run catalog` 更新總覽、圖片 manifest 及按 PPT 檔名分隔的 `output/<檔名>-previews/`，保留原 `output/previews/`。六張生活插畫在 `../assets/images/`，提示詞獨立保存在 `../assets/image-prompts.json`。

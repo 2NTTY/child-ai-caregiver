@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="720" viewBox="0 0 1440 720" role="img" aria-labelledby="title desc" font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif">
-  <title id="title">育伴港持續 Agent 的受授權工作循環</title>
+  <title id="title">育有方持續 Agent 的受授權工作循環</title>
   <desc id="desc">已確認設計及分階段規劃。P2 的持續 worker 由事件或到期事項觸發，按需呼叫 AI 理解、補問與草擬下一步，再由程式逐次核對授權、工具與任務終態，才執行和記錄。預先授權範圍內自動執行，超出範圍才請求確認。台帳支持有限跟進，完成、取消或撤權即停止。</desc>
   <rect width="1440" height="720" fill="#FAF7EF"/>
   <g id="heading">

@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -168,7 +168,7 @@
     {
       "id": "domain.childcare-hk.profile",
       "path": "domains/childcare-hk/profile.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -185,7 +185,7 @@
     {
       "id": "domain.childcare-hk.sources-freshness",
       "path": "domains/childcare-hk/sources-freshness.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.identity-and-trust",
         "domain.childcare-hk.profile"

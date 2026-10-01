@@ -1,4 +1,4 @@
-# 育伴港
+# 育有方
 
 An AI companion centered on source-backed parenting answers for adult caregivers of children aged 0–10 in Hong Kong. It uses confirmed child and family context to answer everyday questions and surface relevant growth-stage concerns; records, collaboration, memory, and notifications support that experience.
 

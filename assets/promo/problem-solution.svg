@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
-  <title id="title">育伴港：從零散日常到有脈絡的照顧</title>
-  <desc id="desc">左方以便條、對話和相片表達家長資料零散，也未必知道要問甚麼；右方以記錄、補問、授權跟進三步，表達育伴港的產品方向。按預先授權執行，並在每次執行前重查權限。此圖是分階段規劃，不代表功能已交付。</desc>
+  <title id="title">育有方：從零散日常到有脈絡的照顧</title>
+  <desc id="desc">左方以便條、對話和相片表達家長資料零散，也未必知道要問甚麼；右方以記錄、補問、授權跟進三步，表達育有方的產品方向。按預先授權執行，並在每次執行前重查權限。此圖是分階段規劃，不代表功能已交付。</desc>
   <rect width="1200" height="720" fill="#FAF7EF"/>
   <g font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" fill="#203E3A">
     <g id="heading">
@@ -9,7 +9,7 @@
         <path d="M18 32C12 46 17 64 29 74C40 83 56 83 67 74C79 64 84 46 78 32" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
         <path d="M48 11C50 21 54 25 64 27C54 29 50 33 48 43C46 33 42 29 32 27C42 25 46 21 48 11Z" fill="currentColor"/>
       </g>
-      <text x="111" y="55" fill="#287568" font-size="20" font-weight="700" letter-spacing="2">育伴港</text>
+      <text x="111" y="55" fill="#287568" font-size="20" font-weight="700" letter-spacing="2">育有方</text>
       <text x="1136" y="57" text-anchor="end" fill="#60756E" font-size="18">產品方向・分階段規劃</text>
       <text id="headline" x="64" y="124" font-size="44" font-weight="700">零散的日常，也值得被好好接住。</text>
       <line x1="64" y1="157" x2="1136" y2="157" stroke="#DDE8DB" stroke-width="2"/>
@@ -48,7 +48,7 @@
     </g>
 
     <g id="connected-care">
-      <text x="571" y="216" font-size="28" font-weight="700">育伴港，接起記、問、跟進。</text>
+      <text x="571" y="216" font-size="28" font-weight="700">育有方，接起記、問、跟進。</text>
       <path d="M604 288 V498 Q604 564 667 564 H1077" fill="none" stroke="#DDE8DB" stroke-width="12" stroke-linecap="round"/>
       <g id="record">
         <circle cx="604" cy="301" r="23" fill="#287568"/>

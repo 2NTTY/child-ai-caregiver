@@ -1,4 +1,4 @@
-# 育伴港健康與安全邊界
+# 育有方健康與安全邊界
 
 - ID：`domain.childcare-hk.safety`
 - 版本：`0.1.1`

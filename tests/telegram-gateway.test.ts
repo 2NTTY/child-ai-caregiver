@@ -9,8 +9,8 @@ const config: TelegramConfig = {
 
 test("an uncertain Telegram transport attempt is never retried or reported as rejected", async () => {
   for (const notice of [
-    { kind: undefined, text: "育伴港渠道測試：這是你剛才確認發送的一般測試，沒有孩子資料。按下『收到測試』只記錄收到，不代表照護事項完成。", button: "收到測試", prefix: "ack:" },
-    { kind: "care", text: "育伴港有新的提示。請開啟育伴港查看實際事項。按下『收到提示』只記錄收到，不代表照護事項完成。", button: "收到提示", prefix: "contact:" },
+    { kind: undefined, text: "育有方渠道測試：這是你剛才確認發送的一般測試，沒有孩子資料。按下『收到測試』只記錄收到，不代表照護事項完成。", button: "收到測試", prefix: "ack:" },
+    { kind: "care", text: "育有方有新的提示。請開啟育有方查看實際事項。按下『收到提示』只記錄收到，不代表照護事項完成。", button: "收到提示", prefix: "contact:" },
   ] as const) {
     let attempts = 0;
     let requestBody: string | undefined;
