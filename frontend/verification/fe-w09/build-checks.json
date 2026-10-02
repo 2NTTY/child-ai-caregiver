@@ -1,0 +1,116 @@
+{
+  "scope": "Isolated synthetic frontend Agent conversation; no Server, model, provider or device acceptance",
+  "verifiedAt": "2026-09-30T12:55:49.356Z",
+  "baselineCommit": "83106c07a3793e5f0b6ef8b4cd61a9de3aa2e45b",
+  "contractCommit": "90dacd4e5c0a8be9e490fa7d94830ea369c57521",
+  "sources": [
+    {
+      "path": "src/agent-view-model.ts",
+      "sha256": "dfdf10e5082c94f2dabaf6d75826ccbba71a575b872f88c4b5f7cc277b50bba7"
+    },
+    {
+      "path": "src/preview/agent-fixture.ts",
+      "sha256": "b761abd203d2b896d9bf94b051f3ae2812cdaed0d92e4339d3630fb48e442840"
+    },
+    {
+      "path": "src/preview/useAgentPreview.ts",
+      "sha256": "6e758e596d24a85296ccb491d29150f9da412d34e77894db8dba27bedd0f5487"
+    },
+    {
+      "path": "src/components/agent/AgentConversationPreview.tsx",
+      "sha256": "d6b467202921e7136134ea40b69b77d57d0ae458ae97410ef667e8c117102bf1"
+    },
+    {
+      "path": "src/components/agent/AgentRunView.tsx",
+      "sha256": "18292a8ced8ed11aee36eb0751a04ec65370414416f2a90fbeccea77244bfd23"
+    },
+    {
+      "path": "src/components/agent/AgentInboxView.tsx",
+      "sha256": "3e217679682b0335b0a83ca9a509355a4300b21ab5befadc0eeb3ddb5364f193"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "b65c8205a0e4a5043420e1d85abcd59419d62a8ad80dc732d98df6a2d1b9c357"
+    },
+    {
+      "path": "src/screens/chatScreen.tsx",
+      "sha256": "59d185c848dd669a9628d112ea5f25ad2c53d59b80d8efef3852cd9da522371b"
+    },
+    {
+      "path": "scripts/flows/agent-conversation.mjs",
+      "sha256": "ed414c861338a88c4a1eb35129b08e9bcdacf77990413bd7a1039bbdffe4fb63"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "77332f572a974942abfde1a581945171e183c54cac70d19554f7ae202d59f35a"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "fcab0b21017af3cbab3e7eab6ef7720d00315cd7e4788d376f0f0a8ae98a9ae0"
+    },
+    {
+      "path": "src/components/AppIcon.tsx",
+      "sha256": "5843746f59c98b4c2b1dc5a5790ca7f38e7c41f0dac523e62a6edc1ca63bfd23"
+    }
+  ],
+  "sourceSnapshotSha256": "9fd9bb9360948a1ac633d48fab5248cd173dc3a847e1e20694b3d0175458cab5",
+  "versions": {
+    "expo": "57.0.24",
+    "router": "57.0.22",
+    "paper": "5.15.3",
+    "reactNativeWeb": "0.21.2"
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  "webExport": {
+    "command": "npm run build:web",
+    "exitCode": 0,
+    "staticRoutes": 23,
+    "bundle": {
+      "path": "_expo/static/js/web/entry-9135814489af9e3de9681acb70409fa7.js",
+      "bytes": 3819155,
+      "sha256": "18b6495ec00af323db7477eeac25f71c1b203160816e04b396cda9dad9d59a95"
+    }
+  },
+  "androidExport": {
+    "command": "npm run build:android-ui",
+    "exitCode": 0,
+    "assets": 31,
+    "bundle": {
+      "path": "_expo/static/js/android/entry-d92ddd376105b20986e29450003f0cf7.hbc",
+      "bytes": 6033088,
+      "sha256": "5a84927028efe24fc672367a8e682521792b6bed23d8f277a286de2c5c2de65b"
+    }
+  },
+  "productionPreview": {
+    "previewUrl": "http://localhost:8083",
+    "widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "evidence": [
+      "checks-agent-flow.json"
+    ],
+    "passed": [
+      "Agent conversation: four-width manual read/keyboard shared acceptance/private fact/source metadata/draft guard; unknown original retry/conflict/missing read/permission and child identity clearing/manual inbox/expiry/unknown statistics/full task-change projection"
+    ],
+    "failures": []
+  },
+  "repairedIssues": [
+    "Synthetic read scenarios now preserve terminal candidate receipts.",
+    "Test locators now reopen tools after the child-key reset and identify the full unknown status sentence."
+  ],
+  "reusedEvidence": [
+    "FE-W07 token contrast (no color change)",
+    "Existing form/rule unit checks (unchanged)"
+  ],
+  "notVerified": [
+    "Real ChatController/API/session/AI/knowledge/cross-page integration",
+    "Android device/APK/system font/keyboard/TalkBack",
+    "User visual acceptance"
+  ]
+}

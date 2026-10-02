@@ -6,8 +6,9 @@ import { AppDialog as Dialog } from "./AppDialog";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import type { ConnectionState, OperationState } from "../view-model";
 
-export function AppButton({ label, onPress, variant = "primary", disabled = false, loading = false, style, ref }: {
+export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", disabled = false, loading = false, style, ref }: {
   label: string;
+  accessibilityLabel?: string;
   onPress: () => void;
   variant?: "primary" | "secondary" | "quiet" | "accent";
   disabled?: boolean;
@@ -27,7 +28,7 @@ export function AppButton({ label, onPress, variant = "primary", disabled = fals
       contentStyle={styles.buttonContent}
       labelStyle={styles.buttonLabel}
       style={[styles.button, variant === "secondary" && styles.outlineButton, style]}
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel}
     >
       {label}
     </Button>
