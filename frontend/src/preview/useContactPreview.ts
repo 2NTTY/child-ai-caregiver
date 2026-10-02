@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 import {useEffect, useRef, useState} from 'react';
 import type {HomeChild} from '../view-model';
 import type {ContactDecision, ContactPage, ContactPending, ContactViewModel} from '../contact-view-model';
@@ -21,6 +22,7 @@ export function useContactPreview(child: HomeChild, online: boolean, identity: s
   const dirtyKeys = useRef(new Set<string>());
   const [pending, setPending] = useState<Pending | null>(null), [originalConsent, setOriginalConsent] = useState(false);
   const pendingRef = useRef(pending); pendingRef.current = pending;
+  usePreviewLeaveGuard(dirty, busy || !!pending);
   const [operation, setOperation] = useState<ContactViewModel['operation']>('none'), [notice, setNotice] = useState(''), [epoch, setEpoch] = useState(0), [confirmationEpoch, setConfirmationEpoch] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null), flight = useRef<'read' | Pending | null>(null), generation = useRef(0), alive = useRef(true), serial = useRef(0);
   const onlineRef = useRef(online); onlineRef.current = online;

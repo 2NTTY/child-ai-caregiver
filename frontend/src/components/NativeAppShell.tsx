@@ -1,3 +1,4 @@
+import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { BackHandler, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
@@ -16,6 +17,7 @@ import { PreviewToolbar, RightRail } from "./AppShell";
 export function NativeAppShell({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const leave = usePreviewNavigation();
   const pathname = usePathname();
   const { model, actions, checkedPreviewItems, togglePreviewItem, notice, dismissNotice } = usePreview();
   const [railOpen, setRailOpen] = useState(false);
@@ -27,7 +29,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   }, [railOpen]);
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}>
-      <View style={styles.header}><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => router.push("/")} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>
+      <View style={styles.header}><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"))} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>
         <View testID="header-actions" style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <ToolbarIconButton icon="page-layout-sidebar-right" label={railOpen ? "收起資訊側欄" : "開啟資訊側欄"} expanded={railOpen} onPress={() => setRailOpen(value => !value)} />
         </View>

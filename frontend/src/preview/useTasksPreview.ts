@@ -1,22 +1,27 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { HomeChild } from "../view-model";
 import { taskChangeAllowed, type TaskDraft, type TaskRevisionView, type TasksActions, type TasksViewModel, type TaskView } from "../task-view-model";
 import { emptyTaskForm, taskChangeFromForm, taskFormFromBasis, taskFormSchema, taskValuesFromForm } from "../components/tasks/task-form";
-import { createTaskFixture, taskConflictFixture, type TaskPreviewCondition } from "./task-fixture";
+import { createTaskFixture, taskConflictFixture, taskFixturePage, type TaskPreviewCondition } from "./task-fixture";
+import { mergeTaskPages, replaceTaskInPage } from "./task-pagination";
 import { usePreviewOperation } from "./usePreviewOperation";
 
 export function useTasksPreview(child: HomeChild, online: boolean, reading: boolean) {
   const [condition, setCondition] = useState<TaskPreviewCondition>("normal");
   const [fixture, setFixture] = useState(() => createTaskFixture(child.id, "normal"));
+  const [list, setList] = useState(() => taskFixturePage(createTaskFixture(child.id, "normal"), null));
+  const [loadingMoreTasks, setLoadingMoreTasks] = useState(false);
+  const pageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [historyLimit, setHistoryLimit] = useState(0);
   const [draft, setDraft] = useState<TaskDraft | null>(null);
   const [latest, setLatest] = useState<TaskView | null>(null);
   const serial = useRef(0);
+  useEffect(() => () => { if (pageTimer.current) clearTimeout(pageTimer.current); }, []);
   const controller = usePreviewOperation();
   const access = condition === "access_lost" ? "lost" : condition === "viewer" ? "read_only" : "editable";
   const blocked = controller.locked || controller.operation.state === "conflict";
-  const selected = fixture.items.find(item => item.id === selectedId) ?? null;
+  const selected = list.items.find(item => item.id === selectedId) ?? null;
 
   function applyConfirmed(attempt: TaskDraft) {
     const values = attempt.reviewedValues!;
@@ -45,11 +50,15 @@ export function useTasksPreview(child: HomeChild, online: boolean, reading: bool
     setFixture(previous => ({ ...previous, items: [result, ...previous.items.filter(item => item.id !== result.id)],
       histories: { ...previous.histories, [result.id]: [revision, ...(previous.histories[result.id] ?? [])] },
       work: previous.work.filter(item => item.taskId !== result.id), reminders: previous.reminders.filter(item => item.taskId !== result.id) }));
+    setList(previous => replaceTaskInPage(previous, result, true));
     setSelectedId(result.id); setHistoryLimit(0); setDraft(null); setLatest(null);
   }
 
   function changeCondition(next: TaskPreviewCondition) {
-    controller.reset(); setCondition(next); setFixture(createTaskFixture(child.id, next));
+    if (pageTimer.current) clearTimeout(pageTimer.current);
+    pageTimer.current = null; setLoadingMoreTasks(false);
+    const nextFixture = createTaskFixture(child.id, next);
+    controller.reset(); setCondition(next); setFixture(nextFixture); setList(taskFixturePage(nextFixture, null));
     setSelectedId(next === "needs_review" ? `${child.id}-task-review` : next === "assignee_revoked" || next === "worker_failed" || next === "worker_unknown" ? `${child.id}-task-ordinary` : null);
     setHistoryLimit(0); setDraft(null); setLatest(null);
   }
@@ -71,7 +80,7 @@ export function useTasksPreview(child: HomeChild, online: boolean, reading: bool
         initialValues: emptyTaskForm(), reviewedValues: null });
     },
     startChange(id, action) {
-      const basis = fixture.items.find(item => item.id === id);
+      const basis = list.items.find(item => item.id === id);
       if (!basis || access !== "editable" || reading || blocked || draft || !taskChangeAllowed(basis, action)) return;
       controller.reset(); setLatest(null); setHistoryLimit(0); setSelectedId(id);
       setDraft({ key: `change-${++serial.current}`, mode: action, basis, initialValues: taskFormFromBasis(basis), reviewedValues: null });
@@ -99,6 +108,7 @@ export function useTasksPreview(child: HomeChild, online: boolean, reading: bool
         setFixture(previous => ({ ...previous, items: previous.items.map(item => item.id === basis.id ? competing : item),
           histories: { ...previous.histories, [basis.id]: [revision, ...(previous.histories[basis.id] ?? [])] },
           work: previous.work.filter(item => item.taskId !== basis.id), reminders: previous.reminders.filter(item => item.taskId !== basis.id) }));
+        setList(previous => replaceTaskInPage(previous, competing));
       } : undefined);
     },
     useLatestVersion() {
@@ -107,15 +117,26 @@ export function useTasksPreview(child: HomeChild, online: boolean, reading: bool
     },
     showHistory() { if (selected && !reading && access !== "lost" && !draft) setHistoryLimit(1); },
     loadOlderHistory() { if (selected && online && !reading && access !== "lost" && !draft) setHistoryLimit(previous => previous + 2); },
+    loadMoreTasks() {
+      if (!list.nextAfterId || pageTimer.current || loadingMoreTasks || !online || reading || access === "lost" || blocked) return;
+      const cursor = list.nextAfterId;
+      setLoadingMoreTasks(true);
+      pageTimer.current = setTimeout(() => {
+        pageTimer.current = null;
+        setList(previous => mergeTaskPages(previous, taskFixturePage(fixture, cursor)));
+        setLoadingMoreTasks(false);
+      }, 250);
+    },
   };
   const hidden = access === "lost" || reading;
   const history = selected ? fixture.histories[selected.id] ?? [] : [];
   const model: TasksViewModel = {
     child: { id: child.id, name: child.displayName }, access, online, reading,
     dataLabel: "合成示例 · 未接駁 Server · 重新載入、切換孩子或情境後重置",
-    items: hidden ? [] : fixture.items, eligibleAssignees: hidden ? [] : fixture.eligibleAssignees,
-    selected: hidden ? null : selected, workerEnabled: hidden ? undefined : fixture.workerEnabled,
-    work: hidden ? [] : fixture.work, reminders: hidden ? [] : fixture.reminders,
+    items: hidden ? [] : list.items, eligibleAssignees: hidden ? [] : list.eligibleAssignees,
+    hasMoreTasks: !hidden && list.nextAfterId !== null, loadingMoreTasks: !hidden && loadingMoreTasks,
+    selected: hidden ? null : selected, workerEnabled: hidden ? undefined : list.workerEnabled,
+    work: hidden ? [] : list.work, reminders: hidden ? [] : list.reminders,
     history: hidden ? [] : history.slice(0, historyLimit), historyOpen: !hidden && historyLimit > 0,
     hasMoreHistory: !hidden && history.length > historyLimit, draft: access === "lost" ? null : draft,
     latest: access === "lost" ? null : latest, operation: controller.operation,

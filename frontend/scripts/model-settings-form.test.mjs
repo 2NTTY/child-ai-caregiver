@@ -12,6 +12,27 @@ test("personal settings require consent and valid integer budgets before any dir
   }
   assert.equal(modelSettingsSchema(false).safeParse(draft).success, false);
 });
+test("new and replacement keys match the server boundary without changing the typed value", () => {
+  const draft = { ...modelSettingsDraft(settings), consent: true };
+  for (const keyConfigured of [false, true]) {
+    const schema = modelSettingsSchema(keyConfigured);
+    assert.equal(schema.safeParse({ ...draft, keyText: "k".repeat(20) }).success, true);
+    assert.equal(schema.safeParse({ ...draft, keyText: "k".repeat(512) }).success, true);
+    assert.equal(schema.safeParse({ ...draft, keyText: "!" + "~".repeat(19) }).success, true);
+    for (const keyText of ["k".repeat(19), "k".repeat(513), " " + "k".repeat(20), "k".repeat(20) + " ", "k".repeat(10) + " " + "k".repeat(10), "k".repeat(19) + "中", "k".repeat(19) + "\n", "k".repeat(19) + "\x7f"]) {
+      assert.equal(schema.safeParse({ ...draft, keyText }).success, false);
+    }
+  }
+  assert.equal(modelSettingsSchema(true).safeParse(draft).success, true);
+  assert.equal(modelSettingsSchema(true).safeParse({ ...draft, keyText: "   " }).success, true);
+  assert.equal(modelSettingsSchema(false).safeParse(draft).success, false);
+  const entered = "!" + "k".repeat(19);
+  const replacement = { ...draft, keyText: entered };
+  assert.equal(modelCommandFromDraft(replacement, settings).apiKey, entered);
+  assert.equal(replacement.keyText, entered);
+  assert.equal("apiKey" in modelCommandFromDraft(draft, settings), false);
+  assert.equal("apiKey" in modelCommandFromDraft({ ...draft, keyText: "   " }, settings), false);
+});
 test("nonpersonal mode omits entered keys and retains saved limits instead of invalid hidden draft values", () => {
   const command = modelCommandFromDraft({ ...modelSettingsDraft(settings), mode: "platform", keyText: "synthetic-key-not-for-network", consent: true,
     dailyText: "invalid", modelCallsText: "invalid", queryEmbeddingsText: "invalid" }, settings);

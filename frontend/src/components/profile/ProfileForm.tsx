@@ -1,6 +1,7 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { HelperText, Text } from "react-native-paper";
 import { AppButton, AppSelect, AppTextField } from "../ui";
@@ -14,6 +15,8 @@ export function ProfileForm({ initialValues, editable, canReview, draftOnly, onE
   onEdit: () => void; onReview: (values: ProfileFormValues) => void;
 }) {
   const { control, handleSubmit } = useForm<ProfileFormValues>({ resolver: zodResolver(profileFormSchema), defaultValues: initialValues });
+  const { isDirty } = useFormState({ control });
+  usePreviewLeaveGuard(isDirty);
   const ageKind = useWatch({ control, name: "ageKind" });
   const [width, setWidth] = useState(0);
   const paired = width >= 560;

@@ -1,7 +1,8 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useRef,useState } from "react";
 import { View } from "react-native";
 import { HelperText,Text } from "react-native-paper";
-import { Controller,useForm,useWatch } from "react-hook-form";
+import { Controller,useForm,useWatch, useFormState } from "react-hook-form";
 import type { GrowthActions,GrowthTopic,GrowthViewModel } from "../../growth-view-model";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppButton,AppSelect,SectionCard,SectionHeader } from "../ui";
@@ -13,6 +14,8 @@ export function GrowthTopicCard({topic,model,actions,onMemory}:{topic:GrowthTopi
   const basis=useRef<{topic:GrowthTopic;authorityVersion:string}|null>(null);
   // Wire keys can contain punctuation; use stable local field names instead of RHF path parsing.
   const {control,getValues}=useForm<Record<string,string>>({defaultValues:Object.fromEntries(topic.inputs.map((_,index)=>[`choice_${index}`,""]))});
+  const { isDirty } = useFormState({ control });
+  usePreviewLeaveGuard(isDirty);
   const choices=useWatch({control});
   const authorityVersion=model.page!.authorityVersion;
   const captured=basis.current??{topic,authorityVersion};

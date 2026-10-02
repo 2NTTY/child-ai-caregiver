@@ -12,11 +12,11 @@ export interface MemoryFactView {
   id: string; childId: string; key: string; content: string; source: FactSourceView;
   validUntil: string | null; visibility: MemoryVisibility; intendedVisibility: MemoryVisibility;
   status: FactStatus; version: number; authorSelf: boolean; reason: string;
-  confirmedAt: string | null; sourceState: "current" | "changed";
+  applicable: boolean; confirmedBy: string | null; confirmedAt: string | null; sourceState: "current" | "changed";
 }
 export interface MemoryTopicView {
   id: string; childId: string; title: string; note: string; visibility: MemoryVisibility;
-  status: TopicStatus; version: number; authorSelf: boolean; updatedAt: string;
+  status: TopicStatus; mayAsk: boolean; version: number; authorSelf: boolean; updatedAt: string;
   resumeAfter: string | null; reopenReason: string | null; reopenedFrom: string | null;
 }
 export interface MemorySummaryView {
@@ -54,7 +54,7 @@ export type MemoryPreviewWrite =
   | { kind: "reopen_topic"; basis: MemoryTopicView; reason: string }
   | { kind: "delete_topic"; basis: MemoryTopicView };
 export interface MemoryPreviewWriteContext {
-  childId: string; role: MemoryRole; sources: MemorySourceChoice[]; nextId: string; now: number;
+  childId: string; role: MemoryRole; actorId: string; sources: MemorySourceChoice[]; nextId: string; now: number;
 }
 
 export const factStatusLabels: Record<FactStatus, string> = { candidate: "待確認候選", confirmed: "已確認", inactive: "已停用" };
@@ -65,18 +65,22 @@ export const isTerminalTopic = (topic: Pick<MemoryTopicView, "status">) => topic
 export function canManageMemory(role: MemoryRole, item: { visibility: MemoryVisibility; authorSelf: boolean }) {
   return item.visibility === "private" ? item.authorSelf : role !== "viewer";
 }
-export function factIsApplicable(fact: MemoryFactView, now = Date.now()) {
-  return fact.status === "confirmed" && fact.sourceState === "current" && (!fact.validUntil || Date.parse(fact.validUntil) > now);
+export function factIsApplicable(fact: MemoryFactView) {
+  return fact.applicable;
 }
-export function topicMayAsk(topic: MemoryTopicView, now = Date.now()) {
-  return topic.status === "pending" || topic.status === "snoozed" && !!topic.resumeAfter && Date.parse(topic.resumeAfter) <= now;
+export function topicMayAsk(topic: MemoryTopicView) {
+  return topic.mayAsk;
 }
-export function factUnavailableReason(fact: MemoryFactView, now = Date.now()) {
+export function factUnavailableReason(fact: MemoryFactView) {
+  if (fact.applicable) return "目前適用";
   if (fact.status === "candidate") return "候選未確認，不能作為適用事實";
   if (fact.status === "inactive") return "已停用，重新核對及確認前不適用";
   if (fact.sourceState === "changed") return "來源版本已更改，須先更正及重新核對";
-  if (fact.validUntil && Date.parse(fact.validUntil) <= now) return "已過期，須先更正有效期";
-  return "目前適用";
+  return "目前不適用；請核對 Server 的最新狀態及有效期";
+}
+export function factConfirmationLabel(fact: MemoryFactView) {
+  if (!fact.confirmedBy && !fact.confirmedAt) return "尚未確認";
+  return `確認者：${fact.confirmedBy ?? "未提供"} · 確認時間：${fact.confirmedAt ?? "未提供"}`;
 }
 export function factSourceLabel(source: FactSourceView) {
   const kind = source.kind === "manual" ? "手動描述" : source.kind === "care_record" ? "照顧記錄" : "私人聊天";
@@ -124,6 +128,13 @@ export function sourceFromDraft(draft: FactDraft, sources: MemorySourceChoice[])
   throw new Error("這個來源參照不可提交；請明確改用手動描述。");
 }
 
+function previewFactApplicable(fact: MemoryFactView, now: number) {
+  return fact.status === "confirmed" && fact.sourceState === "current" && (!fact.validUntil || Date.parse(fact.validUntil) > now);
+}
+function previewTopicMayAsk(topic: MemoryTopicView, now: number) {
+  return topic.status === "pending" || topic.status === "snoozed" && !!topic.resumeAfter && Date.parse(topic.resumeAfter) <= now;
+}
+
 // Only simulates the established memory lifecycle in this mounted preview.
 export function applyMemoryPreviewWrite(data: MemoryPreviewData, write: MemoryPreviewWrite, context: MemoryPreviewWriteContext): MemoryPreviewData {
   const { role, childId, now } = context;
@@ -149,38 +160,43 @@ export function applyMemoryPreviewWrite(data: MemoryPreviewData, write: MemoryPr
     const draft = factDraftSchema(context.sources, false).parse(write.draft); requireShared(draft.intendedVisibility);
     putFact({ id: context.nextId, childId, key: draft.key, content: draft.content, source: sourceFromDraft(draft, context.sources),
       validUntil: draft.validUntil || null, visibility: "private", intendedVisibility: draft.intendedVisibility, status: "candidate", version: 1,
-      authorSelf: true, reason: "建立私人候選", confirmedAt: null, sourceState: "current" });
+      authorSelf: true, reason: "建立私人候選", applicable: false, confirmedBy: null, confirmedAt: null, sourceState: "current" });
   } else if (write.kind.endsWith("_fact") && "basis" in write && "key" in write.basis) {
     const fact = requireBasis(data.facts, write.basis);
     if (write.kind === "delete_fact") { next.facts = next.facts.filter(item => item.id !== fact.id); delete next.factVersions[fact.id]; }
     else if (write.kind === "revise_fact") {
       const draft = factDraftSchema(context.sources, true).parse(write.draft); requireShared(fact.visibility, write.sharedConfirmed);
       if (fact.status === "confirmed") requireUniqueFact(fact.id, draft.key, fact.visibility);
-      putFact({ ...fact, key: draft.key, content: draft.content, source: sourceFromDraft(draft, context.sources), validUntil: draft.validUntil || null,
-        reason: draft.reason, sourceState: "current", version: fact.version + 1 });
+      const revised = { ...fact, key: draft.key, content: draft.content, source: sourceFromDraft(draft, context.sources), validUntil: draft.validUntil || null,
+        reason: draft.reason, sourceState: "current" as const, version: fact.version + 1 };
+      putFact({ ...revised, applicable: previewFactApplicable(revised, now) });
     } else if (write.kind === "confirm_fact") {
       if (fact.status === "confirmed" || fact.sourceState === "changed" || fact.validUntil && Date.parse(fact.validUntil) <= now) throw new Error("請先更正內容、來源或有效期，再確認這項事實。");
       requireShared(fact.intendedVisibility, write.sharedConfirmed);
       requireUniqueFact(fact.id, fact.key, fact.intendedVisibility);
-      putFact({ ...fact, status: "confirmed", visibility: fact.intendedVisibility, confirmedAt: new Date(now).toISOString(), reason: "明確確認事實", version: fact.version + 1 });
+      putFact({ ...fact, status: "confirmed", visibility: fact.intendedVisibility, applicable: true, confirmedBy: context.actorId,
+        confirmedAt: new Date(now).toISOString(), reason: "明確確認事實", version: fact.version + 1 });
     } else if (write.kind === "deactivate_fact") {
       if (!write.reason.trim() || write.reason.length > 500 || fact.status === "inactive") throw new Error("請填寫停用原因並核對目前狀態。");
-      putFact({ ...fact, status: "inactive", reason: write.reason, version: fact.version + 1 });
+      putFact({ ...fact, status: "inactive", applicable: false, reason: write.reason, version: fact.version + 1 });
     }
   } else if (write.kind === "create_topic") {
     const draft = topicDraftSchema("create", now).parse(write.draft); requireShared(draft.visibility, write.sharedConfirmed);
     putTopic({ id: context.nextId, childId, title: draft.title, note: draft.note, visibility: draft.visibility, status: "pending", version: 1,
-      authorSelf: true, updatedAt: new Date(now).toISOString(), resumeAfter: null, reopenedFrom: null, reopenReason: null });
+      mayAsk: true, authorSelf: true, updatedAt: new Date(now).toISOString(), resumeAfter: null, reopenedFrom: null, reopenReason: null });
   } else if ("basis" in write && "title" in write.basis) {
     const topic = requireBasis(data.topics, write.basis);
     if (write.kind === "delete_topic") { next.topics = next.topics.filter(item => item.id !== topic.id); delete next.topicVersions[topic.id]; }
     else if (write.kind === "change_topic") {
       if (isTerminalTopic(topic)) throw new Error("已回答或已解決話題須按原因重開；原終態保留。");
       const draft = topicDraftSchema("change", now).parse(write.draft);
-      putTopic({ ...topic, status: draft.status, note: draft.note, resumeAfter: draft.status === "snoozed" ? draft.resumeAfter : null, version: topic.version + 1, updatedAt: new Date(now).toISOString() });
+      const changed = { ...topic, status: draft.status, note: draft.note, resumeAfter: draft.status === "snoozed" ? draft.resumeAfter : null,
+        version: topic.version + 1, updatedAt: new Date(now).toISOString() };
+      putTopic({ ...changed, mayAsk: previewTopicMayAsk(changed, now) });
     } else if (write.kind === "reopen_topic") {
       if (!isTerminalTopic(topic) || !write.reason.trim() || write.reason.length > 500 || data.topics.some(item => item.reopenedFrom === topic.id)) throw new Error("這項終態話題已重開，或仍缺少明確重開原因。");
-      putTopic({ ...topic, id: context.nextId, version: 1, status: "pending", resumeAfter: null, reopenedFrom: topic.id, reopenReason: write.reason, updatedAt: new Date(now).toISOString(), authorSelf: true });
+      putTopic({ ...topic, id: context.nextId, version: 1, status: "pending", mayAsk: true, resumeAfter: null, reopenedFrom: topic.id,
+        reopenReason: write.reason, updatedAt: new Date(now).toISOString(), authorSelf: true });
     }
   }
   return next;

@@ -2,10 +2,13 @@
 export type ChannelReadState = "ready" | "loading" | "failed" | "session_changed";
 export type ChannelPermission = "default" | "granted" | "denied" | "unsupported";
 export type ChannelDeliveryState = "queued" | "sending" | "accepted" | "rejected" | "unknown" | "stopped";
-export interface ChannelDeliveryView {
+interface ChannelDeliveryBase {
   id: string; bindingId: string; label: string; status: ChannelDeliveryState;
-  reasonLabel: string | null; createdAt: string; acknowledgedAt: string | null;
+  reasonLabel: string | null; createdAt: string;
 }
+export type PushDeliveryView = ChannelDeliveryBase;
+export interface TelegramDeliveryView extends ChannelDeliveryBase { acknowledgedAt: string | null }
+export type ChannelDeliveryView = PushDeliveryView | TelegramDeliveryView;
 export interface ChannelReview {
   kind: "enable" | "begin" | "confirm" | "revoke" | "test";
   targetLabel: string; expectedVersion: number | null; confirmed: boolean;
@@ -13,7 +16,6 @@ export interface ChannelReview {
 interface ChannelSettingsBase {
   online: boolean; readState: ChannelReadState; locked: boolean; conflict: boolean;
   notice: string | null; workerEnabled: boolean; review: ChannelReview | null;
-  deliveries: ChannelDeliveryView[];
 }
 export interface PushBindingView {
   id: string; version: number; label: string; status: "active" | "revoked" | "expired";
@@ -22,7 +24,7 @@ export interface PushBindingView {
 export interface PushSettingsModel extends ChannelSettingsBase {
   available: boolean; browserSupported: boolean; permission: ChannelPermission;
   currentBindingId: string | null; bindings: PushBindingView[];
-  testsRemaining: number; nextTestAt: string | null;
+  deliveries: PushDeliveryView[]; testsRemaining: number; nextTestAt: string | null;
 }
 interface ChannelReviewActions {
   refresh(): void; confirmReview(checked: boolean): void;
@@ -41,7 +43,7 @@ export interface TelegramChallengeView {
 }
 export interface TelegramSettingsModel extends ChannelSettingsBase {
   configured: boolean; binding: TelegramBindingView | null;
-  challenge: TelegramChallengeView | null;
+  challenge: TelegramChallengeView | null; deliveries: TelegramDeliveryView[];
 }
 export interface TelegramSettingsActions extends ChannelReviewActions {
   stageBegin(): void; stageConfirm(): void; stageRevoke(): void; stageTest(): void;
@@ -55,7 +57,22 @@ export const channelDeliveryLabels: Record<ChannelDeliveryState, string> = {
 export function channelTime(value: string): string {
   return new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", hour12: false });
 }
-export function blocksAnotherTest(deliveries: ChannelDeliveryView[], bindingId: string): boolean {
+export function pushTestAllowed(
+  status: Pick<PushSettingsModel, "available" | "workerEnabled" | "testsRemaining" | "nextTestAt">,
+  binding: PushBindingView | null, now = Date.now(),
+): boolean {
+  return status.available && status.workerEnabled && status.testsRemaining > 0
+    && (status.nextTestAt === null || Date.parse(status.nextTestAt) <= now)
+    && binding?.status === "active";
+}
+export function pushDeliveryNeedsReview(deliveries: PushDeliveryView[], bindingId: string): boolean {
+  return deliveries.some(item => item.bindingId === bindingId &&
+    (item.status === "queued" || item.status === "sending" || item.status === "unknown"));
+}
+export function telegramBeginAllowed(status: Pick<TelegramSettingsModel, "configured" | "binding" | "challenge">): boolean {
+  return status.configured && (!status.binding || status.binding.status === "revoked");
+}
+export function blocksAnotherTelegramTest(deliveries: TelegramDeliveryView[], bindingId: string): boolean {
   return deliveries.some(item => item.bindingId === bindingId &&
     (item.status === "queued" || item.status === "sending" || item.status === "unknown" && item.acknowledgedAt === null));
 }

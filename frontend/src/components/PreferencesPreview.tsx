@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { StyleSheet, View } from "react-native";
 import { HelperText, Switch, Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
@@ -25,6 +26,7 @@ export function PreferencesPreview({ online }: { online: boolean }) {
   const [basis, setBasis] = useState(1);
   const [review, setReview] = useState<Values | null>(null);
   const form = useForm<Values>({ defaultValues: initial, resolver: zodResolver(schema), mode: "onBlur" });
+  usePreviewLeaveGuard(form.formState.isDirty);
   const locked = op.locked || op.operation.state === "conflict";
   function edited() { setReview(null); op.edit(); }
   function input(name: "timeZone" | "quietStart" | "quietEnd", label: string) {
@@ -48,7 +50,7 @@ export function PreferencesPreview({ online }: { online: boolean }) {
       <AppButton label="模擬保存本人偏好" disabled={!online} onPress={() => op.submit(() => { const version = basis + 1; setSaved({ ...review, version }); setBasis(version); setReview(null); form.reset(review); }, () => { setSaved({ ...saved, quietStart: "21:30", version: basis + 1 }); setReview(null); })} />
     </View> : null}
     {op.operation.state === "conflict" ? <View style={styles.review}><Text style={styles.title}>最新版本 {saved.version}</Text><Text style={styles.body}>{saved.timeZone} · {saved.quietStart}–{saved.quietEnd}；預約例外{saved.allowAppointmentDuringQuiet ? "開啟" : "關閉"}。</Text><Text style={styles.meta}>上方是你的未保存草稿；不會自動覆蓋。</Text><AppButton label="保留草稿並使用最新版本" disabled={!online} onPress={() => { setBasis(saved.version); op.useLatest(); }} /></View> : null}
-    <Text style={styles.meta}>這頁的修改只留在本次預覽；離開或重新載入可能清除未保存草稿。實際接線使用既有 notification-preferences API。</Text>
+    <Text style={styles.meta}>設定頁籤之間會保留草稿；離頁須確認捨棄，待查操作須先處理。重新載入不能恢復本次草稿。實際接線使用既有 notification-preferences API。</Text>
     <PreviewWriteControls controller={op} />
   </SectionCard>;
 }

@@ -32,6 +32,7 @@ export function CareRecordsView({ model, actions, previewControls, onPhotos }: {
       <Text style={styles.body}>{model.operation.message}</Text>
       {model.operation.reference ? <Text style={styles.meta}>合成操作參考：{model.operation.reference}；不是 Server opId。</Text> : null}
       {model.operation.state === "unknown" ? <AppButton label={model.checkLabel} disabled={!model.online} onPress={actions.checkOriginalOperation} /> : null}
+      {model.operation.state === "unknown" && model.operation.retryAvailable ? <AppButton label="重試同一原操作" disabled={!model.online} onPress={actions.retryOriginalOperation} /> : null}
     </View> : null}
     {model.access === "lost" ? <SectionCard><SectionHeader title="已無權查看這個孩子" /><Text style={styles.body}>記錄、歷史與草稿已清除。請返回有權存取的孩子或重新確認登入身份。</Text></SectionCard> : <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.columns, !split && styles.stack]}>
       {split || !showPanel ? <View style={styles.listColumn} testID="care-record-list"><SectionCard><SectionHeader title="已確認記錄" subtitle="按最初加入時間排列；搜尋內容不寫入 URL。" />

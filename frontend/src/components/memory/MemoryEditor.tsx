@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useState } from "react";
 import { Controller, useForm, type Control, type FieldValues, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,6 +57,7 @@ function FactValuesEditor({ preview, editor, role, online }: { preview: MemoryPr
   const [reviewed, setReviewed] = useState<FactDraft | null>(null);
   const [sharedChecked, setSharedChecked] = useState(false);
   const form = useForm<FactDraft>({ defaultValues: factDraftFrom(basis, preview.sources), resolver: zodResolver(factDraftSchema(preview.sources, mode === "revise")) });
+  usePreviewLeaveGuard(form.formState.isDirty);
   const draft = form.watch();
   const disabled = !online || preview.blocked;
   const shared = !!basis && basis.visibility === "family";
@@ -94,6 +96,7 @@ function TopicValuesEditor({ preview, editor, role, online }: { preview: MemoryP
   const [reviewed, setReviewed] = useState<TopicDraft | null>(null);
   const [sharedChecked, setSharedChecked] = useState(false);
   const form = useForm<TopicDraft>({ defaultValues: topicDraftFrom(basis), resolver: zodResolver(topicDraftSchema(mode)) });
+  usePreviewLeaveGuard(form.formState.isDirty);
   const draft = form.watch();
   const disabled = !online || preview.blocked;
   const shared = !basis && draft.visibility === "family";
@@ -135,6 +138,7 @@ function LifecycleEditor({ preview, editor, online }: { preview: MemoryPreviewCo
   const deactivating = editor.kind === "fact" && editor.mode === "deactivate";
   const deleting = editor.mode === "delete";
   const form = useForm<{ reason: string }>({ defaultValues: { reason: "" }, resolver: zodResolver(z.object({ reason: z.string().max(500, "最多 500 字元").refine(value => !deactivating || !!value.trim(), "請填寫停用原因") })) });
+  usePreviewLeaveGuard(form.formState.isDirty);
   const basis = editor.basis;
   if (!basis) return null;
   const title = "key" in basis ? basis.key : basis.title;

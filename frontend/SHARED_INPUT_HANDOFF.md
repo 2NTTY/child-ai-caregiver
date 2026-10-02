@@ -33,7 +33,7 @@
 
 | view 回調 | 既有 API／控制器責任 |
 |---|---|
-| refresh／openInput | `inputs(childId, signal, userId)`／`input(childId, inputId, signal, userId)`；重新查同一輸入，清單最多 50 項不代表建立上限 |
+| refresh／openInput | `inputs(childId, signal, userId)`／`input(childId, inputId, signal, userId)`；重新查同一輸入，本人可見清單最多 50 項；Server 另有每孩子合計 50 項建立上限（包括其他成員的私人項目），不能由本人可見數量判斷餘額或揭露他人內容 |
 | create | `create(childId, input, signal, userId)`；沿原 opId 收據，保存後不自動取得正文 |
 | fetchContent | `fetch(input, signal, userId)`；`expectedVersion`＋`confirmFetch: true`，直接操作沒有 opId |
 | extract | `extract(input, excerpt, signal, userId)`；`expectedVersion`＋`confirmModel: true`，直接操作沒有 opId；只送明確選定原文片段 |

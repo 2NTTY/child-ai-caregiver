@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 import { useEffect, useRef, useState } from "react";
 import type { HomeChild } from "../view-model";
 import { emptyPhotoDraft, type PhotoDraftFields } from "../photo-view-model";
@@ -27,6 +28,7 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
   const [draftUncertainties, setDraftUncertainties] = useState<readonly string[]>([]);
   const [confirmationKind, setConfirmationKind] = useState<SourceConfirmationKind>("reference");
   const [excerpt, setExcerpt] = useState("");
+  const [excerptDirty, setExcerptDirty] = useState(false);
   const [fetchConsent, setFetchConsent] = useState(false), [modelConsent, setModelConsent] = useState(false);
   const [sharedConsent, setSharedConsent] = useState(false), [childFactConsent, setChildFactConsent] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false), [deleteScope, setDeleteScope] = useState(false), [deleteFinal, setDeleteFinal] = useState(false);
@@ -40,6 +42,7 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
   const busy = inFlight.current || operation.state === "saving" || reading;
   const load = reading || condition === "loading" ? "loading" : readFailed || condition === "read_error" ? "error" : "ready";
   const conflict = operation.state === "conflict";
+  usePreviewLeaveGuard(!!reviewed || excerptDirty || !!deleteOpen, busy || !!pending.current || !!direct);
   const fresh = online && load === "ready" && access !== "lost" && !busy && !pending.current && !conflict;
   const manageable = !!selected && selected.canManage && selected.ownerUserId === identity.id && access === "editable";
   const canChoose = !busy && !pending.current && !directRef.current && access !== "lost";
@@ -58,7 +61,7 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
   function clearEditor() {
     setSelected(null); setLatest(null); setComposerSeed(null); setDraft(emptyPhotoDraft()); setReviewed(null); setFormKey(value => value + 1);
     setDraftUncertainties([]);
-    setExcerpt(""); setConfirmationKind("reference"); setDeleteOpen(false); consentReset();
+    setExcerpt(""); setExcerptDirty(false); setConfirmationKind("reference"); setDeleteOpen(false); consentReset();
   }
   function applied(entry: Receipt) {
     pending.current = null; trackDirect(null); consentReset(); setReadFailed(false); entry.apply();
@@ -174,7 +177,7 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
     recreateWithText() { if (!fresh || !canCreate || !selected || selected.kind !== "personal_source" || direct) return; const seed = copy(selected); clearEditor(); setComposerSeed(seed); setOperation(idle()); setNotice("原來源仍保留。請自行貼上正文；保存後會建立另一項私人來源，不會更新或訂閱原項。"); },
     setFetchConsent, setModelConsent, setSharedConsent,
     setChildFactConsent(value: boolean) { setChildFactConsent(value); setSharedConsent(false); },
-    setExcerpt(value: string) { if (direct || pending.current || busy) return; setExcerpt(value); setModelConsent(false); },
+    setExcerpt(value: string) { if (direct || pending.current || busy) return; setExcerpt(value); setExcerptDirty(true); setModelConsent(false); },
     fetchContent() { if (model.canFetch && fetchConsent && selected) sendDirect({ kind: "fetch", basis: copy(selected), excerpt: "", checked: false }, faultPhase === "fetch" ? outcome : "success"); },
     extract() { if (model.canExtract && modelConsent && selected && validSourceExcerpt(selected.text, excerpt)) sendDirect({ kind: "extract", basis: copy(selected), excerpt, checked: false }, faultPhase === "extract" ? outcome : "success"); },
     adoptCandidate() { if (model.formLocked || !selected?.extraction.draft || selected.recordId) return; const { uncertainties, ...fields } = selected.extraction.draft; setDraft(fields); setDraftUncertainties([...uncertainties]); setFormKey(value => value + 1); setReviewed(null); consentReset(); },

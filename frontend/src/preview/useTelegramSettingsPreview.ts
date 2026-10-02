@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import type { ChannelDeliveryState, ChannelDeliveryView, ChannelReadState, ChannelReview, TelegramBindingView, TelegramChallengeView, TelegramSettingsActions, TelegramSettingsModel } from "../channel-view-model";
-import { blocksAnotherTest } from "../channel-view-model";
+import type { ChannelDeliveryState, TelegramDeliveryView, ChannelReadState, ChannelReview, TelegramBindingView, TelegramChallengeView, TelegramSettingsActions, TelegramSettingsModel } from "../channel-view-model";
+import { blocksAnotherTelegramTest, telegramBeginAllowed } from "../channel-view-model";
 import type { ChannelPreviewIdentity } from "./usePushSettingsPreview";
 import { usePreviewOperation } from "./usePreviewOperation";
 
 export type TelegramScenario = "normal" | "unconfigured" | "paused" | "blocked" | "expired" | "unknown_delivery" | "read_failed" | "loading" | "session_changed";
 interface TelegramData {
   configured: boolean; workerEnabled: boolean; readState: ChannelReadState;
-  binding: TelegramBindingView | null; challenge: TelegramChallengeView | null; deliveries: ChannelDeliveryView[];
+  binding: TelegramBindingView | null; challenge: TelegramChallengeView | null; deliveries: TelegramDeliveryView[];
 }
 const initial = (): TelegramData => ({ configured: true, workerEnabled: true, readState: "ready", binding: null, challenge: null, deliveries: [] });
 
@@ -40,7 +40,7 @@ export function useTelegramSettingsPreview(online: boolean, identity: ChannelPre
       setNotice("已模擬重新讀取本人的 Telegram 狀態；沒有自動輪詢或真服務回覆。");
     },
     stageBegin() {
-      if (!data.configured || data.binding && data.binding.status !== "revoked") return;
+      if (!telegramBeginAllowed(data)) return;
       stage({ kind: "begin", targetLabel: `${identity.name}的私人 Telegram 渠道`, expectedVersion: null, confirmed: false });
     },
     stageConfirm() {
@@ -54,7 +54,7 @@ export function useTelegramSettingsPreview(online: boolean, identity: ChannelPre
     },
     stageTest() {
       const binding = data.binding;
-      if (!data.configured || !data.workerEnabled || !binding || binding.status !== "active" || blocksAnotherTest(data.deliveries, binding.id)) return;
+      if (!data.configured || !data.workerEnabled || !binding || binding.status !== "active" || blocksAnotherTelegramTest(data.deliveries, binding.id)) return;
       stage({ kind: "test", targetLabel: `${binding.label} · ${binding.chatIdHint}`, expectedVersion: binding.version, confirmed: false }, binding.id);
     },
     openStartLink() {
@@ -83,7 +83,7 @@ export function useTelegramSettingsPreview(online: boolean, identity: ChannelPre
           if (draft.kind === "begin") return { ...current, challenge: { id: `preview-challenge-${identity.id}-${++sequence.current}`, version: 1, state: "waiting", candidate: null, expiresAt: new Date(Date.now() + 600_000).toISOString() } };
           if (draft.kind === "confirm") return { ...current, challenge: null, binding: { id: `preview-telegram-${identity.id}`, version: (current.binding?.version ?? 0) + 1, status: "active", label: candidate!.label, chatIdHint: candidate!.chatIdHint } };
           if (draft.kind === "revoke") return { ...current, binding: current.binding ? { ...current.binding, status: "revoked", version: current.binding.version + 1 } : null };
-          const delivery: ChannelDeliveryView = { id: `preview-telegram-delivery-${identity.id}-${++sequence.current}`, bindingId: basis.id!, label: draft.targetLabel, status: outcome,
+          const delivery: TelegramDeliveryView = { id: `preview-telegram-delivery-${identity.id}-${++sequence.current}`, bindingId: basis.id!, label: draft.targetLabel, status: outcome,
             reasonLabel: outcome === "unknown" ? "未能確認是否已接受，請先核對原投遞。" : outcome === "rejected" ? "渠道拒絕本次一般測試。" : outcome === "stopped" ? "這次投遞已停止。" : null,
             createdAt: new Date().toISOString(), acknowledgedAt: null };
           return { ...current, deliveries: [delivery, ...current.deliveries].slice(0, 20) };

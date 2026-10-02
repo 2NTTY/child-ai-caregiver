@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 import { useEffect,useRef,useState } from "react";
 import type { GrowthAttention,GrowthAttempt,GrowthDecision,GrowthPage,GrowthPending,GrowthTopic,GrowthTopicDecision,GrowthViewModel } from "../growth-view-model";
 import { growthActionable,growthStateLabels } from "../growth-view-model";
@@ -25,6 +26,7 @@ export function useGrowthPreview(child:HomeChild,online:boolean,identity:string,
   const onlineRef=useRef(online);onlineRef.current=online;
   const access=condition==="lost"?"lost":condition==="read_only"||child.accessRole==="viewer"?"read_only":"editable";
   const accessRef=useRef(access);accessRef.current=access;
+  usePreviewLeaveGuard(dirty, busy || !!pending);
   const load=condition==="loading"||busy&&flight.current==="read"?"loading":readFailed||condition==="read_error"?"error":"ready";
   function save(value:GrowthPage|null){pageRef.current=value;setPage(value);}
   function savePending(value:GrowthPending|null){pendingRef.current=value;setPending(value);setOriginalConsent(false);}

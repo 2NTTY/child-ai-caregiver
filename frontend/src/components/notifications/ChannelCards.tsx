@@ -5,7 +5,7 @@ import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  blocksAnotherTest, channelDeliveryLabels, channelTime,
+  blocksAnotherTelegramTest, channelDeliveryLabels, channelTime, pushDeliveryNeedsReview, pushTestAllowed, telegramBeginAllowed,
   type ChannelDeliveryView, type ChannelPermission, type ChannelReadState, type ChannelReview,
   type PushSettingsActions, type PushSettingsModel, type TelegramSettingsActions, type TelegramSettingsModel,
 } from "../../channel-view-model";
@@ -74,6 +74,7 @@ function RuntimeNotices({ model }: { model: SharedModel }) {
 }
 
 function ChannelReviewPanel({ model, actions }: { model: SharedModel; actions: SharedActions }) {
+  const replacingChallenge = model.review?.kind === "begin" && "challenge" in model && model.challenge !== null;
   return <>
     {model.conflict ? <View style={styles.review}>
       <Text accessibilityRole="header" style={styles.title}>渠道狀態已有更新</Text>
@@ -84,8 +85,10 @@ function ChannelReviewPanel({ model, actions }: { model: SharedModel; actions: S
       <Text accessibilityRole="header" style={styles.title}>待確認渠道操作</Text>
       <Text style={styles.body}>目標：{model.review.targetLabel}</Text>
       <Text style={styles.meta}>核對版本：{model.review.expectedVersion === null ? "新登記／綁定，未有既有版本" : model.review.expectedVersion}</Text>
-      <Text style={styles.body}>{reviewScope[model.review.kind]}</Text>
-      <AppCheckbox label={reviewLabels[model.review.kind]} checked={model.review.confirmed}
+      <Text style={styles.body}>{replacingChallenge
+        ? "服務接受重新開始後，會立即令目前的 Telegram 連結及候選帳號失效，並建立新的 10 分鐘連結；舊候選與勾選須重新核對。每小時最多 6 次開始，達限時請稍後重讀。"
+        : reviewScope[model.review.kind]}</Text>
+      <AppCheckbox label={replacingChallenge ? "我明白舊連結及候選帳號會失效，並同意重新開始" : reviewLabels[model.review.kind]} checked={model.review.confirmed}
         disabled={model.locked || model.conflict} onChange={actions.confirmReview} />
       <View style={styles.actions}>
         <AppButton label="模擬確認這項渠道操作" disabled={!model.online || model.locked || model.conflict || !model.review.confirmed} onPress={actions.submit} />
@@ -106,7 +109,7 @@ function RecentDeliveries({ deliveries }: { deliveries: ChannelDeliveryView[] })
       <Text style={styles.meta}>建立：{channelTime(delivery.createdAt)}（香港時間）</Text>
       {delivery.reasonLabel ? <Text style={styles.meta}>狀態說明：{delivery.reasonLabel}</Text> : null}
       {delivery.status === "unknown" ? <Text style={styles.warning}>結果未知，請查核原投遞狀態；不要盲目重發。</Text> : null}
-      {delivery.acknowledgedAt ? <Text style={styles.body}>收到本人回覆：{channelTime(delivery.acknowledgedAt)}（香港時間）</Text> : null}
+      {"acknowledgedAt" in delivery && delivery.acknowledgedAt ? <Text style={styles.body}>收到本人回覆：{channelTime(delivery.acknowledgedAt)}（香港時間）</Text> : null}
     </View>)}
   </View>;
 }
@@ -128,7 +131,6 @@ export function WebPushSettingsCard({ model, actions, operationNotice }: { model
   const actionBlocked = !model.online || model.locked || !!model.review || model.conflict;
   const canEnable = ready && !actionBlocked && model.available && model.browserSupported && model.permission !== "denied" && model.permission !== "unsupported";
   const cooldownReady = model.nextTestAt === null || Date.parse(model.nextTestAt) <= Date.now();
-  const canTest = !actionBlocked && model.available && model.workerEnabled && model.testsRemaining > 0 && cooldownReady;
   return <SectionCard style={styles.card}>
     <SectionHeader title="我的瀏覽器通知" icon="bell-outline" subtitle="只管理本人的瀏覽器訂閱；此頁是合成預覽。"
       action={ready ? <AppButton label="重新讀取瀏覽器狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
@@ -146,7 +148,7 @@ export function WebPushSettingsCard({ model, actions, operationNotice }: { model
       <View style={styles.stack}>
         <Text accessibilityRole="header" style={styles.title}>本人瀏覽器訂閱</Text>
         {model.bindings.length === 0 ? <Text style={styles.meta}>目前沒有本人瀏覽器訂閱。</Text> : model.bindings.map(binding => {
-          const testBlocked = blocksAnotherTest(model.deliveries, binding.id);
+          const deliveryNeedsReview = pushDeliveryNeedsReview(model.deliveries, binding.id);
           return <View key={binding.id} style={styles.entry}>
             <View style={styles.top}><Text style={styles.title}>{binding.label}</Text>
               <Text style={styles.badge}>{binding.status === "active" ? "有效" : binding.status === "revoked" ? "已撤銷" : "已過期"}</Text>
@@ -156,9 +158,9 @@ export function WebPushSettingsCard({ model, actions, operationNotice }: { model
             {binding.status === "active" ? <>
               <View style={styles.actions}>
                 <AppButton label="撤銷此訂閱" variant="secondary" disabled={actionBlocked} onPress={() => actions.stageRevoke(binding.id)} />
-                <AppButton label="預覽一般測試" variant="quiet" disabled={!canTest || testBlocked} onPress={() => actions.stageTest(binding.id)} />
+                <AppButton label="預覽一般測試" variant="quiet" disabled={actionBlocked || !pushTestAllowed(model, binding)} onPress={() => actions.stageTest(binding.id)} />
               </View>
-              {testBlocked ? <Text style={styles.warning}>這項訂閱仍有排隊中、發送中或結果未知的投遞；先查核原投遞，暫不可另發測試。</Text> : null}
+              {deliveryNeedsReview ? <Text style={styles.warning}>這項訂閱仍有排隊中、發送中或結果未知的投遞；請查核原投遞，切勿盲目重送。若服務、worker 及測試限額允許，可明確發起另一項一般測試。</Text> : null}
             </> : null}
           </View>;
         })}
@@ -176,9 +178,9 @@ export function TelegramSettingsCard({ model, actions, operationNotice }: { mode
   const actionBlocked = !model.online || model.locked || !!model.review || model.conflict;
   const challengeExpired = !!model.challenge && Date.parse(model.challenge.expiresAt) <= Date.now();
   const existingBinding = model.binding !== null && model.binding.status !== "revoked";
-  const canBegin = !actionBlocked && model.configured && !existingBinding && (!model.challenge || challengeExpired);
+  const canBegin = !actionBlocked && telegramBeginAllowed(model);
   const canConfirm = !actionBlocked && model.configured && !existingBinding && model.challenge?.state === "seen" && model.challenge.candidate !== null && !challengeExpired;
-  const testBlocked = model.binding !== null && blocksAnotherTest(model.deliveries, model.binding.id);
+  const testBlocked = model.binding !== null && blocksAnotherTelegramTest(model.deliveries, model.binding.id);
   const canTest = !actionBlocked && model.configured && model.workerEnabled && model.binding?.status === "active" && !testBlocked;
   return <SectionCard style={styles.card}>
     <SectionHeader title="我的 Telegram" icon="message-text-outline" subtitle="只綁定本人的私人帳號；此頁是合成預覽。"
@@ -199,7 +201,7 @@ export function TelegramSettingsCard({ model, actions, operationNotice }: { mode
         </View> : null}
         {model.binding.status !== "revoked" && testBlocked ? <Text style={styles.warning}>仍有排隊中、發送中或未有本人回覆的未知投遞；先查核原投遞，暫不可另發測試。</Text> : null}
       </View> : <Text style={styles.meta}>目前沒有本人 Telegram 綁定。</Text>}
-      {!existingBinding ? <AppButton label="預覽開始私人綁定" disabled={!canBegin} onPress={actions.stageBegin} /> : null}
+      {!existingBinding ? <AppButton label={model.challenge ? "預覽重新開始私人綁定" : "預覽開始私人綁定"} disabled={!canBegin} onPress={actions.stageBegin} /> : null}
       {model.challenge ? <View style={styles.entry}>
         <Text accessibilityRole="header" style={styles.title}>{challengeExpired ? "私人綁定步驟已過期" : "私人綁定步驟"}</Text>
         <Text style={styles.meta}>版本 {model.challenge.version} · 到期：{channelTime(model.challenge.expiresAt)}（香港時間）</Text>

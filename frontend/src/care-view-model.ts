@@ -80,6 +80,7 @@ export interface CareRecordsViewModel {
     message: string;
     reference: string | null;
     latest: CareRecordView | null;
+    retryAvailable?: boolean;
   };
   submitLabel: string;
   checkLabel: string;
@@ -101,6 +102,7 @@ export interface CareRecordsActions {
   editDraft(): void;
   submitReviewed(): void;
   checkOriginalOperation(): void;
+  retryOriginalOperation(): void;
   useLatestVersion(): void;
 }
 

@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 import { useEffect, useRef, useState } from "react";
 import { personalLimits, type ModelKeyCheck, type ModelSettings, type ModelSettingsCommand, type ModelSettingsSnapshot, type ModelSettingsViewModel } from "../model-settings-view-model";
 
@@ -24,6 +25,7 @@ export function useModelSettingsPreview(online: boolean, identity: { id: string;
   const [availability, setAvailability] = useState<Availability>("available");
   const scopeKey = `${server}|${identity.id}`;
   const [state, setState] = useState<Workspace>(() => workspace(scopeKey));
+  usePreviewLeaveGuard(false, state.busy === "save" || state.operation === "unknown");
   const stateRef = useRef(state); stateRef.current = state;
   const scopeRef = useRef(scopeKey); scopeRef.current = scopeKey;
   const onlineRef = useRef(online); onlineRef.current = online;

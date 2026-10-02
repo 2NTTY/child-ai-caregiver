@@ -4,6 +4,7 @@ import type { HomeChild } from "../view-model";
 import { emptyPhotoDraft, photoLimits, samePhotoOriginal, type PhotoDraftFields, type PhotoItem, type PhotoOperation, type PhotoOriginal, type PhotoPhase, type PhotoReplacement, type PhotosActions, type PhotosViewModel } from "../photo-view-model";
 import { photoDraftSchema, photoConfirmationProjection } from "../components/photos/photo-form";
 import { photoFixture, photoPreviewCandidate } from "./photoFixture";
+import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 
 export type PhotoPreviewCondition = "normal" | "empty" | "loading" | "read_error" | "read_only" | "capacity" | "access_lost";
 export type PhotoPreviewOutcome = "success" | "failed" | "unknown" | "conflict" | "capacity" | "confirmed_unavailable";
@@ -47,6 +48,7 @@ export function usePhotosPreview(child: HomeChild, online: boolean, reading: boo
   const busy = operation.state === "saving" || inFlight.current;
   const fresh = online && load === "ready" && access !== "lost" && !busy && operation.state !== "conflict";
   const unresolved = ["unknown", "unconfirmed", "confirmed_unavailable"].includes(operation.state);
+  usePreviewLeaveGuard(!!(original && selected?.state !== "ready" || draft.text || draft.rawValue || draft.unit || draft.timeRaw || reviewed), busy || unresolved);
   const extractionPending = unresolved && operation.phase === "extract";
   const hardLocked = busy || (unresolved && !extractionPending) || operation.state === "conflict";
   const manageable = selected?.canManage && selected.isUploader && selected.visibility === "private" && selected.recordId === null && access === "editable";
@@ -169,7 +171,7 @@ export function usePhotosPreview(child: HomeChild, online: boolean, reading: boo
       if (pending.current) { checkOriginal(); return; }
       if (operation.state === "conflict" && selected) setLatest({ ...selected, version: selected.version + 1 });
       if (operation.state === "confirmed_unavailable" && !reservationUnidentified) setOperation(idle());
-      setReadError(false); if (condition === "read_error" || condition === "loading") setCondition("normal");
+      setReadError(false); setReviewed(null); resetConsents(); if (condition === "read_error" || condition === "loading") setCondition("normal");
       setNotice("已模擬重新讀取；原照片及草稿保留。這不是 Server 查核。");
     },
     setModelConsent: value => { if (canExtract) setModelConsent(value); },
@@ -184,7 +186,7 @@ export function usePhotosPreview(child: HomeChild, online: boolean, reading: boo
       setDraft({ ...fields }); setFormKey(value => value + 1); setReviewed(null); setSharedConsent(false); setNotice("已按你的選擇採用候選，仍是未共享草稿。");
     },
     editDraft(value) { if (hardLocked || access !== "editable") return; setDraft(value); setReviewed(null); setSharedConsent(false); },
-    reviewDraft(value) { if (hardLocked || access !== "editable" || !photoDraftSchema.safeParse(value).success) return; setDraft(value); setReviewed({ ...value }); setSharedConsent(false); },
+    reviewDraft(value) { if (!fresh || hardLocked || access !== "editable" || !photoDraftSchema.safeParse(value).success) return; setDraft(value); setReviewed({ ...value }); setSharedConsent(false); },
     setSharedConsent: value => { if (!hardLocked && reviewed) setSharedConsent(value); },
     confirmShared() {
       if (!canConfirm || !selected || !reviewed) return; const basis = selected, values = photoConfirmationProjection({ ...reviewed }, basis.source);
@@ -193,7 +195,7 @@ export function usePhotosPreview(child: HomeChild, online: boolean, reading: boo
         setNotice(`已模擬確認原照片及「${values.text}」為家庭共享記錄；不是私人聊天共享，沒有送出提醒。`); });
     },
     checkOriginal,
-    retryOriginal() { const entry = pending.current; if (entry?.checked && entry.phase !== "extract" && online && !busy) runAttempt(entry, outcome); },
+    retryOriginal() { const entry = pending.current; if (entry?.checked && entry.phase !== "extract" && online && !readError && access === "editable" && !busy) runAttempt(entry, outcome); },
     finishUnidentified() { if (!reservationUnidentified || busy) return; setOperation(idle()); setNotice("已明確結束待查，原檔及草稿保留。請逐項開啟附件清單核對；不會重新建立附件。"); },
     useLatest() { if (!latest || !online || busy || pending.current) return; setSelected(latest); setSource(latest.source); setLatest(null); setReviewed(null); resetConsents(); setOperation(idle()); setNotice("已明確改用目前版本，手動草稿保留。須重新預覽及確認共享範圍。"); },
     openDeletion() { if (canDelete) { setDeletion(true); setDeleteScope(false); setDeleteFinal(false); } },
@@ -216,6 +218,15 @@ export function usePhotosPreview(child: HomeChild, online: boolean, reading: boo
   useEffect(() => { alive.current = true; return () => { alive.current = false; generation.current++; if (timer.current) clearTimeout(timer.current);
     for (const file of leases.current) file.dispose?.(); leases.current.clear(); attachedOriginals.current.clear();
     if (replacementRef.current?.kind === "original") replacementRef.current.original.dispose?.(); }; }, []);
+  useEffect(() => {
+    if (online) return;
+    generation.current++; if (timer.current) clearTimeout(timer.current); timer.current = null; inFlight.current = false;
+    setReadError(true); setReviewed(null); setDeletion(false); resetConsents();
+    const entry = pending.current;
+    if (entry) { entry.checked = false; setOperation({ state: "unknown", phase: entry.phase, reference: entry.reference, checked: false,
+      message: "已離線；原內容及操作參考保留。回線後先查核原操作，舊查核與同意不能沿用。" }); }
+    setNotice("照片及手動草稿保留。回線後須手動重新讀取，重新核對並勾選；沒有自動提交。");
+  }, [online]);
   useEffect(() => {
     if (Platform.OS !== "web" || !(original && selected?.state !== "ready" || draft.text || draft.rawValue || draft.unit || draft.timeRaw || unresolved)) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };

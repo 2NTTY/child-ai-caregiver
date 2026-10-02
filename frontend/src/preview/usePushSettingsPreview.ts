@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
-import type { ChannelDeliveryState, ChannelDeliveryView, ChannelPermission, ChannelReadState, ChannelReview, PushBindingView, PushSettingsActions, PushSettingsModel } from "../channel-view-model";
-import { blocksAnotherTest } from "../channel-view-model";
+import type { ChannelDeliveryState, PushDeliveryView, ChannelPermission, ChannelReadState, ChannelReview, PushBindingView, PushSettingsActions, PushSettingsModel } from "../channel-view-model";
+import { pushTestAllowed } from "../channel-view-model";
 import { usePreviewOperation } from "./usePreviewOperation";
 
 export type PushScenario = "normal" | "denied" | "unsupported" | "unconfigured" | "paused" | "expired" | "unknown_delivery" | "read_failed" | "loading" | "session_changed";
 export interface ChannelPreviewIdentity { id: string; name: string }
 interface PushData {
   available: boolean; workerEnabled: boolean; permission: ChannelPermission; readState: ChannelReadState;
-  currentBindingId: string | null; bindings: PushBindingView[]; deliveries: ChannelDeliveryView[];
+  currentBindingId: string | null; bindings: PushBindingView[]; deliveries: PushDeliveryView[];
   testsRemaining: number; nextTestAt: string | null;
 }
 function initial(): PushData {
@@ -55,8 +55,7 @@ export function usePushSettingsPreview(online: boolean, identity: ChannelPreview
     },
     stageTest(id) {
       const binding = data.bindings.find(item => item.id === id);
-      if (!data.available || !data.workerEnabled || data.testsRemaining <= 0 || data.nextTestAt && Date.parse(data.nextTestAt) > Date.now()
-        || !binding || binding.status !== "active" || blocksAnotherTest(data.deliveries, id)) return;
+      if (!binding || !pushTestAllowed(data, binding)) return;
       stage({ kind: "test", targetLabel: binding.label, expectedVersion: binding.version, confirmed: false }, id);
     },
     confirmReview(confirmed) { if (!locked) setReview(current => current ? { ...current, confirmed } : null); },
@@ -79,8 +78,8 @@ export function usePushSettingsPreview(online: boolean, identity: ChannelPreview
             return { ...current, permission: "granted", currentBindingId: id, bindings: [binding, ...current.bindings.filter(item => item.id !== id)] };
           }
           if (draft.kind === "revoke") return { ...current, bindings: current.bindings.map(item => item.id === basis.id ? { ...item, status: "revoked", version: item.version + 1 } : item) };
-          const delivery: ChannelDeliveryView = { id: `preview-push-delivery-${identity.id}-${++sequence.current}`, bindingId: basis.id!, label: draft.targetLabel,
-            status: outcome, reasonLabel: reasons[outcome] ?? null, createdAt: new Date().toISOString(), acknowledgedAt: null };
+          const delivery: PushDeliveryView = { id: `preview-push-delivery-${identity.id}-${++sequence.current}`, bindingId: basis.id!, label: draft.targetLabel,
+            status: outcome, reasonLabel: reasons[outcome] ?? null, createdAt: new Date().toISOString() };
           return { ...current, deliveries: [delivery, ...current.deliveries].slice(0, 20), testsRemaining: Math.max(0, current.testsRemaining - 1), nextTestAt: new Date(Date.now() + 60_000).toISOString() };
         });
         setReview(null); target.current = null;
@@ -112,7 +111,7 @@ export function usePushSettingsPreview(online: boolean, identity: ChannelPreview
     if (next === "loading") sample.readState = "loading";
     if (next === "read_failed") sample.readState = "failed";
     if (next === "session_changed") sample.readState = "session_changed";
-    if (next === "unknown_delivery") sample.deliveries = [{ id: "preview-unknown-push", bindingId: sample.currentBindingId!, label: "我的瀏覽器（合成）", status: "unknown", reasonLabel: reasons.unknown!, createdAt: new Date().toISOString(), acknowledgedAt: null }];
+    if (next === "unknown_delivery") sample.deliveries = [{ id: "preview-unknown-push", bindingId: sample.currentBindingId!, label: "我的瀏覽器（合成）", status: "unknown", reasonLabel: reasons.unknown!, createdAt: new Date().toISOString() }];
     setData(sample);
   }
   return { model, actions, operation: op, scenario, chooseScenario, deliveryOutcome, setDeliveryOutcome, resetForAccount };

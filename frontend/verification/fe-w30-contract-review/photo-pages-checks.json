@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-02T17:03:14.329Z",
+  "results": [
+    {
+      "photoReconnect": "raw retained; stale read blocks review; consents/review cleared; explicit reload and new confirmation required"
+    },
+    {
+      "viewerPhotos": "own private and shared visible; record and delete actions absent"
+    },
+    {
+      "memoryPages": "50+1 facts and topics append and terminal cursors clear"
+    },
+    {
+      "taskPages": "50+1 append and final cursor clears"
+    }
+  ],
+  "failures": [],
+  "scope": "local synthetic preview only"
+}

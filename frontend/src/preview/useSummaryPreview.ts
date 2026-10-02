@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 import {useEffect, useRef, useState} from 'react';
 import type {HomeChild} from '../view-model';
 import type {PreparationDecision, SummaryPage, SummaryPending, SummaryViewModel} from '../summary-view-model';
@@ -21,6 +22,7 @@ export function useSummaryPreview(child: HomeChild, online: boolean, identity: s
   const dirtyRef = useRef(dirty); dirtyRef.current = dirty;
   const [pending, setPending] = useState<Pending | null>(null), [originalConsent, setOriginalConsent] = useState(false);
   const pendingRef = useRef(pending); pendingRef.current = pending;
+  usePreviewLeaveGuard(dirty, busy || !!pending);
   const [operation, setOperation] = useState<SummaryViewModel['operation']>('none'), [notice, setNotice] = useState('');
   const [formEpoch, setFormEpoch] = useState(0), [confirmationEpoch, setConfirmationEpoch] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null), flight = useRef<'read' | Pending | null>(null), generation = useRef(0), alive = useRef(true), serial = useRef(0);

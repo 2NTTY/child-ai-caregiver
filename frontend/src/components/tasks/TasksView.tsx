@@ -31,15 +31,17 @@ export function TasksView({ model, actions, controller, previewControls }: { mod
         <PreviewWriteNotice controller={controller} online={model.online && !model.reading} />
         <View style={[styles.workspace, wide && styles.workspaceWide]}>
           <View style={[styles.column, wide && styles.listColumn]}><SectionCard>
-            <SectionHeader title="共享事項清單" subtitle={`${model.items.length} 項合成事項；過期不會自動完成。`} />
+            <SectionHeader title="共享事項清單" subtitle={`已載入 ${model.items.length} 項合成事項${model.hasMoreTasks ? "；仍有更多事項" : "；已載入全部"}。過期不會自動完成。`} />
             <AppSelect label="事項狀態" value={stateFilter} options={[{ value: "all", label: "全部" }, ...Object.entries(taskStateLabels).map(([value, label]) => ({ value: value as TaskState, label }))]} onChange={setStateFilter} disabled={locked || !!model.draft} />
             {model.reading ? <Text accessibilityRole="alert" style={styles.meta}>正在模擬重新讀取，上一批事項及提醒暫不展示；草稿仍保留。</Text> : null}
-            {!model.reading && visible.length === 0 ? <Text style={styles.meta}>這個狀態沒有事項。</Text> : null}
+            {!model.reading && visible.length === 0 ? <Text style={styles.meta}>{model.hasMoreTasks ? "已載入事項中沒有這個狀態；其他頁可能有，請載入更多事項。" : "這個狀態沒有事項。"}</Text> : null}
             {visible.map(task => <Pressable key={task.id} accessibilityRole="button" accessibilityLabel={`查看事項：${task.title}`} accessibilityState={{ selected: model.selected?.id === task.id, disabled: locked || !!model.draft }}
               disabled={locked || !!model.draft} onPress={() => actions.selectTask(task.id)} style={({ pressed }) => [styles.task, model.selected?.id === task.id && styles.selectedTask, pressed && styles.pressed]}>
               <Text style={styles.taskTitle}>{task.title}</Text><Text style={styles.meta}>{task.kind === "appointment" ? "預約" : "普通任務"} · {taskStateLabels[task.occurrence.state]} · 版本 {task.version}</Text>
               <Text style={styles.meta}>{task.occurrence.dueAt}</Text><Text style={styles.meta}>負責人：{taskAssigneeLabel(task.assigneeUserId, model.eligibleAssignees)}</Text>
             </Pressable>)}
+            {model.hasMoreTasks ? <AppButton label={model.loadingMoreTasks ? "正在載入更多事項…" : "載入更多事項"}
+              disabled={model.loadingMoreTasks || !model.online || model.reading || locked} onPress={actions.loadMoreTasks} /> : null}
           </SectionCard></View>
           <View style={[styles.column, wide && styles.detailColumn]}>
             {model.draft ? <TaskForm key={model.draft.key} model={model} actions={actions} /> : model.selected ? <TaskDetail model={model} actions={actions} /> : <SectionCard><SectionHeader title="選擇一項事項" subtitle="查看安排、背景處理及逐版歷史；只有有權的照顧者可更改共享安排。" /></SectionCard>}

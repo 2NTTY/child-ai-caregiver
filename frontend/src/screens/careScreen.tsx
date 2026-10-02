@@ -26,7 +26,7 @@ function CareWorkspace({ child, online, reading, initialKind }: { child: HomeChi
     {controlsOpen ? <>
       <AppSelect label="記錄情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} />
       <AppSelect label="模擬提交結果" value={preview.outcome} options={outcomes} onChange={preview.setOutcome} />
-      <AppSelect<CareLookupOutcome> label="模擬查核結果" value={preview.lookupOutcome} options={[{ value: "unknown", label: "仍未查明" }, { value: "saved", label: "已保存" }, { value: "not_applied", label: "確認未保存" }]} onChange={preview.setLookupOutcome} />
+      <AppSelect<CareLookupOutcome> label="模擬查核結果" value={preview.lookupOutcome} options={[{ value: "unknown", label: "仍未查明" }, { value: "saved", label: "已保存" }, { value: "not_applied", label: "尚無確認收據" }]} onChange={preview.setLookupOutcome} />
       <Text>切換情境會清除這頁的合成操作與草稿。處理中或結果未知時，只可模擬權限失效。搜尋「公園」可比較空頁仍有下一頁的情況。</Text>
     </> : null}
   </SectionCard>} />;

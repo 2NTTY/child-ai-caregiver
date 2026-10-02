@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useEffect, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { HelperText, Text } from "react-native-paper";
@@ -16,6 +17,7 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
   const [confirmed, setConfirmed] = useState(false);
   const { control, handleSubmit, getValues, formState: { isDirty } } = useForm<TaskFormValues>({ defaultValues: draft.initialValues,
     resolver: zodResolver(taskFormSchema(draft.mode, model.eligibleAssignees)), mode: "onBlur" });
+  usePreviewLeaveGuard(isDirty);
   const busy = ["saving", "unknown"].includes(model.operation.state);
   const timeZone = useWatch({ control, name: "timeZone" });
   const locked = busy || model.operation.state === "conflict" || model.reading || model.access !== "editable";
