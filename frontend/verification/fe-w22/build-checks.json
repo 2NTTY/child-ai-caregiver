@@ -1,0 +1,188 @@
+{
+  "at": "2026-10-01T15:32:48.535Z",
+  "package": "FE-W22 toolbar consistency and destructive-action safeguards",
+  "baseline": "d2f1124fe157d147857b0e644351f3bfbd827b97",
+  "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+  "uiHandoffBlob": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+  "apiBlob": "69fd07e18f649e4862030001837662d5e2fdc19b",
+  "scope": "frontend only; shared toolbar, danger presentation, child-name and scope confirmation; no backend/API/auth/account deletion changes",
+  "otherWorktreesChecked": 14,
+  "frontendOverlaps": [],
+  "sources": [
+    {
+      "path": "frontend/scripts/flows/deletion.mjs",
+      "gitBlob": "588ca9e6c0386836352381898710f678bce06642",
+      "sha256": "433fb7a3a0b437d71b1416260df7a64b8d1a0f6c640c342e746dfaad7dcbb466"
+    },
+    {
+      "path": "frontend/scripts/flows/shell-settings.mjs",
+      "gitBlob": "617b6a8ebd8a20d426aa507e79281236bdfbcf18",
+      "sha256": "18d4faf2ed506db6f02455b81447225104867c3eb8971902ff3f6e393d8628fa"
+    },
+    {
+      "path": "frontend/scripts/flows/toolbar-safety.mjs",
+      "gitBlob": "967c04064025eadb9d9f377380bc5c3b6683735d",
+      "sha256": "e8627f1fe1559aa8a9ec9e3d0bfcffbabd9caff56ac6e3771d6a85b516b016ed"
+    },
+    {
+      "path": "frontend/scripts/verify-ui.mjs",
+      "gitBlob": "5a3dbf582b3c4e73e7804b4886b78e412c0692cb",
+      "sha256": "dd1aeb12b82f6cb3b3eddc37ece17dd7a2421ae6690305b1a53669bc52a5cddd"
+    },
+    {
+      "path": "frontend/src/components/AppDialog.tsx",
+      "gitBlob": "8e78d03b2b023dcb56f59814bbe256be175eca32",
+      "sha256": "444cdeb5f478e7ad363e29ae2ddb10f3a1a1259544aa33d865c949f6ee439927"
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "gitBlob": "08507ee7c386b8cd42346c04ac72f8d6460fe6ec",
+      "sha256": "f7b25bf689e553038957e830cf9d1e26dab80541a0a95e1b5a46ba7e54a0f522"
+    },
+    {
+      "path": "frontend/src/components/DeleteChildPreview.tsx",
+      "gitBlob": "0c117cdb0cdce94a35a8b8a7b4e8e6eff452978a",
+      "sha256": "e5ca9c4099588a4ef588f0a8043d27054cc32e82266d3f2dfb0961430c104ecd"
+    },
+    {
+      "path": "frontend/src/components/NativeAppShell.tsx",
+      "gitBlob": "7d2ccd619c3878c0234f735094fd599eadeda188",
+      "sha256": "558702f789b3018d046e5bd59950bcd5ef5387044439b4bdea9dc0d105d448b3"
+    },
+    {
+      "path": "frontend/src/components/NotificationBell.tsx",
+      "gitBlob": "3e6cdbd15ec0edc5436aef28a0dffbfdc20aa25e",
+      "sha256": "018ca960ea8a6d85a18e38204777214869f66f89c32ae452652fd9147bc31af4"
+    },
+    {
+      "path": "frontend/src/components/ToolbarIconButton.tsx",
+      "gitBlob": "ec71d1e448e50687856e4aab7d568c6231acb5c7",
+      "sha256": "bba5766c7c77848842e87411b8bbb185e53ec6cad3e25ffe49a75afaf7e57d49"
+    },
+    {
+      "path": "frontend/src/components/care/CareRecordDelete.tsx",
+      "gitBlob": "7c96ced3ec7a9935182f46f146e8a6b29c785abb",
+      "sha256": "d766ed05d487f870290137161d218c98ddfd9eddacbf785d1aca2d0816fa1028"
+    },
+    {
+      "path": "frontend/src/components/memory/MemoryEditor.tsx",
+      "gitBlob": "1cd4fdc7f5ee9a4fe063d86c8b1c8475b1a4291e",
+      "sha256": "fc497b01719933260fe8d7b48b9b4557d30fbea2aef6b8d0c880e387b80ad696"
+    },
+    {
+      "path": "frontend/src/components/model-settings/ModelSettingsView.tsx",
+      "gitBlob": "fe0b81a25f6ac8c911e4f3e82dfc5e425af75dc3",
+      "sha256": "21e33b8f898e8542b8c7d7fb690f47427aaba90753b120f21da4657929100d73"
+    },
+    {
+      "path": "frontend/src/components/photos/PhotosView.tsx",
+      "gitBlob": "4ae7b224a457e9699b44e23b10aee37e55902c47",
+      "sha256": "87b48f719b357db7fe91b48850b14777d3bd0f1e50d821567303a0ccce86b57e"
+    },
+    {
+      "path": "frontend/src/components/profile/ProfileView.tsx",
+      "gitBlob": "e3fbd29ce5966632a18bad5fd45311a6695e8321",
+      "sha256": "1231b34e4f9de223a8310258fa5fa49e512a86c32b3ab511427628f9281a3f67"
+    },
+    {
+      "path": "frontend/src/components/shared-inputs/SourcesView.tsx",
+      "gitBlob": "1b955d7b7aa9135bdc27ee0643110f95c7810fd2",
+      "sha256": "448250503917f0fb5220cf6a4a8ea405d6ef8863d121fec8094fe072a93727db"
+    },
+    {
+      "path": "frontend/src/components/ui.tsx",
+      "gitBlob": "a3f4350d3416b81abf90469e6dbdc5654419adec",
+      "sha256": "ed226079ae805b58a9f3851ace0398b4132e600716f5fa09a47d5fa887dcf885"
+    }
+  ],
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "webExport": {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "routes": 33,
+      "bundles": [
+        {
+          "path": "dist/_expo/static/js/web/entry-90eab76c716f67e85e3e218c9c005c78.js",
+          "sha256": "16aa884df41ba6b406eee43f02adc422401b61a5d33cb2c66843c5cec172913c",
+          "bytes": 4136063
+        }
+      ]
+    },
+    "androidExport": {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundles": [
+        {
+          "path": "dist-android/_expo/static/js/android/entry-1b2087e27ecdb8840ebee234aac0ff1e.hbc",
+          "sha256": "9d41e8b1b290243d555ad8b9ea8b646e6cb7b074b7dba0f5b22adf6dab24fe45",
+          "bytes": 6370613
+        }
+      ]
+    },
+    "finalToolbar": {
+      "command": "node scripts/verify-ui.mjs toolbar-safety",
+      "exitCode": 0,
+      "evidence": "verification/fe-w22/checks-toolbar-safety.json",
+      "bundle": "dist/_expo/static/js/web/entry-90eab76c716f67e85e3e218c9c005c78.js",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "passed": [
+        "toolbar-safety: four sizes/shared SVG surfaces/44-48 actual targets/centered status/Enter toggle/Escape focus/red child modal/name and scope/cancel/photo confirmation"
+      ],
+      "failures": []
+    },
+    "deletion": {
+      "command": "node scripts/verify-ui.mjs deletion",
+      "exitCode": 0,
+      "evidence": "verification/fe-w22/checks-deletion.json",
+      "passed": [
+        "deletion: record scope/checkbox keyboard/failure/explicit conflict review/same-operation lookup/owner-only child deletion/isolation"
+      ],
+      "failures": [],
+      "reused": "Passed before the final toolbar touch-target/native-size correction. DeleteChildPreview, care deletion and operation callbacks were unchanged afterward; final modal geometry/keyboard/cancel/name/scope checks are in finalToolbar."
+    },
+    "shell": {
+      "passed": true,
+      "record": "verifyShell printed its full pass in three targeted runner calls; later toolbar-safety assertions failed in those runs. No clean shell-only runner JSON claimed.",
+      "reused": "Existing shell flow passed after replacing its stale quick-action selector with the delivered photo shortcut. Final toolbar keyboard/focus geometry is checked separately."
+    },
+    "skill": {
+      "evidence": "verification/fe-w22/skill-checks.json",
+      "exitCode": 0,
+      "method": "Existing YAML parser and metadata checks; official Python validator unavailable without PyYAML"
+    }
+  },
+  "failuresResolved": [
+    "Photos dialog parts used the vendor Title type; moved to shared AppDialog parts.",
+    "Legacy shell test counted an obsolete dietary shortcut; aligned it with the existing photo shortcut.",
+    "IconButton outer border reduced the actual target by 2px; public contentStyle places the border inside the 44/48 target.",
+    "New DOM checks initially sampled the modal wrapper and asserted before React closed the modal; use Paper surface and wait for hidden. Heading query scoped by role to exclude background buttons."
+  ],
+  "securityAudit": {
+    "child": "Owner-only preview, red modal, exact display name and scope; unknown cannot dismiss or resubmit.",
+    "account": "No actionable delete account UI/complete contract.",
+    "reauthentication": "Not implemented. Real Server-backed recent identity verification remains a main-chat handoff requirement; no password collected or invented payload."
+  },
+  "limits": [
+    "Synthetic Web only; no Server/API/model/notification requests or real deletion.",
+    "Android export is bundle evidence; no device/permission/keyboard/system-font acceptance.",
+    "No full business regression rerun.",
+    "User visual approval, real authentication and formal API integration remain pending."
+  ],
+  "delivery": {
+    "author": "CherylNg-2526 <250349656@stu.vtc.edu.hk>",
+    "committer": "2NTTY <2nttyfor2b@gmail.com>",
+    "pullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/73",
+    "draft": true,
+    "merge": false
+  }
+}

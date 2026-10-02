@@ -1,0 +1,137 @@
+{
+  "at": "2026-10-02T09:03:08.182Z",
+  "baseline": "9df6c671e0affe2386ac04498a53d5621c47a210",
+  "branch": "codex/fe-w11-photos",
+  "scope": "FE-W27 child-control and first-home introduction follow-up; frontend/** only",
+  "sources": {
+    "frontend/app/(dashboard)/index.tsx": {
+      "gitBlob": "f6653fcc4eb9a859251683792d1e97c35c3c6095",
+      "sha256": "b1a82a17c6a75574e020d00691950d7221f4e575b2cff86c94e9b69d3f02bcd9"
+    },
+    "frontend/src/components/ChildPicker.tsx": {
+      "gitBlob": "cd3c80e213a1ea241c7b74bce3aa7c3be730f003",
+      "sha256": "415934beb5c84b3019708ee0fb154365ab7f02262d15ae1f7d066d1d6ff96d89"
+    },
+    "frontend/src/components/HomeDashboard.tsx": {
+      "gitBlob": "4daa8072f1e66ceab499d28be955315576a4e67f",
+      "sha256": "dad7e9c913a692a64d80ab1e7469f89cba44e51fd5535b260937b3fe71611c33"
+    },
+    "frontend/src/components/MobileHomeDashboard.tsx": {
+      "gitBlob": "40eb6ab2c6434d62d9660f8cdc1a5caefa312fd9",
+      "sha256": "786a0c1bea484ed6f240143bc520e161c6bfb48d830101654c3038d52760c614"
+    },
+    "frontend/src/preview/PreviewContext.tsx": {
+      "gitBlob": "7192c3442f66cf16aca7f80d22f78bcb4ed82f89",
+      "sha256": "59f8b16bb8ebea407b55a5581ad77e9523433b1082b46ac40e0dbb178b1dffc9"
+    },
+    "frontend/scripts/verify-home-introduction.mjs": {
+      "gitBlob": "e14185d3f243e8a74c2477823602f29ee9ee01a6",
+      "sha256": "b0d1b56244bfb8d6936c2fb32ee1f27c2b3e3df18c8baea0b9fd3878ade33d82"
+    },
+    "frontend/DESIGN_SYSTEM.md": {
+      "gitBlob": "4e43d4a64de44a0c8407b85f441d228dd2b8eb73",
+      "sha256": "fa2b2aa71cdd7737c12d3efc92b1d0a14119b4fd2b5b41695cea00bee1f96b62"
+    },
+    "frontend/HANDOFF.md": {
+      "gitBlob": "2aaf3e9047dcebf6a8a41fb02068953929d731c7",
+      "sha256": "c8af06f3c2e4275eff10a6732842e56d4d03614c62929ae6b7fa05a60ffe63f1"
+    },
+    "frontend/PLAN.md": {
+      "gitBlob": "f51a04e7baac77019c3aad01c39072244e11ba55",
+      "sha256": "96c0002562964e4613cb7615ece8cb47229641dcb989fde71e9bdbe7085f2806"
+    },
+    "frontend/STATUS.md": {
+      "gitBlob": "18a7c90f748e105ed8e9bb8616b23b452bbee220",
+      "sha256": "dfa40e0c5135b79f20a2f9571cc1554e4f8e4070a52d5cbf86c4546c8ce599c1"
+    }
+  },
+  "versions": {
+    "expo": "57.0.24",
+    "expo-router": "57.0.22",
+    "react-native": "0.86.3",
+    "react-native-web": "0.21.2",
+    "react-native-paper": "5.15.3",
+    "lucide-react-native": "1.49.0"
+  },
+  "preserved": {
+    "frontend/app/(dashboard)/_layout.tsx": "fa66c1d8c1753a51a13812b2a4bd241dcb8a13dd",
+    "frontend/src/components/appearance/HomeBackground.tsx": "2ef8b432d66eb4e85e02fc52ab2e0e4d43162fa0",
+    "frontend/src/components/AppDialog.tsx": "8e78d03b2b023dcb56f59814bbe256be175eca32",
+    "frontend/src/components/appScrollView.css": "e5abd1b703389ff2f7e91f74f4737820e0f307e4",
+    "frontend/src/theme.ts": "f2d617150223c6ebc3cc3138b96973bab19b5bc0",
+    "frontend/src/view-model.ts": "356a6c716aa1eec7cf38a1adb0790f5e3f8b407c",
+    "frontend/src/components/agent/AnswerSources.tsx": "caa8fd817657d722ddfa2b44bc7e856134a37e96"
+  },
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "staticRoutes": 33,
+      "bundle": "entry-3d6df2e8e276b08c71cc5459d04ab8bb.js",
+      "sha256": "1d736a2349fc7df1e1a80db4eab1f79477005766e460426deb61f7b9ff0f6033"
+    },
+    {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundle": "entry-88522c0a96b707995249c8a2ad1f9028.hbc",
+      "sha256": "a86e4563df8bedca849420c8a15d0888b0086e2462af09ca058af2c820423cc7"
+    },
+    {
+      "command": "FRONTEND_PREVIEW_URL=http://localhost:8083 node scripts/verify-home-introduction.mjs",
+      "exitCode": 0,
+      "cases": 8,
+      "report": "child-control-checks.json",
+      "testRefinement": "After the eight-case run, only the transition click gained force:true to bypass stability waiting. The revised action was verified separately against the same unchanged application build.",
+      "supplement": "Forced click observed during opacity transition, then stable past the cancelled timer"
+    }
+  ],
+  "evidence": {
+    "child-320-large-text.png": "7e37fdc7667372ef8d215473e3f5e89dfb7f9ff2ab5d0a39d6ed1bc0a5e5c590",
+    "child-control-checks.json": "a2af30dd4c519c7b9fa89de72cb0e83b6a9137350bfb666e68be44de1f61317a",
+    "child-docked-320.png": "c21dd43a6bdec34569540babefd076591e87030e9f23e9100b6afda6a2dcc521",
+    "child-docked-390-pointer.png": "64c32c28a8b286ca6f59fbb5469342701eecd318d700975b67e55e104830d3ee",
+    "child-docked-390-reduced.png": "64c32c28a8b286ca6f59fbb5469342701eecd318d700975b67e55e104830d3ee",
+    "child-docked-390.png": "86a974ce322b5de6ab835d8984472bf0c8c4a979fea8204250bd8ce82daf0f48",
+    "child-docked-649.png": "824d5fe16afccaf9053a36c55755b5e2f70051b70a0eb5721939da24a70fdf4c",
+    "child-open-320.png": "a6cb19255ee602aa9bab4fec489ecffcddfae19772994dd10a40efe816f11211",
+    "child-open-390-reduced.png": "52a6f077d192b59a8192009da0ef52261b29e4438fd4a48ba99479c20f263df4",
+    "child-open-390.png": "fd0f187833e9a068932c315aced8b8e8021436a032ab03adefeaec4b99760abf",
+    "child-open-649.png": "f3e1028dbf8fec904d7ec69391a625a6e622d236427ef8354420c06487bd05ed"
+  },
+  "sync": {
+    "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+    "at": "2026-10-02T08:55:53.3267961Z",
+    "githubLogin": "CherylNg-2526",
+    "githubDocs": {
+      "docs/API.md": "69fd07e18f649e4862030001837662d5e2fdc19b",
+      "src/shared/product-agent.ts": "9f217d80dd1e020dc6048075e4f34f9233cd73f2",
+      "docs/P2_UI_HANDOFF.md": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+      "src/shared/knowledge.ts": "ea330e54333a48dcb861364fccbc167aedab78f7"
+    },
+    "frontendOverlaps": [],
+    "otherWorktreesChecked": 14
+  },
+  "attribution": {
+    "author": "CherylNg-2526 <250349656@stu.vtc.edu.hk>",
+    "committer": "2NTTY <2nttyfor2b@gmail.com>",
+    "deliveryLogin": "CherylNg-2526"
+  },
+  "reused": [
+    {
+      "at": "9df6c671e0affe2386ac04498a53d5621c47a210",
+      "path": "frontend/verification/fe-w27-home/build-checks.json",
+      "scope": "Unchanged question-field removal, reference-date omission, scrollbar, guide, drafts and quick recording. Prior evidence retained; not rerun as final full regression."
+    }
+  ],
+  "pending": [
+    "User visual approval",
+    "Formal authenticated session flag/reset integration",
+    "Android device, TalkBack and actual native animation acceptance"
+  ],
+  "noRealServices": true
+}

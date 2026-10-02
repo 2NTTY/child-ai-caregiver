@@ -3,14 +3,20 @@ import { Platform } from "react-native";
 import { AppIcon } from "../../src/components/AppIcon";
 import { AppShell } from "../../src/components/AppShell";
 import { NativeAppShell } from "../../src/components/NativeAppShell";
-import { PreviewProvider } from "../../src/preview/PreviewContext";
+import { PreviewProvider, usePreview } from "../../src/preview/PreviewContext";
+import { BackgroundProvider } from "../../src/preview/BackgroundContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, mobileIcons, mobileLayout, mobileType } from "../../src/theme";
 
 export default function DashboardLayout() {
-  return <PreviewProvider>{Platform.OS === "web" ? <AppShell><Slot /></AppShell> : <NativeAppShell>
+  return <PreviewProvider><PreviewAppearance>{Platform.OS === "web" ? <AppShell><Slot /></AppShell> : <NativeAppShell>
     <NativeDashboardTabs />
-  </NativeAppShell>}</PreviewProvider>;
+  </NativeAppShell>}</PreviewAppearance></PreviewProvider>;
+}
+
+function PreviewAppearance({ children }: { children: React.ReactNode }) {
+  const { model } = usePreview();
+  return <BackgroundProvider key={model.caregiverName}>{children}</BackgroundProvider>;
 }
 
 function NativeDashboardTabs() {
@@ -20,6 +26,7 @@ function NativeDashboardTabs() {
       <Tabs.Screen name="chat" options={{ title: "對話", tabBarIcon: ({ color }) => <AppIcon name="message-text-outline" color={color} size={mobileIcons.navigation} /> }} />
       <Tabs.Screen name="tasks" options={{ title: "待辦", tabBarIcon: ({ color }) => <AppIcon name="clipboard-check-outline" color={color} size={mobileIcons.navigation} /> }} />
       <Tabs.Screen name="memory" options={{ title: "記憶", tabBarIcon: ({ color }) => <AppIcon name="book-open-page-variant-outline" color={color} size={mobileIcons.navigation} /> }} />
-      {["care", "profile", "family", "settings", "guide", "motion-preview"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
+      <Tabs.Screen name="more" options={{ title: "更多", tabBarIcon: ({ color }) => <AppIcon name="dots-horizontal" color={color} size={mobileIcons.navigation} /> }} />
+      {["care", "photos", "sources", "growth", "summary", "contact", "profile", "family", "settings", "guide", "motion-preview"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
     </Tabs>;
 }

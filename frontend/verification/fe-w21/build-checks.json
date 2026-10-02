@@ -1,0 +1,232 @@
+{
+  "at": "2026-10-01T14:29:37.006Z",
+  "package": "FE-W21 frontend brand rename",
+  "baseline": "6f367657179d2d38f4d5ceef6627482658680646",
+  "githubMaster": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "uiHandoffBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1",
+  "scope": "frontend only; display brand/SVG/metadata/selectors/current frontend documentation; no API/session/technical identifier changes",
+  "brandName": "育有方",
+  "sources": [
+    {
+      "path": "frontend/app.json",
+      "gitBlob": "0397895a594734f820dde2d0dbf37d6d7d591f8b",
+      "sha256": "2f6dcd8f31236372998fc93f6cbfa7e629b4f14f35e74cfe5d3d4e7a3893526d"
+    },
+    {
+      "path": "frontend/app/_layout.tsx",
+      "gitBlob": "fdce399b18bdd62594b4cab70c5f25431877a31c",
+      "sha256": "fa3cf5d65e401e1bf356669ed16ee38d54ddd756ec2c03cb2e32aebc537cf7d1"
+    },
+    {
+      "path": "frontend/scripts/flows/appearance.mjs",
+      "gitBlob": "661fc68b66c8c9d23f1a207556f82fb0d6a459e5",
+      "sha256": "d30271c6714e3038c26ac1c192780b1147bbc9d8519bc33a80cf53cbe4ac505e"
+    },
+    {
+      "path": "frontend/scripts/flows/composer-surfaces.mjs",
+      "gitBlob": "7cc2db796b7d422cf6ed56e3365e82249497238a",
+      "sha256": "069f6e8dc5e8e6420758210e2a9a1191537831f0d51114f8cb8ad7d7113360b9"
+    },
+    {
+      "path": "frontend/scripts/flows/model-settings.mjs",
+      "gitBlob": "4bb093d210e58d00ac3175196a36b84be77b877a",
+      "sha256": "b5c0f9f3257042829ccb291206168e4aeb3071fb6d929c27fd524f915978ae92"
+    },
+    {
+      "path": "frontend/scripts/flows/photos.mjs",
+      "gitBlob": "8044284d38d3654d2ba9aeec25db1ee99225f2d9",
+      "sha256": "13dc72549eeaa338b23521eebc55195cad5d1d47011235ece254a75ac97a839c"
+    },
+    {
+      "path": "frontend/scripts/flows/shared-inputs.mjs",
+      "gitBlob": "49f8fdf00ec313de35cd12af55cba4b13ba9e90c",
+      "sha256": "dd5bf321810db97ed9533bc56fc619d25f17fc015f4dadfd61c73b520e151204"
+    },
+    {
+      "path": "frontend/scripts/flows/shell-settings.mjs",
+      "gitBlob": "a2698a1950d392fc2ad34902bb6f421ad6a4892c",
+      "sha256": "2b12a70a398b402366148a16eb95f56af92cd224aeb84905db12579fba038923"
+    },
+    {
+      "path": "frontend/src/branding.ts",
+      "gitBlob": "b17afccc4107f85815510fc976fe7f998545b4c3",
+      "sha256": "90278dc5820b678170c60ab51022834990f8518f9d2e896934326cc5a7bdcc18"
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "gitBlob": "3bb04d865ec039f838ad2efab2c2b48ac5ef81cc",
+      "sha256": "3204b8c0eb0b7704ec5e52022220990ddb9618972e63099b4c6ca0cb8a6ecbe9"
+    },
+    {
+      "path": "frontend/src/components/BrandLogo.tsx",
+      "gitBlob": "f818940386d3350959f74b551ea6f556dda350e3",
+      "sha256": "f1d84a49ebb4ba3f9d9f5f8d16e54aeda86f3a64efe7c488149bc5495a3b50f2"
+    },
+    {
+      "path": "frontend/src/components/HomeDashboard.tsx",
+      "gitBlob": "87c85adeeec5c576ba823c39e11cfbf7ecbc70f2",
+      "sha256": "94892184b0d2120b38e1aaf3bc4b0f56af808b9d4bcfd49120cc595be6f71c58"
+    },
+    {
+      "path": "frontend/src/components/MobileHomeDashboard.tsx",
+      "gitBlob": "9e6e9f1a92647422042af972832b56913621a44a",
+      "sha256": "c51099cd6e464bdcb65c5ea3f3bf925171de31487070b9156710ed0aef313f91"
+    },
+    {
+      "path": "frontend/src/components/NativeAppShell.tsx",
+      "gitBlob": "d8e4e27f8e26ee42536fcd9b8d30665ebd9696c8",
+      "sha256": "0799b17fd4c0ab8192998e9de7d3ef5e6ad7afa144750ec5743e2e5673ddd6ab"
+    },
+    {
+      "path": "frontend/src/components/appearance/BackgroundSettings.tsx",
+      "gitBlob": "16588ed3aa46d71960cfca3ac0ce005e1b81f7f4",
+      "sha256": "f692232c7abd6f1be0a791768d93b087bf271cb0b445c1087f1ad79eebc5be23"
+    },
+    {
+      "path": "frontend/src/components/care/CareRecordsView.tsx",
+      "gitBlob": "41bdd2d43935ebfe054e7c371b339fc742000785",
+      "sha256": "1ebc7ca7459760826cc4c1cd6f60645bd649f1a3bd987c16fb40620244ac4504"
+    },
+    {
+      "path": "frontend/src/components/model-settings/ModelSettingsView.tsx",
+      "gitBlob": "68e7a58198306024e8ffe681e5a0f09420aa2dc4",
+      "sha256": "1c787235c73e7de0fc7fed561167997b063092abd8626650e3b2a318572e12d1"
+    },
+    {
+      "path": "frontend/src/components/photos/PhotosView.tsx",
+      "gitBlob": "198fc3021615d8a578223ecf889efca159711393",
+      "sha256": "285028a47de976fd1f859d8b8ea2b1700d424500cb646d29734e9f0449fc12dd"
+    },
+    {
+      "path": "frontend/src/components/profile/ProfileView.tsx",
+      "gitBlob": "127bf21361dc961f5d111164dd6e27d9f44bdbc9",
+      "sha256": "859a74df87db63092d895b2ef3f4ef52308ef9beb664b14b50721a30470ff455"
+    },
+    {
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "gitBlob": "e770ea3b2aa294bab72d78891b80005a579c7015",
+      "sha256": "4ff22ea7f436b57607680c62ec4e9d6bdd66eedd0c629827b2d5b190bd0e6b3d"
+    },
+    {
+      "path": "frontend/src/preview/photoFixture.ts",
+      "gitBlob": "eb8480d6ec3ae5cf20178e4379f2da590934e75a",
+      "sha256": "19e8d6cc40bd1c5d82afe3361e17acc5bca5f808b819a907720b8c05247e6235"
+    },
+    {
+      "path": "frontend/src/screens/chatScreen.tsx",
+      "gitBlob": "c35a1071a635a23d6b791c41fe3eed47d7c1b7f0",
+      "sha256": "6d6e8c7ce4a0d8cd9fd6a5260c230573fb6613dd5123881828a8e09add9aeee0"
+    },
+    {
+      "path": "frontend/src/screens/familyScreen.tsx",
+      "gitBlob": "48a05b90da10451b23f0a8ffb11e70a5723427ed",
+      "sha256": "cabcafcba11cb8add100dea1567f9ac8ea43e32d2a60ec0a3cfd884345742e74"
+    },
+    {
+      "path": "frontend/src/screens/guideScreen.tsx",
+      "gitBlob": "d22293fdcae15ccf0db65e08bd25f7fb9f78b8aa",
+      "sha256": "85b5e2368953dd586ce3eb9ca1b26e9ba891248cdf6e2193c4efd24bb6130797"
+    },
+    {
+      "path": "frontend/src/screens/loginScreen.tsx",
+      "gitBlob": "665c0bc825be54e707d1794dc55db9223ef7dc68",
+      "sha256": "afed520fa13760328c8187b4c490dd968ccf7d031721d3c9dcf089a9ecb2a061"
+    },
+    {
+      "path": "frontend/src/screens/memoryScreen.tsx",
+      "gitBlob": "cdf515d249286d99c55cf86384518357e7d38c49",
+      "sha256": "853b4016eed533bf083f1cb9bacdcc5ac2fef9fc3faedd2f39342c1c459d356e"
+    },
+    {
+      "path": "frontend/src/screens/motionPreviewScreen.tsx",
+      "gitBlob": "0ebb51bbb2ee33cb59eb4642adf4b1e48d29c272",
+      "sha256": "23ac3cb8fe5c6c6ab7b02430c17f111560e975571fb3bb308dd84252eec3fbdd"
+    },
+    {
+      "path": "frontend/src/screens/settingsScreen.tsx",
+      "gitBlob": "01b0a40276b255858408a7f8120cdb438b8bed70",
+      "sha256": "7a48701e6c8d014fc84b11da11c4bb709be31cf72f13302da23240a6cdbf0fde"
+    }
+  ],
+  "dependencies": {
+    "expo": "57.0.24",
+    "expo-router": "57.0.22",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-web": "0.21.2",
+    "react-native-paper": "5.15.3",
+    "react-native-svg": "15.15.4"
+  },
+  "originalArtwork": {
+    "path": "assets/brand/logo-horizontal.svg",
+    "gitBlob": "a37a5130ed653f50453cd3fd51f96a1fcbcc4496",
+    "sha256": "090f49b27a0a1661229847ba0002a9e75ec42f92818a10fcc882242de064b809",
+    "readOnly": true
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "web": {
+    "exitCode": 0,
+    "routes": 33,
+    "path": "dist/_expo/static/js/web/entry-bf0d9445b38d0c4f27d908b6a0389113.js",
+    "sha256": "05e887f8833d72660056879c3dbd893c2ec0b1f3d98246613466a18e52a90ed5"
+  },
+  "android": {
+    "exitCode": 0,
+    "assets": 30,
+    "path": "dist-android/_expo/static/js/android/entry-e796469abba79b36949ae981f6b16129.hbc",
+    "sha256": "f140023d7be00ad0acc9a861bccff88ba4e26dc73890682c0b0f2bb2b37058f0",
+    "limitation": "Hermes/asset export only; no APK/native font/App label/device acceptance"
+  },
+  "broadPreview": {
+    "path": "checks-layout-design-agent.json",
+    "layoutChecks": 60,
+    "designWidths": [
+      1440,
+      1024,
+      840,
+      744,
+      390,
+      320
+    ],
+    "agentWidths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "failures": [],
+    "phase": "Before SVG text baseline moved from 116 to 118; parent geometry and interaction code unchanged"
+  },
+  "finalBrandPreview": {
+    "path": "brand-checks.json",
+    "checks": 10,
+    "widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "scope": "Home/login SVG name and text bounds; title/accessible brand; Enter return from chat; settings background/model and photo fixture names; no runtime errors/API requests",
+    "failures": []
+  },
+  "skillValidation": {
+    "exitCode": 0,
+    "name": "web-screen-delivery",
+    "method": "Installed yaml parser; frontmatter/name/description/placeholder checks",
+    "officialValidator": "Not executed successfully: bundled Python has no PyYAML"
+  },
+  "initialFailure": {
+    "cause": "SVG font bounds were fractionally above viewBox at some scaled sizes; focus check also expected one narrow login logo despite existing two-logo layout",
+    "resolution": "Move text baseline by two viewBox units and keep original login layout; focused final check passed"
+  },
+  "priorEvidence": "Theme, business flows, artwork bytes and original API state semantics unchanged; existing evidence retained without full business regression",
+  "pending": [
+    "User visual acceptance",
+    "Formal App/backend brand integration",
+    "Native font/App display name and device acceptance"
+  ],
+  "deliveryAccount": "CherylNg-2526",
+  "mergePerformed": false
+}

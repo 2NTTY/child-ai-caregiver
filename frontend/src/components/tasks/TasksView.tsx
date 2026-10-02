@@ -1,3 +1,4 @@
+import { brand } from "../../branding";
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -17,7 +18,7 @@ export function TasksView({ model, actions, controller, previewControls }: { mod
   const wide = width >= 840;
   const locked = ["saving", "unknown", "conflict"].includes(model.operation.state);
   const visible = model.items.filter(item => stateFilter === "all" || item.occurrence.state === stateFilter);
-  return <PageFrame title="任務與預約" description="先核對孩子、負責人及時間，再確認家庭共享安排。回報照護完成與背景處理狀態分開記錄。" eyebrow="育伴港 · 家庭協調">
+  return <PageFrame title="任務與預約" description="先核對孩子、負責人及時間，再確認家庭共享安排。回報照護完成與背景處理狀態分開記錄。" eyebrow={`${brand.name} · 家庭協調`}>
     <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={styles.stack}>
       <SectionCard><SectionHeader title={`${model.child.name}的家庭事項`} subtitle={model.dataLabel}
         action={model.access === "editable" ? <AppButton label="新增共享事項" disabled={locked || !!model.draft || model.reading} onPress={actions.startCreate} /> : undefined} />

@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import type { HomeChild, RecordsLoadState } from "../view-model";
@@ -20,7 +21,7 @@ export function ChildKeyFacts({ child, load }: { child: HomeChild | undefined; l
 const styles = StyleSheet.create({
   scroll: { flex: 1, minWidth: 0, flexGrow: 1 },
   facts: { alignItems: "center", gap: spacing.sm, paddingRight: spacing.sm },
-  fact: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.quietSurface, paddingHorizontal: spacing.sm, minHeight: 31 },
+  fact: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.softLine, paddingHorizontal: spacing.sm, minHeight: 31 },
   label: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
   value: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, fontWeight: "700", maxWidth: 120 },
   placeholder: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },

@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-01T15:29:28.200Z",
+  "passed": [
+    "toolbar-safety: four sizes/shared SVG surfaces/44-48 actual targets/centered status/Enter toggle/Escape focus/red child modal/name and scope/cancel/photo confirmation"
+  ],
+  "failures": []
+}

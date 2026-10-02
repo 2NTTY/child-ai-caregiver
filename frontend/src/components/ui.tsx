@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode, type Ref } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { AppIcon } from "./AppIcon";
 import { Button, Portal, RadioButton, Text, TextInput } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
@@ -10,7 +11,7 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   label: string;
   accessibilityLabel?: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "quiet" | "accent";
+  variant?: "primary" | "secondary" | "quiet" | "accent" | "danger";
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -20,15 +21,15 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   return (
     <Button
       ref={ref}
-      mode={variant === "primary" || variant === "accent" ? "contained" : variant === "secondary" ? "outlined" : "text"}
-      buttonColor={variant === "accent" ? colors.deepTeal : undefined}
-      textColor={variant === "accent" ? colors.white : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
+      mode={variant === "primary" || variant === "accent" || variant === "danger" ? "contained" : variant === "secondary" ? "outlined" : "text"}
+      buttonColor={variant === "danger" ? colors.errorInk : variant === "accent" ? colors.accent : variant === "secondary" ? colors.controlSurface : undefined}
+      textColor={variant === "danger" ? colors.white : variant === "accent" ? colors.onAccent : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
       onPress={onPress}
       disabled={disabled || loading}
       loading={loading}
       contentStyle={[styles.buttonContent, compact && styles.mobileTarget]}
       labelStyle={[styles.buttonLabel, compact && mobileType.itemTitle]}
-      style={[styles.button, variant === "secondary" && styles.outlineButton, style]}
+      style={[styles.button, variant === "secondary" && styles.outlineButton, variant === "accent" && styles.accentButton, style]}
       accessibilityLabel={accessibilityLabel}
     >
       {label}
@@ -37,9 +38,10 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
 }
 
 type AppTextFieldProps = Omit<React.ComponentProps<typeof TextInput>, "ref"> & { ref?: Ref<React.ComponentRef<typeof TextInput>> };
-export function AppTextField({ style, outlineStyle, mode, ref, ...props }: AppTextFieldProps) {
-  return <TextInput {...props} ref={(instance: React.ComponentRef<typeof TextInput> | null) => { if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }}
-    mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={[styles.inputOutline, outlineStyle]} />;
+export function AppTextField({ style, outlineStyle, contentStyle, multiline, label, mode, ref, ...props }: AppTextFieldProps) {
+  return <TextInput {...props} multiline={multiline} label={label} ref={(instance: React.ComponentRef<typeof TextInput> | null) => { if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }}
+    mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={[styles.inputOutline, outlineStyle]}
+    contentStyle={[multiline && label ? styles.multilineContent : undefined, contentStyle]} />;
 }
 
 export function AppSelectionTrigger({ label, onPress, disabled = false, expanded, ref, calendar = false }: {
@@ -124,7 +126,7 @@ export function OperationPill({ state }: { state: OperationState }) {
 export function ConnectionPill({ state }: { state: ConnectionState }) {
   const label = state === "online" ? "已連接" : state === "offline" ? "目前離線" : "正在檢查連線";
   return (
-    <View accessibilityRole="text" accessibilityLabel={label} style={[styles.pill, styles.connectionPill, state === "online" ? styles.tealPill : state === "offline" ? styles.amberPill : styles.neutralPill]}>
+    <View accessibilityRole="text" accessibilityLabel={label} style={[styles.pill, styles.connectionPill, state === "offline" ? styles.amberPill : state === "checking" ? styles.neutralPill : styles.onlineConnection]}>
       <View style={[styles.dot, state === "online" ? styles.tealDot : state === "offline" ? styles.amberDot : styles.neutralDot]} />
       <Text style={styles.pillText}>{label}</Text>
     </View>
@@ -160,6 +162,7 @@ const styles = StyleSheet.create({
   buttonContent: { minHeight: 44, paddingHorizontal: 4 },
   buttonLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "700" },
   outlineButton: { borderColor: colors.line },
+  accentButton: { borderWidth: 1, borderColor: colors.ink },
   card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
   mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
   sectionHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap" },
@@ -175,7 +178,8 @@ const styles = StyleSheet.create({
   count: { minWidth: 24, paddingHorizontal: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.paleTeal, alignItems: "center" },
   countText: { fontFamily: chineseFont, color: colors.deepTeal, ...mobileType.caption, fontWeight: "700" },
   pill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 6 },
-  connectionPill: { alignSelf: "center" },
+  connectionPill: { alignSelf: "center", borderWidth: 1, borderColor: colors.line },
+  onlineConnection: { backgroundColor: colors.controlSurface },
   pillText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },
   neutralPill: { backgroundColor: colors.neutralSurface },
   tealPill: { backgroundColor: colors.paleTeal },
@@ -194,11 +198,13 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: colors.teal },
   tabText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },
   tabTextActive: { color: colors.deepTeal, fontWeight: "800" },
-  input: { backgroundColor: colors.white, fontFamily: chineseFont },
+  input: { backgroundColor: colors.controlSurface, fontFamily: chineseFont },
+  // Keep the scrolling textarea below its floating label, including enlarged text.
+  multilineContent: { marginTop: spacing.md },
   inputOutline: { borderColor: colors.controlOutline, borderRadius: radius.small },
   selectDialog: { maxWidth: 440, width: "90%", alignSelf: "center", marginHorizontal: 0 },
   selectList: { maxHeight: 360 },
-  selectionTrigger: { minHeight: 44, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small, backgroundColor: colors.white },
+  selectionTrigger: { minHeight: 44, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small, backgroundColor: colors.controlSurface },
   selectionLabel: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "600", lineHeight: 22 },
   selectionDisabled: { opacity: 0.5 },
 });

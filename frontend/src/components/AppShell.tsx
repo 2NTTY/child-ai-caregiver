@@ -1,28 +1,36 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, usePathname, useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
+import { brand } from "../branding";
+import { BrandLogo } from "./BrandLogo";
 import { Button, Divider, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { AppIcon } from "./AppIcon";
 import { AppMenuList } from "./AppMenuList";
 import { AgentEntryButton } from "./AgentEntryButton";
-import { AppButton, ConnectionPill, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
+import { AppButton, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 import { NotificationBell } from "./NotificationBell";
+import { ToolbarIconButton } from "./ToolbarIconButton";
 import { PreviewTodoCard } from "./PreviewTodoCard";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 import { previewChecklist, scenarioLabels, type PreviewScenario } from "../preview/fixture";
 import { usePreview } from "../preview/PreviewContext";
 import type { HomeActions, HomeViewModel } from "../view-model";
 
-const logo = require("../../assets/brand/logo-horizontal.png");
-type AppPath = "/" | "/chat" | "/care" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks";
+type AppPath = "/" | "/chat" | "/care" | "/photos" | "/sources" | "/growth" | "/summary" | "/contact" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks";
 const navigation: { href: AppPath; label: string; short: string; icon: React.ComponentProps<typeof AppIcon>["name"] }[] = [
   { href: "/", label: "主頁", short: "主頁", icon: "home-outline" },
   { href: "/chat", label: "與 Agent 對話", short: "對話", icon: "message-text-outline" },
   { href: "/care", label: "照顧記錄", short: "記錄", icon: "notebook-outline" },
+  { href: "/photos", label: "照片與記錄", short: "照片", icon: "image-outline" },
+  { href: "/sources", label: "私人來源", short: "來源", icon: "link-variant" },
   { href: "/tasks", label: "任務與預約", short: "待辦", icon: "clipboard-check-outline" },
+  { href: "/growth", label: "成長關注", short: "關注", icon: "chart-bar" },
+  { href: "/summary", label: "照顧摘要", short: "摘要", icon: "clipboard-check-outline" },
+  { href: "/contact", label: "聯絡授權", short: "聯絡", icon: "bell-outline" },
   { href: "/profile", label: "子女檔案", short: "孩子", icon: "account-child-outline" },
   { href: "/family", label: "家庭協調", short: "家庭", icon: "account-group-outline" },
   { href: "/memory", label: "記憶與話題", short: "記憶", icon: "book-open-variant" },
@@ -120,7 +128,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const railProps = { model, actions, checkedPreviewItems, togglePreviewItem };
   const [railOpen, setRailOpen] = useState(true);
   const [railModal, setRailModal] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   useEffect(() => { if (wide) setRailModal(false); }, [wide]);
   const active = (path: AppPath) => pathname === path;
@@ -131,8 +138,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return <View style={styles.root}>
     {!compact ? <View testID="web-sidebar" style={styles.sidebar}>
-      <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" style={styles.brandLink}>
-        <Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={styles.logo} />
+      <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={styles.brandLink}>
+        <BrandLogo style={styles.logo} decorative />
         <Text style={styles.brandLine}>用資料 · 陪伴成長</Text>
       </Pressable></Link>
       <View style={styles.navList}>{navigation.filter(item => item.href !== "/chat").map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}</View>
@@ -140,28 +147,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         <AgentEntryButton active={active("/chat")} />
       </View>
       <NavItem item={{ href: "/settings", label: "設定", short: "設定", icon: "cog-outline" }} active={active("/settings")} />
-      <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" accessibilityState={{ expanded: accountOpen }} onPress={() => setAccountOpen(true)} style={({ pressed }) => [styles.account, pressed && styles.pressed]}>
-        <View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View>
-        <View style={styles.accountCopy}><Text style={styles.accountName}>{model.caregiverName}</Text><Text style={styles.accountHint}>合成預覽帳戶</Text></View>
-        <AppIcon name="chevron-down" size={18} />
-      </Pressable>
       {showGuideNav ? <NavItem item={{ href: "/guide", label: "使用引導", short: "引導", icon: "compass-outline" }} active={active("/guide")} /> : null}
     </View> : null}
     <View style={styles.stage}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
-        {compact ? <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={[styles.topLogo, tiny && styles.topLogoTiny]} /></Pressable></Link> : null}
+        {compact ? <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></Link> : null}
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts child={selectedChild} load={model.profileLoad} /> : null}
-        <View style={styles.topActions}>
-          {!compact ? <ConnectionPill state={model.connection} /> : null}
+        <View testID="header-actions" style={styles.topActions}>
           <NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
-          {compact ? <Pressable accessibilityRole="button" accessibilityLabel="用戶選單" onPress={() => setAccountOpen(true)} style={[styles.accountAction, width < mobileLayout.breakpoint && styles.mobileAction]}><View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable> : null}
-          <Pressable accessibilityRole="button" accessibilityLabel={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
-            accessibilityState={{ expanded: railExpanded }} aria-expanded={railExpanded}
-            onPress={() => wide ? setRailOpen(value => !value) : setRailModal(value => !value)}
-            style={({ pressed }) => [styles.infoAction, tiny && styles.infoActionTiny, width < mobileLayout.breakpoint && styles.mobileAction, pressed && styles.pressed]}>
-            <AppIcon name="page-layout-sidebar-right" size={22} />
-          </Pressable>
+          <ToolbarIconButton icon="page-layout-sidebar-right" label={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
+            expanded={railExpanded} onPress={() => wide ? setRailOpen(value => !value) : setRailModal(value => !value)} />
         </View>
       </View>
       {compact && !mobileHome ? <View style={styles.compactFacts}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /><ChildKeyFacts child={selectedChild} load={model.profileLoad} /></View> : null}
@@ -173,7 +169,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </View>
       {compact ? <View style={styles.bottomNav}>
         {navigation.filter(item => ["/", "/chat", "/tasks", "/memory"].includes(item.href)).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
-        <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={mobileIcons.navigation} color={["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={mobileIcons.navigation} color={["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
       </View> : null}
       {railModal && !wide ? <View style={[styles.railOverlay, compact ? styles.railOverlayCompact : styles.railOverlayDesktop]}>
         <Pressable accessibilityRole="button" accessibilityLabel="關閉資訊側欄背景" onPress={() => setRailModal(false)} style={styles.railScrim} />
@@ -181,23 +177,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       </View> : null}
     </View>
     <Portal>
-      <Dialog visible={accountOpen} onDismiss={() => setAccountOpen(false)}>
-        <Dialog.Title>用戶與帳戶</Dialog.Title>
-        <Dialog.Content><Text style={styles.dialogBody}>{model.caregiverName} · 合成預覽帳戶。正式登入、登出及權限由主聊天接線。</Text></Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={() => { setAccountOpen(false); router.push("/login"); }}>查看登入畫面</Button>
-          <Button onPress={() => { setAccountOpen(false); router.push("/settings"); }}>設定</Button>
-          <Button onPress={() => setAccountOpen(false)}>關閉</Button>
-        </Dialog.Actions>
-      </Dialog>
       <Dialog visible={moreOpen} onDismiss={() => setMoreOpen(false)} style={styles.menuDialog}>
         <Dialog.Title>更多頁面</Dialog.Title>
         <Dialog.Content>
           <AppMenuList items={[
-            ...navigation.filter(item => ["/family", "/care", "/profile", "/memory"].includes(item.href)).map(item => ({ key: item.href, label: item.label, icon: item.icon, onPress: () => { setMoreOpen(false); router.push(item.href); } })),
+            ...navigation.filter(item => ["/family", "/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/memory"].includes(item.href)).map(item => ({ key: item.href, label: item.label, icon: item.icon, onPress: () => { setMoreOpen(false); router.push(item.href); } })),
             { key: "settings", label: "設定", icon: "cog-outline", onPress: () => { setMoreOpen(false); router.push("/settings"); } },
             ...(showGuideNav ? [{ key: "guide", label: "使用引導", icon: "compass-outline" as const, onPress: () => { setMoreOpen(false); router.push("/guide"); } }] : []),
-            { key: "account", label: "用戶與帳戶", icon: "account-outline", onPress: () => { setMoreOpen(false); setAccountOpen(true); } },
           ]} />
         </Dialog.Content>
         <Dialog.Actions><Button onPress={() => setMoreOpen(false)}>關閉</Button></Dialog.Actions>
@@ -220,17 +206,8 @@ const styles = StyleSheet.create({
   navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
   sidebarBottom: { marginTop: "auto", paddingBottom: spacing.sm },
-  account: { minHeight: 56, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white, paddingHorizontal: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  accountAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
-  accountAction: { width: 44, height: 44, flexShrink: 0, alignItems: "center", justifyContent: "center" },
-  mobileAction: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, minWidth: mobileLayout.touchTarget, minHeight: mobileLayout.touchTarget },
-  accountAvatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" },
-  accountCopy: { flex: 1, minWidth: 0 },
-  accountName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "700" },
-  accountHint: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
-  accountArrow: { color: colors.deepTeal, fontSize: typeScale.title },
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
-  topbar: { height: 70, backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
+  topbar: { height: 70, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
   topbarCompact: { height: 64, paddingHorizontal: spacing.md, gap: spacing.sm },
   topbarTiny: { paddingHorizontal: spacing.sm, gap: spacing.xs },
   topBrandLink: { width: 124, height: 44, alignItems: "center", justifyContent: "center", marginRight: "auto" },
@@ -238,11 +215,9 @@ const styles = StyleSheet.create({
   topLogo: { width: 124, height: 44 },
   topLogoTiny: { width: 114 },
   topActions: { marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  infoAction: { minWidth: 44, minHeight: 44, backgroundColor: colors.quietSurface, borderRadius: radius.small, alignItems: "center", justifyContent: "center" },
-  infoActionTiny: { minWidth: 38, minHeight: 40 },
   panelIcon: { width: 20, height: 17, borderWidth: 1.7, borderColor: colors.deepTeal, borderRadius: 4, alignItems: "flex-end", justifyContent: "center" },
   panelIconDivider: { width: 6, height: 15, borderLeftWidth: 1.7, borderLeftColor: colors.deepTeal },
-  compactFacts: { minHeight: 52, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, gap: spacing.md, flexDirection: "row", alignItems: "center", backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.softLine },
+  compactFacts: { minHeight: 52, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, gap: spacing.md, flexDirection: "row", alignItems: "center", backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   menuDialog: { maxWidth: 400 },
   previewArea: { backgroundColor: colors.previewSurface, borderBottomWidth: 1, borderBottomColor: colors.line },
   previewLine: { minHeight: 36, paddingHorizontal: spacing.lg, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
@@ -281,7 +256,6 @@ const styles = StyleSheet.create({
   railOverlayDesktop: { top: 70 },
   railScrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.overlay },
   railDrawer: { width: "92%", maxWidth: 370, height: "100%", backgroundColor: colors.sidebar },
-  dialogBody: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
   bottomNav: { minHeight: mobileLayout.tabMinHeight, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line, flexDirection: "row" },
   bottomNavItem: { flex: 1, minWidth: mobileLayout.touchTarget, paddingVertical: spacing.sm, alignItems: "center", justifyContent: "center", gap: spacing.xs },
   bottomGlyph: { fontSize: 22, color: colors.muted },

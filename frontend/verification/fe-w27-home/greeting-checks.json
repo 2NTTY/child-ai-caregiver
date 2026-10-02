@@ -1,0 +1,149 @@
+{
+  "at": "2026-10-02T07:57:30.120Z",
+  "scope": "Synthetic frontend home-entry animation; no authentication/API calls or native device acceptance",
+  "passed": [
+    "home intro 649 reduced=false: reading interval, one left child selector, no reference date/right button, upward compact transition, fixed right artwork, post-transition child switch",
+    "home intro 390 reduced=false: reading interval, one left child selector, no reference date/right button, upward compact transition, fixed right artwork, post-transition child switch, pause while picker is open",
+    "home intro 320 reduced=false: reading interval, one left child selector, no reference date/right button, upward compact transition, fixed right artwork, post-transition child switch, enlarged text",
+    "home intro 390 reduced=true: reading interval, one left child selector, no reference date/right button, instant reduced-motion change, fixed right artwork, post-transition child switch"
+  ],
+  "metrics": [
+    {
+      "width": 649,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 617,
+        "height": 90
+      },
+      "final": {
+        "x": 16,
+        "y": 153,
+        "width": 382.53125,
+        "height": 64
+      },
+      "initialHeader": {
+        "x": 16,
+        "y": 101,
+        "width": 617,
+        "height": 274
+      },
+      "finalHeader": {
+        "x": 16,
+        "y": 101,
+        "width": 617,
+        "height": 168
+      },
+      "image": {
+        "x": 350.5,
+        "y": 101,
+        "width": 298.5,
+        "height": 168
+      }
+    },
+    {
+      "width": 390,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 358,
+        "height": 90
+      },
+      "final": {
+        "x": 16,
+        "y": 153,
+        "width": 221.953125,
+        "height": 64
+      },
+      "initialHeader": {
+        "x": 16,
+        "y": 101,
+        "width": 358,
+        "height": 274
+      },
+      "finalHeader": {
+        "x": 16,
+        "y": 101,
+        "width": 358,
+        "height": 168
+      },
+      "image": {
+        "x": 91.5,
+        "y": 101,
+        "width": 298.5,
+        "height": 168
+      }
+    },
+    {
+      "width": 320,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 288,
+        "height": 90
+      },
+      "final": {
+        "x": 16,
+        "y": 153,
+        "width": 178.546875,
+        "height": 64
+      },
+      "initialHeader": {
+        "x": 16,
+        "y": 101,
+        "width": 288,
+        "height": 274
+      },
+      "finalHeader": {
+        "x": 16,
+        "y": 101,
+        "width": 288,
+        "height": 168
+      },
+      "image": {
+        "x": 21.5,
+        "y": 101,
+        "width": 298.5,
+        "height": 168
+      }
+    },
+    {
+      "width": 390,
+      "reduced": true,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 358,
+        "height": 90
+      },
+      "final": {
+        "x": 16,
+        "y": 153,
+        "width": 221.953125,
+        "height": 64
+      },
+      "initialHeader": {
+        "x": 16,
+        "y": 101,
+        "width": 358,
+        "height": 274
+      },
+      "finalHeader": {
+        "x": 16,
+        "y": 101,
+        "width": 358,
+        "height": 168
+      },
+      "image": {
+        "x": 91.5,
+        "y": 101,
+        "width": 298.5,
+        "height": 168
+      }
+    }
+  ],
+  "failures": []
+}

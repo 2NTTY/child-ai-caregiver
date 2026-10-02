@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-02T05:27:48.008Z",
+  "scope": "Synthetic frontend only; no API/model calls or device acceptance",
+  "passed": [
+    "citations 1440: divided answer footer; three superscripts locate/focus their source without opening a panel; inline source tabs/Enter/collapse, no modal, preserved draft",
+    "citations 1024: divided answer footer; three superscripts locate/focus their source without opening a panel; inline source tabs/Enter/collapse, no modal, preserved draft",
+    "citations 390: divided answer footer; three superscripts locate/focus their source without opening a panel; inline source tabs/Enter/collapse, no modal, preserved draft, enlarged text",
+    "citations 320: divided answer footer; three superscripts locate/focus their source without opening a panel; inline source tabs/Enter/collapse, no modal, preserved draft, enlarged text"
+  ],
+  "failures": []
+}

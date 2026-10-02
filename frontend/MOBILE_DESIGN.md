@@ -6,7 +6,7 @@ FE-W10；2026-09-30。依使用者手機參考圖及現有 Paper／Expo 結構�
 
 ## 成熟方案與取捨
 
-採用現有 React Native Paper 5.15.3、Expo Router 57.0.22 及 React Native 0.86.3，沒有新增 UI 框架。官方方案解決可伸縮尺寸、字體層次、觸控及安全區；參考圖決定育伴港的排列與密度。
+採用現有 React Native Paper 5.15.3、Expo Router 57.0.22 及 React Native 0.86.3，沒有新增 UI 框架。官方方案解決可伸縮尺寸、字體層次、觸控及安全區；參考圖決定育有方的排列與密度。
 
 使用者再提出圖標／組件／文字偏大的疑慮後，對照 [Paper 5.15.3 原始 tokens](https://github.com/callstack/react-native-paper/blob/v5.15.3/src/styles/themes/v3/tokens.tsx) 及 [Material Android 官方字級](https://github.com/material-components/material-components-android/blob/master/docs/theming/Typography.md)，將首輪 24／18／15 收斂為 MD3 的 22／16／14。這是本工程選用的角色，不是聲稱所有手機正文必須 14。[Lucide](https://lucide.dev/guide/lucide/basics/sizing) 的預設為 24；本工程按角色取 20–24，與可按範圍分開。
 
@@ -41,3 +41,21 @@ typecheck、Web 23 個路由輸出及 Android Hermes／31 項資產輸出通過�
 實際運行畫面：[390 主頁](verification/fe-w10/home-390.png)、[320 主頁](verification/fe-w10/home-320.png)、[完整排列](verification/fe-w10/home-390-full-layout.png)、[320 對話](verification/fe-w10/chat-320.png)、[150% 文字孩子卡片](verification/fe-w10/child-large-text-320.png)。使用者的視覺確認仍待回饋。
 
 窄 Web 使用同一個手機首頁 React Native 元件，但外殼仍是 Web。Android bundle 只驗打包；原生系統字體、安全區、鍵盤／返回鍵、TalkBack、APK 和真 API 均需主聊天另行驗收，不能從 Web 截圖推斷已通過。
+
+## FE-W11 照片入口接續
+
+手機主頁第二格改成「照片記錄」，符合參考圖的快速記錄排列，仍使用同一個 SVG／88 最小高度／四或兩格規則。照片頁按原圖、人工核對、清單排單欄；短按鈕文字配完整 accessible label，主要控制仍至少 48，正文／次層沿 14／12。原生更多選單及照顧記錄也可到達；原生相簿／相機的 `selectOriginal` adapter 未接，不冒稱選圖權限已驗。
+
+共用密度及照片增加後，44 個重排與 390／320 手機必要互動、快捷入口、150% Web 文字均通過；見 [FE-W11 checks](verification/fe-w11/checks-layout-photos-mobile-density.json)／[metrics](verification/fe-w11/after-metrics.json)／[完整手機首頁](verification/fe-w11/home-390-full-layout.png)。Web 25 路由及 Android Hermes／31 資產 export 通過，原生真機門檻保持待驗。
+
+## FE-W12 問候區品牌插畫
+
+2026-10-01 使用者要求問候區以桌面主頁的海旁家庭美術作完整背景。MobileHomeDashboard 復用 `harbour-family-hero.png`，背景橫跨問候區；左側用現有 canvas 色的 SVG 透明度漸變保護文字，右側保留人物，底部漸淡接回畫布。問候區最小高度 168、文字佔內容寬度 60%，可換行並隨內容增高，沿原有字級；背景不攔截操作，裝飾略過朗讀及鍵盤。
+
+此版當時沿用 RN Image 與 react-native-svg 15.15.4，採 100% 寬高及 cover，避免靜態素材原尺寸覆蓋絕對定位；原插畫裁切已由下述 FE-W24 取代。頂部、孩子摘要列與常駐側欄同色，畫布及白色卡片形成下一層。共用外殼 44 個重排、390／320 的孩子切換／草稿／快捷記錄及 150% Web 文字、typecheck、Web 25 路由及 Android Hermes 31 資產 export 通過；[歷史建置](verification/fe-w12/build-checks.json)。
+
+## FE-W24 完整插畫及登入簡化
+
+2026-10-02：手機首頁問候保留圖片，原 1672 × 941 插畫改為等比 contain、靠右及垂直置中，照顧者、孩子、手指和腳都不裁切；左側漸淡從實際圖片左緣開始接回畫布，文字與最小 168 高度沿原規則。自選背景仍用 cover，沒有改寫使用者圖片。320／390／640 的完整畫框、比例及實際截圖已核對；[390](verification/fe-w24/home-whole-390.png)／[640](verification/fe-w24/home-whole-640.png)。
+
+手機登入則移除頂部宣傳故事／插畫，保留單一品牌及表單；此規則不套用手機首頁。900 以下適用同一共用畫面，原生手機亦不渲染 BlurView。Web 覆蓋式捲動不改原生 ScrollView；原生實機、安全區及系統字體仍待驗，見 [交接](HANDOFF.md#responsive-scroll)。

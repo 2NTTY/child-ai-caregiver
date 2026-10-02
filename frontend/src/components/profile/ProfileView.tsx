@@ -1,3 +1,4 @@
+import { brand } from "../../branding";
 import { useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -19,7 +20,7 @@ export function ProfileView({ model, actions, childPicker, writeNotice, previewC
   const canReview = model.access === "editable" && !model.reading && !pending && !conflict
     && (!model.child || model.online && !model.needsRefresh);
   const editable = model.access === "editable" && !model.reading && !pending && !conflict && model.intent !== "delete";
-  const frame = (children: ReactNode) => <PageFrame title="子女檔案" description="只填已知資料；年齡原值、日期基準與未知欄位如實保留。" eyebrow="育伴港 · 孩子資料">{children}</PageFrame>;
+  const frame = (children: ReactNode) => <PageFrame title="子女檔案" description="只填已知資料；年齡原值、日期基準與未知欄位如實保留。" eyebrow={`${brand.name} · 孩子資料`}>{children}</PageFrame>;
   if (model.access === "lost") return frame(<>
     <SectionCard><SectionHeader title="孩子權限已失效" /><Text style={styles.body}>本頁檔案、歷史、草稿及未完成操作已清除。請重新核對家庭權限，或切換至有權查看的孩子。</Text></SectionCard>
     {childPicker}{previewControls}
@@ -71,9 +72,9 @@ export function ProfileView({ model, actions, childPicker, writeNotice, previewC
             <AppButton label="已比較，使用最新基準" onPress={actions.useLatestVersion} disabled={!model.latest || !model.online || model.reading} />
           </View> : null}
           {model.child && model.current?.data ? <AppButton label="永久刪除檔案及歷史" variant="quiet" onPress={actions.reviewDeletion} disabled={!canReview || model.intent === "delete"} /> : null}
-          {model.operation.state === "needs_confirmation" && model.intent === "delete" ? <View style={styles.confirmation}>
-            <Text style={styles.confirmationTitle}>再次確認永久刪除</Text><Text style={styles.body}>會清除整個檔案及全部更正歷史，不能從歷史復原。孩子及照顧記錄仍會保留。</Text>
-            <AppButton label="確認永久刪除檔案及歷史" onPress={actions.submitReviewed} disabled={!canReview} />
+          {model.operation.state === "needs_confirmation" && model.intent === "delete" ? <View style={[styles.confirmation, styles.deletionConfirmation]}>
+            <Text style={[styles.confirmationTitle, styles.deletionTitle]}>再次確認永久刪除</Text><Text style={styles.body}>會清除整個檔案及全部更正歷史，不能從歷史復原。孩子及照顧記錄仍會保留。</Text>
+            <AppButton label="確認永久刪除檔案及歷史" variant="danger" onPress={actions.submitReviewed} disabled={!canReview} />
             <AppButton label="取消刪除" variant="quiet" onPress={actions.cancelReview} />
           </View> : null}
           {model.operation.state === "failed" && model.intent === "delete" ? <AppButton label="返回檔案草稿" variant="secondary" onPress={actions.cancelReview} /> : null}
@@ -93,6 +94,8 @@ const styles = StyleSheet.create({
   label: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
   warning: { backgroundColor: colors.paleAmber, padding: spacing.md, gap: spacing.sm, borderRadius: radius.small },
   confirmation: { backgroundColor: colors.paleAmber, padding: spacing.md, borderRadius: radius.small, gap: spacing.md, minWidth: 0 },
+  deletionConfirmation: { backgroundColor: colors.paleCoral },
+  deletionTitle: { color: colors.errorInk },
   confirmationTitle: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
   historyItem: { borderTopWidth: 1, borderColor: colors.line, paddingTop: spacing.md },
 });

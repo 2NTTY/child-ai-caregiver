@@ -1,0 +1,6 @@
+{
+  "exitCode": 0,
+  "name": "web-screen-delivery",
+  "method": "Installed yaml parser; frontmatter/name/description/placeholder checks",
+  "officialValidator": "Not executed successfully: bundled Python has no PyYAML"
+}

@@ -1,0 +1,135 @@
+{
+  "at": "2026-10-01T16:17:08.789Z",
+  "package": "FE-W23 full-background login layout",
+  "baseline": "cab28414a39a2b6e25c77c68e349024247623122",
+  "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+  "uiHandoffBlob": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+  "apiBlob": "69fd07e18f649e4862030001837662d5e2fdc19b",
+  "scope": "frontend only; original illustration as full viewport background, one left brand/introduction/auth card, narrow single column; no backend/API/auth/background preference changes",
+  "otherWorktreesChecked": 14,
+  "frontendOverlaps": [],
+  "sources": [
+    {
+      "path": "frontend/src/screens/loginScreen.tsx",
+      "gitBlob": "87e96351288bd65b99720324e52e7afbcde4c99f",
+      "sha256": "fd1fd494bf391a4f27632a9e609319a24a0bf292b898b8b8bca6af9b7ad38bec"
+    }
+  ],
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "webExport": {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "routes": 33,
+      "bundles": [
+        {
+          "path": "dist/_expo/static/js/web/entry-c4434460fdf499a022f2dd555503793f.js",
+          "sha256": "ff0309b6ecd83ac4fb1b9207897cb6c62530b717ee62dc8f7b87208dc81c7843",
+          "bytes": 4134501
+        }
+      ]
+    },
+    "androidExport": {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundles": [
+        {
+          "path": "dist-android/_expo/static/js/android/entry-653586ce90ddee132f440fd9863633a8.hbc",
+          "sha256": "b61b50ed6d2f85537e324ca02185bf5c34a262326f5da89b8b8c2cde53154a82",
+          "bytes": 6369521
+        }
+      ]
+    },
+    "layout": {
+      "kind": "Ad hoc headless check of the exported synthetic login UI using the existing preview browser helper",
+      "evidence": "verification/fe-w23/layout-checks.json",
+      "viewports": [
+        {
+          "width": 2217,
+          "height": 1230
+        },
+        {
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "width": 1024,
+          "height": 768
+        },
+        {
+          "width": 390,
+          "height": 844
+        },
+        {
+          "width": 320,
+          "height": 720
+        }
+      ],
+      "assertions": [
+        "Background fills viewport at opacity 1",
+        "Desktop left form and right illustration space",
+        "Narrow full-width single column",
+        "One accessible SVG wordmark",
+        "Sign-in and sign-up field switching",
+        "No horizontal overflow, pageerror, console.error or API requests"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-c4434460fdf499a022f2dd555503793f.js"
+    },
+    "login": {
+      "command": "node scripts/verify-ui.mjs login",
+      "exitCode": 0,
+      "evidence": "verification/fe-w23/checks-login.json",
+      "passed": [
+        "login: accessible local validation/password visibility/keyboard submission without a Server request at 320"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-c4434460fdf499a022f2dd555503793f.js"
+    }
+  },
+  "screenshots": [
+    {
+      "path": "verification/fe-w23/login-1024.png",
+      "sha256": "3be3ee448a85109018d070c67e34631688fd78343340196dd47f91935364c306",
+      "bytes": 866516
+    },
+    {
+      "path": "verification/fe-w23/login-1440.png",
+      "sha256": "1d187d96db8d169308f2f2f02fe744b6d8b887ea5e446c81d613d61faa965ba4",
+      "bytes": 1503470
+    },
+    {
+      "path": "verification/fe-w23/login-2217.png",
+      "sha256": "aba9734b5bfae284c817618eb06b9f12b652876720dc306596c1e7a958b2543a",
+      "bytes": 3035244
+    },
+    {
+      "path": "verification/fe-w23/login-320.png",
+      "sha256": "b3ab9d8a351c40b02f33e23997e5a314dadf7f152d7b71f3c9b763eaaa8a5861",
+      "bytes": 109453
+    },
+    {
+      "path": "verification/fe-w23/login-390.png",
+      "sha256": "75af3fa48a9bb4eff5518b1abbf1015369e58cc523ecbb83ddbbcdbc6c4b3108",
+      "bytes": 137113
+    }
+  ],
+  "limitations": [
+    "Synthetic Web UI checks only; no real credentials, Server, authentication/session or account creation",
+    "Android export is bundle evidence only; OS keyboard, device, accessibility and user visual acceptance pending",
+    "Cover preserves aspect ratio and may crop the artwork at differing viewport ratios",
+    "No unrelated feature regression rerun"
+  ],
+  "delivery": {
+    "branch": "codex/fe-w11-photos",
+    "pullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/73",
+    "draft": true,
+    "merged": false,
+    "author": "CherylNg-2526 <250349656@stu.vtc.edu.hk>",
+    "actualCommitter": "2NTTY <2nttyfor2b@gmail.com>"
+  }
+}

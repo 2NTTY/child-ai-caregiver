@@ -1,0 +1,278 @@
+{
+  "scope": "Growth attention frontend projection; synthetic only, no Server/rules/worker or device acceptance",
+  "verifiedAt": "2026-09-30T22:47:20.531Z",
+  "baselineCommit": "3e153a7c5f8682429e380d6e8816ae5be128175d",
+  "sourceCommit": "ef536e8e1c71e5b28dd2e337ab4e6b478fbc489a",
+  "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "authoritySources": [
+    {
+      "path": "docs/P2_UI_HANDOFF.md",
+      "githubBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1"
+    },
+    {
+      "path": "docs/API.md",
+      "githubBlob": "69fd07e18f649e4862030001837662d5e2fdc19b"
+    },
+    {
+      "path": "src/shared/growth.ts",
+      "githubBlob": "98308a5249b14c0426cf628550daab5a470716f2"
+    },
+    {
+      "path": "src/client/growth-api.ts",
+      "githubBlob": "cacbf27f2e10b6d5d097d4c9ddd3906fe6156125"
+    },
+    {
+      "path": "src/client/GrowthPanel.tsx",
+      "githubBlob": "6e9485153bde98223aec8c91dcfadab1115f1c22"
+    },
+    {
+      "path": "src/shared/tasks.ts",
+      "githubBlob": "20b9260b58bbf5a72df9a094ae5fb652ad79cf3a"
+    }
+  ],
+  "sources": [
+    {
+      "path": "app/(dashboard)/_layout.tsx",
+      "sha256": "bab5d595debf56cd37ae78dddf7aa6893d7ab18e85ccfc34e01ff4032e5f0484"
+    },
+    {
+      "path": "app/(dashboard)/growth.tsx",
+      "sha256": "59f12558cea8bbea10bf59c9d92d4558461e8ff94948a66508e858205d23dca1"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940"
+    },
+    {
+      "path": "scripts/flows/growth.mjs",
+      "sha256": "6e28c07c59349eccad85d123b25df3f7d5c2a795a5fdd16bba53c603999940ca"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "ae74061b1160b5e4dbbf13dfcb8abca4d7bbb87f34c7200c4e6e723bd8516a84"
+    },
+    {
+      "path": "src/components/AppCheckbox.tsx",
+      "sha256": "1efb6cf18e16d9de1d1952322a0bee7682dd647f68501fcdecc7323cbc088e0e"
+    },
+    {
+      "path": "src/components/AppIcon.tsx",
+      "sha256": "79a0c4c939e57590570b30efbab0f0f2996e10c5aeb963ca8f68e7f3d987bbe4"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256": "fe8ea34a7922cf517a492287b6466c04cc3135245e9fdcc488ac8d717756ac15"
+    },
+    {
+      "path": "src/components/DateTimeFields.tsx",
+      "sha256": "5f3ec91da26d653f84cc1459497a3ceb2ac0ad85580fe90f732299ad0c29b6f4"
+    },
+    {
+      "path": "src/components/NativeAppShell.tsx",
+      "sha256": "cd4877eddb02e49ee0fde36f8424a91b21142615218abfe557c0126135d66508"
+    },
+    {
+      "path": "src/components/growth/GrowthAttentionCard.tsx",
+      "sha256": "55b7de3e64a39512d7fa71bf0b6465d45dcaa8ae9b0842e0cae99de3f7b4130e"
+    },
+    {
+      "path": "src/components/growth/GrowthTopicCard.tsx",
+      "sha256": "8a46788a030f6f41aac25c0ea58fd38375c6f8226e35364df18af70638b11026"
+    },
+    {
+      "path": "src/components/growth/GrowthView.tsx",
+      "sha256": "92f274002d8704dc59d4fe75cee2a7bad59565c0b2ea8bb339770e42ddb2fde1"
+    },
+    {
+      "path": "src/components/growth/growth-form.test.mjs",
+      "sha256": "41f7dbe3f99bac509347b8bdcbbad5814e13c0ded898ab8a713db4a3113935dd"
+    },
+    {
+      "path": "src/components/growth/growth-form.ts",
+      "sha256": "5e22601e194d4caa68af48c0bac0c378049fb77d9759c88d81d7e03cf655a7d1"
+    },
+    {
+      "path": "src/components/growth/growth-styles.ts",
+      "sha256": "844f3cc25a242b215dad11c1c0400737997424e70a5e55028b48f2edad27f17d"
+    },
+    {
+      "path": "src/components/tasks/task-form.ts",
+      "sha256": "5a40a277b2a95f588410999c51185a789d02c8a5f8f5b09378829ceb968dbb0f"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "d9309f724e6b17fbbe33016d247754ec3d1b1414eaabce18f4ccdfd15d8d6997"
+    },
+    {
+      "path": "src/growth-view-model.ts",
+      "sha256": "86e9492492a1ec84f2c05ad334182ba316fe15f62547176ea4eec94e36e24661"
+    },
+    {
+      "path": "src/preview/PreviewContext.tsx",
+      "sha256": "b8ea9f64f54e445078827a04d0573d3c8173e52075b8bc977e61742b40fa00de"
+    },
+    {
+      "path": "src/preview/growthFixture.ts",
+      "sha256": "6a2a4fd6ca53a0c88d5474c7bcb20dba5cd224d7009401102ec00ed29fa7843b"
+    },
+    {
+      "path": "src/preview/useGrowthPreview.ts",
+      "sha256": "b780ef63e284729db39a129fdc17b2605fbfd0357c91b7656329400ed7a83784"
+    },
+    {
+      "path": "src/screens/GrowthScreen.tsx",
+      "sha256": "bce866b4f31906e464526fd698b1010165edaa238659186456090c2d47bf33d2"
+    },
+    {
+      "path": "src/task-view-model.ts",
+      "sha256": "a6d4c2cf6a95b236d8e32c93800ca0988bf6e2e7b81546e1da5221d41d9faee0"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "7f931fdd7ddeacfb2ba1a615bf81aabf1804f595a0266491d02e46825f532688"
+    },
+    {
+      "path": "src/view-model.ts",
+      "sha256": "04069b0584aeda962e0c206f4f568d62df2e2541d397d40d52fd45312fdb5dfb"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d"
+    }
+  ],
+  "snapshotDigest": "5fb492b18358cd251c9cff5555f616fd38f34a2d504cfa0da931274c2449b2c0",
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "growthUnit": {
+      "exitCode": 0,
+      "passed": 3,
+      "command": "node --experimental-strip-types --test src/components/growth/growth-form.test.mjs"
+    },
+    "webExport": {
+      "exitCode": 0,
+      "staticRoutes": 29,
+      "bundles": [
+        {
+          "name": "entry-9a08d93dfe8cd1a37250bdd488c88fbd.js",
+          "sha256": "4ee8297fe1bcdbbfbc5e23b219c4ebeda69617b1f695a48f04217cf2596239a8"
+        }
+      ]
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "assets": 31,
+      "bundles": [
+        {
+          "name": "entry-5c7a674dcaa4904af31add41c51b8655.hbc",
+          "sha256": "fcc5e842d4da1380e4f2c8b3c1b3b54ddccd79d6706c5eaa76291cec3fed8bf0"
+        }
+      ]
+    },
+    "growthUi": {
+      "exitCode": 0,
+      "proof": "checks-growth-growth-text.json",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "textScale": {
+        "webOnly": true,
+        "scale": 1.5,
+        "widths": [
+          390,
+          320
+        ]
+      },
+      "passed": [
+        "growth: four sizes and navigation, acknowledgement/task consent, explicit snooze, finite context/private draft, topic terminal preservation, frozen unknown/version/missing target, unavailable source/linked task/fact conflict, offline and identity/Server/child/access cleanup; no API calls",
+        "growth text: 390/320 synthetic 150% Web text, floating label and shared controls reflow; not Android system font acceptance"
+      ],
+      "failures": []
+    },
+    "skill": {
+      "frontmatter": "Passed using existing yaml package; official Python validator unavailable because PyYAML is absent",
+      "localReferences": 16
+    }
+  },
+  "screenshots": [
+    {
+      "name": "growth-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "8ec40f8665f9967cfaa31379433551996ceb08931095d1f29bdac0a55cc37be5"
+    },
+    {
+      "name": "growth-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "f0a06b505a4293969081de601eb316439fa745ba358b5c41e9ca1018fdb3419d"
+    },
+    {
+      "name": "growth-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "f1c443eabdb9aea706fa861addf209d8e0e4aa3b93f2e8e46cb40f8059761bee"
+    },
+    {
+      "name": "growth-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "7a20e87b92dd66960b8ed2500c660a8c14742e111ba68f0e1a6f37e41a8df53c"
+    },
+    {
+      "name": "growth-large-text-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "51f1fb45775031f8e8318c722d27073c683fe51b6689874bb3314fdd5b5d997a"
+    },
+    {
+      "name": "growth-large-text-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "c4488a3ed32f3e0782e73b3a6e213035e51fd667a1851adcc6f1942e8658bf7f"
+    }
+  ],
+  "reuse": [
+    "Existing Paper/RHF/Zod controls, task form and date/time/zone validation reused",
+    "RHF 7.88.0 public set() path behavior checked in the installed SDK; fresh official document fetch failed, not claimed verified",
+    "Existing OKLCH palette, contrast and FE-W14 common multiline/48 layout evidence reused; no 52-layout or unrelated regression claim"
+  ],
+  "versions": {
+    "@expo/metro-runtime": "57.0.16",
+    "@expo/vector-icons": "^15.0.2",
+    "@hookform/resolvers": "5.9.1",
+    "expo": "57.0.24",
+    "expo-constants": "57.0.19",
+    "expo-linking": "57.0.10",
+    "expo-router": "57.0.22",
+    "lucide-react-native": "1.49.0",
+    "luxon": "3.7.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "7.88.0",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-paper": "5.15.3",
+    "react-native-paper-dates": "0.24.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "0.21.2",
+    "react-native-worklets": "0.10.1",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "playwrightCore": "^1.63.0"
+  },
+  "pending": [
+    "User visual acceptance",
+    "Formal GrowthApi/controller/online refresh and source/eligibility/rules adapters",
+    "Exact task/memory navigation, home projection and cross-page synchronization",
+    "APK/device, native system font scaling, keyboard/back/Safe Area/TalkBack",
+    "Remaining visit summary and proactive contact frontend projections"
+  ]
+}

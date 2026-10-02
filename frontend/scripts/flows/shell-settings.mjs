@@ -1,3 +1,4 @@
+import { brand } from "../../src/branding.ts";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { openPreview, assertFits, selectOption } from "../preview-browser.mjs";
@@ -24,7 +25,7 @@ export async function verifyAgentEntry(browser, failures, directory) {
     await question.waitFor();
     assert.equal(await page.getByRole("link", { name: "與 Agent 對話", exact: true }).getAttribute("aria-current"), "page");
     await question.fill("保留我的照顧問題");
-    await page.getByRole("link", { name: "育伴港，返回主頁", exact: true }).click();
+    await page.getByRole("link", { name: brand.homeLabel, exact: true }).click();
     await page.getByRole("link", { name: "與 Agent 對話", exact: true }).click();
     assert.equal(await question.inputValue(), "保留我的照顧問題");
     await page.screenshot({ path: resolve(directory, "agent-chat-" + width + ".png") });
@@ -57,20 +58,22 @@ export async function verifyShell(browser, failures, directory) {
   await page.getByRole("link", { name: "設定", exact: true }).click();
   await page.getByRole("button", { name: "開啟使用引導", exact: true }).click();
   await page.getByText("隨時回來查看使用方法", { exact: true }).waitFor();
-  await page.getByRole("link", { name: "育伴港，返回主頁", exact: true }).click();
+  await page.getByRole("link", { name: brand.homeLabel, exact: true }).click();
   await page.getByText("把每天的細節，慢慢整理清楚。", { exact: true }).waitFor();
   await page.close();
 
   const phone = await openPreview(browser, "/", 390, 844, failures);
-  const quick = phone.getByRole("button", { name: /^快速(記錄情況|記錄睡眠|身高體重|飲食記錄)$/ });
+  const quick = phone.getByRole("button", { name: /^快速(記錄情況|記錄睡眠|身高體重|照片記錄)$/ });
   const quickRows = await quick.evaluateAll(elements => elements.map(element => Math.round(element.getBoundingClientRect().top)));
   assert.equal(quickRows.length, 4); assert.equal(new Set(quickRows).size, 1, "390 homepage uses four quick actions on one row");
-  await phone.getByRole("button", { name: "準備問題：整理最近的睡眠", exact: true }).click();
+  assert.equal(await phone.getByText("問我關於孩子的問題…", { exact: true }).count(), 0);
+  assert.equal(await phone.getByRole("button", { name: /^準備問題：/ }).count(), 0);
+  await phone.getByRole("link", { name: "與 Agent 對話", exact: true }).click();
   await phone.getByRole("textbox", { name: "撰寫對話問題", exact: true }).waitFor();
-  assert.equal(await phone.getByRole("textbox", { name: "撰寫對話問題", exact: true }).inputValue(), "整理最近的睡眠");
+  assert.equal(await phone.getByRole("textbox", { name: "撰寫對話問題", exact: true }).inputValue(), "");
   await phone.getByRole("textbox", { name: "撰寫對話問題", exact: true }).fill("保留我的原問題");
   await phone.getByRole("link", { name: "主頁", exact: true }).click();
-  await phone.getByRole("button", { name: "準備問題：記錄孩子的飲食", exact: true }).click();
+  await phone.getByRole("link", { name: "與 Agent 對話", exact: true }).click();
   assert.equal(await phone.getByRole("textbox", { name: "撰寫對話問題", exact: true }).inputValue(), "保留我的原問題");
   await phone.getByRole("link", { name: "主頁", exact: true }).click();
   await phone.getByRole("button", { name: "開啟資訊側欄", exact: true }).click();

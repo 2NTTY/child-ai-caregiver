@@ -1,0 +1,646 @@
+{
+  "scope": "Private source/shared-record frontend projection; synthetic only, no Server/website/model/device acceptance",
+  "verifiedAt": "2026-09-30T21:52:47.501Z",
+  "baselineCommit": "c09c22b4cde784cf9f31f349b204038b063ed3d4",
+  "sourceCommit": "d00a6bb0bd5c48834a00fa3057c5793bd49cf650",
+  "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "authoritySources": [
+    {
+      "path": "docs/P2_UI_HANDOFF.md",
+      "githubBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1"
+    },
+    {
+      "path": "docs/API.md",
+      "githubBlob": "69fd07e18f649e4862030001837662d5e2fdc19b"
+    },
+    {
+      "path": "src/shared/shared-inputs.ts",
+      "githubBlob": "2ea4a6a123c4a9889c4a6a08aca6d0294ddbe9a1"
+    },
+    {
+      "path": "src/client/shared-input-api.ts",
+      "githubBlob": "6cc3b63b3a1279f090da843c1b70a5f1b4feab31"
+    },
+    {
+      "path": "src/client/SharedInputPanel.tsx",
+      "githubBlob": "e172549bad8feda885a87adb011fb6d89d05aaca"
+    }
+  ],
+  "sources": [
+    {
+      "path": "app/(dashboard)/_layout.tsx",
+      "sha256": "b4edf1f3bfad5c81280eaa2743a0d2c7116a48e4817d61ff1c8730d20d8dc656"
+    },
+    {
+      "path": "app/(dashboard)/sources.tsx",
+      "sha256": "d30d2c50aaf9e39bf74128082bb0d564434361c148b4ac77fa941ae6ef04665d"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940"
+    },
+    {
+      "path": "scripts/flows/shared-inputs.mjs",
+      "sha256": "3f870b53766ef1530875271853f3e53d4dc52f055ba09b849c6652416ec6b252"
+    },
+    {
+      "path": "scripts/photo-form.test.mts",
+      "sha256": "9a2b7b519b458cd68248aeaf46a5260728eb28fac6d03efe173404684738ee5b"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "566eea0d4e95297f351708125d94b99a824a1364344fc8a5b05a7407a2aba5ed"
+    },
+    {
+      "path": "src/components/AppIcon.tsx",
+      "sha256": "79a0c4c939e57590570b30efbab0f0f2996e10c5aeb963ca8f68e7f3d987bbe4"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256": "521f52f18b90be6047bec88121f6c426b9087f981bd9469cebf173119cf644d8"
+    },
+    {
+      "path": "src/components/NativeAppShell.tsx",
+      "sha256": "9d68a1f3582c5ac130cf4c9e437473b40fe83ec3824887487a9e256bd8f80f4d"
+    },
+    {
+      "path": "src/components/RecordDraftFields.tsx",
+      "sha256": "322162b6f87866f27a3748e8b857d19021b1ce58ac9a60f58b348aad3025d8d5"
+    },
+    {
+      "path": "src/components/photos/PhotoRecordForm.tsx",
+      "sha256": "ab7e016acc2ae847f7a9dcc31271cb3ec7b5cf93e5d2b089886ef67e326fb9f8"
+    },
+    {
+      "path": "src/components/photos/photo-form.ts",
+      "sha256": "51d965eb316395012da5da310307c18e3e483f9713facbf642a16d3aa75d3172"
+    },
+    {
+      "path": "src/components/shared-inputs/SourceComposer.tsx",
+      "sha256": "54e83f026b08664c4a2de62fa6f4d34b4f51e59148797e3965888618ba8ce50b"
+    },
+    {
+      "path": "src/components/shared-inputs/SourceDetails.tsx",
+      "sha256": "73c876ad3b80598f1ed89295bf5822043f6b868932425c77cdde7f59e38c6ea4"
+    },
+    {
+      "path": "src/components/shared-inputs/SourceRecordForm.tsx",
+      "sha256": "9e9c7a8a800b6f4c8bb52962bef949be7570525ca37445d0ad7fe71f4bf1ac06"
+    },
+    {
+      "path": "src/components/shared-inputs/SourcesView.tsx",
+      "sha256": "64fb1edafccafa78b096a239a916122c1cf467452f09a382dfb416ef96b45444"
+    },
+    {
+      "path": "src/components/shared-inputs/source-form.test.mjs",
+      "sha256": "46d9fe3a05978f17d5bbe9ad15d012f1f4afa1b9b642adc2ee28de73b43b7692"
+    },
+    {
+      "path": "src/components/shared-inputs/source-form.ts",
+      "sha256": "2884bc43c99bfb2617d22ddfa88dd3d55d330e9417d5194d1e0b695f2295d362"
+    },
+    {
+      "path": "src/components/shared-inputs/source-styles.ts",
+      "sha256": "442a1b3a30d1b062931db06dd96594c5eeb55a83e3f46d9f285d1bd598d4ed8d"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "d9309f724e6b17fbbe33016d247754ec3d1b1414eaabce18f4ccdfd15d8d6997"
+    },
+    {
+      "path": "src/preview/PreviewContext.tsx",
+      "sha256": "d1e561b954cec106fdee22e359b63754716958e820dbe5fca185bb0d2fabaa6b"
+    },
+    {
+      "path": "src/preview/sourceFixture.ts",
+      "sha256": "82c307208f5e0a018eda9a12713ee845440b39a109e04cd3e9a40f84592c015f"
+    },
+    {
+      "path": "src/preview/useSourcesPreview.ts",
+      "sha256": "f30e77f8e537d781fccfa3709f186c8b5757fa251f1fe352c3ee36edc09b011b"
+    },
+    {
+      "path": "src/screens/SourcesScreen.tsx",
+      "sha256": "066ebb053b5f96836d7024f95c5696aaaecfdd6e2c7aa361650a183811ce3243"
+    },
+    {
+      "path": "src/shared-input-view-model.ts",
+      "sha256": "cd9f62af4249029b54d451f52916667c91f0575874a06aa021bfacd5e09d8a07"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "7f931fdd7ddeacfb2ba1a615bf81aabf1804f595a0266491d02e46825f532688"
+    },
+    {
+      "path": "src/view-model.ts",
+      "sha256": "a38fc0cb777723bf415e897051d6fe9e13bf852a9e9da5aaf037fbc564f405a9"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "1571bfb7783a106586c8431560a1e1377d409c6e763fce900d979abdb297a85d"
+    }
+  ],
+  "snapshotDigest": "00d7bcfa76d919c561b5aa394e97bde6c2bb3a61c2b0078ee632478d8e7b0d9f",
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "sourceUnit": {
+      "exitCode": 0,
+      "passed": 4,
+      "command": "node --experimental-strip-types --test src/components/shared-inputs/source-form.test.mjs"
+    },
+    "sharedPhotoUnit": {
+      "exitCode": 0,
+      "passed": 3,
+      "command": "node --experimental-strip-types --test scripts/photo-form.test.mts"
+    },
+    "webExport": {
+      "exitCode": 0,
+      "staticRoutes": 27,
+      "bundles": [
+        {
+          "name": "entry-9086e93be97ee420409e31519ebc65fc.js",
+          "sha256": "5dfc89e01ecc915a2685bc8d0b6704c07c2e29e81c86fde75852423049c256b4"
+        }
+      ]
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "assets": 31,
+      "bundles": [
+        {
+          "name": "entry-eb5813c504379342fdc5b1ef99bd8aeb.hbc",
+          "sha256": "94fc06464303afc32136b51cb1db8a3c0f4d61e9b329d596891764f8af2448fd"
+        }
+      ]
+    },
+    "layout": {
+      "exitCode": 0,
+      "proof": "checks-layout.json",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "testedBundle": {
+        "name": "entry-3fa7e11c4d2b61d8ba05867ce2036fa0.js",
+        "sha256": "fa47c5ecda67e4abf72f487d189ea66aa003543d3009b3f20ac5f47a90ab31f3"
+      },
+      "passed": [
+        "layout / 1440",
+        "layout /care 1440",
+        "layout /photos 1440",
+        "layout /sources 1440",
+        "layout /profile 1440",
+        "layout /family 1440",
+        "layout /memory 1440",
+        "layout /tasks 1440",
+        "layout /settings 1440",
+        "layout /chat 1440",
+        "layout /guide 1440",
+        "layout /login 1440",
+        "layout / 1024",
+        "layout /care 1024",
+        "layout /photos 1024",
+        "layout /sources 1024",
+        "layout /profile 1024",
+        "layout /family 1024",
+        "layout /memory 1024",
+        "layout /tasks 1024",
+        "layout /settings 1024",
+        "layout /chat 1024",
+        "layout /guide 1024",
+        "layout /login 1024",
+        "layout / 390",
+        "layout /care 390",
+        "layout /photos 390",
+        "layout /sources 390",
+        "layout /profile 390",
+        "layout /family 390",
+        "layout /memory 390",
+        "layout /tasks 390",
+        "layout /settings 390",
+        "layout /chat 390",
+        "layout /guide 390",
+        "layout /login 390",
+        "layout / 320",
+        "layout /care 320",
+        "layout /photos 320",
+        "layout /sources 320",
+        "layout /profile 320",
+        "layout /family 320",
+        "layout /memory 320",
+        "layout /tasks 320",
+        "layout /settings 320",
+        "layout /chat 320",
+        "layout /guide 320",
+        "layout /login 320"
+      ],
+      "failures": [],
+      "reuseAfter": "Only source confirmed-receipt-unread and adopted uncertainty states changed after this shared-field/normal-route layout run. Final targeted source flow/text checks use the final Web bundle; unchanged normal route geometry is reused."
+    },
+    "sourceUi": {
+      "exitCode": 0,
+      "proof": "checks-sources-sources-text.json",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "textScale": {
+        "webOnly": true,
+        "scale": 1.5,
+        "widths": [
+          390,
+          320
+        ]
+      },
+      "passed": [
+        "sources: four widths, raw/private save and dates, explicit fetch/excerpt/candidate/reference, child-fact/shared double consent, deletion scope, receipt/direct unknown and original retry, version/draft/access/scope/offline isolation, shared photo fields",
+        "sources text: 390/320 synthetic 150% Web text and shared record form reflow; not Android system font acceptance"
+      ],
+      "failures": []
+    }
+  },
+  "screenshots": [
+    {
+      "name": "care-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "879c188a1d6802628675c4f797d4b77630e9198c0ca04a1a0dd58405781c7dc4"
+    },
+    {
+      "name": "care-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "291638e9d23371fd47265def183b03a4a2651d25be63c9ff2a016ee9961a4a1c"
+    },
+    {
+      "name": "care-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "7c2d2ab8b066d710b47483c6dbb6103115fb30992fff856ca18e7566eaf567ad"
+    },
+    {
+      "name": "care-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "b263588665cf3988e106a035922cfa9937c3e93b4692238fd0d49c94640b331e"
+    },
+    {
+      "name": "chat-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "e4ea594cd20d9e77a851b997188058eb9e5d1c0a9e4d0afe2d7168984c7f4b98"
+    },
+    {
+      "name": "chat-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "5f1223e5dd8c50396799631e58d92b4b9f7414f1814a2e8ade736f1722eafe27"
+    },
+    {
+      "name": "chat-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "bce017f983643a89e3f90fd945392a2574148150c375fc5010120a7bf9b11a1e"
+    },
+    {
+      "name": "chat-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "0b1db74ba0fa4362a3cb896e10d710de979849dcc4eba02930b66fcbe0dc93f5"
+    },
+    {
+      "name": "family-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "6e2fd1438e2c455651075b09930a33addc3f79cec420190cd2c0c87291144b0d"
+    },
+    {
+      "name": "family-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "b603e5bf5b59049f762faf3c299c44e7a432ce745db98eb030d41fcddeaece29"
+    },
+    {
+      "name": "family-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "fffae84fa34dcc7c492f6911436202222881cd47a89cea6791999851285f9e37"
+    },
+    {
+      "name": "family-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "6bd8e9751ae9107674fedc46503b8630f606ef59f8d2a69349b38c1b03e9f212"
+    },
+    {
+      "name": "guide-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "2fc4bba2da57b7dd6ff52db45a4d07222a350fe29ddb5d87a63d31083121eda6"
+    },
+    {
+      "name": "guide-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "c34668043b98a1de95faf339c8afbba4c4cbd9b4ba4eaecb7782f095a15a052a"
+    },
+    {
+      "name": "guide-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "e145f2baad6afced941b9e9ba96bcdfda1cfa7ead30a66eabc5a96f63789e515"
+    },
+    {
+      "name": "guide-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "c53750e6ce76fb1a640a3941bc43810489d2daf169dadbee10f4cfcbd6d3bb4e"
+    },
+    {
+      "name": "home-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "edb1f20bb8f9e114b79781256c5fda1c9fa53f0ff56b8f2fbc825a80e78a602c"
+    },
+    {
+      "name": "home-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "1aaba11091cedb2c08ef5f9ee99d827160ff0d7a32a0e4b688b46dcf26a0ab22"
+    },
+    {
+      "name": "home-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "a224d3166b969fcbdd4c63fde7e3c9532b854380bcecbcda922d59e410f6a91a"
+    },
+    {
+      "name": "home-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "1270a82b69ff131bb35d4c6a53056b272c2bd4cd9f839283a66781fe402a207f"
+    },
+    {
+      "name": "login-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "5d3dc9c6bae544e8897186683f03d2df5258658e41077bb084297ab9170389dc"
+    },
+    {
+      "name": "login-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "e6843aaf87ef44d6c747fd7627df670a6b857f50fbec8c480f3692bae456729b"
+    },
+    {
+      "name": "login-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "b17297ae4adf3ad2476411f79363ea25340757f2d1a49c857586ee9f3eab4be1"
+    },
+    {
+      "name": "login-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "d84372df185cf3145fb15fa1c2b6f165ad0c232dba184bbd5cbc3c728cf5eecc"
+    },
+    {
+      "name": "memory-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "a1f74d6baa2a53c8ea6b1687c19f6c27701a08afc6f1c9da92d7120ccec4483c"
+    },
+    {
+      "name": "memory-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "290b2aa0c296ce745d873df6ebe440b29311c5f9d89b7d20f8fbee680ea6ce88"
+    },
+    {
+      "name": "memory-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "cd9f3dfb78b6a3a4864d0d82db3398e3382c9aff71cae31f8b147f7be358ce89"
+    },
+    {
+      "name": "memory-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "2d1ce75832bff02390b5a6a41de078ab93cc6468119cd28814efde5d5c183139"
+    },
+    {
+      "name": "photos-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "a980f6cd8039294b3080f05d058d7a7e7e3bc8aa6c01fa441ff3a3f3fadfccdf"
+    },
+    {
+      "name": "photos-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "5a0e071b9e739ff9d9bf59a9a1208b59a5910d06d5fd1d4c4162d778e94a2e7a"
+    },
+    {
+      "name": "photos-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "cc4ad2e2a5c20f2893f85a29edaf4d5f540a8f5d3cd436887b6c3f3f0fd38179"
+    },
+    {
+      "name": "photos-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "0de87cf1a333beae7b5ec3747cb80b8d7e118cbd6ee03db1f325b35b32d95ba5"
+    },
+    {
+      "name": "profile-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "6212739746179a482e5a430a7698c2442a4fd1aed7def0e13f4606faf5fa9910"
+    },
+    {
+      "name": "profile-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "fdeb5fcfbcb2af601d18471a81f6c3ecfc458e88e889ef19d054ca5e0a859f39"
+    },
+    {
+      "name": "profile-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "8db460e1c74a892d39cbec2073a4ad974e32b96828bde48b79c7221073538932"
+    },
+    {
+      "name": "profile-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "08e9f2c38caa135dbe676259790e9d105500d247d287f891a8a9031be9d3e8f4"
+    },
+    {
+      "name": "settings-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "f76663d031c5ae7a7b086061f78e86c47fde2b7a9a5cd7dcf2123079aa84889f"
+    },
+    {
+      "name": "settings-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "93f4483093c2e97481d63774dbd2454f8bd2fca29e9a5cf88d28fc472af030c9"
+    },
+    {
+      "name": "settings-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "bdf46e67e066f48fd72f4630946e219cbfb84cf5c80b06199bfe508b3ce82689"
+    },
+    {
+      "name": "settings-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "2555b1d98c4677b1003c4b51922e76b4f2fddcdf20c643f10956b5522ac21c4c"
+    },
+    {
+      "name": "sources-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "f25030b5c2e6a452725d8750dc80da54300866b69d78f4864566b8cc6136ea36"
+    },
+    {
+      "name": "sources-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "77ece7f4e93d8925dcdaf2de0acc0122f31412452991e0adb4123c69c8d1cdf6"
+    },
+    {
+      "name": "sources-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "7278ff3abeec93e9e1cedcf6b3a5f2abba3330dfd091490d280d42e376add238"
+    },
+    {
+      "name": "sources-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "da585d38876dd254b2e2ecfb3f256387e1a6e681e34346ef9f684ec10df5e69a"
+    },
+    {
+      "name": "sources-composer-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "d6bce01a504cbe4ce184fae43e39f495ac64d4f053be52b52134708dffdcf021"
+    },
+    {
+      "name": "sources-composer-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "c18307f13ba3a36b04e0c31f0930804d1a0f9e27390dc5a9056a616803a6b4a0"
+    },
+    {
+      "name": "sources-composer-320.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "806b771f11f68c16f6fb30c60c8a72f07c09eeba040d546589b09fd7f70ae6f9"
+    },
+    {
+      "name": "sources-composer-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "3bd5474e1ab8aeafd9dc366d2602a04bbc1d4d0947f27a80da2881cf379c083b"
+    },
+    {
+      "name": "sources-large-text-320.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "e6e503efc3676265029c0b914991bc4ed3de5a036a036b3408df5b0c8b88292c"
+    },
+    {
+      "name": "sources-large-text-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "eb21269b17380f6c2f58a80a04d7e7cd9db0f9c0f4ba4c984634cff9fb5601bf"
+    },
+    {
+      "name": "sources-reference-320.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "55ebe93c2dc76dc91813f9cba35478665ecf1d38d88c8ee2b764edb6f09ab56d"
+    },
+    {
+      "name": "sources-unknown-320.png",
+      "width": 320,
+      "height": 844,
+      "sha256": "4594d033b7dfe3f665ba2771b0f92e7c4ae0f07ed046ffe3a523218300298029"
+    },
+    {
+      "name": "tasks-1024.png",
+      "width": 1024,
+      "height": 992,
+      "sha256": "c7ff2893316514b2cc6ee9110627734dd72782a35dc4427c60922c693d6fac60"
+    },
+    {
+      "name": "tasks-1440.png",
+      "width": 1440,
+      "height": 992,
+      "sha256": "dfc1de3303a764ca5ec5281e075235d1aaada313d20479282cfd6b188ec4b422"
+    },
+    {
+      "name": "tasks-320.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "0cc8fa3ed915beab56cc2da44593b472b041cb58b2f597fd978ad7d7ccc4b3d7"
+    },
+    {
+      "name": "tasks-390.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "2aee26a60981b07ef9868e7f4de1ad04484ee9a80b763a1c692fbdd66c3a215c"
+    }
+  ],
+  "reuse": [
+    "Existing Paper 5.15.3/RHF/Zod controls and photo field rules; RecordDraftFields shares presentation only",
+    "Existing OKLCH palette and contrast proofs unchanged",
+    "Paper public contentStyle; multiline label/scroll-area geometry and actual images checked with 150% Web text",
+    "Existing unrelated business tests not rerun"
+  ],
+  "versions": {
+    "@expo/metro-runtime": "57.0.16",
+    "@expo/vector-icons": "^15.0.2",
+    "@hookform/resolvers": "5.9.1",
+    "expo": "57.0.24",
+    "expo-constants": "57.0.19",
+    "expo-linking": "57.0.10",
+    "expo-router": "57.0.22",
+    "lucide-react-native": "1.49.0",
+    "luxon": "3.7.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "7.88.0",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-paper": "5.15.3",
+    "react-native-paper-dates": "0.24.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "0.21.2",
+    "react-native-worklets": "0.10.1",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "playwrightCore": "^1.63.0"
+  },
+  "pending": [
+    "User visual acceptance",
+    "Formal API/controller/catalog and exact record/cross-page integration",
+    "Actual public website fetch/model extraction, OS share/native adapters",
+    "APK, device, keyboard/back, Safe Area, TalkBack and system font scaling",
+    "Remaining growth attention, visit summary and proactive-contact frontend projections"
+  ]
+}

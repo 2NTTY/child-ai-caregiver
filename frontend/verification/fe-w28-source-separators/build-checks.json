@@ -1,0 +1,203 @@
+{
+  "at": "2026-10-02T12:22:52.664Z",
+  "baseline": "5980ff41a98b8f34574e308f99e42014423107de",
+  "scope": "FE-W28 supplement: shared chat source rendering, separators, indicator clearance, grouped source details and synchronized homepage motion. frontend/** only.",
+  "sources": {
+    "frontend/scripts/verify-answer-sources.mjs": {
+      "gitBlob": "ea8f66318d6387006945443beca3bc88afb8391f",
+      "sha256": "93daeee0245b38f0c7c92a34d146fbf49e8f5861951c6d6c2574b8f7152a6b67"
+    },
+    "frontend/src/chat-view-model.ts": {
+      "gitBlob": "aff9ebcf043b7712d2cdbbd5e4dca6c993f86b12",
+      "sha256": "57cefdd1caf68ca3e4e0b80a540e1c24db6cec43c05d4db0930644814cfaffd7"
+    },
+    "frontend/src/components/chat/AnswerSources.tsx": {
+      "gitBlob": "8678a0fa144c43fe7d6a2c145cfd9efd9a59d804",
+      "sha256": "673f9c8f5d1528e6a29f93b10e2c37a4f3e91ad258a09d39ab2b516e645a0e24"
+    },
+    "frontend/src/components/chat/CitationMarker.tsx": {
+      "gitBlob": "edfc8840fa48cc63c78dd86d1736d51140f06637",
+      "sha256": "0bacd13ae472b4dcde781785488e587e2f4be56cbd83b452dcdc7879df286518"
+    },
+    "frontend/src/components/chat/CitationMarker.web.tsx": {
+      "gitBlob": "635fbe919d166418c0d985919187cd9538346540",
+      "sha256": "846d5c62c4470534e757497112e1487714fa7977eba818263e925d95f8ee37eb"
+    },
+    "frontend/src/components/chat/locateCitationSource.ts": {
+      "gitBlob": "d968d265ebed4079e3effda2f0cda0ecc823fb78",
+      "sha256": "0c9fa358467346d02547fb3c2bd6232432ffa7eca5abc78cef922ca028f14814"
+    },
+    "frontend/src/components/chat/locateCitationSource.web.ts": {
+      "gitBlob": "4ed43470cd4d0235e57288e133c902bb6d443788",
+      "sha256": "872424c7965860309136a0f39e143d9d13eed55fa9c32e212ef98f1ed4ee3519"
+    },
+    "frontend/.agents/skills/web-screen-delivery/SKILL.md": {
+      "gitBlob": "0622e8b98dc224265c7a259cd3714a372e2de6a2",
+      "sha256": "16ee085e3ffdb45c8fb2763a173f00819b2deb55388baf46b32fbd006882860f"
+    },
+    "frontend/AGENT_HANDOFF.md": {
+      "gitBlob": "10bb64abe75f9771c6155f4b4bb3bd4fb65a495a",
+      "sha256": "df7d209ce9d1e5f84c8fbef399ca60f7798072243c218a9a6654771be996870b"
+    },
+    "frontend/DESIGN_SYSTEM.md": {
+      "gitBlob": "824d8cd85055c4324a7227e8dc018f1e25430998",
+      "sha256": "89f303ad31b0ec2860373d3939f6be1f9679f3009e3f805adb66290e8db75ce4"
+    },
+    "frontend/HANDOFF.md": {
+      "gitBlob": "8129d0d4fa3e4838c2f4d8708f5b1cf628e491f6",
+      "sha256": "4edc684ca5556f8d7d975b01683e40a86b3b13f4174d7a6e0200774b6e1015f2"
+    },
+    "frontend/PLAN.md": {
+      "gitBlob": "90467773faa03e7002baffc63774c2da617577e8",
+      "sha256": "e1137991e5f1e6f10b0c3c0b2f383d4403d4fd16416feb5b25e41ed00a2e4831"
+    },
+    "frontend/STATUS.md": {
+      "gitBlob": "11f1b3cc33fdab7f8fc939177c0ced8e539ac935",
+      "sha256": "ad508453a3cecaea76d93010ebf664ed264c016397fc42d6a746059655f5be31"
+    },
+    "frontend/WORKFLOW.md": {
+      "gitBlob": "e72cb53814d3d5d7d2541bd3dd1f4237e6378e44",
+      "sha256": "7aa3f0960fc441a14162d656d489c3c0b8292e98a488f3c5747b3f4c3694d927"
+    },
+    "frontend/scripts/verify-home-introduction.mjs": {
+      "gitBlob": "3e0b000f756351439c22f592c78b84cb89feca3c",
+      "sha256": "83ff2c8a00a5b6e87afa167afadda700c206dc207aa203845a38218804c854c1"
+    },
+    "frontend/src/agent-view-model.ts": {
+      "gitBlob": "115809ed1727f615b57c2e5f88e97f7cb4572037",
+      "sha256": "58d83ab9b510d8467c5065c54d2e1268b66da832f6e11799bebd13be5c08d1f5"
+    },
+    "frontend/src/components/ChildPicker.tsx": {
+      "gitBlob": "e3ab5d405bdd5a8940ba58588033ad3b9dce761c",
+      "sha256": "66fcf13dbef53102a7a041b8fb94f3c9b5c51bedd65dd675710164d22480e9ac"
+    },
+    "frontend/src/components/MobileHomeDashboard.tsx": {
+      "gitBlob": "574c11e51f5ea40965cd8d22476f7ec8989dc02c",
+      "sha256": "f66681ca5a94fade37d15ac123b2367d09743f6a11b37c9f76e13ecff77a9888"
+    },
+    "frontend/src/components/agent/AgentConversationPreview.tsx": {
+      "gitBlob": "8d71cfdf9491e68c6db98795e9cfaa00594d5d6d",
+      "sha256": "4d8d17827601af877b909ec69b89962a9580b5c95f559a085ef4d0c3f73b9175"
+    },
+    "frontend/src/components/agent/AgentRunView.tsx": {
+      "gitBlob": "1fa4fbb4b5c8ebf00b437b3892fdf112b22225d7",
+      "sha256": "7ee760cf168f9c153fb1dab8776cdb6be366611207b5eeef3a6b3bb0eeea24df"
+    },
+    "frontend/src/preview/answer-citations.ts": {
+      "gitBlob": "b614896a8016bc79713ccc407d66cb84dea76fc3",
+      "sha256": "1075a1930dd4253bf07ff56cc1dce0e538e1618529c4567bfbb10a48bb4ba3ef"
+    },
+    "frontend/src/screens/chatScreen.tsx": {
+      "gitBlob": "aba77e35079eb37d9d70ab700bd1afeb233a43d9",
+      "sha256": "a6192fe0fb56d3d146d8ecb5d55f3bb9cc68847302a8d6d24581816f21a46c01"
+    }
+  },
+  "removed": [
+    "frontend/src/components/agent/AnswerSources.tsx",
+    "frontend/src/components/agent/CitationMarker.tsx",
+    "frontend/src/components/agent/CitationMarker.web.tsx",
+    "frontend/src/components/agent/locateCitationSource.ts",
+    "frontend/src/components/agent/locateCitationSource.web.ts"
+  ],
+  "evidence": {
+    "fe-w28-source-separators/collapsed-sources-1024.png": "10f2f3403594f70cfb32ea891cf5a5782a43d045cf09fc93e6a7668b6d335189",
+    "fe-w28-source-separators/collapsed-sources-1440.png": "26ccd9826520ea96bfd093ccfc96b87befc90cdf4f77584c8e0a0861c979fb18",
+    "fe-w28-source-separators/collapsed-sources-320.png": "972166a4f34c36f14d875afc66452fbb03da496acd5dd964f51442403c0611eb",
+    "fe-w28-source-separators/collapsed-sources-390.png": "f145b53e3f28e85bb76cce9ef03b60f9c020f95d8fcf53f74f6383212b3210ce",
+    "fe-w28-source-separators/many-sources-1024.png": "36dd8b6befaf1e8457d5fb851196ead9f5e8b26a8a879e41e386a7c1800ba12c",
+    "fe-w28-source-separators/many-sources-1440.png": "7a849a1b37e02c64da38612a659f49930fc40c254990ad7278c42e4d7d63869e",
+    "fe-w28-source-separators/many-sources-320.png": "e9e8c140eeebfe0336bc34f1aa51f3cd0897a2275ba38dcd3931c90fed751536",
+    "fe-w28-source-separators/many-sources-390.png": "ee1ec40d5894ea3f97a22758fad263e60bc1d8e855bd157217961d4c4b621288",
+    "fe-w28-source-separators/single-source-panel-1024.png": "93889b4cf413c9c9df98e9b17662eae34083cd64ac467d876f3c29ab8249273d",
+    "fe-w28-source-separators/single-source-panel-1440.png": "b1e383ed4991acbfbf543b1c92e3f26824a80693f4884ff1fd503bd034b1a1eb",
+    "fe-w28-source-separators/single-source-panel-320.png": "06ff3b27b3142af0825ff8ae0b42db9faf7e3ecc9600807a38ea7f2810f86a88",
+    "fe-w28-source-separators/single-source-panel-390.png": "a14af0397d3f97b52a80304396d7146468c23d60981071790a0a7b40e356ba79",
+    "fe-w28-source-separators/source-tabs-checks.json": "8a535fb1f9e3dc72d1a47ecbb24d4929a78371313058e8a32bd25fe255bbf25e",
+    "fe-w28-home-motion/before-home-motion-checks.json": "f88cf3c67c758888417cc13cb1a218e25b69cc6e98848214403de44f72ee9509",
+    "fe-w28-home-motion/child-320-large-text.png": "ea677141fa7cec57b324cc8d1e7cac6d20bdf67a7781e394eff47e4b78ee497b",
+    "fe-w28-home-motion/child-control-checks.json": "d99aa230ea5c64db00eab32a52f8f0186fbb271d4ea6b02ba874093e6ad4e810",
+    "fe-w28-home-motion/child-docked-320.png": "3f8042afbf5df8f98e77fc3f69c4c5f7b08b0702683a1490adffc5b8f2154b27",
+    "fe-w28-home-motion/child-docked-390-reduced.png": "53221f1e5748cbdbf00bbaea1d873307c08b288db8c6211a30e415e5748765b7",
+    "fe-w28-home-motion/child-docked-390.png": "b2dbac847998dfe902482ca638210f28559d8dd75ecff4d1b3d8de5340b4a044",
+    "fe-w28-home-motion/child-docked-649.png": "65ecc1fb1f28b48aa3565b63696ff579703836e4bc91ada59f26219962221c76",
+    "fe-w28-home-motion/child-open-320.png": "6a96756e08f4953a54b0531a5ebe682fc13968ca67897c86fc47a9eb4cad9eb0",
+    "fe-w28-home-motion/child-open-390-reduced.png": "a55f03b7e814a35fb2f7bd0da50b2cb66c9377d0f36dfddbcafaad58e5ecd161",
+    "fe-w28-home-motion/child-open-390.png": "3d2313a70602da4dd0691af0791e2e6924d60c61c31ea20373bd5013c664e0ec",
+    "fe-w28-home-motion/child-open-649.png": "cb9387e029c775cbdc2a47703744860231fac12829c071364aeee5bbc2e68a22"
+  },
+  "versions": {
+    "expo": "57.0.24",
+    "expo-router": "57.0.22",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-web": "0.21.2",
+    "react-native-paper": "5.15.3",
+    "overlayscrollbars": "2.16.0"
+  },
+  "sync": {
+    "otherWorktreesChecked": 14,
+    "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+    "githubDocs": {
+      "src/shared/knowledge.ts": "ea330e54333a48dcb861364fccbc167aedab78f7",
+      "src/shared/product-agent.ts": "9f217d80dd1e020dc6048075e4f34f9233cd73f2",
+      "docs/P2_UI_HANDOFF.md": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+      "docs/API.md": "69fd07e18f649e4862030001837662d5e2fdc19b"
+    },
+    "githubLogin": "CherylNg-2526",
+    "frontendOverlaps": [],
+    "at": "2026-10-02T12:20:44.1485986Z"
+  },
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "staticRoutes": 35,
+      "bundle": "entry-c43a28706352c799655083de028349bf.js",
+      "sha256": "eaa6cd27e55b76223a537b6dd938d0df44b92647c52a8350c4e4f2beaa3a52d6"
+    },
+    {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundle": "entry-35575e676694420bacffde1a1d5c3818.hbc",
+      "sha256": "8dd26ff208741f1b3a393337725219db22ccd7010c3e0cbbf7d12f5e3c72ad0d"
+    },
+    {
+      "command": "node scripts/verify-answer-sources.mjs",
+      "exitCode": 0,
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "report": "fe-w28-source-separators/source-tabs-checks.json"
+    },
+    {
+      "command": "FRONTEND_PROOF_DIR=verification/fe-w28-home-motion node scripts/verify-home-introduction.mjs",
+      "exitCode": 0,
+      "cases": 8,
+      "report": "fe-w28-home-motion/child-control-checks.json"
+    },
+    {
+      "command": "HTTP GET preview /chat and current JS asset",
+      "status": 200,
+      "servedBundleMatchesExport": true
+    }
+  ],
+  "observedCauses": [
+    "The child copy stayed flex:1 until the homeDocked state switch. Interpolating it with the existing outer animation value removes the large last-frame arrow jump.",
+    "The selected source underline previously occupied the horizontal indicator lane. Eight pixels below the 48px tabs now leave at least 2px clearance."
+  ],
+  "reuse": "Unchanged Agent decision/version/unknown/permissions, composer camera and shared scrollbar behavior reuse existing FE-W26 and FE-W28-shell-feedback evidence; no full business suite rerun.",
+  "pending": [
+    "User visual acceptance",
+    "Formal API/identity/stream and citation mapping integration",
+    "Native device, keyboard/accessibility and actual motion acceptance"
+  ],
+  "noRealServices": true
+}

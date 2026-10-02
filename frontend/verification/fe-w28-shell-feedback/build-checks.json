@@ -1,0 +1,239 @@
+{
+  "at": "2026-10-02T10:42:23.918Z",
+  "baseline": "95431add2b5da596ba85d571025a9aabb8aba6cb",
+  "branch": "codex/fe-w11-photos",
+  "scope": "FE-W28: shared Web overlay scrollbars, header reduction, return-home first frames and 3-second intro; production-removal guidance; page-transition research only. frontend/** only.",
+  "sources": {
+    "frontend/PRODUCTION_UI_HANDOFF.md": {
+      "gitBlob": "290029a874a55065b767c15c2bcbee2869c98533",
+      "sha256": "0057ae2da2fa4e02a5680c822aac0700e5978b5adf03190bcedcfb4fca2d2488"
+    },
+    "frontend/app/(dashboard)/more.tsx": {
+      "gitBlob": "ba9f15eb39daead2101db3491c7e909a48a21a81",
+      "sha256": "cbb986323a5e33e3367d4b47f6270cf6d6a66c9d12686fb674bfc222f52e9fef"
+    },
+    "frontend/scripts/verify-shell-feedback.mjs": {
+      "gitBlob": "bfe34c79fd2153909ca7b35fb5a1e5aa6c410f8b",
+      "sha256": "a6326a0cc6448407fc2539778380467bc4a9c54ec27978fbc6e8e52b17e30f3f"
+    },
+    "frontend/src/screens/moreScreen.tsx": {
+      "gitBlob": "6278d23f51e9f29766525c440dd3cc6c81e98f64",
+      "sha256": "b388c59b55b3e950d747545ec35a9af140d6dba082bff6b0b1adad0407731065"
+    },
+    "frontend/.agents/skills/web-screen-delivery/references/scroll-and-blur.md": {
+      "gitBlob": "995df93145d352fb5e546d189a24700dcdd7e1e6",
+      "sha256": "b8f877a5970952a4797377a1e403f0af39d71b0193e3bccc65a6ab00ed2259fc"
+    },
+    "frontend/DESIGN_SYSTEM.md": {
+      "gitBlob": "dab791a2cf875bfaaf510f81b7181584c810e213",
+      "sha256": "fb0eb8cb66d586aff2cd81f3527e2f3413532648820f5b044754b25569a56865"
+    },
+    "frontend/HANDOFF.md": {
+      "gitBlob": "e140ad5ff761f79df4408e550802487ba28ca5b7",
+      "sha256": "b1d2552d82d42ab0cc8b06d026235248f34ae8497a9dbb01183b3c370d9a35c0"
+    },
+    "frontend/MOTION_OPTIONS.md": {
+      "gitBlob": "990bd5ffe7faa9a60ecd8b802ce07970a899bb30",
+      "sha256": "94627dae8db5487ace3050803c9d02fc5e6345508e3872b0a73e20c70a7911ce"
+    },
+    "frontend/PLAN.md": {
+      "gitBlob": "c448ac2a8b1fe03bad2b5f5b4cf7ec0a9973ec4e",
+      "sha256": "7e1e672d90775bd2db14fe4f397d751d0083878bb25b45695f71e4b7a8f47809"
+    },
+    "frontend/STATUS.md": {
+      "gitBlob": "39cd555fb78fd965f8114f716046f3f5ecb5c441",
+      "sha256": "224d636fb17d15897eb65e9dc2911a18ce06cd66db45014f74edc8a1ae1f6d2e"
+    },
+    "frontend/app/(dashboard)/_layout.tsx": {
+      "gitBlob": "f5291c2e618d38c37458a0f3ca192af262e9ae7c",
+      "sha256": "a03c178edea523d02951c2b8472893aeedb0e3d557fe17c424d590499c5c7751"
+    },
+    "frontend/scripts/flows/mobile-density.mjs": {
+      "gitBlob": "c3081f1b454d0add2652a1fb4d522776408be24b",
+      "sha256": "365e91f880d9598acddcfd41e5a39e8ba75cc4d590fcd51f5beb081af261d0ee"
+    },
+    "frontend/scripts/flows/toolbar-safety.mjs": {
+      "gitBlob": "dfe0e0ca8a278dab5535759fa0d57873513dd0ee",
+      "sha256": "771cee1ad8d8d4c92285bf5c4d049e75bdc74fc91eb1e8bfbad08d5098858ce1"
+    },
+    "frontend/scripts/verify-home-introduction.mjs": {
+      "gitBlob": "e1ddc7d173a261699e1481be3ab53be70e92c44a",
+      "sha256": "a565ed8d7bf10eda733497c10d1f4f7bf8a5250493e47fd409fb5c7260f10879"
+    },
+    "frontend/src/components/AppScrollView.web.tsx": {
+      "gitBlob": "3678d95c73e33f82984fde00369eada8a04b083e",
+      "sha256": "6b96e19c2fd59d02ee50c53f6774cbb73a8cc96b0b707d0367aeaba85091280c"
+    },
+    "frontend/src/components/AppShell.tsx": {
+      "gitBlob": "7d69cb3515575bed1e7543c752df2171a6ce08e5",
+      "sha256": "3d53b8be454456b865868eb70442a4fe2a54511b57b7683397d46c16752d2357"
+    },
+    "frontend/src/components/HomeDashboard.tsx": {
+      "gitBlob": "852005bd03c8fee50a463532ff346872cf610e5d",
+      "sha256": "2caefc1e158d60932d69c4359ab099fbbd8c44738374f746ced875136a5b8ca7"
+    },
+    "frontend/src/components/MobileHomeDashboard.tsx": {
+      "gitBlob": "f272d126fc529f5f8a206094117be3e7a0526720",
+      "sha256": "b9cb7b503fdb7ac9bcbae0b7ed22ab54d6403cc39f61f13c49ff72e496234513"
+    },
+    "frontend/src/components/NativeAppShell.tsx": {
+      "gitBlob": "d32c1038684b32c0fde1ad5a23c62485d93eeb45",
+      "sha256": "4462ba9dbda103c6abdc49010b666e2806c179cd849b0a267b0d52d7dd06cd2c"
+    },
+    "frontend/src/components/appScrollView.css": {
+      "gitBlob": "544936fdd5111b18e086cb5c1ffceb80d02d07de",
+      "sha256": "3c9b4ab4433153a7fef317b622cbed555934996fae93709471184c0abc5fcb59"
+    }
+  },
+  "versions": {
+    "expo": "57.0.24",
+    "expo-router": "57.0.22",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-web": "0.21.2",
+    "react-native-paper": "5.15.3",
+    "overlayscrollbars": "2.16.0",
+    "react-native-reanimated": "4.5.1"
+  },
+  "preserved": {
+    "frontend/src/theme.ts": "f2d617150223c6ebc3cc3138b96973bab19b5bc0",
+    "frontend/src/view-model.ts": "356a6c716aa1eec7cf38a1adb0790f5e3f8b407c",
+    "frontend/src/preview/PreviewContext.tsx": "7192c3442f66cf16aca7f80d22f78bcb4ed82f89",
+    "frontend/src/components/ChildPicker.tsx": "cd3c80e213a1ea241c7b74bce3aa7c3be730f003",
+    "frontend/src/components/appearance/HomeBackground.tsx": "2ef8b432d66eb4e85e02fc52ab2e0e4d43162fa0",
+    "frontend/src/components/agent/AnswerSources.tsx": "caa8fd817657d722ddfa2b44bc7e856134a37e96",
+    "frontend/src/components/agent/locateCitationSource.web.ts": "4ed43470cd4d0235e57288e133c902bb6d443788",
+    "frontend/src/components/agent/AgentRunView.tsx": "a33b614866e461fb083e1031167de2f3e4a5105b",
+    "frontend/src/components/agent/AgentInboxView.tsx": "33d2918177f16658d35a77e947f13571e62bfb45",
+    "frontend/package.json": "7cd5fe6f0394b8a2bc42bce9c03ea6147b7eef30",
+    "frontend/package-lock.json": "194ae9825dada06190f8be0f440a536c70081cf0"
+  },
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "staticRoutes": 35,
+      "bundle": "entry-fb1f44c6efd926bed8038b6c833d6795.js",
+      "sha256": "03cb96d6b11e6925d6f321fab6fc928330e1511a52c4ffcb0c208f6b9a01daa5"
+    },
+    {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundle": "entry-07ca0b5073a8332fb11149d5d6654412.hbc",
+      "sha256": "3e1505ea137d8269163a6d02a6c1563c3d9b8526ec10670088139bc680727d8f"
+    },
+    {
+      "command": "node scripts/verify-shell-feedback.mjs",
+      "exitCode": 0,
+      "report": "shell-feedback-checks.json",
+      "widths": [
+        320,
+        390,
+        900,
+        1024,
+        1280,
+        1440
+      ]
+    },
+    {
+      "command": "node scripts/verify-home-introduction.mjs",
+      "exitCode": 0,
+      "cases": 8,
+      "report": "child-control-checks.json",
+      "readingDelayMs": 3000
+    },
+    {
+      "command": "node .expo-home/verify-source-scroll-tabs.mjs",
+      "exitCode": 0,
+      "report": "source-tabs-checks.json",
+      "reusedScriptSha256": "6485529ece132b46f8718cb8a8a9d3ba5b02a200b09f5938de8e20c6f7899485"
+    },
+    {
+      "command": "node --check scripts/flows/mobile-density.mjs; node --check scripts/flows/toolbar-safety.mjs",
+      "exitCode": 0,
+      "scope": "Selector updates only; unchanged business flows were not rerun"
+    },
+    {
+      "command": "HTTP GET preview / and current JS asset",
+      "exitCode": 0,
+      "status": 200,
+      "servedBundleMatchesExport": true
+    }
+  ],
+  "evidence": {
+    "child-320-large-text.png": "ea677141fa7cec57b324cc8d1e7cac6d20bdf67a7781e394eff47e4b78ee497b",
+    "child-control-checks.json": "b972d7531dc41755445ed2c8812aa6891690fd39c92523daa7424b8639cac091",
+    "child-docked-320.png": "3f8042afbf5df8f98e77fc3f69c4c5f7b08b0702683a1490adffc5b8f2154b27",
+    "child-docked-390-reduced.png": "53221f1e5748cbdbf00bbaea1d873307c08b288db8c6211a30e415e5748765b7",
+    "child-docked-390.png": "b2dbac847998dfe902482ca638210f28559d8dd75ecff4d1b3d8de5340b4a044",
+    "child-docked-649.png": "65ecc1fb1f28b48aa3565b63696ff579703836e4bc91ada59f26219962221c76",
+    "child-open-320.png": "6a96756e08f4953a54b0531a5ebe682fc13968ca67897c86fc47a9eb4cad9eb0",
+    "child-open-390-reduced.png": "a55f03b7e814a35fb2f7bd0da50b2cb66c9377d0f36dfddbcafaad58e5ecd161",
+    "child-open-390.png": "3d2313a70602da4dd0691af0791e2e6924d60c61c31ea20373bd5013c664e0ec",
+    "child-open-649.png": "cb9387e029c775cbdc2a47703744860231fac12829c071364aeee5bbc2e68a22",
+    "collapsed-sources-1024.png": "e8f175c299f32cae2e901a8dcc42cd9fa140ff7d8c954c2fed58b03925ce8afc",
+    "collapsed-sources-1440.png": "5c8a0254f6cd4f25ed87f2b6d979f286c82d1cc7b6dedff4e506ee1a43a8aa5b",
+    "collapsed-sources-320.png": "ba541713ce3ff1d1bb045f2e66c52dbb74923975b1e64fefbac60ebca78341e5",
+    "collapsed-sources-390.png": "0f3f21626d8f44e2cdf65f8c92990b6d82fba11ee424c7fed9bcd915c63eb6ac",
+    "home-stable-390.png": "f2df1d62b670e43835a1b58f73cd830e15eda1bfc808d31f16e30069ad8d5089",
+    "many-sources-1024.png": "b0e69c1b5d8cb530ea321d33400674c46e641341f50dacedc1307489a6ac564b",
+    "many-sources-1440.png": "e1e56b702bdff11c917bd5caa6b37deb80267f0e7b6d0bfa8420c5d70c0ce8de",
+    "many-sources-320.png": "81858610c21fa978dfdeafe263294ab0991f18535e6e51619d360553ba50393b",
+    "many-sources-390.png": "3925f2999f95b9d8aca4c26dc53e3705d3946e4ded1629ecd1dabb68fdfa3010",
+    "scrollbars-1440.png": "350ed20858546d97048c4cdf1f4d85333967d627380f88bfefb9bbf5905cd6cb",
+    "scrollbars-390.png": "144959a6a1f5b5cd1ce92ca7f194d586663d2b59614e87e93fc75b3d17e27709",
+    "shell-feedback-checks.json": "a8864936ab9f7f19632721845be3383f368a2d8e9e3cd1fc73c68e012b521c78",
+    "single-source-panel-1024.png": "acbf0e03136c3c7e825f0e8c49c1288c9d6a289720a0312984bb33f63b75c353",
+    "single-source-panel-1440.png": "2a57f6880e137438d908168683d534dcde89fd029df085237592352464c5fbd9",
+    "single-source-panel-320.png": "3926dabf709162fa409af85533cf86d757a2133e8642cae84e05bb8978ae9b3c",
+    "single-source-panel-390.png": "75289fc2c0602301fe76ec4acc1c7ea4f093156f4ac8569926a7f8ece1642676",
+    "source-tabs-checks.json": "1a1ad252c83a6307f9f943f7dd632ea1c57accfd52486874e23590a00d00b2aa"
+  },
+  "sync": {
+    "frontendOverlaps": [],
+    "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+    "at": "2026-10-02T10:34:28.2759334Z",
+    "githubDocs": {
+      "src/shared/knowledge.ts": "ea330e54333a48dcb861364fccbc167aedab78f7",
+      "docs/API.md": "69fd07e18f649e4862030001837662d5e2fdc19b",
+      "docs/P2_UI_HANDOFF.md": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+      "src/shared/product-agent.ts": "9f217d80dd1e020dc6048075e4f34f9233cd73f2"
+    },
+    "otherWorktreesChecked": 14,
+    "githubLogin": "CherylNg-2526"
+  },
+  "observedCauses": [
+    "Mobile return: measured child height changed the previous negative-margin position by 17px; quick width 0 caused 2-to-4-column change. Docked natural centering and a viewport estimate remove these first-frame changes.",
+    "Desktop return: initial width 900 preceded actual pane width at 900/1280 viewport sizes. Pre-paint measurement now produces the final one-column layout immediately."
+  ],
+  "testRefinement": "The first reused citation-helper run failed because it only identified overflow:auto/scroll ancestors. OverlayScrollbars can mark a non-overflowing viewport hidden. The helper now recognizes the existing overlay viewport; application code was unchanged and all four scoped cases passed.",
+  "attribution": {
+    "author": "CherylNg-2526 <250349656@stu.vtc.edu.hk>",
+    "committer": "2NTTY <2nttyfor2b@gmail.com>",
+    "deliveryLogin": "CherylNg-2526"
+  },
+  "reused": [
+    {
+      "at": "95431add2b5da596ba85d571025a9aabb8aba6cb",
+      "path": "frontend/verification/fe-w26-source-tabs/build-checks.json",
+      "scope": "Unchanged Agent decision/version/unknown and permission/child cleanup; no full business-suite rerun"
+    },
+    {
+      "at": "95431add2b5da596ba85d571025a9aabb8aba6cb",
+      "path": "frontend/verification/fe-w27-home/build-checks.json",
+      "scope": "Unchanged homepage question/date removal, local guide and draft rules"
+    }
+  ],
+  "pending": [
+    "User visual approval",
+    "Formal authentication/session, API/controller, notification and cross-page integration",
+    "Native More tab, animation/scrolling, accessibility and device acceptance",
+    "Page-transition choice and implementation; current route animation has not been changed"
+  ],
+  "noRealServices": true
+}

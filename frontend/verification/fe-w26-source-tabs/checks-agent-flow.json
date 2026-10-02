@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-02T06:51:53.138Z",
+  "passed": [
+    "Agent conversation: four-width manual read/keyboard shared acceptance/private fact/source metadata/draft guard; unknown original retry/conflict/missing read/permission and child identity clearing/manual inbox/expiry/unknown statistics/full task-change projection"
+  ],
+  "failures": []
+}

@@ -1,0 +1,213 @@
+{
+  "at": "2026-10-01T17:55:16.058Z",
+  "package": "FE-W23 restore original login files before proportional crop adjustment",
+  "baseline": "4496f47e9880a61a1d70e990895925837de150d6",
+  "restoreBaseline": "cab28414a39a2b6e25c77c68e349024247623122",
+  "scope": "Restore exactly five frontend files from the pre-login-change commit, then adjust only login desktop proportions/crop and current documentation. Preserve Git history, original 0.55 image opacity, original narrow stack, brand/form markup and local auth validation.",
+  "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+  "uiHandoffBlob": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+  "otherWorktreesChecked": 14,
+  "frontendOverlaps": [],
+  "sources": [
+    {
+      "path": "frontend/src/screens/loginScreen.tsx",
+      "gitBlob": "efc328579676cd2a4eb2fa6c4a564ef3be54de6e",
+      "sha256": "5331208a5e53f2c6adf3393bda8b6229efaee8d80e030b660c9fb631ab4682a9"
+    }
+  ],
+  "restore": {
+    "evidence": "verification/fe-w23-reset/restore-checks.json",
+    "files": [
+      {
+        "matches": true,
+        "restoredBlob": "665c0bc825be54e707d1794dc55db9223ef7dc68",
+        "baselineBlob": "665c0bc825be54e707d1794dc55db9223ef7dc68",
+        "path": "frontend/src/screens/loginScreen.tsx"
+      },
+      {
+        "matches": true,
+        "restoredBlob": "61c86bd50826f2dfe80dce82e60bcc147baa0b71",
+        "baselineBlob": "61c86bd50826f2dfe80dce82e60bcc147baa0b71",
+        "path": "frontend/STATUS.md"
+      },
+      {
+        "matches": true,
+        "restoredBlob": "39235af5fdf2dcb0966204d15d93b6dda5c706db",
+        "baselineBlob": "39235af5fdf2dcb0966204d15d93b6dda5c706db",
+        "path": "frontend/PLAN.md"
+      },
+      {
+        "matches": true,
+        "restoredBlob": "440239b612ead880d9051829a60a08a97bc4eb1b",
+        "baselineBlob": "440239b612ead880d9051829a60a08a97bc4eb1b",
+        "path": "frontend/HANDOFF.md"
+      },
+      {
+        "matches": true,
+        "restoredBlob": "1565dbf96a8b194ba1c0402b312222c95c5e9511",
+        "baselineBlob": "1565dbf96a8b194ba1c0402b312222c95c5e9511",
+        "path": "frontend/DESIGN_SYSTEM.md"
+      }
+    ],
+    "verifiedBeforeAdjustment": true
+  },
+  "unchangedOriginalCode": {
+    "authStateAndValidation": true,
+    "formMarkup": true
+  },
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "webExport": {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "routes": 33,
+      "bundles": [
+        {
+          "path": "dist/_expo/static/js/web/entry-4a0497427b70c16bd78578f56458b356.js",
+          "sha256": "ccb1d4362d571d594ffb9a01a1b4b3a7a3f3cf99eca3bfdc950d3ce2955c58f1",
+          "bytes": 4136736
+        }
+      ]
+    },
+    "androidExport": {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundles": [
+        {
+          "path": "dist-android/_expo/static/js/android/entry-5fa12f13a4e1eb5861ab3e2f58eecd77.hbc",
+          "sha256": "a1a2d83d3798c4090528291be911faee62d66435115216e99be9f40444d2d521",
+          "bytes": 6371653
+        }
+      ]
+    },
+    "layout": {
+      "kind": "Ad hoc headless synthetic UI check with existing preview helper",
+      "evidence": "verification/fe-w23-reset/layout-checks.json",
+      "viewports": [
+        {
+          "width": 2206,
+          "height": 1252
+        },
+        {
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "width": 1024,
+          "height": 768
+        },
+        {
+          "width": 900,
+          "height": 800
+        },
+        {
+          "width": 390,
+          "height": 844
+        },
+        {
+          "width": 320,
+          "height": 720
+        }
+      ],
+      "approximateFingerClearance": [
+        {
+          "width": 2206,
+          "cssPx": 174.7282819976076
+        },
+        {
+          "width": 1440,
+          "cssPx": 120.67503364234449
+        },
+        {
+          "width": 1024,
+          "cssPx": 98.2734375
+        },
+        {
+          "width": 900,
+          "cssPx": 92.0703125
+        }
+      ],
+      "assertions": [
+        "Original story/right-form structure and both wordmarks",
+        "Right desktop column at 36% with 400 minimum",
+        "Proportional illustration crop covering the story",
+        "Original 0.55 opacity",
+        "Room beyond an approximate x=1510 source fingertip landmark, verified against actual screenshots",
+        "Original narrow story/form stacking",
+        "Sign-in/sign-up switching and no horizontal overflow or runtime/API errors"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-4a0497427b70c16bd78578f56458b356.js"
+    },
+    "login": {
+      "command": "node scripts/verify-ui.mjs login",
+      "exitCode": 0,
+      "evidence": "verification/fe-w23-reset/checks-login.json",
+      "passed": [
+        "login: accessible local validation/password visibility/keyboard submission without a Server request at 320"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-4a0497427b70c16bd78578f56458b356.js"
+    }
+  },
+  "screenshots": [
+    {
+      "path": "verification/fe-w23-reset/login-1024.png",
+      "sha256": "5b58008a81e35efad93b16dd234a04bed3689662893f4b97b00a322e2be09cb1",
+      "bytes": 745505
+    },
+    {
+      "path": "verification/fe-w23-reset/login-1440.png",
+      "sha256": "906ffb6333d66f24a364bb2d4f670e8f7ac6c87f72e2afb35b0880255279478f",
+      "bytes": 1219620
+    },
+    {
+      "path": "verification/fe-w23-reset/login-2206.png",
+      "sha256": "e645859d721c12e545a9661ddde224e14f6fded671df3042703c3de4955113ba",
+      "bytes": 2139351
+    },
+    {
+      "path": "verification/fe-w23-reset/login-320.png",
+      "sha256": "502c2e100f3869bd152a8b891f3f3d74677dbd5b57ccf3469d23b5ead17cea4c",
+      "bytes": 182234
+    },
+    {
+      "path": "verification/fe-w23-reset/login-390.png",
+      "sha256": "61601452baad4de7b05ea984848b6ba8cae9b3989ce6cfdc8266c6b350c087f7",
+      "bytes": 207313
+    },
+    {
+      "path": "verification/fe-w23-reset/login-900.png",
+      "sha256": "b22c41660e4ec1d83beff348aa913f6118c501549f46a8be07a01256fa2a2aa2",
+      "bytes": 626640
+    },
+    {
+      "path": "verification/fe-w23-reset/login-form-320.png",
+      "sha256": "d5d6c2c21705765f2afadd88e7047077955e9a0c3249eb65dd5eb23f14f1a2e1",
+      "bytes": 28370
+    },
+    {
+      "path": "verification/fe-w23-reset/login-form-390.png",
+      "sha256": "f920bfed3dee0943843438f46ed6c40dc434ade8cdf1efe6264c32d28b797520",
+      "bytes": 203722
+    }
+  ],
+  "limitations": [
+    "Synthetic preview only; no real authentication/Server or credential transmission",
+    "Native export is bundle evidence only; device/keyboard/accessibility and user visual acceptance pending",
+    "Fingertip coordinate is an approximate visual landmark, not business data",
+    "Previous FE-W23 and balance evidence retained as superseded historical versions; no unrelated business regression rerun"
+  ],
+  "delivery": {
+    "branch": "codex/fe-w11-photos",
+    "pullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/73",
+    "draft": true,
+    "merged": false,
+    "author": "CherylNg-2526 <250349656@stu.vtc.edu.hk>",
+    "actualCommitter": "2NTTY <2nttyfor2b@gmail.com>"
+  }
+}

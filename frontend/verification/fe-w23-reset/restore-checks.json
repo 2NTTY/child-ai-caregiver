@@ -1,0 +1,38 @@
+{
+  "beforeHead": "4496f47e9880a61a1d70e990895925837de150d6",
+  "restoreBaseline": "cab28414a39a2b6e25c77c68e349024247623122",
+  "method": "Restore exactly five frontend login/source documentation files from the pre-login-change commit before making the new scoped layout changes; preserve Git history and previous verification evidence",
+  "at": "2026-10-01T17:34:00.7683296Z",
+  "files": [
+    {
+      "matches": true,
+      "restoredBlob": "665c0bc825be54e707d1794dc55db9223ef7dc68",
+      "baselineBlob": "665c0bc825be54e707d1794dc55db9223ef7dc68",
+      "path": "frontend/src/screens/loginScreen.tsx"
+    },
+    {
+      "matches": true,
+      "restoredBlob": "61c86bd50826f2dfe80dce82e60bcc147baa0b71",
+      "baselineBlob": "61c86bd50826f2dfe80dce82e60bcc147baa0b71",
+      "path": "frontend/STATUS.md"
+    },
+    {
+      "matches": true,
+      "restoredBlob": "39235af5fdf2dcb0966204d15d93b6dda5c706db",
+      "baselineBlob": "39235af5fdf2dcb0966204d15d93b6dda5c706db",
+      "path": "frontend/PLAN.md"
+    },
+    {
+      "matches": true,
+      "restoredBlob": "440239b612ead880d9051829a60a08a97bc4eb1b",
+      "baselineBlob": "440239b612ead880d9051829a60a08a97bc4eb1b",
+      "path": "frontend/HANDOFF.md"
+    },
+    {
+      "matches": true,
+      "restoredBlob": "1565dbf96a8b194ba1c0402b312222c95c5e9511",
+      "baselineBlob": "1565dbf96a8b194ba1c0402b312222c95c5e9511",
+      "path": "frontend/DESIGN_SYSTEM.md"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-02T03:25:30.960Z",
+  "passed": [
+    "chat presentation: four widths without the permanent emergency-help card or message avatars; right-aligned questions, full-width answers, no overlap, local draft preview and offline layout; no API or model calls"
+  ],
+  "failures": []
+}

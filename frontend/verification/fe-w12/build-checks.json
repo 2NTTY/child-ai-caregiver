@@ -1,0 +1,170 @@
+{
+  "scope": "Requested full mobile greeting background and shared navigation surface follow-up on existing frontend draft PR #73; no Server or device acceptance",
+  "verifiedAt": "2026-09-30T17:04:45.910Z",
+  "baselineCommit": "685cdfca9fab1af6e3ebacec7c60af4a018a412f",
+  "sources": [
+    {
+      "path": "src/components/MobileHomeDashboard.tsx",
+      "sha256": "5529195db496ac7d4f440d4e82bb4b70edf36fdabda1ac512747530419c94251"
+    },
+    {
+      "path": "src/components/HomeDashboard.tsx",
+      "sha256": "eb5fa66bb7314b62546aec37433633ed63da1223b4e9f9cfa06e06f01b3c9f28"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256": "eef64de280e695bad624e075245933cf16890b906c861bbb2ea3bdc44054e9f8"
+    },
+    {
+      "path": "src/components/NativeAppShell.tsx",
+      "sha256": "16ceb7a9fe3a481b8e5405b91981aee02f2caeef13d635041a77b9eb5177d450"
+    },
+    {
+      "path": "src/theme.ts",
+      "sha256": "7f931fdd7ddeacfb2ba1a615bf81aabf1804f595a0266491d02e46825f532688"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256": "1bd8df83c2568c008bdd9682b2834b8dcc9936bb5659e0b97697d693ee0f8d89"
+    },
+    {
+      "path": "src/components/ChildPicker.tsx",
+      "sha256": "afad0de7dfdc11eb7c75b7179a7c00d1021bc695dd39ff95bf12b816260360a6"
+    },
+    {
+      "path": "src/view-model.ts",
+      "sha256": "68eced069f7f5d0749d3c11429f4cf37a20db38036ee37cdfa0d997a5d201a26"
+    },
+    {
+      "path": "scripts/flows/mobile-density.mjs",
+      "sha256": "28ee9c690c01eba43b5130febc9472f8b128ca3f1ef10d8eeeef1fa521ba7481"
+    },
+    {
+      "path": "scripts/verify-ui.mjs",
+      "sha256": "790a4af6017f3f605eaac9d18611350e48f4568588746c84e885045fc111c922"
+    },
+    {
+      "path": "assets/images/harbour-family-hero.png",
+      "sha256": "d2a072b0e68f4e825b50ab95b6074072b3cc847e40b9a08d113a4fd3c8316a9c"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940"
+    }
+  ],
+  "snapshotDigest": "f1c346adf6ecd9b75cf6ce4059aa4c4b517959fcd28256c608563bc077e887b6",
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "webExport": {
+      "exitCode": 0,
+      "staticRoutes": 25,
+      "bundles": [
+        {
+          "name": "entry-3658331c46708c71de4dd175f0de7596.js",
+          "sha256": "384e1cdbd254716634585e73353d44db87efa1db1a55ba6807ded766d0b5e15a"
+        }
+      ]
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "assets": 31,
+      "bundles": [
+        {
+          "name": "entry-87b166acb205c781baa2b4835d6cc696.hbc",
+          "sha256": "937883fa3c2c94bc35075322706b3319c22e74d52930dcfdf5f3c516393f4cad"
+        }
+      ]
+    },
+    "sharedShellUi": {
+      "exitCode": 0,
+      "proof": "checks-layout-mobile-density.json",
+      "layoutCount": 44,
+      "failures": [],
+      "passed": [
+        "layout / 1440",
+        "layout /care 1440",
+        "layout /photos 1440",
+        "layout /profile 1440",
+        "layout /family 1440",
+        "layout /memory 1440",
+        "layout /tasks 1440",
+        "layout /settings 1440",
+        "layout /chat 1440",
+        "layout /guide 1440",
+        "layout /login 1440",
+        "layout / 1024",
+        "layout /care 1024",
+        "layout /photos 1024",
+        "layout /profile 1024",
+        "layout /family 1024",
+        "layout /memory 1024",
+        "layout /tasks 1024",
+        "layout /settings 1024",
+        "layout /chat 1024",
+        "layout /guide 1024",
+        "layout /login 1024",
+        "layout / 390",
+        "layout /care 390",
+        "layout /photos 390",
+        "layout /profile 390",
+        "layout /family 390",
+        "layout /memory 390",
+        "layout /tasks 390",
+        "layout /settings 390",
+        "layout /chat 390",
+        "layout /guide 390",
+        "layout /login 390",
+        "layout / 320",
+        "layout /care 320",
+        "layout /photos 320",
+        "layout /profile 320",
+        "layout /family 320",
+        "layout /memory 320",
+        "layout /tasks 320",
+        "layout /settings 320",
+        "layout /chat 320",
+        "layout /guide 320",
+        "layout /login 320",
+        "mobile density: 390/320 targets/age basis/header alignment/four-or-two quick actions/child picker/keyboard suggestions/original draft/quick form/150% Web text reflow"
+      ]
+    },
+    "finalMobileUi": {
+      "exitCode": 0,
+      "proof": "checks-mobile-density.json",
+      "failures": [],
+      "passed": [
+        "mobile density: 390/320 targets/age basis/header alignment/four-or-two quick actions/child picker/keyboard suggestions/original draft/quick form/150% Web text reflow"
+      ]
+    },
+    "visualReview": {
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "actualScreenshots": [
+        "home-1440.png",
+        "home-1024.png",
+        "home-390.png",
+        "home-320.png"
+      ],
+      "result": "Shared warm neutral navigation surfaces; full mobile greeting artwork with canvas opacity fades across the text side and bottom, without an image frame"
+    },
+    "fixNotes": [
+      "Visual review found that absoluteFill alone retained the static Image asset dimensions of 1672 by 941; explicit 100% width and height fixed the crop",
+      "After the Image-only dimension fix, only the affected mobile group was repeated; other page layouts and the shared shell were unchanged"
+    ],
+    "reuse": [
+      "FE-W11 photo interactions and raw-value unit checks remain valid for unchanged photo code",
+      "Existing 18 color contrast checks retained: OKLCH color values unchanged",
+      "No new unit tests or dependencies for this reversible visual change"
+    ]
+  },
+  "limits": [
+    "Web image/layout screenshots do not prove Android device behavior",
+    "User visual approval and native device acceptance pending"
+  ]
+}

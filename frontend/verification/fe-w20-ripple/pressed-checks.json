@@ -1,0 +1,99 @@
+{
+  "results": [
+    {
+      "name": "agent",
+      "width": 1440,
+      "ripple": "rgba(39, 35, 67, 0.12)",
+      "opacity": "1",
+      "background": "rgb(255, 216, 3)",
+      "surfaceLayers": [
+        "rgb(255, 216, 3)"
+      ],
+      "text": "與 Agent 對話提問・整理・規劃",
+      "href": "/chat",
+      "cleanup": "passed"
+    },
+    {
+      "name": "accent-button",
+      "width": 1440,
+      "ripple": "rgba(39, 35, 67, 0.12)",
+      "opacity": "1",
+      "background": "rgb(255, 216, 3)",
+      "surfaceLayers": [
+        "rgba(39, 35, 67, 0.06)",
+        "rgb(255, 216, 3)"
+      ],
+      "text": "進行對話",
+      "href": null,
+      "cleanup": "passed"
+    },
+    {
+      "name": "secondary-button",
+      "width": 1440,
+      "ripple": "rgba(39, 35, 67, 0.12)",
+      "opacity": "1",
+      "background": "rgb(255, 255, 254)",
+      "surfaceLayers": [
+        "rgba(39, 35, 67, 0.06)",
+        "rgb(255, 255, 254)"
+      ],
+      "text": "查看照顧記錄",
+      "href": null,
+      "cleanup": "passed"
+    },
+    {
+      "name": "agent-keyboard-draft",
+      "width": 1440,
+      "navigation": "passed",
+      "draft": "preserved"
+    },
+    {
+      "name": "agent",
+      "width": 1024,
+      "ripple": "rgba(39, 35, 67, 0.12)",
+      "opacity": "1",
+      "background": "rgb(255, 216, 3)",
+      "surfaceLayers": [
+        "rgb(255, 216, 3)"
+      ],
+      "text": "與 Agent 對話提問・整理・規劃",
+      "href": "/chat",
+      "cleanup": "passed"
+    },
+    {
+      "name": "accent-button",
+      "width": 1024,
+      "ripple": "rgba(39, 35, 67, 0.12)",
+      "opacity": "1",
+      "background": "rgb(255, 216, 3)",
+      "surfaceLayers": [
+        "rgba(39, 35, 67, 0.06)",
+        "rgb(255, 216, 3)"
+      ],
+      "text": "進行對話",
+      "href": null,
+      "cleanup": "passed"
+    },
+    {
+      "name": "secondary-button",
+      "width": 1024,
+      "ripple": "rgba(39, 35, 67, 0.12)",
+      "opacity": "1",
+      "background": "rgb(255, 255, 254)",
+      "surfaceLayers": [
+        "rgba(39, 35, 67, 0.06)",
+        "rgb(255, 255, 254)"
+      ],
+      "text": "查看照顧記錄",
+      "href": null,
+      "cleanup": "passed"
+    },
+    {
+      "name": "agent-keyboard-draft",
+      "width": 1024,
+      "navigation": "passed",
+      "draft": "preserved"
+    }
+  ],
+  "failures": []
+}

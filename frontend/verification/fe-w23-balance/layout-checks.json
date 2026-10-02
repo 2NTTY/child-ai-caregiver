@@ -1,0 +1,129 @@
+{
+  "at": "2026-10-01T16:49:30.582Z",
+  "scope": "Synthetic frontend login proportions only; no authentication",
+  "passed": [
+    {
+      "width": 2217,
+      "height": 1230,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 1418.890625,
+        "height": 1230
+      },
+      "form": {
+        "x": 1418.890625,
+        "y": 0,
+        "width": 798.109375,
+        "height": 1230
+      },
+      "picture": {
+        "x": -574.875,
+        "y": 0,
+        "width": 2185.5,
+        "height": 1230
+      }
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 921.609375,
+        "height": 900
+      },
+      "form": {
+        "x": 921.609375,
+        "y": 0,
+        "width": 518.390625,
+        "height": 900
+      },
+      "picture": {
+        "x": -507.859375,
+        "y": 0,
+        "width": 1599.140625,
+        "height": 900
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 624,
+        "height": 768
+      },
+      "form": {
+        "x": 624,
+        "y": 0,
+        "width": 400,
+        "height": 768
+      },
+      "picture": {
+        "x": -555.453125,
+        "y": 0,
+        "width": 1364.59375,
+        "height": 768
+      }
+    },
+    {
+      "width": 900,
+      "height": 800,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 500,
+        "height": 800
+      },
+      "form": {
+        "x": 500,
+        "y": 0,
+        "width": 400,
+        "height": 800
+      },
+      "picture": {
+        "x": -691.09375,
+        "y": 0,
+        "width": 1421.453125,
+        "height": 800
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "story": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 902
+      },
+      "picture": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "width": 320,
+      "height": 720,
+      "story": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 994
+      },
+      "picture": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 720
+      }
+    }
+  ],
+  "failures": []
+}

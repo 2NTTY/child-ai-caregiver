@@ -10,6 +10,7 @@ import { useCarePreview, type CareLookupOutcome, type CarePreviewCondition, type
 import type { HomeChild } from "../view-model";
 
 function CareWorkspace({ child, online, reading, initialKind }: { child: HomeChild; online: boolean; reading: boolean; initialKind?: CareKind }) {
+  const { actions } = usePreview();
   const preview = useCarePreview(child, online, reading, initialKind);
   const [controlsOpen, setControlsOpen] = useState(false);
   const conditions: { value: CarePreviewCondition; label: string }[] = [
@@ -20,7 +21,7 @@ function CareWorkspace({ child, online, reading, initialKind }: { child: HomeChi
     { value: "success", label: "成功" }, { value: "failed", label: "失敗" }, { value: "unknown", label: "結果未知" },
     ...(preview.model.draft?.mode === "revise" || preview.model.deletion ? [{ value: "conflict" as const, label: "版本衝突" }] : []),
   ];
-  return <CareRecordsView model={preview.model} actions={preview.actions} previewControls={<SectionCard>
+  return <CareRecordsView model={preview.model} actions={preview.actions} onPhotos={() => actions.open("photos")} previewControls={<SectionCard>
     <SectionHeader title="合成預覽情境" subtitle="這些工具只切換示例狀態，沒有呼叫 Server。" action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
     {controlsOpen ? <>
       <AppSelect label="記錄情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} />

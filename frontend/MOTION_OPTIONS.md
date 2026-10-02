@@ -1,5 +1,29 @@
 # Web 動態方向比較（暫不採用）
 
+<a id="page-transitions"></a>
+## 換頁動畫研究，尚未實作（2026-10-02）
+
+使用者要求先查成熟方案及報告，暫不改動換頁動畫。下列為本次建議，沒有套入路由、外殼或現有比較頁。首頁首次會話的 3 秒閱讀／360 ms 孩子上移屬另行已批准的局部互動。
+
+核對 [IBM Carbon motion](https://www.carbondesignsystem.com/building-blocks/foundations/motion/overview)：日常任務適合克制而迅速的 productive motion，較鮮明的 expressive motion 留給少量重要時刻；移動距離、資訊層級與時長一起考慮，保留可辨認的連續元素。它不是要求每次路由都使用同一種滑動。
+
+| 場景 | 建議呈現 | 適用理由 |
+|---|---|---|
+| 主頁、聊天、記錄、任務之間切換 | 內容區淡入淡出約 180–220 ms，建議先用 200 ms；頂部、側欄及底部導覽保持位置 | 同層目的地，家長可以立即閱讀，不造成左右方向的誤解 |
+| 清單進入詳情及返回 | 前進／返回方向相反的短滑動，約 220–280 ms；日後原生 Stack 沿平台預設 | 移動交代進入下一層與返回的關係 |
+| 側欄及來源詳情展開 | 只移動或展開該區，不重播整頁進場 | 保持正文、輸入草稿和閱讀位置；正文引用仍立即定位 |
+| 系統減少動畫、快速連續導航 | 直接顯示終點；新的導航取代尚未完成的效果 | 操作不排隊、不鎖住控制，不以動畫改變保存結果 |
+
+**以上時長及位置是針對育有方的設計建議，不是官方強制規格。** 不使用整頁縮放、每張卡片依次進場或全站彈簧動畫；使用者已指出版面比例跳動，尺寸必須先穩定，不能用過場遮掩量度後的重排。首頁問候只在同一登入會話首次播放，切頁動畫不重新設置此 flag。
+
+技術先復用現有 Reanimated 4.5.1：官方 [進出場預設](https://docs.swmansion.com/react-native-reanimated/docs/layout-animations/entering-exiting-animations/)支援 Web／Android／iOS，並提供 reduceMotion；Web spring 仍有文件限制。它足以做短淡入或短位移，但同時呈現離開及進入頁面需要核對 Expo Router 57.0.22 的提交時機，不能聲稱給 Slot 加 FadeIn 就已實作完整 cross-fade。現在 dashboard Web 用 Slot，原生用 Tabs；[Expo Stack 指引](https://docs.expo.dev/router/advanced/stack/)講述的 Android／iOS push／pop 行為不能直接視為目前 Web 的換頁效果。
+
+Web 的另一個成熟方向是 [MDN View Transition API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transition_API/Using)：舊／新畫面快照可 cross-fade，並能分開指定區域；不支援時保留普通導航。文件已核對，**未在本工程實測路由接合**。若採用，須等待真正新路由 DOM 提交，保留外殼與焦點、處理連續導航及 browser back／forward，並另核對目標瀏覽器；不因有 API 就保證所有瀏覽器或 React Native 支援，也不增加第二套路由框架。
+
+採用前的局部驗證只需圍繞短過場、快速連按／返回、長聊天草稿及位置、來源瞬間定位、減少動畫與窄尺寸。真登入及 Server 操作驗收沿主聊天 P2 集中安排。本次只研究及記錄，換頁動畫未變更。
+
+## 既有比較及歷史證據
+
 2026-09-27，使用者決定 Web 與日後 Android 前端先保持靜態。本頁保留當時的比較與驗證證據，並非正式產品設計規則；將來若要加入動態，須另立前端工作包及分平台驗收。
 
 本頁只比較呈現節奏；不改業務狀態、操作收據、任務或通知語義。可在獨立合成預覽的 `/motion-preview` 切換 A／B／C，按「重播進場」「切換孩子」「展開詳情」看同一份示例內容的差異。這不是正式產品頁，也沒有向 Server 讀寫。

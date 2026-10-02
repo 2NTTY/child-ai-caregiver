@@ -1,0 +1,87 @@
+{
+  "at": "2026-10-01T16:06:23.650Z",
+  "scope": "Synthetic frontend login layout only; no real authentication",
+  "passed": [
+    {
+      "width": 2217,
+      "height": 1230,
+      "background": {
+        "x": 0,
+        "y": 0,
+        "width": 2217,
+        "height": 1230
+      },
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 1064.15625,
+        "height": 1230
+      }
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "background": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900
+      },
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 691.1875,
+        "height": 900
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "background": {
+        "x": 0,
+        "y": 0,
+        "width": 1024,
+        "height": 768
+      },
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 491.515625,
+        "height": 879
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "background": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844
+      },
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 902
+      }
+    },
+    {
+      "width": 320,
+      "height": 720,
+      "background": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 720
+      },
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 994
+      }
+    }
+  ],
+  "failures": []
+}

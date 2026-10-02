@@ -10,6 +10,7 @@ import Bell from "lucide-react-native/icons/bell";
 import BookOpen from "lucide-react-native/icons/book-open";
 import Calendar from "lucide-react-native/icons/calendar";
 import CalendarClock from "lucide-react-native/icons/calendar-clock";
+import Camera from "lucide-react-native/icons/camera";
 import ChartColumnIncreasing from "lucide-react-native/icons/chart-column-increasing";
 import Check from "lucide-react-native/icons/check";
 import ChevronDown from "lucide-react-native/icons/chevron-down";
@@ -29,14 +30,18 @@ import EyeOff from "lucide-react-native/icons/eye-off";
 import FileText from "lucide-react-native/icons/file-text";
 import History from "lucide-react-native/icons/rotate-ccw-clock";
 import House from "lucide-react-native/icons/house";
+import ImageIcon from "lucide-react-native/icons/image";
 import Info from "lucide-react-native/icons/info";
 import Keyboard from "lucide-react-native/icons/keyboard";
+import Link2 from "lucide-react-native/icons/link-2";
 import LockKeyhole from "lucide-react-native/icons/lock-keyhole";
 import Mail from "lucide-react-native/icons/mail";
 import MessageCircle from "lucide-react-native/icons/message-circle";
+import Mic from "lucide-react-native/icons/mic";
 import Moon from "lucide-react-native/icons/moon";
 import NotebookPen from "lucide-react-native/icons/notebook-pen";
 import PanelRight from "lucide-react-native/icons/panel-right";
+import Paperclip from "lucide-react-native/icons/paperclip";
 import Pencil from "lucide-react-native/icons/pencil";
 import Plus from "lucide-react-native/icons/plus";
 import Ruler from "lucide-react-native/icons/ruler";
@@ -61,6 +66,7 @@ const icons = {
   "home-outline": House,
   "message-text-outline": MessageCircle,
   "notebook-outline": NotebookPen,
+  "link-variant": Link2,
   "clipboard-check-outline": ClipboardCheck,
   "clipboard-check": ClipboardCheck,
   "account-child-outline": Baby,
@@ -114,6 +120,10 @@ const icons = {
   "thermometer": Thermometer,
   "ruler": Ruler,
   "file-document-outline": FileText,
+  "image-outline": ImageIcon,
+  "camera-outline": Camera,
+  "microphone-outline": Mic,
+  "paperclip": Paperclip,
   "history": History,
   "information-outline": Info,
   "help-circle": CircleHelp,

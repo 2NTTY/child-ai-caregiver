@@ -1,14 +1,20 @@
 import { useState } from "react";
+import { BlurView } from "expo-blur";
+import { brand } from "../branding";
+import { BrandLogo } from "../components/BrandLogo";
 import { useRouter } from "expo-router";
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "../components/AppScrollView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "react-native-paper";
 import { AppButton, AppTextField } from "../components/ui";
 import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
-const logo = require("../../assets/brand/logo-horizontal.png");
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
+const harbourSourceSize = { width: 1672, height: 941 };
+// Keep the fingertip inside the frame and the sun beyond its fixed right crop.
+const harbourRightEdge = 1552;
 type Mode = "signIn" | "signUp";
 
 export default function LoginPage() {
@@ -16,6 +22,10 @@ export default function LoginPage() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const narrow = width < 900;
+  const [storySize, setStorySize] = useState({ width: 0, height: 0 });
+  const artworkScale = Math.max(storySize.width / harbourRightEdge, storySize.height / harbourSourceSize.height);
+  const artworkWidth = harbourSourceSize.width * artworkScale;
+  const artworkHeight = harbourSourceSize.height * artworkScale;
   const [mode, setMode] = useState<Mode>("signIn");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -32,23 +42,25 @@ export default function LoginPage() {
   }
 
   return <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView style={styles.scroll} contentContainerStyle={[styles.root, narrow && styles.rootStack, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
-    <View style={[styles.story, narrow && styles.storyCompact]}>
-      <Image source={harbourArt} resizeMode="cover" accessibilityLabel="香港海旁照顧者與孩子插畫" style={styles.storyImage} />
-      <View style={styles.storyContent}>
-        <Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={styles.storyLogo} />
+    {!narrow ? <View testID="login-story-column" style={[styles.story, styles.storyDesktop]} onLayout={({ nativeEvent: { layout } }) => setStorySize(current => current.width === layout.width && current.height === layout.height ? current : { width: layout.width, height: layout.height })}>
+      <Image testID="login-background-image" source={harbourArt} resizeMode="cover" accessibilityLabel="香港海旁照顧者與孩子插畫" style={[styles.storyImage, { opacity: artworkScale > 0 ? 0.55 : 0, width: artworkWidth, height: artworkHeight, right: (harbourRightEdge - harbourSourceSize.width) * artworkScale, top: (storySize.height - artworkHeight) / 2 }]} />
+      <View testID="login-story-content" style={[styles.storyContent, styles.storyReadingWidth]}>
+        <BlurView testID="login-story-panel" intensity={32} tint="light" style={styles.storyPanel}>
+        <BrandLogo style={styles.storyLogo} />
         <Text style={styles.storyEyebrow}>用資料 · 陪伴成長</Text>
         <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>用 AI，{narrow ? "" : "\n"}更輕鬆做好育兒大小事。</Text>
         <Text style={styles.storyLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
-        {!narrow ? <View style={styles.features}>
+        <View style={styles.features}>
           <View style={styles.featureRow}><AppIcon name="message-text-outline" /><Text style={styles.feature}>隨時整理照顧問題與記錄</Text></View>
           <View style={styles.featureRow}><AppIcon name="file-document-outline" /><Text style={styles.feature}>清楚區分候選與已確認資料</Text></View>
           <View style={styles.featureRow}><AppIcon name="account-group-outline" /><Text style={styles.feature}>按權限與家人協調</Text></View>
           <View style={styles.featureRow}><AppIcon name="shield-check-outline" /><Text style={styles.feature}>保留原文、時間及資料來源</Text></View>
-        </View> : null}
+        </View>
+        </BlurView>
       </View>
-    </View>
-    <View style={styles.formSide}>
-      <View style={styles.formHeader}><Image source={logo} resizeMode="contain" accessibilityLabel="育伴港" style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
+    </View> : null}
+    <View testID="login-form-column" style={[styles.formSide, narrow ? styles.formCompact : styles.formDesktop]}>
+      <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
       <View style={styles.formCard}>
         <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
         <Text style={styles.formIntro}>{mode === "signIn" ? "登入後，繼續整理孩子的照顧資料。" : "先建立自己的帳戶，再新增孩子的資料。"}</Text>
@@ -66,12 +78,17 @@ export default function LoginPage() {
         <Text style={styles.unavailable}>參考圖中的手機、Google／Apple 登入和忘記密碼尚未有本項目可用的正式接線，因此不提供假按鈕。</Text>
         <Pressable accessibilityRole="link" accessibilityLabel="返回主頁合成預覽" onPress={() => router.replace("/")} style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}><Text style={styles.backLinkText}>返回 Web 主頁預覽</Text><AppIcon name="arrow-right" size={18} /></Pressable>
       </View>
-      <Text style={styles.footer}>育伴港 · 用資料陪伴成長</Text>
+      <Text style={styles.footer}>{brand.name} · 用資料陪伴成長</Text>
     </View>
   </ScrollView></KeyboardAvoidingView>;
 }
 
 const styles = StyleSheet.create({
+  storyPanel: { padding: spacing.xl, gap: spacing.md, borderRadius: radius.large, overflow: "hidden", borderWidth: 1, borderColor: colors.white },
+  formCompact: { minHeight: 0, paddingVertical: spacing.xl },
+  storyDesktop: { width: "64%", minWidth: 0, flexShrink: 1 },
+  storyReadingWidth: { width: "52%", minWidth: 360, maxWidth: 520 },
+  formDesktop: { flexGrow: 0, flexShrink: 0, flexBasis: "36%", minWidth: 400, paddingHorizontal: spacing.xxl },
   featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { opacity: 0.65 },
   story: { width: "52%", minHeight: 760, backgroundColor: colors.paper, overflow: "hidden" }, storyCompact: { width: "100%", minHeight: 310 }, storyImage: { position: "absolute", width: "100%", height: "100%", opacity: 0.55 }, storyContent: { flex: 1, paddingHorizontal: spacing.hero, paddingVertical: spacing.xxl, justifyContent: "center", gap: spacing.md }, storyLogo: { width: 190, height: 60, alignSelf: "flex-start" }, storyEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.small, fontWeight: "800" }, storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.hero, lineHeight: 48, fontWeight: "800", maxWidth: 600 }, storyTitleCompact: { fontSize: typeScale.heading, lineHeight: 38 }, storyLead: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 26, maxWidth: 570 }, features: { marginTop: spacing.lg, gap: spacing.lg }, feature: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },

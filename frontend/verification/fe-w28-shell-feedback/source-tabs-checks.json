@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-02T10:30:51.805Z",
+  "scope": "Synthetic frontend only; no API/model calls or device acceptance",
+  "passed": [
+    "sources 1440: one named tab strip, no duplicate list, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal overflow/scroll, immediate own-panel footnote jump including 1800px extended reply without reduced-motion preference, offscreen source focus/location, preserved draft",
+    "sources 1024: one named tab strip, no duplicate list, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal overflow/scroll, immediate own-panel footnote jump including 1800px extended reply without reduced-motion preference, offscreen source focus/location, preserved draft",
+    "sources 390: one named tab strip, no duplicate list, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal overflow/scroll, immediate own-panel footnote jump including 1800px extended reply without reduced-motion preference, offscreen source focus/location, preserved draft, enlarged text",
+    "sources 320: one named tab strip, no duplicate list, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal overflow/scroll, immediate own-panel footnote jump including 1800px extended reply without reduced-motion preference, offscreen source focus/location, preserved draft, enlarged text"
+  ],
+  "failures": []
+}

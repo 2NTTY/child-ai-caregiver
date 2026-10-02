@@ -1,0 +1,511 @@
+{
+  "at": "2026-10-02T08:44:06.126Z",
+  "scope": "Synthetic local UI; route/session-boundary lifecycle, child selector and targeted reflow only. No real authentication, API, model, notification or native device acceptance.",
+  "passed": [
+    "649: reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return, breakpoint remount",
+    "390: reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return",
+    "320: reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return, 150% text",
+    "390-reduced: reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return",
+    "Early route departure consumes the first entry; returning stays docked past the old timer. A fresh dashboard preview boundary allows one new introduction; no actual login was performed.",
+    "Clicking during the transition settles to the docked layout without a reset or replay.",
+    "1440: shared toolbar picker proportions, keyboard dialog and desktop-to-mobile without replay",
+    "1024: shared toolbar picker proportions, keyboard dialog and desktop-to-mobile without replay"
+  ],
+  "metrics": [
+    {
+      "width": 649,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 617,
+        "height": 98
+      },
+      "docked": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 382.53125,
+          "height": 72,
+          "top": 149,
+          "right": 398.53125,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "0"
+      },
+      "opened": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 382.53125,
+          "height": 72,
+          "top": 149,
+          "right": 398.53125,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "0"
+      }
+    },
+    {
+      "width": 390,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 358,
+        "height": 98
+      },
+      "docked": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 221.953125,
+          "height": 72,
+          "top": 149,
+          "right": 237.953125,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "0"
+      },
+      "opened": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 221.953125,
+          "height": 72,
+          "top": 149,
+          "right": 237.953125,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "0"
+      }
+    },
+    {
+      "width": 320,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 288,
+        "height": 98
+      },
+      "docked": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 178.546875,
+          "height": 72,
+          "top": 149,
+          "right": 194.546875,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "0"
+      },
+      "opened": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 178.546875,
+          "height": 72,
+          "top": 149,
+          "right": 194.546875,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "0"
+      }
+    },
+    {
+      "width": 390,
+      "reduced": true,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 358,
+        "height": 98
+      },
+      "docked": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 221.953125,
+          "height": 72,
+          "top": 149,
+          "right": 237.953125,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "0"
+      },
+      "opened": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 221.953125,
+          "height": 72,
+          "top": 149,
+          "right": 237.953125,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "0"
+      }
+    }
+  ],
+  "failures": [],
+  "transitionSupplement": {
+    "at": "2026-10-02T08:59:14.155Z",
+    "beforeClickOpacity": 0.999421,
+    "action": "Forced pointer click bypasses Playwright stability waiting; after dismissal the docked geometry remains unchanged past five seconds.",
+    "failures": []
+  }
+}

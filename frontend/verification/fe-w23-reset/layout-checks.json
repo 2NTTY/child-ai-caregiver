@@ -1,0 +1,145 @@
+{
+  "at": "2026-10-01T17:42:51.539Z",
+  "scope": "Restored synthetic frontend login layout; approximate fingertip landmark used only for visual geometry",
+  "passed": [
+    {
+      "width": 2206,
+      "height": 1252,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 1411.828125,
+        "height": 1252
+      },
+      "form": {
+        "x": 1411.828125,
+        "y": 0,
+        "width": 794.15625,
+        "height": 1252
+      },
+      "picture": {
+        "x": -771.953125,
+        "y": 0,
+        "width": 2224.59375,
+        "height": 1252
+      },
+      "fingerSpace": 174.7282819976076
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 921.59375,
+        "height": 900
+      },
+      "form": {
+        "x": 921.59375,
+        "y": 0,
+        "width": 518.390625,
+        "height": 900
+      },
+      "picture": {
+        "x": -643.28125,
+        "y": 0,
+        "width": 1599.140625,
+        "height": 900
+      },
+      "fingerSpace": 120.67503364234449
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 624,
+        "height": 805
+      },
+      "form": {
+        "x": 624,
+        "y": 0,
+        "width": 400,
+        "height": 805
+      },
+      "picture": {
+        "x": -766.03125,
+        "y": 0,
+        "width": 1430.34375,
+        "height": 805
+      },
+      "fingerSpace": 98.2734375
+    },
+    {
+      "width": 900,
+      "height": 800,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 500,
+        "height": 805
+      },
+      "form": {
+        "x": 500,
+        "y": 0,
+        "width": 400,
+        "height": 805
+      },
+      "picture": {
+        "x": -883.828125,
+        "y": 0,
+        "width": 1430.34375,
+        "height": 805
+      },
+      "fingerSpace": 92.0703125
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 310
+      },
+      "form": {
+        "x": 0,
+        "y": 310,
+        "width": 390,
+        "height": 809
+      },
+      "picture": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 310
+      },
+      "fingerSpace": null
+    },
+    {
+      "width": 320,
+      "height": 720,
+      "story": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 333
+      },
+      "form": {
+        "x": 0,
+        "y": 333,
+        "width": 320,
+        "height": 851
+      },
+      "picture": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 333
+      },
+      "fingerSpace": null
+    }
+  ],
+  "failures": []
+}

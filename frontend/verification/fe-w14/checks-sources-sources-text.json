@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-09-30T21:30:31.032Z",
+  "passed": [
+    "sources: four widths, raw/private save and dates, explicit fetch/excerpt/candidate/reference, child-fact/shared double consent, deletion scope, receipt/direct unknown and original retry, version/draft/access/scope/offline isolation, shared photo fields",
+    "sources text: 390/320 synthetic 150% Web text and shared record form reflow; not Android system font acceptance"
+  ],
+  "failures": []
+}

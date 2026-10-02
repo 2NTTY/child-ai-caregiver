@@ -1,3 +1,4 @@
+import { brand } from "../../branding";
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
@@ -10,7 +11,7 @@ import { CareRecordDetail } from "./CareRecordDetail";
 import { CareRecordForm } from "./CareRecordForm";
 import { CareRecordDelete } from "./CareRecordDelete";
 
-export function CareRecordsView({ model, actions, previewControls }: { model: CareRecordsViewModel; actions: CareRecordsActions; previewControls?: ReactNode }) {
+export function CareRecordsView({ model, actions, previewControls, onPhotos }: { model: CareRecordsViewModel; actions: CareRecordsActions; previewControls?: ReactNode; onPhotos?: () => void }) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<CareFilter>("all");
   const [width, setWidth] = useState(0);
@@ -20,9 +21,9 @@ export function CareRecordsView({ model, actions, previewControls }: { model: Ca
   const showPanel = !!(model.detail || model.draft || model.deletion);
   const split = width >= 780;
   const search = () => actions.search(query, kind);
-  return <PageFrame title="照顧記錄" description="保留日常觀察的原文與來源；事件時間、加入時間及更正版本分開顯示。" eyebrow="育伴港 · 孩子資料">
+  return <PageFrame title="照顧記錄" description="保留日常觀察的原文與來源；事件時間、加入時間及更正版本分開顯示。" eyebrow={`${brand.name} · 孩子資料`}>
     <View style={styles.context}><View style={styles.contextCopy}><Text style={styles.title}>{model.child.name}的記錄</Text><Text style={styles.body}>{model.child.summary}</Text></View>
-      <AppButton label="新增記錄" onPress={actions.startCreate} disabled={model.access !== "editable" || occupied || loading} /></View>
+      <View style={styles.actions}>{onPhotos ? <AppButton label="照片與記錄" variant="secondary" onPress={onPhotos} disabled={occupied || loading} /> : null}<AppButton label="新增記錄" onPress={actions.startCreate} disabled={model.access !== "editable" || occupied || loading} /></View></View>
     <Text style={styles.meta}>{model.dataLabel}</Text>
     {!model.online ? <View style={styles.notice}><Text style={styles.noticeText}>目前離線。已載入資料可能不是最新；本次草稿保留，恢復連線後由你重試。</Text></View> : null}
     {model.access === "read_only" ? <View style={styles.notice}><Text style={styles.noticeText}>你是檢視者，可閱讀記錄及歷史；新增、更正及刪除須由擁有人或照顧者處理。</Text></View> : null}

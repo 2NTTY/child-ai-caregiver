@@ -18,7 +18,7 @@ export async function verifyDesign(browser, failures, directory) {
       const style = getComputedStyle(element);
       return { color: style.backgroundColor, radius: parseFloat(style.borderTopLeftRadius), width: element.getBoundingClientRect().width };
     });
-    assert.equal(visual.color, "rgb(255, 255, 255)", "Branded dialog surface at " + width);
+    assert.equal(visual.color, "rgb(255, 255, 254)", "Branded dialog surface at " + width);
     assert.ok(visual.radius >= 12 && visual.radius <= 24, "Card-like dialog corners at " + width);
     assert.ok(visual.width <= width - 16, "Dialog fits viewport at " + width);
     await page.keyboard.press("Escape");

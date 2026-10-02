@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { HelperText, Portal, Text, TextInput } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { DatePickerModal, TimePicker, TimePickerModal, registerTranslation, zhTW } from "react-native-paper-dates";

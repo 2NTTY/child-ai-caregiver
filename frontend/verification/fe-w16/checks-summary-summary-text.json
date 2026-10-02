@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-09-30T23:46:11.503Z",
+  "passed": [
+    "summary: four widths/navigation, period and source versions, stable dynamic fields, contract-normalized review and explicit sharing, original receipt/confirmed-unread recovery, stale basis/appointment review, limits and offline/identity/Server/child/access cleanup; no API calls",
+    "summary text: 390/320 synthetic 150% Web text, stable dynamic fields and shared multiline label/control reflow; not native font acceptance"
+  ],
+  "failures": []
+}

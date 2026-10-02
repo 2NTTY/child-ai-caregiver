@@ -1,6 +1,10 @@
-import { useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { brand } from "../branding";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { AccessibilityInfo, Animated, Easing, Image, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
+import { HomeBackground } from "./appearance/HomeBackground";
 import { AppIcon } from "./AppIcon";
 import type { HomeActions, HomeViewModel } from "../view-model";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing } from "../theme";
@@ -8,72 +12,98 @@ import { AppButton, OperationPill, SectionCard, SectionHeader, TextLink } from "
 import { ChildPicker } from "./ChildPicker";
 import { previewChecklist } from "../preview/fixture";
 
-const questions = ["整理最近的睡眠", "記錄孩子的飲食", "下次檢查的問題"];
 const quickActions = [
   { kind: "note", label: "記錄情況", hint: "日常觀察", icon: "notebook-outline" },
-  { kind: "sleep", label: "記錄睡眠", hint: "時間原文", icon: "weather-night" },
+  { kind: "photos", label: "照片記錄", hint: "原圖及草稿", icon: "image-outline" },
   { kind: "measurement", label: "身高體重", hint: "約數及單位", icon: "chart-bar" },
-  { kind: "feeding", label: "飲食記錄", hint: "份量與來源", icon: "silverware-fork-knife" },
+  { kind: "sleep", label: "記錄睡眠", hint: "時間原文", icon: "weather-night" },
 ] as const;
 
-export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; actions: HomeActions }) {
+export function MobileHomeDashboard({ model, actions, introductionPending = false }: { model: HomeViewModel; actions: HomeActions; introductionPending?: boolean }) {
   const child = model.children.find(item => item.id === model.selectedChildId);
   const records = model.records.filter(item => item.childId === child?.id);
   const checklist = previewChecklist.filter(item => item.childId === child?.id);
   const guide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   const state = model.operation.state;
-  const viewportWidth = useWindowDimensions().width;
-  const [quickWidth, setQuickWidth] = useState(0);
-  const [childWidth, setChildWidth] = useState(0);
-  const fourQuickColumns = quickWidth >= 290;
-  const shortSwitch = childWidth ? childWidth < 300 : viewportWidth < 360;
-  const splitAge = Boolean(child?.ageSummaryLabel && child?.ageReferenceLabel);
+  const { width: windowWidth } = useWindowDimensions();
+  const [quickWidth, setQuickWidth] = useState<number | null>(null);
+  const initialQuickWidth = Math.max(0, Math.min(windowWidth, mobileLayout.breakpoint) - 2 * mobileLayout.pageInset - 2 * mobileLayout.cardInset - 2);
+  const fourQuickColumns = (quickWidth ?? initialQuickWidth) >= 290;
+  const playIntroduction = useRef(introductionPending && Boolean(child)).current;
+  const intro = useRef(new Animated.Value(playIntroduction ? 0 : 1)).current;
+  const transitionStarted = useRef(false);
+  const [greetingHeight, setGreetingHeight] = useState(168);
+  const [childHeight, setChildHeight] = useState(98);
+  const [docked, setDocked] = useState(!playIntroduction);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState<boolean | null>(null);
+  const hasChild = Boolean(child);
+  useEffect(() => {
+    let active = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(value => { if (active) setReducedMotion(value); }, () => { if (active) setReducedMotion(true); });
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReducedMotion);
+    return () => { active = false; subscription?.remove(); };
+  }, []);
+  useFocusEffect(useCallback(() => () => {
+    intro.stopAnimation();
+    intro.setValue(1);
+    setDocked(true);
+  }, [intro]));
+  useFocusEffect(useCallback(() => {
+    if (!hasChild || docked || pickerOpen || reducedMotion === null) return;
+    const timer = setTimeout(() => {
+      transitionStarted.current = true;
+      if (reducedMotion) { intro.setValue(1); setDocked(true); return; }
+      Animated.timing(intro, { toValue: 1, duration: 360, easing: Easing.inOut(Easing.cubic), useNativeDriver: false })
+        .start(({ finished }) => { if (finished) setDocked(true); });
+    }, 3000);
+    return () => { clearTimeout(timer); intro.stopAnimation(); };
+  }, [hasChild, docked, pickerOpen, reducedMotion, intro]));
+  function handlePickerOpen(open: boolean) {
+    setPickerOpen(open);
+    if (open && transitionStarted.current && !docked) {
+      intro.stopAnimation();
+      intro.setValue(1);
+      setDocked(true);
+    }
+  }
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-    <View style={styles.greeting}>
-      <View style={styles.greetingTop}>
+    <View testID="mobile-home-header" style={[styles.homeHeader, { minHeight: greetingHeight }]}>
+      <View pointerEvents="none" style={[styles.artwork, { height: greetingHeight }]}><HomeBackground surface={colors.canvas} fadeBottom fitIllustration /></View>
+      <Animated.View testID="mobile-home-greeting" pointerEvents="none" accessibilityElementsHidden={hasChild && docked} aria-hidden={hasChild && docked}
+        onLayout={event => setGreetingHeight(event.nativeEvent.layout.height)}
+        style={[styles.greeting, { minHeight: greetingHeight, opacity: hasChild ? intro.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0, 0] }) : 1 }]}>
+      {!hasChild || !docked ? <View style={styles.greetingCopy}>
         <Text accessibilityRole="header" style={styles.heading}>你好，{model.caregiverName}！</Text>
-        <View aria-hidden importantForAccessibility="no-hide-descendants" style={styles.sprout}><AppIcon name="sprout" size={mobileIcons.primary} color={colors.teal} /></View>
-      </View>
-      <Text style={styles.subtitle}>{child ? `一起整理${child.displayName}的照顧日常。` : "先把基本資料整理好，再開始記錄。"}</Text>
-      <Text style={styles.motto}>每個小日常，都值得好好記下。</Text>
+        <Text style={styles.subtitle}>{child ? `一起整理${child.displayName}的照顧日常。` : "先把基本資料整理好，再開始記錄。"}</Text>
+        <Text style={styles.motto}>每個小日常，都值得好好記下。</Text>
+      </View> : null}
+      </Animated.View>
+      {child ? <Animated.View testID="mobile-child-card" onLayout={docked ? undefined : event => setChildHeight(event.nativeEvent.layout.height)}
+        style={[styles.childCard, docked ? styles.dockedChildCard : {
+          width: intro.interpolate({ inputRange: [0, 1], outputRange: ["100%", "62%"] }),
+          marginTop: intro.interpolate({ inputRange: [0, 1], outputRange: [mobileLayout.sectionGap, -(greetingHeight + childHeight) / 2] }),
+          padding: intro.interpolate({ inputRange: [0, 1], outputRange: [spacing.md, 0] }),
+          borderWidth: intro.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+          backgroundColor: intro.interpolate({ inputRange: [0, 1], outputRange: [colors.white, "rgba(255,255,255,0)"] }),
+        }]}>
+        <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} homeIdentity homeDocked={docked}
+          homeTransition={docked ? undefined : intro} loading={model.profileLoad === "loading"} onOpenChange={handlePickerOpen} />
+        {!child.profileConfirmed ? <Text style={styles.meta}>檔案待核對</Text> : null}
+      </Animated.View> : null}
     </View>
 
-    <SectionCard testID="mobile-child-card">
-      {child ? <>
-        <View style={styles.childCardRow} onLayout={event => setChildWidth(event.nativeEvent.layout.width)}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的孩子檔案`} onPress={() => actions.open("profile")} style={({ pressed }) => [styles.identity, pressed && styles.pressed]}>
-            <View style={styles.avatar}><Text style={styles.initial}>{child.displayName.slice(0, 1)}</Text></View>
-            <View style={styles.childCopy}>
-              <View style={styles.nameRow}><Text style={styles.childName}>{child.displayName}</Text><AppIcon name="chevron-right" size={mobileIcons.inline} /></View>
-              <Text style={styles.age}>{model.profileLoad === "loading" ? "正在讀取…" : splitAge ? child.ageSummaryLabel : child.ageLabel}</Text>
-            </View>
-          </Pressable>
-          <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} switchOnly shortSwitchLabel={shortSwitch} />
-        </View>
-        {model.profileLoad !== "loading" ? <View style={styles.childMeta}>
-          {splitAge ? <Text style={styles.meta}>{child.ageReferenceLabel}</Text> : null}
-          <Text style={styles.meta}>{child.regionLabel} · {child.profileConfirmed ? "檔案已確認" : "待核對"}</Text>
-        </View> : null}
-      </> : <>
+    {!child ? <SectionCard testID="mobile-child-card">
         <Text style={styles.title}>先建立第一位孩子的檔案</Text>
         <Text style={styles.body}>只填已知資料；未知及約數都可以如實保留。</Text>
         <AppButton label="查看子女檔案" onPress={() => actions.open("profile")} />
-      </>}
-    </SectionCard>
+    </SectionCard> : null}
 
     {guide ? <SectionCard>
       <SectionHeader title="先完成基本設定" subtitle="檢查孩子、記錄及家庭偏好，再進行對話。" />
       <AppButton label="前往使用引導" onPress={() => actions.open("guide")} />
-    </SectionCard> : <Pressable accessibilityRole="button" accessibilityLabel="進行對話" onPress={() => actions.open("chat")} style={({ pressed }) => [styles.ask, pressed && styles.pressed]}>
-      <AppIcon name="magnify" size={mobileIcons.content} color={colors.muted} /><Text style={styles.askText}>問我關於孩子的問題…</Text>
-      <View style={styles.send}><AppIcon name="send" size={mobileIcons.content} color={colors.white} /></View>
-    </Pressable>}
-    {child && !guide ? <View style={styles.suggestions}>
-      {questions.map(question => <Pressable key={question} accessibilityRole="button" accessibilityLabel={`準備問題：${question}`} onPress={() => actions.prepareQuestion(question)} style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}>
-        <Text style={styles.suggestionText}>{question}</Text>
-      </Pressable>)}
-    </View> : null}
+    </SectionCard> : null}
 
     <SectionCard style={styles.focus}>
       <SectionHeader title="今日重點" icon="star-four-points" action={<TextLink label="查看記錄" onPress={() => actions.open("care")} />} />
@@ -101,7 +131,7 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
     <SectionCard>
       <SectionHeader title="快速記錄" icon="pencil" />
       <View testID="mobile-quick-actions" style={styles.quickGrid} onLayout={event => setQuickWidth(event.nativeEvent.layout.width)}>
-        {quickActions.map(item => <Pressable key={item.kind} accessibilityRole="button" accessibilityLabel={`快速${item.label}`} disabled={!child} onPress={() => actions.composeCare(item.kind)} style={({ pressed }) => [styles.quick, fourQuickColumns && styles.fourColumns, !child && styles.disabled, pressed && styles.pressed]}>
+        {quickActions.map(item => <Pressable key={item.kind} accessibilityRole="button" accessibilityLabel={`快速${item.label}`} disabled={!child} onPress={() => item.kind === "photos" ? actions.open("photos") : actions.composeCare(item.kind)} style={({ pressed }) => [styles.quick, fourQuickColumns && styles.fourColumns, !child && styles.disabled, pressed && styles.pressed]}>
           <AppIcon name={item.icon} size={mobileIcons.content} color={colors.teal} /><Text style={styles.quickLabel}>{item.label}</Text><Text style={styles.quickHint}>{item.hint}</Text>
         </Pressable>)}
       </View>
@@ -110,7 +140,7 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
     <SectionCard>
       <SectionHeader title="記憶與話題" icon="book-open-page-variant-outline" action={<TextLink label="查看更多" onPress={() => actions.open("memory")} />} />
       <View style={styles.memoryRow}>
-        <Image source={require("../../assets/images/assistant.png")} resizeMode="contain" style={styles.assistant} accessibilityLabel="育伴港助手插畫" />
+        <Image source={require("../../assets/images/assistant.png")} resizeMode="contain" style={styles.assistant} accessibilityLabel={`${brand.name}助手插畫`} />
         <View style={styles.copy}><Text style={styles.title}>把待核對的內容整理在一起</Text><Text style={styles.body}>候選先核對，已確認資料保留來源；私人聊天和家庭共享分開處理。</Text></View>
       </View>
     </SectionCard>
@@ -121,31 +151,19 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.canvas },
   page: { padding: mobileLayout.pageInset, gap: mobileLayout.sectionGap, width: "100%", maxWidth: mobileLayout.breakpoint, alignSelf: "center" },
-  greeting: { paddingVertical: spacing.xs, gap: spacing.xs },
-  greetingTop: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.heading, fontWeight: "800", flex: 1 },
+  homeHeader: { position: "relative", marginTop: -mobileLayout.pageInset },
+  artwork: { position: "absolute", top: 0, left: -mobileLayout.pageInset, right: -mobileLayout.pageInset },
+  greeting: { minHeight: 168, paddingVertical: spacing.lg, justifyContent: "center" },
+  childCard: { borderRadius: radius.large, borderColor: colors.softLine, gap: spacing.xs },
+  dockedChildCard: { position: "absolute", left: 0, top: 0, bottom: 0, width: "62%", justifyContent: "center" },
+  greetingCopy: { width: "60%", minWidth: 0, gap: spacing.xs },
+  heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.heading, fontWeight: "800" },
   subtitle: { fontFamily: chineseFont, color: colors.ink, ...mobileType.body },
   motto: { fontFamily: chineseFont, color: colors.teal, ...mobileType.caption },
-  sprout: { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
-  childCardRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  identity: { flex: 1, minWidth: 0, minHeight: mobileLayout.touchTarget, flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  avatar: { width: mobileLayout.childAvatar, height: mobileLayout.childAvatar, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
-  initial: { color: colors.deepTeal, fontFamily: chineseFont, ...mobileType.sectionTitle, fontWeight: "700" },
-  childCopy: { flex: 1, minWidth: 0 },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  childName: { fontFamily: chineseFont, ...mobileType.sectionTitle, fontWeight: "800", color: colors.ink, flexShrink: 1 },
-  age: { fontFamily: chineseFont, color: colors.muted, ...mobileType.label },
-  childMeta: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.sm, rowGap: spacing.xs },
   copy: { flex: 1, minWidth: 0, gap: spacing.xs },
   title: { fontFamily: chineseFont, color: colors.ink, ...mobileType.itemTitle, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.muted, ...mobileType.body },
   meta: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption },
-  suggestions: { flexDirection: "row", gap: spacing.sm },
-  suggestion: { flex: 1, minWidth: 0, minHeight: mobileLayout.touchTarget, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, backgroundColor: colors.white, borderRadius: radius.pill, justifyContent: "center" },
-  suggestionText: { fontFamily: chineseFont, color: colors.deepTeal, ...mobileType.label, textAlign: "center" },
-  ask: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.sm, borderWidth: 1, borderColor: colors.line, borderRadius: radius.pill, backgroundColor: colors.white, minHeight: mobileLayout.askMinHeight },
-  askText: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.muted, ...mobileType.body },
-  send: { width: 40, height: 40, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", backgroundColor: colors.teal },
   focus: { backgroundColor: colors.paleTeal },
   focusInner: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, backgroundColor: colors.white, borderRadius: radius.small, padding: spacing.md },
   focusIcon: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },

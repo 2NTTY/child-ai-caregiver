@@ -1,0 +1,103 @@
+{
+  "at": "2026-10-02T07:57:36.318Z",
+  "scope": "Synthetic frontend only; no API/model calls or native device acceptance",
+  "passed": [
+    "home 1440: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+    "home 1024: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+    "home 649: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+    "home 650: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+    "home 390: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+    "home 320: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+    "login 390: compact transparent overlay sizing with unchanged form layout",
+    "login 320: compact transparent overlay sizing with unchanged form layout"
+  ],
+  "metrics": [
+    {
+      "width": 1440,
+      "bars": [
+        {
+          "size": 10,
+          "position": "absolute",
+          "track": "rgba(0, 0, 0, 0)",
+          "thumb": 10,
+          "viewportWidth": 910,
+          "hostWidth": 910
+        },
+        {
+          "size": 10,
+          "position": "absolute",
+          "track": "rgba(0, 0, 0, 0)",
+          "thumb": 10,
+          "viewportWidth": 309,
+          "hostWidth": 309
+        }
+      ]
+    },
+    {
+      "width": 1024,
+      "bars": [
+        {
+          "size": 10,
+          "position": "absolute",
+          "track": "rgba(0, 0, 0, 0)",
+          "thumb": 10,
+          "viewportWidth": 804,
+          "hostWidth": 804
+        }
+      ]
+    },
+    {
+      "width": 649,
+      "bars": [
+        {
+          "size": 6,
+          "position": "absolute",
+          "track": "rgba(0, 0, 0, 0)",
+          "thumb": 4,
+          "viewportWidth": 649,
+          "hostWidth": 649
+        }
+      ]
+    },
+    {
+      "width": 650,
+      "bars": [
+        {
+          "size": 10,
+          "position": "absolute",
+          "track": "rgba(0, 0, 0, 0)",
+          "thumb": 10,
+          "viewportWidth": 650,
+          "hostWidth": 650
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "bars": [
+        {
+          "size": 6,
+          "position": "absolute",
+          "track": "rgba(0, 0, 0, 0)",
+          "thumb": 4,
+          "viewportWidth": 390,
+          "hostWidth": 390
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "bars": [
+        {
+          "size": 6,
+          "position": "absolute",
+          "track": "rgba(0, 0, 0, 0)",
+          "thumb": 4,
+          "viewportWidth": 320,
+          "hostWidth": 320
+        }
+      ]
+    }
+  ],
+  "failures": []
+}

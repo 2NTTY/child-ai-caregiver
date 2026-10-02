@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "expo-router";
 import { createPreviewModel, previewChecklist, type PreviewScenario } from "./fixture";
 import type { GuideStatus, HomeActions, HomeChild, HomeDestination, HomeViewModel } from "../view-model";
@@ -8,6 +8,8 @@ type PreviewContextValue = {
   scenario: PreviewScenario;
   setScenario: (scenario: PreviewScenario) => void;
   actions: HomeActions;
+  homeIntroductionPending: boolean;
+  markHomeIntroductionPresented: () => void;
   notice: string | null;
   dismissNotice: () => void;
   chatDraft: string;
@@ -18,8 +20,8 @@ type PreviewContextValue = {
 
 const PreviewContext = createContext<PreviewContextValue | null>(null);
 
-const routes: Record<HomeDestination, "/chat" | "/care" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks"> = {
-  chat: "/chat", care: "/care", profile: "/profile", family: "/family", memory: "/memory", settings: "/settings", guide: "/guide", tasks: "/tasks",
+const routes: Record<HomeDestination, "/chat" | "/care" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks" | "/photos" | "/sources" | "/growth" | "/summary" | "/contact"> = {
+  chat: "/chat", care: "/care", profile: "/profile", family: "/family", memory: "/memory", settings: "/settings", guide: "/guide", tasks: "/tasks", photos: "/photos", sources: "/sources", growth: "/growth", summary: "/summary", contact: "/contact",
 };
 
 export function PreviewProvider({ children }: { children: ReactNode }) {
@@ -27,6 +29,9 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const [scenario, setScenarioState] = useState<PreviewScenario>("normal");
   const [guideStatus, setGuideStatus] = useState<GuideStatus>("complete");
   const [selectedChildId, setSelectedChildId] = useState("preview-child-1");
+  const [homeIntroductionPending, setHomeIntroductionPending] = useState(true);
+  // The dashboard provider is the synthetic session boundary, not a route or child boundary.
+  const markHomeIntroductionPresented = useCallback(() => setHomeIntroductionPending(false), []);
   const [notice, setNotice] = useState<string | null>(null);
   const [createdChildren, setCreatedChildren] = useState<HomeChild[]>([]);
   const [deletedChildren, setDeletedChildren] = useState<string[]>([]);
@@ -108,7 +113,8 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   }
 
   return <PreviewContext.Provider value={{
-    model, scenario, setScenario, actions, notice, dismissNotice: () => setNotice(null),
+    model, scenario, setScenario, actions, homeIntroductionPending, markHomeIntroductionPresented,
+    notice, dismissNotice: () => setNotice(null),
     chatDraft: chatDrafts[draftKey] ?? "",
     setChatDraft: value => setChatDrafts(previous => ({ ...previous, [draftKey]: value })),
     checkedPreviewItems,

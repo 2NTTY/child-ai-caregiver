@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-09-30T22:47:20.531Z",
+  "passed": [
+    "growth: four sizes and navigation, acknowledgement/task consent, explicit snooze, finite context/private draft, topic terminal preservation, frozen unknown/version/missing target, unavailable source/linked task/fact conflict, offline and identity/Server/child/access cleanup; no API calls",
+    "growth text: 390/320 synthetic 150% Web text, floating label and shared controls reflow; not Android system font acceptance"
+  ],
+  "failures": []
+}

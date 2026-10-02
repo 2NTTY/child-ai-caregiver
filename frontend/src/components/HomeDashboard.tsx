@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { brand } from "../branding";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView } from "react-native";
+import { AppScrollView as ScrollView } from "./AppScrollView";
 import { ActivityIndicator, Divider, Text } from "react-native-paper";
 import { AppButton, AppTextField, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import type { HomeActions, HomeRecord, HomeViewModel } from "../view-model";
 import { MobileHomeDashboard } from "./MobileHomeDashboard";
 import { AppIcon, type AppIconName } from "./AppIcon";
+import { HomeBackground } from "./appearance/HomeBackground";
 
-const harbourArt = require("../../assets/images/harbour-family-hero.png");
 const recordIcons: Record<HomeRecord["kind"], AppIconName> = { sleep: "weather-night", feeding: "silverware-fork-knife", measurement: "chart-bar", note: "notebook-outline", appointment: "calendar-outline" };
 
 function DashboardLink({ icon, title, detail, onPress }: { icon: AppIconName; title: string; detail: string; onPress: () => void }) {
@@ -70,22 +72,31 @@ function RecentRecords({ model, actions }: { model: HomeViewModel; actions: Home
   </SectionCard>;
 }
 
-export function HomeDashboard({ model, actions }: { model: HomeViewModel; actions: HomeActions }) {
+export function HomeDashboard({ model, actions, introductionPending = false, onIntroductionPresented }: {
+  model: HomeViewModel; actions: HomeActions; introductionPending?: boolean; onIntroductionPresented?: () => void;
+}) {
   const { width: windowWidth } = useWindowDimensions();
+  const scrollRef = useRef<NativeScrollView | null>(null);
   const [width, setWidth] = useState(900);
   const stacked = Math.min(width, windowWidth) < 760;
+  useLayoutEffect(() => {
+    if (Platform.OS !== "web" || windowWidth < 650) return;
+    const viewport = (scrollRef.current as (NativeScrollView & { getScrollableNode(): HTMLElement }) | null)?.getScrollableNode();
+    if (viewport) setWidth(viewport.clientWidth);
+  }, [windowWidth]);
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
-  if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} />;
-  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-    <View style={[styles.introCard, stacked && styles.introStack]}>
-      <View style={styles.introText}><Text style={styles.eyebrow}>育伴港 · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
-      <Image source={harbourArt} resizeMode="cover" accessibilityLabel="照顧者與孩子在香港海旁同行" style={[styles.introArt, stacked && styles.introArtStack]} />
+  useEffect(() => { if (introductionPending) onIntroductionPresented?.(); }, [introductionPending, onIntroductionPresented]);
+  if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} introductionPending={introductionPending} />;
+  return <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+    <View testID="desktop-home-banner" style={[styles.introCard, stacked && styles.introStack]}>
+      <HomeBackground surface={colors.paper} protectFullWidth={stacked} wideIllustration />
+      <View style={[styles.introText, stacked && styles.introTextWide]}><Text style={styles.eyebrow}>{brand.name} · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} variant="accent" onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
     </View>
-    <View style={[styles.grid, stacked && styles.gridStack]}>
-      <View style={styles.column}><DataOverview model={model} actions={actions} /><RecentRecords model={model} actions={actions} /></View>
-      <View style={styles.column}><Highlight model={model} actions={actions} /><SectionCard><SectionHeader title="常用入口" subtitle="從已掌握的資料繼續。" /><DashboardLink icon="message-text-outline" title="基本聊天" detail="整理需要討論的問題" onPress={() => actions.open("chat")} /><DashboardLink icon="notebook-outline" title="照顧記錄" detail="查看已確認的內容" onPress={() => actions.open("care")} /><DashboardLink icon="account-group-outline" title="家庭協調" detail="查看成員與共享範圍" onPress={() => actions.open("family")} /></SectionCard></View>
+    <View testID="desktop-home-grid" style={[styles.grid, stacked && styles.gridStack]}>
+      <View testID="home-records-column" style={[styles.column, stacked && styles.stackedColumn]}><DataOverview model={model} actions={actions} /><RecentRecords model={model} actions={actions} /></View>
+      <View testID="home-actions-column" style={[styles.column, stacked && styles.stackedColumn]}><Highlight model={model} actions={actions} /><SectionCard><SectionHeader title="常用入口" subtitle="從已掌握的資料繼續。" /><DashboardLink icon="message-text-outline" title="基本聊天" detail="整理需要討論的問題" onPress={() => actions.open("chat")} /><DashboardLink icon="notebook-outline" title="照顧記錄" detail="查看已確認的內容" onPress={() => actions.open("care")} /><DashboardLink icon="account-group-outline" title="家庭協調" detail="查看成員與共享範圍" onPress={() => actions.open("family")} /></SectionCard></View>
     </View>
-    <Text style={styles.footer}>育伴港 · 用資料陪伴成長</Text>
+    <Text style={styles.footer}>{brand.name} · 用資料陪伴成長</Text>
   </ScrollView>;
 }
 
@@ -93,15 +104,16 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 }, page: { width: "100%", maxWidth: 1260, alignSelf: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xl, gap: spacing.lg },
   pressed: { opacity: 0.68 },
   introCard: { minHeight: 235, backgroundColor: colors.paper, borderRadius: radius.large, overflow: "hidden", flexDirection: "row", borderWidth: 1, borderColor: colors.softLine },
-  introStack: { flexDirection: "column-reverse" },
-  introText: { flex: 1, minWidth: 0, padding: spacing.xl, justifyContent: "center", gap: spacing.md },
-  introArt: { width: "38%", height: 235, minHeight: 235 }, introArtStack: { width: "100%", height: 135, minHeight: 135 },
+  introStack: { flexDirection: "column" },
+  introText: { width: "64%", minWidth: 0, padding: spacing.xl, justifyContent: "center", gap: spacing.md },
+  introTextWide: { width: "100%" },
   eyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, fontWeight: "800" },
   introTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, lineHeight: 37, fontWeight: "800" },
   body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
   actions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   actionsNarrow: { flexDirection: "column", alignItems: "stretch" },
   grid: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, gridStack: { flexDirection: "column" }, column: { flex: 1, minWidth: 0, width: "100%", gap: spacing.lg },
+  stackedColumn: { flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   highlightUnknown: { backgroundColor: colors.statusUnknown, borderColor: colors.statusUnknownLine }, highlightFailed: { backgroundColor: colors.paleCoral, borderColor: colors.statusFailedLine }, highlightConfirmation: { backgroundColor: colors.statusWarm, borderColor: colors.statusWarmLine },
   highlightTop: { flexDirection: "row", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" }, highlightTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 29, fontWeight: "800" },
   linkRow: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.sm, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.small },

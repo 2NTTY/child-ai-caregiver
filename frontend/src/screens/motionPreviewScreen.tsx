@@ -1,3 +1,4 @@
+import { brand } from "../branding";
 import { useEffect, useState } from "react";
 import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Switch, Text } from "react-native-paper";
@@ -135,7 +136,7 @@ export default function MotionPreviewScreen() {
   const narrow = Math.min(width, containerWidth) < 680;
   const current = optionDetails[option];
 
-  return <PageFrame title="動態方向比較" description="先選喜歡的節奏；這個比較頁只演示呈現方式，不改現有產品流程或資料狀態。" eyebrow="育伴港 · Web 動態預覽">
+  return <PageFrame title="動態方向比較" description="先選喜歡的節奏；這個比較頁只演示呈現方式，不改現有產品流程或資料狀態。" eyebrow={`${brand.name} · Web 動態預覽`}>
     <View style={styles.layout} onLayout={event => setContainerWidth(event.nativeEvent.layout.width)}>
       <SectionCard>
         <SectionHeader title="選擇節奏" subtitle="三款沿用同一套色彩、Paper 控制項與資料語義。" />

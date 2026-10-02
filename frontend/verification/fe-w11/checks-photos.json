@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-09-30T15:51:51.598Z",
+  "passed": [
+    "photos: four-width layout/targets; file integrity/replacement; raw drafts; conflict; same-operation retry; unknown extraction manual review; two-step deletion; offline/scope/read-only/revocation; mobile entry"
+  ],
+  "failures": []
+}

@@ -1,0 +1,25 @@
+{
+  "scope": "Synthetic Web only; logical pixels, not device acceptance",
+  "metrics": [
+    {
+      "width": 390,
+      "childCard": {
+        "width": 358,
+        "height": 90,
+        "y": 285
+      },
+      "quickHeight": 88,
+      "composerHeight": 219.59375
+    },
+    {
+      "width": 320,
+      "childCard": {
+        "width": 288,
+        "height": 90,
+        "y": 285
+      },
+      "quickHeight": 88,
+      "composerHeight": 219.59375
+    }
+  ]
+}

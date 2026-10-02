@@ -1,0 +1,196 @@
+{
+  "scope": "Direct camera in isolated Web Agent composer; no backend integration or real device acceptance",
+  "sourceCommit": "f541a2da0f97e2cf463f380d3f8449dad3525892",
+  "baselineCommit": "bed134271e70529a0d90878292daf2fc228fc885",
+  "authorityCommit": "ce87370b6375b25e45f016f2218d924b44f06f3c",
+  "authoritySources": [
+    {
+      "path": "docs/P2_UI_HANDOFF.md",
+      "githubBlob": "8124bf61b31ed402d5b3f1cd264079f931eeeac1"
+    },
+    {
+      "path": "docs/API.md",
+      "githubBlob": "69fd07e18f649e4862030001837662d5e2fdc19b"
+    },
+    {
+      "path": "src/shared/photos.ts",
+      "githubBlob": "8c0808ef91a7f82cab64228984dadc48b549e62a"
+    },
+    {
+      "path": "src/shared/shared-inputs.ts",
+      "githubBlob": "2ea4a6a123c4a9889c4a6a08aca6d0294ddbe9a1"
+    }
+  ],
+  "verifiedAt": "2026-10-01T10:09:31.328Z",
+  "sourceSnapshot": {
+    "files": [
+      {
+        "path": "frontend/src/components/agent/AgentComposer.tsx",
+        "sha256": "fc0cd48f31326793709528b010f15ee3fedc96bba46b627e1581a9631ac24c78",
+        "gitBlob": "dc9ce79d74b98ea895d50446059aaf1d3d4bcc14"
+      },
+      {
+        "path": "frontend/src/components/agent/AgentInputToolbar.tsx",
+        "sha256": "b5bf99b0930e057915d28462273e34f4efe18b5f5e54f6cd25fe43de76a6f554",
+        "gitBlob": "9c953362cf677adfa01f785e3d80fa584d008778"
+      },
+      {
+        "path": "frontend/src/components/photos/WebCameraCapture.web.tsx",
+        "sha256": "92b67cae3eae3c5de7ff72679d2c139fb349797cdb79300a50ce3720e9887d16",
+        "gitBlob": "d7af573417cde812d1fe61855e64974166780396"
+      },
+      {
+        "path": "frontend/src/components/photos/PhotoFilePicker.web.tsx",
+        "sha256": "1e7a780a570e3beae8b2bba81d5a3ac1bbc6e2ee4e0dcb904fddcd176b9ea5e2",
+        "gitBlob": "dd9cabb37bf2e57ae023a114ee85bbf744931db0"
+      },
+      {
+        "path": "frontend/src/components/photos/PhotoFilePicker.tsx",
+        "sha256": "d8851be813652afb0b1f51c45a24ab8e529927c393767a73601d438a6a6c9a8e",
+        "gitBlob": "fcd9168e4941d988d4caf9d9e7df6cc4d6877d0e"
+      },
+      {
+        "path": "frontend/src/screens/chatScreen.tsx",
+        "sha256": "f86db85c4631fb73f1f7587768089e0c3a9dc2fe9a9e61c969e4d58728b5cf28",
+        "gitBlob": "3679809045b31cdc639f3b6285c7ec6bec39191f"
+      },
+      {
+        "path": "frontend/src/photo-view-model.ts",
+        "sha256": "fdc883271ad04533dd2de1519439d15a78016a6f710095ab717f06f56c762a5f",
+        "gitBlob": "04609938e9ab966e6c19c4d5e9317c0bb9891354"
+      },
+      {
+        "path": "frontend/src/preview/PreviewContext.tsx",
+        "sha256": "216c8d9951b26cf484bea86820ca2955a6dfcff8e30dd8299dfa49d53e232a55",
+        "gitBlob": "dbebadd9b5c1f5b665c9c9a9b08e1a557666d707"
+      },
+      {
+        "path": "frontend/src/theme.ts",
+        "sha256": "6ce10cb0ef466a86193a1285fde3f7a29a07a46a1859501e5497e2e962dd23ed",
+        "gitBlob": "67a74a84fed21b661dcb24d8e954c6562d9b941f"
+      },
+      {
+        "path": "frontend/src/components/AppDialog.tsx",
+        "sha256": "bce79e176eaa4d62cef770c04c490b6a75e2bc198e8bc314287231f63776efb0",
+        "gitBlob": "a60de3e806c3fe6532365f65c8f356b6ab607e11"
+      },
+      {
+        "path": "frontend/src/components/ui.tsx",
+        "sha256": "1bd1613c2c51753d802dcdc279a6b9bed3ecc5a80f0d367801d5335a6a22dd0c",
+        "gitBlob": "21bf2ca98813a6d293f5c638fc1cb201aac68f66"
+      },
+      {
+        "path": "frontend/scripts/flows/composer-surfaces.mjs",
+        "sha256": "03a74e9df89de74846cf792ae5b3683e4c12017634868db6adf13aed569de527",
+        "gitBlob": "ec75b8b6ef2e0200e2d56a3019d293bea13035af"
+      },
+      {
+        "path": "frontend/scripts/flows/camera-capture.mjs",
+        "sha256": "f1cc5af8de17b234aa8547ff430b2ec9294d92b1c1972974f19a728a75f7afda",
+        "gitBlob": "889a3d9c317f5b3f95b9b185d0b997476e02a726"
+      },
+      {
+        "path": "frontend/scripts/verify-ui.mjs",
+        "sha256": "a893b7784765404ec5cecea5cace4d18ae115a301616e68c1848d7f1823724e0",
+        "gitBlob": "47e709513a8846c23dcf914b991aad81530ade11"
+      },
+      {
+        "path": "frontend/scripts/preview-browser.mjs",
+        "sha256": "fe49ce8ffce72bce7683a762d2e94eee7a0bc57c40d924026ab4117dab76fb41",
+        "gitBlob": "3ab61b4888b9c28f6448490bcae6ec654770553e"
+      },
+      {
+        "path": "frontend/package.json",
+        "sha256": "7bb199ba61fceb81e00354c7888ec57474fd4cd6483b50ab993a3a0aed697940",
+        "gitBlob": "ad71153f3a5afb898255cc4e16237f5b6ea45af9"
+      },
+      {
+        "path": "frontend/package-lock.json",
+        "sha256": "539308d4c82f44876ba3a459c74b30107de20810cfacf48a78786cb2df567ca0",
+        "gitBlob": "2f66a71a186a9b93abd1981f2c67ea9e76085537"
+      }
+    ],
+    "sha256": "ff23c9befde6f602cc8377e9222036e624cfd229acedfffbe939821e4fdfc7a1",
+    "hashMeaning": "SHA-256 of actual working file bytes; Git blob IDs identify the committed files with Git line-ending normalization."
+  },
+  "versions": {
+    "expo": "57.0.24",
+    "expo-router": "57.0.22",
+    "react-native": "0.86.3",
+    "react-native-web": "0.21.2",
+    "react-native-paper": "5.15.3",
+    "lucide-react-native": "1.49.0",
+    "react-native-svg": "15.15.4"
+  },
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "note": "Native sources unchanged after this successful export; subsequent callback-ref repair is confined to WebCameraCapture.web.tsx."
+    },
+    {
+      "command": "node scripts/verify-ui.mjs composer-surfaces camera",
+      "exitCode": 0,
+      "evidence": "checks-composer-surfaces-camera.json",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "webTextScalingWidths": [
+        390,
+        320
+      ]
+    }
+  ],
+  "web": {
+    "path": "dist/_expo/static/js/web/entry-a8ee500536a07720777564e3e1cca999.js",
+    "sha256": "de9e0909012eb173213128c9cdb093864652fdee780f5b6815e5813023ded55d",
+    "staticRoutes": 33
+  },
+  "android": {
+    "path": "dist-android/_expo/static/js/android/entry-490b142e2107bc5ed2de6b0cf137a86c.hbc",
+    "sha256": "058a23c800133eb62b93b9460474364c0578d4c970a4702617d57d5e75bac69f",
+    "assets": 31
+  },
+  "resolvedIssue": {
+    "reason": "Paper Portal mounted the video DOM after the stream effect; srcObject remained null.",
+    "observed": {
+      "videoPresent": true,
+      "sourceAttached": false,
+      "readyState": 0,
+      "dimensions": [
+        0,
+        0
+      ],
+      "streamTrackState": "live"
+    },
+    "evidence": "camera-diagnostic.png",
+    "resolution": "Stable callback ref attaches srcObject when the video mounts; synthetic stream now captures its complete 640x480 frame."
+  },
+  "reusedEvidence": {
+    "path": "../fe-w18/build-checks.json",
+    "reason": "Brand tokens, shared shell, business contracts and form rules are unchanged; previous color and broad layout evidence retained."
+  },
+  "deliveryIdentity": {
+    "author": "CherylNg-2526 <250349656@stu.vtc.edu.hk>",
+    "committer": "2NTTY <2nttyfor2b@gmail.com>",
+    "signature": "N",
+    "note": "B UI responsibility, AI implementation and checks; not a claim of personal manual work or verified signing."
+  },
+  "limitations": [
+    "All media used by checks is a canvas-generated stream or synthetic PNG; no real camera or microphone was accessed.",
+    "Real Webcam/mobile camera permissions, native capture adapter, APK/device UI and user visual approval remain unverified.",
+    "Captured/selected files remain local and unsent; no Server, upload, model analysis or notification transport.",
+    "This package does not change the backend chat/attachment protocol; formal multimodal integration remains with the main chat."
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-02T07:57:40.746Z",
+  "passed": [
+    "mobile density: 390/320 targets/age basis/header alignment/four-or-two quick actions/child picker/keyboard suggestions/original draft/quick form/150% Web text reflow"
+  ],
+  "failures": []
+}

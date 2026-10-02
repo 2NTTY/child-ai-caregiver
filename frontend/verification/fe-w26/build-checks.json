@@ -1,0 +1,178 @@
+{
+  "at": "2026-10-02T05:36:24.994Z",
+  "package": "FE-W26 answer citations and inline source panel",
+  "baseline": "20da9da6c6f7b5a56e45194b6dc0a3d4acd371a3",
+  "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+  "githubDocs": {
+    "src/shared/product-agent.ts": "9f217d80dd1e020dc6048075e4f34f9233cd73f2",
+    "docs/API.md": "69fd07e18f649e4862030001837662d5e2fdc19b",
+    "src/shared/knowledge.ts": "ea330e54333a48dcb861364fccbc167aedab78f7",
+    "docs/P2_UI_HANDOFF.md": "6488b8c53ae58e37a12e7a3683aea94924aa3981"
+  },
+  "githubLogin": "CherylNg-2526",
+  "otherWorktreesChecked": 14,
+  "frontendOverlaps": [],
+  "scope": "frontend only; answer footer, citation-number location/focus and collapsible inline source tabs",
+  "sources": [
+    {
+      "path": "frontend/scripts/flows/agent-conversation.mjs",
+      "gitBlob": "6f66e8a2869c3da62cf022900ebafa1678043c0b",
+      "sha256": "b05d13a35c21581a17e48a94de2bc6e4c554c1f558751dcf3c626c89e8844d8e"
+    },
+    {
+      "path": "frontend/src/components/agent/AgentConversationPreview.tsx",
+      "gitBlob": "6d56930f63e82db0273db9031dd53b4571a6482c",
+      "sha256": "5a883be9bef13493920db16c673f03cd5fe43c7675a75cf43d24dc70f68970a5"
+    },
+    {
+      "path": "frontend/src/components/agent/AgentRunView.tsx",
+      "gitBlob": "2998c344be4e798fceee527085a6cf1ffaf20227",
+      "sha256": "2146d8304ff4f8c0faf100a8cbc5bc8eb6f63b293e214d8e02e29c054cb25431"
+    },
+    {
+      "path": "frontend/src/preview/agent-fixture.ts",
+      "gitBlob": "23e0826fce154d5598d1e3bf44c3f5b89f2f64df",
+      "sha256": "8934f0ffb922b41a6416450e91a4b85af6a3e27fce858afe3cf66580f6d084da"
+    },
+    {
+      "path": "frontend/src/screens/chatScreen.tsx",
+      "gitBlob": "669f50a5c5d15a2d056cd23e850fcdb2bed136cf",
+      "sha256": "31887afcd12a174aae070e3176725aa37f99eb7823cb3ee921141488b7d4f4ee"
+    },
+    {
+      "path": "frontend/src/components/agent/AnswerSources.tsx",
+      "gitBlob": "1c688edcae145db8a61d20a5769382ab95093d27",
+      "sha256": "e4867450fb68135b0f36d8c7ae88366cf04534f6e8bbda718147f37421dc5810"
+    },
+    {
+      "path": "frontend/src/components/agent/CitationMarker.tsx",
+      "gitBlob": "edfc8840fa48cc63c78dd86d1736d51140f06637",
+      "sha256": "0bacd13ae472b4dcde781785488e587e2f4be56cbd83b452dcdc7879df286518"
+    },
+    {
+      "path": "frontend/src/components/agent/CitationMarker.web.tsx",
+      "gitBlob": "635fbe919d166418c0d985919187cd9538346540",
+      "sha256": "846d5c62c4470534e757497112e1487714fa7977eba818263e925d95f8ee37eb"
+    },
+    {
+      "path": "frontend/src/components/agent/locateCitationSource.ts",
+      "gitBlob": "cf3b76ebaffb8b4da044e481dc12d84742af3828",
+      "sha256": "7a53f294a38cd02b1569718e21d3c65cbf6ed0af289f6907b4e2dd23124ae4bf"
+    },
+    {
+      "path": "frontend/src/components/agent/locateCitationSource.web.ts",
+      "gitBlob": "a354d9c7d8741fc6a3dfa0582068dcd04d8a567d",
+      "sha256": "7b33febd724dc7ac66d5c124a0568b692ce615e3d1901501d0cf3b4fc802afa6"
+    },
+    {
+      "path": "frontend/src/preview/answer-citations.ts",
+      "gitBlob": "5e55deb2e70b7a17380180cbfc9f04a1012d1f9e",
+      "sha256": "7486303a9572700d8920fc283f293356017daff00cafefda6f2adb489363e612"
+    }
+  ],
+  "guidance": [
+    {
+      "path": "frontend/AGENT_HANDOFF.md",
+      "gitBlob": "f92472987444434f2b1b33f247554d0aabb093be",
+      "sha256": "8223988c59d9b4277cb834c0be2a580acc433d936e9d23614afe08d3cf54e3a4"
+    },
+    {
+      "path": "frontend/DESIGN_SYSTEM.md",
+      "gitBlob": "a8b0f95e6de353b60ca09d3a09fdcc47751c244c",
+      "sha256": "2fb4cf9e2d560dbf8a5614840481bd65ffad45abff847e4bc5a0f7a37fca0737"
+    },
+    {
+      "path": "frontend/HANDOFF.md",
+      "gitBlob": "0bf3410de066639354ba516281043d0d994f0999",
+      "sha256": "f383970c243939e60927e534dc7d04d311c1af0ea5fd96fe06d5d9d87c68bc6c"
+    },
+    {
+      "path": "frontend/PLAN.md",
+      "gitBlob": "531aad926a9ca2354dbe9fcbad188e9a68204280",
+      "sha256": "15c8bfc3e2fbeaba6c1af2bd8b192fff8e4f1b1cf5ae47fc998aa616d7617fc1"
+    },
+    {
+      "path": "frontend/STATUS.md",
+      "gitBlob": "7ea5016df8f5656c6aedf89fdbdc277c841837c0",
+      "sha256": "f33dd15d78cab64175f305dae58d83a872f27794ff0646ccdad625a77ab891df"
+    }
+  ],
+  "sourceAssociation": "The formal API has answer text and KnowledgeEvidence[] but no sentence/offset mapping. Only existing in-range numeric markers are styled. Formal integration must validate their true relationship to source order; no automatic citation attachment or inferred source matching.",
+  "preserved": {
+    "localMessageHandler": true,
+    "composerPropsAndComponent": true,
+    "originalDecisionAndProposalCards": true,
+    "syntheticControllerAndViewModel": true,
+    "dependencies": true
+  },
+  "resolvedFailure": {
+    "check": "Agent conversation access-loss assertion",
+    "cause": "AnswerSources and adjacent RunDetails used the same React sibling key; parent updates left duplicate untracked source nodes.",
+    "resolution": "Use an answer-prefixed unique key and verify one answer after control changes plus removal of open source details on access loss."
+  },
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "webExport": {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "routes": 33,
+      "bundles": [
+        {
+          "path": "dist/_expo/static/js/web/entry-9e200ee3823f81f38b2f3ee1f509531c.js",
+          "sha256": "a0a6e02338ca3e45d0b026260982aefddea2d68950c58ec0a1d05436a1e05d1a",
+          "bytes": 4175435
+        }
+      ]
+    },
+    "androidExport": {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundles": [
+        {
+          "path": "dist-android/_expo/static/js/android/entry-7bb8babf179833445664af1c7300429e.hbc",
+          "sha256": "f110af4bc25e3209ae76bd28c6785fa95ae89bee88f4bdb83e993a25b92e8800",
+          "bytes": 6382947
+        }
+      ]
+    },
+    "citations": {
+      "kind": "Targeted synthetic browser check",
+      "helperSha256": "64acca18ed272709b9e8522d661d97868e3e70fc82bc4d83f1edcd04c9401aa9",
+      "evidence": "verification/fe-w26/citation-checks.json",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "passed": [
+        "citations 1440: divided answer footer; three superscripts locate/focus their source without opening a panel; inline source tabs/Enter/collapse, no modal, preserved draft",
+        "citations 1024: divided answer footer; three superscripts locate/focus their source without opening a panel; inline source tabs/Enter/collapse, no modal, preserved draft",
+        "citations 390: divided answer footer; three superscripts locate/focus their source without opening a panel; inline source tabs/Enter/collapse, no modal, preserved draft, enlarged text",
+        "citations 320: divided answer footer; three superscripts locate/focus their source without opening a panel; inline source tabs/Enter/collapse, no modal, preserved draft, enlarged text"
+      ],
+      "failures": []
+    },
+    "agentAndLayout": {
+      "command": "node scripts/verify-ui.mjs agent-flow emergency-help",
+      "exitCode": 0,
+      "evidence": "verification/fe-w26/checks-agent-flow-emergency-help.json",
+      "passed": [
+        "Agent conversation: four-width manual read/keyboard shared acceptance/private fact/source metadata/draft guard; unknown original retry/conflict/missing read/permission and child identity clearing/manual inbox/expiry/unknown statistics/full task-change projection",
+        "chat presentation: four widths without the permanent emergency-help card or message avatars; right-aligned questions, full-width answers, no overlap, local draft preview and offline layout; no API or model calls"
+      ],
+      "failures": []
+    }
+  },
+  "noTrueServiceRequests": true,
+  "pending": [
+    "User visual confirmation",
+    "Formal citation association and existing controller/API integration",
+    "Native inline baseline, font scaling, touch, scroll and assistive-technology device acceptance"
+  ],
+  "evidenceReuse": "Unchanged global controls, scroll adapters, composer and other business flows retain prior scoped evidence; no whole-project regression or true-service/device test."
+}

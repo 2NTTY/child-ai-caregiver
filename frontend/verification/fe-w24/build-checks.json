@@ -1,0 +1,334 @@
+{
+  "at": "2026-10-01T20:28:05.085Z",
+  "package": "FE-W24 responsive scroll/login/home fixes",
+  "baseline": "5b77d907fd827198e53f8f41f44c209e12f62310",
+  "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+  "uiHandoffBlob": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+  "apiBlob": "69fd07e18f649e4862030001837662d5e2fdc19b",
+  "otherWorktreesChecked": 14,
+  "frontendOverlaps": [],
+  "scope": "frontend only; responsive presentation and native/Web scroll adapters; synthetic UI only",
+  "sources": [
+    {
+      "path": "frontend/package-lock.json",
+      "gitBlob": "194ae9825dada06190f8be0f440a536c70081cf0",
+      "sha256": "866b37fc279201162389b050b1cb074628bb6734c7220b5995e94ca1624fbe79"
+    },
+    {
+      "path": "frontend/package.json",
+      "gitBlob": "7cd5fe6f0394b8a2bc42bce9c03ea6147b7eef30",
+      "sha256": "a17005123df0e767aa89f946c78e60d6ed5c9098861a4ca6f5f9defa36a0e771"
+    },
+    {
+      "path": "frontend/src/components/AppMenuList.tsx",
+      "gitBlob": "8c290c50c2f1813d4a756c11acffa452450171ab",
+      "sha256": "0abbd8bae868241ffbcfdc0feed8986a13154e16fca0b09d68a717834b00d56e"
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "gitBlob": "5c3a309d845f50a5d11b5cccb83cf2b1b8389c48",
+      "sha256": "90edd56ea92c889c20331e506ab2b24bd8a0c4d3d3e0c3c8251bb39bc3480a09"
+    },
+    {
+      "path": "frontend/src/components/ChildKeyFacts.tsx",
+      "gitBlob": "69c0658776df325e0cab2abd3154eb0f72bd19f4",
+      "sha256": "5a3784c9ccd3354a75aa55f8dcda1f2a53bda54432d0bebfad6cbbf5a710afff"
+    },
+    {
+      "path": "frontend/src/components/ChildPicker.tsx",
+      "gitBlob": "24edd7b7b6773dfe1e71dac83495a928879b946c",
+      "sha256": "d83ec784b2c1c70b6a0449f2e45ed0e9ea66a7d0ed6b3f500bd9fb3d672dd352"
+    },
+    {
+      "path": "frontend/src/components/DateTimeFields.tsx",
+      "gitBlob": "6eedd0f53dc7bd679db79d7728b1c63baf5cf17e",
+      "sha256": "0c3bd236cda328bb06b62040351aeac33ee3cbf07722ba859dd26293f70122f1"
+    },
+    {
+      "path": "frontend/src/components/DeleteChildPreview.tsx",
+      "gitBlob": "4dc461a75cfa6aca6c5500a3d23817bdba3be0c2",
+      "sha256": "5ba74ecd2c4ccca73daa5169ed408667a32b21a1602c9ec71a380056c7e44c3c"
+    },
+    {
+      "path": "frontend/src/components/HomeDashboard.tsx",
+      "gitBlob": "6403a410316eac9aa9afd05078d2828e70fa620b",
+      "sha256": "4717a9ff4127991d404a29e905a4569fd91e638fa2ad1e31981ada31b895bd46"
+    },
+    {
+      "path": "frontend/src/components/MobileHomeDashboard.tsx",
+      "gitBlob": "f2a79fd800f17f7bc0f074be494b144c0b4405d8",
+      "sha256": "defc5da9555316ba79c3b450a8d15fcf50bec5b9ab7e65d860f7c23f589a719e"
+    },
+    {
+      "path": "frontend/src/components/PageFrame.tsx",
+      "gitBlob": "09e6df69861cc1f35c29f9392cd8728d3318a26b",
+      "sha256": "a9b4c14e3e545712b01d8a62712a63938c05e6f74497a95a7be90b3475f609ee"
+    },
+    {
+      "path": "frontend/src/components/agent/AgentComposer.tsx",
+      "gitBlob": "43b5fb0789176cb916a5c664a76bac623c21acff",
+      "sha256": "883898231bf60ed6f1be27a47175abdab7f5b2c1e321e0fc1fb5bedb41b2b5ca"
+    },
+    {
+      "path": "frontend/src/components/appearance/HomeBackground.tsx",
+      "gitBlob": "2ef8b432d66eb4e85e02fc52ab2e0e4d43162fa0",
+      "sha256": "b31851e556e185462729d285e593a3b25217a77d7ea6685b1e0e6fc2976606eb"
+    },
+    {
+      "path": "frontend/src/components/photos/WebCameraCapture.web.tsx",
+      "gitBlob": "f18fd1e539a024d776fd2a98358855def80dcba8",
+      "sha256": "99ee8af709cb25d0d30ee31e261ca8702fee571547f52a837873741a792d8fa6"
+    },
+    {
+      "path": "frontend/src/components/shared-inputs/SourceDetails.tsx",
+      "gitBlob": "26ccc0d4c26a57ed3f0f242f00cfd84bc003f648",
+      "sha256": "674c0d2d0378e4a1160684916c487a4eab42b983ae7a0ca182d6e0847207ad36"
+    },
+    {
+      "path": "frontend/src/components/shared-inputs/SourcesView.tsx",
+      "gitBlob": "5d0c87c656af4a394e61a2a08611a88b4fc0488f",
+      "sha256": "605fd36835ca3230a6d3f3272d2ef070ce2fe86370d957c45f5b77cfbd825fd1"
+    },
+    {
+      "path": "frontend/src/components/ui.tsx",
+      "gitBlob": "3fe0316febb2620ca208ca2b9bb005c7bf328ed6",
+      "sha256": "cd7518f251d6c7722c7aa5b66750f923e380df50094178eecce9f37807df9612"
+    },
+    {
+      "path": "frontend/src/screens/chatScreen.tsx",
+      "gitBlob": "e7a83864ebfbaa9df5e0766a6b6187f8dc7545ee",
+      "sha256": "e732cab695ef91f238aaf8f7d269a0ce2646119fb6fdb49f7186c385bd14c36b"
+    },
+    {
+      "path": "frontend/src/screens/loginScreen.tsx",
+      "gitBlob": "e95cd4f48047941ee43be89388b9742e7a32b223",
+      "sha256": "16875ead7d3cf43c85f000612bab7f96c4933956d3d4660a418f612e944d4c2f"
+    },
+    {
+      "path": "frontend/src/components/AppScrollView.tsx",
+      "gitBlob": "9e82cbe222cb34015e542e53aee7b275433fc292",
+      "sha256": "718e912e6a11465bdeeb5369f42b2ffbb5726829ca210833451b4d266f343c49"
+    },
+    {
+      "path": "frontend/src/components/AppScrollView.web.tsx",
+      "gitBlob": "38fe2d6aae6962a948dac6e86f824ac061e108f2",
+      "sha256": "7a3e5ba9e08e7a402c95d3eb26b95bb953f492a0e5c021ba27df9828f5dbbc60"
+    },
+    {
+      "path": "frontend/src/components/appScrollView.css",
+      "gitBlob": "d4c8ae483907a2e3933db615c00557dc3cde9bac",
+      "sha256": "97da80b05f59a093d1e38db79fcec45273378514f384dab852d7b79f9ac8792b"
+    },
+    {
+      "path": "frontend/src/web-styles.d.ts",
+      "gitBlob": "cbe652dbe00b29be433328013a005bbf5d5c44c1",
+      "sha256": "35d26ea66c86da9701e4f4b467913481ffeae910761cea34c775c5dacb7f8eaa"
+    }
+  ],
+  "guidance": [
+    {
+      "path": "frontend/.agents/skills/web-screen-delivery/SKILL.md",
+      "gitBlob": "f95c7b331b4b87b4daae7636924a9e64501a5256",
+      "sha256": "8d89c7f45e3276cd40f42f6be65876e4ca3dcd3a63fac8c0558cba0fc75ef315"
+    },
+    {
+      "path": "frontend/DESIGN_SYSTEM.md",
+      "gitBlob": "e58859bd72438da82a4bc893cf7d963124948d2a",
+      "sha256": "f1015d397ec01fe8cdabaafe05878e2e73ae417143a94ca1ea6700ddc8db595b"
+    },
+    {
+      "path": "frontend/HANDOFF.md",
+      "gitBlob": "ac368b11f5de9928e1cc9a68d047c743c3856c10",
+      "sha256": "21121196d786b4e2157a2fce99d98dd417a6c9dd957bb31fdecb4376b2795821"
+    },
+    {
+      "path": "frontend/MOBILE_DESIGN.md",
+      "gitBlob": "982e2de4f560c3810d1dfa3a286ced621cc836fe",
+      "sha256": "a04aced5d1825632e56248bb5f2c660dc14187b7efb18f9bff3a591870276e3c"
+    },
+    {
+      "path": "frontend/PLAN.md",
+      "gitBlob": "e0f12044d8150f8aed9ea4efb30f6d02a69177c6",
+      "sha256": "66db410ca9a74b0223105d528a78237fd99247b070e65acb6271af08f385cc12"
+    },
+    {
+      "path": "frontend/STATUS.md",
+      "gitBlob": "2046f40592738af130df48b44327cdd0a86f0503",
+      "sha256": "81b9e2279770c2950b94243be126db5942b5370fded4e36762eb5ddc5692bce9"
+    },
+    {
+      "path": "frontend/.agents/skills/web-screen-delivery/references/scroll-and-blur.md",
+      "gitBlob": "ecb18467b5f01e555a120aa4ba94e9ca8928da09",
+      "sha256": "e7b423b98001311ca1b81cc544f7ddca74247b6a0878e61266490666256a480b"
+    }
+  ],
+  "dependencies": {
+    "added": [
+      {
+        "name": "expo-blur",
+        "version": "57.0.3",
+        "license": "MIT"
+      },
+      {
+        "name": "overlayscrollbars",
+        "version": "2.16.0",
+        "license": "MIT"
+      }
+    ],
+    "existingVersionsAndIntegrityUnchanged": true
+  },
+  "preserved": {
+    "localLoginValidation": true,
+    "formContent": true,
+    "artworkFile": true,
+    "nativeScrollViewAlias": true,
+    "webScrollbarThemeAbsentFromAndroidBundle": true
+  },
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "webExport": {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "routes": 33,
+      "bundles": [
+        {
+          "path": "dist/_expo/static/js/web/entry-cc43b81e8ac76fc3e7fd886b7dad543e.js",
+          "sha256": "31de62a254fff529de8aedeb6f4b6f677ce6b09174d7bd697e6d61339d0a1dd8",
+          "bytes": 4172176
+        },
+        {
+          "path": "dist/_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+          "sha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+          "bytes": 14266
+        },
+        {
+          "path": "dist/_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+          "sha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+          "bytes": 14266
+        },
+        {
+          "path": "dist/_expo/static/css/appScrollView-b38bc8e3cd05cbf317495356045f69b6.css",
+          "sha256": "a11f8c844598ef481fcf855e7167d5dffb566a719d68055fc35d7e21a01f2791",
+          "bytes": 710
+        },
+        {
+          "path": "dist/_expo/static/css/appScrollView-b38bc8e3cd05cbf317495356045f69b6.css",
+          "sha256": "a11f8c844598ef481fcf855e7167d5dffb566a719d68055fc35d7e21a01f2791",
+          "bytes": 710
+        }
+      ]
+    },
+    "androidExport": {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundles": [
+        {
+          "path": "dist-android/_expo/static/js/android/entry-1ae72872e5b03fbff5712265316a7622.hbc",
+          "sha256": "3cb4d64b9780fb8c2c2296623e77573082d5350f5ed90c66bbaec26e6a711494",
+          "bytes": 6378603
+        }
+      ]
+    },
+    "layoutAndExistingFlows": {
+      "command": "node scripts/verify-ui.mjs layout login design",
+      "exitCode": 0,
+      "evidence": "verification/fe-w24/checks-layout-login-design.json",
+      "passed": [
+        "layout / 1440",
+        "layout /care 1440",
+        "layout /photos 1440",
+        "layout /sources 1440",
+        "layout /growth 1440",
+        "layout /summary 1440",
+        "layout /contact 1440",
+        "layout /profile 1440",
+        "layout /family 1440",
+        "layout /memory 1440",
+        "layout /tasks 1440",
+        "layout /settings 1440",
+        "layout /chat 1440",
+        "layout /guide 1440",
+        "layout /login 1440",
+        "layout / 1024",
+        "layout /care 1024",
+        "layout /photos 1024",
+        "layout /sources 1024",
+        "layout /growth 1024",
+        "layout /summary 1024",
+        "layout /contact 1024",
+        "layout /profile 1024",
+        "layout /family 1024",
+        "layout /memory 1024",
+        "layout /tasks 1024",
+        "layout /settings 1024",
+        "layout /chat 1024",
+        "layout /guide 1024",
+        "layout /login 1024",
+        "layout / 390",
+        "layout /care 390",
+        "layout /photos 390",
+        "layout /sources 390",
+        "layout /growth 390",
+        "layout /summary 390",
+        "layout /contact 390",
+        "layout /profile 390",
+        "layout /family 390",
+        "layout /memory 390",
+        "layout /tasks 390",
+        "layout /settings 390",
+        "layout /chat 390",
+        "layout /guide 390",
+        "layout /login 390",
+        "layout / 320",
+        "layout /care 320",
+        "layout /photos 320",
+        "layout /sources 320",
+        "layout /growth 320",
+        "layout /summary 320",
+        "layout /contact 320",
+        "layout /profile 320",
+        "layout /family 320",
+        "layout /memory 320",
+        "layout /tasks 320",
+        "layout /settings 320",
+        "layout /chat 320",
+        "layout /guide 320",
+        "layout /login 320",
+        "login: accessible local validation/password visibility/keyboard submission without a Server request at 320",
+        "design: branded dialogs/SVG controls/menu rows/child picker proportions at 1440/1024/840/744/390/320"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-5b6dbebcbae5c7c0903b8cb7e1e5f2ea.js",
+      "scopeNote": "Before final original-illustration gradient-start adjustment only; unchanged scroll/login/menu code. Final targeted checks rerun after this visual adjustment."
+    },
+    "targeted": {
+      "kind": "Ad hoc existing headless preview helper; final Web bundle",
+      "exitCode": 0,
+      "evidence": "verification/fe-w24/responsive-scroll-checks.json",
+      "passed": [
+        "Desktop single-column card heights/gaps at six same-page resizes and filtered/empty/loading/unknown content",
+        "Original full homepage illustration contained at 320/390/640, with original asset dimensions and aspect ratio",
+        "User-selected background retains cover and route preservation after the original illustration fit change",
+        "Phone login hides story/illustration; desktop glass panel blurs its background while keeping fixed x=1552 crop",
+        "Overflow appearing/disappearing does not move the login fields or reserve scrollbar width",
+        "Native wheel/PageDown, draggable thumb, independently scrolling right rail and adapter cleanup on route change",
+        "Low-height menu retains scrolling, Escape and focus return"
+      ],
+      "failures": [],
+      "bundle": "dist/_expo/static/js/web/entry-cc43b81e8ac76fc3e7fd886b7dad543e.js"
+    }
+  },
+  "pending": [
+    "User visual confirmation",
+    "Other browsers and assistive technologies",
+    "Native BlurTargetView for wide Android story panels",
+    "APK/device/system behavior",
+    "Formal authentication/API/controller integration"
+  ],
+  "noTrueServiceRequests": true,
+  "noArtworkEditing": true
+}
