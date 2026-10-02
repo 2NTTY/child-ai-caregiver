@@ -4,6 +4,21 @@
 
 ## 交付範圍及入口
 
+<a id="shell-feedback"></a>
+### FE-W28 統一捲動、頂部減量及首頁首幀（2026-10-02）
+
+基線 `95431add2b5da596ba85d571025a9aabb8aba6cb`，只修改 frontend，主責 B，沿 draft PR #73。重新從 GitHub 核對 master `d3213e6` 的 P2／API／來源型別 blob 未變，14 個其他 worktree 沒有 frontend 重疊。沒有改正式 App、Server、API 或依賴。
+
+[AppScrollView.web](src/components/AppScrollView.web.tsx) 垂直及橫向都沿原 RN viewport／事件／scrollTo ref 接 OverlayScrollbars；不再讓來源橫向列回退到原生白色軌道。共用 CSS 的 6 px 覆蓋區、border-box／1 px 內距及 4 px 滑塊套用全部 Web 寬度。原本隱藏的 facts／UnderlineTabs／composer indicator 保持隱藏，來源面板顯示同款。原生仍沿 RN／系統捲動，未聲稱手機 App 改成 Web 滑塊。
+
+右上角只保留鈴鐺及資訊側欄，移除 Web／原生帳戶頭像與 Web 被動連線 pill；offline／unknown 業務提示仍在相應內容。設定由桌面側欄、窄 Web「更多」及原生第五個「更多」分頁進入，原生舊帳戶選單的功能移到 [moreScreen](src/screens/moreScreen.tsx)，不是移除路由。
+
+首頁閱讀時間改為 3 秒。MobileHomeDashboard 上移完成後以 hero 內垂直置中的孩子區呈現，不再於返回時用預設高度計算負 margin；快捷記錄首幀用實際視窗及既有內距估算欄數，再沿 onLayout 核對。桌面 HomeDashboard 在 Web useLayoutEffect 透過 RN 公開 viewport 於繪畫前量度可用寬度，保留原生 onLayout；避免 900／1280 返回時先雙欄再單欄。沒有新增全域尺寸 cache 或換頁動畫。
+
+局部檢查通過：320／390／900／1024／1280／1440 返回首幀一致、四種一般寬度及中間寬度的覆蓋條量度、窄版橫向拖動／更多設定／自然分頁高度；八組 3 秒首次會話／選單／減少動畫／斷點及 320 放大文字；四寬度來源分頁／12 項／長回覆瞬間定位／草稿及放大文字。來源 helper 原本只按 overflow:auto／scroll 找 viewport，無溢出時套件可用 hidden；首輪量度失敗後改為辨認既有 overlay viewport，應用程式未因此改動，補驗通過。最終 typecheck、Web 35 路由及 Android Hermes 30 資產 export 通過。[本次證據](verification/fe-w28-shell-feedback/build-checks.json)；既有業務規則及權限／unknown 證據按未變來源沿用，沒有全量回歸或真 API／身份／原生實機驗收。
+
+主聊天按 [正式移除及接線清單](PRODUCTION_UI_HANDOFF.md) 區分開發工具、合成資料替換及必須保留的狀態，不能全域刪「預覽」字樣。換頁動畫只完成 [成熟方案研究](MOTION_OPTIONS.md#page-transitions)，未改路由／外殼進出場；建議先做內容區約 200 ms 的短過場，詳情才交代前進／返回方向，採用待使用者決定。
+
 <a id="home-simplification"></a>
 ### FE-W27 首頁減量、孩子入口及手機捲動條（2026-10-02）
 
@@ -13,7 +28,7 @@
 
 首頁沿已安裝 RN Animated／Expo Router useFocusEffect。播放記錄現在由 [PreviewProvider](src/preview/PreviewContext.tsx) 的合成會話保留，經首頁入口傳入 [HomeDashboard](src/components/HomeDashboard.tsx) 的可選 `introductionPending`／`onIntroductionPresented`。首次顯示即消耗，不等動畫完成；桌面首次顯示也消耗，以免縮窄才重播。MobileHomeDashboard 只在初次掛載捕捉待播放值；在同一會話來回切頁、切孩子、讀取或 649／650 重掛載均直接顯示已上移版式。真 App 須由既有登入/session 上層投影同樣的顯示 flag／回調，在真正新登入時重設，不能隨路由／孩子／refresh 重設；未傳入時預設不播放。這不是新 API、引導完成狀態或持久登入資料，不使用 localStorage，也未接真登入。
 
-首輪仍提供 5 秒標語閱讀時間，360 ms 上移至左側 62%，圖片置於獨立背景層，完整 contain 尺寸不動。閱讀期間打開選單暫停，關閉後重新提供閱讀時間；開始移動後點開則先收斂至最終位置，避免停止半途、關閉回跳。AccessibilityInfo 減少動畫模式保留延遲後直接切換；提前離頁清除 timer／停止動畫並保留最終版式，之後返回不再重播。未有孩子時維持提示及建立入口，後續建立孩子不重新啟動動畫。
+原 FE-W27 提供 5 秒標語閱讀時間；FE-W28 按最新要求改為 3 秒，360 ms 上移至左側 62%，圖片置於獨立背景層，完整 contain 尺寸不動。閱讀期間打開選單暫停，關閉後重新提供閱讀時間；開始移動後點開則先收斂至最終位置，避免停止半途、關閉回跳。AccessibilityInfo 減少動畫模式保留延遲後直接切換；提前離頁清除 timer／停止動畫並保留最終版式，之後返回不再重播。未有孩子時維持提示及建立入口，後續建立孩子不重新啟動動畫。
 
 ChildPicker 的 `homeIdentity`／`homeDocked` 只改首頁：48 頭像、18／14 名字／年齡、至少 72 高度及 20 SVG 箭嘴；動畫後文字按內容收窄，箭嘴距離 8。點開／關閉沿透明底，按下用透明度回饋，取消原通用 open 白色長條；Dialog、完整年齡日期、Enter／Escape及原 selectChild 保留。一般工具列 picker 的比例及樣式不變。
 

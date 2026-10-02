@@ -4,12 +4,10 @@ import { BackHandler, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Vie
 import { brand } from "../branding";
 import { BrandLogo } from "./BrandLogo";
 import { ToolbarIconButton } from "./ToolbarIconButton";
-import { Button, Portal, Text } from "react-native-paper";
-import { AppDialog as Dialog } from "./AppDialog";
-import { AppMenuList } from "./AppMenuList";
+import { Text } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePreview } from "../preview/PreviewContext";
-import { chineseFont, colors, mobileLayout, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileLayout, spacing, typeScale } from "../theme";
 import { NotificationBell } from "./NotificationBell";
 import { ChildPicker } from "./ChildPicker";
 import { ChildKeyFacts } from "./ChildKeyFacts";
@@ -20,7 +18,6 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { model, actions, checkedPreviewItems, togglePreviewItem, notice, dismissNotice } = usePreview();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(90);
   useEffect(() => {
@@ -31,8 +28,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}>
       <View style={styles.header}><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => router.push("/")} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>
-        <View style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
-          <Pressable accessibilityRole="button" accessibilityLabel="用戶與更多頁面" onPress={() => setMenuOpen(true)} style={styles.accountAction}><View style={styles.avatar}><Text style={styles.initial}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable>
+        <View testID="header-actions" style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <ToolbarIconButton icon="page-layout-sidebar-right" label={railOpen ? "收起資訊側欄" : "開啟資訊側欄"} expanded={railOpen} onPress={() => setRailOpen(value => !value)} />
         </View>
       </View>
@@ -42,12 +38,6 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
     {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.meta}>{notice}</Text></Pressable> : null}
     <KeyboardAvoidingView style={styles.content} behavior={Platform.OS === "ios" ? "padding" : undefined}>{children}</KeyboardAvoidingView>
     {railOpen ? <View style={[styles.overlay, { top: insets.top + headerHeight, bottom: insets.bottom }]}><Pressable accessibilityRole="button" accessibilityLabel="關閉資訊側欄背景" onPress={() => setRailOpen(false)} style={styles.scrim} /><View style={styles.drawer}><RightRail model={model} actions={actions} checkedPreviewItems={checkedPreviewItems} togglePreviewItem={togglePreviewItem} overlay /></View></View> : null}
-    <Portal><Dialog visible={menuOpen} onDismiss={() => setMenuOpen(false)}><Dialog.Title>你的照顧空間</Dialog.Title><Dialog.Content>
-      <Text style={styles.meta}>{model.caregiverName} · 合成預覽帳戶</Text>
-      <AppMenuList items={[
-        ...([{ key: "profile", label: "子女檔案", icon: "account-child-outline" }, { key: "care", label: "照顧記錄", icon: "notebook-outline" }, { key: "photos", label: "照片與記錄", icon: "image-outline" }, { key: "sources", label: "私人來源", icon: "link-variant" }, { key: "growth", label: "成長關注", icon: "chart-bar" }, { key: "summary", label: "照顧摘要", icon: "clipboard-check-outline" }, { key: "contact", label: "聯絡授權", icon: "bell-outline" }, { key: "family", label: "家庭協調", icon: "account-group-outline" }, { key: "settings", label: "設定", icon: "cog-outline" }, { key: "guide", label: "使用引導", icon: "compass-outline" }] as const).map(item => ({ ...item, onPress: () => { setMenuOpen(false); actions.open(item.key); } })),
-      ]} />
-    </Dialog.Content><Dialog.Actions><Button onPress={() => setMenuOpen(false)}>關閉</Button></Dialog.Actions></Dialog></Portal>
   </View>;
 }
 const styles = StyleSheet.create({
@@ -56,9 +46,6 @@ const styles = StyleSheet.create({
   brand: { flexShrink: 1, minWidth: 0, justifyContent: "center", minHeight: 48 },
   logo: { width: 124, height: 44 },
   actions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  accountAction: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center" },
-  avatar: { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.teal, justifyContent: "center", alignItems: "center" },
-  initial: { fontFamily: chineseFont, color: colors.white, fontSize: typeScale.body, fontWeight: "700" },
   childStrip: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingBottom: spacing.sm, backgroundColor: colors.sidebar },
   content: { flex: 1 },
   notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },

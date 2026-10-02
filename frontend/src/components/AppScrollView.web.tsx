@@ -8,13 +8,12 @@ import "./appScrollView.css";
 type WebScrollView = ScrollView & { getScrollableNode(): HTMLElement };
 
 export const AppScrollView = forwardRef<ScrollView, ScrollViewProps>(function AppScrollView(
-  { style, horizontal, showsVerticalScrollIndicator, scrollEnabled, ...props }, forwardedRef,
+  { style, horizontal, showsHorizontalScrollIndicator, showsVerticalScrollIndicator, scrollEnabled, ...props }, forwardedRef,
 ) {
   const scrollRef = useRef<WebScrollView | null>(null);
   useImperativeHandle(forwardedRef, () => scrollRef.current!, []);
 
   useEffect(() => {
-    if (horizontal) return;
     const viewport = scrollRef.current?.getScrollableNode();
     const target = viewport?.parentElement;
     if (!viewport || !target) return;
@@ -22,22 +21,22 @@ export const AppScrollView = forwardRef<ScrollView, ScrollViewProps>(function Ap
     target.style.setProperty("--app-scrollbar-active", colors.ink);
     // Keep RN Web's viewport, events and scrollTo ref; only the scrollbar is replaced.
     const instance = OverlayScrollbars({ target, elements: { viewport }, scrollbars: { slot: target } }, {
-      overflow: { x: "hidden", y: scrollEnabled === false ? "hidden" : "scroll" },
+      overflow: {
+        x: horizontal && scrollEnabled !== false ? "scroll" : "hidden",
+        y: !horizontal && scrollEnabled !== false ? "scroll" : "hidden",
+      },
       scrollbars: {
         theme: "os-theme-app", autoHide: "never",
-        visibility: showsVerticalScrollIndicator === false ? "hidden" : "auto",
+        visibility: (horizontal ? showsHorizontalScrollIndicator : showsVerticalScrollIndicator) === false ? "hidden" : "auto",
         dragScroll: scrollEnabled !== false, clickScroll: "instant",
       },
     });
     return () => instance.destroy();
-  }, [horizontal, scrollEnabled, showsVerticalScrollIndicator]);
-
-  if (horizontal) return <ScrollView {...props} ref={scrollRef} style={style} horizontal
-    scrollEnabled={scrollEnabled} showsVerticalScrollIndicator={showsVerticalScrollIndicator} />;
+  }, [horizontal, scrollEnabled, showsHorizontalScrollIndicator, showsVerticalScrollIndicator]);
 
   return <View testID="app-scroll-host" style={[styles.host, style]}>
-    <ScrollView {...props} ref={scrollRef} style={styles.viewport} scrollEnabled={scrollEnabled}
-      tabIndex={props.tabIndex ?? 0} showsVerticalScrollIndicator={false} />
+    <ScrollView {...props} ref={scrollRef} style={styles.viewport} horizontal={horizontal} scrollEnabled={scrollEnabled}
+      tabIndex={props.tabIndex ?? 0} showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false} />
   </View>;
 });
 

@@ -12,10 +12,10 @@ Windows 傳統捲動條即使軌道透明，也可能佔內容寬度；`scrollba
 
 ## 共用 ScrollView adapter
 
-- 沿 [AppScrollView.web](../../../../src/components/AppScrollView.web.tsx)；原生檔直接導出 RN ScrollView。DOM、CSS 與套件初始化只放 `.web`；橫向清單直接用原有 ScrollView，不套垂直滑塊。
+- 沿 [AppScrollView.web](../../../../src/components/AppScrollView.web.tsx)；原生檔直接導出 RN ScrollView。DOM、CSS 與套件初始化只放 `.web`。垂直及橫向均指定既有 RN viewport，按 horizontal 設定唯一可捲方向；保留兩種 indicator 設定，原本隱藏的 facts／underline tabs／composer 清單仍隱藏，來源分頁則顯示匹配的橫向覆蓋條。
 - 用 RN Web 公開的 `getScrollableNode()` 指定既有 viewport，外層 host 同時是 target／scrollbar slot。保留 onScroll、contentContainerStyle、keyboardShouldPersistTaps 及原 ScrollView ref；不要另造一個捲動 viewport 或綁第二套 wheel／PageDown。
-- 以 `showsVerticalScrollIndicator={false}` 從首幀隱藏會佔寬的原生 Web bar，OverlayScrollbars 的 visibility 依原顯示設定決定；不能透過所有場景一律隱藏可見滑塊來冒充修復。viewport 可鍵盤聚焦。
-- 共用 [CSS](../../../../src/components/appScrollView.css) 只使用官方 `--os-*` 變數：透明軌道、既有 theme 的 controlOutline／ink、40 最小滑塊、10 覆蓋區。保留內容內距，按鈕不要位於滑塊下；forced-colors 沿系統 CanvasText，不新增品牌色。
+- RN viewport 以兩種 `shows*ScrollIndicator={false}` 從首幀隱藏會佔位的原生 Web bar，OverlayScrollbars 的 visibility 依 caller 原設定決定；不能透過一律隱藏可見滑塊來冒充修復。viewport 可鍵盤聚焦。
+- 共用 [CSS](../../../../src/components/appScrollView.css) 只使用官方 `--os-*` 變數：透明軌道、既有 theme 的 controlOutline／ink、40 最小滑塊。依使用者 2026-10-02 要求，桌面與窄 Web 均為 6 px 覆蓋區、border-box／1 px 垂直於軸的內距，可見滑塊 4 px；橫向同款。保留內容內距，按鈕不要位於滑塊下；forced-colors 沿系統 CanvasText，不新增品牌色。
 - effect 初始化每個區域，卸載呼叫 destroy；路由更換、主內容／資訊欄及 Dialog 不共享錯誤的 instance。不要全頁掃描 DOM 或在 Server 渲染期間使用 document。CSS 型別用局部 `*.css` declaration，不關閉整個 TypeScript 檢查。
 - 無固定高度的 Dialog／選單需要自然高度和適當 maxHeight；Web wrapper 的 minWidth／minHeight 為 0，不將 auto-height 一律變成 flexBasis 0。雙欄轉直排時，原 `flex: 1` 可能壓縮欄高並讓內容溢出重疊；按實際容器改為不縮、自然 basis，不能用遮蔽內容的固定高度補救。
 

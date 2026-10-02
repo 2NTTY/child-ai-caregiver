@@ -36,13 +36,7 @@ export async function verifyToolbarSafety(browser, failures, directory) {
     }
     assert.equal(metrics[0].radius, metrics[1].radius); assert.equal(metrics[0].border, metrics[1].border);
     assert.ok(Math.abs(metrics[0].center - metrics[1].center) < 1, "Toolbar controls share a center line");
-    if (width >= 1024) {
-      const connection = actions.getByLabel("已連接", { exact: true });
-      const box = await connection.boundingBox();
-      assert.ok(Math.abs(box.y + box.height / 2 - metrics[0].center) < 1, "Passive connection status is centered");
-      assert.equal(await connection.evaluate(e => getComputedStyle(e).backgroundColor), white);
-      assert.equal(await connection.getAttribute("role"), null, "Connection status is not an action button");
-    }
+    assert.equal(await actions.getByRole("link").count(), 0, "The header has no separate account or settings action");
     await assertFits(home, `toolbar ${width}`);
     await home.screenshot({ path: resolve(directory, `home-${width}.png`) });
     if (width === 1440) await actions.screenshot({ path: resolve(directory, "toolbar-1440.png") });

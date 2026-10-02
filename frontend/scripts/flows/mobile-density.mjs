@@ -21,7 +21,8 @@ export async function verifyMobileDensity(browser, failures, directory) {
     await target(page.getByRole("link", { name: "與 Agent 對話", exact: true }), "對話導覽");
     assert.equal(await page.getByText("問我關於孩子的問題…", { exact: true }).count(), 0);
     assert.equal(await page.getByRole("button", { name: /^準備問題：/ }).count(), 0);
-    await target(page.getByRole("link", { name: "開啟設定", exact: true }), "開啟設定");
+    assert.equal(await page.getByTestId("header-actions").getByRole("link").count(), 0);
+    await target(page.getByRole("button", { name: "更多頁面", exact: true }), "更多頁面");
     const title = await page.getByRole("heading", { name: "待辦事項", exact: true }).boundingBox();
     const action = await page.getByRole("button", { name: "查看全部", exact: true }).boundingBox();
     assert.ok(title.y < action.y + action.height && action.y < title.y + title.height, "Task title and action align on one row");

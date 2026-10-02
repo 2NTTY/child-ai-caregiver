@@ -9,7 +9,7 @@ import { AppDialog as Dialog } from "./AppDialog";
 import { AppIcon } from "./AppIcon";
 import { AppMenuList } from "./AppMenuList";
 import { AgentEntryButton } from "./AgentEntryButton";
-import { AppButton, ConnectionPill, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
+import { AppButton, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 import { NotificationBell } from "./NotificationBell";
@@ -155,9 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts child={selectedChild} load={model.profileLoad} /> : null}
         <View testID="header-actions" style={styles.topActions}>
-          {!compact ? <ConnectionPill state={model.connection} /> : null}
           <NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
-          {compact ? <Link href="/settings" asChild><Pressable accessibilityRole="link" accessibilityLabel="開啟設定" style={StyleSheet.flatten([styles.accountAction, width < mobileLayout.breakpoint && styles.mobileAction])}><View style={styles.accountAvatar}><Text style={styles.accountAvatarText}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable></Link> : null}
           <ToolbarIconButton icon="page-layout-sidebar-right" label={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
             expanded={railExpanded} onPress={() => wide ? setRailOpen(value => !value) : setRailModal(value => !value)} />
         </View>
@@ -208,10 +206,6 @@ const styles = StyleSheet.create({
   navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
   sidebarBottom: { marginTop: "auto", paddingBottom: spacing.sm },
-  accountAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
-  accountAction: { width: 44, height: 44, flexShrink: 0, alignItems: "center", justifyContent: "center" },
-  mobileAction: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, minWidth: mobileLayout.touchTarget, minHeight: mobileLayout.touchTarget },
-  accountAvatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" },
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
   topbar: { height: 70, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
   topbarCompact: { height: 64, paddingHorizontal: spacing.md, gap: spacing.sm },

@@ -1,7 +1,7 @@
 import { brand } from "../branding";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { AccessibilityInfo, Animated, Easing, Image, Pressable, StyleSheet, View } from "react-native";
+import { AccessibilityInfo, Animated, Easing, Image, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import { HomeBackground } from "./appearance/HomeBackground";
@@ -25,13 +25,15 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
   const checklist = previewChecklist.filter(item => item.childId === child?.id);
   const guide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   const state = model.operation.state;
-  const [quickWidth, setQuickWidth] = useState(0);
-  const fourQuickColumns = quickWidth >= 290;
+  const { width: windowWidth } = useWindowDimensions();
+  const [quickWidth, setQuickWidth] = useState<number | null>(null);
+  const initialQuickWidth = Math.max(0, Math.min(windowWidth, mobileLayout.breakpoint) - 2 * mobileLayout.pageInset - 2 * mobileLayout.cardInset - 2);
+  const fourQuickColumns = (quickWidth ?? initialQuickWidth) >= 290;
   const playIntroduction = useRef(introductionPending && Boolean(child)).current;
   const intro = useRef(new Animated.Value(playIntroduction ? 0 : 1)).current;
   const transitionStarted = useRef(false);
   const [greetingHeight, setGreetingHeight] = useState(168);
-  const [childHeight, setChildHeight] = useState(106);
+  const [childHeight, setChildHeight] = useState(98);
   const [docked, setDocked] = useState(!playIntroduction);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState<boolean | null>(null);
@@ -54,7 +56,7 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
       if (reducedMotion) { intro.setValue(1); setDocked(true); return; }
       Animated.timing(intro, { toValue: 1, duration: 360, easing: Easing.inOut(Easing.cubic), useNativeDriver: false })
         .start(({ finished }) => { if (finished) setDocked(true); });
-    }, 5000);
+    }, 3000);
     return () => { clearTimeout(timer); intro.stopAnimation(); };
   }, [hasChild, docked, pickerOpen, reducedMotion, intro]));
   function handlePickerOpen(open: boolean) {
@@ -78,8 +80,8 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
         <Text style={styles.motto}>每個小日常，都值得好好記下。</Text>
       </View> : null}
       </Animated.View>
-      {child ? <Animated.View testID="mobile-child-card" onLayout={event => setChildHeight(event.nativeEvent.layout.height)}
-        style={[styles.childCard, {
+      {child ? <Animated.View testID="mobile-child-card" onLayout={docked ? undefined : event => setChildHeight(event.nativeEvent.layout.height)}
+        style={[styles.childCard, docked ? styles.dockedChildCard : {
           width: intro.interpolate({ inputRange: [0, 1], outputRange: ["100%", "62%"] }),
           marginTop: intro.interpolate({ inputRange: [0, 1], outputRange: [mobileLayout.sectionGap, -(greetingHeight + childHeight) / 2] }),
           padding: intro.interpolate({ inputRange: [0, 1], outputRange: [spacing.md, 0] }),
@@ -153,6 +155,7 @@ const styles = StyleSheet.create({
   artwork: { position: "absolute", top: 0, left: -mobileLayout.pageInset, right: -mobileLayout.pageInset },
   greeting: { minHeight: 168, paddingVertical: spacing.lg, justifyContent: "center" },
   childCard: { borderRadius: radius.large, borderColor: colors.softLine, gap: spacing.xs },
+  dockedChildCard: { position: "absolute", left: 0, top: 0, bottom: 0, width: "62%", justifyContent: "center" },
   greetingCopy: { width: "60%", minWidth: 0, gap: spacing.xs },
   heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.heading, fontWeight: "800" },
   subtitle: { fontFamily: chineseFont, color: colors.ink, ...mobileType.body },

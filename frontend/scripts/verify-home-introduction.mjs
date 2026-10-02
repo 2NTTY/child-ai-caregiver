@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { assertFits, launchPreviewBrowser, openPreview } from "./preview-browser.mjs";
 
-const directory = resolve(process.env.FRONTEND_PROOF_DIR ?? "verification/fe-w27-child-control");
+const directory = resolve(process.env.FRONTEND_PROOF_DIR ?? "verification/fe-w28-shell-feedback");
 const browser = await launchPreviewBrowser(), failures = [], passed = [], metrics = [];
 const greetingName = "你好，媽媽！";
 const homeLink = page => page.getByRole("link", { name: "主頁", exact: true });
@@ -45,7 +45,7 @@ try {
     await page.getByRole("heading", { name: greetingName, exact: true }).waitFor();
     const initial = await card.boundingBox(), image = await header.getByTestId("home-background-image").boundingBox();
     const start = Date.now();
-    await page.waitForTimeout(3100);
+    await page.waitForTimeout(1800);
     assert.equal(await page.getByTestId("mobile-home-greeting").evaluate(e => getComputedStyle(e).opacity), "1");
     if (width === 390 && !reduced) {
       const trigger = card.getByRole("button");
@@ -58,9 +58,9 @@ try {
       await page.keyboard.press("Escape"); await page.getByRole("dialog").waitFor({ state: "hidden" });
     }
     await page.getByRole("heading", { name: greetingName, exact: true }).waitFor({ state: "hidden", timeout: 6500 });
-    assert.ok(Date.now() - start >= 4700, "First-entry reading time remains available");
+    assert.ok(Date.now() - start >= 2800, "The first entry keeps approximately three seconds of reading time");
     const control = await checkDocked(page, "docked child " + suffix);
-    assert.ok(control.card.y < initial.y - 80);
+    assert.ok(control.button.y < initial.y - 80);
     assert.deepEqual(await header.getByTestId("home-background-image").boundingBox(), image, "Artwork remains fixed during the introduction");
     await page.screenshot({ path: resolve(directory, "child-docked-" + suffix + ".png") });
     const trigger = card.getByRole("button");

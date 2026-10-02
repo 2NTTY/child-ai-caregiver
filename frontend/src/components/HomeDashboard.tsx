@@ -1,6 +1,6 @@
 import { brand } from "../branding";
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { ActivityIndicator, Divider, Text } from "react-native-paper";
 import { AppButton, AppTextField, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
@@ -76,12 +76,18 @@ export function HomeDashboard({ model, actions, introductionPending = false, onI
   model: HomeViewModel; actions: HomeActions; introductionPending?: boolean; onIntroductionPresented?: () => void;
 }) {
   const { width: windowWidth } = useWindowDimensions();
+  const scrollRef = useRef<NativeScrollView | null>(null);
   const [width, setWidth] = useState(900);
   const stacked = Math.min(width, windowWidth) < 760;
+  useLayoutEffect(() => {
+    if (Platform.OS !== "web" || windowWidth < 650) return;
+    const viewport = (scrollRef.current as (NativeScrollView & { getScrollableNode(): HTMLElement }) | null)?.getScrollableNode();
+    if (viewport) setWidth(viewport.clientWidth);
+  }, [windowWidth]);
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   useEffect(() => { if (introductionPending) onIntroductionPresented?.(); }, [introductionPending, onIntroductionPresented]);
   if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} introductionPending={introductionPending} />;
-  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+  return <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <View testID="desktop-home-banner" style={[styles.introCard, stacked && styles.introStack]}>
       <HomeBackground surface={colors.paper} protectFullWidth={stacked} wideIllustration />
       <View style={[styles.introText, stacked && styles.introTextWide]}><Text style={styles.eyebrow}>{brand.name} · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} variant="accent" onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>

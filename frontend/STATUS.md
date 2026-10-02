@@ -2,7 +2,9 @@
 
 更新：2026-10-02。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W27 首頁孩子入口補修（2026-10-02）：** 同一合成會話只在首次首頁播放 5 秒閱讀／360 ms 上移，切頁返回、提前離頁、切孩子及 649／650 斷點不重播；上層入口預留真正登入會話接線。移除點開時的白色長條，動畫後箭嘴靠近文字；頭像改 48，名字／年齡 18／14，入口至少 72 高。四尺寸、選單／鍵盤／動畫中點擊、閱讀暫停／減少動畫及 320 放大文字、typecheck、Web／Android export 通過；[交接](HANDOFF.md#home-simplification)／[最新證據](verification/fe-w27-child-control/build-checks.json)。此前移除首頁提問／重複切換／日期及手機 6／4 px 覆蓋條的[證據保留](verification/fe-w27-home/build-checks.json)。真登入接線、使用者視覺及原生實機仍待驗收。
+**最新 FE-W28（2026-10-02）：** 全部 Web 垂直／橫向捲動條改為 6／4 px 透明覆蓋同款；頂部只留鈴鐺與資訊側欄，設定沿「更多」。首頁等待改 3 秒，修正返回時孩子／快捷欄數及桌面首幀重排。六寬度首幀、來源長回覆／12 項、首次會話／選單／減少動畫／放大文字、typecheck、Web／Android export 通過；[交接](HANDOFF.md#shell-feedback)／[證據](verification/fe-w28-shell-feedback/build-checks.json)。[正式移除清單](PRODUCTION_UI_HANDOFF.md) 已交接，[換頁研究](MOTION_OPTIONS.md#page-transitions)已記錄，換頁動畫未實作。真身份／API／原生實機及使用者視覺待驗。
+
+**此前 FE-W27 首頁孩子入口補修（2026-10-02）：** 同一合成會話只在首次首頁播放 5 秒閱讀／360 ms 上移，切頁返回、提前離頁、切孩子及 649／650 斷點不重播；上層入口預留真正登入會話接線。移除點開時的白色長條，動畫後箭嘴靠近文字；頭像改 48，名字／年齡 18／14，入口至少 72 高。四尺寸、選單／鍵盤／動畫中點擊、閱讀暫停／減少動畫及 320 放大文字、typecheck、Web／Android export 通過；[交接](HANDOFF.md#home-simplification)／[當時證據](verification/fe-w27-child-control/build-checks.json)。此前移除首頁提問／重複切換／日期及手機 6／4 px 覆蓋條的[證據保留](verification/fe-w27-home/build-checks.json)。最新時長及全部 Web 滑塊由 FE-W28 接續；真登入接線、使用者視覺及原生實機仍待驗收。
 
 **FE-W26 來源面板補修（2026-10-02）：** 每則回答只留一個底部來源分頁組件，顯示來源標題；過多可左右捲動，點同一項再收起。正文上標立即跳到該則訊息的來源面板，標示及聚焦對應分頁；沒有平滑捲動，也不自動展開關閉的詳情。四尺寸及長回覆／12 項來源、390／320 放大文字、typecheck、Web／Android export 通過；原 Agent 合成流程沿用未變業務證據。[交接](HANDOFF.md#answer-citations)／[本次證據](verification/fe-w26-source-tabs/build-checks.json)。正式 API 沒有逐句引用映射，真接線須核對正文編號與原來源次序，不能前端猜配。使用者視覺及原生實機仍待驗收；未改根文件或業務控制器。
 

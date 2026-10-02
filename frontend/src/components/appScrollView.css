@@ -1,7 +1,8 @@
 .os-theme-app.os-scrollbar {
-  --os-size: 10px;
+  box-sizing: border-box;
+  --os-size: 6px;
   --os-padding-axis: 4px;
-  --os-padding-perpendicular: 2px;
+  --os-padding-perpendicular: 1px;
   --os-track-bg: transparent;
   --os-track-bg-hover: transparent;
   --os-track-bg-active: transparent;
@@ -17,14 +18,6 @@
   --os-handle-min-size: 40px;
   --os-handle-border-radius: 999px;
   z-index: 5;
-}
-
-@media (max-width: 649px) {
-  .os-theme-app.os-scrollbar {
-    box-sizing: border-box;
-    --os-size: 6px;
-    --os-padding-perpendicular: 1px;
-  }
 }
 
 @media (forced-colors: active) {
