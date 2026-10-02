@@ -1,0 +1,24 @@
+{
+  "baseline": "0ff9533e1c0afaf7a79cccaaa70854e72b9107fc",
+  "metrics": [
+    {
+      "width": 390,
+      "childCard": {
+        "width": 358,
+        "height": 127,
+        "y": 260
+      },
+      "quickHeight": 114
+    },
+    {
+      "width": 320,
+      "childCard": {
+        "width": 288,
+        "height": 183,
+        "y": 260
+      },
+      "quickHeight": 114
+    }
+  ],
+  "failures": []
+}

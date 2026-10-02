@@ -21,6 +21,16 @@
 
 桌面內容以 onLayout 的實際可用寬度重排；手機首頁在 Web 小於 650 px 或原生入口使用。390 px 快速記錄四格，較窄容器改兩列；孩子卡片可換行，不固定截圖尺寸。原生使用 SafeAreaProvider／useSafeAreaInsets、Expo Router JavaScript Tabs、Android window resize／tabBarHideOnKeyboard 及返回鍵關抽屜；沒有假系統狀態欄。手機 Web 截圖不是 Android 實機證據。
 
+### FE-W10 手機尺寸接續
+
+前置 `0ff9533e1c0afaf7a79cccaaa70854e72b9107fc`（FE-W09 draft PR #69）；本包 `codex/fe-w10-mobile-density`，正式契約基線仍是 `90dacd4`。主責 B；只交付 frontend 顯示及共用元件，沒有改 Server、正式 App、根指導／模型文件或新增依賴。使用者視覺及真機仍待驗收。
+
+- `theme.ts` 的 mobileLayout／mobileType／mobileIcons 集中手機比例；沿 Paper 5.15.3 MD3 的 22／16／14–16／12 字級、20–24 SVG，主要控制觸控至少 48。一般頁由 PageFrame 的 onLayout 決定內容邊距，首頁快速格由實際內容寬度決定四／兩格；Desktop tokens 和 OKLCH 未改。成熟依據、數值及 Skill 見 [MOBILE_DESIGN](MOBILE_DESIGN.md)。
+- HomeChild 新增可選的 `ageSummaryLabel`／`ageReferenceLabel` **只屬顯示投影，不是新 API 欄位**。主聊天須從既有年齡／約數／基準資料同時投影二者；缺任一項時顯示完整 ageLabel，禁止解析格式化字串、移除「約」或隱去基準。選單仍顯示完整標籤。ChildPicker 的短「切換」只適用窄卡片，accessible label 保留目前孩子。
+- 手機 composer 的「預覽」仍是本地輸入預覽；accessible label 是「預覽輸入」，沒有送出或保存。提問捷徑是獨立橫向列，鍵盤能到達；已有草稿仍禁用，孩子切換／原文保留沿原控制器要求。不要把短按鈕接成第二套 chat transport。
+- NativeDashboardTabs 的最小內容高度與 safe-area bottom 分開，底部仍由 Router Tabs 處理；原生外殼只處理頂部／左右 inset。字體保留系統伸縮，沒有固定整頁比例、PixelRatio 補償或虛構系統狀態欄。Android 真字體、鍵盤、返回鍵、TalkBack 和安全區仍待主聊天安排。
+- typecheck、Web 23 路由／Android Hermes 31 資產輸出、40 個重排及手機必要互動／150% Web 文字通過；沒有 API、pageerror 或 console.error。證據：[checks](verification/fe-w10/checks-layout-mobile-density.json)／[build-checks](verification/fe-w10/build-checks.json)，[390 主頁](verification/fe-w10/home-390.png)、[320](verification/fe-w10/home-320.png)、[完整排列](verification/fe-w10/home-390-full-layout.png)。Web 放大文字不當作 Android 系統字體驗收。
+
 ## 共用元件與成熟方案
 
 - [theme.ts](src/theme.ts) 是色彩、字級、間距、圓角及 Paper 主題唯一入口；[ui.tsx](src/components/ui.tsx) 集中品牌按鈕、輸入、選單、卡片、標題、分頁和狀態。
@@ -33,7 +43,7 @@
 
 重複使用的方法與官方來源在 [前端 Skill](.agents/skills/web-screen-delivery/SKILL.md) 及其原生／表單參考；不重選框架，不把 Skill 變成第二份需求或協定。
 
-2026-09-30 的樣式修訂沿 [COLOR_STRATEGY](COLOR_STRATEGY.md)：原品牌種子、OKLCH 明暗派生與已核對 HEX 集中 theme.ts；完整 MD3 角色及 elevation 防止預設紫色漏入。Paper roundness 是倍率基數 4，Dialog 的實際圓角由 AppDialog 統一為 22 px。AppMenuList 統一導覽列；ChildPicker 的文字層次、方形頭像及 44／52 px 高度集中一處。
+2026-09-30 的樣式修訂沿 [COLOR_STRATEGY](COLOR_STRATEGY.md)：原品牌種子、OKLCH 明暗派生與已核對 HEX 集中 theme.ts；完整 MD3 角色及 elevation 防止預設紫色漏入。Paper roundness 是倍率基數 4，Dialog 的實際圓角由 AppDialog 統一為 22 px。AppMenuList 統一導覽列；ChildPicker 的文字層次、方形頭像、桌面 44／52 及手機至少 48 高度集中一處。
 
 使用者認為色階改善後，本次按 Material／Carbon／Atlassian 官方的角色分工重新安排位置：常駐側欄／畫布用 paper 派生中性色，資料卡片／彈窗用白色；次要操作／孩子摘要用 ink，普通圖標用 muted，teal 集中於主要操作、選中及手機重點。既有色階與業務回調保留，狀態不互換；成熟方案與理由見 COLOR_STRATEGY。
 

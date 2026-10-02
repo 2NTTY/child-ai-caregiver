@@ -1,9 +1,9 @@
 import { useRef, useState, type ReactNode, type Ref } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
 import { AppIcon } from "./AppIcon";
 import { Button, Portal, RadioButton, Text, TextInput } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
-import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 import type { ConnectionState, OperationState } from "../view-model";
 
 export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", disabled = false, loading = false, style, ref }: {
@@ -16,6 +16,7 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   style?: StyleProp<ViewStyle>;
   ref?: Ref<View>;
 }) {
+  const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   return (
     <Button
       ref={ref}
@@ -25,8 +26,8 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
       onPress={onPress}
       disabled={disabled || loading}
       loading={loading}
-      contentStyle={styles.buttonContent}
-      labelStyle={styles.buttonLabel}
+      contentStyle={[styles.buttonContent, compact && styles.mobileTarget]}
+      labelStyle={[styles.buttonLabel, compact && mobileType.itemTitle]}
       style={[styles.button, variant === "secondary" && styles.outlineButton, style]}
       accessibilityLabel={accessibilityLabel}
     >
@@ -44,9 +45,10 @@ export function AppTextField({ style, outlineStyle, mode, ref, ...props }: AppTe
 export function AppSelectionTrigger({ label, onPress, disabled = false, expanded, ref, calendar = false }: {
   label: string; onPress: () => void; disabled?: boolean; expanded: boolean; ref?: Ref<View>; calendar?: boolean;
 }) {
+  const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   // Paper 5.15 Button replaces expanded state on its inner control; expose it on the selection trigger itself.
   return <Pressable ref={ref} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ expanded, disabled }} aria-expanded={expanded} aria-disabled={disabled} disabled={disabled}
-    onPress={onPress} style={({ pressed }) => [styles.selectionTrigger, disabled && styles.selectionDisabled, pressed && styles.linkPressed]}>
+    onPress={onPress} style={({ pressed }) => [styles.selectionTrigger, compact && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && styles.linkPressed]}>
     <Text style={styles.selectionLabel}>{label}</Text><AppIcon name={calendar ? "calendar-clock-outline" : "chevron-down"} size={20} color={colors.deepTeal} />
   </Pressable>;
 }
@@ -73,15 +75,25 @@ export function AppSelect<T extends string>({ label, value, options, onChange, d
     </Dialog></Portal> : null}</>;
 }
 
-export function SectionCard({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+export function SectionCard({ children, style, testID }: { children: ReactNode; style?: StyleProp<ViewStyle>; testID?: string }) {
+  const compact = useWindowDimensions().width < mobileLayout.breakpoint;
+  return <View testID={testID} style={[styles.card, compact && styles.mobileCard, style]}>{children}</View>;
 }
 
-export function SectionHeader({ title, subtitle, action, icon }: { title: string; subtitle?: string; action?: ReactNode; icon?: React.ComponentProps<typeof AppIcon>["name"] }) {
+export function SectionHeader({ title, subtitle, action, icon, count }: { title: string; subtitle?: string; action?: ReactNode; icon?: React.ComponentProps<typeof AppIcon>["name"]; count?: number }) {
+  const compact = useWindowDimensions().width < mobileLayout.breakpoint;
+  if (compact) return <View style={styles.mobileHeader}>
+    <View style={styles.mobileHeaderRow}><View style={styles.mobileHeaderTitle}>
+      {icon ? <AppIcon name={icon} size={mobileIcons.content} color={colors.teal} importantForAccessibility="no" /> : null}
+      <Text accessibilityRole="header" style={[styles.sectionTitle, mobileType.sectionTitle]}>{title}</Text>
+      {count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}
+    </View>{action ? <View style={styles.mobileHeaderAction}>{action}</View> : null}</View>
+    {subtitle ? <Text style={[styles.sectionSubtitle, mobileType.caption]}>{subtitle}</Text> : null}
+  </View>;
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.headerText}>
-        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text></View>
+        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{count !== undefined ? <Text style={styles.countText}>{count}</Text> : null}</View>
         {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
       </View>
       {action}
@@ -120,9 +132,10 @@ export function ConnectionPill({ state }: { state: ConnectionState }) {
 }
 
 export function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
+  const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.link, pressed && styles.linkPressed]}>
-      <Text style={styles.linkText}>{label}</Text><AppIcon name="arrow-right" size={17} color={colors.ink} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.link, compact && styles.mobileTarget, pressed && styles.linkPressed]}>
+      <Text style={[styles.linkText, compact && mobileType.label]}>{label}</Text><AppIcon name="arrow-right" size={compact ? mobileIcons.inline : 17} color={colors.ink} />
     </Pressable>
   );
 }
@@ -132,11 +145,12 @@ export function UnderlineTabs<T extends string>({ items, value, onChange }: {
   value: T;
   onChange: (next: T) => void;
 }) {
+  const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   return <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabs}>
     {items.map(item => <Pressable
       key={item.key} accessibilityRole="tab" accessibilityLabel={item.label}
       accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => onChange(item.key)}
-      style={({ pressed }) => [styles.tab, value === item.key && styles.tabActive, pressed && styles.linkPressed]}
+      style={({ pressed }) => [styles.tab, compact && styles.mobileTarget, value === item.key && styles.tabActive, pressed && styles.linkPressed]}
     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
   </ScrollView>;
 }
@@ -147,11 +161,19 @@ const styles = StyleSheet.create({
   buttonLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "700" },
   outlineButton: { borderColor: colors.line },
   card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
+  mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
   sectionHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap" },
   headerText: { flexGrow: 1, flexShrink: 1, gap: spacing.xs },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 29, fontWeight: "700", flexShrink: 1 },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   sectionSubtitle: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 21 },
+  mobileTarget: { minHeight: mobileLayout.touchTarget, minWidth: mobileLayout.touchTarget },
+  mobileHeader: { gap: spacing.xs },
+  mobileHeaderRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  mobileHeaderTitle: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  mobileHeaderAction: { flexShrink: 0, maxWidth: "48%" },
+  count: { minWidth: 24, paddingHorizontal: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.paleTeal, alignItems: "center" },
+  countText: { fontFamily: chineseFont, color: colors.deepTeal, ...mobileType.caption, fontWeight: "700" },
   pill: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 6 },
   connectionPill: { alignSelf: "center" },
   pillText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },

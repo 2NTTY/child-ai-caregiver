@@ -9,6 +9,9 @@ export interface HomeChild {
   id: string;
   displayName: string;
   ageLabel: string;
+  // Optional display projection; preserve the full label and its approximate/date semantics.
+  ageSummaryLabel?: string;
+  ageReferenceLabel?: string;
   regionLabel: string;
   allergiesLabel: string | null;
   profileConfirmed: boolean;

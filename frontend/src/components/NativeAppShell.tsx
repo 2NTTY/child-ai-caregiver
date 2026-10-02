@@ -7,7 +7,7 @@ import { AppIcon } from "./AppIcon";
 import { AppMenuList } from "./AppMenuList";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePreview } from "../preview/PreviewContext";
-import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileIcons, mobileLayout, radius, spacing, typeScale } from "../theme";
 import { NotificationBell } from "./NotificationBell";
 import { ChildPicker } from "./ChildPicker";
 import { ChildKeyFacts } from "./ChildKeyFacts";
@@ -30,8 +30,8 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
     <View onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}>
       <View style={styles.header}><Pressable accessibilityRole="link" accessibilityLabel="育伴港，返回主頁" onPress={() => router.push("/")} style={styles.brand}><Image source={require("../../assets/brand/logo-horizontal.png")} resizeMode="contain" style={styles.logo} /></Pressable>
         <View style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
-          <Pressable accessibilityRole="button" accessibilityLabel="用戶與更多頁面" onPress={() => setMenuOpen(true)} style={styles.avatar}><Text style={styles.initial}>{model.caregiverName.slice(0, 1)}</Text></Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel={railOpen ? "收起資訊側欄" : "開啟資訊側欄"} accessibilityState={{ expanded: railOpen }} onPress={() => setRailOpen(value => !value)} style={styles.railButton}><AppIcon name="page-layout-sidebar-right" color={colors.deepTeal} size={23} /></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="用戶與更多頁面" onPress={() => setMenuOpen(true)} style={styles.accountAction}><View style={styles.avatar}><Text style={styles.initial}>{model.caregiverName.slice(0, 1)}</Text></View></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={railOpen ? "收起資訊側欄" : "開啟資訊側欄"} accessibilityState={{ expanded: railOpen }} onPress={() => setRailOpen(value => !value)} style={styles.railButton}><AppIcon name="page-layout-sidebar-right" color={colors.deepTeal} size={mobileIcons.navigation} /></Pressable>
         </View>
       </View>
       {pathname !== "/" ? <View style={styles.childStrip}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /><ChildKeyFacts child={model.children.find(item => item.id === model.selectedChildId)} load={model.profileLoad} /></View> : null}
@@ -51,13 +51,14 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
 }
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.canvas },
-  header: { minHeight: 68, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  header: { minHeight: mobileLayout.headerMinHeight, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   brand: { flexShrink: 1, minWidth: 0, justifyContent: "center", minHeight: 48 },
   logo: { width: 124, height: 44 },
   actions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  avatar: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.teal, justifyContent: "center", alignItems: "center" },
+  accountAction: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center" },
+  avatar: { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.teal, justifyContent: "center", alignItems: "center" },
   initial: { fontFamily: chineseFont, color: colors.white, fontSize: typeScale.body, fontWeight: "700" },
-  railButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.small, backgroundColor: colors.quietSurface },
+  railButton: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center", borderRadius: radius.small, backgroundColor: colors.quietSurface },
   childStrip: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
   content: { flex: 1 },
   notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },

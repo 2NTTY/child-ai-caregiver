@@ -39,6 +39,22 @@ export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, hero: 40
 export const radius = { small: 10, medium: 16, large: 22, pill: 999 } as const;
 export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading: 28, hero: 34 } as const;
 export const iconTokens = { strokeWidth: 1.8, small: 18, navigation: 22, feature: 28 } as const;
+// Mobile sizes are logical units. Text retains the platform's font scaling and intrinsic height.
+export const mobileLayout = {
+  breakpoint: 650, pageInset: 16, sectionGap: 16, cardInset: 16, cardRadius: 16,
+  touchTarget: 48, headerMinHeight: 64, tabMinHeight: 64,
+  childAvatar: 40, askMinHeight: 56, quickTileMinHeight: 88,
+} as const;
+export const mobileIcons = { inline: 16, content: 20, navigation: 22, primary: 24 } as const;
+export const mobileType = {
+  heading: { fontSize: 22, lineHeight: 28 },
+  sectionTitle: { fontSize: 16, lineHeight: 24 },
+  itemTitle: { fontSize: 14, lineHeight: 20 },
+  body: { fontSize: 14, lineHeight: 20 },
+  bodyLarge: { fontSize: 16, lineHeight: 24 },
+  label: { fontSize: 12, lineHeight: 16 },
+  caption: { fontSize: 12, lineHeight: 16 },
+} as const;
 export const chineseFont = Platform.select({ web: "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
 
 export const paperTheme = {

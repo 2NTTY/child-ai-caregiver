@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { Badge, Button, IconButton, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import type { ConnectionState, HomeOperation } from "../view-model";
-import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileIcons, mobileLayout, radius, spacing, typeScale } from "../theme";
 import { OperationPill } from "./ui";
 
 const attentionStates = new Set(["needs_confirmation", "failed", "unknown"]);
@@ -14,13 +14,14 @@ export function NotificationBell({ operation, connection, onReview }: {
   onReview: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   const needsAttention = attentionStates.has(operation.state);
   return <>
-    <View style={styles.anchor}>
+    <View style={[styles.anchor, compact && styles.mobileTarget]}>
       <IconButton
-        icon="bell-outline" size={22} iconColor={colors.deepTeal}
+        icon="bell-outline" size={compact ? mobileIcons.content : 22} iconColor={colors.deepTeal}
         accessibilityLabel={`開啟訊息提示${needsAttention ? "：1 項合成狀態需留意" : ""}`}
-        onPress={() => setOpen(true)} style={styles.button}
+        onPress={() => setOpen(true)} style={[styles.button, compact && styles.mobileTarget]}
       />
       <Badge visible={needsAttention} size={18} style={styles.badge}>1</Badge>
     </View>
@@ -47,6 +48,7 @@ export function NotificationBell({ operation, connection, onReview }: {
 const styles = StyleSheet.create({
   anchor: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   button: { margin: 0 },
+  mobileTarget: { width: mobileLayout.touchTarget, height: mobileLayout.touchTarget },
   badge: { position: "absolute", top: 1, right: 1, backgroundColor: colors.coral, color: colors.white },
   dialog: { width: "92%", maxWidth: 440, alignSelf: "center", borderRadius: radius.large },
   content: { gap: spacing.sm },

@@ -1,17 +1,20 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
 import { AppButton, AppTextField, SectionCard } from "../components/ui";
 import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";
 import { usePreview } from "../preview/PreviewContext";
 import { AppIcon } from "../components/AppIcon";
-import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 
 const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄", "先列出想問的問題"];
 
 export default function ChatPage() {
   const { model, actions, chatDraft, setChatDraft } = usePreview();
   const [localMessages, setLocalMessages] = useState<Record<string, string[]>>({});
+  const viewportWidth = useWindowDimensions().width;
+  const [paneWidth, setPaneWidth] = useState(0);
+  const compact = (paneWidth || viewportWidth) < mobileLayout.breakpoint;
   const child = model.children.find(item => item.id === model.selectedChildId);
   const key = model.selectedChildId ?? "no-child";
   const messages = localMessages[key] ?? [];
@@ -23,10 +26,10 @@ export default function ChatPage() {
     setChatDraft("");
   }
 
-  return <View style={styles.root}>
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+  return <View onLayout={event => setPaneWidth(event.nativeEvent.layout.width)} style={styles.root}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled">
       <SectionCard style={styles.headingCard}>
-        <View style={styles.headingRow}><View style={styles.agentMark}><AppIcon name="star-four-points" size={28} /></View><View style={styles.headingCopy}><Text accessibilityRole="header" style={styles.title}>育伴港 Agent 對話</Text><Text style={styles.subtitle}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
+        <View style={styles.headingRow}><View style={styles.agentMark}><AppIcon name="star-four-points" size={28} /></View><View style={styles.headingCopy}><Text accessibilityRole="header" style={[styles.title, compact && mobileType.sectionTitle]}>育伴港 Agent 對話</Text><Text style={[styles.subtitle, compact && mobileType.body]}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
         <Text style={styles.previewNote}>合成畫面示例 · 尚未連接 Agent 或發送訊息</Text>
       </SectionCard>
       {!child ? <SectionCard><Text style={styles.body}>請先選擇孩子；不同孩子的私人對話不能混在一起。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard> : <>
@@ -46,10 +49,10 @@ export default function ChatPage() {
         <AgentConversationPreview key={child.id} childId={child.id} online={model.connection === "online"} />
       </>}
     </ScrollView>
-    <View style={styles.composer}>
+    <View testID="chat-composer" style={[styles.composer, compact && styles.mobileComposer]}>
       <View style={styles.composerTop}><Text style={styles.composerLabel}>撰寫問題</Text><Text style={styles.composerHint}>只供本地預覽；不會發送或保存</Text></View>
-      <View style={styles.composerRow}><AppTextField multiline accessibilityLabel="撰寫對話問題" placeholder="輸入你想討論的照顧問題…" value={chatDraft} onChangeText={setChatDraft} style={styles.composerInput} disabled={!child} /><AppButton label="預覽輸入" onPress={previewMessage} disabled={!child || !chatDraft.trim()} /></View>
-      <View style={styles.suggestions}><Text style={styles.suggestionLabel}>建議提問：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={item} disabled={!!chatDraft.trim() || !child} onPress={() => setChatDraft(item)} style={({ pressed }) => [styles.suggestion, (!!chatDraft.trim() || !child) && styles.suggestionDisabled, pressed && styles.pressed]}><Text style={styles.suggestionText}>{item}</Text></Pressable>)}</View>
+      <View style={styles.composerRow}><AppTextField multiline accessibilityLabel="撰寫對話問題" placeholder="輸入你想討論的照顧問題…" value={chatDraft} onChangeText={setChatDraft} style={[styles.composerInput, compact && styles.mobileComposerInput]} disabled={!child} /><AppButton label={compact ? "預覽" : "預覽輸入"} accessibilityLabel="預覽輸入" onPress={previewMessage} disabled={!child || !chatDraft.trim()} /></View>
+      <ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll} contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled"><Text style={styles.suggestionLabel}>建議提問：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={item} disabled={!!chatDraft.trim() || !child} onPress={() => setChatDraft(item)} style={({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (!!chatDraft.trim() || !child) && styles.suggestionDisabled, pressed && styles.pressed]}><Text style={styles.suggestionText}>{item}</Text></Pressable>)}</ScrollView>
     </View>
   </View>;
 }
@@ -57,6 +60,12 @@ export default function ChatPage() {
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, backgroundColor: colors.canvas }, pressed: { opacity: 0.68 }, scroll: { flex: 1 },
   page: { width: "100%", maxWidth: 1060, alignSelf: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, gap: spacing.lg },
+  mobilePage: { paddingHorizontal: mobileLayout.pageInset },
+  mobileComposer: { paddingHorizontal: mobileLayout.pageInset, paddingVertical: spacing.sm },
+  mobileComposerInput: { minWidth: 0, fontSize: mobileType.body.fontSize },
+  suggestionScroll: { flexGrow: 0 },
+  mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm },
+  mobileSuggestion: { minHeight: mobileLayout.touchTarget, flexShrink: 0 },
   headingCard: { gap: spacing.sm }, headingRow: { flexDirection: "row", alignItems: "center", gap: spacing.md }, headingCopy: { flex: 1, minWidth: 0 },
   agentMark: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" }, agentMarkSmall: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" }, agentGlyph: { color: colors.teal, fontSize: 28 },
   title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, fontWeight: "800" }, subtitle: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 }, previewNote: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.mintSurface, alignSelf: "flex-start", paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, fontSize: typeScale.caption, fontWeight: "700" },
