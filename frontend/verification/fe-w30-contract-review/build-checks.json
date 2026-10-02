@@ -1,0 +1,244 @@
+{
+  "at": "2026-10-02T17:32:18.861979+00:00",
+  "baseline": "949d088298a0055b1c2a41191a59402a09d9abe2",
+  "branch": "codex/fe-w30-contract-review",
+  "reviewDocSha256": "b4dce43c197653d46963877bb4114c53b5e56f940ed6bb6519210ddbf22c7493",
+  "githubSync": {
+    "githubLogin": "CherylNg-2526",
+    "at": "2026-10-02T16:55:45.7076714Z",
+    "otherWorktreesChecked": 14,
+    "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+    "frontendOverlaps": [],
+    "githubDocs": {
+      "src/shared/knowledge.ts": "ea330e54333a48dcb861364fccbc167aedab78f7",
+      "docs/API.md": "69fd07e18f649e4862030001837662d5e2fdc19b",
+      "src/shared/product-agent.ts": "9f217d80dd1e020dc6048075e4f34f9233cd73f2",
+      "docs/P2_UI_HANDOFF.md": "6488b8c53ae58e37a12e7a3683aea94924aa3981"
+    }
+  },
+  "dependencyPrAudit": {
+    "pullRequests": [
+      {
+        "fileCount": 210,
+        "mergeState": "CLEAN",
+        "base": "master",
+        "head": "6c7216f2c1b04f0ecebb3cedde7abf7e131b1f2d",
+        "outsideFrontend": [],
+        "checks": [],
+        "reviews": [],
+        "branch": "codex/fe-w06-care-record-flows",
+        "pr": 54
+      },
+      {
+        "fileCount": 27,
+        "mergeState": "CLEAN",
+        "base": "codex/fe-w06-care-record-flows",
+        "head": "1e1fb7b07a5333ce15843acea10ef670a27de562",
+        "outsideFrontend": [],
+        "checks": [],
+        "reviews": [],
+        "branch": "codex/fe-w07-notification-settings",
+        "pr": 65
+      },
+      {
+        "fileCount": 59,
+        "mergeState": "CLEAN",
+        "base": "codex/fe-w07-notification-settings",
+        "head": "83106c07a3793e5f0b6ef8b4cd61a9de3aa2e45b",
+        "outsideFrontend": [],
+        "checks": [],
+        "reviews": [],
+        "branch": "codex/fe-w08-agent-entry",
+        "pr": 68
+      },
+      {
+        "fileCount": 23,
+        "mergeState": "CLEAN",
+        "base": "codex/fe-w08-agent-entry",
+        "head": "0ff9533e1c0afaf7a79cccaaa70854e72b9107fc",
+        "outsideFrontend": [],
+        "checks": [],
+        "reviews": [],
+        "branch": "codex/fe-w09-agent-conversation",
+        "pr": 69
+      },
+      {
+        "fileCount": 72,
+        "mergeState": "CLEAN",
+        "base": "codex/fe-w09-agent-conversation",
+        "head": "596c657fa7c67eb264c31bc65538c6822c360df2",
+        "outsideFrontend": [],
+        "checks": [],
+        "reviews": [],
+        "branch": "codex/fe-w10-mobile-density",
+        "pr": 70
+      },
+      {
+        "fileCount": 1027,
+        "mergeState": "CLEAN",
+        "base": "codex/fe-w10-mobile-density",
+        "head": "949d088298a0055b1c2a41191a59402a09d9abe2",
+        "outsideFrontend": [],
+        "checks": [],
+        "reviews": [],
+        "branch": "codex/fe-w11-photos",
+        "pr": 73
+      }
+    ],
+    "login": "CherylNg-2526",
+    "at": "2026-10-02T17:13:36.7369668Z"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "57.0.16",
+    "@expo/vector-icons": "^15.0.2",
+    "@hookform/resolvers": "5.9.1",
+    "expo": "57.0.24",
+    "expo-blur": "57.0.3",
+    "expo-constants": "57.0.19",
+    "expo-linking": "57.0.10",
+    "expo-router": "57.0.22",
+    "lucide-react-native": "1.49.0",
+    "luxon": "3.7.2",
+    "overlayscrollbars": "2.16.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "7.88.0",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "2.32.0",
+    "react-native-paper": "5.15.3",
+    "react-native-paper-dates": "0.24.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-screens": "4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "0.21.2",
+    "react-native-worklets": "0.10.1",
+    "zod": "4.5.4"
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "browser": "154.0.4258.48",
+    "platform": "Edge headless; synthetic static Web preview"
+  },
+  "checks": {
+    "typecheck": {
+      "exitCode": 0
+    },
+    "webExport": {
+      "exitCode": 0,
+      "routes": 35
+    },
+    "androidExport": {
+      "exitCode": 0,
+      "scope": "Hermes bundle/assets only"
+    },
+    "focusedUnit": {
+      "passed": 24,
+      "failed": 0,
+      "memory": 6,
+      "taskAndForms": 7,
+      "channel": 4,
+      "modelAndGrowth": 7,
+      "memoryOverlapRerun": 6
+    },
+    "syntheticLayouts": {
+      "passed": 64
+    },
+    "syntheticFlows": {
+      "passed": 8
+    },
+    "diffCheck": {
+      "exitCode": 0
+    }
+  },
+  "limitations": [
+    "No production API, model, notifications, database, formal E2E or physical-device checks",
+    "No assertion of all-browser back protection: tested cancellable Navigation API in recorded Edge version",
+    "A1-A6 and full D1/formal child name handling remain formal App handoff"
+  ],
+  "verification": {
+    "confirmed-unavailable-390.png": "3999bfecab785a21d29fdaa493bd87dbb84f7bbdfc684d1a4be52ae60087fdb0",
+    "layout-checks.json": "0a7b248c23559e2cf8923efd8c6677bb002a325dd47156162df1785cf8895752",
+    "photo-pages-checks.json": "f7883351fc1a1cc9133b1f9a36db40867bc4cdb70998e7bd60356c6cec490018",
+    "photo-reconnect-390.png": "edd1cb73dea43cc9c8b75fc8d6a3e9a441e812a95b2ad87ae0a445c4d71a0a2d",
+    "preferences-recovery-390.png": "2cf3554253f93bfc717d9dca625e447edaaa51a1bf9352ec766b60c894a84d19",
+    "recovery-checks.json": "bee44982eb24405d5d94273623363a075098ffbca4a0fdf3a471045ea6a218c6",
+    "ui-checks.json": "e0c3fa5dc392578b6bc754dccd2636cd1a5f63bc27f5e269276e3e8890967aab"
+  },
+  "sourceSha256": {
+    "frontend/HANDOFF.md": "5dcf2faf6c91c3ef659ffc0edc2acc7b4d23fc2a0e81de8372bb73394c2ff5ed",
+    "frontend/PLAN.md": "4af2e775709d7529e00bd9197e3e4d16481a558f0dcd6141bfa129fede72b6da",
+    "frontend/SHARED_INPUT_HANDOFF.md": "5f868a42531fc4921ac459ea127feadd613d59b7177540a6cc121c46ee0dd9ea",
+    "frontend/STATUS.md": "1eda4dfb894b0709875a7fb475f795bece4474e6f19e1b865895dcdc9b52ee2c",
+    "frontend/app/(dashboard)/_layout.tsx": "d7307d3a98108415408436588e5a0fccafda2c351bfc657ac52a534ab1ee3388",
+    "frontend/app/_layout.tsx": "b39984d62abdead92834f0f37663d09f822009bc8bff9e53e66a9e1920819579",
+    "frontend/scripts/channel-policy.test.mjs": "31eab3ccd3e1d645bfe073eba414df0672d49b77aa7811da662564e9f669f78b",
+    "frontend/scripts/memory-preview.test.mjs": "7550ba5cb043988a8b346f1223bc25765bc088033adc81165d1e881b9b972abd",
+    "frontend/scripts/model-settings-form.test.mjs": "2ef06e84eb431f0a1a13265d9fdb792ceb22584ad8a5ea180304c65a773e24e1",
+    "frontend/scripts/task-pagination.test.mjs": "4c6976331e78d8c884f77b58223e5c178394002a3b7817b9b62e3a2f203b14ca",
+    "frontend/scripts/verify-contract-review-layout.mjs": "45d7a79cfc2c6d15a39b58e0a8505941a8bb537e0ee0a3e32871188cee159f13",
+    "frontend/scripts/verify-contract-review-photo-pages.mjs": "4e5544746efeccc9d2a7f0e535fed87a1e298708ce3669d194157c34a7cb9a1d",
+    "frontend/scripts/verify-contract-review-recovery.mjs": "e6a6241f86e28710c1e63b0fc618619d0e629b6407d50e036a179ad8c9ec0949",
+    "frontend/src/care-view-model.ts": "f65d8f4689e9f7f188e58b3cdf29ccaa3842337c21e104aaec30a8746312b061",
+    "frontend/src/channel-view-model.ts": "d5833643005a2ade5f08d77ab581eeaaa8eb0fc53e7d6c6a29cacd9b117bfef8",
+    "frontend/src/components/AgentEntryButton.tsx": "af83d3fbd0ab9ee8c8d237284b90fa280417e7ac66a1db80b98ce037d68e311e",
+    "frontend/src/components/AppShell.tsx": "9e803c5f252887ab877eeb698d8c3e637e7ea3aa93e668ad8f93c0c68a88a1ea",
+    "frontend/src/components/CreateChildPreview.tsx": "d52dd2a5fdc21518c3ef17dddba3bd52fcaacf730bee84f7165cfe7f4c166aa3",
+    "frontend/src/components/NativeAppShell.tsx": "522082987d491c7a9df58bb9e9b3e488d01b8981f158309afb5b70127cf12d06",
+    "frontend/src/components/PreferencesPreview.tsx": "aafdf5019791f932d7a81eefaf8680fa2bb97f4b3b0e6d7954b7557be210f953",
+    "frontend/src/components/PreviewWritePanel.tsx": "4321e28cb34f96ae8dbd046ed3a48dd87b6f2f8f6877a6d9f5470fa87898d7ae",
+    "frontend/src/components/care/CareRecordForm.tsx": "a34ec5058e779a6e63c3d37b2ed5cf8c45d0c1f264cbbf44506772f184710fc8",
+    "frontend/src/components/care/CareRecordsView.tsx": "678026650f758f8816a2e5bf483c535dfc885c7fe8995248a87101c32561ba0f",
+    "frontend/src/components/contact/ContactConsentCard.tsx": "65b985d05eef094f4475dec4400c0e30135d57180d3b6e7d9420c07372a1db45",
+    "frontend/src/components/contact/ContactTaskCard.tsx": "bb0e5001192afbfe10ff658501d2d35c00d6c8ad0cbfaae2bf22c2343ae63f05",
+    "frontend/src/components/family/FamilyView.tsx": "d07ca915692e8eed82b09e3aba0e46a4f707a1e668b53aef3189dd9ffe1e39d7",
+    "frontend/src/components/growth/GrowthAttentionCard.tsx": "3b274842168e912e53655f9b017abb7b102861a45a2fb24d32b3e7ec2be691c4",
+    "frontend/src/components/growth/GrowthTopicCard.tsx": "059f5adeb96115f0b0a8aaeccd0c705dda4379b92f9ee50b0b5b3da847aea4c1",
+    "frontend/src/components/growth/growth-form.test.mjs": "cf31e6ab0ff4094fa994045a335893b0ca887e5ed93e0d21ffc57b8676ab657d",
+    "frontend/src/components/growth/growth-form.ts": "aa907d1ff114a65f299c1aedd61df325da0c521943f02bacc00602f9e93d250d",
+    "frontend/src/components/memory/MemoryCards.tsx": "168b890d5a32baa741c9eba0e0c18438e351ddf90ebd810aacbab9cd6bad44e3",
+    "frontend/src/components/memory/MemoryEditor.tsx": "26bdcfd20cf95ca9edfc3fc48af2c1424f504a230a809c5d80cf40a7d18204f1",
+    "frontend/src/components/model-settings/ModelSettingsPreview.tsx": "9965957f31554ce2d1488de70fa7a57da0cff4e2d7069d4dc6f1e14a822f47fb",
+    "frontend/src/components/model-settings/ModelSettingsView.tsx": "fb7622342ad597c77c311f8d68a0af781c5f4b2a068608160d8f8cc85534f2f3",
+    "frontend/src/components/model-settings/model-settings-form.ts": "e993eae8f2167b4b01e8a3a54f99eebd10bf5511663183877b1b9b6dbb08a2bf",
+    "frontend/src/components/notifications/ChannelCards.tsx": "c4d068b3a767cb7c96268086bbf04adaf0a2b736540ea154d0ec0600b775eba1",
+    "frontend/src/components/photos/PhotoRecordForm.tsx": "742949b521c1a654168b0c6293a2244942d03b1f25f0fafee3f67876534d1ef6",
+    "frontend/src/components/photos/PhotosView.tsx": "ea689b921d5381267fd2b32456939a46e72257ee141e655c45e3b913f21c9b76",
+    "frontend/src/components/profile/ProfileForm.tsx": "77cb0d35378d41b5173c394ed60c3c71a34ccfb8c4c0f46d6b719d759b59cd3b",
+    "frontend/src/components/shared-inputs/SourceComposer.tsx": "5c86d46aeb4f5a58c080a258b0393c0a25e10c82458a51f548e6b69a0222d725",
+    "frontend/src/components/shared-inputs/SourceRecordForm.tsx": "6a3fb43b3a67e93303e76acaab16dc4483e4119794a010572978b4c33f711f69",
+    "frontend/src/components/summary/PreparationCard.tsx": "8606fdcec4de834a42b7057dd6e8a16d6571e8ed3df8087ceeb25e6ef0f3f43e",
+    "frontend/src/components/tasks/TaskForm.tsx": "c33437f4b3735a2f9cbe1c8619d2bdcba6c38922406f055eac93602c286fe164",
+    "frontend/src/components/tasks/TasksView.tsx": "5692b6fe2ff5551146d06208efa4c9784e27462cf2011612de74183f85bd4aa5",
+    "frontend/src/memory-view-model.ts": "0b1b4ea53e06ebb90486f865968f1d088f5fad19ad117bb00016580697c9e73c",
+    "frontend/src/preview/PreviewContext.tsx": "eb2953adde38ed9df1dbd747f87d66ee500b9f4034feb1781a57ae2a578a13f7",
+    "frontend/src/preview/PreviewNavigationGuard.tsx": "0294870944f9c12ba6e6c58dfc55afd04c45fbcb7c35827a8d39e4806e5e5077",
+    "frontend/src/preview/browser-history-guard.ts": "8247beeb3f12e8c95fa3954252049d7b0e9e545fba48b8a543cc4ba485c3a57b",
+    "frontend/src/preview/memory-fixture.ts": "fd452d0b088ed2c4a89b4b809dcdcdd9a37d51796c3e1631512df7176c89cc84",
+    "frontend/src/preview/memory-pagination.ts": "63073fd4b96c5cf0eb3ed7705524ec2d83bfba13ff0a111f2265f30929ad72d3",
+    "frontend/src/preview/photoFixture.ts": "4d115738df7bc89bce4279ceb04cc4f08c0b24e00d9b51a313f50fe3b55ea674",
+    "frontend/src/preview/task-fixture.ts": "510a248a9653316a4c78e192a772e87075eba1d4c7c4ce18ce4cf73a6a48ead7",
+    "frontend/src/preview/task-pagination.ts": "ba8da44cd0dda27b8fb6aeb6318233592b4edbe1100c8a6abc06f931e60499cb",
+    "frontend/src/preview/useAgentPreview.ts": "4c02f31c24de0b9bafe68ade9670d92b462dc603b50a878b69ddb6642e62fbcd",
+    "frontend/src/preview/useCarePreview.ts": "99fb1709f2e60537dcad29bc6b9107173750e04db07934d1031bf2de50d87b7c",
+    "frontend/src/preview/useContactPreview.ts": "80a82df10d535f81b4e45ad250440134bcc8a28ee1b83c30644a4865dfa4a69f",
+    "frontend/src/preview/useGrowthPreview.ts": "45f6cddc37b25e6016a94c7e076ef9a4863f6a0f6fb5423f6f92e53846f9f7fa",
+    "frontend/src/preview/useMemoryPreview.ts": "4f84fbf41fae9653b5bb155f685c9bb7e05f11d8d4992ecac7d60ceb280fd9dd",
+    "frontend/src/preview/useModelSettingsPreview.ts": "75b766bff9a9f125b849d04f9683f5d47f51e8428ea2d8c935ac9b100de8bcd0",
+    "frontend/src/preview/usePhotosPreview.ts": "824d779a097831a763cbf017309b982b811a32e5543e152f04e0f4007b8e4af8",
+    "frontend/src/preview/usePreviewOperation.ts": "a9b4cb33eefb784f8fde300cc701e5351ace8bb78967f98aa9999451e2f049a2",
+    "frontend/src/preview/usePushSettingsPreview.ts": "d51bcf2fbf35febe0a3f57f247f91ab3b3a0675eb985a54279ff4340365ef4fe",
+    "frontend/src/preview/useSourcesPreview.ts": "554bd243849d30586711b5a7b989238315f8fa1396fe2e220c0b20bab06b48cb",
+    "frontend/src/preview/useSummaryPreview.ts": "a7f150b5bb82bd8aafb808fbce591c9f7c89787f0a31fa53a24ec11569d49e4a",
+    "frontend/src/preview/useTasksPreview.ts": "fa0b7f51174fbfcf1a75756acb6d6d398eda07aad6cb703795e46d6068f2c9f6",
+    "frontend/src/preview/useTelegramSettingsPreview.ts": "0a90157d05f458dce5d6a1646e5ea8e2701ec5115daf516374bb951b30842c80",
+    "frontend/src/screens/careScreen.tsx": "7a12742ef646f9c145d2c6bd11fd76b3c5edd92f2cf4d61fa31b4f61f0279d09",
+    "frontend/src/screens/settingsScreen.tsx": "32e77720e60f18eceb7477f03a4835b512eef20342fa890603ded011aac0ed53",
+    "frontend/src/screens/tasksScreen.tsx": "e1a39042c88469cb43f38c6a2d150ef891aef19cf17d37e90d7caacef9699411",
+    "frontend/src/task-view-model.ts": "6192088c3cd11aeb0da07253cb255d377b14f64085d5b76a4d7dd00ad519b0b3"
+  },
+  "bundleSha256": {
+    "dist/_expo/static/js/web/entry-932a80b83752457b5dd74723053d93b7.js": "0b08388d96fece0eb8d82aa1132401c37cd0bff2af147f2b8ecf749cb895d640",
+    "dist-android/_expo/static/js/android/entry-94834119ab35c12ca243a8ea0ae7a2cf.hbc": "1ad1752a3ce6e4458eff7451f16bf4e1d2a93bcb7ccc6105691bb98ebac6228c"
+  }
+}

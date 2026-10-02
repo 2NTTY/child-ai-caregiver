@@ -18,6 +18,7 @@ function TasksWorkspace({ child, online, reading }: { child: HomeChild; online: 
     { value: "worker_disabled", label: "worker 停用／還原後暫停" }, { value: "metadata_missing", label: "未提供 worker metadata" },
     { value: "worker_failed", label: "worker 失敗" }, { value: "worker_unknown", label: "worker 結果未知" },
     { value: "latest_terminal", label: "衝突的最新版本已結束" },
+    { value: "many_items", label: "超過 50 項／分頁" },
   ];
   return <TasksView model={preview.model} actions={preview.actions} controller={preview.controller} previewControls={<SectionCard>
     <SectionHeader title="合成預覽情境" subtitle="只切換固定示例，沒有連接 Server 或啟動 worker。" action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />

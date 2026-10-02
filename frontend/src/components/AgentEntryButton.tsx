@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "expo-router";
+import { PreviewLink } from "../preview/PreviewNavigationGuard";
 import { StyleSheet, View } from "react-native";
 import { Text, TouchableRipple } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
@@ -7,7 +7,7 @@ import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
 export function AgentEntryButton({ active }: { active: boolean }) {
   const [focused, setFocused] = useState(false);
-  return <Link href="/chat" asChild><TouchableRipple
+  return <PreviewLink href="/chat"><TouchableRipple
     testID="agent-entry"
     accessibilityRole="link"
     accessibilityLabel="與 Agent 對話"
@@ -27,7 +27,7 @@ export function AgentEntryButton({ active }: { active: boolean }) {
       </View>
       <AppIcon name="chevron-right" size={16} color={colors.onAccent} />
     </View>
-  </TouchableRipple></Link>;
+  </TouchableRipple></PreviewLink>;
 }
 
 const styles = StyleSheet.create({

@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useEffect } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { HelperText, Text } from "react-native-paper";
@@ -12,6 +13,7 @@ import { CareRevisionContent, CareValueSummary } from "./CareRecordDetail";
 export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel; actions: CareRecordsActions }) {
   const draft = model.draft!;
   const { control, handleSubmit, getValues, formState: { isDirty } } = useForm<CareFormValues>({ defaultValues: draft.initialValues, resolver: zodResolver(careFormSchema(draft.mode)), mode: "onBlur" });
+  usePreviewLeaveGuard(isDirty);
   const locked = ["saving", "unknown", "conflict"].includes(model.operation.state);
   const busy = ["saving", "unknown"].includes(model.operation.state);
   useEffect(() => {
@@ -37,6 +39,7 @@ export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel
       <View style={styles.quantityField}>{field("quantityUnit", "單位（與數量一起填寫）", "數量單位草稿")}</View></View>
     <Controller name="quantityPrecision" control={control} render={({ field: input }) => <AppSelect label="數量精度" value={input.value} options={[{ value: "approximate", label: "約數" }, { value: "exact", label: "精確" }]} disabled={locked} onChange={value => { input.onChange(value); actions.editDraft(); }} />} />
     {field("eventTimeRaw", "事件時間原文（可留空）", "事件時間草稿", "保留原時間說法。更改文字不會自動推算精準時間；留空表示未知。")}
+    <Text style={styles.meta}>目前這個表單只保存時間原文。未確認實際事件日期／時間的記錄，不會納入按期間計算的照顧摘要；加入日期不能代替事件時間。</Text>
     {draft.mode === "revise" ? field("reason", "更正原因", "更正原因草稿") : null}
     <Text style={styles.meta}>離線時可整理本次表單；關閉、重新載入或切換孩子會清除草稿。</Text>
     <AppButton label="預覽共享內容" disabled={locked} onPress={handleSubmit(actions.reviewDraft)} />

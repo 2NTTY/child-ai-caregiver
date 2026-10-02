@@ -12,7 +12,11 @@ export function modelSettingsSchema(keyConfigured: boolean) {
   }).superRefine((draft, context) => {
     if (draft.mode !== "personal") return;
     if (!draft.consent) context.addIssue({ code: "custom", path: ["consent"], message: "請確認費用及資料外送安排。" });
-    if (!keyConfigured && !draft.keyText.trim()) context.addIssue({ code: "custom", path: ["keyText"], message: "請輸入你的個人 API 密鑰。" });
+    if (!draft.keyText.trim()) {
+      if (!keyConfigured) context.addIssue({ code: "custom", path: ["keyText"], message: "請輸入你的個人 API 密鑰。" });
+    } else if (draft.keyText.length < 20 || draft.keyText.length > 512 || /[^\x21-\x7e]/u.test(draft.keyText)) {
+      context.addIssue({ code: "custom", path: ["keyText"], message: "密鑰須為 20–512 個可列印 ASCII 字元，不能包含空格。" });
+    }
     for (const [path, range] of [["dailyText", personalLimits.daily], ["modelCallsText", personalLimits.modelCalls], ["queryEmbeddingsText", personalLimits.queryEmbeddings]] as const) {
       const number = Number(draft[path]);
       if (!/^\d+$/u.test(draft[path]) || !Number.isInteger(number) || number < range.min || number > range.max) {
@@ -28,7 +32,7 @@ export function modelCommandFromDraft(draft: ModelSettingsDraft, settings: Model
     dailyLimit: personal ? Number(draft.dailyText) : settings.dailyLimit,
     maxModelCalls: personal ? Number(draft.modelCallsText) : settings.maxModelCalls,
     maxQueryEmbeddings: personal ? Number(draft.queryEmbeddingsText) : settings.maxQueryEmbeddings,
-    ...(personal && draft.keyText.trim() ? { apiKey: draft.keyText.trim() } : {}),
+    ...(personal && draft.keyText.trim() ? { apiKey: draft.keyText } : {}),
   };
 }
 export function removeModelKeyCommand(settings: ModelSettings): ModelSettingsCommand {

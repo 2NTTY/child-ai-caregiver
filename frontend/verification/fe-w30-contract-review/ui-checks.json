@@ -1,0 +1,333 @@
+{
+  "at": "2026-10-02T17:16:17.047Z",
+  "results": [
+    {
+      "path": "/",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/chat",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/care",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/tasks",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/memory",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/sources",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/photos",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/family",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/profile",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/growth",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/summary",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/contact",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/settings",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/guide",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/more",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/motion-preview",
+      "width": 1440,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/chat",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/care",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/tasks",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/memory",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/sources",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/photos",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/family",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/profile",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/growth",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/summary",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/contact",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/settings",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/guide",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/more",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/motion-preview",
+      "width": 1024,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/chat",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/care",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/tasks",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/memory",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/sources",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/photos",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/family",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/profile",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/growth",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/summary",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/contact",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/settings",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/guide",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/more",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/motion-preview",
+      "width": 390,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/chat",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/care",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/tasks",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/memory",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/sources",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/photos",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/family",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/profile",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/growth",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/summary",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/contact",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/settings",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/guide",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/more",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "path": "/motion-preview",
+      "width": 320,
+      "runtimeAndLayout": "passed"
+    },
+    {
+      "sourceDirty": "route cancel retains raw; explicit discard; beforeunload passed"
+    },
+    {
+      "preferences": "unknown retained across tab; nav blocked; original retry keeps reference"
+    }
+  ],
+  "failures": [],
+  "scope": "local synthetic preview; no formal API/E2E/device calls"
+}

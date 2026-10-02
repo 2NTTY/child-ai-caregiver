@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, usePathname, useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
+import { PreviewLink, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { brand } from "../branding";
@@ -39,14 +40,14 @@ const scenarios: PreviewScenario[] = ["normal", "first_login", "setup_incomplete
 
 function NavItem({ item, active, compact = false }: { item: typeof navigation[number]; active: boolean; compact?: boolean }) {
   const [pressed, setPressed] = useState(false);
-  return <Link href={item.href} asChild><Pressable
+  return <PreviewLink href={item.href}><Pressable
     accessibilityRole="link" accessibilityLabel={item.label} accessibilityState={{ selected: active }} aria-current={active ? "page" : undefined}
     onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
     style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.pressed])}
   >
     <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
     <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
-  </Pressable></Link>;
+  </Pressable></PreviewLink>;
 }
 
 export function PreviewToolbar() {
@@ -119,6 +120,7 @@ export function RightRail({ model, actions, checkedPreviewItems, togglePreviewIt
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const leave = usePreviewNavigation();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const compact = width < 900;
@@ -138,10 +140,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return <View style={styles.root}>
     {!compact ? <View testID="web-sidebar" style={styles.sidebar}>
-      <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={styles.brandLink}>
+      <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={styles.brandLink}>
         <BrandLogo style={styles.logo} decorative />
         <Text style={styles.brandLine}>用資料 · 陪伴成長</Text>
-      </Pressable></Link>
+      </Pressable></PreviewLink>
       <View style={styles.navList}>{navigation.filter(item => item.href !== "/chat").map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}</View>
       <View style={styles.sidebarBottom}>
         <AgentEntryButton active={active("/chat")} />
@@ -151,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     </View> : null}
     <View style={styles.stage}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
-        {compact ? <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></Link> : null}
+        {compact ? <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></PreviewLink> : null}
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts child={selectedChild} load={model.profileLoad} /> : null}
         <View testID="header-actions" style={styles.topActions}>
@@ -181,9 +183,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Dialog.Title>更多頁面</Dialog.Title>
         <Dialog.Content>
           <AppMenuList items={[
-            ...navigation.filter(item => ["/family", "/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/memory"].includes(item.href)).map(item => ({ key: item.href, label: item.label, icon: item.icon, onPress: () => { setMoreOpen(false); router.push(item.href); } })),
-            { key: "settings", label: "設定", icon: "cog-outline", onPress: () => { setMoreOpen(false); router.push("/settings"); } },
-            ...(showGuideNav ? [{ key: "guide", label: "使用引導", icon: "compass-outline" as const, onPress: () => { setMoreOpen(false); router.push("/guide"); } }] : []),
+            ...navigation.filter(item => ["/family", "/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/memory"].includes(item.href)).map(item => ({ key: item.href, label: item.label, icon: item.icon, onPress: () => { setMoreOpen(false); leave(() => router.push(item.href)); } })),
+            { key: "settings", label: "設定", icon: "cog-outline", onPress: () => { setMoreOpen(false); leave(() => router.push("/settings")); } },
+            ...(showGuideNav ? [{ key: "guide", label: "使用引導", icon: "compass-outline" as const, onPress: () => { setMoreOpen(false); leave(() => router.push("/guide")); } }] : []),
           ]} />
         </Dialog.Content>
         <Dialog.Actions><Button onPress={() => setMoreOpen(false)}>關閉</Button></Dialog.Actions>

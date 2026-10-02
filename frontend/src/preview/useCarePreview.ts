@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 import { useEffect, useRef, useState } from "react";
 import {
   careKindOptions, emptyCareForm, type CareDraftView, type CareFilter, type CareFormValues, type CareKind,
@@ -58,6 +59,7 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
 
   const access = condition === "access_lost" ? "lost" : condition === "read_only" ? "read_only" : "editable";
   const locked = ["saving", "unknown"].includes(operation.state);
+  usePreviewLeaveGuard(!!draft?.reviewedValues || !!deletion, locked);
   const canWrite = access === "editable" && online && !reading && !locked && operation.state !== "conflict";
   const selected = records.find(item => item.id === selectedId) ?? null;
 
@@ -222,13 +224,11 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
       later(() => {
         if (lookupOutcome === "saved") applyConfirmed(currentAttempt);
         else if (lookupOutcome === "not_applied") {
-          setOperation({ state: "failed", message: currentAttempt.mode === "delete" ? "模擬查核：原操作已確認沒有刪除；記錄仍然保留。請重新確認範圍。" : "模擬查核：原操作已確認沒有保存。草稿保留，須重新預覽才可再提交。", reference: currentAttempt.reference, latest: null });
-          setDraft(previous => previous ? { ...previous, reviewedValues: null } : null);
-          setDeletion(previous => previous ? { ...previous, scopeConfirmed: false } : null);
-          attempt.current = null;
+          setOperation({ state: "unknown", message: "原操作尚無確認收據；不代表已知失敗。原內容、版本與參考保留，只可明確重試同一操作。", reference: currentAttempt.reference, latest: null, retryAvailable: true });
         } else setOperation(previous => ({ ...previous, state: "unknown", message: "模擬查核後仍是結果未知；原操作參考不變，沒有重新提交。" }));
       });
     },
+    retryOriginalOperation() { if (operation.retryAvailable && attempt.current && online && !reading && access === "editable") submitAttempt(attempt.current); },
     useLatestVersion() {
       if (operation.state !== "conflict" || !operation.latest || !online || access !== "editable") return;
       if (deletion) {

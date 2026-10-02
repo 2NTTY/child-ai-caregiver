@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -22,6 +23,7 @@ function ScopeCheck({ checked, disabled, onChange }: { checked: boolean; disable
 
 function InviteComposer({ model, actions }: { model: FamilyViewModel; actions: FamilyActions }) {
   const form = useForm<FamilyInviteValues>({ resolver: zodResolver(invitationSchema), defaultValues: { email: "", role: "caregiver" } });
+  usePreviewLeaveGuard(form.formState.isDirty);
   const disabled = !model.online || model.locked || !!model.draft && model.draft.kind !== "invite";
   return <View style={styles.form}>
     <Controller control={form.control} name="email" render={({ field, fieldState }) => <>
@@ -39,6 +41,7 @@ function InviteComposer({ model, actions }: { model: FamilyViewModel; actions: F
 
 function IncomingComposer({ model, actions }: { model: FamilyViewModel; actions: FamilyActions }) {
   const form = useForm<{ code: string }>({ defaultValues: { code: "" } });
+  usePreviewLeaveGuard(form.formState.isDirty);
   return <View style={styles.form}>
     <Text style={styles.body}>這裏只接受頁尾情境工具提供的無效示例碼，不會驗證真實邀請。</Text>
     <Controller control={form.control} name="code" rules={{ required: "請填寫合成示例碼。" }} render={({ field, fieldState }) => <>

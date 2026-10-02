@@ -26,11 +26,20 @@ test("Context confirms only explicit finite choices while freezing all original 
   assert.throws(()=>growthContextProjection({...topic,inputs:[...topic.inputs,{...topic.inputs[0],factRefs:[{id:"b",version:7}]}]},"authority-old",{one:"yes"}),/versions disagree/);
 });
 test("Snooze requires an explicit future instant and source links remain restricted to credential-free HTTPS",()=>{
-  const schema=growthFormSchema([],Date.parse("2026-10-01T00:00:00Z"));
+  const now=Date.parse("2026-10-01T00:00:00Z");
+  const schema=growthFormSchema([],now);
   const defaults={...growthFormDefaults("",""),action:"snooze"};
   assert.equal(schema.safeParse({...defaults,until:"2026-09-30T09:00:00+08:00"}).success,false);
   assert.equal(schema.safeParse({...defaults,until:"2030-10-02T09:00:00"}).success,false);
-  assert.equal(schema.safeParse({...defaults,until:"2030-10-02T09:00:00+08:00"}).success,true);
+  const within="2026-10-02T09:00:00+08:00";
+  assert.equal(schema.safeParse({...defaults,until:within}).success,true);
+  const boundary=new Date(now+366*86400000).toISOString();
+  const beyond=new Date(now+366*86400000+1).toISOString();
+  assert.equal(schema.safeParse({...defaults,until:boundary}).success,true);
+  const result=schema.safeParse({...defaults,until:beyond});
+  assert.equal(result.success,false);
+  assert.equal(result.error.issues.find(issue=>issue.path[0]==="until")?.message,"最多可延後 366 天；請選擇較早的時間。");
+  assert.equal(growthDecisionProjection(schema.parse({...defaults,until:within}),3,"authority-old").until,within);
   for(const url of ["javascript:alert(1)","http://example.com","https://user:pass@example.com"," https://example.com"])assert.equal(growthSourceUrl(url),null);
   assert.equal(growthSourceUrl("https://www.fhs.gov.hk/"),"https://www.fhs.gov.hk/");
 });

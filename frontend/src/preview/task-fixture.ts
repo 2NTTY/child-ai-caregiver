@@ -1,6 +1,7 @@
 import type { TaskAssigneeView, TaskReminderView, TaskRevisionView, TaskView, TaskWorkView } from "../task-view-model";
+import type { TaskListPage } from "./task-pagination";
 
-export type TaskPreviewCondition = "normal" | "viewer" | "access_lost" | "needs_review" | "assignee_revoked" | "worker_disabled" | "metadata_missing" | "worker_failed" | "worker_unknown" | "latest_terminal";
+export type TaskPreviewCondition = "normal" | "viewer" | "access_lost" | "needs_review" | "assignee_revoked" | "worker_disabled" | "metadata_missing" | "worker_failed" | "worker_unknown" | "latest_terminal" | "many_items";
 export interface TaskFixture {
   items: TaskView[]; eligibleAssignees: TaskAssigneeView[];
   histories: Record<string, TaskRevisionView[]>; reminders: TaskReminderView[]; work: TaskWorkView[]; workerEnabled?: boolean;
@@ -16,6 +17,17 @@ export function createTaskFixture(childId: string, condition: TaskPreviewConditi
       details: kind === "appointment" ? "家庭到診安排示例；機構預約確認須另外核對。" : "由家人明確建立的合成安排。",
       kind, assigneeUserId: "preview-owner", createdBy: "preview-owner", createdAt, updatedAt: version === 1 ? createdAt : at,
       occurrence: { id: `${prefix}${suffix}-occurrence`, dueAt: "2026-09-30T09:30:00+08:00", timeZone: "Asia/Hong_Kong", state, terminalBasisVersion: state === "scheduled" ? null : 1 } };
+  }
+  if (condition === "many_items") {
+    const items = Array.from({ length: 51 }, (_, index) => task(`page-${String(index + 1).padStart(3, "0")}`,
+      `合成事項 ${index + 1}`, index === 50 ? "completed" : "scheduled", index === 50 ? 2 : 1));
+    return {
+      items, eligibleAssignees: [{ userId: "preview-owner", name: "媽媽（擁有人 · 合成）" }], histories: {},
+      reminders: [{ id: `${items[0].id}-initial`, batchId: "preview-page-batch", taskId: items[0].id,
+        occurrenceId: items[0].occurrence.id, taskVersion: 1, phase: "initial", createdAt: at }],
+      work: items.map(item => ({ taskId: item.id, taskVersion: item.version, status: "pending", nextAt: item.occurrence.dueAt, failures: 0 })),
+      workerEnabled: true,
+    };
   }
   const ordinary = task("ordinary", "記錄這星期的身高", "scheduled", 2);
   ordinary.occurrence.dueAt = "2026-09-28T09:00:00+08:00";
@@ -51,6 +63,20 @@ export function createTaskFixture(childId: string, condition: TaskPreviewConditi
   ];
   return { items, eligibleAssignees, histories, reminders: condition === "metadata_missing" ? [] : reminders,
     work: condition === "metadata_missing" ? [] : work, workerEnabled: condition === "metadata_missing" ? undefined : condition !== "worker_disabled" };
+}
+
+// Mirrors the bounded list page shape without adding a preview transport.
+export function taskFixturePage(fixture: TaskFixture, afterId: string | null): TaskListPage {
+  const start = afterId === null ? 0 : fixture.items.findIndex(item => item.id === afterId) + 1;
+  const offset = afterId !== null && start === 0 ? fixture.items.length : start;
+  const items = fixture.items.slice(offset, offset + 50);
+  const ids = new Set(items.map(item => item.id));
+  return {
+    items, eligibleAssignees: fixture.eligibleAssignees,
+    nextAfterId: offset + items.length < fixture.items.length ? items.at(-1)?.id ?? null : null,
+    reminders: fixture.reminders.filter(item => ids.has(item.taskId)),
+    work: fixture.work.filter(item => ids.has(item.taskId)), workerEnabled: fixture.workerEnabled,
+  };
 }
 
 // Fixed competing snapshots, not a client implementation of Server conflict rules.

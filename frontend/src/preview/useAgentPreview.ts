@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 import { useEffect, useRef, useState } from "react";
 import { mayCheckShared, mayDecide, mayRetryOriginal, type AgentDecisionKind, type AgentInboxActions, type AgentInboxModel,
   type AgentPendingDecision, type AgentRunActions, type AgentRunModel, type AgentRunView } from "../agent-view-model";
@@ -19,6 +20,7 @@ export function useAgentPreview(childId: string, online: boolean) {
   });
   const [inboxState, setInboxState] = useState<Omit<AgentInboxModel, "online" | "locked">>({ state: "idle", loadedAt: null, entries: [], selectedRunId: null });
   const selectedRun = useRef<string | null>(null);
+  usePreviewLeaveGuard(false, runState.busy === "write" || !!runState.pendingDecision);
   const fixtures = useRef(new Map<string, AgentRunView>());
   const fixtureTime = useRef(Date.now());
   const runTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -31,7 +31,7 @@ export function PhotosView({ model, actions, onCare, previewControls, selectOrig
     {model.operation.state !== "none" ? <View accessibilityRole="alert" style={s.status} testID="photo-operation"><Text style={s.title}>{operationLabels[model.operation.state]}</Text><Text style={s.body}>{model.operation.message}</Text>
       {model.operation.reference ? <Text style={s.meta}>合成操作參考：{model.operation.reference}；不是 Server opId。</Text> : null}
       <View style={s.row}>{["unknown", "unconfirmed"].includes(model.operation.state) ? <AppButton label={model.operation.phase === "upload" || model.operation.phase === "extract" ? "查核同一照片附件" : "查核原照片操作"} disabled={!model.online || model.busy} onPress={actions.checkOriginal} /> : null}
-        {model.operation.state === "unconfirmed" && model.operation.checked ? <AppButton label="重試原操作" accessibilityLabel="明確重試原內容及原操作" variant="secondary" disabled={!model.online || model.busy} onPress={actions.retryOriginal} /> : null}
+        {model.operation.state === "unconfirmed" && model.operation.checked ? <AppButton label="重試原操作" accessibilityLabel="明確重試原內容及原操作" variant="secondary" disabled={!model.fresh} onPress={actions.retryOriginal} /> : null}
         {model.reservationUnidentified && model.operation.state === "confirmed_unavailable" ? <AppButton label="結束待查並核對清單" variant="secondary" onPress={actions.finishUnidentified} /> : null}
       </View>
       {model.operation.state === "conflict" ? <><Text style={s.meta}>本頁基準：版本 {selected?.version ?? "未確定"}；目前版本：{model.latest?.version ?? "尚待重新讀取"}。原文草稿不會被最新資料覆蓋。</Text>
@@ -62,7 +62,7 @@ export function PhotosView({ model, actions, onCare, previewControls, selectOrig
           {editable && (model.original || selected) ? <PhotoRecordForm key={model.formKey} model={model} actions={actions} /> : null}
         </View>
         <View style={[s.list, !split && s.full]}><SectionCard testID="photo-list"><SectionHeader title="照片清單" subtitle="私人照片只有上傳者可見；共享照片按家庭權限讀取。" icon="image-outline" />
-          {model.access === "read_only" ? <Text style={s.meta}>你目前只可查看家庭共享內容；不能上傳、提取、確認或刪除。</Text> : null}
+          {model.access === "read_only" ? <Text style={s.meta}>你目前可查看家庭共享照片及本人既有的私人照片；不能上傳、提取、確認或刪除。</Text> : null}
           {model.load === "loading" ? <View style={s.row}><ActivityIndicator color={colors.teal} /><Text style={s.body}>正在讀取照片…</Text></View> : model.load === "error" ? <Text style={s.warning}>讀取未確認。原照片及草稿保留，先手動重新讀取。</Text> : null}
           {model.items.length === 0 && model.load === "ready" ? <Text style={s.meta}>目前沒有可讀取的照片。選擇原照片後，可先私人保存。</Text> : model.items.map(item => <View key={item.id} style={s.item}>
             <View style={s.itemHeader}><View style={s.itemIcon}><AppIcon name="image-outline" size={20} color={colors.teal} /></View><View style={s.itemCopy}><Text style={s.title}>{item.fileName}</Text><Text style={s.meta}>{item.createdAtLabel} · 版本 {item.version}</Text></View></View>

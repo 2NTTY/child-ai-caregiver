@@ -1,7 +1,8 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import {HelperText, Text} from 'react-native-paper';
-import {useForm, useWatch} from 'react-hook-form';
+import {useForm, useWatch, useFormState } from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import type {ContactActions, ContactBinding, ContactViewModel} from '../../contact-view-model';
 import {contactChannelLabels, sameContactBinding} from '../../contact-view-model';
@@ -13,6 +14,8 @@ import {contactStyles as s} from './contact-styles';
 export function ContactConsentCard({model, actions, onSettings}: {model: ContactViewModel; actions: ContactActions; onSettings: () => void}) {
   const page = model.page!, basis = useRef(page.consent.version), [confirm, setConfirm] = useState(false), [adopt, setAdopt] = useState(false);
   const {control, setValue, handleSubmit} = useForm<ConsentFormValues>({defaultValues: {enabled: page.consent.enabled, allowBackup: page.consent.allowBackup, bindings: page.consent.bindings.map(item => ({...item}))}, resolver: zodResolver(contactConsentFormSchema(page.availableBindings))});
+  const { isDirty } = useFormState({ control });
+  usePreviewLeaveGuard(isDirty);
   const values = useWatch({control}) as ConsentFormValues, parsed = contactConsentFormSchema(page.availableBindings).safeParse(values), stale = basis.current !== page.consent.version;
   const editable = !model.locked;
   useEffect(() => {setConfirm(false); setAdopt(false);}, [model.confirmationEpoch]);

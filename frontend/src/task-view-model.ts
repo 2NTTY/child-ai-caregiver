@@ -39,6 +39,7 @@ export interface TasksViewModel {
   child: { id: string; name: string }; access: "editable" | "read_only" | "lost";
   online: boolean; reading: boolean; dataLabel: string;
   items: TaskView[]; eligibleAssignees: TaskAssigneeView[]; selected: TaskView | null;
+  hasMoreTasks: boolean; loadingMoreTasks: boolean;
   workerEnabled?: boolean; work: TaskWorkView[]; reminders: TaskReminderView[];
   history: TaskRevisionView[]; historyOpen: boolean; hasMoreHistory: boolean;
   draft: TaskDraft | null; latest: TaskView | null; operation: PreviewWriteOperation;
@@ -48,6 +49,7 @@ export interface TasksActions {
   startCreate(): void; startChange(id: string, action: TaskAction): void;
   reviewDraft(values: TaskFormValues): void; editDraft(): void; submitReviewed(): void;
   useLatestVersion(): void; showHistory(): void; loadOlderHistory(): void;
+  loadMoreTasks(): void;
 }
 export const taskStateLabels: Record<TaskState, string> = {
   scheduled: "待處理", completed: "已完成", cancelled: "已取消", needs_review: "待覆核 · 已停催",

@@ -1,6 +1,7 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
-import { useForm } from "react-hook-form";
+import { useForm, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { PhotoDraftFields } from "../../photo-view-model";
 import type { SourcesActions, SourcesViewModel } from "../../shared-input-view-model";
@@ -11,6 +12,8 @@ import { sourceRecordSchema } from "./source-form";
 import { sourceStyles as s } from "./source-styles";
 export function SourceRecordForm({ model, actions }: { model: SourcesViewModel; actions: SourcesActions }) {
   const { control, handleSubmit, getValues } = useForm<PhotoDraftFields>({ defaultValues: model.draft, mode: "onBlur", resolver: zodResolver(sourceRecordSchema(model.confirmationKind)) });
+  const { isDirty } = useFormState({ control });
+  usePreviewLeaveGuard(isDirty);
   function change<K extends keyof PhotoDraftFields>(name: K, value: PhotoDraftFields[K]) { actions.editDraft({ ...getValues(), [name]: value }); }
   return <SectionCard testID="source-record-form"><SectionHeader title="人工核對記錄" subtitle="原文已私人保存；這份草稿仍未與家庭共享。" icon="pencil-outline" />
     <AppSelect label="記錄用途" value={model.confirmationKind} disabled={model.formLocked} options={[{ value: "reference", label: "外部參考（預設）" }, { value: "family_record", label: "孩子實際記錄" }]} onChange={actions.setConfirmationKind} />

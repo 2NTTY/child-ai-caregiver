@@ -12,7 +12,12 @@ export function growthFormSchema(assignees:TaskAssigneeView[],now=Date.now()){
         const result=taskFormSchema("create",assignees).safeParse(value);
         if(!result.success)for(const issue of result.error.issues)context.addIssue({code:"custom",path:issue.path,message:issue.message});
       }
-      if(value.action==="snooze"&&(!z.iso.datetime({offset:true}).safeParse(value.until).success||Date.parse(value.until)<=now))context.addIssue({code:"custom",path:["until"],message:"請選擇將來的明確日期與時間。"});
+      if(value.action==="snooze"){
+        const valid=z.iso.datetime({offset:true}).safeParse(value.until).success;
+        const until=Date.parse(value.until);
+        if(!valid||until<=now)context.addIssue({code:"custom",path:["until"],message:"請選擇將來的明確日期與時間。"});
+        else if(until>now+366*86400000)context.addIssue({code:"custom",path:["until"],message:"最多可延後 366 天；請選擇較早的時間。"});
+      }
       if(value.action==="dismiss"&&value.closeNote.length>1000)context.addIssue({code:"custom",path:["closeNote"],message:"關閉備註最多 1,000 字；不會截短原文。"});
     });
 }

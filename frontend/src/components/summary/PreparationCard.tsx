@@ -1,7 +1,8 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import {HelperText, Text} from 'react-native-paper';
-import {Controller, useFieldArray, useForm, useWatch} from 'react-hook-form';
+import {Controller, useFieldArray, useForm, useWatch, useFormState } from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import type {SummaryActions, SummaryViewModel} from '../../summary-view-model';
 import {summaryBasis, summaryBasisChanged, summaryPeriodLabel, summaryTime} from '../../summary-view-model';
@@ -15,6 +16,8 @@ export function PreparationCard({model, actions}: {model: SummaryViewModel; acti
   const basis = useRef(summaryBasis(page));
   const [shared, setShared] = useState(false), [basisConsent, setBasisConsent] = useState(false);
   const {control, handleSubmit, setValue} = useForm<PreparationFormValues>({defaultValues: preparationDefaults(page), resolver: zodResolver(preparationFormSchema), mode: 'onBlur'});
+  const { isDirty } = useFormState({ control });
+  usePreviewLeaveGuard(isDirty);
   const questions = useFieldArray({control, name: 'questions'}), checklist = useFieldArray({control, name: 'checklist'});
   const values = useWatch({control}), parsed = preparationFormSchema.safeParse(values);
   const stale = summaryBasisChanged(basis.current, page);

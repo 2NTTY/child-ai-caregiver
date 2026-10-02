@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-02T17:28:00.986Z",
+  "results": [
+    {
+      "browserBack": "cancel retains raw; explicit discard leaves"
+    },
+    {
+      "confirmedUnreadable": "unknown browser back blocked with reference retained; read failure keeps original reference; only GET recovery; unavailable ends pending"
+    }
+  ],
+  "failures": [],
+  "scope": "local synthetic preview only"
+}

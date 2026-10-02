@@ -13,7 +13,7 @@ export const photoPreviewCandidate: PhotoCandidate = {
 export function photoFixture(childId: string, readOnly = false): PhotoItem[] {
   const common = { ...photoPreviewOriginal, childId, source: `${brand.name}原有美術 · 合成預覽`, ownerLabel: "媽媽（合成）", isUploader: true, createdAtLabel: "2026年9月30日 10:24", version: 1 };
   const shared: PhotoItem = { ...common, id: `${childId}-photo-shared`, isUploader: !readOnly, canManage: !readOnly, state: "ready", visibility: "shared", recordId: `${childId}-photo-record`, extraction: readOnly ? { state: "not_requested", candidate: null } : { state: "available", candidate: photoPreviewCandidate } };
-  return readOnly ? [shared] : [
-    { ...common, id: `${childId}-photo-private`, canManage: true, state: "ready", visibility: "private", recordId: null, extraction: { state: "not_requested", candidate: null } }, shared,
+  return [
+    { ...common, id: `${childId}-photo-private`, canManage: !readOnly, state: "ready", visibility: "private", recordId: null, extraction: { state: "not_requested", candidate: null } }, shared,
   ];
 }

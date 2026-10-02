@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { HelperText, Text } from "react-native-paper";
@@ -15,6 +16,7 @@ export function CreateChildPreview({ online, enabled = true, onCreated }: { onli
   const [review, setReview] = useState<string | null>(null);
   const op = usePreviewOperation();
   const form = useForm({ defaultValues: { displayName: "" }, resolver: zodResolver(schema) });
+  usePreviewLeaveGuard(form.formState.isDirty);
   return <View style={styles.root}><AppButton label={open ? "收起新增孩子" : "新增孩子"} variant="secondary" disabled={op.locked || !enabled} onPress={() => setOpen(value => !value)} />
     {open ? <View style={styles.form}><Text style={styles.body}>合成新增示例。只需要稱呼；其他未知資料不會推算。正式建立由現有家庭／孩子 API 處理。</Text>
       <PreviewWriteNotice controller={op} online={online} />

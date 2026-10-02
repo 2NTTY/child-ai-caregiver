@@ -8,6 +8,7 @@ import { PaperSvgIcon } from "../src/components/AppIcon";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
+import { PreviewNavigationGuard } from "../src/preview/PreviewNavigationGuard";
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -17,12 +18,12 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider><PaperProvider theme={paperTheme} settings={{ icon: PaperSvgIcon }}>
       <Head><title>{brand.previewName}</title></Head>
-      <View style={styles.root} testID={ready ? "frontend-preview-ready" : undefined}>
+      <PreviewNavigationGuard><View style={styles.root} testID={ready ? "frontend-preview-ready" : undefined}>
         {renderRoutes ? <Stack screenOptions={{ headerShown: false, animation: "none" }} /> : <View style={styles.launch}>
           <BrandLogo style={styles.logo} decorative />
           <Text accessibilityRole="text" style={styles.launchText}>正在開啟{brand.name}…</Text>
         </View>}
-      </View>
+      </View></PreviewNavigationGuard>
     </PaperProvider></SafeAreaProvider>
   );
 }

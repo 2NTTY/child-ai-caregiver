@@ -1,6 +1,10 @@
 # 育有方前端狀態
 
-更新：2026-10-02。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
+更新：2026-10-03。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
+
+**最新 FE-W30 契約審查修復：** 已核對使用者提供的 review 與 GitHub `master d3213e6`、前端 `949d088`。修正原操作查核／同一參考重試／已確認待重讀、草稿離頁保護及設定頁籤保留；補記憶權威旗標／確認者／分頁、任務分頁、Push／Telegram 測試差異、來源標籤、照片重連重新核對、模型 key 說明／驗證及 366 日上限。[逐項判定及正式 App 待修項](HANDOFF.md#contract-review)／[證據](verification/fe-w30-contract-review/build-checks.json)。新分支 `codex/fe-w30-contract-review`；使用者已授權以 B 賬號 CherylNg-2526 按相依順序合併 #54／#65／#68／#69／#70／#73 及本次新 PR，GitHub 狀態為合併結果權威。這次授權取代下方歷史條目的「沿 draft／不自行 merge」，不取消真 API、視覺或原生實機關口。
+
+正式 App 的 A1–A6、D1 及孩子稱呼長度另交主聊天，沒有改目錄外程式。瀏覽器返回已驗 Edge 的可取消 Navigation API；缺少該能力的瀏覽器返回仍有缺口，不能當全面跨瀏覽器驗收。重新載入／系統關閉不保證恢復私人草稿，沒有本地持久化或離線寫入隊列。
 
 **FE-W29 出現閃動補修（2026-10-02）：** 使用者確認回到底部會隱藏，但回報出現時閃一下。已重現底部無位移的 wheel 亦會誤顯示；手勢現在只暫停跟隨，按鈕按實際離底距離及 40／24 px 緩衝顯隱，引用跳到尾部也會隱藏而不重啟跟隨。四尺寸逐幀／DOM 變化只有一次出現及隱藏；390 串流中引用定位、歷史錨點、草稿／停止及 scope 清理、typecheck／Web export 通過。[交接](HANDOFF.md#chat-timeline)／[證據](verification/fe-w29-return-stability/build-checks.json)。使用者修正版視覺、真 API 及原生實機仍待驗，沒有重跑完整四尺寸聊天或 Android export。
 

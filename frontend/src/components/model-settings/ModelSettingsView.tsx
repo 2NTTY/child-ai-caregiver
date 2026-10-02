@@ -1,3 +1,4 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { brand } from "../../branding";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -23,7 +24,7 @@ function UsageCard({ label, usage }: { label: string; usage: ModelSettingsUsage 
   </SectionCard>;
 }
 
-export function ModelSettingsView({ model, actions }: { model: ModelSettingsViewModel; actions: ModelSettingsActions }) {
+export function ModelSettingsView({ model, actions, active = true }: { model: ModelSettingsViewModel; actions: ModelSettingsActions; active?: boolean }) {
   const [width, setWidth] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
@@ -31,6 +32,7 @@ export function ModelSettingsView({ model, actions }: { model: ModelSettingsView
   const { control, reset, setValue, watch, handleSubmit, formState: { errors, isDirty } } = useForm<ModelSettingsDraft>({
     resolver: zodResolver(modelSettingsSchema(settings.keyConfigured)), defaultValues: modelSettingsDraft(settings), mode: "onChange",
   });
+  usePreviewLeaveGuard(isDirty);
   const mode = watch("mode"), keyText = watch("keyText"), consent = watch("consent");
   const locked = !model.online || !model.authorized || !!model.busy || model.needsRead || !snapshot;
   const available = mode === "personal" ? snapshot?.personalAvailable : mode === "platform" ? snapshot?.platformAvailable : true;
@@ -42,6 +44,7 @@ export function ModelSettingsView({ model, actions }: { model: ModelSettingsView
     setValue("keyText", ""); setValue("consent", false); setDeleteOpen(false); setDeleteConfirmed(false);
   }, [model.secretRevision, model.online, model.authorized, setValue]);
   function clearSecret() { setValue("keyText", ""); setValue("consent", false); }
+  useEffect(() => { if (!active) { setValue("keyText", ""); setValue("consent", false); setDeleteOpen(false); setDeleteConfirmed(false); } }, [active, setValue]);
   const submit = handleSubmit(draft => {
     if (!canSave) return;
     const command = modelCommandFromDraft(draft, settings);
@@ -77,6 +80,7 @@ export function ModelSettingsView({ model, actions }: { model: ModelSettingsView
               importantForAutofill="no" maxLength={512} value={model.online && model.authorized ? field.value : ""} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors.keyText} />} />
             <FieldError message={errors.keyText?.message} />
             <Text style={styles.meta}>{settings.keyConfigured ? "留空會保留已保存密鑰。" : ""}密鑰只在確認保存時送出；送出或失敗後會清空，原密鑰不會讀回。</Text>
+            <Text style={styles.body}>保存時，密鑰會送到目前連接的育有方 Server（{model.serverLabel}）並加密儲存，只供你授權的 Google AI 呼叫使用；密鑰原文不會讀回。</Text>
             <Controller control={control} name="consent" render={({ field }) => <AppCheckbox checked={field.value} onChange={value => setValue("consent", value, { shouldValidate: true })} disabled={locked || !available}
               label="我同意個人服務的費用及資料外送" description="使用你自己的 Google AI 服務；必要對話與資料會送到供應商，費用按其帳戶計算。" />} />
             <FieldError message={errors.consent?.message} />

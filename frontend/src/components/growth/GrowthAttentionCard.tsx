@@ -1,7 +1,8 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useRef,useState } from "react";
 import { View } from "react-native";
 import { HelperText,Text } from "react-native-paper";
-import { Controller,useForm,useWatch } from "react-hook-form";
+import { Controller,useForm,useWatch, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { GrowthActions,GrowthAttention,GrowthPage,GrowthViewModel } from "../../growth-view-model";
 import { growthActionable,growthKindLabels,growthSourceUrl,growthStateLabels,growthTime } from "../../growth-view-model";
@@ -16,6 +17,8 @@ export function GrowthAttentionCard({item,page,model,actions,onSource,onTask}:{i
   const [detailsOpen,setDetailsOpen]=useState(false),[actionsOpen,setActionsOpen]=useState(false),[taskShared,setTaskShared]=useState(false);
   const basis=useRef<{item:GrowthAttention;authorityVersion:string}|null>(null);
   const {control,handleSubmit}=useForm<GrowthFormValues>({defaultValues:growthFormDefaults(item.title,item.advice),mode:"onBlur",resolver:zodResolver(growthFormSchema(page.eligibleAssignees))});
+  const { isDirty } = useFormState({ control });
+  usePreviewLeaveGuard(isDirty);
   const values=useWatch({control});
   const action=values.action??"accept",taskMode=values.taskMode??"none",timeZone=values.timeZone??"Asia/Hong_Kong";
   const captured=basis.current??{item,authorityVersion:page.authorityVersion};

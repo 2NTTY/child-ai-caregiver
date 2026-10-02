@@ -1,7 +1,8 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import {HelperText, Text} from 'react-native-paper';
-import {Controller, useForm, useWatch} from 'react-hook-form';
+import {Controller, useForm, useWatch, useFormState } from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import type {TaskView} from '../../task-view-model';
 import type {ContactActions, ContactViewModel} from '../../contact-view-model';
@@ -19,6 +20,8 @@ export function ContactTaskCard({task, missing, model, actions, onTask}: {task: 
   const basis = useRef({taskVersion: task.version, grantVersion: grant?.version ?? 0}), [open, setOpen] = useState(false), [confirm, setConfirm] = useState(false), [revoke, setRevoke] = useState(false), [adopt, setAdopt] = useState(false);
   const defaults: GrantFormValues = grant ? {...emptyContactGrant(), allowFollowUp: grant.allowFollowUp, allowFallback: grant.allowFallback, backupUserId: grant.backupUserId ?? '', validUntil: grant.validUntil, timeZone: task.occurrence.timeZone} : {...emptyContactGrant(), timeZone: task.occurrence.timeZone};
   const {control, handleSubmit, setValue} = useForm<GrantFormValues>({defaultValues: defaults, resolver: zodResolver(contactGrantFormSchema(backups.map(item => item.userId)))});
+  const { isDirty } = useFormState({ control });
+  usePreviewLeaveGuard(isDirty);
   const values = useWatch({control}) as GrantFormValues, parsed = contactGrantFormSchema(backups.map(item => item.userId)).safeParse(values);
   const stale = basis.current.taskVersion !== task.version || basis.current.grantVersion !== (grant?.version ?? 0), editable = !model.locked && !missing;
   const eligible = task.occurrence.state === 'scheduled' && !!primary?.enabled && primary.channels.length > 0;

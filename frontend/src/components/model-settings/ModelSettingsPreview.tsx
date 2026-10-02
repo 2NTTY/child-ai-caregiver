@@ -6,7 +6,7 @@ import { chineseFont, colors, spacing, typeScale } from "../../theme";
 import { AppButton, AppSelect, SectionCard, SectionHeader } from "../ui";
 import { ModelSettingsView } from "./ModelSettingsView";
 
-export function ModelSettingsPreview({ controller, onSwitchAccount }: { controller: ModelSettingsPreviewController; onSwitchAccount: () => void }) {
+export function ModelSettingsPreview({ controller, onSwitchAccount, active = true }: { controller: ModelSettingsPreviewController; onSwitchAccount: () => void; active?: boolean }) {
   const [toolsOpen, setToolsOpen] = useState(false);
   return <View style={styles.root}>
     <SectionCard><SectionHeader title="模型設定合成預覽" subtitle="這裏不會連接供應商或保存真密鑰。請只使用測試文字。" />
@@ -24,7 +24,7 @@ export function ModelSettingsPreview({ controller, onSwitchAccount }: { controll
         {!controller.model.authorized ? <AppButton label="恢復合成登入" variant="secondary" onPress={controller.restoreIdentity} /> : null}
       </View><Text style={styles.meta}>只保留本次預覽的無密鑰 metadata；不寫入瀏覽器儲存、原操作台帳或重播隊列。</Text></> : null}
     </SectionCard>
-    <ModelSettingsView key={controller.model.scopeKey} model={controller.model} actions={controller.actions} />
+    <ModelSettingsView key={controller.model.scopeKey} model={controller.model} actions={controller.actions} active={active} />
   </View>;
 }
 const styles = StyleSheet.create({ root: { gap: spacing.lg }, controls: { gap: spacing.sm }, meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 } });

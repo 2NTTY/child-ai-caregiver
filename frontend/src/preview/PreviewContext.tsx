@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "expo-router";
+import { usePreviewNavigation } from "./PreviewNavigationGuard";
 import { createPreviewModel, previewChecklist, type PreviewScenario } from "./fixture";
 import type { GuideStatus, HomeActions, HomeChild, HomeDestination, HomeViewModel } from "../view-model";
 
@@ -26,6 +27,7 @@ const routes: Record<HomeDestination, "/chat" | "/care" | "/profile" | "/family"
 
 export function PreviewProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const leave = usePreviewNavigation();
   const [scenario, setScenarioState] = useState<PreviewScenario>("normal");
   const [guideStatus, setGuideStatus] = useState<GuideStatus>("complete");
   const [selectedChildId, setSelectedChildId] = useState("preview-child-1");
@@ -50,8 +52,9 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const draftKey = model.selectedChildId ?? "no-child";
   const actions: HomeActions = {
     selectChild(id) {
-      setSelectedChildId(id);
-      setNotice("已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。");
+      if (id === model.selectedChildId) return;
+      leave(() => { setSelectedChildId(id);
+        setNotice("已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。"); });
     },
     refresh() {
       const restoreScenario = scenario === "loading" ? "normal" : scenario;
@@ -70,13 +73,13 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
           ? "這仍是候選內容；正式版須開啟原記錄，核對後才可確認。"
           : "正式版須返回原操作並保留輸入；預覽沒有提交資料。");
     },
-    open(destination) { router.push(routes[destination]); },
-    composeCare(kind) { router.push({ pathname: "/care", params: { compose: kind } }); },
+    open(destination) { leave(() => router.push(routes[destination])); },
+    composeCare(kind) { leave(() => router.push({ pathname: "/care", params: { compose: kind } })); },
     prepareQuestion(question) {
       if (!model.selectedChildId) return;
       if (chatDrafts[draftKey]?.trim()) setNotice("保留你原本未發送的問題；可在對話頁核對後修改。");
       else setChatDrafts(previous => ({ ...previous, [draftKey]: question }));
-      router.push("/chat");
+      leave(() => router.push("/chat"));
     },
     createChildPreview(displayName) {
       const child: HomeChild = { id: `preview-new-child-${++childSerial.current}`, displayName,

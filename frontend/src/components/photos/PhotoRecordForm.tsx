@@ -1,6 +1,7 @@
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
-import { useForm } from "react-hook-form";
+import { useForm, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { careKindOptions } from "../../care-view-model";
 import type { PhotoDraftFields, PhotosActions, PhotosViewModel } from "../../photo-view-model";
@@ -12,12 +13,14 @@ import { photoStyles as s } from "./photo-styles";
 
 export function PhotoRecordForm({ model, actions }: { model: PhotosViewModel; actions: PhotosActions }) {
   const { control, handleSubmit, getValues } = useForm<PhotoDraftFields>({ defaultValues: model.draft, resolver: zodResolver(photoDraftSchema), mode: "onBlur" });
+  const { isDirty } = useFormState({ control });
+  usePreviewLeaveGuard(isDirty);
   function change<K extends keyof PhotoDraftFields>(name: K, value: PhotoDraftFields[K]) { actions.editDraft({ ...getValues(), [name]: value }); }
   return <SectionCard testID="photo-record-form"><SectionHeader title="核對記錄內容" subtitle="本頁手動草稿尚未共享；提取失敗或結果未知也可手動整理。" icon="pencil-outline" />
     <RecordDraftFields control={control} locked={model.formLocked} prefix="照片" onFieldChange={change} />
     <Text style={s.meta}>資料來源：{model.selected?.source ?? model.source}。更改草稿後須重新預覽及勾選共享範圍。</Text>
     <Text style={s.meta}>離開這頁、切換孩子或重新載入會清除本次原檔及草稿；沒有離線寫入隊列。</Text>
-    <AppButton label="預覽共享" accessibilityLabel="預覽照片共享內容" disabled={model.formLocked} onPress={handleSubmit(actions.reviewDraft)} />
+    <AppButton label="預覽共享" accessibilityLabel="預覽照片共享內容" disabled={model.formLocked || !model.fresh} onPress={handleSubmit(actions.reviewDraft)} />
     {model.reviewed ? <View style={s.review} testID="photo-shared-review"><Text style={s.title}>待確認 · 尚未家庭共享</Text>
       <Text style={s.body}>{model.reviewed.text}</Text>
       <Text style={s.body}>種類：{careKindOptions.find(item => item.value === model.reviewed?.kind)?.label}；數值：{model.reviewed.rawValue || "未填寫"}；單位：{model.reviewed.unit || "未填寫"}</Text>

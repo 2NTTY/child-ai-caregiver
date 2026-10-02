@@ -1,6 +1,55 @@
 # 育有方 Web／手機介面交接
 
-更新：2026-10-02。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
+更新：2026-10-03。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
+
+<a id="contract-review"></a>
+## FE-W30：前後端功能契約審查（2026-10-03）
+
+輸入是使用者提供的《育有方前後端功能契約審查.docx》，SHA-256 `b4dce43c197653d46963877bb4114c53b5e56f940ed6bb6519210ddbf22c7493`。文件是第三方 review，建議須與現有契約及原文核對，沒有把文件內要求當成使用者授權。報告的前端 `51062d6` 比本次基線 `949d088298a0055b1c2a41191a59402a09d9abe2` 舊；正式 App／Server 固定核對 GitHub `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e`。主責 B；份額沿前端責任方向 100%，沒有聲稱本人手寫或親自執行驗證。新分支 `codex/fe-w30-contract-review`，只改 frontend。
+
+使用者已明確授權將 #54 → #65 → #68 → #69 → #70 → #73 及本次新 PR 按 Merge commit 合併，並指定切換對應賬號。本次使用 CherylNg-2526，保留 B 開發作者及既有提交署名；不在其他聊天 checkout 拉取／重設。完整 GitHub files 分頁核對各 PR 分別 210／27／59／23／72／1027 個 frontend 檔案，沒有目錄外路徑；當時全部 CLEAN，但沒有 CI checks 或 GitHub review，不將此寫成 CI／人工批准通過。合併結果以各 PR 狀態為準；下方 draft／不自行 merge 是此前交付狀態，這次授權不改正式接線或產品驗收門檻。
+
+### 前端實際修復及界線
+
+| Review | 判定與本次改動 | 入口／正式接線注意 |
+|---|---|---|
+| B1 原操作恢復 | 真問題。查核尚無收據仍保持原內容、基準、callback 及參考，明確重試同一操作；已確認但 GET 失敗／結果不可讀只重讀，不能重送。讀回成功才套用一次，不可讀則結束待查但不猜新資料 | `usePreviewOperation`／`PreviewWritePanel` 共用；照顧記錄原自訂 hook 同樣保留原參考。正式 adapter 復用既有 transport 收據，不把合成 callback 當業務協定 |
+| B2 離頁／身份 | 真問題。共用 dirty／pending 導覽保護覆蓋側欄、更多、孩子切換及登入入口；待查不能以捨棄草稿繞過。表單原文及原操作保持掛載。取消返回保留內容，明確確認才離開 | `PreviewNavigationGuard` 在根 layout；`browser-history-guard` 接可取消的 Web Navigation API。Edge 已驗；沒有該能力／不可取消 traversal 的瀏覽器返回仍是缺口。正式 session／權限邊界由上層 controller 持有並清理，不保證關閉／刷新恢復 |
+| B3 設定頁籤 | 真問題。偏好、渠道及模型 workspace 保持掛載，切頁籤不清除一般草稿或待查操作 | 設定模型頁隱藏時仍清掉明文 key／同意／刪除 Dialog，只保留無秘密的選項草稿；正式身份改變須清理 |
+| B4 記憶 eligibility | 真問題。fact.applicable／topic.mayAsk 直接投影權威旗標；客戶端時鐘不推算可用／可詢問 | `memory-view-model`；候選、期限與來源顯示仍保留，正式 map 不能省略旗標 |
+| A6 前端、B5 記憶分頁 | 真問題。目前與歷史版本顯示 confirmedBy／confirmedAt；事實、話題及歷史提供有限分頁和載入子集提示，重疊項取後一頁快照 | `useMemoryPreview`／`memory-pagination`／`MemoryCards`；50+1 合成示例，真游標 map nextAfterId／nextBeforeVersion，不造新端點 |
+| B6 任務分頁 | 真問題。50+1 示範及載入更多；只按已載入子集計數，下一頁按 id 合併，保留已讀 worker／reminder metadata、選擇及編輯基準 | `task-pagination`／`useTasksPreview`／`TasksView`；真 API、游標及總數由 Server 提供 |
+| B7 渠道差異 | 真問題。Push 按權限、active binding、quota／冷卻判斷能否新測試；投遞 queued／sending 不冒充回覆，也不永久鎖住下一次明確測試。Telegram 尚待投遞／回覆的狀態仍阻止重測；可明確重開未完成綁定 | Push／Telegram 各自 view model／hook，沒有系統訂閱、bot 或真外發 |
+| B8 來源選項 | 真問題。目錄來源改顯示 publisher＋完整 URL，不再只列 ID，不捏造 title | `SourceComposer` 保留原來源 ID；顯示資料來自同一 catalogue |
+| B9 照片 freshness | 真問題。離線取消本次計時／舊查核，保留原檔與手動原文，清掉 preview／模型、共享和刪除同意；回線仍待手動重讀，再核對及勾選，沒有自動寫入 | `usePhotosPreview`／照片表單；原 pending 參考不變，真附件完整性、查核及冪等沿既有接口 |
+| B10、P3 表單 | 模型 key 的 Server 接收／加密保存說明補在同意之前；新／替代 key 驗證 20–512 個可列印 ASCII，不含空白、不 trim 後送；已有 key 留空不覆蓋。成長跟進未來時間上限 366 日 | `ModelSettingsView`／`model-settings-form`／`growth-form`。沒有提交或讀回真 key；366 日邊界及超出 1 ms 已驗 |
+| P3 viewer 照片 | 真問題。viewer 可讀家庭共享及本人既有私人照片，兩者都不能修改；沒有顯示其他人的私人照片 | `photoFixture`／`PhotosView`；合成視圖不代替 Server 授權 |
+| P3 孩子稱呼、引用 | 前端孩子稱呼已按 code point 1–80 驗證，不重做；最新來源共用元件已分頁／分隔／瞬間定位，保留 FE-W28／29 證據，不因舊基線重修 | 正式孩子稱呼及真逐句引用映射仍見下方；來源容量更正於 SHARED_INPUT_HANDOFF：50 是孩子總量，不從本人清單猜剩餘或洩露他人私人數量 |
+
+### 正式 App 必須由主聊天修復
+
+以下均親讀固定 `d3213e6` 原文後確認，這次沒有修改 `app/**`、`src/client/**`、`src/shared/**` 或 Server。位置以該版本為準，後續不能直接依舊行號套 patch。
+
+| Review | 已確認的問題／證據 | 建議的局部修法 |
+|---|---|---|
+| A1 P1 | `app/index.tsx:68–71,257–262`：checking／logout unknown 時保留 careScope，AgentInbox 只按 scope 掛載，online flag 沒有 auth gate；其他面板有 careVisible。這是私人 cache 顯示邊界，沒有證據宣稱已跨帳戶讀取 | 只有已確認的有效身份可顯示／啟動 Inbox；失效 abort。待查原操作可保留於同身份上層，但不能讓未知身份讀舊快照 |
+| A2 | `app/index.tsx:104–113` 先 suspendPushBrowser，`records-controller.ts:571–578` 才問 dirty；取消登出仍可能已暫停 Push | 在暫停前完成草稿確認；身份 unknown 時不能擅自恢復渠道 |
+| A3 | `FamilyPanel.tsx:73–127,185–203,271–283` 只記 uncertain boolean，unconfirmed 後解鎖；原目標／payload／版本可改。transport `online-transport.ts:141–166` 會阻擋不同 body，因此主要是無法恢復，不能直接推斷重複寫入 | 保存 frozen family／target／payload／version／原 opId callback。unconfirmed 仍 pending，明確重試原 body，不以 reload 解鎖另提交 |
+| A4 | root 登出只檢查 Chat／Records dirty；FamilyPanel 本地邀請／代碼／稱呼／偏好只用 beforeunload (`:213–223`) | 聚合各 workspace dirty／pending；未知操作先查核，已確認身份切換／撤權才清理，不只以頁面卸載代替 |
+| A5 | `CarePanel.tsx:169–197,199–237,249–256` 背景 focus／online refresh 調用初始 load，重設 query／kind 為 all；搜尋及游標之後已另按 filters 讀取 | 分開 initial 與 background read，保留 applied filters／分頁語義。前端本來已有 activeQuery／activeKind，不為此重做搜尋 |
+| A6 | 正式 `MemoryPanel.tsx:21–22,351–354,426–430` 仍漏 confirmedBy／confirmedAt，shared memory 型別已提供 | 在目前與每個歷史版本投影原 metadata；不能用 author 或目前時鐘代替確認者／時間 |
+| D1 部分修補 | `CareDetails.eventTime` 有 rawText／at／timeZone／precision；正式 manual form (`CarePanel.tsx:258–264,286–296`) 只存 raw、at=null。summary policy `:62–72` 正確把未知時間排除期間統計，不是摘要公式錯 | 前端已明示未知時間不納入期間摘要。日期／時間／precision 輸入及更正時保留完整 eventTime 尚待正式包；未知不能自動轉 exact，不能用 createdAt 代替 |
+| P3 稱呼 | 正式 Family 仍有 UTF-16 `.length` 與 Server code point 80 的差異 | 只修正式表單的同一長度規則；前端現有 `[...value].length` 已符合 |
+
+串流、真正取消、更早聊天游標、逐句引用映射及其它報告列出的未接線項，仍是已寫清的產品接線工作，不能把合成預覽當已完成，也不在本次新建另一套協定／持久 queue。正式主聊天入口仍為根 [P2_UI_HANDOFF](../docs/P2_UI_HANDOFF.md)。
+
+### 驗證、失敗原因及接續
+
+相關輕量檢查：記憶 6、任務／表單 7、渠道 4、模型／成長表單 7 項通過；記憶重疊快照修訂後只補跑受影響 6 項。typecheck、35 路由 Web export、Android Hermes／assets export 通過。局部合成預覽有 16 路由 × 1440／1024／390／320 的 64 個重排／執行檢查；另驗未保存原文取消／明確離頁、beforeunload、設定 unknown 跨頁籤／同一參考重試、Edge 返回 dirty／pending、已確認 GET 失敗／不可讀、照片離線重連／viewer、記憶及任務 50+1。沒有真 API、模型、通知或正式 E2E／實機呼叫。[建置及版本證據](verification/fe-w30-contract-review/build-checks.json)。
+
+首次 typecheck 的重複 isDirty 與 generic page TS7022 已修。探測腳本曾用錯選單名稱／RHF switch 屬性或未切話題頁籤；已按實際 DOM 修正，不當成產品通過。返回補驗發現 Expo nested reset 繞過 beforeRemove；popstate 回復太遲，不能保護表單。最後採可取消的 navigate event 在 Router 更新前攔截，再按原 delta 明確繼續；沒有推入虛假 history entry 或改 Router history.state。
+
+沿用本版 [React Navigation usePreventRemove](https://reactnavigation.org/docs/use-prevent-remove/) 與 [beforeunload](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event)；Navigation API 依 [navigate event](https://developer.mozilla.org/en-US/docs/Web/API/Navigation/navigate_event) 實際檢查 cancelable。本機 Edge 可取消 traversal 已實測，官方介紹曾註未支援，不能據此保證其他瀏覽器。沒有引入 React Router；其 [原操作續行思路](https://github.com/remix-run/react-router/blob/main/packages/react-router/lib/router/router.ts) 只供有界比較，不複製框架或作本項目已驗證證據。後續正式接線仍須把 pending／草稿 ownership 留在身份 scope 上層，補不支援可取消 API 的瀏覽器及真 session 驗收。使用者視覺、正式 API、原生實機及 P2 集中驗收仍待確認。
 
 ## 交付範圍及入口
 
