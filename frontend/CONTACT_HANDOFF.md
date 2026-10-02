@@ -41,6 +41,8 @@ RHF 選項保留原同意／task／grant 版本；一般 GET 和離線不覆寫 
 
 ## 功能清單補缺及驗證
 
+**2026-10-02 FE-W25 修訂：** 以下固定求助卡的描述及驗證屬 FE-W17 歷史版本；使用者明確要求移除 `/chat` 常駐卡，現已撤去展示。本人聯絡授權／任務／台帳行為不變；根 UI-P2-06 與本次使用者決定的交接見 [現行聊天版面](HANDOFF.md#chat-presentation)。
+
 最後核對 UI-P2-06 發現固定緊急入口未投影，已加 [EmergencyHelpView](src/components/agent/EmergencyHelpView.tsx)，在 `/chat` 的模型結果前及離線時均存在。正式接入根 `EMERGENCY_HELP` 常量；隔離 [顯示快照](src/preview/emergency-help-data.ts) 沿 GitHub 的 [原型別／文案](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/shared/emergency-help.ts)／[原元件](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/client/EmergencyHelp.tsx)，保留其 2026-09-28 核對日期。2026-10-01 另讀兩個 [消防處頁](https://www.hkfsd.gov.hk/chi/fire_ambulance_services/responder.html)／[召喚資料](https://www.hkfsd.gov.hk/chi/fire_ambulance_services/fire_information.html)，與固定文字相符；沒有新症狀分類、模型分流或自動致電。官方頁是有真 href 的 Expo Link，鍵盤可聚焦，不是假的 link 角色。
 
 復用現有 Paper 5.15.3、RHF 7.88／Zod 4.5、DateTimeFields／Luxon、SVG 和 OKLCH tokens；兩個渠道沿既有勾選／移動控件，沒有新排序庫、表單或通知框架。外部 Link asChild 最初未向 Pressable anchor 傳 target／rel，已按 [RN Web 官方 View](https://necolas.github.io/react-native-web/docs/view/) 的 hrefAttrs 修正；現官方頁 0.21.3，另核對本機 0.21.2 實作，沒有以文件相容冒充實測。三項契約規則已通過；四尺寸、鍵盤／期限／授權／台帳／草稿／原收據、390／320 的 150% Web 文字及固定入口檢查結果見 [本包證據](verification/fe-w17/build-checks.json)。只核對受影響畫面，沿 FE-W14 共用及後續局部證據，不聲稱重跑所有頁。

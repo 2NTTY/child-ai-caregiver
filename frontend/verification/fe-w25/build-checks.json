@@ -1,0 +1,116 @@
+{
+  "at": "2026-10-02T03:31:56.566Z",
+  "package": "FE-W25 chat presentation",
+  "baseline": "ccc224e2e10006c277e817f7fe5160682732fe8c",
+  "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+  "uiHandoffBlob": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+  "apiBlob": "69fd07e18f649e4862030001837662d5e2fdc19b",
+  "githubLogin": "CherylNg-2526",
+  "otherWorktreesChecked": 14,
+  "frontendOverlaps": [],
+  "scope": "frontend only; remove permanent chat emergency-help card and heading/message avatars at user request",
+  "sources": [
+    {
+      "path": "frontend/scripts/flows/emergency-help.mjs",
+      "gitBlob": "f16739e3acad6ad6ab36d5697da44f40fdf7915d",
+      "sha256": "df3a9a70dff95c401f6aed2058bb731de9a9d7700de9a9cef956f4dcbf25a74f"
+    },
+    {
+      "path": "frontend/src/screens/chatScreen.tsx",
+      "gitBlob": "6f728f6ec781e5ffa15760cddb1da64fa19ea3b1",
+      "sha256": "8b00e24429487221243c5b29b931d7c473fd9394f9e74783e8be7fd279a6a936"
+    }
+  ],
+  "guidance": [
+    {
+      "path": "frontend/AGENT_HANDOFF.md",
+      "gitBlob": "5c85f99ce9d56d3f306958d7c0ced9100777c9e5",
+      "sha256": "038e09ada7677e1f36989d6e6111a3484c155cfc057ecfb4b091d6b5d6589875"
+    },
+    {
+      "path": "frontend/CONTACT_HANDOFF.md",
+      "gitBlob": "20bee3f7e916c8c820aae8e4e1de74373afb7be4",
+      "sha256": "d7075289f3dc7fcd852e40df600967cd4ea19d94ac9313e4ec7944da19c383e9"
+    },
+    {
+      "path": "frontend/DESIGN_SYSTEM.md",
+      "gitBlob": "0ab93bd271d931993c983bc14a45c1309ff6c026",
+      "sha256": "37a5e731729f88d0586e2d9c64f68a7ef825aea3866c4f0baeac25793a562ecd"
+    },
+    {
+      "path": "frontend/HANDOFF.md",
+      "gitBlob": "42317aa9991821a84d40d6aff59d8749e5ce1f06",
+      "sha256": "8d135dc69e32ef6a87b6ff5079cef1221e822910866f9c74339736e673b3f370"
+    },
+    {
+      "path": "frontend/PLAN.md",
+      "gitBlob": "49ac7dc240fcaa85563102aca16d4647511621f5",
+      "sha256": "92c9268f8d4fc6ed97f7c75437845dfbc6f173657cf3d69582e276a7ed4fe79c"
+    },
+    {
+      "path": "frontend/STATUS.md",
+      "gitBlob": "1b0d1df5e958e56b4e2c5a5fe1602088f457e915",
+      "sha256": "e8f4abc7eee71b50afa7f90f97d5aae8fe05b6b45c44486274ed2f417d5f8157"
+    }
+  ],
+  "handoffDifference": "GitHub UI-P2-06 still requires a fixed help entry. The user explicitly removed the permanent chat card; frontend handoffs record this decision for formal integration. Root requirements and formal App were not edited.",
+  "preserved": {
+    "localMessageHandler": true,
+    "composerPropsAndComponent": true,
+    "agentResultProjection": true,
+    "dependencies": true,
+    "emergencyDataAndReusableComponent": true
+  },
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    "webExport": {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "routes": 33,
+      "bundles": [
+        {
+          "path": "dist/_expo/static/js/web/entry-3f907aeb2beda373eb0bcda11a47f011.js",
+          "sha256": "6beb7b944e0fc304fa86e360b0708b5367bf94589e43360c5fb8971514c9bd46",
+          "bytes": 4169592
+        }
+      ]
+    },
+    "androidExport": {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundles": [
+        {
+          "path": "dist-android/_expo/static/js/android/entry-fb7e3dfd27566a4c4e31dd4628be5312.hbc",
+          "sha256": "7686e86c36c803a42220dd70f73764c5ecabf929506316f92690ec1b7b442334",
+          "bytes": 6374318
+        }
+      ]
+    },
+    "chatLayout": {
+      "command": "node scripts/verify-ui.mjs emergency-help",
+      "exitCode": 0,
+      "evidence": "verification/fe-w25/checks-emergency-help.json",
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "passed": [
+        "chat presentation: four widths without the permanent emergency-help card or message avatars; right-aligned questions, full-width answers, no overlap, local draft preview and offline layout; no API or model calls"
+      ],
+      "failures": []
+    }
+  },
+  "noTrueServiceRequests": true,
+  "pending": [
+    "User visual confirmation",
+    "Formal authentication/API/controller integration and root UI-P2-06 display decision",
+    "Native device acceptance"
+  ],
+  "evidenceReuse": "Shared controls, scroll adapters and unaffected business flows retain their prior scoped evidence; no full regression rerun."
+}

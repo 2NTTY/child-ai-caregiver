@@ -4,8 +4,17 @@
 
 ## 交付範圍及入口
 
+<a id="chat-presentation"></a>
+### FE-W25 聊天版面減量（2026-10-02，現行版本）
+
+基線 `ccc224e2e10006c277e817f7fe5160682732fe8c`，只修改 frontend，沿 draft PR #73，主責 B。直接核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 清單（blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`）：UI-P2-06 原要求模型回覆前顯示固定緊急入口，這是 FE-W17 加入常駐卡的來源。使用者本次明確要求移除這張卡，故本包撤去 `/chat` 的渲染及 import；原顯示快照／元件留作既有資料，沒有另加彈窗、按鈕或自動求助。主聊天正式整合時須同步根清單與本次使用者決定，不直接恢復舊卡。
+
+[ChatPage](src/screens/chatScreen.tsx) 移除標題、問題、Agent 回覆及本地預覽問題的頭像；靠右氣泡和回覆卡片區分內容。回覆保留水平列與 `flex: 1`，用回完整寬度；問題仍沿原 82% 上限。原問題／答案／資料說明、按孩子分開的本地訊息、草稿、相機／檔案／語音工具列及候選結果保持原行為。沒有 API、依賴或正式 App 改動。
+
+**已驗／未驗：** typecheck、Web 33 路由及 Android Hermes／30 資產 export 通過；1440／1024／390／320 的訊息列無頭像、問題靠右、答案全列寬、自然間距、本地預覽及離線無常駐求助卡均通過，沒有 runtime error 或 API／模型請求。沿用既有局部檢查入口 `node scripts/verify-ui.mjs emergency-help`，更新其已被取代的展示預期，沒有全量回歸。[證據](verification/fe-w25/build-checks.json)／[桌面](verification/fe-w25/chat-layout-1440.png)／[390](verification/fe-w25/chat-layout-390.png)。使用者視覺、原生實機及正式接線仍待驗收；先前共用流程／捲動證據按各包保留。
+
 <a id="responsive-scroll"></a>
-### FE-W24 捲動及響應式修補（2026-10-02，現行版本）
+### FE-W24 捲動及響應式修補（2026-10-02，捲動／首頁／登入續用）
 
 基線 `5b77d907fd827198e53f8f41f44c209e12f62310`，只修改 frontend，沿 draft PR #73，主責 B。重核 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 清單，blob 仍為 `6488b8c53ae58e37a12e7a3683aea94924aa3981`；此包屬視覺及共用捲動修補，不增加 API。來源、建置及同期 worktree 核對見 [build-checks](verification/fe-w24/build-checks.json)。
 
@@ -168,7 +177,7 @@ UI-P2-06 固定緊急入口補在 `/chat` 的模型結果前，資料由根 EMER
 | GitHub UI 清單 | 已投影位置 | 仍待主聊天 |
 |---|---|---|
 | 01 家庭、02 檔案、03 記錄、04 記憶 | `/family`、`/profile`／孩子切換、`/care`、`/memory`；FE-W04／06 | 原控制器／角色／版本／歷史與跨成員刷新 |
-| 05 Agent、06 引用／固定求助 | `/chat` 的運行／候選／來源快照／背景結果及常駐求助；FE-W09／17 | 原 ChatController composer／回覆、AgentRunApi／Inbox、根 EMERGENCY_HELP；不能連 fixture |
+| 05 Agent、06 引用／固定求助 | `/chat` 的運行／候選／來源快照／背景結果；FE-W09／17。常駐求助卡已按使用者指示於 FE-W25 撤去，聊天不放頭像 | 原 ChatController composer／回覆、AgentRunApi／Inbox；同步本次求助展示決定至根 UI-P2-06，不能連 fixture |
 | 07 成長、08 任務／預約 | `/growth`、`/tasks`；FE-W15／06 | 原 GrowthApi／TaskApi、規則結果、精確歷史／導航及跨頁 |
 | 09 聯絡授權、13 執行／投遞 | `/contact` 的本人／grant／台帳，`/tasks` 的 worker metadata；FE-W17／06 | ContactApi／原 opId 控制器、dirty 草稿差異、真 worker／渠道；ack 不作完成 |
 | 10 偏好、11 Push、12 Telegram | `/settings` 本人偏好及渠道；FE-W06／07 | 本人身份、瀏覽器／bot adapter、原操作；不把測試接受作收到 |

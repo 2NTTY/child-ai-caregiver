@@ -5,11 +5,8 @@ import { AppScrollView as ScrollView } from "../components/AppScrollView";
 import { Text } from "react-native-paper";
 import { AppButton, SectionCard } from "../components/ui";
 import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";
-import { EmergencyHelpView } from "../components/agent/EmergencyHelpView";
 import { AgentComposer } from "../components/agent/AgentComposer";
-import { emergencyHelpSnapshot } from "../preview/emergency-help-data";
 import { usePreview } from "../preview/PreviewContext";
-import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 
 export default function ChatPage() {
@@ -32,13 +29,12 @@ export default function ChatPage() {
   return <View onLayout={event => setPaneWidth(event.nativeEvent.layout.width)} style={styles.root}>
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled">
       <SectionCard style={styles.headingCard}>
-        <View style={styles.headingRow}><View style={styles.agentMark}><AppIcon name="star-four-points" size={28} /></View><View style={styles.headingCopy}><Text accessibilityRole="header" style={[styles.title, compact && mobileType.sectionTitle]}>{brand.agentTitle}</Text><Text style={[styles.subtitle, compact && mobileType.body]}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
+        <View style={styles.headingRow}><View style={styles.headingCopy}><Text accessibilityRole="header" style={[styles.title, compact && mobileType.sectionTitle]}>{brand.agentTitle}</Text><Text style={[styles.subtitle, compact && mobileType.body]}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
         <Text style={styles.previewNote}>合成畫面示例 · 尚未連接 Agent 或發送訊息</Text>
       </SectionCard>
-      <EmergencyHelpView help={emergencyHelpSnapshot} />
       {!child ? <SectionCard><Text style={styles.body}>請先選擇孩子；不同孩子的私人對話不能混在一起。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard> : <>
-        <View style={styles.questionRow}><View style={styles.questionBubble}><Text style={styles.questionText}>最近一星期孩子晚上比較難入睡。我應該先整理哪些資料，才方便討論睡前流程？</Text><Text style={styles.bubbleMeta}>合成問題示例 · 未向 Server 發送</Text></View><View style={styles.personMark}><Text style={styles.personGlyph}>媽</Text></View></View>
-        <View style={styles.answerRow}><View style={styles.agentMarkSmall}><AppIcon name="star-four-points" size={24} /></View><View style={styles.answerCard}>
+        <View testID="chat-question" style={styles.questionRow}><View style={styles.questionBubble}><Text style={styles.questionText}>最近一星期孩子晚上比較難入睡。我應該先整理哪些資料，才方便討論睡前流程？</Text><Text style={styles.bubbleMeta}>合成問題示例 · 未向 Server 發送</Text></View></View>
+        <View testID="chat-answer" style={styles.answerRow}><View style={styles.answerCard}>
           <Text style={styles.answerEyebrow}>示例版式 · 並非 Agent 建議</Text>
           <Text style={styles.answerIntro}>可以先把已確認的睡眠記錄、作息時間，以及你想了解的情況放在一起。正式回答會由已接通的 Agent 按授權資料及適用來源生成。</Text>
           <View style={styles.usedData}><Text style={styles.usedDataTitle}>這個示例畫面可顯示的資料</Text><Text style={styles.usedDataText}>{child.displayName} · {child.ageLabel} · 已載入已確認記錄 {model.records.filter(item => item.childId === child.id).length} 項</Text></View>
@@ -49,7 +45,7 @@ export default function ChatPage() {
           </View>
           <View style={styles.answerFooter}><Text style={styles.footerText}>此段只示範排版與狀態，沒有呼叫模型。</Text></View>
         </View></View>
-        {messages.map((message, index) => <View key={`${key}-${index}`} style={styles.questionRow}><View style={styles.localBubble}><Text style={styles.questionText}>{message}</Text><Text style={styles.bubbleMeta}>本地預覽 · 未送出</Text></View><View style={styles.personMark}><Text style={styles.personGlyph}>媽</Text></View></View>)}
+        {messages.map((message, index) => <View key={`${key}-${index}`} testID="chat-local-message" style={styles.questionRow}><View style={styles.localBubble}><Text style={styles.questionText}>{message}</Text><Text style={styles.bubbleMeta}>本地預覽 · 未送出</Text></View></View>)}
         <AgentConversationPreview key={child.id} childId={child.id} online={model.connection === "online"} />
       </>}
     </ScrollView>
@@ -63,8 +59,7 @@ const styles = StyleSheet.create({
   page: { width: "100%", maxWidth: 1060, alignSelf: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, gap: spacing.lg },
   mobilePage: { paddingHorizontal: mobileLayout.pageInset },
   headingCard: { gap: spacing.sm }, headingRow: { flexDirection: "row", alignItems: "center", gap: spacing.md }, headingCopy: { flex: 1, minWidth: 0 },
-  agentMark: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" }, agentMarkSmall: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" }, agentGlyph: { color: colors.teal, fontSize: 28 },
   title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, fontWeight: "800" }, subtitle: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 }, previewNote: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.mintSurface, alignSelf: "flex-start", paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, fontSize: typeScale.caption, fontWeight: "700" },
-  body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 }, questionRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "flex-start", gap: spacing.sm }, questionBubble: { maxWidth: "82%", backgroundColor: colors.paleTeal, borderRadius: radius.medium, padding: spacing.md, gap: spacing.xs }, localBubble: { maxWidth: "82%", backgroundColor: colors.neutralSurface, borderRadius: radius.medium, padding: spacing.md, gap: spacing.xs }, questionText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23 }, bubbleMeta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, textAlign: "right" }, personMark: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.paleAmber, alignItems: "center", justifyContent: "center" }, personGlyph: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "800" },
+  body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 }, questionRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "flex-start", gap: spacing.sm }, questionBubble: { maxWidth: "82%", backgroundColor: colors.paleTeal, borderRadius: radius.medium, padding: spacing.md, gap: spacing.xs }, localBubble: { maxWidth: "82%", backgroundColor: colors.neutralSurface, borderRadius: radius.medium, padding: spacing.md, gap: spacing.xs }, questionText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23 }, bubbleMeta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, textAlign: "right" },
   answerRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm }, answerCard: { flex: 1, minWidth: 0, borderWidth: 1, borderColor: colors.softLine, backgroundColor: colors.white, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md }, answerEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, fontWeight: "800" }, answerIntro: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 24 }, usedData: { backgroundColor: colors.quietSurface, padding: spacing.md, borderRadius: radius.small, gap: spacing.xs }, usedDataTitle: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "800" }, usedDataText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 }, answerSteps: { gap: spacing.xs }, stepTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "800", marginTop: spacing.xs }, stepBody: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 }, answerFooter: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm }, footerText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
 });
