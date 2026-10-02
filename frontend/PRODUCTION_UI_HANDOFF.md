@@ -7,7 +7,8 @@
 | 位置／symbol | 預覽用途 | 正式處理 |
 |---|---|---|
 | src/components/AppShell.tsx：PreviewToolbar；NativeAppShell.tsx 的同名呼叫 | 「介面預覽 · 合成資料 · 未接駁 Server」、切換情境及 loading／unknown 等模擬控制 | 移除兩個平台的呼叫及僅供工具的展開狀態／選項，不留下空白高度 |
-| src/components/agent/AgentConversationPreview.tsx：toolsVisible／toolsToggle 及情境工具卡 | 本人身份、運行情境、決定結果、重讀結果的模擬選擇 | 移除整個開發工具分支與合成身份選擇；保留 AgentRunView／AgentInboxView 及真正操作回調 |
+| src/components/agent/AgentConversationPreview.tsx：toolsVisible／toolsToggle 及情境工具卡 | 本人身份、運行情境、決定結果、重讀結果及聊天回覆 phase／計時串流的模擬選擇 | 移除整個開發工具分支、onPreviewReply 及合成身份選擇；保留 AgentRunView／AgentInboxView 及真正操作回調 |
+| src/preview/useChatTimelinePreview.ts：initialMessages／showReply／timer | 合成歷史、逐字計時、假公開工具步驟及最終合成快照 | 整個 hook 替換為真 controller 投影；不能把定時器包成真 streaming adapter，或保存合成訊息／工具結果 |
 | 各功能 use*Preview 對應的情境／合成 outcome 控制 | 人為製造成功、衝突、未知、拒絕等畫面 | 由真正 controller 狀態驅動畫面後移除。具體掛接位置見各功能 *_HANDOFF，不批量刪除結果提示 |
 | app/(dashboard)/motion-preview.tsx 及比較入口 | A／B／C 動態樣板 | 正式導航／交付不含此開發頁；目前隔離預覽保留，並未採用換頁動畫 |
 
@@ -18,7 +19,8 @@
 | 位置 | 正式接線內容／邊界 |
 |---|---|
 | src/preview/PreviewContext.tsx／fixture.ts、dashboard/_layout.tsx 的 PreviewProvider | 正式本人／孩子／session、資料及操作回調投影。原 preview 寫入彼此獨立，不能拼成正式資料庫。BackgroundProvider 現以照顧者名字重掛載；正式隔離必須使用穩定本人／session 身份 |
-| src/screens/chatScreen.tsx：固定示例、previewAnswerCitations、localMessages／previewMessage | 接既有 ChatController 與授權訊息；按下合成「預覽輸入」現在只是本地新增文字，不是保存或要求 Agent 回覆。接通後才替換示例、標章及按鈕文案 |
+| src/screens/chatScreen.tsx：ChatContents header、kind=intro 正文、useChatTimelinePreview／previewMessage | 接既有 ChatController 與授權訊息；移除固定正文／來源、合成 header 工具及「預覽輸入」分支。保留共用 ChatMessage／ChatTimeline／AnswerSources 和原 composer 資源清理；controller 真成功及授權上下文吻合後才投影訊息 |
+| ChatMessageView.phase／activities、ChatTimeline.items／followRequest／recentLimit | 顯示投影不另定 transport：真 phase／公開活動由後端核定，增量更新沿同一 message id、最終快照具權威。followRequest 只表示本人明確提交／回到最新，不用每次收到 delta 都重設跟隨。recentLimit 只是已載入清單的視窗；GET messages 目前最近 100 則，沒有更早游標，超過該範圍須主聊天先補契約。真取消、恢復／去重及逐句引用映射仍待接線 |
 | src/components/agent/AgentConversationPreview.tsx：isolated-preview key、useAgentPreview、conversationRunId | 用實際 Server／本人／孩子 key 及 run id；原運行、候選、原決定查核和來源仍由既有 controller 驅動，不能去掉 key 的身份清理 |
 | previewChecklist／PreviewTodoCard／checkedPreviewItems、MobileHomeDashboard 待辦 | 使用正式任務／occurrence／完成收據，移除本地勾選的假完成效果。主頁、右欄與任務頁投影同一授權資料，不以三份 fixture 模擬同步 |
 | NotificationBell 的原操作投影 | 鈴鐺保留。目前角標是需留意操作，不是正式未讀；未讀／通知中心須沿實際已交付契約，不能用網絡連接推斷通知送達 |
@@ -30,6 +32,7 @@
 
 - 保存中、failed、unknown、衝突、撤權／登入失效、原 opId 查核，以及候選人工確認／共享範圍／危險操作多重確認。它們是正式業務狀態，不能因曾用模擬情境展示就刪掉。
 - 真來源的標題分頁、片段、版本／日期／適用範圍及來源缺失提示；正文編號只按真實映射，不把合成三來源移植成知識證據。
+- 最新在底部、歷史閱讀位置、明確回到最新及每則訊息自己的展開／來源狀態；停止的部分文字、failed／unknown 與待確認不能改成普通成功答案。公開過程由資料層核定，內部思維鏈及秘密不進顯示模型。
 - 本人／孩子切換的私人內容清理、草稿邊界、未保存附件／blob／camera track 清理。普通切頁不順手清空草稿，也不重設首頁首次 flag。
 - 未接通功能的誠實限制，直至它實際接通；真正帳戶刪除及 password／最近身份重新驗證仍由主聊天完成，不把名字輸入或紅色 Dialog 視為身份認證。
 - 求助需要時用統一權威來源；聊天沒有常駐求助卡，並非刪除真正求助能力。

@@ -4,6 +4,23 @@
 
 ## 交付範圍及入口
 
+<a id="chat-timeline"></a>
+### FE-W29：共用聊天時間線及增量顯示（2026-10-02）
+
+前置／基線 `2e82e5954f83f4a48a566b7511872efd28017faf`，主責 B，沿 draft PR #73，只改 frontend。核對 GitHub master `d3213e6` 的 ChatPage／API／ChatPanel；原來的最近 100 則及完整 reply 契約沒有歷史游標或真串流。已研究 Codex／Claude Code／DeepSeek Harness 官方文件和 GitHub 原文，方法、固定版本／許可及適用限制見 [CHAT_UI_RESEARCH](CHAT_UI_RESEARCH.md)。沒有引入 harness、聊天框架或新依賴，換頁動畫仍未實作。
+
+[ChatMessage](src/components/chat/ChatMessage.tsx) 是每則 user／assistant 的共用顯示元件，沒有頭像；按 [ChatMessageView](src/chat-view-model.ts) 的穩定 id／text／phase／公開 activities 更新，同一則串流回覆保留同一實例及過程展開狀態。正文可用 children 組裝，基本回覆和 AgentRunView 均使用此元件及 AnswerSources；Agent 的候選、原決定查核及 RunDetails 沿原模型／回調，不移進通用顯示層。來源清單 undefined 表示尚未提供快照，明確 [] 則呈現沒有可核對來源；合成串流只在最終快照附來源。通用元件不猜真引用映射。
+
+ChatMessage 可顯示思考中、正在回覆、回覆已結束、已停止、失敗、未知及等候確認；進度只有可公開標題／摘要，沒有 provider 思維鏈、原工具參數或結果。過程預設收起，同一按鈕再次收回；停止／查核按鈕只在傳入操作回調及適用 phase 時出現。部分文字不當作已保存答案，回覆結束不表示候選／照護事項完成。正式 stop、重讀及 unknown 須由原 controller 決定，本包沒有新 API。
+
+[ChatTimeline](src/components/chat/ChatTimeline.tsx) 接收已授權、舊至新排列的 items 與 renderItem；預設最近 20 則，合成預覽以 6 則示範逐批展開。較早訊息只是隱藏，按「查看較早記錄」在上方增加一批並補償高度，保留原閱讀錨點；到最早時只說「本次載入」範圍，不宣稱 Server 沒有更早記錄。回到最新會收回額外歷史並跟隨底部；新提交的 followRequest 代表明確移至最新，閱讀歷史時的新文字不偷走位置。scrollRef 提供原捲動／引用定位 port，controlsRef 提供 followLatest／holdReadingPosition，沒有資料庫、API 或業務狀態。
+
+Web 復用 AppScrollView／OverlayScrollbars，薄 [手勢 adapter](src/components/chat/useChatScrollIntent.web.ts) 區分 wheel、捲動鍵、touchmove／滑塊與程式捲動；原生沿 ScrollView.onScrollBeginDrag，實機待驗。第一輪預覽發現 RN Web 延後送出的程式 scroll 被誤當讀者移動，現改為明確手勢立即暫停；來源定位只暫停跟隨、不即時改可視高度，避免「回到最新」提示把來源分頁裁掉。上標仍立即定位，不改成平滑移動。
+
+[ChatContents](src/screens/chatScreen.tsx) 只組裝畫面；[useChatTimelinePreview](src/preview/useChatTimelinePreview.ts) 管理合成歷史／問題及定時文字示例。可從「顯示 Agent 情境工具 → 聊天回覆狀態示例 → 加入回覆狀態示例」比較串流、停止／失敗／未知／確認；示例不呼叫模型／工具。scope 重掛載清理舊文字、展開狀態、計時器和 composer 附件，正式隔離仍要用 Server／本人／session／孩子／權限的穩定 key，不能以稱呼當身份。文字草稿沿原 provider，不另建持久庫。
+
+**驗證及交接：** typecheck、35 路由 Web／30 資產 Android Hermes export 通過。四尺寸核對底部時間線、最近視窗、逐批歷史錨點、逐字同實例／展開保留、讀舊時不偷走位置、最終快照／來源、草稿及固定 composer 不重疊；390 加驗停止、失敗／未知／待確認、切孩子清計時器及放大文字。沿用來源檢查再驗四尺寸的多實例、3／12 項、長回覆立即定位及分組／底線空間。見 [時間線檢查](scripts/verify-chat-timeline.mjs)／[證據](verification/fe-w29-chat/build-checks.json)。真身份、超過 100 則的游標、增量 transport／斷線及取消、逐句引用映射、正式權限／跨頁及原生實機仍待主聊天接線／集中驗收；[正式移除清單](PRODUCTION_UI_HANDOFF.md) 已逐項標示 synthetic hook／timer／工具／固定正文須替換的入口。使用者視覺待驗，未把合成串流當作正式接線完成。
+
 <a id="chat-source-reuse"></a>
 ### FE-W28 補修：共用聊天來源及分隔線（2026-10-02）
 

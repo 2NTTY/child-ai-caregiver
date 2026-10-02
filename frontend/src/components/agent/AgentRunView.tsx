@@ -10,7 +10,8 @@ import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
 import { AppButton, SectionCard, SectionHeader } from "../ui";
-import { AnswerSources, CitationText, type LocateAnswerSource } from "../chat/AnswerSources";
+import type { LocateAnswerSource } from "../chat/AnswerSources";
+import { ChatMessage } from "../chat/ChatMessage";
 
 type Tone = "neutral" | "saved" | "warning" | "error";
 const sharedConfirmationLabel = "我已核對內容及對象，明確同意寫入家庭共享資料";
@@ -153,10 +154,8 @@ export function AgentRunView({ model, actions, onLocateSource }: { model: AgentR
       {run.stopReasonLabel ? <Text style={styles.meta}>停止原因：{run.stopReasonLabel}</Text> : null}
       {run.status === "running" ? <StateNote>處理尚未結束，可稍後手動重新讀取。</StateNote> : null}
       {run.status === "unknown" ? <StateNote tone="warning">本次運行結果未知，請讀取原運行核對；未知不能當作已成功或已完成。</StateNote> : null}
-      <AnswerSources key={`answer-${run.id}`} testID="agent-answer" sources={run.citations} onOpenSource={actions.openSource}
-        onLocateSource={onLocateSource} degraded={run.retrievalMode === "keyword_degraded"}>
-        <CitationText style={styles.body}>{run.text}</CitationText>
-      </AnswerSources>
+      <ChatMessage key={`answer-${run.id}`} testID="agent-answer" embedded message={{ id: run.id, role: "assistant", text: run.text, sources: run.citations }}
+        onOpenSource={actions.openSource} onLocateSource={onLocateSource} degraded={run.retrievalMode === "keyword_degraded"} />
       <RunDetails key={run.id} run={run} />
       <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.title}>待核對及已處理候選</Text>

@@ -1,0 +1,238 @@
+{
+  "at": "2026-10-02T13:28:04.199Z",
+  "baseline": "2e82e5954f83f4a48a566b7511872efd28017faf",
+  "branch": "codex/fe-w11-photos",
+  "scope": "FE-W29: generic chat message/timeline, chronological recent window and loaded history, safe phase/tool summaries, synthetic streamed display, source reuse and official Agent UI research. frontend/** only.",
+  "sources": {
+    "frontend/CHAT_UI_RESEARCH.md": {
+      "gitBlob": "f00574a007174debf4aceed5d4e93b39d980369a",
+      "sha256": "19881f7875dcdeb211e8014f9ed0c6d8d9f58f6c2c0821af124e834820ded678"
+    },
+    "frontend/scripts/verify-chat-timeline.mjs": {
+      "gitBlob": "56b3f340c03e7156b62da92b7b1a16159fa2146a",
+      "sha256": "4752caed105b4e471222a9cea7fab4eb3d5046e304f1e154a27d0d6a0470f7d0"
+    },
+    "frontend/src/components/chat/ChatMessage.tsx": {
+      "gitBlob": "4882feca90fc7c505f9c399063cfc2fc8368b757",
+      "sha256": "7947f9d0a7cd4147cf7bc9cf79be353e8da775e5b31ad7f4418c048b24167f54"
+    },
+    "frontend/src/components/chat/ChatTimeline.tsx": {
+      "gitBlob": "2be800f0382ac6fbd856c7c78ec4216f2fdfd257",
+      "sha256": "a651a1241435745faee2384c811a29a2368392552d079f2a090581dc41e5c4ea"
+    },
+    "frontend/src/components/chat/useChatScrollIntent.ts": {
+      "gitBlob": "93b7b3d7410a0aa88edf98edabcdbc8181ef5ec2",
+      "sha256": "59192e1b322f3b9e5736b3f81cc51eb66889b905265b8d0fe2b48319df9f03ff"
+    },
+    "frontend/src/components/chat/useChatScrollIntent.web.ts": {
+      "gitBlob": "552b27a8a103f2d4964bb7f776001432686bea22",
+      "sha256": "8df59607274b013e36bc9ce3ad08255072a1a98eb090327a8671f5d5c6fa35f2"
+    },
+    "frontend/src/preview/useChatTimelinePreview.ts": {
+      "gitBlob": "184ed4ba8e161d442a268dac44510728bf3dfda9",
+      "sha256": "2186e66620f31638a24e053e1d586b33363509ad08610e31e0e4dbdd295b300d"
+    },
+    "frontend/.agents/skills/web-screen-delivery/SKILL.md": {
+      "gitBlob": "365a7748783536e34c192c6e3d434024d061fdf2",
+      "sha256": "5f33d73f31d71623ca82fff6834e6c6620a33e116b86ecae77f0bccce2fea82b"
+    },
+    "frontend/AGENT_HANDOFF.md": {
+      "gitBlob": "58e882583e071173f5139ea4ad090a3be62171a4",
+      "sha256": "b07424cdb15dceab0c4f8f70788f2b542973df5b4f88d50797b2365873526410"
+    },
+    "frontend/DESIGN_SYSTEM.md": {
+      "gitBlob": "b79702f0cd252b0941a058d7ac71645f012a382e",
+      "sha256": "1b06873e57f6719afb9f8d5533ba1de217cf9850c5ce5ebc66ec422841adc3f8"
+    },
+    "frontend/HANDOFF.md": {
+      "gitBlob": "03be4f4a2156cc4fd4c822ba6c5a9016bf49b663",
+      "sha256": "6ed0f3912b1b23179c243009e7b1c0a470ac3db28511737fabc31f54901bc8c2"
+    },
+    "frontend/PLAN.md": {
+      "gitBlob": "f96764eb0bf0af4cd4beb4384d3ecaf0b6c403a0",
+      "sha256": "9824e0d8aa26447ac0601e5fd76fb2fb052ddb24f4b3b0fc8723e811f3cf00b7"
+    },
+    "frontend/PRODUCTION_UI_HANDOFF.md": {
+      "gitBlob": "8cfca3351c20d48ac943c88ffb8bf2035aad6ce8",
+      "sha256": "3bac3cb608009d01802583d18dbfdc2b2ee240f6e5745c267ffb46ab7679bd08"
+    },
+    "frontend/STATUS.md": {
+      "gitBlob": "5340d426d76f2c27cd5766c001d6cf8fb8467078",
+      "sha256": "908c4228e637e2e2e82b1c0ad2e68916472b116890eb4a7c16625ee5ae368118"
+    },
+    "frontend/src/chat-view-model.ts": {
+      "gitBlob": "a95763dbadf4442c955754a7c59e564c7ce4e136",
+      "sha256": "4cedf8d1cb4d46b25a9a47fb8ea2958ac6649be8da61bd1b9e3a42f13511c48f"
+    },
+    "frontend/src/components/agent/AgentConversationPreview.tsx": {
+      "gitBlob": "9cc59b42eaf61e06f0741b44a751746c90571de1",
+      "sha256": "2fc53edd8e73827755ceafc3b593fa51e991e26c05af5842751737a47324f1f0"
+    },
+    "frontend/src/components/agent/AgentRunView.tsx": {
+      "gitBlob": "6cef9cf7651dc97ce3b2a44929e7d65bffedb37e",
+      "sha256": "59fc11d4de6ab2b5abe5f026073ed045b723856bff0b82210597056cbef78d18"
+    },
+    "frontend/src/screens/chatScreen.tsx": {
+      "gitBlob": "8828db023bf28c481ef103612a131d21b34d574c",
+      "sha256": "11debe0455cee0c0efa953920711d6caf62e20ddb8e36809cfab03ab4562f7dd"
+    }
+  },
+  "preserved": {
+    "frontend/package.json": "7cd5fe6f0394b8a2bc42bce9c03ea6147b7eef30",
+    "frontend/package-lock.json": "194ae9825dada06190f8be0f440a536c70081cf0",
+    "frontend/src/preview/useAgentPreview.ts": "cd306a40283724bd1442c15a9f40c7dbe735ca0b",
+    "frontend/src/components/agent/AgentInboxView.tsx": "33d2918177f16658d35a77e947f13571e62bfb45",
+    "frontend/src/components/agent/AgentComposer.tsx": "43b5fb0789176cb916a5c664a76bac623c21acff",
+    "frontend/src/components/AppScrollView.web.tsx": "3678d95c73e33f82984fde00369eada8a04b083e",
+    "frontend/src/components/MobileHomeDashboard.tsx": "574c11e51f5ea40965cd8d22476f7ec8989dc02c",
+    "frontend/src/components/ChildPicker.tsx": "e3ab5d405bdd5a8940ba58588033ad3b9dce761c",
+    "frontend/src/view-model.ts": "356a6c716aa1eec7cf38a1adb0790f5e3f8b407c",
+    "frontend/src/theme.ts": "f2d617150223c6ebc3cc3138b96973bab19b5bc0"
+  },
+  "evidence": {
+    "chat-390-large-text.png": "6601cf47566c4233604d5fdd5fa9095ef4a876c1860d77e40e6a7b5c227af0c2",
+    "chat-timeline-checks.json": "810e0d918680f3af3c363a5640d812c984de714be3b509b8dd9f43aa9cfc6f0c",
+    "collapsed-sources-1024.png": "7967af410c4876d9bf42367a3510098a8706d665915a08cd339affad09e62ea8",
+    "collapsed-sources-1440.png": "502a767f6cfb8c87578ee4f382df5ad7229bee9ef3096ab4a27e134baa146dc7",
+    "collapsed-sources-320.png": "c117798b8d53305cbfab683f2e98160b88302dc0c884088ec5ff3016507e5190",
+    "collapsed-sources-390.png": "3af5867cffca7da85c237fa1929e5866af3e6daf6ff7d0a77d20b34156638cb1",
+    "completed-1024.png": "4df7d2397451f0053a27ce47902ebf8fb824193cc6a5970b27efaedc5dcee63d",
+    "completed-1440.png": "6718d655f8d46da12ed00dc6df454a434bde44e3885b58ddf52f56ebe00a08d3",
+    "completed-320.png": "e90bea99fc5eb1354b2e29866317ac7ba52d53fb75130227b9a06479ef431d8c",
+    "completed-390.png": "04ff0e99ec345d6cca944990d89a49fd5d677c9d2643081bac9bfa185656d1d2",
+    "failed-390.png": "ecc4aadad38767a14223f2da9b7ed12678238f50020a250c12178c8ef2ed04cc",
+    "history-1024.png": "2cabc48a9bce3800fca6b13d6e5d25147a9046e7c50beec0ae5a1befd769392f",
+    "history-1440.png": "4963c2629004040c12e5ee7893af033e4b8f63a7957b60b70ef3b6c37f81b664",
+    "history-320.png": "2021839d39c67ede82455aae360465c89420d637f01d11ff8b50e89409a6db70",
+    "history-390.png": "4fdc57e9caf8cedc78edc35abde57b7fcdbd54f4a6faca17449a6a0dc3cb4992",
+    "many-sources-1024.png": "4cad8f2a342730535240d52a1784c874200109ee1d880faf4ed72db97a905bdc",
+    "many-sources-1440.png": "495e470e3b240b8d159f1d404a5b3047ba53028ea94036b2eddce09ee55a26ec",
+    "many-sources-320.png": "cd01f3fee061d8cf5acae32ab9fee5f0048594d33447df0fd0be6f754c7054c0",
+    "many-sources-390.png": "676a4fb1589dba0ce842e10559b474407ed40454337d95c8fe2c0aaf0cf7d307",
+    "single-source-panel-1024.png": "b8bf3720c29a6a838beafad82c196c66a7b109c865d691d7305e4c4e047569e5",
+    "single-source-panel-1440.png": "253e8d7b9d073582cfb8c0a40da0cc9b539b9228c4ffb1e8453d06084ef42bac",
+    "single-source-panel-320.png": "7b35f197ec21c7c3fd40abaa7e19e8417afbe2a5e00a58347052488d53b11820",
+    "single-source-panel-390.png": "35de332994a0ff5dad8c0e291a3dee4c0ab6c520ee0a668f9398577f47245431",
+    "source-tabs-checks.json": "f4940cceddbfb8c479e8cab44c8808b17e32a78b4f6283dd632d492db33f4310",
+    "streaming-1024.png": "f27aeabf25560e94b7cf055c453a9f47c22221679451c795a24e3b050b8fdcb7",
+    "streaming-1440.png": "ac6c0bdd1354d3a78a05ab1e269c7ac25ff2aa2be7ed2b92a928a1b7df145390",
+    "streaming-320.png": "43e53c079c187caee80f7ccbad49dd2ee1c5532cd9c6a0da6e6defb267f7c782",
+    "streaming-390.png": "f5beeb43423c9ef4d2d7209c7e3a061cba600100a4e853672ec8c665a4b886fc"
+  },
+  "sync": {
+    "at": "2026-10-02T13:19:42.2740467Z",
+    "githubLogin": "CherylNg-2526",
+    "frontendOverlaps": [],
+    "otherWorktreesChecked": 14,
+    "githubDocs": {
+      "docs/API.md": "69fd07e18f649e4862030001837662d5e2fdc19b",
+      "src/shared/knowledge.ts": "ea330e54333a48dcb861364fccbc167aedab78f7",
+      "docs/P2_UI_HANDOFF.md": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+      "src/shared/product-agent.ts": "9f217d80dd1e020dc6048075e4f34f9233cd73f2"
+    },
+    "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e"
+  },
+  "versions": {
+    "expo": "57.0.24",
+    "expo-router": "57.0.22",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-web": "0.21.2",
+    "react-native-paper": "5.15.3",
+    "overlayscrollbars": "2.16.0"
+  },
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "staticRoutes": 35,
+      "bundle": "entry-519bbcf8812eed317a223993a833e6b3.js",
+      "sha256": "e2a8e96813dd7bfab5a10a14d17da799ca63c625536b84acfe28f5c24152a0cf"
+    },
+    {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundle": "entry-f11e196d6dfc3c242beb8abcbb6a0865.hbc",
+      "sha256": "4fca18e8b68cd86e7952f1ab559fdb04f84b5348fb24285ed8215f1d5d9850b7"
+    },
+    {
+      "command": "node scripts/verify-chat-timeline.mjs",
+      "exitCode": 0,
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "report": "chat-timeline-checks.json"
+    },
+    {
+      "command": "FRONTEND_PROOF_DIR=verification/fe-w29-chat node scripts/verify-answer-sources.mjs",
+      "exitCode": 0,
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "report": "source-tabs-checks.json"
+    },
+    {
+      "command": "HTTP GET preview /chat and current JS asset",
+      "status": 200,
+      "servedBundleMatchesExport": true
+    }
+  ],
+  "research": {
+    "checkedAt": "2026-10-02",
+    "document": "frontend/CHAT_UI_RESEARCH.md",
+    "codex": {
+      "commit": "ca466061d64f0b44f416135c7fd06aa7af850bbc",
+      "license": "Apache-2.0",
+      "scope": "Official App Server and CLI TUI only; no closed desktop renderer inspected"
+    },
+    "claudeCode": {
+      "scope": "Official product documentation and public repository; no claim of complete desktop UI source"
+    },
+    "deepseekHarness": {
+      "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+      "license": "MIT",
+      "scope": "Official chat scroll/follow and renderer source; developer preview; principles only"
+    },
+    "copiedCode": false,
+    "newDependencies": false
+  },
+  "observedCauses": [
+    "Deferred RN Web programmatic scroll events were misclassified as reader movement; explicit wheel/key/touch/thumb or native drag intent now owns the follow policy.",
+    "Changing viewport height while locating a source could clip the strip; citation hold pauses follow without changing viewport height. It also clears prior gesture ownership so an instant programmatic source jump cannot resume follow."
+  ],
+  "contractGaps": [
+    "GET messages currently returns messages and limit 100 only; earlier cursor/hasMore is absent",
+    "Reply returns a complete stored message/run; no streaming, recovery or cancellation transport is defined",
+    "No sentence-level citation mapping is provided"
+  ],
+  "reused": [
+    {
+      "at": "2e82e5954f83f4a48a566b7511872efd28017faf",
+      "path": "frontend/verification/fe-w28-source-separators/build-checks.json",
+      "scope": "Unchanged source presentation, grouped fields and synchronized homepage animation"
+    },
+    {
+      "at": "2e82e5954f83f4a48a566b7511872efd28017faf",
+      "path": "frontend/verification/fe-w26-source-tabs/build-checks.json",
+      "scope": "Unchanged Agent decision/version/unknown and authorized fixture cleanup logic; no full business-suite rerun"
+    }
+  ],
+  "pending": [
+    "User visual acceptance",
+    "Formal identity/authorization, earlier-history and streaming/recovery/cancel integration",
+    "True source-number mapping and safe public activity projection",
+    "Native device, keyboard/accessibility and motion acceptance"
+  ],
+  "noRealServices": true
+}
