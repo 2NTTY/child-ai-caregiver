@@ -7,7 +7,9 @@
 <a id="chat-presentation"></a>
 ### FE-W25 聊天版面減量（2026-10-02，現行版本）
 
-基線 `ccc224e2e10006c277e817f7fe5160682732fe8c`，只修改 frontend，沿 draft PR #73，主責 B。直接核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 清單（blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`）：UI-P2-06 原要求模型回覆前顯示固定緊急入口，這是 FE-W17 加入常駐卡的來源。使用者本次明確要求移除這張卡，故本包撤去 `/chat` 的渲染及 import；原顯示快照／元件留作既有資料，沒有另加彈窗、按鈕或自動求助。主聊天正式整合時須同步根清單與本次使用者決定，不直接恢復舊卡。
+基線 `ccc224e2e10006c277e817f7fe5160682732fe8c`，只修改 frontend，沿 draft PR #73，主責 B。直接核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 清單（blob `6488b8c53ae58e37a12e7a3683aea94924aa3981`）。FE-W17 把 UI-P2-06 的「固定緊急求助入口」誤讀為每次聊天均顯示常駐卡；FE-W25 已按使用者指示撤去 `/chat` 的渲染及 import，原顯示快照／元件保留，沒有另加彈窗、按鈕或自動求助。
+
+**2026-10-02 使用者澄清：**「固定」指需要顯示求助入口時，統一使用已核對、最權威的官方入口及資訊，不隨每次回答生成或更換；不代表普通聊天必須常駐展示。移除常駐卡不是取消求助功能或變更這項需求。正式顯示時機仍沿主聊天的安全流程接線，前端不另造症狀判斷，也不恢復舊常駐卡。本次只更正前端解讀，沒有改根文件或正式 App。FE-W25 `build-checks.json` 的 `handoffDifference`／相關待辦保留當時記錄，其需求解讀由本段更正；原建置、檢查及產物不變。
 
 [ChatPage](src/screens/chatScreen.tsx) 移除標題、問題、Agent 回覆及本地預覽問題的頭像；靠右氣泡和回覆卡片區分內容。回覆保留水平列與 `flex: 1`，用回完整寬度；問題仍沿原 82% 上限。原問題／答案／資料說明、按孩子分開的本地訊息、草稿、相機／檔案／語音工具列及候選結果保持原行為。沒有 API、依賴或正式 App 改動。
 
@@ -177,7 +179,7 @@ UI-P2-06 固定緊急入口補在 `/chat` 的模型結果前，資料由根 EMER
 | GitHub UI 清單 | 已投影位置 | 仍待主聊天 |
 |---|---|---|
 | 01 家庭、02 檔案、03 記錄、04 記憶 | `/family`、`/profile`／孩子切換、`/care`、`/memory`；FE-W04／06 | 原控制器／角色／版本／歷史與跨成員刷新 |
-| 05 Agent、06 引用／固定求助 | `/chat` 的運行／候選／來源快照／背景結果；FE-W09／17。常駐求助卡已按使用者指示於 FE-W25 撤去，聊天不放頭像 | 原 ChatController composer／回覆、AgentRunApi／Inbox；同步本次求助展示決定至根 UI-P2-06，不能連 fixture |
+| 05 Agent、06 引用／固定求助 | `/chat` 的運行／候選／來源快照／背景結果；FE-W09／17。FE-W25 撤去誤設的常駐求助卡及聊天頭像；「固定」按上文使用者澄清理解 | 原 ChatController composer／回覆、AgentRunApi／Inbox；按正式安全流程在需要時顯示統一的權威求助入口，不能連 fixture |
 | 07 成長、08 任務／預約 | `/growth`、`/tasks`；FE-W15／06 | 原 GrowthApi／TaskApi、規則結果、精確歷史／導航及跨頁 |
 | 09 聯絡授權、13 執行／投遞 | `/contact` 的本人／grant／台帳，`/tasks` 的 worker metadata；FE-W17／06 | ContactApi／原 opId 控制器、dirty 草稿差異、真 worker／渠道；ack 不作完成 |
 | 10 偏好、11 Push、12 Telegram | `/settings` 本人偏好及渠道；FE-W06／07 | 本人身份、瀏覽器／bot adapter、原操作；不把測試接受作收到 |

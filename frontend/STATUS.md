@@ -2,7 +2,7 @@
 
 更新：2026-10-02。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**最新 FE-W25 聊天版面減量（2026-10-02）：** 按使用者指示移除聊天頁的常駐「緊急求助」卡及標題／訊息頭像；問題保持靠右，Agent 回覆用回完整列寬。1440／1024／390／320 的版面、間距、本地問題預覽及離線檢查，typecheck、Web／Android export 通過；[交接](HANDOFF.md#chat-presentation)／[證據](verification/fe-w25/build-checks.json)。GitHub UI-P2-06 仍要求固定求助入口，正式整合須同步本次使用者決定；未改根文件、API 或正式 App，視覺／實機仍待驗收。
+**最新 FE-W25 聊天版面減量（2026-10-02）：** 按使用者指示移除聊天頁的常駐「緊急求助」卡及標題／訊息頭像；問題保持靠右，Agent 回覆用回完整列寬。1440／1024／390／320 的版面、間距、本地問題預覽及離線檢查，typecheck、Web／Android export 通過；[交接](HANDOFF.md#chat-presentation)／[證據](verification/fe-w25/build-checks.json)。使用者已澄清 UI-P2-06 的「固定」指需要顯示時用統一、最權威的官方入口，不代表常駐；前端已更正解讀，正式觸發仍待主聊天接線。未改根文件、API 或正式 App，視覺／實機仍待驗收。
 
 **FE-W24 捲動及響應式修補（上一版）：** 900 以下的登入頁只保留品牌／表單，桌面介紹文字加 Expo BlurView 半透明模糊面板，續用固定右側裁切。Web 垂直捲動復用 OverlayScrollbars，透明軌道覆蓋內容、不預留寬度；原生及橫向捲動保留 RN ScrollView。桌面首頁轉單欄採自然高度，修正記錄／確認卡片重疊；手機首頁完整等比顯示兩位人物，左側漸淡。15 頁四尺寸重排、登入／共用選單、局部高度／圖片／滑鼠／鍵盤／清理及 Web／Android export 通過；[交接](HANDOFF.md#responsive-scroll)／[證據](verification/fe-w24/build-checks.json)。使用者視覺、Android 實機及原生 BlurTargetView 尚待驗收／接續。
 

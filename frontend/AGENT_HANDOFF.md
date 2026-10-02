@@ -2,7 +2,7 @@
 
 更新：2026-10-02。FE-W09 前置為已 review 的前端 `83106c0`（draft PR #68），分支 `codex/fe-w09-agent-conversation`。正式契約核對穩定主線 `90dacd4e5c0a8be9e490fa7d94830ea369c57521`；只讀 API／控制器，沒有改 Server、正式 App 或根文件。
 
-**FE-W25 最新展示修訂：** 按使用者指示撤去 `/chat` 常駐「緊急求助」卡及聊天標題／訊息頭像，問題靠右、答案用回全列寬。原草稿、按孩子分開的本地問題、composer 及結果操作不變。四尺寸局部檢查及 Web／Android export 通過；來源、UI-P2-06 與本次決定的差異及正式交接見 [總交接](HANDOFF.md#chat-presentation)。原 FE-W17 的求助展示證據屬歷史版本，不能據此恢復舊卡。
+**FE-W25 最新展示修訂：** 按使用者指示撤去 `/chat` 常駐「緊急求助」卡及聊天標題／訊息頭像，問題靠右、答案用回全列寬。原草稿、按孩子分開的本地問題、composer 及結果操作不變。四尺寸局部檢查及 Web／Android export 通過。使用者已澄清「固定」指需要顯示時用統一、最權威的官方求助入口，避免每次生成不同資訊；不代表常駐，也沒有取消求助功能。正式觸發與前端誤讀更正見 [總交接](HANDOFF.md#chat-presentation)；原 FE-W17 展示證據屬歷史版本，不能據此恢復舊卡。
 
 **FE-W19 最新增補：原對話頁直接拍照。** 源碼／驗證 `f541a2da0f97e2cf463f380d3f8449dad3525892`；基線 `bed134271e70529a0d90878292daf2fc228fc885`，直接重核 GitHub master `ce87370` 的 P2 交接；照片／聊天協定未改。新增 [AgentComposer](src/components/agent/AgentComposer.tsx) 管理當頁選圖和資源，復用 [PhotoFilePicker](src/components/photos/PhotoFilePicker.web.tsx) 的校驗／hash／blob。[WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx) 只在明確按下後掛載並要求 `getUserMedia`，`audio: false`，後置鏡頭為偏好；相機畫面沿共用 AppDialog／AppButton。這項取代 FE-W18 的拍照跳頁，沒有新增依賴或修改後端。
 
