@@ -3,13 +3,14 @@ import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import {
   agentProposalLabels, agentRunLabels, agentTime, agentToolLabels, mayCheckShared, mayDecide,
-  mayRetryOriginal, proposalExpired, type AgentCitationView, type AgentProposalView,
+  mayRetryOriginal, proposalExpired, type AgentProposalView,
   type AgentRunActions, type AgentRunModel,
 } from "../../agent-view-model";
 import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
 import { AppButton, SectionCard, SectionHeader } from "../ui";
+import { AnswerSources, CitationText } from "./AnswerSources";
 
 type Tone = "neutral" | "saved" | "warning" | "error";
 const sharedConfirmationLabel = "我已核對內容及對象，明確同意寫入家庭共享資料";
@@ -18,11 +19,6 @@ const retrievalLabels = {
   keyword_degraded: "已降級為關鍵詞檢索",
   not_used: "本次沒有使用知識檢索",
 } as const;
-const classificationLabels: Record<AgentCitationView["classification"], string> = {
-  official_guidance: "官方指引",
-  recent_information: "近期資訊",
-  synthetic: "合成示例（沒有真實來源證據）",
-};
 
 function timeLabel(value: string | null): string {
   return value === null ? "未提供" : Number.isFinite(Date.parse(value)) ? `${agentTime(value)}（香港時間）` : "時間資料無效，請重新讀取";
@@ -102,34 +98,6 @@ function ProposalCard({ proposal, model, actions }: { proposal: AgentProposalVie
   </View>;
 }
 
-function CitationCard({ source, openSource }: { source: AgentCitationView; openSource(id: string): void }) {
-  const [expanded, setExpanded] = useState(false);
-  return <View style={styles.entry}>
-    <Text accessibilityRole="header" style={styles.title}>{source.title}</Text>
-    <Text style={styles.meta}>章節：{source.section}</Text>
-    <Text style={styles.meta}>發布者：{source.publisher}</Text>
-    <Text style={styles.meta}>分類：{classificationLabels[source.classification]}</Text>
-    <View style={styles.quote}><Text selectable style={styles.body}>{source.excerpt}</Text></View>
-    {source.classification === "synthetic" ? <StateNote>這段內容只展示引用版式，沒有真實來源證據，不能作為育兒判斷依據。</StateNote> : null}
-    <AppButton label={expanded ? "收起來源詳情" : "查看來源版本與適用範圍"} variant="quiet"
-      onPress={() => setExpanded(value => !value)} style={styles.fullButton} />
-    {expanded ? <View style={styles.metadata}>
-      <DetailRow label="原來源版本" value={source.versionId} />
-      <DetailRow label="原來源版本校驗" value={source.versionHash} />
-      <DetailRow label="核對時間" value={timeLabel(source.checkedAt)} />
-      <DetailRow label="擷取時間" value={timeLabel(source.fetchedAt)} />
-      <DetailRow label="最後成功核對" value={timeLabel(source.lastSuccessfulCheckAt)} />
-      <DetailRow label="來源日期" value={source.sourceDate ?? "未提供"} />
-      <DetailRow label="有效至" value={timeLabel(source.validUntil)} />
-      <DetailRow label="原適用範圍" value={source.applicabilityLabel} />
-      <DetailRow label="內部限定" value={source.internalOnly ? "是" : "否"} />
-      <Text style={styles.meta}>以上是本次運行保存的來源快照；來源更新後，須重新讀取及核對適用範圍。</Text>
-    </View> : null}
-    {source.url ? <AppButton label={`開啟原來源：${source.title}`} variant="secondary"
-      onPress={() => openSource(source.id)} style={styles.fullButton} /> : <Text style={styles.meta}>沒有可開啟的真實來源連結。</Text>}
-  </View>;
-}
-
 function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
   const [expanded, setExpanded] = useState(false);
   return <View style={styles.section}>
@@ -157,7 +125,7 @@ function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
   </View>;
 }
 
-export function AgentRunView({ model, actions }: { model: AgentRunModel; actions: AgentRunActions }) {
+export function AgentRunView({ model, actions, onLocateSource }: { model: AgentRunModel; actions: AgentRunActions; onLocateSource?: (target: View | null) => void }) {
   const denied = model.readState === "denied";
   const run = model.readState === "ready" ? model.run : null;
   const readMessage = model.readState === "idle" ? "尚未讀取運行結果。請手動讀取後再核對。"
@@ -185,16 +153,14 @@ export function AgentRunView({ model, actions }: { model: AgentRunModel; actions
       {run.stopReasonLabel ? <Text style={styles.meta}>停止原因：{run.stopReasonLabel}</Text> : null}
       {run.status === "running" ? <StateNote>處理尚未結束，可稍後手動重新讀取。</StateNote> : null}
       {run.status === "unknown" ? <StateNote tone="warning">本次運行結果未知，請讀取原運行核對；未知不能當作已成功或已完成。</StateNote> : null}
-      <Text selectable style={styles.body}>{run.text}</Text>
+      <AnswerSources key={`answer-${run.id}`} testID="agent-answer" sources={run.citations} onOpenSource={actions.openSource}
+        onLocateSource={onLocateSource} degraded={run.retrievalMode === "keyword_degraded"}>
+        <CitationText style={styles.body}>{run.text}</CitationText>
+      </AnswerSources>
       <RunDetails key={run.id} run={run} />
       <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.title}>待核對及已處理候選</Text>
         {run.proposals.length === 0 ? <Text style={styles.meta}>本次沒有候選事項。</Text> : run.proposals.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} />)}
-      </View>
-      <View style={styles.section}>
-        <Text accessibilityRole="header" style={styles.title}>本次運行的來源快照</Text>
-        <Text style={styles.meta}>引用沿用原運行保存的版本及適用範圍，請核對來源日期與內容。</Text>
-        {run.citations.length === 0 ? <Text style={styles.meta}>本次沒有可核對的來源片段。</Text> : run.citations.map(source => <CitationCard key={source.id} source={source} openSource={actions.openSource} />)}
       </View>
     </> : null}
   </SectionCard></View>;
@@ -227,6 +193,4 @@ const styles = StyleSheet.create({
   receipt: { gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   metrics: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
   tool: { gap: spacing.sm, paddingBottom: spacing.sm },
-  quote: { borderLeftWidth: 2, borderLeftColor: colors.line, paddingLeft: spacing.md, minWidth: 0 },
-  metadata: { gap: spacing.md, minWidth: 0, paddingTop: spacing.sm },
 });

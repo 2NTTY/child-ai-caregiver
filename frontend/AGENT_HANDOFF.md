@@ -1,5 +1,7 @@
 # Agent 對話及私人結果交接
 
+**FE-W26 最新來源版式（2026-10-02）：** 回覆底部以分隔線列來源，正文上標只定位及聚焦相應列；點底部來源展開頁內分頁面板，可切來源及收起，沒有中央 Dialog。共享 [AnswerSources／CitationText](src/components/agent/AnswerSources.tsx)，保留原快照詳情及 stable source id 開啟回調。四尺寸／窄版放大文字、既有 Agent 合成操作／權限清理及 Web／Android export 通過。現有正式 text／KnowledgeEvidence 沒有逐句映射，主聊天須核對真實編號關聯，不能把 fixture 或猜配作證據；平台 port、失敗修正及未驗項見 [總交接](HANDOFF.md#answer-citations)。
+
 更新：2026-10-02。FE-W09 前置為已 review 的前端 `83106c0`（draft PR #68），分支 `codex/fe-w09-agent-conversation`。正式契約核對穩定主線 `90dacd4e5c0a8be9e490fa7d94830ea369c57521`；只讀 API／控制器，沒有改 Server、正式 App 或根文件。
 
 **FE-W25 最新展示修訂：** 按使用者指示撤去 `/chat` 常駐「緊急求助」卡及聊天標題／訊息頭像，問題靠右、答案用回全列寬。原草稿、按孩子分開的本地問題、composer 及結果操作不變。四尺寸局部檢查及 Web／Android export 通過。使用者已澄清「固定」指需要顯示時用統一、最權威的官方求助入口，避免每次生成不同資訊；不代表常駐，也沒有取消求助功能。正式觸發與前端誤讀更正見 [總交接](HANDOFF.md#chat-presentation)；原 FE-W17 展示證據屬歷史版本，不能據此恢復舊卡。
@@ -43,7 +45,7 @@ FE-W18 必要輕量檢查：typecheck、20 組 token 對比、Web／Android expo
 | `proposals[].details` | 逐類投影正式 `value` 的完整內容；`task_change` 保留 action／原任務 expectedVersion／負責對象／新時間與時區／覆核 outcome／note，不能只傳一句標題 |
 | `decide`／`retryOriginal` | `product-agent-api.decideProposal` 的既有 POST `.../proposals/:proposalId/decide`；原 proposalId／expectedVersion／decision／confirmShared 完整保留。正式 API 已有 pending／原決定核對，不包成另一套通用寫入流程 |
 | 私人背景結果 | `src/client/AgentInbox.tsx` 既有 GET `/children/:childId/agent/runs`；手動讀取最多 20 個 runId／createdAt，再以相同組件開啟。不自造未讀、投遞、輪詢或背景完成通知 |
-| 引用與開啟來源 | `ProductAgentResult.citations` 及 `product-agent-api.ts` 的 KnowledgeEvidence 驗證；sourceDate 保留 sourceDateText 或原日期，不把文字硬解析成 instant。versionHash 是版本校驗，不冒稱 contentHash。正式 adapter 核對 HTTPS、主機、無 credentials／控制字元後才提供可開啟 URL |
+| 引用與開啟來源 | `ProductAgentResult.citations` 及 `product-agent-api.ts` 的 KnowledgeEvidence 驗證，投影到回覆底部 AnswerSources 及頁內來源分頁。原文編號對應須由正式 adapter 核對，沒有逐句映射時不猜配。sourceDate 保留 sourceDateText 或原日期，不把文字硬解析成 instant；versionHash 是版本校驗，不冒稱 contentHash。`onOpenSource` 只傳原 id，正式 adapter 核對 HTTPS、主機、無 credentials／控制字元後才開啟 |
 
 ## 必須保留的語義
 

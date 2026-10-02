@@ -4,6 +4,19 @@
 
 ## 交付範圍及入口
 
+<a id="answer-citations"></a>
+### FE-W26 回覆引用及來源面板（2026-10-02，現行來源版式）
+
+基線 `20da9da6c6f7b5a56e45194b6dc0a3d4acd371a3`，只修改 frontend，沿 draft PR #73，主責 B。直接核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 [P2 UI 交接](https://github.com/2NTTY/child-ai-caregiver/blob/d3213e6dde2b72fd34a955b5ceebab1f046f3f6e/docs/P2_UI_HANDOFF.md)、API 及 product-agent／knowledge 型別；blob 及 14 個其他 worktree 無 frontend 重疊的核對見 [build-checks](verification/fe-w26/build-checks.json)。沒有新 API、依賴或正式 App 改動。
+
+[AnswerSources／CitationText](src/components/agent/AnswerSources.tsx) 復用 AgentCitationView，將每則回答的來源放在正文最底部，以細線分開。有效的【n】或 [n] 原文標記以較小上標呈現；點擊只定位、聚焦並標示底部對應列，沒有自動打開詳情。點底部來源後才展開頁內面板；上方來源分頁可橫向捲動，內容區保留原片段、發布者／分類、版本校驗、日期、有效期及適用／內部範圍，可獨立捲動及收起。開啟原來源仍只傳原 source id 給既有回調，不直接開未核對 URL。沒有 Portal 或中央來源 Dialog。
+
+[Web 上標](src/components/agent/CitationMarker.web.tsx) 用原生 sup／button 保留文字縮放及鍵盤焦點；[Web 定位](src/components/agent/locateCitationSource.web.ts) 復用實際 ancestor viewport 的 scrollIntoView，尊重減少動畫設定。[原生上標](src/components/agent/CitationMarker.tsx) 及 [原生定位](src/components/agent/locateCitationSource.ts) 使用 RN inline View／Pressable、fontScale 及 ScrollView measureLayout／scrollTo，沒有 DOM 或框架新增。小型平台差異按現有薄 adapter 處理；依 [RN Web Text](https://necolas.github.io/react-native-web/docs/text/)、[View](https://necolas.github.io/react-native-web/docs/view/) 及 [RN Text](https://reactnative.dev/docs/text) 核對，2026-10-02，文件核對不等於真機驗收。
+
+**正式引用關聯：** 現有 AgentPresentation／ProductAgentResult 提供 text 和 KnowledgeEvidence 清單，沒有逐句編號、offset 或映射欄位。本元件只呈現原文中有對應清單項的標記；未對應／超出範圍的編號保留原文字，不自動附引用。正式 adapter 須確認正文編號與來源的真實關聯，沿原清單次序及唯一穩定 id 投影，不能由前端按句子、關鍵字或來源標題猜配。沒有映射時仍可呈現底部來源，不製造文內證據。[三來源 fixture](src/preview/answer-citations.ts) 和運行示例只作合成版式，沒有真知識證據或健康建議。
+
+**清理及驗證：** 來源狀態屬單則回覆，原 Server／本人／孩子的 keyed 子樹和 ready／failed／denied 投影不變。原候選、共享勾選、版本／unknown／原決定查核、草稿和 composer 行為保留。首輪既有權限檢查發現 AnswerSources 和 RunDetails 重複 key 導致殘留，已改唯一 key 並核對控制變更不重複回覆、失去權限清除已開面板。四 Web 寬度 1440／1024／390／320 的上標、分隔線、三次定位／焦點、分頁 Enter／收起、無中央彈窗及草稿保留通過；390／320 的 150% Web 文字無橫向溢出。原 Agent 合成流程及聊天版面檢查、typecheck、Web 33 路由／Android Hermes 30 資產 export 通過；沒有 runtime error 或 API／模型請求。[定位證據](verification/fe-w26/citation-checks.json)／[原流程](verification/fe-w26/checks-agent-flow-emergency-help.json)／[桌面面板](verification/fe-w26/source-panel-1440.png)／[窄版](verification/fe-w26/source-panel-390.png)。只補本次需要的局部檢查；使用者視覺、真來源映射／正式接線，以及原生基線／大字體／觸控／定位／輔助技術待驗收。
+
 <a id="chat-presentation"></a>
 ### FE-W25 聊天版面減量（2026-10-02，現行版本）
 

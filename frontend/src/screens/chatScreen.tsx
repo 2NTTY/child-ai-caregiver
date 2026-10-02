@@ -1,17 +1,22 @@
 import { brand } from "../branding";
-import { useState } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { useRef, useState } from "react";
+import { StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView } from "react-native";
 import { AppScrollView as ScrollView } from "../components/AppScrollView";
 import { Text } from "react-native-paper";
 import { AppButton, SectionCard } from "../components/ui";
 import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";
 import { AgentComposer } from "../components/agent/AgentComposer";
+import { AnswerSources, CitationText } from "../components/agent/AnswerSources";
+import { locateCitationSource } from "../components/agent/locateCitationSource";
+import { previewAnswerCitations } from "../preview/answer-citations";
 import { usePreview } from "../preview/PreviewContext";
 import { chineseFont, colors, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 
 export default function ChatPage() {
   const { model, actions, chatDraft, setChatDraft } = usePreview();
   const [localMessages, setLocalMessages] = useState<Record<string, string[]>>({});
+  const scrollRef = useRef<NativeScrollView | null>(null);
+  const locateSource = (target: View | null) => locateCitationSource(target, scrollRef.current);
   const viewportWidth = useWindowDimensions().width;
   const [paneWidth, setPaneWidth] = useState(0);
   const compact = (paneWidth || viewportWidth) < mobileLayout.breakpoint;
@@ -27,7 +32,7 @@ export default function ChatPage() {
   }
 
   return <View onLayout={event => setPaneWidth(event.nativeEvent.layout.width)} style={styles.root}>
-    <ScrollView style={styles.scroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled">
+    <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled">
       <SectionCard style={styles.headingCard}>
         <View style={styles.headingRow}><View style={styles.headingCopy}><Text accessibilityRole="header" style={[styles.title, compact && mobileType.sectionTitle]}>{brand.agentTitle}</Text><Text style={[styles.subtitle, compact && mobileType.body]}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
         <Text style={styles.previewNote}>合成畫面示例 · 尚未連接 Agent 或發送訊息</Text>
@@ -35,18 +40,20 @@ export default function ChatPage() {
       {!child ? <SectionCard><Text style={styles.body}>請先選擇孩子；不同孩子的私人對話不能混在一起。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard> : <>
         <View testID="chat-question" style={styles.questionRow}><View style={styles.questionBubble}><Text style={styles.questionText}>最近一星期孩子晚上比較難入睡。我應該先整理哪些資料，才方便討論睡前流程？</Text><Text style={styles.bubbleMeta}>合成問題示例 · 未向 Server 發送</Text></View></View>
         <View testID="chat-answer" style={styles.answerRow}><View style={styles.answerCard}>
+          <AnswerSources key={child.id} sources={previewAnswerCitations} onLocateSource={locateSource}>
           <Text style={styles.answerEyebrow}>示例版式 · 並非 Agent 建議</Text>
           <Text style={styles.answerIntro}>可以先把已確認的睡眠記錄、作息時間，以及你想了解的情況放在一起。正式回答會由已接通的 Agent 按授權資料及適用來源生成。</Text>
           <View style={styles.usedData}><Text style={styles.usedDataTitle}>這個示例畫面可顯示的資料</Text><Text style={styles.usedDataText}>{child.displayName} · {child.ageLabel} · 已載入已確認記錄 {model.records.filter(item => item.childId === child.id).length} 項</Text></View>
           <View style={styles.answerSteps}>
-            <Text style={styles.stepTitle}>1　先核對已有記錄</Text><Text style={styles.stepBody}>查看事件發生時間、來源及是否已確認，避免把候選內容當作事實。</Text>
-            <Text style={styles.stepTitle}>2　列出仍想釐清的問題</Text><Text style={styles.stepBody}>例如入睡時間、睡前活動與你希望得到的協助；不在預覽中推斷原因。</Text>
-            <Text style={styles.stepTitle}>3　再由正式服務提供有來源的回覆</Text><Text style={styles.stepBody}>適用的官方資料、引用片段與日期，須待 Agent／知識接線後才能顯示。</Text>
+            <Text style={styles.stepTitle}>1　先核對已有記錄</Text><CitationText style={styles.stepBody}>查看事件發生時間、來源及是否已確認，避免把候選內容當作事實。【1】</CitationText>
+            <Text style={styles.stepTitle}>2　列出仍想釐清的問題</Text><CitationText style={styles.stepBody}>例如入睡時間、睡前活動與你希望得到的協助；不在預覽中推斷原因。【2】</CitationText>
+            <Text style={styles.stepTitle}>3　再由正式服務提供有來源的回覆</Text><CitationText style={styles.stepBody}>適用的官方資料、引用片段與日期，須待 Agent／知識接線後才能顯示。【3】</CitationText>
           </View>
-          <View style={styles.answerFooter}><Text style={styles.footerText}>此段只示範排版與狀態，沒有呼叫模型。</Text></View>
+          <Text style={styles.footerText}>此段只示範排版與狀態，沒有呼叫模型。</Text>
+          </AnswerSources>
         </View></View>
         {messages.map((message, index) => <View key={`${key}-${index}`} testID="chat-local-message" style={styles.questionRow}><View style={styles.localBubble}><Text style={styles.questionText}>{message}</Text><Text style={styles.bubbleMeta}>本地預覽 · 未送出</Text></View></View>)}
-        <AgentConversationPreview key={child.id} childId={child.id} online={model.connection === "online"} />
+        <AgentConversationPreview key={child.id} childId={child.id} online={model.connection === "online"} onLocateSource={locateSource} />
       </>}
     </ScrollView>
     <AgentComposer key={JSON.stringify([child?.id, model.caregiverName, child?.accessRole])} enabled={!!child} compact={compact}

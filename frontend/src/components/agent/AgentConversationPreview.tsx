@@ -23,27 +23,28 @@ const readOptions: { value: AgentReadOutcome; label: string }[] = [
   { value: "failed", label: "讀取失敗" }, { value: "denied", label: "權限或登入失效" },
 ];
 
-export function AgentConversationPreview({ childId, online }: { childId: string; online: boolean }) {
+export function AgentConversationPreview({ childId, online, onLocateSource }: { childId: string; online: boolean; onLocateSource?: (target: View | null) => void }) {
   const [identity, setIdentity] = useState("preview-self");
   const [toolsVisible, setToolsVisible] = useState(false);
   // Server/user/child changes must replace private contents before an old result can render.
   return <AgentConversationContents key={JSON.stringify(["isolated-preview", identity, childId])}
-    childId={childId} online={online} identity={identity} setIdentity={setIdentity} toolsVisible={toolsVisible} setToolsVisible={setToolsVisible} />;
+    childId={childId} online={online} identity={identity} setIdentity={setIdentity} toolsVisible={toolsVisible} setToolsVisible={setToolsVisible} onLocateSource={onLocateSource} />;
 }
-function AgentConversationContents({ childId, online, identity, setIdentity, toolsVisible, setToolsVisible }: {
+function AgentConversationContents({ childId, online, identity, setIdentity, toolsVisible, setToolsVisible, onLocateSource }: {
   childId: string; online: boolean; identity: string; setIdentity(value: string): void;
   toolsVisible: boolean; setToolsVisible(value: boolean): void;
+  onLocateSource?: (target: View | null) => void;
 }) {
   const preview = useAgentPreview(childId, online);
   const blocked = !!preview.model.busy || !!preview.model.pendingDecision || preview.model.readState === "denied";
   return <View style={styles.stack}>
     <SectionCard>
-      <SectionHeader title="來源與後續操作" icon="star-four-points" subtitle="引用與候選屬於這一則示例回覆；先核對內容，再決定下一步。" />
+      <SectionHeader title="後續操作" icon="star-four-points" subtitle="候選屬於這一則示例回覆；先核對內容，再決定下一步。" />
       <Text style={styles.body}>下方可操作的運行與候選均為合成資料，沒有連接 Agent、建立任務或寫入記憶。</Text>
       <AppButton label="查看來源與候選" variant="secondary" disabled={!online || blocked}
         onPress={() => preview.selectRun(conversationRunId(childId))} />
     </SectionCard>
-    {preview.model.readState !== "idle" ? <AgentRunView model={preview.model} actions={preview.actions} /> : null}
+    {preview.model.readState !== "idle" ? <AgentRunView model={preview.model} actions={preview.actions} onLocateSource={onLocateSource} /> : null}
     <AgentInboxView model={preview.inbox} actions={preview.inboxActions} />
     <View style={styles.toolsToggle}><AppButton label={toolsVisible ? "收起 Agent 情境工具" : "顯示 Agent 情境工具"} variant="quiet" onPress={() => setToolsVisible(!toolsVisible)} /></View>
     {toolsVisible ? <SectionCard style={styles.tools}>
