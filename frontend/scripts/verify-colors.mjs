@@ -16,6 +16,8 @@ const pairs = [
   ["secondary on menu", "muted", "quietSurface", 4.5],
   ["secondary on green tint", "muted", "paleTeal", 4.5],
   ["secondary on selected tint", "muted", "selectedNav", 4.5],
+  ["secondary on warning tint", "muted", "paleAmber", 4.5],
+  ["secondary on error tint", "muted", "paleCoral", 4.5],
   ["primary button", "white", "teal", 4.5],
   ["emphasized button", "white", "deepTeal", 4.5],
   ["error text", "errorInk", "paleCoral", 4.5],

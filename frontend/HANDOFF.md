@@ -69,7 +69,7 @@
 
 2026-09-30 同步核對主線 `fe7ac9e`：上述 client API／型別沒有變動；S10-W02 已補知識證據的 lastSuccessfulCheckAt／usageScope，仍沒有獨立知識 Web 路由。後續引用畫面須保留公開／組內用途限制，不能把 CHP／RTHK 組內來源當成公開知識卡片。主線的模型規則更新由主聊天管理，本包沒有回寫。
 
-其後同步主線 `34892c7`，PR #58／#59 已合併 Web Push／Telegram：已核對 src/shared/web-push.ts／telegram.ts 和 src/client/web-push-api.ts／telegram-api.ts。FE-W07 可沿本人渠道 API 的 status、register／begin、confirm、revoke、test、reconcilePending 建顯示模型；不呼叫實際服務、不複製成另一套 wire contract。切孩子不重綁本人渠道，切帳號／Server 清理舊狀態；accepted 不是已讀，acknowledgedAt 不是照護完成。投遞及主動聯絡完整台帳仍沿 W07，不自行新增未讀協定。
+其後同步主線 `34892c7`，PR #58／#59 已合併 Web Push／Telegram：已核對 src/shared/web-push.ts／telegram.ts、src/client/web-push-api.ts／telegram-api.ts、WebPushPanel／TelegramPanel 及 use-web-push。FE-W07 已按這些本人渠道 API 建顯示模型及合成流程，入口與接線映射見 [CHANNELS_HANDOFF](CHANNELS_HANDOFF.md)。切孩子不重綁本人渠道，切帳號／Server 清理舊狀態；accepted 不是已讀，acknowledgedAt 不是照護完成。投遞及主動聯絡完整台帳仍沿 W07，不自行新增未讀協定。
 
 | 領域 | 主聊天應復用 |
 |---|---|
@@ -85,7 +85,7 @@ HomeChild.profileConfirmed／ageLabel／allergiesLabel 只投影同一 selectedC
 ## 待主聊天接續
 
 - 所有真 session／API／opId／跨畫面及跨成員同步、正式 UI 掛載，以及接線後針對新增介面的必要瀏覽器驗收。主線已經 `9f0febd` 合併既有正式 App 的 S16-W05 Chromium 情景；該證據可按未變部分復用，但沒有驗過本包隔離介面，不要求無理由重跑整套舊情景。
-- S11-W02 真 Agent 多步結果／引用、S12 照片／分享来源核對、S13 通知渠道／投遞及成長關注、S14 到診摘要等：active 分支落碼不等同已合併交付。收到已 review 契約／基線再安排相應前端包，不代改其程式碼。
+- S13-W05／W06 的本人渠道已在 FE-W07 投影，待接正式 adapter；真通知中心／未讀及 W07 聯絡授權／fallback 台帳沒有新協定。S11-W02 真 Agent／引用、S12 照片／分享來源、S13 成長關注、S14 到診摘要等仍須已 review 契約／基線；active 分支落碼不等同已合併交付，不代改其程式碼。
 - 真通知中心、Web Push／Telegram／FCM 及未讀。鈴鐺只提示合成原操作，右欄勾選只是本地清單；/tasks 的合成流程另列，不能互相冒充。
 - 圖中的第三方／手機登入、忘記密碼、方案／儲存用量、帳戶匯出／刪除、疫苗百分比及知識首頁，不能憑圖片當已承諾 API。手機首頁暫用已有記憶／話題入口，沒有假醫療建議、附件或咪高峰操作。
 - 正式 P3 共用服務、APK／簽署、實機畫面／鍵盤／返回鍵／Safe Area／TalkBack／大字體、登入及相機／通知權限。Android JS bundle 不代表上述已驗收。
@@ -112,3 +112,5 @@ npm run web -- --port 8082
 2026-09-30 已接續上次未完成的收尾，對源碼 checkpoint `4739b9e` 補跑最後版本的 Web／Android export，兩者 exit 0；產物版本見 [build-checks](verification/fe-w06/build-checks.json)。40 個版面／11 組流程及其後手機首頁針對性檢查、typecheck、19 項單元結果沿用，沒有因恢復聊天重跑整套檢查。全部真 API、視覺確認及 Android 實機仍待驗收；交付及文件補完 commit 以本分支 Git 記錄為準。
 
 共用設計修訂另見 [verification/fe-w06-design](verification/fe-w06-design)：typecheck、16 個 token 對比、Web 23 個路由輸出及 Android Hermes／31 項資產 export 通過；固定輸出在 40 個版面及 shell／shared／design 檢查通過（包含 840／744／390／320 的更多選單），沒有 pageerror、console.error 或 /api/ 請求。實際源碼及產物 hash 在該目錄 build-checks.json；19 項未變表單規則沿原證據。曾發現的 SVG accessible DOM、SSR 首次渲染及 favicon 問題已修復並針對性驗證，不以建置成功取代執行畫面。
+
+FE-W07 沿 FE-W06 `6c7216f` 隔離接續；/settings 通知渠道的四尺寸、明確勾選、失敗草稿、同一原操作、切孩子保留／換帳戶清理、候選版本／過期／封鎖及接受／回覆語義通過。Web／Android export 通過；[verification/fe-w07](verification/fe-w07) 保存結果及產物 hash。共用 PreviewWriteNotice 容器按 saved／failed／待確認或 unknown 採淡青綠／淡珊瑚／淡琥珀，處理中維持中性，不再所有狀態都是警告底。操作邏輯未變，沒有重新跑整套舊檢查。

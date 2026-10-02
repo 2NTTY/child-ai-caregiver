@@ -24,6 +24,7 @@
 | 原生外殼及手機首頁 | [NativeAppShell](src/components/NativeAppShell.tsx)、[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) | Safe Area、更多／資訊面板、Expo Router Tabs、問候／孩子卡片／提問／重點／待辦／快捷記錄；與 Web 共享資料模型和功能元件 |
 | 共同外殼 | [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 左導覽、孩子切換及其授權摘要、資訊欄、預覽情境、內頁標題與內容間距 |
 | 待辦與提示 | [PreviewTodoCard.tsx](src/components/PreviewTodoCard.tsx)、[NotificationBell.tsx](src/components/NotificationBell.tsx) | 跨頁一致的右欄待辦示例及頂部原操作提示；兩者只處理展示與本地交互，不擔當正式任務／通知協議 |
+| 本人渠道設定 | [ChannelCards](src/components/notifications/ChannelCards.tsx)、[channel-view-model](src/channel-view-model.ts) | Web Push／Telegram 的狀態、核對、本人撤銷、明確測試及投遞；沿相同卡片／表單／狀態控件，與安靜時段和任務完成分開 |
 | 畫面與路由 | [screens](src/screens)、[app](app) | 每頁只組合現有元件；app 內只保留路由與 layout 入口 |
 | 合成狀態 | [view-model.ts](src/view-model.ts)、[preview](src/preview) | 孩子、記錄、連線及原操作展示；不是 Server 契約或正式資料源 |
 
@@ -50,3 +51,5 @@
 重要表單使用 RHF／Zod，錯誤放在欄位旁，原文不經 trim 或數值轉換覆寫。日期本身不轉成 UTC；時刻由明確 IANA 時區換算，無效或 DST 重複／不存在時間須要求使用者釐清。小於 360 的時間彈窗採同一 Paper Dates 公開鍵盤控件，避免其標準 328 px 時鐘溢出。
 
 Dialog 採 Paper 視覺配 RN Modal 的焦點／返回鍵行為；選單及勾選用共同封裝提供 Web 明確 ARIA。刪檔案、刪單筆記錄與刪整位孩子各有範圍提示及再次確認；確認結果前保留資料，unknown 鎖定並查原操作，版本改變先比較再重新核對。
+
+共用操作提示的容器按語義分配：已保存用淡青綠，明確失敗用淡珊瑚，待確認／unknown／衝突用淡琥珀，處理中及普通說明保持中性；不讓所有狀態都看似警告。渠道卡片的大部分內容保持中性，只在需要提醒或明確狀態時使用這些既有色階。

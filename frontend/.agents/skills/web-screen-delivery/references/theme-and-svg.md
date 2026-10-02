@@ -16,4 +16,4 @@
 
 角色及輸出核對來源：[Material 3 主題](https://developer.android.com/codelabs/m3-design-theming?hl=en)、[Carbon 色彩](https://carbondesignsystem.com/elements/color/overview/)、[Atlassian 色彩](https://atlassian.design/foundations/color)／[層次](https://atlassian.design/foundations/elevation)、[React SSR 首次渲染](https://react.dev/reference/react/useEffect#displaying-different-content-on-the-server-and-the-client)、[Expo Web export 預覽](https://docs.expo.dev/guides/publishing-websites/)。
 
-已核對套件源碼、版本及 16 個 token 對比；執行畫面／建置證據見 frontend/verification/fe-w06-design 及 HANDOFF。真 API、完整可存取驗收和 Android 實機未因本研究通過。
+已核對套件源碼及版本；FE-W06 核對 16 個 token 對比，FE-W07 補查狀態容器後共 18 組。執行畫面／建置證據見 frontend/verification/fe-w06-design、fe-w07 及 HANDOFF。真 API、完整可存取驗收和 Android 實機未因本研究通過。

@@ -56,7 +56,7 @@ mintSurface、previewSurface 和操作狀態容器沿上述色階作語義別名
 
 ## 驗證與限制
 
-在 frontend 執行 npm run verify:colors。Culori 只屬 devDependency；檢查程式讀 theme.ts，核對 16 個實際使用的文字／背景、按鈕及控制圖標組合，記錄未四捨五入的對比及 source hash。
+在 frontend 執行 npm run verify:colors。Culori 只屬 devDependency；檢查程式讀 theme.ts，核對已列明的文字／背景、按鈕及控制圖標組合，記錄未四捨五入的對比及 source hash。FE-W06 首輪核對 16 組；FE-W07 補查狀態容器內的兩組文字，共 18 組，沒有新增色值。
 
 一般文字至少 4.5:1；辨識控制項／狀態所需的非文字視覺至少 3:1。裝飾分隔線、未啟用項目和整個產品的其他可存取要求不由這份 token 檢查代替。[WCAG 文字對比](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)、[非文字對比](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
 
