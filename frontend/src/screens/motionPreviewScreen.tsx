@@ -3,6 +3,7 @@ import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Switch, Text } from "react-native-paper";
 import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp, FadeOut, ReduceMotion, ZoomIn, useReducedMotion } from "react-native-reanimated";
 import { PageFrame } from "../components/PageFrame";
+import { AppIcon } from "../components/AppIcon";
 import { AppButton, OperationPill, SectionCard, SectionHeader, UnderlineTabs } from "../components/ui";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
@@ -90,7 +91,7 @@ function MotionFrame({ option, childIndex, replay, detailsOpen, reduced, narrow 
   const childContent = <View style={styles.childRow}>
     <View style={styles.childAvatar}><Text style={styles.childAvatarText}>{child.name.slice(0, 1)}</Text></View>
     <View style={styles.flexText}><Text style={styles.childName}>{child.name}</Text><Text style={styles.muted}>{child.age}</Text></View>
-    <Text style={styles.chevron}>⌄</Text>
+    <AppIcon name="chevron-down" size={18} />
   </View>;
   const statusContent = <View style={styles.statusRow}>
     <View style={styles.flexText}><Text style={styles.cardTitle}>本週睡眠觀察</Text><Text style={styles.muted}>示例內容 · 尚未向 Server 提交</Text></View>
@@ -112,7 +113,7 @@ function MotionFrame({ option, childIndex, replay, detailsOpen, reduced, narrow 
       </SectionCard>
       {reduced ? <SectionCard style={styles.sceneCard}>{statusContent}</SectionCard>
         : <Animated.View key={`${option}-record-${replay}`} entering={option === "warm" ? warmRecord : effect.card} style={styles.animatedCard}><SectionCard style={styles.sceneCard}>
-          {option === "warm" ? <Animated.View key={`mark-${replay}`} entering={effect.mark} style={styles.sparkMark}><Text style={styles.sparkText}>✦</Text></Animated.View> : null}
+          {option === "warm" ? <Animated.View key={`mark-${replay}`} entering={effect.mark} style={styles.sparkMark}><AppIcon name="star-four-points" size={24} /></Animated.View> : null}
           {statusContent}
         </SectionCard></Animated.View>}
     </View>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Badge, Button, Dialog, IconButton, Portal, Text } from "react-native-paper";
+import { Badge, Button, IconButton, Portal, Text } from "react-native-paper";
+import { AppDialog as Dialog } from "./AppDialog";
 import type { ConnectionState, HomeOperation } from "../view-model";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import { OperationPill } from "./ui";

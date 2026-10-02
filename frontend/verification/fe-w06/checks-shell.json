@@ -1,0 +1,8 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "at": "2026-09-28T20:37:37.293Z",
+  "passed": [
+    "shell: single rail toggle/keyboard checklist/bell/first-login guide/settings re-entry/logo/phone reference layout/question draft preservation/quick draft"
+  ],
+  "failures": []
+}

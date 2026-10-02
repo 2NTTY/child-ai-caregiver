@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { AppButton, SectionCard, SectionHeader, TextLink } from "../components/ui";
 import { usePreview } from "../preview/PreviewContext";
+import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
 const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄", "先列出想問的問題"];
@@ -24,12 +25,12 @@ export default function ChatPage() {
   return <View style={styles.root}>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
       <SectionCard style={styles.headingCard}>
-        <View style={styles.headingRow}><View style={styles.agentMark}><Text style={styles.agentGlyph}>✦</Text></View><View style={styles.headingCopy}><Text accessibilityRole="header" style={styles.title}>育伴港 Agent 對話</Text><Text style={styles.subtitle}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
+        <View style={styles.headingRow}><View style={styles.agentMark}><AppIcon name="star-four-points" size={28} /></View><View style={styles.headingCopy}><Text accessibilityRole="header" style={styles.title}>育伴港 Agent 對話</Text><Text style={styles.subtitle}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text></View></View>
         <Text style={styles.previewNote}>合成畫面示例 · 尚未連接 Agent 或發送訊息</Text>
       </SectionCard>
       {!child ? <SectionCard><Text style={styles.body}>請先選擇孩子；不同孩子的私人對話不能混在一起。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard> : <>
         <View style={styles.questionRow}><View style={styles.questionBubble}><Text style={styles.questionText}>最近一星期孩子晚上比較難入睡。我應該先整理哪些資料，才方便討論睡前流程？</Text><Text style={styles.bubbleMeta}>合成問題示例 · 未向 Server 發送</Text></View><View style={styles.personMark}><Text style={styles.personGlyph}>媽</Text></View></View>
-        <View style={styles.answerRow}><View style={styles.agentMarkSmall}><Text style={styles.agentGlyph}>✦</Text></View><View style={styles.answerCard}>
+        <View style={styles.answerRow}><View style={styles.agentMarkSmall}><AppIcon name="star-four-points" size={24} /></View><View style={styles.answerCard}>
           <Text style={styles.answerEyebrow}>示例版式 · 並非 Agent 建議</Text>
           <Text style={styles.answerIntro}>可以先把已確認的睡眠記錄、作息時間，以及你想了解的情況放在一起。正式回答會由已接通的 Agent 按授權資料及適用來源生成。</Text>
           <View style={styles.usedData}><Text style={styles.usedDataTitle}>這個示例畫面可顯示的資料</Text><Text style={styles.usedDataText}>{child.displayName} · {child.ageLabel} · 已載入已確認記錄 {model.records.filter(item => item.childId === child.id).length} 項</Text></View>

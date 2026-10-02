@@ -4,15 +4,17 @@ import { ActivityIndicator, Divider, Text } from "react-native-paper";
 import { AppButton, AppTextField, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import type { HomeActions, HomeRecord, HomeViewModel } from "../view-model";
+import { MobileHomeDashboard } from "./MobileHomeDashboard";
+import { AppIcon, type AppIconName } from "./AppIcon";
 
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
-const recordGlyph: Record<HomeRecord["kind"], string> = { sleep: "☾", feeding: "◌", measurement: "↗", note: "✎", appointment: "▣" };
+const recordIcons: Record<HomeRecord["kind"], AppIconName> = { sleep: "weather-night", feeding: "silverware-fork-knife", measurement: "chart-bar", note: "notebook-outline", appointment: "calendar-outline" };
 
-function DashboardLink({ glyph, title, detail, onPress }: { glyph: string; title: string; detail: string; onPress: () => void }) {
+function DashboardLink({ icon, title, detail, onPress }: { icon: AppIconName; title: string; detail: string; onPress: () => void }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}>
-    <View style={styles.glyphFrame}><Text style={styles.glyph}>{glyph}</Text></View>
+    <View style={styles.glyphFrame}><AppIcon name={icon} size={22} /></View>
     <View style={styles.rowCopy}><Text style={styles.rowTitle}>{title}</Text><Text style={styles.micro}>{detail}</Text></View>
-    <Text style={styles.arrow}>→</Text>
+    <AppIcon name="arrow-right" size={18} />
   </Pressable>;
 }
 
@@ -39,17 +41,17 @@ function DataOverview({ model, actions }: { model: HomeViewModel; actions: HomeA
   const count = model.records.filter(item => item.childId === model.selectedChildId).length;
   return <SectionCard>
     <SectionHeader title="資料概況" action={<TextLink label="查看照顧記錄" onPress={() => actions.open("care")} />} />
-    <DashboardLink glyph="▤" title="最近已確認記錄" detail={model.recordsLoad === "loading" ? "正在讀取記錄" : `只計已載入的 ${count} 項記錄`} onPress={() => actions.open("care")} />
-    <DashboardLink glyph="◉" title="孩子檔案" detail={child ? `${child.displayName} · ${child.ageLabel} · ${child.profileConfirmed ? "已確認" : "待核對"}` : "尚未有孩子"} onPress={() => actions.open("profile")} />
-    <DashboardLink glyph="◇" title="最近操作" detail={model.operation.title} onPress={() => model.operation.state === "none" ? actions.open("care") : actions.reviewOperation()} />
+    <DashboardLink icon="file-document-outline" title="最近已確認記錄" detail={model.recordsLoad === "loading" ? "正在讀取記錄" : `只計已載入的 ${count} 項記錄`} onPress={() => actions.open("care")} />
+    <DashboardLink icon="account-child-outline" title="孩子檔案" detail={child ? `${child.displayName} · ${child.ageLabel} · ${child.profileConfirmed ? "已確認" : "待核對"}` : "尚未有孩子"} onPress={() => actions.open("profile")} />
+    <DashboardLink icon="history" title="最近操作" detail={model.operation.title} onPress={() => model.operation.state === "none" ? actions.open("care") : actions.reviewOperation()} />
   </SectionCard>;
 }
 
 function RecordRow({ item, onPress }: { item: HomeRecord; onPress: () => void }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={`查看${item.title}，${item.detail}`} onPress={onPress} style={({ pressed }) => [styles.recordRow, pressed && styles.pressed]}>
-    <View style={styles.glyphFrame}><Text style={styles.glyph}>{recordGlyph[item.kind]}</Text></View>
+    <View style={styles.glyphFrame}><AppIcon name={recordIcons[item.kind]} size={22} /></View>
     <View style={styles.rowCopy}><View style={styles.rowHeading}><Text numberOfLines={1} style={styles.rowTitle}>{item.title}</Text><Text style={styles.confirmed}>已確認</Text></View><Text numberOfLines={2} style={styles.body}>{item.detail}</Text><Text style={styles.micro}>{item.eventTimeLabel} · {item.confirmedAtLabel}加入</Text></View>
-    <Text style={styles.arrow}>›</Text>
+    <AppIcon name="chevron-right" size={18} />
   </Pressable>;
 }
 
@@ -73,6 +75,7 @@ export function HomeDashboard({ model, actions }: { model: HomeViewModel; action
   const [width, setWidth] = useState(900);
   const stacked = Math.min(width, windowWidth) < 760;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
+  if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} />;
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <View style={[styles.introCard, stacked && styles.introStack]}>
       <View style={styles.introText}><Text style={styles.eyebrow}>育伴港 · 照顧整理空間</Text><Text accessibilityRole="header" style={styles.introTitle}>把每天的細節，慢慢整理清楚。</Text><Text style={styles.body}>結合孩子的已確認資料與可靠來源，幫你看清目前狀態，再決定下一步。</Text><View style={[styles.actions, windowWidth < 360 && styles.actionsNarrow]}><AppButton label={needsGuide ? "前往使用引導" : "進行對話"} onPress={() => actions.open(needsGuide ? "guide" : "chat")} /><AppButton label="查看照顧記錄" variant="secondary" onPress={() => actions.open("care")} /></View></View>
@@ -80,7 +83,7 @@ export function HomeDashboard({ model, actions }: { model: HomeViewModel; action
     </View>
     <View style={[styles.grid, stacked && styles.gridStack]}>
       <View style={styles.column}><DataOverview model={model} actions={actions} /><RecentRecords model={model} actions={actions} /></View>
-      <View style={styles.column}><Highlight model={model} actions={actions} /><SectionCard><SectionHeader title="常用入口" subtitle="從已掌握的資料繼續。" /><DashboardLink glyph="✦" title="基本聊天" detail="整理需要討論的問題" onPress={() => actions.open("chat")} /><DashboardLink glyph="▤" title="照顧記錄" detail="查看已確認的內容" onPress={() => actions.open("care")} /><DashboardLink glyph="♙" title="家庭協調" detail="查看成員與共享範圍" onPress={() => actions.open("family")} /></SectionCard></View>
+      <View style={styles.column}><Highlight model={model} actions={actions} /><SectionCard><SectionHeader title="常用入口" subtitle="從已掌握的資料繼續。" /><DashboardLink icon="message-text-outline" title="基本聊天" detail="整理需要討論的問題" onPress={() => actions.open("chat")} /><DashboardLink icon="notebook-outline" title="照顧記錄" detail="查看已確認的內容" onPress={() => actions.open("care")} /><DashboardLink icon="account-group-outline" title="家庭協調" detail="查看成員與共享範圍" onPress={() => actions.open("family")} /></SectionCard></View>
     </View>
     <Text style={styles.footer}>育伴港 · 用資料陪伴成長</Text>
   </ScrollView>;
@@ -99,7 +102,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   actionsNarrow: { flexDirection: "column", alignItems: "stretch" },
   grid: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, gridStack: { flexDirection: "column" }, column: { flex: 1, minWidth: 0, width: "100%", gap: spacing.lg },
-  highlightUnknown: { backgroundColor: colors.statusUnknown, borderColor: colors.statusUnknownLine }, highlightFailed: { backgroundColor: colors.statusWarm, borderColor: colors.statusFailedLine }, highlightConfirmation: { backgroundColor: colors.statusWarm, borderColor: colors.statusWarmLine },
+  highlightUnknown: { backgroundColor: colors.statusUnknown, borderColor: colors.statusUnknownLine }, highlightFailed: { backgroundColor: colors.paleCoral, borderColor: colors.statusFailedLine }, highlightConfirmation: { backgroundColor: colors.statusWarm, borderColor: colors.statusWarmLine },
   highlightTop: { flexDirection: "row", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" }, highlightTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 29, fontWeight: "800" },
   linkRow: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.sm, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.small },
   glyphFrame: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" }, glyph: { color: colors.deepTeal, fontSize: 22 },

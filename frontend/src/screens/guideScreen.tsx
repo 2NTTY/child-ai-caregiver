@@ -24,7 +24,7 @@ export default function GuideScreen() {
       {model.guideStatus === "incomplete" ? <Text style={styles.body}>目前設定尚未完成。你可以逐項查看；預覽不會代你保存任何資料。</Text> : null}
     </SectionCard>
     <View style={[styles.steps, narrow && styles.stepsNarrow]}>
-      {steps.map((step, index) => <SectionCard key={step.title} style={styles.step}>
+      {steps.map((step, index) => <SectionCard key={step.title} style={[styles.step, narrow && styles.fullStep]}>
         <View style={styles.stepHeading}><View style={styles.stepNumber}><Text style={styles.stepNumberText}>{index + 1}</Text></View><Text accessibilityRole="header" style={styles.stepTitle}>{step.title}</Text></View>
         <Text style={styles.body}>{step.description}</Text>
         <AppButton label={step.action} variant="secondary" onPress={() => actions.open(step.destination)} />
@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
   steps: { flexDirection: "row", gap: spacing.md, alignItems: "stretch" },
   stepsNarrow: { flexDirection: "column" },
   step: { flex: 1, minWidth: 0, justifyContent: "space-between" },
+  fullStep: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   stepHeading: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   stepNumber: { width: 28, height: 28, borderRadius: radius.pill, backgroundColor: colors.deepTeal, alignItems: "center", justifyContent: "center" },
   stepNumberText: { color: colors.white, fontFamily: chineseFont, fontWeight: "800", fontSize: typeScale.small },

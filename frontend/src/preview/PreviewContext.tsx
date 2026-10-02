@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "expo-router";
-import { createPreviewModel, type PreviewScenario } from "./fixture";
-import type { GuideStatus, HomeActions, HomeDestination, HomeViewModel } from "../view-model";
+import { createPreviewModel, previewChecklist, type PreviewScenario } from "./fixture";
+import type { GuideStatus, HomeActions, HomeChild, HomeDestination, HomeViewModel } from "../view-model";
 
 type PreviewContextValue = {
   model: HomeViewModel;
@@ -18,8 +18,8 @@ type PreviewContextValue = {
 
 const PreviewContext = createContext<PreviewContextValue | null>(null);
 
-const routes: Record<HomeDestination, "/chat" | "/care" | "/profile" | "/family" | "/memory" | "/settings" | "/guide"> = {
-  chat: "/chat", care: "/care", profile: "/profile", family: "/family", memory: "/memory", settings: "/settings", guide: "/guide",
+const routes: Record<HomeDestination, "/chat" | "/care" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks"> = {
+  chat: "/chat", care: "/care", profile: "/profile", family: "/family", memory: "/memory", settings: "/settings", guide: "/guide", tasks: "/tasks",
 };
 
 export function PreviewProvider({ children }: { children: ReactNode }) {
@@ -28,12 +28,20 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const [guideStatus, setGuideStatus] = useState<GuideStatus>("complete");
   const [selectedChildId, setSelectedChildId] = useState("preview-child-1");
   const [notice, setNotice] = useState<string | null>(null);
+  const [createdChildren, setCreatedChildren] = useState<HomeChild[]>([]);
+  const [deletedChildren, setDeletedChildren] = useState<string[]>([]);
+  const childSerial = useRef(0);
   const [chatDrafts, setChatDrafts] = useState<Record<string, string>>({});
   const [checkedPreviewItems, setCheckedPreviewItems] = useState<Record<string, boolean>>({});
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); }, []);
 
-  const model = createPreviewModel(scenario, selectedChildId, guideStatus);
+  const fixture = createPreviewModel(scenario, selectedChildId, guideStatus);
+  const childrenInPreview = [...fixture.children, ...createdChildren].filter(child => !deletedChildren.includes(child.id));
+  const model: HomeViewModel = { ...fixture, children: childrenInPreview,
+    selectedChildId: childrenInPreview.some(item => item.id === selectedChildId) ? selectedChildId : childrenInPreview[0]?.id ?? null,
+    records: fixture.records.filter(record => childrenInPreview.some(item => item.id === record.childId)),
+  };
   const draftKey = model.selectedChildId ?? "no-child";
   const actions: HomeActions = {
     selectChild(id) {
@@ -58,6 +66,29 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
           : "正式版須返回原操作並保留輸入；預覽沒有提交資料。");
     },
     open(destination) { router.push(routes[destination]); },
+    composeCare(kind) { router.push({ pathname: "/care", params: { compose: kind } }); },
+    prepareQuestion(question) {
+      if (!model.selectedChildId) return;
+      if (chatDrafts[draftKey]?.trim()) setNotice("保留你原本未發送的問題；可在對話頁核對後修改。");
+      else setChatDrafts(previous => ({ ...previous, [draftKey]: question }));
+      router.push("/chat");
+    },
+    createChildPreview(displayName) {
+      const child: HomeChild = { id: `preview-new-child-${++childSerial.current}`, displayName,
+        accessRole: "owner",
+        ageLabel: "年齡未提供", regionLabel: "未提供", allergiesLabel: null, profileConfirmed: false };
+      setCreatedChildren(previous => [...previous, child]); setSelectedChildId(child.id);
+      setNotice("已模擬新增孩子，只留在本次預覽。尚未建立真家庭資料或確認檔案。");
+    },
+    deleteChildPreview(id) {
+      if (!childrenInPreview.some(child => child.id === id && child.accessRole === "owner")) return;
+      setDeletedChildren(previous => [...previous, id]);
+      setCreatedChildren(previous => previous.filter(child => child.id !== id));
+      const checklistIds = new Set(previewChecklist.filter(item => item.childId === id).map(item => item.id));
+      setCheckedPreviewItems(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !checklistIds.has(key))));
+      setChatDrafts(previous => { const next = { ...previous }; delete next[id]; return next; });
+      setNotice("已模擬移除孩子及本頁關聯草稿。只影響合成預覽；沒有刪除真家庭資料。");
+    },
     completeGuidePreview() {
       if (model.children.length === 0) return;
       setGuideStatus("complete");
@@ -69,6 +100,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   function setScenario(next: PreviewScenario) {
     if (refreshTimer.current) clearTimeout(refreshTimer.current);
     setScenarioState(next);
+    setCreatedChildren([]); setDeletedChildren([]); setSelectedChildId("preview-child-1");
     if (next === "first_login") setGuideStatus("first_login");
     else if (next === "setup_incomplete" || next === "empty") setGuideStatus("incomplete");
     else if (next === "normal") setGuideStatus("complete");

@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "at": "2026-09-28T19:20:10.767Z",
+  "passed": [
+    "care: paged search/history/conflict/failure/same-operation lookup/child isolation/permission loss",
+    "care: 320 form validation and keyboard confirmation"
+  ],
+  "failures": []
+}

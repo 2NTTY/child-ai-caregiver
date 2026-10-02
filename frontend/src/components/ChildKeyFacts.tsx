@@ -22,6 +22,6 @@ const styles = StyleSheet.create({
   facts: { alignItems: "center", gap: spacing.sm, paddingRight: spacing.sm },
   fact: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderRadius: radius.pill, backgroundColor: colors.quietSurface, paddingHorizontal: spacing.sm, minHeight: 31 },
   label: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
-  value: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "700", maxWidth: 120 },
+  value: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, fontWeight: "700", maxWidth: 120 },
   placeholder: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
 });

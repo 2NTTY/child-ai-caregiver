@@ -1,0 +1,11 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "at": "2026-09-28T19:45:38.172Z",
+  "passed": [
+    "profile: history/raw approximate age/conflict/same-operation lookup/deletion cancellation/role and permission cleanup at 320",
+    "family: keyboard scope confirmation/one-time-code cleanup/unknown revocation/viewer boundary/invitation acceptance at 320",
+    "tasks: terminal actions stay closed/date-time selection/keyboard scope/unknown creation/explicit needs-review resolution at 320",
+    "memory: explicit family confirmation/unknown preserves candidate/summary invalidation/terminal reopening/viewer and access boundaries/320 editor"
+  ],
+  "failures": []
+}
