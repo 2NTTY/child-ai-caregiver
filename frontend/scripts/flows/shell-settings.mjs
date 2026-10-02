@@ -2,6 +2,37 @@ import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { openPreview, assertFits, selectOption } from "../preview-browser.mjs";
 
+export async function verifyAgentEntry(browser, failures, directory) {
+  for (const width of [1440, 1024, 390, 320]) {
+    const page = await openPreview(browser, "/", width, width >= 1024 ? 992 : 844, failures);
+    const entry = page.getByRole("link", { name: "與 Agent 對話", exact: true });
+    assert.equal(await entry.count(), 1, "One Agent navigation entry per layout");
+    assert.equal(await entry.getAttribute("href"), "/chat", "Use an actual Expo Router navigation link");
+    if (width >= 1024) {
+      const sidebar = page.getByTestId("web-sidebar");
+      assert.equal(await sidebar.getByRole("link", { name: "與 Agent 對話", exact: true }).count(), 1);
+      assert.equal(await page.getByTestId("agent-entry").locator("svg").count(), 2);
+      const bounds = await entry.boundingBox();
+      const settingsBounds = await sidebar.getByRole("link", { name: "設定", exact: true }).boundingBox();
+      assert.ok(bounds.height >= 72 && bounds.width >= 190, "Prominent Agent touch area");
+      assert.ok(bounds.y + bounds.height <= settingsBounds.y && bounds.y >= 600, "Agent entry is pinned above settings");
+      await sidebar.screenshot({ path: resolve(directory, "sidebar-" + width + ".png") });
+    } else assert.equal(await page.getByTestId("agent-entry").count(), 0, "Compact layout keeps its bottom chat tab");
+    await assertFits(page, "Agent entry " + width);
+    await entry.focus(); await entry.press("Enter");
+    const question = page.getByRole("textbox", { name: "撰寫對話問題", exact: true });
+    await question.waitFor();
+    assert.equal(await page.getByRole("link", { name: "與 Agent 對話", exact: true }).getAttribute("aria-current"), "page");
+    await question.fill("保留我的照顧問題");
+    await page.getByRole("link", { name: "育伴港，返回主頁", exact: true }).click();
+    await page.getByRole("link", { name: "與 Agent 對話", exact: true }).click();
+    assert.equal(await question.inputValue(), "保留我的照顧問題");
+    await page.screenshot({ path: resolve(directory, "agent-chat-" + width + ".png") });
+    await page.close();
+  }
+  return "Agent entry: single navigation/pinned primary touch area/SVG/keyboard navigation/current page/draft preservation/four Web sizes";
+}
+
 export async function verifyShell(browser, failures, directory) {
   const page = await openPreview(browser, "/", 1440, 992, failures);
   await page.getByRole("button", { name: "收起資訊側欄", exact: true }).click();

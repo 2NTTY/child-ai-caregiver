@@ -10,6 +10,7 @@
 - 右資訊欄先顯示目前孩子與待辦摘要，再顯示已確認記錄及原操作狀態。待辦示例的勾選只在本地預覽有效；頂部鈴鐺的角標只代表需留意的原操作狀態，不代表通知已送達或未讀。窄視窗保留鈴鐺及資訊面板入口，帳戶入口放在底部「更多」。
 - 頂部孩子選擇以清楚的雙層字級及柔和邊框呈現；旁邊只顯示所選孩子獲授權且已讀到的檔案摘要，未知資料直接寫「未提供」，切換孩子或載入時不沿用上一位孩子的提示。連線標籤置中並用「已連接」；合成預覽的連線狀態仍須另行標示未接駁 Server。
 - 側欄由鈴鐺旁的單一面板圖示開關，不再在資訊欄另放關閉鈕。左上 Logo 置中且可回主頁；左下用深綠「與 Agent 對話」主操作取代裝飾圖。首次登入或配置未完成時，底部導覽才顯示引導入口；設定頁永遠提供重看入口。
+- Agent 是桌面側欄下方的單一主要入口，固定在設定／帳戶上方；上方一般導覽不重複。用深綠底、白色 SVG／文字、短用途說明及箭嘴形成主次，72 px 內容高度方便點擊，焦點／目前頁面有邊框提示。窄 Web 和手機原生保留底部對話分頁。
 - 以 [theme.ts](src/theme.ts) 為唯一色彩、間距、字級和 Paper 主題來源。現行間距為 4／8／12／16／24／32／40 px，圓角 10／16／22 px 及膠囊形，字級 12／14／16／20／28／34 px。Web 使用系統繁體中文字體堆疊，不從外站載入字體。
 
 ## 共用組件與規則
@@ -23,6 +24,7 @@
 | 日期、時間及表單 | [DateTimeFields](src/components/DateTimeFields.tsx)、[date-time](src/components/date-time.ts)、各頁 RHF／Zod schema | 共用 Paper Dates 0.24.0 的日曆／時鐘／窄屏鍵盤輸入，IANA 時區沿 Luxon 3.7.2；不逐頁手寫日期控制 |
 | 原生外殼及手機首頁 | [NativeAppShell](src/components/NativeAppShell.tsx)、[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) | Safe Area、更多／資訊面板、Expo Router Tabs、問候／孩子卡片／提問／重點／待辦／快捷記錄；與 Web 共享資料模型和功能元件 |
 | 共同外殼 | [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 左導覽、孩子切換及其授權摘要、資訊欄、預覽情境、內頁標題與內容間距 |
+| Agent 主要入口 | [AgentEntryButton](src/components/AgentEntryButton.tsx) | 桌面側欄的固定入口、主操作層次、SVG、焦點／目前頁面；復用 Paper TouchableRipple 與既有 token，不改一般 AppButton |
 | 待辦與提示 | [PreviewTodoCard.tsx](src/components/PreviewTodoCard.tsx)、[NotificationBell.tsx](src/components/NotificationBell.tsx) | 跨頁一致的右欄待辦示例及頂部原操作提示；兩者只處理展示與本地交互，不擔當正式任務／通知協議 |
 | 本人渠道設定 | [ChannelCards](src/components/notifications/ChannelCards.tsx)、[channel-view-model](src/channel-view-model.ts) | Web Push／Telegram 的狀態、核對、本人撤銷、明確測試及投遞；沿相同卡片／表單／狀態控件，與安靜時段和任務完成分開 |
 | 畫面與路由 | [screens](src/screens)、[app](app) | 每頁只組合現有元件；app 內只保留路由與 layout 入口 |

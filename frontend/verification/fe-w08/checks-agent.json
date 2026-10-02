@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-09-30T11:44:53.094Z",
+  "passed": [
+    "Agent entry: single navigation/pinned primary touch area/SVG/keyboard navigation/current page/draft preservation/four Web sizes"
+  ],
+  "failures": []
+}
