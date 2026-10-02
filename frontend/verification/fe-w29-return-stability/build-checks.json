@@ -1,0 +1,117 @@
+{
+  "at": "2026-10-02T14:38:03.060Z",
+  "baseline": "1e3d598baa5eb7fba3cc9f0e4c4b0bfed56a2bd6",
+  "branch": "codex/fe-w11-photos",
+  "scope": "FE-W29 return button visibility stabilization: measured distance separate from reader intent; 40/24px hysteresis. frontend/** only.",
+  "sources": {
+    "frontend/src/components/chat/ChatTimeline.tsx": {
+      "gitBlob": "fc376063c3b460fea32a4b7a8cda4a881e502767",
+      "sha256": "72e378577d5b1948abb4bb5469e35589029e5059d0cb6278a12037ace4797824"
+    },
+    "frontend/scripts/verify-chat-timeline.mjs": {
+      "gitBlob": "2042c606416a96f4c7ac3d3cd731dda1052c41eb",
+      "sha256": "cb8213e01ba05702d7ee7410b2d6617271688a71b86653cd7351413c1ec34390"
+    },
+    "frontend/STATUS.md": {
+      "gitBlob": "27b42c0c08da8a986bc96b9369f50de201f5520a",
+      "sha256": "4f4bf898a71cd8ac564dc7eb78802721343589bd1cdd9073ac4bf06fb7ed1373"
+    },
+    "frontend/PLAN.md": {
+      "gitBlob": "1f90b5d437a5c63e55d570e4c6a3faf0e52ebfe9",
+      "sha256": "c525ebf89644708dbdc1214c7e4ddf5a00a5764acee609eaaab036a4d14524f8"
+    },
+    "frontend/HANDOFF.md": {
+      "gitBlob": "a66bd591165c5b215a5556d7c17295a3ca9ce7f8",
+      "sha256": "f79f1852b29b5e43ab1ce965b5885932464b782e7d8b42d6fb55c798f9b83d90"
+    },
+    "frontend/DESIGN_SYSTEM.md": {
+      "gitBlob": "4cf944fa8ffce938e059eb2fb5b85bde27935a49",
+      "sha256": "548919cc4784e62970d19abc0d67e7d64d358d5baeb897b26b46cec119c32b2b"
+    }
+  },
+  "evidence": {
+    "frontend/verification/fe-w29-return-stability/before-390.json": {
+      "sha256": "84cf19411a9cd50dd65be5d58cc7070633210e4a5bdd0dd5498b520e527ff013"
+    },
+    "frontend/verification/fe-w29-return-stability/chat-390-large-text.png": {
+      "sha256": "6601cf47566c4233604d5fdd5fa9095ef4a876c1860d77e40e6a7b5c227af0c2"
+    },
+    "frontend/verification/fe-w29-return-stability/chat-timeline-checks.json": {
+      "sha256": "3519a44926574ad410e056c2e41256b51759db7e8a4106191b893df11341a5f6"
+    },
+    "frontend/verification/fe-w29-return-stability/checks.json": {
+      "sha256": "19de9d6e916b4d9f67e6b582a235b287fdb180b5d02d970b7f1b934ce8501518"
+    },
+    "frontend/verification/fe-w29-return-stability/completed-390.png": {
+      "sha256": "04ff0e99ec345d6cca944990d89a49fd5d677c9d2643081bac9bfa185656d1d2"
+    },
+    "frontend/verification/fe-w29-return-stability/failed-390.png": {
+      "sha256": "ecc4aadad38767a14223f2da9b7ed12678238f50020a250c12178c8ef2ed04cc"
+    },
+    "frontend/verification/fe-w29-return-stability/history-390.png": {
+      "sha256": "96123d56d5ab7d613c69b9c53440fbc927c3de242f2d311a3d7005d46986e486"
+    },
+    "frontend/verification/fe-w29-return-stability/stable-return-1024.png": {
+      "sha256": "92da41a9f7cb2668e7d512a8ea1ebad117fe3d4f685a4c090c08406b1f51da10"
+    },
+    "frontend/verification/fe-w29-return-stability/stable-return-1440.png": {
+      "sha256": "ece3648a1c130f63dc6e890df5a0618dad46bcf86c065b22e6bba357283351f4"
+    },
+    "frontend/verification/fe-w29-return-stability/stable-return-320.png": {
+      "sha256": "ec5ab7197a3f6f16f4f4d5a6cf6261d2402c3d6299a987ab60dc78469e488d86"
+    },
+    "frontend/verification/fe-w29-return-stability/stable-return-390.png": {
+      "sha256": "573ba799a548528cf573be62df4a40b0e5673bf23ef87b81c84a23d735c3140e"
+    },
+    "frontend/verification/fe-w29-return-stability/streaming-390.png": {
+      "sha256": "994e212ae3a4367729f947a533f47478c38ecae4ea0fa65170f3993ddc0cd809"
+    }
+  },
+  "checks": {
+    "typecheck": {
+      "command": "npm.cmd run typecheck",
+      "exit": 0
+    },
+    "web": {
+      "command": "npm.cmd run build:web",
+      "exit": 0,
+      "staticRoutes": 35,
+      "entry": "_expo/static/js/web/entry-8ca410a6538fb42f1c9f67be4cd235c4.js",
+      "sha256": "720fde71cd9f10db2b44c6b6a6cca61df47d535f0ceaa5cb2dadbf444530cfb7",
+      "servedMatchingBuild": true
+    },
+    "localSynthetic": {
+      "frameWidths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "oneAppearancePerDeparture": true,
+      "noBottomWheelFlash": true,
+      "timelineWidths": [
+        390
+      ],
+      "citationDuringStreamPreservesReading": true,
+      "tailCitationHidesButton": true,
+      "failures": []
+    },
+    "testAdjustment": "The prior check used visible return controls as a proxy for following and assumed a tail citation resumes following. It now measures real reading anchors through streaming, verifies hiding at the tail, and uses explicit return input to resume."
+  },
+  "githubScope": {
+    "at": "2026-10-02T14:15:09.5995093Z",
+    "master": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+    "otherWorktreesChecked": 14,
+    "frontendOverlaps": []
+  },
+  "notRun": [
+    "Full four-width chat/source regression",
+    "Android export",
+    "Real API/model",
+    "Native device acceptance"
+  ],
+  "pending": [
+    "User visual approval",
+    "Formal integration and native device acceptance"
+  ]
+}

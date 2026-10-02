@@ -29,7 +29,9 @@ try{
   await reply.getByTestId('chat-process-toggle').click();await reply.getByTestId('chat-process-details').waitFor();
   await reply.getByText('正在回覆',{exact:true}).waitFor();await page.waitForTimeout(180);const partial=await reply.innerText();await page.waitForTimeout(180);assert.notEqual(await reply.innerText(),partial);
   await bottom(scroll);await page.screenshot({path:resolve(directory,`streaming-${width}.png`)});
-  await readUp(page,scroll,280);const reading=await geometry(scroll);assert.ok(reading.gap>40,'Reader did not leave the bottom');
+  await readUp(page,scroll,280);
+  await page.getByTestId('chat-answer').getByRole('button',{name:/^查看引用【1】/}).evaluate(el=>el.click());await page.waitForTimeout(80);
+  const reading=await geometry(scroll);assert.ok(reading.gap>40,'Citation did not stay above the active reply');
   const visibleAnchor=await scroll.evaluate(el=>{const top=el.getBoundingClientRect().top;const item=[...el.querySelectorAll('[data-testid="chat-timeline-entry"]')].find(item=>item.getBoundingClientRect().bottom>top+4);return {id:item.id,y:item.getBoundingClientRect().top};});
   await reply.getByText('回覆已結束',{exact:true}).waitFor();await page.waitForTimeout(100);
   const readingAfterFinal=await geometry(scroll);assert.ok(Math.abs(readingAfterFinal.top-reading.top)<=2,'Streaming interrupted history reading');
@@ -37,12 +39,12 @@ try{
   assert.equal(await reply.getAttribute('data-instance-probe'),'same-message');assert.equal(await reply.getByTestId('chat-process-details').count(),1);
   assert.ok((await reply.innerText()).includes('示例參考來源'));assert.equal(await reply.getByTestId('answer-source-panel').count(),1);assert.equal(await input.inputValue(),'保留串流時的草稿');
   await reply.getByRole('button',{name:/^查看引用【1】/}).evaluate(el=>el.click());await page.waitForTimeout(100);
-  assert.equal(await page.getByRole('button',{name:'回到最新',exact:true}).count(),1,'Citation navigation resumed follow after an earlier reader gesture');
-  await page.getByRole('button',{name:'回到最新',exact:true}).click();await bottom(scroll);
-  await reply.getByTestId('chat-process-toggle').click();assert.equal(await reply.getByTestId('chat-process-details').count(),0);await bottom(scroll);
+  await bottom(scroll);assert.equal(await page.getByRole('button',{name:'回到最新',exact:true}).count(),0,'A citation at the tail leaves the return button visible at the bottom');
+  await reply.getByTestId('chat-process-toggle').click();assert.equal(await reply.getByTestId('chat-process-details').count(),0);
+  await readUp(page,scroll,80);await page.getByRole('button',{name:'回到最新',exact:true}).click();await bottom(scroll);
   const composer=await page.getByTestId('chat-composer').boundingBox(),viewport=await scroll.boundingBox();assert.ok(viewport.y+viewport.height<=composer.y+1,'Timeline and composer overlap');
   await page.screenshot({path:resolve(directory,`completed-${width}.png`)});await assertFits(page,`timeline ${width}`);
-  metrics.push({width,initialVisible:6,totalBeforeStream:15,historyAnchorShiftPx:anchorShift,readingBefore:reading,readingAfterFinal,returnedToLatest:await geometry(scroll),sameMessageInstance:true,finalSnapshotHasSource:true,composerSeparate:true});
+  metrics.push({width,initialVisible:6,totalBeforeStream:15,historyAnchorShiftPx:anchorShift,readingBefore:reading,readingAfterFinal,returnedToLatest:await geometry(scroll),sameMessageInstance:true,finalSnapshotHasSource:true,citationDuringStreamHoldsPosition:true,tailCitationButtonHidden:true,composerSeparate:true});
   if(width===390){
    await tools(page,scroll);await page.getByRole('button',{name:'加入回覆狀態示例',exact:true}).click();await lastReply(page).getByText('正在回覆',{exact:true}).waitFor();
    await lastReply(page).getByRole('button',{name:'停止回覆',exact:true}).click();await lastReply(page).getByText('已停止 · 回覆未完成',{exact:true}).waitFor();const stopped=await lastReply(page).innerText();await page.waitForTimeout(450);assert.equal(await lastReply(page).innerText(),stopped);assert.equal(await lastReply(page).getByTestId('answer-sources').count(),0);

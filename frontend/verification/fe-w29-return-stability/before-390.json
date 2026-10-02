@@ -1,0 +1,465 @@
+{
+  "baseline": "1e3d598baa5eb7fba3cc9f0e4c4b0bfed56a2bd6",
+  "scope": "Pre-fix observation: a non-moving bottom wheel incorrectly creates the return button.",
+  "failures": [],
+  "changes": [
+    {
+      "step": "idle",
+      "time": 6374.79999999702,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "small-up",
+      "time": 6404.4000000059605,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "continue-up",
+      "time": 6688.29999999702,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "continue-up",
+      "time": 6707,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "back-bottom",
+      "time": 6955.100000008941,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "back-bottom",
+      "time": 6974.79999999702,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7221.29999999702,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7240,
+      "visible": true,
+      "gap": 0
+    }
+  ],
+  "trace": [
+    {
+      "step": "idle",
+      "time": 6374.79999999702,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "idle",
+      "time": 6389.600000008941,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "small-up",
+      "time": 6404.4000000059605,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "small-up",
+      "time": 6422.5,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "small-up",
+      "time": 6438.4000000059605,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6472.29999999702,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6489,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6521.100000008941,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6538.100000008941,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6554.4000000059605,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6570.79999999702,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6588.600000008941,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6603.9000000059605,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6621.100000008941,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6637.4000000059605,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6655,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "small-up",
+      "time": 6671.20000000298,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "continue-up",
+      "time": 6688.29999999702,
+      "visible": false,
+      "gap": 12
+    },
+    {
+      "step": "continue-up",
+      "time": 6704.79999999702,
+      "visible": false,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6707,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6721.4000000059605,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6738.29999999702,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6754.70000000298,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6771.20000000298,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6788.79999999702,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6804.29999999702,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6821.5,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6838.600000008941,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6855.4000000059605,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6871,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6888.100000008941,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6904.20000000298,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6921.29999999702,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "continue-up",
+      "time": 6937.5,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "back-bottom",
+      "time": 6955.100000008941,
+      "visible": true,
+      "gap": 132
+    },
+    {
+      "step": "back-bottom",
+      "time": 6972.9000000059605,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 6974.79999999702,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 6987.600000008941,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7004,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7022.5,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7037.4000000059605,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7054.9000000059605,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7072.100000008941,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7088.20000000298,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7104.100000008941,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7121.20000000298,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7138.20000000298,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7154.29999999702,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7171.20000000298,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7188.100000008941,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "back-bottom",
+      "time": 7204,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7221.29999999702,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7237.70000000298,
+      "visible": false,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7240,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7254.4000000059605,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7271.20000000298,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7288.29999999702,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7304.4000000059605,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7321.20000000298,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7337.29999999702,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7354.4000000059605,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7371.100000008941,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7387.29999999702,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7405,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7422.100000008941,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7437.4000000059605,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7455.29999999702,
+      "visible": true,
+      "gap": 0
+    },
+    {
+      "step": "wheel-at-bottom",
+      "time": 7472.29999999702,
+      "visible": true,
+      "gap": 0
+    }
+  ]
+}

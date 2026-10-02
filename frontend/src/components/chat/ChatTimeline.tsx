@@ -26,7 +26,12 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   const readerGesture = useRef(false);
 
   function holdReadingPosition() { readerGesture.current = false; following.current = false; }
-  function readerIntent() { holdReadingPosition(); readerGesture.current = true; setAtLatest(false); }
+  function readerIntent() { holdReadingPosition(); readerGesture.current = true; }
+  function updateLatestVisibility() {
+    const gap = Math.max(0, metrics.current.height - metrics.current.viewport - metrics.current.y);
+    // Reader intent pauses following immediately; visibility waits for actual distance and has a small dead zone.
+    setAtLatest(previous => gap <= (previous ? 40 : 24));
+  }
   useChatScrollIntent(ownScroll, readerIntent);
   function queueBottom() {
     if (frame.current !== null) return;
@@ -44,7 +49,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   useImperativeHandle(controlsRef ?? ownControls, () => ({ followLatest, holdReadingPosition }), [recentFirst]);
   useLayoutEffect(() => {
     if (following.current) { setFirstId(recentFirst); queueBottom(); }
-    else setAtLatest(false);
+    else updateLatestVisibility();
   }, [items, recentFirst]);
   useLayoutEffect(() => { if (followRequest !== undefined) followLatest(); }, [followRequest]);
   useLayoutEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current); }, []);
@@ -53,11 +58,13 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const moved = Math.abs(contentOffset.y - metrics.current.y) > 1;
     metrics.current = { y: contentOffset.y, height: contentSize.height, viewport: layoutMeasurement.height };
-    if (programmatic.current || prepend.current || !readerGesture.current) return;
+    if (programmatic.current || prepend.current) return;
+    if (!following.current || (readerGesture.current && moved)) updateLatestVisibility();
+    if (!readerGesture.current) return;
     // A growing streaming reply at the same offset is not a reader gesture.
     if (moved) {
       const nearBottom = contentSize.height - layoutMeasurement.height - contentOffset.y <= 40;
-      following.current = nearBottom; setAtLatest(nearBottom);
+      following.current = nearBottom;
     }
   }
   function revealEarlier() {
@@ -72,6 +79,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
       ownScroll.current?.scrollTo({ y: Math.max(0, previous.y + height - previous.height), animated: false });
       requestAnimationFrame(() => { programmatic.current = false; });
     } else if (following.current) queueBottom();
+    else updateLatestVisibility();
   }
   return <View testID="chat-timeline" style={styles.root}>
     <AppScrollView testID="chat-timeline-scroll" ref={node => { ownScroll.current = node; if (scrollRef) scrollRef.current = node; }} style={styles.scroll}

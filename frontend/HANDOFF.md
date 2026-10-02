@@ -17,6 +17,10 @@ ChatMessage 可顯示思考中、正在回覆、回覆已結束、已停止、�
 
 **懸浮按鈕補修：** 從 `51062d69b118395110141ed3637ca82dc102331d` 接續，移除「回到最新」佔用的整行，改在時間線底部中央覆蓋顯示，離輸入欄 12 px。透明包裝採 pointerEvents="box-none"，只有按鈕本身接收點擊；顯示／收起不改可視高度，沿用原 followLatest，沒有額外狀態或動畫。四尺寸量度高度不變、側邊命中／wheel 穿透、Enter 回到底部及草稿保留，typecheck／35 路由 Web export 通過；[截圖及檢查](verification/fe-w29-floating-latest/checks.json)／[來源及建置](verification/fe-w29-floating-latest/build-checks.json)。這次只改位置樣式，沒有重跑完整串流／歷史檢查或 Android export；原有流程證據保留，使用者視覺及原生實機待驗。
 
+**出現閃動補修：** 基線 `1e3d598baa5eb7fba3cc9f0e4c4b0bfed56a2bd6`，GitHub master／UI／API blob 未變、14 個其他 worktree 沒有 frontend 重疊。使用者確認回底隱藏，但回報出現時閃動；本機捕捉到 gap=0 的 wheel 也會先掛載按鈕。原 readerIntent 先強制顯示、onScroll 再按位置收回，現分開手勢意圖與顯示狀態：立即暫停跟隨，實際離底超過 40 px 才顯示，靠近至 24 px 才收起，內容增長／程式引用定位按實際距離更新。引用移到尾部時會隱藏，但 holdReadingPosition 仍保留，不能用按鈕是否可見推斷自動跟隨。既有檢查原以「按鈕常見」作跟隨代理及假定尾部引用後已恢復，兩處失敗已修為串流中引用的實際錨點／位移、尾部隱藏及明確回到最新的公開操作，沒有為通過檢查重啟跟隨。
+
+四尺寸逐幀及 DOM 掛載觀察各只有一次出現／隱藏，底部 wheel 及 12 px 小位移不再短暫顯示。390 沿用時間線檢查核對串流中的引用定位不拉回底部、歷史錨點、最終來源／草稿、停止／scope 清理及放大文字；typecheck／35 路由 Web export 通過。[原版觀察](verification/fe-w29-return-stability/before-390.json)／[逐幀檢查](verification/fe-w29-return-stability/checks.json)／[來源及建置](verification/fe-w29-return-stability/build-checks.json)。沒有完整四尺寸聊天、Android export、真 API 或實機驗收；使用者修正版視覺待驗。
+
 Web 復用 AppScrollView／OverlayScrollbars，薄 [手勢 adapter](src/components/chat/useChatScrollIntent.web.ts) 區分 wheel、捲動鍵、touchmove／滑塊與程式捲動；原生沿 ScrollView.onScrollBeginDrag，實機待驗。第一輪預覽發現 RN Web 延後送出的程式 scroll 被誤當讀者移動，現改為明確手勢立即暫停；來源定位只暫停跟隨、不即時改可視高度，避免「回到最新」提示把來源分頁裁掉。上標仍立即定位，不改成平滑移動。
 
 [ChatContents](src/screens/chatScreen.tsx) 只組裝畫面；[useChatTimelinePreview](src/preview/useChatTimelinePreview.ts) 管理合成歷史／問題及定時文字示例。可從「顯示 Agent 情境工具 → 聊天回覆狀態示例 → 加入回覆狀態示例」比較串流、停止／失敗／未知／確認；示例不呼叫模型／工具。scope 重掛載清理舊文字、展開狀態、計時器和 composer 附件，正式隔離仍要用 Server／本人／session／孩子／權限的穩定 key，不能以稱呼當身份。文字草稿沿原 provider，不另建持久庫。

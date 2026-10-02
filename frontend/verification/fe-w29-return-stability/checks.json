@@ -1,0 +1,115 @@
+{
+  "at": "2026-10-02T14:26:56.708Z",
+  "scope": "Frame/mutation inspection of actual local synthetic scrolling, four widths. No real API or native device.",
+  "metrics": [
+    {
+      "width": 1440,
+      "changes": [
+        {
+          "step": "idle",
+          "time": 6377.29999999702,
+          "visible": false,
+          "gap": 0
+        },
+        {
+          "step": "leave-bottom",
+          "time": 7009.20000000298,
+          "visible": true,
+          "gap": 192
+        },
+        {
+          "step": "back-bottom",
+          "time": 7592,
+          "visible": false,
+          "gap": 0
+        }
+      ],
+      "noBottomFlash": true,
+      "oneAppearance": true,
+      "oneDisappearance": true,
+      "frames": 106
+    },
+    {
+      "width": 1024,
+      "changes": [
+        {
+          "step": "idle",
+          "time": 6349.29999999702,
+          "visible": false,
+          "gap": 0
+        },
+        {
+          "step": "leave-bottom",
+          "time": 6942.29999999702,
+          "visible": true,
+          "gap": 192
+        },
+        {
+          "step": "back-bottom",
+          "time": 7474.70000000298,
+          "visible": false,
+          "gap": 0
+        }
+      ],
+      "noBottomFlash": true,
+      "oneAppearance": true,
+      "oneDisappearance": true,
+      "frames": 99
+    },
+    {
+      "width": 390,
+      "changes": [
+        {
+          "step": "idle",
+          "time": 6340.79999999702,
+          "visible": false,
+          "gap": 0
+        },
+        {
+          "step": "leave-bottom",
+          "time": 6909.0999999940395,
+          "visible": true,
+          "gap": 192
+        },
+        {
+          "step": "back-bottom",
+          "time": 7424.199999988079,
+          "visible": false,
+          "gap": 0
+        }
+      ],
+      "noBottomFlash": true,
+      "oneAppearance": true,
+      "oneDisappearance": true,
+      "frames": 96
+    },
+    {
+      "width": 320,
+      "changes": [
+        {
+          "step": "idle",
+          "time": 6362.70000000298,
+          "visible": false,
+          "gap": 0
+        },
+        {
+          "step": "leave-bottom",
+          "time": 6939.100000008941,
+          "visible": true,
+          "gap": 192
+        },
+        {
+          "step": "back-bottom",
+          "time": 7472.29999999702,
+          "visible": false,
+          "gap": 0
+        }
+      ],
+      "noBottomFlash": true,
+      "oneAppearance": true,
+      "oneDisappearance": true,
+      "frames": 98
+    }
+  ],
+  "failures": []
+}
