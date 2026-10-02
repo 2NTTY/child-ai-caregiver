@@ -72,12 +72,15 @@ function RecentRecords({ model, actions }: { model: HomeViewModel; actions: Home
   </SectionCard>;
 }
 
-export function HomeDashboard({ model, actions }: { model: HomeViewModel; actions: HomeActions }) {
+export function HomeDashboard({ model, actions, introductionPending = false, onIntroductionPresented }: {
+  model: HomeViewModel; actions: HomeActions; introductionPending?: boolean; onIntroductionPresented?: () => void;
+}) {
   const { width: windowWidth } = useWindowDimensions();
   const [width, setWidth] = useState(900);
   const stacked = Math.min(width, windowWidth) < 760;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
-  if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} />;
+  useEffect(() => { if (introductionPending) onIntroductionPresented?.(); }, [introductionPending, onIntroductionPresented]);
+  if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} introductionPending={introductionPending} />;
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <View testID="desktop-home-banner" style={[styles.introCard, stacked && styles.introStack]}>
       <HomeBackground surface={colors.paper} protectFullWidth={stacked} wideIllustration />

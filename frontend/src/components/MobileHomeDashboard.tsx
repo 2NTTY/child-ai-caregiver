@@ -19,7 +19,7 @@ const quickActions = [
   { kind: "sleep", label: "記錄睡眠", hint: "時間原文", icon: "weather-night" },
 ] as const;
 
-export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; actions: HomeActions }) {
+export function MobileHomeDashboard({ model, actions, introductionPending = false }: { model: HomeViewModel; actions: HomeActions; introductionPending?: boolean }) {
   const child = model.children.find(item => item.id === model.selectedChildId);
   const records = model.records.filter(item => item.childId === child?.id);
   const checklist = previewChecklist.filter(item => item.childId === child?.id);
@@ -27,10 +27,12 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
   const state = model.operation.state;
   const [quickWidth, setQuickWidth] = useState(0);
   const fourQuickColumns = quickWidth >= 290;
-  const intro = useRef(new Animated.Value(0)).current;
+  const playIntroduction = useRef(introductionPending && Boolean(child)).current;
+  const intro = useRef(new Animated.Value(playIntroduction ? 0 : 1)).current;
+  const transitionStarted = useRef(false);
   const [greetingHeight, setGreetingHeight] = useState(168);
-  const [childHeight, setChildHeight] = useState(98);
-  const [docked, setDocked] = useState(false);
+  const [childHeight, setChildHeight] = useState(106);
+  const [docked, setDocked] = useState(!playIntroduction);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState<boolean | null>(null);
   const hasChild = Boolean(child);
@@ -40,25 +42,37 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
     const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReducedMotion);
     return () => { active = false; subscription?.remove(); };
   }, []);
-  useEffect(() => { if (!hasChild) { intro.setValue(0); setDocked(false); } }, [hasChild, intro]);
+  useFocusEffect(useCallback(() => () => {
+    intro.stopAnimation();
+    intro.setValue(1);
+    setDocked(true);
+  }, [intro]));
   useFocusEffect(useCallback(() => {
     if (!hasChild || docked || pickerOpen || reducedMotion === null) return;
-    intro.setValue(0);
     const timer = setTimeout(() => {
+      transitionStarted.current = true;
       if (reducedMotion) { intro.setValue(1); setDocked(true); return; }
       Animated.timing(intro, { toValue: 1, duration: 360, easing: Easing.inOut(Easing.cubic), useNativeDriver: false })
         .start(({ finished }) => { if (finished) setDocked(true); });
     }, 5000);
     return () => { clearTimeout(timer); intro.stopAnimation(); };
   }, [hasChild, docked, pickerOpen, reducedMotion, intro]));
+  function handlePickerOpen(open: boolean) {
+    setPickerOpen(open);
+    if (open && transitionStarted.current && !docked) {
+      intro.stopAnimation();
+      intro.setValue(1);
+      setDocked(true);
+    }
+  }
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <View testID="mobile-home-header" style={[styles.homeHeader, { minHeight: greetingHeight }]}>
       <View pointerEvents="none" style={[styles.artwork, { height: greetingHeight }]}><HomeBackground surface={colors.canvas} fadeBottom fitIllustration /></View>
-      <Animated.View testID="mobile-home-greeting" pointerEvents="none" accessibilityElementsHidden={docked} aria-hidden={docked}
+      <Animated.View testID="mobile-home-greeting" pointerEvents="none" accessibilityElementsHidden={hasChild && docked} aria-hidden={hasChild && docked}
         onLayout={event => setGreetingHeight(event.nativeEvent.layout.height)}
-        style={[styles.greeting, { minHeight: greetingHeight, opacity: intro.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0, 0] }) }]}>
-      {!docked ? <View style={styles.greetingCopy}>
+        style={[styles.greeting, { minHeight: greetingHeight, opacity: hasChild ? intro.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0, 0] }) : 1 }]}>
+      {!hasChild || !docked ? <View style={styles.greetingCopy}>
         <Text accessibilityRole="header" style={styles.heading}>你好，{model.caregiverName}！</Text>
         <Text style={styles.subtitle}>{child ? `一起整理${child.displayName}的照顧日常。` : "先把基本資料整理好，再開始記錄。"}</Text>
         <Text style={styles.motto}>每個小日常，都值得好好記下。</Text>
@@ -72,8 +86,8 @@ export function MobileHomeDashboard({ model, actions }: { model: HomeViewModel; 
           borderWidth: intro.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
           backgroundColor: intro.interpolate({ inputRange: [0, 1], outputRange: [colors.white, "rgba(255,255,255,0)"] }),
         }]}>
-        <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} homeIdentity
-          loading={model.profileLoad === "loading"} onOpenChange={setPickerOpen} />
+        <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} homeIdentity homeDocked={docked}
+          loading={model.profileLoad === "loading"} onOpenChange={handlePickerOpen} />
         {!child.profileConfirmed ? <Text style={styles.meta}>檔案待核對</Text> : null}
       </Animated.View> : null}
     </View>

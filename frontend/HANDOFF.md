@@ -7,15 +7,19 @@
 <a id="home-simplification"></a>
 ### FE-W27 首頁減量、孩子入口及手機捲動條（2026-10-02）
 
-基線 `02f76518624066cc75d4be3fde8b3166c6f3a6f7`，只修改 frontend，沿 draft PR #73，主責 B；與 FE-W26 的來源面板補修一併交付。直接重新核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 交接／API／來源型別，內容 blob 未變；14 個其他 worktree 沒有 frontend 修改重疊。沒有更改正式 App、API、業務控制器或依賴。
+原基線 `02f76518624066cc75d4be3fde8b3166c6f3a6f7`、交付 `9df6c671e0affe2386ac04498a53d5621c47a210`，本次從交付版補修孩子入口及「登入後首次首頁」生命週期。只修改 frontend，沿 draft PR #73，主責 B。直接重新核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 交接／API／來源型別，內容 blob 未變；14 個其他 worktree 沒有 frontend 修改重疊。沒有更改正式 App、API、業務控制器或依賴。
 
 [MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) 移除首頁提問欄及快速提問三項，也移除孩子右側重複切換按鈕和卡片的日期／已確認列。左側名字／頭像／年齡直接復用 [ChildPicker](src/components/ChildPicker.tsx) 的選單及原 selectChild 回調，取代原來進入 profile 的左側動作；未確認檔案仍標待核對。homeIdentity 只顯示 supplied ageSummaryLabel，缺少時沿原 ageLabel，沒有解析或改寫年齡；完整日期及原文仍在資料模型、選單及 profile。loading 保留讀取狀態。首次登入引導、待辦及快速記錄保留。這是窄版 Web 與隔離原生預覽共用元件；桌面對話按鈕及底部導覽保留，沒有改 HomeActions 協定或草稿範圍。
 
-首頁使用已安裝 RN Animated／Expo Router useFocusEffect：每次新掛載的首頁，先提供 5 秒標語閱讀時間，再以 360 ms 將孩子選擇區上移及縮至左側 62%，淡去介紹文字，讓下方卡片按自然高度跟上。圖片置於獨立背景層，位置及完整 contain 尺寸不隨動畫改動。動畫後只留一個孩子選擇入口；選單開啟時停止並保留閱讀時間，完成後切孩子不重播。AccessibilityInfo 沿系統減少動畫設定，保留延遲後直接切換；離頁／卸載清除 timer 並停止未完成動畫。沒有建立登入狀態、計時業務或新的保存協定。正式 App 須在真登入後首次首頁掛載觸發，按本人／session 的既有清理及導航生命週期決定重掛載，不能用這個合成預覽當真登入驗收。
+首頁沿已安裝 RN Animated／Expo Router useFocusEffect。播放記錄現在由 [PreviewProvider](src/preview/PreviewContext.tsx) 的合成會話保留，經首頁入口傳入 [HomeDashboard](src/components/HomeDashboard.tsx) 的可選 `introductionPending`／`onIntroductionPresented`。首次顯示即消耗，不等動畫完成；桌面首次顯示也消耗，以免縮窄才重播。MobileHomeDashboard 只在初次掛載捕捉待播放值；在同一會話來回切頁、切孩子、讀取或 649／650 重掛載均直接顯示已上移版式。真 App 須由既有登入/session 上層投影同樣的顯示 flag／回調，在真正新登入時重設，不能隨路由／孩子／refresh 重設；未傳入時預設不播放。這不是新 API、引導完成狀態或持久登入資料，不使用 localStorage，也未接真登入。
+
+首輪仍提供 5 秒標語閱讀時間，360 ms 上移至左側 62%，圖片置於獨立背景層，完整 contain 尺寸不動。閱讀期間打開選單暫停，關閉後重新提供閱讀時間；開始移動後點開則先收斂至最終位置，避免停止半途、關閉回跳。AccessibilityInfo 減少動畫模式保留延遲後直接切換；提前離頁清除 timer／停止動畫並保留最終版式，之後返回不再重播。未有孩子時維持提示及建立入口，後續建立孩子不重新啟動動畫。
+
+ChildPicker 的 `homeIdentity`／`homeDocked` 只改首頁：48 頭像、18／14 名字／年齡、至少 72 高度及 20 SVG 箭嘴；動畫後文字按內容收窄，箭嘴距離 8。點開／關閉沿透明底，按下用透明度回饋，取消原通用 open 白色長條；Dialog、完整年齡日期、Enter／Escape及原 selectChild 保留。一般工具列 picker 的比例及樣式不變。
 
 [appScrollView.css](src/components/appScrollView.css) 只在 650 以下縮小 Web 垂直捲動條：6 px 覆蓋區、1 px 橫向內距及 border-box，實測滑塊 4 px，透明軌道不佔寬。首輪量度發現自訂主題沿 content-box，padding 會增加實際覆蓋寬度；手機規則已修正盒模型。沿既有 OverlayScrollbars 的捲動／拖動與清理，沒有自建位置系統；桌面及原生 RN／系統捲動條沿原樣。
 
-四尺寸及 649／650 邊界的首頁無提問欄／捷徑、卡片間距、Enter 對話導覽及原草稿／引導保留，首頁／聊天及 390／320 登入的透明軌道、滑塊及零佔寬通過。649／390／320 普通動畫及 390 減少動畫情境通過實際閱讀等待、單一入口、上移比例、圖片位置、選單暫停及動畫後切換；320 動畫後的 150% Web 文字可重排。更新後既有 mobile-density 流程通過孩子切換、四／兩格快速記錄、聊天草稿、鍵盤及 150% Web 文字；shell 流程只同步新導覽 selector 並作語法檢查，其未改功能沿原證據，不聲稱全跑。最終 typecheck、Web 33 路由及 Android Hermes 30 資產 export 通過；沒有 runtime error 或真 API／模型請求。[本次證據](verification/fe-w27-home/build-checks.json)／[首頁及滑塊量度](verification/fe-w27-home/home-checks.json)／[動畫量度](verification/fe-w27-home/greeting-checks.json)／[390 動畫後](verification/fe-w27-home/home-docked-390.png)／[320](verification/fe-w27-home/home-docked-320.png)。使用者視覺、真登入觸發／正式接線、APK／原生捲動／動畫與實機仍待驗收；不以 Web 量度代替原生驗收。
+補修後的 typecheck、Web 33 路由及 Android Hermes 30 資產 export 通過。[最新證據](verification/fe-w27-child-control/build-checks.json)／[八組局部檢查](verification/fe-w27-child-control/child-control-checks.json)涵蓋 649／390／320 普通首輪、390 減少動畫、閱讀中選單、動畫中點擊、開啟／Escape／切換比例不跳、提前離頁及正常返回不重播、649／650 重掛載、1440／1024 工具列不變及桌面轉窄版不重播、320 的 150% Web 文字。新合成會話可再播放一輪；測試沒有執行真正登入。沒有 runtime error 或 API／模型請求。此前首頁減量、捲動條／日期／草稿／引導及快速記錄的[交付證據](verification/fe-w27-home/build-checks.json)保留，未改部分不重跑整套。使用者視覺、真登入會話接線、APK／原生捲動／動畫與實機仍待驗收；不以 Web 量度代替原生驗收。
 
 <a id="answer-citations"></a>
 ### FE-W26 回覆引用及來源面板（2026-10-02，現行來源版式）
