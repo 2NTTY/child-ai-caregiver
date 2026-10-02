@@ -34,10 +34,13 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
   const transitionStarted = useRef(false);
   const [greetingHeight, setGreetingHeight] = useState(168);
   const [childHeight, setChildHeight] = useState(98);
+  const [headerWidth, setHeaderWidth] = useState(Math.min(windowWidth, mobileLayout.breakpoint) - 2 * mobileLayout.pageInset);
+  const [childContentWidth, setChildContentWidth] = useState<number | null>(null);
   const [docked, setDocked] = useState(!playIntroduction);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [reducedMotion, setReducedMotion] = useState<boolean | null>(null);
   const hasChild = Boolean(child);
+  const dockedWidth = Math.min(childContentWidth ?? headerWidth * 0.62, headerWidth * 0.62);
   useEffect(() => {
     let active = true;
     AccessibilityInfo.isReduceMotionEnabled().then(value => { if (active) setReducedMotion(value); }, () => { if (active) setReducedMotion(true); });
@@ -69,7 +72,7 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
   }
 
   return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-    <View testID="mobile-home-header" style={[styles.homeHeader, { minHeight: greetingHeight }]}>
+    <View testID="mobile-home-header" onLayout={event => setHeaderWidth(event.nativeEvent.layout.width)} style={[styles.homeHeader, { minHeight: greetingHeight }]}>
       <View pointerEvents="none" style={[styles.artwork, { height: greetingHeight }]}><HomeBackground surface={colors.canvas} fadeBottom fitIllustration /></View>
       <Animated.View testID="mobile-home-greeting" pointerEvents="none" accessibilityElementsHidden={hasChild && docked} aria-hidden={hasChild && docked}
         onLayout={event => setGreetingHeight(event.nativeEvent.layout.height)}
@@ -82,14 +85,15 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
       </Animated.View>
       {child ? <Animated.View testID="mobile-child-card" onLayout={docked ? undefined : event => setChildHeight(event.nativeEvent.layout.height)}
         style={[styles.childCard, docked ? styles.dockedChildCard : {
-          width: intro.interpolate({ inputRange: [0, 1], outputRange: ["100%", "62%"] }),
+          width: intro.interpolate({ inputRange: [0, 1], outputRange: [headerWidth, dockedWidth] }),
           marginTop: intro.interpolate({ inputRange: [0, 1], outputRange: [mobileLayout.sectionGap, -(greetingHeight + childHeight) / 2] }),
           padding: intro.interpolate({ inputRange: [0, 1], outputRange: [spacing.md, 0] }),
-          borderWidth: intro.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
-          backgroundColor: intro.interpolate({ inputRange: [0, 1], outputRange: [colors.white, "rgba(255,255,255,0)"] }),
         }]}>
+        <Animated.View testID="mobile-child-card-frame" pointerEvents="none" style={[styles.childCardFrame,
+          { opacity: docked ? 0 : intro.interpolate({ inputRange: [0, 0.2, 0.6, 1], outputRange: [1, 1, 0, 0], extrapolate: "clamp" }) }]} />
         <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} homeIdentity homeDocked={docked}
-          homeTransition={docked ? undefined : intro} loading={model.profileLoad === "loading"} onOpenChange={handlePickerOpen} />
+          onHomeContentWidth={docked ? undefined : width => { if (!transitionStarted.current) setChildContentWidth(width); }}
+          loading={model.profileLoad === "loading"} onOpenChange={handlePickerOpen} />
         {!child.profileConfirmed ? <Text style={styles.meta}>檔案待核對</Text> : null}
       </Animated.View> : null}
     </View>
@@ -154,12 +158,13 @@ const styles = StyleSheet.create({
   homeHeader: { position: "relative", marginTop: -mobileLayout.pageInset },
   artwork: { position: "absolute", top: 0, left: -mobileLayout.pageInset, right: -mobileLayout.pageInset },
   greeting: { minHeight: 168, paddingVertical: spacing.lg, justifyContent: "center" },
-  childCard: { borderRadius: radius.large, borderColor: colors.softLine, gap: spacing.xs },
-  dockedChildCard: { position: "absolute", left: 0, top: 0, bottom: 0, width: "62%", justifyContent: "center" },
+  childCard: { borderRadius: radius.large, gap: spacing.xs },
+  childCardFrame: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: radius.large, borderWidth: 1, borderColor: colors.softLine, backgroundColor: colors.white },
+  dockedChildCard: { position: "absolute", left: 0, top: 0, bottom: 0, width: "auto", maxWidth: "62%", justifyContent: "center" },
   greetingCopy: { width: "60%", minWidth: 0, gap: spacing.xs },
-  heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.heading, fontWeight: "800" },
-  subtitle: { fontFamily: chineseFont, color: colors.ink, ...mobileType.body },
-  motto: { fontFamily: chineseFont, color: colors.teal, ...mobileType.caption },
+  heading: { fontFamily: chineseFont, color: colors.ink, fontSize: 26, lineHeight: 34, fontWeight: "800" },
+  subtitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 16, lineHeight: 24 },
+  motto: { fontFamily: chineseFont, color: colors.teal, fontSize: 14, lineHeight: 22 },
   copy: { flex: 1, minWidth: 0, gap: spacing.xs },
   title: { fontFamily: chineseFont, color: colors.ink, ...mobileType.itemTitle, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.muted, ...mobileType.body },

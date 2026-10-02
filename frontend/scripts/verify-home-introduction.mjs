@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { assertFits, launchPreviewBrowser, openPreview } from "./preview-browser.mjs";
 
-const directory = resolve(process.env.FRONTEND_PROOF_DIR ?? "verification/fe-w28-shell-feedback");
+const directory = resolve(process.env.FRONTEND_PROOF_DIR ?? "verification/fe-w31-home-motion");
 const browser = await launchPreviewBrowser(), failures = [], passed = [], metrics = [];
 const greetingName = "你好，媽媽！";
 const homeLink = page => page.getByRole("link", { name: "主頁", exact: true });
@@ -11,10 +11,11 @@ const chatLink = page => page.getByRole("link", { name: "與 Agent 對話", exac
 const cardFor = page => page.getByTestId("mobile-child-card");
 const describe = card => card.evaluate(element => {
   const button = element.querySelector('[role="button"]'), avatar = button.children[0], copy = button.children[1], arrow = button.children[2];
+  const copyContent = copy.children.length === 1 ? copy.children[0] : copy;
   const box = node => node.getBoundingClientRect().toJSON();
   return { card: box(element), button: box(button), avatar: box(avatar), copy: box(copy), arrow: box(arrow),
-    background: getComputedStyle(button).backgroundColor, nameSize: getComputedStyle(copy.children[0]).fontSize,
-    ageSize: getComputedStyle(copy.children[1]).fontSize, copyGrow: getComputedStyle(copy).flexGrow };
+    background: getComputedStyle(button).backgroundColor, nameSize: getComputedStyle(copyContent.children[0]).fontSize,
+    ageSize: getComputedStyle(copyContent.children[1]).fontSize, copyGrow: getComputedStyle(copy).flexGrow };
 });
 async function returnHome(page) {
   await chatLink(page).click();
@@ -40,9 +41,11 @@ async function observeMotion(page) {
     const card = document.querySelector('[data-testid="mobile-child-card"]'), greeting = document.querySelector('[data-testid="mobile-home-greeting"]');
     const began = performance.now(), frames = []; let settled = 0;
     function sample() {
-      const button = card.querySelector('[role="button"]'), box = node => { const b = node.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height }; };
+      const button = card.querySelector('[role="button"]'), frame = card.querySelector('[data-testid="mobile-child-card-frame"]');
+      const box = node => { const b = node.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height, right: b.right }; };
       const hidden = greeting.getAttribute('aria-hidden') === 'true';
-      frames.push({ at: performance.now() - began, hidden, opacity: Number(getComputedStyle(greeting).opacity), grow: Number(getComputedStyle(button.children[1]).flexGrow), avatar: box(button.children[0]), arrow: box(button.children[2]) });
+      frames.push({ at: performance.now() - began, hidden, opacity: Number(getComputedStyle(greeting).opacity), card: box(card),
+        frameOpacity: Number(getComputedStyle(frame).opacity), frame: box(frame), avatar: box(button.children[0]), arrow: box(button.children[2]) });
       if (hidden) settled++; else settled = 0;
       if (settled >= 3) resolve(frames);
       else if (performance.now() - began > 12000) reject(new Error('Homepage animation did not settle'));
@@ -59,7 +62,12 @@ try {
     await page.emulateMedia({ reducedMotion: reduced ? "reduce" : "no-preference" });
     const card = cardFor(page), header = page.getByTestId("mobile-home-header");
     await page.getByRole("heading", { name: greetingName, exact: true }).waitFor();
+    assert.equal(await page.getByRole("heading", { name: greetingName, exact: true }).evaluate(e => getComputedStyle(e).fontSize), "26px");
+    assert.deepEqual(await page.getByTestId("mobile-home-greeting").locator('[dir="auto"]').evaluateAll(elements => elements.map(e => getComputedStyle(e).fontSize)), ["26px", "16px", "14px"]);
     const initial = await card.boundingBox(), image = await header.getByTestId("home-background-image").boundingBox();
+    const greeting = await page.getByTestId("mobile-home-greeting").boundingBox();
+    assert.ok(initial.y >= greeting.y + greeting.height + 15, 'The larger greeting leaves room before the child card');
+    await page.screenshot({ path: resolve(directory, "child-reading-" + suffix + ".png") });
     const motion = reduced ? null : observeMotion(page);
     const start = Date.now();
     await page.waitForTimeout(1800);
@@ -80,11 +88,18 @@ try {
     let motionMetrics = null;
     if (motion) {
       const frames = await motion, settledAt = frames.findIndex(frame => frame.hidden), before = frames[settledAt - 1], after = frames[settledAt];
-      const moving = frames.filter(frame => !frame.hidden && frame.grow > 0 && frame.grow < 1);
+      const moving = frames.filter(frame => !frame.hidden && frame.card.width < initial.width - 0.5 && frame.card.width > control.card.width + 0.5);
       assert.ok(moving.length >= 5, 'Observe the complete motion rather than only its final screenshot');
+      const initialRightGap = frames[0].frame.right - frames[0].arrow.right;
+      assert.ok(moving.every(frame => frame.frame.right - frame.arrow.right >= -1 && frame.frame.right - frame.arrow.right <= initialRightGap + 1), 'The frame right edge stays beside the moving arrow');
+      assert.ok(moving.some(frame => frame.frameOpacity > 0 && frame.frameOpacity < 1), 'The frame visibly fades while it contracts');
+      assert.ok(moving.some(frame => frame.frameOpacity === 0 && frame.card.width > control.card.width + 8), 'The frame disappears before the child control finishes moving');
+      assert.ok(Math.abs(after.card.width - before.card.width) <= 2, 'The container cannot jump in width when docking switches');
       assert.ok(Math.abs(after.arrow.x - before.arrow.x) <= 2, 'The arrow cannot jump sideways when docking switches');
       assert.ok(Math.abs(after.avatar.x - before.avatar.x) <= 2 && Math.abs(after.avatar.y - before.avatar.y) <= 2, 'The child identity cannot jump at the final frame');
-      motionMetrics = { movingFrames: moving.length, finalArrowDelta: after.arrow.x - before.arrow.x, finalAvatarDelta: { x: after.avatar.x - before.avatar.x, y: after.avatar.y - before.avatar.y }, frames: frames.filter(frame => frame.opacity < 1 || frame.hidden) };
+      motionMetrics = { movingFrames: moving.length, finalCardWidthDelta: after.card.width - before.card.width,
+        maximumRightGap: Math.max(...moving.map(frame => frame.frame.right - frame.arrow.right)), finalArrowDelta: after.arrow.x - before.arrow.x,
+        finalAvatarDelta: { x: after.avatar.x - before.avatar.x, y: after.avatar.y - before.avatar.y }, frames: frames.filter(frame => frame.opacity < 1 || frame.hidden) };
     }
     assert.ok(control.button.y < initial.y - 80);
     assert.deepEqual(await header.getByTestId("home-background-image").boundingBox(), image, "Artwork remains fixed during the introduction");

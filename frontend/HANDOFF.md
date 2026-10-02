@@ -2,6 +2,19 @@
 
 更新：2026-10-03。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
 
+<a id="home-frame-motion"></a>
+## FE-W31：首頁外框動畫及手機標語（2026-10-03）
+
+基線為已合併的 GitHub master `ef0448e2a91dd90790a6ed38f9e0688668760a10`，新分支 `codex/fe-w31-home-motion`，只改 frontend。P2 UI 交接 blob 仍是 `6488b8c53ae58e37a12e7a3683aea94924aa3981`，14 個其他 worktree 沒有 frontend 修改重疊；沒有新依賴、API 或正式 App 修改。交付沿此前已確認的前端賬號 CherylNg-2526。
+
+使用者回報外框右邊沒有跟隨箭嘴收窄，要求兩者一起縮向左上方、外框半途消失；另指定標語只在手機版放大。[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) 不再把動畫外框的終點固定為 62%：由 [ChildPicker](src/components/ChildPicker.tsx) 的首頁文字量度回調取得內容寬度，連同原有頭像／箭嘴／間距計算終點，同一 intro 驅動整個容器的寬度、上移及內距。白底／邊線獨立為不可點擊的裝飾層，在進度 20%–60% 淡出；孩子資訊及選單不跟着淡出。終態沿自然寬度、最大 62%，文字放大仍可重新排版。舊 homeTransition 文字 flex 動畫由整個容器的寬度動畫取代；一般工具列 ChildPicker 的尺寸、字體及功能保留。
+
+MobileHomeDashboard 的問候改 26／34、副句 16／24、標語 14／22（字體／行高）；桌面 HomeDashboard 文字不變。仍等 3 秒、360 ms 移動，只在合成登入會話的首次首頁播放；中途開選單、提前離頁、切孩子／路由、減少動畫及右側圖片保持位置沿原生命週期。這次沒有實作換頁動畫，亦沒有接真正登入。
+
+必要局部檢查通過：649／390／320 實際記錄 19／18／17 個移動幀，外框右端與箭嘴的間距保持在原 12 px 以內，移動完成前已有不可見外框的幀；終態外框寬度及箭嘴接縫均小於 0.24 px。390 減少動畫、3 秒／選單閱讀暫停、鍵盤開關／切孩子、提前離頁／切頁返回不重播、中途點擊及 649／650 重掛載，連同 1440／1024 原工具列比例及 320 的 150% 文字共八組檢查通過，沒有 runtime error 或真 API 請求。[逐幀及互動證據](verification/fe-w31-home-motion/child-control-checks.json)。已查看 390 閱讀／移動中／終態及 320 放大文字運行截圖；鍵盤焦點框仍保留，與淡出的裝飾外框不同。
+
+首輪 typecheck 發現 RN 0.86 不提供 absoluteFillObject，改用現有 absolute 定位；首輪放大文字檢查發現固定量度的終態容器把「阿樂」壓至 43 px，而文字需 54 px，已改回自然寬度／最大比例，沒有移除溢出檢查。最終 typecheck、35 路由 Web export及 Android Hermes／30 資產 export 通過。[建置及源碼校驗](verification/fe-w31-home-motion/build-checks.json)。修正版使用者視覺、真登入會話及原生動畫／字體與實機仍待驗，沿用原正式接線界線。
+
 <a id="contract-review"></a>
 ## FE-W30：前後端功能契約審查（2026-10-03）
 
