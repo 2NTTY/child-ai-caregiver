@@ -82,14 +82,14 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
         <Text style={styles.hint}>分批展開已載入的記錄</Text></View> : items.length ? <Text testID="chat-history-start" style={styles.hint}>已到本次載入記錄的最早位置</Text> : null}
       {items.slice(start).map(item => <View key={item.id} testID="chat-timeline-entry" nativeID={`chat-entry-${item.id}`} style={styles.item}>{renderItem(item)}</View>)}
     </AppScrollView>
-    {!atLatest ? <View testID="chat-return-latest" style={styles.returnRow}><AppButton label="回到最新" variant="secondary" onPress={followLatest} /></View> : null}
+    {!atLatest ? <View testID="chat-return-latest" pointerEvents="box-none" style={styles.returnOverlay}><AppButton label="回到最新" variant="secondary" onPress={followLatest} /></View> : null}
   </View>;
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, minHeight: 0 }, scroll: { flex: 1 },
+  root: { flex: 1, minHeight: 0, position: "relative" }, scroll: { flex: 1 },
   content: { width: "100%", maxWidth: 1060, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, gap: spacing.lg },
   compact: { paddingHorizontal: mobileLayout.pageInset }, item: { minWidth: 0 },
   history: { alignItems: "center", gap: spacing.xs, minWidth: 0 }, hint: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20, textAlign: "center" },
-  returnRow: { alignItems: "center", backgroundColor: colors.canvas, paddingVertical: spacing.xs, minWidth: 0 },
+  returnOverlay: { position: "absolute", bottom: spacing.md, left: 0, right: 0, alignItems: "center", zIndex: 1 },
 });

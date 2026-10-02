@@ -1,0 +1,159 @@
+{
+  "at": "2026-10-02T14:00:02.184Z",
+  "scope": "Four-width local synthetic overlay inspection only; no real API, model, native device or full regression.",
+  "metrics": [
+    {
+      "width": 1440,
+      "viewportBefore": {
+        "x": 220,
+        "y": 107,
+        "width": 910,
+        "height": 668.59375
+      },
+      "viewportShown": {
+        "x": 220,
+        "y": 107,
+        "width": 910,
+        "height": 668.59375
+      },
+      "viewportAfter": {
+        "x": 220,
+        "y": 107,
+        "width": 910,
+        "height": 668.59375
+      },
+      "button": {
+        "x": 618.796875,
+        "y": 718.59375,
+        "width": 112.40625,
+        "height": 44
+      },
+      "composer": {
+        "x": 220,
+        "y": 775.59375,
+        "width": 910,
+        "height": 216.40625
+      },
+      "buttonBottomGap": 13,
+      "sideHitThrough": true,
+      "sideWheelScrolls": true,
+      "keyboardReturnsToLatest": true,
+      "draftPreserved": true
+    },
+    {
+      "width": 1024,
+      "viewportBefore": {
+        "x": 220,
+        "y": 107,
+        "width": 804,
+        "height": 668.59375
+      },
+      "viewportShown": {
+        "x": 220,
+        "y": 107,
+        "width": 804,
+        "height": 668.59375
+      },
+      "viewportAfter": {
+        "x": 220,
+        "y": 107,
+        "width": 804,
+        "height": 668.59375
+      },
+      "button": {
+        "x": 565.796875,
+        "y": 718.59375,
+        "width": 112.40625,
+        "height": 44
+      },
+      "composer": {
+        "x": 220,
+        "y": 775.59375,
+        "width": 804,
+        "height": 216.40625
+      },
+      "buttonBottomGap": 13,
+      "sideHitThrough": true,
+      "sideWheelScrolls": true,
+      "keyboardReturnsToLatest": true,
+      "draftPreserved": true
+    },
+    {
+      "width": 390,
+      "viewportBefore": {
+        "x": 0,
+        "y": 158,
+        "width": 390,
+        "height": 402.40625
+      },
+      "viewportShown": {
+        "x": 0,
+        "y": 158,
+        "width": 390,
+        "height": 402.40625
+      },
+      "viewportAfter": {
+        "x": 0,
+        "y": 158,
+        "width": 390,
+        "height": 402.40625
+      },
+      "button": {
+        "x": 138.796875,
+        "y": 499.40625,
+        "width": 112.40625,
+        "height": 48
+      },
+      "composer": {
+        "x": 0,
+        "y": 560.40625,
+        "width": 390,
+        "height": 219.59375
+      },
+      "buttonBottomGap": 13,
+      "sideHitThrough": true,
+      "sideWheelScrolls": true,
+      "keyboardReturnsToLatest": true,
+      "draftPreserved": true
+    },
+    {
+      "width": 320,
+      "viewportBefore": {
+        "x": 0,
+        "y": 158,
+        "width": 320,
+        "height": 278.40625
+      },
+      "viewportShown": {
+        "x": 0,
+        "y": 158,
+        "width": 320,
+        "height": 278.40625
+      },
+      "viewportAfter": {
+        "x": 0,
+        "y": 158,
+        "width": 320,
+        "height": 278.40625
+      },
+      "button": {
+        "x": 103.796875,
+        "y": 375.40625,
+        "width": 112.40625,
+        "height": 48
+      },
+      "composer": {
+        "x": 0,
+        "y": 436.40625,
+        "width": 320,
+        "height": 219.59375
+      },
+      "buttonBottomGap": 13,
+      "sideHitThrough": true,
+      "sideWheelScrolls": true,
+      "keyboardReturnsToLatest": true,
+      "draftPreserved": true
+    }
+  ],
+  "failures": []
+}

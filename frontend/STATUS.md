@@ -2,6 +2,8 @@
 
 更新：2026-10-02。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**FE-W29 懸浮按鈕補修（2026-10-02）：** 「回到最新」改為聊天區底部的透明覆蓋層，只保留按鈕；顯示／收起不佔整行、不改可視高度，兩旁點擊及捲動穿透，與輸入欄留 12 px 間距。1440／1024／390／320 的高度、穿透、Enter 返回及草稿檢查，typecheck／35 路由 Web export 通過；[交接](HANDOFF.md#chat-timeline)／[證據](verification/fe-w29-floating-latest/build-checks.json)。使用者視覺及原生實機仍待驗，未重跑整套聊天或 Android export。
+
 **最新 FE-W29 共用聊天（2026-10-02）：** ChatMessage／ChatTimeline 共用訊息與來源；最新在底部，較早記錄分批展開並保持閱讀位置，回到最新才恢復跟隨。可顯示逐字更新、思考／工具過程、停止、失敗、未知及待確認；安全公開過程預設收起，同一訊息 id 保留展開狀態。四尺寸、390 停止／scope 清理／放大文字、來源再驗、typecheck 及 Web／Android export 通過；[交接](HANDOFF.md#chat-timeline)／[研究](CHAT_UI_RESEARCH.md)／[證據](verification/fe-w29-chat/build-checks.json)。目前正式接口只提供最近 100 則／完整回覆；更早游標、真串流／取消及逐句引用映射待主聊天。全部仍為合成預覽，視覺、正式 API 及原生實機待驗。
 
 **FE-W28 來源補修（2026-10-02）：** 取消淺綠底板及多餘內距，相鄰來源用細直線分隔；底線與滑塊分開，詳情分組加線。首頁文字 flex 與外框共用動畫進度，修正終態箭嘴約 211 px 跳動，三寬度逐幀接縫降至約 1 px。通用 AnswerSources／CitationText 及平台 adapter 移到 `components/chat/`，基本聊天與 Agent 共用；來源投影獨立於 Agent，各訊息各自保留來源、展開及定位狀態。四尺寸的 3／12 項、跨訊息互不干擾、收起／長回覆瞬間定位／窄版放大文字，typecheck、Web／Android export 通過；[復用交接](HANDOFF.md#chat-source-reuse)／[證據](verification/fe-w28-source-separators/build-checks.json)。正式真來源及原生實機、使用者視覺待驗。

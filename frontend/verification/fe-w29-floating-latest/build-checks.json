@@ -1,0 +1,90 @@
+{
+  "at": "2026-10-02T14:05:55.567Z",
+  "baseline": "51062d69b118395110141ed3637ca82dc102331d",
+  "branch": "codex/fe-w11-photos",
+  "scope": "FE-W29 return-to-latest overlay supplement only, frontend/**. No changes to following, loaded history, sources, stream controllers or composer.",
+  "sources": {
+    "frontend/src/components/chat/ChatTimeline.tsx": {
+      "gitBlob": "cd68b41c87aefa90ebd534c2336dee821ed5bf93",
+      "sha256": "777d35dd8b05d25762558af6974f25258b0e80b06635d3d6f7b14218f065fbcc"
+    },
+    "frontend/STATUS.md": {
+      "gitBlob": "86dc2bbab0833f71d3704dab11f8a6f75e1ebf45",
+      "sha256": "63e330a2fca22e81307f5570b1a1606ffb68dab95dd1c748bef55f4df831837a"
+    },
+    "frontend/PLAN.md": {
+      "gitBlob": "4460de7c7571bf9295a976f863f75d20115c8a4e",
+      "sha256": "fd544cf49c74c9a11cff662ad75b654211ca335b56f96036366efe8716300888"
+    },
+    "frontend/HANDOFF.md": {
+      "gitBlob": "563abfaa61e1e364c3ce62f23c304661959648be",
+      "sha256": "1d54908b441bb009f5649519d9cc8f08f634d0adca6fbae01337e963fe930f22"
+    },
+    "frontend/DESIGN_SYSTEM.md": {
+      "gitBlob": "87cad0d2931e794d801cda9768d5d383cd6b9a8e",
+      "sha256": "75480ca815dfffc26efb837710cb401c87da75348923de7fec3c9b604703cca3"
+    }
+  },
+  "evidence": {
+    "frontend/verification/fe-w29-floating-latest/checks.json": {
+      "sha256": "76095169a903aab6eea4d9e86e0187bf3aca9d217b826f9f9474036e8cd880c9"
+    },
+    "frontend/verification/fe-w29-floating-latest/floating-latest-1024.png": {
+      "sha256": "36664abc7318c7c1c06558a8006728a0f0a6e9e755995475ce89112edaccf6e2"
+    },
+    "frontend/verification/fe-w29-floating-latest/floating-latest-1440.png": {
+      "sha256": "d5083562d265060d0dceb0a975e1805addc4badd674e0053046b77a6c5a21826"
+    },
+    "frontend/verification/fe-w29-floating-latest/floating-latest-320.png": {
+      "sha256": "510f97fe6ff88f503c7914a30c41245b00521eee35e244d5133741b31948a5b3"
+    },
+    "frontend/verification/fe-w29-floating-latest/floating-latest-390.png": {
+      "sha256": "14c9da3c9db7ecb8ea9076b9dcd92c2f2b7054c06b72e506613bf7b633676d85"
+    }
+  },
+  "checks": {
+    "typecheck": {
+      "command": "npm.cmd run typecheck",
+      "exit": 0
+    },
+    "web": {
+      "command": "npm.cmd run build:web",
+      "exit": 0,
+      "staticRoutes": 35,
+      "entry": "_expo/static/js/web/entry-a1fd1840e0557a58973013d924844f74.js",
+      "sha256": "60ecc6ccd5df9140169ef52bd90e4bfa66be63b87025a028350104286793f900",
+      "servedMatchingBuild": true
+    },
+    "localSynthetic": {
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "unchangedViewport": true,
+      "sideHitThrough": true,
+      "sideWheelScrolls": true,
+      "keyboardReturn": true,
+      "draftPreserved": true,
+      "composerSeparate": true,
+      "failures": []
+    },
+    "notRun": [
+      "Full chat/source regression",
+      "Android export",
+      "Real API/model",
+      "Native device acceptance"
+    ]
+  },
+  "githubScope": {
+    "at": "2026-10-02T13:51:46.2865294Z",
+    "master": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+    "otherWorktreesChecked": 14,
+    "frontendOverlaps": []
+  },
+  "pending": [
+    "User visual approval",
+    "Formal integration and native device acceptance"
+  ]
+}

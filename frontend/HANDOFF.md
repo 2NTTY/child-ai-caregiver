@@ -15,6 +15,8 @@ ChatMessage 可顯示思考中、正在回覆、回覆已結束、已停止、�
 
 [ChatTimeline](src/components/chat/ChatTimeline.tsx) 接收已授權、舊至新排列的 items 與 renderItem；預設最近 20 則，合成預覽以 6 則示範逐批展開。較早訊息只是隱藏，按「查看較早記錄」在上方增加一批並補償高度，保留原閱讀錨點；到最早時只說「本次載入」範圍，不宣稱 Server 沒有更早記錄。回到最新會收回額外歷史並跟隨底部；新提交的 followRequest 代表明確移至最新，閱讀歷史時的新文字不偷走位置。scrollRef 提供原捲動／引用定位 port，controlsRef 提供 followLatest／holdReadingPosition，沒有資料庫、API 或業務狀態。
 
+**懸浮按鈕補修：** 從 `51062d69b118395110141ed3637ca82dc102331d` 接續，移除「回到最新」佔用的整行，改在時間線底部中央覆蓋顯示，離輸入欄 12 px。透明包裝採 pointerEvents="box-none"，只有按鈕本身接收點擊；顯示／收起不改可視高度，沿用原 followLatest，沒有額外狀態或動畫。四尺寸量度高度不變、側邊命中／wheel 穿透、Enter 回到底部及草稿保留，typecheck／35 路由 Web export 通過；[截圖及檢查](verification/fe-w29-floating-latest/checks.json)／[來源及建置](verification/fe-w29-floating-latest/build-checks.json)。這次只改位置樣式，沒有重跑完整串流／歷史檢查或 Android export；原有流程證據保留，使用者視覺及原生實機待驗。
+
 Web 復用 AppScrollView／OverlayScrollbars，薄 [手勢 adapter](src/components/chat/useChatScrollIntent.web.ts) 區分 wheel、捲動鍵、touchmove／滑塊與程式捲動；原生沿 ScrollView.onScrollBeginDrag，實機待驗。第一輪預覽發現 RN Web 延後送出的程式 scroll 被誤當讀者移動，現改為明確手勢立即暫停；來源定位只暫停跟隨、不即時改可視高度，避免「回到最新」提示把來源分頁裁掉。上標仍立即定位，不改成平滑移動。
 
 [ChatContents](src/screens/chatScreen.tsx) 只組裝畫面；[useChatTimelinePreview](src/preview/useChatTimelinePreview.ts) 管理合成歷史／問題及定時文字示例。可從「顯示 Agent 情境工具 → 聊天回覆狀態示例 → 加入回覆狀態示例」比較串流、停止／失敗／未知／確認；示例不呼叫模型／工具。scope 重掛載清理舊文字、展開狀態、計時器和 composer 附件，正式隔離仍要用 Server／本人／session／孩子／權限的穩定 key，不能以稱呼當身份。文字草稿沿原 provider，不另建持久庫。
