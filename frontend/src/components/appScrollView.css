@@ -19,6 +19,14 @@
   z-index: 5;
 }
 
+@media (max-width: 649px) {
+  .os-theme-app.os-scrollbar {
+    box-sizing: border-box;
+    --os-size: 6px;
+    --os-padding-perpendicular: 1px;
+  }
+}
+
 @media (forced-colors: active) {
   .os-theme-app.os-scrollbar {
     --os-handle-bg: CanvasText;

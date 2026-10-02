@@ -10,7 +10,7 @@ import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
 import { AppButton, SectionCard, SectionHeader } from "../ui";
-import { AnswerSources, CitationText } from "./AnswerSources";
+import { AnswerSources, CitationText, type LocateAnswerSource } from "./AnswerSources";
 
 type Tone = "neutral" | "saved" | "warning" | "error";
 const sharedConfirmationLabel = "我已核對內容及對象，明確同意寫入家庭共享資料";
@@ -125,7 +125,7 @@ function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
   </View>;
 }
 
-export function AgentRunView({ model, actions, onLocateSource }: { model: AgentRunModel; actions: AgentRunActions; onLocateSource?: (target: View | null) => void }) {
+export function AgentRunView({ model, actions, onLocateSource }: { model: AgentRunModel; actions: AgentRunActions; onLocateSource?: LocateAnswerSource }) {
   const denied = model.readState === "denied";
   const run = model.readState === "ready" ? model.run : null;
   const readMessage = model.readState === "idle" ? "尚未讀取運行結果。請手動讀取後再核對。"

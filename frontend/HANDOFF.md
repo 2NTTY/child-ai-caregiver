@@ -4,18 +4,31 @@
 
 ## 交付範圍及入口
 
+<a id="home-simplification"></a>
+### FE-W27 首頁減量、孩子入口及手機捲動條（2026-10-02）
+
+基線 `02f76518624066cc75d4be3fde8b3166c6f3a6f7`，只修改 frontend，沿 draft PR #73，主責 B；與 FE-W26 的來源面板補修一併交付。直接重新核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 P2 UI 交接／API／來源型別，內容 blob 未變；14 個其他 worktree 沒有 frontend 修改重疊。沒有更改正式 App、API、業務控制器或依賴。
+
+[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) 移除首頁提問欄及快速提問三項，也移除孩子右側重複切換按鈕和卡片的日期／已確認列。左側名字／頭像／年齡直接復用 [ChildPicker](src/components/ChildPicker.tsx) 的選單及原 selectChild 回調，取代原來進入 profile 的左側動作；未確認檔案仍標待核對。homeIdentity 只顯示 supplied ageSummaryLabel，缺少時沿原 ageLabel，沒有解析或改寫年齡；完整日期及原文仍在資料模型、選單及 profile。loading 保留讀取狀態。首次登入引導、待辦及快速記錄保留。這是窄版 Web 與隔離原生預覽共用元件；桌面對話按鈕及底部導覽保留，沒有改 HomeActions 協定或草稿範圍。
+
+首頁使用已安裝 RN Animated／Expo Router useFocusEffect：每次新掛載的首頁，先提供 5 秒標語閱讀時間，再以 360 ms 將孩子選擇區上移及縮至左側 62%，淡去介紹文字，讓下方卡片按自然高度跟上。圖片置於獨立背景層，位置及完整 contain 尺寸不隨動畫改動。動畫後只留一個孩子選擇入口；選單開啟時停止並保留閱讀時間，完成後切孩子不重播。AccessibilityInfo 沿系統減少動畫設定，保留延遲後直接切換；離頁／卸載清除 timer 並停止未完成動畫。沒有建立登入狀態、計時業務或新的保存協定。正式 App 須在真登入後首次首頁掛載觸發，按本人／session 的既有清理及導航生命週期決定重掛載，不能用這個合成預覽當真登入驗收。
+
+[appScrollView.css](src/components/appScrollView.css) 只在 650 以下縮小 Web 垂直捲動條：6 px 覆蓋區、1 px 橫向內距及 border-box，實測滑塊 4 px，透明軌道不佔寬。首輪量度發現自訂主題沿 content-box，padding 會增加實際覆蓋寬度；手機規則已修正盒模型。沿既有 OverlayScrollbars 的捲動／拖動與清理，沒有自建位置系統；桌面及原生 RN／系統捲動條沿原樣。
+
+四尺寸及 649／650 邊界的首頁無提問欄／捷徑、卡片間距、Enter 對話導覽及原草稿／引導保留，首頁／聊天及 390／320 登入的透明軌道、滑塊及零佔寬通過。649／390／320 普通動畫及 390 減少動畫情境通過實際閱讀等待、單一入口、上移比例、圖片位置、選單暫停及動畫後切換；320 動畫後的 150% Web 文字可重排。更新後既有 mobile-density 流程通過孩子切換、四／兩格快速記錄、聊天草稿、鍵盤及 150% Web 文字；shell 流程只同步新導覽 selector 並作語法檢查，其未改功能沿原證據，不聲稱全跑。最終 typecheck、Web 33 路由及 Android Hermes 30 資產 export 通過；沒有 runtime error 或真 API／模型請求。[本次證據](verification/fe-w27-home/build-checks.json)／[首頁及滑塊量度](verification/fe-w27-home/home-checks.json)／[動畫量度](verification/fe-w27-home/greeting-checks.json)／[390 動畫後](verification/fe-w27-home/home-docked-390.png)／[320](verification/fe-w27-home/home-docked-320.png)。使用者視覺、真登入觸發／正式接線、APK／原生捲動／動畫與實機仍待驗收；不以 Web 量度代替原生驗收。
+
 <a id="answer-citations"></a>
 ### FE-W26 回覆引用及來源面板（2026-10-02，現行來源版式）
 
-基線 `20da9da6c6f7b5a56e45194b6dc0a3d4acd371a3`，只修改 frontend，沿 draft PR #73，主責 B。直接核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 [P2 UI 交接](https://github.com/2NTTY/child-ai-caregiver/blob/d3213e6dde2b72fd34a955b5ceebab1f046f3f6e/docs/P2_UI_HANDOFF.md)、API 及 product-agent／knowledge 型別；blob 及 14 個其他 worktree 無 frontend 重疊的核對見 [build-checks](verification/fe-w26/build-checks.json)。沒有新 API、依賴或正式 App 改動。
+原版基線 `20da9da6c6f7b5a56e45194b6dc0a3d4acd371a3`、交付 `02f76518624066cc75d4be3fde8b3166c6f3a6f7`；本次從交付版依使用者意見補修。只修改 frontend，沿 draft PR #73，主責 B。重新核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 [P2 UI 交接](https://github.com/2NTTY/child-ai-caregiver/blob/d3213e6dde2b72fd34a955b5ceebab1f046f3f6e/docs/P2_UI_HANDOFF.md)、API 及 product-agent／knowledge 型別；blob 及 14 個其他 worktree 無 frontend 重疊的核對見 [本次 build-checks](verification/fe-w26-source-tabs/build-checks.json)。沒有新 API、依賴或正式 App 改動。
 
-[AnswerSources／CitationText](src/components/agent/AnswerSources.tsx) 復用 AgentCitationView，將每則回答的來源放在正文最底部，以細線分開。有效的【n】或 [n] 原文標記以較小上標呈現；點擊只定位、聚焦並標示底部對應列，沒有自動打開詳情。點底部來源後才展開頁內面板；上方來源分頁可橫向捲動，內容區保留原片段、發布者／分類、版本校驗、日期、有效期及適用／內部範圍，可獨立捲動及收起。開啟原來源仍只傳原 source id 給既有回調，不直接開未核對 URL。沒有 Portal 或中央來源 Dialog。
+[AnswerSources／CitationText](src/components/agent/AnswerSources.tsx) 復用 AgentCitationView，將每則回答的來源放在正文最底部，以細線分開，只留一個來源分頁組件，移除上方重複清單。分頁顯示編號及來源標題，過多時左右捲動；點一次展開，再點同一項收起，點另一項切換詳情。有效的【n】或 [n] 原文標記以較小上標呈現；點擊立即跳到該則訊息的來源面板，定位、聚焦及標示對應分頁，包括原先未露出的來源；不平滑捲動或自動展開關閉的詳情。內容區保留原片段、發布者／分類、版本校驗、日期、有效期及適用／內部範圍，可獨立捲動。開啟原來源仍只傳原 source id 給既有回調，不直接開未核對 URL。沒有 Portal 或中央來源 Dialog。
 
-[Web 上標](src/components/agent/CitationMarker.web.tsx) 用原生 sup／button 保留文字縮放及鍵盤焦點；[Web 定位](src/components/agent/locateCitationSource.web.ts) 復用實際 ancestor viewport 的 scrollIntoView，尊重減少動畫設定。[原生上標](src/components/agent/CitationMarker.tsx) 及 [原生定位](src/components/agent/locateCitationSource.ts) 使用 RN inline View／Pressable、fontScale 及 ScrollView measureLayout／scrollTo，沒有 DOM 或框架新增。小型平台差異按現有薄 adapter 處理；依 [RN Web Text](https://necolas.github.io/react-native-web/docs/text/)、[View](https://necolas.github.io/react-native-web/docs/view/) 及 [RN Text](https://reactnative.dev/docs/text) 核對，2026-10-02，文件核對不等於真機驗收。
+[Web 上標](src/components/agent/CitationMarker.web.tsx) 用原生 sup／button 保留文字縮放及鍵盤焦點；[Web 定位](src/components/agent/locateCitationSource.web.ts) 復用實際 ancestor viewport 的 scrollIntoView，明確使用 instant，先定位橫向來源再捲到自己的面板；接近頁尾時沿可捲範圍顯示。展開詳情時也把面板捲到可見位置，避免落在 composer 下方。[原生上標](src/components/agent/CitationMarker.tsx) 及 [原生定位](src/components/agent/locateCitationSource.ts) 使用 RN inline View／Pressable、fontScale、ScrollView measureLayout／scrollTo；橫向來源及垂直面板皆 animated: false，沒有 DOM 或框架新增。小型平台差異按現有薄 adapter 處理；依 [RN Web Text](https://necolas.github.io/react-native-web/docs/text/)、[View](https://necolas.github.io/react-native-web/docs/view/) 及 [RN Text](https://reactnative.dev/docs/text) 核對，2026-10-02，文件核對不等於真機驗收。
 
 **正式引用關聯：** 現有 AgentPresentation／ProductAgentResult 提供 text 和 KnowledgeEvidence 清單，沒有逐句編號、offset 或映射欄位。本元件只呈現原文中有對應清單項的標記；未對應／超出範圍的編號保留原文字，不自動附引用。正式 adapter 須確認正文編號與來源的真實關聯，沿原清單次序及唯一穩定 id 投影，不能由前端按句子、關鍵字或來源標題猜配。沒有映射時仍可呈現底部來源，不製造文內證據。[三來源 fixture](src/preview/answer-citations.ts) 和運行示例只作合成版式，沒有真知識證據或健康建議。
 
-**清理及驗證：** 來源狀態屬單則回覆，原 Server／本人／孩子的 keyed 子樹和 ready／failed／denied 投影不變。原候選、共享勾選、版本／unknown／原決定查核、草稿和 composer 行為保留。首輪既有權限檢查發現 AnswerSources 和 RunDetails 重複 key 導致殘留，已改唯一 key 並核對控制變更不重複回覆、失去權限清除已開面板。四 Web 寬度 1440／1024／390／320 的上標、分隔線、三次定位／焦點、分頁 Enter／收起、無中央彈窗及草稿保留通過；390／320 的 150% Web 文字無橫向溢出。原 Agent 合成流程及聊天版面檢查、typecheck、Web 33 路由／Android Hermes 30 資產 export 通過；沒有 runtime error 或 API／模型請求。[定位證據](verification/fe-w26/citation-checks.json)／[原流程](verification/fe-w26/checks-agent-flow-emergency-help.json)／[桌面面板](verification/fe-w26/source-panel-1440.png)／[窄版](verification/fe-w26/source-panel-390.png)。只補本次需要的局部檢查；使用者視覺、真來源映射／正式接線，以及原生基線／大字體／觸控／定位／輔助技術待驗收。
+**清理及驗證：** 來源狀態屬單則回覆，原 Server／本人／孩子的 keyed 子樹和 ready／failed／denied 投影不變。原候選、共享勾選、版本／unknown／原決定查核、草稿和 composer 保留。原交付已修正 AnswerSources 和 RunDetails 重複 key 的殘留，本次保持唯一 key。單一分頁版首輪既有 Agent 流程通過權限／孩子清理、unknown／原決定及草稿；其後只調定位 port 和來源可見性，未重跑業務流程，並局部核對原決定／候選／controller 未變。本次四 Web 寬度 1440／1024／390／320 通過單一來源列、來源標題、同項 click／Enter 收起、切來源時詳情可見、12 項橫向捲動及未露出的來源焦點；在一般動畫偏好下，包含加長 1800 px 回覆的正文數字仍立即定位自己的面板。390／320 的 150% Web 文字無橫向溢出。typecheck、Web 33 路由／Android Hermes 30 資產 export 通過，沒有 runtime error 或真 API／模型請求。最後僅 Web 手機捲動條 CSS 盒模型修補，來源 JS／定位及可用寬度未變；沿用其已過的局部檢查。[本次來源證據](verification/fe-w26-source-tabs/source-tabs-checks.json)／[原流程](verification/fe-w26-source-tabs/checks-agent-flow.json)／[桌面面板](verification/fe-w26-source-tabs/single-source-panel-1440.png)／[窄版多來源](verification/fe-w26-source-tabs/many-sources-390.png)。原 [FE-W26 證據](verification/fe-w26/build-checks.json) 保留歷史版式，不當本次版本。使用者視覺、真來源映射／正式接線，以及原生基線／大字體／觸控／定位／輔助技術待驗收。
 
 <a id="chat-presentation"></a>
 ### FE-W25 聊天版面減量（2026-10-02，現行版本）

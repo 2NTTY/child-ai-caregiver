@@ -31,9 +31,10 @@ export async function verifyAgentConversation(browser, failures, directory) {
     await loadConversation(page);
     assert.equal(await accept(page).isDisabled(), true);
     assert.equal(await accept(page, factTitle).isDisabled(), false, "Private fact does not ask for family sharing");
-    await runView(page).getByRole("button", { name: "查看來源【1】：來源片段與版本的版式示例", exact: true }).click();
+    await runView(page).getByRole("tab", { name: "來源分頁【1】：來源片段與版本的版式示例", exact: true }).click();
     await runView(page).getByTestId("source-details-panel").getByText("合成時間，非官方發布日期", { exact: true }).waitFor();
-    await runView(page).getByRole("button", { name: "收起來源詳情", exact: true }).click();
+    await runView(page).getByRole("tab", { name: "來源分頁【1】：來源片段與版本的版式示例", exact: true }).click();
+    assert.equal(await runView(page).getByTestId("source-details-panel").count(), 0, "The same source tab collapses its details");
     await assertFits(page, `Agent source and candidate ${width}`);
     await shared(page).focus(); await page.keyboard.press("Space");
     assert.equal(await shared(page).getAttribute("aria-checked"), "true");
@@ -114,7 +115,7 @@ export async function verifyAgentConversation(browser, failures, directory) {
   await tools(boundary);
   await selectOption(boundary, "模擬原運行讀取", "權限或登入失效");
   assert.equal(await runView(boundary).getByTestId("agent-answer").count(), 1, "Changing controls must not duplicate the answer");
-  await runView(boundary).getByRole("button", { name: "查看來源【1】：來源片段與版本的版式示例", exact: true }).click();
+  await runView(boundary).getByRole("tab", { name: "來源分頁【1】：來源片段與版本的版式示例", exact: true }).click();
   await runView(boundary).getByTestId("source-details-panel").waitFor();
   await boundary.getByRole("button", { name: "重新讀取運行結果", exact: true }).click();
   await boundary.getByText("已失去讀取此運行的權限", { exact: false }).waitFor();

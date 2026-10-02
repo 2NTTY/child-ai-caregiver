@@ -1,0 +1,270 @@
+{
+  "at": "2026-10-02T08:05:29.514Z",
+  "packages": [
+    "FE-W26 source-tab feedback",
+    "FE-W27 home simplification and child-entry transition"
+  ],
+  "baseline": "02f76518624066cc75d4be3fde8b3166c6f3a6f7",
+  "scope": "frontend only; one answer-source widget, instant per-message citation jump, compact homepage, one child picker, timed greeting transition and mobile overlay scrollbar",
+  "githubMaster": "d3213e6dde2b72fd34a955b5ceebab1f046f3f6e",
+  "githubDocs": {
+    "docs/P2_UI_HANDOFF.md": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+    "src/shared/knowledge.ts": "ea330e54333a48dcb861364fccbc167aedab78f7",
+    "docs/API.md": "69fd07e18f649e4862030001837662d5e2fdc19b",
+    "src/shared/product-agent.ts": "9f217d80dd1e020dc6048075e4f34f9233cd73f2"
+  },
+  "githubLogin": "CherylNg-2526",
+  "githubSyncAt": "2026-10-02T08:02:49.7873680Z",
+  "otherWorktreesChecked": 14,
+  "frontendOverlaps": [],
+  "sources": [
+    {
+      "path": "frontend/scripts/flows/agent-conversation.mjs",
+      "gitBlob": "9e86ca7609e81f0e19979c621bc15492f3cfbb5f",
+      "sha256": "01b2d5545191b51235e22b830100c2b2ef671d74300c89d8a0e8f6ac0a073425"
+    },
+    {
+      "path": "frontend/scripts/flows/mobile-density.mjs",
+      "gitBlob": "b88fb08fc97cb153b7f23380e4aa765c5f747aee",
+      "sha256": "a486f5e0989c5dd9b7266759c7e0c54a097b0fba1719d5413a0062fc00edda84"
+    },
+    {
+      "path": "frontend/scripts/flows/shell-settings.mjs",
+      "gitBlob": "f8c5a3d34d09f28adbc6dd9c3b2c94af6940759f",
+      "sha256": "87ae273066217e459483a552e3646b234579ec4fa787ec00057db77994dc3a88"
+    },
+    {
+      "path": "frontend/src/components/ChildPicker.tsx",
+      "gitBlob": "282b1042196749d7f1f77a8af67b887cf827fd83",
+      "sha256": "09e4e5c1effe1c858c0a3eff2c5ae4cfe87b7c489eba7e2c25d3b0fb0e78aba9"
+    },
+    {
+      "path": "frontend/src/components/MobileHomeDashboard.tsx",
+      "gitBlob": "4603a1cd90fb985974db8746b7a61c0f55ac5b91",
+      "sha256": "da1c6c93fa2ad8f365a7b6f0bf78f0ab19c82b9e9de9cb751275a69b2022b778"
+    },
+    {
+      "path": "frontend/src/components/agent/AgentConversationPreview.tsx",
+      "gitBlob": "ff9b097bc0ebed0de42a25e1b57c4c8a0c2040d4",
+      "sha256": "738cee958c91b28713b9bda89ce4706dad80246d558cd730256335786fdb318f"
+    },
+    {
+      "path": "frontend/src/components/agent/AgentRunView.tsx",
+      "gitBlob": "a33b614866e461fb083e1031167de2f3e4a5105b",
+      "sha256": "37f7724207bfd09f3f664837a2fe36bffc1ae22604f543c303756d176fa9380b"
+    },
+    {
+      "path": "frontend/src/components/agent/AnswerSources.tsx",
+      "gitBlob": "caa8fd817657d722ddfa2b44bc7e856134a37e96",
+      "sha256": "1e1a275ed8f58ffd748fc2bd9b9da3f35e8a5ff6bd138c2918b1fa58c4ce18da"
+    },
+    {
+      "path": "frontend/src/components/agent/locateCitationSource.ts",
+      "gitBlob": "d968d265ebed4079e3effda2f0cda0ecc823fb78",
+      "sha256": "0c9fa358467346d02547fb3c2bd6232432ffa7eca5abc78cef922ca028f14814"
+    },
+    {
+      "path": "frontend/src/components/agent/locateCitationSource.web.ts",
+      "gitBlob": "4ed43470cd4d0235e57288e133c902bb6d443788",
+      "sha256": "872424c7965860309136a0f39e143d9d13eed55fa9c32e212ef98f1ed4ee3519"
+    },
+    {
+      "path": "frontend/src/components/appScrollView.css",
+      "gitBlob": "e5abd1b703389ff2f7e91f74f4737820e0f307e4",
+      "sha256": "c1c61c2da26f4f927cb468bcc2e7054cd8dc71a489042fc1ccb3753c4c735500"
+    },
+    {
+      "path": "frontend/src/preview/agent-fixture.ts",
+      "gitBlob": "2f7be007ab0f451fab9a1a7ebc29bf48cf579136",
+      "sha256": "3d821a46b2578ea04b9d82915a3fe8df8838b6cb5e907e4a0ea9d5d5472d061f"
+    },
+    {
+      "path": "frontend/src/screens/chatScreen.tsx",
+      "gitBlob": "b6ea8de28c75b4eb1222772d7d4179c561eab731",
+      "sha256": "4ce716b97bfba5882384b9867eb7e66f12335246c69dfed2a8a80fcade63e1b2"
+    }
+  ],
+  "guidance": [
+    {
+      "path": "frontend/AGENT_HANDOFF.md",
+      "gitBlob": "23ce9bef4dcc9d5e3deded0766fb10dffe85dd39",
+      "sha256": "3bab5bc72cb68c0751dfde47ec34a44f526482c90459c202e1b597fe1de1ff1c"
+    },
+    {
+      "path": "frontend/DESIGN_SYSTEM.md",
+      "gitBlob": "7061244d85584e4d955d0e1ad3129de2e1b6d7dc",
+      "sha256": "7d280b73e670eb3338551538580800a65879426c9abb1cb11d70a03736e75f4c"
+    },
+    {
+      "path": "frontend/HANDOFF.md",
+      "gitBlob": "c5585784c46f801d43421f6123450f20dcad0f30",
+      "sha256": "35372b0d6c6450685050b43e193d35380dd1e09c783edc6e651c2249f2e059b8"
+    },
+    {
+      "path": "frontend/PLAN.md",
+      "gitBlob": "480dbc1076d6505997ea77d945987d68224e1436",
+      "sha256": "99128c2b2a334a0b91a0a9020f01c0bdedfe3516a5e515dcd7a345e579c234ed"
+    },
+    {
+      "path": "frontend/STATUS.md",
+      "gitBlob": "76ded7bbf5aa8951464a6f76069cd44432793be5",
+      "sha256": "5035e7a847a24847831975b66c96213dacc32e93f13909cfb4572bd0b7bdfe78"
+    }
+  ],
+  "preserved": {
+    "localMessageHandler": true,
+    "composer": true,
+    "originalDecisionAndProposalCards": true,
+    "syntheticControllerAndViewModels": true,
+    "dependencies": true,
+    "scrollAdapter": true
+  },
+  "sourceAssociation": "The formal API has text and KnowledgeEvidence[] but no sentence/offset mapping. Only existing in-range numeric markers are styled; formal integration must validate their genuine relationship to supplied source order. Preview evidence is synthetic.",
+  "homeTransition": {
+    "readingDelayMs": 5000,
+    "durationMs": 360,
+    "finalChildWidth": "62%",
+    "reducedMotion": "Delay retained, then change without animation",
+    "lifecycle": "Focus-bound timer and animation cancellation; paused while child picker is open. Formal login/session trigger still requires integration.",
+    "childAge": "Use supplied ageSummaryLabel without parsing; retain full age/date in model, picker options and profile.",
+    "mobileWebScrollbar": {
+      "breakpoint": 650,
+      "overlayPx": 6,
+      "visibleThumbPx": 4,
+      "transparentTrack": true,
+      "zeroGutter": true
+    }
+  },
+  "resolvedFailures": [
+    {
+      "cause": "Opened source details could be below the composer.",
+      "resolution": "Opening/switching scrolls the inline widget into view."
+    },
+    {
+      "cause": "Custom overlay scrollbar theme used content-box, adding padding outside the specified mobile size.",
+      "resolution": "Use border-box only in the compact media rule."
+    }
+  ],
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck (frontend)",
+      "exitCode": 0
+    },
+    "webExport": {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "routes": 33,
+      "bundles": [
+        {
+          "path": "dist/_expo/static/js/web/entry-e28c131c4f89d45b2eb2abecc9f888aa.js",
+          "sha256": "ce93ce76e38eb459b23c3ec3bde744ad2fc60bdf3333b5813d549267de45d38c",
+          "bytes": 4173680
+        },
+        {
+          "path": "dist/_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+          "sha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+          "bytes": 14266
+        },
+        {
+          "path": "dist/_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+          "sha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+          "bytes": 14266
+        },
+        {
+          "path": "dist/_expo/static/css/appScrollView-4dad51435f0d5a853cbf3ebd97a12a85.css",
+          "sha256": "93ce6583a32428b99f8ec7f1610e5e6d088f17b98078b8b88d2bc4b605f7793b",
+          "bytes": 827
+        },
+        {
+          "path": "dist/_expo/static/css/appScrollView-4dad51435f0d5a853cbf3ebd97a12a85.css",
+          "sha256": "93ce6583a32428b99f8ec7f1610e5e6d088f17b98078b8b88d2bc4b605f7793b",
+          "bytes": 827
+        }
+      ]
+    },
+    "androidExport": {
+      "command": "npm run build:android-ui",
+      "exitCode": 0,
+      "assets": 30,
+      "bundles": [
+        {
+          "path": "dist-android/_expo/static/js/android/entry-0e3970f701bb8dcd375672ccd776736b.hbc",
+          "sha256": "d3bdcb376164afd26f346f629d713d3c0d3f6e432211959e0247e1bdc3408363",
+          "bytes": 6382687
+        }
+      ]
+    },
+    "citations": {
+      "kind": "Targeted synthetic browser check",
+      "helperSha256": "784fdcc7fb8602c6bd2ecfb7103f8d47f2fa767f7f20cd1b4fbb32c0c1cee7cc",
+      "at": "2026-10-02T07:17:01.745Z",
+      "evidence": "verification/fe-w26-source-tabs/source-tabs-checks.json",
+      "passed": [
+        "sources 1440: one named tab strip, no duplicate list, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal overflow/scroll, immediate own-panel footnote jump including 1800px extended reply without reduced-motion preference, offscreen source focus/location, preserved draft",
+        "sources 1024: one named tab strip, no duplicate list, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal overflow/scroll, immediate own-panel footnote jump including 1800px extended reply without reduced-motion preference, offscreen source focus/location, preserved draft",
+        "sources 390: one named tab strip, no duplicate list, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal overflow/scroll, immediate own-panel footnote jump including 1800px extended reply without reduced-motion preference, offscreen source focus/location, preserved draft, enlarged text",
+        "sources 320: one named tab strip, no duplicate list, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal overflow/scroll, immediate own-panel footnote jump including 1800px extended reply without reduced-motion preference, offscreen source focus/location, preserved draft, enlarged text"
+      ],
+      "failures": []
+    },
+    "agent": {
+      "command": "node scripts/verify-ui.mjs agent-flow",
+      "at": "2026-10-02T06:51:53.138Z",
+      "evidence": "verification/fe-w26-source-tabs/checks-agent-flow.json",
+      "passed": [
+        "Agent conversation: four-width manual read/keyboard shared acceptance/private fact/source metadata/draft guard; unknown original retry/conflict/missing read/permission and child identity clearing/manual inbox/expiry/unknown statistics/full task-change projection"
+      ],
+      "failures": [],
+      "reuse": "Passed on the first single-tab revision before later location/visibility and homepage changes. Original decision/proposal/controller/composer blocks remain unchanged; no business-suite rerun claimed."
+    },
+    "home": {
+      "helperSha256": "372861f5a818aa8becada43ac1f462a10bab93066773f5b852948efc9fc0d848",
+      "at": "2026-10-02T07:57:36.318Z",
+      "evidence": "verification/fe-w27-home/home-checks.json",
+      "passed": [
+        "home 1440: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+        "home 1024: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+        "home 649: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+        "home 650: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+        "home 390: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+        "home 320: no question field or shortcuts, original navigation/draft and guide preserved, compact scrollbar sizing, transparent overlay with no width gutter, no page overflow",
+        "login 390: compact transparent overlay sizing with unchanged form layout",
+        "login 320: compact transparent overlay sizing with unchanged form layout"
+      ],
+      "failures": []
+    },
+    "greeting": {
+      "helperSha256": "09158d186a1818eee939f9cfe464e066e86a107c2811eacccecaa2c40cb1922a",
+      "at": "2026-10-02T07:57:30.120Z",
+      "evidence": "verification/fe-w27-home/greeting-checks.json",
+      "passed": [
+        "home intro 649 reduced=false: reading interval, one left child selector, no reference date/right button, upward compact transition, fixed right artwork, post-transition child switch",
+        "home intro 390 reduced=false: reading interval, one left child selector, no reference date/right button, upward compact transition, fixed right artwork, post-transition child switch, pause while picker is open",
+        "home intro 320 reduced=false: reading interval, one left child selector, no reference date/right button, upward compact transition, fixed right artwork, post-transition child switch, enlarged text",
+        "home intro 390 reduced=true: reading interval, one left child selector, no reference date/right button, instant reduced-motion change, fixed right artwork, post-transition child switch"
+      ],
+      "failures": []
+    },
+    "mobileDensity": {
+      "command": "node scripts/verify-ui.mjs mobile-density",
+      "at": "2026-10-02T07:57:40.746Z",
+      "evidence": "verification/fe-w27-home/checks-mobile-density.json",
+      "passed": [
+        "mobile density: 390/320 targets/age basis/header alignment/four-or-two quick actions/child picker/keyboard suggestions/original draft/quick form/150% Web text reflow"
+      ],
+      "failures": []
+    },
+    "shellScript": {
+      "command": "node --check scripts/flows/shell-settings.mjs",
+      "exitCode": 0,
+      "fullFlowRerun": false
+    }
+  },
+  "noTrueServiceRequests": true,
+  "pending": [
+    "User visual approval",
+    "Formal citation association, controller/API and post-authentication homepage lifecycle integration",
+    "APK/native inline citation, child-picker transition, scrollbar, font scaling, touch and assistive-technology acceptance"
+  ],
+  "evidenceReuse": "Citation four-width checks predate the final homepage-only changes and compact-scrollbar box model; source components and location logic are unchanged. Final homepage/chat/login measurements confirm unchanged viewport width. Original FE-W26 evidence is retained as historical; unrelated business and whole-project regressions were not rerun."
+}

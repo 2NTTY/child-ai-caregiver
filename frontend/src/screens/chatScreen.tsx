@@ -16,7 +16,7 @@ export default function ChatPage() {
   const { model, actions, chatDraft, setChatDraft } = usePreview();
   const [localMessages, setLocalMessages] = useState<Record<string, string[]>>({});
   const scrollRef = useRef<NativeScrollView | null>(null);
-  const locateSource = (target: View | null) => locateCitationSource(target, scrollRef.current);
+  const locateSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
   const viewportWidth = useWindowDimensions().width;
   const [paneWidth, setPaneWidth] = useState(0);
   const compact = (paneWidth || viewportWidth) < mobileLayout.breakpoint;

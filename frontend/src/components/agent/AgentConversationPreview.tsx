@@ -7,12 +7,14 @@ import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
 import { AppButton, AppSelect, SectionCard, SectionHeader } from "../ui";
 import { AgentInboxView } from "./AgentInboxView";
 import { AgentRunView } from "./AgentRunView";
+import type { LocateAnswerSource } from "./AnswerSources";
 
 const scenarioOptions: { value: AgentRunScenario; label: string }[] = [
   { value: "standard", label: "建立任務及私人記憶" }, { value: "changes", label: "任務變更及共享記憶" },
   { value: "empty", label: "沒有候選或引用" }, { value: "expired", label: "確認期限已過" },
   { value: "running", label: "仍在處理中" }, { value: "stopped", label: "運行已停止" },
   { value: "unknown", label: "運行結果及統計未知" }, { value: "degraded", label: "關鍵詞降級檢索" },
+  { value: "many_sources", label: "多個來源（12 項）" },
 ];
 const decisionOptions: { value: AgentDecisionOutcome; label: string }[] = [
   { value: "success", label: "合成收據成功" }, { value: "unknown", label: "結果未知" }, { value: "conflict", label: "確認基準衝突" },
@@ -23,7 +25,7 @@ const readOptions: { value: AgentReadOutcome; label: string }[] = [
   { value: "failed", label: "讀取失敗" }, { value: "denied", label: "權限或登入失效" },
 ];
 
-export function AgentConversationPreview({ childId, online, onLocateSource }: { childId: string; online: boolean; onLocateSource?: (target: View | null) => void }) {
+export function AgentConversationPreview({ childId, online, onLocateSource }: { childId: string; online: boolean; onLocateSource?: LocateAnswerSource }) {
   const [identity, setIdentity] = useState("preview-self");
   const [toolsVisible, setToolsVisible] = useState(false);
   // Server/user/child changes must replace private contents before an old result can render.
@@ -33,7 +35,7 @@ export function AgentConversationPreview({ childId, online, onLocateSource }: { 
 function AgentConversationContents({ childId, online, identity, setIdentity, toolsVisible, setToolsVisible, onLocateSource }: {
   childId: string; online: boolean; identity: string; setIdentity(value: string): void;
   toolsVisible: boolean; setToolsVisible(value: boolean): void;
-  onLocateSource?: (target: View | null) => void;
+  onLocateSource?: LocateAnswerSource;
 }) {
   const preview = useAgentPreview(childId, online);
   const blocked = !!preview.model.busy || !!preview.model.pendingDecision || preview.model.readState === "denied";

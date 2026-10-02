@@ -1,6 +1,6 @@
-import type { AgentProposalView, AgentRunView } from "../agent-view-model";
+import type { AgentCitationView, AgentProposalView, AgentRunView } from "../agent-view-model";
 
-export type AgentRunScenario = "standard" | "changes" | "empty" | "expired" | "running" | "stopped" | "unknown" | "degraded";
+export type AgentRunScenario = "standard" | "changes" | "empty" | "expired" | "running" | "stopped" | "unknown" | "degraded" | "many_sources";
 export const conversationRunId = (childId: string) => `preview-conversation-${childId}`;
 export const backgroundRunId = (childId: string) => `preview-background-${childId}`;
 export function createAgentRun(childId: string, runId: string, scenario: AgentRunScenario, now: number): AgentRunView {
@@ -35,7 +35,7 @@ export function createAgentRun(childId: string, runId: string, scenario: AgentRu
   const empty = scenario === "empty" || scenario === "running" || scenario === "stopped" || scenario === "unknown";
   return {
     id: runId, childId, createdAt, status: ["running", "stopped", "unknown"].includes(scenario) ? scenario as "running" | "stopped" | "unknown" : "completed",
-    text: empty ? "" : "示例回覆：先核對已有記錄，再逐項決定是否接受下方候選。【1】此段只示範結果版式，沒有呼叫模型，亦沒有提供健康建議。",
+    text: empty ? "" : "示例回覆：先核對已有記錄，再逐項決定是否接受下方候選。【1】此段只示範結果版式，沒有呼叫模型，亦沒有提供健康建議。" + (scenario === "many_sources" ? "多來源定位版式示例。【12】" : ""),
     stopReasonLabel: scenario === "stopped" ? "處理中斷，沒有自動重新執行" : null,
     counts: scenario === "unknown" ? null : { modelCalls: 1, toolCalls: empty ? 1 : 3, queryEmbeddings: empty ? 0 : 1 },
     retrievalMode: empty ? "not_used" : scenario === "degraded" ? "keyword_degraded" : "vector_keyword",
@@ -44,10 +44,13 @@ export function createAgentRun(childId: string, runId: string, scenario: AgentRu
         { id: "preview-propose", nameLabel: "保存任務／記憶候選", status: "succeeded", savesCandidate: true },
         { id: "preview-present", nameLabel: "整理回覆及引用", status: "succeeded", savesCandidate: false }],
     proposals: empty ? [] : proposals,
-    citations: empty ? [] : [{ id: "preview-source", title: "來源片段與版本的版式示例", section: "合成引用 · 沒有真資料來源", publisher: "前端合成樣本", classification: "synthetic",
+    citations: empty ? [] : Array.from({ length: scenario === "many_sources" ? 12 : 1 }, (_, index): AgentCitationView => ({
+      id: scenario === "many_sources" ? `preview-source-${index + 1}` : "preview-source",
+      title: scenario === "many_sources" ? `來源片段與版本的版式示例 ${index + 1}` : "來源片段與版本的版式示例",
+      section: "合成引用 · 沒有真資料來源", publisher: "前端合成樣本", classification: "synthetic",
       excerpt: "這個位置會顯示原回答實際引用的片段。此處只有版式文字，不能作為任何育兒或健康說法的依據。",
       versionId: "preview-version-1", versionHash: "preview-only-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
       checkedAt: createdAt, fetchedAt: createdAt, lastSuccessfulCheckAt: createdAt, sourceDate: "合成時間，非官方發布日期",
-      validUntil: null, applicabilityLabel: "香港；年齡及條件限制由正式引用提供。本樣本並不適用於真實建議。", internalOnly: true, url: null }],
+      validUntil: null, applicabilityLabel: "香港；年齡及條件限制由正式引用提供。本樣本並不適用於真實建議。", internalOnly: true, url: null })),
   };
 }

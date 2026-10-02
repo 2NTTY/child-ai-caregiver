@@ -7,7 +7,7 @@
 - FE-W20 依使用者指定採 [Happy Hues 14](https://www.happyhues.co/palettes/14)：白色承載卡片、Dialog 及表單，淺青統一導航，深藍紫作標題／圖標／普通提交，黃色集中於 Agent 入口，較深青作選中。額外表面／警告色仍按 OKLCH 派生，明確失敗沿既有 coral，狀態必配文案。Logo／美術保留；用途及對比沿 [配色策略](COLOR_STRATEGY.md)。
 - 淺青導航的內嵌控制用白色 controlSurface 配共用邊界；孩子切換、資料標籤、側欄開關及次要按鈕不跟外層同色。白卡內的安靜內容用 quietSurface，按父／子用途分層。
 - 一個頁面只有清楚的主標題，下面用短說明交代資料範圍；卡片標題、內容、來源／時間次序固定。對話有訊息氣泡、來源區和底部輸入；設定有分頁、資料列及明確未保存提示；登入以品牌故事與表單分區。
-- FE-W26 的來源放在每則 AI 回覆底部，以細線分開；正文引用用較小上標【n】，點擊定位／聚焦對應來源。再點來源才展開頁內小面板，上方橫向來源分頁、獨立捲動內容及收起；沿同一 quietSurface／ink／softLine，不放中央彈窗。真引用關聯和平台界線見 [交接](HANDOFF.md#answer-citations)。
+- FE-W26 的來源放在每則 AI 回覆底部，以細線分開，只留一個來源分頁組件，不另列重複清單。分頁顯示編號及來源標題，過多時左右捲動；點一次展開詳情，再點同一項收起，切另一項則顯示該來源。正文上標【n】立即跳到該則訊息的來源面板，定位／聚焦對應分頁，包括原先未露出的來源；不平滑捲動或自動展開關閉的詳情。沿同一 quietSurface／ink／softLine 及獨立詳情捲動，不放中央彈窗。真引用關聯和平台界線見 [交接](HANDOFF.md#answer-citations)。
 - FE-W25 對話標題及訊息不放頭像，以靠右問題氣泡／回覆卡片及文字區分內容，答案用回完整列寬。按使用者指示移除聊天常駐「緊急求助」卡；帳戶／孩子選擇的資料頭像及功能控件 SVG 仍按各自用途保留。來源及正式交接差異見 [聊天版面](HANDOFF.md#chat-presentation)。
 - 對話底部把問題欄與工具列分開：拍照、檔案／來源、語音 SVG 入口在左，主要預覽／正式送出動作在右。窄屏保留 48 觸控及無障礙名稱，隱藏重複的圖標文字，使三項工具及主操作同一列。已有草稿不被導航或提示覆蓋；未接功能顯示真實能力，不能用假錄音或假附件充當互動。
 - 寬桌面用左導覽、主內容、常駐右資訊欄。設定固定在左下，下方不另放帳戶卡片；切換帳戶集中在「設定 → 個人與帳戶 → 登入與安全」。右欄可關閉及重開。中寬或窄視窗的右欄改為可開啟面板，手機瀏覽器用底部導覽與「更多」入口，不遺失家庭／記憶／設定路由。
@@ -29,7 +29,7 @@
 | SVG 圖標 | [AppIcon](src/components/AppIcon.tsx)、theme 的 iconTokens | 統一尺寸、線寬與名稱映射；PaperSvgIcon 同時供 PaperProvider 使用 |
 | 日期、時間及表單 | [DateTimeFields](src/components/DateTimeFields.tsx)、[date-time](src/components/date-time.ts)、各頁 RHF／Zod schema | 共用 Paper Dates 0.24.0 的日曆／時鐘／窄屏鍵盤輸入，IANA 時區沿 Luxon 3.7.2；不逐頁手寫日期控制 |
 | 原文核對欄位 | [RecordDraftFields](src/components/RecordDraftFields.tsx) | 照片和私人來源共用種類、原文、數值／單位、約數及時間原文；隱藏參考備註不適用的欄位，驗證／同意沿各功能契約 |
-| 原生外殼及手機首頁 | [NativeAppShell](src/components/NativeAppShell.tsx)、[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) | Safe Area、更多／資訊面板、Expo Router Tabs、問候／孩子卡片／提問／重點／待辦／快捷記錄；與 Web 共享資料模型和功能元件 |
+| 原生外殼及手機首頁 | [NativeAppShell](src/components/NativeAppShell.tsx)、[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) | Safe Area、更多／資訊面板、Expo Router Tabs、問候／孩子卡片／重點／待辦／快捷記錄；與 Web 共享資料模型和功能元件 |
 | 共同外殼 | [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 左導覽、孩子切換及其授權摘要、資訊欄、預覽情境、內頁標題與內容間距 |
 | 捲動區域 | [AppScrollView.web](src/components/AppScrollView.web.tsx)、[原生入口](src/components/AppScrollView.tsx) | Web 垂直滑塊覆蓋內容、透明軌道及不預留寬度；保留 RN viewport／事件／ref。原生及橫向捲動維持 RN ScrollView |
 | Agent 主要入口 | [AgentEntryButton](src/components/AgentEntryButton.tsx) | 桌面側欄的固定入口、主操作層次、SVG、焦點／目前頁面；復用 Paper TouchableRipple 與既有 token，不改一般 AppButton |
@@ -50,7 +50,7 @@
 
 ## 手機參考圖的組件排列
 
-2026-09-29 的手機圖採單欄、柔和卡片、大而清楚的問候、孩子卡片內的切換入口、膠囊提問及問題捷徑，然後依次放今日重點、待辦、快速記錄及內容卡片。手機首頁沿此順序；底部保留四個原生主要入口，更多功能從帳戶選單開啟。Web 的窄尺寸另保留「更多」，不把桌面側欄縮小塞入手機。
+2026-09-29 的手機圖採單欄、柔和卡片、大而清楚的問候及孩子切換入口。2026-10-02 使用者要求首頁減量，移除膠囊提問及問題捷徑；左側孩子資料直接開原選單，不另放右側切換按鈕或卡片日期。初入首頁先展示問候及下方孩子卡片約 5 秒，再以 360 ms 上移孩子選擇區取代文字；右側完整圖片保持位置，今日重點、待辦、快速記錄及內容卡片跟隨自然高度。打開孩子選單時暫停；減少動態效果時保留閱讀時間後直接切換；離頁取消未完成計時和動畫。其他介面仍沿既有靜態設計。對話沿原底部導覽進入；四個原生主要入口和更多功能保留。Web 的窄尺寸另保留「更多」，不把桌面側欄縮小塞入手機。
 
 孩子卡片保留可換行的稱呼、年齡原值／基準及確認狀態；有真授權相片時才顯示，現在以首字头像代表合成資料。未知年齡不推算、未知過敏不寫「無過敏」。390 px 的快速記錄排四格，320 px 依內容寬度排两列；建草稿後核對共享。三個問題捷徑只準備問題並保護原草稿，不自動發送。
 
@@ -75,6 +75,8 @@ FE-W20 的 [首頁背景設定](APPEARANCE_HANDOFF.md) 復用 HomeBackground、�
 FE-W23 先精確還原登入改版前檔案，再從原左介紹／右登入結構調整：桌面右欄 36%／至少 400、表單最寬 500。圖片沿原 0.55 透明度，以原圖 x=1552 作固定可見右邊界，排除太陽並保留指尖；按容器等比 cover、垂直置中，變窄只由左側裁切。FE-W24 在桌面介紹文字下面加半透明模糊面板；900 以下移除整個宣傳故事／插畫，只保留表單上方品牌及登入內容。[現行交接](HANDOFF.md#responsive-scroll)／[還原證據](HANDOFF.md#login-original-reset)。
 
 FE-W24：Web 垂直捲動區使用共用 AppScrollView，透明軌道及 10 px 覆蓋區不佔內容寬度，滑塊顏色沿 controlOutline／ink；內容保持原本邊距，控制不放到滑塊下面。頁面、右欄及選單獨立捲動，保留原生鍵盤／滾輪及焦點；不以 stable gutter 預留空白。桌面首頁轉單欄時列採自然高度，區塊保留 16 間距，不用固定高度遮掉記錄。手機首頁原插畫 contain 完整展示，靠右、左緣及底部漸淡；自選背景維持 cover。研究及平台界線見 [捲動／模糊指引](.agents/skills/web-screen-delivery/references/scroll-and-blur.md)。
+
+FE-W27：650 以下的 Web 使用 6 px 覆蓋區、1 px 橫向內距及 border-box，實測可見滑塊 4 px；桌面沿既有樣式。手機仍可直接滑動內容，透明軌道不佔內容寬度、不造成左右跳動；原生沿 RN／系統捲動條。[局部驗證](verification/fe-w27-home/home-checks.json)。
 
 ## 照片與原文核對
 
