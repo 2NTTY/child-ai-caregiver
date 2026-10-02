@@ -89,7 +89,7 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
           backgroundColor: intro.interpolate({ inputRange: [0, 1], outputRange: [colors.white, "rgba(255,255,255,0)"] }),
         }]}>
         <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} homeIdentity homeDocked={docked}
-          loading={model.profileLoad === "loading"} onOpenChange={handlePickerOpen} />
+          homeTransition={docked ? undefined : intro} loading={model.profileLoad === "loading"} onOpenChange={handlePickerOpen} />
         {!child.profileConfirmed ? <Text style={styles.meta}>檔案待核對</Text> : null}
       </Animated.View> : null}
     </View>

@@ -7,7 +7,7 @@ import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
 import { AppButton, AppSelect, SectionCard, SectionHeader } from "../ui";
 import { AgentInboxView } from "./AgentInboxView";
 import { AgentRunView } from "./AgentRunView";
-import type { LocateAnswerSource } from "./AnswerSources";
+import type { LocateAnswerSource } from "../chat/AnswerSources";
 
 const scenarioOptions: { value: AgentRunScenario; label: string }[] = [
   { value: "standard", label: "建立任務及私人記憶" }, { value: "changes", label: "任務變更及共享記憶" },

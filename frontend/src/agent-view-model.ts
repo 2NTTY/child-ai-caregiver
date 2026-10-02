@@ -1,4 +1,5 @@
 // Display projections only. Formal payloads and receipts remain owned by src/shared/product-agent.ts.
+import type { ChatCitationView } from "./chat-view-model";
 export type AgentReadState = "idle" | "loading" | "ready" | "failed" | "denied";
 export type AgentRunStatus = "running" | "completed" | "stopped" | "unknown";
 export type AgentProposalStatus = "pending" | "accepted" | "dismissed" | "expired";
@@ -11,13 +12,7 @@ export interface AgentProposalView {
   details: AgentDetailRow[]; createdAt: string; expiresAt: string;
   result: { kind: "task" | "memory_fact"; version: number; label: string } | null;
 }
-export interface AgentCitationView {
-  id: string; title: string; section: string; publisher: string; excerpt: string;
-  classification: "official_guidance" | "recent_information" | "synthetic";
-  versionId: string; versionHash: string; checkedAt: string; fetchedAt: string;
-  lastSuccessfulCheckAt: string | null; sourceDate: string | null; validUntil: string | null;
-  applicabilityLabel: string; internalOnly: boolean; url: string | null;
-}
+export type AgentCitationView = ChatCitationView;
 export interface AgentRunView {
   id: string; childId: string; status: AgentRunStatus; createdAt: string;
   text: string; stopReasonLabel: string | null;

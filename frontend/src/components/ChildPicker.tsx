@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useMemo, useState } from "react";
+import { Animated, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Button, Portal, RadioButton, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
@@ -7,19 +7,21 @@ import { AppIcon } from "./AppIcon";
 import type { HomeChild } from "../view-model";
 import { chineseFont, colors, mobileLayout, radius, spacing, typeScale } from "../theme";
 
-export function ChildPicker({ children, selectedId, onSelect, compact = false, tiny = false, switchOnly = false, shortSwitchLabel = false, homeIdentity = false, homeDocked = false, loading = false, onOpenChange }: {
+export function ChildPicker({ children, selectedId, onSelect, compact = false, tiny = false, switchOnly = false, shortSwitchLabel = false, homeIdentity = false, homeDocked = false, homeTransition, loading = false, onOpenChange }: {
   children: HomeChild[]; selectedId: string | null; onSelect: (id: string) => void; compact?: boolean; tiny?: boolean; switchOnly?: boolean; shortSwitchLabel?: boolean;
-  homeIdentity?: boolean; homeDocked?: boolean; loading?: boolean; onOpenChange?: (open: boolean) => void;
+  homeIdentity?: boolean; homeDocked?: boolean; homeTransition?: Animated.Value; loading?: boolean; onOpenChange?: (open: boolean) => void;
 }) {
   const [visible, setVisible] = useState(false);
   const mobile = useWindowDimensions().width < mobileLayout.breakpoint;
   const selected = children.find(child => child.id === selectedId);
+  const copyGrow = useMemo(() => homeTransition?.interpolate({ inputRange: [0, 1], outputRange: [1, 0], extrapolate: "clamp" }), [homeTransition]);
   function setOpen(open: boolean) { setVisible(open); onOpenChange?.(open); }
   return <><Pressable accessibilityRole="button" accessibilityLabel={`選擇孩子，目前${selected?.displayName ?? "尚未有孩子"}`} accessibilityState={{ expanded: visible, disabled: children.length === 0 }} aria-expanded={visible} aria-disabled={children.length === 0} disabled={children.length === 0}
     onPress={() => setOpen(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, homeIdentity && styles.homeIdentity, homeIdentity && homeDocked && styles.homeDocked, visible && !homeIdentity && styles.open, children.length === 0 && styles.disabled, pressed && (homeIdentity ? styles.homePressed : styles.pressed)]}>
     {switchOnly ? <><AppIcon name="swap-horizontal" size={20} color={colors.deepTeal} /><Text style={styles.name}>{shortSwitchLabel ? "切換" : "切換孩子"}</Text></> : <>
       <View style={[styles.avatar, compact && styles.avatarCompact, tiny && styles.avatarTiny, homeIdentity && styles.homeAvatar]}><Text style={[styles.initial, homeIdentity && styles.homeInitial]}>{selected?.displayName.slice(0, 1) ?? "育"}</Text></View>
-      <View style={[styles.copy, homeIdentity && homeDocked && styles.homeDockedCopy]}><Text numberOfLines={1} style={[styles.name, homeIdentity && styles.homeName]}>{selected?.displayName ?? "尚未有孩子"}</Text>{!compact && selected ? <Text numberOfLines={homeIdentity ? undefined : 1} style={[styles.age, homeIdentity && styles.homeAge]}>{loading ? "正在讀取…" : homeIdentity ? selected.ageSummaryLabel ?? selected.ageLabel : selected.ageLabel}</Text> : null}</View>
+      <Animated.View style={[styles.copy, homeIdentity && homeDocked && styles.homeDockedCopy,
+        homeIdentity && copyGrow !== undefined && { flexBasis: "auto", flexGrow: copyGrow }]}><Text numberOfLines={1} style={[styles.name, homeIdentity && styles.homeName]}>{selected?.displayName ?? "尚未有孩子"}</Text>{!compact && selected ? <Text numberOfLines={homeIdentity ? undefined : 1} style={[styles.age, homeIdentity && styles.homeAge]}>{loading ? "正在讀取…" : homeIdentity ? selected.ageSummaryLabel ?? selected.ageLabel : selected.ageLabel}</Text> : null}</Animated.View>
       <AppIcon name="chevron-down" size={homeIdentity ? 20 : 18} color={visible ? colors.teal : colors.muted} />
     </>}
   </Pressable><Portal><Dialog visible={visible} onDismiss={() => setOpen(false)}><Dialog.Title>選擇孩子</Dialog.Title><Dialog.ScrollArea><ScrollView style={{ maxHeight: 360 }}>

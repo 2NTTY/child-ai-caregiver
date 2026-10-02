@@ -4,6 +4,21 @@
 
 ## 交付範圍及入口
 
+<a id="chat-source-reuse"></a>
+### FE-W28 補修：共用聊天來源及分隔線（2026-10-02）
+
+基線 `5980ff41a98b8f34574e308f99e42014423107de`，只修改 frontend，主責 B，沿 draft PR #73。使用者要求來源之間加線、取消淺綠底板，並要求日後每則聊天回覆沿用同一組件；本次直接核對 GitHub master `d3213e6` 的 P2 UI 清單，接口／來源型別 blob 未變，14 個其他 worktree 沒有 frontend 重疊。沒有新 API、依賴或換頁動畫。
+
+[AnswerSources／CitationText](src/components/chat/AnswerSources.tsx)、[上標 Web／原生 adapter](src/components/chat/CitationMarker.web.tsx) 和 [定位 Web／原生 adapter](src/components/chat/locateCitationSource.web.ts) 移到共用 `components/chat/`。[ChatPage](src/screens/chatScreen.tsx) 的回覆及 [AgentRunView](src/components/agent/AgentRunView.tsx) 均直接使用同一份組件；沒有為各畫面複製來源版式。通用來源投影 [ChatCitationView](src/chat-view-model.ts) 不依賴 Agent runtime 或合成 fixture，原 AgentCitationView 僅 alias 此型別，欄位、分類、日期格式及正式協定不變。
+
+**後續每則聊天的使用方式：** 在已按 Server／本人／孩子隔離的訊息子樹中，為每則 AI 回覆渲染一個 AnswerSources，使用該訊息穩定 id 作 key，傳入自己的 `sources`、正文 `children`、`onOpenSource` 和 `onLocateSource`；正文要呈現已核對的引用標記時用 CitationText。來源編號從每則回覆自己的清單開始，展開／收起、標示及 ref 均留在該組件實例，不用全頁共用 selected source，也不把示例標題／來源寫入組件。沒有來源時保留無來源提示，降級旗標仍由資料層傳入。正式 adapter 仍須核對真實編號映射、快照及開啟權限，不能由通用元件猜配來源或執行 API；資料及清理界線沿 [原交接](#answer-citations)／[正式移除清單](PRODUCTION_UI_HANDOFF.md)。
+
+來源面板取消淺綠背景、外框／圓角、12 px 四邊內距及額外橫向留白；相鄰分頁之間加 1 px × 20 px 細直線，首尾不加多餘線。觸控高度仍為 48 px，分頁下方留 8 px 捲動條位置，收起的來源區由原 102 px 縮至 80 px；實際有橫向捲動時核對選中底線與滑塊至少相隔 2 px。selected／located 底線、按下回饋、同項收起、12 項橫向捲動及正文瞬間定位保留。展開詳情分為「引用內容」「版本與核對」「日期與適用範圍」三組，同組欄位靠近、組間用細線及留白分隔；原資料不刪減。
+
+**首頁動畫補修：** [ChildPicker](src/components/ChildPicker.tsx) 的文字 flexGrow 與 [MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) 的外框／位置共用原 intro Animated.Value，由 1 連續變至 0，避免只在動畫結束切換 homeDockedCopy 而把箭嘴由右端瞬移左側。3 秒閱讀、360 ms 上移、一次會話、開選單暫停及中途點擊處理保留。649／390／320 的實際逐幀記錄分別有 21／22／21 個移動幀；原 649 結束時箭嘴跳動約 211 px，補修後三寬度切換終態均約 1 px，來源是外框移除。原生只驗 bundle，實機動畫待驗。證據：[改前](verification/fe-w28-home-motion/before-home-motion-checks.json)／[改後及會話檢查](verification/fe-w28-home-motion/child-control-checks.json)。
+
+**已驗／未驗：** typecheck、Web 35 路由及 Android Hermes 30 資產 export 通過；[沿用來源檢查](scripts/verify-answer-sources.mjs) 在 1440／1024／390／320 核對透明／零內距、3／12 項的相鄰分隔、48 px 目標、同項 click／Enter 收起、長回覆立即定位、不同訊息各自展開／切換且互不干擾、草稿及窄版 150% Web 文字。實際截圖已覆核；沒有 runtime error 或 API／模型請求。[本次證據](verification/fe-w28-source-separators/build-checks.json)／[四尺寸檢查](verification/fe-w28-source-separators/source-tabs-checks.json)。原業務／權限／unknown 及歷史證據保留，沒有全量重跑；使用者視覺、正式真來源接線及原生實機仍待驗收。
+
 <a id="shell-feedback"></a>
 ### FE-W28 統一捲動、頂部減量及首頁首幀（2026-10-02）
 
@@ -41,9 +56,9 @@ ChildPicker 的 `homeIdentity`／`homeDocked` 只改首頁：48 頭像、18／14
 
 原版基線 `20da9da6c6f7b5a56e45194b6dc0a3d4acd371a3`、交付 `02f76518624066cc75d4be3fde8b3166c6f3a6f7`；本次從交付版依使用者意見補修。只修改 frontend，沿 draft PR #73，主責 B。重新核對 GitHub master `d3213e6dde2b72fd34a955b5ceebab1f046f3f6e` 的 [P2 UI 交接](https://github.com/2NTTY/child-ai-caregiver/blob/d3213e6dde2b72fd34a955b5ceebab1f046f3f6e/docs/P2_UI_HANDOFF.md)、API 及 product-agent／knowledge 型別；blob 及 14 個其他 worktree 無 frontend 重疊的核對見 [本次 build-checks](verification/fe-w26-source-tabs/build-checks.json)。沒有新 API、依賴或正式 App 改動。
 
-[AnswerSources／CitationText](src/components/agent/AnswerSources.tsx) 復用 AgentCitationView，將每則回答的來源放在正文最底部，以細線分開，只留一個來源分頁組件，移除上方重複清單。分頁顯示編號及來源標題，過多時左右捲動；點一次展開，再點同一項收起，點另一項切換詳情。有效的【n】或 [n] 原文標記以較小上標呈現；點擊立即跳到該則訊息的來源面板，定位、聚焦及標示對應分頁，包括原先未露出的來源；不平滑捲動或自動展開關閉的詳情。內容區保留原片段、發布者／分類、版本校驗、日期、有效期及適用／內部範圍，可獨立捲動。開啟原來源仍只傳原 source id 給既有回調，不直接開未核對 URL。沒有 Portal 或中央來源 Dialog。
+[AnswerSources／CitationText](src/components/chat/AnswerSources.tsx) 復用來源 view model，將每則回答的來源放在正文最底部，以細線分開，只留一個來源分頁組件，移除上方重複清單。分頁顯示編號及來源標題，過多時左右捲動；點一次展開，再點同一項收起，點另一項切換詳情。有效的【n】或 [n] 原文標記以較小上標呈現；點擊立即跳到該則訊息的來源面板，定位、聚焦及標示對應分頁，包括原先未露出的來源；不平滑捲動或自動展開關閉的詳情。內容區保留原片段、發布者／分類、版本校驗、日期、有效期及適用／內部範圍，可獨立捲動。開啟原來源仍只傳原 source id 給既有回調，不直接開未核對 URL。沒有 Portal 或中央來源 Dialog。FE-W28 的底板／分隔線及共用入口由 [補修交接](#chat-source-reuse)接續；本節的驗證及截圖保留原版事實。
 
-[Web 上標](src/components/agent/CitationMarker.web.tsx) 用原生 sup／button 保留文字縮放及鍵盤焦點；[Web 定位](src/components/agent/locateCitationSource.web.ts) 復用實際 ancestor viewport 的 scrollIntoView，明確使用 instant，先定位橫向來源再捲到自己的面板；接近頁尾時沿可捲範圍顯示。展開詳情時也把面板捲到可見位置，避免落在 composer 下方。[原生上標](src/components/agent/CitationMarker.tsx) 及 [原生定位](src/components/agent/locateCitationSource.ts) 使用 RN inline View／Pressable、fontScale、ScrollView measureLayout／scrollTo；橫向來源及垂直面板皆 animated: false，沒有 DOM 或框架新增。小型平台差異按現有薄 adapter 處理；依 [RN Web Text](https://necolas.github.io/react-native-web/docs/text/)、[View](https://necolas.github.io/react-native-web/docs/view/) 及 [RN Text](https://reactnative.dev/docs/text) 核對，2026-10-02，文件核對不等於真機驗收。
+[Web 上標](src/components/chat/CitationMarker.web.tsx) 用原生 sup／button 保留文字縮放及鍵盤焦點；[Web 定位](src/components/chat/locateCitationSource.web.ts) 復用實際 ancestor viewport 的 scrollIntoView，明確使用 instant，先定位橫向來源再捲到自己的面板；接近頁尾時沿可捲範圍顯示。展開詳情時也把面板捲到可見位置，避免落在 composer 下方。[原生上標](src/components/chat/CitationMarker.tsx) 及 [原生定位](src/components/chat/locateCitationSource.ts) 使用 RN inline View／Pressable、fontScale、ScrollView measureLayout／scrollTo；橫向來源及垂直面板皆 animated: false，沒有 DOM 或框架新增。小型平台差異按現有薄 adapter 處理；依 [RN Web Text](https://necolas.github.io/react-native-web/docs/text/)、[View](https://necolas.github.io/react-native-web/docs/view/) 及 [RN Text](https://reactnative.dev/docs/text) 核對，2026-10-02，文件核對不等於真機驗收。
 
 **正式引用關聯：** 現有 AgentPresentation／ProductAgentResult 提供 text 和 KnowledgeEvidence 清單，沒有逐句編號、offset 或映射欄位。本元件只呈現原文中有對應清單項的標記；未對應／超出範圍的編號保留原文字，不自動附引用。正式 adapter 須確認正文編號與來源的真實關聯，沿原清單次序及唯一穩定 id 投影，不能由前端按句子、關鍵字或來源標題猜配。沒有映射時仍可呈現底部來源，不製造文內證據。[三來源 fixture](src/preview/answer-citations.ts) 和運行示例只作合成版式，沒有真知識證據或健康建議。
 

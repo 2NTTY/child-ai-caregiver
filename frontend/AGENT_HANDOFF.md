@@ -1,6 +1,6 @@
 # Agent 對話及私人結果交接
 
-**FE-W26 最新來源版式（2026-10-02）：** 回覆底部以分隔線接一個來源標題分頁組件，沒有重複清單；正文上標立即跳到該則回覆的來源面板，定位及聚焦相應分頁。點分頁展開，再點同一項收起，多個來源可左右捲動，沒有中央 Dialog。共享 [AnswerSources／CitationText](src/components/agent/AnswerSources.tsx)，保留原快照詳情及 stable source id 開啟回調。四尺寸／長回覆／12 項來源及窄版放大文字、Web／Android export 通過；原 Agent 操作／權限證據沿用未改業務。現有正式 text／KnowledgeEvidence 沒有逐句映射，主聊天須核對真實編號關聯，不能把 fixture 或猜配作證據；平台 port、失敗修正及未驗項見 [總交接](HANDOFF.md#answer-citations)。FE-W27 首頁不再放提問欄／捷徑，對話沿既有導覽進入，草稿保留。
+**FE-W28 最新來源版式（2026-10-02）：** 回覆底部以分隔線接一個來源標題分頁組件，沒有重複清單或淺綠底板；相鄰來源用細直線分隔，底線與滑塊分開；詳情按引用、版本核對、日期適用三組及細線整理。正文上標立即跳到自己的來源面板；點分頁展開，再點同一項收起，多個來源可左右捲動，沒有中央 Dialog。基本聊天與 Agent 共用 [AnswerSources／CitationText](src/components/chat/AnswerSources.tsx) 及 [ChatCitationView](src/chat-view-model.ts)，不讀 Agent／fixture 狀態，每則訊息獨立；保留快照詳情及 stable source id 回調。四尺寸／長回覆／12 項、跨訊息互不干擾、窄版放大文字及 Web／Android export 通過；原 Agent 操作／權限證據沿用未改業務。現有正式 text／KnowledgeEvidence 沒有逐句映射，主聊天須核對真實編號關聯，不能把 fixture 或猜配作證據；復用接線方式見 [總交接](HANDOFF.md#chat-source-reuse)。FE-W27 首頁不再放提問欄／捷徑，對話沿既有導覽進入，草稿保留。
 
 更新：2026-10-02。FE-W09 前置為已 review 的前端 `83106c0`（draft PR #68），分支 `codex/fe-w09-agent-conversation`。正式契約核對穩定主線 `90dacd4e5c0a8be9e490fa7d94830ea369c57521`；只讀 API／控制器，沒有改 Server、正式 App 或根文件。
 

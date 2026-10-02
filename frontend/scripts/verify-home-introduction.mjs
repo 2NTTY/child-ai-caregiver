@@ -35,6 +35,22 @@ async function checkDocked(page, label) {
   await assertFits(page, label);
   return control;
 }
+async function observeMotion(page) {
+  return page.evaluate(() => new Promise((resolve, reject) => {
+    const card = document.querySelector('[data-testid="mobile-child-card"]'), greeting = document.querySelector('[data-testid="mobile-home-greeting"]');
+    const began = performance.now(), frames = []; let settled = 0;
+    function sample() {
+      const button = card.querySelector('[role="button"]'), box = node => { const b = node.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height }; };
+      const hidden = greeting.getAttribute('aria-hidden') === 'true';
+      frames.push({ at: performance.now() - began, hidden, opacity: Number(getComputedStyle(greeting).opacity), grow: Number(getComputedStyle(button.children[1]).flexGrow), avatar: box(button.children[0]), arrow: box(button.children[2]) });
+      if (hidden) settled++; else settled = 0;
+      if (settled >= 3) resolve(frames);
+      else if (performance.now() - began > 12000) reject(new Error('Homepage animation did not settle'));
+      else requestAnimationFrame(sample);
+    }
+    sample();
+  }));
+}
 try {
   await mkdir(directory, { recursive: true });
   for (const [width, reduced] of [[649, false], [390, false], [320, false], [390, true]]) {
@@ -44,6 +60,7 @@ try {
     const card = cardFor(page), header = page.getByTestId("mobile-home-header");
     await page.getByRole("heading", { name: greetingName, exact: true }).waitFor();
     const initial = await card.boundingBox(), image = await header.getByTestId("home-background-image").boundingBox();
+    const motion = reduced ? null : observeMotion(page);
     const start = Date.now();
     await page.waitForTimeout(1800);
     assert.equal(await page.getByTestId("mobile-home-greeting").evaluate(e => getComputedStyle(e).opacity), "1");
@@ -60,6 +77,15 @@ try {
     await page.getByRole("heading", { name: greetingName, exact: true }).waitFor({ state: "hidden", timeout: 6500 });
     assert.ok(Date.now() - start >= 2800, "The first entry keeps approximately three seconds of reading time");
     const control = await checkDocked(page, "docked child " + suffix);
+    let motionMetrics = null;
+    if (motion) {
+      const frames = await motion, settledAt = frames.findIndex(frame => frame.hidden), before = frames[settledAt - 1], after = frames[settledAt];
+      const moving = frames.filter(frame => !frame.hidden && frame.grow > 0 && frame.grow < 1);
+      assert.ok(moving.length >= 5, 'Observe the complete motion rather than only its final screenshot');
+      assert.ok(Math.abs(after.arrow.x - before.arrow.x) <= 2, 'The arrow cannot jump sideways when docking switches');
+      assert.ok(Math.abs(after.avatar.x - before.avatar.x) <= 2 && Math.abs(after.avatar.y - before.avatar.y) <= 2, 'The child identity cannot jump at the final frame');
+      motionMetrics = { movingFrames: moving.length, finalArrowDelta: after.arrow.x - before.arrow.x, finalAvatarDelta: { x: after.avatar.x - before.avatar.x, y: after.avatar.y - before.avatar.y }, frames: frames.filter(frame => frame.opacity < 1 || frame.hidden) };
+    }
     assert.ok(control.button.y < initial.y - 80);
     assert.deepEqual(await header.getByTestId("home-background-image").boundingBox(), image, "Artwork remains fixed during the introduction");
     await page.screenshot({ path: resolve(directory, "child-docked-" + suffix + ".png") });
@@ -97,7 +123,7 @@ try {
       assert.equal(await page.getByRole("heading", { name: greetingName, exact: true }).count(), 0);
       await checkDocked(page, "649/650 remount");
     }
-    metrics.push({ width, reduced, initial, docked: control, opened });
+    metrics.push({ width, reduced, initial, docked: control, opened, motion: motionMetrics });
     passed.push(suffix + ": reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return" + (width === 320 ? ", 150% text" : "") + (width === 649 ? ", breakpoint remount" : ""));
     await page.close();
   }

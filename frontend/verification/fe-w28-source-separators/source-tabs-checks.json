@@ -1,0 +1,153 @@
+{
+  "at": "2026-10-02T12:02:15.707Z",
+  "scope": "Synthetic frontend only; reused source checks plus compact presentation and independent message instances; no API/model calls or device acceptance",
+  "passed": [
+    "sources 1440: shared chat and Agent source presentation without enclosing background/border/padding, 1px separators only between tabs, 48px tab targets, independent per-message expansion and citation jumps, one named strip, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, offscreen focus/location, preserved draft",
+    "sources 1024: shared chat and Agent source presentation without enclosing background/border/padding, 1px separators only between tabs, 48px tab targets, independent per-message expansion and citation jumps, one named strip, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, offscreen focus/location, preserved draft",
+    "sources 390: shared chat and Agent source presentation without enclosing background/border/padding, 1px separators only between tabs, 48px tab targets, independent per-message expansion and citation jumps, one named strip, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, offscreen focus/location, preserved draft, enlarged text",
+    "sources 320: shared chat and Agent source presentation without enclosing background/border/padding, 1px separators only between tabs, 48px tab targets, independent per-message expansion and citation jumps, one named strip, same-tab click/Enter collapse, visible cross-tab details, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, offscreen focus/location, preserved draft, enlarged text"
+  ],
+  "appearance": [
+    {
+      "width": 1440,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 80
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 80
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    },
+    {
+      "width": 1024,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 80
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 80
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    },
+    {
+      "width": 390,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 80
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 80
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    },
+    {
+      "width": 320,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 80
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 80
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    }
+  ],
+  "failures": []
+}

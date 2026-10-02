@@ -10,7 +10,7 @@ import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
 import { AppButton, SectionCard, SectionHeader } from "../ui";
-import { AnswerSources, CitationText, type LocateAnswerSource } from "./AnswerSources";
+import { AnswerSources, CitationText, type LocateAnswerSource } from "../chat/AnswerSources";
 
 type Tone = "neutral" | "saved" | "warning" | "error";
 const sharedConfirmationLabel = "我已核對內容及對象，明確同意寫入家庭共享資料";
