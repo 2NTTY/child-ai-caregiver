@@ -1,0 +1,555 @@
+{
+  "at": "2026-10-03T17:26:22.949Z",
+  "scope": "Synthetic frontend only; actual quote-return pointer/keyboard, clamped context alignment and visible focus plus reused source checks; no API/model calls or device acceptance",
+  "passed": [
+    "reading 1440: reusable plain chat and Agent source disclosures, reading before optional technical fields, actual pointer/Enter return to the original quote with visible focus and clamped center alignment, stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft",
+    "reading 1024: reusable plain chat and Agent source disclosures, reading before optional technical fields, actual pointer/Enter return to the original quote with visible focus and clamped center alignment, stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft",
+    "reading 390: reusable plain chat and Agent source disclosures, reading before optional technical fields, actual pointer/Enter return to the original quote with visible focus and clamped center alignment, stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft, enlarged text",
+    "reading 320: reusable plain chat and Agent source disclosures, reading before optional technical fields, actual pointer/Enter return to the original quote with visible focus and clamped center alignment, stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft, enlarged text"
+  ],
+  "appearance": [
+    {
+      "width": 1440,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    },
+    {
+      "width": 1024,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    },
+    {
+      "width": 390,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    },
+    {
+      "width": 320,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    }
+  ],
+  "returns": [
+    {
+      "width": 1440,
+      "scenario": "short reply with collapsed sources",
+      "activation": "pointer",
+      "before": {
+        "scroll": 451,
+        "expected": 451,
+        "visible": true,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 451,
+        "expected": 451,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 1440,
+      "scenario": "quote with open source",
+      "activation": "pointer",
+      "before": {
+        "scroll": 711,
+        "expected": 614,
+        "visible": true,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 614,
+        "expected": 614,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 1440,
+      "scenario": "1800px extended reply",
+      "activation": "pointer",
+      "before": {
+        "scroll": 2251,
+        "expected": 476,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 476,
+        "expected": 476,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 1440,
+      "scenario": "original quote after switching the detail source",
+      "activation": "Enter",
+      "before": {
+        "scroll": 2511,
+        "expected": 476,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 476,
+        "expected": 476,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 1024,
+      "scenario": "short reply with collapsed sources",
+      "activation": "pointer",
+      "before": {
+        "scroll": 451,
+        "expected": 451,
+        "visible": true,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 451,
+        "expected": 451,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 1024,
+      "scenario": "quote with open source",
+      "activation": "pointer",
+      "before": {
+        "scroll": 711,
+        "expected": 614,
+        "visible": true,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 614,
+        "expected": 614,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 1024,
+      "scenario": "1800px extended reply",
+      "activation": "pointer",
+      "before": {
+        "scroll": 2251,
+        "expected": 476,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 476,
+        "expected": 476,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 1024,
+      "scenario": "original quote after switching the detail source",
+      "activation": "Enter",
+      "before": {
+        "scroll": 2511,
+        "expected": 476,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 476,
+        "expected": 476,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 390,
+      "scenario": "short reply with collapsed sources",
+      "activation": "pointer",
+      "before": {
+        "scroll": 874,
+        "expected": 874,
+        "visible": true,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 874,
+        "expected": 874,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 390,
+      "scenario": "quote with open source",
+      "activation": "pointer",
+      "before": {
+        "scroll": 1138,
+        "expected": 907.5,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 908,
+        "expected": 907.5,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 390,
+      "scenario": "1800px extended reply",
+      "activation": "pointer",
+      "before": {
+        "scroll": 2674,
+        "expected": 721.5,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 722,
+        "expected": 721.5,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 390,
+      "scenario": "original quote after switching the detail source",
+      "activation": "Enter",
+      "before": {
+        "scroll": 2938,
+        "expected": 721.5,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 722,
+        "expected": 721.5,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 320,
+      "scenario": "short reply with collapsed sources",
+      "activation": "pointer",
+      "before": {
+        "scroll": 1088,
+        "expected": 1059.5,
+        "visible": true,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 1060,
+        "expected": 1059.5,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 320,
+      "scenario": "quote with open source",
+      "activation": "pointer",
+      "before": {
+        "scroll": 1304,
+        "expected": 1059.5,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 1060,
+        "expected": 1059.5,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 320,
+      "scenario": "1800px extended reply",
+      "activation": "pointer",
+      "before": {
+        "scroll": 2888,
+        "expected": 873.5,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 874,
+        "expected": 873.5,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    },
+    {
+      "width": 320,
+      "scenario": "original quote after switching the detail source",
+      "activation": "Enter",
+      "before": {
+        "scroll": 3104,
+        "expected": 873.5,
+        "visible": false,
+        "focused": false,
+        "outline": "none",
+        "outlineWidth": "3px",
+        "width": 30.28125,
+        "height": 15
+      },
+      "after": {
+        "scroll": 874,
+        "expected": 873.5,
+        "visible": true,
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "1px",
+        "width": 30.28125,
+        "height": 15
+      }
+    }
+  ],
+  "failures": []
+}

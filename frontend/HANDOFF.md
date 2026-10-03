@@ -20,6 +20,10 @@ AgentConversationPreview 的合成活動／候選預設收起，隱藏內容保�
 
 首輪舊 composer 檢查量到透明內層、照片離頁未確認草稿，以及窄版操作腳本沒有展開新 disclosure；已先核對失敗畫面／DOM，更新為實際底色、明確捨棄及真正展開。沒有刪除離頁保護、放寬原操作／草稿斷言或把 timeout 當成通過。正式 history／stream／引用映射缺口沿原研究及交接，由主聊天接既有權限和協定；品牌外殼與換頁動畫未改。
 
+**引用返回補修（2026-10-04）：** 基線為 #81 合併 `7fe20907083b689dcd0b4c38da833a4185ec9d4f`。使用者發現「返回引用句」看似沒有作用；實際指標點擊重現 390／1440 的短回覆捲動位置不變、只改焦點。原 helper 使用 nearest，而 Web 引用數字沒有可見焦點標示；之前只驗程式 click／焦點，未驗這個可見回饋，證據不足。現在同一引用 ref 明確要求 instant 居中定位上下文，受可捲範圍限制；短回覆已在畫面時以 1 px 定位框標示原引用，失焦即消失、不改行高。來源面板仍按 start 定位；展開／收合及來源切換不覆蓋最初引用位置。只補共用 Web 顯示層，沒有改 wire contract、原生 helper 或時間線跟隨規則。
+
+四尺寸的真實指標／Enter 檢查通過：短回覆、來源展開、延長 1800 px 回覆，以及引用來源 1 後改看來源 3 再返回原引用；核對可視位置、焦點框、行內尺寸和兩幀後位置。沿原來源檢查補驗 12 項橫捲／獨立訊息／穩定標頭與草稿；[返回量度及來源檢查](verification/fe-w36-citation-return/source-tabs-checks.json)／[窄版返回畫面](verification/fe-w36-citation-return/returned-quote-390.png)／[建置及範圍](verification/fe-w36-citation-return/build-checks.json)。首輪焦點框檢查抓到改的是原生檔而非 Web adapter，已依實際 DOM 改正並完成補驗。typecheck 和 35 路由 Web export 通過；沒有另跑 Android bundle、正式 API、實機或讀屏驗收。這是 FE-W36 的局部修復，不新增 PLAN 工作階段。
+
 ## 較早工作包的交接背景
 
 更新：2026-10-03。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。

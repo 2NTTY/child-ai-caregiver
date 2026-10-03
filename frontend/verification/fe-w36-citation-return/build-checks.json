@@ -1,0 +1,38 @@
+{
+  "at": "2026-10-04T01:30:08.2543574+08:00",
+  "baseline": "7fe20907083b689dcd0b4c38da833a4185ec9d4f",
+  "branch": "codex/fe-w36-citation-return",
+  "scope": "Isolated frontend Web citation-return repair only; no Server, API, native device, screen-reader or user visual acceptance",
+  "typecheck": "Passed: tsc --noEmit",
+  "webExport": {
+    "result": "passed",
+    "staticRoutes": 35,
+    "bundle": "entry-694581185ec1802b2f8d53bff208dd87.js",
+    "sha256": "65d8dd92c1987a0952752f90f933ae93c4c56271c3bd74b4bb0ed8fa62d28d5c"
+  },
+  "sourceChecks": "source-tabs-checks.json: 1440/1024/390/320; real pointer/Enter; short/extended reply; changed selected source; visible focus; unchanged inline bounds; 12 sources; separate message state; draft",
+  "code": [
+    {
+      "path": "frontend/src/components/chat/AnswerSources.tsx",
+      "sha256": "0a3eb60e346c7fdb88fea12260b5dd82357be04b12ed2ae4de5b7865b1390151"
+    },
+    {
+      "path": "frontend/src/components/chat/CitationMarker.web.tsx",
+      "sha256": "32db4ae97f5a638895ff7115743407e0ac20cd259b4495db7648c735a266435a"
+    },
+    {
+      "path": "frontend/src/components/chat/locateCitationSource.web.ts",
+      "sha256": "c256a4e1d86476dc47521add2fd7ad33561c57f0299dd08e6b1a03d0ff26437a"
+    },
+    {
+      "path": "frontend/scripts/verify-answer-sources.mjs",
+      "sha256": "7b9591c9789255acc031cfc660565b87ba5759a8b718653cc144ae4d64d68fa5"
+    }
+  ],
+  "notRun": [
+    "Android export: native implementation unchanged",
+    "Formal API/Agent E2E",
+    "Native devices and screen readers",
+    "User visual acceptance"
+  ]
+}
