@@ -1,0 +1,94 @@
+{
+  "at": "2026-10-02T18:28:17.259Z",
+  "scope": "Local synthetic homepage animation and typography only. No real authentication, API, model, notification or native device acceptance.",
+  "baseline": "ef0448e2a91dd90790a6ed38f9e0688668760a10",
+  "branch": "codex/fe-w31-home-motion",
+  "githubAccount": "CherylNg-2526",
+  "uiContractBlob": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+  "otherWorktreesWithFrontendChanges": 0,
+  "environment": {
+    "node": "v24.11.0",
+    "browser": "Microsoft Edge 154.0.4258.48",
+    "expo": "57.0.24",
+    "reactNative": "0.86.3"
+  },
+  "checks": {
+    "typecheck": "passed",
+    "webExport": {
+      "routes": 35,
+      "bundle": "entry-c3c18a95156e4a7e3243226abf474361.js",
+      "sha256": "7915f4ba627baa56130163a348bf3255de4271d05046d77e2320eb7fbce9c9e1"
+    },
+    "androidExport": {
+      "assets": 30,
+      "bundle": "entry-43239cb1f2d8c1d810438e33aa03f258.hbc",
+      "sha256": "640448e197ccb921d617373fba670e4493c254993e294782a54f0626eefcaa38"
+    },
+    "localUi": {
+      "passed": 8,
+      "failures": [],
+      "reportSha256": "734a8ed3186b291f53309e8c15822e16c097dd75263279a952e1420a86a3c95b"
+    }
+  },
+  "motion": [
+    {
+      "width": 649,
+      "movingFrames": 19,
+      "maximumRightGap": 11.953125,
+      "finalCardWidthDelta": 0.203125,
+      "finalArrowDelta": 0.203125
+    },
+    {
+      "width": 390,
+      "movingFrames": 18,
+      "maximumRightGap": 11.953125,
+      "finalCardWidthDelta": 0.21875,
+      "finalArrowDelta": 0.21875
+    },
+    {
+      "width": 320,
+      "movingFrames": 17,
+      "maximumRightGap": 11.875,
+      "finalCardWidthDelta": 0.234375,
+      "finalArrowDelta": 0.234375
+    }
+  ],
+  "desktopTypography": "HomeDashboard.tsx unchanged from baseline; shared toolbar proportions checked at 1440/1024.",
+  "failedAttempts": [
+    {
+      "failure": "RN 0.86 typecheck rejected StyleSheet.absoluteFillObject.",
+      "resolution": "Used existing absolute positioning style properties."
+    },
+    {
+      "failure": "The first fixed-width docked layout clipped the enlarged child name to 43 px while it needed 54 px at 320.",
+      "resolution": "Docked container now uses intrinsic width with a 62% maximum; the 150% overflow check remains and passes."
+    }
+  ],
+  "sourceSha256": {
+    "src/components/MobileHomeDashboard.tsx": "8af2202d6e0b1a63f58b093b9145659923f15c8739a8aa7365997b509eef77ae",
+    "src/components/ChildPicker.tsx": "8a6e6b26386303972349c5fc81eb87357fcced29cd9a51e9ba2e13d5f27a73b3",
+    "scripts/verify-home-introduction.mjs": "10d9a7c87dc62d5d6fdd9ef6a83c48f5be3afb9c245e99a4f75d23e0526730f6"
+  },
+  "screenshotSha256": {
+    "child-320-large-text.png": "ea677141fa7cec57b324cc8d1e7cac6d20bdf67a7781e394eff47e4b78ee497b",
+    "child-docked-320.png": "3f8042afbf5df8f98e77fc3f69c4c5f7b08b0702683a1490adffc5b8f2154b27",
+    "child-docked-390-pointer.png": "b9c521311f87680b1eac25c4ea60b6d38ef3319f68e8e9b21bfb382b4f376d43",
+    "child-docked-390-reduced.png": "53221f1e5748cbdbf00bbaea1d873307c08b288db8c6211a30e415e5748765b7",
+    "child-docked-390.png": "b2dbac847998dfe902482ca638210f28559d8dd75ecff4d1b3d8de5340b4a044",
+    "child-docked-649.png": "65ecc1fb1f28b48aa3565b63696ff579703836e4bc91ada59f26219962221c76",
+    "child-moving-390.png": "6ff4209aa0064e7fd2cc8142532cb1ddfc15cdbd17107aebe029d39b3ace7e8d",
+    "child-open-320.png": "6a96756e08f4953a54b0531a5ebe682fc13968ca67897c86fc47a9eb4cad9eb0",
+    "child-open-390-reduced.png": "a55f03b7e814a35fb2f7bd0da50b2cb66c9377d0f36dfddbcafaad58e5ecd161",
+    "child-open-390.png": "3d2313a70602da4dd0691af0791e2e6924d60c61c31ea20373bd5013c664e0ec",
+    "child-open-649.png": "cb9387e029c775cbdc2a47703744860231fac12829c071364aeee5bbc2e68a22",
+    "child-reading-320.png": "e3cd517c8505624e9e27a7a21112abea7aa0b375b0f96d4070fb7030d194a9a6",
+    "child-reading-390-reduced.png": "15bb2d173ccf03e410e7bc0342164480bd762bd2170bfba595b2369bfa696e79",
+    "child-reading-390.png": "f3e7bee3fb3a71ed81d4941cc0c559cda903f2e50380e065458ba6a29ebaa017",
+    "child-reading-649.png": "71c0230ec7e6f0a18f01433a75ab49751a31a01c0b8f69db6437ed6f57b86473"
+  },
+  "pending": [
+    "User visual confirmation of revised animation and phone greeting.",
+    "Real login-session integration.",
+    "Native device animation/font acceptance."
+  ]
+}

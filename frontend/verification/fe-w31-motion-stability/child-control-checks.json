@@ -1,0 +1,5643 @@
+{
+  "at": "2026-10-03T08:03:59.436Z",
+  "scope": "Synthetic local UI; route/session-boundary lifecycle, child selector and targeted reflow only. No real authentication, API, model, notification or native device acceptance.",
+  "passed": [
+    "649: reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return, breakpoint remount",
+    "605: reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return",
+    "390: reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return",
+    "320: reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return, 150% text",
+    "390-reduced: reading delay, fixed artwork, larger child control, close chevron, transparent open state, Escape/selection, no replay on route return",
+    "Early route departure consumes the first entry; returning stays docked past the old timer. A fresh dashboard preview boundary allows one new introduction; no actual login was performed.",
+    "Clicking during the transition settles to the docked layout without a reset or replay.",
+    "1440: shared toolbar picker proportions, keyboard dialog and desktop-to-mobile without replay",
+    "1024: shared toolbar picker proportions, keyboard dialog and desktop-to-mobile without replay"
+  ],
+  "metrics": [
+    {
+      "width": 649,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 617,
+        "height": 96
+      },
+      "docked": {
+        "card": {
+          "x": 16,
+          "y": 147,
+          "width": 170.234375,
+          "height": 72,
+          "top": 147,
+          "right": 186.234375,
+          "bottom": 219,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 147,
+          "width": 170.234375,
+          "height": 72,
+          "top": 147,
+          "right": 186.234375,
+          "bottom": 219,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 159,
+          "width": 48,
+          "height": 48,
+          "top": 159,
+          "right": 64,
+          "bottom": 207,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 159,
+          "width": 86.234375,
+          "height": 48,
+          "top": 159,
+          "right": 158.234375,
+          "bottom": 207,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 173,
+          "width": 20,
+          "height": 20,
+          "top": 173,
+          "right": 186.234375,
+          "bottom": 193,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "opened": {
+        "card": {
+          "x": 16,
+          "y": 147,
+          "width": 170.234375,
+          "height": 72,
+          "top": 147,
+          "right": 186.234375,
+          "bottom": 219,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 147,
+          "width": 170.234375,
+          "height": 72,
+          "top": 147,
+          "right": 186.234375,
+          "bottom": 219,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 159,
+          "width": 48,
+          "height": 48,
+          "top": 159,
+          "right": 64,
+          "bottom": 207,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 159,
+          "width": 86.234375,
+          "height": 48,
+          "top": 159,
+          "right": 158.234375,
+          "bottom": 207,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 173,
+          "width": 20,
+          "height": 20,
+          "top": 173,
+          "right": 186.234375,
+          "bottom": 193,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "motion": {
+        "movingFrames": 18,
+        "finalCardWidthDelta": 0,
+        "finalCardHeightDelta": 0,
+        "endingFrames": 12,
+        "maximumRightGap": 11.921875,
+        "finalArrowDelta": 0,
+        "finalAvatarDelta": {
+          "x": 0,
+          "y": -0.015625
+        },
+        "frames": [
+          {
+            "at": 2908.800000011921,
+            "hidden": false,
+            "opacity": 0.999912,
+            "card": {
+              "x": 16,
+              "y": 284.984375,
+              "width": 616.96875,
+              "height": 95.96875,
+              "right": 632.96875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.984375,
+              "width": 616.96875,
+              "height": 95.96875,
+              "right": 632.96875
+            },
+            "avatar": {
+              "x": 27.984375,
+              "y": 308.96875,
+              "width": 48,
+              "height": 48,
+              "right": 75.984375
+            },
+            "arrow": {
+              "x": 600.984375,
+              "y": 322.96875,
+              "width": 20,
+              "height": 20,
+              "right": 620.984375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2924.5,
+            "hidden": false,
+            "opacity": 0.997321,
+            "card": {
+              "x": 16,
+              "y": 284.796875,
+              "width": 616.171875,
+              "height": 95.9375,
+              "right": 632.171875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.796875,
+              "width": 616.171875,
+              "height": 95.9375,
+              "right": 632.171875
+            },
+            "avatar": {
+              "x": 27.96875,
+              "y": 308.765625,
+              "width": 48,
+              "height": 48,
+              "right": 75.96875
+            },
+            "arrow": {
+              "x": 600.203125,
+              "y": 322.765625,
+              "width": 20,
+              "height": 20,
+              "right": 620.203125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2941.300000011921,
+            "hidden": false,
+            "opacity": 0.989026,
+            "card": {
+              "x": 16,
+              "y": 284.1875,
+              "width": 613.609375,
+              "height": 95.84375,
+              "right": 629.609375
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.1875,
+              "width": 613.609375,
+              "height": 95.84375,
+              "right": 629.609375
+            },
+            "avatar": {
+              "x": 27.921875,
+              "y": 308.109375,
+              "width": 48,
+              "height": 48,
+              "right": 75.921875
+            },
+            "arrow": {
+              "x": 597.6875,
+              "y": 322.109375,
+              "width": 20,
+              "height": 20,
+              "right": 617.6875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2957.9000000059605,
+            "hidden": false,
+            "opacity": 0.968245,
+            "card": {
+              "x": 16,
+              "y": 282.640625,
+              "width": 607.203125,
+              "height": 95.59375,
+              "right": 623.203125
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 282.640625,
+              "width": 607.203125,
+              "height": 95.59375,
+              "right": 623.203125
+            },
+            "avatar": {
+              "x": 27.796875,
+              "y": 306.4375,
+              "width": 48,
+              "height": 48,
+              "right": 75.796875
+            },
+            "arrow": {
+              "x": 591.40625,
+              "y": 320.4375,
+              "width": 20,
+              "height": 20,
+              "right": 611.40625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2974.9000000059605,
+            "hidden": false,
+            "opacity": 0.930517,
+            "card": {
+              "x": 16,
+              "y": 279.875,
+              "width": 595.5625,
+              "height": 95.15625,
+              "right": 611.5625
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 279.875,
+              "width": 595.5625,
+              "height": 95.15625,
+              "right": 611.5625
+            },
+            "avatar": {
+              "x": 27.578125,
+              "y": 303.453125,
+              "width": 48,
+              "height": 48,
+              "right": 75.578125
+            },
+            "arrow": {
+              "x": 579.984375,
+              "y": 317.453125,
+              "width": 20,
+              "height": 20,
+              "right": 599.984375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2992.4000000059605,
+            "hidden": false,
+            "opacity": 0.870787,
+            "card": {
+              "x": 16,
+              "y": 275.5,
+              "width": 577.125,
+              "height": 94.4375,
+              "right": 593.125
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 275.5,
+              "width": 577.125,
+              "height": 94.4375,
+              "right": 593.125
+            },
+            "avatar": {
+              "x": 27.21875,
+              "y": 298.71875,
+              "width": 48,
+              "height": 48,
+              "right": 75.21875
+            },
+            "arrow": {
+              "x": 561.90625,
+              "y": 312.71875,
+              "width": 20,
+              "height": 20,
+              "right": 581.90625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3009.5999999940395,
+            "hidden": false,
+            "opacity": 0.784,
+            "card": {
+              "x": 16,
+              "y": 269.171875,
+              "width": 550.359375,
+              "height": 93.40625,
+              "right": 566.359375
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 269.171875,
+              "width": 550.359375,
+              "height": 93.40625,
+              "right": 566.359375
+            },
+            "avatar": {
+              "x": 26.703125,
+              "y": 291.875,
+              "width": 48,
+              "height": 48,
+              "right": 74.703125
+            },
+            "arrow": {
+              "x": 535.65625,
+              "y": 305.875,
+              "width": 20,
+              "height": 20,
+              "right": 555.65625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3024.199999988079,
+            "hidden": false,
+            "opacity": 0.657,
+            "card": {
+              "x": 16,
+              "y": 259.96875,
+              "width": 511.171875,
+              "height": 91.875,
+              "right": 527.171875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 259.96875,
+              "width": 511.171875,
+              "height": 91.875,
+              "right": 527.171875
+            },
+            "avatar": {
+              "x": 25.9375,
+              "y": 281.90625,
+              "width": 48,
+              "height": 48,
+              "right": 73.9375
+            },
+            "arrow": {
+              "x": 497.234375,
+              "y": 295.90625,
+              "width": 20,
+              "height": 20,
+              "right": 517.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3041,
+            "hidden": false,
+            "opacity": 0.529492,
+            "card": {
+              "x": 16,
+              "y": 250.890625,
+              "width": 471.84375,
+              "height": 90.34375,
+              "right": 487.84375
+            },
+            "frameOpacity": 0.911866,
+            "frame": {
+              "x": 16,
+              "y": 250.890625,
+              "width": 471.84375,
+              "height": 90.34375,
+              "right": 487.84375
+            },
+            "avatar": {
+              "x": 25.171875,
+              "y": 272.0625,
+              "width": 48,
+              "height": 48,
+              "right": 73.171875
+            },
+            "arrow": {
+              "x": 458.671875,
+              "y": 286.0625,
+              "width": 20,
+              "height": 20,
+              "right": 478.671875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3058.0999999940395,
+            "hidden": false,
+            "opacity": 0.336438,
+            "card": {
+              "x": 16,
+              "y": 237.234375,
+              "width": 412.28125,
+              "height": 88.03125,
+              "right": 428.28125
+            },
+            "frameOpacity": 0.670548,
+            "frame": {
+              "x": 16,
+              "y": 237.234375,
+              "width": 412.28125,
+              "height": 88.03125,
+              "right": 428.28125
+            },
+            "avatar": {
+              "x": 24.015625,
+              "y": 257.25,
+              "width": 48,
+              "height": 48,
+              "right": 72.015625
+            },
+            "arrow": {
+              "x": 400.265625,
+              "y": 271.25,
+              "width": 20,
+              "height": 20,
+              "right": 420.265625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3074.199999988079,
+            "hidden": false,
+            "opacity": 0.0967037,
+            "card": {
+              "x": 16,
+              "y": 220.640625,
+              "width": 338.328125,
+              "height": 85.15625,
+              "right": 354.328125
+            },
+            "frameOpacity": 0.37088,
+            "frame": {
+              "x": 16,
+              "y": 220.640625,
+              "width": 338.328125,
+              "height": 85.15625,
+              "right": 354.328125
+            },
+            "avatar": {
+              "x": 22.578125,
+              "y": 239.21875,
+              "width": 48,
+              "height": 48,
+              "right": 70.578125
+            },
+            "arrow": {
+              "x": 327.75,
+              "y": 253.21875,
+              "width": 20,
+              "height": 20,
+              "right": 347.75
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3091.9000000059605,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 203.40625,
+              "width": 259.875,
+              "height": 82.09375,
+              "right": 275.875
+            },
+            "frameOpacity": 0.0530264,
+            "frame": {
+              "x": 16,
+              "y": 203.40625,
+              "width": 259.875,
+              "height": 82.09375,
+              "right": 275.875
+            },
+            "avatar": {
+              "x": 21.046875,
+              "y": 220.453125,
+              "width": 48,
+              "height": 48,
+              "right": 69.046875
+            },
+            "arrow": {
+              "x": 250.828125,
+              "y": 234.453125,
+              "width": 20,
+              "height": 20,
+              "right": 270.828125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3108.4000000059605,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 187.515625,
+              "width": 185.765625,
+              "height": 79.21875,
+              "right": 201.765625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 187.515625,
+              "width": 185.765625,
+              "height": 79.21875,
+              "right": 201.765625
+            },
+            "avatar": {
+              "x": 19.609375,
+              "y": 203.125,
+              "width": 48,
+              "height": 48,
+              "right": 67.609375
+            },
+            "arrow": {
+              "x": 178.15625,
+              "y": 217.125,
+              "width": 20,
+              "height": 20,
+              "right": 198.15625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3124.5999999940395,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 175.71875,
+              "width": 175.296875,
+              "height": 77.0625,
+              "right": 191.296875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 175.71875,
+              "width": 175.296875,
+              "height": 77.0625,
+              "right": 191.296875
+            },
+            "avatar": {
+              "x": 18.53125,
+              "y": 190.25,
+              "width": 48,
+              "height": 48,
+              "right": 66.53125
+            },
+            "arrow": {
+              "x": 168.765625,
+              "y": 204.25,
+              "width": 20,
+              "height": 20,
+              "right": 188.765625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3141.9000000059605,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 167.453125,
+              "width": 173.765625,
+              "height": 75.53125,
+              "right": 189.765625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 167.453125,
+              "width": 173.765625,
+              "height": 75.53125,
+              "right": 189.765625
+            },
+            "avatar": {
+              "x": 17.765625,
+              "y": 181.21875,
+              "width": 48,
+              "height": 48,
+              "right": 65.765625
+            },
+            "arrow": {
+              "x": 168,
+              "y": 195.21875,
+              "width": 20,
+              "height": 20,
+              "right": 188
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3158.300000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 159.5625,
+              "width": 172.390625,
+              "height": 74.15625,
+              "right": 188.390625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 159.5625,
+              "width": 172.390625,
+              "height": 74.15625,
+              "right": 188.390625
+            },
+            "avatar": {
+              "x": 17.078125,
+              "y": 172.640625,
+              "width": 48,
+              "height": 48,
+              "right": 65.078125
+            },
+            "arrow": {
+              "x": 167.3125,
+              "y": 186.640625,
+              "width": 20,
+              "height": 20,
+              "right": 187.3125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3175.5999999940395,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 154.53125,
+              "width": 171.515625,
+              "height": 73.28125,
+              "right": 187.515625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 154.53125,
+              "width": 171.515625,
+              "height": 73.28125,
+              "right": 187.515625
+            },
+            "avatar": {
+              "x": 16.640625,
+              "y": 167.171875,
+              "width": 48,
+              "height": 48,
+              "right": 64.640625
+            },
+            "arrow": {
+              "x": 166.875,
+              "y": 181.171875,
+              "width": 20,
+              "height": 20,
+              "right": 186.875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3190.699999988079,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 150.890625,
+              "width": 170.890625,
+              "height": 72.65625,
+              "right": 186.890625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 150.890625,
+              "width": 170.890625,
+              "height": 72.65625,
+              "right": 186.890625
+            },
+            "avatar": {
+              "x": 16.328125,
+              "y": 163.21875,
+              "width": 48,
+              "height": 48,
+              "right": 64.328125
+            },
+            "arrow": {
+              "x": 166.5625,
+              "y": 177.21875,
+              "width": 20,
+              "height": 20,
+              "right": 186.5625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3207.300000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 148.765625,
+              "width": 170.515625,
+              "height": 72.28125,
+              "right": 186.515625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 148.765625,
+              "width": 170.515625,
+              "height": 72.28125,
+              "right": 186.515625
+            },
+            "avatar": {
+              "x": 16.140625,
+              "y": 160.90625,
+              "width": 48,
+              "height": 48,
+              "right": 64.140625
+            },
+            "arrow": {
+              "x": 166.375,
+              "y": 174.90625,
+              "width": 20,
+              "height": 20,
+              "right": 186.375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3225.5999999940395,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147.609375,
+              "width": 170.328125,
+              "height": 72.09375,
+              "right": 186.328125
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147.609375,
+              "width": 170.328125,
+              "height": 72.09375,
+              "right": 186.328125
+            },
+            "avatar": {
+              "x": 16.046875,
+              "y": 159.65625,
+              "width": 48,
+              "height": 48,
+              "right": 64.046875
+            },
+            "arrow": {
+              "x": 166.28125,
+              "y": 173.65625,
+              "width": 20,
+              "height": 20,
+              "right": 186.28125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3241.699999988079,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147.09375,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147.09375,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159.09375,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173.09375,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3258.300000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147.015625,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147.015625,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159.015625,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173.015625,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3275.5,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3290.699999988079,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3308.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3324.5999999940395,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3341.5,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3358.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3374.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3390.9000000059605,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3408.5,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3425.5999999940395,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3440.800000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3457.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          }
+        ]
+      }
+    },
+    {
+      "width": 605,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 573,
+        "height": 96
+      },
+      "docked": {
+        "card": {
+          "x": 16,
+          "y": 147,
+          "width": 170.234375,
+          "height": 72,
+          "top": 147,
+          "right": 186.234375,
+          "bottom": 219,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 147,
+          "width": 170.234375,
+          "height": 72,
+          "top": 147,
+          "right": 186.234375,
+          "bottom": 219,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 159,
+          "width": 48,
+          "height": 48,
+          "top": 159,
+          "right": 64,
+          "bottom": 207,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 159,
+          "width": 86.234375,
+          "height": 48,
+          "top": 159,
+          "right": 158.234375,
+          "bottom": 207,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 173,
+          "width": 20,
+          "height": 20,
+          "top": 173,
+          "right": 186.234375,
+          "bottom": 193,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "opened": {
+        "card": {
+          "x": 16,
+          "y": 147,
+          "width": 170.234375,
+          "height": 72,
+          "top": 147,
+          "right": 186.234375,
+          "bottom": 219,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 147,
+          "width": 170.234375,
+          "height": 72,
+          "top": 147,
+          "right": 186.234375,
+          "bottom": 219,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 159,
+          "width": 48,
+          "height": 48,
+          "top": 159,
+          "right": 64,
+          "bottom": 207,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 159,
+          "width": 86.234375,
+          "height": 48,
+          "top": 159,
+          "right": 158.234375,
+          "bottom": 207,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 173,
+          "width": 20,
+          "height": 20,
+          "top": 173,
+          "right": 186.234375,
+          "bottom": 193,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "motion": {
+        "movingFrames": 17,
+        "finalCardWidthDelta": 0,
+        "finalCardHeightDelta": 0,
+        "endingFrames": 12,
+        "maximumRightGap": 11.875,
+        "finalArrowDelta": 0,
+        "finalAvatarDelta": {
+          "x": 0,
+          "y": -0.03125
+        },
+        "frames": [
+          {
+            "at": 2946.300000011921,
+            "hidden": false,
+            "opacity": 0.999298,
+            "card": {
+              "x": 16,
+              "y": 284.9375,
+              "width": 572.796875,
+              "height": 95.96875,
+              "right": 588.796875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.9375,
+              "width": 572.796875,
+              "height": 95.96875,
+              "right": 588.796875
+            },
+            "avatar": {
+              "x": 27.984375,
+              "y": 308.921875,
+              "width": 48,
+              "height": 48,
+              "right": 75.984375
+            },
+            "arrow": {
+              "x": 556.8125,
+              "y": 322.921875,
+              "width": 20,
+              "height": 20,
+              "right": 576.8125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2962.4000000059605,
+            "hidden": false,
+            "opacity": 0.993838,
+            "card": {
+              "x": 16,
+              "y": 284.53125,
+              "width": 571.234375,
+              "height": 95.90625,
+              "right": 587.234375
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.53125,
+              "width": 571.234375,
+              "height": 95.90625,
+              "right": 587.234375
+            },
+            "avatar": {
+              "x": 27.953125,
+              "y": 308.484375,
+              "width": 48,
+              "height": 48,
+              "right": 75.953125
+            },
+            "arrow": {
+              "x": 555.28125,
+              "y": 322.484375,
+              "width": 20,
+              "height": 20,
+              "right": 575.28125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2979.300000011921,
+            "hidden": false,
+            "opacity": 0.979827,
+            "card": {
+              "x": 16,
+              "y": 283.5,
+              "width": 567.21875,
+              "height": 95.75,
+              "right": 583.21875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 283.5,
+              "width": 567.21875,
+              "height": 95.75,
+              "right": 583.21875
+            },
+            "avatar": {
+              "x": 27.875,
+              "y": 307.375,
+              "width": 48,
+              "height": 48,
+              "right": 75.875
+            },
+            "arrow": {
+              "x": 551.34375,
+              "y": 321.375,
+              "width": 20,
+              "height": 20,
+              "right": 571.34375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2996.300000011921,
+            "hidden": false,
+            "opacity": 0.950704,
+            "card": {
+              "x": 16,
+              "y": 281.359375,
+              "width": 558.875,
+              "height": 95.40625,
+              "right": 574.875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 281.359375,
+              "width": 558.875,
+              "height": 95.40625,
+              "right": 574.875
+            },
+            "avatar": {
+              "x": 27.703125,
+              "y": 305.0625,
+              "width": 48,
+              "height": 48,
+              "right": 75.703125
+            },
+            "arrow": {
+              "x": 543.171875,
+              "y": 319.0625,
+              "width": 20,
+              "height": 20,
+              "right": 563.171875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3013.9000000059605,
+            "hidden": false,
+            "opacity": 0.901957,
+            "card": {
+              "x": 16,
+              "y": 277.765625,
+              "width": 544.90625,
+              "height": 94.8125,
+              "right": 560.90625
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 277.765625,
+              "width": 544.90625,
+              "height": 94.8125,
+              "right": 560.90625
+            },
+            "avatar": {
+              "x": 27.40625,
+              "y": 301.171875,
+              "width": 48,
+              "height": 48,
+              "right": 75.40625
+            },
+            "arrow": {
+              "x": 529.5,
+              "y": 315.171875,
+              "width": 20,
+              "height": 20,
+              "right": 549.5
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3029.9000000059605,
+            "hidden": false,
+            "opacity": 0.823337,
+            "card": {
+              "x": 16,
+              "y": 272,
+              "width": 522.375,
+              "height": 93.875,
+              "right": 538.375
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 272,
+              "width": 522.375,
+              "height": 93.875,
+              "right": 538.375
+            },
+            "avatar": {
+              "x": 26.9375,
+              "y": 294.9375,
+              "width": 48,
+              "height": 48,
+              "right": 74.9375
+            },
+            "arrow": {
+              "x": 507.4375,
+              "y": 308.9375,
+              "width": 20,
+              "height": 20,
+              "right": 527.4375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3046,
+            "hidden": false,
+            "opacity": 0.725375,
+            "card": {
+              "x": 16,
+              "y": 264.890625,
+              "width": 494.3125,
+              "height": 92.6875,
+              "right": 510.3125
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 264.890625,
+              "width": 494.3125,
+              "height": 92.6875,
+              "right": 510.3125
+            },
+            "avatar": {
+              "x": 26.34375,
+              "y": 287.234375,
+              "width": 48,
+              "height": 48,
+              "right": 74.34375
+            },
+            "arrow": {
+              "x": 479.96875,
+              "y": 301.234375,
+              "width": 20,
+              "height": 20,
+              "right": 499.96875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3063.7000000178814,
+            "hidden": false,
+            "opacity": 0.596599,
+            "card": {
+              "x": 16,
+              "y": 255.65625,
+              "width": 457.421875,
+              "height": 91.15625,
+              "right": 473.421875
+            },
+            "frameOpacity": 0.995748,
+            "frame": {
+              "x": 16,
+              "y": 255.65625,
+              "width": 457.421875,
+              "height": 91.15625,
+              "right": 473.421875
+            },
+            "avatar": {
+              "x": 25.578125,
+              "y": 277.234375,
+              "width": 48,
+              "height": 48,
+              "right": 73.578125
+            },
+            "arrow": {
+              "x": 443.84375,
+              "y": 291.234375,
+              "width": 20,
+              "height": 20,
+              "right": 463.84375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3080.4000000059605,
+            "hidden": false,
+            "opacity": 0.421296,
+            "card": {
+              "x": 16,
+              "y": 243.203125,
+              "width": 407.1875,
+              "height": 89.03125,
+              "right": 423.1875
+            },
+            "frameOpacity": 0.77662,
+            "frame": {
+              "x": 16,
+              "y": 243.203125,
+              "width": 407.1875,
+              "height": 89.03125,
+              "right": 423.1875
+            },
+            "avatar": {
+              "x": 24.515625,
+              "y": 263.71875,
+              "width": 48,
+              "height": 48,
+              "right": 72.515625
+            },
+            "arrow": {
+              "x": 394.671875,
+              "y": 277.71875,
+              "width": 20,
+              "height": 20,
+              "right": 414.671875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3096.100000023842,
+            "hidden": false,
+            "opacity": 0.201395,
+            "card": {
+              "x": 16,
+              "y": 227.90625,
+              "width": 344.1875,
+              "height": 86.40625,
+              "right": 360.1875
+            },
+            "frameOpacity": 0.501744,
+            "frame": {
+              "x": 16,
+              "y": 227.90625,
+              "width": 344.1875,
+              "height": 86.40625,
+              "right": 360.1875
+            },
+            "avatar": {
+              "x": 23.203125,
+              "y": 247.109375,
+              "width": 48,
+              "height": 48,
+              "right": 71.203125
+            },
+            "arrow": {
+              "x": 332.984375,
+              "y": 261.109375,
+              "width": 20,
+              "height": 20,
+              "right": 352.984375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3113.300000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 210.78125,
+              "width": 272.40625,
+              "height": 83.40625,
+              "right": 288.40625
+            },
+            "frameOpacity": 0.188536,
+            "frame": {
+              "x": 16,
+              "y": 210.78125,
+              "width": 272.40625,
+              "height": 83.40625,
+              "right": 288.40625
+            },
+            "avatar": {
+              "x": 21.703125,
+              "y": 228.484375,
+              "width": 48,
+              "height": 48,
+              "right": 69.703125
+            },
+            "arrow": {
+              "x": 262.703125,
+              "y": 242.484375,
+              "width": 20,
+              "height": 20,
+              "right": 282.703125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3129.800000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 194.171875,
+              "width": 201.203125,
+              "height": 80.40625,
+              "right": 217.203125
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 194.171875,
+              "width": 201.203125,
+              "height": 80.40625,
+              "right": 217.203125
+            },
+            "avatar": {
+              "x": 20.203125,
+              "y": 210.375,
+              "width": 48,
+              "height": 48,
+              "right": 68.203125
+            },
+            "arrow": {
+              "x": 193,
+              "y": 224.375,
+              "width": 20,
+              "height": 20,
+              "right": 213
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3146.2000000178814,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 181.59375,
+              "width": 176.359375,
+              "height": 78.125,
+              "right": 192.359375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 181.59375,
+              "width": 176.359375,
+              "height": 78.125,
+              "right": 192.359375
+            },
+            "avatar": {
+              "x": 19.0625,
+              "y": 196.65625,
+              "width": 48,
+              "height": 48,
+              "right": 67.0625
+            },
+            "arrow": {
+              "x": 169.296875,
+              "y": 210.65625,
+              "width": 20,
+              "height": 20,
+              "right": 189.296875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3163.100000023842,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 171.25,
+              "width": 174.421875,
+              "height": 76.1875,
+              "right": 190.421875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 171.25,
+              "width": 174.421875,
+              "height": 76.1875,
+              "right": 190.421875
+            },
+            "avatar": {
+              "x": 18.09375,
+              "y": 185.34375,
+              "width": 48,
+              "height": 48,
+              "right": 66.09375
+            },
+            "arrow": {
+              "x": 168.328125,
+              "y": 199.34375,
+              "width": 20,
+              "height": 20,
+              "right": 188.328125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3179.2000000178814,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 162.75,
+              "width": 172.953125,
+              "height": 74.71875,
+              "right": 188.953125
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 162.75,
+              "width": 172.953125,
+              "height": 74.71875,
+              "right": 188.953125
+            },
+            "avatar": {
+              "x": 17.359375,
+              "y": 176.109375,
+              "width": 48,
+              "height": 48,
+              "right": 65.359375
+            },
+            "arrow": {
+              "x": 167.59375,
+              "y": 190.109375,
+              "width": 20,
+              "height": 20,
+              "right": 187.59375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3196.300000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 156.828125,
+              "width": 171.921875,
+              "height": 73.6875,
+              "right": 187.921875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 156.828125,
+              "width": 171.921875,
+              "height": 73.6875,
+              "right": 187.921875
+            },
+            "avatar": {
+              "x": 16.84375,
+              "y": 169.671875,
+              "width": 48,
+              "height": 48,
+              "right": 64.84375
+            },
+            "arrow": {
+              "x": 167.078125,
+              "y": 183.671875,
+              "width": 20,
+              "height": 20,
+              "right": 187.078125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3212.7000000178814,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 152.40625,
+              "width": 171.171875,
+              "height": 72.9375,
+              "right": 187.171875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 152.40625,
+              "width": 171.171875,
+              "height": 72.9375,
+              "right": 187.171875
+            },
+            "avatar": {
+              "x": 16.46875,
+              "y": 164.875,
+              "width": 48,
+              "height": 48,
+              "right": 64.46875
+            },
+            "arrow": {
+              "x": 166.703125,
+              "y": 178.875,
+              "width": 20,
+              "height": 20,
+              "right": 186.703125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3230,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 149.6875,
+              "width": 170.671875,
+              "height": 72.4375,
+              "right": 186.671875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 149.6875,
+              "width": 170.671875,
+              "height": 72.4375,
+              "right": 186.671875
+            },
+            "avatar": {
+              "x": 16.21875,
+              "y": 161.90625,
+              "width": 48,
+              "height": 48,
+              "right": 64.21875
+            },
+            "arrow": {
+              "x": 166.453125,
+              "y": 175.90625,
+              "width": 20,
+              "height": 20,
+              "right": 186.453125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3246.300000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147.953125,
+              "width": 170.390625,
+              "height": 72.15625,
+              "right": 186.390625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147.953125,
+              "width": 170.390625,
+              "height": 72.15625,
+              "right": 186.390625
+            },
+            "avatar": {
+              "x": 16.078125,
+              "y": 160.03125,
+              "width": 48,
+              "height": 48,
+              "right": 64.078125
+            },
+            "arrow": {
+              "x": 166.3125,
+              "y": 174.03125,
+              "width": 20,
+              "height": 20,
+              "right": 186.3125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3262.800000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147.234375,
+              "width": 170.265625,
+              "height": 72.03125,
+              "right": 186.265625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147.234375,
+              "width": 170.265625,
+              "height": 72.03125,
+              "right": 186.265625
+            },
+            "avatar": {
+              "x": 16.015625,
+              "y": 159.25,
+              "width": 48,
+              "height": 48,
+              "right": 64.015625
+            },
+            "arrow": {
+              "x": 166.25,
+              "y": 173.25,
+              "width": 20,
+              "height": 20,
+              "right": 186.25
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3280.100000023842,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147.03125,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147.03125,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159.03125,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173.03125,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3295.5,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3313.2000000178814,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3329.9000000059605,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3346,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3362.100000023842,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3380.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3395.600000023842,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3412.800000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3428.9000000059605,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3446.800000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3462.600000023842,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3478.800000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 159,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 173,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          }
+        ]
+      }
+    },
+    {
+      "width": 390,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 358,
+        "height": 96
+      },
+      "docked": {
+        "card": {
+          "x": 16,
+          "y": 145,
+          "width": 170.234375,
+          "height": 72,
+          "top": 145,
+          "right": 186.234375,
+          "bottom": 217,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 145,
+          "width": 170.234375,
+          "height": 72,
+          "top": 145,
+          "right": 186.234375,
+          "bottom": 217,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 157,
+          "width": 48,
+          "height": 48,
+          "top": 157,
+          "right": 64,
+          "bottom": 205,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 157,
+          "width": 86.234375,
+          "height": 48,
+          "top": 157,
+          "right": 158.234375,
+          "bottom": 205,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 171,
+          "width": 20,
+          "height": 20,
+          "top": 171,
+          "right": 186.234375,
+          "bottom": 191,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "opened": {
+        "card": {
+          "x": 16,
+          "y": 145,
+          "width": 170.234375,
+          "height": 72,
+          "top": 145,
+          "right": 186.234375,
+          "bottom": 217,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 145,
+          "width": 170.234375,
+          "height": 72,
+          "top": 145,
+          "right": 186.234375,
+          "bottom": 217,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 157,
+          "width": 48,
+          "height": 48,
+          "top": 157,
+          "right": 64,
+          "bottom": 205,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 157,
+          "width": 86.234375,
+          "height": 48,
+          "top": 157,
+          "right": 158.234375,
+          "bottom": 205,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 171,
+          "width": 20,
+          "height": 20,
+          "top": 171,
+          "right": 186.234375,
+          "bottom": 191,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "motion": {
+        "movingFrames": 18,
+        "finalCardWidthDelta": 0,
+        "finalCardHeightDelta": 0,
+        "endingFrames": 12,
+        "maximumRightGap": 11.9375,
+        "finalArrowDelta": 0,
+        "finalAvatarDelta": {
+          "x": 0,
+          "y": -0.015625
+        },
+        "frames": [
+          {
+            "at": 7097.5,
+            "hidden": false,
+            "opacity": 0.999995,
+            "card": {
+              "x": 16,
+              "y": 284.984375,
+              "width": 357.984375,
+              "height": 95.96875,
+              "right": 373.984375
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.984375,
+              "width": 357.984375,
+              "height": 95.96875,
+              "right": 373.984375
+            },
+            "avatar": {
+              "x": 27.984375,
+              "y": 308.96875,
+              "width": 48,
+              "height": 48,
+              "right": 75.984375
+            },
+            "arrow": {
+              "x": 342,
+              "y": 322.96875,
+              "width": 20,
+              "height": 20,
+              "right": 362
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7113.5,
+            "hidden": false,
+            "opacity": 0.998628,
+            "card": {
+              "x": 16,
+              "y": 284.890625,
+              "width": 357.75,
+              "height": 95.96875,
+              "right": 373.75
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.890625,
+              "width": 357.75,
+              "height": 95.96875,
+              "right": 373.75
+            },
+            "avatar": {
+              "x": 27.984375,
+              "y": 308.875,
+              "width": 48,
+              "height": 48,
+              "right": 75.984375
+            },
+            "arrow": {
+              "x": 341.765625,
+              "y": 322.875,
+              "width": 20,
+              "height": 20,
+              "right": 361.765625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7131.300000011921,
+            "hidden": false,
+            "opacity": 0.992,
+            "card": {
+              "x": 16,
+              "y": 284.40625,
+              "width": 356.5625,
+              "height": 95.875,
+              "right": 372.5625
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.40625,
+              "width": 356.5625,
+              "height": 95.875,
+              "right": 372.5625
+            },
+            "avatar": {
+              "x": 27.9375,
+              "y": 308.34375,
+              "width": 48,
+              "height": 48,
+              "right": 75.9375
+            },
+            "arrow": {
+              "x": 340.625,
+              "y": 322.34375,
+              "width": 20,
+              "height": 20,
+              "right": 360.625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7146.9000000059605,
+            "hidden": false,
+            "opacity": 0.973,
+            "card": {
+              "x": 16,
+              "y": 283,
+              "width": 353.15625,
+              "height": 95.65625,
+              "right": 369.15625
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 283,
+              "width": 353.15625,
+              "height": 95.65625,
+              "right": 369.15625
+            },
+            "avatar": {
+              "x": 27.828125,
+              "y": 306.828125,
+              "width": 48,
+              "height": 48,
+              "right": 75.828125
+            },
+            "arrow": {
+              "x": 337.328125,
+              "y": 320.828125,
+              "width": 20,
+              "height": 20,
+              "right": 357.328125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7163.700000017881,
+            "hidden": false,
+            "opacity": 0.941187,
+            "card": {
+              "x": 16,
+              "y": 280.65625,
+              "width": 347.46875,
+              "height": 95.28125,
+              "right": 363.46875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 280.65625,
+              "width": 347.46875,
+              "height": 95.28125,
+              "right": 363.46875
+            },
+            "avatar": {
+              "x": 27.640625,
+              "y": 304.296875,
+              "width": 48,
+              "height": 48,
+              "right": 75.640625
+            },
+            "arrow": {
+              "x": 331.828125,
+              "y": 318.296875,
+              "width": 20,
+              "height": 20,
+              "right": 351.828125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7180.100000023842,
+            "hidden": false,
+            "opacity": 0.890937,
+            "card": {
+              "x": 16,
+              "y": 276.953125,
+              "width": 338.46875,
+              "height": 94.6875,
+              "right": 354.46875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 276.953125,
+              "width": 338.46875,
+              "height": 94.6875,
+              "right": 354.46875
+            },
+            "avatar": {
+              "x": 27.34375,
+              "y": 300.296875,
+              "width": 48,
+              "height": 48,
+              "right": 75.34375
+            },
+            "arrow": {
+              "x": 323.125,
+              "y": 314.296875,
+              "width": 20,
+              "height": 20,
+              "right": 343.125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7197.4000000059605,
+            "hidden": false,
+            "opacity": 0.812633,
+            "card": {
+              "x": 16,
+              "y": 271.21875,
+              "width": 324.453125,
+              "height": 93.75,
+              "right": 340.453125
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 271.21875,
+              "width": 324.453125,
+              "height": 93.75,
+              "right": 340.453125
+            },
+            "avatar": {
+              "x": 26.875,
+              "y": 294.09375,
+              "width": 48,
+              "height": 48,
+              "right": 74.875
+            },
+            "arrow": {
+              "x": 309.578125,
+              "y": 308.09375,
+              "width": 20,
+              "height": 20,
+              "right": 329.578125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7214.4000000059605,
+            "hidden": false,
+            "opacity": 0.703704,
+            "card": {
+              "x": 16,
+              "y": 263.375,
+              "width": 304.953125,
+              "height": 92.4375,
+              "right": 320.953125
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 263.375,
+              "width": 304.953125,
+              "height": 92.4375,
+              "right": 320.953125
+            },
+            "avatar": {
+              "x": 26.21875,
+              "y": 285.59375,
+              "width": 48,
+              "height": 48,
+              "right": 74.21875
+            },
+            "arrow": {
+              "x": 290.734375,
+              "y": 299.59375,
+              "width": 20,
+              "height": 20,
+              "right": 310.734375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7231.300000011921,
+            "hidden": false,
+            "opacity": 0.559096,
+            "card": {
+              "x": 16,
+              "y": 252.9375,
+              "width": 279.078125,
+              "height": 90.6875,
+              "right": 295.078125
+            },
+            "frameOpacity": 0.94887,
+            "frame": {
+              "x": 16,
+              "y": 252.9375,
+              "width": 279.078125,
+              "height": 90.6875,
+              "right": 295.078125
+            },
+            "avatar": {
+              "x": 25.34375,
+              "y": 274.28125,
+              "width": 48,
+              "height": 48,
+              "right": 73.34375
+            },
+            "arrow": {
+              "x": 265.734375,
+              "y": 288.28125,
+              "width": 20,
+              "height": 20,
+              "right": 285.734375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7247.100000023842,
+            "hidden": false,
+            "opacity": 0.373754,
+            "card": {
+              "x": 16,
+              "y": 239.921875,
+              "width": 245.890625,
+              "height": 88.46875,
+              "right": 261.890625
+            },
+            "frameOpacity": 0.717193,
+            "frame": {
+              "x": 16,
+              "y": 239.921875,
+              "width": 245.890625,
+              "height": 88.46875,
+              "right": 261.890625
+            },
+            "avatar": {
+              "x": 24.234375,
+              "y": 260.15625,
+              "width": 48,
+              "height": 48,
+              "right": 72.234375
+            },
+            "arrow": {
+              "x": 233.65625,
+              "y": 274.15625,
+              "width": 20,
+              "height": 20,
+              "right": 253.65625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7264.9000000059605,
+            "hidden": false,
+            "opacity": 0.157579,
+            "card": {
+              "x": 16,
+              "y": 224.78125,
+              "width": 207.203125,
+              "height": 85.875,
+              "right": 223.203125
+            },
+            "frameOpacity": 0.446974,
+            "frame": {
+              "x": 16,
+              "y": 224.78125,
+              "width": 207.203125,
+              "height": 85.875,
+              "right": 223.203125
+            },
+            "avatar": {
+              "x": 22.9375,
+              "y": 243.71875,
+              "width": 48,
+              "height": 48,
+              "right": 70.9375
+            },
+            "arrow": {
+              "x": 196.265625,
+              "y": 257.71875,
+              "width": 20,
+              "height": 20,
+              "right": 216.265625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7281.100000023842,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 205.515625,
+              "width": 180.703125,
+              "height": 82.46875,
+              "right": 196.703125
+            },
+            "frameOpacity": 0.090631,
+            "frame": {
+              "x": 16,
+              "y": 205.515625,
+              "width": 180.703125,
+              "height": 82.46875,
+              "right": 196.703125
+            },
+            "avatar": {
+              "x": 21.234375,
+              "y": 222.75,
+              "width": 48,
+              "height": 48,
+              "right": 69.234375
+            },
+            "arrow": {
+              "x": 171.46875,
+              "y": 236.75,
+              "width": 20,
+              "height": 20,
+              "right": 191.46875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7298,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 190.578125,
+              "width": 178.015625,
+              "height": 79.78125,
+              "right": 194.015625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 190.578125,
+              "width": 178.015625,
+              "height": 79.78125,
+              "right": 194.015625
+            },
+            "avatar": {
+              "x": 19.890625,
+              "y": 206.46875,
+              "width": 48,
+              "height": 48,
+              "right": 67.890625
+            },
+            "arrow": {
+              "x": 170.125,
+              "y": 220.46875,
+              "width": 20,
+              "height": 20,
+              "right": 190.125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7313.5,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 177.25,
+              "width": 175.734375,
+              "height": 77.5,
+              "right": 191.734375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 177.25,
+              "width": 175.734375,
+              "height": 77.5,
+              "right": 191.734375
+            },
+            "avatar": {
+              "x": 18.75,
+              "y": 192,
+              "width": 48,
+              "height": 48,
+              "right": 66.75
+            },
+            "arrow": {
+              "x": 168.984375,
+              "y": 206,
+              "width": 20,
+              "height": 20,
+              "right": 188.984375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7331.4000000059605,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 167.890625,
+              "width": 174.140625,
+              "height": 75.90625,
+              "right": 190.140625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 167.890625,
+              "width": 174.140625,
+              "height": 75.90625,
+              "right": 190.140625
+            },
+            "avatar": {
+              "x": 17.953125,
+              "y": 181.84375,
+              "width": 48,
+              "height": 48,
+              "right": 65.953125
+            },
+            "arrow": {
+              "x": 168.1875,
+              "y": 195.84375,
+              "width": 20,
+              "height": 20,
+              "right": 188.1875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7347,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 159.296875,
+              "width": 172.671875,
+              "height": 74.4375,
+              "right": 188.671875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 159.296875,
+              "width": 172.671875,
+              "height": 74.4375,
+              "right": 188.671875
+            },
+            "avatar": {
+              "x": 17.21875,
+              "y": 172.515625,
+              "width": 48,
+              "height": 48,
+              "right": 65.21875
+            },
+            "arrow": {
+              "x": 167.453125,
+              "y": 186.515625,
+              "width": 20,
+              "height": 20,
+              "right": 187.453125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7364.800000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 154.046875,
+              "width": 171.765625,
+              "height": 73.53125,
+              "right": 187.765625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 154.046875,
+              "width": 171.765625,
+              "height": 73.53125,
+              "right": 187.765625
+            },
+            "avatar": {
+              "x": 16.765625,
+              "y": 166.8125,
+              "width": 48,
+              "height": 48,
+              "right": 64.765625
+            },
+            "arrow": {
+              "x": 167,
+              "y": 180.8125,
+              "width": 20,
+              "height": 20,
+              "right": 187
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7380.5,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 149.671875,
+              "width": 171.015625,
+              "height": 72.78125,
+              "right": 187.015625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 149.671875,
+              "width": 171.015625,
+              "height": 72.78125,
+              "right": 187.015625
+            },
+            "avatar": {
+              "x": 16.390625,
+              "y": 162.0625,
+              "width": 48,
+              "height": 48,
+              "right": 64.390625
+            },
+            "arrow": {
+              "x": 166.625,
+              "y": 176.0625,
+              "width": 20,
+              "height": 20,
+              "right": 186.625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7397.200000017881,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 147.234375,
+              "width": 170.609375,
+              "height": 72.375,
+              "right": 186.609375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 147.234375,
+              "width": 170.609375,
+              "height": 72.375,
+              "right": 186.609375
+            },
+            "avatar": {
+              "x": 16.1875,
+              "y": 159.421875,
+              "width": 48,
+              "height": 48,
+              "right": 64.1875
+            },
+            "arrow": {
+              "x": 166.421875,
+              "y": 173.421875,
+              "width": 20,
+              "height": 20,
+              "right": 186.421875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7413.600000023842,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145.78125,
+              "width": 170.359375,
+              "height": 72.125,
+              "right": 186.359375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145.78125,
+              "width": 170.359375,
+              "height": 72.125,
+              "right": 186.359375
+            },
+            "avatar": {
+              "x": 16.0625,
+              "y": 157.84375,
+              "width": 48,
+              "height": 48,
+              "right": 64.0625
+            },
+            "arrow": {
+              "x": 166.296875,
+              "y": 171.84375,
+              "width": 20,
+              "height": 20,
+              "right": 186.296875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7430.4000000059605,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145.171875,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145.171875,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157.171875,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171.171875,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7447.5,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145.015625,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145.015625,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157.015625,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171.015625,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7464.200000017881,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7480.4000000059605,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7497.200000017881,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7513.700000017881,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7530.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7547.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7563.700000017881,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7580,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7597.200000017881,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7613.600000023842,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7630.600000023842,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 7647.5,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 157,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 171,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          }
+        ]
+      }
+    },
+    {
+      "width": 320,
+      "reduced": false,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 288,
+        "height": 96
+      },
+      "docked": {
+        "card": {
+          "x": 16,
+          "y": 143,
+          "width": 170.234375,
+          "height": 72,
+          "top": 143,
+          "right": 186.234375,
+          "bottom": 215,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 143,
+          "width": 170.234375,
+          "height": 72,
+          "top": 143,
+          "right": 186.234375,
+          "bottom": 215,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 155,
+          "width": 48,
+          "height": 48,
+          "top": 155,
+          "right": 64,
+          "bottom": 203,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 155,
+          "width": 86.234375,
+          "height": 48,
+          "top": 155,
+          "right": 158.234375,
+          "bottom": 203,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 169,
+          "width": 20,
+          "height": 20,
+          "top": 169,
+          "right": 186.234375,
+          "bottom": 189,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "opened": {
+        "card": {
+          "x": 16,
+          "y": 143,
+          "width": 170.234375,
+          "height": 72,
+          "top": 143,
+          "right": 186.234375,
+          "bottom": 215,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 143,
+          "width": 170.234375,
+          "height": 72,
+          "top": 143,
+          "right": 186.234375,
+          "bottom": 215,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 155,
+          "width": 48,
+          "height": 48,
+          "top": 155,
+          "right": 64,
+          "bottom": 203,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 155,
+          "width": 86.234375,
+          "height": 48,
+          "top": 155,
+          "right": 158.234375,
+          "bottom": 203,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 169,
+          "width": 20,
+          "height": 20,
+          "top": 169,
+          "right": 186.234375,
+          "bottom": 189,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "motion": {
+        "movingFrames": 17,
+        "finalCardWidthDelta": 0,
+        "finalCardHeightDelta": 0,
+        "endingFrames": 12,
+        "maximumRightGap": 11.875,
+        "finalArrowDelta": 0,
+        "finalAvatarDelta": {
+          "x": 0,
+          "y": -0.03125
+        },
+        "frames": [
+          {
+            "at": 2953.0999999940395,
+            "hidden": false,
+            "opacity": 0.999421,
+            "card": {
+              "x": 16,
+              "y": 284.953125,
+              "width": 287.90625,
+              "height": 95.96875,
+              "right": 303.90625
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.953125,
+              "width": 287.90625,
+              "height": 95.96875,
+              "right": 303.90625
+            },
+            "avatar": {
+              "x": 27.984375,
+              "y": 308.9375,
+              "width": 48,
+              "height": 48,
+              "right": 75.984375
+            },
+            "arrow": {
+              "x": 271.921875,
+              "y": 322.9375,
+              "width": 20,
+              "height": 20,
+              "right": 291.921875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2968.800000011921,
+            "hidden": false,
+            "opacity": 0.994381,
+            "card": {
+              "x": 16,
+              "y": 284.578125,
+              "width": 287.1875,
+              "height": 95.90625,
+              "right": 303.1875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 284.578125,
+              "width": 287.1875,
+              "height": 95.90625,
+              "right": 303.1875
+            },
+            "avatar": {
+              "x": 27.953125,
+              "y": 308.53125,
+              "width": 48,
+              "height": 48,
+              "right": 75.953125
+            },
+            "arrow": {
+              "x": 271.234375,
+              "y": 322.53125,
+              "width": 20,
+              "height": 20,
+              "right": 291.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 2985.5999999940395,
+            "hidden": false,
+            "opacity": 0.981037,
+            "card": {
+              "x": 16,
+              "y": 283.59375,
+              "width": 285.265625,
+              "height": 95.75,
+              "right": 301.265625
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 283.59375,
+              "width": 285.265625,
+              "height": 95.75,
+              "right": 301.265625
+            },
+            "avatar": {
+              "x": 27.875,
+              "y": 307.46875,
+              "width": 48,
+              "height": 48,
+              "right": 75.875
+            },
+            "arrow": {
+              "x": 269.390625,
+              "y": 321.46875,
+              "width": 20,
+              "height": 20,
+              "right": 289.390625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3002.699999988079,
+            "hidden": false,
+            "opacity": 0.952911,
+            "card": {
+              "x": 16,
+              "y": 281.515625,
+              "width": 281.21875,
+              "height": 95.40625,
+              "right": 297.21875
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 281.515625,
+              "width": 281.21875,
+              "height": 95.40625,
+              "right": 297.21875
+            },
+            "avatar": {
+              "x": 27.703125,
+              "y": 305.21875,
+              "width": 48,
+              "height": 48,
+              "right": 75.703125
+            },
+            "arrow": {
+              "x": 265.515625,
+              "y": 319.21875,
+              "width": 20,
+              "height": 20,
+              "right": 285.515625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3019.5,
+            "hidden": false,
+            "opacity": 0.905458,
+            "card": {
+              "x": 16,
+              "y": 278.015625,
+              "width": 274.375,
+              "height": 94.84375,
+              "right": 290.375
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 278.015625,
+              "width": 274.375,
+              "height": 94.84375,
+              "right": 290.375
+            },
+            "avatar": {
+              "x": 27.421875,
+              "y": 301.4375,
+              "width": 48,
+              "height": 48,
+              "right": 75.421875
+            },
+            "arrow": {
+              "x": 258.953125,
+              "y": 315.4375,
+              "width": 20,
+              "height": 20,
+              "right": 278.953125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3036.4000000059605,
+            "hidden": false,
+            "opacity": 0.833625,
+            "card": {
+              "x": 16,
+              "y": 272.765625,
+              "width": 264.03125,
+              "height": 94,
+              "right": 280.03125
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 272.765625,
+              "width": 264.03125,
+              "height": 94,
+              "right": 280.03125
+            },
+            "avatar": {
+              "x": 27,
+              "y": 295.765625,
+              "width": 48,
+              "height": 48,
+              "right": 75
+            },
+            "arrow": {
+              "x": 249.03125,
+              "y": 309.765625,
+              "width": 20,
+              "height": 20,
+              "right": 269.03125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3052.4000000059605,
+            "hidden": false,
+            "opacity": 0.739219,
+            "card": {
+              "x": 16,
+              "y": 265.90625,
+              "width": 250.4375,
+              "height": 92.84375,
+              "right": 266.4375
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 265.90625,
+              "width": 250.4375,
+              "height": 92.84375,
+              "right": 266.4375
+            },
+            "avatar": {
+              "x": 26.421875,
+              "y": 288.328125,
+              "width": 48,
+              "height": 48,
+              "right": 74.421875
+            },
+            "arrow": {
+              "x": 236.015625,
+              "y": 302.328125,
+              "width": 20,
+              "height": 20,
+              "right": 256.015625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3069.0999999940395,
+            "hidden": false,
+            "opacity": 0.614525,
+            "card": {
+              "x": 16,
+              "y": 256.96875,
+              "width": 232.484375,
+              "height": 91.34375,
+              "right": 248.484375
+            },
+            "frameOpacity": 1,
+            "frame": {
+              "x": 16,
+              "y": 256.96875,
+              "width": 232.484375,
+              "height": 91.34375,
+              "right": 248.484375
+            },
+            "avatar": {
+              "x": 25.671875,
+              "y": 278.640625,
+              "width": 48,
+              "height": 48,
+              "right": 73.671875
+            },
+            "arrow": {
+              "x": 218.8125,
+              "y": 292.640625,
+              "width": 20,
+              "height": 20,
+              "right": 238.8125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3086.199999988079,
+            "hidden": false,
+            "opacity": 0.444137,
+            "card": {
+              "x": 16,
+              "y": 244.84375,
+              "width": 207.953125,
+              "height": 89.3125,
+              "right": 223.953125
+            },
+            "frameOpacity": 0.805171,
+            "frame": {
+              "x": 16,
+              "y": 244.84375,
+              "width": 207.953125,
+              "height": 89.3125,
+              "right": 223.953125
+            },
+            "avatar": {
+              "x": 24.65625,
+              "y": 265.5,
+              "width": 48,
+              "height": 48,
+              "right": 72.65625
+            },
+            "arrow": {
+              "x": 195.296875,
+              "y": 279.5,
+              "width": 20,
+              "height": 20,
+              "right": 215.296875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3102.300000011921,
+            "hidden": false,
+            "opacity": 0.229745,
+            "card": {
+              "x": 16,
+              "y": 229.734375,
+              "width": 184.984375,
+              "height": 86.75,
+              "right": 200.984375
+            },
+            "frameOpacity": 0.537182,
+            "frame": {
+              "x": 16,
+              "y": 229.734375,
+              "width": 184.984375,
+              "height": 86.75,
+              "right": 200.984375
+            },
+            "avatar": {
+              "x": 23.375,
+              "y": 249.109375,
+              "width": 48,
+              "height": 48,
+              "right": 71.375
+            },
+            "arrow": {
+              "x": 173.609375,
+              "y": 263.109375,
+              "width": 20,
+              "height": 20,
+              "right": 193.609375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3119.800000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 212.828125,
+              "width": 182.015625,
+              "height": 83.78125,
+              "right": 198.015625
+            },
+            "frameOpacity": 0.229282,
+            "frame": {
+              "x": 16,
+              "y": 212.828125,
+              "width": 182.015625,
+              "height": 83.78125,
+              "right": 198.015625
+            },
+            "avatar": {
+              "x": 21.890625,
+              "y": 230.71875,
+              "width": 48,
+              "height": 48,
+              "right": 69.890625
+            },
+            "arrow": {
+              "x": 172.125,
+              "y": 244.71875,
+              "width": 20,
+              "height": 20,
+              "right": 192.125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3136.5999999940395,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 193.8125,
+              "width": 178.796875,
+              "height": 80.5625,
+              "right": 194.796875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 193.8125,
+              "width": 178.796875,
+              "height": 80.5625,
+              "right": 194.796875
+            },
+            "avatar": {
+              "x": 20.28125,
+              "y": 210.09375,
+              "width": 48,
+              "height": 48,
+              "right": 68.28125
+            },
+            "arrow": {
+              "x": 170.515625,
+              "y": 224.09375,
+              "width": 20,
+              "height": 20,
+              "right": 190.515625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3153.699999988079,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 179.359375,
+              "width": 176.359375,
+              "height": 78.125,
+              "right": 192.359375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 179.359375,
+              "width": 176.359375,
+              "height": 78.125,
+              "right": 192.359375
+            },
+            "avatar": {
+              "x": 19.0625,
+              "y": 194.421875,
+              "width": 48,
+              "height": 48,
+              "right": 67.0625
+            },
+            "arrow": {
+              "x": 169.296875,
+              "y": 208.421875,
+              "width": 20,
+              "height": 20,
+              "right": 189.296875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3169.800000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 167.9375,
+              "width": 174.421875,
+              "height": 76.1875,
+              "right": 190.421875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 167.9375,
+              "width": 174.421875,
+              "height": 76.1875,
+              "right": 190.421875
+            },
+            "avatar": {
+              "x": 18.09375,
+              "y": 182.03125,
+              "width": 48,
+              "height": 48,
+              "right": 66.09375
+            },
+            "arrow": {
+              "x": 168.328125,
+              "y": 196.03125,
+              "width": 20,
+              "height": 20,
+              "right": 188.328125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3186.300000011921,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 159.65625,
+              "width": 173.046875,
+              "height": 74.8125,
+              "right": 189.046875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 159.65625,
+              "width": 173.046875,
+              "height": 74.8125,
+              "right": 189.046875
+            },
+            "avatar": {
+              "x": 17.40625,
+              "y": 173.0625,
+              "width": 48,
+              "height": 48,
+              "right": 65.40625
+            },
+            "arrow": {
+              "x": 167.640625,
+              "y": 187.0625,
+              "width": 20,
+              "height": 20,
+              "right": 187.640625
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3202.4000000059605,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 153.453125,
+              "width": 171.984375,
+              "height": 73.75,
+              "right": 187.984375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 153.453125,
+              "width": 171.984375,
+              "height": 73.75,
+              "right": 187.984375
+            },
+            "avatar": {
+              "x": 16.875,
+              "y": 166.328125,
+              "width": 48,
+              "height": 48,
+              "right": 64.875
+            },
+            "arrow": {
+              "x": 167.109375,
+              "y": 180.328125,
+              "width": 20,
+              "height": 20,
+              "right": 187.109375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3218.9000000059605,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 149.015625,
+              "width": 171.234375,
+              "height": 73,
+              "right": 187.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 149.015625,
+              "width": 171.234375,
+              "height": 73,
+              "right": 187.234375
+            },
+            "avatar": {
+              "x": 16.5,
+              "y": 161.515625,
+              "width": 48,
+              "height": 48,
+              "right": 64.5
+            },
+            "arrow": {
+              "x": 166.734375,
+              "y": 175.515625,
+              "width": 20,
+              "height": 20,
+              "right": 186.734375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3236.0999999940395,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 145.90625,
+              "width": 170.703125,
+              "height": 72.46875,
+              "right": 186.703125
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 145.90625,
+              "width": 170.703125,
+              "height": 72.46875,
+              "right": 186.703125
+            },
+            "avatar": {
+              "x": 16.234375,
+              "y": 158.140625,
+              "width": 48,
+              "height": 48,
+              "right": 64.234375
+            },
+            "arrow": {
+              "x": 166.46875,
+              "y": 172.140625,
+              "width": 20,
+              "height": 20,
+              "right": 186.46875
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3252.5999999940395,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 144.109375,
+              "width": 170.421875,
+              "height": 72.1875,
+              "right": 186.421875
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 144.109375,
+              "width": 170.421875,
+              "height": 72.1875,
+              "right": 186.421875
+            },
+            "avatar": {
+              "x": 16.09375,
+              "y": 156.203125,
+              "width": 48,
+              "height": 48,
+              "right": 64.09375
+            },
+            "arrow": {
+              "x": 166.328125,
+              "y": 170.203125,
+              "width": 20,
+              "height": 20,
+              "right": 186.328125
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3269.4000000059605,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143.3125,
+              "width": 170.265625,
+              "height": 72.03125,
+              "right": 186.265625
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143.3125,
+              "width": 170.265625,
+              "height": 72.03125,
+              "right": 186.265625
+            },
+            "avatar": {
+              "x": 16.015625,
+              "y": 155.328125,
+              "width": 48,
+              "height": 48,
+              "right": 64.015625
+            },
+            "arrow": {
+              "x": 166.25,
+              "y": 169.328125,
+              "width": 20,
+              "height": 20,
+              "right": 186.25
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3286.5,
+            "hidden": false,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143.03125,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143.03125,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155.03125,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169.03125,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3302.699999988079,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3319.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3336.0999999940395,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3352.9000000059605,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3369.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3386,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3403.199999988079,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3419.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3435.5,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3453.300000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3469.5999999940395,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          },
+          {
+            "at": 3485.800000011921,
+            "hidden": true,
+            "opacity": 0,
+            "card": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "frameOpacity": 0,
+            "frame": {
+              "x": 16,
+              "y": 143,
+              "width": 170.234375,
+              "height": 72,
+              "right": 186.234375
+            },
+            "avatar": {
+              "x": 16,
+              "y": 155,
+              "width": 48,
+              "height": 48,
+              "right": 64
+            },
+            "arrow": {
+              "x": 166.234375,
+              "y": 169,
+              "width": 20,
+              "height": 20,
+              "right": 186.234375
+            },
+            "position": "relative",
+            "copyBasis": "auto",
+            "greetingChildren": 1
+          }
+        ]
+      }
+    },
+    {
+      "width": 390,
+      "reduced": true,
+      "initial": {
+        "x": 16,
+        "y": 285,
+        "width": 358,
+        "height": 96
+      },
+      "docked": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "opened": {
+        "card": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "avatar": {
+          "x": 16,
+          "y": 161,
+          "width": 48,
+          "height": 48,
+          "top": 161,
+          "right": 64,
+          "bottom": 209,
+          "left": 16
+        },
+        "copy": {
+          "x": 72,
+          "y": 161,
+          "width": 86.234375,
+          "height": 48,
+          "top": 161,
+          "right": 158.234375,
+          "bottom": 209,
+          "left": 72
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "nameSize": "18px",
+        "ageSize": "14px",
+        "copyGrow": "1"
+      },
+      "motion": null
+    }
+  ],
+  "failures": []
+}

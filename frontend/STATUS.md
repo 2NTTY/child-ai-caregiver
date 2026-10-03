@@ -2,6 +2,10 @@
 
 更新：2026-10-03。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**最新 FE-W31 結尾閃動補修：** 使用者回報完成一刻閃動，605 px 量度確認初版最後一幀將容器由 relative／72 高切成 absolute／168 高，文字 flex 及問候子樹亦同時切換。現在整段沿同一自然流佈局，以 minWidth／maxWidth、上移及內距共用 intro；完成只更新可讀狀態，沒有定位、文字 flex 或子樹切換。649／605／390／320 末幀尺寸／箭嘴跳變均為 0，完成後 12 幀穩定；九組局部互動及放大文字、typecheck、Web／Android export 通過。[補修交接](HANDOFF.md#home-motion-stability)／[證據](verification/fe-w31-motion-stability/build-checks.json)。沿原分支及 draft PR #77；保留手機標語、外框半途淡出、3 秒及每會話一次，修正版使用者視覺／真登入／實機仍待驗。
+
+**FE-W31 首頁外框動畫及手機標語初版：** 外框和箭嘴沿同一 intro 進度收窄上移，以實際孩子文字寬度作終點；外框在進度 20%–60% 淡出，孩子資訊保持可見。收起後按內容自然寬度、最多佔左側 62%，避免放大文字被舊量度鎖住。只放大手機首頁問候／副句／標語至 26／16／14，桌面字體不改。649／390／320 逐幀、1440／1024 工具列、3 秒及首次會話、選單／中途點擊／減少動畫和 320 的 150% 文字檢查通過；typecheck、Web／Android export 通過。[交接](HANDOFF.md#home-frame-motion)／[當時證據](verification/fe-w31-home-motion/build-checks.json)。新分支 `codex/fe-w31-home-motion`；初版結尾重排由上方補修取代，真登入會話及原生實機仍待驗。
+
 **最新 FE-W30 契約審查修復：** 已核對使用者提供的 review 與 GitHub `master d3213e6`、前端 `949d088`。修正原操作查核／同一參考重試／已確認待重讀、草稿離頁保護及設定頁籤保留；補記憶權威旗標／確認者／分頁、任務分頁、Push／Telegram 測試差異、來源標籤、照片重連重新核對、模型 key 說明／驗證及 366 日上限。[逐項判定及正式 App 待修項](HANDOFF.md#contract-review)／[證據](verification/fe-w30-contract-review/build-checks.json)。新分支 `codex/fe-w30-contract-review`；使用者已授權以 B 賬號 CherylNg-2526 按相依順序合併 #54／#65／#68／#69／#70／#73 及本次新 PR，GitHub 狀態為合併結果權威。這次授權取代下方歷史條目的「沿 draft／不自行 merge」，不取消真 API、視覺或原生實機關口。
 
 正式 App 的 A1–A6、D1 及孩子稱呼長度另交主聊天，沒有改目錄外程式。瀏覽器返回已驗 Edge 的可取消 Navigation API；缺少該能力的瀏覽器返回仍有缺口，不能當全面跨瀏覽器驗收。重新載入／系統關閉不保證恢復私人草稿，沒有本地持久化或離線寫入隊列。
