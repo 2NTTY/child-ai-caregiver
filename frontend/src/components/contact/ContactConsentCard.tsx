@@ -21,7 +21,7 @@ export function ContactConsentCard({model, actions, onSettings}: {model: Contact
   useEffect(() => {setConfirm(false); setAdopt(false);}, [model.confirmationEpoch]);
   function edit() {actions.markDirty('consent'); setConfirm(false); setAdopt(false);}
   function choose(binding: ContactBinding, selected: boolean) {setValue('bindings', selected ? [...values.bindings.filter(item => item.channel !== binding.channel), {...binding}] : values.bindings.filter(item => !sameContactBinding(item, binding)), {shouldDirty: true}); edit();}
-  return <SectionCard testID="contact-consent"><SectionHeader title="本人的接收同意" icon="bell-outline" subtitle={`只管理你在${model.childName}這個資料空間的同意，不代其他家庭成員同意。`} />
+  return <SectionCard testID="contact-consent"><SectionHeader density="compact" title="本人的接收同意" icon="bell-outline" subtitle={`只管理你在${model.childName}這個資料空間的同意，不代其他家庭成員同意。`} />
     <Text style={s.body}>已保存：{page.consent.enabled ? '允許接收' : '未允許接收'} · 後備資格：{page.consent.allowBackup ? '已同意' : '未同意'}</Text>
     <Text style={s.meta}>已保存版本 {page.consent.version} · 未提交選項基準 {basis.current}</Text>
     <Text style={s.meta}>已保存渠道次序：{page.consent.bindings.length ? page.consent.bindings.map(item => contactChannelLabels[item.channel]).join(' → ') : '沒有'}</Text>

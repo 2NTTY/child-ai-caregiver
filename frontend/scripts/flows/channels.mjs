@@ -16,7 +16,8 @@ const submit = scope => scope.getByRole("button", { name: "模擬確認這項渠
 const reference = scope => scope.getByText("合成操作參考：", { exact: false }).textContent();
 
 export async function verifyChannels(browser, failures, directory) {
-  for (const width of [1440, 1024, 390, 320]) {
+  const widths = (process.env.FRONTEND_CHANNEL_WIDTHS ?? "1440,1024,390,320").split(",").filter(Boolean).map(Number);
+  for (const width of widths) {
     const page = await channelsPage(browser, failures, width);
     await assertFits(page, "channel settings " + width);
     await page.screenshot({ path: resolve(directory, "channels-" + width + ".png") });
@@ -34,24 +35,24 @@ export async function verifyChannels(browser, failures, directory) {
   await selectOption(push, "模擬提交結果", "失敗");
   await push.getByRole("button", { name: "預覽啟用此瀏覽器通知", exact: true }).click();
   await approve(push, "我同意登記本人的這個瀏覽器"); await submit(push);
-  await push.getByText("模擬失敗：已知沒有保存", { exact: false }).waitFor();
+  await push.getByText("模擬失敗：已知沒有保存；草稿保留，請重新核對。", { exact: true }).waitFor();
   assert.equal(await field.inputValue(), "我的 Firefox");
-  assert.equal(await push.getByRole("alert").first().evaluate(element => getComputedStyle(element).backgroundColor), "rgb(255, 240, 235)");
+  assert.equal(await push.getByRole("heading", { name: "未能保存", exact: true }).locator("..").evaluate(element => getComputedStyle(element).backgroundColor), "rgb(255, 240, 235)");
   assert.equal(await push.getByText("本人瀏覽器訂閱", { exact: true }).count(), 1);
   await selectOption(push, "模擬提交結果", "結果未知");
   await push.getByRole("button", { name: "預覽啟用此瀏覽器通知", exact: true }).click();
   await approve(push, "我同意登記本人的這個瀏覽器"); await submit(push);
-  await push.getByRole("button", { name: "模擬查核原操作", exact: true }).waitFor();
+  await push.getByRole("button", { name: "查核原操作", exact: true }).waitFor();
   const original = await reference(push);
   assert.equal(await field.isEditable(), false);
-  await push.getByRole("button", { name: "模擬查核原操作", exact: true }).click();
-  await push.getByRole("button", { name: "模擬查核原操作", exact: true }).waitFor();
+  await push.getByRole("button", { name: "查核原操作", exact: true }).click();
+  await push.getByRole("button", { name: "查核原操作", exact: true }).waitFor();
   assert.equal(await reference(push), original);
   assert.equal(await push.getByText("目前沒有本人瀏覽器訂閱。", { exact: true }).count(), 1);
-  await selectOption(push, "模擬查核結果", "已保存");
-  await push.getByRole("button", { name: "模擬查核原操作", exact: true }).click();
+  await selectOption(push, "模擬查核結果", "已確認並讀回");
+  await push.getByRole("button", { name: "查核原操作", exact: true }).click();
   await push.getByText("我的 Firefox", { exact: true }).waitFor();
-  assert.equal(await push.getByRole("alert").first().evaluate(element => getComputedStyle(element).backgroundColor), "rgb(233, 247, 244)");
+  assert.equal(await push.getByRole("heading", { name: "已保存", exact: true }).locator("..").evaluate(element => getComputedStyle(element).backgroundColor), "rgb(227, 246, 245)");
   await page.getByRole("button", { name: /選擇孩子，目前/ }).click();
   await page.getByRole("radio", { name: "阿樂 · 約 8 歲 · 截至 2026 年 9 月", exact: true }).click();
   assert.equal(await push.getByText("我的 Firefox", { exact: true }).count(), 1, "Personal channel survives child selection");
@@ -63,7 +64,7 @@ export async function verifyChannels(browser, failures, directory) {
   await approve(push, "我了解撤銷後會停止新的投遞"); await submit(push);
   await push.getByText("已撤銷", { exact: true }).waitFor();
   await selectOption(push, "Web Push 情境", "投遞結果未知");
-  assert.equal(await push.getByRole("button", { name: "預覽一般測試", exact: true }).isDisabled(), true);
+  assert.equal(await push.getByRole("button", { name: "預覽一般測試", exact: true }).isDisabled(), false, "A separate explicit Push test follows quota/cooldown; delivery review does not inherit Telegram's acknowledgement gate");
   await selectOption(push, "Web Push 情境", "讀取失敗");
   assert.equal(await push.getByText("我的瀏覽器（合成）", { exact: true }).count(), 0);
   await push.getByRole("button", { name: "重新讀取本人渠道狀態", exact: true }).click();
@@ -99,10 +100,10 @@ export async function verifyChannels(browser, failures, directory) {
   await selectOption(telegram, "模擬提交結果", "結果未知");
   await telegram.getByRole("button", { name: "預覽一般測試", exact: true }).click();
   await approve(telegram, "我了解一般測試會立即發送，不跟隨安靜時段"); await submit(telegram);
-  await telegram.getByRole("button", { name: "模擬查核原操作", exact: true }).waitFor();
+  await telegram.getByRole("button", { name: "查核原操作", exact: true }).waitFor();
   const telegramReference = await reference(telegram);
-  await selectOption(telegram, "模擬查核結果", "已保存");
-  await telegram.getByRole("button", { name: "模擬查核原操作", exact: true }).click();
+  await selectOption(telegram, "模擬查核結果", "已確認並讀回");
+  await telegram.getByRole("button", { name: "查核原操作", exact: true }).click();
   await telegram.getByText("投遞結果未知", { exact: true }).waitFor();
   assert.equal(await reference(telegram), telegramReference);
   assert.equal(await telegram.getByRole("button", { name: "預覽一般測試", exact: true }).isDisabled(), true);
@@ -113,7 +114,7 @@ export async function verifyChannels(browser, failures, directory) {
   await telegramPage.screenshot({ path: resolve(directory, "telegram-390-outcome.png") });
   await selectOption(telegram, "Telegram 情境", "綁定連結已過期");
   assert.equal(await telegram.getByRole("button", { name: "核對這個 Telegram 帳號", exact: true }).count(), 0);
-  assert.equal(await telegram.getByRole("button", { name: "預覽開始私人綁定", exact: true }).isDisabled(), false);
+  assert.equal(await telegram.getByRole("button", { name: "預覽重新開始私人綁定", exact: true }).isDisabled(), false);
   await selectOption(telegram, "Telegram 情境", "渠道被封鎖");
   assert.equal(await telegram.getByRole("button", { name: "預覽一般測試", exact: true }).isDisabled(), true);
   assert.equal(await telegram.getByRole("button", { name: "撤銷 Telegram 綁定", exact: true }).isDisabled(), false);
@@ -121,11 +122,11 @@ export async function verifyChannels(browser, failures, directory) {
   await selectOption(telegram, "模擬提交結果", "結果未知");
   await telegram.getByRole("button", { name: "預覽開始私人綁定", exact: true }).click();
   await approve(telegram, "我同意開始本人的私人渠道綁定"); await submit(telegram);
-  await telegram.getByRole("button", { name: "模擬查核原操作", exact: true }).waitFor();
+  await telegram.getByRole("button", { name: "查核原操作", exact: true }).waitFor();
   await telegramPage.getByRole("button", { name: "切換渠道情境的合成帳戶", exact: true }).click();
   await telegram.getByText("目前沒有本人 Telegram 綁定。", { exact: true }).waitFor();
   assert.equal(await telegram.getByText("合成操作參考：", { exact: false }).count(), 0);
   assert.equal(await telegram.getByText("私人綁定步驟", { exact: true }).count(), 0);
   await telegramPage.close();
-  return "channels: four Web sizes/explicit private and immediate consent/failure and read-error drafts/status surfaces/same operation lookup/child persistence/account cleanup/unavailable revoke/unknown delivery/manual bot refresh/Telegram candidate conflict/expiry/block/reply semantics";
+  return `channels: ${widths.length ? `${widths.length} Web sizes/` : ""}explicit private and immediate consent/failure and read-error drafts/status surfaces/same operation lookup/child persistence/account cleanup/unavailable revoke/Push quota and Telegram reply gates/manual bot refresh/Telegram candidate conflict/expiry/block/reply semantics`;
 }

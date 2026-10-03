@@ -22,7 +22,7 @@ function CareWorkspace({ child, online, reading, initialKind }: { child: HomeChi
     ...(preview.model.draft?.mode === "revise" || preview.model.deletion ? [{ value: "conflict" as const, label: "版本衝突" }] : []),
   ];
   return <CareRecordsView model={preview.model} actions={preview.actions} onPhotos={() => actions.open("photos")} previewControls={<SectionCard>
-    <SectionHeader title="合成預覽情境" subtitle="這些工具只切換示例狀態，沒有呼叫 Server。" action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
+    <SectionHeader density="compact" title="合成預覽情境" subtitle="這些工具只切換示例狀態，沒有呼叫 Server。" action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
     {controlsOpen ? <>
       <AppSelect label="記錄情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} />
       <AppSelect label="模擬提交結果" value={preview.outcome} options={outcomes} onChange={preview.setOutcome} />
@@ -38,5 +38,5 @@ export default function CarePage() {
   const initialKind = careKindOptions.find(item => item.value === compose)?.value;
   const child = model.children.find(item => item.id === model.selectedChildId);
   return child ? <CareWorkspace key={`${child.id}:${initialKind ?? "list"}`} child={child} online={model.connection === "online"} reading={model.recordsLoad === "loading"} initialKind={initialKind} /> :
-    <PageFrame title="照顧記錄" description="選擇有權查看的孩子，再整理日常觀察。"><SectionCard><Text>尚未選擇孩子，不會顯示其他孩子的記錄。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="照顧記錄" description="選擇有權查看的孩子，再整理日常觀察。"><SectionCard><Text>尚未選擇孩子，不會顯示其他孩子的記錄。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

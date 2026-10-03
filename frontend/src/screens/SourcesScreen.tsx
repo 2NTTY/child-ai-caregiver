@@ -28,7 +28,7 @@ function SourceWorkspace({ child, online, identity, server, onIdentity, onServer
       : [{ value: "running" as const, label: "仍在處理" }, { value: "failed" as const, label: "原次已失敗" }, { value: "not_requested" as const, label: "尚未開始處理" }]),
   ];
   return <SourcesView model={preview.model} actions={preview.actions} onPhotos={onPhotos} onRecord={onRecord} previewControls={<SectionCard>
-    <SectionHeader title="合成來源情境" subtitle="不連 Server、網頁或模型；不是系統分享或檔案上傳。" action={<AppButton label={controlsOpen ? "收起來源情境" : "顯示來源情境"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
+    <SectionHeader density="compact" title="合成來源情境" subtitle="不連 Server、網頁或模型；不是系統分享或檔案上傳。" action={<AppButton label={controlsOpen ? "收起來源情境" : "顯示來源情境"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
     {controlsOpen ? <><AppSelect label="來源情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} />
       <AppSelect label="來源問題階段" value={preview.faultPhase} options={phases} onChange={value => { preview.setFaultPhase(value); preview.setOutcome("success"); }} />
       <AppSelect label="模擬來源結果" value={preview.outcome} options={outcomes} onChange={preview.setOutcome} />
@@ -47,5 +47,5 @@ export default function SourcesPage() {
   return child ? <SourceWorkspace key={JSON.stringify([child.id, identity.id, identity.name, server])} child={child} online={model.connection === "online"} identity={identity} server={server}
     onIdentity={() => setAccount(value => value === "mom" ? "dad" : "mom")} onServer={() => setServer(value => value === "合成 A" ? "合成 B" : "合成 A")}
     onPhotos={() => actions.open("photos")} onRecord={() => actions.open("care")} /> :
-    <PageFrame title="私人來源" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不會顯示其他孩子的私人來源。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="私人來源" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不會顯示其他孩子的私人來源。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

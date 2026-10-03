@@ -2,6 +2,8 @@
 
 更新：2026-10-03。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**FE-W35 商業方案推廣：** 任務、記憶、照片、私人來源、設定及其他工作頁已套用共用閱讀／工作密度、行式清單、分組細線、讀取狀態、轉換播報及表單錯誤／實際焦點。照片和來源共用欄位；設定 Tabs、秘密及身份／孩子清理保留。補修 blur 驗證令按鈕在按下／放開之間移位的首次點擊問題。60 個靜態重排、桌面及 320 表單、typecheck、35 路由 Web／29 資產 Android bundle 通過；必要流程及範圍證據見 [交接](HANDOFF.md#commercial-rollout)／[檢查](verification/fe-w35-commercial/build-checks.json)。Astra 方案前四階段的採納實作及八卡正式 adapter／預覽移除交接已齊；正式 App 接線、使用者視覺、讀屏及真機仍待主聊天／驗收。使用者本輪已授權自行審核後合併，前置 #78／#79 已依序合併；下方歷史「沿 draft／不自行 merge」不是本輪限制。
+
 **FE-W34 首頁及記錄工作區：** 首頁承接一個明確授權的 focus 投影，正常無事項／讀取不可用分開；已有孩子可直接提問，引導是可選入口。兩種首頁共用焦點及最近記錄，右欄預設收起且不再重複主要內容。記錄詳情改閱讀正文／相關資料／技術 metadata 三層；窄版返回保留篩選、捲動位置及上次查看標記，表單錯誤有欄位關聯、摘要及實際焦點。四尺寸八組首頁／記錄／表單、原照顧流程與九組手機動畫檢查、typecheck、Web／Android bundle 通過。[交接](HANDOFF.md#commercial-home-records)／[證據](verification/fe-w34-home-records/build-checks.json)。接續推廣到待辦、記憶、照片及設定；正式 API、使用者視覺與真機仍待驗。
 
 **FE-W33 商業方案首包：** 按 Astra 全份方案及 DESIGN_REVIEW 的已採納範圍，完成共用字級／表面／觸控密度、純 OperationNotice、狀態轉換播報、可達導覽／路由右欄選擇、Modal 抽屜、真 Tabs 及欄位 ref。普通聊天改連續正文，輸入框及建議分開；來源改閱讀優先、技術區次層、原引用返回及 disclosure 語意。四尺寸來源／時間線、1440／900 短窗／390／320 焦點及 Tabs、60 個靜態重排、typecheck、Web／Android bundle 通過。[交接](HANDOFF.md#commercial-reading)／[證據](verification/fe-w33-reading/build-checks.json)。正式 API、讀屏／真機與使用者視覺仍待驗；下一包首頁及記錄詳情，不改換頁動畫。

@@ -1,0 +1,39 @@
+{
+  "at": "2026-10-03T15:02:59.381Z",
+  "baseline": "e584718b21d89f97171749e4ad6d07a93eae93eb",
+  "formalBaseline": "4f27d05539234a2c2823fbdbfc7660955f0e7428",
+  "integratedMasterBeforeDelivery": "c0e946a7e48353b038ecdf35abca85adba706e89",
+  "documentSha256": "2e0b3a56b99450c204f455127072e5f73d82bf7654c76329f2b74cd09c96dfd0",
+  "scope": "frontend only; synthetic local preview; no formal API, real model, notification delivery or device acceptance",
+  "checks": {
+    "typecheck": "passed after final product changes",
+    "webExport": "passed, 35 routes",
+    "webEntry": "entry-4d20fc4b3ad91876612bca90ca5a206d.js",
+    "webSha256": "45e099357e433bb08f800095172190659a734046c9044b3a1c659ccc7f35d49f",
+    "androidExport": "passed, 29 assets; bundle only",
+    "androidEntry": "entry-a340e814f18c455f2f1c63359de909f3.hbc",
+    "androidSha256": "f621a53f675246e7346d58325a7e68e4398def9fb2ec10f3c6b432fd9ef4b727",
+    "layout": "checks-layout.json: 15 routes at 1440/1024/390/320; captured before validation timing and scope guard fixes, which do not change normal layout",
+    "forms": "form-checks.json: recorded desktop two, narrow seven and two scope checks; five other desktop prefixes observed separately",
+    "channels": "checks-channels.json",
+    "modelAndSources": "checks-model-settings-sources.json",
+    "photos": "checks-photos.json",
+    "otherCompletedPrefixes": "observed-flows.json",
+    "visualReview": "Primary agent inspected tasks 1440, memory 1440, photos 320, settings 320 and photo error 320 captures; user visual acceptance remains pending",
+    "boundary": "Only frontend paths changed; no active worktree has uncommitted frontend overlap; frontend tree equals current master before this work package"
+  },
+  "resolvedFailures": [
+    "Photo button moved 106 px between pointerdown and pointerup after blur validation; ordinary forms now use onSubmit with default onChange revalidation, and actual first-click focus is verified",
+    "Global guard incorrectly asked to discard personal model draft on child selection; explicit child/account scope preserves personal drafts and unknown operations while route departure still blocks unknown operations",
+    "Initial model consent fixture expected a cross-field error before triggering validation; corrected fixture verifies actual consent checkbox and first invalid limit without changing product rules",
+    "Legacy selectors included hidden live regions or obsolete operation labels; tests now address actual visible controls and preserve business assertions",
+    "Push quota/cooldown gates were wrongly treated as Telegram acknowledgement gates; assertions now follow the existing FE-W30 contract",
+    "Legacy photo read-only assertion excluded the uploader private attachment and omitted explicit replacement confirmation; corrected test verifies own-private reading, disabled mutations and permission revocation"
+  ],
+  "pending": [
+    "Formal app/client adapters and preview controller removal; concrete eight-card mapping in HANDOFF#commercial-rollout",
+    "Existing A1-A6/D1 formal integration issues, identity generation, real stream/history/source mapping and cancellation",
+    "Task own read-error, memory own read-error and model check failed/429 need explicit formal projection; UI does not infer missing states",
+    "User visual acceptance, screen readers, real API/model/notifications, browser/device and native acceptance"
+  ]
+}

@@ -1,43 +1,51 @@
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Controller, useForm, useWatch, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { HelperText, Text } from "react-native-paper";
+import { Text } from "react-native-paper";
 import { AppButton, AppSelect, AppTextField } from "../ui";
 import { AppDateField } from "../DateTimeFields";
 import { profileAgeOptions, profileAgeUnitOptions, type ProfileFormValues } from "../../profile-view-model";
 import { chineseFont, colors, spacing, typeScale } from "../../theme";
 import { profileFormSchema } from "./profile-form";
+import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 
 export function ProfileForm({ initialValues, editable, canReview, draftOnly, onEdit, onReview }: {
   initialValues: ProfileFormValues; editable: boolean; canReview: boolean; draftOnly: boolean;
   onEdit: () => void; onReview: (values: ProfileFormValues) => void;
 }) {
-  const { control, handleSubmit } = useForm<ProfileFormValues>({ resolver: zodResolver(profileFormSchema), defaultValues: initialValues });
-  const { isDirty } = useFormState({ control });
+  const formId = useId();
+  const { control, handleSubmit, setFocus } = useForm<ProfileFormValues>({ resolver: zodResolver(profileFormSchema), defaultValues: initialValues, shouldFocusError: false });
+  const { isDirty, errors } = useFormState({ control });
   usePreviewLeaveGuard(isDirty);
   const ageKind = useWatch({ control, name: "ageKind" });
+  const fieldId = (name: keyof ProfileFormValues) => `${formId}-${name}`;
+  const visibleFields: { field: keyof ProfileFormValues; label: string }[] = [{ field: "ageKind", label: "年齡資料" },
+    ...(ageKind === "birth_date" ? [{ field: "birthDate" as const, label: "出生日期" }] : ageKind === "approximate" ? [{ field: "ageRaw" as const, label: "約數年齡原值" }, { field: "ageUnit" as const, label: "約數年齡單位" }, { field: "ageAsOf" as const, label: "約數年齡截至日期" }] : []),
+    { field: "dueDate", label: "預產期" }, { field: "gestationalWeeksRaw", label: "出生孕週原文" }, { field: "region", label: "地區" }, { field: "language", label: "語言" }, { field: "allergies", label: "過敏資料" }, { field: "specialNeeds", label: "特別需要" }, { field: "preferences", label: "照顧偏好" }, { field: "source", label: "資料來源" }, { field: "validUntil", label: "資料有效至" }, { field: "reason", label: "確認或更正原因" }];
+  const errorEntries = visibleFields.flatMap(item => errors[item.field]?.message ? [{ ...item, message: String(errors[item.field]?.message) }] : []);
   const [width, setWidth] = useState(0);
   const paired = width >= 560;
   const field = (name: Exclude<keyof ProfileFormValues, "ageKind" | "ageUnit">, label: string, multiline = false, placeholder?: string) =>
     <Controller key={name} control={control} name={name} render={({ field: input, fieldState }) => <View style={styles.field}>
-      {["birthDate", "ageAsOf", "dueDate", "validUntil"].includes(name) ? <AppDateField label={label} value={input.value} disabled={!editable}
+      {["birthDate", "ageAsOf", "dueDate", "validUntil"].includes(name) ? <AppDateField ref={input.ref} onBlur={input.onBlur} id={fieldId(name)} errorId={`${fieldId(name)}-message`} label={label} value={input.value} disabled={!editable}
         onChange={value => { onEdit(); input.onChange(value); }} error={fieldState.error?.message} /> : <AppTextField ref={input.ref} label={label} accessibilityLabel={label} value={input.value} onBlur={input.onBlur}
         onChangeText={value => { onEdit(); input.onChange(value); }} editable={editable} disabled={!editable}
-        error={!!fieldState.error} multiline={multiline} placeholder={placeholder} />}
-      {fieldState.error && !["birthDate", "ageAsOf", "dueDate", "validUntil"].includes(name) ? <HelperText type="error" accessibilityRole="alert">{fieldState.error.message}</HelperText> : null}
+        nativeID={fieldId(name)} aria-invalid={!!fieldState.error} aria-describedby={fieldState.error ? `${fieldId(name)}-message` : undefined} error={!!fieldState.error} multiline={multiline} placeholder={placeholder} />}
+      {!["birthDate", "ageAsOf", "dueDate", "validUntil"].includes(name) ? <FormFieldMessage id={`${fieldId(name)}-message`} error={fieldState.error?.message} /> : null}
     </View>} />;
   const pair = (first: ReactNode, second: ReactNode) => <View style={[styles.pair, paired && styles.pairWide]}>
     <View style={styles.pairItem}>{first}</View><View style={styles.pairItem}>{second}</View>
   </View>;
   return <View style={styles.form} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-    <Controller control={control} name="ageKind" render={({ field: input }) => <AppSelect label="年齡資料" value={input.value} options={profileAgeOptions}
+    <FormErrorSummary entries={errorEntries} onFocus={name => setFocus(name as keyof ProfileFormValues)} />
+    <Controller control={control} name="ageKind" render={({ field: input }) => <AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("ageKind")} label="年齡資料" value={input.value} options={profileAgeOptions}
       disabled={!editable} onChange={value => { onEdit(); input.onChange(value); }} />} />
     {ageKind === "birth_date" ? field("birthDate", "出生日期（YYYY-MM-DD）", false, "例如 2023-02-14") : null}
     {ageKind === "approximate" ? <>
       {field("ageRaw", "約數年齡原值", false, "例如 3 個半；不轉成精確數值")}
-      <Controller control={control} name="ageUnit" render={({ field: input }) => <AppSelect label="約數年齡單位" value={input.value} options={profileAgeUnitOptions}
+      <Controller control={control} name="ageUnit" render={({ field: input }) => <AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("ageUnit")} label="約數年齡單位" value={input.value} options={profileAgeUnitOptions}
         disabled={!editable} onChange={value => { onEdit(); input.onChange(value); }} />} />
       {field("ageAsOf", "約數年齡截至日期（YYYY-MM-DD）")}
     </> : null}
@@ -51,7 +59,9 @@ export function ProfileForm({ initialValues, editable, canReview, draftOnly, onE
     {field("source", "資料來源（由你描述）", true, "例如家長提供；不自動引用私人聊天")}
     {field("validUntil", "資料有效至（可空，YYYY-MM-DD）")}
     {field("reason", "確認或更正原因", true)}
-    <AppButton label={draftOnly ? "預覽本地檔案草稿" : "預覽家庭共享內容"} onPress={() => { void handleSubmit(onReview)(); }} disabled={!canReview} />
+    <AppButton label={draftOnly ? "預覽本地檔案草稿" : "預覽家庭共享內容"} onPress={() => { void handleSubmit(onReview, invalid => {
+      const first = visibleFields.find(item => invalid[item.field]?.message); if (first) setFocus(first.field);
+    })(); }} disabled={!canReview} />
   </View>;
 }
 const styles = StyleSheet.create({

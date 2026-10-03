@@ -1,14 +1,16 @@
+import type { Ref } from "react";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, spacing, typeScale } from "../theme";
 
-export function AppCheckbox({ label, accessibilityLabel = label, description, checked, disabled = false, onChange, strikeThrough = false }: {
+export function AppCheckbox({ label, accessibilityLabel = label, description, checked, disabled = false, onChange, strikeThrough = false, ref, id, invalid, describedBy, onBlur }: {
   label: string; accessibilityLabel?: string; description?: string; checked: boolean; disabled?: boolean; onChange: (checked: boolean) => void; strikeThrough?: boolean;
+  ref?: Ref<View>; id?: string; invalid?: boolean; describedBy?: string; onBlur?: () => void;
 }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   function toggle() { if (!disabled) onChange(!checked); }
-  return <Pressable accessibilityRole="checkbox" accessibilityLabel={accessibilityLabel} accessibilityState={{ checked, disabled }} aria-checked={checked} aria-disabled={disabled}
+  return <Pressable ref={ref} nativeID={id} onBlur={onBlur} aria-invalid={invalid} aria-describedby={describedBy} accessibilityRole="checkbox" accessibilityLabel={accessibilityLabel} accessibilityState={{ checked, disabled }} aria-checked={checked} aria-disabled={disabled}
     disabled={disabled} onPress={toggle} style={({ pressed }) => [styles.row, compact && styles.mobileRow, disabled && styles.disabled, pressed && styles.pressed]}
     {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => {
       if ((event.nativeEvent?.key ?? event.key) === " ") { event.preventDefault(); toggle(); }

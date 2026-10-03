@@ -10,7 +10,7 @@ import {PageFrame} from '../components/PageFrame';
 
 function ContactWorkspace({child, online, identity, server, onIdentity, onServer, onTask, onSettings}: {child: HomeChild; online: boolean; identity: string; server: string; onIdentity: () => void; onServer: () => void; onTask: (id: string) => void; onSettings: () => void}) {
   const preview = useContactPreview(child, online, identity, server), [tools, setTools] = useState(false);
-  return <ContactView model={preview.model} actions={preview.actions} onTask={onTask} onSettings={onSettings} previewTools={<SectionCard><SectionHeader title="合成聯絡情境" subtitle="不取得瀏覽器權限、不綁定渠道、不外發或啟動背景執行。" icon="information-outline" />
+  return <ContactView model={preview.model} actions={preview.actions} onTask={onTask} onSettings={onSettings} previewTools={<SectionCard><SectionHeader density="compact" title="合成聯絡情境" subtitle="不取得瀏覽器權限、不綁定渠道、不外發或啟動背景執行。" icon="information-outline" />
     <AppButton label={tools ? '收起聯絡情境' : '顯示聯絡情境'} variant="quiet" onPress={() => setTools(value => !value)} />
     {tools ? <>
       <AppSelect label="聯絡資料情境" value={preview.condition} options={([{value: 'normal', label: '一般'}, {value: 'empty', label: '沒有任務或紀錄'}, {value: 'loading', label: '載入中'}, {value: 'read_error', label: '讀取失敗'}, {value: 'read_only', label: '唯讀'}, {value: 'no_bindings', label: '沒有本人綁定'}, {value: 'primary_ineligible', label: '負責人未同意渠道'}, {value: 'worker_paused', label: '背景聯絡暫停'}, {value: 'expired_grant', label: '已保存授權過期'}, {value: 'lost', label: '失去存取'}] as {value: ContactCondition; label: string}[])} onChange={preview.changeCondition} />
@@ -23,5 +23,5 @@ function ContactWorkspace({child, online, identity, server, onIdentity, onServer
 export function ContactScreen() {
   const {model, actions} = usePreview(), child = model.children.find(item => item.id === model.selectedChildId), [identity, setIdentity] = useState('preview-mom'), [server, setServer] = useState('合成 A');
   return child ? <ContactWorkspace key={JSON.stringify([child.id, identity, server])} child={child} online={model.connection === 'online'} identity={identity} server={server} onIdentity={() => setIdentity(value => value === 'preview-mom' ? 'preview-second-user' : 'preview-mom')} onServer={() => setServer(value => value === '合成 A' ? '合成 B' : '合成 A')} onTask={() => actions.open('tasks')} onSettings={() => actions.open('settings')} /> :
-    <PageFrame title="主動聯絡授權" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不讀取其他孩子的聯絡授權。</Text><AppButton label="查看子女檔案" onPress={() => actions.open('profile')} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="主動聯絡授權" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不讀取其他孩子的聯絡授權。</Text><AppButton label="查看子女檔案" onPress={() => actions.open('profile')} /></SectionCard></PageFrame>;
 }

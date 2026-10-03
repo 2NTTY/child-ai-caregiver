@@ -18,17 +18,17 @@ export async function verifyProfile(browser, failures, directory) {
   await selectOption(page, "模擬提交結果", "結果未知");
   await page.getByRole("button", { name: "預覽家庭共享內容", exact: true }).click();
   await page.getByRole("button", { name: "我已核對，確認家庭共享", exact: true }).click();
-  await page.getByLabel("操作狀態：結果未知", { exact: true }).waitFor();
+  await page.getByRole("heading", { name: "尚未確認操作結果", exact: true }).waitFor();
   assert.equal(await page.getByRole("textbox", { name: "約數年齡原值", exact: true }).isEditable(), false);
   const reference = await page.getByText("合成操作參考：", { exact: false }).textContent();
-  await page.getByRole("button", { name: "模擬查核原操作", exact: true }).click();
-  await page.getByLabel("操作狀態：結果未知", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "查核原操作", exact: true }).click();
+  await page.getByRole("heading", { name: "尚未確認操作結果", exact: true }).waitFor();
   assert.equal(await page.getByText("合成操作參考：", { exact: false }).textContent(), reference);
   await assertFits(page, "profile unknown 320");
   await page.screenshot({ path: resolve(directory, "profile-320-unknown.png") });
-  await selectOption(page, "模擬查核結果", "已保存");
-  await page.getByRole("button", { name: "模擬查核原操作", exact: true }).click();
-  await page.getByLabel("操作狀態：已保存", { exact: true }).waitFor();
+  await selectOption(page, "模擬查核結果", "已確認並讀回");
+  await page.getByRole("button", { name: "查核原操作", exact: true }).click();
+  await page.getByRole("heading", { name: "已保存", exact: true }).waitFor();
   await page.getByRole("button", { name: "永久刪除檔案及歷史", exact: true }).click();
   await page.getByRole("button", { name: "取消刪除", exact: true }).click();
   assert.equal(await page.getByRole("button", { name: "確認永久刪除檔案及歷史", exact: true }).count(), 0);
@@ -37,7 +37,7 @@ export async function verifyProfile(browser, failures, directory) {
   assert.equal(await page.getByRole("button", { name: "新增孩子", exact: true }).isEnabled(), false);
   await selectOption(page, "檔案情境", "權限失效");
   await page.getByText("孩子權限已失效", { exact: true }).waitFor();
-  assert.equal(await page.getByRole("button", { name: "模擬查核原操作", exact: true }).count(), 0);
+  assert.equal(await page.getByRole("button", { name: "查核原操作", exact: true }).count(), 0);
   await page.close();
   return "profile: history/raw approximate age/conflict/same-operation lookup/deletion cancellation/role and permission cleanup at 320";
 }
@@ -61,11 +61,11 @@ export async function verifyFamily(browser, failures, directory) {
   await selectOption(page, "模擬提交結果", "結果未知");
   await scope.click();
   await page.getByRole("button", { name: "再次確認操作", exact: true }).click();
-  await page.getByLabel("操作狀態：結果未知", { exact: true }).waitFor();
+  await page.getByRole("heading", { name: "尚未確認操作結果", exact: true }).waitFor();
   assert.equal(await member.count(), 1, "An unknown revocation must not remove a member early");
-  await selectOption(page, "模擬查核結果", "已保存");
-  await page.getByRole("button", { name: "模擬查核原操作", exact: true }).click();
-  await page.getByLabel("操作狀態：已保存", { exact: true }).waitFor();
+  await selectOption(page, "模擬查核結果", "已確認並讀回");
+  await page.getByRole("button", { name: "查核原操作", exact: true }).click();
+  await page.getByRole("heading", { name: "已保存", exact: true }).waitFor();
   assert.equal(await member.count(), 0);
   await page.screenshot({ path: resolve(directory, "family-1440-revoked.png") });
   await selectOption(page, "本人視角", "檢視者");
@@ -79,7 +79,7 @@ export async function verifyFamily(browser, failures, directory) {
   await assertFits(narrow, "family acceptance 320");
   await narrow.getByRole("checkbox", { name: "我已核對目標及共享範圍", exact: true }).click();
   await narrow.getByRole("button", { name: "再次確認加入", exact: true }).click();
-  await narrow.getByLabel("操作狀態：已保存", { exact: true }).waitFor();
+  await narrow.getByRole("heading", { name: "已保存", exact: true }).waitFor();
   await narrow.screenshot({ path: resolve(directory, "family-320-acceptance.png") });
   await narrow.close();
   return "family: keyboard scope confirmation/one-time-code cleanup/unknown revocation/viewer boundary/invitation acceptance at 320";

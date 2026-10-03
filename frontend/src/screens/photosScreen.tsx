@@ -22,7 +22,7 @@ function PhotoWorkspace({ child, online, reading, onCare, capturePreferred }: { 
     ...(!["upload", "extract"].includes(preview.faultPhase) ? [{ value: "confirmed_unavailable" as const, label: "已確認但結果不可讀" }] : []),
   ];
   return <PhotosView model={preview.model} actions={preview.actions} onCare={onCare} capturePreferred={capturePreferred} previewControls={<SectionCard>
-    <SectionHeader title="合成預覽情境" subtitle="不呼叫 Server、Gemini 或裝置權限。" action={<AppButton label={controlsOpen ? "收起照片情境" : "顯示照片情境"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
+    <SectionHeader density="compact" title="合成預覽情境" subtitle="不呼叫 Server、Gemini 或裝置權限。" action={<AppButton label={controlsOpen ? "收起照片情境" : "顯示照片情境"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
     {controlsOpen ? <><AppButton label="使用品牌示例原圖" variant="secondary" disabled={!preview.model.canPick} onPress={() => preview.actions.pickOriginal({ ...photoPreviewOriginal })} />
       <AppSelect label="照片情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} />
       <AppSelect label="模擬問題階段" value={preview.faultPhase} options={phases} onChange={value => { preview.setFaultPhase(value); preview.setOutcome("success"); }} />
@@ -36,5 +36,5 @@ export default function PhotosPage() {
   const { model, actions } = usePreview();
   const child = model.children.find(item => item.id === model.selectedChildId);
   return child ? <PhotoWorkspace key={JSON.stringify([child.id, model.caregiverName])} child={child} online={model.connection === "online"} reading={model.recordsLoad === "loading"} capturePreferred={input === "camera"} onCare={() => actions.open("care")} /> :
-    <PageFrame title="照片與記錄" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不會顯示其他孩子的照片。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="照片與記錄" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不會顯示其他孩子的照片。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

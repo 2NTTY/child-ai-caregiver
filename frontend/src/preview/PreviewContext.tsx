@@ -54,7 +54,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     selectChild(id) {
       if (id === model.selectedChildId) return;
       leave(() => { setSelectedChildId(id);
-        setNotice("已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。"); });
+        setNotice("已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。"); }, "child");
     },
     refresh() {
       const restoreScenario = scenario === "loading" ? "normal" : scenario;

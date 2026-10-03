@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { profileAgeUnitOptions, type ProfileDataView, type ProfileRevisionView } from "../../profile-view-model";
-import { chineseFont, colors, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, spacing, typeScale , readingType } from "../../theme";
 
 export function ProfileDataSummary({ data }: { data: ProfileDataView | null }) {
   if (!data) return <Text style={styles.body}>沒有已確認檔案。</Text>;
@@ -32,7 +32,7 @@ export function ProfileRevisionSummary({ revision }: { revision: ProfileRevision
 const styles = StyleSheet.create({
   rows: { gap: spacing.sm, minWidth: 0 }, row: { gap: 2, minWidth: 0 },
   label: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },
-  body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, flexShrink: 1 },
-  meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
-  version: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },
+  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+  version: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.tool, fontWeight: "700" },
 });

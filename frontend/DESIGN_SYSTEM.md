@@ -106,3 +106,11 @@ FE-W19：Agent 輸入工具列的「拍照」直接開同風格 AppDialog 相機
 首頁只承接一個授權 focus：operation 優先顯示既有恢復操作，其他 task／growth／none／unavailable 由 adapter 明確提供，不用記錄數或本地清單推斷。已設孩子可直接進入聊天，可選引導不阻擋。HomeFocus／HomeRecentRecords 供兩種首頁共用，最近記錄用行與細線，技術狀態次層；右欄預設收起，不重複主要內容。手機動畫子樹、三秒閱讀及右側完整圖片保留。
 
 工作頁用 PageFrame compact（24／32 標題）及 SectionHeader compact（16／24）；記錄原文用 reading 16／26，相關欄位 tool 14／22，metadata 12／18 分組。ReadStateNotice 分清 initial／empty／stale／error，普通狀態只在轉換時播報。FormFieldMessage 關聯控件的 help／error，FormErrorSummary 可定位實際欄位；不覆寫 RHF schema 或原 request。窄詳情返回保留篩選、列表位置和非顏色標記，身份／孩子／權限改變即清理閱讀錨點。
+
+## FE-W35 既有工作頁配方
+
+任務、記憶、照片、私人來源、設定及其他工作頁沿同一 compact 容器。原文用 16／26，相關操作及欄位 14／22，版本、來源及時間 12／18；相同用途貼近排列，群組之間用細線。任務和記憶清單以行與明確文字標記區分選取；原照片維持 contain，不為密度而裁切。
+
+一般狀態在轉換時 polite 播報，明確失敗、撤權或身份失效才 urgent；歷史 mount 和逐字正文不重播。讀取提示只承接該資源自己的 loading／error／freshness，未提供錯誤旗標時不從其他頁或中文 notice 猜測。設定的真正 Tabs 保持編輯器掛載；模型秘密在 inactive／送出／失效時仍須清理。
+
+驗證錯誤使用實際欄位 ref、穩定 id 和 help／error 關聯，摘要按畫面順序定位。普通表單首次提交時驗證，之後隨輸入重驗；不在 pointerdown 造成的 blur 中插入摘要，避免按鈕於 pointerup 前移位而失去點擊。schema、原文空格、日期精度、共享同意和原操作保持由既有控制器決定。[實作及驗證](HANDOFF.md#commercial-rollout)。

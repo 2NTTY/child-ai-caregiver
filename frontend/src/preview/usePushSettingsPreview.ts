@@ -20,7 +20,7 @@ const reasons: Partial<Record<ChannelDeliveryState, string>> = {
 };
 
 export function usePushSettingsPreview(online: boolean, identity: ChannelPreviewIdentity) {
-  const op = usePreviewOperation();
+  const op = usePreviewOperation("account");
   const [data, setData] = useState<PushData>(initial);
   const [review, setReview] = useState<ChannelReview | null>(null);
   const target = useRef<{ id: string | null; version: number | null } | null>(null);

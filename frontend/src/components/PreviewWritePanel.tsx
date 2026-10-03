@@ -11,7 +11,6 @@ export function PreviewWriteNotice({ controller, operation, onCheckOriginal, onR
 }) {
   const op = operation ?? controller?.operation;
   if (!op) return null;
-  if (op.state === "none" && !op.message) return null;
   const title = op.resultUnavailable ? "原操作已確認 · 結果不可讀" : op.recovery === "reload" ? "原操作已確認 · 待重讀結果"
     : ({ none: "操作狀態", needs_confirmation: "待確認", saving: "處理中", saved: "已保存", failed: "未能保存", unknown: "尚未確認操作結果", conflict: "版本衝突 · 尚未保存" } as const)[op.state];
   return <OperationNotice state={op.state} title={title} message={op.message}

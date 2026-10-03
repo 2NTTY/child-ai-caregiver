@@ -25,7 +25,7 @@ const formFields = [
 export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel; actions: CareRecordsActions }) {
   const draft = model.draft!;
   const formId = useId();
-  const { control, handleSubmit, getValues, setFocus, formState: { isDirty, errors } } = useForm<CareFormValues>({ defaultValues: draft.initialValues, resolver: zodResolver(careFormSchema(draft.mode)), mode: "onBlur", shouldFocusError: false });
+  const { control, handleSubmit, getValues, setFocus, formState: { isDirty, errors } } = useForm<CareFormValues>({ defaultValues: draft.initialValues, resolver: zodResolver(careFormSchema(draft.mode)), mode: "onSubmit", shouldFocusError: false });
   const visibleFields = formFields.filter(item => item.name !== "reason" || draft.mode === "revise");
   const errorEntries = visibleFields.flatMap(item => {
     const message = errors[item.name]?.message;

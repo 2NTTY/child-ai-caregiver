@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { HelperText, Text } from "react-native-paper";
+import { Text } from "react-native-paper";
 import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,10 +9,13 @@ import {
   type ChannelDeliveryView, type ChannelPermission, type ChannelReadState, type ChannelReview,
   type PushSettingsActions, type PushSettingsModel, type TelegramSettingsActions, type TelegramSettingsModel,
 } from "../../channel-view-model";
-import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
 import { AppButton, AppTextField, SectionCard, SectionHeader } from "../ui";
+import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
+import { ReadStateNotice } from "../ReadStateNotice";
+import { StatusAnnouncement } from "../StatusAnnouncement";
 
 type SharedModel = PushSettingsModel | TelegramSettingsModel;
 type SharedActions = PushSettingsActions | TelegramSettingsActions;
@@ -50,18 +53,31 @@ type BrowserLabelValues = z.infer<typeof browserLabelSchema>;
 function StateNote({ children, tone = "neutral" }: { children: ReactNode; tone?: Tone }) {
   return <View style={[styles.note, tone === "warning" && styles.warningNote, tone === "error" && styles.errorNote]}>
     <AppIcon name="information-outline" size={18} color={tone === "warning" ? colors.warningInk : tone === "error" ? colors.errorInk : colors.muted} />
-    <Text accessibilityRole={tone === "neutral" ? "text" : "alert"} style={[styles.noteCopy, tone === "warning" && styles.warning, tone === "error" && styles.error]}>{children}</Text>
+    <Text style={[styles.noteCopy, tone === "warning" && styles.warning, tone === "error" && styles.error]}>{children}</Text>
   </View>;
 }
 
-function ReadState({ state, online, locked, refresh }: { state: ChannelReadState; online: boolean; locked: boolean; refresh(): void }) {
-  const message = state === "loading" ? "正在重新讀取本人渠道狀態，上一批訂閱、接收者及投遞暫不展示。"
+function readMessage(state: ChannelReadState) {
+  return state === "ready" ? "" : state === "loading" ? "正在重新讀取本人渠道狀態，上一批訂閱、接收者及投遞暫不展示。"
     : state === "session_changed" ? "登入身份已變更，上一位使用者的渠道、接收者及操作內容已清除。請重新登入，或以正確帳戶重新載入頁面。"
       : "未能讀取本人渠道狀態，上一批訂閱、接收者及投遞暫不展示。請手動重新讀取。";
+}
+
+function ChannelAnnouncements({ model }: { model: SharedModel }) {
+  return <>
+    <StatusAnnouncement eventKey={model.readState} message={readMessage(model.readState)} urgent={model.readState === "failed" || model.readState === "session_changed"} />
+    <StatusAnnouncement eventKey={String(model.online)} message={model.online ? "已恢復連線，請重新核對本人渠道狀態。" : "目前離線；恢復連線後才可確認渠道操作或重新讀取。"} />
+    <StatusAnnouncement eventKey={String(model.workerEnabled)} message={model.workerEnabled ? "背景投遞暫停提示已解除；可用操作仍按目前渠道狀態判斷。" : "背景投遞目前暫停，不能發送一般測試；排隊中的投遞不等於已發送。"} />
+    <StatusAnnouncement eventKey={model.notice ?? ""} message={model.notice ?? ""} />
+  </>;
+}
+
+function ReadState({ state, online, locked, refresh }: { state: ChannelReadState; online: boolean; locked: boolean; refresh(): void }) {
   return <View style={styles.stack}>
-    <StateNote tone={state === "failed" ? "error" : "neutral"}>{message}</StateNote>
+    {state === "loading" || state === "failed" ? <ReadStateNotice key={state} state={state === "loading" ? "loading" : "error"} message={readMessage(state)}>
+      {state === "failed" ? <AppButton label="重新讀取本人渠道狀態" variant="secondary" disabled={!online || locked} onPress={refresh} /> : null}
+    </ReadStateNotice> : <StateNote>{readMessage(state)}</StateNote>}
     {!online && state !== "session_changed" ? <StateNote tone="warning">目前離線，恢復連線後才可重新讀取。</StateNote> : null}
-    {state === "failed" ? <AppButton label="重新讀取本人渠道狀態" variant="secondary" disabled={!online || locked} onPress={refresh} /> : null}
   </View>;
 }
 
@@ -100,7 +116,7 @@ function ChannelReviewPanel({ model, actions }: { model: SharedModel; actions: S
 
 function RecentDeliveries({ deliveries }: { deliveries: ChannelDeliveryView[] }) {
   const latest = [...deliveries].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)).slice(0, 20);
-  return <View style={styles.stack}>
+  return <View style={[styles.stack, styles.group]}>
     <Text accessibilityRole="header" style={styles.title}>最近投遞</Text>
     <Text style={styles.meta}>最多顯示最近 20 項。渠道已接受不等於已送達或已讀；投遞及本人回覆均不代表照護任務已完成。</Text>
     {latest.length === 0 ? <Text style={styles.meta}>目前沒有投遞紀錄。</Text> : latest.map(delivery => <View key={delivery.id} style={styles.entry}>
@@ -115,24 +131,30 @@ function RecentDeliveries({ deliveries }: { deliveries: ChannelDeliveryView[] })
 }
 
 function BrowserEnableForm({ form, disabled, stageEnable }: { form: UseFormReturn<BrowserLabelValues>; disabled: boolean; stageEnable(label: string): void }) {
-  return <View style={styles.stack}>
+  const formId = useId();
+  const error = form.formState.errors.label?.message;
+  return <View style={[styles.stack, styles.group]}>
+    <FormErrorSummary entries={error ? [{ field: "label", label: "瀏覽器名稱", message: error }] : []} onFocus={() => form.setFocus("label")} />
     <Controller name="label" control={form.control} render={({ field, fieldState }) => <View>
-      <AppTextField ref={field.ref} label="瀏覽器名稱" accessibilityLabel="瀏覽器通知名稱" value={field.value}
+      <AppTextField ref={field.ref} nativeID={`${formId}-label`} aria-invalid={!!fieldState.error} aria-describedby={`${formId}-label-message`} label="瀏覽器名稱" accessibilityLabel="瀏覽器通知名稱" value={field.value}
         disabled={disabled} onChangeText={field.onChange} onBlur={field.onBlur} error={!!fieldState.error} />
-      {fieldState.error ? <HelperText type="error">{fieldState.error.message}</HelperText> : <Text style={styles.fieldHint}>去除前後空格後須有內容，最多 80 字元；只供你辨認本人訂閱。</Text>}
+      <FormFieldMessage id={`${formId}-label-message`} error={fieldState.error?.message} help="去除前後空格後須有內容，最多 80 字元；只供你辨認本人訂閱。" />
     </View>} />
-    <AppButton label="預覽啟用此瀏覽器通知" disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()))} />
+    <AppButton label="預覽啟用此瀏覽器通知" disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()), () => form.setFocus("label"))} />
   </View>;
 }
 
 export function WebPushSettingsCard({ model, actions, operationNotice }: { model: PushSettingsModel; actions: PushSettingsActions; operationNotice?: ReactNode }) {
-  const form = useForm<BrowserLabelValues>({ defaultValues: { label: "我的瀏覽器" }, resolver: zodResolver(browserLabelSchema), mode: "onBlur" });
+  const form = useForm<BrowserLabelValues>({ defaultValues: { label: "我的瀏覽器" }, resolver: zodResolver(browserLabelSchema), mode: "onSubmit", shouldFocusError: false });
   const ready = model.readState === "ready";
   const actionBlocked = !model.online || model.locked || !!model.review || model.conflict;
   const canEnable = ready && !actionBlocked && model.available && model.browserSupported && model.permission !== "denied" && model.permission !== "unsupported";
   const cooldownReady = model.nextTestAt === null || Date.parse(model.nextTestAt) <= Date.now();
   return <SectionCard style={styles.card}>
-    <SectionHeader title="我的瀏覽器通知" icon="bell-outline" subtitle="只管理本人的瀏覽器訂閱；此頁是合成預覽。"
+    <ChannelAnnouncements model={model} />
+    <StatusAnnouncement eventKey={model.permission} message={`通知權限：${permissionLabels[model.permission]}。${permissionGuidance[model.permission]}`} urgent={model.permission === "denied"} />
+    <StatusAnnouncement eventKey={`${model.available}:${model.browserSupported}`} message={!model.available ? "瀏覽器通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。" : !model.browserSupported ? "這個瀏覽器未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。" : ""} />
+    <SectionHeader density="compact" title="我的瀏覽器通知" icon="bell-outline" subtitle="只管理本人的瀏覽器訂閱；此頁是合成預覽。"
       action={ready ? <AppButton label="重新讀取瀏覽器狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {!ready ? <ReadState state={model.readState} online={model.online} locked={model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />
@@ -145,7 +167,7 @@ export function WebPushSettingsCard({ model, actions, operationNotice }: { model
       </View>
       <BrowserEnableForm form={form} disabled={!canEnable} stageEnable={actions.stageEnable} />
       <ChannelReviewPanel model={model} actions={actions} />
-      <View style={styles.stack}>
+      <View style={[styles.stack, styles.group]}>
         <Text accessibilityRole="header" style={styles.title}>本人瀏覽器訂閱</Text>
         {model.bindings.length === 0 ? <Text style={styles.meta}>目前沒有本人瀏覽器訂閱。</Text> : model.bindings.map(binding => {
           const deliveryNeedsReview = pushDeliveryNeedsReview(model.deliveries, binding.id);
@@ -183,7 +205,10 @@ export function TelegramSettingsCard({ model, actions, operationNotice }: { mode
   const testBlocked = model.binding !== null && blocksAnotherTelegramTest(model.deliveries, model.binding.id);
   const canTest = !actionBlocked && model.configured && model.workerEnabled && model.binding?.status === "active" && !testBlocked;
   return <SectionCard style={styles.card}>
-    <SectionHeader title="我的 Telegram" icon="message-text-outline" subtitle="只綁定本人的私人帳號；此頁是合成預覽。"
+    <ChannelAnnouncements model={model} />
+    <StatusAnnouncement eventKey={String(model.configured)} message={!model.configured ? "Telegram 渠道目前未設定或未可用，不能開始、確認新綁定或發送測試；既有本人綁定仍可撤銷。" : ""} />
+    <StatusAnnouncement eventKey={`${model.binding?.id ?? ""}:${model.binding?.status ?? "none"}`} message={model.binding?.status === "blocked" ? "本人 Telegram 渠道已封鎖，不能發送測試；須先撤銷，才可重新開始私人綁定。" : ""} urgent={model.binding?.status === "blocked"} />
+    <SectionHeader density="compact" title="我的 Telegram" icon="message-text-outline" subtitle="只綁定本人的私人帳號；此頁是合成預覽。"
       action={ready ? <AppButton label="重新讀取 Telegram 狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {!ready ? <ReadState state={model.readState} online={model.online} locked={model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />
@@ -230,23 +255,23 @@ export function TelegramSettingsCard({ model, actions, operationNotice }: { mode
 const styles = StyleSheet.create({
   card: { minWidth: 0 },
   stack: { gap: spacing.md, minWidth: 0 },
-  entry: { backgroundColor: colors.neutralSurface, padding: spacing.md, borderRadius: radius.small, gap: spacing.sm, minWidth: 0 },
+  entry: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm, minWidth: 0 },
+  group: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   top: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
   actions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
-  title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700", flexShrink: 1 },
-  body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, flexShrink: 1 },
-  meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20, flexShrink: 1 },
-  fieldHint: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20, marginTop: spacing.xs },
-  warning: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption, lineHeight: 20 },
+  title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700", flexShrink: 1 },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },
+  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
+  warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
   error: { color: colors.errorInk },
-  note: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, backgroundColor: colors.neutralSurface, padding: spacing.md, borderRadius: radius.small, minWidth: 0 },
-  noteCopy: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 23, flex: 1, minWidth: 0 },
-  warningNote: { backgroundColor: colors.paleAmber },
-  errorNote: { backgroundColor: colors.paleCoral },
-  badge: { fontFamily: chineseFont, color: colors.muted, backgroundColor: colors.white, fontSize: typeScale.caption, lineHeight: 20, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill, flexShrink: 1 },
+  note: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, paddingVertical: spacing.sm, minWidth: 0 },
+  noteCopy: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool, flex: 1, minWidth: 0 },
+  warningNote: { borderLeftWidth: 2, borderLeftColor: colors.warningInk, paddingLeft: spacing.md },
+  errorNote: { borderLeftWidth: 2, borderLeftColor: colors.errorInk, paddingLeft: spacing.md },
+  badge: { fontFamily: chineseFont, color: colors.muted, backgroundColor: colors.white, ...readingType.meta, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill, flexShrink: 1 },
   currentBadge: { backgroundColor: colors.paleTeal, color: colors.deepTeal },
   warningBadge: { backgroundColor: colors.paleAmber, color: colors.warningInk },
   errorBadge: { backgroundColor: colors.paleCoral, color: colors.errorInk },
-  review: { backgroundColor: colors.neutralSurface, borderWidth: 1, borderColor: colors.line, padding: spacing.md, borderRadius: radius.small, gap: spacing.md, minWidth: 0 },
+  review: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.md, minWidth: 0 },
   candidate: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.md, gap: spacing.sm, minWidth: 0 },
 });

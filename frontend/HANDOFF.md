@@ -472,3 +472,43 @@ FE-W08 沿 FE-W07 `1e1fb7b`（draft PR #65）隔離接續，只處理使用者�
 - `CareRecordDetail` 原文、原時間精度／timezone／約數及各版本保留，閱讀／相關資料／metadata 用三層字級和分線。`CareRecordForm` 以穩定 id 關聯錯誤／說明、摘要定位及真正 ref 聚焦首個無效欄位；原 validator、草稿 dirty、基線／原 op 恢復及確認仍由 controller 掌管。`OperationNotice.visible` 只避免與已打開確認卡重複，狀態播報一直掛載。
 
 [八組首頁／記錄／表單](verification/fe-w34-home-records/home-care-checks.json)、[九組手機動畫](verification/fe-w34-home-records/motion/child-control-checks.json)、[原照顧流程](verification/fe-w34-home-records/checks-care.json)及 [建置](verification/fe-w34-home-records/build-checks.json)通過。曾發現重複確認標題，已只留正式確認卡；Paper 按下後聚焦測試改等待真正欄位焦點，沒有改產品時序。typecheck、35 路由 Web export 及 Android bundle 通過。正式 focus selection／資料讀取／原 opId、使用者視覺、讀屏及原生實機仍待主聊天／驗收；接續推廣到其餘既有頁面。
+
+<a id="commercial-rollout"></a>
+## FE-W35 商業方案：工作頁推廣及正式 adapter 交接
+
+前置 `e584718`（FE-W34／PR #79）；分支 `codex/fe-w35-commercial-rollout`。契約核對沿 `4f27d055` 及既有 P2 handoff，沒有改 `frontend/` 外程式、API／schema、transport、依賴或換頁動畫。使用者已明確授權親自審核後合併；FE-W33／34 已依序合併。本節交付方案第五階段的具體接線對照，正式 App 實作仍屬主聊天。
+
+### 已交付的共用配方
+
+- 任務、記憶、照片、私人來源及設定採 compact PageFrame／SectionHeader；檔案、家庭、成長、摘要、聯絡及引導套用相同頁面主次。原文 reading 16／26、工具／相關資料 14／22、metadata 12／18；相同用途成組、細線分離。任務／記憶清單採行式呈現及「正在查看」，照片原圖保持 contain。
+- `ReadStateNotice` 只承接資源自己的 loading／empty／error／stale／unavailable。`StatusAnnouncement` 持續掛載，正常 polite、明確失敗及失權 urgent；`PreviewWriteNotice` 從 none 開始也保留宣告節點，歷史 mount 不播報、逐字正文不進 live region。Photos／Sources 保留各自的擴展操作狀態，不強轉成共用五態。
+- 表單沿原 RHF／Zod：實際 TextInput／Select／日期選擇／Checkbox refs、穩定欄位 id、help／error 關聯、摘要按可見順序和首個錯誤定位。`RecordDraftFields` 同時供照片與私人來源用。日期／時間、原文空格、約數、來源、權限、二次共享及原 request 不改。
+- 設定 Tabs 保持編輯器掛載。模型 key 在送出／失效／inactive／身份及 Server 切換的清理保留，沒有把秘密寫進 metadata、播報、proof 或 storage；本人設定不依孩子切換重置。來源詳情將 SHA／取得時間等放可收起技術區，原文與原發布日期優先。
+- `PreviewNavigationGuard` 明確區分 navigation／child intent 和 child／account entry。孩子選擇只檢查孩子的草稿／原操作；本人模型、偏好及渠道保留。普通離頁／歷史返回仍檢查所有作用域，unknown 不能捨棄，確認時也重查相關 pending；正式 adapter 須沿原身份／Server／孩子控制器重現此界線。
+
+### 第五階段逐卡接線對照
+
+| 工作卡／可重用入口 | 主聊天的正式接線位置及責任 | 上下文／移除邊界 |
+| --- | --- | --- |
+| 1：theme／ui、OperationNotice、ReadStateNotice、FormErrorSummary | 接既有 controller 的合法 read／write 投影及原 callbacks；共用提示不執行 API 或決定重試 | 不以連線、中文 notice 或 UI 顏色推斷保存；保留原 opId／body、reload-needed／unavailable |
+| 2：AppShell／NativeAppShell、AppTabPanel／UnderlineTabs | 正式 `app` 外殼與導航沿原 session／URL／dirty guard；保留路由 rail 人工選擇及穩定 Tabs 子樹 | 抽屜清理後返回原控制；身份未知不展示舊私人快照，帳戶入口留設定 |
+| 3：ChatTimeline／ChatMessage／AgentComposer | 原 ChatController、AgentRunApi／Inbox 及 [Agent handoff](AGENT_HANDOFF.md)；保持 message id、final snapshot、run phase／公開活動及真正取消 | `recentLimit` 只是已載入視窗；更早歷史須正式游標。清 attachment／blob／track，逐字內容不播報，不顯示內部思維鏈 |
+| 4：AnswerSources／CitationText | 由正式 AgentPresentation／KnowledgeEvidence 投影原來源 id、次序、片段及權限；[原引用交接](#answer-citations) | 每訊息／每引用 ref 獨立，instant 到自己的面板，返回原句；沒有真逐句映射就只呈現底部來源，不猜編號 |
+| 5：HomeFocus／HomeRecentRecords | 以同一已授權孩子及正式 Task／Growth／Care 快照提供 `HomeFocusView`，沿 [首頁交接](#commercial-home-records) | 未提供不是無事項；正式 session 只重設一次 intro flag。移除首頁 fixture／假勾選，兩個首頁投影同一資料 |
+| 6：CareRecordsView／CareRecordDetail、TasksView／TaskForm、MemoryCards／MemoryEditor、PhotosView／PhotoRecordForm、SourcesView／SourceRecordForm | 原 Care／Task／Memory／Photo／SharedInput controllers；按 [P2 對照](#p2-coverage) 及各功能 HANDOFF map metadata、版本、游標、原操作、同意與直接 request 差異 | 權限／身份／Server／孩子變更清草稿、refs、選取及附件。保留未知原操作在正確作用域；不要把 preview hooks／回調當 transport |
+| 7：StatusAnnouncement、ModelSettingsView／ChannelCards | 本人 ModelSettingsApi／Push／Telegram adapters；模型 key、直接 unknown 查 metadata、通知原 opId、quota／cooldown及本人回覆沿原契約 | 模型 hidden tab 清秘密；accepted／ack／照護完成分開，Push 不套 Telegram 回覆 gate |
+| 8：各 screen 的掛載及 PreviewProvider 替換 | 正式 App／client 的 auth、abort／generation、可見刷新及 scope orchestration；沿 [正式移除清單](PRODUCTION_UI_HANDOFF.md) | 先接真資料／callbacks，再逐項移除 PreviewToolbar／fixture／timer／情境工具；不能搜尋刪「合成」後宣稱接通 |
+
+部分工作表單仍直接依賴 preview controller／PreviewWriteControls／PreviewNavigationGuard，並非全部都可不改 wrapper 直接接正式 API。正式包要替換這些 orchestration 層，重用閱讀、控件和狀態視覺；原業務規則／協定不由本節重定。
+
+**明確缺口：** 任務現有投影沒有獨立 read-error；記憶只有自己的 loading，不能借 Home.recordsLoad 當其失敗。模型查核 failed／429 目前只有 notice／keyCheck=null，正式 adapter 須提供明確失敗／限流投影才可按語義 urgent，不能解析文案。正式 A1–A6／D1、身份世代、真歷史／stream／取消、逐句映射和 raw eventTime 接線仍沿 [既有契約審查](#contract-review)，沒有漏作前端假實作。
+
+### 必要證據及限制
+
+60 個既有頁面／尺寸靜態重排通過（1440／1024／390／320）。桌面及 320 的表單檢查包含第一次 pointer 提交、實際首錯／摘要／日期／checkbox 焦點、欄位關聯、原文保留及模型 hidden-tab 秘密清理。正常畫面及錯誤畫面已由主模型查看；使用者視覺與讀屏／原生真機仍待驗。
+
+初輪量得照片按鈕在 pointerdown 的 blur 驗證後移位 106 px，pointerup 落到別處；首提交未觸發，並非 ref 缺失。普通表單改 onSubmit，保留 RHF 預設 onChange 重驗；沒有額外 timeout、重設或框架補丁。照片／來源共用欄位及偏好已補驗，方法寫回前端 Skill。舊流程 selector 的操作標籤／按鈕／配色及 Push 和 Telegram 差異亦對照既有 FE-W30 判定更新，原操作／草稿／權限斷言保留。
+
+後續流程檢查發現原全域離頁 guard 會在切換孩子時誤問本人模型草稿是否捨棄，與個人設定保留不符；已按作用域修正，並驗本人草稿／未知原操作跨孩子保留、route 仍阻擋未知操作。照片及來源的孩子草稿仍須明確捨棄才切換，舊腳本亦補上真正確認；沒有取消其保護。
+
+[表單及範圍證據](verification/fe-w35-commercial/build-checks.json)列明實際通過項、首輪失敗及產物版本。typecheck、35 路由 Web export、29 資產 Android bundle 通過；Android 只驗 bundle。沒有真 API、模型、通知、正式 E2E 或原生真機呼叫，沒有量測家長成效或宣稱正式產品驗收。前四階段的採納實作及本聊天的第五階段交接已齊；主聊天可沿本節開始正式接線。

@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-03T14:47:05.914Z",
+  "scope": "Synthetic local frontend, no real API or device acceptance",
+  "passed": [
+    "scope 1440: personal draft and pending operation survive child selection, unknown still blocks leaving route",
+    "scope 320: personal draft and pending operation survive child selection, unknown still blocks leaving route"
+  ],
+  "failures": []
+}

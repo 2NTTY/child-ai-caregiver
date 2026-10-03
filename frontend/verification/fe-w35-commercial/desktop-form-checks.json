@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-03T14:08:13.514Z",
+  "scope": "Synthetic local frontend, no real API or device acceptance",
+  "passed": [
+    "source-records 1440: shared field focus and unmodified raw value",
+    "model 1440: consent checkbox, limit focus, field messages and hidden-tab secret cleanup"
+  ],
+  "failures": []
+}

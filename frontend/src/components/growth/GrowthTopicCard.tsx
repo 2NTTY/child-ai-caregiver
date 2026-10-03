@@ -26,7 +26,7 @@ export function GrowthTopicCard({topic,model,actions,onMemory}:{topic:GrowthTopi
   const selected=topic.inputs.filter((input,index)=>chosen(index)&&input.choices.some(choice=>choice.value===chosen(index)));
   function mark(){if(!basis.current)basis.current={topic:JSON.parse(JSON.stringify(topic)) as GrowthTopic,authorityVersion};actions.markDirty(`topic:${topic.id}`);}
   function save(){if(disabled||!shared||conflict)return;try{const fields=getValues();const values=Object.fromEntries(captured.topic.inputs.map((input,index)=>[input.key,fields[`choice_${index}`]??""]));const input=growthContextProjection(captured.topic,captured.authorityVersion,values);setError("");actions.updateTopic(captured.topic,input);}catch{setError("請核對有限選項及原資料版本；衝突的近況需到記憶區覆核。");}}
-  return <SectionCard testID={`growth-topic-${topic.id}`}><SectionHeader title={topic.title} subtitle={topic.disabled?"已永久停用":"已啟用"} icon="sprout" />
+  return <SectionCard testID={`growth-topic-${topic.id}`}><SectionHeader density="compact" title={topic.title} subtitle={topic.disabled?"已永久停用":"已啟用"} icon="sprout" />
     <AppButton label={open?`收起${topic.title}設定`:`查看${topic.title}設定`} variant="quiet" onPress={()=>setOpen(value=>!value)} />
     {open?<View style={s.smallStack}>
       <Text style={s.meta}>只保存這次明確選擇的近況；未知或不選的欄位保持原狀。已確認資料會供獲授權家庭成員查看。</Text>

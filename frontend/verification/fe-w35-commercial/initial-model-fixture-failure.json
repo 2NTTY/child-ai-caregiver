@@ -1,0 +1,8 @@
+{
+  "at": "2026-10-03T14:03:13.152Z",
+  "scope": "Synthetic local frontend, no real API or device acceptance",
+  "passed": [],
+  "failures": [
+    "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '修正費用及資料外送同意', exact: true })\u001b[22m\n"
+  ]
+}

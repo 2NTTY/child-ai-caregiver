@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { OperationState } from "../view-model";
-import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
+import { usePreviewLeaveGuard, type LeaveScope } from "./PreviewNavigationGuard";
 
 export type PreviewWriteOutcome = "success" | "failed" | "unknown" | "conflict";
 export type PreviewCheckOutcome = "unknown" | "saved" | "not_applied" | "confirmed_unavailable" | "reload_failed";
@@ -9,7 +9,7 @@ export interface PreviewWriteOperation { state: PreviewWriteState; message: stri
 const empty: PreviewWriteOperation = { state: "none", message: "", reference: null };
 
 // Preview-only frozen callbacks. Production recovery is owned by the existing transport/controller.
-export function usePreviewOperation() {
+export function usePreviewOperation(scope: LeaveScope = "child") {
   const [operation, setOperation] = useState<PreviewWriteOperation>(empty);
   const [outcome, setOutcome] = useState<PreviewWriteOutcome>("success");
   const [checkOutcome, setCheckOutcome] = useState<PreviewCheckOutcome>("unknown");
@@ -20,7 +20,7 @@ export function usePreviewOperation() {
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; if (timer.current) clearTimeout(timer.current); }; }, []);
   const locked = operation.state === "saving" || operation.state === "unknown";
-  usePreviewLeaveGuard(operation.state === "needs_confirmation" || operation.state === "conflict", locked);
+  usePreviewLeaveGuard(operation.state === "needs_confirmation" || operation.state === "conflict", locked, scope);
   function later(action: () => void) { timer.current = setTimeout(() => { timer.current = null; if (alive.current) action(); }, 380); }
   function saved() {
     const attempt = pending.current;

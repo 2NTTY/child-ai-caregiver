@@ -12,7 +12,7 @@ interface TelegramData {
 const initial = (): TelegramData => ({ configured: true, workerEnabled: true, readState: "ready", binding: null, challenge: null, deliveries: [] });
 
 export function useTelegramSettingsPreview(online: boolean, identity: ChannelPreviewIdentity) {
-  const op = usePreviewOperation();
+  const op = usePreviewOperation("account");
   const [data, setData] = useState<TelegramData>(initial);
   const [review, setReview] = useState<ChannelReview | null>(null);
   const target = useRef<{ id: string | null; version: number | null } | null>(null);
