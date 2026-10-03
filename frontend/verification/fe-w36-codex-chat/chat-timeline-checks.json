@@ -1,0 +1,135 @@
+{
+  "at": "2026-10-03T16:10:02.444Z",
+  "scope": "Synthetic local chat rendering, history and timed display updates only. No model, tools, API, transport, persistence or native-device acceptance.",
+  "passed": [
+    "1440: bottom chronological window, local submit follows newest, progressive loaded history with retained anchor, return-to-latest, same streaming message and disclosure state, reader wheel pauses follow through final snapshot, final sources and preserved draft, no composer overlap",
+    "1024: bottom chronological window, local submit follows newest, progressive loaded history with retained anchor, return-to-latest, same streaming message and disclosure state, reader wheel pauses follow through final snapshot, final sources and preserved draft, no composer overlap",
+    "390: stop freezes partial text, failed/unknown/confirmation stay distinct and do not execute; child remount removes old messages, active timers and progress; enlarged text fits",
+    "390: bottom chronological window, local submit follows newest, progressive loaded history with retained anchor, return-to-latest, same streaming message and disclosure state, reader wheel pauses follow through final snapshot, final sources and preserved draft, no composer overlap",
+    "320: bottom chronological window, local submit follows newest, progressive loaded history with retained anchor, return-to-latest, same streaming message and disclosure state, reader wheel pauses follow through final snapshot, final sources and preserved draft, no composer overlap"
+  ],
+  "metrics": [
+    {
+      "width": 1440,
+      "initialVisible": 6,
+      "totalBeforeStream": 15,
+      "historyAnchorShiftPx": 0,
+      "readingBefore": {
+        "top": 1788,
+        "height": 2948,
+        "viewport": 735,
+        "gap": 425
+      },
+      "readingAfterFinal": {
+        "top": 1788,
+        "height": 2948,
+        "viewport": 735,
+        "gap": 425
+      },
+      "returnedToLatest": {
+        "top": 1717,
+        "height": 2452,
+        "viewport": 735,
+        "gap": 0
+      },
+      "sameMessageInstance": true,
+      "finalSnapshotHasSource": true,
+      "citationDuringStreamHoldsPosition": true,
+      "tailCitationButtonHidden": true,
+      "composerSeparate": true
+    },
+    {
+      "width": 1024,
+      "initialVisible": 6,
+      "totalBeforeStream": 15,
+      "historyAnchorShiftPx": 0,
+      "readingBefore": {
+        "top": 1788,
+        "height": 2948,
+        "viewport": 735,
+        "gap": 425
+      },
+      "readingAfterFinal": {
+        "top": 1788,
+        "height": 2948,
+        "viewport": 735,
+        "gap": 425
+      },
+      "returnedToLatest": {
+        "top": 1717,
+        "height": 2452,
+        "viewport": 735,
+        "gap": 0
+      },
+      "sameMessageInstance": true,
+      "finalSnapshotHasSource": true,
+      "citationDuringStreamHoldsPosition": true,
+      "tailCitationButtonHidden": true,
+      "composerSeparate": true
+    },
+    {
+      "width": 390,
+      "initialVisible": 6,
+      "totalBeforeStream": 15,
+      "historyAnchorShiftPx": 0,
+      "readingBefore": {
+        "top": 2006,
+        "height": 3150,
+        "viewport": 468,
+        "gap": 676
+      },
+      "readingAfterFinal": {
+        "top": 2006,
+        "height": 3150,
+        "viewport": 468,
+        "gap": 676
+      },
+      "returnedToLatest": {
+        "top": 2258,
+        "height": 2726,
+        "viewport": 468,
+        "gap": 0
+      },
+      "sameMessageInstance": true,
+      "finalSnapshotHasSource": true,
+      "citationDuringStreamHoldsPosition": true,
+      "tailCitationButtonHidden": true,
+      "composerSeparate": true,
+      "stateColors": {
+        "回覆失敗": "rgb(149, 64, 38)",
+        "結果未知": "rgb(94, 79, 12)",
+        "等候確認": "rgb(107, 107, 107)"
+      }
+    },
+    {
+      "width": 320,
+      "initialVisible": 6,
+      "totalBeforeStream": 15,
+      "historyAnchorShiftPx": 0,
+      "readingBefore": {
+        "top": 2162,
+        "height": 3306,
+        "viewport": 344,
+        "gap": 800
+      },
+      "readingAfterFinal": {
+        "top": 2162,
+        "height": 3306,
+        "viewport": 344,
+        "gap": 800
+      },
+      "returnedToLatest": {
+        "top": 2562,
+        "height": 2906,
+        "viewport": 344,
+        "gap": 0
+      },
+      "sameMessageInstance": true,
+      "finalSnapshotHasSource": true,
+      "citationDuringStreamHoldsPosition": true,
+      "tailCitationButtonHidden": true,
+      "composerSeparate": true
+    }
+  ],
+  "failures": []
+}

@@ -1,10 +1,13 @@
 import { useImperativeHandle, useLayoutEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
-import { StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView } from "react-native";
+import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppScrollView } from "../AppScrollView";
+import { AppIcon } from "../AppIcon";
 import { AppButton } from "../ui";
-import { chineseFont, colors, mobileLayout, readingLayout, spacing, typeScale } from "../../theme";
+import { spacing } from "../../theme";
+import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 import { useChatScrollIntent } from "./useChatScrollIntent";
+import { useInteractionDensity } from "../useInteractionDensity";
 
 export interface ChatTimelineControls { followLatest(): void; holdReadingPosition(): void }
 
@@ -13,6 +16,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   items: readonly T[]; renderItem: (item: T) => ReactNode; header?: ReactNode; compact?: boolean; recentLimit?: number;
   scrollRef?: MutableRefObject<ScrollView | null>; controlsRef?: MutableRefObject<ChatTimelineControls | null>; followRequest?: string;
 }) {
+  const touchControls = useInteractionDensity() || compact;
   const limit = Math.max(1, Math.floor(recentLimit));
   const recentFirst = items[Math.max(0, items.length - limit)]?.id ?? null;
   const [firstId, setFirstId] = useState<string | null>(recentFirst);
@@ -90,14 +94,22 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
         <Text style={styles.hint}>分批展開已載入的記錄</Text></View> : items.length ? <Text testID="chat-history-start" style={styles.hint}>已到本次載入記錄的最早位置</Text> : null}
       {items.slice(start).map(item => <View key={item.id} testID="chat-timeline-entry" nativeID={`chat-entry-${item.id}`} style={styles.item}>{renderItem(item)}</View>)}
     </AppScrollView>
-    {!atLatest ? <View testID="chat-return-latest" pointerEvents="box-none" style={styles.returnOverlay}><AppButton label="回到最新" variant="secondary" onPress={followLatest} /></View> : null}
+    {!atLatest ? <View testID="chat-return-latest" pointerEvents="box-none" style={styles.returnOverlay}>
+      <Pressable accessibilityRole="button" accessibilityLabel="回到最新" onPress={followLatest}
+        style={({ pressed }) => [styles.returnButton, touchControls && styles.compactReturnButton, pressed && styles.returnPressed]}>
+        <AppIcon name="arrow-down" size={20} color={chatColors.ink} />
+      </Pressable>
+    </View> : null}
   </View>;
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, position: "relative" }, scroll: { flex: 1 },
-  content: { width: "100%", maxWidth: readingLayout.maxWidth, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: readingLayout.wideInset, paddingVertical: spacing.lg, gap: spacing.lg },
-  compact: { paddingHorizontal: mobileLayout.pageInset }, item: { minWidth: 0 },
-  history: { alignItems: "center", gap: spacing.xs, minWidth: 0 }, hint: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20, textAlign: "center" },
+  content: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: chatLayout.wideInset, paddingVertical: chatLayout.turnGap, gap: chatLayout.turnGap },
+  compact: { paddingHorizontal: chatLayout.compactInset, paddingVertical: chatLayout.compactTurnGap, gap: chatLayout.compactTurnGap }, item: { minWidth: 0 },
+  history: { alignItems: "center", gap: spacing.xs, minWidth: 0 }, hint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
   returnOverlay: { position: "absolute", bottom: spacing.md, left: 0, right: 0, alignItems: "center", zIndex: 1 },
+  returnButton: { width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, borderWidth: 1, borderColor: chatColors.line, backgroundColor: chatColors.canvas, alignItems: "center", justifyContent: "center" },
+  compactReturnButton: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
+  returnPressed: { backgroundColor: chatColors.hover },
 });

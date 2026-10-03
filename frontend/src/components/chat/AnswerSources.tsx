@@ -2,10 +2,11 @@ import { createContext, Fragment, useContext, useId, useLayoutEffect, useRef, us
 import { Pressable, StyleSheet, View, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import type { ChatCitationView } from "../../chat-view-model";
-import { chineseFont, colors, readingType, spacing, typeScale } from "../../theme";
+import { colors, spacing } from "../../theme";
 import { AppScrollView } from "../AppScrollView";
 import { AppButton } from "../ui";
 import { CitationMarker } from "./CitationMarker";
+import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 
 type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
 const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string, anchor?: RefObject<View | null>): void } | null>(null);
@@ -18,8 +19,8 @@ function sourceTime(value: string | null): string {
     ? `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", hour12: false })}（香港時間）`
     : "時間資料無效，請重新讀取";
 }
-function Detail({ label, value }: { label: string; value: string }) {
-  return <View style={styles.detail}><Text style={styles.meta}>{label}</Text><Text selectable style={styles.body}>{value}</Text></View>;
+function Detail({ label, value, technical = false }: { label: string; value: string; technical?: boolean }) {
+  return <View style={styles.detail}><Text style={styles.meta}>{label}</Text><Text selectable style={technical ? styles.meta : styles.body}>{value}</Text></View>;
 }
 
 function CitationReference({ number, source, locate }: { number: number; source: ChatCitationView; locate(id: string, anchor: RefObject<View | null>): void }) {
@@ -129,14 +130,14 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
             <View style={[styles.detailGroup, styles.dividedGroup]}>
               <Pressable accessibilityRole="button" accessibilityLabel="版本與核對資料" accessibilityState={{ expanded: technicalOpen }}
                 aria-expanded={technicalOpen} aria-controls={`${groupId}-technical`} onPress={() => setTechnicalOpen(value => !value)} style={styles.technicalToggle}>
-                <Text style={styles.groupTitle}>{technicalOpen ? "收起" : "查看"}版本與核對資料</Text>
+                <Text style={styles.technicalTitle}>{technicalOpen ? "收起" : "查看"}版本與核對資料</Text>
               </Pressable>
               {technicalOpen ? <View nativeID={`${groupId}-technical`} testID="source-detail-group" style={styles.detailGroup}>
-                <Detail label="原來源版本" value={selected.versionId} />
-                <Detail label="原來源版本校驗" value={selected.versionHash} />
-                <Detail label="核對時間" value={sourceTime(selected.checkedAt)} />
-                <Detail label="擷取時間" value={sourceTime(selected.fetchedAt)} />
-                <Detail label="最後成功核對" value={sourceTime(selected.lastSuccessfulCheckAt)} />
+                <Detail technical label="原來源版本" value={selected.versionId} />
+                <Detail technical label="原來源版本校驗" value={selected.versionHash} />
+                <Detail technical label="核對時間" value={sourceTime(selected.checkedAt)} />
+                <Detail technical label="擷取時間" value={sourceTime(selected.fetchedAt)} />
+                <Detail technical label="最後成功核對" value={sourceTime(selected.lastSuccessfulCheckAt)} />
               </View> : null}
             </View>
           </AppScrollView> : null}
@@ -147,27 +148,28 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
 }
 
 const styles = StyleSheet.create({
-  answer: { gap: spacing.md, minWidth: 0 },
-  footer: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.xs, minWidth: 0 },
-  footerTitle: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20, fontWeight: "700" },
+  answer: { gap: chatLayout.paragraphGap, minWidth: 0 },
+  footer: { borderTopWidth: 1, borderTopColor: chatColors.line, paddingTop: chatLayout.paragraphGap, gap: spacing.xs, minWidth: 0 },
+  footerTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600" },
   footerHeading: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" },
   pressed: { opacity: 0.7 },
-  located: { borderBottomColor: colors.controlOutline },
-  sourceTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
-  meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 21 },
-  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
-  quoteBody: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
+  located: { borderBottomColor: chatColors.focus },
+  sourceTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
+  meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+  body: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool },
+  quoteBody: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body },
   panel: { gap: spacing.xs, minWidth: 0 },
   tabBar: { height: 56, flexGrow: 0, flexShrink: 0, minWidth: 0 },
   tabs: { flexDirection: "row", alignItems: "center", paddingBottom: spacing.sm },
-  separator: { width: 1, height: 20, backgroundColor: colors.softLine, flexShrink: 0 },
+  separator: { width: 1, height: 20, backgroundColor: chatColors.line, flexShrink: 0 },
   tab: { minHeight: 48, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent", minWidth: 0 },
-  selectedTab: { borderBottomColor: colors.deepTeal },
-  tabText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 21, fontWeight: "700" },
+  selectedTab: { borderBottomColor: chatColors.ink },
+  tabText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600" },
   detailScroll: { height: 280, flexGrow: 0 }, details: { paddingVertical: spacing.sm, gap: spacing.md }, detail: { gap: spacing.xs, minWidth: 0 },
-  detailGroup: { gap: spacing.sm, minWidth: 0 }, dividedGroup: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
-  groupTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 21, fontWeight: "700" },
-  quote: { borderLeftWidth: 2, borderLeftColor: colors.line, paddingLeft: spacing.md, minWidth: 0 },
-  warning: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption, lineHeight: 21 },
+  detailGroup: { gap: spacing.sm, minWidth: 0 }, dividedGroup: { borderTopWidth: 1, borderTopColor: chatColors.line, paddingTop: spacing.md },
+  groupTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
+  quote: { borderLeftWidth: 2, borderLeftColor: chatColors.line, paddingLeft: spacing.md, minWidth: 0 },
+  warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.meta },
+  technicalTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600" },
   technicalToggle: { minHeight: 48, justifyContent: "center", alignSelf: "flex-start" },
 });

@@ -10,12 +10,18 @@ const accept = (page, title = taskTitle) => page.getByRole("button", { name: `�
 const runView = page => page.getByTestId("agent-run-view");
 const contentText = (page, text, options) => page.getByText(text, options).and(page.locator(':not([data-testid="status-announcement"])'));
 async function loadConversation(page) {
+  await revealPreview(page);
   await page.getByRole("button", { name: "查看來源與候選", exact: true }).click();
   await runView(page).getByText("已結束", { exact: true }).waitFor();
   assert.equal(await runView(page).getByTestId("agent-answer").count(), 1, "A reread must render one answer with its own source state");
 }
 async function tools(page) {
+  await revealPreview(page);
   if (await page.getByRole("button", { name: "顯示 Agent 情境工具", exact: true }).count()) await page.getByRole("button", { name: "顯示 Agent 情境工具", exact: true }).click();
+}
+async function revealPreview(page) {
+  const disclosure = page.getByTestId("agent-preview-toggle");
+  if (await disclosure.getAttribute("aria-expanded") === "false") await disclosure.click();
 }
 async function captureResult(page, directory, name) {
   await runView(page).getByText("Agent 運行結果", { exact: true }).evaluate(element => element.scrollIntoView({ block: "start" }));
@@ -62,6 +68,12 @@ export async function verifyAgentConversation(browser, failures, directory) {
   await loadConversation(unknown); await tools(unknown);
   await selectOption(unknown, "模擬候選決定結果", "結果未知");
   await shared(unknown).click(); await accept(unknown).click();
+  await unknown.getByText("原確認結果待查核", { exact: true }).waitFor();
+  await runView(unknown).evaluate(element => { element.dataset.operationProbe = "original-pending-operation"; });
+  await unknown.getByTestId("agent-preview-toggle").click();
+  assert.equal(await runView(unknown).isVisible(), false);
+  await unknown.getByTestId("agent-preview-toggle").click();
+  assert.equal(await runView(unknown).getAttribute("data-operation-probe"), "original-pending-operation", "Collapsing activity cannot remount or clear an unknown operation");
   await unknown.getByText("原確認結果待查核", { exact: true }).waitFor();
   const retry = unknown.getByRole("button", { name: "明確重試原確認", exact: true });
   assert.equal(await retry.isDisabled(), true);
@@ -128,6 +140,7 @@ export async function verifyAgentConversation(browser, failures, directory) {
   await assertFits(boundary, "Private access loss 390"); await boundary.close();
 
   const narrow = await openPreview(browser, "/chat", 320, 720, failures);
+  await revealPreview(narrow);
   const inbox = narrow.getByTestId("agent-inbox-view");
   assert.equal(await inbox.getByRole("button", { name: /^查看私人背景結果：/ }).count(), 0);
   await inbox.getByRole("button", { name: "讀取私人背景結果", exact: true }).click();

@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-03T16:21:56.018Z",
+  "passed": [
+    "composer: 4 widths, camera stays on /chat with native file fallback, inline image/draft preservation, cancel/reject/replace/remove, blob disposal on removal/scope/departure, late integrity result isolation, ordinary photo/source navigation, keyboard and 150% Web text; no real camera/microphone/Server"
+  ],
+  "failures": []
+}

@@ -1,0 +1,90 @@
+{
+  "at": "2026-10-03T16:21:59.141Z",
+  "scope": "Local synthetic frontend rendering and input behavior only; no API, real agent, transport, persistence, mobile keyboard or device acceptance.",
+  "passed": [
+    "1440: shared reading column, plain assistant text, compact single composer; raw text, Shift+Enter, IME Enter, one preview on Enter; same input across grow/shrink; reachable tools and no overlap in a 600px viewport",
+    "1024: shared reading column, plain assistant text, compact single composer; raw text, Shift+Enter, IME Enter, one preview on Enter; same input across grow/shrink; reachable tools and no overlap in a 600px viewport",
+    "390: shared reading column, plain assistant text, compact single composer; raw text, Shift+Enter, IME Enter, one preview on Enter; same input across grow/shrink; reachable tools and no overlap in a 600px viewport",
+    "320: shared reading column, plain assistant text, compact single composer; raw text, Shift+Enter, IME Enter, one preview on Enter; same input across grow/shrink; reachable tools and no overlap in a 600px viewport",
+    "1024 coarse pointer: compact visual controls retain 48px touch targets independently of pane width"
+  ],
+  "metrics": [
+    {
+      "width": 1440,
+      "textStyle": {
+        "size": "15px",
+        "line": "24px",
+        "font": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Microsoft JhengHei\", \"PingFang TC\", sans-serif"
+      },
+      "inputStyle": {
+        "size": "16px",
+        "line": "24px"
+      },
+      "initialHeight": 48,
+      "longHeight": 168,
+      "restoredHeight": 48,
+      "shortViewport": {
+        "composerHeight": 270,
+        "messageHeight": 223
+      }
+    },
+    {
+      "width": 1024,
+      "textStyle": {
+        "size": "15px",
+        "line": "24px",
+        "font": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Microsoft JhengHei\", \"PingFang TC\", sans-serif"
+      },
+      "inputStyle": {
+        "size": "16px",
+        "line": "24px"
+      },
+      "initialHeight": 48,
+      "longHeight": 168,
+      "restoredHeight": 48,
+      "shortViewport": {
+        "composerHeight": 270,
+        "messageHeight": 223
+      }
+    },
+    {
+      "width": 390,
+      "textStyle": {
+        "size": "15px",
+        "line": "24px",
+        "font": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Microsoft JhengHei\", \"PingFang TC\", sans-serif"
+      },
+      "inputStyle": {
+        "size": "16px",
+        "line": "24px"
+      },
+      "initialHeight": 48,
+      "longHeight": 168,
+      "restoredHeight": 48,
+      "shortViewport": {
+        "composerHeight": 274,
+        "messageHeight": 104
+      }
+    },
+    {
+      "width": 320,
+      "textStyle": {
+        "size": "15px",
+        "line": "24px",
+        "font": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Microsoft JhengHei\", \"PingFang TC\", sans-serif"
+      },
+      "inputStyle": {
+        "size": "16px",
+        "line": "24px"
+      },
+      "initialHeight": 48,
+      "longHeight": 168,
+      "restoredHeight": 48,
+      "shortViewport": {
+        "composerHeight": 274,
+        "messageHeight": 104
+      }
+    }
+  ],
+  "failures": []
+}

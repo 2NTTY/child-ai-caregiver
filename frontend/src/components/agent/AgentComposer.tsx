@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState, type ComponentRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, Keyboard, Platform, Pressable, StyleSheet, View } from "react-native";
 import { AppScrollView as ScrollView } from "../AppScrollView";
-import { Text, TextInput } from "react-native-paper";
+import { Text } from "react-native-paper";
 import type { PhotoOriginal } from "../../photo-view-model";
-import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, readingLayout, readingType, spacing } from "../../theme";
+import { colors, mobileIcons, mobileLayout, radius, spacing } from "../../theme";
 import { AppIcon } from "../AppIcon";
 import type { PhotoFilePickerProps } from "../photos/PhotoFilePicker";
-import { AppButton, AppTextField } from "../ui";
+import { chatColors, chatFont, chatLayout, chatType } from "../chat/chat-presentation";
 import { AgentInputToolbar } from "./AgentInputToolbar";
+import { ChatComposerInput, type ChatComposerInputHandle } from "./ChatComposerInput";
+import { useInteractionDensity } from "../useInteractionDensity";
 
 const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄", "先列出想問的問題"];
 
@@ -16,7 +18,8 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
   enabled: boolean; compact: boolean; draft: string; onChangeDraft: (value: string) => void; onPreview: () => void;
   onPhotos: () => void; onSources: () => void; captureOriginal?: PhotoFilePickerProps["captureOriginal"];
 }) {
-  const input = useRef<ComponentRef<typeof TextInput>>(null);
+  const input = useRef<ChatComposerInputHandle>(null);
+  const touchControls = useInteractionDensity() || compact;
   const currentPhoto = useRef<PhotoOriginal | null>(null);
   const mounted = useRef(true);
   const [photo, setPhoto] = useState<PhotoOriginal | null>(null);
@@ -65,12 +68,7 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
   }
   return <View testID="chat-composer" style={[styles.composer, compact && styles.mobileComposer]}>
     <View style={[styles.composerContent, compact && styles.mobileComposerContent]}>
-    <View style={styles.composerTop}><Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
-      accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
-      aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
-      style={({ pressed }) => [styles.suggestionToggle, (!enabled || hasDraft) && styles.disabled, pressed && styles.pressed]}>
-      <Text style={styles.suggestionToggleText}>{showSuggestions ? "收起建議" : "建議問題"}</Text></Pressable>
-      <Text style={styles.composerHint}>只供本地預覽；不會發送或保存</Text></View>
+    <View testID="chat-composer-panel" style={[styles.panel, inputFocused && styles.panelFocused]}>
     {photo ? <View testID="composer-photo-preview" style={styles.photo}>
       <Image source={photo.imageSource} accessibilityLabel="照片本地預覽，未上傳或送出" style={styles.thumbnail} resizeMode="cover" />
       <View style={styles.photoCopy}><Text style={styles.photoName}>{photo.fileName}</Text>
@@ -79,12 +77,21 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
         style={({ pressed }) => [styles.removePhoto, pressed && styles.pressed]}><AppIcon name="close" size={mobileIcons.content} /></Pressable>
     </View> : null}
     {photoError ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.photoError}>{photoError}</Text> : null}
-    <View style={styles.composerRow}><AppTextField ref={input} multiline accessibilityLabel="撰寫對話問題" placeholder="輸入你想討論的照顧問題…"
+    <ChatComposerInput ref={input} onSubmit={onPreview}
       value={draft} onChangeText={onChangeDraft} onFocus={() => { setInputFocused(true); setSuggestionsExpanded(false); }} onBlur={() => setInputFocused(false)}
-      style={[styles.composerInput, compact && styles.mobileComposerInput]} disabled={!enabled} /></View>
-    <View style={styles.composerActions}><AgentInputToolbar disabled={!enabled} compact={compact} onPhotos={onPhotos} onSources={onSources}
+      disabled={!enabled} />
+    <View style={styles.composerActions}><View style={styles.leftActions}><AgentInputToolbar disabled={!enabled} compact={touchControls} onPhotos={onPhotos} onSources={onSources}
       onUseText={() => input.current?.focus()} onPickPhoto={pickPhoto} onPhotoError={setPhotoError} captureOriginal={captureOriginal} />
-      <AppButton label={compact ? "預覽" : "預覽輸入"} accessibilityLabel="預覽輸入" onPress={onPreview} disabled={!enabled || !draft.trim()} /></View>
+      <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
+        accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
+        aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
+        style={({ pressed }) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, pressed && styles.pressed]}>
+        <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable></View>
+      <Pressable accessibilityRole="button" accessibilityLabel="預覽輸入" accessibilityState={{ disabled: !enabled || !draft.trim() }}
+        disabled={!enabled || !draft.trim()} onPress={onPreview}
+        style={({ pressed }) => [styles.iconControl, touchControls && styles.compactControl, pressed && styles.pressed]}>
+        <View style={[styles.sendCircle, (!enabled || !draft.trim()) && styles.sendDisabled]}><AppIcon name="arrow-up" size={20} color={chatColors.canvas} /></View>
+      </Pressable></View>
     {showSuggestions ? <ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
       contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled">
       <Text style={styles.suggestionLabel}>本地示例：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={`預填本地示例：${item}`}
@@ -93,33 +100,34 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
         <Text style={styles.suggestionText}>{item}</Text></Pressable>)}
     </ScrollView> : null}
     </View>
+    <Text style={styles.composerHint}>只供本地預覽；不會發送或保存</Text>
+    </View>
   </View>;
 }
 
 const styles = StyleSheet.create({
-  composer: { backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line, paddingVertical: spacing.md },
-  mobileComposer: { paddingVertical: spacing.sm },
-  composerContent: { width: "100%", maxWidth: readingLayout.maxWidth, alignSelf: "center", paddingHorizontal: readingLayout.wideInset, gap: spacing.sm },
-  mobileComposerContent: { paddingHorizontal: readingLayout.compactInset },
-  composerTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.xs },
-  suggestionToggle: { minHeight: mobileLayout.touchTarget, paddingHorizontal: spacing.sm, justifyContent: "center", borderRadius: radius.small },
-  suggestionToggleText: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.tool },
-  composerHint: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  composerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
-  composerInput: { flex: 1, minWidth: 185, maxHeight: 110, backgroundColor: colors.white, fontFamily: chineseFont, ...readingType.body },
-  mobileComposerInput: { minWidth: 0 },
-  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" },
+  composer: { backgroundColor: chatColors.canvas, paddingTop: 8, paddingBottom: 12 },
+  mobileComposer: { paddingBottom: 8 },
+  composerContent: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", paddingHorizontal: chatLayout.wideInset, gap: 6 },
+  mobileComposerContent: { paddingHorizontal: chatLayout.compactInset },
+  panel: { minWidth: 0, borderWidth: 1, borderColor: chatColors.line, borderRadius: chatLayout.composerRadius, padding: 8, backgroundColor: chatColors.canvas },
+  panelFocused: { borderColor: chatColors.focus },
+  composerHint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
+  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }, leftActions: { flexDirection: "row", alignItems: "center", minWidth: 0 },
+  iconControl: { width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, alignItems: "center", justifyContent: "center" },
+  compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
+  sendCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send }, sendDisabled: { opacity: .35 },
   photo: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.sm, backgroundColor: colors.quietSurface,
-    borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.small },
+    borderWidth: 1, borderColor: chatColors.line, borderRadius: radius.small },
   thumbnail: { width: 48, height: 48, borderRadius: radius.small, backgroundColor: colors.controlSurface },
   photoCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
-  photoName: { fontFamily: chineseFont, color: colors.ink, ...mobileType.body },
-  photoNote: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption },
-  photoError: { fontFamily: chineseFont, color: colors.warningInk, ...mobileType.body },
+  photoName: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, flexShrink: 1 },
+  photoNote: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+  photoError: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
   removePhoto: { minHeight: mobileLayout.touchTarget, minWidth: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center", borderRadius: radius.small },
   suggestionScroll: { flexGrow: 0 }, suggestions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.xs },
-  mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm }, suggestionLabel: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  suggestion: { minHeight: 34, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.pill, justifyContent: "center" },
+  mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm }, suggestionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+  suggestion: { minHeight: 40, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: chatColors.line, borderRadius: radius.pill, justifyContent: "center" },
   mobileSuggestion: { minHeight: mobileLayout.touchTarget, flexShrink: 0 },
-  suggestionText: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta }, disabled: { opacity: .5 }, pressed: { opacity: .68 },
+  suggestionText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool }, disabled: { opacity: .5 }, pressed: { opacity: .68 },
 });

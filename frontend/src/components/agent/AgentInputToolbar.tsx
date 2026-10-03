@@ -6,7 +6,8 @@ import { AppIcon, type AppIconName } from "../AppIcon";
 import { AppMenuList } from "../AppMenuList";
 import { PhotoFilePicker, type PhotoFilePickerProps } from "../photos/PhotoFilePicker";
 import { AppButton } from "../ui";
-import { chineseFont, colors, mobileIcons, mobileLayout, radius, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, spacing, typeScale } from "../../theme";
+import { chatColors, chatLayout } from "../chat/chat-presentation";
 
 // Capture stays in the composer; the other callbacks open existing photo/source workflows.
 export function AgentInputToolbar({ disabled, compact, onPhotos, onSources, onUseText, onPickPhoto, onPhotoError, captureOriginal }: {
@@ -17,7 +18,7 @@ export function AgentInputToolbar({ disabled, compact, onPhotos, onSources, onUs
   const returnToText = useRef(false);
   useEffect(() => { if (disabled) setDialog(null); }, [disabled]);
   const controls: { key: string; label: string; icon: AppIconName; onPress: () => void }[] = [
-    { key: "files", label: "檔案與來源", icon: "paperclip", onPress: () => setDialog("files") },
+    { key: "files", label: "檔案與來源", icon: "plus", onPress: () => setDialog("files") },
     { key: "voice", label: "語音輸入", icon: "microphone-outline", onPress: () => setDialog("voice") },
   ];
   function openPhotos() { setDialog(null); onPhotos(); }
@@ -63,17 +64,16 @@ function InputControl({ label, icon, onPress, compact, disabled, expanded, busy 
 }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hint}
     accessibilityState={{ disabled, busy, ...(expanded === undefined ? {} : { expanded }) }} aria-disabled={disabled} aria-expanded={expanded} aria-busy={busy}
-    disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.control, disabled && styles.disabled, pressed && styles.pressed]}>
-    <AppIcon name={icon} size={mobileIcons.content} color={colors.ink} />{!compact ? <Text style={styles.label}>{label}</Text> : null}
+    disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.control, compact && styles.compactControl, disabled && styles.disabled, pressed && styles.pressed]}>
+    <AppIcon name={icon} size={20} color={chatColors.secondary} />
   </Pressable>;
 }
 
 const styles = StyleSheet.create({
-  controls: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.xs },
-  control: { minHeight: mobileLayout.touchTarget, minWidth: mobileLayout.touchTarget, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.xs,
-    paddingHorizontal: spacing.sm, borderRadius: radius.small, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.line },
-  label: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "600" },
-  disabled: { opacity: .5 }, pressed: { backgroundColor: colors.selectedNav },
+  controls: { flexDirection: "row", alignItems: "center" },
+  control: { width: chatLayout.controlSize, height: chatLayout.controlSize, alignItems: "center", justifyContent: "center", borderRadius: chatLayout.controlSize / 2 },
+  compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
+  disabled: { opacity: .5 }, pressed: { backgroundColor: chatColors.hover },
   content: { gap: spacing.md }, body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 22 },
   note: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
 });
