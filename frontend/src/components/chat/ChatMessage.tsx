@@ -2,11 +2,12 @@ import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
 import type { ChatMessageView, ChatReplyPhase } from "../../chat-view-model";
-import { chineseFont, colors, radius, readingType, spacing, typeScale } from "../../theme";
+import { colors, spacing } from "../../theme";
 import { AppIcon } from "../AppIcon";
 import { AppButton } from "../ui";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { AnswerSources, CitationText, type LocateAnswerSource } from "./AnswerSources";
+import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 
 const phaseLabels: Record<ChatReplyPhase, string> = {
   thinking: "思考中", streaming: "正在回覆", complete: "回覆已結束", stopped: "已停止 · 回覆未完成",
@@ -30,17 +31,17 @@ export function ChatMessage({ message, children, footer, testID, embedded = fals
       {assistant ? <StatusAnnouncement eventKey={`${message.id}:${message.phase ?? "complete"}`}
         message={phaseLabels[message.phase ?? "complete"]} urgent={message.phase === "failed"} /> : null}
       {assistant && message.phase && (message.phase !== "complete" || activities.length > 0) ? <View testID="chat-message-phase" style={styles.statusRow}>
-        {active ? <ActivityIndicator size={14} color={colors.deepTeal} /> : null}
+        {active ? <ActivityIndicator size={14} color={chatColors.secondary} /> : null}
         <Text style={[styles.status, attention && styles.warning, message.phase === "failed" && styles.error]}>{phaseLabels[message.phase]}</Text>
-        {active && onStop ? <AppButton label="停止回覆" variant="quiet" onPress={onStop} /> : null}
-        {attention && onCheck ? <AppButton label="查核原回覆" variant="quiet" onPress={onCheck} /> : null}
+        {active && onStop ? <AppButton label="停止回覆" variant="quiet" density="compact" onPress={onStop} /> : null}
+        {attention && onCheck ? <AppButton label="查核原回覆" variant="quiet" density="compact" onPress={onCheck} /> : null}
       </View> : null}
       {assistant && activities.length ? <View style={styles.process}>
         <Pressable testID="chat-process-toggle" accessibilityRole="button" accessibilityLabel="執行過程"
           accessibilityState={{ expanded: processOpen }} aria-expanded={processOpen} onPress={() => setProcessOpen(value => !value)}
           style={({ pressed }) => [styles.processToggle, pressed && styles.pressed]}>
-          <Text style={styles.meta}>執行過程 · {activities.length} 項{activities.some(item => item.state === "failed" || item.state === "unknown") ? " · 有結果待核對" : ""}</Text>
-          <AppIcon name={processOpen ? "chevron-up" : "chevron-down"} size={16} />
+          <Text style={styles.processLabel}>執行過程 · {activities.length} 項{activities.some(item => item.state === "failed" || item.state === "unknown") ? " · 有結果待核對" : ""}</Text>
+          <AppIcon name={processOpen ? "chevron-up" : "chevron-down"} size={16} color={chatColors.secondary} />
         </Pressable>
         {processOpen ? <View testID="chat-process-details" style={styles.processDetails}>{activities.map((activity, index) => <View key={activity.id} style={[styles.activity, index > 0 && styles.divider]}>
           <View style={styles.statusRow}><Text style={styles.activityTitle}>{activity.label}</Text><Text style={activity.state === "failed" ? [styles.warning, styles.error] : activity.state === "unknown" ? styles.warning : styles.meta}>{activityLabels[activity.state]}</Text></View>
@@ -56,16 +57,17 @@ export function ChatMessage({ message, children, footer, testID, embedded = fals
 
 const styles = StyleSheet.create({
   row: { width: "100%", minWidth: 0, flexDirection: "row" }, userRow: { justifyContent: "flex-end" },
-  content: { minWidth: 0, gap: spacing.md }, assistant: { flex: 1, paddingVertical: spacing.md },
-  user: { maxWidth: "82%", backgroundColor: colors.paleTeal, borderRadius: radius.medium, padding: spacing.md }, embedded: { padding: 0, borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
-  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, minWidth: 0, flexShrink: 1 },
-  meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 21, minWidth: 0, flexShrink: 1 }, userNote: { textAlign: "right" },
+  content: { minWidth: 0, gap: chatLayout.paragraphGap }, assistant: { flex: 1 },
+  user: { maxWidth: "82%", backgroundColor: chatColors.userBubble, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 }, embedded: { padding: 0, borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
+  body: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body, minWidth: 0, flexShrink: 1 },
+  meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, minWidth: 0, flexShrink: 1 }, userNote: { textAlign: "right" },
   statusRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
-  status: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, lineHeight: 21, fontWeight: "700", flexShrink: 1 },
-  warning: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption, lineHeight: 21, flexShrink: 1 },
+  status: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600", flexShrink: 1 },
+  warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool, flexShrink: 1 },
   error: { color: colors.errorInk },
-  process: { minWidth: 0 }, processToggle: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 },
+  process: { minWidth: 0 }, processToggle: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 },
+  processLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, minWidth: 0, flexShrink: 1 },
   processDetails: { gap: spacing.sm, paddingBottom: spacing.sm }, activity: { gap: spacing.xs, minWidth: 0 },
-  divider: { paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine },
-  activityTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 21, fontWeight: "700", flexShrink: 1 }, pressed: { opacity: 0.7 },
+  divider: { paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: chatColors.line },
+  activityTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600", flexShrink: 1 }, pressed: { opacity: 0.7 },
 });

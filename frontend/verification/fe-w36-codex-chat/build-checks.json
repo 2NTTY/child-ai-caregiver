@@ -1,0 +1,63 @@
+{
+  "package": "FE-W36",
+  "checkedAt": "2026-10-03T16:38:23.7627918+00:00",
+  "baseline": "3ff84d386bbd2b150b7bba3c873a42527f441409",
+  "branch": "codex/fe-w36-codex-chat",
+  "scope": "Isolated frontend presentation and synthetic interaction only",
+  "research": "CHAT_UI_RESEARCH.md#codex-desktop-presentation",
+  "frontendHandoffBlob": "6488b8c53ae58e37a12e7a3683aea94924aa3981",
+  "otherWorktreesChecked": 14,
+  "frontendOverlap": [],
+  "typecheck": "passed",
+  "web": {
+    "result": "passed",
+    "routes": 35,
+    "bundle": "entry-6700215d603ce09e5cb8f8e1a86ed4d9.js",
+    "sha256": "9de1d3ce18cea3a4746952d021491a370c4dc52769c222c3d224806a9b09504b"
+  },
+  "android": {
+    "result": "bundle passed",
+    "assets": 29,
+    "bundle": "entry-66b67d875fe034859074b3f15d3459db.hbc",
+    "sha256": "1bfa49ae719d2dbda4018a98b5a00f3fddc5835e2ba3fd40759d1d75fc408e58",
+    "device": "not tested"
+  },
+  "checks": [
+    "codex-chat-checks.json",
+    "source-tabs-checks.json",
+    "chat-timeline-checks.json",
+    "composer/checks-composer-surfaces.json",
+    "operations/checks-agent-flow.json"
+  ],
+  "review": {
+    "scope": "Only frontend files and evidence; no dependency, root guide, Server, API, formal App or page-transition changes",
+    "sources": "Instant citation/return, stable source heading, 12 tabs, separated indicator and scrollbar preserved",
+    "state": "History intent and anchors, stable streaming message, raw drafts, photo cleanup and unknown original operation retained; activity disclosure stays mounted",
+    "input": "48-168px same-node textarea; Shift+Enter, composition/isComposing/229 protections tested with synthetic keyboard events; 40px pointer and 48px compact/coarse targets",
+    "visual": "Desktop/narrow conversation, source disclosure and composer evidence inspected"
+  },
+  "initialFailures": [
+    "Legacy surface assertion measured a transparent inner button; now verifies the actual painted ancestor without changing shell styles.",
+    "Photo-route back navigation correctly stopped on the unsaved-draft guard; verification now explicitly discards the synthetic photo before returning.",
+    "Narrow inbox scenario required opening the new collapsed preview disclosure; setup now does so."
+  ],
+  "notVerified": [
+    "Real Agent/API/streaming or persistence",
+    "Server history beyond loaded messages and true citation mapping",
+    "Actual OS IME/mobile soft keyboard, screen reader or native device",
+    "User visual acceptance"
+  ],
+  "sourceHashes": {
+    "src/components/agent/AgentInputToolbar.tsx": "ab8362eacf72463b45c198553aa403c8d31f7417cfa38fb73d1555f086cbc66b",
+    "src/components/agent/AgentConversationPreview.tsx": "6de12bc73952e1e7de14b6570dc4def0f3b802d730d41759806e189e664e4776",
+    "src/components/chat/ChatMessage.tsx": "01375255fd9562c302b943d21d864b7cb9c1675d4891c6e4d3557b041373e160",
+    "src/components/agent/AgentComposer.tsx": "3fdc9ae6fc0991c77bb05ba3244fd4d37715e21202a8286b438864370ef4f204",
+    "src/components/agent/ChatComposerInput.web.tsx": "6b469bce190d17b0029ad3d39504226055c60f99a6e7c0e9b47cf2de46236b3e",
+    "src/components/agent/ChatComposerInput.tsx": "0876724e852cb894301cbd581aafc1f0bfef051bcdad90791bd29aafe8f83487",
+    "src/screens/chatScreen.tsx": "683ce81825d718513acfbc6f4918efada2e2518dcbabee994a21e50200145b2b",
+    "src/components/chat/chat-presentation.ts": "ca6c5cb44ba4455fdb5df14548d9dd9b95daf7720f36bb2a3e40b41d735fe24a",
+    "src/components/chat/ChatTimeline.tsx": "4234d2931d1353750d6cfda5ff038774213a2fe2ac83e40cbdbce5bc319ffdf4",
+    "src/components/chat/AnswerSources.tsx": "ad003a4da7e9856732710b3ab043e941ad65521c0cb9417ddd6e63d43fa7c06f",
+    "scripts/verify-codex-chat.mjs": "f7b44496818ba7bb23f805c8ae28caa583865eca9d59637b685b134b9ca8d9b4"
+  }
+}

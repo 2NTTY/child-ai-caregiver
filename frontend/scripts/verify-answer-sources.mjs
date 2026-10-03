@@ -73,6 +73,7 @@ try{
   await page.keyboard.press('Enter');assert.equal(await details.count(),0);
   await page.screenshot({path:resolve(directory,`collapsed-sources-${width}.png`)});
   assert.equal(await draft.inputValue(),'保留原問題草稿');
+  await page.getByTestId('agent-preview-toggle').click();
   await page.getByRole('button',{name:'顯示 Agent 情境工具',exact:true}).click();
   await selectOption(page,'Agent 運行情境','多個來源（12 項）');
   await page.getByRole('button',{name:'查看來源與候選',exact:true}).click();

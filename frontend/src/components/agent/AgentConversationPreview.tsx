@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { useAgentPreview, type AgentDecisionOutcome, type AgentReadOutcome } from "../../preview/useAgentPreview";
 import { conversationRunId, type AgentRunScenario } from "../../preview/agent-fixture";
@@ -9,6 +9,8 @@ import { AgentInboxView } from "./AgentInboxView";
 import { AgentRunView } from "./AgentRunView";
 import type { LocateAnswerSource } from "../chat/AnswerSources";
 import type { ChatReplyPhase } from "../../chat-view-model";
+import { AppIcon } from "../AppIcon";
+import { chatColors, chatFont, chatType } from "../chat/chat-presentation";
 
 const scenarioOptions: { value: AgentRunScenario; label: string }[] = [
   { value: "standard", label: "建立任務及私人記憶" }, { value: "changes", label: "任務變更及共享記憶" },
@@ -40,9 +42,18 @@ function AgentConversationContents({ childId, online, identity, setIdentity, too
   onPreviewReply?: (phase: ChatReplyPhase) => void;
 }) {
   const [replyPhase, setReplyPhase] = useState<ChatReplyPhase>("streaming");
+  const [expanded, setExpanded] = useState(false);
   const preview = useAgentPreview(childId, online);
   const blocked = !!preview.model.busy || !!preview.model.pendingDecision || preview.model.readState === "denied";
   return <View style={styles.stack}>
+    <Pressable testID="agent-preview-toggle" accessibilityRole="button" accessibilityLabel="Agent 活動與候選"
+      accessibilityState={{ expanded }} aria-expanded={expanded} onPress={() => setExpanded(!expanded)}
+      style={({ pressed }) => [styles.disclosure, pressed && styles.pressed]}>
+      <AppIcon name={expanded ? "chevron-down" : "chevron-right"} size={16} color={chatColors.secondary} />
+      <Text style={styles.disclosureText}>Agent 活動與候選</Text><Text style={styles.disclosureNote}>合成示例</Text>
+    </Pressable>
+    <View testID="agent-preview-content" style={[styles.stack, !expanded && styles.hidden]} aria-hidden={!expanded}
+      importantForAccessibility={expanded ? "auto" : "no-hide-descendants"}>
     <SectionCard>
       <SectionHeader title="後續操作" icon="star-four-points" subtitle="候選屬於這一則示例回覆；先核對內容，再決定下一步。" />
       <Text style={styles.body}>下方可操作的運行與候選均為合成資料，沒有連接 Agent、建立任務或寫入記憶。</Text>
@@ -67,10 +78,14 @@ function AgentConversationContents({ childId, online, identity, setIdentity, too
       <AppSelect label="模擬候選決定結果" value={preview.decisionOutcome} options={decisionOptions} onChange={preview.setDecisionOutcome} disabled={!!preview.model.busy} />
       <AppSelect label="模擬原運行讀取" value={preview.readOutcome} options={readOptions} onChange={preview.setReadOutcome} disabled={!!preview.model.busy} />
     </SectionCard> : null}
+    </View>
   </View>;
 }
 const styles = StyleSheet.create({
-  stack: { gap: spacing.lg, minWidth: 0 }, body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 23 },
+  stack: { gap: spacing.md, minWidth: 0 }, body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 23 },
+  disclosure: { minHeight: 48, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
+  disclosureText: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool }, disclosureNote: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+  hidden: { display: "none" }, pressed: { opacity: .7 },
   toolsToggle: { alignItems: "flex-start" }, tools: { backgroundColor: colors.quietSurface, borderRadius: radius.large },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 21 },
 });

@@ -38,6 +38,8 @@
 | 8 | Web 整套確認與正式接線 | 待主聊天及使用者 | 使用者比較全部 Web 畫面並明確確認；主聊天按 [HANDOFF](HANDOFF.md) 對正式 App 的既有 API／控制器接線與真服務驗收。未接通 P2 功能須等其業務包交付，不以預覽代替 |
 | 9 | FE-W06 手機軟件介面 | 源碼及 bundle 完成；待視覺及真機驗收 | 按使用者 2026-09-29 指示提前做手機畫面；手機首頁依參考圖組裝品牌／問候、孩子卡片、重點、待辦、快捷記錄及底部導航，FE-W27 依最新指示移除首頁提問。共用 React Native 元件、Expo Router Tabs／Safe Area／鍵盤及最終 Android bundle 通過；正式 P3 接線／APK／實機驗收仍待主聊天及後續條件 |
 
+FE-W36（2026-10-04）：按使用者要求研究 Codex 官方桌面呈現，再更新可復用聊天、來源及 composer；共用字體／間距／寬度、單一輸入面板、Web 多行增減及中文選字、預設收起合成活動且保留原操作已實作。四尺寸／短窗／寬觸控及必要聊天互動、typecheck、Web／Android bundle 通過。[研究](CHAT_UI_RESEARCH.md#codex-desktop-presentation)／[交接](HANDOFF.md#codex-chat-presentation)。前置 #80；正式接線及使用者視覺／原生鍵盤仍在第 8／9 項關口。這是既有聊天呈現交付記錄，不另添商業方案階段或換頁動畫。
+
 FE-W29 懸浮補修（2026-10-02）：基線 `51062d6`，「回到最新」改覆蓋聊天底部，不佔整行或改可視高度，兩旁操作穿透。四尺寸／Enter／草稿、typecheck 及 Web export 通過；[交接及證據](HANDOFF.md#chat-timeline)，原生實機及使用者視覺仍待驗。
 
 FE-W29 出現閃動補修（2026-10-02）：從 `1e3d598` 接續，手勢暫停與按鈕實際顯隱分開，加 40／24 px 緩衝。四尺寸逐幀、390 串流／引用閱讀控制、typecheck／Web export 通過；[交接及證據](HANDOFF.md#chat-timeline)，修正版視覺及原生實機待驗。

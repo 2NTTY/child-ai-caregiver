@@ -7,7 +7,7 @@ const browser=await launchPreviewBrowser(),failures=[],passed=[],metrics=[];
 const geometry=scroll=>scroll.evaluate(el=>({top:el.scrollTop,height:el.scrollHeight,viewport:el.clientHeight,gap:el.scrollHeight-el.clientHeight-el.scrollTop}));
 async function bottom(scroll){await scroll.page().waitForFunction(()=>{const el=document.querySelector('[data-testid="chat-timeline-scroll"]');return el&&el.scrollHeight-el.clientHeight-el.scrollTop<=2;});}
 async function readUp(page,scroll,amount){const box=await scroll.boundingBox();await page.mouse.move(box.x+5,box.y+box.height/2);await page.mouse.wheel(0,-amount);await page.getByRole('button',{name:'回到最新',exact:true}).waitFor();}
-async function tools(page,scroll){await readUp(page,scroll,6000);const toggle=page.getByRole('button',{name:'顯示 Agent 情境工具',exact:true});if(await toggle.count())await toggle.click();}
+async function tools(page,scroll){await readUp(page,scroll,6000);const disclosure=page.getByTestId('agent-preview-toggle');if(await disclosure.getAttribute('aria-expanded')==='false')await disclosure.click();const toggle=page.getByRole('button',{name:'顯示 Agent 情境工具',exact:true});if(await toggle.count())await toggle.click();}
 const lastReply=page=>page.getByTestId('chat-timeline-entry').last().getByTestId('chat-message');
 try{
  for(const width of (process.env.FRONTEND_CHAT_WIDTHS?.split(',').map(Number)??[1440,1024,390,320])){

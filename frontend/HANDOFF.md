@@ -1,5 +1,27 @@
 # 育有方 Web／手機介面交接
 
+<a id="codex-chat-presentation"></a>
+## FE-W36：Codex 聊天呈現（2026-10-04）
+
+基線為已合併 #80 的 `3ff84d386bbd2b150b7bba3c873a42527f441409`，分支 `codex/fe-w36-codex-chat`，只改 frontend。依使用者「Agent 聊天全面參照 Codex」要求，先核對官方桌面圖片／app 說明；[研究](CHAT_UI_RESEARCH.md#codex-desktop-presentation)將可觀察外觀、本項目選值及原有 transport 缺口分開。沒有 vendor renderer CSS 或像素完全一致的證據，沒有複製 vendor 程式／圖片或新增依賴。
+
+泛用 `components/chat/chat-presentation.ts` 集中系統字體、15／24 正文、13／20 工具、12／18 metadata、800 欄寬／兩側 24 或 16。ChatMessage 白底連續助手文字／灰使用者氣泡，ChatTimeline 共用欄寬及 24／20 訊息間距、圓形懸浮返回；AnswerSources 沿原單一底部、引用瞬移／返回、分隔線、同項收合、來源橫捲及技術 disclosure，不在單獨示例頁硬編樣式。
+
+AgentComposer 保持 enabled／draft／onChangeDraft／onPreview／onPhotos／onSources／captureOriginal 回調及身份／孩子 scope，改成一個圓角面板。原照片、錯誤、文字、圖示及箭嘴在面板內，本地預覽提示置外。ChatComposerInput 的穩定 Web textarea 同步量度 48–168 高，刪字、來源／照片返回及改寬度不重建輸入節點；Enter 只觸發原本地預覽、Shift＋Enter 換行，composition／isComposing／229 不提前預覽。原生仍是 Paper multiline，Enter 換行／明確箭嘴預覽；bundle 已驗，軟鍵盤及字體度量未驗。圖形32、普通滑鼠點擊區40，窄版／任何觸控裝置48；不因寬屏縮小觸控範圍。
+
+AgentConversationPreview 的合成活動／候選預設收起，隱藏內容保持掛載；收合不清 pendingDecision、unknown 或原 controller。實測未知原操作收起／再開後同一結果節點及查核／明確重試鎖定保留。正式接線仍移除這個合成入口／工具／fixture，保留真正 AgentRunView／AgentInboxView，不能把預覽 disclosure 當正式活動來源。[正式移除清單](PRODUCTION_UI_HANDOFF.md)沿本節同步補充。
+
+必要合成檢查已通過：
+
+- [正文及輸入](verification/fe-w36-codex-chat/codex-chat-checks.json)：1440／1024／390／320，同欄寬、原文、Shift＋Enter、中文選字、不重建欄位、多行增高／刪字縮回；600 高短窗無重疊；1024 coarse pointer 含懸浮返回保持48。
+- [來源](verification/fe-w36-codex-chat/source-tabs-checks.json)及 [時間線](verification/fe-w36-codex-chat/chat-timeline-checks.json)：引用瞬間定位／原句返回、穩定來源標頭、12來源、長答案、來源／下劃線分離、不同訊息狀態、歷史錨點、串流讀舊停止跟隨／最後快照、停止與未知等終態及孩子清理。
+- [composer](verification/fe-w36-codex-chat/composer/checks-composer-surfaces.json)：四尺寸照片取消／拒絕／替換／移除、原草稿及焦點、blob／離頁清理、遲到照片隔離、檔案／語音後備、150% Web文字。[原操作](verification/fe-w36-codex-chat/operations/checks-agent-flow.json)：候選／共享確認、unknown 同原操作、版本衝突、缺失／權限、孩子／身份與私人背景結果；活動區收合不重建原結果。
+- typecheck、35 靜態路由 Web export及29資產 Android bundle 通過；[產物及範圍](verification/fe-w36-codex-chat/build-checks.json)。已實際查看正常聊天、來源及窄版截圖；不是正式 E2E、真相機、真串流、保存、使用者視覺確認或原生實機驗收。
+
+首輪舊 composer 檢查量到透明內層、照片離頁未確認草稿，以及窄版操作腳本沒有展開新 disclosure；已先核對失敗畫面／DOM，更新為實際底色、明確捨棄及真正展開。沒有刪除離頁保護、放寬原操作／草稿斷言或把 timeout 當成通過。正式 history／stream／引用映射缺口沿原研究及交接，由主聊天接既有權限和協定；品牌外殼與換頁動畫未改。
+
+## 較早工作包的交接背景
+
 更新：2026-10-03。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
 
 <a id="home-frame-motion"></a>

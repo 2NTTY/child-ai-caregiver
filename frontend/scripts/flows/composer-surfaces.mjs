@@ -50,12 +50,17 @@ export async function verifyComposerSurfaces(browser, failures, directory) {
     const fact = picker.locator("..").getByText("地區", { exact: true }).locator("..");
     assert.equal(await fact.evaluate(element => getComputedStyle(element).backgroundColor), surfaces.control);
     const rail = page.getByRole("button", { name: /資訊側欄/ });
-    assert.equal(await rail.evaluate(element => getComputedStyle(element).backgroundColor), surfaces.control);
+    assert.equal(await rail.evaluate(element => {
+      let painted = element;
+      while (painted && getComputedStyle(painted).backgroundColor === "rgba(0, 0, 0, 0)") painted = painted.parentElement;
+      return painted ? getComputedStyle(painted).backgroundColor : null;
+    }), surfaces.control);
     const toolbar = page.getByTestId("agent-input-toolbar");
     for (const label of ["拍照", "檔案與來源", "語音輸入"]) {
       const control = toolbar.getByRole("button", { name: label, exact: true });
       const bounds = await control.boundingBox();
-      assert.ok(bounds.width >= 48 && bounds.height >= 48, `Input target ${label} at ${width}`);
+      const target = width < 768 ? 48 : 40;
+      assert.ok(bounds.width >= target && bounds.height >= target, `Input target ${label} at ${width}`);
       assert.equal(await control.locator("svg").count(), 1);
     }
     const input = page.getByRole("textbox", { name: "撰寫對話問題", exact: true });
@@ -172,7 +177,9 @@ export async function verifyComposerSurfaces(browser, failures, directory) {
       await page.getByRole("button", { name: "選擇原照片", exact: true }).waitFor();
       await page.locator('input[type="file"]').setInputFiles({ name: "一般選圖示例.png", mimeType: "image/png", buffer: await readFile(resolve("assets/brand/favicon.png")) });
       await page.getByText("一般選圖示例.png", { exact: false }).first().waitFor();
-      await page.goBack();
+      await page.evaluate(() => history.back());
+      await page.getByRole("dialog").getByRole("button", { name: "捨棄草稿並離開", exact: true }).click();
+      await page.waitForURL("**/chat");
       await page.getByTestId("agent-input-toolbar").waitFor();
       assert.equal(await input.inputValue(), draft);
     }

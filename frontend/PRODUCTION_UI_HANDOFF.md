@@ -7,7 +7,7 @@
 | 位置／symbol | 預覽用途 | 正式處理 |
 |---|---|---|
 | src/components/AppShell.tsx：PreviewToolbar；NativeAppShell.tsx 的同名呼叫 | 「介面預覽 · 合成資料 · 未接駁 Server」、切換情境及 loading／unknown 等模擬控制 | 移除兩個平台的呼叫及僅供工具的展開狀態／選項，不留下空白高度 |
-| src/components/agent/AgentConversationPreview.tsx：toolsVisible／toolsToggle 及情境工具卡 | 本人身份、運行情境、決定結果、重讀結果及聊天回覆 phase／計時串流的模擬選擇 | 移除整個開發工具分支、onPreviewReply 及合成身份選擇；保留 AgentRunView／AgentInboxView 及真正操作回調 |
+| src/components/agent/AgentConversationPreview.tsx：agent-preview-toggle／expanded、toolsVisible／toolsToggle 及情境工具卡 | 預設收起的合成活動入口；本人身份、運行情境、決定結果、重讀結果及聊天回覆 phase／計時串流的模擬選擇 | 移除合成 disclosure、整個開發工具分支、onPreviewReply 及合成身份選擇；保留 AgentRunView／AgentInboxView 及真正操作回調。隱藏正式活動不能卸載待查核的原操作 |
 | src/preview/useChatTimelinePreview.ts：initialMessages／showReply／timer | 合成歷史、逐字計時、假公開工具步驟及最終合成快照 | 整個 hook 替換為真 controller 投影；不能把定時器包成真 streaming adapter，或保存合成訊息／工具結果 |
 | 各功能 use*Preview 對應的情境／合成 outcome 控制 | 人為製造成功、衝突、未知、拒絕等畫面 | 由真正 controller 狀態驅動畫面後移除。具體掛接位置見各功能 *_HANDOFF，不批量刪除結果提示 |
 | app/(dashboard)/motion-preview.tsx 及比較入口 | A／B／C 動態樣板 | 正式導航／交付不含此開發頁；目前隔離預覽保留，並未採用換頁動畫 |

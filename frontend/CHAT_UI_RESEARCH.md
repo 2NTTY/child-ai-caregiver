@@ -1,6 +1,6 @@
 # Agent 對話顯示研究
 
-核對日期：2026-10-02。這是 frontend 的顯示方法研究，產品協定及業務權限仍由根文件／Server 掌管。已讀官方文件及下列 GitHub 原文；沒有啟動這些產品、檢查其閉源桌面渲染器、複製程式或引入新依賴。
+核對日期：2026-10-02（事件／捲動）及 2026-10-04（Codex 桌面呈現）。這是 frontend 的顯示方法研究，產品協定及業務權限仍由根文件／Server 掌管。已讀官方文件、下列 GitHub 原文及官方桌面圖片；沒有啟動這些產品、檢查其閉源桌面渲染器、複製程式／圖片資產或引入新依賴。
 
 | 參考 | 核對到的做法 | 育有方採用範圍 |
 |---|---|---|
@@ -22,3 +22,22 @@ Codex 指定版本為 Apache-2.0；DSH 指定版本為 MIT，其 README 明示�
 - 正文引用與 KnowledgeEvidence 沒有逐句映射；最終真編號及來源快照須由正式 adapter 核對。公開進度摘要須經資料層核定，不顯示 provider 私有推理、原工具參數／原工具輸出或 secrets。
 
 這些是實際接口缺口，交 [正式移除及接線清單](PRODUCTION_UI_HANDOFF.md) 和 [組件交接](HANDOFF.md#chat-timeline) 跟進；沒有改後端或推造業務成功。
+
+<a id="codex-desktop-presentation"></a>
+## FE-W36：Codex 桌面呈現
+
+使用者要求 Agent 聊天全面參照 Codex，包括字體、間距及輸入區。本輪先復用上方事件／捲動研究，再核對 [Codex app 官方說明](https://learn.chatgpt.com/docs/app)、[官方 changelog](https://learn.chatgpt.com/docs/changelog)及 [Codex Remote 官方文章](https://developers.openai.com/blog/mastering-codex-remote-for-engineering)。實際在瀏覽器查看官方 [Windows light 對話圖](https://learn.chatgpt.com/images/codex/windows/codex-windows-light.webp)與 [新對話輸入圖](https://learn.chatgpt.com/images/codex/app/codex-app-basic-light.webp)；手機 Remote 只輔助理解附件／輸入操作，不拿其尺寸當桌面規格。
+
+| 實際可觀察的呈現 | 本項目採用 |
+|---|---|
+| 明亮對話背景、置中的有限正文寬度；普通助手回覆直接排文 | 白色聊天工作區，正文與輸入區同寬，無頭像／卡片外框；沿泛用 ChatMessage，不只改示例頁 |
+| 家長問題與助手正文分開；輔助過程及訊息資訊較輕 | 淺灰使用者氣泡，正文／區段／過程／metadata 四層字級；公開活動、失敗、未知、停止、候選語意仍各自保留 |
+| 單一圓角 composer，上方文字、下方精簡工具及右側箭嘴 | 一個面板容納多行文字、原照片及圖示列；本地預覽提示放外側。直接拍照、原檔處理、文字草稿及焦點返回沿現有流程 |
+| 過程細節不需要一直展開 | 合成「Agent 活動與候選」預設收起；展開區保持掛載，收合不能清掉待查核的原操作。正式版須沿真活動／待確認投影，不把合成工具列搬過去 |
+| 長對話讓正文及輸入區各自可達 | 沿既有時間線的讀者意圖、歷史錨點及底部懸浮返回；多行輸入可增高至上限後自行捲動，不壓在訊息上 |
+
+官方圖片沒有提供 renderer CSS／實際字級數值，本機唯讀定位亦只找到 CLI 入口，沒有可讀的桌面 renderer 原碼。因此 **15／24 正文、13／20 工具、12／18 metadata、16／24 輸入、800 上限及 20 圓角是育有方的實作選值，不是聲稱量得或複製 Codex CSS**；前文 TUI Rust 證據也不能支持桌面字體數值。這些值集中於 chat-presentation，保留品牌導航及育有方的引用／操作規則，不搬入 Codex 的模型選擇、權限／工具協定或工作目錄功能。
+
+輸入框沿現有 Paper 原生欄位；Web 需要沒有表單外框的 textarea、多行增高及中文 IME-safe Enter，故加局部 ChatComposerInput.web adapter，沒有改 AppTextField 或換框架。原文直接經 onChangeText 回調；提交仍沿本地 onPreview。尺寸按 [MDN scrollHeight](https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollHeight)同步量度，在 [React useLayoutEffect](https://react.dev/reference/react/useLayoutEffect) 的繪製前階段還原高度，刪字及寬度變更均可重新量度，避免跨幀重設閃動；依 [MDN isComposing](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/isComposing)及 composition 狀態隔離選字 Enter，另保留 keyCode 229 的相容判斷。Web Enter 預覽、Shift＋Enter 換行；原生多行 Enter 仍換行，明確按箭嘴才預覽。原生 adapter／鍵盤行為只交接，實機仍待驗。
+
+這次沒有新依賴或 vendor code／圖片複製；外觀選值與實際合成互動證據分開，正式 transport／真引用／100 則以外歷史等原缺口照上節處理。[設計配方](DESIGN_SYSTEM.md#codex-chat-presentation)／[交接及實測](HANDOFF.md#codex-chat-presentation)。
