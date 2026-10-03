@@ -12,7 +12,7 @@ Windows 傳統捲動條即使軌道透明，也可能佔內容寬度；`scrollba
 
 ## 共用 ScrollView adapter
 
-- 沿 [AppScrollView.web](../../../../src/components/AppScrollView.web.tsx)；原生檔直接導出 RN ScrollView。DOM、CSS 與套件初始化只放 `.web`。垂直及橫向均指定既有 RN viewport，按 horizontal 設定唯一可捲方向；保留兩種 indicator 設定，原本隱藏的 facts／underline tabs／composer 清單仍隱藏，來源分頁則顯示匹配的橫向覆蓋條。
+- 沿 [AppScrollView.web](../../../../src/components/AppScrollView.web.tsx)；原生檔直接導出 RN ScrollView。DOM、CSS 與套件初始化只放 `.web`。垂直及橫向均指定既有 RN viewport，按 horizontal 設定唯一可捲方向；保留兩種 indicator 設定，原本隱藏的 facts／underline tabs／composer 清單仍隱藏。來源列依最新 [設計規則](../../../../DESIGN_SYSTEM.md) 用自身右側提示及 `showsHorizontalScrollIndicator={false}`，不改其他區域或整個 adapter 的 indicator 政策。
 - 用 RN Web 公開的 `getScrollableNode()` 指定既有 viewport，外層 host 同時是 target／scrollbar slot。保留 onScroll、contentContainerStyle、keyboardShouldPersistTaps 及原 ScrollView ref；不要另造一個捲動 viewport 或綁第二套 wheel／PageDown。
 - RN viewport 以兩種 `shows*ScrollIndicator={false}` 從首幀隱藏會佔位的原生 Web bar，OverlayScrollbars 的 visibility 依 caller 原設定決定；不能透過一律隱藏可見滑塊來冒充修復。viewport 可鍵盤聚焦。
 - 共用 [CSS](../../../../src/components/appScrollView.css) 只使用官方 `--os-*` 變數：透明軌道、既有 theme 的 controlOutline／ink、40 最小滑塊。依使用者 2026-10-02 要求，桌面與窄 Web 均為 6 px 覆蓋區、border-box／1 px 垂直於軸的內距，可見滑塊 4 px；橫向同款。保留內容內距，按鈕不要位於滑塊下；forced-colors 沿系統 CanvasText，不新增品牌色。

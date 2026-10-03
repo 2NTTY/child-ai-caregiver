@@ -1,0 +1,35 @@
+{
+  "at": "2026-10-04T02:12:14.5500273+08:00",
+  "baseline": "083773aab4b0765dbac4c08f0c9a0a034e8f38d5",
+  "branch": "codex/fe-w36-source-scroll-hint",
+  "scope": "Isolated reusable frontend source row only; no API, Server, device, screen-reader or user visual acceptance",
+  "typecheck": "passed: tsc --noEmit",
+  "webExport": {
+    "result": "passed",
+    "staticRoutes": 35,
+    "bundle": "entry-0b4be3a4d65b5f920a0df9784627963c.js",
+    "sha256": "52b78f089ed46753e9303a7830b0f31b002cff2f940b08f0815eb709bfb71245"
+  },
+  "androidExport": {
+    "result": "passed",
+    "assets": 29,
+    "bundle": "entry-d5a5604f41fa3f604d636606f89152be.hbc",
+    "sha256": "e257a09416f4a89964cffd24bd2d6dfd2ee909aead1d115042c5343d422f2771"
+  },
+  "sourceChecks": "source-tabs-checks.json: 1440/1024/390/320, hidden source scrollbar, separate 48px right hint, pointer/Enter consecutive reveal and focus, native browser wheel, end/reappearance, stable widths, 390-to-1440-to-390 resize, 12 sources, message independence, quote jump/return, draft",
+  "code": [
+    {
+      "path": "frontend/src/components/chat/AnswerSources.tsx",
+      "sha256": "b1729a4c2befddec9c8df4672728e2821dff567c55098f0e9aaea38d37ed8940"
+    },
+    {
+      "path": "frontend/scripts/verify-answer-sources.mjs",
+      "sha256": "6986b789dfa34f506b1694d67826836b767e130e6e218f833c1d86a2bc8f974f"
+    }
+  ],
+  "pending": [
+    "Formal API/Agent wiring",
+    "Native gestures and focus on devices",
+    "Screen-reader and user visual acceptance"
+  ]
+}

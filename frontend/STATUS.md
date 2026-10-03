@@ -2,6 +2,8 @@
 
 更新：2026-10-04。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**FE-W36 來源列提示：** 以右側箭嘴取代來源列的橫向滑塊，獨立 48 px 區不遮擋標題。還有右方來源才顯示，點擊／Enter 揭示下一來源；末端收起，回捲再顯示，全部放得下不留位。四尺寸、12 來源、連續操作、wheel／改寬度、原引用往返／草稿、typecheck、Web／Android bundle 通過；[交接及證據](HANDOFF.md#codex-chat-presentation)。正式 API／實機／讀屏及視覺待驗收。
+
 **FE-W36 引用返回補修：** 「返回引用句」改為 instant 定位原引用的上下文並顯示焦點框，短回覆已可見時也有回饋；改看其他來源後仍返回最初引用。實際指標／Enter、長回覆、四尺寸來源與草稿、typecheck 及 Web export 通過；[補修原因與證據](HANDOFF.md#codex-chat-presentation)。沒有新增計劃階段或正式接線。
 
 **FE-W36 Codex 聊天呈現：** 已研究官方桌面對話／輸入圖，將泛用 ChatMessage／ChatTimeline、每則底部來源及 AgentComposer 套用中性白底、系統字體、800 同寬正文／輸入、15／24 正文及單一圓角輸入面板。Web 多行增減高度、Shift＋Enter／中文選字、精簡工具與箭嘴已實作；合成活動區預設收起，保持原 unknown／候選控制器掛載。四尺寸及短視窗／寬觸控、來源／串流時間線、照片草稿／焦點／清理、原操作恢復、typecheck、Web／Android bundle 通過；[官方研究與選值](CHAT_UI_RESEARCH.md#codex-desktop-presentation)／[交接及證據](HANDOFF.md#codex-chat-presentation)。前置 #80 已合併；沿使用者自行審核後合併授權。正式 Agent／API／歷史游標／軟鍵盤／真機及使用者視覺仍待驗收，沒有改換頁動畫。
