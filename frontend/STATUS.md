@@ -2,6 +2,8 @@
 
 更新：2026-10-03。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**FE-W33 商業方案首包：** 按 Astra 全份方案及 DESIGN_REVIEW 的已採納範圍，完成共用字級／表面／觸控密度、純 OperationNotice、狀態轉換播報、可達導覽／路由右欄選擇、Modal 抽屜、真 Tabs 及欄位 ref。普通聊天改連續正文，輸入框及建議分開；來源改閱讀優先、技術區次層、原引用返回及 disclosure 語意。四尺寸來源／時間線、1440／900 短窗／390／320 焦點及 Tabs、60 個靜態重排、typecheck、Web／Android bundle 通過。[交接](HANDOFF.md#commercial-reading)／[證據](verification/fe-w33-reading/build-checks.json)。正式 API、讀屏／真機與使用者視覺仍待驗；下一包首頁及記錄詳情，不改換頁動畫。
+
 **最新 FE-W31 結尾閃動補修：** 使用者回報完成一刻閃動，605 px 量度確認初版最後一幀將容器由 relative／72 高切成 absolute／168 高，文字 flex 及問候子樹亦同時切換。現在整段沿同一自然流佈局，以 minWidth／maxWidth、上移及內距共用 intro；完成只更新可讀狀態，沒有定位、文字 flex 或子樹切換。649／605／390／320 末幀尺寸／箭嘴跳變均為 0，完成後 12 幀穩定；九組局部互動及放大文字、typecheck、Web／Android export 通過。[補修交接](HANDOFF.md#home-motion-stability)／[證據](verification/fe-w31-motion-stability/build-checks.json)。沿原分支及 draft PR #77；保留手機標語、外框半途淡出、3 秒及每會話一次，修正版使用者視覺／真登入／實機仍待驗。
 
 **FE-W31 首頁外框動畫及手機標語初版：** 外框和箭嘴沿同一 intro 進度收窄上移，以實際孩子文字寬度作終點；外框在進度 20%–60% 淡出，孩子資訊保持可見。收起後按內容自然寬度、最多佔左側 62%，避免放大文字被舊量度鎖住。只放大手機首頁問候／副句／標語至 26／16／14，桌面字體不改。649／390／320 逐幀、1440／1024 工具列、3 秒及首次會話、選單／中途點擊／減少動畫和 320 的 150% 文字檢查通過；typecheck、Web／Android export 通過。[交接](HANDOFF.md#home-frame-motion)／[當時證據](verification/fe-w31-home-motion/build-checks.json)。新分支 `codex/fe-w31-home-motion`；初版結尾重排由上方補修取代，真登入會話及原生實機仍待驗。

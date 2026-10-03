@@ -67,7 +67,7 @@ try {
       assert.ok(await tabs.evaluate(element => element.scrollLeft) > before, "Horizontal overlay thumb remains draggable");
       dragged = true;
     }
-    await tabs.getByRole("tab").first().click();
+    await tabs.getByRole("button", {name: /^來源【/}).first().click();
     await page.getByTestId("chat-answer").getByTestId("source-details-panel").waitFor();
     const scrolls = await scrollGeometry(page);
     await assertFits(page, "chat with matching scrollbars " + width);

@@ -11,7 +11,7 @@ import { ChatTimeline, type ChatTimelineControls } from "../components/chat/Chat
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { useChatTimelinePreview } from "../preview/useChatTimelinePreview";
 import { usePreview } from "../preview/PreviewContext";
-import { chineseFont, colors, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileLayout, mobileType, readingType, spacing, typeScale, workspaceType } from "../theme";
 
 export default function ChatPage() {
   const { model } = usePreview();
@@ -33,7 +33,7 @@ function ChatContents({ compact }: { compact: boolean }) {
   };
   function previewMessage() { const value = chatDraft.trim(); if (!value || !child) return; preview.addQuestion(value); setChatDraft(""); }
   const header = <>
-    <SectionCard style={styles.headingCard}>
+    <SectionCard surface="plain" style={styles.headingCard}>
       <Text accessibilityRole="header" style={[styles.title, compact && mobileType.sectionTitle]}>{brand.agentTitle}</Text>
       <Text style={styles.subtitle}>把已確認資料、你的問題與可靠來源放在一起，逐步討論下一步。</Text>
       <Text style={styles.previewNote}>合成畫面示例 · 尚未連接 Agent 或發送訊息</Text>
@@ -63,10 +63,10 @@ function ChatContents({ compact }: { compact: boolean }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, backgroundColor: colors.canvas }, headingCard: { gap: spacing.sm },
-  title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, fontWeight: "800" }, subtitle: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
-  previewNote: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.mintSurface, alignSelf: "flex-start", paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, fontSize: typeScale.caption, fontWeight: "700" },
+  title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.title }, subtitle: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
+  previewNote: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
-  answerEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, fontWeight: "800" }, answerIntro: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 24 },
-  usedData: { backgroundColor: colors.quietSurface, padding: spacing.md, borderRadius: radius.small, gap: spacing.xs }, usedDataTitle: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "800" }, usedDataText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
-  answerSteps: { gap: spacing.xs }, stepTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "800", marginTop: spacing.xs }, stepBody: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 }, footerText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
+  answerEyebrow: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta }, answerIntro: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
+  usedData: { borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.softLine, paddingVertical: spacing.sm, gap: spacing.xs }, usedDataTitle: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, fontWeight: "700" }, usedDataText: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+  answerSteps: { gap: spacing.sm }, stepTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, marginTop: spacing.sm }, stepBody: { fontFamily: chineseFont, color: colors.ink, ...readingType.body }, footerText: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
 });

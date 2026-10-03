@@ -25,19 +25,20 @@ try{
   await page.getByRole('button',{name:'回到最新',exact:true}).click();await bottom(scroll);assert.equal(await page.getByTestId('chat-timeline-entry').count(),6);
   await input.fill('保留串流時的草稿');await tools(page,scroll);await page.getByRole('button',{name:'加入回覆狀態示例',exact:true}).click();
   const reply=lastReply(page);await reply.getByText('思考中',{exact:true}).waitFor();await bottom(scroll);
-  await reply.evaluate(el=>el.dataset.instanceProbe='same-message');assert.equal(await reply.getByTestId('answer-sources').count(),0);assert.equal(await reply.getByTestId('chat-process-details').count(),0);
+  await reply.evaluate(el=>{el.dataset.instanceProbe='same-message';el.style.minHeight='800px';});assert.equal(await reply.getByTestId('answer-sources').count(),0);assert.equal(await reply.getByTestId('chat-process-details').count(),0);
   await reply.getByTestId('chat-process-toggle').click();await reply.getByTestId('chat-process-details').waitFor();
-  await reply.getByText('正在回覆',{exact:true}).waitFor();await page.waitForTimeout(180);const partial=await reply.innerText();await page.waitForTimeout(180);assert.notEqual(await reply.innerText(),partial);
+  await reply.getByTestId('chat-message-phase').getByText('正在回覆',{exact:true}).waitFor();await page.waitForTimeout(180);const partial=await reply.innerText();await page.waitForTimeout(180);assert.notEqual(await reply.innerText(),partial);
   await bottom(scroll);await page.screenshot({path:resolve(directory,`streaming-${width}.png`)});
   await readUp(page,scroll,280);
   await page.getByTestId('chat-answer').getByRole('button',{name:/^查看引用【1】/}).evaluate(el=>el.click());await page.waitForTimeout(80);
   const reading=await geometry(scroll);assert.ok(reading.gap>40,'Citation did not stay above the active reply');
   const visibleAnchor=await scroll.evaluate(el=>{const top=el.getBoundingClientRect().top;const item=[...el.querySelectorAll('[data-testid="chat-timeline-entry"]')].find(item=>item.getBoundingClientRect().bottom>top+4);return {id:item.id,y:item.getBoundingClientRect().top};});
-  await reply.getByText('回覆已結束',{exact:true}).waitFor();await page.waitForTimeout(100);
+  await reply.getByTestId('chat-message-phase').getByText('回覆已結束',{exact:true}).waitFor();await page.waitForTimeout(100);
   const readingAfterFinal=await geometry(scroll);assert.ok(Math.abs(readingAfterFinal.top-reading.top)<=2,'Streaming interrupted history reading');
   const afterAnchor=await page.locator(`[id="${visibleAnchor.id}"]`).boundingBox();assert.ok(Math.abs(afterAnchor.y-visibleAnchor.y)<=2,'Streaming shifted the visible history entry');
   assert.equal(await reply.getAttribute('data-instance-probe'),'same-message');assert.equal(await reply.getByTestId('chat-process-details').count(),1);
   assert.ok((await reply.innerText()).includes('示例參考來源'));assert.equal(await reply.getByTestId('answer-source-panel').count(),1);assert.equal(await input.inputValue(),'保留串流時的草稿');
+  await reply.evaluate(el=>el.style.minHeight='');
   await reply.getByRole('button',{name:/^查看引用【1】/}).evaluate(el=>el.click());await page.waitForTimeout(100);
   await bottom(scroll);assert.equal(await page.getByRole('button',{name:'回到最新',exact:true}).count(),0,'A citation at the tail leaves the return button visible at the bottom');
   await reply.getByTestId('chat-process-toggle').click();assert.equal(await reply.getByTestId('chat-process-details').count(),0);
@@ -46,12 +47,12 @@ try{
   await page.screenshot({path:resolve(directory,`completed-${width}.png`)});await assertFits(page,`timeline ${width}`);
   metrics.push({width,initialVisible:6,totalBeforeStream:15,historyAnchorShiftPx:anchorShift,readingBefore:reading,readingAfterFinal,returnedToLatest:await geometry(scroll),sameMessageInstance:true,finalSnapshotHasSource:true,citationDuringStreamHoldsPosition:true,tailCitationButtonHidden:true,composerSeparate:true});
   if(width===390){
-   await tools(page,scroll);await page.getByRole('button',{name:'加入回覆狀態示例',exact:true}).click();await lastReply(page).getByText('正在回覆',{exact:true}).waitFor();
-   await lastReply(page).getByRole('button',{name:'停止回覆',exact:true}).click();await lastReply(page).getByText('已停止 · 回覆未完成',{exact:true}).waitFor();const stopped=await lastReply(page).innerText();await page.waitForTimeout(450);assert.equal(await lastReply(page).innerText(),stopped);assert.equal(await lastReply(page).getByTestId('answer-sources').count(),0);
+   await tools(page,scroll);await page.getByRole('button',{name:'加入回覆狀態示例',exact:true}).click();await lastReply(page).getByTestId('chat-message-phase').getByText('正在回覆',{exact:true}).waitFor();
+   await lastReply(page).getByRole('button',{name:'停止回覆',exact:true}).click();await lastReply(page).getByTestId('chat-message-phase').getByText('已停止 · 回覆未完成',{exact:true}).waitFor();const stopped=await lastReply(page).innerText();await page.waitForTimeout(450);assert.equal(await lastReply(page).innerText(),stopped);assert.equal(await lastReply(page).getByTestId('answer-sources').count(),0);
    const stateColors={};
    for(const [option,label]of [['回覆失敗','回覆失敗'],['結果未知','結果未知 · 待查核'],['等候確認','等候你的確認']]){
-    await tools(page,scroll);await selectOption(page,'聊天回覆狀態示例',option);await page.getByRole('button',{name:'加入回覆狀態示例',exact:true}).click();await lastReply(page).getByText(label,{exact:true}).waitFor();assert.equal(await lastReply(page).getByRole('button',{name:'停止回覆',exact:true}).count(),0);
-    stateColors[option]=await lastReply(page).getByText(label,{exact:true}).evaluate(el=>getComputedStyle(el).color);
+    await tools(page,scroll);await selectOption(page,'聊天回覆狀態示例',option);await page.getByRole('button',{name:'加入回覆狀態示例',exact:true}).click();await lastReply(page).getByTestId('chat-message-phase').getByText(label,{exact:true}).waitFor();assert.equal(await lastReply(page).getByRole('button',{name:'停止回覆',exact:true}).count(),0);
+    stateColors[option]=await lastReply(page).getByTestId('chat-message-phase').getByText(label,{exact:true}).evaluate(el=>getComputedStyle(el).color);
     if(option==='回覆失敗')await page.screenshot({path:resolve(directory,'failed-390.png')});
    }
    assert.notEqual(stateColors['回覆失敗'],stateColors['結果未知']);metrics.at(-1).stateColors=stateColors;

@@ -445,3 +445,18 @@ FE-W07 沿 FE-W06 `6c7216f` 隔離接續；/settings 通知渠道的四尺寸、
 FE-W08 沿 FE-W07 `1e1fb7b`（draft PR #65）隔離接續，只處理使用者最新 Agent 導覽要求：桌面上方去除重複入口，下方 [AgentEntryButton](src/components/AgentEntryButton.tsx) 固定在設定及帳戶上方。沿 Paper TouchableRipple、共用 SVG／原有深綠／字級 token，72 px 內容高度、短用途說明及箭嘴；手機底部分頁保留。沒有改 Agent、資料或業務回調語義。
 
 外殼導覽與 Logo 使用 Expo Link asChild，輸出真 href；Slot 的直接子元件先 flatten style，避免本版 Router／Radix 合併 array／function style。原先只有 role=link 的 div 按 Enter 無效，之後 array style 曾令 export 頁出現 indexed CSS 錯誤；修復後 typecheck、Web／Android export、40 個重排及四尺寸單一入口／Enter／目前頁面／草稿保留通過。證據見 [verification/fe-w08](verification/fe-w08)。正式接線須保留這些共用導航與樣式規則；一般業務寫入繼續由既有 controller／回調驅動，不能因外殼導航而重置草稿或假發送訊息。
+
+<a id="commercial-reading"></a>
+## FE-W33 商業方案：共用基礎與完整閱讀切片
+
+前置審查 `1bbf342`；分支 `codex/fe-w33-reading-foundation`，使用者 2026-10-03 已批准按 Astra 方案及逐項判定持續實作。仍只改 frontend；正式基線 `4f27d055`，沒有新增框架、業務 store、資料協定或換頁動畫。
+
+- `theme.ts` 增量保留舊 exports；reading 16／26、tool 14／22、meta 12／18、880 上限。`ChatTimeline` 與 `AgentComposer` 同欄；普通 `ChatMessage` 是正文，候選操作仍獨立核對。
+- `AnswerSources` 每引用實例保留自己的 ref，數字即時定位自己訊息的底部；返回按鈕使用最後按的引用 ref，不自動打開來源或重啟跟隨。引用、日期／適用先讀，原 version/hash/check times 收在可展開技術區；來源是 disclosure，真正 Tabs 用於設定／記憶／動態比較。
+- `AgentComposer` 建議預設收起，聚焦／草稿／原生鍵盤時隱藏；同一輸入框、草稿及附件節點保留。`OperationNotice` 是純顯示，既有 PreviewWriteNotice 只傳投影及原回調；一般播報 polite、實際失敗 urgent，historical mount 不重播，逐字內容不進 live region。
+- `AppShell` 可捲動導覽按目的分組，URL／Agent 固定入口及 More 分頁保留。一般右欄預設只在首頁打開，各路由人工開關各自保留；首頁右欄不重複待辦／最近操作。Web／Native 抽屜沿 RN Modal，有一個明確關閉按鈕。Web 實際焦點返回使用 Paper Surface 內標示的 button，等 onDismiss 後處理；遮罩不是第二個鍵盤按鈕。
+- `UnderlineTabs`／`AppTabPanel` 有 tablist、唯一 tab stop、方向／Home／End、穩定 aria 關聯；本人設定編輯器保持掛載。AppSelect／日期／時區供 RHF 聚焦使用；候選按鈕只按 kind 決定動詞，不解析中文標題。
+
+必要檢查：四尺寸來源往返／12 來源／長回覆／輸入節點；時間線歷史錨點／增量／來源閱讀／停止／scope 清理；1440／900×600／390／320 的抽屜 focus／Escape／返回、短窗導覽及 Tabs／草稿；60 個靜態重排、typecheck、35 路由 Web export 與 30 資產 Android bundle 通過。四尺寸候選鍵盤確認、私人／共享區分、unknown 原決定重試、版本變更及撤權／身份／孩子清理亦通過。初輪發現可聚焦遮罩及 Surface ref／Modal cleanup 的返回次序，已依實際節點修正；來源收合的延遲定位會搶走下一個控件的焦點，改成 commit 後的 layout effect，來源與候選流程補驗通過。舊時間線測試的短回覆不再跨可視區，已明確使用 800px 長回覆場景驗閱讀保持。原生 TalkBack、真 API／模型／stream／history cursor／session generation、來源正式識別及已列 A1–A6／D1 仍交主聊天，未當作通過。來源多次引用使用各自 ref，沒有新增正式 paragraphs/citationIds 契約。
+
+[來源](verification/fe-w33-reading/source-tabs-checks.json)／[焦點與 Tabs](verification/fe-w33-reading/foundation-checks.json)／[時間線](verification/fe-w33-reading/timeline/chat-timeline-checks.json)／[候選流程](verification/fe-w33-reading/agent-flow-checks.json)／[建置及界線](verification/fe-w33-reading/build-checks.json)。下一包按 PLAN 先完成首頁與記錄詳情，之後推廣配方。

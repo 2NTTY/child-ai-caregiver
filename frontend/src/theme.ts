@@ -42,6 +42,18 @@ export const colors = {
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, hero: 40 } as const;
 export const radius = { small: 10, medium: 16, large: 22, pill: 999 } as const;
 export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading: 28, hero: 34 } as const;
+export const readingLayout = { maxWidth: 880, compactInset: 16, wideInset: 24 } as const;
+export const readingType = {
+  body: { fontSize: 16, lineHeight: 26 },
+  tool: { fontSize: 14, lineHeight: 22 },
+  meta: { fontSize: 12, lineHeight: 18 },
+} as const;
+export const workspaceType = {
+  title: { fontSize: 24, lineHeight: 32, fontWeight: "700" as const },
+  section: { fontSize: 16, lineHeight: 24, fontWeight: "700" as const },
+  row: { fontSize: 14, lineHeight: 20 },
+  meta: { fontSize: 12, lineHeight: 18 },
+} as const;
 export const iconTokens = { strokeWidth: 1.8, small: 18, navigation: 22, feature: 28 } as const;
 // Mobile sizes are logical units. Text retains the platform's font scaling and intrinsic height.
 export const mobileLayout = {

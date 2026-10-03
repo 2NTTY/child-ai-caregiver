@@ -3,7 +3,7 @@ import { StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, ty
 import { Text } from "react-native-paper";
 import { AppScrollView } from "../AppScrollView";
 import { AppButton } from "../ui";
-import { chineseFont, colors, mobileLayout, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, mobileLayout, readingLayout, spacing, typeScale } from "../../theme";
 import { useChatScrollIntent } from "./useChatScrollIntent";
 
 export interface ChatTimelineControls { followLatest(): void; holdReadingPosition(): void }
@@ -96,7 +96,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, position: "relative" }, scroll: { flex: 1 },
-  content: { width: "100%", maxWidth: 1060, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, gap: spacing.lg },
+  content: { width: "100%", maxWidth: readingLayout.maxWidth, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: readingLayout.wideInset, paddingVertical: spacing.lg, gap: spacing.lg },
   compact: { paddingHorizontal: mobileLayout.pageInset }, item: { minWidth: 0 },
   history: { alignItems: "center", gap: spacing.xs, minWidth: 0 }, hint: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20, textAlign: "center" },
   returnOverlay: { position: "absolute", bottom: spacing.md, left: 0, right: 0, alignItems: "center", zIndex: 1 },
