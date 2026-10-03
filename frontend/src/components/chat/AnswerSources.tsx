@@ -4,9 +4,11 @@ import { Text } from "react-native-paper";
 import type { ChatCitationView } from "../../chat-view-model";
 import { colors, spacing } from "../../theme";
 import { AppScrollView } from "../AppScrollView";
+import { AppIcon } from "../AppIcon";
 import { AppButton } from "../ui";
 import { CitationMarker } from "./CitationMarker";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
+import { locateCitationSource } from "./locateCitationSource";
 
 type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
 const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string, anchor?: RefObject<View | null>): void } | null>(null);
@@ -61,7 +63,31 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
   const tabScrollRef = useRef<NativeScrollView | null>(null);
   const pendingNavigation = useRef<{ id: string; closing: boolean } | null>(null);
   const [tabWidth, setTabWidth] = useState(0);
+  const [tabOverflow, setTabOverflow] = useState(false);
+  const [moreSources, setMoreSources] = useState(false);
+  const tabMetrics = useRef({ rowWidth: 0, width: 0, contentWidth: 0, x: 0 });
+  const tabLayouts = useRef(new Map<string, { x: number; width: number }>());
+  const pendingReveal = useRef<string | null>(null);
   const selected = sources.find(source => source.id === selectedId);
+  function updateTabHint() {
+    const { rowWidth, width, contentWidth, x } = tabMetrics.current;
+    // Compare against the full row so showing the hint cannot create its own overflow.
+    setTabOverflow(rowWidth > 0 && contentWidth > rowWidth + 1);
+    setMoreSources(width > 0 && contentWidth > width + x + 1);
+  }
+  function revealNextSource() {
+    const right = tabMetrics.current.x + tabMetrics.current.width;
+    const pendingIndex = sources.findIndex(source => source.id === pendingReveal.current);
+    const next = sources.find((source, index) => {
+      const layout = tabLayouts.current.get(source.id);
+      return index > pendingIndex && layout && layout.x + layout.width > right + 1;
+    }) ?? sources[sources.length - 1];
+    // Consecutive activations can arrive before the native scroll event reports the new offset.
+    pendingReveal.current = next?.id ?? null;
+    const target = next ? sourceRefs.current.get(next.id) ?? null : null;
+    if (onLocateSource) onLocateSource(target, tabScrollRef.current);
+    else locateCitationSource(target, null, tabScrollRef.current);
+  }
   useLayoutEffect(() => {
     const pending = pendingNavigation.current;
     pendingNavigation.current = null;
@@ -95,12 +121,20 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
           <View style={styles.footerHeading}><Text accessibilityRole="header" style={styles.footerTitle}>參考來源</Text>
             {origin && onLocateSource ? <AppButton label="返回引用句" variant="quiet" density="compact" onPress={returnToCitation} /> : null}
           </View>
+          <View testID="answer-source-tab-row" style={styles.tabRow} onLayout={event => {
+            tabMetrics.current.rowWidth = event.nativeEvent.layout.width; updateTabHint();
+          }}>
           <AppScrollView ref={tabScrollRef} horizontal testID="answer-source-tabs" accessibilityLabel="回答參考來源"
-            onLayout={event => setTabWidth(event.nativeEvent.layout.width)} style={styles.tabBar} contentContainerStyle={styles.tabs}>
+            showsHorizontalScrollIndicator={false} scrollEventThrottle={16}
+            onLayout={event => { const width = event.nativeEvent.layout.width; setTabWidth(width); tabMetrics.current.width = width; updateTabHint(); }}
+            onContentSizeChange={width => { tabMetrics.current.contentWidth = width; updateTabHint(); }}
+            onScroll={event => { tabMetrics.current.x = event.nativeEvent.contentOffset.x; pendingReveal.current = null; updateTabHint(); }}
+            style={styles.tabBar} contentContainerStyle={styles.tabs}>
             {sources.map((source, index) => <Fragment key={source.id}>
               {index > 0 ? <View testID="answer-source-separator" accessible={false} style={styles.separator} /> : null}
               <Pressable accessibilityRole="button"
               ref={node => { if (node) sourceRefs.current.set(source.id, node); else sourceRefs.current.delete(source.id); }}
+              onLayout={event => { const { x, width } = event.nativeEvent.layout; tabLayouts.current.set(source.id, { x, width }); }}
               accessibilityLabel={`來源【${index + 1}】：${source.title}`} accessibilityState={{ expanded: selectedId === source.id }}
               aria-expanded={selectedId === source.id} aria-controls={`${groupId}-detail-${index}`} onPress={() => toggle(source.id)}
               style={({ pressed }) => [styles.tab, { maxWidth: Math.max(96, Math.min(280, (tabWidth || 224) - 8)) },
@@ -109,6 +143,13 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
               </Pressable>
             </Fragment>)}
           </AppScrollView>
+          {tabOverflow ? <View testID="answer-source-hint-slot" style={styles.hintSlot}>
+            {moreSources ? <Pressable testID="answer-source-scroll-hint" accessibilityRole="button" accessibilityLabel="查看更多來源"
+              onPress={revealNextSource} style={({ pressed }) => [styles.scrollHint, pressed && styles.pressed]}>
+              <AppIcon name="chevron-right" size={20} color={chatColors.secondary} />
+            </Pressable> : null}
+          </View> : null}
+          </View>
           {selected ? <AppScrollView key={selected.id} nativeID={`${groupId}-detail-${sources.indexOf(selected)}`} testID="source-details-panel" style={styles.detailScroll} contentContainerStyle={styles.details}>
             <View testID="source-detail-group" style={styles.detailGroup}>
               <Text accessibilityRole="header" style={styles.groupTitle}>引用內容</Text>
@@ -161,8 +202,11 @@ const styles = StyleSheet.create({
   body: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool },
   quoteBody: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body },
   panel: { gap: spacing.xs, minWidth: 0 },
-  tabBar: { height: 56, flexGrow: 0, flexShrink: 0, minWidth: 0 },
-  tabs: { flexDirection: "row", alignItems: "center", paddingBottom: spacing.sm },
+  tabRow: { height: 48, flexDirection: "row", minWidth: 0 },
+  tabBar: { height: 48, flex: 1, minWidth: 0 },
+  tabs: { flexDirection: "row", alignItems: "center" },
+  hintSlot: { width: 48, height: 48, flexShrink: 0 },
+  scrollHint: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
   separator: { width: 1, height: 20, backgroundColor: chatColors.line, flexShrink: 0 },
   tab: { minHeight: 48, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent", minWidth: 0 },
   selectedTab: { borderBottomColor: chatColors.ink },

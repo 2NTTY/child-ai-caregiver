@@ -3,7 +3,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {launchPreviewBrowser,openPreview,assertFits,selectOption} from './preview-browser.mjs';
 const directory=resolve(process.env.FRONTEND_PROOF_DIR??'verification/fe-w33-reading');await mkdir(directory,{recursive:true});
-const browser=await launchPreviewBrowser(),failures=[],passed=[],appearance=[],returns=[];
+const browser=await launchPreviewBrowser(),failures=[],passed=[],appearance=[],returns=[],hints=[];
 const titles=['記錄時間及原文（合成示例）','睡前流程討論（合成示例）','來源日期及適用範圍（合成示例）'];
 const sourceTab=(answer,number,title)=>answer.getByRole('button',{name:`來源【${number}】：${title}`,exact:true});
 const sourceButtons=answer=>answer.getByRole('button',{name:/^來源【/});
@@ -32,15 +32,37 @@ async function returnToQuote(answer,marker,width,scenario,keyboard=false){
  assert.ok(Math.abs((await quoteState(marker)).scroll-after.scroll)<=1,'Returning must not be pulled back to the source or latest message');
  returns.push({width,scenario,activation:keyboard?'Enter':'pointer',before,after});
 }
+async function sourceHintState(answer){
+ const row=answer.getByTestId('answer-source-tab-row'),handle=await row.elementHandle();
+ await answer.page().waitForFunction(row=>{
+  const viewport=row.querySelector('[data-testid="answer-source-tabs"]');
+  return !!row.querySelector('[data-testid="answer-source-scroll-hint"]')===(viewport.scrollWidth-viewport.clientWidth-viewport.scrollLeft>1);
+ },handle);
+ const state=await row.evaluate(element=>{
+  const viewport=element.querySelector('[data-testid="answer-source-tabs"]'),hint=element.querySelector('[data-testid="answer-source-scroll-hint"]');
+  const bar=viewport.parentElement.querySelector('.os-scrollbar-horizontal'),bounds=element.getBoundingClientRect(),frame=viewport.getBoundingClientRect(),tip=hint?.getBoundingClientRect(),barStyle=bar&&getComputedStyle(bar);
+  return {left:viewport.scrollLeft,width:viewport.clientWidth,content:viewport.scrollWidth,rowWidth:bounds.width,height:bounds.height,
+   more:!!hint,slot:!!element.querySelector('[data-testid="answer-source-hint-slot"]'),barFound:!!bar,
+   barVisible:!!bar&&barStyle.display!=='none'&&barStyle.visibility!=='hidden'&&Number(barStyle.opacity)>0&&bar.getBoundingClientRect().height>0,
+   separate:!tip||tip.left>=frame.right-1&&tip.right<=bounds.right+1,hitWidth:tip?.width,hitHeight:tip?.height};
+ });
+ assert.equal(state.barFound,true,'Inspect the existing source scrollbar instance rather than missing the element');
+ assert.equal(state.barVisible,false,'Source titles must not share a horizontal scrollbar');
+ assert.equal(state.separate,true,'The right-side hint must occupy its own area outside the source viewport');
+ assert.ok(state.height>=48);
+ if(state.more)assert.deepEqual([state.hitWidth,state.hitHeight],[48,48]);
+ if(state.content<=state.width+1){assert.equal(state.more,false);assert.equal(state.slot,false,'Fitting sources must not reserve hint space');}
+ return state;
+}
 async function sourceAppearance(answer,count){
  const panel=answer.getByTestId('answer-source-panel');
  const style=await panel.evaluate(element=>{const s=getComputedStyle(element);return {background:s.backgroundColor,border:s.borderTopWidth,radius:s.borderRadius,padding:[s.paddingTop,s.paddingRight,s.paddingBottom,s.paddingLeft],height:element.getBoundingClientRect().height};});
- assert.equal(style.background,'rgba(0, 0, 0, 0)');assert.equal(style.border,'0px');assert.equal(style.radius,'0px');assert.deepEqual(style.padding,['0px','0px','0px','0px']);assert.ok(style.height>=104);
+ assert.equal(style.background,'rgba(0, 0, 0, 0)');assert.equal(style.border,'0px');assert.equal(style.radius,'0px');assert.deepEqual(style.padding,['0px','0px','0px','0px']);assert.ok(style.height>=100);
  const tabs=await sourceButtons(answer).evaluateAll(elements=>elements.map(element=>{const s=getComputedStyle(element),b=element.getBoundingClientRect();return {height:b.height,background:s.backgroundColor};}));
  assert.equal(tabs.length,count);assert.ok(tabs.every(tab=>tab.height>=48&&tab.background==='rgba(0, 0, 0, 0)'));
  const dividers=await answer.getByTestId('answer-source-separator').evaluateAll(elements=>elements.map(element=>{const b=element.getBoundingClientRect(),before=element.previousElementSibling.getBoundingClientRect(),after=element.nextElementSibling.getBoundingClientRect();return {width:b.width,height:b.height,between:b.left>=before.right-1&&b.right<=after.left+1};}));
  assert.equal(dividers.length,count-1);assert.ok(dividers.every(divider=>divider.width===1&&divider.height===20&&divider.between));
- return {panel:style,tabs:tabs.length,separators:dividers.length};
+ return {panel:style,tabs:tabs.length,separators:dividers.length,hint:await sourceHintState(answer)};
 }
 try{
  for(const width of [1440,1024,390,320]){
@@ -59,6 +81,11 @@ try{
   assert.equal(await sourceButtons(footer).count(),3);assert.equal(await footer.getByRole('button',{name:/^查看來源/}).count(),0);
   assert.equal(await details.count(),0);assert.equal(await footer.evaluate(element=>getComputedStyle(element).borderTopWidth),'1px');
   const initialAppearance=await sourceAppearance(answer,3);
+  if(width===390){
+   await page.setViewportSize({width:1440,height:992});const wide=await sourceHintState(answer);assert.equal(wide.more,false);assert.equal(wide.slot,false);
+   await page.setViewportSize({width,height:844});const narrow=await sourceHintState(answer);assert.equal(narrow.more,true);
+   hints.push({width,scenario:'resize from overflow to fitting sources and back',wide,narrow});
+  }
   for(let index=0;index<3;index++){
    const tab=sourceTab(answer,index+1,titles[index]);assert.ok((await tab.innerText()).includes(titles[index]));
    await instantJump(answer.getByRole('button',{name:`查看引用【${index+1}】：${titles[index]}`,exact:true}),footer.getByTestId('answer-source-panel'));
@@ -97,8 +124,7 @@ try{
   assert.equal(await details.getByText('原來源版本校驗',{exact:true}).count(),1);
   await details.getByRole('button',{name:'版本與核對資料',exact:true}).click();
   const groups=await details.getByTestId('source-detail-group').evaluateAll(elements=>elements.map(element=>getComputedStyle(element).borderTopWidth));assert.deepEqual(groups,['0px','1px']);
-  const indicator=await sourceTab(answer,2,titles[1]).evaluate(element=>{let host=element.parentElement;while(host&&!host.hasAttribute('data-overlayscrollbars'))host=host.parentElement;const handle=host?.querySelector('.os-scrollbar-horizontal .os-scrollbar-handle'),tab=element.getBoundingClientRect(),bar=handle?.getBoundingClientRect();return {tabBottom:tab.bottom,handleTop:bar?.top,handleHeight:bar?.height};});
-  if(indicator.handleHeight>0)assert.ok(indicator.handleTop-indicator.tabBottom>=2,'Selected underline and horizontal thumb must have a visible gap');
+  await sourceHintState(answer);
   assert.equal(await sourceButtons(footer).count(),3);assert.equal(await page.getByTestId('app-dialog').count(),0);
   await assertFits(page,`single source panel ${width}`);await page.screenshot({path:resolve(directory,`single-source-panel-${width}.png`)});
   await sourceTab(answer,2,titles[1]).focus();
@@ -116,10 +142,22 @@ try{
   const lastTitle='來源片段與版本的版式示例 12',firstTitle='來源片段與版本的版式示例 1';
   const last=sourceTab(many,12,lastTitle),first=sourceTab(many,1,firstTitle);
   assert.equal((await horizontalState(first)).overflow,true);
+  const hint=many.getByRole('button',{name:'查看更多來源',exact:true});
+  const beforeHint=await sourceHintState(many);assert.equal(beforeHint.more,true);
+  await hint.click();const pointerHint=await sourceHintState(many);assert.ok(pointerHint.left>beforeHint.left);assert.equal(await manyDetails.count(),0);
+  assert.match(await page.evaluate(()=>document.activeElement.getAttribute('aria-label')),/^來源【/,'The hint must focus the newly revealed source, not a disappearing control');
+  await hint.focus();await page.keyboard.press('Enter');const keyboardHint=await sourceHintState(many);assert.ok(keyboardHint.left>pointerHint.left);assert.equal(await manyDetails.count(),0);
+  await page.screenshot({path:resolve(directory,`source-scroll-hint-${width}.png`)});
   await instantJump(many.getByRole('button',{name:`查看引用【12】：${lastTitle}`,exact:true}),many.getByTestId('answer-source-panel'));await located(last);
   const end=(await horizontalState(last)).left;assert.ok(end>0);assert.equal(await manyDetails.count(),0);
+  const ended=await sourceHintState(many);assert.equal(ended.more,false);assert.equal(ended.width,beforeHint.width,'Reaching the end must not resize the source viewport');
   await instantJump(many.getByRole('button',{name:`查看引用【1】：${firstTitle}`,exact:true}),many.getByTestId('answer-source-panel'));await located(first);
   assert.ok((await horizontalState(first)).left<end);
+  const restored=await sourceHintState(many);assert.equal(restored.more,true);
+  const viewport=many.getByTestId('answer-source-tabs');await viewport.evaluate(element=>element.scrollLeft=0);
+  const frame=await viewport.boundingBox();await page.mouse.move(frame.x+frame.width/2,frame.y+frame.height/2);await page.mouse.wheel(220,0);
+  await page.waitForFunction(element=>element.scrollLeft>0,await viewport.elementHandle());const wheel=await sourceHintState(many);
+  hints.push({width,scenario:'12 sources: pointer, Enter, wheel, end and return',before:beforeHint,pointer:pointerHint,keyboard:keyboardHint,end:ended,restored,wheel});
   await first.evaluate(element=>{let parent=element.parentElement;while(parent){if(['auto','scroll'].includes(getComputedStyle(parent).overflowX)){parent.scrollLeft=parent.scrollWidth;return;}parent=parent.parentElement;}});
   assert.ok((await horizontalState(last)).left>0);assert.equal((await horizontalState(last)).inside,true,JSON.stringify(await last.evaluate(element=>{let parent=element.parentElement;while(parent){if(['auto','scroll'].includes(getComputedStyle(parent).overflowX)){const b=element.getBoundingClientRect(),f=parent.getBoundingClientRect();return {left:parent.scrollLeft,scrollWidth:parent.scrollWidth,clientWidth:parent.clientWidth,tabLeft:b.left,tabRight:b.right,frameLeft:f.left,frameRight:f.right};}parent=parent.parentElement;}})));
   await last.click();await manyDetails.getByText(lastTitle,{exact:true}).waitFor();await visibleHeader(manyDetails,lastTitle);await assertFits(page,`12 horizontally scrolling sources ${width}`);
@@ -134,9 +172,9 @@ try{
   await last.click();assert.equal(await manyDetails.count(),0);
   if(width<1024){await many.locator('[dir="auto"]').evaluateAll(elements=>{for(const element of elements){const style=getComputedStyle(element);element.style.fontSize=parseFloat(style.fontSize)*1.5+'px';if(style.lineHeight!=='normal')element.style.lineHeight=parseFloat(style.lineHeight)*1.5+'px';}});await assertFits(page,`150% source text ${width}`);}
   assert.equal(await draft.inputValue(),'保留原問題草稿');
-  passed.push(`reading ${width}: reusable plain chat and Agent source disclosures, reading before optional technical fields, actual pointer/Enter return to the original quote with visible focus and clamped center alignment, stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft${width<1024?', enlarged text':''}`);
+  passed.push(`reading ${width}: reusable chat and Agent source disclosures, hidden source scrollbar and separate 48px right hint, pointer/Enter reveal with source focus, native horizontal wheel, end hint removal without width change and reappearance on return, independent messages and 12 sources, citation jump/return including 1800px extended reply, unchanged draft and source disclosure${width<1024?', enlarged text':''}`);
   await page.close();
  }
- assert.deepEqual(failures,[]);await writeFile(resolve(directory,'source-tabs-checks.json'),JSON.stringify({at:new Date().toISOString(),scope:'Synthetic frontend only; actual quote-return pointer/keyboard, clamped context alignment and visible focus plus reused source checks; no API/model calls or device acceptance',passed,appearance,returns,failures},null,2)+'\n');
+ assert.deepEqual(failures,[]);await writeFile(resolve(directory,'source-tabs-checks.json'),JSON.stringify({at:new Date().toISOString(),scope:'Synthetic frontend only; conditional right source hint, native scroll/focus, resize, pointer/keyboard and reused citation return checks; no API/model calls or device acceptance',passed,appearance,hints,returns,failures},null,2)+'\n');
  console.log(JSON.stringify({passed,failures}));
 }finally{await browser.close();}

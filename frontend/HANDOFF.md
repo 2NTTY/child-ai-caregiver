@@ -24,6 +24,10 @@ AgentConversationPreview 的合成活動／候選預設收起，隱藏內容保�
 
 四尺寸的真實指標／Enter 檢查通過：短回覆、來源展開、延長 1800 px 回覆，以及引用來源 1 後改看來源 3 再返回原引用；核對可視位置、焦點框、行內尺寸和兩幀後位置。沿原來源檢查補驗 12 項橫捲／獨立訊息／穩定標頭與草稿；[返回量度及來源檢查](verification/fe-w36-citation-return/source-tabs-checks.json)／[窄版返回畫面](verification/fe-w36-citation-return/returned-quote-390.png)／[建置及範圍](verification/fe-w36-citation-return/build-checks.json)。首輪焦點框檢查抓到改的是原生檔而非 Web adapter，已依實際 DOM 改正並完成補驗。typecheck 和 35 路由 Web export 通過；沒有另跑 Android bundle、正式 API、實機或讀屏驗收。這是 FE-W36 的局部修復，不新增 PLAN 工作階段。
 
+**來源右側提示（2026-10-04）：** 基線 #82／`083773aab4b0765dbac4c08f0c9a0a034e8f38d5`，分支 `codex/fe-w36-source-scroll-hint`。依使用者截圖，AnswerSources 的來源列隱藏橫向 indicator，以右側箭嘴提示還有來源；沿現有 RN ScrollView／AppScrollView 事件、ref、AppIcon 和引用定位 helper，沒有新套件／第二捲動系統。來源全放得下時不顯示或留位；有溢出時保留獨立 48 px 區，末端收起箭嘴但不改 viewport 寬度，向左回捲後再顯示。點擊／Enter 揭示並聚焦下一個來源，不展開詳情，不改原引用返回位置。取消原滑塊的 8 px 垂直留位，分隔及選中底線保留；只改每則回答的泛用元件，其他區域滑塊沿原樣。
+
+四 Web 尺寸的滑鼠／Enter、連續操作、橫向 wheel、12 來源、末端顯隱／穩定寬度、窄轉寬再返回、引用往返／來源收合／獨立實例及原草稿通過；[量度](verification/fe-w36-source-scroll-hint/source-tabs-checks.json)／[實際來源列](verification/fe-w36-source-scroll-hint/source-strip-390.png)／[建置](verification/fe-w36-source-scroll-hint/build-checks.json)。初輪先核對套件以 visibility／opacity 隱藏但保留 DOM 的實況，修正可見性量度；再重現一幀延遲的 scroll 回報令第二次重複同一來源，補記未回報前已揭示的來源，回報後沿實際位置處理。typecheck、35 路由 Web export 和 Android bundle 通過；原生焦點／手勢、真 API／Agent、讀屏及使用者視覺仍待驗收。沒有追加 PLAN 工作階段。
+
 ## 較早工作包的交接背景
 
 更新：2026-10-03。只交接 `frontend/**`；正式產品、Server、Agent、權限及協定仍以根目錄文件和程式碼為準。FE-W01–FE-W05 已隨 PR #40–#44 合併；FE-W06 基於穩定 `master` **22f5c667887e8c5a926df59686a460fc3d281c6d**，分支 `codex/fe-w06-care-record-flows`，前端源碼 checkpoint **4739b9e8594b70e78bbea19fe03d80e8cb34fa74**。本包主責 B（Web／App UI），開發責任份額 100%，相對權重 5；使用者透過共用 Codex 統籌，沒有聲稱 B 親自手寫或執行驗證。視覺由使用者驗收，正式接線及真服務由主聊天統籌。
