@@ -1,0 +1,24 @@
+{
+  "before": {
+    "rowY": 389,
+    "scroll": [
+      {
+        "top": 695,
+        "height": 622,
+        "scrollHeight": 1331,
+        "overflow": "scroll"
+      }
+    ]
+  },
+  "after": {
+    "rowY": 1031,
+    "scroll": [
+      {
+        "top": 53,
+        "height": 622,
+        "scrollHeight": 1331,
+        "overflow": "scroll"
+      }
+    ]
+  }
+}

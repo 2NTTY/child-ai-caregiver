@@ -1,0 +1,256 @@
+{
+  "at": "2026-10-03T10:05:56.260Z",
+  "baseline": "4f27d05539234a2c2823fbdbfc7660955f0e7428",
+  "scope": "Read-only local synthetic UI observations; all non-preview and API requests blocked.",
+  "browser": "Microsoft Edge",
+  "sourceScriptSha256": "2ae06d294290a00fcdaad52e5235f176b2adae4042f2f5f6caee5ed3a829bdb8",
+  "observations": [
+    {
+      "path": "/",
+      "width": 1440,
+      "height": 992
+    },
+    {
+      "path": "/chat",
+      "width": 1440,
+      "height": 992,
+      "composerBefore": {
+        "x": 220,
+        "y": 775.59375,
+        "width": 910,
+        "height": 216.40625,
+        "bottom": 992
+      },
+      "suggestionsBefore": true,
+      "suggestionsWithFocusedDraft": true,
+      "composerWithDraft": {
+        "x": 220,
+        "y": 775.59375,
+        "width": 910,
+        "height": 216.40625,
+        "bottom": 992
+      },
+      "sourceControl": {
+        "role": "tab",
+        "expanded": "false",
+        "controls": null,
+        "tabIndex": 0
+      },
+      "sourceHeadings": [
+        "引用內容",
+        "記錄時間及原文（合成示例）",
+        "版本與核對",
+        "日期與適用範圍"
+      ],
+      "hasReturnToCitation": false
+    },
+    {
+      "path": "/care",
+      "width": 1440,
+      "height": 992
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "/chat",
+      "width": 390,
+      "height": 844,
+      "composerBefore": {
+        "x": 0,
+        "y": 560.40625,
+        "width": 390,
+        "height": 219.59375,
+        "bottom": 780
+      },
+      "suggestionsBefore": true,
+      "suggestionsWithFocusedDraft": true,
+      "composerWithDraft": {
+        "x": 0,
+        "y": 560.40625,
+        "width": 390,
+        "height": 219.59375,
+        "bottom": 780
+      },
+      "sourceControl": {
+        "role": "tab",
+        "expanded": "false",
+        "controls": null,
+        "tabIndex": 0
+      },
+      "sourceHeadings": [
+        "引用內容",
+        "記錄時間及原文（合成示例）",
+        "版本與核對",
+        "日期與適用範圍"
+      ],
+      "hasReturnToCitation": false,
+      "drawerFocusOnOpen": {
+        "label": null,
+        "text": ""
+      },
+      "drawerModalCount": 0,
+      "drawerStillOpenAfterEscape": true,
+      "drawerFocusAfterTab": {
+        "label": "選擇孩子，目前小昕",
+        "text": "小小昕"
+      }
+    },
+    {
+      "path": "/care",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "/",
+      "width": 900,
+      "height": 600,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 220,
+        "height": 600,
+        "bottom": 600
+      },
+      "navigationItems": [
+        {
+          "label": "育有方，返回主頁",
+          "top": 16,
+          "bottom": 109
+        },
+        {
+          "label": "主頁",
+          "top": 121,
+          "bottom": 167
+        },
+        {
+          "label": "照顧記錄",
+          "top": 171,
+          "bottom": 217
+        },
+        {
+          "label": "照片與記錄",
+          "top": 221,
+          "bottom": 267
+        },
+        {
+          "label": "私人來源",
+          "top": 271,
+          "bottom": 317
+        },
+        {
+          "label": "任務與預約",
+          "top": 321,
+          "bottom": 367
+        },
+        {
+          "label": "成長關注",
+          "top": 371,
+          "bottom": 417
+        },
+        {
+          "label": "照顧摘要",
+          "top": 421,
+          "bottom": 467
+        },
+        {
+          "label": "聯絡授權",
+          "top": 471,
+          "bottom": 517
+        },
+        {
+          "label": "子女檔案",
+          "top": 521,
+          "bottom": 567
+        },
+        {
+          "label": "家庭協調",
+          "top": 571,
+          "bottom": 617
+        },
+        {
+          "label": "記憶與話題",
+          "top": 621,
+          "bottom": 667
+        },
+        {
+          "label": "與 Agent 對話",
+          "top": 671,
+          "bottom": 747
+        },
+        {
+          "label": "設定",
+          "top": 759,
+          "bottom": 805
+        }
+      ],
+      "scrollRegions": []
+    },
+    {
+      "path": "/settings",
+      "width": 1440,
+      "height": 992,
+      "tabs": [
+        {
+          "label": "個人與帳戶",
+          "tabIndex": 0,
+          "controls": null
+        },
+        {
+          "label": "孩子設定",
+          "tabIndex": 0,
+          "controls": null
+        },
+        {
+          "label": "家庭成員",
+          "tabIndex": 0,
+          "controls": null
+        },
+        {
+          "label": "應用偏好",
+          "tabIndex": 0,
+          "controls": null
+        },
+        {
+          "label": "通知渠道",
+          "tabIndex": 0,
+          "controls": null
+        },
+        {
+          "label": "模型設定",
+          "tabIndex": 0,
+          "controls": null
+        },
+        {
+          "label": "資料與私隱",
+          "tabIndex": 0,
+          "controls": null
+        }
+      ],
+      "tablistCount": 0,
+      "tabpanelCount": 0,
+      "tabFocusBefore": {
+        "label": "個人與帳戶",
+        "text": "個人與帳戶"
+      },
+      "tabFocusAfter": {
+        "label": "個人與帳戶",
+        "text": "個人與帳戶"
+      }
+    }
+  ],
+  "environmentNoise": {
+    "cause": "Kaspersky-injected non-preview script blocked by local-only routing; matching ERR_FAILED console messages.",
+    "blockedRequests": 8,
+    "matchingConsoleMessages": 8,
+    "rawEnvironmentUrlsOmitted": true
+  },
+  "otherRecordedFailures": [],
+  "acceptance": {
+    "purpose": "Evidence for review decisions, not a test-suite pass or visual acceptance.",
+    "formalApiModelsNotifications": "not executed",
+    "nativeAndCrossBrowser": "not executed"
+  }
+}
