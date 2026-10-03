@@ -1,17 +1,20 @@
-import { useState, type ReactNode } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { useState, type ReactNode, type Ref } from "react";
+import { StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView, type ScrollViewProps } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
-import { chineseFont, colors, mobileLayout, mobileType, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileLayout, mobileType, spacing, typeScale, workspaceType } from "../theme";
 
-export function PageFrame({ title, description, children, eyebrow }: { title: string; description: string; children: ReactNode; eyebrow?: string }) {
+export function PageFrame({ title, description, children, eyebrow, density = "regular", scrollRef, onScroll, onContentSizeChange, scrollTestID }: {
+  title: string; description: string; children: ReactNode; eyebrow?: string; density?: "regular" | "compact";
+  scrollRef?: Ref<NativeScrollView>; onScroll?: ScrollViewProps["onScroll"]; onContentSizeChange?: ScrollViewProps["onContentSizeChange"]; scrollTestID?: string;
+}) {
   const viewportWidth = useWindowDimensions().width;
   const [contentWidth, setContentWidth] = useState(0);
   const compact = (contentWidth || viewportWidth) < mobileLayout.breakpoint;
-  return <ScrollView onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={styles.scroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled">
+  return <ScrollView ref={scrollRef} testID={scrollTestID} onScroll={onScroll} scrollEventThrottle={16} onContentSizeChange={onContentSizeChange} onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={styles.scroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled">
     <View style={styles.heading}>
       {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-      <Text accessibilityRole="header" style={[styles.title, compact && mobileType.heading]}>{title}</Text>
+      <Text accessibilityRole="header" style={[styles.title, compact && mobileType.heading, density === "compact" && workspaceType.title]}>{title}</Text>
       <Text style={[styles.description, compact && mobileType.body]}>{description}</Text>
     </View>
     {children}

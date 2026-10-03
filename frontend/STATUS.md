@@ -2,6 +2,8 @@
 
 更新：2026-10-03。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**FE-W34 首頁及記錄工作區：** 首頁承接一個明確授權的 focus 投影，正常無事項／讀取不可用分開；已有孩子可直接提問，引導是可選入口。兩種首頁共用焦點及最近記錄，右欄預設收起且不再重複主要內容。記錄詳情改閱讀正文／相關資料／技術 metadata 三層；窄版返回保留篩選、捲動位置及上次查看標記，表單錯誤有欄位關聯、摘要及實際焦點。四尺寸八組首頁／記錄／表單、原照顧流程與九組手機動畫檢查、typecheck、Web／Android bundle 通過。[交接](HANDOFF.md#commercial-home-records)／[證據](verification/fe-w34-home-records/build-checks.json)。接續推廣到待辦、記憶、照片及設定；正式 API、使用者視覺與真機仍待驗。
+
 **FE-W33 商業方案首包：** 按 Astra 全份方案及 DESIGN_REVIEW 的已採納範圍，完成共用字級／表面／觸控密度、純 OperationNotice、狀態轉換播報、可達導覽／路由右欄選擇、Modal 抽屜、真 Tabs 及欄位 ref。普通聊天改連續正文，輸入框及建議分開；來源改閱讀優先、技術區次層、原引用返回及 disclosure 語意。四尺寸來源／時間線、1440／900 短窗／390／320 焦點及 Tabs、60 個靜態重排、typecheck、Web／Android bundle 通過。[交接](HANDOFF.md#commercial-reading)／[證據](verification/fe-w33-reading/build-checks.json)。正式 API、讀屏／真機與使用者視覺仍待驗；下一包首頁及記錄詳情，不改換頁動畫。
 
 **最新 FE-W31 結尾閃動補修：** 使用者回報完成一刻閃動，605 px 量度確認初版最後一幀將容器由 relative／72 高切成 absolute／168 高，文字 flex 及問候子樹亦同時切換。現在整段沿同一自然流佈局，以 minWidth／maxWidth、上移及內距共用 intro；完成只更新可讀狀態，沒有定位、文字 flex 或子樹切換。649／605／390／320 末幀尺寸／箭嘴跳變均為 0，完成後 12 幀穩定；九組局部互動及放大文字、typecheck、Web／Android export 通過。[補修交接](HANDOFF.md#home-motion-stability)／[證據](verification/fe-w31-motion-stability/build-checks.json)。沿原分支及 draft PR #77；保留手機標語、外框半途淡出、3 秒及每會話一次，修正版使用者視覺／真登入／實機仍待驗。

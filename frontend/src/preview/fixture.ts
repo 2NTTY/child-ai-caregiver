@@ -1,6 +1,6 @@
 import type { GuideStatus, HomeChild, HomeOperation, HomeRecord, HomeViewModel, OperationState } from "../view-model";
 
-export type PreviewScenario = "normal" | "first_login" | "setup_incomplete" | "empty" | "loading" | "offline" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown";
+export type PreviewScenario = "normal" | "first_login" | "setup_incomplete" | "empty" | "loading" | "offline" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown" | "focus_task" | "focus_growth" | "focus_unavailable";
 
 // Local checklist examples for layout review. These are not S13 tasks or occurrences.
 export interface PreviewChecklistItem {
@@ -20,6 +20,7 @@ export const previewChecklist: PreviewChecklistItem[] = [
 export const scenarioLabels: Record<PreviewScenario, string> = {
   normal: "一般", first_login: "首次登入", setup_incomplete: "設定未完成", empty: "尚無孩子", loading: "讀取中", offline: "離線",
   needs_confirmation: "待確認", saving: "處理中", saved: "已保存", failed: "失敗", unknown: "結果未知",
+  focus_task: "今日任務示例", focus_growth: "成長提示示例", focus_unavailable: "今日事項未能取得",
 };
 
 const children: HomeChild[] = [
@@ -55,6 +56,10 @@ export function createPreviewModel(scenario: PreviewScenario, selectedChildId: s
     records: scenario === "loading" ? [] : records,
     lastReadLabel: scenario === "loading" ? null : "2026 年 9 月 26 日 10:24",
     operation: operationCopy[scenario in operationCopy ? scenario as OperationState : "none"],
+    focus: scenario === "focus_task" ? { kind: "task", title: "看看這次待辦的安排", detail: "合成版式示例；這裏沒有建立正式任務或預約。", whyNow: "由合成快照明確指定，不按記錄數量推算。", action: { label: "查看任務與預約", destination: "tasks" } }
+      : scenario === "focus_growth" ? { kind: "growth", title: "核對一項成長關注", detail: "合成版式示例；不代表這位孩子有發展問題。", whyNow: "示意已授權投影的理由；正式適用性由成長功能提供。", sourceLabel: "前端合成樣本，沒有真來源證據", action: { label: "查看成長關注", destination: "growth" } }
+        : scenario === "focus_unavailable" || scenario === "loading" ? { kind: "unavailable", detail: scenario === "loading" ? "正在讀取今日事項，尚未能確認有沒有需要處理的內容。" : "未能取得今日事項；不能因此當作沒有待辦。" }
+          : { kind: "none", detail: "合成快照沒有指定待處理事項；這不是對真家庭狀態的確認。" },
     guideStatus,
   };
 }

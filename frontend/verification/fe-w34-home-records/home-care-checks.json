@@ -1,0 +1,43 @@
+{
+  "passed": [
+    "home 1440: one supplied focus; none/unavailable/task/growth/unknown; no checklist-derived priority, duplicate overview or question field; optional guide",
+    "care 1440: pane-based list/detail; selected/visited marker; exact narrow return and preserved search; real field errors, help links and first-invalid/summary focus; unchanged raw values",
+    "home 1024: one supplied focus; none/unavailable/task/growth/unknown; no checklist-derived priority, duplicate overview or question field; optional guide",
+    "care 1024: pane-based list/detail; selected/visited marker; exact narrow return and preserved search; real field errors, help links and first-invalid/summary focus; unchanged raw values",
+    "home 390: one supplied focus; none/unavailable/task/growth/unknown; no checklist-derived priority, duplicate overview or question field; optional guide",
+    "care 390: pane-based list/detail; selected/visited marker; exact narrow return and preserved search; real field errors, help links and first-invalid/summary focus; unchanged raw values",
+    "home 320: one supplied focus; none/unavailable/task/growth/unknown; no checklist-derived priority, duplicate overview or question field; optional guide",
+    "care 320: pane-based list/detail; selected/visited marker; exact narrow return and preserved search; real field errors, help links and first-invalid/summary focus; unchanged raw values"
+  ],
+  "metrics": [
+    {
+      "width": 1440,
+      "split": true,
+      "before": 247,
+      "after": 247,
+      "rowName": "查看身高記錄"
+    },
+    {
+      "width": 1024,
+      "split": false,
+      "before": 247,
+      "after": 247,
+      "rowName": "查看身高記錄"
+    },
+    {
+      "width": 390,
+      "split": false,
+      "before": 675,
+      "after": 675,
+      "rowName": "查看身高記錄"
+    },
+    {
+      "width": 320,
+      "split": false,
+      "before": 782,
+      "after": 782,
+      "rowName": "查看身高記錄"
+    }
+  ],
+  "failures": []
+}
