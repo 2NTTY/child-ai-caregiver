@@ -32,7 +32,7 @@ export function GrowthAttentionCard({item,page,model,actions,onSource,onTask}:{i
       onChangeText={value=>{input.onChange(value);edit();}} />{fieldState.error||help?<HelperText type={fieldState.error?"error":"info"} visible>{fieldState.error?.message??help}</HelperText>:null}
   </View>}/>;}
   const sourceUrl=growthSourceUrl(item.source.url);
-  return <SectionCard testID={`growth-item-${item.id}`}><SectionHeader title={item.title} subtitle={`${growthKindLabels[item.kind]} · ${growthStateLabels[item.state]}`} icon="chart-bar" />
+  return <SectionCard testID={`growth-item-${item.id}`}><SectionHeader density="compact" title={item.title} subtitle={`${growthKindLabels[item.kind]} · ${growthStateLabels[item.state]}`} icon="chart-bar" />
     <Text style={s.body}>為何現在：{item.whyNow}</Text>
     {item.sourceAvailable?<><Text style={s.body}>{item.advice}</Text><Text style={s.meta}>適用限制：{item.limits}</Text></>:<>
       <Text style={s.warning}>來源或適用依據已改變／暫不可用。這項提示只供歷史追溯，不能按舊建議處理。</Text><Text style={s.meta}>產生當時的限制：{item.limits}</Text>

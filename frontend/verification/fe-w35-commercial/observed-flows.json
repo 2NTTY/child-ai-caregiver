@@ -1,0 +1,12 @@
+{
+  "scope": "Synthetic frontend only; primary agent observed completion lines in command output; no standalone JSON was saved for these completed prefixes",
+  "passed": [
+    "profile: raw age, versions, conflict, same-operation lookup, deletion cancellation, role and access isolation",
+    "family: one-time codes, unknown revocation, read-only role and invitation scopes",
+    "tasks: terminal actions, date-time input, keyboard scope, unknown creation and explicit needs-review resolution",
+    "memory: authority and confirmation metadata, pagination, raw draft and original operation recovery",
+    "settings: draft failure and same-operation lookup, date selection and key selection",
+    "photos: initial four-width original/review layouts and narrow targets completed before a stale read-only expectation failed; final flow passed in checks-photos.json",
+    "channels: initial four-width layouts and confirmation controls completed before a stale Push gate expectation failed; final flow passed in checks-channels.json"
+  ]
+}

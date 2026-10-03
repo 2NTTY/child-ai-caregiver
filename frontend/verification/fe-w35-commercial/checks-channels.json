@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-03T14:27:45.922Z",
+  "passed": [
+    "channels: explicit private and immediate consent/failure and read-error drafts/status surfaces/same operation lookup/child persistence/account cleanup/unavailable revoke/Push quota and Telegram reply gates/manual bot refresh/Telegram candidate conflict/expiry/block/reply semantics"
+  ],
+  "failures": []
+}

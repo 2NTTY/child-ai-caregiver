@@ -30,7 +30,7 @@ function FamilyWorkspace({ perspective, incomingCondition, setPerspective, setIn
   return <FamilyView model={preview.model} actions={{ ...preview.actions, openProfile: onProfile }}
     writeNotice={<PreviewWriteNotice controller={preview.controller} online={online} />}
     previewControls={<SectionCard>
-      <SectionHeader title="合成預覽情境" subtitle="這些工具只切換示例；不屬於正式家庭操作。" />
+      <SectionHeader density="compact" title="合成預覽情境" subtitle="這些工具只切換示例；不屬於正式家庭操作。" />
       <AppButton label={controlsOpen ? "收起家庭情境工具" : "顯示家庭情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />
       {controlsOpen ? <View style={styles.controls}>
         <AppSelect label="本人視角" value={perspective} options={perspectives} onChange={setPerspective} />
@@ -46,7 +46,7 @@ export default function FamilyPage() {
   const { model, scenario, actions } = usePreview();
   const [perspective, setPerspective] = useState<FamilyPerspective>("owner");
   const [incomingCondition, setIncomingCondition] = useState<IncomingInvitationCondition>("pending");
-  return <PageFrame title="家庭協調" description="把共享記錄與私人聊天分清楚；邀請、接受及權限更改都先核對範圍。" eyebrow={`${brand.name} · 家庭`}>
+  return <PageFrame density="compact" title="家庭協調" description="把共享記錄與私人聊天分清楚；邀請、接受及權限更改都先核對範圍。" eyebrow={`${brand.name} · 家庭`}>
     <FamilyWorkspace key={`${scenario}:${perspective}:${incomingCondition}`} perspective={perspective} incomingCondition={incomingCondition}
       setPerspective={setPerspective} setIncomingCondition={setIncomingCondition} ownerName={model.caregiverName}
       children={model.children} online={model.connection === "online"} reading={model.recordsLoad === "loading"} onProfile={() => actions.open("profile")} />

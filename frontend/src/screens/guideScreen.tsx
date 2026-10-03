@@ -18,9 +18,9 @@ export default function GuideScreen() {
   const { model, actions } = usePreview();
   const narrow = width < 760;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
-  return <PageFrame title="使用引導" description="先認識孩子資料、照顧記錄和設定，再開始與 Agent 對話。你之後仍可在設定重新開啟本頁。" eyebrow={`${brand.name} · 開始使用`}>
+  return <PageFrame density="compact" title="使用引導" description="你可以先提問，再按需要核對孩子資料、照顧記錄和設定；隨時可回來查看。" eyebrow={`${brand.name} · 開始使用`}>
     <SectionCard style={styles.intro}>
-      <SectionHeader title={needsGuide ? "先把基本資料整理好" : "隨時回來查看使用方法"} subtitle="此頁是獨立 Web 合成預覽；正式完成狀態須由 Server 提供。" />
+      <SectionHeader density="compact" title={needsGuide ? "按需要了解使用方法" : "隨時回來查看使用方法"} subtitle="此頁是獨立 Web 合成預覽；正式完成狀態須由 Server 提供。" />
       {model.guideStatus === "first_login" ? <Text style={styles.body}>這是首次登入的預覽狀態。先核對孩子檔案，再決定要記下甚麼或向 Agent 提問。</Text> : null}
       {model.guideStatus === "incomplete" ? <Text style={styles.body}>目前設定尚未完成。你可以逐項查看；預覽不會代你保存任何資料。</Text> : null}
     </SectionCard>
@@ -32,7 +32,7 @@ export default function GuideScreen() {
       </SectionCard>)}
     </View>
     <SectionCard>
-      <SectionHeader title="準備好便可以對話" subtitle="Agent 的回答應以獲授權的孩子資料和已確認內容為準。" />
+      <SectionHeader density="compact" title="已有孩子便可以開始提問" subtitle="Agent 的回答應以獲授權的孩子資料和已確認內容為準。" />
       <View style={styles.actions}><AppButton label="與 Agent 對話" onPress={() => actions.open("chat")} />
         {needsGuide ? <AppButton label="模擬設定已完成" variant="quiet" disabled={model.children.length === 0} onPress={actions.completeGuidePreview} /> : null}</View>
       {needsGuide ? <Text style={styles.previewNote}>「模擬設定已完成」只切換本地預覽的引導顯示，不代表真實設定已保存或通過核對。</Text> : null}

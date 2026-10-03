@@ -4,7 +4,7 @@ import { Text } from "react-native-paper";
 import { WebPushSettingsCard, TelegramSettingsCard } from "./ChannelCards";
 import { AppButton, AppSelect, SectionCard, SectionHeader } from "../ui";
 import { PreviewWriteControls, PreviewWriteNotice } from "../PreviewWritePanel";
-import { chineseFont, colors, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, readingType, spacing } from "../../theme";
 import type { ChannelSettingsPreviewController } from "../../preview/useChannelSettingsPreview";
 import type { ChannelDeliveryState } from "../../channel-view-model";
 import { channelDeliveryLabels } from "../../channel-view-model";
@@ -28,7 +28,7 @@ export function ChannelSettingsPreview({ controller }: { controller: ChannelSett
   const [tools, setTools] = useState(false);
   const { push, telegram, identity } = controller;
   return <View testID="channel-settings" style={styles.workspace}>
-    <SectionCard><SectionHeader title="本人的通知渠道" subtitle="切換孩子不會重新綁定；切換帳戶或 Server 時必須清理舊渠道及待查操作。" />
+    <SectionCard><SectionHeader density="compact" title="本人的通知渠道" subtitle="切換孩子不會重新綁定；切換帳戶或 Server 時必須清理舊渠道及待查操作。" />
       <Text style={styles.meta}>渠道情境帳戶：{identity.name}（合成）。此處沒有登出、登入或外發。</Text>
       <View style={styles.actions}><AppButton label={tools ? "收起渠道情境工具" : "顯示渠道情境工具"} variant="quiet" onPress={() => setTools(value => !value)} />
         <AppButton label="切換渠道情境的合成帳戶" variant="secondary" onPress={controller.switchAccount} />
@@ -60,5 +60,5 @@ const styles = StyleSheet.create({
   workspace: { gap: spacing.lg }, columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, stack: { flexDirection: "column" },
   column: { flex: 1, minWidth: 0, width: "100%", gap: spacing.lg }, fullColumn: { flex: undefined, flexBasis: "auto", flexGrow: 0, flexShrink: 0 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
+  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
 });

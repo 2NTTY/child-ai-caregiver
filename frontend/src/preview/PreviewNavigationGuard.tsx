@@ -8,9 +8,11 @@ import { AppButton } from "../components/ui";
 import { chineseFont, colors, typeScale } from "../theme";
 import { guardBrowserHistory, type HistoryGuardWindow } from "./browser-history-guard";
 
-type LeaveState = { dirty: boolean; pending: boolean };
-type LeaveRequest = { blocked: boolean; action: () => void };
-type Guard = { register(id: string, value: LeaveState): void; remove(id: string): void; request(action: () => void): void };
+export type LeaveScope = "child" | "account";
+type LeaveIntent = "navigation" | "child";
+type LeaveState = { dirty: boolean; pending: boolean; scope: LeaveScope };
+type LeaveRequest = { blocked: boolean; action: () => void; intent: LeaveIntent };
+type Guard = { register(id: string, value: LeaveState): void; remove(id: string): void; request(action: () => void, intent?: LeaveIntent): void };
 const Context = createContext<Guard | null>(null);
 
 // Mounted drafts remain owned by their workspace. Unknown writes cannot be discarded as drafts.
@@ -18,11 +20,13 @@ export function PreviewNavigationGuard({ children }: { children: ReactNode }) {
   const entries = useRef(new Map<string, LeaveState>());
   const approved = useRef(false);
   const [request, setRequest] = useState<LeaveRequest | null>(null);
-  const leave = useCallback((action: () => void) => {
+  // Personal settings survive child selection; leaving their route still checks every guard.
+  const statesFor = (intent: LeaveIntent) => [...entries.current.values()].filter(value => intent === "navigation" || value.scope === "child");
+  const leave = useCallback((action: () => void, intent: LeaveIntent = "navigation") => {
     if (approved.current) { action(); return; }
-    const states = [...entries.current.values()];
-    if (states.some(value => value.pending)) setRequest({ blocked: true, action });
-    else if (states.some(value => value.dirty)) setRequest({ blocked: false, action });
+    const states = statesFor(intent);
+    if (states.some(value => value.pending)) setRequest({ blocked: true, action, intent });
+    else if (states.some(value => value.dirty)) setRequest({ blocked: false, action, intent });
     else action();
   }, []);
   const guard = useRef<Guard>({ register: (id, value) => entries.current.set(id, value), remove: id => entries.current.delete(id), request: leave }).current;
@@ -40,7 +44,7 @@ export function PreviewNavigationGuard({ children }: { children: ReactNode }) {
       <Dialog.Actions><AppButton label={request?.blocked ? "留在此頁查核" : "繼續編輯"} variant="quiet" onPress={() => setRequest(null)} />
         {request && !request.blocked ? <AppButton label="捨棄草稿並離開" variant="danger" onPress={() => {
           // Recheck at confirmation: a pending request may have started while the dialog was open.
-          if ([...entries.current.values()].some(value => value.pending)) { setRequest({ ...request, blocked: true }); return; }
+          if (statesFor(request.intent).some(value => value.pending)) { setRequest({ ...request, blocked: true }); return; }
           const action = request.action; setRequest(null); approved.current = true;
           try { action(); } finally { approved.current = false; }
         }} /> : null}</Dialog.Actions>
@@ -50,7 +54,7 @@ export function PreviewNavigationGuard({ children }: { children: ReactNode }) {
 
 export function usePreviewNavigation() {
   const guard = useContext(Context);
-  return guard?.request ?? ((action: () => void) => action());
+  return guard?.request ?? ((action: () => void, _intent?: LeaveIntent) => action());
 }
 
 export function PreviewLink({ href, children }: { href: Href; children: ReactNode }) {
@@ -64,11 +68,11 @@ export function PreviewLink({ href, children }: { href: Href; children: ReactNod
   }}>{children}</Link>;
 }
 
-export function usePreviewLeaveGuard(dirty: boolean, pending = false) {
+export function usePreviewLeaveGuard(dirty: boolean, pending = false, scope: LeaveScope = "child") {
   const guard = useContext(Context);
   const id = useId();
   const navigation = useNavigation();
-  useEffect(() => { guard?.register(id, { dirty, pending }); return () => guard?.remove(id); }, [guard, id, dirty, pending]);
+  useEffect(() => { guard?.register(id, { dirty, pending, scope }); return () => guard?.remove(id); }, [guard, id, dirty, pending, scope]);
   usePreventRemove(!!guard && (dirty || pending), ({ data }) => guard?.request(() => navigation.dispatch(data.action)));
   useEffect(() => {
     if (Platform.OS !== "web" || !guard || !(dirty || pending)) return;

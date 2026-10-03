@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-03T15:02:59.379Z",
+  "scope": "Synthetic frontend only; no real API or device acceptance",
+  "recordedForms": [
+    {
+      "file": "desktop-form-checks.json",
+      "at": "2026-10-03T14:08:13.514Z",
+      "scope": "Synthetic local frontend, no real API or device acceptance",
+      "passed": [
+        "source-records 1440: shared field focus and unmodified raw value",
+        "model 1440: consent checkbox, limit focus, field messages and hidden-tab secret cleanup"
+      ],
+      "failures": []
+    },
+    {
+      "file": "narrow-form-checks.json",
+      "at": "2026-10-03T14:12:22.943Z",
+      "scope": "Synthetic local frontend, no real API or device acceptance",
+      "passed": [
+        "tasks 320: first error and actual date trigger focus",
+        "memory 320: first error, summary target and field message",
+        "photos 320: first pointer submit, unit focus and unmodified raw value",
+        "sources 320: first error and original text target",
+        "source-records 320: shared field focus and unmodified raw value",
+        "preferences 320: first error and summary target focus",
+        "model 320: consent checkbox, limit focus, field messages and hidden-tab secret cleanup"
+      ],
+      "failures": []
+    },
+    {
+      "file": "scope-guard-checks.json",
+      "at": "2026-10-03T14:47:05.914Z",
+      "scope": "Synthetic local frontend, no real API or device acceptance",
+      "passed": [
+        "scope 1440: personal draft and pending operation survive child selection, unknown still blocks leaving route",
+        "scope 320: personal draft and pending operation survive child selection, unknown still blocks leaving route"
+      ],
+      "failures": []
+    }
+  ],
+  "observedDesktopPrefix": {
+    "source": "Primary agent observed these completed assertions and captures before the initial model consent fixture failed; no independent JSON was saved for that prefix",
+    "passed": [
+      "tasks 1440: first error and actual date trigger focus",
+      "memory 1440: first error, summary target and field message",
+      "photos 1440: first pointer submit, unit focus and unmodified raw value",
+      "sources 1440: first error and original text target",
+      "preferences 1440: first error and summary target focus"
+    ]
+  },
+  "unresolvedFailures": []
+}

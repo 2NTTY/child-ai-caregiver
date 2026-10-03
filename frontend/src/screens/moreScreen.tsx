@@ -18,7 +18,7 @@ const destinations = [
 
 export default function MoreScreen() {
   const { actions } = usePreview();
-  return <PageFrame title="更多頁面" description="查看照顧資料、家庭功能及設定。">
+  return <PageFrame density="compact" title="更多頁面" description="查看照顧資料、家庭功能及設定。">
     <SectionCard><AppMenuList items={destinations.map(item => ({ ...item, onPress: () => actions.open(item.key) }))} /></SectionCard>
   </PageFrame>;
 }

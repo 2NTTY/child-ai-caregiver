@@ -22,7 +22,7 @@ function ProfileWorkspace({ child, online, reading }: { child: HomeChild | null;
   ];
   return <ProfileView model={preview.model} actions={preview.actions} onOpenCare={() => homeActions.open("care")} childDeletionActive={childDeletionActive}
     writeNotice={<PreviewWriteNotice controller={preview.controller} online={online && !reading && preview.model.access === "editable"} />}
-    childPicker={<SectionCard><SectionHeader title="切換孩子" subtitle="切換會清除本頁草稿及未完成操作。" />
+    childPicker={<SectionCard><SectionHeader density="compact" title="切換孩子" subtitle="切換會清除本頁草稿及未完成操作。" />
       {home.children.length ? home.children.map(item => <Pressable key={item.id} accessibilityRole="button"
         accessibilityLabel={`切換至${item.displayName}`} accessibilityState={{ selected: item.id === child?.id }}
         onPress={() => homeActions.selectChild(item.id)}
@@ -32,7 +32,7 @@ function ProfileWorkspace({ child, online, reading }: { child: HomeChild | null;
       <CreateChildPreview online={online && !reading} enabled={preview.model.access === "editable" && !preview.controller.locked && !childDeletionActive} onCreated={homeActions.createChildPreview} />
       {child && preview.model.access === "editable" ? <DeleteChildPreview key={child.id} child={child} online={online && !reading} enabled={!preview.controller.locked && preview.model.operation.state !== "conflict"} onDeleted={homeActions.deleteChildPreview} onActiveChange={setChildDeletionActive} /> : null}
     </SectionCard>}
-    previewControls={<SectionCard><SectionHeader title="合成預覽情境" subtitle="只切換本頁示例，沒有呼叫 Server。"
+    previewControls={<SectionCard><SectionHeader density="compact" title="合成預覽情境" subtitle="只切換本頁示例，沒有呼叫 Server。"
       action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
       {controlsOpen ? <>
         {child ? <AppSelect label="檔案情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} /> : null}

@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-03T14:12:22.943Z",
+  "scope": "Synthetic local frontend, no real API or device acceptance",
+  "passed": [
+    "tasks 320: first error and actual date trigger focus",
+    "memory 320: first error, summary target and field message",
+    "photos 320: first pointer submit, unit focus and unmodified raw value",
+    "sources 320: first error and original text target",
+    "source-records 320: shared field focus and unmodified raw value",
+    "preferences 320: first error and summary target focus",
+    "model 320: consent checkbox, limit focus, field messages and hidden-tab secret cleanup"
+  ],
+  "failures": []
+}

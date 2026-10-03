@@ -47,7 +47,7 @@ export async function verifySources(browser, failures, directory) {
   await field(publicPage, "自備來源原文").fill("a".repeat(10001)); await button(publicPage, "保存私人來源").click();
   await publicPage.getByText("原文最多 10,000 字，請自行選擇內容；不會截短原文。", { exact: true }).waitFor();
   assert.equal((await field(publicPage, "自備來源原文").inputValue()).length, 10001);
-  await selectOption(publicPage, "來源方式", "清單中的公開來源"); await selectOption(publicPage, "公開來源", "衛生署家庭健康服務（合成清單）");
+  await selectOption(publicPage, "來源方式", "清單中的公開來源"); await selectOption(publicPage, "公開來源", "衛生署家庭健康服務（合成清單） · https://www.fhs.gov.hk/");
   await button(publicPage, "保存私人來源").click(); await publicPage.getByText("來源已私人保存（合成預覽）。尚未家庭共享。", { exact: true }).waitFor();
   assert.equal(await field(publicPage, "來源記錄原文").count(), 0); assert.equal(await button(publicPage, "取得此網頁內容").isDisabled(), true);
   await checkbox(publicPage, "我同意取得此來源的公開正文並私人保存").focus(); await publicPage.keyboard.press("Space");
@@ -93,7 +93,7 @@ export async function verifySources(browser, failures, directory) {
 
   const unavailable = await normalSourcePage(browser, failures); await fault(unavailable, "私人來源保存", "已確認但結果不可讀");
   await field(unavailable, "自備來源原文").fill(raw); await button(unavailable, "保存私人來源").click();
-  await unavailable.getByText(/原收據已確認操作，但結果尚未能核對/).waitFor(); assert.equal(await button(unavailable, "沿原內容及參考重試").count(), 0);
+  await unavailable.getByText(/原收據已確認操作，但結果尚未能核對/).and(unavailable.locator(':not([data-testid="status-announcement"])')).waitFor(); assert.equal(await button(unavailable, "沿原內容及參考重試").count(), 0);
   assert.equal(await field(unavailable, "自備來源原文").inputValue(), raw); assert.equal(await field(unavailable, "自備來源原文").isEditable(), false);
   assert.equal(await button(unavailable, "結束已確認操作").isDisabled(), true); await button(unavailable, "查核原次結果").click(); await readComplete(unavailable);
   assert.equal(await field(unavailable, "自備來源原文").inputValue(), raw); await button(unavailable, "結束已確認操作").click(); assert.equal(await field(unavailable, "自備來源原文").inputValue(), ""); await unavailable.close();
@@ -116,7 +116,7 @@ export async function verifySources(browser, failures, directory) {
   await review(ended); await share(ended); await ended.getByText("核對記錄已家庭共享（合成預覽）；原文、網址及候選仍屬私人。", { exact: true }).waitFor(); await ended.close();
 
   const conflict = await normalSourcePage(browser, failures); await openInput(conflict); await fault(conflict, "家庭共享確認", "版本衝突"); await review(conflict); await share(conflict);
-  await conflict.getByText(/版本已改變，原文及手動草稿保留/).waitFor(); assert.equal(await button(conflict, "明確使用目前版本").isDisabled(), true);
+  await conflict.getByText(/版本已改變，原文及手動草稿保留/).and(conflict.locator(':not([data-testid="status-announcement"])')).waitFor(); assert.equal(await button(conflict, "明確使用目前版本").isDisabled(), true);
   await button(conflict, "重新讀取來源").click(); await readComplete(conflict); await button(conflict, "明確使用目前版本").click();
   assert.equal(await field(conflict, "來源記錄原文").inputValue(), raw); assert.equal(await conflict.getByTestId("source-shared-review").count(), 0); await conflict.close();
 
@@ -130,7 +130,8 @@ export async function verifySources(browser, failures, directory) {
   assert.equal(await field(scoped, "自備來源原文").inputValue(), ""); await field(scoped, "自備來源原文").fill(raw); await tools(scoped);
   await button(scoped, "切換來源 Server，目前合成 A").click(); assert.equal(await field(scoped, "自備來源原文").inputValue(), "");
   await field(scoped, "自備來源原文").fill(raw); await scoped.getByRole("button", { name: /^選擇孩子，目前/ }).click();
-  await scoped.getByRole("radio", { name: "阿樂 · 約 8 歲 · 截至 2026 年 9 月", exact: true }).click(); assert.equal(await field(scoped, "自備來源原文").inputValue(), "");
+  await scoped.getByRole("radio", { name: "阿樂 · 約 8 歲 · 截至 2026 年 9 月", exact: true }).click();
+  await button(scoped, "捨棄草稿並離開").click(); assert.equal(await field(scoped, "自備來源原文").inputValue(), "");
   await tools(scoped); await selectOption(scoped, "來源情境", "唯讀角色"); assert.equal(await button(scoped, "保存私人來源").isDisabled(), true);
   await openInput(scoped, "爸爸貼上的觀察原文"); assert.equal(await field(scoped, "來源記錄原文").count(), 0); assert.equal(await button(scoped, "刪除私人來源").isDisabled(), true);
   await selectOption(scoped, "來源情境", "權限失效"); assert.equal(await scoped.getByTestId("source-details").count(), 0); assert.equal(await field(scoped, "自備來源原文").count(), 0); await scoped.close();

@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-03T15:00:33.030Z",
+  "passed": [
+    "model settings: four sizes, keyboard/consent/budgets, metadata-only check/429, removal, unknown/version reread, known failure drafts, child/account/Server/offline isolation and no key storage",
+    "sources: four widths, raw/private save and dates, explicit fetch/excerpt/candidate/reference, child-fact/shared double consent, deletion scope, receipt/direct unknown and original retry, version/draft/access/scope/offline isolation, shared photo fields"
+  ],
+  "failures": []
+}

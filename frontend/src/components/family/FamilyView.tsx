@@ -1,12 +1,14 @@
+import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
+import { StatusAnnouncement } from "../StatusAnnouncement";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { familyRoleLabels, familyRoleOptions, familyScopeText, type FamilyActions, type FamilyDraft, type FamilyInviteValues, type FamilyViewModel, type MemberRole } from "../../family-view-model";
-import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, radius, spacing, typeScale , readingType } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from "../ui";
 
@@ -22,17 +24,19 @@ function ScopeCheck({ checked, disabled, onChange }: { checked: boolean; disable
 }
 
 function InviteComposer({ model, actions }: { model: FamilyViewModel; actions: FamilyActions }) {
+  const formId = useId();
   const form = useForm<FamilyInviteValues>({ resolver: zodResolver(invitationSchema), defaultValues: { email: "", role: "caregiver" } });
   usePreviewLeaveGuard(form.formState.isDirty);
   const disabled = !model.online || model.locked || !!model.draft && model.draft.kind !== "invite";
   return <View style={styles.form}>
+    <FormErrorSummary entries={form.formState.errors.email?.message ? [{ field: "email", label: "受邀人的電郵", message: form.formState.errors.email.message }] : []} onFocus={() => form.setFocus("email")} />
     <Controller control={form.control} name="email" render={({ field, fieldState }) => <>
-      <AppTextField label="受邀人的電郵" accessibilityLabel="受邀人的電郵" keyboardType="email-address" autoCapitalize="none"
+      <AppTextField ref={field.ref} nativeID={`${formId}-email`} aria-invalid={!!fieldState.error} aria-describedby={fieldState.error ? `${formId}-email-error` : undefined} label="受邀人的電郵" accessibilityLabel="受邀人的電郵" keyboardType="email-address" autoCapitalize="none"
         value={field.value} onBlur={field.onBlur} editable={!disabled} error={!!fieldState.error}
         onChangeText={value => { field.onChange(value); actions.editInvite(); }} />
-      {fieldState.error ? <Text accessibilityRole="alert" style={styles.error}>{fieldState.error.message}</Text> : null}
+      {fieldState.error ? <FormFieldMessage id={`${formId}-email-error`} error={fieldState.error.message} /> : null}
     </>} />
-    <Controller control={form.control} name="role" render={({ field }) => <AppSelect label="邀請角色" value={field.value} options={familyRoleOptions}
+    <Controller control={form.control} name="role" render={({ field }) => <AppSelect ref={field.ref} onBlur={field.onBlur} id={`${formId}-role`} label="邀請角色" value={field.value} options={familyRoleOptions}
       disabled={disabled} onChange={value => { field.onChange(value); actions.editInvite(); }} />} />
     <Text style={styles.meta}>只可邀請照顧者或檢視者；邀請有效七日。正式碼由 Server 建立，只顯示一次，系統不會自動發電郵。</Text>
     <AppButton label="核對邀請內容" onPress={form.handleSubmit(actions.reviewInvite)} disabled={disabled} />
@@ -40,15 +44,17 @@ function InviteComposer({ model, actions }: { model: FamilyViewModel; actions: F
 }
 
 function IncomingComposer({ model, actions }: { model: FamilyViewModel; actions: FamilyActions }) {
+  const formId = useId();
   const form = useForm<{ code: string }>({ defaultValues: { code: "" } });
   usePreviewLeaveGuard(form.formState.isDirty);
   return <View style={styles.form}>
+    <FormErrorSummary entries={form.formState.errors.code?.message ? [{ field: "code", label: "合成示例碼", message: form.formState.errors.code.message }] : []} onFocus={() => form.setFocus("code")} />
     <Text style={styles.body}>這裏只接受頁尾情境工具提供的無效示例碼，不會驗證真實邀請。</Text>
     <Controller control={form.control} name="code" rules={{ required: "請填寫合成示例碼。" }} render={({ field, fieldState }) => <>
-      <AppTextField label="合成示例碼" accessibilityLabel="收到的合成邀請碼" value={field.value} autoCapitalize="none"
+      <AppTextField ref={field.ref} nativeID={`${formId}-code`} aria-invalid={!!fieldState.error} aria-describedby={fieldState.error ? `${formId}-code-error` : undefined} label="合成示例碼" accessibilityLabel="收到的合成邀請碼" value={field.value} autoCapitalize="none"
         editable={model.canStartAction} onBlur={field.onBlur} error={!!fieldState.error}
         onChangeText={value => { field.onChange(value); actions.editIncoming(); }} />
-      {fieldState.error ? <Text accessibilityRole="alert" style={styles.error}>{fieldState.error.message}</Text> : null}
+      {fieldState.error ? <FormFieldMessage id={`${formId}-code-error`} error={fieldState.error.message} /> : null}
     </>} />
     <AppButton label="預覽收到的邀請" onPress={form.handleSubmit(value => actions.previewIncoming(value.code))} disabled={!model.canStartAction} />
     {model.incomingError ? <Text accessibilityRole="alert" style={styles.error}>{model.incomingError}</Text> : null}
@@ -99,7 +105,7 @@ function DraftReview({ model, actions }: { model: FamilyViewModel; actions: Fami
   if (!draft) return null;
   const needsReview = model.operation.state === "failed" || model.operation.state === "none";
   return <SectionCard style={styles.reviewCard}>
-    <SectionHeader title={draft.kind === "accept" ? "再次確認接受邀請" : "確認家庭操作"} subtitle="此操作只影響本次合成預覽。" />
+    <SectionHeader density="compact" title={draft.kind === "accept" ? "再次確認接受邀請" : "確認家庭操作"} subtitle="此操作只影響本次合成預覽。" />
     <DraftDescription draft={draft} />
     <Text style={styles.body}>{familyScopeText}</Text>
     {model.latest && draft.kind !== "accept" ? <View style={styles.comparison}>
@@ -127,16 +133,18 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
   const [width, setWidth] = useState(0);
   const stacked = width < 760;
   return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={styles.workspace}>
+    <StatusAnnouncement eventKey={model.loadState} message={model.loadState === "lost" ? "家庭權限已失效；原有家庭、成員、邀請碼及草稿已清除。" : model.loadState === "loading" ? "正在讀取家庭資料。" : ""} urgent={model.loadState === "lost"} />
+    <StatusAnnouncement eventKey={model.notice ?? ""} message={model.notice ?? ""} />
     <View style={styles.warning}><Text style={styles.warningText}>合成家庭預覽 · 沒有建立有效邀請碼、發電郵、加入真實家庭或更改正式權限。Server 授權仍是權威。</Text></View>
-    {model.loadState === "lost" ? <SectionCard><Text accessibilityRole="alert" style={styles.body}>家庭權限已模擬失效；原有家庭、成員、邀請碼及草稿已清除。</Text></SectionCard>
+    {model.loadState === "lost" ? <SectionCard><Text style={styles.body}>家庭權限已模擬失效；原有家庭、成員、邀請碼及草稿已清除。</Text></SectionCard>
       : model.loadState === "loading" ? <SectionCard><Text style={styles.body}>正在模擬讀取家庭；不會沿用上一個情境的資料。</Text></SectionCard> : <>
-        {!model.online ? <Text accessibilityRole="alert" style={styles.warningText}>目前離線；只展示已載入的合成資料，不能提交或查核。</Text> : null}
-        {model.notice ? <Text accessibilityRole="alert" style={styles.body}>{model.notice}</Text> : null}
+        {!model.online ? <Text style={styles.warningText}>目前離線；只展示已載入的合成資料，不能提交或查核。</Text> : null}
+        {model.notice ? <Text style={styles.body}>{model.notice}</Text> : null}
         {writeNotice}
         <DraftReview model={model} actions={actions} />
         <View style={[styles.columns, stacked && styles.stack]}>
           <View style={[styles.column, stacked && styles.fullColumn]}>
-            <SectionCard><SectionHeader title="我的家庭" subtitle="以下列出所有合成成員及目前角色。" />
+            <SectionCard><SectionHeader density="compact" title="我的家庭" subtitle="以下列出所有合成成員及目前角色。" />
               {model.families.length > 1 && model.family ? <AppSelect label="家庭" value={model.family.id}
                 options={model.families.map(family => ({ value: family.id, label: `${family.ownerName.replace("（合成）", "")}的家庭` }))}
                 disabled={model.operation.state === "saving" || model.operation.state === "unknown"} onChange={actions.selectFamily} /> : null}
@@ -149,7 +157,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
                 {model.family.role !== "owner" ? <Text style={styles.body}>只有擁有者可管理成員及邀請；此視角沒有這些管理操作或邀請電郵清單。</Text> : null}
               </> : <Text style={styles.body}>沒有可查看的家庭。</Text>}
             </SectionCard>
-            <SectionCard><SectionHeader title="家庭共享範圍" />
+            <SectionCard><SectionHeader density="compact" title="家庭共享範圍" />
               <Text style={styles.body}>{familyScopeText}</Text>
               {model.children.length > 0 ? <View style={styles.childList}><Text style={styles.memberName}>目前合成孩子</Text>
                 {model.children.map(child => <Text key={child.id} style={styles.meta}>{child.displayName} · {child.ageLabel}</Text>)}</View>
@@ -159,7 +167,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
           </View>
           <View style={[styles.column, stacked && styles.fullColumn]}>
             {model.family?.role === "owner" ? <>
-              <SectionCard><SectionHeader title="邀請成員" subtitle="先核對收件人、角色與全家庭範圍。" />
+              <SectionCard><SectionHeader density="compact" title="邀請成員" subtitle="先核對收件人、角色與全家庭範圍。" />
                 <InviteComposer key={model.inviteFormKey} model={model} actions={actions} />
                 {model.oneTimeCode ? <View style={styles.review}>
                   <Text style={styles.reviewTitle}>無效示例碼 · 只展示這一次</Text>
@@ -168,7 +176,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
                   <AppButton label="清除示例碼" variant="secondary" onPress={actions.dismissCode} />
                 </View> : null}
               </SectionCard>
-              <SectionCard><SectionHeader title="邀請清單" subtitle="清單只展示狀態；不包含一次性碼。" />
+              <SectionCard><SectionHeader density="compact" title="邀請清單" subtitle="清單只展示狀態；不包含一次性碼。" />
                 {model.family.invitations.length === 0 ? <Text style={styles.body}>目前沒有邀請。</Text> : model.family.invitations.map(invite => <View key={invite.id} style={styles.member}>
                   <Text selectable style={styles.memberName}>{invite.email}</Text>
                   <Text style={styles.meta}>{familyRoleLabels[invite.role]} · {invitationStatusLabels[invite.status]}</Text>
@@ -177,7 +185,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
                 </View>)}
               </SectionCard>
             </> : null}
-            <SectionCard><SectionHeader title="收到邀請？" subtitle="先預覽家庭及範圍，再明確接受。" />
+            <SectionCard><SectionHeader density="compact" title="收到邀請？" subtitle="先預覽家庭及範圍，再明確接受。" />
               <IncomingComposer key={model.family?.id ?? "no-family"} model={model} actions={actions} />
             </SectionCard>
           </View>
@@ -190,8 +198,8 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
 const styles = StyleSheet.create({
   workspace: { gap: spacing.lg, minWidth: 0 }, columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg },
   stack: { flexDirection: "column" }, column: { flex: 1, minWidth: 0, gap: spacing.lg }, fullColumn: { width: "100%", flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
-  body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 23 },
-  meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
+  body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
+  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   warning: { padding: spacing.md, backgroundColor: colors.paleAmber, borderRadius: radius.small },
   warningText: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, lineHeight: 22 },
   error: { fontFamily: chineseFont, color: colors.errorInk, fontSize: typeScale.small, lineHeight: 21 },

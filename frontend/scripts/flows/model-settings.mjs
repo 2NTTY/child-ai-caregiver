@@ -56,7 +56,7 @@ export async function verifyModelSettings(browser, failures, directory) {
   await saveButton(page).click(); await page.getByText("請輸入 1–1000 的整數。", { exact: true }).waitFor();
   await page.getByLabel("個人每日呼叫上限", { exact: true }).fill("120");
   await saveButton(page).focus(); await page.keyboard.press("Enter");
-  await page.getByText("模型設定已保存；密鑰輸入已清除。", { exact: false }).waitFor();
+  await page.getByText("模型設定已保存；密鑰輸入已清除。", { exact: false }).and(page.locator(':not([data-testid="status-announcement"])')).waitFor();
   assert.equal(await keyInput(page).inputValue(), ""); assert.equal(await fee(page).getAttribute("aria-checked"), "false");
   assert.equal(await background.getAttribute("aria-checked"), "true");
   await showForm(page, "本人模型設定"); await page.screenshot({ path: resolve(directory, "model-settings-saved-390.png") });
@@ -64,7 +64,7 @@ export async function verifyModelSettings(browser, failures, directory) {
   await page.getByText("模型資料可讀取。實際生成、查詢向量、收費及剩餘配額仍未驗證。", { exact: true }).waitFor();
   await tools(page); await selectOption(page, "模型資料查核結果", "429 查核限流");
   await page.getByRole("button", { name: "檢查已保存密鑰", exact: true }).click();
-  await page.getByText("查核太頻密（429）", { exact: false }).waitFor();
+  await page.getByText("查核太頻密（429）", { exact: false }).and(page.locator(':not([data-testid="status-announcement"])')).waitFor();
   await page.getByRole("button", { name: "收起模型情境工具", exact: true }).click();
   await tools(page); await selectOption(page, "模型服務可用性", "個人服務不可用");
   assert.equal(await saveButton(page).isDisabled(), true);
@@ -75,7 +75,7 @@ export async function verifyModelSettings(browser, failures, directory) {
   const removal = page.getByRole("button", { name: "確認刪除並停用", exact: true });
   assert.equal(await removal.isDisabled(), true);
   await page.getByRole("checkbox", { name: "我確認刪除密鑰並停用 AI", exact: true }).click();
-  await removal.click(); await page.getByText("個人密鑰已刪除，AI 已停用。", { exact: false }).waitFor();
+  await removal.click(); await page.getByText("個人密鑰已刪除，AI 已停用。", { exact: false }).and(page.locator(':not([data-testid="status-announcement"])')).waitFor();
   await page.getByText("最後讀到的版本：5 · 停用 AI", { exact: true }).waitFor(); await page.close();
 
   for (const [option, message, version] of [
@@ -85,7 +85,7 @@ export async function verifyModelSettings(browser, failures, directory) {
     const current = await modelPage(browser, failures, 320); await personal(current); await tools(current);
     await selectOption(current, "模型保存結果", option); await keyInput(current).fill(sample); await consent(current);
     await current.getByLabel("個人每日呼叫上限", { exact: true }).fill("130");
-    await saveButton(current).click(); await current.getByText(message, { exact: false }).waitFor();
+    await saveButton(current).click(); await current.getByText(message, { exact: false }).and(current.locator(':not([data-testid="status-announcement"])')).waitFor();
     assert.equal(await keyInput(current).inputValue(), "");
     assert.equal(await current.getByLabel("個人每日呼叫上限", { exact: true }).inputValue(), "130");
     assert.equal(await saveButton(current).isDisabled(), true);
@@ -102,12 +102,14 @@ export async function verifyModelSettings(browser, failures, directory) {
   await personal(scoped); await keyInput(scoped).fill(sample);
   await scoped.getByRole("button", { name: /^選擇孩子，目前/ }).click();
   await scoped.getByRole("radio", { name: "阿樂 · 約 8 歲 · 截至 2026 年 9 月", exact: true }).click();
+  await scoped.getByRole("button", { name: "選擇孩子，目前阿樂", exact: true }).waitFor();
+  assert.equal(await scoped.getByTestId("leave-preview-dialog").count(), 0, "Personal model draft is not a child-scoped draft");
   assert.equal(await keyInput(scoped).inputValue(), sample);
   await scoped.getByRole("button", { name: "切換合成預覽情境", exact: true }).click();
   await scoped.getByRole("button", { name: "離線", exact: true }).click(); assert.equal(await keyInput(scoped).inputValue(), "");
   await scoped.getByRole("button", { name: "一般", exact: true }).click();
   await scoped.getByRole("button", { name: "重新讀取模型設定", exact: true }).click();
-  await scoped.getByText("目前設定及版本已讀取。", { exact: false }).waitFor();
+  await scoped.getByText("目前設定及版本已讀取。", { exact: false }).and(scoped.locator(':not([data-testid="status-announcement"])')).waitFor();
   await personal(scoped); await tools(scoped); await keyInput(scoped).fill(sample); await consent(scoped);
   await saveButton(scoped).click(); await scoped.getByText("正在保存模型設定…", { exact: true }).waitFor();
   await scoped.getByRole("button", { name: "切換模型合成帳戶", exact: true }).click();

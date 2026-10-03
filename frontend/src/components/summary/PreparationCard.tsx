@@ -29,7 +29,7 @@ export function PreparationCard({model, actions}: {model: SummaryViewModel; acti
     <AppTextField ref={input.ref} label={label} accessibilityLabel={label} value={input.value} multiline disabled={!editable} error={!!fieldState.error} onBlur={input.onBlur} onChangeText={value => {input.onChange(value); edit();}} />
     {fieldState.error ? <HelperText type="error">{fieldState.error.message}</HelperText> : null}</View>} />;}
   const appointmentOptions = [{value: '', label: '沒有指定預約'}, ...page.appointments.map(task => ({value: task.id, label: `${task.title} · ${summaryTime(task.occurrence.dueAt, task.occurrence.timeZone)}`})), ...(!appointmentValid && values.appointmentTaskId ? [{value: values.appointmentTaskId, label: '原預約已不在目前清單（保留草稿）'}] : [])];
-  return <SectionCard testID="summary-preparation"><SectionHeader title="家庭共享到診準備" icon="clipboard-check-outline" subtitle="問題、清單、預約選擇及核對標記會共享給有權讀取這個孩子的家庭成員。" />
+  return <SectionCard testID="summary-preparation"><SectionHeader density="compact" title="家庭共享到診準備" icon="clipboard-check-outline" subtitle="問題、清單、預約選擇及核對標記會共享給有權讀取這個孩子的家庭成員。" />
     <Text style={s.meta}>已保存版本 {page.preparation.version} · {page.preparation.reviewed ? '曾標記已核對' : '未核對'}。目前來源：{page.reviewCurrent ? '仍與全部來源吻合' : '未核對或來源已變，須重新核對'}。</Text>
     <Text selectable style={s.meta}>已保存核對依據：{page.preparation.reviewedBasis ?? '沒有'} · 期間：{page.preparation.period ? summaryPeriodLabel(page.preparation.period) : '沒有'}</Text>
     <Text style={s.meta}>已保存預約：{page.preparation.appointmentTaskId ? page.appointments.find(task => task.id === page.preparation.appointmentTaskId)?.title ?? page.preparation.appointmentTaskId : '沒有指定'}</Text>

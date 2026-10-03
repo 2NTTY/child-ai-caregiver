@@ -21,7 +21,7 @@ function Attempt({attempt, model, actions, title}: {attempt: ContactAttempt; mod
 }
 export function ContactHistory({model, actions, onTask}: {model: ContactViewModel; actions: ContactActions; onTask: (id: string) => void}) {
   const page = model.page!, [open, setOpen] = useState<string | null>(null);
-  return <SectionCard testID="contact-history"><SectionHeader title="聯絡及收到紀錄" icon="history" subtitle="以 Server 台帳為準，手動更新。這裏不啟動發送或補發。" />
+  return <SectionCard testID="contact-history"><SectionHeader density="compact" title="聯絡及收到紀錄" icon="history" subtitle="以 Server 台帳為準，手動更新。這裏不啟動發送或補發。" />
     <Text style={s.meta}>{page.historyLimited ? '僅顯示最近 50 個請求內已載入的紀錄，並非完整歷史。' : '顯示本次已載入紀錄。'}</Text>
     <Text style={s.meta}>渠道接受、本人確認收到與事項完成各自記錄；未知不當失敗，也不由前端觸發後備。</Text>
     {!page.requests.length ? <Text style={s.body}>目前沒有載入聯絡紀錄；不代表從未發送。</Text> : null}

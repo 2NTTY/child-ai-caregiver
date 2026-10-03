@@ -21,7 +21,7 @@ function TasksWorkspace({ child, online, reading }: { child: HomeChild; online: 
     { value: "many_items", label: "超過 50 項／分頁" },
   ];
   return <TasksView model={preview.model} actions={preview.actions} controller={preview.controller} previewControls={<SectionCard>
-    <SectionHeader title="合成預覽情境" subtitle="只切換固定示例，沒有連接 Server 或啟動 worker。" action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
+    <SectionHeader density="compact" title="合成預覽情境" subtitle="只切換固定示例，沒有連接 Server 或啟動 worker。" action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
     {controlsOpen ? <>
       <AppSelect label="任務情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} />
       <PreviewWriteControls controller={preview.controller} conflict={preview.model.draft?.mode !== "create"} />
@@ -34,5 +34,5 @@ export default function TasksPage() {
   const { model, actions } = usePreview();
   const child = model.children.find(item => item.id === model.selectedChildId);
   return child ? <TasksWorkspace key={child.id} child={child} online={model.connection === "online"} reading={model.recordsLoad === "loading"} /> :
-    <PageFrame title="任務與預約" description="先選擇有權查看的孩子，才展示家庭共享事項。"><SectionCard><Text>尚未選擇孩子，沒有顯示其他孩子的任務、提醒或草稿。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="任務與預約" description="先選擇有權查看的孩子，才展示家庭共享事項。"><SectionCard><Text>尚未選擇孩子，沒有顯示其他孩子的任務、提醒或草稿。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }
