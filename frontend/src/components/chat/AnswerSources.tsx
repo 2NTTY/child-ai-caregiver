@@ -1,13 +1,14 @@
-import { createContext, Fragment, useContext, useRef, useState, type ReactNode } from "react";
+import { createContext, Fragment, useContext, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Pressable, StyleSheet, View, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import type { ChatCitationView } from "../../chat-view-model";
-import { chineseFont, colors, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, readingType, spacing, typeScale } from "../../theme";
 import { AppScrollView } from "../AppScrollView";
 import { AppButton } from "../ui";
 import { CitationMarker } from "./CitationMarker";
 
-const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string): void } | null>(null);
+type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
+const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string, anchor?: RefObject<View | null>): void } | null>(null);
 export type LocateAnswerSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => void;
 const classificationLabels: Record<ChatCitationView["classification"], string> = {
   official_guidance: "官方指引", recent_information: "近期資訊", synthetic: "合成來源示例",
@@ -19,6 +20,11 @@ function sourceTime(value: string | null): string {
 }
 function Detail({ label, value }: { label: string; value: string }) {
   return <View style={styles.detail}><Text style={styles.meta}>{label}</Text><Text selectable style={styles.body}>{value}</Text></View>;
+}
+
+function CitationReference({ number, source, locate }: { number: number; source: ChatCitationView; locate(id: string, anchor: RefObject<View | null>): void }) {
+  const anchor = useRef<View>(null);
+  return <CitationMarker ref={anchor} number={number} label={`查看引用【${number}】：${source.title}`} onPress={() => locate(source.id, anchor)} />;
 }
 
 export function CitationText({ children, style }: { children: string; style?: StyleProp<TextStyle> }) {
@@ -33,8 +39,7 @@ export function CitationText({ children, style }: { children: string; style?: St
     if (!source) continue;
     const position = match.index!;
     parts.push(children.slice(offset, position));
-    parts.push(<CitationMarker key={position} number={sourceNumber} label={`查看引用【${sourceNumber}】：${source.title}`}
-      onPress={() => context.locate(source.id)} />);
+    parts.push(<CitationReference key={position} number={sourceNumber} source={source} locate={context.locate} />);
     offset = position + match[0].length;
   }
   parts.push(children.slice(offset));
@@ -47,21 +52,36 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [locatedId, setLocatedId] = useState<string | null>(null);
+  const [origin, setOrigin] = useState<CitationOrigin | null>(null);
+  const [technicalOpen, setTechnicalOpen] = useState(false);
+  const groupId = useId();
   const sourceRefs = useRef(new Map<string, View>());
   const panelRef = useRef<View | null>(null);
   const tabScrollRef = useRef<NativeScrollView | null>(null);
+  const pendingNavigation = useRef<{ id: string; closing: boolean } | null>(null);
   const [tabWidth, setTabWidth] = useState(0);
   const selected = sources.find(source => source.id === selectedId);
-  function locate(id: string) {
+  useLayoutEffect(() => {
+    const pending = pendingNavigation.current;
+    pendingNavigation.current = null;
+    if (pending) onLocateSource?.(pending.closing ? sourceRefs.current.get(pending.id) ?? null : panelRef.current,
+      pending.closing ? tabScrollRef.current : undefined);
+  }, [selectedId, onLocateSource]);
+  function locate(id: string, anchor?: RefObject<View | null>) {
     setLocatedId(id);
-    if (selectedId) setSelectedId(id);
+    if (anchor?.current) setOrigin({ sourceId: id, anchor });
+    if (selectedId && selectedId !== id) { setSelectedId(id); setTechnicalOpen(false); }
     onLocateSource?.(sourceRefs.current.get(id) ?? null, tabScrollRef.current, panelRef.current);
   }
   function toggle(id: string) {
     const closing = selectedId === id;
+    pendingNavigation.current = { id, closing };
     setSelectedId(closing ? null : id); setLocatedId(id);
-    requestAnimationFrame(() => onLocateSource?.(closing ? sourceRefs.current.get(id) ?? null : panelRef.current,
-      closing ? tabScrollRef.current : undefined));
+    if (!closing && selectedId !== id) setTechnicalOpen(false);
+  }
+  function returnToCitation() {
+    if (origin?.anchor.current && sources.some(source => source.id === origin.sourceId)) onLocateSource?.(origin.anchor.current);
+    else setOrigin(null);
   }
   return <CitationContext.Provider value={{ sources, locate }}>
     <View testID={testID} style={styles.answer}>
@@ -69,37 +89,31 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
       <View testID="answer-sources" style={styles.footer}>
         {degraded ? <Text style={styles.warning}>檢索已降級；請核對原來源及適用範圍。</Text> : null}
         {sources.length ? <View ref={panelRef} testID="answer-source-panel" style={styles.panel}>
-          <Text accessibilityRole="header" style={styles.footerTitle}>參考來源</Text>
-          <AppScrollView ref={tabScrollRef} horizontal testID="answer-source-tabs" accessibilityRole="tablist" accessibilityLabel="回答參考來源"
+          <View style={styles.footerHeading}><Text accessibilityRole="header" style={styles.footerTitle}>參考來源</Text>
+            {origin && onLocateSource ? <AppButton label="返回引用句" variant="quiet" density="compact" onPress={returnToCitation} /> : null}
+          </View>
+          <AppScrollView ref={tabScrollRef} horizontal testID="answer-source-tabs" accessibilityLabel="回答參考來源"
             onLayout={event => setTabWidth(event.nativeEvent.layout.width)} style={styles.tabBar} contentContainerStyle={styles.tabs}>
             {sources.map((source, index) => <Fragment key={source.id}>
               {index > 0 ? <View testID="answer-source-separator" accessible={false} style={styles.separator} /> : null}
-              <Pressable accessibilityRole="tab"
+              <Pressable accessibilityRole="button"
               ref={node => { if (node) sourceRefs.current.set(source.id, node); else sourceRefs.current.delete(source.id); }}
-              accessibilityLabel={`來源分頁【${index + 1}】：${source.title}`} accessibilityState={{ selected: selectedId === source.id, expanded: selectedId === source.id }}
-              aria-selected={selectedId === source.id} aria-expanded={selectedId === source.id} onPress={() => toggle(source.id)}
+              accessibilityLabel={`來源【${index + 1}】：${source.title}`} accessibilityState={{ expanded: selectedId === source.id }}
+              aria-expanded={selectedId === source.id} aria-controls={`${groupId}-detail-${index}`} onPress={() => toggle(source.id)}
               style={({ pressed }) => [styles.tab, { maxWidth: Math.max(96, Math.min(280, (tabWidth || 224) - 8)) },
                 pressed && styles.pressed, (selectedId ?? locatedId) === source.id && styles.located, selectedId === source.id && styles.selectedTab]}>
               <Text numberOfLines={1} style={styles.tabText}>【{index + 1}】{source.title}</Text>
               </Pressable>
             </Fragment>)}
           </AppScrollView>
-          {selected ? <AppScrollView key={selected.id} testID="source-details-panel" style={styles.detailScroll} contentContainerStyle={styles.details}>
+          {selected ? <AppScrollView key={selected.id} nativeID={`${groupId}-detail-${sources.indexOf(selected)}`} testID="source-details-panel" style={styles.detailScroll} contentContainerStyle={styles.details}>
             <View testID="source-detail-group" style={styles.detailGroup}>
               <Text accessibilityRole="header" style={styles.groupTitle}>引用內容</Text>
               <View style={styles.detail}><Text accessibilityRole="header" style={styles.sourceTitle}>{selected.title}</Text>
                 <Text style={styles.meta}>{selected.publisher} · {classificationLabels[selected.classification]}</Text></View>
               <Detail label="章節" value={selected.section} />
-              <View style={styles.quote}><Text selectable style={styles.body}>{selected.excerpt}</Text></View>
+              <View style={styles.quote}><Text selectable style={styles.quoteBody}>{selected.excerpt}</Text></View>
               {selected.classification === "synthetic" ? <Text style={styles.meta}>此來源只展示引用版式，沒有真實來源證據。</Text> : null}
-            </View>
-            <View testID="source-detail-group" style={[styles.detailGroup, styles.dividedGroup]}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>版本與核對</Text>
-              <Detail label="原來源版本" value={selected.versionId} />
-              <Detail label="原來源版本校驗" value={selected.versionHash} />
-              <Detail label="核對時間" value={sourceTime(selected.checkedAt)} />
-              <Detail label="擷取時間" value={sourceTime(selected.fetchedAt)} />
-              <Detail label="最後成功核對" value={sourceTime(selected.lastSuccessfulCheckAt)} />
             </View>
             <View testID="source-detail-group" style={[styles.detailGroup, styles.dividedGroup]}>
               <Text accessibilityRole="header" style={styles.groupTitle}>日期與適用範圍</Text>
@@ -108,8 +122,22 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
               <Detail label="原適用範圍" value={selected.applicabilityLabel} />
               <Detail label="內部限定" value={selected.internalOnly ? "是" : "否"} />
               <Text style={styles.meta}>引用沿用回答當時的來源快照；請核對日期及適用範圍。</Text>
-              {selected.url && onOpenSource ? <AppButton label={`開啟原來源：${selected.title}`} variant="secondary"
-                onPress={() => onOpenSource(selected.id)} /> : <Text style={styles.meta}>沒有可開啟的真實來源連結。</Text>}
+              {selected.url ? onOpenSource ? <AppButton label="開啟原來源" accessibilityLabel={`開啟原來源：${selected.title}`} variant="secondary"
+                onPress={() => onOpenSource(selected.id)} /> : <Text selectable style={styles.body}>{selected.url}</Text>
+                : <Text style={styles.meta}>沒有可開啟的真實來源連結。</Text>}
+            </View>
+            <View style={[styles.detailGroup, styles.dividedGroup]}>
+              <Pressable accessibilityRole="button" accessibilityLabel="版本與核對資料" accessibilityState={{ expanded: technicalOpen }}
+                aria-expanded={technicalOpen} aria-controls={`${groupId}-technical`} onPress={() => setTechnicalOpen(value => !value)} style={styles.technicalToggle}>
+                <Text style={styles.groupTitle}>{technicalOpen ? "收起" : "查看"}版本與核對資料</Text>
+              </Pressable>
+              {technicalOpen ? <View nativeID={`${groupId}-technical`} testID="source-detail-group" style={styles.detailGroup}>
+                <Detail label="原來源版本" value={selected.versionId} />
+                <Detail label="原來源版本校驗" value={selected.versionHash} />
+                <Detail label="核對時間" value={sourceTime(selected.checkedAt)} />
+                <Detail label="擷取時間" value={sourceTime(selected.fetchedAt)} />
+                <Detail label="最後成功核對" value={sourceTime(selected.lastSuccessfulCheckAt)} />
+              </View> : null}
             </View>
           </AppScrollView> : null}
         </View> : <Text style={styles.meta}>本次沒有可核對的來源片段。</Text>}
@@ -122,11 +150,13 @@ const styles = StyleSheet.create({
   answer: { gap: spacing.md, minWidth: 0 },
   footer: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.xs, minWidth: 0 },
   footerTitle: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20, fontWeight: "700" },
+  footerHeading: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" },
   pressed: { opacity: 0.7 },
   located: { borderBottomColor: colors.controlOutline },
   sourceTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 21 },
-  body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 24 },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
+  quoteBody: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   panel: { gap: spacing.xs, minWidth: 0 },
   tabBar: { height: 56, flexGrow: 0, flexShrink: 0, minWidth: 0 },
   tabs: { flexDirection: "row", alignItems: "center", paddingBottom: spacing.sm },
@@ -139,4 +169,5 @@ const styles = StyleSheet.create({
   groupTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 21, fontWeight: "700" },
   quote: { borderLeftWidth: 2, borderLeftColor: colors.line, paddingLeft: spacing.md, minWidth: 0 },
   warning: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption, lineHeight: 21 },
+  technicalToggle: { minHeight: 48, justifyContent: "center", alignSelf: "flex-start" },
 });

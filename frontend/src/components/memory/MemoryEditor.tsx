@@ -18,7 +18,7 @@ function FormField<T extends FieldValues>({ control, name, label, disabled, mult
   control: Control<T>; name: Path<T>; label: string; disabled: boolean; multiline?: boolean; placeholder?: string; onEdit: () => void;
 }) {
   return <Controller control={control} name={name} render={({ field, fieldState }) => <View style={styles.field}>
-    {name === "validUntil" || name === "resumeAfter" ? <AppDateTimeField label={label} value={String(field.value ?? "")} disabled={disabled} optional={name === "validUntil"}
+    {name === "validUntil" || name === "resumeAfter" ? <AppDateTimeField ref={field.ref} onBlur={field.onBlur} label={label} value={String(field.value ?? "")} disabled={disabled} optional={name === "validUntil"}
       error={fieldState.error?.message} onChange={value => { onEdit(); field.onChange(value); }} /> : <AppTextField ref={field.ref} label={label} accessibilityLabel={label} value={String(field.value ?? "")} onChangeText={value => { onEdit(); field.onChange(value); }} onBlur={field.onBlur}
       disabled={disabled} multiline={multiline} placeholder={placeholder} error={!!fieldState.error} />}
     {fieldState.error && name !== "validUntil" && name !== "resumeAfter" ? <HelperText type="error" style={styles.error}>{fieldState.error.message}</HelperText> : null}

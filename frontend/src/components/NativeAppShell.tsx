@@ -1,7 +1,7 @@
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
-import { BackHandler, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { brand } from "../branding";
 import { BrandLogo } from "./BrandLogo";
 import { ToolbarIconButton } from "./ToolbarIconButton";
@@ -19,16 +19,11 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const leave = usePreviewNavigation();
   const pathname = usePathname();
-  const { model, actions, checkedPreviewItems, togglePreviewItem, notice, dismissNotice } = usePreview();
+  const { model, actions, notice, dismissNotice } = usePreview();
   const [railOpen, setRailOpen] = useState(false);
-  const [headerHeight, setHeaderHeight] = useState(90);
-  useEffect(() => {
-    if (!railOpen || Platform.OS !== "android") return;
-    const subscription = BackHandler.addEventListener("hardwareBackPress", () => { setRailOpen(false); return true; });
-    return () => subscription.remove();
-  }, [railOpen]);
+  useEffect(() => { setRailOpen(false); }, [pathname]);
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
-    <View onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}>
+    <View>
       <View style={styles.header}><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"))} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>
         <View testID="header-actions" style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <ToolbarIconButton icon="page-layout-sidebar-right" label={railOpen ? "收起資訊側欄" : "開啟資訊側欄"} expanded={railOpen} onPress={() => setRailOpen(value => !value)} />
@@ -39,7 +34,12 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
     </View>
     {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.meta}>{notice}</Text></Pressable> : null}
     <KeyboardAvoidingView style={styles.content} behavior={Platform.OS === "ios" ? "padding" : undefined}>{children}</KeyboardAvoidingView>
-    {railOpen ? <View style={[styles.overlay, { top: insets.top + headerHeight, bottom: insets.bottom }]}><Pressable accessibilityRole="button" accessibilityLabel="關閉資訊側欄背景" onPress={() => setRailOpen(false)} style={styles.scrim} /><View style={styles.drawer}><RightRail model={model} actions={actions} checkedPreviewItems={checkedPreviewItems} togglePreviewItem={togglePreviewItem} overlay /></View></View> : null}
+    {railOpen ? <Modal visible transparent animationType="none" onRequestClose={() => setRailOpen(false)}>
+      <View style={styles.overlay}><View accessible={false} onStartShouldSetResponder={() => true} onResponderRelease={() => setRailOpen(false)} style={styles.scrim} />
+        <View accessibilityViewIsModal accessibilityLabel="照顧上下文" style={[styles.drawer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+          <RightRail model={model} actions={actions} home={pathname === "/"} overlay onClose={() => setRailOpen(false)} />
+        </View></View>
+    </Modal> : null}
   </View>;
 }
 const styles = StyleSheet.create({
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
-  overlay: { position: "absolute", left: 0, right: 0, zIndex: 4, flexDirection: "row", justifyContent: "flex-end" },
+  overlay: { flex: 1, flexDirection: "row", justifyContent: "flex-end" },
   scrim: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.overlay },
   drawer: { width: "92%", maxWidth: 370, height: "100%", backgroundColor: colors.sidebar },
 });

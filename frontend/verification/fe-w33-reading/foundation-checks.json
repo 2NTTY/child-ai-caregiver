@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-03T11:56:05.529Z",
+  "scope": "Isolated synthetic frontend; local layout, keyboard and disclosure checks only; no formal API, device or screen-reader acceptance.",
+  "passed": [
+    "1440: reading type, closed workspace rail, short navigation or modal focus/Escape/return, roving tabs with stable panels and retained drafts",
+    "900: reading type, closed workspace rail, short navigation or modal focus/Escape/return, roving tabs with stable panels and retained drafts",
+    "390: reading type, closed workspace rail, short navigation or modal focus/Escape/return, roving tabs with stable panels and retained drafts",
+    "320: reading type, closed workspace rail, short navigation or modal focus/Escape/return, roving tabs with stable panels and retained drafts"
+  ],
+  "failures": []
+}

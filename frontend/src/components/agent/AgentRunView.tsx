@@ -6,10 +6,11 @@ import {
   mayRetryOriginal, proposalExpired, type AgentProposalView,
   type AgentRunActions, type AgentRunModel,
 } from "../../agent-view-model";
-import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
 import { AppButton, SectionCard, SectionHeader } from "../ui";
+import { StatusAnnouncement } from "../StatusAnnouncement";
 import type { LocateAnswerSource } from "../chat/AnswerSources";
 import { ChatMessage } from "../chat/ChatMessage";
 
@@ -29,8 +30,7 @@ function StateNote({ children, tone = "neutral" }: { children: ReactNode; tone?:
   return <View style={[styles.note, tone === "saved" && styles.savedNote, tone === "warning" && styles.warningNote, tone === "error" && styles.errorNote]}>
     <AppIcon name={tone === "saved" ? "check-circle" : "information-outline"} size={18}
       color={tone === "saved" ? colors.deepTeal : tone === "warning" ? colors.warningInk : tone === "error" ? colors.errorInk : colors.muted} />
-    <Text accessibilityRole={tone === "warning" || tone === "error" ? "alert" : "text"}
-      style={[styles.noteCopy, tone === "saved" && styles.saved, tone === "warning" && styles.warning, tone === "error" && styles.error]}>{children}</Text>
+    <Text style={[styles.noteCopy, tone === "saved" && styles.saved, tone === "warning" && styles.warning, tone === "error" && styles.error]}>{children}</Text>
   </View>;
 }
 
@@ -62,6 +62,7 @@ function OriginalDecision({ model, actions }: { model: AgentRunModel; actions: A
 function ProposalCard({ proposal, model, actions }: { proposal: AgentProposalView; model: AgentRunModel; actions: AgentRunActions }) {
   const expired = proposalExpired(proposal);
   const pending = proposal.status === "pending";
+  const acceptLabel = proposal.kind === "task_create" ? "建立待辦" : proposal.kind === "task_change" ? "確認更改" : "確認資料";
   return <View testID={`agent-proposal-${proposal.id}`} style={styles.entry}>
     <View style={styles.top}><Text accessibilityRole="header" style={styles.title}>{proposal.title}</Text>
       <Text style={[styles.badge, (pending || proposal.status === "expired") && styles.warningBadge]}>{agentProposalLabels[proposal.status]}</Text></View>
@@ -81,7 +82,7 @@ function ProposalCard({ proposal, model, actions }: { proposal: AgentProposalVie
         accessibilityLabel={`${sharedConfirmationLabel}: ${proposal.title}`} checked={!!model.sharedConfirmed[proposal.id]}
         disabled={!mayCheckShared(model, proposal)} onChange={checked => actions.setSharedConfirmation(proposal.id, checked)} /> : null}
       <View style={styles.actions}>
-        <AppButton label="接受事項" accessibilityLabel={`明確接受此事項：${proposal.title}`} disabled={!mayDecide(model, proposal, "accept")}
+        <AppButton label={acceptLabel} accessibilityLabel={`明確${acceptLabel}：${proposal.title}`} disabled={!mayDecide(model, proposal, "accept")}
           onPress={() => actions.decide(proposal.id, "accept")} style={styles.fullButton} />
         <AppButton label="略過" accessibilityLabel={`略過此事項：${proposal.title}`} variant="quiet" disabled={!mayDecide(model, proposal, "dismiss")}
           onPress={() => actions.decide(proposal.id, "dismiss")} style={styles.fullButton} />
@@ -134,7 +135,23 @@ export function AgentRunView({ model, actions, onLocateSource }: { model: AgentR
       : model.readState === "failed" ? "未能讀取運行結果。請重新讀取，暫時不能確認候選事項。"
         : denied ? "已失去讀取此運行的權限，原結果及候選內容已隱藏。"
           : !run ? "目前沒有可展示的運行結果。" : null;
-  return <View testID="agent-run-view" style={styles.root}><SectionCard style={styles.card}>
+  const announcementKey = readMessage ? `read:${model.readState}`
+    : !model.online ? "offline" : model.busy === "write" ? "decision:working"
+      : model.notice ? `notice:${model.notice.tone}:${model.notice.text}`
+        : model.pendingDecision ? `decision:pending:${model.pendingDecision.reviewed}:${model.pendingDecision.reconfirm}`
+          : `run:${run?.status ?? "empty"}`;
+  const announcementMessage = readMessage
+    ?? (!model.online ? "目前離線，恢復連線後才可重新讀取或確認事項。"
+      : model.busy === "write" ? "正在處理原決定，請等候原操作結果。"
+        : model.notice?.text ?? (model.pendingDecision
+          ? !model.pendingDecision.reviewed ? "原確認結果待查核，請先重新讀取原運行。"
+            : model.pendingDecision.reconfirm ? "原確認條件已變更，請重新讀取並核對。"
+              : "已讀取原運行，請核對原決定及家庭共享同意，再明確重試。"
+          : run ? `Agent 運行${agentRunLabels[run.status]}；請核對結果，運行結束不代表照護事項已完成。` : ""));
+  return <View testID="agent-run-view" style={styles.root}>
+    <StatusAnnouncement eventKey={announcementKey} message={announcementMessage}
+      urgent={model.readState === "failed" || announcementKey.startsWith("notice:error:")} />
+    <SectionCard style={styles.card}>
     <SectionHeader title="Agent 運行結果" icon="clipboard-check-outline" subtitle="核對本次回覆、候選及來源；運行結束不代表照護事項已完成。" />
     <AppButton label={model.pendingDecision ? "讀取原運行並核對" : "重新讀取運行結果"} variant="secondary"
       disabled={!model.online || !!model.busy || denied || model.readState === "loading"} loading={model.busy === "read"}
@@ -170,22 +187,22 @@ const styles = StyleSheet.create({
   section: { gap: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine },
   entry: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, padding: spacing.md, gap: spacing.md, minWidth: 0 },
   top: { flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
-  title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 25, fontWeight: "700", flexShrink: 1, minWidth: 0 },
-  body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 24, flexShrink: 1, minWidth: 0 },
-  meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 21, flexShrink: 1, minWidth: 0 },
-  badge: { fontFamily: chineseFont, color: colors.muted, backgroundColor: colors.quietSurface, borderRadius: radius.small, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, fontSize: typeScale.caption, lineHeight: 20, overflow: "hidden" },
+  title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, flexShrink: 1, minWidth: 0 },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1, minWidth: 0 },
+  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1, minWidth: 0 },
+  badge: { fontFamily: chineseFont, color: colors.muted, backgroundColor: colors.quietSurface, borderRadius: radius.small, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, ...readingType.meta, overflow: "hidden" },
   warningBadge: { backgroundColor: colors.paleAmber, color: colors.warningInk }, errorBadge: { backgroundColor: colors.paleCoral, color: colors.errorInk },
   scope: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, minWidth: 0 },
   detailRow: { gap: spacing.xs, minWidth: 0 },
-  detailLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
-  detailValue: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, flexShrink: 1, minWidth: 0 },
+  detailLabel: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+  detailValue: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1, minWidth: 0 },
   note: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, backgroundColor: colors.quietSurface, borderRadius: radius.small, padding: spacing.md, minWidth: 0 },
-  noteCopy: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 23, flex: 1, minWidth: 0 },
+  noteCopy: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool, flex: 1, minWidth: 0 },
   savedNote: { backgroundColor: colors.paleTeal, borderLeftWidth: 3, borderLeftColor: colors.deepTeal },
   saved: { color: colors.deepTeal },
   warningNote: { backgroundColor: colors.paleAmber, borderLeftWidth: 3, borderLeftColor: colors.amber },
   errorNote: { backgroundColor: colors.paleCoral, borderLeftWidth: 3, borderLeftColor: colors.coral },
-  warning: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, lineHeight: 23, flexShrink: 1 },
+  warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool, flexShrink: 1 },
   error: { color: colors.errorInk },
   review: { backgroundColor: colors.paleAmber, borderWidth: 1, borderColor: colors.amber, borderRadius: radius.medium, padding: spacing.md, gap: spacing.md, minWidth: 0 },
   actions: { gap: spacing.sm, minWidth: 0 }, fullButton: { alignSelf: "stretch", maxWidth: "100%", minWidth: 0 },

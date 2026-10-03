@@ -1,23 +1,26 @@
 import { useRef, useState, type ReactNode, type Ref } from "react";
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { AppIcon } from "./AppIcon";
 import { Button, Portal, RadioButton, Text, TextInput } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 import type { ConnectionState, OperationState } from "../view-model";
+import { useInteractionDensity } from "./useInteractionDensity";
 
-export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", disabled = false, loading = false, style, ref }: {
+export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", density = "standard", disabled = false, loading = false, style, ref }: {
   label: string;
   accessibilityLabel?: string;
   onPress: () => void;
   variant?: "primary" | "secondary" | "quiet" | "accent" | "danger";
+  density?: "standard" | "compact";
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
   ref?: Ref<View>;
 }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
+  const touch = useInteractionDensity();
   return (
     <Button
       ref={ref}
@@ -27,7 +30,7 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
       onPress={onPress}
       disabled={disabled || loading}
       loading={loading}
-      contentStyle={[styles.buttonContent, compact && styles.mobileTarget]}
+      contentStyle={[styles.buttonContent, density === "compact" && styles.compactButtonContent, (compact || touch) && styles.mobileTarget]}
       labelStyle={[styles.buttonLabel, compact && mobileType.itemTitle]}
       style={[styles.button, variant === "secondary" && styles.outlineButton, variant === "accent" && styles.accentButton, style]}
       accessibilityLabel={accessibilityLabel}
@@ -44,20 +47,21 @@ export function AppTextField({ style, outlineStyle, contentStyle, multiline, lab
     contentStyle={[multiline && label ? styles.multilineContent : undefined, contentStyle]} />;
 }
 
-export function AppSelectionTrigger({ label, onPress, disabled = false, expanded, ref, calendar = false }: {
-  label: string; onPress: () => void; disabled?: boolean; expanded: boolean; ref?: Ref<View>; calendar?: boolean;
+export function AppSelectionTrigger({ label, onPress, onBlur, disabled = false, expanded, ref, calendar = false }: {
+  label: string; onPress: () => void; onBlur?: () => void; disabled?: boolean; expanded: boolean; ref?: Ref<View>; calendar?: boolean;
 }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
+  const touch = useInteractionDensity();
   // Paper 5.15 Button replaces expanded state on its inner control; expose it on the selection trigger itself.
   return <Pressable ref={ref} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ expanded, disabled }} aria-expanded={expanded} aria-disabled={disabled} disabled={disabled}
-    onPress={onPress} style={({ pressed }) => [styles.selectionTrigger, compact && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && styles.linkPressed]}>
+    onPress={onPress} onBlur={onBlur} style={({ pressed }) => [styles.selectionTrigger, (compact || touch) && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && styles.linkPressed]}>
     <Text style={styles.selectionLabel}>{label}</Text><AppIcon name={calendar ? "calendar-clock-outline" : "chevron-down"} size={20} color={colors.deepTeal} />
   </Pressable>;
 }
 
-export function AppSelect<T extends string>({ label, value, options, onChange, disabled = false }: {
+export function AppSelect<T extends string>({ label, value, options, onChange, onBlur, disabled = false, ref }: {
   label: string; value: T; options: readonly { value: T; label: string }[];
-  onChange: (value: T) => void; disabled?: boolean;
+  onChange: (value: T) => void; onBlur?: () => void; disabled?: boolean; ref?: Ref<View>;
 }) {
   const [visible, setVisible] = useState(false);
   const anchor = useRef<View>(null);
@@ -66,7 +70,7 @@ export function AppSelect<T extends string>({ label, value, options, onChange, d
     setVisible(false);
     if (Platform.OS === "web") (anchor.current as unknown as HTMLElement | null)?.focus();
   }
-  return <><AppSelectionTrigger ref={anchor} label={`${label}：${selected}`} disabled={disabled}
+  return <><AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={`${label}：${selected}`} disabled={disabled} onBlur={onBlur}
     expanded={visible && !disabled} onPress={() => setVisible(true)} />
     {visible && !disabled ? <Portal><Dialog visible onDismiss={dismiss} style={styles.selectDialog}>
       <Dialog.Title>{label}</Dialog.Title><Dialog.ScrollArea><ScrollView style={styles.selectList} keyboardShouldPersistTaps="handled">
@@ -77,9 +81,9 @@ export function AppSelect<T extends string>({ label, value, options, onChange, d
     </Dialog></Portal> : null}</>;
 }
 
-export function SectionCard({ children, style, testID }: { children: ReactNode; style?: StyleProp<ViewStyle>; testID?: string }) {
+export function SectionCard({ children, style, testID, surface = "regular" }: { children: ReactNode; style?: StyleProp<ViewStyle>; testID?: string; surface?: "regular" | "inset" | "plain" }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
-  return <View testID={testID} style={[styles.card, compact && styles.mobileCard, style]}>{children}</View>;
+  return <View testID={testID} style={[styles.card, compact && styles.mobileCard, surface === "inset" && styles.insetCard, surface === "plain" && styles.plainCard, style]}>{children}</View>;
 }
 
 export function SectionHeader({ title, subtitle, action, icon, count }: { title: string; subtitle?: string; action?: ReactNode; icon?: React.ComponentProps<typeof AppIcon>["name"]; count?: number }) {
@@ -135,36 +139,69 @@ export function ConnectionPill({ state }: { state: ConnectionState }) {
 
 export function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
+  const touch = useInteractionDensity();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.link, compact && styles.mobileTarget, pressed && styles.linkPressed]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.link, (compact || touch) && styles.mobileTarget, pressed && styles.linkPressed]}>
       <Text style={[styles.linkText, compact && mobileType.label]}>{label}</Text><AppIcon name="arrow-right" size={compact ? mobileIcons.inline : 17} color={colors.ink} />
     </Pressable>
   );
 }
 
-export function UnderlineTabs<T extends string>({ items, value, onChange }: {
+function tabId(tabsId: string, key: string) { return `${tabsId}-tab-${encodeURIComponent(key)}`; }
+function tabPanelId(tabsId: string, key: string) { return `${tabsId}-panel-${encodeURIComponent(key)}`; }
+
+export function UnderlineTabs<T extends string>({ id, label, items, value, onChange }: {
+  id: string;
+  label?: string;
   items: ReadonlyArray<{ key: T; label: string }>;
   value: T;
   onChange: (next: T) => void;
 }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
-  return <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabs}>
-    {items.map(item => <Pressable
-      key={item.key} accessibilityRole="tab" accessibilityLabel={item.label}
+  const touch = useInteractionDensity();
+  const controls = useRef(new Map<T, View>());
+  function move(event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }, index: number) {
+    const key = event.nativeEvent?.key ?? event.key;
+    const next = key === "ArrowLeft" ? (index + items.length - 1) % items.length
+      : key === "ArrowRight" ? (index + 1) % items.length : key === "Home" ? 0 : key === "End" ? items.length - 1 : null;
+    if (next === null || !items[next]) return;
+    event.preventDefault();
+    onChange(items[next].key);
+    (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus();
+  }
+  return <ScrollView horizontal tabIndex={-1} showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
+    <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs}>
+    {items.map((item, index) => <Pressable
+      key={item.key} nativeID={tabId(id, item.key)} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
+      accessibilityRole="tab" accessibilityLabel={item.label} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
       accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => onChange(item.key)}
-      style={({ pressed }) => [styles.tab, compact && styles.mobileTarget, value === item.key && styles.tabActive, pressed && styles.linkPressed]}
+      {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
+      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, value === item.key && styles.tabActive, pressed && styles.linkPressed]}
     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
+    </View>
   </ScrollView>;
+}
+
+export function AppTabPanel({ tabsId, tabKey, active, children, style, ...props }: ViewProps & {
+  tabsId: string; tabKey: string; active: boolean; children: ReactNode;
+}) {
+  return <View {...props} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" ? "tabpanel" : undefined}
+    aria-labelledby={tabId(tabsId, tabKey)} aria-hidden={!active} accessibilityElementsHidden={!active}
+    importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={active ? 0 : -1}
+    style={[style, !active && styles.hiddenPanel]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
   button: { maxWidth: "100%" },
   buttonContent: { minHeight: 44, paddingHorizontal: 4 },
+  compactButtonContent: { minHeight: 40 },
   buttonLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "700" },
   outlineButton: { borderColor: colors.line },
   accentButton: { borderWidth: 1, borderColor: colors.ink },
   card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
   mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
+  insetCard: { borderWidth: 0, borderRadius: radius.small, backgroundColor: colors.quietSurface, padding: spacing.md },
+  plainCard: { borderWidth: 0, borderRadius: 0, backgroundColor: "transparent", padding: 0 },
   sectionHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md, flexWrap: "wrap" },
   headerText: { flexGrow: 1, flexShrink: 1, gap: spacing.xs },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 29, fontWeight: "700", flexShrink: 1 },
@@ -194,6 +231,7 @@ const styles = StyleSheet.create({
   linkText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 21, fontWeight: "700" },
   tabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.line },
   tabs: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  hiddenPanel: { display: "none" },
   tab: { minHeight: 46, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
   tabActive: { borderBottomColor: colors.teal },
   tabText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },

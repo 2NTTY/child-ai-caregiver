@@ -1,5 +1,5 @@
 import { brand } from "../branding";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "expo-router";
 import { usePreviewNavigation, usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -11,7 +11,7 @@ import { useChannelSettingsPreview } from "../preview/useChannelSettingsPreview"
 import { ModelSettingsPreview } from "../components/model-settings/ModelSettingsPreview";
 import { useModelSettingsPreview } from "../preview/useModelSettingsPreview";
 import { PageFrame } from "../components/PageFrame";
-import { AppButton, AppTextField, SectionCard, SectionHeader, TextLink, UnderlineTabs } from "../components/ui";
+import { AppButton, AppTabPanel, AppTextField, SectionCard, SectionHeader, TextLink, UnderlineTabs } from "../components/ui";
 import { usePreview } from "../preview/PreviewContext";
 import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
@@ -35,12 +35,13 @@ export default function SettingsPage() {
   const channels = useChannelSettingsPreview(model.connection === "online");
   const modelSettings = useModelSettingsPreview(model.connection === "online", channels.identity);
   const [tab, setTab] = useState<SettingsTab>("account");
+  const tabsId = useId();
   const [displayName, setDisplayName] = useState(model.caregiverName);
   usePreviewLeaveGuard(displayName !== model.caregiverName);
   const stacked = width < 850;
   return <PageFrame title="設定" description="管理個人偏好、孩子與家庭資料；此獨立 Web 預覽沒有連接帳戶或保存設定。" eyebrow={`${brand.name} · 個人空間`}>
-    <UnderlineTabs items={tabs} value={tab} onChange={setTab} />
-    {tab === "account" ? <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.columns, stacked && styles.stack]}>
+    <UnderlineTabs id={tabsId} label="設定分類" items={tabs} value={tab} onChange={setTab} />
+    <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} onLayout={event => { if (event.nativeEvent.layout.width > 0) setWidth(event.nativeEvent.layout.width); }} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}>
         <SectionCard><SectionHeader title="個人資料" subtitle="目前資料只屬合成示例。" />
           <View style={styles.identity}><View style={styles.avatar}><Text style={styles.avatarText}>{displayName.slice(0, 1) || "育"}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{displayName || "未命名"}</Text><Text style={styles.muted}>preview@example.invalid · 合成資料</Text></View></View>
@@ -72,15 +73,15 @@ export default function SettingsPage() {
         </SectionCard>
         <View style={styles.helpCard}><Text style={styles.helpTitle}>需要協助？</Text><Text style={styles.body}>正式支援入口須由產品提供；預覽不會開啟不存在的客服渠道。</Text></View>
       </View>
-    </View> : null}
-    {tab === "children" ? <SectionCard><SectionHeader title="孩子設定" subtitle="切換孩子時必須隔離另一位孩子的資料與草稿。" />
+    </AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="children" active={tab === "children"}><SectionCard><SectionHeader title="孩子設定" subtitle="切換孩子時必須隔離另一位孩子的資料與草稿。" />
       {model.children.length === 0 ? <Text style={styles.body}>目前沒有孩子檔案。</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
       <Text style={styles.draftNote}>新增、刪除及共享孩子資料屬正式 API 與權限控制；此預覽不執行。</Text>
-    </SectionCard> : null}
-    {tab === "family" ? <SectionCard><SectionHeader title="家庭成員" subtitle="共享記錄與私人聊天的權限分開處理。" />
+    </SectionCard></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><SectionHeader title="家庭成員" subtitle="共享記錄與私人聊天的權限分開處理。" />
       <Text style={styles.body}>正式版已有家庭邀請、角色和撤權流程。這裏只提供視覺入口，權限由 Server 核定。</Text><AppButton label="查看家庭協調" onPress={() => actions.open("family")} />
-    </SectionCard> : null}
-    <View onLayout={event => { if (event.nativeEvent.layout.width > 0) setWidth(event.nativeEvent.layout.width); }} style={[styles.columns, stacked && styles.stack, tab !== "preferences" && styles.hidden]}>
+    </SectionCard></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} onLayout={event => { if (event.nativeEvent.layout.width > 0) setWidth(event.nativeEvent.layout.width); }} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}>
         <PreferencesPreview online={model.connection === "online"} />
         <BackgroundSettings />
@@ -91,10 +92,10 @@ export default function SettingsPage() {
           <TextLink label="查看本人通知渠道" onPress={() => setTab("notifications")} />
         </SectionCard>
       </View>
-    </View>
-    <View style={tab !== "notifications" && styles.hidden}><ChannelSettingsPreview controller={channels} /></View>
-    <View style={tab !== "model" && styles.hidden}><ModelSettingsPreview controller={modelSettings} active={tab === "model"} onSwitchAccount={channels.switchAccount} /></View>
-    {tab === "privacy" ? <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.columns, stacked && styles.stack]}>
+    </AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="notifications" active={tab === "notifications"}><ChannelSettingsPreview controller={channels} /></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsPreview controller={modelSettings} active={tab === "model"} onSwitchAccount={channels.switchAccount} /></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} onLayout={event => { if (event.nativeEvent.layout.width > 0) setWidth(event.nativeEvent.layout.width); }} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}><SectionCard><SectionHeader title="資料與私隱" />
         <Text style={styles.body}>孩子資料、已確認記錄與私人聊天的可見範圍，須按目前身份與家庭角色重新檢查。退出或撤權後，正式 App 必須清除不再可見的資料。</Text>
         <LabeledValue label="私人聊天" value="只對本人可見" /><LabeledValue label="共享資料" value="按孩子及家庭角色授權" />
@@ -103,12 +104,11 @@ export default function SettingsPage() {
         <Text style={styles.body}>匯出資料、刪除帳戶及儲存用量未有此預覽可用的完整契約；不顯示可點擊的假操作。</Text>
         <TextLink label="查看接線說明" onPress={() => setTab("account")} />
       </SectionCard></View>
-    </View> : null}
+    </AppTabPanel>
   </PageFrame>;
 }
 
 const styles = StyleSheet.create({
-  hidden: { display: "none" },
   pressed: { opacity: 0.68 },
   columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, stack: { flexDirection: "column" }, column: { flex: 1, width: "100%", minWidth: 0, gap: spacing.lg },
   fullColumn: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },

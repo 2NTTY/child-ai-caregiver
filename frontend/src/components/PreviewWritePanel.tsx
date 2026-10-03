@@ -2,7 +2,8 @@ import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import type { PreviewOperationController, PreviewWriteOperation, PreviewWriteOutcome } from "../preview/usePreviewOperation";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
-import { AppButton, AppSelect, OperationPill } from "./ui";
+import { AppButton, AppSelect } from "./ui";
+import { OperationNotice } from "./OperationNotice";
 
 export function PreviewWriteNotice({ controller, operation, onCheckOriginal, onRetryOriginal, onReloadCurrent, online = true }: {
   controller?: PreviewOperationController; operation?: PreviewWriteOperation; online?: boolean;
@@ -11,14 +12,14 @@ export function PreviewWriteNotice({ controller, operation, onCheckOriginal, onR
   const op = operation ?? controller?.operation;
   if (!op) return null;
   if (op.state === "none" && !op.message) return null;
-  return <View accessibilityRole="alert" style={[styles.notice, op.state === "saved" && styles.saved, op.state === "failed" && styles.failed,
-    (op.state === "needs_confirmation" || op.state === "unknown" || op.state === "conflict") && styles.attention]}>
-    {op.resultUnavailable ? <Text style={styles.title}>原操作已確認 · 結果不可讀</Text> : op.recovery === "reload" ? <Text style={styles.title}>原操作已確認 · 待重讀結果</Text> : op.state === "conflict" ? <Text style={styles.title}>版本衝突 · 尚未保存</Text> : <OperationPill state={op.state} />}
-    <Text style={styles.body}>{op.message}</Text>{op.reference ? <Text style={styles.meta}>合成操作參考：{op.reference}；不是 Server opId。</Text> : null}
+  const title = op.resultUnavailable ? "原操作已確認 · 結果不可讀" : op.recovery === "reload" ? "原操作已確認 · 待重讀結果"
+    : ({ none: "操作狀態", needs_confirmation: "待確認", saving: "處理中", saved: "已保存", failed: "未能保存", unknown: "尚未確認操作結果", conflict: "版本衝突 · 尚未保存" } as const)[op.state];
+  return <OperationNotice state={op.state} title={title} message={op.message}
+    referenceLabel={op.reference ? `合成操作參考：${op.reference}；不是 Server opId。` : undefined}>
     {op.state === "unknown" && op.recovery !== "reload" && (onCheckOriginal || controller) ? <AppButton label="查核原操作" onPress={onCheckOriginal ?? controller!.check} disabled={!online} /> : null}
     {op.state === "unknown" && op.recovery === "retry" && (onRetryOriginal || controller) ? <AppButton label="重試同一原操作" onPress={onRetryOriginal ?? controller!.retryOriginal} disabled={!online} /> : null}
     {op.state === "unknown" && op.recovery === "reload" && (onReloadCurrent || controller) ? <AppButton label="重新讀取目前資料" onPress={onReloadCurrent ?? controller!.reloadCurrent} disabled={!online} /> : null}
-  </View>;
+  </OperationNotice>;
 }
 
 export function PreviewWriteControls({ controller, conflict = true }: { controller: PreviewOperationController; conflict?: boolean }) {

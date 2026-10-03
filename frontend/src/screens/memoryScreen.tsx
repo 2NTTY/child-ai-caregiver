@@ -1,12 +1,12 @@
 import { brand } from "../branding";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { MemoryFactList, MemoryHistoryCard, MemorySummaryCard, MemoryTopicList } from "../components/memory/MemoryCards";
 import { MemoryEditorPanel } from "../components/memory/MemoryEditor";
 import { PageFrame } from "../components/PageFrame";
 import { PreviewWriteNotice } from "../components/PreviewWritePanel";
-import { AppButton, AppSelect, SectionCard, SectionHeader, UnderlineTabs } from "../components/ui";
+import { AppButton, AppSelect, AppTabPanel, SectionCard, SectionHeader, UnderlineTabs } from "../components/ui";
 import { roleLabels, type MemoryRole } from "../memory-view-model";
 import { usePreview } from "../preview/PreviewContext";
 import { useMemoryPreview } from "../preview/useMemoryPreview";
@@ -15,8 +15,8 @@ import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 type Tab = "facts" | "topics" | "summary";
 const tabs: { key: Tab; label: string }[] = [{ key: "facts", label: "已確認與候選" }, { key: "topics", label: "話題" }, { key: "summary", label: "私人摘要" }];
 
-function MemoryWorkspace({ childId, role, sourceChanged, expired, online, loading, tab }: {
-  childId: string; role: MemoryRole; sourceChanged: boolean; expired: boolean; online: boolean; loading: boolean; tab: Tab;
+function MemoryWorkspace({ childId, role, sourceChanged, expired, online, loading, tab, tabsId }: {
+  childId: string; role: MemoryRole; sourceChanged: boolean; expired: boolean; online: boolean; loading: boolean; tab: Tab; tabsId: string;
 }) {
   const preview = useMemoryPreview(childId, role, sourceChanged, expired);
   const [contentWidth, setContentWidth] = useState(0);
@@ -26,9 +26,12 @@ function MemoryWorkspace({ childId, role, sourceChanged, expired, online, loadin
     {!online ? <View accessibilityRole="alert" style={styles.warning}><Text style={styles.body}>目前離線；當前草稿保留。恢復連線後由你重新核對，系統不會自動提交。</Text></View> : null}
     <PreviewWriteNotice controller={preview.controller} online={online && !loading} />
     {loading ? <SectionCard><Text accessibilityRole="alert" style={styles.body}>正在模擬重新讀取這位孩子的記憶；暫不展示舊資料或接受寫入。</Text></SectionCard> : null}
-    {!loading && tab === "summary" ? <MemorySummaryCard summary={preview.data.summary} /> : null}
+    <AppTabPanel tabsId={tabsId} tabKey="summary" active={!loading && tab === "summary"}>{!loading && tab === "summary" ? <MemorySummaryCard summary={preview.data.summary} /> : null}</AppTabPanel>
     <View style={[styles.columns, stacked && styles.stack, (loading || tab === "summary") && styles.hidden]}>
-      <View style={[styles.listColumn, stacked && styles.stackedColumn]}>{tab === "topics" ? <MemoryTopicList preview={preview} role={role} disabled={disabled} /> : <MemoryFactList preview={preview} role={role} disabled={disabled} />}</View>
+      <View style={[styles.listColumn, stacked && styles.stackedColumn]}>
+        <AppTabPanel tabsId={tabsId} tabKey="facts" active={tab === "facts"}>{tab !== "topics" ? <MemoryFactList preview={preview} role={role} disabled={disabled} /> : null}</AppTabPanel>
+        <AppTabPanel tabsId={tabsId} tabKey="topics" active={tab === "topics"}>{tab === "topics" ? <MemoryTopicList preview={preview} role={role} disabled={disabled} /> : null}</AppTabPanel>
+      </View>
       <View style={[styles.editorColumn, stacked && styles.stackedColumn]}><MemoryEditorPanel preview={preview} role={role} online={online && !loading} /></View>
     </View>
     {!loading ? <MemoryHistoryCard preview={preview} /> : null}
@@ -37,6 +40,7 @@ function MemoryWorkspace({ childId, role, sourceChanged, expired, online, loadin
 
 function MemoryChildScope({ childId, childName, online, loading }: { childId: string; childName: string; online: boolean; loading: boolean }) {
   const [tab, setTab] = useState<Tab>("facts");
+  const tabsId = useId();
   const [role, setRole] = useState<MemoryRole>("caregiver");
   const [sourceState, setSourceState] = useState<"current" | "changed">("current");
   const [expiry, setExpiry] = useState<"valid" | "expired">("valid");
@@ -55,9 +59,11 @@ function MemoryChildScope({ childId, childName, online, loading }: { childId: st
         <View style={styles.scenario}><AppSelect label="孩子存取權" value={permission} options={[{ value: "active", label: "有效" }, { value: "revoked", label: "已失效" }]} onChange={setPermission} /></View>
       </View>
     </SectionCard> : null}
-    <UnderlineTabs items={tabs} value={tab} onChange={setTab} />
-    {permission === "revoked" ? <SectionCard><Text accessibilityRole="alert" style={styles.body}>存取權已失效。這位孩子的記憶、摘要、版本與草稿已清除；未完成的合成操作不會再改動清單。</Text></SectionCard>
-      : <MemoryWorkspace key={scope} childId={childId} role={role} sourceChanged={sourceState === "changed"} expired={expiry === "expired"} online={online} loading={loading} tab={tab} />}
+    <UnderlineTabs id={tabsId} label="記憶分類" items={tabs} value={tab} onChange={setTab} />
+    {permission === "revoked" ? tabs.map(item => <AppTabPanel key={item.key} tabsId={tabsId} tabKey={item.key} active={tab === item.key}>
+      {tab === item.key ? <SectionCard><Text accessibilityRole="alert" style={styles.body}>存取權已失效。這位孩子的記憶、摘要、版本與草稿已清除；未完成的合成操作不會再改動清單。</Text></SectionCard> : null}
+    </AppTabPanel>)
+      : <MemoryWorkspace key={scope} childId={childId} role={role} sourceChanged={sourceState === "changed"} expired={expiry === "expired"} online={online} loading={loading} tab={tab} tabsId={tabsId} />}
   </>;
 }
 

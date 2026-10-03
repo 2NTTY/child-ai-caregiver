@@ -1,11 +1,11 @@
 import { brand } from "../branding";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Switch, Text } from "react-native-paper";
 import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp, FadeOut, ReduceMotion, ZoomIn, useReducedMotion } from "react-native-reanimated";
 import { PageFrame } from "../components/PageFrame";
 import { AppIcon } from "../components/AppIcon";
-import { AppButton, OperationPill, SectionCard, SectionHeader, UnderlineTabs } from "../components/ui";
+import { AppButton, AppTabPanel, OperationPill, SectionCard, SectionHeader, UnderlineTabs } from "../components/ui";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
 type MotionOption = "calm" | "guided" | "warm";
@@ -127,6 +127,7 @@ export default function MotionPreviewScreen() {
   const { width } = useWindowDimensions();
   const [containerWidth, setContainerWidth] = useState(900);
   const [option, setOption] = useState<MotionOption>("calm");
+  const tabsId = useId();
   const [childIndex, setChildIndex] = useState(0);
   const [replay, setReplay] = useState(0);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -140,7 +141,7 @@ export default function MotionPreviewScreen() {
     <View style={styles.layout} onLayout={event => setContainerWidth(event.nativeEvent.layout.width)}>
       <SectionCard>
         <SectionHeader title="選擇節奏" subtitle="三款沿用同一套色彩、Paper 控制項與資料語義。" />
-        <UnderlineTabs items={options} value={option} onChange={next => { setOption(next); setReplay(value => value + 1); }} />
+        <UnderlineTabs id={tabsId} label="動態節奏" items={options} value={option} onChange={next => { setOption(next); setReplay(value => value + 1); }} />
         <View style={styles.controls}>
           <AppButton label="重播進場" onPress={() => setReplay(value => value + 1)} />
           <AppButton label="切換孩子" variant="secondary" onPress={() => setChildIndex(value => (value + 1) % children.length)} />
@@ -151,12 +152,14 @@ export default function MotionPreviewScreen() {
           <Switch value={reduced} disabled={systemReduced} onValueChange={setManualReduced} accessibilityLabel="減少動態示例" />
         </View>
       </SectionCard>
+      {options.map(item => <AppTabPanel key={item.key} tabsId={tabsId} tabKey={item.key} active={option === item.key} style={styles.layout}>{option === item.key ? <>
       <MotionFrame option={option} childIndex={childIndex} replay={replay} detailsOpen={detailsOpen} reduced={reduced} narrow={narrow} />
       <SectionCard><SectionHeader title={current.title} subtitle={current.description} />
         <View style={styles.explanation}><Text style={styles.explanationLabel}>節奏</Text><Text style={styles.muted}>{current.tempo}</Text></View>
         <View style={styles.explanation}><Text style={styles.explanationLabel}>適用位置</Text><Text style={styles.muted}>{current.placement}</Text></View>
         <Text style={styles.note}>鍵盤操作不依賴動畫；320px 時卡片重排為單欄。選定方向後，才會將動態規則接到共用元件與各路由。</Text>
       </SectionCard>
+      </> : null}</AppTabPanel>)}
     </View>
   </PageFrame>;
 }

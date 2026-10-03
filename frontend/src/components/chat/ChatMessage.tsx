@@ -2,9 +2,10 @@ import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
 import type { ChatMessageView, ChatReplyPhase } from "../../chat-view-model";
-import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
+import { chineseFont, colors, radius, readingType, spacing, typeScale } from "../../theme";
 import { AppIcon } from "../AppIcon";
 import { AppButton } from "../ui";
+import { StatusAnnouncement } from "../StatusAnnouncement";
 import { AnswerSources, CitationText, type LocateAnswerSource } from "./AnswerSources";
 
 const phaseLabels: Record<ChatReplyPhase, string> = {
@@ -26,9 +27,11 @@ export function ChatMessage({ message, children, footer, testID, embedded = fals
     : <Text selectable style={styles.body}>{message.text}</Text> : null);
   return <View testID={testID ?? "chat-message"} nativeID={`chat-message-${message.id}`} style={[styles.row, !assistant && styles.userRow]}>
     <View style={[styles.content, assistant ? styles.assistant : styles.user, embedded && styles.embedded]}>
+      {assistant ? <StatusAnnouncement eventKey={`${message.id}:${message.phase ?? "complete"}`}
+        message={phaseLabels[message.phase ?? "complete"]} urgent={message.phase === "failed"} /> : null}
       {assistant && message.phase && (message.phase !== "complete" || activities.length > 0) ? <View testID="chat-message-phase" style={styles.statusRow}>
         {active ? <ActivityIndicator size={14} color={colors.deepTeal} /> : null}
-        <Text accessibilityLiveRegion="polite" accessibilityRole={attention ? "alert" : "text"} style={[styles.status, attention && styles.warning, message.phase === "failed" && styles.error]}>{phaseLabels[message.phase]}</Text>
+        <Text style={[styles.status, attention && styles.warning, message.phase === "failed" && styles.error]}>{phaseLabels[message.phase]}</Text>
         {active && onStop ? <AppButton label="停止回覆" variant="quiet" onPress={onStop} /> : null}
         {attention && onCheck ? <AppButton label="查核原回覆" variant="quiet" onPress={onCheck} /> : null}
       </View> : null}
@@ -53,9 +56,9 @@ export function ChatMessage({ message, children, footer, testID, embedded = fals
 
 const styles = StyleSheet.create({
   row: { width: "100%", minWidth: 0, flexDirection: "row" }, userRow: { justifyContent: "flex-end" },
-  content: { minWidth: 0, gap: spacing.sm }, assistant: { flex: 1, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.large, padding: spacing.lg },
+  content: { minWidth: 0, gap: spacing.md }, assistant: { flex: 1, paddingVertical: spacing.md },
   user: { maxWidth: "82%", backgroundColor: colors.paleTeal, borderRadius: radius.medium, padding: spacing.md }, embedded: { padding: 0, borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
-  body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 24, minWidth: 0, flexShrink: 1 },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, minWidth: 0, flexShrink: 1 },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 21, minWidth: 0, flexShrink: 1 }, userNote: { textAlign: "right" },
   statusRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
   status: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, lineHeight: 21, fontWeight: "700", flexShrink: 1 },

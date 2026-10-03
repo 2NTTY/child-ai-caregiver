@@ -1,0 +1,153 @@
+{
+  "at": "2026-10-03T12:22:56.338Z",
+  "scope": "Synthetic frontend only; reused source checks plus compact presentation and independent message instances; no API/model calls or device acceptance",
+  "passed": [
+    "reading 1440: reusable plain chat and Agent source disclosures, reading before optional technical fields, exact citation return and stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft",
+    "reading 1024: reusable plain chat and Agent source disclosures, reading before optional technical fields, exact citation return and stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft",
+    "reading 390: reusable plain chat and Agent source disclosures, reading before optional technical fields, exact citation return and stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft, enlarged text",
+    "reading 320: reusable plain chat and Agent source disclosures, reading before optional technical fields, exact citation return and stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft, enlarged text"
+  ],
+  "appearance": [
+    {
+      "width": 1440,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    },
+    {
+      "width": 1024,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    },
+    {
+      "width": 390,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    },
+    {
+      "width": 320,
+      "preview": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 3,
+        "separators": 2
+      },
+      "agent": {
+        "panel": {
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px",
+          "radius": "0px",
+          "padding": [
+            "0px",
+            "0px",
+            "0px",
+            "0px"
+          ],
+          "height": 108
+        },
+        "tabs": 12,
+        "separators": 11
+      }
+    }
+  ],
+  "failures": []
+}

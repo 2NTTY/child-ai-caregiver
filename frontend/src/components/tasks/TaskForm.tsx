@@ -42,26 +42,26 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
     {draft.basis ? <TaskSnapshot task={draft.basis} assignees={model.eligibleAssignees} /> : null}
     {draft.mode === "create" ? <>
       {field("title", "事項標題")}{field("details", "詳細內容（可選）", undefined, true)}
-      <Controller name="kind" control={control} render={({ field: input }) => <AppSelect label="事項種類" value={input.value}
+      <Controller name="kind" control={control} render={({ field: input }) => <AppSelect ref={input.ref} onBlur={input.onBlur} label="事項種類" value={input.value}
         options={[{ value: "ordinary", label: "普通任務" }, { value: "appointment", label: "預約" }]} disabled={locked} onChange={value => { input.onChange(value); edited(); }} />} />
     </> : null}
     {draft.mode === "create" || draft.mode === "reschedule" ? <>
       <Controller name="assigneeUserId" control={control} render={({ field: input, fieldState }) => <View>
-        <AppSelect label="負責人" value={model.eligibleAssignees.some(item => item.userId === input.value) ? input.value : ""}
+        <AppSelect ref={input.ref} onBlur={input.onBlur} label="負責人" value={model.eligibleAssignees.some(item => item.userId === input.value) ? input.value : ""}
           options={[{ value: "", label: "請選擇合資格家庭成員" }, ...model.eligibleAssignees.map(item => ({ value: item.userId, label: item.name }))]}
           disabled={locked} onChange={value => { input.onChange(value); edited(); }} />
         <HelperText type={fieldState.error ? "error" : "info"} visible>{fieldState.error?.message ?? "只可指派本家庭目前有權照顧孩子的成員；檢視者不在清單內。"}</HelperText>
       </View>} />
       <Controller name="timeZone" control={control} render={({ field: input, fieldState }) => <View>
-        <AppTimeZoneSelect value={input.value} disabled={locked} onChange={value => { input.onChange(value); edited(); }} />
+        <AppTimeZoneSelect ref={input.ref} onBlur={input.onBlur} value={input.value} disabled={locked} onChange={value => { input.onChange(value); edited(); }} />
         {fieldState.error ? <HelperText type="error">{fieldState.error.message}</HelperText> : null}
       </View>} />
       <Controller name="dueAt" control={control} render={({ field: input, fieldState }) => <AppDateTimeField
-        label={draft.mode === "reschedule" ? "新安排時間" : "安排時間"} value={input.value} timeZone={timeZone} disabled={locked}
+        ref={input.ref} onBlur={input.onBlur} label={draft.mode === "reschedule" ? "新安排時間" : "安排時間"} value={input.value} timeZone={timeZone} disabled={locked}
         error={fieldState.error?.message} onChange={value => { input.onChange(value); edited(); }} />} />
     </> : null}
     {draft.mode === "resolve" ? <Controller name="outcome" control={control} render={({ field: input, fieldState }) => <View>
-      <AppSelect label="明確終態" value={input.value} options={[{ value: "", label: "請選擇終態" }, { value: "completed", label: "覆核為已完成" }, { value: "cancelled", label: "覆核為已取消" }]}
+      <AppSelect ref={input.ref} onBlur={input.onBlur} label="明確終態" value={input.value} options={[{ value: "", label: "請選擇終態" }, { value: "completed", label: "覆核為已完成" }, { value: "cancelled", label: "覆核為已取消" }]}
         disabled={locked} onChange={value => { input.onChange(value); edited(); }} />
       {fieldState.error ? <HelperText type="error" visible>{fieldState.error.message}</HelperText> : null}
       <Text style={styles.meta}>覆核只選終態，不會重新排程或重新催辦。</Text>

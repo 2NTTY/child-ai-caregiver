@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { PreviewLink, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { brand } from "../branding";
 import { BrandLogo } from "./BrandLogo";
@@ -15,9 +16,8 @@ import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 import { NotificationBell } from "./NotificationBell";
 import { ToolbarIconButton } from "./ToolbarIconButton";
-import { PreviewTodoCard } from "./PreviewTodoCard";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
-import { previewChecklist, scenarioLabels, type PreviewScenario } from "../preview/fixture";
+import { scenarioLabels, type PreviewScenario } from "../preview/fixture";
 import { usePreview } from "../preview/PreviewContext";
 import type { HomeActions, HomeViewModel } from "../view-model";
 
@@ -37,6 +37,12 @@ const navigation: { href: AppPath; label: string; short: string; icon: React.Com
   { href: "/memory", label: "記憶與話題", short: "記憶", icon: "book-open-variant" },
 ];
 const scenarios: PreviewScenario[] = ["normal", "first_login", "setup_incomplete", "empty", "loading", "offline", "needs_confirmation", "saving", "saved", "failed", "unknown"];
+const navigationGroups = [
+  { label: "今天", paths: ["/"] },
+  { label: "問題與待辦", paths: ["/tasks", "/growth", "/contact"] },
+  { label: "照顧資料", paths: ["/care", "/photos", "/sources", "/summary", "/memory"] },
+  { label: "家庭", paths: ["/profile", "/family"] },
+];
 
 function NavItem({ item, active, compact = false }: { item: typeof navigation[number]; active: boolean; compact?: boolean }) {
   const [pressed, setPressed] = useState(false);
@@ -69,19 +75,19 @@ export function PreviewToolbar() {
   </View>;
 }
 
-export function RightRail({ model, actions, checkedPreviewItems, togglePreviewItem, overlay = false }: {
+export function RightRail({ model, actions, home = false, overlay = false, onClose }: {
   model: HomeViewModel;
   actions: HomeActions;
-  checkedPreviewItems: Record<string, boolean>;
-  togglePreviewItem: (id: string) => void;
+  home?: boolean;
   overlay?: boolean;
+  onClose?: () => void;
 }) {
   const child = model.children.find(item => item.id === model.selectedChildId);
   const records = model.records.filter(item => item.childId === model.selectedChildId).slice(0, 3);
-  const checklist = previewChecklist.filter(item => item.childId === model.selectedChildId);
-  return <View style={[styles.rail, overlay && styles.railFill]}>
+  return <View testID="context-rail" style={[styles.rail, overlay && styles.railFill]}>
     <View style={styles.railHeader}>
-      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>資訊與提醒</Text></View>
+      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>照顧上下文</Text></View>
+      {onClose ? <ToolbarIconButton icon="close" label="關閉資訊側欄" onPress={onClose} /> : null}
     </View>
     <ScrollView contentContainerStyle={styles.railCards}>
       <SectionCard>
@@ -91,8 +97,6 @@ export function RightRail({ model, actions, checkedPreviewItems, togglePreviewIt
           <View style={styles.railIdentityText}><Text style={styles.railRecordTitle}>{child.displayName}</Text><Text style={styles.railMeta}>{child.ageLabel}</Text><Text style={styles.railMeta}>{child.regionLabel} · {child.profileConfirmed ? "檔案已確認" : "檔案待核對"}</Text></View>
         </View> : <Text style={styles.railMeta}>尚未選擇孩子；請先建立檔案。</Text>}
       </SectionCard>
-      <PreviewTodoCard items={checklist} checked={checkedPreviewItems} onToggle={togglePreviewItem} onOpen={actions.open} />
-      <AppButton label="查看任務與預約" variant="secondary" onPress={() => actions.open("tasks")} />
       <SectionCard>
         <SectionHeader title="近期已確認記錄" action={<TextLink label="查看全部" onPress={() => actions.open("care")} />} />
         {model.recordsLoad === "loading" ? <Text style={styles.railMeta}>正在讀取記錄…</Text> : records.length === 0 ? <Text style={styles.railMeta}>目前沒有已載入記錄。</Text> : records.map((record, index) => <View key={record.id}>
@@ -104,16 +108,12 @@ export function RightRail({ model, actions, checkedPreviewItems, togglePreviewIt
         </View>)}
         {model.connection === "offline" ? <Text style={styles.railCaution}>目前離線；以上可能不是最新資料。</Text> : null}
       </SectionCard>
-      <SectionCard>
+      {!home && model.operation.state !== "none" ? <SectionCard>
         <SectionHeader title="最近操作" />
         <OperationPill state={model.operation.state} />
         <Text style={styles.railMeta}>{model.operation.detail}</Text>
         <TextLink label={model.operation.state === "unknown" ? "查核原操作" : "查看相關記錄"} onPress={() => model.operation.state === "none" ? actions.open("care") : actions.reviewOperation()} />
-      </SectionCard>
-      <View style={styles.railTip}>
-        <Text style={styles.railRecordTitle}>小提示</Text>
-        <Text style={styles.railMeta}>網絡可用不等於資料已保存；以原操作的確認結果為準。</Text>
-      </View>
+      </SectionCard> : null}
     </ScrollView>
   </View>;
 }
@@ -126,12 +126,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   const compact = width < 900;
   const tiny = width < 390;
   const wide = width >= 1280;
-  const { model, actions, checkedPreviewItems, togglePreviewItem, notice, dismissNotice } = usePreview();
-  const railProps = { model, actions, checkedPreviewItems, togglePreviewItem };
-  const [railOpen, setRailOpen] = useState(true);
+  const { model, actions, notice, dismissNotice } = usePreview();
+  const railProps = { model, actions, home: pathname === "/" };
+  // Only the home overview opens this secondary pane by default. Keep each route's manual choice.
+  const [railChoices, setRailChoices] = useState<Record<string, boolean>>({});
+  const railOpen = railChoices[pathname] ?? pathname === "/";
+  const railAnchor = useRef<View>(null);
+  const restoreRailFocus = useRef(false);
   const [railModal, setRailModal] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   useEffect(() => { if (wide) setRailModal(false); }, [wide]);
+  useEffect(() => { setRailModal(false); }, [pathname]);
+  function closeRail() {
+    restoreRailFocus.current = true;
+    setRailModal(false);
+  }
+  function railClosed() {
+    if (restoreRailFocus.current && Platform.OS === "web") (railAnchor.current as unknown as HTMLElement | null)?.focus();
+    restoreRailFocus.current = false;
+  }
   const active = (path: AppPath) => pathname === path;
   const mobileHome = width < 650 && active("/");
   const selectedChild = model.children.find(item => item.id === model.selectedChildId);
@@ -144,7 +157,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         <BrandLogo style={styles.logo} decorative />
         <Text style={styles.brandLine}>用資料 · 陪伴成長</Text>
       </Pressable></PreviewLink>
-      <View style={styles.navList}>{navigation.filter(item => item.href !== "/chat").map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}</View>
+      <ScrollView testID="sidebar-navigation" style={styles.navScroll} contentContainerStyle={styles.navList}>
+        {navigationGroups.map(group => <View key={group.label} style={styles.navGroup}>
+          <Text style={styles.navGroupLabel}>{group.label}</Text>
+          {group.paths.map(path => navigation.find(item => item.href === path)!).map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}
+        </View>)}
+      </ScrollView>
       <View style={styles.sidebarBottom}>
         <AgentEntryButton active={active("/chat")} />
       </View>
@@ -158,8 +176,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!compact ? <ChildKeyFacts child={selectedChild} load={model.profileLoad} /> : null}
         <View testID="header-actions" style={styles.topActions}>
           <NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
-          <ToolbarIconButton icon="page-layout-sidebar-right" label={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
-            expanded={railExpanded} onPress={() => wide ? setRailOpen(value => !value) : setRailModal(value => !value)} />
+          <ToolbarIconButton ref={railAnchor} icon="page-layout-sidebar-right" label={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
+            expanded={railExpanded} onPress={() => wide ? setRailChoices(choices => ({ ...choices, [pathname]: !railOpen })) : setRailModal(true)} />
         </View>
       </View>
       {compact && !mobileHome ? <View style={styles.compactFacts}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /><ChildKeyFacts child={selectedChild} load={model.profileLoad} /></View> : null}
@@ -173,10 +191,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         {navigation.filter(item => ["/", "/chat", "/tasks", "/memory"].includes(item.href)).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
         <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={mobileIcons.navigation} color={["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
       </View> : null}
-      {railModal && !wide ? <View style={[styles.railOverlay, compact ? styles.railOverlayCompact : styles.railOverlayDesktop]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="關閉資訊側欄背景" onPress={() => setRailModal(false)} style={styles.railScrim} />
-        <View style={styles.railDrawer}><RightRail {...railProps} overlay /></View>
-      </View> : null}
+      <Modal visible={railModal && !wide} transparent animationType="none" onRequestClose={closeRail} onDismiss={railClosed}>
+        <View style={styles.railOverlay}>
+          <View accessible={false} onStartShouldSetResponder={() => true} onResponderRelease={closeRail} style={styles.railScrim} />
+          <SafeAreaView testID="context-drawer" role="dialog" aria-modal accessibilityLabel="照顧上下文" style={styles.railDrawer}>
+            <RightRail {...railProps} overlay onClose={closeRail} />
+          </SafeAreaView>
+        </View>
+      </Modal>
     </View>
     <Portal>
       <Dialog visible={moreOpen} onDismiss={() => setMoreOpen(false)} style={styles.menuDialog}>
@@ -197,17 +219,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   root: { flex: 1, flexDirection: "row", minHeight: 0, backgroundColor: colors.canvas },
   pressed: { opacity: 0.68 },
-  sidebar: { width: 220, backgroundColor: colors.sidebar, borderRightColor: colors.line, borderRightWidth: 1, paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.xs },
+  sidebar: { width: 216, minHeight: 0, backgroundColor: colors.sidebar, borderRightColor: colors.line, borderRightWidth: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
   brandLink: { width: "100%", minHeight: 93, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
   logo: { width: 164, height: 53 },
   brandLine: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, textAlign: "center" },
-  navList: { gap: spacing.xs },
+  navScroll: { flex: 1, minHeight: 0 }, navList: { gap: spacing.md, paddingBottom: spacing.md },
+  navGroup: { gap: spacing.xs }, navGroupLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: 12, lineHeight: 18, paddingHorizontal: spacing.md },
   navItem: { minHeight: 46, borderRadius: radius.small, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
   navActive: { backgroundColor: colors.selectedNav, borderLeftColor: colors.teal, borderLeftWidth: 3 },
   navGlyph: { width: 23, textAlign: "center", fontSize: 22, color: colors.deepTeal },
   navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
-  sidebarBottom: { marginTop: "auto", paddingBottom: spacing.sm },
+  sidebarBottom: { paddingBottom: spacing.sm },
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
   topbar: { height: 70, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
   topbarCompact: { height: 64, paddingHorizontal: spacing.md, gap: spacing.sm },
@@ -253,9 +276,7 @@ const styles = StyleSheet.create({
   divider: { backgroundColor: colors.softLine },
   railCaution: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption },
   railTip: { backgroundColor: colors.mintSurface, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.xs },
-  railOverlay: { position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 5, flexDirection: "row", justifyContent: "flex-end" },
-  railOverlayCompact: { top: 64 },
-  railOverlayDesktop: { top: 70 },
+  railOverlay: { flex: 1, flexDirection: "row", justifyContent: "flex-end" },
   railScrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.overlay },
   railDrawer: { width: "92%", maxWidth: 370, height: "100%", backgroundColor: colors.sidebar },
   bottomNav: { minHeight: mobileLayout.tabMinHeight, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line, flexDirection: "row" },

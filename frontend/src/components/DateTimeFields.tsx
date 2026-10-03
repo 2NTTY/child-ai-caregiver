@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type Ref } from "react";
 import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { HelperText, Portal, Text, TextInput } from "react-native-paper";
@@ -10,7 +10,8 @@ import { AppButton, AppSelect, AppSelectionTrigger, AppTextField } from "./ui";
 
 registerTranslation("zh-HK", { ...zhTW, save: "選用日期" });
 
-type FieldProps = { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; error?: string };
+type FieldProps = { label: string; value: string; onChange: (value: string) => void; onBlur?: () => void; disabled?: boolean; error?: string };
+type TextFieldProps = FieldProps & { ref?: Ref<React.ElementRef<typeof TextInput>> };
 function webEscape(dismiss: () => void) {
   return Platform.OS === "web" ? { onKeyDown: (event: { key: string; preventDefault: () => void; stopPropagation: () => void }) => {
     if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); dismiss(); }
@@ -29,24 +30,24 @@ function CompactTimeDialog({ label, value, onConfirm, onDismiss }: { label: stri
   </Dialog.Content><Dialog.Actions><AppButton label="取消" variant="quiet" onPress={onDismiss} /><AppButton label="選用時間" disabled={!valid}
     onPress={() => onConfirm(`${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`)} /></Dialog.Actions></Dialog></Portal>;
 }
-export function AppDateField({ label, value, onChange, disabled = false, error }: FieldProps) {
+export function AppDateField({ label, value, onChange, onBlur, disabled = false, error, ref }: TextFieldProps) {
   const [open, setOpen] = useState(false);
   const field = useRef<React.ElementRef<typeof TextInput>>(null);
   function dismiss() { setOpen(false); if (Platform.OS === "web") field.current?.focus(); }
-  return <View><AppTextField ref={field} label={label} accessibilityLabel={label} value={value} onChangeText={onChange} disabled={disabled} error={!!error}
+  return <View><AppTextField ref={instance => { field.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={label} accessibilityLabel={label} value={value} onChangeText={onChange} onBlur={onBlur} disabled={disabled} error={!!error}
     placeholder="YYYY-MM-DD" right={<TextInput.Icon icon="calendar-month-outline" accessibilityLabel={`選擇${label}`} disabled={disabled} onPress={() => setOpen(true)} />} />
     {error ? <HelperText type="error">{error}</HelperText> : null}
     {open && !disabled ? <DatePickerModal locale="zh-HK" mode="single" visible animationType="none" date={calendarDate(value)} onDismiss={dismiss}
       onConfirm={({ date }) => { if (date) onChange(calendarValue(date)); dismiss(); }} /> : null}
   </View>;
 }
-export function AppTimeField({ label, value, onChange, disabled = false, error }: FieldProps) {
+export function AppTimeField({ label, value, onChange, onBlur, disabled = false, error, ref }: TextFieldProps) {
   const [open, setOpen] = useState(false);
   const { width } = useWindowDimensions();
   const field = useRef<React.ElementRef<typeof TextInput>>(null);
   const valid = /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
   function dismiss() { setOpen(false); if (Platform.OS === "web") field.current?.focus(); }
-  return <View><AppTextField ref={field} label={label} accessibilityLabel={label} value={value} onChangeText={onChange} disabled={disabled} error={!!error} placeholder="HH:mm"
+  return <View><AppTextField ref={instance => { field.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={label} accessibilityLabel={label} value={value} onChangeText={onChange} onBlur={onBlur} disabled={disabled} error={!!error} placeholder="HH:mm"
     right={<TextInput.Icon icon="clock-outline" accessibilityLabel={`選擇${label}`} disabled={disabled} onPress={() => setOpen(true)} />} />
     {error ? <HelperText type="error">{error}</HelperText> : null}
     {open && !disabled && width < 360 ? <CompactTimeDialog label={label} value={value} onDismiss={dismiss} onConfirm={next => { onChange(next); dismiss(); }} /> : null}
@@ -55,11 +56,11 @@ export function AppTimeField({ label, value, onChange, disabled = false, error }
       onConfirm={({ hours, minutes }) => { onChange(`${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`); dismiss(); }} /> : null}
   </View>;
 }
-export function AppTimeZoneSelect({ value, onChange, disabled = false }: { value: string; onChange: (value: string) => void; disabled?: boolean }) {
+export function AppTimeZoneSelect({ value, onChange, onBlur, disabled = false, ref }: { value: string; onChange: (value: string) => void; onBlur?: () => void; disabled?: boolean; ref?: Ref<View> }) {
   const options = timeZoneOptions.some(item => item.value === value) ? timeZoneOptions : [...timeZoneOptions, { value, label: `${value}（原設定）` }];
-  return <AppSelect label="時區" value={value} options={options} onChange={onChange} disabled={disabled} />;
+  return <AppSelect ref={ref} label="時區" value={value} options={options} onChange={onChange} onBlur={onBlur} disabled={disabled} />;
 }
-export function AppDateTimeField({ label, value, onChange, disabled = false, error, timeZone = hongKongTimeZone, optional = false }: FieldProps & { timeZone?: string; optional?: boolean }) {
+export function AppDateTimeField({ label, value, onChange, onBlur, disabled = false, error, timeZone = hongKongTimeZone, optional = false, ref }: FieldProps & { timeZone?: string; optional?: boolean; ref?: Ref<View> }) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
@@ -69,7 +70,7 @@ export function AppDateTimeField({ label, value, onChange, disabled = false, err
   function dismiss() { setOpen(false); if (Platform.OS === "web") (anchor.current as unknown as HTMLElement | null)?.focus(); }
   return <View style={styles.field}>
     <Text style={styles.label}>{label}</Text><Text style={styles.summary}>{parts ? `${parts.date} · ${parts.time} · ${timeZoneLabel(timeZone)}` : "尚未選擇日期與時間"}</Text>
-    <AppSelectionTrigger ref={anchor} label={`選擇${label}`} disabled={disabled} expanded={open} calendar onPress={() => {
+    <AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={`選擇${label}`} disabled={disabled} expanded={open} onBlur={onBlur} calendar onPress={() => {
       setDate(parts?.date ?? ""); setTime(parts?.time ?? ""); setLocalError(null); setOpen(true);
     }} />
     {optional && value ? <AppButton label={`清除${label}`} variant="quiet" disabled={disabled} onPress={() => onChange("")} /> : null}

@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-03T12:25:43.3460366Z",
+  "baseline": "1bbf342",
+  "formalBaseline": "4f27d05539234a2c2823fbdbfc7660955f0e7428",
+  "scope": "frontend only; synthetic local rendering; no formal API or device acceptance",
+  "checks": {
+    "androidExport": "passed, 30 assets",
+    "typecheck": "passed",
+    "webExport": "passed, 35 routes",
+    "timeline": "timeline/chat-timeline-checks.json",
+    "sources": "source-tabs-checks.json",
+    "foundation": "foundation-checks.json",
+    "layout": "layout-checks.json, 60 route/width checks",
+    "agentFlow": "agent-flow-checks.json; four widths, shared consent, original unknown retry, changed basis, access and scope clearing",
+    "webEntry": "entry-ec1f943a2c6cf098866ee8bca7b60996.js"
+  },
+  "pending": [
+    "Formal API/controllers and source mapping",
+    "Screen readers and native devices",
+    "User visual acceptance",
+    "Home and record slices; later recipe rollout"
+  ]
+}
