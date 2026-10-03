@@ -9,6 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { PreviewNavigationGuard } from "../src/preview/PreviewNavigationGuard";
+import { MotionProvider } from "../src/motion";
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -16,7 +17,7 @@ export default function RootLayout() {
   // Keep the exported HTML and first client render identical before reading viewport dimensions.
   const renderRoutes = Platform.OS !== "web" || ready;
   return (
-    <SafeAreaProvider><PaperProvider theme={paperTheme} settings={{ icon: PaperSvgIcon }}>
+    <SafeAreaProvider><MotionProvider><PaperProvider theme={paperTheme} settings={{ icon: PaperSvgIcon }}>
       <Head><title>{brand.previewName}</title></Head>
       <PreviewNavigationGuard><View style={styles.root} testID={ready ? "frontend-preview-ready" : undefined}>
         {renderRoutes ? <Stack screenOptions={{ headerShown: false, animation: "none" }} /> : <View style={styles.launch}>
@@ -24,7 +25,7 @@ export default function RootLayout() {
           <Text accessibilityRole="text" style={styles.launchText}>正在開啟{brand.name}…</Text>
         </View>}
       </View></PreviewNavigationGuard>
-    </PaperProvider></SafeAreaProvider>
+    </PaperProvider></MotionProvider></SafeAreaProvider>
   );
 }
 

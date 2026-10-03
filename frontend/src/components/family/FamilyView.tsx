@@ -1,7 +1,7 @@
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { familyRoleLabels, familyRoleOptions, familyScopeText, type FamilyActions, type FamilyDraft, type FamilyInviteValues, type FamilyViewModel, type MemberRole } from "../../family-view-model";
 import { chineseFont, colors, radius, spacing, typeScale , readingType } from "../../theme";
+import { MotionFeedback, MotionList } from "../../motion";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from "../ui";
 
@@ -69,15 +70,16 @@ function IncomingComposer({ model, actions }: { model: FamilyViewModel; actions:
   </View>;
 }
 
-function MemberRow({ member, self, canManage, disabled, actions }: {
-  member: NonNullable<FamilyViewModel["family"]>["members"][number]; self: boolean; canManage: boolean; disabled: boolean; actions: FamilyActions;
+function MemberRow({ member, self, canManage, disabled, actions, scopeKey, feedbackEligible }: {
+  member: NonNullable<FamilyViewModel["family"]>["members"][number]; self: boolean; canManage: boolean; disabled: boolean; actions: FamilyActions; scopeKey: string; feedbackEligible: boolean;
 }) {
   const [nextRole, setNextRole] = useState<MemberRole | "revoked">(member.role === "owner" ? "caregiver" : member.role);
+  useEffect(() => { setNextRole(member.role === "owner" ? "caregiver" : member.role); }, [member.role]);
   return <View style={styles.member} testID={`family-member-${member.userId}`}>
     <View style={styles.memberIdentity}>
       <View style={styles.avatar}><Text style={styles.avatarText}>{member.name.slice(0, 1)}</Text></View>
       <View style={styles.flexCopy}><Text style={styles.memberName}>{member.name}{self ? " · 本人" : ""}</Text>
-        <Text style={styles.meta}>{familyRoleLabels[member.role]} · {member.role === "owner" ? "管理成員及孩子" : member.role === "caregiver" ? "可管理共享記錄及任務" : "共享資料唯讀"}</Text></View>
+        <MotionFeedback active={feedbackEligible} triggerKey={member.role} scopeKey={`${scopeKey}:${member.userId}`}><Text style={styles.meta}>{familyRoleLabels[member.role]} · {member.role === "owner" ? "管理成員及孩子" : member.role === "caregiver" ? "可管理共享記錄及任務" : "共享資料唯讀"}</Text></MotionFeedback></View>
     </View>
     {canManage && member.role !== "owner" && !self ? <View style={styles.form}>
       <AppSelect label="新角色" value={nextRole} options={[...familyRoleOptions, { value: "revoked", label: "撤銷權限" }]} onChange={setNextRole} disabled={disabled} />
@@ -132,6 +134,8 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
 }) {
   const [width, setWidth] = useState(0);
   const stacked = width < 760;
+  const scopeKey = `${model.selfUserId}:${model.family?.id ?? "none"}:${model.family?.role ?? "none"}`;
+  const eligible = model.loadState === "ready" && model.operation.state === "saved";
   return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={styles.workspace}>
     <StatusAnnouncement eventKey={model.loadState} message={model.loadState === "lost" ? "家庭權限已失效；原有家庭、成員、邀請碼及草稿已清除。" : model.loadState === "loading" ? "正在讀取家庭資料。" : ""} urgent={model.loadState === "lost"} />
     <StatusAnnouncement eventKey={model.notice ?? ""} message={model.notice ?? ""} />
@@ -152,8 +156,8 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
                 <Text style={styles.memberName}>{model.family.ownerName}的家庭</Text>
                 <Text style={styles.meta}>本人角色：{familyRoleLabels[model.family.role]} · 家庭權限版本 {model.family.version}</Text>
                 <AppButton label="重新讀取家庭清單" variant="quiet" onPress={actions.refresh} disabled={!model.canStartAction} />
-                {model.family.members.map(member => <MemberRow key={`${member.userId}:${model.family!.version}`} member={member}
-                  self={member.userId === model.selfUserId} canManage={model.family!.role === "owner"} disabled={!model.canStartAction} actions={actions} />)}
+                <MotionList items={model.family.members} keyExtractor={member => member.userId} scopeKey={scopeKey} regionKey="family-members" eligible={eligible} style={styles.list} renderItem={(member, { exiting }) => <MemberRow key={`${model.family!.id}:${member.userId}`} member={member}
+                  self={member.userId === model.selfUserId} canManage={model.family!.role === "owner"} disabled={!model.canStartAction || exiting} actions={actions} scopeKey={scopeKey} feedbackEligible={eligible && !exiting} />} />
                 {model.family.role !== "owner" ? <Text style={styles.body}>只有擁有者可管理成員及邀請；此視角沒有這些管理操作或邀請電郵清單。</Text> : null}
               </> : <Text style={styles.body}>沒有可查看的家庭。</Text>}
             </SectionCard>
@@ -177,12 +181,12 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
                 </View> : null}
               </SectionCard>
               <SectionCard><SectionHeader density="compact" title="邀請清單" subtitle="清單只展示狀態；不包含一次性碼。" />
-                {model.family.invitations.length === 0 ? <Text style={styles.body}>目前沒有邀請。</Text> : model.family.invitations.map(invite => <View key={invite.id} style={styles.member}>
+                {model.family.invitations.length === 0 ? <Text style={styles.body}>目前沒有邀請。</Text> : null}<MotionList items={model.family.invitations} keyExtractor={invite => invite.id} scopeKey={scopeKey} regionKey="family-invitations" eligible={eligible} style={styles.list} renderItem={(invite, { exiting }) => <View key={invite.id} style={styles.member}>
                   <Text selectable style={styles.memberName}>{invite.email}</Text>
-                  <Text style={styles.meta}>{familyRoleLabels[invite.role]} · {invitationStatusLabels[invite.status]}</Text>
+                  <MotionFeedback active={eligible && !exiting} triggerKey={invite.status} scopeKey={`${scopeKey}:${invite.id}`}><Text style={styles.meta}>{familyRoleLabels[invite.role]} · {invitationStatusLabels[invite.status]}</Text></MotionFeedback>
                   <Text style={styles.meta}>合成到期時間：{expiryLabel(invite.expiresAt)}</Text>
-                  {invite.status === "pending" ? <AppButton label="撤銷此邀請" variant="secondary" onPress={() => actions.stageRevokeInvitation(invite.id)} disabled={!model.canStartAction} /> : null}
-                </View>)}
+                  {invite.status === "pending" ? <AppButton label="撤銷此邀請" variant="secondary" onPress={() => actions.stageRevokeInvitation(invite.id)} disabled={!model.canStartAction || exiting} /> : null}
+                </View>} />
               </SectionCard>
             </> : null}
             <SectionCard><SectionHeader density="compact" title="收到邀請？" subtitle="先預覽家庭及範圍，再明確接受。" />
@@ -196,6 +200,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls }: {
 }
 
 const styles = StyleSheet.create({
+  list: { gap: spacing.md },
   workspace: { gap: spacing.lg, minWidth: 0 }, columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg },
   stack: { flexDirection: "column" }, column: { flex: 1, minWidth: 0, gap: spacing.lg }, fullColumn: { width: "100%", flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },

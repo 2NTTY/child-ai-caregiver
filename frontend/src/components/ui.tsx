@@ -7,6 +7,8 @@ import { AppDialog as Dialog } from "./AppDialog";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale, workspaceType } from "../theme";
 import type { ConnectionState, OperationState } from "../view-model";
 import { useInteractionDensity } from "./useInteractionDensity";
+import { MotionEntrance } from "../motion";
+import { MotionSelectionMarker } from "../motion/MotionSelectionMarker";
 
 export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", density = "standard", disabled = false, loading = false, style, ref }: {
   label: string;
@@ -162,6 +164,8 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   const touch = useInteractionDensity();
   const controls = useRef(new Map<T, View>());
+  const [positions, setPositions] = useState<Record<string, { x: number; width: number }>>({});
+  const selection = positions[value];
   function move(event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }, index: number) {
     const key = event.nativeEvent?.key ?? event.key;
     const next = key === "ArrowLeft" ? (index + items.length - 1) % items.length
@@ -174,12 +178,13 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
   return <ScrollView horizontal tabIndex={-1} showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
     <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs}>
     {items.map((item, index) => <Pressable
-      key={item.key} nativeID={tabId(id, item.key)} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
+      key={item.key} nativeID={tabId(id, item.key)} onLayout={event => { const { x, width } = event.nativeEvent.layout; setPositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
       accessibilityRole="tab" accessibilityLabel={item.label} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
       accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => onChange(item.key)}
       {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
-      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, value === item.key && styles.tabActive, pressed && styles.linkPressed]}
+      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.linkPressed]}
     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
+    <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} />
     </View>
   </ScrollView>;
 }
@@ -187,10 +192,10 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
 export function AppTabPanel({ tabsId, tabKey, active, children, style, ...props }: ViewProps & {
   tabsId: string; tabKey: string; active: boolean; children: ReactNode;
 }) {
-  return <View {...props} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" ? "tabpanel" : undefined}
+  return <MotionEntrance {...props} preset="panel" triggerKey={active ? `${tabsId}:${tabKey}:active` : null} scopeKey={tabsId} enabled={active} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" ? "tabpanel" : undefined}
     aria-labelledby={tabId(tabsId, tabKey)} aria-hidden={!active} accessibilityElementsHidden={!active}
     importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={active ? 0 : -1}
-    style={[style, !active && styles.hiddenPanel]}>{children}</View>;
+    style={[style, !active && styles.hiddenPanel]}>{children}</MotionEntrance>;
 }
 
 const styles = StyleSheet.create({

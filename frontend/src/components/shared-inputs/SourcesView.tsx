@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Text } from "react-native-paper";
@@ -14,6 +14,7 @@ import { SourceRecordForm } from "./SourceRecordForm";
 import { sourceStyles as s } from "./source-styles";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { StatusAnnouncement } from "../StatusAnnouncement";
+import { MotionEntrance } from "../../motion";
 
 function SourceStatus({ model, actions }: { model: SourcesViewModel; actions: SourcesActions }) {
   const op = model.operation;
@@ -34,10 +35,20 @@ function SourceStatus({ model, actions }: { model: SourcesViewModel; actions: So
   </SectionCard>}</>;
 }
 
-export function SourcesView({ model, actions, onPhotos, onRecord, previewControls }: {
+export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord, previewControls }: {
   model: SourcesViewModel; actions: SourcesActions; onPhotos: () => void; onRecord: (id: string) => void; previewControls: ReactNode;
 }) {
   const [width, setWidth] = useState(0);
+  const [resultTrigger, setResultTrigger] = useState<number | null>(null);
+  const requestSerial = useRef(0);
+  const creationRequested = useRef(false);
+  function revealAfter(action: () => void) {setResultTrigger(++requestSerial.current); action();}
+  const actions: SourcesActions = {...sourceActions,
+    create: input => {creationRequested.current = true; sourceActions.create(input);},
+    fetchContent: () => revealAfter(sourceActions.fetchContent), extract: () => revealAfter(sourceActions.extract),
+    refresh: () => revealAfter(sourceActions.refresh), checkOriginal: () => revealAfter(sourceActions.checkOriginal),
+    retryDirect: () => revealAfter(sourceActions.retryDirect), retryOriginal: () => revealAfter(sourceActions.retryOriginal),
+  };
   const columns = width >= 780;
   const readState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online ? "stale" : model.access !== "lost" && model.items.length === 0 ? "empty" : "ready";
   const readMessage = readState === "loading" ? "正在讀取私人來源…" : readState === "error" ? "讀取未能確認；最近內容及草稿保留，暫不提交新的操作。"
@@ -57,15 +68,15 @@ export function SourcesView({ model, actions, onPhotos, onRecord, previewControl
     <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[s.columns, !columns && s.single]}>
       <View style={[s.main, !columns && s.full]}>
         {model.access !== "lost" && !model.selected ? <SourceComposer key={model.formKey} model={model} actions={actions} /> : null}
-        {model.selected ? <SourceDetails key={model.selected.id} model={model} actions={actions} onRecord={onRecord} /> : null}
+        {model.selected ? <SourceDetails key={model.selected.id} model={model} actions={actions} onRecord={onRecord} resultTrigger={resultTrigger} /> : null}
         {model.selected?.text.trim() && !model.selected.recordId && model.access === "editable" ? <SourceRecordForm key={model.formKey} model={model} actions={actions} /> : null}
       </View>
       <View style={[s.aside, !columns && s.full]}><SectionCard testID="source-list"><SectionHeader density="compact" title="我的私人來源" subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
-        {model.items.length === 0 ? null : model.items.map(input => <View key={input.id} style={s.item}>
+        {model.items.length === 0 ? null : model.items.map(input => <MotionEntrance key={input.id} triggerKey={input.id} scopeKey={model.scopeKey} preset="item-add" animateOnMount={creationRequested.current && model.operation.state === 'saved' && model.operation.phase === 'create' && model.selected?.id === input.id} style={s.item} testID={`source-item-${input.id}`}>
           <Text style={s.title}>{input.sourceLabel}</Text><Text style={s.meta}>{fetchStateLabels[input.fetchState]}{input.recordId ? " · 已連結家庭記錄" : " · 尚未家庭共享"}</Text>
           <Text style={s.meta}>保存於 {sourceTime(input.createdAt)}</Text>
           <AppButton label={model.selected?.id === input.id ? "目前來源" : "查看來源"} accessibilityLabel={`查看私人來源：${input.sourceLabel}`} variant="quiet" disabled={!model.canChoose || !model.online || model.load !== "ready"} onPress={() => actions.openInput(input)} />
-        </View>)}
+        </MotionEntrance>)}
       </SectionCard></View>
     </View>
     {previewControls}

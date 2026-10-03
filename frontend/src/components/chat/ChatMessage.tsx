@@ -8,6 +8,7 @@ import { AppButton } from "../ui";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { AnswerSources, CitationText, type LocateAnswerSource } from "./AnswerSources";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
+import { MotionDisclosure } from "../../motion";
 
 const phaseLabels: Record<ChatReplyPhase, string> = {
   thinking: "思考中", streaming: "正在回覆", complete: "回覆已結束", stopped: "已停止 · 回覆未完成",
@@ -43,10 +44,10 @@ export function ChatMessage({ message, children, footer, testID, embedded = fals
           <Text style={styles.processLabel}>執行過程 · {activities.length} 項{activities.some(item => item.state === "failed" || item.state === "unknown") ? " · 有結果待核對" : ""}</Text>
           <AppIcon name={processOpen ? "chevron-up" : "chevron-down"} size={16} color={chatColors.secondary} />
         </Pressable>
-        {processOpen ? <View testID="chat-process-details" style={styles.processDetails}>{activities.map((activity, index) => <View key={activity.id} style={[styles.activity, index > 0 && styles.divider]}>
+        <MotionDisclosure expanded={processOpen} scopeKey={message.id}><View testID="chat-process-details" style={styles.processDetails}>{activities.map((activity, index) => <View key={activity.id} style={[styles.activity, index > 0 && styles.divider]}>
           <View style={styles.statusRow}><Text style={styles.activityTitle}>{activity.label}</Text><Text style={activity.state === "failed" ? [styles.warning, styles.error] : activity.state === "unknown" ? styles.warning : styles.meta}>{activityLabels[activity.state]}</Text></View>
           {activity.summary ? <Text style={styles.meta}>{activity.summary}</Text> : null}
-        </View>)}</View> : null}
+        </View>)}</View></MotionDisclosure>
       </View> : null}
       {assistant && message.sources !== undefined ? <AnswerSources sources={message.sources} onLocateSource={onLocateSource} onOpenSource={onOpenSource} degraded={degraded}>{body}</AnswerSources> : body}
       {message.note ? <Text style={[styles.meta, !assistant && styles.userNote]}>{message.note}</Text> : null}

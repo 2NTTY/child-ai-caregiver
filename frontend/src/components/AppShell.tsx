@@ -5,6 +5,7 @@ import { Modal, Platform, Pressable, StyleSheet, View, useWindowDimensions } fro
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { brand } from "../branding";
+import { MotionEntrance, MotionScopeBoundary } from "../motion";
 import { BrandLogo } from "./BrandLogo";
 import { Button, Divider, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
@@ -133,6 +134,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [railChoices, setRailChoices] = useState<Record<string, boolean>>({});
   const railOpen = railChoices[pathname] ?? false;
   const railAnchor = useRef<View>(null);
+  const routeSurface = useRef<View>(null);
+  const previousPath = useRef(pathname);
+  useEffect(() => {
+    const changed = previousPath.current !== pathname; previousPath.current = pathname;
+    if (!changed || Platform.OS !== "web") return;
+    const heading = (routeSurface.current as unknown as HTMLElement | null)?.querySelector<HTMLElement>('[role="heading"],h1,h2');
+    if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+  }, [pathname]);
   const restoreRailFocus = useRef(false);
   const [railModal, setRailModal] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -151,6 +160,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const selectedChild = model.children.find(item => item.id === model.selectedChildId);
   const showGuideNav = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   const railExpanded = wide ? railOpen : railModal;
+  const motionScope = `${model.caregiverName}:${model.selectedChildId ?? "none"}:${selectedChild?.accessRole ?? "none"}`;
 
   return <View style={styles.root}>
     {!compact ? <View testID="web-sidebar" style={styles.sidebar}>
@@ -171,6 +181,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {showGuideNav ? <NavItem item={{ href: "/guide", label: "使用引導", short: "引導", icon: "compass-outline" }} active={active("/guide")} /> : null}
     </View> : null}
     <View style={styles.stage}>
+      <MotionScopeBoundary scopeKey={motionScope} eligible={model.selectedChildId !== null} style={styles.scopePane}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
         {compact ? <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></PreviewLink> : null}
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
@@ -185,9 +196,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <PreviewToolbar />
       {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
       <View style={styles.body}>
-        <View style={styles.content}>{children}</View>
+        <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
         {wide && railOpen ? <RightRail {...railProps} /> : null}
       </View>
+      </MotionScopeBoundary>
       {compact ? <View style={styles.bottomNav}>
         {navigation.filter(item => ["/", "/chat", "/tasks", "/memory"].includes(item.href)).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
         <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={mobileIcons.navigation} color={["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
@@ -195,9 +207,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Modal visible={railModal && !wide} transparent animationType="none" onRequestClose={closeRail} onDismiss={railClosed}>
         <View style={styles.railOverlay}>
           <View accessible={false} onStartShouldSetResponder={() => true} onResponderRelease={closeRail} style={styles.railScrim} />
-          <SafeAreaView testID="context-drawer" role="dialog" aria-modal accessibilityLabel="照顧上下文" style={styles.railDrawer}>
+          <MotionEntrance preset="dialog" triggerKey="context-drawer" scopeKey={motionScope} animateOnMount style={styles.railDrawer}><SafeAreaView testID="context-drawer" role="dialog" aria-modal accessibilityLabel="照顧上下文" style={styles.drawerContent}>
             <RightRail {...railProps} overlay onClose={closeRail} />
-          </SafeAreaView>
+          </SafeAreaView></MotionEntrance>
         </View>
       </Modal>
     </View>
@@ -233,6 +245,7 @@ const styles = StyleSheet.create({
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
   sidebarBottom: { paddingBottom: spacing.sm },
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
+  scopePane: { flex: 1, minWidth: 0, minHeight: 0 }, drawerContent: { flex: 1 },
   topbar: { height: 70, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
   topbarCompact: { height: 64, paddingHorizontal: spacing.md, gap: spacing.sm },
   topbarTiny: { paddingHorizontal: spacing.sm, gap: spacing.xs },

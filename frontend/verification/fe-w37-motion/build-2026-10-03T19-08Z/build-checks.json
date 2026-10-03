@@ -1,0 +1,86 @@
+{
+  "baseline": "c51dd52e0cdea03b1d412a10d08ac6761e010d9b",
+  "version": "reviewed working copy; exact source hashes in UI attempt source-manifest.json",
+  "environment": "dot cloud Linux; no user computer, real API, AI, notifications or paid services",
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "result": "passed",
+      "log": "typecheck.log"
+    },
+    {
+      "command": "npm run build:web",
+      "result": "environment failure before Metro",
+      "reason": "Expo telemetry mkdir /home/agent/.expo returned ENOENT",
+      "log": "build-web.log"
+    },
+    {
+      "command": "HOME=/tmp/caregiver-motion-home XDG_CACHE_HOME=/tmp/caregiver-motion-cache EXPO_NO_TELEMETRY=1 CI=1 npm run build:web",
+      "result": "passed",
+      "routes": 35,
+      "log": "build-web-retry-home.log"
+    },
+    {
+      "command": "same temporary environment; npm run build:android-ui",
+      "result": "passed; bundle compatibility only, no device validation",
+      "assets": 29,
+      "log": "build-android.log"
+    },
+    {
+      "command": "node node_modules/expo/bin/cli serve --port 8083",
+      "result": "started private localhost preview",
+      "log": "preview.log"
+    },
+    {
+      "command": "BROWSER_EXECUTABLE=/usr/bin/chromium FRONTEND_PREVIEW_URL=http://localhost:8083 node scripts/verify-motion-system.mjs",
+      "result": "blocked before browser/page creation",
+      "reason": "Chromium ProcessSingleton socket() Operation not permitted; read-only XDG config",
+      "log": "ui-initial.log"
+    },
+    {
+      "command": "same UI command, writable XDG_CONFIG_HOME and supported require_escalated execution",
+      "result": "blocked before browser/page creation",
+      "reason": "Chromium ProcessSingleton socket() Operation not permitted persists",
+      "log": "ui-launch-retry.log"
+    }
+  ],
+  "actual_ui_pages": 0,
+  "actual_ui_checks": 0,
+  "ui_status": "not run; not a pass",
+  "attempt_directories": [
+    "../2026-10-03T19-11-24-622Z",
+    "../2026-10-03T19-12-36-367Z"
+  ],
+  "artifact_hashes": {
+    "typecheck.log": "36909e4212b55a6cfd8f3e2bae14fb164f0589f81b1563e66628f7ec63f8a6ce",
+    "build-web.log": "1b01324724a4fe4e3888bda5612114d94bb5be4c99cc48cd0da7540b4a56181a",
+    "build-web-retry-home.log": "519cbbec5a713f83801f827dfe298010891474f0c9a41f767210e016dd540c07",
+    "build-android.log": "c644f7d853150b41275a966b00d8bec9b91ba44be4a010e8cfd4ab5faa4e1282",
+    "ui-initial.log": "dc84e3c3aa03d6e9e5218daaeb5a26a3bbe199fee4365b91bd719b3a54a64676",
+    "ui-launch-retry.log": "395d7ccdce45460e673d964baaa807bf0d6ebcbfff7e3e8cd5d925e366ed5f25"
+  },
+  "pending_ui_groups": [
+    "layout",
+    "navigation",
+    "summary",
+    "care",
+    "tasks",
+    "photos",
+    "states",
+    "child",
+    "reduced",
+    "dialog",
+    "chat"
+  ],
+  "static_script_review": {
+    "syntax": "node --check passed",
+    "diff_check": "git diff --check passed",
+    "approved_repairs": [
+      "Wait for the photo adoption action rather than the now-persistent candidate container",
+      "Identify curtain ownership by nearest data-motion-kind",
+      "Wait for resizing disclosures and compare the exact chat entry ID"
+    ],
+    "runtime_validation": "Not run; zero browser pages/cases"
+  },
+  "final_source_note": "Source hash refresh and final build wait for root consolidation; existing attempt manifests remain immutable evidence of those attempts."
+}

@@ -1,5 +1,6 @@
-import type { ComponentProps } from "react";
-import { Modal, StyleSheet, View } from "react-native";
+import { useLayoutEffect, useRef, type ComponentProps } from "react";
+import { Animated, Easing, Modal, StyleSheet, View } from "react-native";
+import { motionTokens, useMotionPreferences } from "../motion";
 import { Dialog as PaperDialog } from "react-native-paper";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
@@ -13,8 +14,22 @@ function Actions({ style, ...props }: ComponentProps<typeof PaperDialog.Actions>
 
 // Paper supplies the appearance; RN Modal owns the modal focus and platform close behavior.
 export const AppDialog = Object.assign(function AppDialog({ danger = false, onClosed, ...props }: ComponentProps<typeof PaperDialog> & { danger?: boolean; onClosed?: () => void }) {
+  const preferences = useMotionPreferences();
+  const progress = useRef(new Animated.Value(1)).current;
+  const previous = useRef(false);
+  useLayoutEffect(() => {
+    const opening = props.visible && !previous.current;
+    previous.current = props.visible;
+    progress.stopAnimation();
+    if (!opening || !preferences.enabled) { progress.setValue(1); return; }
+    progress.setValue(0);
+    // Animate the Paper surface itself, not its backdrop or RN Modal focus owner.
+    const animation = Animated.timing(progress, { toValue: 1, duration: motionTokens.dialog.duration, easing: Easing.bezier(0.2, 0, 0, 1), useNativeDriver: true });
+    animation.start();
+    return () => animation.stop();
+  }, [props.visible, preferences.enabled, preferences.epoch, progress]);
   return <Modal visible={props.visible} transparent animationType="none" onRequestClose={props.onDismiss} onDismiss={onClosed}>
-    <View style={styles.root}><PaperDialog {...props} testID={props.testID ?? "app-dialog"} style={[styles.dialog, danger && styles.dangerDialog, props.style]} /></View>
+    <View style={styles.root}><PaperDialog {...props} theme={{ ...props.theme, animation: { scale: 0 } }} testID={props.testID ?? "app-dialog"} style={[styles.dialog, danger && styles.dangerDialog, props.style, { opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [motionTokens.dialog.distance, 0] }) }] }]} /></View>
   </Modal>;
 }, { Title, Content: PaperDialog.Content, Actions, ScrollArea: PaperDialog.ScrollArea, Icon: PaperDialog.Icon });
 

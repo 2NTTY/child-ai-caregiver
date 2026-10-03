@@ -1,4 +1,4 @@
-import { useImperativeHandle, useLayoutEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
+import { useId, useImperativeHandle, useLayoutEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppScrollView } from "../AppScrollView";
@@ -8,14 +8,27 @@ import { spacing } from "../../theme";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 import { useChatScrollIntent } from "./useChatScrollIntent";
 import { useInteractionDensity } from "../useInteractionDensity";
+import { MotionEntrance } from "../../motion";
+import { isNewReplyArrival } from "./chat-arrival";
 
 export interface ChatTimelineControls { followLatest(): void; holdReadingPosition(): void }
 
 // Items are already-authorized display rows in chronological order; this component does not fetch or persist messages.
-export function ChatTimeline<T extends { id: string }>({ items, renderItem, header, compact = false, recentLimit = 20, scrollRef, controlsRef, followRequest }: {
+export function ChatTimeline<T extends { id: string }>({ items, renderItem, header, compact = false, recentLimit = 20, scrollRef, controlsRef, followRequest, newReplyId }: {
   items: readonly T[]; renderItem: (item: T) => ReactNode; header?: ReactNode; compact?: boolean; recentLimit?: number;
   scrollRef?: MutableRefObject<ScrollView | null>; controlsRef?: MutableRefObject<ChatTimelineControls | null>; followRequest?: string;
+  // Set with an appended assistant reply, never for initial/history reads or token updates.
+  newReplyId?: string;
 }) {
+  const motionScope = useId();
+  const knownIds = useRef(new Set(items.map(item => item.id)));
+  const previousLastId = useRef(items[items.length - 1]?.id);
+  const currentIds = items.map(item => item.id);
+  const arrivingId = newReplyId && isNewReplyArrival(newReplyId, newReplyId, knownIds.current, previousLastId.current, currentIds) ? newReplyId : undefined;
+  useLayoutEffect(() => {
+    for (const item of items) knownIds.current.add(item.id);
+    previousLastId.current = items[items.length - 1]?.id;
+  }, [items]);
   const touchControls = useInteractionDensity() || compact;
   const limit = Math.max(1, Math.floor(recentLimit));
   const recentFirst = items[Math.max(0, items.length - limit)]?.id ?? null;
@@ -92,7 +105,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
       {header}
       {start > 0 ? <View testID="chat-history-entry" style={styles.history}><AppButton label={`查看較早記錄（${start} 則）`} variant="quiet" onPress={revealEarlier} />
         <Text style={styles.hint}>分批展開已載入的記錄</Text></View> : items.length ? <Text testID="chat-history-start" style={styles.hint}>已到本次載入記錄的最早位置</Text> : null}
-      {items.slice(start).map(item => <View key={item.id} testID="chat-timeline-entry" nativeID={`chat-entry-${item.id}`} style={styles.item}>{renderItem(item)}</View>)}
+      {items.slice(start).map(item => <TimelineEntry key={item.id} id={item.id} scopeKey={motionScope} arriving={arrivingId === item.id}>{renderItem(item)}</TimelineEntry>)}
     </AppScrollView>
     {!atLatest ? <View testID="chat-return-latest" pointerEvents="box-none" style={styles.returnOverlay}>
       <Pressable accessibilityRole="button" accessibilityLabel="回到最新" onPress={followLatest}
@@ -100,6 +113,14 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
         <AppIcon name="arrow-down" size={20} color={chatColors.ink} />
       </Pressable>
     </View> : null}
+  </View>;
+}
+
+function TimelineEntry({ id, scopeKey, arriving, children }: { id: string; scopeKey: string; arriving: boolean; children: ReactNode }) {
+  // Keep the original arrival decision throughout this mount, including streaming updates.
+  const [animateOnMount] = useState(arriving);
+  return <View testID="chat-timeline-entry" nativeID={`chat-entry-${id}`} style={styles.item}>
+    <MotionEntrance triggerKey={id} scopeKey={scopeKey} preset="message" animateOnMount={animateOnMount}>{children}</MotionEntrance>
   </View>;
 }
 

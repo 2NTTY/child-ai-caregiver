@@ -43,6 +43,7 @@ function ChatContents({ compact }: { compact: boolean }) {
   </>;
   return <>
     <ChatTimeline items={child ? preview.messages : []} recentLimit={6} compact={compact} header={header} scrollRef={scrollRef} controlsRef={timelineRef} followRequest={preview.followRequest}
+      newReplyId={preview.messages.find(message => message.id === preview.followRequest && message.role === "assistant")?.id}
       renderItem={message => <ChatMessage message={message} testID={message.kind === "intro" ? "chat-answer" : message.id === `${child?.id}-question` ? "chat-question" : message.kind === "local" ? "chat-local-message" : undefined}
         onLocateSource={locateSource} onStop={() => preview.stop(message.id)}>
         {message.kind === "intro" && child ? <>

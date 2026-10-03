@@ -21,12 +21,13 @@ export function PreparationCard({model, actions}: {model: SummaryViewModel; acti
   const questions = useFieldArray({control, name: 'questions'}), checklist = useFieldArray({control, name: 'checklist'});
   const values = useWatch({control}), parsed = preparationFormSchema.safeParse(values);
   const stale = summaryBasisChanged(basis.current, page);
-  const editable = model.online && !model.busy && !model.readFailed && !model.pending && model.access === 'editable' && page.canManage;
+  const fieldsAvailable = model.online && !model.readFailed && !model.pending && model.access === 'editable' && page.canManage;
+  const editable = fieldsAvailable && !model.busy;
   const appointmentValid = !values.appointmentTaskId || page.appointments.some(task => task.id === values.appointmentTaskId);
   useEffect(() => {setShared(false); setBasisConsent(false);}, [model.confirmationEpoch]);
   function edit(reviewChange = false) {actions.markDirty(); setShared(false); setBasisConsent(false); if (!reviewChange) setValue('reviewed', false, {shouldDirty: true});}
   function field(name: `questions.${number}.text` | `checklist.${number}.text`, label: string) {return <Controller name={name} control={control} render={({field: input, fieldState}) => <View>
-    <AppTextField ref={input.ref} label={label} accessibilityLabel={label} value={input.value} multiline disabled={!editable} error={!!fieldState.error} onBlur={input.onBlur} onChangeText={value => {input.onChange(value); edit();}} />
+    <AppTextField ref={input.ref} label={label} accessibilityLabel={label} value={input.value} multiline disabled={!fieldsAvailable} editable={editable} error={!!fieldState.error} onBlur={input.onBlur} onChangeText={value => {if (!editable) return; input.onChange(value); edit();}} />
     {fieldState.error ? <HelperText type="error">{fieldState.error.message}</HelperText> : null}</View>} />;}
   const appointmentOptions = [{value: '', label: '沒有指定預約'}, ...page.appointments.map(task => ({value: task.id, label: `${task.title} · ${summaryTime(task.occurrence.dueAt, task.occurrence.timeZone)}`})), ...(!appointmentValid && values.appointmentTaskId ? [{value: values.appointmentTaskId, label: '原預約已不在目前清單（保留草稿）'}] : [])];
   return <SectionCard testID="summary-preparation"><SectionHeader density="compact" title="家庭共享到診準備" icon="clipboard-check-outline" subtitle="問題、清單、預約選擇及核對標記會共享給有權讀取這個孩子的家庭成員。" />

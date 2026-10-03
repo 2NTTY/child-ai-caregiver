@@ -37,8 +37,8 @@ function MemoryWorkspace({ childId, role, sourceChanged, expired, online, loadin
     <AppTabPanel tabsId={tabsId} tabKey="summary" active={!loading && tab === "summary"}><MemorySummaryCard summary={preview.data.summary} /></AppTabPanel>
     <View style={[styles.columns, stacked && styles.stack, (loading || tab === "summary") && styles.hidden]}>
       <View style={[styles.listColumn, stacked && styles.stackedColumn]}>
-        <AppTabPanel tabsId={tabsId} tabKey="facts" active={tab === "facts"}><MemoryFactList preview={preview} role={role} disabled={disabled} /></AppTabPanel>
-        <AppTabPanel tabsId={tabsId} tabKey="topics" active={tab === "topics"}><MemoryTopicList preview={preview} role={role} disabled={disabled} /></AppTabPanel>
+        <AppTabPanel tabsId={tabsId} tabKey="facts" active={tab === "facts"}><MemoryFactList preview={preview} role={role} disabled={disabled} scopeKey={`${childId}:${role}`} motionActive={!loading && tab === "facts"} /></AppTabPanel>
+        <AppTabPanel tabsId={tabsId} tabKey="topics" active={tab === "topics"}><MemoryTopicList preview={preview} role={role} disabled={disabled} scopeKey={`${childId}:${role}`} motionActive={!loading && tab === "topics"} /></AppTabPanel>
       </View>
       <View style={[styles.editorColumn, stacked && styles.stackedColumn]}><MemoryEditorPanel preview={preview} role={role} online={online && !loading} /></View>
     </View>

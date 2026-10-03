@@ -1,5 +1,5 @@
 import { brand } from "../../branding";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { PageFrame } from "../PageFrame";
@@ -9,12 +9,23 @@ import { chineseFont, colors, radius, spacing, typeScale , readingType } from ".
 import { ProfileForm } from "./ProfileForm";
 import { ProfileDataSummary, ProfileRevisionSummary } from "./ProfileSummary";
 import { StatusAnnouncement } from "../StatusAnnouncement";
+import { MotionReveal } from "../../motion";
 
-export function ProfileView({ model, actions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false }: {
+export function ProfileView({ model, actions: sourceActions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false }: {
   model: ProfileViewModel; actions: ProfileActions; childPicker: ReactNode; writeNotice: ReactNode;
   previewControls: ReactNode; onOpenCare: () => void; childDeletionActive?: boolean;
 }) {
   const [width, setWidth] = useState(0);
+  const [revisionTrigger, setRevisionTrigger] = useState<number | null>(null);
+  const requestSerial = useRef(0);
+  const actions: ProfileActions = {...sourceActions, submitReviewed: () => {
+    if (model.intent === 'save') setRevisionTrigger(++requestSerial.current);
+    sourceActions.submitReviewed();
+  }};
+  const revealEligible = model.online && !model.reading && !model.needsRefresh && model.access !== 'lost'
+    && model.operation.state === 'saved' && !!model.current?.data;
+  const revealTrigger = model.operation.state === 'saving' || revealEligible ? revisionTrigger : null;
+  const scopeKey = JSON.stringify([model.child?.id ?? 'no-child', model.access]);
   const stacked = width < 940;
   const pending = childDeletionActive || model.operation.state === "saving" || model.operation.state === "unknown";
   const conflict = model.operation.state === "conflict";
@@ -40,7 +51,8 @@ export function ProfileView({ model, actions, childPicker, writeNotice, previewC
         <SectionCard><SectionHeader density="compact" title={model.child ? model.child.name : "尚未有孩子"}
           action={model.child ? <TextLink label="查看照顧記錄" onPress={onOpenCare} /> : undefined} />
           {model.child ? <>
-            {model.reading ? <Text style={styles.body}>檔案正在讀取，草稿暫停確認。</Text> : model.current ? <ProfileRevisionSummary revision={model.current} /> : <Text style={styles.body}>沒有可顯示的檔案。</Text>}
+            {model.reading ? <Text style={styles.body}>檔案正在讀取，草稿暫停確認。</Text> : null}
+            <MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown ? <ProfileRevisionSummary revision={shown} /> : !model.reading ? <Text style={styles.body}>沒有可顯示的檔案。</Text> : null}</MotionReveal>
             <AppButton label="重新讀取檔案" variant="quiet" onPress={actions.refresh} disabled={!model.online || model.reading || pending} />
           </> : <Text style={styles.body}>可從下方新增第一位合成孩子。正式建立孩子仍須接既有孩子 API；本頁不會保存真家庭資料。</Text>}
           {model.access === "read_only" ? <Text style={styles.notice}>目前是 viewer 唯讀角色，可以查看檔案及歷史；不能更正或刪除。</Text> : null}

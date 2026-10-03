@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { brand } from "../branding";
+import { MotionEntrance } from "../motion";
 import { BrandLogo } from "./BrandLogo";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { Text } from "react-native-paper";
@@ -36,9 +37,9 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
     <KeyboardAvoidingView style={styles.content} behavior={Platform.OS === "ios" ? "padding" : undefined}>{children}</KeyboardAvoidingView>
     {railOpen ? <Modal visible transparent animationType="none" onRequestClose={() => setRailOpen(false)}>
       <View style={styles.overlay}><View accessible={false} onStartShouldSetResponder={() => true} onResponderRelease={() => setRailOpen(false)} style={styles.scrim} />
-        <View accessibilityViewIsModal accessibilityLabel="照顧上下文" style={[styles.drawer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <MotionEntrance preset="dialog" triggerKey="context-drawer" scopeKey={`${model.caregiverName}:${model.selectedChildId}`} animateOnMount accessibilityViewIsModal accessibilityLabel="照顧上下文" style={[styles.drawer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
           <RightRail model={model} actions={actions} home={pathname === "/"} overlay onClose={() => setRailOpen(false)} />
-        </View></View>
+        </MotionEntrance></View>
     </Modal> : null}
   </View>;
 }

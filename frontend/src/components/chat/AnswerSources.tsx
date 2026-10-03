@@ -9,6 +9,7 @@ import { AppButton } from "../ui";
 import { CitationMarker } from "./CitationMarker";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 import { locateCitationSource } from "./locateCitationSource";
+import { MotionDisclosure } from "../../motion";
 
 type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
 const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string, anchor?: RefObject<View | null>): void } | null>(null);
@@ -170,18 +171,18 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
                 onPress={() => onOpenSource(selected.id)} /> : <Text selectable style={styles.body}>{selected.url}</Text>
                 : <Text style={styles.meta}>沒有可開啟的真實來源連結。</Text>}
             </View>
-            <View style={[styles.detailGroup, styles.dividedGroup]}>
+            <View style={[styles.technicalGroup, styles.dividedGroup]}>
               <Pressable accessibilityRole="button" accessibilityLabel="版本與核對資料" accessibilityState={{ expanded: technicalOpen }}
                 aria-expanded={technicalOpen} aria-controls={`${groupId}-technical`} onPress={() => setTechnicalOpen(value => !value)} style={styles.technicalToggle}>
                 <Text style={styles.technicalTitle}>{technicalOpen ? "收起" : "查看"}版本與核對資料</Text>
               </Pressable>
-              {technicalOpen ? <View nativeID={`${groupId}-technical`} testID="source-detail-group" style={styles.detailGroup}>
+              <MotionDisclosure expanded={technicalOpen} scopeKey={`${groupId}:${selected.id}`}><View nativeID={`${groupId}-technical`} testID="source-detail-group" style={[styles.detailGroup, styles.technicalContents]}>
                 <Detail technical label="原來源版本" value={selected.versionId} />
                 <Detail technical label="原來源版本校驗" value={selected.versionHash} />
                 <Detail technical label="核對時間" value={sourceTime(selected.checkedAt)} />
                 <Detail technical label="擷取時間" value={sourceTime(selected.fetchedAt)} />
                 <Detail technical label="最後成功核對" value={sourceTime(selected.lastSuccessfulCheckAt)} />
-              </View> : null}
+              </View></MotionDisclosure>
             </View>
           </AppScrollView> : null}
         </View> : <Text style={styles.meta}>本次沒有可核對的來源片段。</Text>}
@@ -218,4 +219,5 @@ const styles = StyleSheet.create({
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.meta },
   technicalTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600" },
   technicalToggle: { minHeight: 48, justifyContent: "center", alignSelf: "flex-start" },
+  technicalGroup: { minWidth: 0 }, technicalContents: { paddingTop: spacing.sm },
 });

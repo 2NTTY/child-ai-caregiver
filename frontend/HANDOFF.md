@@ -542,3 +542,56 @@ FE-W08 沿 FE-W07 `1e1fb7b`（draft PR #65）隔離接續，只處理使用者�
 後續流程檢查發現原全域離頁 guard 會在切換孩子時誤問本人模型草稿是否捨棄，與個人設定保留不符；已按作用域修正，並驗本人草稿／未知原操作跨孩子保留、route 仍阻擋未知操作。照片及來源的孩子草稿仍須明確捨棄才切換，舊腳本亦補上真正確認；沒有取消其保護。
 
 [表單及範圍證據](verification/fe-w35-commercial/build-checks.json)列明實際通過項、首輪失敗及產物版本。typecheck、35 路由 Web export、29 資產 Android bundle 通過；Android 只驗 bundle。沒有真 API、模型、通知、正式 E2E 或原生真機呼叫，沒有量測家長成效或宣稱正式產品驗收。前四階段的採納實作及本聊天的第五階段交接已齊；主聊天可沿本節開始正式接線。
+
+
+<a id="semantic-motion"></a>
+## FE-W37 全站語意動效
+
+2026-10-04，基線 master `c51dd52e0cdea03b1d412a10d08ac6761e010d9b`，分支 `dot/fe-w37-motion-system`。使用者要求以前端分聊天的邊界接續，依目前動效指南完成既有畫面，僅使用一個 PR，並授權必要驗收後以 2NTTY 提交及合併。本次沒有修改 Server、正式 App、根依賴或業務協定。
+
+### 已實作的接點
+
+- `src/motion/` 集中時長、動態偏好、內容幕布、孩子範圍、清單進退／FLIP、進場、說明收合、選中標記及確認回饋；採納規則見 [MOTION_SYSTEM](MOTION_SYSTEM.md)。
+- 單一 MotionProvider 在 `app/_layout.tsx` 的 PaperProvider 外，Portal 與導航保護浮層共用同一偏好。AppShell／NativeAppShell 保留既有 router／provider；Web 同級切頁僅新工作區 +10 px／200 ms 進場，不複製活的 Slot 或保留第二棵可操作路由。
+- 孩子切換的內容窗格用完整 03；舊範圍立即不可見及不可操作，新內容在遮滿時交接。側欄及底部導航保留。局部結果則以 scope、語意 contentKey 及明確手動 intent 配合，不以動畫 callback 提交業務結果。
+- care／tasks／memory／family 的既有列表採穩定 ID、單項退出及受影響存續列補位；載入、分頁、篩選重設不當成新增。care 的窄屏清單保留掛載並恢復錨點，04 只用在既有詳情往返。tasks 沒有新增改名或刪除業務操作，排序維持原契約。
+- 摘要唯讀結果與到診草稿分開；忙碌期間文字欄位用唯讀保留焦點，保存及清單操作鎖仍維持。照片／私人來源的候選更新不代表確認共享，只有已有確認結果才有成功底色。檔案更新保留原表單和資料版本判斷。
+- 新 assistant 訊息依明確的新 ID 只進場一次；初始歷史、前插歷史、同 ID 串流及重掛不重播。活動、詳情、來源技術資料採保留掛載的收合。引用定位、返回引用句及來源箭嘴保持立即執行。
+- 原有 Paper Switch／控件能力沿用；AppDialog 取消重複的 Paper 動畫，只動畫呈現表面，保留 RN Modal 的焦點及關閉行為。
+
+### 審查發現及修正
+
+1. 舊 swapping effect 可能在同次 commit 的新 cover 或取消後重啟 reveal：改用 generation／scope／epoch、operation、intent 及 target 一致性守衛；舊 swap 不能採用新 token 授權自己。
+2. 原生減少動畫的初值 Promise 可能覆蓋較新的系統事件：先訂閱事件，以 preference revision 拒絕過期初值。
+3. 減少動畫或不播放進退時的刪除曾先卸載列而失去焦點：同 scope 先保留至 layout 中轉移焦點，再立即移除；跨 scope 仍即時清除。
+4. 展開途中反向收合曾先跳回端點：改為從目前動畫高度接續。
+5. 裝飾幕布與標記明確加 Web `aria-hidden`；呈現探針只使用不透明版本序號，不將正文或 scope 原值放入 data 屬性。
+
+上述四項生命週期問題已完成限定源碼覆核及純 guard 測試，不能當作真實 React DOM／逐幀互動驗收。
+
+### 實際檢查與阻塞
+
+[最終檢查記錄](verification/fe-w37-motion/final-2026-10-03T19-25Z/build-checks.json)與同目錄 [source manifest](verification/fe-w37-motion/final-2026-10-03T19-25Z/source-manifest.json)固定被測檔案及產物 hash。
+
+- `npm run typecheck` 通過。
+- `node --test src/motion/lifecycle.test.mts` 四項純判斷測試通過。
+- `npm run build:web` 通過，35 個路由。
+- `npm run build:android-ui` 通過，29 個資產；只證明 bundle 相容性。
+- `scripts/verify-motion-system.mjs` 語法檢查通過，但未在瀏覽器執行。
+
+第一次 Web 建置因雲端預設 HOME 目錄不可寫而失敗；使用專用暫存 HOME／XDG 及關閉 Expo telemetry 的行程設定後通過，沒有改全域系統設定。Chromium 正常啟動及獲批的權限重試均因 `ProcessSingleton socket() Operation not permitted` 受阻。實際 UI 為 **0 頁面、0 案例、0 截圖**；沒有避開限制、公開部署私人程式或改用使用者電腦。僅停止本輪建立的本地預覽程序。
+
+### 補驗與合併門檻
+
+保留本 PR 為 draft；本包狀態是已實作、建置通過、必要互動待驗收，**不是完成或 merge-ready**。在可正常啟動瀏覽器的獲准環境，先用既有 lockfile 安裝、建置並提供本地 preview，再執行：
+
+```sh
+BROWSER_EXECUTABLE=<installed Chromium executable> \
+FRONTEND_PREVIEW_URL=<local preview URL> \
+FRONTEND_TEST_VERSION=<exact branch commit> \
+node scripts/verify-motion-system.mjs
+```
+
+11 組尚待執行：layout、navigation、summary、care、tasks、photos、states、child、reduced、dialog、chat。四尺寸及操作範圍已獲准，首次失敗停批、保存證據並定位；後續只補受影響部分，不重跑已有效通過的無關項目。準備好的腳本仍可能在實跑後發現 selector 或時序修正需求，不把未執行的斷言當成證據。
+
+必要互動通過、審查修正齊備、主線差異已重新核對後，才在這一個 PR 上完成合併。正式 API／真模型／通知、真身份、原生裝置及讀屏仍按原分工另驗；本輪沒有部署或啟動 P3。

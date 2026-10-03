@@ -13,6 +13,7 @@ import { AppButton, SectionCard, SectionHeader } from "../ui";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import type { LocateAnswerSource } from "../chat/AnswerSources";
 import { ChatMessage } from "../chat/ChatMessage";
+import { MotionDisclosure } from "../../motion";
 
 type Tone = "neutral" | "saved" | "warning" | "error";
 const sharedConfirmationLabel = "我已核對內容及對象，明確同意寫入家庭共享資料";
@@ -102,10 +103,10 @@ function ProposalCard({ proposal, model, actions }: { proposal: AgentProposalVie
 
 function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
   const [expanded, setExpanded] = useState(false);
-  return <View style={styles.section}>
+  return <View style={[styles.section, styles.disclosureSection]}>
     <AppButton label={expanded ? "收起運行詳情" : "查看運行詳情"} variant="quiet"
       onPress={() => setExpanded(value => !value)} style={styles.fullButton} />
-    {expanded ? <>
+    <MotionDisclosure expanded={expanded} scopeKey={run.id}><View style={styles.details}>
       {run.counts === null ? <Text style={styles.meta}>統計未知，不能當作零用量。</Text> : null}
       <View style={styles.metrics}>
         <Text style={styles.meta}>AI 調用：{run.counts === null ? "未知" : run.counts.modelCalls}</Text>
@@ -123,7 +124,7 @@ function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
           : "工具已回報成功；照護事項的完成狀態仍須另行核對。"}</Text> : null}
         {tool.status === "unknown" ? <Text style={styles.warning}>工具結果未知，請查核原運行，不能以新操作代替核對。</Text> : null}
       </View>)}
-    </> : null}
+    </View></MotionDisclosure>
   </View>;
 }
 
@@ -185,6 +186,7 @@ export function AgentRunView({ model, actions, onLocateSource }: { model: AgentR
 const styles = StyleSheet.create({
   root: { minWidth: 0, width: "100%" }, card: { gap: spacing.lg, minWidth: 0 },
   section: { gap: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine },
+  disclosureSection: { gap: 0 }, details: { gap: spacing.md, minWidth: 0, paddingTop: spacing.md },
   entry: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, padding: spacing.md, gap: spacing.md, minWidth: 0 },
   top: { flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
   title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, flexShrink: 1, minWidth: 0 },
