@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { assertFits, launchPreviewBrowser, openPreview } from "./preview-browser.mjs";
 
-const directory = resolve(process.env.FRONTEND_PROOF_DIR ?? "verification/fe-w31-home-motion");
+const directory = resolve(process.env.FRONTEND_PROOF_DIR ?? "verification/fe-w31-motion-stability");
 const browser = await launchPreviewBrowser(), failures = [], passed = [], metrics = [];
 const greetingName = "你好，媽媽！";
 const homeLink = page => page.getByRole("link", { name: "主頁", exact: true });
@@ -28,7 +28,6 @@ async function checkDocked(page, label) {
   const card = cardFor(page), control = await describe(card), header = await page.getByTestId("mobile-home-header").boundingBox();
   assert.equal(control.avatar.width, 48); assert.equal(control.avatar.height, 48);
   assert.equal(control.nameSize, "18px"); assert.equal(control.ageSize, "14px");
-  assert.equal(control.copyGrow, "0");
   assert.ok(control.button.height >= 72 && control.button.width >= 48);
   assert.ok(control.button.width <= 200 && control.arrow.x - control.copy.right <= 9, label + ": chevron hugs the child copy");
   assert.equal(control.background, "rgba(0, 0, 0, 0)");
@@ -45,9 +44,10 @@ async function observeMotion(page) {
       const box = node => { const b = node.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height, right: b.right }; };
       const hidden = greeting.getAttribute('aria-hidden') === 'true';
       frames.push({ at: performance.now() - began, hidden, opacity: Number(getComputedStyle(greeting).opacity), card: box(card),
-        frameOpacity: Number(getComputedStyle(frame).opacity), frame: box(frame), avatar: box(button.children[0]), arrow: box(button.children[2]) });
+        frameOpacity: Number(getComputedStyle(frame).opacity), frame: box(frame), avatar: box(button.children[0]), arrow: box(button.children[2]),
+        position: getComputedStyle(card).position, copyBasis: getComputedStyle(button.children[1]).flexBasis, greetingChildren: greeting.childElementCount });
       if (hidden) settled++; else settled = 0;
-      if (settled >= 3) resolve(frames);
+      if (settled >= 12) resolve(frames);
       else if (performance.now() - began > 12000) reject(new Error('Homepage animation did not settle'));
       else requestAnimationFrame(sample);
     }
@@ -56,7 +56,7 @@ async function observeMotion(page) {
 }
 try {
   await mkdir(directory, { recursive: true });
-  for (const [width, reduced] of [[649, false], [390, false], [320, false], [390, true]]) {
+  for (const [width, reduced] of [[649, false], [605, false], [390, false], [320, false], [390, true]]) {
     const suffix = width + (reduced ? "-reduced" : "");
     const page = await openPreview(browser, "/", width, width === 320 ? 720 : 844, failures);
     await page.emulateMedia({ reducedMotion: reduced ? "reduce" : "no-preference" });
@@ -88,16 +88,21 @@ try {
     let motionMetrics = null;
     if (motion) {
       const frames = await motion, settledAt = frames.findIndex(frame => frame.hidden), before = frames[settledAt - 1], after = frames[settledAt];
-      const moving = frames.filter(frame => !frame.hidden && frame.card.width < initial.width - 0.5 && frame.card.width > control.card.width + 0.5);
+      const moving = frames.filter(frame => !frame.hidden && frame.card.y < initial.y - 0.5 &&
+        (frame.card.width > control.card.width + 0.5 || frame.card.y > control.card.y + 0.5));
       assert.ok(moving.length >= 5, 'Observe the complete motion rather than only its final screenshot');
       const initialRightGap = frames[0].frame.right - frames[0].arrow.right;
       assert.ok(moving.every(frame => frame.frame.right - frame.arrow.right >= -1 && frame.frame.right - frame.arrow.right <= initialRightGap + 1), 'The frame right edge stays beside the moving arrow');
       assert.ok(moving.some(frame => frame.frameOpacity > 0 && frame.frameOpacity < 1), 'The frame visibly fades while it contracts');
-      assert.ok(moving.some(frame => frame.frameOpacity === 0 && frame.card.width > control.card.width + 8), 'The frame disappears before the child control finishes moving');
+      assert.ok(moving.some(frame => frame.frameOpacity === 0 && frame.card.y > control.card.y + 8), 'The frame disappears before the child control finishes moving');
       assert.ok(Math.abs(after.card.width - before.card.width) <= 2, 'The container cannot jump in width when docking switches');
+      assert.ok(Math.abs(after.card.height - before.card.height) <= 1, 'The card height stays continuous at the last animation frame');
+      const ending = frames.slice(settledAt);
+      assert.ok(ending.every(frame => ["x", "y", "width", "height"].every(key => Math.abs(frame.card[key] - after.card[key]) <= 1)), 'The completed card does not reflow after the animation');
       assert.ok(Math.abs(after.arrow.x - before.arrow.x) <= 2, 'The arrow cannot jump sideways when docking switches');
       assert.ok(Math.abs(after.avatar.x - before.avatar.x) <= 2 && Math.abs(after.avatar.y - before.avatar.y) <= 2, 'The child identity cannot jump at the final frame');
       motionMetrics = { movingFrames: moving.length, finalCardWidthDelta: after.card.width - before.card.width,
+        finalCardHeightDelta: after.card.height - before.card.height, endingFrames: ending.length,
         maximumRightGap: Math.max(...moving.map(frame => frame.frame.right - frame.arrow.right)), finalArrowDelta: after.arrow.x - before.arrow.x,
         finalAvatarDelta: { x: after.avatar.x - before.avatar.x, y: after.avatar.y - before.avatar.y }, frames: frames.filter(frame => frame.opacity < 1 || frame.hidden) };
     }

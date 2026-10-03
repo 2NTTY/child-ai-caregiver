@@ -9,9 +9,9 @@ import { chineseFont, colors, mobileLayout, radius, spacing, typeScale } from ".
 
 const homeAvatarSize = 48, homeArrowSize = 20;
 
-export function ChildPicker({ children, selectedId, onSelect, compact = false, tiny = false, switchOnly = false, shortSwitchLabel = false, homeIdentity = false, homeDocked = false, onHomeContentWidth, loading = false, onOpenChange }: {
+export function ChildPicker({ children, selectedId, onSelect, compact = false, tiny = false, switchOnly = false, shortSwitchLabel = false, homeIdentity = false, loading = false, onOpenChange }: {
   children: HomeChild[]; selectedId: string | null; onSelect: (id: string) => void; compact?: boolean; tiny?: boolean; switchOnly?: boolean; shortSwitchLabel?: boolean;
-  homeIdentity?: boolean; homeDocked?: boolean; onHomeContentWidth?: (width: number) => void; loading?: boolean; onOpenChange?: (open: boolean) => void;
+  homeIdentity?: boolean; loading?: boolean; onOpenChange?: (open: boolean) => void;
 }) {
   const [visible, setVisible] = useState(false);
   const mobile = useWindowDimensions().width < mobileLayout.breakpoint;
@@ -19,11 +19,10 @@ export function ChildPicker({ children, selectedId, onSelect, compact = false, t
   const copy = <><Text numberOfLines={1} style={[styles.name, homeIdentity && styles.homeName]}>{selected?.displayName ?? "尚未有孩子"}</Text>{!compact && selected ? <Text numberOfLines={homeIdentity ? undefined : 1} style={[styles.age, homeIdentity && styles.homeAge]}>{loading ? "正在讀取…" : homeIdentity ? selected.ageSummaryLabel ?? selected.ageLabel : selected.ageLabel}</Text> : null}</>;
   function setOpen(open: boolean) { setVisible(open); onOpenChange?.(open); }
   return <><Pressable accessibilityRole="button" accessibilityLabel={`選擇孩子，目前${selected?.displayName ?? "尚未有孩子"}`} accessibilityState={{ expanded: visible, disabled: children.length === 0 }} aria-expanded={visible} aria-disabled={children.length === 0} disabled={children.length === 0}
-    onPress={() => setOpen(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, homeIdentity && styles.homeIdentity, homeIdentity && homeDocked && styles.homeDocked, visible && !homeIdentity && styles.open, children.length === 0 && styles.disabled, pressed && (homeIdentity ? styles.homePressed : styles.pressed)]}>
+    onPress={() => setOpen(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, homeIdentity && styles.homeIdentity, visible && !homeIdentity && styles.open, children.length === 0 && styles.disabled, pressed && (homeIdentity ? styles.homePressed : styles.pressed)]}>
     {switchOnly ? <><AppIcon name="swap-horizontal" size={20} color={colors.deepTeal} /><Text style={styles.name}>{shortSwitchLabel ? "切換" : "切換孩子"}</Text></> : <>
       <View style={[styles.avatar, compact && styles.avatarCompact, tiny && styles.avatarTiny, homeIdentity && styles.homeAvatar]}><Text style={[styles.initial, homeIdentity && styles.homeInitial]}>{selected?.displayName.slice(0, 1) ?? "育"}</Text></View>
-      <View style={[styles.copy, homeIdentity && homeDocked && styles.homeDockedCopy]}>{homeIdentity ? <View style={styles.homeCopyContent}
-        onLayout={event => onHomeContentWidth?.(event.nativeEvent.layout.width + homeAvatarSize + 2 * spacing.sm + homeArrowSize)}>{copy}</View> : copy}</View>
+      <View style={[styles.copy, homeIdentity && styles.homeCopy]}>{homeIdentity ? <View style={styles.homeCopyContent}>{copy}</View> : copy}</View>
       <AppIcon name="chevron-down" size={homeIdentity ? homeArrowSize : 18} color={visible ? colors.teal : colors.muted} />
     </>}
   </Pressable><Portal><Dialog visible={visible} onDismiss={() => setOpen(false)}><Dialog.Title>選擇孩子</Dialog.Title><Dialog.ScrollArea><ScrollView style={{ maxHeight: 360 }}>
@@ -38,9 +37,8 @@ const styles = StyleSheet.create({
   mobile: { minHeight: mobileLayout.touchTarget },
   mobileCompact: { width: 132 },
   shortSwitch: { paddingHorizontal: spacing.sm, gap: spacing.xs },
-  homeIdentity: { width: "100%", minHeight: 72, paddingHorizontal: 0, backgroundColor: "transparent", borderWidth: 0, borderRadius: radius.small },
-  homeDocked: { width: "auto", alignSelf: "flex-start" },
-  homeDockedCopy: { flexGrow: 0, flexShrink: 1, flexBasis: "auto" },
+  homeIdentity: { width: "auto", alignSelf: "stretch", minHeight: 72, paddingHorizontal: 0, backgroundColor: "transparent", borderWidth: 0, borderRadius: radius.small },
+  homeCopy: { flexBasis: "auto" },
   homeCopyContent: { alignSelf: "flex-start", maxWidth: "100%", gap: 2 },
   homePressed: { opacity: 0.72 },
   open: { borderColor: colors.teal, backgroundColor: colors.white },

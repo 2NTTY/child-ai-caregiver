@@ -5,6 +5,17 @@
 <a id="home-frame-motion"></a>
 ## FE-W31：首頁外框動畫及手機標語（2026-10-03）
 
+<a id="home-motion-stability"></a>
+### 結尾閃動補修
+
+使用者回報初版最後一刻仍會閃一下。本次從 `73437442d6f3c3d1db0a9476d8b9493e69e3ecdb` 接續原分支／draft PR #77。605 px 實際記錄顯示，完成一刻容器由 relative 切成 absolute、高度由 72 變成 168，文字 flexBasis 由 0% 切成 auto，同時移除問候子樹；原逐幀只核對位置接縫，沒有覆核這個高度及排版切換。[改前證據](verification/fe-w31-motion-stability/before-motion-checks.json)。
+
+MobileHomeDashboard 現在初態、過渡及終態都沿同一自然流容器，以 Animated minWidth 從頁寬收至 0，讓內容自然寬度接住收縮；maxWidth、上移、內距及外框 opacity 仍共用 intro。ChildPicker 的首頁 copy 始終沿相同 flexBasis，自動伸展初態、按內容收窄終態；取消初版只在終態採用的 homeDocked／量度回調。問候保持掛載、以 opacity／aria-hidden 隱藏，完成 callback 只更新可讀狀態，不再切定位、flex 或 DOM 子樹。標語字體、圖片、3 秒閱讀／360 ms、外框中途淡出及首次會話規則沿用；沒有加入另一套動畫框架。
+
+649／605／390／320 實際移動幀為 18／17／18／17；末幀寬度、高度及箭嘴位置跳變均為 0，完成後另外 12 幀的容器幾何保持在 1 px 以內。四窄版／390 減少動畫，連同提前離頁、動畫中點擊、1440／1024 工具列及原有選單／切孩子／320 的 150% 文字，共九組局部檢查通過；沒有 runtime error 或真 API 請求。[逐幀及互動](verification/fe-w31-motion-stability/child-control-checks.json)。typecheck、35 路由 Web export及 Android Hermes／30 資產 export 通過，已查看 605 終態運行圖。[建置及源碼校驗](verification/fe-w31-motion-stability/build-checks.json)。修正版的使用者視覺、真登入及原生實機仍待驗。
+
+### 初版交付及當時證據
+
 基線為已合併的 GitHub master `ef0448e2a91dd90790a6ed38f9e0688668760a10`，新分支 `codex/fe-w31-home-motion`，只改 frontend。P2 UI 交接 blob 仍是 `6488b8c53ae58e37a12e7a3683aea94924aa3981`，14 個其他 worktree 沒有 frontend 修改重疊；沒有新依賴、API 或正式 App 修改。交付沿此前已確認的前端賬號 CherylNg-2526。
 
 使用者回報外框右邊沒有跟隨箭嘴收窄，要求兩者一起縮向左上方、外框半途消失；另指定標語只在手機版放大。[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) 不再把動畫外框的終點固定為 62%：由 [ChildPicker](src/components/ChildPicker.tsx) 的首頁文字量度回調取得內容寬度，連同原有頭像／箭嘴／間距計算終點，同一 intro 驅動整個容器的寬度、上移及內距。白底／邊線獨立為不可點擊的裝飾層，在進度 20%–60% 淡出；孩子資訊及選單不跟着淡出。終態沿自然寬度、最大 62%，文字放大仍可重新排版。舊 homeTransition 文字 flex 動畫由整個容器的寬度動畫取代；一般工具列 ChildPicker 的尺寸、字體及功能保留。

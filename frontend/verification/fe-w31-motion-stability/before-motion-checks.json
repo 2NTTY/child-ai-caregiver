@@ -1,0 +1,541 @@
+{
+  "at": "2026-10-03T07:56:04.869Z",
+  "width": 605,
+  "ending": {
+    "before": {
+      "at": 3356.899999976158,
+      "hidden": false,
+      "card": {
+        "x": 16,
+        "y": 149.015625,
+        "width": 170.015625,
+        "height": 72,
+        "top": 149.015625,
+        "right": 186.015625,
+        "bottom": 221.015625,
+        "left": 16
+      },
+      "button": {
+        "x": 16,
+        "y": 149.015625,
+        "width": 170.015625,
+        "height": 72,
+        "top": 149.015625,
+        "right": 186.015625,
+        "bottom": 221.015625,
+        "left": 16
+      },
+      "arrow": {
+        "x": 166.015625,
+        "y": 175.015625,
+        "width": 20,
+        "height": 20,
+        "top": 175.015625,
+        "right": 186.015625,
+        "bottom": 195.015625,
+        "left": 166.015625
+      },
+      "position": "relative",
+      "copyBasis": "0%",
+      "copyGrow": "1",
+      "greetingChildren": 1
+    },
+    "after": {
+      "at": 3373.699999988079,
+      "hidden": true,
+      "card": {
+        "x": 16,
+        "y": 101,
+        "width": 170.234375,
+        "height": 168,
+        "top": 101,
+        "right": 186.234375,
+        "bottom": 269,
+        "left": 16
+      },
+      "button": {
+        "x": 16,
+        "y": 149,
+        "width": 170.234375,
+        "height": 72,
+        "top": 149,
+        "right": 186.234375,
+        "bottom": 221,
+        "left": 16
+      },
+      "arrow": {
+        "x": 166.234375,
+        "y": 175,
+        "width": 20,
+        "height": 20,
+        "top": 175,
+        "right": 186.234375,
+        "bottom": 195,
+        "left": 166.234375
+      },
+      "position": "absolute",
+      "copyBasis": "auto",
+      "copyGrow": "0",
+      "greetingChildren": 0
+    },
+    "settled": [
+      {
+        "at": 3373.699999988079,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3390.5999999940395,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3406.5999999940395,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3424.0999999940395,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3440.699999988079,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3457.399999976158,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3473.699999988079,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3489.899999976158,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3507,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3523.7999999821186,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3539.7999999821186,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      },
+      {
+        "at": 3557.399999976158,
+        "hidden": true,
+        "card": {
+          "x": 16,
+          "y": 101,
+          "width": 170.234375,
+          "height": 168,
+          "top": 101,
+          "right": 186.234375,
+          "bottom": 269,
+          "left": 16
+        },
+        "button": {
+          "x": 16,
+          "y": 149,
+          "width": 170.234375,
+          "height": 72,
+          "top": 149,
+          "right": 186.234375,
+          "bottom": 221,
+          "left": 16
+        },
+        "arrow": {
+          "x": 166.234375,
+          "y": 175,
+          "width": 20,
+          "height": 20,
+          "top": 175,
+          "right": 186.234375,
+          "bottom": 195,
+          "left": 166.234375
+        },
+        "position": "absolute",
+        "copyBasis": "auto",
+        "copyGrow": "0",
+        "greetingChildren": 0
+      }
+    ]
+  },
+  "failures": []
+}

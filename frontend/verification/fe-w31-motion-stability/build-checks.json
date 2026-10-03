@@ -1,0 +1,112 @@
+{
+  "at": "2026-10-03T08:14:02.959Z",
+  "scope": "Targeted local synthetic homepage ending stability only. No real authentication, API, model, notification or native device acceptance.",
+  "baseline": "73437442d6f3c3d1db0a9476d8b9493e69e3ecdb",
+  "branch": "codex/fe-w31-home-motion",
+  "pullRequest": 77,
+  "githubAccount": "CherylNg-2526",
+  "userFeedback": "The homepage child intro flashes at the end.",
+  "environment": {
+    "node": "v24.11.0",
+    "browser": "Microsoft Edge 154.0.4258.48",
+    "reactNative": "0.86.3",
+    "expo": "57.0.24"
+  },
+  "before": {
+    "reportSha256": "edcf13729f620c8f22a70dde02caa5a5dd276cc062b56beea767ed86a82a1c93",
+    "width": 605,
+    "heightDelta": 96,
+    "position": [
+      "relative",
+      "absolute"
+    ],
+    "copyBasis": [
+      "0%",
+      "auto"
+    ],
+    "greetingChildren": [
+      1,
+      0
+    ]
+  },
+  "checks": {
+    "typecheck": "passed",
+    "webExport": {
+      "routes": 35,
+      "bundle": "entry-2fb40e2eb3cc634b732bc438150d3971.js",
+      "sha256": "a88f194f237b121cac760c20e50cad3ab9a5e1905cbe612a7072f31797ce1bf2"
+    },
+    "androidExport": {
+      "assets": 30,
+      "bundle": "entry-40e4b6d2816b6ede3d6349e1083fcbca.hbc",
+      "sha256": "6fdcb2cf39643be893311eef420a810baca85315d0fcb96b50b6cb5d90c324ba"
+    },
+    "localUi": {
+      "passed": 9,
+      "failures": [],
+      "reportSha256": "f21b01747103ed13f7494e0d1e60f49e87fa87b24bea0f7b0e6d898234dc4fb3"
+    }
+  },
+  "motion": [
+    {
+      "width": 649,
+      "movingFrames": 18,
+      "endingFrames": 12,
+      "finalCardWidthDelta": 0,
+      "finalCardHeightDelta": 0,
+      "finalArrowDelta": 0
+    },
+    {
+      "width": 605,
+      "movingFrames": 17,
+      "endingFrames": 12,
+      "finalCardWidthDelta": 0,
+      "finalCardHeightDelta": 0,
+      "finalArrowDelta": 0
+    },
+    {
+      "width": 390,
+      "movingFrames": 18,
+      "endingFrames": 12,
+      "finalCardWidthDelta": 0,
+      "finalCardHeightDelta": 0,
+      "finalArrowDelta": 0
+    },
+    {
+      "width": 320,
+      "movingFrames": 17,
+      "endingFrames": 12,
+      "finalCardWidthDelta": 0,
+      "finalCardHeightDelta": 0,
+      "finalArrowDelta": 0
+    }
+  ],
+  "sourceSha256": {
+    "src/components/MobileHomeDashboard.tsx": "d19b2379a975220343f64c0c5419dff34730ec9a1ff7bbe0e1d7edee27aba985",
+    "src/components/ChildPicker.tsx": "586472d2940312b079933d5682486fb9ed28a6c1aa6813dd65baf40cf2e94542",
+    "scripts/verify-home-introduction.mjs": "9e6cdbbdf6216fc7d4df9abfe985592dcd6797f02b1b35e56a6b32778771be9b"
+  },
+  "screenshotSha256": {
+    "child-320-large-text.png": "ea677141fa7cec57b324cc8d1e7cac6d20bdf67a7781e394eff47e4b78ee497b",
+    "child-docked-320.png": "5bb12331c238f6eed7d4b52e2c2a7e0ca3bc9a38e54fbe2ff4ee0d434a53999a",
+    "child-docked-390-reduced.png": "c666575389cf5f657bef2c262e938b94569f2bfc058d3bb872d0102a65dae58c",
+    "child-docked-390.png": "0dbfe1a4ccc35e9e279a4145b5bc926d2fdb47a327a81ae4ac408135e6581979",
+    "child-docked-605.png": "dd506b57b7fdca245a2c91e0f0c207be9339565ecd4c1490b9c9863b152eee6e",
+    "child-docked-649.png": "6b4ae5fdd2fb33da1786bb1e2a83c926e1b064451c015ab77509dc7d89a70f6a",
+    "child-open-320.png": "60549527379781ef1ee5188927336221c6fd643f86d628af79dbcee3127c18a5",
+    "child-open-390-reduced.png": "56eb1d1ffa9c7649ffe8ec718466276b636e7600fa189951c445cb1f6ea2b2f1",
+    "child-open-390.png": "66a1c3b3af17b139bd37fc021b65ae0317c321eb80639df31d0a6acc1a3df9e0",
+    "child-open-605.png": "be3233b2f96bd8a0bd356e624db99b1960b4b728a84ae5d9788de0dce9a75227",
+    "child-open-649.png": "f253b028851038d9cf8d17b36039eff9786e0fde45fc665b31d3395abcd55129",
+    "child-reading-320.png": "e3cd517c8505624e9e27a7a21112abea7aa0b375b0f96d4070fb7030d194a9a6",
+    "child-reading-390-reduced.png": "f3e7bee3fb3a71ed81d4941cc0c559cda903f2e50380e065458ba6a29ebaa017",
+    "child-reading-390.png": "15bb2d173ccf03e410e7bc0342164480bd762bd2170bfba595b2369bfa696e79",
+    "child-reading-605.png": "35b70b1a0135696bbb5235a8aa571436fb89aad72170b5daca378839436a7b8a",
+    "child-reading-649.png": "d9d25ab9d0884c203c781ef711d7c85baecd304e734aadabd26298ad5cb86e92"
+  },
+  "limitations": [
+    "Stability checks measure geometry and layout; they do not claim automated pixel-flicker detection.",
+    "Revised user visual confirmation remains pending.",
+    "Real login and native device behavior remain pending."
+  ]
+}
