@@ -81,7 +81,9 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
     if (!closing && selectedId !== id) setTechnicalOpen(false);
   }
   function returnToCitation() {
-    if (origin?.anchor.current && sources.some(source => source.id === origin.sourceId)) onLocateSource?.(origin.anchor.current);
+    if (origin?.anchor.current && sources.some(source => source.id === origin.sourceId)) {
+      onLocateSource?.(origin.anchor.current, undefined, origin.anchor.current);
+    }
     else setOrigin(null);
   }
   return <CitationContext.Provider value={{ sources, locate }}>

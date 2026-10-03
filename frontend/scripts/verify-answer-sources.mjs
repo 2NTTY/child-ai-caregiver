@@ -3,7 +3,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {launchPreviewBrowser,openPreview,assertFits,selectOption} from './preview-browser.mjs';
 const directory=resolve(process.env.FRONTEND_PROOF_DIR??'verification/fe-w33-reading');await mkdir(directory,{recursive:true});
-const browser=await launchPreviewBrowser(),failures=[],passed=[],appearance=[];
+const browser=await launchPreviewBrowser(),failures=[],passed=[],appearance=[],returns=[];
 const titles=['記錄時間及原文（合成示例）','睡前流程討論（合成示例）','來源日期及適用範圍（合成示例）'];
 const sourceTab=(answer,number,title)=>answer.getByRole('button',{name:`來源【${number}】：${title}`,exact:true});
 const sourceButtons=answer=>answer.getByRole('button',{name:/^來源【/});
@@ -11,6 +11,27 @@ async function instantJump(marker,panel){await marker.scrollIntoViewIfNeeded();c
 async function visibleHeader(details,title){await details.getByText(title,{exact:true}).evaluate(async element=>{await new Promise(resolve=>requestAnimationFrame(resolve));const bounds=element.getBoundingClientRect();let parent=element.parentElement;while(parent){const style=getComputedStyle(parent);if(['auto','scroll'].includes(style.overflowY)&&parent.scrollHeight>parent.clientHeight){const frame=parent.getBoundingClientRect();if(bounds.top<frame.top-1||bounds.bottom>frame.bottom+1)throw new Error('Opened source heading is outside a scroll viewport');}parent=parent.parentElement;}});}
 async function horizontalState(tab){return tab.evaluate(element=>{let parent=element.parentElement;while(parent){const style=getComputedStyle(parent);if(parent.hasAttribute('data-overlayscrollbars-viewport')||['auto','scroll'].includes(style.overflowX)){const bounds=element.getBoundingClientRect(),frame=parent.getBoundingClientRect();return {left:parent.scrollLeft,overflow:parent.scrollWidth>parent.clientWidth+1,inside:bounds.left>=frame.left-1&&bounds.right<=frame.right+1,width:frame.width};}parent=parent.parentElement;}throw new Error('No horizontal source viewport');});}
 async function located(tab){assert.equal(await tab.evaluate(element=>element===document.activeElement),true);assert.equal((await horizontalState(tab)).inside,true);await tab.evaluate(element=>{const bounds=element.getBoundingClientRect();let parent=element.parentElement;while(parent){const style=getComputedStyle(parent);if(['auto','scroll'].includes(style.overflowY)&&parent.scrollHeight>parent.clientHeight){const frame=parent.getBoundingClientRect();if(bounds.top<frame.top-1||bounds.bottom>frame.bottom+1)throw new Error('Source tab is outside its vertical viewport');return;}parent=parent.parentElement;}});}
+async function quoteState(marker){return marker.evaluate(element=>{
+ const bounds=element.getBoundingClientRect(),style=getComputedStyle(element);let parent=element.parentElement;
+ while(parent){if(['auto','scroll'].includes(getComputedStyle(parent).overflowY)&&parent.scrollHeight>parent.clientHeight){
+  const frame=parent.getBoundingClientRect(),max=parent.scrollHeight-parent.clientHeight;
+  return {scroll:parent.scrollTop,expected:Math.min(max,Math.max(0,parent.scrollTop+bounds.top+bounds.height/2-frame.top-parent.clientHeight/2)),
+   visible:bounds.top>=frame.top-1&&bounds.bottom<=frame.bottom+1,focused:element===document.activeElement,
+   outline:style.outlineStyle,outlineWidth:style.outlineWidth,width:bounds.width,height:bounds.height};
+ }parent=parent.parentElement;}throw new Error('No quote viewport');
+});}
+async function returnToQuote(answer,marker,width,scenario,keyboard=false){
+ const button=answer.getByRole('button',{name:'返回引用句',exact:true});await button.scrollIntoViewIfNeeded();
+ const before=await quoteState(marker);
+ if(keyboard){await button.focus();await answer.page().keyboard.press('Enter');}else await button.click();
+ const after=await quoteState(marker);
+ assert.ok(Math.abs(after.scroll-before.expected)<=1,`Return must locate the original quote context: ${JSON.stringify({before,after})}`);
+ assert.equal(after.visible,true);assert.equal(after.focused,true);assert.equal(after.outline,'solid');assert.equal(after.outlineWidth,'1px');
+ assert.deepEqual([after.width,after.height],[before.width,before.height],'The return indicator must not change inline layout');
+ await marker.evaluate(element=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ assert.ok(Math.abs((await quoteState(marker)).scroll-after.scroll)<=1,'Returning must not be pulled back to the source or latest message');
+ returns.push({width,scenario,activation:keyboard?'Enter':'pointer',before,after});
+}
 async function sourceAppearance(answer,count){
  const panel=answer.getByTestId('answer-source-panel');
  const style=await panel.evaluate(element=>{const s=getComputedStyle(element);return {background:s.backgroundColor,border:s.borderTopWidth,radius:s.borderRadius,padding:[s.paddingTop,s.paddingRight,s.paddingBottom,s.paddingLeft],height:element.getBoundingClientRect().height};});
@@ -43,14 +64,25 @@ try{
    await instantJump(answer.getByRole('button',{name:`查看引用【${index+1}】：${titles[index]}`,exact:true}),footer.getByTestId('answer-source-panel'));
    await located(tab);assert.equal(await details.count(),0);assert.equal(await tab.getAttribute('aria-expanded'),'false');
   }
+  const originalThird=answer.getByRole('button',{name:`查看引用【3】：${titles[2]}`,exact:true});
+  await returnToQuote(answer,originalThird,width,'short reply with collapsed sources');
+  await originalThird.click();
+  await sourceTab(answer,3,titles[2]).click();assert.equal(await details.count(),1);
+  await returnToQuote(answer,originalThird,width,'quote with open source');
+  assert.equal(await sourceTab(answer,3,titles[2]).getAttribute('aria-expanded'),'true');
+  await page.screenshot({path:resolve(directory,`returned-quote-${width}.png`)});
+  await sourceTab(answer,3,titles[2]).click();assert.equal(await details.count(),0);
   await footer.evaluate(element=>{element.style.marginTop='1800px';});
   await instantJump(answer.getByRole('button',{name:`查看引用【1】：${titles[0]}`,exact:true}),footer.getByTestId('answer-source-panel'));
   await located(sourceTab(answer,1,titles[0]));assert.equal(await details.count(),0);
   assert.equal((await sourceAppearance(answer,3)).panel.height,initialAppearance.panel.height,'Returning to a citation must not change the source header height');
-  await footer.getByRole('button',{name:'返回引用句',exact:true}).evaluate(element=>element.click());
   const originalMarker=answer.getByRole('button',{name:`查看引用【1】：${titles[0]}`,exact:true});
-  assert.equal(await originalMarker.evaluate(element=>element===document.activeElement),true,'Return must focus the original citation');
-  await located(originalMarker);
+  await returnToQuote(answer,originalMarker,width,'1800px extended reply');
+  await instantJump(originalMarker,footer.getByTestId('answer-source-panel'));
+  await sourceTab(answer,3,titles[2]).click();assert.equal(await details.count(),1);
+  await returnToQuote(answer,originalMarker,width,'original quote after switching the detail source',true);
+  assert.equal(await sourceTab(answer,3,titles[2]).getAttribute('aria-expanded'),'true');
+  await sourceTab(answer,3,titles[2]).click();assert.equal(await details.count(),0);
   await footer.evaluate(element=>{element.style.marginTop='';});
   const third=sourceTab(answer,3,titles[2]);await third.click();await details.getByText(titles[2],{exact:true}).waitFor();await visibleHeader(details,titles[2]);
   assert.equal(await third.getAttribute('aria-expanded'),'true');await third.click();assert.equal(await details.count(),0);
@@ -102,9 +134,9 @@ try{
   await last.click();assert.equal(await manyDetails.count(),0);
   if(width<1024){await many.locator('[dir="auto"]').evaluateAll(elements=>{for(const element of elements){const style=getComputedStyle(element);element.style.fontSize=parseFloat(style.fontSize)*1.5+'px';if(style.lineHeight!=='normal')element.style.lineHeight=parseFloat(style.lineHeight)*1.5+'px';}});await assertFits(page,`150% source text ${width}`);}
   assert.equal(await draft.inputValue(),'保留原問題草稿');
-  passed.push(`reading ${width}: reusable plain chat and Agent source disclosures, reading before optional technical fields, exact citation return and stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft${width<1024?', enlarged text':''}`);
+  passed.push(`reading ${width}: reusable plain chat and Agent source disclosures, reading before optional technical fields, actual pointer/Enter return to the original quote with visible focus and clamped center alignment, stable header, 1px source separators, 48px targets, independent message expansion, 12-source horizontal scrolling, instant own-panel jump including 1800px extended reply, same-button click/Enter collapse, suggestions hidden by default/focus/draft without replacing the input, preserved draft${width<1024?', enlarged text':''}`);
   await page.close();
  }
- assert.deepEqual(failures,[]);await writeFile(resolve(directory,'source-tabs-checks.json'),JSON.stringify({at:new Date().toISOString(),scope:'Synthetic frontend only; reused source checks plus compact presentation and independent message instances; no API/model calls or device acceptance',passed,appearance,failures},null,2)+'\n');
+ assert.deepEqual(failures,[]);await writeFile(resolve(directory,'source-tabs-checks.json'),JSON.stringify({at:new Date().toISOString(),scope:'Synthetic frontend only; actual quote-return pointer/keyboard, clamped context alignment and visible focus plus reused source checks; no API/model calls or device acceptance',passed,appearance,returns,failures},null,2)+'\n');
  console.log(JSON.stringify({passed,failures}));
 }finally{await browser.close();}
