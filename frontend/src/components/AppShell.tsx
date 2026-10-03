@@ -36,7 +36,7 @@ const navigation: { href: AppPath; label: string; short: string; icon: React.Com
   { href: "/family", label: "家庭協調", short: "家庭", icon: "account-group-outline" },
   { href: "/memory", label: "記憶與話題", short: "記憶", icon: "book-open-variant" },
 ];
-const scenarios: PreviewScenario[] = ["normal", "first_login", "setup_incomplete", "empty", "loading", "offline", "needs_confirmation", "saving", "saved", "failed", "unknown"];
+const scenarios: PreviewScenario[] = ["normal", "first_login", "setup_incomplete", "empty", "loading", "offline", "needs_confirmation", "saving", "saved", "failed", "unknown", "focus_task", "focus_growth", "focus_unavailable"];
 const navigationGroups = [
   { label: "今天", paths: ["/"] },
   { label: "問題與待辦", paths: ["/tasks", "/growth", "/contact"] },
@@ -91,15 +91,16 @@ export function RightRail({ model, actions, home = false, overlay = false, onClo
     </View>
     <ScrollView contentContainerStyle={styles.railCards}>
       <SectionCard>
-        <SectionHeader title="目前孩子" action={<TextLink label="查看檔案" onPress={() => actions.open("profile")} />} />
+        <SectionHeader title={home ? "已載入的孩子背景" : "目前孩子"} density="compact" action={<TextLink label="查看檔案" onPress={() => actions.open("profile")} />} />
         {child ? <View style={styles.railIdentity}>
           <View style={styles.railAvatar}><Text style={styles.railAvatarText}>{child.displayName.slice(0, 1)}</Text></View>
           <View style={styles.railIdentityText}><Text style={styles.railRecordTitle}>{child.displayName}</Text><Text style={styles.railMeta}>{child.ageLabel}</Text><Text style={styles.railMeta}>{child.regionLabel} · {child.profileConfirmed ? "檔案已確認" : "檔案待核對"}</Text></View>
         </View> : <Text style={styles.railMeta}>尚未選擇孩子；請先建立檔案。</Text>}
+        {home && child ? <><Text style={styles.railMeta}>過敏資料：{child.allergiesLabel ?? "未提供"}</Text><Text style={styles.railMeta}>背景可協助理解問題；實際使用的資料由每次回覆標示。</Text></> : null}
       </SectionCard>
-      <SectionCard>
+      {!home ? <SectionCard>
         <SectionHeader title="近期已確認記錄" action={<TextLink label="查看全部" onPress={() => actions.open("care")} />} />
-        {model.recordsLoad === "loading" ? <Text style={styles.railMeta}>正在讀取記錄…</Text> : records.length === 0 ? <Text style={styles.railMeta}>目前沒有已載入記錄。</Text> : records.map((record, index) => <View key={record.id}>
+        {model.recordsLoad === "loading" ? <Text style={styles.railMeta}>正在讀取記錄…</Text> : model.recordsLoad === "error" ? <Text style={styles.railMeta}>暫時讀不到記錄，不能確認最新資料。</Text> : records.length === 0 ? <Text style={styles.railMeta}>目前沒有已載入記錄。</Text> : records.map((record, index) => <View key={record.id}>
           {index > 0 ? <Divider style={styles.divider} /> : null}
           <Pressable accessibilityRole="button" accessibilityLabel={`查看${record.title}`} onPress={() => actions.open("care")} style={({ pressed }) => [styles.railRecord, pressed && styles.pressed]}>
             <View style={styles.recordMark}><AppIcon name="file-document-outline" size={20} /></View>
@@ -107,7 +108,7 @@ export function RightRail({ model, actions, home = false, overlay = false, onClo
           </Pressable>
         </View>)}
         {model.connection === "offline" ? <Text style={styles.railCaution}>目前離線；以上可能不是最新資料。</Text> : null}
-      </SectionCard>
+      </SectionCard> : null}
       {!home && model.operation.state !== "none" ? <SectionCard>
         <SectionHeader title="最近操作" />
         <OperationPill state={model.operation.state} />
@@ -128,9 +129,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const wide = width >= 1280;
   const { model, actions, notice, dismissNotice } = usePreview();
   const railProps = { model, actions, home: pathname === "/" };
-  // Only the home overview opens this secondary pane by default. Keep each route's manual choice.
+  // Main screens contain their own useful overview. Keep each route's manual context choice.
   const [railChoices, setRailChoices] = useState<Record<string, boolean>>({});
-  const railOpen = railChoices[pathname] ?? pathname === "/";
+  const railOpen = railChoices[pathname] ?? false;
   const railAnchor = useRef<View>(null);
   const restoreRailFocus = useRef(false);
   const [railModal, setRailModal] = useState(false);

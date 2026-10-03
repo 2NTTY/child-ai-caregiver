@@ -33,6 +33,13 @@ export interface HomeOperation {
   detail: string;
 }
 
+// The adapter selects an authorized focus. Missing data is not an empty task list.
+export type HomeFocusView =
+  | { kind: "none"; detail?: string }
+  | { kind: "unavailable"; detail: string }
+  | { kind: "task" | "growth"; title: string; detail: string; whyNow?: string; sourceLabel?: string;
+      action: { label: string; destination: HomeDestination } };
+
 export interface HomeViewModel {
   caregiverName: string;
   children: HomeChild[];
@@ -43,6 +50,7 @@ export interface HomeViewModel {
   records: HomeRecord[];
   lastReadLabel: string | null;
   operation: HomeOperation;
+  focus?: HomeFocusView;
   guideStatus: GuideStatus;
 }
 

@@ -1,0 +1,10 @@
+{
+  "scope": "Synthetic frontend only; no Server or device acceptance",
+  "previewUrl": "http://localhost:8083",
+  "at": "2026-10-03T12:53:27.849Z",
+  "passed": [
+    "care: paged search/history/conflict/failure/same-operation lookup/child isolation/permission loss",
+    "care: 320 form validation and keyboard confirmation"
+  ],
+  "failures": []
+}

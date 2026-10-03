@@ -4,7 +4,7 @@ import { AppScrollView as ScrollView } from "./AppScrollView";
 import { AppIcon } from "./AppIcon";
 import { Button, Portal, RadioButton, Text, TextInput } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
-import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale, workspaceType } from "../theme";
 import type { ConnectionState, OperationState } from "../view-model";
 import { useInteractionDensity } from "./useInteractionDensity";
 
@@ -47,21 +47,23 @@ export function AppTextField({ style, outlineStyle, contentStyle, multiline, lab
     contentStyle={[multiline && label ? styles.multilineContent : undefined, contentStyle]} />;
 }
 
-export function AppSelectionTrigger({ label, onPress, onBlur, disabled = false, expanded, ref, calendar = false }: {
+export function AppSelectionTrigger({ label, onPress, onBlur, disabled = false, expanded, ref, calendar = false, id, invalid, describedBy }: {
   label: string; onPress: () => void; onBlur?: () => void; disabled?: boolean; expanded: boolean; ref?: Ref<View>; calendar?: boolean;
+  id?: string; invalid?: boolean; describedBy?: string;
 }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   const touch = useInteractionDensity();
   // Paper 5.15 Button replaces expanded state on its inner control; expose it on the selection trigger itself.
-  return <Pressable ref={ref} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ expanded, disabled }} aria-expanded={expanded} aria-disabled={disabled} disabled={disabled}
+  return <Pressable ref={ref} nativeID={id} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ expanded, disabled }} aria-expanded={expanded} aria-disabled={disabled} aria-invalid={invalid} aria-describedby={describedBy} disabled={disabled}
     onPress={onPress} onBlur={onBlur} style={({ pressed }) => [styles.selectionTrigger, (compact || touch) && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && styles.linkPressed]}>
     <Text style={styles.selectionLabel}>{label}</Text><AppIcon name={calendar ? "calendar-clock-outline" : "chevron-down"} size={20} color={colors.deepTeal} />
   </Pressable>;
 }
 
-export function AppSelect<T extends string>({ label, value, options, onChange, onBlur, disabled = false, ref }: {
+export function AppSelect<T extends string>({ label, value, options, onChange, onBlur, disabled = false, ref, id, invalid, describedBy }: {
   label: string; value: T; options: readonly { value: T; label: string }[];
   onChange: (value: T) => void; onBlur?: () => void; disabled?: boolean; ref?: Ref<View>;
+  id?: string; invalid?: boolean; describedBy?: string;
 }) {
   const [visible, setVisible] = useState(false);
   const anchor = useRef<View>(null);
@@ -70,7 +72,7 @@ export function AppSelect<T extends string>({ label, value, options, onChange, o
     setVisible(false);
     if (Platform.OS === "web") (anchor.current as unknown as HTMLElement | null)?.focus();
   }
-  return <><AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={`${label}：${selected}`} disabled={disabled} onBlur={onBlur}
+  return <><AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} id={id} invalid={invalid} describedBy={describedBy} label={`${label}：${selected}`} disabled={disabled} onBlur={onBlur}
     expanded={visible && !disabled} onPress={() => setVisible(true)} />
     {visible && !disabled ? <Portal><Dialog visible onDismiss={dismiss} style={styles.selectDialog}>
       <Dialog.Title>{label}</Dialog.Title><Dialog.ScrollArea><ScrollView style={styles.selectList} keyboardShouldPersistTaps="handled">
@@ -86,12 +88,12 @@ export function SectionCard({ children, style, testID, surface = "regular" }: { 
   return <View testID={testID} style={[styles.card, compact && styles.mobileCard, surface === "inset" && styles.insetCard, surface === "plain" && styles.plainCard, style]}>{children}</View>;
 }
 
-export function SectionHeader({ title, subtitle, action, icon, count }: { title: string; subtitle?: string; action?: ReactNode; icon?: React.ComponentProps<typeof AppIcon>["name"]; count?: number }) {
+export function SectionHeader({ title, subtitle, action, icon, count, density = "regular" }: { title: string; subtitle?: string; action?: ReactNode; icon?: React.ComponentProps<typeof AppIcon>["name"]; count?: number; density?: "regular" | "compact" }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   if (compact) return <View style={styles.mobileHeader}>
     <View style={styles.mobileHeaderRow}><View style={styles.mobileHeaderTitle}>
       {icon ? <AppIcon name={icon} size={mobileIcons.content} color={colors.teal} importantForAccessibility="no" /> : null}
-      <Text accessibilityRole="header" style={[styles.sectionTitle, mobileType.sectionTitle]}>{title}</Text>
+      <Text accessibilityRole="header" style={[styles.sectionTitle, mobileType.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>
       {count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}
     </View>{action ? <View style={styles.mobileHeaderAction}>{action}</View> : null}</View>
     {subtitle ? <Text style={[styles.sectionSubtitle, mobileType.caption]}>{subtitle}</Text> : null}
@@ -99,7 +101,7 @@ export function SectionHeader({ title, subtitle, action, icon, count }: { title:
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.headerText}>
-        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{count !== undefined ? <Text style={styles.countText}>{count}</Text> : null}</View>
+        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={[styles.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>{count !== undefined ? <Text style={styles.countText}>{count}</Text> : null}</View>
         {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
       </View>
       {action}

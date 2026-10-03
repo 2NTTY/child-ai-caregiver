@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-03T13:03:52.191126+00:00",
+  "baseline": "3332c3e077808ede317c716f2bf44a5523eb7be7",
+  "formalBaseline": "4f27d05539234a2c2823fbdbfc7660955f0e7428",
+  "scope": "frontend only; synthetic local rendering; no formal API or device acceptance",
+  "checks": {
+    "typecheck": "passed",
+    "webExport": "passed, 35 routes",
+    "webEntry": "entry-a7397bc5ebb34cdcdc64b2d1b0e91dd3.js",
+    "androidExport": "passed, 29 assets",
+    "androidEntry": "entry-9a1ef203b68ac20cd1b963e75fe61e7b.hbc",
+    "homeAndCare": "home-care-checks.json, 8 groups at 4 widths",
+    "animation": "motion/child-control-checks.json, 9 groups",
+    "careFlow": "checks-care.json, original request/recovery/conflict/access and narrow confirmation"
+  },
+  "pending": [
+    "Formal adapters, identity and authorized focus selection",
+    "User visual acceptance",
+    "Screen readers and native device acceptance"
+  ]
+}

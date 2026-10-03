@@ -51,9 +51,9 @@ try {
     await page.getByRole("button", { name: "清除搜尋", exact: true }).click();
     await list.getByRole("button", { name: "查看睡眠記錄", exact: true }).click();
     await page.getByRole("button", { name: "查看更正歷史", exact: true }).click();
-    await page.getByText("版本 2", { exact: true }).waitFor();
+    await page.getByText("版本：2", { exact: true }).waitFor();
     await page.getByRole("button", { name: "載入更早版本", exact: true }).click();
-    await page.getByText("版本 1", { exact: true }).waitFor();
+    await page.getByText("版本：1", { exact: true }).waitFor();
     await page.getByRole("button", { name: "更正這筆記錄", exact: true }).click();
     const raw = "  大約九點多入睡；仍須核對。  ";
     await page.getByRole("textbox", { name: "記錄原文草稿", exact: true }).fill(raw);
@@ -69,7 +69,7 @@ try {
     await selectOption(page, "模擬提交結果", "失敗");
     await page.getByRole("button", { name: "預覽共享內容", exact: true }).click();
     await page.getByRole("button", { name: "確認家庭共享並模擬提交", exact: true }).click();
-    await page.getByText("模擬失敗：已知沒有保存。", { exact: false }).waitFor();
+    await page.getByText("模擬失敗：已知沒有保存。", { exact: false }).and(page.locator(':not([data-testid="status-announcement"])')).waitFor();
     assert.equal(await page.getByRole("textbox", { name: "記錄原文草稿", exact: true }).inputValue(), raw);
     await selectOption(page, "模擬提交結果", "結果未知");
     await page.getByRole("button", { name: "預覽共享內容", exact: true }).click();
@@ -83,7 +83,7 @@ try {
     await page.screenshot({ path: resolve(directory, "care-1440-unknown.png") });
     await selectOption(page, "模擬查核結果", "已保存");
     await page.getByRole("button", { name: "模擬查核原操作", exact: true }).click();
-    await page.getByText("模擬已保存；只更新本次照顧記錄預覽", { exact: false }).waitFor();
+    await page.getByText("模擬已保存；只更新本次照顧記錄預覽", { exact: false }).and(page.locator(':not([data-testid="status-announcement"])')).waitFor();
     assert.equal(await page.getByRole("textbox", { name: "記錄原文草稿", exact: true }).count(), 0);
     await page.getByRole("button", { name: /選擇孩子，目前/ }).click();
     await page.getByRole("radio", { name: "阿樂 · 約 8 歲 · 截至 2026 年 9 月" }).click();

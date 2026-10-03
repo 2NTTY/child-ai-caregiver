@@ -100,3 +100,9 @@ FE-W11 沿既有 OKLCH／MD3 規則，沒有新增色階。原照片保持比例
 手機首頁的第二個快速格為「照片記錄」，其他格為記錄情況、身高體重及睡眠，保持 88 最小高度與四／兩格規則；點擊進照片頁面，不假上傳、不直接開相機。原生選圖 adapter 待接時保持明確停用。
 
 FE-W19：Agent 輸入工具列的「拍照」直接開同風格 AppDialog 相機，拍攝回原問題欄作未送出縮圖，不經另一個管理頁。主要動作為「拍下照片」，系統拍照／選圖及取消用共用次要／quiet 按鈕；等待／拒絕／缺裝置靠近預覽說明。相機容器 contain 顯示完整 frame，composer 的 48 縮圖只作辨識，不改原檔；照片／狀態／清除入口與文字分開。最小觸控和中性表面沿現有 tokens，沒有新配色或錄影／錄音樣式。
+
+## FE-W34 首頁及記錄配方
+
+首頁只承接一個授權 focus：operation 優先顯示既有恢復操作，其他 task／growth／none／unavailable 由 adapter 明確提供，不用記錄數或本地清單推斷。已設孩子可直接進入聊天，可選引導不阻擋。HomeFocus／HomeRecentRecords 供兩種首頁共用，最近記錄用行與細線，技術狀態次層；右欄預設收起，不重複主要內容。手機動畫子樹、三秒閱讀及右側完整圖片保留。
+
+工作頁用 PageFrame compact（24／32 標題）及 SectionHeader compact（16／24）；記錄原文用 reading 16／26，相關欄位 tool 14／22，metadata 12／18 分組。ReadStateNotice 分清 initial／empty／stale／error，普通狀態只在轉換時播報。FormFieldMessage 關聯控件的 help／error，FormErrorSummary 可定位實際欄位；不覆寫 RHF schema 或原 request。窄詳情返回保留篩選、列表位置和非顏色標記，身份／孩子／權限改變即清理閱讀錨點。

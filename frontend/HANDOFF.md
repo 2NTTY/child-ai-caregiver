@@ -460,3 +460,15 @@ FE-W08 沿 FE-W07 `1e1fb7b`（draft PR #65）隔離接續，只處理使用者�
 必要檢查：四尺寸來源往返／12 來源／長回覆／輸入節點；時間線歷史錨點／增量／來源閱讀／停止／scope 清理；1440／900×600／390／320 的抽屜 focus／Escape／返回、短窗導覽及 Tabs／草稿；60 個靜態重排、typecheck、35 路由 Web export 與 30 資產 Android bundle 通過。四尺寸候選鍵盤確認、私人／共享區分、unknown 原決定重試、版本變更及撤權／身份／孩子清理亦通過。初輪發現可聚焦遮罩及 Surface ref／Modal cleanup 的返回次序，已依實際節點修正；來源收合的延遲定位會搶走下一個控件的焦點，改成 commit 後的 layout effect，來源與候選流程補驗通過。舊時間線測試的短回覆不再跨可視區，已明確使用 800px 長回覆場景驗閱讀保持。原生 TalkBack、真 API／模型／stream／history cursor／session generation、來源正式識別及已列 A1–A6／D1 仍交主聊天，未當作通過。來源多次引用使用各自 ref，沒有新增正式 paragraphs/citationIds 契約。
 
 [來源](verification/fe-w33-reading/source-tabs-checks.json)／[焦點與 Tabs](verification/fe-w33-reading/foundation-checks.json)／[時間線](verification/fe-w33-reading/timeline/chat-timeline-checks.json)／[候選流程](verification/fe-w33-reading/agent-flow-checks.json)／[建置及界線](verification/fe-w33-reading/build-checks.json)。下一包按 PLAN 先完成首頁與記錄詳情，之後推廣配方。
+
+<a id="commercial-home-records"></a>
+## FE-W34 商業方案：首頁及記錄工作區
+
+前置 `3332c3e`（PR #78）；分支 `codex/fe-w34-home-records`。正式基線仍為 `4f27d055`；只改 frontend，沒有改 Server、正式 App、schema 或換頁動畫。
+
+- `HomeFocus`／`HomeRecentRecords` 供 HomeDashboard 及 MobileHomeDashboard 共用。`HomeFocusView` 是純投影，正式 adapter 須先檢查家庭／孩子授權及資料可用性，再提供 task／growth／none／unavailable 和 reason／source／現有 destination；未傳不當作無事項。operation 沿原決定／查核，不變成重試寫入。沒有新增首頁優先級 store，合成 focus_* 場景只是示例。
+- 品牌首頁只有一個焦點，已有孩子可直接問問題，引導可選。各路由右欄預設收起，人工選擇按路由保留；首頁右欄只補孩子背景。手機的三秒、每會話一次、完整圖片及同一動畫子樹保留，未加頁面轉場。
+- `CareRecordsView` 延續 selected id／query／kind，窄詳情返回恢復實際列表 offset／原行焦點，並有「上次查看」標記；孩子／篩選／權限改變清理。正式掛載亦須按身份／Server scope 清理，不能跨身份復用閱讀 refs。四尺寸原位置分別 247／247／675／782 px，返回值相同；1024 中欄 760 px 採窄工作區，不按整個視窗假定 split。
+- `CareRecordDetail` 原文、原時間精度／timezone／約數及各版本保留，閱讀／相關資料／metadata 用三層字級和分線。`CareRecordForm` 以穩定 id 關聯錯誤／說明、摘要定位及真正 ref 聚焦首個無效欄位；原 validator、草稿 dirty、基線／原 op 恢復及確認仍由 controller 掌管。`OperationNotice.visible` 只避免與已打開確認卡重複，狀態播報一直掛載。
+
+[八組首頁／記錄／表單](verification/fe-w34-home-records/home-care-checks.json)、[九組手機動畫](verification/fe-w34-home-records/motion/child-control-checks.json)、[原照顧流程](verification/fe-w34-home-records/checks-care.json)及 [建置](verification/fe-w34-home-records/build-checks.json)通過。曾發現重複確認標題，已只留正式確認卡；Paper 按下後聚焦測試改等待真正欄位焦點，沒有改產品時序。typecheck、35 路由 Web export 及 Android bundle 通過。正式 focus selection／資料讀取／原 opId、使用者視覺、讀屏及原生實機仍待主聊天／驗收；接續推廣到其餘既有頁面。
