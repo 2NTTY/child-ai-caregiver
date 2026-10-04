@@ -1,5 +1,6 @@
 import { brand } from "../branding";
 import { useRef, useState } from "react";
+import { usePathname } from "expo-router";
 import { StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppButton, SectionCard } from "../components/ui";
@@ -25,7 +26,8 @@ export default function ChatPage() {
 }
 
 function ChatContents({ compact }: { compact: boolean }) {
-  const { model, actions, chatDraft, setChatDraft } = usePreview();
+  const pathname = usePathname();
+  const { model, actions, chatDraft, setChatDraft, takeAgentPhoto } = usePreview();
   const child = model.children.find(item => item.id === model.selectedChildId);
   const preview = useChatTimelinePreview(child?.id ?? "no-child");
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
@@ -58,7 +60,7 @@ function ChatContents({ compact }: { compact: boolean }) {
           <Text style={styles.footerText}>此段只示範排版與狀態，沒有呼叫模型。</Text>
         </> : undefined}
       </ChatMessage>} />
-    <AgentComposer enabled={!!child} compact={compact} draft={chatDraft} onChangeDraft={setChatDraft} onPreview={previewMessage} onPhotos={() => actions.open("photos")} onSources={() => actions.open("sources")} />
+    <AgentComposer enabled={!!child && pathname === "/chat"} compact={compact} draft={chatDraft} onChangeDraft={setChatDraft} onPreview={previewMessage} onPhotos={() => actions.open("photos")} onSources={() => actions.open("sources")} takeInitialPhoto={takeAgentPhoto} />
   </>;
 }
 

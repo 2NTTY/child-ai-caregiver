@@ -9,8 +9,9 @@ import type { HomeActions, HomeViewModel } from "../view-model";
 import { MobileHomeDashboard } from "./MobileHomeDashboard";
 import { AppIcon, type AppIconName } from "./AppIcon";
 import { HomeBackground } from "./appearance/HomeBackground";
-import { HomeFocus } from "./HomeFocus";
-import { HomeRecentRecords } from "./HomeRecentRecords";
+import { HomeAgentImportant } from "./HomeAgentImportant";
+import { HomeOngoing } from "./HomeOngoing";
+import { HomeQuickActions } from "./HomeQuickActions";
 
 function DashboardLink({ icon, title, detail, onPress }: { icon: AppIconName; title: string; detail: string; onPress: () => void }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}>
@@ -44,12 +45,12 @@ export function HomeDashboard({ model, actions, introductionPending = false, onI
           {needsGuide ? <TextLink label="了解如何使用" onPress={() => actions.open("guide")} /> : null}</View>
       </View>
     </View>
-    <HomeFocus model={model} actions={actions} />
+    <HomeAgentImportant model={model} actions={actions} />
+    <HomeQuickActions model={model} actions={actions} />
     <View testID="desktop-home-grid" style={[styles.grid, stacked && styles.gridStack]}>
-      <View testID="home-records-column" style={[styles.column, styles.recordsColumn, stacked && styles.stackedColumn]}><HomeRecentRecords model={model} actions={actions} filterable /></View>
-      <View testID="home-actions-column" style={[styles.column, stacked && styles.stackedColumn]}><SectionCard><SectionHeader title="從日常資料繼續" density="compact" />
-        <DashboardLink icon="clipboard-check-outline" title="任務與預約" detail="查看安排及明確記錄事項結果" onPress={() => actions.open("tasks")} />
-        <DashboardLink icon="notebook-outline" title="記憶與話題" detail="核對來源及需要繼續討論的內容" onPress={() => actions.open("memory")} />
+      <View testID="home-ongoing-column" style={[styles.column, styles.recordsColumn, stacked && styles.stackedColumn]}><HomeOngoing model={model} actions={actions} /></View>
+      <View testID="home-actions-column" style={[styles.column, stacked && styles.stackedColumn]}><SectionCard><SectionHeader title="照顧資料" density="compact" />
+        <DashboardLink icon="notebook-outline" title="照顧記錄" detail="查看完整時間軸及原始內容" onPress={() => actions.open("care")} />
         <DashboardLink icon="account-group-outline" title="家庭協調" detail="查看成員與共享範圍" onPress={() => actions.open("family")} />
       </SectionCard></View>
     </View>

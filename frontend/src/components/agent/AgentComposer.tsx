@@ -15,9 +15,10 @@ import { useInteractionDensity } from "../useInteractionDensity";
 const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄", "先列出想問的問題"];
 
 // Mount this private subtree with the current identity/child scope key.
-export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPreview, onPhotos, onSources, captureOriginal }: {
+export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPreview, onPhotos, onSources, captureOriginal, takeInitialPhoto }: {
   enabled: boolean; compact: boolean; draft: string; onChangeDraft: (value: string) => void; onPreview: () => void;
   onPhotos: () => void; onSources: () => void; captureOriginal?: PhotoFilePickerProps["captureOriginal"];
+  takeInitialPhoto?: () => PhotoOriginal | null;
 }) {
   const input = useRef<ChatComposerInputHandle>(null);
   const touchControls = useInteractionDensity() || compact;
@@ -36,6 +37,15 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
     return () => { mounted.current = false; currentPhoto.current?.dispose?.(); currentPhoto.current = null; };
   }, []);
   useEffect(() => {
+    if (!enabled || !takeInitialPhoto) return;
+    // Claim only after mounting; a cancelled mount leaves ownership with the provider.
+    const frame = requestAnimationFrame(() => {
+      const original = takeInitialPhoto();
+      if (original) pickPhoto(original);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [enabled, takeInitialPhoto]);
+  useEffect(() => {
     if (Platform.OS === "web") return;
     const show = Keyboard.addListener("keyboardDidShow", () => { setKeyboardVisible(true); setAutomaticCollapse(value => value + 1); setSuggestionsExpanded(false); });
     const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
@@ -44,6 +54,10 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
   useEffect(() => {
     if (!enabled || hasDraft || keyboardVisible) setSuggestionsExpanded(false);
   }, [enabled, hasDraft, keyboardVisible]);
+  useEffect(() => {
+    if (enabled) return;
+    currentPhoto.current?.dispose?.(); currentPhoto.current = null; setPhoto(null); setPhotoError(null);
+  }, [enabled]);
   function pickPhoto(original: PhotoOriginal) {
     if (!mounted.current || !enabled) { original.dispose?.(); return; }
     if (currentPhoto.current !== original) currentPhoto.current?.dispose?.();
@@ -74,7 +88,7 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
     {photo ? <View testID="composer-photo-preview" style={styles.photo}>
       <Image source={photo.imageSource} accessibilityLabel="照片本地預覽，未上傳或送出" style={styles.thumbnail} resizeMode="cover" />
       <View style={styles.photoCopy}><Text style={styles.photoName}>{photo.fileName}</Text>
-        <Text style={styles.photoNote}>本地照片 · 未上傳／未送出</Text><Text style={styles.photoNote}>離開此頁或切換孩子時清除</Text></View>
+        <Text style={styles.photoNote}>本地照片 · 未上傳／未送出</Text><Text style={styles.photoNote}>圖片辨識及自動整理記錄尚未接通</Text><Text style={styles.photoNote}>離開此頁或切換孩子時清除</Text></View>
       <Pressable accessibilityRole="button" accessibilityLabel="移除本地照片" onPress={removePhoto}
         style={({ pressed }) => [styles.removePhoto, pressed && styles.pressed]}><AppIcon name="close" size={mobileIcons.content} /></Pressable>
     </View> : null}

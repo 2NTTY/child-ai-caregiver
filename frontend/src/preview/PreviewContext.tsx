@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { usePreviewNavigation } from "./PreviewNavigationGuard";
 import { createPreviewModel, previewChecklist, type PreviewScenario } from "./fixture";
 import type { GuideStatus, HomeActions, HomeChild, HomeDestination, HomeViewModel } from "../view-model";
+import type { PhotoOriginal } from "../photo-view-model";
+import { createHomeAgentPhotoHandoff, homeAgentScope } from "../home-agent-entry";
 
 type PreviewContextValue = {
   model: HomeViewModel;
@@ -15,6 +17,7 @@ type PreviewContextValue = {
   dismissNotice: () => void;
   chatDraft: string;
   setChatDraft: (value: string) => void;
+  takeAgentPhoto: () => PhotoOriginal | null;
   checkedPreviewItems: Record<string, boolean>;
   togglePreviewItem: (id: string) => void;
 };
@@ -27,6 +30,7 @@ const routes: Record<HomeDestination, "/chat" | "/care" | "/profile" | "/family"
 
 export function PreviewProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const leave = usePreviewNavigation();
   const [scenario, setScenarioState] = useState<PreviewScenario>("normal");
   const [guideStatus, setGuideStatus] = useState<GuideStatus>("complete");
@@ -41,15 +45,27 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const [chatDrafts, setChatDrafts] = useState<Record<string, string>>({});
   const [checkedPreviewItems, setCheckedPreviewItems] = useState<Record<string, boolean>>({});
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const photoHandoff = useRef(createHomeAgentPhotoHandoff()).current;
   useEffect(() => () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); }, []);
 
-  const fixture = createPreviewModel(scenario, selectedChildId, guideStatus);
-  const childrenInPreview = [...fixture.children, ...createdChildren].filter(child => !deletedChildren.includes(child.id));
-  const model: HomeViewModel = { ...fixture, children: childrenInPreview,
-    selectedChildId: childrenInPreview.some(item => item.id === selectedChildId) ? selectedChildId : childrenInPreview[0]?.id ?? null,
-    records: fixture.records.filter(record => childrenInPreview.some(item => item.id === record.childId)),
-  };
+  // Resolve visible children before deriving any child-scoped home/rail projection.
+  const model = createPreviewModel(scenario, selectedChildId, guideStatus, { createdChildren, deletedChildIds: deletedChildren });
+  const childrenInPreview = model.children;
   const draftKey = model.selectedChildId ?? "no-child";
+  const agentScope = homeAgentScope(model);
+  const currentEntry = useRef({ scope: agentScope, pathname });
+  const previousPathname = useRef(pathname);
+  currentEntry.current = { scope: agentScope, pathname };
+  useEffect(() => {
+    photoHandoff.retainScope(agentScope);
+    if ((pathname !== "/" && pathname !== "/chat") || (previousPathname.current === "/chat" && pathname !== "/chat")) photoHandoff.clear();
+    previousPathname.current = pathname;
+  }, [agentScope, pathname, photoHandoff]);
+  useEffect(() => () => photoHandoff.clear(), [photoHandoff]);
+  const takeAgentPhoto = useCallback(() => {
+    if (currentEntry.current.scope !== agentScope || currentEntry.current.pathname !== "/chat") return null;
+    return photoHandoff.take(agentScope);
+  }, [agentScope, photoHandoff]);
   const actions: HomeActions = {
     selectChild(id) {
       if (id === model.selectedChildId) return;
@@ -74,6 +90,14 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
           : "正式版須返回原操作並保留輸入；預覽沒有提交資料。");
     },
     open(destination) { leave(() => router.push(routes[destination])); },
+    openAgentPhoto(original) {
+      // Only the visible home capture can transfer a photo. No route parameter can open a camera.
+      if (!agentScope || currentEntry.current.scope !== agentScope || currentEntry.current.pathname !== "/") {
+        original.dispose?.(); return;
+      }
+      photoHandoff.stage(agentScope, original);
+      router.push("/chat");
+    },
     composeCare(kind) { leave(() => router.push({ pathname: "/care", params: { compose: kind } })); },
     prepareQuestion(question) {
       if (!model.selectedChildId) return;
@@ -119,6 +143,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     model, scenario, setScenario, actions, homeIntroductionPending, markHomeIntroductionPresented,
     notice, dismissNotice: () => setNotice(null),
     chatDraft: chatDrafts[draftKey] ?? "",
+    takeAgentPhoto,
     setChatDraft: value => setChatDrafts(previous => ({ ...previous, [draftKey]: value })),
     checkedPreviewItems,
     togglePreviewItem: id => {

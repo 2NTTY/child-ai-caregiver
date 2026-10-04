@@ -1,3 +1,4 @@
+import { createHomeOverviewFixture } from "./home-overview-fixture.ts";
 import type { GuideStatus, HomeChild, HomeOperation, HomeRecord, HomeViewModel, OperationState } from "../view-model";
 
 export type PreviewScenario = "normal" | "first_login" | "setup_incomplete" | "empty" | "loading" | "offline" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown" | "focus_task" | "focus_growth" | "focus_unavailable";
@@ -44,22 +45,22 @@ const operationCopy: Record<OperationState, HomeOperation> = {
   unknown: { state: "unknown", title: "提交結果尚未確認", detail: "先按原操作 ID 查核結果，不要因為等候逾時，就重新建立同一筆記錄。" },
 };
 
-export function createPreviewModel(scenario: PreviewScenario, selectedChildId: string, guideStatus: GuideStatus): HomeViewModel {
-  const isEmpty = scenario === "empty";
+export function createPreviewModel(scenario: PreviewScenario, selectedChildId: string, guideStatus: GuideStatus,
+  childChanges: { createdChildren?: HomeChild[]; deletedChildIds?: string[] } = {}): HomeViewModel {
+  const visibleChildren = [...(scenario === "empty" ? [] : children), ...(childChanges.createdChildren ?? [])]
+    .filter(child => !childChanges.deletedChildIds?.includes(child.id));
+  const resolvedChildId = visibleChildren.some(child => child.id === selectedChildId) ? selectedChildId : visibleChildren[0]?.id ?? null;
   return {
     caregiverName: "媽媽",
-    children: isEmpty ? [] : children,
-    selectedChildId: isEmpty ? null : selectedChildId,
+    children: visibleChildren,
+    selectedChildId: resolvedChildId,
     connection: scenario === "offline" ? "offline" : "online",
     recordsLoad: scenario === "loading" ? "loading" : "ready",
     profileLoad: scenario === "loading" ? "loading" : "ready",
-    records: scenario === "loading" ? [] : records,
+    records: scenario === "loading" ? [] : records.filter(record => visibleChildren.some(child => child.id === record.childId)),
     lastReadLabel: scenario === "loading" ? null : "2026 年 9 月 26 日 10:24",
     operation: operationCopy[scenario in operationCopy ? scenario as OperationState : "none"],
-    focus: scenario === "focus_task" ? { kind: "task", title: "看看這次待辦的安排", detail: "合成版式示例；這裏沒有建立正式任務或預約。", whyNow: "由合成快照明確指定，不按記錄數量推算。", action: { label: "查看任務與預約", destination: "tasks" } }
-      : scenario === "focus_growth" ? { kind: "growth", title: "核對一項成長關注", detail: "合成版式示例；不代表這位孩子有發展問題。", whyNow: "示意已授權投影的理由；正式適用性由成長功能提供。", sourceLabel: "前端合成樣本，沒有真來源證據", action: { label: "查看成長關注", destination: "growth" } }
-        : scenario === "focus_unavailable" || scenario === "loading" ? { kind: "unavailable", detail: scenario === "loading" ? "正在讀取今日事項，尚未能確認有沒有需要處理的內容。" : "未能取得今日事項；不能因此當作沒有待辦。" }
-          : { kind: "none", detail: "合成快照沒有指定待處理事項；這不是對真家庭狀態的確認。" },
+    overview: resolvedChildId ? createHomeOverviewFixture(resolvedChildId, scenario) : undefined,
     guideStatus,
   };
 }

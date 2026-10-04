@@ -45,6 +45,11 @@
 
 首頁的 first_login／incomplete／complete 尚無上述基線權威來源；不能以本地看過頁面代替初始化狀態。沒有資料顯示「未提供」，不猜「沒有過敏／沒有事項」。登入供應商、帳戶匯出／刪除、方案／儲存、PDF／OS 分享、疫苗百分位及獨立知識首頁等未交付契約，不能按圖片加假操作。
 
+<a id="home-assistant-entry"></a>
+## 助手式首頁接點
+
+第一區 `agentImportant` 只呈現明確提供的 Agent 重要事項；側欄 `attention` 及第二區 `ongoing` 各自保留來源，不以普通待辦補成 Agent 推送。首頁拍照直接接既有相機，再交同 scope 的對話本地預覽；表單為補改入口。投影／照片所有權、未知與未接通能力沿 [Agent 專項](AGENT_HANDOFF.md#home-assistant-entry)，照片 port 沿 [照片交接](PHOTOS_HANDOFF.md)。本節取代舊首頁 Task／Growth focus 分工；舊 commercial-home-records 錨點僅供歷史追溯。
+
 <a id="commercial-rollout"></a>
 ## 正式 adapters 的接線映射
 
@@ -54,7 +59,7 @@
 | 2：AppShell／NativeAppShell、AppTabPanel／UnderlineTabs | 正式 `app` 外殼與導航沿原 session／URL／dirty guard；保留路由 rail 人工選擇及穩定 Tabs 子樹 | 抽屜清理後返回原控制；身份未知不展示舊私人快照，帳戶入口留設定 |
 | 3：ChatTimeline／ChatMessage／AgentComposer | 原 ChatController、AgentRunApi／Inbox 及 [Agent handoff](AGENT_HANDOFF.md)；保持 message id、final snapshot、run phase／公開活動及真正取消 | `recentLimit` 只是已載入視窗；更早歷史須正式游標。清 attachment／blob／track，逐字內容不播報，不顯示內部思維鏈 |
 | 4：AnswerSources／CitationText | 由正式 AgentPresentation／KnowledgeEvidence 投影原來源 id、次序、片段及權限；[原引用交接](#answer-citations) | 每訊息／每引用 ref 獨立，instant 到自己的面板，返回原句；沒有真逐句映射就只呈現底部來源，不猜編號 |
-| 5：HomeFocus／HomeRecentRecords | 以同一已授權孩子及正式 Task／Growth／Care 快照提供 `HomeFocusView`，沿 [首頁交接](#commercial-home-records) | 未提供不是無事項；正式 session 只重設一次 intro flag。移除首頁 fixture／假勾選，兩個首頁投影同一資料 |
+| 5：HomeAgentImportant／HomeOngoing／HomeQuickActions | Agent 重要事項、持續觀察與側欄待辦各有獨立同孩子投影；本地拍照 handoff 沿 [助手式首頁接點](#home-assistant-entry) | 未接線不作空清單，不以待辦冒充推送；照片只供未送出預覽，正式身份、上傳、模型及保存分別接線 |
 | 6：CareRecordsView／CareRecordDetail、TasksView／TaskForm、MemoryCards／MemoryEditor、PhotosView／PhotoRecordForm、SourcesView／SourceRecordForm | 原 Care／Task／Memory／Photo／SharedInput controllers；按 [P2 對照](#p2-coverage) 及各功能 HANDOFF map metadata、版本、游標、原操作、同意與直接 request 差異 | 權限／身份／Server／孩子變更清草稿、refs、選取及附件。保留未知原操作在正確作用域；不要把 preview hooks／回調當 transport |
 | 7：StatusAnnouncement、ModelSettingsView／ChannelCards | 本人 ModelSettingsApi／Push／Telegram adapters；模型 key、直接 unknown 查 metadata、通知原 opId、quota／cooldown及本人回覆沿原契約 | 模型 hidden tab 清秘密；accepted／ack／照護完成分開，Push 不套 Telegram 回覆 gate |
 | 8：各 screen 的掛載及 PreviewProvider 替換 | 正式 App／client 的 auth、abort／generation、可見刷新及 scope orchestration；沿 [正式移除清單](PRODUCTION_UI_HANDOFF.md) | 先接真資料／callbacks，再逐項移除 PreviewToolbar／fixture／timer／情境工具；不能搜尋刪「合成」後宣稱接通 |

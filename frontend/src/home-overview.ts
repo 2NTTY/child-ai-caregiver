@@ -1,0 +1,63 @@
+import type { HomeDestination, HomeViewModel } from "./view-model";
+import type { AgentProposalStatus, AgentRunStatus } from "./agent-view-model";
+
+// Presentation only: the owning adapter supplies authorized items in display order.
+// Neither timestamps nor record counts imply urgency, task completion or health risk.
+export interface HomeOverviewItem {
+  id: string;
+  title: string;
+  detail: string;
+  statusLabel: string;
+  sourceLabel?: string;
+  action: { label: string; destination: HomeDestination };
+}
+export interface HomeOverviewSection {
+  state: "ready" | "loading" | "unavailable";
+  items: HomeOverviewItem[];
+  detail?: string;
+}
+// An explicit Agent selection, never inferred from the task list or care records.
+// These fields are a display boundary, not a new feed, ranking or read/dismiss API.
+export interface HomeAgentImportantItem extends HomeOverviewItem {
+  whyNow: string | null;
+  source: { kind: "agent_run"; runId: string; createdAt: string | null; status: AgentRunStatus };
+  proposal?: { id: string; version: number; status: AgentProposalStatus; expiresAt: string };
+}
+export interface HomeAgentImportantSection {
+  state: "ready" | "loading" | "error" | "unavailable";
+  items: HomeAgentImportantItem[];
+  loadedAt: string | null;
+  detail?: string;
+  // The preview must remain identifiable when shown outside the preview toolbar.
+  synthetic?: boolean;
+}
+export interface HomeOverviewView {
+  childId: string;
+  agentImportant?: HomeAgentImportantSection;
+  attention: HomeOverviewSection;
+  ongoing: HomeOverviewSection;
+}
+
+export function selectHomeAgentImportant(model: HomeViewModel): HomeAgentImportantSection | null {
+  const overview = selectHomeOverview(model);
+  if (!overview) return null;
+  return overview.agentImportant ?? { state: "unavailable", items: [], loadedAt: null,
+    detail: "尚未取得 Agent 提供的重要事項，不能確認有沒有新提醒。" };
+}
+
+export function selectHomeOverview(model: HomeViewModel): HomeOverviewView | null {
+  if (!model.selectedChildId || !model.children.some(child => child.id === model.selectedChildId)) return null;
+  if (model.overview?.childId === model.selectedChildId) return model.overview;
+  // Preserve existing callers while a formal adapter is still pending. Missing is not empty.
+  const focus = model.overview ? undefined : model.focus;
+  return {
+    childId: model.selectedChildId,
+    attention: !focus || focus.kind === "unavailable"
+      ? { state: "unavailable", items: [], detail: focus?.detail ?? "尚未取得待辦與提醒，不能確認有沒有需要處理的事項。" }
+      : focus.kind === "none" ? { state: "ready", items: [], detail: focus.detail }
+        : { state: "ready", items: [{ id: `focus:${model.selectedChildId}:${focus.kind}`, title: focus.title,
+          detail: focus.detail, statusLabel: focus.whyNow ?? (focus.kind === "task" ? "待查看安排" : "待核對關注"),
+          sourceLabel: focus.sourceLabel, action: focus.action }] },
+    ongoing: { state: "unavailable", items: [], detail: "尚未取得持續關注的話題；不從最近記錄推斷。" },
+  };
+}

@@ -22,7 +22,7 @@
 | src/screens/chatScreen.tsx：ChatContents header、kind=intro 正文、useChatTimelinePreview／previewMessage | 接既有 ChatController 與授權訊息；移除固定正文／來源、合成 header 工具及「預覽輸入」分支。保留共用 ChatMessage／ChatTimeline／AnswerSources 和原 composer 資源清理；controller 真成功及授權上下文吻合後才投影訊息 |
 | ChatMessageView.phase／activities、ChatTimeline.items／followRequest／recentLimit | 顯示投影不另定 transport：真 phase／公開活動由後端核定，增量更新沿同一 message id、最終快照具權威。followRequest 只表示本人明確提交／回到最新，不用每次收到 delta 都重設跟隨。recentLimit 只是已載入清單的視窗；GET messages 目前最近 100 則，沒有更早游標，超過該範圍須主聊天先補契約。真取消、恢復／去重及逐句引用映射仍待接線 |
 | src/components/agent/AgentConversationPreview.tsx：isolated-preview key、useAgentPreview、conversationRunId | 用實際 Server／本人／孩子 key 及 run id；原運行、候選、原決定查核和來源仍由既有 controller 驅動，不能去掉 key 的身份清理 |
-| previewChecklist／PreviewTodoCard／checkedPreviewItems、MobileHomeDashboard 待辦 | 使用正式任務／occurrence／完成收據，移除本地勾選的假完成效果。主頁、右欄與任務頁投影同一授權資料，不以三份 fixture 模擬同步 |
+| HomeAgentImportant／HomeOngoing／側欄 attention／HomeQuickActions | 第一區接明確 Agent-important owner 投影，第二區接持續觀察，側欄與任務頁才沿同一授權 Task 資料；不能以普通待辦補位 Agent 推送。本地 capture handoff 只到未送出對話預覽，正式相機／上傳／模型／保存及 scope 清理沿 [助手入口交接](AGENT_HANDOFF.md#home-assistant-entry)。移除獨立 fixture，不拼成正式資料庫 |
 | NotificationBell 的原操作投影 | 鈴鐺保留。目前角標是需留意操作，不是正式未讀；未讀／通知中心須沿實際已交付契約，不能用網絡連接推斷通知送達 |
 | loginScreen.tsx：validate／返回預覽、登入（預覽）及未接通說明 | 接實際身份服務後才替換格式檢查；沒有契約的第三方／手機／忘記密碼功能不能把說明刪掉後加假按鈕 |
 | HomeDashboard：introductionPending／onIntroductionPresented | 真正新登入的會話上層重設；同會話首次首頁消耗一次。閱讀 3 秒後上移，切頁、切孩子及重讀不重設；不要改成每次掛載進場 |
@@ -37,4 +37,4 @@
 - 未接通功能的誠實限制，直至它實際接通；真正帳戶刪除及 password／最近身份重新驗證仍由主聊天完成，不把名字輸入或紅色 Dialog 視為身份認證。
 - 求助需要時用統一權威來源；聊天沒有常駐求助卡，並非刪除真正求助能力。
 
-順序為：接實際授權資料／控制器 → 逐項移除開發工具與合成分支 → 核對無空白高度、路由／來源定位及首幀 → 按當次正式包的授權驗真身份、原操作未知及跨頁一致性。全域搜尋刪掉「預覽／合成」字樣不能完成接線；`PreviewToolbar` 消失不代表所有功能已可用。當前隔離畫面仍保留預覽提示，未執行正式接線或真 API 驗收。
+順序為：接實際授權資料／控制器 → 逐項移除開發工具與合成分支 → 核對無空白高度、路由／來源定位及首幀 → 按 P2 集中安排驗真身份、原操作未知及跨頁一致性。全域搜尋刪掉「預覽／合成」字樣不能完成接線；`PreviewToolbar` 消失不代表所有功能已可用。當前隔離畫面仍保留預覽提示，未執行正式接線或真 API 驗收。

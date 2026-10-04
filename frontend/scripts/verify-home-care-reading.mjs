@@ -17,15 +17,15 @@ try {
   assert.equal(await page.getByRole('textbox',{name:/問我關於孩子|撰寫對話/}).count(),0);
   assert.equal(await page.getByText('資料概況',{exact:true}).count(),0);
   assert.equal(await page.getByText('待辦示例 · 尚未建立正式任務',{exact:true}).count(),0);
-  await page.getByText('今天暫無指定事項',{exact:true}).waitFor();
+  await page.getByText('目前合成快照沒有指定待處理事項。',{exact:true}).waitFor();
   await assertFits(page,`home reading ${width}`);
   await page.screenshot({path:resolve(directory,`home-${width}.png`)});
   await scenario(page,'今日事項未能取得');
-  await page.getByTestId('home-focus').getByText('暫未能確認今日事項',{exact:true}).waitFor();
-  assert.equal(await page.getByText('今天暫無指定事項',{exact:true}).count(),0,'Unavailable is not none');
+  await page.getByTestId('home-focus').getByText('暫未能確認待辦與提醒',{exact:true}).waitFor();
+  assert.equal(await page.getByText('目前合成快照沒有指定待處理事項。',{exact:true}).count(),0,'Unavailable is not none');
   await assertFits(page,`unavailable home ${width}`);
   await scenario(page,'今日任務示例');
-  await page.getByTestId('home-focus').getByRole('button',{name:'查看任務與預約',exact:true}).waitFor();
+  await page.getByTestId('home-focus').getByRole('button',{name:'查看並覆核',exact:true}).waitFor();
   await scenario(page,'成長提示示例');
   await page.getByTestId('home-focus').getByText('依據：前端合成樣本，沒有真來源證據',{exact:true}).waitFor();
   await scenario(page,'結果未知');
@@ -34,7 +34,7 @@ try {
   await scenario(page,'設定未完成');
   await page.getByRole('button',{name:'了解如何使用',exact:true}).waitFor();
   if(width>=650) {await page.getByRole('button',{name:'問育兒問題',exact:true}).click();await page.getByRole('textbox',{name:'撰寫對話問題',exact:true}).waitFor();}
-  passed.push(`home ${width}: one supplied focus; none/unavailable/task/growth/unknown; no checklist-derived priority, duplicate overview or question field; optional guide`);
+  passed.push(`home ${width}: supplied attention projection; empty/unavailable/task/growth/unknown; no checklist-derived priority or question field; optional guide`);
   await page.close();
 
   const care=await openPreview(browser,'/care',width,width>=1024?992:width===390?844:720,failures);
