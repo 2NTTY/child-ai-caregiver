@@ -9,7 +9,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 核對時間：2026-10-04；本次文件整理基線為 master `c51dd52`（PR #83）。開工仍須重查遠端／相關 PR 及本機差異；快照不代表之後沒有新提交。
 
-- **文件維護 DOC-R04**：本次收斂閱讀路徑、文件職責及歷史索引，只改文件／指引。範圍、驗收及交付見 [本包](#doc-r04)；不啟動產品包、部署或改活動前端 PR。
+- **文件維護**：[DOC-R04](#doc-r04) 已驗收，隨 [PR #86](https://github.com/2NTTY/child-ai-caregiver/pull/86) 合併結案；沒有因此啟動下一個文件或產品包。
 - **前端獨立工作流**：只沿 [frontend/PLAN#active](frontend/PLAN.md#active) 接續；根計劃不複製 FE-Wxx 的工作狀態。
 - **Server／Agent／正式整合**：目前沒有在本次任務獲啟動的新產品包。下一步是按前端實際交付及使用者指示界定一個正式接線包，讀 [P2 UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff) → [相關功能交接](frontend/HANDOFF.md#p2-coverage)；正式 API、身份／草稿／原 opId、未驗項和必要驗收不能由合成預覽代替。不自行啟動 P3。
 
@@ -283,12 +283,10 @@ P1 按真實流程實作 DataStore／ModelGateway；P2 加入 AgentRuntime／Att
 <a id="doc-r04"></a>
 ## DOC-R04 — 文件職責及閱讀路徑收斂
 
-- 狀態：待驗收（文件整理與靜態核對完成，待 PR review／合併）；不改業務程式、API 語義、UI 或部署。
-- 前置：master `c51dd52`；審計及 Word 方案只作快照輸入，已核對活動 PR #84／#85。
-- 範圍：根／前端入口、PLAN／STATUS／交接分工、過時 metadata、歷史及證據定位；工作規則保留，歷史原文用固定 Git 版本追溯。
-- 驗收：[EV-DOC-R04](artifacts/verification/DOC_R04_CHECKS.json)／[LOG](WORKLOG.md#log-20261004-001)。引用／錨點、TOML、歷史內容及獨立接手檢查完成；沒有产品测试或 runtime／token 節省量測。
-- 下一步／gate：PR review，合併另候使用者指示；保留 #84／#85 的新內容及各自驗收，不操作其源分支。
-- 停止條件：現行需求／授權衝突或其他工作的新變更影響整理範圍，先核對受影響內容；不猜完成或覆蓋現場。
+- 狀態：已完成；2026-10-04 使用者確認合併，隨 [PR #86](https://github.com/2NTTY/child-ai-caregiver/pull/86) 合併生效。
+- 成果／基線：從 master `c51dd52` 收斂根／前端閱讀入口、文件職責、過時 metadata 及歷史索引；附件按現行資料取捨，保留前端獨立進度、固定歷史原文及證據。沒有業務程式、API 語義、UI 或部署改動。
+- 驗收：[EV-DOC-R04](artifacts/verification/DOC_R04_CHECKS.json)／[LOG](WORKLOG.md#log-20261004-001)。引用／錨點、TOML、歷史內容及接手入口已核對；追加 STATUS 更新／清理規則已靜態核對。官方 Skill validator 缺 PyYAML，替代檢查及未驗限制照實保留；沒有產品測試或 runtime／token 節省量測。
+- 後續整合限制：#84／#85 的新內容及各自驗收由原包處理；整合時保留其新增內容，不整檔覆蓋。本包不操作其源分支或啟動正式接線。
 
 <a id="s00-w01"></a>
 ## S00-W01 — 完整文档迁移
