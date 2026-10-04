@@ -1,6 +1,6 @@
 # 育有方 Agent Prompt Pack
 
-版本 **0.1.17** · 原文件工作包 **DOC-P01** · **S11-W03 已局部接入 Server 基礎並通過最小真模型工具循環；完整產品配方尚未全部接通或驗收**。
+版本 **0.1.17** · 原文件工作包 **DOC-P01** · 配方／模組定義以 [manifest](manifest.json) 為準；實作／驗收狀態只按 [根 PLAN](../PLAN.md#roadmap-packages) 的所屬包與 EV，不在本入口維護另一份進度。
 
 這裏的主要交付是直接給產品 Agent 閱讀的指令正文。Gemini 是首個接入目標；Agent 在 Server 執行，Web／Android 使用同一套行為與業務契約。一般聊天輸出自然文字，工具參數和必要的草稿／背景結果才使用結構化資料。
 
@@ -13,7 +13,7 @@ S11-W01 如只需要簡單文字聊天，可直接採用 [P1 最小入口](p1/RE
 3. 按 [執行上下文](contracts/run-context.md)、[工具契約](contracts/capabilities-and-tools.md) 及 [輸出契約](contracts/output.md) 準備輸入。
 4. 接入 Gemini 時讀 [接入說明](integration/gemini.md)；審查時讀 [案例與驗證](review/README.md)。
 
-本目錄保存指令與契約；[Server 組裝器](../server/agent-prompt.ts) 與 [ADK runtime](../server/agent-runtime.ts) 已復用原有正文，`p1-chat` 配方完成 [S11-W03 必要驗收](../artifacts/verification/S11_W03_CHECKS.json)。P1 Web 仍使用原最小入口；記憶、RAG、任務、排程及通知按後續工作包接線，配方不是已可調用的工具目錄。原靜態範例仍全為合成資料，不當作整套模型效果測試。
+本目錄保存指令與契約；[Server 組裝器](../server/agent-prompt.ts) 與 [ADK runtime](../server/agent-runtime.ts) 已復用原有正文，`p1-chat` 配方完成 [S11-W03 必要驗收](../artifacts/verification/S11_W03_CHECKS.json)。P2 產品配方的記憶／RAG／任務及通知接線證據見 [S11-W02](../artifacts/verification/S11_W02_CHECKS.json) 與 [S17-W02](../artifacts/verification/S17_W02_CHECKS.json)；配方存在不表示任意環境已啟用全部能力，仍須按 Server capabilities。原靜態範例仍全為合成資料，不當作整套模型效果測試。
 
 ## 模組與閱讀對象
 
@@ -40,7 +40,7 @@ S11-W01 如只需要簡單文字聊天，可直接採用 [P1 最小入口](p1/RE
 
 使用者提出要求後，最終要得到可理解的回答、補問或結果說明；工具呼叫只是中間步驟。純背景維護可回傳 `no_action`，不為了像在聊天而發通知。對外聯絡的文字與當前使用者的回覆分開，仍需既定渠道和當前授權。
 
-P1 只用簡單聊天及已提供的相關資料，不預建長期記憶或假設照片、檢索、通知已接通。其餘配方是後續工作包的準備資產；manifest 的階段標籤只表示預計接入落點，並不啟用能力。
+P1 只用簡單聊天及已提供的相關資料，不預建長期記憶或假設照片、檢索、通知已接通。各配方是否已接入按 manifest 的驗證範圍及所屬包證據核對；階段標籤本身不啟用能力，未驗配方不能由已通過的 P2 配方代替。
 
 ## 長期維護
 

@@ -1,5 +1,7 @@
 # 数据模型、版本与不变量
 
+本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。
+
 本文件唯一維護已確定的概念實體、字段含義、關係、終態、版本及遷移格式。現行 Server 模型依 [ADR-008](DECISIONS.md#adr-008) 替代本地主庫及離線操作模型，保留既有錨點。不是已生成的 schema；SQL 類型、索引／約束名及序列化細節見 [待實施細化](DECISIONS.md#deferred)。各包只落實當前所需字段，不提前建立全部對象。
 
 <a id="section-3-2"></a>
@@ -98,7 +100,7 @@ owner 刪除孩子時，現有外鍵連帶刪除照護記錄、聊天及該孩�
 - 刪整個孩子時清除相關收據正文；刪一筆記錄時保守清除該孩子 care 類收據正文，刪檔案歷史時清除 profile 類正文。保留最少操作識別及加密 fingerprint，阻止舊建立操作復活；result=null 不是未確認。新台帳隨既有全庫備份保存，本包沒有新增備份還原演練。
 - 舊直接寫入在 migration 啟用後也追加變更，但不獲得不存在的 opId 冪等保證。新記憶、任務及附件須由各自工作包接上相同授權／確認邊界，本包不預先實作它們。
 
-S09-W02 的 `011-memory-online` 擴充既有台帳的 `memory` 種類，沿用相同原子提交及目前授權，不改寫已套用的 010 migration。記憶寫入取得 workspace UPDATE 後再鎖孩子；共享事件只含孩子及種類，私人事件綁本人。刪除單一事實／話題時，保守抹除該孩子所有 memory 收據正文而保留去重識別；此擴展已與 008 記憶資料完成獲准本機 SQL／重啟／刪除驗收，見 [EV-S09-W02](../artifacts/verification/S09_W02_CHECKS.json)；未部署。
+S09-W02 的 `011-memory-online` 擴充既有台帳的 `memory` 種類，沿用相同原子提交及目前授權，不改寫已套用的 010 migration。記憶寫入取得 workspace UPDATE 後再鎖孩子；共享事件只含孩子及種類，私人事件綁本人。刪除單一事實／話題時，保守抹除該孩子所有 memory 收據正文而保留去重識別；此擴展已與 008 記憶資料完成獲准本機 SQL／重啟／刪除驗收，見 [EV-S09-W02](../artifacts/verification/S09_W02_CHECKS.json)。
 
 <a id="section-4-5"></a>
 ## 4.5 冲突规则
@@ -421,10 +423,10 @@ migration `022-shared-inputs` 新增 `shared_inputs`：孩子／輸入者／來�
 
 原文永久維持輸入者私有；確認只新增家長核對的共享 CareRecord，不把原文改為家庭可讀。`reference` 明確標外部參考、數字及時間不進摘要計算；`family_record` 須另確認實際孩子關係，也不自動建立 MemoryFact／任務或外發授權。既有 Care 更正歷史及版本繼續適用。
 
-新增／確認／刪除沿用私人收據；刪除移除相應回傳正文。記錄／孩子 FK cascade 及 DB 加密備份涵蓋新表，歷史備份仍保留當時快照；還原及資料保留真證據待集中驗收。[契約](API.md#p2-shared-inputs)
+新增／確認／刪除沿用私人收據；刪除移除相應回傳正文。記錄／孩子 FK cascade 及 DB 加密備份涵蓋新表，歷史備份仍保留當時快照；還原及資料保留證據見 [S12-W04](../artifacts/verification/S12_W04_CHECKS.json)。[契約](API.md#p2-shared-inputs)
 
 <a id="proactive-contact-storage"></a>
-## S13-W07 聯絡台帳（019，未執行遷移）
+## S13-W07 聯絡台帳（migration 019）
 
 [019-proactive-contact.sql](../server/migrations/019-proactive-contact.sql) 把本人接收同意、精確任務授權、聯絡請求與渠道嘗試分開：
 - `contact_consents／contact_consent_revisions` 綁孩子、本人、版本、渠道順序及家庭權限版本；`contact_grants／contact_grant_revisions` 保存任務版本、確認人、對象／同意／綁定版本、披露範圍、期限及 fallback。正文以既有 cipher 及種類／資源／版本 AAD 加密。

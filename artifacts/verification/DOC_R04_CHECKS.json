@@ -1,0 +1,127 @@
+{
+  "evidence_id": "EV-DOC-R04",
+  "package": "DOC-R04",
+  "recorded_at": "2026-10-04T20:20:50+08:00",
+  "source_base": "c51dd52e0cdea03b1d412a10d08ac6761e010d9b",
+  "branch": "codex/docs-structure-consolidation",
+  "scope": "文件架構與指導整理；不改產品程式、API 語義、UI 或子代理配置",
+  "inputs": [
+    {
+      "file": "育有方-文件架構唯讀審計-2026-10-04.md",
+      "sha256": "c3ab7ff5539babf39dc972c9106857250624c4131508308a47fd8cd8feb91743",
+      "role": "審計／方案快照；按現行倉庫與使用者補充取捨"
+    },
+    {
+      "file": "育有方-文件架構整合實施方案-2026-10-04 (1).docx",
+      "sha256": "2c73046ebf8aa064b46d2a69ffd9fdd0131b45d33b25aff4e6bd61282401cc0e",
+      "role": "審計／方案快照；按現行倉庫與使用者補充取捨"
+    }
+  ],
+  "remote_snapshot": {
+    "observed_pr_updates_through": "2026-10-04T11:52:17Z",
+    "master": "c51dd52e0cdea03b1d412a10d08ac6761e010d9b",
+    "pull_requests": [
+      {
+        "number": 84,
+        "head": "4ecb67b8ab4e247aedbff0b571241f85e50ccde0",
+        "state": "draft/open",
+        "scope": "FE-W37 動效；恢復索引已補入，但後續修正／被測現場仍須核對"
+      },
+      {
+        "number": 85,
+        "head": "5af4027fa3cc8f205c0578f3afe5f75a7badc3e2",
+        "state": "draft/open",
+        "scope": "首頁資訊與快捷記錄；原 PR 未分配 FE-Wxx，不自行命名"
+      }
+    ],
+    "limits": "遠端快照不等於現場 dirty 或後續被測版本；未修改這兩個 PR 或其他 checkout"
+  },
+  "checks": {
+    "checked_local_links": 1097,
+    "link_errors": [],
+    "lost_explicit_anchors": {},
+    "worklog_original_prefix_preserved": true,
+    "indexed_frozen_file_sha256_verified": 9,
+    "git_snapshot_sha256_verified": 4,
+    "toml_parsed_and_unchanged": [
+      ".codex/agents/explorer.toml",
+      ".codex/agents/worker.toml",
+      ".codex/config.toml"
+    ],
+    "dispatch_section_unchanged": true,
+    "product_prompt_body_unchanged": true,
+    "skill_fallback_static_checks": "passed",
+    "changed_markdown_files": 34,
+    "new_files": [
+      "artifacts/verification/DOC_R04_CHECKS.json"
+    ],
+    "diff_check": "passed",
+    "entry_sizes": {
+      "AGENTS.md": {
+        "before_utf8_lf_bytes": 28104,
+        "after_utf8_lf_bytes": 27582
+      },
+      "frontend/AGENTS.md": {
+        "before_utf8_lf_bytes": 1986,
+        "after_utf8_lf_bytes": 2067
+      },
+      "STATUS.md": {
+        "before_utf8_lf_bytes": 14916,
+        "after_utf8_lf_bytes": 1775
+      },
+      "frontend/STATUS.md": {
+        "before_utf8_lf_bytes": 33193,
+        "after_utf8_lf_bytes": 1034
+      },
+      "frontend/PLAN.md": {
+        "before_utf8_lf_bytes": 26563,
+        "after_utf8_lf_bytes": 6626
+      },
+      "frontend/HANDOFF.md": {
+        "before_utf8_lf_bytes": 119006,
+        "after_utf8_lf_bytes": 16942
+      }
+    },
+    "limits": "Local path/anchor checks exclude frozen historical source bodies and old WORKLOG entries; external links are not exhaustively fetched.",
+    "historical_files_checked_in_earlier_pass": 1398,
+    "altered_historical_files": [],
+    "historical_comparison_method": "Git blob content compared with checkout; existing CRLF conversion allowed. Nine indexed frozen files additionally checked by exact raw SHA-256."
+  },
+  "readonly_entry_review": {
+    "method": "兩個 Luna 分別定位過期 metadata 及按入口核對接手情境；主模型親讀來源並修改／裁決",
+    "covered": [
+      "root 與 frontend 各自任務入口",
+      "主線與未合併 PR 的版本邊界",
+      "下一步／阻塞／未驗項",
+      "正式 UI 契約及指定歷史證據",
+      "子域 AGENTS 優先與根基底",
+      "更新目的地及防止重複進度"
+    ],
+    "corrections": "主模型未採納無證據的「網站已停」及「PR #85 是 FE-W38」推斷；網站標未知、保留未分配編號，#85 的具體範圍補回本域 PLAN",
+    "limit": "屬文件可定位性及來源覆核，不是 runtime 載入、真人驗收或 token 節省量測"
+  },
+  "skill_validation": {
+    "official_command": "quick_validate.py frontend/.agents/skills/web-screen-delivery",
+    "official_result": "blocked: ModuleNotFoundError: No module named yaml",
+    "fallback": "原有兩欄 frontmatter 未改；名稱／description／placeholder 及引用檢查通過；未安裝依賴",
+    "runtime": "未驗"
+  },
+  "preservation": {
+    "worklog": "只追加 LOG-20261004-001；既有內容不改寫",
+    "archive": "原凍結資料／run 原位保留；收短文件以 _archive/README.md 的固定 Git blob 與 SHA-256 追溯",
+    "dispatch": "AGENTS #models 與三份 TOML 未改",
+    "product_prompt": "product-tools 的 prompt:begin/end 內正文未改"
+  },
+  "not_run": [
+    "產品測試／build／E2E",
+    "GCP／網站可用性查詢或部署",
+    "Skill／AGENTS／模型配置的原生 runtime 驗證",
+    "token／額度量測"
+  ],
+  "remaining": [
+    "DOC-R04 等待 PR review／合併；不宣稱已合併",
+    "PR #84 與本次前端文件有重疊，整合須保留新增動效內容／證據",
+    "PR #84／#85 產品重疊及驗收由原包處理；本次不變更 gate",
+    "官方 Skill validator 缺 PyYAML，靜態替代檢查不等同該命令通過"
+  ]
+}

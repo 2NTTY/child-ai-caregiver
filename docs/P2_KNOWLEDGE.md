@@ -1,6 +1,6 @@
 # P2 小型官方知識庫
 
-S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢索。獲批的真 PostgreSQL／embedding／備份還原已通過：7 組檢查、15 次 embedding、79 次 store 呼叫；原 23 張業務表保留，31 張表空庫還原及向量查詢成功，詳見 [驗收證據](../artifacts/verification/S10_W01_CHECKS.json)。目前未部署。Agent 工具接入及面向家長的引用 UI 在 S11-W02，定期來源檢查在 S10-W02；本包指令不等於這些功能已接通。
+S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢索。獲批的真 PostgreSQL／embedding／備份還原已通過：7 組檢查、15 次 embedding、79 次 store 呼叫；原 23 張業務表保留，31 張表空庫還原及向量查詢成功，詳見 [驗收證據](../artifacts/verification/S10_W01_CHECKS.json)。這是 S10-W01 當時範圍；Agent／引用與來源更新分屬 [S11-W02](../PLAN.md#s11-w02)／[S10-W02](../PLAN.md#s10-w02)，部署現況只看 [STATUS](../STATUS.md#deployment)。本文件管操作方法，不維護後續包進度。
 
 ## 首批內容與適用性
 

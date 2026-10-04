@@ -1,5 +1,7 @@
 # 育有方配色策略
 
+身份：FE-W20 的來源及採納理由。現行色值只改 [theme.ts](src/theme.ts)，呈現規則只改 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)；此處不用隨每次畫面調整再維護一份色值／進度。
+
 更新：2026-10-01，FE-W20。使用者指定 [Happy Hues 第 14 款](https://www.happyhues.co/palettes/14)，取代原綠色／暖灰 UI 色盤。只讀這一頁的用色指導並核對實際畫面，沒有翻看其他配色。Logo／美術保留；色值唯一入口是 [theme.ts](src/theme.ts)。
 
 ## 網站分工與育有方映射
