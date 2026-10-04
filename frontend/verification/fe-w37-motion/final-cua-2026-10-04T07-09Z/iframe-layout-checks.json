@@ -1,0 +1,549 @@
+{
+  "method": "Normalized records of the CUA assertions: every measurement read the actual same-origin iframe document URL, clientWidth, scrollWidth, and clientHeight after supported Enter navigation and ordinary wrapper width-button activation. This is not a raw event trace.",
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+  "wrapper": "/qa-viewport",
+  "bundle": "entry-05edcc83574fdeb504488d2d81869933.js",
+  "checks": [
+    {
+      "expected_route": "/",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/care",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/care",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/care",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/care",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/care",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/care",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/care",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/care",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/photos",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/photos",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/photos",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/photos",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/photos",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/photos",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/photos",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/photos",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/sources",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/sources",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/sources",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/sources",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/sources",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/sources",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/sources",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/sources",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/growth",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/growth",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/growth",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/growth",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/growth",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/growth",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/growth",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/growth",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/summary",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/summary",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/summary",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/summary",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/summary",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/summary",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/summary",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/summary",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/contact",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/contact",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/contact",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/contact",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/contact",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/contact",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/contact",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/contact",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/profile",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/profile",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/profile",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/profile",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/profile",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/profile",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/profile",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/profile",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/family",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/family",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/family",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/family",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/family",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/family",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/family",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/family",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/memory",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/memory",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/memory",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/memory",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/memory",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/memory",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/memory",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/memory",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/tasks",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/tasks",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/tasks",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/tasks",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/tasks",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/tasks",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/tasks",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/tasks",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/settings",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/settings",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/settings",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/settings",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/settings",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/settings",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/settings",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/settings",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/chat",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/chat",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/chat",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/chat",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/guide",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/guide",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/guide",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/guide",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/guide",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/guide",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/guide",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/guide",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/login",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/login",
+      "expected_width": 1440,
+      "client_width": 1440,
+      "scroll_width": 1440,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/login",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/login",
+      "expected_width": 1024,
+      "client_width": 1024,
+      "scroll_width": 1024,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/login",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/login",
+      "expected_width": 390,
+      "client_width": 390,
+      "scroll_width": 390,
+      "client_height": 900,
+      "passed": true
+    },
+    {
+      "expected_route": "/login",
+      "actual_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/login",
+      "expected_width": 320,
+      "client_width": 320,
+      "scroll_width": 320,
+      "client_height": 900,
+      "passed": true
+    }
+  ],
+  "scope": "60 route-identity, CSS viewport width, and document-overflow assertions. Iframe viewport evidence, not whole-browser device emulation or exhaustive per-control clipping review."
+}

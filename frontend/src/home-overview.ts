@@ -1,4 +1,5 @@
 import type { HomeDestination, HomeViewModel } from "./view-model";
+import type { AgentProposalStatus, AgentRunStatus } from "./agent-view-model";
 
 // Presentation only: the owning adapter supplies authorized items in display order.
 // Neither timestamps nor record counts imply urgency, task completion or health risk.
@@ -15,10 +16,33 @@ export interface HomeOverviewSection {
   items: HomeOverviewItem[];
   detail?: string;
 }
+// An explicit Agent selection, never inferred from the task list or care records.
+// These fields are a display boundary, not a new feed, ranking or read/dismiss API.
+export interface HomeAgentImportantItem extends HomeOverviewItem {
+  whyNow: string | null;
+  source: { kind: "agent_run"; runId: string; createdAt: string | null; status: AgentRunStatus };
+  proposal?: { id: string; version: number; status: AgentProposalStatus; expiresAt: string };
+}
+export interface HomeAgentImportantSection {
+  state: "ready" | "loading" | "error" | "unavailable";
+  items: HomeAgentImportantItem[];
+  loadedAt: string | null;
+  detail?: string;
+  // The preview must remain identifiable when shown outside the preview toolbar.
+  synthetic?: boolean;
+}
 export interface HomeOverviewView {
   childId: string;
+  agentImportant?: HomeAgentImportantSection;
   attention: HomeOverviewSection;
   ongoing: HomeOverviewSection;
+}
+
+export function selectHomeAgentImportant(model: HomeViewModel): HomeAgentImportantSection | null {
+  const overview = selectHomeOverview(model);
+  if (!overview) return null;
+  return overview.agentImportant ?? { state: "unavailable", items: [], loadedAt: null,
+    detail: "尚未取得 Agent 提供的重要事項，不能確認有沒有新提醒。" };
 }
 
 export function selectHomeOverview(model: HomeViewModel): HomeOverviewView | null {

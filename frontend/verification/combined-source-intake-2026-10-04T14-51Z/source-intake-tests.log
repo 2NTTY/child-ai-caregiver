@@ -1,0 +1,14 @@
+✔ supplied intentions stay verbatim and do not assert that a source was read or verified (0.990016ms)
+✔ unavailable and unknown reads cannot become proposals or connected results (0.251095ms)
+✔ manual and assisted entry use the same proposal validation and confirmation boundary (0.330144ms)
+✔ specific validity stays raw and must be provided before confirming (0.241605ms)
+✔ unknown connection freezes the confirmed intent and never reports connected (0.133325ms)
+✔ draft limits reject rather than truncate; the formal create projection stays separate (0.590539ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 193.563232

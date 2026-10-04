@@ -1,21 +1,24 @@
-import { useId, useState } from "react";
+import { useId } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { useBackground } from "../../preview/BackgroundContext";
+import { useFirstScreenImage } from "../../startup/FirstScreenGate";
+import { useContainerSize } from "../useContainerSize";
 
 export function HomeBackground({ surface, protectFullWidth = false, fadeBottom = false, wideIllustration = false, fitIllustration = false }: { surface: string; protectFullWidth?: boolean; fadeBottom?: boolean; wideIllustration?: boolean; fitIllustration?: boolean }) {
   const { source, selected } = useBackground();
   const fade = useId();
   const bottom = `${fade}-bottom`;
-  const [size, setSize] = useState({ width: 0, height: 0 });
   const wholeIllustration = fitIllustration && !selected;
+  const { ref, size, onLayout } = useContainerSize(wholeIllustration);
   const illustrationHeight = Math.min(size.height, size.width / (1672 / 941));
+  const startupImage = useFirstScreenImage("home-hero", !wholeIllustration || illustrationHeight > 0);
   const illustrationFadeStart = Math.max(0.42, size.width > 0 ? 1 - illustrationHeight * (1672 / 941) / size.width : 0.42);
-  return <View aria-hidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={StyleSheet.absoluteFill}
-    onLayout={wholeIllustration ? ({ nativeEvent: { layout } }) => setSize(current => current.width === layout.width && current.height === layout.height ? current : { width: layout.width, height: layout.height }) : undefined}>
-    <Image testID="home-background-image" source={source} accessible={false} resizeMode={wholeIllustration ? "contain" : "cover"}
+  return <View ref={ref} aria-hidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={onLayout}>
+    {!startupImage.fallback || selected ? <Image testID="home-background-image" source={source} accessible={false} resizeMode={wholeIllustration ? "contain" : "cover"}
+      onLoad={startupImage.onLoad} onError={startupImage.onError}
       style={[styles.image, wideIllustration && !selected && styles.wideIllustration,
-        wholeIllustration && { left: "auto", right: 0, width: illustrationHeight * (1672 / 941), height: illustrationHeight, top: (size.height - illustrationHeight) / 2, opacity: illustrationHeight > 0 ? 1 : 0 }]} />
+        wholeIllustration && { left: "auto", right: 0, width: illustrationHeight * (1672 / 941), height: illustrationHeight, top: (size.height - illustrationHeight) / 2, opacity: illustrationHeight > 0 ? 1 : 0 }]} /> : null}
     <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} aria-hidden focusable={false}>
       <Defs>
         <LinearGradient id={fade} x1={0} y1={0} x2={1} y2={0}>

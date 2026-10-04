@@ -1,0 +1,54 @@
+{
+  "at": "2026-10-04T14:52:20Z",
+  "source_files": 273,
+  "source_manifest_sha256": "d8087f0a9495ebcf3660b9bc5031c795e5fad04abbc69761a28ba353f2cd3993",
+  "source_unchanged_during_batch": true,
+  "delta": "source-delta.json",
+  "commands": [
+    {
+      "command": "npm run typecheck",
+      "result": "pass",
+      "log": "typecheck.log"
+    },
+    {
+      "command": "node --test scripts/source-intake.test.mts",
+      "result": "pass",
+      "tests": 6,
+      "log": "source-intake-tests.log"
+    },
+    {
+      "command": "npm run build:web",
+      "result": "pass",
+      "routes": 35,
+      "log": "build-web.log"
+    }
+  ],
+  "exit_code": 0,
+  "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004",
+  "clear_used": false,
+  "router_proof": "metro-router-proof.json",
+  "compiled_markers": {
+    "motion-settings": 1,
+    "modal-backdrop": 2,
+    "frontend-startup-loading": 1,
+    "home-agent-important": 2,
+    "home-agent-camera": 1,
+    "mobile-context-row": 1,
+    "measureWhileCollapsed": 7,
+    "motionExit": 2,
+    "profile-scroll": 1,
+    "useProfileSwitchAnchor": 2,
+    "composerOverlap": 5,
+    "source-intake-conversation": 1,
+    "source-intake-review": 1,
+    "motion-child-delayed-status": 1
+  },
+  "entry": "dist/_expo/static/js/web/entry-16deeae76d9de51cc39e7e129ca83da1.js",
+  "entry_sha256": "2c89cfc6682cd2c9f5c64ea448fa53e706b8256cda8938500dab8cace4d8d507",
+  "export_file_count": 61,
+  "export_manifest_sha256": "de722255ac6dd290ca49a157f0bfb0fb4237bd2d3e76b74eb3d99b46b98e89e9",
+  "prior_tests": "Earlier14home/handoffpure tests notrerun; sourceunchanged",
+  "runtime": "Pending parent publication; first End-atlatest→four-line failure recheck, then source-intake bounded flow/lazyfamilymodal/normalcurtainnolabel",
+  "android": "Notrerun for scopedWebbatch",
+  "known_open": "Source-detailsEndinflight remainsopen; five-second curtain hold not naturallyexercised; cloudfontlimits separator measurements; no realAPI/model/camera/privateupload"
+}

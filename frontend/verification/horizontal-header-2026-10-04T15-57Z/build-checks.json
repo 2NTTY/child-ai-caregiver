@@ -1,0 +1,55 @@
+{
+  "started_at": "2026-10-04T15:57:38.357826+00:00",
+  "scope": "one combined typecheck and one Web export only",
+  "source_files": 321,
+  "frozen_implementation_hashes_match": true,
+  "environment": {
+    "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004",
+    "EXPO_NO_TELEMETRY": "1",
+    "EXPO_OFFLINE": "1",
+    "__UNSAFE_EXPO_HOME_DIRECTORY": "/workspace/scratch/c112a98a8be9/expo-export-home"
+  },
+  "typecheck": {
+    "result": "pass",
+    "exit_code": 0,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "log": "typecheck.log"
+  },
+  "build": {
+    "result": "pass",
+    "exit_code": 0,
+    "command": [
+      "npm",
+      "run",
+      "build:web"
+    ],
+    "log": "build-web.log",
+    "route_summary": "Static routes (35)"
+  },
+  "source_unchanged_during_batch": true,
+  "source_manifest_sha256": "73ea48a6803bd6d52b422e07af2209ba489916afd829de1ecbbb14c16339c6f8",
+  "exports": {
+    "file_count": 61,
+    "manifest_sha256": "010759e3c299a105ca164f3f81dcf81d8dba24837cd64a546fffca3ff2768b89",
+    "entries": [
+      {
+        "path": "dist/_expo/static/js/web/entry-ebafc322443387cdabf398ba645da145.js",
+        "bytes": 4399263,
+        "sha256": "b0fafa1a94ebea8d880b4123f9fd96cebec8b0cb4f37c3bbc08dfb94d85de113"
+      }
+    ]
+  },
+  "compiled_markers": {
+    "mobile-header-identity": 1,
+    "header-child-facts": 2,
+    "header-context-layer": 1,
+    "inline-swap": 1,
+    "mobile-context-row": 0
+  },
+  "completed_at": "2026-10-04T15:57:58.791423+00:00",
+  "manifest_scope_note": "Compared with the prior 275-file manifest, this 321-file manifest also inventories 44 already-existing verification scripts. Only the six frozen implementation files are product-source changes: four modified and two added. No existing script was run or modified."
+}

@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import {useRef, useState} from 'react';
 import {View} from 'react-native';
@@ -10,10 +11,13 @@ import {AppButton, SectionCard, SectionHeader} from '../ui';
 import {ContactConsentCard} from './ContactConsentCard';
 import {ContactTaskCard} from './ContactTaskCard';
 import {ContactHistory} from './ContactHistory';
+import {MotionDisclosure} from '../../motion';
 import {contactStyles as s} from './contact-styles';
 
 export function ContactView({model, actions, onSettings, onTask, previewTools}: {model: ContactViewModel; actions: ContactActions; onSettings: () => void; onTask: (id: string) => void; previewTools?: React.ReactNode}) {
-  const [wide, setWide] = useState(false), [details, setDetails] = useState(false), cache = useRef(new Map<string, TaskView>()), epoch = useRef(model.epoch), page = model.page;
+  const containerLayout = useContainerWidth();
+  const wide = containerLayout.width >= 980;
+  const [details, setDetails] = useState(false), cache = useRef(new Map<string, TaskView>()), epoch = useRef(model.epoch), page = model.page;
   if (epoch.current !== model.epoch) {cache.current.clear(); epoch.current = model.epoch;}
   page?.tasks.forEach(task => cache.current.set(task.id, task));
   const tasks = [...cache.current.values()], canRetry = model.online && !model.busy && model.load === 'ready' && model.access === 'editable' && !!page?.canManage && !!model.pending?.reviewed && !model.pending.confirmed;
@@ -34,15 +38,15 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
     {model.pending ? <SectionCard testID="contact-pending"><SectionHeader density="compact" title="原決定待核對" icon="information-outline" />
       <Text selectable style={s.meta}>原操作：{model.pending.reference}（合成參考）</Text>{model.pending.labels.map((text, index) => <Text key={index} style={s.body}>{text}</Text>)}
       <AppButton label={details ? '收起原提交內容' : '查看原提交內容及版本'} variant="quiet" onPress={() => setDetails(value => !value)} />
-      {details ? <Text testID="contact-original-body" selectable style={s.meta}>{JSON.stringify(JSON.parse(model.pending.body), null, 2)}</Text> : null}
+      <MotionDisclosure expanded={details} scopeKey={`${model.scopeKey}:${model.pending.reference}`}><Text testID="contact-original-body" selectable style={s.meta}>{JSON.stringify(JSON.parse(model.pending.body), null, 2)}</Text></MotionDisclosure>
       <Text style={s.meta}>{model.pending.confirmed ? '原收據已確認，最新資料尚未讀回；不能重送或另建提交。' : '原識別、接收者、內容及版本保持不變；GET 本身不證明原決定成功。'}</Text>
       <AppCheckbox label="我已核對目前資料，同意以原識別內容及版本重試" checked={model.originalConsent} disabled={!canRetry} onChange={actions.setOriginalConsent} /><AppButton label="明確重試原聯絡決定" disabled={!canRetry || !model.originalConsent} onPress={actions.retryOriginal} />
     </SectionCard> : null}
     {page ? <>
       {!page.workerEnabled ? <SectionCard><Text style={s.warning}>背景聯絡 worker 目前未啟用，保存授權不會啟動投遞。仍可管理或撤回授權。</Text></SectionCard> : null}
-      <View onLayout={event => setWide(event.nativeEvent.layout.width >= 980)} style={wide ? s.columns : s.stack}><View style={wide ? s.column : s.full}><ContactConsentCard key={`consent:${model.epoch}`} model={model} actions={actions} onSettings={onSettings} /></View>
+      <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={wide ? s.columns : s.stack}><View style={wide ? s.column : s.full}><ContactConsentCard key={`${model.scopeKey}:${model.userId}`} model={model} actions={actions} onSettings={onSettings} /></View>
         <View style={wide ? s.column : s.full}><SectionCard><SectionHeader density="compact" title="各任務的聯絡授權" icon="clipboard-check-outline" /><Text style={s.meta}>{page.tasksHaveMore ? '僅顯示最多 50 個任務內已載入的清單，並非全部任務。' : '顯示本次已載入的任務。'}主要接收者依任務負責人，後備須本人另行同意。</Text>{!page.tasks.length ? <Text style={s.body}>目前沒有載入任務；沒有據此推定已有授權全部失效。</Text> : null}</SectionCard>
-          {tasks.map(task => <ContactTaskCard key={`${model.epoch}:${task.id}`} task={task} missing={!page.tasks.some(item => item.id === task.id)} model={model} actions={actions} onTask={onTask} />)}</View></View>
+          {tasks.map(task => <ContactTaskCard key={`${model.scopeKey}:${task.id}`} task={task} missing={!page.tasks.some(item => item.id === task.id)} model={model} actions={actions} onTask={onTask} />)}</View></View>
       <ContactHistory model={model} actions={actions} onTask={onTask} />
     </> : null}{previewTools}
   </PageFrame>;

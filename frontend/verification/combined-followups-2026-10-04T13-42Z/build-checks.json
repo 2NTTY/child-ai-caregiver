@@ -1,0 +1,51 @@
+{
+  "at": "2026-10-04T13:44:30Z",
+  "workspace": "/workspace/shared/caregiver_combined_preview/frontend",
+  "source_files": 268,
+  "source_manifest_sha256": "595134829ffea38b816dd6d59ab75ae34993d1e0f0e8d4ff6e7cf0254ba7fc9b",
+  "source_before_after_equal": true,
+  "commands": [
+    {
+      "command": "npm run typecheck",
+      "result": "pass"
+    },
+    {
+      "command": "node --test scripts/home-overview.test.mts scripts/home-agent-entry.test.mts",
+      "result": "pass",
+      "tests": 14
+    },
+    {
+      "command": "npm run build:web",
+      "result": "pass",
+      "routes": 35
+    }
+  ],
+  "batch_exit_code": 0,
+  "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004",
+  "clear_used": false,
+  "router_and_critical_import_proof": "metro-graph-proof.json",
+  "compiled_marker_counts": {
+    "motion-settings": 1,
+    "reduce-motion-switch": 1,
+    "drawer-right": 1,
+    "drawer-backdrop": 1,
+    "modal-backdrop": 2,
+    "frontend-startup-loading": 1,
+    "home-quick-actions": 1,
+    "home-overview-item-": 1,
+    "rail-attention": 1,
+    "useContainerWidth": 17,
+    "useContainerSize": 3,
+    "home-agent-important": 2,
+    "home-agent-camera": 1,
+    "motionExit": 2
+  },
+  "entry": "dist/_expo/static/js/web/entry-1d8302d1d612a735a3dfb5362c16fb22.js",
+  "entry_sha256": "6c7b31ab9633b4ad11e4fd8962332cc637ceea0021d79c054472accfc2064e9b",
+  "export_files": 61,
+  "export_manifest_sha256": "ec3799fa0fc6590394f5cdb6c6a68c6eb21a89c9f4120171e994dd44cf827b36",
+  "status": "Intermediate frozen checkpoint. Mobile facts-row change started only after source after-hash captured; do not publish this as latest final.",
+  "runtime": "No browser execution; audit agent owns current v22 session.",
+  "android": "Not rerun for current Web scoped changes; preceding v22 compatibility evidence remains separately bound.",
+  "known_source_End_inflight": "Unchanged known failure; not retested"
+}

@@ -1,0 +1,53 @@
+{
+  "at": "2026-10-04T07:44:11.379964+00:00",
+  "review": "Manual reduction supplements system preference, starts conservatively, stores one versioned non-personal browser preference with session fallback, updates shared motion gate without remounting app/input. Existing MobileHome and motion-preview also follow shared preference; no Server or auth state change.",
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "exit_code": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "command": "node --test src/motion/lifecycle.test.mts src/motion/preferencePolicy.test.mts",
+      "status": "passed",
+      "exit_code": 0,
+      "tests": 6,
+      "log": "policy-tests.log"
+    },
+    {
+      "command": "npm run build:web",
+      "status": "passed",
+      "exit_code": 0,
+      "routes": 35,
+      "log": "build-web.log"
+    }
+  ],
+  "process_environment": {
+    "HOME": "/tmp/caregiver-motion-home",
+    "XDG_CONFIG_HOME": "/tmp/caregiver-motion-config",
+    "XDG_CACHE_HOME": "/tmp/caregiver-motion-cache",
+    "EXPO_NO_TELEMETRY": "1",
+    "CI": "1"
+  },
+  "source_manifest": {
+    "files": 228,
+    "path": "verification/fe-w37-motion/manual-reduce-2026-10-04T07-43Z/source-manifest.json",
+    "sha256": "1a2d2c2d658ba0e598fe1fb6f92436aeba64ccb32e525b411e123dad2af45573"
+  },
+  "export_directory": "/workspace/shared/caregiver_motion_impl/frontend/dist",
+  "export_manifest": {
+    "files": 60,
+    "bytes": 9021614,
+    "path": "verification/fe-w37-motion/manual-reduce-2026-10-04T07-43Z/web-export-manifest.json",
+    "sha256": "695eb62468e0d95c96701c728c6ce665161864b744abc0e3ee37d45e9d27ca68"
+  },
+  "web_bundle": [
+    {
+      "path": "_expo/static/js/web/entry-60ad8f512f58125571a3c455813146fb.js",
+      "bytes": 4301465,
+      "sha256": "7dfb0ab74e9046350ffc911b592d4cc60adde3021707d9c528affed907b9ecb6"
+    }
+  ],
+  "ui": "Pending deployment and supported cloud CUA verification; manual preference testing is separate from blocked OS media emulation."
+}

@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../components/useContainerWidth";
 import { brand } from "../branding";
 import { useId, useState } from "react";
 import { useRouter } from "expo-router";
@@ -6,6 +7,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Divider, Text } from "react-native-paper";
 import { PreferencesPreview } from "../components/PreferencesPreview";
 import { BackgroundSettings } from "../components/appearance/BackgroundSettings";
+import { MotionSettings } from "../components/appearance/MotionSettings";
 import { ChannelSettingsPreview } from "../components/notifications/ChannelSettingsPreview";
 import { useChannelSettingsPreview } from "../preview/useChannelSettingsPreview";
 import { ModelSettingsPreview } from "../components/model-settings/ModelSettingsPreview";
@@ -30,7 +32,8 @@ function LabeledValue({ label, value }: { label: string; value: string }) {
 export default function SettingsPage() {
   const router = useRouter();
   const leave = usePreviewNavigation();
-  const [width, setWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
   const { model, actions } = usePreview();
   const channels = useChannelSettingsPreview(model.connection === "online");
   const modelSettings = useModelSettingsPreview(model.connection === "online", channels.identity);
@@ -39,9 +42,10 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState(model.caregiverName);
   usePreviewLeaveGuard(displayName !== model.caregiverName);
   const stacked = width < 850;
-  return <PageFrame density="compact" title="設定" description="管理個人偏好、孩子與家庭資料；此獨立 Web 預覽沒有連接帳戶或保存設定。" eyebrow={`${brand.name} · 個人空間`}>
+  return <PageFrame density="compact" title="設定" description="管理個人偏好、孩子與家庭資料；帳戶資料為合成預覽，裝置動畫偏好只在本機套用。" eyebrow={`${brand.name} · 個人空間`}>
+    <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.workspace}>
     <UnderlineTabs id={tabsId} label="設定分類" items={tabs} value={tab} onChange={setTab} />
-    <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} onLayout={event => { if (event.nativeEvent.layout.width > 0) setWidth(event.nativeEvent.layout.width); }} style={[styles.columns, stacked && styles.stack]}>
+    <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}>
         <SectionCard><SectionHeader density="compact" title="個人資料" subtitle="目前資料只屬合成示例。" />
           <View style={styles.identity}><View style={styles.avatar}><Text style={styles.avatarText}>{displayName.slice(0, 1) || "育"}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{displayName || "未命名"}</Text><Text style={styles.muted}>preview@example.invalid · 合成資料</Text></View></View>
@@ -81,8 +85,9 @@ export default function SettingsPage() {
     <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><SectionHeader density="compact" title="家庭成員" subtitle="共享記錄與私人聊天的權限分開處理。" />
       <Text style={styles.body}>正式版已有家庭邀請、角色和撤權流程。這裏只提供視覺入口，權限由 Server 核定。</Text><AppButton label="查看家庭協調" onPress={() => actions.open("family")} />
     </SectionCard></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} onLayout={event => { if (event.nativeEvent.layout.width > 0) setWidth(event.nativeEvent.layout.width); }} style={[styles.columns, stacked && styles.stack]}>
+    <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}>
+        <MotionSettings />
         <PreferencesPreview online={model.connection === "online"} />
         <BackgroundSettings />
       </View><View style={[styles.column, stacked && styles.fullColumn]}>
@@ -95,7 +100,7 @@ export default function SettingsPage() {
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="notifications" active={tab === "notifications"}><ChannelSettingsPreview controller={channels} /></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsPreview controller={modelSettings} active={tab === "model"} onSwitchAccount={channels.switchAccount} /></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} onLayout={event => { if (event.nativeEvent.layout.width > 0) setWidth(event.nativeEvent.layout.width); }} style={[styles.columns, stacked && styles.stack]}>
+    <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}><SectionCard><SectionHeader density="compact" title="資料與私隱" />
         <Text style={styles.body}>孩子資料、已確認記錄與私人聊天的可見範圍，須按目前身份與家庭角色重新檢查。退出或撤權後，正式 App 必須清除不再可見的資料。</Text>
         <LabeledValue label="私人聊天" value="只對本人可見" /><LabeledValue label="共享資料" value="按孩子及家庭角色授權" />
@@ -105,10 +110,12 @@ export default function SettingsPage() {
         <TextLink label="查看接線說明" onPress={() => setTab("account")} />
       </SectionCard></View>
     </AppTabPanel>
+    </View>
   </PageFrame>;
 }
 
 const styles = StyleSheet.create({
+  workspace: { width: "100%", minWidth: 0, gap: spacing.lg },
   pressed: { opacity: 0.68 },
   columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, stack: { flexDirection: "column" }, column: { flex: 1, width: "100%", minWidth: 0, gap: spacing.lg },
   fullColumn: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },

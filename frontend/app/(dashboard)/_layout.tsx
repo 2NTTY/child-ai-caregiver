@@ -1,4 +1,4 @@
-import { Slot, Tabs } from "expo-router";
+import { usePathname, Slot, Tabs } from "expo-router";
 import { Platform } from "react-native";
 import { AppIcon } from "../../src/components/AppIcon";
 import { AppShell } from "../../src/components/AppShell";
@@ -8,6 +8,7 @@ import { usePreviewNavigation } from "../../src/preview/PreviewNavigationGuard";
 import { BackgroundProvider } from "../../src/preview/BackgroundContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, mobileIcons, mobileLayout, mobileType } from "../../src/theme";
+import { MotionScopeBoundary, MotionEntrance } from "../../src/motion";
 
 export default function DashboardLayout() {
   return <PreviewProvider><PreviewAppearance>{Platform.OS === "web" ? <AppShell><Slot /></AppShell> : <NativeAppShell>
@@ -23,7 +24,10 @@ function PreviewAppearance({ children }: { children: React.ReactNode }) {
 function NativeDashboardTabs() {
   const insets = useSafeAreaInsets();
   const leave = usePreviewNavigation();
-  return <Tabs screenListeners={({ navigation, route }) => ({ tabPress: event => {
+  const { model } = usePreview();
+  const pathname = usePathname();
+  const scopeKey = `${model.caregiverName}:${model.selectedChildId ?? "none"}`;
+  return <Tabs screenLayout={({ children }) => <MotionScopeBoundary scopeKey={scopeKey} eligible={model.selectedChildId !== null} style={{ flex: 1 }}><MotionEntrance preset="route" triggerKey={pathname} scopeKey={scopeKey} style={{ flex: 1 }} testID="motion-route">{children}</MotionEntrance></MotionScopeBoundary>} screenListeners={({ navigation, route }) => ({ tabPress: event => {
     event.preventDefault(); leave(() => navigation.navigate(route.name));
   } })} screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.teal, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, minHeight: mobileLayout.tabMinHeight + insets.bottom }, tabBarItemStyle: { minHeight: mobileLayout.touchTarget }, tabBarLabelStyle: mobileType.caption, tabBarHideOnKeyboard: true }}>
       <Tabs.Screen name="index" options={{ title: "主頁", tabBarIcon: ({ color }) => <AppIcon name="home-outline" color={color} size={mobileIcons.navigation} /> }} />

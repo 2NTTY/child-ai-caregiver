@@ -1,5 +1,7 @@
 # Web 動態方向比較（暫不採用）
 
+> 歷史候選研究：「暫不採用」只代表當時。現行採納要求見 [MOTION_SYSTEM](MOTION_SYSTEM.md)，目前工作與未驗關口見 [PLAN](PLAN.md#active)。
+
 <a id="page-transitions"></a>
 ## 換頁動畫研究，尚未實作（2026-10-02）
 

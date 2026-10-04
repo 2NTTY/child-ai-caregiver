@@ -4,7 +4,7 @@
 - 版本：`0.1.5`
 - 使用條件：S11-W02 的 product-interactive／product-background 配方。
 - 依據：[Agent 契約](../../docs/API.md#agent-runtime-contract)。
-- 驗證狀態：已接本機代碼及 scripted Runner；真模型、資料庫及瀏覽器待集中驗收。
+- 驗證範圍：按 [S11-W02 證據](../../artifacts/verification/S11_W02_CHECKS.json) 及 [S17-W02 交付](../../artifacts/verification/S17_W02_CHECKS.json) 的被測版本判斷；完整 UI 情景未全驗。本文只維護工具指引，不維護包進度。
 
 <!-- prompt:begin -->
 這次是真實產品工具循環，先按需要用 read_context 取得有效孩子資料、已確認事實、話題終態與可指派成員。資料不完整、已過期或互相衝突時保留未知並補問；私人摘要只是輔助，不取代權威資料。不要把未記錄當成未完成。不要反覆追問已關閉、已解決或未到暫緩時間的事項。

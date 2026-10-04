@@ -11,9 +11,21 @@ import { AppCheckbox } from "../AppCheckbox";
 import { AppDateTimeField,AppTimeZoneSelect } from "../DateTimeFields";
 import { AppButton,AppSelect,AppTextField,SectionCard,SectionHeader } from "../ui";
 import { growthDecisionProjection,growthFormDefaults,growthFormSchema,type GrowthFormValues } from "./growth-form";
+import { MotionDisclosure, MotionFeedback } from "../../motion";
+import { useGrowthFeedback } from "./growth-motion";
 import { growthStyles as s } from "./growth-styles";
 
-export function GrowthAttentionCard({item,page,model,actions,onSource,onTask}:{item:GrowthAttention;page:GrowthPage;model:GrowthViewModel;actions:GrowthActions;onSource:(url:string)=>void;onTask:(id:string)=>void}){
+type GrowthAttentionProps = {item:GrowthAttention;page:GrowthPage;model:GrowthViewModel;actions:GrowthActions;onSource:(url:string)=>void;onTask:(id:string)=>void};
+export function GrowthAttentionCard(props: GrowthAttentionProps){
+  const {item, model} = props, resetCount = model.resetCounts[`item:${item.id}`] ?? 0;
+  const scopeKey = `${model.scopeKey}:${model.epoch}:${model.access}:${item.id}`;
+  const trigger = useGrowthFeedback(scopeKey, resetCount, JSON.stringify([item.state, item.snoozeUntil, item.note, item.taskId]));
+  return <SectionCard testID={`growth-item-${item.id}`}><SectionHeader density="compact" title={item.title} icon="chart-bar" />
+    <MotionFeedback active={model.operation === "saved" && !model.busy && !model.pending && model.load === "ready"} triggerKey={trigger} scopeKey={scopeKey} testID={`growth-item-feedback-${item.id}`}><Text style={s.meta}>{growthKindLabels[item.kind]} · {growthStateLabels[item.state]}</Text></MotionFeedback>
+    <GrowthAttentionBody key={`${model.epoch}:${resetCount}`} {...props} />
+  </SectionCard>;
+}
+function GrowthAttentionBody({item,page,model,actions,onSource,onTask}: GrowthAttentionProps){
   const [detailsOpen,setDetailsOpen]=useState(false),[actionsOpen,setActionsOpen]=useState(false),[taskShared,setTaskShared]=useState(false);
   const basis=useRef<{item:GrowthAttention;authorityVersion:string}|null>(null);
   const {control,handleSubmit}=useForm<GrowthFormValues>({defaultValues:growthFormDefaults(item.title,item.advice),mode:"onBlur",resolver:zodResolver(growthFormSchema(page.eligibleAssignees))});
@@ -32,7 +44,7 @@ export function GrowthAttentionCard({item,page,model,actions,onSource,onTask}:{i
       onChangeText={value=>{input.onChange(value);edit();}} />{fieldState.error||help?<HelperText type={fieldState.error?"error":"info"} visible>{fieldState.error?.message??help}</HelperText>:null}
   </View>}/>;}
   const sourceUrl=growthSourceUrl(item.source.url);
-  return <SectionCard testID={`growth-item-${item.id}`}><SectionHeader density="compact" title={item.title} subtitle={`${growthKindLabels[item.kind]} · ${growthStateLabels[item.state]}`} icon="chart-bar" />
+  return <>
     <Text style={s.body}>為何現在：{item.whyNow}</Text>
     {item.sourceAvailable?<><Text style={s.body}>{item.advice}</Text><Text style={s.meta}>適用限制：{item.limits}</Text></>:<>
       <Text style={s.warning}>來源或適用依據已改變／暫不可用。這項提示只供歷史追溯，不能按舊建議處理。</Text><Text style={s.meta}>產生當時的限制：{item.limits}</Text>
@@ -46,18 +58,18 @@ export function GrowthAttentionCard({item,page,model,actions,onSource,onTask}:{i
       <AppButton label="查看連結任務" variant="secondary" onPress={()=>onTask(item.taskId!)} /><Text style={s.meta}>接受不代表預約或完成；來源改變不代表任務已取消。</Text></View>:
       item.state==="accepted"?<Text style={s.meta}>已記錄知悉，沒有連結任務；不代表已預約或完成。</Text>:null}
     <AppButton label={detailsOpen?"收起來源及依據":"查看來源及依據"} variant="quiet" onPress={()=>setDetailsOpen(value=>!value)} />
-    {detailsOpen?<View style={s.divider} testID="growth-source"><Text style={s.title}>{item.source.title} · {item.source.section}</Text><Text selectable style={s.body}>{item.source.excerpt}</Text>
+    <MotionDisclosure expanded={detailsOpen} scopeKey={`${model.scopeKey}:${item.id}`}><View style={s.divider} testID="growth-source"><Text style={s.title}>{item.source.title} · {item.source.section}</Text><Text selectable style={s.body}>{item.source.excerpt}</Text>
       <Text selectable style={s.meta}>核對：{growthTime(item.source.checkedAt)} · 來源版本：{item.source.versionId}</Text>
       <Text selectable style={s.meta}>章節識別：{item.source.chunkId} · 內容 hash：{item.source.contentHash}</Text>
       <Text style={s.meta}>階段／規則：{item.basis.stage}／{item.basis.ruleRevision} · 檔案版本 {item.evidence.profileVersion}</Text>
       {Object.entries(item.basis.values).map(([key,value])=><Text key={key} selectable style={s.meta}>{key}：{value}</Text>)}
       {item.evidence.facts.map(fact=><Text key={fact.id} selectable style={s.meta}>已確認資料：{fact.id} · 版本 {fact.version}</Text>)}
       {sourceUrl?<AppButton label="開啟來源網頁" variant="secondary" onPress={()=>onSource(sourceUrl)} />:<Text style={s.warning}>連結未通過 HTTPS 核對，不能開啟。</Text>}
-    </View>:null}
+    </View></MotionDisclosure>
     {changed?<Text style={s.warning}>關注或授權基準已改變，原草稿仍保留；先核對最新內容，再明確放棄草稿並重新核對。</Text>:null}
     {page.canManage&&(growthActionable(item)||basis.current)?<>
       <AppButton label={actionsOpen?"收起處理選項":"處理這項關注"} variant="secondary" onPress={()=>setActionsOpen(value=>!value)} />
-      {actionsOpen?<View style={s.divider} testID="growth-decision-form">
+      <MotionDisclosure expanded={actionsOpen} scopeKey={`${model.scopeKey}:${item.id}`}><View style={s.divider} testID="growth-decision-form">
         <Controller name="action" control={control} render={({field:input})=><AppSelect label="關注處理方式" value={input.value} options={[{value:"accept",label:"接受並記錄知悉"},{value:"snooze",label:"稍後處理"},{value:"dismiss",label:"關閉這項關注"}]} disabled={disabled} onChange={value=>{input.onChange(value);edit();}} />}/>
         {action==="accept"?<>
           <Controller name="taskMode" control={control} render={({field:input})=><AppSelect label="接受後的安排" value={input.value} options={[{value:"none",label:"只記錄已知悉"},...(!activeTask&&page.eligibleAssignees.length?[{value:"create" as const,label:"建立共享待處理任務"}]:[])]} disabled={disabled} onChange={value=>{input.onChange(value);edit();}} />}/>
@@ -77,7 +89,7 @@ export function GrowthAttentionCard({item,page,model,actions,onSource,onTask}:{i
           <>{field("closeNote","關注關閉備註","可留空，最多 1,000 字。")}<Text style={s.meta}>關閉後，相同階段及依據不再催。永久停用在主題設定處理。</Text></>}
         <AppButton label={action==="accept"?(taskMode==="create"?"明確接受並建立共享任務":"明確接受並記錄知悉"):action==="snooze"?"明確延後這項關注":"明確關閉這項關注"}
           disabled={disabled||action==="accept"&&taskMode==="create"&&(!taskShared||activeTask)} onPress={handleSubmit(values=>{mark();actions.decide(captured.item,growthDecisionProjection(values,captured.item.version,captured.authorityVersion));})} />
-      </View>:null}
+      </View></MotionDisclosure>
     </>:null}
-  </SectionCard>;
+  </>;
 }

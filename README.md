@@ -8,38 +8,28 @@ Planned capabilities include:
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
 - A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
 
-**Current status: P1 complete; P2 implementation and necessary acceptance complete, effective when the S17-W02 delivery PR merges.** The [trial site](https://ex-machina.eu.org) now runs P2 revision `43ab10c`. The data-preserving upgrade, public HTTP checks, and encrypted database/photo backup with an empty-target restore passed. See [STATUS.md](STATUS.md) for current availability and limits, [P2 delivery](docs/P2_DELIVERY.md) for evidence and limitations, and [SPEC.md](SPEC.md) for product requirements.
+P1 and the original P2 packages are complete; P3 has not started. The redesigned frontend remains an isolated preview. See [STATUS](STATUS.md) for the short current snapshot and domain entry points. The last recorded public deployment was revision `43ab10c`; its scheduled stop time has passed and current availability has not been checked. [Deployment observation](STATUS.md#deployment).
 
-P2 is the competition-delivery target: a Google ADK TypeScript product agent with real multi-step tools, confirmed memory, a minimal pgvector RAG pipeline, persistent background work, family permissions, web photo input, source-backed answers and growth-stage attention, and preauthorized Web Push/Telegram follow-ups. These function packages and their necessary local/real-service acceptance are merged. Public demonstrations passed: a caregiver request used confirmed memory and cited vector knowledge to propose an accepted task; a browser-closed due event triggered authorized Telegram contact. The user confirmed receipt, then explicitly authorized task completion and cleanup. The existing Prompt Pack and visual assets are reused.
-
-The public release enables ADK, the normal persistent worker, and five reviewed knowledge chunks from four Hong Kong Family Health Service sources. Notification channels require the recipient's own binding and consent. Public Firefox Push receipt and Telegram acknowledgment were confirmed by the user. The dedicated fixture was cleaned up and server channel bindings revoked; full Firefox compatibility and exhaustive panel testing remain deferred. Daily limits are restored to 12 per user and 20 globally without resetting usage. The [UI function and integration checklist](docs/P2_UI_HANDOFF.md) maps the functional UI to its APIs and evidence; the separate frontend redesign preview has not replaced it.
-
-Android follows in P3. P4 expands the same RAG core with full knowledge management, bulk operations, and scaling, alongside deployment choice, reports, migration, and disaster recovery; see the [work packages](PLAN.md#roadmap-packages) and [design decision](docs/DECISIONS.md#adr-011).
+Product requirements belong in [SPEC](SPEC.md); package scope and completion gates belong in [PLAN](PLAN.md#phases). The shared Prompt Pack and visual assets are reused.
 
 <a id="entry"></a>
 ## Getting started
 
-Start with [STATUS.md](STATUS.md), then the current step and work package in [PLAN.md](PLAN.md). Follow [AGENTS.md](AGENTS.md) and read other documents only as needed.
+Read [STATUS](STATUS.md), then the relevant domain and current package:
+
+- Frontend: [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active).
+- Server, Agent, formal integration, or root documentation: [AGENTS](AGENTS.md#read) → [PLAN#active](PLAN.md#active).
+- Open only the contracts, handoff sections, or Skills linked by that task. History is not a prerequisite.
 
 <a id="authority"></a>
 ## Documentation
 
-| File | Source of truth for |
-|---|---|
-| [README.md](README.md) | Project overview, navigation, and verified setup/test instructions |
-| [AGENTS.md](AGENTS.md) | Agent workflow, language, model, quota, and verification rules |
-| [SPEC.md](SPEC.md) | Product behavior, boundaries, permissions, and acceptance criteria |
-| [PLAN.md](PLAN.md) | Implementation steps, dependencies, status, and acceptance gates |
-| [STATUS.md](STATUS.md) | Current work snapshot, derived from PLAN |
-| [WORKLOG.md](WORKLOG.md) | Append-only project history and evidence references |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, data flow, sync, AI, deployment, recovery, and runtime costs |
-| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Entities, fields, relationships, invariants, and migration formats |
-| [docs/API.md](docs/API.md) | Interface contracts, authorization, idempotency, errors, and compatibility |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | Decision rationale, superseded choices, and their impact |
-| [artifacts/verification/](artifacts/verification/) | Redacted evidence from checks actually performed |
-| [_archive/README.md](_archive/README.md) | Index of frozen baselines, legacy material, and archived verification evidence |
+[Document responsibilities and update destinations](AGENTS.md#document-updates) define where each kind of information belongs. PLAN owns tasks; STATUS is a short projection; handoffs own integration differences, not another task log.
 
-Maintain each definition in one authoritative document and reference it elsewhere. Preserve stable anchors for traceability; snapshots and verification evidence do not replace specifications.
+- Behavior and contracts: [SPEC](SPEC.md), [architecture](docs/ARCHITECTURE.md), [data model](docs/DATA_MODEL.md), [API](docs/API.md).
+- Integration: [formal UI/API map](docs/P2_UI_HANDOFF.md), [frontend handoff index](frontend/HANDOFF.md).
+- Reusable methods: the applicable project Skill; product prompts have their own [entry](prompts/README.md).
+- Decisions and history: [DECISIONS](docs/DECISIONS.md), [archive and evidence index](_archive/README.md). Follow a specific LOG/EV link rather than reading all of WORKLOG or scanning evidence directories.
 
 <a id="historical-assets"></a>
 ## Historical baseline and research
@@ -127,4 +117,4 @@ The additional approved checks are `npm run test:records` and the local browser 
 
 ## Team pilot
 
-The original seven-day P1 pilot passed its necessary deployed-service and independent trial acceptance, including the Firefox login fix, and closed with [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23). The same site now hosts the authorized P2 release. Use synthetic data and follow the [P2 trial guide](docs/P2_TRIAL.md). The user approved a three-day extension: the VM is configured to stop on October 3, 2026, at 20:50:44 Hong Kong time; retained disk/IP charges continue. See [current deployment operations and limits](docs/P2_DELIVERY.md).
+The original seven-day P1 pilot passed its necessary deployed-service and independent trial acceptance, including the Firefox login fix, and closed with [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23). The same site hosted the authorized P2 release at the last recorded deployment; [current availability is unverified](STATUS.md#deployment). Use synthetic data and follow the [P2 trial guide](docs/P2_TRIAL.md). The user approved a three-day extension: the VM is configured to stop on October 3, 2026, at 20:50:44 Hong Kong time; retained disk/IP charges continue. See [current deployment operations and limits](docs/P2_DELIVERY.md).

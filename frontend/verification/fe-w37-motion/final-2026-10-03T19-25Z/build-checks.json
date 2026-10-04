@@ -1,0 +1,139 @@
+{
+  "baseline": "c51dd52e0cdea03b1d412a10d08ac6761e010d9b",
+  "tested_version": "Root-frozen working copy after focused lifecycle audits; identified by source-manifest.json",
+  "completed_at_utc": "2026-10-03T19:27:05.686198+00:00",
+  "environment": {
+    "execution": "dot cloud Linux",
+    "node": "v24.19.0",
+    "HOME": "/tmp/caregiver-motion-home",
+    "XDG_CONFIG_HOME": "/tmp/caregiver-motion-config",
+    "XDG_CACHE_HOME": "/tmp/caregiver-motion-cache",
+    "EXPO_NO_TELEMETRY": "1",
+    "CI": "1",
+    "settings_scope": "per-process only"
+  },
+  "source_manifest": {
+    "path": "source-manifest.json",
+    "files": 225,
+    "sha256": "371f3e53860f51a3032e402196d2010ae733d310bb970aa52d7b333f1d6e41d9",
+    "includes": "frontend src/app/assets, build configuration, lockfile, motion acceptance script and existing preview helper"
+  },
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "exit_code": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "command": "node --test src/motion/lifecycle.test.mts",
+      "status": "passed",
+      "tests": 4,
+      "failed": 0,
+      "exit_code": 0,
+      "log": "lifecycle.log",
+      "scope": "Pure lifecycle guards only; not rendered React or UI acceptance"
+    },
+    {
+      "command": "npm run build:web",
+      "status": "passed",
+      "static_routes": 35,
+      "exit_code": 0,
+      "log": "build-web.log"
+    },
+    {
+      "command": "npm run build:android-ui",
+      "status": "passed",
+      "assets": 29,
+      "exit_code": 0,
+      "log": "build-android.log",
+      "scope": "Bundle compatibility only; no native device validation"
+    }
+  ],
+  "log_sha256": {
+    "typecheck.log": "36909e4212b55a6cfd8f3e2bae14fb164f0589f81b1563e66628f7ec63f8a6ce",
+    "lifecycle.log": "4cdfa9689fba2bc9c605dbe838410901aae260dff6eb1715ef651ca2bc066ce9",
+    "build-web.log": "8d569a9b1df581bfaaced3ce050e3913e88b605265c33e0cb42f68f155d17c6c",
+    "build-android.log": "b1ed820517de7aad7decd5e1d367c9bb88ec8cc1144b29ad7e33f1fc22747f06"
+  },
+  "built_artifacts": [
+    {
+      "path": "dist/_expo/static/js/web/entry-5e0262ef0b79ac185ea2e927e18cb041.js",
+      "bytes": 4296677,
+      "sha256": "045240f63958dad68aaf2000f8dc8d28aa6208d29e130e08e042574f860654fc"
+    },
+    {
+      "path": "dist-android/_expo/static/js/android/entry-7a5a6782d53a095fd34d1c757d134870.hbc",
+      "bytes": 6545946,
+      "sha256": "31beeb19604d0df9c231a055a64b6a0651a0bc002302ad0520ed4f54c47dffdd"
+    },
+    {
+      "path": "dist-android/metadata.json",
+      "bytes": 1976,
+      "sha256": "28ced12f6641899956e5446fd5f866d17856572de4811bf989043342887a9bbc"
+    }
+  ],
+  "ui": {
+    "status": "blocked before browser creation; mandatory acceptance gate remains unmet",
+    "browser_launch_attempts": 2,
+    "runtime_pages": 0,
+    "runtime_cases": 0,
+    "screenshots": 0,
+    "pending_groups": [
+      "layout",
+      "navigation",
+      "summary",
+      "care",
+      "tasks",
+      "photos",
+      "states",
+      "child",
+      "reduced",
+      "dialog",
+      "chat"
+    ],
+    "planned_widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "first_failure": "Chromium ProcessSingleton socket() returned Operation not permitted; XDG config was read-only",
+    "approved_retry": "Temporary writable XDG config plus supported require_escalated run; config issue cleared but socket() remained denied",
+    "no_further_retries": true,
+    "evidence": [
+      "../2026-10-03T19-11-24-622Z/checks.json",
+      "../2026-10-03T19-12-36-367Z/checks.json",
+      "../build-2026-10-03T19-08Z/ui-initial.log",
+      "../build-2026-10-03T19-08Z/ui-launch-retry.log"
+    ]
+  },
+  "earlier_build_environment_failure": {
+    "status": "preserved, resolved by temporary per-process HOME and disabling Expo telemetry",
+    "path": "../build-2026-10-03T19-08Z/build-web.log"
+  },
+  "test_script": {
+    "path": "../../../scripts/verify-motion-system.mjs",
+    "syntax_check": "node --check passed",
+    "runtime_validation": "Not run",
+    "known_limitations": [
+      "Prepared bounded script has not executed in a browser and may reveal additional selector or timing corrections when the environment becomes available",
+      "Frame/DOM observations are synthetic Web checks, not actual screen-reader, iOS, Android-device or real API acceptance"
+    ],
+    "source_manifest_note": "Future UI manifest collection also includes .mts lifecycle guard sources; final manifest already includes every src/app/assets file."
+  },
+  "preview_cleanup": {
+    "session_id": 41096,
+    "action": "normal Ctrl-C through existing exec session",
+    "exit_code": 130,
+    "status": "stopped only the preview process started by this evaluator",
+    "public_deployment": false
+  },
+  "scope_exclusions": [
+    "No real Server/API/model calls",
+    "No real notifications or paid services",
+    "No user computer, Work, Codex task, or cloud_threads execution",
+    "No merge or deployment"
+  ],
+  "release_gate": "Draft PR evidence only; do not mark frontend motion accepted or merge-ready before bounded UI acceptance"
+}

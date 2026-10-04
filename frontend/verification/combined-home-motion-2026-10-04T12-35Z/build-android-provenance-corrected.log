@@ -1,0 +1,48 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> yuban-hk-frontend-preview@0.1.0 build:android-ui
+> expo export --platform android --output-dir dist-android --clear
+
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+| (node:80) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:80) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:80) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:80) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:80) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:80) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Android Bundled 33114ms ../../caregiver_recovery_impl/frontend/node_modules/expo-router/entry.js (2320 modules)
+
+› Assets (29):
+../../caregiver_recovery_impl/frontend/node_modules/@expo-google-fonts/material-symbols/400Regular/MaterialSymbols_400Regular.ttf (967KB)
+../../caregiver_recovery_impl/frontend/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf (1.3MB)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/arrow_down.png (9.5KB)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/arrow_right.xml (307B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/checkmark.xml (312B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/error.png (469B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/file.png (138B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/forward.png (188B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/pkg.png (364B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/back-icon-mask.png (653B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/back-icon.png (4 variations | 152B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/clear-icon.png (4 variations | 425B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/close-icon.png (4 variations | 235B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/search-icon.png (4 variations | 599B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/sitemap.png (465B)
+../../caregiver_recovery_impl/frontend/node_modules/expo-router/assets/unmatched.png (4.8KB)
+assets/images/harbour-family-hero.png (2.3MB)
+
+› android bundles (1):
+_expo/static/js/android/entry-eef37516b91e7340a924411d38b3dde4.hbc (6.6MB)
+
+› Files (1):
+metadata.json (2KB)
+
+Exported: dist-android

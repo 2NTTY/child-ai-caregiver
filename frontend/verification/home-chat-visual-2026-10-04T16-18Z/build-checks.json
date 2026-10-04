@@ -1,0 +1,62 @@
+{
+  "started_at": "2026-10-04T16:18:36.706435+00:00",
+  "scope": "One combined typecheck and one Web export after both implementation freezes; no prior scripts or full matrices rerun",
+  "source_files": 321,
+  "source_manifest_policy": "Reused v28 inventory plus current src/app files; excludes documentation and verification artifacts",
+  "frozen_implementation_hashes": {
+    "src/components/MobileHomeDashboard.tsx": "f5c9de0725476514b8f644d9504e6bb7eba4ce476bf7632de6b07129a63f2671",
+    "src/components/chat/chat-presentation.ts": "31ca3f08e0a3715e42d4ce537d1f6246269bd1c190c3ab6828edee636626268a",
+    "src/components/chat/ChatTimeline.tsx": "7192d2eb1873d049aac30c08cf2e5a5c2aca77d4441c7a55a34f61ae2e87b2c9",
+    "src/components/agent/ChatComposerInput.web.tsx": "387b77e626ae825446923dcdb66c7644e003211ba0e75ec9e62e9da66bd24208",
+    "src/components/agent/AgentComposer.tsx": "8b8a85d5239e0754873e060d6b26bdb9ebacf75cdc69118fbda902d01eb7e0ce"
+  },
+  "frozen_implementation_hashes_match": true,
+  "environment": {
+    "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004",
+    "EXPO_NO_TELEMETRY": "1",
+    "EXPO_OFFLINE": "1",
+    "__UNSAFE_EXPO_HOME_DIRECTORY": "/workspace/scratch/c112a98a8be9/expo-export-home"
+  },
+  "typecheck": {
+    "result": "pass",
+    "exit_code": 0,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "log": "typecheck.log"
+  },
+  "build": {
+    "result": "pass",
+    "exit_code": 0,
+    "command": [
+      "npm",
+      "run",
+      "build:web"
+    ],
+    "log": "build-web.log"
+  },
+  "source_unchanged_during_batch": true,
+  "source_manifest_sha256": "d7fbfb230b90439350507315b27705bb4981d22a3ca430016f84950c7d10b30f",
+  "exports": {
+    "file_count": 61,
+    "manifest_sha256": "1418ddbbfc459688f028cd813ccef60305bbf5f4e34a8c3a8c879dc9f59423dd",
+    "entries": [
+      {
+        "path": "dist/_expo/static/js/web/entry-7b5903e7aa6a2fe9a72491a9ede419a8.js",
+        "bytes": 4401071,
+        "sha256": "119c90f70e8d91cd8200f0882c69f23d176e00e1b4ef53d0610feaa1721c5116"
+      }
+    ]
+  },
+  "compiled_markers": {
+    "childCardDocked": 2,
+    "top:\"50%\"": 1,
+    "translateY:\"-50%\"": 1,
+    "chat-composer-input::placeholder": 1,
+    "chat-composer-panel": 1,
+    "chat-return-latest": 1
+  },
+  "completed_at": "2026-10-04T16:19:05.034828+00:00"
+}

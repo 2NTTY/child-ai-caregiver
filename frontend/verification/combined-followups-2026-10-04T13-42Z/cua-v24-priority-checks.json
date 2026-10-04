@@ -1,0 +1,99 @@
+{
+  "version": 24,
+  "at": "2026-10-04T14:03:35Z–14:04:40Z",
+  "entry": "entry-a3b3e65c4dfb1945c7043d8d6cafe279.js",
+  "sha256": "6f120b16577ffc4390043cc6a45df55fac09398648276026ac9b5315f6532cab",
+  "method": "Cloud CUA semantic inputs and read-only DOM samples, ordinary320×600 iframe; screenshots in tool transcript. Not prepared Playwright runner or continuous frame trace.",
+  "checks": [
+    {
+      "case": "originalv23reduced-rowfailure",
+      "result": "fixed on actualv24",
+      "manualReduce": true,
+      "route": "/chat",
+      "phase": "settled",
+      "height": 57,
+      "routeY": 158,
+      "opacity": "1",
+      "display": "flex",
+      "innerAriaHidden": null,
+      "innerInert": false,
+      "chipsPreserved": true,
+      "screenshot": "2026-10-04T14:03:35Z tool output"
+    },
+    {
+      "case": "normalhome-axis",
+      "result": "pass",
+      "homeEntry": {
+        "routePhase": "settled",
+        "routeTransform": "none",
+        "opacity": "1",
+        "factsPhase": "resizing",
+        "factsHeight": 8.078125
+      },
+      "chatEntry": {
+        "routePhase": "settled",
+        "routeTransform": "none",
+        "opacity": "1",
+        "factsPhase": "resizing",
+        "factsHeight": 56.96875
+      },
+      "observationLimit": "SeparateDOM reads occurred at different instants; no claim everyintermediateframe or exact180ms"
+    },
+    {
+      "case": "ordinaryworkspaceroute",
+      "result": "pass",
+      "from": "/chat",
+      "to": "/tasks",
+      "phase": "entering",
+      "transform": "matrix(1, 0, 0, 1, 6.97324, 0)",
+      "opacity": "1"
+    },
+    {
+      "case": "composerstyleanddraft",
+      "result": "pass",
+      "viewport": [
+        320,
+        600
+      ],
+      "panel": {
+        "top": 390,
+        "bottom": 504,
+        "width": 288,
+        "height": 114,
+        "shadow": "rgba(32, 33, 35, 0.06) 0px 2px 12px 0px"
+      },
+      "outer": {
+        "background": "rgba(0, 0, 0, 0)",
+        "position": "relative",
+        "bottom": 536
+      },
+      "beforeAndAfterManualReduceToggle": {
+        "value": "懸浮輸入驗收草稿",
+        "focused": true,
+        "selection": [
+          8,
+          8
+        ],
+        "textareaCount": 1
+      },
+      "identityLimit": "Retained value/focus/selection and one textarea observed; exactDOMinstance identity not exposed by supported readonlyscope."
+    }
+  ],
+  "cleanup": {
+    "manualReduce": false,
+    "chatDraft": "cleared via normalUI",
+    "currentQaRoute": "/tasks",
+    "currentQaSize": [
+      320,
+      600
+    ]
+  },
+  "remaining": [
+    "Child-switch scroll asymmetry delegated asnextbrowserowner",
+    "Agent-important isolation/unknown/nochild newUI andimagewarmreturn pending",
+    "CaptureE2E notrun, no permissionaccept/photo/upload",
+    "Actualsystemmedia,200%text,continuousfirstframe/nativeUI gatesunchanged",
+    "KnownsourceEnd-inflight remainsopenandnotretested"
+  ],
+  "status": "Boundedprioritybatchpassed; broadercompletionnotclaimed"
+}

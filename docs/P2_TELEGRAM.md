@@ -1,6 +1,6 @@
 # P2 Telegram 操作
 
-本包預設關閉；本機必要 SQL 及一次真本人通知／收到回覆已驗。以下是啟用及部署的準備條件；現網仍是 P1，公開 webhook 未註冊或驗收。
+本文件保存 Telegram 的操作方法；開關預設關閉，以下步驟不是啟用授權。包狀態看 [PLAN](../PLAN.md#s13-w06)，最後公開 webhook／回覆結果看 [S17-W02](../artifacts/verification/S17_W02_CHECKS.json)，即時服務狀態須另查 [STATUS](../STATUS.md#deployment)。
 
 1. 由負責組員在 Telegram 的官方 BotFather 建立／選用 bot。token 不貼進聊天或工程；保存於工程外的受保護 JSON，Windows 限本人 ACL、Linux 僅服務帳號可讀。字段為 token、botId（字串）、botUsername（不含 @）、webhookSecret（32–128 個英數／底線／連字號，使用隨機值）。token 的 ID 前綴須與 botId 相符。
 2. Server 與 worker 設 TELEGRAM_ENABLED=true、TELEGRAM_CONFIG_FILE 指向同一受保護檔案；未批准前不啟用。bot 身份先透過官方 getMe 核對，不能把手填名字當驗證；[官方 API](https://core.telegram.org/bots/api#getme)。
@@ -9,6 +9,10 @@
 5. 一般測試需本人明確即時確認，每人 24 小時最多 3 次且相隔至少 60 秒；只發固定無孩子資料訊息。Telegram 的收到按鈕只回報 acknowledgement，不完成照護任務。停用 TELEGRAM_ENABLED 可停止新 adapter 執行，worker 全局暫停／restore 世代沿用 [既有流程](P2_WORKER.md)。
 
 結果 unknown 不重發、不盲目切渠道。檢查站內台帳及 Telegram 實際訊息後，集中驗收／維護人員再判斷後續，不手改成 accepted。送出前已進入網絡的訊息不能靠撤銷追回；provider 接受不能當作送達或已讀。更換 bot 身份須先撤銷舊綁定；同 bot token 輪換保留 bot ID 但須重新核對 secret／webhook 配置。
+
+## S13-W06 當時驗收記錄（歷史）
+
+下列失敗及未部署只描述該次驗收；後續 S17-W02 已補公開接線，原結果不改寫，亦不把原暫留綁定指示當今日授權。
 
 2026-09-30：[必要證據](../artifacts/verification/S13_W06_CHECKS.json)。既有 migration 018／配對還原及原資料保留通過；本機 45 業務／2 輪詢核對私人綁定、update 去重、交易入列、unknown 不重發、撤銷及重建後終態，合成資料已清理。真 bot 單次 sendMessage 獲 HTTP 200，使用者確認收到並按鈕回覆，持久 acknowledgement 可核對，不完成照護任務。
 

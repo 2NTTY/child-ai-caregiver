@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -24,7 +25,8 @@ const telegramScenarios: { value: TelegramScenario; label: string }[] = [
 const deliveryOptions = (Object.keys(channelDeliveryLabels) as ChannelDeliveryState[]).map(value => ({ value, label: channelDeliveryLabels[value] }));
 
 export function ChannelSettingsPreview({ controller }: { controller: ChannelSettingsPreviewController }) {
-  const [width, setWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
   const [tools, setTools] = useState(false);
   const { push, telegram, identity } = controller;
   return <View testID="channel-settings" style={styles.workspace}>
@@ -34,9 +36,9 @@ export function ChannelSettingsPreview({ controller }: { controller: ChannelSett
         <AppButton label="切換渠道情境的合成帳戶" variant="secondary" onPress={controller.switchAccount} />
       </View>
     </SectionCard>
-    <View key={identity.id} onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.columns, width < 760 && styles.stack]}>
+    <View key={identity.id} ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.columns, width < 760 && styles.stack]}>
       <View testID="push-settings" style={[styles.column, width < 760 && styles.fullColumn]}>
-        <WebPushSettingsCard model={push.model} actions={push.actions} operationNotice={<PreviewWriteNotice controller={push.operation} online={push.model.online} />} />
+        <WebPushSettingsCard scopeKey={`${identity.id}:push`} confirmedOperation={push.operation.operation.state === "saved" && !push.operation.operation.resultUnavailable && push.operation.operation.reference ? { reference: push.operation.operation.reference } : null} model={push.model} actions={push.actions} operationNotice={<PreviewWriteNotice controller={push.operation} online={push.model.online} />} />
         {tools ? <SectionCard><Text style={styles.meta}>Web Push 合成情境 · 不請求系統權限</Text>
           <AppSelect label="Web Push 情境" value={push.scenario} options={pushScenarios} onChange={push.chooseScenario} disabled={push.model.locked || !!push.model.review} />
           <AppSelect label="Web Push 投遞示例" value={push.deliveryOutcome} options={deliveryOptions} onChange={push.setDeliveryOutcome} disabled={push.model.locked || !!push.model.review} />
@@ -44,7 +46,7 @@ export function ChannelSettingsPreview({ controller }: { controller: ChannelSett
         </SectionCard> : null}
       </View>
       <View testID="telegram-settings" style={[styles.column, width < 760 && styles.fullColumn]}>
-        <TelegramSettingsCard model={telegram.model} actions={telegram.actions} operationNotice={<PreviewWriteNotice controller={telegram.operation} online={telegram.model.online} />} />
+        <TelegramSettingsCard scopeKey={`${identity.id}:telegram`} confirmedOperation={telegram.operation.operation.state === "saved" && !telegram.operation.operation.resultUnavailable && telegram.operation.operation.reference ? { reference: telegram.operation.operation.reference } : null} model={telegram.model} actions={telegram.actions} operationNotice={<PreviewWriteNotice controller={telegram.operation} online={telegram.model.online} />} />
         {tools ? <SectionCard><Text style={styles.meta}>Telegram 合成情境 · 不開啟真 bot</Text>
           <AppSelect label="Telegram 情境" value={telegram.scenario} options={telegramScenarios} onChange={telegram.chooseScenario} disabled={telegram.model.locked || !!telegram.model.review} />
           <AppSelect label="Telegram 投遞示例" value={telegram.deliveryOutcome} options={deliveryOptions} onChange={telegram.setDeliveryOutcome} disabled={telegram.model.locked || !!telegram.model.review} />

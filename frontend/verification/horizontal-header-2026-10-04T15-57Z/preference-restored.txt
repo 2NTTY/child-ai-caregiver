@@ -1,0 +1,7 @@
+											171 text 減少動畫
+											172 text 目前跟隨系統設定，工作區動畫正常顯示。
+											173 switch (settable, boolean) Description: 減少動畫, Value: 0
+										174 text 選擇只儲存在這個瀏覽器，不會同步至帳戶或其他裝置。關閉開關即恢復跟隨系統。
+										175 text 狀態：目前跟隨系統設定，工作區動畫正常顯示。
+											198 switch (settable, boolean) Description: 預約提醒例外預覽, Value: 0
+The focused UI element is 173 switch (settable, boolean) Description: 減少動畫, Value: 0

@@ -1,4 +1,5 @@
 import type { HomeOverviewView } from "./home-overview";
+import type { PhotoOriginal } from "./photo-view-model";
 
 // Presentation-only types. They are not an API or a replacement for shared domain contracts.
 export type ConnectionState = "online" | "offline" | "checking";
@@ -64,6 +65,7 @@ export interface HomeActions {
   refresh(): void;
   reviewOperation(): void;
   open(destination: HomeDestination): void;
+  openAgentPhoto(original: PhotoOriginal): void;
   composeCare(kind: HomeRecord["kind"]): void;
   prepareQuestion(question: string): void;
   createChildPreview(displayName: string): void;

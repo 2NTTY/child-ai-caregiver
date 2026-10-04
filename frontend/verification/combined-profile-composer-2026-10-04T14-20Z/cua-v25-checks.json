@@ -1,0 +1,121 @@
+{
+  "version": 25,
+  "entry": "entry-070227e4f4e46b0888c7d3c4fa5c7dd5.js",
+  "sha256": "3eb618b05e3722f5db4be9732405107ef8073bae00db70956a104770e4bd9f57",
+  "profile": {
+    "viewport": [
+      1440,
+      900
+    ],
+    "initialTwoDirections": [
+      {
+        "child": "小昕",
+        "scrollTop": 788,
+        "cardY": 341
+      },
+      {
+        "child": "阿樂",
+        "scrollTop": 352,
+        "cardY": 341,
+        "focus": "切換至阿樂"
+      },
+      {
+        "child": "小昕",
+        "scrollTop": 745,
+        "cardY": 418,
+        "focus": "切換至小昕"
+      }
+    ],
+    "apparent77pxDifference": "Preserved original observation. Root approved one bounded discrimination to distinguish tool focus-induced scrolling.",
+    "discrimination": [
+      {
+        "stage": "阿樂 beforefocus",
+        "scrollTop": 335,
+        "cardY": 358,
+        "focus": "切換至阿樂"
+      },
+      {
+        "stage": "pressShift on小昕 tofocus withoutactivation",
+        "scrollTop": 275,
+        "cardY": 418,
+        "focus": "切換至小昕"
+      },
+      {
+        "stage": "Enter selects小昕 settled",
+        "scrollTop": 745,
+        "cardY": 418,
+        "focus": "切換至小昕"
+      }
+    ],
+    "conclusion": "Selection retains cardY and targetfocus; measured extra movement came from locator pre-focus scrolling. No jumptozero.",
+    "draftGuard": {
+      "cancel": "kept小昕 and位置驗收合成草稿",
+      "discard": "selected阿樂, emptychilddraft, focus切換至阿樂"
+    },
+    "identityBoundary": "Stable viewport source reviewed; exactcross-call DOMobjectidentity not instrumented"
+  },
+  "composer": {
+    "viewport": [
+      390,
+      600
+    ],
+    "timelineBottom": 414,
+    "panelTop": 390,
+    "panelBottom": 504,
+    "panelRadius": 20,
+    "visibleOverlap": 24,
+    "outerTop": 382,
+    "outerBottom": 536,
+    "outerPosition": "relative",
+    "outerPointer": "none",
+    "cornerHit": "chat-timeline-scroll",
+    "centerHit": "chat-composer-panel",
+    "latestBottom": 370,
+    "screenshot": "CUA tool output14:37:22 UTC",
+    "gapWheel": {
+      "beforeTop": 224,
+      "afterTop": 981,
+      "gapHitBefore": "chat-message",
+      "gapHitAfter": "answer-source-panel",
+      "centerHit": "chat-composer-panel"
+    },
+    "latestAndEnd": {
+      "top": 1110,
+      "max": 1110,
+      "latestAbsentAtBottom": true
+    },
+    "multilineFailure": {
+      "at": "2026-10-04T14:40:07Z",
+      "before": "Atlatesttop=max1110",
+      "draftLines": 4,
+      "valueAndFocusPreserved": true,
+      "textareaHeight": 108,
+      "panelTop": 330,
+      "panelBottom": 504,
+      "timelineBottom": 354,
+      "scrollTop": 1110,
+      "scrollMax": 1170,
+      "latestAbsent": true,
+      "lastSourceRow": [
+        314,
+        362
+      ],
+      "observation": "Repeatedreadonlyread after screenshot retained60px bottomgap; finalsource row belowviewportbottom8px and behindcomposer32px",
+      "scope": "Composer resizing atlatest, notknownsource-details End-inflightissue",
+      "cleanup": "Cleared syntheticdraft and returnedtimeline End; no previewsubmit"
+    }
+  },
+  "block": {
+    "at": "2026-10-04T14:37:51Z",
+    "action": "beforeGapScroll25=await overlapMeasure25(); qa25.scroll([31,460],down,1); readonlyafter andscreenshot",
+    "result": "JavaScript execution did not receive approval",
+    "status": "Original publicSite/UI authorization forwarded; identicalcall retriedonce and succeeded14:39:31Z"
+  },
+  "pending": [
+    "Composerheight/followlatest diagnosis andaffectedrecheck",
+    "ExactDOMnodeidentitynotinstrumented",
+    "SeparateSource-separator investigation owned bygeometryworker"
+  ],
+  "knownSourceEnd": "Not retried; knownfailure unchanged",
+  "status": "Stopped on firstconcrete newfailure afterprofilefixpassed"
+}

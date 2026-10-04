@@ -1,0 +1,63 @@
+{
+  "at": "2026-10-04T06:05:36.891769+00:00",
+  "method": "Supported CUA Chrome at 1180x757; semantic UI actions and read-only DOM observations",
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/care",
+  "site_deployment_version": 2,
+  "loaded_script": "/_expo/static/js/web/entry-0aa65e625a63e161ec0c8b0ea9a4a203.js",
+  "scope": "Recheck the previous care middle deletion pagination/focus failure only",
+  "steps": [
+    "Reload existing /care tab and verify new script src",
+    "Load next page to six rows",
+    "Open third row 身高記錄",
+    "Open permanent deletion confirmation",
+    "Check the existing synthetic deletion scope checkbox",
+    "Confirm synthetic deletion once",
+    "Wait for 已確認刪除（預覽）",
+    "Wait for care-row-preview-care-height to detach"
+  ],
+  "results": {
+    "pagination": "passed: five surviving IDs retained, scanned5, no load-more",
+    "surviving_ids": [
+      "preview-care-sleep",
+      "preview-care-temperature",
+      "preview-care-park",
+      "preview-care-food",
+      "preview-care-appointment"
+    ],
+    "focus": "FAILED: BODY with no aria-label both at confirmed result and after exiting row detached",
+    "settled_rows": {
+      "exiting": false,
+      "flip": false
+    },
+    "curtains": 0
+  },
+  "batch_status": "Stopped at remaining focus failure; did not continue other UI groups",
+  "diagnostic_hypothesis": "CareRecordsView effect depends on model.list.records array and may cancel the scheduled restoration frame during a subsequent render after previousPanel was already set false; hypothesis sent to original owner, not claimed as proven",
+  "screenshot": "Settled five-row state captured in CUA tool output at06:04:39Z; no local image file claimed",
+  "remaining_limits": [
+    "Four required widths",
+    "Frame-level motion/DOM identity",
+    "Runtime reduced-motion",
+    "All not-yet-run groups"
+  ],
+  "production_changes_by_evaluator": false,
+  "focus_target_diagnostics": {
+    "at": "2026-10-04T06:06:15Z",
+    "test_id": "care-row-preview-care-park",
+    "tag": "BUTTON",
+    "tabindex": "0",
+    "disabled": false,
+    "aria_disabled": null,
+    "inert_ancestor": false,
+    "aria_hidden_true_ancestor": false,
+    "rect": {
+      "x": 257,
+      "y": 320,
+      "width": 882,
+      "height": 137
+    },
+    "all_ancestor_display_visibility": "visible",
+    "original_anchor_evidence": "Height row displayed 上次查看 before deletion",
+    "latest_50_non_extension_console_errors": []
+  }
+}

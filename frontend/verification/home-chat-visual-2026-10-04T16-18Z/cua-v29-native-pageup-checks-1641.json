@@ -1,0 +1,107 @@
+{
+  "at": "2026-10-04T16:41:45.551Z",
+  "version": 29,
+  "tabId": "13",
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "entry": "entry-7b5903e7aa6a2fe9a72491a9ede419a8.js",
+  "method": "One ordinary click on visible noninteractive footer text; read-only frame-scoped activeElement and geometry confirmation; one tab.pressKey(null, Page_Up), no locator focus at key time; first and settled metrics. No event listeners, RAF or state injection.",
+  "result": "fail: focused viewport remained at bottom after single native PageUp; cause remains unclassified",
+  "checks": [
+    {
+      "case": "settled-prerequisites",
+      "data": {
+        "activeIsViewport": false,
+        "activeRole": "heading",
+        "activeTag": "H1",
+        "activeTestId": null,
+        "at": "2026-10-04T16:40:47.552Z",
+        "clientHeight": 313,
+        "composerHeight": 154,
+        "disclosureHeight": 0,
+        "draft": "",
+        "gap": 0,
+        "latestVisible": false,
+        "overflowY": "scroll",
+        "scrollHeight": 1456,
+        "scrollTop": 1143,
+        "sourceExpanded": "false",
+        "tabIndex": 0,
+        "width": 320
+      }
+    },
+    {
+      "case": "explicit-visible-click-focus",
+      "data": {
+        "activeIsViewport": true,
+        "activeRole": null,
+        "activeTag": "DIV",
+        "activeTestId": "chat-timeline-scroll",
+        "at": "2026-10-04T16:40:49.004Z",
+        "clientHeight": 313,
+        "composerHeight": 154,
+        "disclosureHeight": 0,
+        "draft": "",
+        "gap": 0,
+        "latestVisible": false,
+        "overflowY": "scroll",
+        "scrollHeight": 1456,
+        "scrollTop": 1143,
+        "sourceExpanded": "false",
+        "tabIndex": 0,
+        "width": 320
+      }
+    },
+    {
+      "case": "native-pageup-first",
+      "data": {
+        "activeIsViewport": true,
+        "activeRole": null,
+        "activeTag": "DIV",
+        "activeTestId": "chat-timeline-scroll",
+        "at": "2026-10-04T16:41:07.223Z",
+        "clientHeight": 313,
+        "composerHeight": 154,
+        "disclosureHeight": 0,
+        "draft": "",
+        "gap": 0,
+        "latestVisible": false,
+        "overflowY": "scroll",
+        "scrollHeight": 1456,
+        "scrollTop": 1143,
+        "sourceExpanded": "false",
+        "tabIndex": 0,
+        "width": 320
+      }
+    },
+    {
+      "case": "native-pageup-settled",
+      "data": {
+        "activeIsViewport": true,
+        "activeRole": null,
+        "activeTag": "DIV",
+        "activeTestId": "chat-timeline-scroll",
+        "at": "2026-10-04T16:41:07.604Z",
+        "clientHeight": 313,
+        "composerHeight": 154,
+        "disclosureHeight": 0,
+        "draft": "",
+        "gap": 0,
+        "latestVisible": false,
+        "overflowY": "scroll",
+        "scrollHeight": 1456,
+        "scrollTop": 1143,
+        "sourceExpanded": "false",
+        "tabIndex": 0,
+        "width": 320
+      }
+    }
+  ],
+  "latestAction": "not attempted; button absent",
+  "limitations": [
+    "Event-time dispatch and native default action were not captured",
+    "One focused ordinary keyboard route is not a complete keyboard regression suite",
+    "No repeated key, wheel workaround, source edits, build, Git, Sites or real API operations"
+  ],
+  "screenshot": "320-native-pageup-no-movement-1641.png",
+  "cleanup": "tab13 closed immediately after saving; draft empty and source closed"
+}

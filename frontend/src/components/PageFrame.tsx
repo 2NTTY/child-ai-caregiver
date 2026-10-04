@@ -1,5 +1,6 @@
-import { useState, type ReactNode, type Ref } from "react";
-import { StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView, type ScrollViewProps } from "react-native";
+import { type ReactNode, type Ref } from "react";
+import { StyleSheet, View, type ScrollView as NativeScrollView, type ScrollViewProps } from "react-native";
+import { useContainerWidth } from "./useContainerWidth";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import { chineseFont, colors, mobileLayout, mobileType, spacing, typeScale, workspaceType } from "../theme";
@@ -8,20 +9,20 @@ export function PageFrame({ title, description, children, eyebrow, density = "re
   title: string; description: string; children: ReactNode; eyebrow?: string; density?: "regular" | "compact";
   scrollRef?: Ref<NativeScrollView>; onScroll?: ScrollViewProps["onScroll"]; onContentSizeChange?: ScrollViewProps["onContentSizeChange"]; scrollTestID?: string;
 }) {
-  const viewportWidth = useWindowDimensions().width;
-  const [contentWidth, setContentWidth] = useState(0);
-  const compact = (contentWidth || viewportWidth) < mobileLayout.breakpoint;
-  return <ScrollView ref={scrollRef} testID={scrollTestID} onScroll={onScroll} scrollEventThrottle={16} onContentSizeChange={onContentSizeChange} onLayout={event => setContentWidth(event.nativeEvent.layout.width)} style={styles.scroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled">
+  const containerLayout = useContainerWidth();
+  const compact = containerLayout.width < mobileLayout.breakpoint;
+  return <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.container}><ScrollView ref={scrollRef} testID={scrollTestID} onScroll={onScroll} scrollEventThrottle={16} onContentSizeChange={onContentSizeChange} style={styles.scroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled">
     <View style={styles.heading}>
       {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
       <Text accessibilityRole="header" style={[styles.title, compact && mobileType.heading, density === "compact" && workspaceType.title]}>{title}</Text>
       <Text style={[styles.description, compact && mobileType.body]}>{description}</Text>
     </View>
     {children}
-  </ScrollView>;
+  </ScrollView></View>;
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, minWidth: 0, minHeight: 0 },
   scroll: { flex: 1, backgroundColor: colors.canvas },
   page: { width: "100%", maxWidth: 1260, alignSelf: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xl, gap: spacing.lg },
   mobilePage: { paddingHorizontal: mobileLayout.pageInset, paddingVertical: mobileLayout.pageInset },

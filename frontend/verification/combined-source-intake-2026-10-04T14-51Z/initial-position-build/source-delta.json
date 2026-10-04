@@ -1,0 +1,5 @@
+[
+  "src/components/chat/ChatTimeline.tsx",
+  "src/components/chat/useChatInitialPosition.ts",
+  "src/components/chat/useChatInitialPosition.web.ts"
+]

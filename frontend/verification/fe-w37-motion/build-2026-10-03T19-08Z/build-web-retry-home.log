@@ -1,0 +1,66 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> yuban-hk-frontend-preview@0.1.0 build:web
+> expo export --platform web
+
+Starting Metro Bundler
+
+Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
+| (node:20) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:20) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:20) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:20) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:20) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:20) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+λ Bundled 18034ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1818 modules)
+Web Bundled 19263ms node_modules/expo-router/entry.js (1786 modules)
+
+› web bundles (3):
+_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css (731B)
+_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css (14KB)
+_expo/static/js/web/entry-49cee96c7b844307adb3cf40f3620972.js (4.3MB)
+
+› Static routes (35):
+/care (29KB)
+/chat (29KB)
+/more (29KB)
+/login (29KB)
+/guide (29KB)
+/ (index) (29KB)
+/tasks (29KB)
+/family (29KB)
+/growth (29KB)
+/memory (29KB)
+/photos (29KB)
+/contact (29KB)
+/profile (29KB)
+/sources (29KB)
+/summary (29KB)
+/_sitemap (28KB)
+/settings (29KB)
+/+not-found (28KB)
+/motion-preview (29KB)
+/(dashboard)/care (29KB)
+/(dashboard)/chat (29KB)
+/(dashboard)/more (29KB)
+/(dashboard)/guide (29KB)
+/(dashboard) (29KB)
+/(dashboard)/tasks (29KB)
+/(dashboard)/family (29KB)
+/(dashboard)/growth (29KB)
+/(dashboard)/memory (29KB)
+/(dashboard)/photos (29KB)
+/(dashboard)/contact (29KB)
+/(dashboard)/profile (29KB)
+/(dashboard)/sources (29KB)
+/(dashboard)/summary (29KB)
+/(dashboard)/settings (29KB)
+/(dashboard)/motion-preview (29KB)
+
+Exported: dist

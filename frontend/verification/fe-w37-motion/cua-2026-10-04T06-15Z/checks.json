@@ -1,0 +1,74 @@
+{
+  "at": "2026-10-04T06:17:59.588493+00:00",
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/care",
+  "site_version": 3,
+  "verified_bundle": "/_expo/static/js/web/entry-dd3d2422245fbd34ff814cdc89fc0409.js",
+  "method": "Supported CUA cloud Chrome at1180x757; semantic actions/read-only DOM/screenshot output. No prepared Playwright script or injected observer.",
+  "care_delete_recheck": {
+    "status": "passed for observed behavior",
+    "steps": [
+      "Reload and verify script",
+      "Load six rows",
+      "Delete third height row through existing confirmation",
+      "Wait for confirmed heading and height row detached"
+    ],
+    "survivors": [
+      "preview-care-sleep",
+      "preview-care-temperature",
+      "preview-care-park",
+      "preview-care-food",
+      "preview-care-appointment"
+    ],
+    "scanned": 5,
+    "load_more": false,
+    "focus": {
+      "tag": "BUTTON",
+      "aria_label": "查看公園觀察"
+    },
+    "observed_flip_during_completion": {
+      "upper_sleep": false,
+      "upper_temperature": false,
+      "lower_park": true,
+      "lower_food": true,
+      "lower_appointment": true
+    },
+    "curtains": 0,
+    "limits": "No continuous frame recording or four-width acceptance"
+  },
+  "care_local_correction": {
+    "status": "FAILED",
+    "steps": [
+      "Continue with five loaded rows from successful deletion",
+      "Open sleep record",
+      "Click 更正這筆記錄",
+      "Fill 記錄原文草稿 with 動效驗收：昨晚大約九時休息，今早七時左右醒來。",
+      "Fill 更正原因草稿 with 合成原觀察核對",
+      "Click 預覽共享內容",
+      "Click 確認家庭共享並模擬提交 once",
+      "Observe confirmed save and settled presentation"
+    ],
+    "positive": [
+      "New sleep text and version4 displayed",
+      "Only changed row and detail content serial became2; other visible row content serial stayed1",
+      "Reveal settled and zero curtain overlays remain"
+    ],
+    "failure": "Loaded rows shrink from five to three after revising one row; unrelated loaded food and appointment rows disappear, scanned resets3 and load-more reappears",
+    "after_ids": [
+      "preview-care-sleep",
+      "preview-care-temperature",
+      "preview-care-park"
+    ],
+    "expected_ids": [
+      "preview-care-sleep",
+      "preview-care-temperature",
+      "preview-care-park",
+      "preview-care-food",
+      "preview-care-appointment"
+    ],
+    "focus": "睡眠記錄 result heading/container"
+  },
+  "batch_status": "Stopped at first new correction failure; prior delete/focus fix remains a genuine pass",
+  "screenshots": "Successful deletion and settled correction failure captured in CUA tool output; no local image paths claimed",
+  "next": "Root to assign scoped correction-prefix fix to original owner, then affected build and recheck",
+  "full_ui_acceptance": "Still incomplete"
+}

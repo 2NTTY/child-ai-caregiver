@@ -9,7 +9,7 @@ import type { HomeActions, HomeViewModel } from "../view-model";
 import { MobileHomeDashboard } from "./MobileHomeDashboard";
 import { AppIcon, type AppIconName } from "./AppIcon";
 import { HomeBackground } from "./appearance/HomeBackground";
-import { HomeFocus } from "./HomeFocus";
+import { HomeAgentImportant } from "./HomeAgentImportant";
 import { HomeOngoing } from "./HomeOngoing";
 import { HomeQuickActions } from "./HomeQuickActions";
 
@@ -45,7 +45,7 @@ export function HomeDashboard({ model, actions, introductionPending = false, onI
           {needsGuide ? <TextLink label="了解如何使用" onPress={() => actions.open("guide")} /> : null}</View>
       </View>
     </View>
-    <HomeFocus model={model} actions={actions} />
+    <HomeAgentImportant model={model} actions={actions} />
     <HomeQuickActions model={model} actions={actions} />
     <View testID="desktop-home-grid" style={[styles.grid, stacked && styles.gridStack]}>
       <View testID="home-ongoing-column" style={[styles.column, styles.recordsColumn, stacked && styles.stackedColumn]}><HomeOngoing model={model} actions={actions} /></View>

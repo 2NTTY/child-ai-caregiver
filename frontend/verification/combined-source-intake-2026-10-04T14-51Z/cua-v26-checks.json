@@ -1,0 +1,205 @@
+{
+  "version": 26,
+  "entry": "entry-16deeae76d9de51cc39e7e129ca83da1.js",
+  "sha256": "2c89cfc6682cd2c9f5c64ea448fa53e706b8256cda8938500dab8cace4d8d507",
+  "method": "Cloud CUA, ordinaryQAiframe; semanticinputs/read-onlyDOM/screenshots. No actualAPI/model/privateupload.",
+  "accessEvents": [
+    {
+      "at": "14:55:08",
+      "action": "getTab2",
+      "result": "dismissed securitypermissionrequest; identicalretryafteroriginalauthorization succeeded14:56:18"
+    },
+    {
+      "at": "14:58:33",
+      "action": "syntheticpreviewreadsource+proposal/narrowcontrols",
+      "result": "JavaScriptexecutiondidnotreceiveapproval; awaitingauthorizationforwardforoneidenticalretry"
+    },
+    {
+      "at": "15:06–15:07",
+      "action": "Select known URL; list available tabs; open fresh authorized cloud QA tab after empty inventories",
+      "result": "success; no new permission denial"
+    }
+  ],
+  "checks": [
+    {
+      "case": "originalv25Endatbottom+fourlinefailure",
+      "result": "fixed",
+      "viewport": [
+        390,
+        600
+      ],
+      "steps": [
+        "Home toexposelatest",
+        "Press回到最新",
+        "Readtop=max1110",
+        "PressEndwhilealreadyatbottom",
+        "Fillfourlines"
+      ],
+      "after": {
+        "top": 1170,
+        "max": 1170,
+        "lastSourceBottom": 302,
+        "panelTop": 330,
+        "viewportBottom": 354,
+        "latestVisible": false
+      },
+      "screenshot": "CUA14:56:41"
+    },
+    {
+      "case": "readingpositionhold",
+      "result": "pass",
+      "before": {
+        "top": 0,
+        "max": 1110,
+        "latestVisible": true
+      },
+      "afterFourLines": {
+        "top": 0,
+        "max": 1170,
+        "latestVisible": true
+      },
+      "cleanup": "draftclearednotpreviewed"
+    },
+    {
+      "case": "singleSettingsSourceEntry",
+      "result": "pass",
+      "tab": "資料與私隱",
+      "label": "管理資料來源",
+      "count": 1,
+      "destination": "/sources"
+    },
+    {
+      "case": "syntheticsourcecreate",
+      "result": "pass",
+      "text": "只供介面驗收的虛構文字，沒有真實孩子或家庭資料。",
+      "intention": "回答時作待核對參考，不建立記錄。",
+      "observed": "私人合成保存；source-intake-conversation waitingread; nofamilysaving/connectionclaim",
+      "nextStages": "pendingblockedcall"
+    },
+    {
+      "case": "assistedSourceProposalManualSharedEditor",
+      "result": "pass",
+      "at": "15:07–15:11",
+      "widths": [
+        1440,
+        1024,
+        320
+      ],
+      "observed": [
+        "Synthetic source saved; reading preview explicitly makes no real request",
+        "Reading report -> fixed proposal sample -> three-field editor",
+        "Confirmation says intent confirmed, formal connection not connected; no record/reference/topic added",
+        "Manual reopen and direct manual path each use exactly one source-intake-review"
+      ],
+      "narrowEditorRect": {
+        "left": 33,
+        "right": 287,
+        "width": 254
+      },
+      "screenshots": [
+        "CUA 15:08:23 assisted editor",
+        "CUA 15:09:29 settled narrow lock"
+      ]
+    },
+    {
+      "case": "connectionUnknownLockAndOriginalLookup",
+      "result": "pass",
+      "at": "15:09–15:10",
+      "widths": [
+        1440,
+        320
+      ],
+      "locked": [
+        "new source",
+        "delete source",
+        "manual extraction",
+        "source list selection"
+      ],
+      "absent": [
+        "confirm intent",
+        "manual editor"
+      ],
+      "lookup": "Original lookup after fixture result changes restores confirmed-pending-connection without resubmission"
+    },
+    {
+      "case": "readingUnknownLockAndOriginalLookup",
+      "result": "pass",
+      "at": "15:10–15:11",
+      "widths": [
+        320,
+        1024
+      ],
+      "locked": [
+        "new source",
+        "delete source",
+        "manual extraction",
+        "source list selection"
+      ],
+      "absent": [
+        "read again",
+        "manual editor"
+      ],
+      "lookup": "Original lookup after fixture result changes restores clarification; source and intention retained"
+    },
+    {
+      "case": "familyRoleModalFirstAndReopen",
+      "result": "pass",
+      "at": "15:11–15:13",
+      "widths": [
+        1024,
+        320
+      ],
+      "firstMount": {
+        "modalCount": 1,
+        "closeFocused": true
+      },
+      "reopen": {
+        "modalCount": 1,
+        "closeFocused": true
+      },
+      "dismissals": [
+        "Cancel restores collapsed role trigger focus",
+        "Escape restores collapsed role trigger focus"
+      ],
+      "syntheticRoleMutation": "none",
+      "screenshots": [
+        "CUA 15:12:20 settled first modal",
+        "CUA 15:13:14 narrow modal"
+      ]
+    },
+    {
+      "case": "ordinaryChildCurtainNoDelayedLabel",
+      "result": "pass (sampled transition and settled state, not continuous frames)",
+      "at": "15:13:45–15:13:52",
+      "width": 320,
+      "from": "小昕",
+      "to": "阿樂",
+      "covering": {
+        "phase": "covering",
+        "generation": "1",
+        "curtain": 1,
+        "delayedStatus": 0,
+        "switchingLabel": false
+      },
+      "settled": {
+        "phase": "settled",
+        "generation": "1",
+        "curtain": 0,
+        "delayedStatus": 0,
+        "switchingLabel": false
+      },
+      "limits": "No artificial business hold; natural five-second waiting branch not exercised"
+    }
+  ],
+  "pending": [
+    "Natural five-second child waiting branch has source-only evidence; no artificial hold added"
+  ],
+  "knownOpen": [
+    "Source-detailsEndinflight remainsfailedanduntouched",
+    "Actualsystemmedia/continuousfirstpaint/nativeUI unverified",
+    "Cloudfonttofusourcelabels limitnormalfontseparatorproof"
+  ],
+  "continuation_at": "2026-10-04T15:14:00Z",
+  "continuation_tab": "8",
+  "continuation_url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport"
+}

@@ -1,0 +1,65 @@
+{
+  "at": "2026-10-04T16:09:46.726185+00:00",
+  "version": 28,
+  "entry": "entry-ebafc322443387cdabf398ba645da145.js",
+  "sha256": "b0fafa1a94ebea8d880b4123f9fd96cebec8b0cb4f37c3bbc08dfb94d85de113",
+  "site_version": "appgprj_6ac1e7c965308191bc2c599951348a51~appgver_a0ceede5abe08191979db28e369cce33",
+  "site_commit": "5de0c8d650392a6b8f414c9838edea0bc240455c",
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "browser": "dot cloud Chrome, CUA tab 9",
+  "method": "Ordinary UI interaction and read-only frame-scoped DOM metrics. No injected observer, artificial animation slowdown, DevTools, private data, real API or upload.",
+  "viewport": "390x600 and 320x600 CSS px measured directly from iframe; wrapper caption height remained stale at 900",
+  "source_unchanged_after_runtime": true,
+  "changed_source_paths": [],
+  "result": "pass for bounded static geometry, navigation, control reachability, hidden-layer isolation, and manual reduced-motion end states",
+  "checks": [
+    {
+      "case": "Home, chat, profile at390 and320",
+      "result": "pass",
+      "header_height": 64,
+      "route_origin_y": 101,
+      "identity_height": 48,
+      "body_horizontal_overflow": false,
+      "detail": "Route animation may change x, never sampled y. At390 identity width254 x12; at320 width196 x8. Header action group104x48 stays in same row."
+    },
+    {
+      "case": "Child picker and facts",
+      "result": "pass",
+      "detail": "Picker132x48 and arrow48x48 at both widths; 390 pointer reveal reached region, profile, allergy and last arrow disabled; 320 Tab from picker reached arrow and Enter focused and fully revealed region. Horizontal scroll settled after early discrete samples."
+    },
+    {
+      "case": "Header controls after rapid Home/chat reversal",
+      "result": "pass",
+      "detail": "Child picker opened/closed; bell opened synthetic notice and closed; sidebar opened/closed; no remnant blocker encountered."
+    },
+    {
+      "case": "Hidden-layer focus/pointer isolation",
+      "result": "pass within sampled flows",
+      "detail": "Home context inert+aria-hidden; Tab from visible brand reached bell instead of hidden picker. Chat brand inert+aria-hidden. Rapid reversal ended with only correct layer active. Source uses pointerEvents none on inactive layer."
+    },
+    {
+      "case": "Manual reduced animation",
+      "result": "pass",
+      "detail": "Switch confirmed by AX Value1 and displayed reduced text. First measured Home and chat samples settled with correct active/inert layers and fixed geometry. Original switch off/follow-system restored via UI, AX Value0 and text recorded."
+    }
+  ],
+  "measurements": "measurements.json",
+  "screenshots": [
+    {
+      "file": "320-chat.jpg",
+      "sha256": "1ed51197a8370728f7b00c5f3f90bf4aee557bb2db8946e47de7ac55260302ce"
+    },
+    {
+      "file": "390-chat.jpg",
+      "sha256": "a9c33338814f9fab6c0c8d114a712d180af3ce5aacc40ee97863dde79e6e37f9"
+    }
+  ],
+  "authorization": "One CUA call initially denied. Exact same call retried once successfully after parent supplied original transcript authorizing public synthetic QA; original denial separately preserved. No alternate surface used.",
+  "limits": [
+    "Samples captured initial/phase and final states, but no distinct interpolated midpoint or continuous first-paint recording; cannot claim exact curve, zero-flash or no transient frame beyond observed samples.",
+    "Cloud CJK source labels still render tofu; this limits some text/pixel claims and is pre-existing.",
+    "System media preference, native Android, screen reader, real camera/microphone/API and data persistence were not tested.",
+    "Desktop unchanged-shell rerun omitted as unnecessary; no old matrices, broad suite, native build or source-intake tests rerun.",
+    "Existing source-details End-in-flight failure remains outside this header change."
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "at": "2026-10-04T06:00:40.288868+00:00",
+  "version": "Local 942b416 plus scoped two-file care deletion pagination/focus fix",
+  "changed_sources": [
+    "src/components/care/CareRecordsView.tsx",
+    "src/preview/useCarePreview.ts"
+  ],
+  "review": "Narrow diff reviewed: retain scanned prefix after deleting an included item, without pulling in an unscanned row; extend valid list-anchor focus restoration to split layout while leaving desktop scroll unchanged",
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "exit_code": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "command": "npm run build:web",
+      "status": "passed",
+      "exit_code": 0,
+      "routes": 35,
+      "log": "build-web.log"
+    }
+  ],
+  "environment": "Per-process temporary HOME/XDG; EXPO_NO_TELEMETRY=1 CI=1; no Chromium launch",
+  "source_manifest": {
+    "path": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/care-fix-2026-10-04T05-59Z/source-manifest.json",
+    "files": 225,
+    "sha256": "6adbe69ff7f77a73ca54d827c74a2771fe97ddc3d9e4accb18a3194aeaa9f107"
+  },
+  "export_directory": "/workspace/shared/caregiver_motion_impl/frontend/dist",
+  "export_manifest": {
+    "path": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/care-fix-2026-10-04T05-59Z/web-export-manifest.json",
+    "files": 60,
+    "bytes": 9015609,
+    "sha256": "169d0e5e04c1b1f468585bb946d1ca96679be6819e56e3470e58b48c5298f36b"
+  },
+  "web_bundle": [
+    {
+      "path": "_expo/static/js/web/entry-0aa65e625a63e161ec0c8b0ea9a4a203.js",
+      "bytes": 4295460,
+      "sha256": "b417aaa06a17e18f9640a6e5b296a01e20c2ef5903d468573d7fa0f23c737582"
+    }
+  ],
+  "verification_state": "Fix built; care UI recheck awaits replacement temporary Site deployment. Earlier first-failure evidence preserved. Android and other passed checks not rerun."
+}

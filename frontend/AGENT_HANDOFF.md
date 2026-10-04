@@ -1,5 +1,27 @@
 # Agent 對話及私人結果交接
 
+<a id="mobile-quick-input-design"></a>
+## 手機快捷輸入與更多入口待實施設計
+
+2026-10-04 使用者確認方向；整體版型／導航改造仍等待使用者另行通知，本節不代表現有項目已實作。
+
+- 底部「記錄」輕點仍進記錄；由該按鈕向上拖打開原有「更多」頁，保留原本次要功能的可達性。另提供可辨識且可直接點擊／鍵盤操作的更多入口，不能只靠隱藏手勢。
+- 快捷拍照控制貼於手機左下、首頁導航鈕上方，避開底部安全區及導航點擊範圍，內容須預留不被遮擋的空間。輕點拍照；按住開始拖動立即展開小菜單：**往上選文件、右上語音、往右快速記一句**。此為最新方向，取代先前上方語音／右上文件或相簿的提案。
+- 拖動高亮目標，放手只打開相應輸入功能；回到起點／離開有效選區／pointer cancel 均取消，拖動後不再觸發拍照 click。減少動畫保留完整操作與直接終態；鍵盤／讀屏可用明確按鈕展開選單。
+- 相機輸入保留選相片後備。照片、語音、文件進同一個未送出內容區，能預覽／移除、可選填文字；有效附件就緒後，文字空白亦可由使用者按發送。不可因放手、拍完、錄完或選檔就自動送出，也不可補入假問題文字通過驗證。
+- 共用同一個本人／孩子／Server scope 的助手輸入 controller：快捷入口只交原始輸入或草稿意圖；預覽、補文字、驗證、取消、實際發送及 unknown 查核由同一 owner 管理。各入口不得再接一套保存／上傳／發送 API。未送出草稿、遲到回呼、object URL／media tracks 沿既有範圍清理規則。
+- 語音、檔案種類／大小及附件-only 發送須核對正式契約與能力，未支援時明示待接線並禁止假成功；不從設計稿推定新的 endpoint、權限或背景持久化已存在。相機／麥克風權限由明確使用動作觸發；文字只在有有效附件時可省略，兩者皆空不可送。
+
+
+<a id="home-assistant-entry"></a>
+## 首頁助手入口與重要事項
+
+首頁以「隨手拍／說／寫，由助手整理及跟進」為體驗目標；表單保留作補充及修改。此目標不代表已具備自動辨識、正式保存或背景處理能力。現行首頁 `HomeQuickActions` 的拍照沿既有 Web camera／picker；`home-agent-entry.ts` 只把一份本地 `PhotoOriginal` 的所有權交給同 scope 的 `AgentComposer`，不寫 URL／localStorage、不上傳或自動送出。取消、替換、離頁及切孩子／身份清理資源與遲到回應；合成 scope 的稱呼／孩子／角色不能代替正式 session／本人／Server／授權。文字沿原對話入口，語音未接通；圖片處理與記錄亦須明示未接通。正式照片／模型同意、保存、發送及 unknown 沿下方原契約及 [照片交接](PHOTOS_HANDOFF.md)，不得由「已拍攝」推成「已記錄」。
+
+首頁第一區只使用 `HomeOverview.agentImportant` 的獨立來源；側欄 `attention` 保留用戶待辦，第二區 `ongoing` 保留持續觀察，三者不互相補位。`HomeAgentImportantSection` 是前端投影，不是新 HTTP schema：保留來源次序、穩定 id、原 runId／候選版本與期限、原建立時間、讀取時間及原 whyNow；前端不按日期或健康內容自行判重要性。缺省／錯孩子／未接線為 unavailable，loading、error、ready 空快照各自獨立；unknown 不作成功，completed 不作照護完成。首頁只作導航，沒有已讀、略過或精確 run 導航的正式 callback 時不新增假操作。
+
+已於 master `37625d0` 核對：現有背景清單只提供本人同孩子最近最多 20 次 run，沒有首頁重要事項 feed、優先級排序或已讀契約。正式 owner 必須提供已授權、明確選出的投影並隔離過期回應；不能直接用普通 Task／Growth 或最新 run 代替 Agent 推送。合成樣本只在 `src/preview/home-overview-fixture.ts`，正式接線移除它；驗收／剩餘工作只在 [PLAN#active](PLAN.md#active)，本節不保存測試流水帳。
+
 **FE-W29 最新共用時間線／訊息（2026-10-02）：** 基本聊天、合成逐字回覆與 AgentRunView 共用 ChatMessage／AnswerSources；ChatTimeline 將最新放底部、較早訊息分批展開，讀舊時不跟新文字。公開執行過程預設收起，不顯示內部思維鏈；同一 id 更新及最終快照保留自己的狀態，停止／失敗／unknown／待確認分開。合成工具及計時器只在 preview hook，正式最近 100 則 API 尚無更早游標或增量／取消契約。四尺寸、停止及 scope 清理、來源再驗和 Web／Android export 通過；[共用元件／props／證據](HANDOFF.md#chat-timeline)／[三個 Agent 官方研究](CHAT_UI_RESEARCH.md)／[必須移除／替換](PRODUCTION_UI_HANDOFF.md)。真串流、權限、逐句來源映射及原生實機仍待接線／驗收。
 
 **FE-W28 最新來源版式（2026-10-02）：** 回覆底部以分隔線接一個來源標題分頁組件，沒有重複清單或淺綠底板；相鄰來源用細直線分隔，底線與滑塊分開；詳情按引用、版本核對、日期適用三組及細線整理。正文上標立即跳到自己的來源面板；點分頁展開，再點同一項收起，多個來源可左右捲動，沒有中央 Dialog。基本聊天與 Agent 共用 [AnswerSources／CitationText](src/components/chat/AnswerSources.tsx) 及 [ChatCitationView](src/chat-view-model.ts)，不讀 Agent／fixture 狀態，每則訊息獨立；保留快照詳情及 stable source id 回調。四尺寸／長回覆／12 項、跨訊息互不干擾、窄版放大文字及 Web／Android export 通過；原 Agent 操作／權限證據沿用未改業務。現有正式 text／KnowledgeEvidence 沒有逐句映射，主聊天須核對真實編號關聯，不能把 fixture 或猜配作證據；復用接線方式見 [總交接](HANDOFF.md#chat-source-reuse)。FE-W27 首頁不再放提問欄／捷徑，對話沿既有導覽進入，草稿保留。

@@ -1,0 +1,166 @@
+{
+  "at": "2026-10-04T16:16:31.526Z",
+  "scope": "Focused static source and theme-token contrast checks only. No browser, full typecheck, build, device or complete accessibility audit.",
+  "palette": {
+    "canvas": "#F7FCFC",
+    "surface": "#FFFFFE",
+    "ink": "#272343",
+    "secondary": "#2D334A",
+    "userBubble": "#E3F6F5",
+    "line": "#E6E6EA",
+    "outline": "#737284",
+    "hover": "#EDFAF9",
+    "send": "#FFD803",
+    "onSend": "#272343",
+    "focus": "#272343"
+  },
+  "contrastPairs": [
+    {
+      "label": "answer text / canvas",
+      "foreground": "#272343",
+      "background": "#F7FCFC",
+      "ratio": 14.409481328249322,
+      "minimum": 4.5
+    },
+    {
+      "label": "metadata / canvas",
+      "foreground": "#2D334A",
+      "background": "#F7FCFC",
+      "ratio": 12.0455816033193,
+      "minimum": 4.5
+    },
+    {
+      "label": "question text / aqua bubble",
+      "foreground": "#272343",
+      "background": "#E3F6F5",
+      "ratio": 13.33139913315473,
+      "minimum": 4.5
+    },
+    {
+      "label": "question metadata / aqua bubble",
+      "foreground": "#2D334A",
+      "background": "#E3F6F5",
+      "ratio": 11.144360611371544,
+      "minimum": 4.5
+    },
+    {
+      "label": "input / white panel",
+      "foreground": "#272343",
+      "background": "#FFFFFE",
+      "ratio": 14.908514536467967,
+      "minimum": 4.5
+    },
+    {
+      "label": "placeholder and tools / white panel",
+      "foreground": "#2D334A",
+      "background": "#FFFFFE",
+      "ratio": 12.462747571713962,
+      "minimum": 4.5
+    },
+    {
+      "label": "composer and latest boundary / panel",
+      "foreground": "#737284",
+      "background": "#FFFFFE",
+      "ratio": 4.696076930505238,
+      "minimum": 3
+    },
+    {
+      "label": "composer and latest boundary / canvas",
+      "foreground": "#737284",
+      "background": "#F7FCFC",
+      "ratio": 4.538884989555044,
+      "minimum": 3
+    },
+    {
+      "label": "send arrow / yellow",
+      "foreground": "#272343",
+      "background": "#FFD803",
+      "ratio": 10.709205615619581,
+      "minimum": 3
+    },
+    {
+      "label": "send dark boundary / panel",
+      "foreground": "#272343",
+      "background": "#FFFFFE",
+      "ratio": 14.908514536467967,
+      "minimum": 3
+    },
+    {
+      "label": "focus / white panel",
+      "foreground": "#272343",
+      "background": "#FFFFFE",
+      "ratio": 14.908514536467967,
+      "minimum": 3
+    },
+    {
+      "label": "focus / previous boundary",
+      "foreground": "#272343",
+      "background": "#737284",
+      "ratio": 3.1746742562124086,
+      "minimum": 3
+    },
+    {
+      "label": "source title and active underline / canvas",
+      "foreground": "#272343",
+      "background": "#F7FCFC",
+      "ratio": 14.409481328249322,
+      "minimum": 4.5
+    },
+    {
+      "label": "tool icon / hover",
+      "foreground": "#2D334A",
+      "background": "#EDFAF9",
+      "ratio": 11.664588213132955,
+      "minimum": 3
+    }
+  ],
+  "checks": [
+    "main: existing theme unchanged; scoped palette aliases; 4 edited files passed TypeScript syntax transpilation; chat layout/type, composer handlers/state, timeline behavior and input handlers/sizing unchanged",
+    "combined: existing theme unchanged; scoped palette aliases; 4 edited files passed TypeScript syntax transpilation; chat layout/type, composer handlers/state, timeline behavior and input handlers/sizing unchanged",
+    "Shared palette, latest control and Web input match across workspaces. Existing combined-only photo intake and cleanup preserved."
+  ],
+  "sources": {
+    "main": {
+      "themeSha256": "c5b1abed6b55603d3eb088ebe70b7e1c4acd2bc552529f89f220a585893d432a",
+      "files": {
+        "src/components/chat/chat-presentation.ts": {
+          "beforeSha256": "f618633adf78fe78e65544e26d22f7279202921008dcfef9f21a56262d712e0d",
+          "sha256": "31ca3f08e0a3715e42d4ce537d1f6246269bd1c190c3ab6828edee636626268a"
+        },
+        "src/components/agent/AgentComposer.tsx": {
+          "beforeSha256": "b6bc1ead92475fb2e42d63e7208137d82ba6de1f7e596b3773e8d6e815de9a7c",
+          "sha256": "be61974d02cb4e2f38d28576a5508a1be1e91388df2cfd9137e9262fe2a6057a"
+        },
+        "src/components/chat/ChatTimeline.tsx": {
+          "beforeSha256": "a1b4fefba9e5c127410ed10e7b8514cb8aca3f05f669542fe5420b6b71b20de2",
+          "sha256": "7192d2eb1873d049aac30c08cf2e5a5c2aca77d4441c7a55a34f61ae2e87b2c9"
+        },
+        "src/components/agent/ChatComposerInput.web.tsx": {
+          "beforeSha256": "6b469bce190d17b0029ad3d39504226055c60f99a6e7c0e9b47cf2de46236b3e",
+          "sha256": "387b77e626ae825446923dcdb66c7644e003211ba0e75ec9e62e9da66bd24208"
+        }
+      }
+    },
+    "combined": {
+      "themeSha256": "c5b1abed6b55603d3eb088ebe70b7e1c4acd2bc552529f89f220a585893d432a",
+      "files": {
+        "src/components/chat/chat-presentation.ts": {
+          "beforeSha256": "f618633adf78fe78e65544e26d22f7279202921008dcfef9f21a56262d712e0d",
+          "sha256": "31ca3f08e0a3715e42d4ce537d1f6246269bd1c190c3ab6828edee636626268a"
+        },
+        "src/components/agent/AgentComposer.tsx": {
+          "beforeSha256": "d1c86c6931e50cbade5c6e2099d805cb5d67176e6dd630f8d210a8205d370565",
+          "sha256": "8b8a85d5239e0754873e060d6b26bdb9ebacf75cdc69118fbda902d01eb7e0ce"
+        },
+        "src/components/chat/ChatTimeline.tsx": {
+          "beforeSha256": "a1b4fefba9e5c127410ed10e7b8514cb8aca3f05f669542fe5420b6b71b20de2",
+          "sha256": "7192d2eb1873d049aac30c08cf2e5a5c2aca77d4441c7a55a34f61ae2e87b2c9"
+        },
+        "src/components/agent/ChatComposerInput.web.tsx": {
+          "beforeSha256": "6b469bce190d17b0029ad3d39504226055c60f99a6e7c0e9b47cf2de46236b3e",
+          "sha256": "387b77e626ae825446923dcdb66c7644e003211ba0e75ec9e62e9da66bd24208"
+        }
+      }
+    }
+  }
+}

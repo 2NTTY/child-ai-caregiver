@@ -1,0 +1,307 @@
+{
+  "site_version": 22,
+  "tested_at_utc": "2026-10-04T13:04:41Z–13:10:02Z",
+  "entry": "entry-8f72fc1e25e3557239a893ef55267941.js",
+  "entry_sha256": "8bdb3853c400b439ae6ba6213051a20ee1230e3a369f3d2bdb25c744ea7d2ff0",
+  "source_manifest_sha256": "db16b5aeb1ca85f5f0e481bd518fa0809fdc70c7a92f0b6237c90b1e801acb8e",
+  "method": "Supported cloud CUA semantic input and read-only DOM observations; ordinary iframe width/height controls. Not execution of prepared Playwright script, full browser emulation, native UI, or continuous frame trace. Screenshots emitted in CUA transcript, no local screenshot artifact claimed.",
+  "checks": [
+    {
+      "case": "missing reduce control regression",
+      "result": "pass",
+      "route": "/settings",
+      "tab": "應用偏好",
+      "actual_heading": "動畫與操作",
+      "role": "switch",
+      "name": "減少動畫",
+      "initial_checked": false,
+      "disabled": false,
+      "viewport": [
+        1180,
+        757
+      ],
+      "card_rect": [
+        240,
+        291.04,
+        450,
+        201
+      ],
+      "switch_rect": [
+        633,
+        388.04,
+        40,
+        20
+      ],
+      "below_fold": false,
+      "lookup_changed_preference": false
+    },
+    {
+      "case": "four-width home geometry",
+      "result": "pass",
+      "viewports": [
+        [
+          320,
+          600
+        ],
+        [
+          390,
+          600
+        ],
+        [
+          1024,
+          900
+        ],
+        [
+          1440,
+          900
+        ]
+      ],
+      "docWidth_equals_viewport": true,
+      "button_widths": [
+        71,
+        88.5,
+        180.5,
+        284.5
+      ],
+      "button_height": 64,
+      "all_buttons_hit_test_unobscured": true,
+      "mobile_scroller": [
+        101,
+        427
+      ],
+      "mobile_toolbar": [
+        427,
+        536
+      ],
+      "mobile_button_top_bottom": [
+        464,
+        528
+      ],
+      "normal_flow_toolbar_position": "relative",
+      "desktop_task_scenario_buttons_top_bottom": [
+        695,
+        759
+      ],
+      "raw_recent_stream_not_used": "Page shows 現在要處理 and 持續關注 with topic and basis"
+    },
+    {
+      "case": "320 short-height scroll",
+      "result": "pass",
+      "scroll_top": 486,
+      "scroll_max": 486,
+      "last_content_button_top_bottom": [
+        346,
+        394
+      ],
+      "toolbar_unchanged": [
+        427,
+        536
+      ],
+      "content_reachable_without_bottom_overlap": true
+    },
+    {
+      "case": "home/rail same projection",
+      "result": "pass",
+      "home_ids": [
+        "home-overview-item-preview-child-1-task-review"
+      ],
+      "rail_ids": [
+        "home-overview-item-preview-child-1-task-review",
+        "home-overview-item-preview-child-1-task-ordinary",
+        "home-overview-item-preview-child-1-task-appointment"
+      ],
+      "first_text_identical": true,
+      "dock_width": 310,
+      "dock_has_content": true,
+      "inactive_overlay_shell_has_content": false,
+      "rail_ArrowRight_context_selected": true,
+      "rail_ArrowLeft_attention_selected": true,
+      "no_claim_of_formal_crosspage_server_sync": true
+    },
+    {
+      "case": "four original quick callbacks",
+      "result": "pass",
+      "routes": {
+        "快速記錄情況": "/care?compose=note",
+        "快速照片記錄": "/photos",
+        "快速身高體重": "/care?compose=measurement",
+        "快速記錄睡眠": "/care?compose=sleep"
+      },
+      "form_kinds": [
+        "日常觀察",
+        "身高／體重",
+        "睡眠"
+      ],
+      "toolbar_absent_off_home": true,
+      "forms_cancelled_without_save": true,
+      "return_home_greeting_aria_hidden": "true"
+    },
+    {
+      "case": "child and empty boundaries",
+      "result": "pass",
+      "new_child": "阿樂",
+      "home_id": "home-overview-item-preview-child-2-task-review",
+      "rail_ids": [
+        "home-overview-item-preview-child-2-task-review",
+        "home-overview-item-preview-child-2-task-ordinary",
+        "home-overview-item-preview-child-2-task-appointment"
+      ],
+      "old_child_ids_not_displayed_in_projection": true,
+      "no_child_scenario": "four quick buttons disabled; original create/view-profile entrance remains",
+      "unavailable_text": "暫未能確認待辦與提醒；不能當作沒有事項",
+      "scenario_reset": "一般"
+    },
+    {
+      "case": "notification shared backdrop",
+      "result": "pass",
+      "entry_sample": {
+        "phase": "entering",
+        "opacity": 0.63018,
+        "color": "rgba(39, 35, 67, 0.24)",
+        "pointer": "none",
+        "aria_hidden": "true"
+      },
+      "settled": {
+        "opacity": 1,
+        "phase": "settled",
+        "count": 1
+      },
+      "Escape": {
+        "remaining_backdrops": 0,
+        "focus": "開啟訊息提示"
+      },
+      "manual_reduced_open": {
+        "opacity": 1,
+        "phase": "settled"
+      },
+      "manual_toggle_while_open_kept_dialog_content": true
+    },
+    {
+      "case": "drawer shared backdrop and Escape",
+      "result": "pass",
+      "entry": {
+        "phase": "entering",
+        "opacity": 0.512295,
+        "drawer_backdrop_count": 1,
+        "modal_backdrop_count": 0
+      },
+      "exit": {
+        "phase": "exiting",
+        "opacity": 0.120799,
+        "pointer": "none",
+        "focus": "開啟資訊側欄"
+      },
+      "duration_and_curve": "Source tokens share240ms and same bezier; discrete runtime samples establish progression, not exact elapsed duration"
+    },
+    {
+      "case": "AppDialog select normal/reduced",
+      "result": "pass",
+      "entry_normal": {
+        "phase": "entering",
+        "opacity": 0.660813
+      },
+      "reduced": {
+        "phase": "settled",
+        "opacity": 1,
+        "scope_reduced": "true"
+      },
+      "Escape": {
+        "remaining_backdrops": 0,
+        "focus": "時區：香港時間"
+      },
+      "selection_changed": false
+    },
+    {
+      "case": "date shared backdrop and cancellation",
+      "result": "pass",
+      "viewport": [
+        320,
+        600
+      ],
+      "normal_entry": {
+        "phase": "entering",
+        "opacity": 0.807932,
+        "color": "rgba(39, 35, 67, 0.24)"
+      },
+      "next_month_then_same_origin_manual_reduce": {
+        "scope_reduced": "true",
+        "backdrop_count": 1,
+        "dialog_size": [
+          320,
+          600
+        ]
+      },
+      "Escape": {
+        "input_value": "2026-10-04",
+        "original_input_focused": true,
+        "remaining_backdrops": 0
+      },
+      "no_value_committed": true
+    },
+    {
+      "case": "draft leave guard",
+      "result": "pass",
+      "normal_entry": {
+        "phase": "entering",
+        "opacity": 0.379263,
+        "count": 1
+      },
+      "Escape": {
+        "draft": "灰幕驗收草稿",
+        "focus": "主頁",
+        "remaining_backdrops": 0
+      },
+      "cleanup": "Name restored to媽媽, then page reloaded"
+    },
+    {
+      "case": "warm mobile startup and greeting",
+      "result": "pass",
+      "viewport": [
+        320,
+        600
+      ],
+      "normal_reload_button": true,
+      "ready_hero": {
+        "complete": true,
+        "natural_width": 1672
+      },
+      "greeting_initial_aria_hidden": null,
+      "greeting_later_aria_hidden": "true",
+      "quick_buttons_remain_first_viewport_both_states": true,
+      "scope": "Natural warm load; no controlled slow/error response or exact3s claim"
+    }
+  ],
+  "test_harness_events": [
+    {
+      "case": "drawer query",
+      "result": "First single locator matched dock plus empty overlay shell; read-only evaluateAll distinguished modes without weakening content assertion. No product failure."
+    },
+    {
+      "case": "scenario chooser review",
+      "result": "Original blocked exact call retried once after parent supplied authorization, succeeded on corrected bundle."
+    }
+  ],
+  "cleanup": {
+    "qa_iframe_route": "/",
+    "qa_size": [
+      320,
+      600
+    ],
+    "fixture_reset": "ordinary iframe reload",
+    "settings_tab": "reloaded to clean state then 應用偏好",
+    "manual_reduce_checked": false,
+    "business_data_saved": false
+  },
+  "open_or_unverified": [
+    "Source details End-key in-flight reset remained failed onv20; unchanged candidate, not retested/closed",
+    "Actual system media prefers-reduced-motion not tested; manual app preference is separate",
+    "No full continuous first-painted-frame proof or exact timing/curve runtime measurement",
+    "200% text-only unavailable without prohibited injection/config change",
+    "Controlled slow/error image fallback runtime unverified",
+    "Vendor date internal calendar/edit and hour/minute250ms reduction gap remains",
+    "Native UI/screenreader/real API/model/notification not tested",
+    "Nested stack leave-guard not exercised; ordinary draft leave guard plus separate select/date dialogs covered",
+    "This bounded combined batch does not rerun every historical motion case or the full route×viewport matrix"
+  ],
+  "acceptance": "Bounded corrected-build cases passed. Not a global motion-complete or merge-ready claim."
+}
