@@ -6,12 +6,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { brand } from "../branding";
 import { BrandLogo } from "./BrandLogo";
-import { Button, Divider, Portal, Text } from "react-native-paper";
+import { Button, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { AppIcon } from "./AppIcon";
 import { AppMenuList } from "./AppMenuList";
 import { AgentEntryButton } from "./AgentEntryButton";
-import { AppButton, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
+import { RightRailContent } from "./RightRailContent";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 import { NotificationBell } from "./NotificationBell";
@@ -82,40 +82,12 @@ export function RightRail({ model, actions, home = false, overlay = false, onClo
   overlay?: boolean;
   onClose?: () => void;
 }) {
-  const child = model.children.find(item => item.id === model.selectedChildId);
-  const records = model.records.filter(item => item.childId === model.selectedChildId).slice(0, 3);
   return <View testID="context-rail" style={[styles.rail, overlay && styles.railFill]}>
     <View style={styles.railHeader}>
-      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>照顧上下文</Text></View>
+      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>照顧資訊</Text></View>
       {onClose ? <ToolbarIconButton icon="close" label="關閉資訊側欄" onPress={onClose} /> : null}
     </View>
-    <ScrollView contentContainerStyle={styles.railCards}>
-      <SectionCard>
-        <SectionHeader title={home ? "已載入的孩子背景" : "目前孩子"} density="compact" action={<TextLink label="查看檔案" onPress={() => actions.open("profile")} />} />
-        {child ? <View style={styles.railIdentity}>
-          <View style={styles.railAvatar}><Text style={styles.railAvatarText}>{child.displayName.slice(0, 1)}</Text></View>
-          <View style={styles.railIdentityText}><Text style={styles.railRecordTitle}>{child.displayName}</Text><Text style={styles.railMeta}>{child.ageLabel}</Text><Text style={styles.railMeta}>{child.regionLabel} · {child.profileConfirmed ? "檔案已確認" : "檔案待核對"}</Text></View>
-        </View> : <Text style={styles.railMeta}>尚未選擇孩子；請先建立檔案。</Text>}
-        {home && child ? <><Text style={styles.railMeta}>過敏資料：{child.allergiesLabel ?? "未提供"}</Text><Text style={styles.railMeta}>背景可協助理解問題；實際使用的資料由每次回覆標示。</Text></> : null}
-      </SectionCard>
-      {!home ? <SectionCard>
-        <SectionHeader title="近期已確認記錄" action={<TextLink label="查看全部" onPress={() => actions.open("care")} />} />
-        {model.recordsLoad === "loading" ? <Text style={styles.railMeta}>正在讀取記錄…</Text> : model.recordsLoad === "error" ? <Text style={styles.railMeta}>暫時讀不到記錄，不能確認最新資料。</Text> : records.length === 0 ? <Text style={styles.railMeta}>目前沒有已載入記錄。</Text> : records.map((record, index) => <View key={record.id}>
-          {index > 0 ? <Divider style={styles.divider} /> : null}
-          <Pressable accessibilityRole="button" accessibilityLabel={`查看${record.title}`} onPress={() => actions.open("care")} style={({ pressed }) => [styles.railRecord, pressed && styles.pressed]}>
-            <View style={styles.recordMark}><AppIcon name="file-document-outline" size={20} /></View>
-            <View style={styles.railIdentityText}><Text style={styles.railRecordTitle}>{record.title}</Text><Text numberOfLines={2} style={styles.railMeta}>{record.eventTimeLabel} · {record.detail}</Text></View>
-          </Pressable>
-        </View>)}
-        {model.connection === "offline" ? <Text style={styles.railCaution}>目前離線；以上可能不是最新資料。</Text> : null}
-      </SectionCard> : null}
-      {!home && model.operation.state !== "none" ? <SectionCard>
-        <SectionHeader title="最近操作" />
-        <OperationPill state={model.operation.state} />
-        <Text style={styles.railMeta}>{model.operation.detail}</Text>
-        <TextLink label={model.operation.state === "unknown" ? "查核原操作" : "查看相關記錄"} onPress={() => model.operation.state === "none" ? actions.open("care") : actions.reviewOperation()} />
-      </SectionCard> : null}
-    </ScrollView>
+    <RightRailContent model={model} actions={actions} home={home} />
   </View>;
 }
 

@@ -1,31 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, Animated, Easing, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import { HomeBackground } from "./appearance/HomeBackground";
-import { AppIcon } from "./AppIcon";
 import type { HomeActions, HomeViewModel } from "../view-model";
-import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing } from "../theme";
-import { AppButton, SectionCard, SectionHeader, TextLink } from "./ui";
+import { chineseFont, colors, mobileLayout, mobileType, radius, spacing } from "../theme";
+import { AppButton, SectionCard, TextLink } from "./ui";
 import { ChildPicker } from "./ChildPicker";
 import { HomeFocus } from "./HomeFocus";
-import { HomeRecentRecords } from "./HomeRecentRecords";
-
-const quickActions = [
-  { kind: "note", label: "記錄情況", hint: "日常觀察", icon: "notebook-outline" },
-  { kind: "photos", label: "照片記錄", hint: "原圖及草稿", icon: "image-outline" },
-  { kind: "measurement", label: "身高體重", hint: "約數及單位", icon: "chart-bar" },
-  { kind: "sleep", label: "記錄睡眠", hint: "時間原文", icon: "weather-night" },
-] as const;
+import { HomeOngoing } from "./HomeOngoing";
+import { HomeQuickActions } from "./HomeQuickActions";
 
 export function MobileHomeDashboard({ model, actions, introductionPending = false }: { model: HomeViewModel; actions: HomeActions; introductionPending?: boolean }) {
   const child = model.children.find(item => item.id === model.selectedChildId);
   const guide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   const { width: windowWidth } = useWindowDimensions();
-  const [quickWidth, setQuickWidth] = useState<number | null>(null);
-  const initialQuickWidth = Math.max(0, Math.min(windowWidth, mobileLayout.breakpoint) - 2 * mobileLayout.pageInset - 2 * mobileLayout.cardInset - 2);
-  const fourQuickColumns = (quickWidth ?? initialQuickWidth) >= 290;
   const playIntroduction = useRef(introductionPending && Boolean(child)).current;
   const intro = useRef(new Animated.Value(playIntroduction ? 0 : 1)).current;
   const transitionStarted = useRef(false);
@@ -66,7 +56,7 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
     }
   }
 
-  return <ScrollView style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+  return <View style={styles.root}><ScrollView testID="mobile-home-scroll" style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <View testID="mobile-home-header" onLayout={event => setHeaderWidth(event.nativeEvent.layout.width)} style={[styles.homeHeader, { minHeight: greetingHeight }]}>
       <View pointerEvents="none" style={[styles.artwork, { height: greetingHeight }]}><HomeBackground surface={colors.canvas} fadeBottom fitIllustration /></View>
       <Animated.View testID="mobile-home-greeting" pointerEvents="none" accessibilityElementsHidden={hasChild && docked} aria-hidden={hasChild && docked}
@@ -101,22 +91,13 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
 
     {guide ? <View style={styles.guide}><Text style={styles.body}>已有孩子即可提問；資料需要時再補充。</Text><TextLink label="了解如何使用" onPress={() => actions.open("guide")} /></View> : null}
     <HomeFocus model={model} actions={actions} />
-    <HomeRecentRecords model={model} actions={actions} />
-
-    <SectionCard>
-      <SectionHeader title="快速記錄" density="compact" />
-      <View testID="mobile-quick-actions" style={styles.quickGrid} onLayout={event => setQuickWidth(event.nativeEvent.layout.width)}>
-        {quickActions.map(item => <Pressable key={item.kind} accessibilityRole="button" accessibilityLabel={`快速${item.label}`} disabled={!child} onPress={() => item.kind === "photos" ? actions.open("photos") : actions.composeCare(item.kind)} style={({ pressed }) => [styles.quick, fourQuickColumns && styles.fourColumns, !child && styles.disabled, pressed && styles.pressed]}>
-          <AppIcon name={item.icon} size={mobileIcons.content} color={colors.teal} /><Text style={styles.quickLabel}>{item.label}</Text><Text style={styles.quickHint}>{item.hint}</Text>
-        </Pressable>)}
-      </View>
-    </SectionCard>
-
-  </ScrollView>;
+    <HomeOngoing model={model} actions={actions} />
+  </ScrollView><HomeQuickActions model={model} actions={actions} docked /></View>;
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.canvas },
+  root: { flex: 1, minHeight: 0, backgroundColor: colors.canvas },
+  scroll: { flex: 1, minHeight: 0, backgroundColor: colors.canvas },
   page: { padding: mobileLayout.pageInset, gap: mobileLayout.sectionGap, width: "100%", maxWidth: mobileLayout.breakpoint, alignSelf: "center" },
   homeHeader: { position: "relative", marginTop: -mobileLayout.pageInset },
   artwork: { position: "absolute", top: 0, left: -mobileLayout.pageInset, right: -mobileLayout.pageInset },
@@ -132,18 +113,4 @@ const styles = StyleSheet.create({
   body: { fontFamily: chineseFont, color: colors.muted, ...mobileType.body },
   meta: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption },
   guide: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
-  focusInner: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, backgroundColor: colors.white, borderRadius: radius.small, padding: spacing.md },
-  focusIcon: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine, minHeight: 64 },
-  lastRow: { borderBottomWidth: 0 },
-  rowIcon: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
-  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  quick: { flexBasis: "45%", flexGrow: 1, minHeight: mobileLayout.quickTileMinHeight, backgroundColor: colors.quietSurface, borderRadius: radius.small, padding: spacing.xs, gap: spacing.xs, alignItems: "center", justifyContent: "center" },
-  fourColumns: { flexBasis: "22%" },
-  quickLabel: { fontFamily: chineseFont, color: colors.ink, ...mobileType.label, fontWeight: "700", textAlign: "center" },
-  quickHint: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption, textAlign: "center" },
-  memoryRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  assistant: { width: 56, height: 64 },
-  pressed: { opacity: 0.68 }, disabled: { opacity: 0.5 },
-  offline: { fontFamily: chineseFont, color: colors.warningInk, ...mobileType.body },
 });

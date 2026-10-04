@@ -1,35 +1,34 @@
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 import { Text } from "react-native-paper";
 import type { HomeActions, HomeViewModel } from "../view-model";
-import { chineseFont, colors, readingType, spacing, workspaceType } from "../theme";
-import { AppButton, SectionCard } from "./ui";
+import { selectHomeOverview } from "../home-overview";
+import { chineseFont, colors, readingType } from "../theme";
+import { AppButton, SectionCard, SectionHeader } from "./ui";
 import { OperationNotice } from "./OperationNotice";
 import { ReadStateNotice } from "./ReadStateNotice";
+import { HomeOverviewItems } from "./HomeOverviewItems";
 
-export function HomeFocus({ model, actions }: { model: HomeViewModel; actions: HomeActions }) {
-  if (!model.children.some(child => child.id === model.selectedChildId)) return null;
+export function HomeFocus({ model, actions, full = false }: { model: HomeViewModel; actions: HomeActions; full?: boolean }) {
+  const overview = selectHomeOverview(model);
+  if (!overview) return null;
+  const section = overview.attention;
   const operation = model.operation;
-  const focus = model.focus ?? { kind: "unavailable", detail: "尚未取得今日事項，不能確認有沒有需要處理的內容。" };
-  const hasOperation = operation.state !== "none";
-  return <View testID="home-focus">
-    {hasOperation ? <OperationNotice state={operation.state} title={operation.title} message={operation.detail}>
+  const visibleItems = full ? section.items : section.items.slice(0, 1);
+  const emptyMessage = operation.state === "none" ? section.detail ?? "目前沒有指定待處理事項。" : "這次快照沒有其他指定待辦。";
+  return <SectionCard testID={full ? "rail-attention" : "home-focus"}>
+    <SectionHeader title={full ? "待辦與提醒" : "現在要處理"} density="compact" />
+    {operation.state !== "none" ? <OperationNotice state={operation.state} title={operation.title} message={operation.detail}>
       {operation.state !== "saving" ? <AppButton label={operation.state === "unknown" ? "查核這次結果" : "查看原操作"} density="compact" variant="secondary" onPress={actions.reviewOperation} /> : null}
-    </OperationNotice> : focus.kind === "none" ? <View style={styles.quiet}><Text style={styles.heading}>今天暫無指定事項</Text><Text style={styles.body}>{focus.detail ?? "目前的授權快照沒有指定需要處理的事項。"}</Text></View>
-      : focus.kind === "unavailable" ? <ReadStateNotice state="unavailable" title="暫未能確認今日事項" message={focus.detail}>
-        <AppButton label="重新讀取" density="compact" variant="quiet" disabled={model.connection !== "online" || model.recordsLoad === "loading"} onPress={actions.refresh} />
-      </ReadStateNotice> : <SectionCard>
-        <Text style={styles.eyebrow}>{focus.kind === "task" ? "今天的一件待辦" : "一項成長關注"}</Text>
-        <Text accessibilityRole="header" style={styles.heading}>{focus.title}</Text><Text style={styles.body}>{focus.detail}</Text>
-        {focus.whyNow ? <Text style={styles.meta}>{focus.whyNow}</Text> : null}{focus.sourceLabel ? <Text style={styles.meta}>依據：{focus.sourceLabel}</Text> : null}
-        <AppButton label={focus.action.label} density="compact" variant="secondary" onPress={() => actions.open(focus.action.destination)} />
-      </SectionCard>}
+    </OperationNotice> : null}
+    <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
+      title={section.state === "unavailable" ? "暫未能確認待辦與提醒" : undefined}
+      message={section.state === "ready" && section.items.length === 0 ? emptyMessage : section.detail}>
+      {section.state === "unavailable" ? <AppButton label="重新讀取" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
+    </ReadStateNotice>
+    {section.state === "ready" ? <HomeOverviewItems items={visibleItems} actions={actions} /> : null}
+    {!full && section.items.length > visibleItems.length ? <Text style={styles.meta}>另有 {section.items.length - visibleItems.length} 項，可在資訊側欄的「待辦／提醒」查看。</Text> : null}
+    {full ? <Text style={styles.meta}>只顯示這次已載入的事項；安排、送達與照顧完成各自核對。</Text> : null}
     {model.connection !== "online" ? <Text style={styles.meta}>目前未連線；已載入的事項可能不是最新狀態。</Text> : null}
-  </View>;
+  </SectionCard>;
 }
-const styles = StyleSheet.create({
-  quiet: { gap: spacing.xs, paddingVertical: spacing.sm },
-  heading: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, fontWeight: "700" },
-  eyebrow: { fontFamily: chineseFont, color: colors.teal, ...readingType.meta },
-  body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
-  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, marginTop: spacing.xs },
-});
+const styles = StyleSheet.create({ meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });

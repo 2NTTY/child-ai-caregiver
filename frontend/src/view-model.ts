@@ -1,3 +1,5 @@
+import type { HomeOverviewView } from "./home-overview";
+
 // Presentation-only types. They are not an API or a replacement for shared domain contracts.
 export type ConnectionState = "online" | "offline" | "checking";
 export type RecordsLoadState = "ready" | "loading" | "error";
@@ -51,6 +53,7 @@ export interface HomeViewModel {
   lastReadLabel: string | null;
   operation: HomeOperation;
   focus?: HomeFocusView;
+  overview?: HomeOverviewView;
   guideStatus: GuideStatus;
 }
 

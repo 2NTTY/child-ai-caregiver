@@ -43,12 +43,9 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); }, []);
 
-  const fixture = createPreviewModel(scenario, selectedChildId, guideStatus);
-  const childrenInPreview = [...fixture.children, ...createdChildren].filter(child => !deletedChildren.includes(child.id));
-  const model: HomeViewModel = { ...fixture, children: childrenInPreview,
-    selectedChildId: childrenInPreview.some(item => item.id === selectedChildId) ? selectedChildId : childrenInPreview[0]?.id ?? null,
-    records: fixture.records.filter(record => childrenInPreview.some(item => item.id === record.childId)),
-  };
+  // Resolve visible children before deriving any child-scoped home/rail projection.
+  const model = createPreviewModel(scenario, selectedChildId, guideStatus, { createdChildren, deletedChildIds: deletedChildren });
+  const childrenInPreview = model.children;
   const draftKey = model.selectedChildId ?? "no-child";
   const actions: HomeActions = {
     selectChild(id) {
