@@ -4,7 +4,7 @@ import { AppScrollView as ScrollView } from "./AppScrollView";
 import { HelperText, Portal, Text, TextInput, useTheme } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import { DatePickerModalContent, TimePicker, registerTranslation, zhTW } from "react-native-paper-dates";
-import { MotionEntrance } from "../motion";
+import { MotionBackdrop, MotionEntrance } from "../motion";
 import { MotionPaperScope } from "../motion/MotionPaperScope";
 import { chineseFont, colors, spacing, typeScale } from "../theme";
 import { calendarDate, calendarValue, dateTimeParts, dateTimeValue, hongKongTimeZone, timeZoneLabel, timeZoneOptions } from "./date-time";
@@ -26,7 +26,7 @@ function DatePickerDialog({ label, value, visible, onConfirm, onDismiss, onClose
   return <Modal visible={visible} transparent animationType="none" presentationStyle="overFullScreen" onRequestClose={onDismiss} onDismiss={onClosed}
     supportedOrientations={["portrait", "portrait-upside-down", "landscape", "landscape-left", "landscape-right"]} statusBarTranslucent>
     <MotionPaperScope><View style={styles.dateRoot}>
-      <View accessible={false} aria-hidden onStartShouldSetResponder={() => true} onResponderRelease={onDismiss} style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.backdrop }]} />
+      <MotionBackdrop open={visible} onPress={onDismiss} />
       <MotionEntrance preset="dialog" triggerKey="date-picker" scopeKey={label} animateOnMount role="dialog" aria-modal accessibilityViewIsModal accessibilityLabel={label} testID="app-date-picker"
         style={[styles.dateSurface, width > 650 && styles.dateSurfaceBig, { backgroundColor: theme.colors.elevation.level3 }]}>
         <DatePickerModalContent locale="zh-HK" mode="single" date={date} onDismiss={onDismiss} onConfirm={({ date: selected }) => { if (selected) onConfirm(calendarValue(selected)); else onDismiss(); }} />

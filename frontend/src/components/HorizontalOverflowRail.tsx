@@ -16,13 +16,14 @@ interface HorizontalOverflowRailProps extends Omit<ScrollViewProps, "horizontal"
   hintTestID?: string;
   hintSlotTestID?: string;
   revealTarget?: HorizontalRailItem;
+  revealRevision?: number;
   animatedScroll?: boolean;
   onRevealItem: (key: string, scroll: ScrollView | null) => void;
 }
 
 /** A tab/disclosure rail with an independent trailing hint, never a content overlay. */
 export const HorizontalOverflowRail = forwardRef<ScrollView, HorizontalOverflowRailProps>(function HorizontalOverflowRail(
-  { items, hintLabel, hintColor = colors.muted, rowTestID, hintTestID, hintSlotTestID, revealTarget,
+  { items, hintLabel, hintColor = colors.muted, rowTestID, hintTestID, hintSlotTestID, revealTarget, revealRevision,
     animatedScroll = true, onRevealItem, style, children, onLayout, onContentSizeChange, onScroll,
     onScrollBeginDrag, onTouchStart, ...props }, forwardedRef,
 ) {
@@ -40,22 +41,58 @@ export const HorizontalOverflowRail = forwardRef<ScrollView, HorizontalOverflowR
     const next = horizontalOverflow(metrics.current);
     setHint(current => current.overflow === next.overflow && current.more === next.more ? current : next);
   }
+  function currentMetrics() {
+    const viewport = Platform.OS === "web" ? scrollRef.current?.getScrollableNode() as HTMLElement | null : null;
+    // Focus, keyboard and scroll calls can precede RN Web's throttled onScroll.
+    if (viewport) metrics.current = { ...metrics.current, x: viewport.scrollLeft,
+      viewportWidth: viewport.clientWidth, contentWidth: viewport.scrollWidth };
+    return metrics.current;
+  }
+  function scrollToOffset(x: number, animated: boolean) {
+    const viewport = Platform.OS === "web" ? scrollRef.current?.getScrollableNode() as HTMLElement | null : null;
+    const nativeScroll = viewport?.ownerDocument.defaultView?.Element.prototype.scroll as
+      ((this: Element, options: ScrollToOptions) => void) | undefined;
+    if (viewport && typeof nativeScroll === "function") {
+      const position = { left: x, top: viewport.scrollTop };
+      nativeScroll.call(viewport, { ...position, behavior: animated ? "smooth" : "instant" });
+      // Settle an interrupted browser user animator, matching source positioning.
+      // The second request is a same-position no-op, so reduced motion stays instant.
+      if (!animated) nativeScroll.call(viewport, { ...position, behavior: "smooth" });
+      currentMetrics();
+      updateHint();
+      return;
+    }
+    scrollRef.current?.scrollTo({ x, animated });
+  }
   function revealNext() {
-    const item = nextHorizontalItem(items, metrics.current, pending.current?.key ?? null);
+    const latest = currentMetrics();
+    if (pending.current && Math.abs(pending.current.x - latest.x) <= 1) pending.current = null;
+    const item = nextHorizontalItem(items, latest, pending.current?.key ?? null);
     if (!item) return;
-    const x = horizontalRevealOffset(item, metrics.current);
+    const x = horizontalRevealOffset(item, latest);
     pending.current = { key: item.key, x };
-    // Use the RN ref signature: RN Web installs it on its DOM viewport as well.
-    scrollRef.current?.scrollTo({ x, animated: animatedScroll && preferences.enabled });
+    scrollToOffset(x, animatedScroll && preferences.enabled);
     onRevealItem(item.key, scrollRef.current);
   }
 
   useLayoutEffect(() => {
     if (!revealTarget || layout.viewportWidth <= 0) return;
     pending.current = null;
-    const x = horizontalRevealOffset(revealTarget, metrics.current);
-    if (Math.abs(x - metrics.current.x) > 1) scrollRef.current?.scrollTo({ x, animated: false });
-  }, [revealTarget?.key, revealTarget?.x, revealTarget?.width, layout.viewportWidth, layout.contentWidth]);
+    const x = horizontalRevealOffset(revealTarget, currentMetrics());
+    // An explicit selection must settle even when the selected key has not changed.
+    // Do not skip a same-position request: an older smooth scroll may still be live.
+    scrollToOffset(x, false);
+  }, [revealTarget?.key, revealTarget?.x, revealTarget?.width, revealRevision, layout.viewportWidth, layout.contentWidth]);
+
+  useLayoutEffect(() => {
+    if (Platform.OS !== "web") return;
+    const viewport = scrollRef.current?.getScrollableNode() as HTMLElement | null;
+    if (!viewport) return;
+    // RN Web forwards wheel directly; it does not emit onScrollBeginDrag for it.
+    const interrupt = () => { pending.current = null; };
+    viewport.addEventListener("wheel", interrupt, { passive: true });
+    return () => viewport.removeEventListener("wheel", interrupt);
+  }, []);
 
   useLayoutEffect(() => {
     cancelAnimation(opacity);
@@ -74,7 +111,8 @@ export const HorizontalOverflowRail = forwardRef<ScrollView, HorizontalOverflowR
     // A preference/viewport interruption settles any native smooth scroll immediately.
     const target = pending.current;
     if (target) {
-      scrollRef.current?.scrollTo({ x: Math.max(0, Math.min(target.x, metrics.current.contentWidth - metrics.current.viewportWidth)), animated: false });
+      const latest = currentMetrics();
+      scrollToOffset(Math.max(0, Math.min(target.x, latest.contentWidth - latest.viewportWidth)), false);
       pending.current = null;
     }
   }, [preferences.enabled, preferences.epoch]);

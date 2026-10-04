@@ -1,19 +1,20 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type Ref } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, { cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { motionData, type MotionViewProps } from "./viewProps";
 import { useMotionPreferences } from "./preferences";
 import { motionTokens } from "./tokens";
 import { drawerGeometry } from "./drawerGeometry";
+import { MotionBackdrop } from "./MotionBackdrop";
 
 export interface MotionDrawerRightProps extends MotionViewProps {
   open: boolean; width: number; scopeKey: string; mode: "dock" | "overlay";
   eligible?: boolean; animateOnMount?: boolean; surfaceRef?: Ref<View>;
-  backdrop?: ReactNode;
+  onBackdropPress?: () => void;
 }
 
 /** A single live surface. Width and translation always use the same progress. */
-export function MotionDrawerRight({ open, width, scopeKey, mode, eligible = true, animateOnMount = false, surfaceRef, backdrop, children, style, ...props }: MotionDrawerRightProps) {
+export function MotionDrawerRight({ open, width, scopeKey, mode, eligible = true, animateOnMount = false, surfaceRef, onBackdropPress, children, style, ...props }: MotionDrawerRightProps) {
   const preferences = useMotionPreferences();
   const progress = useSharedValue(!animateOnMount && open && eligible ? 1 : 0);
   const previous = useRef({ open: animateOnMount ? false : open, scopeKey, width, epoch: preferences.epoch });
@@ -48,11 +49,8 @@ export function MotionDrawerRight({ open, width, scopeKey, mode, eligible = true
   useLayoutEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current += 1; cancelAnimation(progress); }; }, [progress]);
   const frame = useAnimatedStyle(() => ({ width: drawerGeometry(width, progress.value, mode).frameWidth }));
   const surface = useAnimatedStyle(() => ({ transform: [{ translateX: drawerGeometry(width, progress.value, mode).translateX }] }));
-  const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
   return <>
-    {visible && backdrop ? <Animated.View {...motionData({ motionKind: "drawer-backdrop", motionPhase: phase })}
-      accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-      pointerEvents={open && eligible ? "auto" : "none"} style={[StyleSheet.absoluteFill, backdropStyle]}>{backdrop}</Animated.View> : null}
+    {visible && onBackdropPress ? <MotionBackdrop open={open && eligible} onPress={onBackdropPress} progress={progress} phase={phase} kind="drawer-backdrop" /> : null}
     <Animated.View {...motionData({ motionKind: "drawer-right", motionMode: mode, motionPhase: phase })} style={[styles.frame, frame]} pointerEvents={open && eligible ? "auto" : "none"}>
     {visible ? <Animated.View {...props} ref={(value: View | null) => {
       node.current = value;

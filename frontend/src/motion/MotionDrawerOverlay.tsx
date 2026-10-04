@@ -10,9 +10,9 @@ export function MotionDrawerOverlay({ open, scopeKey, label, children, onRequest
   return <Modal visible={open} transparent animationType="none" onRequestClose={onRequestClose}>
     <View style={styles.overlay}>
       <MotionDrawerRight open={open} width={width} mode="overlay" scopeKey={scopeKey} animateOnMount
-        backdrop={<View accessible={false} pointerEvents={open ? "auto" : "none"} onStartShouldSetResponder={() => true} onResponderRelease={onRequestClose} style={[StyleSheet.absoluteFill, styles.scrim]} />}
+        onBackdropPress={onRequestClose}
         accessibilityViewIsModal accessibilityLabel={label} style={styles.surface}>{children}</MotionDrawerRight>
     </View>
   </Modal>;
 }
-const styles = StyleSheet.create({ overlay: { flex: 1, flexDirection: "row", justifyContent: "flex-end", overflow: "hidden" }, scrim: { backgroundColor: colors.overlay }, surface: { backgroundColor: colors.sidebar } });
+const styles = StyleSheet.create({ overlay: { flex: 1, flexDirection: "row", justifyContent: "flex-end", overflow: "hidden" }, surface: { backgroundColor: colors.sidebar } });

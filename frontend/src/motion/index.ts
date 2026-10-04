@@ -8,3 +8,4 @@ export { MotionFeedback, type MotionFeedbackProps } from "./MotionFeedback";
 export { MotionScopeBoundary, type MotionScopeBoundaryProps } from "./MotionScopeBoundary";
 export { MotionDrawerRight, type MotionDrawerRightProps } from "./MotionDrawerRight";
 export { MotionDrawerOverlay } from "./MotionDrawerOverlay";
+export { MotionBackdrop, type MotionBackdropProps } from "./MotionBackdrop";

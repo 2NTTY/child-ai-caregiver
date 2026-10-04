@@ -15,7 +15,7 @@ function DrawerContents(props: DrawerOverlayProps) {
     <MotionPaperScope>
       <View style={styles.row} pointerEvents="box-none">
         <MotionDrawerRight open={props.open} width={width} mode="overlay" scopeKey={props.scopeKey} surfaceRef={surface}
-          backdrop={<View accessible={false} aria-hidden pointerEvents={props.open ? "auto" : "none"} onStartShouldSetResponder={() => true} onResponderRelease={props.onRequestClose} style={[StyleSheet.absoluteFill, styles.scrim]} />}
+          onBackdropPress={props.onRequestClose}
           role="dialog" aria-modal={props.open} accessibilityLabel={props.label} tabIndex={-1} style={styles.surface}>{props.children}</MotionDrawerRight>
       </View>
     </MotionPaperScope>
@@ -32,4 +32,4 @@ export function MotionDrawerOverlay(props: DrawerOverlayProps) {
   }, []);
   return host ? createPortal(<DrawerContents {...props} />, host) : null;
 }
-const styles = StyleSheet.create({ overlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, overflow: "hidden" }, row: { flex: 1, flexDirection: "row", justifyContent: "flex-end" }, scrim: { backgroundColor: colors.overlay }, surface: { backgroundColor: colors.sidebar } });
+const styles = StyleSheet.create({ overlay: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, overflow: "hidden" }, row: { flex: 1, flexDirection: "row", justifyContent: "flex-end" }, surface: { backgroundColor: colors.sidebar } });

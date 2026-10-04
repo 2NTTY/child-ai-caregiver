@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type ComponentProps } from "react";
 import { Animated, Easing, Modal, StyleSheet, View } from "react-native";
-import { motionTokens, useMotionPreferences } from "../motion";
+import { MotionBackdrop, motionTokens, useMotionPreferences } from "../motion";
 import { MotionPaperScope } from "../motion/MotionPaperScope";
 import { Dialog as PaperDialog } from "react-native-paper";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
@@ -24,13 +24,16 @@ export const AppDialog = Object.assign(function AppDialog({ danger = false, onCl
     progress.stopAnimation();
     if (!opening || !preferences.enabled) { progress.setValue(1); return; }
     progress.setValue(0);
-    // Animate the Paper surface itself, not its backdrop or RN Modal focus owner.
+    // The shared backdrop animates independently of RN Modal's focus owner.
     const animation = Animated.timing(progress, { toValue: 1, duration: motionTokens.dialog.duration, easing: Easing.bezier(0.2, 0, 0, 1), useNativeDriver: true });
     animation.start();
     return () => animation.stop();
   }, [props.visible, preferences.enabled, preferences.epoch, progress]);
   return <Modal visible={props.visible} transparent animationType="none" onRequestClose={props.onDismiss} onDismiss={onClosed}>
-    <MotionPaperScope><View style={styles.root}><PaperDialog {...props} theme={{ ...props.theme, animation: { scale: 0 } }} testID={props.testID ?? "app-dialog"} style={[styles.dialog, danger && styles.dangerDialog, props.style, { opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [motionTokens.dialog.distance, 0] }) }] }]} /></View></MotionPaperScope>
+    <MotionPaperScope><View style={styles.root}>
+      <MotionBackdrop open={props.visible ?? false} />
+      <PaperDialog {...props} theme={{ ...props.theme, colors: { ...props.theme?.colors, backdrop: "transparent" }, animation: { scale: 0 } }} testID={props.testID ?? "app-dialog"} style={[styles.dialog, danger && styles.dangerDialog, props.style, { opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [motionTokens.dialog.distance, 0] }) }] }]} />
+    </View></MotionPaperScope>
   </Modal>;
 }, { Title, Content: PaperDialog.Content, Actions, ScrollArea: PaperDialog.ScrollArea, Icon: PaperDialog.Icon });
 

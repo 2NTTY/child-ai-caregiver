@@ -86,8 +86,21 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
     if (selectedId === null) return;
     const scroll = detailScrollRef.current;
     const viewport = Platform.OS === "web" ? scroll?.getScrollableNode() : null;
-    if (viewport) viewport.style.setProperty("overflow-anchor", "none");
-    // RN Web installs its RN-signature scrollTo on the DOM viewport as well.
+    if (viewport) {
+      viewport.style.setProperty("overflow-anchor", "none");
+      // RN Web replaces viewport.scrollTo and maps animated:false to "auto".
+      const nativeScroll = viewport.ownerDocument?.defaultView?.Element.prototype.scroll;
+      if (typeof nativeScroll === "function") {
+        nativeScroll.call(viewport, { left: 0, top: 0, behavior: "instant" });
+        // Chromium cancels its user animator before the smooth no-op check;
+        // this same-target request has no displacement after the instant reset.
+        // InitiateScrollAnimation, inspected 2026-10-04 (main, not a pinned release):
+        // https://raw.githubusercontent.com/chromium/chromium/main/third_party/blink/renderer/core/scroll/scrollable_area.cc
+        nativeScroll.call(viewport, { left: 0, top: 0, behavior: "smooth" });
+        return;
+      }
+    }
+    // Native platforms and non-DOM adapters keep the RN method signature.
     scroll?.scrollTo({ x: 0, y: 0, animated: false });
   }, [selectedId]);
   useLayoutEffect(() => {

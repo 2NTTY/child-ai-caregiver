@@ -166,25 +166,30 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
   const touch = useInteractionDensity();
   const controls = useRef(new Map<T, View>());
   const [positions, setPositions] = useState<Record<string, { x: number; width: number }>>({});
+  const [revealRevision, setRevealRevision] = useState(0);
   const selection = positions[value];
+  function select(key: T) {
+    setRevealRevision(revision => revision + 1);
+    onChange(key);
+  }
   function move(event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }, index: number) {
     const key = event.nativeEvent?.key ?? event.key;
     const next = key === "ArrowLeft" ? (index + items.length - 1) % items.length
       : key === "ArrowRight" ? (index + 1) % items.length : key === "Home" ? 0 : key === "End" ? items.length - 1 : null;
     if (next === null || !items[next]) return;
     event.preventDefault();
-    onChange(items[next].key);
+    select(items[next].key);
     (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true });
   }
   return <HorizontalOverflowRail tabIndex={-1} style={styles.tabsScroll} rowTestID={`${id}-rail`} hintTestID={`${id}-scroll-hint`}
     items={items.flatMap(item => positions[item.key] ? [{ key: item.key, ...positions[item.key] }] : [])}
-    revealTarget={selection ? { key: value, ...selection } : undefined} hintLabel={`查看更多${label ?? "分頁"}`}
+    revealTarget={selection ? { key: value, ...selection } : undefined} revealRevision={revealRevision} hintLabel={`查看更多${label ?? "分頁"}`}
     onRevealItem={key => { if (Platform.OS === "web") (controls.current.get(key as T) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true }); }}>
     <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs}>
     {items.map((item, index) => <Pressable
       key={item.key} nativeID={tabId(id, item.key)} onLayout={event => { const { x, width } = event.nativeEvent.layout; setPositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
       accessibilityRole="tab" accessibilityLabel={item.label} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
-      accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => onChange(item.key)}
+      accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => select(item.key)}
       {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
       style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.linkPressed]}
     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
