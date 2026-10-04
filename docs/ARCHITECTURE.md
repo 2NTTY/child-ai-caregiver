@@ -1,5 +1,7 @@
 # 技术架构与运行机制
 
+本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。
+
 本文件唯一維護組件職責、技術選擇、資料流、權威節點、在線更新、AI、通知、部署、恢復及 Gemini 成本機制。現行 Server 權威設計按 [ADR-008](DECISIONS.md#adr-008) 取代三種主庫、手機中繼及離線 outbox，保留原章節及 rule 錨點。本次不代表已驗證服務可用性；實施時按 [PLAN](../PLAN.md) 核驗實際環境與固定版本。
 
 用户行为见 [SPEC](../SPEC.md)，完整字段见 [DATA_MODEL](DATA_MODEL.md)，调用／鉴权契约见 [API](API.md)。[DECISIONS](DECISIONS.md) 记录原因和后续未决细节，不承担第二份当前架构。
@@ -121,20 +123,20 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 <a id="portable-core"></a>
 核心資料、任務、附件、權限及確定性規則由自有 Node／PostgreSQL／pgvector／worker／Compose 承載，不依賴只能在 GCP 運行的核心服務。平台 Gemini 維持 Vertex，可使用 GCP 以外 ADC；個人 key 接入見 [S06-W05](#personal-model-routing)。自部署不代表離線 Gemini。S17-W05 須驗證沒有 GCP 附加身份、關閉 AI 時核心資料與確定性任務仍可用，模型及外部通知另按憑據／授權驗證。
 
-渠道薄 adapter 優先驗證 web-push、grammY 及 Expo Notifications；FCM Server 先用官方 Google Auth＋單次 HTTP v1 請求，以免 SDK 隱藏重試繞過 unknown／去重規則。版本、許可及 Firebase Admin 未優先採用的證據見 [渠道研究](TECH_REUSE.md#channels)。選人、授權、排程、fallback 與投遞台帳仍由項目控制；所有候選尚待各包驗收。
+渠道薄 adapter 優先驗證 web-push、grammY 及 Expo Notifications；FCM Server 先用官方 Google Auth＋單次 HTTP v1 請求，以免 SDK 隱藏重試繞過 unknown／去重規則。版本、許可及 Firebase Admin 未優先採用的證據見 [渠道研究](TECH_REUSE.md#channels)。選人、授權、排程、fallback 與投遞台帳仍由項目控制；採用與驗收按 [工作包](../PLAN.md#roadmap-packages) 分列；Web Push／Telegram 的既有證據不代替 P3 FCM。
 
 <a id="p2-agent-runtime"></a>
 ### 3.6A P2 ADK 產品 Agent（S11-W03 基礎已實作）
 
-S11-W03 已交付 [內部 AgentRuntime](../server/agent-runtime.ts)、[模型 adapter](../server/agent-model-gateway.ts) 及 [Prompt Pack 組裝器](../server/agent-prompt.ts)，完成真 Runner scripted 檢查及獲批的兩次 Vertex／Gemini 呼叫及一次工具循環驗收，見 [EV-S11-W03](../artifacts/verification/S11_W03_CHECKS.json)。目前只接入 `text`／`tool_cycle` 配方基礎，P1 網頁／聊天路徑及現網保持不變；S11-W02 的後續接線狀態見下文，未部署至現網。工具 schema 描述是模型指引，仍由主模型維護。
+S11-W03 已交付 [內部 AgentRuntime](../server/agent-runtime.ts)、[模型 adapter](../server/agent-model-gateway.ts) 及 [Prompt Pack 組裝器](../server/agent-prompt.ts)，完成真 Runner scripted 檢查及獲批的兩次 Vertex／Gemini 呼叫及一次工具循環驗收，見 [EV-S11-W03](../artifacts/verification/S11_W03_CHECKS.json)。該證據只覆蓋 `text`／`tool_cycle` 配方基礎；產品配方接線見下文，公開交付另見 [S17-W02](../artifacts/verification/S17_W02_CHECKS.json)。工具 schema 描述是模型指引，仍由主模型維護。
 
-S11-W02 已在隔離分支接通互動／背景 [產品 Agent](../server/product-agent.ts)、[受限工具](../server/product-agent-tools.ts)及[確認台帳](../server/product-agent-store.ts)，仍待集中驗收，沒有合併或部署。API 與 worker 共用服務組裝、配额及運行限額；以 `P2_AGENT_ENABLED=true` 明確啟用，預設保留 P1。Prompt Pack 按 product-interactive／product-background 配方復用，最終文字不作第二次副作用入口。
+S11-W02 的互動／背景 [產品 Agent](../server/product-agent.ts)、[受限工具](../server/product-agent-tools.ts)及[確認台帳](../server/product-agent-store.ts) 沿用同一運行邊界。API 與 worker 共用服務組裝、配额及運行限額；以 `P2_AGENT_ENABLED=true` 明確啟用，預設保留 P1。Prompt Pack 按 product-interactive／product-background 配方復用，最終文字不作第二次副作用入口。
 
-到期提醒與 `agent-task-due-v1` 入列共用原交易，只带 reminder／work ID 及原 worker generation／storage epoch；模型等待不持有 SQL 交易。領取及每次工具前重查任務版本／發生實例／終態、指派人及原授權人；還原後舊事件不能因重新啟用而復活。固定事件只建立一個 run，重啟查原台帳，已開始的模型循環不盲目重跑。背景先提供只屬原照顧者的站內說明；外發及成長候選待各自工作包。
+到期提醒與 `agent-task-due-v1` 入列共用原交易，只带 reminder／work ID 及原 worker generation／storage epoch；模型等待不持有 SQL 交易。領取及每次工具前重查任務版本／發生實例／終態、指派人及原授權人；還原後舊事件不能因重新啟用而復活。固定事件只建立一個 run，重啟查原台帳，已開始的模型循環不盲目重跑。背景先提供只屬原照顧者的站內說明；外發及成長候選分屬 S13-W07／S13-W08，沿各自契約及授權。
 
 本人互動只載入必要近期訊息、已確認事實及可追溯摘要；背景只用家庭 scope。完整摘要批次在既有覆蓋規則下核對保存，與 run 完結共用交易，不自動提升推斷或改話題／任務終態。功能 UI 的官方求助入口在模型／檢索前保持可見，來源是 2026-09-28 核對的[消防處先遣急救員資料](https://www.hkfsd.gov.hk/chi/fire_ambulance_services/responder.html)及[召喚救護指引](https://www.hkfsd.gov.hk/chi/fire_ambulance_services/fire_information.html)，不建立症狀分類、診斷或自動致電。
 
-診斷採原生 BasePlugin，僅允許 runId、階段、已知工具名／狀態及耗時；預設停用，`AGENT_DIAGNOSTICS=true` 才寫 metadata。保留 ADK content capture 關閉，沒有新增 OTel exporter／憑據；sink 失敗不影響流程。已做最少 scripted Runner／observer 檢查，真服務、SQL、取消／重啟及通知端到端證據仍欠缺。
+診斷採原生 BasePlugin，僅允許 runId、階段、已知工具名／狀態及耗時；預設停用，`AGENT_DIAGNOSTICS=true` 才寫 metadata。保留 ADK content capture 關閉，沒有新增 OTel exporter／憑據；sink 失敗不影響流程。診斷本身的 scripted Runner／observer 檢查不等於所有端到端情景已驗；產品真服務／SQL／通知證據分見 [S11-W02](../artifacts/verification/S11_W02_CHECKS.json)／[S16-W02](../artifacts/verification/S16_W02_CHECKS.json)，按實際測試範圍判斷。
 
 <a id="rule-adk-01"></a>
 採用 Google ADK TypeScript `@google/adk 2.1.0`，在現有 Node／GCP Compose Server 使用一個產品 `LlmAgent`／`Runner`；按受信入口、事件及所需任務配方暴露 `FunctionTool`，由 ADK 實際執行多步工具循環。S11-W03 先完成相容性基礎，S11-W02 才接通完整記憶／知識／任務能力。沿用 Node 24.19，npm 於 S11-W03 調整至 11.8.0 並同步建置及 lockfile；固定依賴、許可、現有 Gemini 型號／Vertex ADC／TypeScript 相容性須在接入驗證，不把本次文件當成安裝或實測。
@@ -317,7 +319,7 @@ P2 最小向量 RAG 的資料／接口語義分別見 [DATA_MODEL](DATA_MODEL.md
 embedding 暫時不可用時，可返回仍符合相同條件的關鍵詞結果並標示降級／原因；不足時明示限制。降級不算向量流程通過。候選新版須完成核對及向量生成才發布；生成失敗不冒充完成，已知失效舊版即停用，歷史引用仍能追溯。
 
 <a id="p2-rag-evidence"></a>
-S10-W01 已在實作固定 pgvector `0.8.6`／commit `8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c`；採用同版 PostgreSQL multi-stage 映像及公共資料 migration，既有 volume 保留。有限語料、指令、精確／RRF 排序、用量與降級見 [操作與限制](P2_KNOWLEDGE.md)，可復用 SDK／擴展約束見 [技術 Skill](../.agents/skills/postgres-vector-knowledge/SKILL.md)。目前僅純單元及型別接線已驗證；真擴展、embedding、資料保留及備份還原待批准，不代表現網已變更。
+S10-W01 已在實作固定 pgvector `0.8.6`／commit `8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c`；採用同版 PostgreSQL multi-stage 映像及公共資料 migration，既有 volume 保留。有限語料、指令、精確／RRF 排序、用量與降級見 [操作與限制](P2_KNOWLEDGE.md)，可復用 SDK／擴展約束見 [技術 Skill](../.agents/skills/postgres-vector-knowledge/SKILL.md)。真擴展、embedding、資料保留及備份還原的版本化結果見 [S10-W01](../artifacts/verification/S10_W01_CHECKS.json)，不代表現時服務可用性。
 
 2026-09-24 核對 [pgvector 精確搜尋／過濾及索引](https://github.com/pgvector/pgvector#querying)、[固定版本建置參考](https://github.com/pgvector/pgvector/blob/v0.8.6/Dockerfile)、[Gemini embedding 維度](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/get-text-embeddings)及[task types](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/task-types)；其後亦核對固定 GenAI 2.24.0 的參數／回應映射。這些文件與 SDK 原始碼依據不當作真服務證據。
 
@@ -488,7 +490,7 @@ S10-W01 已在實作固定 pgvector `0.8.6`／commit `8ee86c96f0fd72390f890aa8a3
 
 一般測試只發固定無孩子正文訊息，使用者點回應只記 acknowledgedAt。此包接通渠道邊界，S13-W07 才把已核准家庭事項與聯絡決策接入；不讓渠道 adapter 決定照顧者、醫療事項、fallback 或完成狀態。網頁可關閉，已確認 queued 由 worker 處理；發送不確定時停止重發，不能承諾外部 exactly-once。
 
-原文核對及實作方法見 [Telegram Skill](../.agents/skills/telegram-bot-api/SKILL.md)，帳號操作／上線條件見 [操作指引](P2_TELEGRAM.md)。S13-W06 的 SQL、真 webhook／訊息及恢復仍待 P2 集中驗收。
+原文核對及實作方法見 [Telegram Skill](../.agents/skills/telegram-bot-api/SKILL.md)，帳號操作／上線條件見 [操作指引](P2_TELEGRAM.md)。S13-W06 的 SQL／訊息結果見 [該包 EV](../artifacts/verification/S13_W06_CHECKS.json)，公開 webhook 及恢復範圍按 [S17-W02](../artifacts/verification/S17_W02_CHECKS.json) 核對。
 
 <a id="care-summary-flow"></a>
 ## S14-W01 統計及到診準備接線
@@ -526,7 +528,7 @@ API 與 worker 均須既有 P2 啟用旗標及 migration 017；DB 維護指令�
 
 原生 inlineData 由 Server 注入當次 ADK user message，保留現有 parts／配額／取消／診斷保護；共用同一前景 runtime 並發控制。只載入既有 capture-confirm／multimodal 模組及簡短 photo-capture 接線模組；受限工具只接候選。家長編輯、確認及原圖分享經業務服務完成，AI 不能直接写入共享照護資料。原圖外送須明確操作，不因已上傳便呼叫模型。
 
-本包只做原生 Web File 選取與功能確認表單；不加入圖片套件、雲端物件服務、相機／Android 或 UI polish。已核官方資料與真服務證據分列，必要照片／配對還原通過，完整面板及公開部署未驗；[接口](API.md#p2-photos)／[保存](DATA_MODEL.md#p2-photo-data)／[恢復操作](P2_PHOTOS.md)。
+本包只做原生 Web File 選取與功能確認表單；不加入圖片套件、雲端物件服務、相機／Android 或 UI polish。已核官方資料與真服務證據分列，必要照片／配對還原通過，完整面板未全驗，公開交付另按 S17-W02 證據；[接口](API.md#p2-photos)／[保存](DATA_MODEL.md#p2-photo-data)／[恢復操作](P2_PHOTOS.md)。
 
 <a id="p2-shared-input-flow"></a>
 ## S12-W04 分享輸入接線
@@ -538,7 +540,7 @@ Server 只從固定 catalog 選公開來源，沿用 DNS／IP／HTTPS／redirect
 家長可人工填寫，或採用候選再確認；外部參考與孩子實際記錄分開。完整來源快照私有，確認文字共享，沒有背景讀私人動態、帖子直接授權任務或全量向量化。功能 UI 交接見 [清單](P2_UI_HANDOFF.md#shared-input-handoff)；必要私人來源取得／隔離、SQL／保存及真提取修正版證據見 [S12-W04](../artifacts/verification/S12_W04_CHECKS.json)；完整分享面板瀏覽器仍未驗。
 
 <a id="proactive-contact-flow"></a>
-## S13-W07 預授權聯絡接線（待集中驗收）
+## S13-W07 預授權聯絡接線
 
 到期事件 → 共用 ADK 讀取 Server 聯絡選項 → 原生工具建立唯一聯絡請求／pg-boss job → worker 核權及偏好 → 渠道單次呼叫 → 持久結果／本人收到確認。對已到期事項新增明確授權可建立一個新事件；同一提醒的外發請求仍唯一，不重跑舊模型運行。無新事件不空轉模型。
 
@@ -546,7 +548,7 @@ Server 只從固定 catalog 選公開來源，沿用 DNS／IP／HTTPS／redirect
 
 Prompt Pack 只補產品工具範圍；工具是唯一副作用入口。收尾失敗從台帳回報已入列，既有操作不重做。包版本與模組正文版本分開，loader 仍精確校驗模組 header／manifest／依賴。Push／Telegram 都只傳固定無家庭正文提示，點開後由站內權限控制資料；回應不改照護終態。渠道接受、收到與任務完成分開展示，瀏覽器關閉不影響已入列工作。
 
-目前只有最少離線工具／型別證據；真渠道、SQL／重啟／撤權競態及瀏覽器接線待 S16 集中核對。P2 開關保持預設關閉，未部署。
+P2 開關預設關閉；真渠道及 SQL 等既有結果見 [S13-W07](../artifacts/verification/S13_W07_CHECKS.json)，公開 worker／webhook 見 [S17-W02](../artifacts/verification/S17_W02_CHECKS.json)。開關預設值、某次部署與完整瀏覽器驗收不是同一狀態。
 
 <a id="personal-model-routing"></a>
 ## S06-W05 本人 key 的共用路由

@@ -1,5 +1,7 @@
 # 接口与鉴权契约
 
+本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。
+
 本文件維護已確定的共享介面職責、鑑權邊界及呼叫結果語義。介面名及錨點保留，現行 Server 契約依 [ADR-008](DECISIONS.md#adr-008) 原位替代舊模式，不表示程式碼或 HTTP 路由已存在。完整字段定義見 [DATA_MODEL](DATA_MODEL.md)，執行次序見 [ARCHITECTURE](ARCHITECTURE.md)，不複製 schema 或另立更新算法。
 
 <a id="section-3-3"></a>
@@ -33,9 +35,9 @@ P1 `ModelGateway` 由已登入且通過資源權限檢查的 Server 請求呼叫
 P2 檢索適用範圍包含地區、年齡依據及精度、主題與必要條件，未知保留未知；回傳結果區分有適用證據、無適用證據、來源衝突及檢索不可用，不把空結果當作容許模型補造。育兒知識回答／成長關注／安全求助提示至少一個已核對的適用官方來源，每項重要建議連具體片段／版本；Server 拒絕不存在或已失效引用。語義支持與例外依 [SPEC](../SPEC.md#req-5-6-11)，不宣稱結構校驗消除幻覺。安全求助可用仍適用的預先核對官方內容；不新增醫療分流 API。
 
 <a id="agent-runtime-contract"></a>
-### P2 AgentRuntime／工具契約（基礎已驗，產品接線待集中驗收）
+### P2 AgentRuntime／工具契約
 
-S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止；目前 P1 路由未切換。S11-W02 已接業務工具及跨 run 確認／記憶；HTTP 與待驗界線见下文。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
+S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止。S11-W02 已接業務工具及跨 run 確認／記憶；HTTP 契約見下文，驗收範圍見所屬工作包。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
 
 - <a id="api-ar-01"></a>內部入口接受受信互動請求或 worker 事件及必要輸入／待確認參照；Server 建立 runId，注入身份、孩子／資料空間、觸發來源、時間／時區、授權及資料版本、配方／工具集合。客戶端正文不能聲稱自己是 worker 或提供可直接採信的權限。
 - <a id="api-ar-02"></a>ModelGateway 的 ADK 路徑傳遞完整模型／工具 parts、呼叫關聯及必要 opaque metadata，不壓成 P1 文字介面。每次生成／查詢 embedding 均受[運行配置](ARCHITECTURE.md#p2-agent-budgets)、全局開關、配額及共享取消／deadline 約束；語料維護另有有限額，不能繞過全局控制。
@@ -45,7 +47,7 @@ S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime
 - <a id="api-ar-06"></a>輸出供 UI 使用的 runId、狀態／停止原因、可理解結果、可引用來源及最小工具進度，須在呈現前重新核對權限及版本。進度只取實際工具／台帳證據，不回傳原始 provider 協定、內部推理、憑據或無權資料。API 路由與完整序列化隨工作包落碼，不把 Prompt Pack 語義直接當現有 wire format。
 
 <a id="product-agent-http"></a>
-### S11-W02 產品 Agent 接線（已實作，待集中驗收）
+### S11-W02 產品 Agent 接線
 
 Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 016；未啟用維持 P1 聊天。共用組裝入口為 [product-agent-services](../server/product-agent-services.ts)，共享結果見 [product-agent](../src/shared/product-agent.ts)。GET／POST 均核對 session 與 `x-expected-user-id`，POST 另沿用 JSON／Origin 規則；模型不能提供身份、配方或權限。
 
@@ -60,7 +62,7 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 
 `read_context` 按入口區分本人／家庭；私人摘要只在取得完整批次時透過 `stage_private_summary` 暫存，運行結束再核對來源版本及精確覆蓋，衝突保留原摘要。摘要及候選不成為確認事實。`search_knowledge` 使用既有 public retriever 與同一運行預算；`present_answer` 核對引用 ID、官方類別及當前有效版本，回傳結構不等於已驗證語義支持。
 
-背景 product-background 因已核准到期提醒或 S13-W08 新關注基準入列，讀取家庭共享上下文並保存本人站內說明；不讀私人聊天、建立新任務或發出外部通知。成長關注接線見 S13-W08；預授權聯絡仍留 W07。必要真 SQL、Gemini／embedding、worker 恢復與修正範圍分列 [S11 證據](../artifacts/verification/S11_W02_CHECKS.json)及 [W08 證據](../artifacts/verification/S13_W08_CHECKS.json)；完整 Agent／關注 UI 情景未驗，不以其他包的瀏覽器證據代替。
+背景 product-background 因已核准到期提醒或 S13-W08 新關注基準入列，讀取家庭共享上下文並保存本人站內說明；不讀私人聊天、建立新任務或發出外部通知。成長關注接線見 S13-W08；預授權聯絡由 W07 的接線及授權掌管。必要真 SQL、Gemini／embedding、worker 恢復與修正範圍分列 [S11 證據](../artifacts/verification/S11_W02_CHECKS.json)及 [W08 證據](../artifacts/verification/S13_W08_CHECKS.json)；完整 Agent／關注 UI 情景未驗，不以其他包的瀏覽器證據代替。
 
 <a id="knowledge-retrieval-contract"></a>
 ### P2 最小向量檢索契約
@@ -73,7 +75,7 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 <a id="knowledge-w01-implementation"></a>
 ### S10-W01 實作入口（必要真服務驗收已通過）
 
-[KnowledgeRetriever](../server/knowledge-retriever.ts) 的 `createRun({actor,budget,authorize})` 接收 Server 權威身份、既有運行預算及即時權限回查。`search(query, filter)` 回傳 [KnowledgeResult](../src/shared/knowledge.ts)，包括實際模式、片段短原文 `sourceExcerpt`、經核對精簡轉述 `text`、來源及版本；此處是內部檢索契約，S11-W02 的 ADK／HTTP 接線見上文。`revalidateCitations` 在交付前重查片段／版本／hash 和適用性，不作內容語義判定。四來源五片段、維護 CLI、限額及未完成接線見 [操作文件](P2_KNOWLEDGE.md)；S11-W02 已接聊天及背景 Agent，新增接線仍待集中驗收。
+[KnowledgeRetriever](../server/knowledge-retriever.ts) 的 `createRun({actor,budget,authorize})` 接收 Server 權威身份、既有運行預算及即時權限回查。`search(query, filter)` 回傳 [KnowledgeResult](../src/shared/knowledge.ts)，包括實際模式、片段短原文 `sourceExcerpt`、經核對精簡轉述 `text`、來源及版本；此處是內部檢索契約，S11-W02 的 ADK／HTTP 接線見上文。`revalidateCitations` 在交付前重查片段／版本／hash 和適用性，不作內容語義判定。維護 CLI 及限額見 [操作文件](P2_KNOWLEDGE.md)；接線驗收按 [S11-W02](../PLAN.md#s11-w02) 的版本化證據。
 
 <a id="knowledge-refresh-contract"></a>
 ### S10-W02 來源更新邊界
@@ -235,7 +237,7 @@ S03-W01 在同一 `/api` 入口新增以下已登入端點；session、Origin、
 
 `003-ai-usage` 遷移新增每日配額及 `ai_attempts`；只保存帳號／孩子 ID、模型、固定結果碼、耗時及已回報 token 數，未知 token 為 null，不保存問題、回答、憑據或 raw error。遷移只新增資料表，不清空既有資料。設定見 `.env.example`；部署須使用 HTTPS、精確 origin、Server ADC 及私網 PostgreSQL，不信任客戶端 forwarding header。
 
-本包只有必要單元／型別檢查證據；真 PostgreSQL 遷移及重啟配額、Vertex 調用與部署環境仍須在 S11／S16 的必要驗收取得實測證據，不能把 fake provider 當真模型。
+身份／配額接線與真服務驗收分開核對：[S06-W01](../PLAN.md#s06-w01)／[S11-W01](../PLAN.md#s11-w01)；fake provider 不等於真模型證據。
 
 <a id="p1-chat-http"></a>
 ## P1 私人聊天保存 HTTP（S09-W01）
@@ -441,7 +443,7 @@ S13-W06 的 [共享型別](../src/shared/telegram.ts) 接本人私人渠道；�
 
 queued、sending、accepted、rejected、unknown、stopped 與 acknowledgedAt 分開；「收到測試」只記收到，不改任何照護任務。sendMessage 逾時或重領 sending 保留 unknown，不重發／不切換渠道；API 接受不是送達或已讀。同一綁定仍有 queued／sending 或未收到回應的 unknown 時，Server 拒絕另建一般測試。原 opId 回應丟失先查收據；即使現況改變，仍可明確用相同原操作取得既有成功或 Server 拒絕，不另建操作猜結果。
 
-家庭授權聯絡由 S13-W07 接線，callback 只記收到；任務完成仍須明確確認。功能已落碼，SQL／真 webhook／Telegram／瀏覽器均待集中驗收。
+家庭授權聯絡由 S13-W07 接線，callback 只記收到；任務完成仍須明確確認。SQL／真渠道及公開 webhook 的既有結果分見 [S13-W06](../artifacts/verification/S13_W06_CHECKS.json)／[S17-W02](../artifacts/verification/S17_W02_CHECKS.json)，不由契約正文推斷完整瀏覽器已驗。
 
 <a id="care-summary-http"></a>
 ## S14-W01 摘要與到診準備

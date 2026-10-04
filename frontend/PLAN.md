@@ -1,83 +1,45 @@
 # 育有方前端單一計劃
 
-本計劃只管理 frontend/** 的設計與前端實作。產品功能、正式 API、權限與跨模組驗收，以根目錄 [AGENTS](../AGENTS.md)、[STATUS](../STATUS.md)、[PLAN](../PLAN.md)、[SPEC](../SPEC.md) 及 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 為準。前端不修改 Server、Agent、資料庫、根目錄依賴或正式 App；合併只按使用者明確指示進行。
+本文件是 FE-Wxx 的任務、依賴、下一步及關口入口；STATUS 只作短指路，HANDOFF 只管實際接點。[修改邊界](../AGENTS.md#frontend-backend)／[資訊更新職責](../AGENTS.md#document-updates)。
 
-| 次序 | 前端工作包 | 狀態 | 交付及關口 |
-|---|---|---|---|
-| 1 | FE-W01 Web 主頁基線 | 待使用者視覺驗收 | 獨立 Expo Web 預覽、資料模型、Paper 共用元件、合成狀態與響應式首頁；原分支 codex/fe-w01-web-home |
-| 2 | FE-W02 Web 共用框架與核心畫面 | 待使用者視覺驗收 | 依新增對話／設定／登入參考圖，完成共用導覽及右資訊欄、主頁、對話、照顧記錄、子女檔案、家庭協調、記憶與話題、設定及登入畫面；所有資料仍屬合成預覽；本包分支 codex/fe-w02-web-shell-chat-settings-auth，基於 FE-W01 commit e70a13d |
-| 3 | FE-W03 待辦預覽與訊息提示 | 待使用者視覺驗收 | 在 FE-W02 的右資訊欄加入按孩子分隔的本地清單、頂部鈴鐺及原操作狀態提示；對照正式功能缺口並交接。分支 codex/fe-w03-dashboard-todos-notifications，基於 FE-W02 commit 271f10b。正式任務／通知待其業務契約交付 |
-| 4 | FE-W04 外殼、孩子摘要與引導 | 待使用者視覺驗收 | 依新增截圖統一右欄開關、頂部孩子資料、左側品牌／對話入口及條件式引導；分支 codex/fe-w04-shell-child-guide，基於 FE-W03 commit 2671a9b。孩子資料正式 API 已存在但此預覽無登入會話；引導完成狀態仍缺正式契約 |
-| 5 | FE-W05 Web 動態方向比較 | 比較已完成；暫不採用 | 從 FE-W04 commit 591a23d 建 `codex/fe-w05-motion-preview`；只在 `/motion-preview` 示範 A／B／C 三種節奏，核對 reduced motion／鍵盤／320px，詳見 [MOTION_OPTIONS](MOTION_OPTIONS.md)。保留獨立比較頁作日後參考，不套入正式畫面 |
-| 6 | FE-W06 既有契約流程與跨尺寸介面 | 實作及輕量檢查完成；待使用者視覺驗收 | 基於 master `22f5c66`，分支 `codex/fe-w06-care-record-flows`；/care、/profile、/family、/memory、/tasks 及 /settings 本人偏好投影已實作。新增品牌／OKLCH 配色位置、完整 MD3、SVG、Dialog／選單及孩子切換比例修訂，10 頁四種 Web 寬度、共用互動與 Web／Android export 通過；所有寫入仍未接真 API |
-| 7a | FE-W07 本人渠道設定前端 | 實作及輕量檢查完成；待視覺／正式接線 | 前置已 review 的 FE-W06 `6c7216f`，分支 `codex/fe-w07-notification-settings`；主線 `34892c7` 已合併 S13-W05／W06（PR #58／#59）。/settings 的本人 Web Push 訂閱／撤銷／明確測試、Telegram 開始私人綁定／候選核對／撤銷／投遞及回覆分開已實作；四 Web 寬度、合成關鍵流程及 Web／Android export 通過。不觸發真權限、訂閱、bot 或外發 |
-| 7b | FE-W08 Agent 主要入口 | 實作及輕量檢查完成；待視覺驗收 | 前置已 review 的 FE-W07 `1e1fb7b`（draft PR #65），分支 `codex/fe-w08-agent-entry`；移除桌面導覽第二項，統一下方固定的深綠 SVG／雙層文字入口，保留手機對話分頁及原草稿。外殼導航沿 Expo Link asChild，修復只有 link 角色而無 href 的鍵盤問題；typecheck、40 個重排及四尺寸 Agent 互動、Web／Android export 通過 |
-| 7c | FE-W09 Agent 對話投影 | 實作及輕量檢查完成；待視覺／接線 | 基於 `83106c0`，分支 `codex/fe-w09-agent-conversation`，正式契約核對 `90dacd4`。運行／候選／來源及手動私人背景結果、明確共享與原決定查核已實作；四尺寸關鍵合成互動、Web／Android export 通過。真 composer 保存／要求回覆沿原 ChatController 待接線；入口見 [AGENT_HANDOFF](AGENT_HANDOFF.md) |
-| 7d | FE-W10 手機比例與密度 | 實作及輕量檢查完成；待視覺／真機驗收 | 前置已 review 的 FE-W09 `0ff9533`（draft PR #69），分支 `codex/fe-w10-mobile-density`。核對 Android／Apple／Paper 5.15.3 MD3 與 Lucide：集中手機字級／圖標／觸控及卡片規則，調整孩子年齡／基準、標題動作、快速記錄與窄 composer；10 頁四尺寸及必要手機互動／150% Web 文字、Web／Android export 通過。研究存 [MOBILE_DESIGN](MOBILE_DESIGN.md) 並補既有 Skill；沒有改色階或後端 |
-| 7e | FE-W11 照片與記錄前端 | `ddcf651`／draft PR #73 已交付；待視覺／正式接線 | 前置 FE-W10 `596c657`（draft PR #70），分支 `codex/fe-w11-photos`。直接讀 GitHub master 的 P2 UI 交接及照片契約，交付前重核 `ce87370` 未改照片章節／型別／封裝；原圖／私人保存／候選／人工原文／家庭共享／查核及刪除投影、Web 選圖與原生薄 port 已實作。三項原文單元、11 頁四尺寸、必要照片／手機互動及 Web／Android export 通過；真 API／原生選圖／裝置權限待主聊天 |
-| 7f | FE-W12 手機背景及外殼層次 | 實作及輕量檢查通過，追加現有 draft PR #73 | 依使用者 2026-10-01 意見，手機問候使用全幅海旁背景與左側／底部漸淡；常駐頂部／側欄同色，沿現有 OKLCH 表面角色。修訂基線 `685cdfc`，沿同一前端 draft 分支；44 個外殼重排、最終 390／320／150% Web 文字、typecheck、Web／Android export 通過，沒有新增依賴或單元測試 |
-| 7g | FE-W13 本人模型設定 | `095f135` 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `433d312`，直接讀 GitHub `ce87370` UI-P2-18／API／型別／Panel／封裝；平台／個人／停用、密鑰及費用同意、背景 opt-in、個人上限、分開用量、模型 metadata-only 查核及二次刪除已投影。typecheck、三項 command 檢查、四尺寸／鍵盤／unknown 重讀／範圍清理、390／320 放大文字及 Web／Android export 通過；[MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md)，待視覺及真接線／真機 |
-| 7h | FE-W14 私人來源及共享核對 | `d00a6bb` 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `c09c22b`；直接讀 GitHub `ce87370` UI-P2-15／API／型別／Panel／封裝。私人來源／貼上／指定清單、原日期／取得、精確片段／候選、參考／孩子實際記錄、刪除、收據及直接 unknown／範圍清理已投影；共用 RecordDraftFields 和 Paper 多行輸入公開樣式。四項來源／三項照片規則、48 個重排、來源流程／放大文字及 Web／Android export 通過；[SHARED_INPUT_HANDOFF](SHARED_INPUT_HANDOFF.md)，待視覺、真接線／OS share／真機 |
-| 7i | FE-W15 成長關注 | `ef536e8` 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `3e153a7`，直接讀 GitHub `ce87370` UI-P2-07／API／型別／Panel。理由／來源、知悉／任務分開、暫緩／關閉、有限近況／四主題、原 body／授權／fact 版本查回及清理已投影；三項規則、四尺寸及 390／320 放大文字、typecheck／Web 29 路由／Android 31 資產 export 通過。[GROWTH_HANDOFF](GROWTH_HANDOFF.md)，待視覺、真接線／refresh／跨頁及真機 |
-| 7j | FE-W16 照顧摘要／到診準備 | `10aa70b` 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `e61bca2`，直接讀 GitHub `ce87370` S14-W01／API／型別／Panel；期間／來源／原單位、RHF 問題／清單、規範內容／共享確認、原收據／基準／預約失效及清理已投影。兩項規則、四尺寸／390 及 320 放大文字、typecheck、Web 31 路由／Android 31 資產 export 通過；[SUMMARY_HANDOFF](SUMMARY_HANDOFF.md)，待視覺、真接線／精確導航／跨頁及真機 |
-| 7k | FE-W17 主動聯絡及功能補缺 | `ebcaa73` 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `3d4badf`，直接讀 GitHub `ce87370` 的 UI-P2-09／API／型別／Panel。本人同意／任務授權／台帳／ack 分開、期限／版本／原收據與草稿／範圍清理；最後補 UI-P2-06 固定求助入口。三項規則、聯絡及求助四尺寸／390 和 320 放大文字、typecheck、Web 33 路由／Android 31 資產 export 通過；[CONTACT_HANDOFF](CONTACT_HANDOFF.md)，待視覺、真接線／clearDrafts 差異／跨頁及真機 |
-| 7l | FE-W18 表面層次及 Agent 輸入入口 | `eb9b48c` 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `f3ba9e3`，重核 GitHub `ce87370` 的照片／來源交接及 API。控制／資料標籤與外層導航分色；三項 SVG 輸入入口、照片 capture／普通選檔、來源導航及語音未接通提示，原草稿保留。typecheck、20 組色彩、60 個四尺寸重排／放大文字、六寬度 Dialog／選單及 Web／Android export 通過；[AGENT_HANDOFF](AGENT_HANDOFF.md)，真聊天附件／任意文件、語音／原生相機與實機仍待接續 |
-| 7m | FE-W19 原對話頁直接拍照 | `f541a2d` 實作及輕量檢查通過，追加現有 draft PR #73 | 前置 `bed1342`；依使用者要求取消拍照跳頁。明確按下才開頁內 Web 相機，拍攝／取消／權限拒絕／後備選圖、原頁未送出預覽、草稿保留、track／blob 及遲到結果清理已實作。typecheck、Web／Android export、1440／1024／390／320 合成串流及原檔、鍵盤和 390／320 放大文字通過；[AGENT_HANDOFF](AGENT_HANDOFF.md)。實際裝置相機／系統權限、原生 adapter 和真正對話附件仍待接線／驗收 |
-| 7n | FE-W20 Happy Hues 14／首頁背景 | 實作及輕量檢查通過；追加現有 draft PR #73 | 前置 `0ae3976`，只研究使用者指定第 14 款，按網站角色落實共用配色，必要派生仍用 OKLCH；Web 應用偏好可本地選圖／恢復及跨尺寸首頁套用，原生薄 port 已預留。typecheck／22 組對比／60 重排／Dialog、四尺寸背景／150% 文字與 Web／Android export 通過；[APPEARANCE_HANDOFF](APPEARANCE_HANDOFF.md)。正式保存無契約，不污染通知偏好／照片 API；視覺、原生 adapter 及真機待驗 |
-| 7o | FE-W21 育有方前端品牌更名 | 實作及必要輕量檢查通過；待使用者視覺驗收 | 前置 `cb9112e`，從收尾基線 `6f36765` 恢復。品牌文字集中 branding.ts，原 SVG 圖形／比例共用 BrandLogo；各頁／提示／合成示例、Web／Expo 顯示名稱、當前前端文件及 selector 已同步，沿用美術與 Happy Hues 14。60 個重排、共用設計／Agent、四尺寸 Logo／鍵盤返回、typecheck 及 Web／Android bundle 通過；[交接](HANDOFF.md#brand-rename-pending)。原生實機／正式品牌整合待主聊天；根文件、後端及技術身份未遷移 |
-| 7p | FE-W22 頂部控件及刪除保障 | 實作及必要輕量檢查通過；待視覺／正式接線 | 前置 `d2f1124`，沿 draft PR #73。鈴鐺／側欄共用 Paper 控件、真實 44／48 點擊範圍及狀態置中；danger 確認樣式、整位孩子稱呼／範圍確認和 unknown 保留已實作。四尺寸／鍵盤／照片二次確認、記錄及孩子刪除合成狀態、typecheck、Web／Android export 通過；[交接](HANDOFF.md#toolbar-delete-safeguards)。不新增 password payload 或帳戶刪除假按鈕，真正身份重新驗證交主聊天 |
-| 7q | FE-W23 登入原版還原及裁切 | 實作及必要輕量檢查通過；待使用者視覺驗收 | 原從 `cab2841` 精確還原五檔的證據保留；本次從 `8295fa7` 補修窄高視窗裁切。左介紹／右登入及窄版上下排列保留；桌面右欄 36%／至少 400。原圖 x=1552 作固定可見右邊界，太陽排除、指尖留白，變窄只由左側裁切。2237 × 1265、1440 × 900、1024 × 1237／768、900 × 1237、390 × 844、320 × 720，以及同頁 CSS 縮放等效重排、本地驗證／鍵盤、typecheck、Web／Android export 通過；[交接](HANDOFF.md#login-original-reset)。沿 draft PR #73；真登入、背景偏好及原生實機仍由主聊天處理 |
-| 7r | FE-W24 捲動及響應式修補 | 實作及必要輕量檢查通過；待使用者視覺驗收 | 基線 `5b77d90`，沿 draft PR #73。Web AppScrollView 復用 OverlayScrollbars 2.16.0 的既有 viewport；透明軌道覆蓋內容、原生維持 RN。登入 900 以下移除故事，桌面文字加 Expo BlurView 57.0.3；首頁單欄自然高度及手機完整圖片已修正。60 重排、登入／共用設計、局部圖片／高度／捲動／焦點及 Web／Android export 通過；[交接](HANDOFF.md#responsive-scroll)，Android 模糊目標及實機仍待接續／驗收 |
-| 7s | FE-W25 聊天版面減量 | 實作及必要輕量檢查通過；待使用者視覺驗收 | 基線 `ccc224e`，依使用者指示移除常駐求助卡及聊天頭像，保留原訊息／草稿／composer。四尺寸的列寬／間距、本地問題預覽／離線、typecheck 及 Web／Android export 通過；[交接](HANDOFF.md#chat-presentation)。已更正 FE-W17 誤讀：「固定」指需要顯示時用統一的權威官方入口，不是常駐或取消求助功能；正式觸發待接線。只改 frontend，沿 draft PR #73 |
-| 7t | FE-W26 回覆引用及來源面板 | 補修及必要輕量檢查通過；待視覺／正式接線 | 原交付 `02f7651` 後依使用者意見取消重複清單，只留來源標題分頁；同項開關、12 項橫向捲動及正文數字瞬間定位自己的來源面板已修正。四尺寸、長回覆、390／320 放大文字及 Web／Android export 通過；原 Agent 權限／unknown／孩子清理證據沿用。[交接](HANDOFF.md#answer-citations)／[本次證據](verification/fe-w26-source-tabs/build-checks.json)。正式引用映射／原生實機待主聊天；沿 draft PR #73 |
-| 7u | FE-W27 首頁減量、孩子入口及手機捲動條 | 補修及必要輕量檢查通過；待使用者視覺驗收 | 原基線 `02f7651`；從 `9df6c67` 補修同會話首次首頁才播放，來回切頁、提前離頁、切孩子及 649／650 重掛載不重播。點開保持透明，48 頭像／18–14 文字及靠近的箭嘴，閱讀暫停／動畫中點擊／減少動畫已驗。原移除提問／重複切換／日期及手機 6／4 px 捲動條保留。四尺寸／放大文字、typecheck、Web／Android export 通過；[交接](HANDOFF.md#home-simplification)／[最新證據](verification/fe-w27-child-control/build-checks.json)。真登入會話／實機及正式接線待驗；沿 draft PR #73 |
-| 7v | FE-W28 統一捲動／頂部減量／首頁首幀及共用來源 | 實作及必要局部檢查通過；待視覺／正式接線 | 原基線 `95431ad`，來源補修從 `5980ff4` 接續，沿 draft PR #73。全部 Web 6／4 px 覆蓋條、頂部兩按鈕、更多設定、首頁 3 秒及返回首幀保留。來源取消底板／內距、分頁加細直線／滑塊留位，詳情分組；首頁 flex 與外框同步及三寬度逐幀接縫檢查通過。基本聊天與 Agent 共用 `components/chat/`，各訊息獨立；四尺寸的多來源／長回覆／鍵盤／跨訊息與放大文字、typecheck／Web／Android export 通過。[外殼交接](HANDOFF.md#shell-feedback)／[來源復用](HANDOFF.md#chat-source-reuse)。正式移除清單已寫；[換頁研究](MOTION_OPTIONS.md#page-transitions)僅供決定，動畫未實作；真登入／API／原生實機待主聊天 |
-| 7w | FE-W29 共用聊天時間線／增量顯示 | 實作及必要局部檢查通過；待視覺／正式接線 | 前置 `2e82e59`，核對 GitHub master `d3213e6`。ChatMessage／ChatTimeline 共用正文、來源和公開過程；底部最新、最近視窗、逐批歷史錨點、讀舊停止跟隨及最終快照已投影。四尺寸／390 停止、不同終態、scope 清理／放大文字、來源再驗、typecheck／Web／Android export 通過。[交接](HANDOFF.md#chat-timeline)／[三個 Agent 官方研究](CHAT_UI_RESEARCH.md)。最近 100 則 API 未有更早游標／增量／取消契約，正式接線及實機仍待主聊天；沿 draft PR #73，不改換頁動畫 |
-| 7x | FE-W30 契約審查修復 | 實作及必要局部檢查通過；待正式接線／視覺及跨瀏覽器覆核 | 基線 `949d088`，新分支 `codex/fe-w30-contract-review`，核對正式 `d3213e6`。原操作恢復／草稿導覽保護／頁籤保留、記憶與任務分頁、渠道差異、照片 freshness、來源及模型／日期驗證已修；[判定與正式待修項](HANDOFF.md#contract-review)。使用者已授權 B 賬號按 Merge commit 合併六個前端相依 PR 及本次新 PR，結果看 GitHub；不標 P2／P3 完成。Edge 返回已驗，其他瀏覽器能力缺口及真 API／實機仍待集中驗收 |
-| 7y | FE-W31 首頁外框動畫及手機標語 | 補修及必要局部檢查通過；待使用者視覺／正式接線 | 從已合併 master `ef0448e` 開 `codex/fe-w31-home-motion`，從 `7343744` 補修結尾閃動，沿 draft PR #77。整段沿同一自然流及文字 flex，容器自然寬度配合 minWidth／maxWidth 動畫，完成不切排版；外框半途淡出、3 秒及一次會話保留。只放大手機問候 26／16／14。649／605／390／320 末幀尺寸／箭嘴零跳變及完成後 12 幀、1440／1024、選單／離頁／減少動畫／320 放大文字共九組通過，typecheck、Web／Android export 通過。[最新補修](HANDOFF.md#home-motion-stability)／[證據](verification/fe-w31-motion-stability/build-checks.json)。未改換頁動畫、API 或正式 App |
-| 8 | Web 整套確認與正式接線 | 待主聊天及使用者 | 使用者比較全部 Web 畫面並明確確認；主聊天按 [HANDOFF](HANDOFF.md) 對正式 App 的既有 API／控制器接線與真服務驗收。未接通 P2 功能須等其業務包交付，不以預覽代替 |
-| 9 | FE-W06 手機軟件介面 | 源碼及 bundle 完成；待視覺及真機驗收 | 按使用者 2026-09-29 指示提前做手機畫面；手機首頁依參考圖組裝品牌／問候、孩子卡片、重點、待辦、快捷記錄及底部導航，FE-W27 依最新指示移除首頁提問。共用 React Native 元件、Expo Router Tabs／Safe Area／鍵盤及最終 Android bundle 通過；正式 P3 接線／APK／實機驗收仍待主聊天及後續條件 |
+<a id="active"></a>
+## 目前工作包
 
-FE-W36（2026-10-04）：按使用者要求研究 Codex 官方桌面呈現，再更新可復用聊天、來源及 composer；共用字體／間距／寬度、單一輸入面板、Web 多行增減及中文選字、預設收起合成活動且保留原操作已實作。四尺寸／短窗／寬觸控及必要聊天互動、typecheck、Web／Android bundle 通過。[研究](CHAT_UI_RESEARCH.md#codex-desktop-presentation)／[交接](HANDOFF.md#codex-chat-presentation)。前置 #80；正式接線及使用者視覺／原生鍵盤仍在第 8／9 項關口。這是既有聊天呈現交付記錄，不另添商業方案階段或換頁動畫。
+2026-10-04 提交前核對（PR 更新截至 11:52 UTC）：已合併基線 **master `c51dd52`／PR #83（FE-W36）**。以下兩個 PR 均為 **draft／未合併**，各自從此基線開出；按使用者本次任務選對入口，不另開等價包或同時操作重疊檔案。開工仍須重查 head／PR 與現場差異。
 
-FE-W29 懸浮補修（2026-10-02）：基線 `51062d6`，「回到最新」改覆蓋聊天底部，不佔整行或改可視高度，兩旁操作穿透。四尺寸／Enter／草稿、typecheck 及 Web export 通過；[交接及證據](HANDOFF.md#chat-timeline)，原生實機及使用者視覺仍待驗。
+| 活動包 | 觀察版本／入口 | 下一步與未驗關口 |
+|---|---|---|
+| FE-W37 全站語意動效 | [PR #84](https://github.com/2NTTY/child-ai-caregiver/pull/84)，`dot/fe-w37-motion-system`，`4ecb67b8ab4e247aedbff0b571241f85e50ccde0`；[包範圍](https://github.com/2NTTY/child-ai-caregiver/blob/4ecb67b8ab4e247aedbff0b571241f85e50ccde0/frontend/PLAN.md#目前工作包)／[交接](https://github.com/2NTTY/child-ai-caregiver/blob/4ecb67b8ab4e247aedbff0b571241f85e50ccde0/frontend/HANDOFF.md#semantic-motion) | 先沿 [恢復來源與驗證索引](https://github.com/2NTTY/child-ai-caregiver/blob/4ecb67b8ab4e247aedbff0b571241f85e50ccde0/frontend/verification/fe-w37-motion/recovery-2026-10-04/README.md) 核對重建範圍及新證據，再補受影響的來源捲動、首屏、灰幕／箭頭／跨頁首幀等；系統 reduced-motion 與精確換文逐幀門檻仍不能由手動路徑／舊 run 代替 |
+| 首頁資訊與快捷記錄（PR #85，未獲分配 FE-Wxx） | [PR #85](https://github.com/2NTTY/child-ai-caregiver/pull/85)，`dot/home-information-layout`，`5af4027fa3cc8f205c0578f3afe5f75a7badc3e2`；[固定改動](https://github.com/2NTTY/child-ai-caregiver/commit/5af4027fa3cc8f205c0578f3afe5f75a7badc3e2)，啟動原文／細節見該 PR 正文 | 目標是首頁「現在要處理／持續關注」、首頁與右欄的同孩子投影，以及正常 flex 內的手機四快捷；刪除／刷新／首個孩子建立先保持合法選取。瀏覽器 UI、大字體、首屏快捷可達性仍未驗；與 #84 合併後的行為／UI 亦待核對。Android bundle／裝置或恢復 hash 一致都不等於 UI 通過；原生驗收沿本域既有邊界另列 |
 
-FE-W29 出現閃動補修（2026-10-02）：從 `1e3d598` 接續，手勢暫停與按鈕實際顯隱分開，加 40／24 px 緩衝。四尺寸逐幀、390 串流／引用閱讀控制、typecheck／Web export 通過；[交接及證據](HANDOFF.md#chat-timeline)，修正版視覺及原生實機待驗。
+- **範圍**：兩包均只改 `frontend/**` 合成介面及所需檢查，不改 Server、正式 App、API 或正式部署；本索引不擴大原包授權。FE-W37 採納規範在固定版本的 [MOTION_SYSTEM](https://github.com/2NTTY/child-ai-caregiver/blob/4ecb67b8ab4e247aedbff0b571241f85e50ccde0/frontend/MOTION_SYSTEM.md)，未合併不能假設在 master。
+- **現場／版本**：本次只核對遠端，不接管原執行現場；dirty 清單及最新被測版本仍須向原現場核對。PR #84 回報 native-instant 來源捲動修正尚未包括在 `4ecb67b`；不得把此 head 的結果擴至後續修改。較舊 `e8a653d` 的恢復索引缺檔已由上述新 checkpoint 補入，舊 UI 通過仍只屬各自版本。
+- **交叉範圍／gate**：#85 的 AppShell／MobileHome 內容接線與 #84 的 drawer 幾何、startup readiness、timer 邊界重疊；按 hunk 整合並保存兩邊意圖，不能整檔覆蓋。#85 沒有提出合併要求；兩包均保留 draft，直至相關必要證據／review 與當次授權齊備。
+- **停止條件**：來源／被測版本缺口、工具限制、首次驗收失敗或超出範圍，按 [根驗收規則](../AGENTS.md#finish) 處理，不繞過環境限制或以重跑無關項代替。
 
-FE-W04 的可獨立驗收範圍是外殼調整、孩子摘要與引導頁的前端投影、條件顯示、Web 響應式／鍵盤檢查及正式接線交接；不宣稱孩子摘要已取得 Server 資料或引導完成狀態已有正式來源。下一批真正任務／通知流程仍須先核對所屬業務包的已交付契約，不依參考圖推造任務完成或訊息送達。
+本次文件整理在獨立分支，不修改兩個活動 PR 的源分支。#84 同時改本 PLAN、STATUS、HANDOFF、DESIGN_SYSTEM、MOTION_OPTIONS 與 Skill；合併時保留該包新增內容／證據，依本次職責收斂到正確位置，不能把舊長版整檔覆回。活動包以後在本域 PLAN 原位更新；#85 現有 PR 正文保留為啟動來源，補入本域工作卡後不再兩邊各養一份進度。
 
-每包依 [WORKFLOW](WORKFLOW.md) 核對 active worktree、提取設計規則、實作、必要輕量檢查及展示合成運行畫面。FE-W01 → FE-W04 的源碼已隨 PR #40–#43 合併；FE-W05 只保留比較樣本，並非後續靜態畫面的前置。2026-09-29 已恢復開發，並依使用者明確新指示加入手機軟件介面，取代先等待整套 Web 視覺確認的開工次序。Web／Android 維持靜態；本次只完成有契約可對照的前端範圍。第 7／8 項未交付的 API、正式接線及集中驗收不能由前端代為完成或標為通過。
+<a id="integration-gates"></a>
+## 正式整合及仍未完成的關口
 
-FE-W06 驗收範圍：既有靜態路由及新增 /tasks 在 1440／1024／390／320 CSS px 檢查重排；針對新表單檢查確認、失敗保留、同原操作查核、版本衝突、角色、孩子切換及離線。共用設計修訂另查 840／744 的更多選單、SVG、白色 Dialog／合理圓角、孩子切換比例、16 個 token 對比及固定 export 首次載入。Android 只核對 bundle 與共用介面源碼；系統鍵盤、返回鍵、Safe Area、TalkBack、真 session、通知及實機畫面尚待後續驗收。主聊天 P2 集中驗收安排照常，不提前執行真服務或正式 E2E。
+- **Web 視覺／正式接線**：整套使用者確認、正式 controller／session／API、跨頁及必要正式驗收仍未由合成預覽證明。主聊天按 [正式 UI 對照](../docs/P2_UI_HANDOFF.md#chat-handoff) → [專項交接](HANDOFF.md#p2-coverage) 界定接線包；既有 Sxx 後端已完成的能力不重標未實作。
+- **Android**：依 [根分工](../AGENTS.md#frontend-backend) 可提前做共用 UI；bundle 只證明建置，P3／APK／真機／權限／鍵盤／讀屏仍按根 PLAN 前置處理。
+- **範圍缺口**：真歷史游標／stream／取消／逐句引用、正式身份與 unknown／草稿差異，以及沒有契約的畫面功能，按 [正式移除及接線清單](PRODUCTION_UI_HANDOFF.md) 與 [已記錄差異](HANDOFF.md#contract-review) 逐項重核，不從設計圖片創造 API。
 
-2026-10-01：已核對 GitHub UI-P2-01–18，FE-W17 是本期最後一個未投影包；隔離前端程式、合成操作／響應式、共用 Android bundle 及交接已齊備。[覆蓋清單](HANDOFF.md#p2-coverage) 分開列介面與接線，現轉第 8／9 項的視覺及正式整合／實機關口。這不是使用者整套 Web 確認、P2／P3 完成或 PR 合併。
+<a id="delivered"></a>
+## 已交付範圍與歷史定位
 
-2026-09-29 使用者回報沒額度並要求暫時收尾；源碼及證據保存在 checkpoint `4739b9e`。2026-09-30 已恢復並補完建置、共用設計修訂及 FE-W07 本人渠道前端；使用者另要求建立持續目標。視覺比較及正式接線仍待使用者／主聊天；不把源碼／bundle 完成當作產品包或真機驗收完成。後續只按已交付契約開始獨立前端包；新合併只讀核對，不改主聊天 checkout。
+下列是主線已合併的隔離前端範圍索引，**不把未完成的視覺／接線／真機關口標為完成**。逐包範圍、當時狀態和證據見 [固定舊 PLAN](https://github.com/2NTTY/child-ai-caregiver/blob/c51dd52e0cdea03b1d412a10d08ac6761e010d9b/frontend/PLAN.md)／[歷史索引](../_archive/README.md#frontend-history)，不用全讀後才開工。
+
+| 範圍 | 讀取入口 |
+|---|---|
+| FE-W01–06 主頁、共用外殼、核心表單及手機共用 UI | [核心接線表](HANDOFF.md#p2-coverage) |
+| FE-W07–20 渠道、Agent、照片、模型、私人來源、成長、摘要、聯絡與背景偏好 | [專項交接索引](HANDOFF.md#p2-coverage) |
+| FE-W21–31 品牌、登入／響應式、聊天來源／歷史及契約修補 | [舊錨點及指定包](HANDOFF.md#history) |
+| FE-W32–35 商業設計研究、閱讀／首頁／工作頁配方 | [設計規則](DESIGN_SYSTEM.md)、[正式接線映射](HANDOFF.md#commercial-rollout) |
+| FE-W36 Codex 聊天、引用返回及來源提示 | [交接與指定證據](HANDOFF.md#codex-chat-presentation) |
 
 <a id="fe-w32-design-review"></a>
-## 商業成品設計方案：後續實作計劃
+## 商業方案的採納與接續
 
-2026-10-03 按使用者要求，追加《育有方前端商業成品設計與實作方案》（Astra 撰寫，由使用者提供）的實施路線。原方案的 [核心設計思路](DESIGN_REVIEW.md#design-intent) 已集中保存；以下是文件提出的階段及工作卡，採納範圍先經 [全份審查](DESIGN_REVIEW.md) 判定，再按有界工作包推進。零碎缺陷、舊修正及逐項證據留在審查／交接文件，不列作本計劃的新階段。
-
-| 文件階段 | 計劃產物及次序 | 進入下一階段的條件 |
-| --- | --- | --- |
-| 一．定設計 | 選定首頁、完整答案連來源、記錄詳情三張旗艦畫面的構圖、內容主次、文案、閱讀／工作密度及 view contract；包含必要失敗狀態 | 使用者 2026-10-03 確認按方案及逐項審查持續實作；首輪閱讀／工作配方已定於 DESIGN_SYSTEM，依現況增量套用 |
-| 二．共用基礎 | 局部擴充既有 type／density／surface、容器、狀態及焦點配方；共享檔案串行處理 | FE-W33 基礎及閱讀切片已實作；四尺寸來源／時間線、抽屜焦點及 Tabs、60 個靜態重排、typecheck／Web／Android bundle 通過。正式讀屏／真機仍待驗，見 HANDOFF |
-| 三．逐條精修 | 先交付一張完整答案連來源的閱讀切片，再依次套用首頁及記錄詳情，分開交付與驗收 | 閱讀切片 FE-W33、首頁及記錄 FE-W34 的實作及必要輕量檢查已齊；各包視覺／正式接線／真機未驗項保留，見 HANDOFF |
-| 四．推廣 | 將已定配方套用任務、記憶、照片、設定等既有頁面 | FE-W35 已實作，包含私人來源、檔案、家庭及其餘工作頁；共用閱讀／工作密度、分組細線、讀取／操作播報與可定位錯誤。必要輕量證據及未驗界線見 [交接](HANDOFF.md#commercial-rollout) |
-| 五．正式 adapters | 主聊天在正式 App／client 範圍接既有 controller 投影，逐頁移除合成預覽 | FE-W35 已交付八張工作卡的逐項 adapter／上下文清理對照。正式 App 接線、真身份／資料／原操作及正式驗收仍待主聊天按既定範圍處理；不是隔離前端已接通 |
-
-| 文件實作卡 | 後續內容 | 依賴及邊界 |
-| --- | --- | --- |
-| 1．共用視覺與狀態基礎 | 少量語意 tokens、容器密度、純顯示 OperationNotice／讀取狀態配方及必要焦點 primitives | 設計方向先定；保留舊 exports，只在實際重用時抽元件 |
-| 2．外殼比例與可達導航 | 可用側欄比例、路由 rail policy、導航分組及 drawer 可及性架構 | 卡 1 後；先定構圖／導航，保留網址及離頁保護 |
-| 3．閱讀版式與專心輸入 | 好讀的答案正文、對齊的 composer、可收起的建議與附件／鍵盤空間 | 卡 1／2 穩定後；保留訊息 id、草稿、輸入節點及既有聊天控制 |
-| 4．來源重排與返回錨點 | 閱讀資料優先、技術資料次層、來源收合及回到原引用位置 | 與閱讀切片一起交付；保留每訊息唯一面板及真來源 metadata |
-| 5．首頁焦點與問答起步 | 品牌首頁、單一今日重點、可選引導及已有孩子的提問起步 | 先定首頁主次；重點只承接已授權投影，不新增首頁業務狀態 |
-| 6．記錄工作台與可修正表單 | 既有清單／詳情的工作密度、上下文延續及表單錯誤處理配方 | 卡 1／2 後；共用表單檔串行，照片套用留下一包 |
-| 7．狀態播報與精準文案 | 一般／緊急狀態宣告、真分頁互動及按事項種類的操作文案 | 依現有狀態與回調投影，不從文案猜測業務 |
-| 8．正式接線與上下文延續 | 正式 controller／transport、導航目標及身份／孩子／操作清理 | 主聊天另分配正式路徑；隔離前端不重定 Server 契約 |
-
-建議首包為「已定方向的共用基礎＋一張完整答案連來源」，先比較桌面與窄 Web 的正常、閱讀來源及 unknown，再把配方推廣。文件列出的字級、尺寸、導航改名及投入估計仍是提案，不代表全部已採納或已量測。保留既有框架、靜態偏好及已確認產品取捨；新轉場、完整歷史／收藏、持久偏好、新資料契約另立範圍。
-
-實作只改 `frontend/**`；每包採最少必要輕量檢查。真 API／模型／通知、原生真機及全量驗收仍按現有批准與集中驗收規則處理，不因文件列出覆蓋目錄而自動啟動。
+原五階段／八張卡是設計輸入；FE-W33–35 已交付共用配方及隔離畫面，正式 adapters 仍由主聊天接續。已採納呈現以 DESIGN_SYSTEM 為準；[DESIGN_REVIEW](DESIGN_REVIEW.md#design-intent) 保留取捨，[原計劃全文](https://github.com/2NTTY/child-ai-caregiver/blob/c51dd52e0cdea03b1d412a10d08ac6761e010d9b/frontend/PLAN.md#fe-w32-design-review) 保留當時範圍。不要重新開啟「建議首包」、把全部提案當已採納，或為同一進度另建卡片。

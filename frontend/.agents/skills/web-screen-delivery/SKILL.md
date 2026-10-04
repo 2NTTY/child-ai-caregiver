@@ -5,23 +5,38 @@ description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作�
 
 # 育有方 Web 畫面交付
 
-適用 frontend/ 的 Web 畫面工作包。先依 [前端流程](../../../WORKFLOW.md)核對根目錄功能真況、active worktree、參考圖規則與待接線範圍；本 Skill 不覆蓋根目錄的產品或 API 決策。
+保存本域可復用的實作與检查方法。工作次序／版本核對用 [WORKFLOW](../../../WORKFLOW.md)，當前包／授權／未驗用 [PLAN](../../../PLAN.md#active)，呈現取捨用 [DESIGN_SYSTEM](../../../DESIGN_SYSTEM.md)。業務契約及特定接線差異只沿 [HANDOFF 索引](../../../HANDOFF.md#p2-coverage) 讀本次功能，不在 Skill 維護第二份。
 
-1. 先按 [前端流程](../../../WORKFLOW.md) 讀 GitHub master 的 P2 UI 交接，再局部讀當前 API／型別／client 封裝，固定核對 commit；本機副本只作比對。從參考圖提取可重用的顏色、層次、密度、導覽、表單與狀態規則，更新 [設計規則](../../../DESIGN_SYSTEM.md)。不複製圖片中的假功能、假資料或與育有方 Logo／美術衝突的元素。
-2. 沿用現有 Expo Router 結構：app/ 只保留路由與 layout 入口，畫面實作在 src/screens/，共享外殼與 Paper 薄封裝在 src/components/，主題 tokens 在 src/theme.ts，合成 fixture 與前端狀態在 src/preview/。不用為了套新版模板遷移已存在的路由根。組件樣式以 StyleSheet.create 共置，不造單一 HTML／CSS 巨檔。Paper Portal 內若要展示共用狀態，由外殼傳入資料與回調，避免在移動後的子樹重新讀取預覽 context；本版窄屏資訊欄曾因此出錯，須納入開欄檢查。
-3. 用 Paper 5.x 控件與現有 AppButton／AppTextField／AppSelect／AppCheckbox／AppDialog／AppMenuList；只封裝品牌及反覆語義。SVG 圖標集中 AppIcon／PaperSvgIcon，改主題或圖標前讀 [品牌主題與 SVG](references/theme-and-svg.md)，補齊 MD3 色彩角色並核對 SDK 相容版本。RN Web 0.21.2 的原生 accessibilityState 不等於 DOM 狀態，選單明確補 aria-expanded、單選／勾選補 aria-checked、分頁補 aria-selected。共用 AppCheckbox 驗 Space，不每頁複製 adapter。AppDialog 沿 Paper 官方 accessible modal 建議，以 RN Modal 承載 Paper Dialog，驗 Tab 焦點限制／Escape／返回焦點。閱讀 [表單與控件](references/forms-controls.md) 才改日期、時間、選單或彈窗；不 fork vendor 或替換整套框架。
-   改共用 ScrollView、透明捲動條或文字模糊底板時讀 [捲動及模糊面板](references/scroll-and-blur.md)，沿既有 Web adapter／Expo BlurView；自然高度與容器裁切須實際核對，不只檢查整頁寬度。
-4. 畫面由資料模型和操作回調驅動；合成預覽清楚標示不連 Server。待確認、處理中、已保存、失敗、結果未知各自呈現；網絡可用不等於保存。切換孩子時隔離該孩子的資料和草稿；本人渠道則按身份／Server 隔離，切孩子不重綁。渠道畫面先讀 [CHANNELS_HANDOFF](../../../CHANNELS_HANDOFF.md) 的已核對位置，不從截圖或 Platform.OS 推造真瀏覽器能力、投遞或未讀；accepted／回覆／照護完成分開。正式版的權限、收據與原 opId 查核由主聊天接線。
-   聊天先沿 [已核對研究](../../../CHAT_UI_RESEARCH.md)／[共用時間線交接](../../../HANDOFF.md#chat-timeline)，每則訊息維持 stable id，文字增量與最終快照分開，來源／過程狀態各自獨立。跟隨意圖與程式捲動分開；Web 讀者手勢及原生 onScrollBeginDrag 立即暫停跟隨，來源定位不改可視高度。只展示公開活動摘要，合成 timer 不能當正式 stream，沒有游標的最近 100 則不能冒稱完整歷史。
-5. 重要表單沿項目已採用 RHF 7.88／Zod 4.5，透過 Controller 接 Paper；錯誤靠近欄位，原文不經 trim／數字轉換覆蓋。view model／回調只屬顯示層，Server 協定仍以根目錄型別為準。沿實際成功回應才標 saved；有收據的 unknown 鎖定並查同一參考，不能用第二次 submit 代替查核。直接秘密設定沒有 opId／收據，不套用業務重試器：清秘密，重讀 metadata／版本後重新確認；本人模型的接口及清理入口見 [MODEL_SETTINGS_HANDOFF](../../../MODEL_SETTINGS_HANDOFF.md)。409 先比較最新內容，再由使用者明確換基準並重新核對。
-   照片及來源的原文控件沿 RecordDraftFields；私人來源的取得／提取沒有 opId，沿 [SHARED_INPUT_HANDOFF](../../../SHARED_INPUT_HANDOFF.md) 已核對的原版本／片段及查核分支，不由共用狀態提示推造 retry 協定。已確認但結果不能核對時先 GET 並明確結束，不按正文／hash 猜測或重送。候選不確定內容保留，來源日期不派生自取得時間。
-   成長操作沿 [GROWTH_HANDOFF](../../../GROWTH_HANDOFF.md) 的原完整 body／項目／授權／fact 基準；GET 不代表 unknown 已成功，放棄表單不清未知原請求。來源或適用依據失效不呈現舊建議為現行內容，接受不等於任務／預約／外發完成。
-   摘要沿 [SUMMARY_HANDOFF](../../../SUMMARY_HANDOFF.md) 的 Server 統計／完整來源及原期間，unknown 查原收據；保存已確認但摘要未讀回不能重送。RHF 動態清單保留 stable id／草稿與舊基準，根契約的規範內容另行核對，不覆寫原草稿或自動採新版本。
-   聯絡沿 [CONTACT_HANDOFF](../../../CONTACT_HANDOFF.md) 的本人同意／任務 grant／台帳，固定 generic_notice／task_due；accepted、本人 ack 和事項完成分開。GET／離線保留 dirty 選項及原版本，正式 ContactPanel 的 clearDrafts 接線差異須明確處理；receipt confirmed 不能覆寫較新版本。有限清單不能推斷原任務已刪除。使用者已在 FE-W25 澄清：「固定」求助入口只指需要顯示時採統一、最權威官方入口，並非聊天常駐卡片；正式觸發由主聊天接線，不新增症狀分類。
-6. 依變更執行必要 typecheck／build／針對性合成預覽。共用外殼變更才擴至所有靜態路由；不因換工作包例行重跑完整舊測試。至少檢查受影響頁的 1440／1024／390／320 CSS px、鍵盤及適用操作狀態，區分 document overflow 與容器裁切的內容溢出。展示實際截圖，更新前端 STATUS／PLAN／HANDOFF。真服務／正式 E2E 沿主聊天 P2 集中驗收安排。
-   佈局改動先核對同一元件的初態／動畫中／終態；需同步變化的尺寸及 flex 沿同一 Animated.Value，驗中途操作與最後一幀接縫，不能只比靜態截圖。來源底線／捲動條須留獨立位置，詳情按關係分組及用細線分隔；共用聊天顯示層不得依賴 Agent fixture。按需閱讀 [本項目已核對的方法與證據](../../../WORKFLOW.md)，沿用已確認研究。
-7. 需要手機軟件介面時讀 [原生介面指引](references/native-ui.md)。手機 Web、Android bundle、Android 實機三份證據不可混用。開包、整合前及交付前同步 GitHub 遠端引用，核對 frontend 重疊；不改其他聊天 checkout 或 root 指導文件。
+## 元件及狀態方法
 
-RHF／Zod 復用結論沿 [項目已有研究](../../../../docs/TECH_REUSE.md) 與 TaskPanel，frontend 依賴固定 RHF 7.88.0／resolvers 5.9.1／Zod 4.5.4。本次補充核對日期為 2026-09-29；原 Web 官方來源仍適用。
+- 沿用 Expo Router：app/ 只作路由／layout，src/screens/ 放畫面，src/components/ 放共用呈現，src/theme.ts 放 tokens，src/preview/ 放合成資料及控制器。樣式用共置 StyleSheet；不要因新版模板搬路由根。Portal 內需用的 scope 資料／回調由擁有者傳入，避免越出 provider 後再讀 context。
+- 復用 Paper 5.x 及現有 App* 薄封裝。RN Web 0.21.2 的 accessibilityState 不等於 DOM 狀態；選單／勾選／Tabs 明確核對 aria-expanded／checked／selected 及鍵盤操作。AppDialog 以 RN Modal 承載 Paper Dialog，保留焦點限制、Escape 及返回焦點；細節按下表讀。
+- 重要表單沿已採用 RHF／Zod，以 Controller 接 Paper，原文不經 trim／數字轉換覆蓋。動態列用 stable id 保留草稿／基準。pointerdown 的 blur 驗證若令按鈕位移，須驗完整 pointer 提交，不能只用程式 click 或焦點斷言；沿既有 onSubmit／onChange 重驗方法，勿加無依據 timeout。
+- view model／回調只呈現合法狀態，不決定授權或重試。網絡可用不是已保存；unknown 必須按該功能的正式契約處理，有收據與無收據的直接操作不可共用假重試器。身份／孩子／Server 變更清理邊界依專項交接，不從畫面或文字猜業務。
+- 共用聊天維持 message id、最終快照、每訊息來源／展開狀態及本人跟隨意圖；不把合成 timer 當真 stream、不把已載入視窗當完整歷史。只呈現公開活動，不能顯示內部思維鏈。
+- 同類呈現已重用時才抽小型共用元件，資料／回調和內容組裝分開；不把 fixture／控制器搬進通用顯示層。多實例 state／key 要按本人／孩子正確隔離。來源底線、捲動條、固定 composer 等相鄰元素須量度相對位置，不只檢查整頁寬度。
+
+## 按任務讀取
+
+| 本次改甚麼 | 只讀對應方法 |
+|---|---|
+| 主題／SVG／MD3 角色 | [theme-and-svg](references/theme-and-svg.md) |
+| 日期／時間／表單／選單／Dialog | [forms-controls](references/forms-controls.md) |
+| ScrollView／透明捲動條／模糊底板 | [scroll-and-blur](references/scroll-and-blur.md) |
+| 手機軟件介面 | [native-ui](references/native-ui.md)；Web、bundle、實機分開 |
+| 已採納的動效及其驗證 | 由 [當前包](../../../PLAN.md#active) 定位適用版本的 MOTION_SYSTEM／方法 reference；未合併文件不能假設在 master，研究 MOTION_OPTIONS 不自動成為規範 |
+| 照片、來源、模型 key、成長、摘要、聯絡等 | [功能交接](../../../HANDOFF.md#p2-coverage) 的正式差異與 API 指標；不用全部讀 |
+
+## 最少必要畫面檢查
+
+按變更驗受影響頁的 1440／1024／390／320 CSS px、鍵盤及相關操作狀態；共用外殼確有影響才擴至所涉路由，不例行全跑舊測試。分清 document overflow、內容裁切及可見焦點，展示必要實際畫面。
+
+佈局／動畫改動驗初態、過渡和終態：沿已採用 RN Animated.Value 同步相關尺寸／flex，查看結束接縫、中途操作／離頁、減少動畫及受影響斷點。靜態前後截圖或 DOM phase 不證明連續過渡；來源定位與既有業務回調不應依賴動畫完成。已有適用方法可復用，工具能力不足便如實列未驗，不改驗收斷言。
+
+命令及證據位置見 [WORKFLOW#preview](../../../WORKFLOW.md#preview)。只保存該版本必要截圖／trace／結果，不另建 Skill 日誌；每個結果列被測版本／manifest、環境、範圍及限制，失敗與補驗分開。高成本驗收及停批依 [根規則](../../../../AGENTS.md#finish)，不把方法文件當授權。
+
+## 已有來源及驗證範圍
+
+方法來源沿用既有研究，未在本次文件整理重跑產品或重新核對套件：RHF 7.88.0／resolvers 5.9.1／Zod 4.5.4 的採用理由見 [TECH_REUSE](../../../../docs/TECH_REUSE.md)。動畫／元件抽取沿 [Expo 動畫](https://github.com/expo/skills/blob/13ad8e05874195633b5c185f6947bb6400e228fc/plugins/expo/skills/expo-animation/SKILL.md)、[Expo 元件組裝](https://github.com/expo/skills/blob/13ad8e05874195633b5c185f6947bb6400e228fc/plugins/expo/skills/expo-design-system/SKILL.md)、[React state／key](https://react.dev/learn/preserving-and-resetting-state) 的既有核對。官方方法不是本項目實測保證；本地結果按 [指定包證據](../../../HANDOFF.md#history) 判斷，未驗條件仍待驗。
 
 技術基線：Expo 57.0.24、Expo Router 57.0.22、React Native Web 0.21.2、React Native Paper 5.15.3；最後核對 2026-09-29。官方文件已核對：[Expo Router 檔案規則](https://docs.expo.dev/router/basics/core-concepts/)、[Expo Router layout](https://docs.expo.dev/router/basics/navigation-layouts/)、[Expo project-structure skill](https://github.com/expo/skills/blob/main/plugins/expo/skills/expo-project-structure/SKILL.md)、[Expo design-system skill](https://github.com/expo/skills/blob/main/plugins/expo/skills/expo-design-system/SKILL.md)、[Paper theming](https://oss.callstack.com/react-native-paper/docs/guides/theming)、[Paper icons](https://oss.callstack.com/react-native-paper/docs/guides/icons)。本項目的實作與驗證證據見 [HANDOFF.md](../../../HANDOFF.md)；官方文件核對不等同正式 API 驗收。

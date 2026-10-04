@@ -1,5 +1,7 @@
 # 手機比例與密度
 
+身份：FE-W10 的版本化設計研究；現行採納看 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)，可復用平台方法看下方 Skill，當前 Android 範圍依 [根分工](../AGENTS.md#frontend-backend)。舊包文字不構成今日授權。
+
 FE-W10；2026-09-30。依使用者手機參考圖及現有 Paper／Expo 結構改善 `frontend/`，不修改正式 App 或業務契約。色階沿品牌／OKLCH，不在這包改顏色。
 
 後續畫面復用 [web-screen-delivery Skill](.agents/skills/web-screen-delivery/SKILL.md) 的 [原生手機指引](.agents/skills/web-screen-delivery/references/native-ui.md)，不用重新調查或另起組件系統。
