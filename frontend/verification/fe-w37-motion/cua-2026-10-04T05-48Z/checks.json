@@ -1,0 +1,160 @@
+{
+  "at": "2026-10-04T05:56:34.540931+00:00",
+  "method": "Supported CUA dot cloud Chrome, semantic locator actions, accessibility snapshots, read-only rendered DOM geometry, screenshots in tool output; prepared local Playwright script was not executed",
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+  "site_source": "533f51de6cd063f2fd99eb8de170bdac1fb42d67",
+  "site_public_access_revision": 2,
+  "tab_id": "8",
+  "viewport": {
+    "width": 1180,
+    "height": 757
+  },
+  "application_paths_visited": [
+    "/",
+    "/chat",
+    "/care",
+    "/tasks",
+    "/summary"
+  ],
+  "supported_observations": [
+    {
+      "flow": "Home endpoint",
+      "result": "Observed document width 1180, viewport width 1180, scope and route settled; no horizontal document overflow at this viewport"
+    },
+    {
+      "flow": "Tool navigation and chat draft",
+      "steps": [
+        "Open chat",
+        "Fill synthetic draft",
+        "Navigate care → tasks → summary → chat"
+      ],
+      "result": "Correct final URLs and page-heading focus observed; exact synthetic draft preserved"
+    },
+    {
+      "flow": "Summary changed result",
+      "steps": [
+        "Open summary scenario controls",
+        "Select changed source/preparation fixture",
+        "Fill synthetic preparation draft",
+        "Refresh summary once"
+      ],
+      "result": "Pending state observed, then summary basis probe serial 1→2 and visible :new basis; original raw draft and old form basis preserved; readOnly=false/disabled=false after completion; zero remaining curtain overlays",
+      "limits": "No continuous frame trace, DOM identity handle, in-flight focus or selection assertion"
+    },
+    {
+      "flow": "Leave-draft cancellation",
+      "steps": [
+        "Request care navigation from dirty summary",
+        "Observe confirmation dialog",
+        "Choose continue editing"
+      ],
+      "result": "Dialog role and aria-modal=true observed; route remains summary; focus returns to original care navigation link; draft not discarded"
+    },
+    {
+      "flow": "Care middle deletion",
+      "result": "FAILED; stopped acceptance batch",
+      "details": "Six loaded rows collapse to three after deleting only the third row, and activeElement is BODY"
+    }
+  ],
+  "failure": {
+    "expected": "Delete only preview-care-height, retain the other five loaded rows, and restore focus to a valid next/previous row or list control",
+    "reproduction": [
+      "Open /care",
+      "Click 載入下一頁 and wait for six rows",
+      "Click 查看身高記錄 (third row)",
+      "Click 永久刪除此記錄及歷史",
+      "Check 我明白會永久刪除此記錄及全部歷史",
+      "Click 確認並模擬永久刪除記錄 once",
+      "Observe 已確認刪除（預覽） and the remaining list"
+    ],
+    "before": {
+      "list_width": 506,
+      "row_height": 137,
+      "rows": [
+        {
+          "id": "preview-care-sleep",
+          "relative_y": 0
+        },
+        {
+          "id": "preview-care-temperature",
+          "relative_y": 149
+        },
+        {
+          "id": "preview-care-height",
+          "relative_y": 298
+        },
+        {
+          "id": "preview-care-park",
+          "relative_y": 447
+        },
+        {
+          "id": "preview-care-food",
+          "relative_y": 596
+        },
+        {
+          "id": "preview-care-appointment",
+          "relative_y": 745
+        }
+      ]
+    },
+    "after": {
+      "list_width": 882,
+      "row_height": 137,
+      "rows": [
+        {
+          "id": "preview-care-sleep",
+          "relative_y": 0,
+          "exiting": false,
+          "flip": false
+        },
+        {
+          "id": "preview-care-temperature",
+          "relative_y": 149,
+          "exiting": false,
+          "flip": false
+        },
+        {
+          "id": "preview-care-park",
+          "relative_y": 298,
+          "exiting": false,
+          "flip": false
+        }
+      ],
+      "active_element": {
+        "tag": "BODY",
+        "aria_label": null
+      },
+      "curtains": 0,
+      "list_status": "已載入 3 筆 / 已掃描 3 筆 / 載入下一頁 is visible"
+    },
+    "missing_previously_loaded_ids": [
+      "preview-care-food",
+      "preview-care-appointment"
+    ],
+    "source_locations": [
+      "src/preview/useCarePreview.ts:66-70 resets scanned to pageSize in confirmed delete branch",
+      "src/components/care/CareRecordsView.tsx:47-54 restores list focus only when !split"
+    ],
+    "screenshot": "Captured in CUA tool output at 2026-10-04T05:55Z; no local screenshot-file path claimed",
+    "scope": "Only synthetic preview records; no real Server operation or family data deletion"
+  },
+  "explicit_unverified": [
+    "1440/1024/390/320 viewport acceptance",
+    "Continuous curtain-covered commit timing",
+    "DOM-instance retention and selection during animation",
+    "FLIP intermediate geometry and lower-row motion",
+    "Runtime reduced-motion toggle",
+    "Rapid child switching and delayed response races",
+    "Task completion/addition and photo candidate flows",
+    "Failed/unknown operation groups",
+    "Full dialog Tab/Escape/focus matrix",
+    "New-message-only entrance and streaming interaction"
+  ],
+  "tool_limits": [
+    "Advertised browser capabilities list is empty; no supported viewport or reduced-motion setter",
+    "CUA evaluate is read-only, so no animation observer/script injection was used"
+  ],
+  "console_notes": "Observed error logs were from chrome-extension content-script browser metadata, not application source; not classified as app errors",
+  "batch_status": "Stopped at first concrete product failure; no replay or production changes",
+  "release_gate": "Mandatory UI acceptance incomplete; not merge-ready"
+}

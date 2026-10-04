@@ -5,19 +5,23 @@
 <a id="active"></a>
 ## 目前工作包
 
-2026-10-04 提交前核對（PR 更新截至 11:52 UTC）：已合併基線 **master `c51dd52`／PR #83（FE-W36）**。以下兩個 PR 均為 **draft／未合併**，各自從此基線開出；按使用者本次任務選對入口，不另開等價包或同時操作重疊檔案。開工仍須重查 head／PR 與現場差異。
+2026-10-04 核對：主線文件整理已合併至 `37625d0`；兩個前端包仍為 draft／未合併，原始程式基線為 `c51dd52`。下列遠端 head 與本地新增實作分開；開工及提交前重查，不能把合成預覽當正式接線。
 
-| 活動包 | 觀察版本／入口 | 下一步與未驗關口 |
+| 活動包 | 固定遠端／範圍 | 下一步及關口 |
 |---|---|---|
-| FE-W37 全站語意動效 | [PR #84](https://github.com/2NTTY/child-ai-caregiver/pull/84)，`dot/fe-w37-motion-system`，`4ecb67b8ab4e247aedbff0b571241f85e50ccde0`；[包範圍](https://github.com/2NTTY/child-ai-caregiver/blob/4ecb67b8ab4e247aedbff0b571241f85e50ccde0/frontend/PLAN.md#目前工作包)／[交接](https://github.com/2NTTY/child-ai-caregiver/blob/4ecb67b8ab4e247aedbff0b571241f85e50ccde0/frontend/HANDOFF.md#semantic-motion) | 先沿 [恢復來源與驗證索引](https://github.com/2NTTY/child-ai-caregiver/blob/4ecb67b8ab4e247aedbff0b571241f85e50ccde0/frontend/verification/fe-w37-motion/recovery-2026-10-04/README.md) 核對重建範圍及新證據，再補受影響的來源捲動、首屏、灰幕／箭頭／跨頁首幀等；系統 reduced-motion 與精確換文逐幀門檻仍不能由手動路徑／舊 run 代替 |
-| 首頁資訊與快捷記錄（PR #85，未獲分配 FE-Wxx） | [PR #85](https://github.com/2NTTY/child-ai-caregiver/pull/85)，`dot/home-information-layout`，`5af4027fa3cc8f205c0578f3afe5f75a7badc3e2`；[固定改動](https://github.com/2NTTY/child-ai-caregiver/commit/5af4027fa3cc8f205c0578f3afe5f75a7badc3e2)，啟動原文／細節見該 PR 正文 | 目標是首頁「現在要處理／持續關注」、首頁與右欄的同孩子投影，以及正常 flex 內的手機四快捷；刪除／刷新／首個孩子建立先保持合法選取。瀏覽器 UI、大字體、首屏快捷可達性仍未驗；與 #84 合併後的行為／UI 亦待核對。Android bundle／裝置或恢復 hash 一致都不等於 UI 通過；原生驗收沿本域既有邊界另列 |
+| FE-W37 語意動效 | [PR #84](https://github.com/2NTTY/child-ai-caregiver/pull/84)，`dot/fe-w37-motion-system`，`fa696d60ef390383ddf049b4dfba54bd2069e81a` | Web 灰幕純視覺退場、圖片 paint 前尺寸已有有界結果；按最新要求改手機頂欄為原高度內橫向替代 Logo，該新增來源待補驗；保留 draft。来源 End 捲動中切換仍未通過，桌面表單最初跳動尚未完整捕捉；不能以 route 位移尾段解釋全部現象 |
+| 助手式首頁及快速記錄 | [PR #85](https://github.com/2NTTY/child-ai-caregiver/pull/85)，`dot/home-information-layout`，`5af4027fa3cc8f205c0578f3afe5f75a7badc3e2` | 使用者已改為一按拍照交助手、文字補充、表單退為補改；第一區獨立 Agent 重要事項，第二區持續觀察、側欄保留待辦。本地前端邊界及合成流程已實作，最終 UI 待驗；正式重要事項 feed、圖片辨識／記錄、語音及背景處理尚未接通 |
 
-- **範圍**：兩包均只改 `frontend/**` 合成介面及所需檢查，不改 Server、正式 App、API 或正式部署；本索引不擴大原包授權。FE-W37 採納規範在固定版本的 [MOTION_SYSTEM](https://github.com/2NTTY/child-ai-caregiver/blob/4ecb67b8ab4e247aedbff0b571241f85e50ccde0/frontend/MOTION_SYSTEM.md)，未合併不能假設在 master。
-- **現場／版本**：本次只核對遠端，不接管原執行現場；dirty 清單及最新被測版本仍須向原現場核對。PR #84 回報 native-instant 來源捲動修正尚未包括在 `4ecb67b`；不得把此 head 的結果擴至後續修改。較舊 `e8a653d` 的恢復索引缺檔已由上述新 checkpoint 補入，舊 UI 通過仍只屬各自版本。
-- **交叉範圍／gate**：#85 的 AppShell／MobileHome 內容接線與 #84 的 drawer 幾何、startup readiness、timer 邊界重疊；按 hunk 整合並保存兩邊意圖，不能整檔覆蓋。#85 沒有提出合併要求；兩包均保留 draft，直至相關必要證據／review 與當次授權齊備。
-- **停止條件**：來源／被測版本缺口、工具限制、首次驗收失敗或超出範圍，按 [根驗收規則](../AGENTS.md#finish) 處理，不繞過環境限制或以重跑無關項代替。
-
-本次文件整理在獨立分支，不修改兩個活動 PR 的源分支。#84 同時改本 PLAN、STATUS、HANDOFF、DESIGN_SYSTEM、MOTION_OPTIONS 與 Skill；合併時保留該包新增內容／證據，依本次職責收斂到正確位置，不能把舊長版整檔覆回。活動包以後在本域 PLAN 原位更新；#85 現有 PR 正文保留為啟動來源，補入本域工作卡後不再兩邊各養一份進度。
+- **範圍與授權**：只改 `frontend/**`、必要規範／Skill 及既有位置的驗證紀錄。使用者批准 dot 雲端有界合成檢查、公開測試站及向 #84 推送動效程式／相關規範；首頁另在 #85。沒有真 Server／模型／通知／家庭資料操作，不建立 Work／Codex 任務；推送不等於准予未驗收合併。
+- **證據**：恢復來源沿 [既有索引](https://github.com/2NTTY/child-ai-caregiver/blob/fa696d60ef390383ddf049b4dfba54bd2069e81a/frontend/verification/fe-w37-motion/recovery-2026-10-04/README.md)。正確整合 v22 的[首頁／灰幕有界檢查](verification/combined-home-motion-2026-10-04T12-35Z/cua-v22-checks.json)已完成，對應[來源與產物證據](verification/combined-home-motion-2026-10-04T12-35Z/provenance-corrected-build-checks.json)；錯誤 Metro 快取產物 v21 不作正確來源驗收。後續新增源碼須補受影響檢查，不能沿用 v22 的通過。原始結果留各 `verification/` run；本表只記下一步，不複製流水帳。
+- **後續有界結果**：[v24 優先補驗](verification/combined-followups-2026-10-04T13-42Z/cua-v24-priority-checks.json)確認灰幕退出互動、減少動畫資料列終態及手機軸協調；其[固定來源／產物](verification/combined-followups-2026-10-04T13-42Z/coordinated-final-build-checks.json)不包含之後的 profile 位置錨點及 32px 輸入框重疊，後者仍待補驗。
+- **當批補驗（2026-10-04 15:24 UTC）**：[v26](verification/combined-source-intake-2026-10-04T14-51Z/cua-v26-checks.json) 通過私人來源共用 editor／unknown 鎖定與恢復、家庭角色彈窗及普通孩子切換無提示文字；[v27](verification/combined-source-intake-2026-10-04T14-51Z/cua-v27-initial-position-checks.json) 首個可量度聊天樣本在底部，閱讀保位／回到最新／End＋多行回歸通過。這是固定合成整合版有界結果，不代表獨立分支或正式接線全面通過。初次 Expo 環境失敗與同源碼修復建置保留在 [build-checks](verification/combined-source-intake-2026-10-04T14-51Z/initial-position-build/build-checks.json)。
+- **頂欄有界補驗（2026-10-04 16:10 UTC）**：[v28](verification/horizontal-header-2026-10-04T15-57Z/cua-v28-checks.json) 的 390／320 Home、chat、profile 頂欄均 64px、正文起點均 101px；孩子選擇、資料箭嘴、鈴鐺／側欄、快速反向及隱藏層鍵盤隔離正常；站內減少動畫首個可量度樣本已 settled。[固定來源建置](verification/horizontal-header-2026-10-04T15-57Z/build-checks.json) 通過。連續中间幀、精確曲線、系統偏好與原生未驗。使用者後續指出首頁孩子資訊塊返回時跳動，屬新待定位問題，不由此終態檢查推定不存在。
+- **首頁與聊天配色（2026-10-04 16:37 UTC）**：[v29 有界結果](verification/home-chat-visual-2026-10-04T16-18Z/cua-v29-checks.json) 確認 390／320 返回首頁孩子區按容器置中，實際聊天色值／32px 輸入框重疊符合本批來源；[建置及来源](verification/home-chat-visual-2026-10-04T16-18Z/build-checks.json) 通過。320 PageUp 停穩檢查未達預期，仍在區分焦點／工具與跟隨邏輯，不能標通過；原複合過渡及未捕捉連續幀保留。桌面 1024 截圖已存，1440 fullPage 的工具 timeout 不作畫面通過證據。
+- **320px 鍵盤關口**：[明確焦點補驗](verification/home-chat-visual-2026-10-04T16-18Z/cua-v29-native-pageup-checks-1641.json) 中，普通點擊後確認聊天 viewport 為焦點，再送一次 PageUp，首個／停穩樣本仍離底 0px；不能只歸咎 locator focus。現有工具沒有 keydown／default action 回執，未判明事件輸送、原生 default 或跟隨反制，沒有加入猜測性補丁。相關 adapter／hooks 在本批配色前後未改，不足以認定配色或首頁回歸。雲端此關口保持未通過；使用者於 2026-10-04 16:53 UTC 依提供的 320×600 手動步驟回報本機瀏覽器沒有問題。這是使用者端手動結果，不改寫雲端失敗，也不足以斷言純工具原因；保留環境差異，不加入猜測性補丁，按使用者既有收尾／推送／合併授權繼續交付。
+- **未驗**：系統媒體 reduced-motion、連續首幀／精確曲線、受控慢載／失敗網絡、文字放大及原生／讀屏／正式 API 等未被有界 Web 結果證明。手動偏好、自然暖載、Android bundle 各只代表自己的範圍。
+- **接合**：#84／#85 的 AppShell、手機首頁及部分入口按 hunk 保留兩邊意圖；文件以主線精簡結構為底，動效方法／新交接留正確位置，不恢復舊長版文件。外部文件 PR 已合併，不再當待合併阻塞。
+- **停止條件**：首次失敗先保存必要證據、查因及局部補驗；來源不明、工具限制或超出原授權依 [根驗收規則](../AGENTS.md#finish) 處理。
 
 <a id="integration-gates"></a>
 ## 正式整合及仍未完成的關口

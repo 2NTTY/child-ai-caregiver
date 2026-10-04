@@ -1,7 +1,9 @@
-import { StyleSheet, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { careKindOptions, type CareFormValues, type CareRecordsActions, type CareRecordsViewModel, type CareRevisionView } from "../../care-view-model";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
+import { MotionDisclosure, MotionReveal } from "../../motion";
 import { AppButton, SectionCard, SectionHeader } from "../ui";
 
 export function CareValueSummary({ values }: { values: CareFormValues }) {
@@ -30,23 +32,27 @@ export function CareRevisionContent({ revision, createdAtLabel }: { revision: Ca
   </View>;
 }
 
-export function CareRecordDetail({ detail, actions, canEdit, online }: {
-  detail: NonNullable<CareRecordsViewModel["detail"]>; actions: CareRecordsActions; canEdit: boolean; online: boolean;
+export function CareRecordDetail({ detail, actions, canEdit, online, active = true, revealIntent = null, revealEligible = false }: {
+  detail: NonNullable<CareRecordsViewModel["detail"]>; actions: CareRecordsActions; canEdit: boolean; online: boolean; active?: boolean; revealIntent?: string | number | null; revealEligible?: boolean;
 }) {
   const { record } = detail;
+  const headingRef = useRef<View>(null);
+  useEffect(() => {
+    if (active && Platform.OS === "web") (headingRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
+  }, [record.id, active]);
   return <SectionCard><SectionHeader title="記錄詳情" density="compact" action={<AppButton label="返回記錄" density="compact" variant="quiet" onPress={actions.closePanel} />} />
-    <View style={styles.recordHeading}><Text style={styles.title}>{record.title}</Text><Text style={styles.confirmed}>已確認</Text></View>
-    <CareRevisionContent revision={record.current} createdAtLabel={record.createdAtLabel} />
+    <View ref={headingRef} accessibilityLabel={record.title} tabIndex={-1} style={styles.recordHeading}><Text accessibilityRole="header" style={styles.title}>{record.title}</Text><Text style={styles.confirmed}>已確認</Text></View>
+    <MotionReveal value={record.current} contentKey={JSON.stringify(record.current.values)} scopeKey={`${record.childId}:${record.id}`} regionKey="record-detail-text" triggerKey={revealIntent} eligible={revealEligible && active} preset="local">{revision => <CareRevisionContent revision={revision} createdAtLabel={record.createdAtLabel} />}</MotionReveal>
     <Text style={styles.tool}>這是家庭共享記錄；更正會建立新版本並保留舊版，不會改寫原文歷史。</Text>
     <View style={styles.actions}>{canEdit ? <AppButton label="更正這筆記錄" onPress={() => actions.startCorrection(record.id)} /> : null}
       {!detail.historyOpen ? <AppButton label="查看更正歷史" variant="secondary" onPress={actions.showHistory} /> : null}</View>
     {canEdit ? <AppButton label="永久刪除此記錄及歷史" variant="quiet" disabled={!online} onPress={() => actions.startDeletion(record.id)} /> : null}
-    {detail.historyOpen ? <View style={styles.history}><Text accessibilityRole="header" style={styles.title}>更正歷史</Text>
+    <MotionDisclosure expanded={detail.historyOpen} scopeKey={`${record.childId}:${record.id}`}><View style={styles.history}><Text accessibilityRole="header" style={styles.title}>更正歷史</Text>
       {detail.history.length === 0 ? <Text style={styles.tool}>目前只有第一個已確認版本。</Text> : detail.history.map(revision => <View key={revision.version} style={styles.revision}>
         <CareRevisionContent revision={revision} />
       </View>)}
       {detail.hasMoreHistory ? <AppButton label="載入更早版本" variant="secondary" onPress={actions.loadOlderHistory} loading={detail.historyLoading} disabled={!online} /> : <Text style={styles.meta}>已到最早的已載入版本。</Text>}
-    </View> : null}
+    </View></MotionDisclosure>
   </SectionCard>;
 }
 

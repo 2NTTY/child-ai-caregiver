@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-04T16:02:47Z",
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "version": 28,
+  "result": "JavaScript execution did not receive approval",
+  "attempted_action": "Read header identity/action/body DOM rectangles and inline style/inert/aria-hidden; click visible 與 Agent 對話 link; re-read rectangles and accessibility tree",
+  "scope": "Public synthetic QA only; no real API or uploads",
+  "next": "Paused pending transcript authorization evidence from parent; no alternate browser surface attempted"
+}

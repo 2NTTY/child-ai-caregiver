@@ -1,6 +1,6 @@
 # Web 動態方向比較（暫不採用）
 
-身份：動效候選研究，標題的「暫不採用／未實作」只描述原比較時點。現行動效包及採納規範入口見 [PLAN#active](PLAN.md#active)，不從舊樣本推斷當前已採用／已驗收。
+> 歷史候選研究：「暫不採用」只代表當時。現行採納要求見 [MOTION_SYSTEM](MOTION_SYSTEM.md)，目前工作與未驗關口見 [PLAN](PLAN.md#active)。
 
 <a id="page-transitions"></a>
 ## 換頁動畫研究，尚未實作（2026-10-02）

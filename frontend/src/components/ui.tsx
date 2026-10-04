@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode, type Ref } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { AppIcon } from "./AppIcon";
@@ -7,6 +7,9 @@ import { AppDialog as Dialog } from "./AppDialog";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale, workspaceType } from "../theme";
 import type { ConnectionState, OperationState } from "../view-model";
 import { useInteractionDensity } from "./useInteractionDensity";
+import { MotionEntrance } from "../motion";
+import { MotionSelectionMarker } from "../motion/MotionSelectionMarker";
+import { HorizontalOverflowRail } from "./HorizontalOverflowRail";
 
 export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", density = "standard", disabled = false, loading = false, style, ref }: {
   label: string;
@@ -66,6 +69,7 @@ export function AppSelect<T extends string>({ label, value, options, onChange, o
   id?: string; invalid?: boolean; describedBy?: string;
 }) {
   const [visible, setVisible] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
   const anchor = useRef<View>(null);
   const selected = options.find(item => item.value === value)?.label ?? value;
   function dismiss() {
@@ -73,8 +77,9 @@ export function AppSelect<T extends string>({ label, value, options, onChange, o
     if (Platform.OS === "web") (anchor.current as unknown as HTMLElement | null)?.focus();
   }
   return <><AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} id={id} invalid={invalid} describedBy={describedBy} label={`${label}：${selected}`} disabled={disabled} onBlur={onBlur}
-    expanded={visible && !disabled} onPress={() => setVisible(true)} />
-    {visible && !disabled ? <Portal><Dialog visible onDismiss={dismiss} style={styles.selectDialog}>
+    expanded={visible && !disabled} onPress={() => { setHasOpened(true); setVisible(true); }} />
+    {/* Keep the modal stable after first use so close focus and backdrop exit can finish. */}
+    {hasOpened ? <Portal><Dialog visible={visible && !disabled} onDismiss={dismiss} style={styles.selectDialog}>
       <Dialog.Title>{label}</Dialog.Title><Dialog.ScrollArea><ScrollView style={styles.selectList} keyboardShouldPersistTaps="handled">
         {options.map(item => <RadioButton.Item key={item.value} label={item.label} value={item.value} aria-checked={item.value === value}
           accessibilityLabel={`${label}選項：${item.label}`} status={item.value === value ? "checked" : "unchecked"}
@@ -162,35 +167,50 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   const touch = useInteractionDensity();
   const controls = useRef(new Map<T, View>());
+  const [positions, setPositions] = useState<Record<string, { x: number; width: number }>>({});
+  const [revealRevision, setRevealRevision] = useState(0);
+  const selection = positions[value];
+  function select(key: T) {
+    setRevealRevision(revision => revision + 1);
+    onChange(key);
+  }
   function move(event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }, index: number) {
     const key = event.nativeEvent?.key ?? event.key;
     const next = key === "ArrowLeft" ? (index + items.length - 1) % items.length
       : key === "ArrowRight" ? (index + 1) % items.length : key === "Home" ? 0 : key === "End" ? items.length - 1 : null;
     if (next === null || !items[next]) return;
     event.preventDefault();
-    onChange(items[next].key);
-    (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus();
+    select(items[next].key);
+    (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true });
   }
-  return <ScrollView horizontal tabIndex={-1} showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
+  return <HorizontalOverflowRail tabIndex={-1} style={styles.tabsScroll} rowTestID={`${id}-rail`} hintTestID={`${id}-scroll-hint`}
+    items={items.flatMap(item => positions[item.key] ? [{ key: item.key, ...positions[item.key] }] : [])}
+    revealTarget={selection ? { key: value, ...selection } : undefined} revealRevision={revealRevision} hintLabel={`查看更多${label ?? "分頁"}`}
+    onRevealItem={key => { if (Platform.OS === "web") (controls.current.get(key as T) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true }); }}>
     <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs}>
     {items.map((item, index) => <Pressable
-      key={item.key} nativeID={tabId(id, item.key)} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
+      key={item.key} nativeID={tabId(id, item.key)} onLayout={event => { const { x, width } = event.nativeEvent.layout; setPositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
       accessibilityRole="tab" accessibilityLabel={item.label} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
-      accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => onChange(item.key)}
+      accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => select(item.key)}
       {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
-      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, value === item.key && styles.tabActive, pressed && styles.linkPressed]}
+      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.linkPressed]}
     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
+    <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} />
     </View>
-  </ScrollView>;
+  </HorizontalOverflowRail>;
 }
 
 export function AppTabPanel({ tabsId, tabKey, active, children, style, ...props }: ViewProps & {
   tabsId: string; tabKey: string; active: boolean; children: ReactNode;
 }) {
-  return <View {...props} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" ? "tabpanel" : undefined}
+  const panel = useRef<View>(null);
+  useLayoutEffect(() => {
+    if (Platform.OS === "web" && panel.current) (panel.current as unknown as HTMLElement).inert = !active;
+  }, [active]);
+  return <MotionEntrance {...props} ref={panel} preset="panel" triggerKey={active ? `${tabsId}:${tabKey}:active` : null} scopeKey={tabsId} enabled={active} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" ? "tabpanel" : undefined}
     aria-labelledby={tabId(tabsId, tabKey)} aria-hidden={!active} accessibilityElementsHidden={!active}
-    importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={active ? 0 : -1}
-    style={[style, !active && styles.hiddenPanel]}>{children}</View>;
+    importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={active ? 0 : -1} pointerEvents={active ? "auto" : "none"}
+    style={[style, !active && styles.hiddenPanel]}>{children}</MotionEntrance>;
 }
 
 const styles = StyleSheet.create({

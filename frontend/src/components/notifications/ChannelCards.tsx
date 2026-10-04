@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm, type UseFormReturn } from "react-hook-form";
@@ -17,6 +17,9 @@ import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 
+import { MotionFeedback } from "../../motion";
+
+export type ConfirmedChannelOperation = { reference: string } | null;
 type SharedModel = PushSettingsModel | TelegramSettingsModel;
 type SharedActions = PushSettingsActions | TelegramSettingsActions;
 type Tone = "neutral" | "warning" | "error";
@@ -144,7 +147,24 @@ function BrowserEnableForm({ form, disabled, stageEnable }: { form: UseFormRetur
   </View>;
 }
 
-export function WebPushSettingsCard({ model, actions, operationNotice }: { model: PushSettingsModel; actions: PushSettingsActions; operationNotice?: ReactNode }) {
+export function WebPushSettingsCard({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation }: { model: PushSettingsModel; actions: PushSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation }) {
+  const stagedBinding = useRef<string | null>(null);
+  const [bindingIntent, setBindingIntent] = useState<{ kind: "enable" | "revoke"; id: string | null; baseVersion: number } | null>(null);
+  const actions: PushSettingsActions = {
+    ...sourceActions,
+    stageEnable(label) { stagedBinding.current = model.currentBindingId; setBindingIntent(null); sourceActions.stageEnable(label); },
+    stageRevoke(id) { stagedBinding.current = id; setBindingIntent(null); sourceActions.stageRevoke(id); },
+    stageTest(id) { setBindingIntent(null); sourceActions.stageTest(id); },
+    refresh() { setBindingIntent(null); sourceActions.refresh(); },
+    cancel() { setBindingIntent(null); sourceActions.cancel(); },
+    useLatest() { setBindingIntent(null); sourceActions.useLatest(); },
+    submit() {
+      const review = model.review;
+      if (review?.confirmed && (review.kind === "enable" || review.kind === "revoke")) setBindingIntent({ kind: review.kind, id: stagedBinding.current, baseVersion: review.expectedVersion ?? 0 });
+      else setBindingIntent(null);
+      sourceActions.submit();
+    },
+  };
   const form = useForm<BrowserLabelValues>({ defaultValues: { label: "我的瀏覽器" }, resolver: zodResolver(browserLabelSchema), mode: "onSubmit", shouldFocusError: false });
   const ready = model.readState === "ready";
   const actionBlocked = !model.online || model.locked || !!model.review || model.conflict;
@@ -171,12 +191,16 @@ export function WebPushSettingsCard({ model, actions, operationNotice }: { model
         <Text accessibilityRole="header" style={styles.title}>本人瀏覽器訂閱</Text>
         {model.bindings.length === 0 ? <Text style={styles.meta}>目前沒有本人瀏覽器訂閱。</Text> : model.bindings.map(binding => {
           const deliveryNeedsReview = pushDeliveryNeedsReview(model.deliveries, binding.id);
+          const confirmed = !!confirmedOperation && !!bindingIntent && model.online && ready && !model.locked && !model.review && !model.conflict
+            && binding.version > bindingIntent.baseVersion && (bindingIntent.kind === "enable" ? binding.id === model.currentBindingId && binding.status === "active" : binding.id === bindingIntent.id && binding.status === "revoked");
           return <View key={binding.id} style={styles.entry}>
+            <MotionFeedback active={confirmed} triggerKey={confirmed ? confirmedOperation?.reference ?? null : null} scopeKey={`${scopeKey}:${binding.id}`} testID="push-binding-feedback" animateOnMount={confirmed && bindingIntent?.kind === "enable" && stagedBinding.current === null} style={styles.bindingMetadata}>
             <View style={styles.top}><Text style={styles.title}>{binding.label}</Text>
               <Text style={styles.badge}>{binding.status === "active" ? "有效" : binding.status === "revoked" ? "已撤銷" : "已過期"}</Text>
               {model.currentBindingId === binding.id ? <Text style={[styles.badge, styles.currentBadge]}>目前瀏覽器</Text> : null}</View>
             <Text style={styles.meta}>提供者：{binding.providerLabel} · 版本 {binding.version}</Text>
             <Text style={styles.meta}>到期：{binding.expiresAt ? `${channelTime(binding.expiresAt)}（香港時間）` : "未提供到期時間"}</Text>
+            </MotionFeedback>
             {binding.status === "active" ? <>
               <View style={styles.actions}>
                 <AppButton label="撤銷此訂閱" variant="secondary" disabled={actionBlocked} onPress={() => actions.stageRevoke(binding.id)} />
@@ -195,11 +219,30 @@ export function WebPushSettingsCard({ model, actions, operationNotice }: { model
   </SectionCard>;
 }
 
-export function TelegramSettingsCard({ model, actions, operationNotice }: { model: TelegramSettingsModel; actions: TelegramSettingsActions; operationNotice?: ReactNode }) {
+export function TelegramSettingsCard({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation }: { model: TelegramSettingsModel; actions: TelegramSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation }) {
+  const [bindingIntent, setBindingIntent] = useState<{ kind: "confirm" | "revoke"; id: string | null; baseVersion: number } | null>(null);
+  const actions: TelegramSettingsActions = {
+    ...sourceActions,
+    stageBegin() { setBindingIntent(null); sourceActions.stageBegin(); },
+    stageConfirm() { setBindingIntent(null); sourceActions.stageConfirm(); },
+    stageRevoke() { setBindingIntent(null); sourceActions.stageRevoke(); },
+    stageTest() { setBindingIntent(null); sourceActions.stageTest(); },
+    refresh() { setBindingIntent(null); sourceActions.refresh(); },
+    cancel() { setBindingIntent(null); sourceActions.cancel(); },
+    useLatest() { setBindingIntent(null); sourceActions.useLatest(); },
+    submit() {
+      const review = model.review;
+      if (review?.confirmed && (review.kind === "confirm" || review.kind === "revoke")) setBindingIntent({ kind: review.kind, id: model.binding?.id ?? null, baseVersion: model.binding?.version ?? 0 });
+      else setBindingIntent(null);
+      sourceActions.submit();
+    },
+  };
   const ready = model.readState === "ready";
   const actionBlocked = !model.online || model.locked || !!model.review || model.conflict;
   const challengeExpired = !!model.challenge && Date.parse(model.challenge.expiresAt) <= Date.now();
   const existingBinding = model.binding !== null && model.binding.status !== "revoked";
+  const confirmed = !!confirmedOperation && !!bindingIntent && !!model.binding && model.online && ready && !model.locked && !model.review && !model.conflict
+    && model.binding.version > bindingIntent.baseVersion && (bindingIntent.kind === "confirm" ? model.binding.status === "active" : model.binding.id === bindingIntent.id && model.binding.status === "revoked");
   const canBegin = !actionBlocked && telegramBeginAllowed(model);
   const canConfirm = !actionBlocked && model.configured && !existingBinding && model.challenge?.state === "seen" && model.challenge.candidate !== null && !challengeExpired;
   const testBlocked = model.binding !== null && blocksAnotherTelegramTest(model.deliveries, model.binding.id);
@@ -215,10 +258,12 @@ export function TelegramSettingsCard({ model, actions, operationNotice }: { mode
       {operationNotice}
       {!model.configured ? <StateNote tone="warning">Telegram 渠道目前未設定或未可用，不能開始、確認新綁定或發送測試；你仍可撤銷既有本人綁定。</StateNote> : null}
       {model.binding ? <View style={styles.entry}>
+        <MotionFeedback active={confirmed} triggerKey={confirmed ? confirmedOperation?.reference ?? null : null} scopeKey={`${scopeKey}:${model.binding.id}`} testID="telegram-binding-feedback" animateOnMount={confirmed && bindingIntent?.kind === "confirm" && bindingIntent.id === null} style={styles.bindingMetadata}>
         <View style={styles.top}><Text style={styles.title}>{model.binding.label}</Text>
           <Text style={[styles.badge, model.binding.status === "blocked" && styles.errorBadge]}>{model.binding.status === "active" ? "有效綁定" : model.binding.status === "revoked" ? "已撤銷" : "渠道已封鎖"}</Text></View>
         <Text style={styles.body}>本人接收者：{model.binding.label}</Text>
         <Text style={styles.meta}>帳號提示：{model.binding.chatIdHint} · 版本 {model.binding.version}</Text>
+        </MotionFeedback>
         {model.binding.status === "blocked" ? <Text style={styles.warning}>這項綁定已封鎖，不能發送測試；須先撤銷，才可重新開始私人綁定。</Text> : null}
         {model.binding.status !== "revoked" ? <View style={styles.actions}>
           <AppButton label="撤銷 Telegram 綁定" variant="secondary" disabled={actionBlocked} onPress={actions.stageRevoke} />
@@ -253,6 +298,7 @@ export function TelegramSettingsCard({ model, actions, operationNotice }: { mode
 }
 
 const styles = StyleSheet.create({
+  bindingMetadata: { gap: spacing.sm },
   card: { minWidth: 0 },
   stack: { gap: spacing.md, minWidth: 0 },
   entry: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm, minWidth: 0 },

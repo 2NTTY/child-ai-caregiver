@@ -4,6 +4,10 @@
 
 ## 共通接線邊界
 
+正式接線採「一處接線，多處呈現」：同一本人／孩子／Server scope 的資料由一個 controller adapter 掌管讀取、保存、原操作及刷新；各頁只接相同投影與回調，不各自再接一套 API／保存邏輯。交接須列出唯一 owner 掛載點與所有 consumer，並驗 A 修改後 B 反映、B 修改後 A 反映；unknown／已確認但讀回失敗由 owner 管理，不以重送當刷新。不同私人／家庭權限不可因共用而合併。既有各頁 fixture 尚未正式同步，不把這項要求宣稱為已完成。
+
+各頁版型按功能焦點安排，與共用元件分開；規範只在 [DESIGN_SYSTEM](DESIGN_SYSTEM.md#function-specific-layouts) 保存，不在交接另寫一套視覺規則。
+
 `*-view-model.ts` 及回調是呈現投影，`src/preview/` fixture／use*Preview／usePreviewOperation 不是正式 transport。各頁合成寫入彼此獨立；正式畫面須由同一授權 controller 投影，不把 fixture 拼成資料庫。業務權限、版本、原 opId／unknown 由 [正式 API](../docs/API.md) 及既有 shared 型別掌管，按 [P2 UI 清單](../docs/P2_UI_HANDOFF.md) 只讀相關部分。
 
 以下只摘要必要安全邊界：身份／孩子／Server 及 generation 隔離，保留正確作用域的原操作與草稿；已確認但讀回失敗只重讀、不重送；候選確認、通知 accepted、本人 ack 及照護完成分開。具體例外及方法在各專項，不在總交接重寫一份契約。
@@ -88,6 +92,13 @@
 ## 預覽入口（舊連結相容）
 
 安裝／預覽命令統一移至 [WORKFLOW#preview](WORKFLOW.md#preview)，檢查方法在 Web Skill；本節不再保存另一份命令或舊測試結果。
+
+<a id="semantic-motion"></a>
+## 語意動效接點
+
+正式外殼保留 `MotionProvider`／共用 `src/motion` tokens 與偏好；畫面只提供 stable id、scope、contentKey 及一次性操作 intent。範圍變更清私人呈現及失效回呼，草稿／業務控制器不交給動畫保存。Web Modal 關閉立即釋放原焦點及互動，只允許不可互動的裝飾灰幕短暫退出；native／相機 owner 卸載的限制照實保留。
+
+成熟 Paper／RN Modal 與自訂 portal 的焦點生命週期分開；減少動畫及清理優先於視覺。方法讀 [動效接合](.agents/skills/web-screen-delivery/references/motion-implementation.md)，採納要求讀 [MOTION_SYSTEM](MOTION_SYSTEM.md)。當前結果／下一步只看 [PLAN](PLAN.md#active)；歷史詳細交接可追 [固定 fa696d6](https://github.com/2NTTY/child-ai-caregiver/blob/fa696d60ef390383ddf049b4dfba54bd2069e81a/frontend/HANDOFF.md#semantic-motion)。
 
 <a id="history"></a>
 ## 歷史與舊錨點

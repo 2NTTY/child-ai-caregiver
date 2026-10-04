@@ -1,0 +1,507 @@
+[
+  {
+    "cache_path": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/be/e1aa23d161cfa34f406184e63a4ab8c104cf98d2b407e796dda87075e3dfc129178f2b.mp",
+    "dependencies": [
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/_layout.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 3,
+                "column": 66,
+                "index": 178
+              },
+              "end": {
+                "line": 3,
+                "column": 158,
+                "index": 270
+              }
+            }
+          ],
+          "key": "eDuzVwhzwxOdEsCnBjyWSU6oXas=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/care.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 4,
+                "column": 63,
+                "index": 340
+              },
+              "end": {
+                "line": 4,
+                "column": 152,
+                "index": 429
+              }
+            }
+          ],
+          "key": "XYPRdQK5usKspBitykaJx3odd9A=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/chat.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 5,
+                "column": 63,
+                "index": 499
+              },
+              "end": {
+                "line": 5,
+                "column": 152,
+                "index": 588
+              }
+            }
+          ],
+          "key": "KntJzYnxHGyedE5qMQQ0KTBFN7M=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/contact.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 6,
+                "column": 66,
+                "index": 661
+              },
+              "end": {
+                "line": 6,
+                "column": 158,
+                "index": 753
+              }
+            }
+          ],
+          "key": "v1N2WTLE7u93h/DvPDwxERDKGbs=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/family.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 7,
+                "column": 65,
+                "index": 825
+              },
+              "end": {
+                "line": 7,
+                "column": 156,
+                "index": 916
+              }
+            }
+          ],
+          "key": "vseEES5RGnBiSo/Vz5ktXT2q9I4=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/growth.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 8,
+                "column": 65,
+                "index": 988
+              },
+              "end": {
+                "line": 8,
+                "column": 156,
+                "index": 1079
+              }
+            }
+          ],
+          "key": "Fr9B0t0aIVfNRfE31ZzBsT5S54E=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/guide.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 9,
+                "column": 64,
+                "index": 1150
+              },
+              "end": {
+                "line": 9,
+                "column": 154,
+                "index": 1240
+              }
+            }
+          ],
+          "key": "FBwaKpsHZ9LPUpik1pSGR+/8T6E=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/index.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 10,
+                "column": 64,
+                "index": 1311
+              },
+              "end": {
+                "line": 10,
+                "column": 154,
+                "index": 1401
+              }
+            }
+          ],
+          "key": "8PsxcLjP/tNfb3SvScoKWHuFD+4=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/memory.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 11,
+                "column": 65,
+                "index": 1473
+              },
+              "end": {
+                "line": 11,
+                "column": 156,
+                "index": 1564
+              }
+            }
+          ],
+          "key": "xiMyW3QFMouqPUbImY1NysQwPRk=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/more.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 12,
+                "column": 63,
+                "index": 1634
+              },
+              "end": {
+                "line": 12,
+                "column": 152,
+                "index": 1723
+              }
+            }
+          ],
+          "key": "/TcvOXF/2qt31paZl9uxDhCBrt4=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/motion-preview.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 13,
+                "column": 73,
+                "index": 1803
+              },
+              "end": {
+                "line": 13,
+                "column": 172,
+                "index": 1902
+              }
+            }
+          ],
+          "key": "xYy8mALKxDaS9xx79JIKcpyGoHo=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/photos.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 14,
+                "column": 65,
+                "index": 1974
+              },
+              "end": {
+                "line": 14,
+                "column": 156,
+                "index": 2065
+              }
+            }
+          ],
+          "key": "6ND+Q1+xV1dFdIZwlo5rC+MDfyg=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/profile.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 15,
+                "column": 66,
+                "index": 2138
+              },
+              "end": {
+                "line": 15,
+                "column": 158,
+                "index": 2230
+              }
+            }
+          ],
+          "key": "K66qv9HcMsRGuaSTmPDFMIMTTvo=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/settings.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 16,
+                "column": 67,
+                "index": 2304
+              },
+              "end": {
+                "line": 16,
+                "column": 160,
+                "index": 2397
+              }
+            }
+          ],
+          "key": "KB66bwGtCLO1JbrEHFlDc+UrIWc=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/sources.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 17,
+                "column": 66,
+                "index": 2470
+              },
+              "end": {
+                "line": 17,
+                "column": 158,
+                "index": 2562
+              }
+            }
+          ],
+          "key": "QIEa85DzAaqVWmX4J5Voqby27OM=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/summary.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 18,
+                "column": 66,
+                "index": 2635
+              },
+              "end": {
+                "line": 18,
+                "column": 158,
+                "index": 2727
+              }
+            }
+          ],
+          "key": "OpeB8hi30QmUdWzomDSbSjjPsuw=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/tasks.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 19,
+                "column": 64,
+                "index": 2798
+              },
+              "end": {
+                "line": 19,
+                "column": 154,
+                "index": 2888
+              }
+            }
+          ],
+          "key": "L0bsDSGyJ/1hJN6lG2PobIJ2AAU=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/_layout.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 20,
+                "column": 54,
+                "index": 2949
+              },
+              "end": {
+                "line": 20,
+                "column": 134,
+                "index": 3029
+              }
+            }
+          ],
+          "key": "eTM0KDtPSGUcAiYLvad9Peu9BGQ=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      },
+      {
+        "name": "/workspace/shared/caregiver_combined_preview/frontend/app/login.tsx",
+        "data": {
+          "asyncType": null,
+          "isESMImport": false,
+          "locs": [
+            {
+              "start": {
+                "line": 21,
+                "column": 52,
+                "index": 3088
+              },
+              "end": {
+                "line": 21,
+                "column": 130,
+                "index": 3166
+              }
+            }
+          ],
+          "key": "tQKcvlmwXqcN4v2pDneVEO8Rx7g=",
+          "exportNames": [
+            "*"
+          ],
+          "imports": 1
+        }
+      }
+    ],
+    "output": [
+      {
+        "type": "js/module",
+        "code": "__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {\n  // All of the requested modules are loaded behind enumerable getters.\n  var map = Object.defineProperties({}, {\n    \"./(dashboard)/_layout.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[0]);\n      }\n    },\n    \"./(dashboard)/care.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[1]);\n      }\n    },\n    \"./(dashboard)/chat.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[2]);\n      }\n    },\n    \"./(dashboard)/contact.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[3]);\n      }\n    },\n    \"./(dashboard)/family.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[4]);\n      }\n    },\n    \"./(dashboard)/growth.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[5]);\n      }\n    },\n    \"./(dashboard)/guide.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[6]);\n      }\n    },\n    \"./(dashboard)/index.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[7]);\n      }\n    },\n    \"./(dashboard)/memory.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[8]);\n      }\n    },\n    \"./(dashboard)/more.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[9]);\n      }\n    },\n    \"./(dashboard)/motion-preview.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[10]);\n      }\n    },\n    \"./(dashboard)/photos.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[11]);\n      }\n    },\n    \"./(dashboard)/profile.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[12]);\n      }\n    },\n    \"./(dashboard)/settings.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[13]);\n      }\n    },\n    \"./(dashboard)/sources.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[14]);\n      }\n    },\n    \"./(dashboard)/summary.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[15]);\n      }\n    },\n    \"./(dashboard)/tasks.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[16]);\n      }\n    },\n    \"./_layout.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[17]);\n      }\n    },\n    \"./login.tsx\": {\n      enumerable: true,\n      get() {\n        return require(_dependencyMap[18]);\n      }\n    }\n  });\n  function metroContext(request) {\n    return map[request];\n  }\n\n  // Return the keys that can be resolved.\n  metroContext.keys = function metroContextKeys() {\n    return Object.keys(map);\n  };\n\n  // Return the module identifier for a user request.\n  metroContext.resolve = function metroContextResolve(request) {\n    throw new Error('Unimplemented Metro module context functionality');\n  };\n  module.exports = metroContext;\n});"
+      }
+    ]
+  }
+]

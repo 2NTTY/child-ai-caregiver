@@ -1,6 +1,7 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { brand } from "../../branding";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { StyleSheet, View } from "react-native";
@@ -13,6 +14,7 @@ import { ReadStateNotice } from "../ReadStateNotice";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { personalLimits, type ModelMode, type ModelSettings, type ModelSettingsActions, type ModelSettingsUsage, type ModelSettingsViewModel } from "../../model-settings-view-model";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
+import { MotionFeedback, MotionReveal } from "../../motion";
 import { modelCommandFromDraft, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, type ModelSettingsDraft } from "./model-settings-form";
 
 const empty: ModelSettings = { version: 0, mode: "disabled", provider: "gemini", model: "gemini-3.1-flash-lite", keyConfigured: false,
@@ -30,12 +32,32 @@ function UsageCard({ label, usage }: { label: string; usage: ModelSettingsUsage 
   </SectionCard>;
 }
 
-export function ModelSettingsView({ model, actions, active = true }: { model: ModelSettingsViewModel; actions: ModelSettingsActions; active?: boolean }) {
-  const [width, setWidth] = useState(0);
+export function ModelSettingsView({ model, actions: sourceActions, active = true }: { model: ModelSettingsViewModel; actions: ModelSettingsActions; active?: boolean }) {
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const formId = useId();
   const snapshot = model.snapshot, settings = snapshot?.settings ?? empty;
+  const motionSerial = useRef(0);
+  const [readIntent, setReadIntent] = useState<{ serial: number; scopeKey: string } | null>(null);
+  const [saveIntent, setSaveIntent] = useState<{ serial: number; scopeKey: string; baseVersion: number } | null>(null);
+  const metadata = { version: settings.version, mode: settings.mode };
+  const readEligible = active && model.online && model.authorized && !!snapshot && !model.busy && !model.needsRead && model.operation !== "unknown" && model.operation !== "failed";
+  const readTrigger = readIntent && readIntent.scopeKey === model.scopeKey && active && model.online && model.authorized && (model.busy === "read" || readEligible) ? readIntent.serial : null;
+  const saved = active && model.online && model.authorized && !model.busy && !model.needsRead && model.operation === "saved"
+    && saveIntent !== null && saveIntent.scopeKey === model.scopeKey && settings.version > saveIntent.baseVersion;
+  const actions: ModelSettingsActions = {
+    ...sourceActions,
+    refresh() {
+      setSaveIntent(null); setReadIntent({ serial: ++motionSerial.current, scopeKey: model.scopeKey });
+      sourceActions.refresh();
+    },
+    save(command) {
+      setReadIntent(null); setSaveIntent({ serial: ++motionSerial.current, scopeKey: model.scopeKey, baseVersion: settings.version });
+      sourceActions.save(command);
+    },
+  };
   const { control, reset, setValue, setFocus, watch, handleSubmit, formState: { errors, isDirty } } = useForm<ModelSettingsDraft>({
     resolver: zodResolver(modelSettingsSchema(settings.keyConfigured)), defaultValues: modelSettingsDraft(settings), mode: "onChange", shouldFocusError: false,
   });
@@ -74,7 +96,7 @@ export function ModelSettingsView({ model, actions, active = true }: { model: Mo
   const statusMessage = model.notice || (model.busy === "read" ? "正在讀取模型設定…" : model.busy === "check" ? "正在讀取已保存密鑰的模型資料…"
     : model.busy === "save" ? "正在保存模型設定…" : !model.authorized ? "本人身份或權限已改變，請重新登入。"
       : !model.online ? "目前離線，密鑰輸入已清除；恢復連線後先重讀設定。" : snapshot ? "模型設定已讀取；密鑰不會讀回。" : "");
-  return <View testID="model-settings-view" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={styles.root}>
+  return <View testID="model-settings-view" ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.root}>
     <StatusAnnouncement eventKey={String(model.online)} message={active ? model.online ? "已恢復連線，請先重新讀取模型設定及版本。" : "目前離線，密鑰輸入已清除；恢復連線後先重讀設定。" : ""} />
     <StatusAnnouncement eventKey={String(model.authorized)} message={active && !model.authorized ? "本人身份或權限已改變，輸入及模型資料已清除。請重新登入。" : ""} urgent={!model.authorized} />
     <StatusAnnouncement eventKey={`${model.busy ?? "none"}:${model.operation}:${model.notice}:${model.keyCheck?.status ?? "none"}`}
@@ -91,7 +113,10 @@ export function ModelSettingsView({ model, actions, active = true }: { model: Mo
     </SectionCard>
     {snapshot && model.authorized ? <View style={[styles.columns, narrow && styles.stacked]}>
       <View style={[styles.column, narrow && styles.fullColumn]}>
-        <SectionCard><SectionHeader density="compact" title="使用方式" subtitle={`最後讀到的版本：${settings.version} · ${modeLabels[settings.mode]}`} />
+        <SectionCard><MotionFeedback active={saved} triggerKey={saved ? saveIntent?.serial ?? null : null} scopeKey={model.scopeKey} testID="model-settings-feedback">
+          <MotionReveal value={metadata} contentKey={JSON.stringify([metadata.version, metadata.mode])} scopeKey={model.scopeKey} regionKey="model-settings-metadata" triggerKey={readTrigger} eligible={readEligible}>
+            {shown => <SectionHeader density="compact" title="使用方式" subtitle={`最後讀到的版本：${shown.version} · ${modeLabels[shown.mode]}`} />}
+          </MotionReveal></MotionFeedback>
           <FormErrorSummary entries={errorEntries} onFocus={name => {
             const target = visibleFields.find(item => item.name === name);
             if (target) setFocus(target.name);

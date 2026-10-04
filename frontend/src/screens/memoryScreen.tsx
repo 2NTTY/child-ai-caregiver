@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../components/useContainerWidth";
 import { brand } from "../branding";
 import { useId, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -21,7 +22,8 @@ function MemoryWorkspace({ childId, role, sourceChanged, expired, online, loadin
   childId: string; role: MemoryRole; sourceChanged: boolean; expired: boolean; online: boolean; loading: boolean; tab: Tab; tabsId: string;
 }) {
   const preview = useMemoryPreview(childId, role, sourceChanged, expired);
-  const [contentWidth, setContentWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const contentWidth = containerLayout.width;
   const stacked = contentWidth < 760;
   const disabled = !online || loading || preview.blocked;
   const empty = tab === "facts" ? preview.factsPage.items.length === 0 && !preview.factsPage.nextAfterId
@@ -29,7 +31,7 @@ function MemoryWorkspace({ childId, role, sourceChanged, expired, online, loadin
   const readState = loading ? "loading" : !online ? "stale" : empty ? "empty" : "ready";
   const emptyMessage = tab === "facts" ? "目前沒有可見事實。新增內容會先建立私人候選。"
     : tab === "topics" ? "目前沒有可見話題。" : "目前沒有有效摘要。記憶改動後，舊摘要會失效；本頁沒有公開摘要生成或寫入操作。";
-  return <View style={styles.workspace} onLayout={event => setContentWidth(event.nativeEvent.layout.width)}>
+  return <View style={styles.workspace} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
     <ReadStateNotice state={readState} title={loading ? "正在重新讀取" : !online ? "目前離線" : empty ? "目前沒有資料" : undefined}
       message={loading ? "正在模擬重新讀取這位孩子的記憶；暫不展示舊資料或接受寫入。"
         : !online ? `目前離線；當前草稿保留。恢復連線後由你重新核對，系統不會自動提交。${empty ? ` ${emptyMessage}` : ""}` : empty ? emptyMessage : ""} />
@@ -37,12 +39,12 @@ function MemoryWorkspace({ childId, role, sourceChanged, expired, online, loadin
     <AppTabPanel tabsId={tabsId} tabKey="summary" active={!loading && tab === "summary"}><MemorySummaryCard summary={preview.data.summary} /></AppTabPanel>
     <View style={[styles.columns, stacked && styles.stack, (loading || tab === "summary") && styles.hidden]}>
       <View style={[styles.listColumn, stacked && styles.stackedColumn]}>
-        <AppTabPanel tabsId={tabsId} tabKey="facts" active={tab === "facts"}><MemoryFactList preview={preview} role={role} disabled={disabled} /></AppTabPanel>
-        <AppTabPanel tabsId={tabsId} tabKey="topics" active={tab === "topics"}><MemoryTopicList preview={preview} role={role} disabled={disabled} /></AppTabPanel>
+        <AppTabPanel tabsId={tabsId} tabKey="facts" active={tab === "facts"}><MemoryFactList preview={preview} role={role} disabled={disabled} scopeKey={`${childId}:${role}`} motionActive={!loading && tab === "facts"} /></AppTabPanel>
+        <AppTabPanel tabsId={tabsId} tabKey="topics" active={tab === "topics"}><MemoryTopicList preview={preview} role={role} disabled={disabled} scopeKey={`${childId}:${role}`} motionActive={!loading && tab === "topics"} /></AppTabPanel>
       </View>
       <View style={[styles.editorColumn, stacked && styles.stackedColumn]}><MemoryEditorPanel preview={preview} role={role} online={online && !loading} /></View>
     </View>
-    {!loading ? <MemoryHistoryCard preview={preview} /> : null}
+    {!loading ? <MemoryHistoryCard preview={preview} scopeKey={`${childId}:${role}`} /> : null}
   </View>;
 }
 

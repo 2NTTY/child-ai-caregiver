@@ -1,0 +1,20 @@
+[
+  "scripts/source-intake.test.mts",
+  "src/components/AppShell.tsx",
+  "src/components/HorizontalOverflowRail.tsx",
+  "src/components/chat/AnswerSources.tsx",
+  "src/components/chat/ChatTimeline.tsx",
+  "src/components/chat/useChatScrollIntent.web.ts",
+  "src/components/shared-inputs/SourceComposer.tsx",
+  "src/components/shared-inputs/SourceDetails.tsx",
+  "src/components/shared-inputs/SourceIntakeConversation.tsx",
+  "src/components/shared-inputs/SourceIntakeEditor.tsx",
+  "src/components/shared-inputs/SourcesView.tsx",
+  "src/components/ui.tsx",
+  "src/motion/MotionScopeBoundary.tsx",
+  "src/preview/useSourcesPreview.ts",
+  "src/screens/SourcesScreen.tsx",
+  "src/screens/settingsScreen.tsx",
+  "src/shared-input-view-model.ts",
+  "src/source-intake.ts"
+]

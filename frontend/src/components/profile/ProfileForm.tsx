@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useId, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
@@ -25,7 +26,8 @@ export function ProfileForm({ initialValues, editable, canReview, draftOnly, onE
     ...(ageKind === "birth_date" ? [{ field: "birthDate" as const, label: "出生日期" }] : ageKind === "approximate" ? [{ field: "ageRaw" as const, label: "約數年齡原值" }, { field: "ageUnit" as const, label: "約數年齡單位" }, { field: "ageAsOf" as const, label: "約數年齡截至日期" }] : []),
     { field: "dueDate", label: "預產期" }, { field: "gestationalWeeksRaw", label: "出生孕週原文" }, { field: "region", label: "地區" }, { field: "language", label: "語言" }, { field: "allergies", label: "過敏資料" }, { field: "specialNeeds", label: "特別需要" }, { field: "preferences", label: "照顧偏好" }, { field: "source", label: "資料來源" }, { field: "validUntil", label: "資料有效至" }, { field: "reason", label: "確認或更正原因" }];
   const errorEntries = visibleFields.flatMap(item => errors[item.field]?.message ? [{ ...item, message: String(errors[item.field]?.message) }] : []);
-  const [width, setWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
   const paired = width >= 560;
   const field = (name: Exclude<keyof ProfileFormValues, "ageKind" | "ageUnit">, label: string, multiline = false, placeholder?: string) =>
     <Controller key={name} control={control} name={name} render={({ field: input, fieldState }) => <View style={styles.field}>
@@ -38,7 +40,7 @@ export function ProfileForm({ initialValues, editable, canReview, draftOnly, onE
   const pair = (first: ReactNode, second: ReactNode) => <View style={[styles.pair, paired && styles.pairWide]}>
     <View style={styles.pairItem}>{first}</View><View style={styles.pairItem}>{second}</View>
   </View>;
-  return <View style={styles.form} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+  return <View style={styles.form} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
     <FormErrorSummary entries={errorEntries} onFocus={name => setFocus(name as keyof ProfileFormValues)} />
     <Controller control={control} name="ageKind" render={({ field: input }) => <AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("ageKind")} label="年齡資料" value={input.value} options={profileAgeOptions}
       disabled={!editable} onChange={value => { onEdit(); input.onChange(value); }} />} />

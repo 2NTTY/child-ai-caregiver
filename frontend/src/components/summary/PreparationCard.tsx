@@ -1,6 +1,6 @@
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import {useEffect, useRef, useState} from 'react';
-import {View} from 'react-native';
+import {Platform, View} from 'react-native';
 import {HelperText, Text} from 'react-native-paper';
 import {Controller, useFieldArray, useForm, useWatch, useFormState } from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
@@ -9,31 +9,95 @@ import {summaryBasis, summaryBasisChanged, summaryPeriodLabel, summaryTime} from
 import {AppCheckbox} from '../AppCheckbox';
 import {AppButton, AppSelect, AppTextField, SectionCard, SectionHeader} from '../ui';
 import {preparationDefaults, preparationFormSchema, preparationProjection, type PreparationFormValues} from './summary-form';
+import {MotionFeedback, MotionList} from '../../motion';
 import {summaryStyles as s} from './summary-styles';
 
-export function PreparationCard({model, actions}: {model: SummaryViewModel; actions: SummaryActions}) {
-  const page = model.page!;
-  const basis = useRef(summaryBasis(page));
-  const [shared, setShared] = useState(false), [basisConsent, setBasisConsent] = useState(false);
-  const {control, handleSubmit, setValue} = useForm<PreparationFormValues>({defaultValues: preparationDefaults(page), resolver: zodResolver(preparationFormSchema), mode: 'onBlur'});
-  const { isDirty } = useFormState({ control });
-  usePreviewLeaveGuard(isDirty);
-  const questions = useFieldArray({control, name: 'questions'}), checklist = useFieldArray({control, name: 'checklist'});
-  const values = useWatch({control}), parsed = preparationFormSchema.safeParse(values);
-  const stale = summaryBasisChanged(basis.current, page);
-  const editable = model.online && !model.busy && !model.readFailed && !model.pending && model.access === 'editable' && page.canManage;
-  const appointmentValid = !values.appointmentTaskId || page.appointments.some(task => task.id === values.appointmentTaskId);
-  useEffect(() => {setShared(false); setBasisConsent(false);}, [model.confirmationEpoch]);
-  function edit(reviewChange = false) {actions.markDirty(); setShared(false); setBasisConsent(false); if (!reviewChange) setValue('reviewed', false, {shouldDirty: true});}
-  function field(name: `questions.${number}.text` | `checklist.${number}.text`, label: string) {return <Controller name={name} control={control} render={({field: input, fieldState}) => <View>
-    <AppTextField ref={input.ref} label={label} accessibilityLabel={label} value={input.value} multiline disabled={!editable} error={!!fieldState.error} onBlur={input.onBlur} onChangeText={value => {input.onChange(value); edit();}} />
-    {fieldState.error ? <HelperText type="error">{fieldState.error.message}</HelperText> : null}</View>} />;}
-  const appointmentOptions = [{value: '', label: '沒有指定預約'}, ...page.appointments.map(task => ({value: task.id, label: `${task.title} · ${summaryTime(task.occurrence.dueAt, task.occurrence.timeZone)}`})), ...(!appointmentValid && values.appointmentTaskId ? [{value: values.appointmentTaskId, label: '原預約已不在目前清單（保留草稿）'}] : [])];
+type PreparationProps = {model: SummaryViewModel; actions: SummaryActions};
+export function PreparationCard(props: PreparationProps) {
+  const {model} = props, page = model.page!, scopeKey = `${model.scopeKey}:${model.access}`;
+  const contentKey = JSON.stringify([page.preparation, page.reviewCurrent, page.appointments.find(task => task.id === page.preparation.appointmentTaskId)?.title]);
+  const feedback = useRef({scopeKey, before: contentKey, reference: null as string | null, trigger: null as string | null});
+  if (feedback.current.scopeKey !== scopeKey) feedback.current = {scopeKey, before: contentKey, reference: null, trigger: null};
+  if (model.pending && feedback.current.reference !== model.pending.reference) {
+    feedback.current.reference = model.pending.reference; feedback.current.before = contentKey;
+  }
+  if (model.operation === 'saved' && !model.busy && !model.pending && feedback.current.reference) {
+    feedback.current.trigger = feedback.current.before !== contentKey ? feedback.current.reference : null;
+    feedback.current.reference = null;
+  } else if (['none', 'failed', 'conflict'].includes(model.operation) && !model.pending) feedback.current.reference = null;
   return <SectionCard testID="summary-preparation"><SectionHeader density="compact" title="家庭共享到診準備" icon="clipboard-check-outline" subtitle="問題、清單、預約選擇及核對標記會共享給有權讀取這個孩子的家庭成員。" />
+    <MotionFeedback active={model.operation === 'saved' && !model.busy && !model.pending && !model.readFailed} triggerKey={feedback.current.trigger} scopeKey={scopeKey} style={s.smallStack} testID="preparation-saved-feedback">
     <Text style={s.meta}>已保存版本 {page.preparation.version} · {page.preparation.reviewed ? '曾標記已核對' : '未核對'}。目前來源：{page.reviewCurrent ? '仍與全部來源吻合' : '未核對或來源已變，須重新核對'}。</Text>
     <Text selectable style={s.meta}>已保存核對依據：{page.preparation.reviewedBasis ?? '沒有'} · 期間：{page.preparation.period ? summaryPeriodLabel(page.preparation.period) : '沒有'}</Text>
     <Text style={s.meta}>已保存預約：{page.preparation.appointmentTaskId ? page.appointments.find(task => task.id === page.preparation.appointmentTaskId)?.title ?? page.preparation.appointmentTaskId : '沒有指定'}</Text>
     {page.preparation.updatedAt ? <Text style={s.meta}>最後保存：{page.preparation.updatedBy} · {summaryTime(page.preparation.updatedAt)}</Text> : null}
+    </MotionFeedback>
+    <PreparationForm key={model.formEpoch} {...props} />
+  </SectionCard>;
+}
+function PreparationForm({model, actions}: PreparationProps) {
+  const page = model.page!;
+  const basis = useRef(summaryBasis(page));
+  const [shared, setShared] = useState(false), [basisConsent, setBasisConsent] = useState(false);
+  const {control, handleSubmit, setValue, setFocus} = useForm<PreparationFormValues>({defaultValues: preparationDefaults(page), resolver: zodResolver(preparationFormSchema), mode: 'onBlur'});
+  const { isDirty, errors } = useFormState({ control });
+  usePreviewLeaveGuard(isDirty);
+  const questions = useFieldArray({control, name: 'questions'}), checklist = useFieldArray({control, name: 'checklist'});
+  const values = useWatch({control}), parsed = preparationFormSchema.safeParse(values);
+  const rowRefs = useRef(new Map<string, View>()), addQuestionRef = useRef<View>(null), addChecklistRef = useRef<View>(null);
+  const formScope = `${model.scopeKey}:${model.formEpoch}:${model.access}`;
+  const appendFocus = useRef<{kind: 'questions' | 'checklist'; scope: string; beforeIds: Set<string>} | null>(null);
+  const questionRows = questions.fields.map((item, index) => ({...item, index, text: values.questions?.[index]?.text ?? item.text, error: errors.questions?.[index]?.text?.message}));
+  const checklistRows = checklist.fields.map((item, index) => ({...item, index, text: values.checklist?.[index]?.text ?? item.text, done: values.checklist?.[index]?.done ?? item.done, error: errors.checklist?.[index]?.text?.message}));
+  const stale = summaryBasisChanged(basis.current, page);
+  const fieldsAvailable = model.online && !model.readFailed && !model.pending && model.access === 'editable' && page.canManage;
+  const editable = fieldsAvailable && !model.busy;
+  const appointmentValid = !values.appointmentTaskId || page.appointments.some(task => task.id === values.appointmentTaskId);
+  useEffect(() => {setShared(false); setBasisConsent(false);}, [model.confirmationEpoch]);
+  function edit(reviewChange = false) {actions.markDirty(); setShared(false); setBasisConsent(false); if (!reviewChange) setValue('reviewed', false, {shouldDirty: true});}
+  function appendRow(kind: 'questions' | 'checklist') {
+    const rows = kind === 'questions' ? questions : checklist;
+    if (!editable || rows.fields.length >= (kind === 'questions' ? 12 : 16)) return;
+    appendFocus.current = {kind, scope: formScope, beforeIds: new Set(rows.fields.map(item => item.id))};
+    // MotionList commits the Controller after RHF's append effect has run.
+    // Complete this explicit focus request from that new input's committed ref.
+    if (kind === 'questions') questions.append({text: ''}, {shouldFocus: false});
+    else checklist.append({text: '', done: false}, {shouldFocus: false});
+    edit();
+  }
+  function focusAppendedField(kind: 'questions' | 'checklist', id: string, node: {focus: () => void} | null) {
+    const intent = appendFocus.current;
+    if (!intent || !node) return;
+    if (intent.scope !== formScope || !editable) {appendFocus.current = null; return;}
+    const rows = kind === 'questions' ? questions : checklist;
+    if (intent.kind !== kind || intent.beforeIds.has(id) || rows.fields[rows.fields.length - 1]?.id !== id) return;
+    appendFocus.current = null;
+    node.focus();
+  }
+  function removeRow(kind: 'questions' | 'checklist', index: number, id: string) {
+    const rows = kind === 'questions' ? questions : checklist;
+    const node = rowRefs.current.get(id) as unknown as HTMLElement | undefined;
+    if (Platform.OS === 'web' && node?.contains(document.activeElement)) {
+      const nextIndex = index + 1 < rows.fields.length ? index + 1 : index - 1;
+      if (nextIndex >= 0) {
+        const nextRow = rowRefs.current.get(rows.fields[nextIndex].id) as unknown as HTMLElement | undefined;
+        const input = nextRow?.querySelector<HTMLElement>('input,textarea');
+        if (input) input.focus({preventScroll: true});
+        else setFocus(`${kind}.${nextIndex}.text`);
+      }
+      else {
+        const add = (kind === 'questions' ? addQuestionRef : addChecklistRef).current as unknown as HTMLElement | null;
+        const target = add?.matches('button,[role="button"],[tabindex="0"]') ? add : add?.querySelector<HTMLElement>('button,[role="button"],[tabindex="0"]');
+        target?.focus({preventScroll: true});
+      }
+    }
+    rows.remove(index); edit();
+  }
+  function field(kind: 'questions' | 'checklist', id: string, index: number, label: string) {return <Controller name={`${kind}.${index}.text`} control={control} render={({field: input, fieldState}) => <View>
+    <AppTextField ref={node => {input.ref(node); focusAppendedField(kind, id, node);}} label={label} accessibilityLabel={label} value={input.value} multiline disabled={!fieldsAvailable} editable={editable} error={!!fieldState.error} onBlur={input.onBlur} onChangeText={value => {if (!editable) return; input.onChange(value); edit();}} />
+    {fieldState.error ? <HelperText type="error">{fieldState.error.message}</HelperText> : null}</View>} />;}
+  const appointmentOptions = [{value: '', label: '沒有指定預約'}, ...page.appointments.map(task => ({value: task.id, label: `${task.title} · ${summaryTime(task.occurrence.dueAt, task.occurrence.timeZone)}`})), ...(!appointmentValid && values.appointmentTaskId ? [{value: values.appointmentTaskId, label: '原預約已不在目前清單（保留草稿）'}] : [])];
+  return <>
     {!page.canManage ? <Text style={s.warning}>目前只有檢視權限，不能修改或保存。</Text> : null}
     <Text selectable style={s.meta}>草稿基準：共享準備版本 {basis.current.expectedVersion} · {basis.current.basisVersion} · {summaryPeriodLabel(basis.current.period)}</Text>
     {model.dirty ? <View style={s.box}><Text style={s.title}>目前已保存內容，供比較</Text>{page.preparation.questions.map((text, index) => <Text key={index} style={s.body}>已保存問題 {index + 1}：{text}</Text>)}{page.preparation.checklist.map((item, index) => <Text key={index} style={s.body}>已保存準備 {index + 1}：{item.done ? '已完成' : '未完成'} · {item.text}</Text>)}<Text style={s.meta}>本頁未保存草稿及原依據保留，更新摘要不會悄悄覆寫。</Text></View> : null}
@@ -43,19 +107,30 @@ export function PreparationCard({model, actions}: {model: SummaryViewModel; acti
     <Controller name="appointmentTaskId" control={control} render={({field: input}) => <AppSelect label="到診預約安排" value={input.value} options={appointmentOptions} disabled={!editable} onChange={value => {input.onChange(value); edit();}} />} />
     {!appointmentValid ? <HelperText type="error">原預約已不在目前待處理清單；請明確另選或選「沒有指定」，不會自動移除。</HelperText> : null}
     <Text style={s.title}>到診問題 · 最多 12 條</Text>
-    {questions.fields.map((item, index) => <View key={item.id} style={s.item}>{field(`questions.${index}.text`, `到診問題 ${index + 1}`)}<AppButton label={`移除到診問題 ${index + 1}`} variant="quiet" disabled={!editable} onPress={() => {questions.remove(index); edit();}} /></View>)}
+    <MotionList items={questionRows} keyExtractor={item => item.id} scopeKey={`${model.scopeKey}:${model.formEpoch}:${model.access}:questions`} regionKey="preparation-questions" eligible={editable} style={s.stack} renderItem={(item, {exiting}) => {
+      const index = questions.fields.findIndex(row => row.id === item.id), removed = exiting || index < 0, label = `到診問題 ${(removed ? item.index : index) + 1}`;
+      return <View ref={node => {if (node) rowRefs.current.set(item.id, node); else rowRefs.current.delete(item.id);}} style={s.item}>
+        {removed ? <View><AppTextField label={label} value={item.text} multiline disabled error={!!item.error} />{item.error ? <HelperText type="error">{item.error}</HelperText> : null}</View> : field('questions', item.id, index, label)}
+        <AppButton label={`移除${label}`} variant="quiet" disabled={!editable || removed} onPress={() => removeRow('questions', index, item.id)} />
+      </View>;
+    }} />
     {!questions.fields.length ? <Text style={s.meta}>尚未記錄問題；不會由模型替你新增已確認內容。</Text> : null}
-    <AppButton label="新增到診問題" variant="secondary" disabled={!editable || questions.fields.length >= 12} onPress={() => {questions.append({text: ''}); edit();}} />
+    <AppButton ref={addQuestionRef} label="新增到診問題" variant="secondary" disabled={!editable || questions.fields.length >= 12} onPress={() => appendRow('questions')} />
     <Text style={s.title}>準備清單 · 最多 16 項</Text>
-    {checklist.fields.map((item, index) => <View key={item.id} style={s.item}>{field(`checklist.${index}.text`, `到診準備 ${index + 1}`)}
-      <Controller name={`checklist.${index}.done`} control={control} render={({field: input}) => <AppCheckbox label={`到診準備 ${index + 1} 已完成`} checked={input.value} disabled={!editable} onChange={value => {input.onChange(value); edit();}} />} />
-      <AppButton label={`移除到診準備 ${index + 1}`} variant="quiet" disabled={!editable} onPress={() => {checklist.remove(index); edit();}} /></View>)}
-    <AppButton label="新增到診準備" variant="secondary" disabled={!editable || checklist.fields.length >= 16} onPress={() => {checklist.append({text: '', done: false}); edit();}} />
+    <MotionList items={checklistRows} keyExtractor={item => item.id} scopeKey={`${model.scopeKey}:${model.formEpoch}:${model.access}:checklist`} regionKey="preparation-checklist" eligible={editable} style={s.stack} renderItem={(item, {exiting}) => {
+      const index = checklist.fields.findIndex(row => row.id === item.id), removed = exiting || index < 0, label = `到診準備 ${(removed ? item.index : index) + 1}`;
+      return <View ref={node => {if (node) rowRefs.current.set(item.id, node); else rowRefs.current.delete(item.id);}} style={s.item}>
+        {removed ? <View><AppTextField label={label} value={item.text} multiline disabled error={!!item.error} />{item.error ? <HelperText type="error">{item.error}</HelperText> : null}</View> : field('checklist', item.id, index, label)}
+        {removed ? <AppCheckbox label={`${label} 已完成`} checked={item.done} disabled onChange={() => {}} /> : <Controller name={`checklist.${index}.done`} control={control} render={({field: input}) => <AppCheckbox label={`${label} 已完成`} checked={input.value} disabled={!editable} onChange={value => {input.onChange(value); edit();}} />} />}
+        <AppButton label={`移除${label}`} variant="quiet" disabled={!editable || removed} onPress={() => removeRow('checklist', index, item.id)} />
+      </View>;
+    }} />
+    <AppButton ref={addChecklistRef} label="新增到診準備" variant="secondary" disabled={!editable || checklist.fields.length >= 16} onPress={() => appendRow('checklist')} />
     <Text style={s.meta}>問題最多 500 字，準備項目最多 300 字；不截短。依正式契約，保存內容會移除兩端空白；原草稿保留，下方顯示實際保存內容。</Text>
     {parsed.success ? <View style={s.box} testID="summary-save-review"><Text style={s.title}>保存前核對</Text>{parsed.data.questions.map((item, index) => <Text key={index} selectable style={s.body}>問題 {index + 1}：{item.text}</Text>)}{parsed.data.checklist.map((item, index) => <Text key={index} selectable style={s.body}>準備 {index + 1}：{item.done ? '已完成' : '未完成'} · {item.text}</Text>)}<Text style={s.meta}>核對標記：{parsed.data.reviewed ? '已核對' : '未核對'}</Text></View> : <HelperText type="error">請核對空白欄位及字數；不會自動刪項或截短。</HelperText>}
     <Controller name="reviewed" control={control} render={({field: input}) => <AppCheckbox label="我已逐項核對問題、準備清單及目前摘要來源" checked={input.value} disabled={!editable || stale} onChange={value => {input.onChange(value); edit(true);}} />} />
     <AppCheckbox label="我確認把以上到診準備與有權家庭成員共享" checked={shared} disabled={!editable || stale || !parsed.success || !appointmentValid} onChange={setShared} />
     <AppButton label="確認保存家庭共享到診準備" disabled={!editable || stale || !shared || !parsed.success || !appointmentValid} onPress={handleSubmit(raw => {actions.markDirty(); const input = preparationProjection(raw, basis.current); actions.save(input, page.appointments.find(task => task.id === input.appointmentTaskId)?.title ?? '沒有指定預約');})} />
     {model.dirty ? <AppButton label="放棄草稿並載入已保存準備" variant="quiet" disabled={!model.online || model.busy || !!model.pending || model.readFailed} onPress={actions.discard} /> : null}
-  </SectionCard>;
+  </>;
 }

@@ -1,5 +1,6 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { StatusAnnouncement } from "../StatusAnnouncement";
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import {View} from 'react-native';
 import {Text} from 'react-native-paper';
 import type {SummaryActions, SummaryViewModel} from '../../summary-view-model';
@@ -12,22 +13,32 @@ import {summaryPeriodSchema} from './summary-form';
 import {PreparationCard} from './PreparationCard';
 import {SummaryRecords} from './SummaryRecords';
 import {summaryStyles as s} from './summary-styles';
+import {MotionReveal} from '../../motion';
 
 export function SummaryView({model, actions, onRecord, onTask, previewTools}: {model: SummaryViewModel; actions: SummaryActions; onRecord: (id: string) => void; onTask: (id: string) => void; previewTools?: React.ReactNode}) {
-  const [wide, setWide] = useState(false), [wideQuery, setWideQuery] = useState(false);
+  const contentLayout = useContainerWidth(), queryLayout = useContainerWidth();
+  const wide = contentLayout.width >= 980, wideQuery = queryLayout.width >= 680;
+  const [refreshTrigger, setRefreshTrigger] = useState<number | null>(null);
+  const refreshSerial = useRef(0);
   const page = model.page, queryValid = summaryPeriodSchema.safeParse(model.query).success;
+  const revealEligible = !!page && model.online && !model.busy && !model.readFailed && !model.pending && model.access !== 'lost'
+    && (model.operation === 'none' || model.operation === 'saved');
+  const revealTrigger = !model.busy && !revealEligible ? null : refreshTrigger;
+  function refresh() {setRefreshTrigger(++refreshSerial.current); actions.refresh();}
+  // Preparation is authoritative immediately and remains outside the read-only presentation.
+  const basisKey = page ? JSON.stringify([page.childName, page.profile, page.period, page.endDayExclusive, page.generatedAt, page.basisVersion]) : 'empty';
   const canRetry = model.online && !model.busy && !model.readFailed && model.access === 'editable' && !!page?.canManage && !!model.pending?.checked && !model.pending.confirmed;
   return <PageFrame density="compact" title="照顧摘要與到診準備" description={`整理${model.childName}的已確認記錄及來源，再由家長核對到診問題與安排。未有記錄不等於事情沒有發生。`}>
     <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
     <SectionCard><SectionHeader density="compact" title="選擇整理期間" icon="calendar-outline" subtitle={model.dataLabel} />
-      <View onLayout={event => setWideQuery(event.nativeEvent.layout.width >= 680)} style={wideQuery ? s.queryRow : s.stack}>
+      <View ref={queryLayout.ref} onLayout={queryLayout.onLayout} style={wideQuery ? s.queryRow : s.stack}>
         <View style={wideQuery ? s.queryField : undefined}><AppDateField label="摘要開始日" value={model.query.startDay} disabled={model.busy || !!model.pending || model.access === 'lost'} onChange={value => actions.updateQuery({...model.query, startDay: value})} /></View>
         <View style={wideQuery ? s.queryField : undefined}><AppSelect label="摘要期間" value={model.query.period} options={[{value: 'day', label: '一日'}, {value: 'week', label: '連續七日'}]} disabled={model.busy || !!model.pending || model.access === 'lost'} onChange={value => actions.updateQuery({...model.query, period: value})} /></View>
         <View style={wideQuery ? s.queryField : undefined}><AppTimeZoneSelect value={model.query.timeZone} disabled={model.busy || !!model.pending || model.access === 'lost'} onChange={value => actions.updateQuery({...model.query, timeZone: value})} /></View>
       </View>
       {!queryValid ? <Text style={s.warning}>請輸入有效開始日與 IANA 時區。</Text> : null}
-      <AppButton label={model.pending ? '先查原收據及更新摘要' : '產生／更新摘要並保留草稿'} variant="secondary" disabled={!model.online || model.busy || model.access === 'lost' || !model.pending && !queryValid} onPress={actions.refresh} />
+      <AppButton label={model.pending ? '先查原收據及更新摘要' : '產生／更新摘要並保留草稿'} variant="secondary" disabled={!model.online || model.busy || model.access === 'lost' || !model.pending && !queryValid} onPress={refresh} />
       {page && !sameSummaryPeriod(page.period, model.query) ? <Text style={s.warning}>新選項尚未套用，目前仍顯示：{summaryPeriodLabel(page.period)}。</Text> : null}
       {model.busy ? <Text style={s.meta}>正在讀取／提交，尚未確認最新狀態。</Text> : null}
       {!model.online ? <Text style={s.warning}>目前離線；草稿及原操作只留本頁，不會排隊提交。</Text> : null}
@@ -42,11 +53,16 @@ export function SummaryView({model, actions, onRecord, onTask, previewTools}: {m
       <AppCheckbox label="我已核對目前摘要，同意用原操作識別及內容重試" checked={model.originalConsent} disabled={!canRetry} onChange={actions.setOriginalConsent} /><AppButton label="以原操作明確重試到診準備" disabled={!canRetry || !model.originalConsent} onPress={actions.retryOriginal} />
     </SectionCard> : null}
     {page ? <>
-      <SectionCard><SectionHeader density="compact" title={`${page.childName} · 摘要依據`} icon="account-child-outline" /><Text style={s.body}>{page.profile.ageLabel}</Text><Text style={s.meta}>檔案版本 {page.profile.version} · 來源：{page.profile.source}</Text>
-        {page.profile.confirmedAt ? <Text style={s.meta}>檔案核對：{page.profile.confirmedBy} · {summaryTime(page.profile.confirmedAt)} · {page.profile.reason ?? '未記錄'}</Text> : null}
-        <Text style={s.body}>期間：{page.period.startDay} 至 {page.endDayExclusive}（不包括結束日） · {page.period.timeZone}</Text><Text selectable style={s.meta}>生成：{summaryTime(page.generatedAt, page.period.timeZone)} · 依據版本：{page.basisVersion}</Text><Text style={s.meta}>數值保留原單位及約數，沒有混加不同單位或讀取便條內的數字；更正後需重新讀取。</Text>
+      <SectionCard><SectionHeader density="compact" title={`${page.childName} · 摘要依據`} icon="account-child-outline" />
+        <MotionReveal value={page} contentKey={basisKey} scopeKey={model.scopeKey} regionKey="summary-basis" triggerKey={revealTrigger} eligible={revealEligible} preset="summary" style={s.smallStack} testID="summary-basis-motion">{shown => <>
+          <Text style={s.body}>{shown.profile.ageLabel}</Text><Text style={s.meta}>檔案版本 {shown.profile.version} · 來源：{shown.profile.source}</Text>
+          {shown.profile.confirmedAt ? <Text style={s.meta}>檔案核對：{shown.profile.confirmedBy} · {summaryTime(shown.profile.confirmedAt)} · {shown.profile.reason ?? '未記錄'}</Text> : null}
+          <Text style={s.body}>期間：{shown.period.startDay} 至 {shown.endDayExclusive}（不包括結束日） · {shown.period.timeZone}</Text><Text selectable style={s.meta}>生成：{summaryTime(shown.generatedAt, shown.period.timeZone)} · 依據版本：{shown.basisVersion}</Text>
+        </>}</MotionReveal><Text style={s.meta}>數值保留原單位及約數，沒有混加不同單位或讀取便條內的數字；更正後需重新讀取。</Text>
       </SectionCard>
-      <View onLayout={event => setWide(event.nativeEvent.layout.width >= 980)} style={wide ? s.columns : s.stack}><View style={wide ? s.column : s.full}><SummaryRecords page={page} onRecord={onRecord} onTask={onTask} /></View><View style={wide ? s.column : s.full}><PreparationCard key={model.formEpoch} model={model} actions={actions} /></View></View>
+      <View ref={contentLayout.ref} onLayout={contentLayout.onLayout} style={wide ? s.columns : s.stack}><View style={wide ? s.column : s.full}>
+        <SummaryRecords page={page} onRecord={onRecord} onTask={onTask} motion={{scopeKey: model.scopeKey, triggerKey: revealTrigger, eligible: revealEligible}} />
+      </View><View style={wide ? s.column : s.full}><PreparationCard key={model.scopeKey} model={model} actions={actions} /></View></View>
     </> : null}
     {previewTools}
   </PageFrame>;

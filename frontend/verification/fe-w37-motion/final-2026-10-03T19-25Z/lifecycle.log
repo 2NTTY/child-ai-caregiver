@@ -1,0 +1,12 @@
+✔ a committed swap can reveal only its own presentation (0.757672ms)
+✔ a native startup preference cannot overwrite a newer event or unmount (0.126881ms)
+✔ reduced-motion removal hands off focus before same-scope rows drop (0.681578ms)
+✔ disclosure reversal starts at its current interpolated height (0.149125ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 106.13095

@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { useState } from "react";
 import { View } from "react-native";
@@ -24,7 +25,8 @@ function OriginalRequest({attempt}:{attempt:GrowthAttempt}){
   </View>;
 }
 export function GrowthView({model,actions,onTask,onMemory,onSource,previewTools}:{model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onMemory:()=>void;onSource:(url:string)=>void;previewTools?:React.ReactNode}){
-  const [wide,setWide]=useState(false);
+  const containerLayout = useContainerWidth();
+  const wide = containerLayout.width >= 880;
   const page=model.page;
   const retryDisabled=model.busy||!model.online||model.access!=="editable"||model.load!=="ready"||!page?.canManage||!model.pending?.reviewed||!!model.pending?.reconfirm||!model.originalConsent;
   return <PageFrame density="compact" title="成長階段關注" description={`按${model.childName}的已確認情況查看理由、來源及下一步；供觀察、安排及諮詢準備，不作診斷或醫療分流。`}>
@@ -51,13 +53,13 @@ export function GrowthView({model,actions,onTask,onMemory,onSource,previewTools}
     </SectionCard>:null}
     {page?<>
       {page.notices.map((text,index)=><Text key={index} style={s.meta}>{text}</Text>)}
-      <View onLayout={event=>setWide(event.nativeEvent.layout.width>=880)} style={wide?s.columns:s.stack}>
-        <View style={wide?s.main:s.full}>{page.items.length?page.items.map(item=><GrowthAttentionCard key={`${item.id}:${model.epoch}:${model.resetCounts[`item:${item.id}`]??0}`} item={item} page={page} model={model} actions={actions} onSource={onSource} onTask={onTask} />):
+      <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={wide?s.columns:s.stack}>
+        <View style={wide?s.main:s.full}>{page.items.length?page.items.map(item=><GrowthAttentionCard key={`${model.scopeKey}:${item.id}`} item={item} page={page} model={model} actions={actions} onSource={onSource} onTask={onTask} />):
           <SectionCard><SectionHeader density="compact" title="目前沒有已保存的成長關注" icon="chart-bar" /><Text style={s.body}>可核對下方家庭共享近況。沒有提示不代表已接受專業評估。</Text></SectionCard>}
           {page.historyHasMore?<Text style={s.meta}>目前只列有限歷史，還有較早記錄未顯示；不是完整歷史。</Text>:null}
         </View>
         <View style={wide?s.aside:s.full}><SectionCard><SectionHeader density="compact" title="家庭近況與主題設定" icon="account-group-outline" /><Text style={s.body}>近況需明確共享；永久停用及重新啟用不會復活舊關閉記錄。</Text></SectionCard>
-          {page.topics.map(topic=><GrowthTopicCard key={`${topic.id}:${model.epoch}:${model.resetCounts[`topic:${topic.id}`]??0}`} topic={topic} model={model} actions={actions} onMemory={onMemory} />)}
+          {page.topics.map(topic=><GrowthTopicCard key={`${model.scopeKey}:${topic.id}`} topic={topic} model={model} actions={actions} onMemory={onMemory} />)}
         </View>
       </View>
     </>:null}

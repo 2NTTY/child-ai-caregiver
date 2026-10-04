@@ -1,0 +1,13 @@
+✔ missing and mismatched projections never become an empty or previous child's overview (1.227322ms)
+✔ home and rail receive the same projection, order, identifiers and state (1.289936ms)
+✔ legacy focus remains usable without deriving ongoing topics from records (0.257345ms)
+✔ deleting the selected child derives both home and rail from the remaining child, including refresh (2.485741ms)
+✔ deleting the final child clears the projection; a newly created child gets only its own empty overview (1.374037ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 201.091552

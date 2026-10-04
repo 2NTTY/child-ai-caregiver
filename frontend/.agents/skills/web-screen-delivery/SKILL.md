@@ -1,6 +1,6 @@
 ---
 name: web-screen-delivery
-description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作或審核 Web／手機介面、共用 Paper 表單、操作狀態及交接；不適用 Server／Agent 接線或正式 Android 真機驗收。
+description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作或審核 Web／手機介面、共用 Paper 表單、語意動效、操作狀態及交接；不適用 Server／Agent 接線或正式 Android 真機驗收。
 ---
 
 # 育有方 Web 畫面交付
@@ -24,14 +24,14 @@ description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作�
 | 日期／時間／表單／選單／Dialog | [forms-controls](references/forms-controls.md) |
 | ScrollView／透明捲動條／模糊底板 | [scroll-and-blur](references/scroll-and-blur.md) |
 | 手機軟件介面 | [native-ui](references/native-ui.md)；Web、bundle、實機分開 |
-| 已採納的動效及其驗證 | 由 [當前包](../../../PLAN.md#active) 定位適用版本的 MOTION_SYSTEM／方法 reference；未合併文件不能假設在 master，研究 MOTION_OPTIONS 不自動成為規範 |
+| 已採納的動效及其驗證 | 讀 [MOTION_SYSTEM](../../../MOTION_SYSTEM.md) 與 [motion-implementation](references/motion-implementation.md)；研究 MOTION_OPTIONS 不自動成為規範 |
 | 照片、來源、模型 key、成長、摘要、聯絡等 | [功能交接](../../../HANDOFF.md#p2-coverage) 的正式差異與 API 指標；不用全部讀 |
 
 ## 最少必要畫面檢查
 
 按變更驗受影響頁的 1440／1024／390／320 CSS px、鍵盤及相關操作狀態；共用外殼確有影響才擴至所涉路由，不例行全跑舊測試。分清 document overflow、內容裁切及可見焦點，展示必要實際畫面。
 
-佈局／動畫改動驗初態、過渡和終態：沿已採用 RN Animated.Value 同步相關尺寸／flex，查看結束接縫、中途操作／離頁、減少動畫及受影響斷點。靜態前後截圖或 DOM phase 不證明連續過渡；來源定位與既有業務回調不應依賴動畫完成。已有適用方法可復用，工具能力不足便如實列未驗，不改驗收斷言。
+佈局／動畫改動驗初態、過渡和終態：沿該元件已採用的共用動畫進度同步相關尺寸／flex（新共用動效使用 Reanimated，勿機械改為另一套引擎），查看結束接縫、中途操作／離頁、減少動畫及受影響斷點。靜態前後截圖或 DOM phase 不證明連續過渡；來源定位與既有業務回調不應依賴動畫完成。已有適用方法可復用，工具能力不足便如實列未驗，不改驗收斷言。
 
 命令及證據位置見 [WORKFLOW#preview](../../../WORKFLOW.md#preview)。只保存該版本必要截圖／trace／結果，不另建 Skill 日誌；每個結果列被測版本／manifest、環境、範圍及限制，失敗與補驗分開。高成本驗收及停批依 [根規則](../../../../AGENTS.md#finish)，不把方法文件當授權。
 

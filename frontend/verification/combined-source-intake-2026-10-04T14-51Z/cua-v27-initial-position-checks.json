@@ -1,0 +1,94 @@
+{
+  "version": 27,
+  "at": "2026-10-04T15:23:01Z",
+  "entry": "entry-e140db8f36abb42e063aecc8b738de8c.js",
+  "sha256": "8ebdd8ab014988f8850ff00ebf23c9f96467e2494f7f221f970b73aff6610fc4",
+  "site_commit": "50e3dd077d1f608fd38017dfcb261132579e9634",
+  "site_version": "appgprj_6ac1e7c965308191bc2c599951348a51~appgver_18f707c7258c8191b6f8c4fff126cbbb",
+  "method": "Authorized cloud CUA, ordinary UI input and read-only DOM metrics; no injected observer or DevTools",
+  "tab": "8",
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "viewport": {
+    "width": 390,
+    "height": 600,
+    "evidence": "iframe clientWidth/clientHeight, not stale QA caption"
+  },
+  "checks": [
+    {
+      "case": "warmHomeToChatInitialPlacement",
+      "result": "pass for first measurable sample",
+      "at": "15:21:22",
+      "script_src_observed": "/_expo/static/js/web/entry-e140db8f36abb42e063aecc8b738de8c.js",
+      "sample": {
+        "top": 1053,
+        "max": 1053,
+        "height": 313,
+        "content": 1366,
+        "latestCount": 0
+      },
+      "limit": "Covers first tool-observable measurable state, not continuous first-paint frames"
+    },
+    {
+      "case": "noOpEndAtBottomThenFourLines",
+      "result": "pass after settling",
+      "at": "15:21:41–15:21:53",
+      "firstResizeSample": {
+        "top": 1110,
+        "max": 1170,
+        "height": 196,
+        "latestCount": 0
+      },
+      "settled": {
+        "top": 1170,
+        "max": 1170,
+        "height": 196,
+        "latestCount": 0,
+        "composerPanelTop": 330
+      },
+      "screenshot": "CUA 15:21:53",
+      "limit": "Brief discrete resize sample precedes queued bottom-follow; not a continuous timing measurement"
+    },
+    {
+      "case": "readingHoldComposerShrinkThenReturnLatest",
+      "result": "pass",
+      "at": "15:22:35–15:23:01",
+      "readingFourLines": {
+        "top": 0,
+        "max": 1170,
+        "latestCount": 1
+      },
+      "afterShrink": {
+        "top": 0,
+        "max": 1110,
+        "height": 256,
+        "latestCount": 1
+      },
+      "afterReturnLatest": {
+        "top": 1110,
+        "max": 1110,
+        "height": 256,
+        "latestCount": 0,
+        "sourceBottom": 362,
+        "composerPanelTop": 390
+      },
+      "screenshot": "CUA 15:22:35",
+      "cleanup": "Synthetic draft cleared, not submitted"
+    }
+  ],
+  "interactionNotes": [
+    "Home pressed in the same batch as composer clearing did not establish a reading position; subsequent measured state remained at latest. Reading-hold assertions were made only after a separate settled Home movement reached top 0.",
+    "QA caption remained 390 × 900 while direct iframe client dimensions were 390 × 600. No wrapper source change was made."
+  ],
+  "notRerun": [
+    "v26 source-intake and family flows",
+    "source-intake unit tests",
+    "source-details End-in-flight known failure"
+  ],
+  "knownOpen": [
+    "Source-details End-in-flight failure remains untouched",
+    "Continuous initial first-paint/no-jump behavior is unverified",
+    "Cloud source labels render tofu; normal-font separator evidence remains limited",
+    "Natural five-second child loading branch not exercised; no artificial business hold",
+    "System/native camera/microphone, true API/model/private upload not exercised"
+  ]
+}

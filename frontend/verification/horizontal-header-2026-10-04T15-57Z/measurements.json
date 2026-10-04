@@ -1,0 +1,889 @@
+[
+  {
+    "case": "390-home",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 274,
+        "y": 7.5
+      },
+      "active": "primary",
+      "bodyScrollWidth": 390,
+      "bodyWidth": 390,
+      "brand": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 12,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "context": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": -242,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(-254px);"
+      },
+      "focus": {
+        "label": null,
+        "tag": "BODY"
+      },
+      "header": {
+        "height": 64,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 254,
+        "x": 12,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 390,
+        "x": 0,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "390-home-to-chat-first-sample",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 274,
+        "y": 7.5
+      },
+      "active": "secondary",
+      "bodyScrollWidth": 390,
+      "bodyWidth": 390,
+      "brand": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 12,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "context": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": -242,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(-254px);"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 254,
+        "x": 12,
+        "y": 7.5
+      },
+      "phase": "entering",
+      "route": {
+        "height": 435,
+        "width": 390,
+        "x": 10,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "390-chat-settled",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 274,
+        "y": 7.5
+      },
+      "active": "secondary",
+      "bodyScrollWidth": 390,
+      "bodyWidth": 390,
+      "brand": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 266,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(254px);"
+      },
+      "context": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 12,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 254,
+        "x": 12,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 390,
+        "x": 0,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "390-facts-last",
+    "data": {
+      "arrow": "<button aria-label=\"顯示更多孩子資料\" role=\"button\" tabindex=\"-1\" class=\"css-g5y9jx r-12vffkv r-1awozwy r-1777fci r-1pl7oy7 r-rwqe4o\" data-testid=\"header-child-facts-more\" type=\"button\" aria-disabled=\"true\" disabled=\"\"><div aria-hidden=\"true\" class=\"css-g5y9jx\" data-testid=\"svg-icon-chevron-right\" style=\"width: 20px; height: 20px; flex-shrink: 0;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#2D334A\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-right\" aria-hidden=\"true\" tabindex=\"-1\"><path fill=\"none\" stroke=\"#2D334A\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"m9 18 6-6-6-6\" aria-hidden=\"true\" tabindex=\"-1\"></path></svg></div></button>",
+      "focus": "過敏未提供",
+      "labels": [
+        {
+          "text": "地區香港",
+          "w": 70.03125,
+          "x": -32
+        },
+        {
+          "text": "檔案已確認",
+          "w": 82.03125,
+          "x": 46.03125
+        },
+        {
+          "text": "過敏未提供",
+          "w": 82.03125,
+          "x": 136.0625
+        }
+      ],
+      "scrollers": [
+        {
+          "left": 184,
+          "scrollWidth": 390,
+          "width": 206
+        }
+      ]
+    }
+  },
+  {
+    "case": "390-return-home-sample1",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 274,
+        "y": 7.5
+      },
+      "active": "primary",
+      "bodyScrollWidth": 390,
+      "bodyWidth": 390,
+      "brand": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 266,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(254px);"
+      },
+      "context": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 12,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 254,
+        "x": 12,
+        "y": 7.5
+      },
+      "phase": "exiting",
+      "route": {
+        "height": 435,
+        "width": 390,
+        "x": 10,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "390-return-home-sample2",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 274,
+        "y": 7.5
+      },
+      "active": "primary",
+      "bodyScrollWidth": 390,
+      "bodyWidth": 390,
+      "brand": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 266,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(254px);"
+      },
+      "context": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 12,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 254,
+        "x": 12,
+        "y": 7.5
+      },
+      "phase": "exiting",
+      "route": {
+        "height": 435,
+        "width": 390,
+        "x": 10,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "390-return-home-sample3",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 274,
+        "y": 7.5
+      },
+      "active": "primary",
+      "bodyScrollWidth": 390,
+      "bodyWidth": 390,
+      "brand": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 266,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(254px);"
+      },
+      "context": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 12,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 254,
+        "x": 12,
+        "y": 7.5
+      },
+      "phase": "exiting",
+      "route": {
+        "height": 435,
+        "width": 390,
+        "x": 10,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "390-entering-after-screenshot",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 274,
+        "y": 7.5
+      },
+      "active": "secondary",
+      "bodyScrollWidth": 390,
+      "bodyWidth": 390,
+      "brand": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 266,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(254px);"
+      },
+      "context": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 12,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 254,
+        "x": 12,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 390,
+        "x": 0,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "390-rapid-reverse-settled",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 274,
+        "y": 7.5
+      },
+      "active": "secondary",
+      "bodyScrollWidth": 390,
+      "bodyWidth": 390,
+      "brand": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 266,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(254px);"
+      },
+      "context": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 12,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 254,
+        "x": 12,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 390,
+        "x": 0,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "390-profile",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 274,
+        "y": 7.5
+      },
+      "active": "secondary",
+      "bodyScrollWidth": 390,
+      "bodyWidth": 390,
+      "brand": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 266,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(254px);"
+      },
+      "context": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 254,
+          "x": 12,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 254,
+        "x": 12,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 390,
+        "x": 10,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "320-profile",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 208,
+        "y": 7.5
+      },
+      "active": "secondary",
+      "bodyScrollWidth": 320,
+      "bodyWidth": 320,
+      "brand": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": 204,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(196px);"
+      },
+      "context": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": 8,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "BODY"
+      },
+      "header": {
+        "height": 64,
+        "width": 320,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 196,
+        "x": 8,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 320,
+        "x": 0,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "320-keyboard-facts",
+    "data": {
+      "focus": "地區香港",
+      "labels": [
+        {
+          "text": "地區香港",
+          "w": 70.03125,
+          "x": 86
+        },
+        {
+          "text": "檔案已確認",
+          "w": 82.03125,
+          "x": 164.03125
+        },
+        {
+          "text": "過敏未提供",
+          "w": 82.03125,
+          "x": 254.0625
+        }
+      ],
+      "scrollers": [
+        {
+          "left": 62,
+          "scrollWidth": 390,
+          "width": 148
+        }
+      ]
+    }
+  },
+  {
+    "case": "320-home",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 208,
+        "y": 7.5
+      },
+      "active": "primary",
+      "bodyScrollWidth": 320,
+      "bodyWidth": 320,
+      "brand": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": 8,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "context": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": -188,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(-196px);"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 320,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 196,
+        "x": 8,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 320,
+        "x": 0,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "320-chat",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 208,
+        "y": 7.5
+      },
+      "active": "secondary",
+      "bodyScrollWidth": 320,
+      "bodyWidth": 320,
+      "brand": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": 204,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(196px);"
+      },
+      "context": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": 8,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 320,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 196,
+        "x": 8,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 320,
+        "x": 0,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "320-reduced-home-first-sample",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 208,
+        "y": 7.5
+      },
+      "active": "primary",
+      "bodyScrollWidth": 320,
+      "bodyWidth": 320,
+      "brand": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": 8,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "context": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": -188,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(-196px);"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 320,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 196,
+        "x": 8,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 320,
+        "x": 0,
+        "y": 101
+      }
+    }
+  },
+  {
+    "case": "320-reduced-chat-first-sample",
+    "data": {
+      "actions": {
+        "height": 48,
+        "width": 104,
+        "x": 208,
+        "y": 7.5
+      },
+      "active": "secondary",
+      "bodyScrollWidth": 320,
+      "bodyWidth": 320,
+      "brand": {
+        "hidden": "true",
+        "inert": true,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": 204,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 0; transform: translateX(196px);"
+      },
+      "context": {
+        "hidden": null,
+        "inert": false,
+        "rect": {
+          "height": 48,
+          "width": 196,
+          "x": 8,
+          "y": 7.5
+        },
+        "style": "position: absolute; inset: 0px; justify-content: center; min-width: 0px; opacity: 1;"
+      },
+      "focus": {
+        "label": null,
+        "tag": "H1"
+      },
+      "header": {
+        "height": 64,
+        "width": 320,
+        "x": 0,
+        "y": 0
+      },
+      "identity": {
+        "height": 48,
+        "width": 196,
+        "x": 8,
+        "y": 7.5
+      },
+      "phase": "settled",
+      "route": {
+        "height": 435,
+        "width": 320,
+        "x": 0,
+        "y": 101
+      }
+    }
+  }
+]

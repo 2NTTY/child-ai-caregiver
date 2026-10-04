@@ -1,0 +1,36 @@
+{
+  "at": "2026-10-04T05:47:40.204819+00:00",
+  "browser": "Supported dot cloud Chrome via CUA",
+  "tab_id": "8",
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+  "site_source_commit": "533f51de6cd063f2fd99eb8de170bdac1fb42d67",
+  "private_site_version": 1,
+  "observed_title": "育有方前端動效驗收",
+  "observed_page": [
+    "登录后即可访问",
+    "育有方前端動效驗收",
+    "使用 ChatGPT 继续"
+  ],
+  "classification": "Ordinary private Site authentication gate, not a bot-detection block",
+  "result": "Site reachable; product acceptance blocked before any application page",
+  "login_clicked": false,
+  "credentials_or_tokens_accessed": false,
+  "application_pages": 0,
+  "application_cases": 0,
+  "application_screenshots": 0,
+  "gate_screenshot": "Captured in CUA tool output; no local screenshot file claimed",
+  "pending_groups": [
+    "layout",
+    "navigation",
+    "summary",
+    "care",
+    "tasks",
+    "photos",
+    "states",
+    "child",
+    "reduced",
+    "dialog",
+    "chat"
+  ],
+  "tab_preserved_for_continuation": true
+}

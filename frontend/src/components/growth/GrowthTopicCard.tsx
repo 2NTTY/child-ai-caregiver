@@ -7,9 +7,21 @@ import type { GrowthActions,GrowthTopic,GrowthViewModel } from "../../growth-vie
 import { AppCheckbox } from "../AppCheckbox";
 import { AppButton,AppSelect,SectionCard,SectionHeader } from "../ui";
 import { growthContextProjection,growthFactBasis } from "./growth-form";
+import { MotionDisclosure, MotionFeedback } from "../../motion";
+import { useGrowthFeedback } from "./growth-motion";
 import { growthStyles as s } from "./growth-styles";
 
-export function GrowthTopicCard({topic,model,actions,onMemory}:{topic:GrowthTopic;model:GrowthViewModel;actions:GrowthActions;onMemory:()=>void}){
+type GrowthTopicProps = {topic:GrowthTopic;model:GrowthViewModel;actions:GrowthActions;onMemory:()=>void};
+export function GrowthTopicCard(props: GrowthTopicProps){
+  const {topic, model} = props, resetCount = model.resetCounts[`topic:${topic.id}`] ?? 0;
+  const scopeKey = `${model.scopeKey}:${model.epoch}:${model.access}:${topic.id}`;
+  const trigger = useGrowthFeedback(scopeKey, resetCount, JSON.stringify([topic.disabled, topic.inputs.map(input => [input.key, input.value])]));
+  return <SectionCard testID={`growth-topic-${topic.id}`}><SectionHeader density="compact" title={topic.title} icon="sprout" />
+    <MotionFeedback active={model.operation === "saved" && !model.busy && !model.pending && model.load === "ready"} triggerKey={trigger} scopeKey={scopeKey} testID={`growth-topic-feedback-${topic.id}`}><Text style={s.meta}>{topic.disabled ? "已永久停用" : "已啟用"}</Text></MotionFeedback>
+    <GrowthTopicBody key={`${model.epoch}:${resetCount}`} {...props} />
+  </SectionCard>;
+}
+function GrowthTopicBody({topic,model,actions,onMemory}: GrowthTopicProps){
   const [open,setOpen]=useState(false),[shared,setShared]=useState(false),[enabled,setEnabled]=useState(false),[error,setError]=useState("");
   const basis=useRef<{topic:GrowthTopic;authorityVersion:string}|null>(null);
   // Wire keys can contain punctuation; use stable local field names instead of RHF path parsing.
@@ -26,9 +38,9 @@ export function GrowthTopicCard({topic,model,actions,onMemory}:{topic:GrowthTopi
   const selected=topic.inputs.filter((input,index)=>chosen(index)&&input.choices.some(choice=>choice.value===chosen(index)));
   function mark(){if(!basis.current)basis.current={topic:JSON.parse(JSON.stringify(topic)) as GrowthTopic,authorityVersion};actions.markDirty(`topic:${topic.id}`);}
   function save(){if(disabled||!shared||conflict)return;try{const fields=getValues();const values=Object.fromEntries(captured.topic.inputs.map((input,index)=>[input.key,fields[`choice_${index}`]??""]));const input=growthContextProjection(captured.topic,captured.authorityVersion,values);setError("");actions.updateTopic(captured.topic,input);}catch{setError("請核對有限選項及原資料版本；衝突的近況需到記憶區覆核。");}}
-  return <SectionCard testID={`growth-topic-${topic.id}`}><SectionHeader density="compact" title={topic.title} subtitle={topic.disabled?"已永久停用":"已啟用"} icon="sprout" />
+  return <>
     <AppButton label={open?`收起${topic.title}設定`:`查看${topic.title}設定`} variant="quiet" onPress={()=>setOpen(value=>!value)} />
-    {open?<View style={s.smallStack}>
+    <MotionDisclosure expanded={open} scopeKey={`${model.scopeKey}:${topic.id}`}><View style={s.smallStack}>
       <Text style={s.meta}>只保存這次明確選擇的近況；未知或不選的欄位保持原狀。已確認資料會供獲授權家庭成員查看。</Text>
       {changed?<Text style={s.warning}>主題、資料或授權版本已改變，原選擇保留；先核對最新內容，再明確放棄草稿並重新核對。</Text>:null}
       {conflict?<><Text style={s.warning}>近況存在衝突，這裏不能直接覆蓋。請先到記憶區覆核。</Text><AppButton label="到記憶區核對" variant="secondary" onPress={onMemory} /></>:null}
@@ -50,6 +62,6 @@ export function GrowthTopicCard({topic,model,actions,onMemory}:{topic:GrowthTopi
         </View>
       </>:null}
       {error?<HelperText type="error" accessibilityRole="alert">{error}</HelperText>:null}
-    </View>:null}
-  </SectionCard>;
+    </View></MotionDisclosure>
+  </>;
 }

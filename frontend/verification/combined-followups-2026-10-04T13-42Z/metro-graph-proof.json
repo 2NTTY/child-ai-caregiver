@@ -1,0 +1,170 @@
+[
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/10/7534ee77adbd14bfad82114e4d675e660154cf29cf8ef50edebd2ed1a6742d5c6c0c8b.mp",
+    "dependencies": [
+      "../useContainerSize"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/13/2c160154dd232f96e554a3cb68300ba867b75974caad78be60875474d74a3e5c8844ae.mp",
+    "dependencies": [
+      "./HomeAgentImportant"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/14/3af459945f190cfa8db53d9e0dd7620e3c47c5ebdc083514ae0bc413d14761e05c9bd4.mp",
+    "dependencies": [
+      "./HomeAgentImportant"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/1d/b0846b393801ba672ea905482810b3b6c98d4f44b89be29053033a575eb8c74d17cb51.mp",
+    "dependencies": [
+      "../motion/useModalBackdrop"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/2d/7188dbb9a7f12c0dac12046ac274dc660154cf29cf8ef50edebd2ed1a6742d5c6c0c8b.mp",
+    "dependencies": [
+      "../useContainerSize"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/4c/86c0f5b43e6c55ba02c2d4761a55aac104cf98d2b407e796dda87075e3dfc129178f2b.mp",
+    "dependencies": [
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/care.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/chat.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/contact.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/family.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/growth.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/guide.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/index.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/memory.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/more.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/motion-preview.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/photos.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/profile.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/settings.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/sources.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/summary.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/tasks.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/login.tsx"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/61/4a5c09cd2ddfdb837e21273f986a64f5857322aba2e9628a02088cae0328f463dbdf48.mp",
+    "dependencies": [
+      "../home-agent-entry"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/7c/b0437a59d5b41c9873d79fd82e29c30e3c47c5ebdc083514ae0bc413d14761e05c9bd4.mp",
+    "dependencies": [
+      "./HomeAgentImportant"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/83/0632a1f258bc65065756b04689267ea4214f9cab3d75627d19db2df1e6d9f743039a96.mp",
+    "dependencies": [
+      "../components/useContainerSize"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/90/2a1b715713eadb15717d51580db7c05fb9e65a52ce97a7675142f6b7cdd653a3010ee8.mp",
+    "dependencies": [
+      "../motion/useModalBackdrop"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/95/37311f03a45ba5e2c9436b17e02f13c104cf98d2b407e796dda87075e3dfc129178f2b.mp",
+    "dependencies": [
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/care.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/chat.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/contact.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/family.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/growth.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/guide.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/index.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/memory.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/more.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/motion-preview.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/photos.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/profile.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/settings.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/sources.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/summary.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/tasks.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/login.tsx"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/97/6b647ca363aee7950528e2d811ada803b906080991cc0c6b80081bd89ea00cf5cb850b.mp",
+    "dependencies": [
+      "../home-agent-entry"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/98/2b4e843d4541130e7846784701799aa4214f9cab3d75627d19db2df1e6d9f743039a96.mp",
+    "dependencies": [
+      "../components/useContainerSize"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/9a/561b43f815a49709f5e1e74d24de8bb6c98d4f44b89be29053033a575eb8c74d17cb51.mp",
+    "dependencies": [
+      "../motion/useModalBackdrop"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/b0/7478fccb47049fdf0f3ae8e62d219bf5857322aba2e9628a02088cae0328f463dbdf48.mp",
+    "dependencies": [
+      "../home-agent-entry"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/be/e1aa23d161cfa34f406184e63a4ab8c104cf98d2b407e796dda87075e3dfc129178f2b.mp",
+    "dependencies": [
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/care.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/chat.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/contact.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/family.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/growth.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/guide.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/index.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/memory.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/more.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/motion-preview.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/photos.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/profile.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/settings.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/sources.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/summary.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/tasks.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/login.tsx"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/bf/f6797ffd42d9e23db50e0a0db6d0d203b906080991cc0c6b80081bd89ea00cf5cb850b.mp",
+    "dependencies": [
+      "../home-agent-entry"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/c6/a6ea57005af7507c8b1a790d24605e5fb9e65a52ce97a7675142f6b7cdd653a3010ee8.mp",
+    "dependencies": [
+      "../motion/useModalBackdrop"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/f5/1fce2a87489e281201491cdeb2b8e0a867b75974caad78be60875474d74a3e5c8844ae.mp",
+    "dependencies": [
+      "./HomeAgentImportant"
+    ]
+  }
+]

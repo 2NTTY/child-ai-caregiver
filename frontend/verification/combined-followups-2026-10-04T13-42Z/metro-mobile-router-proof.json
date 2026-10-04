@@ -1,0 +1,74 @@
+[
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/4c/86c0f5b43e6c55ba02c2d4761a55aac104cf98d2b407e796dda87075e3dfc129178f2b.mp",
+    "dependencies": [
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/care.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/chat.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/contact.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/family.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/growth.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/guide.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/index.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/memory.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/more.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/motion-preview.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/photos.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/profile.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/settings.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/sources.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/summary.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/tasks.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/login.tsx"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/95/37311f03a45ba5e2c9436b17e02f13c104cf98d2b407e796dda87075e3dfc129178f2b.mp",
+    "dependencies": [
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/care.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/chat.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/contact.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/family.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/growth.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/guide.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/index.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/memory.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/more.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/motion-preview.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/photos.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/profile.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/settings.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/sources.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/summary.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/tasks.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/login.tsx"
+    ]
+  },
+  {
+    "cache_file": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004/metro-cache/be/e1aa23d161cfa34f406184e63a4ab8c104cf98d2b407e796dda87075e3dfc129178f2b.mp",
+    "dependencies": [
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/care.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/chat.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/contact.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/family.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/growth.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/guide.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/index.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/memory.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/more.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/motion-preview.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/photos.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/profile.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/settings.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/sources.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/summary.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/(dashboard)/tasks.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/_layout.tsx",
+      "/workspace/shared/caregiver_combined_preview/frontend/app/login.tsx"
+    ]
+  }
+]

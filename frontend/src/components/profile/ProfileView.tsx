@@ -1,30 +1,49 @@
-import { brand } from "../../branding";
-import { useState, type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { useContainerWidth } from "../useContainerWidth";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { PageFrame } from "../PageFrame";
 import { AppButton, SectionCard, SectionHeader, TextLink } from "../ui";
 import { profileDataFromForm, type ProfileActions, type ProfileViewModel } from "../../profile-view-model";
 import { chineseFont, colors, radius, spacing, typeScale , readingType } from "../../theme";
 import { ProfileForm } from "./ProfileForm";
 import { ProfileDataSummary, ProfileRevisionSummary } from "./ProfileSummary";
 import { StatusAnnouncement } from "../StatusAnnouncement";
+import { MotionDisclosure, MotionReveal } from "../../motion";
 
-export function ProfileView({ model, actions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false }: {
+export function ProfileView({ model, actions: sourceActions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false, onLayoutReady }: {
   model: ProfileViewModel; actions: ProfileActions; childPicker: ReactNode; writeNotice: ReactNode;
-  previewControls: ReactNode; onOpenCare: () => void; childDeletionActive?: boolean;
+  previewControls: ReactNode; onOpenCare: () => void; childDeletionActive?: boolean; onLayoutReady?: () => void;
 }) {
-  const [width, setWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
+  useLayoutEffect(() => {
+    if (Platform.OS === "web") {
+      const node = containerLayout.ref.current as unknown as HTMLElement | null;
+      // The initial viewport-width fallback may still select the wrong column layout.
+      if (!node || Math.abs(node.getBoundingClientRect().width - width) >= 1) return;
+    }
+    onLayoutReady?.();
+  }, [containerLayout.ref, width, onLayoutReady]);
+  const [revisionTrigger, setRevisionTrigger] = useState<number | null>(null);
+  const requestSerial = useRef(0);
+  const actions: ProfileActions = {...sourceActions, submitReviewed: () => {
+    if (model.intent === 'save') setRevisionTrigger(++requestSerial.current);
+    sourceActions.submitReviewed();
+  }};
+  const revealEligible = model.online && !model.reading && !model.needsRefresh && model.access !== 'lost'
+    && model.operation.state === 'saved' && !!model.current?.data;
+  const revealTrigger = model.operation.state === 'saving' || revealEligible ? revisionTrigger : null;
+  const scopeKey = JSON.stringify([model.child?.id ?? 'no-child', model.access]);
   const stacked = width < 940;
   const pending = childDeletionActive || model.operation.state === "saving" || model.operation.state === "unknown";
   const conflict = model.operation.state === "conflict";
   const canReview = model.access === "editable" && !model.reading && !pending && !conflict
     && (!model.child || model.online && !model.needsRefresh);
   const editable = model.access === "editable" && !model.reading && !pending && !conflict && model.intent !== "delete";
-  const frame = (children: ReactNode) => <PageFrame density="compact" title="子女檔案" description="只填已知資料；年齡原值、日期基準與未知欄位如實保留。" eyebrow={`${brand.name} · 孩子資料`}>
+  const frame = (children: ReactNode) => <>
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "孩子權限已失效。本頁檔案、歷史、草稿及未完成操作已清除。" : ""} urgent={model.access === "lost"} />
     <StatusAnnouncement eventKey={`${model.operation.state}:${model.notice}`} message={model.notice ?? ""} urgent={model.operation.state === "failed"} />
-    {children}</PageFrame>;
+    {children}</>;
   if (model.access === "lost") return frame(<>
     <SectionCard><SectionHeader density="compact" title="孩子權限已失效" /><Text style={styles.body}>本頁檔案、歷史、草稿及未完成操作已清除。請重新核對家庭權限，或切換至有權查看的孩子。</Text></SectionCard>
     {childPicker}{previewControls}
@@ -35,22 +54,23 @@ export function ProfileView({ model, actions, childPicker, writeNotice, previewC
     {model.online && model.needsRefresh && model.child ? <View style={styles.warning}><Text style={styles.body}>連線已恢復，請先重新讀取及核對檔案，再確認共享。</Text><AppButton label="重新讀取及核對" onPress={actions.refresh} disabled={model.reading || pending} /></View> : null}
     {model.notice ? <Text style={styles.body}>{model.notice}</Text> : null}
     {writeNotice}
-    <View style={[styles.columns, stacked && styles.stacked]} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+    <View style={[styles.columns, stacked && styles.stacked]} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
       <View style={[styles.column, stacked && styles.fullColumn]}>
         <SectionCard><SectionHeader density="compact" title={model.child ? model.child.name : "尚未有孩子"}
           action={model.child ? <TextLink label="查看照顧記錄" onPress={onOpenCare} /> : undefined} />
           {model.child ? <>
-            {model.reading ? <Text style={styles.body}>檔案正在讀取，草稿暫停確認。</Text> : model.current ? <ProfileRevisionSummary revision={model.current} /> : <Text style={styles.body}>沒有可顯示的檔案。</Text>}
+            {model.reading ? <Text style={styles.body}>檔案正在讀取，草稿暫停確認。</Text> : null}
+            <MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown ? <ProfileRevisionSummary revision={shown} /> : !model.reading ? <Text style={styles.body}>沒有可顯示的檔案。</Text> : null}</MotionReveal>
             <AppButton label="重新讀取檔案" variant="quiet" onPress={actions.refresh} disabled={!model.online || model.reading || pending} />
           </> : <Text style={styles.body}>可從下方新增第一位合成孩子。正式建立孩子仍須接既有孩子 API；本頁不會保存真家庭資料。</Text>}
           {model.access === "read_only" ? <Text style={styles.notice}>目前是 viewer 唯讀角色，可以查看檔案及歷史；不能更正或刪除。</Text> : null}
         </SectionCard>
         {model.child ? <SectionCard><SectionHeader density="compact" title="確認及更正歷史" />
           <AppButton label={model.historyOpen ? "已顯示歷史" : "查看較早版本"} variant="secondary" onPress={actions.showHistory} disabled={!model.online || model.reading || model.historyOpen} />
-          {model.historyOpen ? <>
+          <MotionDisclosure expanded={model.historyOpen} scopeKey={scopeKey} testID="profile-history-disclosure"><View style={styles.historyList}>
             {model.history.length ? model.history.map(revision => <View key={revision.version} style={styles.historyItem}><ProfileRevisionSummary revision={revision} /></View>) : <Text style={styles.body}>沒有較早版本。</Text>}
             {model.hasMoreHistory ? <AppButton label="載入更早版本" variant="quiet" onPress={actions.loadOlderHistory} disabled={!model.online || model.reading} /> : null}
-          </> : null}
+          </View></MotionDisclosure>
         </SectionCard> : null}
         {childPicker}
       </View>
@@ -90,6 +110,7 @@ export function ProfileView({ model, actions, childPicker, writeNotice, previewC
   </>);
 }
 const styles = StyleSheet.create({
+  historyList: { gap: spacing.md },
   columns: { width: "100%", flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, stacked: { flexDirection: "column" },
   column: { flex: 1, minWidth: 0, gap: spacing.lg }, formColumn: { flex: 1.4 }, fullColumn: { width: "100%", flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },

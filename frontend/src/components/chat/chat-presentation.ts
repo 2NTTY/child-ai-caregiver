@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { colors } from "../../theme";
 
 // Local chat presentation adapted from official Codex desktop references, not vendor CSS.
 export const chatFont = Platform.select({
@@ -6,8 +7,9 @@ export const chatFont = Platform.select({
   default: undefined,
 });
 export const chatColors = {
-  canvas: "#FFFFFF", ink: "#202123", secondary: "#6B6B6B", userBubble: "#F3F3F3",
-  line: "#E5E5E5", hover: "#F4F4F4", send: "#212121", focus: "#8A8A8A",
+  canvas: colors.canvas, surface: colors.controlSurface, ink: colors.ink, secondary: colors.muted,
+  userBubble: colors.paleTeal, line: colors.softLine, outline: colors.controlOutline, hover: colors.quietSurface,
+  send: colors.accent, onSend: colors.onAccent, focus: colors.ink,
 } as const;
 export const chatType = {
   body: { fontSize: 15, lineHeight: 24 },
@@ -18,6 +20,6 @@ export const chatType = {
 } as const;
 export const chatLayout = {
   maxWidth: 800, wideInset: 24, compactInset: 16, turnGap: 24, compactTurnGap: 20,
-  paragraphGap: 12, composerRadius: 20, controlSize: 40, compactControlSize: 48,
+  paragraphGap: 12, composerRadius: 20, composerOverlap: 32, controlSize: 40, compactControlSize: 48,
   inputMinHeight: 48, inputMaxHeight: 168,
 } as const;
