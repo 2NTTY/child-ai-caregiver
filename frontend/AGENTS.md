@@ -4,7 +4,7 @@
 
 本目錄是獨立 Expo／React Native Web 前端預覽。根 STATUS 已提供產品短摘要；接着只讀 [PLAN#active](PLAN.md#active)，按包讀相關設計、Skill 或專項交接，不預設讀整份 HANDOFF／研究／歷史。根 PLAN／SPEC／API 只按具體契約或正式整合需要讀。
 
-本域沿 [根文件職責](../AGENTS.md#document-updates)：PLAN 管任務；STATUS 只指路；HANDOFF 管接線索引與差異；WORKFLOW 管次序；Skill 管方法；DESIGN_SYSTEM 管已採納呈現。不要再維護多份下一步。
+本域沿 [根文件職責](../AGENTS.md#document-updates)：PLAN 管任務；STATUS 管短現況與入口；HANDOFF 管接線索引與差異；WORKFLOW 管次序；Skill 管方法；DESIGN_SYSTEM 管已採納呈現。不要再維護多份下一步。
 
 - 只修改 frontend/**。不接管主聊天的 Server、Agent、資料庫、根目錄依賴、正式 App 或根目錄權威文件；前端新依賴只加入本目錄。若 active worktree 修改範圍重疊，先指出具體路徑。
 - 參考圖片只提供視覺規則；文案用香港繁體中文、現有 Logo 與美術。合成預覽不得聲稱已向 Server 保存、發送、登入、邀請或獲得 Agent 回答。
