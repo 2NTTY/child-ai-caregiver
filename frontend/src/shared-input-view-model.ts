@@ -1,5 +1,6 @@
 import type { photoConfirmationProjection } from "./components/photos/photo-form";
 import type { PhotoCandidate, PhotoDraftFields } from "./photo-view-model";
+import type { SourceIntake, SourceIntakeActions, SourceIntakeView } from "./source-intake";
 
 // Display projections of ce87370 SharedInputPanel/shared-inputs.ts, not a second wire contract.
 export type SourceCreateKind = "personal_source" | "paste" | "public_source";
@@ -25,6 +26,8 @@ export type SourceOperation = {
 };
 export type SourceDirect = { kind: "fetch" | "extract"; basisVersion: number; excerpt: string; checked: boolean };
 export type SourcesViewModel = {
+  // Optional, synthetic-only sidecar; never spread into a SharedInput API request.
+  intake?: SourceIntakeView; intakeByInputId?: Readonly<Record<string, SourceIntake>>;
   scopeKey: string; childName: string; accountName: string; online: boolean; access: "editable" | "read_only" | "lost";
   load: "ready" | "loading" | "error"; canCreate: boolean; items: readonly SourceInput[]; sources: readonly PublicInputSource[];
   selected: SourceInput | null; latest: SourceInput | null; operation: SourceOperation; direct: SourceDirect | null; notice: string;
@@ -34,6 +37,7 @@ export type SourcesViewModel = {
   busy: boolean; fresh: boolean; formLocked: boolean; canChoose: boolean; canFetch: boolean; canExtract: boolean; canConfirm: boolean; canDelete: boolean;
 };
 export type SourcesActions = {
+  intake?: SourceIntakeActions;
   refresh(): void; create(input: SourceCreate): void; openInput(input: SourceInput): void; newInput(): void; recreateWithText(): void;
   setFetchConsent(value: boolean): void; fetchContent(): void; setExcerpt(value: string): void; setModelConsent(value: boolean): void; extract(): void;
   adoptCandidate(): void; editDraft(draft: PhotoDraftFields): void; reviewDraft(draft: PhotoDraftFields): void;

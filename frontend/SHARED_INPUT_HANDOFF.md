@@ -1,5 +1,35 @@
 # 私人來源與共享核對前端交接
 
+<a id="assisted-source-management"></a>
+## 設定統一管理，Agent 協助接入
+
+資料來源以設定「資料與私隱 → 資料來源」及既有 `/sources` 為同一管理入口；聊天 `onSources` 導向相同頁面。手動操作與 Agent 代填共用 `SourcesViewModel.items`、`SourceIntakeEditor` 及驗證／確認流程，不另建隱藏來源清單、權威副本或另一個保存入口。
+
+### 一處接線，多處呈現
+
+唯一資料接線入口是 `SourcesScreen` 目前取得 `SourcesViewModel`／`SourcesActions` 的位置：正式整合在這裡以同一 scope 的來源 controller adapter 替換 `useSourcesPreview`，共用清單、選取、原操作及 intake 草稿。設定和聊天只導航至此入口；Agent 代填透過同一 owner 的 intake 回調交建議，不另發一套 create／fetch／confirm 請求或保存分類副本。若未來要在多處同時顯示來源摘要，由共同的本人／孩子／Server scope owner 提供同一投影及更新通知，不能在每個 consumer 再建立 controller。
+
+讀取、loading／error／unknown、版本及原次查核由該 owner 管理。操作確認成功後更新同一份投影，其他 consumer 自動反映；已確認但讀回失敗只重讀，不重送。正式驗收需覆蓋「手動入口更改後 Agent 入口讀到相同結果，Agent 確認後設定亦更新」，並驗 scope 切換不回填舊孩子／他人私人資料。現行預覽仍是單頁 component memory，不能將此接線要求宣稱為已完成跨頁正式同步。
+
+使用者提供連結／原文及一句用途，Agent 接線目標是先在獲准範圍讀取、釐清必要問題，再把建議帶回同一 editor 確認。名稱／來源日期／備註放補充資料；原 `sourceComposerSchema`／`sourceCreateProjection` 仍負責私人保存。新增意向不可混入 `sourceNotes` 或擅增 `SourceCreate` wire 欄位。保存連結、讀取正文、交模型、確認孩子事實和共享各是不同操作，不因一次代填同意而合併。
+
+`SourceIntakeConversation`／`source-intake.ts` 提供受控前端流程及 `actions.intake`：
+- `setIntention`／`setClarification` 保留原文；`read`／`checkRead` 分開閱讀與原結果查核
+- `propose`／`editManually`／`editProposal` 共用一份草稿，以 `validSourceIntakeProposal` 驗證
+- `confirmProposal`／`checkConnection` 只確認意向或查核合成狀態；現行預覽終態是「用途已確認，正式接入未連線」，沒有真閱讀、真模型或已接通結果
+- 未解決的 reading／read_unknown／connection_unknown 鎖住原次意向，不重新確認或另起一次；來源／身份／孩子／Server／授權改變清理相應內容
+
+用途、來源性質、時效及可見範圍分開：`purpose` 為回答參考／待核對孩子記錄／追蹤話題；`nature` 只是來源性質聲稱，`claimed_official` 仍未核實；`timeScope`／`validityText` 不由來源日期或保存時間猜測。舊項缺 metadata 保持未指定，長期參考不代表永久有效。私人可見範圍固定，分類不把材料加入公共知識庫；來源正文、版本與授權仍沿正式 `shared_inputs`。
+
+「回答時參考」不等於既有 `confirm.kind=reference`：後者建立家庭參考備註，不能當私人回答檢索接線。選記錄用途不會建立 CareRecord／MemoryFact、任務或外發，也不等於已確認孩子關係與家庭共享。不可讀／需登入來源不猜正文、不代登入；提供原文後仍沿取得及模型同意邊界。
+
+**正式尚缺的接點：**用途／來源性質／時效的保存及修訂、原地修改／停用、Agent 閱讀與討論结果、私人回答引用／檢索、話題接入及可查核終態。沒有契約前不造 endpoint；原地修改／停用顯示待接線。現在 `intake`／`intakeByInputId` 只在 preview component memory，正式掛載須替換，不建 outbox／browser storage。
+
+後續整合版 [v26 有界 UI 證據](verification/combined-source-intake-2026-10-04T14-51Z/cua-v26-checks.json)已核對助手／人工共用 editor、閱讀／接入 unknown 鎖定與原次恢復，以及桌面／320 CSS px 操作；這不是正式 controller 或全部尺寸的驗收。
+
+本包程式基線核對 master `37625d0`。局部實作證據見 [implementation-checks](verification/private-source-intake/implementation-checks.json)；純狀態及 scoped 型別通過不代表完整建置、四尺寸、鍵盤、跨頁或真服務通過。後端不在本次前端修改範圍。
+
+
 更新：2026-10-01。FE-W14 基線 `c09c22b4cde784cf9f31f349b204038b063ed3d4`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)，不自行 merge。源碼／驗證 commit：`d00a6bb0bd5c48834a00fa3057c5793bd49cf650`。主責 B；只交付 `frontend/**` 的顯示、表單及合成操作，沒有改 Server、Agent、正式 App、共用業務型別或根文件。
 
 ## 權威來源
@@ -64,3 +94,4 @@ fetch／extract 沒有收據，unknown 保留原 basisVersion／原片段，先 
 typecheck、四項來源 schema／投影及三項共用照片規則檢查通過；Web 27 個靜態路由、Android Hermes／31 項資產 export 通過。共用 AppTextField 以 Paper 5.x 公開 `contentStyle` 留出浮動標籤空間，保留字體伸縮；48 個四尺寸重排及來源關鍵合成流程、390／320 的 150% Web 文字檢查通過。完整輸出、測試 bundle、檔案 hash 和重用範圍見 [build-checks](verification/fe-w14/build-checks.json)。
 
 仍待使用者視覺確認、正式 UI／API／跨頁接線，以及原生選圖／OS share、APK、鍵盤／返回鍵／Safe Area／TalkBack／系統大字體和真機驗收。沒有真 Server、來源抓取、模型或外發成本；手機 Web 截圖及 bundle 不冒充原生驗收。成長關注、到診摘要及主動聯絡另包接續，本包不把整套前端標完成。
+

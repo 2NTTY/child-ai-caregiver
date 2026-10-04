@@ -33,6 +33,8 @@ function SourceWorkspace({ child, online, identity, server, onIdentity, onServer
       <AppSelect label="來源問題階段" value={preview.faultPhase} options={phases} onChange={value => { preview.setFaultPhase(value); preview.setOutcome("success"); }} />
       <AppSelect label="模擬來源結果" value={preview.outcome} options={outcomes} onChange={preview.setOutcome} />
       <AppSelect label="模擬來源查核" value={preview.lookup} options={lookups} onChange={preview.setLookup} />
+      <AppSelect label="助手查看來源結果（合成）" value={preview.intakeReadOutcome} onChange={preview.setIntakeReadOutcome} options={[{ value: "ready", label: "可進入用途討論" }, { value: "unavailable", label: "來源不可讀" }, { value: "unknown", label: "原次結果未知" }]} />
+      <AppSelect label="用途確認後狀態（合成）" value={preview.intakeConnectionOutcome} onChange={preview.setIntakeConnectionOutcome} options={[{ value: "not_connected", label: "確認意向，正式接入未連線" }, { value: "unknown", label: "接入結果未知" }]} />
       <AppButton label={`切換來源帳戶，目前${identity.name}`} variant="secondary" onPress={onIdentity} />
       <AppButton label={`切換來源 Server，目前${server}`} variant="secondary" onPress={onServer} />
       <Text style={s.meta}>帳戶／Server／孩子切換清除本頁私人資料及舊回應。離線保留本頁草稿；其他情境切換重設資料。公開清單 ID、hash 及正文都是示例，正式接線須採用 Server 回應。</Text>
@@ -47,5 +49,5 @@ export default function SourcesPage() {
   return child ? <SourceWorkspace key={JSON.stringify([child.id, identity.id, identity.name, server])} child={child} online={model.connection === "online"} identity={identity} server={server}
     onIdentity={() => setAccount(value => value === "mom" ? "dad" : "mom")} onServer={() => setServer(value => value === "合成 A" ? "合成 B" : "合成 A")}
     onPhotos={() => actions.open("photos")} onRecord={() => actions.open("care")} /> :
-    <PageFrame density="compact" title="私人來源" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不會顯示其他孩子的私人來源。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="資料來源" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不會顯示其他孩子的私人來源。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }
