@@ -6,7 +6,7 @@
  * BROWSER_EXECUTABLE=/usr/bin/chromium \
  * FRONTEND_PREVIEW_URL=http://localhost:8083 \
  * FRONTEND_TEST_VERSION=<reviewed-version> \
- * node scripts/verify-motion-system.mjs [layout|navigation|summary|care|tasks|photos|states|child|reduced|dialog|chat]
+ * node scripts/verify-motion-system.mjs [layout|navigation|summary|care|tasks|photos|contact|states|child|reduced|dialog|chat]
  *
  * A failure stops the batch. Pass only the failed/affected group for an approved
  * local rerun; earlier evidence is never overwritten (one directory per run).
@@ -196,6 +196,17 @@ async function navigation() {
 
 async function summary() {
   const page = await fresh('/summary');
+  // New RHF inputs mount after the list motion commit; append focus must wait for that ref.
+  for (const [add, fieldName, remove] of [
+    ['新增到診問題', '到診問題 2', '移除到診問題 2'],
+    ['新增到診準備', '到診準備 2', '移除到診準備 2'],
+  ]) {
+    await button(page, add).click();
+    const appended = field(page, fieldName); await appended.waitFor(); await settled(page);
+    assert.equal(await appended.evaluate(element => element === document.activeElement), true, `${add} did not focus its committed new input`);
+    await button(page, remove).click(); await settled(page);
+    assert.equal(await appended.count(), 0, 'Temporary append-focus fixture row was not removed');
+  }
   await enableTools(page, '顯示摘要情境');
   await selectOption(page, '摘要重讀資料', '來源及家庭準備已改變');
   const input = field(page, '到診問題 1'), raw = '  更新結果期間保留的到診草稿與游標。  ';
@@ -373,6 +384,31 @@ async function photos() {
   await assertNoResidue(page, 'photo candidate adoption');
 }
 
+async function contact() {
+  const page = await fresh('/contact');
+  await page.getByRole('checkbox', { name: '允許透過以下本人渠道接收一般任務提示', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Web Push · 本人瀏覽器（合成）', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Telegram · 本人 Telegram（合成）', exact: true }).click();
+  await settled(page);
+  const rows = page.locator('[data-motion-region="contact-consent-bindings"] [data-motion-row]');
+  const ids = () => rows.evaluateAll(elements => elements.map(element => element.dataset.motionRow));
+  const original = await ids(); assert.equal(original.length, 2);
+  await startTrace(page, 'contact-draft-reorder-remove-focus');
+  await button(page, '向前移動Telegram').click(); await settled(page);
+  assert.deepEqual(await ids(), [...original].reverse(), 'Contact reorder changed stable binding identities');
+  assert.equal(await button(page, '移除Telegram接收選項').evaluate(element => element === document.activeElement), true, 'Moving to index0 left focus on the newly disabled move control');
+  await button(page, '向前移動Web Push').click(); await settled(page);
+  assert.deepEqual(await ids(), original, 'Moving back failed to restore the established channel order');
+  await button(page, '移除Web Push接收選項').click(); await settled(page);
+  assert.deepEqual(await ids(), [original[1]], 'Removing one draft channel changed the survivor');
+  assert.equal(await button(page, '移除Telegram接收選項').evaluate(element => element === document.activeElement), true, 'Removing the first draft channel lost survivor focus');
+  await button(page, '移除Telegram接收選項').click(); await settled(page);
+  assert.deepEqual(await ids(), [], 'Removing the final draft channel left a row');
+  assert.equal(await page.getByRole('checkbox', { name: 'Telegram · 本人 Telegram（合成）', exact: true }).evaluate(element => element === document.activeElement), true, 'Final channel removal did not focus the checkbox fallback');
+  await stopTrace(page); await assertNoResidue(page, 'contact draft reorder and removal');
+  // These are local draft changes only: do not save consent or invoke notification APIs.
+}
+
 async function states() {
   for (const [outcome, message] of [['未獲接受', '這次保存未獲接受'], ['結果未知', '保存結果未知']]) {
     const page = await fresh('/summary', 390);
@@ -457,6 +493,25 @@ async function dialog() {
   assert.equal(await trigger.evaluate(element => element === document.activeElement), true, 'Dialog dismissal lost trigger focus');
   assert.equal(await button(page, '切換至小昕').count(), 1, 'Cancel submitted the destructive action');
   await assertNoResidue(page, 'dialog cancel');
+
+  // React mutation-phase focus restoration must not undo drawer dismissal.
+  const drawerPage = await fresh('/summary', 390);
+  const draft = field(drawerPage, '到診問題 1'); await draft.fill('側欄配置合成草稿');
+  const drawerTrigger = button(drawerPage, '開啟資訊側欄'); await drawerTrigger.focus();
+  await startTrace(drawerPage, 'drawer-escape-focus');
+  await drawerPage.keyboard.press('Enter');
+  const drawer = drawerPage.getByRole('dialog', { name: '照顧上下文', exact: true }); await drawer.waitFor();
+  await button(drawerPage, '關閉資訊側欄').focus();
+  await drawerPage.keyboard.press('Shift+Tab');
+  assert.equal(await drawer.evaluate(element => element.contains(document.activeElement)), true, 'Drawer reverse Tab escaped its focus trap');
+  await drawerPage.keyboard.press('Tab');
+  assert.equal(await button(drawerPage, '關閉資訊側欄').evaluate(element => element === document.activeElement), true, 'Drawer forward Tab did not wrap to its first control');
+  await drawerPage.keyboard.press('Escape'); await drawer.waitFor({ state: 'hidden' });
+  assert.equal(await drawerTrigger.evaluate(element => element === document.activeElement), true, 'Drawer Escape did not immediately restore trigger focus');
+  await settled(drawerPage); await stopTrace(drawerPage);
+  assert.equal(await drawerTrigger.evaluate(element => element === document.activeElement), true, 'Drawer exit completion lost trigger focus');
+  assert.equal(await draft.inputValue(), '側欄配置合成草稿', 'Drawer dismissal lost the existing draft');
+  await assertNoResidue(drawerPage, 'drawer Escape');
 }
 
 async function chat() {
@@ -493,7 +548,7 @@ async function chat() {
   await assertNoResidue(page, 'stopped streaming message');
 }
 
-const groups = { layout, navigation, summary, care, tasks, photos, states, child, reduced, dialog, chat };
+const groups = { layout, navigation, summary, care, tasks, photos, contact, states, child, reduced, dialog, chat };
 for (const group of requested) assert.ok(group in groups, `Unknown motion group: ${group}`);
 
 async function sourceManifest() {
@@ -502,7 +557,7 @@ async function sourceManifest() {
     for (const item of await readdir(directory, { withFileTypes: true })) {
       const path = resolve(directory, item.name);
       if (item.isDirectory()) await visit(path);
-      else if (/\.(tsx?|mts|mjs|json)$/.test(item.name)) entries.push({ path: relative(process.cwd(), path), sha256: createHash('sha256').update(await readFile(path)).digest('hex') });
+      else if (/\.(tsx?|mts|mjs|json|css)$/.test(item.name)) entries.push({ path: relative(process.cwd(), path), sha256: createHash('sha256').update(await readFile(path)).digest('hex') });
     }
   }
   for (const path of ['src', 'app']) await visit(resolve(path));

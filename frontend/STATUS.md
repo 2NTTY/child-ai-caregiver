@@ -2,6 +2,8 @@
 
 更新：2026-10-04。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
+**FE-W37 恢復版覆核中（2026-10-04）：** 已核對並恢復已推送來源，再重建後續未提交接合；唯一動效 PR #84 維持 draft。首屏圖片、灰幕、橫向箭頭、設定／記憶首幀及其他重建接合須取得新證據。下方歷史通過只適用當時版本，不代表此恢復版已完成。[恢復與驗證索引](verification/fe-w37-motion/recovery-2026-10-04/README.md)。
+
 **FE-W37 全站語意動效：** 唯一 [draft PR #84](https://github.com/2NTTY/child-ai-caregiver/pull/84)，基線 `c51dd52`，分支 `dot/fe-w37-motion-system`。共用動效及既有畫面已接線。2026-10-04 經使用者授權的臨時公開合成測試站完成有界 CUA 驗證：15 路由 × 四種 iframe CSS 寬度共 60 次逐項網址／寬度核對、文件層級無水平溢出；清單新增／更正／刪除保留載入前綴、返回焦點、草稿、切孩子隔離及部分中斷端點通過。實測發現的清單重設、返回焦點與刪除孩子彈窗 Escape 焦點已修復並補驗。最新 typecheck／35 路由 Web export 通過；先前 Android bundle 只屬舊版建置證據。實際 reduced-motion 受組織 DevTools 政策阻擋，精確遮滿換文的逐幀／selection 證據仍待取得；**不可標為完成或合併就緒**。詳見 [最新 CUA 證據](verification/fe-w37-motion/final-cua-2026-10-04T07-09Z/checks.json)、[規範](MOTION_SYSTEM.md)及[交接](HANDOFF.md#semantic-motion)。
 
 **FE-W37 站內減少動畫：** 設定 → 應用偏好已加入開關，Web 本機保存，系統減少動畫優先；原生為 session-only。Typecheck、6項純測試及35路由Web export通過。四種iframe寬度、Space切換、on/off重載保存、幕布covering中啟用後清罩與草稿／焦點／游標保留、關閉不重播及新操作恢復已驗。[證據](verification/fe-w37-motion/manual-reduce-2026-10-04T07-43Z/cua-checks.json)。這是手動偏好路徑，不取代系統media及精確逐幀門檻。

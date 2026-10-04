@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { brand } from "../../branding";
 import { useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
@@ -9,13 +10,14 @@ import { chineseFont, colors, radius, spacing, typeScale , readingType } from ".
 import { ProfileForm } from "./ProfileForm";
 import { ProfileDataSummary, ProfileRevisionSummary } from "./ProfileSummary";
 import { StatusAnnouncement } from "../StatusAnnouncement";
-import { MotionReveal } from "../../motion";
+import { MotionDisclosure, MotionReveal } from "../../motion";
 
 export function ProfileView({ model, actions: sourceActions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false }: {
   model: ProfileViewModel; actions: ProfileActions; childPicker: ReactNode; writeNotice: ReactNode;
   previewControls: ReactNode; onOpenCare: () => void; childDeletionActive?: boolean;
 }) {
-  const [width, setWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
   const [revisionTrigger, setRevisionTrigger] = useState<number | null>(null);
   const requestSerial = useRef(0);
   const actions: ProfileActions = {...sourceActions, submitReviewed: () => {
@@ -46,7 +48,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
     {model.online && model.needsRefresh && model.child ? <View style={styles.warning}><Text style={styles.body}>連線已恢復，請先重新讀取及核對檔案，再確認共享。</Text><AppButton label="重新讀取及核對" onPress={actions.refresh} disabled={model.reading || pending} /></View> : null}
     {model.notice ? <Text style={styles.body}>{model.notice}</Text> : null}
     {writeNotice}
-    <View style={[styles.columns, stacked && styles.stacked]} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+    <View style={[styles.columns, stacked && styles.stacked]} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
       <View style={[styles.column, stacked && styles.fullColumn]}>
         <SectionCard><SectionHeader density="compact" title={model.child ? model.child.name : "尚未有孩子"}
           action={model.child ? <TextLink label="查看照顧記錄" onPress={onOpenCare} /> : undefined} />
@@ -59,10 +61,10 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
         </SectionCard>
         {model.child ? <SectionCard><SectionHeader density="compact" title="確認及更正歷史" />
           <AppButton label={model.historyOpen ? "已顯示歷史" : "查看較早版本"} variant="secondary" onPress={actions.showHistory} disabled={!model.online || model.reading || model.historyOpen} />
-          {model.historyOpen ? <>
+          <MotionDisclosure expanded={model.historyOpen} scopeKey={scopeKey} testID="profile-history-disclosure"><View style={styles.historyList}>
             {model.history.length ? model.history.map(revision => <View key={revision.version} style={styles.historyItem}><ProfileRevisionSummary revision={revision} /></View>) : <Text style={styles.body}>沒有較早版本。</Text>}
             {model.hasMoreHistory ? <AppButton label="載入更早版本" variant="quiet" onPress={actions.loadOlderHistory} disabled={!model.online || model.reading} /> : null}
-          </> : null}
+          </View></MotionDisclosure>
         </SectionCard> : null}
         {childPicker}
       </View>
@@ -102,6 +104,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
   </>);
 }
 const styles = StyleSheet.create({
+  historyList: { gap: spacing.md },
   columns: { width: "100%", flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, stacked: { flexDirection: "column" },
   column: { flex: 1, minWidth: 0, gap: spacing.lg }, formColumn: { flex: 1.4 }, fullColumn: { width: "100%", flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },

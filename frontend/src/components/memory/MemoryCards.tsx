@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useLayoutEffect, useRef, useState } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { canManageMemory, factConfirmationLabel, factIsApplicable, factSourceLabel, factStatusLabels, factUnavailableReason, isTerminalTopic, topicMayAsk, topicStatusLabels, visibilityLabels, type MemoryFactView, type MemoryRole, type MemorySummaryView, type MemoryTopicView } from "../../memory-view-model";
 import type { MemoryPreviewController } from "../../preview/useMemoryPreview";
 import { chineseFont, colors, radius, readingType, spacing, typeScale, workspaceType } from "../../theme";
-import { MotionFeedback, MotionList, MotionReveal } from "../../motion";
+import { MotionDisclosure, MotionFeedback, MotionList, MotionReveal } from "../../motion";
 import { AppButton, SectionCard, SectionHeader } from "../ui";
 
 export function MemoryFactList({ preview, role, disabled, scopeKey, motionActive }: { preview: MemoryPreviewController; role: MemoryRole; disabled: boolean; scopeKey: string; motionActive: boolean }) {
@@ -91,12 +91,23 @@ export function MemorySummaryCard({ summary }: { summary: MemorySummaryView | nu
   </SectionCard>;
 }
 
-export function MemoryHistoryCard({ preview }: { preview: MemoryPreviewController }) {
-  if (!preview.history) return null;
-  const versions: (MemoryFactView | MemoryTopicView)[] = preview.historyPage.items;
-  return <SectionCard><SectionHeader density="compact" title="合成版本記錄" subtitle="只含預覽資料及本次操作；正式版本須由 Server 核對可見範圍。"
-    action={<AppButton label="關閉版本" variant="quiet" onPress={preview.closeHistory} />} />
-    <Text style={styles.meta}>已載入 {versions.length} 個版本{preview.historyPage.nextAfterId ? "；仍有未載入頁面" : "；本次合成記錄已到最後一頁"}。</Text>
+export function MemoryHistoryCard({ preview, scopeKey }: { preview: MemoryPreviewController; scopeKey: string }) {
+  const retained = useRef<{ scopeKey: string; versions: (MemoryFactView | MemoryTopicView)[]; hasMore: boolean } | null>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const selectedHistory = preview.history ? `${preview.history.kind}:${preview.history.id}` : null;
+  if (retained.current?.scopeKey !== scopeKey) retained.current = null;
+  if (preview.history) retained.current = { scopeKey, versions: preview.historyPage.items, hasMore: !!preview.historyPage.nextAfterId };
+  const versions = retained.current?.versions ?? [];
+  useLayoutEffect(() => {
+    if (Platform.OS === "web" && selectedHistory) opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  }, [selectedHistory, scopeKey]);
+  function closeHistory() {
+    if (Platform.OS === "web" && opener.current?.isConnected && opener.current.getClientRects().length > 0) opener.current.focus({ preventScroll: true });
+    preview.closeHistory();
+  }
+  return <MotionDisclosure expanded={!!preview.history} scopeKey={scopeKey} testID="memory-history-disclosure"><SectionCard><SectionHeader density="compact" title="合成版本記錄" subtitle="只含預覽資料及本次操作；正式版本須由 Server 核對可見範圍。"
+    action={<AppButton label="關閉版本" variant="quiet" onPress={closeHistory} />} />
+    <Text style={styles.meta}>已載入 {versions.length} 個版本{retained.current?.hasMore ? "；仍有未載入頁面" : "；本次合成記錄已到最後一頁"}。</Text>
     {versions.map(version => <View key={version.version} style={styles.entry}>
       <Text style={styles.title}>版本 {version.version} · {"key" in version ? factStatusLabels[version.status] : topicStatusLabels[version.status]}</Text>
       <Text style={styles.body}>{"key" in version ? `${version.key}：${version.content}` : `${version.title}：${version.note || "沒有備註"}`}</Text>
@@ -108,7 +119,7 @@ export function MemoryHistoryCard({ preview }: { preview: MemoryPreviewControlle
         : <><Text style={styles.meta}>更新：{version.updatedAt} · 暫緩至：{version.resumeAfter ?? "沒有"}</Text><Text style={styles.meta}>{topicMayAsk(version) ? "目前可以再次提問" : "目前不可再次提問"}</Text>{version.reopenReason ? <Text style={styles.meta}>重開原因：{version.reopenReason}</Text> : null}</>}</View>
     </View>)}
     {preview.historyPage.nextAfterId ? <AppButton label="載入更多版本" variant="quiet" onPress={preview.loadMoreHistory} /> : null}
-  </SectionCard>;
+  </SectionCard></MotionDisclosure>;
 }
 
 const styles = StyleSheet.create({

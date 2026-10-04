@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { PreviewLink, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
-import { Modal, Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { brand } from "../branding";
-import { MotionEntrance, MotionScopeBoundary } from "../motion";
+import { MotionDrawerOverlay, MotionDrawerRight, MotionEntrance, MotionScopeBoundary } from "../motion";
 import { BrandLogo } from "./BrandLogo";
 import { Button, Divider, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
@@ -130,9 +130,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const wide = width >= 1280;
   const { model, actions, notice, dismissNotice } = usePreview();
   const railProps = { model, actions, home: pathname === "/" };
-  // Main screens contain their own useful overview. Keep each route's manual context choice.
-  const [railChoices, setRailChoices] = useState<Record<string, boolean>>({});
-  const railOpen = railChoices[pathname] ?? false;
+  // The docked context rail is shell state, not a separate choice for every route.
+  const [railOpen, setRailOpen] = useState(false);
+  const shell = useRef<View>(null);
   const railAnchor = useRef<View>(null);
   const routeSurface = useRef<View>(null);
   const previousPath = useRef(pathname);
@@ -142,27 +142,25 @@ export function AppShell({ children }: { children: ReactNode }) {
     const heading = (routeSurface.current as unknown as HTMLElement | null)?.querySelector<HTMLElement>('[role="heading"],h1,h2');
     if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
   }, [pathname]);
-  const restoreRailFocus = useRef(false);
   const [railModal, setRailModal] = useState(false);
+  const railContext = useRef({ path: pathname, scope: "" });
   const [moreOpen, setMoreOpen] = useState(false);
   useEffect(() => { if (wide) setRailModal(false); }, [wide]);
   useEffect(() => { setRailModal(false); }, [pathname]);
   function closeRail() {
-    restoreRailFocus.current = true;
     setRailModal(false);
-  }
-  function railClosed() {
-    if (restoreRailFocus.current && Platform.OS === "web") (railAnchor.current as unknown as HTMLElement | null)?.focus();
-    restoreRailFocus.current = false;
   }
   const active = (path: AppPath) => pathname === path;
   const mobileHome = width < 650 && active("/");
   const selectedChild = model.children.find(item => item.id === model.selectedChildId);
   const showGuideNav = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
-  const railExpanded = wide ? railOpen : railModal;
   const motionScope = `${model.caregiverName}:${model.selectedChildId ?? "none"}:${selectedChild?.accessRole ?? "none"}`;
+  const sameRailContext = railContext.current.path === pathname && railContext.current.scope === motionScope;
+  const overlayOpen = railModal && !wide && sameRailContext;
+  const railExpanded = wide ? railOpen : overlayOpen;
+  useEffect(() => { setRailModal(false); }, [motionScope]);
 
-  return <View style={styles.root}>
+  return <View ref={shell} style={styles.root}>
     {!compact ? <View testID="web-sidebar" style={styles.sidebar}>
       <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={styles.brandLink}>
         <BrandLogo style={styles.logo} decorative />
@@ -189,7 +187,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <View testID="header-actions" style={styles.topActions}>
           <NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <ToolbarIconButton ref={railAnchor} icon="page-layout-sidebar-right" label={railExpanded ? "收起資訊側欄" : "開啟資訊側欄"}
-            expanded={railExpanded} onPress={() => wide ? setRailChoices(choices => ({ ...choices, [pathname]: !railOpen })) : setRailModal(true)} />
+            expanded={railExpanded} onPress={() => {
+              if (wide) setRailOpen(value => !value);
+              else { railContext.current = { path: pathname, scope: motionScope }; setRailModal(true); }
+            }} />
         </View>
       </View>
       {compact && !mobileHome ? <View style={styles.compactFacts}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /><ChildKeyFacts child={selectedChild} load={model.profileLoad} /></View> : null}
@@ -197,21 +198,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
       <View style={styles.body}>
         <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
-        {wide && railOpen ? <RightRail {...railProps} /> : null}
+        {wide ? <MotionDrawerRight open={railOpen} width={310} mode="dock" scopeKey={motionScope} testID="motion-context-rail"><RightRail {...railProps} /></MotionDrawerRight> : null}
       </View>
       </MotionScopeBoundary>
       {compact ? <View style={styles.bottomNav}>
         {navigation.filter(item => ["/", "/chat", "/tasks", "/memory"].includes(item.href)).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
         <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={mobileIcons.navigation} color={["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
       </View> : null}
-      <Modal visible={railModal && !wide} transparent animationType="none" onRequestClose={closeRail} onDismiss={railClosed}>
-        <View style={styles.railOverlay}>
-          <View accessible={false} onStartShouldSetResponder={() => true} onResponderRelease={closeRail} style={styles.railScrim} />
-          <MotionEntrance preset="dialog" triggerKey="context-drawer" scopeKey={motionScope} animateOnMount style={styles.railDrawer}><SafeAreaView testID="context-drawer" role="dialog" aria-modal accessibilityLabel="照顧上下文" style={styles.drawerContent}>
-            <RightRail {...railProps} overlay onClose={closeRail} />
-          </SafeAreaView></MotionEntrance>
-        </View>
-      </Modal>
+      <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}:${wide ? "dock" : "overlay"}`} label="照顧上下文" onRequestClose={closeRail}
+        backgroundRef={shell} returnFocusRef={railAnchor} restoreFocusOnClose={sameRailContext}>
+        <SafeAreaView testID="context-drawer" style={styles.drawerContent}><RightRail {...railProps} overlay onClose={closeRail} /></SafeAreaView>
+      </MotionDrawerOverlay>
     </View>
     <Portal>
       <Dialog visible={moreOpen} onDismiss={() => setMoreOpen(false)} style={styles.menuDialog}>
@@ -236,7 +233,7 @@ const styles = StyleSheet.create({
   brandLink: { width: "100%", minHeight: 93, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
   logo: { width: 164, height: 53 },
   brandLine: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, textAlign: "center" },
-  navScroll: { flex: 1, minHeight: 0 }, navList: { gap: spacing.md, paddingBottom: spacing.md },
+  navScroll: { flex: 1, minHeight: 0, marginRight: -spacing.sm }, navList: { gap: spacing.md, paddingBottom: spacing.md, paddingRight: spacing.sm },
   navGroup: { gap: spacing.xs }, navGroupLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: 12, lineHeight: 18, paddingHorizontal: spacing.md },
   navItem: { minHeight: 46, borderRadius: radius.small, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
   navActive: { backgroundColor: colors.selectedNav, borderLeftColor: colors.teal, borderLeftWidth: 3 },
@@ -290,9 +287,6 @@ const styles = StyleSheet.create({
   divider: { backgroundColor: colors.softLine },
   railCaution: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption },
   railTip: { backgroundColor: colors.mintSurface, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.xs },
-  railOverlay: { flex: 1, flexDirection: "row", justifyContent: "flex-end" },
-  railScrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.overlay },
-  railDrawer: { width: "92%", maxWidth: 370, height: "100%", backgroundColor: colors.sidebar },
   bottomNav: { minHeight: mobileLayout.tabMinHeight, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line, flexDirection: "row" },
   bottomNavItem: { flex: 1, minWidth: mobileLayout.touchTarget, paddingVertical: spacing.sm, alignItems: "center", justifyContent: "center", gap: spacing.xs },
   bottomGlyph: { fontSize: 22, color: colors.muted },

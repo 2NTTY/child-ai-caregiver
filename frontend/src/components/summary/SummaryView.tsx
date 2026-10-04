@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import {useRef, useState} from 'react';
 import {View} from 'react-native';
@@ -15,7 +16,8 @@ import {summaryStyles as s} from './summary-styles';
 import {MotionReveal} from '../../motion';
 
 export function SummaryView({model, actions, onRecord, onTask, previewTools}: {model: SummaryViewModel; actions: SummaryActions; onRecord: (id: string) => void; onTask: (id: string) => void; previewTools?: React.ReactNode}) {
-  const [wide, setWide] = useState(false), [wideQuery, setWideQuery] = useState(false);
+  const contentLayout = useContainerWidth(), queryLayout = useContainerWidth();
+  const wide = contentLayout.width >= 980, wideQuery = queryLayout.width >= 680;
   const [refreshTrigger, setRefreshTrigger] = useState<number | null>(null);
   const refreshSerial = useRef(0);
   const page = model.page, queryValid = summaryPeriodSchema.safeParse(model.query).success;
@@ -25,13 +27,12 @@ export function SummaryView({model, actions, onRecord, onTask, previewTools}: {m
   function refresh() {setRefreshTrigger(++refreshSerial.current); actions.refresh();}
   // Preparation is authoritative immediately and remains outside the read-only presentation.
   const basisKey = page ? JSON.stringify([page.childName, page.profile, page.period, page.endDayExclusive, page.generatedAt, page.basisVersion]) : 'empty';
-  const resultsKey = page ? JSON.stringify([page.counts, page.metrics, page.records, page.missing, page.appointments, page.conflicts]) : 'empty';
   const canRetry = model.online && !model.busy && !model.readFailed && model.access === 'editable' && !!page?.canManage && !!model.pending?.checked && !model.pending.confirmed;
   return <PageFrame density="compact" title="照顧摘要與到診準備" description={`整理${model.childName}的已確認記錄及來源，再由家長核對到診問題與安排。未有記錄不等於事情沒有發生。`}>
     <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
     <SectionCard><SectionHeader density="compact" title="選擇整理期間" icon="calendar-outline" subtitle={model.dataLabel} />
-      <View onLayout={event => setWideQuery(event.nativeEvent.layout.width >= 680)} style={wideQuery ? s.queryRow : s.stack}>
+      <View ref={queryLayout.ref} onLayout={queryLayout.onLayout} style={wideQuery ? s.queryRow : s.stack}>
         <View style={wideQuery ? s.queryField : undefined}><AppDateField label="摘要開始日" value={model.query.startDay} disabled={model.busy || !!model.pending || model.access === 'lost'} onChange={value => actions.updateQuery({...model.query, startDay: value})} /></View>
         <View style={wideQuery ? s.queryField : undefined}><AppSelect label="摘要期間" value={model.query.period} options={[{value: 'day', label: '一日'}, {value: 'week', label: '連續七日'}]} disabled={model.busy || !!model.pending || model.access === 'lost'} onChange={value => actions.updateQuery({...model.query, period: value})} /></View>
         <View style={wideQuery ? s.queryField : undefined}><AppTimeZoneSelect value={model.query.timeZone} disabled={model.busy || !!model.pending || model.access === 'lost'} onChange={value => actions.updateQuery({...model.query, timeZone: value})} /></View>
@@ -59,9 +60,9 @@ export function SummaryView({model, actions, onRecord, onTask, previewTools}: {m
           <Text style={s.body}>期間：{shown.period.startDay} 至 {shown.endDayExclusive}（不包括結束日） · {shown.period.timeZone}</Text><Text selectable style={s.meta}>生成：{summaryTime(shown.generatedAt, shown.period.timeZone)} · 依據版本：{shown.basisVersion}</Text>
         </>}</MotionReveal><Text style={s.meta}>數值保留原單位及約數，沒有混加不同單位或讀取便條內的數字；更正後需重新讀取。</Text>
       </SectionCard>
-      <View onLayout={event => setWide(event.nativeEvent.layout.width >= 980)} style={wide ? s.columns : s.stack}><View style={wide ? s.column : s.full}>
-        <MotionReveal value={page} contentKey={resultsKey} scopeKey={model.scopeKey} regionKey="summary-results" triggerKey={revealTrigger} eligible={revealEligible} preset="summary" style={s.stack} testID="summary-results-motion">{shown => <SummaryRecords page={shown} onRecord={onRecord} onTask={onTask} />}</MotionReveal>
-      </View><View style={wide ? s.column : s.full}><PreparationCard key={model.formEpoch} model={model} actions={actions} /></View></View>
+      <View ref={contentLayout.ref} onLayout={contentLayout.onLayout} style={wide ? s.columns : s.stack}><View style={wide ? s.column : s.full}>
+        <SummaryRecords page={page} onRecord={onRecord} onTask={onTask} motion={{scopeKey: model.scopeKey, triggerKey: revealTrigger, eligible: revealEligible}} />
+      </View><View style={wide ? s.column : s.full}><PreparationCard key={model.scopeKey} model={model} actions={actions} /></View></View>
     </> : null}
     {previewTools}
   </PageFrame>;

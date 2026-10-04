@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type ComponentProps } from "react";
 import { Animated, Easing, Modal, StyleSheet, View } from "react-native";
 import { motionTokens, useMotionPreferences } from "../motion";
+import { MotionPaperScope } from "../motion/MotionPaperScope";
 import { Dialog as PaperDialog } from "react-native-paper";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
@@ -29,7 +30,7 @@ export const AppDialog = Object.assign(function AppDialog({ danger = false, onCl
     return () => animation.stop();
   }, [props.visible, preferences.enabled, preferences.epoch, progress]);
   return <Modal visible={props.visible} transparent animationType="none" onRequestClose={props.onDismiss} onDismiss={onClosed}>
-    <View style={styles.root}><PaperDialog {...props} theme={{ ...props.theme, animation: { scale: 0 } }} testID={props.testID ?? "app-dialog"} style={[styles.dialog, danger && styles.dangerDialog, props.style, { opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [motionTokens.dialog.distance, 0] }) }] }]} /></View>
+    <MotionPaperScope><View style={styles.root}><PaperDialog {...props} theme={{ ...props.theme, animation: { scale: 0 } }} testID={props.testID ?? "app-dialog"} style={[styles.dialog, danger && styles.dangerDialog, props.style, { opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [motionTokens.dialog.distance, 0] }) }] }]} /></View></MotionPaperScope>
   </Modal>;
 }, { Title, Content: PaperDialog.Content, Actions, ScrollArea: PaperDialog.ScrollArea, Icon: PaperDialog.Icon });
 

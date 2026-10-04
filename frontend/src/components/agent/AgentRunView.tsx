@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import {
@@ -13,7 +13,9 @@ import { AppButton, SectionCard, SectionHeader } from "../ui";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import type { LocateAnswerSource } from "../chat/AnswerSources";
 import { ChatMessage } from "../chat/ChatMessage";
-import { MotionDisclosure } from "../../motion";
+import { MotionDisclosure, MotionFeedback, MotionReveal } from "../../motion";
+
+type DecisionMotionIntent = { serial: number; proposalId: string; version: number; status: "accepted" | "dismissed" };
 
 type Tone = "neutral" | "saved" | "warning" | "error";
 const sharedConfirmationLabel = "我已核對內容及對象，明確同意寫入家庭共享資料";
@@ -60,14 +62,19 @@ function OriginalDecision({ model, actions }: { model: AgentRunModel; actions: A
   </View>;
 }
 
-function ProposalCard({ proposal, model, actions }: { proposal: AgentProposalView; model: AgentRunModel; actions: AgentRunActions }) {
+function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEligible, decisionIntent }: {
+  proposal: AgentProposalView; model: AgentRunModel; actions: AgentRunActions; scopeKey: string;
+  readTrigger: number | null; readEligible: boolean; decisionIntent: DecisionMotionIntent | null;
+}) {
+  const confirmed = model.online && model.readState === "ready" && !model.busy && !model.pendingDecision && model.notice?.tone === "saved"
+    && decisionIntent !== null && decisionIntent.proposalId === proposal.id && proposal.version > decisionIntent.version && proposal.status === decisionIntent.status;
   const expired = proposalExpired(proposal);
   const pending = proposal.status === "pending";
   const acceptLabel = proposal.kind === "task_create" ? "建立待辦" : proposal.kind === "task_change" ? "確認更改" : "確認資料";
   return <View testID={`agent-proposal-${proposal.id}`} style={styles.entry}>
     <View style={styles.top}><Text accessibilityRole="header" style={styles.title}>{proposal.title}</Text>
-      <Text style={[styles.badge, (pending || proposal.status === "expired") && styles.warningBadge]}>{agentProposalLabels[proposal.status]}</Text></View>
-    <Text selectable style={styles.body}>{proposal.content}</Text>
+      <MotionFeedback active={confirmed} triggerKey={confirmed ? decisionIntent?.serial ?? null : null} scopeKey={`${scopeKey}:${proposal.id}`} testID="agent-proposal-feedback"><Text style={[styles.badge, (pending || proposal.status === "expired") && styles.warningBadge]}>{agentProposalLabels[proposal.status]}</Text></MotionFeedback></View>
+    <MotionReveal value={proposal.content} contentKey={proposal.content} scopeKey={`${scopeKey}:${proposal.id}`} regionKey={`agent-proposal-${proposal.id}`} triggerKey={readTrigger} eligible={readEligible}>{text => <Text selectable style={styles.body}>{text}</Text>}</MotionReveal>
     <View style={styles.scope}><AppIcon name={proposal.scope === "family" ? "account-group-outline" : "lock-outline"} size={18} />
       <Text style={styles.meta}>{proposal.scope === "family"
         ? pending ? "候選只限本人查看；接受後按家庭權限共享" : "家庭共享資料：接受後家庭成員可按權限查看"
@@ -128,9 +135,40 @@ function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
   </View>;
 }
 
-export function AgentRunView({ model, actions, onLocateSource }: { model: AgentRunModel; actions: AgentRunActions; onLocateSource?: LocateAnswerSource }) {
+export function AgentRunView({ model, actions: sourceActions, onLocateSource }: { model: AgentRunModel; actions: AgentRunActions; onLocateSource?: LocateAnswerSource }) {
+  const instanceScope = useId();
+  const serial = useRef(0);
+  const [readIntent, setReadIntent] = useState<{ serial: number; runId: string } | null>(null);
+  const [decisionIntent, setDecisionIntent] = useState<DecisionMotionIntent | null>(null);
   const denied = model.readState === "denied";
-  const run = model.readState === "ready" ? model.run : null;
+  const run = !denied && model.readState !== "idle" ? model.run : null;
+  const ready = model.readState === "ready";
+  const scopeKey = `${instanceScope}:${run?.childId ?? "none"}:${run?.id ?? "none"}`;
+  const readEligible = !!run && ready && model.online && !model.busy && run.status !== "unknown" && model.notice?.tone !== "error";
+  const readTrigger = readIntent && readIntent.runId === run?.id && model.online && (model.readState === "loading" || readEligible) ? readIntent.serial : null;
+  const actions: AgentRunActions = {
+    ...sourceActions,
+    refresh() {
+      const pending = model.pendingDecision;
+      if (!pending || pending.proposalId !== decisionIntent?.proposalId || pending.input.expectedVersion !== decisionIntent.version) setDecisionIntent(null);
+      setReadIntent(model.run ? { serial: ++serial.current, runId: model.run.id } : null);
+      sourceActions.refresh();
+    },
+    decide(id, decision) {
+      const proposal = model.run?.proposals.find(item => item.id === id);
+      if (!proposal || !mayDecide(model, proposal, decision)) return;
+      setReadIntent(null);
+      setDecisionIntent({ serial: ++serial.current, proposalId: id, version: proposal.version, status: decision === "accept" ? "accepted" : "dismissed" });
+      sourceActions.decide(id, decision);
+    },
+    retryOriginal() {
+      const pending = model.pendingDecision;
+      if (!pending || !mayRetryOriginal(model)) return;
+      setReadIntent(null);
+      setDecisionIntent({ serial: ++serial.current, proposalId: pending.proposalId, version: pending.input.expectedVersion, status: pending.input.decision === "accept" ? "accepted" : "dismissed" });
+      sourceActions.retryOriginal();
+    },
+  };
   const readMessage = model.readState === "idle" ? "尚未讀取運行結果。請手動讀取後再核對。"
     : model.readState === "loading" ? "正在讀取原運行結果，請稍候；讀取中不能決定候選事項。"
       : model.readState === "failed" ? "未能讀取運行結果。請重新讀取，暫時不能確認候選事項。"
@@ -164,7 +202,7 @@ export function AgentRunView({ model, actions, onLocateSource }: { model: AgentR
       {model.busy === "write" ? <StateNote>正在處理原決定，請等候原操作結果。</StateNote> : null}
       <OriginalDecision model={model} actions={actions} />
     </> : null}
-    {run ? <>
+    {run ? <View style={[styles.runContents, !ready && styles.hidden]} aria-hidden={!ready} accessibilityElementsHidden={!ready} importantForAccessibility={ready ? "auto" : "no-hide-descendants"} pointerEvents={ready ? "auto" : "none"}>
       <View style={styles.top}><Text accessibilityRole="header" style={styles.title}>本次運行</Text>
         <Text style={[styles.badge, run.status === "unknown" && styles.warningBadge]}>{agentRunLabels[run.status]}</Text></View>
       <Text style={styles.meta}>結果讀取時間：{timeLabel(model.loadedAt)}</Text>
@@ -177,13 +215,14 @@ export function AgentRunView({ model, actions, onLocateSource }: { model: AgentR
       <RunDetails key={run.id} run={run} />
       <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.title}>待核對及已處理候選</Text>
-        {run.proposals.length === 0 ? <Text style={styles.meta}>本次沒有候選事項。</Text> : run.proposals.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} />)}
+        {run.proposals.length === 0 ? <Text style={styles.meta}>本次沒有候選事項。</Text> : run.proposals.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
       </View>
-    </> : null}
+    </View> : null}
   </SectionCard></View>;
 }
 
 const styles = StyleSheet.create({
+  runContents: { gap: spacing.lg, minWidth: 0 }, hidden: { display: "none" },
   root: { minWidth: 0, width: "100%" }, card: { gap: spacing.lg, minWidth: 0 },
   section: { gap: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine },
   disclosureSection: { gap: 0 }, details: { gap: spacing.md, minWidth: 0, paddingTop: spacing.md },

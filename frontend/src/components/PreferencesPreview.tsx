@@ -1,6 +1,7 @@
 import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { StyleSheet, View } from "react-native";
-import { Switch, Text } from "react-native-paper";
+import { Text } from "react-native-paper";
+import { Switch } from "./AppSwitch";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";

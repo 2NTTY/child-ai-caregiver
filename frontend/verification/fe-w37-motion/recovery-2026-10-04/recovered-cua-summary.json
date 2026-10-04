@@ -1,0 +1,103 @@
+{
+  "created_at": "2026-10-04T10:54:20Z",
+  "provenance": "Reconstructed from this verifier's retained conversation/tool results after executor filesystem rollback at approximately10:48UTC. This is not a claim that the original local logs, manifests or screenshot files survived. Original CUA screenshots were tool outputs only.",
+  "active_public_site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+  "last_published_version": "v16",
+  "last_published_bundle": {
+    "filename": "entry-f96b5e9d8a6d38b6e88a8ce90f4b795d.js",
+    "sha256": "c43dac3c00ce6ad41470f7ad50b31250a7704ce82d9590aa44af540a07ec1e1a",
+    "source_manifest_sha256": "67a0ea0f94a02c4a58970d82eadd7e49da28c6be799eb588a549312721dc4447",
+    "source_file_count": 246,
+    "export_manifest_sha256": "d860fe0cfc19e5ed716e11e1c6add8b5ec5d07416209877b928ddc1eb77acb06",
+    "export_file_count": 61,
+    "static_checks": "typecheck and Web35 route export passed; source before/after identical at10:42:42UTC"
+  },
+  "history": [
+    {
+      "version": "v13",
+      "scope": "Sidebar scrollbar shift only",
+      "bundle": "entry-f1a2daa9c428a7d8a79a1e37b884dc12.js",
+      "bundle_sha256": "68ff13de5e302e8bdd9ffec4f4e10c6e30d02006b98bdfeb23d671c809da0bc9",
+      "source_manifest_sha256": "d93ff13281b1cbd113640dac0d2d40d189e7f1f40228ca95b4b3dc1aa74f5ca8",
+      "export_manifest_sha256": "b515b0be526628402611382b41662f49fc8c18333cd6fd9a50cd457a4847a995",
+      "original_evidence_directory_now_unavailable": "frontend/verification/fe-w37-motion/sidebar-scrollbar-2026-10-04T09-53Z",
+      "original_cua_checks_sha256": "4725abf49f15fb9d4eb1333b4578e4a6c7b2a70d4de80fa383b3145a8800ef11",
+      "passed": [
+        "1440/1024 x900: bar x197→205, exact +8; width6 unchanged; all11 navigation link rectangles and label rectangles exactly equal to v12; sidebar width216 unchanged",
+        "1024x600: drag scrollbar scrollTop0→337=max→0; final Family link y392,height46 remains above fixed Agent/settings area",
+        "Read-only elementFromPoint at x205.5..210.5 all6 samples belong to scrollbar; bar right211 vs sidebar right216, interior4px before1px border",
+        "390/320 at600 and900 heights: no desktop sidebar and document scrollWidth=clientWidth"
+      ],
+      "wrapper_note": "Independent QA height text still said900 after600 button, but actual iframe innerHeight600 was measured; root informed. Not a product failure."
+    },
+    {
+      "version": "v14",
+      "bundle": "entry-b327141b5e6318b65c6c22642b4820fd.js",
+      "bundle_sha256": "caf13cd85e5765dc7fc40594675053924adc54f1d1ae4fdbe748f8cdd78f87a6",
+      "source_manifest_sha256": "58832db45513b68fe5b5399c5f4349973b9c2b524ace73204525a2da4afcf529",
+      "export_manifest_sha256": "03af731ea5c1671dfc0dafd4ce93f4985edfe1871e61f5e6722d2e6a93ca3463",
+      "static_checks": "typecheck passed after TS2551 fix,8 pure tests passed,Web35 routes;246 source before/after equal",
+      "build_failures_retained_in_prior_lost_evidence": "StyleSheet.absoluteFillObject unsupported RN0.86 type; initial typecheck exit2. One unchanged-source typecheck accidentally repeated because verifier shell lacked early set-e, same exit2, no tests/Web executed then. Fixed explicit position/sides subsequently passed.",
+      "passed": [
+        "Desktop1440 dock main width1224→914; frame0→310; actual entering/exiting/reversal samples kept mainRight and surfaceLeft within0.02px, main opacity1",
+        "Closing sample frame13.1875/main1210.8125/surfaceX296.803; reversal entering frame78.171875/main1145.828125/surfaceX231.816",
+        "Dock remains310 across Home→Summary; destination heading focused",
+        "Summary with dock container866 directioncolumn; without dock1176 directionrow with two580 columns; synthetic question draft preserved",
+        "390 overlay entering from right: frame358.796875,left31.203125; surfaceLeft203.3301/translateX172.127/opacity1; focus close button; ShiftTab wraps to last daily-observation button and Tab wraps back"
+      ],
+      "failure": "390 Summary Enter drawer→ShiftTab→Tab→Escape: exiting aria-hidden=true/modal=false/background inert released, but focusBODY; stillBODY after settle despite original BUTTON rolebutton/tabindex0/enabled. Draft preserved. Actual button explicitly had rolebutton, so missing-role hypothesis was contradicted by DOM evidence."
+    },
+    {
+      "version": "v15",
+      "bundle": "entry-c9312160263a399d0077ee1e70425dab.js",
+      "bundle_sha256": "58045ffd9085056b704a3404583fbbdff37be570707d8731a59803feab6dffd4",
+      "build_source_manifest_sha256": "b79eae8f4911d19e0dc49f82ce0585e520a3a3c395309ddd2968e8fed313cada",
+      "post_build_test_only_manifest_sha256": "4aa038b551bd2bc09d9c262215fb9aac19e901a015d971e738fb4106a6da3024",
+      "export_manifest_sha256": "7cc4863e5d0b01d3e72dda470ca5887b3af0233e1e302383a8383b76cc8b6d32",
+      "passed": [
+        "Exact v14 Escape failure replay passed: during exiting focus already BUTTON Open context sidebar; settled same; background inertfalse; draft preserved",
+        "Quick close/reopen: exit focus trigger, reopen entering/X249.835/focusClose",
+        "Nested unsaved-draft guard Escape returned View profile inside original drawer; confirming synthetic discard navigated/profile and focused H1 Child profile without background inert",
+        "Manual reduce while entrance phaseentering/X237.829 made settled/X0; close returned trigger; reduced initial open settled; restoring manualOFF did not replay",
+        "390 overlay→1440 mode change left zero open dialogs/context drawer nodes/background locks",
+        "Open dock child change to阿樂 showed only new child's content; dock310 settled while child boundary revealing",
+        "Settings account/preferences/account actual entering opacity1 at Y6.97354/3.52933/4.64345, exactly1 visible active panel and6 displaynone/inert/pointer-none; synthetic name draft preserved",
+        "AnswerSources first disclosure resizing height4.46875/opacity1; A/B/A panel entering opacity1 and stable rendered panel id_r_3_-detail (not proof of exact node identity)"
+      ],
+      "test_selector_correction": "Active tab has omitted aria-hidden rather than aria-hidden=false. Original selector timedout3000ms. Root approved :not([aria-hidden=true]) plus exactly1 visible expected label. Corrected assertions passed; not product failure.",
+      "outside_scope_gap": "Existing child-picker DIV radio Space focused but did not activate; Enter worked. Root informed, no unrelated fix.",
+      "source_failure": "Source1 open, End scroll top266/max296 then source2: top7 persisted after panel settled. End not proven fully stopped in this run, so scroll-anchoring cause remained hypothesis. Earlier disclosure-in-flight End→B top194 was separately labelled race."
+    },
+    {
+      "version": "v16",
+      "source_failure": "Fully settled End baseline top=max296, overflow-anchor:none; source2 activation entering top294, after panelsettled top1. Fixed viewport transformidentity/hostnone, inner content Y5.63426. Separate in-flight End→A read top73 entering then0 settled. Immediate reset contract still failed.",
+      "verified_api_cause": "Installed react-native-web/dist/exports/ScrollView/index.js:252-265 assigns node.scrollTo=this.scrollTo. Lines204-217 accept{x,y,animated}; DOM-shaped{top,left,behavior} leaves animatedundefined and enables smooth motion. Casting toHTMLElement does not restore native DOM method.",
+      "next_fix_source_only": "Owner corrected to RN ref.scrollTo({x:0,y:0,animated:false}), retaining fixed viewport/content-onlyY and local overflow-anchor:none. Owner's installed-class adapter check passed, but this final correction was not yet built/deployed/UI-verified before rollback."
+    }
+  ],
+  "earlier_completed_bounded_batch": {
+    "version": "v12",
+    "final_checks_sha256": "6b11387413b1a955acb036f592b3f1794754e10f55cbadd27adbc526fa6eb5b3",
+    "source_manifest_sha256": "9e43ccc9e3f139c7561f6e67a89045bfbef43bf51b1417bf6359c710bc5220bb",
+    "full_cua_checks_sha256": "c0e3de1368c2cc96c0a6093989d9e454034513d6b7e4ecd35c5f306039ad2421",
+    "original_directory_now_unavailable": "frontend/verification/fe-w37-motion/final-cua-2026-10-04T09-40Z",
+    "summary": "Confirmed synthetic success/unknown-result gating, Care prefixes/delete focus, Preparation append/delete focus, Contact reorder/delete focus, summary changed-only curtains, photo/source list exit/FLIP, date/dialog focus, manual reduce persistence/cancel and numerous disclosures were recorded as passed on their exact prior builds. Reload cleanup verified synthetic business state reset, manual reduceOFF. Full details require earlier retained context/tool results, not inference from current source."
+  },
+  "pending_after_recovery": [
+    "Rebuild corrected RN source scroll API together with approved backdrop/startup/overflow changes only when all owners freeze",
+    "Source fully settled and in-flight scroll immediate reset, same-source close, citation locate/return,3/12 horizontal overflow",
+    "Representative shared container initial-width checks, including new user Settings and Memory topics chaotic-first-layout reports",
+    "Backdrop shared-progress entering/exiting with immediate pointer/focus release",
+    "Natural firstload/warm/nonhome startup image readiness; controlled slow/error runtime not available through CUA capabilities",
+    "Final synthetic state reload cleanup/manualreduceOFF"
+  ],
+  "unresolved_gates": [
+    "Actual system/browser prefers-reduced-motion emulation blocked by organization DevTools policy; app manual preference is separate evidence",
+    "No continuous exact first-visible-frame/full-opacity swap/DOM-instance-selection trajectory proof; discrete samples and source guards are not equivalent",
+    "Source-known vendor react-native-paper-dates internal calendar/edit and hour/minute250ms transitions remain without public reduce prop",
+    "Native UI/screenreader/realServer/model/notifications not validated",
+    "Prior60 route-width checks15x4 were on v6, not a finalv16 full matrix",
+    "Prepared Playwright runner never executed browser UI; only CUA real UI evidence and script syntax",
+    "New user-reported Settings/Memory first-frame issues remain open until recovered source/UI checks"
+  ]
+}

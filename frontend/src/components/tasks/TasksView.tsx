@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { brand } from "../../branding";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -16,7 +17,8 @@ import { TaskForm } from "./TaskForm";
 import { taskAssigneeLabel } from "./TaskContent";
 
 export function TasksView({ model, actions, controller, previewControls }: { model: TasksViewModel; actions: TasksActions; controller: PreviewOperationController; previewControls: ReactNode }) {
-  const [width, setWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
   const [stateFilter, setStateFilter] = useState<TaskState | "all">("all");
   const loading = model.reading || model.loadingMoreTasks;
   const previousLoading = useRef(loading);
@@ -29,7 +31,7 @@ export function TasksView({ model, actions, controller, previewControls }: { mod
   const readState = model.reading || model.loadingMoreTasks ? "loading" : !model.online ? "stale" : visible.length ? "ready" : "empty";
   const readMessage = model.reading ? "正在模擬重新讀取，上一批事項及提醒暫不展示；草稿仍保留。" : model.loadingMoreTasks ? "正在載入更多事項；已載入的事項保留。" : !model.online ? "目前離線，現有內容只供參考。草稿保留，可整理內容；提交及原操作查核須等連線恢復。" : visible.length ? "" : model.hasMoreTasks ? "已載入事項中沒有這個狀態；其他頁可能有，請載入更多事項。" : "這個狀態沒有事項。";
   return <PageFrame title="任務與預約" density="compact" description="先核對孩子、負責人及時間，再確認家庭共享安排。回報照護完成與背景處理狀態分開記錄。" eyebrow={`${brand.name} · 家庭協調`}>
-    <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={styles.stack}>
+    <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.stack}>
       <StatusAnnouncement key={model.child.id} eventKey={model.access} urgent={model.access === "lost"} message={model.access === "lost" ? "孩子權限已失效。任務、提醒、歷史、草稿及待查核原操作已清除。" : model.access === "read_only" ? "viewer 唯讀：可以查看共享事項及歷史，不能新增或更改。" : model.access === "editable" ? "已恢復共享事項的編輯權限。" : ""} />
       <SectionCard><SectionHeader density="compact" title={`${model.child.name}的家庭事項`} subtitle={model.dataLabel}
         action={model.access === "editable" ? <AppButton label="新增共享事項" disabled={locked || !!model.draft || model.reading} onPress={actions.startCreate} /> : undefined} />
@@ -53,7 +55,8 @@ export function TasksView({ model, actions, controller, previewControls }: { mod
               disabled={model.loadingMoreTasks || !model.online || model.reading || locked} onPress={actions.loadMoreTasks} /> : null}
           </SectionCard></View>
           <View style={[styles.column, wide && styles.detailColumn]}>
-            {model.draft ? <TaskForm key={model.draft.key} model={model} actions={actions} /> : model.selected ? <TaskDetail model={model} actions={actions} /> : <SectionCard><SectionHeader density="compact" title="選擇一項事項" subtitle="查看安排、背景處理及逐版歷史；只有有權的照顧者可更改共享安排。" /></SectionCard>}
+            {model.draft ? <TaskForm key={model.draft.key} model={model} actions={actions} /> : null}
+            {model.selected ? <View key="task-detail" style={model.draft ? styles.hidden : undefined} pointerEvents={model.draft ? "none" : "auto"} aria-hidden={!!model.draft} accessibilityElementsHidden={!!model.draft} importantForAccessibility={model.draft ? "no-hide-descendants" : "auto"}><TaskDetail model={model} actions={actions} /></View> : !model.draft ? <SectionCard><SectionHeader density="compact" title="選擇一項事項" subtitle="查看安排、背景處理及逐版歷史；只有有權的照顧者可更改共享安排。" /></SectionCard> : null}
           </View>
         </View>
       </>}
@@ -62,6 +65,7 @@ export function TasksView({ model, actions, controller, previewControls }: { mod
   </PageFrame>;
 }
 const styles = StyleSheet.create({
+  hidden: { display: "none" },
   list: { gap: spacing.md },
   stack: { gap: spacing.lg, minWidth: 0 }, workspace: { gap: spacing.lg }, workspaceWide: { flexDirection: "row", alignItems: "flex-start" },
   column: { minWidth: 0, width: "100%" }, listColumn: { flex: 1, width: undefined }, detailColumn: { flex: 1.5, width: undefined },

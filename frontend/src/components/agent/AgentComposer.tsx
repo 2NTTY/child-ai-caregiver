@@ -9,6 +9,7 @@ import type { PhotoFilePickerProps } from "../photos/PhotoFilePicker";
 import { chatColors, chatFont, chatLayout, chatType } from "../chat/chat-presentation";
 import { AgentInputToolbar } from "./AgentInputToolbar";
 import { ChatComposerInput, type ChatComposerInputHandle } from "./ChatComposerInput";
+import { MotionDisclosure } from "../../motion";
 import { useInteractionDensity } from "../useInteractionDensity";
 
 const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄", "先列出想問的問題"];
@@ -27,6 +28,7 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
   const [suggestionsExpanded, setSuggestionsExpanded] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [automaticCollapse, setAutomaticCollapse] = useState(0);
   const hasDraft = draft.length > 0;
   const showSuggestions = suggestionsExpanded && enabled && !hasDraft && !inputFocused && !keyboardVisible;
   useEffect(() => {
@@ -35,7 +37,7 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
   }, []);
   useEffect(() => {
     if (Platform.OS === "web") return;
-    const show = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
+    const show = Keyboard.addListener("keyboardDidShow", () => { setKeyboardVisible(true); setAutomaticCollapse(value => value + 1); setSuggestionsExpanded(false); });
     const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
     return () => { show.remove(); hide.remove(); };
   }, []);
@@ -78,7 +80,7 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
     </View> : null}
     {photoError ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.photoError}>{photoError}</Text> : null}
     <ChatComposerInput ref={input} onSubmit={onPreview}
-      value={draft} onChangeText={onChangeDraft} onFocus={() => { setInputFocused(true); setSuggestionsExpanded(false); }} onBlur={() => setInputFocused(false)}
+      value={draft} onChangeText={onChangeDraft} onFocus={() => { setInputFocused(true); setAutomaticCollapse(value => value + 1); setSuggestionsExpanded(false); }} onBlur={() => setInputFocused(false)}
       disabled={!enabled} />
     <View style={styles.composerActions}><View style={styles.leftActions}><AgentInputToolbar disabled={!enabled} compact={touchControls} onPhotos={onPhotos} onSources={onSources}
       onUseText={() => input.current?.focus()} onPickPhoto={pickPhoto} onPhotoError={setPhotoError} captureOriginal={captureOriginal} />
@@ -92,13 +94,13 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
         style={({ pressed }) => [styles.iconControl, touchControls && styles.compactControl, pressed && styles.pressed]}>
         <View style={[styles.sendCircle, (!enabled || !draft.trim()) && styles.sendDisabled]}><AppIcon name="arrow-up" size={20} color={chatColors.canvas} /></View>
       </Pressable></View>
-    {showSuggestions ? <ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
+    <MotionDisclosure expanded={showSuggestions} scopeKey={JSON.stringify([enabled, hasDraft, automaticCollapse])} testID="composer-suggestions-disclosure"><ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
       contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled">
       <Text style={styles.suggestionLabel}>本地示例：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={`預填本地示例：${item}`}
         disabled={hasDraft || !enabled} onPress={() => pickSuggestion(item)}
         style={({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (hasDraft || !enabled) && styles.disabled, pressed && styles.pressed]}>
         <Text style={styles.suggestionText}>{item}</Text></Pressable>)}
-    </ScrollView> : null}
+    </ScrollView></MotionDisclosure>
     </View>
     <Text style={styles.composerHint}>只供本地預覽；不會發送或保存</Text>
     </View>

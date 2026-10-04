@@ -5,6 +5,7 @@ export const motionTokens = {
   ease: Easing.bezier(0.2, 0, 0, 1),
   coverEase: Easing.bezier(0.4, 0, 0.2, 1),
   route: { duration: 200, distance: 10 },
+  drawerRight: { enter: 240, exit: 180 },
   local: { cover: 140, reveal: 220, color: "#DCEADF" },
   summary: { cover: 160, reveal: 260, color: "#DCEADF" },
   scope: { cover: 160, reveal: 260, color: "#E2ECE3" },

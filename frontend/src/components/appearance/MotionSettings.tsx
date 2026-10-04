@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { Platform, StyleSheet, View } from "react-native";
-import { Switch, Text } from "react-native-paper";
+import { Text } from "react-native-paper";
+import { Switch } from "../AppSwitch";
 import { useMotionPreferences } from "../../motion";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { StatusAnnouncement } from "../StatusAnnouncement";

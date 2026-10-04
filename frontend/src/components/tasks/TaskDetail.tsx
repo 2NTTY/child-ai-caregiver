@@ -13,7 +13,7 @@ export function TaskDetail({ model, actions }: { model: TasksViewModel; actions:
   const writable = model.access === "editable" && !locked;
   return <SectionCard><SectionHeader density="compact" title={task.title} subtitle="家庭共享事項 · 合成資料" action={<AppButton label="關閉詳情" variant="quiet" onPress={actions.closePanel} disabled={locked} />} />
     <StatusAnnouncement key={task.id} eventKey={task.occurrence.state} message={task.occurrence.state === "needs_review" ? "完成與取消出現相反操作，終態仍待覆核，已停止催辦。" : task.occurrence.state === "completed" || task.occurrence.state === "cancelled" ? "這項事項已結束。" : "事項待處理。"} />
-    <TaskSnapshot task={task} assignees={model.eligibleAssignees} showTitle={false} announceEligibility />
+    <TaskSnapshot task={task} assignees={model.eligibleAssignees} showTitle={false} announceEligibility motion={{scopeKey: `${model.child.id}:${model.access}:${task.id}`, triggerKey: ["saving", "saved"].includes(model.operation.state) ? model.operation.reference : null, eligible: model.operation.state === "saved" && !model.reading && !model.draft}} />
     {task.occurrence.state === "needs_review" ? <Text style={styles.warning}>完成與取消出現相反操作，終態仍待覆核，已停止催辦。請明確選擇完成或取消，並填寫原因。</Text> : null}
     {task.occurrence.state === "completed" || task.occurrence.state === "cancelled" ? <Text style={styles.body}>這項事項已結束，不能直接重開。如需另做，請明確新增另一項事項。</Text> : null}
     <TaskWorkerMetadata task={task} model={model} />

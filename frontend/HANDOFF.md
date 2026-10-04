@@ -545,6 +545,8 @@ FE-W08 沿 FE-W07 `1e1fb7b`（draft PR #65）隔離接續，只處理使用者�
 
 
 <a id="semantic-motion"></a>
+
+> 恢復版覆核入口（2026-10-04）：[来源、歷史證據及目前待驗範圍](verification/fe-w37-motion/recovery-2026-10-04/README.md)。下方舊結果保留其原版本邊界，不能替代重建後驗證。
 ## FE-W37 全站語意動效
 
 2026-10-04，基線 master `c51dd52e0cdea03b1d412a10d08ac6761e010d9b`，分支 `dot/fe-w37-motion-system`。使用者要求以前端分聊天的邊界接續，依目前動效指南完成既有畫面，僅使用一個 PR，並授權必要驗收後以 2NTTY 提交及合併。本次沒有修改 Server、正式 App、根依賴或業務協定。

@@ -40,7 +40,9 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null }
           <AppButton label="自行貼上正文" accessibilityLabel="返回新增私人來源並自行貼上正文" variant="secondary" disabled={!model.fresh || !model.canCreate || !!direct} onPress={actions.recreateWithText} /></> : null}
       </> : <><AppButton label={showText ? "收起保存原文" : `查看完整原文（${selected.text.length.toLocaleString("en-HK")} 字）`} variant="secondary" onPress={() => setShowText(value => !value)} />
       </>}
-      <MotionReveal value={selected.text} contentKey={selected.text} scopeKey={scopeKey} regionKey="source-original-text" triggerKey={textTrigger} eligible={textEligible} testID="source-original-motion">{shown => showText && shown ? <ScrollView nestedScrollEnabled style={s.original} contentContainerStyle={s.originalContent}><Text selectable testID="source-full-text" style={s.reading}>{shown}</Text></ScrollView> : null}</MotionReveal>
+      <MotionDisclosure expanded={showText && hasText} scopeKey={scopeKey}>
+        <MotionReveal value={selected.text} contentKey={selected.text} scopeKey={scopeKey} regionKey="source-original-text" triggerKey={textTrigger} eligible={textEligible} testID="source-original-motion">{shown => <ScrollView nestedScrollEnabled style={s.original} contentContainerStyle={s.originalContent}><Text selectable testID="source-full-text" style={s.reading}>{shown}</Text></ScrollView>}</MotionReveal>
+      </MotionDisclosure>
       <View style={s.group}><AppButton label={showTechnical ? "收起來源技術資料" : "顯示來源技術資料"} variant="quiet" density="compact" onPress={() => setShowTechnical(value => !value)} />
         <MotionDisclosure expanded={showTechnical} scopeKey={scopeKey} style={s.stack}><Text style={s.meta}>本站保存：{sourceTime(selected.createdAt)}（香港時間）</Text>
           <Text style={s.meta}>取得正文：{sourceTime(selected.retrievedAt)}{selected.retrievedAt ? "（香港時間）" : ""}</Text>

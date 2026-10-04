@@ -1,6 +1,6 @@
 ---
 name: web-screen-delivery
-description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作或審核 Web／手機介面、共用 Paper 表單、操作狀態及交接；不適用 Server／Agent 接線或正式 Android 真機驗收。
+description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作或審核 Web／手機介面、共用 Paper 表單、語意動效、操作狀態及交接；不適用 Server／Agent 接線或正式 Android 真機驗收。
 ---
 
 # 育有方 Web 畫面交付
@@ -20,7 +20,7 @@ description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作�
    聯絡沿 [CONTACT_HANDOFF](../../../CONTACT_HANDOFF.md) 的本人同意／任務 grant／台帳，固定 generic_notice／task_due；accepted、本人 ack 和事項完成分開。GET／離線保留 dirty 選項及原版本，正式 ContactPanel 的 clearDrafts 接線差異須明確處理；receipt confirmed 不能覆寫較新版本。有限清單不能推斷原任務已刪除。使用者已在 FE-W25 澄清：「固定」求助入口只指需要顯示時採統一、最權威官方入口，並非聊天常駐卡片；正式觸發由主聊天接線，不新增症狀分類。
 6. 依變更執行必要 typecheck／build／針對性合成預覽。共用外殼變更才擴至所有靜態路由；不因換工作包例行重跑完整舊測試。至少檢查受影響頁的 1440／1024／390／320 CSS px、鍵盤及適用操作狀態，區分 document overflow 與容器裁切的內容溢出。展示實際截圖，更新前端 STATUS／PLAN／HANDOFF。真服務／正式 E2E 沿主聊天 P2 集中驗收安排。
    佈局改動先核對同一元件的初態／動畫中／終態；需同步變化的尺寸及 flex 沿同一 Animated.Value，驗中途操作與最後一幀接縫，不能只比靜態截圖。來源底線／捲動條須留獨立位置，詳情按關係分組及用細線分隔；共用聊天顯示層不得依賴 Agent fixture。按需閱讀 [本項目已核對的方法與證據](../../../WORKFLOW.md)，沿用已確認研究。
-   動效工作先讀 [動效規範](../../../MOTION_SYSTEM.md)，復用 `src/motion/` 的 tokens、偏好與呈現元件；畫面僅提供 stable ID、scope、內容版本及操作意圖，不另造一套動畫狀態機。幕布遮滿期間提交新內容，僅變更區域及位置真正改變的存續列播放；初次載入、分頁與篩選不當成新增。確認新增／更正／刪除後須保留已載入清單前綴、其他列草稿及焦點；刪除從詳情返回時，桌面與窄屏均驗下一存續列／上一列／清單入口的實際焦點。普通資料重繪不得取消尚未完成的焦點交接。保留失敗證據，修復後只重驗受影響流程；靜態建置、端點畫面、動畫中間幀及系統減少動畫各自記錄，未驗不可標通過。
+   動效工作先讀 [動效規範](../../../MOTION_SYSTEM.md)，復用 src/motion/ 的 tokens、偏好及呈現元件；畫面只提供 stable ID、scope、內容版本及操作意圖。改來源捲動、浮層焦點、動態表單或驗證方法時，按需讀 [動效接合與驗證](references/motion-implementation.md) 對應段落。當次進度與證據沿 [FE-W37 交接](../../../HANDOFF.md#semantic-motion)，不塞進 Skill；只有版本／API 變更、行為衝突或證據缺口才補查受影響部分。
 7. 需要手機軟件介面時讀 [原生介面指引](references/native-ui.md)。手機 Web、Android bundle、Android 實機三份證據不可混用。開包、整合前及交付前同步 GitHub 遠端引用，核對 frontend 重疊；不改其他聊天 checkout 或 root 指導文件。
 
 RHF／Zod 復用結論沿 [項目已有研究](../../../../docs/TECH_REUSE.md) 與 TaskPanel，frontend 依賴固定 RHF 7.88.0／resolvers 5.9.1／Zod 4.5.4。本次補充核對日期為 2026-09-29；原 Web 官方來源仍適用。

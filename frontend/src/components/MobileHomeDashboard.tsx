@@ -12,6 +12,7 @@ import { ChildPicker } from "./ChildPicker";
 import { HomeFocus } from "./HomeFocus";
 import { HomeRecentRecords } from "./HomeRecentRecords";
 import { useMotionPreferences } from "../motion";
+import { useFirstScreenReady } from "../startup/FirstScreenGate";
 
 const quickActions = [
   { kind: "note", label: "記錄情況", hint: "日常觀察", icon: "notebook-outline" },
@@ -36,6 +37,7 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
   const [docked, setDocked] = useState(!playIntroduction);
   const [pickerOpen, setPickerOpen] = useState(false);
   const { reducedMotion, preferenceReady } = useMotionPreferences();
+  const firstScreenReady = useFirstScreenReady();
   const hasChild = Boolean(child);
   useLayoutEffect(() => {
     if (!preferenceReady || !reducedMotion) return;
@@ -47,14 +49,14 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
     setDocked(true);
   }, [intro]));
   useFocusEffect(useCallback(() => {
-    if (!hasChild || docked || pickerOpen || !preferenceReady || reducedMotion) return;
+    if (!firstScreenReady || !hasChild || docked || pickerOpen || !preferenceReady || reducedMotion) return;
     const timer = setTimeout(() => {
       transitionStarted.current = true;
       Animated.timing(intro, { toValue: 1, duration: 360, easing: Easing.inOut(Easing.cubic), useNativeDriver: false })
         .start(({ finished }) => { if (finished) setDocked(true); });
     }, 3000);
     return () => { clearTimeout(timer); intro.stopAnimation(); };
-  }, [hasChild, docked, pickerOpen, preferenceReady, reducedMotion, intro]));
+  }, [firstScreenReady, hasChild, docked, pickerOpen, preferenceReady, reducedMotion, intro]));
   function handlePickerOpen(open: boolean) {
     setPickerOpen(open);
     if (open && transitionStarted.current && !docked) {

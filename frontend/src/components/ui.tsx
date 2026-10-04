@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode, type Ref } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { AppIcon } from "./AppIcon";
@@ -9,6 +9,7 @@ import type { ConnectionState, OperationState } from "../view-model";
 import { useInteractionDensity } from "./useInteractionDensity";
 import { MotionEntrance } from "../motion";
 import { MotionSelectionMarker } from "../motion/MotionSelectionMarker";
+import { HorizontalOverflowRail } from "./HorizontalOverflowRail";
 
 export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", density = "standard", disabled = false, loading = false, style, ref }: {
   label: string;
@@ -173,9 +174,12 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
     if (next === null || !items[next]) return;
     event.preventDefault();
     onChange(items[next].key);
-    (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus();
+    (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true });
   }
-  return <ScrollView horizontal tabIndex={-1} showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
+  return <HorizontalOverflowRail tabIndex={-1} style={styles.tabsScroll} rowTestID={`${id}-rail`} hintTestID={`${id}-scroll-hint`}
+    items={items.flatMap(item => positions[item.key] ? [{ key: item.key, ...positions[item.key] }] : [])}
+    revealTarget={selection ? { key: value, ...selection } : undefined} hintLabel={`查看更多${label ?? "分頁"}`}
+    onRevealItem={key => { if (Platform.OS === "web") (controls.current.get(key as T) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true }); }}>
     <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs}>
     {items.map((item, index) => <Pressable
       key={item.key} nativeID={tabId(id, item.key)} onLayout={event => { const { x, width } = event.nativeEvent.layout; setPositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
@@ -186,15 +190,19 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
     <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} />
     </View>
-  </ScrollView>;
+  </HorizontalOverflowRail>;
 }
 
 export function AppTabPanel({ tabsId, tabKey, active, children, style, ...props }: ViewProps & {
   tabsId: string; tabKey: string; active: boolean; children: ReactNode;
 }) {
-  return <MotionEntrance {...props} preset="panel" triggerKey={active ? `${tabsId}:${tabKey}:active` : null} scopeKey={tabsId} enabled={active} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" ? "tabpanel" : undefined}
+  const panel = useRef<View>(null);
+  useLayoutEffect(() => {
+    if (Platform.OS === "web" && panel.current) (panel.current as unknown as HTMLElement).inert = !active;
+  }, [active]);
+  return <MotionEntrance {...props} ref={panel} preset="panel" triggerKey={active ? `${tabsId}:${tabKey}:active` : null} scopeKey={tabsId} enabled={active} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" ? "tabpanel" : undefined}
     aria-labelledby={tabId(tabsId, tabKey)} aria-hidden={!active} accessibilityElementsHidden={!active}
-    importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={active ? 0 : -1}
+    importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={active ? 0 : -1} pointerEvents={active ? "auto" : "none"}
     style={[style, !active && styles.hiddenPanel]}>{children}</MotionEntrance>;
 }
 

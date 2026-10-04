@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { brand } from "../../branding";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { Image, View } from "react-native";
@@ -16,18 +17,28 @@ import { AppButton, AppTextField, SectionCard, SectionHeader } from "../ui";
 import { PhotoFilePicker, type PhotoFilePickerProps } from "./PhotoFilePicker";
 import { PhotoRecordForm } from "./PhotoRecordForm";
 import { photoStyles as s } from "./photo-styles";
-import { MotionEntrance, MotionFeedback, MotionReveal } from "../../motion";
+import { MotionFeedback, MotionList, MotionReveal } from "../../motion";
+import { useContentListMotion } from "../shared-inputs/useContentListMotion";
+import { useContentDeletionFocus } from "../shared-inputs/useContentDeletionFocus";
 
 const operationLabels: Record<PhotosViewModel["operation"]["state"], string> = { none: "", saving: "處理中 · 尚未確認", saved: "已確認（合成預覽）", failed: "失敗 · 原輸入保留", unknown: "結果未知 · 先查核", unconfirmed: "查核尚無確認結果", conflict: "版本衝突 · 尚未保存", confirmed_unavailable: "原操作已確認 · 結果不可讀" };
 export function PhotosView({ model, actions: sourceActions, onCare, previewControls, selectOriginal, capturePreferred, captureOriginal, scopeKey }: { model: PhotosViewModel; actions: PhotosActions; onCare: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"]; capturePreferred?: boolean; captureOriginal?: PhotoFilePickerProps["captureOriginal"]; scopeKey?: string }) {
-  const [width, setWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
   const [candidateTrigger, setCandidateTrigger] = useState<number | null>(null);
   const requestSerial = useRef(0);
-  const creationRequested = useRef(false);
+  const listSerial = useRef(0);
+  const listIntent = useRef<{serial: number; kind: 'add' | 'remove' | 'move'; targetId: string | null} | null>(null);
+  function mutateList(kind: 'add' | 'remove' | 'move', action: () => void) {
+    listIntent.current = {serial: ++listSerial.current, kind, targetId: model.selected?.id ?? null}; action();
+  }
   function revealAfter(action: () => void) {setCandidateTrigger(++requestSerial.current); action();}
   const actions: PhotosActions = {...sourceActions,
-    upload: () => {creationRequested.current = true; sourceActions.upload();},
-    extract: () => revealAfter(sourceActions.extract), refresh: () => revealAfter(sourceActions.refresh),
+    upload: () => mutateList(model.selected ? 'move' : 'add', sourceActions.upload),
+    deletePhoto: () => {if (model.selected) deletionFocus.start(model.selected.id); mutateList('remove', sourceActions.deletePhoto);},
+    confirmShared: () => mutateList('move', sourceActions.confirmShared),
+    extract: () => mutateList('move', () => revealAfter(sourceActions.extract)),
+    refresh: () => {if (!['unknown', 'unconfirmed'].includes(model.operation.state)) listIntent.current = null; revealAfter(sourceActions.refresh);},
     checkOriginal: () => revealAfter(sourceActions.checkOriginal), retryOriginal: () => revealAfter(sourceActions.retryOriginal),
   };
   const sourceId = useId();
@@ -41,6 +52,17 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
     && model.operation.state === 'saved' && model.operation.phase === 'extract' && !selected.recordId;
   const revealTrigger = !model.busy && !revealEligible ? null : candidateTrigger;
   const operationLabel = model.operation.state === 'saved' && model.operation.phase === 'extract' ? '候選已備妥 · 尚未確認' : operationLabels[model.operation.state];
+  const listScope = JSON.stringify([scopeKey ?? model.childName, model.access]);
+  const listResultAvailable = model.online && model.access !== 'lost' && model.load === 'ready';
+  const deletionFocus = useContentDeletionFocus({scopeKey: listScope, ids: model.items.map(item => item.id), visible: model.deletion,
+    available: listResultAvailable && !model.busy, operation: model.operation});
+  const listChange = !listResultAvailable ? null : listIntent.current?.kind === 'remove'
+    ? model.operation.state === 'saved' && model.operation.phase === 'delete' ? 'remove' : null
+    : listIntent.current?.kind === 'add' ? ['saving', 'saved'].includes(model.operation.state) && ['reserve', 'upload'].includes(model.operation.phase ?? '') ? 'add' : null
+      : listIntent.current?.kind === 'move' && model.operation.state === 'saved' && ['upload', 'extract', 'confirm'].includes(model.operation.phase ?? '') ? 'move' : null;
+  const listMotion = useContentListMotion({ids: model.items.map(item => item.id), scopeKey: listScope,
+    eventKey: listIntent.current ? String(listIntent.current.serial) : null, change: listChange,
+    settled: !['saving', 'unknown', 'unconfirmed'].includes(model.operation.state), targetId: listIntent.current?.targetId});
   const locked = model.busy || ["unknown", "unconfirmed", "confirmed_unavailable", "conflict"].includes(model.operation.state);
   const listReadState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online ? "stale" : model.items.length ? "ready" : "empty";
   const readMessage = model.load === "loading" ? model.items.length ? "正在重新讀取照片；已載入清單及草稿保留。" : "正在讀取照片…" : model.load === "error" ? "讀取未確認。原照片及草稿保留，先手動重新讀取。" : !model.online ? "已載入清單可能不是最新；重連後先重新讀取。" : listReadState === "empty" ? "目前沒有可讀取的照片。選擇原照片後，可先私人保存。" : "";
@@ -65,7 +87,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
         {model.latest ? <AppButton label="使用目前版本並保留草稿" disabled={!model.online} onPress={actions.useLatest} /> : null}</> : null}
     </View> : null}
     {model.access === "lost" ? <SectionCard><SectionHeader density="compact" title="已無權查看這個孩子" /><Text style={s.body}>照片、原檔、候選及草稿已清除。請改選有權存取的孩子或重新核對身份。</Text></SectionCard> :
-      <View style={[s.columns, !split && s.single]} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+      <View style={[s.columns, !split && s.single]} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
         <View style={[s.editor, !split && s.full]}>
           <SectionCard testID="photo-original"><SectionHeader density="compact" title={selected ? "原照片" : "選擇原照片"} icon="image-outline" action={selected || model.original ? <AppButton label="清除本頁" variant="quiet" disabled={locked} onPress={actions.clearEditor} /> : undefined} />
             {image ? <Image source={image} resizeMode="contain" accessibilityLabel="原照片預覽" style={[s.image, compact && s.mobileImage]} /> : <View style={s.placeholder}><AppIcon name="image-outline" size={24} color={colors.teal} /><Text style={s.meta}>保留照片原檔，確認後才共享</Text></View>}
@@ -92,14 +114,14 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
           </SectionCard>
           {editable && (model.original || selected) ? <PhotoRecordForm key={model.formKey} model={model} actions={actions} /> : null}
         </View>
-        <View style={[s.list, !split && s.full]}><SectionCard testID="photo-list"><SectionHeader density="compact" title="照片清單" subtitle="私人照片只有上傳者可見；共享照片按家庭權限讀取。" icon="image-outline" />
+        <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="照片清單" style={[s.list, !split && s.full]}><SectionCard testID="photo-list"><SectionHeader density="compact" title="照片清單" subtitle="私人照片只有上傳者可見；共享照片按家庭權限讀取。" icon="image-outline" />
           {model.access === "read_only" ? <Text style={s.meta}>你目前可查看家庭共享照片及本人既有的私人照片；不能上傳、提取、確認或刪除。</Text> : null}
           <ReadStateNotice state={listReadState} message={readMessage} />
-          {model.items.map(item => <MotionEntrance key={item.id} triggerKey={item.id} scopeKey={JSON.stringify([scopeKey ?? item.childId, model.access])} preset="item-add" animateOnMount={creationRequested.current && selected?.id === item.id && ['reserve', 'upload'].includes(model.operation.phase ?? '') && ['saving', 'saved'].includes(model.operation.state)} style={s.item} testID={`photo-item-${item.id}`}>
+          <MotionList items={model.items} keyExtractor={item => item.id} scopeKey={listScope} regionKey="photo-list" eligible={listMotion} testID="photo-list-motion" renderItem={(item, row) => <View style={s.item} testID={`photo-item-${item.id}`}>
             <View style={s.itemHeader}><View style={s.itemIcon}><AppIcon name="image-outline" size={20} color={colors.teal} /></View><View style={s.itemCopy}><Text style={s.title}>{item.fileName}</Text><Text style={s.meta}>{item.createdAtLabel} · 版本 {item.version}</Text></View></View>
             <View style={s.row}><Text style={s.meta}>{item.visibility === "private" ? "私人" : "家庭共享"} · {item.state === "ready" ? "原檔已保存" : "原檔待上傳"}</Text></View>
-            <AppButton label="開啟照片" accessibilityLabel={`開啟照片：${item.visibility === "private" ? "私人" : "共享"} · ${item.fileName}`} variant="quiet" disabled={locked || model.load !== "ready"} onPress={() => actions.openPhoto(item)} />
-          </MotionEntrance>)}
+            <AppButton ref={node => deletionFocus.rowRef(item.id, node)} label="開啟照片" accessibilityLabel={`開啟照片：${item.visibility === "private" ? "私人" : "共享"} · ${item.fileName}`} variant="quiet" disabled={row.exiting || locked || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openPhoto(item);}} />
+          </View>} />
           <Text style={s.meta}>JPEG／PNG，每張最多 4 MiB；每個孩子最多 100 張及 100 MiB。清單數量不是全部容量統計。</Text>
         </SectionCard></View>
       </View>}
@@ -108,7 +130,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
       <Dialog.Title>取代本頁原檔與草稿？</Dialog.Title><Dialog.Content><Text style={s.body}>這個動作會清除目前編輯器的原檔及未共享草稿。已保存的合成附件仍在清單；結果未知時不能用更換照片避開查核。</Text></Dialog.Content>
       <Dialog.Actions style={s.row}><AppButton label="保留目前草稿" variant="quiet" onPress={actions.cancelReplacement} /><AppButton label="確認取代本頁" onPress={actions.confirmReplacement} /></Dialog.Actions>
     </AppDialog>
-      <AppDialog danger visible={model.deletion} onDismiss={actions.closeDeletion}>
+      <AppDialog danger visible={model.deletion} onDismiss={actions.closeDeletion} onClosed={deletionFocus.onClosed}>
         <Dialog.Title danger>刪除照片及連結記錄</Dialog.Title><Dialog.Content><View style={s.stack}><Text style={s.body}>{selected?.fileName} · 版本 {selected?.version}</Text>
           <Text style={s.body}>{selected?.recordId ? "這會移除原照片及已連結的家庭確認記錄，家庭成員將不能再讀取。" : "這會移除這份附件及原照片；它尚未連結家庭確認記錄。"}</Text>
           <AppCheckbox label="我已核對照片與連結記錄的刪除範圍" checked={model.deleteScope} disabled={locked} onChange={actions.setDeleteScope} />

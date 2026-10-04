@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
@@ -132,11 +133,12 @@ function DraftReview({ model, actions }: { model: FamilyViewModel; actions: Fami
 export function FamilyView({ model, actions, writeNotice, previewControls }: {
   model: FamilyViewModel; actions: FamilyActions; writeNotice: ReactNode; previewControls: ReactNode;
 }) {
-  const [width, setWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
   const stacked = width < 760;
   const scopeKey = `${model.selfUserId}:${model.family?.id ?? "none"}:${model.family?.role ?? "none"}`;
   const eligible = model.loadState === "ready" && model.operation.state === "saved";
-  return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={styles.workspace}>
+  return <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.workspace}>
     <StatusAnnouncement eventKey={model.loadState} message={model.loadState === "lost" ? "家庭權限已失效；原有家庭、成員、邀請碼及草稿已清除。" : model.loadState === "loading" ? "正在讀取家庭資料。" : ""} urgent={model.loadState === "lost"} />
     <StatusAnnouncement eventKey={model.notice ?? ""} message={model.notice ?? ""} />
     <View style={styles.warning}><Text style={styles.warningText}>合成家庭預覽 · 沒有建立有效邀請碼、發電郵、加入真實家庭或更改正式權限。Server 授權仍是權威。</Text></View>

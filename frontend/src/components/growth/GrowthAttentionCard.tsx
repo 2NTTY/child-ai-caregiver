@@ -12,9 +12,20 @@ import { AppDateTimeField,AppTimeZoneSelect } from "../DateTimeFields";
 import { AppButton,AppSelect,AppTextField,SectionCard,SectionHeader } from "../ui";
 import { growthDecisionProjection,growthFormDefaults,growthFormSchema,type GrowthFormValues } from "./growth-form";
 import { MotionDisclosure, MotionFeedback } from "../../motion";
+import { useGrowthFeedback } from "./growth-motion";
 import { growthStyles as s } from "./growth-styles";
 
-export function GrowthAttentionCard({item,page,model,actions,onSource,onTask}:{item:GrowthAttention;page:GrowthPage;model:GrowthViewModel;actions:GrowthActions;onSource:(url:string)=>void;onTask:(id:string)=>void}){
+type GrowthAttentionProps = {item:GrowthAttention;page:GrowthPage;model:GrowthViewModel;actions:GrowthActions;onSource:(url:string)=>void;onTask:(id:string)=>void};
+export function GrowthAttentionCard(props: GrowthAttentionProps){
+  const {item, model} = props, resetCount = model.resetCounts[`item:${item.id}`] ?? 0;
+  const scopeKey = `${model.scopeKey}:${model.epoch}:${model.access}:${item.id}`;
+  const trigger = useGrowthFeedback(scopeKey, resetCount, JSON.stringify([item.state, item.snoozeUntil, item.note, item.taskId]));
+  return <SectionCard testID={`growth-item-${item.id}`}><SectionHeader density="compact" title={item.title} icon="chart-bar" />
+    <MotionFeedback active={model.operation === "saved" && !model.busy && !model.pending && model.load === "ready"} triggerKey={trigger} scopeKey={scopeKey} testID={`growth-item-feedback-${item.id}`}><Text style={s.meta}>{growthKindLabels[item.kind]} · {growthStateLabels[item.state]}</Text></MotionFeedback>
+    <GrowthAttentionBody key={`${model.epoch}:${resetCount}`} {...props} />
+  </SectionCard>;
+}
+function GrowthAttentionBody({item,page,model,actions,onSource,onTask}: GrowthAttentionProps){
   const [detailsOpen,setDetailsOpen]=useState(false),[actionsOpen,setActionsOpen]=useState(false),[taskShared,setTaskShared]=useState(false);
   const basis=useRef<{item:GrowthAttention;authorityVersion:string}|null>(null);
   const {control,handleSubmit}=useForm<GrowthFormValues>({defaultValues:growthFormDefaults(item.title,item.advice),mode:"onBlur",resolver:zodResolver(growthFormSchema(page.eligibleAssignees))});
@@ -33,7 +44,7 @@ export function GrowthAttentionCard({item,page,model,actions,onSource,onTask}:{i
       onChangeText={value=>{input.onChange(value);edit();}} />{fieldState.error||help?<HelperText type={fieldState.error?"error":"info"} visible>{fieldState.error?.message??help}</HelperText>:null}
   </View>}/>;}
   const sourceUrl=growthSourceUrl(item.source.url);
-  return <SectionCard testID={`growth-item-${item.id}`}><SectionHeader density="compact" title={item.title} icon="chart-bar" /><MotionFeedback active={model.operation === "saved"} triggerKey={item.state} scopeKey={`${model.scopeKey}:${item.id}`}><Text style={s.meta}>{growthKindLabels[item.kind]} · {growthStateLabels[item.state]}</Text></MotionFeedback>
+  return <>
     <Text style={s.body}>為何現在：{item.whyNow}</Text>
     {item.sourceAvailable?<><Text style={s.body}>{item.advice}</Text><Text style={s.meta}>適用限制：{item.limits}</Text></>:<>
       <Text style={s.warning}>來源或適用依據已改變／暫不可用。這項提示只供歷史追溯，不能按舊建議處理。</Text><Text style={s.meta}>產生當時的限制：{item.limits}</Text>
@@ -80,5 +91,5 @@ export function GrowthAttentionCard({item,page,model,actions,onSource,onTask}:{i
           disabled={disabled||action==="accept"&&taskMode==="create"&&(!taskShared||activeTask)} onPress={handleSubmit(values=>{mark();actions.decide(captured.item,growthDecisionProjection(values,captured.item.version,captured.authorityVersion));})} />
       </View></MotionDisclosure>
     </>:null}
-  </SectionCard>;
+  </>;
 }

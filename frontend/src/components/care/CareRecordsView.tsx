@@ -1,3 +1,4 @@
+import { useContainerWidth } from "../useContainerWidth";
 import { brand } from "../../branding";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Platform, Pressable, StyleSheet, View, type ScrollView as NativeScrollView } from "react-native";
@@ -17,7 +18,8 @@ import { CareRecordDelete } from "./CareRecordDelete";
 export function CareRecordsView({ model, actions, previewControls, onPhotos }: { model: CareRecordsViewModel; actions: CareRecordsActions; previewControls?: ReactNode; onPhotos?: () => void }) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<CareFilter>("all");
-  const [width, setWidth] = useState(0);
+  const containerLayout = useContainerWidth();
+  const width = containerLayout.width;
   const scrollRef = useRef<NativeScrollView>(null);
   const scrollPosition = useRef(0);
   const listAnchor = useRef<{ id: string | null; position: number; context: string; nextIds: string[]; previousIds: string[] } | null>(null);
@@ -108,7 +110,7 @@ export function CareRecordsView({ model, actions, previewControls, onPhotos }: {
       {model.operation.state === "unknown" ? <AppButton label={model.checkLabel} disabled={!model.online} onPress={actions.checkOriginalOperation} /> : null}
       {model.operation.state === "unknown" && model.operation.retryAvailable ? <AppButton label="重試同一原操作" disabled={!model.online} onPress={actions.retryOriginalOperation} /> : null}
     </OperationNotice>
-    {model.access === "lost" ? <SectionCard><SectionHeader title="已無權查看這個孩子" /><Text style={styles.body}>記錄、歷史與草稿已清除。請返回有權存取的孩子或重新確認登入身份。</Text></SectionCard> : <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.columns, !split && styles.stack]}>
+    {model.access === "lost" ? <SectionCard><SectionHeader title="已無權查看這個孩子" /><Text style={styles.body}>記錄、歷史與草稿已清除。請返回有權存取的孩子或重新確認登入身份。</Text></SectionCard> : <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.columns, !split && styles.stack]}>
       <MotionDetail activeKey={showPanel ? "panel" : "list"} scopeKey={motionScope} direction="back" compact={!split && !showPanel} style={[styles.listColumn, !listVisible && styles.hidden]}><View ref={listFocusRef} testID="care-record-list" tabIndex={-1} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"} aria-hidden={!listVisible} pointerEvents={listVisible ? "auto" : "none"}><SectionCard><SectionHeader title="已確認記錄" density="compact" subtitle="按最初加入時間排列；搜尋內容不寫入 URL。" />
         <AppTextField dense label="搜尋照顧記錄" accessibilityLabel="搜尋照顧記錄" maxLength={200} value={query} onChangeText={setQuery} onSubmitEditing={search} disabled={occupied} />
         <View style={styles.actions}><AppSelect label="篩選種類" value={kind} options={[{ value: "all", label: "全部" }, ...careKindOptions]} onChange={setKind} disabled={occupied} />

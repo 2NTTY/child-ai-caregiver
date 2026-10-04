@@ -1,15 +1,16 @@
 import { createContext, Fragment, useContext, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Pressable, StyleSheet, View, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
+import { Platform, Pressable, StyleSheet, View, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import type { ChatCitationView } from "../../chat-view-model";
 import { colors, spacing } from "../../theme";
 import { AppScrollView } from "../AppScrollView";
-import { AppIcon } from "../AppIcon";
+import { HorizontalOverflowRail } from "../HorizontalOverflowRail";
 import { AppButton } from "../ui";
 import { CitationMarker } from "./CitationMarker";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 import { locateCitationSource } from "./locateCitationSource";
-import { MotionDisclosure } from "../../motion";
+import { MotionDisclosure, MotionEntrance } from "../../motion";
+import { MotionSelectionMarker } from "../../motion/MotionSelectionMarker";
 
 type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
 const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string, anchor?: RefObject<View | null>): void } | null>(null);
@@ -55,6 +56,10 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
   onOpenSource?: (id: string) => void; onLocateSource?: LocateAnswerSource; degraded?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [presentedId, setPresentedId] = useState<string | null>(null);
+  const [panelTrigger, setPanelTrigger] = useState<number | null>(null);
+  const [animateSelection, setAnimateSelection] = useState(false);
+  const selectionSerial = useRef(0);
   const [locatedId, setLocatedId] = useState<string | null>(null);
   const [origin, setOrigin] = useState<CitationOrigin | null>(null);
   const [technicalOpen, setTechnicalOpen] = useState(false);
@@ -62,33 +67,29 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
   const sourceRefs = useRef(new Map<string, View>());
   const panelRef = useRef<View | null>(null);
   const tabScrollRef = useRef<NativeScrollView | null>(null);
+  const detailScrollRef = useRef<NativeScrollView | null>(null);
   const pendingNavigation = useRef<{ id: string; closing: boolean } | null>(null);
   const [tabWidth, setTabWidth] = useState(0);
-  const [tabOverflow, setTabOverflow] = useState(false);
-  const [moreSources, setMoreSources] = useState(false);
-  const tabMetrics = useRef({ rowWidth: 0, width: 0, contentWidth: 0, x: 0 });
-  const tabLayouts = useRef(new Map<string, { x: number; width: number }>());
-  const pendingReveal = useRef<string | null>(null);
-  const selected = sources.find(source => source.id === selectedId);
-  function updateTabHint() {
-    const { rowWidth, width, contentWidth, x } = tabMetrics.current;
-    // Compare against the full row so showing the hint cannot create its own overflow.
-    setTabOverflow(rowWidth > 0 && contentWidth > rowWidth + 1);
-    setMoreSources(width > 0 && contentWidth > width + x + 1);
-  }
-  function revealNextSource() {
-    const right = tabMetrics.current.x + tabMetrics.current.width;
-    const pendingIndex = sources.findIndex(source => source.id === pendingReveal.current);
-    const next = sources.find((source, index) => {
-      const layout = tabLayouts.current.get(source.id);
-      return index > pendingIndex && layout && layout.x + layout.width > right + 1;
-    }) ?? sources[sources.length - 1];
-    // Consecutive activations can arrive before the native scroll event reports the new offset.
-    pendingReveal.current = next?.id ?? null;
-    const target = next ? sourceRefs.current.get(next.id) ?? null : null;
+  const [tabLayouts, setTabLayouts] = useState<Record<string, { x: number; width: number }>>({});
+  // Retain only an ID during collapse; the live collection controls data access.
+  const selected = sources.find(source => source.id === (selectedId ?? presentedId));
+  const expanded = selectedId !== null && selected !== undefined;
+  const markerId = sources.find(source => source.id === (selectedId ?? locatedId))?.id ?? null;
+  const selection = markerId ? tabLayouts[markerId] : undefined;
+  function revealSource(id: string) {
+    const target = sourceRefs.current.get(id) ?? null;
     if (onLocateSource) onLocateSource(target, tabScrollRef.current);
     else locateCitationSource(target, null, tabScrollRef.current);
   }
+  useLayoutEffect(() => {
+    // Reset explicitly while preserving the viewport and its control identity.
+    if (selectedId === null) return;
+    const scroll = detailScrollRef.current;
+    const viewport = Platform.OS === "web" ? scroll?.getScrollableNode() : null;
+    if (viewport) viewport.style.setProperty("overflow-anchor", "none");
+    // RN Web installs its RN-signature scrollTo on the DOM viewport as well.
+    scroll?.scrollTo({ x: 0, y: 0, animated: false });
+  }, [selectedId]);
   useLayoutEffect(() => {
     const pending = pendingNavigation.current;
     pendingNavigation.current = null;
@@ -96,18 +97,23 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
       pending.closing ? tabScrollRef.current : undefined);
   }, [selectedId, onLocateSource]);
   function locate(id: string, anchor?: RefObject<View | null>) {
+    setPanelTrigger(null); setAnimateSelection(false);
     setLocatedId(id);
     if (anchor?.current) setOrigin({ sourceId: id, anchor });
-    if (selectedId && selectedId !== id) { setSelectedId(id); setTechnicalOpen(false); }
+    if (selectedId && selectedId !== id) { setSelectedId(id); setPresentedId(id); setTechnicalOpen(false); }
     onLocateSource?.(sourceRefs.current.get(id) ?? null, tabScrollRef.current, panelRef.current);
   }
   function toggle(id: string) {
     const closing = selectedId === id;
+    setAnimateSelection(true);
+    setPanelTrigger(selectedId !== null && !closing ? ++selectionSerial.current : null);
+    if (!closing) setPresentedId(id);
     pendingNavigation.current = { id, closing };
     setSelectedId(closing ? null : id); setLocatedId(id);
     if (!closing && selectedId !== id) setTechnicalOpen(false);
   }
   function returnToCitation() {
+    setPanelTrigger(null); setAnimateSelection(false);
     if (origin?.anchor.current && sources.some(source => source.id === origin.sourceId)) {
       onLocateSource?.(origin.anchor.current, undefined, origin.anchor.current);
     }
@@ -122,36 +128,29 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
           <View style={styles.footerHeading}><Text accessibilityRole="header" style={styles.footerTitle}>參考來源</Text>
             {origin && onLocateSource ? <AppButton label="返回引用句" variant="quiet" density="compact" onPress={returnToCitation} /> : null}
           </View>
-          <View testID="answer-source-tab-row" style={styles.tabRow} onLayout={event => {
-            tabMetrics.current.rowWidth = event.nativeEvent.layout.width; updateTabHint();
-          }}>
-          <AppScrollView ref={tabScrollRef} horizontal testID="answer-source-tabs" accessibilityLabel="回答參考來源"
-            showsHorizontalScrollIndicator={false} scrollEventThrottle={16}
-            onLayout={event => { const width = event.nativeEvent.layout.width; setTabWidth(width); tabMetrics.current.width = width; updateTabHint(); }}
-            onContentSizeChange={width => { tabMetrics.current.contentWidth = width; updateTabHint(); }}
-            onScroll={event => { tabMetrics.current.x = event.nativeEvent.contentOffset.x; pendingReveal.current = null; updateTabHint(); }}
-            style={styles.tabBar} contentContainerStyle={styles.tabs}>
+          <HorizontalOverflowRail ref={tabScrollRef} testID="answer-source-tabs" rowTestID="answer-source-tab-row" accessibilityLabel="回答參考來源"
+            hintLabel="查看更多來源" hintTestID="answer-source-scroll-hint" hintSlotTestID="answer-source-hint-slot" hintColor={chatColors.secondary}
+            items={sources.flatMap(source => tabLayouts[source.id] ? [{ key: source.id, ...tabLayouts[source.id] }] : [])}
+            onRevealItem={revealSource} animatedScroll={false}
+            onLayout={event => setTabWidth(event.nativeEvent.layout.width)} style={styles.tabRow} contentContainerStyle={styles.tabs}>
             {sources.map((source, index) => <Fragment key={source.id}>
               {index > 0 ? <View testID="answer-source-separator" accessible={false} style={styles.separator} /> : null}
               <Pressable accessibilityRole="button"
               ref={node => { if (node) sourceRefs.current.set(source.id, node); else sourceRefs.current.delete(source.id); }}
-              onLayout={event => { const { x, width } = event.nativeEvent.layout; tabLayouts.current.set(source.id, { x, width }); }}
+              onLayout={event => { const { x, width } = event.nativeEvent.layout; setTabLayouts(current => current[source.id]?.x === x && current[source.id]?.width === width ? current : { ...current, [source.id]: { x, width } }); }}
               accessibilityLabel={`來源【${index + 1}】：${source.title}`} accessibilityState={{ expanded: selectedId === source.id }}
-              aria-expanded={selectedId === source.id} aria-controls={`${groupId}-detail-${index}`} onPress={() => toggle(source.id)}
+              aria-expanded={selectedId === source.id} aria-controls={`${groupId}-detail`} onPress={() => toggle(source.id)}
               style={({ pressed }) => [styles.tab, { maxWidth: Math.max(96, Math.min(280, (tabWidth || 224) - 8)) },
-                pressed && styles.pressed, (selectedId ?? locatedId) === source.id && styles.located, selectedId === source.id && styles.selectedTab]}>
+                pressed && styles.pressed, !selection && markerId === source.id && styles.located, !selection && selectedId === source.id && styles.selectedTab]}>
               <Text numberOfLines={1} style={styles.tabText}>【{index + 1}】{source.title}</Text>
               </Pressable>
             </Fragment>)}
-          </AppScrollView>
-          {tabOverflow ? <View testID="answer-source-hint-slot" style={styles.hintSlot}>
-            {moreSources ? <Pressable testID="answer-source-scroll-hint" accessibilityRole="button" accessibilityLabel="查看更多來源"
-              onPress={revealNextSource} style={({ pressed }) => [styles.scrollHint, pressed && styles.pressed]}>
-              <AppIcon name="chevron-right" size={20} color={chatColors.secondary} />
-            </Pressable> : null}
-          </View> : null}
-          </View>
-          {selected ? <AppScrollView key={selected.id} nativeID={`${groupId}-detail-${sources.indexOf(selected)}`} testID="source-details-panel" style={styles.detailScroll} contentContainerStyle={styles.details}>
+            <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${groupId}:${markerId ?? "none"}`} enabled={animateSelection} color={selectedId ? chatColors.ink : chatColors.focus} />
+          </HorizontalOverflowRail>
+          <MotionDisclosure expanded={expanded} scopeKey={groupId} testID="answer-source-disclosure">
+          <AppScrollView ref={detailScrollRef} nativeID={`${groupId}-detail`} testID="source-details-panel" style={styles.detailScroll}>
+          <MotionEntrance preset="panel" triggerKey={expanded ? panelTrigger : null} scopeKey={groupId} enabled={expanded} testID="answer-source-content-motion" style={styles.details}>
+            {selected ? <>
             <View testID="source-detail-group" style={styles.detailGroup}>
               <Text accessibilityRole="header" style={styles.groupTitle}>引用內容</Text>
               <View style={styles.detail}><Text accessibilityRole="header" style={styles.sourceTitle}>{selected.title}</Text>
@@ -184,7 +183,10 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
                 <Detail technical label="最後成功核對" value={sourceTime(selected.lastSuccessfulCheckAt)} />
               </View></MotionDisclosure>
             </View>
-          </AppScrollView> : null}
+            </> : null}
+          </MotionEntrance>
+          </AppScrollView>
+          </MotionDisclosure>
         </View> : <Text style={styles.meta}>本次沒有可核對的來源片段。</Text>}
       </View>
     </View>
@@ -204,10 +206,7 @@ const styles = StyleSheet.create({
   quoteBody: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body },
   panel: { gap: spacing.xs, minWidth: 0 },
   tabRow: { height: 48, flexDirection: "row", minWidth: 0 },
-  tabBar: { height: 48, flex: 1, minWidth: 0 },
   tabs: { flexDirection: "row", alignItems: "center" },
-  hintSlot: { width: 48, height: 48, flexShrink: 0 },
-  scrollHint: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
   separator: { width: 1, height: 20, backgroundColor: chatColors.line, flexShrink: 0 },
   tab: { minHeight: 48, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent", minWidth: 0 },
   selectedTab: { borderBottomColor: chatColors.ink },
