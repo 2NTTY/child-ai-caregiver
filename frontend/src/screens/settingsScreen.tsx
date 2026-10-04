@@ -104,7 +104,13 @@ export default function SettingsPage() {
       <View style={[styles.column, stacked && styles.fullColumn]}><SectionCard><SectionHeader density="compact" title="資料與私隱" />
         <Text style={styles.body}>孩子資料、已確認記錄與私人聊天的可見範圍，須按目前身份與家庭角色重新檢查。退出或撤權後，正式 App 必須清除不再可見的資料。</Text>
         <LabeledValue label="私人聊天" value="只對本人可見" /><LabeledValue label="共享資料" value="按孩子及家庭角色授權" />
-      </SectionCard></View>
+      </SectionCard>
+        <SectionCard testID="settings-data-sources"><SectionHeader density="compact" title="資料來源" subtitle="你提供的來源，在同一處查看和管理。" icon="link-variant" />
+          <Text style={styles.body}>加入連結或原文，說明想怎樣使用；可以交助手協助整理，再回到同一表單核對，也可以自行填寫。</Text>
+          <AppButton label="管理資料來源" variant="secondary" onPress={() => actions.open("sources")} />
+          <Text style={styles.draftNote}>完整來源保持本人私人。用途編輯是合成草稿；正式接入、原地修改與停用仍待接線。</Text>
+        </SectionCard>
+      </View>
       <View style={[styles.column, stacked && styles.fullColumn]}><SectionCard><SectionHeader density="compact" title="帳戶操作" />
         <Text style={styles.body}>匯出資料、刪除帳戶及儲存用量未有此預覽可用的完整契約；不顯示可點擊的假操作。</Text>
         <TextLink label="查看接線說明" onPress={() => setTab("account")} />

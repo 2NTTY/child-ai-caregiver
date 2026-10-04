@@ -5,6 +5,7 @@ import { emptyPhotoDraft, type PhotoDraftFields } from "../photo-view-model";
 import type { SourceCreate, SourceDirect, SourceInput, SourceOperation, SourcePhase, SourceConfirmationKind, SourcesViewModel } from "../shared-input-view-model";
 import { sourceConfirmationProjection, validSourceExcerpt } from "../components/shared-inputs/source-form";
 import { previewPublicSources, sourceFixture } from "./sourceFixture";
+import { createSourceIntake, confirmSourceIntake, validSourceIntakeText, proposeSourceIntake, sourceIntakeIsUnresolved, sourceIntakeReadResult, type SourceIntake, type SourceIntakeReadOutcome, type SourceIntakeConnectionOutcome, type SourceIntakeProposal } from "../source-intake";
 
 export type SourceCondition = "normal" | "empty" | "loading" | "read_error" | "read_only" | "capacity" | "lost";
 export type SourceOutcome = "success" | "failed" | "unknown" | "conflict" | "capacity" | "confirmed_unavailable";
@@ -23,6 +24,10 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
   const [lookup, setLookup] = useState<SourceLookup>("unknown");
   const [items, setItems] = useState(() => sourceFixture(child.id, identity.id, identity.name));
   const [selected, setSelected] = useState<SourceInput | null>(null), [latest, setLatest] = useState<SourceInput | null>(null);
+  const [intakeIntention, setIntakeIntention] = useState("");
+  const [intakes, setIntakes] = useState<Record<string, SourceIntake>>({});
+  const [intakeReadOutcome, setIntakeReadOutcome] = useState<SourceIntakeReadOutcome>("ready");
+  const [intakeConnectionOutcome, setIntakeConnectionOutcome] = useState<SourceIntakeConnectionOutcome>("not_connected");
   const [composerSeed, setComposerSeed] = useState<SourceInput | null>(null);
   const [draft, setDraft] = useState(emptyPhotoDraft), [reviewed, setReviewed] = useState<PhotoDraftFields | null>(null), [formKey, setFormKey] = useState(0);
   const [draftUncertainties, setDraftUncertainties] = useState<readonly string[]>([]);
@@ -42,13 +47,15 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
   const busy = inFlight.current || operation.state === "saving" || reading;
   const load = reading || condition === "loading" ? "loading" : readFailed || condition === "read_error" ? "error" : "ready";
   const conflict = operation.state === "conflict";
-  usePreviewLeaveGuard(!!reviewed || excerptDirty || !!deleteOpen, busy || !!pending.current || !!direct);
+  const selectedIntake = selected ? intakes[selected.id] ?? null : null;
+  const intakeUnresolved = sourceIntakeIsUnresolved(selectedIntake);
+  usePreviewLeaveGuard(!!reviewed || excerptDirty || !!deleteOpen || !!intakeIntention || !!selectedIntake && ["clarifying", "review"].includes(selectedIntake.stage), busy || !!pending.current || !!direct || intakeUnresolved);
   const fresh = online && load === "ready" && access !== "lost" && !busy && !pending.current && !conflict;
   const manageable = !!selected && selected.canManage && selected.ownerUserId === identity.id && access === "editable";
-  const canChoose = !busy && !pending.current && !directRef.current && access !== "lost";
+  const canChoose = !busy && !pending.current && !directRef.current && !intakeUnresolved && access !== "lost";
   const blockedDirect = !!selected && (selected.fetchState === "unknown" || selected.extraction.state === "unknown");
   const manualAllowed = !directRef.current || directRef.current.kind === "extract" && directRef.current.checked && selected?.extraction.state !== "running";
-  const canConfirm = fresh && manageable && !selected?.recordId && !!selected?.text.trim() && manualAllowed;
+  const canConfirm = fresh && manageable && !selected?.recordId && !!selected?.text.trim() && manualAllowed && !intakeUnresolved;
   const canCreate = access === "editable" && condition !== "capacity";
   function consentReset() { setFetchConsent(false); setModelConsent(false); setSharedConsent(false); setChildFactConsent(false); setDeleteScope(false); setDeleteFinal(false); }
   function trackDirect(value: Direct | null) { directRef.current = value; setDirect(value); }
@@ -60,7 +67,7 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
   function put(input: SourceInput) { setItems(previous => [input, ...previous.filter(item => item.id !== input.id)]); setSelected(input); }
   function clearEditor() {
     setSelected(null); setLatest(null); setComposerSeed(null); setDraft(emptyPhotoDraft()); setReviewed(null); setFormKey(value => value + 1);
-    setDraftUncertainties([]);
+    setDraftUncertainties([]); setIntakeIntention("");
     setExcerpt(""); setExcerptDirty(false); setConfirmationKind("reference"); setDeleteOpen(false); consentReset();
   }
   function applied(entry: Receipt) {
@@ -69,7 +76,10 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
   }
   function unavailable(entry: Receipt) {
     pending.current = null; trackDirect(null); clearEditor(); setReadFailed(false);
-    if (entry.phase !== "create" && selected) setItems(previous => previous.filter(item => item.id !== selected.id));
+    if (entry.phase !== "create" && selected) {
+      setItems(previous => previous.filter(item => item.id !== selected.id));
+      setIntakes(previous => { const next = { ...previous }; delete next[selected.id]; return next; });
+    }
     setOperation({ state: "confirmed_unavailable", phase: entry.phase, reference: entry.reference, checked: true, message: "原操作已由合成收據確認，但結果已刪除或不可讀。不會按原文或 hash 猜測結果，也不會重送。" });
   }
   function sendReceipt(entry: Receipt, result: SourceOutcome) {
@@ -137,6 +147,7 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
   function changeCondition(next: SourceCondition) {
     if ((inFlight.current || pending.current || directRef.current) && next !== "lost") return;
     cancel(); pending.current = null; trackDirect(null); clearEditor(); setReading(false); setReadFailed(false); setOperation(idle()); setCondition(next);
+    setIntakes({});
     setItems(next === "lost" || next === "empty" ? [] : sourceFixture(child.id, identity.id, identity.name));
     setNotice(next === "lost" ? "已無權存取，私人原文、候選、草稿及舊操作已清除。" : "");
   }
@@ -144,6 +155,7 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
   useEffect(() => {
     if (online) return;
     cancel(); setReading(false); setReadFailed(true); consentReset();
+    setIntakes(previous => Object.fromEntries(Object.entries(previous).map(([id, value]) => [id, value.stage === "reading" ? { ...value, stage: "read_unknown" as const } : value])));
     if (pending.current) pending.current.checked = false;
     if (directRef.current) trackDirect({ ...directRef.current, checked: false });
     if (pending.current || directRef.current) setOperation(previous => ({ ...previous, state: pending.current?.confirmed ? "confirmed_unavailable" : "unknown", checked: false,
@@ -151,18 +163,60 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
     // Offline keeps only this page's text draft and original in-memory attempt; no outbox.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online]);
-  const model: SourcesViewModel = { scopeKey, childName: child.displayName, accountName: identity.name, online, access, load, canCreate,
+  function updateIntake(id: string, change: (value: SourceIntake) => SourceIntake) {
+    setIntakes(previous => previous[id] ? { ...previous, [id]: change(previous[id]) } : previous);
+  }
+  const canEditIntake = fresh && manageable && !direct && !pending.current;
+  const model: SourcesViewModel = { scopeKey,
+    intake: { mode: "synthetic", intention: access === "lost" ? "" : intakeIntention, selected: access === "lost" ? null : selectedIntake },
+    intakeByInputId: access === "lost" ? {} : intakes, childName: child.displayName, accountName: identity.name, online, access, load, canCreate,
     items: access === "lost" ? [] : items.map(item => ({ ...item, canManage: item.canManage && access === "editable" })), sources: previewPublicSources,
     selected: access === "lost" ? null : selected, latest, operation, direct: direct ? { kind: direct.kind, basisVersion: direct.basis.version, excerpt: direct.excerpt, checked: direct.checked } as SourceDirect : null,
     notice, draft, draftUncertainties, formKey, reviewed, confirmationKind, composerSeed, excerpt, fetchConsent, modelConsent, sharedConsent, childFactConsent, deleteOpen, deleteScope, deleteFinal,
     busy, fresh, formLocked: busy || !!pending.current || access !== "editable", canChoose,
-    canFetch: fresh && manageable && !selected?.recordId && !direct && !blockedDirect && !!selected?.sourceUrl && ["personal_source", "public_source"].includes(selected?.kind ?? "") && ["not_requested", "failed"].includes(selected?.fetchState ?? ""),
-    canExtract: fresh && manageable && !selected?.recordId && !direct && !blockedDirect && !!selected?.text.trim() && ["not_requested", "failed"].includes(selected?.extraction.state ?? ""),
-    canConfirm, canDelete: fresh && manageable && manualAllowed };
-  return { model, condition, changeCondition, faultPhase, setFaultPhase, outcome, setOutcome, lookup, setLookup, actions: {
+    canFetch: fresh && manageable && !intakeUnresolved && !selected?.recordId && !direct && !blockedDirect && !!selected?.sourceUrl && ["personal_source", "public_source"].includes(selected?.kind ?? "") && ["not_requested", "failed"].includes(selected?.fetchState ?? ""),
+    canExtract: fresh && manageable && !intakeUnresolved && !selected?.recordId && !direct && !blockedDirect && !!selected?.text.trim() && ["not_requested", "failed"].includes(selected?.extraction.state ?? ""),
+    canConfirm, canDelete: fresh && manageable && manualAllowed && !intakeUnresolved };
+  return { model, condition, changeCondition, faultPhase, setFaultPhase, outcome, setOutcome, lookup, setLookup,
+    intakeReadOutcome, setIntakeReadOutcome, intakeConnectionOutcome, setIntakeConnectionOutcome, actions: {
+    intake: {
+      setIntention(value: string) { if (canChoose && !selected && access === "editable") setIntakeIntention(value); },
+      read() {
+        if (!canEditIntake || inFlight.current || !selected || selectedIntake?.stage !== "awaiting_read") return;
+        const id = selected.id;
+        updateIntake(id, value => ({ ...value, stage: "reading" }));
+        later(() => updateIntake(id, value => sourceIntakeReadResult(value, intakeReadOutcome)));
+      },
+      checkRead() {
+        if (!canEditIntake || !selected || selectedIntake?.stage !== "read_unknown") return;
+        updateIntake(selected.id, value => sourceIntakeReadResult(value, intakeReadOutcome));
+      },
+      setClarification(value: string) {
+        if (!canEditIntake || !selected || selectedIntake?.stage !== "clarifying") return;
+        updateIntake(selected.id, intake => ({ ...intake, clarification: value }));
+      },
+      propose() { if (canEditIntake && selected) updateIntake(selected.id, proposeSourceIntake); },
+      editManually() {
+        if (!canEditIntake || !selected || intakeUnresolved) return;
+        setIntakes(previous => { const current = previous[selected.id] ?? createSourceIntake("");
+          return { ...previous, [selected.id]: current.proposal ? { ...current, stage: "review", proposalOrigin: "manual" } : proposeSourceIntake({ ...current, stage: "clarifying", proposalOrigin: "manual" }) }; });
+      },
+      editProposal(proposal: SourceIntakeProposal) {
+        if (!canEditIntake || !selected || selectedIntake?.stage !== "review") return;
+        updateIntake(selected.id, value => ({ ...value, proposal: copy(proposal) }));
+      },
+      confirmProposal() {
+        if (!canEditIntake || !selected) return;
+        updateIntake(selected.id, value => confirmSourceIntake(value, intakeConnectionOutcome));
+      },
+      checkConnection() {
+        if (!canEditIntake || !selected || selectedIntake?.stage !== "connection_unknown" || intakeConnectionOutcome === "unknown") return;
+        updateIntake(selected.id, value => ({ ...value, stage: "confirmed_pending_connection" }));
+      },
+    },
     refresh, checkOriginal: refresh,
     create(input: SourceCreate) {
-      if (!fresh || !canCreate || selected || direct || pending.current) return;
+      if (!fresh || !canCreate || selected || direct || pending.current || !validSourceIntakeText(intakeIntention)) return;
       const payload = copy(input), source = payload.kind === "public_source" ? previewPublicSources.find(item => item.id === payload.sourceId) : null;
       if (payload.kind === "public_source" && !source) return;
       const value: SourceInput = { id: `preview-source-created-${++serial.current}`, childId: child.id, ownerUserId: identity.id, version: 1, canManage: true, createdAt: "2026-10-01T01:00:00Z",
@@ -170,11 +224,12 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
         sourceUrl: source?.url ?? (payload.kind !== "public_source" ? payload.sourceUrl : null), sourceDateText: payload.kind !== "public_source" ? payload.sourceDateText : null,
         sourceNotes: payload.kind === "personal_source" ? payload.sourceNotes : "", text: payload.kind !== "public_source" ? payload.text : "", sha256: payload.kind !== "public_source" && payload.text.trim() ? "d".repeat(64) : null, retrievedAt: null,
         fetchState: payload.kind !== "public_source" && payload.text.trim() ? "ready" : "not_requested", extraction: { state: "not_requested", runId: null, excerpt: null, draft: null, stopReason: null, processedAt: null, model: null }, recordId: null, confirmationKind: null };
-      receipt("create", () => { clearEditor(); put(value); setExcerpt(value.text.length <= 10000 ? value.text : ""); });
+      const intake = createSourceIntake(intakeIntention);
+      receipt("create", () => { clearEditor(); put(value); setIntakes(previous => ({ ...previous, [value.id]: intake })); setExcerpt(value.text.length <= 10000 ? value.text : ""); });
     },
     openInput(input: SourceInput) { if (!canChoose || !online || load !== "ready") return; clearEditor(); put(input); setExcerpt(input.text.length <= 10000 ? input.text : ""); setOperation(idle()); setNotice(""); },
     newInput() { if (!canChoose || !canCreate) return; clearEditor(); setOperation(idle()); setNotice("本頁未保存草稿已清除；已保存來源仍在清單。"); },
-    recreateWithText() { if (!fresh || !canCreate || !selected || selected.kind !== "personal_source" || direct) return; const seed = copy(selected); clearEditor(); setComposerSeed(seed); setOperation(idle()); setNotice("原來源仍保留。請自行貼上正文；保存後會建立另一項私人來源，不會更新或訂閱原項。"); },
+    recreateWithText() { if (!fresh || !canCreate || !canChoose || !selected || selected.kind !== "personal_source" || direct) return; const seed = copy(selected), intention = selectedIntake?.intention ?? ""; clearEditor(); setComposerSeed(seed); setIntakeIntention(intention); setOperation(idle()); setNotice("原來源仍保留。請自行貼上正文；保存後會建立另一項私人來源，不會更新或訂閱原項。"); },
     setFetchConsent, setModelConsent, setSharedConsent,
     setChildFactConsent(value: boolean) { setChildFactConsent(value); setSharedConsent(false); },
     setExcerpt(value: string) { if (direct || pending.current || busy) return; setExcerpt(value); setExcerptDirty(true); setModelConsent(false); },
@@ -195,7 +250,7 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
     useLatest() { if (!latest || !online || load !== "ready" || access !== "editable" || busy || pending.current || direct) return; put(latest); setLatest(null); if (excerpt && !latest.text.includes(excerpt)) setExcerpt(""); setOperation(idle()); consentReset(); setReviewed(null); setNotice("已明確使用目前版本，手動草稿保留。請重新核對共享內容。"); },
     openDeletion() { if (!model.canDelete) return; setDeleteOpen(true); setDeleteScope(false); setDeleteFinal(false); }, closeDeletion() { if (!busy) setDeleteOpen(false); }, setDeleteScope, setDeleteFinal,
     remove() { if (!model.canDelete || !deleteScope || !deleteFinal || !selected) return; const id = selected.id;
-      receipt("delete", () => { setItems(previous => previous.filter(item => item.id !== id)); clearEditor(); }); },
+      receipt("delete", () => { setItems(previous => previous.filter(item => item.id !== id)); setIntakes(previous => { const next = { ...previous }; delete next[id]; return next; }); clearEditor(); }); },
   } };
 }
 export type SourcesPreviewController = ReturnType<typeof useSourcesPreview>;

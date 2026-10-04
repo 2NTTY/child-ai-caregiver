@@ -1,0 +1,58 @@
+{
+  "checkedAtUtc": "2026-10-04T14:35:00Z",
+  "repository": "2NTTY/child-ai-caregiver",
+  "upstreamReadRef": "37625d0",
+  "workspace": "scoped canonical-source snapshot; local Git baseline is not an upstream ancestor",
+  "sourceSha256": {
+    "frontend/src/components/shared-inputs/SourceComposer.tsx": "5c3ddc71619dcffed669e855bde18c4e313dd0bec2830f25e4813695778ef1a6",
+    "frontend/src/components/shared-inputs/SourceDetails.tsx": "f6acddd988a4ba3c1b5c1efb18b8539c2b7d2e713d69406cf19b396d9e202ed6",
+    "frontend/src/components/shared-inputs/SourcesView.tsx": "f91ffc0f06cd932c99c469afc596aa91905e036da71edc62262f3df3d70058d4",
+    "frontend/src/preview/useSourcesPreview.ts": "399600cef31584459c3126213625754f8893f9c5ce9ee6028276f8570dab4a5e",
+    "frontend/src/screens/SourcesScreen.tsx": "c2fa0b91e2cb559c718643a6ccf6b9dd4472307dc91481d7c5bdfedad65b6f2b",
+    "frontend/src/screens/settingsScreen.tsx": "74fc83b3987303b5b6a65a4e8fe6ffbd1f5a95f61e18741734ef2d5b034e7f2b",
+    "frontend/src/shared-input-view-model.ts": "db625b507ab9323659dbbafd7312199b97c9f4e93632216ca645e5f695d57229",
+    "frontend/src/source-intake.ts": "d59dbb3cd71f8aae979982ab0477629ee2a72b9244ef7369204ce8e1da9a5ad4",
+    "frontend/src/components/shared-inputs/SourceIntakeConversation.tsx": "3133f567cbf782cb6ef00eb873fc656a3c05a09b2a041d14083f3902b45640c0",
+    "frontend/src/components/shared-inputs/SourceIntakeEditor.tsx": "0fc31ceb08f50cdaf3476f355d7258069fe16674f29bc3e83e751352d4b7fd9a",
+    "frontend/scripts/source-intake.test.mts": "77a645cf4a575208f76af421c53ae6177f1074ee819859223b1306e9b09c7ded"
+  },
+  "checks": [
+    {
+      "name": "node --test frontend/scripts/source-intake.test.mts",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "name": "scoped TypeScript no-emit check",
+      "entrypoints": 10,
+      "diagnostics": 0,
+      "dependencyTree": "existing caregiver_recovery_impl/frontend dependencies, read-only CompilerHost overlay; no files replaced"
+    },
+    {
+      "name": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "name": "unchanged formal projection and family confirmation form",
+      "paths": [
+        "frontend/src/components/shared-inputs/source-form.ts",
+        "frontend/src/components/shared-inputs/SourceRecordForm.tsx",
+        "frontend/package.json"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "notRun": [
+    "Web or Android build",
+    "browser interaction or responsive visual validation",
+    "full-project checks",
+    "real Server, fetch, model, login, API integration",
+    "upstream publication or deployment"
+  ],
+  "scope": [
+    "shared SourceIntakeEditor for manual and assisted drafts",
+    "existing sources list and existing create/fetch/extract/confirm/delete contracts retained",
+    "intake metadata exists only in component memory; no browser storage or automatic API operations",
+    "no connected success state; edit original source and disable are explicitly unavailable"
+  ]
+}

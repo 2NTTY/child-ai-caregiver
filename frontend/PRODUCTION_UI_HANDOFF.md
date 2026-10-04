@@ -1,5 +1,10 @@
 # 預覽轉正式介面的移除及接線清單
 
+## 私人來源協助接入補充
+
+設定與聊天均導向同一 sources 清單及 editor；SourceComposer 保留原 create 投影，新增意向由正式接入草稿契約承接，不能塞入舊 API。將 SourceIntakeConversation／Editor 的合成閱讀、建議及確認結果替換為實際授權 controller；無真結果不能顯示已讀、已核實或已接入。正式缺口、回調、同意及清理見 [私人來源交接](SHARED_INPUT_HANDOFF.md#assisted-source-management)；記憶上下文後續安排見 [Agent 交接](AGENT_HANDOFF.md#memory-context-integration)。保留人工入口及唯一資料權威，不挪用原 fetch／extract／confirm 的 unknown／版本契約。
+
+
 更新：2026-10-02。只管理 frontend 的交接；不變更正式產品協定。主聊天先直接讀 [GitHub P2 UI 清單](https://github.com/2NTTY/child-ai-caregiver/blob/master/docs/P2_UI_HANDOFF.md)，按功能局部讀 [API](https://github.com/2NTTY/child-ai-caregiver/blob/master/docs/API.md)及共用型別／client 封裝，再沿 [功能交接](HANDOFF.md#p2-coverage)。本次核對 master d3213e6，P2／API blob 與上次相同；正式整合時重新固定實際基線。
 
 ## 接線後移除
@@ -37,4 +42,4 @@
 - 未接通功能的誠實限制，直至它實際接通；真正帳戶刪除及 password／最近身份重新驗證仍由主聊天完成，不把名字輸入或紅色 Dialog 視為身份認證。
 - 求助需要時用統一權威來源；聊天沒有常駐求助卡，並非刪除真正求助能力。
 
-順序為：接實際授權資料／控制器 → 逐項移除開發工具與合成分支 → 核對無空白高度、路由／來源定位及首幀 → 按 P2 集中安排驗真身份、原操作未知及跨頁一致性。全域搜尋刪掉「預覽／合成」字樣不能完成接線；`PreviewToolbar` 消失不代表所有功能已可用。當前隔離畫面仍保留預覽提示，未執行正式接線或真 API 驗收。
+順序為：接實際授權資料／控制器 → 逐項移除開發工具與合成分支 → 核對無空白高度、路由／來源定位及首幀 → 按當次正式包的授權驗真身份、原操作未知及跨頁一致性。全域搜尋刪掉「預覽／合成」字樣不能完成接線；`PreviewToolbar` 消失不代表所有功能已可用。當前隔離畫面仍保留預覽提示，未執行正式接線或真 API 驗收。
