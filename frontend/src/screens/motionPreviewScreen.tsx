@@ -1,8 +1,9 @@
 import { brand } from "../branding";
-import { useEffect, useId, useState } from "react";
-import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useMotionPreferences } from "../motion";
+import { useId, useState } from "react";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { Switch, Text } from "react-native-paper";
-import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp, FadeOut, ReduceMotion, ZoomIn, useReducedMotion } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp, FadeOut, ReduceMotion, ZoomIn } from "react-native-reanimated";
 import { PageFrame } from "../components/PageFrame";
 import { AppIcon } from "../components/AppIcon";
 import { AppButton, AppTabPanel, OperationPill, SectionCard, SectionHeader, UnderlineTabs } from "../components/ui";
@@ -65,20 +66,6 @@ const children = [
   { name: "阿樂", age: "約 8 歲", region: "未提供", profile: "檔案待核對" },
 ] as const;
 
-function useSystemReducedMotion() {
-  const initial = useReducedMotion();
-  const [enabled, setEnabled] = useState(initial);
-  useEffect(() => {
-    if (Platform.OS !== "web" || typeof window === "undefined") return;
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setEnabled(query.matches);
-    const update = (event: MediaQueryListEvent) => setEnabled(event.matches);
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-  return enabled;
-}
-
 function MotionFrame({ option, childIndex, replay, detailsOpen, reduced, narrow }: {
   option: MotionOption;
   childIndex: number;
@@ -132,8 +119,8 @@ export default function MotionPreviewScreen() {
   const [replay, setReplay] = useState(0);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [manualReduced, setManualReduced] = useState(false);
-  const systemReduced = useSystemReducedMotion();
-  const reduced = systemReduced || manualReduced;
+  const sharedReduced = useMotionPreferences().reducedMotion;
+  const reduced = sharedReduced || manualReduced;
   const narrow = Math.min(width, containerWidth) < 680;
   const current = optionDetails[option];
 
@@ -148,8 +135,8 @@ export default function MotionPreviewScreen() {
           <AppButton label={detailsOpen ? "收起詳情" : "展開詳情"} variant="secondary" onPress={() => setDetailsOpen(value => !value)} />
         </View>
         <View style={styles.reduceRow}>
-          <View style={styles.flexText}><Text style={styles.cardTitle}>減少動態</Text><Text style={styles.muted}>{systemReduced ? "系統已要求減少動態，示例固定為靜態。" : "可在此切換；亦會遵從系統的減少動態設定。"}</Text></View>
-          <Switch value={reduced} disabled={systemReduced} onValueChange={setManualReduced} accessibilityLabel="減少動態示例" />
+          <View style={styles.flexText}><Text style={styles.cardTitle}>減少動態</Text><Text style={styles.muted}>{sharedReduced ? "系統或應用偏好已要求減少動畫，示例固定為靜態。" : "可在此額外減少動態；亦會遵從系統及應用偏好。"}</Text></View>
+          <Switch value={reduced} disabled={sharedReduced} onValueChange={setManualReduced} accessibilityLabel="減少動態示例" />
         </View>
       </SectionCard>
       {options.map(item => <AppTabPanel key={item.key} tabsId={tabsId} tabKey={item.key} active={option === item.key} style={styles.layout}>{option === item.key ? <>

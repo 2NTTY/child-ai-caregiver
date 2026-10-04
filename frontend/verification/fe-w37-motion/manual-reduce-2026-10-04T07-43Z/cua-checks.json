@@ -1,0 +1,107 @@
+{
+  "at": "2026-10-04T07:50:41.593247+00:00",
+  "status": "Passed the bounded manual App preference checks",
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+  "bundle": "entry-60ad8f512f58125571a3c455813146fb.js",
+  "method": "Supported cloud CUA, ordinary semantic keyboard UI and read-only DOM, normal same-origin iframe sizing. No DevTools or script injection. Prepared Playwright script not executed.",
+  "source_files_rechecked": 228,
+  "source_mismatches": [],
+  "checks": [
+    {
+      "name": "Accessible switch and keyboard",
+      "result": "Role=switch INPUT, accessible name 減少動畫, tabindex0, initially unchecked/enabled; Space checks it with focus retained and visible status announcement. Read-only inspection: checked is native property; aria-checked not needed for native checkbox/switch."
+    },
+    {
+      "name": "Reload persistence",
+      "result": "Enabled manual preference survives ordinary reload. Later disabled state also survives wrapper/app reload. Preference restored to initial off after testing."
+    },
+    {
+      "name": "Cross-view synchronisation",
+      "result": "Same-origin settings view changes preference and existing summary view reacts without reload; summary visibilityState visible before/after, no background cancellation confound."
+    },
+    {
+      "name": "Reduced update before playback",
+      "result": "Changed summary result serial1→2 finishes settled with zero curtains. Exact unsaved draft including spaces retained, textarea not disabled; temporary readOnly clears on completion; input focus and caret[14,14] retained. No continuous frame recording claimed."
+    },
+    {
+      "name": "Active covering cancellation",
+      "before": {
+        "phase": "covering",
+        "serial": "2",
+        "curtains": 1,
+        "visibility": "visible",
+        "focus": true,
+        "selection": [
+          14,
+          14
+        ],
+        "draft": "  手動減少動畫驗收草稿  "
+      },
+      "action": "Press Space on manual reduce switch in existing same-origin settings view",
+      "after": {
+        "phase": "settled",
+        "serial": "3",
+        "curtains": 0,
+        "visibility": "visible",
+        "focus": true,
+        "selection": [
+          14,
+          14
+        ],
+        "draft": "  手動減少動畫驗收草稿  "
+      },
+      "result": "Passed actual phase-observed interruption; old callbacks did not restore a curtain."
+    },
+    {
+      "name": "Normal resume",
+      "result": "Turning manual preference off leaves old serial3 settled/zero curtains, without replay. A NEW explicit refresh is observed covering/one curtain, then serial4 settled/zero curtains; input focus/caret and exact draft remain."
+    },
+    {
+      "name": "Settings layout",
+      "result": "Exact /settings URL checked at four ordinary iframe widths. Switch remains inside viewport and document has no horizontal overflow. This is iframe CSS viewport evidence, not device emulation."
+    }
+  ],
+  "layout": [
+    {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "switchX": 763,
+      "switchWidth": 40,
+      "checked": false,
+      "disabled": false
+    },
+    {
+      "width": 1024,
+      "scrollWidth": 1024,
+      "switchX": 943,
+      "switchWidth": 40,
+      "checked": false,
+      "disabled": false
+    },
+    {
+      "width": 390,
+      "scrollWidth": 390,
+      "switchX": 317,
+      "switchWidth": 40,
+      "checked": false,
+      "disabled": false
+    },
+    {
+      "width": 320,
+      "scrollWidth": 320,
+      "switchX": 247,
+      "switchWidth": 40,
+      "checked": false,
+      "disabled": false
+    }
+  ],
+  "screenshots": "Desktop enabled preference after reload and narrow320 enabled preference captured in CUA tool output at07:46; no local image paths or video fabricated.",
+  "limits": [
+    "This verifies manual App reduction, NOT actual OS/browser prefers-reduced-motion changes. Organization-blocked DevTools was not retried.",
+    "Unknown/system-true policy combinations passed pure policy tests; no actual OS media emulation, native session persistence, blocked-storage runtime or real screen-reader run.",
+    "Exact solid-curtain content-commit/frame proof and complete DOM instance identity throughout playback remain outside these observations."
+  ],
+  "previous_gate_report": "../final-cua-2026-10-04T07-09Z/checks.json",
+  "build_report": "build-checks.json",
+  "new_failures": []
+}

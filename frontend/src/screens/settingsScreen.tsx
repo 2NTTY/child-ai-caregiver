@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Divider, Text } from "react-native-paper";
 import { PreferencesPreview } from "../components/PreferencesPreview";
 import { BackgroundSettings } from "../components/appearance/BackgroundSettings";
+import { MotionSettings } from "../components/appearance/MotionSettings";
 import { ChannelSettingsPreview } from "../components/notifications/ChannelSettingsPreview";
 import { useChannelSettingsPreview } from "../preview/useChannelSettingsPreview";
 import { ModelSettingsPreview } from "../components/model-settings/ModelSettingsPreview";
@@ -39,7 +40,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState(model.caregiverName);
   usePreviewLeaveGuard(displayName !== model.caregiverName);
   const stacked = width < 850;
-  return <PageFrame density="compact" title="設定" description="管理個人偏好、孩子與家庭資料；此獨立 Web 預覽沒有連接帳戶或保存設定。" eyebrow={`${brand.name} · 個人空間`}>
+  return <PageFrame density="compact" title="設定" description="管理個人偏好、孩子與家庭資料；帳戶資料為合成預覽，裝置動畫偏好只在本機套用。" eyebrow={`${brand.name} · 個人空間`}>
     <UnderlineTabs id={tabsId} label="設定分類" items={tabs} value={tab} onChange={setTab} />
     <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} onLayout={event => { if (event.nativeEvent.layout.width > 0) setWidth(event.nativeEvent.layout.width); }} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}>
@@ -83,6 +84,7 @@ export default function SettingsPage() {
     </SectionCard></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} onLayout={event => { if (event.nativeEvent.layout.width > 0) setWidth(event.nativeEvent.layout.width); }} style={[styles.columns, stacked && styles.stack]}>
       <View style={[styles.column, stacked && styles.fullColumn]}>
+        <MotionSettings />
         <PreferencesPreview online={model.connection === "online"} />
         <BackgroundSettings />
       </View><View style={[styles.column, stacked && styles.fullColumn]}>

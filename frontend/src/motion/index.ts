@@ -1,4 +1,4 @@
-export { MotionProvider, useMotionPreferences } from "./preferences";
+export { MotionProvider, useMotionPreferences, type MotionPreferences, type MotionPreferenceStorage } from "./preferences";
 export { motionTokens } from "./tokens";
 export { MotionReveal, type MotionRevealProps, type MotionPhase, type MotionTrigger } from "./MotionReveal";
 export { MotionList, type MotionListProps } from "./MotionList";

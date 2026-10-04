@@ -4,6 +4,8 @@
 
 **FE-W37 全站語意動效：** 唯一 [draft PR #84](https://github.com/2NTTY/child-ai-caregiver/pull/84)，基線 `c51dd52`，分支 `dot/fe-w37-motion-system`。共用動效及既有畫面已接線。2026-10-04 經使用者授權的臨時公開合成測試站完成有界 CUA 驗證：15 路由 × 四種 iframe CSS 寬度共 60 次逐項網址／寬度核對、文件層級無水平溢出；清單新增／更正／刪除保留載入前綴、返回焦點、草稿、切孩子隔離及部分中斷端點通過。實測發現的清單重設、返回焦點與刪除孩子彈窗 Escape 焦點已修復並補驗。最新 typecheck／35 路由 Web export 通過；先前 Android bundle 只屬舊版建置證據。實際 reduced-motion 受組織 DevTools 政策阻擋，精確遮滿換文的逐幀／selection 證據仍待取得；**不可標為完成或合併就緒**。詳見 [最新 CUA 證據](verification/fe-w37-motion/final-cua-2026-10-04T07-09Z/checks.json)、[規範](MOTION_SYSTEM.md)及[交接](HANDOFF.md#semantic-motion)。
 
+**FE-W37 站內減少動畫：** 設定 → 應用偏好已加入開關，Web 本機保存，系統減少動畫優先；原生為 session-only。Typecheck、6項純測試及35路由Web export通過。四種iframe寬度、Space切換、on/off重載保存、幕布covering中啟用後清罩與草稿／焦點／游標保留、關閉不重播及新操作恢復已驗。[證據](verification/fe-w37-motion/manual-reduce-2026-10-04T07-43Z/cua-checks.json)。這是手動偏好路徑，不取代系統media及精確逐幀門檻。
+
 **FE-W36 來源列提示：** 以右側箭嘴取代來源列的橫向滑塊，獨立 48 px 區不遮擋標題。還有右方來源才顯示，點擊／Enter 揭示下一來源；末端收起，回捲再顯示，全部放得下不留位。四尺寸、12 來源、連續操作、wheel／改寬度、原引用往返／草稿、typecheck、Web／Android bundle 通過；[交接及證據](HANDOFF.md#codex-chat-presentation)。正式 API／實機／讀屏及視覺待驗收。
 
 **FE-W36 引用返回補修：** 「返回引用句」改為 instant 定位原引用的上下文並顯示焦點框，短回覆已可見時也有回饋；改看其他來源後仍返回最初引用。實際指標／Enter、長回覆、四尺寸來源與草稿、typecheck 及 Web export 通過；[補修原因與證據](HANDOFF.md#codex-chat-presentation)。沒有新增計劃階段或正式接線。

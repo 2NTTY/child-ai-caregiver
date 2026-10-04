@@ -588,3 +588,9 @@ FE-W08 沿 FE-W07 `1e1fb7b`（draft PR #65）隔離接續，只處理使用者�
 準備好的 `scripts/verify-motion-system.mjs` 已補焦點及已載入 ID 保留回歸斷言，但未成功執行；CUA 結果不可當成該腳本通過。首次失敗停批並保留證據，修正後只驗受影響流程。不得重跑已通過無關項目作替代驗收。
 
 長期動效知識在 `MOTION_SYSTEM.md`，既有 `web-screen-delivery` Skill 已加入按需入口、共用呈現元件與回歸規則；沒有另造平行 skill。正式 API／真模型／通知、原生裝置及讀屏仍按原分工另驗；臨時合成站不是正式部署或 P3 啟動。
+
+### FE-W37 手動減少動畫補充
+
+使用者 2026-10-04 明確要求設定頁開關。`MotionSettings` 復用 Paper Switch；`MotionProvider` 統一 system OR manual 偏好，預設未知時保守減少。Web 保存於本機單一版本化偏好鍵，storage event 同步同來源頁面，失敗退 session；原生未加持久儲存套件，明示本次session。手機首頁與歷史比較頁亦讀共用有效值。
+
+[最新 build/source 證據](verification/fe-w37-motion/manual-reduce-2026-10-04T07-43Z/build-checks.json)固定228檔來源；typecheck、6項純policy/guard測試及35路由Web export通過。[CUA補驗](verification/fe-w37-motion/manual-reduce-2026-10-04T07-43Z/cua-checks.json)包括四iframe寬度、Space、開關重載保存、covering中同來源手動啟用清罩、草稿／focus／caret保留、關閉不重播及新操作恢復。測後手動值還原關閉。系統media實測與精確換文逐幀仍待驗，PR維持draft。

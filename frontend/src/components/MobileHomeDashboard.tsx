@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import { HomeBackground } from "./appearance/HomeBackground";
@@ -11,6 +11,7 @@ import { AppButton, SectionCard, SectionHeader, TextLink } from "./ui";
 import { ChildPicker } from "./ChildPicker";
 import { HomeFocus } from "./HomeFocus";
 import { HomeRecentRecords } from "./HomeRecentRecords";
+import { useMotionPreferences } from "../motion";
 
 const quickActions = [
   { kind: "note", label: "記錄情況", hint: "日常觀察", icon: "notebook-outline" },
@@ -34,29 +35,26 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
   const [headerWidth, setHeaderWidth] = useState(Math.min(windowWidth, mobileLayout.breakpoint) - 2 * mobileLayout.pageInset);
   const [docked, setDocked] = useState(!playIntroduction);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState<boolean | null>(null);
+  const { reducedMotion, preferenceReady } = useMotionPreferences();
   const hasChild = Boolean(child);
-  useEffect(() => {
-    let active = true;
-    AccessibilityInfo.isReduceMotionEnabled().then(value => { if (active) setReducedMotion(value); }, () => { if (active) setReducedMotion(true); });
-    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReducedMotion);
-    return () => { active = false; subscription?.remove(); };
-  }, []);
+  useLayoutEffect(() => {
+    if (!preferenceReady || !reducedMotion) return;
+    intro.stopAnimation(); intro.setValue(1); setDocked(true);
+  }, [intro, preferenceReady, reducedMotion]);
   useFocusEffect(useCallback(() => () => {
     intro.stopAnimation();
     intro.setValue(1);
     setDocked(true);
   }, [intro]));
   useFocusEffect(useCallback(() => {
-    if (!hasChild || docked || pickerOpen || reducedMotion === null) return;
+    if (!hasChild || docked || pickerOpen || !preferenceReady || reducedMotion) return;
     const timer = setTimeout(() => {
       transitionStarted.current = true;
-      if (reducedMotion) { intro.setValue(1); setDocked(true); return; }
       Animated.timing(intro, { toValue: 1, duration: 360, easing: Easing.inOut(Easing.cubic), useNativeDriver: false })
         .start(({ finished }) => { if (finished) setDocked(true); });
     }, 3000);
     return () => { clearTimeout(timer); intro.stopAnimation(); };
-  }, [hasChild, docked, pickerOpen, reducedMotion, intro]));
+  }, [hasChild, docked, pickerOpen, preferenceReady, reducedMotion, intro]));
   function handlePickerOpen(open: boolean) {
     setPickerOpen(open);
     if (open && transitionStarted.current && !docked) {
