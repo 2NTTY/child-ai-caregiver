@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState, type Ref } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
 import { Keyboard, Modal, Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { HelperText, Portal, Text, TextInput, useTheme } from "react-native-paper";
@@ -6,6 +6,7 @@ import { AppDialog as Dialog } from "./AppDialog";
 import { DatePickerModalContent, TimePicker, registerTranslation, zhTW } from "react-native-paper-dates";
 import { MotionBackdrop, MotionEntrance } from "../motion";
 import { MotionPaperScope } from "../motion/MotionPaperScope";
+import { useModalBackdrop } from "../motion/useModalBackdrop";
 import { chineseFont, colors, spacing, typeScale } from "../theme";
 import { calendarDate, calendarValue, dateTimeParts, dateTimeValue, hongKongTimeZone, timeZoneLabel, timeZoneOptions } from "./date-time";
 import { AppButton, AppSelect, AppSelectionTrigger, AppTextField } from "./ui";
@@ -23,10 +24,11 @@ function DatePickerDialog({ label, value, visible, onConfirm, onDismiss, onClose
   const { width } = useWindowDimensions();
   const theme = useTheme();
   const date = useMemo(() => calendarDate(value), [value]);
+  const backdrop = useModalBackdrop(visible);
   return <Modal visible={visible} transparent animationType="none" presentationStyle="overFullScreen" onRequestClose={onDismiss} onDismiss={onClosed}
     supportedOrientations={["portrait", "portrait-upside-down", "landscape", "landscape-left", "landscape-right"]} statusBarTranslucent>
     <MotionPaperScope><View style={styles.dateRoot}>
-      <MotionBackdrop open={visible} onPress={onDismiss} />
+      <MotionBackdrop open={visible} onPress={onDismiss} {...backdrop} />
       <MotionEntrance preset="dialog" triggerKey="date-picker" scopeKey={label} animateOnMount role="dialog" aria-modal accessibilityViewIsModal accessibilityLabel={label} testID="app-date-picker"
         style={[styles.dateSurface, width > 650 && styles.dateSurfaceBig, { backgroundColor: theme.colors.elevation.level3 }]}>
         <DatePickerModalContent locale="zh-HK" mode="single" date={date} onDismiss={onDismiss} onConfirm={({ date: selected }) => { if (selected) onConfirm(calendarValue(selected)); else onDismiss(); }} />
@@ -34,19 +36,27 @@ function DatePickerDialog({ label, value, visible, onConfirm, onDismiss, onClose
     </View></MotionPaperScope>
   </Modal>;
 }
-function TimePickerDialog({ label, value, onConfirm, onDismiss }: { label: string; value: string; onConfirm: (value: string) => void; onDismiss: () => void }) {
+function TimePickerDialog({ label, value, visible, onConfirm, onDismiss }: { label: string; value: string; visible: boolean; onConfirm: (value: string) => void; onDismiss: () => void }) {
   const { width, height } = useWindowDimensions();
   const [hours, setHours] = useState(/^([01]\d|2[0-3]):[0-5]\d$/.test(value) ? Number(value.slice(0, 2)) : 9);
   const [minutes, setMinutes] = useState(/^([01]\d|2[0-3]):[0-5]\d$/.test(value) ? Number(value.slice(3)) : 0);
   const [focused, setFocused] = useState<"hours" | "minutes">("hours");
   const [inputType, setInputType] = useState<"keyboard" | "picker">("keyboard");
+  const wasVisible = useRef(false);
+  useLayoutEffect(() => {
+    const opening = visible && !wasVisible.current; wasVisible.current = visible;
+    if (!opening) return;
+    const validValue = /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+    setHours(validValue ? Number(value.slice(0, 2)) : 9); setMinutes(validValue ? Number(value.slice(3)) : 0);
+    setFocused("hours"); setInputType("keyboard");
+  }, [visible, value]);
   const canUseClock = width >= 360 && (width <= height || width >= 580);
   const actualInputType = canUseClock ? inputType : "keyboard";
   const landscapeClock = actualInputType === "picker" && width > height;
   const valid = Number.isInteger(hours) && hours >= 0 && hours < 24 && Number.isInteger(minutes) && minutes >= 0 && minutes < 60;
   // The official landscape clock needs 536px internally; keep keyboard mode
   // in narrower layouts without resetting the user's local time values.
-  return <Portal><Dialog visible testID="app-time-picker" onDismiss={onDismiss} style={[styles.timeDialog, landscapeClock && { width: Math.min(width - 16, 600), maxWidth: 600 }]} {...webEscape(onDismiss)}><Dialog.Title>{label}</Dialog.Title>
+  return <Portal><Dialog visible={visible} testID="app-time-picker" onDismiss={onDismiss} style={[styles.timeDialog, landscapeClock && { width: Math.min(width - 16, 600), maxWidth: 600 }]} {...webEscape(onDismiss)}><Dialog.Title>{label}</Dialog.Title>
     <Dialog.ScrollArea style={{ paddingHorizontal: landscapeClock ? 12 : 24 }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.timeContent}>
     <TimePicker locale="zh-HK" hours={hours} minutes={minutes} focused={focused} onFocusInput={setFocused} inputType={actualInputType} inputFontSize={typeScale.hero} use24HourClock
       onChange={next => { setHours(next.hours); setMinutes(next.minutes); if (next.focused) setFocused(next.focused); }} />
@@ -82,7 +92,7 @@ export function AppTimeField({ label, value, onChange, onBlur, disabled = false,
   return <View><AppTextField nativeID={id} aria-invalid={!!error} aria-describedby={[describedBy, error ? messageId : undefined].filter(Boolean).join(" ") || undefined} ref={instance => { field.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={label} accessibilityLabel={label} value={value} onChangeText={onChange} onBlur={onBlur} disabled={disabled} error={!!error} placeholder="HH:mm"
     right={<TextInput.Icon icon="clock-outline" accessibilityLabel={`選擇${label}`} disabled={disabled} onPress={() => setOpen(true)} />} />
     {error ? <HelperText nativeID={messageId} type="error">{error}</HelperText> : null}
-    {open && !disabled ? <TimePickerDialog label={label} value={value} onDismiss={dismiss} onConfirm={next => { onChange(next); dismiss(); }} /> : null}
+    <TimePickerDialog label={label} value={value} visible={open && !disabled} onDismiss={dismiss} onConfirm={next => { onChange(next); dismiss(); }} />
   </View>;
 }
 export function AppTimeZoneSelect({ value, onChange, onBlur, disabled = false, ref, id, invalid, describedBy }: { value: string; onChange: (value: string) => void; onBlur?: () => void; disabled?: boolean; ref?: Ref<View>; id?: string; invalid?: boolean; describedBy?: string }) {
@@ -106,14 +116,14 @@ export function AppDateTimeField({ label, value, onChange, onBlur, disabled = fa
     }} />
     {optional && value ? <AppButton label={`清除${label}`} variant="quiet" disabled={disabled} onPress={() => onChange("")} /> : null}
     {error ? <HelperText nativeID={messageId} type="error">{error}</HelperText> : null}
-    {open && !disabled ? <Portal><Dialog visible onDismiss={dismiss} style={styles.dialog} {...webEscape(dismiss)}><Dialog.Title>{label}</Dialog.Title>
+    <Portal><Dialog visible={open && !disabled} onDismiss={dismiss} style={styles.dialog} {...webEscape(dismiss)}><Dialog.Title>{label}</Dialog.Title>
       <Dialog.ScrollArea><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.fields}>
         <Text style={styles.summary}>以{timeZoneLabel(timeZone)}輸入。選用後仍須預覽及確認。</Text>
         <AppDateField label={`${label}日期`} value={date} onChange={setDate} /><AppTimeField label={`${label}時間`} value={time} onChange={setTime} />
         {localError ? <HelperText type="error" accessibilityRole="alert">{localError}</HelperText> : null}
       </ScrollView></Dialog.ScrollArea><Dialog.Actions><AppButton label="取消" variant="quiet" onPress={dismiss} />
         <AppButton label={`選用${label}`} onPress={() => { const result = dateTimeValue(date, time, timeZone); if (result.value === null) setLocalError(result.error); else { onChange(result.value); dismiss(); } }} />
-      </Dialog.Actions></Dialog></Portal> : null}
+      </Dialog.Actions></Dialog></Portal>
   </View>;
 }
 const styles = StyleSheet.create({ field: { gap: spacing.sm }, label: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "700", color: colors.ink },

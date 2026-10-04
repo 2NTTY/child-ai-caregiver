@@ -1,0 +1,12 @@
+{
+  "baseline": "horizontal-header-2026-10-04T15-57Z/source-manifest-before.json",
+  "modified": [
+    "src/components/MobileHomeDashboard.tsx",
+    "src/components/agent/AgentComposer.tsx",
+    "src/components/agent/ChatComposerInput.web.tsx",
+    "src/components/chat/ChatTimeline.tsx",
+    "src/components/chat/chat-presentation.ts"
+  ],
+  "added": [],
+  "removed": []
+}

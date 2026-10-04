@@ -68,8 +68,8 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
     setSuggestionsExpanded(false);
     requestAnimationFrame(() => input.current?.focus());
   }
-  return <View testID="chat-composer" style={[styles.composer, compact && styles.mobileComposer]}>
-    <View style={[styles.composerContent, compact && styles.mobileComposerContent]}>
+  return <View testID="chat-composer" pointerEvents="box-none" style={[styles.composer, compact && styles.mobileComposer]}>
+    <View pointerEvents="box-none" style={[styles.composerContent, compact && styles.mobileComposerContent]}>
     <View testID="chat-composer-panel" style={[styles.panel, inputFocused && styles.panelFocused]}>
     {photo ? <View testID="composer-photo-preview" style={styles.photo}>
       <Image source={photo.imageSource} accessibilityLabel="照片本地預覽，未上傳或送出" style={styles.thumbnail} resizeMode="cover" />
@@ -92,7 +92,7 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
       <Pressable accessibilityRole="button" accessibilityLabel="預覽輸入" accessibilityState={{ disabled: !enabled || !draft.trim() }}
         disabled={!enabled || !draft.trim()} onPress={onPreview}
         style={({ pressed }) => [styles.iconControl, touchControls && styles.compactControl, pressed && styles.pressed]}>
-        <View style={[styles.sendCircle, (!enabled || !draft.trim()) && styles.sendDisabled]}><AppIcon name="arrow-up" size={20} color={chatColors.canvas} /></View>
+        <View style={[styles.sendCircle, (!enabled || !draft.trim()) && styles.sendDisabled]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>
       </Pressable></View>
     <MotionDisclosure expanded={showSuggestions} scopeKey={JSON.stringify([enabled, hasDraft, automaticCollapse])} testID="composer-suggestions-disclosure"><ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
       contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled">
@@ -108,17 +108,18 @@ export function AgentComposer({ enabled, compact, draft, onChangeDraft, onPrevie
 }
 
 const styles = StyleSheet.create({
-  composer: { backgroundColor: chatColors.canvas, paddingTop: 8, paddingBottom: 12 },
-  mobileComposer: { paddingBottom: 8 },
+  composer: { flexShrink: 0, zIndex: 1, marginTop: -chatLayout.composerOverlap, backgroundColor: "transparent", paddingTop: 12, paddingBottom: 12 },
+  mobileComposer: { paddingTop: 8, paddingBottom: 8 },
   composerContent: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", paddingHorizontal: chatLayout.wideInset, gap: 6 },
   mobileComposerContent: { paddingHorizontal: chatLayout.compactInset },
-  panel: { minWidth: 0, borderWidth: 1, borderColor: chatColors.line, borderRadius: chatLayout.composerRadius, padding: 8, backgroundColor: chatColors.canvas },
+  panel: { minWidth: 0, borderWidth: 1, borderColor: chatColors.outline, borderRadius: chatLayout.composerRadius, padding: 8, backgroundColor: chatColors.surface,
+    shadowColor: chatColors.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: .06, shadowRadius: 12, elevation: 2 },
   panelFocused: { borderColor: chatColors.focus },
   composerHint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
   composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }, leftActions: { flexDirection: "row", alignItems: "center", minWidth: 0 },
   iconControl: { width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, alignItems: "center", justifyContent: "center" },
   compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
-  sendCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send }, sendDisabled: { opacity: .35 },
+  sendCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send, borderWidth: 1, borderColor: chatColors.onSend }, sendDisabled: { opacity: .35 },
   photo: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.sm, backgroundColor: colors.quietSurface,
     borderWidth: 1, borderColor: chatColors.line, borderRadius: radius.small },
   thumbnail: { width: 48, height: 48, borderRadius: radius.small, backgroundColor: colors.controlSurface },

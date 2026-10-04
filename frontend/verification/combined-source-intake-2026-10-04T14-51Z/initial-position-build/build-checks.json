@@ -1,0 +1,55 @@
+{
+  "at": "2026-10-04T15:16:21Z",
+  "source_files": 275,
+  "source_delta": "source-delta.json",
+  "typecheck": {
+    "result": "pass",
+    "exit_code": 0,
+    "log": "typecheck.log"
+  },
+  "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004",
+  "source_intake_tests": "unchanged; not rerun",
+  "prior_runtime": "v26 evidence belongs to prior entry; this new build has no runtime claim",
+  "completed_at": "2026-10-04T15:18:05Z",
+  "source_unchanged_during_batch": true,
+  "source_manifest_sha256": "44ecce8fa146880ebabba68ea8746efd9a0c5ca47ea242ed40e74648f3e4c0d7",
+  "build_initial_failure": {
+    "result": "blocked before Metro startup",
+    "exit_code": 7,
+    "log": "build-web.log",
+    "reason": "Expo telemetry attempts mkdir /home/agent/.expo; ENOENT"
+  },
+  "build": {
+    "result": "pass",
+    "exit_code": 0,
+    "log": "build-web-retry.log",
+    "route_summary": "\u203a Static routes (35):"
+  },
+  "environment_recovery": {
+    "EXPO_NO_TELEMETRY": "1",
+    "EXPO_OFFLINE": "1",
+    "__UNSAFE_EXPO_HOME_DIRECTORY": "/workspace/scratch/c112a98a8be9/expo-export-home",
+    "support": "Installed Expo CLI UserSettings.js:136 reads __UNSAFE_EXPO_HOME_DIRECTORY; env.js documents telemetry/offline flags",
+    "outside_writable_roots_modified": false
+  },
+  "exports": {
+    "file_count": 61,
+    "manifest_sha256": "2ff3e5062afd6c79d0a96f7565f418641a4e3fbeb6ada6c1c97bae059bfd338c",
+    "entries": [
+      {
+        "path": "dist/_expo/static/js/web/entry-e140db8f36abb42e063aecc8b738de8c.js",
+        "bytes": 4395219,
+        "sha256": "8ebdd8ab014988f8850ff00ebf23c9f96467e2494f7f221f970b73aff6610fc4"
+      }
+    ]
+  },
+  "compiled_markers": {
+    "getScrollableNode": 39,
+    "getInnerViewNode": 5,
+    "ResizeObserver": 7,
+    "chat-timeline-scroll": 1,
+    "source-intake-review": 1
+  },
+  "new_runtime": "Bounded v27 result saved in ../cua-v27-initial-position-checks.json; continuous first-paint remains unverified",
+  "runtime_source_unchanged": true
+}

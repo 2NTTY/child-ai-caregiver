@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, type ComponentProps } from "react";
 import { Animated, Easing, Modal, StyleSheet, View } from "react-native";
 import { MotionBackdrop, motionTokens, useMotionPreferences } from "../motion";
 import { MotionPaperScope } from "../motion/MotionPaperScope";
+import { useModalBackdrop } from "../motion/useModalBackdrop";
 import { Dialog as PaperDialog } from "react-native-paper";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
@@ -16,6 +17,7 @@ function Actions({ style, ...props }: ComponentProps<typeof PaperDialog.Actions>
 // Paper supplies the appearance; RN Modal owns the modal focus and platform close behavior.
 export const AppDialog = Object.assign(function AppDialog({ danger = false, onClosed, ...props }: ComponentProps<typeof PaperDialog> & { danger?: boolean; onClosed?: () => void }) {
   const preferences = useMotionPreferences();
+  const backdrop = useModalBackdrop(props.visible ?? false);
   const progress = useRef(new Animated.Value(1)).current;
   const previous = useRef(false);
   useLayoutEffect(() => {
@@ -31,7 +33,7 @@ export const AppDialog = Object.assign(function AppDialog({ danger = false, onCl
   }, [props.visible, preferences.enabled, preferences.epoch, progress]);
   return <Modal visible={props.visible} transparent animationType="none" onRequestClose={props.onDismiss} onDismiss={onClosed}>
     <MotionPaperScope><View style={styles.root}>
-      <MotionBackdrop open={props.visible ?? false} />
+      <MotionBackdrop open={props.visible ?? false} {...backdrop} />
       <PaperDialog {...props} theme={{ ...props.theme, colors: { ...props.theme?.colors, backdrop: "transparent" }, animation: { scale: 0 } }} testID={props.testID ?? "app-dialog"} style={[styles.dialog, danger && styles.dangerDialog, props.style, { opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [motionTokens.dialog.distance, 0] }) }] }]} />
     </View></MotionPaperScope>
   </Modal>;

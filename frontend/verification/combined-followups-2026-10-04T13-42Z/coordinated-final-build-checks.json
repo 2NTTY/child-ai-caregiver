@@ -1,0 +1,47 @@
+{
+  "at": "2026-10-04T13:59:20Z",
+  "source_files": 268,
+  "source_manifest_sha256": "9af86580b9d7d1d221b2135b659694bafda4942a272aa00858a02ba706868eba",
+  "source_unchanged_during_batch": true,
+  "delta_from_auto_fix": [
+    "src/components/AppShell.tsx",
+    "src/components/agent/AgentComposer.tsx"
+  ],
+  "commands": [
+    {
+      "command": "npm run typecheck",
+      "result": "pass",
+      "log": "typecheck-coordinated.log"
+    },
+    {
+      "command": "npm run build:web",
+      "result": "pass",
+      "routes": 35,
+      "log": "build-web-coordinated.log"
+    }
+  ],
+  "exit_code": 0,
+  "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004",
+  "router_proof": "metro-coordinated-router-proof.json",
+  "compiled_markers": {
+    "motion-settings": 1,
+    "reduce-motion-switch": 1,
+    "modal-backdrop": 2,
+    "frontend-startup-loading": 1,
+    "home-agent-important": 2,
+    "home-agent-camera": 1,
+    "mobile-context-row": 1,
+    "measureWhileCollapsed": 7,
+    "motionExit": 2,
+    "useContainerSize": 3,
+    "chat-composer-panel": 1
+  },
+  "compiled_disclosure_auto_present": true,
+  "entry": "dist/_expo/static/js/web/entry-a3b3e65c4dfb1945c7043d8d6cafe279.js",
+  "entry_sha256": "6f120b16577ffc4390043cc6a45df55fac09398648276026ac9b5315f6532cab",
+  "export_file_count": 61,
+  "export_manifest_sha256": "f1192d5f3bc01ab204a98bc641e15dd48407def57395e4fbbb8104f27a759e05",
+  "pure_tests": "Prior14pass retained; actualtestandtestedhomehelperfiles unchanged",
+  "runtime": "Pending newpublication; first checkv23reducedfailure, thenaxis/composerandremainingboundedcases",
+  "prior_failure": "cua-v23-first-failure.json"
+}

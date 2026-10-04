@@ -1,9 +1,7 @@
 import { useContainerWidth } from "../useContainerWidth";
-import { brand } from "../../branding";
-import { useRef, useState, type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { PageFrame } from "../PageFrame";
 import { AppButton, SectionCard, SectionHeader, TextLink } from "../ui";
 import { profileDataFromForm, type ProfileActions, type ProfileViewModel } from "../../profile-view-model";
 import { chineseFont, colors, radius, spacing, typeScale , readingType } from "../../theme";
@@ -12,12 +10,20 @@ import { ProfileDataSummary, ProfileRevisionSummary } from "./ProfileSummary";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { MotionDisclosure, MotionReveal } from "../../motion";
 
-export function ProfileView({ model, actions: sourceActions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false }: {
+export function ProfileView({ model, actions: sourceActions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false, onLayoutReady }: {
   model: ProfileViewModel; actions: ProfileActions; childPicker: ReactNode; writeNotice: ReactNode;
-  previewControls: ReactNode; onOpenCare: () => void; childDeletionActive?: boolean;
+  previewControls: ReactNode; onOpenCare: () => void; childDeletionActive?: boolean; onLayoutReady?: () => void;
 }) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
+  useLayoutEffect(() => {
+    if (Platform.OS === "web") {
+      const node = containerLayout.ref.current as unknown as HTMLElement | null;
+      // The initial viewport-width fallback may still select the wrong column layout.
+      if (!node || Math.abs(node.getBoundingClientRect().width - width) >= 1) return;
+    }
+    onLayoutReady?.();
+  }, [containerLayout.ref, width, onLayoutReady]);
   const [revisionTrigger, setRevisionTrigger] = useState<number | null>(null);
   const requestSerial = useRef(0);
   const actions: ProfileActions = {...sourceActions, submitReviewed: () => {
@@ -34,10 +40,10 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
   const canReview = model.access === "editable" && !model.reading && !pending && !conflict
     && (!model.child || model.online && !model.needsRefresh);
   const editable = model.access === "editable" && !model.reading && !pending && !conflict && model.intent !== "delete";
-  const frame = (children: ReactNode) => <PageFrame density="compact" title="子女檔案" description="只填已知資料；年齡原值、日期基準與未知欄位如實保留。" eyebrow={`${brand.name} · 孩子資料`}>
+  const frame = (children: ReactNode) => <>
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "孩子權限已失效。本頁檔案、歷史、草稿及未完成操作已清除。" : ""} urgent={model.access === "lost"} />
     <StatusAnnouncement eventKey={`${model.operation.state}:${model.notice}`} message={model.notice ?? ""} urgent={model.operation.state === "failed"} />
-    {children}</PageFrame>;
+    {children}</>;
   if (model.access === "lost") return frame(<>
     <SectionCard><SectionHeader density="compact" title="孩子權限已失效" /><Text style={styles.body}>本頁檔案、歷史、草稿及未完成操作已清除。請重新核對家庭權限，或切換至有權查看的孩子。</Text></SectionCard>
     {childPicker}{previewControls}

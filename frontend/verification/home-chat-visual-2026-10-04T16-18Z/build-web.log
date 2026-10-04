@@ -1,0 +1,72 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> yuban-hk-frontend-preview@0.1.0 build:web
+> expo export --platform web
+
+Starting Metro Bundler
+
+Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
+| (node:40) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:40) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:40) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:40) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:40) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:40) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+λ Bundled 11174ms ../../caregiver_recovery_impl/frontend/node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1856 modules)
+Web Bundled 12497ms ../../caregiver_recovery_impl/frontend/node_modules/expo-router/entry.js (1823 modules)
+
+› web bundles (4):
+_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css (731B)
+_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css (14KB)
+_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css (210B)
+_expo/static/js/web/entry-7b5903e7aa6a2fe9a72491a9ede419a8.js (4.4MB)
+
+› Static routes (35):
+/care (30KB)
+/chat (30KB)
+/more (30KB)
+/login (30KB)
+/guide (30KB)
+/ (index) (30KB)
+/tasks (30KB)
+/family (30KB)
+/growth (30KB)
+/memory (30KB)
+/photos (30KB)
+/contact (30KB)
+/profile (30KB)
+/sources (30KB)
+/summary (30KB)
+/_sitemap (29KB)
+/settings (30KB)
+/+not-found (29KB)
+/motion-preview (30KB)
+/(dashboard)/care (30KB)
+/(dashboard)/chat (30KB)
+/(dashboard)/more (30KB)
+/(dashboard)/guide (30KB)
+/(dashboard) (30KB)
+/(dashboard)/tasks (30KB)
+/(dashboard)/family (30KB)
+/(dashboard)/growth (30KB)
+/(dashboard)/memory (30KB)
+/(dashboard)/photos (30KB)
+/(dashboard)/contact (30KB)
+/(dashboard)/profile (30KB)
+/(dashboard)/sources (30KB)
+/(dashboard)/summary (30KB)
+/(dashboard)/settings (30KB)
+/(dashboard)/motion-preview (30KB)
+
+Exported: dist
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

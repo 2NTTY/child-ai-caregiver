@@ -84,7 +84,7 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
           maxWidth: intro.interpolate({ inputRange: [0, 1], outputRange: ["100%", "62%"] }),
           marginTop: intro.interpolate({ inputRange: [0, 1], outputRange: [mobileLayout.sectionGap, -(greetingHeight + childHeight) / 2] }),
           padding: intro.interpolate({ inputRange: [0, 1], outputRange: [spacing.md, 0] }),
-        }]}>
+        }, docked && styles.childCardDocked]}>
         <Animated.View testID="mobile-child-card-frame" pointerEvents="none" style={[styles.childCardFrame,
           { opacity: intro.interpolate({ inputRange: [0, 0.2, 0.6, 1], outputRange: [1, 1, 0, 0], extrapolate: "clamp" }) }]} />
         <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} homeIdentity
@@ -122,6 +122,8 @@ const styles = StyleSheet.create({
   artwork: { position: "absolute", top: 0, left: -mobileLayout.pageInset, right: -mobileLayout.pageInset },
   greeting: { minHeight: 168, paddingVertical: spacing.lg, justifyContent: "center" },
   childCard: { width: "auto", alignSelf: "flex-start", borderRadius: radius.large, gap: spacing.xs },
+  // Resolve the returned-page position in layout, before asynchronous onLayout measurements.
+  childCardDocked: { position: "absolute", top: "50%", left: 0, marginTop: 0, transform: [{ translateY: "-50%" }] },
   childCardFrame: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: radius.large, borderWidth: 1, borderColor: colors.softLine, backgroundColor: colors.white },
   greetingCopy: { width: "60%", minWidth: 0, gap: spacing.xs },
   heading: { fontFamily: chineseFont, color: colors.ink, fontSize: 26, lineHeight: 34, fontWeight: "800" },

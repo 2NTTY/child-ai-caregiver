@@ -1,0 +1,55 @@
+{
+  "at": "2026-10-04T14:21:20Z",
+  "source_files": 269,
+  "source_manifest_sha256": "1d7db479ca1590a1f218860a486a95500885601ba7a97960c342ce987c205d07",
+  "source_unchanged_during_batch": true,
+  "delta_from_v24": [
+    "src/components/agent/AgentComposer.tsx",
+    "src/components/chat/ChatTimeline.tsx",
+    "src/components/chat/chat-presentation.ts",
+    "src/components/profile/ProfileView.tsx",
+    "src/components/profile/useProfileSwitchAnchor.ts",
+    "src/screens/profileScreen.tsx"
+  ],
+  "commands": [
+    {
+      "command": "npm run typecheck",
+      "result": "pass",
+      "log": "typecheck.log"
+    },
+    {
+      "command": "npm run build:web",
+      "result": "pass",
+      "routes": 35,
+      "log": "build-web.log"
+    }
+  ],
+  "exit_code": 0,
+  "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004",
+  "router_proof": "metro-router-proof.json",
+  "compiled_markers": {
+    "motion-settings": 1,
+    "reduce-motion-switch": 1,
+    "modal-backdrop": 2,
+    "frontend-startup-loading": 1,
+    "home-agent-important": 2,
+    "home-agent-camera": 1,
+    "mobile-context-row": 1,
+    "measureWhileCollapsed": 7,
+    "motionExit": 2,
+    "useContainerSize": 3,
+    "chat-composer-panel": 1,
+    "profile-scroll": 1,
+    "useProfileSwitchAnchor": 2,
+    "composerOverlap": 5
+  },
+  "entry": "dist/_expo/static/js/web/entry-070227e4f4e46b0888c7d3c4fa5c7dd5.js",
+  "entry_sha256": "3eb618b05e3722f5db4be9732405107ef8073bae00db70956a104770e4bd9f57",
+  "export_file_count": 61,
+  "export_manifest_sha256": "fb2a262977565684d09410d844df7716c7f1717f5ee44a9bfc8df7fb225a5245",
+  "pure_tests": "Prior14pass retained; actualtestandtestedhomehelperfiles unchanged",
+  "reference_image_viewed": "/workspace/scratch/c112a98a8be9/composer-feedback/image(20261004-140822).png",
+  "runtime": "Pending parent publication and geometry owner releasing cloudbrowser; no browser operations during build.",
+  "android": "Not rerun for scoped Web changes.",
+  "known_open_gates": "sourceEndinflight failure; systemmedia/controlledslowimage/continuousframes/nativeUI unchanged"
+}

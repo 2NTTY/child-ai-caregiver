@@ -1,5 +1,5 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { StyleSheet } from "react-native";
+import { useCallback, useLayoutEffect, useRef, useState, type Ref } from "react";
+import { StyleSheet, type View } from "react-native";
 import Animated, { cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from "react-native-reanimated";
 import { colors } from "../theme";
 import { useMotionPreferences } from "./preferences";
@@ -8,6 +8,7 @@ import { motionData } from "./viewProps";
 
 export interface MotionBackdropProps {
   open: boolean;
+  ref?: Ref<View>;
   onPress?: () => void;
   /** An enclosing drawer owns this progress, including its noninteractive exit. */
   progress?: SharedValue<number>;
@@ -16,7 +17,7 @@ export interface MotionBackdropProps {
 }
 
 /** One decorative dim layer; it never owns modal focus or delays closing. */
-export function MotionBackdrop({ open, onPress, progress, phase, kind = "modal-backdrop" }: MotionBackdropProps) {
+export function MotionBackdrop({ open, onPress, progress, phase, ref, kind = "modal-backdrop" }: MotionBackdropProps) {
   const preferences = useMotionPreferences();
   const ownProgress = useSharedValue(open && !preferences.enabled ? 1 : 0);
   const previous = useRef({ open: false, epoch: preferences.epoch });
@@ -41,7 +42,7 @@ export function MotionBackdrop({ open, onPress, progress, phase, kind = "modal-b
   useLayoutEffect(() => () => { generation.current += 1; cancelAnimation(ownProgress); }, [ownProgress]);
   const opacity = progress ?? ownProgress;
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-  return <Animated.View {...motionData({ motionKind: kind, motionPhase: phase ?? ownPhase })}
+  return <Animated.View ref={ref} {...motionData({ motionKind: kind, motionPhase: phase ?? ownPhase })}
     accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
     pointerEvents={open && onPress ? "auto" : "none"}
     onStartShouldSetResponder={() => open && !!onPress} onResponderRelease={() => { if (open) onPress?.(); }}

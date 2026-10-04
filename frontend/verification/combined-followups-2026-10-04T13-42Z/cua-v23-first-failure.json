@@ -1,0 +1,108 @@
+{
+  "observed_at": "2026-10-04T13:53:12Z",
+  "version": 23,
+  "entry": "entry-ed406f824430852c40c8a122f7f2d48e.js",
+  "sha256": "24b023304ed24301f61b57366bb2b23b121e0ca056cd508789588b17dd7a361f",
+  "source_manifest": "source-manifest-mobile-after.json",
+  "failure": "Manual reduced-motion navigation to /chat leaves mobile-context-row settled but height0; content remains clipped instead of immediately showing full row.",
+  "viewport": [
+    320,
+    600
+  ],
+  "steps": [
+    "Start home with row collapsed",
+    "In separate same-origin settings tab switch manual減少動畫ON",
+    "Press homepage用文字告訴助手",
+    "Read actual /chat URL and mobile-context-row geometry"
+  ],
+  "observed": {
+    "url": "/chat",
+    "phase": "settled",
+    "height": 0,
+    "routeY": 101,
+    "rowY": 64,
+    "display": "flex",
+    "opacity": "1",
+    "innerAriaHidden": null,
+    "innerInert": false,
+    "text": "小小昕地區香港檔案已確認過敏未提供"
+  },
+  "expected": "Reduced motion should settle at expanded natural row height, previously about57px, without hiding chips.",
+  "observation_limit": "First returned DOM sample in same CUA call; not continuous video or later-settled second sample. Phase itself already says settled. No screenshot of this precise failed frame retained.",
+  "cleanup_before_stop": "Returned home and restored manual reduceOFF through normal UI; no business data changed.",
+  "prior_bounded_passes": {
+    "notificationExit": {
+      "phase": "exiting",
+      "opacity": 0.112045,
+      "pointer": "none",
+      "ariaHidden": "true",
+      "children": 0,
+      "focus": "開啟訊息提示",
+      "hitTestNotGhost": true
+    },
+    "rapidReopen": {
+      "exitOpacity": 0.288905,
+      "exitInertAttribute": true,
+      "newActiveOpacity": 0.267294,
+      "newPhase": "entering",
+      "oldExitAbsent": true
+    },
+    "modalToDrawer": {
+      "oldExitCount": 0,
+      "drawerMaskCount": 1,
+      "focus": "關閉資訊側欄"
+    },
+    "manualToggleExitCleanup": {
+      "remainingExits": 0
+    },
+    "normalMobileReverse": {
+      "heights": [
+        0,
+        55.65625,
+        14.4375,
+        0
+      ],
+      "routeY": [
+        101,
+        156.65625,
+        115.4375,
+        101
+      ],
+      "opacityAlways": "1",
+      "hiddenInnerInert": true
+    },
+    "captureToolbar": {
+      "viewport": [
+        320,
+        600
+      ],
+      "docWidth": 320,
+      "bounds": [
+        347,
+        536
+      ],
+      "camera": [
+        296,
+        64,
+        384,
+        448
+      ],
+      "secondaryEach": [
+        96,
+        48,
+        456,
+        504
+      ],
+      "hitTestAll": true,
+      "voiceDisabled": true,
+      "cameraActivated": false
+    }
+  },
+  "pending": [
+    "reduced facts-row correction and recheck",
+    "newhome Agent-important task separation/unknown/nochild callbacks",
+    "image warm-return targeted check",
+    "nested/resize/path modalexit coverage as relevant"
+  ],
+  "stop_policy": "Stopped on first new failure; parent notified, production owner diagnosis pending."
+}

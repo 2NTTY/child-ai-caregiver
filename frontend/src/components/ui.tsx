@@ -69,6 +69,7 @@ export function AppSelect<T extends string>({ label, value, options, onChange, o
   id?: string; invalid?: boolean; describedBy?: string;
 }) {
   const [visible, setVisible] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
   const anchor = useRef<View>(null);
   const selected = options.find(item => item.value === value)?.label ?? value;
   function dismiss() {
@@ -76,8 +77,9 @@ export function AppSelect<T extends string>({ label, value, options, onChange, o
     if (Platform.OS === "web") (anchor.current as unknown as HTMLElement | null)?.focus();
   }
   return <><AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} id={id} invalid={invalid} describedBy={describedBy} label={`${label}：${selected}`} disabled={disabled} onBlur={onBlur}
-    expanded={visible && !disabled} onPress={() => setVisible(true)} />
-    {visible && !disabled ? <Portal><Dialog visible onDismiss={dismiss} style={styles.selectDialog}>
+    expanded={visible && !disabled} onPress={() => { setHasOpened(true); setVisible(true); }} />
+    {/* Keep the modal stable after first use so close focus and backdrop exit can finish. */}
+    {hasOpened ? <Portal><Dialog visible={visible && !disabled} onDismiss={dismiss} style={styles.selectDialog}>
       <Dialog.Title>{label}</Dialog.Title><Dialog.ScrollArea><ScrollView style={styles.selectList} keyboardShouldPersistTaps="handled">
         {options.map(item => <RadioButton.Item key={item.value} label={item.label} value={item.value} aria-checked={item.value === value}
           accessibilityLabel={`${label}選項：${item.label}`} status={item.value === value ? "checked" : "unchecked"}

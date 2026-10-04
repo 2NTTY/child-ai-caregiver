@@ -1,0 +1,77 @@
+{
+  "recorded_at": "2026-10-04T13:01:30Z",
+  "source_files": 262,
+  "source_unchanged": true,
+  "source_manifest_sha256": "db16b5aeb1ca85f5f0e481bd518fa0809fdc70c7a92f0b6237c90b1e801acb8e",
+  "commands": [
+    "npm run build:web -- --clear",
+    "npm run build:android-ui -- --clear"
+  ],
+  "both_exit_code": 0,
+  "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-combined-v21-corrected-20261004",
+  "product_source_changes": 0,
+  "exports": {
+    "dist": {
+      "directory": "/workspace/shared/caregiver_combined_preview/frontend/dist",
+      "file_count": 61,
+      "manifest_sha256": "b8a519fbf3b183914aca0dbf76b520e980b38fcaf3e1ef41cf94c12a94012abc",
+      "entries": [
+        {
+          "path": "_expo/static/js/web/entry-8f72fc1e25e3557239a893ef55267941.js",
+          "bytes": 4350806,
+          "sha256": "8bdb3853c400b439ae6ba6213051a20ee1230e3a369f3d2bdb25c744ea7d2ff0"
+        }
+      ]
+    },
+    "dist-android": {
+      "directory": "/workspace/shared/caregiver_combined_preview/frontend/dist-android",
+      "file_count": 31,
+      "manifest_sha256": "472f593e827e6782e7314c58b66f7e9c62d7b68e890f15d2d2ee3a9b0ea3e7c4",
+      "entries": [
+        {
+          "path": "_expo/static/js/android/entry-eef37516b91e7340a924411d38b3dde4.hbc",
+          "bytes": 6608929,
+          "sha256": "02808805aba9afede83a649a513d8f906302a6a98f348bf3bf7d45fd5c3288c9"
+        }
+      ]
+    }
+  },
+  "web_stable_marker_counts": {
+    "motion-settings": 1,
+    "reduce-motion-switch": 1,
+    "drawer-right": 1,
+    "drawer-backdrop": 1,
+    "modal-backdrop": 1,
+    "frontend-startup-loading": 1,
+    "home-quick-actions": 1,
+    "home-overview-item-": 1,
+    "rail-attention": 1,
+    "motionPaperScope": 1,
+    "motionReduced": 1,
+    "motionSwitch": 1,
+    "useContainerWidth": 17
+  },
+  "cached_route_context": {
+    "app_root": "/workspace/shared/caregiver_combined_preview/frontend/app",
+    "dependencies": 19,
+    "all_match": true,
+    "proof_file": "metro-context-dependency-proof.json",
+    "scope": "Cache inspected after sequential Android --clear; Web independently checked required compiled module identifiers/testIDs. No claim of retained pre-Android Web cache."
+  },
+  "critical_import_proof": "metro-critical-import-proof.json",
+  "supersedes": "EarliercombinedWeb/Androidexports had wrong cached router context. Suspect bytes preserved in suspect-exports; their logs record command success only, not correct-source compatibility.",
+  "prior_static_checks": "Typecheck and5homeprojectiontests ran against source directly and remainvalid; currenttoken240only is a numericdelta.",
+  "runtime": "Awaiting corrected public publication, thenrecheckmissingMotionSettingsfirst",
+  "android_binary_marker_counts": {
+    "motion-settings": 1,
+    "reduce-motion-switch": 1,
+    "drawer-right": 1,
+    "drawer-backdrop": 1,
+    "modal-backdrop": 1,
+    "frontend-startup-loading": 1,
+    "home-quick-actions": 1,
+    "home-overview-item-": 1,
+    "rail-attention": 1,
+    "useContainerWidth": 1
+  }
+}

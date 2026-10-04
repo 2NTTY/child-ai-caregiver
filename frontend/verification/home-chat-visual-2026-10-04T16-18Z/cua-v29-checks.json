@@ -1,0 +1,127 @@
+{
+  "at": "2026-10-04T16:36:29.288552+00:00",
+  "version": 29,
+  "site_version": "appgprj_6ac1e7c965308191bc2c599951348a51~appgver_03e0a8651c5c81918f241373b063102e",
+  "site_commit": "9d9e858c05f47c51e091345c79a9d1c99cb8ea6b",
+  "entry": "entry-7b5903e7aa6a2fe9a72491a9ede419a8.js",
+  "sha256": "119c90f70e8d91cd8200f0882c69f23d176e00e1b4ef53d0610feaa1721c5116",
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "browser": "dot cloud Chrome, CUA tabs 11 then 12; tab 11 automatically cleaned after blocked turn, tab 12 explicitly closed at completion",
+  "method": "Ordinary visible UI controls and frame-scoped read-only DOM geometry/computed styles. No RAF injection, hidden-state mutation, real API, upload or native controls.",
+  "source_evidence": "build-checks.json; source-runtime-check.json confirms no source change through the first runtime batch",
+  "result": "Partial: Home docked geometry and rendered theme colors pass within bounded observations; isolated 320 PageUp terminal flow failed, cause unclassified; continuous motion unverified",
+  "checks": [
+    {
+      "case": "390 and 320 chat-to-Home returns",
+      "result": "pass within discrete geometry samples",
+      "detail": "First measurable return and settled samples show header 168px, child 72px, center error 0. Computed absolute, top84px, translateY -36px, marginTop0. Route x movement sampled; no y drift in sampled geometry."
+    },
+    {
+      "case": "320 Home picker open/close",
+      "result": "pass",
+      "detail": "Opened via visible button, closed via Close; focus restored to picker."
+    },
+    {
+      "case": "Initial greeting seam",
+      "result": "not captured",
+      "detail": "Supported app reload control was tried; first available sample was already docked. No hidden-state changes, frame sampling or extra attempts."
+    },
+    {
+      "case": "320 and 1440 actual chat colors",
+      "result": "pass",
+      "detail": "Question background rgb227,246,245; text/source title rgb39,35,67; metadata/placeholder rgb45,51,74; canvas rgb247,252,252; composer rgb255,255,254; border rgb115,114,132; enabled arrow background rgb255,216,3 with #272343 arrow/border. Actual rendered values match static 14-pair contrast check."
+    },
+    {
+      "case": "Composer geometry and focused input",
+      "result": "pass",
+      "detail": "320 and1440 marginTop -32px and measured timeline/composer overlap32px. 320 two-line input grew48px to60px, panel114px to126px; focus border became rgb39,35,67, send opacity1. Draft cleared without sending."
+    },
+    {
+      "case": "Source disclosure",
+      "result": "pass for opening and closing only",
+      "detail": "Source1 expanded to panel height280px with synthetic text, then closed. No claim of complete source-scroll regression coverage."
+    },
+    {
+      "case": "Compound source-close plus draft-clear plus PageUp",
+      "result": "inconclusive / preserved failure",
+      "detail": "AX briefly exposed latest button, but next sample was at bottom1143+313=1456 and button click had no target. Batch stopped before any retry. Source disclosure and composer height changed in same batch."
+    },
+    {
+      "case": "First isolated settled PageUp follow-up",
+      "result": "incomplete terminal assertion",
+      "detail": "With source closed, draft empty and composer154px, PageUp reached gap238px and latest button appeared. Clicking latest removed it; immediate sample still had gap273px. Viewport was changed before a narrow settled endpoint, so no320 terminal pass is claimed."
+    },
+    {
+      "case": "Explicitly reauthorized 320 settled PageUp terminal check",
+      "result": "fail / unresolved",
+      "detail": "Prerequisites were stable: source aria-expanded false, disclosure0px, draft empty, composer154px, viewport320. One PageUp produced no movement in first and subsequent settled samples: scrollTop1143,client313,scrollHeight1456,gap0,latest absent. No repeat key, alternate scroll, diagnosis or source fix attempted."
+    },
+    {
+      "case": "Desktop screenshot",
+      "result": "pass at1024x600; fullPage1440 blocked by timeout",
+      "detail": "FullPage screenshot timed out initially and once after new authorization. Used existing visible1024 and600 controls and ordinary viewport screenshot, which captured entire desktop layout. No screenshot loop."
+    }
+  ],
+  "contrast_spot_checks": {
+    "provenance": "../chat-theme-colors-2026-10-04T16-14Z/chat-color-checks.json; runtime DOM values agree",
+    "body_on_canvas": 14.40948,
+    "question_on_aqua": 13.3314,
+    "input_on_panel": 14.90851,
+    "placeholder_on_panel": 12.46275,
+    "enabled_arrow_on_yellow": 10.70921,
+    "outline_on_panel": 4.69608,
+    "scope": "Spot checks only, not complete accessibility certification"
+  },
+  "measurements": "measurements.json",
+  "first_failure_partial_measurements": "measurements-partial.json",
+  "screenshots": [
+    {
+      "file": "1024-chat.jpg",
+      "sha256": "b6957fcaec9017ced1b64c2ada671fe83de80b33f63526c482c14f32b180bd5d"
+    },
+    {
+      "file": "320-chat.jpg",
+      "sha256": "329c43ee537237e1da39ff5a0d0d29c1bf76075c754801cc41f84e90e248555f"
+    },
+    {
+      "file": "320-interrupted-scroll-bottom.jpg",
+      "sha256": "c816b1d255a5e829225a229094bcdabd31146009e3819d780b19e11aa96ca0f3"
+    },
+    {
+      "file": "320-settled-pageup-no-movement.jpg",
+      "sha256": "712bd9b3f648076df80cd2393d275d2d158d29d74cfd7728e28c9614ba7f6852"
+    }
+  ],
+  "tool_limits": [
+    "Initial parent-document iframe contentDocument access was unavailable; documented frame-scoped locator reads worked.",
+    "One click API timed out but next AX state confirmed navigation completed; no repeat click.",
+    "CJK source/citation labels retain pre-existing tofu glyph rendering in screenshots.",
+    "Read-troubleshooting plus save-measurements call was denied twice, with one exact original-evidence retry; browser work stopped. New explicit user approval later allowed exact call and data save.",
+    "Last10 error records observed were browser-extension metadata errors; no exhaustive console assertion was made.",
+    "Wrapper height caption remained900; actual frame clientHeight was600 in narrow and1024 captures."
+  ],
+  "not_run": [
+    "Continuous first paint or precise animation curves",
+    "Initial greeting seam",
+    "System reduced-motion preference",
+    "Native Android/device/screen-reader",
+    "Full old matrices or source-End-in-flight regression",
+    "Real Server/model/data persistence",
+    "Scroll failure diagnosis or repair"
+  ],
+  "cleanup": {
+    "test_draft": "empty",
+    "source_panel": "closed",
+    "browser": "tab12 closed; ownership released",
+    "product_source_edits": "none by verifier"
+  },
+  "pageup_focus_evidence": {
+    "action": "await frame.getByTestId('chat-timeline-scroll').press('PageUp')",
+    "target": "Documented frame-scoped Playwright locator for the chat scroll viewport",
+    "before_action_last_AX_focus": "Wrapper button6, 320 px (after viewport control)",
+    "after_action_AX_focus": "Element120 container containing the full chat timeline text, observed at16:34:34UTC and again16:34:53UTC",
+    "textarea_AX_id": 105,
+    "event_time_activeElement": "Not captured",
+    "interpretation": "Tool locator.press is documented to focus its locator. Post-action AX points to timeline, not composer/document, but event-time focus and key dispatch were not independently recorded. Assertion not met; product regression is not established."
+  }
+}

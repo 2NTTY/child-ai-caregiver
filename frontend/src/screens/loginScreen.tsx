@@ -13,6 +13,7 @@ import { MotionSelectionMarker } from "../motion/MotionSelectionMarker";
 import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import { useFirstScreenImage } from "../startup/FirstScreenGate";
+import { useContainerSize } from "../components/useContainerSize";
 
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
 const harbourSourceSize = { width: 1672, height: 941 };
@@ -25,7 +26,7 @@ export default function LoginPage() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const narrow = width < 900;
-  const [storySize, setStorySize] = useState({ width: 0, height: 0 });
+  const { ref: storyRef, size: storySize, onLayout: onStoryLayout } = useContainerSize(!narrow);
   const artworkScale = Math.max(storySize.width / harbourRightEdge, storySize.height / harbourSourceSize.height);
   const artworkWidth = harbourSourceSize.width * artworkScale;
   const artworkHeight = harbourSourceSize.height * artworkScale;
@@ -58,7 +59,7 @@ export default function LoginPage() {
   }
 
   return <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView style={styles.scroll} contentContainerStyle={[styles.root, narrow && styles.rootStack, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
-    {!narrow ? <View testID="login-story-column" style={[styles.story, styles.storyDesktop]} onLayout={({ nativeEvent: { layout } }) => setStorySize(current => current.width === layout.width && current.height === layout.height ? current : { width: layout.width, height: layout.height })}>
+    {!narrow ? <View ref={storyRef} testID="login-story-column" style={[styles.story, styles.storyDesktop]} onLayout={onStoryLayout}>
       {!startupImage.fallback ? <Image testID="login-background-image" source={harbourArt} resizeMode="cover" onLoad={startupImage.onLoad} onError={startupImage.onError} accessibilityLabel="香港海旁照顧者與孩子插畫" style={[styles.storyImage, { opacity: artworkScale > 0 ? 0.55 : 0, width: artworkWidth, height: artworkHeight, right: (harbourRightEdge - harbourSourceSize.width) * artworkScale, top: (storySize.height - artworkHeight) / 2 }]} /> : null}
       <View testID="login-story-content" style={[styles.storyContent, styles.storyReadingWidth]}>
         <BlurView testID="login-story-panel" intensity={32} tint="light" style={styles.storyPanel}>

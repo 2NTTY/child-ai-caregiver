@@ -1,0 +1,22 @@
+✔ capture scope requires the selected child and changes with identity or access (0.902425ms)
+✔ a photo transfers once and disposal belongs to the composer after taking it (0.34375ms)
+✔ replacement and cancelled handoffs release their local photo exactly once (0.215599ms)
+✔ changed or missing scope drops a pending photo instead of exposing it to another child (0.159069ms)
+✔ missing and mismatched projections never become an empty or previous child's overview (2.02197ms)
+✔ home and rail receive the same projection, order, identifiers and state (1.875543ms)
+✔ legacy focus remains usable without deriving ongoing topics from records (0.382026ms)
+✔ deleting the selected child derives both home and rail from the remaining child, including refresh (2.962331ms)
+✔ deleting the final child clears the projection; a newly created child gets only its own empty overview (0.28397ms)
+✔ tasks and legacy focus never become Agent important items (0.22208ms)
+✔ Agent read failure, loading, missing data and a confirmed empty snapshot remain distinct (0.187977ms)
+✔ Agent projections never leak a previous or inaccessible child's items (0.978021ms)
+✔ Agent supplied order, original references and unknown outcomes are preserved (0.54522ms)
+✔ synthetic Agent selections remain independent of the sidebar task projection (0.550076ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 184.199098

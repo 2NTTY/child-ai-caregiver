@@ -1391,3 +1391,12 @@
 - 沒有重跑完整產品 E2E 或模型效果驗收；本次不把字串／素材檢查當作全功能重新驗收。
 
 - 驗收補充（2026-10-01，使用者回覆）：使用者以 PowerPoint 開啟確認圖片正常；先前缺圖只出現在 Codex 直接預覽。此為圖片顯示確認，不代填整份簡報內容或逐頁驗收。
+
+
+<a id="log-20261004-001"></a>
+## LOG-20261004-001
+
+- Recorded At／Work Date：2026-10-04T20:13:16+08:00（Asia/Hong_Kong），本次實際整理；Package：DOC-R04。A 負責規則／整合，文件維護權重 1、A 100%，不計作程式開發比例；共用 AI 執行，主模型親寫、兩個 Luna 分別唯讀核對 metadata 與接手入口，未代填組員人工驗收。
+- Actual Work／Changes：核對 master `c51dd52`、活動 PR #84／#85 及附件快照，收斂根／前端閱讀入口與文件職責，保留前端獨立 PLAN／STATUS；移出重複交付史、標明舊部署／決策／研究身份。歷史原文以固定 Git 版本及 hash 定位，舊錨點保留；沒有修改業務程式、API 語義、UI 或模型調度規則。
+- Verification／Evidence：[EV-DOC-R04](artifacts/verification/DOC_R04_CHECKS.json) 保存本機文件連結／錨點、TOML、歷史內容、prompt 正文、Skill 靜態替代檢查及唯讀接手結果；只做文件驗收，沒有產品測試／部署、原生載入或 token 節省量測。官方 Skill validator 缺 PyYAML，沒有假報該命令通過；原 metadata 及適用結構條件另行核對。
+- Limitations／Next：活動前端成果及現場可能繼續變動，整合時重查 head、保留新增內容和未驗項；網站現況未查，STOP 設定不當成停機實證。提交文件 PR 供 review，合併另候使用者指示；未修改其他聊天 checkout 或活動 PR。

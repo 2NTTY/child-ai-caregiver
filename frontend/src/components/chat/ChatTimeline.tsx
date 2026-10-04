@@ -7,6 +7,7 @@ import { AppButton } from "../ui";
 import { spacing } from "../../theme";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 import { useChatScrollIntent } from "./useChatScrollIntent";
+import { useChatInitialPosition } from "./useChatInitialPosition";
 import { useInteractionDensity } from "../useInteractionDensity";
 import { MotionEntrance } from "../../motion";
 import { isNewReplyArrival } from "./chat-arrival";
@@ -41,8 +42,11 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   const frame = useRef<number | null>(null), programmatic = useRef(false);
   const prepend = useRef<{ y: number; height: number } | null>(null);
   const readerGesture = useRef(false);
+  const cancelInitialPosition = useChatInitialPosition(ownScroll,
+    () => following.current && !readerGesture.current && !prepend.current,
+    next => { metrics.current = next; });
 
-  function holdReadingPosition() { readerGesture.current = false; following.current = false; }
+  function holdReadingPosition() { cancelInitialPosition(); readerGesture.current = false; following.current = false; }
   function readerIntent() { holdReadingPosition(); readerGesture.current = true; }
   function updateLatestVisibility() {
     const gap = Math.max(0, metrics.current.height - metrics.current.viewport - metrics.current.y);
@@ -101,7 +105,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   return <View testID="chat-timeline" style={styles.root}>
     <AppScrollView testID="chat-timeline-scroll" ref={node => { ownScroll.current = node; if (scrollRef) scrollRef.current = node; }} style={styles.scroll}
       contentContainerStyle={[styles.content, compact && styles.compact]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16}
-      onScroll={onScroll} onScrollBeginDrag={readerIntent} onContentSizeChange={contentChanged} onLayout={event => { metrics.current.viewport = event.nativeEvent.layout.height; if (following.current) queueBottom(); }}>
+      onScroll={onScroll} onScrollBeginDrag={readerIntent} onContentSizeChange={contentChanged} onLayout={event => { metrics.current.viewport = event.nativeEvent.layout.height; if (following.current) queueBottom(); else updateLatestVisibility(); }}>
       {header}
       {start > 0 ? <View testID="chat-history-entry" style={styles.history}><AppButton label={`查看較早記錄（${start} 則）`} variant="quiet" onPress={revealEarlier} />
         <Text style={styles.hint}>分批展開已載入的記錄</Text></View> : items.length ? <Text testID="chat-history-start" style={styles.hint}>已到本次載入記錄的最早位置</Text> : null}
@@ -126,11 +130,12 @@ function TimelineEntry({ id, scopeKey, arriving, children }: { id: string; scope
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, position: "relative" }, scroll: { flex: 1 },
-  content: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: chatLayout.wideInset, paddingVertical: chatLayout.turnGap, gap: chatLayout.turnGap },
-  compact: { paddingHorizontal: chatLayout.compactInset, paddingVertical: chatLayout.compactTurnGap, gap: chatLayout.compactTurnGap }, item: { minWidth: 0 },
+  // Match the composer's normal-flow overlap so the last message and scroll range stay clear of its panel.
+  content: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: chatLayout.wideInset, paddingVertical: chatLayout.turnGap, paddingBottom: chatLayout.turnGap + chatLayout.composerOverlap, gap: chatLayout.turnGap },
+  compact: { paddingHorizontal: chatLayout.compactInset, paddingVertical: chatLayout.compactTurnGap, paddingBottom: chatLayout.compactTurnGap + chatLayout.composerOverlap, gap: chatLayout.compactTurnGap }, item: { minWidth: 0 },
   history: { alignItems: "center", gap: spacing.xs, minWidth: 0 }, hint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
-  returnOverlay: { position: "absolute", bottom: spacing.md, left: 0, right: 0, alignItems: "center", zIndex: 1 },
-  returnButton: { width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, borderWidth: 1, borderColor: chatColors.line, backgroundColor: chatColors.canvas, alignItems: "center", justifyContent: "center" },
+  returnOverlay: { position: "absolute", bottom: spacing.md + chatLayout.composerOverlap, left: 0, right: 0, alignItems: "center", zIndex: 1 },
+  returnButton: { width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, borderWidth: 1, borderColor: chatColors.outline, backgroundColor: chatColors.surface, alignItems: "center", justifyContent: "center" },
   compactReturnButton: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
   returnPressed: { backgroundColor: chatColors.hover },
 });

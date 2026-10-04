@@ -1,5 +1,5 @@
 import { createContext, Fragment, useContext, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Platform, Pressable, StyleSheet, View, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView, type StyleProp, type TextStyle } from "react-native";
 import { Text } from "react-native-paper";
 import type { ChatCitationView } from "../../chat-view-model";
 import { colors, spacing } from "../../theme";
@@ -71,6 +71,16 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
   const pendingNavigation = useRef<{ id: string; closing: boolean } | null>(null);
   const [tabWidth, setTabWidth] = useState(0);
   const [tabLayouts, setTabLayouts] = useState<Record<string, { x: number; width: number }>>({});
+  const windowWidth = useWindowDimensions().width;
+  const sourceLayoutKey = JSON.stringify(sources.map(source => [source.id, source.title]));
+  useLayoutEffect(() => {
+    if (Platform.OS !== "web") return;
+    const viewport = tabScrollRef.current?.getScrollableNode() as HTMLElement | null;
+    if (!viewport || viewport.clientWidth <= 0) return;
+    const width = viewport.clientWidth;
+    // One follow-up read settles any width reserved by the trailing hint.
+    setTabWidth(current => current === width ? current : width);
+  }, [windowWidth, sourceLayoutKey, tabWidth]);
   // Retain only an ID during collapse; the live collection controls data access.
   const selected = sources.find(source => source.id === (selectedId ?? presentedId));
   const expanded = selectedId !== null && selected !== undefined;
@@ -142,6 +152,7 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
             {origin && onLocateSource ? <AppButton label="返回引用句" variant="quiet" density="compact" onPress={returnToCitation} /> : null}
           </View>
           <HorizontalOverflowRail ref={tabScrollRef} testID="answer-source-tabs" rowTestID="answer-source-tab-row" accessibilityLabel="回答參考來源"
+            layoutRevision={`${sourceLayoutKey}:${tabWidth}`}
             hintLabel="查看更多來源" hintTestID="answer-source-scroll-hint" hintSlotTestID="answer-source-hint-slot" hintColor={chatColors.secondary}
             items={sources.flatMap(source => tabLayouts[source.id] ? [{ key: source.id, ...tabLayouts[source.id] }] : [])}
             onRevealItem={revealSource} animatedScroll={false}

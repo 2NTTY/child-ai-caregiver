@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
-import { Platform, Pressable, StyleSheet, View, type ScrollView, type ScrollViewProps } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView, type ScrollViewProps } from "react-native";
 import Animated, { cancelAnimation, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useMotionPreferences } from "../motion/preferences";
 import { motionTokens } from "../motion/tokens";
@@ -18,16 +18,19 @@ interface HorizontalOverflowRailProps extends Omit<ScrollViewProps, "horizontal"
   revealTarget?: HorizontalRailItem;
   revealRevision?: number;
   animatedScroll?: boolean;
+  layoutRevision?: string;
   onRevealItem: (key: string, scroll: ScrollView | null) => void;
 }
 
 /** A tab/disclosure rail with an independent trailing hint, never a content overlay. */
 export const HorizontalOverflowRail = forwardRef<ScrollView, HorizontalOverflowRailProps>(function HorizontalOverflowRail(
   { items, hintLabel, hintColor = colors.muted, rowTestID, hintTestID, hintSlotTestID, revealTarget, revealRevision,
-    animatedScroll = true, onRevealItem, style, children, onLayout, onContentSizeChange, onScroll,
+    animatedScroll = true, layoutRevision, onRevealItem, style, children, onLayout, onContentSizeChange, onScroll,
     onScrollBeginDrag, onTouchStart, ...props }, forwardedRef,
 ) {
   const preferences = useMotionPreferences();
+  const windowWidth = useWindowDimensions().width;
+  const rowRef = useRef<View | null>(null);
   const scrollRef = useRef<ScrollView | null>(null);
   const hintRef = useRef<View | null>(null);
   const metrics = useRef<HorizontalRailMetrics>({ rowWidth: 0, viewportWidth: 0, contentWidth: 0, x: 0 });
@@ -48,6 +51,18 @@ export const HorizontalOverflowRail = forwardRef<ScrollView, HorizontalOverflowR
       viewportWidth: viewport.clientWidth, contentWidth: viewport.scrollWidth };
     return metrics.current;
   }
+  useLayoutEffect(() => {
+    if (Platform.OS !== "web") return;
+    const row = rowRef.current as unknown as HTMLElement | null;
+    const viewport = scrollRef.current?.getScrollableNode() as HTMLElement | null;
+    if (!row || !viewport) return;
+    const viewportWidth = viewport.clientWidth, contentWidth = viewport.scrollWidth;
+    metrics.current = { rowWidth: row.clientWidth, viewportWidth, contentWidth, x: viewport.scrollLeft };
+    // Reserve the hint before paint, using the full row rather than its reduced viewport.
+    updateHint();
+    setLayout(current => current.viewportWidth === viewportWidth && current.contentWidth === contentWidth
+      ? current : { viewportWidth, contentWidth });
+  }, [windowWidth, layoutRevision, hint.overflow]);
   function scrollToOffset(x: number, animated: boolean) {
     const viewport = Platform.OS === "web" ? scrollRef.current?.getScrollableNode() as HTMLElement | null : null;
     const nativeScroll = viewport?.ownerDocument.defaultView?.Element.prototype.scroll as
@@ -119,7 +134,7 @@ export const HorizontalOverflowRail = forwardRef<ScrollView, HorizontalOverflowR
   useLayoutEffect(() => () => { cancelAnimation(opacity); }, [opacity]);
   const hintStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
-  return <View testID={rowTestID} style={[styles.row, style]} onLayout={event => {
+  return <View ref={rowRef} testID={rowTestID} style={[styles.row, style]} onLayout={event => {
     metrics.current.rowWidth = event.nativeEvent.layout.width; updateHint();
   }}>
     <AppScrollView {...props} ref={scrollRef} horizontal showsHorizontalScrollIndicator={false}

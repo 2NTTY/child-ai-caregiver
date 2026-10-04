@@ -29,14 +29,15 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  return <textarea ref={input} aria-label="撰寫對話問題" placeholder="輸入你想討論的照顧問題…"
+  return <><style>{`.chat-composer-input::placeholder { color: ${chatColors.secondary}; opacity: 1; }`}</style>
+    <textarea className="chat-composer-input" ref={input} aria-label="撰寫對話問題" placeholder="輸入你想討論的照顧問題…"
     rows={1} disabled={props.disabled} value={props.value} onChange={event => props.onChangeText(event.currentTarget.value)}
     onFocus={props.onFocus} onBlur={props.onBlur} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
     onKeyDown={event => {
       if (event.key !== "Enter" || event.shiftKey || composing.current || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       event.preventDefault();
       if (!props.disabled && props.value.trim()) props.onSubmit();
-    }} style={inputStyle} />;
+    }} style={inputStyle} /></>;
 });
 
 const inputStyle: CSSProperties = {

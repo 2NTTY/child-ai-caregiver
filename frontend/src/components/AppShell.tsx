@@ -15,6 +15,7 @@ import { AgentEntryButton } from "./AgentEntryButton";
 import { AppButton, OperationPill, SectionCard, SectionHeader, TextLink } from "./ui";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
+import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
 import { NotificationBell } from "./NotificationBell";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
@@ -179,9 +180,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       {showGuideNav ? <NavItem item={{ href: "/guide", label: "使用引導", short: "引導", icon: "compass-outline" }} active={active("/guide")} /> : null}
     </View> : null}
     <View style={styles.stage}>
-      <MotionScopeBoundary scopeKey={motionScope} eligible={model.selectedChildId !== null} style={styles.scopePane}>
+      <MotionScopeBoundary scopeKey={motionScope} resetKey={pathname} eligible={model.selectedChildId !== null} style={styles.scopePane}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
-        {compact ? <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></PreviewLink> : null}
+        {compact ? <CompactHeaderIdentity showContext={!mobileHome} scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
+          brand={<PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></PreviewLink>} /> : null}
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts child={selectedChild} load={model.profileLoad} /> : null}
         <View testID="header-actions" style={styles.topActions}>
@@ -193,7 +195,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             }} />
         </View>
       </View>
-      {compact && !mobileHome ? <View style={styles.compactFacts}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /><ChildKeyFacts child={selectedChild} load={model.profileLoad} /></View> : null}
       <PreviewToolbar />
       {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
       <View style={styles.body}>
@@ -243,17 +244,16 @@ const styles = StyleSheet.create({
   sidebarBottom: { paddingBottom: spacing.sm },
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
   scopePane: { flex: 1, minWidth: 0, minHeight: 0 }, drawerContent: { flex: 1 },
-  topbar: { height: 70, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
+  topbar: { height: 70, flexShrink: 0, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
   topbarCompact: { height: 64, paddingHorizontal: spacing.md, gap: spacing.sm },
   topbarTiny: { paddingHorizontal: spacing.sm, gap: spacing.xs },
   topBrandLink: { width: 124, height: 44, alignItems: "center", justifyContent: "center", marginRight: "auto" },
   topBrandLinkTiny: { width: 114 },
   topLogo: { width: 124, height: 44 },
   topLogoTiny: { width: 114 },
-  topActions: { marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  topActions: { marginLeft: "auto", flexShrink: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   panelIcon: { width: 20, height: 17, borderWidth: 1.7, borderColor: colors.deepTeal, borderRadius: 4, alignItems: "flex-end", justifyContent: "center" },
   panelIconDivider: { width: 6, height: 15, borderLeftWidth: 1.7, borderLeftColor: colors.deepTeal },
-  compactFacts: { minHeight: 52, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, gap: spacing.md, flexDirection: "row", alignItems: "center", backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   menuDialog: { maxWidth: 400 },
   previewArea: { backgroundColor: colors.previewSurface, borderBottomWidth: 1, borderBottomColor: colors.line },
   previewLine: { minHeight: 36, paddingHorizontal: spacing.lg, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },

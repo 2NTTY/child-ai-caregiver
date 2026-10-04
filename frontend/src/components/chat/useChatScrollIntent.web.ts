@@ -11,6 +11,8 @@ export function useChatScrollIntent(scroll: MutableRefObject<ScrollView | null>,
     const key = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (target.closest("input, textarea, button, [role='button'], [role='tab']") || target.isContentEditable) return;
+      // A no-op End cannot emit the scroll event that would restore following at the bottom.
+      if (event.key === "End" && target === viewport && viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop <= 1) return;
       if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) read();
     };
     const thumb = (event: PointerEvent) => {

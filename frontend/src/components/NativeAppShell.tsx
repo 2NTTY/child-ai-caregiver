@@ -11,8 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePreview } from "../preview/PreviewContext";
 import { chineseFont, colors, mobileLayout, spacing, typeScale } from "../theme";
 import { NotificationBell } from "./NotificationBell";
-import { ChildPicker } from "./ChildPicker";
-import { ChildKeyFacts } from "./ChildKeyFacts";
+import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
 import { PreviewToolbar, RightRail } from "./AppShell";
 
 export function NativeAppShell({ children }: { children: ReactNode }) {
@@ -29,12 +28,12 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   useEffect(() => { setRailOpen(false); }, [pathname, motionScope]);
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View>
-      <View style={styles.header}><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"))} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>
+      <View style={styles.header}><CompactHeaderIdentity showContext={pathname !== "/"} scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
+        brand={<Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"))} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>} />
         <View testID="header-actions" style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <ToolbarIconButton icon="page-layout-sidebar-right" label={overlayOpen ? "收起資訊側欄" : "開啟資訊側欄"} expanded={overlayOpen} onPress={() => { railContext.current = { path: pathname, scope: motionScope }; setRailOpen(value => !value); }} />
         </View>
       </View>
-      {pathname !== "/" ? <View style={styles.childStrip}><ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} compact /><ChildKeyFacts child={model.children.find(item => item.id === model.selectedChildId)} load={model.profileLoad} /></View> : null}
       <PreviewToolbar />
     </View>
     {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.meta}>{notice}</Text></Pressable> : null}
@@ -46,11 +45,10 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
 }
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.canvas },
-  header: { minHeight: mobileLayout.headerMinHeight, backgroundColor: colors.sidebar, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  header: { height: mobileLayout.headerMinHeight, flexShrink: 0, backgroundColor: colors.sidebar, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   brand: { flexShrink: 1, minWidth: 0, justifyContent: "center", minHeight: 48 },
   logo: { width: 124, height: 44 },
-  actions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  childStrip: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingBottom: spacing.sm, backgroundColor: colors.sidebar },
+  actions: { flexShrink: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   content: { flex: 1 },
   notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },

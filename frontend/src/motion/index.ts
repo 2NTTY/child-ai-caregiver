@@ -4,6 +4,7 @@ export { MotionReveal, type MotionRevealProps, type MotionPhase, type MotionTrig
 export { MotionList, type MotionListProps } from "./MotionList";
 export { MotionEntrance, MotionDetail, type MotionEntranceProps, type MotionEntrancePreset, type MotionDetailProps } from "./MotionEntrance";
 export { MotionDisclosure, type MotionDisclosureProps } from "./MotionDisclosure";
+export { MotionInlineSwap, type MotionInlineSwapProps } from "./MotionInlineSwap";
 export { MotionFeedback, type MotionFeedbackProps } from "./MotionFeedback";
 export { MotionScopeBoundary, type MotionScopeBoundaryProps } from "./MotionScopeBoundary";
 export { MotionDrawerRight, type MotionDrawerRightProps } from "./MotionDrawerRight";

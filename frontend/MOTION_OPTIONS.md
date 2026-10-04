@@ -1,6 +1,6 @@
 # Web 動態方向比較（暫不採用）
 
-> 歷史比較記錄。2026-10-04 使用者已另外批准 FE-W37 的全站語意動效；本輪採納方向見 [MOTION_SYSTEM](MOTION_SYSTEM.md)，實作及驗收狀態見 [STATUS](STATUS.md)。下列「暫不採用／尚未實作」描述當時的比較階段，不限制本輪明確授權，也不代表下列每個候選已被採用。
+> 歷史候選研究：「暫不採用」只代表當時。現行採納要求見 [MOTION_SYSTEM](MOTION_SYSTEM.md)，目前工作與未驗關口見 [PLAN](PLAN.md#active)。
 
 <a id="page-transitions"></a>
 ## 換頁動畫研究，尚未實作（2026-10-02）
