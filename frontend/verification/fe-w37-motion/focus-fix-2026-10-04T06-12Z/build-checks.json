@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-04T06:13:24.308244+00:00",
+  "review": "Scoped focus fix reviewed: focus visible enabled connected next/previous/list targets in committed layout, verify activeElement; keep narrow scroll frame across ordinary array renders, cancel on navigation/scope/loss/unmount. No animation timing delay used for data or focus.",
+  "changed_since_previous_build": [
+    "src/components/care/CareRecordsView.tsx"
+  ],
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "exit_code": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "command": "npm run build:web",
+      "status": "passed",
+      "exit_code": 0,
+      "routes": 35,
+      "log": "build-web.log"
+    }
+  ],
+  "source_manifest": {
+    "files": 225,
+    "path": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/focus-fix-2026-10-04T06-12Z/source-manifest.json",
+    "sha256": "7749b0bea9b30558be177fe144e7cc123f09706992d612facb200f4fc85a471d"
+  },
+  "export_directory": "/workspace/shared/caregiver_motion_impl/frontend/dist",
+  "export_manifest": {
+    "files": 60,
+    "bytes": 9017403,
+    "path": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/focus-fix-2026-10-04T06-12Z/web-export-manifest.json",
+    "sha256": "2cf74c5fe340d0978b4f8e352d72d8f3ee2b5dbfea5a36d6024718c0a1a4dccc"
+  },
+  "web_bundle": [
+    {
+      "path": "_expo/static/js/web/entry-dd3d2422245fbd34ff814cdc89fc0409.js",
+      "bytes": 4297254,
+      "sha256": "57c37ea0a0eed9f525700dc54c21e0af104257690758cb462f0de06e0299e187"
+    }
+  ],
+  "ui": "Awaiting same Site replacement before recheck; previous pagination pass and focus failure preserved; no Chromium launch/Android/unrelated test reruns"
+}

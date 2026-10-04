@@ -261,7 +261,9 @@ async function care() {
       assert.ok(final.y < row.y - 2, `Lower care row ${row.id} did not settle upward`);
     }
   }
-  await keepSearch(); await assertNoResidue(page, 'care deletion'); await screenshot(page, 'care-delete-1440');
+  await keepSearch();
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), '查看公園觀察', 'Deleting the selected record must focus the next surviving row');
+  await assertNoResidue(page, 'care deletion'); await screenshot(page, 'care-delete-1440');
 
   // One real existing correction checks the local read-only result boundary.
   await button(list, '查看睡眠記錄').click();
@@ -276,7 +278,23 @@ async function care() {
   assert.ok(motionRegions(correction).length, 'Changed record did not reveal the changed read-only result');
   for (const region of motionRegions(correction)) assertCurtainCommit(correction, region);
   assert.ok((await list.innerText()).includes(raw));
+  assert.deepEqual(correction.snapshots.at(-1).rows.map(row => row.id), correction.snapshots[0].rows.map(row => row.id), 'A local correction must retain every previously loaded record');
   await assertNoResidue(page, 'care correction');
+
+  // The same loaded-prefix invariant also applies when a real existing create
+  // action inserts a row according to the product's established ordering.
+  await button(page, '新增記錄').click();
+  await field(page, '記錄原文草稿').fill('合成新增記錄；原已載入記錄仍保留。');
+  await field(page, '資料來源草稿').fill('動效驗收合成來源');
+  await button(page, '預覽共享內容').click();
+  await startTrace(page, 'care-create-prefix');
+  await button(page, '確認家庭共享並模擬提交').click();
+  await page.getByRole('heading', { name: '已確認保存（預覽）', exact: true }).waitFor();
+  await settled(page); const creation = await stopTrace(page);
+  const oldIds = creation.snapshots[0].rows.map(row => row.id), createdIds = creation.snapshots.at(-1).rows.map(row => row.id);
+  assert.equal(createdIds.length, oldIds.length + 1, 'Creating a record must retain the loaded prefix and add exactly one record');
+  assert.ok(oldIds.every(id => createdIds.includes(id)), 'Creating a record dropped a previously loaded record');
+  await assertNoResidue(page, 'care creation');
 
   const narrow = await fresh('/care', 390), scroll = narrow.getByTestId('care-page-scroll');
   const row = button(narrow.getByTestId('care-record-list'), '查看身高記錄');

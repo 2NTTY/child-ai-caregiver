@@ -67,7 +67,10 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
     const basis = currentAttempt.basis;
     if (currentAttempt.mode === "delete" && basis) {
       setRecords(previous => previous.filter(item => item.id !== basis.id));
-      setSelectedId(null); setHistoryLimit(0); setDeletion(null); setScanned(pageSize);
+      // Preserve the loaded prefix without pulling an unscanned record into it.
+      const removedIndex = records.findIndex(item => item.id === basis.id);
+      setScanned(previous => removedIndex >= 0 && removedIndex < previous ? previous - 1 : previous);
+      setSelectedId(null); setHistoryLimit(0); setDeletion(null);
       setListState("ready"); setListMessage(null);
       setOperation({ kind: "delete", state: "saved", message: "模擬已刪除記錄及全部歷史；只更新本次預覽，沒有 Server 收據。", reference: currentAttempt.reference, latest: null });
       attempt.current = null;
@@ -93,7 +96,8 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
     setSelectedId(record.id);
     setHistoryLimit(0);
     setDraft(null);
-    setScanned(pageSize);
+    // Correction keeps the prefix; creation prepends one record to that same prefix.
+    if (!basis) setScanned(previous => Math.min(previous, records.length) + 1);
     setListState("ready");
     setListMessage(null);
     setOperation({ state: "saved", message: "模擬已保存；只更新本次照顧記錄預覽，沒有 Server 收據。", reference: currentAttempt.reference, latest: null });

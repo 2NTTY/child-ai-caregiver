@@ -569,29 +569,22 @@ FE-W08 沿 FE-W07 `1e1fb7b`（draft PR #65）隔離接續，只處理使用者�
 
 上述四項生命週期問題已完成限定源碼覆核及純 guard 測試，不能當作真實 React DOM／逐幀互動驗收。
 
-### 實際檢查與阻塞
+### 實際檢查與補修（2026-10-04）
 
-[最終檢查記錄](verification/fe-w37-motion/final-2026-10-03T19-25Z/build-checks.json)與同目錄 [source manifest](verification/fe-w37-motion/final-2026-10-03T19-25Z/source-manifest.json)固定被測檔案及產物 hash。
+- 原始 [建置證據](verification/fe-w37-motion/final-2026-10-03T19-25Z/build-checks.json)：typecheck、四項 lifecycle guard、35 路由 Web export、29 資產 Android bundle 通過。Android 僅 bundle、非本次最後修正版或實機驗收。
+- 本地 Chromium 三次有界嘗試皆因 socket 限制未能啟動。使用者隨後批准 GPT Site 臨時測試及公開存取；只部署合成前端 export，未連真 Server、Gemini、通知或正式身份。
+- [最新建置](verification/fe-w37-motion/dialog-fix-2026-10-04T06-49Z/build-checks.json)與同目錄 225 檔 source manifest 固定最新被測來源；typecheck、35 路由 Web export 通過。
+- [最終 CUA 記錄](verification/fe-w37-motion/final-cua-2026-10-04T07-09Z/checks.json)及 [尺寸矩陣](verification/fe-w37-motion/final-cua-2026-10-04T07-09Z/iframe-layout-checks.json)：15 路由 × 1440／1024／390／320 CSS px，共 60 次逐项核對實際網址與 iframe 寬度，文件層級无水平溢出。這是 iframe viewport 證據，不是完整瀏覽器裝置模擬；先前 52 次未核對路由的量度已降級，不算通過。
+- Care 已確認增／改／刪操作曾無條件重設 scanned，導致其他已載入列消失；改為保持原前綴、更正不變、新增依既有前插加一、刪除僅扣原前綴中該筆。實測補驗通過。
+- Care 詳情返回焦點原本只在窄屏處理，且 rAF 被普通 records 重繪取消；改為 layout 階段同步驗證有效焦點，窄屏捲動按範圍／導航清理。桌面刪除返回下一列及 390 窄屏錨點 631→631 已驗。
+- DeleteChildPreview 開窗時自禁用 trigger，破壞 RN Modal 保存／回復焦點；保留業務禁用條件，改用 onPress open guard。320 下 Tab trap、Escape 取消、不刪除孩子、焦點返回原按鈕已補驗。
+- 已觀察草稿保留、單項新增／退出與受影響列 FLIP 標記、候選採用、failed／unknown 原收據、切孩子隔離、幕布 covering 中再次更新／換頁取消。詳見 CUA 記錄，不能將端點或 DOM phase 當連續逐幀證據。
+- 既有 login 返回預覽 link 的 Enter 無效列為範圍外鍵盤缺口，未在本包擴大修改。
 
-- `npm run typecheck` 通過。
-- `node --test src/motion/lifecycle.test.mts` 四項純判斷測試通過。
-- `npm run build:web` 通過，35 個路由。
-- `npm run build:android-ui` 通過，29 個資產；只證明 bundle 相容性。
-- `scripts/verify-motion-system.mjs` 語法檢查通過，但未在瀏覽器執行。
+### 接續與合併門檻
 
-第一次 Web 建置因雲端預設 HOME 目錄不可寫而失敗；使用專用暫存 HOME／XDG 及關閉 Expo telemetry 的行程設定後通過，沒有改全域系統設定。Chromium 正常啟動及獲批的權限重試均因 `ProcessSingleton socket() Operation not permitted` 受阻。實際 UI 為 **0 頁面、0 案例、0 截圖**；沒有避開限制、公開部署私人程式或改用使用者電腦。僅停止本輪建立的本地預覽程序。
+保留唯一 PR #84 為 draft，未合併。下一步僅補仍缺的真實 reduced-motion 初始／中途切換、精確遮滿換文逐幀與 DOM／selection 保留證據。雲端 Chrome DevTools 已明確受組織政策禁止，沒有繞過或改安全設定。需能合法執行這些檢查的環境後再續。
 
-### 補驗與合併門檻
+準備好的 `scripts/verify-motion-system.mjs` 已補焦點及已載入 ID 保留回歸斷言，但未成功執行；CUA 結果不可當成該腳本通過。首次失敗停批並保留證據，修正後只驗受影響流程。不得重跑已通過無關項目作替代驗收。
 
-保留本 PR 為 draft；本包狀態是已實作、建置通過、必要互動待驗收，**不是完成或 merge-ready**。在可正常啟動瀏覽器的獲准環境，先用既有 lockfile 安裝、建置並提供本地 preview，再執行：
-
-```sh
-BROWSER_EXECUTABLE=<installed Chromium executable> \
-FRONTEND_PREVIEW_URL=<local preview URL> \
-FRONTEND_TEST_VERSION=<exact branch commit> \
-node scripts/verify-motion-system.mjs
-```
-
-11 組尚待執行：layout、navigation、summary、care、tasks、photos、states、child、reduced、dialog、chat。四尺寸及操作範圍已獲准，首次失敗停批、保存證據並定位；後續只補受影響部分，不重跑已有效通過的無關項目。準備好的腳本仍可能在實跑後發現 selector 或時序修正需求，不把未執行的斷言當成證據。
-
-必要互動通過、審查修正齊備、主線差異已重新核對後，才在這一個 PR 上完成合併。正式 API／真模型／通知、真身份、原生裝置及讀屏仍按原分工另驗；本輪沒有部署或啟動 P3。
+長期動效知識在 `MOTION_SYSTEM.md`，既有 `web-screen-delivery` Skill 已加入按需入口、共用呈現元件與回歸規則；沒有另造平行 skill。正式 API／真模型／通知、原生裝置及讀屏仍按原分工另驗；臨時合成站不是正式部署或 P3 啟動。

@@ -1,0 +1,47 @@
+{
+  "at": "2026-10-04T06:22:02.543116+00:00",
+  "review": "Correction preserves the scanned prefix; prepend-create increases the actual loaded prefix by one. Existing delete/focus repairs unchanged. Owned acceptance script adds explicit deleted-row focus and revise/create loaded-ID preservation assertions, without running additional UI.",
+  "changed_since_previous_build": [
+    "scripts/verify-motion-system.mjs",
+    "src/preview/useCarePreview.ts"
+  ],
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "exit_code": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "command": "npm run build:web",
+      "status": "passed",
+      "exit_code": 0,
+      "routes": 35,
+      "log": "build-web.log"
+    },
+    {
+      "command": "node --check scripts/verify-motion-system.mjs",
+      "status": "passed"
+    }
+  ],
+  "source_manifest": {
+    "files": 225,
+    "path": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/prefix-fix-2026-10-04T06-20Z/source-manifest.json",
+    "sha256": "b549405e6aaa0cac4836c360d3338b584ca56ae3cdf4c86598a673b422a0eba6"
+  },
+  "export_directory": "/workspace/shared/caregiver_motion_impl/frontend/dist",
+  "export_manifest": {
+    "files": 60,
+    "bytes": 9017430,
+    "path": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/prefix-fix-2026-10-04T06-20Z/web-export-manifest.json",
+    "sha256": "372492eecbfa86d21499175ed077eb70f3a7ddcd12e20eeda2f9bb4ff2117564"
+  },
+  "web_bundle": [
+    {
+      "path": "_expo/static/js/web/entry-dbb59101114c9f4458f0eac63dbc56e8.js",
+      "bytes": 4297281,
+      "sha256": "8e65d7855b4f9b14fcccac068bf0de75a0f32be9ce1ab10692058803f29676fe"
+    }
+  ],
+  "ui": "Awaiting same Site replacement for affected correction and create checks; prior failures and delete/focus pass preserved; no Chromium launch or Android/unrelated test rerun"
+}

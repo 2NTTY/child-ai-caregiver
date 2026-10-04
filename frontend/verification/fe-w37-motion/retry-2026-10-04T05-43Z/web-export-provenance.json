@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-04T05:45:11.636298+00:00",
+  "export_directory": "/workspace/shared/caregiver_motion_impl/frontend/dist",
+  "source_manifest": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/final-2026-10-03T19-25Z/source-manifest.json",
+  "source_manifest_sha256": "371f3e53860f51a3032e402196d2010ae733d310bb970aa52d7b333f1d6e41d9",
+  "source_files_checked": 225,
+  "source_mismatches": [],
+  "recorded_web_bundle_checks": [
+    {
+      "path": "dist/_expo/static/js/web/entry-5e0262ef0b79ac185ea2e927e18cb041.js",
+      "expected": "045240f63958dad68aaf2000f8dc8d28aa6208d29e130e08e042574f860654fc",
+      "actual": "045240f63958dad68aaf2000f8dc8d28aa6208d29e130e08e042574f860654fc",
+      "matches": true
+    }
+  ],
+  "export_manifest": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/retry-2026-10-04T05-43Z/web-export-manifest.json",
+  "export_manifest_sha256": "68f22b8fb65842d5c1b8c7978c65d9df02c440603bcdbd30eacdc7b65f3b7dfd",
+  "export_files": 60,
+  "export_bytes": 9016826,
+  "html_routes": 35,
+  "copy_boundary": "Copy only the contents of frontend/dist; no source, node_modules, credentials, or repository metadata are needed for the static Web preview",
+  "runtime_status": "No UI pages executed; this is file-provenance verification only"
+}

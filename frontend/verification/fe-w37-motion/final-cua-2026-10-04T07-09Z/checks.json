@@ -1,0 +1,139 @@
+{
+  "at": "2026-10-04T07:11:01.071666+00:00",
+  "status": "Supported bounded UI observations completed; required gates remain unmet",
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+  "latest_verified_bundle": "entry-05edcc83574fdeb504488d2d81869933.js",
+  "latest_bundle_sha256": "af8036114b0c3d0d4e32cd1594fa1f303f89d7a622162c8c8fb689149e4f6eba",
+  "source_provenance": {
+    "source_manifest": "verification/fe-w37-motion/dialog-fix-2026-10-04T06-49Z/source-manifest.json",
+    "sha256": "de58367bc6457a46c94dfe81c332cff443b4f68be2e6a32da9aa82233173fde5",
+    "files_rechecked": 225,
+    "mismatches": []
+  },
+  "methods": {
+    "runtime": "Supported CUA cloud Chromium; normal native keyboard/tab selection; semantic browser/iframe locators; read-only rendered DOM; ordinary same-origin iframe sizing UI",
+    "prepared_playwright_script": "Not executed: shell-launched Chromium remained blocked. Do not present CUA results as that script passing.",
+    "viewports": "Standalone1180x757; iframe1440/1024/390/320x900",
+    "mutation_boundaries": "Only synthetic UI fixture actions; no Server/model/notifications/real personal file upload, OS security change or user computer task"
+  },
+  "completed_observations": [
+    {
+      "group": "layout",
+      "status": "passed for bounded stated assertions",
+      "evidence": "iframe-layout-checks.json",
+      "result": "15 exact routes x4 actual iframe CSS widths, 60 checks; each URL and width confirmed; no document-level horizontal overflow"
+    },
+    {
+      "group": "navigation",
+      "status": "observed pass",
+      "result": "Chat→care→tasks→summary→chat reaches expected paths/page headings; exact chat draft preserved"
+    },
+    {
+      "group": "summary",
+      "status": "observed pass with frame-level limits",
+      "result": "Changed basis content serial1→2; draft and original basis retained; same-result/failure endpoints did not change result serial; final curtain cleanup observed"
+    },
+    {
+      "group": "care",
+      "status": "observed pass after scoped fixes",
+      "result": "Six-row middle deletion retains five correct IDs; focus moves to next park row; only three lower rows reported flip=true while two upper rows false. Correction retains six loaded IDs and updated text/version. Create retains six old IDs plus one new ID; only new row entering=true; new result heading focused"
+    },
+    {
+      "group": "care narrow navigation",
+      "status": "observed pass",
+      "width": 390,
+      "result": "List→detail→return restores scrollTop631→631 and focus to original height row"
+    },
+    {
+      "group": "tasks",
+      "status": "observed pass",
+      "width": 320,
+      "result": "Pending-filter completion exits only the completed task and retains appointment; subsequent create adds one new task (entering=true) while existing pending row remains (entering=false)"
+    },
+    {
+      "group": "photos",
+      "status": "observed pass",
+      "width": 390,
+      "result": "Synthetic candidate reveal retains exact manual draft until explicit adoption; adoption changes draft only; photo remains private and candidate unconfirmed/unshared",
+      "authorization_note": "Initial call denied before mutations; state checked unchanged. Source demonstrated timer/state-only fixture, parent provided exact user evidence, identical call retried once and passed"
+    },
+    {
+      "group": "states",
+      "status": "observed pass",
+      "width": 390,
+      "result": "Failed summary save retains draft and unchanged result serials; unknown lookup retains exact original reference/content/version, prohibits blind retry; later same receipt confirmed via synthetic lookup without another submit"
+    },
+    {
+      "group": "child",
+      "status": "observed pass for synthetic scope cases",
+      "result": "NormalA→B→A isolates child IDs and per-child drafts. A synthetic reply started then child switched immediately; after the old callback window B still contains only child2 IDs with no old progress; return toA does not resurrect old stream ID"
+    },
+    {
+      "group": "dialog",
+      "status": "observed pass after trigger fix",
+      "width": 320,
+      "result": "Enter opens safe cancel control,8 Tab presses remain in dialog and wrap, Escape closes without deletion, focus returns to original delete-child BUTTON"
+    },
+    {
+      "group": "chat",
+      "status": "observed pass for endpoints/stop",
+      "width": 320,
+      "result": "Synthetic reply completion and explicit stop/incomplete state work; composer draft retained; no old reply survives child reset",
+      "limits": "Continuous same-ID entry count and reading-anchor trace were not recorded"
+    },
+    {
+      "group": "interruption",
+      "status": "observed pass",
+      "bundle": "entry-05edcc83574fdeb504488d2d81869933.js",
+      "result": "Waited for actual summary covering phase then issued a newer update; final content serial3/:new:new. A separate covering-phase navigation tocare left zero curtains, no summary region, all visible phases settled and care heading focused"
+    }
+  ],
+  "failures_fixed": [
+    {
+      "failure": "Care delete discarded previously loaded later rows and lost focus",
+      "initial": "../cua-2026-10-04T05-48Z/checks.json",
+      "partial_recheck": "../cua-2026-10-04T06-03Z/checks.json",
+      "passed": "../cua-2026-10-04T06-15Z/checks.json",
+      "fix_files": [
+        "src/preview/useCarePreview.ts",
+        "src/components/care/CareRecordsView.tsx"
+      ]
+    },
+    {
+      "failure": "Care correction reset loaded prefix; same-cause create reset risk",
+      "initial": "../cua-2026-10-04T06-15Z/checks.json",
+      "passed_result": "v4 correction6→6 and create6→7 with correct IDs",
+      "fix_files": [
+        "src/preview/useCarePreview.ts"
+      ]
+    },
+    {
+      "failure": "Delete-child dialog Escape returned focus toBODY",
+      "initial": "../cua-2026-10-04T06-25Z/checks.json",
+      "passed_result": "v6 8Tab/Escape recheck returns focus to original trigger; child intact",
+      "fix_files": [
+        "src/components/DeleteChildPreview.tsx"
+      ]
+    }
+  ],
+  "required_pending_gates": [
+    "Actual prefers-reduced-motion before playback and changed during playback. Normal Chromium DevTools opening was explicitly blocked by organization policy; no setting changed or bypass attempted.",
+    "Continuous frame/commit evidence of opaque full curtain coverage at the exact content swap, and precise DOM-instance/selection preservation throughout it. Endpoint/phase observations and source guards are not substitutes.",
+    "Other explicitly unexecuted stress/race combinations, real browser/device and screen-reader acceptance remain outside the bounded observations. No real API validation claimed."
+  ],
+  "existing_out_of_scope_gap": {
+    "route": "/login",
+    "control": "返回主頁合成預覽 / 返回Web主頁預覽",
+    "observation": "Enter did not navigate; control is DIV role=link tabindex0 with no href; URL remained/login",
+    "root_decision": "Record existing login keyboard gap, no unrelated refactor in this motion scope"
+  },
+  "tool_limits_and_corrections": [
+    "Shell Chromium attempts remain blocked at ProcessSingleton socket(). Successful CUA browser tests are a separate supported route.",
+    "Some pointer navigation to iframe controls outside the host viewport did not navigate. Inspected actual URL/DOM and used supported Enter activation; do not claim those pointer paths passed.",
+    "An earlier52-resize batch did not capture every actual frame URL. Its declared route coverage is unconfirmed and superseded by the later60 URL-checked measurements; the earlier record is annotated, not erased.",
+    "Native cloud Chromium DevTools showed organization prohibition. Only dismissed that notice, with no alternative entry or security change.",
+    "Screenshots at key stages exist in CUA tool outputs; no local screenshot file paths, videos, or traces are fabricated."
+  ],
+  "build_evidence": "../dialog-fix-2026-10-04T06-49Z/build-checks.json",
+  "release_recommendation": "Keep the same PR draft while the required reduced-motion and exact curtain/frame gates remain unmet; do not claim every frontend motion is complete/perfect or merge-ready."
+}

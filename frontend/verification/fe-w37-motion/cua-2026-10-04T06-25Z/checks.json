@@ -1,0 +1,163 @@
+{
+  "at": "2026-10-04T06:48:24.352184+00:00",
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+  "verified_app_bundle": "entry-dbb59101114c9f4458f0eac63dbc56e8.js",
+  "method": "Supported CUA cloud browser; ordinary same-origin QA iframe controls, semantic UI actions, keyboard input, read-only rendered DOM, screenshots in tool output. No script injection or local Playwright acceptance execution.",
+  "iframe_wrapper": "/qa-viewport (server-normalized from /qa-viewport.html)",
+  "viewport_reflow": {
+    "measurements": 52,
+    "routes": [
+      "/",
+      "/care",
+      "/photos",
+      "/sources",
+      "/growth",
+      "/summary",
+      "/contact",
+      "/profile",
+      "/family",
+      "/memory",
+      "/tasks",
+      "/settings",
+      "/chat"
+    ],
+    "widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "height": 900,
+    "result": "Every measured clientWidth equals the selected width and scrollWidth equals clientWidth",
+    "boundary": "Iframe CSS viewport evidence; not browser device emulation or full control-clipping assertions",
+    "pending_routes": [
+      "/guide",
+      "/login"
+    ]
+  },
+  "observed_flows": [
+    {
+      "flow": "Care correction recheck",
+      "status": "passed",
+      "width": 1180,
+      "result": "Six loaded IDs remain; corrected sleep text/version4 is visible and curtain settles"
+    },
+    {
+      "flow": "Care create prefix",
+      "status": "passed",
+      "width": 1180,
+      "result": "Exactly one new ID prepended, previous six IDs retained (seven total); only new ID entering=true; focus on new result label 日常觀察記錄"
+    },
+    {
+      "flow": "Narrow care round trip",
+      "status": "passed",
+      "width": 390,
+      "result": "Source row focus and scrollTop restored exactly631→631"
+    },
+    {
+      "flow": "Chat reply states",
+      "status": "passed for observed endpoints",
+      "width": 320,
+      "result": "One synthetic reply completed; another stopped mid-stream as incomplete; same final reply ID and composer draft retained",
+      "limits": "Entrance frame was already settled at observation; exact once-only entry and continuous stream timing not measured"
+    },
+    {
+      "flow": "Child scope isolation",
+      "status": "passed for observed normal A→B→A",
+      "width": 320,
+      "result": "B contained only child2 IDs and empty draft; return A contained only child1 IDs and restored A draft; scope curtain observed revealing then settled/zero overlays",
+      "limits": "Not a timed rapid-race or delayed network-response proof"
+    },
+    {
+      "flow": "Task filtered completion",
+      "status": "passed",
+      "width": 320,
+      "result": "Only completed ordinary task exiting=true; pending appointment retained; original completed task removed after exit"
+    },
+    {
+      "flow": "Task addition",
+      "status": "passed",
+      "width": 320,
+      "result": "Existing pending appointment retained; one new task ID entering=true and old row entering=false"
+    },
+    {
+      "flow": "Summary failed save",
+      "status": "passed",
+      "width": 390,
+      "result": "Failure text immediately available; original draft retained, both summary content serials unchanged1, no remaining curtain"
+    },
+    {
+      "flow": "Summary unknown lookup",
+      "status": "passed",
+      "width": 390,
+      "result": "Original preview-summary-operation-2 with exact input/version preserved after lookup; resubmit disabled and draft retained. Later original receipt marked confirmed through the existing synthetic lookup selector, without a second submit"
+    },
+    {
+      "flow": "Photo candidate and adoption",
+      "status": "passed",
+      "width": 390,
+      "result": "Candidate appears while manual draft retained; only explicit adoption replaces draft, original photo remains private and candidate unconfirmed; notice says still unshared",
+      "authorization": "First call rejected before any mutation. Source confirmed setTimeout/state-only fixture; parent supplied transcript evidence; identical call retried once and succeeded. No image upload, actual Gemini or Server call"
+    },
+    {
+      "flow": "Modal keyboard cancellation",
+      "status": "FAILED return focus",
+      "width": 320,
+      "result": "Enter opens synthetic delete-child dialog; eight Tabs stay inside and wrap; Escape closes with child intact; activeElement remains BODY rather than existing trigger"
+    }
+  ],
+  "failure": {
+    "case": "Delete-child dialog Escape does not restore trigger focus",
+    "path": "/profile",
+    "width": 320,
+    "height": 900,
+    "steps": [
+      "Enter on 刪除整位孩子（預覽）",
+      "Fill 核對刪除孩子稱呼 with 合成取消驗收",
+      "Press Tab eight times; all inside role=dialog",
+      "Press Escape",
+      "Wait for dialog hidden and inspect focus again"
+    ],
+    "after": {
+      "dialogs": 0,
+      "active_element": {
+        "tag": "BODY",
+        "aria_label": null
+      },
+      "child_still_present": true,
+      "trigger": {
+        "tag": "BUTTON",
+        "disabled": false,
+        "tabindex": "0",
+        "x": 33,
+        "y": 498,
+        "width": 254,
+        "height": 48
+      }
+    },
+    "source_hypothesis": "DeleteChildPreview disables trigger while open; upstream active-state gating may disable it before RN Modal captures/restores focus. Root to assign scoped fix; not claimed proven from runtime internal state.",
+    "screenshot": "Captured CUA tool output at06:46:54Z; no local file path claimed"
+  },
+  "tool_observation": {
+    "time": "06:34Z",
+    "issue": "Pointer click on narrow iframe bottom navigation did not navigate, so next-control lookup timed out",
+    "inspection": "No modal/curtain blocker; verified task anchor href and visible iframe coordinates",
+    "recovery": "Same visible navigation link activated by supported Enter key, navigation succeeded",
+    "classification": "Not an established application defect; pointer/frame-coordinate limitation remains explicit"
+  },
+  "batch_status": "Stopped at first new concrete modal focus failure. Previous failures preserved separately and fixed care behaviors remain passed.",
+  "pending": [
+    "guide/login four-width static checks",
+    "Modal focus-return recheck after fix",
+    "Actual system reduced-motion start/mid-animation",
+    "Continuous curtain commit/animation frame traces",
+    "Rapid race/delayed response injection",
+    "Native devices and actual screen reader"
+  ],
+  "no_actual_services": true,
+  "route_identity_correction": {
+    "discovered_at": "2026-10-04T06:56Z",
+    "note": "The initial52 width measurements did not independently confirm each actual frame URL after pointer navigation. Route coverage is therefore unconfirmed; do not use the original52 as route-specific pass evidence.",
+    "superseding_evidence": "../final-cua-2026-10-04T07-09Z/iframe-layout-checks.json"
+  }
+}

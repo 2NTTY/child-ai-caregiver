@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-04T06:50:57.887060+00:00",
+  "review": "Keep the delete-child trigger focusable while the existing RN Modal owns background isolation and focus restoration; guard duplicate opening in the handler. Verified upstream enabled excludes childDeletionActive; existing online/permission/unknown guards remain. No secondary focus manager/timer introduced.",
+  "changed_since_previous_build": [
+    "src/components/DeleteChildPreview.tsx"
+  ],
+  "checks": [
+    {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "exit_code": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "command": "npm run build:web",
+      "status": "passed",
+      "exit_code": 0,
+      "routes": 35,
+      "log": "build-web.log"
+    }
+  ],
+  "source_manifest": {
+    "files": 225,
+    "path": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/dialog-fix-2026-10-04T06-49Z/source-manifest.json",
+    "sha256": "de58367bc6457a46c94dfe81c332cff443b4f68be2e6a32da9aa82233173fde5"
+  },
+  "export_directory": "/workspace/shared/caregiver_motion_impl/frontend/dist",
+  "export_manifest": {
+    "files": 60,
+    "bytes": 9016158,
+    "path": "/workspace/shared/caregiver_motion_impl/frontend/verification/fe-w37-motion/dialog-fix-2026-10-04T06-49Z/web-export-manifest.json",
+    "sha256": "fb911fe55dfaf0a2ca6d82f40a0d7010501cacb87a8d48e6c729d1ceb27fb255"
+  },
+  "web_bundle": [
+    {
+      "path": "_expo/static/js/web/entry-05edcc83574fdeb504488d2d81869933.js",
+      "bytes": 4296009,
+      "sha256": "af8036114b0c3d0d4e32cd1594fa1f303f89d7a622162c8c8fb689149e4f6eba"
+    }
+  ],
+  "ui": "Awaiting same Site replacement for the failed modal focus-return recheck; previous 52 iframe reflow and feature-flow evidence remains distinct; no Chromium launch/Android/unrelated UI rerun"
+}

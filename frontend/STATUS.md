@@ -2,7 +2,7 @@
 
 更新：2026-10-04。只記 `frontend/**`；根目錄 STATUS 才是產品、Server 和正式 App 的進度。
 
-**FE-W37 全站語意動效：** 共用呈現層及既有畫面的接線已實作，基線為 master `c51dd52`，分支 `dot/fe-w37-motion-system`，採單一 draft PR。最終 typecheck、4 項生命週期判斷測試、35 路由 Web export 及 29 資產 Android bundle 通過；程式審查發現的過期 swap、原生減少動畫初值競態、無動畫刪除焦點及反向收合跳變已修正並局部覆核。雲端 Chromium 兩次啟動均受 socket 權限限制，實際 UI 為 0 頁面／0 案例／0 截圖，11 組必要互動仍待驗收，**不可標為完成或合併就緒**。使用者已授權驗收後以 2NTTY 合併；目前保留該門檻。不改正式 App、Server 或觸發真服務。[規範](MOTION_SYSTEM.md)／[交接](HANDOFF.md#semantic-motion)／[最終建置證據](verification/fe-w37-motion/final-2026-10-03T19-25Z/build-checks.json)。
+**FE-W37 全站語意動效：** 唯一 [draft PR #84](https://github.com/2NTTY/child-ai-caregiver/pull/84)，基線 `c51dd52`，分支 `dot/fe-w37-motion-system`。共用動效及既有畫面已接線。2026-10-04 經使用者授權的臨時公開合成測試站完成有界 CUA 驗證：15 路由 × 四種 iframe CSS 寬度共 60 次逐項網址／寬度核對、文件層級無水平溢出；清單新增／更正／刪除保留載入前綴、返回焦點、草稿、切孩子隔離及部分中斷端點通過。實測發現的清單重設、返回焦點與刪除孩子彈窗 Escape 焦點已修復並補驗。最新 typecheck／35 路由 Web export 通過；先前 Android bundle 只屬舊版建置證據。實際 reduced-motion 受組織 DevTools 政策阻擋，精確遮滿換文的逐幀／selection 證據仍待取得；**不可標為完成或合併就緒**。詳見 [最新 CUA 證據](verification/fe-w37-motion/final-cua-2026-10-04T07-09Z/checks.json)、[規範](MOTION_SYSTEM.md)及[交接](HANDOFF.md#semantic-motion)。
 
 **FE-W36 來源列提示：** 以右側箭嘴取代來源列的橫向滑塊，獨立 48 px 區不遮擋標題。還有右方來源才顯示，點擊／Enter 揭示下一來源；末端收起，回捲再顯示，全部放得下不留位。四尺寸、12 來源、連續操作、wheel／改寬度、原引用往返／草稿、typecheck、Web／Android bundle 通過；[交接及證據](HANDOFF.md#codex-chat-presentation)。正式 API／實機／讀屏及視覺待驗收。
 

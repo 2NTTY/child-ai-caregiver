@@ -40,6 +40,12 @@ export function CareRecordsView({ model, actions, previewControls, onPhotos }: {
     previousDraftMode.current = model.draft?.mode;
   }, [model.draft?.mode, model.detail?.record.id, model.operation.state]);
   const restoreFrame = useRef<number | null>(null);
+  const returnState = useRef({ showPanel, split, context: listContext, access: model.access });
+  returnState.current = { showPanel, split, context: listContext, access: model.access };
+  useLayoutEffect(() => () => {
+    if (restoreFrame.current !== null) cancelAnimationFrame(restoreFrame.current);
+    restoreFrame.current = null;
+  }, []);
   useEffect(() => {
     listAnchor.current = null; setVisitedId(null); setCreatedDetailId(null);
   }, [model.child.id, model.access, listContext]);
@@ -47,24 +53,35 @@ export function CareRecordsView({ model, actions, previewControls, onPhotos }: {
     const returning = previousPanel.current && !showPanel;
     const entering = !previousPanel.current && showPanel;
     previousPanel.current = showPanel;
-    if (restoreFrame.current !== null) cancelAnimationFrame(restoreFrame.current);
-    if (!split && model.access !== "lost") {
-      if (entering) scrollRef.current?.scrollTo({ y: 0, animated: false });
-      const anchor = listAnchor.current;
+    const anchor = listAnchor.current;
+    if (entering || model.access === "lost" || anchor?.context !== listContext) {
+      if (restoreFrame.current !== null) cancelAnimationFrame(restoreFrame.current);
+      restoreFrame.current = null;
+    }
+    if (model.access !== "lost") {
+      if (!split && entering) scrollRef.current?.scrollTo({ y: 0, animated: false });
       if (returning && anchor?.context === listContext) {
-        restoreFrame.current = requestAnimationFrame(() => {
-          restoreFrame.current = null;
-          scrollRef.current?.scrollTo({ y: anchor.position, animated: false });
-          if (Platform.OS === "web") {
-            const surviving = new Set(model.list.records.map(record => record.id));
-            const targetId = [anchor.id, ...anchor.nextIds, ...anchor.previousIds].find(id => id && surviving.has(id));
-            const target = targetId ? rowRefs.current.get(targetId) : listFocusRef.current;
-            (target as unknown as HTMLElement | undefined)?.focus({ preventScroll: true });
+        // Refs are committed here. Do not defer focus to a frame that an
+        // unrelated records-array render can cancel after consuming the return.
+        if (Platform.OS === "web") {
+          const surviving = new Set(model.list.records.map(record => record.id));
+          const candidates = [anchor.id, ...anchor.nextIds, ...anchor.previousIds]
+            .filter((id): id is string => !!id && surviving.has(id))
+            .map(id => rowRefs.current.get(id));
+          for (const candidate of [...candidates, listFocusRef.current]) {
+            const target = candidate as unknown as HTMLElement | null | undefined;
+            if (!target?.isConnected || !target.getClientRects().length || target.closest("[inert]") || target.hasAttribute("disabled") || target.getAttribute("aria-disabled") === "true") continue;
+            target.focus({ preventScroll: true });
+            if (document.activeElement === target) break;
           }
+        }
+        if (!split) restoreFrame.current = requestAnimationFrame(() => {
+          restoreFrame.current = null;
+          const current = returnState.current;
+          if (!current.showPanel && !current.split && current.access !== "lost" && current.context === anchor.context) scrollRef.current?.scrollTo({ y: anchor.position, animated: false });
         });
       }
     }
-    return () => { if (restoreFrame.current !== null) cancelAnimationFrame(restoreFrame.current); };
   }, [showPanel, split, model.access, listContext, model.list.records]);
   function rememberList(id: string | null) {
     const ids = model.list.records.map(record => record.id);
