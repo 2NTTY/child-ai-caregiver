@@ -5,7 +5,7 @@
 <a id="active"></a>
 ## FE-W38：功能專屬版型與快捷輸入
 
-2026-10-04 18:30 UTC：使用者已通知開始按確認方案改造，並要求其他頁面亦依功能安排版型。以 master `65f8cf37bceeb15b05f46326c49e0370349ae3a5` 開包；交付分支 `dot/fe-w38-function-layouts`，以新 draft PR 留待使用者審閱，不自動合併。
+2026-10-04 18:30 UTC：使用者已通知開始按確認方案改造，並要求其他頁面亦依功能安排版型。以 master `65f8cf37bceeb15b05f46326c49e0370349ae3a5` 開包；交付分支 `dot/fe-w38-function-layouts`，以 [draft PR #88](https://github.com/2NTTY/child-ai-caregiver/pull/88) 留待使用者審閱，不自動合併。
 
 - **範圍**：今日／助手／待辦／成長／記錄，以及家庭、聯絡、照片、摘要、記憶、設定、孩子檔案、私人來源、引導及登入。共用主題與小型元件，各頁依閱讀焦點及操作設計；導航保留既有次要功能可達性。
 - **必要入口**：[版型配方](DESIGN_SYSTEM.md#function-specific-layouts)、[手機快捷輸入](AGENT_HANDOFF.md#mobile-quick-input-design)、[照片同源入口](PHOTOS_HANDOFF.md#records-photo-entry)，再按涉及功能讀專項接線。
@@ -13,9 +13,8 @@
 - **交付狀態**：全站功能專屬呈現、手機五入口／更多手勢、助手單一暫存草稿、本地錄音及照片雙入口單一 owner 已實作；正式媒體／Agent feed 等接線仍未完成。最後 typecheck／35 路由 Web export 通過，公開合成預覽已更新。
 - **已驗與修正**：16 頁的四寬度有界畫面／量度分別見 [首輪首頁](verification/function-layout-integration-2026-10-04T18-58Z-baseline-retry/browser-v30/) 與 [其餘頁及操作](verification/function-layout-integration-2026-10-04T19-08Z-local-fix/browser-v31/checks.json)。記錄上拉後相容 click 跳回 care、320px 工具列裁切已局部修正並補驗通過；Contact 短文案是最後單檔調整，[最後建置](verification/function-layout-integration-2026-10-04T19-26Z-final-contact/build-checks.json) 與前版 runtime 差異只有該檔；[320px 最後補驗](verification/function-layout-integration-2026-10-04T19-26Z-final-contact/browser-v32/checks.json) 通過。草稿取消、孩子隔離、檔案切換錨點、設定草稿及照片雙入口共享在所列合成情境通過。
 - **保留限制**：聊天來源列與引用括號在雲端畫面缺字，舊 v29 圖已有同樣現象；本次 [字型診斷](verification/function-layout-integration-2026-10-04T19-08Z-local-fix/browser-v31/chat-font-diagnosis.json) 未確定根因，沒有標成可讀性通過。Home attention 與 Tasks 的正式同源刷新、Contact／Summary 精確任務導向仍是既有接線缺口，見 [助手接點](AGENT_HANDOFF.md#home-assistant-entry)。沒有實測真相機／咪高峰、原生、真 API 或連續每幀零閃動。
-- **交付限制**：GitHub 圖片上傳中斷，目前 68／74 張成功，餘下 6 張保留雲端；JSON 的未上傳 screenshot 路徑只表示本地證據。程式及文字證據先以 draft PR 留審，不因缺圖重跑驗收或宣稱全數上傳。
 - **交付證據**：程式、文字檢查及合成截圖沿既有 verification/ 保存；[完整分版本摘要](verification/function-layout-integration-2026-10-04T19-26Z-final-contact/verification-summary.md) 區分成功、原失敗、局部修復及未驗，不把截图數量當全回歸通過。
-- **下一步**：使用者審閱公開預覽與 draft PR，再決定合併／針對性修改；不要自行重跑全矩陣或接入正式 Server。
+- **下一步**：完成本輪截圖與 PR 同步後，按 2026-10-05 使用者新意見修正：手機快捷入口只留黏附左下角的一個圓形按鈕，平時不佔整排空間；再對照原已確認預覽及使用者新參考圖，核對並修正實作版型差距。保留點拍照、按住拖動選單、鍵盤等效操作與 scope 清理。仍留 draft PR，不自動合併；不重跑無關矩陣或接入正式 Server。
 - **驗收授權**：使用者批准一輪受影響頁面的 1440／1024／390／320 CSS px，以及導航、快捷輸入、取消與孩子隔離的主要操作；首次失敗停批查因，僅對失敗局部補驗。不跑真後端、模型、真家庭資料、實際咪高峰／相機或原生真機。未執行的項目保持待驗；結果沿既有 verification/ 的本包 run 保存，不新增另一套日誌目錄。
 
 ## 前置已交付基線
