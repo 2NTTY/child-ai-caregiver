@@ -1,6 +1,6 @@
 import { useContainerWidth } from "../useContainerWidth";
 import { brand } from "../../branding";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Image, View } from "react-native";
 import { Portal, Text } from "react-native-paper";
 import type { PhotosActions, PhotosViewModel } from "../../photo-view-model";
@@ -25,6 +25,8 @@ const operationLabels: Record<PhotosViewModel["operation"]["state"], string> = {
 export function PhotosView({ model, actions: sourceActions, onCare, previewControls, selectOriginal, capturePreferred, captureOriginal, scopeKey }: { model: PhotosViewModel; actions: PhotosActions; onCare: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"]; capturePreferred?: boolean; captureOriginal?: PhotoFilePickerProps["captureOriginal"]; scopeKey?: string }) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
+  const [adding, setAdding] = useState(!!capturePreferred);
+  const [inspecting, setInspecting] = useState(!!capturePreferred);
   const [candidateTrigger, setCandidateTrigger] = useState<number | null>(null);
   const requestSerial = useRef(0);
   const listSerial = useRef(0);
@@ -44,6 +46,8 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
   const sourceId = useId();
   const split = width >= 780, compact = width < mobileLayout.breakpoint;
   const selected = model.selected;
+  const editorVisible = inspecting && (adding || !!selected || !!model.original);
+  useEffect(() => {if (model.original || selected) setInspecting(true);}, [model.original, selected?.id]);
   const image = model.original?.imageSource ?? selected?.imageSource;
   const editable = model.access === "editable" && (!selected || selected.visibility === "private" && selected.isUploader && selected.canManage && !selected.recordId);
   const candidate = selected?.extraction.candidate;
@@ -68,13 +72,14 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
   const readMessage = model.load === "loading" ? model.items.length ? "正在重新讀取照片；已載入清單及草稿保留。" : "正在讀取照片…" : model.load === "error" ? "讀取未確認。原照片及草稿保留，先手動重新讀取。" : !model.online ? "已載入清單可能不是最新；重連後先重新讀取。" : listReadState === "empty" ? "目前沒有可讀取的照片。選擇原照片後，可先私人保存。" : "";
   const extractionState = selected?.extraction.state;
   const extractionMessage = extractionState && extractionState !== "not_requested" && !(model.operation.phase === "extract" && model.operation.state !== "none") ? `照片提取：${photoExtractionLabels[extractionState]}。` : "";
-  return <PageFrame density="compact" title="照片與記錄" description="先保存私人原照片，再核對內容。只有你明確確認，才與家庭共享照片及記錄。" eyebrow={`${brand.name} · 孩子資料`}>
+  return <PageFrame density="compact" title="記錄 · 原始照片" description="先保存私人原照片，再核對內容。只有你明確確認，才與家庭共享照片及記錄。" eyebrow={`${brand.name} · 孩子資料`}>
     <StatusAnnouncement eventKey={`${model.operation.reference}:${model.operation.phase}:${model.operation.state}:${model.operation.message}`} message={model.operation.state === "none" ? "" : `${operationLabel}。${model.operation.message}`} urgent={model.operation.state === "failed"} />
     <StatusAnnouncement key={selected?.id ?? "no-selected-photo"} eventKey={extractionState ?? "not_requested"} message={extractionMessage} urgent={extractionState === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權查看這個孩子。照片、原檔、候選及草稿已清除。" : ""} urgent={model.access === "lost"} />
     <StatusAnnouncement eventKey={model.sourceError} message={model.sourceError} urgent />
     <View style={s.context}><Text style={s.title}>{model.childName}的照片</Text><View style={s.row}><AppButton label="重新讀取照片" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /><AppButton label="返回記錄" accessibilityLabel="返回照顧記錄" variant="quiet" onPress={onCare} disabled={locked} /></View></View>
-    <View style={s.steps}>{["選擇原照片", "私人保存", "核對草稿", "家庭共享"].map((label, index) => <View key={label} style={s.step}><Text style={s.stepNumber}>{index + 1}</Text><Text style={s.meta}>{label}</Text></View>)}</View>
+    <Text style={s.meta}>照片附件與家庭記錄各有自己的可見範圍。未關聯、私人或待核對的照片仍在這裏；選取不代表共享。</Text>
+    {editorVisible ? <View style={s.steps}>{["選擇原照片", "私人保存", "核對草稿", "家庭共享"].map((label, index) => <View key={label} style={s.step}><Text style={s.stepNumber}>{index + 1}</Text><Text style={s.meta}>{label}</Text></View>)}</View> : null}
     {!model.online ? <View style={s.notice}><Text style={s.warning}>目前離線，已選原照片及草稿保留。重連後先核對最新狀態，不會自動重送。</Text></View> : null}
     {model.notice ? <Text style={s.body}>{model.notice}</Text> : null}
     {model.operation.state !== "none" ? <View style={[s.status, model.operation.state === "failed" && s.statusError]} testID="photo-operation"><Text style={s.title}>{operationLabel}</Text><Text style={s.body}>{model.operation.message}</Text>
@@ -88,7 +93,18 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
     </View> : null}
     {model.access === "lost" ? <SectionCard><SectionHeader density="compact" title="已無權查看這個孩子" /><Text style={s.body}>照片、原檔、候選及草稿已清除。請改選有權存取的孩子或重新核對身份。</Text></SectionCard> :
       <View style={[s.columns, !split && s.single]} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
-        <View style={[s.editor, !split && s.full]}>
+        <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="照片清單" style={[s.list, (!split || !editorVisible) && s.full, !split && editorVisible && s.hidden]}><View style={s.library} testID="photo-list"><SectionHeader density="compact" title="原始附件" subtitle="私人照片只有上傳者可見；共享照片按家庭權限讀取。" icon="image-outline" action={<AppButton label={selected || model.original ? "繼續核對本頁" : "加入原照片"} variant="quiet" disabled={locked || !selected && !model.original && !model.canPick} onPress={() => {setAdding(!selected && !model.original); setInspecting(true);}} />} />
+          {model.access === "read_only" ? <Text style={s.meta}>你目前可查看家庭共享照片及本人既有的私人照片；不能上傳、提取、確認或刪除。</Text> : null}
+          <ReadStateNotice state={listReadState} message={readMessage} />
+          <MotionList items={model.items} keyExtractor={item => item.id} scopeKey={listScope} regionKey="photo-list" eligible={listMotion} testID="photo-list-motion" renderItem={(item, row) => <View style={s.item} testID={`photo-item-${item.id}`}>
+            <View style={s.itemHeader}>{item.imageSource ? <Image source={item.imageSource} resizeMode="contain" accessibilityLabel={`${item.fileName}縮圖`} style={s.thumbnail} /> : <View style={s.itemIcon}><AppIcon name="image-outline" size={20} color={colors.teal} /></View>}<View style={s.itemCopy}><Text style={s.title}>{item.fileName}</Text><Text style={s.meta}>{item.createdAtLabel} · 版本 {item.version}</Text></View></View>
+            <View style={s.row}><Text style={s.meta}>{item.visibility === "private" ? "私人" : "家庭共享"} · {item.state === "ready" ? "原檔已保存" : "原檔待上傳"}</Text></View>
+            <AppButton ref={node => deletionFocus.rowRef(item.id, node)} label="開啟照片" accessibilityLabel={`開啟照片：${item.visibility === "private" ? "私人" : "共享"} · ${item.fileName}`} variant="quiet" disabled={row.exiting || locked || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openPhoto(item);}} />
+          </View>} />
+          <Text style={s.meta}>JPEG／PNG，每張最多 4 MiB；每個孩子最多 100 張及 100 MiB。清單數量不是全部容量統計。</Text>
+        </View></View>
+        <View style={[s.editor, !split && s.full, !editorVisible && s.hidden]} accessibilityElementsHidden={!editorVisible} importantForAccessibility={editorVisible ? "auto" : "no-hide-descendants"} aria-hidden={!editorVisible}>
+          {!split ? <AppButton label="返回附件清單（保留本頁草稿）" variant="quiet" disabled={locked} onPress={() => setInspecting(false)} /> : null}
           <SectionCard testID="photo-original"><SectionHeader density="compact" title={selected ? "原照片" : "選擇原照片"} icon="image-outline" action={selected || model.original ? <AppButton label="清除本頁" variant="quiet" disabled={locked} onPress={actions.clearEditor} /> : undefined} />
             {image ? <Image source={image} resizeMode="contain" accessibilityLabel="原照片預覽" style={[s.image, compact && s.mobileImage]} /> : <View style={s.placeholder}><AppIcon name="image-outline" size={24} color={colors.teal} /><Text style={s.meta}>保留照片原檔，確認後才共享</Text></View>}
             {model.original || selected ? <><Text style={s.title}>{model.original?.fileName ?? selected?.fileName}</Text><Text style={s.meta}>{((model.original?.bytes ?? selected?.bytes ?? 0) / (1024 * 1024)).toFixed(2)} MiB · {selected?.state === "ready" ? "原檔已模擬保存" : "本次原檔尚未完整保存"}</Text></> : null}
@@ -114,16 +130,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
           </SectionCard>
           {editable && (model.original || selected) ? <PhotoRecordForm key={model.formKey} model={model} actions={actions} /> : null}
         </View>
-        <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="照片清單" style={[s.list, !split && s.full]}><SectionCard testID="photo-list"><SectionHeader density="compact" title="照片清單" subtitle="私人照片只有上傳者可見；共享照片按家庭權限讀取。" icon="image-outline" />
-          {model.access === "read_only" ? <Text style={s.meta}>你目前可查看家庭共享照片及本人既有的私人照片；不能上傳、提取、確認或刪除。</Text> : null}
-          <ReadStateNotice state={listReadState} message={readMessage} />
-          <MotionList items={model.items} keyExtractor={item => item.id} scopeKey={listScope} regionKey="photo-list" eligible={listMotion} testID="photo-list-motion" renderItem={(item, row) => <View style={s.item} testID={`photo-item-${item.id}`}>
-            <View style={s.itemHeader}><View style={s.itemIcon}><AppIcon name="image-outline" size={20} color={colors.teal} /></View><View style={s.itemCopy}><Text style={s.title}>{item.fileName}</Text><Text style={s.meta}>{item.createdAtLabel} · 版本 {item.version}</Text></View></View>
-            <View style={s.row}><Text style={s.meta}>{item.visibility === "private" ? "私人" : "家庭共享"} · {item.state === "ready" ? "原檔已保存" : "原檔待上傳"}</Text></View>
-            <AppButton ref={node => deletionFocus.rowRef(item.id, node)} label="開啟照片" accessibilityLabel={`開啟照片：${item.visibility === "private" ? "私人" : "共享"} · ${item.fileName}`} variant="quiet" disabled={row.exiting || locked || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openPhoto(item);}} />
-          </View>} />
-          <Text style={s.meta}>JPEG／PNG，每張最多 4 MiB；每個孩子最多 100 張及 100 MiB。清單數量不是全部容量統計。</Text>
-        </SectionCard></View>
+
       </View>}
     {previewControls}
     <Portal><AppDialog visible={!!model.replacement} onDismiss={actions.cancelReplacement}>

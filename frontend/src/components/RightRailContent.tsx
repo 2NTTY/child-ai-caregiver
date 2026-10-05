@@ -10,17 +10,25 @@ import { HomeFocus } from "./HomeFocus";
 
 type RailTab = "attention" | "context";
 // Pure rail content. AppShell owns desktop layout, modal geometry and motion.
-export function RightRailContent({ model, actions, home = false }: { model: HomeViewModel; actions: HomeActions; home?: boolean }) {
+export function RightRailContent({ model, actions, home = false, contextPath = "/" }: { model: HomeViewModel; actions: HomeActions; home?: boolean; contextPath?: string }) {
   const tabsId = useId();
   const [tab, setTab] = useState<RailTab>("attention");
   const child = model.children.find(item => item.id === model.selectedChildId);
+  const routeContext = contextPath === "/chat" ? { title: "目前對話", detail: "助手輸入只屬於目前孩子；候選操作仍須核對。", label: "記憶與話題", destination: "memory" as const }
+    : contextPath === "/growth" ? { title: "成長與關注", detail: "回看觀察依據及已確認跟進；關注不等於臨床判斷。", label: "回顧與到診", destination: "summary" as const }
+    : contextPath === "/care" || contextPath === "/photos" ? { title: "記錄核對", detail: "先核對整理結果與原文，再作更正或確認。", label: "請助手協助", destination: "chat" as const }
+    : contextPath === "/tasks" ? { title: "行動安排", detail: "核對時間、負責人與下一步；安排與完成分開。", label: "家庭日常交接", destination: "family" as const }
+    : { title: "照顧空間", detail: "只顯示目前孩子已載入的背景與事項。", label: "前往助手", destination: "chat" as const };
   const records = model.records.filter(item => item.childId === model.selectedChildId).slice(0, 3);
   return <View style={styles.root}>
     <View style={styles.tabs}><UnderlineTabs id={tabsId} label="照顧資訊分類"
       items={[{ key: "attention", label: "待辦／提醒" }, { key: "context", label: "照顧上下文" }]} value={tab} onChange={setTab} /></View>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.cards}>
-      <AppTabPanel tabsId={tabsId} tabKey="attention" active={tab === "attention"}>
+      <AppTabPanel tabsId={tabsId} tabKey="attention" active={tab === "attention"} style={styles.context}>
         {child ? <HomeFocus model={model} actions={actions} full /> : <SectionCard><Text style={styles.meta}>選擇孩子後，再查看對應的待辦與提醒。</Text></SectionCard>}
+        {child ? <View style={styles.routeContext}><Text style={styles.contextEyebrow}>{child.displayName} · {routeContext.title}</Text>
+          <Text style={styles.meta}>{routeContext.detail}</Text><TextLink label={routeContext.label} onPress={() => actions.open(routeContext.destination)} />
+        </View> : null}
       </AppTabPanel>
       <AppTabPanel tabsId={tabsId} tabKey="context" active={tab === "context"} style={styles.context}>
         <SectionCard><SectionHeader title={home ? "已載入的孩子背景" : "目前孩子"} density="compact" action={<TextLink label="查看檔案" onPress={() => actions.open("profile")} />} />
@@ -44,7 +52,9 @@ export function RightRailContent({ model, actions, home = false }: { model: Home
   </View>;
 }
 const styles = StyleSheet.create({
-  root: { flex: 1, minHeight: 0 }, tabs: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm }, scroll: { flex: 1, minHeight: 0 },
+  root: { flex: 1, minHeight: 0 },
+  routeContext: { gap: spacing.sm, paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine },
+  contextEyebrow: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: 12, lineHeight: 18, fontWeight: "700" }, tabs: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm }, scroll: { flex: 1, minHeight: 0 },
   cards: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl }, context: { gap: spacing.md },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.sm }, avatar: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "800" }, copy: { flex: 1, minWidth: 0 },

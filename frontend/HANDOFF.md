@@ -25,6 +25,7 @@
 | Push／Telegram 本人渠道 | [CHANNELS_HANDOFF](CHANNELS_HANDOFF.md) |
 | 照片／原圖 | [PHOTOS_HANDOFF](PHOTOS_HANDOFF.md) |
 | 本人模型 key／上限 | [MODEL_SETTINGS_HANDOFF](MODEL_SETTINGS_HANDOFF.md) |
+| 記錄原始輸入與候選核對 | [本頁接點](#record-review-projection) |
 | 私人來源／共享核對 | [SHARED_INPUT_HANDOFF](SHARED_INPUT_HANDOFF.md) |
 | 成長關注 | [GROWTH_HANDOFF](GROWTH_HANDOFF.md) |
 | 摘要／到診準備 | [SUMMARY_HANDOFF](SUMMARY_HANDOFF.md) |
@@ -67,6 +68,11 @@
 部分工作表單仍直接依賴 preview controller／PreviewWriteControls／PreviewNavigationGuard，並非全部都可不改 wrapper 直接接正式 API。正式包要替換這些 orchestration 層，重用閱讀、控件和狀態視覺；原業務規則／協定不由本節重定。
 
 **明確缺口：** 任務現有投影沒有獨立 read-error；記憶只有自己的 loading，不能借 Home.recordsLoad 當其失敗。模型查核 failed／429 目前只有 notice／keyCheck=null，正式 adapter 須提供明確失敗／限流投影才可按語義 urgent，不能解析文案。正式 A1–A6／D1、身份世代、真歷史／stream／取消、逐句映射和 raw eventTime 接線仍沿 [既有契約審查](#contract-review)，沒有漏作前端假實作。
+
+<a id="record-review-projection"></a>
+## 記錄核對的新增投影
+
+`CareRecordsViewModel.review?: CareReviewProjection` 提供私人原始輸入、整理候選、來源及待核對事項；由記錄 owner 一次注入，`CareCaptureDetail`／清單只呈現。正式 capture-review 讀取 port 尚未接通，缺省為 unavailable；不能將既有家庭記錄當成私人 Agent 原文，亦不能虛構辨識成功。採用候選只預填既有 Care 表單，仍經核對、家庭共享確認及原保存／unknown 流程；不直接保存或改寫原始輸入。照片入口與附件集合的唯一 owner 見 [照片接點](PHOTOS_HANDOFF.md#records-photo-entry)，助手未送出 media 草稿則見 [助手接點](AGENT_HANDOFF.md#mobile-quick-input-design)，二者不自動互相上傳或共享。
 
 <a id="contract-review"></a>
 ## 正式 App 尚需重核的差異

@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { usePathname, useRouter } from "expo-router";
-import { PreviewLink, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
+import { usePathname } from "expo-router";
+import { PreviewLink } from "../preview/PreviewNavigationGuard";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { brand } from "../branding";
 import { MotionDrawerOverlay, MotionDrawerRight, MotionEntrance, MotionScopeBoundary } from "../motion";
 import { BrandLogo } from "./BrandLogo";
-import { Button, Portal, Text } from "react-native-paper";
-import { AppDialog as Dialog } from "./AppDialog";
+import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
-import { AppMenuList } from "./AppMenuList";
 import { AgentEntryButton } from "./AgentEntryButton";
+import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
+import { RecordsNavButton } from "./navigation/RecordsNavButton";
 import { RightRailContent } from "./RightRailContent";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
@@ -23,16 +23,16 @@ import { scenarioLabels, type PreviewScenario } from "../preview/fixture";
 import { usePreview } from "../preview/PreviewContext";
 import type { HomeActions, HomeViewModel } from "../view-model";
 
-type AppPath = "/" | "/chat" | "/care" | "/photos" | "/sources" | "/growth" | "/summary" | "/contact" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks";
+type AppPath = "/" | "/chat" | "/care" | "/photos" | "/sources" | "/growth" | "/summary" | "/contact" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks" | "/more";
 const navigation: { href: AppPath; label: string; short: string; icon: React.ComponentProps<typeof AppIcon>["name"] }[] = [
-  { href: "/", label: "主頁", short: "主頁", icon: "home-outline" },
-  { href: "/chat", label: "與 Agent 對話", short: "對話", icon: "message-text-outline" },
-  { href: "/care", label: "照顧記錄", short: "記錄", icon: "notebook-outline" },
+  { href: "/", label: "今日", short: "今日", icon: "home-outline" },
+  { href: "/chat", label: "助手", short: "助手", icon: "message-text-outline" },
+  { href: "/care", label: "記錄與核對", short: "記錄", icon: "notebook-outline" },
   { href: "/photos", label: "照片與記錄", short: "照片", icon: "image-outline" },
   { href: "/sources", label: "私人來源", short: "來源", icon: "link-variant" },
-  { href: "/tasks", label: "任務與預約", short: "待辦", icon: "clipboard-check-outline" },
-  { href: "/growth", label: "成長關注", short: "關注", icon: "chart-bar" },
-  { href: "/summary", label: "照顧摘要", short: "摘要", icon: "clipboard-check-outline" },
+  { href: "/tasks", label: "待辦與預約", short: "待辦", icon: "clipboard-check-outline" },
+  { href: "/growth", label: "成長與關注", short: "成長", icon: "chart-bar" },
+  { href: "/summary", label: "回顧與到診", short: "摘要", icon: "clipboard-check-outline" },
   { href: "/contact", label: "聯絡授權", short: "聯絡", icon: "bell-outline" },
   { href: "/profile", label: "子女檔案", short: "孩子", icon: "account-child-outline" },
   { href: "/family", label: "家庭協調", short: "家庭", icon: "account-group-outline" },
@@ -40,10 +40,10 @@ const navigation: { href: AppPath; label: string; short: string; icon: React.Com
 ];
 const scenarios: PreviewScenario[] = ["normal", "first_login", "setup_incomplete", "empty", "loading", "offline", "needs_confirmation", "saving", "saved", "failed", "unknown", "focus_task", "focus_growth", "focus_unavailable"];
 const navigationGroups = [
-  { label: "今天", paths: ["/"] },
-  { label: "問題與待辦", paths: ["/tasks", "/growth", "/contact"] },
-  { label: "照顧資料", paths: ["/care", "/photos", "/sources", "/summary", "/memory"] },
-  { label: "家庭", paths: ["/profile", "/family"] },
+  { label: "常用", paths: ["/"] },
+  { label: "行動與成長", paths: ["/tasks", "/growth"] },
+  { label: "照顧資料", paths: ["/care", "/summary"] },
+  { label: "資料管理", paths: ["/profile"] },
 ];
 
 function NavItem({ item, active, compact = false }: { item: typeof navigation[number]; active: boolean; compact?: boolean }) {
@@ -77,10 +77,11 @@ export function PreviewToolbar() {
   </View>;
 }
 
-export function RightRail({ model, actions, home = false, overlay = false, onClose }: {
+export function RightRail({ model, actions, home = false, contextPath = "/", overlay = false, onClose }: {
   model: HomeViewModel;
   actions: HomeActions;
   home?: boolean;
+  contextPath?: string;
   overlay?: boolean;
   onClose?: () => void;
 }) {
@@ -89,20 +90,19 @@ export function RightRail({ model, actions, home = false, overlay = false, onClo
       <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>照顧資訊</Text></View>
       {onClose ? <ToolbarIconButton icon="close" label="關閉資訊側欄" onPress={onClose} /> : null}
     </View>
-    <RightRailContent model={model} actions={actions} home={home} />
+    <RightRailContent model={model} actions={actions} home={home} contextPath={contextPath} />
   </View>;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const leave = usePreviewNavigation();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const compact = width < 900;
   const tiny = width < 390;
-  const wide = width >= 1280;
+  const wide = !compact;
   const { model, actions, notice, dismissNotice } = usePreview();
-  const railProps = { model, actions, home: pathname === "/" };
+  const railProps = { model, actions, home: pathname === "/", contextPath: pathname };
   // The docked context rail is shell state, not a separate choice for every route.
   const [railOpen, setRailOpen] = useState(false);
   const shell = useRef<View>(null);
@@ -117,7 +117,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [pathname]);
   const [railModal, setRailModal] = useState(false);
   const railContext = useRef({ path: pathname, scope: "" });
-  const [moreOpen, setMoreOpen] = useState(false);
   useEffect(() => { if (wide) setRailModal(false); }, [wide]);
   useEffect(() => { setRailModal(false); }, [pathname]);
   function closeRail() {
@@ -149,6 +148,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <AgentEntryButton active={active("/chat")} />
       </View>
       <NavItem item={{ href: "/settings", label: "設定", short: "設定", icon: "cog-outline" }} active={active("/settings")} />
+      <NavItem item={{ href: "/more", label: "更多功能", short: "更多", icon: "dots-horizontal" }} active={active("/more")} />
       {showGuideNav ? <NavItem item={{ href: "/guide", label: "使用引導", short: "引導", icon: "compass-outline" }} active={active("/guide")} /> : null}
     </View> : null}
     <View style={styles.stage}>
@@ -174,28 +174,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         {wide ? <MotionDrawerRight open={railOpen} width={310} mode="dock" scopeKey={motionScope} testID="motion-context-rail"><RightRail {...railProps} /></MotionDrawerRight> : null}
       </View>
       </MotionScopeBoundary>
-      {compact ? <View style={styles.bottomNav}>
-        {navigation.filter(item => ["/", "/chat", "/tasks", "/memory"].includes(item.href)).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
-        <Pressable accessibilityRole="button" accessibilityLabel="更多頁面" accessibilityState={{ expanded: moreOpen }} aria-expanded={moreOpen} onPress={() => setMoreOpen(true)} style={({ pressed }) => [styles.bottomNavItem, pressed && styles.pressed]}><AppIcon name="dots-horizontal" size={mobileIcons.navigation} color={["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) ? colors.deepTeal : colors.muted} /><Text style={[styles.bottomLabel, ["/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/family", "/settings", "/guide"].includes(pathname) && styles.navActiveText]}>更多</Text></Pressable>
+      {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} /> : null}
+      {compact ? <View testID="mobile-bottom-navigation" style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
+        {["/", "/chat", "/tasks", "/growth"].map(path => navigation.find(item => item.href === path)!).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
+        <RecordsNavButton active={active("/care") || active("/photos") || active("/more")} scopeKey={motionScope} />
       </View> : null}
       <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}:${wide ? "dock" : "overlay"}`} label="照顧上下文" onRequestClose={closeRail}
         backgroundRef={shell} returnFocusRef={railAnchor} restoreFocusOnClose={sameRailContext}>
         <SafeAreaView testID="context-drawer" style={styles.drawerContent}><RightRail {...railProps} overlay onClose={closeRail} /></SafeAreaView>
       </MotionDrawerOverlay>
     </View>
-    <Portal>
-      <Dialog visible={moreOpen} onDismiss={() => setMoreOpen(false)} style={styles.menuDialog}>
-        <Dialog.Title>更多頁面</Dialog.Title>
-        <Dialog.Content>
-          <AppMenuList items={[
-            ...navigation.filter(item => ["/family", "/care", "/photos", "/sources", "/growth", "/summary", "/contact", "/profile", "/memory"].includes(item.href)).map(item => ({ key: item.href, label: item.label, icon: item.icon, onPress: () => { setMoreOpen(false); leave(() => router.push(item.href)); } })),
-            { key: "settings", label: "設定", icon: "cog-outline", onPress: () => { setMoreOpen(false); leave(() => router.push("/settings")); } },
-            ...(showGuideNav ? [{ key: "guide", label: "使用引導", icon: "compass-outline" as const, onPress: () => { setMoreOpen(false); leave(() => router.push("/guide")); } }] : []),
-          ]} />
-        </Dialog.Content>
-        <Dialog.Actions><Button onPress={() => setMoreOpen(false)}>關閉</Button></Dialog.Actions>
-      </Dialog>
-    </Portal>
+
   </View>;
 }
 

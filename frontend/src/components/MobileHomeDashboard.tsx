@@ -10,7 +10,7 @@ import { AppButton, SectionCard, TextLink } from "./ui";
 import { ChildPicker } from "./ChildPicker";
 import { HomeAgentImportant } from "./HomeAgentImportant";
 import { HomeOngoing } from "./HomeOngoing";
-import { HomeQuickActions } from "./HomeQuickActions";
+import { HomeActionSummary } from "./HomeFocus";
 import { useMotionPreferences } from "../motion";
 import { useFirstScreenReady } from "../startup/FirstScreenGate";
 
@@ -92,7 +92,8 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
     {guide ? <View style={styles.guide}><Text style={styles.body}>已有孩子即可提問；資料需要時再補充。</Text><TextLink label="了解如何使用" onPress={() => actions.open("guide")} /></View> : null}
     <HomeAgentImportant model={model} actions={actions} />
     <HomeOngoing model={model} actions={actions} />
-  </ScrollView><HomeQuickActions model={model} actions={actions} docked /></View>;
+    <HomeActionSummary model={model} actions={actions} />
+  </ScrollView></View>;
 }
 
 const styles = StyleSheet.create({

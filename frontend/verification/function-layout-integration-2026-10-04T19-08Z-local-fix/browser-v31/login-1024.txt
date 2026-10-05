@@ -1,0 +1,46 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px" [active]
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 1024 × 900 CSS px
+- iframe [id="app-frame"]:
+  - generic "香港海旁照顧者與孩子插畫":
+    - img "香港海旁照顧者與孩子插畫"
+  - img "育有方":
+  - generic: 用資料 · 陪伴成長
+  - heading "用 AI， 更輕鬆做好育兒大小事。" [level=1]
+  - generic: 結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。
+  - generic: 隨時整理照顧問題與記錄
+  - generic: 清楚區分候選與已確認資料
+  - generic: 按權限與家人協調
+  - generic: 保留原文、時間及資料來源
+  - img "育有方":
+  - generic: 實用 · 可靠 · 與你同行
+  - generic: 介面預覽 · 不會建立登入狀態
+  - heading "歡迎回來" [level=1]
+  - generic: 登入後，繼續整理孩子的照顧資料。
+  - tablist "登入方式":
+    - tab "電郵登入" [selected]:
+      - generic: 電郵登入
+    - tab "註冊帳戶":
+      - generic: 註冊帳戶
+  - generic: 電郵地址
+  - generic: 電郵地址
+  - textbox "電郵地址"
+  - generic: 密碼
+  - generic: 密碼
+  - textbox "密碼"
+  - button "顯示密碼":
+    - generic: 顯示
+  - button "登入（預覽）":
+    - generic: 登入（預覽）
+  - generic: 本頁只檢查輸入及展示介面；不會傳送密碼，也不會建立登入狀態。
+  - generic: 手機、Google／Apple 登入及忘記密碼尚未接入這個預覽。
+  - link "返回主頁合成預覽":
+    - generic: 返回 Web 主頁預覽
+  - generic: 育有方 · 用資料陪伴成長

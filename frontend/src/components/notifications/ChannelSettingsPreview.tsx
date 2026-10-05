@@ -1,9 +1,10 @@
+import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useContainerWidth } from "../useContainerWidth";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { WebPushSettingsCard, TelegramSettingsCard } from "./ChannelCards";
-import { AppButton, AppSelect, SectionCard, SectionHeader } from "../ui";
+import { AppButton, AppSelect, SectionHeader } from "../ui";
 import { PreviewWriteControls, PreviewWriteNotice } from "../PreviewWritePanel";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
 import type { ChannelSettingsPreviewController } from "../../preview/useChannelSettingsPreview";

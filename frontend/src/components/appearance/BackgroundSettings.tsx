@@ -1,3 +1,4 @@
+import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { brand } from "../../branding";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -5,7 +6,7 @@ import { Text } from "react-native-paper";
 import type { PickBackgroundImage } from "../../background-view-model";
 import { useBackground } from "../../preview/BackgroundContext";
 import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
-import { AppButton, SectionCard, SectionHeader } from "../ui";
+import { AppButton, SectionHeader } from "../ui";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { BackgroundImagePicker } from "./BackgroundImagePicker";
 import { HomeBackground } from "./HomeBackground";

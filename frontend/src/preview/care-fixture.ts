@@ -1,4 +1,4 @@
-import { emptyCareForm, type CareFormValues, type CareRecordView, type CareRevisionView } from "../care-view-model";
+import { emptyCareForm, type CareCaptureReview, type CareFormValues, type CareRecordView, type CareRevisionView } from "../care-view-model";
 
 function revision(version: number, values: Partial<CareFormValues>, confirmedAtLabel: string): CareRevisionView {
   return {
@@ -45,4 +45,16 @@ export function createCareFixtures(childId: string): CareRecordView[] {
       current: revision(1, { kind: "appointment", text: "家人記下下次例行檢查的安排；這筆記錄不代表機構已確認預約。", source: "家人的行程筆記（合成）", eventTimeRaw: "下個月，具體日期待核對", reason: "首次確認" }, "2026 年 9 月 20 日 上午 11:00"), history: [],
     },
   ];
+}
+
+// Isolated capture review examples, not actual Agent output or a server queue.
+export function createCareCaptureFixtures(childId: string): CareCaptureReview[] {
+  if (!["preview-child-1", "preview-child-2"].includes(childId)) return [];
+  const older = childId === "preview-child-2";
+  return [{id:`preview-capture:${childId}:daily`,childId,title:older?"課後分享的片段":"昨晚的睡眠片段",createdAtLabel:"2026 年 10 月 4 日 上午 7:12（合成）",
+    originalText:older?"今日畫完幅畫，佢走過嚟同我講學校發生咩事。":"昨晚大概九點半睡，中間醒過一次，安撫後再睡。朝早七點左右起身。",
+    sourceLabel:"家長私人文字 · 合成原始輸入",
+    proposedValues:{...emptyCareForm(),kind:older?"note":"sleep",text:older?"完成畫作後，主動與家人分享學校的事情。":"昨晚約 21:30 入睡，中途醒過一次，安撫後繼續睡。早上約 07:00 起床。",source:"家長提供的生活觀察（合成）",eventTimeRaw:older?"今天放學後":"昨晚至今早",reason:"家長核對助手整理候選"},
+    uncertainties:["相對日期未轉成確實時間，請核對發生日期。","候選尚未家庭共享；原始私人文字不會隨採用自動分享。"],
+  }];
 }

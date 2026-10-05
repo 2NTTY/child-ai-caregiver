@@ -5,27 +5,28 @@ import {
   type CareListState, type CareRecordsActions, type CareRecordsViewModel, type CareRecordView,
 } from "../care-view-model";
 import type { HomeChild } from "../view-model";
-import { createCareFixtures } from "./care-fixture";
+import { createCareFixtures, createCareCaptureFixtures } from "./care-fixture";
 
 export type CarePreviewCondition = "normal" | "read_only" | "access_lost" | "search_error" | "stale_page";
 export type CarePreviewOutcome = "success" | "failed" | "unknown" | "conflict";
 export type CareLookupOutcome = "unknown" | "saved" | "not_applied";
-type Attempt = { reference: string; mode: "create" | "revise" | "delete"; basis: CareRecordView | null; values: CareFormValues };
+type Attempt = { captureId?: string; reference: string; mode: "create" | "revise" | "delete"; basis: CareRecordView | null; values: CareFormValues };
 const pageSize = 3;
 const noOperation: CareRecordsViewModel["operation"] = { state: "none", message: "", reference: null, latest: null };
 
 // Synthetic state only. This hook must never be used as the formal write transport.
-export function useCarePreview(child: HomeChild, online: boolean, reading: boolean, initialKind?: CareKind) {
+export function useCarePreview(child: HomeChild, online: boolean, reading: boolean, initialKind?: CareKind, initialRecordId?: string) {
   const [condition, setCondition] = useState<CarePreviewCondition>("normal");
   const [outcome, setOutcome] = useState<CarePreviewOutcome>("success");
   const [lookupOutcome, setLookupOutcome] = useState<CareLookupOutcome>("unknown");
+  const [captures, setCaptures] = useState(() => createCareCaptureFixtures(child.id));
   const [records, setRecords] = useState(() => createCareFixtures(child.id));
   const [scanned, setScanned] = useState(pageSize);
   const [activeQuery, setActiveQuery] = useState("");
   const [activeKind, setActiveKind] = useState<CareFilter>("all");
   const [listState, setListState] = useState<CareListState>("ready");
   const [listMessage, setListMessage] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(() => initialRecordId && createCareFixtures(child.id).some(item => item.id === initialRecordId) ? initialRecordId : null);
   const [historyLimit, setHistoryLimit] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [draft, setDraft] = useState<CareDraftView | null>(() => initialKind ? { key: "quick-create", mode: "create", basis: null, initialValues: { ...emptyCareForm(), kind: initialKind }, reviewedValues: null } : null);
@@ -57,7 +58,7 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
     return () => { alive.current = false; clearTimers(); };
   }, []);
 
-  const access = condition === "access_lost" ? "lost" : condition === "read_only" ? "read_only" : "editable";
+  const access = condition === "access_lost" ? "lost" : condition === "read_only" || child.accessRole === "viewer" ? "read_only" : "editable";
   const locked = ["saving", "unknown"].includes(operation.state);
   usePreviewLeaveGuard(!!draft?.reviewedValues || !!deletion, locked);
   const canWrite = access === "editable" && online && !reading && !locked && operation.state !== "conflict";
@@ -92,6 +93,7 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
       },
       history: basis ? [basis.current, ...basis.history] : [],
     };
+    if (currentAttempt.captureId) setCaptures(previous => previous.filter(item => item.id !== currentAttempt.captureId));
     setRecords(previous => basis ? previous.map(item => item.id === basis.id ? record : item) : [record, ...previous]);
     setSelectedId(record.id);
     setHistoryLimit(0);
@@ -110,6 +112,7 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
     attempt.current = null;
     setCondition(next);
     setRecords(createCareFixtures(child.id));
+    setCaptures(next === "access_lost" ? [] : createCareCaptureFixtures(child.id));
     setScanned(pageSize);
     setListState("ready");
     setListMessage(null);
@@ -179,6 +182,12 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
       setSelectedId(null); setOperation(noOperation);
       setDraft({ key: `create-${++serial.current}`, mode: "create", basis: null, initialValues: emptyCareForm(), reviewedValues: null });
     },
+    reviewCapture(id) {
+      const capture = captures.find(item => item.id === id && item.childId === child.id);
+      if (!capture || access !== "editable" || locked || reading || draft || deletion) return;
+      setSelectedId(null); setOperation(noOperation);
+      setDraft({key:`capture-${++serial.current}`,mode:"create",basis:null,initialValues:{...capture.proposedValues},reviewedValues:null,captureId:id});
+    },
     startCorrection(id) {
       const basis = records.find(item => item.id === id);
       if (!basis || access !== "editable" || reading || locked || deletion) return;
@@ -218,7 +227,7 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
     },
     submitReviewed() {
       if (!draft?.reviewedValues || !canWrite || operation.state !== "needs_confirmation") return;
-      const currentAttempt: Attempt = { reference: `preview-care-operation-${++serial.current}`, mode: draft.mode, basis: draft.basis, values: { ...draft.reviewedValues } };
+      const currentAttempt: Attempt = { reference: `preview-care-operation-${++serial.current}`, mode: draft.mode, captureId: draft.captureId, basis: draft.basis, values: { ...draft.reviewedValues } };
       submitAttempt(currentAttempt);
     },
     checkOriginalOperation() {
@@ -253,6 +262,7 @@ export function useCarePreview(child: HomeChild, online: boolean, reading: boole
   const hidden = access === "lost" || reading;
   const model: CareRecordsViewModel = {
     child: { id: child.id, name: child.displayName, summary: child.ageLabel }, access, online,
+    review: {state: reading ? "loading" : "ready", items: hidden ? [] : captures, hasMore: false, label: "候選核對為隔離合成示例；正式 Agent 核對佇列 port 尚未接通。"},
     dataLabel: "合成示例 · 未接駁 Server · 重新載入或切換孩子後重置",
     list: { state: reading ? "loading" : listState, records: hidden ? [] : visibleRecords,
       activeQuery, activeKind, scanned: hidden ? 0 : Math.min(scanned, records.length),

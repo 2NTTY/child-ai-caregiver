@@ -20,14 +20,14 @@ const incomingConditions: { value: IncomingInvitationCondition; label: string }[
   { value: "pending", label: "待接受" }, { value: "expired", label: "已過期" }, { value: "revoked", label: "已撤銷" },
 ];
 
-function FamilyWorkspace({ perspective, incomingCondition, setPerspective, setIncomingCondition, ownerName, children, online, reading, onProfile }: {
+function FamilyWorkspace({ perspective, incomingCondition, setPerspective, setIncomingCondition, ownerName, children, online, reading, onProfile, onTasks, onContact }: {
   perspective: FamilyPerspective; incomingCondition: IncomingInvitationCondition;
   setPerspective: (value: FamilyPerspective) => void; setIncomingCondition: (value: IncomingInvitationCondition) => void;
-  ownerName: string; children: HomeChild[]; online: boolean; reading: boolean; onProfile: () => void;
+  ownerName: string; children: HomeChild[]; online: boolean; reading: boolean; onProfile: () => void; onTasks: () => void; onContact: () => void;
 }) {
   const preview = useFamilyPreview({ perspective, incomingCondition, ownerName, children, online, reading });
   const [controlsOpen, setControlsOpen] = useState(false);
-  return <FamilyView model={preview.model} actions={{ ...preview.actions, openProfile: onProfile }}
+  return <FamilyView onTasks={onTasks} onContact={onContact} model={preview.model} actions={{ ...preview.actions, openProfile: onProfile }}
     writeNotice={<PreviewWriteNotice controller={preview.controller} online={online} />}
     previewControls={<SectionCard>
       <SectionHeader density="compact" title="合成預覽情境" subtitle="這些工具只切換示例；不屬於正式家庭操作。" />
@@ -46,10 +46,10 @@ export default function FamilyPage() {
   const { model, scenario, actions } = usePreview();
   const [perspective, setPerspective] = useState<FamilyPerspective>("owner");
   const [incomingCondition, setIncomingCondition] = useState<IncomingInvitationCondition>("pending");
-  return <PageFrame density="compact" title="家庭協調" description="把共享記錄與私人聊天分清楚；邀請、接受及權限更改都先核對範圍。" eyebrow={`${brand.name} · 家庭`}>
+  return <PageFrame density="compact" title="家庭協調" description="認清一起照顧的人、各自的角色，讓交接與共享範圍清楚可查。" eyebrow={`${brand.name} · 家庭`}>
     <FamilyWorkspace key={`${scenario}:${perspective}:${incomingCondition}`} perspective={perspective} incomingCondition={incomingCondition}
       setPerspective={setPerspective} setIncomingCondition={setIncomingCondition} ownerName={model.caregiverName}
-      children={model.children} online={model.connection === "online"} reading={model.recordsLoad === "loading"} onProfile={() => actions.open("profile")} />
+      children={model.children} online={model.connection === "online"} reading={model.recordsLoad === "loading"} onProfile={() => actions.open("profile")} onTasks={() => actions.open("tasks")} onContact={() => actions.open("contact")} />
   </PageFrame>;
 }
 

@@ -2,9 +2,10 @@ import { StyleSheet } from "react-native";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 
 export const photoStyles = StyleSheet.create({
+  hidden: {display: "none"}, library: {gap: spacing.md}, thumbnail: {width: 64, height: 64, backgroundColor: colors.canvas, borderRadius: radius.small},
   stack: { gap: spacing.md }, row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" },
   columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, single: { flexDirection: "column" },
-  list: { width: 290, minWidth: 0 }, full: { width: "100%", minWidth: 0 }, editor: { flex: 1, minWidth: 0, gap: spacing.lg },
+  list: { width: 280, minWidth: 0 }, full: { width: "100%", minWidth: 0 }, editor: { flex: 1, minWidth: 0, gap: spacing.lg },
   context: { gap: spacing.sm, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
   original: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },

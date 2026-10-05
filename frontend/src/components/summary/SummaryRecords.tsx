@@ -53,7 +53,7 @@ export function SummaryRecords({page, onRecord, onTask, motion}: {page: SummaryP
   const [recordsOpen, setRecordsOpen] = useState(false);
   const counts = {counts: page.counts, metrics: page.metrics, missing: page.missing};
   return <>
-    <SectionCard testID="summary-counts"><SectionHeader density="compact" title="記錄數量與原單位" icon="chart-bar" subtitle="只有已確認且事件時間在期間內的當前版本才納入；數字由正式 Server 計算。" />
+    <View testID="summary-counts" style={s.reportSection}><SectionHeader density="compact" title="01 期間概覽" icon="chart-bar" subtitle="只有已確認且事件時間在期間內的當前版本才納入；正式數字由 Server 計算；目前為合成預覽。" />
       <Readout value={counts} regionKey="summary-counts" motion={motion}>{shown => <>
         <View style={s.row}>{careKindOptions.map(kind => <View key={kind.value} style={s.count}><Text style={s.body}>{kind.label} · {shown.counts[kind.value]} 筆</Text></View>)}</View>
         {!shown.metrics.length ? <Text style={s.body}>此期間沒有可列出的數值統計。零記錄不代表事件沒有發生。</Text> : null}
@@ -61,15 +61,15 @@ export function SummaryRecords({page, onRecord, onTask, motion}: {page: SummaryP
         <Text style={s.warning}>整個孩子已掃描記錄中，事件時間未知：{shown.missing.unknownEventTime} 筆。這不是本日／本週的缺漏數，不會假歸入期間。</Text>
         <Text style={s.meta}>未能納入數值統計的數量：{shown.missing.invalidQuantities}。沒有記錄的種類：{shown.missing.emptyKinds.map(kindLabel).join('、') || '沒有'}；未記錄不等於未發生。</Text>
       </>}</Readout>
-    </SectionCard>
-    <SectionCard><SectionHeader density="compact" title="原始記錄及更正來源" count={page.records.length} icon="notebook-outline" /><AppButton label={recordsOpen ? '收起期間記錄' : '查看期間記錄及來源'} variant="secondary" onPress={() => setRecordsOpen(value => !value)} />
+    </View>
+    <View style={s.reportSection}><SectionHeader density="compact" title="02 記錄與來源" count={page.records.length} icon="notebook-outline" /><AppButton label={recordsOpen ? '收起期間記錄' : '查看期間記錄及來源'} variant="secondary" onPress={() => setRecordsOpen(value => !value)} />
       <MotionDisclosure expanded={recordsOpen} scopeKey={motion.scopeKey}><View style={s.stack}>
         {page.records.length ? page.records.map(record => <RecordSource key={record.id} record={record} onRecord={onRecord} motion={{...motion, eligible: motion.eligible && recordsOpen}} />) : <Text style={s.body}>本期間沒有已列出的記錄。</Text>}
       </View></MotionDisclosure>
-    </SectionCard>
-    <SectionCard><SectionHeader density="compact" title="家庭已確認預約安排" count={page.appointments.length} icon="calendar-outline" /><Text style={s.meta}>家庭台帳中的安排不代表機構已確認預約。</Text>
+    </View>
+    <View style={s.reportSection}><SectionHeader density="compact" title="03 預約與跟進" count={page.appointments.length} icon="calendar-outline" /><Text style={s.meta}>家庭台帳中的安排不代表機構已確認預約。</Text>
       {page.appointments.length ? page.appointments.map(task => <TaskSource key={task.id} task={task} onTask={onTask} motion={motion} group="appointment" />) : <Text style={s.body}>目前沒有列出的待處理預約。</Text>}
       <Text style={s.title}>待覆核任務 · {page.conflicts.length}</Text>{page.conflicts.length ? page.conflicts.map(task => <TaskSource key={task.id} task={task} onTask={onTask} motion={motion} group="conflict" />) : <Text style={s.meta}>目前沒有列出的待覆核任務。</Text>}
-    </SectionCard>
+    </View>
   </>;
 }

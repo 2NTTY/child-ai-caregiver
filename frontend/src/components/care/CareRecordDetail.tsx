@@ -40,9 +40,10 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
   useEffect(() => {
     if (active && Platform.OS === "web") (headingRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
   }, [record.id, active]);
-  return <SectionCard><SectionHeader title="記錄詳情" density="compact" action={<AppButton label="返回記錄" density="compact" variant="quiet" onPress={actions.closePanel} />} />
+  return <View style={styles.detail}><SectionHeader title="已確認的整理結果" density="compact" action={<AppButton label="返回記錄" density="compact" variant="quiet" onPress={actions.closePanel} />} />
     <View ref={headingRef} accessibilityLabel={record.title} tabIndex={-1} style={styles.recordHeading}><Text accessibilityRole="header" style={styles.title}>{record.title}</Text><Text style={styles.confirmed}>已確認</Text></View>
     <MotionReveal value={record.current} contentKey={JSON.stringify(record.current.values)} scopeKey={`${record.childId}:${record.id}`} regionKey="record-detail-text" triggerKey={revealIntent} eligible={revealEligible && active} preset="local">{revision => <CareRevisionContent revision={revision} createdAtLabel={record.createdAtLabel} />}</MotionReveal>
+    <View style={styles.provenance}><Text style={styles.title}>原始依據</Text><Text selectable style={styles.tool}>{record.current.values.source}</Text><Text style={styles.meta}>上方為已確認版本。私人對話原文不會自動跟隨共享；較早內容可按下方版本歷史核對。</Text></View>
     <Text style={styles.tool}>這是家庭共享記錄；更正會建立新版本並保留舊版，不會改寫原文歷史。</Text>
     <View style={styles.actions}>{canEdit ? <AppButton label="更正這筆記錄" onPress={() => actions.startCorrection(record.id)} /> : null}
       {!detail.historyOpen ? <AppButton label="查看更正歷史" variant="secondary" onPress={actions.showHistory} /> : null}</View>
@@ -53,10 +54,11 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
       </View>)}
       {detail.hasMoreHistory ? <AppButton label="載入更早版本" variant="secondary" onPress={actions.loadOlderHistory} loading={detail.historyLoading} disabled={!online} /> : <Text style={styles.meta}>已到最早的已載入版本。</Text>}
     </View></MotionDisclosure>
-  </SectionCard>;
+  </View>;
 }
 
 const styles = StyleSheet.create({
+  detail: {padding:spacing.lg,backgroundColor:colors.paper,gap:spacing.lg}, provenance:{padding:spacing.md,backgroundColor:colors.canvas,gap:spacing.sm},
   summary: { gap: spacing.md },
   valueContext: { gap: spacing.xs },
   metadata: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.xs },

@@ -43,12 +43,31 @@ export interface CareRecordView {
   history: CareRevisionView[];
 }
 
+// Optional, authorized review projection. Candidate capture is not a saved CareRecord.
+export type CareCaptureReview = {
+  id: string; childId: string; title: string; createdAtLabel: string;
+  originalText: string; sourceLabel: string; proposedValues: CareFormValues;
+  uncertainties: string[];
+};
+export type CareReviewProjection = {
+  state: "ready" | "loading" | "error" | "unavailable";
+  items: CareCaptureReview[]; hasMore: boolean; label: string;
+};
+export type CareReviewFilter = "pending" | "all" | "corrected";
+export function careRecordMatchesReview(record: CareRecordView, filter: CareReviewFilter) {
+  return filter === "all" || filter === "corrected" && record.current.version > 1;
+}
+export function careCaptureMatchesSearch(item: CareCaptureReview, query: string, kind: CareFilter) {
+  return (kind === "all" || item.proposedValues.kind === kind) && `${item.title} ${item.originalText} ${item.proposedValues.text} ${item.sourceLabel}`.toLocaleLowerCase("zh-HK").includes(query.trim().toLocaleLowerCase("zh-HK"));
+}
+
 export interface CareDraftView {
   key: string;
   mode: "create" | "revise";
   basis: CareRecordView | null;
   initialValues: CareFormValues;
   reviewedValues: CareFormValues | null;
+  captureId?: string;
 }
 
 export interface CareRecordsViewModel {
@@ -56,6 +75,7 @@ export interface CareRecordsViewModel {
   access: "editable" | "read_only" | "lost";
   online: boolean;
   dataLabel: string;
+  review?: CareReviewProjection;
   list: {
     state: CareListState;
     records: CareRecordView[];
@@ -92,6 +112,7 @@ export interface CareRecordsActions {
   openRecord(id: string): void;
   closePanel(): void;
   startCreate(): void;
+  reviewCapture?(id: string): void;
   startCorrection(id: string): void;
   startDeletion(id: string): void;
   confirmDeletionScope(checked: boolean): void;

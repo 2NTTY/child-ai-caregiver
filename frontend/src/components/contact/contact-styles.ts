@@ -1,6 +1,15 @@
 import {StyleSheet} from 'react-native';
 import {chineseFont, colors, radius, spacing, typeScale, readingType } from '../../theme';
 export const contactStyles = StyleSheet.create({
+  hidden: {display: 'none'}, pageStack: {gap: spacing.lg, minWidth: 0}, section: {gap: spacing.md, minWidth: 0, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.softLine},
+  toolbar: {flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md}, copy: {flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs},
+  reachability: {flexDirection: 'row', gap: spacing.lg, paddingVertical: spacing.lg, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.softLine}, reachabilityStack: {flexDirection: 'column'},
+  checkpoint: {flex: 1, gap: spacing.xs, minWidth: 0}, step: {fontFamily: chineseFont, ...readingType.meta, color: colors.deepTeal, fontWeight: '700'},
+  consentSurface: {backgroundColor: colors.quietSurface}, editor: {gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md},
+  taskIndex: {flex: 0.9, minWidth: 0}, taskDetail: {flex: 1.3, gap: spacing.md, minWidth: 0},
+  taskRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, minWidth: 0},
+  selectedTask: {backgroundColor: colors.paleTeal, borderRadius: radius.small}, pressed: {opacity: 0.7},
+
   stack: {gap: spacing.md}, row: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm},
   columns: {flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg}, column: {flex: 1, minWidth: 0, gap: spacing.lg}, full: {width: '100%', gap: spacing.lg},
   title: {fontFamily: chineseFont, fontSize: typeScale.body, lineHeight: 25, fontWeight: '700', color: colors.ink},

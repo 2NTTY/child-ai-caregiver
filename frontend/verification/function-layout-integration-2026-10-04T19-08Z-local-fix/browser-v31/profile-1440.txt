@@ -1,0 +1,167 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px" [active]
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 1440 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link "育有方，返回主頁":
+    - /url: /
+    - generic: 用資料 · 陪伴成長
+  - generic: 常用
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - generic: 行動與成長
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦與預約
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長與關注
+  - generic: 照顧資料
+  - link "記錄與核對":
+    - /url: /care
+    - generic: 記錄與核對
+  - link "回顧與到診":
+    - /url: /summary
+    - generic: 回顧與到診
+  - generic: 資料管理
+  - link "子女檔案":
+    - /url: /profile
+    - generic: 子女檔案
+  - link "與 Agent 對話":
+    - /url: /chat
+    - generic: 與 Agent 對話
+    - generic: 提問・整理・規劃
+  - link "設定":
+    - /url: /settings
+    - generic: 設定
+  - link "更多功能":
+    - /url: /more
+    - generic: 更多功能
+  - button "選擇孩子，目前小昕":
+    - generic: 小
+    - generic: 小昕
+    - generic: 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic "小昕的關鍵資料":
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - generic: 育有方 · 孩子資料
+  - heading "子女檔案" [level=1]
+  - generic: 只填已知資料；年齡原值、日期基準與未知欄位如實保留。
+  - generic: 合成資料預覽 · 沒有連接 Server。草稿只保留在此頁；切換孩子、離開或關閉頁面會清除。
+  - heading "目前孩子" [level=1]
+  - generic: 只查看這位孩子的檔案；切換前會保護未保存草稿。
+  - button "切換至小昕":
+    - generic: 小昕
+    - generic: 目前
+  - button "切換至阿樂":
+    - generic: 阿樂
+    - generic: 切換
+  - button "新增或管理孩子":
+    - generic: 新增或管理孩子
+  - generic: 小
+  - generic: 目前孩子 · 已確認檔案版本 3
+  - heading "小昕" [level=1]
+  - generic: 最後確認：2026-09-26 10:24（合成）
+  - button "查看照顧記錄":
+    - generic: 查看照顧記錄
+  - generic: 年齡基準
+  - generic: 約 38 個月（截至 2026-09-01）
+  - generic: 過敏資料
+  - generic: 未知
+  - generic: 特別需要
+  - generic: 未知
+  - heading "已確認資料" [level=1]
+  - generic: 原文、來源及確認版本一起保留。
+  - button "查看完整已確認檔案":
+    - generic: 查看完整已確認檔案
+  - button "重新讀取檔案":
+    - generic: 重新讀取檔案
+  - heading "確認及更正歷史" [level=1]
+  - button "查看較早版本":
+    - generic: 查看較早版本
+  - heading "核對檔案草稿" [level=1]
+  - generic: 修改基準：版本 3；更正會新增版本。
+  - heading "年齡與出生資料" [level=1]
+  - button "年齡資料：約數年齡":
+    - generic: 年齡資料：約數年齡
+  - generic: 約數年齡原值
+  - generic: 約數年齡原值
+  - textbox "約數年齡原值":
+    - /placeholder: 例如 3 個半；不轉成精確數值
+  - button "約數年齡單位：個月":
+    - generic: 約數年齡單位：個月
+  - generic: 約數年齡截至日期（YYYY-MM-DD）
+  - generic: 約數年齡截至日期（YYYY-MM-DD）
+  - textbox "約數年齡截至日期（YYYY-MM-DD）":
+    - /placeholder: YYYY-MM-DD
+  - button "選擇約數年齡截至日期（YYYY-MM-DD）":
+  - generic: 預產期（可空，YYYY-MM-DD）
+  - generic: 預產期（可空，YYYY-MM-DD）
+  - textbox "預產期（可空，YYYY-MM-DD）":
+    - /placeholder: YYYY-MM-DD
+  - button "選擇預產期（可空，YYYY-MM-DD）":
+  - generic: 出生孕週原文（可空）
+  - generic: 出生孕週原文（可空）
+  - textbox "出生孕週原文（可空）":
+    - /placeholder: 例如約 35 週
+  - generic: 早產資料只保留原文；不會自動計算矯正年齡。未知欄位請留空。
+  - heading "日常照顧" [level=1]
+  - generic: 只填已知資料；留空代表未知，並不代表沒有過敏或特別需要。
+  - generic: 地區（可空）
+  - generic: 地區（可空）
+  - textbox "地區（可空）"
+  - generic: 語言（可空）
+  - generic: 語言（可空）
+  - textbox "語言（可空）"
+  - generic: 過敏資料（可空）
+  - generic: 過敏資料（可空）
+  - textbox "過敏資料（可空）"
+  - generic: 特別需要（可空）
+  - generic: 特別需要（可空）
+  - textbox "特別需要（可空）"
+  - generic: 照顧偏好（可空）
+  - generic: 照顧偏好（可空）
+  - textbox "照顧偏好（可空）"
+  - heading "來源與這次更正" [level=1]
+  - generic: 資料來源（由你描述）
+  - generic: 資料來源（由你描述）
+  - textbox "資料來源（由你描述）":
+    - /placeholder: 例如家長提供；不自動引用私人聊天
+  - generic: 資料有效至（可空，YYYY-MM-DD）
+  - generic: 資料有效至（可空，YYYY-MM-DD）
+  - textbox "資料有效至（可空，YYYY-MM-DD）":
+    - /placeholder: YYYY-MM-DD
+  - button "選擇資料有效至（可空，YYYY-MM-DD）":
+  - generic: 確認或更正原因
+  - generic: 確認或更正原因
+  - textbox "確認或更正原因"
+  - generic: 先核對資料，再預覽共享內容
+  - generic: 下一步先顯示核對內容；不會直接保存或家庭共享。
+  - button "預覽家庭共享內容":
+    - generic: 預覽家庭共享內容
+  - button "永久刪除檔案及歷史":
+    - generic: 永久刪除檔案及歷史
+  - heading "資料原則" [level=1]
+  - generic: 未知資料直接標示未知；約數年齡不生成生日。預產期與孕週原文不會自動變成矯正年齡。
+  - generic: 來源由照顧者描述，並保留確認人、時間、版本和修改原因。永久刪除檔案與更正資料是兩個不同動作。
+  - heading "合成預覽情境" [level=1]
+  - generic: 只切換本頁示例，沒有呼叫 Server。
+  - button "顯示情境工具":
+    - generic: 顯示情境工具

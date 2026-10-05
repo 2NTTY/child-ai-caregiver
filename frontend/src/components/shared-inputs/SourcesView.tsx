@@ -26,7 +26,7 @@ function SourceStatus({ model, actions }: { model: SourcesViewModel; actions: So
   const pill = op.state === "saved" && op.phase === "extract" ? "needs_confirmation" : op.state === "unconfirmed" ? "unknown" : op.state === "conflict" ? "failed"
     : op.state === "confirmed_unavailable" ? "saved" : op.state;
   return <><StatusAnnouncement eventKey={`${op.state}:${op.phase}:${op.reference}:${op.message}:${model.notice}`} message={[op.message, model.notice].filter(Boolean).join(" ")} urgent={op.state === "failed"} />
-    {op.state === "none" && !model.notice ? null : <SectionCard testID="source-operation"><SectionHeader density="compact" title="這次來源操作" />
+    {op.state === "none" && !model.notice ? null : <SectionCard surface="plain" style={s.operationBanner} testID="source-operation"><SectionHeader density="compact" title="這次來源操作" />
     {op.state === "confirmed_unavailable" ? <Text style={s.title}>原操作已確認 · 結果不可讀</Text> : op.state === "saved" && op.phase === "delete" ? <Text style={s.title}>已刪除（合成預覽）</Text> : op.state !== "none" ? <OperationPill state={pill} /> : null}
     {op.reference ? <Text selectable style={s.meta}>合成原操作參考：{op.reference}</Text> : null}
     {op.message ? <Text style={s.body}>{op.message}</Text> : null}
@@ -79,22 +79,32 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     : readState === "stale" ? "目前離線。本頁文字草稿保留，沒有離線提交；恢復連線後請手動重新讀取。" : readState === "empty" ? "目前沒有可讀取的私人來源。" : "";
   return <PageFrame density="compact" title="資料來源" description="你提供的私人來源統一在這裏管理。說明用途，讓助手協助整理，再由你核對；也可以自行填寫。" eyebrow="私人保存 · 核對後才接入">
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "目前沒有存取權限。舊原文、候選、草稿及操作已清除。" : ""} urgent={model.access === "lost"} />
-    <View style={s.row}><Text style={s.body}>{model.childName} · {model.accountName}的私人來源</Text>
+    <View style={s.toolbar}><View style={s.scope}><Text style={s.meta}>目前範圍</Text><Text style={s.title}>{model.childName} · {model.accountName}本人</Text></View><View style={s.row}>
       <AppButton label="重新讀取來源" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} />
       <AppButton label="清除草稿並新增來源" variant="quiet" disabled={!model.canChoose || !model.canCreate} onPress={actions.newInput} />
       <AppButton label="照片與記錄" variant="quiet" onPress={onPhotos} />
-    </View>
+    </View></View>
     <ReadStateNotice state={readState} message={readMessage} />
     {model.access === "lost" ? <SectionCard><Text style={s.warning}>目前沒有存取權限。舊原文、候選、草稿及操作已清除。</Text></SectionCard> : null}
     {model.access === "read_only" ? <Text style={s.warning}>唯讀權限：可查看自己的私人來源，不能新增、提取、確認或刪除。</Text> : null}
     {model.access === "editable" && !model.canCreate ? <Text style={s.warning}>合成新增容量限制；已有來源及人工草稿仍可核對。</Text> : null}
     <SourceStatus model={model} actions={actions} />
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
-      <View style={[s.main, !columns && s.full]}>
+      <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={model.items.length} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
+        {!model.items.length && model.load === "ready" && model.access !== "lost" ? <Text style={s.meta}>這個範圍尚未有私人來源。可從「加入資料來源」開始。</Text> : null}
+        <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>
+          <Text style={s.title}>{input.sourceLabel}</Text><Text style={s.meta}>{fetchStateLabels[input.fetchState]}{input.recordId ? " · 已連結家庭記錄" : " · 尚未家庭共享"}</Text>
+          <Text style={s.meta}>保存於 {sourceTime(input.createdAt)}</Text>
+          {model.intake ? <Text style={s.meta}>{sourceIntakePurposeLabel(model.intakeByInputId?.[input.id])}</Text> : null}
+          <AppButton ref={node => deletionFocus.rowRef(input.id, node)} label={model.selected?.id === input.id ? "目前來源" : "查看來源"} accessibilityLabel={`查看私人來源：${input.sourceLabel}`} variant={model.selected?.id === input.id ? "secondary" : "quiet"} disabled={row.exiting || !model.canChoose || !model.online || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openInput(input);}} />
+        </View>} />
+      </SectionCard></View>
+      <View style={[s.main, s.editorSurface, !columns && s.full]}>
+        {model.selected ? <View style={s.detailHeading}><Text style={s.meta}>目前來源 · 版本 {model.selected.version}</Text><Text accessibilityRole="header" style={s.detailTitle}>{model.selected.sourceLabel}</Text><Text style={s.meta}>私人保存、整理用途和家庭共享分開核對</Text></View> : null}
         {model.access !== "lost" && !model.selected ? <SourceComposer key={model.formKey} model={model} actions={actions} /> : null}
         {model.selected ? <>
           <SourceIntakeConversation key={`intake-${model.selected.id}`} model={model} actions={actions} />
-          {!model.intake?.selected && actions.intake ? <SectionCard><SectionHeader density="compact" title="來源用途尚未設定" subtitle="舊來源不會自動推算用途、可信度或有效期。" />
+          {!model.intake?.selected && actions.intake ? <SectionCard surface="plain" style={s.workflowSection}><SectionHeader density="compact" title="來源用途尚未設定" subtitle="舊來源不會自動推算用途、可信度或有效期。" />
             <AppButton label="自行填寫接入資料" variant="secondary" disabled={!model.fresh || !model.selected.canManage || model.access !== "editable"} onPress={actions.intake.editManually} />
           </SectionCard> : null}
           <SourceDetails key={model.selected.id} model={model} actions={actions} onRecord={onRecord} resultTrigger={resultTrigger} showTools={showManual} />
@@ -102,14 +112,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
         </> : null}
         {showManual && model.selected?.text.trim() && !model.selected.recordId && model.access === "editable" ? <SourceRecordForm key={model.formKey} model={model} actions={actions} /> : null}
       </View>
-      <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard testID="source-list"><SectionHeader density="compact" title="我的私人來源" subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
-        <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => <View style={s.item} testID={`source-item-${input.id}`}>
-          <Text style={s.title}>{input.sourceLabel}</Text><Text style={s.meta}>{fetchStateLabels[input.fetchState]}{input.recordId ? " · 已連結家庭記錄" : " · 尚未家庭共享"}</Text>
-          <Text style={s.meta}>保存於 {sourceTime(input.createdAt)}</Text>
-          {model.intake ? <Text style={s.meta}>{sourceIntakePurposeLabel(model.intakeByInputId?.[input.id])}</Text> : null}
-          <AppButton ref={node => deletionFocus.rowRef(input.id, node)} label={model.selected?.id === input.id ? "目前來源" : "查看來源"} accessibilityLabel={`查看私人來源：${input.sourceLabel}`} variant="quiet" disabled={row.exiting || !model.canChoose || !model.online || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openInput(input);}} />
-        </View>} />
-      </SectionCard></View>
+
     </View>
     {previewControls}
     <AppDialog danger visible={model.deleteOpen} onDismiss={actions.closeDeletion} onClosed={deletionFocus.onClosed}><AppDialog.Title danger>刪除私人來源</AppDialog.Title><AppDialog.ScrollArea><ScrollView contentContainerStyle={s.stack}>

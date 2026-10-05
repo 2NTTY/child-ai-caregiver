@@ -1,0 +1,151 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px" [active]
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 1024 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link "育有方，返回主頁":
+    - /url: /
+    - generic: 用資料 · 陪伴成長
+  - generic: 常用
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - generic: 行動與成長
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦與預約
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長與關注
+  - generic: 照顧資料
+  - link "記錄與核對":
+    - /url: /care
+    - generic: 記錄與核對
+  - link "回顧與到診":
+    - /url: /summary
+    - generic: 回顧與到診
+  - generic: 資料管理
+  - link "子女檔案":
+    - /url: /profile
+    - generic: 子女檔案
+  - link "與 Agent 對話":
+    - /url: /chat
+    - generic: 與 Agent 對話
+    - generic: 提問・整理・規劃
+  - link "設定":
+    - /url: /settings
+    - generic: 設定
+  - link "更多功能":
+    - /url: /more
+    - generic: 更多功能
+  - button "選擇孩子，目前小昕":
+    - generic: 小
+    - generic: 小昕
+    - generic: 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic "小昕的關鍵資料":
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - button "關閉預覽提示":
+    - generic: 已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。
+  - heading "接收同意與聯絡" [level=1]
+  - generic: 為小昕核對誰可以接收、透過甚麼渠道，以及哪項安排已獲授權。
+  - generic: 全部只屬合成預覽，未接駁 Server；不訂閱、不外發、不啟動 worker。
+  - generic: 接收同意、任務授權、渠道結果各自核對；本頁不發送通知。
+  - button "更新聯絡資料並保留選項":
+    - generic: 更新聯絡資料並保留選項
+  - generic: 01 · 本人同意
+  - generic: 尚未允許接收
+  - generic: 沒有後備接收同意
+  - generic: 02 · 本人渠道
+  - generic: 2 個可選綁定
+  - generic: Web Push · Telegram
+  - generic: 03 · 背景執行
+  - generic: 開關已啟用
+  - generic: 不代表服務在線、已投遞或已讀
+  - heading "本人的接收同意" [level=1]
+  - generic: 只管理你在小昕這個資料空間的同意，不代其他家庭成員同意。
+  - button "管理本人接收同意":
+    - generic: 管理本人接收同意
+  - generic: 已保存：未允許接收 · 後備資格：未同意
+  - generic: 已保存版本 1
+  - generic: 已保存渠道次序：沒有
+  - heading "任務聯絡授權" [level=1]
+  - generic: 選一項安排，核對主要接收者及授權期限。
+  - generic: 僅顯示最多 50 個任務內已載入的清單，並非全部任務。主要接收者依任務負責人，後備須本人另行同意。
+  - button "核對核對這週家庭照顧安排（合成）的聯絡授權":
+    - generic: 核對這週家庭照顧安排（合成）
+    - generic: 接收者：爸爸（合成）
+    - generic: Telegram
+    - generic: 已有保存授權，請核對範圍
+  - button "核對待覆核的家庭事項（合成）的聯絡授權":
+    - generic: 待覆核的家庭事項（合成）
+    - generic: 接收者：爸爸（合成）
+    - generic: Telegram
+    - generic: 尚無已保存授權
+  - heading "聯絡及收到紀錄" [level=1]
+  - generic: 以 Server 台帳為準，手動更新。這裏不啟動發送或補發。
+  - generic: 僅顯示最近 50 個請求內已載入的紀錄，並非完整歷史。
+  - generic: 渠道接受、本人確認收到與事項完成各自記錄；未知不當失敗，也不由前端觸發後備。
+  - generic: 核對這週家庭照顧安排（合成）
+  - generic: 渠道已接受 · 首次聯絡
+  - generic: 5/10/2026 09:00:00 · 任務依據版本 2
+  - button "查看這次聯絡紀錄":
+    - generic: 查看這次聯絡紀錄
+  - button "查看原任務":
+    - generic: 查看原任務
+  - generic: 核對這週家庭照顧安排（合成）
+  - generic: 投遞結果未知 · 首次聯絡
+  - generic: 5/10/2026 09:00:00 · 任務依據版本 2
+  - button "查看這次聯絡紀錄":
+    - generic: 查看這次聯絡紀錄
+  - button "查看原任務":
+    - generic: 查看原任務
+  - generic: 核對這週家庭照顧安排（合成）
+  - generic: 待處理 · 首次聯絡
+  - generic: 5/10/2026 09:00:00 · 任務依據版本 2
+  - button "查看這次聯絡紀錄":
+    - generic: 查看這次聯絡紀錄
+  - button "查看原任務":
+    - generic: 查看原任務
+  - generic: 核對這週家庭照顧安排（合成）
+  - generic: 渠道已拒絕 · 首次聯絡
+  - generic: 5/10/2026 09:00:00 · 任務依據版本 2
+  - button "查看這次聯絡紀錄":
+    - generic: 查看這次聯絡紀錄
+  - button "查看原任務":
+    - generic: 查看原任務
+  - generic: 核對這週家庭照顧安排（合成）
+  - generic: 今天已有普通提示，未另行發送 · 首次聯絡
+  - generic: 5/10/2026 09:00:00 · 任務依據版本 2
+  - generic: 普通提示已合併，不表示另一個提示已成功投遞或收到。
+  - button "查看這次聯絡紀錄":
+    - generic: 查看這次聯絡紀錄
+  - button "查看原任務":
+    - generic: 查看原任務
+  - generic: 核對這週家庭照顧安排（合成）
+  - generic: 已停止 · 首次聯絡
+  - generic: 5/10/2026 09:00:00 · 任務依據版本 2
+  - button "查看這次聯絡紀錄":
+    - generic: 查看這次聯絡紀錄
+  - button "查看原任務":
+    - generic: 查看原任務
+  - heading "合成聯絡情境" [level=1]
+  - generic: 不取得瀏覽器權限、不綁定渠道、不外發或啟動背景執行。
+  - button "顯示聯絡情境":
+    - generic: 顯示聯絡情境

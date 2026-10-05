@@ -39,7 +39,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
     {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.meta}>{notice}</Text></Pressable> : null}
     <KeyboardAvoidingView style={styles.content} behavior={Platform.OS === "ios" ? "padding" : undefined}>{children}</KeyboardAvoidingView>
     <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}`} label="照顧上下文" onRequestClose={() => setRailOpen(false)}>
-      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} home={pathname === "/"} overlay onClose={() => setRailOpen(false)} /></View>
+      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} home={pathname === "/"} contextPath={pathname} overlay onClose={() => setRailOpen(false)} /></View>
     </MotionDrawerOverlay>
   </View>;
 }

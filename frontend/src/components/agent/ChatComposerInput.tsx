@@ -6,7 +6,7 @@ import { AppTextField } from "../ui";
 
 export type ChatComposerInputHandle = { focus(): void; blur(): void };
 export type ChatComposerInputProps = {
-  value: string; disabled: boolean; onChangeText(value: string): void; onSubmit(): void;
+  value: string; disabled: boolean; canSubmit?: boolean; onChangeText(value: string): void; onSubmit(): void;
   onFocus(): void; onBlur(): void;
 };
 
@@ -16,7 +16,7 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
   const [height, setHeight] = useState<number>(chatLayout.inputMinHeight);
   useImperativeHandle(ref, () => ({ focus: () => input.current?.focus(), blur: () => input.current?.blur() }), []);
   return <AppTextField ref={input} mode="flat" dense multiline disabled={props.disabled}
-    accessibilityLabel="撰寫對話問題" placeholder="輸入你想討論的照顧問題…" placeholderTextColor={chatColors.secondary}
+    accessibilityLabel="撰寫對話問題" placeholder="補充情況，或加入附件…" placeholderTextColor={chatColors.secondary}
     value={props.value} onChangeText={props.onChangeText} onFocus={props.onFocus} onBlur={props.onBlur}
     underlineColor="transparent" activeUnderlineColor="transparent" underlineStyle={styles.underline}
     onContentSizeChange={event => setHeight(Math.max(chatLayout.inputMinHeight, Math.min(chatLayout.inputMaxHeight, event.nativeEvent.contentSize.height)))}

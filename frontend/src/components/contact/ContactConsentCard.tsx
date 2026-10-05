@@ -9,21 +9,22 @@ import {contactChannelLabels, sameContactBinding} from '../../contact-view-model
 import {AppCheckbox} from '../AppCheckbox';
 import {AppButton, SectionCard, SectionHeader} from '../ui';
 import {contactConsentFormSchema, contactConsentProjection, type ConsentFormValues} from './contact-form';
-import {MotionFeedback, MotionList} from '../../motion';
+import {MotionDisclosure, MotionFeedback, MotionList} from '../../motion';
 import {useContactFeedback} from './contact-motion';
 import {contactStyles as s} from './contact-styles';
 
 type ContactConsentProps = {model: ContactViewModel; actions: ContactActions; onSettings: () => void};
 export function ContactConsentCard(props: ContactConsentProps) {
   const {model} = props, page = model.page!;
+  const [editing, setEditing] = useState(false);
   const feedback = useContactFeedback(model, 'consent', JSON.stringify([page.consent.enabled, page.consent.allowBackup, page.consent.bindings]));
-  return <SectionCard testID="contact-consent"><SectionHeader density="compact" title="本人的接收同意" icon="bell-outline" subtitle={`只管理你在${model.childName}這個資料空間的同意，不代其他家庭成員同意。`} />
+  return <SectionCard testID="contact-consent" style={s.consentSurface}><SectionHeader density="compact" title="本人的接收同意" subtitle={`只管理你在${model.childName}這個資料空間的同意，不代其他家庭成員同意。`} action={<AppButton label={editing ? "收起選項" : "管理同意"} accessibilityLabel={editing ? "收起本人接收選項" : "管理本人接收同意"} density="compact" variant="secondary" onPress={() => setEditing(value => !value)} />} />
     <MotionFeedback active={model.operation === 'saved' && !model.busy && !model.pending && model.load === 'ready'} triggerKey={feedback.trigger} scopeKey={feedback.scopeKey} style={s.stack} testID="contact-consent-feedback">
       <Text style={s.body}>已保存：{page.consent.enabled ? '允許接收' : '未允許接收'} · 後備資格：{page.consent.allowBackup ? '已同意' : '未同意'}</Text>
       <Text style={s.meta}>已保存版本 {page.consent.version}</Text>
       <Text style={s.meta}>已保存渠道次序：{page.consent.bindings.length ? page.consent.bindings.map(item => contactChannelLabels[item.channel]).join(' → ') : '沒有'}</Text>
     </MotionFeedback>
-    <ContactConsentForm key={model.epoch} {...props} />
+    <MotionDisclosure expanded={editing} scopeKey={`${model.scopeKey}:${model.userId}`}><View style={s.editor}><ContactConsentForm key={model.epoch} {...props} /></View></MotionDisclosure>
   </SectionCard>;
 }
 function ContactConsentForm({model, actions, onSettings}: ContactConsentProps) {

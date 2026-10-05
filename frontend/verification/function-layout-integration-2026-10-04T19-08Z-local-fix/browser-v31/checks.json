@@ -1,0 +1,790 @@
+{
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "bundle": "/_expo/static/js/web/entry-08e5274bee72e693b32bbd944e6f8a04.js",
+  "startedAt": "2026-10-04T19:10:58.252Z",
+  "checks": [
+    {
+      "name": "records-up-drag-to-more",
+      "status": "passed",
+      "action": "tab.drag([300,638],[300,578])",
+      "bounds": {
+        "height": 64,
+        "width": 64,
+        "x": 256,
+        "y": 536
+      }
+    },
+    {
+      "name": "records-normal-tap",
+      "status": "passed"
+    },
+    {
+      "name": "care-toolbar-320-contained",
+      "status": "passed",
+      "bounds": [
+        {
+          "height": 48,
+          "label": "含照片／原始附件",
+          "right": 185.8125,
+          "width": 168.8125,
+          "x": 17,
+          "y": 301
+        },
+        {
+          "height": 48,
+          "label": "手動補記",
+          "right": 283.21875,
+          "width": 88.40625,
+          "x": 194.8125,
+          "y": 301
+        },
+        {
+          "height": 48,
+          "label": "更多",
+          "right": 80,
+          "width": 64,
+          "x": 16,
+          "y": 358
+        }
+      ]
+    },
+    {
+      "name": "records-keyboard-up-to-more",
+      "status": "passed"
+    },
+    {
+      "name": "more-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "more-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "more-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "more-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "summary-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "summary-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "summary-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "summary-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "profile-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "profile-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "profile-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "profile-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "profile-child-switch-cancel-keeps-draft",
+      "status": "passed"
+    },
+    {
+      "name": "profile-child-switch-anchor-focus",
+      "status": "passed",
+      "anchorBefore": {
+        "focused": true,
+        "y": 322
+      },
+      "anchorAfter": {
+        "focused": true,
+        "y": 322
+      },
+      "childAfter": true
+    },
+    {
+      "name": "settings-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "settings-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "settings-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "settings-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "settings-tabs-retain-display-name-draft",
+      "status": "passed"
+    },
+    {
+      "name": "sources-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "sources-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "sources-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "sources-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "private-source-navigation-cancel-keeps-draft",
+      "status": "passed",
+      "input": "Synthetic text only; no save, fetch or model call",
+      "activation": "Records Enter at320x600; earlier click at900px height had no observed activation and is not counted"
+    },
+    {
+      "name": "photos-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "photos-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "photos-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "photos-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "photo-collection-shared-between-compatible-routes",
+      "status": "passed",
+      "from": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/photos",
+      "to": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/care?view=photos",
+      "fromPhotoCount": 0,
+      "toPhotoCount": 0,
+      "note": "Synthetic empty collection selected on /photos remains empty via normal care navigation; no upload/delete"
+    },
+    {
+      "name": "photo-owner-child-scope-reset",
+      "status": "passed",
+      "photoChildScoped": true,
+      "otherPhotoCount": 2
+    },
+    {
+      "name": "photo-child-switch-clears-prior-selection-and-draft",
+      "status": "passed",
+      "resetChild": true,
+      "oldEditorCount": 0
+    },
+    {
+      "name": "care-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "care-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "care-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "care-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "tasks-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "tasks-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "tasks-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "tasks-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "growth-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "growth-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "growth-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "growth-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "family-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "family-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "family-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "family-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "contact-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "contact-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "contact-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "contact-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "chat-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "chat-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "chat-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "chat-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "chat-composer-overlap-preserved",
+      "status": "passed",
+      "composerMetrics": {
+        "composerTop": 681,
+        "overlap": 32,
+        "timelineBottom": 713
+      }
+    },
+    {
+      "name": "memory-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "memory-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "memory-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "memory-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "guide-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "guide-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "guide-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "guide-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "login-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "login-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "login-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "login-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    }
+  ],
+  "screenshots": [
+    "more-1440.jpg",
+    "more-1024.jpg",
+    "more-390.jpg",
+    "more-320.jpg",
+    "summary-1440.jpg",
+    "summary-1024.jpg",
+    "summary-390.jpg",
+    "summary-320.jpg",
+    "profile-1440.jpg",
+    "profile-1024.jpg",
+    "profile-390.jpg",
+    "profile-320.jpg",
+    "settings-1440.jpg",
+    "settings-1024.jpg",
+    "settings-390.jpg",
+    "settings-320.jpg",
+    "sources-1440.jpg",
+    "sources-1024.jpg",
+    "sources-390.jpg",
+    "sources-320.jpg",
+    "photos-1440.jpg",
+    "photos-1024.jpg",
+    "photos-390.jpg",
+    "photos-320.jpg",
+    "care-1440.jpg",
+    "care-1024.jpg",
+    "care-390.jpg",
+    "care-320.jpg",
+    "tasks-1440.jpg",
+    "tasks-1024.jpg",
+    "tasks-390.jpg",
+    "tasks-320.jpg",
+    "growth-1440.jpg",
+    "growth-1024.jpg",
+    "growth-390.jpg",
+    "growth-320.jpg",
+    "family-1440.jpg",
+    "family-1024.jpg",
+    "family-390.jpg",
+    "family-320.jpg",
+    "contact-1440.jpg",
+    "contact-1024.jpg",
+    "contact-390.jpg",
+    "contact-320.jpg",
+    "chat-1440.jpg",
+    "chat-1024.jpg",
+    "chat-390.jpg",
+    "chat-320.jpg",
+    "memory-1440.jpg",
+    "memory-1024.jpg",
+    "memory-390.jpg",
+    "memory-320.jpg",
+    "guide-1440.jpg",
+    "guide-1024.jpg",
+    "guide-390.jpg",
+    "guide-320.jpg",
+    "login-1440.jpg",
+    "login-1024.jpg",
+    "login-390.jpg",
+    "login-320.jpg"
+  ],
+  "failures": [
+    {
+      "name": "chat-source-and-citation-glyph-legibility",
+      "status": "failed-visible-rendering",
+      "observed": "Source tab CJK text and inline citation brackets display missing-glyph squares while DOM text is complete",
+      "baselineRelation": "Root verified AnswerSources.tsx and theme.ts unchanged versus baseline; regression attribution unresolved",
+      "diagnosis": "chat-font-diagnosis.json",
+      "screenshot": "chat-font-diagnosis-320.jpg"
+    }
+  ],
+  "status": "bounded-original-matrix-complete-with-documented-existing-glyph-limitation",
+  "unverified": [
+    "Real backend/model/session/permissions and native devices",
+    "Real microphone/camera/audio codec lifecycle; synthetic lifecycle tests only",
+    "Full regression, all hidden states, continuous animation frames, system reduced-motion and screen-reader behavior",
+    "Existing cloud320 PageUp discrepancy remains unchanged and was not retested",
+    "Info-rail interactive open/close was not added to the completed matrix"
+  ],
+  "existingLimitation": {
+    "name": "Source and citation glyph readability",
+    "status": "unresolved-pre-existing",
+    "priorScreenshot": "/workspace/shared/caregiver_combined_preview/frontend/verification/home-chat-visual-2026-10-04T16-18Z/320-chat.jpg",
+    "rootDecision": "Prior v29 screenshot shows the same missing glyphs. Preserve current evidence; do not label as a new regression or tool artifact, do not claim readable sources passed, and do not broaden this layout package into font-system changes."
+  },
+  "finishedAt": "2026-10-04T19:25:12.692Z",
+  "layoutMatrix": {
+    "v31Pages": [
+      "more",
+      "summary",
+      "profile",
+      "settings",
+      "sources",
+      "photos",
+      "care",
+      "tasks",
+      "growth",
+      "family",
+      "contact",
+      "chat",
+      "memory",
+      "guide",
+      "login"
+    ],
+    "v31Snapshots": 60,
+    "widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "priorHome": "v30 homepage four-width screenshots and measurements remain valid for unchanged home layout; not rerun",
+    "note": "Document geometry checks and first-view screenshots at each width; this is not full content/state regression or formal design approval"
+  },
+  "consoleObservation": {
+    "returnedEntries": 373,
+    "siteOriginEntries": 2,
+    "siteLogs": [
+      {
+        "level": "warn",
+        "message": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md",
+        "timestamp": "2026-10-04T19:03:14.578Z",
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/_expo/static/js/web/entry-90a7cc7dae0d029439bbc1764b9eeee1.js"
+      },
+      {
+        "level": "warn",
+        "message": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md",
+        "timestamp": "2026-10-04T19:10:38.519Z",
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/_expo/static/js/web/entry-08e5274bee72e693b32bbd944e6f8a04.js"
+      }
+    ],
+    "limitation": "Read-only captured-log sample; extension metadata errors excluded by URL. Not an exhaustive network trace."
+  },
+  "pending": [
+    "Final Contact320 short-label visual recheck after root publishes the targeted label correction"
+  ]
+}

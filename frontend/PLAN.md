@@ -3,7 +3,22 @@
 本文件是 FE-Wxx 的任務、依賴、下一步及關口入口；STATUS 只作短指路，HANDOFF 只管實際接點。[修改邊界](../AGENTS.md#frontend-backend)／[資訊更新職責](../AGENTS.md#document-updates)。
 
 <a id="active"></a>
-## 本輪交付與下一步
+## FE-W38：功能專屬版型與快捷輸入
+
+2026-10-04 18:30 UTC：使用者已通知開始按確認方案改造，並要求其他頁面亦依功能安排版型。以 master `65f8cf37bceeb15b05f46326c49e0370349ae3a5` 開包；交付分支 `dot/fe-w38-function-layouts`，以新 draft PR 留待使用者審閱，不自動合併。
+
+- **範圍**：今日／助手／待辦／成長／記錄，以及家庭、聯絡、照片、摘要、記憶、設定、孩子檔案、私人來源、引導及登入。共用主題與小型元件，各頁依閱讀焦點及操作設計；導航保留既有次要功能可達性。
+- **必要入口**：[版型配方](DESIGN_SYSTEM.md#function-specific-layouts)、[手機快捷輸入](AGENT_HANDOFF.md#mobile-quick-input-design)、[照片同源入口](PHOTOS_HANDOFF.md#records-photo-entry)，再按涉及功能讀專項接線。
+- **修改邊界**：只改 frontend/**；一個領域資料 owner、多個呈現入口，保留 scope、草稿、權限、unknown 與原操作查核。合成資料留 preview，未有正式語音／檔案／Agent feed 契約不冒稱接通。自訂背景持久保存／跨裝置與原生選圖繼續延後。
+- **交付狀態**：全站功能專屬呈現、手機五入口／更多手勢、助手單一暫存草稿、本地錄音及照片雙入口單一 owner 已實作；正式媒體／Agent feed 等接線仍未完成。最後 typecheck／35 路由 Web export 通過，公開合成預覽已更新。
+- **已驗與修正**：16 頁的四寬度有界畫面／量度分別見 [首輪首頁](verification/function-layout-integration-2026-10-04T18-58Z-baseline-retry/browser-v30/) 與 [其餘頁及操作](verification/function-layout-integration-2026-10-04T19-08Z-local-fix/browser-v31/checks.json)。記錄上拉後相容 click 跳回 care、320px 工具列裁切已局部修正並補驗通過；Contact 短文案是最後單檔調整，[最後建置](verification/function-layout-integration-2026-10-04T19-26Z-final-contact/build-checks.json) 與前版 runtime 差異只有該檔；[320px 最後補驗](verification/function-layout-integration-2026-10-04T19-26Z-final-contact/browser-v32/checks.json) 通過。草稿取消、孩子隔離、檔案切換錨點、設定草稿及照片雙入口共享在所列合成情境通過。
+- **保留限制**：聊天來源列與引用括號在雲端畫面缺字，舊 v29 圖已有同樣現象；本次 [字型診斷](verification/function-layout-integration-2026-10-04T19-08Z-local-fix/browser-v31/chat-font-diagnosis.json) 未確定根因，沒有標成可讀性通過。Home attention 與 Tasks 的正式同源刷新、Contact／Summary 精確任務導向仍是既有接線缺口，見 [助手接點](AGENT_HANDOFF.md#home-assistant-entry)。沒有實測真相機／咪高峰、原生、真 API 或連續每幀零閃動。
+- **交付限制**：GitHub 圖片上傳中斷，目前 68／74 張成功，餘下 6 張保留雲端；JSON 的未上傳 screenshot 路徑只表示本地證據。程式及文字證據先以 draft PR 留審，不因缺圖重跑驗收或宣稱全數上傳。
+- **交付證據**：程式、文字檢查及合成截圖沿既有 verification/ 保存；[完整分版本摘要](verification/function-layout-integration-2026-10-04T19-26Z-final-contact/verification-summary.md) 區分成功、原失敗、局部修復及未驗，不把截图數量當全回歸通過。
+- **下一步**：使用者審閱公開預覽與 draft PR，再決定合併／針對性修改；不要自行重跑全矩陣或接入正式 Server。
+- **驗收授權**：使用者批准一輪受影響頁面的 1440／1024／390／320 CSS px，以及導航、快捷輸入、取消與孩子隔離的主要操作；首次失敗停批查因，僅對失敗局部補驗。不跑真後端、模型、真家庭資料、實際咪高峰／相機或原生真機。未執行的項目保持待驗；結果沿既有 verification/ 的本包 run 保存，不新增另一套日誌目錄。
+
+## 前置已交付基線
 
 2026-10-04：本輪隔離前端按動效、首頁、私人來源三部分收尾。以下區分程式交付、有界驗證及正式接線；合成預覽不代表正式產品已接通。
 
@@ -11,11 +26,11 @@
 |---|---|---|
 | FE-W37 動效及局部畫面修正 | [PR #84](https://github.com/2NTTY/child-ai-caregiver/pull/84) 已合併；merge `117e53dd444e0c451e1cd07801da42d0ea7fcff3` | 包括共用灰幕、頂欄橫向替代 Logo、首頁回頁定位、聊天配色及相關捲動／焦點修正；未驗項不因合併而消失 |
 | 助手式首頁與快速記錄 | [PR #85](https://github.com/2NTTY/child-ai-caregiver/pull/85) 已合併；merge `242d9ac4d9bcb5378ee024c0cfc68416550e7284` | Agent 重要事項、持續觀察、側欄待辦分清；拍照只到未送出預覽。正式 feed／上傳／辨識／保存仍待相應接線 |
-| 私人來源協助接入 | 本次 `dot/private-source-purposes` 交付；合併狀態以該 PR 為準 | 共用 sources 清單／editor、Agent 協助與人工入口；意向已確認不代表正式接入。接線見 [專項](SHARED_INPUT_HANDOFF.md#assisted-source-management) |
+| 私人來源協助接入 | [PR #87](https://github.com/2NTTY/child-ai-caregiver/pull/87) 已合併；merge `65f8cf37bceeb15b05f46326c49e0370349ae3a5` | 共用 sources 清單／editor、Agent 協助與人工入口；意向已確認不代表正式接入。接線見 [專項](SHARED_INPUT_HANDOFF.md#assisted-source-management) |
 
 ### 接手先看
 
-- **沒有授權中的整體改造包**：使用者要求版型／導航、記錄上拉更多、左下快捷手勢等改造等另行通知；自訂背景持久保存／跨裝置與原生選圖也延後。目前只保留設計與接線安排，不能自行啟動。[設計方向](DESIGN_SYSTEM.md#function-specific-layouts)／[快捷輸入](AGENT_HANDOFF.md#mobile-quick-input-design)／[照片入口](PHOTOS_HANDOFF.md#records-photo-entry)。
+- 當前改造及 gate 以本頁 [FE-W38](#active) 為準；下列既有證據只支持原被測版本，不自動適用改造後畫面。
 - 新任務只讀相關專項；正式 controller／Server／API 接線由原主聊天按已授權工作包承接，沿 [HANDOFF 索引](HANDOFF.md#p2-coverage)，不重新把 fixture 當正式資料庫。
 - 只改前端所屬範圍，保留本人／孩子／Server scope、原操作查核、權限及草稿清理。需要接線時，一處注入權威 controller，多處呈現及刷新，不建立重複保存路徑。
 

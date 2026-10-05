@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import type { PreviewWriteOperation } from "./preview/usePreviewOperation";
 
 // Presentation-only projection of src/shared/tasks.ts. No transport or task authority lives here.
@@ -69,4 +70,34 @@ export function currentTaskMetadata(task: TaskView, assignees: TaskAssigneeView[
     reminders: task.occurrence.state === "scheduled" && assignees.some(item => item.userId === task.assigneeUserId)
       ? reminders.filter(item => item.taskId === task.id && item.taskVersion === task.version && item.occurrenceId === task.occurrence.id) : [],
   };
+}
+
+export interface TaskScheduleSection { id: string; label: string; items: TaskView[] }
+
+// Absolute dates are intentional: a dated preview snapshot must not pretend to be today's agenda.
+export function taskScheduleSections(tasks: TaskView[]): TaskScheduleSection[] {
+  const groups = new Map<string, TaskScheduleSection>();
+  for (const task of tasks) {
+    const due = DateTime.fromISO(task.occurrence.dueAt, { setZone: true }).setZone(task.occurrence.timeZone);
+    const terminal = task.occurrence.state === "completed" || task.occurrence.state === "cancelled";
+    const id = terminal ? "ended" : due.isValid ? due.toFormat("yyyy-MM-dd") : "unconfirmed";
+    const label = terminal ? "已結束的安排" : due.isValid ? due.setLocale("zh-HK").toFormat("yyyy年M月d日 cccc") : "時間待核對";
+    const group = groups.get(id) ?? { id, label, items: [] };
+    group.items.push(task);
+    groups.set(id, group);
+  }
+  const order = (id: string) => id === "ended" ? "zz" : id === "unconfirmed" ? "zy" : id;
+  return [...groups.values()].sort((a, b) => order(a.id).localeCompare(order(b.id))).map(group => ({ ...group,
+    items: [...group.items].sort((a, b) => (Date.parse(a.occurrence.dueAt) || 0) - (Date.parse(b.occurrence.dueAt) || 0)),
+  }));
+}
+export function taskScheduleTime(task: TaskView): string {
+  const due = DateTime.fromISO(task.occurrence.dueAt, { setZone: true }).setZone(task.occurrence.timeZone);
+  return due.isValid ? due.toFormat("HH:mm") : "待核對";
+}
+export function taskNextStep(task: TaskView, assignees: TaskAssigneeView[]): string {
+  if (task.occurrence.state === "needs_review") return "核對完成或取消";
+  if (task.occurrence.state === "completed" || task.occurrence.state === "cancelled") return "查看安排及歷史";
+  if (!assignees.some(person => person.userId === task.assigneeUserId)) return "重新核對負責人";
+  return task.kind === "appointment" ? "核對到診安排" : "查看安排／回報進度";
 }

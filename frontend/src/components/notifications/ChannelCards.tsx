@@ -1,3 +1,4 @@
+import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -12,7 +13,7 @@ import {
 import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppIcon } from "../AppIcon";
-import { AppButton, AppTextField, SectionCard, SectionHeader } from "../ui";
+import { AppButton, AppTextField, SectionHeader } from "../ui";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { StatusAnnouncement } from "../StatusAnnouncement";

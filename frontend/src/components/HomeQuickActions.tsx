@@ -26,7 +26,7 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
   const available = !!child && model.profileLoad === "ready" && active;
   return <View testID="home-quick-actions" style={[styles.section, docked && styles.docked]}>
     <Text accessibilityRole="header" style={styles.heading}>{child ? `記下${child.displayName}的日常` : "隨手記下，交給助手"}</Text>
-    <PhotoFilePicker disabled={!available || opening} capturePreferred captureOriginal={captureOriginal}
+    <View style={styles.captureRow}><PhotoFilePicker disabled={!available || opening} capturePreferred captureOriginal={captureOriginal}
       onPick={original => { setError(null); setOpening(true); actions.openAgentPhoto(original); }} onError={setError}
       renderTrigger={trigger => <Pressable testID="home-agent-camera" accessibilityRole="button" accessibilityLabel="拍照給助手"
         accessibilityHint={trigger.unavailableReason ?? "開啟相機，拍攝後在目前孩子的對話中檢視；不會自動上傳或保存"}
@@ -50,21 +50,22 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
         disabled={!available || opening} onPress={() => actions.open("care")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && styles.pressed]}>
         <AppIcon name="notebook-outline" size={mobileIcons.content} /><Text style={styles.label}>補改資料</Text>
       </Pressable>
-    </View>
+    </View></View>
     <Text style={styles.note}>{Platform.OS !== "web" && !captureOriginal ? "原生相機未接通；可先用文字輸入。" : "照片只作本地預覽；Agent 整理及保存尚未接通。"}</Text>
     {error ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
   </View>;
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing.sm, padding: spacing.md, backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.medium },
+  section: { gap: spacing.sm, padding: spacing.md, backgroundColor: colors.quietSurface, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.medium },
   docked: { flexShrink: 0, borderRadius: 0, borderWidth: 0, borderTopWidth: 1, paddingVertical: spacing.sm },
   heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.itemTitle, fontWeight: "700" },
-  capture: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: colors.accent, borderRadius: radius.medium },
+  captureRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md },
+  capture: { flexGrow: 1, flexBasis: 260, minWidth: 0, minHeight: 56, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: colors.paleAmber, borderRadius: radius.small },
   captureCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
   captureTitle: { fontFamily: chineseFont, color: colors.onAccent, ...mobileType.bodyLarge, fontWeight: "700" },
   captureDetail: { fontFamily: chineseFont, color: colors.onAccent, ...mobileType.caption },
-  secondaryActions: { flexDirection: "row", gap: spacing.xs },
+  secondaryActions: { flexGrow: 1, flexBasis: 240, flexDirection: "row", gap: spacing.xs },
   secondary: { flex: 1, minWidth: mobileLayout.touchTarget, minHeight: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center", gap: spacing.xs, paddingHorizontal: spacing.xs },
   label: { fontFamily: chineseFont, color: colors.ink, ...mobileType.label, textAlign: "center" },
   note: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption },

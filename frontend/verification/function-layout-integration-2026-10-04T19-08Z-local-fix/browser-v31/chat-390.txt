@@ -1,0 +1,97 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px" [active]
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 390 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading "助手" [level=1]
+  - button "記憶與話題":
+    - generic: 記憶與話題
+  - generic: 合成畫面示例 · 尚未連接 Agent 或發送訊息
+  - button "Agent 活動與候選":
+    - generic: Agent 活動與候選
+    - generic: 合成示例
+  - button "查看較早記錄（8 則）":
+    - generic: 查看較早記錄（8 則）
+  - generic: 分批展開已載入的記錄
+  - generic: 歷史版式示例：查看確認與候選。
+  - generic: 本地合成記錄 · 並非真實對話
+  - generic: 這則只示範「確認與候選」的歷史記錄版式，沒有生成建議或執行操作。
+  - generic: 歷史版式示例：查看討論的範圍。
+  - generic: 本地合成記錄 · 並非真實對話
+  - generic: 這則只示範「討論的範圍」的歷史記錄版式，沒有生成建議或執行操作。
+  - generic: 最近一星期孩子晚上比較難入睡。我應該先整理哪些資料，才方便討論睡前流程？
+  - generic: 合成問題示例 · 未向 Server 發送
+  - generic: 示例版式 · 並非 Agent 建議
+  - generic: 可以先把已確認的睡眠記錄、作息時間，以及你想了解的情況放在一起。正式回答會由已接通的 Agent 按授權資料及適用來源生成。
+  - generic: 這個示例畫面可顯示的資料
+  - generic: 小昕 · 約 3 歲 2 個月 · 截至 2026 年 9 月 · 已載入已確認記錄 3 項
+  - generic: 1 先核對已有記錄
+  - text: 查看事件發生時間、來源及是否已確認，避免把候選內容當作事實。
+  - superscript:
+    - button "查看引用【1】：記錄時間及原文（合成示例）": 【1】
+  - generic: 2 列出仍想釐清的問題
+  - text: 例如入睡時間、睡前活動與你希望得到的協助；不在預覽中推斷原因。
+  - superscript:
+    - button "查看引用【2】：睡前流程討論（合成示例）": 【2】
+  - generic: 3 再由正式服務提供有來源的回覆
+  - text: 適用的官方資料、引用片段與日期，須待 Agent／知識接線後才能顯示。
+  - superscript:
+    - button "查看引用【3】：來源日期及適用範圍（合成示例）": 【3】
+  - generic: 此段只示範排版與狀態，沒有呼叫模型。
+  - heading "參考來源" [level=1]
+  - generic "回答參考來源":
+    - button "來源【1】：記錄時間及原文（合成示例）":
+      - generic: 【1】記錄時間及原文（合成示例）
+    - button "來源【2】：睡前流程討論（合成示例）":
+      - generic: 【2】睡前流程討論（合成示例）
+    - button "來源【3】：來源日期及適用範圍（合成示例）":
+      - generic: 【3】來源日期及適用範圍（合成示例）
+  - button "查看更多來源":
+  - textbox "撰寫對話問題":
+    - /placeholder: 補充情況，或加入附件…
+  - button "拍照":
+  - button "加入文件":
+  - button "語音輸入":
+  - button "展開建議問題":
+  - button "預覽輸入" [disabled]:
+  - generic: 先補文字或附件 · 只作本地預覽
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

@@ -1,0 +1,125 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px" [active]
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 1440 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link "育有方，返回主頁":
+    - /url: /
+    - generic: 用資料 · 陪伴成長
+  - generic: 常用
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - generic: 行動與成長
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦與預約
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長與關注
+  - generic: 照顧資料
+  - link "記錄與核對":
+    - /url: /care
+    - generic: 記錄與核對
+  - link "回顧與到診":
+    - /url: /summary
+    - generic: 回顧與到診
+  - generic: 資料管理
+  - link "子女檔案":
+    - /url: /profile
+    - generic: 子女檔案
+  - link "與 Agent 對話":
+    - /url: /chat
+    - generic: 與 Agent 對話
+    - generic: 提問・整理・規劃
+  - link "設定":
+    - /url: /settings
+    - generic: 設定
+  - link "更多功能":
+    - /url: /more
+    - generic: 更多功能
+  - button "選擇孩子，目前小昕":
+    - generic: 小
+    - generic: 小昕
+    - generic: 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic "小昕的關鍵資料":
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - button "關閉預覽提示":
+    - generic: 已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。
+  - generic: 私人保存 · 核對後才接入
+  - heading "資料來源" [level=1]
+  - generic: 你提供的私人來源統一在這裏管理。說明用途，讓助手協助整理，再由你核對；也可以自行填寫。
+  - generic: 目前範圍
+  - generic: 小昕 · 媽媽本人
+  - button "重新讀取來源":
+    - generic: 重新讀取來源
+  - button "清除草稿並新增來源":
+    - generic: 清除草稿並新增來源
+  - button "照片與記錄":
+    - generic: 照片與記錄
+  - generic "我的私人來源清單":
+    - heading "我的私人來源" [level=1]
+    - generic: "3"
+    - generic: 完整原文、網址、備註及候選只有本人可讀取。
+    - generic: 媽媽的私人來源
+    - generic: 未要求取得 · 尚未家庭共享
+    - generic: 保存於 2026年9月30日 17:30
+    - generic: 用途待討論
+    - button "查看私人來源：媽媽的私人來源":
+      - generic: 查看來源
+    - generic: 媽媽貼上的觀察原文
+    - generic: 正文已保存 · 尚未家庭共享
+    - generic: 保存於 2026年9月30日 17:30
+    - generic: 用途待討論
+    - button "查看私人來源：媽媽貼上的觀察原文":
+      - generic: 查看來源
+    - generic: 媽媽的長文合成示例
+    - generic: 正文已保存 · 尚未家庭共享
+    - generic: 保存於 2026年9月30日 17:30
+    - generic: 用途待討論
+    - button "查看私人來源：媽媽的長文合成示例":
+      - generic: 查看來源
+  - heading "加入資料來源" [level=1]
+  - generic: 先放到小昕的私人來源，只供媽媽本人讀取。
+  - button "來源方式：自行設定私人來源":
+    - generic: 來源方式：自行設定私人來源
+  - generic: 來源連結
+  - generic: 來源連結
+  - textbox "來源連結"
+  - generic: 可留空；HTTPS 網址不含帳密。貼上網址不會立即取得正文。
+  - generic: 來源原文
+  - generic: 來源原文
+  - textbox "來源原文"
+  - generic: 連結或原文至少一項。需要登入的材料，請貼上你有權提供的原文。
+  - generic: 0 字 · 最多 10,000 字，不會截短原文。
+  - button "補充名稱、日期或備註":
+    - generic: 補充名稱、日期或備註
+  - generic: 這份資料想用來做甚麼？
+  - generic: 這份資料想用來做甚麼？
+  - textbox "這份資料想用來做甚麼"
+  - generic: 用一句話說就可以，也可以先保存。助手會先查看來源，再和你商量；你亦可隨時改用同一表單自行整理。
+  - generic: 目前是合成預覽：只模擬私人保存與討論，不讀網頁、不傳模型、不接入回答。
+  - generic: 正式來源沿既有加密儲存保存，不加入公共官方／新聞知識庫；家庭成員不會取得完整原文。
+  - button "私人保存並開始整理（預覽）":
+    - generic: 私人保存並開始整理（預覽）
+  - heading "合成來源情境" [level=1]
+  - generic: 不連 Server、網頁或模型；不是系統分享或檔案上傳。
+  - button "顯示來源情境":
+    - generic: 顯示來源情境

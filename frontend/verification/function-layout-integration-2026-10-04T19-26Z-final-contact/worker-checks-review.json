@@ -1,0 +1,22 @@
+{
+  "baseline": "65f8cf37bceeb15b05f46326c49e0370349ae3a5",
+  "syntax": {
+    "method": "TypeScript transpileModule on own changed TS/TSX only",
+    "files": 25,
+    "errors": 0
+  },
+  "focusedPureChecks": {
+    "command": "node --test frontend/src/components/care/care-review.test.mjs",
+    "tests": 3,
+    "passed": 3
+  },
+  "additionalPureProbe": "Capture fixtures isolated per child; unknown child has no capture; Growth record references resolve to the same child synthetic Care fixture",
+  "notRun": [
+    "Full typecheck",
+    "Web export",
+    "Browser",
+    "Native",
+    "Real API",
+    "Hook lifecycle integration"
+  ]
+}

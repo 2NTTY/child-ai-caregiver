@@ -5,24 +5,36 @@ import { canManageMemory, factConfirmationLabel, factIsApplicable, factSourceLab
 import type { MemoryPreviewController } from "../../preview/useMemoryPreview";
 import { chineseFont, colors, radius, readingType, spacing, typeScale, workspaceType } from "../../theme";
 import { MotionDisclosure, MotionFeedback, MotionList, MotionReveal } from "../../motion";
-import { AppButton, SectionCard, SectionHeader } from "../ui";
+import { AppButton, AppSelect, SectionCard, SectionHeader } from "../ui";
 
 export function MemoryFactList({ preview, role, disabled, scopeKey, motionActive }: { preview: MemoryPreviewController; role: MemoryRole; disabled: boolean; scopeKey: string; motionActive: boolean }) {
+  const [filter, setFilter] = useState<"confirmed" | "candidate" | "review" | "all">("confirmed");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const filtered = preview.factsPage.items.filter(fact => {
+    if (filter === "all") return true;
+    if (filter === "review") return fact.status === "inactive" || fact.sourceState !== "current" || fact.status === "confirmed" && !factIsApplicable(fact);
+    return fact.status === filter;
+  });
   const operation = preview.controller.operation;
   const revealIntent = ["saving", "saved"].includes(operation.state) ? operation.reference : null;
   const [readReference, setReadReference] = useState<string | null>(null);
   const eligible = motionActive && operation.state === "saved" && operation.reference !== readReference;
-  return <SectionCard><SectionHeader density="compact" title="已確認與候選" subtitle="合成記憶；候選即使預期共享，確認前仍只供本人。"
-    action={<AppButton label="新增候選" variant="secondary" disabled={disabled} onPress={() => preview.beginFact("create")} />} />
+  return <View style={styles.managementList}><SectionHeader density="compact" title="記憶資料" subtitle="助手可參考的已確認資料；候選和失效內容另外核對。"
+    action={<AppButton label="新增候選" variant="secondary" disabled={disabled} onPress={() => {setFilter("candidate"); preview.beginFact("create");}} />} />
     {!preview.sampleActive && preview.data.facts.length > 0 && preview.data.topics.length > 0 ? <AppButton label="示範 50+1 合成分頁" variant="quiet" disabled={disabled} onPress={() => { setReadReference(operation.reference); preview.showPaginationSample(); }} /> : null}
     <Text style={styles.meta}>已載入 {preview.factsPage.items.length} 項合成事實{preview.factsPage.nextAfterId ? "；仍有未載入頁面" : "；本次合成清單已到最後一頁"}。</Text>
     {preview.factsPage.items.length === 0 && preview.factsPage.nextAfterId ? <Text style={styles.body}>目前已載入頁面沒有可見事實；可繼續載入。</Text> : null}
-    <MotionList items={preview.factsPage.items} keyExtractor={fact => fact.id} scopeKey={scopeKey} regionKey="memory-facts" eligible={eligible} style={styles.list} renderItem={(fact, { exiting }) => {
+    <AppSelect label="記憶狀態" value={filter} options={[{value:"confirmed",label:"已確認記憶"},{value:"candidate",label:"候選待確認"},{value:"review",label:"來源／期限待覆核"},{value:"all",label:"全部已載入記憶"}]} onChange={setFilter} disabled={disabled} />
+    {!filtered.length ? <Text style={styles.meta}>已載入範圍沒有符合此分類的記憶{preview.factsPage.nextAfterId ? "；尚有未載入頁面" : ""}。</Text> : null}
+    <MotionList items={filtered} keyExtractor={fact => fact.id} scopeKey={`${scopeKey}:${filter}`} regionKey="memory-facts" eligible={eligible} style={styles.list} renderItem={(fact, { exiting }) => {
       const manage = canManageMemory(role, fact);
       const confirm = manage && (fact.intendedVisibility === "private" || role !== "viewer") && fact.sourceState === "current";
       return <View key={fact.id} testID={`memory-fact-${fact.id}`} style={styles.entry}>
         <View style={styles.top}><Text style={styles.title}>{fact.key}</Text><MotionFeedback active={eligible && !exiting} triggerKey={fact.status} scopeKey={`${scopeKey}:${fact.id}`}><Text style={[styles.badge, fact.status !== "confirmed" && styles.warningBadge]}>{factStatusLabels[fact.status]}</Text></MotionFeedback></View>
         <MotionReveal value={fact.content} contentKey={fact.content} scopeKey={`${scopeKey}:${fact.id}`} regionKey="fact-content" triggerKey={revealIntent} eligible={eligible && !exiting} preset="local">{text => <Text style={styles.body}>{text}</Text>}</MotionReveal>
+        <Text style={styles.meta}>{visibilityLabels[fact.visibility]} · {factSourceLabel(fact.source)}</Text>
+        <AppButton label={expandedId === fact.id ? "收起核對資料" : "核對來源及操作"} variant="quiet" disabled={exiting} onPress={() => setExpandedId(value => value === fact.id ? null : fact.id)} />
+        <MotionDisclosure expanded={expandedId === fact.id} scopeKey={`${scopeKey}:${fact.id}`}><View style={styles.expandedFact}>
         <View style={styles.details}><Text style={styles.meta}>{visibilityLabels[fact.visibility]} · 版本 {fact.version} · {factConfirmationLabel(fact)}</Text>
         {fact.status === "candidate" ? <Text style={styles.warning}>擬確認範圍：{visibilityLabels[fact.intendedVisibility]}；目前仍是私人候選。</Text> : null}
         <Text style={styles.meta}>{factSourceLabel(fact.source)}</Text>
@@ -37,10 +49,11 @@ export function MemoryFactList({ preview, role, disabled, scopeKey, motionActive
           {manage ? <AppButton label="刪除" variant="quiet" disabled={disabled || exiting} onPress={() => preview.beginFact("delete", fact)} /> : <Text style={styles.meta}>目前角色只可查看這項家庭共享記憶。</Text>}
         </View>
         {role === "viewer" && fact.visibility === "private" && fact.intendedVisibility === "family" ? <Text style={styles.meta}>你可更正或刪除本人的私人候選；確認為家庭共享須由有權成員處理。</Text> : null}
+        </View></MotionDisclosure>
       </View>;
     }} />
     {preview.factsPage.nextAfterId ? <AppButton label="載入更多事實" variant="quiet" disabled={disabled} onPress={() => { setReadReference(operation.reference); preview.loadMoreFacts(); }} /> : null}
-  </SectionCard>;
+  </View>;
 }
 
 export function MemoryTopicList({ preview, role, disabled, scopeKey, motionActive }: { preview: MemoryPreviewController; role: MemoryRole; disabled: boolean; scopeKey: string; motionActive: boolean }) {
@@ -48,7 +61,7 @@ export function MemoryTopicList({ preview, role, disabled, scopeKey, motionActiv
   const revealIntent = ["saving", "saved"].includes(operation.state) ? operation.reference : null;
   const [readReference, setReadReference] = useState<string | null>(null);
   const eligible = motionActive && operation.state === "saved" && operation.reference !== readReference;
-  return <SectionCard><SectionHeader density="compact" title="話題清單" subtitle="已回答及已解決是終態；話題回答不代表任務已完成。"
+  return <View style={styles.managementList}><SectionHeader density="compact" title="對話話題" subtitle="管理與助手尚未談完的事；這些話題不是成長關注，也不代表任務已完成。"
     action={<AppButton label="新增話題" variant="secondary" disabled={disabled} onPress={() => preview.beginTopic("create")} />} />
     {!preview.sampleActive && preview.data.facts.length > 0 && preview.data.topics.length > 0 ? <AppButton label="示範 50+1 合成分頁" variant="quiet" disabled={disabled} onPress={() => { setReadReference(operation.reference); preview.showPaginationSample(); }} /> : null}
     <Text style={styles.meta}>已載入 {preview.topicsPage.items.length} 項合成話題{preview.topicsPage.nextAfterId ? "；仍有未載入頁面" : "；本次合成清單已到最後一頁"}。</Text>
@@ -73,7 +86,7 @@ export function MemoryTopicList({ preview, role, disabled, scopeKey, motionActiv
       </View>;
     }} />
     {preview.topicsPage.nextAfterId ? <AppButton label="載入更多話題" variant="quiet" disabled={disabled} onPress={() => { setReadReference(operation.reference); preview.loadMoreTopics(); }} /> : null}
-  </SectionCard>;
+  </View>;
 }
 
 export function MemorySummaryCard({ summary }: { summary: MemorySummaryView | null }) {
@@ -123,8 +136,9 @@ export function MemoryHistoryCard({ preview, scopeKey }: { preview: MemoryPrevie
 }
 
 const styles = StyleSheet.create({
+  managementList: {gap:spacing.md,minWidth:0}, expandedFact:{gap:spacing.sm},
   list: { gap: spacing.md },
-  entry: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.lg, gap: spacing.sm, minWidth: 0 },
+  entry: { borderTopWidth: 1, borderTopColor: colors.line, paddingVertical: spacing.md, gap: spacing.sm, minWidth: 0 },
   details: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.sm, gap: spacing.xs, minWidth: 0 },
   top: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, flexShrink: 1 },

@@ -1,0 +1,23 @@
+{
+  "version": "v32",
+  "bundle": [
+    "/_expo/static/js/web/entry-23f445ff0520f924d5f1431d60ff06b3.js"
+  ],
+  "checkedAt": "2026-10-04T19:31:27.472Z",
+  "scope": "Only Contact320 button label and complete accessible name after the final single-file copy change",
+  "visibleText": "管理同意",
+  "accessibleName": "管理本人接收同意",
+  "contactBounds": {
+    "ariaLabel": "管理本人接收同意",
+    "height": 48,
+    "left": 174.0690155029297,
+    "right": 286.4752502441406,
+    "width": 112.40623474121094
+  },
+  "contactViewport": {
+    "scrollWidth": 320,
+    "width": 320
+  },
+  "status": "passed",
+  "navigationNote": "Enter on the return-home preview link had no observed activation; one ordinary click reached home. No login action or broad keyboard verification was performed."
+}

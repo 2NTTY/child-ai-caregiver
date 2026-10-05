@@ -1,4 +1,6 @@
 import { useEffect,useRef,useState } from "react";
+import { useRouter } from "expo-router";
+import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { Linking } from "react-native";
 import { Text } from "react-native-paper";
 import type { HomeChild } from "../view-model";
@@ -11,10 +13,11 @@ import { AppButton,AppSelect,SectionCard,SectionHeader } from "../components/ui"
 import { PageFrame } from "../components/PageFrame";
 
 function GrowthWorkspace({child,online,identity,server,onIdentity,onServer,onTask,onMemory}:{child:HomeChild;online:boolean;identity:string;server:string;onIdentity:()=>void;onServer:()=>void;onTask:()=>void;onMemory:()=>void}){
+  const router = useRouter(), navigate = usePreviewNavigation();
   const preview=useGrowthPreview(child,online,identity,server),[tools,setTools]=useState(false),[linkError,setLinkError]=useState("");
   const alive=useRef(true);useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
   function source(url:string){const safe=growthSourceUrl(url);if(!safe)return;void Linking.openURL(safe).catch(()=>{if(alive.current)setLinkError("未能開啟來源網頁，請稍後再試。");});}
-  return <GrowthView model={preview.model} actions={preview.actions} onTask={onTask} onMemory={onMemory} onSource={source} previewTools={<SectionCard>
+  return <GrowthView model={preview.model} actions={preview.actions} onTask={onTask} onMemory={onMemory} onSource={source} onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onSummary={() => navigate(() => router.push("/summary"))} previewTools={<SectionCard>
     <SectionHeader density="compact" title="合成關注情境" subtitle="不執行正式規則、背景處理或外發。" icon="information-outline" />
     {linkError?<Text style={s.warning}>{linkError}</Text>:null}
     <AppButton label={tools?"收起關注情境":"顯示關注情境"} variant="quiet" onPress={()=>setTools(value=>!value)} />
@@ -29,6 +32,6 @@ function GrowthWorkspace({child,online,identity,server,onIdentity,onServer,onTas
 export function GrowthScreen(){
   const {model,actions}=usePreview();const child=model.children.find(item=>item.id===model.selectedChildId);
   const [identity,setIdentity]=useState("合成媽媽"),[server,setServer]=useState("合成 A");
-  return child?<GrowthWorkspace key={JSON.stringify([child.id,identity,server])} child={child} online={model.connection==="online"} identity={identity} server={server} onIdentity={()=>setIdentity(value=>value==="合成媽媽"?"合成爸爸":"合成媽媽")} onServer={()=>setServer(value=>value==="合成 A"?"合成 B":"合成 A")} onTask={()=>actions.open("tasks")} onMemory={()=>actions.open("memory")} />:
+  return child?<GrowthWorkspace key={JSON.stringify([child.id,identity,server,model.caregiverName,child.accessRole])} child={child} online={model.connection==="online"} identity={identity} server={server} onIdentity={()=>setIdentity(value=>value==="合成媽媽"?"合成爸爸":"合成媽媽")} onServer={()=>setServer(value=>value==="合成 A"?"合成 B":"合成 A")} onTask={()=>actions.open("tasks")} onMemory={()=>actions.open("memory")} />:
     <PageFrame density="compact" title="成長階段關注" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不顯示其他孩子的關注。</Text><AppButton label="查看子女檔案" onPress={()=>actions.open("profile")} /></SectionCard></PageFrame>;
 }

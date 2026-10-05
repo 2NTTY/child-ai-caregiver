@@ -23,5 +23,5 @@ function ContactWorkspace({child, online, identity, server, onIdentity, onServer
 export function ContactScreen() {
   const {model, actions} = usePreview(), child = model.children.find(item => item.id === model.selectedChildId), [identity, setIdentity] = useState('preview-mom'), [server, setServer] = useState('合成 A');
   return child ? <ContactWorkspace key={JSON.stringify([child.id, identity, server])} child={child} online={model.connection === 'online'} identity={identity} server={server} onIdentity={() => setIdentity(value => value === 'preview-mom' ? 'preview-second-user' : 'preview-mom')} onServer={() => setServer(value => value === '合成 A' ? '合成 B' : '合成 A')} onTask={() => actions.open('tasks')} onSettings={() => actions.open('settings')} /> :
-    <PageFrame density="compact" title="主動聯絡授權" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不讀取其他孩子的聯絡授權。</Text><AppButton label="查看子女檔案" onPress={() => actions.open('profile')} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="接收同意與聯絡" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不讀取其他孩子的聯絡授權。</Text><AppButton label="查看子女檔案" onPress={() => actions.open('profile')} /></SectionCard></PageFrame>;
 }

@@ -1,0 +1,30 @@
+[
+  {
+    "group": "navigation",
+    "origin": "/workspace/shared/caregiver_layout_redesign/frontend/verification/navigation-quick-input-2026-10-04/checks.json",
+    "copiedEvidence": "worker-checks-navigation.json",
+    "sha256": "1abc31cfca8b8a29d4e419a4f4d69fdc22886965db1a0815cdb44a3a94e2f8ca",
+    "note": "Exact copy of implementation-worker report; verifier did not re-run these commands."
+  },
+  {
+    "group": "daily",
+    "origin": "/workspace/shared/caregiver_layout_redesign/frontend/verification/navigation-quick-input-2026-10-04/daily-checks.json",
+    "copiedEvidence": "worker-checks-daily.json",
+    "sha256": "a4d8a248b58284d1a2b0fd1feee4e1c1663ef64954a02258a167a33410f15656",
+    "note": "Exact copy of implementation-worker report; verifier did not re-run these commands."
+  },
+  {
+    "group": "management",
+    "origin": "/workspace/shared/caregiver_layout_redesign_metadata/management-layouts/checks.json",
+    "copiedEvidence": "worker-checks-management.json",
+    "sha256": "e0327ab3e88c994ab377c66752bedc7db1da79072e3b16d96cc925d160ff99cf",
+    "note": "Exact copy of implementation-worker report; verifier did not re-run these commands."
+  },
+  {
+    "group": "review",
+    "origin": "/workspace/shared/caregiver_layout_redesign_metadata/review-history-layouts/checks.json",
+    "copiedEvidence": "worker-checks-review.json",
+    "sha256": "4c55c8cdc7c1f564790caa12073c2b87a327404d6f89ff7ea9f9c192e22a2b5b",
+    "note": "Exact copy of implementation-worker report; verifier did not re-run these commands."
+  }
+]

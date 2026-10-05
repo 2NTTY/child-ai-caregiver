@@ -1,0 +1,84 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px" [active]
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 320 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link "育有方，返回主頁":
+    - /url: /
+  - button:
+    - generic: 小
+    - generic: 小昕
+  - generic: 地區
+  - generic: 香港
+  - generic: 檔案
+  - generic: 已確認
+  - generic: 過敏
+  - generic: 未提供
+  - button:
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading [level=1]: 你好，媽媽！
+  - generic: 一起整理小昕的照顧日常。
+  - generic: 每個小日常，都值得好好記下。
+  - button "選擇孩子，目前小昕":
+    - generic: 小
+    - generic: 小昕
+    - generic: 約 3 歲 2 個月
+  - heading "Agent 提醒你" [level=1]
+  - generic: 先看這幾件事
+  - generic: 待你核對
+  - heading "先核對一項照顧建議" [level=1]
+  - generic: 合成候選仍等你核對內容及共享範圍，尚未成為已確認安排。
+  - generic: 先看清楚原有照顧內容，再決定是否接受 Agent 整理的候選。這只是介面示例。
+  - generic: 依據：前端合成 Agent 結果，沒有真實推送或來源證據
+  - generic: 建立於 4/10/2026 09:00:00
+  - button "前往 Agent 對話":
+    - generic: 前往 Agent 對話
+  - generic: 合成示例 · 尚未接駁真正 Agent 推送
+  - generic: 合成快照讀取時間 4/10/2026 09:05:00
+  - heading "持續關注" [level=1]
+  - generic: 回看變化，再決定下一步
+  - generic: 待續話題
+  - heading "想整理睡前流程" [level=1]
+  - generic: 家人確認睡前會一起看圖畫書。
+  - generic: 依據：本人話題及已確認睡前觀察 · 合成示例
+  - button "查看話題與依據":
+    - generic: 查看話題與依據
+  - button "查看持續話題與依據":
+    - generic: 查看持續話題與依據
+  - heading "待辦摘要" [level=1]
+  - generic: 安排與下一步
+  - generic: 目前合成快照沒有指定待處理事項。
+  - button "查看待辦與預約":
+    - generic: 查看待辦與預約
+  - generic: 只摘錄已載入的安排；通知送達及照顧完成須另行核對。
+  - button "拍照；拖向上方文件、右上語音或右方文字":
+  - generic: 臨時記下，再交助手整理
+  - generic: 點按拍照 · 拖曳選其他輸入
+  - button "其他輸入":
+    - generic: 其他輸入
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

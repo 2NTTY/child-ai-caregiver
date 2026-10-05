@@ -28,7 +28,7 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
   const candidateTrigger = !model.busy && !candidateEligible ? null : resultTrigger;
   const textTrigger = !model.busy && !textEligible ? null : resultTrigger;
   return <>
-    <SectionCard testID="source-details"><SectionHeader density="compact" title={selected.sourceLabel} subtitle={`本人私人來源 · 版本 ${selected.version}`} icon="link-variant" />
+    <SectionCard surface="plain" style={s.workflowSection} testID="source-details"><SectionHeader density="compact" title={selected.sourceLabel} subtitle={`本人私人來源 · 版本 ${selected.version}`} icon="link-variant" />
       <Text style={s.body}>來源日期原文：{selected.sourceDateText || "未提供"}</Text>
       {selected.sourceUrl ? <Text selectable style={s.body}>網址：{selected.sourceUrl}</Text> : <Text style={s.meta}>沒有來源網址。</Text>}
       {selected.sourceNotes ? <Text selectable style={s.body}>私人備註：{selected.sourceNotes}</Text> : null}
@@ -55,25 +55,25 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
       </View> : null}
       <AppButton label="刪除私人來源" variant="quiet" disabled={!model.canDelete} onPress={actions.openDeletion} />
     </SectionCard>
-    {showTools && canManage && !selected.recordId && (!hasText || selected.kind === "public_source") && selected.sourceUrl && selected.kind !== "paste" ? <SectionCard><SectionHeader density="compact" title="取得網頁正文" subtitle="只按你明確選定的來源取得，不會背景訂閱。" />
+    {showTools && canManage && !selected.recordId && (!hasText || selected.kind === "public_source") && selected.sourceUrl && selected.kind !== "paste" ? <SectionCard surface="plain" style={s.workflowSection}><SectionHeader density="compact" title="取得網頁正文" subtitle="只按你明確選定的來源取得，不會背景訂閱。" />
       <AppCheckbox label="我同意取得此來源的公開正文並私人保存" checked={model.fetchConsent} disabled={!canConsent || direct?.kind === "extract"} onChange={actions.setFetchConsent} />
       <AppButton label={selected.fetchState === "failed" ? "明確重新取得正文" : "取得此網頁內容"} disabled={!model.canFetch || !model.fetchConsent} onPress={actions.fetchContent} />
     </SectionCard> : null}
-    {showTools && canManage && !selected.recordId && hasText ? <SectionCard><SectionHeader density="compact" title="可選的 AI 提取" subtitle="先選取連續原文，再明確同意；也可直接在下方人工整理。" icon="star-four-points" />
+    {showTools && canManage && !selected.recordId && hasText ? <SectionCard surface="plain" style={s.workflowSection}><SectionHeader density="compact" title="可選的 AI 提取" subtitle="先選取連續原文，再明確同意；也可直接在下方人工整理。" icon="star-four-points" />
       {selected.text.length > 10000 ? <Text style={s.warning}>原文超過 10,000 字，請自行複製一段連續片段；沒有自動截短。</Text> : null}
       <AppTextField label="提取原文片段" accessibilityLabel="提取原文片段" multiline value={model.excerpt} disabled={model.formLocked || !!direct} onChangeText={actions.setExcerpt} />
       <Text style={validSourceExcerpt(selected.text, model.excerpt) ? s.meta : s.error}>{validSourceExcerpt(selected.text, model.excerpt) ? "片段與保存原文完全相符。" : "請提供 1–10,000 字、與原文完全相符的連續片段。"}</Text>
       <AppCheckbox label="我同意把以上原文片段交由模型提取" checked={model.modelConsent} disabled={!canConsent || !validSourceExcerpt(selected.text, model.excerpt) || direct?.kind === "fetch"} onChange={actions.setModelConsent} />
       <AppButton label="提取所選片段" disabled={!model.canExtract || !model.modelConsent || !validSourceExcerpt(selected.text, model.excerpt)} onPress={actions.extract} />
     </SectionCard> : null}
-    {direct ? <SectionCard><SectionHeader density="compact" title="原次取得／提取查核" />
+    {direct ? <SectionCard surface="plain" style={s.workflowSection}><SectionHeader density="compact" title="原次取得／提取查核" />
       <Text style={s.body}>原次{direct.kind === "fetch" ? "取得" : "提取"}採用版本 {direct.basisVersion}。明確查回會保留原版本{direct.kind === "extract" ? "及原片段" : ""}。</Text>
       {direct.kind === "extract" ? <Text selectable style={s.meta}>原次片段：{direct.excerpt}</Text> : null}
       <AppButton label="查回原次請求" accessibilityLabel="明確查回原版本及原片段" variant="secondary" disabled={!model.fresh || !direct.checked || !canManage || (direct.kind === "fetch" ? !model.fetchConsent : !model.modelConsent)} onPress={actions.retryDirect} />
       <AppButton label="結束本次查核" variant="quiet" disabled={!model.fresh || !direct.checked || (direct.kind === "fetch" ? selected.fetchState : selected.extraction.state) !== "unknown"} onPress={actions.endDirect} />
     </SectionCard> : null}
     {showTools && !selected.recordId ? <View style={s.stack}>
-      <MotionReveal value={candidate} contentKey={JSON.stringify(candidate)} scopeKey={scopeKey} regionKey="source-candidate" triggerKey={candidateTrigger} eligible={candidateEligible} testID="source-candidate-motion">{shown => shown ? <SectionCard>
+      <MotionReveal value={candidate} contentKey={JSON.stringify(candidate)} scopeKey={scopeKey} regionKey="source-candidate" triggerKey={candidateTrigger} eligible={candidateEligible} testID="source-candidate-motion">{shown => shown ? <SectionCard surface="plain" style={s.workflowSection}>
         <SectionHeader density="compact" title="未確認候選" subtitle="採用前請核對原文、時間、數值及不確定事項。" />
         <Text style={s.reading}>{shown.text || "未提取到文字"}</Text><Text style={s.meta}>數值：{shown.rawValue || "未知"} · 單位：{shown.unit || "未知"} · {shown.approximate ? "包含約數" : "未標記約數"}</Text>
         <Text style={s.meta}>時間原文：{shown.timeRaw || "未知"}</Text>{shown.uncertainties.map((text, index) => <Text key={index} style={s.warning}>{text}</Text>)}

@@ -1,9 +1,9 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import type { HomeActions, HomeViewModel } from "../view-model";
 import { selectHomeOverview } from "../home-overview";
-import { chineseFont, colors, readingType } from "../theme";
-import { AppButton, SectionCard, SectionHeader } from "./ui";
+import { chineseFont, colors, readingType, spacing } from "../theme";
+import { AppButton, SectionCard, SectionHeader, TextLink } from "./ui";
 import { OperationNotice } from "./OperationNotice";
 import { ReadStateNotice } from "./ReadStateNotice";
 import { HomeOverviewItems } from "./HomeOverviewItems";
@@ -31,4 +31,24 @@ export function HomeFocus({ model, actions, full = false }: { model: HomeViewMod
     {model.connection !== "online" ? <Text style={styles.meta}>目前未連線；已載入的事項可能不是最新狀態。</Text> : null}
   </SectionCard>;
 }
-const styles = StyleSheet.create({ meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });
+
+// A short projection of the same authorized attention source used by the information rail.
+export function HomeActionSummary({ model, actions }: { model: HomeViewModel; actions: HomeActions }) {
+  const overview = selectHomeOverview(model);
+  if (!overview) return null;
+  const section = overview.attention;
+  return <View testID="home-action-summary" style={styles.summary}>
+    <SectionHeader title="待辦摘要" subtitle="安排與下一步" density="compact" />
+    <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
+      title={section.state === "unavailable" ? "暫未能確認待辦" : undefined}
+      message={section.detail ?? "這次已載入快照沒有待辦事項。"}>
+      {section.state === "unavailable" ? <AppButton label="重新讀取待辦" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
+    </ReadStateNotice>
+    {section.state === "ready" ? <HomeOverviewItems items={section.items.slice(0, 2)} actions={actions} compact /> : null}
+    <TextLink label="查看待辦與預約" onPress={() => actions.open("tasks")} />
+    <Text style={styles.meta}>只摘錄已載入的安排；通知送達及照顧完成須另行核對。</Text>
+    {model.connection !== "online" ? <Text style={styles.meta}>目前未連線；已載入的安排可能不是最新狀態。</Text> : null}
+  </View>;
+}
+
+const styles = StyleSheet.create({ summary: { gap: spacing.md, minWidth: 0 }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });

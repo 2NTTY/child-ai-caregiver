@@ -67,7 +67,7 @@ export function useGrowthPreview(child:HomeChild,online:boolean,identity:string,
       let latest=clone(current);const original=pendingRef.current;
       if(readScenario==="changed")latest={...latest,authorityVersion:latest.authorityVersion+":new",items:latest.items.map(item=>({...item,version:item.version+1})),topics:latest.topics.map(topic=>({...topic,version:topic.version+1}))};
       if(readScenario==="source_unavailable")latest={...latest,items:latest.items.map(item=>({...item,sourceAvailable:false}))};
-      if(readScenario==="missing")latest={...latest,items:[],topics:[]};
+      if(readScenario==="missing")latest={...latest,items:[],topics:[],concerns:latest.concerns?{...latest.concerns,items:[]}:undefined};
       const found=!!original&&(original.attempt.kind==="item"?latest.items.some(item=>item.id===original.attempt.id):latest.topics.some(topic=>topic.id===original.attempt.id));
       const missing:string[]=[];
       for(const item of current.items)if(dirtyKeys.current.has(`item:${item.id}`)&&!latest.items.some(value=>value.id===item.id)){latest.items.push({...item,sourceAvailable:false});missing.push(`item:${item.id}`);}
@@ -83,7 +83,7 @@ export function useGrowthPreview(child:HomeChild,online:boolean,identity:string,
     cancel();dirtyKeys.current.clear();setDirty(false);setDiscardAsked(false);setEpoch(value=>value+1);setMissingTargets([]);savePending(null);setReadFailed(false);setOperation("none");setCondition(next);
     if(next==="lost"){save(null);setNotice("身份／孩子存取權已改變；舊關注、草稿及操作已清除。");return;}
     const fresh=growthFixture(child.id);
-    if(next==="empty")fresh.items=[];
+    if(next==="empty"){fresh.items=[];if(fresh.concerns)fresh.concerns={...fresh.concerns,items:[]};}
     if(next==="read_only")fresh.canManage=false;
     if(next==="source_unavailable")fresh.items=fresh.items.map(item=>({...item,sourceAvailable:false}));
     if(next==="fact_conflict")fresh.topics[2].inputs[0].conflict=true;

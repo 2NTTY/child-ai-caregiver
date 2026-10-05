@@ -1,0 +1,193 @@
+{
+  "baseline": "65f8cf37bceeb15b05f46326c49e0370349ae3a5",
+  "frozenAt": "2026-10-04T19:08:08.732183+00:00",
+  "files": [
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "sha256": "9a330d56bd55b8507f8beeb7d6c0b9e4d63c4fa28178dbfff0a913969370ac8b",
+      "bytes": 3781,
+      "baselineSha256": "4975b433d5139d8a23ac2158c4d575e185ce55a399a7b7be28f568dcebde4ea0"
+    },
+    {
+      "path": "frontend/scripts/assistant-draft.test.mts",
+      "sha256": "df6872b0a33742acbece58682eb5b6caae149c34755cc419f3fd1aeb0e88150e",
+      "bytes": 2692,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/scripts/local-voice-capture.test.mts",
+      "sha256": "0d4a06e80ea1d1109a0c90b6c8f211cbffe25f64dea9842d32e286b29429e6d9",
+      "bytes": 2973,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/scripts/pointer-click-gate.test.mts",
+      "sha256": "d3b519a1a47e0844ae08709ac9db60c22cf183a39f7adec4e91be125a13f060c",
+      "bytes": 1928,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/assistant-draft.ts",
+      "sha256": "55390bfacfe29d8478217939c7487abea4af8d1ef4c499d48b8e4df618885808",
+      "bytes": 3739,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "sha256": "64522589348cc5ed6a78af1c691f58c215ea981d911eb38f4f1bc2fa64e0c4e1",
+      "bytes": 19717,
+      "baselineSha256": "e59a67caf975daa5d53e5a64f6143e50b807ffa7dfed54760ae161dc910db208"
+    },
+    {
+      "path": "frontend/src/components/NativeAppShell.tsx",
+      "sha256": "690055b7da3d29ab63bf1e2d31ba3f916d3642e9851f11c43dfa6f11b9186964",
+      "bytes": 4228,
+      "baselineSha256": "8610ad55087631412bddc0ca4a9f3ee099f75f0b02693c1b9cbaba9490d042c7"
+    },
+    {
+      "path": "frontend/src/components/RightRailContent.tsx",
+      "sha256": "6f8e63ce5cdc5389ecefec6735904ea289a96843bb1f821643fb85eda1604e8c",
+      "bytes": 6669,
+      "baselineSha256": "aea1c76e70b43ec2ce2da3818f52d57e170a3763c980e9d2b9105095079f4dbe"
+    },
+    {
+      "path": "frontend/src/components/agent/AgentComposer.tsx",
+      "sha256": "f0e127ef9b5c640c9b1de9e609887ba95a5ebdf8a71f889ef764ba82a781302f",
+      "bytes": 11357,
+      "baselineSha256": "8b8a85d5239e0754873e060d6b26bdb9ebacf75cdc69118fbda902d01eb7e0ce"
+    },
+    {
+      "path": "frontend/src/components/agent/AgentInputToolbar.tsx",
+      "sha256": "5732242746db012a3bd9bc7523907df234bad687135d6511dd8a37924346df92",
+      "bytes": 2501,
+      "baselineSha256": "ab8362eacf72463b45c198553aa403c8d31f7417cfa38fb73d1555f086cbc66b"
+    },
+    {
+      "path": "frontend/src/components/agent/AssistantAttachmentPicker.tsx",
+      "sha256": "a6bb12d278c9564ef5c76500c72971079444f93b4cdaed1092b1ed9161f9ad27",
+      "bytes": 1673,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/agent/AssistantAttachmentPicker.web.tsx",
+      "sha256": "bc3cda2232d9d4f104f4688eaa40a5bf9800e0f98a0975805c46c31e691a4030",
+      "bytes": 1876,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/agent/AssistantAttachmentPreview.tsx",
+      "sha256": "a42d68d20c00f4f7cc899b70709f38fb52c598fe64144827662789bfcce00b5c",
+      "bytes": 4647,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/agent/AssistantInputDialog.tsx",
+      "sha256": "51244b5bdf52724bf18fb390fa5a72715af753728094c3e9f06dc611e414271b",
+      "bytes": 2987,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/agent/ChatComposerInput.tsx",
+      "sha256": "09100b601e07b4054831879034a758ae5c36e5a9aabfd549df1aa290fbb2c47d",
+      "bytes": 1981,
+      "baselineSha256": "0876724e852cb894301cbd581aafc1f0bfef051bcdad90791bd29aafe8f83487"
+    },
+    {
+      "path": "frontend/src/components/agent/ChatComposerInput.web.tsx",
+      "sha256": "a8015843c849949f7d4a26ed059011144eb33647930804af5e21ffc641aa9f24",
+      "bytes": 3041,
+      "baselineSha256": "387b77e626ae825446923dcdb66c7644e003211ba0e75ec9e62e9da66bd24208"
+    },
+    {
+      "path": "frontend/src/components/agent/LocalAudioPreview.tsx",
+      "sha256": "7c54126f88015b67c0bae99cade5227c5334770aaef65756768ba2e0d5bed93a",
+      "bytes": 200,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/agent/LocalAudioPreview.web.tsx",
+      "sha256": "fefe5eb9c762e7000e655c1685520d8f1cbd390bc6025fbafc44c7f217c4b7e5",
+      "bytes": 210,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/agent/MobileQuickInputDock.tsx",
+      "sha256": "44d9aa52a2df643f25310c9fba89e9ffde882af0843e95d945c8bb0a37d1d385",
+      "bytes": 6580,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/agent/VoiceCapture.tsx",
+      "sha256": "7d4d0f2e0f4023ebee077f5f67ed03619c434a14f4f38cc64f526312db7f8222",
+      "bytes": 313,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/agent/VoiceCapture.web.tsx",
+      "sha256": "4c2d4a30de5587de2e97409a2c0d612c3ad10af00d18b556631f75bcc768b97c",
+      "bytes": 4093,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/agent/local-voice-capture.ts",
+      "sha256": "f7b7f558bf72dd91d6e5f257b6b98931f31092458ba813546a571c741ce9cc64",
+      "bytes": 4749,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/navigation/DirectionalPressable.tsx",
+      "sha256": "539458b8e0bd90bce47cb486ef4405c9a9fc985eb8f0021a48da9834514f6f0b",
+      "bytes": 2522,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/navigation/DirectionalPressable.web.tsx",
+      "sha256": "c9c514f86953b60f71554d20770a83ed8e4292dfa750b779d0c06f3a0d6b737d",
+      "bytes": 4344,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/navigation/RecordsNavButton.tsx",
+      "sha256": "d061c50f00ef82086bda74c4993b0a9483e5c8b830ebd94295995590baa4febf",
+      "bytes": 2516,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/navigation/pointer-click-gate.ts",
+      "sha256": "20d04176876614fc430e0c8befa06411a336ce52a257dcdf74ca454322318156",
+      "bytes": 358,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/components/navigation/quick-input-gesture.ts",
+      "sha256": "63bd11ec28c2f7978c29aeddd20b7a6f7540f0f581f9a8d9763839d2a501b1bb",
+      "bytes": 695,
+      "baselineSha256": null
+    },
+    {
+      "path": "frontend/src/preview/PreviewContext.tsx",
+      "sha256": "31c43c0ec1047c528a754ec2cc77a948c58b2088cc736f74907bc89956b20488",
+      "bytes": 10041,
+      "baselineSha256": "bad494c03862b7209e13d6635655de0f3b8b7867af2580dcd317bd0927bee6e0"
+    },
+    {
+      "path": "frontend/src/preview/PreviewNavigationGuard.tsx",
+      "sha256": "489b3c49fa9ff1e7af7e5a46e8bfbea0d3085f8b68dbbfe3af1c6a29d74c15c9",
+      "bytes": 5822,
+      "baselineSha256": "5259cf38e27f6878bab0fa0331364512055be75c8f28d991071c15e63ada2954"
+    },
+    {
+      "path": "frontend/src/screens/chatScreen.tsx",
+      "sha256": "5b130f3bd8bd3f1dc38d32697a0670f59db79d3ebec49c03f3389ad4c4a9ead2",
+      "bytes": 8002,
+      "baselineSha256": "93b01be75e29c78dd404bd13ea2520579599b13ac2c2abbf3dd8736390415fb9"
+    },
+    {
+      "path": "frontend/src/screens/moreScreen.tsx",
+      "sha256": "7c3a7fc9fcb015b0909d345282683cf488cb81a8abff6590c75eaa379a267888",
+      "bytes": 2728,
+      "baselineSha256": "b57e5aae881acd3552c254e2a62cf5a9b2ff0efb3ffe9d4170350622cbdf6656"
+    }
+  ],
+  "revisionNote": "Scoped v30 correction: preserve trailing-pointer-click suppression across navigation effect replacement."
+}

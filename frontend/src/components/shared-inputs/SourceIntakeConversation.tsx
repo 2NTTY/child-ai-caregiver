@@ -14,8 +14,10 @@ export function SourceIntakeConversation({ model, actions }: { model: SourcesVie
   const stageLabel = intake.stage === "awaiting_read" ? "等待查看來源" : intake.stage === "reading" ? "正在示範查看來源" : intake.stage === "read_unknown" ? "查看結果未知"
     : intake.stage === "unavailable" ? "來源未能讀取" : intake.stage === "clarifying" ? "先談談怎樣使用" : intake.stage === "review" ? "整理建議待你確認"
       : intake.stage === "connection_unknown" ? "接入結果未知，須查核" : "用途已確認，正式接入未連線";
-  return <SectionCard testID="source-intake-conversation">
+  const step = ["awaiting_read", "reading", "read_unknown", "unavailable"].includes(intake.stage) ? 0 : intake.stage === "clarifying" ? 1 : intake.stage === "review" ? 2 : 3;
+  return <SectionCard surface="plain" style={s.workflowSection} testID="source-intake-conversation">
     <SectionHeader density="compact" title="和助手整理這份來源" subtitle="合成流程示範：沒有讀取網頁、呼叫模型或接入回答。" icon="star-four-points" />
+    <View style={s.intakeSteps} accessibilityLabel={`目前步驟：${stageLabel}`}>{["查看來源", "釐清用途", "核對建議", "正式接入"].map((label, index) => <View key={label} style={[s.intakeStep, index === step && s.intakeStepCurrent]}><Text style={index === step ? s.stepActiveText : s.meta}>{index + 1} · {label}</Text></View>)}</View>
     <StatusAnnouncement eventKey={`${source.id}:${intake.stage}`} message={stageLabel} urgent={intake.stage === "unavailable"} />
     <Text style={s.title}>{stageLabel}</Text>
     {["awaiting_read", "unavailable", "clarifying", "confirmed_pending_connection"].includes(intake.stage) ? <AppButton label={intake.stage === "confirmed_pending_connection" ? "編輯用途草稿" : "自行填寫接入資料"} variant="quiet" disabled={locked} onPress={adapter.editManually} /> : null}

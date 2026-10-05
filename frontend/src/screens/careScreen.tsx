@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { PhotoWorkspace } from "./photosScreen";
+import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
+import { useLocalSearchParams, useRouter, usePathname } from "expo-router";
 import { careKindOptions, type CareKind } from "../care-view-model";
 import { Text } from "react-native-paper";
 import { PageFrame } from "../components/PageFrame";
@@ -9,9 +11,9 @@ import { usePreview } from "../preview/PreviewContext";
 import { useCarePreview, type CareLookupOutcome, type CarePreviewCondition, type CarePreviewOutcome } from "../preview/useCarePreview";
 import type { HomeChild } from "../view-model";
 
-function CareWorkspace({ child, online, reading, initialKind }: { child: HomeChild; online: boolean; reading: boolean; initialKind?: CareKind }) {
-  const { actions } = usePreview();
-  const preview = useCarePreview(child, online, reading, initialKind);
+function CareWorkspace({ child, online, reading, initialKind, initialRecordId }: { child: HomeChild; online: boolean; reading: boolean; initialKind?: CareKind; initialRecordId?: string }) {
+  const router = useRouter(), navigate = usePreviewNavigation();
+  const preview = useCarePreview(child, online, reading, initialKind, initialRecordId);
   const [controlsOpen, setControlsOpen] = useState(false);
   const conditions: { value: CarePreviewCondition; label: string }[] = [
     { value: "normal", label: "一般" }, { value: "read_only", label: "唯讀角色" }, { value: "access_lost", label: "權限失效" },
@@ -21,7 +23,7 @@ function CareWorkspace({ child, online, reading, initialKind }: { child: HomeChi
     { value: "success", label: "成功" }, { value: "failed", label: "失敗" }, { value: "unknown", label: "結果未知" },
     ...(preview.model.draft?.mode === "revise" || preview.model.deletion ? [{ value: "conflict" as const, label: "版本衝突" }] : []),
   ];
-  return <CareRecordsView model={preview.model} actions={preview.actions} onPhotos={() => actions.open("photos")} previewControls={<SectionCard>
+  return <CareRecordsView model={preview.model} actions={preview.actions} onPhotos={() => navigate(() => router.push("/care?view=photos"))} onMore={() => navigate(() => router.push("/more"))} previewControls={<SectionCard>
     <SectionHeader density="compact" title="合成預覽情境" subtitle="這些工具只切換示例狀態，沒有呼叫 Server。" action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
     {controlsOpen ? <>
       <AppSelect label="記錄情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} />
@@ -33,10 +35,14 @@ function CareWorkspace({ child, online, reading, initialKind }: { child: HomeChi
 }
 
 export default function CarePage() {
+  const pathname = usePathname();
   const { model, actions } = usePreview();
-  const { compose } = useLocalSearchParams<{ compose?: string }>();
+  const { compose, view, record } = useLocalSearchParams<{ compose?: string; view?: string; record?: string }>();
   const initialKind = careKindOptions.find(item => item.value === compose)?.value;
   const child = model.children.find(item => item.id === model.selectedChildId);
-  return child ? <CareWorkspace key={`${child.id}:${initialKind ?? "list"}`} child={child} online={model.connection === "online"} reading={model.recordsLoad === "loading"} initialKind={initialKind} /> :
+  const router = useRouter(), navigate = usePreviewNavigation();
+  if (pathname !== "/care") return null;
+  if (child && view === "photos") return <PhotoWorkspace key={JSON.stringify([child.id, model.caregiverName])} capturePreferred={false} onCare={() => navigate(() => router.push("/care"))} />;
+  return child ? <CareWorkspace key={JSON.stringify([child.id,model.caregiverName,child.accessRole,initialKind ?? "list",record ?? ""])} child={child} online={model.connection === "online"} reading={model.recordsLoad === "loading"} initialKind={initialKind} initialRecordId={record} /> :
     <PageFrame density="compact" title="照顧記錄" description="選擇有權查看的孩子，再整理日常觀察。"><SectionCard><Text>尚未選擇孩子，不會顯示其他孩子的記錄。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

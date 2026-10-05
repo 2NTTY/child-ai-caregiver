@@ -8,6 +8,7 @@ import { CreateChildPreview } from "../components/CreateChildPreview";
 import { DeleteChildPreview } from "../components/DeleteChildPreview";
 import { ProfileView } from "../components/profile/ProfileView";
 import { useProfileSwitchAnchor } from "../components/profile/useProfileSwitchAnchor";
+import { MotionDisclosure } from "../motion";
 import { AppButton, AppSelect, SectionCard, SectionHeader } from "../components/ui";
 import { usePreview } from "../preview/PreviewContext";
 import { useProfilePreview, type ProfilePreviewCondition } from "../preview/useProfilePreview";
@@ -20,6 +21,7 @@ function ProfileWorkspace({ child, online, reading, switchPosition }: {
   const { model: home, actions: homeActions } = usePreview();
   const preview = useProfilePreview(child, online, reading);
   const [controlsOpen, setControlsOpen] = useState(false);
+  const [managementOpen, setManagementOpen] = useState(false);
   const [childDeletionActive, setChildDeletionActive] = useState(false);
   const conditions: { value: ProfilePreviewCondition; label: string }[] = [
     { value: "normal", label: "一般" }, { value: "no_profile", label: "尚未確認檔案" },
@@ -27,7 +29,8 @@ function ProfileWorkspace({ child, online, reading, switchPosition }: {
   ];
   return <ProfileView model={preview.model} actions={preview.actions} onOpenCare={() => homeActions.open("care")} childDeletionActive={childDeletionActive} onLayoutReady={switchPosition.restorePosition}
     writeNotice={<PreviewWriteNotice controller={preview.controller} online={online && !reading && preview.model.access === "editable"} />}
-    childPicker={<View ref={switchPosition.pickerRef}><SectionCard><SectionHeader density="compact" title="切換孩子" subtitle="切換會清除本頁草稿及未完成操作。" />
+    childPicker={<View ref={switchPosition.pickerRef} style={styles.childBar}><SectionCard surface="plain"><SectionHeader density="compact" title="目前孩子" subtitle="只查看這位孩子的檔案；切換前會保護未保存草稿。" />
+      <View style={styles.childOptions}>
       {home.children.length ? home.children.map(item => <Pressable key={item.id} accessibilityRole="button"
         ref={node => switchPosition.setOptionRef(item.id, node)}
         accessibilityLabel={`切換至${item.displayName}`} accessibilityState={{ selected: item.id === child?.id }}
@@ -35,10 +38,14 @@ function ProfileWorkspace({ child, online, reading, switchPosition }: {
         style={({ pressed }) => [styles.childOption, item.id === child?.id && styles.childOptionActive, pressed && styles.pressed]}>
         <Text style={styles.childName}>{item.displayName}</Text><Text style={styles.meta}>{item.id === child?.id ? "目前" : "切換"}</Text>
       </Pressable>) : <Text style={styles.meta}>沒有可切換的孩子。</Text>}
+      </View>
+      <AppButton label={managementOpen ? "收起孩子管理" : "新增或管理孩子"} variant="quiet" onPress={() => setManagementOpen(value => !value)} />
+      <MotionDisclosure expanded={managementOpen || childDeletionActive} scopeKey={child?.id ?? "no-child"}><View style={styles.childManagement}>
       <CreateChildPreview online={online && !reading} enabled={preview.model.access === "editable" && !preview.controller.locked && !childDeletionActive} onCreated={homeActions.createChildPreview} />
       {child && preview.model.access === "editable" ? <DeleteChildPreview key={child.id} child={child} online={online && !reading} enabled={!preview.controller.locked && preview.model.operation.state !== "conflict"} onDeleted={homeActions.deleteChildPreview} onActiveChange={setChildDeletionActive} /> : null}
+      </View></MotionDisclosure>
     </SectionCard></View>}
-    previewControls={<SectionCard><SectionHeader density="compact" title="合成預覽情境" subtitle="只切換本頁示例，沒有呼叫 Server。"
+    previewControls={<SectionCard surface="plain" style={styles.previewTools}><SectionHeader density="compact" title="合成預覽情境" subtitle="只切換本頁示例，沒有呼叫 Server。"
       action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
       {controlsOpen ? <>
         {child ? <AppSelect label="檔案情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} /> : null}
@@ -59,7 +66,11 @@ export default function ProfilePage() {
   </PageFrame>;
 }
 const styles = StyleSheet.create({
-  childOption: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.sm,
+  childBar: { borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.lg },
+  childOptions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  childManagement: { gap: spacing.lg, paddingTop: spacing.md },
+  previewTools: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.lg },
+  childOption: { flexGrow: 1, flexBasis: 180, minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.sm,
     borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   childOptionActive: { backgroundColor: colors.selectedNav, borderColor: colors.teal }, pressed: { opacity: 0.68 },
   childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },

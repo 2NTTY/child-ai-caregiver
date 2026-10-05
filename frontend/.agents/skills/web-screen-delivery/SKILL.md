@@ -16,6 +16,15 @@ description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作�
 - 共用聊天維持 message id、最終快照、每訊息來源／展開狀態及本人跟隨意圖；不把合成 timer 當真 stream、不把已載入視窗當完整歷史。只呈現公開活動，不能顯示內部思維鏈。
 - 同類呈現已重用時才抽小型共用元件，資料／回調和內容組裝分開；不把 fixture／控制器搬進通用顯示層。多實例 state／key 要按本人／孩子正確隔離。來源底線、捲動條、固定 composer 等相鄰元素須量度相對位置，不只檢查整頁寬度。
 
+## 多入口與快捷輸入的復用方法
+
+- 功能不同可採不同整頁配方，共用 tokens／控制項及同一資料 owner；新入口只接既有 callback／投影。移動 controller 到共同祖先時，分清需保留的集合、離頁要丟棄的 transient 草稿及 pending／unknown 鎖定，不能僅用重新 mount 全站清資料。
+- 跨入口同源須列明唯一掛載點、consumers 與 scope。scope mismatch 先不暴露舊資料，遲到回呼以 generation／scope 比對拒絕；欄位名稱相近不等於同一業務來源，不能將 MemoryTopic 改名當 Growth concern。
+- 手勢只選擇輸入方式，不自動送出。按下後曾超過拖曳閾值，即使拖回起點也須抑制後續 click；抑制旗標須跨 scope／路由 effect 重建保留，消耗一次後清除，新實際 pointerdown 或鍵盤啟用才能恢復正常點按；pointercancel、失焦、隱藏、離頁及換 scope 清理。保留直接按鈕與鍵盤等效操作，安全區與底欄預留空間按實際畫面驗證。
+- 本地 media adapter 的權限請求只由明確動作啟動；取消後遲到串流也須 stop tracks。錄音停止要等 final dataavailable，記錄真正 MIME，object URL 所有權只能轉移一次，所有結束路徑都釋放。能力、限制及正式接線看 [助手交接](../../../AGENT_HANDOFF.md#mobile-quick-input-design)，不要把本地 resource cap 寫成 Server contract。
+
+以上適用現有 React／Expo Web 前端，2026-10-04 核對瀏覽器原生 [MediaRecorder](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)／[getUserMedia](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)。純 lifecycle 測試不證明真裝置權限或音訊可用；Web、原生與正式 API 分別保留待驗項。
+
 ## 按任務讀取
 
 | 本次改甚麼 | 只讀對應方法 |

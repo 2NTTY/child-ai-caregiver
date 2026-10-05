@@ -2,13 +2,19 @@
 
 更新：2026-10-01。FE-W15 基線 `3e153a7c5f8682429e380d6e8816ae5be128175d`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；源碼／驗證 commit：`ef536e8e1c71e5b28dd2e337ab4e6b478fbc489a`。主責 B，只修改 `frontend/**`，沒有改 Server、Agent、正式 App、根文件或業務規則。使用者視覺及真接線由原責任方驗收，不自行 merge。
 
+## 關注時間線接點
+
+FE-W38 呈現 `GrowthPage.concerns?: GrowthConcernProjection`：每個 concern 帶孩子、穩定 id、狀態、關聯 attentionIds 及事件；事件區分助手提议／原始觀察／待核對記錄／已確認操作，保留來源標籤、時間及原記錄／任務 id。`historyComplete` 明示資料是否完整；缺正式投影為 unavailable，不以既有 MemoryTopic 或數值推斷成長異常。
+
+`GrowthConcernTimeline` 只呈現，唯一來源仍由成長 owner 注入；既有 Growth attention／topic 操作及 expectedVersion／unknown 不變。Agent 建立關注、持續時間線及與首頁同步的正式 port 尚未提供，不從合成 fixture 創造 endpoint。原記錄導向 `/care?record=…`，需保持同孩子授權；找不到 id 或無權時不可跳到別的記錄冒充成功。首頁既有 ongoing 仍是 MemoryTopic，不與 concern 混稱。當前實作／驗收見 [PLAN](PLAN.md#active)。
+
 ## 已核對依據
 
 直接讀 GitHub master `ce87370b6375b25e45f016f2218d924b44f06f3c`：[UI-P2-07／S13-W08 交接](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/docs/P2_UI_HANDOFF.md#growth-ui-handoff)、[HTTP 契約](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/docs/API.md#growth-attention-http)、[growth 型別](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/shared/growth.ts)、[GrowthApi](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/client/growth-api.ts)、[正式 GrowthPanel](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/client/GrowthPanel.tsx)。接線時再核對受影響契約；不因主聊天 checkout 未拉取便推造功能或重寫後端。
 
 ## 前端入口
 
-`npm run web -- --port 8083`，入口 `/growth`；固定輸出預覽方法沿 [總交接](HANDOFF.md#預覽及驗證)。桌面導航「成長關注」，窄屏及原生「更多」可到達；四個原生底部 Tabs 保留。手機 Web 與 Android 使用同一功能元件。
+`npm run web -- --port 8083`，入口 `/growth`；固定輸出預覽方法沿 [總交接](HANDOFF.md#預覽及驗證)。桌面導航「成長與關注」，手機由五項底欄的「成長」進入，次要入口保留相容路由。手機 Web 與 Android 使用同一功能元件。
 
 | 檔案 | 責任 |
 |---|---|

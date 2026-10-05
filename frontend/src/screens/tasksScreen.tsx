@@ -34,5 +34,5 @@ export default function TasksPage() {
   const { model, actions } = usePreview();
   const child = model.children.find(item => item.id === model.selectedChildId);
   return child ? <TasksWorkspace key={child.id} child={child} online={model.connection === "online"} reading={model.recordsLoad === "loading"} /> :
-    <PageFrame density="compact" title="任務與預約" description="先選擇有權查看的孩子，才展示家庭共享事項。"><SectionCard><Text>尚未選擇孩子，沒有顯示其他孩子的任務、提醒或草稿。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="待辦與預約" description="先選擇有權查看的孩子，才展示家庭共享事項。"><SectionCard><Text>尚未選擇孩子，沒有顯示其他孩子的任務、提醒或草稿。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

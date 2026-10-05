@@ -1,0 +1,129 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px" [active]
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 1440 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link "育有方，返回主頁":
+    - /url: /
+    - generic: 用資料 · 陪伴成長
+  - generic: 常用
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - generic: 行動與成長
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦與預約
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長與關注
+  - generic: 照顧資料
+  - link "記錄與核對":
+    - /url: /care
+    - generic: 記錄與核對
+  - link "回顧與到診":
+    - /url: /summary
+    - generic: 回顧與到診
+  - generic: 資料管理
+  - link "子女檔案":
+    - /url: /profile
+    - generic: 子女檔案
+  - link "與 Agent 對話":
+    - /url: /chat
+    - generic: 與 Agent 對話
+    - generic: 提問・整理・規劃
+  - link "設定":
+    - /url: /settings
+    - generic: 設定
+  - link "更多功能":
+    - /url: /more
+    - generic: 更多功能
+  - button "選擇孩子，目前小昕":
+    - generic: 小
+    - generic: 小昕
+    - generic: 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic "小昕的關鍵資料":
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - button "關閉預覽提示":
+    - generic: 已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。
+  - generic: 育有方 · 家庭行動
+  - heading "待辦與預約" [level=1]
+  - generic: 按時間看安排，清楚知道誰負責、下一步做甚麼。
+  - generic: 小昕的家庭事項
+  - generic: 合成示例 · 未接駁 Server · 重新載入、切換孩子或情境後重置
+  - button "新增共享事項":
+    - generic: 新增共享事項
+  - generic: 時間安排
+  - generic: 已載入 5 項 · 日期依各事項時區
+  - button "事項狀態：全部":
+    - generic: 事項狀態：全部
+  - heading "2026年9月28日 星期一" [level=1]
+  - generic: 1 項
+  - button "查看事項：記錄這星期的身高":
+    - generic: 09:00
+    - generic: 任務
+    - generic: 記錄這星期的身高
+    - generic: 負責人：媽媽（擁有人 · 合成）
+    - generic: 待處理
+    - generic: 查看安排／回報進度
+    - generic: Asia/Hong_Kong · 版本 2
+  - heading "2026年9月30日 星期三" [level=1]
+  - generic: 2 項
+  - button "查看事項：健康院到診安排":
+    - generic: 09:30
+    - generic: 預約
+    - generic: 健康院到診安排
+    - generic: 負責人：媽媽（擁有人 · 合成）
+    - generic: 待處理
+    - generic: 核對到診安排
+    - generic: Asia/Hong_Kong · 版本 1
+  - button "查看事項：核對到診準備是否完成":
+    - generic: 09:30
+    - generic: 任務
+    - generic: 核對到診準備是否完成
+    - generic: 負責人：媽媽（擁有人 · 合成）
+    - generic: 待覆核 · 已停催
+    - generic: 核對完成或取消
+    - generic: Asia/Hong_Kong · 版本 3
+  - heading "已結束的安排" [level=1]
+  - generic: 2 項
+  - button "查看事項：整理上星期的照顧觀察":
+    - generic: 09:30
+    - generic: 任務
+    - generic: 整理上星期的照顧觀察
+    - generic: 負責人：媽媽（擁有人 · 合成）
+    - generic: 已完成
+    - generic: 查看安排及歷史
+    - generic: Asia/Hong_Kong · 版本 2
+  - button "查看事項：星期日公園活動":
+    - generic: 09:30
+    - generic: 任務
+    - generic: 星期日公園活動
+    - generic: 負責人：媽媽（擁有人 · 合成）
+    - generic: 已取消
+    - generic: 查看安排及歷史
+    - generic: Asia/Hong_Kong · 版本 2
+  - generic: 過期不會自動完成；回報完成與通知送達分開核對。
+  - button "背景與提醒狀態":
+    - generic: 背景與提醒狀態
+  - heading "合成預覽情境" [level=1]
+  - generic: 只切換固定示例，沒有連接 Server 或啟動 worker。
+  - button "顯示情境工具":
+    - generic: 顯示情境工具

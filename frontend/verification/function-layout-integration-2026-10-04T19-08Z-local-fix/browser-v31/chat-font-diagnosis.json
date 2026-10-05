@@ -1,0 +1,61 @@
+{
+  "citation": {
+    "ariaLabel": "查看引用【1】：記錄時間及原文（合成示例）",
+    "fontFamily": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Microsoft JhengHei\", \"PingFang TC\", sans-serif",
+    "fontFeatureSettings": "normal",
+    "fontSize": "11.7px",
+    "fontStyle": "normal",
+    "fontWeight": "400",
+    "letterSpacing": "normal",
+    "tag": "BUTTON",
+    "text": "【1】"
+  },
+  "fonts": {
+    "faces": [],
+    "status": "loaded"
+  },
+  "normalBody": {
+    "ariaLabel": null,
+    "fontFamily": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Microsoft JhengHei\", \"PingFang TC\", sans-serif",
+    "fontFeatureSettings": "normal",
+    "fontSize": "15px",
+    "fontStyle": "normal",
+    "fontWeight": "400",
+    "letterSpacing": "normal",
+    "tag": "DIV",
+    "text": "可以先把已確認的睡眠記錄、作息時間，以及你想了解的情況放在一起。正式回答會由已接通的 Agent 按授權資料及適用來源生成。"
+  },
+  "referenceHeading": {
+    "ariaLabel": null,
+    "fontFamily": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Microsoft JhengHei\", \"PingFang TC\", sans-serif",
+    "fontFeatureSettings": "normal",
+    "fontSize": "13px",
+    "fontStyle": "normal",
+    "fontWeight": "600",
+    "letterSpacing": "normal",
+    "tag": "H1",
+    "text": "參考來源"
+  },
+  "sourceControl": {
+    "ariaLabel": "來源【1】：記錄時間及原文（合成示例）",
+    "fontFamily": "Arial",
+    "fontFeatureSettings": "normal",
+    "fontSize": "13.3333px",
+    "fontStyle": "normal",
+    "fontWeight": "400",
+    "letterSpacing": "normal",
+    "tag": "BUTTON",
+    "text": "【1】記錄時間及原文（合成示例）"
+  },
+  "sourceText": {
+    "ariaLabel": null,
+    "fontFamily": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Microsoft JhengHei\", \"PingFang TC\", sans-serif",
+    "fontFeatureSettings": "normal",
+    "fontSize": "13px",
+    "fontStyle": "normal",
+    "fontWeight": "600",
+    "letterSpacing": "normal",
+    "tag": "DIV",
+    "text": "【1】記錄時間及原文（合成示例）"
+  }
+}

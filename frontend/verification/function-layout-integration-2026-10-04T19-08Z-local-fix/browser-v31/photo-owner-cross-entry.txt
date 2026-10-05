@@ -1,0 +1,67 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 320 × 900 CSS px
+- iframe [active] [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - button "關閉預覽提示":
+    - generic: 已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。
+  - generic: 育有方 · 孩子資料
+  - heading "記錄 · 原始照片" [level=1]
+  - generic: 先保存私人原照片，再核對內容。只有你明確確認，才與家庭共享照片及記錄。
+  - generic: 小昕的照片
+  - button "重新讀取照片":
+    - generic: 重新讀取照片
+  - button "返回照顧記錄":
+    - generic: 返回記錄
+  - generic: 照片附件與家庭記錄各有自己的可見範圍。未關聯、私人或待核對的照片仍在這裏；選取不代表共享。
+  - generic "照片清單":
+    - heading "原始附件" [level=1]
+    - button "加入原照片":
+      - generic: 加入原照片
+    - generic: 私人照片只有上傳者可見；共享照片按家庭權限讀取。
+    - generic: 目前沒有可讀取的照片。選擇原照片後，可先私人保存。
+    - generic: JPEG／PNG，每張最多 4 MiB；每個孩子最多 100 張及 100 MiB。清單數量不是全部容量統計。
+  - heading "合成預覽情境" [level=1]
+  - button "顯示照片情境":
+    - generic: 顯示照片情境
+  - generic: 不呼叫 Server、Gemini 或裝置權限。
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

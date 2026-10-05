@@ -1,9 +1,9 @@
 # Agent 對話及私人結果交接
 
 <a id="mobile-quick-input-design"></a>
-## 手機快捷輸入與更多入口待實施設計
+## 手機快捷輸入與更多入口
 
-2026-10-04 使用者確認方向；整體版型／導航改造仍等待使用者另行通知，本節不代表現有項目已實作。
+2026-10-04 使用者已通知開始實施；本節定義輸入與接線邊界，完成及驗收狀態只見 [PLAN](PLAN.md#active)。
 
 - 底部「記錄」輕點仍進記錄；由該按鈕向上拖打開原有「更多」頁，保留原本次要功能的可達性。另提供可辨識且可直接點擊／鍵盤操作的更多入口，不能只靠隱藏手勢。
 - 快捷拍照控制貼於手機左下、首頁導航鈕上方，避開底部安全區及導航點擊範圍，內容須預留不被遮擋的空間。輕點拍照；按住開始拖動立即展開小菜單：**往上選文件、右上語音、往右快速記一句**。此為最新方向，取代先前上方語音／右上文件或相簿的提案。
@@ -16,7 +16,13 @@
 <a id="home-assistant-entry"></a>
 ## 首頁助手入口與重要事項
 
-首頁以「隨手拍／說／寫，由助手整理及跟進」為體驗目標；表單保留作補充及修改。此目標不代表已具備自動辨識、正式保存或背景處理能力。現行首頁 `HomeQuickActions` 的拍照沿既有 Web camera／picker；`home-agent-entry.ts` 只把一份本地 `PhotoOriginal` 的所有權交給同 scope 的 `AgentComposer`，不寫 URL／localStorage、不上傳或自動送出。取消、替換、離頁及切孩子／身份清理資源與遲到回應；合成 scope 的稱呼／孩子／角色不能代替正式 session／本人／Server／授權。文字沿原對話入口，語音未接通；圖片處理與記錄亦須明示未接通。正式照片／模型同意、保存、發送及 unknown 沿下方原契約及 [照片交接](PHOTOS_HANDOFF.md)，不得由「已拍攝」推成「已記錄」。
+首頁以「隨手拍／說／寫，由助手整理及跟進」為體驗目標，不代表自動辨識、正式保存或背景處理已接通。`PreviewContext` 只建立一次 `createAssistantDraftOwner`（`src/assistant-draft.ts`）；手機 `MobileQuickInputDock`、Web `HomeQuickActions` 及 `AgentComposer` 只向此 owner 交輸入。照片沿原 camera／picker；文件及音訊是本地附件，不進 URL／localStorage，不自動上傳或送出。Today→Assistant 保留附件；離開 Assistant 確認後清附件，文字維持既有同 scope 暫留，換 scope 不暴露上一範圍內容。正式整合須以 session／本人／Server／孩子授權取代合成 scope，不能用稱呼當正式身份。
+
+`AssistantInputDialog`／`AssistantAttachmentPreview` 共用附件預覽、移除及選填文字。有效附件可以文字空白作本地輸入預覽；兩者皆空停用。照片／文件／語音均無正式 Agent 附件發送 callback，介面須寫「預覽輸入」及未接通，不能假稱已送達或產生 Agent 答案。正式發送、照片／模型同意、unknown 與原操作查核只在此 owner 接入一次，各入口不再各自接 API。
+
+Web `VoiceCapture.web.tsx` 沿瀏覽器 MediaRecorder：明確開始才要求咪高峰、停止後試聽、再明確加入草稿；拒絕／缺安全環境／不可用有提示，可後備選取已錄音訊。取消、隱藏、卸載及 scope 變化釋放 tracks／object URLs，遲到權限回應及 final dataavailable 受 generation 保護。20 MiB／5 分鐘只屬前端暫存資源限制，不是正式音訊契約。沒有轉文字、模型、上傳或背景錄音；原生錄音 adapter 尚未提供。官方能力依 [MediaRecorder](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)／[getUserMedia](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)，文件核對不代表真咪高峰已驗。
+
+首頁及右欄 attention 沿同一投影；現有 Tasks 頁 controller 的改期／完成尚未回寫該合成 snapshot，正式整合必須由同一 Task owner 投影及刷新兩處。Contact／Summary 的指定 task id 導向亦須接入該 owner 的定位回調，不以只打開任務路由當精確定位。Home ongoing 的既有來源是 MemoryTopic，保留原標籤及目的地，不冒充 Growth concern。
 
 首頁第一區只使用 `HomeOverview.agentImportant` 的獨立來源；側欄 `attention` 保留用戶待辦，第二區 `ongoing` 保留持續觀察，三者不互相補位。`HomeAgentImportantSection` 是前端投影，不是新 HTTP schema：保留來源次序、穩定 id、原 runId／候選版本與期限、原建立時間、讀取時間及原 whyNow；前端不按日期或健康內容自行判重要性。缺省／錯孩子／未接線為 unavailable，loading、error、ready 空快照各自獨立；unknown 不作成功，completed 不作照護完成。首頁只作導航，沒有已讀、略過或精確 run 導航的正式 callback 時不新增假操作。
 

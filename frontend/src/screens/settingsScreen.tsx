@@ -13,9 +13,11 @@ import { useChannelSettingsPreview } from "../preview/useChannelSettingsPreview"
 import { ModelSettingsPreview } from "../components/model-settings/ModelSettingsPreview";
 import { useModelSettingsPreview } from "../preview/useModelSettingsPreview";
 import { PageFrame } from "../components/PageFrame";
-import { AppButton, AppTabPanel, AppTextField, SectionCard, SectionHeader, TextLink, UnderlineTabs } from "../components/ui";
+import { AppButton, AppTabPanel, AppTextField, SectionHeader, TextLink } from "../components/ui";
 import { usePreview } from "../preview/PreviewContext";
 import { AppIcon } from "../components/AppIcon";
+import { SettingsNavigation } from "../components/settings/SettingsNavigation";
+import { SettingsSection as SectionCard } from "../components/settings/SettingsSection";
 import { chineseFont, colors, readingType, spacing, typeScale } from "../theme";
 
 type SettingsTab = "account" | "children" | "family" | "preferences" | "notifications" | "model" | "privacy";
@@ -41,17 +43,20 @@ export default function SettingsPage() {
   const tabsId = useId();
   const [displayName, setDisplayName] = useState(model.caregiverName);
   usePreviewLeaveGuard(displayName !== model.caregiverName);
-  const stacked = width < 850;
+  const compactNavigation = width < 720;
+  const accountDirty = displayName !== model.caregiverName;
   return <PageFrame density="compact" title="設定" description="管理個人偏好、孩子與家庭資料；帳戶資料為合成預覽，裝置動畫偏好只在本機套用。" eyebrow={`${brand.name} · 個人空間`}>
-    <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.workspace}>
-    <UnderlineTabs id={tabsId} label="設定分類" items={tabs} value={tab} onChange={setTab} />
-    <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={[styles.columns, stacked && styles.stack]}>
-      <View style={[styles.column, stacked && styles.fullColumn]}>
+    <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.workspace, compactNavigation && styles.workspaceStack]}>
+    <SettingsNavigation id={tabsId} items={tabs} value={tab} onChange={setTab} compact={compactNavigation} />
+    <View style={styles.settingsContent}>
+    <View style={styles.scopeNote}><Text style={styles.valueLabel}>本人的設定</Text><Text style={styles.muted}>分類之間保留草稿；各項操作須分別核對及確認</Text></View>
+    <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
+      <View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="個人資料" subtitle="目前資料只屬合成示例。" />
           <View style={styles.identity}><View style={styles.avatar}><Text style={styles.avatarText}>{displayName.slice(0, 1) || "育"}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{displayName || "未命名"}</Text><Text style={styles.muted}>preview@example.invalid · 合成資料</Text></View></View>
           <Divider style={styles.divider} />
           <Text style={styles.label}>顯示名稱</Text><AppTextField accessibilityLabel="顯示名稱預覽草稿" value={displayName} onChangeText={setDisplayName} />
-          <Text style={styles.draftNote}>修改只在此畫面預覽；未保存至帳戶。正式版須沿用既有身份契約。</Text>
+          <View style={styles.draftBoundary}><Text style={styles.draftTitle}>{accountDirty ? "顯示名稱有未保存修改" : "顯示名稱只作本頁預覽"}</Text><Text style={styles.draftNote}>尚未接入帳戶保存；不會更改正式顯示名稱。</Text>{accountDirty ? <AppButton label="還原顯示名稱草稿" variant="quiet" onPress={() => setDisplayName(model.caregiverName)} /> : null}</View>
           <LabeledValue label="電郵地址" value="preview@example.invalid（合成）" />
           <LabeledValue label="登入方式" value="電郵與密碼（正式 App 已支援）" />
         </SectionCard>
@@ -59,7 +64,7 @@ export default function SettingsPage() {
           <LabeledValue label="介面語言" value="繁體中文（香港）" /><LabeledValue label="地區" value="香港" /><LabeledValue label="時間顯示" value="24 小時制 · Asia/Hong_Kong" />
         </SectionCard>
       </View>
-      <View style={[styles.column, stacked && styles.fullColumn]}>
+      <View style={styles.sectionGroup}>
         <SectionCard testID="account-settings"><SectionHeader density="compact" title="登入與安全" subtitle="切換帳戶入口集中在這裏。" />
           <Text style={styles.body}>下方會開啟登入預覽，目前不會登出或切換真帳戶。</Text>
           <AppButton label="切換帳戶" variant="secondary" onPress={() => leave(() => router.push("/login"))} />
@@ -83,14 +88,14 @@ export default function SettingsPage() {
       <Text style={styles.draftNote}>新增、刪除及共享孩子資料屬正式 API 與權限控制；此預覽不執行。</Text>
     </SectionCard></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><SectionHeader density="compact" title="家庭成員" subtitle="共享記錄與私人聊天的權限分開處理。" />
-      <Text style={styles.body}>正式版已有家庭邀請、角色和撤權流程。這裏只提供視覺入口，權限由 Server 核定。</Text><AppButton label="查看家庭協調" onPress={() => actions.open("family")} />
+      <Text style={styles.body}>正式版已有家庭邀請、角色和撤權流程。這裏只提供視覺入口，權限由 Server 核定。</Text><View style={styles.timeRow}><AppButton label="查看家庭協調" onPress={() => actions.open("family")} /><AppButton label="聯絡與授權" variant="secondary" onPress={() => actions.open("contact")} /></View>
     </SectionCard></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={[styles.columns, stacked && styles.stack]}>
-      <View style={[styles.column, stacked && styles.fullColumn]}>
+    <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={styles.sections}>
+      <View style={styles.sectionGroup}>
         <MotionSettings />
         <PreferencesPreview online={model.connection === "online"} />
         <BackgroundSettings />
-      </View><View style={[styles.column, stacked && styles.fullColumn]}>
+      </View><View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="通知渠道" />
           <LabeledValue label="站內狀態" value="依原事項／收據顯示" />
           <Text style={styles.body}>本人綁定與安靜時段分開設定。Web Push／Telegram 可比較合成流程，真渠道尚未接駁此介面。</Text>
@@ -100,8 +105,8 @@ export default function SettingsPage() {
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="notifications" active={tab === "notifications"}><ChannelSettingsPreview controller={channels} /></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsPreview controller={modelSettings} active={tab === "model"} onSwitchAccount={channels.switchAccount} /></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} style={[styles.columns, stacked && styles.stack]}>
-      <View style={[styles.column, stacked && styles.fullColumn]}><SectionCard><SectionHeader density="compact" title="資料與私隱" />
+    <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} style={styles.sections}>
+      <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="資料與私隱" />
         <Text style={styles.body}>孩子資料、已確認記錄與私人聊天的可見範圍，須按目前身份與家庭角色重新檢查。退出或撤權後，正式 App 必須清除不再可見的資料。</Text>
         <LabeledValue label="私人聊天" value="只對本人可見" /><LabeledValue label="共享資料" value="按孩子及家庭角色授權" />
       </SectionCard>
@@ -111,22 +116,28 @@ export default function SettingsPage() {
           <Text style={styles.draftNote}>完整來源保持本人私人。用途編輯是合成草稿；正式接入、原地修改與停用仍待接線。</Text>
         </SectionCard>
       </View>
-      <View style={[styles.column, stacked && styles.fullColumn]}><SectionCard><SectionHeader density="compact" title="帳戶操作" />
+      <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="帳戶操作" />
         <Text style={styles.body}>匯出資料、刪除帳戶及儲存用量未有此預覽可用的完整契約；不顯示可點擊的假操作。</Text>
         <TextLink label="查看接線說明" onPress={() => setTab("account")} />
       </SectionCard></View>
     </AppTabPanel>
     </View>
+    </View>
   </PageFrame>;
 }
 
 const styles = StyleSheet.create({
-  workspace: { width: "100%", minWidth: 0, gap: spacing.lg },
+  workspace: { width: "100%", minWidth: 0, flexDirection: "row", alignItems: "flex-start", gap: spacing.xxl },
+  workspaceStack: { flexDirection: "column", gap: spacing.lg },
+  settingsContent: { flex: 1, flexBasis: "auto", width: "100%", minWidth: 0, gap: spacing.xl, maxWidth: 800 },
+  scopeNote: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.md },
+  draftBoundary: { borderLeftWidth: 2, borderLeftColor: colors.line, paddingLeft: spacing.md, gap: spacing.xs },
+  draftTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
   pressed: { opacity: 0.68 },
-  columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, stack: { flexDirection: "column" }, column: { flex: 1, width: "100%", minWidth: 0, gap: spacing.lg },
-  fullColumn: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
+  sections: { gap: spacing.xl, width: "100%", minWidth: 0 },
+  sectionGroup: { width: "100%", minWidth: 0, gap: spacing.xl },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.md }, avatar: { width: 55, height: 55, borderRadius: 28, backgroundColor: colors.teal, alignItems: "center", justifyContent: "center" }, avatarText: { color: colors.white, fontFamily: chineseFont, fontSize: typeScale.title, fontWeight: "800" }, identityText: { flex: 1, minWidth: 0, gap: spacing.xs }, identityName: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "800" }, muted: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta }, divider: { backgroundColor: colors.softLine }, label: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, fontWeight: "700" }, draftNote: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   valueRow: { minHeight: 40, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine }, valueLabel: { width: 96, fontFamily: chineseFont, color: colors.muted, ...readingType.meta }, valueText: { flex: 1, minWidth: 130, fontFamily: chineseFont, color: colors.ink, ...readingType.tool }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
-  settingGroup: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.md }, helpTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "800" }, listRow: { minHeight: 66, borderBottomWidth: 1, borderBottomColor: colors.softLine, flexDirection: "row", alignItems: "center", gap: spacing.md }, miniAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.teal, alignItems: "center", justifyContent: "center" }, chevron: { color: colors.teal, fontSize: 23 },
-  timeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md }, timeField: { flex: 1, minWidth: 120, gap: spacing.xs }, switchRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 58 },
+  settingGroup: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.md }, helpTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "800" }, listRow: { minHeight: 66, borderBottomWidth: 1, borderBottomColor: colors.softLine, flexDirection: "row", alignItems: "center", gap: spacing.md }, miniAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.teal, alignItems: "center", justifyContent: "center" },
+  timeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
 });

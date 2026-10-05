@@ -34,7 +34,7 @@ export function SourceComposer({ model, actions }: { model: SourcesViewModel; ac
       <FormFieldMessage id={`${fieldId(name)}-message`} error={fieldState.error?.message} help={help} />
     </View>} />;
   }
-  return <SectionCard testID="source-composer"><SectionHeader density="compact" title="加入資料來源" subtitle={`先放到${model.childName}的私人來源，只供${model.accountName}本人讀取。`} icon="lock-outline" />
+  return <SectionCard surface="plain" style={s.workflowSection} testID="source-composer"><SectionHeader density="compact" title="加入資料來源" subtitle={`先放到${model.childName}的私人來源，只供${model.accountName}本人讀取。`} icon="lock-outline" />
     <FormErrorSummary entries={errorEntries} onFocus={name => { setDetailsOpen(true); setPendingFocus(name as keyof SourceComposerDraft); }} />
     {seed ? <Text style={s.warning}>原來源仍保留；這次會另建一項，請自行貼上正文。</Text> : null}
     <Controller name="kind" control={control} render={({ field: input }) => <AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("kind")} label="來源方式" value={input.value} disabled={locked} onChange={input.onChange} options={[

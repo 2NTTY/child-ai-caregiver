@@ -1,3 +1,4 @@
+import { SettingsSection as SectionCard } from "./settings/SettingsSection";
 import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -8,7 +9,7 @@ import { z } from "zod";
 import { useId, useState } from "react";
 import { usePreviewOperation } from "../preview/usePreviewOperation";
 import { chineseFont, colors, readingType, spacing } from "../theme";
-import { AppButton, SectionCard, SectionHeader } from "./ui";
+import { AppButton, SectionHeader } from "./ui";
 import { FormErrorSummary, FormFieldMessage } from "./FormErrorSummary";
 import { StatusAnnouncement } from "./StatusAnnouncement";
 import { PreviewWriteControls, PreviewWriteNotice } from "./PreviewWritePanel";

@@ -1,9 +1,8 @@
-import { brand } from "../branding";
 import { useRef, useState } from "react";
 import { usePathname } from "expo-router";
 import { StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView } from "react-native";
 import { Text } from "react-native-paper";
-import { AppButton, SectionCard } from "../components/ui";
+import { AppButton, SectionCard, TextLink } from "../components/ui";
 import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";
 import { AgentComposer } from "../components/agent/AgentComposer";
 import { CitationText } from "../components/chat/AnswerSources";
@@ -13,7 +12,11 @@ import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatType } from "../components/chat/chat-presentation";
 import { useChatTimelinePreview } from "../preview/useChatTimelinePreview";
 import { usePreview } from "../preview/PreviewContext";
+import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
+import { canPreviewAssistantDraft } from "../assistant-draft";
 import { mobileLayout } from "../theme";
+
+const attachmentLeaveCopy = { message: "離開將移除未送出的附件；文字仍在本次暫存保留。", actionLabel: "移除附件並離開" };
 
 export default function ChatPage() {
   const { model } = usePreview();
@@ -27,17 +30,25 @@ export default function ChatPage() {
 
 function ChatContents({ compact }: { compact: boolean }) {
   const pathname = usePathname();
-  const { model, actions, chatDraft, setChatDraft, takeAgentPhoto } = usePreview();
+  const { model, actions, chatDraft, setChatDraft, agentAttachments, addAgentAttachment, removeAgentAttachment, clearAgentDraft, composerFocusRequest } = usePreview();
   const child = model.children.find(item => item.id === model.selectedChildId);
   const preview = useChatTimelinePreview(child?.id ?? "no-child");
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
   const locateSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => {
     timelineRef.current?.holdReadingPosition(); locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
   };
-  function previewMessage() { const value = chatDraft.trim(); if (!value || !child) return; preview.addQuestion(value); setChatDraft(""); }
+  usePreviewLeaveGuard(agentAttachments.length > 0 && pathname === "/chat", false, "child", attachmentLeaveCopy);
+  function previewMessage() {
+    if (!child || !canPreviewAssistantDraft({ text: chatDraft, attachments: agentAttachments })) return;
+    const labels = { photo: "照片", file: "文件", voice: "音訊" };
+    const attachmentSummary = agentAttachments.map(item => `${labels[item.kind]}：${item.fileName}`).join("\n");
+    // The local timeline receives an honest summary, never invented question text or a server receipt.
+    preview.addQuestion([chatDraft.trim(), attachmentSummary ? `未送出附件預覽\n${attachmentSummary}` : ""].filter(Boolean).join("\n\n"));
+    clearAgentDraft();
+  }
   const header = <>
     <View style={styles.headingCard}>
-      <Text accessibilityRole="header" style={styles.title}>{brand.agentTitle}</Text>
+      <View style={styles.headingRow}><Text accessibilityRole="header" style={styles.title}>助手</Text><TextLink label="記憶與話題" onPress={() => actions.open("memory")} /></View>
       <Text style={styles.previewNote}>合成畫面示例 · 尚未連接 Agent 或發送訊息</Text>
     </View>
     {child ? <AgentConversationPreview childId={child.id} online={model.connection === "online"} onLocateSource={locateSource} onPreviewReply={preview.showReply} />
@@ -60,12 +71,14 @@ function ChatContents({ compact }: { compact: boolean }) {
           <Text style={styles.footerText}>此段只示範排版與狀態，沒有呼叫模型。</Text>
         </> : undefined}
       </ChatMessage>} />
-    <AgentComposer enabled={!!child && pathname === "/chat"} compact={compact} draft={chatDraft} onChangeDraft={setChatDraft} onPreview={previewMessage} onPhotos={() => actions.open("photos")} onSources={() => actions.open("sources")} takeInitialPhoto={takeAgentPhoto} />
+    <AgentComposer enabled={!!child && pathname === "/chat"} compact={compact} draft={chatDraft} attachments={agentAttachments} onChangeDraft={setChatDraft} onPreview={previewMessage}
+      onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
   </>;
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas }, headingCard: { gap: 4, minWidth: 0 },
+  headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" },
   title: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
   previewNote: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },

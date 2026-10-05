@@ -23,6 +23,6 @@ function SummaryWorkspace({child, online, identity, server, onIdentity, onServer
 export function SummaryScreen() {
   const {model, actions} = usePreview(), child = model.children.find(item => item.id === model.selectedChildId);
   const [identity, setIdentity] = useState('合成媽媽'), [server, setServer] = useState('合成 A');
-  return child ? <SummaryWorkspace key={JSON.stringify([child.id, identity, server])} child={child} online={model.connection === 'online'} identity={identity} server={server} onIdentity={() => setIdentity(value => value === '合成媽媽' ? '合成爸爸' : '合成媽媽')} onServer={() => setServer(value => value === '合成 A' ? '合成 B' : '合成 A')} onRecord={() => actions.open('care')} onTask={() => actions.open('tasks')} /> :
+  return child ? <SummaryWorkspace key={JSON.stringify([child.id, identity, server, model.caregiverName, child.accessRole])} child={child} online={model.connection === 'online'} identity={identity} server={server} onIdentity={() => setIdentity(value => value === '合成媽媽' ? '合成爸爸' : '合成媽媽')} onServer={() => setServer(value => value === '合成 A' ? '合成 B' : '合成 A')} onRecord={() => actions.open('care')} onTask={() => actions.open('tasks')} /> :
     <PageFrame density="compact" title="照顧摘要與到診準備" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不讀取其他孩子的摘要。</Text><AppButton label="查看子女檔案" onPress={() => actions.open('profile')} /></SectionCard></PageFrame>;
 }
