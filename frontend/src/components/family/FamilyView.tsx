@@ -41,7 +41,7 @@ function InviteComposer({ model, actions, production }: { model: FamilyViewModel
     </>} />
     <Controller control={form.control} name="role" render={({ field }) => <AppSelect ref={field.ref} onBlur={field.onBlur} id={`${formId}-role`} label="邀請角色" value={field.value} options={familyRoleOptions}
       disabled={disabled} onChange={value => { field.onChange(value); actions.editInvite(); }} />} />
-    <Text style={styles.meta}>只可邀請照顧者或檢視者；邀請有效七日。正式碼由 Server 建立，只顯示一次，系統不會自動發電郵。</Text>
+    <Text style={styles.meta}>只可邀請照顧者或檢視者；邀請有效七日。邀請碼只顯示一次，需由你傳送給受邀人。</Text>
     <AppButton label="核對邀請內容" onPress={form.handleSubmit(actions.reviewInvite)} disabled={disabled} />
   </View>;
 }
@@ -103,7 +103,7 @@ function DraftDescription({ draft, production }: { draft: FamilyDraft; productio
     <Text style={styles.meta}>目標：{draft.basis.ownerName}的家庭 · 確認基準版本 {draft.basis.version}</Text>
     {draft.kind === "invite" ? <Text selectable style={styles.body}>擬邀請 {draft.values.email} 成為{familyRoleLabels[draft.values.role]}。{production ? "建立邀請不會自動寄出電郵。" : "建立示例不代表已寄出電郵。"}</Text>
       : draft.kind === "member" ? <><Text style={styles.body}>{draft.name}：{familyRoleLabels[draft.previousRole]} → {familyRoleLabels[draft.role]}</Text>
-        {draft.role === "revoked" ? <Text style={styles.body}>此人將失去這個家庭現在及日後孩子、共享記錄及任務的存取權；正式介面須清除不再可見的內容。</Text> : null}</>
+        {draft.role === "revoked" ? <Text style={styles.body}>此人將失去這個家庭現在及日後孩子、共享記錄及任務的存取權。</Text> : null}</>
       : <Text style={styles.body}>撤銷發給 {draft.email} 的待接受邀請；此邀請將不能再用來加入家庭。</Text>}
   </>;
 }
@@ -189,7 +189,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
               <View style={styles.privateBoundary}><Text style={styles.boundaryLabel}>各自私人</Text><Text style={styles.body}>每個人的私人 AI 聊天不屬於家庭共享範圍；加入家庭亦不代表同意接收主動聯絡。</Text></View>
               {model.children.length > 0 ? <View style={styles.childList}><Text style={styles.memberName}>此家庭的孩子</Text>
                 {model.children.map(child => <Text key={child.id} style={styles.meta}>{child.displayName} · {child.ageLabel}</Text>)}</View>
-                : <Text style={styles.meta}>此家庭尚未載入孩子資料；不從邀請預覽推造內容。</Text>}
+                : <Text style={styles.meta}>尚未取得孩子資料。</Text>}
               <AppButton label="查看子女檔案" density="compact" variant="quiet" onPress={actions.openProfile} />
             </SectionCard>
             {onTasks || onContact ? <View style={styles.section}><SectionHeader density="compact" title="協調下一步" />

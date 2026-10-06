@@ -15,5 +15,5 @@ export default function PhotosPage() {
   const child = model.children.find(item => item.id === model.selectedChildId);
   if (pathname !== "/photos") return null;
   return child && scopeKey ? <PhotoWorkspace capturePreferred={input === "camera"} onCare={() => actions.open("care")} /> :
-    <PageFrame density="compact" title="照片與記錄" description="先選擇有權存取的孩子。"><SectionCard><Text>沒有選擇孩子，不會顯示其他孩子的照片。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="照片與記錄"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

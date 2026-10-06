@@ -54,6 +54,7 @@ function harness(entry, symbol, initialArgs, injectedWorkspace = () => null) {
       if (name.endsWith('/AppDialog')) return { AppDialog: Object.assign(function Dialog() {}, { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions' }) };
       if (name === './growth-styles') return { growthStyles: {} };
       if (name === './GrowthArchive') return { GrowthArchive: 'GrowthArchive' };
+      if (name === './GrowthConcernManualFallback') return { GrowthConcernManualFallback: 'GrowthConcernManualFallback' };
       if (name === './GrowthConcernTimeline') return { GrowthConcernIndex: 'GrowthConcernIndex', GrowthConcernTimeline: 'GrowthConcernTimeline' };
       if (name.endsWith('/ui')) return Object.fromEntries(['AppButton', 'AppSelect', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'UnderlineTabs'].map(value => [value, value]));
       for (const component of ['AppCheckbox', 'PageFrame', 'StatusAnnouncement', 'AppIcon', 'AppStatusBadge']) {
@@ -114,7 +115,7 @@ test('ordinary refresh keeps one top toolbar and stable content slots through lo
   assert.equal(refreshNodes(tree)[0].node.props.disabled, true);
   assert.deepEqual(refreshNodes(tree)[0].path, pathBefore);
   assert.equal(tree.props.children[2], null);
-  assert.equal(byId(tree, 'growth-refresh-status')[0].props.children, '正在讀取');
+  assert.equal(byId(tree, 'growth-refresh-status')[0].props.children, '正在讀取關注…');
   o.tick(); state = o.render(); tree = v.render([{ model: state.model, actions: state.actions }]);
   assert.deepEqual(state.model.page, pageBefore, 'A read must not write or disable any source data');
   assert.equal(state.model.notice, '已重新讀取');
@@ -324,8 +325,17 @@ test('Growth and History consume the same injected owner and mismatched scopes a
   const layout = readFileSync(path.join(root, 'app/(dashboard)/_layout.tsx'), 'utf8');
   assert.equal((provider.match(/useGrowthPreview\(/g) ?? []).length, 1);
   assert.ok(!screen.includes('useGrowthPreview(')); assert.ok(!history.includes('/preview/'));
-  assert.ok(!provider.includes('usePathname')); assert.equal((layout.match(/<GrowthWorkspaceProvider>/g) ?? []).length, 1);
-  assert.match(layout, /<MemoryReferenceWorkspaceProvider>\s*<GrowthWorkspaceProvider>\s*\{children\}\s*<\/GrowthWorkspaceProvider>\s*<\/MemoryReferenceWorkspaceProvider>/);
+  assert.ok(!provider.includes('usePathname'));
+  assert.equal((layout.match(/<ProductionDomains>/g) ?? []).length, 1);
+  assert.doesNotMatch(layout, /preview\/(?:Growth|MemoryReference)WorkspaceProvider/);
+  const domains = readFileSync(path.join(root, 'src/production/ProductionDomains.tsx'), 'utf8');
+  assert.equal((domains.match(/<ProductionTaskKnowledgeDomains>/g) ?? []).length, 1);
+  const connected = readFileSync(path.join(root, 'src/production/TaskKnowledgeDomains.tsx'), 'utf8');
+  assert.equal((connected.match(/useTaskKnowledgeGrowth\(env\)/g) ?? []).length, 1);
+  assert.equal((connected.match(/<GrowthWorkspaceProvider\s/g) ?? []).length, 1);
+  assert.match(connected, /snapshot\.scopeKey === env\.scopeKey \? snapshot : null/);
+  assert.match(connected, /<GrowthWorkspaceProvider scopeKey=\{env\.scopeKey\} value=\{current\?\.growth \?\? null\}>/);
+  assert.match(connected, /<MemoryReferenceWorkspaceProvider scopeKey=\{env\.scopeKey\} value=\{current\?\.memory\.value \?\? null\}>/);
 });
 
 test('ending a concern uses a filled control and frozen confirmation; cancel and dismissal never write', () => {

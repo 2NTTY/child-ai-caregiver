@@ -62,7 +62,7 @@ export function SummaryScreen() {
     scrollRef={scrollRef} scrollTestID="child-preparation-scroll" onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View key={scopeKey} style={styles.workspace}>
       <UnderlineTabs<SummaryTab> id="child-preparation-tabs" label="孩子概況與準備" items={[{ key: "overview", label: "孩子概況" }, { key: "preparation", label: "準備單" }]} value={tab === "legacy-preparation" ? "overview" : tab} onChange={changeTab} />
-      {!child ? <View style={styles.empty}><Text style={styles.body}>先選擇有權查看的孩子，不會顯示其他孩子的資料或準備單。</Text><AppButton label="查看子女檔案" variant="secondary" onPress={() => guarded(() => router.push("/profile"))} /></View> : <>
+      {!child ? <View style={styles.empty}><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" variant="secondary" onPress={() => guarded(() => router.push("/profile"))} /></View> : <>
         <AppTabPanel tabsId="child-preparation-tabs" tabKey="overview" active={tab === "overview"}>
           {tab === "overview" ? <><ChildOverviewContent onOpenProfile={() => guarded(() => router.push("/profile"))} onOpenProfileHistory={openProfileHistory}
             measurements={profile?.measurements} profileSource={profile?.profileSource}

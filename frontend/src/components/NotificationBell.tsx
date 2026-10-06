@@ -5,7 +5,8 @@ import { Badge, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import type { ConnectionState, HomeOperation } from "../view-model";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
-import { AppButton, OperationPill } from "./ui";
+import { AppButton } from "./ui";
+import { OperationNotice } from "./OperationNotice";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 
@@ -29,13 +30,8 @@ export function NotificationBell({ operation, connection, onReview }: {
       <Dialog.Title>訊息提示</Dialog.Title>
       <Dialog.Content style={styles.content}>
 
-        {operation.state === "none" ? <Text style={styles.body}>目前沒有需要處理的操作提示。</Text> : <>
-          <OperationPill state={operation.state} />
-          <Text style={styles.title}>{operation.title}</Text>
-          <Text style={styles.body}>{operation.detail}</Text>
-        </>}
-        {connection === "offline" ? <Text style={styles.caution}>目前離線；須重新讀取原操作狀態，才能確認是否保存。</Text> : null}
-        <Text style={styles.note}>角標表示有操作狀態需要留意。</Text>
+        {operation.state === "none" ? <Text style={styles.body}>目前沒有操作提示</Text> : <OperationNotice state={operation.state} title={operation.title} message={operation.detail} />}
+        {connection === "offline" ? <Text style={styles.caution}>{operation.state === "unknown" || operation.state === "saving" ? "目前離線，連線後可查核操作結果" : "目前離線"}</Text> : null}
         <AppButton label="查看通知歷史" variant="secondary" onPress={() => { setOpen(false); navigate(() => router.push("/history?category=notifications")); }} />
       </Dialog.Content>
       <Dialog.Actions>

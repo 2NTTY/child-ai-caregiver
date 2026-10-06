@@ -17,8 +17,11 @@
 
 ### 目前狀態與交付門檻
 
-正在獨立分支實作。先核對正式路由及 production adapter，避免改到只供預覽的搜尋結果；源碼差異、定向測試、型別檢查及必要合成畫面證據完成後更新本節。任何失敗或未驗範圍據實保留，不沿用舊測試冒稱通過。
+已完成程式及文案修訂，交付於 [draft PR #98](https://github.com/2NTTY/child-ai-caregiver/pull/98)。新 readState 與 mutation operation 分開；首次讀取失敗可重試，舊資料保持明示，首頁讀取沿同 scope 的 Task owner。必要確認、模型外送／費用、來源／健康未知及原操作查核保留。
 
+六個定向測試檔補驗 50/50 通過，frontend typecheck 通過；[檢查結果](verification/production-copy-2026-10-06/checks.json)。首次批次 39/50，11 個失敗來自整合前的測試 harness／preview owner 假設；保留原失敗，兩份測試對齊現有正式 provider 及 shallow mock 後補驗，沒有為配合測試改 runtime。原碼 review 無已確認阻塞。
+
+本包未跑瀏覽器畫面、export、真 API 或全量回歸；上述定向結果不等於正式部署／畫面驗收。PR 尚未合併、網站未因本包更新。
 真模型、外部通知、正式家庭資料、部署及完整回歸矩陣不在本包；若必要檢查缺環境，列出具體限制。主聊天的 INT 實作／部署狀態只以 [根 PLAN](../PLAN.md#active)及[正式入口指引](../docs/PRODUCTION_FRONTEND.md)為準。
 
 ### 已完成前端基線

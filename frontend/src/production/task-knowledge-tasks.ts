@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createTaskApi, TaskApiError } from "../../../src/client/task-api";
 import { taskChangeSchema, taskValuesSchema, type TaskChange, type TaskCreate, type TaskPage } from "../../../src/shared/tasks";
 import { emptyTaskForm, taskChangeFromForm, taskFormFromBasis, taskFormSchema, taskValuesFromForm } from "../components/tasks/task-form";
-import { taskChangeAllowed, taskWithCompletionRevision, type TaskDraft, type TaskRevisionView, type TaskView } from "../task-view-model";
+import { taskChangeAllowed, taskWithCompletionRevision, type TaskDraft, type TaskRevisionView, type TaskView, type TasksViewModel } from "../task-view-model";
 import type { TasksWorkspaceValue } from "../workspaces/TasksWorkspace";
 import type { WriteOperationView } from "../view-model";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
@@ -15,6 +15,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const api = useMemo(() => createTaskApi(env.apiBaseUrl), [env.apiBaseUrl]);
   const runtime = useTaskKnowledgeRuntime(env, "tasks");
   const [page, setPage] = useState<TaskPage | null>(null), [reading, setReading] = useState(false);
+  const [readState, setReadState] = useState<NonNullable<TasksViewModel["readState"]>>("loading");
   const [linkedTask, setLinkedTask] = useState<TaskView | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null), [draft, setDraft] = useState<TaskDraft | null>(null);
   const [latest, setLatest] = useState<TaskView | null>(null), [operation, setOperation] = useState(none);
@@ -45,6 +46,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       if (!current()) return;
       setLinkedTask(selectedValue);
     }
+    setReadState("ready");
     clock.current = new Date().toISOString();
     setPage(before => after && before ? { ...value, items: mergeById(before.items, value.items),
       reminders: [...(before.reminders ?? []).filter(item => !value.items.some(task => task.id === item.taskId)), ...(value.reminders ?? [])],
@@ -52,7 +54,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   };
   const refresh = () => {
     if (busy.current || !env.online || !runtime.live()) return;
-    busy.current = true; setReading(true);
+    busy.current = true; setReading(true); setReadState(previous => page ? previous : "loading");
     void runtime.request(async (signal, current) => {
       try {
         if (attempt.current && operation.state === "unknown") {
@@ -77,9 +79,12 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       } catch (error) {
         if (!current()) return;
         if (runtime.accessError(error)) { api.resetOnline(); attempt.current = null; setDraft(null); setPage(null); setHistories({}); return; }
+        setReadState(page ? "stale" : "error");
         checked.current = false;
         if (domainFailure(error).confirmed) committed.current = true;
-        setOperation(previous => ({ ...previous, message: committed.current ? "原操作已確認，清單尚未讀取；請重新讀取，毋須再次提交。" : "讀取或查核失敗；原草稿及操作仍保留。", recovery: previous.state === "unknown" ? "check" : "reload" }));
+        if (attempt.current || committed.current || operation.state === "unknown") {
+          setOperation(previous => ({ ...previous, message: committed.current ? "已提交，清單暫時無法更新；請重新讀取。" : "暫時無法查核，原操作及草稿已保留。", recovery: previous.state === "unknown" ? "check" : "reload" }));
+        }
       } finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const id = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id); } } }
     });
   };
@@ -145,7 +150,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
         } catch (error) {
           if (!current()) return;
           if (domainFailure(error).status === 404) {
-            setSelectedId(null); setLinkedTask(null); setPage(null); setHistories({});
+            setSelectedId(null); setLinkedTask(null); setPage(null); setReadState("error"); setHistories({});
             env.queryClient.removeQueries({ queryKey: ["production", env.scopeKey, "tasks"] });
             setOperation({ state: "failed", message: "找不到此孩子的事項，或目前已無權查看；沒有套用舊資料。", reference: null, recovery: "reload" });
           } else if (!runtime.accessError(error)) setOperation(previous => ({ ...previous, message: "連結事項未能讀取，沒有按標題替代或顯示其他孩子資料。" }));
@@ -156,7 +161,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   selectLatest.current = selectTask;
   return { scopeKey: env.scopeKey, model: {
     child: { id: env.childId!, name: env.childName }, access: runtime.lost ? "lost" : canManage ? "editable" : "read_only",
-    online: env.online, reading: reading || !page && !runtime.lost && env.online && operation.state !== "failed", dataLabel: "Server 任務分頁；完成／取消時間只取已讀取且吻合的終態版本，未讀歷史不補估。",
+    online: env.online, reading, readState: runtime.lost || !env.online && !page ? "error" : !env.online && page ? "stale" : readState, dataLabel: "家庭共享事項",
     scheduleContext: { asOf: clock.current, timeZone: "Asia/Hong_Kong" }, items,
     eligibleAssignees: runtime.lost ? [] : page?.eligibleAssignees ?? [], selected,
     hasMoreTasks: !!page?.nextAfterId && !runtime.lost, loadingMoreTasks: loadingMore,
@@ -202,7 +207,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       busy.current = true; setReading(true); setLoadingMore(true);
       void runtime.request(async (signal, current) => {
         try { await load(signal, current, after); }
-        catch (error) { if (current() && !runtime.accessError(error)) setOperation(previous => ({ ...previous, message: "較舊事項未能讀取；目前清單並非完整歷史。" })); }
+        catch (error) { if (current() && !runtime.accessError(error)) setReadState("stale"); }
         finally { if (current()) { busy.current = false; setReading(false); setLoadingMore(false); } }
       });
     },

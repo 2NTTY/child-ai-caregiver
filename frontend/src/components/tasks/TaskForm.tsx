@@ -97,7 +97,7 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
       <Text style={styles.label}>預覽內容 · 尚未保存</Text><TaskDraftSummary mode={draft.mode} values={draft.reviewedValues} assignees={model.eligibleAssignees} />
       <Text style={styles.meta}>只確認孩子所屬家庭的共享安排。建立事項不代表機構確認預約，也不代表已通知照顧者。</Text>
       <AppCheckbox label={confirmationLabel} checked={confirmed} onChange={setConfirmed} disabled={locked} />
-      <AppButton label={`確認家庭共享並模擬${draft.mode === "create" ? "建立" : "保存"}`} onPress={() => { if (confirmed) actions.submitReviewed(); }}
+      <AppButton label={draft.mode === "create" ? "確認建立共享事項" : "確認保存更改"} onPress={() => { if (confirmed) actions.submitReviewed(); }}
         disabled={!confirmed || !model.online || locked || model.operation.state !== "needs_confirmation"} />
       <AppButton label="繼續修改草稿" variant="quiet" disabled={locked} onPress={edited} />
     </View> : null}

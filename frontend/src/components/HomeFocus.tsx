@@ -14,21 +14,19 @@ export function HomeFocus({ model, actions, full = false }: { model: HomeViewMod
   const section = overview.attention;
   const operation = model.operation;
   const visibleItems = full ? section.items : section.items.slice(0, 1);
-  const emptyMessage = operation.state === "none" ? section.detail ?? "目前沒有指定待處理事項。" : "這次快照沒有其他指定待辦。";
+  const canShowItems = section.state === "ready" || section.state === "stale" || section.state === "loading";
   return <SectionCard testID={full ? "rail-attention" : "home-focus"}>
     <SectionHeader title={full ? "待辦與提醒" : "現在要處理"} density="compact" />
     {operation.state !== "none" ? <OperationNotice state={operation.state} title={operation.title} message={operation.detail}>
       {operation.state !== "saving" ? <AppButton label={operation.state === "unknown" ? "查核這次結果" : "查看原操作"} density="compact" variant="secondary" onPress={actions.reviewOperation} /> : null}
     </OperationNotice> : null}
     <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
-      title={section.state === "unavailable" ? "暫未能確認待辦與提醒" : undefined}
-      message={section.state === "ready" && section.items.length === 0 ? emptyMessage : section.detail}>
-      {section.state === "unavailable" ? <AppButton label="重新讀取" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
+      message={section.detail ?? (section.state === "ready" && !section.items.length ? "目前沒有待辦事項" : undefined)}>
+      {["error", "stale", "unavailable"].includes(section.state) ? <AppButton label="重新讀取" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
     </ReadStateNotice>
-    {section.state === "ready" ? <HomeOverviewItems items={visibleItems} actions={actions} /> : null}
-    {!full && section.items.length > visibleItems.length ? <Text style={styles.meta}>另有 {section.items.length - visibleItems.length} 項，可在資訊側欄的「待辦／提醒」查看。</Text> : null}
-    {full ? <Text style={styles.meta}>只顯示這次已載入的事項；安排、送達與照顧完成各自核對。</Text> : null}
-    {model.connection !== "online" ? <Text style={styles.meta}>目前未連線；已載入的事項可能不是最新狀態。</Text> : null}
+    {canShowItems ? <HomeOverviewItems items={visibleItems} actions={actions} /> : null}
+    {section.state === "ready" && section.items.length > 0 && section.detail ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{section.detail}</Text> : null}
+    {!full && canShowItems && section.items.length > visibleItems.length ? <Text style={styles.meta}>另有 {section.items.length - visibleItems.length} 項，可在資訊側欄的「待辦／提醒」查看。</Text> : null}
   </SectionCard>;
 }
 
@@ -40,13 +38,11 @@ export function HomeActionSummary({ model, actions }: { model: HomeViewModel; ac
   return <View testID="home-action-summary" style={styles.summary}>
     <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>待辦摘要</Text><TextLink label="查看全部" onPress={() => actions.open("tasks")} /></View>
     <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
-      title={section.state === "unavailable" ? "暫未能確認待辦" : undefined}
-      message={section.detail ?? "這次已載入快照沒有待辦事項。"}>
-      {section.state === "unavailable" ? <AppButton label="重新讀取待辦" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
+      message={section.detail ?? (section.state === "ready" && !section.items.length ? "目前沒有待辦事項" : undefined)}>
+      {["error", "stale", "unavailable"].includes(section.state) ? <AppButton label="重新讀取待辦" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
     </ReadStateNotice>
-    {section.state === "ready" ? <HomeOverviewItems items={section.items.slice(0, 2)} actions={actions} compact /> : null}
-    <Text style={styles.meta}>只摘錄已載入安排；送達及照顧完成須另核對。</Text>
-    {model.connection !== "online" ? <Text style={styles.meta}>目前未連線；已載入的安排可能不是最新狀態。</Text> : null}
+    {["ready", "stale", "loading"].includes(section.state) ? <HomeOverviewItems items={section.items.slice(0, 2)} actions={actions} compact /> : null}
+    {section.state === "ready" && section.items.length > 0 && section.detail ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{section.detail}</Text> : null}
   </View>;
 }
 

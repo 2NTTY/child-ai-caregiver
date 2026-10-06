@@ -73,13 +73,12 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
   const readMessage = model.load === "loading" ? model.items.length ? "正在重新讀取照片；已載入清單及草稿保留。" : "正在讀取照片…" : model.load === "error" ? "讀取未確認。原照片及草稿保留，先手動重新讀取。" : !model.online ? "已載入清單可能不是最新；重連後先重新讀取。" : listReadState === "empty" ? "目前沒有可讀取的照片。選擇原照片後，可先私人保存。" : "";
   const extractionState = selected?.extraction.state;
   const extractionMessage = extractionState && extractionState !== "not_requested" && !(model.operation.phase === "extract" && model.operation.state !== "none") ? `照片提取：${photoExtractionLabels[extractionState]}。` : "";
-  return <PageFrame density="compact" title="記錄 · 原始照片" description="先保存私人原照片，再核對內容。只有你明確確認，才與家庭共享照片及記錄。" eyebrow={`${brand.name} · 孩子資料`}>
+  return <PageFrame density="compact" title="記錄 · 原始照片" description="照片先私人保存，確認後才與家庭共享。" eyebrow={`${brand.name} · 孩子資料`}>
     <StatusAnnouncement eventKey={`${model.operation.reference}:${model.operation.phase}:${model.operation.state}:${model.operation.message}`} message={model.operation.state === "none" ? "" : `${operationLabel}。${model.operation.message}`} urgent={model.operation.state === "failed"} />
     <StatusAnnouncement key={selected?.id ?? "no-selected-photo"} eventKey={extractionState ?? "not_requested"} message={extractionMessage} urgent={extractionState === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權查看這個孩子。照片、原檔、候選及草稿已清除。" : ""} urgent={model.access === "lost"} />
     <StatusAnnouncement eventKey={model.sourceError} message={model.sourceError} urgent />
     <View style={s.context}><Text style={s.title}>{model.childName}的照片</Text><View style={s.row}><AppButton label="重新讀取照片" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /><AppButton label="返回記錄" accessibilityLabel="返回照顧記錄" variant="quiet" onPress={onCare} disabled={locked} /></View></View>
-    <Text style={s.meta}>照片附件與家庭記錄各有自己的可見範圍。未關聯、私人或待核對的照片仍在這裏；選取不代表共享。</Text>
     {editorVisible ? <View style={s.steps}>{["選擇原照片", "私人保存", "核對草稿", "家庭共享"].map((label, index) => <View key={label} style={s.step}><Text style={s.stepNumber}>{index + 1}</Text><Text style={s.meta}>{label}</Text></View>)}</View> : null}
     {!model.online ? <View style={s.notice}><Text style={s.warning}>目前離線，已選原照片及草稿保留。重連後先核對最新狀態，不會自動重送。</Text></View> : null}
     {model.notice ? <Text style={s.body}>{model.notice}</Text> : null}
@@ -94,7 +93,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
     </View> : null}
     {model.access === "lost" ? <SectionCard><SectionHeader density="compact" title="已無權查看這個孩子" /><Text style={s.body}>照片、原檔、候選及草稿已清除。請改選有權存取的孩子或重新核對身份。</Text></SectionCard> :
       <View style={[s.columns, !split && s.single]} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
-        <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="照片清單" style={[s.list, (!split || !editorVisible) && s.full, !split && editorVisible && s.hidden]}><View style={s.library} testID="photo-list"><SectionHeader density="compact" title="原始附件" subtitle="私人照片只有上傳者可見；共享照片按家庭權限讀取。" icon="image-outline" action={<AppButton label={selected || model.original ? "繼續核對本頁" : "加入原照片"} variant="quiet" disabled={locked || !selected && !model.original && !model.canPick} onPress={() => {setAdding(!selected && !model.original); setInspecting(true);}} />} />
+        <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="照片清單" style={[s.list, (!split || !editorVisible) && s.full, !split && editorVisible && s.hidden]}><View style={s.library} testID="photo-list"><SectionHeader density="compact" title="原始附件" icon="image-outline" action={<AppButton label={selected || model.original ? "繼續核對本頁" : "加入原照片"} variant="quiet" disabled={locked || !selected && !model.original && !model.canPick} onPress={() => {setAdding(!selected && !model.original); setInspecting(true);}} />} />
           {model.access === "read_only" ? <Text style={s.meta}>你目前可查看家庭共享照片及本人既有的私人照片；不能上傳、提取、確認或刪除。</Text> : null}
           <ReadStateNotice state={listReadState} message={readMessage} />
           <MotionList items={model.items} keyExtractor={item => item.id} scopeKey={listScope} regionKey="photo-list" eligible={listMotion} testID="photo-list-motion" renderItem={(item, row) => <View style={s.item} testID={`photo-item-${item.id}`}>
@@ -115,7 +114,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
             {model.reservationUnidentified ? <Text style={s.warning}>已確認操作的附件結果未能識別。保留原檔，不會再次建立；請逐項核對清單或明確清除本頁。</Text> : null}
             {(!selected || selected.state === "reserved") && model.access === "editable" ? <>
               <PhotoFilePicker disabled={!model.canPick} onPick={actions.pickOriginal} onError={actions.reportFileError} selectOriginal={selectOriginal} capturePreferred={capturePreferred} captureOriginal={captureOriginal} />
-              {!selected ? <View><AppTextField nativeID={sourceId} label="照片來源" accessibilityLabel="照片來源" value={model.source} disabled={model.formLocked} onChangeText={actions.editSource} error={!!model.sourceError} aria-invalid={!!model.sourceError} aria-describedby={`${sourceId}-message`} /><FormFieldMessage id={`${sourceId}-message`} error={model.sourceError || undefined} help="保留原文字；私人保存後沿用原來源。" /></View> : <Text style={s.meta}>待上傳附件只接受相同類型、大小及 SHA-256 的原檔；來源及附件識別保持原樣。</Text>}
+              {!selected ? <View><AppTextField nativeID={sourceId} label="照片來源" accessibilityLabel="照片來源" value={model.source} disabled={model.formLocked} onChangeText={actions.editSource} error={!!model.sourceError} aria-invalid={!!model.sourceError} aria-describedby={`${sourceId}-message`} /><FormFieldMessage id={`${sourceId}-message`} error={model.sourceError || undefined} help="保留原文字；私人保存後沿用原來源。" /></View> : <Text style={s.meta}>請重新選取同一張原照片。</Text>}
               <AppButton label={selected ? "繼續上傳同一原檔" : "私人保存原照片"} disabled={!model.canUpload} onPress={actions.upload} />
             </> : null}
             {selected?.state === "ready" && editable ? <View style={s.related}><AppCheckbox label="我同意把原照片交由 Gemini 提取；候選仍需核對" checked={model.modelConsent} disabled={!model.canExtract} onChange={actions.setModelConsent} />

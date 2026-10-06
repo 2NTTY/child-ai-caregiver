@@ -9,7 +9,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 
 export default function TasksPage() {
-  const { actions, openAgentDraft, chatDraft, setChatDraft } = useProduction();
+  const { model, actions, openAgentDraft, chatDraft, setChatDraft } = useProduction();
   const workspace = useTasksWorkspace(), latest = useRef(workspace); latest.current = workspace;
   const router = useRouter(), navigate = usePreviewNavigation();
   const { taskId: routeTaskId } = useLocalSearchParams<{ taskId?: string | string[] }>();
@@ -28,5 +28,5 @@ export default function TasksPage() {
   return workspace ? <TasksView key={workspace.scopeKey} model={workspace.model} actions={workspace.actions} recovery={workspace.recovery}
     onAgent={() => { if (!chatDraft.trim()) setChatDraft("想請你幫我記低一項安排："); openAgentDraft(true); }}
     onHistory={() => navigate(() => router.push("/history?category=tasks"))} /> :
-    <PageFrame density="compact" title="待辦與預約" description="先選擇有權查看的孩子，才展示家庭共享事項。"><SectionCard><Text>尚未取得目前孩子的任務，沒有顯示其他孩子的提醒或草稿。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="待辦與預約"><SectionCard><Text>{model.selectedChildId ? "正在讀取事項…" : "先選擇孩子。"}</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

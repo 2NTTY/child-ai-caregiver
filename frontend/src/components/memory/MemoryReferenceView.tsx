@@ -18,9 +18,9 @@ const tabs: { key: Tab; label: string }[] = [
 function ReadNotice({ read, unavailable, empty, children }: {
   read: MemoryReadProjection<unknown>; unavailable: string; empty?: boolean; children?: ReactNode;
 }) {
-  if (read.state === "loading") return <ReadStateNotice state="loading" title="正在讀取" message="資料準備好後會在這裏顯示。" />;
-  if (read.state === "error") return <ReadStateNotice state="error" title="暫時讀不到資料" message="未能確認目前內容，請稍後重新讀取。" />;
-  if (read.state === "unavailable") return <ReadStateNotice state="unavailable" title={unavailable} message="目前沒有可顯示的資料。" />;
+  if (read.state === "loading") return <ReadStateNotice state="loading" title="正在讀取…" />;
+  if (read.state === "error") return <ReadStateNotice state="error" title="暫時讀不到資料" message="請稍後重新讀取。" />;
+  if (read.state === "unavailable") return <ReadStateNotice state="unavailable" title={unavailable} />;
   return <>{read.state === "stale" ? <ReadStateNotice state="stale" title="目前顯示上次讀取的資料" message="最新狀態尚未確認，請連線後再核對。" /> : null}
     {empty ? <Text style={styles.meta}>暫無可顯示的資料</Text> : children}</>;
 }
@@ -117,14 +117,14 @@ function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; w
   const sources = visibleKnowledgeReferences(model.references);
   const groups = [{ key: "official_guidance", title: "官方指引", detail: "公共機構及專業指引的來源資料" }, { key: "recent_information", title: "近期資訊", detail: "新聞及具時效性的參考來源" }] as const;
   return <View style={styles.section}><SectionHeader density="compact" title="參考資料" subtitle="查看資料出處、日期及適用範圍" />
-    {model.references.state === "loading" || model.references.state === "error" || model.references.state === "stale" ? <ReadNotice read={model.references} unavailable="參考來源暫未提供" /> : null}
-    {groups.map(group => {
+    {model.references.state !== "ready" ? <ReadNotice read={model.references} unavailable="參考來源暫未提供" /> : null}
+    {!["loading", "error", "unavailable"].includes(model.references.state) ? groups.map(group => {
       const entries = sources.filter(source => source.classification === group.key);
       return <View key={group.key} style={styles.section}><View><Text accessibilityRole="header" style={styles.sectionTitle}>{group.title}</Text><Text style={styles.meta}>{group.detail}</Text></View>
         {entries.length ? entries.map(source => <ReferenceCard key={`${source.sourceId}:${source.versionId}:${source.chunkId}`} source={source} />)
-          : <View style={styles.emptyCard}><Text style={styles.meta}>{model.references.state === "loading" ? "正在讀取來源…" : model.references.state === "error" ? "暫時讀不到來源" : "暫無可顯示來源"}</Text></View>}
+          : <View style={styles.emptyCard}><Text style={styles.meta}>暫無可顯示來源</Text></View>}
       </View>;
-    })}
+    }) : null}
     {model.references.data?.hasMore ? workspace.reads?.loadMoreReferences ? <AppButton label="載入更多來源" variant="quiet" disabled={!model.online} onPress={workspace.reads.loadMoreReferences} />
       : <Text style={styles.meta}>仍有來源未載入</Text> : null}
   </View>;
@@ -151,15 +151,15 @@ function ScopedMemoryReferenceView({ workspace, onPrepareQuestion }: { workspace
   }
   return <View ref={container.ref} onLayout={container.onLayout} style={styles.root}>
     <View style={styles.context}><View style={styles.contextCopy}><Text style={styles.sectionTitle}>{model.childName}的記憶與參考</Text>
-      <Text style={styles.meta}>只供查閱 · 有疑問可請 Agent 核對{model.dataLabel ? ` · ${model.dataLabel}` : ""}</Text></View></View>
+      <Text style={styles.meta}>{model.dataLabel || "查看已保存記憶及來源"}</Text></View></View>
     <UnderlineTabs id={tabsId} label="記憶與參考分類" items={tabs} value={tab} onChange={setTab} />
     <AppTabPanel tabsId={tabsId} tabKey="short" active={tab === "short"}><View style={styles.section}>
       <SectionHeader density="compact" title="短期脈絡" subtitle="這次回覆使用的近期對話片段" />
-      <ReadNotice read={model.shortTerm} unavailable="尚未取得本輪對話脈絡" empty={model.shortTerm.data?.messages.length === 0}>
+      <ReadNotice read={model.shortTerm} unavailable="本輪對話脈絡暫未提供" empty={model.shortTerm.data?.messages.length === 0}>
         {model.shortTerm.data?.messages.map(message => <View key={message.id} style={styles.card}><Text style={styles.meta}>{message.role === "user" ? "你的訊息" : "Agent 回覆"}</Text><Text selectable style={styles.body}>{message.text}</Text></View>)}
         {model.shortTerm.asOf ? <Text style={styles.meta}>讀取於 {memoryDateLabel(model.shortTerm.asOf)}</Text> : null}
       </ReadNotice>
-      <Text style={styles.meta}>每次回覆使用的片段可能不同；這裏不代表全部聊天記錄。</Text>
+      {model.shortTerm.data ? <Text style={styles.meta}>只包括這次回覆使用的近期對話片段。</Text> : null}
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="long" active={tab === "long"}><View style={styles.section}>
       <SectionHeader density="compact" title="長期記憶" subtitle="已保存的事實、來源及對話摘要" />
@@ -181,7 +181,7 @@ function ScopedMemoryReferenceView({ workspace, onPrepareQuestion }: { workspace
 export function MemoryReferenceView({ onPrepareQuestion }: { onPrepareQuestion?: (question: string) => void }) {
   const workspace = useMemoryReferenceWorkspace();
   return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} workspace={workspace} onPrepareQuestion={onPrepareQuestion} />
-    : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先確認目前孩子的存取權；其他孩子或帳戶的資料不會在這裏顯示。" />;
+    : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。" />;
 }
 const styles = StyleSheet.create({
   root: { width: "100%", minWidth: 0, gap: spacing.lg },

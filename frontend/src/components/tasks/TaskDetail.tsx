@@ -47,7 +47,7 @@ export function TaskDetail({ model, actions }: { model: TasksViewModel; actions:
         <TaskSnapshot task={revision.task} assignees={model.eligibleAssignees} />
         <Text style={styles.reading}>原因／備註：{revision.note || "沒有備註"}</Text>
       </View>)}
-      {model.hasMoreHistory ? <AppButton label="模擬載入較早歷史" variant="secondary" disabled={!model.online || locked} onPress={actions.loadOlderHistory} /> : <Text style={styles.meta}>已展示目前已載入的全部版本。</Text>}
+      {model.hasMoreHistory ? <AppButton label="載入較早記錄" variant="secondary" disabled={!model.online || locked} onPress={actions.loadOlderHistory} /> : <Text style={styles.meta}>已展示目前已載入的全部版本。</Text>}
     </View></MotionDisclosure>
   </SectionCard>;
 }

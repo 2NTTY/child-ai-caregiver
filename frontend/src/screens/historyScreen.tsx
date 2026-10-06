@@ -3,9 +3,7 @@ import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppDateField } from "../components/DateTimeFields";
-import { timeZoneLabel } from "../components/date-time";
 import { PageFrame } from "../components/PageFrame";
-import { AppStatusBadge } from "../components/AppStatusBadge";
 import { AppButton, AppSelect, AppTabPanel, AppTextField, UnderlineTabs } from "../components/ui";
 import { useContainerWidth } from "../components/useContainerWidth";
 import { TaskHistoryView } from "../components/tasks/TaskHistoryView";
@@ -75,17 +73,15 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
     : preparationCategory ? dateRange ? <PreparationHistoryView onPrepareQuestion={homeActions.prepareQuestion} searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : reviewCategory ? care ? <CareReviewHistoryView key={care.scopeKey} model={care.model} actions={care.actions} searchText={filters.searchText} initialStatus={initialReviewStatus} olderOnly={olderOnly} />
-      : <Text style={styles.meta}>正在準備目前孩子的核對記錄，未取得正確作用域前不顯示舊內容。</Text>
+      : <Text style={styles.meta}>正在讀取核對記錄…</Text>
     : careCategory ? care ? <CareSavedRecordsView key={care.scopeKey} model={care.model} actions={care.actions} />
-      : <Text style={styles.meta}>正在準備目前孩子的已保存記錄，未取得正確作用域前不顯示舊內容。</Text>
+      : <Text style={styles.meta}>正在讀取已保存記錄…</Text>
     : growthCategory ? dateRange ? <GrowthHistoryView key={growth?.scopeKey ?? scope} searchText={filters.searchText} dateRange={dateRange}
       onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={id => navigate(() => { tasks?.actions.selectTask(id); router.push("/tasks"); })} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : <View testID={`history-unavailable-${filters.category}`}  style={styles.unavailable}>
-      <AppStatusBadge label="尚未接入歷史頁" tone="neutral" />
       <Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
       <Text style={styles.body}>{current.unavailable}</Text>
-      <Text style={styles.meta}>這不代表沒有歷史；搜尋及日期篩選會在同一資料來源接入後啟用。</Text>
       <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath))} />
     </View>;
 
@@ -111,8 +107,6 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
           <View style={styles.dateField}><AppDateField label="結束日期（可不填）" value={filters.to} error={dateErrors.to} disabled={filterDisabled} onChange={value => filter({ type: "to", value })} /></View>
           <AppButton label="清除篩選" variant="quiet" style={[styles.clearFilter, compact && styles.clearFilterStack]} disabled={!hasFilters || currentLocked} onPress={() => filter({ type: "reset" })} />
         </View> : <><Text style={styles.meta}>核對記錄尚未提供可核實的日期欄位，這裏只按內容及處理狀態搜尋。</Text><AppButton label="清除搜尋" variant="quiet" disabled={!filters.searchText || currentLocked} onPress={() => filter({ type: "search", value: "" })} /></>}
-        {taskCategory && tasks ? <Text style={styles.meta}>日期只按已取得且吻合版本的完成／取消修訂時間篩選（{timeZoneLabel(tasks.model.scheduleContext.timeZone)}）；未讀取修訂的事項沒有完成日期，不會用安排時間代替。只顯示同一任務 owner 已取得的分頁。</Text> : null}
-        {preparationCategory && preparations ? <Text style={styles.meta}>目前 API 只提供單一共享到診準備，尚未接通文件歸檔歷史；此區不能代表完整準備單歷史。</Text> : null}
       </View> : null}
       {compact ? <View style={styles.results}>{results}</View> : <AppTabPanel tabsId="history-categories" tabKey={filters.category} active style={styles.results}>{results}</AppTabPanel>}
     </View>
@@ -126,7 +120,7 @@ export default function HistoryScreen() {
   const child = model.children.find(item => item.id === model.selectedChildId);
   const scope = scopeKey ?? "";
   if (pathname !== "/history") return null;
-  if (!child) return <PageFrame title="歷史" density="compact" description="按分類查閱過往資料。"><Text style={styles.body}>先選擇有權查看的孩子，不會顯示其他孩子的歷史。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></PageFrame>;
+  if (!child) return <PageFrame title="歷史" density="compact" description="按分類查閱過往資料。"><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></PageFrame>;
   return <HistoryWorkspace key={scope} scope={scope} childName={child.displayName} initialCategory={normalizeHistoryCategory(category)} initialReviewStatus={normalizeReviewHistoryStatus(status)} olderOnly={normalizeHistoryOlderOnly(older)} />;
 }
 

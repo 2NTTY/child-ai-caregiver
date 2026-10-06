@@ -22,7 +22,7 @@ export function TaskKnowledgeSummaryContent({ preparation = false, onRecord, onT
   const [open, setOpen] = useState(false), navigate = usePreviewNavigation();
   const latest = useRef(owner); latest.current = owner;
   useEffect(() => () => { const value = latest.current; if (value?.model.dirty && !value.model.pending && !value.model.busy) value.actions.discard(); }, []);
-  if (!owner) return <Text style={s.meta}>正在準備目前孩子的摘要，未取得正確作用域前不顯示舊內容。</Text>;
+  if (!owner) return <Text style={s.meta}>正在讀取摘要…</Text>;
   const { model, actions } = owner, page = model.page;
   const canRetry = model.online && !model.busy && !model.readFailed && model.access === "editable" && !!page?.canManage && !!model.pending?.checked && !model.pending.confirmed;
   const locked = model.busy || !!model.pending || model.access === "lost";
@@ -38,7 +38,7 @@ export function TaskKnowledgeSummaryContent({ preparation = false, onRecord, onT
       {!model.online ? <Text style={s.warning}>目前離線；已有資料可能過時，沒有離線提交佇列。</Text> : null}
       {model.readFailed ? <Text style={s.warning}>最新摘要未能核對，暫停保存；目前已顯示資料可能過時。</Text> : null}
       {model.notice ? <Text accessibilityLiveRegion="polite" style={s.meta}>{model.notice}</Text> : null}
-      {page ? <><Text style={s.meta}>{summaryPeriodLabel(page.period)} · Server 產生於 {summaryTime(page.generatedAt, page.period.timeZone)}</Text>
+      {page ? <><Text style={s.meta}>{summaryPeriodLabel(page.period)} · 整理於 {summaryTime(page.generatedAt, page.period.timeZone)}</Text>
         {preparation ? <AppButton label={model.access === "editable" ? "查看／人工修改共享到診準備" : "查看共享到診準備"} variant="secondary" disabled={model.access === "lost"} onPress={() => setOpen(true)} />
           : <SummaryRecords page={page} onRecord={onRecord} onTask={onTask} motion={{ scopeKey: model.scopeKey, triggerKey: null, eligible: false }} />}
       </> : <Text style={s.body}>{model.access === "lost" ? "已無權讀取這位孩子的摘要。" : model.busy ? "正在讀取摘要。" : "摘要尚未取得，沒有顯示部分總計。"}</Text>}

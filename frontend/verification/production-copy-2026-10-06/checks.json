@@ -1,0 +1,39 @@
+{
+  "baseline": "f2aa299d418c10586e99260ef36685619dbb67b2",
+  "scope": "Production UI copy and task read/retry state; frontend only",
+  "node": "v24.19.0",
+  "focused_command": "node --test scripts/shared-status-read-state.test.mjs scripts/task-read-copy.test.mjs scripts/memory-reference.test.mjs scripts/growth-refresh.test.mjs scripts/task-forms.test.mjs scripts/task-layout.test.mts",
+  "first_run": {
+    "exit_code": 1,
+    "tests": 50,
+    "passed": 39,
+    "failed": 11,
+    "evidence": "focused-tests.log",
+    "cause": "Existing INT-era harness assumptions: unmocked GrowthConcernManualFallback dependency reached React Native Flow source; obsolete PreviewProvider/preview owner assertions. Preserved failure, corrected only two test harness files to current production ownership and draft guards."
+  },
+  "recheck": {
+    "exit_code": 0,
+    "tests": 50,
+    "passed": 50,
+    "failed": 0,
+    "evidence": "focused-tests-recheck.log"
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exit_code": 0,
+    "evidence": "typecheck.log"
+  },
+  "review": {
+    "result": "No confirmed blocking findings after fixed-source review and root integration review",
+    "coverage": "Read vs mutation states, scoped retry, retained stale data, access cleanup, confirmation and outbound disclosure preservation, production labels and actual provider reachability"
+  },
+  "not_run": [
+    "browser visual acceptance",
+    "export/build",
+    "live production API",
+    "model or external notification",
+    "native device",
+    "full regression matrix"
+  ],
+  "remaining": "Home Agent-important feed still lacks a connected projection; UI stays explicitly unavailable with an Assistant link. This change does not add a feed or deploy production."
+}

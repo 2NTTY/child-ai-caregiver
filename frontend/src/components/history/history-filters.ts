@@ -5,9 +5,9 @@ export const historyCategories = [
   { key: "preparations", label: "準備單", description: "使用後歸檔的文件與當時版本", sourceLabel: "準備單", sourcePath: "/summary", sourceAction: "開啟準備單", unavailable: "" },
   { key: "review", label: "核對記錄", description: "寫入結果與家長確認分開查看", sourceLabel: "記錄與核對", sourcePath: "/care", sourceAction: "開啟記錄與核對", unavailable: "" },
   { key: "care", label: "照顧記錄", description: "已保存記錄、更正與原始來源", sourceLabel: "照顧記錄", sourcePath: "/care", sourceAction: "開啟記錄與核對", unavailable: "" },
-  { key: "conversations", label: "助手對話", description: "本人與這位孩子相關的對話", sourceLabel: "助手", sourcePath: "/chat", sourceAction: "開啟助手", unavailable: "對話歷史尚未接入這個歷史頁。助手目前顯示的對話視窗不是完整歷史，這裏不會複製或搜尋那個片段。" },
+  { key: "conversations", label: "助手對話", description: "本人與這位孩子相關的對話", sourceLabel: "助手", sourcePath: "/chat", sourceAction: "開啟助手", unavailable: "請到助手查看已載入的對話。" },
   { key: "growth", label: "關注與成長", description: "查看已結束的關注與跟進記錄", sourceLabel: "成長與關注", sourcePath: "/growth", sourceAction: "開啟成長與關注", unavailable: "" },
-  { key: "notifications", label: "通知與聯絡", description: "通知及聯絡請求的狀態歷程", sourceLabel: "聯絡授權", sourcePath: "/contact", sourceAction: "開啟聯絡授權", unavailable: "通知歷史尚未接通；目前的鈴鐺只顯示操作提示。聯絡授權頁可查看有限的聯絡請求記錄，渠道接受不代表本人已收到。" },
+  { key: "notifications", label: "通知與聯絡", description: "通知及聯絡請求的狀態歷程", sourceLabel: "聯絡授權", sourcePath: "/contact", sourceAction: "開啟聯絡授權", unavailable: "通知歷史暫未提供；請到聯絡授權查看已載入的聯絡請求記錄。" },
 ] as const;
 
 export type HistoryCategory = typeof historyCategories[number]["key"];

@@ -6,6 +6,7 @@ import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
 import { growthConcernFollowUpLabel } from "../growth-view-model";
 import { childProfileAgeLabel } from "../child-overview-view-model";
 import { careKindOptions } from "../care-view-model";
+import type { HomeOverviewSection } from "../home-overview";
 import type { HomeViewModel, HomeRecord } from "../view-model";
 
 /** Read-only composition of the exact owners used by domain pages. No home data copy. */
@@ -16,23 +17,30 @@ export function useProductionHome() {
   const currentProfile = profile?.scopeKey === scope ? profile.model : null;
   const currentTasks = tasks?.scopeKey === scope ? tasks.model : null;
   const currentGrowth = growth?.scopeKey === scope ? growth.model : null;
-  const concerns = currentGrowth?.access !== "lost" && currentGrowth?.load === "ready" && currentGrowth.page?.concerns?.state === "ready"
+  const concerns = currentGrowth?.access !== "lost" && currentGrowth?.page?.concerns?.state === "ready"
     ? currentGrowth.page.concerns.items.filter(item => item.childId === base.selectedChildId && item.status !== "closed") : null;
-  const ongoing = concerns ? { state: "ready" as const, items: concerns.map(item => ({
+  const ongoingState: HomeOverviewSection["state"] = !currentGrowth || currentGrowth.access === "lost" ? "unavailable"
+    : currentGrowth.load === "loading" || currentGrowth.page?.concerns?.state === "loading" ? "loading" : concerns && (currentGrowth.load === "error" || !currentGrowth.online) ? "stale"
+      : currentGrowth.load === "error" || currentGrowth.page?.concerns?.state === "error" ? "error" : concerns ? "ready" : "unavailable";
+  const ongoing: HomeOverviewSection = { state: ongoingState, items: (concerns ?? []).map(item => ({
     id: item.id, title: item.title, detail: item.reason, statusLabel: growthConcernFollowUpLabel(item) ?? "持續關注",
     action: { label: "查看關注經過", destination: "growth" as const },
-  })), detail: "目前沒有已取得的持續關注。" }
-    : { state: currentGrowth?.access !== "lost" && currentGrowth?.load === "loading" ? "loading" as const : "unavailable" as const,
-      items: [], detail: "尚未確認目前關注歷程，不能當作沒有需要觀察的事情。" };
+  })), detail: ongoingState === "loading" ? "正在讀取關注…" : ongoingState === "stale" ? "暫時無法更新，顯示較早的關注"
+    : ongoingState === "error" || ongoingState === "unavailable" ? "暫時無法顯示持續關注" : undefined };
   const profileData = currentProfile && !currentProfile.reading && !currentProfile.needsRefresh ? currentProfile.current?.data : null;
-  const pending = currentTasks?.items.filter(item => item.occurrence.state === "scheduled" || item.occurrence.state === "needs_review") ?? [];
-  const tasksReady = !!currentTasks && currentTasks.online && currentTasks.access !== "lost" && !currentTasks.reading && currentTasks.operation.state !== "failed";
-  const attention = tasksReady ? { state: "ready" as const, items: pending.slice(0, 6).map(item => ({
+  const tasksAvailable = !!currentTasks && currentTasks.access !== "lost";
+  const pending = tasksAvailable ? currentTasks.items.filter(item => item.childId === base.selectedChildId && (item.occurrence.state === "scheduled" || item.occurrence.state === "needs_review")) : [];
+  const taskReadState = currentTasks?.readState ?? (currentTasks?.reading ? "loading" : "ready");
+  const attentionState: HomeOverviewSection["state"] = !tasksAvailable ? "unavailable"
+    : currentTasks.reading ? "loading" : taskReadState === "ready" && !currentTasks.online ? "stale" : taskReadState;
+  const tasksReady = attentionState === "ready";
+  const attention: HomeOverviewSection = { state: attentionState, items: pending.slice(0, 6).map(item => ({
     id: item.id, title: item.title, detail: `${new Date(item.occurrence.dueAt).toLocaleString("zh-HK", { timeZone: item.occurrence.timeZone })} · ${item.occurrence.timeZone}`,
     statusLabel: item.occurrence.state === "needs_review" ? "待覆核 · 已停催" : "待處理",
     action: { label: "查看事項", destination: "tasks" as const },
-  })), detail: currentTasks?.hasMoreTasks ? "顯示已載入事項；尚有更早或其他分頁。" : undefined }
-    : { state: currentTasks?.reading ? "loading" as const : "unavailable" as const, items: [], detail: "尚未確認目前事項，不能當作沒有待辦。" };
+  })), detail: attentionState === "loading" ? "正在讀取待辦…" : attentionState === "stale" ? "暫時無法更新，顯示較早的待辦"
+    : attentionState === "error" || attentionState === "unavailable" ? "暫時無法顯示待辦"
+      : currentTasks?.hasMoreTasks ? pending.length ? "尚有未載入的事項" : "已載入部分沒有待辦，尚有未載入的事項" : undefined };
   const model: HomeViewModel = { ...base,
     children: base.children.map(child => child.id !== base.selectedChildId ? child : { ...child,
       ageLabel: profileData ? childProfileAgeLabel(profileData) : "年齡資料未確認",
@@ -51,11 +59,12 @@ export function useProductionHome() {
     })) : [],
     focus: !tasksReady ? { kind: "unavailable", detail: attention.detail! } : pending[0]
       ? { kind: "task", title: pending[0].title, detail: attention.items[0].detail, action: { label: "查看事項", destination: "tasks" } }
-      : { kind: "none", detail: currentTasks?.hasMoreTasks ? "已讀取部分沒有待處理事項；其他分頁仍未讀取。" : "目前沒有待處理事項。" },
+      : { kind: "none", detail: currentTasks?.hasMoreTasks ? "已載入部分沒有待辦，尚有未載入的事項" : "目前沒有待處理事項。" },
     overview: base.overview ? { ...base.overview, attention, ongoing } : undefined,
   };
   return { ...production, model, actions: { ...production.actions, refresh() {
     production.actions.refresh();
+    if (tasks?.scopeKey === scope) tasks.recovery.reloadCurrent?.();
     if (growth?.scopeKey === scope) growth.actions.refresh();
   } } };
 }
