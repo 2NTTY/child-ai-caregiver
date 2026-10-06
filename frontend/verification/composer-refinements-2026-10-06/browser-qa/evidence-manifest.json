@@ -1,0 +1,118 @@
+{
+  "v49-browser-report.md": {
+    "bytes": 5095,
+    "sha256": "4951ce821c6f8aeacaa1e836cfac132f624e26c13ec67f6d62b34b97c7694284"
+  },
+  "v49-desktop-cap-scrolled.json": {
+    "bytes": 11846,
+    "sha256": "54d9ec16fdfd8b632b594125cb0aac7270d2bed2e25292326e79e1ee28da4e23"
+  },
+  "v49-desktop-cap.jpg": {
+    "bytes": 92293,
+    "sha256": "ba98cf5f8ddf4839417b0e5f4c267227d3307eec299494e1b6fdf4aa9c23484c"
+  },
+  "v49-desktop-cap.json": {
+    "bytes": 11844,
+    "sha256": "ab323a47903d534186934c1983f66839704a88f1a0e6c1a90c6f53b0daf59a21"
+  },
+  "v49-desktop-empty.jpg": {
+    "bytes": 87651,
+    "sha256": "e0339fb73e0c5e6dfcf0339750733a93a9d19574f7f28da35585d4eb85ee2bbd"
+  },
+  "v49-desktop-empty.json": {
+    "bytes": 11171,
+    "sha256": "ff16cf14b32072de7ce85e04c4ee3e08d0a994c3947361d2dbf1ddc300a75b00"
+  },
+  "v49-desktop-navigation-return.json": {
+    "bytes": 11233,
+    "sha256": "26a04bd8f1ab99366d1271f335136ddddc33950526b66d033727f8dedf371625"
+  },
+  "v49-desktop-scope-reset.jpg": {
+    "bytes": 91890,
+    "sha256": "a58b9c5741eb17690dfde68acd0365264d75e419c6a8b402cffd0847f46cc15f"
+  },
+  "v49-desktop-scope-reset.json": {
+    "bytes": 11171,
+    "sha256": "ff16cf14b32072de7ce85e04c4ee3e08d0a994c3947361d2dbf1ddc300a75b00"
+  },
+  "v49-desktop-send-focus.jpg": {
+    "bytes": 91405,
+    "sha256": "eee59aca9f48d63d6fde0775830c4eea0b91540ef80990550337a5cebfe50aa7"
+  },
+  "v49-desktop-send-focus.json": {
+    "bytes": 11853,
+    "sha256": "9d496089452050ab5572331be3ed9879897581f2ade985b34ced598588b115ab"
+  },
+  "v49-desktop-tool-focus.json": {
+    "bytes": 11855,
+    "sha256": "44b02bd6b7469fba4a8934b9353b02290d5de3ef04d71cdd0b5b6d2d84aedfb6"
+  },
+  "v49-desktop-two-line.json": {
+    "bytes": 11256,
+    "sha256": "972abb5ffcb509c885640cfad2bfd77790beeac4240999ca52236d3a34085a96"
+  },
+  "v49-end-cleared.jpg": {
+    "bytes": 53004,
+    "sha256": "2d9b7f70601a37bee4c108a6eb61ef460d071d6bf671ca59ed4a0f1f67dea3b6"
+  },
+  "v49-end-cleared.json": {
+    "bytes": 6994,
+    "sha256": "592d06c2f439036d58a8e03a90886b9c1fa2d8b2c4c34125128df6fd1bc7a1b3"
+  },
+  "v49-frame-helper-failure.json": {
+    "bytes": 1862,
+    "sha256": "26abbc95a6b2fa4e61e0647593514663ca9df903222aee935662ad5adc51757a"
+  },
+  "v49-helper-failure.json": {
+    "bytes": 1564,
+    "sha256": "1e3f30b00224fdfbb309de1ac0aa8a5e821c4133b7379e5088f57fae4524b998"
+  },
+  "v49-mobile-320-cap.jpg": {
+    "bytes": 45897,
+    "sha256": "a795728a50c1269f7182b003e30c3cb999a94c6ed0a03f8730379e99bb86f963"
+  },
+  "v49-mobile-320-cap.json": {
+    "bytes": 7150,
+    "sha256": "db8c4ae6d9c635860d2089a42399d0ba460f962590ccbd80aec2923ebaacd99d"
+  },
+  "v49-mobile-320-empty.jpg": {
+    "bytes": 51324,
+    "sha256": "7aece2cb9de8a4c85bfb526d6fb3ea2573ec842809ac24914aa1ff9f018cc73c"
+  },
+  "v49-mobile-320-empty.json": {
+    "bytes": 6994,
+    "sha256": "21aab107447997f8ee1165530d2edcf660586218ab69572e391266192fc65002"
+  },
+  "v49-mobile-320-send-hover.jpg": {
+    "bytes": 45960,
+    "sha256": "0f47cfbb22dff78b02e931f9a9ff823c75946be82ea77d803adeb928f5dff4f3"
+  },
+  "v49-mobile-320-send-hover.json": {
+    "bytes": 7151,
+    "sha256": "62e03248d5339ba2180b841c47969dba098e8adb8d06422aa6b0b4475d9bd99f"
+  },
+  "v49-mobile-390-cap.jpg": {
+    "bytes": 50553,
+    "sha256": "f6041e39715243dcc3c2c365edeef132a7fc9079f4d9909ef68ba93fcec7d789"
+  },
+  "v49-mobile-390-cap.json": {
+    "bytes": 7219,
+    "sha256": "d036b4dc9d62f08f89e1052b0f05d1d1fd44e8295ee3bf4ba38a915e01340076"
+  },
+  "v49-mobile-390-empty-corrected.json": {
+    "bytes": 6994,
+    "sha256": "592d06c2f439036d58a8e03a90886b9c1fa2d8b2c4c34125128df6fd1bc7a1b3"
+  },
+  "v49-mobile-390-empty.jpg": {
+    "bytes": 52953,
+    "sha256": "64df37035e91ccf5ba081317b16cddb7aeba6e6547073ade12d32f9117f83f09"
+  },
+  "v49-mobile-390-empty.json": {
+    "bytes": 343,
+    "sha256": "b0aeff401e9b3cafd573e3d4be34cabaa94f558563584edd11b621e1b0afef95"
+  },
+  "v49-summary.json": {
+    "bytes": 1175,
+    "sha256": "42afbf80011bcc266b81e4f8c0020b3d6087342b1676222f9b9cc2238dfcb4b1"
+  }
+}

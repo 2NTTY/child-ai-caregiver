@@ -32,17 +32,17 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
         accessibilityHint={trigger.unavailableReason ?? "開啟相機，拍攝後在目前孩子的對話中檢視；不會自動上傳或保存"}
         accessibilityState={{ disabled: trigger.disabled, busy: trigger.reading || opening }} aria-disabled={trigger.disabled} aria-busy={trigger.reading || opening}
         disabled={trigger.disabled} onPress={() => { setError(null); trigger.onPress(); }}
-        style={({ pressed }) => [styles.capture, trigger.disabled && styles.disabled, pressed && styles.pressed]}>
+        style={({ pressed }) => [styles.capture, trigger.disabled && styles.disabled, pressed && !trigger.disabled && styles.capturePressed]}>
         <AppIcon name="camera-outline" size={mobileIcons.primary} color={colors.onAccent} />
         <Text style={styles.captureTitle}>{trigger.reading ? "正在讀取照片" : opening ? "正在開啟對話" : "拍照給助手"}</Text>
       </Pressable>} />
     <View testID="mobile-quick-actions" style={styles.secondaryActions}>
       <Pressable accessibilityRole="button" accessibilityLabel="用文字告訴助手" accessibilityState={{ disabled: !available || opening }} aria-disabled={!available || opening}
-        disabled={!available || opening} onPress={() => actions.open("chat")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && styles.pressed]}>
+        disabled={!available || opening} onPress={() => actions.open("chat")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && available && !opening && styles.pressed]}>
         <AppIcon name="message-text-outline" size={mobileIcons.content} /><Text style={styles.label}>用文字說</Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="查看記錄及補改資料" accessibilityState={{ disabled: !available || opening }} aria-disabled={!available || opening}
-        disabled={!available || opening} onPress={() => actions.open("care")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && styles.pressed]}>
+        disabled={!available || opening} onPress={() => actions.open("care")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && available && !opening && styles.pressed]}>
         <AppIcon name="notebook-outline" size={mobileIcons.content} /><Text style={styles.label}>補改資料</Text>
       </Pressable>
     </View></View>
@@ -63,5 +63,5 @@ const styles = StyleSheet.create({
   label: { fontFamily: chineseFont, color: colors.ink, ...mobileType.label, textAlign: "center" },
   note: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption },
   error: { fontFamily: chineseFont, color: colors.warningInk, ...mobileType.body },
-  pressed: { opacity: 0.68 }, disabled: { opacity: 0.5 },
+  pressed: { backgroundColor: colors.pressedOverlay }, capturePressed: { backgroundColor: colors.accentPressed }, disabled: { opacity: 0.5 },
 });

@@ -230,8 +230,6 @@ const styles = StyleSheet.create({
   title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, flexShrink: 1, minWidth: 0 },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1, minWidth: 0 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1, minWidth: 0 },
-  badge: { fontFamily: chineseFont, color: colors.muted, backgroundColor: colors.quietSurface, borderRadius: radius.small, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, ...readingType.meta, overflow: "hidden" },
-  warningBadge: { backgroundColor: colors.paleAmber, color: colors.warningInk }, errorBadge: { backgroundColor: colors.paleCoral, color: colors.errorInk },
   scope: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, minWidth: 0 },
   detailRow: { gap: spacing.xs, minWidth: 0 },
   detailLabel: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },

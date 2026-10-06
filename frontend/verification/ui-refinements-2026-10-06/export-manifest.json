@@ -1,0 +1,382 @@
+{
+  "observedAt": "2026-10-06T07:02:59.829480+00:00",
+  "buildInputFingerprintSha256": "459128602754492d317b4b801e0ddba790b829788ce225786236873f78217d34",
+  "outputDirectory": "/workspace/shared/frontend_ui_refinements_20261006/frontend/dist",
+  "exportFingerprintSha256": "dc93ed68afbf7b44b51f802dc01d96c3aefe895f61136124eb6c3ec8c2dc7bf4",
+  "sourceUnchangedDuringExport": true,
+  "staticRouteCount": 37,
+  "routes": [
+    "(dashboard)/care.html",
+    "(dashboard)/chat.html",
+    "(dashboard)/contact.html",
+    "(dashboard)/family.html",
+    "(dashboard)/growth.html",
+    "(dashboard)/guide.html",
+    "(dashboard)/history.html",
+    "(dashboard)/index.html",
+    "(dashboard)/memory.html",
+    "(dashboard)/more.html",
+    "(dashboard)/motion-preview.html",
+    "(dashboard)/photos.html",
+    "(dashboard)/profile.html",
+    "(dashboard)/settings.html",
+    "(dashboard)/sources.html",
+    "(dashboard)/summary.html",
+    "(dashboard)/tasks.html",
+    "+not-found.html",
+    "_sitemap.html",
+    "care.html",
+    "chat.html",
+    "contact.html",
+    "family.html",
+    "growth.html",
+    "guide.html",
+    "history.html",
+    "index.html",
+    "login.html",
+    "memory.html",
+    "more.html",
+    "motion-preview.html",
+    "photos.html",
+    "profile.html",
+    "settings.html",
+    "sources.html",
+    "summary.html",
+    "tasks.html"
+  ],
+  "entry": [
+    {
+      "path": "_expo/static/js/web/entry-36913f917a02548acd5964af9674b1d3.js",
+      "sha256": "d8f6e3498fb6b388ab0ed5ba07e05bc79e4fc533459ef2e6c0602d2d3accbec6",
+      "bytes": 4698832
+    }
+  ],
+  "hero": [
+    {
+      "path": "assets/assets/images/harbour-family-hero.acf73643e80f2452876d97c45756232e.png",
+      "sha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+      "bytes": 2377969
+    }
+  ],
+  "files": [
+    {
+      "path": "(dashboard)/care.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/chat.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/contact.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/family.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/growth.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/guide.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/history.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/index.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/memory.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/more.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/motion-preview.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/photos.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/profile.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/settings.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/sources.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/summary.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "(dashboard)/tasks.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "+not-found.html",
+      "sha256": "a6f806f5207e40a588f263c0c278572e9c70a44a91634bb3033f604f391c0d05",
+      "bytes": 29016
+    },
+    {
+      "path": "_expo/.routes.json",
+      "sha256": "18234e6b8c5aee837883245f400d379f3f9686f1396b7d90d7ebcdad76c51d47",
+      "bytes": 21
+    },
+    {
+      "path": "_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css",
+      "sha256": "c3c3cf3e37c3bdc0cde835d614f2b3b359d6dee61babb0246f4b57a2d9897509",
+      "bytes": 731
+    },
+    {
+      "path": "_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+      "sha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517",
+      "bytes": 14266
+    },
+    {
+      "path": "_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css",
+      "sha256": "a45f655c8833b06ae0d8fbeaea146411f0adad9f256e53a21192de0683245a97",
+      "bytes": 210
+    },
+    {
+      "path": "_expo/static/js/web/entry-36913f917a02548acd5964af9674b1d3.js",
+      "sha256": "d8f6e3498fb6b388ab0ed5ba07e05bc79e4fc533459ef2e6c0602d2d3accbec6",
+      "bytes": 4698832
+    },
+    {
+      "path": "_sitemap.html",
+      "sha256": "a6f806f5207e40a588f263c0c278572e9c70a44a91634bb3033f604f391c0d05",
+      "bytes": 29016
+    },
+    {
+      "path": "assets/assets/images/harbour-family-hero.acf73643e80f2452876d97c45756232e.png",
+      "sha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+      "bytes": 2377969
+    },
+    {
+      "path": "assets/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.6e435534bd35da5fef04168860a9b8fa.ttf",
+      "sha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428",
+      "bytes": 1307660
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png",
+      "sha256": "6deca32b56b97fa1fa87facd6996b46cc45190a553400e7febdf1d2093099b57",
+      "bytes": 9456
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/error.d1ea1496f9057eb392d5bbf3732a61b7.png",
+      "sha256": "c15ec72a74d13957211808313d5c35deb7f7606c6d22dbddceb0000d4e0547ad",
+      "bytes": 469
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/file.19eeb73b9593a38f8e9f418337fc7d10.png",
+      "sha256": "a69a2edb5b6c60b8433d5b6d23c69f520ccd8a602f3f60e7996e489718bc175c",
+      "bytes": 138
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/forward.d8b800c443b8972542883e0b9de2bdc6.png",
+      "sha256": "708a79cf561b8a2a4850ce0254584d3a5231046be08fb7fadf4b6edfdb31178b",
+      "bytes": 188
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/pkg.ab19f4cbc543357183a20571f68380a3.png",
+      "sha256": "27f4d229d440925bf7212d5dfffa45d596b2c7b3bb2905c96b839b2081a1dbeb",
+      "bytes": 364
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png",
+      "sha256": "9adb8c5efca932e2b732b293da813bd2e31952263056bce9e2517fec0f0b6a76",
+      "bytes": 653
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png",
+      "sha256": "84cf5eb3b20250f69e0e4733beb4da5f417f0682892a5ad1b5e62570753c21b1",
+      "bytes": 207
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png",
+      "sha256": "d03a5cd7a66ef10c5147916f9d5878b2d0a0a5ad46f405a31cd9967efaa55afd",
+      "bytes": 220
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@2x.png",
+      "sha256": "ab5613d2ce70fa67c5926e831353664945199fc195fa6fe76c5fe3cec452e31a",
+      "bytes": 334
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@3x.png",
+      "sha256": "c4e54e6a0a7de636aa153378fbc62ea4a41695bfedf807f90df7b18ffd733f67",
+      "bytes": 502
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@4x.png",
+      "sha256": "c86bb485eee687e06c500fc4234f51a6784b4530c2ae11d0c76481110bce3105",
+      "bytes": 645
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png",
+      "sha256": "b1bc1810ca23e2c38cd76971c43591d726161061240d8b792b05757196ddb528",
+      "bytes": 141
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@2x.png",
+      "sha256": "cbdf9213e55f65c48d076acd8423b7c9aee4f1b81101ff6c95a38c4cd8a86461",
+      "bytes": 201
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png",
+      "sha256": "d05c9d30d79f45a78e5585a2e7ec67c6a06a883dd9137e1d5059e8c87b33ce76",
+      "bytes": 266
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png",
+      "sha256": "2325c53a73e54c438cbbc60dffdd8b513d471ba42e2f56713ef404b95e0ca1fc",
+      "bytes": 332
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/react-navigation/elements/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png",
+      "sha256": "5d075e0c287c4f4441b5b5c8fc7ea5cd27c11bb617ecea09755955bcb1889083",
+      "bytes": 928
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png",
+      "sha256": "acf691957a3bcce7d195856dce98a5cf14dce10bea28aa5c10b3550c078e23b5",
+      "bytes": 465
+    },
+    {
+      "path": "assets/node_modules/expo-router/assets/unmatched.20e71bdf79e3a97bf55fd9e164041578.png",
+      "sha256": "efc79da3c4c97dfb1571bff6202958ab0529c5aa31e8392600578b3e359d1447",
+      "bytes": 4752
+    },
+    {
+      "path": "care.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "chat.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "contact.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "family.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "favicon.ico",
+      "sha256": "0f30b4db3949836cf593141baaf312febbcf8b63ed937b1dbef830dbc708e7f8",
+      "bytes": 14510
+    },
+    {
+      "path": "growth.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "guide.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "history.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "index.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "login.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "memory.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "more.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "motion-preview.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "photos.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "profile.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "settings.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "sources.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "summary.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    },
+    {
+      "path": "tasks.html",
+      "sha256": "1a71a742810f00dfc847a8070c5d1ea0c319958f8fa1e33585be32ba9f9ee1e1",
+      "bytes": 30607
+    }
+  ],
+  "limitations": [
+    "Build/export is not browser/visual validation",
+    "Original user-supplied hero preserved; not represented as the absent older Git image"
+  ]
+}

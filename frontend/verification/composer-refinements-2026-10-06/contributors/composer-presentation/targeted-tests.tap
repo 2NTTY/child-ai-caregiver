@@ -1,0 +1,19 @@
+✔ composer remains a restrained two-layer panel with the existing input limits (4.642625ms)
+✔ send circle is unoutlined yellow and hover or press affects only its own surface (3.659076ms)
+✔ four tools stay transparent at rest with unchanged 40 or 48 pixel hit targets (3.685749ms)
+✔ input keeps its autosize and IME guards on a stable textarea (0.476557ms)
+✔ all 27 former enabled press fades retain opacity and provide local surface feedback (241.547466ms)
+✔ selection fields, options, tabs and lightweight links keep distinct resting roles (93.402151ms)
+✔ disclosure and checkbox keep focus, dimensions and disabled opacity (30.341387ms)
+✔ selected rows and calendar cells deepen without losing selected or warning markers (34.365807ms)
+✔ warning and accent actions retain their own palettes while held (52.407406ms)
+✔ chat send feedback is local to its accent surface and disabled state is unchanged (25.965174ms)
+✔ selected preparation rows no longer switch to a lighter pressed surface (41.2094ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1192.930284

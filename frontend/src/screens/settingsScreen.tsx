@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   scopeNote: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.md },
   draftBoundary: { borderLeftWidth: 2, borderLeftColor: colors.line, paddingLeft: spacing.md, gap: spacing.xs },
   draftTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
-  pressed: { opacity: 0.68 },
+  pressed: { backgroundColor: colors.pressedOverlay },
   sections: { gap: spacing.xl, width: "100%", minWidth: 0 },
   sectionGroup: { width: "100%", minWidth: 0, gap: spacing.xl },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.md }, avatar: { width: 55, height: 55, borderRadius: 28, backgroundColor: colors.teal, alignItems: "center", justifyContent: "center" }, avatarText: { color: colors.white, fontFamily: chineseFont, fontSize: typeScale.title, fontWeight: "800" }, identityText: { flex: 1, minWidth: 0, gap: spacing.xs }, identityName: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "800" }, muted: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta }, divider: { backgroundColor: colors.softLine }, label: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, fontWeight: "700" }, draftNote: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },

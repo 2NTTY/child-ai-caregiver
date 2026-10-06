@@ -12,7 +12,7 @@ export async function openPreview(browser, path, width = 1440, height = 992, fai
   page.on("console", message => { if (message.type() === "error") failures.push(`${path} ${width}: console ${message.text().slice(0, 600)} (${message.location().url})`); });
   page.on("request", request => { if (new URL(request.url()).pathname.startsWith("/api/")) failures.push(`Unexpected API call: ${request.method()}`); });
   await page.goto(new URL(path, process.env.FRONTEND_PREVIEW_URL ?? "http://localhost:8082").toString(), { waitUntil: "domcontentloaded", timeout: 60000 });
-  if (path !== "/login") await page.getByText("介面預覽 · 合成資料 · 未接駁 Server", { exact: true }).waitFor({ timeout: 60000 });
+  // The preview description is a collapsed disclosure; readiness comes from FirstScreenGate.
   await page.getByTestId("frontend-preview-ready").waitFor({ timeout: 60000 });
   await page.waitForFunction(() => [...document.images].every(image => image.complete), undefined, { timeout: 10000 });
   return page;

@@ -1,0 +1,26 @@
+[
+  {
+    "state": "accentPressed",
+    "foreground": "#272343",
+    "background": "#E5C20B",
+    "contrast": 8.562122310784353
+  },
+  {
+    "state": "inkPressed",
+    "foreground": "#FFFFFE",
+    "background": "#221F3B",
+    "contrast": 15.813530195264258
+  },
+  {
+    "state": "selectedPressed",
+    "foreground": "#2D334A",
+    "background": "#A8D0D4",
+    "contrast": 7.5047975243036635
+  },
+  {
+    "state": "warningPressed",
+    "foreground": "#5E4F0C",
+    "background": "#F2EAC8",
+    "contrast": 6.685007579673536
+  }
+]

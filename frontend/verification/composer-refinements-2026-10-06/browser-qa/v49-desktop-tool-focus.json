@@ -1,0 +1,457 @@
+{
+  "buttons": [
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 20,
+            "w": 20,
+            "x": 341,
+            "y": 710
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(0, 0, 0) none 3px",
+            "outlineOffset": "0px",
+            "overflowY": "visible",
+            "padding": "0px"
+          },
+          "tag": "DIV"
+        }
+      ],
+      "disabled": null,
+      "focus": true,
+      "label": "拍照",
+      "rect": {
+        "h": 40,
+        "w": 40,
+        "x": 331,
+        "y": 700
+      },
+      "style": {
+        "background": "rgb(237, 250, 249)",
+        "border": "1px solid rgb(39, 35, 67)",
+        "borderRadius": "20px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "1",
+        "outline": "rgb(16, 16, 16) auto 1px",
+        "outlineOffset": "0px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 20,
+            "w": 20,
+            "x": 381,
+            "y": 710
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(0, 0, 0) none 3px",
+            "outlineOffset": "0px",
+            "overflowY": "visible",
+            "padding": "0px"
+          },
+          "tag": "DIV"
+        }
+      ],
+      "disabled": null,
+      "focus": false,
+      "label": "加入文件",
+      "rect": {
+        "h": 40,
+        "w": 40,
+        "x": 371,
+        "y": 700
+      },
+      "style": {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(0, 0, 0)",
+        "borderRadius": "20px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "1",
+        "outline": "rgb(0, 0, 0) none 3px",
+        "outlineOffset": "0px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 20,
+            "w": 20,
+            "x": 421,
+            "y": 710
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(0, 0, 0) none 3px",
+            "outlineOffset": "0px",
+            "overflowY": "visible",
+            "padding": "0px"
+          },
+          "tag": "DIV"
+        }
+      ],
+      "disabled": null,
+      "focus": false,
+      "label": "語音輸入",
+      "rect": {
+        "h": 40,
+        "w": 40,
+        "x": 411,
+        "y": 700
+      },
+      "style": {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(0, 0, 0)",
+        "borderRadius": "20px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "1",
+        "outline": "rgb(0, 0, 0) none 3px",
+        "outlineOffset": "0px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 20,
+            "w": 20,
+            "x": 461,
+            "y": 710
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgba(16, 16, 16, 0.3) none 3px",
+            "outlineOffset": "0px",
+            "overflowY": "visible",
+            "padding": "0px"
+          },
+          "tag": "DIV"
+        }
+      ],
+      "disabled": "true",
+      "focus": false,
+      "label": "展開建議問題",
+      "rect": {
+        "h": 40,
+        "w": 40,
+        "x": 451,
+        "y": 700
+      },
+      "style": {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(0, 0, 0)",
+        "borderRadius": "20px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "0.5",
+        "outline": "rgba(16, 16, 16, 0.3) none 3px",
+        "outlineOffset": "0px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 36,
+            "w": 36,
+            "x": 1027,
+            "y": 702
+          },
+          "style": {
+            "background": "rgb(255, 216, 3)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "18px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(0, 0, 0) none 3px",
+            "outlineOffset": "0px",
+            "overflowY": "visible",
+            "padding": "0px"
+          },
+          "tag": "DIV"
+        }
+      ],
+      "disabled": null,
+      "focus": false,
+      "label": "預覽輸入",
+      "rect": {
+        "h": 40,
+        "w": 40,
+        "x": 1025,
+        "y": 700
+      },
+      "style": {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(0, 0, 0)",
+        "borderRadius": "20px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "1",
+        "outline": "rgb(0, 0, 0) none 3px",
+        "outlineOffset": "0px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 0,
+            "w": 0,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(39, 35, 67) none 3px",
+            "outlineOffset": "0px",
+            "overflowY": "visible",
+            "padding": "0px"
+          },
+          "tag": "DIV"
+        }
+      ],
+      "disabled": "true",
+      "focus": false,
+      "label": "預填本地示例：整理孩子的睡前流程",
+      "rect": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "style": {
+        "background": "rgb(237, 250, 249)",
+        "border": "1px solid rgb(230, 230, 234)",
+        "borderRadius": "999px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "0.5",
+        "outline": "rgba(16, 16, 16, 0.3) none 3px",
+        "outlineOffset": "0px",
+        "overflowY": "visible",
+        "padding": "0px 12px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 0,
+            "w": 0,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(39, 35, 67) none 3px",
+            "outlineOffset": "0px",
+            "overflowY": "visible",
+            "padding": "0px"
+          },
+          "tag": "DIV"
+        }
+      ],
+      "disabled": "true",
+      "focus": false,
+      "label": "預填本地示例：核對最近的睡眠記錄",
+      "rect": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "style": {
+        "background": "rgb(237, 250, 249)",
+        "border": "1px solid rgb(230, 230, 234)",
+        "borderRadius": "999px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "0.5",
+        "outline": "rgba(16, 16, 16, 0.3) none 3px",
+        "outlineOffset": "0px",
+        "overflowY": "visible",
+        "padding": "0px 12px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 0,
+            "w": 0,
+            "x": 0,
+            "y": 0
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(39, 35, 67) none 3px",
+            "outlineOffset": "0px",
+            "overflowY": "visible",
+            "padding": "0px"
+          },
+          "tag": "DIV"
+        }
+      ],
+      "disabled": "true",
+      "focus": false,
+      "label": "預填本地示例：先列出想問的問題",
+      "rect": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "style": {
+        "background": "rgb(237, 250, 249)",
+        "border": "1px solid rgb(230, 230, 234)",
+        "borderRadius": "999px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "0.5",
+        "outline": "rgba(16, 16, 16, 0.3) none 3px",
+        "outlineOffset": "0px",
+        "overflowY": "visible",
+        "padding": "0px 12px"
+      }
+    }
+  ],
+  "frame": null,
+  "panel": {
+    "rect": {
+      "h": 218,
+      "w": 752,
+      "x": 322,
+      "y": 527
+    },
+    "style": {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px solid rgb(202, 201, 212)",
+      "borderRadius": "24px",
+      "boxShadow": "rgba(39, 35, 67, 0.04) 0px 1px 10px 0px",
+      "gap": "normal",
+      "opacity": "1",
+      "outline": "rgb(0, 0, 0) none 3px",
+      "outlineOffset": "0px",
+      "overflowY": "visible",
+      "padding": "4px 8px"
+    }
+  },
+  "scripts": [
+    "",
+    "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/_expo/static/js/web/entry-3e2f8d0fc2f8a09690edb0560b8a9fe3.js"
+  ],
+  "textarea": {
+    "clientH": 168,
+    "focused": false,
+    "rect": {
+      "h": 168,
+      "w": 734,
+      "x": 331,
+      "y": 532
+    },
+    "scrollH": 300,
+    "scrollTop": 0,
+    "style": {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px none rgb(39, 35, 67)",
+      "borderRadius": "0px",
+      "boxShadow": "none",
+      "gap": "normal",
+      "opacity": "1",
+      "outline": "rgb(39, 35, 67) none 3px",
+      "outlineOffset": "0px",
+      "overflowY": "auto",
+      "padding": "8px 8px 4px"
+    },
+    "value": "純合成測試第 1 行，只驗版面，不送出\n純合成測試第 2 行，只驗版面，不送出\n純合成測試第 3 行，只驗版面，不送出\n純合成測試第 4 行，只驗版面，不送出\n純合成測試第 5 行，只驗版面，不送出\n純合成測試第 6 行，只驗版面，不送出\n純合成測試第 7 行，只驗版面，不送出\n純合成測試第 8 行，只驗版面，不送出\n純合成測試第 9 行，只驗版面，不送出\n純合成測試第 10 行，只驗版面，不送出\n純合成測試第 11 行，只驗版面，不送出\n純合成測試第 12 行，只驗版面，不送出"
+  },
+  "toolbar": {
+    "rect": {
+      "h": 40,
+      "w": 120,
+      "x": 331,
+      "y": 700
+    },
+    "style": {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px solid rgb(0, 0, 0)",
+      "borderRadius": "0px",
+      "boxShadow": "none",
+      "gap": "0px",
+      "opacity": "1",
+      "outline": "rgb(0, 0, 0) none 3px",
+      "outlineOffset": "0px",
+      "overflowY": "visible",
+      "padding": "0px"
+    }
+  },
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat",
+  "viewport": {
+    "clientW": 1180,
+    "h": 757,
+    "scrollW": 1180,
+    "w": 1180
+  }
+}

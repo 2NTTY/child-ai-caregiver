@@ -1,0 +1,196 @@
+--- a/frontend/src/components/agent/AgentComposer.tsx
++++ b/frontend/src/components/agent/AgentComposer.tsx
+@@ -92,12 +92,12 @@
+       <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
+         accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
+         aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
+-        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, pressed && enabled && !hasDraft && styles.pressed]}>
++        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, focused && enabled && !hasDraft && styles.controlFocused, pressed && enabled && !hasDraft && styles.pressed]}>
+         <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable></View>
+       <Pressable accessibilityRole="button" accessibilityLabel="預覽輸入" accessibilityState={{ disabled: !canPreview }}
+         disabled={!canPreview} onPress={preview}
+-        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, canPreview && (hovered || focused) && styles.controlActive, pressed && canPreview && styles.pressed]}>
+-        {({ pressed }) => <View style={[styles.sendCircle, !canPreview && styles.sendDisabled, pressed && canPreview && styles.sendPressed]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>}
++        style={({ focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, focused && canPreview && styles.controlFocused]}>
++        {({ pressed, hovered }: ControlInteraction) => <View style={[styles.sendCircle, !canPreview && styles.sendDisabled, (pressed || hovered) && canPreview && styles.sendPressed]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>}
+       </Pressable></View>
+     <MotionDisclosure expanded={showSuggestions} scopeKey={JSON.stringify([enabled, hasDraft, automaticCollapse])} testID="composer-suggestions-disclosure"><ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
+       contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled">
+@@ -126,15 +126,16 @@
+   mobileComposer: { paddingTop: 8, paddingBottom: 8 },
+   composerContent: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", paddingHorizontal: chatLayout.wideInset, gap: 6 },
+   mobileComposerContent: { paddingHorizontal: chatLayout.compactInset },
+-  panel: { minWidth: 0, borderWidth: 1, borderColor: chatColors.outline, borderRadius: chatLayout.composerRadius, padding: 8, backgroundColor: chatColors.surface,
+-    shadowColor: chatColors.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: .06, shadowRadius: 12, elevation: 2 },
++  panel: { minWidth: 0, borderWidth: 1, borderColor: colors.line, borderRadius: chatLayout.composerRadius, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: chatColors.surface,
++    shadowColor: chatColors.ink, shadowOffset: { width: 0, height: 1 }, shadowOpacity: .04, shadowRadius: 10, elevation: 1 },
+   panelFocused: { borderColor: chatColors.focus },
+   composerHint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
+-  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }, leftActions: { gap: 4, flexDirection: "row", alignItems: "center", minWidth: 0 },
++  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }, leftActions: { gap: 0, flexDirection: "row", alignItems: "center", minWidth: 0 },
+   iconControl: { backgroundColor: "transparent", borderWidth: 0, width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, alignItems: "center", justifyContent: "center" },
+   controlActive: { backgroundColor: chatColors.hover },
++  controlFocused: { borderWidth: 1, borderColor: chatColors.focus },
+   compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
+-  sendCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send, borderWidth: 1, borderColor: chatColors.onSend }, sendDisabled: { opacity: .35 },
++  sendCircle: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send }, sendDisabled: { opacity: .35 },
+   photoError: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
+   suggestionScroll: { flexGrow: 0 }, suggestions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.xs },
+   mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm }, suggestionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+--- a/frontend/src/components/agent/AgentInputToolbar.tsx
++++ b/frontend/src/components/agent/AgentInputToolbar.tsx
+@@ -21,13 +21,13 @@
+ }) {
+   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hint}
+     accessibilityState={{ disabled, busy }} aria-disabled={disabled} aria-busy={busy}
+-    disabled={disabled} onPress={onPress} style={({ pressed, hovered, focused }: ControlInteraction) => [styles.control, compact && styles.compactControl, disabled && styles.disabled, !disabled && (pressed || hovered || focused) && styles.active]}>
++    disabled={disabled} onPress={onPress} style={({ pressed, hovered, focused }: ControlInteraction) => [styles.control, compact && styles.compactControl, disabled && styles.disabled, !disabled && (pressed || hovered || focused) && styles.active, !disabled && focused && styles.focused]}>
+     <AppIcon name={icon} size={20} color={chatColors.secondary} />
+   </Pressable>;
+ }
+ const styles = StyleSheet.create({
+-  controls: { gap: 4, flexDirection: "row", alignItems: "center" },
++  controls: { gap: 0, flexDirection: "row", alignItems: "center" },
+   control: { backgroundColor: "transparent", borderWidth: 0, width: chatLayout.controlSize, height: chatLayout.controlSize, alignItems: "center", justifyContent: "center", borderRadius: chatLayout.controlSize / 2 },
+   compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
+-  disabled: { opacity: .5 }, active: { backgroundColor: chatColors.hover },
++  disabled: { opacity: .5 }, active: { backgroundColor: chatColors.hover }, focused: { borderWidth: 1, borderColor: chatColors.focus },
+ });
+--- a/frontend/src/components/agent/ChatComposerInput.web.tsx
++++ b/frontend/src/components/agent/ChatComposerInput.web.tsx
+@@ -43,7 +43,7 @@
+ const inputStyle: CSSProperties = {
+   display: "block", width: "100%", minWidth: 0, boxSizing: "border-box", border: 0, margin: 0,
+   height: chatLayout.inputMinHeight, minHeight: chatLayout.inputMinHeight, maxHeight: chatLayout.inputMaxHeight,
+-  padding: "10px 8px 2px", resize: "none", background: "transparent", outline: "none",
++  padding: "8px 8px 4px", resize: "none", background: "transparent", outline: "none",
+   fontFamily: chatFont, fontSize: chatType.input.fontSize, lineHeight: `${chatType.input.lineHeight}px`,
+   color: chatColors.ink, overflowWrap: "anywhere", overflowY: "hidden", scrollbarWidth: "thin",
+ };
+--- a/frontend/src/components/agent/ChatComposerInput.tsx
++++ b/frontend/src/components/agent/ChatComposerInput.tsx
+@@ -25,6 +25,6 @@
+ 
+ const styles = StyleSheet.create({
+   input: { backgroundColor: "transparent", fontFamily: chatFont, ...chatType.input },
+-  content: { paddingHorizontal: 8, paddingVertical: 10, color: chatColors.ink, fontFamily: chatFont, ...chatType.input },
++  content: { paddingHorizontal: 8, paddingTop: 8, paddingBottom: 4, color: chatColors.ink, fontFamily: chatFont, ...chatType.input },
+   underline: { height: 0 },
+ });
+--- a/frontend/src/components/chat/chat-presentation.ts
++++ b/frontend/src/components/chat/chat-presentation.ts
+@@ -20,6 +20,6 @@
+ } as const;
+ export const chatLayout = {
+   maxWidth: 800, wideInset: 24, compactInset: 16, turnGap: 24, compactTurnGap: 20,
+-  paragraphGap: 12, composerRadius: 20, composerOverlap: 32, controlSize: 40, compactControlSize: 48,
++  paragraphGap: 12, composerRadius: 24, composerOverlap: 32, controlSize: 40, compactControlSize: 48,
+   inputMinHeight: 48, inputMaxHeight: 168,
+ } as const;
+--- a/frontend/scripts/composer-presentation.test.mjs
++++ b/frontend/scripts/composer-presentation.test.mjs
+@@ -0,0 +1,104 @@
++import assert from 'node:assert/strict';
++import {readFileSync} from 'node:fs';
++import path from 'node:path';
++import {fileURLToPath} from 'node:url';
++import {createRequire} from 'node:module';
++import {test} from 'node:test';
++import ts from 'typescript';
++const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
++const require = createRequire(import.meta.url);
++const flatten = value => Array.isArray(value) ? Object.assign({}, ...value.filter(Boolean).map(flatten)) : value || {};
++const theme = load('src/theme.ts');
++const presentation = load('src/components/chat/chat-presentation.ts');
++function load(relative) {
++  const filename = path.resolve(root, relative);
++  const output = ts.transpileModule(readFileSync(filename, 'utf8'), {fileName: filename, compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022}}).outputText;
++  const module = {exports: {}};
++  const localRequire = name => name === 'react' ? {useState: value => [value, () => {}], useRef: value => ({current: value}), useEffect() {}}
++    : name === 'react/jsx-runtime' ? require(name)
++    : name === 'react-native' ? {Platform: {OS: 'web', select: value => value.web ?? value.default}, StyleSheet: {create: value => value}, Pressable: 'Pressable', View: 'View', Keyboard: {}}
++    : name === 'react-native-paper' ? {Portal: 'Portal', Text: 'Text', MD3LightTheme: {colors: {}, fonts: {}}, configureFonts: value => value}
++    : name.endsWith('/theme') ? theme
++    : name.endsWith('/chat-presentation') ? presentation
++    : name.endsWith('/useInteractionDensity') ? {useInteractionDensity: () => false}
++    : name.endsWith('/assistant-draft') ? {canPreviewAssistantDraft: ({text}) => !!text.trim(), photoAttachment: value => value}
++    : new Proxy({}, {get: (_target, key) => String(key)});
++  new Function('require', 'module', 'exports', output)(localRequire, module, module.exports);
++  return module.exports;
++}
++const {AgentComposer} = load('src/components/agent/AgentComposer.tsx');
++const {AgentInputToolbar} = load('src/components/agent/AgentInputToolbar.tsx');
++const nodes = value => !value || typeof value !== 'object' ? [] : [value, ...[value.props?.children].flat(Infinity).flatMap(nodes)];
++const idle = control => flatten(control.props.style({pressed: false, hovered: false, focused: false}));
++const source = relative => readFileSync(path.join(root, relative), 'utf8');
++const baseProps = {enabled: true, compact: false, draft: '', attachments: [], onChangeDraft() {}, onPreview() {}, onSources() {}, onAddAttachment() {}, onRemoveAttachment() {}};
++
++test('composer remains a restrained two-layer panel with the existing input limits', () => {
++  const panel = nodes(AgentComposer(baseProps)).find(node => node.props?.testID === 'chat-composer-panel');
++  const style = flatten(panel.props.style);
++  assert.equal(style.borderWidth, 1);
++  assert.equal(style.borderColor, theme.colors.line);
++  assert.equal(style.borderRadius, 24);
++  assert.equal(style.paddingHorizontal, 8);
++  assert.equal(style.paddingVertical, 4);
++  assert.equal(style.backgroundColor, theme.colors.controlSurface);
++  assert.equal(presentation.chatLayout.inputMinHeight, 48);
++  assert.equal(presentation.chatLayout.inputMaxHeight, 168);
++  assert.match(source('src/components/agent/ChatComposerInput.web.tsx'), /padding: "8px 8px 4px"/);
++});
++
++test('send circle is unoutlined yellow and hover or press affects only its own surface', () => {
++  for (const compact of [false, true]) for (const enabled of [false, true]) for (const draft of ['', 'Synthetic draft']) {
++    const tree = AgentComposer({...baseProps, compact, enabled, draft});
++    const send = nodes(tree).find(node => node.props?.accessibilityLabel === '預覽輸入');
++    const available = enabled && !!draft;
++    const normal = idle(send);
++    assert.equal(send.props.disabled, !available);
++    assert.equal(send.props.accessibilityState.disabled, !available);
++    assert.equal(normal.width, compact ? 48 : 40);
++    assert.equal(normal.height, compact ? 48 : 40);
++    assert.equal(normal.backgroundColor, 'transparent');
++    assert.equal(normal.borderWidth, 0);
++    for (const state of [{pressed: true}, {hovered: true}]) {
++      assert.equal(flatten(send.props.style(state)).backgroundColor, 'transparent');
++      assert.equal(flatten(send.props.style(state)).borderWidth, 0);
++      const circle = flatten(send.props.children(state).props.style);
++      assert.equal(circle.width, 36); assert.equal(circle.height, 36);
++      assert.equal(circle.borderWidth ?? 0, 0);
++      assert.equal(circle.backgroundColor, available ? theme.colors.accentPressed : theme.colors.accent);
++      assert.equal(circle.opacity ?? 1, available ? 1 : .35);
++    }
++    const focus = flatten(send.props.style({focused: true}));
++    assert.equal(focus.borderWidth, available ? 1 : 0);
++    assert.equal(focus.backgroundColor, 'transparent');
++  }
++});
++
++test('four tools stay transparent at rest with unchanged 40 or 48 pixel hit targets', () => {
++  for (const compact of [false, true]) for (const disabled of [false, true]) {
++    const toolbar = AgentInputToolbar({compact, disabled, onFiles() {}, onVoice() {}, onPickPhoto() {}, onPhotoError() {}});
++    assert.equal(toolbar.props.style.gap, 0);
++    const children = toolbar.props.children;
++    const photo = children[0].props.renderTrigger({disabled, reading: false, onPress() {}});
++    const controls = [photo, ...children.slice(1)].map(child => child.type(child.props));
++    controls.push(nodes(AgentComposer({...baseProps, compact, enabled: !disabled})).find(node => node.props?.testID === 'composer-suggestions-toggle'));
++    for (const control of controls) {
++      const style = idle(control);
++      assert.equal(style.backgroundColor, 'transparent'); assert.equal(style.borderWidth, 0);
++      assert.equal(style.width, compact ? 48 : 40); assert.equal(style.height, compact ? 48 : 40);
++      assert.equal(control.props.disabled, disabled);
++      const focus = flatten(control.props.style({focused: true}));
++      assert.equal(focus.borderWidth, disabled ? 0 : 1);
++      const pressed = flatten(control.props.style({pressed: true}));
++      assert.equal(pressed.opacity ?? 1, disabled ? .5 : 1);
++    }
++  }
++});
++
++test('input keeps its autosize and IME guards on a stable textarea', () => {
++  const web = source('src/components/agent/ChatComposerInput.web.tsx');
++  assert.match(web, /useLayoutEffect\(\(\) => \{ if \(input.current\) fitInput\(input.current\); \}, \[props.value\]\)/);
++  assert.match(web, /event.shiftKey \|\| composing.current \|\| event.nativeEvent.isComposing \|\| event.nativeEvent.keyCode === 229/);
++  assert.match(web, /if \(!props.disabled && \(props.canSubmit \?\? !!props.value.trim\(\)\)\) props.onSubmit\(\)/);
++  assert.doesNotMatch(web, /<textarea[^>]*\bkey=/);
++});

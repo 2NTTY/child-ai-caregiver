@@ -1,0 +1,37 @@
+{
+  "scope": "Growth history subtitle only; no browser, build, Git or publishing operations",
+  "subtitle": "查看已結束的關注與跟進記錄",
+  "focused_tests": {
+    "command": "node --test scripts/history-controls.test.mjs scripts/history-filters.test.mts",
+    "passed": 16,
+    "failed": 0,
+    "log": "focused-tests-final.log",
+    "initial_failure_log": "focused-tests.log",
+    "initial_failure": "15/16; superseded source-string assertion required Growth subtitle to stay hidden. Parent approved replacing only this assertion to match the new user request."
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "initial_failure_log": "typecheck.log",
+    "initial_failure": "Staging initially omitted baseline ../../src/shared/family.ts. Parent approved providing an unchanged baseline shared-type link. No shared source was edited.",
+    "log": "typecheck-final.log",
+    "exit_code": 0,
+    "status": "passed"
+  },
+  "references": [
+    {
+      "library_file_id": "libfile_f63d884d44a08191898f958f7e7075a9",
+      "local_path": "/workspace/scratch/c112a98a8be9/growth_subtitle_refs/image(20261006-064544).png",
+      "viewed": true
+    },
+    {
+      "library_file_id": "libfile_3053e53a26c0819195d9f59dd4a2ec4c",
+      "local_path": "/workspace/scratch/c112a98a8be9/growth_subtitle_refs/image(20261006-064545).png",
+      "viewed": true
+    }
+  ],
+  "limits": [
+    "No new browser screenshots or visual geometry verification",
+    "Four-width component-prop regression is not browser geometry proof",
+    "No fresh build, full aggregate, live API or native-device test"
+  ]
+}

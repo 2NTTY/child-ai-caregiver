@@ -1,0 +1,19 @@
+✔ action variants use either a solid fill or a visible outline without a tinted fill (6.330429ms)
+✔ disabled actions preserve fill-or-outline treatment, readable text, and disabled semantics (1.03573ms)
+✔ disclosures expose state and an adjacent chevron on the actual pressable (0.764704ms)
+✔ home photo capture stays filled while its adjacent quick actions use outlines only (1.389557ms)
+✔ desktop compact and mobile controls retain their intended touch targets (0.465084ms)
+✔ summary disclosure width hugs its content and does not push its chevron to the far edge (0.359139ms)
+✔ actual text links retain a visible underline (0.525566ms)
+✔ status badges retain readable semantic text and do not rely on colour alone (1.673583ms)
+✔ contact channel acceptance remains distinct from receipt and unknown from failure (0.221929ms)
+✔ grant badges preserve missing, revoked, expired, malformed and changed-version boundaries (0.385832ms)
+✔ growth export requires an adapter and source conflicts stay warning states (0.705091ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 767.46126

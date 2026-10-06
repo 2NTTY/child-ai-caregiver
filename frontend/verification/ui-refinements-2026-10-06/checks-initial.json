@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-10-06T06:58:40.659703+00:00",
+  "baselinePr": 89,
+  "baselineHead": "193affe2b2b8a2956cf976c1d3d3e11d9d4dadb7",
+  "sourceBuildInputFingerprintSha256": "ec75087c4517cdb60886cb8d927d0c71612a5347cf22d0446f66045dfa99a822",
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "startedAt": "2026-10-06T06:58:40.659801+00:00",
+      "endedAt": "2026-10-06T06:58:50.789771+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "typecheck.log",
+      "logSha256": "36909e4212b55a6cfd8f3e2bae14fb164f0589f81b1563e66628f7ec63f8a6ce"
+    },
+    "aggregate": {
+      "command": "node --test scripts/*.test.mts scripts/*.test.mjs src/components/care/care-review.test.mjs src/components/growth/growth-form.test.mjs",
+      "startedAt": "2026-10-06T06:58:50.790299+00:00",
+      "endedAt": "2026-10-06T06:59:02.844350+00:00",
+      "exitCode": 1,
+      "status": "failed",
+      "log": "aggregate.log",
+      "logSha256": "9eb6114c868ff00c3a6518189d29b439dd5937ecbcbf43ddd282e83334666e91"
+    }
+  },
+  "stoppingRule": "Stop on the first failed check; retain its original log. No assertion or scope weakening.",
+  "limits": [
+    "No browser or held-press visual verification",
+    "No export yet",
+    "No Git or Sites operations"
+  ]
+}

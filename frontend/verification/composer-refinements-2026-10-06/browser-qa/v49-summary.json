@@ -1,0 +1,46 @@
+{
+  "version": "v49",
+  "entry": "3e2f8d0fc2f8a09690edb0560b8a9fe3",
+  "sourceProvidedByParent": "8be24dc28a23baae506821fcb89efffe368cfa52",
+  "deploymentProvidedByParent": "appgdep_6ac4ab40fa8c819184ba6bf1b41a37a5",
+  "observedThrough": "2026-10-06T08:13:21Z",
+  "result": "Executed targeted checks passed; held send feedback not exercised",
+  "viewports": [
+    {
+      "width": 1180,
+      "height": 757,
+      "mode": "normal browser"
+    },
+    {
+      "width": 390,
+      "height": 600,
+      "mode": "same-origin QA iframe"
+    },
+    {
+      "width": 320,
+      "height": 600,
+      "mode": "same-origin QA iframe"
+    }
+  ],
+  "productFailures": [],
+  "instrumentationFailures": [
+    "approval-denied-retried-once-with-transcript",
+    "invalid-outer-frame-measurement",
+    "string-function-evaluate-undefined"
+  ],
+  "notRun": [
+    "held send activation/release",
+    "normal Enter submit",
+    "IME composition",
+    "native mobile keyboard",
+    "cross browser",
+    "every-frame stability"
+  ],
+  "safeEndState": {
+    "draft": "",
+    "sendDisabled": true,
+    "textareaHeight": 48,
+    "noSubmissionOrMedia": true
+  },
+  "report": "v49-browser-report.md"
+}

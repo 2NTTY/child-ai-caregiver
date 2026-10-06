@@ -1,0 +1,16 @@
+✔ growth source actions share compact sizing and centered self-alignment without a Link wrapper (681.95587ms)
+✔ date clear aligns with the Paper outlined border and drops the offset when stacked (337.317216ms)
+✔ date filtering, reset and the original locked guard are unchanged by the layout (92.439344ms)
+✔ History removes only the permanent closing caveat and keeps restore and coverage conditions (0.54746ms)
+✔ closed chains are distinct name/date rows with sibling reading targets and small right-side restore tools (121.170169ms)
+✔ selected History keeps its chain identity through reorder and filtering and never opens a sibling timeline (27.689557ms)
+✔ lightweight restore retains locked, dirty, missing-state and viewer gates, with keyboard and hover reading feedback (94.666325ms)
+✔ success is concise while unknown and failure messages remain explicit and list copy has no permanent caveats (20.370922ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2210.725655

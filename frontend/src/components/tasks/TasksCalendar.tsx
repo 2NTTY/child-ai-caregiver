@@ -16,7 +16,7 @@ function CalendarDay({ day, current, selected, disabled, onPress }: {
     accessibilityLabel={`${taskCalendarDayLabel(day)}${current ? "；資料基準日" : ""}${selected ? "；已選取，再按取消日期篩選" : ""}`}
     accessibilityState={{ selected, disabled }} aria-pressed={selected} aria-disabled={disabled}
     disabled={disabled} onPress={onPress} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-    style={({ pressed }) => [styles.day, selected && styles.selectedDay, focused && styles.focused, disabled && styles.disabled, pressed && styles.pressed]}>
+    style={({ pressed }) => [styles.day, selected && styles.selectedDay, focused && styles.focused, disabled && styles.disabled, pressed && !disabled && (selected ? styles.selectedPressed : styles.pressed)]}>
     <View style={[styles.dayNumber, current && styles.currentDay]}><Text style={[styles.dayText, selected && styles.selectedText]}>{day.day}</Text></View>
     <View accessible={false} aria-hidden style={styles.dots}>
       {day.scheduled > 0 ? <View style={[styles.dot, styles.scheduledDot]} /> : null}
@@ -40,9 +40,9 @@ export function TasksCalendar({ items, context, selectedDay, month, disabled, on
       <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={styles.month}>{calendar.label}</Text>
       <View style={styles.monthActions}>
         <Pressable accessibilityRole="button" accessibilityLabel="上一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}
-          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && styles.pressed]}><AppIcon name="chevron-left" size={20} color={colors.ink} /></Pressable>
+          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-left" size={20} color={colors.ink} /></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="下一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}
-          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(1)} style={({ pressed }) => [styles.monthButton, pressed && styles.pressed]}><AppIcon name="chevron-right" size={20} color={colors.ink} /></Pressable>
+          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-right" size={20} color={colors.ink} /></Pressable>
       </View>
     </View>
     {calendar.weeks.length ? <View style={styles.grid}>
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   emptyDay: { flex: 1, minWidth: 0 }, dayNumber: { minWidth: 26, height: 26, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "transparent", borderRadius: radius.pill },
   dayText: { fontFamily: chineseFont, color: colors.ink, fontSize: 14, lineHeight: 20 }, selectedText: { fontWeight: "700" },
   currentDay: { borderColor: colors.controlOutline }, selectedDay: { backgroundColor: colors.paleTeal, borderColor: colors.ink },
-  focused: { borderColor: colors.ink, borderWidth: 2 }, disabled: { opacity: 0.5 }, pressed: { opacity: 0.7 },
+  focused: { borderColor: colors.ink, borderWidth: 2 }, disabled: { opacity: 0.5 }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
   dots: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, height: 8 }, dot: { width: 6, height: 6, borderRadius: radius.pill },
   scheduledDot: { backgroundColor: colors.ink }, reviewDot: { backgroundColor: colors.statusWarmLine },
   legend: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.md, rowGap: spacing.xs }, legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },

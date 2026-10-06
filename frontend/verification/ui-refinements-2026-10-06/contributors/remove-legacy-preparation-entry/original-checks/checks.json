@@ -1,0 +1,39 @@
+{
+  "checked_at": "2026-10-06T06:50:29.831702+00:00",
+  "base": "/workspace/shared/frontend_cleanup_verified_v2_20261006/frontend",
+  "staging": "/workspace/shared/remove_legacy_preparation_entry_20261006/frontend",
+  "files": [
+    {
+      "path": "frontend/src/screens/SummaryScreen.tsx",
+      "base_sha256": "728e3c8f3cf6f72245e0a2c7a9b526e87c3b18bad8fe3c102d176ead1d93092d",
+      "result_sha256": "c39b2706cf17b0d9d6a1ddc05f9034a8ec4c9e5058b941472b45d1b6d0eba013"
+    },
+    {
+      "path": "frontend/scripts/summary-composition.test.mjs",
+      "base_sha256": "1f13152d0195a2145ebeaaa109a900a4be85677117d2bacb41a7e74d340a6157",
+      "result_sha256": "b9f71780e0c3b245358b7b77ed699be9946a85257c3d5f9118bad7179a3f6ee9"
+    }
+  ],
+  "focused_tests": {
+    "command": "node --test scripts/summary-composition.test.mjs scripts/preparation-reading.test.mjs",
+    "passed": 15,
+    "failed": 0,
+    "log": "focused-tests.log"
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exit_code": 0,
+    "log": "typecheck-with-shared-source.log",
+    "initial_staging_failure": {
+      "log": "typecheck.log",
+      "cause": "The initial isolated frontend copy lacked sibling src/shared/family.ts. A symlink to the unchanged frozen sibling src restored the original read-only type source; no product source changes were needed."
+    }
+  },
+  "not_run": [
+    "browser QA (owned by separate worker)",
+    "web export",
+    "full aggregate suite",
+    "Git or publishing operations"
+  ],
+  "scope": "Visible legacy preparation entry and its orphan tab-panel spacing only; compatibility route, original recovery controller, pending/unknown operations, data, and contracts unchanged."
+}

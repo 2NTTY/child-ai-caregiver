@@ -1,0 +1,21 @@
+{
+  "base": "/workspace/shared/frontend_cleanup_verified_v2_20261006/frontend",
+  "staging": "/workspace/shared/growth_history_subtitle_20261006/frontend",
+  "files": [
+    {
+      "path": "src/screens/historyScreen.tsx",
+      "base_sha256": "bcd0b2090721d3c50a3b83cd11b16ca3334cf702708a02718b2536ec9ae2218d",
+      "result_sha256": "36077c7c86b8b38790a613e6784ed595cd05e6d1b9671e25507340d84e8ba36f"
+    },
+    {
+      "path": "src/components/history/history-filters.ts",
+      "base_sha256": "13b437c63882bfb0aca4baaf6be9d65f4df2925c3cb13388b4367b355b590180",
+      "result_sha256": "09f2c679bd99bdd50e8426a269d4f649147ca9b857cee9ced41109c0f88c9ddd"
+    },
+    {
+      "path": "scripts/history-controls.test.mjs",
+      "base_sha256": "2ebfec500798e4079dbb61e2c35cc57cafc0d266ccfb7f4f483717a1fb006e25",
+      "result_sha256": "e512fcd282c68c08c118e9f9e63fc6707e44a2183a67daf3f88851801725c03f"
+    }
+  ]
+}

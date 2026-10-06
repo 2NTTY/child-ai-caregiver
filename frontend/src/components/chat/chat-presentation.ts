@@ -20,6 +20,6 @@ export const chatType = {
 } as const;
 export const chatLayout = {
   maxWidth: 800, wideInset: 24, compactInset: 16, turnGap: 24, compactTurnGap: 20,
-  paragraphGap: 12, composerRadius: 20, composerOverlap: 32, controlSize: 40, compactControlSize: 48,
+  paragraphGap: 12, composerRadius: 24, composerOverlap: 32, controlSize: 40, compactControlSize: 48,
   inputMinHeight: 48, inputMaxHeight: 168,
 } as const;

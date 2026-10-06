@@ -1,0 +1,80 @@
+{
+  "observedAt": "2026-10-06T07:51:47.507295+00:00",
+  "baselineRevision": "Final frozen v48",
+  "baselineBuildInputFingerprintSha256": "81cb84068fa95ae59687e2b18a2ec08ea1f96ac92803c0de8911dc628fe7e089",
+  "patches": [
+    {
+      "name": "composer-presentation",
+      "path": "/workspace/shared/frontend_codex_composer_restore_20261006/frontend/verification/codex-composer-restore-2026-10-06/composer-presentation.patch",
+      "sha256": "ac220f65d37ecf3ac4fc13689f749452e3b36a92232579f19e0e15401f69f556",
+      "paths": [
+        "frontend/src/components/agent/AgentComposer.tsx",
+        "frontend/src/components/agent/AgentInputToolbar.tsx",
+        "frontend/src/components/agent/ChatComposerInput.web.tsx",
+        "frontend/src/components/agent/ChatComposerInput.tsx",
+        "frontend/src/components/chat/chat-presentation.ts",
+        "frontend/scripts/composer-presentation.test.mjs"
+      ]
+    }
+  ],
+  "zeroFuzzAllPatches": true,
+  "overlaps": {},
+  "overlapResolution": "Single approved six-file patch; all preimages and owner postimages verified, no manual edits",
+  "changes": [
+    {
+      "path": "frontend/src/components/agent/AgentComposer.tsx",
+      "owners": [
+        "composer-presentation"
+      ],
+      "beforeSha256": "4144ad802daaabab9ff7d982fa4de2284ce371eb733bcbdf3af65228199df95f",
+      "afterSha256": "411e5eab72bb5275e5e2ab00702550ecf15cc23d259a0f119e5f01833620e222",
+      "bytes": 12072
+    },
+    {
+      "path": "frontend/src/components/agent/AgentInputToolbar.tsx",
+      "owners": [
+        "composer-presentation"
+      ],
+      "beforeSha256": "8ad43cd248f85bc87faffd832252a9ad655a79ce965922f440a827b9d5240767",
+      "afterSha256": "64c3b2e3c9bb0726c49c7eef94e302574dd8400e5a44146db67f232e5e8ffea3",
+      "bytes": 2860
+    },
+    {
+      "path": "frontend/src/components/agent/ChatComposerInput.web.tsx",
+      "owners": [
+        "composer-presentation"
+      ],
+      "beforeSha256": "a8015843c849949f7d4a26ed059011144eb33647930804af5e21ffc641aa9f24",
+      "afterSha256": "bf4caad7149bac4b19481afc7f2943fafedf2548d575a70393b285230dec5f36",
+      "bytes": 3040
+    },
+    {
+      "path": "frontend/src/components/agent/ChatComposerInput.tsx",
+      "owners": [
+        "composer-presentation"
+      ],
+      "beforeSha256": "09100b601e07b4054831879034a758ae5c36e5a9aabfd549df1aa290fbb2c47d",
+      "afterSha256": "a0a4ffddf98915e886c98b7c158d3c91f662a292a83eeef2e13780c00278baff",
+      "bytes": 1993
+    },
+    {
+      "path": "frontend/src/components/chat/chat-presentation.ts",
+      "owners": [
+        "composer-presentation"
+      ],
+      "beforeSha256": "31ca3f08e0a3715e42d4ce537d1f6246269bd1c190c3ab6828edee636626268a",
+      "afterSha256": "ea5e3c0374e73d0d580d90e6b9a25af908e5acff7c9d411c3c3ca1dac90c7180",
+      "bytes": 1223
+    },
+    {
+      "path": "frontend/scripts/composer-presentation.test.mjs",
+      "owners": [
+        "composer-presentation"
+      ],
+      "beforeSha256": null,
+      "afterSha256": "fe12ac1f4038ac5d482db1545ee1dcff1ba6bf8129854c6c41e4de3fa99ad64a",
+      "bytes": 6780
+    }
+  ],
+  "contributorFailureEvidenceLimit": "Owner checks.json records the initial omitted shared-family dependency failure but explicitly states its full initial stdout was not retained. Preserved the exact record and corrected passing log without recreating or relabelling missing evidence."
+}

@@ -24,7 +24,7 @@ export function SettingsNavigation<T extends string>({ id, items, value, onChang
         accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key}
         aria-controls={`${id}-panel-${encodeURIComponent(item.key)}`} tabIndex={value === item.key ? 0 : -1} onPress={() => onChange(item.key)}
         {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }) => move(event, index) } : {})}
-        style={({ pressed }) => [styles.item, value === item.key && styles.selected, pressed && styles.pressed]}>
+        style={({ pressed }) => [styles.item, value === item.key && styles.selected, pressed && (value === item.key ? styles.selectedPressed : styles.pressed)]}>
         <Text style={[styles.label, value === item.key && styles.selectedLabel]}>{item.label}</Text>
       </Pressable>)}
     </View>
@@ -38,5 +38,5 @@ const styles = StyleSheet.create({
   items: { gap: spacing.xs }, item: { minHeight: 48, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.small, borderLeftWidth: 2, borderLeftColor: "transparent" },
   selected: { backgroundColor: colors.paleTeal, borderLeftColor: colors.ink }, label: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
   selectedLabel: { color: colors.ink, fontWeight: "700" }, note: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, marginHorizontal: spacing.md },
-  pressed: { opacity: 0.68 },
+  pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
 });

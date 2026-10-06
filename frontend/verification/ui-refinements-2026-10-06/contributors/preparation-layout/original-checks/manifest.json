@@ -1,0 +1,65 @@
+{
+  "base": "/workspace/shared/frontend_cleanup_verified_v2_20261006/frontend",
+  "staging": "/workspace/shared/preparation_layout_20261006/frontend",
+  "files": [
+    {
+      "path": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+      "base_sha256": "22e47bc0d75277b437521e7e9a8100dc81533aaccb233402e1d60a7df42d0909",
+      "staged_sha256": "58ceb683c4fdad45f95b6f321b3de9ca6ccd2f4d4abb8e8422d0bcc74f966b3b"
+    },
+    {
+      "path": "frontend/src/preview/PreparationPreviewTools.tsx",
+      "base_sha256": "c18fddf7533ba7322ef5e08ddf21c2c12370aba2a9a60ef8a48a3cfc3a9bb308",
+      "staged_sha256": "d7f8b0fbdc7a25a1eca5832e8f0fdf1631f495638628a9ab22de8628b886b1a6"
+    },
+    {
+      "path": "frontend/scripts/preparation-layout.test.mjs",
+      "base_sha256": null,
+      "staged_sha256": "b77cd31313aa8c4a4f77cc88844be3cedd4876cd77421b20c405b54a043e66de"
+    }
+  ],
+  "source_equivalence_checks": {
+    "document_row_detail_reader_unchanged": true,
+    "history_view_unchanged": true,
+    "question_draft_callback_unchanged": true
+  },
+  "tests": {
+    "command": "node --test scripts/preparation-layout.test.mjs scripts/summary-composition.test.mjs scripts/preparation-owner.test.mjs scripts/preparation-documents.test.mts",
+    "passed": 29,
+    "failed": 0
+  },
+  "limits": [
+    "No browser or pixel layout verification",
+    "No export/build, runtime edits, Git or Sites operations"
+  ],
+  "reference_images": [
+    {
+      "library_file_id": "libfile_e825a7b0cf508191aefd87f7e61fca98",
+      "version": 0,
+      "path": "/workspace/scratch/c112a98a8be9/preparation-layout-reference-images/image(20261006-064848).png",
+      "viewed": true
+    },
+    {
+      "library_file_id": "libfile_d0f226cb800c8191b157cb01f6c2365a",
+      "version": 0,
+      "path": "/workspace/scratch/c112a98a8be9/preparation-layout-reference-images/image(20261006-064849).png",
+      "viewed": true
+    }
+  ],
+  "typecheck_initial": {
+    "status": "failed",
+    "exit_code": 2,
+    "log": "typecheck.log",
+    "blocker": "Isolated staging omitted the baseline root src/shared/family module referenced by frontend/src/family-view-model.ts; cascading family type errors. No diagnostics for the three changed files. Stopped after this first validation failure; awaiting parent approval for environment-only repair and one retry."
+  },
+  "typecheck": {
+    "status": "passed",
+    "exit_code": 0,
+    "log": "typecheck-retry.log",
+    "repair": "Parent authorized a baseline root src symlink for read-only dependency resolution. No shared source edits; exactly one retry."
+  },
+  "patch": {
+    "path": "/workspace/shared/preparation_layout_20261006/preparation-layout.patch",
+    "sha256": "5659ba526b8bfe61c2792201663537691579660470ff7ad6e1942ee1f3f82690"
+  }
+}

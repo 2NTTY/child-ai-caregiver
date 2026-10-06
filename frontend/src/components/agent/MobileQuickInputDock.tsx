@@ -10,6 +10,7 @@ import { PhotoFilePicker } from "../photos/PhotoFilePicker";
 import { DirectionalPressable } from "../navigation/DirectionalPressable";
 import { quickInputDirection, type QuickInputKind } from "../navigation/quick-input-gesture";
 import { AssistantInputDialog } from "./AssistantInputDialog";
+import { CornerCaptureSurface } from "./CornerCaptureSurface";
 
 const choices: { key: QuickInputKind; label: string; icon: AppIconName }[] = [
   { key: "file", label: "文件", icon: "file-document-outline" },
@@ -74,6 +75,7 @@ export function MobileQuickInputDock() {
           onGestureMove={(dx, dy) => { if (Math.hypot(dx, dy) > 8) setExpanded(true); setSelected(quickInputDirection(dx, dy)); }}
           onGestureCancel={cancelGesture}
           onGestureEnd={(dx, dy, dragged) => { cancelGesture(); if (dragged) { const kind = quickInputDirection(dx, dy); if (kind) choose(kind); } }}>
+          <CornerCaptureSurface />
           <AppIcon name="camera-outline" size={26} color={colors.ink} />
         </DirectionalPressable>
         {!expanded && (error || trigger.reading) ? <View pointerEvents="none" style={styles.status}>
@@ -95,7 +97,7 @@ const styles = StyleSheet.create({
   dock: { position: "absolute", left: 0, bottom: 0, width: 56, height: 56, zIndex: 4, overflow: "visible" },
   dockExpanded: { width: 180, height: 184 },
   camera: { position: "absolute", left: 0, bottom: 0, width: 56, height: 56, borderRadius: 28,
-    backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" },
+    backgroundColor: "transparent", overflow: "visible", alignItems: "center", justifyContent: "center" },
   status: { position: "absolute", left: 0, bottom: 68, width: 248, borderRadius: radius.small, backgroundColor: colors.white,
     paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderWidth: 1, borderColor: colors.softLine },
   statusText: { fontFamily: chineseFont, fontSize: 12, lineHeight: 18, color: colors.ink },

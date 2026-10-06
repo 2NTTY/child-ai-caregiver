@@ -1,0 +1,26 @@
+✔ ordinary refresh keeps one top toolbar and stable content slots through loading and success (407.511435ms)
+✔ selection, tab and newer reading position are not reset by refresh completion (298.6224ms)
+✔ normal reading removes stage forms and their entrance without removing source/history data (404.476291ms)
+✔ dirty and unknown original operations retain their frozen body and guard through a read (248.014882ms)
+✔ lost access cancels in-flight reads and clears private data without restoring stale selection (255.613908ms)
+✔ failed reads and viewer permission remain explicit and keep a single refresh control (355.427955ms)
+✔ scope remount cancels the previous response and does not reuse the previous child data (204.52511ms)
+✔ the chain composes related outcomes by child and canonical id without making new stored events (97.253481ms)
+✔ the related result is inside the chain and keeps coverage and task-state caveats (278.323764ms)
+✔ archive, History, return and refresh share one closed chain without changing attention or tasks (144.584285ms)
+✔ archive rejects stale version, authority, source, viewer and dirty inputs (158.264149ms)
+✔ unknown archive freezes one original request until read and explicit recovery consent (44.313644ms)
+✔ Growth and History consume the same injected owner and mismatched scopes are withheld (69.193536ms)
+✔ ending a concern uses a filled control and frozen confirmation; cancel and dismissal never write (52.396064ms)
+✔ archive confirmation is invalidated by a new version, authority, scope, or write guard (80.028937ms)
+✔ undo restores the original review status and preserves both archive and restore history exactly once (108.242927ms)
+✔ History restores through the same owner and provides recovery locally for an unknown restore (65.789822ms)
+✔ restore and undo reject stale versions, dirty drafts, lost sources, and unmounted scope callbacks (56.926799ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4026.4447

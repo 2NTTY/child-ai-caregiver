@@ -43,7 +43,7 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
 const inputStyle: CSSProperties = {
   display: "block", width: "100%", minWidth: 0, boxSizing: "border-box", border: 0, margin: 0,
   height: chatLayout.inputMinHeight, minHeight: chatLayout.inputMinHeight, maxHeight: chatLayout.inputMaxHeight,
-  padding: "10px 8px 2px", resize: "none", background: "transparent", outline: "none",
+  padding: "8px 8px 4px", resize: "none", background: "transparent", outline: "none",
   fontFamily: chatFont, fontSize: chatType.input.fontSize, lineHeight: `${chatType.input.lineHeight}px`,
   color: chatColors.ink, overflowWrap: "anywhere", overflowY: "hidden", scrollbarWidth: "thin",
 };

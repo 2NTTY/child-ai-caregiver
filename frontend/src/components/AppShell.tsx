@@ -12,6 +12,7 @@ import { AppIcon } from "./AppIcon";
 import { AgentEntryButton } from "./AgentEntryButton";
 import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
 import { RecordsNavButton } from "./navigation/RecordsNavButton";
+import { MobileNavSelection } from "./navigation/MobileNavSelection";
 import { desktopNavigationGroups, navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
 import { RightRailContent } from "./RightRailContent";
 import { ChildKeyFacts } from "./ChildKeyFacts";
@@ -33,6 +34,7 @@ function NavItem({ item, active, compact = false }: { item: NavigationItem; acti
     onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
     style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.navPressed])}
   >
+    {compact && active ? <MobileNavSelection /> : null}
     <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
     <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
   </Pressable></PreviewLink>;
@@ -52,7 +54,7 @@ export function PreviewToolbar() {
     {expanded ? <View style={styles.previewDetails}><Text style={styles.previewLabel}>介面預覽 · 合成資料 · 未接駁 Server</Text><Text style={styles.previewLabel}>保存、登入、邀請、通知與 Agent 回覆均為示例，不會改動正式資料。照片、語音與文件只留在本機草稿；正式上傳、整理及匯出尚未接通。</Text><Text style={styles.previewLabel}>目前情境：{scenarioLabels[scenario]}。各頁情境工具可查看固定快照、接線狀態及測試操作。</Text><View style={styles.scenarios}>{scenarios.map(item => <Pressable
       key={item} accessibilityRole="button" accessibilityLabel={scenarioLabels[item]}
       accessibilityState={{ selected: scenario === item }} onPress={() => setScenario(item)}
-      style={({ pressed }) => [styles.scenario, scenario === item && styles.scenarioSelected, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.scenario, scenario === item && styles.scenarioSelected, pressed && (scenario === item ? styles.scenarioPressed : styles.pressed)]}
     ><Text style={[styles.scenarioText, scenario === item && styles.scenarioSelectedText]}>{scenarioLabels[item]}</Text></Pressable>)}</View></View> : null}
   </View>;
 }
@@ -166,7 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, flexDirection: "row", minHeight: 0, backgroundColor: colors.canvas },
-  pressed: { opacity: 0.68 },
+  pressed: { backgroundColor: colors.paleTeal }, scenarioPressed: { backgroundColor: colors.inkPressed },
   sidebar: { width: 216, minHeight: 0, backgroundColor: colors.sidebar, borderRightColor: colors.line, borderRightWidth: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
   brandLink: { width: "100%", minHeight: 93, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
   logo: { width: 164, height: 53 },
@@ -176,7 +178,6 @@ const styles = StyleSheet.create({
   navItem: { minHeight: 46, borderRadius: radius.small, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
   navActive: { backgroundColor: colors.selectedNav, borderLeftColor: colors.teal, borderLeftWidth: 3 },
   navPressed: { backgroundColor: colors.selectedNav },
-  navGlyph: { width: 23, textAlign: "center", fontSize: 22, color: colors.deepTeal },
   navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
   sidebarBottom: { paddingBottom: spacing.sm },
@@ -190,9 +191,6 @@ const styles = StyleSheet.create({
   topLogo: { width: 124, height: 44 },
   topLogoTiny: { width: 114 },
   topActions: { marginLeft: "auto", flexShrink: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  panelIcon: { width: 20, height: 17, borderWidth: 1.7, borderColor: colors.deepTeal, borderRadius: 4, alignItems: "flex-end", justifyContent: "center" },
-  panelIconDivider: { width: 6, height: 15, borderLeftWidth: 1.7, borderLeftColor: colors.deepTeal },
-  menuDialog: { maxWidth: 400 },
   previewArea: { backgroundColor: colors.canvas },
   previewLine: { minHeight: 36, paddingHorizontal: spacing.lg, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: spacing.sm },
   previewDetails: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, gap: spacing.sm },
@@ -213,21 +211,7 @@ const styles = StyleSheet.create({
   railHeader: { minHeight: 74, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   railEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, fontWeight: "700" },
   railTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, fontWeight: "800" },
-  railCards: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl, gap: spacing.md },
-  railIdentity: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  railAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
-  railAvatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "800" },
-  railIdentityText: { flex: 1, minWidth: 0 },
-  railRecordTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "800" },
-  railMeta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 },
-  railRecord: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  recordMark: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
-  recordMarkText: { color: colors.deepTeal, fontSize: 18 },
-  divider: { backgroundColor: colors.softLine },
-  railCaution: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.caption },
-  railTip: { backgroundColor: colors.mintSurface, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.xs },
   bottomNav: { minHeight: mobileLayout.tabMinHeight, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line, flexDirection: "row" },
   bottomNavItem: { flex: 1, minWidth: mobileLayout.touchTarget, paddingVertical: spacing.sm, alignItems: "center", justifyContent: "center", gap: spacing.xs },
-  bottomGlyph: { fontSize: 22, color: colors.muted },
   bottomLabel: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption, fontWeight: "700" },
 });

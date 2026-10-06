@@ -1,0 +1,1198 @@
+{
+  "name": "v48-danger-dialog-trigger",
+  "before": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgb(149, 64, 38)",
+        "opacity": "1",
+        "testid": "button-container"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "growth-concern-timeline"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "growth-scroll"
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "testid": "app-scroll-host"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "motion-route"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "motion-child-scope"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgb(242, 242, 242)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "testid": "frontend-preview-ready"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "label": "結束關注：日常遊戲與表達",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 438,
+      "height": 44,
+      "left": 456,
+      "right": 568.40625,
+      "top": 394,
+      "width": 112.40625,
+      "x": 456,
+      "y": 394
+    },
+    "spans": [],
+    "textColors": [
+      {
+        "color": "rgb(255, 255, 254)",
+        "opacity": "1",
+        "text": "結束關注"
+      }
+    ]
+  },
+  "samples": [
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(149, 64, 38)",
+          "opacity": "1",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "growth-concern-timeline"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "growth-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0.02)",
+      "label": "結束關注：日常遊戲與表達",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 438,
+        "height": 44,
+        "left": 456,
+        "right": 568.40625,
+        "top": 394,
+        "width": 112.40625,
+        "x": 456,
+        "y": 394
+      },
+      "spans": [],
+      "textColors": [
+        {
+          "color": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "text": "結束關注"
+        }
+      ]
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(149, 64, 38)",
+          "opacity": "1",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "growth-concern-timeline"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "growth-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0.06)",
+      "label": "結束關注：日常遊戲與表達",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 438,
+        "height": 44,
+        "left": 456,
+        "right": 568.40625,
+        "top": 394,
+        "width": 112.40625,
+        "x": 456,
+        "y": 394
+      },
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(0, 0, 0, 0.12); border-radius: 50%; transition-duration: 337.219ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 56px; top: 22px; width: 224.812px; height: 224.812px;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0.12)",
+          "opacity": "0.598899"
+        }
+      ],
+      "textColors": [
+        {
+          "color": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "text": "結束關注"
+        }
+      ]
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(149, 64, 38)",
+          "opacity": "1",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "growth-concern-timeline"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "growth-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0.06)",
+      "label": "結束關注：日常遊戲與表達",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 438,
+        "height": 44,
+        "left": 456,
+        "right": 568.40625,
+        "top": 394,
+        "width": 112.40625,
+        "x": 456,
+        "y": 394
+      },
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(0, 0, 0, 0.12); border-radius: 50%; transition-duration: 337.219ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 56px; top: 22px; width: 224.812px; height: 224.812px;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0.12)",
+          "opacity": "0.747164"
+        }
+      ],
+      "textColors": [
+        {
+          "color": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "text": "結束關注"
+        }
+      ]
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(149, 64, 38)",
+          "opacity": "1",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "growth-concern-timeline"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "growth-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0.06)",
+      "label": "結束關注：日常遊戲與表達",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 438,
+        "height": 44,
+        "left": 456,
+        "right": 568.40625,
+        "top": 394,
+        "width": 112.40625,
+        "x": 456,
+        "y": 394
+      },
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(0, 0, 0, 0.12); border-radius: 50%; transition-duration: 337.219ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 56px; top: 22px; width: 224.812px; height: 224.812px;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0.12)",
+          "opacity": "0.920141"
+        }
+      ],
+      "textColors": [
+        {
+          "color": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "text": "結束關注"
+        }
+      ]
+    }
+  ],
+  "after": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgb(149, 64, 38)",
+        "opacity": "1",
+        "testid": "button-container"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "growth-concern-timeline"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "growth-scroll"
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "testid": "app-scroll-host"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "motion-route"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "motion-child-scope"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgb(242, 242, 242)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "testid": "frontend-preview-ready"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "label": "結束關注：日常遊戲與表達",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 438,
+      "height": 44,
+      "left": 456,
+      "right": 568.40625,
+      "top": 394,
+      "width": 112.40625,
+      "x": 456,
+      "y": 394
+    },
+    "spans": [
+      {
+        "attrs": [
+          [
+            "data-paper-ripple",
+            ""
+          ],
+          [
+            "style",
+            "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+          ]
+        ],
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1"
+      },
+      {
+        "attrs": [
+          [
+            "style",
+            "position: absolute; pointer-events: none; background-color: rgba(0, 0, 0, 0.12); border-radius: 50%; transition-duration: 250ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 0; left: 56px; top: 22px; width: 224.812px; height: 224.812px;"
+          ]
+        ],
+        "background": "rgba(0, 0, 0, 0.12)",
+        "opacity": "0"
+      }
+    ],
+    "textColors": [
+      {
+        "color": "rgb(255, 255, 254)",
+        "opacity": "1",
+        "text": "結束關注"
+      }
+    ]
+  },
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/growth"
+}

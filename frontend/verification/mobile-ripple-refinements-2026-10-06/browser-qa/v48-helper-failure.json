@@ -1,0 +1,7 @@
+{
+  "error": "Unknown CDP tab 9",
+  "context": "Inherited v47 probe helper retained closed tab 9 while v48 tab was 11",
+  "effect": "Current route reached tasks; no held pointer result produced by failed helper",
+  "response": "Stopped and reported before retry; parent approved bounded stale-handle correction",
+  "correction": "Same supported helper rebuilt against current tab 11; original primary probe resumed once successfully"
+}

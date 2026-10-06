@@ -1,0 +1,107 @@
+{
+  "atUtc": "2026-10-06T06:39:30.045548+00:00",
+  "siteVersion": 46,
+  "siteSource": "a7778bedb0204bb01ac38b143daccf8757ad786b",
+  "deploymentId": "appgdep_6ac49640f17081919eee7d317b7386ec",
+  "entry": "entry-123f157e5a028b7f1bb01348c60a6323.js",
+  "sourceBuildInputFingerprintSha256": "7b50b8b33b0b958f8986f766ea88156dffe5c3823fd8d5ba982bd8d18aa2b2d8",
+  "exportArtifactFingerprintSha256": "2fdf3d0d7e0465b216039fc72b81f2dca663905d362717e011ba55f2a225cc5a",
+  "siteUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+  "wrapperUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "viewports": [
+    {
+      "width": 1180,
+      "height": 757,
+      "method": "ordinary desktop browser"
+    },
+    {
+      "width": 320,
+      "height": 600,
+      "method": "same-origin QA-only iframe; DOM dimensions authoritative, wrapper height label stale"
+    }
+  ],
+  "result": "Scoped smoke passed; no unresolved application failure",
+  "notCovered": [
+    "New all-button flash audit",
+    "Every-frame no-flash proof",
+    "Full regression matrix",
+    "Real API/model/persistence/native device"
+  ],
+  "files": [
+    {
+      "file": "care-detail-320.jpg",
+      "bytes": 50687,
+      "sha256": "af5d360469d2e97894be69c28e4b3164df4f2153f0df7aeed1244da05f11b762"
+    },
+    {
+      "file": "care-detail-desktop.jpg",
+      "bytes": 100075,
+      "sha256": "f4ddcd83d4ac3a1c666ed5a7f3229a73e96db733c3600cd6078541e5e529a761"
+    },
+    {
+      "file": "child-switch-320.jpg",
+      "bytes": 52861,
+      "sha256": "379a986ebf5398325a49f8314e05f2c2cc39a6fdad14aed492f06118ef43c9d0"
+    },
+    {
+      "file": "composer-draft-retained.jpg",
+      "bytes": 90333,
+      "sha256": "edbb79040f1d40b73c7dcc7554b3582c20f5a037eff410cf3db675462bfcc3d0"
+    },
+    {
+      "file": "flow-results.json",
+      "bytes": 2190,
+      "sha256": "674ff87445279ee069a41af2232032491304c5b4c2f5aa4232d774078503fc05"
+    },
+    {
+      "file": "growth-320.jpg",
+      "bytes": 52058,
+      "sha256": "729822fd934540a98accfee928e184725382c75cd8249771ee21382cfb8155e1"
+    },
+    {
+      "file": "growth-desktop.jpg",
+      "bytes": 82892,
+      "sha256": "a37bba029fb8bb85534fa166e888718d331d01ab1b54b608632031e9b1ef0910"
+    },
+    {
+      "file": "growth-restored-desktop.jpg",
+      "bytes": 85136,
+      "sha256": "658e52b5c88b9e15950bd58cbe0055752e107be8b281b41efb7f33f49ed68122"
+    },
+    {
+      "file": "home-320.jpg",
+      "bytes": 47945,
+      "sha256": "c83db09f4059b3145637cc0a1baaac6ebd1308804bea499c4d7aa19c20eb1872"
+    },
+    {
+      "file": "home-desktop.jpg",
+      "bytes": 82113,
+      "sha256": "3e1f40ecf56d0d49dcd7da2e635b70548c6e672c2a31125372c20f959882a4da"
+    },
+    {
+      "file": "memory-320.jpg",
+      "bytes": 53593,
+      "sha256": "e7508c2d1473cd80f5cd14b33dfd0087c494332deea0d9ef481061c847a8cc63"
+    },
+    {
+      "file": "memory-desktop.jpg",
+      "bytes": 93777,
+      "sha256": "6b469e895b5014a4ff768831ef835363cec2acd51cd0a969da36790853ee4c65"
+    },
+    {
+      "file": "observations.json",
+      "bytes": 3214,
+      "sha256": "f08086d8933aaa2c427b8c63584e1c9c44686c498e11ef3e2e840c940e423162"
+    },
+    {
+      "file": "runtime-logs.json",
+      "bytes": 22577,
+      "sha256": "20519b91267d9d5d45bf83b897601b634be6f340094ad0007e0d9d253b751951"
+    },
+    {
+      "file": "verification-summary.md",
+      "bytes": 2821,
+      "sha256": "e4827c12883befecf6889781d2f13bf89050a7fe4086537820a3fbd4f07a9d5a"
+    }
+  ]
+}

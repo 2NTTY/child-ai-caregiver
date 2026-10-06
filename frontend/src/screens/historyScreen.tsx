@@ -96,7 +96,7 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
       {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
         : <UnderlineTabs<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
       <View style={styles.sourceRow}>
-        <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text>{!growthCategory ? <Text style={styles.meta}>{current.description} · 來源：{current.sourceLabel}</Text> : null}</View>
+        <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.meta}>{current.description}{!growthCategory ? ` · 來源：${current.sourceLabel}` : null}</Text></View>
         {reviewCategory || careCategory ? <AppButton label="開啟記錄與核對" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/care"))} /> : null}
         {taskCategory ? <AppButton label="開啟待辦" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/tasks"))} /> : null}
         {preparationCategory ? <AppButton label="開啟準備單" variant="secondary" density="compact" onPress={() => navigate(() => router.push({ pathname: "/summary", params: { tab: "preparation" } }))} /> : null}

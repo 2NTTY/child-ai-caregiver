@@ -1,0 +1,6198 @@
+{
+  "sourceRoot": "/workspace/shared/frontend_cleanup_verified_v2_20261006/frontend",
+  "provenance": "Assigned frozen source, stated PR89 head4fc6fff66640bacb9b6b925f629e617886f3ec85/live v46; no remote or browser verification performed",
+  "counts": {
+    "Pressable": 65,
+    "ToolbarIconButton": 4,
+    "AgentEntryButton": 1,
+    "ChildPicker": 2,
+    "RecordsNavButton": 2,
+    "MarkedSwitch": 1,
+    "RadioButton.Item": 2,
+    "AppButton": 404,
+    "MotionBackdrop": 2,
+    "TextInput.Icon": 3,
+    "AppSelect": 80,
+    "AppSelectionTrigger": 6,
+    "AppCheckbox": 42,
+    "TextLink": 14,
+    "DashboardLink": 2,
+    "AppTimeZoneSelect": 4,
+    "Switch": 3,
+    "UnderlineTabs": 10,
+    "IconButton": 1,
+    "InputControl": 3,
+    "DirectionalPressable": 2,
+    "CitationMarker": 1,
+    "button": 1,
+    "GrowthArchiveConcernButton": 1,
+    "Button": 2,
+    "PreparationRow": 1,
+    "TaskListRow": 2,
+    "CalendarDay": 1,
+    "Link": 1,
+    "AppMenuList": 1,
+    "NativeDashboardTabs": 1,
+    "Tabs": 1
+  },
+  "pressedOpacityDefinitions": [
+    {
+      "file": "src/components/AppCheckbox.tsx",
+      "line": 25,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 169,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/components/ChildPicker.tsx",
+      "line": 44,
+      "name": "homePressed",
+      "opacity": "0.72"
+    },
+    {
+      "file": "src/components/HomeAgentImportant.tsx",
+      "line": 98,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/components/HomeDashboard.tsx",
+      "line": 62,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/components/HomeOverviewItems.tsx",
+      "line": 29,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/components/HomeQuickActions.tsx",
+      "line": 66,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/components/RightRailContent.tsx",
+      "line": 62,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/components/agent/AgentComposer.tsx",
+      "line": 143,
+      "name": "pressed",
+      "opacity": ".68"
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 92,
+      "name": "pressed",
+      "opacity": ".7"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 144,
+      "name": "pressed",
+      "opacity": "0.7"
+    },
+    {
+      "file": "src/components/chat/AnswerSources.tsx",
+      "line": 226,
+      "name": "pressed",
+      "opacity": "0.7"
+    },
+    {
+      "file": "src/components/chat/ChatMessage.tsx",
+      "line": 73,
+      "name": "pressed",
+      "opacity": "0.7"
+    },
+    {
+      "file": "src/components/contact/contact-styles.ts",
+      "line": 11,
+      "name": "pressed",
+      "opacity": "0.7"
+    },
+    {
+      "file": "src/components/growth/GrowthHistoryView.tsx",
+      "line": 79,
+      "name": "readPressed",
+      "opacity": "0.65"
+    },
+    {
+      "file": "src/components/growth/growth-styles.ts",
+      "line": 12,
+      "name": "pressed",
+      "opacity": "0.65"
+    },
+    {
+      "file": "src/components/settings/SettingsNavigation.tsx",
+      "line": 41,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/components/summary/summary-styles.ts",
+      "line": 39,
+      "name": "pressed",
+      "opacity": "0.65"
+    },
+    {
+      "file": "src/components/tasks/TaskListRow.tsx",
+      "line": 39,
+      "name": "pressed",
+      "opacity": "0.72"
+    },
+    {
+      "file": "src/components/tasks/TasksCalendar.tsx",
+      "line": 78,
+      "name": "pressed",
+      "opacity": "0.7"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 221,
+      "name": "pressed",
+      "opacity": "0.7"
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 271,
+      "name": "buttonPressed",
+      "opacity": "0.65"
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 299,
+      "name": "linkPressed",
+      "opacity": "0.6"
+    },
+    {
+      "file": "src/screens/guideScreen.tsx",
+      "line": 96,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/screens/loginScreen.tsx",
+      "line": 120,
+      "name": "pressed",
+      "opacity": "0.65"
+    },
+    {
+      "file": "src/screens/profileScreen.tsx",
+      "line": 79,
+      "name": "pressed",
+      "opacity": "0.68"
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 136,
+      "name": "pressed",
+      "opacity": "0.68"
+    }
+  ],
+  "controls": [
+    {
+      "file": "src/components/AppCheckbox.tsx",
+      "line": 13,
+      "component": "Pressable",
+      "label": "{accessibilityLabel}",
+      "style": "{({ pressed }) => [styles.row, compact && styles.mobileRow, disabled && styles.disabled, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/AppMenuList.tsx",
+      "line": 12,
+      "component": "Pressable",
+      "label": "{item.label}",
+      "style": "{({ pressed }) => [styles.row, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 31,
+      "component": "Pressable",
+      "label": "{item.label}",
+      "style": "{StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.navPressed])}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 47,
+      "component": "Pressable",
+      "label": "\"預覽工具與技術狀態\"",
+      "style": "{({ pressed }) => [styles.previewToggle, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 52,
+      "component": "Pressable",
+      "label": "{scenarioLabels[item]}",
+      "style": "{({ pressed }) => [styles.scenario, scenario === item && styles.scenarioSelected, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 71,
+      "component": "ToolbarIconButton",
+      "label": "\"關閉資訊側欄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 115,
+      "component": "Pressable",
+      "label": "{brand.homeLabel}",
+      "style": "{styles.brandLink}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 126,
+      "component": "AgentEntryButton",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 134,
+      "component": "Pressable",
+      "label": "{brand.homeLabel}",
+      "style": "{StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 135,
+      "component": "ChildPicker",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 139,
+      "component": "ToolbarIconButton",
+      "label": "{railExpanded ? \"收起資訊側欄\" : \"開啟資訊側欄\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 147,
+      "component": "Pressable",
+      "label": "\"關閉預覽提示\"",
+      "style": "{styles.notice}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppShell.tsx",
+      "line": 156,
+      "component": "RecordsNavButton",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/AppSwitch.web.tsx",
+      "line": 6,
+      "component": "MarkedSwitch",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/ChildPicker.tsx",
+      "line": 22,
+      "component": "Pressable",
+      "label": "{`選擇孩子，目前${selected?.displayName ?? \"尚未有孩子\"}`}",
+      "style": "{({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, homeIdentity && styles.homeIdentity, visible && !homeIdentity && styles.open, children.length === 0 && styles.disabled, pressed && (homeIdentity ? styles.homePressed : styles.pressed)]}",
+      "loading": null,
+      "disabled": "{children.length === 0}"
+    },
+    {
+      "file": "src/components/ChildPicker.tsx",
+      "line": 30,
+      "component": "RadioButton.Item",
+      "label": "{`${child.displayName} · ${child.ageLabel}`}",
+      "style": "{[styles.option, child.id === selectedId && styles.optionSelected]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/ChildPicker.tsx",
+      "line": 31,
+      "component": "AppButton",
+      "label": "\"關閉\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/CompactHeaderIdentity.tsx",
+      "line": 16,
+      "component": "ChildPicker",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/CreateChildPreview.tsx",
+      "line": 22,
+      "component": "AppButton",
+      "label": "{open ? \"收起新增孩子\" : \"新增孩子\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{op.locked || !enabled}"
+    },
+    {
+      "file": "src/components/CreateChildPreview.tsx",
+      "line": 26,
+      "component": "AppButton",
+      "label": "\"預覽新增孩子\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{op.locked || !enabled}"
+    },
+    {
+      "file": "src/components/CreateChildPreview.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"確認並模擬新增孩子\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online || !enabled}"
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 31,
+      "component": "MotionBackdrop",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 65,
+      "component": "AppButton",
+      "label": "{actualInputType === \"keyboard\" ? \"使用時鐘選擇\" : \"使用鍵盤輸入\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 66,
+      "component": "AppButton",
+      "label": "\"取消\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 66,
+      "component": "AppButton",
+      "label": "\"選用時間\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!valid}"
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 81,
+      "component": "TextInput.Icon",
+      "label": "{`選擇${label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 93,
+      "component": "TextInput.Icon",
+      "label": "{`選擇${label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 100,
+      "component": "AppSelect",
+      "label": "\"時區\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 114,
+      "component": "AppSelectionTrigger",
+      "label": "{`選擇${label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 117,
+      "component": "AppButton",
+      "label": "{`清除${label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 124,
+      "component": "AppButton",
+      "label": "\"取消\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/DateTimeFields.tsx",
+      "line": 125,
+      "component": "AppButton",
+      "label": "{`選用${label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/DeleteChildPreview.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"刪除整位孩子（預覽）\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!enabled || !online}"
+    },
+    {
+      "file": "src/components/DeleteChildPreview.tsx",
+      "line": 39,
+      "component": "AppCheckbox",
+      "label": "{`我明白會永久刪除${child.displayName}及全部關聯資料`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{op.locked || !enabled}"
+    },
+    {
+      "file": "src/components/DeleteChildPreview.tsx",
+      "line": 40,
+      "component": "AppButton",
+      "label": "\"重新核對刪除範圍\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online || !enabled}"
+    },
+    {
+      "file": "src/components/DeleteChildPreview.tsx",
+      "line": 44,
+      "component": "AppButton",
+      "label": "\"取消刪除孩子\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{op.locked}"
+    },
+    {
+      "file": "src/components/DeleteChildPreview.tsx",
+      "line": 45,
+      "component": "AppButton",
+      "label": "\"確認並模擬刪除整位孩子\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canSubmit}"
+    },
+    {
+      "file": "src/components/FormErrorSummary.tsx",
+      "line": 18,
+      "component": "AppButton",
+      "label": "{`修正${item.label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeAgentImportant.tsx",
+      "line": 27,
+      "component": "Pressable",
+      "label": "\"為甚麼提醒我？\"",
+      "style": "{({ pressed }) => [styles.sourceToggle, focused && styles.sourceToggleFocused, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeAgentImportant.tsx",
+      "line": 42,
+      "component": "AppButton",
+      "label": "{item.action.label}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeAgentImportant.tsx",
+      "line": 63,
+      "component": "AppButton",
+      "label": "\"重新讀取\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.connection !== \"online\"}"
+    },
+    {
+      "file": "src/components/HomeAgentImportant.tsx",
+      "line": 69,
+      "component": "Pressable",
+      "label": "{`${item.title}，${item.action.label}`}",
+      "style": "{({ pressed }) => [styles.additional, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeAgentImportant.tsx",
+      "line": 75,
+      "component": "TextLink",
+      "label": "{`另有 ${section.items.length - 3} 項，開啟助手查看`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeAgentImportant.tsx",
+      "line": 79,
+      "component": "AppButton",
+      "label": "{operation.state === \"unknown\" ? \"查核這次結果\" : \"查看原操作\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeDashboard.tsx",
+      "line": 20,
+      "component": "Pressable",
+      "label": "{title}",
+      "style": "{({ pressed }) => [styles.linkRow, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeDashboard.tsx",
+      "line": 44,
+      "component": "AppButton",
+      "label": "\"建立孩子檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeDashboard.tsx",
+      "line": 53,
+      "component": "DashboardLink",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeDashboard.tsx",
+      "line": 53,
+      "component": "DashboardLink",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeFocus.tsx",
+      "line": 21,
+      "component": "AppButton",
+      "label": "{operation.state === \"unknown\" ? \"查核這次結果\" : \"查看原操作\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeFocus.tsx",
+      "line": 26,
+      "component": "AppButton",
+      "label": "\"重新讀取\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.connection !== \"online\"}"
+    },
+    {
+      "file": "src/components/HomeFocus.tsx",
+      "line": 41,
+      "component": "TextLink",
+      "label": "\"查看全部\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeFocus.tsx",
+      "line": 45,
+      "component": "AppButton",
+      "label": "\"重新讀取待辦\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.connection !== \"online\"}"
+    },
+    {
+      "file": "src/components/HomeGuideCallout.tsx",
+      "line": 15,
+      "component": "TextLink",
+      "label": "\"前往設定\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeGuideCallout.tsx",
+      "line": 22,
+      "component": "AppButton",
+      "label": "{status === \"first_login\" ? \"開始使用引導\" : \"繼續使用引導\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeOngoing.tsx",
+      "line": 15,
+      "component": "TextLink",
+      "label": "\"查看全部\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeOngoing.tsx",
+      "line": 18,
+      "component": "AppButton",
+      "label": "\"重新讀取關注\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.connection !== \"online\"}"
+    },
+    {
+      "file": "src/components/HomeOverviewItems.tsx",
+      "line": 11,
+      "component": "Pressable",
+      "label": "{`${item.title}，${item.action.label}`}",
+      "style": "{({ pressed }) => [styles.compactItem, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeOverviewItems.tsx",
+      "line": 21,
+      "component": "AppButton",
+      "label": "{item.action.label}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/HomeQuickActions.tsx",
+      "line": 31,
+      "component": "Pressable",
+      "label": "\"拍照給助手\"",
+      "style": "{({ pressed }) => [styles.capture, trigger.disabled && styles.disabled, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{trigger.disabled}"
+    },
+    {
+      "file": "src/components/HomeQuickActions.tsx",
+      "line": 40,
+      "component": "Pressable",
+      "label": "\"用文字告訴助手\"",
+      "style": "{({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{!available || opening}"
+    },
+    {
+      "file": "src/components/HomeQuickActions.tsx",
+      "line": 44,
+      "component": "Pressable",
+      "label": "\"查看記錄及補改資料\"",
+      "style": "{({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{!available || opening}"
+    },
+    {
+      "file": "src/components/HorizontalOverflowRail.tsx",
+      "line": 167,
+      "component": "Pressable",
+      "label": "{hintLabel}",
+      "style": "{styles.hint}",
+      "loading": null,
+      "disabled": "{!hint.more}"
+    },
+    {
+      "file": "src/components/MobileHomeDashboard.tsx",
+      "line": 26,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/NativeAppShell.tsx",
+      "line": 33,
+      "component": "Pressable",
+      "label": "{brand.homeLabel}",
+      "style": "{styles.brand}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/NativeAppShell.tsx",
+      "line": 35,
+      "component": "ToolbarIconButton",
+      "label": "{overlayOpen ? \"收起資訊側欄\" : \"開啟資訊側欄\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/NativeAppShell.tsx",
+      "line": 40,
+      "component": "Pressable",
+      "label": "\"關閉預覽提示\"",
+      "style": "{styles.notice}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/NotificationBell.tsx",
+      "line": 24,
+      "component": "ToolbarIconButton",
+      "label": "{`開啟訊息提示${needsAttention ? \"：1 項狀態需留意\" : \"\"}`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/NotificationBell.tsx",
+      "line": 39,
+      "component": "AppButton",
+      "label": "\"查看通知歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/NotificationBell.tsx",
+      "line": 42,
+      "component": "AppButton",
+      "label": "\"關閉\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/NotificationBell.tsx",
+      "line": 43,
+      "component": "AppButton",
+      "label": "{operation.state === \"unknown\" ? \"查核原操作\" : \"查看原操作\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/PreferencesPreview.tsx",
+      "line": 45,
+      "component": "AppTimeZoneSelect",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/PreferencesPreview.tsx",
+      "line": 64,
+      "component": "Switch",
+      "label": "\"預約提醒例外預覽\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/PreferencesPreview.tsx",
+      "line": 66,
+      "component": "AppButton",
+      "label": "\"預覽通知偏好\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/PreferencesPreview.tsx",
+      "line": 71,
+      "component": "AppButton",
+      "label": "\"模擬保存本人偏好\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/PreferencesPreview.tsx",
+      "line": 73,
+      "component": "AppButton",
+      "label": "\"保留草稿並使用最新版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/PreviewWritePanel.tsx",
+      "line": 18,
+      "component": "AppButton",
+      "label": "\"查核原操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/PreviewWritePanel.tsx",
+      "line": 19,
+      "component": "AppButton",
+      "label": "\"重試同一原操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/PreviewWritePanel.tsx",
+      "line": 20,
+      "component": "AppButton",
+      "label": "\"重新讀取目前資料\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/PreviewWritePanel.tsx",
+      "line": 27,
+      "component": "AppSelect",
+      "label": "\"模擬提交結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{controller.locked && controller.operation.recovery !== \"retry\"}"
+    },
+    {
+      "file": "src/components/PreviewWritePanel.tsx",
+      "line": 28,
+      "component": "AppSelect",
+      "label": "\"模擬查核結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/PreviewWritePanel.tsx",
+      "line": 29,
+      "component": "AppSelect",
+      "label": "\"模擬重讀結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/RecordDraftFields.tsx",
+      "line": 31,
+      "component": "AppSelect",
+      "label": "{`${prefix}記錄種類`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/RecordDraftFields.tsx",
+      "line": 39,
+      "component": "AppCheckbox",
+      "label": "\"內容含約數或約略時間\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/RightRailContent.tsx",
+      "line": 24,
+      "component": "UnderlineTabs",
+      "label": "\"照顧資訊分類\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/RightRailContent.tsx",
+      "line": 30,
+      "component": "TextLink",
+      "label": "{routeContext.label}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/RightRailContent.tsx",
+      "line": 34,
+      "component": "TextLink",
+      "label": "\"查看檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/RightRailContent.tsx",
+      "line": 41,
+      "component": "TextLink",
+      "label": "\"查看全部\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/RightRailContent.tsx",
+      "line": 44,
+      "component": "Pressable",
+      "label": "{`查看${record.title}`}",
+      "style": "{({ pressed }) => [styles.record, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/ToolbarIconButton.tsx",
+      "line": 19,
+      "component": "IconButton",
+      "label": "{label}",
+      "style": "{[styles.button, compact && styles.mobile]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/WriteRecoveryNotice.tsx",
+      "line": 12,
+      "component": "AppButton",
+      "label": "\"查核原操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/WriteRecoveryNotice.tsx",
+      "line": 13,
+      "component": "AppButton",
+      "label": "\"重試同一原操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/WriteRecoveryNotice.tsx",
+      "line": 14,
+      "component": "AppButton",
+      "label": "\"重新讀取目前資料\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/agent/AgentComposer.tsx",
+      "line": 92,
+      "component": "Pressable",
+      "label": "{showSuggestions ? \"收起建議問題\" : \"展開建議問題\"}",
+      "style": "{({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{!enabled || hasDraft}"
+    },
+    {
+      "file": "src/components/agent/AgentComposer.tsx",
+      "line": 97,
+      "component": "Pressable",
+      "label": "\"預覽輸入\"",
+      "style": "{({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, canPreview && (hovered || focused) && styles.controlActive, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{!canPreview}"
+    },
+    {
+      "file": "src/components/agent/AgentComposer.tsx",
+      "line": 104,
+      "component": "Pressable",
+      "label": "{`預填本地示例：${item}`}",
+      "style": "{({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (hasDraft || !enabled) && styles.disabled, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{hasDraft || !enabled}"
+    },
+    {
+      "file": "src/components/agent/AgentComposer.tsx",
+      "line": 119,
+      "component": "AppButton",
+      "label": "\"保留原照片\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 50,
+      "component": "Pressable",
+      "label": "\"Agent 活動與候選\"",
+      "style": "{({ pressed }) => [styles.disclosure, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 61,
+      "component": "AppButton",
+      "label": "\"查看來源與候選\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online || blocked}"
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 66,
+      "component": "AppButton",
+      "label": "{toolsVisible ? \"收起 Agent 情境工具\" : \"顯示 Agent 情境工具\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 70,
+      "component": "AppSelect",
+      "label": "\"聊天回覆狀態示例\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 74,
+      "component": "AppButton",
+      "label": "\"加入回覆狀態示例\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 76,
+      "component": "AppSelect",
+      "label": "\"執行結果身份示例\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 78,
+      "component": "AppSelect",
+      "label": "\"Agent 運行情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{blocked}"
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 79,
+      "component": "AppSelect",
+      "label": "\"模擬候選決定結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!!preview.model.busy}"
+    },
+    {
+      "file": "src/components/agent/AgentConversationPreview.tsx",
+      "line": 80,
+      "component": "AppSelect",
+      "label": "\"模擬原運行讀取\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!!preview.model.busy}"
+    },
+    {
+      "file": "src/components/agent/AgentInboxView.tsx",
+      "line": 32,
+      "component": "AppButton",
+      "label": "\"讀取私人背景結果\"",
+      "style": "{styles.button}",
+      "loading": "{loading}",
+      "disabled": "{!model.online || model.locked || loading || denied}"
+    },
+    {
+      "file": "src/components/agent/AgentInboxView.tsx",
+      "line": 52,
+      "component": "AppButton",
+      "label": "{`查看私人背景結果：${entry.label}`}",
+      "style": "{styles.button}",
+      "loading": null,
+      "disabled": "{model.locked || !model.online || loading}"
+    },
+    {
+      "file": "src/components/agent/AgentInboxView.tsx",
+      "line": 56,
+      "component": "AppButton",
+      "label": "\"收起私人背景結果\"",
+      "style": "{styles.button}",
+      "loading": null,
+      "disabled": "{model.locked}"
+    },
+    {
+      "file": "src/components/agent/AgentInputToolbar.tsx",
+      "line": 13,
+      "component": "InputControl",
+      "label": "{trigger.reading ? \"正在讀取原照片\" : \"拍照\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{trigger.disabled}"
+    },
+    {
+      "file": "src/components/agent/AgentInputToolbar.tsx",
+      "line": 15,
+      "component": "InputControl",
+      "label": "\"加入文件\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/agent/AgentInputToolbar.tsx",
+      "line": 16,
+      "component": "InputControl",
+      "label": "\"語音輸入\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/agent/AgentInputToolbar.tsx",
+      "line": 22,
+      "component": "Pressable",
+      "label": "{label}",
+      "style": "{({ pressed, hovered, focused }: ControlInteraction) => [styles.control, compact && styles.compactControl, disabled && styles.disabled, !disabled && (pressed || hovered || focused) && styles.active]}",
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/agent/AgentRunView.tsx",
+      "line": 61,
+      "component": "AppButton",
+      "label": "{pending.input.decision === \"accept\" ? \"明確重試原確認\" : \"明確重試原略過\"}",
+      "style": "{styles.fullButton}",
+      "loading": null,
+      "disabled": "{!mayRetryOriginal(model)}"
+    },
+    {
+      "file": "src/components/agent/AgentRunView.tsx",
+      "line": 90,
+      "component": "AppCheckbox",
+      "label": "{`${sharedConfirmationLabel}: ${proposal.title}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!mayCheckShared(model, proposal)}"
+    },
+    {
+      "file": "src/components/agent/AgentRunView.tsx",
+      "line": 94,
+      "component": "AppButton",
+      "label": "{`明確${acceptLabel}：${proposal.title}`}",
+      "style": "{styles.fullButton}",
+      "loading": null,
+      "disabled": "{!mayDecide(model, proposal, \"accept\")}"
+    },
+    {
+      "file": "src/components/agent/AgentRunView.tsx",
+      "line": 96,
+      "component": "AppButton",
+      "label": "{`略過此事項：${proposal.title}`}",
+      "style": "{styles.fullButton}",
+      "loading": null,
+      "disabled": "{!mayDecide(model, proposal, \"dismiss\")}"
+    },
+    {
+      "file": "src/components/agent/AgentRunView.tsx",
+      "line": 115,
+      "component": "AppButton",
+      "label": "{expanded ? \"收起運行詳情\" : \"查看運行詳情\"}",
+      "style": "{styles.fullButton}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AgentRunView.tsx",
+      "line": 194,
+      "component": "AppButton",
+      "label": "{model.pendingDecision ? \"讀取原運行並核對\" : \"重新讀取運行結果\"}",
+      "style": "{styles.fullButton}",
+      "loading": "{model.busy === \"read\"}",
+      "disabled": "{!model.online || !!model.busy || denied || model.readState === \"loading\"}"
+    },
+    {
+      "file": "src/components/agent/AssistantAttachmentPicker.tsx",
+      "line": 25,
+      "component": "AppButton",
+      "label": "{kind === \"voice\" ? \"選取已錄音訊\" : \"選擇本地文件\"}",
+      "style": null,
+      "loading": "{busy}",
+      "disabled": "{disabled || busy || !selectAttachment}"
+    },
+    {
+      "file": "src/components/agent/AssistantAttachmentPicker.web.tsx",
+      "line": 24,
+      "component": "AppButton",
+      "label": "{kind === \"voice\" ? \"選取已錄音訊\" : \"選擇本地文件\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/agent/AssistantAttachmentPreview.tsx",
+      "line": 22,
+      "component": "Pressable",
+      "label": "{`預覽未送出${labels[item.kind]}：${item.fileName}`}",
+      "style": "{styles.preview}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AssistantAttachmentPreview.tsx",
+      "line": 26,
+      "component": "Pressable",
+      "label": "{`移除附件：${item.fileName}`}",
+      "style": "{[styles.remove, !enabled && styles.disabled]}",
+      "loading": null,
+      "disabled": "{!enabled}"
+    },
+    {
+      "file": "src/components/agent/AssistantAttachmentPreview.tsx",
+      "line": 35,
+      "component": "AppButton",
+      "label": "\"更換附件\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AssistantAttachmentPreview.tsx",
+      "line": 36,
+      "component": "AppButton",
+      "label": "\"移除\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AssistantAttachmentPreview.tsx",
+      "line": 37,
+      "component": "AppButton",
+      "label": "\"返回草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AssistantInputDialog.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"管理私人來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AssistantInputDialog.tsx",
+      "line": 29,
+      "component": "AppButton",
+      "label": "\"改用文字\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/AssistantInputDialog.tsx",
+      "line": 29,
+      "component": "AppButton",
+      "label": "\"取消\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/EmergencyHelpView.tsx",
+      "line": 11,
+      "component": "Pressable",
+      "label": "{source.title}",
+      "style": "{s.link}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/MobileQuickInputDock.tsx",
+      "line": 67,
+      "component": "DirectionalPressable",
+      "label": "{`拍照；長按選擇其他輸入；拖向上方文件、右上語音或右方文字${pending ? \"；有未送出草稿\" : \"\"}`}",
+      "style": "{[styles.camera, (!enabled || trigger.reading) && styles.disabled]}",
+      "loading": null,
+      "disabled": "{!enabled || trigger.reading}"
+    },
+    {
+      "file": "src/components/agent/MobileQuickInputDock.tsx",
+      "line": 85,
+      "component": "Pressable",
+      "label": "{`快捷${item.label}`}",
+      "style": "{[styles.choice, styles[item.key], selected === item.key && styles.selected]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/VoiceCapture.web.tsx",
+      "line": 38,
+      "component": "AppButton",
+      "label": "\"停止並試聽\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/VoiceCapture.web.tsx",
+      "line": 39,
+      "component": "AppButton",
+      "label": "\"開始錄音\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!available || busy}"
+    },
+    {
+      "file": "src/components/agent/VoiceCapture.web.tsx",
+      "line": 40,
+      "component": "AppButton",
+      "label": "\"加入未送出草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/agent/VoiceCapture.web.tsx",
+      "line": 41,
+      "component": "AppButton",
+      "label": "{recording ? \"捨棄錄音\" : \"取消錄音\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/appearance/BackgroundImagePicker.tsx",
+      "line": 26,
+      "component": "AppButton",
+      "label": "\"選擇背景圖片\"",
+      "style": null,
+      "loading": "{reading}",
+      "disabled": "{!pickImage || reading}"
+    },
+    {
+      "file": "src/components/appearance/BackgroundImagePicker.web.tsx",
+      "line": 47,
+      "component": "AppButton",
+      "label": "\"選擇背景圖片\"",
+      "style": null,
+      "loading": "{reading}",
+      "disabled": "{reading}"
+    },
+    {
+      "file": "src/components/appearance/BackgroundSettings.tsx",
+      "line": 29,
+      "component": "AppButton",
+      "label": "{brand.restoreBackgroundLabel}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!background.selected || reading}"
+    },
+    {
+      "file": "src/components/appearance/MotionSettings.tsx",
+      "line": 26,
+      "component": "Switch",
+      "label": "\"減少動畫\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{systemWins || !preferenceReady}"
+    },
+    {
+      "file": "src/components/care/CareCaptureDetail.tsx",
+      "line": 44,
+      "component": "AppButton",
+      "label": "\"理解有誤，修正記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canEdit}"
+    },
+    {
+      "file": "src/components/care/CareCaptureDetail.tsx",
+      "line": 47,
+      "component": "AppButton",
+      "label": "\"確認重要內容正確（預覽）\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canConfirmImportant}"
+    },
+    {
+      "file": "src/components/care/CareCaptureDetail.tsx",
+      "line": 51,
+      "component": "AppButton",
+      "label": "{confirmLabel}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canConfirm}"
+    },
+    {
+      "file": "src/components/care/CareCaptureDetail.tsx",
+      "line": 52,
+      "component": "AppButton",
+      "label": "\"先調整內容\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canEdit}"
+    },
+    {
+      "file": "src/components/care/CareCaptureDetail.tsx",
+      "line": 53,
+      "component": "AppButton",
+      "label": "\"略過，不寫入\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canSkip}"
+    },
+    {
+      "file": "src/components/care/CareCaptureDetail.tsx",
+      "line": 55,
+      "component": "AppButton",
+      "label": "\"查看已保存記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/care/CareCaptureDetail.tsx",
+      "line": 58,
+      "component": "AppButton",
+      "label": "\"來源與版本資料\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/care/CareRecordDelete.tsx",
+      "line": 19,
+      "component": "AppButton",
+      "label": "\"已比較，使用最新刪除基準\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/care/CareRecordDelete.tsx",
+      "line": 20,
+      "component": "AppCheckbox",
+      "label": "\"我明白會永久刪除此記錄及全部歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || conflict || !model.online}"
+    },
+    {
+      "file": "src/components/care/CareRecordDelete.tsx",
+      "line": 21,
+      "component": "AppButton",
+      "label": "\"確認並模擬永久刪除記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.access !== \"editable\" || locked || conflict || !deletion.scopeConfirmed || model.operation.state !== \"needs_confirmation\"}"
+    },
+    {
+      "file": "src/components/care/CareRecordDelete.tsx",
+      "line": 22,
+      "component": "AppButton",
+      "label": "\"取消刪除記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/care/CareRecordDetail.tsx",
+      "line": 47,
+      "component": "AppButton",
+      "label": "\"返回記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/care/CareRecordDetail.tsx",
+      "line": 52,
+      "component": "AppSelectionTrigger",
+      "label": "\"來源、確認時間及版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/care/CareRecordDetail.tsx",
+      "line": 61,
+      "component": "AppButton",
+      "label": "\"更正這筆記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/care/CareRecordDetail.tsx",
+      "line": 62,
+      "component": "AppSelectionTrigger",
+      "label": "\"更正歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/care/CareRecordDetail.tsx",
+      "line": 67,
+      "component": "AppButton",
+      "label": "\"載入更早版本\"",
+      "style": null,
+      "loading": "{detail.historyLoading}",
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/care/CareRecordDetail.tsx",
+      "line": 69,
+      "component": "AppButton",
+      "label": "\"永久刪除此記錄及歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online}"
+    },
+    {
+      "file": "src/components/care/CareRecordForm.tsx",
+      "line": 54,
+      "component": "AppButton",
+      "label": "\"取消草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{busy}"
+    },
+    {
+      "file": "src/components/care/CareRecordForm.tsx",
+      "line": 63,
+      "component": "AppSelect",
+      "label": "\"記錄種類\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/care/CareRecordForm.tsx",
+      "line": 73,
+      "component": "AppSelect",
+      "label": "\"數量精度\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/care/CareRecordForm.tsx",
+      "line": 82,
+      "component": "AppButton",
+      "label": "\"預覽共享內容\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/care/CareRecordForm.tsx",
+      "line": 88,
+      "component": "AppButton",
+      "label": "{model.submitLabel}",
+      "style": null,
+      "loading": "{model.operation.state === \"saving\"}",
+      "disabled": "{!model.online || model.list.state === \"loading\" || model.operation.state !== \"needs_confirmation\"}"
+    },
+    {
+      "file": "src/components/care/CareRecordForm.tsx",
+      "line": 89,
+      "component": "AppButton",
+      "label": "\"繼續修改\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{busy}"
+    },
+    {
+      "file": "src/components/care/CareRecordForm.tsx",
+      "line": 95,
+      "component": "AppButton",
+      "label": "\"保留草稿並使用最新版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 24,
+      "component": "AppButton",
+      "label": "{model.checkLabel}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 25,
+      "component": "AppButton",
+      "label": "\"重試同一原操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 82,
+      "component": "UnderlineTabs",
+      "label": "\"記錄分類\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 88,
+      "component": "AppButton",
+      "label": "{filtersOpen ? \"收起篩選\" : \"篩選\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 92,
+      "component": "AppSelect",
+      "label": "\"處理狀態\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 93,
+      "component": "AppSelect",
+      "label": "\"來源對話\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 96,
+      "component": "AppButton",
+      "label": "\"查看較早待確認\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 96,
+      "component": "AppButton",
+      "label": "\"查看較早記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 104,
+      "component": "Pressable",
+      "label": "{`核對${item.title}：${careReviewContentSummary(item)}${statusLabel ? `，${statusLabel}` : \"\"}`}",
+      "style": "{({ pressed }) => [s.row, important && s.importantRow, selectedRow && s.selected, pressed && s.pressed]}",
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 114,
+      "component": "AppButton",
+      "label": "\"上一頁\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied || !visiblePage.hasPrevious}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 114,
+      "component": "AppButton",
+      "label": "\"下一頁\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied || !visiblePage.hasNext}"
+    },
+    {
+      "file": "src/components/care/CareReviewHistoryView.tsx",
+      "line": 118,
+      "component": "AppButton",
+      "label": "{wide ? \"收起內容\" : \"返回記錄清單\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/care/CareSavedRecordsView.tsx",
+      "line": 26,
+      "component": "AppSelect",
+      "label": "\"種類\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/care/CareSavedRecordsView.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"搜尋\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied || loading || !model.online}"
+    },
+    {
+      "file": "src/components/care/CareSavedRecordsView.tsx",
+      "line": 29,
+      "component": "Pressable",
+      "label": "{`查看${record.title}`}",
+      "style": "{s.row}",
+      "loading": null,
+      "disabled": "{occupied || loading}"
+    },
+    {
+      "file": "src/components/care/CareSavedRecordsView.tsx",
+      "line": 32,
+      "component": "AppButton",
+      "label": "\"上一頁\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied || loading || !model.online || !model.list.hasPrevious || !actions.previousPage}"
+    },
+    {
+      "file": "src/components/care/CareSavedRecordsView.tsx",
+      "line": 32,
+      "component": "AppButton",
+      "label": "\"下一頁\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied || loading || !model.online || !model.list.hasMore || model.list.state === \"stale\"}"
+    },
+    {
+      "file": "src/components/care/ImportantRecordConfirmation.tsx",
+      "line": 39,
+      "component": "AppButton",
+      "label": "{demoItemId ? \"內容正確，確認（預覽）\" : \"內容正確，確認\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!ready?.allowed || busy || !model.online || !actions.confirmImportantRecord}"
+    },
+    {
+      "file": "src/components/care/ImportantRecordConfirmation.tsx",
+      "line": 40,
+      "component": "AppButton",
+      "label": "\"內容不對，先修改\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{busy || model.access !== \"editable\"}"
+    },
+    {
+      "file": "src/components/care/ImportantRecordConfirmation.tsx",
+      "line": 41,
+      "component": "AppButton",
+      "label": "{capture?.reviewState === \"confirmed\" ? \"關閉\" : \"稍後核對，保留黃燈\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{busy}"
+    },
+    {
+      "file": "src/components/chat/AnswerSources.tsx",
+      "line": 33,
+      "component": "CitationMarker",
+      "label": "{`查看引用【${number}】：${source.title}`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/AnswerSources.tsx",
+      "line": 153,
+      "component": "AppButton",
+      "label": "\"返回引用句\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/AnswerSources.tsx",
+      "line": 163,
+      "component": "Pressable",
+      "label": "{`來源【${index + 1}】：${source.title}`}",
+      "style": "{({ pressed }) => [styles.tab, { maxWidth: Math.max(96, Math.min(280, (tabWidth || 224) - 8)) },\n                pressed && styles.pressed, !selection && markerId === source.id && styles.located, !selection && selectedId === source.id && styles.selectedTab]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/AnswerSources.tsx",
+      "line": 194,
+      "component": "AppButton",
+      "label": "{`開啟原來源：${selected.title}`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/AnswerSources.tsx",
+      "line": 199,
+      "component": "Pressable",
+      "label": "\"版本與核對資料\"",
+      "style": "{styles.technicalToggle}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/ChatMessage.tsx",
+      "line": 37,
+      "component": "AppButton",
+      "label": "\"停止回覆\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/ChatMessage.tsx",
+      "line": 38,
+      "component": "AppButton",
+      "label": "\"查核原回覆\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/ChatMessage.tsx",
+      "line": 41,
+      "component": "Pressable",
+      "label": "\"執行過程\"",
+      "style": "{({ pressed }) => [styles.processToggle, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/ChatTimeline.tsx",
+      "line": 110,
+      "component": "AppButton",
+      "label": "{`查看較早記錄（${start} 則）`}",
+      "style": "{styles.historyButton}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/ChatTimeline.tsx",
+      "line": 115,
+      "component": "Pressable",
+      "label": "\"回到最新\"",
+      "style": "{({ pressed }) => [styles.returnButton, touchControls && styles.compactReturnButton, pressed && styles.returnPressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/CitationMarker.tsx",
+      "line": 9,
+      "component": "Pressable",
+      "label": "{label}",
+      "style": "{styles.marker}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/chat/CitationMarker.web.tsx",
+      "line": 8,
+      "component": "button",
+      "label": null,
+      "style": "{{ font: \"inherit\", color: colors.deepTeal, outline: focused ? `1px solid ${colors.deepTeal}` : undefined, outlineOffset: 2,\n      lineHeight: \"normal\", textDecoration: \"underline\", background: \"transparent\", border: 0, padding: 0, cursor: \"pointer\", borderRadius: 3 }}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/child-overview/ChildOverviewContent.tsx",
+      "line": 40,
+      "component": "AppButton",
+      "label": "{model?.access === \"read_only\" ? \"查看原檔案\" : model?.child ? \"查看／更正檔案\" : \"新增孩子及檔案\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model}"
+    },
+    {
+      "file": "src/components/child-overview/ChildOverviewContent.tsx",
+      "line": 43,
+      "component": "AppButton",
+      "label": "\"重新讀取檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.reading || pending}"
+    },
+    {
+      "file": "src/components/child-overview/ChildOverviewContent.tsx",
+      "line": 44,
+      "component": "AppButton",
+      "label": "\"返回原檔案查核\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/child-overview/ChildOverviewContent.tsx",
+      "line": 74,
+      "component": "AppButton",
+      "label": "\"查看檔案更正歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.reading || pending}"
+    },
+    {
+      "file": "src/components/child-overview/ChildOverviewContent.tsx",
+      "line": 92,
+      "component": "AppButton",
+      "label": "{`查看${label}量度原記錄`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 22,
+      "component": "AppButton",
+      "label": "{editing ? \"收起本人接收選項\" : \"管理本人接收同意\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 82,
+      "component": "AppButton",
+      "label": "\"到設定管理本人渠道綁定\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 84,
+      "component": "AppCheckbox",
+      "label": "\"允許透過以下本人渠道接收一般任務提示\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 85,
+      "component": "AppCheckbox",
+      "label": "\"我也同意具備這個孩子的後備接收資格\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || !values.enabled}"
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 87,
+      "component": "AppCheckbox",
+      "label": "{`${contactChannelLabels[binding.channel]} · ${binding.label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || !values.enabled}"
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 91,
+      "component": "AppButton",
+      "label": "{`向前移動${contactChannelLabels[binding.channel]}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || !values.enabled || index <= 0 || exiting}"
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 92,
+      "component": "AppButton",
+      "label": "{`移除${contactChannelLabels[binding.channel]}接收選項`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || !values.enabled || index < 0 || exiting}"
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 97,
+      "component": "AppCheckbox",
+      "label": "\"我已核對本人同意的最新版本與渠道\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 97,
+      "component": "AppButton",
+      "label": "\"保留選項並採用最新同意版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || !adopt}"
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 98,
+      "component": "AppCheckbox",
+      "label": "\"我確認保存以上本人接收及後備同意\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || stale || !parsed.success}"
+    },
+    {
+      "file": "src/components/contact/ContactConsentCard.tsx",
+      "line": 99,
+      "component": "AppButton",
+      "label": "\"確認保存本人接收同意\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || stale || !parsed.success || !confirm}"
+    },
+    {
+      "file": "src/components/contact/ContactHistory.tsx",
+      "line": 22,
+      "component": "AppCheckbox",
+      "label": "\"我確認本人已收到這次一般提示\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!mayAck}"
+    },
+    {
+      "file": "src/components/contact/ContactHistory.tsx",
+      "line": 22,
+      "component": "AppButton",
+      "label": "\"確認本人已收到提示\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!mayAck || !confirm}"
+    },
+    {
+      "file": "src/components/contact/ContactHistory.tsx",
+      "line": 35,
+      "component": "AppButton",
+      "label": "{open === request.id ? '收起這次聯絡紀錄' : '查看這次聯絡紀錄'}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/contact/ContactHistory.tsx",
+      "line": 35,
+      "component": "AppButton",
+      "label": "\"查看原任務\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 50,
+      "component": "AppButton",
+      "label": "\"查看這個任務\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 50,
+      "component": "AppButton",
+      "label": "{open ? '收起任務聯絡選項' : '管理任務聯絡授權'}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 55,
+      "component": "AppCheckbox",
+      "label": "\"允許最多一次到期後跟進\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 56,
+      "component": "AppCheckbox",
+      "label": "\"只在明確投遞失敗時允許渠道及後備切換\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 57,
+      "component": "AppSelect",
+      "label": "\"後備接收者\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || !values.allowFallback}"
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 58,
+      "component": "AppTimeZoneSelect",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 62,
+      "component": "AppCheckbox",
+      "label": "\"我已核對這個任務與授權的最新版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 62,
+      "component": "AppButton",
+      "label": "\"保留選項並採用最新任務授權版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || !adopt}"
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 63,
+      "component": "AppCheckbox",
+      "label": "\"我確認以上接收者、一般提示及聯絡期限\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || stale || !eligible || !parsed.success}"
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 64,
+      "component": "AppButton",
+      "label": "\"確認保存任務聯絡授權\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || stale || !eligible || !parsed.success || !confirm}"
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 65,
+      "component": "AppCheckbox",
+      "label": "\"我確認撤回這個任務的已保存聯絡授權\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || stale}"
+    },
+    {
+      "file": "src/components/contact/ContactTaskCard.tsx",
+      "line": 65,
+      "component": "AppButton",
+      "label": "\"確認撤回任務聯絡授權\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || stale || !revoke}"
+    },
+    {
+      "file": "src/components/contact/ContactView.tsx",
+      "line": 47,
+      "component": "AppButton",
+      "label": "{model.pending ? '先查原收據及更新聯絡資料' : '更新聯絡資料並保留選項'}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || model.access === 'lost'}"
+    },
+    {
+      "file": "src/components/contact/ContactView.tsx",
+      "line": 57,
+      "component": "AppButton",
+      "label": "\"放棄全部未提交選項並載入已保存資料\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || !!model.pending || model.load !== 'ready'}"
+    },
+    {
+      "file": "src/components/contact/ContactView.tsx",
+      "line": 60,
+      "component": "AppButton",
+      "label": "{details ? '收起原提交內容' : '查看原提交內容及版本'}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/contact/ContactView.tsx",
+      "line": 63,
+      "component": "AppCheckbox",
+      "label": "\"我已核對目前資料，同意以原識別內容及版本重試\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canRetry}"
+    },
+    {
+      "file": "src/components/contact/ContactView.tsx",
+      "line": 63,
+      "component": "AppButton",
+      "label": "\"明確重試原聯絡決定\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canRetry || !model.originalConsent}"
+    },
+    {
+      "file": "src/components/contact/ContactView.tsx",
+      "line": 79,
+      "component": "Pressable",
+      "label": "{`核對${task.title}的聯絡授權`}",
+      "style": "{({pressed}) => [s.taskRow, selectedId === task.id && s.selectedTask, pressed && s.pressed]}",
+      "loading": null,
+      "disabled": "{model.busy || !!model.pending}"
+    },
+    {
+      "file": "src/components/contact/ContactView.tsx",
+      "line": 85,
+      "component": "AppButton",
+      "label": "\"收起任務授權詳情\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.busy || !!model.pending}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 26,
+      "component": "AppCheckbox",
+      "label": "\"我已核對目標及共享範圍\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 42,
+      "component": "AppSelect",
+      "label": "\"邀請角色\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 45,
+      "component": "AppButton",
+      "label": "\"核對邀請內容\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 62,
+      "component": "AppButton",
+      "label": "\"預覽收到的邀請\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canStartAction}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 70,
+      "component": "AppButton",
+      "label": "\"核對加入範圍\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canStartAction}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 88,
+      "component": "AppButton",
+      "label": "{managing ? `收起${member.name.replace(\"（合成）\", \"\")}權限選項` : `管理${member.name.replace(\"（合成）\", \"\")}權限`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 90,
+      "component": "AppSelect",
+      "label": "\"新角色\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 91,
+      "component": "AppButton",
+      "label": "{`更改${member.name.replace(\"（合成）\", \"\")}權限`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled || nextRole === member.role}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 126,
+      "component": "AppButton",
+      "label": "\"採用最新版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 128,
+      "component": "AppButton",
+      "label": "\"重新核對草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.locked}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 131,
+      "component": "AppButton",
+      "label": "{draft.kind === \"accept\" ? \"再次確認加入\" : \"再次確認操作\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.locked || !draft.scopeConfirmed || model.operation.state !== \"needs_confirmation\"}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 133,
+      "component": "AppButton",
+      "label": "\"取消草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.operation.state === \"saving\" || model.operation.state === \"unknown\"}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 161,
+      "component": "AppSelect",
+      "label": "\"家庭\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.operation.state === \"saving\" || model.operation.state === \"unknown\"}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 164,
+      "component": "AppButton",
+      "label": "\"重新讀取家庭清單\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canStartAction}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 182,
+      "component": "AppButton",
+      "label": "\"撤銷此邀請\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canStartAction || exiting}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 193,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 197,
+      "component": "AppButton",
+      "label": "\"查看目前孩子的待辦\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 198,
+      "component": "AppButton",
+      "label": "\"查看目前孩子的聯絡授權\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 203,
+      "component": "AppButton",
+      "label": "{inviteOpen ? \"收起邀請表單\" : \"邀請一位成員\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.locked}"
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 208,
+      "component": "AppButton",
+      "label": "\"清除示例碼\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/family/FamilyView.tsx",
+      "line": 211,
+      "component": "AppButton",
+      "label": "{incomingOpen ? \"收起收到的邀請\" : \"輸入收到的邀請\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.locked}"
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 38,
+      "component": "AppButton",
+      "label": "{`查看原始${source.label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 129,
+      "component": "AppButton",
+      "label": "{historyOpen ? \"收起其他期間\" : \"翻閱年度／季度\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 130,
+      "component": "AppButton",
+      "label": "\"回到目前報告\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 136,
+      "component": "Pressable",
+      "label": "{`顯示${option.label}成長檔案`}",
+      "style": "{[a.filterButton, filter === option.key && a.filterSelected]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 142,
+      "component": "Pressable",
+      "label": "{`閱讀${item.period?.label ?? item.snapshot.periodLabel}${item.period?.coverage === \"partial\" ? \"，部分內容\" : \"\"}`}",
+      "style": "{[a.archiveCard, wide && a.archiveCardWide, selected?.key === item.key && a.archiveCardSelected]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 155,
+      "component": "AppButton",
+      "label": "{revisionOpen ? \"收起報告資料\" : \"報告資料\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 181,
+      "component": "AppButton",
+      "label": "\"導出報告\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 189,
+      "component": "AppSelect",
+      "label": "\"跳到欄目\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 215,
+      "component": "AppButton",
+      "label": "{`${disclosed ? \"收起\" : \"查看\"}${fieldLabel}的依據`}",
+      "style": "{compactControls ? a.compactDisclosure : undefined}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 231,
+      "component": "Pressable",
+      "label": "{option.label}",
+      "style": "{[a.purpose, purpose === option.id && a.purposeSelected]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 238,
+      "component": "AppSelect",
+      "label": "\"報告期間\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 241,
+      "component": "AppCheckbox",
+      "label": "\"原始記錄與依據\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 242,
+      "component": "AppCheckbox",
+      "label": "\"本版更新說明\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 248,
+      "component": "AppButton",
+      "label": "\"關閉\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchive.tsx",
+      "line": 249,
+      "component": "AppButton",
+      "label": "{onExportReport ? \"準備 PDF 報告\" : \"PDF 下載暫不可用\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canExport}"
+    },
+    {
+      "file": "src/components/growth/GrowthArchiveConcernButton.tsx",
+      "line": 36,
+      "component": "AppButton",
+      "label": "{`結束關注：${concern.title}`}",
+      "style": "{a.action}",
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/growth/GrowthArchiveConcernButton.tsx",
+      "line": 44,
+      "component": "AppButton",
+      "label": "\"取消\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthArchiveConcernButton.tsx",
+      "line": 45,
+      "component": "AppButton",
+      "label": "\"確認結束關注\"",
+      "style": "{a.action}",
+      "loading": null,
+      "disabled": "{!valid}"
+    },
+    {
+      "file": "src/components/growth/GrowthConcernChangeNotice.tsx",
+      "line": 16,
+      "component": "AppButton",
+      "label": "{`撤銷結束關注：${concern.title}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.locked || model.dirty || !growthConcernCanRestore(concern)}"
+    },
+    {
+      "file": "src/components/growth/GrowthConcernTimeline.tsx",
+      "line": 14,
+      "component": "Pressable",
+      "label": "{`查看關注：${item.title}`}",
+      "style": "{({pressed}) => [s.concernRow, selectedId === item.id && s.concernSelected, pressed && s.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthConcernTimeline.tsx",
+      "line": 22,
+      "component": "GrowthArchiveConcernButton",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": "{!!archiveDisabled}"
+    },
+    {
+      "file": "src/components/growth/GrowthConcernTimeline.tsx",
+      "line": 41,
+      "component": "AppButton",
+      "label": "\"查看已連結跟進\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthConcernTimeline.tsx",
+      "line": 48,
+      "component": "AppButton",
+      "label": "\"查看原始記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthConcernTimeline.tsx",
+      "line": 49,
+      "component": "AppButton",
+      "label": "\"前往待核對記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthConcernTimeline.tsx",
+      "line": 50,
+      "component": "AppButton",
+      "label": "\"查看已連結跟進\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthConcernTimeline.tsx",
+      "line": 53,
+      "component": "AppButton",
+      "label": "\"核對量測來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthHistoryView.tsx",
+      "line": 32,
+      "component": "Button",
+      "label": "{`恢復關注：${concern.title}`}",
+      "style": "{styles.restoreAction}",
+      "loading": null,
+      "disabled": "{model.locked || model.dirty || !growthConcernCanRestore(concern)}"
+    },
+    {
+      "file": "src/components/growth/GrowthHistoryView.tsx",
+      "line": 45,
+      "component": "AppButton",
+      "label": "\"返回關注歷史\"",
+      "style": "{styles.action}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthHistoryView.tsx",
+      "line": 54,
+      "component": "Pressable",
+      "label": "{`查看已結束關注：${concern.title}`}",
+      "style": "{({ pressed }) => [styles.readAction, hoveredId === concern.id && styles.readHovered, focusedId === concern.id && styles.readFocused, pressed && styles.readPressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthOperationRecovery.tsx",
+      "line": 31,
+      "component": "AppButton",
+      "label": "{model.busy ? \"正在讀取／提交…\" : \"重讀並核對原操作\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.busy || !model.online}"
+    },
+    {
+      "file": "src/components/growth/GrowthOperationRecovery.tsx",
+      "line": 32,
+      "component": "AppCheckbox",
+      "label": "\"我已核對並同意查回同一份原內容及版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.busy || !model.online || model.access !== \"editable\" || model.load !== \"ready\" || !model.page?.canManage || !model.pending.reviewed || model.pending.reconfirm}"
+    },
+    {
+      "file": "src/components/growth/GrowthOperationRecovery.tsx",
+      "line": 35,
+      "component": "AppButton",
+      "label": "\"明確查回原操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{retryDisabled}"
+    },
+    {
+      "file": "src/components/growth/GrowthView.tsx",
+      "line": 31,
+      "component": "AppButton",
+      "label": "{model.busy?\"正在讀取／提交…\":model.pending?\"重讀並核對原操作\":\"重讀成長關注並保留草稿\"}",
+      "style": "{s.headerRefreshButton}",
+      "loading": null,
+      "disabled": "{model.busy||!model.online||model.access===\"lost\"}"
+    },
+    {
+      "file": "src/components/growth/GrowthView.tsx",
+      "line": 33,
+      "component": "AppButton",
+      "label": "\"前往原始記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthView.tsx",
+      "line": 34,
+      "component": "AppButton",
+      "label": "{notesOpen ? \"收起資料說明\" : \"資料說明\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthView.tsx",
+      "line": 41,
+      "component": "AppButton",
+      "label": "\"查看關注歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthView.tsx",
+      "line": 59,
+      "component": "AppButton",
+      "label": "\"放棄草稿並重新核對\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.busy||!model.online||model.access===\"lost\"}"
+    },
+    {
+      "file": "src/components/growth/GrowthView.tsx",
+      "line": 60,
+      "component": "AppButton",
+      "label": "\"確認放棄未提交草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.busy||!model.online||model.access===\"lost\"}"
+    },
+    {
+      "file": "src/components/growth/GrowthView.tsx",
+      "line": 64,
+      "component": "UnderlineTabs",
+      "label": "\"成長與關注\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/growth/GrowthView.tsx",
+      "line": 71,
+      "component": "AppSelect",
+      "label": "\"目前關注\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 44,
+      "component": "AppButton",
+      "label": "{details ? \"收起來源\" : \"查看來源\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 45,
+      "component": "AppButton",
+      "label": "\"請 Agent 核對\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 55,
+      "component": "AppButton",
+      "label": "{historyOpen ? \"收起版本記錄\" : \"查看版本記錄\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 73,
+      "component": "AppButton",
+      "label": "\"載入更多版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 83,
+      "component": "AppButton",
+      "label": "{details ? \"收起摘要來源\" : \"查看摘要來源\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 99,
+      "component": "AppButton",
+      "label": "{details ? \"收起來源資料\" : \"查看來源資料\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 110,
+      "component": "AppButton",
+      "label": "{technical ? \"收起版本識別\" : \"查看版本識別\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 128,
+      "component": "AppButton",
+      "label": "\"載入更多來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 155,
+      "component": "UnderlineTabs",
+      "label": "\"記憶與參考分類\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 170,
+      "component": "AppButton",
+      "label": "\"載入更多記憶\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/memory/MemoryReferenceView.tsx",
+      "line": 173,
+      "component": "AppButton",
+      "label": "{otherOpen ? \"收起待核對與停用資料\" : `待核對與停用資料（已載入 ${other.length} 項）`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsPreview.tsx",
+      "line": 17,
+      "component": "AppButton",
+      "label": "{toolsOpen ? \"收起模型情境工具\" : \"顯示模型情境工具\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsPreview.tsx",
+      "line": 18,
+      "component": "AppSelect",
+      "label": "\"模型保存結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!!controller.model.busy}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsPreview.tsx",
+      "line": 21,
+      "component": "AppSelect",
+      "label": "\"模型資料查核結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!!controller.model.busy}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsPreview.tsx",
+      "line": 23,
+      "component": "AppSelect",
+      "label": "\"模型服務可用性\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!!controller.model.busy}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsPreview.tsx",
+      "line": 26,
+      "component": "AppButton",
+      "label": "\"切換模型合成帳戶\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsPreview.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"切換模型合成 Server\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsPreview.tsx",
+      "line": 28,
+      "component": "AppButton",
+      "label": "\"恢復合成登入\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 114,
+      "component": "AppButton",
+      "label": "\"重新讀取模型設定\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || !model.authorized || !!model.busy}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 128,
+      "component": "AppSelect",
+      "label": "\"模型模式\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 143,
+      "component": "AppCheckbox",
+      "label": "\"我同意個人服務的費用及資料外送\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || !available}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 146,
+      "component": "AppCheckbox",
+      "label": "\"另行允許背景任務使用此密鑰\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || !available}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 156,
+      "component": "AppButton",
+      "label": "\"保存模型設定\"",
+      "style": null,
+      "loading": "{model.busy === \"save\"}",
+      "disabled": "{!canSave}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 157,
+      "component": "AppButton",
+      "label": "\"刪除個人密鑰\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || !settings.keyConfigured}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 163,
+      "component": "AppButton",
+      "label": "\"檢查已保存密鑰\"",
+      "style": null,
+      "loading": "{model.busy === \"check\"}",
+      "disabled": "{locked || !snapshot.enabled || !snapshot.personalAvailable || settings.mode !== \"personal\" || !!keyText.trim()}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 182,
+      "component": "AppCheckbox",
+      "label": "\"我確認刪除密鑰並停用 AI\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 183,
+      "component": "AppButton",
+      "label": "\"取消\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/model-settings/ModelSettingsView.tsx",
+      "line": 184,
+      "component": "AppButton",
+      "label": "\"確認刪除並停用\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || !deleteConfirmed}"
+    },
+    {
+      "file": "src/components/navigation/DirectionalPressable.web.tsx",
+      "line": 83,
+      "component": "Pressable",
+      "label": "{props.label}",
+      "style": "{props.style}",
+      "loading": null,
+      "disabled": "{props.disabled}"
+    },
+    {
+      "file": "src/components/navigation/RecordsNavButton.tsx",
+      "line": 15,
+      "component": "DirectionalPressable",
+      "label": "\"記錄，向上拖曳開啟更多頁面\"",
+      "style": "{[styles.button, selected && styles.selected, style]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 83,
+      "component": "AppButton",
+      "label": "\"重新讀取本人渠道狀態\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!online || locked}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 103,
+      "component": "AppButton",
+      "label": "\"核對並使用最新渠道狀態\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 112,
+      "component": "AppCheckbox",
+      "label": "{replacingChallenge ? \"我明白舊連結及候選帳號會失效，並同意重新開始\" : reviewLabels[model.review.kind]}",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.locked || model.conflict}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 115,
+      "component": "AppButton",
+      "label": "\"模擬確認這項渠道操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.locked || model.conflict || !model.review.confirmed}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 116,
+      "component": "AppButton",
+      "label": "\"取消渠道操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.locked}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 148,
+      "component": "AppButton",
+      "label": "\"預覽啟用此瀏覽器通知\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 180,
+      "component": "AppButton",
+      "label": "\"重新讀取瀏覽器狀態\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.locked || !!model.review}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 208,
+      "component": "AppButton",
+      "label": "\"撤銷此訂閱\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{actionBlocked}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 209,
+      "component": "AppButton",
+      "label": "\"預覽一般測試\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{actionBlocked || !pushTestAllowed(model, binding)}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 257,
+      "component": "AppButton",
+      "label": "\"重新讀取 Telegram 狀態\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.locked || !!model.review}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 271,
+      "component": "AppButton",
+      "label": "\"撤銷 Telegram 綁定\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{actionBlocked}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 272,
+      "component": "AppButton",
+      "label": "\"預覽一般測試\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canTest}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 276,
+      "component": "AppButton",
+      "label": "{model.challenge ? \"預覽重新開始私人綁定\" : \"預覽開始私人綁定\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canBegin}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 283,
+      "component": "AppButton",
+      "label": "\"開啟 Telegram 綁定步驟\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{actionBlocked || !model.configured || existingBinding}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 284,
+      "component": "AppButton",
+      "label": "\"重新讀取 Telegram 狀態\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.locked || !!model.review}"
+    },
+    {
+      "file": "src/components/notifications/ChannelCards.tsx",
+      "line": 292,
+      "component": "AppButton",
+      "label": "\"核對這個 Telegram 帳號\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canConfirm}"
+    },
+    {
+      "file": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "line": 36,
+      "component": "AppButton",
+      "label": "{tools ? \"收起渠道情境工具\" : \"顯示渠道情境工具\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "line": 37,
+      "component": "AppButton",
+      "label": "\"切換渠道情境的合成帳戶\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "line": 44,
+      "component": "AppSelect",
+      "label": "\"Web Push 情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{push.model.locked || !!push.model.review}"
+    },
+    {
+      "file": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "line": 45,
+      "component": "AppSelect",
+      "label": "\"Web Push 投遞示例\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{push.model.locked || !!push.model.review}"
+    },
+    {
+      "file": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "line": 52,
+      "component": "AppSelect",
+      "label": "\"Telegram 情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{telegram.model.locked || !!telegram.model.review}"
+    },
+    {
+      "file": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "line": 53,
+      "component": "AppSelect",
+      "label": "\"Telegram 投遞示例\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{telegram.model.locked || !!telegram.model.review}"
+    },
+    {
+      "file": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "line": 54,
+      "component": "AppButton",
+      "label": "\"模擬已在 Telegram 啟動\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!telegram.model.online || telegram.model.locked || !!telegram.model.review || telegram.model.challenge?.state !== \"waiting\"}"
+    },
+    {
+      "file": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "line": 55,
+      "component": "AppButton",
+      "label": "\"模擬收到本人回覆\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!telegram.model.online || telegram.model.locked || !!telegram.model.review || !telegram.model.deliveries.length}"
+    },
+    {
+      "file": "src/components/photos/PhotoFilePicker.tsx",
+      "line": 33,
+      "component": "AppButton",
+      "label": "\"拍照\"",
+      "style": null,
+      "loading": "{reading}",
+      "disabled": "{disabled || reading || !captureOriginal}"
+    },
+    {
+      "file": "src/components/photos/PhotoFilePicker.tsx",
+      "line": 35,
+      "component": "AppButton",
+      "label": "\"選擇原照片\"",
+      "style": null,
+      "loading": "{reading}",
+      "disabled": "{disabled || reading || !selectOriginal}"
+    },
+    {
+      "file": "src/components/photos/PhotoFilePicker.web.tsx",
+      "line": 56,
+      "component": "AppButton",
+      "label": "{reading ? \"正在讀取原照片\" : \"拍照或選圖\"}",
+      "style": null,
+      "loading": "{reading}",
+      "disabled": "{disabled || reading}"
+    },
+    {
+      "file": "src/components/photos/PhotoFilePicker.web.tsx",
+      "line": 58,
+      "component": "AppButton",
+      "label": "{reading ? \"正在讀取原照片\" : \"選擇原照片\"}",
+      "style": null,
+      "loading": "{reading}",
+      "disabled": "{disabled || reading}"
+    },
+    {
+      "file": "src/components/photos/PhotoRecordForm.tsx",
+      "line": 32,
+      "component": "AppButton",
+      "label": "\"預覽照片共享內容\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.formLocked || !model.fresh}"
+    },
+    {
+      "file": "src/components/photos/PhotoRecordForm.tsx",
+      "line": 40,
+      "component": "AppCheckbox",
+      "label": "\"我確認原照片及這份記錄與孩子所屬家庭共享\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.formLocked}"
+    },
+    {
+      "file": "src/components/photos/PhotoRecordForm.tsx",
+      "line": 42,
+      "component": "AppButton",
+      "label": "\"確認照片及記錄家庭共享\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canConfirm}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 81,
+      "component": "AppButton",
+      "label": "\"重新讀取照片\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || model.access === \"lost\"}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 81,
+      "component": "AppButton",
+      "label": "\"返回照顧記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 88,
+      "component": "AppButton",
+      "label": "{model.operation.phase === \"upload\" || model.operation.phase === \"extract\" ? \"查核同一照片附件\" : \"查核原照片操作\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 89,
+      "component": "AppButton",
+      "label": "\"明確重試原內容及原操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.fresh}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 90,
+      "component": "AppButton",
+      "label": "\"結束待查並核對清單\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 93,
+      "component": "AppButton",
+      "label": "\"使用目前版本並保留草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 97,
+      "component": "AppButton",
+      "label": "{selected || model.original ? \"繼續核對本頁\" : \"加入原照片\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || !selected && !model.original && !model.canPick}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 103,
+      "component": "AppButton",
+      "label": "{`開啟照片：${item.visibility === \"private\" ? \"私人\" : \"共享\"} · ${item.fileName}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{row.exiting || locked || model.load !== \"ready\"}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 108,
+      "component": "AppButton",
+      "label": "\"返回附件清單（保留本頁草稿）\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 109,
+      "component": "AppButton",
+      "label": "\"清除本頁\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 119,
+      "component": "AppButton",
+      "label": "{selected ? \"繼續上傳同一原檔\" : \"私人保存原照片\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canUpload}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 121,
+      "component": "AppCheckbox",
+      "label": "\"我同意把原照片交由 Gemini 提取；候選仍需核對\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canExtract}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 122,
+      "component": "AppButton",
+      "label": "{selected.extraction.state === \"failed\" ? \"重新提取照片內容\" : \"提取照片內容\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canExtract || !model.modelConsent}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 128,
+      "component": "AppButton",
+      "label": "\"採用候選並取代本頁草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.formLocked}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 130,
+      "component": "AppButton",
+      "label": "\"刪除照片及連結記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canDelete}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 139,
+      "component": "AppButton",
+      "label": "\"保留目前草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 139,
+      "component": "AppButton",
+      "label": "\"確認取代本頁\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 144,
+      "component": "AppCheckbox",
+      "label": "\"我已核對照片與連結記錄的刪除範圍\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 145,
+      "component": "AppCheckbox",
+      "label": "\"我確認要刪除這份照片及連結記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 147,
+      "component": "AppButton",
+      "label": "\"查核原照片刪除\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 148,
+      "component": "AppButton",
+      "label": "\"返回照片\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.busy}"
+    },
+    {
+      "file": "src/components/photos/PhotosView.tsx",
+      "line": 148,
+      "component": "AppButton",
+      "label": "\"確認刪除照片\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canDelete || !model.deleteScope || !model.deleteFinal}"
+    },
+    {
+      "file": "src/components/photos/WebCameraCapture.web.tsx",
+      "line": 93,
+      "component": "AppButton",
+      "label": "\"重新開啟相機\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/photos/WebCameraCapture.web.tsx",
+      "line": 94,
+      "component": "AppButton",
+      "label": "\"拍下照片\"",
+      "style": null,
+      "loading": "{busy}",
+      "disabled": "{!ready}"
+    },
+    {
+      "file": "src/components/photos/WebCameraCapture.web.tsx",
+      "line": 95,
+      "component": "AppButton",
+      "label": "\"系統拍照／選圖\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{busy}"
+    },
+    {
+      "file": "src/components/photos/WebCameraCapture.web.tsx",
+      "line": 96,
+      "component": "AppButton",
+      "label": "\"取消拍照\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 34,
+      "component": "Pressable",
+      "label": "{`開啟${revision?.title ?? \"暫不能查看的準備單\"}`}",
+      "style": "{({ pressed }) => [styles.documentRow, selected && styles.selectedRow, pressed && styles.pressedRow]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 56,
+      "component": "AppButton",
+      "label": "{archived ? \"返回歸檔清單\" : \"返回準備單清單\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 73,
+      "component": "AppCheckbox",
+      "label": "{item.text}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 77,
+      "component": "AppButton",
+      "label": "\"來源與版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 86,
+      "component": "AppButton",
+      "label": "\"使用完畢，歸檔\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canArchive}"
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 87,
+      "component": "AppButton",
+      "label": "\"到助手補充／更新\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!revision || !workspace.model.online || !onPrepareQuestion}"
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 91,
+      "component": "AppButton",
+      "label": "\"歸檔這份準備\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 91,
+      "component": "AppButton",
+      "label": "\"繼續使用\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 93,
+      "component": "AppButton",
+      "label": "\"查看準備單歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 120,
+      "component": "AppButton",
+      "label": "\"到歷史查看\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 121,
+      "component": "AppButton",
+      "label": "\"繼續看其他準備\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 125,
+      "component": "PreparationRow",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 149,
+      "component": "AppButton",
+      "label": "\"查看已歸檔\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 151,
+      "component": "AppSelect",
+      "label": "\"用途\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/preparations/PreparationWorkspace.tsx",
+      "line": 152,
+      "component": "AppButton",
+      "label": "\"到助手交代\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!workspace.model.online || workspace.model.condition === \"lost\" || !onPrepareQuestion}"
+    },
+    {
+      "file": "src/components/profile/ProfileForm.tsx",
+      "line": 46,
+      "component": "AppSelect",
+      "label": "\"年齡資料\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/profile/ProfileForm.tsx",
+      "line": 51,
+      "component": "AppSelect",
+      "label": "\"約數年齡單位\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/profile/ProfileForm.tsx",
+      "line": 71,
+      "component": "AppButton",
+      "label": "{draftOnly ? \"預覽本地檔案草稿\" : \"預覽家庭共享內容\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canReview}"
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 56,
+      "component": "AppButton",
+      "label": "\"重新讀取及核對\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.reading || pending}"
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 65,
+      "component": "TextLink",
+      "label": "\"查看照顧記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 73,
+      "component": "AppButton",
+      "label": "{detailsOpen ? \"收起完整已確認檔案\" : \"查看完整已確認檔案\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 75,
+      "component": "AppButton",
+      "label": "\"重新讀取檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.reading || pending}"
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 80,
+      "component": "AppButton",
+      "label": "{model.historyOpen ? \"已顯示歷史\" : \"查看較早版本\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.reading || model.historyOpen}"
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 83,
+      "component": "AppButton",
+      "label": "\"載入更早版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.reading}"
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 97,
+      "component": "AppButton",
+      "label": "\"我已核對，確認家庭共享\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canReview}"
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 98,
+      "component": "AppButton",
+      "label": "\"返回修改\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 106,
+      "component": "AppButton",
+      "label": "\"已比較，使用最新基準\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.latest || !model.online || model.reading}"
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 108,
+      "component": "AppButton",
+      "label": "\"永久刪除檔案及歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canReview || model.intent === \"delete\"}"
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 111,
+      "component": "AppButton",
+      "label": "\"確認永久刪除檔案及歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canReview}"
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 112,
+      "component": "AppButton",
+      "label": "\"取消刪除\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/profile/ProfileView.tsx",
+      "line": 114,
+      "component": "AppButton",
+      "label": "\"返回檔案草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/settings/SettingsNavigation.tsx",
+      "line": 11,
+      "component": "UnderlineTabs",
+      "label": "\"設定分類\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/settings/SettingsNavigation.tsx",
+      "line": 22,
+      "component": "Pressable",
+      "label": "{item.label}",
+      "style": "{({ pressed }) => [styles.item, value === item.key && styles.selected, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/shared-inputs/SourceComposer.tsx",
+      "line": 40,
+      "component": "AppSelect",
+      "label": "\"來源方式\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceComposer.tsx",
+      "line": 45,
+      "component": "AppSelect",
+      "label": "\"公開來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || !model.sources.length}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceComposer.tsx",
+      "line": 51,
+      "component": "AppButton",
+      "label": "{detailsOpen ? \"收起來源補充資料\" : \"補充名稱、日期或備註\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceComposer.tsx",
+      "line": 65,
+      "component": "AppButton",
+      "label": "{intake ? \"私人保存並開始整理（預覽）\" : \"保存私人來源\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.fresh || !model.canCreate || !model.canChoose || !!intake && !validSourceIntakeText(intake.intention)}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 38,
+      "component": "AppButton",
+      "label": "\"查看照顧記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 41,
+      "component": "AppButton",
+      "label": "\"返回新增私人來源並自行貼上正文\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.fresh || !model.canCreate || !model.canChoose || !!direct}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 42,
+      "component": "AppButton",
+      "label": "{showText ? \"收起保存原文\" : `查看完整原文（${selected.text.length.toLocaleString(\"en-HK\")} 字）`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 47,
+      "component": "AppButton",
+      "label": "{showTechnical ? \"收起來源技術資料\" : \"顯示來源技術資料\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 54,
+      "component": "AppButton",
+      "label": "\"編輯原來源（待接線）\"",
+      "style": null,
+      "loading": null,
+      "disabled": true
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 55,
+      "component": "AppButton",
+      "label": "\"停用接入（待接線）\"",
+      "style": null,
+      "loading": null,
+      "disabled": true
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 57,
+      "component": "AppButton",
+      "label": "\"刪除私人來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canDelete}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 60,
+      "component": "AppCheckbox",
+      "label": "\"我同意取得此來源的公開正文並私人保存\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canConsent || direct?.kind === \"extract\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 61,
+      "component": "AppButton",
+      "label": "{selected.fetchState === \"failed\" ? \"明確重新取得正文\" : \"取得此網頁內容\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canFetch || !model.fetchConsent}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 67,
+      "component": "AppCheckbox",
+      "label": "\"我同意把以上原文片段交由模型提取\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canConsent || !validSourceExcerpt(selected.text, model.excerpt) || direct?.kind === \"fetch\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 68,
+      "component": "AppButton",
+      "label": "\"提取所選片段\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canExtract || !model.modelConsent || !validSourceExcerpt(selected.text, model.excerpt)}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 73,
+      "component": "AppButton",
+      "label": "\"明確查回原版本及原片段\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.fresh || !direct.checked || !canManage || (direct.kind === \"fetch\" ? !model.fetchConsent : !model.modelConsent)}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 74,
+      "component": "AppButton",
+      "label": "\"結束本次查核\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.fresh || !direct.checked || (direct.kind === \"fetch\" ? selected.fetchState : selected.extraction.state) !== \"unknown\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceDetails.tsx",
+      "line": 82,
+      "component": "AppButton",
+      "label": "\"採用候選作草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.formLocked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeConversation.tsx",
+      "line": 24,
+      "component": "AppButton",
+      "label": "{intake.stage === \"confirmed_pending_connection\" ? \"編輯用途草稿\" : \"自行填寫接入資料\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeConversation.tsx",
+      "line": 29,
+      "component": "AppButton",
+      "label": "\"預覽查看來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeConversation.tsx",
+      "line": 35,
+      "component": "AppButton",
+      "label": "\"查核原次查看結果（預覽）\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeConversation.tsx",
+      "line": 39,
+      "component": "AppButton",
+      "label": "\"自行貼上原文\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || !model.canCreate}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeConversation.tsx",
+      "line": 50,
+      "component": "AppButton",
+      "label": "\"查看整理建議（預覽）\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || !validSourceIntakeText(intake.clarification)}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeConversation.tsx",
+      "line": 57,
+      "component": "AppButton",
+      "label": "\"查核原次接入結果（預覽）\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeEditor.tsx",
+      "line": 34,
+      "component": "AppButton",
+      "label": "{editing ? \"收起建議欄位\" : \"修改整理建議\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeEditor.tsx",
+      "line": 36,
+      "component": "AppSelect",
+      "label": "\"建議用途\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeEditor.tsx",
+      "line": 37,
+      "component": "AppSelect",
+      "label": "\"來源性質（不代表已核實）\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeEditor.tsx",
+      "line": 38,
+      "component": "AppSelect",
+      "label": "\"資料時效\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceIntakeEditor.tsx",
+      "line": 44,
+      "component": "AppButton",
+      "label": "\"確認這個用途（預覽）\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || !validSourceIntakeProposal(proposal)}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceRecordForm.tsx",
+      "line": 23,
+      "component": "AppSelect",
+      "label": "\"記錄用途\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.formLocked}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceRecordForm.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"預覽家庭共享內容\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canConfirm}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceRecordForm.tsx",
+      "line": 35,
+      "component": "AppCheckbox",
+      "label": "\"我確認以上內容確實與這個孩子有關\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canConfirm}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceRecordForm.tsx",
+      "line": 38,
+      "component": "AppCheckbox",
+      "label": "\"我確認把以上記錄與獲授權家庭成員共享\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canConfirm || model.confirmationKind === \"family_record\" && !model.childFactConsent}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourceRecordForm.tsx",
+      "line": 39,
+      "component": "AppButton",
+      "label": "\"確認家庭共享\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canConfirm || !model.sharedConsent || model.confirmationKind === \"family_record\" && !model.childFactConsent}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 35,
+      "component": "AppButton",
+      "label": "\"查核原次結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || model.access === \"lost\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 36,
+      "component": "AppButton",
+      "label": "\"沿原內容及參考重試\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || model.load !== \"ready\" || model.access !== \"editable\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 37,
+      "component": "AppButton",
+      "label": "\"結束已確認操作\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!op.checked || !model.online || model.load !== \"ready\" || model.busy || model.access === \"lost\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 39,
+      "component": "AppButton",
+      "label": "\"明確使用目前版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.latest || !model.online || model.load !== \"ready\" || model.busy || model.access !== \"editable\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 84,
+      "component": "AppButton",
+      "label": "\"重新讀取來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || model.access === \"lost\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 85,
+      "component": "AppButton",
+      "label": "\"清除草稿並新增來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canChoose || !model.canCreate}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 86,
+      "component": "AppButton",
+      "label": "\"照片與記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 100,
+      "component": "AppButton",
+      "label": "{`查看私人來源：${input.sourceLabel}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{row.exiting || !model.canChoose || !model.online || model.load !== \"ready\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 109,
+      "component": "AppButton",
+      "label": "\"自行填寫接入資料\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.fresh || !model.selected.canManage || model.access !== \"editable\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 112,
+      "component": "AppButton",
+      "label": "{showManual ? \"收起手動來源操作\" : \"手動提取或核對家庭記錄\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{sourceIntakeIsUnresolved(model.intake.selected)}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 121,
+      "component": "AppCheckbox",
+      "label": "\"我明白刪除範圍包含原文及已連結記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canDelete}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 122,
+      "component": "AppCheckbox",
+      "label": "\"我再次確認刪除此來源及連結記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canDelete || !model.deleteScope}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 124,
+      "component": "AppButton",
+      "label": "\"查核這次刪除\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || model.access === \"lost\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 125,
+      "component": "AppButton",
+      "label": "\"沿原內容重試刪除\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || model.load !== \"ready\" || model.access !== \"editable\"}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 126,
+      "component": "AppButton",
+      "label": "\"結束已確認刪除\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.operation.checked || !model.online || model.load !== \"ready\" || model.busy}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 128,
+      "component": "AppButton",
+      "label": "\"返回來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.busy}"
+    },
+    {
+      "file": "src/components/shared-inputs/SourcesView.tsx",
+      "line": 129,
+      "component": "AppButton",
+      "label": "\"確認刪除來源及連結記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.canDelete || !model.deleteScope || !model.deleteFinal}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 124,
+      "component": "AppButton",
+      "label": "{model.dirty ? \"返回準備單（保留草稿）\" : \"取消修改，返回準備單\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 129,
+      "component": "AppCheckbox",
+      "label": "\"我已核對最新來源及共享準備，保留草稿並採用目前依據\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 130,
+      "component": "AppButton",
+      "label": "\"明確改用目前摘要依據\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || !basisConsent}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 131,
+      "component": "AppSelect",
+      "label": "\"到診預約安排\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 138,
+      "component": "AppButton",
+      "label": "{`移除${label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || removed}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 142,
+      "component": "AppButton",
+      "label": "\"新增到診問題\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || questions.fields.length >= 12}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 148,
+      "component": "AppCheckbox",
+      "label": "{`${label} 已完成`}",
+      "style": null,
+      "loading": null,
+      "disabled": true
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 148,
+      "component": "AppCheckbox",
+      "label": "{`${label} 已完成`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 149,
+      "component": "AppButton",
+      "label": "{`移除${label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || removed}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 152,
+      "component": "AppButton",
+      "label": "\"新增到診準備\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || checklist.fields.length >= 16}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 155,
+      "component": "AppCheckbox",
+      "label": "\"我已逐項核對問題、準備清單及目前摘要來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || stale}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 156,
+      "component": "AppCheckbox",
+      "label": "\"我確認把以上到診準備與有權家庭成員共享\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || stale || !parsed.success || !appointmentValid}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 157,
+      "component": "AppButton",
+      "label": "\"確認保存家庭共享到診準備\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable || stale || !shared || !parsed.success || !appointmentValid}"
+    },
+    {
+      "file": "src/components/summary/PreparationCard.tsx",
+      "line": 158,
+      "component": "AppButton",
+      "label": "\"放棄草稿並載入已保存準備\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || !!model.pending || model.readFailed}"
+    },
+    {
+      "file": "src/components/summary/PreparationSheet.tsx",
+      "line": 32,
+      "component": "AppButton",
+      "label": "\"請 Agent 整理／更新\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{agentBlocked}"
+    },
+    {
+      "file": "src/components/summary/PreparationSheet.tsx",
+      "line": 33,
+      "component": "AppButton",
+      "label": "{model.dirty ? \"繼續修改準備單\" : \"修改準備單\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!editable}"
+    },
+    {
+      "file": "src/components/summary/PreparationSheet.tsx",
+      "line": 34,
+      "component": "AppButton",
+      "label": "\"前往待辦核對\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/summary/PreparationSheet.tsx",
+      "line": 51,
+      "component": "AppButton",
+      "label": "\"前往記錄核對\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/summary/SummaryDisclosure.tsx",
+      "line": 17,
+      "component": "Pressable",
+      "label": "{label}",
+      "style": "{({pressed}) => [s.disclosureTrigger, pressed && s.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/summary/SummaryRecords.tsx",
+      "line": 35,
+      "component": "AppButton",
+      "label": "\"查看原記錄及更正歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/summary/SummaryRecords.tsx",
+      "line": 45,
+      "component": "AppButton",
+      "label": "\"核對這項任務\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/summary/SummaryRecords.tsx",
+      "line": 67,
+      "component": "AppButton",
+      "label": "\"查看這筆原記錄\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/summary/SummaryView.tsx",
+      "line": 45,
+      "component": "AppButton",
+      "label": "\"返回孩子概況與準備\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/summary/SummaryView.tsx",
+      "line": 53,
+      "component": "AppSelect",
+      "label": "\"摘要期間\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.busy || !!model.pending || model.access === 'lost'}"
+    },
+    {
+      "file": "src/components/summary/SummaryView.tsx",
+      "line": 54,
+      "component": "AppTimeZoneSelect",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": "{model.busy || !!model.pending || model.access === 'lost'}"
+    },
+    {
+      "file": "src/components/summary/SummaryView.tsx",
+      "line": 57,
+      "component": "AppButton",
+      "label": "\"套用期間並更新報告\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || model.access === 'lost' || !!model.pending || !queryValid}"
+    },
+    {
+      "file": "src/components/summary/SummaryView.tsx",
+      "line": 65,
+      "component": "AppButton",
+      "label": "{model.pending ? '先查原收據及更新摘要' : '重新讀取摘要'}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.busy || !model.pending && !queryValid}"
+    },
+    {
+      "file": "src/components/summary/SummaryView.tsx",
+      "line": 74,
+      "component": "AppCheckbox",
+      "label": "\"我已核對目前摘要，同意用原操作識別及內容重試\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canRetry}"
+    },
+    {
+      "file": "src/components/summary/SummaryView.tsx",
+      "line": 74,
+      "component": "AppButton",
+      "label": "\"以原操作明確重試到診準備\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!canRetry || !model.originalConsent}"
+    },
+    {
+      "file": "src/components/summary/SummaryView.tsx",
+      "line": 77,
+      "component": "UnderlineTabs",
+      "label": "{recoveryMode ? '舊共享準備及原依據' : '摘要閱讀與到診準備'}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/summary/SummaryView.tsx",
+      "line": 101,
+      "component": "AppButton",
+      "label": "{recoveryMode ? \"核對原摘要依據\" : \"返回閱讀摘要\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/tasks/TaskDetail.tsx",
+      "line": 22,
+      "component": "AppButton",
+      "label": "\"關閉詳情\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskDetail.tsx",
+      "line": 28,
+      "component": "AppButton",
+      "label": "\"改期／轉派\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!writable}"
+    },
+    {
+      "file": "src/components/tasks/TaskDetail.tsx",
+      "line": 29,
+      "component": "AppButton",
+      "label": "\"回報已完成\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!writable}"
+    },
+    {
+      "file": "src/components/tasks/TaskDetail.tsx",
+      "line": 30,
+      "component": "AppButton",
+      "label": "\"取消事項\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!writable}"
+    },
+    {
+      "file": "src/components/tasks/TaskDetail.tsx",
+      "line": 32,
+      "component": "AppButton",
+      "label": "\"核對完成或取消\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!writable}"
+    },
+    {
+      "file": "src/components/tasks/TaskDetail.tsx",
+      "line": 36,
+      "component": "AppButton",
+      "label": "{model.historyOpen ? \"收起安排記錄\" : \"查看安排記錄\"}",
+      "style": "{styles.historyButton}",
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskDetail.tsx",
+      "line": 50,
+      "component": "AppButton",
+      "label": "\"模擬載入較早歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 55,
+      "component": "AppButton",
+      "label": "\"放棄草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{busy}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 63,
+      "component": "AppSelect",
+      "label": "\"事項種類\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 70,
+      "component": "AppSelect",
+      "label": "\"負責人\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 77,
+      "component": "AppTimeZoneSelect",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 86,
+      "component": "AppSelect",
+      "label": "\"明確終態\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 92,
+      "component": "AppButton",
+      "label": "\"預覽家庭共享內容\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 99,
+      "component": "AppCheckbox",
+      "label": "{confirmationLabel}",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 100,
+      "component": "AppButton",
+      "label": "{`確認家庭共享並模擬${draft.mode === \"create\" ? \"建立\" : \"保存\"}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{!confirmed || !model.online || locked || model.operation.state !== \"needs_confirmation\"}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 102,
+      "component": "AppButton",
+      "label": "\"繼續修改草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskForm.tsx",
+      "line": 108,
+      "component": "AppButton",
+      "label": "\"保留草稿並使用最新版本\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!model.online || model.reading || !canRebase}"
+    },
+    {
+      "file": "src/components/tasks/TaskHistoryView.tsx",
+      "line": 73,
+      "component": "TaskListRow",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": "{locked}"
+    },
+    {
+      "file": "src/components/tasks/TaskHistoryView.tsx",
+      "line": 76,
+      "component": "AppButton",
+      "label": "{model.loadingMoreTasks ? \"正在載入…\" : \"載入更多事項\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{locked || model.loadingMoreTasks || !model.online}"
+    },
+    {
+      "file": "src/components/tasks/TaskListRow.tsx",
+      "line": 17,
+      "component": "Pressable",
+      "label": "{`${hint}：${task.title}；${time}；${assignee}；${status}${warning ? `；${warning}` : \"\"}`}",
+      "style": "{({ pressed }) => [styles.row, review && styles.review, (selected || hovered || focused) && styles.highlight, focused && styles.focused, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/tasks/TasksCalendar.tsx",
+      "line": 15,
+      "component": "Pressable",
+      "label": "{`${taskCalendarDayLabel(day)}${current ? \"；資料基準日\" : \"\"}${selected ? \"；已選取，再按取消日期篩選\" : \"\"}`}",
+      "style": "{({ pressed }) => [styles.day, selected && styles.selectedDay, focused && styles.focused, disabled && styles.disabled, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/tasks/TasksCalendar.tsx",
+      "line": 42,
+      "component": "Pressable",
+      "label": "\"上一個月\"",
+      "style": "{({ pressed }) => [styles.monthButton, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{disabled || !calendar.month}"
+    },
+    {
+      "file": "src/components/tasks/TasksCalendar.tsx",
+      "line": 44,
+      "component": "Pressable",
+      "label": "\"下一個月\"",
+      "style": "{({ pressed }) => [styles.monthButton, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{disabled || !calendar.month}"
+    },
+    {
+      "file": "src/components/tasks/TasksCalendar.tsx",
+      "line": 51,
+      "component": "CalendarDay",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/tasks/TasksCalendar.tsx",
+      "line": 59,
+      "component": "AppButton",
+      "label": "\"只取消日期篩選，保留搜尋及原有範圍\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/tasks/TasksCalendar.tsx",
+      "line": 60,
+      "component": "AppButton",
+      "label": "{`回到資料基準日所在月份 ${calendar.currentDay}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 123,
+      "component": "AppButton",
+      "label": "\"請助手安排\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 123,
+      "component": "AppButton",
+      "label": "\"手動新增共享事項\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 133,
+      "component": "UnderlineTabs",
+      "label": "\"事項分類\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 133,
+      "component": "AppButton",
+      "label": "\"事項歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 134,
+      "component": "Pressable",
+      "label": "{`查看已載入的 ${reviewCount} 項待覆核安排，已停止催辦`}",
+      "style": "{({ pressed }) => [styles.reviewShortcut, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 138,
+      "component": "TextInput.Icon",
+      "label": "\"清除搜尋\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 139,
+      "component": "AppSelect",
+      "label": "\"範圍\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 143,
+      "component": "AppSelectionTrigger",
+      "label": "{selectedDay ? \"日期 · 已選\" : \"日期\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 149,
+      "component": "Pressable",
+      "label": "{`查看已載入的 ${backlog.counts.earlier} 項較早未處理事項`}",
+      "style": "{({ pressed }) => [styles.contextLink, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 150,
+      "component": "Pressable",
+      "label": "\"只取消日期篩選\"",
+      "style": "{({ pressed }) => [styles.contextLink, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": "{occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 162,
+      "component": "TaskListRow",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied || exiting}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 167,
+      "component": "AppButton",
+      "label": "\"已載入事項上一頁\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied || backlog.page === 0}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 169,
+      "component": "AppButton",
+      "label": "\"已載入事項下一頁\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{occupied || backlog.page >= backlog.pageCount - 1}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 173,
+      "component": "AppButton",
+      "label": "{model.loadingMoreTasks ? \"正在載入更多事項…\" : \"載入更多事項\"}",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.loadingMoreTasks || !model.online || occupied}"
+    },
+    {
+      "file": "src/components/tasks/TasksView.tsx",
+      "line": 184,
+      "component": "AppSelectionTrigger",
+      "label": "\"提醒資料與預覽說明\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 33,
+      "component": "Pressable",
+      "label": "{accessibilityLabel}",
+      "style": "{({ pressed }) => [styles.button, styles.buttonContent, styles.disclosureButton, density === \"compact\" && styles.compactButtonContent,\n      (compact || touch) && styles.mobileTarget, unavailable && styles.disabledOutlineButton, focused && styles.focusedButton, pressed && !unavailable && styles.buttonPressed, style]}",
+      "loading": null,
+      "disabled": "{unavailable}"
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 42,
+      "component": "Button",
+      "label": "{accessibilityLabel}",
+      "style": "{[styles.button, (variant === \"secondary\" || variant === \"quiet\") && styles.outlineButton,\n        variant === \"quiet\" && styles.quietButton, variant === \"danger-secondary\" && styles.secondaryDangerButton,\n        unavailable && (filled ? styles.disabledFilledButton : styles.disabledOutlineButton), style]}",
+      "loading": "{loading}",
+      "disabled": "{unavailable}"
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 82,
+      "component": "Pressable",
+      "label": "{count === undefined ? label : `${label}，${count} 項`}",
+      "style": "{({ pressed }) => [styles.selectionTrigger, (compact || touch) && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && styles.linkPressed]}",
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 114,
+      "component": "AppSelectionTrigger",
+      "label": "{`${label}：${selected?.label ?? value}`}",
+      "style": null,
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 122,
+      "component": "RadioButton.Item",
+      "label": "{`${label}選項：${item.label}`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 124,
+      "component": "Pressable",
+      "label": "{`${label}選項：${item.label}，${item.count} 項`}",
+      "style": "{({ pressed }) => [styles.countedOption, pressed && styles.linkPressed]}",
+      "loading": null,
+      "disabled": "{disabled}"
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 135,
+      "component": "AppButton",
+      "label": "\"取消\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 192,
+      "component": "Pressable",
+      "label": "{label}",
+      "style": "{({ pressed }) => [styles.link, (compact || touch) && styles.mobileTarget, pressed && styles.linkPressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/components/ui.tsx",
+      "line": 232,
+      "component": "Pressable",
+      "label": "{item.label}",
+      "style": "{({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.linkPressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/motion/MotionDrawerRight.tsx",
+      "line": 53,
+      "component": "MotionBackdrop",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/preview/ImportantRecordPreviewTools.tsx",
+      "line": 18,
+      "component": "AppSelect",
+      "label": "\"模擬重要確認結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{busy}"
+    },
+    {
+      "file": "src/preview/ImportantRecordPreviewTools.tsx",
+      "line": 19,
+      "component": "AppSelect",
+      "label": "\"模擬重要確認查核\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/preview/ImportantRecordPreviewTools.tsx",
+      "line": 20,
+      "component": "AppButton",
+      "label": "\"開啟重要記錄確認（合成示例）\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!item}"
+    },
+    {
+      "file": "src/preview/PreparationPreviewTools.tsx",
+      "line": 24,
+      "component": "AppButton",
+      "label": "\"預覽來源與限制\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/preview/PreparationPreviewTools.tsx",
+      "line": 28,
+      "component": "AppSelect",
+      "label": "\"準備單預覽狀態\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/preview/PreviewNavigationGuard.tsx",
+      "line": 50,
+      "component": "AppButton",
+      "label": "{request?.blocked ? \"留在此頁查核\" : \"繼續編輯\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/preview/PreviewNavigationGuard.tsx",
+      "line": 51,
+      "component": "AppButton",
+      "label": "{request.copy?.actionLabel ?? \"捨棄草稿並離開\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/preview/PreviewNavigationGuard.tsx",
+      "line": 70,
+      "component": "Link",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/ContactScreen.tsx",
+      "line": 14,
+      "component": "AppButton",
+      "label": "{tools ? '收起聯絡情境' : '顯示聯絡情境'}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/ContactScreen.tsx",
+      "line": 16,
+      "component": "AppSelect",
+      "label": "\"聯絡資料情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/ContactScreen.tsx",
+      "line": 17,
+      "component": "AppSelect",
+      "label": "\"聯絡決定保存結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/ContactScreen.tsx",
+      "line": 18,
+      "component": "AppSelect",
+      "label": "\"聯絡原收據查核結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/ContactScreen.tsx",
+      "line": 19,
+      "component": "AppSelect",
+      "label": "\"聯絡重讀資料\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/ContactScreen.tsx",
+      "line": 20,
+      "component": "AppButton",
+      "label": "\"切換聯絡預覽帳戶\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/ContactScreen.tsx",
+      "line": 20,
+      "component": "AppButton",
+      "label": "\"切換聯絡預覽 Server\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/ContactScreen.tsx",
+      "line": 26,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/GrowthScreen.tsx",
+      "line": 19,
+      "component": "AppButton",
+      "label": "{tools ? \"收起關注情境\" : \"顯示關注情境\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/GrowthScreen.tsx",
+      "line": 22,
+      "component": "AppSelect",
+      "label": "\"關注資料情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/GrowthScreen.tsx",
+      "line": 23,
+      "component": "AppSelect",
+      "label": "\"關注提交結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/GrowthScreen.tsx",
+      "line": 24,
+      "component": "AppSelect",
+      "label": "\"關注重讀結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/GrowthScreen.tsx",
+      "line": 26,
+      "component": "AppButton",
+      "label": "\"切換關注預覽帳戶\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/GrowthScreen.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"切換關注預覽 Server\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/GrowthScreen.tsx",
+      "line": 39,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/LegacySummaryRecovery.tsx",
+      "line": 20,
+      "component": "AppButton",
+      "label": "{tools ? \"收起原操作情境\" : \"顯示原操作情境\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/LegacySummaryRecovery.tsx",
+      "line": 22,
+      "component": "AppSelect",
+      "label": "\"摘要資料情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/LegacySummaryRecovery.tsx",
+      "line": 23,
+      "component": "AppSelect",
+      "label": "\"摘要保存結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/LegacySummaryRecovery.tsx",
+      "line": 24,
+      "component": "AppSelect",
+      "label": "\"摘要原收據查核結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/LegacySummaryRecovery.tsx",
+      "line": 25,
+      "component": "AppSelect",
+      "label": "\"摘要重讀資料\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/LegacySummaryRecovery.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"切換摘要預覽帳戶\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/LegacySummaryRecovery.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"切換摘要預覽 Server\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 31,
+      "component": "AppButton",
+      "label": "{controlsOpen ? \"收起來源情境\" : \"顯示來源情境\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 32,
+      "component": "AppSelect",
+      "label": "\"來源情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 33,
+      "component": "AppSelect",
+      "label": "\"來源問題階段\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 34,
+      "component": "AppSelect",
+      "label": "\"模擬來源結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 35,
+      "component": "AppSelect",
+      "label": "\"模擬來源查核\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 36,
+      "component": "AppSelect",
+      "label": "\"助手查看來源結果（合成）\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 37,
+      "component": "AppSelect",
+      "label": "\"用途確認後狀態（合成）\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 38,
+      "component": "AppButton",
+      "label": "{`切換來源帳戶，目前${identity.name}`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 39,
+      "component": "AppButton",
+      "label": "{`切換來源 Server，目前${server}`}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SourcesScreen.tsx",
+      "line": 52,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SummaryScreen.tsx",
+      "line": 66,
+      "component": "UnderlineTabs",
+      "label": "\"孩子概況與準備\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SummaryScreen.tsx",
+      "line": 67,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/SummaryScreen.tsx",
+      "line": 76,
+      "component": "AppButton",
+      "label": "\"舊共享準備／原操作查核\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/careScreen.tsx",
+      "line": 41,
+      "component": "AppButton",
+      "label": "{controlsOpen ? \"收起情境工具\" : \"顯示情境工具\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/careScreen.tsx",
+      "line": 43,
+      "component": "AppSelect",
+      "label": "\"記錄情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/careScreen.tsx",
+      "line": 44,
+      "component": "AppSelect",
+      "label": "\"模擬提交結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/careScreen.tsx",
+      "line": 45,
+      "component": "AppSelect",
+      "label": "\"模擬查核結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/careScreen.tsx",
+      "line": 46,
+      "component": "AppButton",
+      "label": "\"模擬提案來源變更\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{[\"saving\", \"unknown\"].includes(preview.model.operation.state)}"
+    },
+    {
+      "file": "src/screens/careScreen.tsx",
+      "line": 62,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/chatScreen.tsx",
+      "line": 53,
+      "component": "TextLink",
+      "label": "\"對話歷史\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/chatScreen.tsx",
+      "line": 53,
+      "component": "TextLink",
+      "label": "\"記憶與參考\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/chatScreen.tsx",
+      "line": 57,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/familyScreen.tsx",
+      "line": 34,
+      "component": "AppButton",
+      "label": "{controlsOpen ? \"收起家庭情境工具\" : \"顯示家庭情境工具\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/familyScreen.tsx",
+      "line": 36,
+      "component": "AppSelect",
+      "label": "\"本人視角\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/familyScreen.tsx",
+      "line": 37,
+      "component": "AppSelect",
+      "label": "\"收到邀請情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/guideScreen.tsx",
+      "line": 47,
+      "component": "Pressable",
+      "label": "{`第 ${index + 1} 步：${item.title}${index === currentStep ? \"，目前閱讀\" : \"\"}`}",
+      "style": "{({ pressed }) => [styles.step, index === currentStep && styles.stepActive, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/guideScreen.tsx",
+      "line": 63,
+      "component": "AppButton",
+      "label": "{step.action}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/guideScreen.tsx",
+      "line": 65,
+      "component": "AppButton",
+      "label": "\"上一步\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{currentStep === 0}"
+    },
+    {
+      "file": "src/screens/guideScreen.tsx",
+      "line": 66,
+      "component": "AppButton",
+      "label": "\"下一步\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{currentStep === steps.length - 1}"
+    },
+    {
+      "file": "src/screens/guideScreen.tsx",
+      "line": 72,
+      "component": "AppButton",
+      "label": "\"與 Agent 對話\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/guideScreen.tsx",
+      "line": 74,
+      "component": "AppButton",
+      "label": "{toolsOpen ? \"收起預覽工具\" : \"預覽工具\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/guideScreen.tsx",
+      "line": 74,
+      "component": "AppButton",
+      "label": "\"模擬設定已完成\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{model.children.length === 0}"
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 90,
+      "component": "AppButton",
+      "label": "{current.sourceAction}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 96,
+      "component": "AppSelect",
+      "label": "\"歷史分類\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 97,
+      "component": "UnderlineTabs",
+      "label": "\"歷史分類\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 100,
+      "component": "AppButton",
+      "label": "\"開啟記錄與核對\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 101,
+      "component": "AppButton",
+      "label": "\"開啟待辦\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 102,
+      "component": "AppButton",
+      "label": "\"開啟準備單\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 104,
+      "component": "AppButton",
+      "label": "\"查看持續關注\"",
+      "style": "{styles.sourceAction}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 105,
+      "component": "AppButton",
+      "label": "\"查看年度與季度檔案\"",
+      "style": "{styles.sourceAction}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 113,
+      "component": "AppButton",
+      "label": "\"清除篩選\"",
+      "style": "{[styles.clearFilter, compact && styles.clearFilterStack]}",
+      "loading": null,
+      "disabled": "{!hasFilters || currentLocked}"
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 114,
+      "component": "AppButton",
+      "label": "\"清除搜尋\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!filters.searchText || currentLocked}"
+    },
+    {
+      "file": "src/screens/historyScreen.tsx",
+      "line": 130,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/loginScreen.tsx",
+      "line": 87,
+      "component": "Pressable",
+      "label": "{item.label}",
+      "style": "{({ pressed }) => [styles.modeTab, mode === item.key && styles.modeActive, mode === item.key && !modeSelection && styles.modeInitialMarker, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/loginScreen.tsx",
+      "line": 98,
+      "component": "Pressable",
+      "label": "{passwordVisible ? \"隱藏密碼\" : \"顯示密碼\"}",
+      "style": "{({ pressed }) => [styles.passwordToggle, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/loginScreen.tsx",
+      "line": 99,
+      "component": "AppButton",
+      "label": "{mode === \"signIn\" ? \"登入（預覽）\" : \"建立帳戶（預覽）\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/loginScreen.tsx",
+      "line": 102,
+      "component": "AppButton",
+      "label": "{previewDetailsOpen ? \"收起預覽說明\" : \"關於預覽\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/loginScreen.tsx",
+      "line": 106,
+      "component": "Pressable",
+      "label": "\"返回主頁\"",
+      "style": "{({ pressed }) => [styles.backLink, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/memoryScreen.tsx",
+      "line": 18,
+      "component": "AppButton",
+      "label": "{open ? \"收起預覽工具\" : \"預覽工具\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/memoryScreen.tsx",
+      "line": 20,
+      "component": "AppSelect",
+      "label": "\"記錄來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/memoryScreen.tsx",
+      "line": 21,
+      "component": "AppSelect",
+      "label": "\"私人記憶適用性\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/memoryScreen.tsx",
+      "line": 22,
+      "component": "AppSelect",
+      "label": "\"孩子存取權\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/memoryScreen.tsx",
+      "line": 32,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/moreScreen.tsx",
+      "line": 28,
+      "component": "Pressable",
+      "label": "{item.label}",
+      "style": "{StyleSheet.flatten([styles.catalogueLink, pressedDestination === item.key && styles.pressed])}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/moreScreen.tsx",
+      "line": 35,
+      "component": "AppMenuList",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/motionPreviewScreen.tsx",
+      "line": 132,
+      "component": "UnderlineTabs",
+      "label": "\"動態節奏\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/motionPreviewScreen.tsx",
+      "line": 134,
+      "component": "AppButton",
+      "label": "\"重播進場\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/motionPreviewScreen.tsx",
+      "line": 135,
+      "component": "AppButton",
+      "label": "\"切換孩子\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/motionPreviewScreen.tsx",
+      "line": 136,
+      "component": "AppButton",
+      "label": "{detailsOpen ? \"收起詳情\" : \"展開詳情\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/motionPreviewScreen.tsx",
+      "line": 140,
+      "component": "Switch",
+      "label": "\"減少動態示例\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{sharedReduced}"
+    },
+    {
+      "file": "src/screens/photosScreen.tsx",
+      "line": 26,
+      "component": "AppButton",
+      "label": "{controlsOpen ? \"收起照片情境\" : \"顯示照片情境\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/photosScreen.tsx",
+      "line": 27,
+      "component": "AppButton",
+      "label": "\"使用品牌示例原圖\"",
+      "style": null,
+      "loading": null,
+      "disabled": "{!preview.model.canPick}"
+    },
+    {
+      "file": "src/screens/photosScreen.tsx",
+      "line": 28,
+      "component": "AppSelect",
+      "label": "\"照片情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/photosScreen.tsx",
+      "line": 29,
+      "component": "AppSelect",
+      "label": "\"模擬問題階段\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/photosScreen.tsx",
+      "line": 30,
+      "component": "AppSelect",
+      "label": "\"模擬照片結果\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/photosScreen.tsx",
+      "line": 31,
+      "component": "AppSelect",
+      "label": "\"模擬照片查核\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/photosScreen.tsx",
+      "line": 42,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/profileScreen.tsx",
+      "line": 38,
+      "component": "Pressable",
+      "label": "{`切換至${item.displayName}`}",
+      "style": "{({ pressed }) => [styles.childOption, item.id === child?.id && styles.childOptionActive, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/profileScreen.tsx",
+      "line": 46,
+      "component": "AppButton",
+      "label": "{managementOpen ? \"收起孩子管理\" : \"新增或管理孩子\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/profileScreen.tsx",
+      "line": 53,
+      "component": "AppButton",
+      "label": "{controlsOpen ? \"收起情境工具\" : \"顯示情境工具\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/profileScreen.tsx",
+      "line": 55,
+      "component": "AppSelect",
+      "label": "\"檔案情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 59,
+      "component": "AppButton",
+      "label": "\"還原顯示名稱草稿\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 70,
+      "component": "AppButton",
+      "label": "\"查看登入畫面\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 72,
+      "component": "AppButton",
+      "label": "\"管理模型設定\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 76,
+      "component": "TextLink",
+      "label": "\"查看資料與私隱\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 80,
+      "component": "TextLink",
+      "label": "\"開啟使用引導\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 87,
+      "component": "Pressable",
+      "label": "{`查看${child.displayName}的檔案`}",
+      "style": "{({ pressed }) => [styles.listRow, pressed && styles.pressed]}",
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 91,
+      "component": "AppButton",
+      "label": "\"查看家庭協調\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 91,
+      "component": "AppButton",
+      "label": "\"聯絡與授權\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 102,
+      "component": "TextLink",
+      "label": "\"查看本人通知渠道\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 115,
+      "component": "AppButton",
+      "label": "\"管理資料來源\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/settingsScreen.tsx",
+      "line": 121,
+      "component": "TextLink",
+      "label": "\"查看接線說明\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/tasksScreen.tsx",
+      "line": 28,
+      "component": "AppButton",
+      "label": "{controlsOpen ? \"收起情境工具\" : \"顯示情境工具\"}",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/tasksScreen.tsx",
+      "line": 30,
+      "component": "AppSelect",
+      "label": "\"任務情境\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "src/screens/tasksScreen.tsx",
+      "line": 44,
+      "component": "AppButton",
+      "label": "\"查看子女檔案\"",
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "app/(dashboard)/_layout.tsx",
+      "line": 24,
+      "component": "NativeDashboardTabs",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "app/(dashboard)/_layout.tsx",
+      "line": 59,
+      "component": "Tabs",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    },
+    {
+      "file": "app/(dashboard)/_layout.tsx",
+      "line": 66,
+      "component": "RecordsNavButton",
+      "label": null,
+      "style": null,
+      "loading": null,
+      "disabled": null
+    }
+  ]
+}

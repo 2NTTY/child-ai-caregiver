@@ -316,10 +316,6 @@ const styles = StyleSheet.create({
   noteCopy: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool, flex: 1, minWidth: 0 },
   warningNote: { borderLeftWidth: 2, borderLeftColor: colors.warningInk, paddingLeft: spacing.md },
   errorNote: { borderLeftWidth: 2, borderLeftColor: colors.errorInk, paddingLeft: spacing.md },
-  badge: { fontFamily: chineseFont, color: colors.muted, backgroundColor: colors.white, ...readingType.meta, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.pill, flexShrink: 1 },
-  currentBadge: { backgroundColor: colors.paleTeal, color: colors.deepTeal },
-  warningBadge: { backgroundColor: colors.paleAmber, color: colors.warningInk },
-  errorBadge: { backgroundColor: colors.paleCoral, color: colors.errorInk },
   review: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.md, minWidth: 0 },
   candidate: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.md, gap: spacing.sm, minWidth: 0 },
 });

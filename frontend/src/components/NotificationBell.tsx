@@ -51,7 +51,6 @@ const styles = StyleSheet.create({
   badge: { position: "absolute", top: 1, right: 1, backgroundColor: colors.coral, color: colors.white },
   dialog: { width: "92%", maxWidth: 440, alignSelf: "center", borderRadius: radius.large },
   content: { gap: spacing.sm },
-  previewLabel: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "700" },
   title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 21 },
   caution: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, lineHeight: 21 },

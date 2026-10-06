@@ -70,10 +70,9 @@ export function SummaryScreen() {
             measurements={profile?.measurements} profileSource={profile?.profileSource}
             onOpenMeasurement={recordId => guarded(() => router.push({ pathname: "/care", params: { record: recordId } }))} /> : null}
         </AppTabPanel>
-        <AppTabPanel tabsId="child-preparation-tabs" tabKey="preparation" active={tab === "preparation"} style={styles.workspace}>
+        <AppTabPanel tabsId="child-preparation-tabs" tabKey="preparation" active={tab === "preparation"}>
           {tab === "preparation" ? <PreparationWorkspace onPrepareQuestion={actions.prepareQuestion} previewControls={<PreparationPreviewTools key={scopeKey} />} onHistory={() => guarded(() => router.push({ pathname: "/history", params: { category: "preparations" } }))}
             scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} /> : null}
-          {tab === "preparation" ? <AppButton label="舊共享準備／原操作查核" variant="quiet" density="compact" onPress={() => changeTab("legacy-preparation")} /> : null}
         </AppTabPanel>
       </>}
     </View>

@@ -1,0 +1,150 @@
+{
+  "observedAt": "2026-10-06T07:16:56.869098+00:00",
+  "baselineRevision": "Frozen v47",
+  "baselineBuildInputFingerprintSha256": "459128602754492d317b4b801e0ddba790b829788ce225786236873f78217d34",
+  "patches": [
+    {
+      "name": "mobile-corner-navigation",
+      "path": "/workspace/shared/mobile_corner_navigation_20261006/mobile-corner-navigation.patch",
+      "sha256": "5975b3caa38fa9aca9984bf7229fa2632acacae73d87ccc117c086f848a5eed3",
+      "staging": "/workspace/shared/mobile_corner_navigation_20261006",
+      "evidence": "/workspace/shared/mobile_corner_navigation_20261006",
+      "paths": [
+        "frontend/app/(dashboard)/_layout.tsx",
+        "frontend/src/components/AppShell.tsx",
+        "frontend/src/components/navigation/RecordsNavButton.tsx",
+        "frontend/src/components/navigation/DirectionalPressable.tsx",
+        "frontend/src/components/navigation/DirectionalPressable.web.tsx",
+        "frontend/src/components/navigation/MobileNavSelection.tsx",
+        "frontend/src/components/agent/MobileQuickInputDock.tsx",
+        "frontend/src/components/agent/CornerCaptureSurface.tsx",
+        "frontend/scripts/mobile-navigation-corner.test.mjs"
+      ]
+    },
+    {
+      "name": "app-button-dark-ripple",
+      "path": "/workspace/shared/button_dark_ripple_20261006/app-button-dark-ripple.patch",
+      "sha256": "94b01449f44fba121373f44b37e5f5c265bebff6325f14071e55bfcdea15b219",
+      "staging": "/workspace/shared/frontend_dark_ripple_staging_20261006",
+      "evidence": "/workspace/shared/button_dark_ripple_20261006",
+      "paths": [
+        "frontend/src/components/ui.tsx",
+        "frontend/src/theme.ts",
+        "frontend/scripts/app-button-ripple.test.mjs"
+      ]
+    }
+  ],
+  "zeroFuzzAllPatches": true,
+  "overlaps": {},
+  "overlapResolution": "The two approved patches modify disjoint files. Mobile AppShell edits preserve first-batch scenario press feedback. No manual conflict edits.",
+  "changes": [
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "owners": [
+        "mobile-corner-navigation"
+      ],
+      "beforeSha256": "c2a9e9ac78c693afd9c2baf42f9edacc45fbc22287b512ea304b0246779c08a6",
+      "afterSha256": "b1f11e0517093f0fcf108de39753875c0d745b37f86ea09889b3707a3e7b49c7",
+      "bytes": 5130
+    },
+    {
+      "path": "frontend/scripts/app-button-ripple.test.mjs",
+      "owners": [
+        "app-button-dark-ripple"
+      ],
+      "beforeSha256": null,
+      "afterSha256": "0c5752aa7a69e603b48835c2461dd4937a41fd3d2dd3575fd486148e465c989c",
+      "bytes": 5799
+    },
+    {
+      "path": "frontend/scripts/mobile-navigation-corner.test.mjs",
+      "owners": [
+        "mobile-corner-navigation"
+      ],
+      "beforeSha256": null,
+      "afterSha256": "4b8702bf302ee6ad156374edb7ee6255187fed7137f21711e88ab0c06857d943",
+      "bytes": 11175
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "owners": [
+        "mobile-corner-navigation"
+      ],
+      "beforeSha256": "718c227194759d468c800bbd8e90a4f5aa3a6f93d1107e05675329cdbff4cae1",
+      "afterSha256": "72399711633f1ba3ada14695423a644e1ae7c6fd0758888b244a37c9d02dd88b",
+      "bytes": 16765
+    },
+    {
+      "path": "frontend/src/components/agent/CornerCaptureSurface.tsx",
+      "owners": [
+        "mobile-corner-navigation"
+      ],
+      "beforeSha256": null,
+      "afterSha256": "aff7c11df6aff089bbdc09e35d35a5046c4e48c633b6a2810f94626bec1ec689",
+      "bytes": 847
+    },
+    {
+      "path": "frontend/src/components/agent/MobileQuickInputDock.tsx",
+      "owners": [
+        "mobile-corner-navigation"
+      ],
+      "beforeSha256": "25a7ac350f058685de851e4952e5406a99728cf972061b552d1089e54e9b2888",
+      "afterSha256": "0e6c2ce1fb8750dd2261b7ba52e2b1cf76111b2d63f87b7be6ce745a34b166be",
+      "bytes": 8079
+    },
+    {
+      "path": "frontend/src/components/navigation/DirectionalPressable.tsx",
+      "owners": [
+        "mobile-corner-navigation"
+      ],
+      "beforeSha256": "67b1083cab2fbbc83ac861746dfade44bd9431bdacada90cfa83ef308faef34d",
+      "afterSha256": "bfe8d130ef9b1f240758a12f675acb33251ad623b83098c28d9e2a2d50e9ea23",
+      "bytes": 3733
+    },
+    {
+      "path": "frontend/src/components/navigation/DirectionalPressable.web.tsx",
+      "owners": [
+        "mobile-corner-navigation"
+      ],
+      "beforeSha256": "67e811bb48888ace603440bbb063b63e389eb9a808c7080dd9e82664cb99b7fc",
+      "afterSha256": "cb8f42db379c986e6e84df0dd1039b2c6ab51b2224703a394ac453260f16bdb4",
+      "bytes": 5445
+    },
+    {
+      "path": "frontend/src/components/navigation/MobileNavSelection.tsx",
+      "owners": [
+        "mobile-corner-navigation"
+      ],
+      "beforeSha256": null,
+      "afterSha256": "083d317b9f294697565339fb60fac0513d9db2cef8922f11fc6ba283d09ac1e7",
+      "bytes": 721
+    },
+    {
+      "path": "frontend/src/components/navigation/RecordsNavButton.tsx",
+      "owners": [
+        "mobile-corner-navigation"
+      ],
+      "beforeSha256": "d061c50f00ef82086bda74c4993b0a9483e5c8b830ebd94295995590baa4febf",
+      "afterSha256": "0b91ec31c4d3f00224c260999d8f5a5f0e5f2575964b612e19497ae0298e34de",
+      "bytes": 2659
+    },
+    {
+      "path": "frontend/src/components/ui.tsx",
+      "owners": [
+        "app-button-dark-ripple"
+      ],
+      "beforeSha256": "479d6ca3b3cd02e9dbd7ec3e1390ef00dad4895d42e51037503c6b3e9b4ca568",
+      "afterSha256": "2b8298de2fbc1421a996a92ae52b27429c55ccfbb51ccf453120571d78560ce2",
+      "bytes": 24801
+    },
+    {
+      "path": "frontend/src/theme.ts",
+      "owners": [
+        "app-button-dark-ripple"
+      ],
+      "beforeSha256": "bf500dd1458ada7113e1d3b8c0338d7d15a6d5b99c5958bcdd81294e241150b5",
+      "afterSha256": "4b37c33ada6e93c5b46e9aa223a805fbea45329791859cc5c0f8f2dc5c235689",
+      "bytes": 4894
+    }
+  ]
+}

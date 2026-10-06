@@ -1,0 +1,30 @@
+{
+  "observedAt": "2026-10-06T08:09:51Z",
+  "type": "measurement-helper",
+  "result": "Invalid frame metrics. iframe contentDocument returned null in read-only top-level evaluation, helper fell back to outer document. panel/textarea null and 1180x757 are not mobile app results.",
+  "response": "Stopped and reported parent. Requested bounded correction using documented frame-scoped locator evaluate with element.ownerDocument.",
+  "artifact": "v49-mobile-390-empty.json",
+  "uiScreenshot": "v49-mobile-390-empty.jpg",
+  "correctionAttempt": {
+    "observedAt": "2026-10-06T08:10:39Z",
+    "authorization": "Parent approved one bounded frame locator/ownerDocument correction",
+    "method": "Frame-scoped textbox locator evaluate with string function adapted from desktop helper",
+    "result": "evaluate returned undefined; serializing result for evidence failed before a corrected JSON was written",
+    "error": "The data argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined",
+    "response": "Stopped; requested explicit direct-function minimal locator evaluate as next instrumentation correction"
+  },
+  "finalRecovery": {
+    "observedAt": "2026-10-06T08:11:30Z",
+    "authorization": "Parent approved minimal direct-function read-only frame probe and stopping if unsupported",
+    "method": "Frame-scoped textbox locator evaluate with a direct JavaScript function and element.ownerDocument",
+    "probeResult": {
+      "documentWidth": 390,
+      "documentScrollWidth": 390,
+      "textareaWidth": 340,
+      "textareaHeight": 48
+    },
+    "fullMeasurementResult": "Succeeded with actual 390x600 content viewport; same direct-function method subsequently verified 320x600",
+    "correctedArtifact": "v49-mobile-390-empty-corrected.json",
+    "invalidArtifactPreserved": "v49-mobile-390-empty.json"
+  }
+}

@@ -1,0 +1,6 @@
+checking file frontend/src/components/agent/AgentComposer.tsx
+checking file frontend/src/components/agent/AgentInputToolbar.tsx
+checking file frontend/src/components/agent/ChatComposerInput.web.tsx
+checking file frontend/src/components/agent/ChatComposerInput.tsx
+checking file frontend/src/components/chat/chat-presentation.ts
+checking file frontend/scripts/composer-presentation.test.mjs

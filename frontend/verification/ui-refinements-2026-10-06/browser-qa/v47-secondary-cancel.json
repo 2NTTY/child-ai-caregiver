@@ -1,0 +1,627 @@
+{
+  "name": "v47-secondary-cancel",
+  "before": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "button-container"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(255, 255, 254)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "growth-archive-confirmation-surface"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "growth-archive-confirmation-wrapper"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "growth-archive-confirmation"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "BODY",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "HTML",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "border": "rgb(0, 0, 0)",
+    "color": "rgb(0, 0, 0)",
+    "label": "取消",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 486,
+      "height": 44,
+      "left": 563.1875,
+      "right": 647.390625,
+      "top": 442,
+      "width": 84.203125,
+      "x": 563.1875,
+      "y": 442
+    },
+    "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+    "spans": [],
+    "tag": "BUTTON",
+    "testid": "button"
+  },
+  "samples": [
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation-surface"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation-wrapper"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(39, 35, 67, 0.02)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "取消",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 486,
+        "height": 44,
+        "left": 563.1875,
+        "right": 647.390625,
+        "top": 442,
+        "width": 84.203125,
+        "x": 563.1875,
+        "y": 442
+      },
+      "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+      "spans": [],
+      "tag": "BUTTON",
+      "testid": "button"
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation-surface"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation-wrapper"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(39, 35, 67, 0.06)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "取消",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 486,
+        "height": 44,
+        "left": 563.1875,
+        "right": 647.390625,
+        "top": 442,
+        "width": 84.203125,
+        "x": 563.1875,
+        "y": 442
+      },
+      "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 9px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(39, 35, 67, 0.12); border-radius: 50%; transition-duration: 252.609ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 41.8125px; top: 22px; width: 168.406px; height: 168.406px;"
+            ]
+          ],
+          "background": "rgba(39, 35, 67, 0.12)",
+          "opacity": "0.665031"
+        }
+      ],
+      "tag": "BUTTON",
+      "testid": "button"
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation-surface"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation-wrapper"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(39, 35, 67, 0.06)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "取消",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 486,
+        "height": 44,
+        "left": 563.1875,
+        "right": 647.390625,
+        "top": 442,
+        "width": 84.203125,
+        "x": 563.1875,
+        "y": 442
+      },
+      "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 9px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(39, 35, 67, 0.12); border-radius: 50%; transition-duration: 252.609ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 41.8125px; top: 22px; width: 168.406px; height: 168.406px;"
+            ]
+          ],
+          "background": "rgba(39, 35, 67, 0.12)",
+          "opacity": "0.928933"
+        }
+      ],
+      "tag": "BUTTON",
+      "testid": "button"
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation-surface"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation-wrapper"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-archive-confirmation"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(39, 35, 67, 0.06)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "取消",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 486,
+        "height": 44,
+        "left": 563.1875,
+        "right": 647.390625,
+        "top": 442,
+        "width": 84.203125,
+        "x": 563.1875,
+        "y": 442
+      },
+      "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 9px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(39, 35, 67, 0.12); border-radius: 50%; transition-duration: 252.609ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 41.8125px; top: 22px; width: 168.406px; height: 168.406px;"
+            ]
+          ],
+          "background": "rgba(39, 35, 67, 0.12)",
+          "opacity": "1"
+        }
+      ],
+      "tag": "BUTTON",
+      "testid": "button"
+    }
+  ],
+  "after": null,
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/growth"
+}

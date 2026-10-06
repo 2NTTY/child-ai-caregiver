@@ -17,7 +17,6 @@ export const summaryStyles = StyleSheet.create({
   chapterSection: {borderTopWidth: 3, borderTopColor: colors.ink, paddingTop: spacing.lg},
   reportSection: {gap: spacing.md}, reportFooter: {gap: spacing.xs, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.lg},
   stack: {gap: spacing.md}, smallStack: {gap: spacing.sm}, row: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm},
-  columns: {flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg}, column: {flex: 1, minWidth: 0, gap: spacing.lg}, full: {width: '100%', gap: spacing.lg},
   queryRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.md}, queryField: {flex: 1, minWidth: 0},
   title: {fontFamily: chineseFont, fontSize: typeScale.body, lineHeight: 25, fontWeight: '700', color: colors.ink},
   body: {fontFamily: chineseFont, ...readingType.tool, color: colors.ink, flexShrink: 1},
@@ -37,5 +36,5 @@ export const summaryStyles = StyleSheet.create({
   disclosureLabel: {fontFamily: chineseFont, ...readingType.tool, color: colors.ink, fontWeight: '600', flexShrink: 1, minWidth: 0},
   disclosureContent: {paddingTop: spacing.sm, gap: spacing.sm, paddingBottom: spacing.sm},
   sourceRow: {gap: spacing.xs, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm},
-  pressed: {opacity: 0.65},
+  pressed: {backgroundColor: colors.pressedOverlay},
 });

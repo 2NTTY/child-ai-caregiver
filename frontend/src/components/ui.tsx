@@ -44,6 +44,7 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
       mode={filled ? "contained" : "outlined"}
       buttonColor={variant === "danger" ? colors.errorInk : variant === "accent" ? colors.accent : filled ? undefined : "transparent"}
       textColor={variant === "danger" ? colors.white : variant === "danger-secondary" ? colors.errorInk : variant === "accent" ? colors.onAccent : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
+      rippleColor={variant === "primary" || variant === "danger" ? colors.darkActionRipple : undefined}
       theme={{ colors: { surfaceDisabled: colors.softLine, onSurfaceDisabled: colors.muted } }}
       onPress={onPress}
       disabled={unavailable}
@@ -80,7 +81,7 @@ export function AppSelectionTrigger({ label, count, onPress, onBlur, disabled = 
   const touch = useInteractionDensity();
   // Paper 5.15 Button replaces expanded state on its inner control; expose it on the selection trigger itself.
   return <Pressable ref={ref} nativeID={id} accessibilityRole="button" accessibilityLabel={count === undefined ? label : `${label}，${count} 項`} accessibilityState={{ expanded, disabled }} aria-expanded={expanded} aria-disabled={disabled} aria-invalid={invalid} aria-describedby={describedBy} disabled={disabled}
-    onPress={onPress} onBlur={onBlur} style={({ pressed }) => [styles.selectionTrigger, (compact || touch) && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && styles.linkPressed]}>
+    onPress={onPress} onBlur={onBlur} style={({ pressed }) => [styles.selectionTrigger, (compact || touch) && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && !disabled && styles.selectionPressed]}>
     <Text style={styles.selectionLabel}>{label}</Text>{count !== undefined ? <SelectionCount count={count} /> : null}<AppIcon name={calendar ? "calendar-clock-outline" : "chevron-down"} size={20} color={colors.deepTeal} />
   </Pressable>;
 }
@@ -127,7 +128,7 @@ export function AppSelect<T extends string>({ label, value, options, onChange, o
                 if (event.key !== " " && event.key !== "Spacebar") return;
                 event.preventDefault(); if (!disabled && !event.repeat) select();
               } } : {})}
-              style={({ pressed }) => [styles.countedOption, pressed && styles.linkPressed]}>
+              style={({ pressed }) => [styles.countedOption, pressed && !disabled && styles.optionPressed]}>
               <View style={styles.countedOptionCopy}><Text style={styles.countedOptionLabel}>{item.label}</Text><SelectionCount count={item.count} /></View>
               <AppIcon name={checked ? "radiobox-marked" : "radiobox-blank"} size={20} color={colors.ink} />
             </Pressable>;
@@ -234,7 +235,7 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
       accessibilityRole="tab" accessibilityLabel={item.label} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
       accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => select(item.key)}
       {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
-      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.linkPressed]}
+      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.tabPressed]}
     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
     <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} />
     </View>
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
   disclosureButton: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.controlOutline, backgroundColor: "transparent" },
   disclosureLabel: { color: colors.ink, lineHeight: 22, flexShrink: 1 },
   focusedButton: { borderColor: colors.ink },
-  buttonPressed: { opacity: 0.65 },
+  buttonPressed: { backgroundColor: colors.pressedOverlay },
   card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
   mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
   insetCard: { borderWidth: 0, borderRadius: radius.small, backgroundColor: colors.quietSurface, padding: spacing.md },
@@ -290,15 +291,16 @@ const styles = StyleSheet.create({
   onlineConnection: { backgroundColor: colors.controlSurface },
   pillText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },
   neutralPill: { backgroundColor: colors.neutralSurface },
-  tealPill: { backgroundColor: colors.paleTeal },
   amberPill: { backgroundColor: colors.paleAmber },
-  coralPill: { backgroundColor: colors.paleCoral },
   dot: { width: 7, height: 7, borderRadius: 4 },
   tealDot: { backgroundColor: colors.teal },
   amberDot: { backgroundColor: colors.amber },
   neutralDot: { backgroundColor: colors.muted },
   link: { minHeight: 44, flexDirection: "row", gap: spacing.sm, alignItems: "center", justifyContent: "center" },
-  linkPressed: { opacity: 0.6 },
+  linkPressed: { backgroundColor: colors.pressedOverlay },
+  selectionPressed: { backgroundColor: colors.paleTeal },
+  optionPressed: { backgroundColor: colors.paleTeal },
+  tabPressed: { backgroundColor: colors.paleTeal },
   linkText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 21, fontWeight: "700", textDecorationLine: "underline" },
   tabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.line },
   tabs: { flexDirection: "row", alignItems: "center", gap: spacing.md },

@@ -1,0 +1,11 @@
+{
+  "scope": "Final metadata preparation; no product test or runtime operation",
+  "initialAction": "Read final v49 browser report and summary with exec_command",
+  "initialFailure": "exec_command failed: CreateProcess { message: \"Rejected(\\\"Failed to create unified exec process: exec-server transport disconnected\\\")\" }",
+  "failureObservedAtUTC": "2026-10-06T08:17:20Z",
+  "parentNotified": true,
+  "retry": "Same read-only command retried once and succeeded",
+  "retrySucceededAtUTC": "2026-10-06T08:17:57Z",
+  "runtimeChanges": false,
+  "evidenceNote": "This is a record of the exact tool error seen during final metadata preparation, not a reconstructed product failure log."
+}

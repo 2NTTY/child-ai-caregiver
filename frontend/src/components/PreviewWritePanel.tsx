@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import type { PreviewOperationController, PreviewWriteOperation, PreviewWriteOutcome } from "../preview/usePreviewOperation";
-import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
+import { chineseFont, colors, spacing, typeScale } from "../theme";
 import { AppButton, AppSelect } from "./ui";
 import { OperationNotice } from "./OperationNotice";
 
@@ -29,4 +29,4 @@ export function PreviewWriteControls({ controller, conflict = true }: { controll
     {controller.operation.recovery === "reload" ? <AppSelect label="模擬重讀結果" value={controller.readOutcome} options={[{ value: "success", label: "讀回目前資料" }, { value: "failed", label: "讀取失敗" }, { value: "unavailable", label: "已刪除或不可讀" }]} onChange={controller.setReadOutcome} /> : null}
   </View>;
 }
-const styles = StyleSheet.create({ notice: { backgroundColor: colors.quietSurface, padding: spacing.md, gap: spacing.sm, borderRadius: radius.small }, saved: { backgroundColor: colors.paleTeal }, failed: { backgroundColor: colors.paleCoral }, attention: { backgroundColor: colors.paleAmber }, title: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, fontWeight: "700" }, body: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23 }, meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 }, controls: { gap: spacing.sm } });
+const styles = StyleSheet.create({ meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 }, controls: { gap: spacing.sm } });

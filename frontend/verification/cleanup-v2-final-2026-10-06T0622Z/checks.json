@@ -1,0 +1,59 @@
+{
+  "observedAt": "2026-10-06T06:25:42.765151+00:00",
+  "baseCommit": "6477fe65964adea0cde48c784c0598b2cb47d5bf",
+  "baseTree": "f2e1795c022a8b1351a625e48770d34fd5df6a5b",
+  "revision": "FE-W39 cleanup v2 independent final verification",
+  "patchSha256": "2ccd2c9b71bbc04d890d39d3dea702f8eed884d7b2a2b2b9de7dae0733dacb6c",
+  "sourceBuildInputFingerprintSha256": "7b50b8b33b0b958f8986f766ea88156dffe5c3823fd8d5ba982bd8d18aa2b2d8",
+  "patchPreimages": {
+    "sha256Checked": 63,
+    "mergedMasterGitBlobChecked": 63,
+    "allMatch": true,
+    "zeroFuzzDryRun": "passed",
+    "postimages": "all 63 match approved cumulative patch"
+  },
+  "rootAuthoredDocs": [
+    "frontend/PLAN.md",
+    "frontend/STATUS.md"
+  ],
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    "aggregateCompatibility": {
+      "command": "node --test scripts/*.test.mts scripts/*.test.mjs src/components/care/care-review.test.mjs src/components/growth/growth-form.test.mjs",
+      "tests": 278,
+      "passed": 278,
+      "failed": 0
+    },
+    "webExport": {
+      "status": "passed",
+      "staticRoutes": 37,
+      "exitCode": 0,
+      "manifest": "export-manifest.json"
+    },
+    "links": {
+      "checked": 117,
+      "missing": 0,
+      "remoteOnlyTargets": 11,
+      "manifest": "link-checks.json"
+    }
+  },
+  "preservation": {
+    "firstPrAndHistoricalEvidenceFiles": 165,
+    "unchanged": true,
+    "suppliedHeroSha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+    "heroUnchangedInSourceAndExport": true,
+    "approvedArchiveSnapshots": 15
+  },
+  "processNote": "Initial manifest precheck flagged the concurrent parent-authored PLAN update. Parent explicitly directed inclusion of new PLAN/STATUS; classified as authorized docs, with no runtime or test assertion changes. No product check failed.",
+  "limitations": [
+    "Brief cleanup-v2 visual smoke is pending",
+    "First PR browser QA does not validate cleanup v2",
+    "Deprecated browser flows remain explicit pending-migration failures; retained flow availability is not a pass",
+    "No real API, persisted-state, native runtime, device or per-frame animation validation",
+    "No Git write or Site publication by this worker",
+    "Unlisted remote files must be preserved, since this local workspace is intentionally partial"
+  ]
+}

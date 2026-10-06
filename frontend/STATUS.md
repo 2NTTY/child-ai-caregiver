@@ -1,9 +1,8 @@
 # 育伴港前端現況
 
-2026-10-06 UTC：已取回來源並完成新整合修訂；兩個 dashboard 路由及最後交接文件重新編寫，使用者補交首頁圖已納入。這不是原 v44 原始碼的逐檔完整復原。
+2026-10-06 UTC：公開 v48 的按鈕、手機導航及水滴拍照鈕限定驗收已完成。正在依 Codex 參考整理聊天輸入框外觀，v49 已發布，限定桌面／390／320 畫面與輸入檢查通過。
 
-- Full typecheck、274 項測試及 fresh Web export（37 條路由）通過；公開合成預覽 v45 已發布，限定四尺寸及核心操作畫面驗收通過
-- 前端保留 Agent 優先、跨對話記錄核對、共用資料 owner、關注鏈結束／撤銷／恢復，以及標準 Web 成長報告
-- 普通自動保存、重要確認持久化、正式跨頁刷新、長期報告生成及真 PDF 尚未接通
-- GitHub draft PR #88 已更新至 `7119b4d3`，正在補入本次畫面證據，尚未合併，清理在獨立副本同步準備；詳細關口見 [PLAN 當前包](PLAN.md#active)
-- 接手按功能讀 [HANDOFF](HANDOFF.md#p2-coverage)；呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)，成長接線讀 [GROWTH_HANDOFF](GROWTH_HANDOFF.md)
+- 只改比例、留白、邊界、工具列及送出圓形呈現，保留原輸入／草稿／附件行為
+- 本包 304 項測試、typecheck 及建置通過；v49 已發布、限定驗收通過，send 持續按壓／IME／真機未新增實測
+- 前批 v47／v48 已同步至 PR #89 的 `046ded1f`，本輸入框修訂另行追加；PR #89 不自動合併
+- 本包實際檢查及交付狀態見 [PLAN](PLAN.md#active)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)，接線依 [HANDOFF](HANDOFF.md)

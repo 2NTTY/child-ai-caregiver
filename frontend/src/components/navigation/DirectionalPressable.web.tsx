@@ -81,6 +81,6 @@ export function DirectionalPressable(props: DirectionalPressableProps) {
   }, [props.scopeKey, props.disabled, clickGate]);
   useEffect(() => { if (props.disabled) props.onGestureCancel(); }, [props.disabled]);
   return <Pressable ref={node} accessibilityRole="button" accessibilityLabel={props.label} accessibilityHint={props.hint}
-    accessibilityState={{ disabled: !!props.disabled, expanded: props.expanded }} aria-expanded={props.expanded} disabled={props.disabled} testID={props.testID}
+    accessibilityState={{ disabled: !!props.disabled, expanded: props.expanded, selected: props.selected }} aria-current={props.current ? "page" : undefined} aria-expanded={props.expanded} disabled={props.disabled} testID={props.testID}
     style={props.style} onPress={props.onPress}>{props.children}</Pressable>;
 }

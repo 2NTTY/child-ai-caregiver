@@ -23,6 +23,6 @@ export const sourceStyles = StyleSheet.create({
   error: { fontFamily: chineseFont, ...readingType.meta, color: colors.errorInk },
   section: { gap: spacing.sm }, review: { paddingVertical: spacing.md, paddingLeft: spacing.md, borderLeftWidth: 2, borderColor: colors.line, gap: spacing.sm },
   original: { maxHeight: 320, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small }, originalContent: { padding: spacing.md },
-  status: { gap: spacing.sm }, item: { borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 2, borderLeftColor: "transparent", padding: spacing.md, gap: spacing.xs },
+   item: { borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 2, borderLeftColor: "transparent", padding: spacing.md, gap: spacing.xs },
   group: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm },
 });

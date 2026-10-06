@@ -1,0 +1,9 @@
+patching file 'frontend/app/(dashboard)/_layout.tsx'
+patching file frontend/src/components/AppShell.tsx
+patching file frontend/src/components/navigation/RecordsNavButton.tsx
+patching file frontend/src/components/navigation/DirectionalPressable.tsx
+patching file frontend/src/components/navigation/DirectionalPressable.web.tsx
+patching file frontend/src/components/navigation/MobileNavSelection.tsx
+patching file frontend/src/components/agent/MobileQuickInputDock.tsx
+patching file frontend/src/components/agent/CornerCaptureSurface.tsx
+patching file frontend/scripts/mobile-navigation-corner.test.mjs

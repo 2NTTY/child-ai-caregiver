@@ -94,7 +94,11 @@ test('disclosures expose state and an adjacent chevron on the actual pressable',
     assert.equal(style.alignSelf, 'flex-start');
     assert.equal(style.backgroundColor, 'transparent');
     assert.equal(style.borderWidth, 1);
-    assert.equal(flatten(button.props.style({pressed: true})).backgroundColor, 'transparent');
+    const heldStyle = flatten(button.props.style({pressed: true}));
+    assert.equal(heldStyle.backgroundColor, colors.pressedOverlay);
+    assert.equal(heldStyle.opacity ?? 1, 1);
+    assert.equal(heldStyle.borderWidth, style.borderWidth);
+    assert.equal(heldStyle.borderColor, style.borderColor);
     assert.equal(typeof button.props.onFocus, 'function');
     assert.equal(typeof button.props.onBlur, 'function');
     button.props.onPress(); assert.equal(pressed, 1);
@@ -102,6 +106,7 @@ test('disclosures expose state and an adjacent chevron on the actual pressable',
   const disabled = AppButton({label: '詳情', expanded: false, disabled: true, onPress() {}});
   assert.equal(disabled.props['aria-disabled'], true);
   assert.equal(flatten(disabled.props.style({pressed: false})).backgroundColor, 'transparent');
+  assert.equal(flatten(disabled.props.style({pressed: true})).backgroundColor, 'transparent');
 });
 
 test('home photo capture stays filled while its adjacent quick actions use outlines only', () => {

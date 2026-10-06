@@ -19,7 +19,9 @@
 
 以上映射是本項目的用途選擇。淺青導航框住接近白色的畫布，白卡／白控件浮在區塊上；不把每張卡片都改成深色。按 2026-10-05 的最新按鈕規則，AppButton 的 primary 為深底白字、accent 為黃底深字，填色類不再加常駐裝飾框；secondary／quiet 使用清楚描邊與貼合所在表面的底色，不能疊明顯有色填滿。黃色只強調 Agent，不作正文、細線或大面積底色；黃底深字及焦點辨識仍須清楚。MD3 primary 保持深色，使選項／焦點／文字按鈕仍可辨讀。
 
-按下／擴散效果沿 Paper 5.15.3 的半透明文字色，不另造不透明底色：AppButton 原生以當前 textColor 的 12% alpha 產生 ripple；AgentEntryButton 將局部主題 onSurface 對應 colors.onAccent，沿 TouchableRipple 的相同預設及原生 underlay 後備。黃底只稍微變深，深底普通提交用白色透明層；沒有覆寫全站 onSurface。FE-W20 補修移除 Agent 入口遺留的實色青色 ripple，按住／放開及鍵盤導航證據見 [pressed-checks](verification/fe-w20-ripple/pressed-checks.json)。比例來自已安裝套件，沒有自建動畫或新增顏色種子。
+按下回饋按控件角色決定，不降低整個 enabled 控件的透明度；文字、圖示與邊界不跟著淡向白底。自訂 Pressable 使用 theme 的短暫局部表面色，黃色、警告與選中狀態保留原語義，不加常駐裝飾框。disabled／busy、套件 ripple 及內容動畫分開處理，不以全域關閉回饋或更改 onSurface 代替診斷。
+
+Paper 5.15.3 預設以 textColor 的 12% alpha 產生 ripple，白字實色按鈕會局部變亮。本項目的 AppButton primary／danger 因此局部指定 darkActionRipple（黑色 12%），由同一套件產生較淡 hover，保留白字及原底色並微幅變深；其他角色不改。AgentEntryButton 的局部 onSurface=colors.onAccent 保留黃底深色回饋；正常深色 ripple 的工具／次要控件不用因另一角色的閃動而重設。任何 ripple 改動應局限已驗證的角色，保留 focus、disabled 及平台差異。較早 Agent 入口青色 ripple 修正記錄見 [pressed-checks](verification/fe-w20-ripple/pressed-checks.json)，該歷史結果不替代新控件驗收。
 
 ## OKLCH 與狀態
 

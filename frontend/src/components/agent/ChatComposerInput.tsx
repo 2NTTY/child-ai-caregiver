@@ -25,6 +25,6 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
 
 const styles = StyleSheet.create({
   input: { backgroundColor: "transparent", fontFamily: chatFont, ...chatType.input },
-  content: { paddingHorizontal: 8, paddingVertical: 10, color: chatColors.ink, fontFamily: chatFont, ...chatType.input },
+  content: { paddingHorizontal: 8, paddingTop: 8, paddingBottom: 4, color: chatColors.ink, fontFamily: chatFont, ...chatType.input },
   underline: { height: 0 },
 });

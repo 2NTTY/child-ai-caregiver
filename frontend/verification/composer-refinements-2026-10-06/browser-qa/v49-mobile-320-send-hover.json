@@ -1,0 +1,296 @@
+{
+  "buttons": [
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 20,
+            "w": 20,
+            "x": 39,
+            "y": 488
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(0, 0, 0) none 3px",
+            "overflowY": "visible",
+            "padding": "0px"
+          }
+        }
+      ],
+      "disabled": null,
+      "focus": false,
+      "label": "拍照",
+      "rect": {
+        "h": 48,
+        "w": 48,
+        "x": 25,
+        "y": 474
+      },
+      "style": {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(0, 0, 0)",
+        "borderRadius": "24px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "1",
+        "outline": "rgb(0, 0, 0) none 3px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 20,
+            "w": 20,
+            "x": 87,
+            "y": 488
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(0, 0, 0) none 3px",
+            "overflowY": "visible",
+            "padding": "0px"
+          }
+        }
+      ],
+      "disabled": null,
+      "focus": false,
+      "label": "加入文件",
+      "rect": {
+        "h": 48,
+        "w": 48,
+        "x": 73,
+        "y": 474
+      },
+      "style": {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(0, 0, 0)",
+        "borderRadius": "24px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "1",
+        "outline": "rgb(0, 0, 0) none 3px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 20,
+            "w": 20,
+            "x": 135,
+            "y": 488
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(0, 0, 0) none 3px",
+            "overflowY": "visible",
+            "padding": "0px"
+          }
+        }
+      ],
+      "disabled": null,
+      "focus": false,
+      "label": "語音輸入",
+      "rect": {
+        "h": 48,
+        "w": 48,
+        "x": 121,
+        "y": 474
+      },
+      "style": {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(0, 0, 0)",
+        "borderRadius": "24px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "1",
+        "outline": "rgb(0, 0, 0) none 3px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 20,
+            "w": 20,
+            "x": 183,
+            "y": 488
+          },
+          "style": {
+            "background": "rgba(0, 0, 0, 0)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "0px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgba(16, 16, 16, 0.3) none 3px",
+            "overflowY": "visible",
+            "padding": "0px"
+          }
+        }
+      ],
+      "disabled": "true",
+      "focus": false,
+      "label": "展開建議問題",
+      "rect": {
+        "h": 48,
+        "w": 48,
+        "x": 169,
+        "y": 474
+      },
+      "style": {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(0, 0, 0)",
+        "borderRadius": "24px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "0.5",
+        "outline": "rgba(16, 16, 16, 0.3) none 3px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    },
+    {
+      "active": false,
+      "children": [
+        {
+          "rect": {
+            "h": 36,
+            "w": 36,
+            "x": 253,
+            "y": 480
+          },
+          "style": {
+            "background": "rgb(229, 194, 11)",
+            "border": "0px solid rgb(0, 0, 0)",
+            "borderRadius": "18px",
+            "boxShadow": "none",
+            "gap": "normal",
+            "opacity": "1",
+            "outline": "rgb(0, 0, 0) none 3px",
+            "overflowY": "visible",
+            "padding": "0px"
+          }
+        }
+      ],
+      "disabled": null,
+      "focus": false,
+      "label": "預覽輸入",
+      "rect": {
+        "h": 48,
+        "w": 48,
+        "x": 247,
+        "y": 474
+      },
+      "style": {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(0, 0, 0)",
+        "borderRadius": "24px",
+        "boxShadow": "none",
+        "gap": "normal",
+        "opacity": "1",
+        "outline": "rgb(0, 0, 0) none 3px",
+        "overflowY": "visible",
+        "padding": "0px"
+      }
+    }
+  ],
+  "panel": {
+    "rect": {
+      "h": 226,
+      "w": 288,
+      "x": 16,
+      "y": 301
+    },
+    "style": {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px solid rgb(39, 35, 67)",
+      "borderRadius": "24px",
+      "boxShadow": "rgba(39, 35, 67, 0.04) 0px 1px 10px 0px",
+      "gap": "normal",
+      "opacity": "1",
+      "outline": "rgb(0, 0, 0) none 3px",
+      "overflowY": "visible",
+      "padding": "4px 8px"
+    }
+  },
+  "scripts": [
+    "",
+    "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/_expo/static/js/web/entry-3e2f8d0fc2f8a09690edb0560b8a9fe3.js"
+  ],
+  "textarea": {
+    "clientH": 168,
+    "focused": true,
+    "rect": {
+      "h": 168,
+      "w": 270,
+      "x": 25,
+      "y": 306
+    },
+    "scrollH": 252,
+    "scrollTop": 84,
+    "style": {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px none rgb(39, 35, 67)",
+      "borderRadius": "0px",
+      "boxShadow": "none",
+      "gap": "normal",
+      "opacity": "1",
+      "outline": "rgb(39, 35, 67) none 3px",
+      "overflowY": "auto",
+      "padding": "8px 8px 4px"
+    },
+    "value": "合成測試 1\n合成測試 2\n合成測試 3\n合成測試 4\n合成測試 5\n合成測試 6\n合成測試 7\n合成測試 8\n合成測試 9\n合成測試 10"
+  },
+  "toolbar": {
+    "rect": {
+      "h": 48,
+      "w": 144,
+      "x": 25,
+      "y": 474
+    },
+    "style": {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px solid rgb(0, 0, 0)",
+      "borderRadius": "0px",
+      "boxShadow": "none",
+      "gap": "0px",
+      "opacity": "1",
+      "outline": "rgb(0, 0, 0) none 3px",
+      "overflowY": "visible",
+      "padding": "0px"
+    }
+  },
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat",
+  "viewport": {
+    "h": 600,
+    "scrollW": 320,
+    "w": 320
+  }
+}

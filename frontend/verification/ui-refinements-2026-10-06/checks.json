@@ -1,0 +1,76 @@
+{
+  "startedAt": "2026-10-06T06:58:40.659703+00:00",
+  "baselinePr": 89,
+  "baselineHead": "193affe2b2b8a2956cf976c1d3d3e11d9d4dadb7",
+  "sourceBuildInputFingerprintSha256": "459128602754492d317b4b801e0ddba790b829788ce225786236873f78217d34",
+  "checks": {
+    "control-affordances-targeted": {
+      "command": "node --test scripts/control-affordances.test.mjs",
+      "startedAt": "2026-10-06T07:00:17.406559+00:00",
+      "endedAt": "2026-10-06T07:00:18.165949+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "control-affordances-targeted.log",
+      "logSha256": "eff64cadfa5c81d88806fc1bf04c6374b11d0bcea036fb372b81351308f7d1a6",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "typecheck-retry": {
+      "command": "npm run typecheck",
+      "startedAt": "2026-10-06T07:00:18.166514+00:00",
+      "endedAt": "2026-10-06T07:00:28.357582+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "typecheck-retry.log",
+      "logSha256": "36909e4212b55a6cfd8f3e2bae14fb164f0589f81b1563e66628f7ec63f8a6ce"
+    },
+    "aggregate-retry": {
+      "command": "node --test scripts/*.test.mts scripts/*.test.mjs src/components/care/care-review.test.mjs src/components/growth/growth-form.test.mjs",
+      "startedAt": "2026-10-06T07:00:28.358592+00:00",
+      "endedAt": "2026-10-06T07:00:38.243514+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "aggregate-retry.log",
+      "logSha256": "4f1a0e13b36af08d0589948aea1e2fc7ff3a7d36393e6bd96d2ab0ae68f9bbe2",
+      "tests": 292,
+      "passed": 292,
+      "failed": 0
+    },
+    "webExport": {
+      "command": "npm run build:web -- --output-dir dist",
+      "startedAt": "2026-10-06T07:01:57.059834+00:00",
+      "endedAt": "2026-10-06T07:02:59.765493+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "export.log",
+      "logSha256": "098c6ea62976bf05f574e4c6b621208093d08624d017761f732ba93f36c008bb",
+      "staticRoutes": 37,
+      "manifest": "export-manifest.json",
+      "exportFingerprintSha256": "dc93ed68afbf7b44b51f802dc01d96c3aefe895f61136124eb6c3ec8c2dc7bf4"
+    }
+  },
+  "stoppingRule": "Stop on the first failed check; retain its original log. No assertion or scope weakening.",
+  "limits": [
+    "No browser or held-press visual verification by integration worker",
+    "No real API or native-device verification",
+    "No Git or Sites operations by integration worker"
+  ],
+  "retryAuthorization": "Parent reviewed the obsolete held disclosure background assertion and approved only its bounded update to the already approved enabled-press feedback, retaining and strengthening opacity, border, focus, expanded, callback and disabled invariants. No product source changed.",
+  "initialChecks": "checks-initial.json",
+  "initialFailedAggregate": {
+    "passed": 291,
+    "failed": 1,
+    "total": 292,
+    "log": "aggregate.log"
+  },
+  "preservation": {
+    "originalCombinedFailure": "aggregate.log",
+    "originalCombinedFailureCount": 1,
+    "initialCombinedPassedCount": 291,
+    "firstFailureAction": "Stopped before export, reported and obtained parent review before updating the superseded assertion",
+    "contributorOriginalFailures": "contributors/*/original-checks/",
+    "baselineProbeEvidence": "contributors/button-feedback/baseline-audit/browser-baseline/",
+    "baselineProbeScope": "Original baseline only; not the integrated revision"
+  }
+}

@@ -131,7 +131,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
           <MotionDetail activeKey={showPanel ? "panel" : "list"} scopeKey={scopeKey} direction="back" compact={!wide && !showPanel} style={[styles.column, wide && showAside && styles.listColumn, !listVisible && styles.hidden]}>
             <View ref={listRef} tabIndex={-1} testID="tasks-list" style={styles.listSurface} pointerEvents={listVisible ? "auto" : "none"} aria-hidden={!listVisible} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
               <View style={styles.tabsBar}><View style={styles.tabs}><UnderlineTabs id={tabsId} label="事項分類" items={[{ key: "pending", label: `待處理 ${openCount}${model.hasMoreTasks ? "+" : ""}` }, { key: "completed", label: "已回報完成" }]} value={tab} onChange={next => { if (occupied) return; actions.closePanel(); setTab(next); setFilter("near"); setQuery(""); setPage(0); setSelectedDay(null); anchor.current = null; }} /></View><AppButton label="歷史" accessibilityLabel="事項歷史" variant="quiet" density="compact" disabled={occupied} onPress={onHistory} /></View>
-              {!model.reading && reviewCount > 0 ? <Pressable testID="tasks-review-shortcut" accessibilityRole="button" accessibilityLabel={`查看已載入的 ${reviewCount} 項待覆核安排，已停止催辦`} disabled={occupied} accessibilityState={{ disabled: occupied }} aria-disabled={occupied} onPress={() => { if (occupied) return; setTab("pending"); setQuery(""); changeFilter(tab === "pending" && filter === "review" ? "near" : "review"); }} style={({ pressed }) => [styles.reviewShortcut, pressed && styles.pressed]}><View style={styles.reviewCopy}><Text style={styles.reviewTitle}>{reviewCount} 項待覆核{model.hasMoreTasks ? "（已載入）" : ""}</Text><Text style={styles.reviewNote}>{filter === "review" && tab === "pending" ? "返回近期安排" : "完成或取消仍未確定 · 已停催"}</Text></View><AppIcon name={filter === "review" && tab === "pending" ? "chevron-left" : "chevron-right"} size={18} color={colors.warningInk} /></Pressable> : null}
+              {!model.reading && reviewCount > 0 ? <Pressable testID="tasks-review-shortcut" accessibilityRole="button" accessibilityLabel={`查看已載入的 ${reviewCount} 項待覆核安排，已停止催辦`} disabled={occupied} accessibilityState={{ disabled: occupied }} aria-disabled={occupied} onPress={() => { if (occupied) return; setTab("pending"); setQuery(""); changeFilter(tab === "pending" && filter === "review" ? "near" : "review"); }} style={({ pressed }) => [styles.reviewShortcut, pressed && !occupied && styles.reviewPressed]}><View style={styles.reviewCopy}><Text style={styles.reviewTitle}>{reviewCount} 項待覆核{model.hasMoreTasks ? "（已載入）" : ""}</Text><Text style={styles.reviewNote}>{filter === "review" && tab === "pending" ? "返回近期安排" : "完成或取消仍未確定 · 已停催"}</Text></View><AppIcon name={filter === "review" && tab === "pending" ? "chevron-left" : "chevron-right"} size={18} color={colors.warningInk} /></Pressable> : null}
               {tab === "completed" ? <Text style={styles.meta}>{model.hasMoreTasks ? "目前只按已載入資料顯示最近 10 項，載入更多後會重新排序。" : "只顯示最近 10 項；較早及已取消的安排可到事項歷史查看。"}{completed.some(item => !item.completedAt) ? " 未提供完成時間的項目保留載入次序，排在已知時間之後。" : ""}</Text> : null}
               <AppTabPanel tabsId={tabsId} tabKey={tab} active>
               {tab === "pending" && !model.reading ? <View style={styles.backlogToolbar}>
@@ -146,8 +146,8 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
               <View style={styles.scheduleList}>
               {tab === "pending" ? <View style={styles.listContext}>
                 <Text style={styles.meta} accessibilityLiveRegion="polite">{selectedDay ? `${DateTime.fromISO(selectedDay).toFormat("M月d日")}` : backlogLabels[filter]}{!selectedDay && filter === "near" && backlog.nearLabel ? ` · ${backlog.nearLabel}` : ""}{query.trim() ? " · 搜尋結果" : ""} · {timeZoneLabel} · 已載入 {backlog.total} 項{backlog.total > 0 ? `，顯示 ${backlog.from}–${backlog.to}` : ""}</Text>
-                {backlog.counts.earlier > 0 && filter !== "earlier" ? <Pressable accessibilityRole="button" accessibilityLabel={`查看已載入的 ${backlog.counts.earlier} 項較早未處理事項`} disabled={occupied} aria-disabled={occupied} onPress={() => changeFilter("earlier")} style={({ pressed }) => [styles.contextLink, pressed && styles.pressed]}><Text style={styles.contextLinkText}>較早未處理 {backlog.counts.earlier}</Text></Pressable> : null}
-                {selectedDay ? <Pressable accessibilityRole="button" accessibilityLabel="只取消日期篩選" disabled={occupied} aria-disabled={occupied} onPress={() => selectCalendarDay(null)} style={({ pressed }) => [styles.contextLink, pressed && styles.pressed]}><Text style={styles.contextLinkText}>取消日期</Text></Pressable> : null}
+                {backlog.counts.earlier > 0 && filter !== "earlier" ? <Pressable accessibilityRole="button" accessibilityLabel={`查看已載入的 ${backlog.counts.earlier} 項較早未處理事項`} disabled={occupied} aria-disabled={occupied} onPress={() => changeFilter("earlier")} style={({ pressed }) => [styles.contextLink, pressed && !occupied && styles.pressed]}><Text style={styles.contextLinkText}>較早未處理 {backlog.counts.earlier}</Text></Pressable> : null}
+                {selectedDay ? <Pressable accessibilityRole="button" accessibilityLabel="只取消日期篩選" disabled={occupied} aria-disabled={occupied} onPress={() => selectCalendarDay(null)} style={({ pressed }) => [styles.contextLink, pressed && !occupied && styles.pressed]}><Text style={styles.contextLinkText}>取消日期</Text></Pressable> : null}
               </View> : null}
               <ReadStateNotice state={readState} message={readMessage} />
               {sections.map(section => <View key={section.id} testID={`task-time-group-${section.id}`} style={styles.timeGroup}>
@@ -203,9 +203,6 @@ const styles = StyleSheet.create({
   pageTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.title },
   description: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
   hidden: { display: "none" }, stack: { gap: spacing.lg, minWidth: 0 },
-  contextCopy: { flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs },
-  listSummary: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
-  timeZoneNote: { fontWeight: "400" },
   workspace: { gap: spacing.lg, minWidth: 0 }, workspaceWide: { flexDirection: "row", alignItems: "flex-start" },
   column: { minWidth: 0, width: "100%" }, listColumn: { flex: 1.05, width: undefined }, detailColumn: { flex: 1, width: undefined },
   listSurface: { gap: spacing.md, minWidth: 0 }, tabsBar: { flexDirection: "row", alignItems: "center", gap: spacing.sm }, tabs: { flex: 1, minWidth: 0 },
@@ -221,7 +218,7 @@ const styles = StyleSheet.create({
   reviewNote: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta },
   timeGroup: { minWidth: 0 }, groupHeading: { flexDirection: "row", gap: spacing.sm, alignItems: "baseline", paddingBottom: spacing.sm },
   groupTitle: { fontFamily: chineseFont, color: colors.teal, ...readingType.tool, fontWeight: "700" },
-  pressed: { opacity: 0.7 },
+  pressed: { backgroundColor: colors.pressedOverlay }, reviewPressed: { backgroundColor: colors.warningPressed },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   notice: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool }, breadcrumb: { fontFamily: chineseFont, color: colors.teal, ...readingType.meta, fontWeight: "700" },
   background: { alignItems: "flex-start", borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm, gap: spacing.sm },

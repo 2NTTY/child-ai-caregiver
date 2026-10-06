@@ -1,0 +1,1025 @@
+--- a/frontend/scripts/history-controls.test.mjs
++++ b/frontend/scripts/history-controls.test.mjs
+@@ -14,7 +14,7 @@
+ const labelled = (tree, label) => nodes(tree).find(node => node.props?.label === label);
+ 
+ // Hook and control-prop checks only; final browser geometry is a separate acceptance step.
+-function harness(width = 1024) {
++function harness(width = 1024, initialCategory = 'growth') {
+   const slots = [], effects = [], events = [], cache = new Map();
+   let cursor = 0, locked = false;
+   const react = {
+@@ -56,9 +56,33 @@
+   const {AppButton} = load('src/components/ui.tsx');
+   return {
+     events, lock() {locked = true;}, button: props => AppButton(props),
+-    render() {cursor = 0; const tree = HistoryWorkspace({scope: 'scope-a', childName: 'A', initialCategory: 'growth', initialReviewStatus: 'all', olderOnly: false}); while (effects.length) effects.shift()(); return tree;},
++    render() {cursor = 0; const tree = HistoryWorkspace({scope: 'scope-a', childName: 'A', initialCategory, initialReviewStatus: 'all', olderOnly: false}); while (effects.length) effects.shift()(); return tree;},
+   };
+ }
++
++test('growth history keeps the same subtitle slot and typography as the other categories', () => {
++  for (const width of [1440, 1024, 390, 320]) {
++    let referenceCopyStyle, referenceSubtitleStyle;
++    for (const category of historyFilters.historyCategories) {
++      const tree = harness(width, category.key).render();
++      const copy = nodes(tree).find(node => node.type === 'View' && Array.isArray(node.props.children)
++        && node.props.children[0]?.props?.accessibilityRole === 'header'
++        && node.props.children[0].props.children === category.label);
++      assert.ok(copy, `${category.key} header at ${width}px`);
++      const texts = nodes(copy).filter(node => node.type === 'Text');
++      assert.equal(texts.length, 2, `${category.key} has one title and one subtitle`);
++      const expectedSubtitle = category.key === 'growth' ? category.description : `${category.description} · 來源：${category.sourceLabel}`;
++      assert.equal(texts[1].props.children.join(''), expectedSubtitle);
++      referenceCopyStyle ??= copy.props.style;
++      referenceSubtitleStyle ??= texts[1].props.style;
++      assert.deepEqual(copy.props.style, referenceCopyStyle);
++      assert.deepEqual(texts[1].props.style, referenceSubtitleStyle);
++      if (category.key === 'growth') {
++        assert.equal(texts[1].props.children.join(''), '查看已結束的關注與跟進記錄');
++      }
++    }
++  }
++});
+ 
+ test('growth source actions share compact sizing and centered self-alignment without a Link wrapper', () => {
+   for (const width of [1440, 1024, 390, 320]) {
+@@ -145,7 +169,7 @@
+     '../useInteractionDensity': {useInteractionDensity: () => touch},
+     '../../growth-view-model': modelModule.exports,
+     '../../workspaces/GrowthWorkspace': {useGrowthWorkspace: () => workspace},
+-    '../../theme': {colors: {line: '#CAC9D4', controlSurface: '#FFFFFE', ink: '#272343', quietSurface: '#EDFAF9'}, mobileLayout: {breakpoint: 650, touchTarget: 48}, radius: {small: 10}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}},
++    '../../theme': {colors: {line: '#CAC9D4', controlSurface: '#FFFFFE', ink: '#272343', quietSurface: '#EDFAF9', paleTeal: '#E3F6F5'}, mobileLayout: {breakpoint: 650, touchTarget: 48}, radius: {small: 10}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}},
+     './growth-styles': {growthStyles: {stack: {gap: 12}}},
+   };
+   new Function('require', 'module', 'exports', output)(name => dependencies[name] ?? new Proxy({}, {get: (_target, key) => String(key)}), module, module.exports);
+@@ -221,7 +245,9 @@
+   assert.equal(flatten(reading.props.style({pressed: false})).borderColor, '#272343');
+   reading.props.onBlur(); reading.props.onHoverIn(); tree = h.render(); reading = readingControl(identified(tree, 'growth-history-one'));
+   assert.equal(flatten(reading.props.style({pressed: false})).backgroundColor, '#EDFAF9');
+-  assert.equal(flatten(reading.props.style({pressed: true})).opacity, 0.65);
++  const pressed = flatten(reading.props.style({pressed: true}));
++  assert.equal(pressed.opacity ?? 1, 1);
++  assert.equal(pressed.backgroundColor, '#E3F6F5');
+   h.workspace.model.page.canManage = false;
+   assert.equal(restoreControl(h.render()), undefined);
+ });
+@@ -237,6 +263,9 @@
+     assert.ok(texts.includes(h.workspace.model.notice));
+   }
+   const screen = readFileSync(path.join(root, 'src/screens/historyScreen.tsx'), 'utf8');
+-  assert.ok(screen.includes('!growthCategory ? <Text style={styles.meta}>{current.description}'));
++  const growthHeader = nodes(harness().render()).find(node => node.type === 'View' && Array.isArray(node.props.children)
++    && node.props.children[0]?.props?.accessibilityRole === 'header'
++    && node.props.children[0].props.children === '關注與成長');
++  assert.equal(growthHeader.props.children[1].props.children.join(''), '查看已結束的關注與跟進記錄');
+   assert.ok(!screen.includes('日期按結束關注的時間篩選'));
+ });
+--- /dev/null
++++ b/frontend/scripts/preparation-layout.test.mjs
+@@ -0,0 +1,121 @@
++import assert from 'node:assert/strict';
++import { readFileSync } from 'node:fs';
++import path from 'node:path';
++import { fileURLToPath } from 'node:url';
++import { test } from 'node:test';
++import ts from 'typescript';
++
++const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
++const source = file => readFileSync(path.join(root, file), 'utf8');
++const workspaceFile = 'src/components/preparations/PreparationWorkspace.tsx';
++const previewFile = 'src/preview/PreparationPreviewTools.tsx';
++const nodes = tree => !tree || typeof tree !== 'object' ? [] : [tree, ...(Array.isArray(tree) ? tree : [tree.props?.children]).flatMap(nodes)];
++const label = (tree, value) => nodes(tree).find(node => node.props?.label === value);
++const text = tree => nodes(tree).flatMap(node => typeof node.props?.children === 'string' ? [node.props.children] : []).join(' ');
++const reader = tree => nodes(tree).find(node => node.type?.name === 'PreparationReader');
++const actions = tree => nodes(tree).find(node => node.props?.testID === 'preparation-list-actions');
++
++// Pure composition checks do not substitute for browser measurements or visual QA.
++function harness() {
++  let cursor = 0;
++  const slots = [], events = [];
++  const workspace = { scopeKey: 'child-a', model: { child: { displayName: '甲' }, documents: [{ id: 'active-a', status: 'active' }, { id: 'archive-a', status: 'archived' }], selected: null, condition: 'ready', online: true } };
++  const preview = { condition: 'ready', setCondition: value => events.push(['preview-condition', value]) };
++  const dependencies = {
++    react: { useState(value) { const index = cursor++; if (!(index in slots)) slots[index] = value; return [slots[index], next => { slots[index] = typeof next === 'function' ? next(slots[index]) : next; }]; }, useLayoutEffect() {}, useRef: value => ({ current: value }) },
++    'react/jsx-runtime': { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) },
++    'react-native': { Platform: { OS: 'web' }, View: 'View', Pressable: 'Pressable', StyleSheet: { create: value => value } },
++    'react-native-paper': { Text: 'Text' },
++  };
++  function compile(file) {
++    const output = ts.transpileModule(source(file), { fileName: file, compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
++    const module = { exports: {} };
++    function resolve(name) {
++      if (dependencies[name]) return dependencies[name];
++      if (name.endsWith('/theme')) return { chineseFont: 'font', colors: {}, radius: {}, readingType: {}, spacing: { sm: 8, md: 12, lg: 16 } };
++      if (name.endsWith('/workspaces/PreparationWorkspace')) return { usePreparationWorkspace: () => workspace };
++      if (name === './PreparationWorkspaceProvider') return { usePreparationPreviewTools: () => preview };
++      if (name.endsWith('/preparation-view-model')) return {
++        preparationPurposes: [{ key: 'appointment', label: '到診準備' }, { key: 'school', label: '入學／轉校' }],
++        preparationPurposeLabel: value => value === 'school' ? '入學／轉校' : '到診準備',
++      };
++      return new Proxy({}, { get: (_target, key) => String(key) });
++    }
++    new Function('require', 'module', 'exports', output)(resolve, module, module.exports);
++    return module.exports;
++  }
++  const main = compile(workspaceFile).PreparationWorkspace;
++  const tools = compile(previewFile).PreparationPreviewTools;
++  const props = { onHistory: () => events.push(['history']), onPrepareQuestion: value => events.push(['draft', value]), previewControls: { type: 'PreviewControls', props: {} } };
++  return { workspace, events, props,
++    render(overrides = {}) { cursor = 0; return main({ ...props, ...overrides }); },
++    renderPreview() { cursor = 0; return tools(); },
++  };
++}
++
++test('preparation documents lead the page and compact actions plus preview tools follow the content', () => {
++  const h = harness(), tree = h.render(), ordered = nodes(tree), content = reader(tree), footer = actions(tree);
++  assert.deepEqual(content.props.documents.map(document => document.id), ['active-a']);
++  assert.ok(ordered.indexOf(content) < ordered.indexOf(footer));
++  assert.ok(ordered.indexOf(footer) < ordered.indexOf(h.props.previewControls));
++  assert.ok(label(footer, '查看已歸檔'));
++  assert.ok(label(footer, '用途'));
++  assert.ok(label(footer, '到助手準備下一份'));
++  assert.equal(footer.props.style.flexDirection, 'row');
++  assert.equal(footer.props.style.flexWrap, 'wrap');
++  assert.equal(footer.props.style.minHeight, undefined);
++  assert.equal(footer.props.style.flex, undefined);
++  for (const redundant of ['準備好，打開就能用', '各自留成一份準備單', '下一次要準備甚麼？', '在助手交代用途、日期及需要。']) assert.ok(!source(workspaceFile).includes(redundant));
++});
++
++test('the relocated actions keep history navigation and the unchanged unsent purpose draft callback', () => {
++  const h = harness(); let tree = h.render();
++  label(tree, '查看已歸檔').props.onPress();
++  label(tree, '用途').props.onChange('school');
++  tree = h.render();
++  label(tree, '到助手準備下一份').props.onPress();
++  assert.deepEqual(h.events, [['history'], ['draft', '請幫我為甲整理一份入學／轉校。先和我確認用途、日期、已知安排及仍未確定的資料。']]);
++  assert.equal(label(tree, '用途').props.value, 'school');
++});
++
++test('selected documents and write recovery retain their existing composition and disabled boundaries', () => {
++  const h = harness();
++  h.workspace.model.selected = { id: 'active-a', status: 'active' };
++  h.workspace.model.operation = { state: 'unknown', reference: 'original-operation' };
++  const tree = h.render(), recovery = nodes(tree).find(node => node.type === 'WriteRecoveryNotice');
++  assert.equal(actions(tree), undefined);
++  assert.ok(nodes(tree).indexOf(recovery) < nodes(tree).indexOf(reader(tree)));
++  assert.equal(recovery.props.operation, h.workspace.model.operation);
++  assert.equal(reader(tree).props.onPrepareQuestion, h.props.onPrepareQuestion);
++  h.workspace.model.selected = null;
++  h.workspace.model.online = false;
++  assert.equal(label(h.render(), '到助手準備下一份').props.disabled, true);
++  h.workspace.model.online = true;
++  h.workspace.model.condition = 'lost';
++  assert.equal(label(h.render(), '到助手準備下一份').props.disabled, true);
++  h.workspace.model.condition = 'ready';
++  assert.equal(label(h.render({ onPrepareQuestion: undefined }), '到助手準備下一份').props.disabled, true);
++});
++
++test('normal preview detail stays inside the existing accessible disclosure', () => {
++  const h = harness(); let tree = h.renderPreview();
++  assert.equal(label(tree, '合成準備單示例'), undefined);
++  assert.equal(label(tree, '準備單預覽狀態'), undefined);
++  assert.equal(label(tree, '預覽來源與限制').props.expanded, false);
++  label(tree, '預覽來源與限制').props.onPress();
++  tree = h.renderPreview();
++  assert.equal(label(tree, '預覽來源與限制').props.expanded, true);
++  assert.ok(label(tree, '合成準備單示例'));
++  assert.ok(text(tree).includes('清單及歸檔只保留在本次預覽'));
++  assert.ok(label(tree, '準備單預覽狀態'));
++  label(tree, '預覽來源與限制').props.onPress();
++  assert.equal(label(h.renderPreview(), '合成準備單示例'), undefined);
++});
++
++test('document evidence, actionable warnings, archive guards and responsive reader remain present', () => {
++  const content = source(workspaceFile), detail = content.slice(content.indexOf('function PreparationDocumentDetail'), content.indexOf('type ReadingProps'));
++  assert.ok(detail.indexOf('revision?.sections.map') < detail.indexOf('label="來源與版本"'));
++  assert.ok(detail.indexOf('label="來源與版本"') < detail.indexOf('label="使用完畢，歸檔"'));
++  for (const retained of ['canChangePreparation(document, workspace.model.scope) && !pending', 'disabled={!canArchive}', 'archiveAsked && canArchive', 'workspace.actions.archiveDocument(document.id, document.version)', 'workspace.actions.checkItem(document.id, document.version, section.id, item.id, value)', 'document.sources.map', 'state.detail', '目前離線', '目前為唯讀', 'workspace.model.archiveNotice']) assert.ok(detail.includes(retained), retained);
++  for (const retained of ['來源權限已改變', '來源已失效', '來源狀態未知', '來源已有更新', '暫時未能取得準備單', '孩子權限已失效', 'wide = layout.width >= 840', '!selected || wide', 'anchor.current?.scope === workspace.scopeKey']) assert.ok(content.includes(retained), retained);
++});
+--- /dev/null
++++ b/frontend/scripts/pressed-feedback.test.mjs
+@@ -0,0 +1,167 @@
++import assert from 'node:assert/strict';
++import { readFileSync } from 'node:fs';
++import { createRequire } from 'node:module';
++import test from 'node:test';
++import ts from 'typescript';
++
++const require = createRequire(import.meta.url);
++const root = new URL('../', import.meta.url);
++const flatten = value => Array.isArray(value) ? Object.assign({}, ...value.filter(Boolean).map(flatten)) : value || {};
++const source = file => ts.createSourceFile(file, readFileSync(new URL(file, root), 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
++function collect(node, predicate) {
++  const found = [];
++  function visit(current) { if (predicate(current)) found.push(current); ts.forEachChild(current, visit); }
++  visit(node); return found;
++}
++function moduleFrom(file, dependencies) {
++  const output = ts.transpileModule(readFileSync(new URL(file, root), 'utf8'), {
++    fileName: file, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
++  });
++  const module = { exports: {} };
++  new Function('require', 'module', 'exports', output.outputText)(name => {
++    assert.ok(name in dependencies, `Unexpected dependency: ${name}`); return dependencies[name];
++  }, module, module.exports);
++  return module.exports;
++}
++const theme = moduleFrom('src/theme.ts', {
++  'react-native': { Platform: { OS: 'web', select: value => value.web } },
++  'react-native-paper': { MD3LightTheme: { colors: {}, fonts: {}, animation: {} }, configureFonts: value => value },
++});
++const chat = moduleFrom('src/components/chat/chat-presentation.ts', {
++  'react-native': { Platform: { OS: 'web', select: value => value.web } }, '../../theme': theme,
++});
++const context = { ...theme, ...chat, homeAvatarSize: 48, homeArrowSize: 20 };
++function expression(text, values = {}) {
++  const ctx = { ...context, ...values };
++  const output = ts.transpileModule(`export const result = (${text});`, {
++    fileName: 'state-style.tsx', compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 },
++  });
++  const module = { exports: {} };
++  new Function(...Object.keys(ctx), 'require', 'module', 'exports', output.outputText)(...Object.values(ctx), require, module, module.exports);
++  return module.exports.result;
++}
++function styles(file, binding = 'styles') {
++  const sf = source(file);
++  const declaration = collect(sf, node => ts.isVariableDeclaration(node) && node.name.getText(sf) === binding)[0];
++  assert.ok(declaration && ts.isCallExpression(declaration.initializer), `${file}: missing ${binding}`);
++  return expression(declaration.initializer.arguments[0].getText(sf));
++}
++function attribute(node, name, sf) {
++  return node.attributes.properties.find(item => ts.isJsxAttribute(item) && item.name.getText(sf) === name)?.initializer;
++}
++function control(file, matcher) {
++  const sf = source(file);
++  const nodes = collect(sf, node => ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node));
++  const result = nodes.find(node => matcher(node, sf));
++  assert.ok(result, `${file}: missing control`); return { node: result, sf };
++}
++const named = label => (node, sf) => attribute(node, 'accessibilityLabel', sf)?.getText(sf) === JSON.stringify(label);
++const usesStyle = name => (node, sf) => attribute(node, 'style', sf)?.getText(sf).includes(name);
++function stateStyle(file, matcher, values = {}, state = { pressed: true }) {
++  const { node, sf } = control(file, matcher), style = attribute(node, 'style', sf);
++  assert.ok(style && ts.isJsxExpression(style));
++  const callback = expression(style.expression.getText(sf), values);
++  return flatten(typeof callback === 'function' ? callback(state) : callback);
++}
++const opaque = style => assert.equal(style.opacity ?? 1, 1, 'enabled press must retain whole-control opacity');
++
++// These are the former fade definitions, not a ban on disabled or content animation opacity.
++const formerFadeStyles = {
++  'src/components/AppCheckbox.tsx': ['pressed'], 'src/components/AppShell.tsx': ['pressed'],
++  'src/components/ChildPicker.tsx': ['homePressed'], 'src/components/HomeAgentImportant.tsx': ['pressed'],
++  'src/components/HomeDashboard.tsx': ['pressed'], 'src/components/HomeOverviewItems.tsx': ['pressed'],
++  'src/components/HomeQuickActions.tsx': ['pressed'], 'src/components/RightRailContent.tsx': ['pressed'],
++  'src/components/agent/AgentComposer.tsx': ['pressed'], 'src/components/agent/AgentConversationPreview.tsx': ['pressed'],
++  'src/components/care/CareReviewHistoryView.tsx': ['pressed'], 'src/components/chat/AnswerSources.tsx': ['pressed'],
++  'src/components/chat/ChatMessage.tsx': ['pressed'], 'src/components/contact/contact-styles.ts': ['pressed'],
++  'src/components/growth/GrowthHistoryView.tsx': ['readPressed'], 'src/components/growth/growth-styles.ts': ['pressed'],
++  'src/components/settings/SettingsNavigation.tsx': ['pressed'], 'src/components/summary/summary-styles.ts': ['pressed'],
++  'src/components/tasks/TaskListRow.tsx': ['pressed'], 'src/components/tasks/TasksCalendar.tsx': ['pressed'],
++  'src/components/tasks/TasksView.tsx': ['pressed'], 'src/components/ui.tsx': ['buttonPressed', 'linkPressed'],
++  'src/screens/guideScreen.tsx': ['pressed'], 'src/screens/loginScreen.tsx': ['pressed'],
++  'src/screens/profileScreen.tsx': ['pressed'], 'src/screens/settingsScreen.tsx': ['pressed'],
++};
++test('all 27 former enabled press fades retain opacity and provide local surface feedback', () => {
++  let count = 0;
++  for (const [file, keys] of Object.entries(formerFadeStyles)) {
++    const sf = source(file);
++    for (const key of keys) {
++      const prop = collect(sf, node => ts.isPropertyAssignment(node) && node.name.getText(sf) === key && ts.isObjectLiteralExpression(node.initializer))[0];
++      assert.ok(prop, `${file}: ${key}`);
++      const value = expression(prop.initializer.getText(sf)); opaque(value);
++      assert.ok(value.backgroundColor, `${file}: ${key} retains feedback`);
++      assert.equal(value.borderWidth, undefined, 'feedback must not add a frame'); count++;
++    }
++  }
++  assert.equal(count, 27);
++});
++test('selection fields, options, tabs and lightweight links keep distinct resting roles', () => {
++  const file = 'src/components/ui.tsx', shared = styles(file);
++  const field = { styles: shared, compact: false, touch: false, disabled: false };
++  const normal = stateStyle(file, usesStyle('styles.selectionTrigger'), field, { pressed: false });
++  const pressed = stateStyle(file, usesStyle('styles.selectionTrigger'), field); opaque(pressed);
++  assert.equal(normal.backgroundColor, theme.colors.controlSurface);
++  assert.equal(pressed.backgroundColor, theme.colors.paleTeal);
++  assert.equal(pressed.borderWidth, normal.borderWidth);
++  assert.equal(pressed.minHeight, normal.minHeight);
++  const disabled = stateStyle(file, usesStyle('styles.selectionTrigger'), { ...field, disabled: true });
++  assert.equal(disabled.opacity, .5); assert.equal(disabled.backgroundColor, normal.backgroundColor);
++  opaque(stateStyle(file, usesStyle('styles.countedOption'), { styles: shared, disabled: false }));
++  const link = stateStyle(file, usesStyle('styles.link,'), { styles: shared, compact: false, touch: false });
++  opaque(link); assert.equal(link.borderWidth, undefined); assert.equal(link.backgroundColor, theme.colors.pressedOverlay);
++  const tab = stateStyle(file, usesStyle('styles.tab,'), { styles: shared, compact: false, touch: false, selection: null, value: 'one', item: { key: 'one' } });
++  opaque(tab); assert.equal(tab.borderBottomColor, theme.colors.teal); assert.equal(tab.backgroundColor, theme.colors.paleTeal);
++});
++test('disclosure and checkbox keep focus, dimensions and disabled opacity', () => {
++  const file = 'src/components/ui.tsx', shared = styles(file);
++  const value = stateStyle(file, usesStyle('styles.disclosureButton'), { styles: shared, density: 'standard', compact: false, touch: false, unavailable: false, focused: true, style: undefined });
++  opaque(value); assert.equal(value.borderColor, theme.colors.ink); assert.equal(value.borderWidth, 1);
++  const checkbox = 'src/components/AppCheckbox.tsx', checkboxStyles = styles(checkbox);
++  const enabled = stateStyle(checkbox, usesStyle('styles.row'), { styles: checkboxStyles, compact: false, disabled: false });
++  opaque(enabled); assert.equal(enabled.backgroundColor, theme.colors.pressedOverlay);
++  assert.equal(stateStyle(checkbox, usesStyle('styles.row'), { styles: checkboxStyles, compact: false, disabled: true }).opacity, .5);
++});
++test('selected rows and calendar cells deepen without losing selected or warning markers', () => {
++  const file = 'src/components/tasks/TaskListRow.tsx', shared = styles(file);
++  const row = stateStyle(file, usesStyle('styles.row'), { styles: shared, review: true, selected: true, hovered: false, focused: false, disabled: false });
++  opaque(row); assert.equal(row.backgroundColor, theme.colors.selectedNav); assert.equal(row.borderLeftColor, theme.colors.statusWarmLine);
++  const calendar = 'src/components/tasks/TasksCalendar.tsx', calendarStyles = styles(calendar);
++  const day = stateStyle(calendar, usesStyle('styles.day,'), { styles: calendarStyles, selected: true, focused: true, disabled: false });
++  opaque(day); assert.equal(day.backgroundColor, theme.colors.selectedNav); assert.equal(day.borderColor, theme.colors.ink); assert.equal(day.borderWidth, 2);
++  assert.equal(stateStyle(calendar, usesStyle('styles.day,'), { styles: calendarStyles, selected: true, focused: true, disabled: true }).opacity, .5);
++  const profile = 'src/screens/profileScreen.tsx', profileStyles = styles(profile);
++  const child = stateStyle(profile, usesStyle('styles.childOption,'), { styles: profileStyles, item: { id: 'one' }, child: { id: 'one' } });
++  opaque(child); assert.equal(child.backgroundColor, theme.colors.selectedPressed); assert.equal(child.borderColor, theme.colors.teal);
++});
++test('warning and accent actions retain their own palettes while held', () => {
++  const tasks = 'src/components/tasks/TasksView.tsx', taskStyles = styles(tasks);
++  const warning = stateStyle(tasks, usesStyle('styles.reviewShortcut'), { styles: taskStyles, occupied: false });
++  opaque(warning); assert.equal(warning.backgroundColor, theme.colors.warningPressed); assert.equal(warning.borderLeftColor, theme.colors.statusWarmLine);
++  const home = 'src/components/HomeQuickActions.tsx', homeStyles = styles(home);
++  const camera = stateStyle(home, usesStyle('styles.capture,'), { styles: homeStyles, trigger: { disabled: false } });
++  opaque(camera); assert.equal(camera.backgroundColor, theme.colors.accentPressed); assert.equal(camera.borderWidth, undefined);
++  const blocked = stateStyle(home, usesStyle('styles.capture,'), { styles: homeStyles, trigger: { disabled: true } });
++  assert.equal(blocked.opacity, .5); assert.equal(blocked.backgroundColor, theme.colors.accent);
++  const shell = 'src/components/AppShell.tsx', shellStyles = styles(shell);
++  const scenario = stateStyle(shell, usesStyle('styles.scenario,'), { styles: shellStyles, scenario: 'one', item: 'one' });
++  opaque(scenario); assert.equal(scenario.backgroundColor, theme.colors.inkPressed);
++});
++test('chat send feedback is local to its accent surface and disabled state is unchanged', () => {
++  const file = 'src/components/agent/AgentComposer.tsx', shared = styles(file);
++  const { node, sf } = control(file, named('預覽輸入'));
++  const child = node.parent.children.find(item => ts.isJsxExpression(item) && item.expression && ts.isArrowFunction(item.expression));
++  assert.ok(child, 'send control exposes pressed state to its own circle');
++  const render = canPreview => expression(child.expression.getText(sf), { styles: shared, canPreview, View: 'View', AppIcon: 'AppIcon' });
++  const enabled = flatten(render(true)({ pressed: true }).props.style); opaque(enabled);
++  assert.equal(enabled.backgroundColor, theme.colors.accentPressed); assert.equal(enabled.borderWidth, shared.sendCircle.borderWidth);
++  const blocked = flatten(render(false)({ pressed: true }).props.style);
++  assert.equal(blocked.opacity, .35); assert.equal(blocked.backgroundColor, theme.colors.accent);
++});
++test('selected preparation rows no longer switch to a lighter pressed surface', () => {
++  const file = 'src/components/preparations/PreparationWorkspace.tsx', shared = styles(file);
++  const normal = stateStyle(file, usesStyle('styles.documentRow'), { styles: shared, selected: true }, { pressed: false });
++  const pressed = stateStyle(file, usesStyle('styles.documentRow'), { styles: shared, selected: true });
++  opaque(pressed); assert.equal(normal.backgroundColor, theme.colors.paleTeal); assert.equal(pressed.backgroundColor, theme.colors.selectedNav);
++  assert.equal(pressed.borderWidth, normal.borderWidth); assert.equal(pressed.borderColor, normal.borderColor);
++  assert.equal(stateStyle(file, usesStyle('styles.documentRow'), { styles: shared, selected: false }).backgroundColor, theme.colors.quietSurface);
++});
+--- a/frontend/scripts/summary-composition.test.mjs
++++ b/frontend/scripts/summary-composition.test.mjs
+@@ -134,15 +134,38 @@
+   assert.deepEqual(h.events, [['guard']]);
+ });
+ 
+-test('preparation history and legacy recovery preserve explicit return destinations without a third main tab', () => {
+-  const h = harness(); h.query({ tab: 'preparation' }); let tree = h.render();
+-  find(tree, 'PreparationWorkspace').props.onHistory(); h.approve();
++test('current preparation keeps its two tabs and history without exposing the obsolete recovery entry', () => {
++  const h = harness(); h.query({ tab: 'preparation' }); const tree = h.render();
++  const tabs = find(tree, 'UnderlineTabs');
++  assert.deepEqual(tabs.props.items, [{ key: 'overview', label: '孩子概況' }, { key: 'preparation', label: '準備單' }]);
++  assert.equal(tabs.props.value, 'preparation');
++  assert.equal(nodes(tree).some(node => node.props?.label === '舊共享準備／原操作查核'), false);
++  assert.equal(find(tree, 'LegacySummaryRecovery'), undefined);
++  const panel = nodes(tree).find(node => node.type === 'AppTabPanel' && node.props.tabKey === 'preparation');
++  assert.equal(panel.props.style, undefined);
++  assert.equal(panel.props.children.type, 'PreparationWorkspace');
++  find(tree, 'PreparationWorkspace').props.onHistory();
++  assert.deepEqual(h.events, [['guard']]); h.approve();
+   assert.deepEqual(h.events.at(-1), ['push', { pathname: '/history', params: { category: 'preparations' } }]);
+-  nodes(tree).find(node => node.props?.label === '舊共享準備／原操作查核').props.onPress(); h.approve(); tree = h.render();
++  assert.match(source('src/screens/historyScreen.tsx'), /pathname: "\/summary", params: \{ tab: "preparation" \}/);
++});
++
++test('legacy recovery deep links retain guarded returns and reject stale navigation intents', () => {
++  const h = harness(); h.query({ tab: 'legacy-preparation' }); let tree = h.render();
+   assert.equal(tree.type, 'LegacySummaryRecovery'); assert.equal(find(tree, 'UnderlineTabs'), undefined);
+-  tree.props.onReturn(); assert.equal(h.events.at(-1)[0], 'guard'); h.approve(); tree = h.render();
++  tree.props.onReturn(); assert.deepEqual(h.events, [['guard']]);
++  assert.equal(h.render().type, 'LegacySummaryRecovery');
++  h.approve(); tree = h.render();
++  assert.deepEqual(h.events.slice(1), [['close-preparation'], ['params', { tab: 'preparation' }]]);
+   assert.equal(find(tree, 'UnderlineTabs').props.value, 'preparation');
+-  assert.match(source('src/screens/historyScreen.tsx'), /pathname: "\/summary", params: \{ tab: "preparation" \}/);
++  for (const change of [h => h.child('child-b'), h => h.identity('Other parent'), h => h.route('/history'), h => h.query({ tab: 'overview' })]) {
++    const stale = harness(); stale.query({ tab: 'legacy-preparation' }); stale.render().props.onReturn();
++    change(stale); stale.render(); stale.approve(); assert.deepEqual(stale.events, [['guard']]);
++  }
++  const unmounted = harness(); unmounted.query({ tab: 'legacy-preparation' }); unmounted.render().props.onReturn();
++  unmounted.unmount(); unmounted.approve(); assert.deepEqual(unmounted.events, [['guard']]);
++  const missingChild = harness(); missingChild.query({ tab: 'legacy-preparation' }); missingChild.child(null);
++  assert.equal(find(missingChild.render(), 'LegacySummaryRecovery'), undefined);
+ });
+ 
+ test('scope changes reset presentation while a hidden native route renders no second reader', () => {
+--- a/frontend/src/components/AppCheckbox.tsx
++++ b/frontend/src/components/AppCheckbox.tsx
+@@ -11,7 +11,7 @@
+   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
+   function toggle() { if (!disabled) onChange(!checked); }
+   return <Pressable ref={ref} nativeID={id} onBlur={onBlur} aria-invalid={invalid} aria-describedby={describedBy} accessibilityRole="checkbox" accessibilityLabel={accessibilityLabel} accessibilityState={{ checked, disabled }} aria-checked={checked} aria-disabled={disabled}
+-    disabled={disabled} onPress={toggle} style={({ pressed }) => [styles.row, compact && styles.mobileRow, disabled && styles.disabled, pressed && styles.pressed]}
++    disabled={disabled} onPress={toggle} style={({ pressed }) => [styles.row, compact && styles.mobileRow, disabled && styles.disabled, pressed && !disabled && styles.pressed]}
+     {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => {
+       if ((event.nativeEvent?.key ?? event.key) === " ") { event.preventDefault(); toggle(); }
+     } } : {})}>
+@@ -22,4 +22,4 @@
+ const styles = StyleSheet.create({ row: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.sm }, copy: { flex: 1, minWidth: 0, gap: spacing.xs },
+   mobileRow: { minHeight: mobileLayout.touchTarget },
+   label: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23 }, description: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
+-  completed: { textDecorationLine: "line-through", color: colors.muted }, pressed: { opacity: 0.68 }, disabled: { opacity: 0.5 } });
++  completed: { textDecorationLine: "line-through", color: colors.muted }, pressed: { backgroundColor: colors.pressedOverlay }, disabled: { opacity: 0.5 } });
+--- a/frontend/src/components/AppShell.tsx
++++ b/frontend/src/components/AppShell.tsx
+@@ -52,7 +52,7 @@
+     {expanded ? <View style={styles.previewDetails}><Text style={styles.previewLabel}>介面預覽 · 合成資料 · 未接駁 Server</Text><Text style={styles.previewLabel}>保存、登入、邀請、通知與 Agent 回覆均為示例，不會改動正式資料。照片、語音與文件只留在本機草稿；正式上傳、整理及匯出尚未接通。</Text><Text style={styles.previewLabel}>目前情境：{scenarioLabels[scenario]}。各頁情境工具可查看固定快照、接線狀態及測試操作。</Text><View style={styles.scenarios}>{scenarios.map(item => <Pressable
+       key={item} accessibilityRole="button" accessibilityLabel={scenarioLabels[item]}
+       accessibilityState={{ selected: scenario === item }} onPress={() => setScenario(item)}
+-      style={({ pressed }) => [styles.scenario, scenario === item && styles.scenarioSelected, pressed && styles.pressed]}
++      style={({ pressed }) => [styles.scenario, scenario === item && styles.scenarioSelected, pressed && (scenario === item ? styles.scenarioPressed : styles.pressed)]}
+     ><Text style={[styles.scenarioText, scenario === item && styles.scenarioSelectedText]}>{scenarioLabels[item]}</Text></Pressable>)}</View></View> : null}
+   </View>;
+ }
+@@ -166,7 +166,7 @@
+ 
+ const styles = StyleSheet.create({
+   root: { flex: 1, flexDirection: "row", minHeight: 0, backgroundColor: colors.canvas },
+-  pressed: { opacity: 0.68 },
++  pressed: { backgroundColor: colors.paleTeal }, scenarioPressed: { backgroundColor: colors.inkPressed },
+   sidebar: { width: 216, minHeight: 0, backgroundColor: colors.sidebar, borderRightColor: colors.line, borderRightWidth: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
+   brandLink: { width: "100%", minHeight: 93, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
+   logo: { width: 164, height: 53 },
+--- a/frontend/src/components/ChildPicker.tsx
++++ b/frontend/src/components/ChildPicker.tsx
+@@ -20,7 +20,7 @@
+   const copy = <><Text numberOfLines={1} style={[styles.name, homeIdentity && styles.homeName]}>{selected?.displayName ?? "尚未有孩子"}</Text>{!compact && selected ? <Text numberOfLines={homeIdentity ? undefined : 1} style={[styles.age, homeIdentity && styles.homeAge]}>{loading ? "正在讀取…" : homeIdentity ? selected.ageSummaryLabel ?? selected.ageLabel : selected.ageLabel}</Text> : null}</>;
+   function setOpen(open: boolean) { setVisible(open); onOpenChange?.(open); }
+   return <><Pressable accessibilityRole="button" accessibilityLabel={`選擇孩子，目前${selected?.displayName ?? "尚未有孩子"}`} accessibilityState={{ expanded: visible, disabled: children.length === 0 }} aria-expanded={visible} aria-disabled={children.length === 0} disabled={children.length === 0}
+-    onPress={() => setOpen(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, homeIdentity && styles.homeIdentity, visible && !homeIdentity && styles.open, children.length === 0 && styles.disabled, pressed && (homeIdentity ? styles.homePressed : styles.pressed)]}>
++    onPress={() => setOpen(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, homeIdentity && styles.homeIdentity, visible && !homeIdentity && styles.open, children.length === 0 && styles.disabled, pressed && children.length > 0 && (homeIdentity ? styles.homePressed : styles.pressed)]}>
+     {switchOnly ? <><AppIcon name="swap-horizontal" size={20} color={colors.deepTeal} /><Text style={styles.name}>{shortSwitchLabel ? "切換" : "切換孩子"}</Text></> : <>
+       <View style={[styles.avatar, compact && styles.avatarCompact, tiny && styles.avatarTiny, homeIdentity && styles.homeAvatar]}><Text style={[styles.initial, homeIdentity && styles.homeInitial]}>{selected?.displayName.slice(0, 1) ?? "育"}</Text></View>
+       <View style={[styles.copy, homeIdentity && styles.homeCopy]}>{homeIdentity ? <View style={styles.homeCopyContent}>{copy}</View> : copy}</View>
+@@ -41,7 +41,7 @@
+   homeIdentity: { width: "auto", alignSelf: "stretch", minHeight: 72, paddingHorizontal: spacing.sm, backgroundColor: colors.controlSurface, borderWidth: 1, borderRadius: radius.small },
+   homeCopy: { flexBasis: "auto" },
+   homeCopyContent: { alignSelf: "flex-start", maxWidth: "100%", gap: 2 },
+-  homePressed: { opacity: 0.72 },
++  homePressed: { backgroundColor: colors.paleTeal },
+   open: { borderColor: colors.teal, backgroundColor: colors.white },
+   disabled: { opacity: 0.5 }, pressed: { backgroundColor: colors.selectedNav },
+   avatar: { width: 36, height: 36, flexShrink: 0, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
+--- a/frontend/src/components/HomeAgentImportant.tsx
++++ b/frontend/src/components/HomeAgentImportant.tsx
+@@ -95,5 +95,5 @@
+   source: { gap: spacing.xs, paddingBottom: spacing.xs }, hiddenSource: { display: "none" }, action: { alignSelf: "flex-start", maxWidth: "100%" },
+   additional: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine },
+   additionalCopy: { flex: 1, minWidth: 0, gap: spacing.xs }, rowTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.row, fontWeight: "700" },
+-  pressed: { opacity: 0.68 }, recovery: { gap: spacing.sm },
++  pressed: { backgroundColor: colors.pressedOverlay }, recovery: { gap: spacing.sm },
+ });
+--- a/frontend/src/components/HomeDashboard.tsx
++++ b/frontend/src/components/HomeDashboard.tsx
+@@ -59,7 +59,7 @@
+ }
+ const styles = StyleSheet.create({
+   scroll: { flex: 1 }, page: { width: "100%", maxWidth: 1160, alignSelf: "center", padding: spacing.xl },
+-  floatingInputClearance: { paddingBottom: 88 }, content: { gap: spacing.lg }, pressed: { opacity: 0.68 },
++  floatingInputClearance: { paddingBottom: 88 }, content: { gap: spacing.lg }, pressed: { backgroundColor: colors.pressedOverlay },
+   grid: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xl }, gridStack: { flexDirection: "column" },
+   column: { flex: 1, minWidth: 0, width: "100%", gap: spacing.lg }, mainColumn: { flex: 2 },
+   summaryColumn: { paddingTop: spacing.xs }, links: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm },
+--- a/frontend/src/components/HomeOverviewItems.tsx
++++ b/frontend/src/components/HomeOverviewItems.tsx
+@@ -26,7 +26,7 @@
+   compactItem: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: 56, paddingVertical: spacing.md, borderBottomColor: colors.softLine, borderBottomWidth: 1 },
+   compactCopy: { flex: 1, minWidth: 0, gap: spacing.xs, borderLeftColor: colors.sage, borderLeftWidth: 3, paddingLeft: spacing.md },
+   compactTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.row, fontWeight: "700" },
+-  pressed: { opacity: 0.68 }, action: { alignSelf: "flex-start", maxWidth: "100%" }, item: { gap: spacing.sm }, divider: { borderTopColor: colors.softLine, borderTopWidth: 1, paddingTop: spacing.md },
++  pressed: { backgroundColor: colors.pressedOverlay }, action: { alignSelf: "flex-start", maxWidth: "100%" }, item: { gap: spacing.sm }, divider: { borderTopColor: colors.softLine, borderTopWidth: 1, paddingTop: spacing.md },
+   title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, fontWeight: "700" },
+   body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+ });
+--- a/frontend/src/components/HomeQuickActions.tsx
++++ b/frontend/src/components/HomeQuickActions.tsx
+@@ -32,17 +32,17 @@
+         accessibilityHint={trigger.unavailableReason ?? "開啟相機，拍攝後在目前孩子的對話中檢視；不會自動上傳或保存"}
+         accessibilityState={{ disabled: trigger.disabled, busy: trigger.reading || opening }} aria-disabled={trigger.disabled} aria-busy={trigger.reading || opening}
+         disabled={trigger.disabled} onPress={() => { setError(null); trigger.onPress(); }}
+-        style={({ pressed }) => [styles.capture, trigger.disabled && styles.disabled, pressed && styles.pressed]}>
++        style={({ pressed }) => [styles.capture, trigger.disabled && styles.disabled, pressed && !trigger.disabled && styles.capturePressed]}>
+         <AppIcon name="camera-outline" size={mobileIcons.primary} color={colors.onAccent} />
+         <Text style={styles.captureTitle}>{trigger.reading ? "正在讀取照片" : opening ? "正在開啟對話" : "拍照給助手"}</Text>
+       </Pressable>} />
+     <View testID="mobile-quick-actions" style={styles.secondaryActions}>
+       <Pressable accessibilityRole="button" accessibilityLabel="用文字告訴助手" accessibilityState={{ disabled: !available || opening }} aria-disabled={!available || opening}
+-        disabled={!available || opening} onPress={() => actions.open("chat")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && styles.pressed]}>
++        disabled={!available || opening} onPress={() => actions.open("chat")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && available && !opening && styles.pressed]}>
+         <AppIcon name="message-text-outline" size={mobileIcons.content} /><Text style={styles.label}>用文字說</Text>
+       </Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel="查看記錄及補改資料" accessibilityState={{ disabled: !available || opening }} aria-disabled={!available || opening}
+-        disabled={!available || opening} onPress={() => actions.open("care")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && styles.pressed]}>
++        disabled={!available || opening} onPress={() => actions.open("care")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && available && !opening && styles.pressed]}>
+         <AppIcon name="notebook-outline" size={mobileIcons.content} /><Text style={styles.label}>補改資料</Text>
+       </Pressable>
+     </View></View>
+@@ -63,5 +63,5 @@
+   label: { fontFamily: chineseFont, color: colors.ink, ...mobileType.label, textAlign: "center" },
+   note: { fontFamily: chineseFont, color: colors.muted, ...mobileType.caption },
+   error: { fontFamily: chineseFont, color: colors.warningInk, ...mobileType.body },
+-  pressed: { opacity: 0.68 }, disabled: { opacity: 0.5 },
++  pressed: { backgroundColor: colors.pressedOverlay }, capturePressed: { backgroundColor: colors.accentPressed }, disabled: { opacity: 0.5 },
+ });
+--- a/frontend/src/components/RightRailContent.tsx
++++ b/frontend/src/components/RightRailContent.tsx
+@@ -59,5 +59,5 @@
+   identity: { flexDirection: "row", alignItems: "center", gap: spacing.sm }, avatar: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
+   avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "800" }, copy: { flex: 1, minWidth: 0 },
+   title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "800" }, meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 },
+-  record: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: spacing.sm }, divider: { backgroundColor: colors.softLine }, pressed: { opacity: 0.68 },
++  record: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: spacing.sm }, divider: { backgroundColor: colors.softLine }, pressed: { backgroundColor: colors.pressedOverlay },
+ });
+--- a/frontend/src/components/agent/AgentComposer.tsx
++++ b/frontend/src/components/agent/AgentComposer.tsx
+@@ -92,18 +92,18 @@
+       <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
+         accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
+         aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
+-        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, pressed && styles.pressed]}>
++        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, pressed && enabled && !hasDraft && styles.pressed]}>
+         <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable></View>
+       <Pressable accessibilityRole="button" accessibilityLabel="預覽輸入" accessibilityState={{ disabled: !canPreview }}
+         disabled={!canPreview} onPress={preview}
+-        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, canPreview && (hovered || focused) && styles.controlActive, pressed && styles.pressed]}>
+-        <View style={[styles.sendCircle, !canPreview && styles.sendDisabled]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>
++        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, canPreview && (hovered || focused) && styles.controlActive, pressed && canPreview && styles.pressed]}>
++        {({ pressed }) => <View style={[styles.sendCircle, !canPreview && styles.sendDisabled, pressed && canPreview && styles.sendPressed]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>}
+       </Pressable></View>
+     <MotionDisclosure expanded={showSuggestions} scopeKey={JSON.stringify([enabled, hasDraft, automaticCollapse])} testID="composer-suggestions-disclosure"><ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
+       contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled">
+       <Text style={styles.suggestionLabel}>本地示例：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={`預填本地示例：${item}`}
+         disabled={hasDraft || !enabled} onPress={() => pickSuggestion(item)}
+-        style={({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (hasDraft || !enabled) && styles.disabled, pressed && styles.pressed]}>
++        style={({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (hasDraft || !enabled) && styles.disabled, pressed && enabled && !hasDraft && styles.pressed]}>
+         <Text style={styles.suggestionText}>{item}</Text></Pressable>)}
+     </ScrollView></MotionDisclosure>
+     </View>
+@@ -140,5 +140,5 @@
+   mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm }, suggestionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+   suggestion: { backgroundColor: chatColors.hover, minHeight: 40, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: chatColors.line, borderRadius: radius.pill, justifyContent: "center" },
+   mobileSuggestion: { minHeight: mobileLayout.touchTarget, flexShrink: 0 },
+-  suggestionText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool }, disabled: { opacity: .5 }, pressed: { opacity: .68 },
++  suggestionText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool }, disabled: { opacity: .5 }, pressed: { backgroundColor: colors.paleTeal }, sendPressed: { backgroundColor: colors.accentPressed },
+ });
+--- a/frontend/src/components/agent/AgentConversationPreview.tsx
++++ b/frontend/src/components/agent/AgentConversationPreview.tsx
+@@ -89,7 +89,7 @@
+   disclosureRoot: { minWidth: 0 }, disclosureContents: { paddingTop: spacing.md },
+   disclosure: { backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, paddingHorizontal: spacing.sm, alignSelf: "flex-start", minHeight: 48, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
+   disclosureText: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool }, 
+-  pressed: { opacity: .7 },
++  pressed: { backgroundColor: colors.paleTeal },
+   toolsToggle: { alignItems: "flex-start" }, tools: { backgroundColor: colors.quietSurface, borderRadius: radius.large },
+   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 21 },
+ });
+--- a/frontend/src/components/care/CareReviewHistoryView.tsx
++++ b/frontend/src/components/care/CareReviewHistoryView.tsx
+@@ -102,7 +102,7 @@
+               const kind = item.writeState === "saved" && item.savedRecord ? item.savedRecord.current.values.kind : item.proposedValues.kind;
+               const statusLabel = item.operationValidity?.state === "expired" ? `${important ? "重要 · " : ""}原操作已過期` : item.sourceState !== "ready" ? "來源需重新核對" : item.writeState === "unknown" ? "結果未知" : item.writeState === "failed" ? "保存失敗" : important ? "重要 · 待確認" : item.reviewState === "pending" ? "寫入前確認" : item.reviewState === "skipped" ? "已略過" : null;
+               return <Pressable key={item.id} testID="care-review-row" accessibilityRole="button" accessibilityLabel={`核對${item.title}：${careReviewContentSummary(item)}${statusLabel ? `，${statusLabel}` : ""}`} accessibilityState={{ expanded: selectedRow, disabled: occupied }} aria-expanded={selectedRow} aria-current={selectedRow ? "true" : undefined} disabled={occupied}
+-                onPress={() => { if (occupied) return; actions.closePanel(); setSelectedId(selectedRow ? null : item.id); setRecordOpen(false); focusRequested.current = true; }} style={({ pressed }) => [s.row, important && s.importantRow, selectedRow && s.selected, pressed && s.pressed]}>
++                onPress={() => { if (occupied) return; actions.closePanel(); setSelectedId(selectedRow ? null : item.id); setRecordOpen(false); focusRequested.current = true; }} style={({ pressed }) => [s.row, important && s.importantRow, selectedRow && s.selected, pressed && !occupied && (selectedRow ? s.selectedPressed : s.pressed)]}>
+                 <View style={s.copy}><Text numberOfLines={3} style={s.rowContent}>{careReviewContentSummary(item)}</Text>
+                   <Text numberOfLines={2} style={s.meta}>{item.target.kind === "update" ? "更新" : "新增"} · {careReviewUsesCareOwner(item) ? careKindOptions.find(option => option.value === kind)?.label : careReviewDomainLabel(item)} · {item.sourceContext?.conversationLabel ?? item.sourceLabel}</Text>
+                   <View style={s.rowMeta}><Text style={s.meta}>{item.sourceContext?.dateLabel ?? "未提供對話日期"}</Text>{statusLabel ? <AppStatusBadge label={statusLabel} tone={item.writeState === "failed" ? "error" : "warning"} /> : null}</View>
+@@ -141,5 +141,5 @@
+   older: { gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine }, importantReminder: { flexDirection: "row", gap: spacing.xs, alignItems: "center" },
+   sectionLabel: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, groupSection: { gap: spacing.xs }, list: { gap: spacing.md },
+   row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 3, borderLeftColor: "transparent" }, importantRow: { borderLeftColor: colors.statusWarmLine },
+-  copy: { flex: 1, minWidth: 0, gap: spacing.xs }, rowContent: { fontFamily: chineseFont, ...workspaceType.row, color: colors.ink }, rowMeta: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, alignItems: "center" }, selected: { backgroundColor: colors.paleTeal }, pressed: { opacity: 0.7 }, pager: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" },
++  copy: { flex: 1, minWidth: 0, gap: spacing.xs }, rowContent: { fontFamily: chineseFont, ...workspaceType.row, color: colors.ink }, rowMeta: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, alignItems: "center" }, selected: { backgroundColor: colors.paleTeal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav }, pager: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" },
+ });
+--- a/frontend/src/components/chat/AnswerSources.tsx
++++ b/frontend/src/components/chat/AnswerSources.tsx
+@@ -223,7 +223,7 @@
+   footer: { borderTopWidth: 1, borderTopColor: chatColors.line, paddingTop: chatLayout.paragraphGap, gap: spacing.xs, minWidth: 0 },
+   footerTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600" },
+   footerHeading: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" },
+-  pressed: { opacity: 0.7 },
++  pressed: { backgroundColor: colors.pressedOverlay },
+   located: { borderBottomColor: chatColors.focus },
+   sourceTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
+   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+--- a/frontend/src/components/chat/ChatMessage.tsx
++++ b/frontend/src/components/chat/ChatMessage.tsx
+@@ -70,5 +70,5 @@
+   processLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, minWidth: 0, flexShrink: 1 },
+   processDetails: { gap: spacing.sm, paddingBottom: spacing.sm }, activity: { gap: spacing.xs, minWidth: 0 },
+   divider: { paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: chatColors.line },
+-  activityTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600", flexShrink: 1 }, pressed: { opacity: 0.7 },
++  activityTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600", flexShrink: 1 }, pressed: { backgroundColor: colors.paleTeal },
+ });
+--- a/frontend/src/components/contact/ContactView.tsx
++++ b/frontend/src/components/contact/ContactView.tsx
+@@ -76,7 +76,7 @@
+             <View style={wide && selectedId ? s.taskIndex : s.full} testID="contact-task-index">{tasks.map(task => {
+               const grant = page.grants.find(item => item.taskId === task.id);
+               const primary = page.recipients.find(item => item.userId === task.assigneeUserId);
+-              return <Pressable key={task.id} ref={node => { if (node) taskRows.current.set(task.id, node); else taskRows.current.delete(task.id); }} accessibilityRole="button" accessibilityLabel={`核對${task.title}的聯絡授權`} aria-current={selectedId === task.id ? 'true' : undefined} accessibilityState={{disabled: model.busy || !!model.pending, selected: selectedId === task.id}} aria-disabled={model.busy || !!model.pending} disabled={model.busy || !!model.pending} onPress={() => setSelection({epoch: model.epoch, id: task.id})} style={({pressed}) => [s.taskRow, selectedId === task.id && s.selectedTask, pressed && s.pressed]}>
++              return <Pressable key={task.id} ref={node => { if (node) taskRows.current.set(task.id, node); else taskRows.current.delete(task.id); }} accessibilityRole="button" accessibilityLabel={`核對${task.title}的聯絡授權`} aria-current={selectedId === task.id ? 'true' : undefined} accessibilityState={{disabled: model.busy || !!model.pending, selected: selectedId === task.id}} aria-disabled={model.busy || !!model.pending} disabled={model.busy || !!model.pending} onPress={() => setSelection({epoch: model.epoch, id: task.id})} style={({pressed}) => [s.taskRow, selectedId === task.id && s.selectedTask, pressed && !(model.busy || model.pending) && (selectedId === task.id ? s.selectedPressed : s.pressed)]}>
+                 <View style={s.copy}><Text style={s.title}>{task.title}</Text><Text style={s.meta}>接收者：{contactName(page, task.assigneeUserId)}</Text><Text style={s.meta}>{primary?.enabled && primary.channels.length ? primary.channels.map(channel => contactChannelLabels[channel]).join(' · ') : '接收同意或可用渠道待核對'}</Text>
+                   <AppStatusBadge {...contactGrantStatus(grant, task.version)} /></View><AppIcon name="chevron-right" size={18} />
+               </Pressable>;
+--- a/frontend/src/components/contact/contact-styles.ts
++++ b/frontend/src/components/contact/contact-styles.ts
+@@ -8,7 +8,7 @@
+   consentSurface: {backgroundColor: colors.quietSurface}, editor: {gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md},
+   taskIndex: {flex: 0.9, minWidth: 0}, taskDetail: {flex: 1.3, gap: spacing.md, minWidth: 0},
+   taskRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, minWidth: 0},
+-  selectedTask: {backgroundColor: colors.paleTeal, borderRadius: radius.small}, pressed: {opacity: 0.7},
++  selectedTask: {backgroundColor: colors.paleTeal, borderRadius: radius.small}, pressed: {backgroundColor: colors.paleTeal}, selectedPressed: {backgroundColor: colors.selectedNav},
+ 
+   stack: {gap: spacing.md}, row: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm},
+   columns: {flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg},  full: {width: '100%', gap: spacing.lg},
+--- a/frontend/src/components/growth/GrowthConcernTimeline.tsx
++++ b/frontend/src/components/growth/GrowthConcernTimeline.tsx
+@@ -11,7 +11,7 @@
+ const eventLabels = {agent_proposal: "助手提議", observation: "原始觀察", pending_record: "待核對記錄", confirmed_action: "已確認操作"};
+ const concernLabels = {proposed: "待家長核對", following: "持續關注", closed: "已結束"};
+ export function GrowthConcernIndex({items, selectedId, onSelect}: {items: GrowthConcern[]; selectedId: string | null; onSelect: (id: string) => void}) {
+-  return <View style={s.concernIndex}><Text style={s.eyebrow}>關注索引</Text>{items.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`查看關注：${item.title}`} aria-current={selectedId === item.id ? "true" : undefined} onPress={() => onSelect(item.id)} style={({pressed}) => [s.concernRow, selectedId === item.id && s.concernSelected, pressed && s.pressed]}>
++  return <View style={s.concernIndex}><Text style={s.eyebrow}>關注索引</Text>{items.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`查看關注：${item.title}`} aria-current={selectedId === item.id ? "true" : undefined} onPress={() => onSelect(item.id)} style={({pressed}) => [s.concernRow, selectedId === item.id && s.concernSelected, pressed && (selectedId === item.id ? s.selectedPressed : s.pressed)]}>
+     <View style={s.row}><Text style={[s.title, {flex: 1}]}>{item.title}</Text><AppIcon name="chevron-right" size={16} /></View><AppStatusBadge label={concernLabels[item.status]} tone={item.status === "proposed" ? "warning" : item.status === "following" ? "info" : "neutral"} />{selectedId === item.id ? <Text style={s.meta}>正在查看</Text> : null}
+   </Pressable>)}</View>;
+ }
+--- a/frontend/src/components/growth/GrowthHistoryView.tsx
++++ b/frontend/src/components/growth/GrowthHistoryView.tsx
+@@ -76,7 +76,7 @@
+   readAction: { flex: 1, minWidth: 0, minHeight: 64, flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderRadius: radius.small, borderWidth: 2, borderColor: "transparent" },
+   readHovered: { backgroundColor: colors.quietSurface },
+   readFocused: { borderColor: colors.ink },
+-  readPressed: { opacity: 0.65 },
++  readPressed: { backgroundColor: colors.paleTeal },
+   actions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
+   action: { alignSelf: "center" },
+   restoreAction: { alignSelf: "center", flexShrink: 0, borderWidth: 0, borderRadius: radius.small },
+--- a/frontend/src/components/growth/growth-styles.ts
++++ b/frontend/src/components/growth/growth-styles.ts
+@@ -9,7 +9,7 @@
+   headerStatus:{minHeight:18},
+   workspace:{width:"100%",minWidth:0,gap:spacing.md},
+   indexAside:{width:200,minWidth:0,gap:spacing.lg,borderRightWidth:1,borderRightColor:colors.line,paddingRight:spacing.lg},concernIndex:{gap:spacing.sm},
+-  concernRow:{backgroundColor:colors.controlSurface,borderWidth:1,borderColor:colors.line,borderRadius:radius.small,padding:spacing.md,gap:spacing.xs,minHeight:64,borderBottomWidth:1,borderBottomColor:colors.softLine},concernSelected:{backgroundColor:colors.paleTeal,borderLeftWidth:3,borderLeftColor:colors.ink},pressed:{opacity:0.65},
++  concernRow:{backgroundColor:colors.controlSurface,borderWidth:1,borderColor:colors.line,borderRadius:radius.small,padding:spacing.md,gap:spacing.xs,minHeight:64,borderBottomWidth:1,borderBottomColor:colors.softLine},concernSelected:{backgroundColor:colors.paleTeal,borderLeftWidth:3,borderLeftColor:colors.ink},pressed:{backgroundColor:colors.paleTeal},selectedPressed:{backgroundColor:colors.selectedNav},
+   eyebrow:{fontFamily:chineseFont,...readingType.meta,color:colors.muted,fontWeight:"700"},concernTitle:{fontFamily:chineseFont,...workspaceType.title,color:colors.ink},concernHeading:{gap:spacing.sm,paddingBottom:spacing.md},
+   reading:{fontFamily:chineseFont,...readingType.body,color:colors.ink},timelinePanel:{paddingVertical:spacing.sm,gap:spacing.lg,minWidth:0},
+   timeline:{paddingLeft:spacing.sm},timelineEvent:{paddingLeft:spacing.lg+2,paddingBottom:spacing.xl,gap:spacing.sm},
+--- a/frontend/src/components/history/history-filters.ts
++++ b/frontend/src/components/history/history-filters.ts
+@@ -6,7 +6,7 @@
+   { key: "review", label: "核對記錄", description: "寫入結果與家長確認分開查看", sourceLabel: "記錄與核對", sourcePath: "/care", sourceAction: "開啟記錄與核對", unavailable: "" },
+   { key: "care", label: "照顧記錄", description: "已保存記錄、更正與原始來源", sourceLabel: "照顧記錄", sourcePath: "/care", sourceAction: "開啟記錄與核對", unavailable: "" },
+   { key: "conversations", label: "助手對話", description: "本人與這位孩子相關的對話", sourceLabel: "助手", sourcePath: "/chat", sourceAction: "開啟助手", unavailable: "對話歷史尚未接入這個歷史頁。助手目前顯示的對話視窗不是完整歷史，這裏不會複製或搜尋那個片段。" },
+-  { key: "growth", label: "關注與成長", description: "已結束的關注鏈；年度與季度檔案由原入口查閱", sourceLabel: "成長與關注", sourcePath: "/growth", sourceAction: "開啟成長與關注", unavailable: "" },
++  { key: "growth", label: "關注與成長", description: "查看已結束的關注與跟進記錄", sourceLabel: "成長與關注", sourcePath: "/growth", sourceAction: "開啟成長與關注", unavailable: "" },
+   { key: "notifications", label: "通知與聯絡", description: "通知及聯絡請求的狀態歷程", sourceLabel: "聯絡授權", sourcePath: "/contact", sourceAction: "開啟聯絡授權", unavailable: "通知歷史尚未接通；目前的鈴鐺只顯示操作提示。聯絡授權頁可查看有限的聯絡請求記錄，渠道接受不代表本人已收到。" },
+ ] as const;
+ 
+--- a/frontend/src/components/preparations/PreparationWorkspace.tsx
++++ b/frontend/src/components/preparations/PreparationWorkspace.tsx
+@@ -33,7 +33,7 @@
+   const state = stateLabels[document.readState], revision = document.revision;
+   return <Pressable ref={rowRef} testID={`preparation-row-${document.id}`} accessibilityRole="button"
+     accessibilityLabel={`開啟${revision?.title ?? "暫不能查看的準備單"}`} accessibilityState={{ selected }} aria-selected={selected}
+-    onPress={onPress} style={({ pressed }) => [styles.documentRow, selected && styles.selectedRow, pressed && styles.pressedRow]}>
++    onPress={onPress} style={({ pressed }) => [styles.documentRow, selected && styles.selectedRow, pressed && (selected ? styles.selectedPressedRow : styles.pressedRow)]}>
+     <View style={styles.row}><Text style={styles.eyebrow}>{preparationPurposeLabel(document.purpose)}</Text><AppStatusBadge label={document.status === "archived" && document.readState === "ready" ? "已歸檔" : state.label} tone={document.status === "archived" && document.readState === "ready" ? "neutral" : state.tone} /></View>
+     <Text accessibilityRole="header" style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
+     <Text style={styles.body}>{revision?.summary ?? state.detail}</Text>
+@@ -142,16 +142,15 @@
+   const active = workspace.model.documents.filter(document => document.status === "active");
+   const selected = workspace.model.selected?.status === "active";
+   return <View testID="preparation-workspace" style={styles.workspace}>
++    {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
++    {!selected ? <Text style={styles.meta}>待用準備單{["loading", "unavailable", "lost"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
++    <PreparationReader workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
++    {!selected ? <View testID="preparation-list-actions" style={styles.intentControls}>
++      {onHistory ? <AppButton label="查看已歸檔" variant="secondary" density="compact" onPress={onHistory} /> : null}
++      <View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
++      <AppButton label="到助手準備下一份" variant="accent" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} />
++    </View> : null}
+     {previewControls}
+-    {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
+-    {!selected ? <><View style={styles.headingRow}><View style={styles.headingCopy}>
+-      <Text accessibilityRole="header" style={styles.sectionTitle}>準備好，打開就能用</Text><Text style={styles.body}>到診、入學、外出或照顧交接，各自留成一份準備單。</Text>
+-    </View>{onHistory ? <AppButton label="查看已歸檔" variant="secondary" density="compact" onPress={onHistory} /> : null}</View>
+-      <View style={styles.agentEntry}><View style={styles.headingCopy}><Text style={styles.rowTitle}>下一次要準備甚麼？</Text><Text style={styles.meta}>在助手交代用途、日期及需要。</Text></View>
+-        <View style={styles.intentControls}><View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
+-          <AppButton label="到助手交代" variant="accent" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} /></View>
+-      </View><Text style={styles.meta}>待用準備單{["loading", "unavailable", "lost"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text></> : null}
+-    <PreparationReader workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
+   </View>;
+ }
+ 
+@@ -175,15 +174,13 @@
+ 
+ const styles = StyleSheet.create({
+   workspace: { gap: spacing.lg, minWidth: 0 }, stack: { gap: spacing.md, minWidth: 0 }, row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },
+-  headingRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md }, headingCopy: { flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs },
+   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700" },
+   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+   eyebrow: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700", flexGrow: 1, flexShrink: 1 },
+-   agentEntry: { backgroundColor: colors.paleAmber, borderRadius: radius.medium, borderWidth: 1, borderColor: colors.statusWarmLine, padding: spacing.md, gap: spacing.md },
+   intentControls: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md }, purposeField: { flexGrow: 1, minWidth: 180 },
+   list: { gap: spacing.md, minWidth: 0, flex: 1 }, listColumn: { flex: 0.8 }, detailColumn: { flex: 1.4, minWidth: 0 }, split: { flexDirection: "row", alignItems: "flex-start" },
+   documentRow: { gap: spacing.sm, padding: spacing.md, borderRadius: radius.medium, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.line, minWidth: 0 },
+-  selectedRow: { borderColor: "transparent", borderWidth: 2, backgroundColor: colors.paleTeal }, pressedRow: { backgroundColor: colors.quietSurface },
++  selectedRow: { borderColor: "transparent", borderWidth: 2, backgroundColor: colors.paleTeal }, pressedRow: { backgroundColor: colors.quietSurface }, selectedPressedRow: { backgroundColor: colors.selectedNav },
+   rowTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 17, lineHeight: 26, fontWeight: "700" }, openLabel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700" },
+   document: { gap: spacing.lg, maxWidth: 820, minWidth: 0 }, documentHeader: { gap: spacing.sm, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line },
+   documentTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 24, lineHeight: 34, fontWeight: "700" },
+--- a/frontend/src/components/settings/SettingsNavigation.tsx
++++ b/frontend/src/components/settings/SettingsNavigation.tsx
+@@ -24,7 +24,7 @@
+         accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key}
+         aria-controls={`${id}-panel-${encodeURIComponent(item.key)}`} tabIndex={value === item.key ? 0 : -1} onPress={() => onChange(item.key)}
+         {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }) => move(event, index) } : {})}
+-        style={({ pressed }) => [styles.item, value === item.key && styles.selected, pressed && styles.pressed]}>
++        style={({ pressed }) => [styles.item, value === item.key && styles.selected, pressed && (value === item.key ? styles.selectedPressed : styles.pressed)]}>
+         <Text style={[styles.label, value === item.key && styles.selectedLabel]}>{item.label}</Text>
+       </Pressable>)}
+     </View>
+@@ -38,5 +38,5 @@
+   items: { gap: spacing.xs }, item: { minHeight: 48, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.small, borderLeftWidth: 2, borderLeftColor: "transparent" },
+   selected: { backgroundColor: colors.paleTeal, borderLeftColor: colors.ink }, label: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
+   selectedLabel: { color: colors.ink, fontWeight: "700" }, note: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, marginHorizontal: spacing.md },
+-  pressed: { opacity: 0.68 },
++  pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
+ });
+--- a/frontend/src/components/summary/summary-styles.ts
++++ b/frontend/src/components/summary/summary-styles.ts
+@@ -36,5 +36,5 @@
+   disclosureLabel: {fontFamily: chineseFont, ...readingType.tool, color: colors.ink, fontWeight: '600', flexShrink: 1, minWidth: 0},
+   disclosureContent: {paddingTop: spacing.sm, gap: spacing.sm, paddingBottom: spacing.sm},
+   sourceRow: {gap: spacing.xs, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm},
+-  pressed: {opacity: 0.65},
++  pressed: {backgroundColor: colors.pressedOverlay},
+ });
+--- a/frontend/src/components/tasks/TaskListRow.tsx
++++ b/frontend/src/components/tasks/TaskListRow.tsx
+@@ -18,7 +18,7 @@
+     accessibilityLabel={`${hint}：${task.title}；${time}；${assignee}；${status}${warning ? `；${warning}` : ""}`}
+     accessibilityState={{ selected, disabled }} aria-current={selected ? "true" : undefined} aria-disabled={disabled}
+     disabled={disabled} onPress={onPress} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+-    style={({ pressed }) => [styles.row, review && styles.review, (selected || hovered || focused) && styles.highlight, focused && styles.focused, pressed && styles.pressed]}>
++    style={({ pressed }) => [styles.row, review && styles.review, (selected || hovered || focused) && styles.highlight, focused && styles.focused, pressed && !disabled && (selected || hovered || focused ? styles.selectedPressed : styles.pressed)]}>
+     <View accessible={false} aria-hidden style={styles.leading}><AppIcon name={task.kind === "appointment" ? "calendar-clock-outline" : task.occurrence.state === "completed" ? "checkbox-marked" : "checkbox-blank-outline"} size={21} color={review ? colors.warningInk : colors.muted} /></View>
+     <View style={styles.copy}><Text style={styles.title}>{task.title}</Text><View style={styles.metadata}>
+       <Text style={styles.time}>{time}</Text><Text style={styles.assignee}>{assignee}</Text>
+@@ -36,7 +36,7 @@
+   time: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, flexShrink: 1 },
+   assignee: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
+   warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta }, review: { borderLeftColor: colors.statusWarmLine },
+-  highlight: { backgroundColor: colors.paleTeal, borderRadius: radius.small }, focused: { borderLeftColor: colors.teal }, pressed: { opacity: 0.72 },
++  highlight: { backgroundColor: colors.paleTeal, borderRadius: radius.small }, focused: { borderLeftColor: colors.teal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
+   hint: { position: "absolute", bottom: 2, right: spacing.sm, backgroundColor: colors.paleTeal, paddingHorizontal: 4, borderRadius: 3 },
+   hintText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: 11, lineHeight: 16 },
+ });
+--- a/frontend/src/components/tasks/TasksCalendar.tsx
++++ b/frontend/src/components/tasks/TasksCalendar.tsx
+@@ -16,7 +16,7 @@
+     accessibilityLabel={`${taskCalendarDayLabel(day)}${current ? "；資料基準日" : ""}${selected ? "；已選取，再按取消日期篩選" : ""}`}
+     accessibilityState={{ selected, disabled }} aria-pressed={selected} aria-disabled={disabled}
+     disabled={disabled} onPress={onPress} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+-    style={({ pressed }) => [styles.day, selected && styles.selectedDay, focused && styles.focused, disabled && styles.disabled, pressed && styles.pressed]}>
++    style={({ pressed }) => [styles.day, selected && styles.selectedDay, focused && styles.focused, disabled && styles.disabled, pressed && !disabled && (selected ? styles.selectedPressed : styles.pressed)]}>
+     <View style={[styles.dayNumber, current && styles.currentDay]}><Text style={[styles.dayText, selected && styles.selectedText]}>{day.day}</Text></View>
+     <View accessible={false} aria-hidden style={styles.dots}>
+       {day.scheduled > 0 ? <View style={[styles.dot, styles.scheduledDot]} /> : null}
+@@ -40,9 +40,9 @@
+       <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={styles.month}>{calendar.label}</Text>
+       <View style={styles.monthActions}>
+         <Pressable accessibilityRole="button" accessibilityLabel="上一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}
+-          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && styles.pressed]}><AppIcon name="chevron-left" size={20} color={colors.ink} /></Pressable>
++          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-left" size={20} color={colors.ink} /></Pressable>
+         <Pressable accessibilityRole="button" accessibilityLabel="下一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}
+-          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(1)} style={({ pressed }) => [styles.monthButton, pressed && styles.pressed]}><AppIcon name="chevron-right" size={20} color={colors.ink} /></Pressable>
++          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-right" size={20} color={colors.ink} /></Pressable>
+       </View>
+     </View>
+     {calendar.weeks.length ? <View style={styles.grid}>
+@@ -75,7 +75,7 @@
+   emptyDay: { flex: 1, minWidth: 0 }, dayNumber: { minWidth: 26, height: 26, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "transparent", borderRadius: radius.pill },
+   dayText: { fontFamily: chineseFont, color: colors.ink, fontSize: 14, lineHeight: 20 }, selectedText: { fontWeight: "700" },
+   currentDay: { borderColor: colors.controlOutline }, selectedDay: { backgroundColor: colors.paleTeal, borderColor: colors.ink },
+-  focused: { borderColor: colors.ink, borderWidth: 2 }, disabled: { opacity: 0.5 }, pressed: { opacity: 0.7 },
++  focused: { borderColor: colors.ink, borderWidth: 2 }, disabled: { opacity: 0.5 }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
+   dots: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, height: 8 }, dot: { width: 6, height: 6, borderRadius: radius.pill },
+   scheduledDot: { backgroundColor: colors.ink }, reviewDot: { backgroundColor: colors.statusWarmLine },
+   legend: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.md, rowGap: spacing.xs }, legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+--- a/frontend/src/components/tasks/TasksView.tsx
++++ b/frontend/src/components/tasks/TasksView.tsx
+@@ -131,7 +131,7 @@
+           <MotionDetail activeKey={showPanel ? "panel" : "list"} scopeKey={scopeKey} direction="back" compact={!wide && !showPanel} style={[styles.column, wide && showAside && styles.listColumn, !listVisible && styles.hidden]}>
+             <View ref={listRef} tabIndex={-1} testID="tasks-list" style={styles.listSurface} pointerEvents={listVisible ? "auto" : "none"} aria-hidden={!listVisible} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
+               <View style={styles.tabsBar}><View style={styles.tabs}><UnderlineTabs id={tabsId} label="事項分類" items={[{ key: "pending", label: `待處理 ${openCount}${model.hasMoreTasks ? "+" : ""}` }, { key: "completed", label: "已回報完成" }]} value={tab} onChange={next => { if (occupied) return; actions.closePanel(); setTab(next); setFilter("near"); setQuery(""); setPage(0); setSelectedDay(null); anchor.current = null; }} /></View><AppButton label="歷史" accessibilityLabel="事項歷史" variant="quiet" density="compact" disabled={occupied} onPress={onHistory} /></View>
+-              {!model.reading && reviewCount > 0 ? <Pressable testID="tasks-review-shortcut" accessibilityRole="button" accessibilityLabel={`查看已載入的 ${reviewCount} 項待覆核安排，已停止催辦`} disabled={occupied} accessibilityState={{ disabled: occupied }} aria-disabled={occupied} onPress={() => { if (occupied) return; setTab("pending"); setQuery(""); changeFilter(tab === "pending" && filter === "review" ? "near" : "review"); }} style={({ pressed }) => [styles.reviewShortcut, pressed && styles.pressed]}><View style={styles.reviewCopy}><Text style={styles.reviewTitle}>{reviewCount} 項待覆核{model.hasMoreTasks ? "（已載入）" : ""}</Text><Text style={styles.reviewNote}>{filter === "review" && tab === "pending" ? "返回近期安排" : "完成或取消仍未確定 · 已停催"}</Text></View><AppIcon name={filter === "review" && tab === "pending" ? "chevron-left" : "chevron-right"} size={18} color={colors.warningInk} /></Pressable> : null}
++              {!model.reading && reviewCount > 0 ? <Pressable testID="tasks-review-shortcut" accessibilityRole="button" accessibilityLabel={`查看已載入的 ${reviewCount} 項待覆核安排，已停止催辦`} disabled={occupied} accessibilityState={{ disabled: occupied }} aria-disabled={occupied} onPress={() => { if (occupied) return; setTab("pending"); setQuery(""); changeFilter(tab === "pending" && filter === "review" ? "near" : "review"); }} style={({ pressed }) => [styles.reviewShortcut, pressed && !occupied && styles.reviewPressed]}><View style={styles.reviewCopy}><Text style={styles.reviewTitle}>{reviewCount} 項待覆核{model.hasMoreTasks ? "（已載入）" : ""}</Text><Text style={styles.reviewNote}>{filter === "review" && tab === "pending" ? "返回近期安排" : "完成或取消仍未確定 · 已停催"}</Text></View><AppIcon name={filter === "review" && tab === "pending" ? "chevron-left" : "chevron-right"} size={18} color={colors.warningInk} /></Pressable> : null}
+               {tab === "completed" ? <Text style={styles.meta}>{model.hasMoreTasks ? "目前只按已載入資料顯示最近 10 項，載入更多後會重新排序。" : "只顯示最近 10 項；較早及已取消的安排可到事項歷史查看。"}{completed.some(item => !item.completedAt) ? " 未提供完成時間的項目保留載入次序，排在已知時間之後。" : ""}</Text> : null}
+               <AppTabPanel tabsId={tabsId} tabKey={tab} active>
+               {tab === "pending" && !model.reading ? <View style={styles.backlogToolbar}>
+@@ -146,8 +146,8 @@
+               <View style={styles.scheduleList}>
+               {tab === "pending" ? <View style={styles.listContext}>
+                 <Text style={styles.meta} accessibilityLiveRegion="polite">{selectedDay ? `${DateTime.fromISO(selectedDay).toFormat("M月d日")}` : backlogLabels[filter]}{!selectedDay && filter === "near" && backlog.nearLabel ? ` · ${backlog.nearLabel}` : ""}{query.trim() ? " · 搜尋結果" : ""} · {timeZoneLabel} · 已載入 {backlog.total} 項{backlog.total > 0 ? `，顯示 ${backlog.from}–${backlog.to}` : ""}</Text>
+-                {backlog.counts.earlier > 0 && filter !== "earlier" ? <Pressable accessibilityRole="button" accessibilityLabel={`查看已載入的 ${backlog.counts.earlier} 項較早未處理事項`} disabled={occupied} aria-disabled={occupied} onPress={() => changeFilter("earlier")} style={({ pressed }) => [styles.contextLink, pressed && styles.pressed]}><Text style={styles.contextLinkText}>較早未處理 {backlog.counts.earlier}</Text></Pressable> : null}
+-                {selectedDay ? <Pressable accessibilityRole="button" accessibilityLabel="只取消日期篩選" disabled={occupied} aria-disabled={occupied} onPress={() => selectCalendarDay(null)} style={({ pressed }) => [styles.contextLink, pressed && styles.pressed]}><Text style={styles.contextLinkText}>取消日期</Text></Pressable> : null}
++                {backlog.counts.earlier > 0 && filter !== "earlier" ? <Pressable accessibilityRole="button" accessibilityLabel={`查看已載入的 ${backlog.counts.earlier} 項較早未處理事項`} disabled={occupied} aria-disabled={occupied} onPress={() => changeFilter("earlier")} style={({ pressed }) => [styles.contextLink, pressed && !occupied && styles.pressed]}><Text style={styles.contextLinkText}>較早未處理 {backlog.counts.earlier}</Text></Pressable> : null}
++                {selectedDay ? <Pressable accessibilityRole="button" accessibilityLabel="只取消日期篩選" disabled={occupied} aria-disabled={occupied} onPress={() => selectCalendarDay(null)} style={({ pressed }) => [styles.contextLink, pressed && !occupied && styles.pressed]}><Text style={styles.contextLinkText}>取消日期</Text></Pressable> : null}
+               </View> : null}
+               <ReadStateNotice state={readState} message={readMessage} />
+               {sections.map(section => <View key={section.id} testID={`task-time-group-${section.id}`} style={styles.timeGroup}>
+@@ -218,7 +218,7 @@
+   reviewNote: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta },
+   timeGroup: { minWidth: 0 }, groupHeading: { flexDirection: "row", gap: spacing.sm, alignItems: "baseline", paddingBottom: spacing.sm },
+   groupTitle: { fontFamily: chineseFont, color: colors.teal, ...readingType.tool, fontWeight: "700" },
+-  pressed: { opacity: 0.7 },
++  pressed: { backgroundColor: colors.pressedOverlay }, reviewPressed: { backgroundColor: colors.warningPressed },
+   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+   notice: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool }, breadcrumb: { fontFamily: chineseFont, color: colors.teal, ...readingType.meta, fontWeight: "700" },
+   background: { alignItems: "flex-start", borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm, gap: spacing.sm },
+--- a/frontend/src/components/ui.tsx
++++ b/frontend/src/components/ui.tsx
+@@ -80,7 +80,7 @@
+   const touch = useInteractionDensity();
+   // Paper 5.15 Button replaces expanded state on its inner control; expose it on the selection trigger itself.
+   return <Pressable ref={ref} nativeID={id} accessibilityRole="button" accessibilityLabel={count === undefined ? label : `${label}，${count} 項`} accessibilityState={{ expanded, disabled }} aria-expanded={expanded} aria-disabled={disabled} aria-invalid={invalid} aria-describedby={describedBy} disabled={disabled}
+-    onPress={onPress} onBlur={onBlur} style={({ pressed }) => [styles.selectionTrigger, (compact || touch) && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && styles.linkPressed]}>
++    onPress={onPress} onBlur={onBlur} style={({ pressed }) => [styles.selectionTrigger, (compact || touch) && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && !disabled && styles.selectionPressed]}>
+     <Text style={styles.selectionLabel}>{label}</Text>{count !== undefined ? <SelectionCount count={count} /> : null}<AppIcon name={calendar ? "calendar-clock-outline" : "chevron-down"} size={20} color={colors.deepTeal} />
+   </Pressable>;
+ }
+@@ -127,7 +127,7 @@
+                 if (event.key !== " " && event.key !== "Spacebar") return;
+                 event.preventDefault(); if (!disabled && !event.repeat) select();
+               } } : {})}
+-              style={({ pressed }) => [styles.countedOption, pressed && styles.linkPressed]}>
++              style={({ pressed }) => [styles.countedOption, pressed && !disabled && styles.optionPressed]}>
+               <View style={styles.countedOptionCopy}><Text style={styles.countedOptionLabel}>{item.label}</Text><SelectionCount count={item.count} /></View>
+               <AppIcon name={checked ? "radiobox-marked" : "radiobox-blank"} size={20} color={colors.ink} />
+             </Pressable>;
+@@ -234,7 +234,7 @@
+       accessibilityRole="tab" accessibilityLabel={item.label} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
+       accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => select(item.key)}
+       {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
+-      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.linkPressed]}
++      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.tabPressed]}
+     ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
+     <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} />
+     </View>
+@@ -268,7 +268,7 @@
+   disclosureButton: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.controlOutline, backgroundColor: "transparent" },
+   disclosureLabel: { color: colors.ink, lineHeight: 22, flexShrink: 1 },
+   focusedButton: { borderColor: colors.ink },
+-  buttonPressed: { opacity: 0.65 },
++  buttonPressed: { backgroundColor: colors.pressedOverlay },
+   card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
+   mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
+   insetCard: { borderWidth: 0, borderRadius: radius.small, backgroundColor: colors.quietSurface, padding: spacing.md },
+@@ -296,7 +296,10 @@
+   amberDot: { backgroundColor: colors.amber },
+   neutralDot: { backgroundColor: colors.muted },
+   link: { minHeight: 44, flexDirection: "row", gap: spacing.sm, alignItems: "center", justifyContent: "center" },
+-  linkPressed: { opacity: 0.6 },
++  linkPressed: { backgroundColor: colors.pressedOverlay },
++  selectionPressed: { backgroundColor: colors.paleTeal },
++  optionPressed: { backgroundColor: colors.paleTeal },
++  tabPressed: { backgroundColor: colors.paleTeal },
+   linkText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 21, fontWeight: "700", textDecorationLine: "underline" },
+   tabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.line },
+   tabs: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+--- a/frontend/src/preview/PreparationPreviewTools.tsx
++++ b/frontend/src/preview/PreparationPreviewTools.tsx
+@@ -20,9 +20,9 @@
+   const [expanded, setExpanded] = useState(false);
+   if (!preview) return null;
+   return <View style={styles.sourceNotice}>
+-    <View style={styles.row}><AppStatusBadge label="合成準備單示例" tone="neutral" />
+-      <AppButton label="預覽來源與限制" variant="quiet" density="compact" expanded={expanded} onPress={() => setExpanded(value => !value)} /></View>
++    <AppButton label="預覽來源與限制" variant="quiet" density="compact" style={styles.disclosure} expanded={expanded} onPress={() => setExpanded(value => !value)} />
+     {expanded ? <View style={styles.stack}>
++      <AppStatusBadge label="合成準備單示例" tone="neutral" />
+       <Text style={styles.meta}>以下文件來自預先寫好的版面示例，並非真實孩子資料或即時 Agent 生成。清單及歸檔只保留在本次預覽；重新載入會重設，沒有通知、上傳或傳送給其他人。</Text>
+       <Text style={styles.meta}>正式版仍需接入文件讀取、Agent 產出、版本保存、歸檔及原操作結果查核。現有到診共享準備不會在這裏另存一份。</Text>
+       <AppSelect label="準備單預覽狀態" value={preview.condition} options={conditionOptions} onChange={preview.setCondition} />
+@@ -30,4 +30,4 @@
+   </View>;
+ }
+ 
+-const styles = StyleSheet.create({ sourceNotice: { gap: spacing.md }, row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm }, stack: { gap: spacing.md }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });
++const styles = StyleSheet.create({ sourceNotice: { gap: spacing.md }, disclosure: { alignSelf: "flex-start" }, stack: { gap: spacing.md }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });
+--- a/frontend/src/screens/SummaryScreen.tsx
++++ b/frontend/src/screens/SummaryScreen.tsx
+@@ -70,10 +70,9 @@
+             measurements={profile?.measurements} profileSource={profile?.profileSource}
+             onOpenMeasurement={recordId => guarded(() => router.push({ pathname: "/care", params: { record: recordId } }))} /> : null}
+         </AppTabPanel>
+-        <AppTabPanel tabsId="child-preparation-tabs" tabKey="preparation" active={tab === "preparation"} style={styles.workspace}>
++        <AppTabPanel tabsId="child-preparation-tabs" tabKey="preparation" active={tab === "preparation"}>
+           {tab === "preparation" ? <PreparationWorkspace onPrepareQuestion={actions.prepareQuestion} previewControls={<PreparationPreviewTools key={scopeKey} />} onHistory={() => guarded(() => router.push({ pathname: "/history", params: { category: "preparations" } }))}
+             scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} /> : null}
+-          {tab === "preparation" ? <AppButton label="舊共享準備／原操作查核" variant="quiet" density="compact" onPress={() => changeTab("legacy-preparation")} /> : null}
+         </AppTabPanel>
+       </>}
+     </View>
+--- a/frontend/src/screens/guideScreen.tsx
++++ b/frontend/src/screens/guideScreen.tsx
+@@ -46,7 +46,7 @@
+         <Text style={styles.eyebrow}>使用路徑 · 3 步</Text>
+         {steps.map((item, index) => <Pressable key={item.title} accessibilityRole="button" accessibilityLabel={`第 ${index + 1} 步：${item.title}${index === currentStep ? "，目前閱讀" : ""}`}
+           accessibilityState={{ selected: index === currentStep }} onPress={() => setCurrentStep(index)}
+-          style={({ pressed }) => [styles.step, index === currentStep && styles.stepActive, pressed && styles.pressed]}>
++          style={({ pressed }) => [styles.step, index === currentStep && styles.stepActive, pressed && (index === currentStep ? styles.selectedPressed : styles.pressed)]}>
+           <View style={[styles.stepNumber, index === currentStep && styles.stepNumberActive]}><Text style={[styles.stepNumberText, index === currentStep && styles.stepNumberTextActive]}>{index + 1}</Text></View>
+           <View style={styles.stepCopy}><Text style={styles.stepTitle}>{item.title}</Text>{index === currentStep ? <Text style={styles.meta}>目前閱讀</Text> : null}</View>
+           <AppIcon name="chevron-right" size={18} />
+@@ -93,5 +93,5 @@
+   pointTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+   actions: { alignItems: "flex-start" }, stepControls: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
+   start: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.lg, backgroundColor: colors.paleTeal, padding: spacing.lg, borderRadius: radius.medium }, startCopy: { flex: 1, flexBasis: 260, minWidth: 0, gap: spacing.sm },
+-  previewFooter: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm, alignItems: "flex-start" }, pressed: { opacity: 0.68 },
++  previewFooter: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm, alignItems: "flex-start" }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
+ });
+--- a/frontend/src/screens/historyScreen.tsx
++++ b/frontend/src/screens/historyScreen.tsx
+@@ -96,7 +96,7 @@
+       {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
+         : <UnderlineTabs<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
+       <View style={styles.sourceRow}>
+-        <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text>{!growthCategory ? <Text style={styles.meta}>{current.description} · 來源：{current.sourceLabel}</Text> : null}</View>
++        <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.meta}>{current.description}{!growthCategory ? ` · 來源：${current.sourceLabel}` : null}</Text></View>
+         {reviewCategory || careCategory ? <AppButton label="開啟記錄與核對" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/care"))} /> : null}
+         {taskCategory ? <AppButton label="開啟待辦" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/tasks"))} /> : null}
+         {preparationCategory ? <AppButton label="開啟準備單" variant="secondary" density="compact" onPress={() => navigate(() => router.push({ pathname: "/summary", params: { tab: "preparation" } }))} /> : null}
+--- a/frontend/src/screens/loginScreen.tsx
++++ b/frontend/src/screens/loginScreen.tsx
+@@ -117,7 +117,7 @@
+   storyReadingWidth: { width: "100%", minWidth: 0, maxWidth: 600 },
+   formDesktop: { flexGrow: 0, flexShrink: 0, flexBasis: "44%", minWidth: 400, paddingHorizontal: spacing.xxl },
+   featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+-  scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { opacity: 0.65 },
++  scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { backgroundColor: colors.pressedOverlay },
+   story: { width: "52%", minHeight: 760, backgroundColor: colors.paper, overflow: "hidden" },  storyImage: { position: "absolute", width: "100%", height: "100%", opacity: 0.55 }, storyContent: { flex: 1, paddingHorizontal: spacing.hero, paddingVertical: spacing.xxl, justifyContent: "center", gap: spacing.md }, storyLogo: { width: 190, height: 60, alignSelf: "flex-start" }, storyEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.small, fontWeight: "800" }, storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.hero, lineHeight: 48, fontWeight: "800", maxWidth: 600 }, storyTitleCompact: { fontSize: typeScale.heading, lineHeight: 38 }, storyLead: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 26, maxWidth: 570 }, features: { marginTop: spacing.lg, gap: spacing.lg }, feature: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },
+   formSide: { flex: 1, minWidth: 0, minHeight: 760, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { width: "100%", maxWidth: 440, alignItems: "flex-start", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 440, gap: spacing.lg }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
+   modeTabs: { flexDirection: "row", borderRadius: radius.small, backgroundColor: colors.neutralSurface, padding: spacing.xs, gap: spacing.xs }, modeTab: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.small }, modeActive: { backgroundColor: colors.white }, modeInitialMarker: { borderBottomWidth: 2, borderBottomColor: colors.teal }, modeText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" }, modeTextActive: { color: colors.deepTeal }, passwordBlock: { gap: spacing.xs }, passwordToggle: { backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, alignSelf: "flex-end", minHeight: 48, paddingHorizontal: spacing.sm, justifyContent: "center" }, passwordToggleText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "700" }, result: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.paleTeal, borderRadius: radius.small, padding: spacing.md, fontSize: typeScale.small, lineHeight: 22 }, formNote: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 }, divider: { height: 1, backgroundColor: colors.line },  backLink: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, alignSelf: "flex-start" }, backLinkText: { textDecorationLine: "underline", fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" }, footer: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
+--- a/frontend/src/screens/profileScreen.tsx
++++ b/frontend/src/screens/profileScreen.tsx
+@@ -39,7 +39,7 @@
+         ref={node => switchPosition.setOptionRef(item.id, node)}
+         accessibilityLabel={`切換至${item.displayName}`} accessibilityState={{ selected: item.id === child?.id }}
+         onPress={() => switchPosition.selectChild(item.id)}
+-        style={({ pressed }) => [styles.childOption, item.id === child?.id && styles.childOptionActive, pressed && styles.pressed]}>
++        style={({ pressed }) => [styles.childOption, item.id === child?.id && styles.childOptionActive, pressed && (item.id === child?.id ? styles.selectedPressed : styles.pressed)]}>
+         <Text style={styles.childName}>{item.displayName}</Text><Text style={styles.meta}>{item.id === child?.id ? "目前" : "切換"}</Text>
+       </Pressable>) : <Text style={styles.meta}>沒有可切換的孩子。</Text>}
+       </View>
+@@ -76,7 +76,7 @@
+   previewTools: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.lg },
+   childOption: { backgroundColor: colors.controlSurface, flexGrow: 1, flexBasis: 180, minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.sm,
+     borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+-  childOptionActive: { backgroundColor: colors.selectedNav, borderColor: colors.teal }, pressed: { opacity: 0.68 },
++  childOptionActive: { backgroundColor: colors.selectedNav, borderColor: colors.teal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedPressed },
+   childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
+   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
+ });
+--- a/frontend/src/screens/settingsScreen.tsx
++++ b/frontend/src/screens/settingsScreen.tsx
+@@ -133,7 +133,7 @@
+   scopeNote: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.md },
+   draftBoundary: { borderLeftWidth: 2, borderLeftColor: colors.line, paddingLeft: spacing.md, gap: spacing.xs },
+   draftTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
+-  pressed: { opacity: 0.68 },
++  pressed: { backgroundColor: colors.pressedOverlay },
+   sections: { gap: spacing.xl, width: "100%", minWidth: 0 },
+   sectionGroup: { width: "100%", minWidth: 0, gap: spacing.xl },
+   identity: { flexDirection: "row", alignItems: "center", gap: spacing.md }, avatar: { width: 55, height: 55, borderRadius: 28, backgroundColor: colors.teal, alignItems: "center", justifyContent: "center" }, avatarText: { color: colors.white, fontFamily: chineseFont, fontSize: typeScale.title, fontWeight: "800" }, identityText: { flex: 1, minWidth: 0, gap: spacing.xs }, identityName: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "800" }, muted: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta }, divider: { backgroundColor: colors.softLine }, label: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, fontWeight: "700" }, draftNote: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+--- a/frontend/src/theme.ts
++++ b/frontend/src/theme.ts
+@@ -30,6 +30,12 @@
+   quietSurface: "#EDFAF9",
+   mintSurface: "#E3F6F5",
+   previewSurface: "#F7FCFC",
++  // Temporary interaction shades; content and borders keep their full opacity.
++  pressedOverlay: "rgba(39, 35, 67, 0.08)",
++  accentPressed: "#E5C20B",
++  inkPressed: "#221F3B",
++  selectedPressed: "#A8D0D4",
++  warningPressed: "#F2EAC8",
+   statusWarm: "#FFF7D8",
+   statusUnknown: "#FFF7D8",
+   statusWarmLine: "#A38B19",

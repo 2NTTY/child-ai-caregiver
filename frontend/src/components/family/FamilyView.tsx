@@ -231,7 +231,6 @@ const styles = StyleSheet.create({
   stack: { flexDirection: "column" }, column: { flex: 1, minWidth: 0, gap: spacing.lg }, fullColumn: { width: "100%", flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  warning: { padding: spacing.md, backgroundColor: colors.paleAmber, borderRadius: radius.small },
   warningText: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, lineHeight: 22 },
   error: { fontFamily: chineseFont, color: colors.errorInk, fontSize: typeScale.small, lineHeight: 21 },
   form: { gap: spacing.sm, minWidth: 0 }, member: { paddingVertical: spacing.lg, gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine },
@@ -244,7 +243,6 @@ const styles = StyleSheet.create({
   reviewCard: { backgroundColor: colors.statusUnknown, borderColor: colors.statusUnknownLine },
   reviewTitle: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, fontWeight: "700", lineHeight: 22 },
   comparison: { padding: spacing.md, borderWidth: 1, borderColor: colors.statusUnknownLine, borderRadius: radius.small, gap: spacing.sm },
-  checkRow: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, pressed: { opacity: 0.68 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, 
   code: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, lineHeight: 22 },
 });

@@ -1,0 +1,110 @@
+{
+  "controls": [
+    {
+      "label": "開啟小昕的到診準備",
+      "rect": {
+        "bottom": 453,
+        "height": 142,
+        "left": 240,
+        "right": 1156,
+        "top": 311,
+        "width": 916,
+        "x": 240,
+        "y": 311
+      }
+    },
+    {
+      "label": "開啟小昕的迎新準備",
+      "rect": {
+        "bottom": 607,
+        "height": 142,
+        "left": 240,
+        "right": 1156,
+        "top": 465,
+        "width": 916,
+        "x": 240,
+        "y": 465
+      }
+    },
+    {
+      "label": "開啟週末公園半日遊",
+      "rect": {
+        "bottom": 761,
+        "height": 142,
+        "left": 240,
+        "right": 1156,
+        "top": 619,
+        "width": 916,
+        "x": 240,
+        "y": 619
+      }
+    },
+    {
+      "label": "開啟週末照顧交接",
+      "rect": {
+        "bottom": 915,
+        "height": 142,
+        "left": 240,
+        "right": 1156,
+        "top": 773,
+        "width": 916,
+        "x": 240,
+        "y": 773
+      }
+    },
+    {
+      "label": "查看已歸檔",
+      "rect": {
+        "bottom": 975,
+        "height": 40,
+        "left": 241,
+        "right": 335.5,
+        "top": 935,
+        "width": 94.5,
+        "x": 241,
+        "y": 935
+      }
+    },
+    {
+      "label": "用途：到診準備",
+      "rect": {
+        "bottom": 979,
+        "height": 48,
+        "left": 348.5,
+        "right": 975.1875,
+        "top": 931,
+        "width": 626.6875,
+        "x": 348.5,
+        "y": 931
+      }
+    },
+    {
+      "label": "到助手準備下一份",
+      "rect": {
+        "bottom": 977,
+        "height": 44,
+        "left": 987.1875,
+        "right": 1156,
+        "top": 933,
+        "width": 168.8125,
+        "x": 987.1875,
+        "y": 933
+      }
+    },
+    {
+      "label": "預覽來源與限制",
+      "rect": {
+        "bottom": 1035,
+        "height": 40,
+        "left": 240,
+        "right": 390,
+        "top": 995,
+        "width": 150,
+        "x": 240,
+        "y": 995
+      }
+    }
+  ],
+  "legacyEntries": [],
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/summary?tab=preparation"
+}
