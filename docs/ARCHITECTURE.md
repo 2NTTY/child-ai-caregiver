@@ -567,3 +567,13 @@ P2 開關預設關閉；真渠道及 SQL 等既有結果見 [S13-W07](../artifac
 個人 key 模式的 UI 可調每日及每次運行生成／query embedding 次數，範圍見 [API](API.md#personal-model-http)；本節取代前述 4／2 對 personal 模式不可變的假設，平台預設不變。全站個人服務安全上限由 `AI_PERSONAL_DAILY_GLOBAL_ATTEMPTS` 管理，預設 1000，UI 顯示但普通使用者不能改全站配置；全局 AI_ENABLED 仍有效。接線版本啟動前須 migration 024，避免憑據或計數服務悄悄退回舊路徑。
 
 2026-09-30 真 key 的 metadata GET 回覆地區不支援；使用者確認本包先交付設定及本機接線，真生成／向量留待可用供應商條件。不能把 Vertex ADC 通過或 metadata GET 當私人 key 真服務通過；未新增 Vertex key 路由或繞過地區限制。
+
+
+<a id="int-concern-flow"></a>
+## INT-W05 持續關注與站內跟進
+
+ConcernStore 是家庭共享關注、事件與原操作收據的唯一權威；頁面 owner 與 Agent 候選確認共用服務，GrowthAttention 保持有限官方規則的獨立語義。觀察只保存已核對共享的整理內容，不把私人聊天或來源向量化／複製進家庭。連結按資源 ID／孩子核對，不因相似標題合併。
+
+一次跟進由明確未來時間觸發：pg-boss 排程 → 短交易重核／入列 ID → 交易外 Agent background → 原 run 收據／站內結果。延用既有 generation、storage epoch、目前成員權限與 Agent claim 去重。沒有新排程不空轉模型；已關閉、版本過時或 unknown 不重新執行。背景關注沒有 contact 工具，不借此擴大通知授權；相關任務仍走既有獨立流程。恢復關注不重新排入舊跟進。
+
+使用現有 pg-boss／權限／cipher 的原因：此包缺的是產品關注與終態語義，既有框架已提供可靠入列、排程及恢復，不引入第二套 worker 或狀態機框架。細節以 [API](API.md#int-concerns)／[資料契約](DATA_MODEL.md#int-concerns) 為準。

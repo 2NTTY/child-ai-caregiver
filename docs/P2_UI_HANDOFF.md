@@ -26,7 +26,8 @@ INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴
 | 對話、歷史、來源、工具結果、持久待確認及取消 | ChatController／AgentConversationOwner／AgentAuthorizationOwner；messages、agent runs／pending／operation receipts |
 | 記錄、搜尋、更正、歷史及孩子檔案；首頁照護資料 | `CareProfileDomains`；同一 Care API／profile 版本。首頁只組合已載入資料，不另外保存 |
 | 任務、預約、改期、完成、取消、成員指派及歷史 | `TaskKnowledgeDomains`；Task API 的 task／occurrence／版本，側欄讀相同 owner |
-| 記憶、摘要覆蓋、人工備援；成長關注及單份到診準備 | `TaskKnowledgeDomains`；Memory／Growth／CareSummary API。持續關注鏈及多份文件不以這些舊資源冒充 |
+| 記憶、摘要覆蓋、人工備援；成長關注及單份到診準備 | `TaskKnowledgeDomains`；Memory／Growth／CareSummary API。多份文件仍待 INT-W06 |
+| 共享持續關注、事件、結束／恢復與一次站內跟進 | 同一 `TaskKnowledgeDomains/useTaskKnowledgeGrowth` → Concern API／ConcernStore；首頁及歷史只讀此 owner。Agent 以持久候選確認同一服務；與 GrowthAttention／MemoryTopic 分開。根 INT-W05 記驗收，未聲稱已公開部署 |
 | 對話照片轉交、照片上傳／提取／確認、分享文字／連結輸入 | `PhotoInputDomains`；Photo／SharedInput API，原檔與人工草稿共用一次操作上下文；模型提取與家庭共享分開同意 |
 | 本人模型 key／限額、通知偏好、Push／Telegram、家庭成員及聯絡授權 | `SettingsDomains`；各既有 API／版本／收據，個人設定按身份、家庭操作按孩子清理；不自動發送渠道測試 |
 | 私人來源、用途、原地修改／停用、修訂歷史及對話設定 | `PhotoInputDomains`／`usePhotoInputSources`／同一 SharedInput API；設定與聊天導向同一來源清單，Agent 候選確認亦寫入同一 shared_inputs。引用原文另經本人選取授權，私人引用不當官方知識 |

@@ -1,0 +1,55 @@
+{
+  "package": "INT-W05",
+  "baseline": "7abdcf9bb7c7ec97f225d90fd2091afb13de9b07",
+  "date": "2026-10-06",
+  "environment": {
+    "node": "24.19.0",
+    "postgres": "18.6",
+    "database": "local synthetic database on port 5434",
+    "worker": "paused before and after; dedicated scripted handler during one scenario"
+  },
+  "checks": {
+    "serverTypes": "passed",
+    "frontendTypes": "passed; final manual-fallback delta also passed on Node 24.11.0 (no product runtime claim)",
+    "adkCatalog": {
+      "provider": "scripted only",
+      "originalFailure": "input_limit before any provider call when all feature tools were attached",
+      "fix": "task-specific capability selection; no quota increase or protocol truncation",
+      "finalRequestCharacters": 23790,
+      "toolDeclarations": 11,
+      "result": "passed"
+    },
+    "localScenario": {
+      "script": "scripts/int-concerns-smoke.mjs --approved-local-int-w05",
+      "attempts": 1,
+      "result": "passed",
+      "accounts": 2,
+      "children": 1,
+      "businessCalls": 40,
+      "polls": 3,
+      "scriptedAgentExecutions": 1,
+      "coverage": [
+        "real Agent candidate confirmation to concern authority and original receipt replay",
+        "shared observer reading and revocation",
+        "append/archive/restore preserve history and linked task",
+        "durable job and same follow-up Agent claim dedup",
+        "private Agent reply not copied into shared event",
+        "synthetic child cleanup; worker paused"
+      ]
+    }
+  },
+  "realServiceCalls": {
+    "model": 0,
+    "embedding": 0,
+    "notification": 0,
+    "externalFetch": 0,
+    "browser": 0
+  },
+  "backup": "external encrypted paired database/photo backup before migration 027",
+  "limits": [
+    "No new real Gemini concern workflow or browser interaction proof",
+    "No new hard-kill or cron timing test; existing pg-boss evidence reused",
+    "No public deployment; INT-W07 remains required"
+  ],
+  "review": "Primary reviewed permissions, transaction/candidate receipt integration, worker guards, private result isolation and shared-owner projection"
+}

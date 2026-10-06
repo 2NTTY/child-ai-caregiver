@@ -10,6 +10,7 @@ const stopReasons: Record<string, string> = {
   invalid_tool: "工具要求未能通過核對", tool_unknown: "工具結果未能確認", interrupted: "處理中斷，沒有自動重新執行",
 };
 const toolNames: Record<string, string> = {
+  read_concerns:"讀取持續關注",propose_concern:"保存持續關注候選",propose_concern_change:"保存關注變更候選",
   list_private_sources:"讀取本人來源清單",read_private_source:"讀取獲授權的私人原文",propose_private_source:"保存私人來源候選",propose_private_source_change:"保存來源修改候選",
   stage_private_summary: "整理私有輔助摘要", read_context: "讀取已確認記憶及任務", search_knowledge: "檢索知識來源",
   propose_task: "保存建立任務候選", propose_task_change: "保存任務變更候選", propose_fact: "保存記憶候選", present_answer: "整理回覆及引用",
@@ -39,7 +40,21 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
   const common = { id: proposal.id, version: proposal.version, status: proposal.status, kind: value.kind,
     createdAt: proposal.createdAt, expiresAt: proposal.expiresAt,
     result: proposal.result ? { kind: proposal.result.kind, version: proposal.result.version,
-      label: `${proposal.result.kind === "task" ? "任務" : proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+      label: `${proposal.result.kind === "task" ? "任務" : proposal.result.kind==="concern"?"持續關注":proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+  if(value.kind==="concern_create") return {...common,scope:"family",title:value.values.title,content:value.values.reason,
+    details:[{label:"將共享的觀察",value:value.values.observation},{label:"觀察時間",value:value.values.observedAt},
+      {label:"一次站內跟進",value:value.values.followUpAt??"未安排；不自動發通知"},
+      {label:"關聯",value:Object.entries(value.values.links).filter(([,id])=>id).map(([kind,id])=>kind+": "+id).join(" · ")||"沒有關聯記錄"},
+      {label:"邊界",value:"接受後加入家庭共享持續關注；觀察不是診斷或已確認健康事實。跟進只回站內，不自動外發。"}]};
+  if(value.kind==="concern_change") {
+    const change=value.change, label={append:"追加共享觀察",archive:"結束關注",restore:"恢復關注",schedule_followup:"調整站內跟進"}[change.action];
+    return {...common,scope:"family",title:proposal.targetLabel??"持續關注",content:label,details:[
+      {label:"原關注與版本",value:value.concernId+" · "+change.expectedVersion},
+      ...(change.action==="append"?[{label:"將共享的觀察",value:change.text},{label:"觀察時間",value:change.observedAt},
+        {label:"關聯",value:Object.entries(change.links).filter(([,id])=>id).map(([kind,id])=>kind+": "+id).join(" · ")||"沒有關聯記錄"}]:[]),
+      ...(change.action==="schedule_followup"?[{label:"一次站內跟進",value:change.followUpAt??"取消尚未觸發的跟進"}]:[]),
+      {label:"邊界",value:"結束關注不代表照護完成，也不取消相關任務；恢復不重新啟動舊跟進。不會自動外發通知。"}]};
+  }
   if(value.kind==="private_source_create"||value.kind==="private_source_change") {
     const management=value.kind==="private_source_create"?value.management:value.change.management;
     const content=value.kind==="private_source_create"?value.input:value.change.content;
@@ -75,6 +90,6 @@ export function projectAgentRun(result: ProductAgentResult, childId: string, cre
     stopReasonLabel: result.stopReason ? stopReasons[result.stopReason] ?? "未能確認停止原因" : null,
     counts: result.countsKnown === false ? null : result.counts, retrievalMode: result.retrievalMode,
     tools: result.tools.map((tool, index) => ({ id: `${result.runId}:${index}`, nameLabel: toolNames[tool.name] ?? "其他工具",
-      status: tool.status, savesCandidate: ["propose_task", "propose_task_change", "propose_fact","propose_private_source","propose_private_source_change"].includes(tool.name) })),
+      status: tool.status, savesCandidate: ["propose_task", "propose_task_change", "propose_fact","propose_private_source","propose_private_source_change","propose_concern","propose_concern_change"].includes(tool.name) })),
     proposals: result.proposals.map(projectAgentProposal), citations: result.citations.map(projectAgentCitation),privateSourceCitations:result.privateSourceCitations };
 }

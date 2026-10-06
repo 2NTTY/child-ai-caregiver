@@ -1,6 +1,6 @@
 import { usePreviewLeaveGuard } from "./PreviewNavigationGuard";
 import { useEffect,useRef,useState } from "react";
-import type { GrowthAttention,GrowthAttempt,GrowthConcernChange,GrowthDecision,GrowthPage,GrowthPending,GrowthTopic,GrowthTopicDecision,GrowthViewModel } from "../growth-view-model";
+import type { GrowthAttention,GrowthAttempt as FormalGrowthAttempt,GrowthConcernChange,GrowthDecision,GrowthPage,GrowthPending as FormalGrowthPending,GrowthTopic,GrowthTopicDecision,GrowthViewModel } from "../growth-view-model";
 import { growthActionable,growthConcernCanRestore,growthRefreshNotice,growthStateLabels } from "../growth-view-model";
 import { growthFixture } from "./growthFixture";
 import type { HomeChild } from "../view-model";
@@ -8,6 +8,8 @@ import type { HomeChild } from "../view-model";
 export type GrowthCondition="normal"|"empty"|"loading"|"read_error"|"read_only"|"lost"|"source_unavailable"|"fact_conflict"|"linked_task"|"no_assignee";
 export type GrowthOutcome="success"|"failed"|"unknown"|"conflict";
 export type GrowthRead="same"|"changed"|"missing"|"source_unavailable";
+type GrowthAttempt = Exclude<FormalGrowthAttempt, { kind: "concern_create" | "concern_update" }>;
+type GrowthPending = Omit<FormalGrowthPending, "attempt"> & { attempt: GrowthAttempt };
 const clone=<T,>(value:T):T=>JSON.parse(JSON.stringify(value)) as T;
 
 // Component-memory simulation only. Production uses GrowthApi and the original frozen-request rules.

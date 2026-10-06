@@ -30,6 +30,7 @@ import { createOnlineStore } from "./online.ts";
 import { createWorkerQueue } from "./worker-queue.ts";
 import { createTaskScheduling } from "./task-worker.ts";
 import { createGrowthStore } from "./growth-store.ts";
+import { createConcernStore } from "./concern-store.ts";
 import { createProductAgentServices } from "./product-agent-services.ts";
 import { createAgentActionsStore } from "./agent-actions-store.ts";
 import { createWebPushQueue } from "./web-push-queue.ts";
@@ -78,6 +79,7 @@ try {
   const tasks = onlineEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='012-task-ledger'")).rowCount ? createTaskStore(pool, cipher, taskScheduling) : undefined;
   const growthEnabled=agentEnabled && Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='017-growth-attention'")).rowCount);
   const growth=growthEnabled ? createGrowthStore(pool,cipher,taskScheduling) : undefined;
+  const concerns=agentEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='027-concerns'")).rowCount ? createConcernStore(pool,cipher) : undefined;
   const contactServices=agentEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='019-proactive-contact'")).rowCount ? {queue:queue?contactQueue(queue.boss):undefined,pushKey:pushConfig?.publicKey??null,telegramBotId:telegramConfig?.botId??null} : undefined;
   const contact=contactServices?createContactStore(pool,cipher,contactServices):undefined;
   const summaryEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='020-care-summaries'")).rowCount);
@@ -105,7 +107,7 @@ try {
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
     online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, contactServices,summaryEnabled,photoFiles,Boolean(inputs)) : undefined,
-    tasks, chat, memory, productAgent, productAgentStore, agentActions, growth, telegram, contact, summary, photos, inputs,
+    tasks, chat, memory, productAgent, productAgentStore, agentActions, growth, concerns, telegram, contact, summary, photos, inputs,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelRouting,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider, resolve: modelRouting.resolve }),

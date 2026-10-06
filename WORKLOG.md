@@ -1444,3 +1444,12 @@
 - Server typecheck 修正一處 403 不在 FamilyError 型別後通過；前端 typecheck 一次通過。一次必要合成本機流程通過，28／40 store/API 呼叫，兩帳戶一孩子；精確重播、同源來源、私人引用、同家庭 owner 隔離、停用拒讀及歷史通過，新孩子已刪，帳戶保留。真模型／embedding／通知／外網／瀏覽器全部零，worker 保持停用。
 - 已先作工程外加密配對備份，再經標準入口套用 026。沒有重跑備份還原矩陣或 INT-W02／03 驗收。證據：[INT_W04_CHECKS](artifacts/verification/INT_W04_CHECKS.json)。
 - 未驗：新增工具的真 Gemini／瀏覽器全表單；網址取得仍需原人工 fetch 明示確認，不代登入付費來源或自動訂閱。關注意向不冒充持續跟進，下一包 INT-W05；公開入口部署仍 INT-W07。完成隨本包 review／PR 合併生效。
+<a id="log-20261006-int-w05"></a>
+## LOG-20261006-INT-W05 — 共享持續關注與站內跟進
+- Recorded：2026-10-06 23:06 HKT；前置 INT-W03，基線 `7abdcf9`（已含 PR #94）；獨立分支 `codex/int-w05-concern-followup`。
+- 建立真正 ConcernStore／加密事件與修訂、原操作收據、角色及同孩子關聯；Agent 持久候選與頁面共用服務。首頁、成長及歷史讀同一 owner，保留設計；預設收起的人工備援可建立、追加或重排一次站內跟進。
+- 復用 pg-boss 實際排程與交易入列，worker 按世代／epoch／目前授權及版本核對；原 follow-up reference 防止重跑模型。結束不完成或取消相連任務，恢復不重排；共享事件不複製本人 Agent 回覆正文，背景關注不提供外發工具。
+- 全量掛載工具的零模型宣告檢查在 provider 前觸發 input_limit（零真呼叫）；改為按任務載入工具，最終代表請求 23,790 字元／11 項工具通過。原上限不變，沒有靜默截斷必要協定；新增真 Gemini 行為仍未驗。
+- 必要 Server／前端型別通過；手動備援末輪前端型別以 Node 24.11.0 通過，其餘本包執行為 24.19.0。一次真合成 PostgreSQL 流程首次通過：2 帳戶／1 孩子、40 次業務呼叫、3 次狀態讀取、1 次 scripted Agent claim；候選確認／重播、同源歷史、撤權、去重及私有回覆隔離通過。零真模型／embedding／通知／外網／瀏覽器；清理新孩子，保留帳戶，worker 恢復暫停。
+- 先作工程外加密配對備份再套用 027，沒有重跑完整還原、hard-kill、cron 或前端矩陣。主模型覆核 SQL／交易／工具／owner diff，證據：[INT_W05_CHECKS](artifacts/verification/INT_W05_CHECKS.json)。
+- 主責 C，權重 5：C 50%／A 30%／B 20%；共用 AI 由 A 統籌，依團隊責任署名，不冒稱人手實測工時。交付用 C 帳號，Committer 為 A；合併後才啟動 INT-W06，多份文件／報告及公開入口切換仍未完成。

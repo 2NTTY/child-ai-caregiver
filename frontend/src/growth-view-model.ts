@@ -1,4 +1,5 @@
 import type { TaskAssigneeView, TaskState, TaskValues } from "./task-view-model";
+import type { ConcernChange, ConcernValues } from "../../src/shared/concerns";
 
 // Display projections of ce87370 growth.ts/GrowthPanel; the existing API remains authoritative.
 export type GrowthTopicId = "solid_food" | "toddler_play" | "preschool_development" | "school_vision";
@@ -27,6 +28,7 @@ export type GrowthConcern = {
   version: number; archivedAt: string | null;
   statusBeforeArchive?: "proposed" | "following";
   attentionIds: string[]; events: GrowthConcernEvent[]; historyComplete: boolean;
+  followUp?: { id: string; at: string; state: "pending" | "queued" | "completed" | "stopped" | "unknown" | "cancelled"; runId: string | null } | null;
   measurement?: {label: string; points: {id: string; at: string; value: string; unit: string; sourceRecordId: string}[]};
 };
 export type GrowthConcernProjection = {state: "ready" | "loading" | "error" | "unavailable"; items: GrowthConcern[]; label: string};
@@ -72,7 +74,10 @@ type Basis = {authorityVersion:string;expectedVersion:number;confirm:true};
 export type GrowthDecision = Basis & ({action:"accept";task:{kind:"none"}|{kind:"create";values:TaskValues}|{kind:"existing";id:string;expectedVersion:number}}|{action:"snooze";until:string}|{action:"dismiss";note:string});
 export type GrowthTopicDecision = Basis & ({action:"set_enabled";enabled:boolean}|{action:"confirm_context";expectedFacts:GrowthFactRef[];values:Record<string,string>;confirmShared:true});
 export type GrowthConcernDecision = Basis & { action: "archive" | "restore" };
-export type GrowthAttempt = {kind:"item";id:string;body:string;label:string;input:GrowthDecision;assigneeLabel?:string}|{kind:"topic";id:GrowthTopicId;body:string;label:string;input:GrowthTopicDecision;summary?:string[]}|{kind:"concern";id:string;body:string;label:string;input:GrowthConcernDecision};
+export type GrowthConcernUpdate = Extract<ConcernChange, { action: "append" | "schedule_followup" }>;
+export type GrowthAttempt = {kind:"item";id:string;body:string;label:string;input:GrowthDecision;assigneeLabel?:string}|{kind:"topic";id:GrowthTopicId;body:string;label:string;input:GrowthTopicDecision;summary?:string[]}|{kind:"concern";id:string;body:string;label:string;input:GrowthConcernDecision}
+  | {kind:"concern_create";id:"new";body:string;label:string;input:ConcernValues;authorityVersion:string}
+  | {kind:"concern_update";id:string;body:string;label:string;input:GrowthConcernUpdate};
 export type GrowthPending = {attempt:GrowthAttempt;reviewed:boolean;reconfirm:boolean};
 export type GrowthConcernChange = { scopeKey: string; authorityVersion: string; id: string; version: number; action: "archive" | "restore" };
 export type GrowthViewModel = {
@@ -87,6 +92,8 @@ export type GrowthActions = {
   decide(item:GrowthAttention,input:GrowthDecision):void;updateTopic(topic:GrowthTopic,input:GrowthTopicDecision):void;
   archiveConcern(id: string, expectedVersion: number, authorityVersion: string): void;
   restoreConcern(id: string, expectedVersion: number, authorityVersion: string): void;
+  createConcern?(input: ConcernValues, authorityVersion: string, confirmShared: true): void;
+  updateConcern?(id: string, input: GrowthConcernUpdate, confirmShared: true): void;
 };
 export const growthStateLabels:Record<GrowthState,string>={proposed:"待確認",snoozed:"已延後",accepted:"已接受",dismissed:"已關閉",inapplicable:"目前不適用"};
 export const growthKindLabels={observe:"觀察",arrange:"安排",consult:"諮詢"};
@@ -125,4 +132,9 @@ export function growthArchivedConcerns(model: GrowthViewModel, searchText = "", 
 }
 export const growthActionable=(item:GrowthAttention)=>item.sourceAvailable&&(item.state==="proposed"||item.state==="snoozed");
 export const growthTime=(value:string)=>new Date(value).toLocaleString("zh-HK",{timeZone:"Asia/Hong_Kong",hour12:false});
+export function growthConcernFollowUpLabel(concern: GrowthConcern): string | null {
+  if (!concern.followUp) return null;
+  const labels = { pending: "已安排", queued: "等候處理", completed: "已完成", stopped: "已停止", unknown: "結果待核對", cancelled: "已取消" };
+  return `站內跟進：${growthTime(concern.followUp.at)} · ${labels[concern.followUp.state]}`;
+}
 export function growthSourceUrl(value:string){try{if(/[\u0000-\u0020\u007f]/.test(value))return null;const url=new URL(value);return url.protocol==="https:"&&url.hostname&&!url.username&&!url.password?url.href:null;}catch{return null;}}

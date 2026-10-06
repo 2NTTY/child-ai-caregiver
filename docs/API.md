@@ -540,3 +540,18 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 個人每日上限 1–1000（預設 100）、每次 Agent 生成 1–12（預設 4）、查詢 embedding 1–6（預設 2），UI 可編輯並經 Server 驗證。只有 personal 模式採用這些限額；平台維持原配額及每次 4／2。工具 8 次、90 秒、輸出 1024 tokens／次及上下文 32000 字元仍是固定安全上限。每個運行固定選定版本，後續模型／向量／工具及回報重查；撤回不能取消供應商已接受的呼叫。
 
 `/api/ai/status`、`/api/ai/usage` 依本人目前模式回報；設定頁同時列兩種來源。UTC 每日 00:00（香港 08:00）重置計數；生成與查詢 embedding 的嘗試均計次，用量 metadata 不代表完整供應商帳單。
+
+<a id="int-concerns"></a>
+## INT-W05 持續關注
+
+共享關注是獨立的業務資源，與有限成長候選、MemoryTopic、任務分開；[精確型別](../src/shared/concerns.ts)。讀取依 READ_ROLES，寫入依 WRITE_ROLES，鎖後重核同一孩子及共享關聯。聊天與頁面均調用 ConcernStore，不另存可寫副本。
+
+- GET `/api/children/:childId/concerns` 回傳同一家庭的 concern 清單、事件、目前跟進狀態及 `authorityVersion`。頁面／歷史以 ID、版本及真實歸檔時間投影，不靠標題配對。
+- POST 同一路徑建立，POST `/concerns/:id/actions` 追加觀察、結束、恢復或設定一次站內跟進。寫入帶原 `opId`、`confirmShared:true`；變更另帶原版本及 authorityVersion。相同操作精確重播返回原收據，換內容不能沿用同一 opId；unknown 先查原對象及原操作，不新建副作用。
+- Agent `read_concerns` 可查共享歷史；`propose_concern`／`propose_concern_change` 使用持久候選，接受時明確核對將共享的整理內容、時間及關聯，經同一 store 原子保存。私人聊天全文不自動共享；觀察不升格為已確認健康事實。
+- 結束保留歷史與關聯，取消尚未執行的本關注跟進；不完成、取消或刪除相連任務。恢復回到結束前的 following，不重啟舊跟進。使用者另行明確指定未來時間才安排新的跟進。
+- 背景 `concern_followup` 只在目前角色／版本／worker generation／storage epoch 有效時啟動；工具不提供外發或寫入能力。模型呼叫在交易外，使用同一 follow-up reference 防重；已知完成可讀回，unknown 不重新推理。結果連結實際 Agent run，站內回饋不代表發送通知或照護完成。
+
+新關注由本人核對後屬家庭共享；背景回覆仍按原使用者的 Agent run 權限呈現。事件只保存共享觀察、操作與結果 ID，不把私人聊天／模型背景正文複製成家庭紀錄。外發仍須另有既有任務／渠道授權，不由本包擴權。
+
+互動工具按當次及近期對話的任務載入：來源／關注、普通記錄／私人交代／提醒分組，不把全套工具 schema 塞進每次呼叫。這只決定本 run 可用工具，不授權執行；缺能力時如實說明或補問，不假稱成功。每個工具照常核對權限、原文及政策。模型上限不變，不靜默截斷必要的授權或協定配對；關注上下文保留完整事件並明示 historyComplete。

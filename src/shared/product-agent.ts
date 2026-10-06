@@ -2,9 +2,12 @@ import { z } from "zod";
 import { taskChangeSchema, taskValuesSchema } from "./tasks.ts";
 import type { KnowledgeEvidence } from "./knowledge.ts";
 import { sharedInputCreateSchema, sourceManagementSchema, sourceManagementChangeSchema } from "./shared-inputs.ts";
+import { concernValuesSchema, concernChangeSchema } from "./concerns.ts";
 
 const text = (max: number) => z.string().min(1).max(max).refine(value => value.trim().length > 0);
 export const agentProposalSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("concern_create"), values: concernValuesSchema }).strict(),
+  z.object({ kind: z.literal("concern_change"), concernId: z.uuid(), change: concernChangeSchema }).strict(),
   z.object({kind:z.literal("private_source_create"),input:sharedInputCreateSchema.options[0],management:sourceManagementSchema}).strict(),
   z.object({kind:z.literal("private_source_change"),inputId:z.uuid(),change:sourceManagementChangeSchema}).strict(),
   z.object({ kind: z.literal("task_create"), values: taskValuesSchema }).strict(),
@@ -22,7 +25,7 @@ export interface AgentProposal {
   id: string; runId: string; childId: string; version: number;
   status: "pending" | "accepted" | "dismissed" | "expired";
   createdAt: string; expiresAt: string; value: AgentProposalValue; targetLabel: string | null;
-  result: { kind: "task" | "memory_fact" | "private_source"; id: string; version: number } | null;
+  result: { kind: "task" | "memory_fact" | "private_source" | "concern"; id: string; version: number } | null;
 }
 export interface AgentPendingPage {
   proposals: AgentProposal[];

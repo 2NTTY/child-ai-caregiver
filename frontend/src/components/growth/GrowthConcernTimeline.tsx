@@ -2,7 +2,7 @@ import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon } from "../AppIcon";
 import { Pressable, View } from "react-native";
 import { Text } from "react-native-paper";
-import { growthConcernTimelineEntries, growthStateLabels, growthTime, type GrowthConcern, type GrowthPage } from "../../growth-view-model";
+import { growthConcernFollowUpLabel, growthConcernTimelineEntries, growthStateLabels, growthTime, type GrowthConcern, type GrowthPage } from "../../growth-view-model";
 import { taskStateLabels } from "../../task-view-model";
 import { AppButton, SectionHeader } from "../ui";
 import { GrowthArchiveConcernButton } from "./GrowthArchiveConcernButton";
@@ -17,10 +17,12 @@ export function GrowthConcernIndex({items, selectedId, onSelect}: {items: Growth
 }
 export function GrowthConcernTimeline({concern, page, onRecord, onTask, onArchive, archiveDisabled, scopeKey}: {concern: GrowthConcern; page: GrowthPage; onRecord?: (id?: string) => void; onTask: (id: string) => void; onArchive?: () => void; archiveDisabled?: boolean; scopeKey?: string}) {
   const entries = growthConcernTimelineEntries(concern, page);
+  const followUpLabel = growthConcernFollowUpLabel(concern);
   return <View style={s.timelinePanel} testID="growth-concern-timeline">
     <View style={s.concernHeading}><AppStatusBadge label={concernLabels[concern.status]} tone={concern.status === "proposed" ? "warning" : concern.status === "following" ? "info" : "neutral"} /><Text accessibilityRole="header" style={s.concernTitle}>{concern.title}</Text><Text style={s.reading}>{concern.reason}</Text>
       {onArchive && concern.status !== "closed" && scopeKey ? <GrowthArchiveConcernButton concern={concern} scopeKey={scopeKey} authorityVersion={page.authorityVersion} disabled={!!archiveDisabled} onConfirm={onArchive} /> : null}
     </View>
+    {followUpLabel ? <Text style={s.meta}>{followUpLabel}</Text> : null}
     <SectionHeader density="compact" title="這件事的跟進經過" />
     <View style={s.timeline}>{entries.map((entry, index) => {
       const marker = <>

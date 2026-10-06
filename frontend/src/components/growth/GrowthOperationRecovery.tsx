@@ -6,9 +6,17 @@ import { AppButton, SectionCard, SectionHeader } from "../ui";
 import { growthStyles as s } from "./growth-styles";
 
 export function GrowthOriginalRequest({attempt}:{attempt:GrowthAttempt}){
-  const input=attempt.input;
-  return <View testID="growth-original-request" style={s.smallStack}><Text style={s.title}>{attempt.label}</Text><Text style={s.meta}>原版本 {input.expectedVersion} · 原授權基準 {input.authorityVersion}</Text>
-    {attempt.kind==="concern"?<Text style={s.body}>{attempt.input.action === "restore" ? "只恢復這條關注並保留前後經過；不更改建議、原始記錄或連結任務。" : "只結束這條關注並保留歷史；不更改建議、原始記錄或連結任務。"}</Text>:attempt.kind==="item"?(attempt.input.action==="accept"?(attempt.input.task.kind==="none"?<Text style={s.body}>只記錄已知悉，不建立任務。</Text>:attempt.input.task.kind==="create"?<>
+  return <View testID="growth-original-request" style={s.smallStack}><Text style={s.title}>{attempt.label}</Text>
+    <Text style={s.meta}>{attempt.kind === "concern_create" ? `原建立請求 · 原授權基準 ${attempt.authorityVersion}` : `原版本 ${attempt.input.expectedVersion} · 原授權基準 ${attempt.input.authorityVersion}`}</Text>
+    {attempt.kind === "concern_create" ? <>
+      <Text selectable style={s.body}>原名稱：{attempt.input.title}</Text><Text selectable style={s.body}>原關注原因：{attempt.input.reason}</Text>
+      <Text selectable style={s.body}>原觀察：{attempt.input.observation}</Text><Text style={s.meta}>原觀察時間：{attempt.input.observedAt}</Text>
+      <Text style={s.meta}>原站內跟進時間：{attempt.input.followUpAt ?? "沒有安排"} · 家庭共享</Text>
+    </> : attempt.kind === "concern_update" ? <>
+      {attempt.input.action === "append" ? <><Text selectable style={s.body}>原追加觀察：{attempt.input.text}</Text><Text style={s.meta}>原觀察時間：{attempt.input.observedAt}</Text></>
+        : <Text style={s.body}>{attempt.input.followUpAt ? `原站內跟進安排：${attempt.input.followUpAt}` : "原決定：撤回這次站內跟進安排"}</Text>}
+      <Text style={s.meta}>家庭共享；不更改原始記錄或連結任務。</Text>
+    </> : attempt.kind==="concern"?<Text style={s.body}>{attempt.input.action === "restore" ? "只恢復這條關注並保留前後經過；不更改建議、原始記錄或連結任務。" : "只結束這條關注並保留歷史；不更改建議、原始記錄或連結任務。"}</Text>:attempt.kind==="item"?(attempt.input.action==="accept"?(attempt.input.task.kind==="none"?<Text style={s.body}>只記錄已知悉，不建立任務。</Text>:attempt.input.task.kind==="create"?<>
       <Text style={s.body}>{attempt.input.task.values.title}</Text><Text selectable style={s.body}>{attempt.input.task.values.details}</Text><Text style={s.meta}>原負責人：{attempt.assigneeLabel??attempt.input.task.values.assigneeUserId} · 時間：{attempt.input.task.values.dueAt} · 時區：{attempt.input.task.values.timeZone}</Text>
     </>:<Text style={s.body}>原連結任務：{attempt.input.task.id} · 版本 {attempt.input.task.expectedVersion}</Text>):attempt.input.action==="snooze"?<Text style={s.body}>原延後時間：{attempt.input.until}</Text>:<Text selectable style={s.body}>原關閉備註：{attempt.input.note||"沒有備註"}</Text>):
       attempt.input.action==="set_enabled"?<Text style={s.body}>{attempt.input.enabled?"重新啟用主題":"永久停用主題"}</Text>:<>
