@@ -10,6 +10,21 @@ import { validSourceIntakeText } from "../../source-intake";
 
 export function SourceIntakeConversation({ model, actions }: { model: SourcesViewModel; actions: SourcesActions }) {
   const intake = model.intake?.selected, source = model.selected, adapter = actions.intake;
+  if (intake && source && adapter && model.intake?.mode === "production") {
+    const locked = !model.fresh || !source.canManage || model.access !== "editable" || !!model.direct;
+    const enabled = source.management?.enabled !== false;
+    return <SectionCard surface="plain" style={s.workflowSection} testID="source-intake-conversation">
+      <SectionHeader density="compact" title="整理這份私人來源" subtitle="先查看保存原文，再核對用途及摘錄授權。" icon="star-four-points" />
+      <Text selectable style={s.body}>你的說明：{source.management?.intention || intake.intention || "用途尚未設定。"}</Text>
+      <Text style={s.meta}>{source.text.trim() ? `已保存 ${source.text.length.toLocaleString("en-HK")} 字原文，可在下方查看；這裏沒有產生 AI 閱讀結果。` : "目前只保存來源連結，尚未取得正文；不會根據網址猜測內容。"}</Text>
+      {!enabled ? <Text style={s.warning}>來源已停用；重新啟用並保存後才可讀取或提取。</Text> : null}
+      {intake.stage === "awaiting_read" || intake.stage === "unavailable" ? <AppButton label="查看保存狀態並整理用途" variant="secondary" disabled={locked || !enabled} onPress={adapter.read} /> : null}
+      {intake.stage === "clarifying" ? <><Text style={s.body}>請自行選擇用途、來源性質及時效；這些欄位沒有由 AI 推斷。</Text><AppButton label="填寫來源設定" disabled={locked} onPress={adapter.propose} /></> : null}
+      <SourceIntakeEditor model={model} actions={actions} />
+      {adapter.discuss ? <><AppButton label="交給 Agent 討論" variant="secondary" disabled={locked || !enabled || !!model.managementDraft?.dirty} onPress={adapter.discuss} />
+        <Text style={s.meta}>只把來源識別及已保存用途帶到聊天草稿，由你核對後送出。先保存修改；不會自動發起模型請求。</Text></> : null}
+    </SectionCard>;
+  }
   if (!intake || !source || !adapter || model.intake?.mode !== "synthetic") return null;
   const locked = !model.fresh || !source.canManage || model.access !== "editable" || !!model.direct;
   const stageLabel = intake.stage === "awaiting_read" ? "等待查看來源" : intake.stage === "reading" ? "正在示範查看來源" : intake.stage === "read_unknown" ? "查看結果未知"

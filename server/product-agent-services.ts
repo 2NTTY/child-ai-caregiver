@@ -14,6 +14,7 @@ import type { TaskScheduling } from "./tasks.ts";
 import { createTaskStore } from "./tasks.ts";
 import { createMemoryStore } from "./memory.ts";
 import { createChatStore } from "./chat.ts";
+import { createSharedInputStore } from "./shared-input-store.ts";
 
 import type { GrowthStore } from "./growth-store.ts";
 
@@ -23,7 +24,7 @@ export function createProductAgentServices(pool: Pool, cipher: StorageCipher, co
     provider: config.enabled ? createVertexAgentProvider(config) : { generate: async () => { throw new Error("ai_disabled"); } },
     resolve: routing?.resolve,
     diagnostics: diagnostics ? event => { console.info("agent_diagnostic", JSON.stringify(event)); } : undefined });
-  const agent = createProductAgent({ store, growth, contact, summary, actions, memory: createMemoryStore(pool, cipher, true),
+  const agent = createProductAgent({ store, growth, contact, summary, actions, sources:createSharedInputStore(pool,cipher), memory: createMemoryStore(pool, cipher, true),
     tasks: createTaskStore(pool, cipher, scheduling), chat: createChatStore(pool, cipher, true, true),
     runtime,
     knowledge: createKnowledgeRetriever(createKnowledgeStore(pool), createEmbeddingGateway({ config,

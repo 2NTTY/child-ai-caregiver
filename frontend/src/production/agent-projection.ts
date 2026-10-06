@@ -10,6 +10,7 @@ const stopReasons: Record<string, string> = {
   invalid_tool: "工具要求未能通過核對", tool_unknown: "工具結果未能確認", interrupted: "處理中斷，沒有自動重新執行",
 };
 const toolNames: Record<string, string> = {
+  list_private_sources:"讀取本人來源清單",read_private_source:"讀取獲授權的私人原文",propose_private_source:"保存私人來源候選",propose_private_source_change:"保存來源修改候選",
   stage_private_summary: "整理私有輔助摘要", read_context: "讀取已確認記憶及任務", search_knowledge: "檢索知識來源",
   propose_task: "保存建立任務候選", propose_task_change: "保存任務變更候選", propose_fact: "保存記憶候選", present_answer: "整理回覆及引用",
   read_private_instructions: "讀取本人普通交代", execute_ordinary_instruction: "執行已授權的本人普通交代",
@@ -38,7 +39,19 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
   const common = { id: proposal.id, version: proposal.version, status: proposal.status, kind: value.kind,
     createdAt: proposal.createdAt, expiresAt: proposal.expiresAt,
     result: proposal.result ? { kind: proposal.result.kind, version: proposal.result.version,
-      label: `${proposal.result.kind === "task" ? "任務" : "確認記憶"} · ${proposal.result.id}` } : null };
+      label: `${proposal.result.kind === "task" ? "任務" : proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+  if(value.kind==="private_source_create"||value.kind==="private_source_change") {
+    const management=value.kind==="private_source_create"?value.management:value.change.management;
+    const content=value.kind==="private_source_create"?value.input:value.change.content;
+    return {...common,scope:"private",title:proposal.targetLabel??"私人來源設定",content:management.intention||"核對私人來源用途與讀取範圍",
+      details:[{label:"操作",value:value.kind==="private_source_create"?"保存新的私人來源":management.enabled?"更新原來源":"停用原來源"},
+        ...(value.kind==="private_source_change"?[{label:"來源及原版本",value:`${value.inputId} · ${value.change.expectedVersion}`}]:[]),
+        {label:"用途",value:({answer_reference:"回答參考",record_candidate:"待核對記錄",track_topic:"關注話題意向（不自動建立跟進）"})[management.purpose]},
+        {label:"適用性聲稱",value:`${management.nature} · ${management.timeScope} · ${management.validityText||"未指定條件"}；不是已核實官方資料`},
+        ...(content?[{label:"來源連結",value:content.sourceUrl??"未提供"},{label:"將保存的原文",value:content.text||"只有連結，正文尚未取得"}]:[]),
+        {label:"明確授權交模型的片段",value:management.enabled&&management.modelExcerpt?management.modelExcerpt:"未授權；不讀來源正文"},
+        {label:"邊界",value:"只供本人，不建立家庭事實、訂閱或外發。修改正文會撤回原模型授權，之後須再次核對。"}]};
+  }
   if (value.kind === "task_create") return { ...common, scope: "family", title: value.values.title, content: value.values.details || "沒有詳細內容",
     details: [{ label: "種類", value: value.values.kind === "ordinary" ? "普通任務" : "預約" },
       { label: "負責人", value: proposal.targetLabel ?? "未能確認對象" }, { label: "負責人識別", value: value.values.assigneeUserId },
@@ -62,6 +75,6 @@ export function projectAgentRun(result: ProductAgentResult, childId: string, cre
     stopReasonLabel: result.stopReason ? stopReasons[result.stopReason] ?? "未能確認停止原因" : null,
     counts: result.countsKnown === false ? null : result.counts, retrievalMode: result.retrievalMode,
     tools: result.tools.map((tool, index) => ({ id: `${result.runId}:${index}`, nameLabel: toolNames[tool.name] ?? "其他工具",
-      status: tool.status, savesCandidate: ["propose_task", "propose_task_change", "propose_fact"].includes(tool.name) })),
-    proposals: result.proposals.map(projectAgentProposal), citations: result.citations.map(projectAgentCitation) };
+      status: tool.status, savesCandidate: ["propose_task", "propose_task_change", "propose_fact","propose_private_source","propose_private_source_change"].includes(tool.name) })),
+    proposals: result.proposals.map(projectAgentProposal), citations: result.citations.map(projectAgentCitation),privateSourceCitations:result.privateSourceCitations };
 }

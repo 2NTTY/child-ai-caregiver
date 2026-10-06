@@ -1,6 +1,7 @@
 import { createHash,randomUUID } from "node:crypto";
 import type { Pool,PoolClient } from "pg";
-import type { SharedInput,SharedInputCreate,SharedInputConfirmation } from "../src/shared/shared-inputs.ts";
+import { sourceManagementChangeSchema,sourceManagementSchema,type SharedInput,type SharedInputCreate,type SharedInputConfirmation,
+  type SourceManagement,type SourceManagementChange,type SourceManagementRevision } from "../src/shared/shared-inputs.ts";
 import { emptyCareDetails } from "../src/shared/care.ts";
 import { photoDraftSchema,type PhotoDraft } from "../src/shared/photos.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
@@ -16,7 +17,10 @@ export const publicInputSources=SOURCE_WATCHES.filter(source=>source.kind==="pag
 interface Payload {
   sourceNotes?:string;sourceLabel:string;sourceUrl:string|null;sourceDateText:string|null;text:string;sha256:string|null;retrievedAt:string|null;
   excerpt:string|null;draft:PhotoDraft|null;stopReason:string|null;processedAt:string|null;model:string|null;
+  management?:SourceManagement|null;
 }
+interface ManagementHistoryPayload {previousVersion:number;previousManagement:SourceManagement|null;management:SourceManagement;reason:string}
+interface ManagementHistoryRow {version:number;changed_at:Date;payload_encrypted:string}
 interface Row {
   id:string;child_id:string;owner_user_id:string;kind:SharedInput["kind"];source_id:string|null;payload_encrypted:string;version:number;
   fetch_state:SharedInput["fetchState"];fetch_run_id:string|null;fetch_expires_at:Date|null;fetch_access_version:number|null;
@@ -26,6 +30,7 @@ interface Row {
 const missing=()=>new FamilyError(404,"not_found");
 const hash=(text:string)=>createHash("sha256").update(text,"utf8").digest("hex");
 const aad=(id:string)=>"shared-input:"+id+":payload";
+const managementAad=(id:string,childId:string,userId:string,version:number)=>"shared-input:"+id+":"+childId+":"+userId+":management:"+version;
 type Phase="fetch"|"extraction";
 export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
   const payload=(row:Row)=>JSON.parse(cipher.decrypt(row.payload_encrypted,aad(row.id))) as Payload;
@@ -37,7 +42,7 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
       fetchState:row.fetch_state==="running"&&row.fetch_expires_at!<=new Date()?"unknown":row.fetch_state,
       extraction:{state:row.extraction_state==="running"&&row.extraction_expires_at!<=new Date()?"unknown":row.extraction_state,
         runId:row.extraction_run_id,excerpt:data.excerpt,draft:data.draft,stopReason:data.stopReason,processedAt:data.processedAt,model:data.model},
-      recordId:row.record_id,confirmationKind:row.confirmation_kind};
+      recordId:row.record_id,confirmationKind:row.confirmation_kind,management:data.management??null};
   }
   const rowFor=async(client:PoolClient,userId:string,childId:string,id:string)=>{
     const row=(await client.query<Row>("SELECT * FROM shared_inputs WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 FOR UPDATE",[id,childId,userId])).rows[0];
@@ -56,6 +61,57 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
     },
     async get(userId:string,childId:string,id:string) {
       return access(userId,childId,false,async(client,role)=>decode(await rowFor(client,userId,childId,id),role));
+    },
+    async managementHistory(userId:string,childId:string,id:string) {
+      return access(userId,childId,false,async(client)=>{
+        const row=await rowFor(client,userId,childId,id);
+        const history=(await client.query<ManagementHistoryRow>(`SELECT version,changed_at,payload_encrypted FROM shared_input_management_revisions
+          WHERE input_id=$1 AND child_id=$2 AND owner_user_id=$3 ORDER BY version DESC LIMIT 21`,[id,childId,userId])).rows;
+        const revisions:SourceManagementRevision[]=history.slice(0,20).map(revision=>{
+          const data=JSON.parse(cipher.decrypt(revision.payload_encrypted,managementAad(id,childId,userId,revision.version))) as ManagementHistoryPayload;
+          return {version:revision.version,changedAt:revision.changed_at.toISOString(),reason:data.reason,management:data.management};
+        });
+        return {inputId:id,childId,ownerUserId:userId,version:row.version,revisions,hasMore:history.length>20};
+      });
+    },
+    async manage(userId:string,childId:string,id:string,change:SourceManagementChange) {
+      const parsed=sourceManagementChangeSchema.parse(change);
+      return access(userId,childId,true,async(client,role,space)=>{
+        const row=await rowFor(client,userId,childId,id);
+        requireFamilyVersion(row.version,parsed.expectedVersion);
+        if([row.fetch_state,row.extraction_state].some(state=>state==="running"||state==="unknown"))throw new FamilyError(409,"input_processing");
+        const data=payload(row),previousManagement=data.management??null;
+        if(parsed.content&&(row.kind!=="personal_source"||row.record_id))throw new FamilyError(400,"invalid_input");
+        const content=parsed.content;
+        const contentChanged=content!==null&&(data.sourceLabel!==content.sourceLabel||data.sourceUrl!==content.sourceUrl
+          ||data.sourceDateText!==content.sourceDateText||(data.sourceNotes??"")!==content.sourceNotes||data.text!==content.text);
+        if(contentChanged&&content){
+          Object.assign(data,{sourceLabel:content.sourceLabel,sourceUrl:content.sourceUrl,sourceDateText:content.sourceDateText,
+            sourceNotes:content.sourceNotes,text:content.text,sha256:content.text.trim()?hash(content.text):null,retrievedAt:null,
+            excerpt:null,draft:null,stopReason:null,processedAt:null,model:null});
+        }
+        const management=sourceManagementSchema.parse({...parsed.management,
+          modelExcerpt:contentChanged||!parsed.management.enabled?null:parsed.management.modelExcerpt});
+        if(management.modelExcerpt!==null&&(!management.modelExcerpt.trim()||management.modelExcerpt.length>6000
+          ||!data.text.includes(management.modelExcerpt)))throw new FamilyError(400,"invalid_input");
+        const resetExtraction=contentChanged||!management.enabled;
+        if(resetExtraction)Object.assign(data,{excerpt:null,draft:null,stopReason:null,processedAt:null,model:null});
+        data.management=management;
+        const changed=(await client.query<Row>(`UPDATE shared_inputs SET payload_encrypted=$2,version=version+1,
+          fetch_state=CASE WHEN $3 THEN $4 ELSE fetch_state END,
+          fetch_run_id=CASE WHEN $3 THEN NULL ELSE fetch_run_id END,
+          fetch_expires_at=CASE WHEN $3 THEN NULL ELSE fetch_expires_at END,
+          fetch_access_version=CASE WHEN $3 THEN NULL ELSE fetch_access_version END,
+          extraction_state=CASE WHEN $5 THEN 'not_requested' ELSE extraction_state END,
+          extraction_run_id=CASE WHEN $5 THEN NULL ELSE extraction_run_id END,
+          extraction_expires_at=CASE WHEN $5 THEN NULL ELSE extraction_expires_at END,
+          extraction_access_version=CASE WHEN $5 THEN NULL ELSE extraction_access_version END WHERE id=$1 RETURNING *`,
+          [id,cipher.encrypt(JSON.stringify(data),aad(id)),contentChanged,data.text.trim()?"ready":"not_requested",resetExtraction])).rows[0];
+        const history:ManagementHistoryPayload={previousVersion:row.version,previousManagement,management,reason:parsed.reason};
+        await client.query(`INSERT INTO shared_input_management_revisions(input_id,child_id,owner_user_id,version,payload_encrypted)
+          VALUES($1,$2,$3,$4,$5)`,[id,childId,userId,changed.version,cipher.encrypt(JSON.stringify(history),managementAad(id,childId,userId,changed.version))]);
+        await appendOnlineChange(client,space,"care",childId,false,userId);return decode(changed,role);
+      });
     },
     async create(userId:string,childId:string,input:SharedInputCreate) {
       return access(userId,childId,true,async(client,role,space)=>{
@@ -79,16 +135,20 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
     async claim(userId:string,childId:string,id:string,phase:Phase,expectedVersion:number,excerpt?:string) {
       return access(userId,childId,true,async(client,role,space)=>{
         const row=await rowFor(client,userId,childId,id);
+        const data=payload(row);
+        if(data.management?.enabled===false)throw missing();
         if(row.record_id||phase==="fetch"&&!["public_source","personal_source"].includes(row.kind)||phase==="extraction"&&row.fetch_state!=="ready")throw missing();
         const state=row[phase+"_state" as "fetch_state"|"extraction_state"];
         // A lost response never launches a new run. Only an explicit failed/current-version retry can do that.
         if(state!=="not_requested"&&(state!=="failed"||row.version!==expectedVersion))return {created:false,input:decode(row,role),scope:null,runId:null};
         requireFamilyVersion(row.version,expectedVersion);
-        const data=payload(row);
         if(phase==="extraction"){
           if(!excerpt?.trim()||excerpt.length>10000||!data.text.includes(excerpt))throw new FamilyError(400,"invalid_input");
           data.excerpt=excerpt;data.draft=null;data.stopReason=null;data.processedAt=null;data.model=null;
-        }else if(row.kind==="public_source"?!publicInputSources.some(source=>source.id===row.source_id):!data.sourceUrl)throw missing();
+        }else {
+          if(row.kind==="public_source"?!publicInputSources.some(source=>source.id===row.source_id):!data.sourceUrl)throw missing();
+          if(data.management)data.management={...data.management,modelExcerpt:null};
+        }
         const version=await versions(client,space),runId=randomUUID();
         // phase is a closed internal union, never a request field.
         const changed=(await client.query<Row>(`UPDATE shared_inputs SET ${phase}_state='running',${phase}_run_id=$2,
@@ -102,7 +162,7 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
     async authorized(userId:string,childId:string,id:string,phase:Phase,runId:string) {
       return Boolean(await access(userId,childId,false,async(client,role,space)=>{
         const row=await rowFor(client,userId,childId,id),version=await versions(client,space);
-        return role!=="viewer"&&!row.record_id&&row[phase+"_state" as "fetch_state"|"extraction_state"]==="running"
+        return role!=="viewer"&&!row.record_id&&payload(row).management?.enabled!==false&&row[phase+"_state" as "fetch_state"|"extraction_state"]==="running"
           &&row[phase+"_run_id" as "fetch_run_id"|"extraction_run_id"]===runId
           &&row[phase+"_access_version" as "fetch_access_version"|"extraction_access_version"]===version.access_version
           &&row[phase+"_expires_at" as "fetch_expires_at"|"extraction_expires_at"]!>new Date();
@@ -113,15 +173,21 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
         const row=await rowFor(client,userId,childId,id),version=await versions(client,space);
         if(row.fetch_run_id!==runId||row.record_id)throw missing();
         if(row.fetch_state!=="running")return decode(row,role);
-        const allowed=row.fetch_access_version===version.access_version&&row.fetch_expires_at!>new Date();
         const data=payload(row);
+        const allowed=row.fetch_access_version===version.access_version&&row.fetch_expires_at!>new Date()&&data.management?.enabled!==false;
         if(content&&allowed){
           if(!content.text.trim()||content.text.length>64000||/[\u0000\uD800-\uDFFF]/u.test(content.text)||content.url!==data.sourceUrl)throw new FamilyError(400,"invalid_input");
           data.text=content.text;data.sha256=hash(content.text);data.retrievedAt=new Date().toISOString();data.sourceDateText=content.sourceDateText??data.sourceDateText;
+          Object.assign(data,{excerpt:null,draft:null,stopReason:null,processedAt:null,model:null});
+          if(data.management)data.management={...data.management,modelExcerpt:null};
         }
         const state=allowed&&content?"ready":!allowed||uncertain?"unknown":"failed";
-        const changed=(await client.query<Row>("UPDATE shared_inputs SET fetch_state=$2,payload_encrypted=$3,version=version+1 WHERE id=$1 RETURNING *",
-          [id,state,cipher.encrypt(JSON.stringify(data),aad(id))])).rows[0];
+        const changed=(await client.query<Row>(`UPDATE shared_inputs SET fetch_state=$2,payload_encrypted=$3,version=version+1,
+          extraction_state=CASE WHEN $4 THEN 'not_requested' ELSE extraction_state END,
+          extraction_run_id=CASE WHEN $4 THEN NULL ELSE extraction_run_id END,
+          extraction_expires_at=CASE WHEN $4 THEN NULL ELSE extraction_expires_at END,
+          extraction_access_version=CASE WHEN $4 THEN NULL ELSE extraction_access_version END WHERE id=$1 RETURNING *`,
+          [id,state,cipher.encrypt(JSON.stringify(data),aad(id)),Boolean(content&&allowed)])).rows[0];
         await appendOnlineChange(client,space,"care",childId,false,userId);return decode(changed,role);
       });
     },
@@ -130,8 +196,8 @@ export function createSharedInputStore(pool:Pool,cipher:StorageCipher) {
         const row=await rowFor(client,userId,childId,id),version=await versions(client,space);
         if(row.extraction_run_id!==runId||row.record_id)throw missing();
         if(row.extraction_state!=="running")return decode(row,role);
-        const allowed=row.extraction_access_version===version.access_version&&row.extraction_expires_at!>new Date();
         const data=payload(row);
+        const allowed=row.extraction_access_version===version.access_version&&row.extraction_expires_at!>new Date()&&data.management?.enabled!==false;
         Object.assign(data,{draft:allowed&&draft?photoDraftSchema.parse(draft):null,stopReason:allowed?stopReason:"unauthorized_or_expired",processedAt:new Date().toISOString(),model});
         const state=data.draft?"available":!allowed||stopReason==="cancelled"||stopReason==="deadline"?"unknown":"failed";
         const changed=(await client.query<Row>("UPDATE shared_inputs SET extraction_state=$2,payload_encrypted=$3,version=version+1 WHERE id=$1 RETURNING *",

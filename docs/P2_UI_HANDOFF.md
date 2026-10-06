@@ -29,7 +29,7 @@ INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴
 | 記憶、摘要覆蓋、人工備援；成長關注及單份到診準備 | `TaskKnowledgeDomains`；Memory／Growth／CareSummary API。持續關注鏈及多份文件不以這些舊資源冒充 |
 | 對話照片轉交、照片上傳／提取／確認、分享文字／連結輸入 | `PhotoInputDomains`；Photo／SharedInput API，原檔與人工草稿共用一次操作上下文；模型提取與家庭共享分開同意 |
 | 本人模型 key／限額、通知偏好、Push／Telegram、家庭成員及聯絡授權 | `SettingsDomains`；各既有 API／版本／收據，個人設定按身份、家庭操作按孩子清理；不自動發送渠道測試 |
-| 私人來源人工管理 | `SettingsDomains`／PrivateSource API；對話直接設定及操作留 INT-W04，不因人工入口就緒標為 Agent 已接通 |
+| 私人來源、用途、原地修改／停用、修訂歷史及對話設定 | `PhotoInputDomains`／`usePhotoInputSources`／同一 SharedInput API；設定與聊天導向同一來源清單，Agent 候選確認亦寫入同一 shared_inputs。引用原文另經本人選取授權，私人引用不當官方知識 |
 | 首頁、側欄與歷史頁 | 組合上述 owner 的受權結果；已載入清單不冒充完整清單，未能讀取不顯示為「沒有資料」 |
 
 寫入成功按 Server 收據刷新共用讀取；可見頁面沿 changes cursor 每 5 秒核對變更 metadata，回到前景即核對。沒有變更不定時重跑模型。busy／unknown 保留原操作，先查核再容許新提交；登出、撤權及身份／孩子切換清理舊內容與遲到回應。

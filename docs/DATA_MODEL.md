@@ -426,6 +426,8 @@ migration 018（S13-W06，未執行）加入 telegram_challenges、telegram_bind
 
 migration `022-shared-inputs` 新增 `shared_inputs`：孩子／輸入者／來源類型、版本、fetch 與 extraction 的獨立 run ID／期限／授權版本、可選共享記錄連結及確認類型。每個孩子最多 50 項，以 workspace 寫鎖串行核對上限。
 
+INT-W04 在同一加密 payload 保存可選 management：用途、來源性質聲稱、時效原文、啟用與本人授權的連續正文片段；舊資料為 null，不自動授權。migration `026-private-source-management` 增加管理修訂，綁 input／child／owner 複合外鍵及版本、刪來源時 cascade，前後 management 與原因均加密；沒有第二份可寫來源主表。修改正文撤回原片段授權並清過時提取。Agent 候選沿既有加密 proposals，在同一交易调用來源服務及保存結果資源 ID／版本，精確重播不重建來源。私人引用快照只進本人 run，與公共 KnowledgeEvidence 分開。
+
 新增 `023-personal-sources` 只擴充 kind／source_id 約束，加入 `personal_source`；它和 paste 的 source_id 均為 null，不註冊公共來源。023 本機遷移及新來源保存／隔離已通過；022 的集中驗收結果另見 [S16 集中驗收](../PLAN.md#s16-w02)，不能當成 023 通過。資料仍按孩子及輸入者隔離，不新增跨孩子訂閱或帳密資料表。
 
 原文、來源名稱／網址／日期／私人備註、hash／取得時間、選取片段及 AI 候選以既有 storage cipher 加密，AAD 綁穩定輸入 ID；不放公共向量庫。貼上字串原樣保存；抓取保存明確標示的解析正文。來源快照一旦 ready 不背景刷新，來源日期未知保持 null，保存日期不代替原文日期。舊加密 payload 缺 sourceNotes 時讀為空字串；家長提供的正文保留原樣，URL-only 明示 not_requested，沒有正文不能提取或確認。

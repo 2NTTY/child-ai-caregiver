@@ -1434,3 +1434,13 @@
 - Verification：[EV-INT-W03](artifacts/verification/INT_W03_CHECKS.json)。Server／前端型別通過，主模型覆核關鍵原文、diff、權限／scope 與收據；一次本機真 API／Chromium case 通過，11.19 秒（整輪41.91秒）、126 HTTP／8 store 呼叫。同一記錄更正至版本2後，Care及聊天側欄一致，Task及設定可讀。零模型／embedding／通知／外網，無遷移；專用孩子已清理，服務已停止，原庫及暫停 worker 保留。沿用 W01／02 隔離、unknown 及真 Agent 證據，不補整套矩陣。
 - Limits：驗收前只有外部 key 路徑的解讀修正，尚未啟動 case 或建立資料；唯一 case 無失敗／重跑。最後局部修正初讀／離線任務狀態及所選舊分頁任務更新，只作靜態 review，未重跑整批。各表單／照片模型／取消／百則以上聊天未新增獨立 E2E；短期 run context／知識目錄尚未接新記憶頁。未做公開部署、Android、持續關注鏈、多份文件或 PDF。
 - Delivery／Next：B 真實帳號提交作者／推送／PR／合併，本機 Committer 保留 A，按實際共同責任署名 A／C／D，遠端身份與簽署交付時核對。合併後才開始 INT-W04 私人來源對話操作；最終入口及部署仍待 INT-W07。
+
+<a id="log-20261006-int-w04"></a>
+## LOG-20261006-INT-W04 — 私人來源對話與管理
+- Recorded：2026-10-06 22:30 HKT；前置 INT-W03／PR #93，基線 `64d5808`；獨立分支 `codex/int-w04-private-sources`。
+- 同一 shared_inputs 增補用途、原地內容管理、停用及加密修訂；原 opId／版本／owner 隔離沿用，改內容或停用撤回舊模型片段授權。Agent 持久候選確認使用相同服務，來源頁及聊天不建可寫副本。
+- 對話只讀本人授權片段、私人引用另列並收尾重核；官方育兒證據門檻保持。沿用既有 Prompt Pack、小幅補來源工具指引，保留新前端設計。
+- 主責 A，權重 3，A 50%／C 30%／B 20%；共用 AI 由 A 統籌，C 為來源服務／SQL、B 為原前端接線責任，主模型親寫契約及提示詞並 review；不冒稱個人手寫或真人測試。
+- Server typecheck 修正一處 403 不在 FamilyError 型別後通過；前端 typecheck 一次通過。一次必要合成本機流程通過，28／40 store/API 呼叫，兩帳戶一孩子；精確重播、同源來源、私人引用、同家庭 owner 隔離、停用拒讀及歷史通過，新孩子已刪，帳戶保留。真模型／embedding／通知／外網／瀏覽器全部零，worker 保持停用。
+- 已先作工程外加密配對備份，再經標準入口套用 026。沒有重跑備份還原矩陣或 INT-W02／03 驗收。證據：[INT_W04_CHECKS](artifacts/verification/INT_W04_CHECKS.json)。
+- 未驗：新增工具的真 Gemini／瀏覽器全表單；網址取得仍需原人工 fetch 明示確認，不代登入付費來源或自動訂閱。關注意向不冒充持續跟進，下一包 INT-W05；公開入口部署仍 INT-W07。完成隨本包 review／PR 合併生效。

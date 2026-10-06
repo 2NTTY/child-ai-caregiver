@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { photoDraftSchema } from "../shared/photos.ts";
 import {
-  sharedInputCreateSchema, type PublicInputSource, type SharedInput, type SharedInputConfirmation, type SharedInputCreate,
+  sharedInputCreateSchema, sourceManagementSchema, sourceManagementChangeSchema,
+  type PublicInputSource, type SharedInput, type SharedInputConfirmation, type SharedInputCreate,
+  type SourceManagementChange, type SourceManagementRevision,
 } from "../shared/shared-inputs.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
@@ -27,6 +29,8 @@ export interface SharedInputApi {
   fetch(input: SharedInput, signal: AbortSignal, userId: string): Promise<SharedInput>;
   extract(input: SharedInput, excerpt: string, signal: AbortSignal, userId: string): Promise<SharedInput>;
   confirm(input: SharedInput, confirmation: SharedInputConfirmation, signal: AbortSignal, userId: string): Promise<SharedInputWriteResult>;
+  manage(input: SharedInput, change: SourceManagementChange, signal: AbortSignal, userId: string): Promise<SharedInputWriteResult>;
+  managementHistory(input: SharedInput, signal: AbortSignal, userId: string): Promise<{ revisions: SourceManagementRevision[]; hasMore: boolean }>;
   delete(input: SharedInput, signal: AbortSignal, userId: string): Promise<SharedInputWriteResult>;
   reconcilePending(signal: AbortSignal, userId: string): Promise<SharedInputReconciliation>;
   hasPendingOnline(): boolean;
@@ -54,13 +58,19 @@ const inputSchema = z.object({
     processedAt: dateTime.nullable(), model: safeText(200).nullable(),
   }).strict(),
   recordId: z.uuid().nullable(), confirmationKind: z.enum(["reference", "family_record"]).nullable(),
+  management: sourceManagementSchema.nullable().default(null),
 }).strict();
 const resultSchema = z.object({ input: inputSchema }).strict();
 const confirmationSchema = z.object({ input: inputSchema, recordId: z.uuid() }).strict();
 const deletionSchema = z.object({ deleted: z.literal(true) }).strict();
+const historySchema = z.object({
+  inputId: z.uuid(), childId: z.uuid(), ownerUserId: user, version,
+  revisions: z.array(z.object({ version, changedAt: dateTime, reason: safeText(500).refine(value => !!value.trim()),
+    management: sourceManagementSchema.nullable() }).strict()).max(20), hasMore: z.boolean(),
+}).strict();
 type Target = {
-  kind: "create" | "confirm" | "delete"; childId: string; userId: string; inputId?: string;
-  create?: SharedInputCreate; basis?: SharedInput; confirmation?: SharedInputConfirmation;
+  kind: "create" | "confirm" | "delete" | "manage"; childId: string; userId: string; inputId?: string;
+  create?: SharedInputCreate; basis?: SharedInput; confirmation?: SharedInputConfirmation; managementChange?: SourceManagementChange;
 };
 const codes = new Set(["inputs_capacity", "input_processing", "version_conflict", "invalid_input", "session_changed", "not_found", "forbidden"]);
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -68,13 +78,25 @@ const sameSourceOrigin = (left: SharedInput, right: SharedInput) => left.kind ==
   && left.sourceNotes === right.sourceNotes && left.sourceLabel === right.sourceLabel && left.sourceUrl === right.sourceUrl && left.createdAt === right.createdAt;
 const sameSource = (left: SharedInput, right: SharedInput) => sameSourceOrigin(left, right)
   && left.sourceDateText === right.sourceDateText;
+const changesContent = (input: SharedInput, content: SourceManagementChange["content"]) => content !== null
+  && (input.sourceLabel !== content.sourceLabel || input.sourceUrl !== content.sourceUrl || input.sourceDateText !== content.sourceDateText
+    || input.sourceNotes !== content.sourceNotes || input.text !== content.text);
+const sameManagement = (left: SharedInput["management"], right: SharedInput["management"]) => {
+  if (!left || !right) return left == null && right == null;
+  return left.intention === right.intention && left.purpose === right.purpose && left.nature === right.nature
+    && left.timeScope === right.timeScope && left.validityText === right.validityText && left.enabled === right.enabled
+    && left.modelExcerpt === right.modelExcerpt;
+};
 
 function checkedInput(value: unknown, childId: string, userId: string, inputId?: string, confirmed = false): SharedInput {
   const parsed = resultSchema.safeParse(value);
   if (!parsed.success || parsed.data.input.childId !== childId || parsed.data.input.ownerUserId !== userId
     || (inputId !== undefined && parsed.data.input.id !== inputId)
     || (parsed.data.input.kind === "public_source" ? parsed.data.input.sourceId === null : parsed.data.input.sourceId !== null)
-    || ((parsed.data.input.recordId === null) !== (parsed.data.input.confirmationKind === null))) {
+    || ((parsed.data.input.recordId === null) !== (parsed.data.input.confirmationKind === null))
+    || (parsed.data.input.management?.modelExcerpt !== undefined && parsed.data.input.management.modelExcerpt !== null
+      && (!parsed.data.input.management.enabled || !parsed.data.input.management.modelExcerpt.trim()
+        || !parsed.data.input.text.includes(parsed.data.input.management.modelExcerpt)))) {
     throw new SharedInputApiError(0, null, confirmed);
   }
   return parsed.data.input;
@@ -94,6 +116,24 @@ function checkedWrite(value: unknown, target: Target): SharedInputWriteResult {
       || input.version <= target.confirmation.expectedVersion || !sameSource(input, target.basis)
       || input.text !== target.basis.text || input.sha256 !== target.basis.sha256) throw new SharedInputApiError(0, null, true);
     return { input, recordId: parsed.data.recordId };
+  }
+  if (target.kind === "manage") {
+    const basis = target.basis, change = target.managementChange;
+    if (!basis || !change) throw new SharedInputApiError(0, null, true);
+    const input = checkedInput(value, target.childId, target.userId, target.inputId, true);
+    const contentChanged = changesContent(basis, change.content), content = change.content;
+    const expectedManagement = { ...change.management, modelExcerpt: contentChanged || !change.management.enabled ? null : change.management.modelExcerpt };
+    if (input.version !== change.expectedVersion + 1 || input.kind !== basis.kind || input.sourceId !== basis.sourceId
+      || input.createdAt !== basis.createdAt || input.recordId !== basis.recordId || input.confirmationKind !== basis.confirmationKind
+      || !sameManagement(input.management, expectedManagement)
+      || (content === null ? !sameSource(input, basis) || input.text !== basis.text || input.sha256 !== basis.sha256
+        : input.sourceLabel !== content.sourceLabel || input.sourceUrl !== content.sourceUrl || input.sourceDateText !== content.sourceDateText
+          || input.sourceNotes !== content.sourceNotes || input.text !== content.text)
+      || (contentChanged && (input.retrievedAt !== null || input.fetchState !== (input.text.trim() ? "ready" : "not_requested")))
+      || ((contentChanged || !change.management.enabled) && (input.extraction.state !== "not_requested"
+        || input.extraction.runId !== null || input.extraction.excerpt !== null || input.extraction.draft !== null
+        || input.extraction.stopReason !== null || input.extraction.processedAt !== null || input.extraction.model !== null))) throw new SharedInputApiError(0, null, true);
+    return { input };
   }
   const input = checkedInput(value, target.childId, target.userId, undefined, true);
   const created = target.create;
@@ -213,7 +253,8 @@ export function createSharedInputApi(baseUrl = "", fetcher: typeof fetch = fetch
     },
     async fetch(input, signal, userId) {
       manageable(input, userId);
-      if ((input.kind !== "public_source" && input.kind !== "personal_source") || !input.sourceUrl || input.recordId !== null) throw new SharedInputApiError(400, "invalid_input");
+      if ((input.kind !== "public_source" && input.kind !== "personal_source") || !input.sourceUrl || input.recordId !== null
+        || input.management?.enabled === false) throw new SharedInputApiError(400, "invalid_input");
       const next = checkedInput(await request(entity(input.childId, input.id) + "/fetch", signal, userId,
         { expectedVersion: input.version, confirmFetch: true }, 25_000), input.childId, userId, input.id);
       if (!sameSourceOrigin(next, input) || next.version < input.version) throw new SharedInputApiError();
@@ -221,7 +262,7 @@ export function createSharedInputApi(baseUrl = "", fetcher: typeof fetch = fetch
     },
     async extract(input, excerpt, signal, userId) {
       manageable(input, userId);
-      if (input.recordId !== null || !safeText(10000).safeParse(excerpt).success || !excerpt.trim() || !input.text.includes(excerpt)) {
+      if (input.recordId !== null || input.management?.enabled === false || !safeText(10000).safeParse(excerpt).success || !excerpt.trim() || !input.text.includes(excerpt)) {
         throw new SharedInputApiError(400, "invalid_input");
       }
       const next = checkedInput(await request(entity(input.childId, input.id) + "/extract", signal, userId,
@@ -240,6 +281,28 @@ export function createSharedInputApi(baseUrl = "", fetcher: typeof fetch = fetch
       }
       return mutate(entity(input.childId, input.id) + "/confirm", confirmation,
         { kind: "confirm", childId: input.childId, userId, inputId: input.id, basis: input, confirmation }, signal);
+    },
+    async manage(input, change, signal, userId) {
+      manageable(input, userId);
+      const parsed = sourceManagementChangeSchema.safeParse(change);
+      if (!parsed.success || parsed.data.expectedVersion !== input.version
+        || (parsed.data.content !== null && (input.kind !== "personal_source" || input.recordId !== null))) throw new SharedInputApiError(400, "invalid_input");
+      if ([input.fetchState, input.extraction.state].some(state => state === "running" || state === "unknown")) throw new SharedInputApiError(409, "input_processing");
+      const management = parsed.data.management;
+      if (!changesContent(input, parsed.data.content) && management.enabled && management.modelExcerpt !== null
+        && (!management.modelExcerpt.trim() || !input.text.includes(management.modelExcerpt))) throw new SharedInputApiError(400, "invalid_input");
+      return mutate(entity(input.childId, input.id) + "/manage", parsed.data,
+        { kind: "manage", childId: input.childId, userId, inputId: input.id, basis: input, managementChange: parsed.data }, signal);
+    },
+    async managementHistory(input, signal, userId) {
+      identity(input.childId, userId, input.id);
+      if (input.ownerUserId !== userId) throw new SharedInputApiError(403, "forbidden");
+      const parsed = historySchema.safeParse(await request(entity(input.childId, input.id) + "/history", signal, userId));
+      if (!parsed.success || parsed.data.inputId !== input.id || parsed.data.childId !== input.childId || parsed.data.ownerUserId !== userId
+        || parsed.data.version < input.version || (parsed.data.hasMore && parsed.data.revisions.length !== 20)
+        || parsed.data.revisions.some((revision, index, revisions) => revision.version > parsed.data.version
+          || (index > 0 && revision.version >= revisions[index - 1].version))) throw new SharedInputApiError();
+      return { revisions: parsed.data.revisions, hasMore: parsed.data.hasMore };
     },
     async delete(input, signal, userId) {
       manageable(input, userId);
