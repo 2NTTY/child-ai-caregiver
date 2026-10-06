@@ -1,8 +1,7 @@
 # 育伴港前端現況
 
-2026-10-06 UTC：公開 v48 的按鈕、手機導航及水滴拍照鈕限定驗收已完成。正在依 Codex 參考整理聊天輸入框外觀，v49 已發布，限定桌面／390／320 畫面與輸入檢查通過。
+2026-10-06 UTC：前端 v49 已發布，包含程式、文件及驗收證據的 [PR #89](https://github.com/2NTTY/child-ai-caregiver/pull/89) 已合併至 master `26d36e8`。
 
-- 只改比例、留白、邊界、工具列及送出圓形呈現，保留原輸入／草稿／附件行為
-- 本包 304 項測試、typecheck 及建置通過；v49 已發布、限定驗收通過，send 持續按壓／IME／真機未新增實測
-- 前批 v47／v48 已同步至 PR #89 的 `046ded1f`，本輸入框修訂另行追加；PR #89 不自動合併
-- 本包實際檢查及交付狀態見 [PLAN](PLAN.md#active)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)，接線依 [HANDOFF](HANDOFF.md)
+FE-W43 的七份接線／需求文件已清理並通過定向一致性覆核，保留正式能力缺口與驗證限制；這不代表 backend 已接通。當前包、交付門檻及結果只見 [PLAN#active](PLAN.md#active)。
+
+接線從 [HANDOFF 閱讀入口](HANDOFF.md#reading-order)開始；呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)，不用重讀歷史測試流水。

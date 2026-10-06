@@ -125,7 +125,7 @@ Web「更多」是次要分類目錄，按實際正文寬度兩／三欄，極�
 | 原文核對欄位 | [RecordDraftFields](src/components/RecordDraftFields.tsx) | 照片和私人來源共用種類、原文、數值／單位、約數及時間原文；隱藏參考備註不適用的欄位，驗證／同意沿各功能契約 |
 | 原生外殼及手機首頁 | [NativeAppShell](src/components/NativeAppShell.tsx)、[MobileHomeDashboard](src/components/MobileHomeDashboard.tsx) | Safe Area、更多／資訊面板、Expo Router Tabs、問候／孩子卡片／重點／待辦／快捷記錄；與 Web 共享資料模型和功能元件 |
 | 共同外殼 | [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 左導覽、孩子切換及其授權摘要、資訊欄、預覽情境、內頁標題與內容間距 |
-| 捲動區域 | [AppScrollView.web](src/components/AppScrollView.web.tsx)、[原生入口](src/components/AppScrollView.tsx) | Web 垂直滑塊覆蓋內容、透明軌道及不預留寬度；保留 RN viewport／事件／ref。原生及橫向捲動維持 RN ScrollView |
+| 捲動區域 | [AppScrollView.web](src/components/AppScrollView.web.tsx)、[原生入口](src/components/AppScrollView.tsx) | Web 垂直及橫向滑塊覆蓋內容、透明軌道及不預留空間；保留 RN viewport／事件／ref。原生維持 RN ScrollView |
 | Agent 主要入口 | [AgentEntryButton](src/components/AgentEntryButton.tsx) | 桌面側欄的固定入口、主操作層次、SVG、焦點／目前頁面；復用 Paper TouchableRipple 與既有 token，不改一般 AppButton |
 | 首頁重點與提示 | [HomeFocus](src/components/HomeFocus.tsx)、[HomeActionSummary](src/components/HomeFocus.tsx)、[RightRailContent](src/components/RightRailContent.tsx)、[NotificationBell](src/components/NotificationBell.tsx) | 依各自授權投影呈現首頁重點、行動摘要、右欄近期資料及原操作提示；不以合成卡片代替正式任務／通知協議 |
 | 本人渠道設定 | [ChannelCards](src/components/notifications/ChannelCards.tsx)、[channel-view-model](src/channel-view-model.ts) | Web Push／Telegram 的狀態、核對、本人撤銷、明確測試及投遞；沿相同卡片／表單／狀態控件，與安靜時段和任務完成分開 |
@@ -150,7 +150,7 @@ Web「更多」是次要分類目錄，按實際正文寬度兩／三欄，極�
 
 2026-10-03 補充：只把手機首頁的問候／副句／標語放大至 26／16／14（行高 34／24／22），桌面字體不變。孩子外框與箭嘴跟隨同一容器收窄上移，外框在移動進度 20%–60% 淡出，不隱藏孩子資訊；終態按內容自然寬度、最多 62%，避免放大字體被初始量度壓窄。3 秒閱讀及每會話一次播放沿用。
 
-孩子卡片保留可換行的稱呼、年齡原值／基準及確認狀態；有真授權相片時才顯示，現在以首字头像代表合成資料。未知年齡不推算、未知過敏不寫「無過敏」。快捷輸入沿[現行功能版型](#function-specific-layouts)的單一圓形入口；保護既有草稿，不自動發送，涉及共享仍按原契約核對。
+孩子卡片保留可換行的稱呼、年齡原值／基準及確認狀態；有真授權相片時才顯示，現在以首字头像代表合成資料。未知年齡不推算、未知過敏不寫「無過敏」。快捷輸入沿[現行功能版型](#function-specific-layouts)的單一水滴快捷入口；保護既有草稿，不自動發送，涉及共享仍按原契約核對。
 
 共用按鈕／選擇／勾選及連結在手機至少 48 的觸控範圍，普通 SVG 20／導航 22／突出符號 24；主標題 22、卡片標題 16、正文 14–16、次層 12，沿 Paper 5.15.3 MD3 tokens。卡片內距／頁邊 16；快捷輸入尺寸依上述現行配方。字體保留系統伸縮，不固定卡片文字高度；參考及成熟來源見 [MOBILE_DESIGN](MOBILE_DESIGN.md)。React Native 安全區、鍵盤與底部導航沿 [Expo Safe Areas](https://docs.expo.dev/develop/user-interface/safe-areas/)／[JavaScript Tabs](https://docs.expo.dev/router/advanced/tabs/)，原生效果仍須實機驗收。沒有正式來源的知識／醫療重點、相片／咪高峰不做成假操作；現以已有記憶／話題入口銜接。
 
@@ -172,9 +172,9 @@ FE-W20 的 [首頁背景設定](APPEARANCE_HANDOFF.md) 復用 HomeBackground、�
 
 登入沿 FE-W23 已還原的左介紹／右登入結構；FE-W38 桌面右欄 44%／至少 400、表單最寬 440。圖片沿原 0.55 透明度，以原圖 x=1552 作固定可見右邊界，排除太陽並保留指尖；按容器等比 cover、垂直置中，變窄只由左側裁切。FE-W24 在桌面介紹文字下面加半透明模糊面板；900 以下移除整個宣傳故事／插畫，只保留表單上方品牌及登入內容。[現行交接](HANDOFF.md#responsive-scroll)／[還原證據](HANDOFF.md#login-original-reset)。
 
-FE-W24：Web 垂直捲動區使用共用 AppScrollView，透明軌道及 10 px 覆蓋區不佔內容寬度，滑塊顏色沿 controlOutline／ink；內容保持原本邊距，控制不放到滑塊下面。頁面、右欄及選單獨立捲動，保留原生鍵盤／滾輪及焦點；不以 stable gutter 預留空白。桌面首頁轉單欄時列採自然高度，區塊保留 16 間距，不用固定高度遮掉記錄。手機首頁原插畫 contain 完整展示，靠右、左緣及底部漸淡；自選背景維持 cover。研究及平台界線見 [捲動／模糊指引](.agents/skills/web-screen-delivery/references/scroll-and-blur.md)。
+Web 捲動區使用共用 AppScrollView，滑塊顏色沿 controlOutline／ink；內容保持原本邊距，控制不放到滑塊下面。頁面、右欄及選單獨立捲動，保留原生鍵盤／滾輪及焦點；不以 stable gutter 預留空白。桌面首頁轉單欄時列採自然高度，區塊保留 16 間距，不用固定高度遮掉記錄。手機首頁原插畫 contain 完整展示，靠右、左緣及底部漸淡；自選背景維持 cover。研究及平台界線見 [捲動／模糊指引](.agents/skills/web-screen-delivery/references/scroll-and-blur.md)。
 
-FE-W28：全部 Web 垂直及橫向捲動區均使用 6 px 覆蓋區、1 px 垂直於軸的內距及 border-box，可見滑塊 4 px；桌面與手機同款。透明軌道不佔內容寬度／高度，不造成左右跳動。原本隱藏 indicator 的分頁及清單保持隱藏；原生沿 RN／系統捲動條。FE-W27 的手機限定[舊證據](verification/fe-w27-home/home-checks.json)保留，本次見 [局部驗證](verification/fe-w28-shell-feedback/shell-feedback-checks.json)。
+全部 Web 垂直及橫向捲動區均使用 6 px 覆蓋區、1 px 垂直於軸的內距及 border-box，可見滑塊 4 px；桌面與手機同款。透明軌道不佔內容寬度／高度，不造成左右跳動。原本隱藏 indicator 的分頁及清單保持隱藏；原生沿 RN／系統捲動條。歷史依據見 [FE-W28 局部驗證](verification/fe-w28-shell-feedback/shell-feedback-checks.json)，不作新版本驗收。
 
 ## 照片與原文核對
 

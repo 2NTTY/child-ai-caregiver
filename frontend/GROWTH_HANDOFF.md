@@ -1,6 +1,6 @@
 # 成長與關注前端交接
 
-2026-10-06 UTC 重整。依已取回程式及較早 Growth v38 交接編寫的新文件；不是遺失的最終 v44 原件。當前驗證與下一步只見 [PLAN](PLAN.md#active)。
+本文件保留關注鏈及報告的前端投影、既定需求與正式接線缺口；當前驗證與下一步只見 [PLAN](PLAN.md#active)。
 
 <a id="living-growth-archive"></a>
 ## 持續關注與常態成長報告
@@ -22,6 +22,8 @@
 時間線呈現依 [GrowthConcernTimeline](src/components/growth/GrowthConcernTimeline.tsx)；原記錄導向 `/care?record=…` 必須校驗同孩子授權及實際 id，找不到不能選別筆。Task callback 現時只到 `/tasks`，不可宣稱精確定位或兩個 domain 已正式同步。Home ongoing 仍為 MemoryTopic。
 
 ### Web 報告與導出選擇
+
+產品需求：打開成長檔案即可閱讀由 Agent 持續整理的標準報告；特殊內容或用途由家長在聊天交代給 Agent。PDF 是選定期間／版本的導出產物，不取代可持續更新的網頁正文。特殊報告同樣遵守來源、權限及版本限制；目前沒有因這項需求而接通生成 API。
 
 [GrowthArchive](src/components/growth/GrowthArchive.tsx) 是持續可讀的標準 Web 報告。章節由正式分類投影安排孩子概況、身體與生活、能力與興趣、持續關注、近期變化與支持；舊未分類條目放中性「已記錄的情況」，不從文字猜分類。來源確認記錄、Agent 整理及尚待核對的標示分開，不把報告當發展評估或已確認的新事實。
 
