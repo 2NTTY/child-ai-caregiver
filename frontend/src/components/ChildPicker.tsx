@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
-import { Button, Portal, RadioButton, Text } from "react-native-paper";
+import { Portal, RadioButton, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
+import { AppButton } from "./ui";
 import { AppIcon } from "./AppIcon";
 import type { HomeChild } from "../view-model";
 import { chineseFont, colors, mobileLayout, radius, spacing, typeScale } from "../theme";
@@ -27,7 +28,7 @@ export function ChildPicker({ children, selectedId, onSelect, compact = false, t
     </>}
   </Pressable><Portal><Dialog visible={visible} onDismiss={() => setOpen(false)}><Dialog.Title>選擇孩子</Dialog.Title><Dialog.ScrollArea><ScrollView style={{ maxHeight: 360 }}>
     {children.map(child => <RadioButton.Item key={child.id} label={`${child.displayName} · ${child.ageLabel}`} value={child.id} aria-checked={child.id === selectedId} status={child.id === selectedId ? "checked" : "unchecked"} labelStyle={styles.optionLabel} style={[styles.option, child.id === selectedId && styles.optionSelected]} onPress={() => { setOpen(false); onSelect(child.id); }} />)}
-  </ScrollView></Dialog.ScrollArea><Dialog.Actions><Button onPress={() => setOpen(false)}>關閉</Button></Dialog.Actions></Dialog></Portal></>;
+  </ScrollView></Dialog.ScrollArea><Dialog.Actions><AppButton label="關閉" variant="quiet" onPress={() => setOpen(false)} /></Dialog.Actions></Dialog></Portal></>;
 }
 const styles = StyleSheet.create({
   picker: { width: 276, minHeight: 52, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.controlSurface, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium },
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
   mobile: { minHeight: mobileLayout.touchTarget },
   mobileCompact: { width: 132 },
   shortSwitch: { paddingHorizontal: spacing.sm, gap: spacing.xs },
-  homeIdentity: { width: "auto", alignSelf: "stretch", minHeight: 72, paddingHorizontal: 0, backgroundColor: "transparent", borderWidth: 0, borderRadius: radius.small },
+  homeIdentity: { width: "auto", alignSelf: "stretch", minHeight: 72, paddingHorizontal: spacing.sm, backgroundColor: colors.controlSurface, borderWidth: 1, borderRadius: radius.small },
   homeCopy: { flexBasis: "auto" },
   homeCopyContent: { alignSelf: "flex-start", maxWidth: "100%", gap: 2 },
   homePressed: { opacity: 0.72 },

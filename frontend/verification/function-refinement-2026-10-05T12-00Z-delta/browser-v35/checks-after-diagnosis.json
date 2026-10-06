@@ -1,0 +1,205 @@
+{
+  "version": "v35",
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "entry": [
+    "/_expo/static/js/web/entry-fb3f33d31f110361befa79b4143e54c6.js"
+  ],
+  "startedAt": "2026-10-05T12:07:54.908Z",
+  "checks": [
+    {
+      "name": "home-initial-welcome-1440",
+      "status": "observed",
+      "measurement": {
+        "height": 192,
+        "phase": "reading",
+        "text": "你好每個小日常，都值得好好記下。",
+        "width": 1112
+      }
+    },
+    {
+      "name": "home-initial-welcome-settles",
+      "status": "passed",
+      "note": "Reading state and final absence observed; precise 3s/360ms timing and every animation frame were not measured"
+    },
+    {
+      "name": "home-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+        "width": 1440
+      }
+    },
+    {
+      "name": "home-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+        "width": 1024
+      }
+    },
+    {
+      "name": "home-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+        "width": 390
+      }
+    },
+    {
+      "name": "home-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+        "width": 320
+      }
+    },
+    {
+      "name": "mobile-home-picker-visible-and-cancel",
+      "status": "passed",
+      "bounds": {
+        "h": 48,
+        "w": 132,
+        "x": 8,
+        "y": 7.5
+      }
+    },
+    {
+      "name": "mobile-home-switch-and-return-without-welcome-replay",
+      "status": "passed",
+      "homeReturn35": {
+        "child": true,
+        "welcomeCount": 0
+      }
+    },
+    {
+      "name": "capture-650ms-hold-release-keeps-options",
+      "status": "passed",
+      "captureBounds": {
+        "height": 56,
+        "width": 56,
+        "x": 12,
+        "y": 467
+      }
+    },
+    {
+      "name": "capture-menu-file-open-cancel",
+      "status": "passed"
+    },
+    {
+      "name": "capture-keyboard-expand-tab-escape",
+      "status": "passed",
+      "focusedChoice35": {
+        "activeLabel": "快捷文件",
+        "activeTestId": "quick-input-file"
+      },
+      "afterEsc35": {
+        "expanded": "false",
+        "focused": true
+      }
+    },
+    {
+      "name": "capture-direction-drag-voice-and-cancel",
+      "status": "passed",
+      "note": "Voice dialog only; Start recording not pressed"
+    },
+    {
+      "name": "capture-out-of-sector-drag-cancels",
+      "status": "passed"
+    },
+    {
+      "name": "tasks-layout-1440",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1440,
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/tasks",
+        "width": 1440
+      }
+    },
+    {
+      "name": "tasks-layout-1024",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/tasks",
+        "width": 1024
+      }
+    },
+    {
+      "name": "tasks-layout-390",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 390,
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/tasks",
+        "width": 390
+      }
+    },
+    {
+      "name": "tasks-layout-320",
+      "status": "passed",
+      "metrics": {
+        "height": 900,
+        "scrollWidth": 320,
+        "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/tasks",
+        "width": 320
+      }
+    },
+    {
+      "name": "tasks-ended-disclosure",
+      "status": "passed",
+      "before": 3,
+      "expanded": 5,
+      "after": 3
+    },
+    {
+      "name": "tasks-review-detail-return-retains-filter",
+      "status": "failed"
+    }
+  ],
+  "failures": [
+    {
+      "name": "tasks-review-detail-return-retains-filter",
+      "status": "failed"
+    },
+    {
+      "name": "tasks-review-detail-return-retains-filter",
+      "assertion": "Exactly one task row and exact accessible name 事項狀態：待覆核",
+      "observedRows": [
+        "核對到診準備是否完成09:30負責人：媽媽（擁有人 · 合成）待覆核 · 已停催核對完成或取消"
+      ],
+      "observedFilterText": [
+        "事項狀態：待覆核 · 已停催"
+      ]
+    }
+  ],
+  "screenshots": [
+    "home-welcome-1440-initial.jpg",
+    "home-1440.jpg",
+    "home-1024.jpg",
+    "home-390.jpg",
+    "home-320.jpg",
+    "tasks-1440.jpg",
+    "tasks-1024.jpg",
+    "tasks-390.jpg",
+    "tasks-320.jpg"
+  ],
+  "deferred": [
+    "Growth visual acceptance pending purpose definition"
+  ],
+  "scope": "Home/capture, Tasks, Care, Summary, More only; 1440/1024/390/320 and representative interactions; no camera/mic/API/model/native",
+  "nextVersionDeferrals": [
+    "Growth visual acceptance pending next implementation",
+    "Web footer help removal and onboarding/Settings guide-entry change pending v36; do not accept the old footer guide entry"
+  ],
+  "status": "stopped-on-first-unmet-task-return-assertion"
+}

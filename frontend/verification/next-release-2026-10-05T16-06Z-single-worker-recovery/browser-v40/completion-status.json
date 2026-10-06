@@ -1,0 +1,113 @@
+{
+  "capturedAt": "2026-10-05T16:28:26.070244+00:00",
+  "status": "bounded-v40-qa-complete-with-unverified-archive",
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+  "observedWrapperURL": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "versionId": "appgprj_6ac1e7c965308191bc2c599951348a51~appgver_582d6747932481919bef39ad16cf7846",
+  "deploymentId": "appgdep_6ac3ccc27cf08191a07f8323525c1853",
+  "siteCommit": "64bbe36f39354ead34fe758fd0fd6335e81a7682",
+  "rootPublicationConfirmedAt": "2026-10-05T16:14:11Z",
+  "runtimeEntryEvidence": "runtime-entry.json",
+  "entry": "entry-29f5685892ac54b0ca53a9bde3814118.js",
+  "entrySha256": "01512f96a992b364160705fa094d90ff4dfe71d78d94298acce50318f3004bc9",
+  "hashQualification": "Immutable local export hash plus browser-observed matching script src; no remote byte-hash claim",
+  "sourceFreeze": "2026-10-05T16:06:25Z",
+  "sourceBoundary": "Current NEXT source has root-authorized adapter work after freeze. QA used only the published fixed export; current source is not claimed equal, and known work is not flagged as accidental drift.",
+  "buildIntegrity": {
+    "status": "passed",
+    "checkedFiles": 63,
+    "drift": []
+  },
+  "browser": "dot cloud Chrome browser1/tab22; user computer not accessed",
+  "fourWidthEvidence": {
+    "pages": [
+      "Current child overview",
+      "Multipurpose preparation reading",
+      "Multi-chat Records review",
+      "Classified History Care review"
+    ],
+    "widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "height": 900,
+    "pairs": 16,
+    "result": "No document horizontal overflow in captured views; screenshots are wrapper fullPage showing current iframe scroll viewport, not every content section or pointer visibility"
+  },
+  "keyResults": [
+    {
+      "name": "manual-fallback",
+      "result": "No 手動補填 button until existing 其他記錄入口 disclosure expanded; restored collapsed afterward"
+    },
+    {
+      "name": "multi-chat-projection",
+      "result": "Six rows across five source batches. Important pending entries appear before ordinary saved and pre-write pending entries"
+    },
+    {
+      "name": "important-confirmation",
+      "result": "Explicit synthetic acknowledgement reduced important pending 2->1 and total pending 4->3; no repeat record write or notification claimed"
+    },
+    {
+      "name": "expired-operation",
+      "result": "Remaining expired important proposal retains yellow warning and has no submit/confirm action; not treated as confirmed"
+    },
+    {
+      "name": "shared-Care-state",
+      "result": "History Care category shows the same updated 1 important / 3 pending counts and expired item after navigation; preview state only"
+    },
+    {
+      "name": "preparation-checklist",
+      "result": "Keyboard Space checked one item, 1/3 shown, with local-only notice. After independent Records/History navigation and returning, same document still contains that checked item",
+      "evidence": "preparation-checklist-cross-page.txt"
+    },
+    {
+      "name": "overview-truthfulness",
+      "result": "Profile source and confirmation visible; measurement unavailable is explicit, unknown allergies/needs are not asserted absent"
+    }
+  ],
+  "permissionStops": [
+    {
+      "action": "Overview four-width screenshot batch with fresh helper",
+      "result": "Generic no-approval; same call once succeeded after root supplied user transcript evidence"
+    },
+    {
+      "action": "Reopen same synthetic preparation to inspect checked state",
+      "result": "Generic no-approval; same call once succeeded after root supplied user transcript evidence"
+    },
+    {
+      "action": "Press 使用完畢，歸檔 on 小昕的到診準備",
+      "result": "Denied for lacking specific archive authorization; root supplied exact user archive/QA wording; same call retried once, generic no-approval again; stopped, no alternate route. Archive and archive->History not verified"
+    }
+  ],
+  "harnessIssue": "An old capture helper retained closed v39 tab20; replaced by a fresh helper with explicit tab22/frame parameters. No app interaction failure.",
+  "buttonAppearance": {
+    "result": "partial-runtime-evidence-review-needed",
+    "ordinaryDisclosures": "來源與版本 and 其他記錄入口 captured with transparent background and 1px outline",
+    "selectedPreparationRow": {
+      "text": "開啟小昕的到診準備",
+      "background": "rgb(227, 246, 245)",
+      "border": "2px",
+      "borderColor": "rgb(39, 35, 67)",
+      "selected": "true"
+    },
+    "qualification": "Selected clickable card has both cyan fill and 2px dark border; surfaced to root to decide selection-state scope. Shared Paper AppButton outer role nodes are transparent/no-border while inner visual layers were not captured in the denied mixed call; cannot claim every clickable element now obeys fill-or-outline."
+  },
+  "notVerified": [
+    "Preparation archive confirmation/completion and resulting History entry; blocked after one authorized same-call retry",
+    "All command-button inner style layers and every clickable selected-row fill-or-outline interpretation",
+    "Child scope switch, revoked/private-source/unknown preparation fixtures, old legacy-operation recovery in this build",
+    "Full keyboard traversal, hover, pointer paths in changed app flows; app actions this run were keyboard, wrapper size controls pointer",
+    "Previous v38 ChildPicker/footer pointer failures remain unresolved; no keyboard result replaces a pointer pass",
+    "New adapter work after the fixed freeze, formal persistent/current-authoritative database, actual Agent generation, real APIs/models/media/native actions",
+    "Full-site regression; only listed primary views and bounded flows tested"
+  ],
+  "noActions": [
+    "No source/docs modifications during browser QA",
+    "No extra build/tests or source drift investigation",
+    "No GitHub upload/commit/PR work",
+    "No Sites publication by verifier",
+    "No real record, consent, notification, booking or medical action"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "cases": 12,
+  "checks": [
+    "Composer compact=false, enabled=false, draft=false: transparent controls, original target/panel/send/handlers",
+    "Composer compact=false, enabled=false, draft=true: transparent controls, original target/panel/send/handlers",
+    "Composer compact=false, enabled=true, draft=false: transparent controls, original target/panel/send/handlers",
+    "Composer compact=false, enabled=true, draft=true: transparent controls, original target/panel/send/handlers",
+    "Composer compact=true, enabled=false, draft=false: transparent controls, original target/panel/send/handlers",
+    "Composer compact=true, enabled=false, draft=true: transparent controls, original target/panel/send/handlers",
+    "Composer compact=true, enabled=true, draft=false: transparent controls, original target/panel/send/handlers",
+    "Composer compact=true, enabled=true, draft=true: transparent controls, original target/panel/send/handlers",
+    "Toolbar compact=false, disabled=false: transparent controls, hover/focus/press, original target and callbacks",
+    "Toolbar compact=false, disabled=true: transparent controls, hover/focus/press, original target and callbacks",
+    "Toolbar compact=true, disabled=false: transparent controls, hover/focus/press, original target and callbacks",
+    "Toolbar compact=true, disabled=true: transparent controls, hover/focus/press, original target and callbacks"
+  ],
+  "limits": [
+    "Mocked component and source-invariant checks only",
+    "No browser, full build, Git, publication, real media permissions or native-device tests"
+  ]
+}

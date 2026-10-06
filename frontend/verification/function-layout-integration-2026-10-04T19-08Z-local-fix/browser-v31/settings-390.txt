@@ -1,0 +1,110 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px" [active]
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 390 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - button "關閉預覽提示":
+    - generic: 已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。
+  - generic: 育有方 · 個人空間
+  - heading "設定" [level=1]
+  - generic: 管理個人偏好、孩子與家庭資料；帳戶資料為合成預覽，裝置動畫偏好只在本機套用。
+  - tablist "設定分類":
+    - tab "個人與帳戶" [selected]:
+      - generic: 個人與帳戶
+    - tab "孩子設定":
+      - generic: 孩子設定
+    - tab "家庭成員":
+      - generic: 家庭成員
+    - tab "應用偏好":
+      - generic: 應用偏好
+    - tab "通知渠道":
+      - generic: 通知渠道
+    - tab "模型設定":
+      - generic: 模型設定
+    - tab "資料與私隱":
+      - generic: 資料與私隱
+  - button "查看更多設定分類":
+  - generic: 本人的設定
+  - generic: 分類之間保留草稿；各項操作須分別核對及確認
+  - tabpanel "個人與帳戶":
+    - heading "個人資料" [level=1]
+    - generic: 目前資料只屬合成示例。
+    - generic: 媽
+    - generic: 媽媽
+    - generic: preview@example.invalid · 合成資料
+    - generic: 顯示名稱
+    - textbox "顯示名稱預覽草稿"
+    - generic: 顯示名稱只作本頁預覽
+    - generic: 尚未接入帳戶保存；不會更改正式顯示名稱。
+    - generic: 電郵地址
+    - generic: preview@example.invalid（合成）
+    - generic: 登入方式
+    - generic: 電郵與密碼（正式 App 已支援）
+    - heading "語言與地區" [level=1]
+    - generic: 畫面現以香港繁體中文呈現；偏好尚未接線。
+    - generic: 介面語言
+    - generic: 繁體中文（香港）
+    - generic: 地區
+    - generic: 香港
+    - generic: 時間顯示
+    - generic: 24 小時制 · Asia/Hong_Kong
+    - heading "登入與安全" [level=1]
+    - generic: 切換帳戶入口集中在這裏。
+    - generic: 下方會開啟登入預覽，目前不會登出或切換真帳戶。
+    - button "切換帳戶":
+      - generic: 切換帳戶
+    - heading "模型服務" [level=1]
+    - generic: 管理平台服務、個人密鑰及呼叫上限。
+    - button "管理模型設定":
+      - generic: 管理模型設定
+    - heading "資料狀態" [level=1]
+    - generic: 目前展示的是合成孩子與記錄。真資料是否已保存，以原操作收據和授權讀取結果為準。
+    - button "查看資料與私隱":
+      - generic: 查看資料與私隱
+    - heading "使用引導" [level=1]
+    - generic: 即使完成初始設定，也可隨時重看操作次序。
+    - generic: 查看孩子資料、已確認記錄及家庭偏好的入口。
+    - button "開啟使用引導":
+      - generic: 開啟使用引導
+    - generic: 需要協助？
+    - generic: 正式支援入口須由產品提供；預覽不會開啟不存在的客服渠道。
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

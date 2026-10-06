@@ -1,13 +1,13 @@
 # 照片前端交接
 
 <a id="records-photo-entry"></a>
-## 已確認入口方向，改造待通知
+## 記錄與照片的同源入口
 
-2026-10-04：使用者確認照片收進「記錄」的照片篩選／原始附件檢視，拍照交給助手的快捷入口仍保留；使用者另要求等待通知才開始項目前端的版型／入口改造。本節是接線安排，不表示目前 `/photos`、導航或正式 controller 已更改。
+2026-10-04：使用者確認照片收進「記錄」的照片篩選／原始附件檢視，拍照交給助手的快捷入口仍保留；使用者已通知開始改造。本節管理同源接線要求，`/photos` 保留相容入口；實作及正式 controller 的驗證狀態見 [PLAN](PLAN.md#active)。
 
 - 記錄檢視呈現 Agent 整理結果、原始依據及更正／歷史；照片是原始附件，不等同已確認照護記錄。未關聯或待核對照片仍須可查閱，不因移除獨立主導航而失去入口。
 - 新記錄附件檢視、既有照片詳情及助手入口共用同一授權 scope 下的照片 controller／操作回調；只在正式組合入口注入一次 PhotoApi adapter，各處不另存照片副本或自行接第二套上傳／提取／刪除流程。記錄資料仍由其自身 owner 管理，靠穩定附件／記錄關聯連到原始來源；不混合私人附件及家庭記錄權限。
-- 待正式整合時明列唯一 owner 掛載點及 consumers；驗證一處更正／刪除後其他入口刷新，以及撤權、unknown 和原操作查核的共同行為。現有合成頁面尚未提供這種跨入口真同步，不以設計稿互動冒充接線。
+- 待正式整合時明列唯一 owner 掛載點及 consumers；驗證一處更正／刪除後其他入口刷新，以及撤權、unknown 和原操作查核的共同行為。合成頁面由 `src/preview/PhotosWorkspaceProvider.tsx` 在 dashboard 組合入口單次掛載，`/photos` 及 `/care?view=photos` 消費同一 `usePhotosPreview`。同 scope 附件集合保留，退出清暫存草稿；身份／孩子／角色改變先遮蔽不符 scope 的 controller，再清資料與遲到回呼。這不代表正式 PhotoApi 或真跨裝置同步已接通，驗證狀態只沿 PLAN。
 
 2026-10-01 FE-W19 增補：Agent 拍照現在直接開頁內相機，取代 FE-W18 的 `/photos?input=camera` 導航。`PhotoFilePicker.renderTrigger` 只客製呈現與入口，仍沿同一讀檔／hash／blob 流程；Web 的拍照 trigger 開 [WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx)，拍下完整 frame 後以 JPEG／實際 PNG MIME 作原始本次照片；系統 `capture=environment` 選圖是另一個明確後備動作。只在點擊後要求相機權限、`audio: false`，所有 tracks 在拍攝／取消／卸載／隱藏時停止，遲到串流亦釋放。元件掛載在 Portal 時以 callback ref 接 `video.srcObject`，不能假設 effect 執行時 DOM 已存在。原生 `captureOriginal(): Promise<PhotoOriginal | null>` 與 `selectOriginal` 分開，未注入仍停用。原照片頁的普通選檔／有限 camera intent、私人保存／提取／共享及 unknown 未改；[AGENT_HANDOFF](AGENT_HANDOFF.md) 列完整當頁預覽及正式接線界線。
 

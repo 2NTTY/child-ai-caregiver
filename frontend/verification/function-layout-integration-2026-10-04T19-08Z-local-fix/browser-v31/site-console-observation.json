@@ -1,0 +1,19 @@
+{
+  "returnedEntries": 373,
+  "siteOriginEntries": 2,
+  "siteLogs": [
+    {
+      "level": "warn",
+      "message": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md",
+      "timestamp": "2026-10-04T19:03:14.578Z",
+      "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/_expo/static/js/web/entry-90a7cc7dae0d029439bbc1764b9eeee1.js"
+    },
+    {
+      "level": "warn",
+      "message": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md",
+      "timestamp": "2026-10-04T19:10:38.519Z",
+      "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/_expo/static/js/web/entry-08e5274bee72e693b32bbd944e6f8a04.js"
+    }
+  ],
+  "limitation": "Read-only captured-log sample; extension metadata errors excluded by URL. Not an exhaustive network trace."
+}

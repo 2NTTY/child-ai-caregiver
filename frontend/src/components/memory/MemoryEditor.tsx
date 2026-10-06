@@ -66,7 +66,7 @@ function ConflictComparison({ preview }: { preview: MemoryPreviewController }) {
   </View>;
 }
 function EditorShell({ preview, title, children }: { preview: MemoryPreviewController; title: string; children: React.ReactNode }) {
-  return <SectionCard><SectionHeader density="compact" title={title} subtitle="只改變本次合成預覽；切換孩子或權限失效會清除草稿。" />
+  return <SectionCard><SectionHeader density="compact" title={title} subtitle="切換孩子或權限失效會清除草稿。" />
     <StatusAnnouncement eventKey={`${preview.error ?? ""}:${preview.conflict?.latest.version ?? ""}`} message={preview.error ?? (preview.conflict ? "版本衝突；草稿保留，請比較最新版本。" : "")} urgent />
     <ConflictComparison preview={preview} />
     {preview.error ? <Text style={styles.error}>{preview.error}</Text> : null}

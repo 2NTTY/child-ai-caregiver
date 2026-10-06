@@ -1,54 +1,51 @@
-# 育有方前端單一計劃
+# 育伴港前端計劃
 
-本文件是 FE-Wxx 的任務、依賴、下一步及關口入口；STATUS 只作短指路，HANDOFF 只管實際接點。[修改邊界](../AGENTS.md#frontend-backend)／[資訊更新職責](../AGENTS.md#document-updates)。
+本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## 本輪交付與下一步
+## FE-W38 收束：來源復原與新整合修訂
 
-2026-10-04：本輪隔離前端按動效、首頁、私人來源三部分收尾。以下區分程式交付、有界驗證及正式接線；合成預覽不代表正式產品已接通。
+更新：2026-10-06 UTC。目標是保住已完成的前端功能、恢復可檢查的來源及交接，再完成本包交付；只處理 `frontend/**`，不改正式 App、Server、Agent、資料庫、根依賴或根文件。
 
-| 部分 | 交付位置 | 接續邊界 |
-|---|---|---|
-| FE-W37 動效及局部畫面修正 | [PR #84](https://github.com/2NTTY/child-ai-caregiver/pull/84) 已合併；merge `117e53dd444e0c451e1cd07801da42d0ea7fcff3` | 包括共用灰幕、頂欄橫向替代 Logo、首頁回頁定位、聊天配色及相關捲動／焦點修正；未驗項不因合併而消失 |
-| 助手式首頁與快速記錄 | [PR #85](https://github.com/2NTTY/child-ai-caregiver/pull/85) 已合併；merge `242d9ac4d9bcb5378ee024c0cfc68416550e7284` | Agent 重要事項、持續觀察、側欄待辦分清；拍照只到未送出預覽。正式 feed／上傳／辨識／保存仍待相應接線 |
-| 私人來源協助接入 | 本次 `dot/private-source-purposes` 交付；合併狀態以該 PR 為準 | 共用 sources 清單／editor、Agent 協助與人工入口；意向已確認不代表正式接入。接線見 [專項](SHARED_INPUT_HANDOFF.md#assisted-source-management) |
+### 來源與現況
 
-### 接手先看
+- 已取回 GitHub 暫存物件中的前端原始檔、部分歷史驗證及保存的設計文件。PR 基線為 `2a64fdd7`，相關正式契約歷史基線為 master `65f8cf37bceeb15b05f46326c49e0370349ae3a5`；兩者均不代表本次已推送或合併
+- 原最後版 `app/(dashboard)/_layout.tsx`、`app/(dashboard)/history.tsx` 及本頁／STATUS／HANDOFF／GROWTH_HANDOFF 未完整取回，已依已取回程式另寫替代內容。新版不可冒稱原 v44 逐位元組復原
+- 新 Dashboard layout 在共同祖先各掛一次資料 owner，History 路由只轉入既有畫面；沒有用孩子或情境 key 重掛整個 AppShell。資料 owner 仍按孩子／身份／Server／角色隔離並拒絕遲到回呼。Native 記錄入口已把 History 納入 active 判斷；這項只完成源碼／composition 檢查，未作原生 runtime 驗收
+- 功能保留：家長對話 → Agent 整理 → 家長查看；手動填寫作補救。跨對話記錄核對、孩子概況／準備單、待辦／歷史、唯讀記憶與參考、持續關注鏈及標準 Web 成長報告均沿原同源接點
+- 新修訂 full typecheck 與250 項 scripts 測試及 24 項 colocated 測試通過（合計 274 項）；Fresh Web export 已通過（37 條靜態路由、63 份輸出），本修訂限定 browser 驗收已通過；原生 runtime 未驗。GitHub draft PR #88 已確認更新至 `7119b4d3`，本次畫面證據正追加，尚未合併；Sites 發布狀態與 GitHub 交付分開核對
 
-- **沒有授權中的整體改造包**：使用者要求版型／導航、記錄上拉更多、左下快捷手勢等改造等另行通知；自訂背景持久保存／跨裝置與原生選圖也延後。目前只保留設計與接線安排，不能自行啟動。[設計方向](DESIGN_SYSTEM.md#function-specific-layouts)／[快捷輸入](AGENT_HANDOFF.md#mobile-quick-input-design)／[照片入口](PHOTOS_HANDOFF.md#records-photo-entry)。
-- 新任務只讀相關專項；正式 controller／Server／API 接線由原主聊天按已授權工作包承接，沿 [HANDOFF 索引](HANDOFF.md#p2-coverage)，不重新把 fixture 當正式資料庫。
-- 只改前端所屬範圍，保留本人／孩子／Server scope、原操作查核、權限及草稿清理。需要接線時，一處注入權威 controller，多處呈現及刷新，不建立重複保存路徑。
+### 本次驗證結果
 
-### 本輪有效證據與限制
+- [初次 aggregate](verification/reconstructed-revision-2026-10-06T0533Z/aggregate-tests-initial.log)：248 項中 237 通過、11 失敗，涉及注入重構後兩份測試的過時 mocks。原失敗保留；獲准只修測試契約後，針對測試 15 項通過
+- [最後 aggregate](verification/reconstructed-revision-2026-10-06T0533Z/aggregate-tests-final.log)：250 通過、0 失敗，包含重建掛載、guard／source 導向及 native History active 的 source／composition 檢查。[Full typecheck](verification/reconstructed-revision-2026-10-06T0533Z/typecheck-final.log) 亦通過；完整命令及限制見 [checks](verification/reconstructed-revision-2026-10-06T0533Z/checks.json)。不是瀏覽器、正式 API、持久化或原生裝置驗收
+- [Fresh Web export](verification/reconstructed-revision-2026-10-06T0533Z/export-manifest.json) 通過，包含 `/history`；使用者補交的首頁圖採原 bytes 納入，屬[新資產修訂](verification/reconstructed-revision-2026-10-06T0533Z/asset-revision.json)，不冒稱舊 Git 圖逐位元一致。公開預覽 v45 已於 2026-10-06 05:52 UTC 發布；[本修訂 browser 摘要](verification/reconstructed-revision-2026-10-06T0533Z/browser-qa/verification-summary.md)記錄四尺寸排版、關注結束／撤銷／恢復、孩子切換與減少動畫的限定驗收通過。本機預覽阻擋、一次 iframe pointer 方法失敗與補驗均保留；不宣稱逐幀無閃動、全站全狀態或原生 runtime 通過。
 
-- [v26](verification/combined-source-intake-2026-10-04T14-51Z/cua-v26-checks.json)：私人來源共用 editor、unknown 鎖定／恢復、家庭角色彈窗、普通孩子切換無延遲文字；[v27](verification/combined-source-intake-2026-10-04T14-51Z/cua-v27-initial-position-checks.json)：首次可量度聊天定位及閱讀保位。各結果只適用所列固定來源。
-- [v28](verification/horizontal-header-2026-10-04T15-57Z/cua-v28-checks.json)：390／320 頂欄固定 64px、正文起點一致、控制／鍵盤隔離及站內減少動畫。
-- [v29](verification/home-chat-visual-2026-10-04T16-18Z/cua-v29-checks.json)／[建置來源](verification/home-chat-visual-2026-10-04T16-18Z/build-checks.json)：首頁孩子區返回置中、主題色值／對比、輸入框重疊與相關有界互動；一次 typecheck／Web export 通過。桌面 1024 截圖保存，1440 fullPage 工具 timeout 不作通過證據。
-- **保留差異**：[320px 明確焦點 PageUp 補驗](verification/home-chat-visual-2026-10-04T16-18Z/cua-v29-native-pageup-checks-1641.json) 在雲端沒有離底；使用者於 16:53 UTC 依 320×600 步驟回報本機瀏覽器正常。分開記錄，不推定純工具原因、不改寫失敗，不加猜測性補丁。來源 End 捲動中切換的原失敗與複合過渡未定結果亦保留；完整聊天鍵盤沒有被標為全面通過。
-- 連續首幀、首次問候收合接縫、精確曲線、系統媒體 reduced-motion、慢載／失敗網絡、原生／讀屏／真相機及正式 API 等，未由本輪 Web 合成結果證明。孩子切換超過 5 秒提示只有實作與普通路徑證據，沒有製造假的 hold 作成功證明。
-- 已核對的 #84／#85 GitHub heads 沒有回報相關 check／status／workflow run；本地與有界瀏覽器證據不稱作 GitHub CI 全綠。舊證據、失敗及恢復歷史保留原 `verification/` 路徑；需要追溯才沿原結果，不預設全讀。
+### 必要驗證與完成關口
 
-<a id="integration-gates"></a>
-## 正式整合及仍未完成的關口
+1. 確認原始檔／基線／新重建檔的來源，固定新修訂 manifest；缺檔不由生成 bundle 或摘要猜回
+2. 依實際可用依賴執行必要 typecheck、受影響測試及 Web export，保留失敗與未執行階段；驗證腳本存在不等於已執行
+3. 受影響 UI 的實際瀏覽器檢查須另有此修訂證據：關注結束確認／取消／重複點擊／撤銷／歷史恢復、報告閱讀及導出不可用提示、記錄跨頁核對與孩子隔離。320／390／1024／1440、鍵盤焦點及轉場只報實際覆蓋範圍
+4. Review 新重建的兩個 runtime 檔、四個交接文件及整合差異後，可先更新 draft PR 並明示尚待建置／畫面驗收；首頁圖採使用者補交的新資產，原 hero 圖保留於 Git 歷史；既有歷史檔案不刪，不上傳空白替代。必要建置及畫面檢查完成前不合併；遠端 commit、CI、合併或發布各自核實，不能從本地結果推定
+5. 本包合併確認後，才從最新 master 開獨立清理 PR。清理在獨立副本準備與驗證，另開 PR；不混入本次復原交付
 
-- **Web 視覺／正式接線**：整套使用者確認、正式 controller／session／API、跨頁及必要正式驗收仍未由合成預覽證明。主聊天按 [正式 UI 對照](../docs/P2_UI_HANDOFF.md#chat-handoff) → [專項交接](HANDOFF.md#p2-coverage) 界定接線包；既有 Sxx 後端已完成的能力不重標未實作。
-- **Android**：依 [根分工](../AGENTS.md#frontend-backend) 可提前做共用 UI；bundle 只證明建置，P3／APK／真機／權限／鍵盤／讀屏仍按根 PLAN 前置處理。
-- **範圍缺口**：真歷史游標／stream／取消／逐句引用、正式身份與 unknown／草稿差異，以及沒有契約的畫面功能，按 [正式移除及接線清單](PRODUCTION_UI_HANDOFF.md) 與 [已記錄差異](HANDOFF.md#contract-review) 逐項重核，不從設計圖片創造 API。
+### 保留限制
 
-<a id="delivered"></a>
-## 已交付範圍與歷史定位
+正式 Agent 普通自動寫入／重要分類與確認事件、持久待確認總表、各領域正式 owner 與訂閱、成長關注鏈 archive／restore、長期報告生成與 PDF 均未因此接通。真 API／模型／家庭資料、真相機／咪高峰、APK／真機、完整 Server 歷史與跨瀏覽器／每幀無閃動均不能用合成或靜態證據替代。
 
-下列是主線已合併的隔離前端範圍索引，**不把未完成的視覺／接線／真機關口標為完成**。逐包範圍、當時狀態和證據見 [固定舊 PLAN](https://github.com/2NTTY/child-ai-caregiver/blob/c51dd52e0cdea03b1d412a10d08ac6761e010d9b/frontend/PLAN.md)／[歷史索引](../_archive/README.md#frontend-history)，不用全讀後才開工。
+<a id="evidence"></a>
+### 可追溯的舊證據
 
-| 範圍 | 讀取入口 |
-|---|---|
-| FE-W01–06 主頁、共用外殼、核心表單及手機共用 UI | [核心接線表](HANDOFF.md#p2-coverage) |
-| FE-W07–20 渠道、Agent、照片、模型、私人來源、成長、摘要、聯絡與背景偏好 | [專項交接索引](HANDOFF.md#p2-coverage) |
-| FE-W21–31 品牌、登入／響應式、聊天來源／歷史及契約修補 | [舊錨點及指定包](HANDOFF.md#history) |
-| FE-W32–35 商業設計研究、閱讀／首頁／工作頁配方 | [設計規則](DESIGN_SYSTEM.md)、[正式接線映射](HANDOFF.md#commercial-rollout) |
-| FE-W36 Codex 聊天、引用返回及來源提示 | [交接與指定證據](HANDOFF.md#codex-chat-presentation) |
+以下檔案已取回，只支持檔案內記錄的版本和範圍，並非本次新整合驗收：
+
+- [v40 合成畫面摘要](verification/next-release-2026-10-05T16-06Z-single-worker-recovery/browser-v40/verification-summary.md)
+- [關注確認／撤銷／恢復的定向測試](verification/growth-confirm-restore-2026-10-05T18-59Z/checks.json)
+- [時間線標記的定向檢查](verification/growth-timeline-2026-10-05T19-00Z/source-and-checks.json)
+- [Owner／外殼生命週期檢查](verification/scope-shell-stability-2026-10-05T19-38Z/checks.json)：含原失敗及修訂後局部補驗；明示沒有新 browser／export 證據
+
+未取回的最終 v44 QA／manifest 不能補寫成既有證據。來源 hash 不同的歷史結果保留其原限制；文件內的舊下一步及舊「當前」不構成新授權。
 
 <a id="fe-w32-design-review"></a>
-## 商業方案的採納與接續
+### 較早設計核查入口
 
-原五階段／八張卡是設計輸入；FE-W33–35 已交付共用配方及隔離畫面，正式 adapters 仍由主聊天接續。已採納呈現以 DESIGN_SYSTEM 為準；[DESIGN_REVIEW](DESIGN_REVIEW.md#design-intent) 保留取捨，[原計劃全文](https://github.com/2NTTY/child-ai-caregiver/blob/c51dd52e0cdea03b1d412a10d08ac6761e010d9b/frontend/PLAN.md#fe-w32-design-review) 保留當時範圍。不要重新開啟「建議首包」、把全部提案當已採納，或為同一進度另建卡片。
+FE-W32 的既有引用保留於此；較早發現見 [DESIGN_REVIEW](DESIGN_REVIEW.md)。當前呈現規則依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)，本次整合與驗收狀態依[當前包](#active)，歷史核查不等同此修訂通過。

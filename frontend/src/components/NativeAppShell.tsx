@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "expo-router";
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { brand } from "../branding";
 import { MotionDrawerOverlay } from "../motion";
+import { AppIcon } from "./AppIcon";
 import { BrandLogo } from "./BrandLogo";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { Text } from "react-native-paper";
@@ -28,7 +29,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   useEffect(() => { setRailOpen(false); }, [pathname, motionScope]);
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View>
-      <View style={styles.header}><CompactHeaderIdentity showContext={pathname !== "/"} scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
+      <View style={styles.header}><CompactHeaderIdentity showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
         brand={<Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"))} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>} />
         <View testID="header-actions" style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <ToolbarIconButton icon="page-layout-sidebar-right" label={overlayOpen ? "收起資訊側欄" : "開啟資訊側欄"} expanded={overlayOpen} onPress={() => { railContext.current = { path: pathname, scope: motionScope }; setRailOpen(value => !value); }} />
@@ -36,10 +37,10 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
       </View>
       <PreviewToolbar />
     </View>
-    {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.meta}>{notice}</Text></Pressable> : null}
+    {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={[styles.meta, {flex: 1}]}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
     <KeyboardAvoidingView style={styles.content} behavior={Platform.OS === "ios" ? "padding" : undefined}>{children}</KeyboardAvoidingView>
     <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}`} label="照顧上下文" onRequestClose={() => setRailOpen(false)}>
-      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} home={pathname === "/"} overlay onClose={() => setRailOpen(false)} /></View>
+      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} home={pathname === "/"} contextPath={pathname} overlay onClose={() => setRailOpen(false)} /></View>
     </MotionDrawerOverlay>
   </View>;
 }
@@ -50,6 +51,6 @@ const styles = StyleSheet.create({
   logo: { width: 124, height: 44 },
   actions: { flexShrink: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   content: { flex: 1 },
-  notice: { backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  notice: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.paleAmber, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
 });

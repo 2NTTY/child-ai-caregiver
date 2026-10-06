@@ -1,0 +1,81 @@
+{
+  "evidenceOrigin": "Reconstructed from the original recorded tool replies in the daily-action implementation task. No commands or tests were re-executed to create this file.",
+  "executionTimestamps": null,
+  "timestampNote": "The original exec results did not record an absolute execution timestamp. No new run timestamp is asserted.",
+  "workspace": "/workspace/shared/caregiver_layout_redesign",
+  "checks": [
+    {
+      "name": "Scoped TypeScript syntax parse",
+      "sourceToolChunkId": "977385",
+      "cwd": "/workspace/shared/caregiver_layout_redesign",
+      "method": "node --input-type=module; TypeScript createSourceFile with ScriptTarget.Latest and TSX/TS ScriptKind; read parseDiagnostics only",
+      "files": [
+        "frontend/src/components/HomeDashboard.tsx",
+        "frontend/src/components/MobileHomeDashboard.tsx",
+        "frontend/src/components/HomeAgentImportant.tsx",
+        "frontend/src/components/HomeOngoing.tsx",
+        "frontend/src/components/HomeOverviewItems.tsx",
+        "frontend/src/components/HomeFocus.tsx",
+        "frontend/src/components/HomeQuickActions.tsx",
+        "frontend/src/components/tasks/TasksView.tsx",
+        "frontend/src/components/tasks/TaskDetail.tsx",
+        "frontend/src/task-view-model.ts",
+        "frontend/src/screens/tasksScreen.tsx",
+        "frontend/src/components/family/FamilyView.tsx",
+        "frontend/src/screens/familyScreen.tsx",
+        "frontend/src/components/contact/ContactView.tsx",
+        "frontend/src/components/contact/ContactConsentCard.tsx",
+        "frontend/src/components/contact/ContactHistory.tsx",
+        "frontend/src/components/contact/contact-styles.ts",
+        "frontend/src/screens/ContactScreen.tsx"
+      ],
+      "rawStdout": "{\"kind\":\"scoped syntax parse only\",\"files\":18,\"parseErrors\":0}\n",
+      "exitCode": 0,
+      "result": {
+        "files": 18,
+        "parseErrors": 0
+      },
+      "scopeNote": "This checked the source snapshot at that invocation, before later copy-only changes to HomeFocus.tsx and FamilyView.tsx and the later ContactConsentCard button-label fix. It is syntax-only, not type checking, build, browser or a final integration pass."
+    },
+    {
+      "name": "Initial task-layout test invocation failure",
+      "sourceToolChunkId": "2528d8",
+      "cwd": "/workspace/shared/caregiver_layout_redesign/frontend",
+      "commandSummary": "Read frontend/src/components/ReadStateNotice.tsx; attempt to write frontend/scripts/task-layout.test.mts; node --test scripts/task-layout.test.mts",
+      "rawStdout": "cat: frontend/src/components/ReadStateNotice.tsx: No such file or directory\n/bin/bash: line 1: frontend/scripts/task-layout.test.mts: No such file or directory\nCould not find 'scripts/task-layout.test.mts'\n",
+      "exitCode": 1,
+      "assertionsExecuted": false,
+      "explanation": "The cwd was already frontend, but the read/write paths repeated frontend/. The test file was not created. Verification stopped and the root was informed; the root explicitly authorized one corrected invocation."
+    },
+    {
+      "name": "Task schedule layout pure checks, corrected invocation",
+      "sourceToolChunkId": "884137",
+      "cwd": "/workspace/shared/caregiver_layout_redesign/frontend",
+      "command": "node --test scripts/task-layout.test.mts",
+      "rawStdout": "✔ schedule sections preserve every task identity and leave source order untouched (39.707854ms)\n✔ time grouping uses each task's explicit zone without changing its saved timestamp (2.027631ms)\n✔ invalid dates or zones remain unconfirmed rather than becoming today's agenda (1.531527ms)\n✔ next-step labels preserve review, terminal and revoked-assignee boundaries (0.228093ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 201.002687\n",
+      "exitCode": 0,
+      "result": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "testFileSha256AtScopeFreeze": "76c1fe52e473097392f23961de67291ff90a29bb048c86b9915100b66fa36a45",
+      "taskViewModelSha256AtScopeFreeze": "acec6780c75edafb31ce59487658a059b8724de239d8c59cf67c7ea807897661",
+      "scopeNote": "Four pure presentation checks only. No controller, API, browser, native, build or global typecheck coverage is asserted."
+    },
+    {
+      "name": "Contact consent button-label follow-up syntax parse",
+      "sourceToolChunkId": "436ff2",
+      "cwd": "/workspace/shared/caregiver_layout_redesign",
+      "method": "node --input-type=module; TypeScript createSourceFile for ContactConsentCard.tsx; read parseDiagnostics only",
+      "rawStdout": "{\"kind\":\"single-file syntax parse only\",\"file\":\"frontend/src/components/contact/ContactConsentCard.tsx\",\"errors\":[]}\n",
+      "exitCode": 0,
+      "file": "frontend/src/components/contact/ContactConsentCard.tsx",
+      "sha256AfterFix": "0ef18b051f332c1ea86d4d02010ed05fe83079bb70722ecf20207bec4c40e4ca",
+      "scopeNote": "Visible label shortened to 管理同意 / 收起選項; full accessibilityLabel and original onPress preserved. No browser or build was run by this implementation task."
+    }
+  ]
+}

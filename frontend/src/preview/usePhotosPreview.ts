@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import type { HomeChild } from "../view-model";
 import { emptyPhotoDraft, photoLimits, samePhotoOriginal, type PhotoDraftFields, type PhotoItem, type PhotoOperation, type PhotoOriginal, type PhotoPhase, type PhotoReplacement, type PhotosActions, type PhotosViewModel } from "../photo-view-model";
@@ -12,7 +12,9 @@ export type PhotoPreviewLookup = "applied" | "unconfirmed" | "unknown" | "confir
 type Attempt = { phase: PhotoPhase; reference: string; checked: boolean; apply: (continueFlow: boolean) => void };
 const idle = (): PhotoOperation => ({ state: "none", phase: null, reference: null, message: "", checked: false });
 
-export function usePhotosPreview(child: HomeChild, online: boolean, reading: boolean) {
+export function usePhotosPreview(child: HomeChild, online: boolean, reading: boolean, workspaceActive = true, scopeKey = child.id, workspaceEntry = "photos") {
+  const [controllerScope, setControllerScope] = useState(scopeKey);
+  const activeEntry = useRef(workspaceEntry);
   const [condition, setCondition] = useState<PhotoPreviewCondition>("normal");
   const [outcome, setOutcome] = useState<PhotoPreviewOutcome>("success");
   const [faultPhase, setFaultPhase] = useState<PhotoPhase>("upload");
@@ -48,7 +50,7 @@ export function usePhotosPreview(child: HomeChild, online: boolean, reading: boo
   const busy = operation.state === "saving" || inFlight.current;
   const fresh = online && load === "ready" && access !== "lost" && !busy && operation.state !== "conflict";
   const unresolved = ["unknown", "unconfirmed", "confirmed_unavailable"].includes(operation.state);
-  usePreviewLeaveGuard(!!(original && selected?.state !== "ready" || draft.text || draft.rawValue || draft.unit || draft.timeRaw || reviewed), busy || unresolved);
+  usePreviewLeaveGuard(workspaceActive && !!(original && selected?.state !== "ready" || draft.text || draft.rawValue || draft.unit || draft.timeRaw || reviewed), busy || unresolved);
   const extractionPending = unresolved && operation.phase === "extract";
   const hardLocked = busy || (unresolved && !extractionPending) || operation.state === "conflict";
   const manageable = selected?.canManage && selected.isUploader && selected.visibility === "private" && selected.recordId === null && access === "editable";
@@ -208,13 +210,29 @@ export function usePhotosPreview(child: HomeChild, online: boolean, reading: boo
         clearEditorNow(); setNotice("附件及連結確認記錄已模擬移除。實體檔案清理仍在排程，不等於即時完成備份清理。"); });
     },
   };
-  function changeCondition(value: PhotoPreviewCondition) {
-    if ((busy || unresolved) && value !== "access_lost") return;
+  function changeCondition(value: PhotoPreviewCondition, scopeReset = false) {
+    if (!scopeReset && (busy || unresolved) && value !== "access_lost") return;
     generation.current++; if (timer.current) clearTimeout(timer.current); timer.current = null; inFlight.current = false; pending.current = null;
     for (const file of leases.current) file.dispose?.(); leases.current.clear(); attachedOriginals.current.clear();
     if (replacement?.kind === "original") replacement.original.dispose?.(); setReplacement(null); clearEditorNow(); setOperation(idle()); setNotice(""); setReadError(false);
     setCondition(value); setItems(value === "empty" || value === "loading" || value === "access_lost" ? [] : photoFixture(child.id, value === "read_only" || child.accessRole === "viewer"));
   }
+  useLayoutEffect(() => {
+    if (controllerScope === scopeKey) return;
+    // A scope reset overrides unresolved work: old private data and callbacks
+    // must be discarded on identity/child/permission loss before exposure.
+    changeCondition("normal", true); setControllerScope(scopeKey);
+  }, [scopeKey, controllerScope]);
+  useEffect(() => {
+    // Navigation guard has already resolved dirty drafts before route departure.
+    // Keep one photo collection and attached leases; only clear transient input.
+    const sameEntry = activeEntry.current === workspaceEntry;
+    activeEntry.current = workspaceEntry;
+    if (workspaceActive && sameEntry || busy || unresolved) return;
+    clearEditorNow(); setOperation(idle()); setNotice("");
+    if (replacementRef.current?.kind === "original") replacementRef.current.original.dispose?.();
+    setReplacement(null);
+  }, [workspaceActive, workspaceEntry]);
   useEffect(() => { alive.current = true; return () => { alive.current = false; generation.current++; if (timer.current) clearTimeout(timer.current);
     for (const file of leases.current) file.dispose?.(); leases.current.clear(); attachedOriginals.current.clear();
     if (replacementRef.current?.kind === "original") replacementRef.current.original.dispose?.(); }; }, []);
@@ -235,5 +253,5 @@ export function usePhotosPreview(child: HomeChild, online: boolean, reading: boo
   const model: PhotosViewModel = { childName: child.displayName, online, access, load, canCreate, capacityReached: condition === "capacity",
     items, selected, latest, original, source, sourceError, draft, formKey, reviewed, modelConsent, sharedConsent, operation, notice, reservationUnidentified,
     replacement, deletion, deleteScope, deleteFinal, busy, fresh, formLocked: hardLocked || access !== "editable", canPick, canUpload, canExtract, canConfirm, canDelete };
-  return { model, actions, condition, changeCondition, outcome, setOutcome, faultPhase, setFaultPhase, lookup, setLookup };
+  return { scopeReady: controllerScope === scopeKey, model, actions, condition, changeCondition, outcome, setOutcome, faultPhase, setFaultPhase, lookup, setLookup };
 }

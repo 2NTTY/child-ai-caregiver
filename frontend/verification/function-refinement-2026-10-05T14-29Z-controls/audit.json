@@ -1,0 +1,405 @@
+{
+  "timestamp": "2026-10-05T14:30:00Z",
+  "workspace": "/workspace/shared/caregiver_agent_first_update",
+  "scope": "Owned UI/action/status audit plus later approved Summary Preparation read-first refinement",
+  "reference_images": [
+    "image(20261005-134553).png",
+    "image(20261005-134608).png",
+    "image(20261005-140214).png",
+    "image(20261005-141016).png",
+    "image(20261005-141737).png"
+  ],
+  "changed_paths": [
+    {
+      "path": "scripts/control-affordances.test.mjs",
+      "sha256_at_report": "71e8f2513092a9a39e30fb8bd574db1f37f406e4164417f95f702ed3aa1030fc"
+    },
+    {
+      "path": "scripts/preparation-reading.test.mjs",
+      "sha256_at_report": "4211c526a6eb4b66e9116a9e028d68ee030dfc9f879b5078bd772f4d0f86b735"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "sha256_at_report": "a1e58817d2b6def73a395b91039929e119dec8d5de3188c245804f557eca25ba"
+    },
+    {
+      "path": "src/components/AppStatusBadge.tsx",
+      "sha256_at_report": "23f5819f4ae7ef7f263c6700ca362ec98a4be33d6d26e484d59f859d2713fb82"
+    },
+    {
+      "path": "src/components/ChildPicker.tsx",
+      "sha256_at_report": "d78c02d28929ce7f42f540d20b06c25bf7615c064432c1f019bc91ee81aad6c6"
+    },
+    {
+      "path": "src/components/CreateChildPreview.tsx",
+      "sha256_at_report": "02944355e079df9e390f09d63a1fa4e4bb2fb140d72f43de1bfcc27c95d2c675"
+    },
+    {
+      "path": "src/components/DeleteChildPreview.tsx",
+      "sha256_at_report": "be3765a8ded6c868d9eab8c88281f17a2250480eba1eb73313f48115a101e669"
+    },
+    {
+      "path": "src/components/HomeAgentImportant.tsx",
+      "sha256_at_report": "8faaf0f631b89d0e08e5baeafcb893ba017855e8c82ee110b04d685b52f3463f"
+    },
+    {
+      "path": "src/components/HomeOverviewItems.tsx",
+      "sha256_at_report": "4c703ca06bfa6b094e5ff520f054cef88c017d749903d60d04f278dad59c835e"
+    },
+    {
+      "path": "src/components/HomeQuickActions.tsx",
+      "sha256_at_report": "172df5829f2ec0fcdfe0efc1bfe931ca02e55a5fdb94ae60b469ab234ef24cec"
+    },
+    {
+      "path": "src/components/HorizontalOverflowRail.tsx",
+      "sha256_at_report": "188284f63135b15857dec2c0ab531c31fa850f300d91c508d1f9c663dc58a8c4"
+    },
+    {
+      "path": "src/components/NativeAppShell.tsx",
+      "sha256_at_report": "730ab1a11716cce37db16977a779f671714f224ccd40e450c9e36206b67c7d39"
+    },
+    {
+      "path": "src/components/NotificationBell.tsx",
+      "sha256_at_report": "c698a1786acbdc908a389871b74c2b21981acc553768dafc31ed09f1bf92ff3b"
+    },
+    {
+      "path": "src/components/OperationNotice.tsx",
+      "sha256_at_report": "a7be22fab6d8f19da9d511fd35da906f5ef9adcdb9deb529e1a00650cd67b2c2"
+    },
+    {
+      "path": "src/components/PreviewTodoCard.tsx",
+      "sha256_at_report": "60b2dbf8a4dd08393449e64ba08dd72490ff5d37ed92a048bb099134d0287704"
+    },
+    {
+      "path": "src/components/ReadStateNotice.tsx",
+      "sha256_at_report": "62232b66c773aaf65e277aa9c0a84aeff393a2d203b447c978f11d9444d77752"
+    },
+    {
+      "path": "src/components/RightRailContent.tsx",
+      "sha256_at_report": "69533e4d0e4c25787d8fc1837ce86ba0cbfda680ee5f7376741198a77f99b346"
+    },
+    {
+      "path": "src/components/agent/AgentComposer.tsx",
+      "sha256_at_report": "24d28699e5a911973ea82e3e8f4ab8972fa1308ee4117536b25049956150ccfe"
+    },
+    {
+      "path": "src/components/agent/AgentConversationPreview.tsx",
+      "sha256_at_report": "6dc3b619c4c0f6607b7583578f3abfc08a6621b2f1b3aaa784fa305369f69923"
+    },
+    {
+      "path": "src/components/agent/AgentInboxView.tsx",
+      "sha256_at_report": "d71087666be7b79728336f10deeb1a7ba790aa7b7e6df8d33e2eb2e28a9aafc0"
+    },
+    {
+      "path": "src/components/agent/AgentInputToolbar.tsx",
+      "sha256_at_report": "cce105418d3a99b5783b16a2b061ea3faa5788d80c1d1296dc7e7ad291deaa29"
+    },
+    {
+      "path": "src/components/agent/AgentRunView.tsx",
+      "sha256_at_report": "7f0a659dd81fdc9ca5be4bc35f63f5009209c103c28304dea71e1986db8e7308"
+    },
+    {
+      "path": "src/components/agent/AssistantAttachmentPreview.tsx",
+      "sha256_at_report": "5e96ec225a626523f6e22c807a970c14b0a3ee0c8a905858251cad024802b9cd"
+    },
+    {
+      "path": "src/components/chat/AnswerSources.tsx",
+      "sha256_at_report": "7b8ee6d3a1cfed9400324a922575d8df165c87b3e9ab71f8a9fc741d8216d253"
+    },
+    {
+      "path": "src/components/chat/ChatMessage.tsx",
+      "sha256_at_report": "3b33fd457f6ec293bd07b194efe3a6487a17b5a9cbe4a12cd811cf8adce6199a"
+    },
+    {
+      "path": "src/components/chat/CitationMarker.tsx",
+      "sha256_at_report": "3c8f5ea9acab5196f11a700e46be69d71e1102303eef991e5b8e2f8a89a8c8ad"
+    },
+    {
+      "path": "src/components/chat/CitationMarker.web.tsx",
+      "sha256_at_report": "4d41252bbd425917ff1cc10fe538913e3184356fb537cc6e45ba2e1cd28a7d65"
+    },
+    {
+      "path": "src/components/contact/ContactConsentCard.tsx",
+      "sha256_at_report": "e3f0101bff0adaa7111a21c1b0eca2e07686e1ad6b8fb4a21dddf538ab416bcb"
+    },
+    {
+      "path": "src/components/contact/ContactHistory.tsx",
+      "sha256_at_report": "4a4f82db5a9c3ca8db27a9808920c25421cc1acd8bc1a4c7b7b1c0edc86afdc0"
+    },
+    {
+      "path": "src/components/contact/ContactTaskCard.tsx",
+      "sha256_at_report": "6929da55f6394b64122e9007a246f0c880eb985c607ceb63b40550314cf69386"
+    },
+    {
+      "path": "src/components/contact/ContactView.tsx",
+      "sha256_at_report": "f7be4b361d40e24b615e885803f4aea1109f8e836a08db7c08ed7a4453f2492b"
+    },
+    {
+      "path": "src/components/contact/contact-status.ts",
+      "sha256_at_report": "9bc78fbce5fd93ebd89f6a9771676cd057fc69e99993f3e4f99c11054928ccb2"
+    },
+    {
+      "path": "src/components/family/FamilyView.tsx",
+      "sha256_at_report": "579b2d1d7d6de7e7209b96411a28999dc55c8b806d482b33cac70aab3f8eb87a"
+    },
+    {
+      "path": "src/components/growth/GrowthArchive.tsx",
+      "sha256_at_report": "a3cc15ba09a0d27664f6487e9f110d2e7bfbf9e82ae13e8984e0652cd02a40c8"
+    },
+    {
+      "path": "src/components/growth/GrowthAttentionCard.tsx",
+      "sha256_at_report": "a51a029729fcd6db88097aebc2b87bb441eff6bbdb94e8ae816114ce7ac5d5b3"
+    },
+    {
+      "path": "src/components/growth/GrowthConcernTimeline.tsx",
+      "sha256_at_report": "e08a0782e6eb32021f0710ec4150d818e9d0a55284e6a5031dd7b5d2484791a4"
+    },
+    {
+      "path": "src/components/growth/GrowthTopicCard.tsx",
+      "sha256_at_report": "6d2b042aa95147e1861df7e731569148ade811571bfe246417c527956db51535"
+    },
+    {
+      "path": "src/components/growth/GrowthView.tsx",
+      "sha256_at_report": "719d7a0983fc550d711136038ac40c2970f71f11969a9b85919d477105b2b338"
+    },
+    {
+      "path": "src/components/growth/growth-styles.ts",
+      "sha256_at_report": "9affcbcfb9aa7e8641a14437f2d71050205375b731f99c59f2803a641e8ec955"
+    },
+    {
+      "path": "src/components/memory/MemoryCards.tsx",
+      "sha256_at_report": "e018c3df73e4b29389c22e569d5e01f1babeee70d3cce5f0effd7ceae7b0ee2e"
+    },
+    {
+      "path": "src/components/model-settings/ModelSettingsPreview.tsx",
+      "sha256_at_report": "403d3127c1e93914edcb085ef4a7f1a1e3f129f0ed591020a2e5502f78ae330b"
+    },
+    {
+      "path": "src/components/model-settings/ModelSettingsView.tsx",
+      "sha256_at_report": "660bf35951cc24ab2d4083c67d5c42ec9822b77447646dbc90c14fa019ee7015"
+    },
+    {
+      "path": "src/components/notifications/ChannelCards.tsx",
+      "sha256_at_report": "ddcf8ca5d1476ee1ee99a22389c104be852183c599c7c699156ab1c67d0306cf"
+    },
+    {
+      "path": "src/components/notifications/ChannelSettingsPreview.tsx",
+      "sha256_at_report": "44bf40f4b6f57986d9ec0bb76e50bcfaf9a7262138f6fcaf15299c5518d2eefe"
+    },
+    {
+      "path": "src/components/photos/PhotosView.tsx",
+      "sha256_at_report": "502da87bee6d23752cdfe63635bd3a7384d8aa8b7d9d2f77f6e08fe7ff868a5e"
+    },
+    {
+      "path": "src/components/profile/ProfileView.tsx",
+      "sha256_at_report": "2db53382345c6b29bade4e84de552b775dd592d6e4f06c961119999fa852918d"
+    },
+    {
+      "path": "src/components/shared-inputs/SourceComposer.tsx",
+      "sha256_at_report": "ba4b890afe68eb763426682ffdd29f3c908dbee6066a89fa1fd69b2d1844ae27"
+    },
+    {
+      "path": "src/components/shared-inputs/SourceDetails.tsx",
+      "sha256_at_report": "f56c201bcc953140459919ac8cba78bbfa7304c202b29a125af9abb9ce8c27b9"
+    },
+    {
+      "path": "src/components/shared-inputs/SourceIntakeConversation.tsx",
+      "sha256_at_report": "176ecee8cb96dba86c9a77c1b30cf369b6933de10285352cc5d71be2d8bebc02"
+    },
+    {
+      "path": "src/components/shared-inputs/SourceIntakeEditor.tsx",
+      "sha256_at_report": "64d7982f85dcb92909f20c30debb253dffae472ec9f5a1813bc62f070d01c6d6"
+    },
+    {
+      "path": "src/components/shared-inputs/SourcesView.tsx",
+      "sha256_at_report": "36fc076e11944a5e64344d1b3bf54bc6d93b9fbd828df1687f75ecbcd9b3e726"
+    },
+    {
+      "path": "src/components/summary/PreparationCard.tsx",
+      "sha256_at_report": "dc7768bc54fefaf865e814c63efbea0ba456f7647aaa683a248ff05c459ec378"
+    },
+    {
+      "path": "src/components/summary/PreparationSheet.tsx",
+      "sha256_at_report": "f9ac169fdf90fea33bffa97a9b67b22469c4cfc213e23fd30a9bb8ef5c5e7338"
+    },
+    {
+      "path": "src/components/summary/SummaryRecords.tsx",
+      "sha256_at_report": "784059731c006f41a35fc437e4cdfc010c058f8512d22fb82d4dc694832afe16"
+    },
+    {
+      "path": "src/components/summary/SummaryView.tsx",
+      "sha256_at_report": "9e247373be9f4c40bf4825cfe08a04fb87cb283e620a0e403cad50512f577a79"
+    },
+    {
+      "path": "src/components/summary/summary-styles.ts",
+      "sha256_at_report": "07dba0218549fcc2d46e0a91530740ddcad8c10c294f64cb9e938deb471aae49"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "sha256_at_report": "092513ce732b0e0d39db0da8aec6109350993ce6551de710ab4a481b48e3a8dc"
+    },
+    {
+      "path": "src/screens/ContactScreen.tsx",
+      "sha256_at_report": "c4e78f5f1ecc57818e6bcf9c32e3345147603a02df753729ce1c52d51f4b529c"
+    },
+    {
+      "path": "src/screens/GrowthScreen.tsx",
+      "sha256_at_report": "b084c58bb8f39b2cab238020a1e3cf7f29ee5fdab29edd974aec7857b0c5acdf"
+    },
+    {
+      "path": "src/screens/SourcesScreen.tsx",
+      "sha256_at_report": "960221cc7142d5adac751cdb1c63fa1644ff642d7ed5332aca3307f67fdf82c3"
+    },
+    {
+      "path": "src/screens/SummaryScreen.tsx",
+      "sha256_at_report": "a5d02398653af9f159de343edf487e4f12cbfe1a153f525ba0b86302b506adbf"
+    },
+    {
+      "path": "src/screens/familyScreen.tsx",
+      "sha256_at_report": "84b4a2c461ecce7cbf50e21a0b6c3a1dc8597ee99d59da4910eb6ab9fe8a00a1"
+    },
+    {
+      "path": "src/screens/guideScreen.tsx",
+      "sha256_at_report": "fabb0eac05aeafae5edaf5b6069e9a3e6917d91ab7470915861a8e2679eda32b"
+    },
+    {
+      "path": "src/screens/loginScreen.tsx",
+      "sha256_at_report": "01863d66d52b2e353f9ddd8c5d4cb211040aa50cea8c5d53422efe76ccb48ac9"
+    },
+    {
+      "path": "src/screens/memoryScreen.tsx",
+      "sha256_at_report": "0f7adf443bbfb3e0ee9149204b5708dfb174f416d9915c34998efa12d2355445"
+    },
+    {
+      "path": "src/screens/motionPreviewScreen.tsx",
+      "sha256_at_report": "d4ba403299886f9624ec3bfaf4f12e186d0ba2f8aa9d6319a5db696a1a284976"
+    },
+    {
+      "path": "src/screens/photosScreen.tsx",
+      "sha256_at_report": "0f184a31d5e14b56e920eb312e085024c469e667a596d507e10e780e484c9079"
+    },
+    {
+      "path": "src/screens/profileScreen.tsx",
+      "sha256_at_report": "ed8a31cc77a9ab19aad6e804be5f4e1f15e62ecfb7e9cd504bc28563d268e5e9"
+    }
+  ],
+  "page_audit": [
+    {
+      "page": "today/home",
+      "control_roles": "Filled capture/main action; bordered secondary inputs, evidence disclosure and child picker; arrow navigation rows retained",
+      "status_semantics": "Important item states mapped from typed source/proposal; generic overview labels info, never parsed as success"
+    },
+    {
+      "page": "chat",
+      "control_roles": "Bordered input/attachment/tool controls and disclosures; underlined inline citations/source tabs; actual links retained",
+      "status_semantics": "Run/proposal/tool results independently coloured; succeeded candidate tool does not claim task completion"
+    },
+    {
+      "page": "tasks",
+      "control_roles": "Shared AppButton/badge infrastructure only; domain owner performs row/details edits",
+      "status_semantics": "Task owner maps scheduled/needs_review/completed/cancelled; not audited as this owner runtime work"
+    },
+    {
+      "page": "care/records",
+      "control_roles": "Shared controls only; record domain owner handles direct controls",
+      "status_semantics": "Separate care owner owns pending/confirmed/error badge decisions"
+    },
+    {
+      "page": "growth",
+      "control_roles": "PDF explanation is truthfully labelled; evidence/revision/settings disclose with close chevrons; page-bottom actions grouped",
+      "status_semantics": "Confirmed record green; Agent summary info; unverified/proposed/unknown warning; ended neutral"
+    },
+    {
+      "page": "summary",
+      "control_roles": "Compact content-width disclosures with adjacent chevron; new read-first Preparation sheet; form only on explicit Modify",
+      "status_semantics": "Task states retained; conflicts warning; preparation review and pending save states remain visible"
+    },
+    {
+      "page": "contact",
+      "control_roles": "Refresh/manage/cancel/revoke controls clearly bordered or filled; preserved selectable task rows",
+      "status_semantics": "Consent, grant validity, request, attempt, and personal acknowledgement are distinct; accepted info, unknown warning, rejected error"
+    },
+    {
+      "page": "family",
+      "control_roles": "Manage/invite disclosures visible; revoke is danger-secondary",
+      "status_semantics": "Roles info; invitation pending warning, accepted success, revoked/expired neutral"
+    },
+    {
+      "page": "photos",
+      "control_roles": "Shared quiet buttons are visible; deletion entry danger-secondary",
+      "status_semantics": "Original saved distinct from private/shared and extraction; candidate available warning, failed error, unknown warning"
+    },
+    {
+      "page": "memory",
+      "control_roles": "Visible source disclosure/manage controls and secondary destructive actions",
+      "status_semantics": "Confirmed fact green; candidate warning; inactive neutral; answered/resolved topics success"
+    },
+    {
+      "page": "settings",
+      "control_roles": "Existing section tabs/nav links kept; explicit dialog actions and visible read-state controls",
+      "status_semantics": "Channel binding/delivery, model-key saved and model-readability states kept separate"
+    },
+    {
+      "page": "profile",
+      "control_roles": "Opaque child selector; visible manage/read disclosures; secondary destructive entry",
+      "status_semantics": "Confirmed profile green, missing confirmation warning; versions remain exact"
+    },
+    {
+      "page": "sources",
+      "control_roles": "Visible fetch/extract/manual/disclosure actions; source deletion warning",
+      "status_semantics": "Fetch ready distinct from extraction candidate; conflict corrected from failed mapping to warning; unresolved intake retained"
+    },
+    {
+      "page": "guide",
+      "control_roles": "Steps retain numbered navigation row design with opaque fill/border; prev/next buttons visible",
+      "status_semantics": "Step positions are navigation, not completion claims"
+    },
+    {
+      "page": "login",
+      "control_roles": "Password-show action bordered/filled; form submit visible; back link underlined",
+      "status_semantics": "Local validation remains local-only, no server auth claims"
+    },
+    {
+      "page": "more",
+      "control_roles": "Existing repaired concrete Link asChild navigation rows preserved, no giant action pills",
+      "status_semantics": "Navigation categories remain categories; no fabricated statuses"
+    },
+    {
+      "page": "motion-preview",
+      "control_roles": "Shared controls plus explicit disclosure state",
+      "status_semantics": "Demonstration state only; no domain inference"
+    }
+  ],
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/control-affordances.test.mjs",
+      "result": "10 passed, 0 failed",
+      "scope": "Mocked component props/styles and semantic mappings; 4-width target props, disclosure shape, contrast, grant states, truthful PDF label"
+    },
+    {
+      "check": "TypeScript parse + duplicate object-key scan",
+      "result": "159 non-task/non-care screen/component source files; no parse errors or duplicate object keys",
+      "scope": "Source check before later Preparation refinement, not typecheck or browser proof"
+    },
+    {
+      "command": "node --test frontend/scripts/preparation-reading.test.mjs frontend/src/components/summary/summary-form.test.mjs",
+      "result": "7 passed, 0 failed",
+      "scope": "5 mocked preparation render/state retention tests plus 2 existing schema/projection tests"
+    },
+    {
+      "check": "Later Preparation delta TypeScript parse",
+      "result": "5 files, 0 errors",
+      "scope": "Only changed Preparation card/sheet/style/view/screen; no aggregate typecheck"
+    }
+  ],
+  "known_gaps": [
+    "No browser, aggregate build/typecheck, Git or publish was run by this owner; root owns integrated acceptance",
+    "Component mocks do not establish actual Paper DOM, keyboard, narrow-screen visual layout or native device behavior",
+    "Summary lacks responsible-person display-name mapping; raw assignee identity remains in explicit source details, name is not invented",
+    "Summary has no appointment-specific relevant-observation or generative preparation authority; sheet lists only existing period records and warns that appointment relation is unavailable",
+    "Summary record/task callbacks retain the existing screen-level list navigation rather than exact-record deep links; new Preparation buttons say 前往記錄核對 / 前往待辦核對. Formal ID adapters remain missing.",
+    "Agent entry uses existing unsent prepareQuestion navigation; existing assistant draft is retained; no generation, send, save or new data connection occurs",
+    "Preparation edit/return retains mounted RHF state; explicit discard and original receipt recovery remain controller-owned",
+    "Some files are shared at distinct symbols with other owners (AppShell navigation, GrowthView historical navigation, NotificationBell historical navigation); hashes are report-time snapshots"
+  ]
+}

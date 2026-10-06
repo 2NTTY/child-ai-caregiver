@@ -1,0 +1,170 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px" [active]
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 1440 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link "育有方，返回主頁":
+    - /url: /
+    - generic: 用資料 · 陪伴成長
+  - generic: 常用
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - generic: 行動與成長
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦與預約
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長與關注
+  - generic: 照顧資料
+  - link "記錄與核對":
+    - /url: /care
+    - generic: 記錄與核對
+  - link "回顧與到診":
+    - /url: /summary
+    - generic: 回顧與到診
+  - generic: 資料管理
+  - link "子女檔案":
+    - /url: /profile
+    - generic: 子女檔案
+  - link "與 Agent 對話":
+    - /url: /chat
+    - generic: 與 Agent 對話
+    - generic: 提問・整理・規劃
+  - link "設定":
+    - /url: /settings
+    - generic: 設定
+  - link "更多功能":
+    - /url: /more
+    - generic: 更多功能
+  - button "選擇孩子，目前小昕":
+    - generic: 小
+    - generic: 小昕
+    - generic: 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic "小昕的關鍵資料":
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading "回顧與到診準備" [level=1]
+  - generic: 整理小昕的已確認記錄及來源，再由家長核對到診問題與安排。未有記錄不等於事情沒有發生。
+  - heading "報告範圍" [level=1]
+  - generic: 全部只屬合成預覽，未接駁 Server。數值由 fixture 提供，不在前端重新計算。
+  - generic: 摘要開始日
+  - generic: 摘要開始日
+  - textbox "摘要開始日":
+    - /placeholder: YYYY-MM-DD
+  - button "選擇摘要開始日":
+  - button "摘要期間：連續七日":
+    - generic: 摘要期間：連續七日
+  - button "時區：香港時間":
+    - generic: 時區：香港時間
+  - button "套用期間並更新報告":
+    - generic: 套用期間並更新報告
+  - generic: 家庭照顧回顧 · 已確認記錄
+  - heading "小昕的照顧摘要" [level=1]
+  - generic: 2026-10-05 至 2026-10-12（不包括結束日）
+  - generic: Asia/Hong_Kong · 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic: 檔案版本 2 · 來源：合成孩子檔案；不是 Server 資料
+  - generic: 檔案核對：合成媽媽 · 5/10/2026 09:00:00 · 合成檔案核對
+  - generic: 生成：5/10/2026 09:00:00 · 依據版本：preview-summary-basis-1
+  - heading "01 期間概覽" [level=1]
+  - generic: 只有已確認且事件時間在期間內的當前版本才納入；正式數字由 Server 計算；目前為合成預覽。
+  - generic: 日常觀察 · 0 筆
+  - generic: 飲食 · 0 筆
+  - generic: 睡眠 · 2 筆
+  - generic: 如廁／尿片 · 0 筆
+  - generic: 體溫 · 0 筆
+  - generic: 身高／體重 · 1 筆
+  - generic: 預約 · 0 筆
+  - generic: 睡眠 · hours
+  - generic: 樣本 2 · 其中約數 1
+  - generic: 合計 19.5 · 最小 9.5 · 最大 10
+  - generic: 來源記錄：preview-summary-sleep-a、preview-summary-sleep-b
+  - generic: 身高／體重 · kg
+  - generic: 樣本 1 · 其中約數 0
+  - generic: 合計 未提供 · 最小 14.1 · 最大 14.1
+  - generic: 來源記錄：preview-summary-weight
+  - generic: 整個孩子已掃描記錄中，事件時間未知：2 筆。這不是本日／本週的缺漏數，不會假歸入期間。
+  - generic: 未能納入數值統計的數量：0。沒有記錄的種類：日常觀察、飲食、如廁／尿片、體溫、預約；未記錄不等於未發生。
+  - heading "02 記錄與來源" [level=1]
+  - generic: "3"
+  - button "查看期間記錄及來源":
+    - generic: 查看期間記錄及來源
+  - heading "03 預約與跟進" [level=1]
+  - generic: "1"
+  - generic: 家庭台帳中的安排不代表機構已確認預約。
+  - generic: 核對家庭到診安排（合成）
+  - generic: 只屬家庭台帳示例，未向任何機構預約。
+  - generic: 待處理 · 7/10/2026 10:00:00 · Asia/Hong_Kong
+  - generic: 建立者：合成爸爸 · 負責人：合成媽媽 · 更新：5/10/2026 09:00:00
+  - generic: 原任務 a2e6b734-c2f2-4bc4-8d4b-75b04d0cfa71 · 版本 2 · 事項 preview-appointment-occurrence
+  - button "核對這項任務":
+    - generic: 核對這項任務
+  - generic: 待覆核任務 · 1
+  - generic: 來源變動後待覆核的安排（合成）
+  - generic: 只屬家庭台帳示例，未向任何機構預約。
+  - generic: 待覆核 · 已停催 · 7/10/2026 10:00:00 · Asia/Hong_Kong
+  - generic: 建立者：合成爸爸 · 負責人：合成媽媽 · 更新：5/10/2026 09:00:00
+  - generic: 原任務 preview-summary-review-task · 版本 2 · 事項 preview-review-occurrence
+  - button "核對這項任務":
+    - generic: 核對這項任務
+  - generic: 只整理有來源的記錄；不作診斷。未有記錄不等於事情沒有發生。
+  - generic: 目前只提供頁內閱讀及家庭準備；PDF／下載尚未提供。
+  - heading "家庭共享到診準備" [level=1]
+  - generic: 問題、清單、預約選擇及核對標記會共享給有權讀取這個孩子的家庭成員。
+  - generic: 已保存版本 1 · 未核對。目前來源：未核對或來源已變，須重新核對。
+  - generic: 已保存核對依據：沒有 · 期間：2026-10-05 起七日 · Asia/Hong_Kong
+  - generic: 已保存預約：沒有指定
+  - generic: 最後保存：合成媽媽 · 5/10/2026 09:00:00
+  - generic: 草稿基準：共享準備版本 1 · preview-summary-basis-1 · 2026-10-05 起七日 · Asia/Hong_Kong
+  - button "到診預約安排：沒有指定預約":
+    - generic: 到診預約安排：沒有指定預約
+  - generic: 到診問題 · 最多 12 條
+  - generic: 到診問題 1
+  - generic: 到診問題 1
+  - textbox "到診問題 1"
+  - button "移除到診問題 1":
+    - generic: 移除到診問題 1
+  - button "新增到診問題":
+    - generic: 新增到診問題
+  - generic: 準備清單 · 最多 16 項
+  - generic: 到診準備 1
+  - generic: 到診準備 1
+  - textbox "到診準備 1"
+  - checkbox "到診準備 1 已完成":
+    - generic: 到診準備 1 已完成
+  - button "移除到診準備 1":
+    - generic: 移除到診準備 1
+  - button "新增到診準備":
+    - generic: 新增到診準備
+  - generic: 問題最多 500 字，準備項目最多 300 字；不截短。依正式契約，保存內容會移除兩端空白；原草稿保留，下方顯示實際保存內容。
+  - generic: 保存前核對
+  - generic: 問題 1：想核對哪些日常觀察需要補充？（合成已保存問題）
+  - generic: 準備 1：未完成 · 帶備已核對的原始觀察記錄（合成）
+  - generic: 核對標記：未核對
+  - checkbox "我已逐項核對問題、準備清單及目前摘要來源":
+    - generic: 我已逐項核對問題、準備清單及目前摘要來源
+  - checkbox "我確認把以上到診準備與有權家庭成員共享":
+    - generic: 我確認把以上到診準備與有權家庭成員共享
+  - button "確認保存家庭共享到診準備" [disabled]:
+    - generic: 確認保存家庭共享到診準備
+  - heading "合成摘要情境" [level=1]
+  - generic: 不計算真資料、不建立預約、不呼叫 Agent 或外發。
+  - button "顯示摘要情境":
+    - generic: 顯示摘要情境

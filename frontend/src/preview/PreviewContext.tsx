@@ -1,10 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { usePreviewNavigation } from "./PreviewNavigationGuard";
 import { createPreviewModel, previewChecklist, type PreviewScenario } from "./fixture";
 import type { GuideStatus, HomeActions, HomeChild, HomeDestination, HomeViewModel } from "../view-model";
-import type { PhotoOriginal } from "../photo-view-model";
-import { createHomeAgentPhotoHandoff, homeAgentScope } from "../home-agent-entry";
+import { homeAgentScope } from "../home-agent-entry";
+import { createAssistantDraftOwner, emptyAssistantDraft, photoAttachment, type AssistantAttachment } from "../assistant-draft";
 
 type PreviewContextValue = {
   model: HomeViewModel;
@@ -17,7 +17,13 @@ type PreviewContextValue = {
   dismissNotice: () => void;
   chatDraft: string;
   setChatDraft: (value: string) => void;
-  takeAgentPhoto: () => PhotoOriginal | null;
+  agentAttachments: readonly AssistantAttachment[];
+  addAgentAttachment: (attachment: AssistantAttachment, replaceId?: string) => boolean;
+  removeAgentAttachment: (id: string) => void;
+  clearAgentDraft: () => void;
+  agentDraftScope: string | null;
+  composerFocusRequest: number;
+  openAgentDraft: (focusText?: boolean) => void;
   checkedPreviewItems: Record<string, boolean>;
   togglePreviewItem: (id: string) => void;
 };
@@ -42,30 +48,36 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const [createdChildren, setCreatedChildren] = useState<HomeChild[]>([]);
   const [deletedChildren, setDeletedChildren] = useState<string[]>([]);
   const childSerial = useRef(0);
-  const [chatDrafts, setChatDrafts] = useState<Record<string, string>>({});
+  const draftOwner = useRef(createAssistantDraftOwner()).current;
+  const draftSnapshot = useSyncExternalStore(draftOwner.subscribe, draftOwner.getSnapshot, draftOwner.getSnapshot);
+  const [composerFocusRequest, setComposerFocusRequest] = useState(0);
   const [checkedPreviewItems, setCheckedPreviewItems] = useState<Record<string, boolean>>({});
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const photoHandoff = useRef(createHomeAgentPhotoHandoff()).current;
   useEffect(() => () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); }, []);
 
   // Resolve visible children before deriving any child-scoped home/rail projection.
   const model = createPreviewModel(scenario, selectedChildId, guideStatus, { createdChildren, deletedChildIds: deletedChildren });
   const childrenInPreview = model.children;
-  const draftKey = model.selectedChildId ?? "no-child";
   const agentScope = homeAgentScope(model);
   const currentEntry = useRef({ scope: agentScope, pathname });
   const previousPathname = useRef(pathname);
   currentEntry.current = { scope: agentScope, pathname };
-  useEffect(() => {
-    photoHandoff.retainScope(agentScope);
-    if ((pathname !== "/" && pathname !== "/chat") || (previousPathname.current === "/chat" && pathname !== "/chat")) photoHandoff.clear();
+  const visibleDraft = draftSnapshot.scope === agentScope ? draftSnapshot : emptyAssistantDraft;
+  useLayoutEffect(() => {
+    draftOwner.retainScope(agentScope);
+    if ((pathname !== "/" && pathname !== "/chat") || (previousPathname.current === "/chat" && pathname !== "/chat")) draftOwner.clearAttachments(agentScope);
     previousPathname.current = pathname;
-  }, [agentScope, pathname, photoHandoff]);
-  useEffect(() => () => photoHandoff.clear(), [photoHandoff]);
-  const takeAgentPhoto = useCallback(() => {
-    if (currentEntry.current.scope !== agentScope || currentEntry.current.pathname !== "/chat") return null;
-    return photoHandoff.take(agentScope);
-  }, [agentScope, photoHandoff]);
+  }, [agentScope, pathname, draftOwner]);
+  useEffect(() => () => draftOwner.dispose(), [draftOwner]);
+  const addAgentAttachment = useCallback((attachment: AssistantAttachment, replaceId?: string) => {
+    if (currentEntry.current.scope !== agentScope || currentEntry.current.pathname !== pathname || !["/", "/chat"].includes(pathname)) { attachment.dispose?.(); return false; }
+    return draftOwner.add(agentScope, attachment, replaceId);
+  }, [agentScope, pathname, draftOwner]);
+  function openAgentDraft(focusText = false) {
+    if (!agentScope || currentEntry.current.scope !== agentScope || currentEntry.current.pathname !== pathname) return;
+    if (focusText) setComposerFocusRequest(value => value + 1);
+    if (pathname !== "/chat") leave(() => router.push("/chat"));
+  }
   const actions: HomeActions = {
     selectChild(id) {
       if (id === model.selectedChildId) return;
@@ -95,14 +107,14 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
       if (!agentScope || currentEntry.current.scope !== agentScope || currentEntry.current.pathname !== "/") {
         original.dispose?.(); return;
       }
-      photoHandoff.stage(agentScope, original);
+      draftOwner.add(agentScope, photoAttachment(original));
       router.push("/chat");
     },
     composeCare(kind) { leave(() => router.push({ pathname: "/care", params: { compose: kind } })); },
     prepareQuestion(question) {
       if (!model.selectedChildId) return;
-      if (chatDrafts[draftKey]?.trim()) setNotice("保留你原本未發送的問題；可在對話頁核對後修改。");
-      else setChatDrafts(previous => ({ ...previous, [draftKey]: question }));
+      if (visibleDraft.text.trim()) setNotice("保留你原本未發送的問題；可在對話頁核對後修改。");
+      else draftOwner.setText(agentScope, question);
       leave(() => router.push("/chat"));
     },
     createChildPreview(displayName) {
@@ -118,7 +130,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
       setCreatedChildren(previous => previous.filter(child => child.id !== id));
       const checklistIds = new Set(previewChecklist.filter(item => item.childId === id).map(item => item.id));
       setCheckedPreviewItems(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !checklistIds.has(key))));
-      setChatDrafts(previous => { const next = { ...previous }; delete next[id]; return next; });
+      draftOwner.forget(homeAgentScope({ ...model, selectedChildId: id }));
       setNotice("已模擬移除孩子及本頁關聯草稿。只影響合成預覽；沒有刪除真家庭資料。");
     },
     completeGuidePreview() {
@@ -142,9 +154,12 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   return <PreviewContext.Provider value={{
     model, scenario, setScenario, actions, homeIntroductionPending, markHomeIntroductionPresented,
     notice, dismissNotice: () => setNotice(null),
-    chatDraft: chatDrafts[draftKey] ?? "",
-    takeAgentPhoto,
-    setChatDraft: value => setChatDrafts(previous => ({ ...previous, [draftKey]: value })),
+    chatDraft: visibleDraft.text,
+    agentAttachments: visibleDraft.attachments, addAgentAttachment,
+    removeAgentAttachment: id => draftOwner.remove(agentScope, id),
+    clearAgentDraft: () => draftOwner.clear(agentScope), agentDraftScope: agentScope,
+    composerFocusRequest, openAgentDraft,
+    setChatDraft: value => draftOwner.setText(agentScope, value),
     checkedPreviewItems,
     togglePreviewItem: id => {
       setCheckedPreviewItems(previous => ({ ...previous, [id]: !previous[id] }));

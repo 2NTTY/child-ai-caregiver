@@ -1,0 +1,33 @@
+{
+  "environment": "isolated frontend snapshot, synthetic inputs only",
+  "baseline": "65f8cf37bceeb15b05f46326c49e0370349ae3a5",
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/assistant-draft.test.mts frontend/scripts/local-voice-capture.test.mts frontend/scripts/home-agent-entry.test.mts",
+      "result": "10 passed, 0 failed",
+      "note": "New owner/gesture tests: 3. New synthetic voice lifecycle tests: 3. Existing home handoff/scope compatibility tests: 4. No real microphone/camera or files."
+    },
+    {
+      "method": "TypeScript 6.0.3 transpileModule reportDiagnostics over 27 owned TS/TSX source files",
+      "result": "No syntax errors",
+      "limitation": "Not semantic typechecking, bundling or runtime verification"
+    },
+    {
+      "command": "node --test frontend/scripts/pointer-click-gate.test.mts frontend/scripts/assistant-draft.test.mts",
+      "result": "6 passed, 0 failed",
+      "note": "Scoped correction for v30 Records upward drag. New pure gate lifecycle tests cover navigation effect rebinding, one-click consumption, cancellation/drag-back, a fresh pointerdown and keyboard/assistive activation. Existing direction policy is unchanged. No build/browser run by this worker."
+    }
+  ],
+  "unverified": [
+    "Full semantic typecheck and Web export assigned to integration verifier",
+    "1440/1024/390/320 UI, gesture DOM interactions, keyboard, cancel and child isolation assigned to integration verifier",
+    "Real camera/microphone permissions, codecs, native recording/file picker/audio playback, Android physical controls and screen reader",
+    "Formal upload, Agent media/transcription contracts and real API are not implemented or called"
+  ],
+  "mediaReferences": [
+    "https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder",
+    "https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia",
+    "https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/stop",
+    "https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/dataavailable_event"
+  ]
+}

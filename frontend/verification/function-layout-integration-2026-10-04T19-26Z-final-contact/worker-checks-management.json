@@ -1,0 +1,30 @@
+{
+  "baseline": "65f8cf37bceeb15b05f46326c49e0370349ae3a5",
+  "checkedAt": "2026-10-04T18:48:04.105Z",
+  "syntaxFiles": 23,
+  "syntax": "pass",
+  "unchangedContractsAndControllers": [
+    "frontend/src/profile-view-model.ts",
+    "frontend/src/preview/useProfilePreview.ts",
+    "frontend/src/components/profile/useProfileSwitchAnchor.ts",
+    "frontend/src/components/profile/profile-form.ts",
+    "frontend/src/shared-input-view-model.ts",
+    "frontend/src/source-intake.ts",
+    "frontend/src/preview/useSourcesPreview.ts",
+    "frontend/src/components/shared-inputs/SourceIntakeEditor.tsx",
+    "frontend/src/components/shared-inputs/source-form.ts",
+    "frontend/src/preview/useModelSettingsPreview.ts",
+    "frontend/src/components/model-settings/model-settings-form.ts",
+    "frontend/src/preview/useChannelSettingsPreview.ts",
+    "frontend/src/preview/BackgroundContext.tsx"
+  ],
+  "status": "source-only checks passed",
+  "unverified": [
+    "Integrated typecheck",
+    "Web export",
+    "1440/1024/390/320 browser layout",
+    "Keyboard and cancel flows",
+    "Child switch anchor/unsaved guard in redesigned layout",
+    "Native and real API"
+  ]
+}

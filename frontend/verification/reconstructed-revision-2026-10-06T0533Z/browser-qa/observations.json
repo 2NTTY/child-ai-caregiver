@@ -1,0 +1,2990 @@
+[
+  {
+    "label": "care-detail-1440",
+    "at": "2026-10-06T05:53:37.107Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 1440,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 786,
+          "id": "care-page-scroll",
+          "width": 1224,
+          "x": 216,
+          "y": 114
+        },
+        {
+          "height": 1135,
+          "id": "care-review-gate",
+          "width": 1176,
+          "x": 240,
+          "y": 213
+        },
+        {
+          "height": 356,
+          "id": "care-review-list",
+          "width": 376.3125,
+          "x": 240,
+          "y": 273
+        },
+        {
+          "height": 139,
+          "id": "care-review-row",
+          "width": 376.3125,
+          "x": 240,
+          "y": 347
+        },
+        {
+          "height": 139,
+          "id": "care-review-row",
+          "width": 376.3125,
+          "x": 240,
+          "y": 490
+        },
+        {
+          "height": 1075,
+          "id": "care-review-detail-panel",
+          "width": 783.6875,
+          "x": 632.3125,
+          "y": 273
+        },
+        {
+          "height": 1025,
+          "id": "care-capture-detail",
+          "width": 766.6875,
+          "x": 649.3125,
+          "y": 323
+        },
+        {
+          "height": 26,
+          "id": "care-important-pending",
+          "width": 117.671875,
+          "x": 728.328125,
+          "y": 372
+        },
+        {
+          "height": 852,
+          "id": "care-capture-comparison",
+          "width": 766.6875,
+          "x": 649.3125,
+          "y": 440
+        },
+        {
+          "height": 170,
+          "id": "care-capture-original-column",
+          "width": 375.34375,
+          "x": 649.3125,
+          "y": 440
+        },
+        {
+          "height": 852,
+          "id": "care-capture-interpretation-column",
+          "width": 375.34375,
+          "x": 1040.65625,
+          "y": 440
+        }
+      ],
+      "scrollWidth": 1440,
+      "width": 1440
+    }
+  },
+  {
+    "label": "care-detail-1024",
+    "at": "2026-10-06T05:53:37.673Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 1024,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 786,
+          "id": "care-page-scroll",
+          "width": 808,
+          "x": 216,
+          "y": 114
+        },
+        {
+          "height": 1273,
+          "id": "care-review-gate",
+          "width": 760,
+          "x": 240,
+          "y": 213
+        },
+        {
+          "height": 432,
+          "id": "care-review-list",
+          "width": 243.1875,
+          "x": 240,
+          "y": 273
+        },
+        {
+          "height": 177,
+          "id": "care-review-row",
+          "width": 243.1875,
+          "x": 240,
+          "y": 347
+        },
+        {
+          "height": 177,
+          "id": "care-review-row",
+          "width": 243.1875,
+          "x": 240,
+          "y": 528
+        },
+        {
+          "height": 1213,
+          "id": "care-review-detail-panel",
+          "width": 500.8125,
+          "x": 499.1875,
+          "y": 273
+        },
+        {
+          "height": 1163,
+          "id": "care-capture-detail",
+          "width": 483.8125,
+          "x": 516.1875,
+          "y": 323
+        },
+        {
+          "height": 26,
+          "id": "care-important-pending",
+          "width": 117.671875,
+          "x": 595.203125,
+          "y": 372
+        },
+        {
+          "height": 990,
+          "id": "care-capture-comparison",
+          "width": 483.8125,
+          "x": 516.1875,
+          "y": 440
+        },
+        {
+          "height": 170,
+          "id": "care-capture-original-column",
+          "width": 483.8125,
+          "x": 516.1875,
+          "y": 440
+        },
+        {
+          "height": 804,
+          "id": "care-capture-interpretation-column",
+          "width": 483.8125,
+          "x": 516.1875,
+          "y": 626
+        }
+      ],
+      "scrollWidth": 1024,
+      "width": 1024
+    }
+  },
+  {
+    "label": "care-detail-390",
+    "at": "2026-10-06T05:53:47.158Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 390,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "care-page-scroll",
+          "width": 390,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 1372,
+          "id": "care-review-gate",
+          "width": 358,
+          "x": 16,
+          "y": 196
+        },
+        {
+          "height": 0,
+          "id": "care-review-list",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "care-review-row",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "care-review-row",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 1311,
+          "id": "care-review-detail-panel",
+          "width": 358,
+          "x": 16,
+          "y": 257
+        },
+        {
+          "height": 1253,
+          "id": "care-capture-detail",
+          "width": 358,
+          "x": 16,
+          "y": 315
+        },
+        {
+          "height": 26,
+          "id": "care-important-pending",
+          "width": 117.671875,
+          "x": 95.015625,
+          "y": 364
+        },
+        {
+          "height": 1072,
+          "id": "care-capture-comparison",
+          "width": 358,
+          "x": 16,
+          "y": 432
+        },
+        {
+          "height": 170,
+          "id": "care-capture-original-column",
+          "width": 358,
+          "x": 16,
+          "y": 432
+        },
+        {
+          "height": 886,
+          "id": "care-capture-interpretation-column",
+          "width": 358,
+          "x": 16,
+          "y": 618
+        }
+      ],
+      "scrollWidth": 390,
+      "width": 390
+    }
+  },
+  {
+    "label": "care-detail-320",
+    "at": "2026-10-06T05:53:56.867Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "care-page-scroll",
+          "width": 320,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 1460,
+          "id": "care-review-gate",
+          "width": 288,
+          "x": 16,
+          "y": 196
+        },
+        {
+          "height": 0,
+          "id": "care-review-list",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "care-review-row",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "care-review-row",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 1399,
+          "id": "care-review-detail-panel",
+          "width": 288,
+          "x": 16,
+          "y": 257
+        },
+        {
+          "height": 1341,
+          "id": "care-capture-detail",
+          "width": 288,
+          "x": 16,
+          "y": 315
+        },
+        {
+          "height": 26,
+          "id": "care-important-pending",
+          "width": 117.671875,
+          "x": 95.015625,
+          "y": 364
+        },
+        {
+          "height": 1142,
+          "id": "care-capture-comparison",
+          "width": 288,
+          "x": 16,
+          "y": 450
+        },
+        {
+          "height": 196,
+          "id": "care-capture-original-column",
+          "width": 288,
+          "x": 16,
+          "y": 450
+        },
+        {
+          "height": 930,
+          "id": "care-capture-interpretation-column",
+          "width": 288,
+          "x": 16,
+          "y": 662
+        }
+      ],
+      "scrollWidth": 320,
+      "width": 320
+    }
+  },
+  {
+    "label": "growth-chain-1024",
+    "at": "2026-10-06T05:54:32.149Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 1024,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 786,
+          "id": "growth-scroll",
+          "width": 808,
+          "x": 216,
+          "y": 114
+        },
+        {
+          "height": 64,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 733.390625,
+          "y": 138
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 733.390625,
+          "y": 184
+        },
+        {
+          "height": 48,
+          "id": "growth-workspace-rail",
+          "width": 760,
+          "x": 240,
+          "y": 218
+        },
+        {
+          "height": 1002,
+          "id": "growth-concern-timeline",
+          "width": 760,
+          "x": 240,
+          "y": 338
+        },
+        {
+          "height": 130,
+          "id": "growth-timeline-line-after-0",
+          "width": 2,
+          "x": 248,
+          "y": 579
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-0",
+          "width": 10,
+          "x": 244,
+          "y": 569
+        },
+        {
+          "height": 195,
+          "id": "growth-attention-state-preview-growth-previous",
+          "width": 752,
+          "x": 248,
+          "y": 709
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-1",
+          "width": 2,
+          "x": 248,
+          "y": 709
+        },
+        {
+          "height": 182,
+          "id": "growth-timeline-line-after-1",
+          "width": 2,
+          "x": 248,
+          "y": 722
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-1",
+          "width": 10,
+          "x": 244,
+          "y": 712
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-2",
+          "width": 2,
+          "x": 248,
+          "y": 904
+        },
+        {
+          "height": 184,
+          "id": "growth-timeline-line-after-2",
+          "width": 2,
+          "x": 248,
+          "y": 917
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-2",
+          "width": 10,
+          "x": 244,
+          "y": 907
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-3",
+          "width": 2,
+          "x": 248,
+          "y": 1101
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-3",
+          "width": 10,
+          "x": 244,
+          "y": 1104
+        },
+        {
+          "height": 0,
+          "id": "growth-living-archive",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-current-report",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-standard-report",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-profile",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-profile-facts",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-overview",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-body_life",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-abilities_interests",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-moment",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-changes_support",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-changes",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-footer",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-footer-actions",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 40,
+          "id": "growth-footer",
+          "width": 760,
+          "x": 240,
+          "y": 1356
+        }
+      ],
+      "scrollWidth": 1024,
+      "width": 1024
+    }
+  },
+  {
+    "label": "growth-chain-1440",
+    "at": "2026-10-06T05:57:50.921Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 1440,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 786,
+          "id": "growth-scroll",
+          "width": 1224,
+          "x": 216,
+          "y": 114
+        },
+        {
+          "height": 64,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 1149.390625,
+          "y": 138
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 1149.390625,
+          "y": 184
+        },
+        {
+          "height": 48,
+          "id": "growth-workspace-rail",
+          "width": 1176,
+          "x": 240,
+          "y": 218
+        },
+        {
+          "height": 1002,
+          "id": "growth-concern-timeline",
+          "width": 960,
+          "x": 456,
+          "y": 278
+        },
+        {
+          "height": 130,
+          "id": "growth-timeline-line-after-0",
+          "width": 2,
+          "x": 464,
+          "y": 519
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-0",
+          "width": 10,
+          "x": 460,
+          "y": 509
+        },
+        {
+          "height": 195,
+          "id": "growth-attention-state-preview-growth-previous",
+          "width": 952,
+          "x": 464,
+          "y": 649
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-1",
+          "width": 2,
+          "x": 464,
+          "y": 649
+        },
+        {
+          "height": 182,
+          "id": "growth-timeline-line-after-1",
+          "width": 2,
+          "x": 464,
+          "y": 662
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-1",
+          "width": 10,
+          "x": 460,
+          "y": 652
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-2",
+          "width": 2,
+          "x": 464,
+          "y": 844
+        },
+        {
+          "height": 184,
+          "id": "growth-timeline-line-after-2",
+          "width": 2,
+          "x": 464,
+          "y": 857
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-2",
+          "width": 10,
+          "x": 460,
+          "y": 847
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-3",
+          "width": 2,
+          "x": 464,
+          "y": 1041
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-3",
+          "width": 10,
+          "x": 460,
+          "y": 1044
+        },
+        {
+          "height": 0,
+          "id": "growth-living-archive",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-current-report",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-standard-report",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-profile",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-profile-facts",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-overview",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-body_life",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-abilities_interests",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-moment",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-changes_support",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-changes",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-footer",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-footer-actions",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 40,
+          "id": "growth-footer",
+          "width": 1176,
+          "x": 240,
+          "y": 1296
+        }
+      ],
+      "scrollWidth": 1440,
+      "width": 1440
+    }
+  },
+  {
+    "label": "growth-chain-390",
+    "at": "2026-10-06T05:57:51.463Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 390,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "growth-scroll",
+          "width": 390,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 72,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 16,
+          "y": 168
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 16,
+          "y": 222
+        },
+        {
+          "height": 49,
+          "id": "growth-workspace-rail",
+          "width": 358,
+          "x": 16,
+          "y": 256
+        },
+        {
+          "height": 1110,
+          "id": "growth-concern-timeline",
+          "width": 358,
+          "x": 16,
+          "y": 377
+        },
+        {
+          "height": 156,
+          "id": "growth-timeline-line-after-0",
+          "width": 2,
+          "x": 24,
+          "y": 648
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-0",
+          "width": 10,
+          "x": 20,
+          "y": 638
+        },
+        {
+          "height": 213,
+          "id": "growth-attention-state-preview-growth-previous",
+          "width": 350,
+          "x": 24,
+          "y": 804
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-1",
+          "width": 2,
+          "x": 24,
+          "y": 804
+        },
+        {
+          "height": 200,
+          "id": "growth-timeline-line-after-1",
+          "width": 2,
+          "x": 24,
+          "y": 817
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-1",
+          "width": 10,
+          "x": 20,
+          "y": 807
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-2",
+          "width": 2,
+          "x": 24,
+          "y": 1017
+        },
+        {
+          "height": 188,
+          "id": "growth-timeline-line-after-2",
+          "width": 2,
+          "x": 24,
+          "y": 1030
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-2",
+          "width": 10,
+          "x": 20,
+          "y": 1020
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-3",
+          "width": 2,
+          "x": 24,
+          "y": 1218
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-3",
+          "width": 10,
+          "x": 20,
+          "y": 1221
+        },
+        {
+          "height": 0,
+          "id": "growth-living-archive",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-current-report",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-standard-report",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-profile",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-profile-facts",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-overview",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-body_life",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-abilities_interests",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-moment",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-changes_support",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-changes",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-footer",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-footer-actions",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 48,
+          "id": "growth-footer",
+          "width": 358,
+          "x": 16,
+          "y": 1503
+        }
+      ],
+      "scrollWidth": 390,
+      "width": 390
+    }
+  },
+  {
+    "label": "growth-chain-320",
+    "at": "2026-10-06T05:57:51.965Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "growth-scroll",
+          "width": 320,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 72,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 16,
+          "y": 168
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 16,
+          "y": 222
+        },
+        {
+          "height": 49,
+          "id": "growth-workspace-rail",
+          "width": 288,
+          "x": 16,
+          "y": 256
+        },
+        {
+          "height": 1214,
+          "id": "growth-concern-timeline",
+          "width": 288,
+          "x": 16,
+          "y": 377
+        },
+        {
+          "height": 182,
+          "id": "growth-timeline-line-after-0",
+          "width": 2,
+          "x": 24,
+          "y": 674
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-0",
+          "width": 10,
+          "x": 20,
+          "y": 664
+        },
+        {
+          "height": 239,
+          "id": "growth-attention-state-preview-growth-previous",
+          "width": 280,
+          "x": 24,
+          "y": 856
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-1",
+          "width": 2,
+          "x": 24,
+          "y": 856
+        },
+        {
+          "height": 226,
+          "id": "growth-timeline-line-after-1",
+          "width": 2,
+          "x": 24,
+          "y": 869
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-1",
+          "width": 10,
+          "x": 20,
+          "y": 859
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-2",
+          "width": 2,
+          "x": 24,
+          "y": 1095
+        },
+        {
+          "height": 214,
+          "id": "growth-timeline-line-after-2",
+          "width": 2,
+          "x": 24,
+          "y": 1108
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-2",
+          "width": 10,
+          "x": 20,
+          "y": 1098
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-3",
+          "width": 2,
+          "x": 24,
+          "y": 1322
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-3",
+          "width": 10,
+          "x": 20,
+          "y": 1325
+        },
+        {
+          "height": 0,
+          "id": "growth-living-archive",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-current-report",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-standard-report",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-profile",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-profile-facts",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-overview",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-body_life",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-abilities_interests",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-moment",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-changes_support",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-report-entry-preview-changes",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-footer",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 0,
+          "id": "growth-archive-footer-actions",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 48,
+          "id": "growth-footer",
+          "width": 288,
+          "x": 16,
+          "y": 1607
+        }
+      ],
+      "scrollWidth": 320,
+      "width": 320
+    }
+  },
+  {
+    "label": "growth-report-320",
+    "at": "2026-10-06T05:58:22.082Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "growth-scroll",
+          "width": 320,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 72,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 16,
+          "y": 168
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 16,
+          "y": 222
+        },
+        {
+          "height": 49,
+          "id": "growth-workspace-rail",
+          "width": 288,
+          "x": 16,
+          "y": 256
+        },
+        {
+          "height": 1959,
+          "id": "growth-living-archive",
+          "width": 288,
+          "x": 16,
+          "y": 317
+        },
+        {
+          "height": 192,
+          "id": "growth-current-report",
+          "width": 288,
+          "x": 16,
+          "y": 317
+        },
+        {
+          "height": 1564,
+          "id": "growth-standard-report",
+          "width": 288,
+          "x": 16,
+          "y": 581
+        },
+        {
+          "height": 425,
+          "id": "growth-report-profile",
+          "width": 254,
+          "x": 33,
+          "y": 658
+        },
+        {
+          "height": 122,
+          "id": "growth-report-profile-facts",
+          "width": 254,
+          "x": 33,
+          "y": 706
+        },
+        {
+          "height": 235,
+          "id": "growth-report-entry-preview-overview",
+          "width": 254,
+          "x": 33,
+          "y": 840
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 254,
+          "x": 33,
+          "y": 1019
+        },
+        {
+          "height": 465,
+          "id": "growth-report-body_life",
+          "width": 254,
+          "x": 33,
+          "y": 1095
+        },
+        {
+          "height": 209,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 254,
+          "x": 33,
+          "y": 1152
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 254,
+          "x": 33,
+          "y": 1305
+        },
+        {
+          "height": 179,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 254,
+          "x": 33,
+          "y": 1373
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 254,
+          "x": 33,
+          "y": 1496
+        },
+        {
+          "height": 244,
+          "id": "growth-report-abilities_interests",
+          "width": 254,
+          "x": 33,
+          "y": 1572
+        },
+        {
+          "height": 179,
+          "id": "growth-report-entry-preview-moment",
+          "width": 254,
+          "x": 33,
+          "y": 1629
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 254,
+          "x": 33,
+          "y": 1752
+        },
+        {
+          "height": 300,
+          "id": "growth-report-changes_support",
+          "width": 254,
+          "x": 33,
+          "y": 1828
+        },
+        {
+          "height": 235,
+          "id": "growth-report-entry-preview-changes",
+          "width": 254,
+          "x": 33,
+          "y": 1885
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 254,
+          "x": 33,
+          "y": 2064
+        },
+        {
+          "height": 119,
+          "id": "growth-archive-footer",
+          "width": 288,
+          "x": 16,
+          "y": 2157
+        },
+        {
+          "height": 106,
+          "id": "growth-archive-footer-actions",
+          "width": 288,
+          "x": 16,
+          "y": 2170
+        }
+      ],
+      "scrollWidth": 320,
+      "width": 320
+    }
+  },
+  {
+    "label": "growth-report-390",
+    "at": "2026-10-06T05:58:23.122Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 390,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "growth-scroll",
+          "width": 390,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 72,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 16,
+          "y": 168
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 16,
+          "y": 222
+        },
+        {
+          "height": 49,
+          "id": "growth-workspace-rail",
+          "width": 358,
+          "x": 16,
+          "y": 256
+        },
+        {
+          "height": 1713,
+          "id": "growth-living-archive",
+          "width": 358,
+          "x": 16,
+          "y": 317
+        },
+        {
+          "height": 132,
+          "id": "growth-current-report",
+          "width": 358,
+          "x": 16,
+          "y": 317
+        },
+        {
+          "height": 1434,
+          "id": "growth-standard-report",
+          "width": 358,
+          "x": 16,
+          "y": 521
+        },
+        {
+          "height": 399,
+          "id": "growth-report-profile",
+          "width": 324,
+          "x": 33,
+          "y": 598
+        },
+        {
+          "height": 122,
+          "id": "growth-report-profile-facts",
+          "width": 324,
+          "x": 33,
+          "y": 646
+        },
+        {
+          "height": 209,
+          "id": "growth-report-entry-preview-overview",
+          "width": 324,
+          "x": 33,
+          "y": 780
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 324,
+          "x": 33,
+          "y": 933
+        },
+        {
+          "height": 439,
+          "id": "growth-report-body_life",
+          "width": 324,
+          "x": 33,
+          "y": 1009
+        },
+        {
+          "height": 183,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 324,
+          "x": 33,
+          "y": 1066
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 324,
+          "x": 33,
+          "y": 1193
+        },
+        {
+          "height": 179,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 324,
+          "x": 33,
+          "y": 1261
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 324,
+          "x": 33,
+          "y": 1384
+        },
+        {
+          "height": 218,
+          "id": "growth-report-abilities_interests",
+          "width": 324,
+          "x": 33,
+          "y": 1460
+        },
+        {
+          "height": 153,
+          "id": "growth-report-entry-preview-moment",
+          "width": 324,
+          "x": 33,
+          "y": 1517
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 324,
+          "x": 33,
+          "y": 1614
+        },
+        {
+          "height": 248,
+          "id": "growth-report-changes_support",
+          "width": 324,
+          "x": 33,
+          "y": 1690
+        },
+        {
+          "height": 183,
+          "id": "growth-report-entry-preview-changes",
+          "width": 324,
+          "x": 33,
+          "y": 1747
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 324,
+          "x": 33,
+          "y": 1874
+        },
+        {
+          "height": 63,
+          "id": "growth-archive-footer",
+          "width": 358,
+          "x": 16,
+          "y": 1967
+        },
+        {
+          "height": 50,
+          "id": "growth-archive-footer-actions",
+          "width": 358,
+          "x": 16,
+          "y": 1980
+        }
+      ],
+      "scrollWidth": 390,
+      "width": 390
+    }
+  },
+  {
+    "label": "growth-report-1024",
+    "at": "2026-10-06T05:58:23.998Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 1024,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 786,
+          "id": "growth-scroll",
+          "width": 808,
+          "x": 216,
+          "y": 114
+        },
+        {
+          "height": 64,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 733.390625,
+          "y": 138
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 733.390625,
+          "y": 184
+        },
+        {
+          "height": 48,
+          "id": "growth-workspace-rail",
+          "width": 760,
+          "x": 240,
+          "y": 218
+        },
+        {
+          "height": 1435,
+          "id": "growth-living-archive",
+          "width": 760,
+          "x": 240,
+          "y": 278
+        },
+        {
+          "height": 132,
+          "id": "growth-current-report",
+          "width": 760,
+          "x": 240,
+          "y": 278
+        },
+        {
+          "height": 1168,
+          "id": "growth-standard-report",
+          "width": 760,
+          "x": 240,
+          "y": 478
+        },
+        {
+          "height": 275,
+          "id": "growth-report-profile",
+          "width": 726,
+          "x": 257,
+          "y": 555
+        },
+        {
+          "height": 66,
+          "id": "growth-report-profile-facts",
+          "width": 726,
+          "x": 257,
+          "y": 603
+        },
+        {
+          "height": 141,
+          "id": "growth-report-entry-preview-overview",
+          "width": 726,
+          "x": 257,
+          "y": 681
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 726,
+          "x": 257,
+          "y": 782
+        },
+        {
+          "height": 355,
+          "id": "growth-report-body_life",
+          "width": 726,
+          "x": 257,
+          "y": 842
+        },
+        {
+          "height": 141,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 726,
+          "x": 257,
+          "y": 899
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 726,
+          "x": 257,
+          "y": 1000
+        },
+        {
+          "height": 137,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 726,
+          "x": 257,
+          "y": 1052
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 726,
+          "x": 257,
+          "y": 1149
+        },
+        {
+          "height": 202,
+          "id": "growth-report-abilities_interests",
+          "width": 726,
+          "x": 257,
+          "y": 1209
+        },
+        {
+          "height": 137,
+          "id": "growth-report-entry-preview-moment",
+          "width": 726,
+          "x": 257,
+          "y": 1266
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 726,
+          "x": 257,
+          "y": 1363
+        },
+        {
+          "height": 206,
+          "id": "growth-report-changes_support",
+          "width": 726,
+          "x": 257,
+          "y": 1423
+        },
+        {
+          "height": 141,
+          "id": "growth-report-entry-preview-changes",
+          "width": 726,
+          "x": 257,
+          "y": 1480
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 726,
+          "x": 257,
+          "y": 1581
+        },
+        {
+          "height": 55,
+          "id": "growth-archive-footer",
+          "width": 760,
+          "x": 240,
+          "y": 1658
+        },
+        {
+          "height": 42,
+          "id": "growth-archive-footer-actions",
+          "width": 760,
+          "x": 240,
+          "y": 1671
+        }
+      ],
+      "scrollWidth": 1024,
+      "width": 1024
+    }
+  },
+  {
+    "label": "growth-report-1440",
+    "at": "2026-10-06T05:58:41.949Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 1440,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 786,
+          "id": "growth-scroll",
+          "width": 1224,
+          "x": 216,
+          "y": 114
+        },
+        {
+          "height": 64,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 1149.390625,
+          "y": 138
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 1149.390625,
+          "y": 184
+        },
+        {
+          "height": 48,
+          "id": "growth-workspace-rail",
+          "width": 1176,
+          "x": 240,
+          "y": 218
+        },
+        {
+          "height": 1147,
+          "id": "growth-living-archive",
+          "width": 1176,
+          "x": 240,
+          "y": 278
+        },
+        {
+          "height": 132,
+          "id": "growth-current-report",
+          "width": 1176,
+          "x": 240,
+          "y": 278
+        },
+        {
+          "height": 880,
+          "id": "growth-standard-report",
+          "width": 1040,
+          "x": 240,
+          "y": 478
+        },
+        {
+          "height": 223,
+          "id": "growth-report-profile",
+          "width": 990,
+          "x": 265,
+          "y": 495
+        },
+        {
+          "height": 47,
+          "id": "growth-report-profile-facts",
+          "width": 990,
+          "x": 265,
+          "y": 543
+        },
+        {
+          "height": 108,
+          "id": "growth-report-entry-preview-overview",
+          "width": 990,
+          "x": 265,
+          "y": 602
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 814,
+          "x": 441,
+          "y": 670
+        },
+        {
+          "height": 267,
+          "id": "growth-report-body_life",
+          "width": 990,
+          "x": 265,
+          "y": 730
+        },
+        {
+          "height": 108,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 990,
+          "x": 265,
+          "y": 787
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 814,
+          "x": 441,
+          "y": 855
+        },
+        {
+          "height": 82,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 990,
+          "x": 265,
+          "y": 907
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 814,
+          "x": 441,
+          "y": 949
+        },
+        {
+          "height": 147,
+          "id": "growth-report-abilities_interests",
+          "width": 990,
+          "x": 265,
+          "y": 1009
+        },
+        {
+          "height": 82,
+          "id": "growth-report-entry-preview-moment",
+          "width": 990,
+          "x": 265,
+          "y": 1066
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 814,
+          "x": 441,
+          "y": 1108
+        },
+        {
+          "height": 173,
+          "id": "growth-report-changes_support",
+          "width": 990,
+          "x": 265,
+          "y": 1168
+        },
+        {
+          "height": 108,
+          "id": "growth-report-entry-preview-changes",
+          "width": 990,
+          "x": 265,
+          "y": 1225
+        },
+        {
+          "height": 32,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 814,
+          "x": 441,
+          "y": 1293
+        },
+        {
+          "height": 55,
+          "id": "growth-archive-footer",
+          "width": 1040,
+          "x": 240,
+          "y": 1370
+        },
+        {
+          "height": 42,
+          "id": "growth-archive-footer-actions",
+          "width": 1040,
+          "x": 240,
+          "y": 1383
+        }
+      ],
+      "scrollWidth": 1440,
+      "width": 1440
+    }
+  },
+  {
+    "label": "growth-export-disabled-320",
+    "at": "2026-10-06T05:59:00.456Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "growth-scroll",
+          "width": 320,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 72,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 16,
+          "y": 168
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 16,
+          "y": 222
+        },
+        {
+          "height": 49,
+          "id": "growth-workspace-rail",
+          "width": 288,
+          "x": 16,
+          "y": 256
+        },
+        {
+          "height": 1959,
+          "id": "growth-living-archive",
+          "width": 288,
+          "x": 16,
+          "y": 317
+        },
+        {
+          "height": 192,
+          "id": "growth-current-report",
+          "width": 288,
+          "x": 16,
+          "y": 317
+        },
+        {
+          "height": 1564,
+          "id": "growth-standard-report",
+          "width": 288,
+          "x": 16,
+          "y": 581
+        },
+        {
+          "height": 425,
+          "id": "growth-report-profile",
+          "width": 254,
+          "x": 33,
+          "y": 658
+        },
+        {
+          "height": 122,
+          "id": "growth-report-profile-facts",
+          "width": 254,
+          "x": 33,
+          "y": 706
+        },
+        {
+          "height": 235,
+          "id": "growth-report-entry-preview-overview",
+          "width": 254,
+          "x": 33,
+          "y": 840
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 254,
+          "x": 33,
+          "y": 1019
+        },
+        {
+          "height": 465,
+          "id": "growth-report-body_life",
+          "width": 254,
+          "x": 33,
+          "y": 1095
+        },
+        {
+          "height": 209,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 254,
+          "x": 33,
+          "y": 1152
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 254,
+          "x": 33,
+          "y": 1305
+        },
+        {
+          "height": 179,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 254,
+          "x": 33,
+          "y": 1373
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 254,
+          "x": 33,
+          "y": 1496
+        },
+        {
+          "height": 244,
+          "id": "growth-report-abilities_interests",
+          "width": 254,
+          "x": 33,
+          "y": 1572
+        },
+        {
+          "height": 179,
+          "id": "growth-report-entry-preview-moment",
+          "width": 254,
+          "x": 33,
+          "y": 1629
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 254,
+          "x": 33,
+          "y": 1752
+        },
+        {
+          "height": 300,
+          "id": "growth-report-changes_support",
+          "width": 254,
+          "x": 33,
+          "y": 1828
+        },
+        {
+          "height": 235,
+          "id": "growth-report-entry-preview-changes",
+          "width": 254,
+          "x": 33,
+          "y": 1885
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 254,
+          "x": 33,
+          "y": 2064
+        },
+        {
+          "height": 119,
+          "id": "growth-archive-footer",
+          "width": 288,
+          "x": 16,
+          "y": 2157
+        },
+        {
+          "height": 106,
+          "id": "growth-archive-footer-actions",
+          "width": 288,
+          "x": 16,
+          "y": 2170
+        },
+        {
+          "height": 900,
+          "id": "growth-report-export",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 900,
+          "id": "growth-report-export-backdrop",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 900,
+          "id": "growth-report-export-wrapper",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 828,
+          "id": "growth-report-export-surface",
+          "width": 294.390625,
+          "x": 12.796875,
+          "y": 36
+        },
+        {
+          "height": 97,
+          "id": "growth-export-unavailable",
+          "width": 260.390625,
+          "x": 29.796875,
+          "y": 873
+        }
+      ],
+      "scrollWidth": 320,
+      "width": 320
+    }
+  },
+  {
+    "label": "growth-report-section-navigation-320",
+    "at": "2026-10-06T05:59:08.032Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "growth-scroll",
+          "width": 320,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 72,
+          "id": "growth-refresh-toolbar",
+          "width": 266.609375,
+          "x": 16,
+          "y": -1423
+        },
+        {
+          "height": 18,
+          "id": "growth-refresh-status",
+          "width": 266.609375,
+          "x": 16,
+          "y": -1369
+        },
+        {
+          "height": 49,
+          "id": "growth-workspace-rail",
+          "width": 288,
+          "x": 16,
+          "y": -1335
+        },
+        {
+          "height": 1959,
+          "id": "growth-living-archive",
+          "width": 288,
+          "x": 16,
+          "y": -1274
+        },
+        {
+          "height": 192,
+          "id": "growth-current-report",
+          "width": 288,
+          "x": 16,
+          "y": -1274
+        },
+        {
+          "height": 1564,
+          "id": "growth-standard-report",
+          "width": 288,
+          "x": 16,
+          "y": -1010
+        },
+        {
+          "height": 425,
+          "id": "growth-report-profile",
+          "width": 254,
+          "x": 33,
+          "y": -933
+        },
+        {
+          "height": 122,
+          "id": "growth-report-profile-facts",
+          "width": 254,
+          "x": 33,
+          "y": -885
+        },
+        {
+          "height": 235,
+          "id": "growth-report-entry-preview-overview",
+          "width": 254,
+          "x": 33,
+          "y": -751
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-overview",
+          "width": 254,
+          "x": 33,
+          "y": -572
+        },
+        {
+          "height": 465,
+          "id": "growth-report-body_life",
+          "width": 254,
+          "x": 33,
+          "y": -496
+        },
+        {
+          "height": 209,
+          "id": "growth-report-entry-preview-sleep-observation",
+          "width": 254,
+          "x": 33,
+          "y": -439
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-sleep-observation",
+          "width": 254,
+          "x": 33,
+          "y": -286
+        },
+        {
+          "height": 179,
+          "id": "growth-report-entry-preview-height-observation",
+          "width": 254,
+          "x": 33,
+          "y": -218
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-height-observation",
+          "width": 254,
+          "x": 33,
+          "y": -95
+        },
+        {
+          "height": 244,
+          "id": "growth-report-abilities_interests",
+          "width": 254,
+          "x": 33,
+          "y": -19
+        },
+        {
+          "height": 179,
+          "id": "growth-report-entry-preview-moment",
+          "width": 254,
+          "x": 33,
+          "y": 38
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-moment",
+          "width": 254,
+          "x": 33,
+          "y": 161
+        },
+        {
+          "height": 300,
+          "id": "growth-report-changes_support",
+          "width": 254,
+          "x": 33,
+          "y": 237
+        },
+        {
+          "height": 235,
+          "id": "growth-report-entry-preview-changes",
+          "width": 254,
+          "x": 33,
+          "y": 294
+        },
+        {
+          "height": 48,
+          "id": "growth-archive-entry-tools-preview-changes",
+          "width": 254,
+          "x": 33,
+          "y": 473
+        },
+        {
+          "height": 119,
+          "id": "growth-archive-footer",
+          "width": 288,
+          "x": 16,
+          "y": 566
+        },
+        {
+          "height": 106,
+          "id": "growth-archive-footer-actions",
+          "width": 288,
+          "x": 16,
+          "y": 579
+        }
+      ],
+      "scrollWidth": 320,
+      "width": 320
+    }
+  },
+  {
+    "label": "growth-history-1024",
+    "at": "2026-10-06T05:59:26.063Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 1024,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 786,
+          "id": "history-scroll",
+          "width": 808,
+          "x": 216,
+          "y": 114
+        },
+        {
+          "height": 48,
+          "id": "history-categories-rail",
+          "width": 760,
+          "x": 240,
+          "y": 213
+        },
+        {
+          "height": 141,
+          "id": "history-filter-toolbar",
+          "width": 760,
+          "x": 240,
+          "y": 335
+        },
+        {
+          "height": 111,
+          "id": "growth-history",
+          "width": 760,
+          "x": 240,
+          "y": 492
+        },
+        {
+          "height": 77,
+          "id": "growth-history-preview-concern-play:preview-child-1",
+          "width": 760,
+          "x": 240,
+          "y": 526
+        }
+      ],
+      "scrollWidth": 1024,
+      "width": 1024
+    }
+  },
+  {
+    "label": "growth-history-1440",
+    "at": "2026-10-06T05:59:42.814Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 1440,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 786,
+          "id": "history-scroll",
+          "width": 1224,
+          "x": 216,
+          "y": 114
+        },
+        {
+          "height": 48,
+          "id": "history-categories-rail",
+          "width": 1176,
+          "x": 240,
+          "y": 213
+        },
+        {
+          "height": 141,
+          "id": "history-filter-toolbar",
+          "width": 1176,
+          "x": 240,
+          "y": 335
+        },
+        {
+          "height": 111,
+          "id": "growth-history",
+          "width": 1176,
+          "x": 240,
+          "y": 492
+        },
+        {
+          "height": 77,
+          "id": "growth-history-preview-concern-play:preview-child-1",
+          "width": 1176,
+          "x": 240,
+          "y": 526
+        }
+      ],
+      "scrollWidth": 1440,
+      "width": 1440
+    }
+  },
+  {
+    "label": "growth-history-390",
+    "at": "2026-10-06T05:59:43.421Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 390,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "history-scroll",
+          "width": 390,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 271,
+          "id": "history-filter-toolbar",
+          "width": 358,
+          "x": 16,
+          "y": 365
+        },
+        {
+          "height": 111,
+          "id": "growth-history",
+          "width": 358,
+          "x": 16,
+          "y": 652
+        },
+        {
+          "height": 77,
+          "id": "growth-history-preview-concern-play:preview-child-1",
+          "width": 358,
+          "x": 16,
+          "y": 686
+        }
+      ],
+      "scrollWidth": 390,
+      "width": 390
+    }
+  },
+  {
+    "label": "growth-history-320",
+    "at": "2026-10-06T05:59:43.966Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "history-scroll",
+          "width": 320,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 271,
+          "id": "history-filter-toolbar",
+          "width": 288,
+          "x": 16,
+          "y": 385
+        },
+        {
+          "height": 111,
+          "id": "growth-history",
+          "width": 288,
+          "x": 16,
+          "y": 672
+        },
+        {
+          "height": 77,
+          "id": "growth-history-preview-concern-play:preview-child-1",
+          "width": 288,
+          "x": 16,
+          "y": 706
+        }
+      ],
+      "scrollWidth": 320,
+      "width": 320
+    }
+  },
+  {
+    "label": "growth-history-detail-320",
+    "at": "2026-10-06T06:00:00.878Z",
+    "geometry": {
+      "height": 900,
+      "rects": [
+        {
+          "height": 900,
+          "id": "frontend-preview-ready",
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "height": 727,
+          "id": "history-scroll",
+          "width": 320,
+          "x": 0,
+          "y": 108
+        },
+        {
+          "height": 271,
+          "id": "history-filter-toolbar",
+          "width": 288,
+          "x": 16,
+          "y": 385
+        },
+        {
+          "height": 1483,
+          "id": "growth-history",
+          "width": 288,
+          "x": 16,
+          "y": 672
+        },
+        {
+          "height": 1449,
+          "id": "growth-history-detail-preview-concern-play:preview-child-1",
+          "width": 288,
+          "x": 16,
+          "y": 706
+        },
+        {
+          "height": 1353,
+          "id": "growth-concern-timeline",
+          "width": 254,
+          "x": 33,
+          "y": 785
+        },
+        {
+          "height": 182,
+          "id": "growth-timeline-line-after-0",
+          "width": 2,
+          "x": 41,
+          "y": 1026
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-0",
+          "width": 10,
+          "x": 37,
+          "y": 1016
+        },
+        {
+          "height": 239,
+          "id": "growth-attention-state-preview-growth-previous",
+          "width": 246,
+          "x": 41,
+          "y": 1208
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-1",
+          "width": 2,
+          "x": 41,
+          "y": 1208
+        },
+        {
+          "height": 226,
+          "id": "growth-timeline-line-after-1",
+          "width": 2,
+          "x": 41,
+          "y": 1221
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-1",
+          "width": 10,
+          "x": 37,
+          "y": 1211
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-2",
+          "width": 2,
+          "x": 41,
+          "y": 1447
+        },
+        {
+          "height": 214,
+          "id": "growth-timeline-line-after-2",
+          "width": 2,
+          "x": 41,
+          "y": 1460
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-2",
+          "width": 10,
+          "x": 37,
+          "y": 1450
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-3",
+          "width": 2,
+          "x": 41,
+          "y": 1674
+        },
+        {
+          "height": 214,
+          "id": "growth-timeline-line-after-3",
+          "width": 2,
+          "x": 41,
+          "y": 1687
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-3",
+          "width": 10,
+          "x": 37,
+          "y": 1677
+        },
+        {
+          "height": 3,
+          "id": "growth-timeline-line-before-4",
+          "width": 2,
+          "x": 41,
+          "y": 1901
+        },
+        {
+          "height": 10,
+          "id": "growth-timeline-dot-4",
+          "width": 10,
+          "x": 37,
+          "y": 1904
+        }
+      ],
+      "scrollWidth": 320,
+      "width": 320
+    }
+  }
+]

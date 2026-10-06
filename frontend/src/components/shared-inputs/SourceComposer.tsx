@@ -34,7 +34,7 @@ export function SourceComposer({ model, actions }: { model: SourcesViewModel; ac
       <FormFieldMessage id={`${fieldId(name)}-message`} error={fieldState.error?.message} help={help} />
     </View>} />;
   }
-  return <SectionCard testID="source-composer"><SectionHeader density="compact" title="加入資料來源" subtitle={`先放到${model.childName}的私人來源，只供${model.accountName}本人讀取。`} icon="lock-outline" />
+  return <SectionCard surface="plain" style={s.workflowSection} testID="source-composer"><SectionHeader density="compact" title="加入資料來源" subtitle={`先放到${model.childName}的私人來源，只供${model.accountName}本人讀取。`} icon="lock-outline" />
     <FormErrorSummary entries={errorEntries} onFocus={name => { setDetailsOpen(true); setPendingFocus(name as keyof SourceComposerDraft); }} />
     {seed ? <Text style={s.warning}>原來源仍保留；這次會另建一項，請自行貼上正文。</Text> : null}
     <Controller name="kind" control={control} render={({ field: input }) => <AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("kind")} label="來源方式" value={input.value} disabled={locked} onChange={input.onChange} options={[
@@ -48,7 +48,7 @@ export function SourceComposer({ model, actions }: { model: SourcesViewModel; ac
       {field("sourceUrl", "來源連結", "可留空；HTTPS 網址不含帳密。貼上網址不會立即取得正文。")}
       {field("text", "來源原文", kind === "personal_source" ? "連結或原文至少一項。需要登入的材料，請貼上你有權提供的原文。" : "請貼上原文，最多 10,000 字。")}
       <Text style={s.meta}>{text.length.toLocaleString("en-HK")} 字 · 最多 10,000 字，不會截短原文。</Text>
-      <AppButton label={detailsOpen ? "收起來源補充資料" : "補充名稱、日期或備註"} variant="quiet" disabled={locked} onPress={() => setDetailsOpen(value => !value)} />
+      <AppButton expanded={detailsOpen} label={detailsOpen ? "收起來源補充資料" : "補充名稱、日期或備註"} variant="quiet" disabled={locked} onPress={() => setDetailsOpen(value => !value)} />
       {detailsOpen ? <>
         {field("sourceLabel", "來源名稱", "最多 200 字；可先用預設名稱。")}
         {field("sourceDateText", "來源日期原文", "可留空；來源日期不是保存日期，也不是有效期。")}
@@ -59,7 +59,7 @@ export function SourceComposer({ model, actions }: { model: SourcesViewModel; ac
       <AppTextField label="這份資料想用來做甚麼？" accessibilityLabel="這份資料想用來做甚麼" value={intake.intention} error={!validSourceIntakeText(intake.intention)} disabled={locked} multiline onChangeText={intakeActions.setIntention} />
       {!validSourceIntakeText(intake.intention) ? <Text style={s.error}>用途說明最多 1,000 字，請移除無效字元；不會截短。</Text> : null}
       <Text style={s.meta}>用一句話說就可以，也可以先保存。助手會先查看來源，再和你商量；你亦可隨時改用同一表單自行整理。</Text>
-      <Text style={s.meta}>目前是合成預覽：只模擬私人保存與討論，不讀網頁、不傳模型、不接入回答。</Text>
+
     </View> : null}
     <Text style={s.meta}>正式來源沿既有加密儲存保存，不加入公共官方／新聞知識庫；家庭成員不會取得完整原文。</Text>
     <AppButton label={intake ? "私人保存並開始整理（預覽）" : "保存私人來源"} disabled={!model.fresh || !model.canCreate || !model.canChoose || !!intake && !validSourceIntakeText(intake.intention)} onPress={handleSubmit(value => actions.create(sourceCreateProjection(value)), invalid => {

@@ -1,0 +1,69 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 320 × 900 CSS px
+- iframe [active] [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前阿樂":
+      - generic: 阿
+      - generic: 阿樂
+    - generic: 地區
+    - generic: 未提供
+    - generic: 檔案
+    - generic: 待核對
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - button "關閉預覽提示":
+    - generic: 已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。
+  - heading "今日" [level=1]
+  - generic: 10月5日 · 先看重要的，再繼續日常
+  - generic: 助手提醒你
+  - generic: 待你核對
+  - heading "先核對一項照顧建議" [level=1]
+  - generic: 合成候選仍等你核對內容及共享範圍，尚未成為已確認安排。
+  - button "查看提醒的依據與詳情":
+    - generic: 合成示例 · 查看依據與詳情
+  - button "前往 Agent 對話":
+    - generic: 前往 Agent 對話
+  - heading "持續關注" [level=1]
+  - button "查看全部":
+    - generic: 查看全部
+  - button "想整理睡前流程，查看話題與依據":
+    - generic: 想整理睡前流程
+    - generic: 待續話題 · 家人確認睡前會一起看圖畫書。
+  - heading "待辦摘要" [level=1]
+  - button "查看全部":
+    - generic: 查看全部
+  - generic: 目前合成快照沒有指定待處理事項。
+  - generic: 只摘錄已載入安排；送達及照顧完成須另核對。
+  - button "拍照；長按選擇其他輸入；拖向上方文件、右上語音或右方文字":
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長檔案":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

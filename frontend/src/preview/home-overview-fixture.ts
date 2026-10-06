@@ -21,10 +21,10 @@ function createAgentImportantFixture(childId: string, scenario: PreviewScenario)
   return { state: "ready", loadedAt, synthetic, items: [{
     id: `${childId}:preview-agent-important`, title: unknown ? "一項 Agent 結果仍待查核" : "先核對一項照顧建議",
     detail: unknown ? "示例結果尚未確認。請回到原 Agent 結果核對，不能據此當作已完成。"
-      : "先看清楚原有照顧內容，再決定是否接受 Agent 整理的候選。這只是介面示例。",
-    whyNow: unknown ? null : "合成候選仍等你核對內容及共享範圍，尚未成為已確認安排。",
+      : "先核對照顧內容及共享範圍，再決定是否接受建議。",
+    whyNow: unknown ? null : "這項照顧建議仍待你核對，尚未成為已確認安排。",
     statusLabel: unknown ? "結果未知" : "待你核對",
-    sourceLabel: "前端合成 Agent 結果，沒有真實推送或來源證據",
+    sourceLabel: "合成 Agent 結果，沒有真實推送或來源證據",
     source: { kind: "agent_run", runId, createdAt: "2026-10-04T09:00:00+08:00", status: unknown ? "unknown" : "completed" },
     ...(unknown ? {} : { proposal: { id: `${runId}:proposal`, version: 1, status: "pending" as const, expiresAt: "2026-10-05T09:00:00+08:00" } }),
     action: { label: "前往 Agent 對話", destination: "chat" },

@@ -1,0 +1,106 @@
+{
+  "revision": "new reconstructed revision after partial exact source recovery",
+  "baseCommit": "2a64fdd7eae52c37c4f42f39ea286b4d3acd8630",
+  "observedAt": "2026-10-06T05:47:34.550864+00:00",
+  "runtimeOriginalByteGaps": [
+    "frontend/app/(dashboard)/_layout.tsx",
+    "frontend/app/(dashboard)/history.tsx"
+  ],
+  "newChanges": [
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "origin": "/workspace/shared/frontend_cleanup_audit_20261006/baseline/frontend/app/(dashboard)/_layout.tsx",
+      "bytes": 5081,
+      "git_blob_sha": "5ef0bc1451abb485e7b8bed8a00d8a08b080b5a6",
+      "sha256": "c2a9e9ac78c693afd9c2baf42f9edacc45fbc22287b512ea304b0246779c08a6"
+    },
+    {
+      "path": "frontend/app/(dashboard)/history.tsx",
+      "origin": null,
+      "bytes": 59,
+      "git_blob_sha": "66020fe3b0c97a4c37adc75ad87006ca60ded708",
+      "sha256": "8dfa10d901bd70558fa23776130ab71f7863882d473d1b59f29ca36160ec1d96"
+    },
+    {
+      "path": "frontend/scripts/records-history-integration.test.mjs",
+      "origin": "/workspace/shared/caregiver_upload_recovery_20261006/remote_source/frontend/scripts/records-history-integration.test.mjs",
+      "bytes": 10128,
+      "git_blob_sha": "e0a9fdd40a3a1c7f818de3799e4489342d93d0bb",
+      "sha256": "fee1fbea405418ace0407a884552df39ad4574e5996de4754d6283d678c06258"
+    },
+    {
+      "path": "frontend/scripts/summary-composition.test.mjs",
+      "origin": "/workspace/shared/caregiver_upload_recovery_20261006/remote_source/frontend/scripts/summary-composition.test.mjs",
+      "bytes": 12208,
+      "git_blob_sha": "fe27ef851b5e40bcc658193e1cb164575b217786",
+      "sha256": "1f13152d0195a2145ebeaaa109a900a4be85677117d2bacb41a7e74d340a6157"
+    },
+    {
+      "path": "frontend/scripts/growth-refresh.test.mjs",
+      "origin": "/workspace/shared/caregiver_upload_recovery_20261006/remote_source/frontend/scripts/growth-refresh.test.mjs",
+      "bytes": 33451,
+      "git_blob_sha": "86918f2bd80bef885e3c03317c97314f001b4155",
+      "sha256": "085660108e6cda850a7f13082e295ce6c9d3a45953b9b5d710c5cf540fd00431"
+    }
+  ],
+  "environment": {
+    "platform": "Linux x86_64",
+    "node": "v24.19.0",
+    "npm": "11.9.0",
+    "dependencyInstall": "npm ci --cache .npm-cache --no-audit --no-fund; success; 637 packages"
+  },
+  "checks": {
+    "initialAggregate": {
+      "tests": 248,
+      "passed": 237,
+      "failed": 11,
+      "reason": "Two recovered test harnesses mocked superseded preview hook paths; failure preserved"
+    },
+    "targetedContractRepair": {
+      "tests": 15,
+      "passed": 15,
+      "failed": 0
+    },
+    "finalAggregate": {
+      "command": "node --test scripts/*.test.mts scripts/*.test.mjs",
+      "tests": 250,
+      "passed": 250,
+      "failed": 0,
+      "files": 38
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    "webExport": {
+      "status": "passed",
+      "command": "CI=1 EXPO_NO_TELEMETRY=1 __UNSAFE_EXPO_HOME_DIRECTORY=<integration>/.expo-home TMPDIR=<integration>/.metro-tmp npm run build:web -- --clear",
+      "exitCode": 0,
+      "staticRoutes": 37,
+      "artifactFingerprintSha256": "16fa97ac4ae9b7ea7162ec8fe77e6d73470bedb88b57a666d50c74b365cd5038",
+      "manifest": "export-manifest.json",
+      "sourceBuildInputFingerprintSha256": "4584409d4061c2daa63c6d133386070a2b90626b9500e6f5035e895dc84d652c",
+      "suppliedHeroCopiedToExportUnchanged": true
+    },
+    "colocatedOwnerTests": {
+      "command": "node --test src/components/growth/growth-form.test.mjs src/components/care/care-review.test.mjs",
+      "tests": 24,
+      "passed": 24,
+      "failed": 0,
+      "files": 2
+    },
+    "totalPassingTests": 274
+  },
+  "limitations": [
+    "This is a new revision, not byte-identical v44 recovery",
+    "Historical v44 QA is not reused as proof for this revision",
+    "No browser visual/motion validation has run on this revision",
+    "History navigation highlight/mobile return is a browser audit item",
+    "Native History highlight tested at source/composition level only; native runtime/device untested",
+    "No real Server/API, credentials, payment, media-device or production testing",
+    "No Git write, publication or merge by this worker",
+    "User-supplied PNG is a new asset revision; prior Git PNG byte/pixel identity is not claimed"
+  ],
+  "sourceManifest": "source-manifest.json",
+  "assetRevision": "asset-revision.json"
+}

@@ -41,6 +41,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [previewDetailsOpen, setPreviewDetailsOpen] = useState(false);
 
   function selectMode(next: Mode) { setMode(next); setResult(null); }
   function moveMode(event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }) {
@@ -79,6 +80,7 @@ export default function LoginPage() {
     <View testID="login-form-column" style={[styles.formSide, narrow ? styles.formCompact : styles.formDesktop]}>
       <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
       <View style={styles.formCard}>
+
         <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
         <Text style={styles.formIntro}>{mode === "signIn" ? "登入後，繼續整理孩子的照顧資料。" : "先建立自己的帳戶，再新增孩子的資料。"}</Text>
         <View accessibilityRole="tablist" accessibilityLabel="登入方式" style={styles.modeTabs}>
@@ -96,10 +98,12 @@ export default function LoginPage() {
         <View style={styles.passwordBlock}><AppTextField label={mode === "signUp" ? "密碼（至少 12 個字元）" : "密碼"} accessibilityLabel="密碼" value={password} onChangeText={setPassword} secureTextEntry={!passwordVisible} autoCapitalize="none" autoComplete={mode === "signUp" ? "new-password" : "current-password"} /><Pressable accessibilityRole="button" accessibilityLabel={passwordVisible ? "隱藏密碼" : "顯示密碼"} onPress={() => setPasswordVisible(value => !value)} style={({ pressed }) => [styles.passwordToggle, pressed && styles.pressed]}><Text style={styles.passwordToggleText}>{passwordVisible ? "隱藏" : "顯示"}</Text></Pressable></View>
         <AppButton label={mode === "signIn" ? "登入（預覽）" : "建立帳戶（預覽）"} onPress={validate} />
         {result ? <Text accessibilityLiveRegion="polite" style={styles.result}>{result}</Text> : null}
-        <Text style={styles.formNote}>本頁只檢查輸入及展示介面；不會傳送密碼，也不會建立登入狀態。</Text>
+        <Text style={styles.formNote}>請使用測試資料，勿輸入真實密碼。</Text>
+        <AppButton label={previewDetailsOpen ? "收起預覽說明" : "關於預覽"} variant="quiet" expanded={previewDetailsOpen} onPress={() => setPreviewDetailsOpen(value => !value)} />
+        {previewDetailsOpen ? <Text style={styles.formNote}>本頁只檢查輸入及展示介面；不會傳送密碼，也不會建立登入狀態。手機、Google／Apple 登入及忘記密碼尚未接通。</Text> : null}
         <View style={styles.divider} />
-        <Text style={styles.unavailable}>參考圖中的手機、Google／Apple 登入和忘記密碼尚未有本項目可用的正式接線，因此不提供假按鈕。</Text>
-        <Pressable accessibilityRole="link" accessibilityLabel="返回主頁合成預覽" onPress={() => router.replace("/")} style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}><Text style={styles.backLinkText}>返回 Web 主頁預覽</Text><AppIcon name="arrow-right" size={18} /></Pressable>
+
+        <Pressable accessibilityRole="link" accessibilityLabel="返回主頁" onPress={() => router.replace("/")} style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}><Text style={styles.backLinkText}>返回主頁</Text><AppIcon name="arrow-right" size={18} /></Pressable>
       </View>
       <Text style={styles.footer}>{brand.name} · 用資料陪伴成長</Text>
     </View>
@@ -107,14 +111,16 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
-  storyPanel: { padding: spacing.xl, gap: spacing.md, borderRadius: radius.large, overflow: "hidden", borderWidth: 1, borderColor: colors.white },
-  formCompact: { minHeight: 0, paddingVertical: spacing.xl },
-  storyDesktop: { width: "64%", minWidth: 0, flexShrink: 1 },
-  storyReadingWidth: { width: "52%", minWidth: 360, maxWidth: 520 },
-  formDesktop: { flexGrow: 0, flexShrink: 0, flexBasis: "36%", minWidth: 400, paddingHorizontal: spacing.xxl },
+  previewLabel: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, backgroundColor: colors.paleTeal, borderRadius: radius.small },
+  previewLabelText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, lineHeight: 18, flexShrink: 1 },
+  storyPanel: { padding: spacing.xl, gap: spacing.md, borderRadius: radius.medium, overflow: "hidden" },
+  formCompact: { minHeight: 0, paddingVertical: spacing.xl, paddingHorizontal: spacing.lg },
+  storyDesktop: { width: "56%", minWidth: 0, flexShrink: 1 },
+  storyReadingWidth: { width: "100%", minWidth: 0, maxWidth: 600 },
+  formDesktop: { flexGrow: 0, flexShrink: 0, flexBasis: "44%", minWidth: 400, paddingHorizontal: spacing.xxl },
   featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { opacity: 0.65 },
   story: { width: "52%", minHeight: 760, backgroundColor: colors.paper, overflow: "hidden" }, storyCompact: { width: "100%", minHeight: 310 }, storyImage: { position: "absolute", width: "100%", height: "100%", opacity: 0.55 }, storyContent: { flex: 1, paddingHorizontal: spacing.hero, paddingVertical: spacing.xxl, justifyContent: "center", gap: spacing.md }, storyLogo: { width: 190, height: 60, alignSelf: "flex-start" }, storyEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.small, fontWeight: "800" }, storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.hero, lineHeight: 48, fontWeight: "800", maxWidth: 600 }, storyTitleCompact: { fontSize: typeScale.heading, lineHeight: 38 }, storyLead: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 26, maxWidth: 570 }, features: { marginTop: spacing.lg, gap: spacing.lg }, feature: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },
-  formSide: { flex: 1, minWidth: 0, minHeight: 760, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { alignItems: "center", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 500, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.large, backgroundColor: colors.white, padding: spacing.xl, gap: spacing.md }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
-  modeTabs: { flexDirection: "row", borderRadius: radius.small, backgroundColor: colors.neutralSurface, padding: spacing.xs, gap: spacing.xs }, modeTab: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.small }, modeActive: { backgroundColor: colors.white }, modeInitialMarker: { borderBottomWidth: 2, borderBottomColor: colors.teal }, modeText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" }, modeTextActive: { color: colors.deepTeal }, passwordBlock: { gap: spacing.xs }, passwordToggle: { alignSelf: "flex-end", minHeight: 44, paddingHorizontal: spacing.sm, justifyContent: "center" }, passwordToggleText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "700" }, result: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.paleTeal, borderRadius: radius.small, padding: spacing.md, fontSize: typeScale.small, lineHeight: 22 }, formNote: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 }, divider: { height: 1, backgroundColor: colors.line }, unavailable: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 }, backLink: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.sm, alignSelf: "flex-start" }, backLinkText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" }, footer: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
+  formSide: { flex: 1, minWidth: 0, minHeight: 760, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { width: "100%", maxWidth: 440, alignItems: "flex-start", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 440, gap: spacing.lg }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
+  modeTabs: { flexDirection: "row", borderRadius: radius.small, backgroundColor: colors.neutralSurface, padding: spacing.xs, gap: spacing.xs }, modeTab: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.small }, modeActive: { backgroundColor: colors.white }, modeInitialMarker: { borderBottomWidth: 2, borderBottomColor: colors.teal }, modeText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" }, modeTextActive: { color: colors.deepTeal }, passwordBlock: { gap: spacing.xs }, passwordToggle: { backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, alignSelf: "flex-end", minHeight: 48, paddingHorizontal: spacing.sm, justifyContent: "center" }, passwordToggleText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.caption, fontWeight: "700" }, result: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.paleTeal, borderRadius: radius.small, padding: spacing.md, fontSize: typeScale.small, lineHeight: 22 }, formNote: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 }, divider: { height: 1, backgroundColor: colors.line }, unavailable: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 }, backLink: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, alignSelf: "flex-start" }, backLinkText: { textDecorationLine: "underline", fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" }, footer: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption },
 });

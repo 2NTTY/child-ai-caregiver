@@ -1,0 +1,115 @@
+{
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "bundle": "/_expo/static/js/web/entry-90a7cc7dae0d029439bbc1764b9eeee1.js",
+  "startedAt": "2026-10-04T19:01:45.816Z",
+  "checks": [
+    {
+      "name": "loaded-v30-bundle",
+      "status": "passed",
+      "script": "/_expo/static/js/web/entry-90a7cc7dae0d029439bbc1764b9eeee1.js"
+    },
+    {
+      "name": "home-layout-1024",
+      "status": "passed",
+      "measure": {
+        "height": 900,
+        "scrollWidth": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "name": "home-layout-390",
+      "status": "passed",
+      "measure": {
+        "height": 900,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "home-layout-320",
+      "status": "passed",
+      "measure": {
+        "height": 900,
+        "scrollWidth": 320,
+        "width": 320
+      }
+    },
+    {
+      "name": "mobile-320-right-drag-opens-text",
+      "status": "passed",
+      "observed": "Assistant route and composer focused; no camera permission request"
+    },
+    {
+      "name": "child-text-isolation",
+      "status": "passed",
+      "secondChildValue": ""
+    },
+    {
+      "name": "return-to-child-restores-own-text",
+      "status": "passed",
+      "restored": "合成驗收：小昕未送出文字"
+    },
+    {
+      "name": "mobile-upward-drag-opens-file-dialog",
+      "status": "passed"
+    },
+    {
+      "name": "mobile-diagonal-drag-opens-voice-only",
+      "status": "passed",
+      "note": "Recording not started; synthetic lifecycle already covered by focused worker tests"
+    },
+    {
+      "name": "keyboard-alternative-and-escape-cancel",
+      "status": "passed",
+      "openedFile": true,
+      "afterEscape": false
+    },
+    {
+      "name": "out-of-sector-drag-cancels",
+      "status": "passed",
+      "noDialog": true,
+      "stillHome": true
+    },
+    {
+      "name": "records-upward-drag-opens-more",
+      "status": "failed",
+      "width": 320,
+      "height": 600,
+      "action": "tab.drag([300,638],[300,578])",
+      "expected": "More pages route",
+      "actual": "Care records route and 記錄 heading",
+      "note": "No retry performed; product versus automation event cause not yet established"
+    }
+  ],
+  "failures": [
+    {
+      "name": "records-upward-drag-opens-more",
+      "status": "failed",
+      "width": 320,
+      "height": 600,
+      "action": "tab.drag([300,638],[300,578])",
+      "expected": "More pages route",
+      "actual": "Care records route and 記錄 heading",
+      "note": "No retry performed; product versus automation event cause not yet established"
+    }
+  ],
+  "screenshots": [
+    "home-1440-full.jpg",
+    "home-1024.jpg",
+    "home-390.jpg",
+    "home-320.jpg",
+    "voice-dialog-320.jpg",
+    "failure-records-upward-drag-320.jpg"
+  ],
+  "status": "stopped-on-first-browser-assertion-failure",
+  "finishedAt": "2026-10-04T19:05:39.553Z",
+  "unverified": [
+    "Remaining route/width layout matrix",
+    "Settings draft retention",
+    "Profile section anchor",
+    "Private-source cancel",
+    "Photo shared owner cross-entry and child clearing",
+    "Remaining normal navigation and gesture cases"
+  ]
+}

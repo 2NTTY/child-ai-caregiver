@@ -1,0 +1,46 @@
+{
+  "workspace": "/workspace/shared/caregiver_preparations_update",
+  "scope": "Summary composition, common owner mounts, relevant navigation copy and compatibility recovery only",
+  "files": {
+    "frontend/app/(dashboard)/_layout.tsx": "1271fb6a5377c7d7f6b92508f3817c96f7ebb841a63883867f4055c5436d1f72",
+    "frontend/src/screens/SummaryScreen.tsx": "3e962226db94772a25e71c066f2c5cdf48f1cdec2922146354f277828e0fe80f",
+    "frontend/src/screens/LegacySummaryRecovery.tsx": "59d0ccc2dd10b797205b1f7afafc48f3d5e98ed9db14ba8e28b35c8e7d199cb0",
+    "frontend/src/components/summary/SummaryView.tsx": "62e26c31298b2e2a9aaf332ef74bb333cc22fed18aab7ae899ba2f1a67455ab8",
+    "frontend/src/components/navigation/app-navigation.ts": "e0d3a59fe7a81fc0fb37dbe9912da1a039722aa5ca373de441514c96722a3970",
+    "frontend/src/components/RightRailContent.tsx": "8aeb620b5dc8d1c338986706b08a8fd458ed0b78a18c0be50a490cdcb7d1a2c7",
+    "frontend/src/components/growth/GrowthView.tsx": "4050564adb1536f309b1f32b12edf393bd891cc98c2f4560ca8a762b9e5d2596",
+    "frontend/scripts/summary-composition.test.mjs": "24777c0534d4ffe56b6ab5d001e40b17bfc83acef336119347d2898ac69a1030",
+    "frontend/scripts/preparation-reading.test.mjs": "8f3d8212782f9cca6cebcc14e08d4edf38d4c9bbade000a8800620f92fb24cee"
+  },
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/summary-composition.test.mjs",
+      "result": "passed",
+      "tests": 8
+    },
+    {
+      "command": "node --test scripts/preparation-reading.test.mjs src/components/summary/summary-form.test.mjs",
+      "cwd": "frontend",
+      "result": "passed",
+      "tests": 7
+    },
+    {
+      "check": "TypeScript changed-file syntactic/semantic diagnostics only",
+      "files": 7,
+      "diagnostics": 0
+    }
+  ],
+  "not_run": [
+    "aggregate typecheck",
+    "Web export",
+    "browser verification",
+    "native/physical device",
+    "Git/network repository operations"
+  ],
+  "limits": [
+    "Canonical height/weight adapter unavailable; overview explicitly receives unavailable projection with null facts.",
+    "Legacy shared-preparation remains on original controller through /summary?tab=legacy-preparation. No persisted pending receipt migration or formal server adapter.",
+    "Existing browser summary flows still target old route labels/default period report and require scoped update before reusing.",
+    "Mobile detail/return refs are wired and composition-tested, not browser-render verified."
+  ]
+}

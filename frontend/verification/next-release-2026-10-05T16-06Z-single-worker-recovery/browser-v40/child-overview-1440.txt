@@ -1,0 +1,107 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px" [active]
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 1440 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link "育有方，返回主頁":
+    - /url: /
+    - generic: 用資料 · 陪伴成長
+  - generic: 常用
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - generic: 行動與成長
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦與預約
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長與關注
+  - generic: 照顧資料
+  - link "記錄與核對":
+    - /url: /care
+    - generic: 記錄與核對
+  - link "孩子概況與準備":
+    - /url: /summary
+    - generic: 孩子概況與準備
+  - link "歷史":
+    - /url: /history
+    - generic: 歷史
+  - generic: 資料管理
+  - link "子女檔案":
+    - /url: /profile
+    - generic: 子女檔案
+  - link "記憶與話題":
+    - /url: /memory
+    - generic: 記憶與話題
+  - link "更多功能":
+    - /url: /more
+    - generic: 更多功能
+  - link "與 Agent 對話":
+    - /url: /chat
+    - generic: 與 Agent 對話
+    - generic: 提問・整理・規劃
+  - link "設定":
+    - /url: /settings
+    - generic: 設定
+  - button "選擇孩子，目前小昕":
+    - generic: 小
+    - generic: 小昕
+    - generic: 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic "小昕的關鍵資料":
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading "孩子概況與準備" [level=1]
+  - generic: 查看孩子目前的資料，打開到診、入學、外出或照顧交接的準備單。
+  - tablist "孩子概況與準備":
+    - tab "孩子概況" [selected]:
+      - generic: 孩子概況
+    - tab "準備單":
+      - generic: 準備單
+  - tabpanel "孩子概況":
+    - generic: 已確認檔案
+    - heading "小昕" [level=1]
+    - generic: 約 38 個月（截至 2026-09-01）
+    - button "查看／更正檔案":
+      - generic: 查看／更正檔案
+    - generic: 身高
+    - generic: 未能提供
+    - generic: 尚未接入
+    - generic: 體重
+    - generic: 未能提供
+    - generic: 尚未接入
+    - generic: 身高／體重的原照顧記錄尚未接入，暫不能顯示最新量度。
+    - heading "興趣與生活偏好" [level=1]
+    - generic: 已確認的照顧者原文
+    - generic: 午睡前先讀一本繪本
+    - heading "日常照顧要點" [level=1]
+    - generic: 過敏資料
+    - generic: 未知
+    - generic: 特別需要
+    - generic: 未知
+    - generic: 語言
+    - generic: 廣東話
+    - generic: 地區
+    - generic: 香港
+    - generic: 未知不代表沒有過敏或特別需要。
+    - generic: 檔案來源：媽媽提供的合成示例
+    - generic: 最後確認：2026-09-26 10:24（合成） · 有效至 2026-12-31
+    - button "查看檔案更正歷史":
+      - generic: 查看檔案更正歷史
+    - generic: 合成資料預覽 · 沒有連接 Server

@@ -1,0 +1,43 @@
+{
+  "name": "records-upward-drag-opens-more",
+  "method": "mcp__cua_repl.js tab.drag([300,638],[300,578])",
+  "viewport": {
+    "width": 320,
+    "height": 600
+  },
+  "beforeRoute": "/",
+  "expectedAfterRoute": "/more",
+  "actualAfterRoute": "/care",
+  "dragDelta": {
+    "x": 0,
+    "y": -60
+  },
+  "latestMeasuredRecordsBounds": {
+    "measurementContext": "Same 320x600 common bottom navigation on /chat, measured at 19:03:06 UTC before returning home; no second DOM bounds read immediately before the failing gesture",
+    "iframeLocal": {
+      "x": 256,
+      "y": 536,
+      "width": 64,
+      "height": 64
+    },
+    "preGestureScreenshot": "CUA screenshot at 19:05:02 UTC; target visually at outer x269–333, y605–669. The screenshot was displayed by tool, not saved as a separate file."
+  },
+  "failureScreenshot": "failure-records-upward-drag-320.jpg",
+  "failureDOM": "failure-records-upward-drag-320.txt",
+  "retryPerformed": false,
+  "eventProbePerformed": false,
+  "staticHypothesis": {
+    "status": "unconfirmed",
+    "references": [
+      "frontend/src/components/navigation/RecordsNavButton.tsx:16",
+      "frontend/src/components/navigation/DirectionalPressable.web.tsx:10-11,30-41,63"
+    ],
+    "description": "Pathname changes effect scope and recreates local suppressClick before the trailing click may arrive, allowing onPress to navigate to /care."
+  },
+  "browserReturnedToRoot": "2026-10-04T19:06:00Z",
+  "notes": [
+    "No tool-specific cause assumed",
+    "Wrapper height label stays 900 after height600 action, while iframe content layout height measured 600; product bounds use actual iframe size",
+    "Remaining browser batch stopped without retries"
+  ]
+}

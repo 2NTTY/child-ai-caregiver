@@ -1,0 +1,8 @@
+{
+  "checkedAt": "2026-10-04T19:32:15.250221+00:00",
+  "runtimeFiles": 348,
+  "runtimeManifestSha256": "02701cd37eb9368fc7b481f3bb5a1022e00d12acc0350e3e3ca34019e2721726",
+  "drift": [],
+  "status": "passed",
+  "scope": "Read-only byte comparison after final browser recheck; docs may be updated by root independently. No new build/test execution."
+}

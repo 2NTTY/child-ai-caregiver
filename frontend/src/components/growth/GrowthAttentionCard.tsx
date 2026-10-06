@@ -1,3 +1,4 @@
+import { AppStatusBadge } from "../AppStatusBadge";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useRef,useState } from "react";
 import { View } from "react-native";
@@ -21,7 +22,7 @@ export function GrowthAttentionCard(props: GrowthAttentionProps){
   const scopeKey = `${model.scopeKey}:${model.epoch}:${model.access}:${item.id}`;
   const trigger = useGrowthFeedback(scopeKey, resetCount, JSON.stringify([item.state, item.snoozeUntil, item.note, item.taskId]));
   return <SectionCard testID={`growth-item-${item.id}`}><SectionHeader density="compact" title={item.title} icon="chart-bar" />
-    <MotionFeedback active={model.operation === "saved" && !model.busy && !model.pending && model.load === "ready"} triggerKey={trigger} scopeKey={scopeKey} testID={`growth-item-feedback-${item.id}`}><Text style={s.meta}>{growthKindLabels[item.kind]} · {growthStateLabels[item.state]}</Text></MotionFeedback>
+    <MotionFeedback active={model.operation === "saved" && !model.busy && !model.pending && model.load === "ready"} triggerKey={trigger} scopeKey={scopeKey} testID={`growth-item-feedback-${item.id}`}><View style={s.row}><Text style={s.meta}>{growthKindLabels[item.kind]}</Text><AppStatusBadge label={growthStateLabels[item.state]} tone={item.state === "accepted" ? "success" : item.state === "proposed" ? "warning" : item.state === "snoozed" ? "info" : "neutral"} /></View></MotionFeedback>
     <GrowthAttentionBody key={`${model.epoch}:${resetCount}`} {...props} />
   </SectionCard>;
 }
@@ -57,7 +58,7 @@ function GrowthAttentionBody({item,page,model,actions,onSource,onTask}: GrowthAt
     {item.taskId?<View style={s.box}><Text selectable style={s.body}>連結任務：{item.taskId}</Text><Text style={s.body}>讀取當時：{item.taskState?taskStateLabels[item.taskState]:"狀態未能確認，請重讀任務"}</Text>
       <AppButton label="查看連結任務" variant="secondary" onPress={()=>onTask(item.taskId!)} /><Text style={s.meta}>接受不代表預約或完成；來源改變不代表任務已取消。</Text></View>:
       item.state==="accepted"?<Text style={s.meta}>已記錄知悉，沒有連結任務；不代表已預約或完成。</Text>:null}
-    <AppButton label={detailsOpen?"收起來源及依據":"查看來源及依據"} variant="quiet" onPress={()=>setDetailsOpen(value=>!value)} />
+    <AppButton expanded={detailsOpen} label={detailsOpen?"收起來源及依據":"查看來源及依據"} variant="quiet" onPress={()=>setDetailsOpen(value=>!value)} />
     <MotionDisclosure expanded={detailsOpen} scopeKey={`${model.scopeKey}:${item.id}`}><View style={s.divider} testID="growth-source"><Text style={s.title}>{item.source.title} · {item.source.section}</Text><Text selectable style={s.body}>{item.source.excerpt}</Text>
       <Text selectable style={s.meta}>核對：{growthTime(item.source.checkedAt)} · 來源版本：{item.source.versionId}</Text>
       <Text selectable style={s.meta}>章節識別：{item.source.chunkId} · 內容 hash：{item.source.contentHash}</Text>
@@ -68,7 +69,7 @@ function GrowthAttentionBody({item,page,model,actions,onSource,onTask}: GrowthAt
     </View></MotionDisclosure>
     {changed?<Text style={s.warning}>關注或授權基準已改變，原草稿仍保留；先核對最新內容，再明確放棄草稿並重新核對。</Text>:null}
     {page.canManage&&(growthActionable(item)||basis.current)?<>
-      <AppButton label={actionsOpen?"收起處理選項":"處理這項關注"} variant="secondary" onPress={()=>setActionsOpen(value=>!value)} />
+      <AppButton expanded={actionsOpen} label={actionsOpen?"收起處理選項":"處理這項關注"} variant="secondary" onPress={()=>setActionsOpen(value=>!value)} />
       <MotionDisclosure expanded={actionsOpen} scopeKey={`${model.scopeKey}:${item.id}`}><View style={s.divider} testID="growth-decision-form">
         <Controller name="action" control={control} render={({field:input})=><AppSelect label="關注處理方式" value={input.value} options={[{value:"accept",label:"接受並記錄知悉"},{value:"snooze",label:"稍後處理"},{value:"dismiss",label:"關閉這項關注"}]} disabled={disabled} onChange={value=>{input.onChange(value);edit();}} />}/>
         {action==="accept"?<>

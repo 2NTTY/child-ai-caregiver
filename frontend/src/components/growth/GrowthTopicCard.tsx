@@ -1,3 +1,4 @@
+import { AppStatusBadge } from "../AppStatusBadge";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { useRef,useState } from "react";
 import { View } from "react-native";
@@ -17,7 +18,7 @@ export function GrowthTopicCard(props: GrowthTopicProps){
   const scopeKey = `${model.scopeKey}:${model.epoch}:${model.access}:${topic.id}`;
   const trigger = useGrowthFeedback(scopeKey, resetCount, JSON.stringify([topic.disabled, topic.inputs.map(input => [input.key, input.value])]));
   return <SectionCard testID={`growth-topic-${topic.id}`}><SectionHeader density="compact" title={topic.title} icon="sprout" />
-    <MotionFeedback active={model.operation === "saved" && !model.busy && !model.pending && model.load === "ready"} triggerKey={trigger} scopeKey={scopeKey} testID={`growth-topic-feedback-${topic.id}`}><Text style={s.meta}>{topic.disabled ? "已永久停用" : "已啟用"}</Text></MotionFeedback>
+    <MotionFeedback active={model.operation === "saved" && !model.busy && !model.pending && model.load === "ready"} triggerKey={trigger} scopeKey={scopeKey} testID={`growth-topic-feedback-${topic.id}`}><AppStatusBadge label={topic.disabled ? "已永久停用" : "已啟用"} tone={topic.disabled ? "neutral" : "info"} /></MotionFeedback>
     <GrowthTopicBody key={`${model.epoch}:${resetCount}`} {...props} />
   </SectionCard>;
 }
@@ -39,7 +40,7 @@ function GrowthTopicBody({topic,model,actions,onMemory}: GrowthTopicProps){
   function mark(){if(!basis.current)basis.current={topic:JSON.parse(JSON.stringify(topic)) as GrowthTopic,authorityVersion};actions.markDirty(`topic:${topic.id}`);}
   function save(){if(disabled||!shared||conflict)return;try{const fields=getValues();const values=Object.fromEntries(captured.topic.inputs.map((input,index)=>[input.key,fields[`choice_${index}`]??""]));const input=growthContextProjection(captured.topic,captured.authorityVersion,values);setError("");actions.updateTopic(captured.topic,input);}catch{setError("請核對有限選項及原資料版本；衝突的近況需到記憶區覆核。");}}
   return <>
-    <AppButton label={open?`收起${topic.title}設定`:`查看${topic.title}設定`} variant="quiet" onPress={()=>setOpen(value=>!value)} />
+    <AppButton expanded={open} label={open?`收起${topic.title}設定`:`查看${topic.title}設定`} variant="quiet" onPress={()=>setOpen(value=>!value)} />
     <MotionDisclosure expanded={open} scopeKey={`${model.scopeKey}:${topic.id}`}><View style={s.smallStack}>
       <Text style={s.meta}>只保存這次明確選擇的近況；未知或不選的欄位保持原狀。已確認資料會供獲授權家庭成員查看。</Text>
       {changed?<Text style={s.warning}>主題、資料或授權版本已改變，原選擇保留；先核對最新內容，再明確放棄草稿並重新核對。</Text>:null}
@@ -56,7 +57,7 @@ function GrowthTopicBody({topic,model,actions,onMemory}: GrowthTopicProps){
           <AppButton label={`明確保存${topic.title}所選近況`} disabled={disabled||conflict||!selected.length||!shared} onPress={save} />
         </>:null}
         <View style={s.divider}><AppCheckbox label={topic.disabled?`我同意重新啟用${topic.title}`:`我同意永久停用${topic.title}`} checked={enabled} disabled={disabled} onChange={value=>{mark();setEnabled(value);}} />
-          <AppButton label={topic.disabled?`明確重新啟用${topic.title}`:`明確永久停用${topic.title}`} variant="secondary" disabled={disabled||!enabled}
+          <AppButton label={topic.disabled?`明確重新啟用${topic.title}`:`明確永久停用${topic.title}`} variant={topic.disabled ? "secondary" : "danger-secondary"} disabled={disabled||!enabled}
             onPress={()=>actions.updateTopic(captured.topic,{action:"set_enabled",authorityVersion:captured.authorityVersion,expectedVersion:captured.topic.version,confirm:true,enabled:captured.topic.disabled})} />
           <Text style={s.meta}>重新啟用只恢復未來適用性評估；已關閉的舊記錄保持終態，連結任務另行核對。</Text>
         </View>

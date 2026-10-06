@@ -133,7 +133,7 @@ export default function MotionPreviewScreen() {
         <View style={styles.controls}>
           <AppButton label="重播進場" onPress={() => setReplay(value => value + 1)} />
           <AppButton label="切換孩子" variant="secondary" onPress={() => setChildIndex(value => (value + 1) % children.length)} />
-          <AppButton label={detailsOpen ? "收起詳情" : "展開詳情"} variant="secondary" onPress={() => setDetailsOpen(value => !value)} />
+          <AppButton expanded={detailsOpen} label={detailsOpen ? "收起詳情" : "展開詳情"} variant="secondary" onPress={() => setDetailsOpen(value => !value)} />
         </View>
         <View style={styles.reduceRow}>
           <View style={styles.flexText}><Text style={styles.cardTitle}>減少動態</Text><Text style={styles.muted}>{sharedReduced ? "系統或應用偏好已要求減少動畫，示例固定為靜態。" : "可在此額外減少動態；亦會遵從系統及應用偏好。"}</Text></View>

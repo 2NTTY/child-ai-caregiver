@@ -1,0 +1,12 @@
+{
+  "priorManifest": "/workspace/shared/caregiver_preparations_update/frontend/verification/next-release-2026-10-05T16-00Z/source-manifest.json",
+  "currentRootFreeze": "2026-10-05T16:06:25Z",
+  "priorManifestSha256": "62551f4597cd187dde2301b8627f2a945fb2983cd0f2cd01b9484b39a8da52b0",
+  "changes": [
+    {
+      "path": "frontend/src/components/care/CareRecordsView.tsx",
+      "priorSha256": "3fb71fa0597bd36d1df704ee3cd9f3e1efa6856130fa1e0c8e813de6ea30b40f",
+      "sha256": "6c7571d05d2f94c9ef19f374a0736ccfad2e56fc7315b12774528cfb7e226486"
+    }
+  ]
+}

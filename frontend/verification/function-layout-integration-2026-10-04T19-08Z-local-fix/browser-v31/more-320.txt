@@ -1,0 +1,71 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px" [active]
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 320 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading "更多功能" [level=1]
+  - generic: 按用途找資料與管理入口；私人來源可在設定內開啟。
+  - button "返回記錄":
+    - generic: 返回記錄
+  - heading "照顧資料" [level=1]
+  - generic: 核對原始資料、回看變化與準備到診
+  - button "回顧與到診準備":
+    - generic: 回顧與到診準備
+  - button "含照片記錄":
+    - generic: 含照片記錄
+  - button "子女檔案":
+    - generic: 子女檔案
+  - heading "助手與家庭" [level=1]
+  - generic: 話題背景、家庭協作與聯絡安排
+  - button "記憶與話題":
+    - generic: 記憶與話題
+  - button "家庭協調與成員":
+    - generic: 家庭協調與成員
+  - button "聯絡授權":
+    - generic: 聯絡授權
+  - heading "設定與協助" [level=1]
+  - generic: 本人偏好、私人來源及使用說明
+  - button "設定":
+    - generic: 設定
+  - button "說明與引導":
+    - generic: 說明與引導
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

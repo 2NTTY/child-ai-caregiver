@@ -1,0 +1,119 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px" [active]
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 320 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - button "關閉預覽提示":
+    - generic: 已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。
+  - heading "成長與關注" [level=1]
+  - generic: 按小昕的已確認情況查看理由、來源及下一步；供觀察、安排及諮詢準備，不作診斷或醫療分流。
+  - heading "關注如何開始，後來有何變化" [level=1]
+  - generic: 全部只屬合成預覽，未接駁 Server 或背景 Agent。
+  - button "重讀成長關注並保留草稿":
+    - generic: 重讀成長關注並保留草稿
+  - generic: 全部資料及四主題選項均屬合成；沒有執行規則、背景 Agent 或醫療評估。
+  - generic: 關注索引
+  - button "查看關注：日常遊戲與表達":
+    - generic: 日常遊戲與表達
+    - generic: 待家長核對 · 正在查看
+  - button "整理回顧與到診資料":
+    - generic: 整理回顧與到診資料
+  - generic: 關注時間軸為隔離合成示例；正式 Agent 建立及事件讀取 port 未接通。
+  - generic: 待家長核對
+  - heading "日常遊戲與表達" [level=1]
+  - generic: 助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。
+  - heading "關注的前後經過" [level=1]
+  - generic: 觀察、助手建議與家長已確認的操作分開呈現。
+  - generic: 30/9/2026 09:00:00 · 助手提議
+  - generic: 助手提出關注
+  - generic: 建議整理日常遊戲時的表達與互動，等待家長核對。沒有執行真正 Agent。
+  - generic: 依據：合成助手提議 · 未當作已確認事實
+  - generic: 30/9/2026 10:00:00 · 原始觀察
+  - generic: 連到家長的原始觀察
+  - generic: 下午到公園玩耍後，回家主動分享見聞。
+  - generic: 依據：家庭已確認記錄 · 合成
+  - button "查看原始記錄":
+    - generic: 查看原始記錄
+  - generic: 1/10/2026 10:00:00 · 待核對記錄
+  - generic: 新的生活片段待核對
+  - generic: 先比較家長原文與助手整理結果；未確認前不寫成家庭事實。
+  - generic: 依據：私人候選 · 合成示例
+  - button "前往待核對記錄":
+    - generic: 前往待核對記錄
+  - generic: 已有確認結果
+  - generic: 上次遊戲觀察 · 已關閉
+  - generic: 30/9/2026 09:00:00 · 版本 2 · 上次已核對，保留關閉結果。
+  - generic: 沒有連結任務；不代表已完成行動。
+  - generic: 只列已取得的事件；較早經過仍未完整載入。
+  - heading "可核對的階段建議" [level=1]
+  - generic: 沿用已取得的成長計劃；接受只代表知悉，安排跟進需另行確認。
+  - heading "整理日常遊戲觀察" [level=1]
+  - generic: 觀察 · 待確認
+  - generic: 為何現在：按這位孩子的合成年齡資料，示範如何顯示關注理由。
+  - generic: 先與家人核對自己的觀察，再決定是否需要安排下一步（合成示例）。
+  - generic: 適用限制：不作診斷或醫療分流；此預覽沒有評估孩子或讀取正式資料。
+  - generic: 新提示原因：這是另一份合成依據；舊關閉紀錄保持終態。
+  - generic: 之前關注：preview-growth-previous；舊終態保持。
+  - generic: 建立：30/9/2026 09:00:00 · 更新：30/9/2026 09:00:00 · 版本 1
+  - button "查看來源及依據":
+    - generic: 查看來源及依據
+  - button "處理這項關注":
+    - generic: 處理這項關注
+  - heading "上次遊戲觀察" [level=1]
+  - generic: 觀察 · 已關閉
+  - generic: 為何現在：按這位孩子的合成年齡資料，示範如何顯示關注理由。
+  - generic: 來源或適用依據已改變／暫不可用。這項提示只供歷史追溯，不能按舊建議處理。
+  - generic: 產生當時的限制：不作診斷或醫療分流；此預覽沒有評估孩子或讀取正式資料。
+  - generic: 處理備註：上次已核對，保留關閉結果。
+  - generic: 建立：30/9/2026 09:00:00 · 更新：30/9/2026 09:00:00 · 版本 2
+  - button "查看來源及依據":
+    - generic: 查看來源及依據
+  - generic: 目前只列有限歷史，還有較早記錄未顯示；不是完整歷史。
+  - heading "家庭近況與階段設定" [level=1]
+  - button "核對近況與設定":
+    - generic: 核對近況與設定
+  - generic: 使用既有四階段計劃；與助手記憶／話題分開管理。
+  - heading "合成關注情境" [level=1]
+  - generic: 不執行正式規則、背景處理或外發。
+  - button "顯示關注情境":
+    - generic: 顯示關注情境
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

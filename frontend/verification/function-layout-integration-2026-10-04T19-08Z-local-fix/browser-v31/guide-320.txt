@@ -1,0 +1,85 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px" [active]
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 320 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - generic: 育有方 · 開始使用
+  - heading "使用引導" [level=1]
+  - generic: 先認識資料與操作的分別，按需要走到相關頁面；隨時可以回來。
+  - generic: 隨時重看使用方法
+  - generic: 目前預覽已隱藏首次設定提示，仍可查看每一步。閱讀這些步驟不代表設定已完成；正式完成狀態須由 Server 提供。
+  - generic "使用引導步驟":
+    - generic: 使用路徑 · 3 步
+    - button "第 1 步：核對孩子檔案，目前閱讀":
+      - generic: "1"
+      - generic: 核對孩子檔案
+      - generic: 目前閱讀
+    - button "第 2 步：認識照顧記錄":
+      - generic: "2"
+      - generic: 認識照顧記錄
+    - button "第 3 步：查看家庭及偏好":
+      - generic: "3"
+      - generic: 查看家庭及偏好
+    - generic: 數字表示閱讀次序，不是完成百分比
+  - generic: 第 1 步，共 3 步
+  - heading "核對孩子檔案" [level=1]
+  - generic: 先確認正在查看哪位孩子，再補上你已知道的資料。
+  - generic: "01"
+  - generic: 確認稱呼及年齡基準
+  - generic: 出生日期、約數年齡與未知資料分開保留。約數年齡不會自動變成生日。
+  - generic: "02"
+  - generic: 保留未知，核對重要資料
+  - generic: 過敏、特別需要和照顧偏好只填已知內容；空白不代表沒有。
+  - generic: "03"
+  - generic: 先預覽，再確認共享
+  - generic: 更正會列出共享內容和修改基準。核對後才確認；切換孩子前會提醒未保存草稿。
+  - button "查看子女檔案":
+    - generic: 查看子女檔案
+  - button "上一步" [disabled]:
+    - generic: 上一步
+  - button "下一步":
+    - generic: 下一步
+  - heading "已有孩子，便可以開始提問" [level=1]
+  - generic: Agent 的回答應以獲授權的孩子資料和已確認內容為準。
+  - button "與 Agent 對話":
+    - generic: 與 Agent 對話
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

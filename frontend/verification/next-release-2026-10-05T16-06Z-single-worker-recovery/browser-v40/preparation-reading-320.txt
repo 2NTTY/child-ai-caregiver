@@ -1,0 +1,90 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px" [active]
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 320 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading "孩子概況與準備" [level=1]
+  - generic: 查看孩子目前的資料，打開到診、入學、外出或照顧交接的準備單。
+  - tablist "孩子概況與準備":
+    - tab "孩子概況":
+      - generic: 孩子概況
+    - tab "準備單" [selected]:
+      - generic: 準備單
+  - tabpanel "準備單":
+    - generic: 合成準備單示例
+    - button "預覽來源與限制":
+      - generic: 預覽來源與限制
+    - button "返回準備單清單":
+      - generic: 返回準備單清單
+    - generic: 到診準備 · 小昕
+    - generic: 可查閱
+    - heading "小昕的到診準備" [level=1]
+    - generic: 把這次想談的近況、問題和出門前清單放在一起。
+    - generic: 使用日期 2026年10月8日 · 更新 10月5日 14:00
+    - generic: 資料截至 10月5日 14:00（香港時間）
+    - heading "想和醫護談的近況" [level=1]
+    - generic: ·
+    - generic: 這份示例整理家長想討論的作息和日常觀察，沒有醫療判斷。
+    - generic: ·
+    - generic: 預約時間和地點尚未核實，出發前請查看機構的確認資料。
+    - heading "想問／想確認" [level=1]
+    - generic: "1."
+    - generic: 這段時間的作息有哪些值得持續記下的地方？
+    - generic: "2."
+    - generic: 下次覆診前需要帶甚麼觀察或紀錄？
+    - heading "出發／交接前清單" [level=1]
+    - generic: 0／3 項已核對
+    - checkbox "核對預約時間及診所位置":
+      - generic: 核對預約時間及診所位置
+    - checkbox "帶備預約資料及所需證件":
+      - generic: 帶備預約資料及所需證件
+    - checkbox "把想補問的問題留在手機上":
+      - generic: 把想補問的問題留在手機上
+    - button "來源與版本":
+      - generic: 來源與版本
+    - button "使用完畢，歸檔":
+      - generic: 使用完畢，歸檔
+    - button "到助手補充／更新":
+      - generic: 到助手補充／更新
+    - button "舊共享準備／原操作查核":
+      - generic: 舊共享準備／原操作查核
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

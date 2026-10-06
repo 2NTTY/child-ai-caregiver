@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
-import { Badge, Button, Portal, Text } from "react-native-paper";
+import { Badge, Portal, Text } from "react-native-paper";
 import { AppDialog as Dialog } from "./AppDialog";
 import type { ConnectionState, HomeOperation } from "../view-model";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
-import { OperationPill } from "./ui";
+import { AppButton, OperationPill } from "./ui";
 import { ToolbarIconButton } from "./ToolbarIconButton";
+import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 
 const attentionStates = new Set(["needs_confirmation", "failed", "unknown"]);
 
@@ -15,28 +17,30 @@ export function NotificationBell({ operation, connection, onReview }: {
   onReview: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter(), navigate = usePreviewNavigation();
   const needsAttention = attentionStates.has(operation.state);
   return <>
     <View style={styles.anchor}>
-      <ToolbarIconButton icon="bell-outline" label={`開啟訊息提示${needsAttention ? "：1 項合成狀態需留意" : ""}`}
+      <ToolbarIconButton icon="bell-outline" label={`開啟訊息提示${needsAttention ? "：1 項狀態需留意" : ""}`}
         onPress={() => setOpen(true)} />
       <Badge visible={needsAttention} size={18} style={styles.badge}>1</Badge>
     </View>
     <Portal><Dialog visible={open} onDismiss={() => setOpen(false)} style={styles.dialog}>
       <Dialog.Title>訊息提示</Dialog.Title>
       <Dialog.Content style={styles.content}>
-        <Text style={styles.previewLabel}>合成預覽 · 未接駁站內通知或 Web Push</Text>
+
         {operation.state === "none" ? <Text style={styles.body}>目前沒有需要處理的操作提示。</Text> : <>
           <OperationPill state={operation.state} />
           <Text style={styles.title}>{operation.title}</Text>
           <Text style={styles.body}>{operation.detail}</Text>
         </>}
-        {connection === "offline" ? <Text style={styles.caution}>目前離線；正式版須重讀原操作狀態，不能推斷是否保存。</Text> : null}
-        <Text style={styles.note}>角標只表示此預覽有需留意的狀態，不代表訊息已發送、送達或未讀。</Text>
+        {connection === "offline" ? <Text style={styles.caution}>目前離線；須重新讀取原操作狀態，才能確認是否保存。</Text> : null}
+        <Text style={styles.note}>角標表示有操作狀態需要留意。</Text>
+        <AppButton label="查看通知歷史" variant="secondary" onPress={() => { setOpen(false); navigate(() => router.push("/history?category=notifications")); }} />
       </Dialog.Content>
       <Dialog.Actions>
-        <Button onPress={() => setOpen(false)}>關閉</Button>
-        {needsAttention ? <Button onPress={() => { setOpen(false); onReview(); }}>{operation.state === "unknown" ? "查核原操作" : "查看原操作"}</Button> : null}
+        <AppButton label="關閉" variant="quiet" onPress={() => setOpen(false)} />
+        {needsAttention ? <AppButton label={operation.state === "unknown" ? "查核原操作" : "查看原操作"} onPress={() => { setOpen(false); onReview(); }} /> : null}
       </Dialog.Actions>
     </Dialog></Portal>
   </>;

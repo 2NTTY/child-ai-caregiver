@@ -1,0 +1,137 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px" [active]
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 390 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading "歷史" [level=1]
+  - generic: 分類回看小昕的過往資料，從原始來源查看詳情。
+  - button "歷史分類：核對記錄":
+    - generic: 歷史分類：核對記錄
+  - heading "核對記錄" [level=1]
+  - generic: 寫入結果與家長確認分開查看 · 來源：記錄與核對
+  - button "開啟記錄與核對":
+    - generic: 開啟記錄與核對
+  - generic: 搜尋核對記錄
+  - generic: 搜尋核對記錄
+  - textbox "搜尋核對記錄"
+  - generic: 核對記錄尚未提供可核實的日期欄位，這裏只按內容及處理狀態搜尋。
+  - button "清除搜尋" [disabled]:
+    - generic: 清除搜尋
+  - generic: 重要記錄：1 筆仍待你明確確認
+  - heading "核對記錄" [level=1]
+  - generic: 保留寫入結果與家長核對狀態；存入歷史不會自動寫入或刪除記錄。
+  - generic: 3 筆待確認
+  - button "處理狀態：全部變更":
+    - generic: 處理狀態：全部變更
+  - button "來源對話：所有已載入對話":
+    - generic: 來源對話：所有已載入對話
+  - heading "重要內容，仍待你確認" [level=1]
+  - heading "下週的接送安排" [level=1]
+  - generic: 2026 年 10 月 2 日 晚上 8:00（香港時間） · 本頁 1 項
+  - button "核對接送人安排待核實，待確認":
+    - generic: 新增 · 接送人安排待核實
+    - generic: 照顧記錄
+    - generic: 尚未寫入
+    - generic: 原操作已過期
+    - generic: 重要 · 待你確認
+  - heading "其他對話變更，可按需要查看" [level=1]
+  - heading "補充睡眠與體溫" [level=1]
+  - generic: 2026 年 10 月 5 日 上午 8:14（香港時間） · 本頁 2 項
+  - button "核對已整理的體溫記錄，已寫入":
+    - generic: 新增 · 已整理的體溫記錄
+    - generic: 照顧記錄
+    - generic: 已保存
+  - button "核對補充睡眠記錄，待確認":
+    - generic: 更新 · 補充睡眠記錄
+    - generic: 照顧記錄
+    - generic: 尚未寫入
+    - generic: 須先確認才寫入
+  - heading "例行檢查的安排" [level=1]
+  - generic: 2026 年 10 月 4 日 晚上 9:15（香港時間） · 本頁 1 項
+  - button "核對例行檢查安排是否已確認，已寫入":
+    - generic: 新增 · 例行檢查安排是否已確認
+    - generic: 照顧記錄
+    - generic: 已保存
+    - generic: 重要內容已確認
+  - heading "午睡前的安排" [level=1]
+  - generic: 2026 年 10 月 3 日 下午 1:13（香港時間） · 本頁 1 項
+  - button "核對午睡前的固定安排，待確認":
+    - generic: 新增 · 午睡前的固定安排
+    - generic: 照顧記錄
+    - generic: 尚未寫入
+    - generic: 須先確認才寫入
+  - heading "補充夜間醒來的觀察" [level=1]
+  - generic: 2026 年 9 月 28 日 上午 9:10（香港時間） · 本頁 1 項
+  - button "核對睡眠記錄的補充，已寫入":
+    - generic: 更新 · 睡眠記錄的補充
+    - generic: 照顧記錄
+    - generic: 已保存
+  - heading "接送人安排待核實" [level=1]
+  - generic: 尚未寫入
+  - generic: 原操作已過期
+  - generic: 重要 · 待你確認
+  - generic: 下週的接送安排 · 2026 年 10 月 2 日 晚上 8:00（香港時間）
+  - generic: 原操作已過期（2026 年 10 月 3 日 晚上 8:00（香港時間，合成））。這筆待處理事項仍保留；重新取得有效提案的接口尚未接通，不能提交舊操作。
+  - heading "你的原話與來源" [level=1]
+  - generic: 私人原文
+  - generic: 下星期可能由婆婆接放學，但未落實。呢個安排先俾我核實，唔好當佢已經可以接。
+  - generic: 家長提及尚待落實的接送安排（合成）
+  - heading "Agent 的理解" [level=1]
+  - generic: 建議新增，尚未寫入
+  - generic: 下週可能由婆婆接放學，安排尚未落實；不能視為已確認的接送授權。
+  - generic: 種類：日常觀察
+  - generic: 來源：家長提供的待核實安排（合成）
+  - generic: 數量：未提供
+  - generic: 事件時間原文：下星期，日期未核實
+  - generic: 為甚麼建議保留
+  - generic: 接送安排需要家長明確確認；原操作期限已過，但未處理事項仍保留。
+  - generic: 寫入目的地：這個孩子的家庭共享記錄
+  - generic: 只有你明確確認後才會提交。私人原始對話不會自動跟隨共享。
+  - generic: 確認前留意
+  - generic: • 重新取得有效提案的正式接口未接通；不能提交這個舊操作。
+  - generic: 重要記錄 · 仍需你明確確認
+  - generic: 這筆內容尚未寫入。關閉、換頁或原操作過期，都不代表你已確認這個安排。
+  - alert: 原操作已過期；待確認事項仍保留，須重新取得有效提案後再處理。
+  - generic: 這筆事項仍未處理。
+  - button "來源與版本資料":
+    - generic: 來源與版本資料
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

@@ -1,0 +1,9 @@
+{
+  "scope": [
+    "src/components/agent/AgentComposer.tsx",
+    "src/components/agent/AgentInputToolbar.tsx"
+  ],
+  "diagnosticCount": 0,
+  "passed": true,
+  "diagnostics": []
+}

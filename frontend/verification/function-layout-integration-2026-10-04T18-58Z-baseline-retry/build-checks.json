@@ -1,0 +1,74 @@
+{
+  "baseline": "65f8cf37bceeb15b05f46326c49e0370349ae3a5",
+  "startedAt": "2026-10-04T18:58:25.145814+00:00",
+  "cwd": "/workspace/shared/caregiver_layout_redesign/frontend",
+  "environmentFile": "/workspace/shared/caregiver_layout_redesign_metadata/expo-environment.sh",
+  "environmentFileSha256": "b6dd877f75182d4ce93a84ffca1e4c62c0910f1926f7c5884521a467a648c9ca",
+  "environment": {
+    "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-layout-redesign-20261004",
+    "EXPO_NO_TELEMETRY": "1",
+    "EXPO_OFFLINE": "1",
+    "__UNSAFE_EXPO_HOME_DIRECTORY": "/workspace/scratch/c112a98a8be9/expo-export-home"
+  },
+  "dependencySymlink": "/workspace/shared/caregiver_layout_redesign/frontend/node_modules",
+  "dependencyTarget": "/workspace/shared/caregiver_recovery_impl/frontend/node_modules",
+  "buildPath": "/workspace/shared/caregiver_layout_redesign_builds/function-layout-2026-10-04T18-58Z",
+  "commands": [
+    {
+      "name": "typecheck",
+      "argv": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "startedAt": "2026-10-04T18:58:25.185505+00:00",
+      "log": "typecheck.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-04T18:58:33.160263+00:00",
+      "logSha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19"
+    },
+    {
+      "name": "web-export",
+      "argv": [
+        "npm",
+        "run",
+        "build:web",
+        "--",
+        "--output-dir",
+        "/workspace/shared/caregiver_layout_redesign_builds/function-layout-2026-10-04T18-58Z"
+      ],
+      "startedAt": "2026-10-04T18:58:33.161325+00:00",
+      "log": "web-export.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-04T18:59:10.099788+00:00",
+      "logSha256": "7987f7f4167aa88c64f8468015c2451bc1bb433ee45d94a16294c60b6f1af557"
+    }
+  ],
+  "scope": "One semantic typecheck then one Web export after source freeze. No browser, real backend, model, camera/microphone, native devices or full regression.",
+  "status": "passed-bounded-build-checks",
+  "retryAuthorization": "Root authorized one typecheck retry after materializing the unchanged baseline src/shared/family.ts dependency; first failure is preserved in the 18-56Z run.",
+  "readOnlyBaselineDependency": {
+    "path": "src/shared/family.ts",
+    "gitBlobSha1": "5f605fac7d982748ca2e90c38964ce6458adbf9b",
+    "expectedGitBlobSha1": "5f605fac7d982748ca2e90c38964ce6458adbf9b",
+    "sha256": "8d6ad55ce5624c539ce0768b5261fa27a09dd81bfe97b647f2fa85db354904ae"
+  },
+  "sourceManifestSha256": "1fbfc7407ede63b922a899f8f70d3ae0d78bfe961c028c3aa5e8956f37cd2651",
+  "runtimeManifestSha256": "5ea09b4d0cde80e5bced1856f37883296ee93111caefb1849b31741ef802c4c0",
+  "preflight": {
+    "status": "passed",
+    "errors": [],
+    "preservedMaterializedBaselineTestCount": 21,
+    "existingEvidenceFiles": 9,
+    "sourceFiles": 374,
+    "runtimeFiles": 346
+  },
+  "postBuildIntegrity": {
+    "runtimeDrift": [],
+    "oldEvidenceDrift": [],
+    "status": "passed"
+  },
+  "buildManifestSha256": "e085480f58eca726c0a7d54588804d7143f09e4156c8a8ade1a69767d2be2937",
+  "exportedFileCount": 61,
+  "finishedAt": "2026-10-04T18:59:10.196805+00:00"
+}

@@ -1,0 +1,4 @@
+5577e44aafb6bb83bc4a37f565ece90e00b2651a150e08e381a00c42fb58d6e6  src/components/agent/AgentComposer.tsx
+8ad43cd248f85bc87faffd832252a9ad655a79ce965922f440a827b9d5240767  src/components/agent/AgentInputToolbar.tsx
+102c6ac97b0ea2862984f2d7bcd07ee27b30bf09594902398a842376a45dee5b  src/components/ui.tsx
+12682c4fdd4798623d0d4f4c0a91f9c5109bd2c6e21fbc563a78dae97dcc7b36  src/screens/chatScreen.tsx

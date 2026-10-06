@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { careKindOptions } from "../../care-view-model";
+import { careKindOptions } from "../../care-view-model.ts";
 
 // Client hints only; Server validation and authorization are not delegated to this schema.
 const requiredText = (max: number, label: string) => z.string().max(max, `${label}最多 ${max} 個字元。`)

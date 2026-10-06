@@ -56,6 +56,6 @@ export function PhotoFilePicker({ disabled, onPick, onError, capturePreferred = 
       <AppButton label={reading ? "正在讀取原照片" : "拍照或選圖"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => cameraInput.current?.click()} />
       <Text style={photoStyles.meta}>手機瀏覽器可由系統提供拍照；是否可用由瀏覽器決定。電腦通常會開啟選檔，也可改用下方選擇原照片。</Text></> : null}
     <AppButton label={reading ? "正在讀取原照片" : "選擇原照片"} variant="secondary" disabled={disabled || reading} loading={reading} onPress={() => input.current?.click()} />
-    <Text style={photoStyles.meta}>只讀取你所選的原檔。此隔離預覽不會上傳照片；關閉或重新載入會清除本次輸入。</Text>
+    <Text style={photoStyles.meta}>原檔尚未上傳；關閉或重新載入會清除本次輸入。</Text>
   </View>;
 }

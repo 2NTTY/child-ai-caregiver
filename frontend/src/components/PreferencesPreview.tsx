@@ -1,3 +1,4 @@
+import { SettingsSection as SectionCard } from "./settings/SettingsSection";
 import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -8,7 +9,7 @@ import { z } from "zod";
 import { useId, useState } from "react";
 import { usePreviewOperation } from "../preview/usePreviewOperation";
 import { chineseFont, colors, readingType, spacing } from "../theme";
-import { AppButton, SectionCard, SectionHeader } from "./ui";
+import { AppButton, SectionHeader } from "./ui";
 import { FormErrorSummary, FormFieldMessage } from "./FormErrorSummary";
 import { StatusAnnouncement } from "./StatusAnnouncement";
 import { PreviewWriteControls, PreviewWriteNotice } from "./PreviewWritePanel";
@@ -49,7 +50,7 @@ export function PreferencesPreview({ online }: { online: boolean }) {
   }
   return <SectionCard><SectionHeader density="compact" title="通知偏好" subtitle="只管理本人的安靜時段；設定不代表渠道已綁定或外發已獲授權。" />
     <StatusAnnouncement eventKey={String(online)} message={online ? "已恢復連線，可重新核對本人的通知偏好。" : "目前離線；可整理本次草稿，恢復連線後再確認。"} />
-    <Text style={styles.meta}>合成示例 · 未接駁 Server · 已讀版本 {basis}</Text>
+
     {!online ? <Text style={styles.warning}>目前離線；可整理本次草稿，恢復連線後再確認。</Text> : null}
     <PreviewWriteNotice controller={op} online={online} />
     <FormErrorSummary entries={errorEntries} onFocus={name => {

@@ -1,0 +1,44 @@
+{
+  "baseline": "65f8cf37bceeb15b05f46326c49e0370349ae3a5",
+  "startedAt": "2026-10-04T18:57:12.753057+00:00",
+  "cwd": "/workspace/shared/caregiver_layout_redesign/frontend",
+  "environmentFile": "/workspace/shared/caregiver_layout_redesign_metadata/expo-environment.sh",
+  "environmentFileSha256": "b6dd877f75182d4ce93a84ffca1e4c62c0910f1926f7c5884521a467a648c9ca",
+  "environment": {
+    "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-layout-redesign-20261004",
+    "EXPO_NO_TELEMETRY": "1",
+    "EXPO_OFFLINE": "1",
+    "__UNSAFE_EXPO_HOME_DIRECTORY": "/workspace/scratch/c112a98a8be9/expo-export-home"
+  },
+  "dependencySymlink": "/workspace/shared/caregiver_layout_redesign/frontend/node_modules",
+  "dependencyTarget": "/workspace/shared/caregiver_recovery_impl/frontend/node_modules",
+  "buildPath": "/workspace/shared/caregiver_layout_redesign_builds/function-layout-2026-10-04T18-56Z",
+  "commands": [
+    {
+      "name": "typecheck",
+      "argv": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "startedAt": "2026-10-04T18:57:12.805280+00:00",
+      "log": "typecheck.log",
+      "exitCode": 2,
+      "finishedAt": "2026-10-04T18:57:21.790663+00:00",
+      "logSha256": "1cad23ea1c7c42c0c5f4c06571b0abac1f3cbddc50bfde69b7044cd4d67ec56a"
+    }
+  ],
+  "scope": "One semantic typecheck then one Web export after source freeze. No browser, real backend, model, camera/microphone, native devices or full regression.",
+  "status": "stopped-on-first-failure",
+  "sourceManifestSha256": "a9912f8baad1f25c2f14fe3b31408e9e3e000f298173fd7a913ce780715ae84e",
+  "runtimeManifestSha256": "5ea09b4d0cde80e5bced1856f37883296ee93111caefb1849b31741ef802c4c0",
+  "preflight": {
+    "status": "passed",
+    "errors": [],
+    "preservedMaterializedBaselineTestCount": 21,
+    "existingEvidenceFiles": 3,
+    "sourceFiles": 374,
+    "runtimeFiles": 346
+  },
+  "finishedAt": "2026-10-04T18:57:21.791374+00:00"
+}

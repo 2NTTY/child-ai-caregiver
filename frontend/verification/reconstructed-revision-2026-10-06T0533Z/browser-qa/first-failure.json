@@ -1,0 +1,25 @@
+{
+  "atUtc": "2026-10-06T06:00:17Z",
+  "sourceBuildInputFingerprintSha256": "4584409d4061c2daa63c6d133386070a2b90626b9500e6f5035e895dc84d652c",
+  "siteVersion": 45,
+  "entry": "entry-95f28dfed645f645616bbf755e1c7e4e.js",
+  "frameCssViewport": {
+    "width": 320,
+    "height": 900
+  },
+  "route": "/history?category=growth",
+  "sequence": "History archived row keyboard Enter; pointer Return to History; locator pointer click on child selector",
+  "result": "Selector stayed aria-expanded=false. No UI tree change. Subsequent radio lookup had zero matches and timed out.",
+  "diagnosticObservation": "Outer wrapper page had scrolled so header was above visible viewport. App child-selector iframe-relative rect remained x8,y7.5,width132,height48. No product defect classification yet.",
+  "batchStopped": true,
+  "retryAttempted": false,
+  "proposedBoundedCorrection": "Scroll outer wrapper to top via normal UI, inspect actual screenshot, one visible pointer retry if root approves",
+  "keyboardSubstitution": false,
+  "resolution": {
+    "atUtc": "2026-10-06T06:01:18Z",
+    "approvedBy": "parent after first-failure report",
+    "method": "CUA scroll outer page up; verify iframe x12,y68; pointer86,101 once",
+    "result": "Opened child menu immediately; subsequent pointer child selection succeeded",
+    "appCodeChanged": false
+  }
+}

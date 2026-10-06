@@ -1,16 +1,20 @@
+import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import type { ModelSettingsPreviewController } from "../../preview/useModelSettingsPreview";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
-import { AppButton, AppSelect, SectionCard, SectionHeader } from "../ui";
+import { AppButton, AppSelect, SectionHeader } from "../ui";
 import { ModelSettingsView } from "./ModelSettingsView";
 
 export function ModelSettingsPreview({ controller, onSwitchAccount, active = true }: { controller: ModelSettingsPreviewController; onSwitchAccount: () => void; active?: boolean }) {
   const [toolsOpen, setToolsOpen] = useState(false);
   return <View style={styles.root}>
-    <SectionCard><SectionHeader density="compact" title="模型設定合成預覽" subtitle="這裏不會連接供應商或保存真密鑰。請只使用測試文字。" />
-      <AppButton label={toolsOpen ? "收起模型情境工具" : "顯示模型情境工具"} variant="quiet" onPress={() => setToolsOpen(value => !value)} />
+    <Text style={styles.meta}>請勿輸入真密鑰，只使用測試文字。</Text>
+    <ModelSettingsView key={controller.model.scopeKey} model={controller.model} actions={controller.actions} active={active} />
+
+    <SectionCard><SectionHeader density="compact" title="預覽工具" subtitle={toolsOpen ? "這裏不會連接供應商或保存真密鑰。請只使用測試文字。" : undefined} />
+      <AppButton expanded={toolsOpen} label={toolsOpen ? "收起模型情境工具" : "顯示模型情境工具"} variant="quiet" onPress={() => setToolsOpen(value => !value)} />
       {toolsOpen ? <><View style={styles.controls}><AppSelect label="模型保存結果" value={controller.saveOutcome} disabled={!!controller.model.busy} onChange={controller.setSaveOutcome} options={[
         { value: "saved", label: "已保存" }, { value: "failed", label: "失敗（未保存）" }, { value: "unknown_applied", label: "結果未知（稍後讀到新版本）" },
         { value: "unknown_unapplied", label: "結果未知（稍後仍是原版本）" }, { value: "conflict", label: "版本衝突" }, { value: "denied", label: "身份或權限改變" },
@@ -24,7 +28,6 @@ export function ModelSettingsPreview({ controller, onSwitchAccount, active = tru
         {!controller.model.authorized ? <AppButton label="恢復合成登入" variant="secondary" onPress={controller.restoreIdentity} /> : null}
       </View><Text style={styles.meta}>只保留本次預覽的無密鑰 metadata；不寫入瀏覽器儲存、原操作台帳或重播隊列。</Text></> : null}
     </SectionCard>
-    <ModelSettingsView key={controller.model.scopeKey} model={controller.model} actions={controller.actions} active={active} />
   </View>;
 }
 const styles = StyleSheet.create({ root: { gap: spacing.lg }, controls: { gap: spacing.sm }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });

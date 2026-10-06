@@ -1,3 +1,4 @@
+import { AppStatusBadge } from "../AppStatusBadge";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -73,7 +74,7 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
   const acceptLabel = proposal.kind === "task_create" ? "建立待辦" : proposal.kind === "task_change" ? "確認更改" : "確認資料";
   return <View testID={`agent-proposal-${proposal.id}`} style={styles.entry}>
     <View style={styles.top}><Text accessibilityRole="header" style={styles.title}>{proposal.title}</Text>
-      <MotionFeedback active={confirmed} triggerKey={confirmed ? decisionIntent?.serial ?? null : null} scopeKey={`${scopeKey}:${proposal.id}`} testID="agent-proposal-feedback"><Text style={[styles.badge, (pending || proposal.status === "expired") && styles.warningBadge]}>{agentProposalLabels[proposal.status]}</Text></MotionFeedback></View>
+      <MotionFeedback active={confirmed} triggerKey={confirmed ? decisionIntent?.serial ?? null : null} scopeKey={`${scopeKey}:${proposal.id}`} testID="agent-proposal-feedback"><AppStatusBadge label={agentProposalLabels[proposal.status]} tone={proposal.status === "accepted" ? "success" : pending || proposal.status === "expired" ? "warning" : "neutral"} /></MotionFeedback></View>
     <MotionReveal value={proposal.content} contentKey={proposal.content} scopeKey={`${scopeKey}:${proposal.id}`} regionKey={`agent-proposal-${proposal.id}`} triggerKey={readTrigger} eligible={readEligible}>{text => <Text selectable style={styles.body}>{text}</Text>}</MotionReveal>
     <View style={styles.scope}><AppIcon name={proposal.scope === "family" ? "account-group-outline" : "lock-outline"} size={18} />
       <Text style={styles.meta}>{proposal.scope === "family"
@@ -111,7 +112,7 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
 function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
   const [expanded, setExpanded] = useState(false);
   return <View style={[styles.section, styles.disclosureSection]}>
-    <AppButton label={expanded ? "收起運行詳情" : "查看運行詳情"} variant="quiet"
+    <AppButton expanded={expanded} label={expanded ? "收起運行詳情" : "查看運行詳情"} variant="quiet"
       onPress={() => setExpanded(value => !value)} style={styles.fullButton} />
     <MotionDisclosure expanded={expanded} scopeKey={run.id}><View style={styles.details}>
       {run.counts === null ? <Text style={styles.meta}>統計未知，不能當作零用量。</Text> : null}
@@ -123,9 +124,7 @@ function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
       <Text style={run.retrievalMode === "keyword_degraded" ? styles.warning : styles.meta}>檢索方式：{retrievalLabels[run.retrievalMode]}</Text>
       <Text accessibilityRole="header" style={styles.title}>工具結果</Text>
       {run.tools.length === 0 ? <Text style={styles.meta}>本次沒有工具結果。</Text> : run.tools.map(tool => <View key={tool.id} style={styles.tool}>
-        <View style={styles.top}><Text style={styles.body}>{tool.nameLabel}</Text><Text style={[styles.badge,
-          (tool.status === "unknown" || tool.status === "conflict" || tool.status === "rejected") && styles.warningBadge,
-          tool.status === "failed" && styles.errorBadge]}>{agentToolLabels[tool.status]}</Text></View>
+        <View style={styles.top}><Text style={styles.body}>{tool.nameLabel}</Text><AppStatusBadge label={agentToolLabels[tool.status]} tone={tool.status === "succeeded" ? "success" : tool.status === "failed" ? "error" : "warning"} /></View>
         {tool.status === "succeeded" ? <Text style={styles.meta}>{tool.savesCandidate
           ? "候選已保存，尚未執行；請核對下方內容，再明確決定。"
           : "工具已回報成功；照護事項的完成狀態仍須另行核對。"}</Text> : null}
@@ -204,7 +203,7 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource }: 
     </> : null}
     {run ? <View style={[styles.runContents, !ready && styles.hidden]} aria-hidden={!ready} accessibilityElementsHidden={!ready} importantForAccessibility={ready ? "auto" : "no-hide-descendants"} pointerEvents={ready ? "auto" : "none"}>
       <View style={styles.top}><Text accessibilityRole="header" style={styles.title}>本次運行</Text>
-        <Text style={[styles.badge, run.status === "unknown" && styles.warningBadge]}>{agentRunLabels[run.status]}</Text></View>
+        <AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "completed" ? "success" : run.status === "running" ? "info" : "neutral"} /></View>
       <Text style={styles.meta}>結果讀取時間：{timeLabel(model.loadedAt)}</Text>
       <Text style={styles.meta}>運行建立：{timeLabel(run.createdAt)}</Text>
       {run.stopReasonLabel ? <Text style={styles.meta}>停止原因：{run.stopReasonLabel}</Text> : null}

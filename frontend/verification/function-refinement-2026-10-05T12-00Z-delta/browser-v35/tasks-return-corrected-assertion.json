@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-10-05T12:24:34.362819+00:00",
+  "rootDecision": "Accepted after read-only diagnostic; no Tasks implementation change and no repeat state-changing action",
+  "name": "tasks-review-detail-return-retains-filter",
+  "status": "passed-corrected-assertion",
+  "assertion": {
+    "visibleTaskRows": 1,
+    "filterAccessibleName": "事項狀態：待覆核 · 已停催",
+    "returnedTaskTitle": "核對到診準備是否完成",
+    "focus": "returned task row"
+  },
+  "evidence": [
+    "tasks-return-assertion-state.txt",
+    "tasks-return-assertion-state.jpg",
+    "tasks-return-diagnosis-resolution.json"
+  ],
+  "originalFailure": "checks.json retains the original incorrect exact-label assertion and its failure, restored to the exact SHA-256 captured in evidence-manifest.json",
+  "harnessBug": "The expected exact accessible name omitted the suffix · 已停催. The product retained its filter and focus correctly.",
+  "noRuntimeChange": true
+}

@@ -1,0 +1,81 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px" [active]
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 390 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - generic: 育有方 · 記憶與話題
+  - heading "助手記憶與話題" [level=1]
+  - generic: 管理助手可以參考的資料：核對候選、確認共享範圍，並追溯來源與每次變更。
+  - generic: 小昕的記憶
+  - generic: 本人私人資料與可見家庭共享資料 · 合成預覽 · 家庭擁有人
+  - button "合成情境工具":
+    - generic: 合成情境工具
+  - tablist "記憶分類":
+    - tab "記憶資料" [selected]:
+      - generic: 記憶資料
+    - tab "對話話題":
+      - generic: 對話話題
+    - tab "私人摘要":
+      - generic: 私人摘要
+  - tabpanel "記憶資料":
+    - heading "記憶資料" [level=1]
+    - button "新增候選":
+      - generic: 新增候選
+    - generic: 助手可參考的已確認資料；候選和失效內容另外核對。
+    - button "示範 50+1 合成分頁":
+      - generic: 示範 50+1 合成分頁
+    - generic: 已載入 4 項合成事實；本次合成清單已到最後一頁。
+    - button "記憶狀態：已確認記憶":
+      - generic: 記憶狀態：已確認記憶
+    - generic: 睡前觀察
+    - generic: 已確認
+    - generic: 家人確認睡前會一起看圖畫書。
+    - generic: 家庭共享 · 照顧記錄：合成睡前觀察記錄 · 來源版本 1
+    - button "核對來源及操作":
+      - generic: 核對來源及操作
+    - generic: 本人觀察筆記
+    - generic: 已確認
+    - generic: 想在下次對話補充孩子最近喜歡的活動。
+    - generic: 只供本人 · 手動描述：本人手動核對的合成描述
+    - button "核對來源及操作":
+      - generic: 核對來源及操作
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

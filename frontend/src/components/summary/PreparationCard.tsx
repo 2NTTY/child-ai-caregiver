@@ -1,5 +1,5 @@
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {Platform, View} from 'react-native';
 import {HelperText, Text} from 'react-native-paper';
 import {Controller, useFieldArray, useForm, useWatch, useFormState } from 'react-hook-form';
@@ -11,8 +11,12 @@ import {AppButton, AppSelect, AppTextField, SectionCard, SectionHeader} from '..
 import {preparationDefaults, preparationFormSchema, preparationProjection, type PreparationFormValues} from './summary-form';
 import {MotionFeedback, MotionList} from '../../motion';
 import {summaryStyles as s} from './summary-styles';
+import {AppStatusBadge} from '../AppStatusBadge';
+import {PreparationSheet} from './PreparationSheet';
+import {SummaryDisclosure} from './SummaryDisclosure';
 
-type PreparationProps = {model: SummaryViewModel; actions: SummaryActions};
+export type PreparationDraftStatus = {scopeKey: string; formEpoch: number; stale: boolean; appointmentMissing: boolean};
+type PreparationProps = {model: SummaryViewModel; actions: SummaryActions; onAgent?: () => void; onRecord?: (id: string) => void; onTask?: (id: string) => void; onDraftStatusChange?: (status: PreparationDraftStatus) => void};
 export function PreparationCard(props: PreparationProps) {
   const {model} = props, page = model.page!, scopeKey = `${model.scopeKey}:${model.access}`;
   const contentKey = JSON.stringify([page.preparation, page.reviewCurrent, page.appointments.find(task => task.id === page.preparation.appointmentTaskId)?.title]);
@@ -25,20 +29,31 @@ export function PreparationCard(props: PreparationProps) {
     feedback.current.trigger = feedback.current.before !== contentKey ? feedback.current.reference : null;
     feedback.current.reference = null;
   } else if (['none', 'failed', 'conflict'].includes(model.operation) && !model.pending) feedback.current.reference = null;
-  return <SectionCard testID="summary-preparation"><SectionHeader density="compact" title="家庭共享到診準備" icon="clipboard-check-outline" subtitle="問題、清單、預約選擇及核對標記會共享給有權讀取這個孩子的家庭成員。" />
+  return <SectionCard testID="summary-preparation"><SectionHeader density="compact" title="到診準備單" icon="clipboard-check-outline" subtitle="問題、清單、預約選擇及核對標記會共享給有權讀取這個孩子的家庭成員。" />
     <MotionFeedback active={model.operation === 'saved' && !model.busy && !model.pending && !model.readFailed} triggerKey={feedback.current.trigger} scopeKey={scopeKey} style={s.smallStack} testID="preparation-saved-feedback">
-    <Text style={s.meta}>已保存版本 {page.preparation.version} · {page.preparation.reviewed ? '曾標記已核對' : '未核對'}。目前來源：{page.reviewCurrent ? '仍與全部來源吻合' : '未核對或來源已變，須重新核對'}。</Text>
+    <AppStatusBadge label={page.reviewCurrent ? '已核對，仍與目前來源吻合' : page.preparation.reviewed ? '來源已改變，須重新核對' : '到診準備尚未核對'} tone={page.reviewCurrent ? 'success' : 'warning'} />
+    <Text style={s.meta}>家庭共享 · {page.preparation.updatedAt ? `最近保存：${page.preparation.updatedBy ?? '未提供保存者'} · ${summaryTime(page.preparation.updatedAt)}` : '尚未有保存時間'}</Text>
+    <SummaryDisclosure label="已保存準備的來源與版本" scopeKey={scopeKey}>
+    <Text style={s.meta}>已保存版本 {page.preparation.version} · {page.preparation.reviewed ? '曾標記已核對' : '未核對'}</Text>
     <Text selectable style={s.meta}>已保存核對依據：{page.preparation.reviewedBasis ?? '沒有'} · 期間：{page.preparation.period ? summaryPeriodLabel(page.preparation.period) : '沒有'}</Text>
     <Text style={s.meta}>已保存預約：{page.preparation.appointmentTaskId ? page.appointments.find(task => task.id === page.preparation.appointmentTaskId)?.title ?? page.preparation.appointmentTaskId : '沒有指定'}</Text>
     {page.preparation.updatedAt ? <Text style={s.meta}>最後保存：{page.preparation.updatedBy} · {summaryTime(page.preparation.updatedAt)}</Text> : null}
+    </SummaryDisclosure>
     </MotionFeedback>
     <PreparationForm key={model.formEpoch} {...props} />
   </SectionCard>;
 }
-function PreparationForm({model, actions}: PreparationProps) {
+function PreparationForm({model, actions, onAgent, onRecord, onTask, onDraftStatusChange}: PreparationProps) {
   const page = model.page!;
   const basis = useRef(summaryBasis(page));
   const [shared, setShared] = useState(false), [basisConsent, setBasisConsent] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const readingRef = useRef<View>(null), editorRef = useRef<View>(null), previousEditing = useRef(false);
+  useLayoutEffect(() => {
+    if (previousEditing.current === editing) return;
+    previousEditing.current = editing;
+    if (Platform.OS === 'web') ((editing ? editorRef : readingRef).current as unknown as HTMLElement | null)?.focus({preventScroll: true});
+  }, [editing]);
   const {control, handleSubmit, setValue, setFocus} = useForm<PreparationFormValues>({defaultValues: preparationDefaults(page), resolver: zodResolver(preparationFormSchema), mode: 'onBlur'});
   const { isDirty, errors } = useFormState({ control });
   usePreviewLeaveGuard(isDirty);
@@ -54,6 +69,7 @@ function PreparationForm({model, actions}: PreparationProps) {
   const editable = fieldsAvailable && !model.busy;
   const appointmentValid = !values.appointmentTaskId || page.appointments.some(task => task.id === values.appointmentTaskId);
   useEffect(() => {setShared(false); setBasisConsent(false);}, [model.confirmationEpoch]);
+  useEffect(() => {onDraftStatusChange?.({scopeKey: model.scopeKey, formEpoch: model.formEpoch, stale, appointmentMissing: !appointmentValid});}, [onDraftStatusChange, model.scopeKey, model.formEpoch, stale, appointmentValid]);
   function edit(reviewChange = false) {actions.markDirty(); setShared(false); setBasisConsent(false); if (!reviewChange) setValue('reviewed', false, {shouldDirty: true});}
   function appendRow(kind: 'questions' | 'checklist') {
     const rows = kind === 'questions' ? questions : checklist;
@@ -99,7 +115,15 @@ function PreparationForm({model, actions}: PreparationProps) {
   const appointmentOptions = [{value: '', label: '沒有指定預約'}, ...page.appointments.map(task => ({value: task.id, label: `${task.title} · ${summaryTime(task.occurrence.dueAt, task.occurrence.timeZone)}`})), ...(!appointmentValid && values.appointmentTaskId ? [{value: values.appointmentTaskId, label: '原預約已不在目前清單（保留草稿）'}] : [])];
   return <>
     {!page.canManage ? <Text style={s.warning}>目前只有檢視權限，不能修改或保存。</Text> : null}
-    <Text selectable style={s.meta}>草稿基準：共享準備版本 {basis.current.expectedVersion} · {basis.current.basisVersion} · {summaryPeriodLabel(basis.current.period)}</Text>
+    {model.dirty ? <AppStatusBadge label="本頁草稿未保存" tone="warning" /> : null}
+    {model.pending ? <AppStatusBadge label={model.pending.confirmed ? "保存已確認 · 最新準備待讀回" : "原保存結果未知 · 先查核"} tone="warning" /> : null}
+    {stale ? <Text style={s.warning}>原草稿依據與目前資料不同，保存已暫停；請在修改時核對最新來源及家庭修改。</Text> : null}
+    {!appointmentValid ? <Text style={s.warning}>草稿中的原預約已不在目前清單，原選擇仍保留。</Text> : null}
+    <View ref={readingRef} tabIndex={-1} accessibilityLabel="到診準備單閱讀內容" style={editing && s.hidden}>{!editing ? <PreparationSheet model={model} values={values as PreparationFormValues} editable={editable} onEdit={() => setEditing(true)} onAgent={onAgent} onRecord={onRecord} onTask={onTask} /> : null}</View>
+    <View ref={editorRef} tabIndex={-1} accessibilityLabel="修改到診準備單" testID="preparation-editor" style={[s.stack, !editing && s.hidden]} aria-hidden={!editing} accessibilityElementsHidden={!editing} importantForAccessibility={editing ? 'auto' : 'no-hide-descendants'} pointerEvents={editing ? 'auto' : 'none'}>
+    <View style={s.row}><AppButton label={model.dirty ? "返回準備單（保留草稿）" : "取消修改，返回準備單"} variant="quiet" onPress={() => setEditing(false)} /></View>
+    <Text style={s.meta}>修改只留在本頁；返回閱讀不會保存或丟棄草稿。</Text>
+    <SummaryDisclosure label="目前草稿依據" scopeKey={formScope}><Text selectable style={s.meta}>草稿基準：共享準備版本 {basis.current.expectedVersion} · {basis.current.basisVersion} · {summaryPeriodLabel(basis.current.period)}</Text></SummaryDisclosure>
     {model.dirty ? <View style={s.box}><Text style={s.title}>目前已保存內容，供比較</Text>{page.preparation.questions.map((text, index) => <Text key={index} style={s.body}>已保存問題 {index + 1}：{text}</Text>)}{page.preparation.checklist.map((item, index) => <Text key={index} style={s.body}>已保存準備 {index + 1}：{item.done ? '已完成' : '未完成'} · {item.text}</Text>)}<Text style={s.meta}>本頁未保存草稿及原依據保留，更新摘要不會悄悄覆寫。</Text></View> : null}
     {stale ? <View style={s.box}><Text style={s.warning}>草稿與目前摘要／共享準備版本不同，不能直接保存。先核對來源及家庭成員的最新修改。</Text>
       <AppCheckbox label="我已核對最新來源及共享準備，保留草稿並採用目前依據" checked={basisConsent} disabled={!editable} onChange={setBasisConsent} />
@@ -132,5 +156,6 @@ function PreparationForm({model, actions}: PreparationProps) {
     <AppCheckbox label="我確認把以上到診準備與有權家庭成員共享" checked={shared} disabled={!editable || stale || !parsed.success || !appointmentValid} onChange={setShared} />
     <AppButton label="確認保存家庭共享到診準備" disabled={!editable || stale || !shared || !parsed.success || !appointmentValid} onPress={handleSubmit(raw => {actions.markDirty(); const input = preparationProjection(raw, basis.current); actions.save(input, page.appointments.find(task => task.id === input.appointmentTaskId)?.title ?? '沒有指定預約');})} />
     {model.dirty ? <AppButton label="放棄草稿並載入已保存準備" variant="quiet" disabled={!model.online || model.busy || !!model.pending || model.readFailed} onPress={actions.discard} /> : null}
+    </View>
   </>;
 }

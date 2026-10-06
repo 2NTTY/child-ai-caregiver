@@ -1,3 +1,4 @@
+import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useId } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -5,7 +6,7 @@ import { Switch } from "../AppSwitch";
 import { useMotionPreferences } from "../../motion";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { StatusAnnouncement } from "../StatusAnnouncement";
-import { SectionCard, SectionHeader } from "../ui";
+import { SectionHeader } from "../ui";
 
 export function MotionSettings() {
   const { reducedMotion, systemReducedMotion, manualReducedMotion, preferenceReady, preferenceStorage, setManualReducedMotion } = useMotionPreferences();

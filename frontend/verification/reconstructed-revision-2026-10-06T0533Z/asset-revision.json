@@ -1,0 +1,18 @@
+{
+  "path": "frontend/assets/images/harbour-family-hero.png",
+  "provenance": "user-supplied-new-asset-revision",
+  "libraryFileId": "libfile_408aff3284688191a5ac287a84c52b49",
+  "libraryVersion": 0,
+  "sourceUserMessage": "Sentinel_85a1ba2b680c81918d3bc6c459abea1d",
+  "bytes": 2377969,
+  "gitBlobSha": "559b829b607065dacd351c4bc80e4f10432d0002",
+  "sha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+  "dimensions": {
+    "width": 1672,
+    "height": 941,
+    "mode": "RGB"
+  },
+  "previousGitBlobSha": "8b280c4e124ab05568bb9bf509200b6719f9b90d",
+  "previousExpectedBytes": 2335736,
+  "note": "User supplied harbour-family illustration copied unchanged. Its PNG bytes differ from the prior Git blob; exact previous pixels are unavailable for comparison. No pixel edits, transforms or re-encoding were performed by this worker."
+}

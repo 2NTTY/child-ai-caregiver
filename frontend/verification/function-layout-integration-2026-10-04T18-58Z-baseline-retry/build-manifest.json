@@ -1,0 +1,310 @@
+{
+  "buildPath": "/workspace/shared/caregiver_layout_redesign_builds/function-layout-2026-10-04T18-58Z",
+  "files": [
+    {
+      "path": "(dashboard)/care.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/chat.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/contact.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/family.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/growth.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/guide.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/index.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/memory.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/more.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/motion-preview.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/photos.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/profile.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/settings.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/sources.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/summary.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "(dashboard)/tasks.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "+not-found.html",
+      "bytes": 29225,
+      "sha256": "79ae810ff15ed22e5ee7680fbdf4cd91a74d50ebb26cd21f630bf7bf9124972f"
+    },
+    {
+      "path": "_expo/.routes.json",
+      "bytes": 21,
+      "sha256": "18234e6b8c5aee837883245f400d379f3f9686f1396b7d90d7ebcdad76c51d47"
+    },
+    {
+      "path": "_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css",
+      "bytes": 731,
+      "sha256": "c3c3cf3e37c3bdc0cde835d614f2b3b359d6dee61babb0246f4b57a2d9897509"
+    },
+    {
+      "path": "_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css",
+      "bytes": 14266,
+      "sha256": "d8101bc5d3b92e79f678ab77342049357bd134e74d529c2062912bb5dfaa1517"
+    },
+    {
+      "path": "_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css",
+      "bytes": 210,
+      "sha256": "a45f655c8833b06ae0d8fbeaea146411f0adad9f256e53a21192de0683245a97"
+    },
+    {
+      "path": "_expo/static/js/web/entry-90a7cc7dae0d029439bbc1764b9eeee1.js",
+      "bytes": 4494985,
+      "sha256": "5fd8369be82ace0d1e9f4d44badbac194f41597bb5310722debc2e2fa9bca84b"
+    },
+    {
+      "path": "_sitemap.html",
+      "bytes": 29225,
+      "sha256": "79ae810ff15ed22e5ee7680fbdf4cd91a74d50ebb26cd21f630bf7bf9124972f"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.6e435534bd35da5fef04168860a9b8fa.ttf",
+      "bytes": 1307660,
+      "sha256": "61e8aba5a4e981fe22cf7c8e8bcdbea00476e75c62c37f01bf7ee33361d68428"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png",
+      "bytes": 9456,
+      "sha256": "6deca32b56b97fa1fa87facd6996b46cc45190a553400e7febdf1d2093099b57"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/error.d1ea1496f9057eb392d5bbf3732a61b7.png",
+      "bytes": 469,
+      "sha256": "c15ec72a74d13957211808313d5c35deb7f7606c6d22dbddceb0000d4e0547ad"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/file.19eeb73b9593a38f8e9f418337fc7d10.png",
+      "bytes": 138,
+      "sha256": "a69a2edb5b6c60b8433d5b6d23c69f520ccd8a602f3f60e7996e489718bc175c"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/forward.d8b800c443b8972542883e0b9de2bdc6.png",
+      "bytes": 188,
+      "sha256": "708a79cf561b8a2a4850ce0254584d3a5231046be08fb7fadf4b6edfdb31178b"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/pkg.ab19f4cbc543357183a20571f68380a3.png",
+      "bytes": 364,
+      "sha256": "27f4d229d440925bf7212d5dfffa45d596b2c7b3bb2905c96b839b2081a1dbeb"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png",
+      "bytes": 653,
+      "sha256": "9adb8c5efca932e2b732b293da813bd2e31952263056bce9e2517fec0f0b6a76"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png",
+      "bytes": 207,
+      "sha256": "84cf5eb3b20250f69e0e4733beb4da5f417f0682892a5ad1b5e62570753c21b1"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png",
+      "bytes": 220,
+      "sha256": "d03a5cd7a66ef10c5147916f9d5878b2d0a0a5ad46f405a31cd9967efaa55afd"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@2x.png",
+      "bytes": 334,
+      "sha256": "ab5613d2ce70fa67c5926e831353664945199fc195fa6fe76c5fe3cec452e31a"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@3x.png",
+      "bytes": 502,
+      "sha256": "c4e54e6a0a7de636aa153378fbc62ea4a41695bfedf807f90df7b18ffd733f67"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@4x.png",
+      "bytes": 645,
+      "sha256": "c86bb485eee687e06c500fc4234f51a6784b4530c2ae11d0c76481110bce3105"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png",
+      "bytes": 141,
+      "sha256": "b1bc1810ca23e2c38cd76971c43591d726161061240d8b792b05757196ddb528"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@2x.png",
+      "bytes": 201,
+      "sha256": "cbdf9213e55f65c48d076acd8423b7c9aee4f1b81101ff6c95a38c4cd8a86461"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png",
+      "bytes": 266,
+      "sha256": "d05c9d30d79f45a78e5585a2e7ec67c6a06a883dd9137e1d5059e8c87b33ce76"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png",
+      "bytes": 332,
+      "sha256": "2325c53a73e54c438cbbc60dffdd8b513d471ba42e2f56713ef404b95e0ca1fc"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/react-navigation/elements/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png",
+      "bytes": 928,
+      "sha256": "5d075e0c287c4f4441b5b5c8fc7ea5cd27c11bb617ecea09755955bcb1889083"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png",
+      "bytes": 465,
+      "sha256": "acf691957a3bcce7d195856dce98a5cf14dce10bea28aa5c10b3550c078e23b5"
+    },
+    {
+      "path": "assets/__caregiver_recovery_impl/frontend/node_modules/expo-router/assets/unmatched.20e71bdf79e3a97bf55fd9e164041578.png",
+      "bytes": 4752,
+      "sha256": "efc79da3c4c97dfb1571bff6202958ab0529c5aa31e8392600578b3e359d1447"
+    },
+    {
+      "path": "assets/assets/images/harbour-family-hero.2ab32852b0d4f0a94fec899153794da8.png",
+      "bytes": 2335736,
+      "sha256": "d2a072b0e68f4e825b50ab95b6074072b3cc847e40b9a08d113a4fd3c8316a9c"
+    },
+    {
+      "path": "care.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "chat.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "contact.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "family.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "favicon.ico",
+      "bytes": 14510,
+      "sha256": "0f30b4db3949836cf593141baaf312febbcf8b63ed937b1dbef830dbc708e7f8"
+    },
+    {
+      "path": "growth.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "guide.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "index.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "login.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "memory.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "more.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "motion-preview.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "photos.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "profile.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "settings.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "sources.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "summary.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    },
+    {
+      "path": "tasks.html",
+      "bytes": 30816,
+      "sha256": "66aca6d83a6eb88dcb307b99589c17f64ffcb4047f90826b81761c9c9c4c4acd"
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px" [active]
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 390 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - button "關閉預覽提示":
+    - generic: 已切換合成孩子；正式版須先隔離上一位孩子的可見資料，再讀取新孩子的授權資料。
+  - generic: 育有方 · 家庭
+  - heading "家庭協調" [level=1]
+  - generic: 認清一起照顧的人、各自的角色，讓交接與共享範圍清楚可查。
+  - generic: 合成家庭預覽 · 沒有建立有效邀請碼、發電郵、加入真實家庭或更改正式權限。Server 授權仍是權威。
+  - heading "媽媽的家庭" [level=1]
+  - generic: 本人是擁有者 · 3 位已載入成員 · 權限版本 7
+  - button "重新讀取家庭清單":
+    - generic: 重新讀取家庭清單
+  - heading "一起照顧的人" [level=1]
+  - generic: 先看誰有甚麼角色；需要時才更改權限。
+  - generic: 媽
+  - generic: 媽媽（合成） · 本人
+  - generic: 擁有者 · 管理成員及孩子
+  - generic: 擁有者不能在此更改角色或撤權。
+  - generic: 陳
+  - generic: 陳爸爸（合成）
+  - generic: 照顧者 · 可管理共享記錄及任務
+  - button "管理陳爸爸權限":
+    - generic: 管理陳爸爸權限
+  - generic: 陳
+  - generic: 陳婆婆（合成）
+  - generic: 檢視者 · 共享資料唯讀
+  - button "管理陳婆婆權限":
+    - generic: 管理陳婆婆權限
+  - heading "邀請與加入進度" [level=1]
+  - generic: 狀態來自本次快照，不表示已發出電郵。
+  - generic: relative@example.test
+  - generic: 照顧者 · 待接受
+  - generic: 合成到期時間：6/10/2026 12:00:00
+  - button "撤銷此邀請":
+    - generic: 撤銷此邀請
+  - generic: expired@example.test
+  - generic: 檢視者 · 已過期
+  - generic: 合成到期時間：20/9/2026 12:00:00
+  - generic: revoked@example.test
+  - generic: 檢視者 · 已撤銷
+  - generic: 合成到期時間：6/10/2026 12:00:00
+  - heading "共享到哪裏" [level=1]
+  - generic: 家庭可見
+  - generic: 加入後可查看這個家庭的全部孩子及共享照顧記錄；不包括其他人的私人 AI 聊天。日後新增到這個家庭的孩子及共享記錄，亦屬同一共享範圍。
+  - generic: 各自私人
+  - generic: 每個人的私人 AI 聊天不屬於家庭共享範圍；加入家庭亦不代表同意接收主動聯絡。
+  - generic: 此家庭的合成孩子
+  - generic: 小昕 · 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic: 阿樂 · 約 8 歲 · 截至 2026 年 9 月
+  - button "查看子女檔案":
+    - generic: 查看子女檔案
+  - heading "協調下一步" [level=1]
+  - generic: 日常交接在待辦記下負責人及時間。以下入口按頁首目前孩子載入；請先核對孩子與家庭，接收同意及任務授權亦須分開確認。
+  - button "查看目前孩子的待辦":
+    - generic: 查看目前孩子的待辦
+  - button "查看目前孩子的聯絡授權":
+    - generic: 查看目前孩子的聯絡授權
+  - heading "邀請成員" [level=1]
+  - button "邀請一位成員":
+    - generic: 邀請一位成員
+  - generic: 先核對收件人、角色與全家庭範圍。
+  - heading "收到邀請？" [level=1]
+  - button "輸入收到的邀請":
+    - generic: 輸入收到的邀請
+  - generic: 先預覽家庭及範圍，再明確接受。
+  - heading "合成預覽情境" [level=1]
+  - generic: 這些工具只切換示例；不屬於正式家庭操作。
+  - button "顯示家庭情境工具":
+    - generic: 顯示家庭情境工具
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

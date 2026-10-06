@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-10-05T14:35:49.254684+00:00",
+  "status": "stopped-before-publication-export-source-integrity-failed",
+  "commandResults": "typecheck and export exit 0; command success does not establish correct source artifact",
+  "buildPath": "/workspace/shared/caregiver_agent_first_update_builds/agent-first-integration-2026-10-05T14-26Z",
+  "historySourceExists": true,
+  "historyExportExists": false,
+  "entryMarkers": {
+    "caregiver_layout_redesign": 1,
+    "caregiver_agent_first_update": 0,
+    "./(dashboard)/history.tsx": 0,
+    "/history": 0,
+    "CareConversationReview": 0,
+    "已回報完成": 0
+  },
+  "expectedFrozenSourceManifest": "source-manifest.json",
+  "workingDiagnosis": "Shared Metro cache retained prior checkout route context/app root; not yet confirmed by fresh cache export",
+  "recovery": "Awaiting root approval for one export-only recovery with isolated TMPDIR and --clear. No source edit; no repeated typecheck or owners tests."
+}
