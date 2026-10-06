@@ -1,6 +1,17 @@
 # 育伴港前端整合交接
 
-2026-10-06 UTC 重整。這是依已取回程式、保存的較早交接及設計文件編寫的新交接，不是遺失的最終 v44 原件。工作狀態及驗證只見 [PLAN](PLAN.md#active)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)。
+本文件是前端接線索引及功能差異；工作狀態及驗證只見 [PLAN](PLAN.md#active)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)。
+
+<a id="reading-order"></a>
+## 接線前先讀
+
+1. [AGENTS](AGENTS.md) → [PLAN#active](PLAN.md#active)：範圍、版本及未驗界線
+2. 本文件：各頁責任、同源資料與普通／重要記錄需求
+3. 接聊天／輸入時讀 [AGENT_HANDOFF](AGENT_HANDOFF.md)；接關注鏈／報告時讀 [GROWTH_HANDOFF](GROWTH_HANDOFF.md)
+4. 保留既有版型與操作時按需讀 [DESIGN_SYSTEM](DESIGN_SYSTEM.md#user-first-principles)，不把研究稿或舊截圖當新要求
+5. 正式 wire schema、Server 授權與現有 controller 以根 `docs/P2_UI_HANDOFF.md`、`docs/API.md` 及實際程式重核；本域不複製另一套正式 API 規範
+
+下文「產品方向」是要達成的需求，「合成／目前前端」是已存在的預覽，「歷史 backend 核對」只是固定版本依據；三者不能互相當完成證明。
 
 <a id="p2-coverage"></a>
 ## 按功能接手
@@ -9,7 +20,7 @@
 - 記錄、待辦、概況、準備單與分類歷史：[同源接點](#shared-workspace-injection)、[孩子概況](#child-overview-preparations)、[事項與歷史](#agent-first-task-history)
 - 成長關注、結束／恢復及報告：[GROWTH_HANDOFF](GROWTH_HANDOFF.md#living-growth-archive)
 - 記憶與參考：[唯讀接點](#memory-reference-storage)
-- 正式掛載／既有差異：[適配邊界](#commercial-rollout)、[歷史契約審查](#contract-review)
+- 正式掛載／既有差異：[移除與替換清單](PRODUCTION_UI_HANDOFF.md)、[適配邊界](#commercial-rollout)、[歷史契約審查](#contract-review)
 
 其他專項交接若未在整合樹恢復，不把它們當已讀或可用的新證據；按正式 repository 的 `docs/P2_UI_HANDOFF.md`、`docs/API.md` 及相關 controller 重核。這些根文件及 backend 不由本包改寫。
 

@@ -3,29 +3,29 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## FE-W42：Codex 參考的聊天輸入框呈現
+## FE-W43：接線與需求文件清理
 
-更新：2026-10-06 UTC。依使用者提供的實際截圖及 [Codex 官方參考](https://developers.openai.com/blog/mastering-codex-remote-for-engineering)，在已驗 v48 來源另建獨立修訂；不是桌面 Codex 逐像素複製。
+更新：2026-10-06 UTC。範圍只限前端文件：收斂過時要求、接口回調及歷史流水，分清產品目標、已有預覽能力與正式接線缺口；不改產品程式、backend、資料庫或預覽部署。
 
-### 本包變動與限制
+基線：[PR #89](https://github.com/2NTTY/child-ai-caregiver/pull/89) 已於 2026-10-06 08:59 UTC 合併，master `26d36e8bf6c5f627d721ba9f26587349970ef183`，tree `cd31a9d24d03483f3d4e1cef6889593dc65bfc07`。本包七份文件已完成整理及定向覆核，依本次使用者授權走獨立分支／PR 合併；實際合併結果以本文件所在 GitHub commit／PR 為準，不把先前基線當本包合併提交。
 
-只改 composer 呈現：24 圓角、較柔和邊界與輕陰影；面板內距上／下 4、左／右 8，輸入 8／8／4；透明工具間距收緊但維持滑鼠 40／觸控 48 點按區；送出改 36 黃圓且移除常駐描邊，按住及 hover 只作用於圓形，focus 另有清楚細框。
+### 整理結果與核對範圍
 
-輸入 48–168 自動高度、稳定 textarea、IME、Enter／Shift+Enter、既有 refs／handlers、附件與草稿 scope／遲到回呼保持原樣。不得因造型修改改成真正送出或新增資料處理。
+- 主要入口清楚，聊天專項移除已被替代的造型及接口；歷史只引用固定 Git 版本，不複製另一份歸檔
+- 普通自動保存／重要確認是產品目標；既有 proposal accept 與正式能力缺口另列，不把預覽能力冒充已接通
+- 文件回調、媒體能力及呈現規格對照現有程式；保留來源／scope／版本／unknown 等必要安全約束
+- 已核對七份文件的基線 blob、差異、相對連結目標及可取得正文的錨點；原明確錨點保留，另保留已改名章節的相容入口。定向 source review 的三項文字歧義已修正並覆核，沒有待修阻塞
+- 只變動 Markdown，不改程式、依賴、美術或凍結證據；純文件包未重跑 UI、模型、build 或全量測試。下列較早測試結果不算本包新增測試
 
-### 驗證與交付
+### 接手入口及後續
 
-Owner 定向 11 項檢查及補齊同基線唯讀 family 型別後的 typecheck 通過；首次缺依賴失敗僅有 checks 記錄、未留原 stdout，不補造。Combined typecheck、aggregate 304/304、fresh export 37 路由均通過；v49 已於 2026-10-06 08:03 UTC 發布，[桌面／390／320 限定驗收](verification/composer-refinements-2026-10-06/browser-qa/v49-browser-report.md)通過：多行上限／捲動、Shift+Enter、focus、草稿隔離及局部 hover 正常；send 按住／釋放與 IME／真機未新增實測，不算已通過。
+Codex 先依 [HANDOFF 的閱讀入口](HANDOFF.md#reading-order)，再按功能核對正式 repository 的 API／controller。正式 Agent 普通自動寫入／重要分類與確認事件、持久待確認總表、各領域正式 owner 與訂閱、關注鏈 archive／restore、長期報告及 PDF 仍屬待接線；本文件清理不代表這些功能已完成。
 
-只保存可重用的呈現原則於 DESIGN_SYSTEM，實際檢查與未驗限制留本包；沿既有 PR 更新流程，不自動合併。v47／v48 程式、文件及證據已核實同步至 PR #89 的 `046ded1f`，本輸入框修訂另行追加，不能由公開站已更新推定 Git 完成。
+### 已完成呈現基線
 
-### 已完成基線
+FE-W42 的 v49 已於 2026-10-06 08:03 UTC 發布，程式、文件及證據已包含於 PR #89。沿[輸入框限定驗收](verification/composer-refinements-2026-10-06/browser-qa/v49-browser-report.md)：304 項測試、typecheck、37 路由 export 及桌面／390／320 檢查通過；send 持續按壓／釋放、IME／真機未新增實測。v48 的[按鈕、手機導航及水滴限定驗收](verification/mobile-ripple-refinements-2026-10-06/browser-qa/v48-browser-report.md)仍只支持其原範圍。
 
-v48 的 300 項測試、37 路由 export 及 [主／危險按鈕、手機導航及水滴手勢限定驗收](verification/mobile-ripple-refinements-2026-10-06/browser-qa/v48-browser-report.md)已完成；保留原 source／dist／證據，不將其視作此輸入框改動通過。
-
-### 保留限制
-
-正式 Agent 普通自動寫入／重要分類與確認事件、持久待確認總表、各領域正式 owner 與訂閱、成長關注鏈 archive／restore、長期報告生成與 PDF 均未因此接通。真 API／模型／家庭資料、真相機／咪高峰、APK／真機、完整 Server 歷史與跨瀏覽器／每幀無閃動均不能用合成或靜態證據替代。
+真 API／模型／家庭資料、真相機／咪高峰、完整 Server 歷史、APK／真機與跨瀏覽器／每幀無閃動，均不能用合成或靜態證據替代。GitHub 未有 check／status／workflow runs，不稱 CI green。
 
 <a id="evidence"></a>
 ### 可追溯的舊證據

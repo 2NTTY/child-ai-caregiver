@@ -5,7 +5,7 @@
 設定與聊天均導向同一 sources 清單及 editor；SourceComposer 保留原 create 投影，新增意向由正式接入草稿契約承接，不能塞入舊 API。將 SourceIntakeConversation／Editor 的合成閱讀、建議及確認結果替換為實際授權 controller；無真結果不能顯示已讀、已核實或已接入。正式缺口、回調、同意及清理見 [私人來源交接](SHARED_INPUT_HANDOFF.md#assisted-source-management)；記憶上下文後續安排見 [Agent 交接](AGENT_HANDOFF.md#memory-context-integration)。保留人工入口及唯一資料權威，不挪用原 fetch／extract／confirm 的 unknown／版本契約。
 
 
-更新：2026-10-02。只管理 frontend 的交接；不變更正式產品協定。主聊天先直接讀 [GitHub P2 UI 清單](https://github.com/2NTTY/child-ai-caregiver/blob/master/docs/P2_UI_HANDOFF.md)，按功能局部讀 [API](https://github.com/2NTTY/child-ai-caregiver/blob/master/docs/API.md)及共用型別／client 封裝，再沿 [功能交接](HANDOFF.md#p2-coverage)。本次核對 master d3213e6，P2／API blob 與上次相同；正式整合時重新固定實際基線。
+本文件只管由隔離預覽換成正式掛載的移除／替換邊界，不定義另一套產品需求。先沿 [接線閱讀入口](HANDOFF.md#reading-order)；正式 wire schema、授權及 client 封裝回到根 [P2 UI 清單](../docs/P2_UI_HANDOFF.md)／[API](../docs/API.md)。較早 backend 核對基線為 `d3213e6`，本次文件清理未重新驗 backend；整合時固定實際版本，不把歷史缺口當最新已驗結果。
 
 ## 接線後移除
 
@@ -15,7 +15,7 @@
 | src/components/agent/AgentConversationPreview.tsx：agent-preview-toggle／expanded、toolsVisible／toolsToggle 及情境工具卡 | 預設收起的合成活動入口；本人身份、運行情境、決定結果、重讀結果及聊天回覆 phase／計時串流的模擬選擇 | 移除合成 disclosure、整個開發工具分支、onPreviewReply 及合成身份選擇；保留 AgentRunView／AgentInboxView 及真正操作回調。隱藏正式活動不能卸載待查核的原操作 |
 | src/preview/useChatTimelinePreview.ts：initialMessages／showReply／timer | 合成歷史、逐字計時、假公開工具步驟及最終合成快照 | 整個 hook 替換為真 controller 投影；不能把定時器包成真 streaming adapter，或保存合成訊息／工具結果 |
 | 各功能 use*Preview 對應的情境／合成 outcome 控制 | 人為製造成功、衝突、未知、拒絕等畫面 | 由真正 controller 狀態驅動畫面後移除。具體掛接位置見各功能 *_HANDOFF，不批量刪除結果提示 |
-| app/(dashboard)/motion-preview.tsx 及比較入口 | A／B／C 動態樣板 | 正式導航／交付不含此開發頁；目前隔離預覽保留，並未採用換頁動畫 |
+| app/(dashboard)/motion-preview.tsx 及比較入口 | A／B／C 動態樣板 | 正式導航／交付不含此比較頁；已採納的 MotionEntrance route 等產品動效須保留，依 [MOTION_SYSTEM](MOTION_SYSTEM.md)，不能連同研究入口刪除 |
 
 外殼及卡片沿自然 flow。刪除工具呼叫即可收回其高度，來源正文的定位使用實際捲動容器，不依工具列高度的固定數字；不另加負 margin 或保留佔位。Web 回首頁首幀量度、孩子控制及 PageFrame 的真內容不能隨預覽工具一起刪除。
 
@@ -23,7 +23,7 @@
 
 | 位置 | 正式接線內容／邊界 |
 |---|---|
-| src/preview/PreviewContext.tsx／fixture.ts、dashboard/_layout.tsx 的 PreviewProvider | 正式本人／孩子／session、資料及操作回調投影。原 preview 寫入彼此獨立，不能拼成正式資料庫。BackgroundProvider 現以照顧者名字重掛載；正式隔離必須使用穩定本人／session 身份 |
+| src/preview/PreviewContext.tsx／fixture.ts、dashboard/_layout.tsx 的 PreviewProvider | 正式本人／孩子／session、資料及操作回調投影。現有領域 workspace 已讓多頁共用同一合成 owner，仍非正式持久化；正式替換保留[同源界線](HANDOFF.md#shared-workspace-injection)，不拆成各頁獨立資料。BackgroundProvider／私人子樹的合成名稱 scope 須換成穩定本人／session 身份 |
 | src/screens/chatScreen.tsx：ChatContents header、kind=intro 正文、useChatTimelinePreview／previewMessage | 接既有 ChatController 與授權訊息；移除固定正文／來源、合成 header 工具及「預覽輸入」分支。保留共用 ChatMessage／ChatTimeline／AnswerSources 和原 composer 資源清理；controller 真成功及授權上下文吻合後才投影訊息 |
 | ChatMessageView.phase／activities、ChatTimeline.items／followRequest／recentLimit | 顯示投影不另定 transport：真 phase／公開活動由後端核定，增量更新沿同一 message id、最終快照具權威。followRequest 只表示本人明確提交／回到最新，不用每次收到 delta 都重設跟隨。recentLimit 只是已載入清單的視窗；GET messages 目前最近 100 則，沒有更早游標，超過該範圍須主聊天先補契約。真取消、恢復／去重及逐句引用映射仍待接線 |
 | src/components/agent/AgentConversationPreview.tsx：isolated-preview key、useAgentPreview、conversationRunId | 用實際 Server／本人／孩子 key 及 run id；原運行、候選、原決定查核和來源仍由既有 controller 驅動，不能去掉 key 的身份清理 |
@@ -35,11 +35,11 @@
 
 ## 必須保留
 
-- 保存中、failed、unknown、衝突、撤權／登入失效、原 opId 查核，以及候選人工確認／共享範圍／危險操作多重確認。它們是正式業務狀態，不能因曾用模擬情境展示就刪掉。
+- 保存中、failed、unknown、衝突、撤權／登入失效、各領域原操作查核，以及既有候選確認／共享範圍／按風險的具名確認。普通自動保存與重要記錄確認的目標見 [記錄需求](HANDOFF.md#conversation-change-review)；尚未補齊正式政策前，不自行略過既有 proposal accept。它們是正式業務狀態，不能因曾用模擬情境展示就刪掉。
 - 真來源的標題分頁、片段、版本／日期／適用範圍及來源缺失提示；正文編號只按真實映射，不把合成三來源移植成知識證據。
 - 最新在底部、歷史閱讀位置、明確回到最新及每則訊息自己的展開／來源狀態；停止的部分文字、failed／unknown 與待確認不能改成普通成功答案。公開過程由資料層核定，內部思維鏈及秘密不進顯示模型。
-- 本人／孩子切換的私人內容清理、草稿邊界、未保存附件／blob／camera track 清理。普通切頁不順手清空草稿，也不重設首頁首次 flag。
+- 本人／孩子切換的私人內容清理、草稿邊界、未保存附件／blob／camera track 清理。文字依同 scope 草稿規則保留；附件由共用 owner 管理，Today → Assistant 可轉交，離開助手沿既有離頁確認清附件；身份／孩子／Server／授權改變清理舊私人資源及遲到回呼。不可把文字保留推廣成附件永久保留，亦不重設首頁首次 flag。
 - 未接通功能的誠實限制，直至它實際接通；真正帳戶刪除及 password／最近身份重新驗證仍由主聊天完成，不把名字輸入或紅色 Dialog 視為身份認證。
 - 求助需要時用統一權威來源；聊天沒有常駐求助卡，並非刪除真正求助能力。
 
-順序為：接實際授權資料／控制器 → 逐項移除開發工具與合成分支 → 核對無空白高度、路由／來源定位及首幀 → 按當次正式包的授權驗真身份、原操作未知及跨頁一致性。全域搜尋刪掉「預覽／合成」字樣不能完成接線；`PreviewToolbar` 消失不代表所有功能已可用。當前隔離畫面仍保留預覽提示，未執行正式接線或真 API 驗收。
+順序為：接實際授權資料／控制器 → 逐項移除開發工具與合成分支 → 核對無空白高度、路由／來源定位及首幀 → 按當次正式包的授權驗真身份、原操作未知及跨頁一致性。全域搜尋刪掉「預覽／合成」字樣不能完成接線；`PreviewToolbar` 消失不代表所有功能已可用。隔離畫面的常駐開發說明集中於收合工具，實際未接通／unknown／權限限制就地保留；移走說明不代表正式接線或真 API 已通過。
