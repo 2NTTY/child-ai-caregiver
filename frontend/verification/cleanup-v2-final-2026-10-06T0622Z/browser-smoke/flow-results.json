@@ -1,0 +1,37 @@
+{
+  "siteVersion": 46,
+  "observedEntry": "entry-123f157e5a028b7f1bb01348c60a6323.js",
+  "archiveCancelTimelineUnchanged": true,
+  "oneArchiveHistoryRestore": true,
+  "restoredPendingStatus": true,
+  "originalTimelineEventsPreserved": true,
+  "composerTextDraftRetainedAcrossChatMemoryChat": true,
+  "composerDraftCleanedWithoutSending": true,
+  "mobileChildSwitchCorrectScope": true,
+  "mobileChildSwitchObservedReady": true,
+  "mobileChildSwitchObservedStartup": false,
+  "applicationSmokeFailures": [],
+  "permissionInterruption": {
+    "message": "JavaScript execution did not receive approval",
+    "action": "Synthetic History Restore, state/screenshot checks, Memory navigation",
+    "paused": true,
+    "evidenceProvidedByParent": true,
+    "exactRetryCount": 1,
+    "retrySucceeded": true
+  },
+  "wrapperNote": "Height button sets actual app document to 320x600; wrapper display label remains 320x900. Geometry, not stale label, is the evidence.",
+  "productLogs": [
+    {
+      "level": "warn",
+      "message": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md",
+      "timestamp": "2026-10-06T06:35:17.831Z",
+      "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/_expo/static/js/web/entry-123f157e5a028b7f1bb01348c60a6323.js"
+    },
+    {
+      "level": "warn",
+      "message": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md",
+      "timestamp": "2026-10-06T06:38:13.329Z",
+      "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/_expo/static/js/web/entry-123f157e5a028b7f1bb01348c60a6323.js"
+    }
+  ]
+}

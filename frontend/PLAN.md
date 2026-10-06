@@ -20,8 +20,8 @@
 
 1. 63 檔清理 patch 的 preimages 已對照合併基線，zero-fuzz 套用至獨立工作區；新舊 source／snapshot 及原失敗證據保持可追溯
 2. 暫存階段 typecheck、67 項必要純測試、逐 symbol／AST 等價及本地連結檢查通過；最終整合 [typecheck、278 項 aggregate 及 37 路由 fresh export](verification/cleanup-v2-final-2026-10-06T0622Z/checks.json)均通過，不把前一 PR 的結果當本包通過
-3. v46 已保存、公開發布另待批准；新畫面檢查尚未開始，只覆蓋清理涉及的通常路徑、排版及必要 scope 邊界；真 API／持久化／原生與逐幀無閃動仍未驗
-4. 固定最終 manifest、審閱差異並確認受影響檢查後，建立新的 draft PR；核對實際遠端 head 與可讀 CI。沒有 CI 結果不得称全綠；本包沒有自動合併授權
+3. v46 已於 2026-10-06 06:33 UTC 公開發布；[桌面／320px 限定 smoke](verification/cleanup-v2-final-2026-10-06T0622Z/browser-smoke/verification-summary.md)通過，覆蓋 Home／Care／Growth／Memory、關注恢復、孩子切換及未送出草稿保留；真 API／持久化／原生與逐幀無閃動仍未驗
+4. [Draft PR #89](https://github.com/2NTTY/child-ai-caregiver/pull/89) 已建立，首個 head 為 `4fc6fff6`，本次 smoke 證據另行追加。可讀 exact-head checks／statuses／workflow 均無項目，不稱 CI 全綠；本包沒有自動合併授權。使用者新提出的其他按鈕閃動問題另作診斷，不以此 cleanup smoke 當其驗收
 
 ### 已合併的前包
 

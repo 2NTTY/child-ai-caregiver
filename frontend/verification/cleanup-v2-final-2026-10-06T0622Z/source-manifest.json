@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-10-06T06:26:27.917674+00:00",
+  "observedAt": "2026-10-06T06:40:14.026916+00:00",
   "revision": "cleanup-v2-after-pr88",
   "baseCommit": "6477fe65964adea0cde48c784c0598b2cb47d5bf",
   "baseTree": "f2e1795c022a8b1351a625e48770d34fd5df6a5b",
@@ -89,16 +89,16 @@
     },
     {
       "path": "frontend/PLAN.md",
-      "bytes": 4556,
-      "gitBlobSha": "1f9e3cdfdb324e290d0646264eb427cf056c877c",
-      "sha256": "30c10ed5bb1f8e9a2246e5e3ff915aedd2eab23e1ffd16f9a8a26fb8df7734a9",
+      "bytes": 4837,
+      "gitBlobSha": "878cb5b5cbed2370e040033c1ba3ef9a8c1ef9f5",
+      "sha256": "f3286a7ee1a372aac199e83cf02649db300556ae3fc028a30550c7ffc6fcdf62",
       "provenance": "root-authored-cleanup-handoff"
     },
     {
       "path": "frontend/STATUS.md",
-      "bytes": 762,
-      "gitBlobSha": "95318974644b788c3c7b914083ab3f440d8d0a70",
-      "sha256": "618626f511b30c50465dc6590fc8496d44c5757845ce35347ec87048126e4a42",
+      "bytes": 906,
+      "gitBlobSha": "f37852ab1d6ecc13ae17e533065cd4a3bc5b7a0e",
+      "sha256": "859316a0acada6015473c2345ec2c2b7c01b1c79224ccb88eb257c8795d2ff88",
       "provenance": "root-authored-cleanup-handoff"
     },
     {
