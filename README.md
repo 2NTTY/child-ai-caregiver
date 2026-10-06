@@ -8,7 +8,7 @@ Planned capabilities include:
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
 - A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
 
-P1 and the original P2 packages are complete; P3 has not started. Production integration of the redesigned frontend is in progress. The public deployment has not yet been switched; see [STATUS](STATUS.md) and the [active integration package](PLAN.md#active) for connected capabilities and remaining work. The last recorded public application revision was `43ab10c`; check the [deployment observation](STATUS.md#deployment) before operating the VM.
+P1 and the original P2 packages are complete; P3 has not started. The redesigned frontend is now the public Web entry at https://ex-machina.eu.org, backed by the existing authenticated Server, database and Agent. See the [production entry, feature map and deployment guide](docs/PRODUCTION_FRONTEND.md), [STATUS](STATUS.md) and [integration evidence](PLAN.md#active) for actual validation and remaining limitations. The recorded runtime revision is `053658b`; check the [dated deployment observation](STATUS.md#deployment) before operating the VM.
 
 Product requirements belong in [SPEC](SPEC.md); package scope and completion gates belong in [PLAN](PLAN.md#phases). The shared Prompt Pack and visual assets are reused.
 

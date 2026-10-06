@@ -2,7 +2,7 @@
 
 本檔適用 `frontend/**`，以根 AGENTS 為基底；本域更具體的指示在本域優先，未衝突根規則繼續適用。
 
-本目錄是獨立 Expo／React Native Web 前端預覽。根 STATUS 已提供產品短摘要；接着只讀 [PLAN#active](PLAN.md#active)，按包讀相關設計、Skill 或專項交接，不預設讀整份 HANDOFF／研究／歷史。根 PLAN／SPEC／API 只按具體契約或正式整合需要讀。
+本目錄現為正式 Expo／React Native Web 前端；預覽素材只作設計及開發參考，不能覆蓋正式 owner。根 STATUS 已提供產品短摘要；接着只讀 [PLAN#active](PLAN.md#active)，按包讀相關設計、Skill 或專項交接，不預設讀整份 HANDOFF／研究／歷史。根 PLAN／SPEC／API 只按具體契約或正式整合需要讀；正式啟動及部署見 [入口指引](../docs/PRODUCTION_FRONTEND.md)。
 
 本域沿 [根文件職責](../AGENTS.md#document-updates)：PLAN 管任務；STATUS 管短現況與入口；HANDOFF 管接線索引與差異；WORKFLOW 管次序；Skill 管方法；DESIGN_SYSTEM 管已採納呈現。不要再維護多份下一步。
 

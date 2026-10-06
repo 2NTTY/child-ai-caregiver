@@ -1461,3 +1461,12 @@
 - 復用 pg-boss、React Hook Form 及 @react-pdf/renderer 4.9.0；隨附原版 LXGW WenKai TC 1.522／OFL。PDF 只使用共享文字快照，不含照片／私人聊天或臨床判斷；用途、來源及所選版本明示。
 - 必要 Server／前端型別通過，單份繁中 PDF 的渲染及文字核對通過。先工程外加密配對備份，再套用 028；首次脚本 import 在零業務呼叫時因 Node strip-only 不支援 parameter property 停止，局部修正後單一流程通過：2 帳戶／1 孩子／35 次業務呼叫、零外網／模型／通知／瀏覽器，清理新孩子並暫停 worker。沒有擴充矩陣或重跑既有證據。
 - 主模型覆核權限、資料同源、工具／run 交易、來源失效、worker 世代及 PDF 版本；[證據](artifacts/verification/INT_W06_CHECKS.json) 如實分開未驗項。A 主責，權重 5，A 40%／C 40%／B 20%；共用 AI 由 A 統籌，依責任署名，Committer 保留 A，不冒稱人手實測工時。用 A 帳號交付，合併後才進 INT-W07；公開入口尚未切換。
+
+<a id="log-int-w07"></a>
+## 2026-10-07 — INT-W07 新前端正式入口交付
+
+- 從 `053658b`（PR #96）開包，三個 Docker 映像各建置一次；新 `frontend/` 已部署到 https://ex-machina.eu.org，API／持久 worker 使用同一 runtime。保留版面、互動、美術與既有 Prompt Pack；根舊測試 UI 不再是正式建置入口。
+- 沿用本人既有 VM／Compose project／PostgreSQL 卷及秘密，不新增服務或續期；核對 STOP 為 2026-10-10 20:50:44 HKT。先暫停並加密配對備份，再套用 024–028；68 張原表既有欄位數量／hash 相同，原映像及配置保留。平台每日每人 12／全站 20 不變、不清零。
+- 3 次公開唯讀 GET 確認新 index hash、API healthy、Push worker hash。一次真瀏覽器對話已送出及收到保存回覆；在收據階段碰到腳本 154 次 HTTP 門檻而停止，沒有產品 HTTP／page error。保留原失敗，不重跑瀏覽器或模型；同一 fixture 8 次 API 補核 run、單筆操作收據、記錄版本及聊天來源並清理新孩子、登出，帳號保留。真運行 completed：3 生成／2 工具／0 embedding，零通知；API 未提供實際 tokens／美元成本。
+- 主模型按使用者減少測試要求，沿用 INT-W01～06 的隔離、跨頁、unknown、worker 及各新能力證據，結合本次公開接線結果裁定必要交付成立；不把 API 補核寫成完整瀏覽器通過。收據／Care／Home／reload／logout UI 的本輪剩餘斷言未執行；沒有擴充矩陣。瀏覽器啟動前的零呼叫環境失敗亦保留於 [EV](artifacts/verification/INT_W07_CHECKS.json)。
+- 已補 [正式入口／啟動部署／功能清單與缺口](docs/PRODUCTION_FRONTEND.md)，更新根及前端交接入口。主責 C，權重 3，C 60%／B 20%／A 20%；D 人工驗收沒有代填。共用 AI 由 A 統籌，Committer 保留 A，依團隊責任由 C 帳號推送／PR／合併；不冒稱個人人手實作或工時。
