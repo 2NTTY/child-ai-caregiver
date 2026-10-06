@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "package": "INT-W02",
+  "recordedOn": "2026-10-06",
+  "baseCommit": "2592ec74f254865a9ccc001d5b898b49d910cbc3",
+  "status": "necessary_acceptance_passed_merge_pending",
+  "scope": "Production conversation, ordinary preauthorized instructions, private notes, original operation receipts and persistent pending proposals. Existing UI design retained.",
+  "checks": [
+    { "name": "Server TypeScript", "status": "passed", "runtime": "Node 24.19.0" },
+    { "name": "Frontend TypeScript", "status": "passed", "runtime": "Node 24.19.0", "detail": "After policy-save readback fix; later tool-label-only additions reviewed without rerunning the compiler." },
+    { "name": "Production owner scope", "status": "passed", "cases": 4 },
+    { "name": "Pending proposal scoped cursor", "status": "passed", "cases": 2 },
+    { "name": "Existing ADK product tool-cycle and prompt assembly", "status": "passed", "cases": 1, "realModelCalls": 0 },
+    { "name": "ADK ordinary tool parameters", "status": "passed_in_live_run", "priorFinding": "Union-shaped action arguments were rejected in the live run. Final tools each expose one concrete parameter object and retain shared business validation. Runtime rejection now provides a bounded corrective code; no private input is logged." },
+    { "name": "Encrypted paired backup before migration", "status": "passed", "detail": "Existing external storage and backup keys; database and matching encrypted photos; no plaintext export or upload." },
+    { "name": "Migration 025", "status": "passed", "detail": "Normal migration entry, existing checksums retained, PostgreSQL 18.6 with pgvector 0.8.6. Existing synthetic database preserved; worker remained paused." }
+  ],
+  "postgres": {
+    "status": "passed",
+    "entry": "scripts/int-agent-actions-acceptance.mjs --approved-local-int-w02",
+    "database": "loopback:5434/yuban_s06_test",
+    "businessCalls": 53,
+    "cap": 80,
+    "created": { "accounts": 2, "children": 1, "tasks": 3 },
+    "checks": ["ordinary record provenance", "private note isolation", "self task and actual receipt", "connection recreation persistence", "exact and equivalent operation replay", "source quote validation", "persistent pending and one confirmation effect", "expired candidate cannot execute", "stopped run preserves receipts", "policy withdrawal revokes only its own grant", "historical policy replay cannot reactivate", "no external delivery"],
+    "workerEnabled": false,
+    "realModelCalls": 0,
+    "embeddingCalls": 0,
+    "networkAttempts": 0,
+    "externalNotifications": 0,
+    "cleanedOnlyCurrentSyntheticScene": true
+  },
+  "browserAndLiveAgent": {
+    "status": "necessary_flow_verified_in_bounded_parts",
+    "entry": "playwright.int-agent.config.mjs / tests/browser/int-agent.spec.mjs",
+    "scope": "One ordinary conversation flow; existing INT-W01 identity and unknown-save evidence reused. No Computer Use.",
+    "liveRun": {
+      "status": "completed", "runId": "1e214799-2e2a-4d64-92b0-eac0a6247547", "promptPack": "0.1.19",
+      "model": "gemini-3.1-flash-lite", "modelCalls": 4, "toolCalls": 4, "embeddingCalls": 0,
+      "tools": ["save_ordinary_record rejected, then corrected within the same run", "save_private_instruction succeeded", "save_ordinary_record succeeded", "present_answer succeeded"],
+      "inputTokens": 50633, "outputTokens": 458, "httpAttemptsIncludingSignout": 41,
+      "observed": ["UI policy is explicit and defaults off", "real conversation and persisted response", "two receipt-backed saved resources displayed", "no external notification authority", "ordinary core content and private-note source verified from the same resources"],
+      "externalNotifications": 0
+    },
+    "earlierFailures": [
+      { "runId": "4e3272ab-6a80-42dd-9a39-c9786d8193dc", "cause": "Inherited ADC variable referenced a missing file", "reservedAttempts": 1, "generationRequests": 0, "fix": "Process-local standard authorized ADC path; global settings untouched" },
+      { "runId": "841120c5-bd3b-4e96-b2e1-d78004fa9ae8", "cause": "Both union-shaped ordinary tool requests rejected; no effects", "generationRequests": 2, "embeddingCalls": 0, "fix": "Concrete per-action schemas, supplied policy version and actionable rejection response" },
+      { "runId": "1e214799-2e2a-4d64-92b0-eac0a6247547", "cause": "The test incorrectly required a synthetic marker in the normalized record text", "productRun": "completed", "fix": "Verify actual source-linked resource and core statement; do not call the model again" }
+    ],
+    "readOnlyCompletion": {
+      "recordSidebar": "passed on retained resource; later optional close-button locator failed, not repeated",
+      "privateNote": "passed in final 11.6-second Chromium read; same source-linked note title and content displayed",
+      "finalHttpAttemptsIncludingCleanup": 21, "cap": 25, "newModelCalls": 0, "newEmbeddingCalls": 0,
+      "retainedSuccessChildDeleted": true, "twoEarlierFailedChildrenDeletedAfterReview": true,
+      "earlierStops": ["AI-disabled startup eagerly constructed a Vertex provider: product initialization fixed", "Test expected CareRecord-only fields from the thin TextRecord endpoint: unnecessary assertions removed", "Instant visibility check skipped opening the sidebar: use Playwright locator waiting", "Unnecessary close button was absent from the docked rail: already-passed sidebar not repeated"],
+      "limitation": "The original full browser script was not rerun green end to end. Required results were observed across the original live flow and zero-model reads. One-off resume code removed after cleanup; failures are not rewritten as passes."
+    },
+    "totalActualGenerationRequests": 6,
+    "totalEmbeddingRequests": 0,
+    "quota": "Existing daily limits retained; usage never reset or increased",
+    "datePrecisionReview": "The saved synthetic record incorrectly promoted a date-only statement to an exact time. A local Server normalization now retains source wording and null time without matching explicit clock evidence. Two direct assertions passed with zero network; no repeat live run."
+  },
+  "notClaimed": ["public deployment", "all remaining P2 pages wired", "photo submission", "voice or file input", "complete older chat history cursor", "server run cancellation", "new notification delivery", "Android", "full browser compatibility", "clinical effectiveness"]
+}

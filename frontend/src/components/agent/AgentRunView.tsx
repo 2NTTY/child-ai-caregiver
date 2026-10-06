@@ -69,8 +69,8 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
 }) {
   const confirmed = model.online && model.readState === "ready" && !model.busy && !model.pendingDecision && model.notice?.tone === "saved"
     && decisionIntent !== null && decisionIntent.proposalId === proposal.id && proposal.version > decisionIntent.version && proposal.status === decisionIntent.status;
-  const expired = proposalExpired(proposal);
-  const pending = proposal.status === "pending";
+  const expired = proposal.status === "expired" || proposalExpired(proposal);
+  const pending = proposal.status === "pending" || proposal.status === "expired";
   const acceptLabel = proposal.kind === "task_create" ? "建立待辦" : proposal.kind === "task_change" ? "確認更改" : "確認資料";
   return <View testID={`agent-proposal-${proposal.id}`} style={styles.entry}>
     <View style={styles.top}><Text accessibilityRole="header" style={styles.title}>{proposal.title}</Text>
@@ -86,7 +86,7 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
     <Text style={styles.meta}>到期：{timeLabel(proposal.expiresAt)}</Text>
     {pending ? <>
       <Text style={styles.meta}>這是待確認候選，尚未執行或寫入正式事項。</Text>
-      {expired ? <StateNote tone="warning">候選期限無效或已過期，不能接受或略過。請重新讀取運行結果，再核對最新狀態。</StateNote> : null}
+      {expired ? <StateNote tone="warning">候選已過期，不能接受；可核對後明確略過。</StateNote> : null}
       {proposal.scope === "family" ? <AppCheckbox label={sharedConfirmationLabel}
         accessibilityLabel={`${sharedConfirmationLabel}: ${proposal.title}`} checked={!!model.sharedConfirmed[proposal.id]}
         disabled={!mayCheckShared(model, proposal)} onChange={checked => actions.setSharedConfirmation(proposal.id, checked)} /> : null}

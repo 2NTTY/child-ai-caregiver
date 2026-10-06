@@ -1,90 +1,117 @@
-import { useRef, useState } from "react";
-import { usePathname, useRouter } from "expo-router";
+import { useLayoutEffect, useRef, useState } from "react";
+import { usePathname } from "expo-router";
 import { StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView } from "react-native";
-import { Text } from "react-native-paper";
+import { ActivityIndicator, Text } from "react-native-paper";
 import { AppButton, SectionCard, TextLink } from "../components/ui";
-import { ImportantRecordPreviewTools } from "../preview/ImportantRecordPreviewTools";
-import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";
 import { AgentComposer } from "../components/agent/AgentComposer";
-import { CitationText } from "../components/chat/AnswerSources";
 import { ChatMessage } from "../components/chat/ChatMessage";
 import { ChatTimeline, type ChatTimelineControls } from "../components/chat/ChatTimeline";
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatType } from "../components/chat/chat-presentation";
-import { useChatTimelinePreview } from "../preview/useChatTimelinePreview";
-import { usePreview } from "../preview/PreviewContext";
-import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
-import { canPreviewAssistantDraft } from "../assistant-draft";
+import { useProduction } from "../production/ProductionProvider";
+import { AgentConversation } from "../production/AgentConversation";
+import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { mobileLayout } from "../theme";
+import type { ChatReplyPhase } from "../chat-view-model";
 
 const attachmentLeaveCopy = { message: "離開將移除未送出的附件；文字仍在本次暫存保留。", actionLabel: "移除附件並離開" };
-
+const runPhases = { running: "thinking", completed: "complete", stopped: "stopped", unknown: "unknown" } satisfies Record<string, ChatReplyPhase>;
 export default function ChatPage() {
-  const { model } = usePreview();
+  const { scopeKey } = useProduction();
   const viewportWidth = useWindowDimensions().width;
   const [paneWidth, setPaneWidth] = useState(0);
-  const child = model.children.find(item => item.id === model.selectedChildId);
   return <View onLayout={event => setPaneWidth(event.nativeEvent.layout.width)} style={styles.root}>
-    <ChatContents key={JSON.stringify([model.selectedChildId, model.caregiverName, child?.accessRole])} compact={(paneWidth || viewportWidth) < mobileLayout.breakpoint} />
+    <ChatContents key={scopeKey ?? "no-authorized-child"} compact={(paneWidth || viewportWidth) < mobileLayout.breakpoint} />
   </View>;
 }
-
 function ChatContents({ compact }: { compact: boolean }) {
   const pathname = usePathname();
-  const router = useRouter(), navigate = usePreviewNavigation();
-  const { model, actions, chatDraft, setChatDraft, agentAttachments, addAgentAttachment, removeAgentAttachment, clearAgentDraft, composerFocusRequest } = usePreview();
+  const { model, actions, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
+    addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
   const child = model.children.find(item => item.id === model.selectedChildId);
-  const preview = useChatTimelinePreview(child?.id ?? "no-child");
+  const draft = child ? chat.drafts[child.id] : undefined;
+  const phase = draft?.phase ?? "draft", busy = chat.busy !== null;
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
+  const [followRequest, setFollowRequest] = useState<string>();
+  const previous = useRef({ ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy });
+  const lastMessage = chat.messages[chat.messages.length - 1];
+  const newReplyId = lastMessage?.role === "model" && !previous.current.ids.has(lastMessage.id) && previous.current.busy === "reply" ? lastMessage.id : undefined;
+  useLayoutEffect(() => { previous.current = { ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy }; }, [chat.messages, chat.busy]);
   const locateSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => {
     timelineRef.current?.holdReadingPosition(); locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
   };
   usePreviewLeaveGuard(agentAttachments.length > 0 && pathname === "/chat", false, "child", attachmentLeaveCopy);
-  function previewMessage() {
-    if (!child || !canPreviewAssistantDraft({ text: chatDraft, attachments: agentAttachments })) return;
-    const labels = { photo: "照片", file: "文件", voice: "音訊" };
-    const attachmentSummary = agentAttachments.map(item => `${labels[item.kind]}：${item.fileName}`).join("\n");
-    // The local timeline receives an honest summary, never invented question text or a server receipt.
-    preview.addQuestion([chatDraft.trim(), attachmentSummary ? `未送出附件預覽\n${attachmentSummary}` : ""].filter(Boolean).join("\n\n"));
-    clearAgentDraft();
+  const canSend = !!scopeKey && !!child && chat.selectedChildId === child.id && chat.online && !busy && !chat.loading
+    && chatWritesAllowed && agentAttachments.length === 0 && !!chat.loadedAt && phase === "draft" && !!chatDraft.trim() && chatDraft.length <= 10_000;
+  function send() {
+    if (!canSend) return;
+    setFollowRequest(`send-${Date.now()}`); void sendChat();
   }
   const header = <>
     <View style={styles.headingCard}>
-      <View style={styles.headingRow}><Text accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text><View style={styles.headingActions}><TextLink label="對話歷史" onPress={() => navigate(() => router.push("/history?category=conversations"))} /><TextLink label="記憶與參考" onPress={() => actions.open("memory")} /></View></View>
-
+      <View style={styles.headingRow}><Text accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text>
+        <View style={styles.headingActions}><TextLink label="對話歷史"
+          onPress={() => { if (!child || busy || chat.loading || !chat.online) return; timelineRef.current?.holdReadingPosition(); void chatController.reloadMessages(); }} />
+          <TextLink label="記憶與參考" onPress={() => actions.open("memory")} /></View></View>
     </View>
-    {child ? <AgentConversationPreview childId={child.id} online={model.connection === "online"} onLocateSource={locateSource} onPreviewReply={preview.showReply} previewTools={<ImportantRecordPreviewTools onEdit={id => navigate(() => router.push({ pathname: "/care", params: { record: id } }))} />} />
-      : <SectionCard><Text style={styles.body}>請先選擇孩子；不同孩子的私人對話不能混在一起。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard>}
+    {child ? <>
+      <Text style={styles.meta}>送出後會保存聊天並要求 AI 回覆；孩子稱呼及獲授權資料可能交由 Google 處理。試用時請使用合成資料。</Text>
+      <View style={styles.statusRow}><Text style={styles.meta}>顯示最近 {chat.limit} 則對話。</Text>
+        <AppButton label={chat.loading ? "正在讀取聊天" : phase === "save_unknown" || phase === "checked" ? "重新讀取並查核原保存" : "重新讀取聊天"}
+          variant="quiet" density="compact" loading={chat.loading} disabled={busy || chat.loading || !chat.online} onPress={() => { void chatController.reloadMessages(); }} /></View>
+      {chat.available === false ? <Text style={styles.meta}>AI 目前未開放；已保存訊息可以稍後再要求回覆。</Text> : null}
+      {!chat.online ? <Text style={styles.warning}>目前離線；所示聊天是上次讀取的快照，未送出草稿仍保留。</Text> : null}
+      {chat.loading || busy ? <View style={styles.statusRow}><ActivityIndicator size={14} color={chatColors.secondary} />
+        <Text accessibilityLiveRegion="polite" style={styles.meta}>{chat.busy === "save" ? "正在保存聊天…" : chat.busy === "reply" ? "聊天已保存，正在等候 AI 回覆…" : "正在讀取已保存聊天…"}</Text></View> : null}
+      {chat.error ? <Text accessibilityRole="alert" style={styles.warning}>{chat.error}</Text> : null}
+      {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
+      {chat.replyError && chat.replyError !== draft?.notice ? <Text accessibilityRole="alert" style={styles.warning}>{chat.replyError}</Text> : null}
+      {phase === "checked" ? <View style={styles.statusRow}>
+        {draft?.candidateMessageId ? <AppButton label="已核對，確認這則聊天已保存" variant="quiet" disabled={busy} onPress={() => chatController.confirmFoundMessage()} /> : null}
+        <AppButton label="已核對，解鎖原文重試" variant="quiet" disabled={busy || !chat.online} onPress={() => chatController.unlockCheckedSave()} /></View> : null}
+      {phase === "reply_failed" && draft?.savedUserMessageId ? <View style={styles.statusRow}>
+        <AppButton label="再次取得原訊息的回覆" variant="quiet" disabled={busy || !chat.online || chat.loading || !chatWritesAllowed}
+          onPress={() => { void requestChatReply(draft.savedUserMessageId!); }} />
+        <AppButton label="開始新訊息" variant="quiet" disabled={busy} onPress={() => chatController.startNewMessage()} /></View> : null}
+      {chat.loadedAt ? <Text style={styles.meta}>最後讀取：{new Date(chat.loadedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" })}</Text> : null}
+      {!chat.loading && chat.loadedAt && chat.messages.length === 0 ? <Text style={styles.body}>尚未有已保存聊天。</Text> : null}
+      <AgentConversation onLocateSource={locateSource} />
+    </> : <SectionCard><Text style={styles.body}>請先選擇有存取權的孩子；不同孩子的私人對話不能混在一起。</Text>
+      <AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>}
   </>;
   return <>
-    <ChatTimeline items={child ? preview.messages : []} recentLimit={6} compact={compact} header={header} scrollRef={scrollRef} controlsRef={timelineRef} followRequest={preview.followRequest}
-      newReplyId={preview.messages.find(message => message.id === preview.followRequest && message.role === "assistant")?.id}
-      renderItem={message => <ChatMessage message={message} testID={message.kind === "intro" ? "chat-answer" : message.id === `${child?.id}-question` ? "chat-question" : message.kind === "local" ? "chat-local-message" : undefined}
-        onLocateSource={locateSource} onStop={() => preview.stop(message.id)}>
-        {message.kind === "intro" && child ? <>
-          <Text style={styles.answerEyebrow}>示例版式 · 並非 Agent 建議</Text>
-          <Text style={styles.answerIntro}>可以先把已確認的睡眠記錄、作息時間，以及你想了解的情況放在一起。正式回答會由已接通的 Agent 按授權資料及適用來源生成。</Text>
-          <View style={styles.usedData}><Text style={styles.usedDataTitle}>這個示例畫面可顯示的資料</Text><Text style={styles.usedDataText}>{child.displayName} · {child.ageLabel} · 已載入已確認記錄 {model.records.filter(item => item.childId === child.id).length} 項</Text></View>
-          <View style={styles.answerSteps}>
-            <View style={styles.step}><Text style={styles.stepTitle}>1　先核對已有記錄</Text><CitationText style={styles.stepBody}>查看事件發生時間、來源及是否已確認，避免把候選內容當作事實。【1】</CitationText></View>
-            <View style={styles.step}><Text style={styles.stepTitle}>2　列出仍想釐清的問題</Text><CitationText style={styles.stepBody}>例如入睡時間、睡前活動與你希望得到的協助；不在預覽中推斷原因。【2】</CitationText></View>
-            <View style={styles.step}><Text style={styles.stepTitle}>3　再由正式服務提供有來源的回覆</Text><CitationText style={styles.stepBody}>適用的官方資料、引用片段與日期，須待 Agent／知識接線後才能顯示。【3】</CitationText></View>
-          </View>
-          <Text style={styles.footerText}>此段只示範排版與狀態，沒有呼叫模型。</Text>
-        </> : undefined}
-      </ChatMessage>} />
-    <AgentComposer enabled={!!child && pathname === "/chat"} compact={compact} draft={chatDraft} attachments={agentAttachments} onChangeDraft={setChatDraft} onPreview={previewMessage}
+    <ChatTimeline items={child ? chat.messages : []} recentLimit={6} compact={compact} header={header} scrollRef={scrollRef} controlsRef={timelineRef}
+      followRequest={followRequest} newReplyId={newReplyId} renderItem={message => {
+        const run = message.agentRunId ? agentRuns[message.agentRunId] : undefined;
+        const sourcesMatch = run?.text === message.text;
+        const pendingReply = message.role === "user" && message.authorUserId === chat.userId && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
+        return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
+          phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? run.citations : undefined,
+          note: new Date(message.createdAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }) }}
+          phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
+          onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
+          degraded={run?.retrievalMode === "keyword_degraded"} footer={<>
+            {message.agentRunId ? <AppButton label="查看這則回覆的來源與候選" variant="quiet" density="compact"
+              disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || agentModel.readState === "denied"}
+              onPress={() => selectAgentRun(message.agentRunId!)} /> : null}
+            {pendingReply ? <AppButton label={chat.replyingMessageId === message.id ? "正在等候原訊息回覆" : "要求這則已保存訊息的回覆"}
+              variant="quiet" density="compact" disabled={busy || !chat.online || chat.loading || !chatWritesAllowed} onPress={() => { void requestChatReply(message.id); }} /> : null}
+          </>} />;
+      }} />
+    <AgentComposer enabled={!!child && pathname === "/chat" && !busy && phase === "draft"} compact={compact} draft={chatDraft}
+      attachments={agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
+      suggestionLabel="建議問題" inputHint={agentAttachments.length ? "照片提交尚未接通。請先移除照片才可送出文字；文字及照片草稿會保留。" : "支援文字聊天；照片提交、語音及文件尚未接通。"}
+      filesUnavailableReason="文件提交尚未接通，請先使用文字" voiceUnavailableReason="語音提交尚未接通，請先使用文字"
       onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
   </>;
 }
-
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas }, headingCard: { gap: 4, minWidth: 0 },
   headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 12, flexWrap: "wrap" },
   headingActions: { flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" },
   screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
-  answerEyebrow: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta }, answerIntro: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body },
-  usedData: { paddingVertical: 4, gap: 4 }, usedDataTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, fontWeight: "600" }, usedDataText: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
-  answerSteps: { gap: 16 }, step: { gap: 4 }, stepTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section }, stepBody: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body }, footerText: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+  meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+  warning: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool },
+  statusRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
 });

@@ -1413,3 +1413,13 @@
 - Verification：必要型別、三項 scope 記憶檢查、一次 Web export 通過；一次 Chromium 真 API 情景 34.4秒通過，兩合成帳號、一孩子，保存回應遺失後只查原 opId、不重建，重開及換帳戶隔離通過，孩子已刪。0模型／通知／外網。HTTP實際數及原opId未由line reporter留檔，只證明含清理不超過95；不為補計數重跑。詳見 [EV-INT-W01](artifacts/verification/INT_W01_CHECKS.json)。
 - Failures／Limits：一項純記憶測試首次使用固定fake方法導致失敗，修fixture後只補該項通過。瀏覽器情景一次通過；最後API地址guard／app顯示名稱整理後只做必要型別及零網絡guard檢查，不重跑瀏覽器或export。公開部署、Agent／其餘領域正式接線、Android及全面視覺未驗。
 - Delivery／Next：從master 61a8faa獨立分支交付，B帳號推送／PR／合併；A為本機實際Committer，共同責任按實作範圍署名，實際GitHub身份／簽署於交付時核對。合併後開始真Agent接線；目前不是全部正式前端完成。
+
+<a id="log-20261006-int-w02"></a>
+## LOG-20261006-INT-W02
+
+- Recorded At／Work Date：2026-10-06，Asia/Hong_Kong；基線 master `2592ec7`，前置 INT-W01，分支 `codex/int-w02-agent-wiring`。
+- Goal／Actual Work：保留新前端設計，接真聊天、來源、工具結果、背景結果、持久待確認索引及原操作恢復；新增本人按孩子的普通操作預授權、普通記錄／私人交代／本人提醒及真收據，接回原 Care／Task／Contact 服務。重要事項仍確認，私人交代不變家庭健康事實；補摘要覆蓋接縫，普通日期不虛構精確時刻。migration 025 保存加密政策、修訂、私人交代及操作收據；Prompt Pack 0.1.19 復用原配方。
+- Executor／Responsibility：A 統籌共用 AI；主模型親寫政策／契約／提示詞、整合及 review，三個 Sol 6.1 XHigh 分別實作業務儲存、前端 owner 及候選索引，前端代理另執行有界補驗。C 主責，權重5：C50%／A30%／B20%；是責任分配，不是個人手寫或實測工時。沒有新增組員人工驗收。
+- Verification：[EV-INT-W02](artifacts/verification/INT_W02_CHECKS.json)。沿用已通過型別／原 ADK 個案及 INT-W01 身份／unknown 證據；一次加密配對備份、025 遷移、53 次業務呼叫的 SQL 驗收通過。真 Agent 完成兩項保存及聊天收據，4 次生成、0 embedding；連同先前失败，共6次真生成、未加配額。餘下畫面只讀同一資源、模型關閉；記錄側欄與私人備註已觀察成功，最後一次21 HTTP／11.6秒，專用孩子均已清理，原庫及備份保留。
+- Failures／Limits：失效 ADC 路徑、聯合工具參數被拒、AI 關閉仍初始化 Vertex 已修；測試編號／薄投影欄位／側欄定位造成停止，逐次保留並只補缺項。原整批瀏覽器腳本未重跑成綠，不把分段證據寫成整批通過。日期精度修正只做兩個零網絡直接核對；無新增通知、公開部署、照片提交、Android 或完整相容性驗收。更早聊天、真取消及普通記錄更正工具仍由 INT-W03 承接。
+- Delivery／Next：按已確認分配用 C 帳號推送、建 PR、merge；本機 Committer 是 A，共同作者 A／B，署名及簽署於遠端交付核對。本包完成隨 PR 合併生效，之後才開始 INT-W03；整體正式入口接線目標仍未完成。

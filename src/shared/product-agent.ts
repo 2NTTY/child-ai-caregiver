@@ -21,6 +21,18 @@ export interface AgentProposal {
   createdAt: string; expiresAt: string; value: AgentProposalValue; targetLabel: string | null;
   result: { kind: "task" | "memory_fact"; id: string; version: number } | null;
 }
+export interface AgentPendingPage {
+  proposals: AgentProposal[];
+  nextCursor: string | null;
+}
+export const agentPendingPageSchema = z.object({
+  proposals: z.array(z.object({
+    id: z.uuid(), runId: z.uuid(), childId: z.uuid(), version: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+    status: z.enum(["pending", "expired"]), createdAt: z.iso.datetime({ offset: true }), expiresAt: z.iso.datetime({ offset: true }),
+    value: agentProposalSchema, targetLabel: z.string().nullable(), result: z.null(),
+  })).max(20),
+  nextCursor: z.string().regex(/^[A-Za-z0-9_-]{1,1024}$/).nullable(),
+}).strict();
 export const agentAnswerSchema = z.object({
   kind: z.enum(["caregiving", "safety_help", "clarification", "operation", "record_restatement"]),
   paragraphs: z.array(z.object({ text: text(1800), citationIds: z.array(z.string().min(1).max(80)).max(6) }).strict()).min(1).max(6),

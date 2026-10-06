@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { agentDecisionSchema, agentProposalSchema, type AgentDecision, type AgentProposal, type ProductAgentResult } from "../shared/product-agent.ts";
+import { agentDecisionSchema, agentProposalSchema, agentPendingPageSchema, type AgentDecision, type AgentProposal, type AgentPendingPage, type ProductAgentResult } from "../shared/product-agent.ts";
 
 export type ProductAgentErrorCode = "invalid_input" | "unauthorized" | "not_found" | "session_changed"
   | "account_precondition_required" | "version_conflict" | "confirmation_expired" | "confirmation_scope_changed"
@@ -23,6 +23,7 @@ export class ProductAgentApiError extends Error {
 }
 
 export interface ProductAgentApi {
+  getPendingProposals(childId: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<AgentPendingPage>;
   getRun(childId: string, runId: string, signal: AbortSignal, userId: string): Promise<ProductAgentResult>;
   decideProposal(childId: string, runId: string, proposalId: string, input: AgentDecision, signal: AbortSignal, userId: string): Promise<AgentProposal>;
 }
@@ -103,6 +104,15 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     }
   }
   return {
+    async getPendingProposals(childId, signal, userId, cursor = null) {
+      if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success
+        || (cursor !== null && !/^[A-Za-z0-9_-]{1,1024}$/.test(cursor))) throw new ProductAgentApiError(400, "invalid_input");
+      const value = await request(`/children/${encodeURIComponent(childId)}/agent/pending${cursor === null ? "" : `?cursor=${encodeURIComponent(cursor)}`}`, signal, userId);
+      const parsed = agentPendingPageSchema.safeParse(value);
+      if (!parsed.success || parsed.data.proposals.some(item => item.childId !== childId)
+        || new Set(parsed.data.proposals.map(item => item.id)).size !== parsed.data.proposals.length) throw new ProductAgentApiError();
+      return parsed.data;
+    },
     async getRun(childId, runId, signal, userId) {
       checkScope(childId, runId, userId);
       const value = await request(path(childId, runId), signal, userId);

@@ -20,6 +20,7 @@ import { handleChatRequest } from "./chat-api.ts";
 import { handleChatReply } from "./chat-reply.ts";
 import { handleGrowthRequest } from "./growth-api.ts";
 import { handleProductAgentRequest } from "./product-agent-api.ts";
+import { handleAgentActionsRequest } from "./agent-actions-api.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { handleFamilyRequest } from "./family-api.ts";
 import { handleCareRequest } from "./care-api.ts";
@@ -97,6 +98,7 @@ export function createRequestHandler(options: {
   growth?: import("./growth-store.ts").GrowthStore;
   productAgent?: import("./product-agent.ts").ProductAgent;
   productAgentStore?: import("./product-agent-store.ts").ProductAgentStore;
+  agentActions?: import("./agent-actions-store.ts").AgentActionsStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
   telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
   modelGateway?: ModelGateway;
@@ -222,6 +224,8 @@ export function createRequestHandler(options: {
           ? await handleTelegramRequest(webRequest,userId,options.telegram.store)
           : /^\/api\/children\/[^/]+\/growth(\/|$)/u.test(url.pathname) && options.growth
           ? await handleGrowthRequest(webRequest,userId,options.growth,async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)
+          : options.agentActions && /^\/api\/children\/[^/]+\/agent\/(policy|notes|actions)(\/|$)/u.test(url.pathname)
+          ? await handleAgentActionsRequest(webRequest, userId, options.agentActions, async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)
           : options.productAgent && options.productAgentStore && options.chat
           && (/^\/api\/children\/[^/]+\/agent\//u.test(url.pathname) || /^\/api\/children\/[^/]+\/messages\/[^/]+\/reply$/u.test(url.pathname))
           ? await handleProductAgentRequest(webRequest, userId, { agent: options.productAgent, store: options.productAgentStore, chat: options.chat,

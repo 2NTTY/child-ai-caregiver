@@ -16,9 +16,9 @@ const phaseLabels: Record<ChatReplyPhase, string> = {
 };
 const activityLabels = { running: "處理中", succeeded: "已回報", failed: "失敗", unknown: "未知", pending: "待確認" } as const;
 
-export function ChatMessage({ message, children, footer, testID, embedded = false, onStop, onCheck, onLocateSource, onOpenSource, degraded }: {
+export function ChatMessage({ message, children, footer, testID, embedded = false, onStop, onCheck, onLocateSource, onOpenSource, degraded, phaseLabel }: {
   message: ChatMessageView; children?: ReactNode; footer?: ReactNode; testID?: string; embedded?: boolean;
-  onStop?: () => void; onCheck?: () => void; onLocateSource?: LocateAnswerSource; onOpenSource?: (id: string) => void; degraded?: boolean;
+  onStop?: () => void; onCheck?: () => void; onLocateSource?: LocateAnswerSource; onOpenSource?: (id: string) => void; degraded?: boolean; phaseLabel?: string;
 }) {
   const [processOpen, setProcessOpen] = useState(false);
   const assistant = message.role === "assistant", active = message.phase === "thinking" || message.phase === "streaming";
@@ -30,10 +30,10 @@ export function ChatMessage({ message, children, footer, testID, embedded = fals
   return <View testID={testID ?? "chat-message"} nativeID={`chat-message-${message.id}`} style={[styles.row, !assistant && styles.userRow]}>
     <View style={[styles.content, assistant ? styles.assistant : styles.user, embedded && styles.embedded]}>
       {assistant ? <StatusAnnouncement eventKey={`${message.id}:${message.phase ?? "complete"}`}
-        message={phaseLabels[message.phase ?? "complete"]} urgent={message.phase === "failed"} /> : null}
+        message={phaseLabel ?? phaseLabels[message.phase ?? "complete"]} urgent={message.phase === "failed"} /> : null}
       {assistant && message.phase && (message.phase !== "complete" || activities.length > 0) ? <View testID="chat-message-phase" style={styles.statusRow}>
         {active ? <ActivityIndicator size={14} color={chatColors.secondary} /> : null}
-        <Text style={[styles.status, attention && styles.warning, message.phase === "failed" && styles.error]}>{phaseLabels[message.phase]}</Text>
+        <Text style={[styles.status, attention && styles.warning, message.phase === "failed" && styles.error]}>{phaseLabel ?? phaseLabels[message.phase]}</Text>
         {active && onStop ? <AppButton label="停止回覆" variant="quiet" density="compact" onPress={onStop} /> : null}
         {attention && onCheck ? <AppButton label="查核原回覆" variant="quiet" density="compact" onPress={onCheck} /> : null}
       </View> : null}

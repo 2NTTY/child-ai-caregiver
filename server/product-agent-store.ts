@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { agentDecisionSchema, agentProposalSchema } from "../src/shared/product-agent.ts";
-import type { AgentDecision, AgentProposal, AgentProposalValue, ProductAgentResult } from "../src/shared/product-agent.ts";
+import { agentActionToolNames } from "../src/shared/agent-actions.ts";
+import type { AgentDecision, AgentProposal, AgentProposalValue, AgentPendingPage, ProductAgentResult } from "../src/shared/product-agent.ts";
 import type { AgentScope } from "./agent-runtime.ts";
 import { FamilyError, READ_ROLES, withChildAccess } from "./family-access.ts";
 import { transactionPool } from "./transaction-pool.ts";
@@ -19,7 +20,25 @@ interface RunRow {
   result_encrypted: string | null; created_at: Date; expires_at: Date;
 }
 interface ProposalRow { id: string; run_id: string; call_id: string; version: number; state: AgentProposal["status"];
-  payload_encrypted: string; created_at: Date; expires_at: Date }
+  payload_encrypted: string; created_at: Date; expires_at: Date; is_expired?: boolean }
+interface PendingProposalRow extends ProposalRow {
+  child_id: string; owner_user_id: string; cursor_created_at: string; is_expired: boolean;
+}
+const pendingCursorSchema = z.object({
+  version: z.literal(1), userId: z.string().min(1).max(128), childId: z.uuid(),
+  createdAt: z.iso.datetime({ precision: 6 }), id: z.uuid(),
+}).strict();
+function pendingCursor(raw: string | null, userId: string, childId: string) {
+  if (raw === null) return null;
+  try {
+    if (!/^[A-Za-z0-9_-]{1,1024}$/.test(raw)) throw new Error();
+    const bytes = Buffer.from(raw, "base64url");
+    if (bytes.toString("base64url") !== raw) throw new Error();
+    const cursor = pendingCursorSchema.parse(JSON.parse(bytes.toString("utf8")));
+    if (cursor.userId !== userId || cursor.childId !== childId) throw new Error();
+    return cursor;
+  } catch { throw new FamilyError(400, "invalid_input"); }
+}
 interface ProposalPayload { value: AgentProposalValue; result: AgentProposal["result"]; targetLabel: string | null }
 export interface AgentRunClaim {
   runId: string; scope: AgentScope; created: boolean; sourceMessageId: string | null;
@@ -27,7 +46,7 @@ export interface AgentRunClaim {
 }
 const missing = () => new FamilyError(404, "not_found");
 const aad = (run: Pick<RunRow, "id" | "child_id" | "owner_user_id">) => "agent-run:" + run.child_id + ":" + run.owner_user_id + ":" + run.id;
-const proposalAad = (run: RunRow, row: Pick<ProposalRow, "id" | "version">) => aad(run) + ":proposal:" + row.id + ":" + row.version;
+const proposalAad = (run: Pick<RunRow, "id" | "child_id" | "owner_user_id">, row: Pick<ProposalRow, "id" | "version">) => aad(run) + ":proposal:" + row.id + ":" + row.version;
 const empty = (run: RunRow): ProductAgentResult => ({ runId: run.id, status: run.state, stopReason: run.stop_reason,
   provenance: null, countsKnown: false, text: "", citations: [], retrievalMode: "not_used", tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, proposals: [] });
 
@@ -40,9 +59,9 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
       [runId, userId, childId])).rows[0];
     if (!row) throw missing(); return row;
   }
-  function decodeProposal(run: RunRow, row: ProposalRow): AgentProposal {
+  function decodeProposal(run: Pick<RunRow, "id" | "child_id" | "owner_user_id">, row: ProposalRow): AgentProposal {
     const payload = JSON.parse(cipher.decrypt(row.payload_encrypted, proposalAad(run, row))) as ProposalPayload;
-    return { id: row.id, runId: run.id, childId: run.child_id, version: row.version, status: row.state,
+    return { id: row.id, runId: run.id, childId: run.child_id, version: row.version, status: row.state === "pending" && (row.is_expired ?? row.expires_at.getTime() <= Date.now()) ? "expired" : row.state,
       createdAt: row.created_at.toISOString(), expiresAt: row.expires_at.toISOString(), ...payload };
   }
   async function proposals(client: PoolClient, run: RunRow): Promise<AgentProposal[]> {
@@ -96,6 +115,26 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         return { ...saved, runId, status: row.state, stopReason: row.stop_reason, proposals: await proposals(client, row) };
       });
     },
+    async pendingProposals(userId: string, childId: string, rawCursor: string | null = null): Promise<AgentPendingPage | null> {
+      const cursor = pendingCursor(rawCursor, userId, childId);
+      return access(userId, childId, false, async client => {
+        const rows = (await client.query<PendingProposalRow>(
+          `SELECT p.*,r.child_id,r.owner_user_id,
+             to_char(p.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_created_at,
+             p.expires_at<=clock_timestamp() AS is_expired
+           FROM agent_proposals p JOIN agent_runs r ON r.id=p.run_id
+           WHERE r.owner_user_id=$1 AND r.child_id=$2 AND p.state IN ('pending','expired')
+             AND ($3::timestamptz IS NULL OR (p.created_at,p.id)<($3::timestamptz,$4::uuid))
+           ORDER BY p.created_at DESC,p.id DESC LIMIT 21`,
+          [userId, childId, cursor?.createdAt ?? null, cursor?.id ?? null])).rows;
+        const page = rows.slice(0, 20), last = page.at(-1);
+        return {
+          proposals: page.map(row => decodeProposal({ id: row.run_id, child_id: row.child_id, owner_user_id: row.owner_user_id }, row)),
+          nextCursor: rows.length > 20 && last ? Buffer.from(JSON.stringify({ version: 1, userId, childId,
+            createdAt: last.cursor_created_at, id: last.id }), "utf8").toString("base64url") : null,
+        };
+      });
+    },
     async backgroundRuns(userId: string, childId: string) {
       return access(userId, childId, false, async client => (await client.query<{ runId: string; createdAt: Date }>(
         `SELECT id AS "runId",created_at AS "createdAt" FROM agent_runs WHERE owner_user_id=$1 AND child_id=$2 AND trigger_kind='worker' ORDER BY created_at DESC,id DESC LIMIT 20`,
@@ -108,9 +147,9 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         if (row.state !== "running" || row.authorization_version.toString() !== current.authorizationVersion
           || row.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) return false;
         if(row.data_version !== current.dataVersion){
-          const contact=value.tools.filter(tool=>tool.name==="contact_caregiver" && tool.status==="succeeded" && tool.reference);
+          const contact=value.tools.filter(tool=>(tool.name==="contact_caregiver" || tool.name==="execute_ordinary_instruction" || Object.values(agentActionToolNames).includes(tool.name)) && tool.status==="succeeded" && tool.reference);
           if(!contact.length)return false;
-          value={...value,status:"stopped",stopReason:"unauthorized",text:"已記錄聯絡請求；資料隨後有變，請到聯絡台帳核對目前投遞結果。入列不代表送達或完成。",citations:[],retrievalMode:"not_used",proposals:[],tools:contact};
+          value={...value,status:"stopped",stopReason:"unauthorized",text:"已有操作寫入台帳；資料隨後有變，請查看原操作收據及目前狀態，勿另建重複操作。入列不代表送達或完成。",citations:[],retrievalMode:"not_used",proposals:[],tools:contact};
           summary=undefined;
         }
         if (summary && row.trigger_kind === "interactive" && value.status === "completed") {
@@ -173,16 +212,19 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
       const input = agentDecisionSchema.parse(raw);
       return access(userId, childId, true, async (client, workspaceId) => {
         const run = await runFor(client, userId, childId, runId);
-        const row = (await client.query<ProposalRow>("SELECT * FROM agent_proposals WHERE id=$1 AND run_id=$2 FOR UPDATE", [proposalId, runId])).rows[0];
+        const row = (await client.query<ProposalRow>("SELECT *,expires_at<=clock_timestamp() AS is_expired FROM agent_proposals WHERE id=$1 AND run_id=$2 FOR UPDATE", [proposalId, runId])).rows[0];
         if (!row) throw missing();
         const proposal = decodeProposal(run, row), wanted = input.decision === "accept" ? "accepted" : "dismissed";
         // Exact repeat after response loss returns the already committed effect, never another task.
         if (proposal.status === wanted && proposal.version === input.expectedVersion + 1) return proposal;
-        if (proposal.status !== "pending" || proposal.version !== input.expectedVersion) throw new FamilyError(409, "version_conflict");
-        if (proposal.expiresAt <= new Date().toISOString()) throw new FamilyError(409, "confirmation_expired");
-        const current = await currentScope(client, workspaceId, userId, childId);
-        if (run.authorization_version.toString() !== current.authorizationVersion
-          || run.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) throw new FamilyError(409, "confirmation_scope_changed");
+        if ((proposal.status !== "pending" && proposal.status !== "expired") || proposal.version !== input.expectedVersion) throw new FamilyError(409, "version_conflict");
+        if (input.decision === "accept" && proposal.status === "expired") throw new FamilyError(409, "confirmation_expired");
+        // An expired dismissal only retires the candidate; it never creates a business effect.
+        if (proposal.status === "pending") {
+          const current = await currentScope(client, workspaceId, userId, childId);
+          if (run.authorization_version.toString() !== current.authorizationVersion
+            || run.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) throw new FamilyError(409, "confirmation_scope_changed");
+        }
         const value = proposal.value, shared = value.kind !== "memory_fact" || value.intendedVisibility === "family";
         if (input.decision === "accept" && shared && !input.confirmShared) throw new FamilyError(400, "sharing_confirmation_required");
         let result: AgentProposal["result"] = null;

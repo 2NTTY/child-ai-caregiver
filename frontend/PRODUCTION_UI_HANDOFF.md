@@ -1,5 +1,15 @@
 # 預覽轉正式介面的移除及接線清單
 
+<a id="production-wiring"></a>
+## 正式接線接點
+
+活動狀態及驗收以 [根 INT 計劃](../PLAN.md#production-integration) 為準。INT-W01 已把標準 Web 建置及身份／孩子 owner 接回本目錄；INT-W02 接真聊天、來源、工具結果、持久候選及普通交代。下方預覽清單保留尚待替換位置的用途，不能把已替換位置仍視為合成模式。
+
+- `src/production/ProductionOwner.ts` 持有既有 RecordsController／ChatController；`ProductAgentOwner.ts` 查原 run、來源及待確認索引，`AgentAuthorizationOwner.ts` 管本人預授權、私人交代及原操作收據。畫面收合不卸載待查核操作；換本人／孩子時隔離並取消舊回應。
+- `chatScreen.tsx` 使用原 ChatTimeline／ChatMessage／composer；移除合成回覆和計時串流。授權與記憶放收合入口，來源／候選仍沿既有 AgentRunView；不改已確認的版面、美術或動效。
+- 普通照護整理與私人備註引用真正資源；前者按家庭權限共享，後者只屬本人陳述。收據不是「已通知」證據；舊保存收據後須另讀目前政策。
+- 目前歷史仍為最近 100 則，待確認索引不受此限制。照片提交、其餘功能頁、較舊歷史游標及真 run 取消以根包／契約的未完成項為準，不提供假成功或假停止。跨頁正式投影於 INT-W03 接續。
+
 ## 私人來源協助接入補充
 
 設定與聊天均導向同一 sources 清單及 editor；SourceComposer 保留原 create 投影，新增意向由正式接入草稿契約承接，不能塞入舊 API。將 SourceIntakeConversation／Editor 的合成閱讀、建議及確認結果替換為實際授權 controller；無真結果不能顯示已讀、已核實或已接入。正式缺口、回調、同意及清理見 [私人來源交接](SHARED_INPUT_HANDOFF.md#assisted-source-management)；記憶上下文後續安排見 [Agent 交接](AGENT_HANDOFF.md#memory-context-integration)。保留人工入口及唯一資料權威，不挪用原 fetch／extract／confirm 的 unknown／版本契約。

@@ -127,9 +127,11 @@ export function createAgentRuntime(options: {
               const definition = definitions.get(tool.name);
               const parsed = definition?.parameters.strict().safeParse(args);
               let response: AgentToolResult | undefined;
-              if (!parsed?.success) response = { status: "rejected" };
+              if (!parsed?.success) response = { status: "rejected", data: { code: "invalid_parameters",
+                nextAction: "Use the declared tool parameter shape. No operation was executed; correct the arguments within the remaining run budget." } };
               else if (!await budget.wait(authorize)
-                || !await budget.wait(() => definition!.authorize(parsed.data, scope))) response = { status: "rejected" };
+                || !await budget.wait(() => definition!.authorize(parsed.data, scope))) response = { status: "rejected", data: { code: "not_authorized",
+                  nextAction: "Stop this operation. Do not retry with another identity or resource." } };
               if (response) result.tools.push({ name: tool.name, callId: context.functionCallId ?? "", status: response.status });
               budget.check();
               return response ? { ...response } : undefined;

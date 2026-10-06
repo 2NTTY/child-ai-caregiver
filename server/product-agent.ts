@@ -7,8 +7,10 @@ import { createProductAgentTools } from "./product-agent-tools.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
 import { AgentStopped } from "./agent-budget.ts";
+import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 
 export function createProductAgent(options: {
+  actions?: import("./agent-actions-store.ts").AgentActionsStore;
   summary?:import("./care-summary-store.ts").CareSummaryStore;
   contact?:import("./contact-store.ts").ContactStore;
   growth?: import("./growth-store.ts").GrowthStore;
@@ -49,6 +51,7 @@ export function createProductAgent(options: {
       const page = await options.chat.listForUser(userId, childId), context = await options.memory.context(userId, childId, "private");
       const index = page?.messages.findIndex(item => item.id === messageId && item.role === "user") ?? -1;
       if (!page || index < 0 || !context || !await isCurrentUser()) return null;
+      const operationPolicy = options.actions ? await options.actions.policy(userId, childId) : null;
       const recipeId=options.summary&&/摘要|總結|总结|報告|报告|(?:到診|到诊|覆診|复诊).{0,4}(?:準備|准备|問題|问题)|summary|report/iu.test(page.messages[index].text)?"summary-visit":"product-interactive";
       const claim = await options.store.claim(userId, childId, { kind: "interactive", reference: messageId }, recipeId);
       if (!claim) return null;
@@ -59,8 +62,11 @@ export function createProductAgent(options: {
       const result = await options.runtime.run({
         scope: claim.scope, runId: claim.runId, deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
-        context: { currentMessageId: messageId, memoryAvailability: { hasSummary: Boolean(context.summary),
-          earlierMessagesNotFullySummarized: context.truncated.messages }, confirmationPolicy: "explicit_selection_only",
+        context: { currentMessageId: messageId, serverNow: new Date().toISOString(), timeZone: "Asia/Hong_Kong", memoryAvailability: { hasSummary: Boolean(context.summary),
+          earlierMessagesNotFullySummarized: context.truncated.messages },
+          confirmationPolicy: options.actions ? "ordinary_instructions_with_current_preauthorization_otherwise_explicit_confirmation" : "explicit_selection_only",
+          operationPolicy,
+          instructionPolicy: options.actions ? "本次清楚的普通交代可按 operationPolicy 使用對應普通操作工具。政策不足或重要健康資料、AI 主動建議、含糊指向、刪除及擴大共享仍用候選或補問。需要孩子資料、原任務或舊版本時先 read_context；每次執行由 Server 重查政策。結果依收據，不把站內安排稱為外發通知。" : null,
           outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions" },
         // A bounded recent window is distinct from the coverage-tracked summary and confirmed facts.
         messages: page.messages.slice(Math.max(0, index - 5), index + 1).map(item => ({ role: item.role, text: item.text })),
@@ -78,9 +84,13 @@ export function createProductAgent(options: {
         const recorded=await options.contact.recordedForRun?.(claim.scope.userId,claim.scope.childId,claim.runId);
         for(const reference of recorded??[])if(!result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.reference===reference))result.tools.push({name:"contact_caregiver",callId:"persisted-ledger",status:"succeeded",reference});
       }
+      const receipts = options.actions && await isCurrentUser()
+        ? await options.actions.receipts(userId, childId, claim.runId) ?? [] : [];
+      for (const receipt of receipts) if (!result.tools.some(tool => tool.reference === receipt.id))
+        result.tools.push({ name: agentActionToolNames[receipt.kind], callId: "persisted-ledger", status: "succeeded", reference: receipt.id });
       const presentation = result.status === "completed" ? rendered.value : null;
       const value: ProductAgentResult = { runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
-        text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
+        text: presentation?.text ?? (receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         countsKnown: true, counts: result.counts, proposals: [] };
       if (!await isCurrentUser()) return null;

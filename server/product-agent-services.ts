@@ -17,12 +17,13 @@ import { createChatStore } from "./chat.ts";
 
 import type { GrowthStore } from "./growth-store.ts";
 
-export function createProductAgentServices(pool: Pool, cipher: StorageCipher, config: AiConfig, scheduling?: TaskScheduling, diagnostics = false, growth?: GrowthStore,contact?:import("./contact-store.ts").ContactStore,summary?:import("./care-summary-store.ts").CareSummaryStore, routing?:import("./model-routing.ts").ModelRouting) {
+export function createProductAgentServices(pool: Pool, cipher: StorageCipher, config: AiConfig, scheduling?: TaskScheduling, diagnostics = false, growth?: GrowthStore,contact?:import("./contact-store.ts").ContactStore,summary?:import("./care-summary-store.ts").CareSummaryStore, routing?:import("./model-routing.ts").ModelRouting, actions?:import("./agent-actions-store.ts").AgentActionsStore) {
   const store = createProductAgentStore(pool, cipher, scheduling);
-  const runtime = createAgentRuntime({ config, usage: createAiUsageStore(pool), provider: createVertexAgentProvider(config),
+  const runtime = createAgentRuntime({ config, usage: createAiUsageStore(pool),
+    provider: config.enabled ? createVertexAgentProvider(config) : { generate: async () => { throw new Error("ai_disabled"); } },
     resolve: routing?.resolve,
     diagnostics: diagnostics ? event => { console.info("agent_diagnostic", JSON.stringify(event)); } : undefined });
-  const agent = createProductAgent({ store, growth, contact, summary, memory: createMemoryStore(pool, cipher, true),
+  const agent = createProductAgent({ store, growth, contact, summary, actions, memory: createMemoryStore(pool, cipher, true),
     tasks: createTaskStore(pool, cipher, scheduling), chat: createChatStore(pool, cipher, true, true),
     runtime,
     knowledge: createKnowledgeRetriever(createKnowledgeStore(pool), createEmbeddingGateway({ config,
