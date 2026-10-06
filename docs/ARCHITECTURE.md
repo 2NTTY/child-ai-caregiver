@@ -577,3 +577,11 @@ ConcernStore 是家庭共享關注、事件與原操作收據的唯一權威；�
 一次跟進由明確未來時間觸發：pg-boss 排程 → 短交易重核／入列 ID → 交易外 Agent background → 原 run 收據／站內結果。延用既有 generation、storage epoch、目前成員權限與 Agent claim 去重。沒有新排程不空轉模型；已關閉、版本過時或 unknown 不重新執行。背景關注沒有 contact 工具，不借此擴大通知授權；相關任務仍走既有獨立流程。恢復關注不重新排入舊跟進。
 
 使用現有 pg-boss／權限／cipher 的原因：此包缺的是產品關注與終態語義，既有框架已提供可靠入列、排程及恢復，不引入第二套 worker 或狀態機框架。細節以 [API](API.md#int-concerns)／[資料契約](DATA_MODEL.md#int-concerns) 為準。
+
+
+<a id="int-family-documents"></a>
+## INT 文件整理與導出
+
+Agent 工具、準備單、成長頁及歷史共用 FamilyDocumentStore；前端只掛一個文件 owner，沿既有 changes cursor 更新各頁。Server 在短交易內取得已授權的同源資料，保存有界版本化整理；原 opId、防越權及來源失效規則不交給模型判斷。
+
+首次建立標準報告後，持久 worker 合併來源事件更新；這是確定性的家庭記錄整理，不宣稱每次由 Gemini 新作分析，亦不消耗模型額度。特殊用途由對話選取既有用途及範圍，未提供的私人內容／照片匯出不冒充已接線。PDF 使用固定版 react-pdf Node renderer 及本地繁中字體，取同一已授權 snapshot；渲染後重核才回應，不在持 SQL 鎖時排版。

@@ -36,6 +36,7 @@
     "@google/adk": "2.1.0",
     "@google/genai": "2.24.0",
     "@hookform/resolvers": "5.9.1",
+    "@react-pdf/renderer": "4.9.0",
     "better-auth": "1.7.5",
     "cheerio": "1.2.0",
     "expo": "57.0.24",

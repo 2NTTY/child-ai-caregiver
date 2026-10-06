@@ -1453,3 +1453,11 @@
 - 必要 Server／前端型別通過；手動備援末輪前端型別以 Node 24.11.0 通過，其餘本包執行為 24.19.0。一次真合成 PostgreSQL 流程首次通過：2 帳戶／1 孩子、40 次業務呼叫、3 次狀態讀取、1 次 scripted Agent claim；候選確認／重播、同源歷史、撤權、去重及私有回覆隔離通過。零真模型／embedding／通知／外網／瀏覽器；清理新孩子，保留帳戶，worker 恢復暫停。
 - 先作工程外加密配對備份再套用 027，沒有重跑完整還原、hard-kill、cron 或前端矩陣。主模型覆核 SQL／交易／工具／owner diff，證據：[INT_W05_CHECKS](artifacts/verification/INT_W05_CHECKS.json)。
 - 主責 C，權重 5：C 50%／A 30%／B 20%；共用 AI 由 A 統籌，依團隊責任署名，不冒稱人手實測工時。交付用 C 帳號，Committer 為 A；合併後才啟動 INT-W06，多份文件／報告及公開入口切換仍未完成。
+<a id="log-int-w06"></a>
+## 2026-10-06 — INT-W06 多份文件、來源報告及同版 PDF
+
+- 從 `eaf6287`（PR #95）開獨立分支；Agent 和新前端共用 FamilyDocument Store／API、原操作收據、權限及加密版本。支援多份準備文件、清單、歸檔／恢復、來源期間報告及同版 PDF，保留既有設計及舊單份到診準備入口。
+- 主模型實作 Agent 工具／原話與版本核對、契約及 Prompt Pack 0.1.23；工具成功同交易更新 run 資料基準，收尾不重做副作用。Sol 按既定方案接 Server 及前端 owner。共享來源更正遮蔽舊快照與收據；worker 暫停後恢復仍處理已保存的 dirty 工作，讀頁不生成。
+- 復用 pg-boss、React Hook Form 及 @react-pdf/renderer 4.9.0；隨附原版 LXGW WenKai TC 1.522／OFL。PDF 只使用共享文字快照，不含照片／私人聊天或臨床判斷；用途、來源及所選版本明示。
+- 必要 Server／前端型別通過，單份繁中 PDF 的渲染及文字核對通過。先工程外加密配對備份，再套用 028；首次脚本 import 在零業務呼叫時因 Node strip-only 不支援 parameter property 停止，局部修正後單一流程通過：2 帳戶／1 孩子／35 次業務呼叫、零外網／模型／通知／瀏覽器，清理新孩子並暫停 worker。沒有擴充矩陣或重跑既有證據。
+- 主模型覆核權限、資料同源、工具／run 交易、來源失效、worker 世代及 PDF 版本；[證據](artifacts/verification/INT_W06_CHECKS.json) 如實分開未驗項。A 主責，權重 5，A 40%／C 40%／B 20%；共用 AI 由 A 統籌，依責任署名，Committer 保留 A，不冒稱人手實測工時。用 A 帳號交付，合併後才進 INT-W07；公開入口尚未切換。

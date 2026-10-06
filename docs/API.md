@@ -555,3 +555,17 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 新關注由本人核對後屬家庭共享；背景回覆仍按原使用者的 Agent run 權限呈現。事件只保存共享觀察、操作與結果 ID，不把私人聊天／模型背景正文複製成家庭紀錄。外發仍須另有既有任務／渠道授權，不由本包擴權。
 
 互動工具按當次及近期對話的任務載入：來源／關注、普通記錄／私人交代／提醒分組，不把全套工具 schema 塞進每次呼叫。這只決定本 run 可用工具，不授權執行；缺能力時如實說明或補問，不假稱成功。每個工具照常核對權限、原文及政策。模型上限不變，不靜默截斷必要的授權或協定配對；關注上下文保留完整事件並明示 historyComplete。
+
+
+<a id="int-family-documents"></a>
+## INT：家庭文件及同版 PDF
+
+`/api/children/:childId/documents` 是多份準備文件及成長報告的唯一業務入口，與舊單份 VisitPreparation 分開。每次重查本人、目前家庭角色、孩子及 authorityVersion；owner／caregiver 可整理，viewer 唯讀。GET 清單／單項不呼叫模型或自動建立文件。POST 建立及 `/:id/actions` 帶原 opId；refresh／archive／restore／check_item 帶 expectedVersion。網絡未知只重查／重送相同原操作，不換 opId 或版本猜成功。
+
+文件只整理已可家庭共享的 profile、記錄、有效確認事實、任務及關注；私人聊天／私人記憶／私人來源不自動進入。Server 按來源原 ID／版本組成內容，未記錄保持未知，未知事件時間不改成建立日期。有限範圍列 coverageNote，不將記錄整理當成診斷、能力判定或完整發展評估。四種準備用途保留；歸檔／重開及勾選文件項目不更動照護任務終態。
+
+每次讀取及導出核對來源版本；已更正、刪除或失去適用性的原正文及依賴它的舊快照不得繼續披露。只有新增資料時可呈現有權讀的舊版並標待整理。首次生成標準報告後，持久 worker 按資料變更合併更新，沒有新資料不重建、不輪詢 Gemini；歸檔停止自動更新。
+
+`POST /:id/pdf` 指定 snapshotId／snapshotVersion／authorityVersion、用途及來源／更新說明選項。Web 與 PDF 使用同一快照；生成後再次核權及核對來源才送回 `application/pdf`，`Cache-Control: no-store`。不靜默換版，不自動外發。現版只導出已共享文字；照片、私人聊天逐項匯出等更廣選項仍未提供。
+
+Agent 透過 read_family_documents／generate_family_document／change_family_document 使用同一服務。生成只接受用途／期間等結構化參數，不接受模型自由撰寫家庭正文；真實資源 ID／版本及操作收據才代表已保存。

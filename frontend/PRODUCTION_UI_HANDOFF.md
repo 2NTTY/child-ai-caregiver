@@ -12,6 +12,8 @@
 
 ## 私人來源協助接入補充
 
+INT-W06 已將多份準備文件、清單／歸檔／恢復、成長報告及 PDF 接到 `useFamilyDocuments` 的唯一正式 owner；Agent 與頁面使用同一 FamilyDocument 服務，歷史頁沿同一投影。舊單份到診準備保留 `/summary?tab=legacy-preparation`。來源更正會遮蔽舊正文；報告是共享資料整理，不是臨床評估，PDF 與選中快照同版。功能驗收及部署狀態只見 [根 INT 計劃](../PLAN.md#int-w06)，不沿下列舊預覽描述推定仍未接線。
+
 INT-W04 以 `usePhotoInputSources` 接回真實 management／history／原操作收據；SourceIntakeEditor 保存用途、原地內容修改、停用及獨立摘錄授權。對話工具用同一來源 Store，候選在聊天持久確認；來源頁「交給 Agent 討論」只帶實際 ID／用途到原聊天草稿，由本人送出。舊預覽合成流程保留供參考，正式模式不稱已核實或假裝模型閱讀。實際驗收與保留限制見 [根計劃](../PLAN.md#int-w04)。
 
 設定與聊天均導向同一 sources 清單及 editor；SourceComposer 保留原 create 投影，新增意向由正式接入草稿契約承接，不能塞入舊 API。將 SourceIntakeConversation／Editor 的合成閱讀、建議及確認結果替換為實際授權 controller；無真結果不能顯示已讀、已核實或已接入。正式缺口、回調、同意及清理見 [私人來源交接](SHARED_INPUT_HANDOFF.md#assisted-source-management)；記憶上下文後續安排見 [Agent 交接](AGENT_HANDOFF.md#memory-context-integration)。保留人工入口及唯一資料權威，不挪用原 fetch／extract／confirm 的 unknown／版本契約。

@@ -12,6 +12,8 @@ import { AppCheckbox } from "../AppCheckbox";
 import { AppStatusBadge, type AppStatusTone } from "../AppStatusBadge";
 import { AppButton, AppSelect } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
+import { SummaryDisclosure } from "../summary/SummaryDisclosure";
+import { DocumentCreateForm } from "./DocumentCreateForm";
 
 const stateLabels: Record<PreparationDocumentView["readState"], { label: string; tone: AppStatusTone; detail: string }> = {
   ready: { label: "可查閱", tone: "success", detail: "" },
@@ -77,10 +79,13 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
       <AppButton label="來源與版本" variant="quiet" density="compact" expanded={sourceOpen} onPress={() => setSourceOpen(value => !value)} />
       {sourceOpen ? <View style={styles.stack}>
         <Text style={styles.meta}>正文版本 {revision.number} · 文件版本 {document.version}</Text>
-        {document.sources.map(source => <Text key={source.id} style={styles.meta}>{source.label} · {source.visibility === "private" ? "私人來源" : "家庭來源"} · 資料更新 {preparationDateLabel(source.updatedAt)}{source.version !== revision.sourceRefs.find(ref => ref.id === source.id)?.version ? " · 已有較新版本" : ""}</Text>)}
+        {document.sources.map(source => <Text key={source.id} style={styles.meta}>{source.label} · {source.visibility === "private" ? "私人來源" : "家庭來源"} · 來源日期 {preparationDateLabel(source.updatedAt)}{source.version !== revision.sourceRefs.find(ref => ref.id === source.id)?.version ? " · 已有較新版本" : ""}</Text>)}
         <Text selectable style={styles.meta}>文件：{document.id}{"\n"}正文：{revision.id}{"\n"}來源：{revision.sourceRefs.map(ref => `${ref.id} · v${ref.version}`).join("；")}</Text>
       </View> : null}
     </View> : null}
+    {!archived && workspace.model.capabilities?.refresh && document.readState !== "ready" ? <AppButton label="按目前共享來源整理新版本" variant="secondary"
+      onPress={() => workspace.actions.refreshDocument?.(document.id, document.version)} /> : null}
+    {archived && workspace.model.capabilities?.restore ? <AppButton label="恢復這份準備單" variant="secondary" onPress={() => workspace.actions.restoreDocument?.(document.id, document.version)} /> : null}
     {!archived ? <View style={styles.footer}>
       {workspace.model.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{workspace.model.notice}</Text> : null}
       <View style={styles.actions}><AppButton label="使用完畢，歸檔" variant="primary" disabled={!canArchive} onPress={() => setArchiveAsked(true)} />
@@ -116,7 +121,7 @@ function PreparationReader({ workspace, documents, history = false, onHistory, o
   }, [selected?.id, wide, workspace.scopeKey]);
   return <View ref={layout.ref} onLayout={layout.onLayout} style={styles.stack}>
     {archivedSelection ? <View accessibilityLiveRegion="polite" testID="preparation-archive-success" style={styles.archiveNote}>
-      <AppStatusBadge label="已在本次預覽歸檔" tone="success" /><Text style={styles.body}>這份準備單已移到歷史，使用時的版本仍保留。</Text>
+      <AppStatusBadge label={workspace.model.dataLabel?.startsWith("Server") ? "已歸檔" : "已在本次預覽歸檔"} tone="success" /><Text style={styles.body}>這份準備單已移到歷史，使用時的版本仍保留。</Text>
       {onHistory ? <AppButton label="到歷史查看" variant="secondary" onPress={onHistory} /> : null}
       <AppButton label="繼續看其他準備" variant="quiet" density="compact" onPress={workspace.actions.closeDocument} />
     </View> : null}
@@ -143,6 +148,8 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
   const selected = workspace.model.selected?.status === "active";
   return <View testID="preparation-workspace" style={styles.workspace}>
     {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
+    {workspace.actions.refresh ? <AppButton label={workspace.model.busy ? "正在處理文件…" : workspace.model.operation?.recovery === "check" ? "重讀並核對原操作" : "重新讀取準備單"}
+      variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
     {!selected ? <Text style={styles.meta}>待用準備單{["loading", "unavailable", "lost"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
     <PreparationReader workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
     {!selected ? <View testID="preparation-list-actions" style={styles.intentControls}>
@@ -150,6 +157,11 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
       <View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
       <AppButton label="到助手準備下一份" variant="accent" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} />
     </View> : null}
+    {workspace.actions.createDocument && workspace.actions.markDraft && workspace.actions.discardDraft && workspace.model.scope.role !== "viewer" ? <SummaryDisclosure label="手動備援：直接整理準備單" scopeKey={workspace.scopeKey}>
+      <DocumentCreateForm kind="preparation" purpose={purpose} owner={{ authorityVersion: workspace.model.authorityVersion ?? "", locked: workspace.model.locked ?? true,
+        dirty: workspace.model.dirty ?? false, epoch: workspace.model.epoch ?? 0, operation: workspace.model.operation,
+        createDocument: workspace.actions.createDocument, markDraft: workspace.actions.markDraft, discardDraft: workspace.actions.discardDraft }} />
+    </SummaryDisclosure> : null}
     {previewControls}
   </View>;
 }
@@ -165,6 +177,7 @@ export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestio
   return <View testID="preparation-history" style={styles.workspace}>
     {previewControls}
     {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
+    {workspace.actions.refresh ? <AppButton label="重新讀取／核對文件" variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
     <Text style={styles.meta}>只搜尋可查看的已歸檔準備單：標題、內容、用途及來源名稱。日期按歸檔時間，並非使用日期。{available ? "只涵蓋目前已載入資料。" : "目前尚未取得可確認的結果。"}</Text>
     {unknownDates ? <Text style={styles.meta}>{unknownDates} 份未提供歸檔時間，套用日期範圍時不會把它們歸入任何日期。</Text> : null}
     {available ? <Text style={styles.meta}>{documents.length} 份符合</Text> : null}

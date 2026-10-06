@@ -118,3 +118,10 @@ Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定�
 2026-09-30 核對 `@google/genai 2.24.0` 已同時支援 Vertex／Developer API，沿用現有 ADK adapter、AES-GCM 及 PostgreSQL，無新增依賴。Developer API 用固定官方 baseUrl／v1beta／apiKey、關閉自動重試；不可沿用 Vertex 專用 autoTruncate 參數。query 限 2000 UTF-8 bytes，gemini-embedding-001 的 1024 維結果做 L2 normalization；metadata 缺失保持未知。
 
 官方依據：[key 與保密](https://ai.google.dev/gemini-api/docs/api-key)、[embedding](https://ai.google.dev/gemini-api/docs/embeddings)、[地區](https://ai.google.dev/gemini-api/docs/available-regions)、[Google key 類型](https://docs.cloud.google.com/docs/authentication/api-keys)、[Vertex key](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/start/api-keys)。文件／固定 SDK 原文已核對；真 Developer API metadata 於本機回覆地區不支援，不能把框架相容當真服務通過。依使用者確認，後續可用供應商接入另行處理，本包保留限制。
+
+
+### INT-W06 PDF（2026-10-06）
+
+沿已確認方案採 `@react-pdf/renderer 4.9.0`（MIT），復用 Node `renderToBuffer`／自動分頁／字體內嵌，不自建 PDF 排版器。[官方 Node API](https://react-pdf.org/docs/v4/node)、[字體限制](https://react-pdf.org/docs/v4/fonts)、[相容性](https://react-pdf.org/docs/v4/compatibility)及官方 package／license 已核對。React 19 在支援範圍；官方相容頁沒有列 Node 24，不將文件相容當實測。實際 Node 24.19 的一份繁中合成 PDF 已輸出、抽取文字及渲染核對，零模型。
+
+字體採原版 LXGW WenKai TC v1.522 靜態 TTF（OFL 1.1），原授權及 hash 見 [字體記錄](../server/assets/fonts/README.md)。不用官方明示不適用的可變字體，不向外部 URL 傳送家庭正文；server/assets 隨既有 Server image 複製。這是 PDF 字體，不替换使用者確認的前端設計。
