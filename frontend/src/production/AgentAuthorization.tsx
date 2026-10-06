@@ -19,7 +19,7 @@ export function AgentAuthorization() {
   const [expanded, setExpanded] = useState(false), [deleteId, setDeleteId] = useState<string | null>(null);
   const router = useRouter();
   const editing = state.policyState === "ready" && !state.busy && !state.pending && !state.writesBlocked && state.online;
-  const shared = state.pending?.kind === "policy" ? !!state.pending.input.recordKinds.length || state.pending.input.allowSelfTasks : !!state.draft.recordKinds.length || state.draft.allowSelfTasks;
+  const shared = state.pending?.kind === "policy" ? !!state.pending.input.recordKinds.length || state.pending.input.allowSelfTasks || state.pending.input.allowRecordCorrections : !!state.draft.recordKinds.length || state.draft.allowSelfTasks || state.draft.allowRecordCorrections;
   const deleting = state.notes.find(note => note.id === deleteId);
   const locked = !state.online || !!state.busy;
   return <View style={styles.root}>
@@ -40,6 +40,7 @@ export function AgentAuthorization() {
           {recordOptions.map(option => <AppCheckbox key={option.kind} label={`容許保存${option.label}`} checked={state.draft.recordKinds.includes(option.kind)} disabled={!editing}
             onChange={checked => actions.setDraft({ recordKinds: checked ? [...state.draft.recordKinds, option.kind] : state.draft.recordKinds.filter(kind => kind !== option.kind) })} />)}
           <AppCheckbox label="容許保存及修改本人私人備註" checked={state.draft.allowPrivateNotes} disabled={!editing} onChange={allowPrivateNotes => actions.setDraft({ allowPrivateNotes })} />
+          <AppCheckbox label="容許按明確指令更正本人上述普通類別的原記錄" checked={state.draft.allowRecordCorrections} disabled={!editing} onChange={allowRecordCorrections => actions.setDraft({ allowRecordCorrections })} />
           <AppCheckbox label="容許建立及更改分派給本人的待辦" checked={state.draft.allowSelfTasks} disabled={!editing} onChange={allowSelfTasks => actions.setDraft({ allowSelfTasks })} />
           <AppCheckbox label="按目前本人渠道授權到期提示" checked={state.draft.reminders} disabled={!editing || !state.draft.allowSelfTasks || !reminderEligible(state)} onChange={reminders => actions.setDraft({ reminders })} />
           {shared ? <AppCheckbox label="我明確同意上述照護記錄及本人待辦按家庭權限共享" checked={state.sharedConfirmed}

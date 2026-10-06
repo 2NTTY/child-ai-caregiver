@@ -22,7 +22,7 @@ import { NotificationBell } from "./NotificationBell";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 
-import { useProduction } from "../production/ProductionProvider";
+import { useProductionHome as useProduction } from "../production/useProductionHome";
 import type { HomeActions, HomeViewModel } from "../view-model";
 
 

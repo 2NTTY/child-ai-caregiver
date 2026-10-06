@@ -94,7 +94,7 @@ function RuntimeNotices({ model }: { model: SharedModel }) {
   </>;
 }
 
-function ChannelReviewPanel({ model, actions }: { model: SharedModel; actions: SharedActions }) {
+function ChannelReviewPanel({ model, actions, production }: { model: SharedModel; actions: SharedActions; production: boolean }) {
   const replacingChallenge = model.review?.kind === "begin" && "challenge" in model && model.challenge !== null;
   return <>
     {model.conflict ? <View style={styles.review}>
@@ -112,7 +112,7 @@ function ChannelReviewPanel({ model, actions }: { model: SharedModel; actions: S
       <AppCheckbox label={replacingChallenge ? "我明白舊連結及候選帳號會失效，並同意重新開始" : reviewLabels[model.review.kind]} checked={model.review.confirmed}
         disabled={model.locked || model.conflict} onChange={actions.confirmReview} />
       <View style={styles.actions}>
-        <AppButton label="模擬確認這項渠道操作" disabled={!model.online || model.locked || model.conflict || !model.review.confirmed} onPress={actions.submit} />
+        <AppButton label={production ? "確認這項渠道操作" : "模擬確認這項渠道操作"} disabled={!model.online || model.locked || model.conflict || !model.review.confirmed} onPress={actions.submit} />
         <AppButton label="取消渠道操作" variant="quiet" disabled={model.locked} onPress={actions.cancel} />
       </View>
     </View> : null}
@@ -135,7 +135,7 @@ function RecentDeliveries({ deliveries }: { deliveries: ChannelDeliveryView[] })
   </View>;
 }
 
-function BrowserEnableForm({ form, disabled, stageEnable }: { form: UseFormReturn<BrowserLabelValues>; disabled: boolean; stageEnable(label: string): void }) {
+function BrowserEnableForm({ form, disabled, stageEnable, production }: { form: UseFormReturn<BrowserLabelValues>; disabled: boolean; stageEnable(label: string): void; production: boolean }) {
   const formId = useId();
   const error = form.formState.errors.label?.message;
   return <View style={[styles.stack, styles.group]}>
@@ -145,11 +145,11 @@ function BrowserEnableForm({ form, disabled, stageEnable }: { form: UseFormRetur
         disabled={disabled} onChangeText={field.onChange} onBlur={field.onBlur} error={!!fieldState.error} />
       <FormFieldMessage id={`${formId}-label-message`} error={fieldState.error?.message} help="去除前後空格後須有內容，最多 80 字元；只供你辨認本人訂閱。" />
     </View>} />
-    <AppButton label="預覽啟用此瀏覽器通知" disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()), () => form.setFocus("label"))} />
+    <AppButton label={production ? "啟用此瀏覽器通知" : "預覽啟用此瀏覽器通知"} disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()), () => form.setFocus("label"))} />
   </View>;
 }
 
-export function WebPushSettingsCard({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation }: { model: PushSettingsModel; actions: PushSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation }) {
+export function WebPushSettingsCard({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation, production = false }: { model: PushSettingsModel; actions: PushSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation; production?: boolean }) {
   const stagedBinding = useRef<string | null>(null);
   const [bindingIntent, setBindingIntent] = useState<{ kind: "enable" | "revoke"; id: string | null; baseVersion: number } | null>(null);
   const actions: PushSettingsActions = {
@@ -172,23 +172,25 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
   const actionBlocked = !model.online || model.locked || !!model.review || model.conflict;
   const canEnable = ready && !actionBlocked && model.available && model.browserSupported && model.permission !== "denied" && model.permission !== "unsupported";
   const cooldownReady = model.nextTestAt === null || Date.parse(model.nextTestAt) <= Date.now();
+  const guidance = production && model.permission === "default" ? "須由你在瀏覽器權限提示中選擇允許，才可登記本人的訂閱。" : permissionGuidance[model.permission];
   return <SectionCard style={styles.card}>
     <ChannelAnnouncements model={model} />
-    <StatusAnnouncement eventKey={model.permission} message={`通知權限：${permissionLabels[model.permission]}。${permissionGuidance[model.permission]}`} urgent={model.permission === "denied"} />
+    <StatusAnnouncement eventKey={model.permission} message={`通知權限：${permissionLabels[model.permission]}。${guidance}`} urgent={model.permission === "denied"} />
     <StatusAnnouncement eventKey={`${model.available}:${model.browserSupported}`} message={!model.available ? "瀏覽器通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。" : !model.browserSupported ? "這個瀏覽器未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。" : ""} />
     <SectionHeader density="compact" title="我的瀏覽器通知" icon="bell-outline" subtitle="只管理本人的瀏覽器訂閱。"
       action={ready ? <AppButton label="重新讀取瀏覽器狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
-    {!ready ? <ReadState state={model.readState} online={model.online} locked={model.locked} refresh={actions.refresh} /> : <>
+    {production ? operationNotice : null}
+    {!ready ? <ReadState state={model.readState} online={model.online} locked={production ? model.readState === "loading" : model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />
-      {operationNotice}
+      {!production ? operationNotice : null}
       {!model.available ? <StateNote tone="warning">瀏覽器通知服務目前未可用，不能啟用訂閱或發送測試；你仍可撤銷既有本人訂閱。</StateNote> : null}
       <View style={styles.entry}>
         <AppStatusBadge label={`通知權限：${permissionLabels[model.permission]}`} tone={model.permission === "granted" ? "success" : model.permission === "denied" ? "warning" : "neutral"} />
-        <Text style={styles.body}>{permissionGuidance[model.permission]}</Text>
+        <Text style={styles.body}>{guidance}</Text>
         {!model.browserSupported && model.permission !== "unsupported" ? <Text style={styles.warning}>這個瀏覽器未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。</Text> : null}
       </View>
-      <BrowserEnableForm form={form} disabled={!canEnable} stageEnable={actions.stageEnable} />
-      <ChannelReviewPanel model={model} actions={actions} />
+      <BrowserEnableForm form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
+      <ChannelReviewPanel model={model} actions={actions} production={production} />
       <View style={[styles.stack, styles.group]}>
         <Text accessibilityRole="header" style={styles.title}>本人瀏覽器訂閱</Text>
         {model.bindings.length === 0 ? <Text style={styles.meta}>目前沒有本人瀏覽器訂閱。</Text> : model.bindings.map(binding => {
@@ -206,7 +208,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
             {binding.status === "active" ? <>
               <View style={styles.actions}>
                 <AppButton label="撤銷此訂閱" variant="danger-secondary" disabled={actionBlocked} onPress={() => actions.stageRevoke(binding.id)} />
-                <AppButton label="預覽一般測試" variant="quiet" disabled={actionBlocked || !pushTestAllowed(model, binding)} onPress={() => actions.stageTest(binding.id)} />
+                <AppButton label={production ? "發送一次一般測試" : "預覽一般測試"} variant="quiet" disabled={actionBlocked || !pushTestAllowed(model, binding)} onPress={() => actions.stageTest(binding.id)} />
               </View>
               {deliveryNeedsReview ? <Text style={styles.warning}>這項訂閱仍有排隊中、發送中或結果未知的投遞；請查核原投遞，切勿盲目重送。若服務、worker 及測試限額允許，可明確發起另一項一般測試。</Text> : null}
             </> : null}
@@ -221,7 +223,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
   </SectionCard>;
 }
 
-export function TelegramSettingsCard({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation }: { model: TelegramSettingsModel; actions: TelegramSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation }) {
+export function TelegramSettingsCard({ model, actions: sourceActions, operationNotice, scopeKey, confirmedOperation, production = false }: { model: TelegramSettingsModel; actions: TelegramSettingsActions; operationNotice?: ReactNode; scopeKey: string; confirmedOperation: ConfirmedChannelOperation; production?: boolean }) {
   const [bindingIntent, setBindingIntent] = useState<{ kind: "confirm" | "revoke"; id: string | null; baseVersion: number } | null>(null);
   const actions: TelegramSettingsActions = {
     ...sourceActions,
@@ -255,9 +257,10 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
     <StatusAnnouncement eventKey={`${model.binding?.id ?? ""}:${model.binding?.status ?? "none"}`} message={model.binding?.status === "blocked" ? "本人 Telegram 渠道已封鎖，不能發送測試；須先撤銷，才可重新開始私人綁定。" : ""} urgent={model.binding?.status === "blocked"} />
     <SectionHeader density="compact" title="我的 Telegram" icon="message-text-outline" subtitle="只綁定本人的私人帳號。"
       action={ready ? <AppButton label="重新讀取 Telegram 狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
-    {!ready ? <ReadState state={model.readState} online={model.online} locked={model.locked} refresh={actions.refresh} /> : <>
+    {production ? operationNotice : null}
+    {!ready ? <ReadState state={model.readState} online={model.online} locked={production ? model.readState === "loading" : model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />
-      {operationNotice}
+      {!production ? operationNotice : null}
       {!model.configured ? <StateNote tone="warning">Telegram 渠道目前未設定或未可用，不能開始、確認新綁定或發送測試；你仍可撤銷既有本人綁定。</StateNote> : null}
       {model.binding ? <View style={styles.entry}>
         <MotionFeedback active={confirmed} triggerKey={confirmed ? confirmedOperation?.reference ?? null : null} scopeKey={`${scopeKey}:${model.binding.id}`} testID="telegram-binding-feedback" animateOnMount={confirmed && bindingIntent?.kind === "confirm" && bindingIntent.id === null} style={styles.bindingMetadata}>
@@ -269,11 +272,11 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
         {model.binding.status === "blocked" ? <Text style={styles.warning}>這項綁定已封鎖，不能發送測試；須先撤銷，才可重新開始私人綁定。</Text> : null}
         {model.binding.status !== "revoked" ? <View style={styles.actions}>
           <AppButton label="撤銷 Telegram 綁定" variant="danger-secondary" disabled={actionBlocked} onPress={actions.stageRevoke} />
-          <AppButton label="預覽一般測試" variant="quiet" disabled={!canTest} onPress={actions.stageTest} />
+          <AppButton label={production ? "發送一次一般測試" : "預覽一般測試"} variant="quiet" disabled={!canTest} onPress={actions.stageTest} />
         </View> : null}
         {model.binding.status !== "revoked" && testBlocked ? <Text style={styles.warning}>仍有排隊中、發送中或未有本人回覆的未知投遞；先查核原投遞，暫不可另發測試。</Text> : null}
       </View> : <Text style={styles.meta}>目前沒有本人 Telegram 綁定。</Text>}
-      {!existingBinding ? <AppButton label={model.challenge ? "預覽重新開始私人綁定" : "預覽開始私人綁定"} disabled={!canBegin} onPress={actions.stageBegin} /> : null}
+      {!existingBinding ? <AppButton label={production ? model.challenge ? "重新開始私人綁定" : "開始私人綁定" : model.challenge ? "預覽重新開始私人綁定" : "預覽開始私人綁定"} disabled={!canBegin} onPress={actions.stageBegin} /> : null}
       {model.challenge ? <View style={styles.entry}>
         <Text accessibilityRole="header" style={styles.title}>{challengeExpired ? "私人綁定步驟已過期" : "私人綁定步驟"}</Text>
         <Text style={styles.meta}>版本 {model.challenge.version} · 到期：{channelTime(model.challenge.expiresAt)}（香港時間）</Text>
@@ -283,7 +286,7 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
             <AppButton label="開啟 Telegram 綁定步驟" variant="secondary" disabled={actionBlocked || !model.configured || existingBinding} onPress={actions.openStartLink} />
             <AppButton label="重新讀取 Telegram 狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} />
           </View>
-          <Text style={styles.meta}>合成預覽只展示綁定步驟，不會開啟真實 Telegram 或 bot。</Text>
+          <Text style={styles.meta}>{production ? "按下入口會開啟目前服務提供的 Telegram 綁定連結；須由本人完成，再回來核對候選帳號。" : "合成預覽只展示綁定步驟，不會開啟真實 Telegram 或 bot。"}</Text>
           {model.challenge.state === "seen" && model.challenge.candidate ? <View style={styles.candidate}>
             <Text style={styles.title}>待核對的 Telegram 帳號</Text>
             <Text style={styles.body}>候選接收者：{model.challenge.candidate.label}</Text>
@@ -293,7 +296,7 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
           </View> : <Text style={styles.meta}>尚未讀取到可核對的候選帳號；請完成步驟後重新讀取。</Text>}
         </>}
       </View> : null}
-      <ChannelReviewPanel model={model} actions={actions} />
+      <ChannelReviewPanel model={model} actions={actions} production={production} />
       <RecentDeliveries deliveries={model.deliveries} />
     </>}
   </SectionCard>;

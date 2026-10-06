@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "package": "INT-W03",
+  "recordedOn": "2026-10-06",
+  "baseCommit": "88628489d36d0b2d458ea3f733d0e4b4ed3d2eab",
+  "branch": "codex/int-w03-domain-wiring",
+  "status": "necessary_acceptance_passed_merge_pending",
+  "scope": "Production domain owners and existing P2 pages, photo handoff, shared reads, ordinary-record revision, older chat cursor and in-flight cancellation. Existing frontend design retained.",
+  "checks": [
+    { "name": "Server TypeScript", "status": "passed", "runtime": "Node 24.19.0" },
+    { "name": "Frontend TypeScript", "status": "passed", "detail": "One consolidated check after all delegated owners and manual memory management were integrated." },
+    { "name": "Targeted main-model review", "status": "passed", "detail": "Reviewed stable scope bridges, Server permissions and revision provenance, original operation recovery, personal key handling and shared projections. Final task read-state and selected-outside-page refresh adjustment was statically reviewed; no whole browser rerun." },
+    { "name": "Whitespace diff check", "status": "passed" }
+  ],
+  "representativeAcceptance": {
+    "status": "passed_first_attempt",
+    "entry": "playwright.int-domains.config.mjs / tests/browser/int-domains.spec.mjs",
+    "fixture": "scripts/int-domain-fixture.mjs",
+    "runtime": "Node 24 / Chromium headless shell 1243 / local real API",
+    "database": "loopback:5434/yuban_s06_test",
+    "caseSeconds": 11.19,
+    "wholeCommandSeconds": 41.91,
+    "httpAttempts": 126,
+    "httpCap": 200,
+    "businessStoreCalls": 8,
+    "businessStoreCap": 15,
+    "created": { "accounts": 1, "children": 1, "careRecords": 1 },
+    "verified": [
+      "Real domain providers mount without browser exceptions",
+      "One ordinary record changes from version 1 to 2 through the authorized Agent action store, with no model",
+      "Revision retains the resource ID, records the original operation receipt and preserves preauthorized_user_statement provenance",
+      "Care page and conversation context rail show the same current record",
+      "Task and account/model-settings owners read the real local API"
+    ],
+    "modelCalls": 0,
+    "embeddingCalls": 0,
+    "notificationCalls": 0,
+    "externalNetworkAttempts": 0,
+    "pageErrors": 0,
+    "migrationApplied": false,
+    "workerEnabled": false,
+    "onlyCurrentSyntheticChildDeleted": true,
+    "apiAndWebProcessesStopped": true,
+    "failure": null,
+    "localRawReport": ".cache/int-domains-browser-report.json"
+  },
+  "reusedEvidence": ["INT_W01_CHECKS.json: identity, child isolation and original-op unknown recovery", "INT_W02_CHECKS.json: live Agent, private statements, persistent proposals and tool receipts", "Existing P2 backend and channel acceptance; no duplicate live calls"],
+  "notClaimed": ["every form and failure branch exercised in a browser", "new real model or notification delivery", "live cancellation or more-than-100-message browser run", "new photo extraction acceptance", "private-source conversation tools (INT-W04)", "persistent ongoing-care chains (INT-W05)", "multiple preparation documents or report/PDF (INT-W06)", "public deployment or final legacy entry retirement (INT-W07)", "Android or full visual/browser matrix"]
+}

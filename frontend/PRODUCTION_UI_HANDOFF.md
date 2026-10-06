@@ -35,7 +35,7 @@
 |---|---|
 | src/preview/PreviewContext.tsx／fixture.ts、dashboard/_layout.tsx 的 PreviewProvider | 正式本人／孩子／session、資料及操作回調投影。現有領域 workspace 已讓多頁共用同一合成 owner，仍非正式持久化；正式替換保留[同源界線](HANDOFF.md#shared-workspace-injection)，不拆成各頁獨立資料。BackgroundProvider／私人子樹的合成名稱 scope 須換成穩定本人／session 身份 |
 | src/screens/chatScreen.tsx：ChatContents header、kind=intro 正文、useChatTimelinePreview／previewMessage | 接既有 ChatController 與授權訊息；移除固定正文／來源、合成 header 工具及「預覽輸入」分支。保留共用 ChatMessage／ChatTimeline／AnswerSources 和原 composer 資源清理；controller 真成功及授權上下文吻合後才投影訊息 |
-| ChatMessageView.phase／activities、ChatTimeline.items／followRequest／recentLimit | 顯示投影不另定 transport：真 phase／公開活動由後端核定，增量更新沿同一 message id、最終快照具權威。followRequest 只表示本人明確提交／回到最新，不用每次收到 delta 都重設跟隨。recentLimit 只是已載入清單的視窗；GET messages 目前最近 100 則，沒有更早游標，超過該範圍須主聊天先補契約。真取消、恢復／去重及逐句引用映射仍待接線 |
+| ChatMessageView.phase／activities、ChatTimeline.items／followRequest／recentLimit | 顯示投影不另定 transport：真 phase／公開活動由後端核定，增量更新沿同一 message id、最終快照具權威。followRequest 只表示本人明確提交／回到最新，不用每次收到 delta 都重設跟隨。recentLimit 只是已載入清單的視窗。INT-W03 補 Server 歷史游標及在途取消，沿用原收據／恢復；取消不撤回已保存操作。引用仍只按真片段映射；接線／驗收狀態依根 PLAN，不能把分支實作當作公開部署 |
 | src/components/agent/AgentConversationPreview.tsx：isolated-preview key、useAgentPreview、conversationRunId | 用實際 Server／本人／孩子 key 及 run id；原運行、候選、原決定查核和來源仍由既有 controller 驅動，不能去掉 key 的身份清理 |
 | HomeAgentImportant／HomeOngoing／側欄 attention／HomeQuickActions | 第一區接明確 Agent-important owner 投影，第二區接持續觀察，側欄與任務頁才沿同一授權 Task 資料；不能以普通待辦補位 Agent 推送。本地 capture handoff 只到未送出對話預覽，正式相機／上傳／模型／保存及 scope 清理沿 [助手入口交接](AGENT_HANDOFF.md#home-assistant-entry)。移除獨立 fixture，不拼成正式資料庫 |
 | NotificationBell 的原操作投影 | 鈴鐺保留。目前角標是需留意操作，不是正式未讀；未讀／通知中心須沿實際已交付契約，不能用網絡連接推斷通知送達 |

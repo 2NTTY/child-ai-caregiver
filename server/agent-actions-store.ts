@@ -27,7 +27,7 @@ interface RunRow { id: string; child_id: string; owner_user_id: string; source_m
   trigger_kind: string; authorization_version: string; data_version: string; state: string; unexpired: boolean }
 interface ManualRow { child_id: string; storage_epoch: string; kind: string; request_encrypted: string; result_encrypted: string }
 interface TaskAuthorizationRow { task_id: string; policy_version: number; grant_version: number }
-const emptyPolicy = (): AgentOperationPolicy => ({ version: 0, effective: false, recordKinds: [], allowPrivateNotes: false,
+const emptyPolicy = (): AgentOperationPolicy => ({ version: 0, effective: false, recordKinds: [], allowPrivateNotes: false, allowRecordCorrections: false,
   allowSelfTasks: false, reminderConsentVersion: null, reminderBindings: [] });
 const conflict = (code = "agent_action_changed") => new FamilyError(409, code);
 const missing = () => new FamilyError(404, "not_found");
@@ -55,7 +55,8 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
     const row = (await client.query<VersionRow>("SELECT version,payload_encrypted FROM agent_operation_policies WHERE user_id=$1 AND child_id=$2", [userId, childId])).rows[0];
     if (!row) return emptyPolicy();
     const saved = JSON.parse(cipher.decrypt(row.payload_encrypted, policyAad(userId, childId, row.version))) as PolicySaved;
-    return { ...saved.value, effective: WRITE_ROLES.includes(role) && saved.accessVersion === space.access_version && saved.storageEpoch === space.storage_epoch };
+    return { ...saved.value, allowRecordCorrections: saved.value.allowRecordCorrections === true,
+      effective: WRITE_ROLES.includes(role) && saved.accessVersion === space.access_version && saved.storageEpoch === space.storage_epoch };
   }
   async function manualResult<T>(client: PoolClient, space: Space, userId: string, childId: string, operationId: string, kind: string, request: unknown): Promise<{ found: false } | { found: true; value: T }> {
     const row = (await client.query<ManualRow>("SELECT * FROM agent_manual_operations WHERE user_id=$1 AND operation_id=$2", [userId, operationId])).rows[0];
@@ -161,6 +162,9 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
     return saved ? { notification: "authorized_for_due_event", channels: [page!.consent.bindings[0].channel] } : none;
   }
   const api = {
+    records(userId: string, childId: string, query: string) {
+      return createCareStore(pool, cipher, true).search(userId, childId, { query });
+    },
     policy(userId: string, childId: string): Promise<AgentOperationPolicy | null> {
       return access(userId, childId, false, (client, space, role) => policyFor(client, space, role, userId, childId));
     },
@@ -176,11 +180,11 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
         }
         const current = await policyFor(client, space, role, userId, childId);
         requireFamilyVersion(current.version, input.expectedVersion);
-        if ((input.recordKinds.length || input.allowPrivateNotes || input.allowSelfTasks) && !WRITE_ROLES.includes(role)) throw missing();
+        if ((input.recordKinds.length || input.allowPrivateNotes || input.allowSelfTasks || input.allowRecordCorrections) && !WRITE_ROLES.includes(role)) throw missing();
         if (input.reminderBindings.length && !reminderMatches(input, await contactPage(client, userId, childId))) throw conflict("contact_consent_changed");
-        const { recordKinds, allowPrivateNotes, allowSelfTasks, reminderConsentVersion, reminderBindings } = input;
+        const { recordKinds, allowPrivateNotes, allowSelfTasks, allowRecordCorrections, reminderConsentVersion, reminderBindings } = input;
         const value: AgentOperationPolicy = { version: current.version + 1, effective: WRITE_ROLES.includes(role),
-          recordKinds, allowPrivateNotes, allowSelfTasks, reminderConsentVersion, reminderBindings };
+          recordKinds, allowPrivateNotes, allowSelfTasks, allowRecordCorrections, reminderConsentVersion, reminderBindings };
         const { effective: _effective, ...permissions } = value;
         const payload = cipher.encrypt(JSON.stringify({ value: permissions, accessVersion: space.access_version, storageEpoch: space.storage_epoch } satisfies PolicySaved), policyAad(userId, childId, value.version));
         await client.query(`INSERT INTO agent_operation_policies(user_id,child_id,version,payload_encrypted) VALUES($1,$2,$3,$4)
@@ -267,13 +271,28 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
         const borrowed = transactionPool(client), tasks = createTaskStore(borrowed.pool, cipher, scheduling);
         let resource: AgentActionReceipt["resource"], state: AgentActionReceipt["state"];
         let notification: Pick<AgentActionReceipt, "notification" | "channels"> = { notification: "not_authorized", channels: [] };
-        if (input.kind === "save_record") {
+        if (input.kind === "save_record" || input.kind === "revise_record") {
           if (!policy.recordKinds.includes(input.details.kind)) throw conflict("agent_policy_denied");
-          const saved = await createCareStore(borrowed.pool, cipher, true).create(scope.userId, scope.childId, {
-            text: input.text, details: groundedRecordTime(input.details, input.sourceQuote), source: "依本人預先授權，由 Agent 整理的使用者陳述；未逐項確認為事實",
-          }, "preauthorized_user_statement");
+          const care = createCareStore(borrowed.pool, cipher, true);
+          let details = groundedRecordTime(input.details, input.sourceQuote);
+          if (input.kind === "revise_record") {
+            if (!policy.allowRecordCorrections) throw conflict("agent_policy_denied");
+            const originalRecord = await care.get(scope.userId, scope.childId, input.recordId); borrowed.assertReleased();
+            if (!originalRecord || originalRecord.authorUserId !== scope.userId) throw missing();
+            requireFamilyVersion(originalRecord.version, input.expectedVersion);
+            if (originalRecord.details.kind !== input.details.kind || !policy.recordKinds.includes(originalRecord.details.kind as typeof policy.recordKinds[number]))
+              throw conflict("agent_policy_denied");
+            if (canonicalJson(originalRecord.details.eventTime) === canonicalJson(input.details.eventTime))
+              details = { ...details, eventTime: originalRecord.details.eventTime };
+          }
+          const values = {
+            text: input.text, details, source: "依本人預先授權，由 Agent 整理的使用者陳述；未逐項確認為事實",
+          };
+          const saved = input.kind === "save_record" ? await care.create(scope.userId, scope.childId, values, "preauthorized_user_statement")
+            : await care.revise(scope.userId, scope.childId, input.recordId, values, input.expectedVersion, input.reason, "preauthorized_user_statement");
           borrowed.assertReleased(); if (!saved) throw missing();
-          resource = { kind: "care_record", id: saved.id, version: saved.version }; state = "saved";
+          if (input.kind === "revise_record") await invalidateSummary(client, scope.userId, scope.childId);
+          resource = { kind: "care_record", id: saved.id, version: saved.version }; state = input.kind === "save_record" ? "saved" : "updated";
         } else if (input.kind === "save_private_note" || input.kind === "revise_private_note") {
           if (!policy.allowPrivateNotes) throw conflict("agent_policy_denied");
           const oldRow = input.kind === "revise_private_note" ? await noteFor(client, scope.userId, scope.childId, input.noteId) : undefined;

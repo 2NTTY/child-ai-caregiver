@@ -22,14 +22,14 @@ import { MotionList } from "../../motion";
 import { useContentListMotion } from "./useContentListMotion";
 import { useContentDeletionFocus } from "./useContentDeletionFocus";
 
-function SourceStatus({ model, actions }: { model: SourcesViewModel; actions: SourcesActions }) {
+function SourceStatus({ model, actions, production }: { model: SourcesViewModel; actions: SourcesActions; production: boolean }) {
   const op = model.operation;
   const pill = op.state === "saved" && op.phase === "extract" ? "needs_confirmation" : op.state === "unconfirmed" ? "unknown" : op.state === "conflict" ? "needs_confirmation"
     : op.state === "confirmed_unavailable" ? "saved" : op.state;
   return <><StatusAnnouncement eventKey={`${op.state}:${op.phase}:${op.reference}:${op.message}:${model.notice}`} message={[op.message, model.notice].filter(Boolean).join(" ")} urgent={op.state === "failed"} />
     {op.state === "none" && !model.notice ? null : <SectionCard surface="plain" style={s.operationBanner} testID="source-operation"><SectionHeader density="compact" title="這次來源操作" />
-    {op.state === "confirmed_unavailable" ? <AppStatusBadge label="原操作已確認 · 結果不可讀" tone="warning" /> : op.state === "saved" && op.phase === "delete" ? <AppStatusBadge label="已刪除（合成預覽）" tone="success" /> : op.state === "conflict" ? <AppStatusBadge label="版本衝突 · 待核對" tone="warning" /> : op.state !== "none" ? <OperationPill state={pill} /> : null}
-    {op.reference ? <Text selectable style={s.meta}>合成原操作參考：{op.reference}</Text> : null}
+    {op.state === "confirmed_unavailable" ? <AppStatusBadge label="原操作已確認 · 結果不可讀" tone="warning" /> : op.state === "saved" && op.phase === "delete" ? <AppStatusBadge label={production ? "已刪除" : "已刪除（合成預覽）"} tone="success" /> : op.state === "conflict" ? <AppStatusBadge label="版本衝突 · 待核對" tone="warning" /> : op.state !== "none" ? <OperationPill state={pill} /> : null}
+    {op.reference ? <Text selectable style={s.meta}>{production ? "原操作參考：" : "合成原操作參考："}{op.reference}</Text> : null}
     {op.message ? <Text style={s.body}>{op.message}</Text> : null}
     {model.notice ? <Text style={s.body}>{model.notice}</Text> : null}
     {op.state === "unknown" || op.state === "unconfirmed" || op.state === "confirmed_unavailable" ? <AppButton label="查核原次結果" disabled={!model.online || model.busy || model.access === "lost"} variant="secondary" onPress={actions.checkOriginal} /> : null}
@@ -41,8 +41,8 @@ function SourceStatus({ model, actions }: { model: SourcesViewModel; actions: So
   </SectionCard>}</>;
 }
 
-export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord, previewControls }: {
-  model: SourcesViewModel; actions: SourcesActions; onPhotos: () => void; onRecord: (id: string) => void; previewControls: ReactNode;
+export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord, previewControls, production = false }: {
+  model: SourcesViewModel; actions: SourcesActions; onPhotos: () => void; onRecord: (id: string) => void; previewControls: ReactNode; production?: boolean;
 }) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
@@ -88,8 +88,8 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     <ReadStateNotice state={readState} message={readMessage} />
     {model.access === "lost" ? <SectionCard><Text style={s.warning}>目前沒有存取權限。舊原文、候選、草稿及操作已清除。</Text></SectionCard> : null}
     {model.access === "read_only" ? <Text style={s.warning}>唯讀權限：可查看自己的私人來源，不能新增、提取、確認或刪除。</Text> : null}
-    {model.access === "editable" && !model.canCreate ? <Text style={s.warning}>合成新增容量限制；已有來源及人工草稿仍可核對。</Text> : null}
-    <SourceStatus model={model} actions={actions} />
+    {model.access === "editable" && !model.canCreate ? <Text style={s.warning}>{production ? "目前不能新增來源" : "合成新增容量限制"}；已有來源及人工草稿仍可核對。</Text> : null}
+    <SourceStatus model={model} actions={actions} production={production} />
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
       <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={model.items.length} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
         {!model.items.length && model.load === "ready" && model.access !== "lost" ? <Text style={s.meta}>這個範圍尚未有私人來源。可從「加入資料來源」開始。</Text> : null}

@@ -13,7 +13,28 @@
 
 前端的 view model／回調不是 wire contract；正式接線保留原 controller、身份／孩子／Server 清理、草稿、原 opId／unknown 及授權。實際移除 fixture、開發工具及替換掛載位置見 [PRODUCTION_UI_HANDOFF](../frontend/PRODUCTION_UI_HANDOFF.md)。前端包的已驗／未驗與下一步只在其 PLAN；本表不複製。
 
-既有預覽依賴留在 frontend，正式整合核對版本／許可／相容性，不覆蓋根 lockfile。Web 合成結果、真 API 流程、Android bundle／真機各自分開；單頁或預覽完成不能代替正式驗收。
+INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴變更仍須核對版本／許可／相容性。Web 合成結果、真 API 流程、Android bundle／真機各自分開；單頁或預覽完成不能代替正式驗收。
+
+<a id="production-owners"></a>
+## 新前端正式資料接點
+
+以下是 INT-W03 的接線位置；完成與驗收狀態只看 [根 PLAN](../PLAN.md#int-w03)。不改既有版面、美術或動效，不把舊面板直接掛到新入口。表內 owner 是 Server 資源的受權投影，不能另建頁面資料副本。
+
+| 使用者功能／頁面 | 同一權威來源及前端 owner |
+|---|---|
+| 登入、家庭選擇、孩子切換與刪除 | `ProductionOwner`／既有 RecordsController；Server session、家庭角色及 children |
+| 對話、歷史、來源、工具結果、持久待確認及取消 | ChatController／AgentConversationOwner／AgentAuthorizationOwner；messages、agent runs／pending／operation receipts |
+| 記錄、搜尋、更正、歷史及孩子檔案；首頁照護資料 | `CareProfileDomains`；同一 Care API／profile 版本。首頁只組合已載入資料，不另外保存 |
+| 任務、預約、改期、完成、取消、成員指派及歷史 | `TaskKnowledgeDomains`；Task API 的 task／occurrence／版本，側欄讀相同 owner |
+| 記憶、摘要覆蓋、人工備援；成長關注及單份到診準備 | `TaskKnowledgeDomains`；Memory／Growth／CareSummary API。持續關注鏈及多份文件不以這些舊資源冒充 |
+| 對話照片轉交、照片上傳／提取／確認、分享文字／連結輸入 | `PhotoInputDomains`；Photo／SharedInput API，原檔與人工草稿共用一次操作上下文；模型提取與家庭共享分開同意 |
+| 本人模型 key／限額、通知偏好、Push／Telegram、家庭成員及聯絡授權 | `SettingsDomains`；各既有 API／版本／收據，個人設定按身份、家庭操作按孩子清理；不自動發送渠道測試 |
+| 私人來源人工管理 | `SettingsDomains`／PrivateSource API；對話直接設定及操作留 INT-W04，不因人工入口就緒標為 Agent 已接通 |
+| 首頁、側欄與歷史頁 | 組合上述 owner 的受權結果；已載入清單不冒充完整清單，未能讀取不顯示為「沒有資料」 |
+
+寫入成功按 Server 收據刷新共用讀取；可見頁面沿 changes cursor 每 5 秒核對變更 metadata，回到前景即核對。沒有變更不定時重跑模型。busy／unknown 保留原操作，先查核再容許新提交；登出、撤權及身份／孩子切換清理舊內容與遲到回應。
+
+較早聊天使用 Server 游標；取消只要求停止仍在運行的生成，已保存的工具操作不會撤銷。普通記錄更正另設預設關閉的授權開關，只可更正本人獲授權普通類別的原版本；升級不擴大舊授權。完整入口部署、舊 UI 退出正式建置及新增關注／報告能力仍依 INT 後續包交付。
 
 ## 狀態與使用方式
 

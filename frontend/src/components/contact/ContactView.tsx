@@ -18,7 +18,7 @@ import {ContactHistory} from './ContactHistory';
 import {MotionDisclosure} from '../../motion';
 import {contactStyles as s} from './contact-styles';
 
-export function ContactView({model, actions, onSettings, onTask, previewTools}: {model: ContactViewModel; actions: ContactActions; onSettings: () => void; onTask: (id: string) => void; previewTools?: React.ReactNode}) {
+export function ContactView({model, actions, onSettings, onTask, previewTools, production = false}: {model: ContactViewModel; actions: ContactActions; onSettings: () => void; onTask: (id: string) => void; previewTools?: React.ReactNode; production?: boolean}) {
   const containerLayout = useContainerWidth();
   const wide = containerLayout.width >= 800;
   const [details, setDetails] = useState(false);
@@ -56,7 +56,7 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
       {model.notice ? <Text style={model.load === 'error' || !model.online || model.pending || ['failed', 'conflict', 'unknown'].includes(model.operation) ? s.warning : s.body}>{model.notice}</Text> : null}
       {model.dirty ? <AppButton label="放棄全部未提交選項並載入已保存資料" variant="quiet" disabled={!model.online || model.busy || !!model.pending || model.load !== 'ready'} onPress={actions.discard} /> : null}
       {model.pending ? <SectionCard testID="contact-pending"><SectionHeader density="compact" title="原決定待核對" icon="information-outline" />
-        <AppStatusBadge label={model.pending.confirmed ? "原收據已確認 · 最新資料待讀回" : "原操作結果待核對"} tone="warning" /><Text selectable style={s.meta}>原操作：{model.pending.reference}（合成參考）</Text>{model.pending.labels.map((text, index) => <Text key={index} style={s.body}>{text}</Text>)}
+        <AppStatusBadge label={model.pending.confirmed ? "原收據已確認 · 最新資料待讀回" : "原操作結果待核對"} tone="warning" /><Text selectable style={s.meta}>{production ? model.pending.reference ? `原操作：${model.pending.reference}` : "原操作識別由既有傳輸保留。" : `原操作：${model.pending.reference}（合成參考）`}</Text>{model.pending.labels.map((text, index) => <Text key={index} style={s.body}>{text}</Text>)}
         <AppButton expanded={details} label={details ? '收起原提交內容' : '查看原提交內容及版本'} variant="quiet" onPress={() => setDetails(value => !value)} />
         <MotionDisclosure expanded={details} scopeKey={`${model.scopeKey}:${model.pending.reference}`}><Text testID="contact-original-body" selectable style={s.meta}>{JSON.stringify(JSON.parse(model.pending.body), null, 2)}</Text></MotionDisclosure>
         <Text style={s.meta}>{model.pending.confirmed ? '原收據已確認，最新資料尚未讀回；不能重送或另建提交。' : '原識別、接收者、內容及版本保持不變；GET 本身不證明原決定成功。'}</Text>

@@ -99,10 +99,12 @@ export class RecordsController {
   private recordAbort: AbortController | null = null;
   private retained: RetainedInput | null = null;
   private readonly childDeletion?: ChildDeletionEvents;
+  private readonly readRecords: boolean;
 
-  constructor(api: RecordsApi, online = true, childDeletion?: ChildDeletionEvents) {
+  constructor(api: RecordsApi, online = true, childDeletion?: ChildDeletionEvents, readRecords = true) {
     this.api = api;
     this.childDeletion = childDeletion;
+    this.readRecords = readRecords;
     this.state = initialState(online);
   }
 
@@ -423,6 +425,7 @@ export class RecordsController {
   }
 
   async reloadRecords(): Promise<void> {
+    if (!this.readRecords) return;
     const childId = this.state.selectedChildId;
     if (this.state.auth !== "signedIn" || this.state.busy || !childId) return;
     if (!this.state.online) {

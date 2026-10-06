@@ -7,7 +7,7 @@ import { appendOnlineChange } from "./online-change.ts";
 
 export interface ChatStore {
   acquireReplyLock(messageId: string): Promise<(() => Promise<void>) | null>;
-  listForUser(userId: string, childId: string): Promise<ChatPage | null>;
+  listForUser(userId: string, childId: string, before?: string | null): Promise<ChatPage | null>;
   createUserMessageForUser(userId: string, childId: string, text: string): Promise<ChatMessage | null>;
   createModelMessageForUser(userId: string, childId: string, inReplyTo: string, text: string): Promise<ChatMessage | null>;
 }
@@ -43,14 +43,19 @@ export function createChatStore(pool: Pool, cipher: StorageCipher, trackChanges 
         };
       } catch { client?.release(true); activeLocks--; throw new Error("Chat lock unavailable"); }
     },
-    async listForUser(userId, childId) {
+    async listForUser(userId, childId, before) {
       return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
       const result = await client.query<MessageRow>(
         `SELECT m.id,m.child_id,m.author_user_id,m.role,m.text_encrypted AS text,m.in_reply_to,m.created_at
          ${agentRuns ? ",(SELECT r.id FROM agent_runs r WHERE r.owner_user_id=m.owner_user_id AND r.child_id=m.child_id AND r.trigger_kind='interactive' AND r.trigger_reference=m.in_reply_to) AS agent_run_id" : ""}
-         FROM chat_messages m WHERE m.owner_user_id=$1 AND m.child_id=$2 ORDER BY m.created_at DESC,m.id DESC LIMIT 100`, [userId, childId],
+         FROM chat_messages m WHERE m.owner_user_id=$1 AND m.child_id=$2
+         AND ($3::uuid IS NULL OR (m.created_at,m.id) < (SELECT anchor.created_at,anchor.id FROM chat_messages anchor
+           WHERE anchor.id=$3 AND anchor.owner_user_id=$1 AND anchor.child_id=$2))
+         ORDER BY m.created_at DESC,m.id DESC LIMIT 101`, [userId, childId, before ?? null],
       );
-      return { messages: result.rows.map(row => toMessage(row, userId, cipher)).reverse(), limit: 100 };
+      const rows = result.rows.slice(0, 100);
+      return { messages: rows.map(row => toMessage(row, userId, cipher)).reverse(), limit: 100,
+        nextCursor: result.rows.length > 100 ? rows.at(-1)!.id : null };
       });
     },
     async createUserMessageForUser(userId, childId, text) {

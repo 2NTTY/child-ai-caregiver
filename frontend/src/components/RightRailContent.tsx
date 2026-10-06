@@ -38,7 +38,7 @@ export function RightRailContent({ model, actions, home = false, contextPath = "
           </View> : <Text style={styles.meta}>尚未選擇孩子；請先建立檔案。</Text>}
           {child ? <><Text style={styles.meta}>過敏資料：{child.allergiesLabel ?? "未提供"}</Text><Text style={styles.meta}>背景可協助理解問題；實際使用的資料由每次回覆標示。</Text></> : null}
         </SectionCard>
-        {!home ? <SectionCard><SectionHeader title="近期已保存記錄" density="compact" action={<TextLink label="查看全部" onPress={() => actions.open("care")} />} />
+        {!home ? <SectionCard><SectionHeader title="已載入照護記錄" density="compact" action={<TextLink label="查看全部" onPress={() => actions.open("care")} />} />
           {model.recordsLoad === "loading" ? <Text style={styles.meta}>正在讀取記錄…</Text> : model.recordsLoad === "error" ? <Text style={styles.meta}>暫時讀不到記錄，不能確認最新資料。</Text> : records.length === 0 ? <Text style={styles.meta}>目前沒有已載入記錄。</Text> : records.map((record, index) => <View key={record.id}>
             {index > 0 ? <Divider style={styles.divider} /> : null}
             <Pressable accessibilityRole="button" accessibilityLabel={`查看${record.title}`} onPress={() => actions.open("care")} style={({ pressed }) => [styles.record, pressed && styles.pressed]}>

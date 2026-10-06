@@ -55,9 +55,8 @@ export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, onli
       } finally { busy = false; }
     };
     const event = () => { void check(true); };
-    // A panel may have been busy during an earlier invalidation. Reconcile visible
-    // reads again on the next tick even when its metadata cursor already advanced.
-    const timer = setInterval(() => { void check(true); }, 30_000);
+    // Poll only metadata; domain owners retain invalidation until their write settles.
+    const timer = setInterval(() => { void check(false); }, 5_000);
     window.addEventListener("focus", event);
     document.addEventListener("visibilitychange", event);
     event();

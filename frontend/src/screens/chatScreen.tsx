@@ -10,6 +10,7 @@ import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatType } from "../components/chat/chat-presentation";
 import { useProduction } from "../production/ProductionProvider";
 import { AgentConversation } from "../production/AgentConversation";
+import { AgentPhotoInput } from "../production/PhotoInputDomains";
 import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { mobileLayout } from "../theme";
 import type { ChatReplyPhase } from "../chat-view-model";
@@ -56,7 +57,9 @@ function ChatContents({ compact }: { compact: boolean }) {
     </View>
     {child ? <>
       <Text style={styles.meta}>送出後會保存聊天並要求 AI 回覆；孩子稱呼及獲授權資料可能交由 Google 處理。試用時請使用合成資料。</Text>
-      <View style={styles.statusRow}><Text style={styles.meta}>顯示最近 {chat.limit} 則對話。</Text>
+      <View style={styles.statusRow}><Text style={styles.meta}>已讀取 {chat.messages.length} 則對話。</Text>
+        {chat.nextCursor ? <AppButton label="讀取更早對話" variant="quiet" density="compact" loading={chat.loadingOlder}
+          disabled={busy || chat.loading || chat.loadingOlder || !chat.online} onPress={() => { timelineRef.current?.holdReadingPosition(); void chatController.loadOlderMessages(); }} /> : null}
         <AppButton label={chat.loading ? "正在讀取聊天" : phase === "save_unknown" || phase === "checked" ? "重新讀取並查核原保存" : "重新讀取聊天"}
           variant="quiet" density="compact" loading={chat.loading} disabled={busy || chat.loading || !chat.online} onPress={() => { void chatController.reloadMessages(); }} /></View>
       {chat.available === false ? <Text style={styles.meta}>AI 目前未開放；已保存訊息可以稍後再要求回覆。</Text> : null}
@@ -66,6 +69,9 @@ function ChatContents({ compact }: { compact: boolean }) {
       {chat.error ? <Text accessibilityRole="alert" style={styles.warning}>{chat.error}</Text> : null}
       {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
       {chat.replyError && chat.replyError !== draft?.notice ? <Text accessibilityRole="alert" style={styles.warning}>{chat.replyError}</Text> : null}
+      {chat.busy === "reply" ? <AppButton label="停止這次 Agent 運行" variant="quiet" density="compact" loading={chat.cancelling}
+        disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
+      {chat.cancelNotice ? <Text accessibilityLiveRegion="polite" style={styles.warning}>{chat.cancelNotice}</Text> : null}
       {phase === "checked" ? <View style={styles.statusRow}>
         {draft?.candidateMessageId ? <AppButton label="已核對，確認這則聊天已保存" variant="quiet" disabled={busy} onPress={() => chatController.confirmFoundMessage()} /> : null}
         <AppButton label="已核對，解鎖原文重試" variant="quiet" disabled={busy || !chat.online} onPress={() => chatController.unlockCheckedSave()} /></View> : null}
@@ -76,6 +82,8 @@ function ChatContents({ compact }: { compact: boolean }) {
       {chat.loadedAt ? <Text style={styles.meta}>最後讀取：{new Date(chat.loadedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" })}</Text> : null}
       {!chat.loading && chat.loadedAt && chat.messages.length === 0 ? <Text style={styles.body}>尚未有已保存聊天。</Text> : null}
       <AgentConversation onLocateSource={locateSource} />
+      {agentAttachments.map(attachment => attachment.photo ? <AgentPhotoInput key={attachment.id} original={attachment.photo}
+        onTransferred={() => removeAgentAttachment(attachment.id)} onPhotos={() => actions.open("photos")} /> : null)}
     </> : <SectionCard><Text style={styles.body}>請先選擇有存取權的孩子；不同孩子的私人對話不能混在一起。</Text>
       <AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>}
   </>;
@@ -84,7 +92,8 @@ function ChatContents({ compact }: { compact: boolean }) {
       followRequest={followRequest} newReplyId={newReplyId} renderItem={message => {
         const run = message.agentRunId ? agentRuns[message.agentRunId] : undefined;
         const sourcesMatch = run?.text === message.text;
-        const pendingReply = message.role === "user" && message.authorUserId === chat.userId && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
+        const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
+          && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
           phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? run.citations : undefined,
           note: new Date(message.createdAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }) }}
@@ -100,7 +109,7 @@ function ChatContents({ compact }: { compact: boolean }) {
       }} />
     <AgentComposer enabled={!!child && pathname === "/chat" && !busy && phase === "draft"} compact={compact} draft={chatDraft}
       attachments={agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
-      suggestionLabel="建議問題" inputHint={agentAttachments.length ? "照片提交尚未接通。請先移除照片才可送出文字；文字及照片草稿會保留。" : "支援文字聊天；照片提交、語音及文件尚未接通。"}
+      suggestionLabel="建議問題" inputHint={agentAttachments.length ? "請在上方照片入口保存及核對；照片不會隨文字自動交模型或共享。" : "支援文字聊天及照片核對；語音和其他文件尚未接通。"}
       filesUnavailableReason="文件提交尚未接通，請先使用文字" voiceUnavailableReason="語音提交尚未接通，請先使用文字"
       onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
   </>;

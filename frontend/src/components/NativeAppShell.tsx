@@ -9,7 +9,7 @@ import { BrandLogo } from "./BrandLogo";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { Text } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useProduction } from "../production/ProductionProvider";
+import { useProductionHome as useProduction } from "../production/useProductionHome";
 import { chineseFont, colors, mobileLayout, spacing, typeScale } from "../theme";
 import { NotificationBell } from "./NotificationBell";
 import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
