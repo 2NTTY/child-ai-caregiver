@@ -24,6 +24,8 @@ description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作�
 
 ## 元件及狀態方法
 
+- 文案整理先沿 production route → owner → renderer 核對狀態和可達性，不按「預覽／未接線」全域替換。依 [文案呈現原則](../../../DESIGN_SYSTEM.md#control-roles) 檢查 loading、真空白、失敗、部分／舊資料及 pending mutation；同義 badge／title／正文合併時保留讀屏名稱。重試必須呼叫該資料 owner，不能只改文案掩蓋卡住的 loading；實際寫入不可保留模擬標籤。
+
 - 沿用 Expo Router：app/ 只作路由／layout，src/screens/ 放畫面，src/components/ 放共用呈現，src/theme.ts 放 tokens，src/preview/ 放合成資料及控制器。樣式用共置 StyleSheet；不要因新版模板搬路由根。Portal 內需用的 scope 資料／回調由擁有者傳入，避免越出 provider 後再讀 context。
 - `Link asChild`／`PreviewLink` 下的 Pressable 不直接傳函式型 `style`：本機 Expo Router 57.0.22 經 Radix Slot 以物件展開合併 style，會丟失 callback 的布局。傳 `StyleSheet.flatten` 後的實際物件；需按壓外觀時以局部 press-in／out 狀態產生物件，保留 href／guard／鍵盤語意。2026-10-05 已讀安裝版 BaseExpoRouterLink／ui/Slot 及 Radix 原碼並以 SSR 重現；仍須在受影響頁看實際橫排、padding、邊界及焦點，document 不溢出不等於元件排版正確。版本改變時重核，不擴成所有 Pressable 的禁令。
 - 復用 Paper 5.x 及現有 App* 薄封裝。RN Web 0.21.2 的 accessibilityState 不等於 DOM 狀態；選單／勾選／Tabs 明確核對 aria-expanded／checked／selected 及鍵盤操作。AppDialog 以 RN Modal 承載 Paper Dialog，保留焦點限制、Escape 及返回焦點；Web 選單選取後若要捲動／聚焦選單外內容，用 AppSelect.onSelectionClosed 等 Modal 釋放焦點限制後執行，取消不跳轉，scope／權限／檔案版本更換時清除過期選取，不加猜測 timeout（2026-10-05 成長章節 320px 已補驗）。細節按下表讀。

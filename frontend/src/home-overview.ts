@@ -12,7 +12,7 @@ export interface HomeOverviewItem {
   action: { label: string; destination: HomeDestination };
 }
 export interface HomeOverviewSection {
-  state: "ready" | "loading" | "unavailable";
+  state: "ready" | "loading" | "error" | "stale" | "unavailable";
   items: HomeOverviewItem[];
   detail?: string;
 }
@@ -42,7 +42,7 @@ export function selectHomeAgentImportant(model: HomeViewModel): HomeAgentImporta
   const overview = selectHomeOverview(model);
   if (!overview) return null;
   return overview.agentImportant ?? { state: "unavailable", items: [], loadedAt: null,
-    detail: "尚未取得 Agent 提供的重要事項，不能確認有沒有新提醒。" };
+    detail: "暫時無法顯示助手提醒" };
 }
 
 export function selectHomeOverview(model: HomeViewModel): HomeOverviewView | null {
@@ -53,11 +53,11 @@ export function selectHomeOverview(model: HomeViewModel): HomeOverviewView | nul
   return {
     childId: model.selectedChildId,
     attention: !focus || focus.kind === "unavailable"
-      ? { state: "unavailable", items: [], detail: focus?.detail ?? "尚未取得待辦與提醒，不能確認有沒有需要處理的事項。" }
+      ? { state: "unavailable", items: [], detail: focus?.detail ?? "暫時無法顯示待辦與提醒" }
       : focus.kind === "none" ? { state: "ready", items: [], detail: focus.detail }
         : { state: "ready", items: [{ id: `focus:${model.selectedChildId}:${focus.kind}`, title: focus.title,
           detail: focus.detail, statusLabel: focus.whyNow ?? (focus.kind === "task" ? "待查看安排" : "待核對關注"),
           sourceLabel: focus.sourceLabel, action: focus.action }] },
-    ongoing: { state: "unavailable", items: [], detail: "尚未取得持續關注的話題；不從最近記錄推斷。" },
+    ongoing: { state: "unavailable", items: [], detail: "暫時無法顯示持續關注" },
   };
 }

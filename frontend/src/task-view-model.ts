@@ -41,6 +41,8 @@ export interface TaskDraft {
 export interface TasksViewModel {
   child: { id: string; name: string }; access: "editable" | "read_only" | "lost";
   online: boolean; reading: boolean; dataLabel: string;
+  // List read state is independent of mutations; omitted by older preview adapters.
+  readState?: "loading" | "ready" | "error" | "stale";
   scheduleContext: { asOf: string; timeZone: string };
   items: TaskView[]; eligibleAssignees: TaskAssigneeView[]; selected: TaskView | null;
   hasMoreTasks: boolean; loadingMoreTasks: boolean;

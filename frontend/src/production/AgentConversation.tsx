@@ -36,7 +36,7 @@ export function AgentConversation({ onLocateSource }: { onLocateSource?: LocateA
             <Text selectable style={styles.label}>{source.excerpt}</Text>
           </View>)}
         </SectionCard>:null}
-        {run ? <SectionCard><SectionHeader title="本次操作收據" density="compact" subtitle="與上方真實工具結果一起核對；運行結束不代表照護事項已完成。" />
+        {run ? <SectionCard><SectionHeader title="本次操作收據" density="compact" />
           {receipt?.state === "ready" ? receipt.items.length ? receipt.items.map(item => <View key={item.id} style={styles.receipt}>
             <Text style={styles.label}>{({ save_record: "保存照護記錄", revise_record: "更正照護記錄", save_private_note: "保存私人備註", revise_private_note: "修改私人備註", create_self_task: "建立本人待辦", change_self_task: "更改本人待辦" })[item.kind]} · {({ saved: "已保存", updated: "已更新", scheduled: "已安排", completed: "已記錄完成", cancelled: "已取消" })[item.state]}</Text>
             <Text selectable style={styles.label}>{({ care_record: "照護記錄", private_note: "私人備註", task: "待辦" })[item.resource.kind]}：{item.resource.id} · 版本 {item.resource.version}</Text>

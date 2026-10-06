@@ -36,7 +36,7 @@ function ImportantLead({ item, actions, synthetic, loadedAt }: { item: HomeAgent
       {item.sourceLabel ? <Text style={styles.meta}>來源：{item.sourceLabel}</Text> : null}
       {createdAt || loadedAt ? <Text style={styles.meta}>{[
         createdAt ? `建立於 ${createdAt}` : null,
-        loadedAt ? `${synthetic ? "示例快照" : "讀取於"} ${loadedAt}` : null,
+        loadedAt ? `${synthetic ? "示例" : "讀取於"} ${loadedAt}` : null,
       ].filter(Boolean).join(" · ")}</Text> : null}
     </View>
     <View style={styles.action}><AppButton label={item.action.label} density="compact" variant="accent" onPress={() => actions.open(item.action.destination)} /></View>
@@ -58,13 +58,13 @@ export function HomeAgentImportant({ model, actions }: { model: HomeViewModel; a
         {lead && section.synthetic ? <Text style={styles.meta}>合成示例</Text> : null}
       </View>
       <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
-        title={section.state === "error" ? "未能讀取重要事項" : section.state === "unavailable" ? "暫未能確認重要事項" : undefined}
-        message={section.detail ?? (section.state === "ready" ? "這次已載入快照沒有助手重要事項。" : section.state === "loading" ? "正在讀取助手重要事項…" : "目前未能取得助手重要事項，不能當作沒有提醒。")}>
-        {section.state === "error" || section.state === "unavailable" ? <AppButton label="重新讀取" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
+        message={section.state === "unavailable" ? "暫時無法顯示助手提醒" : section.state === "loading" ? "正在讀取助手提醒…"
+          : section.state === "error" ? "暫時無法讀取助手提醒" : section.items.length ? undefined : "目前沒有助手提醒"}>
+        {section.state === "error" ? <AppButton label="重新讀取" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
+        {section.state === "unavailable" ? <TextLink label="前往助手" onPress={() => actions.open("chat")} /> : null}
       </ReadStateNotice>
       {lead ? <ImportantLead key={lead.id} item={lead} actions={actions} synthetic={section.synthetic} loadedAt={loadedAt} /> : null}
-      {!lead && !section.synthetic && loadedAt ? <Text style={styles.meta}>讀取於 {loadedAt}</Text> : null}
-      {model.connection !== "online" ? <Text style={styles.meta}>目前未連線；提醒可能不是最新狀態。</Text> : null}
+      {model.connection !== "online" && lead ? <Text style={styles.meta}>目前離線，顯示較早的提醒</Text> : null}
     </View>
     {remaining.map(item => <Pressable key={item.id} testID={`home-agent-important-item-${item.id}`} accessibilityRole="button"
       accessibilityLabel={`${item.title}，${item.action.label}`} accessibilityHint={[item.detail, item.sourceLabel].filter(Boolean).join("；")}

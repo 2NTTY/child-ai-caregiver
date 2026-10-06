@@ -185,12 +185,12 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource }: 
           ? !model.pendingDecision.reviewed ? "原確認結果待查核，請先重新讀取原運行。"
             : model.pendingDecision.reconfirm ? "原確認條件已變更，請重新讀取並核對。"
               : "已讀取原運行，請核對原決定及家庭共享同意，再明確重試。"
-          : run ? `Agent 運行${agentRunLabels[run.status]}；請核對結果，運行結束不代表照護事項已完成。` : ""));
+          : run ? `Agent 運行${agentRunLabels[run.status]}；請核對結果。` : ""));
   return <View testID="agent-run-view" style={styles.root}>
     <StatusAnnouncement eventKey={announcementKey} message={announcementMessage}
       urgent={model.readState === "failed" || announcementKey.startsWith("notice:error:")} />
     <SectionCard style={styles.card}>
-    <SectionHeader title="Agent 運行結果" icon="clipboard-check-outline" subtitle="核對本次回覆、候選及來源；運行結束不代表照護事項已完成。" />
+    <SectionHeader title="Agent 運行結果" icon="clipboard-check-outline" />
     <AppButton label={model.pendingDecision ? "讀取原運行並核對" : "重新讀取運行結果"} variant="secondary"
       disabled={!model.online || !!model.busy || denied || model.readState === "loading"} loading={model.busy === "read"}
       onPress={actions.refresh} style={styles.fullButton} />

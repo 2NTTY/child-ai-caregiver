@@ -1,0 +1,236 @@
+✖ ordinary refresh keeps one top toolbar and stable content slots through loading and success (944.845236ms)
+✖ selection, tab and newer reading position are not reset by refresh completion (518.180628ms)
+✖ normal reading removes stage forms and their entrance without removing source/history data (522.314238ms)
+✖ dirty and unknown original operations retain their frozen body and guard through a read (144.394151ms)
+✖ lost access cancels in-flight reads and clears private data without restoring stale selection (131.637097ms)
+✖ failed reads and viewer permission remain explicit and keep a single refresh control (222.671817ms)
+✔ scope remount cancels the previous response and does not reuse the previous child data (183.718686ms)
+✔ the chain composes related outcomes by child and canonical id without making new stored events (56.02004ms)
+✔ the related result is inside the chain and keeps coverage and task-state caveats (112.200353ms)
+✖ archive, History, return and refresh share one closed chain without changing attention or tasks (121.806338ms)
+✔ archive rejects stale version, authority, source, viewer and dirty inputs (169.783927ms)
+✔ unknown archive freezes one original request until read and explicit recovery consent (74.656648ms)
+✖ Growth and History consume the same injected owner and mismatched scopes are withheld (95.334046ms)
+✔ ending a concern uses a filled control and frozen confirmation; cancel and dismissal never write (52.974342ms)
+✔ archive confirmation is invalidated by a new version, authority, scope, or write guard (255.019297ms)
+✖ undo restores the original review status and preserves both archive and restore history exactly once (133.323578ms)
+✔ History restores through the same owner and provides recovery locally for an unknown restore (102.804832ms)
+✔ restore and undo reject stale versions, dirty drafts, lost sources, and unmounted scope callbacks (72.545098ms)
+✔ read provider passes the exact owner value and masks all scope, child and access mismatches (303.641431ms)
+✔ facts and history retain original IDs, versions and provenance without status-based short/long inference (1.025857ms)
+✔ public knowledge is fail-closed for internal or missing use scope and never gains invented dates (0.777439ms)
+✖ all long-term disclosures remain read-only and clarification only hands an unsent question to the existing draft route (394.058545ms)
+✔ missing read ports, denied access and summary-null have honest visible states (731.725941ms)
+✖ only one preview memory owner is mounted and the consumer exposes no database mutator (1.930739ms)
+✔ authorized reference cards display original source metadata while excluded sources stay hidden (167.14479ms)
+✔ an explicitly supplied run context is displayed verbatim without expanding from long-term facts (81.512091ms)
+✔ initial task read failure becomes error without creating a mutation; one retry becomes ready (776.701082ms)
+✔ failed refresh retains stale tasks, and revoked access exposes no old items (279.794902ms)
+✔ task read recovery cannot bypass unknown original-request checks or resubmit implicitly (256.684838ms)
+✔ read notices have one normal loading line and nonempty live status without body copy (42.387778ms)
+✔ partial and stale Home tasks stay explicit, and unavailable assistant reminders only navigate (156.079812ms)
+✔ operation notices deduplicate matching headings without hiding unknown or conflicting results (85.495006ms)
+✔ Home refresh reaches the scoped task reader once and never reuses another scope (90.282302ms)
+✔ creation requires explicit offset, IANA time zone and an eligible assignee (13.643425ms)
+✔ reschedule and cancellation require a reason; review requires an explicit terminal outcome (10.900361ms)
+✔ terminal tasks cannot be rescheduled or reopened; needs_review only offers resolve (0.827172ms)
+✔ visible reminders belong to the current version and occurrence, and stop after revocation or a terminal state (1.25615ms)
+✔ pending day groups use the injected snapshot and retain unresolved review (34.115666ms)
+✔ schedule dates use the requested viewing zone without mutating saved timestamps (3.937194ms)
+✔ invalid dates stay unconfirmed and are never invented unscheduled tasks (2.348852ms)
+✔ recent completed projection is newest ten by completion revision, excluding cancelled (3.968567ms)
+✔ unknown completion dates never borrow due or updated time and stay stable (5.656124ms)
+✔ history searches only terminal loaded items by title, contents or eligible assignee (0.93022ms)
+✔ history date filters use actual terminal revision dates with inclusive local days (0.666602ms)
+✔ next-step labels preserve review, terminal and revoked-assignee boundaries (0.636721ms)
+✔ initial task read failure stays an error, hides unknown counts and offers the existing read retry (623.126147ms)
+✔ failed refresh keeps retained task rows explicitly stale and leaves original-operation recovery intact (260.87042ms)
+✔ only successful empty reads show filter-empty copy, while loading stays a single read status (167.993223ms)
+✔ real task action copy retains the confirmation and history callbacks without simulation claims (2.70758ms)
+✔ task history preserves the same failed-versus-stale distinction without unknown result counts (70.360567ms)
+ℹ tests 50
+ℹ suites 0
+ℹ pass 39
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4910.685882
+
+✖ failing tests:
+
+test at scripts/growth-refresh.test.mjs:96:1
+✖ ordinary refresh keeps one top toolbar and stable content slots through loading and success (944.845236ms)
+  SyntaxError: Unexpected token 'typeof'
+      at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+      at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:336:18)
+      at loadESMFromCJS (node:internal/modules/cjs/loader:1690:24)
+      at Module._compile (node:internal/modules/cjs/loader:1854:5)
+      at Object..js (node:internal/modules/cjs/loader:2003:10)
+      at Module.load (node:internal/modules/cjs/loader:1594:32)
+      at Module._load (node:internal/modules/cjs/loader:1396:12)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
+
+test at scripts/growth-refresh.test.mjs:128:1
+✖ selection, tab and newer reading position are not reset by refresh completion (518.180628ms)
+  SyntaxError: Unexpected token 'typeof'
+      at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+      at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:336:18)
+      at loadESMFromCJS (node:internal/modules/cjs/loader:1690:24)
+      at Module._compile (node:internal/modules/cjs/loader:1854:5)
+      at Object..js (node:internal/modules/cjs/loader:2003:10)
+      at Module.load (node:internal/modules/cjs/loader:1594:32)
+      at Module._load (node:internal/modules/cjs/loader:1396:12)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
+
+test at scripts/growth-refresh.test.mjs:154:1
+✖ normal reading removes stage forms and their entrance without removing source/history data (522.314238ms)
+  SyntaxError: Unexpected token 'typeof'
+      at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+      at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:336:18)
+      at loadESMFromCJS (node:internal/modules/cjs/loader:1690:24)
+      at Module._compile (node:internal/modules/cjs/loader:1854:5)
+      at Object..js (node:internal/modules/cjs/loader:2003:10)
+      at Module.load (node:internal/modules/cjs/loader:1594:32)
+      at Module._load (node:internal/modules/cjs/loader:1396:12)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
+
+test at scripts/growth-refresh.test.mjs:168:1
+✖ dirty and unknown original operations retain their frozen body and guard through a read (144.394151ms)
+  SyntaxError: Unexpected token 'typeof'
+      at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+      at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:336:18)
+      at loadESMFromCJS (node:internal/modules/cjs/loader:1690:24)
+      at Module._compile (node:internal/modules/cjs/loader:1854:5)
+      at Object..js (node:internal/modules/cjs/loader:2003:10)
+      at Module.load (node:internal/modules/cjs/loader:1594:32)
+      at Module._load (node:internal/modules/cjs/loader:1396:12)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
+
+test at scripts/growth-refresh.test.mjs:188:1
+✖ lost access cancels in-flight reads and clears private data without restoring stale selection (131.637097ms)
+  SyntaxError: Unexpected token 'typeof'
+      at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+      at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:336:18)
+      at loadESMFromCJS (node:internal/modules/cjs/loader:1690:24)
+      at Module._compile (node:internal/modules/cjs/loader:1854:5)
+      at Object..js (node:internal/modules/cjs/loader:2003:10)
+      at Module.load (node:internal/modules/cjs/loader:1594:32)
+      at Module._load (node:internal/modules/cjs/loader:1396:12)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
+
+test at scripts/growth-refresh.test.mjs:203:1
+✖ failed reads and viewer permission remain explicit and keep a single refresh control (222.671817ms)
+  SyntaxError: Unexpected token 'typeof'
+      at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+      at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:336:18)
+      at loadESMFromCJS (node:internal/modules/cjs/loader:1690:24)
+      at Module._compile (node:internal/modules/cjs/loader:1854:5)
+      at Object..js (node:internal/modules/cjs/loader:2003:10)
+      at Module.load (node:internal/modules/cjs/loader:1594:32)
+      at Module._load (node:internal/modules/cjs/loader:1396:12)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
+
+test at scripts/growth-refresh.test.mjs:255:1
+✖ archive, History, return and refresh share one closed chain without changing attention or tasks (121.806338ms)
+  SyntaxError: Unexpected token 'typeof'
+      at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+      at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:336:18)
+      at loadESMFromCJS (node:internal/modules/cjs/loader:1690:24)
+      at Module._compile (node:internal/modules/cjs/loader:1854:5)
+      at Object..js (node:internal/modules/cjs/loader:2003:10)
+      at Module.load (node:internal/modules/cjs/loader:1594:32)
+      at Module._load (node:internal/modules/cjs/loader:1396:12)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
+
+test at scripts/growth-refresh.test.mjs:315:1
+✖ Growth and History consume the same injected owner and mismatched scopes are withheld (95.334046ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/shared/production_copy_cleanup_20261006/frontend/scripts/growth-refresh.test.mjs:327:56)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/growth-refresh.test.mjs:364:1
+✖ undo restores the original review status and preserves both archive and restore history exactly once (133.323578ms)
+  SyntaxError: Unexpected token 'typeof'
+      at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+      at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:336:18)
+      at loadESMFromCJS (node:internal/modules/cjs/loader:1690:24)
+      at Module._compile (node:internal/modules/cjs/loader:1854:5)
+      at Object..js (node:internal/modules/cjs/loader:2003:10)
+      at Module.load (node:internal/modules/cjs/loader:1594:32)
+      at Module._load (node:internal/modules/cjs/loader:1396:12)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
+
+test at scripts/memory-reference.test.mjs:112:1
+✖ all long-term disclosures remain read-only and clarification only hands an unsent question to the existing draft route (394.058545ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /if \(visibleDraft\.text\.trim\(\)\).*setNotice/. Input:
+  
+  '// Compatibility for presentation consumers. Production has one owner and no fixture provider.\n' +
+    'export { ProductionProvider as PreviewProvider, useProduction as usePreview } from "../production/ProductionProvider";\n'
+  
+      at TestContext.<anonymous> (file:///workspace/shared/production_copy_cleanup_20261006/frontend/scripts/memory-reference.test.mjs:127:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '// Compatibility for presentation consumers. Production has one owner and no fixture provider.\nexport { ProductionProvider as PreviewProvider, useProduction as usePreview } from "../production/ProductionProvider";\n',
+    expected: /if \(visibleDraft\.text\.trim\(\)\).*setNotice/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts/memory-reference.test.mjs:147:1
+✖ only one preview memory owner is mounted and the consumer exposes no database mutator (1.930739ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/shared/production_copy_cleanup_20261006/frontend/scripts/memory-reference.test.mjs:153:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

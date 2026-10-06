@@ -33,7 +33,7 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
     return projected(growth, concerns);
   };
   const projected = (value: GrowthPage, concerns: ConcernPage): GrowthPage => ({ ...value,
-    concerns: { state: "ready", items: concerns.items, label: "Server 持續關注及已取得的事件歷程。" },
+    concerns: { state: "ready", items: concerns.items, label: "持續關注及已載入的跟進記錄。" },
     archive: { scopeKey: env.scopeKey, childId: env.childId!, authorityVersion: value.authorityVersion, state: "unavailable", snapshot: null,
       label: "年度／季度成長檔案及報告尚未接通。" },
   });
@@ -108,7 +108,7 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
           : attempt.kind === "concern_update" ? attempt.input.action === "append" ? "已追加這次觀察，原有經過及連結任務保留。"
             : attempt.input.followUpAt ? "已保存這次站內跟進安排；實際處理狀態以關注歷程為準。" : "已撤回這次站內跟進安排，原有觀察及連結任務保留。"
           : attempt.kind === "concern" ? attempt.input.action === "archive" ? "已結束這條關注，原有經過及連結任務保留。" : "已恢復這條關注，前後經過及連結任務保留。"
-          : "成長操作已獲 Server 確認；重新讀取可核對目前狀態。"); setMissingTargets([]);
+          : "成長操作已確認；重新讀取可核對目前狀態。"); setMissingTargets([]);
         try {
           const next = await readPage(signal);
           if (current()) { savePage(next, key); setLoad("ready"); }
@@ -140,7 +140,7 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
     write({ kind: "concern", id: actual.id, input: frozen, body: JSON.stringify(frozen), label: actual.title });
   };
   return { scopeKey: env.scopeKey, model: {
-    scopeKey: env.scopeKey, childId: env.childId!, childName: env.childName, dataLabel: "Server 有限 P2 成長候選與主題近況；與持續關注鏈分開核對。",
+    scopeKey: env.scopeKey, childId: env.childId!, childName: env.childName, dataLabel: "可核對的成長建議",
     online: env.online, access: runtime.lost ? "lost" : canManage && visible?.canManage !== false ? "editable" : "read_only", load,
     page: visible, busy, locked, pending: runtime.lost ? null : pending, originalConsent, operation, notice,
     dirty: !runtime.lost && dirty, discardAsked, epoch, resetCounts, refreshPending, missingTargets, lastConcernChange: runtime.lost ? null : lastConcernChange,

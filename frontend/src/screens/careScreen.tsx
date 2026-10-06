@@ -24,7 +24,7 @@ function AgentPendingReview() {
   const locked = !!recovery?.pending || !!workspace?.model.draft || !!workspace?.model.deletion;
   return <SectionCard surface="plain"><SectionHeader density="compact" title="Agent 待確認事項" subtitle="健康事實及家庭待辦只會在你核對內容、對象及共享範圍後保存。"
     action={<AppButton label="重新讀取" variant="quiet" disabled={!online || agentPending.state === "loading" || locked} onPress={() => readAgentPending()} />} />
-    {agentPending.state === "loading" ? <Text>正在讀取真待確認清單。</Text> : agentPending.state === "failed" ? <Text>未能讀取待確認事項，請重試。</Text>
+    {agentPending.state === "loading" ? <Text>正在讀取待確認事項…</Text> : agentPending.state === "failed" ? <Text>未能讀取待確認事項，請重試。</Text>
       : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : !agentPending.entries.length ? <Text>目前已載入範圍沒有待確認事項。</Text> : null}
     {agentPending.entries.map(({ runId, proposal }) => <View key={runId + ":" + proposal.id} style={{ gap: spacing.sm }}>
       <Text>{proposal.title}</Text><Text>{proposal.scope === "family" ? "家庭共享" : "私人"} · {proposal.status === "expired" ? "原提案已過期；仍可查看及略過" : "待你核對"}</Text>
@@ -52,13 +52,13 @@ function CareWorkspace({ initialKind, initialRecordId }: { initialKind?: CareKin
     if (initialRecordId) workspace.actions.openRecord(initialRecordId);
     else if (initialKind) workspace.actions.startCreate(initialKind);
   }, [workspace?.scopeKey, workspace?.model.list.state, workspace?.model.online, workspace?.model.access, recovery?.pending, externalLocked, initialKind, initialRecordId]);
-  if (!workspace) return <PageFrame title="記錄與核對" density="compact"><Text>正在準備目前孩子的記錄；未取得正確作用域前不顯示舊內容。</Text></PageFrame>;
+  if (!workspace) return <PageFrame title="記錄與核對" density="compact"><Text>正在讀取記錄…</Text></PageFrame>;
   const { model, actions } = workspace, panelOpen = !!model.detail || !!model.draft || !!model.deletion;
   return <CareRecordsView model={model} actions={actions} initialRecordId={model.detail?.record.id ?? initialRecordId}
     onReviewHistory={() => navigate(() => router.push("/history?category=review"))}
     onOlderPending={() => navigate(() => router.push("/history?category=review&status=pending&older=1"))}
     previewControls={<>
-      {!panelOpen ? <SectionCard surface="plain"><SectionHeader density="compact" title="查找已保存記錄" subtitle="搜尋及分頁由 Server 核對；這一頁的原值、來源及版本不會自行推算。"
+      {!panelOpen ? <SectionCard surface="plain"><SectionHeader density="compact" title="查找已保存記錄"
         action={model.access === "editable" ? <AppButton label="手動新增共享記錄" disabled={!model.online || !!recovery?.pending || externalLocked} onPress={() => actions.startCreate()} /> : undefined} />
         <CareSavedRecordsView model={model} actions={actions} />
       </SectionCard> : null}
@@ -76,5 +76,5 @@ export default function CarePage() {
   if (child && view === "photos") return <PhotoWorkspace key={scopeKey ?? "no-child"} capturePreferred={false} onCare={() => navigate(() => router.push("/care"))} />;
   const initialRecordId = typeof recordId === "string" ? recordId : typeof record === "string" ? record : undefined;
   return child && scopeKey ? <CareWorkspace key={scopeKey} initialKind={initialKind} initialRecordId={initialRecordId} />
-    : <PageFrame density="compact" title="記錄與核對" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>尚未選擇孩子，不會顯示其他孩子的記錄。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    : <PageFrame density="compact" title="記錄與核對" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

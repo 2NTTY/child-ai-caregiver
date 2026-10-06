@@ -3,31 +3,32 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## FE-W43：接線與需求文件清理
+## FE-W44：正式介面文案與讀取狀態整理
 
-已隨 PR #90 合併至 `61a8faa`。主聊天現開始正式接線，活動包及驗收只在 [根 PLAN](../PLAN.md#active) 維護；本頁保留前端呈現交付，不另建 INT 進度副本。
+2026-10-06 UTC。基線 master `f2aa299d418c10586e99260ef36685619dbb67b2`（PR #97）；使用者要求按已接線版本全面排查並在新 PR 修正多餘字句。本包只改 `frontend/**`，不重新接線 backend、不改正式資料、不部署或自動合併。
 
-更新：2026-10-06 UTC。範圍只限前端文件：收斂過時要求、接口回調及歷史流水，分清產品目標、已有預覽能力與正式接線缺口；不改產品程式、backend、資料庫或預覽部署。
+### 範圍與已定方案
 
-基線：[PR #89](https://github.com/2NTTY/child-ai-caregiver/pull/89) 已於 2026-10-06 08:59 UTC 合併，master `26d36e8bf6c5f627d721ba9f26587349970ef183`，tree `cd31a9d24d03483f3d4e1cef6889593dc65bfc07`。本包七份文件已完成整理及定向覆核，依本次使用者授權走獨立分支／PR 合併；實際合併結果以本文件所在 GitHub commit／PR 為準，不把先前基線當本包合併提交。
+- 正常 loading／empty 每區保留一個短狀態；刪重複防禦句、常駐開發解釋與已過期能力說明
+- 真實操作不能標為「模擬／合成」；保留提交前預覽、具名確認、家庭共享、外送／費用、未保存及 unknown 等實際必要訊息
+- 首頁、側欄及共用狀態減少 badge／標題／正文疊加；無障礙狀態播報仍完整
+- 釐清待辦首次讀取失敗與實際 fetching，首頁重試沿原 Task owner；保留部分／舊資料提示和原操作恢復，不把未讀取當零項
+- 尚無正式投影的首頁助手重要提醒只作誠實、精簡呈現，本包不虛構 feed
 
-### 整理結果與核對範圍
+### 目前狀態與交付門檻
 
-- 主要入口清楚，聊天專項移除已被替代的造型及接口；歷史只引用固定 Git 版本，不複製另一份歸檔
-- 普通自動保存／重要確認是產品目標；既有 proposal accept 與正式能力缺口另列，不把預覽能力冒充已接通
-- 文件回調、媒體能力及呈現規格對照現有程式；保留來源／scope／版本／unknown 等必要安全約束
-- 已核對七份文件的基線 blob、差異、相對連結目標及可取得正文的錨點；原明確錨點保留，另保留已改名章節的相容入口。定向 source review 的三項文字歧義已修正並覆核，沒有待修阻塞
-- 只變動 Markdown，不改程式、依賴、美術或凍結證據；純文件包未重跑 UI、模型、build 或全量測試。下列較早測試結果不算本包新增測試
+已完成程式及文案修訂，交付於 [draft PR #98](https://github.com/2NTTY/child-ai-caregiver/pull/98)。新 readState 與 mutation operation 分開；首次讀取失敗可重試，舊資料保持明示，首頁讀取沿同 scope 的 Task owner。必要確認、模型外送／費用、來源／健康未知及原操作查核保留。
 
-### 接手入口及後續
+六個定向測試檔補驗 50/50 通過，frontend typecheck 通過；[檢查結果](verification/production-copy-2026-10-06/checks.json)。首次批次 39/50，11 個失敗來自整合前的測試 harness／preview owner 假設；保留原失敗，兩份測試對齊現有正式 provider 及 shallow mock 後補驗，沒有為配合測試改 runtime。原碼 review 無已確認阻塞。
 
-Codex 先依 [HANDOFF 的閱讀入口](HANDOFF.md#reading-order)，再按功能核對正式 repository 的 API／controller。正式 Agent 普通自動寫入／重要分類與確認事件、持久待確認總表、各領域正式 owner 與訂閱、關注鏈 archive／restore、長期報告及 PDF 仍屬待接線；本文件清理不代表這些功能已完成。
+本包未跑瀏覽器畫面、export、真 API 或全量回歸；上述定向結果不等於正式部署／畫面驗收。PR 尚未合併、網站未因本包更新。
+真模型、外部通知、正式家庭資料、部署及完整回歸矩陣不在本包；若必要檢查缺環境，列出具體限制。主聊天的 INT 實作／部署狀態只以 [根 PLAN](../PLAN.md#active)及[正式入口指引](../docs/PRODUCTION_FRONTEND.md)為準。
 
-### 已完成呈現基線
+### 已完成前端基線
 
-FE-W42 的 v49 已於 2026-10-06 08:03 UTC 發布，程式、文件及證據已包含於 PR #89。沿[輸入框限定驗收](verification/composer-refinements-2026-10-06/browser-qa/v49-browser-report.md)：304 項測試、typecheck、37 路由 export 及桌面／390／320 檢查通過；send 持續按壓／釋放、IME／真機未新增實測。v48 的[按鈕、手機導航及水滴限定驗收](verification/mobile-ripple-refinements-2026-10-06/browser-qa/v48-browser-report.md)仍只支持其原範圍。
+FE-W43 七份文件清理已隨 [PR #90](https://github.com/2NTTY/child-ai-caregiver/pull/90) 合併；v49 呈現及證據隨 [PR #89](https://github.com/2NTTY/child-ai-caregiver/pull/89) 合併。之後 INT-W01～07 已把新前端接上正式資料並記錄部署；舊「尚未接線」限制必須按目前程式／正式文件重核，不能因保留歷史就視為現行能力。
 
-真 API／模型／家庭資料、真相機／咪高峰、完整 Server 歷史、APK／真機與跨瀏覽器／每幀無閃動，均不能用合成或靜態證據替代。GitHub 未有 check／status／workflow runs，不稱 CI green。
+[輸入框限定驗收](verification/composer-refinements-2026-10-06/browser-qa/v49-browser-report.md)及[手機導航／水滴驗收](verification/mobile-ripple-refinements-2026-10-06/browser-qa/v48-browser-report.md)只支持各自版本，不是本包新證據。
 
 <a id="evidence"></a>
 ### 可追溯的舊證據

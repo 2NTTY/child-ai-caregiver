@@ -23,11 +23,11 @@ export function projectProductionHome(snapshot: ProductionSnapshot): HomeViewMod
     lastReadLabel: state.recordsLoadedAt ? new Date(state.recordsLoadedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }) : null,
     operation: { state: childOperation, title: childOperation === "none" ? "" : "建立孩子", detail: state.childMessage ?? (childOperation === "saving" ? "正在建立孩子…" : "") },
     guideStatus: !knownChildren ? "unknown" : state.children.length === 0 ? "first_login" : "incomplete",
-    focus: { kind: "unavailable", detail: "待辦資料正在接線，尚未取得正式結果。" },
+    focus: { kind: "unavailable", detail: "暫時無法顯示待辦" },
     overview: selected ? { childId: selected.id,
-      agentImportant: { state: "unavailable", items: [], loadedAt: null, detail: "助手重要事項正在接線，尚未取得正式結果，不能當作沒有提醒。" },
-      attention: { state: "unavailable", items: [], detail: "待辦資料正在接線，尚未取得正式結果。" },
-      ongoing: { state: "unavailable", items: [], detail: "持續關注正在接線，尚未取得正式結果。" },
+      agentImportant: { state: "unavailable", items: [], loadedAt: null, detail: "暫時無法顯示助手提醒" },
+      attention: { state: "unavailable", items: [], detail: "暫時無法顯示待辦" },
+      ongoing: { state: "unavailable", items: [], detail: "暫時無法顯示持續關注" },
     } : undefined,
   };
 }

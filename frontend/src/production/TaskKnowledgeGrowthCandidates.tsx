@@ -23,14 +23,14 @@ export function TaskKnowledgeGrowthCandidates({ model, actions, onTask }: { mode
   if (!page) return null;
   const selected = page.items.find(item => item.id === selectedId);
   return <View style={s.stack}>
-    <SectionCard><SectionHeader density="compact" title="目前可核對的成長候選" subtitle={model.dataLabel} />
-      <Text style={s.meta}>以下是有限主題候選；接受只記錄知悉或明確建立共享事項，不代表已完成、已預約或醫療判斷。</Text>
+    <SectionCard><SectionHeader density="compact" title="成長建議" />
+      {page.items.length ? <Text style={s.meta}>接受建議只記錄知悉或建立共享事項，不代表已完成、已預約或醫療判斷。</Text> : null}
       {page.items.length ? page.items.map(item => <View key={item.id} style={s.smallStack}>
         <Text style={s.title}>{item.title}</Text><Text style={s.meta}>{growthKindLabels[item.kind]} · {growthStateLabels[item.state]} · 版本 {item.version}</Text>
         <Text style={s.body}>{item.whyNow}</Text>
         <AppButton label="查看來源與核對候選" variant="secondary" density="compact" disabled={model.busy} onPress={() => setSelectedId(item.id)} />
-      </View>) : <Text style={s.body}>目前已取得的有限主題沒有候選；這不代表沒有需要觀察的事情。</Text>}
-      {page.historyHasMore ? <Text style={s.meta}>只取得 API 的目前候選視窗，不能當作完整成長歷史。</Text> : null}
+      </View>) : <Text style={s.body}>暫時沒有建議。</Text>}
+      {page.historyHasMore ? <Text style={s.meta}>仍有較早建議未載入。</Text> : null}
     </SectionCard>
     <SummaryDisclosure label="有限主題及人工確認近況" scopeKey={model.scopeKey}>
       {page.topics.map(topic => <TopicForm key={`${model.scopeKey}:${topic.id}:${model.epoch}:${model.resetCounts[`topic:${topic.id}`] ?? 0}`} topic={topic} model={model} actions={actions} />)}

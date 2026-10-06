@@ -18,8 +18,8 @@ export function GrowthScreen() {
   const router = useRouter(), navigate = usePreviewNavigation();
   const child = model.children.find(item => item.id === model.selectedChildId);
   const openTask = (id: string) => navigate(() => { tasks?.actions.selectTask(id); router.push("/tasks"); });
-  if (!child || !workspace) return <PageFrame density="compact" title="成長與關注" description="先選擇有權存取的孩子。"><SectionCard>
-    <Text>{child ? "正在準備目前孩子的關注；未取得正確作用域前不顯示舊內容。" : "沒有選擇孩子，不顯示其他孩子的關注。"}</Text>
+  if (!child || !workspace) return <PageFrame density="compact" title="成長與關注"><SectionCard>
+    <Text>{child ? "正在讀取關注…" : "先選擇孩子。"}</Text>
     <AppButton label="查看子女檔案" onPress={() => actions.open("profile")} />
   </SectionCard></PageFrame>;
   return <GrowthView key={workspace.scopeKey} model={workspace.model} actions={workspace.actions}

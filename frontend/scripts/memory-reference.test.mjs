@@ -123,17 +123,23 @@ test('all long-term disclosures remain read-only and clarification only hands an
   assert.equal(JSON.stringify(value), before);
   const screen = fs.readFileSync(new URL('../src/screens/memoryScreen.tsx', import.meta.url), 'utf8');
   assert.match(screen, /onPrepareQuestion=\{actions\.prepareQuestion\}/);
-  const draftRoute = fs.readFileSync(new URL('../src/preview/PreviewContext.tsx', import.meta.url), 'utf8');
-  assert.match(draftRoute, /if \(visibleDraft\.text\.trim\(\)\).*setNotice/);
-  assert.match(draftRoute, /else draftOwner\.setText\(agentScope, question\)/);
+  const draftRoute = fs.readFileSync(new URL('../src/production/ProductionProvider.tsx', import.meta.url), 'utf8');
+  const prepareQuestion = draftRoute.match(/prepareQuestion\(question\) \{([\s\S]*?)\n    \},/)?.[1];
+  assert.ok(prepareQuestion, 'The current production draft action must remain present');
+  assert.match(prepareQuestion, /if \(!currentScope\(\)\) return;/);
+  assert.match(prepareQuestion, /if \(chatDraft\?\.text\.trim\(\)\) setLocalNotice/);
+  assert.match(prepareQuestion, /else owner\.chatController\.setText\(question\)/);
+  assert.match(prepareQuestion, /openAgentDraft\(true\)/);
+  assert.doesNotMatch(prepareQuestion, /sendMessage|\.submit\(|\.send\(/);
 });
 
 test('missing read ports, denied access and summary-null have honest visible states', () => {
   const value = snapshot();
   const short = renderView(value, { tab: 'short' }).html;
-  assert.match(short, /尚未取得本輪對話脈絡/); assert.doesNotMatch(short, /週末照顧安排|睡前觀察/);
+  assert.match(short, /本輪對話脈絡暫未提供/); assert.doesNotMatch(short, /週末照顧安排|睡前觀察/);
   const references = renderView(value, { tab: 'references' }).html;
-  assert.match(references, /官方指引/); assert.match(references, /近期資訊/); assert.match(references, /暫無可顯示來源/);
+  assert.equal((references.match(/參考來源暫未提供/g) ?? []).length, 1);
+  assert.doesNotMatch(references, /暫無可顯示來源|官方指引|近期資訊/);
   assert.doesNotMatch(references, /已接通|即時新聞|共有 0|已驗證/);
   value.model.longTerm.data.summary = null;
   assert.match(renderView(value).html, /目前沒有可用摘要/);
@@ -143,13 +149,21 @@ test('missing read ports, denied access and summary-null have honest visible sta
   assert.doesNotMatch(renderView(hidden, { expanded: true }).html, /睡前觀察|本人觀察筆記/);
 });
 
-test('only one preview memory owner is mounted and the consumer exposes no database mutator', () => {
+test('one scoped production memory owner and an independent preview owner keep consumers read-only', () => {
   const owner = fs.readFileSync(new URL('../src/preview/MemoryReferenceWorkspaceProvider.tsx', import.meta.url), 'utf8');
   assert.equal((owner.match(/useMemoryPreview\(/g) ?? []).length, 1);
   assert.match(owner, /facts: owner\.factsPage\.items/); assert.match(owner, /summary: owner\.data\.summary/);
   assert.doesNotMatch(owner, /useSourcesPreview|setData\(|beginFact|beginTopic|\.submit\(/);
   const layout = fs.readFileSync(new URL('../app/(dashboard)/_layout.tsx', import.meta.url), 'utf8');
-  assert.equal((layout.match(/<MemoryReferenceWorkspaceProvider>/g) ?? []).length, 1);
+  assert.equal((layout.match(/<ProductionDomains>/g) ?? []).length, 1);
+  assert.doesNotMatch(layout, /preview\/MemoryReferenceWorkspaceProvider/);
+  const domains = fs.readFileSync(new URL('../src/production/ProductionDomains.tsx', import.meta.url), 'utf8');
+  assert.equal((domains.match(/<ProductionTaskKnowledgeDomains>/g) ?? []).length, 1);
+  const connected = fs.readFileSync(new URL('../src/production/TaskKnowledgeDomains.tsx', import.meta.url), 'utf8');
+  assert.equal((connected.match(/useTaskKnowledgeMemory\(env\)/g) ?? []).length, 1);
+  assert.equal((connected.match(/<MemoryReferenceWorkspaceProvider\s/g) ?? []).length, 1);
+  assert.match(connected, /snapshot\.scopeKey === env\.scopeKey \? snapshot : null/);
+  assert.match(connected, /<MemoryReferenceWorkspaceProvider scopeKey=\{env\.scopeKey\} value=\{current\?\.memory\.value \?\? null\}>/);
   for (const filename of ['../src/screens/memoryScreen.tsx', '../src/components/memory/MemoryReferenceView.tsx', '../src/workspaces/MemoryReferenceWorkspace.tsx']) {
     const source = fs.readFileSync(new URL(filename, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /useMemoryPreview|useSourcesPreview|MemoryEditorPanel|MemoryTopicList|beginFact|beginTopic|applyMemoryPreviewWrite|\.submit\(/);

@@ -84,7 +84,7 @@ function ChatContents({ compact }: { compact: boolean }) {
       <AgentConversation onLocateSource={locateSource} />
       {agentAttachments.map(attachment => attachment.photo ? <AgentPhotoInput key={attachment.id} original={attachment.photo}
         onTransferred={() => removeAgentAttachment(attachment.id)} onPhotos={() => actions.open("photos")} /> : null)}
-    </> : <SectionCard><Text style={styles.body}>請先選擇有存取權的孩子；不同孩子的私人對話不能混在一起。</Text>
+    </> : <SectionCard><Text style={styles.body}>先選擇孩子。</Text>
       <AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>}
   </>;
   return <>

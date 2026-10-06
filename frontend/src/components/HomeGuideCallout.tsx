@@ -10,14 +10,13 @@ export function HomeGuideCallout({ status, onOpenGuide, onOpenSettings }: {
   if (status === "complete") return null;
   const needsGuide = status === "first_login" || status === "incomplete";
   if (!needsGuide) return <View testID="home-guide-unknown" style={styles.unknown}>
-    <Text style={styles.unknownTitle}>初始設定狀態待確認</Text>
-    <Text style={styles.detail}>尚未取得初始化狀態，暫時不能確認基本資料是否齊全。使用引導可在設定內開啟。</Text>
+    <Text style={styles.unknownTitle}>暫時無法讀取設定狀態</Text>
     <TextLink label="前往設定" onPress={onOpenSettings} />
   </View>;
   return <View testID="home-guide-callout" style={styles.callout}>
     <View style={styles.copy}>
       <Text accessibilityRole="header" style={styles.title}>{status === "first_login" ? "開始設定你的照顧空間" : "繼續完成基本資料設定"}</Text>
-      <Text style={styles.body}>沿使用引導核對孩子的基本資料；只填已知內容，未知資料可以如實保留。</Text>
+      <Text style={styles.body}>加入孩子的基本資料，未知內容可留待之後補充。</Text>
     </View>
     <AppButton label={status === "first_login" ? "開始使用引導" : "繼續使用引導"} onPress={onOpenGuide} />
   </View>;

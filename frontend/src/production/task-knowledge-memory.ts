@@ -127,7 +127,7 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment) {
   };
   const value: MemoryReferenceWorkspaceValue = { scopeKey: env.scopeKey, model: {
     scopeKey: env.scopeKey, childId: env.childId!, childName: env.childName, access: runtime.lost ? "revoked" : "active", online: env.online,
-    dataLabel: "Server 當前本人有權閱讀的記憶與對話摘要；私人／候選／停用及來源狀態保持原值。",
+    dataLabel: "查看已保存記憶及來源",
     shortTerm: { scopeKey: env.scopeKey, state: "unavailable", revision: null, data: null, asOf: null },
     references: { scopeKey: env.scopeKey, state: "unavailable", revision: null, data: null, asOf: null },
     longTerm: loaded && !runtime.lost ? { scopeKey: env.scopeKey, state: failed || !env.online ? "stale" : "ready", revision: JSON.stringify([facts.map(item => [item.id, item.version]), summary?.id, summary?.version]),

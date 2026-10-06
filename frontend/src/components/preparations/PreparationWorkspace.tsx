@@ -18,17 +18,17 @@ import { DocumentCreateForm } from "./DocumentCreateForm";
 const stateLabels: Record<PreparationDocumentView["readState"], { label: string; tone: AppStatusTone; detail: string }> = {
   ready: { label: "可查閱", tone: "success", detail: "" },
   stale: { label: "來源已有更新", tone: "warning", detail: "這份準備使用較早資料，內容保留作參考；請先核對更新後的來源，再改動或歸檔。" },
-  restricted: { label: "來源權限已改變", tone: "warning", detail: "這份準備涉及目前不可查看的私人來源，正文及清單已隱藏。歷史快照亦不會繞過來源權限。" },
-  invalidated: { label: "來源已失效", tone: "warning", detail: "原來源已失效，暫停展示準備內容及清單；不能再把舊內容當作有效準備。" },
+  restricted: { label: "來源權限已改變", tone: "warning", detail: "來源權限已改變，正文及清單暫不可讀，不能修改或歸檔。" },
+  invalidated: { label: "來源已失效", tone: "warning", detail: "來源已失效，正文及清單暫不可讀，不能修改或歸檔。" },
   unknown: { label: "來源狀態未知", tone: "warning", detail: "尚未確認這份準備的來源及版本，內容暫不展示，也不能修改或歸檔。" },
 };
 function PreparationEmptyState({ workspace, history = false }: { workspace: PreparationWorkspaceValue; history?: boolean }) {
   const { condition } = workspace.model;
   const title = condition === "loading" ? "正在讀取準備單" : condition === "unavailable" ? "暫時未能取得準備單"
     : condition === "lost" ? "孩子權限已失效" : history ? "這裏還沒有符合條件的準備單" : "目前沒有已備妥的準備單";
-  const detail = condition === "loading" ? "資料讀取完成前，先不展示舊文件。" : condition === "unavailable" ? "這不代表沒有文件；目前無法確認準備及歸檔狀態。"
-    : condition === "lost" ? "準備單及歷史內容已隱藏，請先確認孩子的存取權。" : history ? "可調整搜尋或日期；沒有刪除其他準備單。" : "可以先到助手交代用途、日期和需要，之後在這裏打開已整理的文件。";
-  return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text><Text style={styles.meta}>{detail}</Text></View>;
+  const detail = condition === "loading" ? "" : condition === "unavailable" ? "請重新讀取。"
+    : condition === "lost" ? "準備單及歷史內容已隱藏，請先確認孩子的存取權。" : history ? "試試其他搜尋或日期。" : "可以先到助手交代用途、日期和需要，之後在這裏打開已整理的文件。";
+  return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.meta}>{detail}</Text> : null}</View>;
 }
 
 function PreparationRow({ document, selected, onPress, rowRef }: { document: PreparationDocumentView; selected: boolean; onPress(): void; rowRef(node: View | null): void }) {

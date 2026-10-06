@@ -59,7 +59,7 @@ function ProfileContent({ switchPosition }: { switchPosition: ReturnType<typeof 
         onPress={() => homeActions.deleteChildPreview(child.id)} /> : null}
     </View></MotionDisclosure>
   </SectionCard></View>;
-  if (!workspace) return <>{childPicker}<SectionCard><Text>{child ? "正在確認目前孩子的檔案作用域，未顯示舊檔案。" : "尚未有孩子。新增或選擇孩子後才可確認檔案及家庭共享資料。"}</Text></SectionCard></>;
+  if (!workspace) return <>{childPicker}<SectionCard><Text>{child ? "正在讀取孩子檔案…" : "尚未有孩子。新增或選擇孩子後才可確認檔案及家庭共享資料。"}</Text></SectionCard></>;
   const { model, actions } = workspace;
   return <ProfileView model={model} actions={actions} childPicker={childPicker} onOpenCare={() => homeActions.open("care")}
     childDeletionActive={!!recordsState.deletion || creating || createUnknown} onLayoutReady={switchPosition.restorePosition} previewControls={null}

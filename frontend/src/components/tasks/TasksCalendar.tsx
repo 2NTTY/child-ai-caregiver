@@ -59,7 +59,6 @@ export function TasksCalendar({ items, context, selectedDay, month, disabled, on
       {selectedDay ? <AppButton label="取消日期篩選" accessibilityLabel="只取消日期篩選，保留搜尋及原有範圍" variant="quiet" density="compact" disabled={disabled} onPress={() => onSelectDay(null)} /> : null}
       {calendar.currentDay ? <AppButton label={`回到 ${currentLabel}`} accessibilityLabel={`回到資料基準日所在月份 ${calendar.currentDay}`} variant="quiet" density="compact" disabled={disabled} onPress={() => onChangeMonth(null)} /> : null}
     </View>
-    <Text style={styles.note}>只標示已載入事項；無色點不代表當日沒有安排。</Text>
     {calendar.unconfirmedCount > 0 ? <Text style={styles.warning}>{calendar.unconfirmedCount} 項日期待核對，可從清單範圍選擇查看。</Text> : null}
   </View>;
 }
