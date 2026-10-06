@@ -1,0 +1,752 @@
+{
+  "scope": [
+    "frontend/PLAN.md",
+    "frontend/STATUS.md",
+    "frontend/DESIGN_SYSTEM.md",
+    "frontend/_archive/fe-w38-replaced-ui/README.md"
+  ],
+  "linksChecked": 117,
+  "failures": [],
+  "checks": [
+    {
+      "source": "frontend/PLAN.md",
+      "link": "STATUS.md",
+      "target": "frontend/STATUS.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "HANDOFF.md",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "DESIGN_SYSTEM.md",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "_archive/fe-w38-replaced-ui/README.md",
+      "target": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "verification/reconstructed-revision-2026-10-06T0533Z/checks.json",
+      "target": "frontend/verification/reconstructed-revision-2026-10-06T0533Z/checks.json",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "verification/reconstructed-revision-2026-10-06T0533Z/browser-qa/verification-summary.md",
+      "target": "frontend/verification/reconstructed-revision-2026-10-06T0533Z/browser-qa/verification-summary.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "verification/next-release-2026-10-05T16-06Z-single-worker-recovery/browser-v40/verification-summary.md",
+      "target": "frontend/verification/next-release-2026-10-05T16-06Z-single-worker-recovery/browser-v40/verification-summary.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "verification/growth-confirm-restore-2026-10-05T18-59Z/checks.json",
+      "target": "frontend/verification/growth-confirm-restore-2026-10-05T18-59Z/checks.json",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "verification/growth-timeline-2026-10-05T19-00Z/source-and-checks.json",
+      "target": "frontend/verification/growth-timeline-2026-10-05T19-00Z/source-and-checks.json",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "verification/scope-shell-stability-2026-10-05T19-38Z/checks.json",
+      "target": "frontend/verification/scope-shell-stability-2026-10-05T19-38Z/checks.json",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "DESIGN_REVIEW.md",
+      "target": "frontend/DESIGN_REVIEW.md",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-applicable"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "DESIGN_SYSTEM.md",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/PLAN.md",
+      "link": "#active",
+      "target": "frontend/PLAN.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/STATUS.md",
+      "link": "PLAN.md#active",
+      "target": "frontend/PLAN.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/STATUS.md",
+      "link": "HANDOFF.md#p2-coverage",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/STATUS.md",
+      "link": "DESIGN_SYSTEM.md",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "PLAN.md#active",
+      "target": "frontend/PLAN.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "#function-specific-layouts",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "#control-roles",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": ".agents/skills/web-screen-delivery/SKILL.md#decision-routing",
+      "target": "frontend/.agents/skills/web-screen-delivery/SKILL.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "#user-first-principles",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "GROWTH_HANDOFF.md#living-growth-archive",
+      "target": "frontend/GROWTH_HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "HANDOFF.md#conversation-change-review",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "PHOTOS_HANDOFF.md#records-photo-entry",
+      "target": "frontend/PHOTOS_HANDOFF.md",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-checked-remote-only"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "PLAN.md#active",
+      "target": "frontend/PLAN.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "AGENT_HANDOFF.md#mobile-quick-input-design",
+      "target": "frontend/AGENT_HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "PLAN.md#active",
+      "target": "frontend/PLAN.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "../SPEC.md",
+      "target": "SPEC.md",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-applicable"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "../docs/P2_UI_HANDOFF.md",
+      "target": "docs/P2_UI_HANDOFF.md",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-applicable"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "MOTION_SYSTEM.md",
+      "target": "frontend/MOTION_SYSTEM.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "HANDOFF.md#chat-timeline",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "COLOR_STRATEGY.md",
+      "target": "frontend/COLOR_STRATEGY.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "#control-roles",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/chat/AnswerSources.tsx",
+      "target": "frontend/src/components/chat/AnswerSources.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "HANDOFF.md#chat-source-reuse",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "HANDOFF.md#chat-presentation",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/theme.ts",
+      "target": "frontend/src/theme.ts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/chat/chat-presentation.ts",
+      "target": "frontend/src/components/chat/chat-presentation.ts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "CHAT_UI_RESEARCH.md#codex-desktop-presentation",
+      "target": "frontend/CHAT_UI_RESEARCH.md",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-checked-remote-only"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/branding.ts",
+      "target": "frontend/src/branding.ts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/BrandLogo.tsx",
+      "target": "frontend/src/components/BrandLogo.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/theme.ts",
+      "target": "frontend/src/theme.ts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/ui.tsx",
+      "target": "frontend/src/components/ui.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/ToolbarIconButton.tsx",
+      "target": "frontend/src/components/ToolbarIconButton.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/AppCheckbox.tsx",
+      "target": "frontend/src/components/AppCheckbox.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/AppDialog.tsx",
+      "target": "frontend/src/components/AppDialog.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/AppMenuList.tsx",
+      "target": "frontend/src/components/AppMenuList.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/ChildPicker.tsx",
+      "target": "frontend/src/components/ChildPicker.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/AppIcon.tsx",
+      "target": "frontend/src/components/AppIcon.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/DateTimeFields.tsx",
+      "target": "frontend/src/components/DateTimeFields.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/date-time.ts",
+      "target": "frontend/src/components/date-time.ts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/RecordDraftFields.tsx",
+      "target": "frontend/src/components/RecordDraftFields.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/NativeAppShell.tsx",
+      "target": "frontend/src/components/NativeAppShell.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/MobileHomeDashboard.tsx",
+      "target": "frontend/src/components/MobileHomeDashboard.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/AppShell.tsx",
+      "target": "frontend/src/components/AppShell.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/ChildKeyFacts.tsx",
+      "target": "frontend/src/components/ChildKeyFacts.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/PageFrame.tsx",
+      "target": "frontend/src/components/PageFrame.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/AppScrollView.web.tsx",
+      "target": "frontend/src/components/AppScrollView.web.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/AppScrollView.tsx",
+      "target": "frontend/src/components/AppScrollView.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/AgentEntryButton.tsx",
+      "target": "frontend/src/components/AgentEntryButton.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/HomeFocus.tsx",
+      "target": "frontend/src/components/HomeFocus.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/HomeFocus.tsx",
+      "target": "frontend/src/components/HomeFocus.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/RightRailContent.tsx",
+      "target": "frontend/src/components/RightRailContent.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/NotificationBell.tsx",
+      "target": "frontend/src/components/NotificationBell.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/notifications/ChannelCards.tsx",
+      "target": "frontend/src/components/notifications/ChannelCards.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/channel-view-model.ts",
+      "target": "frontend/src/channel-view-model.ts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/screens",
+      "target": "frontend/src/screens",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "app",
+      "target": "frontend/app",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/view-model.ts",
+      "target": "frontend/src/view-model.ts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/preview",
+      "target": "frontend/src/preview",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "src/components/AppIcon.tsx",
+      "target": "frontend/src/components/AppIcon.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "COLOR_STRATEGY.md",
+      "target": "frontend/COLOR_STRATEGY.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "HANDOFF.md",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "MOTION_OPTIONS.md",
+      "target": "frontend/MOTION_OPTIONS.md",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-applicable"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "MOTION_SYSTEM.md",
+      "target": "frontend/MOTION_SYSTEM.md",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "#function-specific-layouts",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "#function-specific-layouts",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "MOBILE_DESIGN.md",
+      "target": "frontend/MOBILE_DESIGN.md",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-applicable"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "HANDOFF.md#toolbar-delete-safeguards",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "APPEARANCE_HANDOFF.md",
+      "target": "frontend/APPEARANCE_HANDOFF.md",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-applicable"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "HANDOFF.md#responsive-scroll",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "HANDOFF.md#login-original-reset",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": ".agents/skills/web-screen-delivery/references/scroll-and-blur.md",
+      "target": "frontend/.agents/skills/web-screen-delivery/references/scroll-and-blur.md",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-applicable"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "verification/fe-w27-home/home-checks.json",
+      "target": "frontend/verification/fe-w27-home/home-checks.json",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-applicable"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "verification/fe-w28-shell-feedback/shell-feedback-checks.json",
+      "target": "frontend/verification/fe-w28-shell-feedback/shell-feedback-checks.json",
+      "targetStatus": "preserved-remote-master-path",
+      "anchorStatus": "not-applicable"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "HANDOFF.md#commercial-rollout",
+      "target": "frontend/HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "#control-roles",
+      "target": "frontend/DESIGN_SYSTEM.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "PLAN.md#active",
+      "target": "frontend/PLAN.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/DESIGN_SYSTEM.md",
+      "link": "GROWTH_HANDOFF.md#living-growth-archive",
+      "target": "frontend/GROWTH_HANDOFF.md",
+      "targetStatus": "local-present",
+      "anchorStatus": "verified"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "manifest.json",
+      "target": "frontend/_archive/fe-w38-replaced-ui/manifest.json",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/components/HomeRecentRecords.tsx.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/components/HomeRecentRecords.tsx.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/components/PreviewTodoCard.tsx.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/components/PreviewTodoCard.tsx.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/components/growth/GrowthAttentionCard.tsx.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/GrowthAttentionCard.tsx.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/components/growth/GrowthTopicCard.tsx.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/GrowthTopicCard.tsx.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/components/growth/growth-form.ts.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/growth-form.ts.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/components/growth/growth-motion.ts.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/growth-motion.ts.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/components/memory/MemoryCards.tsx.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/components/memory/MemoryCards.tsx.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/components/memory/MemoryEditor.tsx.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/components/memory/MemoryEditor.tsx.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/components/growth/growth-form.test.mjs.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/growth-form.test.mjs.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "src/home-agent-entry.ts.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/src/home-agent-entry.ts.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "scripts/home-agent-entry.test.mts.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/scripts/home-agent-entry.test.mts.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "scripts/verify-ui.mjs.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/scripts/verify-ui.mjs.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "scripts/flows/growth.mjs.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/scripts/flows/growth.mjs.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "scripts/flows/tasks-memory.mjs.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/scripts/flows/tasks-memory.mjs.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "scripts/flows/summary.mjs.snapshot",
+      "target": "frontend/_archive/fe-w38-replaced-ui/scripts/flows/summary.mjs.snapshot",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../src/components/HomeFocus.tsx",
+      "target": "frontend/src/components/HomeFocus.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../src/components/RightRailContent.tsx",
+      "target": "frontend/src/components/RightRailContent.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../src/components/growth/GrowthConcernTimeline.tsx",
+      "target": "frontend/src/components/growth/GrowthConcernTimeline.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../src/components/growth/GrowthArchive.tsx",
+      "target": "frontend/src/components/growth/GrowthArchive.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../src/components/growth/GrowthOperationRecovery.tsx",
+      "target": "frontend/src/components/growth/GrowthOperationRecovery.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../src/components/memory/MemoryReferenceView.tsx",
+      "target": "frontend/src/components/memory/MemoryReferenceView.tsx",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../src/assistant-draft.ts",
+      "target": "frontend/src/assistant-draft.ts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../src/home-agent-entry.ts",
+      "target": "frontend/src/home-agent-entry.ts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../src/components/growth/growth-form.test.mjs",
+      "target": "frontend/src/components/growth/growth-form.test.mjs",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../scripts/home-agent-entry.test.mts",
+      "target": "frontend/scripts/home-agent-entry.test.mts",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../scripts/verification-flow-policy.mjs",
+      "target": "frontend/scripts/verification-flow-policy.mjs",
+      "targetStatus": "local-present"
+    },
+    {
+      "source": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "link": "../../scripts/preview-browser.mjs",
+      "target": "frontend/scripts/preview-browser.mjs",
+      "targetStatus": "local-present"
+    }
+  ],
+  "note": "Remote-only unchanged targets verified for presence in merged master tree; remote-only anchors were not reread"
+}

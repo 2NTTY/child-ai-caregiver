@@ -27,7 +27,6 @@ const styles = StyleSheet.create({
   compactCopy: { flex: 1, minWidth: 0, gap: spacing.xs, borderLeftColor: colors.sage, borderLeftWidth: 3, paddingLeft: spacing.md },
   compactTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.row, fontWeight: "700" },
   pressed: { opacity: 0.68 }, action: { alignSelf: "flex-start", maxWidth: "100%" }, item: { gap: spacing.sm }, divider: { borderTopColor: colors.softLine, borderTopWidth: 1, paddingTop: spacing.md },
-  status: { fontFamily: chineseFont, color: colors.teal, ...readingType.meta, fontWeight: "700" },
   title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
 });

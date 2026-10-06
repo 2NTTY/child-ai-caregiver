@@ -1,0 +1,1 @@
+Initial source-manifest precheck observed frontend/PLAN.md differed from the first-PR copy. Parent concurrently supplied root-authored FE-W39 PLAN/STATUS and explicitly instructed inclusion. Those two documents were classified separately; no runtime, tests, snapshots or expected patch preimages changed.

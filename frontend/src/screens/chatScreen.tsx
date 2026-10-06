@@ -83,7 +83,6 @@ const styles = StyleSheet.create({
   headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 12, flexWrap: "wrap" },
   headingActions: { flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" },
   screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
-  previewNote: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   answerEyebrow: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta }, answerIntro: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body },
   usedData: { paddingVertical: 4, gap: 4 }, usedDataTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, fontWeight: "600" }, usedDataText: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },

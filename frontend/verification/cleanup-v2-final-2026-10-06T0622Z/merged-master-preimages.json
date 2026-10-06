@@ -1,0 +1,386 @@
+{
+  "baseCommit": "6477fe65964adea0cde48c784c0598b2cb47d5bf",
+  "baseTree": "f2e1795c022a8b1351a625e48770d34fd5df6a5b",
+  "checked": 63,
+  "allMatch": true,
+  "checks": [
+    {
+      "path": "frontend/DESIGN_SYSTEM.md",
+      "localPreimageGitBlobSha": "be4369207c170f3c421c19d7776db6835d38f694",
+      "mergedMasterGitBlobSha": "be4369207c170f3c421c19d7776db6835d38f694",
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/README.md",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/manifest.json",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/scripts/flows/growth.mjs.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/scripts/flows/summary.mjs.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/scripts/flows/tasks-memory.mjs.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/scripts/home-agent-entry.test.mts.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/scripts/verify-ui.mjs.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/components/HomeRecentRecords.tsx.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/components/PreviewTodoCard.tsx.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/GrowthAttentionCard.tsx.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/GrowthTopicCard.tsx.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/growth-form.test.mjs.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/growth-form.ts.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/growth-motion.ts.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/components/memory/MemoryCards.tsx.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/components/memory/MemoryEditor.tsx.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/_archive/fe-w38-replaced-ui/src/home-agent-entry.ts.snapshot",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/assistant-draft.test.mts",
+      "localPreimageGitBlobSha": "4af17c493d9bd7576bf2d6b228d3c06a081581b0",
+      "mergedMasterGitBlobSha": "4af17c493d9bd7576bf2d6b228d3c06a081581b0",
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/flows/growth.mjs",
+      "localPreimageGitBlobSha": "3070729f0cdfcd18b5e01d9352244faf4717b3e0",
+      "mergedMasterGitBlobSha": "3070729f0cdfcd18b5e01d9352244faf4717b3e0",
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/flows/summary.mjs",
+      "localPreimageGitBlobSha": "f49f98423f6d4608fc0870005d1992e04deb8443",
+      "mergedMasterGitBlobSha": "f49f98423f6d4608fc0870005d1992e04deb8443",
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/flows/tasks-memory.mjs",
+      "localPreimageGitBlobSha": "d62edfbacb429413a46e95df51c6df5c35ee82c4",
+      "mergedMasterGitBlobSha": "d62edfbacb429413a46e95df51c6df5c35ee82c4",
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/frontend-archive.test.mjs",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/home-agent-entry.test.mts",
+      "localPreimageGitBlobSha": "9c89a8725fcc8131a4a47a4fada90a34dddb3e75",
+      "mergedMasterGitBlobSha": "9c89a8725fcc8131a4a47a4fada90a34dddb3e75",
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/preview-browser.mjs",
+      "localPreimageGitBlobSha": "3ab61b4888b9c28f6448490bcae6ec654770553e",
+      "mergedMasterGitBlobSha": "3ab61b4888b9c28f6448490bcae6ec654770553e",
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/verification-flow-policy.mjs",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/verification-flow-policy.test.mjs",
+      "localPreimageGitBlobSha": null,
+      "mergedMasterGitBlobSha": null,
+      "matches": true
+    },
+    {
+      "path": "frontend/scripts/verify-ui.mjs",
+      "localPreimageGitBlobSha": "d26068fcfa3389fa72d5501d949140c1e92ca7fa",
+      "mergedMasterGitBlobSha": "d26068fcfa3389fa72d5501d949140c1e92ca7fa",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "localPreimageGitBlobSha": "d7ff05a8f2a6f4f3ae094e8a0816a7d9e262453c",
+      "mergedMasterGitBlobSha": "d7ff05a8f2a6f4f3ae094e8a0816a7d9e262453c",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/HomeAgentImportant.tsx",
+      "localPreimageGitBlobSha": "c0eb3df05130afcf66836969346940ad68dd34d1",
+      "mergedMasterGitBlobSha": "c0eb3df05130afcf66836969346940ad68dd34d1",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/HomeOverviewItems.tsx",
+      "localPreimageGitBlobSha": "c3836808197adc07f5bcbe41bb976fe12788740a",
+      "mergedMasterGitBlobSha": "c3836808197adc07f5bcbe41bb976fe12788740a",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/HomeRecentRecords.tsx",
+      "localPreimageGitBlobSha": "b91a41650da5df2698bf384eba316c56ece7ef93",
+      "mergedMasterGitBlobSha": "b91a41650da5df2698bf384eba316c56ece7ef93",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/NotificationBell.tsx",
+      "localPreimageGitBlobSha": "3c0143cf2cc7a7517df44dd520f7d398e9a5a523",
+      "mergedMasterGitBlobSha": "3c0143cf2cc7a7517df44dd520f7d398e9a5a523",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/PreviewTodoCard.tsx",
+      "localPreimageGitBlobSha": "518cf92e9d9a793f598617a77205d1fd86041410",
+      "mergedMasterGitBlobSha": "518cf92e9d9a793f598617a77205d1fd86041410",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/PreviewWritePanel.tsx",
+      "localPreimageGitBlobSha": "edbbb0fb6a31edb7e7a6873350bc67f0e17ead79",
+      "mergedMasterGitBlobSha": "edbbb0fb6a31edb7e7a6873350bc67f0e17ead79",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/agent/AgentConversationPreview.tsx",
+      "localPreimageGitBlobSha": "f114065a9b293eb23a1a3d756b1948207080ee43",
+      "mergedMasterGitBlobSha": "f114065a9b293eb23a1a3d756b1948207080ee43",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/agent/AgentRunView.tsx",
+      "localPreimageGitBlobSha": "c6ec0ecb6ef4cbc0edc7116804edeee752a8a57f",
+      "mergedMasterGitBlobSha": "c6ec0ecb6ef4cbc0edc7116804edeee752a8a57f",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/care/CareRecordDetail.tsx",
+      "localPreimageGitBlobSha": "4fdb365509d58f03a14f749aacea9dc37b0d9884",
+      "mergedMasterGitBlobSha": "4fdb365509d58f03a14f749aacea9dc37b0d9884",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/contact/contact-styles.ts",
+      "localPreimageGitBlobSha": "4c59d6371932aa055edd2bd7d913ae71c13070fb",
+      "mergedMasterGitBlobSha": "4c59d6371932aa055edd2bd7d913ae71c13070fb",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/family/FamilyView.tsx",
+      "localPreimageGitBlobSha": "9fe09ca17b2fcb5b19ddeac5cbc39e3f244b8d53",
+      "mergedMasterGitBlobSha": "9fe09ca17b2fcb5b19ddeac5cbc39e3f244b8d53",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/growth/GrowthAttentionCard.tsx",
+      "localPreimageGitBlobSha": "9e70546fb8738925aba7dc1902e7416bc8486a13",
+      "mergedMasterGitBlobSha": "9e70546fb8738925aba7dc1902e7416bc8486a13",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/growth/GrowthTopicCard.tsx",
+      "localPreimageGitBlobSha": "efff5b1d21c153da5fd3b42f348bb5ecdf2cf39e",
+      "mergedMasterGitBlobSha": "efff5b1d21c153da5fd3b42f348bb5ecdf2cf39e",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/growth/GrowthView.tsx",
+      "localPreimageGitBlobSha": "d2c4ac04cd327556180392006d48e32a2d0b3f06",
+      "mergedMasterGitBlobSha": "d2c4ac04cd327556180392006d48e32a2d0b3f06",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/growth/growth-form.test.mjs",
+      "localPreimageGitBlobSha": "9d2d33f039a306cc9ce1da294d72839393755e16",
+      "mergedMasterGitBlobSha": "9d2d33f039a306cc9ce1da294d72839393755e16",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/growth/growth-form.ts",
+      "localPreimageGitBlobSha": "dacf777dbfd43740fe9fc01e1caf88e0a4a88713",
+      "mergedMasterGitBlobSha": "dacf777dbfd43740fe9fc01e1caf88e0a4a88713",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/growth/growth-motion.ts",
+      "localPreimageGitBlobSha": "8df995ae829cb76fc27448876975e133e03cc071",
+      "mergedMasterGitBlobSha": "8df995ae829cb76fc27448876975e133e03cc071",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/growth/growth-styles.ts",
+      "localPreimageGitBlobSha": "847e385c575435e08944eded14cacd39d21b3c18",
+      "mergedMasterGitBlobSha": "847e385c575435e08944eded14cacd39d21b3c18",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/memory/MemoryCards.tsx",
+      "localPreimageGitBlobSha": "9e4a147a4a1da889a18c39b07442f34e03c77ec0",
+      "mergedMasterGitBlobSha": "9e4a147a4a1da889a18c39b07442f34e03c77ec0",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/memory/MemoryEditor.tsx",
+      "localPreimageGitBlobSha": "6bbd0fb41a73826e9b0827e4fc41da311f67b1ef",
+      "mergedMasterGitBlobSha": "6bbd0fb41a73826e9b0827e4fc41da311f67b1ef",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/notifications/ChannelCards.tsx",
+      "localPreimageGitBlobSha": "779fb376283c3a20cae934442c6e0f19e23f9e28",
+      "mergedMasterGitBlobSha": "779fb376283c3a20cae934442c6e0f19e23f9e28",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/photos/photo-styles.ts",
+      "localPreimageGitBlobSha": "654ca9695da5526480c7947624b606de4909578c",
+      "mergedMasterGitBlobSha": "654ca9695da5526480c7947624b606de4909578c",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+      "localPreimageGitBlobSha": "f925d264c4344ebc4c18ee9ded38598fe89903d6",
+      "mergedMasterGitBlobSha": "f925d264c4344ebc4c18ee9ded38598fe89903d6",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/shared-inputs/source-styles.ts",
+      "localPreimageGitBlobSha": "c3d615eeb1dd78fda294309cc8a3bf0533cca7f1",
+      "mergedMasterGitBlobSha": "c3d615eeb1dd78fda294309cc8a3bf0533cca7f1",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/summary/summary-styles.ts",
+      "localPreimageGitBlobSha": "d93668260a5cb73151acbedb39036908e4d2224f",
+      "mergedMasterGitBlobSha": "d93668260a5cb73151acbedb39036908e4d2224f",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "localPreimageGitBlobSha": "bd2491a3022cec651b976a1267f97d1d3c00f633",
+      "mergedMasterGitBlobSha": "bd2491a3022cec651b976a1267f97d1d3c00f633",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/components/ui.tsx",
+      "localPreimageGitBlobSha": "02e25bd66f6d077eb160d1fb0081c431a5ef1aa3",
+      "mergedMasterGitBlobSha": "02e25bd66f6d077eb160d1fb0081c431a5ef1aa3",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/home-agent-entry.ts",
+      "localPreimageGitBlobSha": "16588b33839c5c1aa89c11fab993b8a7a3c4cdc0",
+      "mergedMasterGitBlobSha": "16588b33839c5c1aa89c11fab993b8a7a3c4cdc0",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/preview/PreviewContext.tsx",
+      "localPreimageGitBlobSha": "dd74d61f20122eb4c43cdff6e97c1d6f9a41cde1",
+      "mergedMasterGitBlobSha": "dd74d61f20122eb4c43cdff6e97c1d6f9a41cde1",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/preview/fixture.ts",
+      "localPreimageGitBlobSha": "21d4685b764e8e4d133b3dd98f17bac8abaddc61",
+      "mergedMasterGitBlobSha": "21d4685b764e8e4d133b3dd98f17bac8abaddc61",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/screens/GrowthScreen.tsx",
+      "localPreimageGitBlobSha": "b0a213138eab04ec0924411e8b1297456a72a602",
+      "mergedMasterGitBlobSha": "b0a213138eab04ec0924411e8b1297456a72a602",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/screens/chatScreen.tsx",
+      "localPreimageGitBlobSha": "37f5f5700a9fed0e617f7487e6266db32613042e",
+      "mergedMasterGitBlobSha": "37f5f5700a9fed0e617f7487e6266db32613042e",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/screens/loginScreen.tsx",
+      "localPreimageGitBlobSha": "f0b318249171136e41c545bb25d5b252e594c123",
+      "mergedMasterGitBlobSha": "f0b318249171136e41c545bb25d5b252e594c123",
+      "matches": true
+    },
+    {
+      "path": "frontend/src/screens/motionPreviewScreen.tsx",
+      "localPreimageGitBlobSha": "304d8498f0a51c8d62404d6564d7094a8841d0e4",
+      "mergedMasterGitBlobSha": "304d8498f0a51c8d62404d6564d7094a8841d0e4",
+      "matches": true
+    }
+  ]
+}

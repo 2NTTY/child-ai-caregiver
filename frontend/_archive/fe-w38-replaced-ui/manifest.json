@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-06T05:33:00Z",
+  "repository": "2NTTY/child-ai-caregiver",
+  "baselineCommit": "2a64fdd7eae52c37c4f42f39ea286b4d3acd8630",
+  "sourceProvenance": "Original files from the verified first PR head 7119b4d3f291c98ac0b7c9259604e4404efd6fdf. Earlier v1 snapshots preserve identical bytes from the recovered source; per-file Git blob SHA and SHA-256 remain the exact identity.",
+  "snapshotFormat": "Original bytes, with .snapshot appended to the filename; these are historical source records and are not executable modules.",
+  "entries": [
+    {
+      "originalPath": "frontend/src/components/HomeRecentRecords.tsx",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/components/HomeRecentRecords.tsx.snapshot",
+      "kind": "runtime-module",
+      "runtimeRemoved": true,
+      "bytes": 4072,
+      "gitBlobSha": "b91a41650da5df2698bf384eba316c56ece7ef93",
+      "sha256": "5f7631e990c4725bbf2eb94de8f74dc4335eb775924afe58a447a6da36cf0926",
+      "replacement": "HomeAgentImportant, HomeOngoing, HomeActionSummary; RightRailContent retains the active record projection"
+    },
+    {
+      "originalPath": "frontend/src/components/PreviewTodoCard.tsx",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/components/PreviewTodoCard.tsx.snapshot",
+      "kind": "runtime-module",
+      "runtimeRemoved": true,
+      "bytes": 2413,
+      "gitBlobSha": "518cf92e9d9a793f598617a77205d1fd86041410",
+      "sha256": "ada9681d020442759fb8d47bcaa61078a17de87167002af0559a39796269b521",
+      "replacement": "HomeFocus and HomeActionSummary attention projections"
+    },
+    {
+      "originalPath": "frontend/src/components/growth/GrowthAttentionCard.tsx",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/GrowthAttentionCard.tsx.snapshot",
+      "kind": "runtime-module",
+      "runtimeRemoved": true,
+      "bytes": 12106,
+      "gitBlobSha": "9e70546fb8738925aba7dc1902e7416bc8486a13",
+      "sha256": "a51a029729fcd6db88097aebc2b87bb441eff6bbdb94e8ae816114ce7ac5d5b3",
+      "replacement": "GrowthConcernTimeline; GrowthOperationRecovery retains original-operation inspection"
+    },
+    {
+      "originalPath": "frontend/src/components/growth/GrowthTopicCard.tsx",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/GrowthTopicCard.tsx.snapshot",
+      "kind": "runtime-module",
+      "runtimeRemoved": true,
+      "bytes": 6989,
+      "gitBlobSha": "efff5b1d21c153da5fd3b42f348bb5ecdf2cf39e",
+      "sha256": "6d2b042aa95147e1861df7e731569148ade811571bfe246417c527956db51535",
+      "replacement": "GrowthConcernTimeline and GrowthArchive; original topic data remains in the owner"
+    },
+    {
+      "originalPath": "frontend/src/components/growth/growth-form.ts",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/growth-form.ts.snapshot",
+      "kind": "runtime-module",
+      "runtimeRemoved": true,
+      "bytes": 3870,
+      "gitBlobSha": "dacf777dbfd43740fe9fc01e1caf88e0a4a88713",
+      "sha256": "aa907d1ff114a65f299c1aedd61df325da0c521943f02bacc00602f9e93d250d",
+      "replacement": "The stage-editing UI was removed; no active runtime consumer remains"
+    },
+    {
+      "originalPath": "frontend/src/components/growth/growth-motion.ts",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/growth-motion.ts.snapshot",
+      "kind": "runtime-module",
+      "runtimeRemoved": true,
+      "bytes": 688,
+      "gitBlobSha": "8df995ae829cb76fc27448876975e133e03cc071",
+      "sha256": "635a954e8d23a620125e8ba01d9d938938d044927a784b09247307359ce5c747",
+      "replacement": "Only the archived stage cards used this local feedback helper"
+    },
+    {
+      "originalPath": "frontend/src/components/memory/MemoryCards.tsx",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/components/memory/MemoryCards.tsx.snapshot",
+      "kind": "runtime-module",
+      "runtimeRemoved": true,
+      "bytes": 17090,
+      "gitBlobSha": "9e4a147a4a1da889a18c39b07442f34e03c77ec0",
+      "sha256": "aca6291fb1f3b0ec17025e5cbd00ad1e85b22ea4ac93fc2e1a19f83206273df8",
+      "replacement": "MemoryReferenceView read-only facts, sources, summary and version reading"
+    },
+    {
+      "originalPath": "frontend/src/components/memory/MemoryEditor.tsx",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/components/memory/MemoryEditor.tsx.snapshot",
+      "kind": "runtime-module",
+      "runtimeRemoved": true,
+      "bytes": 24304,
+      "gitBlobSha": "6bbd0fb41a73826e9b0827e4fc41da311f67b1ef",
+      "sha256": "374a78662cc3273dbb99d734605e909d05d33b3a9d785453529243b9fd4629e2",
+      "replacement": "MemoryReferenceView; no direct database mutators are exposed by the read adapter"
+    },
+    {
+      "originalPath": "frontend/src/components/growth/growth-form.test.mjs",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/components/growth/growth-form.test.mjs.snapshot",
+      "kind": "original-test",
+      "runtimeRemoved": false,
+      "bytes": 3978,
+      "gitBlobSha": "9d2d33f039a306cc9ce1da294d72839393755e16",
+      "sha256": "cf31e6ab0ff4094fa994045a335893b0ca887e5ed93e0d21ffc57b8676ab657d",
+      "replacement": "Active file retains the existing HTTPS source URL guard checks; form-only assertions are preserved in this snapshot"
+    },
+    {
+      "originalPath": "frontend/src/home-agent-entry.ts",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/src/home-agent-entry.ts.snapshot",
+      "kind": "original-module",
+      "runtimeRemoved": false,
+      "bytes": 1215,
+      "gitBlobSha": "16588b33839c5c1aa89c11fab993b8a7a3c4cdc0",
+      "sha256": "637b692953fb195eacd0dd2fb1c3547a3a3e596bf0c4c12d559beec6adfecdbc",
+      "replacement": "homeAgentScope remains active; createAssistantDraftOwner is the single media draft owner",
+      "removedExports": [
+        "createHomeAgentPhotoHandoff"
+      ]
+    },
+    {
+      "originalPath": "frontend/scripts/home-agent-entry.test.mts",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/scripts/home-agent-entry.test.mts.snapshot",
+      "kind": "original-test",
+      "runtimeRemoved": false,
+      "bytes": 2623,
+      "gitBlobSha": "9c89a8725fcc8131a4a47a4fada90a34dddb3e75",
+      "sha256": "e657f9bf97d6a4c84a3eeb35f929b9385e271eac3ca977c25f20dd1af0253acc",
+      "replacement": "Active scope test retained; attachment ownership/disposal is tested against createAssistantDraftOwner"
+    },
+    {
+      "originalPath": "frontend/scripts/verify-ui.mjs",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/scripts/verify-ui.mjs.snapshot",
+      "kind": "legacy-verification",
+      "runtimeRemoved": false,
+      "bytes": 10507,
+      "gitBlobSha": "d26068fcfa3389fa72d5501d949140c1e92ca7fa",
+      "sha256": "1b4319e4c6d56e488c823d387d1b9466de9931c873b743a9023c16ff5e94de3f",
+      "replacement": "Historical browser flow targets replaced UI; current command rejects this pending-migration flow instead of claiming success"
+    },
+    {
+      "originalPath": "frontend/scripts/flows/growth.mjs",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/scripts/flows/growth.mjs.snapshot",
+      "kind": "legacy-verification",
+      "runtimeRemoved": false,
+      "bytes": 14335,
+      "gitBlobSha": "3070729f0cdfcd18b5e01d9352244faf4717b3e0",
+      "sha256": "6e28c07c59349eccad85d123b25df3f7d5c2a795a5fdd16bba53c603999940ca",
+      "replacement": "Historical browser flow targets replaced UI; current command rejects this pending-migration flow instead of claiming success"
+    },
+    {
+      "originalPath": "frontend/scripts/flows/tasks-memory.mjs",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/scripts/flows/tasks-memory.mjs.snapshot",
+      "kind": "legacy-verification",
+      "runtimeRemoved": false,
+      "bytes": 7874,
+      "gitBlobSha": "d62edfbacb429413a46e95df51c6df5c35ee82c4",
+      "sha256": "f46a0521bb088df284aae2a502e5dfcf2fe7d17ee9fd7eb25a60e49b1943779e",
+      "replacement": "Historical browser flow targets replaced UI; current command rejects this pending-migration flow instead of claiming success"
+    },
+    {
+      "originalPath": "frontend/scripts/flows/summary.mjs",
+      "snapshotPath": "frontend/_archive/fe-w38-replaced-ui/scripts/flows/summary.mjs.snapshot",
+      "kind": "legacy-verification",
+      "runtimeRemoved": false,
+      "bytes": 13923,
+      "gitBlobSha": "f49f98423f6d4608fc0870005d1992e04deb8443",
+      "sha256": "32ec8ee536996bd39250a47e4af7f31df8f40cf43726aec2618390d0a0c951f6",
+      "replacement": "Historical browser flow targets replaced UI; current command rejects this pending-migration flow instead of claiming success"
+    }
+  ],
+  "sourceCommit": "7119b4d3f291c98ac0b7c9259604e4404efd6fdf"
+}

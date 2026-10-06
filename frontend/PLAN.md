@@ -3,31 +3,29 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## FE-W38 收束：來源復原與新整合修訂
+## FE-W39：前端舊實作清理與驗收入口收斂
 
-更新：2026-10-06 UTC。目標是保住已完成的前端功能、恢復可檢查的來源及交接，再完成本包交付；只處理 `frontend/**`，不改正式 App、Server、Agent、資料庫、根依賴或根文件。
+更新：2026-10-06 UTC。基線為已合併 PR #88 的 master `6477fe65964adea0cde48c784c0598b2cb47d5bf`；其 tree 與已驗修訂相同。本包只修改 `frontend/**`，使用獨立分支／PR，不自動合併。
 
-### 來源與現況
+### 範圍與裁決
 
-- 已取回 GitHub 暫存物件中的前端原始檔、部分歷史驗證及保存的設計文件。PR 基線為 `2a64fdd7`，相關正式契約歷史基線為 master `65f8cf37bceeb15b05f46326c49e0370349ae3a5`；兩者均不代表本次已推送或合併
-- 原最後版 `app/(dashboard)/_layout.tsx`、`app/(dashboard)/history.tsx` 及本頁／STATUS／HANDOFF／GROWTH_HANDOFF 未完整取回，已依已取回程式另寫替代內容。新版不可冒稱原 v44 逐位元組復原
-- 新 Dashboard layout 在共同祖先各掛一次資料 owner，History 路由只轉入既有畫面；沒有用孩子或情境 key 重掛整個 AppShell。資料 owner 仍按孩子／身份／Server／角色隔離並拒絕遲到回呼。Native 記錄入口已把 History 納入 active 判斷；這項只完成源碼／composition 檢查，未作原生 runtime 驗收
-- 功能保留：家長對話 → Agent 整理 → 家長查看；手動填寫作補救。跨對話記錄核對、孩子概況／準備單、待辦／歷史、唯讀記憶與參考、持續關注鏈及標準 Web 成長報告均沿原同源接點
-- 新修訂 full typecheck 與250 項 scripts 測試及 24 項 colocated 測試通過（合計 274 項）；Fresh Web export 已通過（37 條靜態路由、63 份輸出），本修訂限定 browser 驗收已通過；原生 runtime 未驗。GitHub draft PR #88 已確認更新至 `7119b4d3`，本次畫面證據正追加，尚未合併；Sites 發布狀態與 GitHub 交付分開核對
+- 逐項核對前端目前用途及引用；保留「家長跟 Agent 說，然後查看」的主要流程，手動輸入作補救
+- 已替代且沒有 consumer 的 8 個舊元件／helper 移出 runtime，連同必要舊測試、browser flow 原文保存於 [_archive/fe-w38-replaced-ui](_archive/fe-w38-replaced-ui/README.md)，附原路徑、雜湊及替代入口
+- 清除 86 個證實無引用的 style keys（首批 6 個及後續 80 個），以及舊假 checklist state、單照片 handoff、Growth 無作用 props；不改 canonical owner、事件、版本或來源權限
+- 7 個已過時 browser 選項明確回報待遷移。預設舊 aggregate／未知選項在啟動瀏覽器前失敗；25 個其他 runner 保留入口，但「可執行」不等於在新修訂通過
+- 保留 legacy-preparation、unknown 原操作恢復、scope／authority guards、a11y 隱藏文字、動態樣式、平台 adapter，以及尚有公開／測試用途的 helpers。安全求助相關候選不隨清理移除
+- DESIGN_SYSTEM 的舊元件連結已更新到現行 HomeFocus／HomeActionSummary／RightRailContent；根文件不由本域改動
 
-### 本次驗證結果
+### 驗證與交付關口
 
-- [初次 aggregate](verification/reconstructed-revision-2026-10-06T0533Z/aggregate-tests-initial.log)：248 項中 237 通過、11 失敗，涉及注入重構後兩份測試的過時 mocks。原失敗保留；獲准只修測試契約後，針對測試 15 項通過
-- [最後 aggregate](verification/reconstructed-revision-2026-10-06T0533Z/aggregate-tests-final.log)：250 通過、0 失敗，包含重建掛載、guard／source 導向及 native History active 的 source／composition 檢查。[Full typecheck](verification/reconstructed-revision-2026-10-06T0533Z/typecheck-final.log) 亦通過；完整命令及限制見 [checks](verification/reconstructed-revision-2026-10-06T0533Z/checks.json)。不是瀏覽器、正式 API、持久化或原生裝置驗收
-- [Fresh Web export](verification/reconstructed-revision-2026-10-06T0533Z/export-manifest.json) 通過，包含 `/history`；使用者補交的首頁圖採原 bytes 納入，屬[新資產修訂](verification/reconstructed-revision-2026-10-06T0533Z/asset-revision.json)，不冒稱舊 Git 圖逐位元一致。公開預覽 v45 已於 2026-10-06 05:52 UTC 發布；[本修訂 browser 摘要](verification/reconstructed-revision-2026-10-06T0533Z/browser-qa/verification-summary.md)記錄四尺寸排版、關注結束／撤銷／恢復、孩子切換與減少動畫的限定驗收通過。本機預覽阻擋、一次 iframe pointer 方法失敗與補驗均保留；不宣稱逐幀無閃動、全站全狀態或原生 runtime 通過。
+1. 63 檔清理 patch 的 preimages 已對照合併基線，zero-fuzz 套用至獨立工作區；新舊 source／snapshot 及原失敗證據保持可追溯
+2. 暫存階段 typecheck、67 項必要純測試、逐 symbol／AST 等價及本地連結檢查通過；最終整合 [typecheck、278 項 aggregate 及 37 路由 fresh export](verification/cleanup-v2-final-2026-10-06T0622Z/checks.json)均通過，不把前一 PR 的結果當本包通過
+3. v46 已保存、公開發布另待批准；新畫面檢查尚未開始，只覆蓋清理涉及的通常路徑、排版及必要 scope 邊界；真 API／持久化／原生與逐幀無閃動仍未驗
+4. 固定最終 manifest、審閱差異並確認受影響檢查後，建立新的 draft PR；核對實際遠端 head 與可讀 CI。沒有 CI 結果不得称全綠；本包沒有自動合併授權
 
-### 必要驗證與完成關口
+### 已合併的前包
 
-1. 確認原始檔／基線／新重建檔的來源，固定新修訂 manifest；缺檔不由生成 bundle 或摘要猜回
-2. 依實際可用依賴執行必要 typecheck、受影響測試及 Web export，保留失敗與未執行階段；驗證腳本存在不等於已執行
-3. 受影響 UI 的實際瀏覽器檢查須另有此修訂證據：關注結束確認／取消／重複點擊／撤銷／歷史恢復、報告閱讀及導出不可用提示、記錄跨頁核對與孩子隔離。320／390／1024／1440、鍵盤焦點及轉場只報實際覆蓋範圍
-4. Review 新重建的兩個 runtime 檔、四個交接文件及整合差異後，可先更新 draft PR 並明示尚待建置／畫面驗收；首頁圖採使用者補交的新資產，原 hero 圖保留於 Git 歷史；既有歷史檔案不刪，不上傳空白替代。必要建置及畫面檢查完成前不合併；遠端 commit、CI、合併或發布各自核實，不能從本地結果推定
-5. 本包合併確認後，才從最新 master 開獨立清理 PR。清理在獨立副本準備與驗證，另開 PR；不混入本次復原交付
+PR #88 已於 2026-10-06 06:19 UTC 合併。其 [274 項測試／typecheck／37 路由建置](verification/reconstructed-revision-2026-10-06T0533Z/checks.json)及[限定 browser 檢查](verification/reconstructed-revision-2026-10-06T0533Z/browser-qa/verification-summary.md)均保留原範圍，公開 v45 屬該修訂。首頁圖為使用者補交的新資產，不冒稱舊 Git 原件逐位元一致。
 
 ### 保留限制
 

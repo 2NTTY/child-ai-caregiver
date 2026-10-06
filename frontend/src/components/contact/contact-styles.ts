@@ -11,7 +11,7 @@ export const contactStyles = StyleSheet.create({
   selectedTask: {backgroundColor: colors.paleTeal, borderRadius: radius.small}, pressed: {opacity: 0.7},
 
   stack: {gap: spacing.md}, row: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm},
-  columns: {flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg}, column: {flex: 1, minWidth: 0, gap: spacing.lg}, full: {width: '100%', gap: spacing.lg},
+  columns: {flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg},  full: {width: '100%', gap: spacing.lg},
   title: {fontFamily: chineseFont, fontSize: typeScale.body, lineHeight: 25, fontWeight: '700', color: colors.ink},
   body: {fontFamily: chineseFont, ...readingType.tool, color: colors.ink, flexShrink: 1},
   meta: {fontFamily: chineseFont, ...readingType.meta, color: colors.muted, flexShrink: 1},

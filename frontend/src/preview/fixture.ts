@@ -4,20 +4,6 @@ import type { GuideStatus, HomeChild, HomeOperation, HomeRecord, HomeViewModel, 
 export type PreviewScenario = "normal" | "first_login" | "setup_incomplete" | "empty" | "loading" | "offline" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown" | "focus_task" | "focus_growth" | "focus_unavailable";
 
 // Local checklist examples for layout review. These are not S13 tasks or occurrences.
-export interface PreviewChecklistItem {
-  id: string;
-  childId: string;
-  title: string;
-  detail: string;
-  destination: "care" | "profile";
-}
-
-export const previewChecklist: PreviewChecklistItem[] = [
-  { id: "preview-check-sleep", childId: "preview-child-1", title: "核對本週睡眠觀察", detail: "查看已確認記錄，再決定是否補充。", destination: "care" },
-  { id: "preview-check-profile", childId: "preview-child-1", title: "看看孩子檔案", detail: "檢查照護資料有沒有需要更新。", destination: "profile" },
-  { id: "preview-check-after-school", childId: "preview-child-2", title: "整理課後觀察", detail: "查看已載入的課後記錄。", destination: "care" },
-];
-
 export const scenarioLabels: Record<PreviewScenario, string> = {
   normal: "一般", first_login: "首次登入", setup_incomplete: "設定未完成", empty: "尚無孩子", loading: "讀取中", offline: "離線",
   needs_confirmation: "待確認", saving: "處理中", saved: "已保存", failed: "失敗", unknown: "結果未知",

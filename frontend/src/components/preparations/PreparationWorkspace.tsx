@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   eyebrow: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700", flexGrow: 1, flexShrink: 1 },
-  sourceNotice: { gap: spacing.md }, agentEntry: { backgroundColor: colors.paleAmber, borderRadius: radius.medium, borderWidth: 1, borderColor: colors.statusWarmLine, padding: spacing.md, gap: spacing.md },
+   agentEntry: { backgroundColor: colors.paleAmber, borderRadius: radius.medium, borderWidth: 1, borderColor: colors.statusWarmLine, padding: spacing.md, gap: spacing.md },
   intentControls: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md }, purposeField: { flexGrow: 1, minWidth: 180 },
   list: { gap: spacing.md, minWidth: 0, flex: 1 }, listColumn: { flex: 0.8 }, detailColumn: { flex: 1.4, minWidth: 0 }, split: { flexDirection: "row", alignItems: "flex-start" },
   documentRow: { gap: spacing.sm, padding: spacing.md, borderRadius: radius.medium, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.line, minWidth: 0 },

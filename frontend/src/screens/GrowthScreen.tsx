@@ -40,7 +40,7 @@ export function GrowthScreen() {
   </SectionCard></PageFrame>;
   return <GrowthView key={workspace.scopeKey} model={workspace.model} actions={workspace.actions}
     initialTab={(Array.isArray(tab) ? tab[0] : tab) === "archive" ? "archive" : "concerns"}
-    onTask={() => actions.open("tasks")} onMemory={() => actions.open("memory")} onSource={() => {}}
+    onTask={() => actions.open("tasks")}
     onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
     onHistory={() => navigate(() => router.push("/history?category=growth"))} previewTools={<GrowthPreviewTools key={workspace.scopeKey} />} />;
 }

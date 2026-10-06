@@ -81,7 +81,6 @@ const styles = StyleSheet.create({
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
   recordHeading: { gap: spacing.xs },
-  confirmed: { color: colors.deepTeal, fontFamily: chineseFont, ...readingType.tool },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, history: { gap: spacing.md },
   revision: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.softLine, paddingTop: spacing.md },
 });

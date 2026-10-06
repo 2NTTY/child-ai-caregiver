@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { canPreviewAssistantDraft, createAssistantDraftOwner, type AssistantAttachment } from "../src/assistant-draft.ts";
+import { canPreviewAssistantDraft, createAssistantDraftOwner, photoAttachment, type AssistantAttachment } from "../src/assistant-draft.ts";
 import { quickInputDirection, recordsMoreDirection } from "../src/components/navigation/quick-input-gesture.ts";
 const attachment = (id: string, onDispose: () => void, kind: AssistantAttachment["kind"] = "file"): AssistantAttachment => ({ id, kind, fileName: "synthetic.txt", mimeType: "text/plain", bytes: 10, dispose: onDispose });
 
@@ -29,4 +29,15 @@ test("mobile directions select only the three approved sectors and cancel at ori
   assert.equal(quickInputDirection(0, -100), "file"); assert.equal(quickInputDirection(80, -80), "voice"); assert.equal(quickInputDirection(100, 0), "text");
   for (const [x, y] of [[0, 0], [0, 30], [-60, -80], [210, 0], [0, -200]]) assert.equal(quickInputDirection(x, y), null);
   assert.equal(recordsMoreDirection(0, -60), true); assert.equal(recordsMoreDirection(80, -60), false); assert.equal(recordsMoreDirection(0, 0), false);
+});
+
+test("photo adapters share one scoped attachment owner and release the original once", () => {
+  const owner = createAssistantDraftOwner(); let disposed = 0;
+  const photo = { fileName: "synthetic.png", mimeType: "image/png", bytes: 10, sha256: "synthetic", imageSource: { uri: "synthetic-only" }, dispose: () => disposed++ };
+  const media = photoAttachment(photo);
+  assert.equal(media.photo, photo); assert.equal(media.dispose, photo.dispose);
+  owner.retainScope("a"); owner.add("a", media); owner.add("a", media);
+  assert.equal(owner.getSnapshot().attachments.length, 1);
+  owner.retainScope("b"); assert.equal(disposed, 1);
+  owner.clear("b"); owner.dispose(); assert.equal(disposed, 1);
 });

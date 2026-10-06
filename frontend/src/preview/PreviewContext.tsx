@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { usePreviewNavigation } from "./PreviewNavigationGuard";
-import { createPreviewModel, previewChecklist, type PreviewScenario } from "./fixture";
+import { createPreviewModel, type PreviewScenario } from "./fixture";
 import type { GuideStatus, HomeActions, HomeChild, HomeDestination, HomeViewModel } from "../view-model";
 import { homeAgentScope } from "../home-agent-entry";
 import { createAssistantDraftOwner, emptyAssistantDraft, photoAttachment, type AssistantAttachment } from "../assistant-draft";
@@ -24,8 +24,6 @@ type PreviewContextValue = {
   agentDraftScope: string | null;
   composerFocusRequest: number;
   openAgentDraft: (focusText?: boolean) => void;
-  checkedPreviewItems: Record<string, boolean>;
-  togglePreviewItem: (id: string) => void;
 };
 
 const PreviewContext = createContext<PreviewContextValue | null>(null);
@@ -51,7 +49,6 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const draftOwner = useRef(createAssistantDraftOwner()).current;
   const draftSnapshot = useSyncExternalStore(draftOwner.subscribe, draftOwner.getSnapshot, draftOwner.getSnapshot);
   const [composerFocusRequest, setComposerFocusRequest] = useState(0);
-  const [checkedPreviewItems, setCheckedPreviewItems] = useState<Record<string, boolean>>({});
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); }, []);
 
@@ -128,8 +125,6 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
       if (!childrenInPreview.some(child => child.id === id && child.accessRole === "owner")) return;
       setDeletedChildren(previous => [...previous, id]);
       setCreatedChildren(previous => previous.filter(child => child.id !== id));
-      const checklistIds = new Set(previewChecklist.filter(item => item.childId === id).map(item => item.id));
-      setCheckedPreviewItems(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !checklistIds.has(key))));
       draftOwner.forget(homeAgentScope({ ...model, selectedChildId: id }));
       setNotice("已模擬移除孩子及本頁關聯草稿。只影響合成預覽；沒有刪除真家庭資料。");
     },
@@ -160,11 +155,6 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     clearAgentDraft: () => draftOwner.clear(agentScope), agentDraftScope: agentScope,
     composerFocusRequest, openAgentDraft,
     setChatDraft: value => draftOwner.setText(agentScope, value),
-    checkedPreviewItems,
-    togglePreviewItem: id => {
-      setCheckedPreviewItems(previous => ({ ...previous, [id]: !previous[id] }));
-      setNotice("只在這個合成預覽標記；沒有保存正式任務，也沒有通知家庭成員。");
-    },
   }}>{children}</PreviewContext.Provider>;
 }
 

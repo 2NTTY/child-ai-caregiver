@@ -22,7 +22,6 @@ export const photoStyles = StyleSheet.create({
   mobileImage: { height: 180 }, placeholder: { minHeight: 112, justifyContent: "center", alignItems: "center", gap: spacing.sm, backgroundColor: colors.canvas, borderRadius: radius.small },
   steps: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   step: { flexDirection: "row", alignItems: "center", gap: spacing.xs }, stepNumber: { color: colors.teal, fontWeight: "700", ...readingType.meta },
-  quantities: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md }, quantity: { flex: 1, flexBasis: 160, minWidth: 0 },
   related: { paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, gap: spacing.sm },
   candidate: { paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, gap: spacing.sm },
   review: { paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, gap: spacing.md },

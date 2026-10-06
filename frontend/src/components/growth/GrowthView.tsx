@@ -13,7 +13,7 @@ import { GrowthOperationRecovery } from "./GrowthOperationRecovery";
 import { growthRefreshNotice } from "../../growth-view-model";
 import { growthStyles as s } from "./growth-styles";
 
-export function GrowthView({model,actions,onTask,onRecord,onHistory,previewTools,initialTab="concerns"}:{model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onMemory:()=>void;onSource:(url:string)=>void;onRecord?:(id?:string)=>void;onSummary?:()=>void;onHistory?:()=>void;previewTools?:React.ReactNode;initialTab?:"concerns"|"archive"}){
+export function GrowthView({model,actions,onTask,onRecord,onHistory,previewTools,initialTab="concerns"}:{model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onRecord?:(id?:string)=>void;onHistory?:()=>void;previewTools?:React.ReactNode;initialTab?:"concerns"|"archive"}){
   const containerLayout = useContainerWidth();
   const wide = containerLayout.width >= 880;
   const scrollRef = useRef<ScrollView>(null);

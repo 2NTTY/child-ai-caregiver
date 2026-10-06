@@ -1,9 +1,8 @@
 # 育伴港前端現況
 
-2026-10-06 UTC：已取回來源並完成新整合修訂；兩個 dashboard 路由及最後交接文件重新編寫，使用者補交首頁圖已納入。這不是原 v44 原始碼的逐檔完整復原。
+2026-10-06 UTC：PR #88 已合併至 master `6477fe65`；其公開預覽 v45 及限定驗收已完成。現在進行獨立前端清理 PR，尚未發布或合併本包。
 
-- Full typecheck、274 項測試及 fresh Web export（37 條路由）通過；公開合成預覽 v45 已發布，限定四尺寸及核心操作畫面驗收通過
-- 前端保留 Agent 優先、跨對話記錄核對、共用資料 owner、關注鏈結束／撤銷／恢復，以及標準 Web 成長報告
-- 普通自動保存、重要確認持久化、正式跨頁刷新、長期報告生成及真 PDF 尚未接通
-- GitHub draft PR #88 已更新至 `7119b4d3`，正在補入本次畫面證據，尚未合併，清理在獨立副本同步準備；詳細關口見 [PLAN 當前包](PLAN.md#active)
-- 接手按功能讀 [HANDOFF](HANDOFF.md#p2-coverage)；呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)，成長接線讀 [GROWTH_HANDOFF](GROWTH_HANDOFF.md)
+- 已歸檔被替代的舊元件／helpers，清除確證無引用的樣式及舊狀態，保留安全、資料 owner、相容路由與來源追溯
+- 過期 browser 流程明確列待遷移，不當作通過；清理最終 typecheck、278 項測試及 37 路由建置通過；新畫面檢查待 v46 發布批准
+- 正式 Agent 自動保存、重要確認持久化、跨頁訂閱及真 PDF 仍待接線
+- 當前範圍、實際驗證及交付關口見 [PLAN](PLAN.md#active)；接手見 [HANDOFF](HANDOFF.md#p2-coverage)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)

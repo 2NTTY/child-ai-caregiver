@@ -125,7 +125,7 @@ Web「更多」是次要分類目錄，按實際正文寬度兩／三欄，極�
 | 共同外殼 | [AppShell.tsx](src/components/AppShell.tsx)、[ChildKeyFacts.tsx](src/components/ChildKeyFacts.tsx)、[PageFrame.tsx](src/components/PageFrame.tsx) | 左導覽、孩子切換及其授權摘要、資訊欄、預覽情境、內頁標題與內容間距 |
 | 捲動區域 | [AppScrollView.web](src/components/AppScrollView.web.tsx)、[原生入口](src/components/AppScrollView.tsx) | Web 垂直滑塊覆蓋內容、透明軌道及不預留寬度；保留 RN viewport／事件／ref。原生及橫向捲動維持 RN ScrollView |
 | Agent 主要入口 | [AgentEntryButton](src/components/AgentEntryButton.tsx) | 桌面側欄的固定入口、主操作層次、SVG、焦點／目前頁面；復用 Paper TouchableRipple 與既有 token，不改一般 AppButton |
-| 待辦與提示 | [PreviewTodoCard.tsx](src/components/PreviewTodoCard.tsx)、[NotificationBell.tsx](src/components/NotificationBell.tsx) | 跨頁一致的右欄待辦示例及頂部原操作提示；兩者只處理展示與本地交互，不擔當正式任務／通知協議 |
+| 首頁重點與提示 | [HomeFocus](src/components/HomeFocus.tsx)、[HomeActionSummary](src/components/HomeFocus.tsx)、[RightRailContent](src/components/RightRailContent.tsx)、[NotificationBell](src/components/NotificationBell.tsx) | 依各自授權投影呈現首頁重點、行動摘要、右欄近期資料及原操作提示；不以合成卡片代替正式任務／通知協議 |
 | 本人渠道設定 | [ChannelCards](src/components/notifications/ChannelCards.tsx)、[channel-view-model](src/channel-view-model.ts) | Web Push／Telegram 的狀態、核對、本人撤銷、明確測試及投遞；沿相同卡片／表單／狀態控件，與安靜時段和任務完成分開 |
 | 畫面與路由 | [screens](src/screens)、[app](app) | 每頁只組合現有元件；app 內只保留路由與 layout 入口 |
 | 合成狀態 | [view-model.ts](src/view-model.ts)、[preview](src/preview) | 孩子、記錄、連線及原操作展示；不是 Server 契約或正式資料源 |
@@ -186,7 +186,7 @@ FE-W19：Agent 輸入工具列的「拍照」直接開同風格 AppDialog 相機
 
 ## FE-W34 首頁及記錄配方
 
-首頁只承接一個授權 focus：operation 優先顯示既有恢復操作，其他 task／growth／none／unavailable 由 adapter 明確提供，不用記錄數或本地清單推斷。已設孩子可直接進入聊天，可選引導不阻擋。HomeFocus／HomeRecentRecords 供兩種首頁共用，最近記錄用行與細線，技術狀態次層；右欄預設收起，不重複主要內容。手機動畫子樹、三秒閱讀及右側完整圖片保留。
+首頁只承接一個授權 focus：operation 優先顯示既有恢復操作，其他 task／growth／none／unavailable 由 adapter 明確提供，不用記錄數或本地清單推斷。已設孩子可直接進入聊天，可選引導不阻擋。首頁以 HomeFocus／HomeActionSummary 承接各自投影，右欄由 RightRailContent 呈現近期資料；技術狀態置於次層，右欄預設收起，不重複主要內容。手機動畫子樹、三秒閱讀及右側完整圖片保留。
 
 工作頁用 PageFrame compact（24／32 標題）及 SectionHeader compact（16／24）；記錄原文用 reading 16／26，相關欄位 tool 14／22，metadata 12／18 分組。ReadStateNotice 分清 initial／empty／stale／error，普通狀態只在轉換時播報。FormFieldMessage 關聯控件的 help／error，FormErrorSummary 可定位實際欄位；不覆寫 RHF schema 或原 request。窄詳情返回保留篩選、列表位置和非顏色標記，身份／孩子／權限改變即清理閱讀錨點。
 

@@ -85,10 +85,10 @@ function AgentConversationContents({ childId, online, identity, setIdentity, too
   </View>;
 }
 const styles = StyleSheet.create({
-  stack: { gap: spacing.md, minWidth: 0 }, body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 23 },
+  stack: { gap: spacing.md, minWidth: 0 }, 
   disclosureRoot: { minWidth: 0 }, disclosureContents: { paddingTop: spacing.md },
   disclosure: { backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, paddingHorizontal: spacing.sm, alignSelf: "flex-start", minHeight: 48, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
-  disclosureText: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool }, disclosureNote: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
+  disclosureText: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool }, 
   pressed: { opacity: .7 },
   toolsToggle: { alignItems: "flex-start" }, tools: { backgroundColor: colors.quietSurface, borderRadius: radius.large },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 21 },
