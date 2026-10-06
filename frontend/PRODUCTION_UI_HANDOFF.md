@@ -5,14 +5,18 @@
 
 活動狀態及驗收以 [根 INT 計劃](../PLAN.md#production-integration) 為準。INT-W01 已把標準 Web 建置及身份／孩子 owner 接回本目錄；INT-W02 接真聊天、來源、工具結果、持久候選及普通交代。下方預覽清單保留尚待替換位置的用途，不能把已替換位置仍視為合成模式。
 
+INT-W07 已把 `frontend/` 產物部署為正式網址，舊根測試 UI 不在正式 Web 入口；當前啟動方式、功能接點與未支援項見 [正式 Web 指引](../docs/PRODUCTION_FRONTEND.md)。下列按包說明的「未部署」只描述該包當時的證據界線。
+
 - `src/production/ProductionOwner.ts` 持有既有 RecordsController／ChatController；`ProductAgentOwner.ts` 查原 run、來源及待確認索引，`AgentAuthorizationOwner.ts` 管本人預授權、私人交代及原操作收據。畫面收合不卸載待查核操作；換本人／孩子時隔離並取消舊回應。
 - `chatScreen.tsx` 使用原 ChatTimeline／ChatMessage／composer；移除合成回覆和計時串流。授權與記憶放收合入口，來源／候選仍沿既有 AgentRunView；不改已確認的版面、美術或動效。
 - 普通照護整理與私人備註引用真正資源；前者按家庭權限共享，後者只屬本人陳述。收據不是「已通知」證據；舊保存收據後須另讀目前政策。
 - INT-W03 已接較早聊天游標、真 run 取消、照片及既有功能頁的共同 owner；待確認索引獨立於聊天頁數。原有設計保持，完整部署仍依 INT-W07，不以本機接線宣稱公開入口已切換。
 
-## 私人來源協助接入補充
+## 文件與報告接入
 
 INT-W06 已將多份準備文件、清單／歸檔／恢復、成長報告及 PDF 接到 `useFamilyDocuments` 的唯一正式 owner；Agent 與頁面使用同一 FamilyDocument 服務，歷史頁沿同一投影。舊單份到診準備保留 `/summary?tab=legacy-preparation`。來源更正會遮蔽舊正文；報告是共享資料整理，不是臨床評估，PDF 與選中快照同版。功能驗收及部署狀態只見 [根 INT 計劃](../PLAN.md#int-w06)，不沿下列舊預覽描述推定仍未接線。
+
+## 私人來源協助接入補充
 
 INT-W04 以 `usePhotoInputSources` 接回真實 management／history／原操作收據；SourceIntakeEditor 保存用途、原地內容修改、停用及獨立摘錄授權。對話工具用同一來源 Store，候選在聊天持久確認；來源頁「交給 Agent 討論」只帶實際 ID／用途到原聊天草稿，由本人送出。舊預覽合成流程保留供參考，正式模式不稱已核實或假裝模型閱讀。實際驗收與保留限制見 [根計劃](../PLAN.md#int-w04)。
 

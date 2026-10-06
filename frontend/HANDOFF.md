@@ -2,6 +2,8 @@
 
 本文件是前端接線索引及功能差異；工作狀態及驗證只見 [PLAN](PLAN.md#active)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)。
 
+INT 正式接線現行位置以 [共用 owner 清單](../docs/P2_UI_HANDOFF.md#production-owners) 為準；`frontend/` 已成正式入口，[啟動／部署及尚未支援項](../docs/PRODUCTION_FRONTEND.md) 另列。下方設計回調與較早缺口不能覆蓋已接通的正式契約。
+
 <a id="reading-order"></a>
 ## 接線前先讀
 
@@ -36,8 +38,8 @@ Dashboard 共同祖先各掛一次 owner，consumer 不能再掛自己的 fixtur
 | Care：`/care`、已保存／核對歷史、聊天重要確認 | CareApi search/create/revise/history/delete 保留原 ID、expectedVersion、reason、共享同意及原操作收據。跨 run 變更索引、普通自動保存、持久重要確認及匹配聊天事件尚缺正式 port |
 | Profile：檔案及孩子概況 | 同一 CareApi getProfile/saveProfile/profileHistory/deleteProfile；孩子清單沿原 RecordsApi。ChildProfileData 沒有身高／體重欄位；量度須獨立授權投影，不能從 Care 單一 quantity 的文字或單位猜測 |
 | Tasks：待辦、日曆、完成／取消歷史 | TaskApi tasks/task/history/createTask/changeTask；原 occurrence、版本、assignee、游標及收據保留。worker 狀態 unknown 與寫入 unknown 分開；Home attention 尚不能當 Tasks 已正式同步 |
-| Preparation：準備單及準備歷史 | 舊 CareSummaryApi savePreparation 只支援每孩子單一 VisitPreparation。多份文件、生成、清單保存、歸檔／重開及歷史游標需要正式 port，不能硬套舊 API |
-| Growth：持續關注、關注歷史、成長報告 | 同一 Growth owner；關注鏈及 archive／restore、報告讀取／生成／導出缺口見專項，不把 MemoryTopic 改名當 concern |
+| Preparation：準備單及準備歷史 | `useFamilyDocuments`／FamilyDocument API 已接多份、清單、歸檔／恢復及版本；原單份 VisitPreparation 保留獨立查閱入口，不拿舊 API 冒充新文件 |
+| Growth：持續關注、關注歷史、成長報告 | 同一 Growth owner 使用 ConcernStore，與 MemoryTopic 分開；報告讀取／來源刷新／同版 PDF 由 `useFamilyDocuments` 投影，實際證據见根 INT 計劃 |
 | MemoryReference：短期脈絡、長期記憶、參考資料 | 唯讀現有 Memory／知識投影；不建立第二套記憶 store，不在此頁提供任意修改 |
 
 正式 owner 掌管本人／孩子／Server／角色、版本、讀取完整性、訂閱、撤權及 abort／generation。成功後發布同一投影供各頁更新；已確認保存但讀回失敗只重讀，不重送保存。歷史快照不是現行值，也不能反向覆寫現行資料。私人原文不因生成家庭記錄或報告而自動共享。

@@ -1,0 +1,289 @@
+{
+  "package": "INT-W07",
+  "date": "2026-10-07",
+  "runtimeCommit": "053658b200662037922990e4cfe7763838e983a2",
+  "decision": "Production wiring and deployment accepted using existing INT-W01–06 evidence plus the new public entry, true conversation and same-resource API checks. Full browser sequence is not claimed as passed.",
+  "deployment": {
+    "url": "https://ex-machina.eu.org",
+    "project": "ai-caregivers-for-children",
+    "zone": "asia-east2-a",
+    "vm": "yuban-p1",
+    "vmId": "2846984358678394356",
+    "ip": "35.241.127.20",
+    "terminationTime": "2026-10-10T12:50:44Z",
+    "releaseDirectory": "/opt/yuban-int-053658b",
+    "migrations": 28,
+    "originalPublicTablesPreserved": 68,
+    "comparison": "counts and hashes of all pre-existing columns while services stopped",
+    "backup": "/var/backups/yuban-p1/int-w07-before-028.ybak with .ybak.attachments directory",
+    "oldReleasePreserved": "/opt/yuban-p2-43ab10c",
+    "worker": "resumed",
+    "platformLimits": {
+      "userDaily": 12,
+      "globalDaily": 20
+    },
+    "quotaReset": false
+  },
+  "release": {
+    "baseCommit": "053658b200662037922990e4cfe7763838e983a2",
+    "files": [
+      {
+        "name": "deployment.tar.gz",
+        "bytes": 2014,
+        "sha256": "07cbecc6c73d1df029916e16674d6c3a9989e548d82563e1fd43b3cf1f3dcbf7"
+      },
+      {
+        "name": "images.tar.gz",
+        "bytes": 669591366,
+        "sha256": "48ec8d525396950eefe448497683df58b63636efb3751b623613daecf19ac39c"
+      }
+    ],
+    "images": [
+      {
+        "tag": "yuban-int-api:053658b",
+        "id": "sha256:7f9d5560d6ab0319c7db3c18e12a3436b95f9c78b130a157a06343bc6a5727d5",
+        "bytes": 262519644
+      },
+      {
+        "tag": "yuban-int-maintenance:053658b",
+        "id": "sha256:5da56fd58187150b47b52343900d552121e84abc579d854a95a3f85a7c05c8cd",
+        "bytes": 381480275
+      },
+      {
+        "tag": "yuban-int-web:053658b",
+        "id": "sha256:b6f6ecb2c993694b5aa831ad4d4672dad8e888cff24eace1545ababba9f09e9f",
+        "bytes": 28516773
+      }
+    ]
+  },
+  "builds": [
+    {
+      "tag": "yuban-int-api:053658b",
+      "target": "server",
+      "revision": "053658b200662037922990e4cfe7763838e983a2",
+      "startedAt": "2026-10-06T15:46:46.6411382Z",
+      "finishedAt": "2026-10-06T15:47:43.4494943Z",
+      "exitCode": 0,
+      "log": ".cache/int-w07-build-api.log",
+      "image": "sha256:7f9d5560d6ab0319c7db3c18e12a3436b95f9c78b130a157a06343bc6a5727d5|262519644|linux|amd64"
+    },
+    {
+      "tag": "yuban-int-maintenance:053658b",
+      "target": "maintenance",
+      "revision": "053658b200662037922990e4cfe7763838e983a2",
+      "startedAt": "2026-10-06T15:47:43.6666205Z",
+      "finishedAt": "2026-10-06T15:48:13.4631745Z",
+      "exitCode": 0,
+      "log": ".cache/int-w07-build-maintenance.log",
+      "image": "sha256:5da56fd58187150b47b52343900d552121e84abc579d854a95a3f85a7c05c8cd|381480275|linux|amd64"
+    },
+    {
+      "tag": "yuban-int-web:053658b",
+      "target": "web",
+      "revision": "053658b200662037922990e4cfe7763838e983a2",
+      "startedAt": "2026-10-06T15:48:13.6646814Z",
+      "finishedAt": "2026-10-06T15:49:04.5899002Z",
+      "exitCode": 0,
+      "log": ".cache/int-w07-build-web.log",
+      "image": "sha256:b6f6ecb2c993694b5aa831ad4d4672dad8e888cff24eace1545ababba9f09e9f|28516773|linux|amd64"
+    }
+  ],
+  "assets": {
+    "revision": "053658b200662037922990e4cfe7763838e983a2",
+    "image": "yuban-int-web:053658b",
+    "method": "Copied files from a stopped container; no service or browser execution",
+    "indexSha256": "E5161AC506057A7ACBA7A8633ED894839E8E54FA632E2EC43124CA207F0BFDD7",
+    "linkedScripts": [
+      "/_expo/static/js/web/entry-e3c441f7c7526be320adc124498a4114.js"
+    ],
+    "jsFiles": [
+      "entry-e3c441f7c7526be320adc124498a4114.js"
+    ],
+    "productionProviderMarker": true,
+    "productionProviderSource": "frontend/src/production/ProductionProvider.tsx:53",
+    "draftStateMarker": true,
+    "pushWorkerSha256": "D8808CE7C242911068C8F4B2919AEC432908B683D8B4A47029357803ADF74C59",
+    "sourcePushWorkerSha256": "D8808CE7C242911068C8F4B2919AEC432908B683D8B4A47029357803ADF74C59",
+    "pushWorkerMatchesSource": true,
+    "linkedScriptsPresent": true,
+    "productionProviderMarkerEncoding": "JavaScript Unicode escape",
+    "hasDomainPendingMarker": true,
+    "bundleBytes": 4989129,
+    "bundleSha256": "DE5D4C401331E7F26FEF4ADE2BE05A5AE1F4CF615915D97F08243A417EA24E21",
+    "initialInspectionFailure": ".cache/int-w07-build-artifact-inspection-initial-failure.json",
+    "initialFailureCause": "Plain Unicode text search did not match Metro JavaScript Unicode escapes; expected frontend marker is present with the generated encoding"
+  },
+  "publicEntry": [
+    {
+      "path": "/",
+      "status": 200,
+      "bytes": 32926,
+      "sha256": "e5161ac506057a7acba7a8633ed894839e8e54fa632e2ec43124ca207f0bfdd7"
+    },
+    {
+      "path": "/api/health",
+      "status": 200,
+      "bytes": 15,
+      "sha256": "a29ee2b15c494311c52521766e44af56a3ad2248e7a8ab465e5206463c13d288"
+    },
+    {
+      "path": "/push-sw.js",
+      "status": 200,
+      "bytes": 5302,
+      "sha256": "d8808ce7c242911068c8f4b2919aec432908b683d8b4a47029357803adf74c59"
+    }
+  ],
+  "browser": {
+    "passed": false,
+    "version": "153.0.8010.12",
+    "preflightFailures": [
+      {
+        "phase": "chromium_check",
+        "code": "full_chromium_executable_missing",
+        "serviceCalls": 0
+      },
+      {
+        "phase": "retention_acl",
+        "code": "native_acl_setup_unconfirmed",
+        "serviceCalls": 0
+      },
+      {
+        "phase": "retention_acl",
+        "code": "retention_acl_CommandNotFoundException",
+        "serviceCalls": 0
+      }
+    ],
+    "requestAttempts": 154,
+    "blockedRequests": 0,
+    "pageErrors": 0,
+    "messageWrites": 1,
+    "replyAttempts": 1,
+    "failure": {
+      "phase": "receipt",
+      "code": "http_cap_reached"
+    },
+    "proof": "The deployed frontend sent one real conversation and received its saved reply; the request cap stopped the remaining UI assertions."
+  },
+  "sameFixtureContinuation": {
+    "origin": "https://ex-machina.eu.org",
+    "deployedRevision": "053658b200662037922990e4cfe7763838e983a2",
+    "runKey": "817cfcb1-9fbf-41c8-bc46-679489b5d6b7",
+    "childId": "70ed840e-63b9-47c6-ba70-c8d71085df79",
+    "runId": "62064388-94db-4293-aa26-5f8fd9ce7a0b",
+    "source": "API continuation of the original retained fixture; no new fixture or Agent run",
+    "passed": true,
+    "calls": 8,
+    "callCap": 8,
+    "attempted": [
+      {
+        "method": "POST",
+        "path": "/api/auth/sign-in/email",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/children/70ed840e-63b9-47c6-ba70-c8d71085df79/agent/runs/62064388-94db-4293-aa26-5f8fd9ce7a0b",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/children/70ed840e-63b9-47c6-ba70-c8d71085df79/agent/actions?runId=62064388-94db-4293-aa26-5f8fd9ce7a0b",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/children/70ed840e-63b9-47c6-ba70-c8d71085df79/care/search",
+        "status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/api/children/70ed840e-63b9-47c6-ba70-c8d71085df79/messages",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/online/context",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/online/submit",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/sign-out",
+        "status": 200
+      }
+    ],
+    "originalBrowser": {
+      "passed": false,
+      "failure": {
+        "phase": "receipt",
+        "code": "http_cap_reached"
+      },
+      "requestAttempts": 154
+    },
+    "newBrowserContexts": 0,
+    "newAgentRuns": 0,
+    "newGenerationCalls": 0,
+    "newQueryEmbeddings": 0,
+    "runStatus": "completed",
+    "counts": {
+      "modelCalls": 3,
+      "toolCalls": 2,
+      "queryEmbeddings": 0
+    },
+    "tokens": null,
+    "tokensAvailableFromRunApi": false,
+    "provenance": {
+      "packVersion": "0.1.23",
+      "recipeId": "product-interactive",
+      "model": "gemini-3.1-flash-lite"
+    },
+    "receiptId": "ede0daa2-5a2f-4312-b09a-c65a16ed5ade",
+    "recordId": "76b7e7d3-3158-40fe-88a7-e01f47ff57d4",
+    "recordVersion": 1,
+    "runConfirmed": true,
+    "receiptConfirmed": true,
+    "recordConfirmed": true,
+    "historyConfirmed": true,
+    "childDeleted": true,
+    "syntheticAccountPreserved": true,
+    "signedOut": true,
+    "originalUiChecksUnverified": [
+      "receipt UI",
+      "Care UI",
+      "Home return",
+      "reload history UI",
+      "logout UI"
+    ],
+    "failure": null,
+    "fixtureRetained": false,
+    "credentialsRetained": false
+  },
+  "realServiceTotals": {
+    "agentRuns": 1,
+    "generationCalls": 3,
+    "queryEmbeddings": 0,
+    "notifications": 0,
+    "tokens": null,
+    "actualCostUsd": null,
+    "preRunCostEstimateUsd": 0.1
+  },
+  "reusedEvidence": [
+    "INT_W01_CHECKS.json",
+    "INT_W02_CHECKS.json",
+    "INT_W03_CHECKS.json",
+    "INT_W04_CHECKS.json",
+    "INT_W05_CHECKS.json",
+    "INT_W06_CHECKS.json"
+  ],
+  "limits": [
+    "No rerun of the browser sequence or model after the HTTP cap",
+    "Current receipt/Care/Home/reload/logout UI assertions remain unexecuted; API continuation is separate",
+    "No new notification, full form matrix, Firefox compatibility, restore matrix or Android test",
+    "Personal Gemini Developer API remains region-limited; no verified personal-key generation claim"
+  ],
+  "review": "Primary reviewed deployment procedure, original-data preservation, exact entry/image identity, shared owner source, observed Agent receipt/history and bounded cleanup. Sol executed image builds and the one browser/API acceptance; no Computer Use."
+}
