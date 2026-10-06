@@ -12,6 +12,19 @@ export const sharedInputCreateSchema=z.discriminatedUnion("kind",[
   z.object({kind:z.literal("public_source"),sourceId:z.string().regex(/^[a-z0-9-]{1,80}$/u)}).strict(),
 ]);
 export type SharedInputCreate=z.infer<typeof sharedInputCreateSchema>;
+export const sourceManagementSchema=z.object({
+  intention:text(1000), purpose:z.enum(["answer_reference","record_candidate","track_topic"]),
+  nature:z.enum(["unspecified","external_material","claimed_official","personal_observation"]),
+  timeScope:z.enum(["unspecified","long_reference","recent","specific_period"]), validityText:text(300),
+  enabled:z.boolean(), modelExcerpt:text(6000).nullable(),
+}).strict().refine(value=>value.timeScope!=="specific_period"||!!value.validityText.trim(),{message:"Specific conditions are required"});
+export type SourceManagement=z.infer<typeof sourceManagementSchema>;
+export const sourceManagementChangeSchema=z.object({
+  expectedVersion:z.number().int().min(1), management:sourceManagementSchema,
+  content:sharedInputCreateSchema.options[0].nullable(), reason:text(500).refine(value=>!!value.trim()),
+}).strict();
+export type SourceManagementChange=z.infer<typeof sourceManagementChangeSchema>;
+export interface SourceManagementRevision {version:number;changedAt:string;reason:string;management:SourceManagement|null}
 export interface PublicInputSource {id:string;url:string;publisher:string}
 export interface SharedInput {
   id:string;childId:string;ownerUserId:string;version:number;createdAt:string;canManage:boolean;
@@ -21,6 +34,8 @@ export interface SharedInput {
   extraction:{state:"not_requested"|"running"|"available"|"failed"|"unknown";runId:string|null;excerpt:string|null;
     draft:PhotoDraft|null;stopReason:string|null;processedAt:string|null;model:string|null};
   recordId:string|null;confirmationKind:"reference"|"family_record"|null;
+  /** Null means no permission to send stored source text to the conversation model. */
+  management?:SourceManagement|null;
 }
 export interface SharedInputConfirmation {
   expectedVersion:number;confirmShared:true;kind:"reference"|"family_record";confirmChildFact:boolean;values:CareValues;

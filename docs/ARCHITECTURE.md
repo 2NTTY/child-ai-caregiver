@@ -540,6 +540,8 @@ API 與 worker 均須既有 P2 啟用旗標及 migration 017；DB 維護指令�
 <a id="p2-shared-input-flow"></a>
 ## S12-W04 分享輸入接線
 
+INT-W04 正式前端增補沿同一 SharedInputStore：頁面管理與 Agent 候選確認共用權限、版本及來源；Agent 的 list／read 工具只在本人互動提供，read 只取明確授權的現行原文片段。私人網址／備註不加入工具讀取結果或公共檢索，私人引用與官方證據分開，收尾重查版本及授權。來源取得仍使用原人工明示 fetch，沒有付費網站代登入；新增用途不是訂閱、家庭事實或後續關注任務。詳見 [接口](API.md#p2-shared-inputs)。
+
 復用 [來源 fetcher](../server/knowledge-source-fetch.ts)、既有 online 收據、私人 storage cipher 及共用 ADK runtime；不增加網頁爬蟲／PDF parser 或通用 ingestion 平台。手動貼文、已核准公開頁面及 [照片上傳](#p2-photo-flow) 提供 P2 使用者主動輸入；作業系統分享 adapter 仍留 P4。
 
 Server 只從固定 catalog 選公開來源，沿用 DNS／IP／HTTPS／redirect／內容上限保護；fetch 與模型呼叫均在資料庫交易外，短交易 claim 及結果核權。原文與選取片段當作不可信資料注入；既有 capture-confirmation／multimodal 模組加一個短 shared-capture 接線配方，工具只回私人候選。來源不足不能借提取包裝成育兒建議。

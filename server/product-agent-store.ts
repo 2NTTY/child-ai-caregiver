@@ -8,6 +8,7 @@ import { FamilyError, READ_ROLES, withChildAccess } from "./family-access.ts";
 import { transactionPool } from "./transaction-pool.ts";
 import { canonicalJson } from "./online-routing.ts";
 import { z } from "zod";
+import { createSharedInputStore } from "./shared-input-store.ts";
 import { summarySaveSchema } from "./memory-validation.ts";
 import { createMemoryStore } from "./memory.ts";
 import { createTaskStore, type TaskScheduling } from "./tasks.ts";
@@ -149,7 +150,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         if(row.data_version !== current.dataVersion){
           const contact=value.tools.filter(tool=>(tool.name==="contact_caregiver" || tool.name==="execute_ordinary_instruction" || Object.values(agentActionToolNames).includes(tool.name)) && tool.status==="succeeded" && tool.reference);
           if(!contact.length)return false;
-          value={...value,status:"stopped",stopReason:"unauthorized",text:"已有操作寫入台帳；資料隨後有變，請查看原操作收據及目前狀態，勿另建重複操作。入列不代表送達或完成。",citations:[],retrievalMode:"not_used",proposals:[],tools:contact};
+          value={...value,status:"stopped",stopReason:"unauthorized",text:"已有操作寫入台帳；資料隨後有變，請查看原操作收據及目前狀態，勿另建重複操作。入列不代表送達或完成。",citations:[],privateSourceCitations:[],retrievalMode:"not_used",proposals:[],tools:contact};
           summary=undefined;
         }
         if (summary && row.trigger_kind === "interactive" && value.status === "completed") {
@@ -194,6 +195,12 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           const rescheduledAssignee = value.change.action === "reschedule" ? value.change.assigneeUserId : null;
           if (rescheduledAssignee && !page.eligibleAssignees.some(person => person.userId === rescheduledAssignee)) throw new FamilyError(400, "invalid_assignee");
         }
+        if (value.kind === "private_source_change") {
+          const source=await createSharedInputStore(borrowed.pool,cipher).get(scope.userId,scope.childId,value.inputId);
+          borrowed.assertReleased();
+          if(!source||source.version!==value.change.expectedVersion)throw new FamilyError(409,"version_conflict");
+          targetLabel=source.sourceLabel;
+        } else if(value.kind === "private_source_create") targetLabel=value.input.sourceLabel;
         const previous = (await client.query<ProposalRow>("SELECT * FROM agent_proposals WHERE run_id=$1", [runId])).rows;
         const encoded = canonicalJson(value);
         for (const row of previous) {
@@ -225,12 +232,22 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           if (run.authorization_version.toString() !== current.authorizationVersion
             || run.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) throw new FamilyError(409, "confirmation_scope_changed");
         }
-        const value = proposal.value, shared = value.kind !== "memory_fact" || value.intendedVisibility === "family";
+        const value = proposal.value, shared = value.kind === "task_create" || value.kind === "task_change" || value.kind === "memory_fact" && value.intendedVisibility === "family";
         if (input.decision === "accept" && shared && !input.confirmShared) throw new FamilyError(400, "sharing_confirmation_required");
         let result: AgentProposal["result"] = null;
         if (input.decision === "accept") {
           const borrowed = transactionPool(client);
-          if (value.kind === "memory_fact") {
+          if (value.kind === "private_source_create" || value.kind === "private_source_change") {
+            const sources=createSharedInputStore(borrowed.pool,cipher);
+            let source;
+            if(value.kind === "private_source_create") {
+              source=await sources.create(userId,childId,value.input); borrowed.assertReleased();
+              if(!source)throw missing();
+              source=await sources.manage(userId,childId,source.id,{expectedVersion:source.version,management:value.management,content:null,reason:"本人在對話核對私人來源用途及模型片段授權"});
+            } else source=await sources.manage(userId,childId,value.inputId,value.change);
+            borrowed.assertReleased(); if(!source)throw missing();
+            result={kind:"private_source",id:source.id,version:source.version};
+          } else if (value.kind === "memory_fact") {
             if (!run.source_message_id) throw new FamilyError(409, "source_changed");
             const memory = createMemoryStore(borrowed.pool, cipher, true);
             const fact = await memory.createFact(userId, childId, { values: { key: value.key, content: value.content, validUntil: value.validUntil,

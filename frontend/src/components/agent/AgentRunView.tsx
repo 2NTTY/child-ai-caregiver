@@ -102,7 +102,7 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
       <Text style={styles.meta}>保存結果版本：{proposal.result.version}</Text>
       <Text style={styles.meta}>{proposal.result.kind === "task"
         ? "此收據代表任務資料已保存；照護事項的完成狀態另行記錄。"
-        : "此收據代表確認事實已保存；不代表照護事項已完成。"}</Text>
+        : proposal.result.kind==="private_source"?"私人來源設定已保存；連結保存不等於取得正文，亦沒有建立家庭事實、提醒或公共知識。":"此收據代表確認事實已保存；不代表照護事項已完成。"}</Text>
     </View> : proposal.status === "accepted" ? <Text style={styles.meta}>此候選已接受；本次快照未提供保存收據詳情。</Text> : null}
     {proposal.status === "dismissed" ? <Text style={styles.meta}>此候選已略過，沒有以此決定執行候選事項。</Text> : null}
     {proposal.status === "expired" ? <Text style={styles.meta}>此候選已過期。請重新讀取運行結果核對最新狀態。</Text> : null}

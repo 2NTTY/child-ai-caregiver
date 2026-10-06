@@ -17,7 +17,7 @@ const toolNames: Record<string, string> = { stage_private_summary: "整理私有
   propose_task: "保存建立任務候選", propose_task_change: "保存任務變更候選", propose_fact: "保存記憶候選", present_answer: "整理回覆及引用" };
 const toolStatuses: Record<ProductAgentResult["tools"][number]["status"], string> = { succeeded: "成功", rejected: "已拒絕", conflict: "出現衝突", failed: "失敗", unknown: "結果未知" };
 const taskActions = { reschedule: "改期／轉派", complete: "記錄完成", cancel: "取消", resolve: "覆核終態" };
-const isShared = (proposal: AgentProposal) => proposal.value.kind !== "memory_fact" || proposal.value.intendedVisibility === "family";
+const isShared = (proposal: AgentProposal) => proposal.value.kind === "task_create" || proposal.value.kind === "task_change" || proposal.value.kind === "memory_fact" && proposal.value.intendedVisibility === "family";
 const expired = (proposal: AgentProposal) => Date.parse(proposal.expiresAt) <= Date.now();
 const privateAccessLost = (error: unknown) => error instanceof ProductAgentApiError
   && ([401, 403, 404].includes(error.status) || ["session_changed", "unauthorized", "not_found"].includes(error.code ?? ""));
@@ -47,6 +47,10 @@ function safeHttps(value: string): string | null {
 }
 function ProposalDetails({ proposal }: { proposal: AgentProposal }) {
   const value = proposal.value;
+  if(value.kind==="private_source_create"||value.kind==="private_source_change")return <View style={styles.stack}>
+    <Text style={styles.label}>私人來源設定：{proposal.targetLabel}</Text>
+    <Text style={styles.hint}>請使用正式新前端核對完整來源用途、選取正文及授權後接受；私人來源不等於已確認事實。</Text>
+  </View>;
   if (value.kind === "task_create") return <View style={styles.stack}>
     <Text style={styles.label}>建立任務：{value.values.title}</Text>
     <Text selectable style={styles.body}>{value.values.details || "沒有詳細內容"}</Text>
@@ -244,7 +248,7 @@ function AgentRunContents({ apiBaseUrl, userId, childId, runId, online }: Props)
             onToggle={() => setShared(previous => ({ ...previous, [proposal.id]: !previous[proposal.id] }))} />}
           {proposal.status === "pending" && <View style={styles.row}>
             <Action label={busy === "write" ? "正在確認操作…" : "明確接受此事項"} onPress={() => decide(proposal, "accept")}
-              disabled={locked || pastDeadline || (isShared(proposal) && !shared[proposal.id])} />
+              disabled={locked || pastDeadline || proposal.value.kind.startsWith("private_source_") || (isShared(proposal) && !shared[proposal.id])} />
             <Action label="略過此事項" onPress={() => decide(proposal, "dismiss")} disabled={locked || pastDeadline} />
           </View>}
         </View>;

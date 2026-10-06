@@ -13,6 +13,7 @@ import type { TaskStore } from "./tasks.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import { FamilyError } from "./family-access.ts";
 import { createAgentActionTools } from "./agent-action-tools.ts";
+import { createAgentSourceTools } from "./agent-source-tools.ts";
 
 type Retriever = ReturnType<typeof createKnowledgeRetriever>;
 const shortText = (length: number) => z.string().min(1).max(length).refine(value => value.trim().length > 0);
@@ -53,6 +54,7 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  sources?: import("./shared-input-store.ts").SharedInputStore;
   actions?: import("./agent-actions-store.ts").AgentActionsStore;
   summary?:import("./care-summary-store.ts").CareSummaryStore;
   contact?:import("./contact-store.ts").ContactStore;
@@ -63,6 +65,7 @@ export function createProductAgentTools(options: {
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
   const authorize = run.authorize ?? options.authorize;
+  const privateSources=options.sources&&options.visibility!=="family"?createAgentSourceTools(options.sources,store,run,authorize):null;
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
     budget, authorize, embeddings: run.embeddings });
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
@@ -147,16 +150,18 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-    { name: "present_answer", description: "提交供畫面顯示的自然文字段落；citationIds 只用本 run search_knowledge 結果的 chunkId，不能用背景來源標籤或拼接 ID。每項育兒／安全建議必須對應實際支持的官方片段；純澄清、操作或家庭記錄回述可無公共引用。不能用這工具执行其他操作或聲稱未完成事項成功。" + (options.reviewedGrowthPresentation
+    { name: "present_answer", description: "提交顯示文字；citationIds 用本 run search_knowledge.chunkId，或 read_private_source.citationId。私人材料回述用 private_reference，不能冒充官方；每項育兒／安全建議仍須支持的官方片段。純澄清、操作或記錄回述可無公共引用。不執行其他操作，不稱未完成事項成功。" + (options.reviewedGrowthPresentation
         ? " 本次是成長關注：選取支持此關注的官方 chunkId；Server 只呈現片段的已核對正文，不使用你改寫的 text。沒有可用片段時呈現固定限制說明。" : ""),
       parameters: agentAnswerSchema, authorize: permitted,
       execute: args => guard(async () => {
         const parsed = agentAnswerSchema.parse(args);
         const official = options.reviewedGrowthPresentation || parsed.kind === "caregiving" || parsed.kind === "safety_help";
         for (const paragraph of parsed.paragraphs) {
-          if ((parsed.kind === "caregiving" || parsed.kind === "safety_help") && !paragraph.citationIds.length) throw new FamilyError(400, "citation_required");
+          if ((parsed.kind === "caregiving" || parsed.kind === "safety_help") && !paragraph.citationIds.some(id=>evidence.get(id)?.chunk.classification==="official_guidance")) throw new FamilyError(400, "citation_required");
+          if(parsed.kind === "private_reference"&&!paragraph.citationIds.some(id=>privateSources?.evidence.has(id)))throw new FamilyError(400,"citation_required");
           if (/https?:\/\/|www\./iu.test(paragraph.text)) throw new FamilyError(400, "use_citation_ids");
           for (const id of paragraph.citationIds) {
+            if(privateSources?.evidence.has(id)&&!options.reviewedGrowthPresentation)continue;
             const item = evidence.get(id);
             if (!item || official && item.chunk.classification !== "official_guidance") throw new FamilyError(400, "invalid_citation");
           }
@@ -169,6 +174,7 @@ export function createProductAgentTools(options: {
   ];
 
   if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted));
+  if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
   if(options.summary)tools.splice(tools.length-1,0,{
     name:"read_care_summary",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",
     parameters:summaryQuery,authorize:permitted,execute:args=>guard(async()=>{
@@ -198,7 +204,9 @@ export function createProductAgentTools(options: {
     async presentation(): Promise<AgentPresentation | null> {
       if (!answer) return null;
       const ids = [...new Set(answer.paragraphs.flatMap(p => p.citationIds))];
-      const citations = ids.map(id => evidence.get(id)!);
+      const citations = ids.filter(id=>evidence.has(id)).map(id => evidence.get(id)!);
+      const privateSourceCitations=ids.filter(id=>privateSources?.evidence.has(id)).map(id=>privateSources!.evidence.get(id)!);
+      for(const citation of privateSourceCitations)if(!await privateSources!.revalidate(citation))throw new AgentStopped("invalid_response");
       for (const { chunk, filter } of citations) {
         if (!await retrieval.revalidateCitations([chunk], filter)) throw new AgentStopped("invalid_response");
       }
@@ -209,8 +217,8 @@ export function createProductAgentTools(options: {
           : [{ text: "暫時未有可引用的補充說明。請查看關注卡片的適用依據及來源。", citationIds: [] }])
         : answer.paragraphs;
       const rendered = paragraphs.map(paragraph => paragraph.text + (paragraph.citationIds.length
-        ? " " + paragraph.citationIds.map(id => "[" + (ids.indexOf(id) + 1) + "]").join("") : "")).join("\n\n");
-      return { text: rendered, citations: citations.map(item => item.chunk), retrievalMode: mode };
+        ? " " + paragraph.citationIds.map(id => privateSources?.evidence.has(id)?"[私人來源 "+(privateSourceCitations.findIndex(item=>item.citationId===id)+1)+"]":"[" + (citations.findIndex(item=>item.chunk.chunkId===id)+1) + "]").join("") : "")).join("\n\n");
+      return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };
     },
   };
 }

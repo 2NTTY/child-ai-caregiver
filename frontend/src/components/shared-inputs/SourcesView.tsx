@@ -14,7 +14,7 @@ import { SourceComposer } from "./SourceComposer";
 import { SourceDetails, sourceTime } from "./SourceDetails";
 import { SourceRecordForm } from "./SourceRecordForm";
 import { SourceIntakeConversation } from "./SourceIntakeConversation";
-import { sourceIntakePurposeLabel, sourceIntakeIsUnresolved } from "../../source-intake";
+import { sourceIntakePurposeLabel, sourceIntakeIsUnresolved, sourcePurposeOptions } from "../../source-intake";
 import { sourceStyles as s } from "./source-styles";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { StatusAnnouncement } from "../StatusAnnouncement";
@@ -57,6 +57,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
   }
   function revealAfter(action: () => void) {setResultTrigger(++requestSerial.current); action();}
   const actions: SourcesActions = {...sourceActions,
+    intake: sourceActions.intake ? { ...sourceActions.intake, confirmProposal: () => mutateList('move', sourceActions.intake!.confirmProposal) } : undefined,
     create: input => mutateList('add', () => sourceActions.create(input)), remove: () => {if (model.selected) deletionFocus.start(model.selected.id); mutateList('remove', sourceActions.remove);},
     confirm: () => mutateList('move', sourceActions.confirm),
     fetchContent: () => mutateList('move', () => revealAfter(sourceActions.fetchContent)), extract: () => mutateList('move', () => revealAfter(sourceActions.extract)),
@@ -70,7 +71,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
   const listChange = !listResultAvailable ? null : listIntent.current?.kind === 'remove'
     ? model.operation.state === 'saved' && model.operation.phase === 'delete' ? 'remove' : null
     : listIntent.current?.kind === 'add' ? model.operation.state === 'saved' && model.operation.phase === 'create' ? 'add' : null
-      : listIntent.current?.kind === 'move' && ['saving', 'saved'].includes(model.operation.state) && ['fetch', 'extract', 'confirm'].includes(model.operation.phase ?? '') ? 'move' : null;
+      : listIntent.current?.kind === 'move' && ['saving', 'saved'].includes(model.operation.state) && ['fetch', 'extract', 'confirm', 'manage'].includes(model.operation.phase ?? '') ? 'move' : null;
   const listMotion = useContentListMotion({ids: model.items.map(item => item.id), scopeKey: listScope,
     eventKey: listIntent.current ? String(listIntent.current.serial) : null, change: listChange,
     settled: !['saving', 'unknown', 'unconfirmed'].includes(model.operation.state), targetId: listIntent.current?.targetId});
@@ -96,7 +97,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
         <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>
           <Text style={s.title}>{input.sourceLabel}</Text><View style={s.row}><AppStatusBadge label={fetchStateLabels[input.fetchState]} tone={input.fetchState === "ready" ? "success" : input.fetchState === "failed" ? "error" : input.fetchState === "unknown" ? "warning" : input.fetchState === "running" ? "info" : "neutral"} /><AppStatusBadge label={input.recordId ? "已連結家庭記錄" : "尚未家庭共享"} tone={input.recordId ? "success" : "neutral"} /></View>
           <Text style={s.meta}>保存於 {sourceTime(input.createdAt)}</Text>
-          {model.intake ? <Text style={s.meta}>{sourceIntakePurposeLabel(model.intakeByInputId?.[input.id])}</Text> : null}
+          {model.intake ? <Text style={s.meta}>{model.intake.mode === "production" ? input.management ? `${sourcePurposeOptions.find(option => option.value === input.management?.purpose)?.label} · ${input.management.enabled ? "可使用" : "已停用"}` : "用途尚未設定" : sourceIntakePurposeLabel(model.intakeByInputId?.[input.id])}</Text> : null}
           <AppButton ref={node => deletionFocus.rowRef(input.id, node)} label={model.selected?.id === input.id ? "目前來源" : "查看來源"} accessibilityLabel={`查看私人來源：${input.sourceLabel}`} variant={model.selected?.id === input.id ? "secondary" : "quiet"} disabled={row.exiting || !model.canChoose || !model.online || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openInput(input);}} />
         </View>} />
       </SectionCard></View>
@@ -109,9 +110,9 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
             <AppButton label="自行填寫接入資料" variant="secondary" disabled={!model.fresh || !model.selected.canManage || model.access !== "editable"} onPress={actions.intake.editManually} />
           </SectionCard> : null}
           <SourceDetails key={model.selected.id} model={model} actions={actions} onRecord={onRecord} resultTrigger={resultTrigger} showTools={showManual} />
-          {model.intake ? <AppButton expanded={showManual} label={showManual ? "收起手動來源操作" : "手動提取或核對家庭記錄"} variant="quiet" disabled={sourceIntakeIsUnresolved(model.intake.selected)} onPress={() => setManualSourceId(showManual ? null : model.selected!.id)} /> : null}
+          {model.intake ? <AppButton expanded={showManual} label={showManual ? "收起手動來源操作" : "取得原文、提取或核對家庭記錄"} variant="quiet" disabled={sourceIntakeIsUnresolved(model.intake.selected)} onPress={() => setManualSourceId(showManual ? null : model.selected!.id)} /> : null}
         </> : null}
-        {showManual && model.selected?.text.trim() && !model.selected.recordId && model.access === "editable" ? <SourceRecordForm key={model.formKey} model={model} actions={actions} /> : null}
+        {showManual && model.selected?.management?.enabled !== false && model.selected?.text.trim() && !model.selected.recordId && model.access === "editable" ? <SourceRecordForm key={model.formKey} model={model} actions={actions} /> : null}
       </View>
 
     </View>

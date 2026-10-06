@@ -1,0 +1,33 @@
+{
+  "package": "INT-W04",
+  "baseline": "64d5808c968695b61e6d651ca362232709ce4014",
+  "branch": "codex/int-w04-private-sources",
+  "status": "necessary_acceptance_passed_merge_pending",
+  "date": "2026-10-06",
+  "review": "Primary reviewed scoped code, contracts, prompt and actual evidence; no UI redesign.",
+  "checks": {
+    "serverTypes": "Passed after fixing one invalid FamilyError status literal (403 to supported 400).",
+    "frontendTypes": "Passed first run.",
+    "localScenario": "One execution passed; no retry. Candidate accept/replay, authoritative list, actual private-source read tool/citation, same-family owner isolation, same-ID disable/refusal, history and child cleanup.",
+    "calls": 28,
+    "callCap": 40,
+    "syntheticAccounts": 2,
+    "syntheticChildren": 1,
+    "childCleaned": true,
+    "syntheticAccountsRetained": true,
+    "liveModelCalls": 0,
+    "embeddingCalls": 0,
+    "notificationCalls": 0,
+    "externalFetches": 0,
+    "browserRuns": 0,
+    "migration": "026 applied through normal migration entry after an encrypted paired local backup; worker remained disabled."
+  },
+  "entry": "scripts/int-private-sources-smoke.mjs --approved-local-int-w04",
+  "reuse": "Existing P2 source fetch/crypto/ADK and INT-W02/03 identity, receipts and cross-page evidence; not rerun.",
+  "limitations": [
+    "New tool flow was not tested with live Gemini or a browser; no complete form matrix.",
+    "External URL retrieval remains the existing separately confirmed manual fetch; no paid-site login, automatic subscriptions or private-source embeddings.",
+    "Track-topic purpose preserves intent; persistent follow-up is INT-W05.",
+    "Public deployment remains INT-W07."
+  ]
+}

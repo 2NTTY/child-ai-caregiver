@@ -1,5 +1,5 @@
 // Frontend-only conversational intake. None of these fields belong to SharedInputCreate.
-export type SourceIntakeStage = "awaiting_read" | "reading" | "read_unknown" | "unavailable" | "clarifying" | "review" | "confirmed_pending_connection" | "connection_unknown";
+export type SourceIntakeStage = "awaiting_read" | "reading" | "read_unknown" | "unavailable" | "clarifying" | "review" | "confirmed_pending_connection" | "connection_unknown" | "saved";
 export type SourceIntakeReadOutcome = "ready" | "unavailable" | "unknown";
 export type SourceIntakeConnectionOutcome = "not_connected" | "unknown";
 export type SourceIntakeProposal = {
@@ -13,7 +13,7 @@ export type SourceIntake = {
   proposal: SourceIntakeProposal | null; proposalOrigin: "manual" | "assisted";
 };
 export type SourceIntakeView = {
-  mode: "synthetic";
+  mode: "synthetic" | "production";
   intention: string;
   selected: SourceIntake | null;
 };
@@ -27,6 +27,7 @@ export type SourceIntakeActions = {
   editProposal(value: SourceIntakeProposal): void;
   confirmProposal(): void;
   checkConnection(): void;
+  discuss?(): void;
 };
 export const sourcePurposeOptions: { value: SourceIntakeProposal["purpose"]; label: string }[] = [
   { value: "answer_reference", label: "回答時參考" },
@@ -64,8 +65,8 @@ export function validSourceIntakeProposal(value: SourceIntakeProposal | null) {
   return !!value && sourcePurposeOptions.some(option => option.value === value.purpose)
     && sourceNatureOptions.some(option => option.value === value.nature)
     && sourceTimeOptions.some(option => option.value === value.timeScope)
-    && (value.timeScope !== "specific_period" || value.validityText.length <= 300
-      && !/[\u0000\uD800-\uDFFF]/u.test(value.validityText) && !!value.validityText.trim());
+    && value.validityText.length <= 300 && !/[\u0000\uD800-\uDFFF]/u.test(value.validityText)
+    && (value.timeScope !== "specific_period" || !!value.validityText.trim());
 }
 export function confirmSourceIntake(value: SourceIntake, outcome: SourceIntakeConnectionOutcome): SourceIntake {
   if (value.stage !== "review" || !validSourceIntakeProposal(value.proposal)) return value;

@@ -58,11 +58,11 @@ export function SourceComposer({ model, actions }: { model: SourcesViewModel; ac
     {intake && intakeActions ? <View style={s.section}>
       <AppTextField label="這份資料想用來做甚麼？" accessibilityLabel="這份資料想用來做甚麼" value={intake.intention} error={!validSourceIntakeText(intake.intention)} disabled={locked} multiline onChangeText={intakeActions.setIntention} />
       {!validSourceIntakeText(intake.intention) ? <Text style={s.error}>用途說明最多 1,000 字，請移除無效字元；不會截短。</Text> : null}
-      <Text style={s.meta}>用一句話說就可以，也可以先保存。助手會先查看來源，再和你商量；你亦可隨時改用同一表單自行整理。</Text>
+      <Text style={s.meta}>{intake.mode === "production" ? "可先私人保存，再在同一表單設定用途；摘錄授權另行核對，不會自動呼叫模型。" : "用一句話說就可以，也可以先保存。助手會先查看來源，再和你商量；你亦可隨時改用同一表單自行整理。"}</Text>
 
     </View> : null}
     <Text style={s.meta}>正式來源沿既有加密儲存保存，不加入公共官方／新聞知識庫；家庭成員不會取得完整原文。</Text>
-    <AppButton label={intake ? "私人保存並開始整理（預覽）" : "保存私人來源"} disabled={!model.fresh || !model.canCreate || !model.canChoose || !!intake && !validSourceIntakeText(intake.intention)} onPress={handleSubmit(value => actions.create(sourceCreateProjection(value)), invalid => {
+    <AppButton label={intake?.mode === "synthetic" ? "私人保存並開始整理（預覽）" : "保存私人來源"} disabled={!model.fresh || !model.canCreate || !model.canChoose || !!intake && !validSourceIntakeText(intake.intention)} onPress={handleSubmit(value => actions.create(sourceCreateProjection(value)), invalid => {
       const first = visibleFields.find(item => invalid[item.field]?.message); if (first) { setDetailsOpen(true); setPendingFocus(first.field); }
     })} />
     {!model.canCreate ? <Text style={s.warning}>目前不能新增來源。已保存的本人內容仍可按權限讀取。</Text> : null}

@@ -7,10 +7,10 @@ export type AgentDecisionKind = "accept" | "dismiss";
 export interface AgentDetailRow { label: string; value: string }
 export interface AgentProposalView {
   id: string; version: number; status: AgentProposalStatus;
-  kind: "task_create" | "task_change" | "memory_fact";
+  kind: "task_create" | "task_change" | "memory_fact" | "private_source_create" | "private_source_change";
   title: string; content: string; scope: "family" | "private";
   details: AgentDetailRow[]; createdAt: string; expiresAt: string;
-  result: { kind: "task" | "memory_fact"; version: number; label: string } | null;
+  result: { kind: "task" | "memory_fact" | "private_source"; version: number; label: string } | null;
 }
 export type AgentCitationView = ChatCitationView;
 export interface AgentRunView {
@@ -20,6 +20,7 @@ export interface AgentRunView {
   retrievalMode: "vector_keyword" | "keyword_degraded" | "not_used";
   tools: { id: string; nameLabel: string; status: "succeeded" | "rejected" | "conflict" | "failed" | "unknown"; savesCandidate: boolean }[];
   proposals: AgentProposalView[]; citations: AgentCitationView[];
+  privateSourceCitations?:import("../../src/shared/product-agent").PrivateSourceCitation[];
 }
 export interface AgentPendingDecision {
   runId: string; proposalId: string;

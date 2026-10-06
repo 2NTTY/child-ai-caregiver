@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sharedInputCreateSchema } from "../src/shared/shared-inputs.ts";
+import { sharedInputCreateSchema,sourceManagementChangeSchema } from "../src/shared/shared-inputs.ts";
 import { careValuesSchema,versionSchema } from "./care-validation.ts";
 import { FamilyError } from "./family-access.ts";
 import type { SharedInputStore } from "./shared-input-store.ts";
@@ -10,7 +10,7 @@ export async function handleSharedInputRequest(request:Request,userId:string|nul
   options:{inReceipt?:boolean;service?:SharedInputService;isCurrentUser?:()=>Promise<boolean>}={}) {
   if(!userId)return apiError("unauthorized","請先登入。",401);
   if(request.headers.get("x-expected-user-id")!==userId)return apiError("session_changed","請重新確認登入帳號。",409);
-  const match=/^\/api\/children\/([^/]+)\/inputs(?:\/([^/]+))?(?:\/(fetch|extract|confirm|delete))?$/u.exec(new URL(request.url).pathname);
+  const match=/^\/api\/children\/([^/]+)\/inputs(?:\/([^/]+))?(?:\/(fetch|extract|confirm|delete|manage|history))?$/u.exec(new URL(request.url).pathname);
   if(!match||!z.uuid().safeParse(match[1]).success||match[2]&&!z.uuid().safeParse(match[2]).success)return apiError("not_found","找不到分享輸入。",404);
   const childId=match[1].toLowerCase(),id=match[2]?.toLowerCase(),action=match[3];
   try{
@@ -18,14 +18,16 @@ export async function handleSharedInputRequest(request:Request,userId:string|nul
     if(request.method==="GET"){
       if(!id)result=await store.list(userId,childId);
       else if(!action){const input=await store.get(userId,childId,id);if(input)result={input};}
+      else if(action==="history")result=await store.managementHistory(userId,childId,id);
     }else if(request.method==="POST"){
       if(request.headers.get("content-type")?.split(";",1)[0].trim().toLowerCase()!=="application/json")return apiError("unsupported_media_type","請使用 JSON。",415);
       let body:unknown;try{body=await request.json();}catch{return apiError("invalid_json","請核對輸入。",400);}
-      if(!id||action==="confirm"||action==="delete"){
+      if(!id||action==="confirm"||action==="delete"||action==="manage"){
         if(!options.inReceipt)return apiError("operation_required","請使用原操作識別提交。",428);
         if(!id){const input=await store.create(userId,childId,sharedInputCreateSchema.parse(body));if(input)result={input};}
         else if(action==="confirm")result=await store.confirm(userId,childId,id,z.object({expectedVersion:versionSchema,confirmShared:z.literal(true),
           kind:z.enum(["reference","family_record"]),confirmChildFact:z.boolean(),values:careValuesSchema}).strict().parse(body));
+        else if(action==="manage"){const input=await store.manage(userId,childId,id,sourceManagementChangeSchema.parse(body));if(input)result={input};}
         else {const parsed=z.object({expectedVersion:versionSchema,confirmDelete:z.literal(true)}).strict().parse(body);result=await store.delete(userId,childId,id,parsed.expectedVersion);}
       }else if(options.service&&options.isCurrentUser){
         let input=null;

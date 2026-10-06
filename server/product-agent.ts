@@ -10,6 +10,7 @@ import { AgentStopped } from "./agent-budget.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 
 export function createProductAgent(options: {
+  sources?: import("./shared-input-store.ts").SharedInputStore;
   actions?: import("./agent-actions-store.ts").AgentActionsStore;
   summary?:import("./care-summary-store.ts").CareSummaryStore;
   contact?:import("./contact-store.ts").ContactStore;
@@ -51,7 +52,7 @@ export function createProductAgent(options: {
       }
       const presentation = result.status === "completed" ? rendered.value : null;
       const value: ProductAgentResult = { runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
-        text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
+        text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })), countsKnown: true, counts: result.counts, proposals: [] };
       if (!await input.authorize() || !await options.store.finish(claim.scope, value)) return null;
       return options.store.get(input.userId, input.childId, claim.runId);
@@ -102,7 +103,7 @@ export function createProductAgent(options: {
         result.tools.push({ name: agentActionToolNames[receipt.kind], callId: "persisted-ledger", status: "succeeded", reference: receipt.id });
       const presentation = result.status === "completed" ? rendered.value : null;
       const value: ProductAgentResult = { runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
-        text: presentation?.text ?? (receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
+        text: presentation?.text ?? (receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         countsKnown: true, counts: result.counts, proposals: [] };
       if (!await isCurrentUser()) return null;
