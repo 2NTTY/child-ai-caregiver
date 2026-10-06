@@ -1,0 +1,86 @@
+Browser tab: 4, Title: "前端尺寸驗收", URL: "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport".
+0 AXWebArea 前端尺寸驗收, URL: yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport
+	1 container
+		2 text 合成前端尺寸驗收
+		3 button 1440 px
+		4 button 1024 px
+		5 button 390 px
+		6 button 320 px
+		7 button 高度 900 px
+		8 button 高度 600 px
+		9 button 重新載入應用, ID: reload-app
+		84 text 320 × 900 CSS px
+	11 container Description: 前端驗收畫面, ID: app-frame
+		12 AXWebArea 育有方 · 前端預覽, URL: yuyoufang-fe37-private-qa.ec002se.chatgpt.site/history?category=growth
+			13 container
+				15 container
+					16 container
+						17 container
+							18 container 孩子及關鍵資料
+								19 container
+									20 button (collapsed) Description: 選擇孩子，目前小昕, Secondary Actions: Expand
+										21 text 小
+										22 text 小昕
+									23 container
+										24 text 地區 香港
+									25 container
+										26 text 檔案 已確認
+									27 container
+										28 text 過敏 未提供
+							29 button 顯示更多孩子資料
+						30 container
+							31 button 開啟訊息提示
+							32 text 1
+							33 button (collapsed) Description: 開啟資訊側欄, Secondary Actions: Expand
+						34 button (collapsed) Description: 預覽工具與技術狀態, Secondary Actions: Expand
+							35 text 預覽工具
+						85 container
+							86 heading 歷史, Value: 1
+								87 text 歷史
+							88 text 分類回看小昕的過往資料，從原始來源查看詳情。
+							89 button (collapsed) Description: 歷史分類：關注與成長, Secondary Actions: Expand
+								90 text 歷史分類：關注與成長
+							91 container
+								92 heading 關注與成長, Value: 1
+									93 text 關注與成長
+								94 button 查看持續關注
+									95 text 查看持續關注
+								96 button 查看年度與季度檔案
+									97 text 查看年度與季度檔案
+							98 container
+								99 container
+									100 container
+										101 text 搜尋關注與成長 搜尋關注與成長
+									102 text field (settable) 搜尋關注與成長
+								103 container
+									104 container
+										105 text 開始日期（可不填） 開始日期（可不填）
+									106 text field (settable) 開始日期（可不填）
+									107 button 選擇開始日期（可不填）
+								108 container
+									109 container
+										110 text 結束日期（可不填） 結束日期（可不填）
+									111 text field (settable) 結束日期（可不填）
+									112 button 選擇結束日期（可不填）
+								113 button (disabled) 清除篩選
+									114 text 清除篩選
+							115 container
+								116 text 已結束關注。
+								117 container
+									118 button 查看已結束關注：日常遊戲與表達
+										119 container
+											120 heading 日常遊戲與表達, Value: 1
+												121 text 日常遊戲與表達
+											122 text 結束於 6/10/2026
+									123 button 恢復關注：日常遊戲與表達
+										124 container
+											125 text 恢復
+					77 link Description: 今日, Value: yuyoufang-fe37-private-qa.ec002se.chatgpt.site/
+					78 link Description: 助手, Value: yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat
+					79 link Description: 待辦與預約, Value: yuyoufang-fe37-private-qa.ec002se.chatgpt.site/tasks
+					80 link Description: 成長與關注, Value: yuyoufang-fe37-private-qa.ec002se.chatgpt.site/growth
+					81 button 記錄，向上拖曳開啟更多頁面
+						82 container
+							83 text 記錄 上拉更多
+
+The focused UI element is 0 AXWebArea 前端尺寸驗收, URL: yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport

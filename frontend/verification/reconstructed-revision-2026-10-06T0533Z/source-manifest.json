@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-10-06T05:54:30.770246+00:00",
+  "observedAt": "2026-10-06T06:08:32.719411+00:00",
   "revision": "new verified source revision reconstructed after partial recovery; not original v44",
   "baseCommit": "2a64fdd7eae52c37c4f42f39ea286b4d3acd8630",
   "buildInputFingerprintSha256": "4584409d4061c2daa63c6d133386070a2b90626b9500e6f5035e895dc84d652c",
@@ -86,16 +86,16 @@
     },
     {
       "path": "frontend/PLAN.md",
-      "bytes": 5910,
-      "gitBlobSha": "b7418602608f73c32b6b690863ee5f21a522a6f4",
-      "sha256": "420f7976b748287fe0e8da71a6e5c99cd34a3b681d24477bf1a9a0f4f091bf63",
+      "bytes": 6261,
+      "gitBlobSha": "ed258e7afac8d2a24a54e23ccff21819083c820a",
+      "sha256": "6323ebd9391b2071fbee7db8ca1c889c95216e0ea26736306698aaac6be982e1",
       "provenance": "new-reviewed-handoff"
     },
     {
       "path": "frontend/STATUS.md",
-      "bytes": 900,
-      "gitBlobSha": "3143be61f5bb08b8c32eb918f564428b56f49904",
-      "sha256": "6a2a70c82e987fba97156db38b155dfcb3e8f444c2ede355b9e1403c69c8eed9",
+      "bytes": 981,
+      "gitBlobSha": "2f79f17f27de4fb022886dd1e32a06d666d97408",
+      "sha256": "bdda6b3d4e6bcdcf338418d3ae9b7bfc4483502780b76938a97e015d25723f87",
       "provenance": "new-reviewed-handoff"
     },
     {
