@@ -18,7 +18,7 @@ INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴
 <a id="production-owners"></a>
 ## 新前端正式資料接點
 
-以下是 INT-W03 的接線位置；完成與驗收狀態只看 [根 PLAN](../PLAN.md#int-w03)。不改既有版面、美術或動效，不把舊面板直接掛到新入口。表內 owner 是 Server 資源的受權投影，不能另建頁面資料副本。
+以下是 INT 系列的接線位置；完成與驗收狀態只看 [根 PLAN](../PLAN.md#production-integration)。不改既有版面、美術或動效，不把舊面板直接掛到新入口。表內 owner 是 Server 資源的受權投影，不能另建頁面資料副本。
 
 | 使用者功能／頁面 | 同一權威來源及前端 owner |
 |---|---|
@@ -26,7 +26,8 @@ INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴
 | 對話、歷史、來源、工具結果、持久待確認及取消 | ChatController／AgentConversationOwner／AgentAuthorizationOwner；messages、agent runs／pending／operation receipts |
 | 記錄、搜尋、更正、歷史及孩子檔案；首頁照護資料 | `CareProfileDomains`；同一 Care API／profile 版本。首頁只組合已載入資料，不另外保存 |
 | 任務、預約、改期、完成、取消、成員指派及歷史 | `TaskKnowledgeDomains`；Task API 的 task／occurrence／版本，側欄讀相同 owner |
-| 記憶、摘要覆蓋、人工備援；成長關注及單份到診準備 | `TaskKnowledgeDomains`；Memory／Growth／CareSummary API。多份文件仍待 INT-W06 |
+| 記憶、摘要覆蓋、人工備援；成長關注及原單份到診準備 | `TaskKnowledgeDomains`；Memory／Growth／CareSummary API；舊到診準備保留 `/summary?tab=legacy-preparation` 查閱入口 |
+| 多份準備文件、清單、歸檔／恢復、成長報告與同版 PDF | `TaskKnowledgeDomains/useFamilyDocuments` → FamilyDocument API／Store；Agent 工具及頁面共用加密資源、版本與收據。來源更正遮蔽失效正文，普通讀取不生成；worker 合併刷新共享文字報告。PDF 明確綁定所選快照／權限，不包含私人聊天或照片。契約見 [API](API.md#int-family-documents) |
 | 共享持續關注、事件、結束／恢復與一次站內跟進 | 同一 `TaskKnowledgeDomains/useTaskKnowledgeGrowth` → Concern API／ConcernStore；首頁及歷史只讀此 owner。Agent 以持久候選確認同一服務；與 GrowthAttention／MemoryTopic 分開。根 INT-W05 記驗收，未聲稱已公開部署 |
 | 對話照片轉交、照片上傳／提取／確認、分享文字／連結輸入 | `PhotoInputDomains`；Photo／SharedInput API，原檔與人工草稿共用一次操作上下文；模型提取與家庭共享分開同意 |
 | 本人模型 key／限額、通知偏好、Push／Telegram、家庭成員及聯絡授權 | `SettingsDomains`；各既有 API／版本／收據，個人設定按身份、家庭操作按孩子清理；不自動發送渠道測試 |
@@ -35,7 +36,7 @@ INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴
 
 寫入成功按 Server 收據刷新共用讀取；可見頁面沿 changes cursor 每 5 秒核對變更 metadata，回到前景即核對。沒有變更不定時重跑模型。busy／unknown 保留原操作，先查核再容許新提交；登出、撤權及身份／孩子切換清理舊內容與遲到回應。
 
-較早聊天使用 Server 游標；取消只要求停止仍在運行的生成，已保存的工具操作不會撤銷。普通記錄更正另設預設關閉的授權開關，只可更正本人獲授權普通類別的原版本；升級不擴大舊授權。完整入口部署、舊 UI 退出正式建置及新增關注／報告能力仍依 INT 後續包交付。
+較早聊天使用 Server 游標；取消只要求停止仍在運行的生成，已保存的工具操作不會撤銷。普通記錄更正另設預設關閉的授權開關，只可更正本人獲授權普通類別的原版本；升級不擴大舊授權。完整入口部署及舊 UI 退出正式建置仍依 INT-W07；新關注／報告的本機證據不能代替公開部署。
 
 ## 狀態與使用方式
 

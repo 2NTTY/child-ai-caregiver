@@ -464,3 +464,11 @@ INT-W04 在同一加密 payload 保存可選 management：用途、來源性質�
 事件中的觀察保持使用者陳述，來源記錄／任務／有限關注指向同一孩子的共享資源。歷史不回寫，超出有界容量明確拒絕，不靜默截斷成完整歷史。家長結束關注不改相連任務終態；恢復保留經過，不把舊關注候選變成新的已接受行動。
 
 一次站內跟進分開保存 reference、到期時間、pending／queued／completed／stopped／unknown／cancelled 及實際 runId；未知不是未執行。背景結果正文仍依原 Agent run 的私人權限存取，共享事件只記結果關聯，不複製私人回覆。重排用新 reference，舊終態保留；孩子刪除連帶刪除本包關聯與收據，備份還原沿既有暫停 worker／更換 epoch 的制度。
+
+
+<a id="int-family-documents"></a>
+## INT 家庭文件
+
+FamilyDocument 保存 kind／purpose／目前版本／歸檔與自動更新狀態；DocumentSnapshot 保存期間、來源依據、有限覆蓋說明、章節、精確來源 ID／版本及更新說明。加密修訂和原操作收據沿既有穩定 AAD／epoch／權限規則。來源業務資源保持權威，文件是可失效的衍生快照，不能反寫成另一份可編輯孩子事實。
+
+文件排程只保存待更新的資源識別，不保存明文家庭資料或模型思考。來源更正／刪除時隱藏受影響舊正文；歷史快照不能繞過目前權限。詳見 [API 契約](API.md#int-family-documents)。

@@ -36,13 +36,13 @@ export type GrowthConcernProjection = {state: "ready" | "loading" | "error" | "u
 // Source records remain owned by their existing domains; an archive is not a confirmed fact.
 export type GrowthArchiveSource = {
   id: string; label: string; version: number; state: "available" | "invalidated";
-  kind: "record" | "attention"; recordId?: string; attentionId?: string;
+  kind: "profile" | "record" | "fact" | "task" | "concern" | "attention"; recordId?: string; attentionId?: string;
   excerpt: string; timeLabel: string;
 };
 export type GrowthReportDomain = "profile" | "body_life" | "abilities_interests" | "concerns" | "changes_support";
 export type GrowthArchiveEntry = {
   id: string; title?: string; text: string; timeLabel?: string;
-  status: "confirmed_record" | "agent_summary" | "unverified"; sourceIds: string[];
+  status: "confirmed_record" | "agent_summary" | "source_summary" | "unverified"; sourceIds: string[];
   // Optional reading classification supplied by the report adapter, not an assessment.
   reportDomain?: GrowthReportDomain;
 };
@@ -51,13 +51,13 @@ export type GrowthArchiveSection = {
   title: string; entries: GrowthArchiveEntry[];
 };
 export type GrowthArchiveSnapshot = {
-  id: string; version: number; ageLabel: string; periodLabel: string; generatedAt: string;
+  id: string; version: number; title?: string; ageLabel: string; periodLabel: string; generatedAt: string;
   sourceBasisVersion: string; coverageNote: string;
   revisionChanges: {id: string; text: string; sourceIds: string[]}[];
   sections: GrowthArchiveSection[]; sources: GrowthArchiveSource[];
 };
 export type GrowthArchivePeriod = {
-  id: string; kind: "year" | "quarter"; year: number; quarter?: 1 | 2 | 3 | 4;
+  id: string; kind: "year" | "quarter" | "range"; year: number; quarter?: 1 | 2 | 3 | 4; from?: string; to?: string;
   label: string; snapshotId: string; snapshotVersion: number; currentAnnual: boolean;
   coverage: "partial" | "complete"; coverageLabel: string;
 };

@@ -1,0 +1,38 @@
+{
+  "package": "INT-W06",
+  "baseline": "eaf6287ad8fbb5e7f63c16d9129682f1421cc330",
+  "date": "2026-10-06",
+  "environment": { "node": "24.19.0", "postgres": "18.6", "worker": "paused before and after; scripted refresh only" },
+  "checks": {
+    "serverTypes": "passed on Node 24.19.0 after Agent transaction integration",
+    "frontendTypes": "passed on Node 24.11.0; final small draft/period guards reviewed without rerunning",
+    "catalog": "Real Runner with scripted provider passed before the final sourceQuote field addition; 21806 characters / 11 declarations at that checkpoint, zero external calls",
+    "pdf": { "renderer": "@react-pdf/renderer 4.9.0", "font": "LXGW WenKai TC 1.522", "result": "passed: one synthetic one-page PDF, Chinese text extraction and rendered image reviewed", "bytes": 45229 },
+    "localScenario": {
+      "script": "scripts/int-documents-smoke.mjs --approved-local-int-w06",
+      "result": "passed",
+      "accounts": 2,
+      "children": 1,
+      "businessCalls": 35,
+      "coverage": [
+        "real Agent claim, atomic document receipt and completed finalization",
+        "two preparations, original operation replay, checklist, archive and history",
+        "strict client parsing of actual store envelopes",
+        "shared viewer read, denied write and revocation",
+        "source change marks report stale; paused refresh does nothing; current worker resumes older pending work",
+        "source correction masks old snapshot and original receipt; refresh uses corrected data",
+        "exact export version and current authority; encrypted storage and synthetic child cleanup"
+      ],
+      "preservedFailure": "First script import stopped before any business calls: Node strip-only rejected a client Error parameter property. Replaced with explicit fields; the single business scenario then passed."
+    }
+  },
+  "backup": "external encrypted paired database/photo backup before migration 028",
+  "externalCalls": { "model": 0, "embedding": 0, "notification": 0, "fetch": 0, "browser": 0 },
+  "review": "Primary reviewed authority, atomic Agent write/version advancement, source invalidation, durable refresh generation, shared owner and PDF source/version binding",
+  "limits": [
+    "No new real Gemini or browser document interaction test",
+    "No new cron/hard-kill/restore matrix; existing worker evidence reused",
+    "PDF uses shared text snapshots, not photo/private-chat exports or clinical assessment",
+    "Public deployment remains INT-W07"
+  ]
+}

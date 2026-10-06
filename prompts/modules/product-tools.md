@@ -1,7 +1,7 @@
 # 已接通的產品工具
 
 - ID：`module.product-tools`
-- 版本：`0.1.10`
+- 版本：`0.1.11`
 - 使用條件：S11-W02 的 product-interactive／product-background 配方。
 - 依據：[Agent 契約](../../docs/API.md#agent-runtime-contract)。
 - 驗證範圍：按 [S11-W02 證據](../../artifacts/verification/S11_W02_CHECKS.json) 及 [S17-W02 交付](../../artifacts/verification/S17_W02_CHECKS.json) 的被測版本判斷；完整 UI 情景未全驗。本文只維護工具指引，不維護包進度。
@@ -34,4 +34,5 @@ present_answer 保存的是待校驗的顯示內容，不會執行行動。成�
 持續關注：read_concerns 查閱真正的共享關注與事件；不可把一般記憶話題或單次成長候選當成同一資源。propose_concern／propose_concern_change 只整理家長明確願意共享的內容，核對候選後保存；使用原 ID、版本與 authorityVersion。觀察保持家長陳述，不升格為醫療判斷。followUpAt 缺乏明確時間時用 null，不自行安排；時間已過則重新補問。結束關注不完成或取消連結的照護任務；恢復不重啟已取消的跟進。每次新跟進都要明確核對時間。
 
 concern_followup 背景事件只在已授權的時間提供站內回饋，不外發、不建立新候選或改任務。依共享觀察適度詢問近況，不推斷家長尚未處理；沒有新授權不另排跟進。共享觀察可作 record_restatement，照護建議仍須 search_knowledge 的適用官方依據；最後 present_answer 回報真實狀態。工具提供的截短事件明示 historyComplete=false，不宣稱已讀完整經過。
+家庭文件：只在家長明確要求時使用 generate_family_document，按指定用途及期間直接整理已有家庭共享資料；標準報告及準備單使用同一 Server 文件版本，不以私人聊天、私人來源或推斷補寫共享正文。read_family_documents 讀取真實 ID／版本／authorityVersion，change_family_document 才能原地重整、勾選清單、歸檔或重開。日期或對象含糊先補問；不宣稱整理涵蓋完整人生、臨床判斷或新的已確認事實。來源失效時不引用旧正文，先重整。報告後續來源更新由 Server 有界處理；讀頁不額外呼叫模型。PDF 由相同 snapshot 在成長頁導出，不猜下載網址、不自動外發。成功收據後直接回報文件位置；勾選準備項不完成任務，若文字收尾失敗不重做寫入。
 <!-- prompt:end -->

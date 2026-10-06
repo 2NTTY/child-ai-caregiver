@@ -9,6 +9,8 @@ import { transactionPool } from "./transaction-pool.ts";
 import { canonicalJson } from "./online-routing.ts";
 import { z } from "zod";
 import { createSharedInputStore } from "./shared-input-store.ts";
+import { createFamilyDocumentStore } from "./family-document-store.ts";
+import { documentRequestSchema, documentChangeSchema, type DocumentRequest, type DocumentChange } from "../src/shared/family-documents.ts";
 import { createConcernStore } from "./concern-store.ts";
 import { summarySaveSchema } from "./memory-validation.ts";
 import { createMemoryStore } from "./memory.ts";
@@ -81,6 +83,33 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     if (expired) { row.state = "unknown"; row.stop_reason = "interrupted"; }
   }
   return {
+    async writeDocument(scope: AgentScope, runId: string, opId: string, sourceQuote: string,
+      mutation: { request: DocumentRequest } | { id: string; change: DocumentChange }) {
+      z.uuid().parse(opId); z.string().trim().min(2).max(1000).parse(sourceQuote);
+      return access(scope.userId, scope.childId, true, async (client, workspaceId) => {
+        const row = await runFor(client, scope.userId, scope.childId, runId);
+        const current = await currentScope(client, workspaceId, scope.userId, scope.childId);
+        if (row.trigger_kind !== "interactive" || row.state !== "running" || row.expires_at.getTime() <= Date.now()
+          || !row.source_message_id || current.workspaceId !== scope.workspaceId
+          || current.authorizationVersion !== scope.authorizationVersion || String(row.authorization_version) !== current.authorizationVersion
+          || row.data_version !== current.dataVersion || scope.dataVersion.split(":")[0] !== current.dataVersion.split(":")[0])
+          throw new FamilyError(409, "agent_scope_changed");
+        const original = (await client.query<{ text_encrypted: string }>(
+          "SELECT text_encrypted FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user' FOR SHARE",
+          [row.source_message_id, scope.childId, scope.userId])).rows[0];
+        if (!original || !cipher.decrypt(original.text_encrypted, `chat_messages:${row.source_message_id}:${scope.childId}:${scope.userId}:user::text`).includes(sourceQuote))
+          throw new FamilyError(409, "agent_source_mismatch");
+        const borrowed = transactionPool(client), documents = createFamilyDocumentStore(borrowed.pool, cipher);
+        const item = "request" in mutation
+          ? await documents.create(scope.userId, scope.childId, documentRequestSchema.parse(mutation.request), opId)
+          : await documents.change(scope.userId, scope.childId, z.uuid().parse(mutation.id), documentChangeSchema.parse(mutation.change), opId);
+        borrowed.assertReleased();
+        if (!item) throw missing();
+        const after = await currentScope(client, workspaceId, scope.userId, scope.childId);
+        await client.query("UPDATE agent_runs SET data_version=$2 WHERE id=$1", [runId, after.dataVersion]);
+        return item;
+      });
+    },
     async claim(userId: string, childId: string, trigger: { kind: "interactive" | "worker"; reference: string }, recipeId: string): Promise<AgentRunClaim | null> {
       return access(userId, childId, true, async (client, workspaceId) => {
         // A trusted worker caller must first validate its current event, generation and terminal state.
@@ -149,7 +178,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         if (row.state !== "running" || row.authorization_version.toString() !== current.authorizationVersion
           || row.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) return false;
         if(row.data_version !== current.dataVersion){
-          const contact=value.tools.filter(tool=>(tool.name==="contact_caregiver" || tool.name==="execute_ordinary_instruction" || Object.values(agentActionToolNames).includes(tool.name)) && tool.status==="succeeded" && tool.reference);
+          const contact=value.tools.filter(tool=>(["generate_family_document","change_family_document"].includes(tool.name) || tool.name==="contact_caregiver" || tool.name==="execute_ordinary_instruction" || Object.values(agentActionToolNames).includes(tool.name)) && tool.status==="succeeded" && tool.reference);
           if(!contact.length)return false;
           value={...value,status:"stopped",stopReason:"unauthorized",text:"已有操作寫入台帳；資料隨後有變，請查看原操作收據及目前狀態，勿另建重複操作。入列不代表送達或完成。",citations:[],privateSourceCitations:[],retrievalMode:"not_used",proposals:[],tools:contact};
           summary=undefined;

@@ -27,7 +27,7 @@ const stateCopy: Record<GrowthArchiveProjection["state"], {title: string; detail
   invalidated: {title: "這份報告暫時無法閱讀", detail: "來源或閱讀權限已改變，需要重新核對。"},
 };
 const entryLabels: Record<GrowthArchiveEntry["status"], string> = {
-  confirmed_record: "家長已確認的記錄", agent_summary: "Agent 整理", unverified: "尚待核對",
+  confirmed_record: "家長已確認的記錄", agent_summary: "Agent 整理", source_summary: "共享來源整理", unverified: "尚待核對",
 };
 
 function SourceDisclosure({sources, onRecord}: {sources: GrowthArchiveSource[]; onRecord?: (source: GrowthArchiveSource) => void}) {
@@ -39,9 +39,10 @@ function SourceDisclosure({sources, onRecord}: {sources: GrowthArchiveSource[]; 
   </View>)}</View>;
 }
 
-export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport, footerActions, footerDetails}: {
+export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport, exportBusy, footerActions, footerDetails}: {
   model: GrowthViewModel; wide: boolean; scrollRef: RefObject<ScrollView | null>; onRecord?: (id?: string) => void;
   onExportReport?: (request: GrowthReportExportRequest) => void;
+  exportBusy?: boolean;
   footerActions?: ReactNode; footerDetails?: ReactNode;
 }) {
   const {authorized, state, items, current} = archiveReadingView(model);
@@ -125,14 +126,16 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     if (request) onExportReport(request);
   }
   const visibleItems = filterArchiveItems(items, filter);
+  const rangePeriods = items.some(item => item.period?.kind === "range");
   const periods = items.length > 0 && (items.length > 1 || selectedKey !== null && !selected) ? <View style={s.stack}>
-    <View style={s.row}><AppButton label={historyOpen ? "收起其他期間" : "翻閱年度／季度"} expanded={historyOpen} variant="quiet" onPress={() => setHistoryOpen(value => !value)} />
+    <View style={s.row}><AppButton label={historyOpen ? "收起其他期間" : rangePeriods ? "翻閱其他期間／版本" : "翻閱年度／季度"} expanded={historyOpen} variant="quiet" onPress={() => setHistoryOpen(value => !value)} />
       {current && selectedKey !== null && selectedKey !== current.key ? <AppButton label="回到目前報告" variant="secondary" onPress={() => selectArchive(current)} /> : null}
     </View>
     {historyOpen && !contextChanged ? <View style={a.history} testID="growth-archive-library">
-      <Text style={s.meta}>已取得的年度與季度</Text>
+      <Text style={s.meta}>{rangePeriods ? "已取得的期間與版本" : "已取得的年度與季度"}</Text>
       <View style={a.filters} accessibilityLabel="檔案期間類別">
-        {([{key: "all", label: "全部"}, {key: "year", label: "年度"}, {key: "quarter", label: "季度"}] as const).map(option =>
+        {(rangePeriods ? [{key: "all", label: "全部"}, {key: "range", label: "日期範圍"}] as const
+          : [{key: "all", label: "全部"}, {key: "year", label: "年度"}, {key: "quarter", label: "季度"}] as const).map(option =>
           <Pressable key={option.key} accessibilityRole="button" accessibilityLabel={`顯示${option.label}成長檔案`} accessibilityState={{selected: filter === option.key}}
             aria-pressed={filter === option.key} onPress={() => setFilter(option.key)} style={[a.filterButton, filter === option.key && a.filterSelected]}>
             <Text style={[a.filterText, filter === option.key && a.filterTextSelected]}>{option.label}</Text>
@@ -147,7 +150,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
           <AppIcon name="chevron-right" size={18} />
         </Pressable>)}
       </View>
-      {!visibleItems.length ? <Text style={s.body}>暫時沒有已取得的{filter === "year" ? "年度" : "季度"}檔案。</Text> : null}
+      {!visibleItems.length ? <Text style={s.body}>暫時沒有已取得的{filter === "year" ? "年度" : filter === "quarter" ? "季度" : "日期範圍"}檔案。</Text> : null}
     </View> : null}
   </View> : null;
   const footer = <View style={a.footer} testID="growth-archive-footer">
@@ -167,16 +170,16 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   </View>;
   if (!archive) return <View style={s.stack}>{periods}<View style={s.archiveEmpty} testID="growth-archive-unavailable">
     <Text accessibilityRole="header" style={s.concernTitle}>{state === "ready" ? "暫時沒有可閱讀的成長報告" : stateCopy[state].title}</Text>
-    <Text style={s.body}>{state === "ready" ? "可翻閱其他已取得的年度與季度。" : stateCopy[state].detail}</Text>
+    <Text style={s.body}>{state === "ready" ? rangePeriods ? "可翻閱其他已取得的期間與版本。" : "可翻閱其他已取得的年度與季度。" : stateCopy[state].detail}</Text>
   </View>{footerActions || footerDetails ? footer : null}</View>;
   const sections = standardGrowthReportSections(model, archive);
-  const canExport = !!onExportReport && !!exportItem && !!growthReportExportRequest(model, exportItem, purpose, includeSources, includeRevision);
+  const canExport = !exportBusy && model.online && !!onExportReport && !!exportItem && !!growthReportExportRequest(model, exportItem, purpose, includeSources, includeRevision);
   return <View style={s.stack} testID="growth-living-archive">
     <View ref={reportRef} tabIndex={-1} style={a.reportHeader} testID="growth-current-report">
       <View style={a.headerRow}>
         <View style={a.headerCopy}>
-          <Text style={a.kicker}>{selected?.key === current?.key ? "標準成長報告" : selected?.period?.label ?? "成長報告"}</Text>
-          <Text accessibilityRole="header" style={a.reportTitle}>{model.childName}的成長報告</Text>
+          <Text style={a.kicker}>{selected?.period?.kind === "range" ? "成長報告" : selected?.key === current?.key ? "標準成長報告" : selected?.period?.label ?? "成長報告"}</Text>
+          <Text accessibilityRole="header" style={a.reportTitle}>{archive.title ?? `${model.childName}的成長報告`}</Text>
         </View>
         <AppButton label="導出報告" variant="accent" onPress={() => {setExportKey(selected?.key ?? null); setExportOpen(true);}} />
       </View>
@@ -246,7 +249,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
         </View> : null}
       </AppScrollView></AppDialog.ScrollArea>
       <AppDialog.Actions><AppButton label="關閉" variant="secondary" onPress={() => setExportOpen(false)} />
-        <AppButton label={onExportReport ? "準備 PDF 報告" : "PDF 下載暫不可用"} disabled={!canExport} onPress={requestExport} />
+        <AppButton label={exportBusy ? "正在準備 PDF…" : onExportReport ? "下載這個版本的 PDF" : "PDF 下載暫不可用"} disabled={!canExport} onPress={requestExport} />
       </AppDialog.Actions>
     </AppDialog>
   </View>;

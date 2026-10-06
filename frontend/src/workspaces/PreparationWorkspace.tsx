@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { PreparationCondition, PreparationDocumentView, PreparationScope } from "../preparation-view-model";
 import type { HomeChild, WriteOperationView, WriteRecoveryActions } from "../view-model";
+import type { DocumentRequest } from "../../../src/shared/family-documents";
 
 // Presentation injection only. The external domain controller owns reads, writes and authorization.
 export interface PreparationWorkspaceValue {
@@ -17,13 +18,18 @@ export interface PreparationWorkspaceValue {
     dataLabel?: string;
     archiveNotice?: string;
     operation?: WriteOperationView;
-    capabilities?: { archive: boolean; checkItem: boolean };
+    capabilities?: { archive: boolean; checkItem: boolean; restore?: boolean; refresh?: boolean; create?: boolean };
+    busy?: boolean; locked?: boolean; dirty?: boolean; epoch?: number; authorityVersion?: string;
   };
   actions: {
     selectDocument(id: string): void;
     closeDocument(): void;
     archiveDocument(id: string, expectedVersion: number): void;
     checkItem(id: string, expectedVersion: number, sectionId: string, itemId: string, checked: boolean): void;
+    restoreDocument?(id: string, expectedVersion: number): void;
+    refreshDocument?(id: string, expectedVersion: number): void;
+    createDocument?(request: DocumentRequest): void;
+    refresh?(): void; markDraft?(): void; discardDraft?(): void;
   };
   recovery?: WriteRecoveryActions;
 }

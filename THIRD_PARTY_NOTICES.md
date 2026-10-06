@@ -84,3 +84,8 @@ S10-W02 registers CHP and RTHK RSS only for internal non-commercial review. Thei
 ## P2 browser acceptance tooling
 
 S16-W05 pins development-only @playwright/test, playwright and playwright-core to 1.63.0 (Apache-2.0, Node >=20). The common unmodified [license](licenses/playwright/LICENSE), [notice](licenses/playwright/NOTICE) and [core third-party notices](licenses/playwright/ThirdPartyNotices.txt), together with the distinct [runner notices](licenses/playwright-runner/ThirdPartyNotices.txt), are retained; license SHA-256: 45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb. Browser executables were downloaded only to the local Playwright cache and are not redistributed in this repository. The bounded Chromium scenario passed; Firefox remains unverified and is deferred by the user.
+
+
+## Family document PDF
+
+Server PDF rendering uses unmodified @react-pdf/renderer 4.9.0 (MIT), by Diego Muracciole and contributors. The original license is retained in [licenses/react-pdf/LICENSE](licenses/react-pdf/LICENSE); transitive packages retain their own licenses in the installed distribution. The bundled LXGW WenKai TC v1.522 Regular font is unmodified and licensed under SIL OFL 1.1; [original font license](server/assets/fonts/OFL.txt) and [source/hash](server/assets/fonts/README.md) are retained. The font license does not apply to documents produced with it.

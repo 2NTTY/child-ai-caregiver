@@ -4,6 +4,8 @@ import { createGrowthStore } from "./growth-store.ts";
 import { createGrowthWorker } from "./growth-worker.ts";
 import { createConcernStore } from "./concern-store.ts";
 import { createConcernWorker } from "./concern-worker.ts";
+import { createFamilyDocumentStore } from "./family-document-store.ts";
+import { createFamilyDocumentWorker } from "./family-document-worker.ts";
 import { createPool } from "./database.ts";
 import { readServerConfig } from "./config.ts";
 import { createStorageCipher, readSecretKey } from "./storage-crypto.ts";
@@ -35,6 +37,7 @@ let queue: ReturnType<typeof createWorkerQueue> | undefined;
 let knowledgeWorker: ReturnType<typeof createKnowledgeRefreshWorker> | undefined;
 let growthWorker: ReturnType<typeof createGrowthWorker> | undefined;
 let concernWorker: ReturnType<typeof createConcernWorker> | undefined;
+let documentWorker: ReturnType<typeof createFamilyDocumentWorker> | undefined;
 let agentBackground: ReturnType<typeof createAgentBackground> | undefined;
 let pushQueue: ReturnType<typeof createWebPushQueue> | undefined;
 let stopping: Promise<void> | undefined;
@@ -42,12 +45,14 @@ const stop = () => stopping ??= (async () => {
   telegramAbort.abort();
   const deadline = setTimeout(() => { console.error("worker_stop_deadline"); process.exit(1); }, 20000).unref();
   agentBackground?.stop();
+  try { await documentWorker?.stop(); } finally {
   try { await concernWorker?.stop(); } finally {
     try { await growthWorker?.stop(); } finally {
       try { await knowledgeWorker?.stop(); } finally {
         try { await pushQueue?.stop(); } finally { try { await telegramConsumer?.stop(); } finally { try { await contactConsumer?.stop(); } finally { try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } } } } }
       }
     }
+  }
   }
 })();
 try {
@@ -61,6 +66,9 @@ try {
   if (!ready) throw new Error("worker_migration_required");
   queue = createWorkerQueue(pool, "worker");
   await queue.start();
+  if ((await pool.query("SELECT 1 FROM app_migrations WHERE id='028-family-documents'")).rowCount) {
+    documentWorker=createFamilyDocumentWorker(pool,queue.boss,createFamilyDocumentStore(pool,cipher)); await documentWorker.start();
+  }
   if (process.env.P2_AGENT_ENABLED === "true") {
     if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='016-product-agent'")).rowCount) throw new Error("agent_migration_required");
     const growth=(await pool.query("SELECT 1 FROM app_migrations WHERE id='017-growth-attention'")).rowCount ? createGrowthStore(pool,cipher) : undefined;

@@ -20,6 +20,7 @@ import { handleChatRequest } from "./chat-api.ts";
 import { handleChatReply } from "./chat-reply.ts";
 import { handleGrowthRequest } from "./growth-api.ts";
 import { handleConcernRequest } from "./concern-api.ts";
+import { handleFamilyDocumentRequest } from "./family-document-api.ts";
 import { handleProductAgentRequest } from "./product-agent-api.ts";
 import { handleAgentActionsRequest } from "./agent-actions-api.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
@@ -98,6 +99,7 @@ export function createRequestHandler(options: {
   contact?:import("./contact-store.ts").ContactStore;
   growth?: import("./growth-store.ts").GrowthStore;
   concerns?: import("./concern-store.ts").ConcernStore;
+  documents?: import("./family-document-store.ts").FamilyDocumentStore;
   productAgent?: import("./product-agent.ts").ProductAgent;
   productAgentStore?: import("./product-agent-store.ts").ProductAgentStore;
   agentActions?: import("./agent-actions-store.ts").AgentActionsStore;
@@ -224,6 +226,8 @@ export function createRequestHandler(options: {
           ? await handleContactRequest(webRequest,userId,options.contact)
           : (url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
           ? await handleTelegramRequest(webRequest,userId,options.telegram.store)
+          : /^\/api\/children\/[^/]+\/documents(\/|$)/u.test(url.pathname) && options.documents
+          ? await handleFamilyDocumentRequest(webRequest,userId,options.documents,async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)
           : /^\/api\/children\/[^/]+\/concerns(\/|$)/u.test(url.pathname) && options.concerns
           ? await handleConcernRequest(webRequest,userId,options.concerns,async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)
           : /^\/api\/children\/[^/]+\/growth(\/|$)/u.test(url.pathname) && options.growth

@@ -14,6 +14,7 @@ import type { ProductAgentStore } from "./product-agent-store.ts";
 import { FamilyError } from "./family-access.ts";
 import { createAgentActionTools } from "./agent-action-tools.ts";
 import { createAgentSourceTools } from "./agent-source-tools.ts";
+import { createAgentDocumentTools } from "./agent-document-tools.ts";
 import { createAgentConcernTools } from "./agent-concern-tools.ts";
 
 type Retriever = ReturnType<typeof createKnowledgeRetriever>;
@@ -55,6 +56,8 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  includeDocuments?: boolean;
+  documents?: import("./family-document-store.ts").FamilyDocumentStore;
   includeConcerns?: boolean; includePrivateSources?: boolean; ordinaryToolNames?: readonly string[];
   includeTaskProposals?: boolean; includeContact?: boolean;
   concerns?: import("./concern-store.ts").ConcernStore;
@@ -180,6 +183,7 @@ export function createProductAgentTools(options: {
   if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
+  if(options.documents && options.includeDocuments && options.visibility!=="family") tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,store,run,permitted));
   if(options.concerns&&options.includeConcerns!==false)tools.splice(tools.length-1,0,...createAgentConcernTools(options.concerns,store,run,permitted,options.visibility==="family"));
   if(options.summary)tools.splice(tools.length-1,0,{
     name:"read_care_summary",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",

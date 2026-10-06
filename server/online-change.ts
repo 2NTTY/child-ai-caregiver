@@ -9,5 +9,12 @@ export async function appendOnlineChange(client: PoolClient, workspaceId: string
     "UPDATE workspaces SET change_seq=change_seq+1 WHERE id=$1 RETURNING change_seq::text", [workspaceId])).rows[0].change_seq;
   await client.query("INSERT INTO online_changes(workspace_id,change_seq,kind,child_id,private_user_id,owner_only,deleted) VALUES($1,$2,$3,$4,$5,$6,$7)",
     [workspaceId, seq, kind, childId, privateUserId, ownerOnly, deleted]);
+  if (!privateUserId && !ownerOnly && childId && ["care", "profile", "memory", "tasks", "growth", "children"].includes(kind)
+    && (await client.query("SELECT 1 FROM app_migrations WHERE id='028-family-documents'")).rowCount) {
+    // Coalesce shared source changes durably, even while workers are paused. Documents never trigger themselves.
+    await client.query(`UPDATE family_documents d SET dirty=true,dirty_epoch=w.storage_epoch,dirty_generation=c.generation
+      FROM workspaces w,worker_control c WHERE d.child_id=$1 AND d.status='active' AND d.auto_refresh
+      AND w.id=$2 AND c.id=1`, [childId, workspaceId]);
+  }
   return seq;
 }

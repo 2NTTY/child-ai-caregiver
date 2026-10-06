@@ -2,7 +2,7 @@ import type { GrowthArchiveEntry, GrowthArchivePeriod, GrowthArchiveProjection, 
 
 // Reading-only references into the authorized projection, never a second archive store.
 export type ArchiveReadingItem = { key: string; period: GrowthArchivePeriod | null; snapshot: GrowthArchiveSnapshot };
-export type ArchiveFilter = "all" | "year" | "quarter";
+export type ArchiveFilter = "all" | "year" | "quarter" | "range";
 
 export function archiveReadingView(model: GrowthViewModel) {
   const provided = model.page?.archive;

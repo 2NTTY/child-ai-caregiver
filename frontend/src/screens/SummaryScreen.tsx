@@ -17,7 +17,7 @@ export type SummaryTab = "overview" | "preparation";
 export type SummaryRouteTab = SummaryTab | "legacy-preparation";
 export function normalizeSummaryTab(value: string | string[] | undefined): SummaryRouteTab {
   const candidate = Array.isArray(value) ? value[0] : value;
-  return candidate === "preparation" || candidate === "legacy-preparation" ? "preparation" : "overview";
+  return candidate === "legacy-preparation" ? "legacy-preparation" : candidate === "preparation" ? "preparation" : "overview";
 }
 
 export function SummaryScreen() {
@@ -58,7 +58,7 @@ export function SummaryScreen() {
     });
   }
   if (pathname !== "/summary") return null;
-  return <PageFrame density="compact" title="孩子概況與準備" description="查看孩子目前的資料、已確認照顧摘要及家庭共享到診準備。"
+  return <PageFrame density="compact" title="孩子概況與準備" description="查看孩子目前的資料、已確認照顧摘要及家庭共享準備文件。"
     scrollRef={scrollRef} scrollTestID="child-preparation-scroll" onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View key={scopeKey} style={styles.workspace}>
       <UnderlineTabs<SummaryTab> id="child-preparation-tabs" label="孩子概況與準備" items={[{ key: "overview", label: "孩子概況" }, { key: "preparation", label: "準備單" }]} value={tab === "legacy-preparation" ? "overview" : tab} onChange={changeTab} />
@@ -71,10 +71,11 @@ export function SummaryScreen() {
           </> : null}
         </AppTabPanel>
         <AppTabPanel tabsId="child-preparation-tabs" tabKey="preparation" active={tab === "preparation"}>
-          {tab === "preparation" ? <><TaskKnowledgeSummaryContent preparation onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={() => guarded(() => router.push("/tasks"))} onAgent={() => actions.prepareQuestion("想核對這份到診準備的問題與來源：")} />
-            <PreparationWorkspace onPrepareQuestion={actions.prepareQuestion} onHistory={() => guarded(() => router.push({ pathname: "/history", params: { category: "preparations" } }))}
-            scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} /></> : null}
+          {tab === "preparation" ? <PreparationWorkspace onPrepareQuestion={actions.prepareQuestion} onHistory={() => guarded(() => router.push({ pathname: "/history", params: { category: "preparations" } }))}
+            scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} /> : null}
         </AppTabPanel>
+        {tab === "legacy-preparation" ? <TaskKnowledgeSummaryContent preparation onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))}
+          onTask={() => guarded(() => router.push("/tasks"))} onAgent={() => actions.prepareQuestion("想核對這份到診準備的問題與來源：")} /> : null}
       </>}
     </View>
   </PageFrame>;
