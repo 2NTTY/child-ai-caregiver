@@ -44,6 +44,7 @@ const policySchema = z.object({
   version, effective: z.boolean(), recordKinds: z.array(z.enum(ordinaryRecordKinds)).max(4)
     .refine(values => new Set(values).size === values.length),
   allowPrivateNotes: z.boolean(), allowSelfTasks: z.boolean(), reminderConsentVersion: version.nullable(), reminderBindings: bindings,
+  allowRecordCorrections: z.boolean().default(false),
 }).strict();
 const policyResponse = z.object({ policy: policySchema }).strict();
 const noteSchema = z.object({
@@ -54,7 +55,7 @@ const notesResponse = z.object({ notes: z.object({ items: z.array(noteSchema).ma
 const deleteInput = z.object({ expectedVersion: z.number().int().positive().max(2147483646), operationId: uuid, confirmDelete: z.literal(true) }).strict();
 const deleteResponse = z.object({ deleted: z.boolean() }).strict();
 const receiptSchema = z.object({
-  id: uuid, runId: uuid, kind: z.enum(["save_record", "save_private_note", "revise_private_note", "create_self_task", "change_self_task"]),
+  id: uuid, runId: uuid, kind: z.enum(["save_record", "revise_record", "save_private_note", "revise_private_note", "create_self_task", "change_self_task"]),
   resource: z.object({ kind: z.enum(["care_record", "private_note", "task"]), id: uuid, version: positiveVersion }).strict(),
   state: z.enum(["saved", "updated", "scheduled", "completed", "cancelled"]),
   notification: z.enum(["not_authorized", "authorized_for_due_event"]),

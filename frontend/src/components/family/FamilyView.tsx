@@ -26,10 +26,10 @@ function ScopeCheck({ checked, disabled, onChange }: { checked: boolean; disable
   return <AppCheckbox label="我已核對目標及共享範圍" checked={checked} disabled={disabled} onChange={onChange} />;
 }
 
-function InviteComposer({ model, actions }: { model: FamilyViewModel; actions: FamilyActions }) {
+function InviteComposer({ model, actions, production }: { model: FamilyViewModel; actions: FamilyActions; production: boolean }) {
   const formId = useId();
   const form = useForm<FamilyInviteValues>({ resolver: zodResolver(invitationSchema), defaultValues: { email: "", role: "caregiver" } });
-  usePreviewLeaveGuard(form.formState.isDirty);
+  usePreviewLeaveGuard(form.formState.isDirty, false, production ? "account" : "child");
   const disabled = !model.online || model.locked || !!model.draft && model.draft.kind !== "invite";
   return <View style={styles.form}>
     <FormErrorSummary entries={form.formState.errors.email?.message ? [{ field: "email", label: "受邀人的電郵", message: form.formState.errors.email.message }] : []} onFocus={() => form.setFocus("email")} />
@@ -46,15 +46,15 @@ function InviteComposer({ model, actions }: { model: FamilyViewModel; actions: F
   </View>;
 }
 
-function IncomingComposer({ model, actions }: { model: FamilyViewModel; actions: FamilyActions }) {
+function IncomingComposer({ model, actions, production }: { model: FamilyViewModel; actions: FamilyActions; production: boolean }) {
   const formId = useId();
   const form = useForm<{ code: string }>({ defaultValues: { code: "" } });
-  usePreviewLeaveGuard(form.formState.isDirty);
+  usePreviewLeaveGuard(form.formState.isDirty, false, production ? "account" : "child");
   return <View style={styles.form}>
-    <FormErrorSummary entries={form.formState.errors.code?.message ? [{ field: "code", label: "合成示例碼", message: form.formState.errors.code.message }] : []} onFocus={() => form.setFocus("code")} />
-    <Text style={styles.body}>這裏只接受頁尾情境工具提供的無效示例碼，不會驗證真實邀請。</Text>
-    <Controller control={form.control} name="code" rules={{ required: "請填寫合成示例碼。" }} render={({ field, fieldState }) => <>
-      <AppTextField ref={field.ref} nativeID={`${formId}-code`} aria-invalid={!!fieldState.error} aria-describedby={fieldState.error ? `${formId}-code-error` : undefined} label="合成示例碼" accessibilityLabel="收到的合成邀請碼" value={field.value} autoCapitalize="none"
+    <FormErrorSummary entries={form.formState.errors.code?.message ? [{ field: "code", label: production ? "收到的邀請碼" : "合成示例碼", message: form.formState.errors.code.message }] : []} onFocus={() => form.setFocus("code")} />
+    <Text style={styles.body}>{production ? "請輸入擁有者交給本人的邀請碼；先核對家庭及角色，再明確接受。" : "這裏只接受頁尾情境工具提供的無效示例碼，不會驗證真實邀請。"}</Text>
+    <Controller control={form.control} name="code" rules={{ required: production ? "請填寫收到的邀請碼。" : "請填寫合成示例碼。" }} render={({ field, fieldState }) => <>
+      <AppTextField ref={field.ref} nativeID={`${formId}-code`} aria-invalid={!!fieldState.error} aria-describedby={fieldState.error ? `${formId}-code-error` : undefined} label={production ? "收到的邀請碼" : "合成示例碼"} accessibilityLabel={production ? "收到的邀請碼" : "收到的合成邀請碼"} value={field.value} autoCapitalize="none"
         editable={model.canStartAction} onBlur={field.onBlur} error={!!fieldState.error}
         onChangeText={value => { field.onChange(value); actions.editIncoming(); }} />
       {fieldState.error ? <FormFieldMessage id={`${formId}-code-error`} error={fieldState.error.message} /> : null}
@@ -64,16 +64,16 @@ function IncomingComposer({ model, actions }: { model: FamilyViewModel; actions:
     {model.incoming ? <View style={styles.review}>
       <Text style={styles.reviewTitle}>{model.incoming.ownerName}的家庭</Text>
       <Text style={styles.body}>加入後角色：{familyRoleLabels[model.incoming.role]}</Text>
-      <Text style={styles.meta}>合成到期時間：{expiryLabel(model.incoming.expiresAt)}（香港時間）</Text>
+      <Text style={styles.meta}>{production ? "到期時間" : "合成到期時間"}：{expiryLabel(model.incoming.expiresAt)}（香港時間）</Text>
       <Text style={styles.body}>{familyScopeText}</Text>
       <Text style={styles.meta}>預覽邀請不會披露孩子或照顧記錄正文；正式接受須登入指定收件人的帳號及持有有效碼。</Text>
-      <AppButton label="核對加入範圍" onPress={actions.stageAccept} disabled={!model.canStartAction} />
+      <AppButton label="核對加入範圍" onPress={actions.stageAccept} disabled={!model.canStartAction || production && (model.incoming.status !== "pending" || Date.parse(model.incoming.expiresAt) <= Date.now())} />
     </View> : null}
   </View>;
 }
 
-function MemberRow({ member, self, canManage, disabled, actions, scopeKey, feedbackEligible }: {
-  member: NonNullable<FamilyViewModel["family"]>["members"][number]; self: boolean; canManage: boolean; disabled: boolean; actions: FamilyActions; scopeKey: string; feedbackEligible: boolean;
+function MemberRow({ member, self, canManage, disabled, actions, scopeKey, feedbackEligible, production }: {
+  member: NonNullable<FamilyViewModel["family"]>["members"][number]; self: boolean; canManage: boolean; disabled: boolean; actions: FamilyActions; scopeKey: string; feedbackEligible: boolean; production: boolean;
 }) {
   const [managing, setManaging] = useState(false);
   const [nextRole, setNextRole] = useState<MemberRole | "revoked">(member.role === "owner" ? "caregiver" : member.role);
@@ -85,40 +85,40 @@ function MemberRow({ member, self, canManage, disabled, actions, scopeKey, feedb
         <MotionFeedback active={feedbackEligible} triggerKey={member.role} scopeKey={`${scopeKey}:${member.userId}`}><AppStatusBadge label={familyRoleLabels[member.role]} tone="info" /><Text style={styles.meta}>{member.role === "owner" ? "管理成員及孩子" : member.role === "caregiver" ? "可管理共享記錄及任務" : "共享資料唯讀"}</Text></MotionFeedback></View>
     </View>
     {canManage && member.role !== "owner" && !self ? <View style={styles.memberControls}>
-      <AppButton expanded={managing} label={managing ? `收起${member.name.replace("（合成）", "")}權限選項` : `管理${member.name.replace("（合成）", "")}權限`} density="compact" variant="quiet" onPress={() => setManaging(value => !value)} disabled={disabled} />
+      <AppButton expanded={managing} label={managing ? `收起${(production ? member.name : member.name.replace("（合成）", ""))}權限選項` : `管理${(production ? member.name : member.name.replace("（合成）", ""))}權限`} density="compact" variant="quiet" onPress={() => setManaging(value => !value)} disabled={disabled} />
       <MotionDisclosure expanded={managing} scopeKey={`${scopeKey}:${member.userId}`}><View style={styles.form}>
       <AppSelect label="新角色" value={nextRole} options={[...familyRoleOptions, { value: "revoked", label: "撤銷權限" }]} onChange={setNextRole} disabled={disabled} />
-      <AppButton label={`更改${member.name.replace("（合成）", "")}權限`} variant="secondary" onPress={() => actions.stageMember(member.userId, nextRole)} disabled={disabled || nextRole === member.role} />
+      <AppButton label={`更改${(production ? member.name : member.name.replace("（合成）", ""))}權限`} variant="secondary" onPress={() => actions.stageMember(member.userId, nextRole)} disabled={disabled || nextRole === member.role} />
       </View></MotionDisclosure>
     </View> : member.role === "owner" ? <Text style={styles.meta}>擁有者不能在此更改角色或撤權。</Text> : null}
   </View>;
 }
 
-function DraftDescription({ draft }: { draft: FamilyDraft }) {
+function DraftDescription({ draft, production }: { draft: FamilyDraft; production: boolean }) {
   if (draft.kind === "accept") return <>
     <Text style={styles.body}>擬加入：{draft.invitation.ownerName}的家庭</Text>
-    <Text style={styles.body}>角色：{familyRoleLabels[draft.invitation.role]}；合成到期時間：{expiryLabel(draft.invitation.expiresAt)}</Text>
+    <Text style={styles.body}>角色：{familyRoleLabels[draft.invitation.role]}；{production ? "到期時間" : "合成到期時間"}：{expiryLabel(draft.invitation.expiresAt)}</Text>
   </>;
   return <>
     <Text style={styles.meta}>目標：{draft.basis.ownerName}的家庭 · 確認基準版本 {draft.basis.version}</Text>
-    {draft.kind === "invite" ? <Text selectable style={styles.body}>擬邀請 {draft.values.email} 成為{familyRoleLabels[draft.values.role]}。建立示例不代表已寄出電郵。</Text>
+    {draft.kind === "invite" ? <Text selectable style={styles.body}>擬邀請 {draft.values.email} 成為{familyRoleLabels[draft.values.role]}。{production ? "建立邀請不會自動寄出電郵。" : "建立示例不代表已寄出電郵。"}</Text>
       : draft.kind === "member" ? <><Text style={styles.body}>{draft.name}：{familyRoleLabels[draft.previousRole]} → {familyRoleLabels[draft.role]}</Text>
         {draft.role === "revoked" ? <Text style={styles.body}>此人將失去這個家庭現在及日後孩子、共享記錄及任務的存取權；正式介面須清除不再可見的內容。</Text> : null}</>
       : <Text style={styles.body}>撤銷發給 {draft.email} 的待接受邀請；此邀請將不能再用來加入家庭。</Text>}
   </>;
 }
 
-function DraftReview({ model, actions }: { model: FamilyViewModel; actions: FamilyActions }) {
+function DraftReview({ model, actions, production }: { model: FamilyViewModel; actions: FamilyActions; production: boolean }) {
   const draft = model.draft;
   if (!draft) return null;
   const needsReview = model.operation.state === "failed" || model.operation.state === "none";
   return <SectionCard style={styles.reviewCard}>
-    <SectionHeader density="compact" title={draft.kind === "accept" ? "再次確認接受邀請" : "確認家庭操作"} subtitle="此操作只影響本次合成預覽。" />
-    <DraftDescription draft={draft} />
+    <SectionHeader density="compact" title={draft.kind === "accept" ? "再次確認接受邀請" : "確認家庭操作"} subtitle={production ? "操作會更新所列家庭的成員或加入範圍。" : "此操作只影響本次合成預覽。"} />
+    <DraftDescription draft={draft} production={production} />
     <Text style={styles.body}>{familyScopeText}</Text>
     {model.latest && draft.kind !== "accept" ? <View style={styles.comparison}>
       <Text style={styles.reviewTitle}>原版本 {draft.basis.version} · 最新版本 {model.latest.version}</Text>
-      <Text style={styles.body}>另一個合成視窗已更新成員；此草稿仍保留。請比較角色後明確採用最新基準。</Text>
+      <Text style={styles.body}>{production ? "目前家庭已有更新；此草稿仍保留。請比較角色後明確採用最新基準。" : "另一個合成視窗已更新成員；此草稿仍保留。請比較角色後明確採用最新基準。"}</Text>
       {model.latest.members.map(member => {
         const previous = draft.basis.members.find(item => item.userId === member.userId);
         return <Text key={member.userId} style={styles.meta}>{member.name}：{previous ? familyRoleLabels[previous.role] : "原清單沒有"} → {familyRoleLabels[member.role]}</Text>;
@@ -135,9 +135,9 @@ function DraftReview({ model, actions }: { model: FamilyViewModel; actions: Fami
   </SectionCard>;
 }
 
-export function FamilyView({ model, actions, writeNotice, previewControls, onTasks, onContact }: {
+export function FamilyView({ model, actions, writeNotice, previewControls, onTasks, onContact, production = false }: {
   model: FamilyViewModel; actions: FamilyActions; writeNotice: ReactNode; previewControls: ReactNode;
-  onTasks?: () => void; onContact?: () => void;
+  onTasks?: () => void; onContact?: () => void; production?: boolean;
 }) {
   const containerLayout = useContainerWidth();
   const stacked = containerLayout.width < 760;
@@ -149,26 +149,26 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
     <StatusAnnouncement eventKey={model.loadState} message={model.loadState === "lost" ? "家庭權限已失效；原有家庭、成員、邀請碼及草稿已清除。" : model.loadState === "loading" ? "正在讀取家庭資料。" : ""} urgent={model.loadState === "lost"} />
     <StatusAnnouncement eventKey={model.notice ?? ""} message={model.notice ?? ""} />
 
-    {model.loadState === "lost" ? <SectionCard><Text style={styles.body}>家庭權限已模擬失效；原有家庭、成員、邀請碼及草稿已清除。</Text></SectionCard>
-      : model.loadState === "loading" ? <SectionCard><Text style={styles.body}>正在模擬讀取家庭；不會沿用上一個情境的資料。</Text></SectionCard> : <>
-        {!model.online ? <Text style={styles.warningText}>目前離線；只展示已載入的合成資料，不能提交或查核。</Text> : null}
+    {model.loadState === "lost" ? <SectionCard><Text style={styles.body}>{production ? "家庭權限已失效；原有家庭、成員、邀請碼及草稿已清除。" : "家庭權限已模擬失效；原有家庭、成員、邀請碼及草稿已清除。"}</Text></SectionCard>
+      : model.loadState === "loading" ? <SectionCard><Text style={styles.body}>{production ? "正在讀取目前家庭資料。" : "正在模擬讀取家庭；不會沿用上一個情境的資料。"}</Text></SectionCard> : <>
+        {!model.online ? <Text style={styles.warningText}>{production ? "目前離線；只展示最後讀取資料，不能提交或查核。" : "目前離線；只展示已載入的合成資料，不能提交或查核。"}</Text> : null}
         {model.notice ? <Text style={styles.body}>{model.notice}</Text> : null}
         {writeNotice}
-        <DraftReview model={model} actions={actions} />
+        <DraftReview model={model} actions={actions} production={production} />
         <View style={styles.familyHeading}>
           <View style={styles.flexCopy}><Text accessibilityRole="header" style={styles.familyTitle}>{model.family ? `${model.family.ownerName}的家庭` : "我的家庭"}</Text>
             {model.family ? <Text style={styles.meta}>本人是{familyRoleLabels[model.family.role]} · {model.family.members.length} 位已載入成員 · 權限版本 {model.family.version}</Text> : null}</View>
           {model.families.length > 1 && model.family ? <AppSelect label="家庭" value={model.family.id}
-            options={model.families.map(family => ({ value: family.id, label: `${family.ownerName.replace("（合成）", "")}的家庭` }))}
+            options={model.families.map(family => ({ value: family.id, label: `${(production ? family.ownerName : family.ownerName.replace("（合成）", ""))}的家庭` }))}
             disabled={model.operation.state === "saving" || model.operation.state === "unknown"} onChange={actions.selectFamily} /> : null}
-          <AppButton label="重新讀取家庭清單" density="compact" variant="quiet" onPress={actions.refresh} disabled={!model.canStartAction} />
+          <AppButton label="重新讀取家庭清單" density="compact" variant="quiet" onPress={actions.refresh} disabled={production ? !model.online || model.operation.state === "saving" : !model.canStartAction} />
         </View>
         <View style={[styles.columns, stacked && styles.stack]}>
           <View style={[styles.column, styles.peopleColumn, stacked && styles.fullColumn]}>
             <SectionCard surface="plain" testID="family-people"><SectionHeader density="compact" title="一起照顧的人" subtitle="先看誰有甚麼角色；需要時才更改權限。" />
               {model.family ? <>
                 <MotionList items={model.family.members} keyExtractor={member => member.userId} scopeKey={scopeKey} regionKey="family-members" eligible={eligible} style={styles.list} renderItem={(member, { exiting }) => <MemberRow key={`${model.family!.id}:${member.userId}`} member={member}
-                  self={member.userId === model.selfUserId} canManage={model.family!.role === "owner"} disabled={!model.canStartAction || exiting} actions={actions} scopeKey={scopeKey} feedbackEligible={eligible && !exiting} />} />
+                  self={member.userId === model.selfUserId} canManage={model.family!.role === "owner"} disabled={!model.canStartAction || exiting} actions={actions} scopeKey={scopeKey} feedbackEligible={eligible && !exiting} production={production} />} />
                 {model.family.role !== "owner" ? <Text style={styles.body}>只有擁有者可管理成員及邀請；此視角沒有這些管理操作或邀請電郵清單。</Text> : null}
               </> : <Text style={styles.body}>沒有可查看的家庭。</Text>}
             </SectionCard>
@@ -178,7 +178,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
               <MotionList items={model.family.invitations} keyExtractor={invite => invite.id} scopeKey={scopeKey} regionKey="family-invitations" eligible={eligible} style={styles.list} renderItem={(invite, { exiting }) => <View key={invite.id} style={styles.invitation}>
                 <View style={styles.flexCopy}><Text selectable style={styles.memberName}>{invite.email}</Text>
                   <MotionFeedback active={eligible && !exiting} triggerKey={invite.status} scopeKey={`${scopeKey}:${invite.id}`}><View style={styles.actions}><Text style={styles.meta}>{familyRoleLabels[invite.role]}</Text><AppStatusBadge label={invitationStatusLabels[invite.status]} tone={invite.status === "accepted" ? "success" : invite.status === "pending" ? "warning" : "neutral"} /></View></MotionFeedback>
-                  <Text style={styles.meta}>合成到期時間：{expiryLabel(invite.expiresAt)}</Text></View>
+                  <Text style={styles.meta}>{production ? "到期時間" : "合成到期時間"}：{expiryLabel(invite.expiresAt)}</Text></View>
                 {invite.status === "pending" ? <AppButton label="撤銷此邀請" density="compact" variant="danger-secondary" onPress={() => actions.stageRevokeInvitation(invite.id)} disabled={!model.canStartAction || exiting} /> : null}
               </View>} />
             </View> : null}
@@ -201,15 +201,15 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
         </View>
         <View style={styles.manageSection}>
           {model.family?.role === "owner" ? <SectionCard surface="plain"><SectionHeader density="compact" title="邀請成員" subtitle="先核對收件人、角色與全家庭範圍。" action={<AppButton expanded={inviteOpen} label={inviteOpen ? "收起邀請表單" : "邀請一位成員"} density="compact" variant="secondary" onPress={() => setInviteOpen(value => !value)} disabled={model.locked} />} />
-            <MotionDisclosure expanded={inviteOpen || model.draft?.kind === "invite"} scopeKey={scopeKey}><InviteComposer key={model.inviteFormKey} model={model} actions={actions} /></MotionDisclosure>
+            <MotionDisclosure expanded={inviteOpen || model.draft?.kind === "invite"} scopeKey={scopeKey}><InviteComposer key={model.inviteFormKey} model={model} actions={actions} production={production} /></MotionDisclosure>
             {model.oneTimeCode ? <View style={styles.review}>
-              <Text style={styles.reviewTitle}>無效示例碼 · 只展示這一次</Text><Text selectable style={styles.code}>{model.oneTimeCode}</Text>
-              <Text style={styles.meta}>此碼不能使用；沒有發送電郵。清除、重新讀取或離開情境後不再顯示。</Text>
-              <AppButton label="清除示例碼" variant="secondary" onPress={actions.dismissCode} />
+              <Text style={styles.reviewTitle}>{production ? "家庭邀請碼 · 只展示這一次" : "無效示例碼 · 只展示這一次"}</Text><Text selectable style={styles.code}>{model.oneTimeCode}</Text>
+              <Text style={styles.meta}>{production ? "請自行交給指定收件人；系統沒有發送電郵。清除或重新讀取後不再顯示。" : "此碼不能使用；沒有發送電郵。清除、重新讀取或離開情境後不再顯示。"}</Text>
+              <AppButton label={production ? "清除邀請碼" : "清除示例碼"} variant="secondary" onPress={actions.dismissCode} />
             </View> : null}
           </SectionCard> : null}
           <SectionCard surface="plain"><SectionHeader density="compact" title="收到邀請？" subtitle="先預覽家庭及範圍，再明確接受。" action={<AppButton expanded={incomingOpen} label={incomingOpen ? "收起收到的邀請" : "輸入收到的邀請"} density="compact" variant="quiet" onPress={() => setIncomingOpen(value => !value)} disabled={model.locked} />} />
-            <MotionDisclosure expanded={incomingOpen || model.draft?.kind === "accept"} scopeKey={scopeKey}><IncomingComposer key={model.family?.id ?? "no-family"} model={model} actions={actions} /></MotionDisclosure>
+            <MotionDisclosure expanded={incomingOpen || model.draft?.kind === "accept"} scopeKey={scopeKey}><IncomingComposer key={production ? `${model.family?.id ?? "no-family"}:${model.inviteFormKey}` : model.family?.id ?? "no-family"} model={model} actions={actions} production={production} /></MotionDisclosure>
           </SectionCard>
         </View>
       </>}

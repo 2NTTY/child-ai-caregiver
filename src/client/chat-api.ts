@@ -38,7 +38,8 @@ export interface ChatUsage {
 
 export interface ChatApi {
   getSession(signal: AbortSignal): Promise<SessionUser | null>;
-  listMessages(childId: string, signal: AbortSignal): Promise<ChatPage>;
+  listMessages(childId: string, signal: AbortSignal, before?: string | null): Promise<ChatPage>;
+  cancelReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<boolean>;
   saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string): Promise<ChatMessage>;
   requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<ChatMessage>;
   getStatus(signal: AbortSignal): Promise<boolean>;
@@ -136,13 +137,19 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
     reconcilePending: (signal, userId) => onlineCall(signal, outerSignal => online.checkPending(outerSignal, userId)),
     resetOnline: () => online.reset(),
     hasPendingOnline: () => online.hasPending(),
-    async listMessages(childId, signal) {
-      const value = await request(`/children/${encodeURIComponent(childId)}/messages`, signal);
+    async listMessages(childId, signal, before) {
+      const value = await request(`/children/${encodeURIComponent(childId)}/messages${before ? `?before=${encodeURIComponent(before)}` : ""}`, signal);
       if (!object(value) || !Array.isArray(value.messages) || !value.messages.every(message)
         || !Number.isInteger(value.limit) || (value.limit as number) < 1 || (value.limit as number) > 100
         || value.messages.length > (value.limit as number)
         || value.messages.some((item: ChatMessage) => item.childId !== childId)) throw new ChatApiError();
-      return { messages: value.messages, limit: value.limit as number };
+      if (value.nextCursor !== undefined && value.nextCursor !== null && !id(value.nextCursor)) throw new ChatApiError();
+      return { messages: value.messages, limit: value.limit as number, nextCursor: value.nextCursor as string | null | undefined };
+    },
+    async cancelReply(childId, messageId, signal, expectedUserId) {
+      const value = await request(`/children/${encodeURIComponent(childId)}/messages/${encodeURIComponent(messageId)}/reply/cancel`, signal, {}, expectedUserId);
+      if (!object(value) || typeof value.accepted !== "boolean") throw new ChatApiError();
+      return value.accepted;
     },
     async saveMessage(childId, text, signal, expectedUserId) {
       const value = await onlineCall(signal, outerSignal => online.submit({ path: `/api/children/${encodeURIComponent(childId)}/messages`, payload: { text } }, outerSignal, expectedUserId));

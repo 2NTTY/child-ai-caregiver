@@ -27,7 +27,10 @@ export async function handleChatRequest(request: Request, userId: string | null,
   if (!match) return apiError("not_found", "找不到資料。", 404);
   const childId = match[1]!;
   if (request.method === "GET") {
-    const page = await store.listForUser(userId, childId);
+    const params = new URL(request.url).searchParams, before = params.get("before");
+    if (params.getAll("before").length > 1 || before !== null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(before))
+      return apiError("invalid_input", "請重新讀取聊天歷史。", 400);
+    const page = await store.listForUser(userId, childId, before);
     return page ? jsonResponse(page) : apiError("not_found", "找不到資料。", 404);
   }
   if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);

@@ -68,7 +68,9 @@ INT-W02 增補：`GET／POST /api/children/:childId/agent/policy` 管理本人�
 
 `GET /agent/notes?query=…&afterId=…` 返回 `{notes:{items,nextAfterId}}`；是本人普通交代的權威來源，不複製成已確認事實。`POST /agent/notes/:id/delete` 需 `operationId／expectedVersion／confirmDelete:true`。`GET /agent/actions?runId=…` 返回 `{receipts}`，只讀本人／孩子原運行的已提交操作；收據含資源 ID、版本、保存／排程／終態及通知授權狀態，不以模型文字推定成功。上述路徑均以 `/api/children/:childId` 為前綴並重核 session；未套用 migration 025 不啟用新操作。
 
-`read_context.uncoveredConversation` 依既有摘要 coverage 讀取未覆蓋的本人原訊息，保持完整訊息及最後來源 ID；超過本次工具文字預算時明示未讀部分，不靜默截斷或宣稱全部記得。長期普通交代另由 `read_private_instructions` 按主題查回，不把最近幾則聊天當長期記憶。此補充不代表 Web 已有較舊聊天游標或真運行取消。
+`read_context.uncoveredConversation` 依既有摘要 coverage 讀取未覆蓋的本人原訊息，保持完整訊息及最後來源 ID；超過本次工具文字預算時明示未讀部分，不靜默截斷或宣稱全部記得。長期普通交代另由 `read_private_instructions` 按主題查回，不把最近幾則聊天當長期記憶。
+
+INT-W03 增補 `allowRecordCorrections`，既有政策及未提供欄位預設 false，不因升級而擴大舊授權。`read_care_records` 讀目前共享記錄及版本；`revise_ordinary_record` 只按本次明確指令更正本人、原普通類別及目前版本，並要求此新開關與原類別均獲授權。更正沿用 CareStore 歷史及原資源，保留未變的時間精度；共享確認、來源原文、權限／版本、操作收據及未知結果規則不變。
 
 原生 `save_ordinary_record`／`save_private_instruction`／`revise_private_instruction`／`create_ordinary_reminder`／`change_ordinary_reminder` 各採單一參數形狀，共用相同業務操作與收據；只接受互動 run、當次來源訊息、精確 sourceQuote、目前政策版本及允許的動作，由同一交易調用原 CareStore／TaskStore 並保存收據；背景 run 不取得此工具。原 call ID 的精確重試及同 run 等價動作沿用原收據；政策撤回、權限／版本改變及任務終態仍拒絕新效果。工具成功但文字收尾失敗，依台帳顯示已保存結果，不再次執行。`read_context.uncoveredConversation` 顯式區分摘要已覆蓋與尚未覆蓋的原文；只返回完整訊息，超出有界輸入時列未讀部分，不承諾完整記得全部聊天。
 
@@ -252,9 +254,11 @@ S03-W01 在同一 `/api` 入口新增以下已登入端點；session、Origin、
 <a id="p1-chat-http"></a>
 ## P1 私人聊天保存 HTTP（S09-W01）
 
-`GET /api/children/:childId/messages` 返回 `{messages, limit:100}`，每則有 `id/childId/authorUserId/role/text/inReplyTo/createdAt`。只返回當前帳號在該孩子的私人聊天；無權或不存在都 404，未登入 401。
+`GET /api/children/:childId/messages?before=:messageId` 返回 `{messages, limit:100, nextCursor}`，每則有 `id/childId/authorUserId/role/text/inReplyTo/createdAt`。首次省略 before，後續使用 nextCursor（最舊訊息 ID）；按 Server `(created_at,id)` 穩定排序，游標查詢也限定本人／孩子。每頁按時間正序呈現，沒有更多時 nextCursor=null。只返回當前帳號在該孩子的私人聊天；無權或不存在都 404，未登入 401。
 
-`POST` 同一路徑只接受 `{text}`，保存 1–10,000 Unicode 字元原文；拒絕額外欄位、空白、NUL 或無效 surrogate。須有符合 session 的 `x-expected-user-id`，缺失 428／不同 409；成功回 `{message}` 及 201。作者、角色、ID 和時間由 Server 決定，不能提交模型訊息。訊息本身不是已確認照護記錄，不觸發模型或工具。
+INT-W03 的 `POST /api/children/:childId/messages/:messageId/reply/cancel` 接受 `{}` 及相同 `x-expected-user-id`，重新核對 session／孩子權限，只停止目前 API 程序中屬於本人原訊息的互動運行。`accepted:true` 表示取消訊號已送入真正 runtime；仍須讀取最後運行與收據，不代表撤銷已提交操作。`false` 不聲稱運行已取消；程序重啟後按原台帳核對，不重建或重跑模型。取消不增加生成呼叫；背景 worker 不由這個入口控制。
+
+`POST /api/children/:childId/messages` 只接受 `{text}`，保存 1–10,000 Unicode 字元原文；拒絕額外欄位、空白、NUL 或無效 surrogate。須有符合 session 的 `x-expected-user-id`，缺失 428／不同 409；成功回 `{message}` 及 201。作者、角色、ID 和時間由 Server 決定，不能提交模型訊息。訊息本身不是已確認照護記錄，不觸發模型或工具。
 
 GET／POST 沿用原有 Origin、body 上限、cookie 更新及 no-store 規則。此包沒有瀏覽器主庫、outbox 或自動重試寫入；S11 會接入保存後的聊天 UI／Gemini，P2 才補完整搜尋與長期記憶。
 

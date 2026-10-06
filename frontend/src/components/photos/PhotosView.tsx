@@ -23,7 +23,7 @@ import { useContentListMotion } from "../shared-inputs/useContentListMotion";
 import { useContentDeletionFocus } from "../shared-inputs/useContentDeletionFocus";
 
 const operationLabels: Record<PhotosViewModel["operation"]["state"], string> = { none: "", saving: "處理中 · 尚未確認", saved: "已確認（合成預覽）", failed: "失敗 · 原輸入保留", unknown: "結果未知 · 先查核", unconfirmed: "查核尚無確認結果", conflict: "版本衝突 · 尚未保存", confirmed_unavailable: "原操作已確認 · 結果不可讀" };
-export function PhotosView({ model, actions: sourceActions, onCare, previewControls, selectOriginal, capturePreferred, captureOriginal, scopeKey }: { model: PhotosViewModel; actions: PhotosActions; onCare: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"]; capturePreferred?: boolean; captureOriginal?: PhotoFilePickerProps["captureOriginal"]; scopeKey?: string }) {
+export function PhotosView({ model, actions: sourceActions, onCare, previewControls, selectOriginal, capturePreferred, captureOriginal, scopeKey, production = false }: { model: PhotosViewModel; actions: PhotosActions; onCare: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"]; capturePreferred?: boolean; captureOriginal?: PhotoFilePickerProps["captureOriginal"]; scopeKey?: string; production?: boolean }) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
   const [adding, setAdding] = useState(!!capturePreferred);
@@ -56,7 +56,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
   const revealEligible = model.online && model.load === 'ready' && !model.busy && selected?.extraction.state === 'available'
     && model.operation.state === 'saved' && model.operation.phase === 'extract' && !selected.recordId;
   const revealTrigger = !model.busy && !revealEligible ? null : candidateTrigger;
-  const operationLabel = model.operation.state === 'saved' && model.operation.phase === 'extract' ? '候選已備妥 · 尚未確認' : operationLabels[model.operation.state];
+  const operationLabel = model.operation.state === 'saved' && model.operation.phase === 'extract' ? '提取結果已返回 · 尚未確認' : production && model.operation.state === 'saved' ? '原操作已確認' : operationLabels[model.operation.state];
   const listScope = JSON.stringify([scopeKey ?? model.childName, model.access]);
   const listResultAvailable = model.online && model.access !== 'lost' && model.load === 'ready';
   const deletionFocus = useContentDeletionFocus({scopeKey: listScope, ids: model.items.map(item => item.id), visible: model.deletion,
@@ -84,10 +84,10 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
     {!model.online ? <View style={s.notice}><Text style={s.warning}>目前離線，已選原照片及草稿保留。重連後先核對最新狀態，不會自動重送。</Text></View> : null}
     {model.notice ? <Text style={s.body}>{model.notice}</Text> : null}
     {model.operation.state !== "none" ? <View style={[s.status, model.operation.state === "failed" && s.statusError]} testID="photo-operation"><AppStatusBadge label={operationLabel} tone={model.operation.state === "failed" ? "error" : model.operation.state === "saved" && model.operation.phase !== "extract" ? "success" : model.operation.state === "saving" ? "info" : "warning"} /><Text style={s.body}>{model.operation.message}</Text>
-      {model.operation.reference ? <Text style={s.meta}>合成操作參考：{model.operation.reference}；不是 Server opId。</Text> : null}
+      {model.operation.reference ? <Text style={s.meta}>{production ? "原操作參考：" : "合成操作參考："}{model.operation.reference}{production ? "" : "；不是 Server opId。"}</Text> : null}
       <View style={s.row}>{["unknown", "unconfirmed"].includes(model.operation.state) ? <AppButton label={model.operation.phase === "upload" || model.operation.phase === "extract" ? "查核同一照片附件" : "查核原照片操作"} disabled={!model.online || model.busy} onPress={actions.checkOriginal} /> : null}
-        {model.operation.state === "unconfirmed" && model.operation.checked ? <AppButton label="重試原操作" accessibilityLabel="明確重試原內容及原操作" variant="secondary" disabled={!model.fresh} onPress={actions.retryOriginal} /> : null}
-        {model.reservationUnidentified && model.operation.state === "confirmed_unavailable" ? <AppButton label="結束待查並核對清單" variant="secondary" onPress={actions.finishUnidentified} /> : null}
+        {model.operation.state === "unconfirmed" && model.operation.checked && (!production || model.operation.phase !== "extract") ? <AppButton label="重試原操作" accessibilityLabel="明確重試原內容及原操作" variant="secondary" disabled={!model.fresh} onPress={actions.retryOriginal} /> : null}
+        {model.operation.state === "confirmed_unavailable" && (model.reservationUnidentified || production && model.operation.checked) ? <AppButton label="結束待查並核對清單" variant="secondary" disabled={model.busy || !model.online} onPress={actions.finishUnidentified} /> : null}
       </View>
       {model.operation.state === "conflict" ? <><Text style={s.meta}>本頁基準：版本 {selected?.version ?? "未確定"}；目前版本：{model.latest?.version ?? "尚待重新讀取"}。原文草稿不會被最新資料覆蓋。</Text>
         {model.latest ? <AppButton label="使用目前版本並保留草稿" disabled={!model.online} onPress={actions.useLatest} /> : null}</> : null}
@@ -108,10 +108,10 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
           {!split ? <AppButton label="返回附件清單（保留本頁草稿）" variant="quiet" disabled={locked} onPress={() => setInspecting(false)} /> : null}
           <SectionCard testID="photo-original"><SectionHeader density="compact" title={selected ? "原照片" : "選擇原照片"} icon="image-outline" action={selected || model.original ? <AppButton label="清除本頁" variant="quiet" disabled={locked} onPress={actions.clearEditor} /> : undefined} />
             {image ? <Image source={image} resizeMode="contain" accessibilityLabel="原照片預覽" style={[s.image, compact && s.mobileImage]} /> : <View style={s.placeholder}><AppIcon name="image-outline" size={24} color={colors.teal} /><Text style={s.meta}>保留照片原檔，確認後才共享</Text></View>}
-            {model.original || selected ? <><Text style={s.title}>{model.original?.fileName ?? selected?.fileName}</Text><Text style={s.meta}>{((model.original?.bytes ?? selected?.bytes ?? 0) / (1024 * 1024)).toFixed(2)} MiB · {selected?.state === "ready" ? "原檔已模擬保存" : "本次原檔尚未完整保存"}</Text></> : null}
+            {model.original || selected ? <><Text style={s.title}>{model.original?.fileName ?? selected?.fileName}</Text><Text style={s.meta}>{((model.original?.bytes ?? selected?.bytes ?? 0) / (1024 * 1024)).toFixed(2)} MiB · {selected?.state === "ready" ? production ? "原檔已保存" : "原檔已模擬保存" : "本次原檔尚未完整保存"}</Text></> : null}
             {selected ? <View style={s.related}><MotionFeedback scopeKey={candidateScope} active={model.operation.state === 'saved' && model.operation.phase === 'confirm' && !!selected.recordId} triggerKey={model.operation.state === 'saved' && model.operation.phase === 'confirm' ? model.operation.reference : null} testID="photo-confirmation-feedback"><AppStatusBadge label={selected.visibility === "private" ? "私人，只有上傳者可讀取" : "已確認家庭共享"} tone={selected.visibility === "private" ? "neutral" : "success"} /></MotionFeedback><AppStatusBadge label={photoExtractionLabels[selected.extraction.state]} tone={selected.extraction.state === "failed" ? "error" : selected.extraction.state === "unknown" || selected.extraction.state === "available" ? "warning" : selected.extraction.state === "running" ? "info" : "neutral"} />{selected.recordId ? <Text style={s.body}>已連結確認記錄，不能再次提取或確認。</Text> : null}
               <Text style={s.meta}>來源：{selected.source}；上傳者：{selected.ownerLabel}；版本 {selected.version}</Text></View> : null}
-            {model.capacityReached ? <Text style={s.warning}>已模擬達到新增容量限制。可核對現有附件，不能再新增照片。</Text> : null}
+            {model.capacityReached ? <Text style={s.warning}>{production ? "已達到新增容量限制。" : "已模擬達到新增容量限制。"}可核對現有附件，不能再新增照片。</Text> : null}
             {model.reservationUnidentified ? <Text style={s.warning}>已確認操作的附件結果未能識別。保留原檔，不會再次建立；請逐項核對清單或明確清除本頁。</Text> : null}
             {(!selected || selected.state === "reserved") && model.access === "editable" ? <>
               <PhotoFilePicker disabled={!model.canPick} onPick={actions.pickOriginal} onError={actions.reportFileError} selectOriginal={selectOriginal} capturePreferred={capturePreferred} captureOriginal={captureOriginal} />
@@ -135,7 +135,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
       </View>}
     {previewControls}
     <Portal><AppDialog visible={!!model.replacement} onDismiss={actions.cancelReplacement}>
-      <Dialog.Title>取代本頁原檔與草稿？</Dialog.Title><Dialog.Content><Text style={s.body}>這個動作會清除目前編輯器的原檔及未共享草稿。已保存的合成附件仍在清單；結果未知時不能用更換照片避開查核。</Text></Dialog.Content>
+      <Dialog.Title>取代本頁原檔與草稿？</Dialog.Title><Dialog.Content><Text style={s.body}>這個動作會清除目前編輯器的原檔及未共享草稿。{production ? "已保存的附件仍在清單" : "已保存的合成附件仍在清單"}；結果未知時不能用更換照片避開查核。</Text></Dialog.Content>
       <Dialog.Actions style={s.row}><AppButton label="保留目前草稿" variant="quiet" onPress={actions.cancelReplacement} /><AppButton label="確認取代本頁" onPress={actions.confirmReplacement} /></Dialog.Actions>
     </AppDialog>
       <AppDialog danger visible={model.deletion} onDismiss={actions.closeDeletion} onClosed={deletionFocus.onClosed}>

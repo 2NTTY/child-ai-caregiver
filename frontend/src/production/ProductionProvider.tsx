@@ -13,6 +13,7 @@ import type { HomeActions } from "../view-model";
 import { ProductionOwner } from "./ProductionOwner";
 import { projectProductionHome } from "./home-projection";
 import { productionDestinations } from "./routes";
+import { useOnlineUpdates } from "../../../src/client/use-online-updates";
 
 function initialOnline() { return Platform.OS !== "web" || typeof navigator === "undefined" || navigator.onLine; }
 
@@ -45,6 +46,7 @@ function useProductionValue(owner: ProductionOwner) {
   const authenticate = useCallback((mode: AuthMode, input: Credentials) => owner.authenticate(mode, input), [owner]);
   const signOut = useCallback(async (discardConfirmed = false) => {
     if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey) return;
+    if (owner.hasDomainPending()) { setLocalNotice("請先等候或查核原操作結果，再登出。"); return; }
     const state = owner.controller.getSnapshot();
     if (state.childOutcome === "unknown" || state.childOutcome === "checked" || state.deletion
       || Object.values(state.drafts).some(item => item.outcome === "unknown" || item.outcome === "checked" || item.outcome === "sending")) {
@@ -94,7 +96,10 @@ function useProductionValue(owner: ProductionOwner) {
       if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey) return;
       owner.controller.setChildName(displayName); void owner.controller.createChild();
     },
-    deleteChildPreview() { setLocalNotice("刪除孩子功能正在接線。"); },
+    deleteChildPreview() {
+      if (!currentScope() || owner.hasDomainPending()) return;
+      owner.controller.reviewDeleteChild();
+    },
     completeGuidePreview() { setLocalNotice("引導完成狀態尚未接線；你可以繼續使用已接通的入口。"); },
   };
   const notice = localNotice ?? (snapshot.records.notice === dismissedNotice ? null : snapshot.records.notice);
@@ -111,7 +116,7 @@ function useProductionValue(owner: ProductionOwner) {
     sendChat: async () => { if (!currentScope() || !owner.chatWritesAllowed() || owner.draftOwner.getSnapshot().attachments.length) return; const known = new Set(owner.chatController.getSnapshot().messages.map(item => item.id)); await owner.chatController.send(); if (currentScope() && owner.chatController.getSnapshot().messages.some(item => !known.has(item.id))) owner.invalidatePrivateReads(); },
     requestChatReply: async (id: string) => { if (!currentScope() || !owner.chatWritesAllowed()) return; const known = new Set(owner.chatController.getSnapshot().messages.map(item => item.id)); await owner.chatController.requestReply(id); if (currentScope() && owner.chatController.getSnapshot().messages.some(item => !known.has(item.id))) owner.invalidatePrivateReads(); },
     agentModel: agent.model, agentInbox: agent.inbox, agentRuns: agent.runs, agentPending: agent.pending,
-    chatWritesAllowed: !agent.model.busy && !agent.model.pendingDecision && !authorization.busy && !authorization.pending,
+    chatWritesAllowed: !owner.hasDomainPending() && !agent.model.busy && !agent.model.pendingDecision && !authorization.busy && !authorization.pending,
     readAgentPending: (more = false) => { if (currentScope()) void owner.agentOwner.readPending(more); },
     authorization, authorizationActions: {
       readPolicy: () => { if (currentScope()) void owner.authorizationOwner.readPolicy(); },
@@ -153,6 +158,10 @@ const ProductionContext = createContext<ProductionContextValue | null>(null);
 export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || "/api" }: { children: ReactNode; apiBaseUrl?: string }) {
   const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline()));
   const value = useProductionValue(owner);
+  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" ? value.userId : null, value.online, async () => {
+    await owner.refresh();
+    owner.invalidatePrivateReads(false);
+  });
   useEffect(() => {
     owner.connect();
     void owner.controller.restoreSession();
@@ -173,6 +182,17 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
     return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
   }, [owner]);
   return <QueryClientProvider client={owner.queryClient}><ProductionContext.Provider value={value}>{children}
+    <AppDialog visible={value.recordsState.deletion !== null} onDismiss={() => owner.controller.cancelDeleteChild()}>
+      <AppDialog.Title>永久刪除這位孩子及附屬資料？</AppDialog.Title>
+      <AppDialog.Content><Text>這會刪除所選孩子、照護記錄、私人聊天、記憶、任務及附屬資料。此操作不能撤銷。</Text>
+        {value.recordsState.deletion?.message ? <Text>{value.recordsState.deletion.message}</Text> : null}</AppDialog.Content>
+      <AppDialog.Actions>
+        <AppButton label="保留孩子" variant="quiet" disabled={!!value.recordsState.busy || value.recordsState.deletion?.phase === "unknown"} onPress={() => owner.controller.cancelDeleteChild()} />
+        {value.recordsState.deletion?.phase === "confirm" ? <AppButton label="確認永久刪除" variant="danger" disabled={!!value.recordsState.busy || !value.online} onPress={() => { void owner.controller.confirmDeleteChild(); }} />
+          : <AppButton label="查核原刪除結果" disabled={!!value.recordsState.busy || !value.online} onPress={() => { void owner.controller.reloadChildren(); }} />}
+        {value.recordsState.deletion?.phase === "checked" ? <AppButton label="核對後重試原刪除" variant="danger" disabled={!!value.recordsState.busy || !value.online} onPress={() => owner.controller.reviewDeleteChild()} /> : null}
+      </AppDialog.Actions>
+    </AppDialog>
     <AppDialog visible={value.logoutConfirmation} onDismiss={value.cancelLogout}>
       <AppDialog.Title>登出並清除未提交內容？</AppDialog.Title>
       <AppDialog.Content><Text>這次登出會清除本頁的文字及照片草稿。已提交但結果未知的操作仍須沿原操作查核。</Text></AppDialog.Content>

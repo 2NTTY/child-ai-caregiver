@@ -84,7 +84,14 @@ export function createCareStore(pool: Pool, cipher: StorageCipher, trackChanges 
         return value;
       }, trackChanges);
     },
-    async revise(userId: string, childId: string, id: string, values: CareValues, expectedVersion: number, reason: string): Promise<CareRecord | null> {
+    async get(userId: string, childId: string, id: string): Promise<CareRecord | null> {
+      return withChildAccess(pool, userId, childId, READ_ROLES, async client => {
+        const row = (await client.query<Row>("SELECT * FROM text_records WHERE id=$1 AND child_id=$2 FOR SHARE", [id, childId])).rows[0];
+        return row ? record(row) : null;
+      });
+    },
+    async revise(userId: string, childId: string, id: string, values: CareValues, expectedVersion: number, reason: string,
+      basis: "explicit" | "preauthorized_user_statement" = "explicit"): Promise<CareRecord | null> {
       return withChildAccess(pool, userId, childId, WRITE_ROLES, async (client, _role, workspaceId) => {
         await lockChild(client, childId);
         const row = (await client.query<Row>("SELECT * FROM text_records WHERE id=$1 AND child_id=$2 FOR UPDATE", [id, childId])).rows[0];
@@ -94,7 +101,7 @@ export function createCareStore(pool: Pool, cipher: StorageCipher, trackChanges 
         const next = { ...row, version: row.version + 1 };
         const updated = (await client.query<Row>(`UPDATE text_records SET text_encrypted=$3,details_encrypted=$4,version=version+1,confirmed_by=$5,confirmed_at=now()
           WHERE id=$1 AND child_id=$2 RETURNING *`, [id, childId, cipher.encrypt(values.text, textContext(row)),
-          cipher.encrypt(JSON.stringify({ details: values.details, source: values.source, reason }), detailsContext(next)), userId])).rows[0];
+          cipher.encrypt(JSON.stringify({ details: values.details, source: values.source, reason, confirmationBasis: basis }), detailsContext(next)), userId])).rows[0];
         const value = record(updated); await archive(client, value);
         if (trackChanges) await appendOnlineChange(client, workspaceId, "care", childId);
         return value;

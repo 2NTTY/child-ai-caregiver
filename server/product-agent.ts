@@ -17,7 +17,16 @@ export function createProductAgent(options: {
   runtime: ReturnType<typeof createAgentRuntime>; store: ProductAgentStore;
   memory: MemoryStore; tasks: TaskStore; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
 }) {
+  const activeReplies = new Map<string, AbortController>();
+  const replyKey = (userId: string, childId: string, messageId: string) => JSON.stringify([userId, childId, messageId]);
   return {
+    async cancelReply(userId: string, childId: string, messageId: string, isCurrentUser: () => Promise<boolean>) {
+      if (!await isCurrentUser() || !await options.chat.listForUser(userId, childId)) return false;
+      const controller = activeReplies.get(replyKey(userId, childId, messageId));
+      if (!controller) return false;
+      controller.abort();
+      return true;
+    },
     async background(input: { userId: string; childId: string; reference: string; context: Record<string, unknown>; authorize: () => Promise<boolean>; signal?: AbortSignal }): Promise<ProductAgentResult | null> {
       if (!await input.authorize()) return null;
       const claim = await options.store.claim(input.userId, input.childId, { kind: "worker", reference: input.reference }, "product-background");
@@ -56,6 +65,9 @@ export function createProductAgent(options: {
       const claim = await options.store.claim(userId, childId, { kind: "interactive", reference: messageId }, recipeId);
       if (!claim) return null;
       if (!claim.created) return options.store.get(userId, childId, claim.runId);
+      const cancellation = new AbortController(), key = replyKey(userId, childId, messageId);
+      activeReplies.set(key, cancellation);
+      try {
       const authorize = async () => await isCurrentUser() && await options.store.authorize(claim.scope,claim.runId);
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
@@ -73,7 +85,7 @@ export function createProductAgent(options: {
         tools: run => {
           tools = createProductAgentTools({ ...options, run, authorize });
           return tools.tools;
-        }, authorize, signal, finalizeOnModelLimit: true,
+        }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true,
         finalize: async () => {
           rendered.value = await tools!.presentation();
           if (!rendered.value) throw new AgentStopped("invalid_response");
@@ -96,6 +108,7 @@ export function createProductAgent(options: {
       if (!await isCurrentUser()) return null;
       if (!await options.store.finish(claim.scope, value, result.status === "completed" ? tools?.summaryDraft() : undefined)) return null;
       return options.store.get(userId, childId, claim.runId);
+      } finally { if (activeReplies.get(key) === cancellation) activeReplies.delete(key); }
     },
   };
 }

@@ -13,7 +13,7 @@ const toolNames: Record<string, string> = {
   stage_private_summary: "整理私有輔助摘要", read_context: "讀取已確認記憶及任務", search_knowledge: "檢索知識來源",
   propose_task: "保存建立任務候選", propose_task_change: "保存任務變更候選", propose_fact: "保存記憶候選", present_answer: "整理回覆及引用",
   read_private_instructions: "讀取本人普通交代", execute_ordinary_instruction: "執行已授權的本人普通交代",
-  save_ordinary_record: "保存普通照護記錄", save_private_instruction: "保存本人私人備註", revise_private_instruction: "更正本人私人備註",
+  save_ordinary_record: "保存普通照護記錄", revise_ordinary_record: "更正普通照護記錄", read_care_records: "讀取照護記錄及原版本", save_private_instruction: "保存本人私人備註", revise_private_instruction: "更正本人私人備註",
   create_ordinary_reminder: "安排本人普通提醒", change_ordinary_reminder: "更新本人普通提醒",
   read_contact_options: "讀取已授權聯絡選項", contact_caregiver: "記錄已授權聯絡請求", read_growth_concerns: "讀取成長關注",
 };

@@ -11,4 +11,5 @@ export interface ChatMessage {
 export interface ChatPage {
   messages: ChatMessage[];
   limit: number;
+  nextCursor?: string | null;
 }

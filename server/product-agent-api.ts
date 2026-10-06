@@ -10,7 +10,7 @@ const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const runRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs/(" + uuid + ")(?:/proposals/(" + uuid + ")/decide)?$", "i");
 const listRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs$", "i");
 const pendingRoute = new RegExp("^/api/children/(" + uuid + ")/agent/pending$", "i");
-const replyRoute = new RegExp("^/api/children/(" + uuid + ")/messages/(" + uuid + ")/reply$", "i");
+const replyRoute = new RegExp("^/api/children/(" + uuid + ")/messages/(" + uuid + ")/reply(/cancel)?$", "i");
 export async function handleProductAgentRequest(request: Request, userId: string | null, options: {
   agent: ProductAgent; store: ProductAgentStore; chat: ChatStore; isCurrentUser: (userId: string) => Promise<boolean>;
 }): Promise<Response> {
@@ -42,6 +42,7 @@ export async function handleProductAgentRequest(request: Request, userId: string
       if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);
       if (!z.object({}).strict().safeParse(body).success) return apiError("invalid_input", "請檢查輸入。", 400);
       const messageId = reply[2].toLowerCase();
+      if (reply[3]) return jsonResponse({ accepted: await options.agent.cancelReply(userId, childId, messageId, () => options.isCurrentUser(userId)) });
       const page = await options.chat.listForUser(userId, childId);
       const old = page?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
       if (old) return await options.isCurrentUser(userId) ? jsonResponse({ message: old }) : apiError("unauthorized", "存取權已改變。", 401);

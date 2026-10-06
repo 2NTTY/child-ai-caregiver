@@ -1,4 +1,3 @@
-import { PreparationPreviewTools } from "../preview/PreparationPreviewTools";
 import { useEffect, useReducer, useRef } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, type ScrollView } from "react-native";
@@ -15,7 +14,7 @@ import { CareSavedRecordsView } from "../components/care/CareSavedRecordsView";
 import { PreparationHistoryView } from "../components/preparations/PreparationWorkspace";
 import { GrowthHistoryView } from "../components/growth/GrowthHistoryView";
 import { createHistoryFilters, historyCategories, historyDateErrors, historyDateRange, historyFilterReducer, normalizeHistoryCategory, normalizeReviewHistoryStatus, normalizeHistoryOlderOnly, type HistoryCategory, type HistoryFilterAction } from "../components/history/history-filters";
-import { usePreview } from "../preview/PreviewContext";
+import { useProduction } from "../production/ProductionProvider";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useTasksWorkspace } from "../workspaces/TasksWorkspace";
 import { useCareWorkspace } from "../workspaces/CareWorkspace";
@@ -26,7 +25,7 @@ import { chineseFont, colors, readingType, spacing } from "../theme";
 
 function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStatus, olderOnly }: { scope: string; childName: string; initialCategory: HistoryCategory; initialReviewStatus: CareReviewStatusFilter; olderOnly: boolean }) {
   const router = useRouter(), navigate = usePreviewNavigation();
-  const { actions: homeActions } = usePreview();
+  const { actions: homeActions } = useProduction();
   const tasks = useTasksWorkspace();
   const preparations = usePreparationWorkspace();
   const care = useCareWorkspace();
@@ -73,7 +72,7 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
   }
   const results = taskCategory ? dateRange ? <TaskHistoryView searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
     : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
-    : preparationCategory ? dateRange ? <PreparationHistoryView onPrepareQuestion={homeActions.prepareQuestion} previewControls={<PreparationPreviewTools key={scope} />} searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
+    : preparationCategory ? dateRange ? <PreparationHistoryView onPrepareQuestion={homeActions.prepareQuestion} searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : reviewCategory ? care ? <CareReviewHistoryView key={care.scopeKey} model={care.model} actions={care.actions} searchText={filters.searchText} initialStatus={initialReviewStatus} olderOnly={olderOnly} />
       : <Text style={styles.meta}>正在準備目前孩子的核對記錄，未取得正確作用域前不顯示舊內容。</Text>
@@ -112,8 +111,8 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
           <View style={styles.dateField}><AppDateField label="結束日期（可不填）" value={filters.to} error={dateErrors.to} disabled={filterDisabled} onChange={value => filter({ type: "to", value })} /></View>
           <AppButton label="清除篩選" variant="quiet" style={[styles.clearFilter, compact && styles.clearFilterStack]} disabled={!hasFilters || currentLocked} onPress={() => filter({ type: "reset" })} />
         </View> : <><Text style={styles.meta}>核對記錄尚未提供可核實的日期欄位，這裏只按內容及處理狀態搜尋。</Text><AppButton label="清除搜尋" variant="quiet" disabled={!filters.searchText || currentLocked} onPress={() => filter({ type: "search", value: "" })} /></>}
-        {taskCategory && tasks ? <Text style={styles.meta}>日期按完成／取消時間篩選，包含開始及結束日（{timeZoneLabel(tasks.model.scheduleContext.timeZone)}）。</Text> : null}
-        {preparationCategory && preparations ? <Text style={styles.meta}>日期按歸檔時間篩選，包含開始及結束日（香港時間）。</Text> : null}
+        {taskCategory && tasks ? <Text style={styles.meta}>日期只按已取得且吻合版本的完成／取消修訂時間篩選（{timeZoneLabel(tasks.model.scheduleContext.timeZone)}）；未讀取修訂的事項沒有完成日期，不會用安排時間代替。只顯示同一任務 owner 已取得的分頁。</Text> : null}
+        {preparationCategory && preparations ? <Text style={styles.meta}>目前 API 只提供單一共享到診準備，尚未接通文件歸檔歷史；此區不能代表完整準備單歷史。</Text> : null}
       </View> : null}
       {compact ? <View style={styles.results}>{results}</View> : <AppTabPanel tabsId="history-categories" tabKey={filters.category} active style={styles.results}>{results}</AppTabPanel>}
     </View>
@@ -123,9 +122,9 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
 export default function HistoryScreen() {
   const pathname = usePathname();
   const { category, status, older } = useLocalSearchParams<{ category?: string | string[]; status?: string | string[]; older?: string | string[] }>();
-  const { model, actions } = usePreview();
+  const { model, actions, scopeKey } = useProduction();
   const child = model.children.find(item => item.id === model.selectedChildId);
-  const scope = JSON.stringify(["preview-server", model.caregiverName, child?.id ?? null, child?.accessRole ?? null]);
+  const scope = scopeKey ?? "";
   if (pathname !== "/history") return null;
   if (!child) return <PageFrame title="歷史" density="compact" description="按分類查閱過往資料。"><Text style={styles.body}>先選擇有權查看的孩子，不會顯示其他孩子的歷史。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></PageFrame>;
   return <HistoryWorkspace key={scope} scope={scope} childName={child.displayName} initialCategory={normalizeHistoryCategory(category)} initialReviewStatus={normalizeReviewHistoryStatus(status)} olderOnly={normalizeHistoryOlderOnly(older)} />;

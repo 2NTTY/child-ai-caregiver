@@ -10,15 +10,17 @@ export const agentPolicyUpdateSchema = z.object({
   operationId: z.uuid(), expectedVersion: version,
   recordKinds: z.array(z.enum(ordinaryRecordKinds)).max(4).refine(values => new Set(values).size === values.length),
   allowPrivateNotes: z.boolean(), allowSelfTasks: z.boolean(),
+  allowRecordCorrections: z.boolean().default(false),
   reminderConsentVersion: version.nullable(), reminderBindings: z.array(contactBindingSchema).max(2),
   confirm: z.literal(true), confirmShared: z.boolean(),
-}).strict().refine(value => !value.recordKinds.length && !value.allowSelfTasks || value.confirmShared)
+}).strict().refine(value => !value.recordKinds.length && !value.allowSelfTasks && !value.allowRecordCorrections || value.confirmShared)
   .refine(value => value.reminderBindings.length === 0 ? value.reminderConsentVersion === null
     : value.allowSelfTasks && value.reminderConsentVersion !== null);
 export type AgentPolicyUpdate = z.infer<typeof agentPolicyUpdateSchema>;
 export interface AgentOperationPolicy {
   version: number; effective: boolean; recordKinds: (typeof ordinaryRecordKinds)[number][];
   allowPrivateNotes: boolean; allowSelfTasks: boolean;
+  allowRecordCorrections: boolean;
   reminderConsentVersion: number | null; reminderBindings: ContactBinding[];
 }
 const evidence = { sourceQuote: text(2000), expectedPolicyVersion: version };
@@ -32,6 +34,8 @@ const ordinaryDetails = z.object({ kind: z.enum(ordinaryRecordKinds),
 /** These actions express user statements and ordinary instructions, never diagnoses or inferred facts. */
 export const agentDirectActionSchema = z.discriminatedUnion("kind", [
   z.object({ ...evidence, kind: z.literal("save_record"), text: text(2000), details: ordinaryDetails }).strict(),
+  z.object({ ...evidence, kind: z.literal("revise_record"), recordId: z.uuid(), expectedVersion: version,
+    text: text(2000), details: ordinaryDetails, reason: text(1000) }).strict(),
   z.object({ ...evidence, kind: z.literal("save_private_note"), title: text(100), text: text(2000) }).strict(),
   z.object({ ...evidence, kind: z.literal("revise_private_note"), noteId: z.uuid(), expectedVersion: version,
     title: text(100), text: text(2000) }).strict(),
@@ -45,7 +49,7 @@ export const agentDirectActionSchema = z.discriminatedUnion("kind", [
 ]);
 export type AgentDirectAction = z.infer<typeof agentDirectActionSchema>;
 export const agentActionToolNames: Record<AgentDirectAction["kind"], string> = {
-  save_record: "save_ordinary_record", save_private_note: "save_private_instruction",
+  save_record: "save_ordinary_record", revise_record: "revise_ordinary_record", save_private_note: "save_private_instruction",
   revise_private_note: "revise_private_instruction", create_self_task: "create_ordinary_reminder",
   change_self_task: "change_ordinary_reminder",
 };

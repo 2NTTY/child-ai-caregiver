@@ -1,20 +1,16 @@
 import { useContainerWidth } from "../components/useContainerWidth";
 import { brand } from "../branding";
-import { useId, useState } from "react";
-import { useRouter } from "expo-router";
+import { useEffect, useId, useState } from "react";
 import { usePreviewNavigation, usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Divider, Text } from "react-native-paper";
-import { PreferencesPreview } from "../components/PreferencesPreview";
 import { BackgroundSettings } from "../components/appearance/BackgroundSettings";
 import { MotionSettings } from "../components/appearance/MotionSettings";
-import { ChannelSettingsPreview } from "../components/notifications/ChannelSettingsPreview";
-import { useChannelSettingsPreview } from "../preview/useChannelSettingsPreview";
-import { ModelSettingsPreview } from "../components/model-settings/ModelSettingsPreview";
-import { useModelSettingsPreview } from "../preview/useModelSettingsPreview";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTabPanel, AppTextField, SectionHeader, TextLink } from "../components/ui";
-import { usePreview } from "../preview/PreviewContext";
+import { useProduction } from "../production/ProductionProvider";
+import { ModelSettingsView } from "../components/model-settings/ModelSettingsView";
+import { ProductionChannelSettings, ProductionNotificationPreferences, useProductionSettingsDomains } from "../production/SettingsDomains";
 import { AppIcon } from "../components/AppIcon";
 import { SettingsNavigation } from "../components/settings/SettingsNavigation";
 import { SettingsSection as SectionCard } from "../components/settings/SettingsSection";
@@ -32,19 +28,19 @@ function LabeledValue({ label, value }: { label: string; value: string }) {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
   const leave = usePreviewNavigation();
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
-  const { model, actions } = usePreview();
-  const channels = useChannelSettingsPreview(model.connection === "online");
-  const modelSettings = useModelSettingsPreview(model.connection === "online", channels.identity);
+  const { model, actions, user, identityKey, signOut } = useProduction();
+  const { modelSettings } = useProductionSettingsDomains();
   const [tab, setTab] = useState<SettingsTab>("account");
   const tabsId = useId();
-  const [displayName, setDisplayName] = useState(model.caregiverName);
-  usePreviewLeaveGuard(displayName !== model.caregiverName);
+  const accountName = user?.name ?? "";
+  const [displayName, setDisplayName] = useState(accountName);
+  useEffect(() => { setDisplayName(accountName); }, [identityKey, accountName]);
+  usePreviewLeaveGuard(displayName !== accountName, false, "account");
   const compactNavigation = width < 720;
-  const accountDirty = displayName !== model.caregiverName;
+  const accountDirty = displayName !== accountName;
   return <PageFrame density="compact" title="設定" description="管理個人偏好、孩子與家庭資料。" eyebrow={`${brand.name} · 個人空間`}>
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.workspace, compactNavigation && styles.workspaceStack]}>
     <SettingsNavigation id={tabsId} items={tabs} value={tab} onChange={setTab} compact={compactNavigation} />
@@ -53,11 +49,12 @@ export default function SettingsPage() {
     <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
       <View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="個人資料" />
-          <View style={styles.identity}><View style={styles.avatar}><Text style={styles.avatarText}>{displayName.slice(0, 1) || "育"}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{displayName || "未命名"}</Text><Text style={styles.muted}>preview@example.invalid</Text></View></View>
+          <View style={styles.identity}><View style={styles.avatar}><Text style={styles.avatarText}>{displayName.slice(0, 1) || "育"}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{displayName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
           <Divider style={styles.divider} />
-          <Text style={styles.label}>顯示名稱</Text><AppTextField accessibilityLabel="顯示名稱預覽草稿" value={displayName} onChangeText={setDisplayName} />
-          {accountDirty ? <View style={styles.draftBoundary}><Text style={styles.draftTitle}>顯示名稱有未保存修改</Text><Text style={styles.draftNote}>帳戶保存暫不可用。</Text><AppButton label="還原顯示名稱草稿" variant="quiet" onPress={() => setDisplayName(model.caregiverName)} /></View> : null}
-          <LabeledValue label="電郵地址" value="preview@example.invalid" />
+          <Text style={styles.label}>顯示名稱</Text><AppTextField accessibilityLabel="顯示名稱草稿" value={displayName} onChangeText={setDisplayName} />
+          {accountDirty ? <View style={styles.draftBoundary}><Text style={styles.draftTitle}>顯示名稱有未保存修改</Text><Text style={styles.draftNote}>帳戶保存暫不可用。</Text><AppButton label="還原顯示名稱草稿" variant="quiet" onPress={() => setDisplayName(accountName)} /></View> : null}
+          <LabeledValue label="電郵地址" value={user?.email ?? "尚未讀取"} />
+          <Text style={styles.draftNote}>目前可查看本人資料；顯示名稱保存暫不可用。</Text>
           <LabeledValue label="登入方式" value="電郵與密碼" />
         </SectionCard>
         <SectionCard><SectionHeader density="compact" title="語言與地區" />
@@ -67,7 +64,8 @@ export default function SettingsPage() {
       <View style={styles.sectionGroup}>
         <SectionCard testID="account-settings"><SectionHeader density="compact" title="登入與安全" subtitle="切換帳戶入口集中在這裏。" />
 
-          <AppButton label="查看登入畫面" variant="secondary" onPress={() => leave(() => router.push("/login"))} />
+          <AppButton label="登出本人帳戶" variant="secondary" onPress={() => leave(() => { void signOut(); })} />
+          <Text style={styles.draftNote}>社交登入、重設密碼及刪除帳戶暫不可用。</Text>
           <View style={styles.settingGroup}><SectionHeader density="compact" title="模型服務" subtitle="管理平台服務、個人密鑰及呼叫上限。" />
             <AppButton label="管理模型設定" variant="secondary" onPress={() => setTab("model")} />
           </View>
@@ -76,7 +74,7 @@ export default function SettingsPage() {
             <TextLink label="查看資料與私隱" onPress={() => setTab("privacy")} />
           </View>
           <View style={styles.settingGroup}><SectionHeader density="compact" title="使用引導" subtitle="即使完成初始設定，也可隨時重看操作次序。" />
-            <Text style={styles.body}>查看孩子資料、已確認記錄及家庭偏好的入口。</Text>
+            <Text style={styles.body}>查看孩子資料、已保存記錄及家庭偏好的入口。</Text>
             <TextLink label="開啟使用引導" onPress={() => actions.open("guide")} />
           </View>
           <View style={styles.settingGroup}><Text style={styles.helpTitle}>需要協助？</Text><Text style={styles.body}>客服支援暫不可用。</Text></View>
@@ -93,7 +91,7 @@ export default function SettingsPage() {
     <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={styles.sections}>
       <View style={styles.sectionGroup}>
         <MotionSettings />
-        <PreferencesPreview online={model.connection === "online"} />
+        <ProductionNotificationPreferences />
         <BackgroundSettings />
       </View><View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="通知渠道" />
@@ -103,22 +101,22 @@ export default function SettingsPage() {
         </SectionCard>
       </View>
     </AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="notifications" active={tab === "notifications"}><ChannelSettingsPreview controller={channels} /></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsPreview controller={modelSettings} active={tab === "model"} onSwitchAccount={channels.switchAccount} /></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="notifications" active={tab === "notifications"}><ProductionChannelSettings /></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsView model={modelSettings.model} actions={modelSettings.actions} active={tab === "model"} /></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} style={styles.sections}>
       <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="資料與私隱" />
-        <Text style={styles.body}>孩子資料、已確認記錄與私人聊天的可見範圍，須按目前身份與家庭角色重新檢查。退出或撤權後，正式 App 必須清除不再可見的資料。</Text>
+        <Text style={styles.body}>孩子資料、已保存記錄與私人聊天的可見範圍，須按目前身份與家庭角色重新檢查。退出或撤權後會清除不再可見的資料。</Text>
         <LabeledValue label="私人聊天" value="只對本人可見" /><LabeledValue label="共享資料" value="按孩子及家庭角色授權" />
       </SectionCard>
         <SectionCard testID="settings-data-sources"><SectionHeader density="compact" title="資料來源" subtitle="你提供的來源，在同一處查看和管理。" icon="link-variant" />
-          <Text style={styles.body}>加入連結或原文，說明想怎樣使用；可以交助手協助整理，再回到同一表單核對，也可以自行填寫。</Text>
+          <Text style={styles.body}>加入連結或原文，自行核對私人來源；交助手討論來源用途的接點尚未提供。</Text>
           <AppButton label="管理資料來源" variant="secondary" onPress={() => actions.open("sources")} />
-          <Text style={styles.draftNote}>完整來源保持本人私人。</Text>
+          <Text style={styles.draftNote}>完整來源保持本人私人；共享照護記錄須另行確認。</Text>
         </SectionCard>
       </View>
       <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="帳戶操作" />
         <Text style={styles.body}>資料匯出、刪除帳戶及儲存用量暫不可用。</Text>
-        <TextLink label="查看接線說明" onPress={() => setTab("account")} />
+        <TextLink label="查看帳戶資料" onPress={() => setTab("account")} />
       </SectionCard></View>
     </AppTabPanel>
     </View>

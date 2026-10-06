@@ -1,7 +1,8 @@
 import type { HomeDestination } from "../view-model";
 
 // Enable each domain only after its production owner has been integrated.
-export const connectedProductionRoutes = ["/", "/login", "/guide", "/chat"] as const;
+export const connectedProductionRoutes = ["/", "/login", "/guide", "/chat", "/care", "/profile", "/tasks", "/summary",
+  "/growth", "/memory", "/history", "/photos", "/sources", "/settings", "/family", "/contact", "/more"] as const;
 export function isProductionRouteConnected(pathname: string): boolean {
   return (connectedProductionRoutes as readonly string[]).includes(pathname);
 }

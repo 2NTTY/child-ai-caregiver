@@ -15,12 +15,13 @@ import { useProduction } from "../../src/production/ProductionProvider";
 import { ProductionGate } from "../../src/production/ProductionGate";
 import ProductionUnavailable from "../../src/production/ProductionUnavailable";
 import { isProductionRouteConnected } from "../../src/production/routes";
+import { ProductionDomains } from "../../src/production/ProductionDomains";
 
 export default function DashboardLayout() {
   const { identityKey } = useProduction();
-  return <ProductionGate><BackgroundProvider key={identityKey}>
+  return <ProductionGate><BackgroundProvider key={identityKey}><ProductionDomains>
     {Platform.OS === "web" ? <AppShell><ConnectedRoute><Slot /></ConnectedRoute></AppShell> : <NativeAppShell><NativeDashboardTabs /></NativeAppShell>}
-  </BackgroundProvider></ProductionGate>;
+  </ProductionDomains></BackgroundProvider></ProductionGate>;
 }
 
 function ConnectedRoute({ children }: { children: ReactNode }) {

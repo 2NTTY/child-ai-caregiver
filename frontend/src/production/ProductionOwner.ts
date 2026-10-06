@@ -23,6 +23,17 @@ export class ProductionOwner {
   readonly chatController: ChatController;
   readonly agentOwner: ProductAgentOwner;
   readonly authorizationOwner: AgentAuthorizationOwner;
+  private readonly domainPending = new Set<string>();
+  setDomainPending = (key: string, pending: boolean) => {
+    if (this.domainPending.has(key) === pending) return;
+    if (pending) this.domainPending.add(key); else this.domainPending.delete(key);
+    this.syncMutationLocks(); this.snapshot = this.project(); this.emit();
+  };
+  hasDomainPending = () => this.domainPending.size > 0;
+  handleDomainAccessError = (error: { status?: number; code?: string | null }) => {
+    if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
+    else if (error.status === 403 || error.code === "access_denied") this.denySelectedChild();
+  };
   private unsubscribeAgent: (() => void) | null = null;
   private unsubscribeAuthorization: (() => void) | null = null;
   private generation = 0;
@@ -53,7 +64,7 @@ export class ProductionOwner {
       release: childId => childEvent(() => this.chatController.releaseChildDeletion(childId)),
       forget: childId => childEvent(() => this.chatController.forgetChild(childId)),
       reconcile: (ids, pending) => childEvent(() => this.chatController.reconcileChildren(ids, pending)),
-    });
+    }, false); // CareProfileDomains owns record reads; this controller owns identity and children.
     this.agentOwner = new ProductAgentOwner(this.apiBaseUrl, online, error => {
       if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
       else this.denySelectedChild();
@@ -87,12 +98,17 @@ export class ProductionOwner {
     const chat = this.chatController.getSnapshot(), agent = this.agentOwner.getSnapshot().model, authorization = this.authorizationOwner.getSnapshot();
     const chatDraft = chat.selectedChildId ? chat.drafts[chat.selectedChildId] : null;
     const chatLocked = !!chat.busy || chatDraft?.phase === "save_unknown" || chatDraft?.phase === "checked";
-    this.agentOwner.setWritesBlocked(chatLocked || !!authorization.busy || !!authorization.pending);
-    this.authorizationOwner.setWritesBlocked(chatLocked || !!agent.busy || !!agent.pendingDecision);
+    this.agentOwner.setWritesBlocked(this.hasDomainPending() || chatLocked || !!authorization.busy || !!authorization.pending);
+    this.authorizationOwner.setWritesBlocked(this.hasDomainPending() || chatLocked || !!agent.busy || !!agent.pendingDecision);
   }
   chatWritesAllowed = () => {
     const agent = this.agentOwner.getSnapshot().model, authorization = this.authorizationOwner.getSnapshot();
-    return !agent.busy && !agent.pendingDecision && !authorization.busy && !authorization.pending;
+    return !this.hasDomainPending() && !agent.busy && !agent.pendingDecision && !authorization.busy && !authorization.pending;
+  };
+  canStartDomainWrite = () => {
+    const chat = this.chatController.getSnapshot();
+    const draft = chat.selectedChildId ? chat.drafts[chat.selectedChildId] : null;
+    return this.chatWritesAllowed() && !chat.busy && draft?.phase !== "save_unknown" && draft?.phase !== "checked";
   };
   private chatChanged() {
     if (this.syncingChat) return;
@@ -147,19 +163,17 @@ export class ProductionOwner {
     } finally { this.syncingChat = false; }
     this.snapshot = this.project(); this.emit();
   }
-  invalidatePrivateReads = () => {
+  invalidatePrivateReads = (emitEvent = true) => {
     const scope = this.scopeKey();
+    if (this.identity) void this.queryClient.invalidateQueries({ queryKey: ["production", this.identity] });
     if (scope) {
       void this.queryClient.invalidateQueries({ queryKey: ["production", scope] });
-      const state = this.controller.getSnapshot(), draft = state.selectedChildId ? state.drafts[state.selectedChildId] : null;
-      if (state.auth === "signedIn" && state.online && !state.busy && !state.recordsLoading && !state.confirmation && !state.deletion
-        && (!draft || draft.outcome === "draft")) void this.controller.reloadRecords();
     }
     this.authorizationOwner?.invalidateReceipts();
     const authorization = this.authorizationOwner?.getSnapshot(), agent = this.agentOwner?.getSnapshot();
     if (agent?.pending.state === "ready" && !agent.model.busy && !agent.model.pendingDecision && !agent.model.writesBlocked) void this.agentOwner.readPending();
     if (authorization?.notesState === "ready" && !authorization.busy && !authorization.pending) void this.authorizationOwner.readNotes(false, true);
-    if (typeof window !== "undefined") window.dispatchEvent(new Event("yuban-online-refresh"));
+    if (emitEvent && typeof window !== "undefined") window.dispatchEvent(new Event("yuban-online-refresh"));
   };
   async refresh() {
     const state = this.controller.getSnapshot();

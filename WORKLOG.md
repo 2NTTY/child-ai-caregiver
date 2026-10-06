@@ -1423,3 +1423,14 @@
 - Verification：[EV-INT-W02](artifacts/verification/INT_W02_CHECKS.json)。沿用已通過型別／原 ADK 個案及 INT-W01 身份／unknown 證據；一次加密配對備份、025 遷移、53 次業務呼叫的 SQL 驗收通過。真 Agent 完成兩項保存及聊天收據，4 次生成、0 embedding；連同先前失败，共6次真生成、未加配額。餘下畫面只讀同一資源、模型關閉；記錄側欄與私人備註已觀察成功，最後一次21 HTTP／11.6秒，專用孩子均已清理，原庫及備份保留。
 - Failures／Limits：失效 ADC 路徑、聯合工具參數被拒、AI 關閉仍初始化 Vertex 已修；測試編號／薄投影欄位／側欄定位造成停止，逐次保留並只補缺項。原整批瀏覽器腳本未重跑成綠，不把分段證據寫成整批通過。日期精度修正只做兩個零網絡直接核對；無新增通知、公開部署、照片提交、Android 或完整相容性驗收。更早聊天、真取消及普通記錄更正工具仍由 INT-W03 承接。
 - Delivery／Next：按已確認分配用 C 帳號推送、建 PR、merge；本機 Committer 是 A，共同作者 A／B，署名及簽署於遠端交付核對。本包完成隨 PR 合併生效，之後才開始 INT-W03；整體正式入口接線目標仍未完成。
+
+<a id="log-20261006-int-w03"></a>
+## LOG-20261006-INT-W03
+
+- Recorded At／Work Date：2026-10-06 22:00（Asia/Hong_Kong）；基線 master `8862848`，前置 INT-W02，分支 `codex/int-w03-domain-wiring`。
+- Goal／Actual Work：保留已確認的新前端設計，接上 Care／Profile、Task／Summary／Memory／Growth、照片／分享輸入及設定／家庭／通知／聯絡共用 owner。首頁與聊天側欄只投影相同資料，移除舊薄記錄清單的重複讀取；metadata 變更每 5 秒核對。照片由對話安全轉交既有核對流程，記憶更正等人工功能放收合備援；沒有為接線重做 UI。
+- Server／Agent：普通記錄更正沿同一 CareStore／版本／收據，新增預設關閉的 allowRecordCorrections，不擴大舊授權；補較舊聊天游標與 API 在途取消，取消不撤回已提交操作。Prompt Pack 0.1.20 復用既有模組。沒有新增 migration、依賴或改每日模型配額。
+- Executor／Responsibility：A 統籌共用 AI；主模型親寫契約／提示詞／文件並 review，四個 Sol 6.1 XHigh 接互不重疊的功能域，照片代理兼執行單一有界驗收。B 主責；權重5：B50%／C30%／A10%／D10%，依介面、Server、Agent及通知接線責任分配，不是個人手寫程式或實測工時。沒有新增組員人工驗收。
+- Verification：[EV-INT-W03](artifacts/verification/INT_W03_CHECKS.json)。Server／前端型別通過，主模型覆核關鍵原文、diff、權限／scope 與收據；一次本機真 API／Chromium case 通過，11.19 秒（整輪41.91秒）、126 HTTP／8 store 呼叫。同一記錄更正至版本2後，Care及聊天側欄一致，Task及設定可讀。零模型／embedding／通知／外網，無遷移；專用孩子已清理，服務已停止，原庫及暫停 worker 保留。沿用 W01／02 隔離、unknown 及真 Agent 證據，不補整套矩陣。
+- Limits：驗收前只有外部 key 路徑的解讀修正，尚未啟動 case 或建立資料；唯一 case 無失敗／重跑。最後局部修正初讀／離線任務狀態及所選舊分頁任務更新，只作靜態 review，未重跑整批。各表單／照片模型／取消／百則以上聊天未新增獨立 E2E；短期 run context／知識目錄尚未接新記憶頁。未做公開部署、Android、持續關注鏈、多份文件或 PDF。
+- Delivery／Next：B 真實帳號提交作者／推送／PR／合併，本機 Committer 保留 A，按實際共同責任署名 A／C／D，遠端身份與簽署交付時核對。合併後才開始 INT-W04 私人來源對話操作；最終入口及部署仍待 INT-W07。
