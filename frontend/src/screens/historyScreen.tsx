@@ -79,7 +79,7 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
     : careCategory ? care ? <CareSavedRecordsView key={care.scopeKey} model={care.model} actions={care.actions} />
       : <Text style={styles.meta}>正在準備目前孩子的已保存記錄，未取得正確作用域前不顯示舊內容。</Text>
     : growthCategory ? dateRange ? <GrowthHistoryView key={growth?.scopeKey ?? scope} searchText={filters.searchText} dateRange={dateRange}
-      onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={() => navigate(() => router.push("/tasks"))} />
+      onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={id => navigate(() => { tasks?.actions.selectTask(id); router.push("/tasks"); })} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : <View testID={`history-unavailable-${filters.category}`}  style={styles.unavailable}>
       <AppStatusBadge label="尚未接入歷史頁" tone="neutral" />

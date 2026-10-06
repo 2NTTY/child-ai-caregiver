@@ -9,6 +9,7 @@ import { transactionPool } from "./transaction-pool.ts";
 import { canonicalJson } from "./online-routing.ts";
 import { z } from "zod";
 import { createSharedInputStore } from "./shared-input-store.ts";
+import { createConcernStore } from "./concern-store.ts";
 import { summarySaveSchema } from "./memory-validation.ts";
 import { createMemoryStore } from "./memory.ts";
 import { createTaskStore, type TaskScheduling } from "./tasks.ts";
@@ -195,6 +196,12 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           const rescheduledAssignee = value.change.action === "reschedule" ? value.change.assigneeUserId : null;
           if (rescheduledAssignee && !page.eligibleAssignees.some(person => person.userId === rescheduledAssignee)) throw new FamilyError(400, "invalid_assignee");
         }
+        if (value.kind === "concern_change") {
+          const concern = await createConcernStore(borrowed.pool,cipher).get(scope.userId,scope.childId,value.concernId);
+          borrowed.assertReleased();
+          if(!concern || concern.version !== value.change.expectedVersion) throw new FamilyError(409,"version_conflict");
+          targetLabel=concern.title;
+        } else if(value.kind === "concern_create") targetLabel=value.values.title;
         if (value.kind === "private_source_change") {
           const source=await createSharedInputStore(borrowed.pool,cipher).get(scope.userId,scope.childId,value.inputId);
           borrowed.assertReleased();
@@ -232,12 +239,18 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           if (run.authorization_version.toString() !== current.authorizationVersion
             || run.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) throw new FamilyError(409, "confirmation_scope_changed");
         }
-        const value = proposal.value, shared = value.kind === "task_create" || value.kind === "task_change" || value.kind === "memory_fact" && value.intendedVisibility === "family";
+        const value = proposal.value, shared = value.kind === "concern_create" || value.kind === "concern_change" || value.kind === "task_create" || value.kind === "task_change" || value.kind === "memory_fact" && value.intendedVisibility === "family";
         if (input.decision === "accept" && shared && !input.confirmShared) throw new FamilyError(400, "sharing_confirmation_required");
         let result: AgentProposal["result"] = null;
         if (input.decision === "accept") {
           const borrowed = transactionPool(client);
-          if (value.kind === "private_source_create" || value.kind === "private_source_change") {
+          if(value.kind === "concern_create" || value.kind === "concern_change") {
+            const concerns=createConcernStore(borrowed.pool,cipher);
+            const concern=value.kind === "concern_create" ? await concerns.create(userId,childId,value.values,row.id)
+              : await concerns.change(userId,childId,value.concernId,value.change,row.id);
+            borrowed.assertReleased(); if(!concern)throw missing();
+            result={kind:"concern",id:concern.id,version:concern.version};
+          } else if (value.kind === "private_source_create" || value.kind === "private_source_change") {
             const sources=createSharedInputStore(borrowed.pool,cipher);
             let source;
             if(value.kind === "private_source_create") {

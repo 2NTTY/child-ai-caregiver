@@ -454,3 +454,13 @@ INT-W04 在同一加密 payload 保存可選 management：用途、來源性質�
 `model_settings` 以本人 user_id 唯一保存，跟隨帳號刪除；不是孩子／家庭資料，其他家庭成員不可存取。欄位包括 version、mode、背景 opt-in、三種可調限額、更新時間及 api_key_encrypted。初次版本 0；保存時鎖帳號並 CAS，成功遞增版本。AES-GCM 沿用現有 cipher，AAD 綁帳號及版本；沒有明文、尾碼或 hash 回傳。一般停用保留 key，刪除清空密文並停用，歷史備份中的密文須按既有保留政策管理；供應商撤銷 key 是另一項操作。
 
 `ai_attempts`／`embedding_attempts.billing_source` 由 Server factory 決定，既有列標 platform；原 counters 不清零。personal 使用 `personal:global`／`personal:user:<id>`，與平台 global／user 分開。公共語料維護僅用 platform；個人 key 不進工作佇列、Agent session、prompt、候選、online receipt 或一般日誌。每次運行只在記憶體持有快照，背景使用受信事件的執行帳號並檢查 opt-in。
+
+
+<a id="int-concerns"></a>
+## INT-W05 共享持續關注（027）
+
+關注有穩定 ID、childId、版本、following／closed 狀態、真實建立／更新／歸檔时间、共享觀察事件及原關聯 ID；不是 MemoryTopic 或 GrowthAttention 的別名。正文與版本历史沿既有 AES-GCM 保存，AAD 綁固定歸屬與版本。原操作收據綁 user／opId／scope 與正規化請求；重播返回已提交結果，不重新寫入。
+
+事件中的觀察保持使用者陳述，來源記錄／任務／有限關注指向同一孩子的共享資源。歷史不回寫，超出有界容量明確拒絕，不靜默截斷成完整歷史。家長結束關注不改相連任務終態；恢復保留經過，不把舊關注候選變成新的已接受行動。
+
+一次站內跟進分開保存 reference、到期時間、pending／queued／completed／stopped／unknown／cancelled 及實際 runId；未知不是未執行。背景結果正文仍依原 Agent run 的私人權限存取，共享事件只記結果關聯，不複製私人回覆。重排用新 reference，舊終態保留；孩子刪除連帶刪除本包關聯與收據，備份還原沿既有暫停 worker／更換 epoch 的制度。

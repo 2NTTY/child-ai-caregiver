@@ -9,6 +9,7 @@ import { AppButton,AppSelect,AppTabPanel,SectionCard,UnderlineTabs } from "../ui
 import { GrowthConcernIndex, GrowthConcernTimeline } from "./GrowthConcernTimeline";
 import { GrowthArchive } from "./GrowthArchive";
 import { GrowthConcernChangeNotice } from "./GrowthConcernChangeNotice";
+import { GrowthConcernManualFallback } from "./GrowthConcernManualFallback";
 import { GrowthOperationRecovery } from "./GrowthOperationRecovery";
 import { growthRefreshNotice } from "../../growth-view-model";
 import { growthStyles as s } from "./growth-styles";
@@ -48,7 +49,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,previewTools
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
     {showStatus ? <View style={s.smallStack}>
       {!model.online?<Text style={s.warning}>目前離線；資料未代表最新狀態，不能提交，沒有離線操作佇列。</Text>:null}
-      {model.access==="read_only"?<Text style={s.meta}>目前只有閱讀權限；不能接受、確認近況或更改主題。</Text>:null}
+      {model.access==="read_only"?<Text style={s.meta}>目前只有閱讀權限；不能更改關注、接受候選或確認近況。</Text>:null}
       {model.access==="lost"?<Text style={s.warning}>已無權存取；舊關注、草稿及操作已清除。</Text>:null}
       {showLoading?<Text style={s.meta}>正在讀取，未確認最新狀態。</Text>:null}
       {model.load==="error"?<Text style={s.warning}>尚未成功讀取目前狀態；保留的草稿不能提交。</Text>:null}
@@ -81,6 +82,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,previewTools
             </View>
           </View>
         </> : <View style={s.archiveEmpty}><Text style={s.body}>{model.access === "lost" ? "已無權查看這位孩子的關注。" : model.load === "loading" ? "正在讀取這位孩子的關注。" : "目前未能取得關注資料。"}</Text></View>}
+        <GrowthConcernManualFallback model={model} actions={actions} concern={concern} />
       </AppTabPanel>
       <AppTabPanel tabsId="growth-workspace" tabKey="archive" active={tab === "archive"} style={s.stack}>
         <GrowthArchive key={model.scopeKey} model={model} wide={wide} scrollRef={scrollRef} onRecord={onRecord} footerActions={footerActions} footerDetails={footerDetails} />

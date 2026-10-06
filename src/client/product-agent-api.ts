@@ -38,9 +38,9 @@ const proposalSchema = z.object({
   id: uuid, runId: uuid, childId: uuid, version,
   status: z.enum(["pending", "accepted", "dismissed", "expired"]),
   createdAt: timestamp, expiresAt: timestamp, value: agentProposalSchema, targetLabel: z.string().nullable(),
-  result: z.object({ kind: z.enum(["task", "memory_fact", "private_source"]), id: uuid, version }).nullable(),
+  result: z.object({ kind: z.enum(["task", "memory_fact", "private_source", "concern"]), id: uuid, version }).nullable(),
 }).refine(value => value.status === "accepted"
-  ? value.result !== null && value.result.kind === (value.value.kind.startsWith("private_source_")?"private_source":value.value.kind === "memory_fact" ? "memory_fact" : "task")
+  ? value.result !== null && value.result.kind === (value.value.kind.startsWith("concern_")?"concern":value.value.kind.startsWith("private_source_")?"private_source":value.value.kind === "memory_fact" ? "memory_fact" : "task")
   : value.result === null);
 const citationSchema = z.object({
   key: z.string(), section: z.string(), sourceExcerpt: z.string(), text: z.string(), keywords: z.array(z.string()),

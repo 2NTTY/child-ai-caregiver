@@ -47,6 +47,7 @@ function safeHttps(value: string): string | null {
 }
 function ProposalDetails({ proposal }: { proposal: AgentProposal }) {
   const value = proposal.value;
+  if(value.kind==="concern_create"||value.kind==="concern_change")return <View style={styles.stack}><Text style={styles.label}>持續關注：{proposal.targetLabel}</Text><Text style={styles.hint}>請使用正式新前端核對共享內容及站內跟進後接受。</Text></View>;
   if(value.kind==="private_source_create"||value.kind==="private_source_change")return <View style={styles.stack}>
     <Text style={styles.label}>私人來源設定：{proposal.targetLabel}</Text>
     <Text style={styles.hint}>請使用正式新前端核對完整來源用途、選取正文及授權後接受；私人來源不等於已確認事實。</Text>
@@ -248,7 +249,7 @@ function AgentRunContents({ apiBaseUrl, userId, childId, runId, online }: Props)
             onToggle={() => setShared(previous => ({ ...previous, [proposal.id]: !previous[proposal.id] }))} />}
           {proposal.status === "pending" && <View style={styles.row}>
             <Action label={busy === "write" ? "正在確認操作…" : "明確接受此事項"} onPress={() => decide(proposal, "accept")}
-              disabled={locked || pastDeadline || proposal.value.kind.startsWith("private_source_") || (isShared(proposal) && !shared[proposal.id])} />
+              disabled={locked || pastDeadline || proposal.value.kind.startsWith("private_source_") || proposal.value.kind.startsWith("concern_") || (isShared(proposal) && !shared[proposal.id])} />
             <Action label="略過此事項" onPress={() => decide(proposal, "dismiss")} disabled={locked || pastDeadline} />
           </View>}
         </View>;

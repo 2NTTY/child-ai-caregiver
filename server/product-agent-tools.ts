@@ -14,6 +14,7 @@ import type { ProductAgentStore } from "./product-agent-store.ts";
 import { FamilyError } from "./family-access.ts";
 import { createAgentActionTools } from "./agent-action-tools.ts";
 import { createAgentSourceTools } from "./agent-source-tools.ts";
+import { createAgentConcernTools } from "./agent-concern-tools.ts";
 
 type Retriever = ReturnType<typeof createKnowledgeRetriever>;
 const shortText = (length: number) => z.string().min(1).max(length).refine(value => value.trim().length > 0);
@@ -54,6 +55,9 @@ export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): 
 }
 
 export function createProductAgentTools(options: {
+  includeConcerns?: boolean; includePrivateSources?: boolean; ordinaryToolNames?: readonly string[];
+  includeTaskProposals?: boolean; includeContact?: boolean;
+  concerns?: import("./concern-store.ts").ConcernStore;
   sources?: import("./shared-input-store.ts").SharedInputStore;
   actions?: import("./agent-actions-store.ts").AgentActionsStore;
   summary?:import("./care-summary-store.ts").CareSummaryStore;
@@ -65,7 +69,7 @@ export function createProductAgentTools(options: {
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
   const authorize = run.authorize ?? options.authorize;
-  const privateSources=options.sources&&options.visibility!=="family"?createAgentSourceTools(options.sources,store,run,authorize):null;
+  const privateSources=options.sources&&options.includePrivateSources!==false&&options.visibility!=="family"?createAgentSourceTools(options.sources,store,run,authorize):null;
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
     budget, authorize, embeddings: run.embeddings });
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
@@ -173,8 +177,10 @@ export function createProductAgentTools(options: {
       }) },
   ];
 
-  if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted));
+  if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted)
+    .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
+  if(options.concerns&&options.includeConcerns!==false)tools.splice(tools.length-1,0,...createAgentConcernTools(options.concerns,store,run,permitted,options.visibility==="family"));
   if(options.summary)tools.splice(tools.length-1,0,{
     name:"read_care_summary",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",
     parameters:summaryQuery,authorize:permitted,execute:args=>guard(async()=>{
@@ -198,7 +204,9 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
-    tools: options.visibility === "family" ? tools.filter(tool => ["read_context", "search_knowledge", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name)) : tools,
+    tools: options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
+      : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
+        && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
       coveredMessageIds: summaryInput.messages.map(message => message.id), text: summaryText } : undefined,
     async presentation(): Promise<AgentPresentation | null> {

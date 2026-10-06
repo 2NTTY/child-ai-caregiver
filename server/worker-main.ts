@@ -2,6 +2,8 @@ import { createContactStore } from "./contact-store.ts";
 import { contactQueue,startContactWorker } from "./contact-worker.ts";
 import { createGrowthStore } from "./growth-store.ts";
 import { createGrowthWorker } from "./growth-worker.ts";
+import { createConcernStore } from "./concern-store.ts";
+import { createConcernWorker } from "./concern-worker.ts";
 import { createPool } from "./database.ts";
 import { readServerConfig } from "./config.ts";
 import { createStorageCipher, readSecretKey } from "./storage-crypto.ts";
@@ -32,6 +34,7 @@ let pool: ReturnType<typeof createPool> | undefined;
 let queue: ReturnType<typeof createWorkerQueue> | undefined;
 let knowledgeWorker: ReturnType<typeof createKnowledgeRefreshWorker> | undefined;
 let growthWorker: ReturnType<typeof createGrowthWorker> | undefined;
+let concernWorker: ReturnType<typeof createConcernWorker> | undefined;
 let agentBackground: ReturnType<typeof createAgentBackground> | undefined;
 let pushQueue: ReturnType<typeof createWebPushQueue> | undefined;
 let stopping: Promise<void> | undefined;
@@ -39,9 +42,11 @@ const stop = () => stopping ??= (async () => {
   telegramAbort.abort();
   const deadline = setTimeout(() => { console.error("worker_stop_deadline"); process.exit(1); }, 20000).unref();
   agentBackground?.stop();
-  try { await growthWorker?.stop(); } finally {
-    try { await knowledgeWorker?.stop(); } finally {
-      try { await pushQueue?.stop(); } finally { try { await telegramConsumer?.stop(); } finally { try { await contactConsumer?.stop(); } finally { try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } } } } }
+  try { await concernWorker?.stop(); } finally {
+    try { await growthWorker?.stop(); } finally {
+      try { await knowledgeWorker?.stop(); } finally {
+        try { await pushQueue?.stop(); } finally { try { await telegramConsumer?.stop(); } finally { try { await contactConsumer?.stop(); } finally { try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } } } } }
+      }
     }
   }
 })();
@@ -64,6 +69,9 @@ try {
     const aiConfig = readAiConfig(process.env);
     const services = createProductAgentServices(pool, cipher, aiConfig, undefined, process.env.AGENT_DIAGNOSTICS === "true",growth,contact,undefined,createModelRouting(pool,cipher,aiConfig));
     if(growth){growthWorker=createGrowthWorker(pool,queue.boss,growth,services.agent);await growthWorker.start();}
+    if((await pool.query("SELECT 1 FROM app_migrations WHERE id='027-concerns'")).rowCount){
+      concernWorker=createConcernWorker(pool,queue.boss,createConcernStore(pool,cipher),services.agent);await concernWorker.start();
+    }
     agentBackground = createAgentBackground(pool, cipher, queue.boss, services.agent);
     await agentBackground.start();
   }
