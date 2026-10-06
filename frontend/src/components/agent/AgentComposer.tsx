@@ -20,17 +20,18 @@ const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄
 type ControlInteraction = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
 
 // Mount this private subtree with the current identity/child scope key.
-export function AgentComposer({ enabled, compact, draft, attachments, onChangeDraft, onPreview, onSources, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0 }: {
+export function AgentComposer({ enabled, compact, draft, attachments, onChangeDraft, onPreview, onSources, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0, submitEnabled, submitLabel = "預覽輸入", inputHint, filesUnavailableReason, voiceUnavailableReason, suggestionLabel = "本地示例" }: {
   enabled: boolean; compact: boolean; draft: string; attachments: readonly AssistantAttachment[]; onChangeDraft: (value: string) => void; onPreview: () => void;
   onSources: () => void; onAddAttachment(attachment: AssistantAttachment, replaceId?: string): boolean; onRemoveAttachment(id: string): void;
   captureOriginal?: PhotoFilePickerProps["captureOriginal"]; focusRequest?: number;
+  submitEnabled?: boolean; submitLabel?: string; inputHint?: string; filesUnavailableReason?: string; voiceUnavailableReason?: string; suggestionLabel?: string;
 }) {
   const input = useRef<ChatComposerInputHandle>(null);
   const touchControls = useInteractionDensity() || compact;
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [inputDialog, setInputDialog] = useState<"file" | "voice" | null>(null);
   const [replacement, setReplacement] = useState<AssistantAttachment | null>(null);
-  const canPreview = enabled && canPreviewAssistantDraft({ text: draft, attachments });
+  const canPreview = enabled && (submitEnabled ?? canPreviewAssistantDraft({ text: draft, attachments }));
   const [suggestionsExpanded, setSuggestionsExpanded] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -88,26 +89,26 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
       value={draft} onChangeText={onChangeDraft} onFocus={() => { setInputFocused(true); setAutomaticCollapse(value => value + 1); setSuggestionsExpanded(false); }} onBlur={() => setInputFocused(false)}
       disabled={!enabled} />
     <View style={styles.composerActions}><View style={styles.leftActions}><AgentInputToolbar disabled={!enabled} compact={touchControls} onFiles={() => { setReplacement(null); setInputDialog("file"); }} onVoice={() => { setReplacement(null); setInputDialog("voice"); }}
-      onPickPhoto={original => addAttachment(photoAttachment(original))} onPhotoError={setPhotoError} captureOriginal={captureOriginal} />
+      onPickPhoto={original => addAttachment(photoAttachment(original))} onPhotoError={setPhotoError} captureOriginal={captureOriginal} filesUnavailableReason={filesUnavailableReason} voiceUnavailableReason={voiceUnavailableReason} />
       <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
         accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
         aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
         style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, focused && enabled && !hasDraft && styles.controlFocused, pressed && enabled && !hasDraft && styles.pressed]}>
         <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable></View>
-      <Pressable accessibilityRole="button" accessibilityLabel="預覽輸入" accessibilityState={{ disabled: !canPreview }}
+      <Pressable accessibilityRole="button" accessibilityLabel={submitLabel} accessibilityState={{ disabled: !canPreview }}
         disabled={!canPreview} onPress={preview}
         style={({ focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, focused && canPreview && styles.controlFocused]}>
         {({ pressed, hovered }: ControlInteraction) => <View style={[styles.sendCircle, !canPreview && styles.sendDisabled, (pressed || hovered) && canPreview && styles.sendPressed]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>}
       </Pressable></View>
     <MotionDisclosure expanded={showSuggestions} scopeKey={JSON.stringify([enabled, hasDraft, automaticCollapse])} testID="composer-suggestions-disclosure"><ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
       contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled">
-      <Text style={styles.suggestionLabel}>本地示例：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={`預填本地示例：${item}`}
+      <Text style={styles.suggestionLabel}>{suggestionLabel}：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={`預填${suggestionLabel}：${item}`}
         disabled={hasDraft || !enabled} onPress={() => pickSuggestion(item)}
         style={({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (hasDraft || !enabled) && styles.disabled, pressed && enabled && !hasDraft && styles.pressed]}>
         <Text style={styles.suggestionText}>{item}</Text></Pressable>)}
     </ScrollView></MotionDisclosure>
     </View>
-    {attachments.length ? <Text style={styles.composerHint}>未送出 · 附件離頁清除；文字草稿保留</Text> : null}
+    {inputHint || attachments.length ? <Text style={styles.composerHint}>{inputHint ?? "未送出 · 附件離頁清除；文字草稿保留"}</Text> : null}
     </View>
     <AssistantInputDialog kind={inputDialog} enabled={enabled} onPick={addAttachment}
       onDismiss={() => { setInputDialog(null); setReplacement(null); }}

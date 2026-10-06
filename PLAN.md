@@ -7,12 +7,12 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-核對時間：2026-10-06；正式整合基線為 master `61a8faa`（PR #90），已 fetch 至本機。開工及交付仍須重查遠端／相關 PR 及本機差異。
+核對時間：2026-10-06；目前 INT-W02 從 master `2592ec7`（PR #91）建立，分支 `codex/int-w02-agent-wiring`。開工及交付仍須重查遠端／相關 PR 及本機差異。
 
 - **文件維護**：[DOC-R04](#doc-r04) 已驗收，隨 [PR #86](https://github.com/2NTTY/child-ai-caregiver/pull/86) 合併結案；沒有因此啟動下一個文件或產品包。
 - **前端獨立工作流**：只沿 [frontend/PLAN#active](frontend/PLAN.md#active) 接續；根計劃不複製 FE-Wxx 的工作狀態。
 - **INT-W01 已驗收**：正式建置、登入、孩子與共用 owner／讀取快取已實作，隨 [PR #91](https://github.com/2NTTY/child-ai-caregiver/pull/91) 合併結案；分支 `codex/int-w01-production-foundation`。保留已確認的版面、動效及美術，未改後端資料契約。
-- **下一步／未驗**：合併後從最新 master 開 INT-W02，先接真 Agent 對話。[INT-W01 固定範圍證據](artifacts/verification/INT_W01_CHECKS.json)。未接頁面暫時標明接線中，不 mount 合成 owner；Agent／其餘 P2 接線、Android 及公開部署未驗。
+- **INT-W02 已驗收／待交付**：真聊天、引用與收據、本人普通預授權、私人交代及跨 run 待確認索引已接通；必要 SQL 與真 Agent 主流程、同源記錄及私人備註畫面已核對，詳見 [EV](artifacts/verification/INT_W02_CHECKS.json)。原瀏覽器整批因測試腳本問題停止，所需结果以零模型讀取分段補足，沒有重跑整批或隱去失敗。完成本包 C 帳號 PR／合併後才啟動 INT-W03；其餘頁面、Android 及公開部署尚未完成。
 - **入口及結案**：依 [正式整合安排](#production-integration) → [P2 UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff) → [前端交接](frontend/HANDOFF.md#reading-order)。INT-W01 的必要驗收及 review 通過並合併才結案，不能將建置入口就緒寫成全產品已接通。
 
 包開始時在此保留一份簡短現行卡：目標／範圍、基線及活動 PR／branch、所需契約位置、下一動作、阻塞／未驗、完成及停止條件。新證據原位更新；已完成內容收短到下方包記錄及證據，勿在 STATUS／HANDOFF 再建第二張卡。[更新職責](AGENTS.md#document-updates)。
@@ -25,14 +25,14 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 | 包 | 狀態／交付 | 前置 | 主責及預分配 |
 |---|---|---|---|
 | <a id="int-w01"></a>INT-W01 | 已完成（隨 [PR #91](https://github.com/2NTTY/child-ai-caregiver/pull/91) 合併生效）：正式建置、登入、孩子与共用 owner／讀取快取；[EV](artifacts/verification/INT_W01_CHECKS.json) | master `61a8faa` | B；權重 3，B 60%／C 30%／A 10% |
-| <a id="int-w02"></a>INT-W02 | 未開始：先接真聊天、歷史、來源、工具結果、確認及背景結果；再補普通指令／自動保存授權、持久確認與記憶接縫 | INT-W01 | A；C／B 協作 |
-| <a id="int-w03"></a>INT-W03 | 未開始：既有 UI-P2-01～18、照片、記錄、任務、記憶、設定、通知／聯絡及跨頁同步 | INT-W02 | B；C／D 協作 |
+| <a id="int-w02"></a>INT-W02 | 已驗收（本包 PR 合併後完成）：真聊天／引用、持久候選、普通記錄／私人交代與本人提醒的預授權操作及收據；[EV](artifacts/verification/INT_W02_CHECKS.json) | INT-W01 | C；權重 5，C 50%／A 30%／B 20% |
+| <a id="int-w03"></a>INT-W03 | 未開始：既有 UI-P2-01～18、照片、記錄、任務、記憶、設定、通知／聯絡及跨頁同步；承接未完成的對話記錄更正、較舊聊天游標與真運行取消，不把 INT-W02 的普通新增視為全部直接操作完成 | INT-W02 | B；C／D 協作 |
 | <a id="int-w04"></a>INT-W04 | 未開始：私人來源的對話設定、讀取、引用及管理 | INT-W03 | A；C／B 協作 |
 | <a id="int-w05"></a>INT-W05 | 未開始：持續關注、主動跟進、事件鏈及結束／恢復 | INT-W03 | C；A／B 協作 |
 | <a id="int-w06"></a>INT-W06 | 未開始：Agent 操作多份準備文件、成長報告及同版 PDF | INT-W04、INT-W05 | A；C／B 協作 |
 | <a id="int-w07"></a>INT-W07 | 未開始：正式入口部署、必要整體驗收、舊 UI 退出正式建置及功能接點清單 | INT-W01～06 | C；B／D 協作 |
 
-每包獨立分支／worktree，必要驗收、主模型 review、按主責帳號 PR／合併後才啟動依賴包；後續包開工時再定權重及份額。分配是責任安排，不冒稱個人手寫程式或實測工時。INT-W01 由共用 AI 在 A 統籌下執行，主模型統籌驗收及最終裁決。
+每包獨立分支／worktree，必要驗收、主模型 review、按主責帳號提交／推送／PR／合併後才啟動依賴包；後續包開工時再定權重及份額。2026-10-06 使用者要求將一半工作包交 C：餘下六包中 INT-W02／05／07 由 C 主責交付，INT-W03 由 B，INT-W04／06 由 A；已合併 INT-W01 保留 B 的原交付紀錄，不改歷史署名。INT-W02 的 C 負責 Server 授權／持久化及接線，A 負責 Agent 政策／工具與整合，B 負責既有 UI 回調；主模型仍親自處理指導、契約及提示詞。分配是責任安排，不冒稱個人手寫程式或實測工時；共用 AI 在 A 統籌下執行，主模型統籌驗收及最終裁決，Committer 保留實際操作者。
 
 驗收只取通常路徑及必要邊界：正式登入／Agent、跨頁同源、重開持久化、身份／孩子隔離、一次原操作 unknown 恢復；新增能力各取一條代表路徑，重用已有證據。不重跑完整預覽矩陣，不使用 Computer Use。真模型／通知仍受既有次數、成本、明確目的地及內容授權限制；部署前重查 VM 期限、備份及相容遷移。完成需列明已接、待驗及未接項，不能在過渡頁仍存在時宣稱正式接線完成。
 

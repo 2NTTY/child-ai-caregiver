@@ -53,6 +53,7 @@ const profile = z.object({
 const record = z.object({
   id: z.uuid(), childId: z.uuid(), authorUserId: user, createdAt: dateTime, version: positiveVersion,
   text: z.string(), source: z.string(), confirmedBy: user, confirmedAt: dateTime, reason: z.string(),
+  confirmationBasis: z.enum(["explicit", "preauthorized_user_statement"]).optional(),
   details: z.object({
     kind: careKind,
     quantity: z.object({ rawValue: z.string(), unit: z.string(), precision: z.enum(["exact", "approximate"]) }).strict().nullable(),

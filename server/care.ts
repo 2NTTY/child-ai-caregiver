@@ -69,11 +69,13 @@ export function createCareStore(pool: Pool, cipher: StorageCipher, trackChanges 
           ? { createdAt: last.cursor_created_at!, id: last.id, ...(changeSeq === undefined ? {} : { changeSeq }) } : null };
       });
     },
-    async create(userId: string, childId: string, values: CareValues): Promise<CareRecord | null> {
+    async create(userId: string, childId: string, values: CareValues, basis: "explicit" | "preauthorized_user_statement" = "explicit"): Promise<CareRecord | null> {
       return withChildAccess(pool, userId, childId, WRITE_ROLES, async (client, _role, workspaceId) => {
         await lockChild(client, childId);
         const identity = { id: randomUUID(), child_id: childId, author_user_id: userId, version: 1 };
-        const metadata = { details: values.details, source: values.source, reason: "首次確認" };
+        const metadata = { details: values.details, source: values.source,
+          reason: basis === "preauthorized_user_statement" ? "依本人預先授權，由 Agent 整理保存的使用者陳述；未逐項確認為事實" : "首次確認",
+          confirmationBasis: basis };
         const row = (await client.query<Row>(`INSERT INTO text_records(id,child_id,author_user_id,text_encrypted,details_encrypted,confirmed_by,confirmed_at)
           VALUES($1,$2,$3,$4,$5,$3,now()) RETURNING *`, [identity.id, childId, userId,
           cipher.encrypt(values.text, textContext(identity)), cipher.encrypt(JSON.stringify(metadata), detailsContext(identity))])).rows[0];

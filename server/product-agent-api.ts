@@ -9,6 +9,7 @@ import { apiError, jsonResponse } from "./workspace-api.ts";
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const runRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs/(" + uuid + ")(?:/proposals/(" + uuid + ")/decide)?$", "i");
 const listRoute = new RegExp("^/api/children/(" + uuid + ")/agent/runs$", "i");
+const pendingRoute = new RegExp("^/api/children/(" + uuid + ")/agent/pending$", "i");
 const replyRoute = new RegExp("^/api/children/(" + uuid + ")/messages/(" + uuid + ")/reply$", "i");
 export async function handleProductAgentRequest(request: Request, userId: string | null, options: {
   agent: ProductAgent; store: ProductAgentStore; chat: ChatStore; isCurrentUser: (userId: string) => Promise<boolean>;
@@ -17,10 +18,16 @@ export async function handleProductAgentRequest(request: Request, userId: string
   const expected = request.headers.get("x-expected-user-id");
   if (!expected) return apiError("account_precondition_required", "請重新確認登入帳號。", 428);
   if (expected !== userId || !await options.isCurrentUser(userId)) return apiError("session_changed", "登入帳號已改變。", 409);
-  const path = new URL(request.url).pathname, reply = replyRoute.exec(path), run = runRoute.exec(path), list = listRoute.exec(path);
-  if (!reply && !run && !list) return apiError("not_found", "找不到資料。", 404);
-  const childId = (reply ?? run ?? list)![1].toLowerCase();
+  const url = new URL(request.url), path = url.pathname, reply = replyRoute.exec(path), run = runRoute.exec(path), list = listRoute.exec(path), pending = pendingRoute.exec(path);
+  if (!reply && !run && !list && !pending) return apiError("not_found", "找不到資料。", 404);
+  const childId = (reply ?? run ?? list ?? pending)![1].toLowerCase();
   try {
+    if (pending) {
+      if (request.method !== "GET") return apiError("method_not_allowed", "不支援此操作。", 405);
+      if (url.searchParams.getAll("cursor").length > 1) return apiError("invalid_input", "請重新讀取待確認事項。", 400);
+      const page = await options.store.pendingProposals(userId, childId, url.searchParams.get("cursor"));
+      return page && await options.isCurrentUser(userId) ? jsonResponse(page) : apiError("not_found", "找不到可讀取的事項。", 404);
+    }
     if (list) {
       if (request.method !== "GET") return apiError("method_not_allowed", "不支援此操作。", 405);
       const runs = await options.store.backgroundRuns(userId, childId);

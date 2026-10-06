@@ -31,6 +31,7 @@ import { createWorkerQueue } from "./worker-queue.ts";
 import { createTaskScheduling } from "./task-worker.ts";
 import { createGrowthStore } from "./growth-store.ts";
 import { createProductAgentServices } from "./product-agent-services.ts";
+import { createAgentActionsStore } from "./agent-actions-store.ts";
 import { createWebPushQueue } from "./web-push-queue.ts";
 import { createWebPushStore } from "./web-push-store.ts";
 import { readWebPushConfig } from "./web-push-gateway.ts";
@@ -84,7 +85,9 @@ try {
   const photosEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='021-photo-attachments'")).rowCount);
   const photoFiles=photosEnabled?await createPhotoFiles(process.env.ATTACHMENTS_DIR??"",cipher):undefined;
   const photoStore=photoFiles?createPhotoStore(pool,cipher,photoFiles):undefined;
-  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true",growth,contact,summary,modelRouting) : undefined;
+  const agentActions = agentEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='025-agent-actions'")).rowCount
+    ? createAgentActionsStore(pool, cipher, taskScheduling, contactServices) : undefined;
+  const productServices = agentEnabled && tasks ? createProductAgentServices(pool, cipher, aiConfig, taskScheduling, process.env.AGENT_DIAGNOSTICS === "true",growth,contact,summary,modelRouting,agentActions) : undefined;
   const productAgentStore = productServices?.store, productAgent = productServices?.agent;
   const photos=photoStore&&productServices?{store:photoStore,agent:createPhotoAgent(photoStore,productServices.runtime)}:undefined;
   const inputsEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='022-shared-inputs'")).rowCount);
@@ -102,7 +105,7 @@ try {
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
     online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, contactServices,summaryEnabled,photoFiles,Boolean(inputs)) : undefined,
-    tasks, chat, memory, productAgent, productAgentStore, growth, telegram, contact, summary, photos, inputs,
+    tasks, chat, memory, productAgent, productAgentStore, agentActions, growth, telegram, contact, summary, photos, inputs,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelRouting,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider, resolve: modelRouting.resolve }),

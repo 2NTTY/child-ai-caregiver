@@ -8,6 +8,7 @@ export interface CareDetails {
 export interface CareValues { text: string; details: CareDetails; source: string }
 export interface CareRevision extends CareValues {
   version: number; confirmedBy: string; confirmedAt: string; reason: string;
+  confirmationBasis?: "explicit" | "preauthorized_user_statement";
 }
 export interface CareRecord extends CareRevision { id: string; childId: string; authorUserId: string; createdAt: string }
 export interface CareCursor { createdAt: string; id: string; changeSeq?: string }
