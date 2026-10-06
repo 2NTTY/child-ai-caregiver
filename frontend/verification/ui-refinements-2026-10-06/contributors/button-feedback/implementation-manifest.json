@@ -1,0 +1,191 @@
+{
+  "baseline": "frozen cleanup v46; assigned PR89 head 4fc6fff66640bacb9b6b925f629e617886f3ec85",
+  "staging": "/workspace/shared/frontend_button_feedback_staging_20261006/frontend",
+  "patch": "/workspace/shared/button_flash_audit_20261006/button-feedback.patch",
+  "patchSha256": "96b27ecd51a8dec59308f7e2cdbaea87ccd8b53e2425a02ac9150c2da08f487b",
+  "changedFiles": [
+    {
+      "path": "src/components/AppCheckbox.tsx",
+      "beforeSha256": "fd34471db6b811ca9a97a8cf484c9d1c9e1f07e43a7e843d8e5151f18923316a",
+      "afterSha256": "cb77b89d73ead78dd6537cad9ab4d74f0f37f8d6e083e752db7d5acd5efea508"
+    },
+    {
+      "path": "src/components/AppShell.tsx",
+      "beforeSha256": "5fc295857080a03df19bf572cd8cd7823492436179a4d31e8af874c07e1937c6",
+      "afterSha256": "718c227194759d468c800bbd8e90a4f5aa3a6f93d1107e05675329cdbff4cae1"
+    },
+    {
+      "path": "src/components/ChildPicker.tsx",
+      "beforeSha256": "d78c02d28929ce7f42f540d20b06c25bf7615c064432c1f019bc91ee81aad6c6",
+      "afterSha256": "8207fa82eaac3b9f9a5d89abd453d8c58cb8410ae5b86ab0f7ebd346f24c7a0b"
+    },
+    {
+      "path": "src/components/HomeAgentImportant.tsx",
+      "beforeSha256": "6938538db70c56773e7beb6f93899900f116d0e1fa10924d24ef6d51efb123de",
+      "afterSha256": "861136c3de5fd61bb986af3bc6c9d7dce7bef728f317d15e72dd6ec979ccb76a"
+    },
+    {
+      "path": "src/components/HomeDashboard.tsx",
+      "beforeSha256": "41106959e423abf6b0555f262aabbc09dbdc47f7b9bb81af9eae081a9b3ae7b6",
+      "afterSha256": "182764f82054148f894d1ad35bb377f5da1ee4c3df340e11e97300398e557c91"
+    },
+    {
+      "path": "src/components/HomeOverviewItems.tsx",
+      "beforeSha256": "05230ba1c3c51cede35cb6824ff76b14c423905e09504bebb78de99011a4adc9",
+      "afterSha256": "57c36004df766f9d1ea887273cb6e8e6ededbce18234a4b88ee8376b32628788"
+    },
+    {
+      "path": "src/components/HomeQuickActions.tsx",
+      "beforeSha256": "df1d3f5b1e8a3dce415c2774952363f20075ea98eca7bb457ff2e10d49dc39e9",
+      "afterSha256": "ce2e2ec90b10159f872b9c0d6dae3b3dcb99361c506762329954c5137edfeed3"
+    },
+    {
+      "path": "src/components/RightRailContent.tsx",
+      "beforeSha256": "b0da277b462118a038e9d3d27688341d2fd8750deffed3dfe1c5342755535308",
+      "afterSha256": "5c98c4b4ba8ff0f5559e605ecdb5f0eaa7baa9046a7b9ed5a8e3720befb5010a"
+    },
+    {
+      "path": "src/components/agent/AgentComposer.tsx",
+      "beforeSha256": "5577e44aafb6bb83bc4a37f565ece90e00b2651a150e08e381a00c42fb58d6e6",
+      "afterSha256": "4144ad802daaabab9ff7d982fa4de2284ce371eb733bcbdf3af65228199df95f"
+    },
+    {
+      "path": "src/components/agent/AgentConversationPreview.tsx",
+      "beforeSha256": "af219c2e95b7d52a9d3b3c44ead8324a231dc10a118c13f834e177691cf69936",
+      "afterSha256": "fcca72852fb107a62abebeb4cf8d60b2baa820496a48a69558f2501405ca5e70"
+    },
+    {
+      "path": "src/components/care/CareReviewHistoryView.tsx",
+      "beforeSha256": "53c73f3e3a9de42660a215581ddd8aa40a571501b0c4c59395a9cc16fb6b6eda",
+      "afterSha256": "86650728cc1c2404576ed649a5b69635e01e84f8abae3cc07206d5ea11dcc708"
+    },
+    {
+      "path": "src/components/chat/AnswerSources.tsx",
+      "beforeSha256": "7b8ee6d3a1cfed9400324a922575d8df165c87b3e9ab71f8a9fc741d8216d253",
+      "afterSha256": "b3701f63bce97db4dee3e34f9f229da61f1088dea266370839a93cc622e72890"
+    },
+    {
+      "path": "src/components/chat/ChatMessage.tsx",
+      "beforeSha256": "3b33fd457f6ec293bd07b194efe3a6487a17b5a9cbe4a12cd811cf8adce6199a",
+      "afterSha256": "57a8cfae3d5f2521135e92b9efcc2ba327e878b6d183127626985bc8620241a6"
+    },
+    {
+      "path": "src/components/contact/ContactView.tsx",
+      "beforeSha256": "a373a15cc57f66fb57921444b20c39a696045051d5f18bd9433de237fdee073b",
+      "afterSha256": "dd4cb470eb299377934d7e8618281b4d31ccbcf75b1bd162dd3315d4323962b3"
+    },
+    {
+      "path": "src/components/contact/contact-styles.ts",
+      "beforeSha256": "d791a90b9051b0afc6851246beb232ba805a3498c95df00d5d3c78ab9355adec",
+      "afterSha256": "daa446e381ae498555144ef002b35213bbebea0b42bd5d5150b86c2bc8536bc6"
+    },
+    {
+      "path": "src/components/growth/GrowthConcernTimeline.tsx",
+      "beforeSha256": "66293501af24cdc12c41585bd44c1070283d7fb215593ff6f0e5934f7edfd21f",
+      "afterSha256": "a20cadbc8cb4b901b1ddafccbfce40db32338c05fcc4b585d16f4eedeecb85b0"
+    },
+    {
+      "path": "src/components/growth/GrowthHistoryView.tsx",
+      "beforeSha256": "e21242a8680e4fa8e6cbe7cbfd8139acaf89ad1b77b3544e21a8f1d6a98622a1",
+      "afterSha256": "25b8104a85ec8401f7ab7d5995ca68fa9f107a72b063549e731b4055869624a0"
+    },
+    {
+      "path": "src/components/growth/growth-styles.ts",
+      "beforeSha256": "fb387c23d524a08760f78db4521d10519f4300e6a1a1e9b927c75bf3ab16a070",
+      "afterSha256": "d6db5a800aff224515de139c7c1298c013fd1b9ad0ab85bc41d1f504f548b440"
+    },
+    {
+      "path": "src/components/preparations/PreparationWorkspace.tsx",
+      "beforeSha256": "22e47bc0d75277b437521e7e9a8100dc81533aaccb233402e1d60a7df42d0909",
+      "afterSha256": "87438aca7d810e4ae7f98797c788783837db5cf25d4a97a4507bcf467becd11f"
+    },
+    {
+      "path": "src/components/settings/SettingsNavigation.tsx",
+      "beforeSha256": "1d3be6631f0f0449fc7dca15f8fd566e24ad16d09f6bbe68ea231ef616449944",
+      "afterSha256": "c4077abd43e9b17b695f3bd8ed8d7e8fdb26abdb09c75890a438d462b57c9c8e"
+    },
+    {
+      "path": "src/components/summary/summary-styles.ts",
+      "beforeSha256": "e8bebcc67311867982c5c23e530a93315a39b46dd0cff35e6d957767051bbb9b",
+      "afterSha256": "8ce3fd78fea69e99c9e0b31dcb6d04fa92700d7b4955a76de813648e105bc77a"
+    },
+    {
+      "path": "src/components/tasks/TaskListRow.tsx",
+      "beforeSha256": "5f569efbbd1c105f41e9dcb11c7e62233cb6289d9ac559ff6b121138f74fca1e",
+      "afterSha256": "59cf50dbfbb0cbec9344431648ec92ad0ec1a792da715fddac48a17d74a8e2fd"
+    },
+    {
+      "path": "src/components/tasks/TasksCalendar.tsx",
+      "beforeSha256": "325b361b3424f5f51e8cc37d5acc86c8bd72374d985ae3c4791c918431cfb48d",
+      "afterSha256": "ccd19ab14603ed0a656edfd86d5895f3e5fa9b9c2ec997e416c207478dd87e8e"
+    },
+    {
+      "path": "src/components/tasks/TasksView.tsx",
+      "beforeSha256": "5b8ec0abc10e379273438b48702a7a2583bce707221f7b94a247b065f80b6a83",
+      "afterSha256": "e58eadb116e1dfc0d2ab5e6665e44109a2bb505f26f988d1d3e0b7d24353a8eb"
+    },
+    {
+      "path": "src/components/ui.tsx",
+      "beforeSha256": "950dd68ebd0779ab44f19b7f10ed76823f444a51d23a89c966606e68e07c25e3",
+      "afterSha256": "479d6ca3b3cd02e9dbd7ec3e1390ef00dad4895d42e51037503c6b3e9b4ca568"
+    },
+    {
+      "path": "src/screens/guideScreen.tsx",
+      "beforeSha256": "929ee3dcae27784792219343a5da1dda49134a64f6b15726b1fbc7a86ac67c7d",
+      "afterSha256": "cc50779dad98fd7aa0c676f43a4ed752c320985bbc5a2354e9154be71a73f0e9"
+    },
+    {
+      "path": "src/screens/loginScreen.tsx",
+      "beforeSha256": "15ae772751600ab85a3cb238a5c2e6150db3d3eeeebca73382028827708141e2",
+      "afterSha256": "296ce40f05fcc68b8aecce791441de61e3dc9c1240b1faba30068ad511fc041e"
+    },
+    {
+      "path": "src/screens/profileScreen.tsx",
+      "beforeSha256": "3f13b4ec0bba91e1f269bc65a1e3097447217051bba0af98d8ebc292dab9878e",
+      "afterSha256": "50708bdf6c7c336dc5af32a5d9819b3dfe1dd8cfe3dccf4a313b2b3a9c4ee8de"
+    },
+    {
+      "path": "src/screens/settingsScreen.tsx",
+      "beforeSha256": "f9aa53228f5b7bd40cd84492094cce96335112c7a9cdcf2b1a1dc7c7770f8423",
+      "afterSha256": "6fa68ecabff1b2b216e409484d3a3e563b9e3631f16dbeef646a6a80ee068ed8"
+    },
+    {
+      "path": "src/theme.ts",
+      "beforeSha256": "c5b1abed6b55603d3eb088ebe70b7e1c4acd2bc552529f89f220a585893d432a",
+      "afterSha256": "bf500dd1458ada7113e1d3b8c0338d7d15a6d5b99c5958bcdd81294e241150b5"
+    },
+    {
+      "path": "scripts/history-controls.test.mjs",
+      "beforeSha256": "2ebfec500798e4079dbb61e2c35cc57cafc0d266ccfb7f4f483717a1fb006e25",
+      "afterSha256": "23882941a3d5498b35fb2f644f03c643523291f4fd1219c112d2d676ede66694"
+    },
+    {
+      "path": "scripts/pressed-feedback.test.mjs",
+      "beforeSha256": null,
+      "afterSha256": "bf9b2bfe4042b733c3cd5b040d36ce03fef2a081501824fd2314aba2d9d8921b"
+    }
+  ],
+  "frozenSourceUnchangedSinceAudit": true,
+  "readOnlySharedFamilyDependencyIdentical": true,
+  "checks": {
+    "initialTypecheck": "failed: isolated staging omitted unchanged root src/shared/family.ts; stopped and reported",
+    "retestTypecheck": "passed after parent-approved same-baseline dependency copy",
+    "focusedTests": {
+      "pressed-feedback": 7,
+      "history-controls": 8,
+      "task-calendar": 19,
+      "owner-shell-lifecycle": 5,
+      "horizontal-rail-control": 3,
+      "growth-refresh": 18
+    },
+    "totalFocusedTests": 60,
+    "newPressedForegroundContrastPairs": 4
+  },
+  "unverified": [
+    "new patch browser rendering and held-press appearance",
+    "per-frame transitions",
+    "native devices",
+    "build/export/aggregate suite",
+    "Paper primary/danger ripple, busy styling, vendor TimeInput ripple and scope/detail animation mechanisms unchanged"
+  ]
+}

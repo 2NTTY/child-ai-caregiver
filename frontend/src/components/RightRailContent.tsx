@@ -59,5 +59,5 @@ const styles = StyleSheet.create({
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.sm }, avatar: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "800" }, copy: { flex: 1, minWidth: 0 },
   title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "800" }, meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 },
-  record: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: spacing.sm }, divider: { backgroundColor: colors.softLine }, pressed: { opacity: 0.68 },
+  record: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: spacing.sm }, divider: { backgroundColor: colors.softLine }, pressed: { backgroundColor: colors.pressedOverlay },
 });

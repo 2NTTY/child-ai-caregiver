@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   disclosureRoot: { minWidth: 0 }, disclosureContents: { paddingTop: spacing.md },
   disclosure: { backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, paddingHorizontal: spacing.sm, alignSelf: "flex-start", minHeight: 48, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
   disclosureText: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool }, 
-  pressed: { opacity: .7 },
+  pressed: { backgroundColor: colors.paleTeal },
   toolsToggle: { alignItems: "flex-start" }, tools: { backgroundColor: colors.quietSurface, borderRadius: radius.large },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 21 },
 });

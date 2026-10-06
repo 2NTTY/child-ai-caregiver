@@ -1,0 +1,7 @@
+{
+  "frozenAt": "2026-10-06T07:20:01.219412+00:00",
+  "buildInputFingerprintSha256": "81cb84068fa95ae59687e2b18a2ec08ea1f96ac92803c0de8911dc628fe7e089",
+  "approvedByParent": "Root approved this separate mobile/ripple runtime freeze after combined tests passed. Root-authored documentation may be updated without runtime edits.",
+  "checkRecord": "checks.json",
+  "browserVerification": "Not performed by integration worker"
+}

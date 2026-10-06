@@ -59,7 +59,7 @@ export function HomeDashboard({ model, actions, introductionPending = false, onI
 }
 const styles = StyleSheet.create({
   scroll: { flex: 1 }, page: { width: "100%", maxWidth: 1160, alignSelf: "center", padding: spacing.xl },
-  floatingInputClearance: { paddingBottom: 88 }, content: { gap: spacing.lg }, pressed: { opacity: 0.68 },
+  floatingInputClearance: { paddingBottom: 88 }, content: { gap: spacing.lg }, pressed: { backgroundColor: colors.pressedOverlay },
   grid: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xl }, gridStack: { flexDirection: "column" },
   column: { flex: 1, minWidth: 0, width: "100%", gap: spacing.lg }, mainColumn: { flex: 2 },
   summaryColumn: { paddingTop: spacing.xs }, links: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm },

@@ -1,0 +1,18 @@
+✔ each existing mobile page retains exactly one obvious selected surface after release (1306.089596ms)
+✔ desktop keeps its existing selection and mobile overlays are absent (109.117669ms)
+✔ Records retains guarded tap, upward-drag and keyboard-expand routes with selected semantics (45.051725ms)
+✔ corner surface has two tangent menisci and remains decorative outside the original hit area (29.242198ms)
+✔ camera long hold and directional choices preserve draft-only input behavior (62.95402ms)
+✔ More keeps mobile lists and desktop links without a redundant return-to-records button (242.186724ms)
+✔ the existing Records control returns from More through the guard without state-reset actions (46.722405ms)
+✔ navigation scope listener replacement preserves and consumes one trailing drag click (0.919355ms)
+✔ cancel or drag back suppresses the trailing click but a fresh pointer tap is restored (0.478507ms)
+✔ Enter or assistive activation is not consumed by an earlier cancelled pointer (0.164281ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2340.130073

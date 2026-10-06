@@ -95,5 +95,5 @@ const styles = StyleSheet.create({
   source: { gap: spacing.xs, paddingBottom: spacing.xs }, hiddenSource: { display: "none" }, action: { alignSelf: "flex-start", maxWidth: "100%" },
   additional: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   additionalCopy: { flex: 1, minWidth: 0, gap: spacing.xs }, rowTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.row, fontWeight: "700" },
-  pressed: { opacity: 0.68 }, recovery: { gap: spacing.sm },
+  pressed: { backgroundColor: colors.pressedOverlay }, recovery: { gap: spacing.sm },
 });

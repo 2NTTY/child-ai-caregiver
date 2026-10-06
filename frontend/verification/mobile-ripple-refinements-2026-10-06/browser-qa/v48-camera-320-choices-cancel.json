@@ -1,0 +1,55 @@
+{
+  "choices": [
+    {
+      "label": "快捷文件",
+      "rect": {
+        "bottom": 427,
+        "height": 60,
+        "left": 0,
+        "right": 64,
+        "top": 367,
+        "width": 64,
+        "x": 0,
+        "y": 367
+      }
+    },
+    {
+      "label": "快捷語音",
+      "rect": {
+        "bottom": 459,
+        "height": 60,
+        "left": 72,
+        "right": 136,
+        "top": 399,
+        "width": 64,
+        "x": 72,
+        "y": 399
+      }
+    },
+    {
+      "label": "快捷記一句",
+      "rect": {
+        "bottom": 535,
+        "height": 60,
+        "left": 108,
+        "right": 172,
+        "top": 475,
+        "width": 64,
+        "x": 108,
+        "y": 475
+      }
+    }
+  ],
+  "rect": {
+    "bottom": 535,
+    "height": 184,
+    "left": 0,
+    "right": 180,
+    "top": 351,
+    "width": 180,
+    "x": 0,
+    "y": 351
+  },
+  "expandedAfterCancel": "false",
+  "remainingChoices": 0
+}

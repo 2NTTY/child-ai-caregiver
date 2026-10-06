@@ -46,7 +46,7 @@ export default function GuideScreen() {
         <Text style={styles.eyebrow}>使用路徑 · 3 步</Text>
         {steps.map((item, index) => <Pressable key={item.title} accessibilityRole="button" accessibilityLabel={`第 ${index + 1} 步：${item.title}${index === currentStep ? "，目前閱讀" : ""}`}
           accessibilityState={{ selected: index === currentStep }} onPress={() => setCurrentStep(index)}
-          style={({ pressed }) => [styles.step, index === currentStep && styles.stepActive, pressed && styles.pressed]}>
+          style={({ pressed }) => [styles.step, index === currentStep && styles.stepActive, pressed && (index === currentStep ? styles.selectedPressed : styles.pressed)]}>
           <View style={[styles.stepNumber, index === currentStep && styles.stepNumberActive]}><Text style={[styles.stepNumberText, index === currentStep && styles.stepNumberTextActive]}>{index + 1}</Text></View>
           <View style={styles.stepCopy}><Text style={styles.stepTitle}>{item.title}</Text>{index === currentStep ? <Text style={styles.meta}>目前閱讀</Text> : null}</View>
           <AppIcon name="chevron-right" size={18} />
@@ -93,5 +93,5 @@ const styles = StyleSheet.create({
   pointTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   actions: { alignItems: "flex-start" }, stepControls: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   start: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.lg, backgroundColor: colors.paleTeal, padding: spacing.lg, borderRadius: radius.medium }, startCopy: { flex: 1, flexBasis: 260, minWidth: 0, gap: spacing.sm },
-  previewFooter: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm, alignItems: "flex-start" }, pressed: { opacity: 0.68 },
+  previewFooter: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm, alignItems: "flex-start" }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
 });

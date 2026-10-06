@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   readAction: { flex: 1, minWidth: 0, minHeight: 64, flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderRadius: radius.small, borderWidth: 2, borderColor: "transparent" },
   readHovered: { backgroundColor: colors.quietSurface },
   readFocused: { borderColor: colors.ink },
-  readPressed: { opacity: 0.65 },
+  readPressed: { backgroundColor: colors.paleTeal },
   actions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
   action: { alignSelf: "center" },
   restoreAction: { alignSelf: "center", flexShrink: 0, borderWidth: 0, borderRadius: radius.small },

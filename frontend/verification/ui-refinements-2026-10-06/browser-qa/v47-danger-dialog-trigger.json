@@ -1,0 +1,1397 @@
+{
+  "name": "v47-danger-dialog-trigger",
+  "before": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgb(149, 64, 38)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "button-container"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "growth-concern-timeline"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "growth-scroll"
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "app-scroll-host"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-route"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-child-scope"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(242, 242, 242)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "frontend-preview-ready"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "BODY",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "HTML",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "border": "rgb(0, 0, 0)",
+    "color": "rgb(0, 0, 0)",
+    "label": "結束關注：日常遊戲與表達",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 438,
+      "height": 44,
+      "left": 456,
+      "right": 568.40625,
+      "top": 394,
+      "width": 112.40625,
+      "x": 456,
+      "y": 394
+    },
+    "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+    "spans": [],
+    "tag": "BUTTON",
+    "testid": "button"
+  },
+  "samples": [
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(149, 64, 38)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-concern-timeline"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(255, 255, 254, 0.06)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "結束關注：日常遊戲與表達",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 438,
+        "height": 44,
+        "left": 456,
+        "right": 568.40625,
+        "top": 394,
+        "width": 112.40625,
+        "x": 456,
+        "y": 394
+      },
+      "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(255, 255, 254, 0.12); border-radius: 50%; transition-duration: 337.219ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 56px; top: 22px; width: 224.812px; height: 224.812px;"
+            ]
+          ],
+          "background": "rgba(255, 255, 254, 0.12)",
+          "opacity": "0.87071"
+        }
+      ],
+      "tag": "BUTTON",
+      "testid": "button"
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(149, 64, 38)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-concern-timeline"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(255, 255, 254, 0.06)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "結束關注：日常遊戲與表達",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 438,
+        "height": 44,
+        "left": 456,
+        "right": 568.40625,
+        "top": 394,
+        "width": 112.40625,
+        "x": 456,
+        "y": 394
+      },
+      "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(255, 255, 254, 0.12); border-radius: 50%; transition-duration: 337.219ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 56px; top: 22px; width: 224.812px; height: 224.812px;"
+            ]
+          ],
+          "background": "rgba(255, 255, 254, 0.12)",
+          "opacity": "1"
+        }
+      ],
+      "tag": "BUTTON",
+      "testid": "button"
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(149, 64, 38)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-concern-timeline"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(255, 255, 254, 0.06)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "結束關注：日常遊戲與表達",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 438,
+        "height": 44,
+        "left": 456,
+        "right": 568.40625,
+        "top": 394,
+        "width": 112.40625,
+        "x": 456,
+        "y": 394
+      },
+      "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(255, 255, 254, 0.12); border-radius: 50%; transition-duration: 337.219ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 56px; top: 22px; width: 224.812px; height: 224.812px;"
+            ]
+          ],
+          "background": "rgba(255, 255, 254, 0.12)",
+          "opacity": "1"
+        }
+      ],
+      "tag": "BUTTON",
+      "testid": "button"
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(149, 64, 38)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-concern-timeline"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "growth-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(255, 255, 254, 0.06)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "結束關注：日常遊戲與表達",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 438,
+        "height": 44,
+        "left": 456,
+        "right": 568.40625,
+        "top": 394,
+        "width": 112.40625,
+        "x": 456,
+        "y": 394
+      },
+      "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(255, 255, 254, 0.12); border-radius: 50%; transition-duration: 337.219ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 56px; top: 22px; width: 224.812px; height: 224.812px;"
+            ]
+          ],
+          "background": "rgba(255, 255, 254, 0.12)",
+          "opacity": "1"
+        }
+      ],
+      "tag": "BUTTON",
+      "testid": "button"
+    }
+  ],
+  "after": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgb(149, 64, 38)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "button-container"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "growth-concern-timeline"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "growth-scroll"
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "app-scroll-host"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-route"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-child-scope"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(242, 242, 242)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "frontend-preview-ready"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "BODY",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "HTML",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "border": "rgb(0, 0, 0)",
+    "color": "rgb(0, 0, 0)",
+    "label": "結束關注：日常遊戲與表達",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 438,
+      "height": 44,
+      "left": 456,
+      "right": 568.40625,
+      "top": 394,
+      "width": 112.40625,
+      "x": 456,
+      "y": 394
+    },
+    "routeText": "成長與關注重新讀取查看關注歷史 持續關注成長檔案關注索引日常遊戲與表達待家長核對正在查看待家長核對日常遊戲與表達助手從家長提供的生活片段提出持續觀察，讓前後變化與依據放在一起。這不是發展評估。結束關注這件事的跟進經過助手提議30/9/2026 09:00:00助手提出關注建議整理",
+    "spans": [
+      {
+        "attrs": [
+          [
+            "data-paper-ripple",
+            ""
+          ],
+          [
+            "style",
+            "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+          ]
+        ],
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1"
+      },
+      {
+        "attrs": [
+          [
+            "style",
+            "position: absolute; pointer-events: none; background-color: rgba(255, 255, 254, 0.12); border-radius: 50%; transition-duration: 250ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 0; left: 56px; top: 22px; width: 224.812px; height: 224.812px;"
+          ]
+        ],
+        "background": "rgba(255, 255, 254, 0.12)",
+        "opacity": "0"
+      }
+    ],
+    "tag": "BUTTON",
+    "testid": "button"
+  },
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/growth"
+}

@@ -1,0 +1,69 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> yuban-hk-frontend-preview@0.1.0 build:web
+> expo export --platform web --output-dir dist
+
+Starting Metro Bundler
+
+Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
+| (node:19) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:19) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:19) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:19) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:19) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:19) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web Bundled 51367ms node_modules/expo-router/entry.js (1875 modules)
+λ Bundled 52292ms node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1916 modules)
+
+› web bundles (4):
+_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css (731B)
+_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css (14KB)
+_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css (210B)
+_expo/static/js/web/entry-306b54fd51461813a9e0d6c05558433b.js (4.7MB)
+
+› Static routes (37):
+/care (31KB)
+/chat (31KB)
+/more (31KB)
+/login (31KB)
+/guide (31KB)
+/ (index) (31KB)
+/tasks (31KB)
+/family (31KB)
+/growth (31KB)
+/memory (31KB)
+/photos (31KB)
+/contact (31KB)
+/history (31KB)
+/profile (31KB)
+/sources (31KB)
+/summary (31KB)
+/_sitemap (29KB)
+/settings (31KB)
+/+not-found (29KB)
+/motion-preview (31KB)
+/(dashboard)/care (31KB)
+/(dashboard)/chat (31KB)
+/(dashboard)/more (31KB)
+/(dashboard)/guide (31KB)
+/(dashboard) (31KB)
+/(dashboard)/tasks (31KB)
+/(dashboard)/family (31KB)
+/(dashboard)/growth (31KB)
+/(dashboard)/memory (31KB)
+/(dashboard)/photos (31KB)
+/(dashboard)/contact (31KB)
+/(dashboard)/history (31KB)
+/(dashboard)/profile (31KB)
+/(dashboard)/sources (31KB)
+/(dashboard)/summary (31KB)
+/(dashboard)/settings (31KB)
+/(dashboard)/motion-preview (31KB)
+
+Exported: dist

@@ -1,0 +1,917 @@
+{
+  "name": "v48-primary-button",
+  "before": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgb(39, 35, 67)",
+        "opacity": "1",
+        "testid": "button-container"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "tasks-page-scroll"
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "testid": "app-scroll-host"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "motion-route"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": "motion-child-scope"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgb(242, 242, 242)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "testid": "frontend-preview-ready"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "label": "請助手安排",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 187,
+      "height": 40,
+      "left": 971.09375,
+      "right": 1065.59375,
+      "top": 147,
+      "width": 94.5,
+      "x": 971.09375,
+      "y": 147
+    },
+    "spans": [],
+    "textColors": [
+      {
+        "color": "rgb(255, 255, 254)",
+        "opacity": "1",
+        "text": "請助手安排"
+      }
+    ]
+  },
+  "samples": [
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(39, 35, 67)",
+          "opacity": "1",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "tasks-page-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0.035)",
+      "label": "請助手安排",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 187,
+        "height": 40,
+        "left": 971.09375,
+        "right": 1065.59375,
+        "top": 147,
+        "width": 94.5,
+        "x": 971.09375,
+        "y": 147
+      },
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(0, 0, 0, 0.12); border-radius: 50%; transition-duration: 283.5ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(0.1, 0.1, 0.1); opacity: 0.5; left: 46.9062px; top: 20px; width: 189px; height: 189px;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0.12)",
+          "opacity": "0.5"
+        }
+      ],
+      "textColors": [
+        {
+          "color": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "text": "請助手安排"
+        }
+      ]
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(39, 35, 67)",
+          "opacity": "1",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "tasks-page-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0.06)",
+      "label": "請助手安排",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 187,
+        "height": 40,
+        "left": 971.09375,
+        "right": 1065.59375,
+        "top": 147,
+        "width": 94.5,
+        "x": 971.09375,
+        "y": 147
+      },
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(0, 0, 0, 0.12); border-radius: 50%; transition-duration: 283.5ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 46.9062px; top: 20px; width: 189px; height: 189px;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0.12)",
+          "opacity": "0.764499"
+        }
+      ],
+      "textColors": [
+        {
+          "color": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "text": "請助手安排"
+        }
+      ]
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(39, 35, 67)",
+          "opacity": "1",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "tasks-page-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0.06)",
+      "label": "請助手安排",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 187,
+        "height": 40,
+        "left": 971.09375,
+        "right": 1065.59375,
+        "top": 147,
+        "width": 94.5,
+        "x": 971.09375,
+        "y": 147
+      },
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(0, 0, 0, 0.12); border-radius: 50%; transition-duration: 283.5ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 46.9062px; top: 20px; width: 189px; height: 189px;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0.12)",
+          "opacity": "1"
+        }
+      ],
+      "textColors": [
+        {
+          "color": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "text": "請助手安排"
+        }
+      ]
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgb(39, 35, 67)",
+          "opacity": "1",
+          "testid": "button-container"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "tasks-page-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "testid": null
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0.06)",
+      "label": "請助手安排",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 187,
+        "height": 40,
+        "left": 971.09375,
+        "right": 1065.59375,
+        "top": 147,
+        "width": 94.5,
+        "x": 971.09375,
+        "y": 147
+      },
+      "spans": [
+        {
+          "attrs": [
+            [
+              "data-paper-ripple",
+              ""
+            ],
+            [
+              "style",
+              "position: absolute; pointer-events: none; inset: 0px; border-radius: 10px; overflow: hidden;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1"
+        },
+        {
+          "attrs": [
+            [
+              "style",
+              "position: absolute; pointer-events: none; background-color: rgba(0, 0, 0, 0.12); border-radius: 50%; transition-duration: 283.5ms; transition-timing-function: linear; transform-origin: center center; transform: translate3d(-50%, -50%, 0px) scale3d(1, 1, 1); opacity: 1; left: 46.9062px; top: 20px; width: 189px; height: 189px;"
+            ]
+          ],
+          "background": "rgba(0, 0, 0, 0.12)",
+          "opacity": "1"
+        }
+      ],
+      "textColors": [
+        {
+          "color": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "text": "請助手安排"
+        }
+      ]
+    }
+  ],
+  "after": null,
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat"
+}

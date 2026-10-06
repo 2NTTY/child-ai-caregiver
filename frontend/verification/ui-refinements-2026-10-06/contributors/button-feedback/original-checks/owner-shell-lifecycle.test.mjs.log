@@ -1,0 +1,13 @@
+✔ A -> B -> A preserves the shell/boundary, masks before effects and cleans keyed owners (1437.36202ms)
+✔ Memory scenario and revocation only replace Memory owner and preserve Growth data and shell (385.256137ms)
+✔ authority changes and removing a child synchronously mask data and reject old publishers (540.69925ms)
+✔ reduced motion settles immediately and the session welcome is not replayed on child changes (146.437293ms)
+✔ sidebar presses keep text opaque while route entrances remain continuously visible (0.790917ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3282.859306

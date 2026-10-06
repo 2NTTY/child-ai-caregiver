@@ -1,0 +1,58 @@
+{
+  "button": {
+    "bottom": 535,
+    "height": 56,
+    "left": 0,
+    "right": 56,
+    "top": 479,
+    "width": 56,
+    "x": 0,
+    "y": 479
+  },
+  "currentLinks": [
+    {
+      "label": "今日",
+      "outerHTML": "<a href=\"/\" aria-current=\"page\" aria-label=\"今日\" role=\"link\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73\" style=\"flex: 1 1 0%; min-width: 48px; padding-top: 8px; padding-bottom: 8px; align-items: center; justify-content: center; gap: 4px;\"><div class=\"css-g5y9jx r-1awozwy r-1td4a82 r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af r-633pao\" data-testid=\"mobile-current-page\"><div class=\"css-g5y9jx r-asyyqd r-1rz6xei r-x4nnad r-1hlnpa r-lrsllp\"></div></div><div aria-hidden=\"true\" class=\"css-g5y9jx\" data-testid=\"svg-icon-home-outline\" style=\"width: 22px; height: 22px; flex-shrink: 0;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#272343\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-house lucide-home\" aria-hidden=\"true\" tabindex=\"-1\"><path fill=\"none\" stroke=\"#272343\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\" aria-hidden=\"true\" tabindex=\"-1\"></path><path fill=\"none\" stroke=\"#272343\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 ",
+      "parentBackground": "rgb(255, 255, 254)"
+    }
+  ],
+  "hits": [
+    {
+      "cameraContainsHit": true,
+      "closestButton": "mobile-quick-camera",
+      "name": "center",
+      "tag": "svg",
+      "testid": null,
+      "x": 28,
+      "y": 507
+    },
+    {
+      "cameraContainsHit": false,
+      "closestButton": "home-overview-item-preview-child-1-memory-pending",
+      "name": "decorative-right-only",
+      "tag": "DIV",
+      "testid": null,
+      "x": 64,
+      "y": 530
+    },
+    {
+      "cameraContainsHit": false,
+      "name": "decorative-top-only",
+      "tag": "DIV",
+      "testid": null,
+      "x": 8,
+      "y": 471
+    }
+  ],
+  "surface": {
+    "bottom": 535,
+    "height": 72,
+    "left": 0,
+    "right": 72,
+    "top": 463,
+    "width": 72,
+    "x": 0,
+    "y": 463
+  },
+  "surfacePointerEvents": "none"
+}

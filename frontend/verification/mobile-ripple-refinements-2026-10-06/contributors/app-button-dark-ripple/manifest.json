@@ -1,0 +1,101 @@
+{
+  "base": "/workspace/shared/frontend_ui_refinements_20261006/frontend",
+  "baseBuildInputFingerprintProvidedByIntegrator": "459128602754492d317b4b801e0ddba790b829788ce225786236873f78217d34",
+  "staging": "/workspace/shared/frontend_dark_ripple_staging_20261006/frontend",
+  "patch": "/workspace/shared/button_dark_ripple_20261006/app-button-dark-ripple.patch",
+  "patchSha256": "94b01449f44fba121373f44b37e5f5c265bebff6325f14071e55bfcdea15b219",
+  "changes": [
+    {
+      "path": "src/components/ui.tsx",
+      "beforeSha256": "479d6ca3b3cd02e9dbd7ec3e1390ef00dad4895d42e51037503c6b3e9b4ca568",
+      "afterSha256": "2b8298de2fbc1421a996a92ae52b27429c55ccfbb51ccf453120571d78560ce2"
+    },
+    {
+      "path": "src/theme.ts",
+      "beforeSha256": "bf500dd1458ada7113e1d3b8c0338d7d15a6d5b99c5958bcdd81294e241150b5",
+      "afterSha256": "4b37c33ada6e93c5b46e9aa223a805fbea45329791859cc5c0f8f2dc5c235689"
+    },
+    {
+      "path": "scripts/app-button-ripple.test.mjs",
+      "beforeSha256": null,
+      "afterSha256": "0c5752aa7a69e603b48835c2461dd4937a41fd3d2dd3575fd486148e465c989c"
+    }
+  ],
+  "token": {
+    "name": "darkActionRipple",
+    "value": "rgba(0, 0, 0, 0.12)",
+    "consumers": [
+      "AppButton primary",
+      "AppButton danger"
+    ]
+  },
+  "checks": {
+    "typecheck": "passed",
+    "app-button-ripple": {
+      "passed": 3,
+      "failed": 0
+    },
+    "control-affordances": {
+      "passed": 11,
+      "failed": 0
+    },
+    "pressed-feedback": {
+      "passed": 7,
+      "failed": 0
+    },
+    "totalTestsPassed": 21,
+    "failureLogs": "none; all checks passed on first run"
+  },
+  "stateColorBounds": [
+    {
+      "role": "primary",
+      "normalBackground": "#272343",
+      "hoverBackgroundRgb": [
+        36.66,
+        32.9,
+        62.98
+      ],
+      "heldBackgroundRgb": [
+        32.260799999999996,
+        28.951999999999998,
+        55.422399999999996
+      ],
+      "hoverContrast": 15.368713358783696,
+      "conservativeHeldTextContrast": 10.831724711945753
+    },
+    {
+      "role": "danger",
+      "normalBackground": "#954026",
+      "hoverBackgroundRgb": [
+        140.06,
+        60.16,
+        35.72
+      ],
+      "heldBackgroundRgb": [
+        123.25280000000001,
+        52.940799999999996,
+        31.4336
+      ],
+      "hoverContrast": 7.519667228676118,
+      "conservativeHeldTextContrast": 5.9010031190338275
+    }
+  ],
+  "notChanged": [
+    "27 earlier pressed-opacity fixes",
+    "secondary/quiet/accent/danger-secondary ripple defaults",
+    "Toolbar and Paper text buttons",
+    "white text and resting action backgrounds",
+    "dimensions and borders",
+    "disabled/loading styling",
+    "global onSurface",
+    "vendor implementations",
+    "scope/motion logic",
+    "durable guidance"
+  ],
+  "unverified": [
+    "new patch browser/held-press appearance",
+    "native devices",
+    "build/export/aggregate suite",
+    "publication"
+  ]
+}

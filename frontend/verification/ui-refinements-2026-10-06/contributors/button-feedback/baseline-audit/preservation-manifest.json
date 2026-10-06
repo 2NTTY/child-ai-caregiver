@@ -1,0 +1,80 @@
+{
+  "scope": "Preserved baseline-only button audit and original probe evidence; not verification of the combined revision",
+  "files": [
+    {
+      "path": "audit.md",
+      "sha256": "8b9006ca9b68e10ea66638af9610c8969e5269820d7220298c690b38e320bf37",
+      "bytes": 20308
+    },
+    {
+      "path": "browser-baseline/baseline-report.md",
+      "sha256": "7e3f0723138b6d74807b979addfadf81aa0505f650fc92b97e5e9274fbe98dba",
+      "bytes": 4843
+    },
+    {
+      "path": "browser-baseline/secondary-cancel-after.jpg",
+      "sha256": "3b94e07c7a3e2edb1cbdacf70d5ba9df163acd7c79df32b8d5f6bd10f9438f90",
+      "bytes": 86037
+    },
+    {
+      "path": "browser-baseline/secondary-cancel-before.jpg",
+      "sha256": "5a53ab84ec6b622f93f1f25685405f885e328d5b4e8627df0461c3ecbf850a94",
+      "bytes": 74160
+    },
+    {
+      "path": "browser-baseline/secondary-cancel-during.jpg",
+      "sha256": "5f2da95e2d3626fb3e733b46b51be108e8173709180c16b7e6eaf5785f0089ff",
+      "bytes": 73913
+    },
+    {
+      "path": "browser-baseline/secondary-cancel.json",
+      "sha256": "1783ed53a1d2c45c8ad3b73459a14dad8e0a9a73871938369f864cbdb894986a",
+      "bytes": 18161
+    },
+    {
+      "path": "browser-baseline/select-after.jpg",
+      "sha256": "5a53ab84ec6b622f93f1f25685405f885e328d5b4e8627df0461c3ecbf850a94",
+      "bytes": 74160
+    },
+    {
+      "path": "browser-baseline/select-during.jpg",
+      "sha256": "2ee02fb68a4da06c4a619382e107e0516639ed276e9ae99a89cae9bdf70f6f88",
+      "bytes": 85905
+    },
+    {
+      "path": "browser-baseline/select-mid-hold.jpg",
+      "sha256": "13ed669823a089c61cb42758ded9cd184c49935bb3e0c84b289c43dc6797a150",
+      "bytes": 85575
+    },
+    {
+      "path": "browser-baseline/select-samples.json",
+      "sha256": "52b909e72c84ef9bdb24eb96e0e63cdb51023793d71f9a4f03941dc85d4f4d43",
+      "bytes": 1962
+    },
+    {
+      "path": "browser-baseline/summary.json",
+      "sha256": "3f88d954e6c20fddbf0174678798f3e54503d99ed12d5c32444e728c4b1e38e7",
+      "bytes": 716
+    },
+    {
+      "path": "browser-baseline/tasks-before.jpg",
+      "sha256": "2ee02fb68a4da06c4a619382e107e0516639ed276e9ae99a89cae9bdf70f6f88",
+      "bytes": 85905
+    },
+    {
+      "path": "changed-files.json",
+      "sha256": "0e560d7ef5308651e6b3c8a50953aa6fbab5fb4895e9316c1ed3aba1671946e4",
+      "bytes": 1324
+    },
+    {
+      "path": "control-inventory.json",
+      "sha256": "c599163b62c75e2fb0ad90825a19c5310aaaca2e60354aa585963a9691926090",
+      "bytes": 182257
+    },
+    {
+      "path": "source-hashes.json",
+      "sha256": "351613bde9c2ab19b02c9455515600b43a441d7fea52e1c49905afc1de030f2b",
+      "bytes": 34388
+    }
+  ]
+}

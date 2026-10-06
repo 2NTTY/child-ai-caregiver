@@ -1,0 +1,3 @@
+patching file frontend/src/components/preparations/PreparationWorkspace.tsx
+patching file frontend/src/preview/PreparationPreviewTools.tsx
+patching file frontend/scripts/preparation-layout.test.mjs

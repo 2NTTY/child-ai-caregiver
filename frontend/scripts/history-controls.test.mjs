@@ -14,7 +14,7 @@ const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tre
 const labelled = (tree, label) => nodes(tree).find(node => node.props?.label === label);
 
 // Hook and control-prop checks only; final browser geometry is a separate acceptance step.
-function harness(width = 1024) {
+function harness(width = 1024, initialCategory = 'growth') {
   const slots = [], effects = [], events = [], cache = new Map();
   let cursor = 0, locked = false;
   const react = {
@@ -56,9 +56,33 @@ function harness(width = 1024) {
   const {AppButton} = load('src/components/ui.tsx');
   return {
     events, lock() {locked = true;}, button: props => AppButton(props),
-    render() {cursor = 0; const tree = HistoryWorkspace({scope: 'scope-a', childName: 'A', initialCategory: 'growth', initialReviewStatus: 'all', olderOnly: false}); while (effects.length) effects.shift()(); return tree;},
+    render() {cursor = 0; const tree = HistoryWorkspace({scope: 'scope-a', childName: 'A', initialCategory, initialReviewStatus: 'all', olderOnly: false}); while (effects.length) effects.shift()(); return tree;},
   };
 }
+
+test('growth history keeps the same subtitle slot and typography as the other categories', () => {
+  for (const width of [1440, 1024, 390, 320]) {
+    let referenceCopyStyle, referenceSubtitleStyle;
+    for (const category of historyFilters.historyCategories) {
+      const tree = harness(width, category.key).render();
+      const copy = nodes(tree).find(node => node.type === 'View' && Array.isArray(node.props.children)
+        && node.props.children[0]?.props?.accessibilityRole === 'header'
+        && node.props.children[0].props.children === category.label);
+      assert.ok(copy, `${category.key} header at ${width}px`);
+      const texts = nodes(copy).filter(node => node.type === 'Text');
+      assert.equal(texts.length, 2, `${category.key} has one title and one subtitle`);
+      const expectedSubtitle = category.key === 'growth' ? category.description : `${category.description} · 來源：${category.sourceLabel}`;
+      assert.equal(texts[1].props.children.join(''), expectedSubtitle);
+      referenceCopyStyle ??= copy.props.style;
+      referenceSubtitleStyle ??= texts[1].props.style;
+      assert.deepEqual(copy.props.style, referenceCopyStyle);
+      assert.deepEqual(texts[1].props.style, referenceSubtitleStyle);
+      if (category.key === 'growth') {
+        assert.equal(texts[1].props.children.join(''), '查看已結束的關注與跟進記錄');
+      }
+    }
+  }
+});
 
 test('growth source actions share compact sizing and centered self-alignment without a Link wrapper', () => {
   for (const width of [1440, 1024, 390, 320]) {
@@ -145,7 +169,7 @@ function closedHistoryHarness(width = 1024, touch = false) {
     '../useInteractionDensity': {useInteractionDensity: () => touch},
     '../../growth-view-model': modelModule.exports,
     '../../workspaces/GrowthWorkspace': {useGrowthWorkspace: () => workspace},
-    '../../theme': {colors: {line: '#CAC9D4', controlSurface: '#FFFFFE', ink: '#272343', quietSurface: '#EDFAF9'}, mobileLayout: {breakpoint: 650, touchTarget: 48}, radius: {small: 10}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}},
+    '../../theme': {colors: {line: '#CAC9D4', controlSurface: '#FFFFFE', ink: '#272343', quietSurface: '#EDFAF9', paleTeal: '#E3F6F5'}, mobileLayout: {breakpoint: 650, touchTarget: 48}, radius: {small: 10}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}},
     './growth-styles': {growthStyles: {stack: {gap: 12}}},
   };
   new Function('require', 'module', 'exports', output)(name => dependencies[name] ?? new Proxy({}, {get: (_target, key) => String(key)}), module, module.exports);
@@ -221,7 +245,9 @@ test('lightweight restore retains locked, dirty, missing-state and viewer gates,
   assert.equal(flatten(reading.props.style({pressed: false})).borderColor, '#272343');
   reading.props.onBlur(); reading.props.onHoverIn(); tree = h.render(); reading = readingControl(identified(tree, 'growth-history-one'));
   assert.equal(flatten(reading.props.style({pressed: false})).backgroundColor, '#EDFAF9');
-  assert.equal(flatten(reading.props.style({pressed: true})).opacity, 0.65);
+  const pressed = flatten(reading.props.style({pressed: true}));
+  assert.equal(pressed.opacity ?? 1, 1);
+  assert.equal(pressed.backgroundColor, '#E3F6F5');
   h.workspace.model.page.canManage = false;
   assert.equal(restoreControl(h.render()), undefined);
 });
@@ -237,6 +263,9 @@ test('success is concise while unknown and failure messages remain explicit and 
     assert.ok(texts.includes(h.workspace.model.notice));
   }
   const screen = readFileSync(path.join(root, 'src/screens/historyScreen.tsx'), 'utf8');
-  assert.ok(screen.includes('!growthCategory ? <Text style={styles.meta}>{current.description}'));
+  const growthHeader = nodes(harness().render()).find(node => node.type === 'View' && Array.isArray(node.props.children)
+    && node.props.children[0]?.props?.accessibilityRole === 'header'
+    && node.props.children[0].props.children === '關注與成長');
+  assert.equal(growthHeader.props.children[1].props.children.join(''), '查看已結束的關注與跟進記錄');
   assert.ok(!screen.includes('日期按結束關注的時間篩選'));
 });

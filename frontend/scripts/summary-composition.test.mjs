@@ -134,15 +134,38 @@ test('late tab or profile requests cannot act on another child, identity, route 
   assert.deepEqual(h.events, [['guard']]);
 });
 
-test('preparation history and legacy recovery preserve explicit return destinations without a third main tab', () => {
-  const h = harness(); h.query({ tab: 'preparation' }); let tree = h.render();
-  find(tree, 'PreparationWorkspace').props.onHistory(); h.approve();
+test('current preparation keeps its two tabs and history without exposing the obsolete recovery entry', () => {
+  const h = harness(); h.query({ tab: 'preparation' }); const tree = h.render();
+  const tabs = find(tree, 'UnderlineTabs');
+  assert.deepEqual(tabs.props.items, [{ key: 'overview', label: '孩子概況' }, { key: 'preparation', label: '準備單' }]);
+  assert.equal(tabs.props.value, 'preparation');
+  assert.equal(nodes(tree).some(node => node.props?.label === '舊共享準備／原操作查核'), false);
+  assert.equal(find(tree, 'LegacySummaryRecovery'), undefined);
+  const panel = nodes(tree).find(node => node.type === 'AppTabPanel' && node.props.tabKey === 'preparation');
+  assert.equal(panel.props.style, undefined);
+  assert.equal(panel.props.children.type, 'PreparationWorkspace');
+  find(tree, 'PreparationWorkspace').props.onHistory();
+  assert.deepEqual(h.events, [['guard']]); h.approve();
   assert.deepEqual(h.events.at(-1), ['push', { pathname: '/history', params: { category: 'preparations' } }]);
-  nodes(tree).find(node => node.props?.label === '舊共享準備／原操作查核').props.onPress(); h.approve(); tree = h.render();
-  assert.equal(tree.type, 'LegacySummaryRecovery'); assert.equal(find(tree, 'UnderlineTabs'), undefined);
-  tree.props.onReturn(); assert.equal(h.events.at(-1)[0], 'guard'); h.approve(); tree = h.render();
-  assert.equal(find(tree, 'UnderlineTabs').props.value, 'preparation');
   assert.match(source('src/screens/historyScreen.tsx'), /pathname: "\/summary", params: \{ tab: "preparation" \}/);
+});
+
+test('legacy recovery deep links retain guarded returns and reject stale navigation intents', () => {
+  const h = harness(); h.query({ tab: 'legacy-preparation' }); let tree = h.render();
+  assert.equal(tree.type, 'LegacySummaryRecovery'); assert.equal(find(tree, 'UnderlineTabs'), undefined);
+  tree.props.onReturn(); assert.deepEqual(h.events, [['guard']]);
+  assert.equal(h.render().type, 'LegacySummaryRecovery');
+  h.approve(); tree = h.render();
+  assert.deepEqual(h.events.slice(1), [['close-preparation'], ['params', { tab: 'preparation' }]]);
+  assert.equal(find(tree, 'UnderlineTabs').props.value, 'preparation');
+  for (const change of [h => h.child('child-b'), h => h.identity('Other parent'), h => h.route('/history'), h => h.query({ tab: 'overview' })]) {
+    const stale = harness(); stale.query({ tab: 'legacy-preparation' }); stale.render().props.onReturn();
+    change(stale); stale.render(); stale.approve(); assert.deepEqual(stale.events, [['guard']]);
+  }
+  const unmounted = harness(); unmounted.query({ tab: 'legacy-preparation' }); unmounted.render().props.onReturn();
+  unmounted.unmount(); unmounted.approve(); assert.deepEqual(unmounted.events, [['guard']]);
+  const missingChild = harness(); missingChild.query({ tab: 'legacy-preparation' }); missingChild.child(null);
+  assert.equal(find(missingChild.render(), 'LegacySummaryRecovery'), undefined);
 });
 
 test('scope changes reset presentation while a hidden native route renders no second reader', () => {

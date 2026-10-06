@@ -1,0 +1,11 @@
+✔ only primary and danger AppButton roles override Paper ripple colour (1.682564ms)
+✔ dark action ripple keeps filled backgrounds, white text and existing unavailable states (0.470442ms)
+✔ Paper hover and held ripple darken both action surfaces with readable contrast (1.231144ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 652.788359

@@ -30,6 +30,14 @@ export const colors = {
   quietSurface: "#EDFAF9",
   mintSurface: "#E3F6F5",
   previewSurface: "#F7FCFC",
+  // Temporary interaction shades; content and borders keep their full opacity.
+  pressedOverlay: "rgba(39, 35, 67, 0.08)",
+  accentPressed: "#E5C20B",
+  inkPressed: "#221F3B",
+  selectedPressed: "#A8D0D4",
+  warningPressed: "#F2EAC8",
+  // Dark filled actions deepen on hover/press without a white wash.
+  darkActionRipple: "rgba(0, 0, 0, 0.12)",
   statusWarm: "#FFF7D8",
   statusUnknown: "#FFF7D8",
   statusWarmLine: "#A38B19",

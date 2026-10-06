@@ -1,0 +1,18 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 600
+  },
+  "startWrapperCoordinate": [
+    41,
+    576
+  ],
+  "endWrapperCoordinate": [
+    153,
+    576
+  ],
+  "gesture": "Rightward drag from camera center",
+  "observedResult": "Assistant screen opened with focused empty 撰寫對話問題 textbox and disabled 預覽輸入 button; no file or camera picker appeared",
+  "then": "Navigated other bottom tabs; ended home with popup canceled",
+  "source": "Live cua_repl DOM snapshot after documented drag at 2026-10-06 approximately 07:30:18 UTC"
+}

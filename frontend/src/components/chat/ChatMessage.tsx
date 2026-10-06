@@ -70,5 +70,5 @@ const styles = StyleSheet.create({
   processLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, minWidth: 0, flexShrink: 1 },
   processDetails: { gap: spacing.sm, paddingBottom: spacing.sm }, activity: { gap: spacing.xs, minWidth: 0 },
   divider: { paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: chatColors.line },
-  activityTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600", flexShrink: 1 }, pressed: { opacity: 0.7 },
+  activityTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600", flexShrink: 1 }, pressed: { backgroundColor: colors.paleTeal },
 });

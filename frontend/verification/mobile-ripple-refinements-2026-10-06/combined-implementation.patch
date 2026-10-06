@@ -1,0 +1,416 @@
+--- a/frontend/app/(dashboard)/_layout.tsx
++++ b/frontend/app/(dashboard)/_layout.tsx
+@@ -58,7 +58,7 @@
+   const scopeKey = `${model.caregiverName}:${model.selectedChildId ?? "none"}`;
+   return <Tabs screenLayout={({ children }) => <MotionScopeBoundary scopeKey={scopeKey} eligible={model.selectedChildId !== null} style={{ flex: 1 }}><MotionEntrance preset="route" triggerKey={pathname} scopeKey={scopeKey} style={{ flex: 1 }} testID="motion-route">{children}</MotionEntrance>{pathname === "/" ? <MobileQuickInputDock key={scopeKey} /> : null}</MotionScopeBoundary>} screenListeners={({ navigation, route }) => ({ tabPress: event => {
+     event.preventDefault(); leave(() => navigation.navigate(route.name));
+-  } })} screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.teal, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, minHeight: mobileLayout.tabMinHeight + insets.bottom }, tabBarItemStyle: { minHeight: mobileLayout.touchTarget }, tabBarLabelStyle: mobileType.caption, tabBarHideOnKeyboard: true }}>
++  } })} screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.teal, tabBarActiveBackgroundColor: colors.selectedNav, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, minHeight: mobileLayout.tabMinHeight + insets.bottom }, tabBarItemStyle: { minHeight: mobileLayout.touchTarget }, tabBarLabelStyle: mobileType.caption, tabBarHideOnKeyboard: true }}>
+       <Tabs.Screen name="index" options={{ title: "今日", tabBarIcon: ({ color }) => <AppIcon name="home-outline" color={color} size={mobileIcons.navigation} /> }} />
+       <Tabs.Screen name="chat" options={{ title: "助手", tabBarIcon: ({ color }) => <AppIcon name="message-text-outline" color={color} size={mobileIcons.navigation} /> }} />
+       <Tabs.Screen name="tasks" options={{ title: "待辦", tabBarIcon: ({ color }) => <AppIcon name="clipboard-check-outline" color={color} size={mobileIcons.navigation} /> }} />
+--- /dev/null
++++ b/frontend/scripts/app-button-ripple.test.mjs
+@@ -0,0 +1,82 @@
++import assert from 'node:assert/strict';
++import { readFileSync } from 'node:fs';
++import { createRequire } from 'node:module';
++import test from 'node:test';
++import ts from 'typescript';
++
++const require = createRequire(import.meta.url);
++const root = new URL('../', import.meta.url);
++const flatten = value => Array.isArray(value) ? Object.assign({}, ...value.filter(Boolean).map(flatten)) : value || {};
++const native = { Platform: { OS: 'web', select: value => value.web ?? value.default }, StyleSheet: { create: value => value, flatten }, Pressable: 'Pressable', View: 'View', useWindowDimensions: () => ({ width: 1440 }) };
++const paper = { Button: 'PaperButton', Text: 'Text', TextInput: 'TextInput', RadioButton: { Item: 'RadioItem' }, Portal: 'Portal', MD3LightTheme: { colors: {}, fonts: {} }, configureFonts: value => value };
++const react = { useState: value => [value, () => {}], useRef: value => ({ current: value }), useLayoutEffect() {} };
++const cache = new Map();
++function load(file) {
++  if (cache.has(file)) return cache.get(file);
++  const output = ts.transpileModule(readFileSync(new URL(file, root), 'utf8'), { fileName: file, compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } });
++  const module = { exports: {} };
++  new Function('require', 'module', 'exports', output.outputText)(name => name === 'react' ? react : name === 'react/jsx-runtime' ? require(name)
++    : name === 'react-native' ? native : name === 'react-native-paper' ? paper : name.endsWith('/theme') ? load('src/theme.ts')
++      : name.endsWith('/useInteractionDensity') ? { useInteractionDensity: () => false } : new Proxy({}, { get: (_target, key) => String(key) }), module, module.exports);
++  cache.set(file, module.exports); return module.exports;
++}
++const { AppButton } = load('src/components/ui.tsx');
++const { colors, paperTheme } = load('src/theme.ts');
++const variants = ['primary', 'danger', 'secondary', 'quiet', 'accent', 'danger-secondary'];
++
++test('only primary and danger AppButton roles override Paper ripple colour', () => {
++  for (const variant of variants) {
++    const onPress = () => {};
++    const button = AppButton({ label: '確認', variant, onPress });
++    assert.equal(button.type, 'PaperButton');
++    assert.equal(button.props.rippleColor, variant === 'primary' || variant === 'danger' ? colors.darkActionRipple : undefined, variant);
++    assert.equal(button.props.onPress, onPress); assert.equal(button.props.accessibilityLabel, '確認');
++    assert.equal(flatten(button.props.contentStyle).minHeight, 44);
++  }
++  assert.equal(AppButton({ label: '預設主操作', onPress() {} }).props.rippleColor, colors.darkActionRipple);
++  const disclosure = AppButton({ label: '詳情', expanded: false, onPress() {} });
++  assert.equal(disclosure.type, 'Pressable'); assert.equal(disclosure.props.rippleColor, undefined);
++});
++
++test('dark action ripple keeps filled backgrounds, white text and existing unavailable states', () => {
++  for (const variant of ['primary', 'danger']) {
++    const button = AppButton({ label: '確認', variant, onPress() {} });
++    assert.equal(button.props.mode, 'contained');
++    assert.equal(button.props.buttonColor ?? paperTheme.colors.primary, variant === 'danger' ? colors.errorInk : colors.ink);
++    assert.equal(button.props.textColor ?? paperTheme.colors.onPrimary, colors.white);
++    assert.equal(flatten(button.props.style).borderWidth ?? 0, 0);
++    for (const state of [{ disabled: true }, { loading: true }]) {
++      const unavailable = AppButton({ label: '等待', variant, ...state, onPress() {} });
++      assert.equal(unavailable.props.disabled, true);
++      assert.equal(unavailable.props.loading, !!state.loading);
++      assert.equal(flatten(unavailable.props.style).backgroundColor, colors.softLine);
++      assert.equal(unavailable.props.theme.colors.onSurfaceDisabled, colors.muted);
++      assert.equal(unavailable.props.rippleColor, colors.darkActionRipple);
++    }
++  }
++  assert.equal(paperTheme.colors.onSurface, colors.ink, 'no global onSurface change');
++});
++
++const rgb = value => value.slice(1).match(/../g).map(channel => parseInt(channel, 16));
++const composite = (foreground, background, alpha) => foreground.map((channel, i) => channel * alpha + background[i] * (1 - alpha));
++const luminance = value => value.map(channel => channel / 255).map(channel => channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4).reduce((sum, channel, i) => sum + channel * [.2126, .7152, .0722][i], 0);
++const contrast = (a, b) => { const values = [luminance(a), luminance(b)].sort((x, y) => y - x); return (values[0] + .05) / (values[1] + .05); };
++
++test('Paper hover and held ripple darken both action surfaces with readable contrast', () => {
++  const match = colors.darkActionRipple.match(/^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/);
++  assert.ok(match); const shade = match.slice(1, 4).map(Number), alpha = Number(match[4]);
++  assert.deepEqual(shade, [0, 0, 0]); assert.equal(alpha, .12);
++  // Installed Paper 5.15.3 halves ripple alpha for hover; its ripple overlays that surface.
++  const hoverAlpha = alpha * .5;
++  for (const name of ['ink', 'errorInk']) {
++    const background = rgb(colors[name]), text = rgb(colors.white);
++    const hover = composite(shade, background, hoverAlpha);
++    const held = composite(shade, hover, alpha);
++    assert.ok(luminance(hover) < luminance(background), name);
++    assert.ok(luminance(held) < luminance(hover), name);
++    assert.ok(contrast(text, hover) >= 4.5, `${name}: hover contrast`);
++    // Conservative bound also shades the text by both layers, although hover is behind it.
++    const conservativeText = composite(shade, composite(shade, text, hoverAlpha), alpha);
++    assert.ok(contrast(conservativeText, held) >= 4.5, `${name}: held contrast`);
++  }
++});
+--- /dev/null
++++ b/frontend/scripts/mobile-navigation-corner.test.mjs
+@@ -0,0 +1,161 @@
++import assert from 'node:assert/strict';
++import { readFileSync, existsSync } from 'node:fs';
++import { createRequire } from 'node:module';
++import path from 'node:path';
++import { fileURLToPath } from 'node:url';
++import test from 'node:test';
++import ts from 'typescript';
++
++const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
++const require = createRequire(import.meta.url);
++const flatten = styles => Object.assign({}, ...[styles].flat(Infinity).filter(Boolean));
++const nodes = tree => !tree || typeof tree !== 'object' ? [] : [tree, ...[tree.props?.children].flat(Infinity).flatMap(nodes)];
++
++// Component/state checks only; actual viewport pixels and browser hit testing
++// remain with the separately authorized browser verification owner.
++function harness({ pathname = '/', width = 390, enabled = true, platform = 'web' } = {}) {
++  let current = [], cursor = 0, pending;
++  const frames = new Map(), cache = new Map(), events = [];
++  const react = {
++    useState(initial) { const index = cursor++, frame = current; frame[index] ??= { value: initial }; return [frame[index].value, value => { frame[index].value = typeof value === 'function' ? value(frame[index].value) : value; }]; },
++    useRef: value => ({ current: value }), useEffect() {}, useLayoutEffect() {}, useMemo: callback => callback(),
++  };
++  const leave = callback => { events.push('guard'); pending = callback; };
++  const preview = { model: { caregiverName: 'parent', selectedChildId: enabled ? 'child' : null, children: [{ id: 'child', accessRole: 'owner' }] },
++    actions: { openAgentPhoto: () => events.push('photo') }, agentDraftScope: enabled ? 'parent:child' : null,
++    agentAttachments: [], chatDraft: '', scenario: 'normal', openAgentDraft: (...args) => events.push(['draft', ...args]), addAgentAttachment: () => true };
++  const native = { Platform: { OS: platform, select: values => values[platform] ?? values.default }, View: 'View', Pressable: 'Pressable',
++    StyleSheet: { create: value => value, flatten }, useWindowDimensions: () => ({ width }), PanResponder: { create: config => ({ panHandlers: config }) } };
++  function load(relative) {
++    const filename = path.resolve(root, relative);
++    if (cache.has(filename)) return cache.get(filename);
++    const code = ts.transpileModule(readFileSync(filename, 'utf8'), { fileName: filename,
++      compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
++    const module = { exports: {} };
++    new Function('require', 'module', 'exports', code)(name => {
++      if (name === 'react') return react;
++      if (name === 'react/jsx-runtime') return require(name);
++      if (name === 'react-native') return native;
++      if (name === 'react-native-paper') return { Text: 'Text', MD3LightTheme: { colors: {}, fonts: {} }, configureFonts: value => value };
++      if (name === 'react-native-svg') return { __esModule: true, default: 'Svg', Path: 'Path' };
++      if (name === 'expo-router') return { usePathname: () => pathname, useRouter: () => ({ push: target => events.push(['push', target]) }) };
++      if (name === 'react-native-safe-area-context') return { SafeAreaView: 'SafeAreaView', useSafeAreaInsets: () => ({ bottom: 24 }) };
++      if (name.endsWith('/PreviewContext')) return { usePreview: () => preview };
++      if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewNavigation: () => leave, PreviewLink: 'PreviewLink' };
++      if (name.endsWith('/fixture')) return { scenarioLabels: {} };
++      if (name.endsWith('/branding')) return { brand: {} };
++      if (/\/(theme|app-navigation|RecordsNavButton|MobileNavSelection|CornerCaptureSurface|quick-input-gesture|pointer-click-gate)$/.test(name)) {
++        const target = path.resolve(path.dirname(filename), name);
++        return load(existsSync(`${target}.ts`) ? `${target}.ts` : `${target}.tsx`);
++      }
++      return new Proxy({}, { get: (_target, key) => String(key) });
++    }, module, module.exports);
++    cache.set(filename, module.exports); return module.exports;
++  }
++  function expand(tree, key = 'root') {
++    if (!tree || typeof tree !== 'object') return tree;
++    if (Array.isArray(tree)) return tree.map((child, index) => expand(child, `${key}.${index}`));
++    if (typeof tree.type === 'function') return render(tree.type, tree.props, key);
++    return { ...tree, props: { ...tree.props, children: expand(tree.props?.children, `${key}.children`) } };
++  }
++  function render(component, props = {}, key = 'root') {
++    const previous = current, previousCursor = cursor;
++    if (!frames.has(key)) frames.set(key, []);
++    current = frames.get(key); cursor = 0;
++    const tree = component(props); current = previous; cursor = previousCursor;
++    return expand(tree, key);
++  }
++  const shell = () => render(load('src/components/AppShell.tsx').AppShell, { children: 'content' }, 'shell');
++  const records = active => render(load('src/components/navigation/RecordsNavButton.tsx').RecordsNavButton, { active, scopeKey: 'parent:child' }, 'records');
++  const dock = () => {
++    const tree = render(load('src/components/agent/MobileQuickInputDock.tsx').MobileQuickInputDock, {}, 'dock');
++    const picker = nodes(tree).find(node => node.type === 'PhotoFilePicker');
++    const trigger = expand(picker.props.renderTrigger({ disabled: !enabled, reading: false, onPress: () => events.push('capture') }), 'trigger');
++    return { tree, trigger, camera: nodes(trigger).find(node => node.props?.testID === 'mobile-quick-camera') };
++  };
++  return { load, render, shell, records, dock, events, approve() { const callback = pending; pending = null; callback?.(); } };
++}
++
++test('each existing mobile page retains exactly one obvious selected surface after release', () => {
++  for (const width of [320, 390]) for (const pathname of ['/', '/chat', '/tasks', '/growth', '/care', '/photos', '/more', '/history']) {
++    const h = harness({ pathname, width });
++    let nav = nodes(h.shell()).find(node => node.props?.testID === 'mobile-bottom-navigation');
++    const all = nodes(nav), indicators = all.filter(node => node.props?.testID === 'mobile-current-page');
++    assert.equal(indicators.length, 1, `${width} ${pathname}`);
++    assert.equal(flatten(indicators[0].props.style).backgroundColor, '#BAE8E8');
++    const marker = nodes(indicators[0]).find(node => flatten(node.props?.style).width === 24);
++    assert.equal(flatten(marker.props.style).height, 3);
++    assert.equal(indicators[0].props.pointerEvents, 'none');
++    const selected = all.find(node => node.props?.['aria-current'] === 'page' || node.props?.current === true);
++    assert.ok(selected);
++    if (selected.props.onPressIn) {
++      selected.props.onPressIn();
++      nav = nodes(h.shell()).find(node => node.props?.testID === 'mobile-bottom-navigation');
++      const held = nodes(nav).find(node => node.props?.['aria-current'] === 'page');
++      assert.equal(nodes(held).filter(node => node.props?.testID === 'mobile-current-page').length, 1);
++      held.props.onPressOut();
++      nav = nodes(h.shell()).find(node => node.props?.testID === 'mobile-bottom-navigation');
++      assert.equal(nodes(nav).filter(node => node.props?.testID === 'mobile-current-page').length, 1);
++    }
++  }
++});
++
++test('desktop keeps its existing selection and mobile overlays are absent', () => {
++  for (const width of [1024, 1440]) {
++    const tree = harness({ pathname: '/growth', width }).shell(), all = nodes(tree);
++    assert.equal(all.some(node => node.props?.testID === 'mobile-bottom-navigation'), false);
++    assert.equal(all.some(node => node.props?.testID === 'mobile-current-page'), false);
++    const active = all.find(node => node.props?.['aria-current'] === 'page');
++    assert.equal(flatten(active.props.style).backgroundColor, '#BAE8E8');
++  }
++});
++
++test('Records retains guarded tap, upward-drag and keyboard-expand routes with selected semantics', () => {
++  const h = harness({ pathname: '/history' });
++  const record = h.records(true);
++  assert.equal(record.props.selected, true); assert.equal(record.props.current, true);
++  record.props.onPress(); assert.deepEqual(h.events, ['guard']);
++  h.approve(); assert.deepEqual(h.events, ['guard', ['push', '/care']]);
++  record.props.onGestureEnd(0, -80, true); assert.equal(h.events.at(-1), 'guard');
++  h.approve(); assert.deepEqual(h.events.at(-1), ['push', '/more']);
++  record.props.onExpand(); h.approve(); assert.deepEqual(h.events.at(-1), ['push', '/more']);
++  assert.equal(h.records(false).props.current, false);
++  const props = { ...record.props, children: 'record' };
++  const web = h.render(h.load('src/components/navigation/DirectionalPressable.web.tsx').DirectionalPressable, props, 'web-control');
++  assert.equal(web.props['aria-current'], 'page'); assert.equal(web.props.accessibilityState.selected, true);
++  const native = h.render(h.load('src/components/navigation/DirectionalPressable.tsx').DirectionalPressable, props, 'native-control');
++  assert.equal(native.props.accessibilityState.selected, true);
++});
++
++test('corner surface has two tangent menisci and remains decorative outside the original hit area', () => {
++  const h = harness(), { tree, camera } = h.dock();
++  const dockStyle = flatten(tree.props.style), hit = flatten(camera.props.style);
++  assert.equal(tree.props.pointerEvents, 'box-none');
++  assert.deepEqual([dockStyle.left, dockStyle.bottom, dockStyle.width, dockStyle.height], [0, 0, 56, 56]);
++  assert.deepEqual([hit.left, hit.bottom, hit.width, hit.height], [0, 0, 56, 56]);
++  assert.equal(hit.backgroundColor, 'transparent');
++  const all = nodes(camera), surface = all.find(node => node.props?.testID === 'mobile-quick-camera-surface');
++  assert.equal(surface.props.pointerEvents, 'none');
++  assert.deepEqual([flatten(surface.props.style).left, flatten(surface.props.style).bottom], [0, 0]);
++  const svg = all.find(node => node.type === 'Svg'), outline = all.find(node => node.type === 'Path');
++  assert.deepEqual([svg.props.width, svg.props.height, svg.props.pointerEvents], [72, 72, 'none']);
++  assert.equal(outline.props.d, 'M 0 0 C 0 12 8 16 28 16 A 28 28 0 0 1 56 44 C 56 64 60 72 72 72 H 0 Z');
++  const withinHit = (x, y) => x >= hit.left && x < hit.left + hit.width && y >= -hit.bottom - hit.height && y < -hit.bottom;
++  assert.equal(withinHit(28, -28), true);
++  for (const point of [[68, -4], [4, -68], [28, 0], [28, 32], [100, -28]]) assert.equal(withinHit(...point), false);
++});
++
++test('camera long hold and directional choices preserve draft-only input behavior', () => {
++  const h = harness();
++  h.dock().camera.props.onLongPress();
++  assert.equal(h.dock().camera.props.expanded, true);
++  assert.equal(nodes(h.dock().tree).filter(node => ['quick-input-file', 'quick-input-voice', 'quick-input-text'].includes(node.props?.testID)).length, 3);
++  h.dock().camera.props.onGestureEnd(70, 0, true);
++  assert.deepEqual(h.events, [['draft', true]]);
++  assert.equal(h.dock().camera.props.expanded, false);
++  h.dock().camera.props.onPress();
++  assert.deepEqual(h.events, [['draft', true], 'capture']);
++  const disabled = harness({ enabled: false }).dock().camera;
++  assert.equal(disabled.props.disabled, true);
++  assert.equal(flatten(disabled.props.style).opacity, 0.4);
++});
+--- a/frontend/src/components/AppShell.tsx
++++ b/frontend/src/components/AppShell.tsx
+@@ -12,6 +12,7 @@
+ import { AgentEntryButton } from "./AgentEntryButton";
+ import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
+ import { RecordsNavButton } from "./navigation/RecordsNavButton";
++import { MobileNavSelection } from "./navigation/MobileNavSelection";
+ import { desktopNavigationGroups, navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
+ import { RightRailContent } from "./RightRailContent";
+ import { ChildKeyFacts } from "./ChildKeyFacts";
+@@ -33,6 +34,7 @@
+     onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
+     style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.navPressed])}
+   >
++    {compact && active ? <MobileNavSelection /> : null}
+     <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
+     <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
+   </Pressable></PreviewLink>;
+--- /dev/null
++++ b/frontend/src/components/agent/CornerCaptureSurface.tsx
+@@ -0,0 +1,17 @@
++import { StyleSheet, View } from "react-native";
++import Svg, { Path } from "react-native-svg";
++import { colors } from "../../theme";
++
++// Concave menisci meet the left/content-bottom edges tangentially around the
++// rounded camera body. The decorative reach never enlarges the 56px hit target.
++export function CornerCaptureSurface() {
++  return <View testID="mobile-quick-camera-surface" pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.surface}>
++    <Svg width={72} height={72} viewBox="0 0 72 72" pointerEvents="none" aria-hidden>
++      <Path d="M 0 0 C 0 12 8 16 28 16 A 28 28 0 0 1 56 44 C 56 64 60 72 72 72 H 0 Z" fill={colors.accent} />
++    </Svg>
++  </View>;
++}
++
++const styles = StyleSheet.create({
++  surface: { position: "absolute", left: 0, bottom: 0, width: 72, height: 72 },
++});
+--- a/frontend/src/components/agent/MobileQuickInputDock.tsx
++++ b/frontend/src/components/agent/MobileQuickInputDock.tsx
+@@ -10,6 +10,7 @@
+ import { DirectionalPressable } from "../navigation/DirectionalPressable";
+ import { quickInputDirection, type QuickInputKind } from "../navigation/quick-input-gesture";
+ import { AssistantInputDialog } from "./AssistantInputDialog";
++import { CornerCaptureSurface } from "./CornerCaptureSurface";
+ 
+ const choices: { key: QuickInputKind; label: string; icon: AppIconName }[] = [
+   { key: "file", label: "文件", icon: "file-document-outline" },
+@@ -74,6 +75,7 @@
+           onGestureMove={(dx, dy) => { if (Math.hypot(dx, dy) > 8) setExpanded(true); setSelected(quickInputDirection(dx, dy)); }}
+           onGestureCancel={cancelGesture}
+           onGestureEnd={(dx, dy, dragged) => { cancelGesture(); if (dragged) { const kind = quickInputDirection(dx, dy); if (kind) choose(kind); } }}>
++          <CornerCaptureSurface />
+           <AppIcon name="camera-outline" size={26} color={colors.ink} />
+         </DirectionalPressable>
+         {!expanded && (error || trigger.reading) ? <View pointerEvents="none" style={styles.status}>
+@@ -95,7 +97,7 @@
+   dock: { position: "absolute", left: 0, bottom: 0, width: 56, height: 56, zIndex: 4, overflow: "visible" },
+   dockExpanded: { width: 180, height: 184 },
+   camera: { position: "absolute", left: 0, bottom: 0, width: 56, height: 56, borderRadius: 28,
+-    backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" },
++    backgroundColor: "transparent", overflow: "visible", alignItems: "center", justifyContent: "center" },
+   status: { position: "absolute", left: 0, bottom: 68, width: 248, borderRadius: radius.small, backgroundColor: colors.white,
+     paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderWidth: 1, borderColor: colors.softLine },
+   statusText: { fontFamily: chineseFont, fontSize: 12, lineHeight: 18, color: colors.ink },
+--- a/frontend/src/components/navigation/DirectionalPressable.tsx
++++ b/frontend/src/components/navigation/DirectionalPressable.tsx
+@@ -2,7 +2,7 @@
+ import { PanResponder, View, type StyleProp, type ViewStyle } from "react-native";
+ 
+ export type DirectionalPressableProps = {
+-  children: ReactNode; label: string; hint?: string; disabled?: boolean; expanded?: boolean; testID?: string;
++  children: ReactNode; label: string; hint?: string; disabled?: boolean; expanded?: boolean; selected?: boolean; current?: boolean; testID?: string;
+   style: StyleProp<ViewStyle>; scopeKey: string; onPress(): void; onExpand?(): void; onLongPress?(): void;
+   onGestureStart(): void; onGestureMove(dx: number, dy: number): void;
+   onGestureEnd(dx: number, dy: number, dragged: boolean): void; onGestureCancel(): void;
+@@ -42,7 +42,7 @@
+     return () => { clearLongPress(); cancelled.current = true; latest.current.onGestureCancel(); };
+   }, [props.scopeKey, props.disabled]);
+   return <View {...responder.panHandlers} accessible accessibilityRole="button" accessibilityLabel={props.label}
+-    accessibilityHint={props.hint} accessibilityState={{ disabled: !!props.disabled, expanded: props.expanded }}
++    accessibilityHint={props.hint} accessibilityState={{ disabled: !!props.disabled, expanded: props.expanded, selected: props.selected }}
+     accessibilityActions={[{ name: "activate", label: props.label }, ...(props.onExpand ? [{ name: props.expanded ? "collapse" : "expand", label: props.expanded ? "收起選項" : "更多選項" }] : [])]}
+     onAccessibilityAction={event => { if (props.disabled) return; if (event.nativeEvent.actionName === "expand") props.onExpand?.(); else if (event.nativeEvent.actionName === "collapse") props.onGestureCancel(); else if (event.nativeEvent.actionName === "activate") props.onPress(); }}
+     onAccessibilityEscape={() => { if (props.expanded) props.onGestureCancel(); }}
+--- a/frontend/src/components/navigation/DirectionalPressable.web.tsx
++++ b/frontend/src/components/navigation/DirectionalPressable.web.tsx
+@@ -81,6 +81,6 @@
+   }, [props.scopeKey, props.disabled, clickGate]);
+   useEffect(() => { if (props.disabled) props.onGestureCancel(); }, [props.disabled]);
+   return <Pressable ref={node} accessibilityRole="button" accessibilityLabel={props.label} accessibilityHint={props.hint}
+-    accessibilityState={{ disabled: !!props.disabled, expanded: props.expanded }} aria-expanded={props.expanded} disabled={props.disabled} testID={props.testID}
++    accessibilityState={{ disabled: !!props.disabled, expanded: props.expanded, selected: props.selected }} aria-current={props.current ? "page" : undefined} aria-expanded={props.expanded} disabled={props.disabled} testID={props.testID}
+     style={props.style} onPress={props.onPress}>{props.children}</Pressable>;
+ }
+--- /dev/null
++++ b/frontend/src/components/navigation/MobileNavSelection.tsx
+@@ -0,0 +1,14 @@
++import { StyleSheet, View } from "react-native";
++import { colors } from "../../theme";
++
++// The current page stays visible after release, independently of press feedback.
++export function MobileNavSelection() {
++  return <View testID="mobile-current-page" pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.surface}>
++    <View style={styles.marker} />
++  </View>;
++}
++
++const styles = StyleSheet.create({
++  surface: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.selectedNav, alignItems: "center" },
++  marker: { width: 24, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: colors.deepTeal },
++});
+--- a/frontend/src/components/navigation/RecordsNavButton.tsx
++++ b/frontend/src/components/navigation/RecordsNavButton.tsx
+@@ -6,6 +6,7 @@
+ import { chineseFont, colors, mobileIcons, mobileLayout, mobileType } from "../../theme";
+ import { AppIcon } from "../AppIcon";
+ import { DirectionalPressable } from "./DirectionalPressable";
++import { MobileNavSelection } from "./MobileNavSelection";
+ import { recordsMoreDirection } from "./quick-input-gesture";
+ 
+ export function RecordsNavButton({ active, scopeKey, style }: { active: boolean; scopeKey: string; style?: StyleProp<ViewStyle> }) {
+@@ -13,10 +14,12 @@
+   const [selected, setSelected] = useState(false);
+   const openMore = () => { setSelected(false); if (pathname !== "/more") leave(() => router.push("/more")); };
+   return <DirectionalPressable label="記錄，向上拖曳開啟更多頁面" hint="點按查看記錄；亦可按方向鍵上，或使用記錄頁的更多按鈕"
++    selected={active} current={active}
+     scopeKey={`${scopeKey}:${pathname}`} testID="records-navigation" style={[styles.button, selected && styles.selected, style]}
+     onPress={() => { if (pathname !== "/care") leave(() => router.push("/care")); }} onExpand={openMore}
+     onGestureStart={() => setSelected(false)} onGestureMove={(dx, dy) => setSelected(recordsMoreDirection(dx, dy))}
+     onGestureCancel={() => setSelected(false)} onGestureEnd={(dx, dy, dragged) => { setSelected(false); if (dragged && recordsMoreDirection(dx, dy)) openMore(); }}>
++    {active ? <MobileNavSelection /> : null}
+     <AppIcon name={selected ? "chevron-up" : "notebook-outline"} size={mobileIcons.navigation} color={active || selected ? colors.deepTeal : colors.muted} />
+     <View style={styles.copy}><Text style={[styles.label, active && styles.active]}>記錄</Text><Text style={styles.hint}>{selected ? "放手開更多" : "上拉更多"}</Text></View>
+   </DirectionalPressable>;
+--- a/frontend/src/components/ui.tsx
++++ b/frontend/src/components/ui.tsx
+@@ -44,6 +44,7 @@
+       mode={filled ? "contained" : "outlined"}
+       buttonColor={variant === "danger" ? colors.errorInk : variant === "accent" ? colors.accent : filled ? undefined : "transparent"}
+       textColor={variant === "danger" ? colors.white : variant === "danger-secondary" ? colors.errorInk : variant === "accent" ? colors.onAccent : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
++      rippleColor={variant === "primary" || variant === "danger" ? colors.darkActionRipple : undefined}
+       theme={{ colors: { surfaceDisabled: colors.softLine, onSurfaceDisabled: colors.muted } }}
+       onPress={onPress}
+       disabled={unavailable}
+--- a/frontend/src/theme.ts
++++ b/frontend/src/theme.ts
+@@ -36,6 +36,8 @@
+   inkPressed: "#221F3B",
+   selectedPressed: "#A8D0D4",
+   warningPressed: "#F2EAC8",
++  // Dark filled actions deepen on hover/press without a white wash.
++  darkActionRipple: "rgba(0, 0, 0, 0.12)",
+   statusWarm: "#FFF7D8",
+   statusUnknown: "#FFF7D8",
+   statusWarmLine: "#A38B19",

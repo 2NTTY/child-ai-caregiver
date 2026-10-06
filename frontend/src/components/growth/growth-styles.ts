@@ -9,7 +9,7 @@ export const growthStyles=StyleSheet.create({
   headerStatus:{minHeight:18},
   workspace:{width:"100%",minWidth:0,gap:spacing.md},
   indexAside:{width:200,minWidth:0,gap:spacing.lg,borderRightWidth:1,borderRightColor:colors.line,paddingRight:spacing.lg},concernIndex:{gap:spacing.sm},
-  concernRow:{backgroundColor:colors.controlSurface,borderWidth:1,borderColor:colors.line,borderRadius:radius.small,padding:spacing.md,gap:spacing.xs,minHeight:64,borderBottomWidth:1,borderBottomColor:colors.softLine},concernSelected:{backgroundColor:colors.paleTeal,borderLeftWidth:3,borderLeftColor:colors.ink},pressed:{opacity:0.65},
+  concernRow:{backgroundColor:colors.controlSurface,borderWidth:1,borderColor:colors.line,borderRadius:radius.small,padding:spacing.md,gap:spacing.xs,minHeight:64,borderBottomWidth:1,borderBottomColor:colors.softLine},concernSelected:{backgroundColor:colors.paleTeal,borderLeftWidth:3,borderLeftColor:colors.ink},pressed:{backgroundColor:colors.paleTeal},selectedPressed:{backgroundColor:colors.selectedNav},
   eyebrow:{fontFamily:chineseFont,...readingType.meta,color:colors.muted,fontWeight:"700"},concernTitle:{fontFamily:chineseFont,...workspaceType.title,color:colors.ink},concernHeading:{gap:spacing.sm,paddingBottom:spacing.md},
   reading:{fontFamily:chineseFont,...readingType.body,color:colors.ink},timelinePanel:{paddingVertical:spacing.sm,gap:spacing.lg,minWidth:0},
   timeline:{paddingLeft:spacing.sm},timelineEvent:{paddingLeft:spacing.lg+2,paddingBottom:spacing.xl,gap:spacing.sm},

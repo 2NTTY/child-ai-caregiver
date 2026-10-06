@@ -8,7 +8,7 @@ export const contactStyles = StyleSheet.create({
   consentSurface: {backgroundColor: colors.quietSurface}, editor: {gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md},
   taskIndex: {flex: 0.9, minWidth: 0}, taskDetail: {flex: 1.3, gap: spacing.md, minWidth: 0},
   taskRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, minWidth: 0},
-  selectedTask: {backgroundColor: colors.paleTeal, borderRadius: radius.small}, pressed: {opacity: 0.7},
+  selectedTask: {backgroundColor: colors.paleTeal, borderRadius: radius.small}, pressed: {backgroundColor: colors.paleTeal}, selectedPressed: {backgroundColor: colors.selectedNav},
 
   stack: {gap: spacing.md}, row: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm},
   columns: {flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg},  full: {width: '100%', gap: spacing.lg},

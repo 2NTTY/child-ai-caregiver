@@ -1,0 +1,65 @@
+{
+  "startedAt": "2026-10-06T07:17:25.682131+00:00",
+  "baselineRevision": "Frozen v47 source and evidence",
+  "baselineBuildInputFingerprintSha256": "459128602754492d317b4b801e0ddba790b829788ce225786236873f78217d34",
+  "sourceBuildInputFingerprintSha256": "81cb84068fa95ae59687e2b18a2ec08ea1f96ac92803c0de8911dc628fe7e089",
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "startedAt": "2026-10-06T07:17:25.682226+00:00",
+      "endedAt": "2026-10-06T07:17:37.546416+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "typecheck.log",
+      "logSha256": "36909e4212b55a6cfd8f3e2bae14fb164f0589f81b1563e66628f7ec63f8a6ce"
+    },
+    "aggregate": {
+      "command": "node --test scripts/*.test.mts scripts/*.test.mjs src/components/care/care-review.test.mjs src/components/growth/growth-form.test.mjs",
+      "startedAt": "2026-10-06T07:17:37.547258+00:00",
+      "endedAt": "2026-10-06T07:17:50.324718+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "aggregate.log",
+      "logSha256": "8ca927d5bd5fc28f91001606dde51a8feb2644121a25efddcbd2676e7e8029ba",
+      "tests": 300,
+      "passed": 300,
+      "failed": 0
+    },
+    "webExport": {
+      "command": "npm run build:web -- --output-dir dist",
+      "startedAt": "2026-10-06T07:20:01.219412+00:00",
+      "endedAt": "2026-10-06T07:21:01.553312+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "export.log",
+      "logSha256": "0a05c3b1186f95ef90537dd99887a4ba4041b5d39c775bcdc30ec9ed979c36df",
+      "staticRoutes": 37,
+      "manifest": "export-manifest.json",
+      "exportFingerprintSha256": "b9b9acaa0b2cd745d3a16195751abfe8bcf5bbf58e05c395cd22685843c1c18c"
+    },
+    "parentOwnedBrowserQA": {
+      "status": "passed-bounded-scope",
+      "publishedVersion": 48,
+      "report": "browser-qa/v48-browser-report.md",
+      "reportSha256": "deb0d23b7f82087c1347f28b8ca8a584518006be3e996166813e21483c7d242d",
+      "summary": "browser-qa/v48-summary.json",
+      "summarySha256": "2f657e0821329c5de215a1c83c05f339acdc51ec85115dbdf77767afccad0b71",
+      "parentReview": "Parent read the full report, inspected actual mobile screenshot, accepted the bounded results and released source/docs/evidence freeze",
+      "integrationWorkerRanBrowser": false,
+      "sourceIdentityNote": "Report supplies published entry 306b54fd51461813a9e0d6c05558433b matching this frozen export",
+      "originalHelperFailure": "browser-qa/v48-helper-failure.json",
+      "limits": [
+        "Representative primary and danger controls, eight held samples; no every-frame continuity claim",
+        "390/320 mobile navigation, sampled hit testing and safe local gestures",
+        "No native device, direct short camera tap, camera permission, file/voice capture, real data, final destructive confirmation or send"
+      ]
+    }
+  },
+  "stoppingRule": "Stop on the first failed check; retain its original log. No assertion or scope weakening.",
+  "limits": [
+    "No browser or held-press visual verification by integration worker",
+    "No real API or native-device verification",
+    "No Git or Sites operations by integration worker"
+  ],
+  "firstPassResult": "All combined checks passed on first run; no assertion edits or product retries"
+}

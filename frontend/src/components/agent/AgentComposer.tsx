@@ -92,18 +92,18 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
       <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
         accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
         aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
-        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, pressed && styles.pressed]}>
+        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, pressed && enabled && !hasDraft && styles.pressed]}>
         <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable></View>
       <Pressable accessibilityRole="button" accessibilityLabel="預覽輸入" accessibilityState={{ disabled: !canPreview }}
         disabled={!canPreview} onPress={preview}
-        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, canPreview && (hovered || focused) && styles.controlActive, pressed && styles.pressed]}>
-        <View style={[styles.sendCircle, !canPreview && styles.sendDisabled]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>
+        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, canPreview && (hovered || focused) && styles.controlActive, pressed && canPreview && styles.pressed]}>
+        {({ pressed }) => <View style={[styles.sendCircle, !canPreview && styles.sendDisabled, pressed && canPreview && styles.sendPressed]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>}
       </Pressable></View>
     <MotionDisclosure expanded={showSuggestions} scopeKey={JSON.stringify([enabled, hasDraft, automaticCollapse])} testID="composer-suggestions-disclosure"><ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
       contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled">
       <Text style={styles.suggestionLabel}>本地示例：</Text>{suggestions.map(item => <Pressable key={item} accessibilityRole="button" accessibilityLabel={`預填本地示例：${item}`}
         disabled={hasDraft || !enabled} onPress={() => pickSuggestion(item)}
-        style={({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (hasDraft || !enabled) && styles.disabled, pressed && styles.pressed]}>
+        style={({ pressed }) => [styles.suggestion, compact && styles.mobileSuggestion, (hasDraft || !enabled) && styles.disabled, pressed && enabled && !hasDraft && styles.pressed]}>
         <Text style={styles.suggestionText}>{item}</Text></Pressable>)}
     </ScrollView></MotionDisclosure>
     </View>
@@ -140,5 +140,5 @@ const styles = StyleSheet.create({
   mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm }, suggestionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   suggestion: { backgroundColor: chatColors.hover, minHeight: 40, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: chatColors.line, borderRadius: radius.pill, justifyContent: "center" },
   mobileSuggestion: { minHeight: mobileLayout.touchTarget, flexShrink: 0 },
-  suggestionText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool }, disabled: { opacity: .5 }, pressed: { opacity: .68 },
+  suggestionText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool }, disabled: { opacity: .5 }, pressed: { backgroundColor: colors.paleTeal }, sendPressed: { backgroundColor: colors.accentPressed },
 });

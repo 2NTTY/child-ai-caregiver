@@ -1,0 +1,184 @@
+{
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+  "publishedVersion": 47,
+  "suppliedDeploymentId": "appgdep_6ac49dba05588191aa9db008eea9d6e1",
+  "suppliedBuildFingerprint": "459128602754492d317b4b801e0ddba790b829788ce225786236873f78217d34",
+  "dateUTC": "2026-10-06",
+  "probes": [
+    {
+      "name": "v47-calendar-day",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgb(227, 246, 245)"
+      ],
+      "rippleBackgrounds": []
+    },
+    {
+      "name": "v47-calendar-month-arrow",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgb(227, 246, 245)"
+      ],
+      "rippleBackgrounds": []
+    },
+    {
+      "name": "v47-chat-suggestions-toggle",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgb(227, 246, 245)",
+        "rgb(237, 250, 249)"
+      ],
+      "rippleBackgrounds": []
+    },
+    {
+      "name": "v47-danger-dialog-trigger",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgba(255, 255, 254, 0.06)"
+      ],
+      "rippleBackgrounds": [
+        "rgba(255, 255, 254, 0.12)"
+      ]
+    },
+    {
+      "name": "v47-disclosure",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgba(0, 0, 0, 0)",
+        "rgba(39, 35, 67, 0.08)"
+      ],
+      "rippleBackgrounds": []
+    },
+    {
+      "name": "v47-primary-button",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgba(255, 255, 254, 0.043)",
+        "rgba(255, 255, 254, 0.06)"
+      ],
+      "rippleBackgrounds": [
+        "rgba(255, 255, 254, 0.12)"
+      ]
+    },
+    {
+      "name": "v47-range-field",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgb(227, 246, 245)"
+      ],
+      "rippleBackgrounds": []
+    },
+    {
+      "name": "v47-range-menu-option",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgb(227, 246, 245)",
+        "rgba(0, 0, 0, 0)"
+      ],
+      "rippleBackgrounds": []
+    },
+    {
+      "name": "v47-secondary-cancel",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgba(39, 35, 67, 0.02)",
+        "rgba(39, 35, 67, 0.06)"
+      ],
+      "rippleBackgrounds": [
+        "rgba(39, 35, 67, 0.12)"
+      ]
+    },
+    {
+      "name": "v47-selected-task-tab",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgb(227, 246, 245)"
+      ],
+      "rippleBackgrounds": []
+    },
+    {
+      "name": "v47-task-list-row",
+      "heldSampleCount": 4,
+      "heldOpacities": [
+        "1"
+      ],
+      "allActive": true,
+      "allReady": true,
+      "allAncestorsOpaque": true,
+      "backgrounds": [
+        "rgb(186, 232, 232)",
+        "rgb(227, 246, 245)"
+      ],
+      "rippleBackgrounds": []
+    }
+  ],
+  "heldSamples": 44,
+  "layout": "Preparation desktop and 320 × 600 pass; History growth subtitle passes; legacy entry absent",
+  "residual": "Primary and danger Paper white 6% hover plus white 12% ripple remain",
+  "limitations": [
+    "No every-frame continuity or persistent DOM identity measurement",
+    "History archived concern row unavailable in current synthetic fixture",
+    "Mobile active bottom nav and droplet intentionally outside v47 scope",
+    "QA wrapper size label remains 320 × 900 while actual iframe height attribute and rendered content are 600"
+  ]
+}

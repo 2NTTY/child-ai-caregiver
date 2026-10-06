@@ -1,0 +1,9 @@
+checking file 'frontend/app/(dashboard)/_layout.tsx'
+checking file frontend/src/components/AppShell.tsx
+checking file frontend/src/components/navigation/RecordsNavButton.tsx
+checking file frontend/src/components/navigation/DirectionalPressable.tsx
+checking file frontend/src/components/navigation/DirectionalPressable.web.tsx
+checking file frontend/src/components/navigation/MobileNavSelection.tsx
+checking file frontend/src/components/agent/MobileQuickInputDock.tsx
+checking file frontend/src/components/agent/CornerCaptureSurface.tsx
+checking file frontend/scripts/mobile-navigation-corner.test.mjs

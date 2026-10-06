@@ -20,7 +20,7 @@ export function ChildPicker({ children, selectedId, onSelect, compact = false, t
   const copy = <><Text numberOfLines={1} style={[styles.name, homeIdentity && styles.homeName]}>{selected?.displayName ?? "尚未有孩子"}</Text>{!compact && selected ? <Text numberOfLines={homeIdentity ? undefined : 1} style={[styles.age, homeIdentity && styles.homeAge]}>{loading ? "正在讀取…" : homeIdentity ? selected.ageSummaryLabel ?? selected.ageLabel : selected.ageLabel}</Text> : null}</>;
   function setOpen(open: boolean) { setVisible(open); onOpenChange?.(open); }
   return <><Pressable accessibilityRole="button" accessibilityLabel={`選擇孩子，目前${selected?.displayName ?? "尚未有孩子"}`} accessibilityState={{ expanded: visible, disabled: children.length === 0 }} aria-expanded={visible} aria-disabled={children.length === 0} disabled={children.length === 0}
-    onPress={() => setOpen(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, homeIdentity && styles.homeIdentity, visible && !homeIdentity && styles.open, children.length === 0 && styles.disabled, pressed && (homeIdentity ? styles.homePressed : styles.pressed)]}>
+    onPress={() => setOpen(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, homeIdentity && styles.homeIdentity, visible && !homeIdentity && styles.open, children.length === 0 && styles.disabled, pressed && children.length > 0 && (homeIdentity ? styles.homePressed : styles.pressed)]}>
     {switchOnly ? <><AppIcon name="swap-horizontal" size={20} color={colors.deepTeal} /><Text style={styles.name}>{shortSwitchLabel ? "切換" : "切換孩子"}</Text></> : <>
       <View style={[styles.avatar, compact && styles.avatarCompact, tiny && styles.avatarTiny, homeIdentity && styles.homeAvatar]}><Text style={[styles.initial, homeIdentity && styles.homeInitial]}>{selected?.displayName.slice(0, 1) ?? "育"}</Text></View>
       <View style={[styles.copy, homeIdentity && styles.homeCopy]}>{homeIdentity ? <View style={styles.homeCopyContent}>{copy}</View> : copy}</View>
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   homeIdentity: { width: "auto", alignSelf: "stretch", minHeight: 72, paddingHorizontal: spacing.sm, backgroundColor: colors.controlSurface, borderWidth: 1, borderRadius: radius.small },
   homeCopy: { flexBasis: "auto" },
   homeCopyContent: { alignSelf: "flex-start", maxWidth: "100%", gap: 2 },
-  homePressed: { opacity: 0.72 },
+  homePressed: { backgroundColor: colors.paleTeal },
   open: { borderColor: colors.teal, backgroundColor: colors.white },
   disabled: { opacity: 0.5 }, pressed: { backgroundColor: colors.selectedNav },
   avatar: { width: 36, height: 36, flexShrink: 0, borderRadius: radius.pill, backgroundColor: colors.sage, alignItems: "center", justifyContent: "center" },

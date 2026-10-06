@@ -39,7 +39,7 @@ function ProfileWorkspace({ child, online, reading, switchPosition }: {
         ref={node => switchPosition.setOptionRef(item.id, node)}
         accessibilityLabel={`切換至${item.displayName}`} accessibilityState={{ selected: item.id === child?.id }}
         onPress={() => switchPosition.selectChild(item.id)}
-        style={({ pressed }) => [styles.childOption, item.id === child?.id && styles.childOptionActive, pressed && styles.pressed]}>
+        style={({ pressed }) => [styles.childOption, item.id === child?.id && styles.childOptionActive, pressed && (item.id === child?.id ? styles.selectedPressed : styles.pressed)]}>
         <Text style={styles.childName}>{item.displayName}</Text><Text style={styles.meta}>{item.id === child?.id ? "目前" : "切換"}</Text>
       </Pressable>) : <Text style={styles.meta}>沒有可切換的孩子。</Text>}
       </View>
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   previewTools: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.lg },
   childOption: { backgroundColor: colors.controlSurface, flexGrow: 1, flexBasis: 180, minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.sm,
     borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  childOptionActive: { backgroundColor: colors.selectedNav, borderColor: colors.teal }, pressed: { opacity: 0.68 },
+  childOptionActive: { backgroundColor: colors.selectedNav, borderColor: colors.teal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedPressed },
   childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
 });

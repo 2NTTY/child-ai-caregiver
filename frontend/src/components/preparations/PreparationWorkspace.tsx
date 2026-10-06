@@ -33,7 +33,7 @@ function PreparationRow({ document, selected, onPress, rowRef }: { document: Pre
   const state = stateLabels[document.readState], revision = document.revision;
   return <Pressable ref={rowRef} testID={`preparation-row-${document.id}`} accessibilityRole="button"
     accessibilityLabel={`開啟${revision?.title ?? "暫不能查看的準備單"}`} accessibilityState={{ selected }} aria-selected={selected}
-    onPress={onPress} style={({ pressed }) => [styles.documentRow, selected && styles.selectedRow, pressed && styles.pressedRow]}>
+    onPress={onPress} style={({ pressed }) => [styles.documentRow, selected && styles.selectedRow, pressed && (selected ? styles.selectedPressedRow : styles.pressedRow)]}>
     <View style={styles.row}><Text style={styles.eyebrow}>{preparationPurposeLabel(document.purpose)}</Text><AppStatusBadge label={document.status === "archived" && document.readState === "ready" ? "已歸檔" : state.label} tone={document.status === "archived" && document.readState === "ready" ? "neutral" : state.tone} /></View>
     <Text accessibilityRole="header" style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
     <Text style={styles.body}>{revision?.summary ?? state.detail}</Text>
@@ -142,16 +142,15 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
   const active = workspace.model.documents.filter(document => document.status === "active");
   const selected = workspace.model.selected?.status === "active";
   return <View testID="preparation-workspace" style={styles.workspace}>
-    {previewControls}
     {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
-    {!selected ? <><View style={styles.headingRow}><View style={styles.headingCopy}>
-      <Text accessibilityRole="header" style={styles.sectionTitle}>準備好，打開就能用</Text><Text style={styles.body}>到診、入學、外出或照顧交接，各自留成一份準備單。</Text>
-    </View>{onHistory ? <AppButton label="查看已歸檔" variant="secondary" density="compact" onPress={onHistory} /> : null}</View>
-      <View style={styles.agentEntry}><View style={styles.headingCopy}><Text style={styles.rowTitle}>下一次要準備甚麼？</Text><Text style={styles.meta}>在助手交代用途、日期及需要。</Text></View>
-        <View style={styles.intentControls}><View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
-          <AppButton label="到助手交代" variant="accent" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} /></View>
-      </View><Text style={styles.meta}>待用準備單{["loading", "unavailable", "lost"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text></> : null}
+    {!selected ? <Text style={styles.meta}>待用準備單{["loading", "unavailable", "lost"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
     <PreparationReader workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
+    {!selected ? <View testID="preparation-list-actions" style={styles.intentControls}>
+      {onHistory ? <AppButton label="查看已歸檔" variant="secondary" density="compact" onPress={onHistory} /> : null}
+      <View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
+      <AppButton label="到助手準備下一份" variant="accent" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} />
+    </View> : null}
+    {previewControls}
   </View>;
 }
 
@@ -175,15 +174,13 @@ export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestio
 
 const styles = StyleSheet.create({
   workspace: { gap: spacing.lg, minWidth: 0 }, stack: { gap: spacing.md, minWidth: 0 }, row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },
-  headingRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md }, headingCopy: { flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   eyebrow: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700", flexGrow: 1, flexShrink: 1 },
-   agentEntry: { backgroundColor: colors.paleAmber, borderRadius: radius.medium, borderWidth: 1, borderColor: colors.statusWarmLine, padding: spacing.md, gap: spacing.md },
   intentControls: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md }, purposeField: { flexGrow: 1, minWidth: 180 },
   list: { gap: spacing.md, minWidth: 0, flex: 1 }, listColumn: { flex: 0.8 }, detailColumn: { flex: 1.4, minWidth: 0 }, split: { flexDirection: "row", alignItems: "flex-start" },
   documentRow: { gap: spacing.sm, padding: spacing.md, borderRadius: radius.medium, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.line, minWidth: 0 },
-  selectedRow: { borderColor: "transparent", borderWidth: 2, backgroundColor: colors.paleTeal }, pressedRow: { backgroundColor: colors.quietSurface },
+  selectedRow: { borderColor: "transparent", borderWidth: 2, backgroundColor: colors.paleTeal }, pressedRow: { backgroundColor: colors.quietSurface }, selectedPressedRow: { backgroundColor: colors.selectedNav },
   rowTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 17, lineHeight: 26, fontWeight: "700" }, openLabel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700" },
   document: { gap: spacing.lg, maxWidth: 820, minWidth: 0 }, documentHeader: { gap: spacing.sm, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line },
   documentTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 24, lineHeight: 34, fontWeight: "700" },

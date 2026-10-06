@@ -1,0 +1,65 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> yuban-hk-frontend-preview@0.1.0 typecheck
+> tsc --noEmit
+
+src/components/family/FamilyView.tsx(65,56): error TS2339: Property 'ownerName' does not exist on type 'IncomingInvitationView'.
+src/components/family/FamilyView.tsx(66,40): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(66,72): error TS2339: Property 'role' does not exist on type 'IncomingInvitationView'.
+src/components/family/FamilyView.tsx(67,68): error TS2339: Property 'expiresAt' does not exist on type 'IncomingInvitationView'.
+src/components/family/FamilyView.tsx(85,141): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(99,53): error TS2339: Property 'ownerName' does not exist on type 'IncomingInvitationView'.
+src/components/family/FamilyView.tsx(100,35): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(100,69): error TS2339: Property 'role' does not exist on type 'IncomingInvitationView'.
+src/components/family/FamilyView.tsx(100,113): error TS2339: Property 'expiresAt' does not exist on type 'IncomingInvitationView'.
+src/components/family/FamilyView.tsx(104,97): error TS7053: Element implicitly has an 'any' type because expression of type 'MemberRole' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(105,77): error TS7053: Element implicitly has an 'any' type because expression of type 'MemberRole' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(105,118): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(122,33): error TS7006: Parameter 'member' implicitly has an 'any' type.
+src/components/family/FamilyView.tsx(123,51): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/family/FamilyView.tsx(124,88): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(124,134): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(160,59): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(170,82): error TS18046: 'member' is of type 'unknown'.
+src/components/family/FamilyView.tsx(170,260): error TS18046: 'member' is of type 'unknown'.
+src/components/family/FamilyView.tsx(171,25): error TS18046: 'member' is of type 'unknown'.
+src/components/family/FamilyView.tsx(178,84): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(178,234): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(179,91): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(180,77): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(180,117): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(180,186): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly owner: "擁有者"; readonly caregiver: "照顧者"; readonly viewer: "檢視者"; readonly revoked: "撤銷權限"; }'.
+src/components/family/FamilyView.tsx(180,203): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(180,246): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly pending: "待接受"; readonly accepted: "已接受"; readonly revoked: "已撤銷"; readonly expired: "已過期"; }'.
+src/components/family/FamilyView.tsx(180,269): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(180,291): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(180,334): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(181,65): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(182,18): error TS18046: 'invite' is of type 'unknown'.
+src/components/family/FamilyView.tsx(182,163): error TS18046: 'invite' is of type 'unknown'.
+src/family-view-model.ts(1,77): error TS2307: Cannot find module '../../src/shared/family' or its corresponding type declarations.
+src/preview/family-fixture.ts(24,12): error TS2353: Object literal may only specify known properties, and 'workspaceId' does not exist in type 'IncomingInvitationView'.
+src/preview/family-fixture.ts(30,40): error TS7006: Parameter 'member' implicitly has an 'any' type.
+src/preview/family-fixture.ts(33,31): error TS7006: Parameter 'member' implicitly has an 'any' type.
+src/preview/family-fixture.ts(34,28): error TS7006: Parameter 'member' implicitly has an 'any' type.
+src/preview/family-fixture.ts(37,34): error TS7006: Parameter 'invite' implicitly has an 'any' type.
+src/preview/family-fixture.ts(38,90): error TS7006: Parameter 'invite' implicitly has an 'any' type.
+src/preview/family-fixture.ts(40,45): error TS7006: Parameter 'invite' implicitly has an 'any' type.
+src/preview/family-fixture.ts(41,102): error TS7006: Parameter 'invite' implicitly has an 'any' type.
+src/preview/family-fixture.ts(47,33): error TS2339: Property 'workspaceId' does not exist on type 'IncomingInvitationView'.
+src/preview/family-fixture.ts(47,74): error TS2339: Property 'ownerName' does not exist on type 'IncomingInvitationView'.
+src/preview/family-fixture.ts(47,108): error TS2339: Property 'role' does not exist on type 'IncomingInvitationView'.
+src/preview/family-fixture.ts(48,72): error TS2339: Property 'ownerName' does not exist on type 'IncomingInvitationView'.
+src/preview/family-fixture.ts(48,161): error TS2339: Property 'role' does not exist on type 'IncomingInvitationView'.
+src/preview/family-fixture.ts(52,39): error TS7006: Parameter 'member' implicitly has an 'any' type.
+src/preview/family-fixture.ts(53,80): error TS7006: Parameter 'member' implicitly has an 'any' type.
+src/preview/useFamilyPreview.ts(30,22): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly owner: "preview-owner"; readonly caregiver: "preview-caregiver"; readonly viewer: "preview-viewer"; readonly access_lost: "preview-owner"; }'.
+src/preview/useFamilyPreview.ts(59,49): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/preview/useFamilyPreview.ts(60,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/preview/useFamilyPreview.ts(68,42): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/preview/useFamilyPreview.ts(74,50): error TS7006: Parameter 'item' implicitly has an 'any' type.
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

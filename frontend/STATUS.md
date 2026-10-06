@@ -1,9 +1,8 @@
 # 育伴港前端現況
 
-2026-10-06 UTC：PR #88 已合併至 master `6477fe65`；其公開預覽 v45 及限定驗收已完成。現在進行獨立前端清理 PR，已建立 draft PR #89 並發布清理預覽 v46，尚未合併本包。
+2026-10-06 UTC：清理與前批按壓／歷史／準備頁修正已交付或進入最後 Git 同步，公開站已更新為 v48。手機底部選中提示、水滴拍照鈕及 primary／danger ripple 修正已發布，限定畫面驗收通過，程式及證據正同步 GitHub。
 
-- 已歸檔被替代的舊元件／helpers，清除確證無引用的樣式及舊狀態，保留安全、資料 owner、相容路由與來源追溯
-- 過期 browser 流程明確列待遷移，不當作通過；清理最終 typecheck、278 項測試及 37 路由建置通過；桌面／320px 限定 smoke 通過
-- 新提出的其他按鈕閃動另行排查；本包 smoke 不等於該問題或逐幀無閃動已驗
-- 正式 Agent 自動保存、重要確認持久化、跨頁訂閱及真 PDF 仍待接線
-- 當前範圍、實際驗證及交付關口見 [PLAN](PLAN.md#active)；接手見 [HANDOFF](HANDOFF.md#p2-coverage)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)
+- 本包 combined typecheck 與 300 項測試通過；37 路由建置通過，限定畫面檢查通過，Git 同步狀態見 [PLAN](PLAN.md#active)
+- 操作／資料 owner／權限／unknown 恢復保留，不送真照片或訊息
+- PR #89 未自動合併；正式 API、持久化、原生及逐幀無閃動不屬已完成宣稱
+- 接線依 [HANDOFF](HANDOFF.md)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)

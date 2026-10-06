@@ -1,0 +1,332 @@
+[
+  {
+    "name": "v48-390-chat-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 78,
+      "right": 156,
+      "top": 536,
+      "width": 78,
+      "x": 78,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 78,
+      "right": 156,
+      "top": 536,
+      "width": 78,
+      "x": 78,
+      "y": 536
+    },
+    "label": "助手",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-390-tasks-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 156,
+      "right": 234,
+      "top": 536,
+      "width": 78,
+      "x": 156,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 156,
+      "right": 234,
+      "top": 536,
+      "width": 78,
+      "x": 156,
+      "y": 536
+    },
+    "label": "待辦與預約",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-390-growth-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 234,
+      "right": 312,
+      "top": 536,
+      "width": 78,
+      "x": 234,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 234,
+      "right": 312,
+      "top": 536,
+      "width": 78,
+      "x": 234,
+      "y": 536
+    },
+    "label": "成長與關注",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-390-records-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 312,
+      "right": 390,
+      "top": 536,
+      "width": 78,
+      "x": 312,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 312,
+      "right": 390,
+      "top": 536,
+      "width": 78,
+      "x": 312,
+      "y": 536
+    },
+    "label": "記錄，向上拖曳開啟更多頁面",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-390-more-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 312,
+      "right": 390,
+      "top": 536,
+      "width": 78,
+      "x": 312,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 312,
+      "right": 390,
+      "top": 536,
+      "width": 78,
+      "x": 312,
+      "y": 536
+    },
+    "label": "記錄，向上拖曳開啟更多頁面",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-320-more-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 256,
+      "right": 320,
+      "top": 536,
+      "width": 64,
+      "x": 256,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 256,
+      "right": 320,
+      "top": 536,
+      "width": 64,
+      "x": 256,
+      "y": 536
+    },
+    "label": "記錄，向上拖曳開啟更多頁面",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-320-records-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 256,
+      "right": 320,
+      "top": 536,
+      "width": 64,
+      "x": 256,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 256,
+      "right": 320,
+      "top": 536,
+      "width": 64,
+      "x": 256,
+      "y": 536
+    },
+    "label": "記錄，向上拖曳開啟更多頁面",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-320-growth-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 192,
+      "right": 256,
+      "top": 536,
+      "width": 64,
+      "x": 192,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 192,
+      "right": 256,
+      "top": 536,
+      "width": 64,
+      "x": 192,
+      "y": 536
+    },
+    "label": "成長與關注",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-320-tasks-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 128,
+      "right": 192,
+      "top": 536,
+      "width": 64,
+      "x": 128,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 128,
+      "right": 192,
+      "top": 536,
+      "width": 64,
+      "x": 128,
+      "y": 536
+    },
+    "label": "待辦與預約",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-320-chat-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 64,
+      "right": 128,
+      "top": 536,
+      "width": 64,
+      "x": 64,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 64,
+      "right": 128,
+      "top": 536,
+      "width": 64,
+      "x": 64,
+      "y": 536
+    },
+    "label": "助手",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  },
+  {
+    "name": "v48-320-home-current",
+    "active": false,
+    "ariaCurrent": "page",
+    "ariaSelected": null,
+    "background": "rgb(186, 232, 232)",
+    "controlRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 0,
+      "right": 64,
+      "top": 536,
+      "width": 64,
+      "x": 0,
+      "y": 536
+    },
+    "highlightRect": {
+      "bottom": 600,
+      "height": 64,
+      "left": 0,
+      "right": 64,
+      "top": 536,
+      "width": 64,
+      "x": 0,
+      "y": 536
+    },
+    "label": "今日",
+    "pointerEvents": "none",
+    "selectedCount": 1
+  }
+]

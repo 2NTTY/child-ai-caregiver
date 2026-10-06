@@ -1,0 +1,26 @@
+{
+  "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+  "route": "/tasks",
+  "viewport": {
+    "width": 1180,
+    "height": 757
+  },
+  "selectHeldSamples": 8,
+  "selectHeldOpacities": [
+    "0.6"
+  ],
+  "selectAllActive": true,
+  "selectAllReady": true,
+  "cancelHeldSamples": 4,
+  "cancelHeldOpacities": [
+    "1"
+  ],
+  "cancelAllAncestorsOpacityOne": true,
+  "cancelAllReady": true,
+  "stoppedReason": "Exact selected-tab/read-only-row probe denied twice by approval reviewer; parent instructed stop all remaining browser work",
+  "limitations": [
+    "No every-frame continuity claim",
+    "No persistent DOM identity measurement",
+    "All other listed button families runtime unverified"
+  ]
+}

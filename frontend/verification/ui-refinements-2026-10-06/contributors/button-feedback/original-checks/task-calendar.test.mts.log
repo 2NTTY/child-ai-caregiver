@@ -1,0 +1,27 @@
+✔ calendar derives pending dates and review dots from the same loaded task objects (13.495798ms)
+✔ calendar and selected-day list use the viewing IANA zone across a UTC day boundary (4.392873ms)
+✔ month cells handle leap February, Monday-first alignment, and year rollover (6.791164ms)
+✔ changing or completing a source item immediately changes the projection without copied task state (2.203345ms)
+✔ selected-day filtering and clearing retain only current pending and review items (2.609453ms)
+✔ invalid and offset-free timestamps stay unconfirmed without a guessed day or device clock (4.026882ms)
+✔ day names explain counts and review state without relying on dots or claiming complete coverage (2.355534ms)
+✔ calendar JSX preserves button semantics, lock guards and loaded-only presentation (250.32068ms)
+✔ backlog defaults to seven local calendar days while older, review and later remain counted (2.915957ms)
+✔ backlog near-term boundaries use the snapshot zone instead of UTC or the device clock (1.945612ms)
+✔ backlog display pages retain every loaded pending item and clamp a shortened final page (17.86323ms)
+✔ backlog pages cover eleven and twenty-five same-day tasks without losing selected-day or search filters (80.460235ms)
+✔ scope count badges receive structured numbers and preserve accessible radio and trigger states (74.712904ms)
+✔ backlog search and calendar-day filters use loaded titles, contents and eligible assignee names (4.27852ms)
+✔ backlog unknown dates stay discoverable and no old item is completed or discarded (2.543471ms)
+✔ backlog UI keeps remote loading separate and preserves guarded local filter/page state (0.910935ms)
+✔ calendar date toggle cancels only an identical selected date (0.184542ms)
+✔ calendar date toggle restores the previous range and preserves the search text (4.165713ms)
+✔ calendar replacement uses the existing detail slot and keeps month state in the view owner (0.817678ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1083.649666

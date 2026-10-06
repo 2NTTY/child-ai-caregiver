@@ -1,0 +1,53 @@
+{
+  "publishedVersion": 48,
+  "dateUTC": "2026-10-06",
+  "publicSite": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/",
+  "suppliedSiteEntry": "306b54fd51461813a9e0d6c05558433b",
+  "suppliedSiteSource": "9ab293a0d735124d87cfe099cebf0c71e8813cbd",
+  "suppliedDeployment": "appgdep_6ac4a240c00c8191af384c002fd24e76",
+  "primaryDanger": [
+    {
+      "name": "v48-primary-button",
+      "sampleCount": 4,
+      "allActive": true,
+      "allControlsOpaque": true,
+      "allAncestorsOpaque": true,
+      "allTextWhiteOpaque": true,
+      "allReady": true,
+      "hoverColors": [
+        "rgba(0, 0, 0, 0.035)",
+        "rgba(0, 0, 0, 0.06)"
+      ],
+      "rippleColors": [
+        "rgba(0, 0, 0, 0.12)"
+      ]
+    },
+    {
+      "name": "v48-danger-dialog-trigger",
+      "sampleCount": 4,
+      "allActive": true,
+      "allControlsOpaque": true,
+      "allAncestorsOpaque": true,
+      "allTextWhiteOpaque": true,
+      "allReady": true,
+      "hoverColors": [
+        "rgba(0, 0, 0, 0.02)",
+        "rgba(0, 0, 0, 0.06)"
+      ],
+      "rippleColors": [
+        "rgba(0, 0, 0, 0.12)"
+      ]
+    }
+  ],
+  "recordedNavigationStates": 11,
+  "navigationAllPersistent": true,
+  "navigationAdditional390Home": "Verified initial screenshot and aria-current inspection in camera metrics",
+  "cameraWidths": [
+    390,
+    320
+  ],
+  "cameraGeometry": "72 × 72 decorative, 56 × 56 hitbox; surface pointer-events none",
+  "cameraGestureResult": "Long press shows three choices at both widths; Escape cancels; 390-pixel rightward text drag opens empty composer without sending",
+  "status": "pass",
+  "safety": "No final confirmation, camera permission, photo, file, voice capture, or message send"
+}

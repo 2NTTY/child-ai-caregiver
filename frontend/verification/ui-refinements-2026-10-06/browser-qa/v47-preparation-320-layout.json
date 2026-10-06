@@ -1,0 +1,121 @@
+{
+  "clientWidth": 288,
+  "controls": [
+    {
+      "label": "開啟小昕的到診準備",
+      "rect": {
+        "bottom": 479,
+        "height": 164,
+        "left": 16,
+        "right": 304,
+        "top": 315,
+        "width": 288,
+        "x": 16,
+        "y": 315
+      }
+    },
+    {
+      "label": "開啟小昕的迎新準備",
+      "rect": {
+        "bottom": 633,
+        "height": 142,
+        "left": 16,
+        "right": 304,
+        "top": 491,
+        "width": 288,
+        "x": 16,
+        "y": 491
+      }
+    },
+    {
+      "label": "開啟週末公園半日遊",
+      "rect": {
+        "bottom": 787,
+        "height": 142,
+        "left": 16,
+        "right": 304,
+        "top": 645,
+        "width": 288,
+        "x": 16,
+        "y": 645
+      }
+    },
+    {
+      "label": "開啟週末照顧交接",
+      "rect": {
+        "bottom": 963,
+        "height": 164,
+        "left": 16,
+        "right": 304,
+        "top": 799,
+        "width": 288,
+        "x": 16,
+        "y": 799
+      }
+    },
+    {
+      "label": "查看已歸檔",
+      "rect": {
+        "bottom": 1028,
+        "height": 48,
+        "left": 17,
+        "right": 111.5,
+        "top": 980,
+        "width": 94.5,
+        "x": 17,
+        "y": 980
+      }
+    },
+    {
+      "label": "用途：到診準備",
+      "rect": {
+        "bottom": 1089,
+        "height": 48,
+        "left": 16,
+        "right": 304,
+        "top": 1041,
+        "width": 288,
+        "x": 16,
+        "y": 1041
+      }
+    },
+    {
+      "label": "到助手準備下一份",
+      "rect": {
+        "bottom": 1149,
+        "height": 48,
+        "left": 16,
+        "right": 184.8125,
+        "top": 1101,
+        "width": 168.8125,
+        "x": 16,
+        "y": 1101
+      }
+    },
+    {
+      "label": "預覽來源與限制",
+      "rect": {
+        "bottom": 1213,
+        "height": 48,
+        "left": 16,
+        "right": 166,
+        "top": 1165,
+        "width": 150,
+        "x": 16,
+        "y": 1165
+      }
+    }
+  ],
+  "legacy": false,
+  "panel": {
+    "bottom": 1213,
+    "height": 932,
+    "left": 16,
+    "right": 304,
+    "top": 281,
+    "width": 288,
+    "x": 16,
+    "y": 281
+  },
+  "scrollWidth": 288
+}

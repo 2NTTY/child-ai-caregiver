@@ -18,7 +18,7 @@ export function TaskListRow({ task, time, assignee, warning, selected, disabled,
     accessibilityLabel={`${hint}：${task.title}；${time}；${assignee}；${status}${warning ? `；${warning}` : ""}`}
     accessibilityState={{ selected, disabled }} aria-current={selected ? "true" : undefined} aria-disabled={disabled}
     disabled={disabled} onPress={onPress} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-    style={({ pressed }) => [styles.row, review && styles.review, (selected || hovered || focused) && styles.highlight, focused && styles.focused, pressed && styles.pressed]}>
+    style={({ pressed }) => [styles.row, review && styles.review, (selected || hovered || focused) && styles.highlight, focused && styles.focused, pressed && !disabled && (selected || hovered || focused ? styles.selectedPressed : styles.pressed)]}>
     <View accessible={false} aria-hidden style={styles.leading}><AppIcon name={task.kind === "appointment" ? "calendar-clock-outline" : task.occurrence.state === "completed" ? "checkbox-marked" : "checkbox-blank-outline"} size={21} color={review ? colors.warningInk : colors.muted} /></View>
     <View style={styles.copy}><Text style={styles.title}>{task.title}</Text><View style={styles.metadata}>
       <Text style={styles.time}>{time}</Text><Text style={styles.assignee}>{assignee}</Text>
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   time: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, flexShrink: 1 },
   assignee: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
   warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta }, review: { borderLeftColor: colors.statusWarmLine },
-  highlight: { backgroundColor: colors.paleTeal, borderRadius: radius.small }, focused: { borderLeftColor: colors.teal }, pressed: { opacity: 0.72 },
+  highlight: { backgroundColor: colors.paleTeal, borderRadius: radius.small }, focused: { borderLeftColor: colors.teal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
   hint: { position: "absolute", bottom: 2, right: spacing.sm, backgroundColor: colors.paleTeal, paddingHorizontal: 4, borderRadius: 3 },
   hintText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: 11, lineHeight: 16 },
 });

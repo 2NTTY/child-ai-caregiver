@@ -1,0 +1,24 @@
+✔ growth history keeps the same subtitle slot and typography as the other categories (1770.878399ms)
+✔ growth source actions share compact sizing and centered self-alignment without a Link wrapper (169.613101ms)
+✔ date clear aligns with the Paper outlined border and drops the offset when stacked (176.800681ms)
+✔ date filtering, reset and the original locked guard are unchanged by the layout (65.033925ms)
+✔ History removes only the permanent closing caveat and keeps restore and coverage conditions (0.472275ms)
+✔ closed chains are distinct name/date rows with sibling reading targets and small right-side restore tools (96.586475ms)
+✔ selected History keeps its chain identity through reorder and filtering and never opens a sibling timeline (18.453999ms)
+✔ lightweight restore retains locked, dirty, missing-state and viewer gates, with keyboard and hover reading feedback (114.169734ms)
+✔ success is concise while unknown and failure messages remain explicit and list copy has no permanent caveats (61.779641ms)
+✔ history is discoverable in grouped Web navigation and mobile More (1.068928ms)
+✔ history deep links resolve only supported categories (0.541451ms)
+✔ category changes preserve the original query and date input without storing source entries (1.06037ms)
+✔ reset clears filters but keeps the current category and scope (0.180974ms)
+✔ scope change clears private search and dates before using another child or identity (0.143083ms)
+✔ date filters accept empty or inclusive same-day bounds and reject malformed or reversed dates (24.228249ms)
+✔ record review and preparation categories keep their own deep links and conservative filters (0.290811ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3039.205192

@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   footer: { borderTopWidth: 1, borderTopColor: chatColors.line, paddingTop: chatLayout.paragraphGap, gap: spacing.xs, minWidth: 0 },
   footerTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600" },
   footerHeading: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, flexWrap: "wrap" },
-  pressed: { opacity: 0.7 },
+  pressed: { backgroundColor: colors.pressedOverlay },
   located: { borderBottomColor: chatColors.focus },
   sourceTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },

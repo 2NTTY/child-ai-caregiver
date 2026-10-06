@@ -1,0 +1,47 @@
+✔ growth history keeps the same subtitle slot and typography as the other categories (2433.728999ms)
+✔ growth source actions share compact sizing and centered self-alignment without a Link wrapper (170.972614ms)
+✔ date clear aligns with the Paper outlined border and drops the offset when stacked (190.234995ms)
+✔ date filtering, reset and the original locked guard are unchanged by the layout (64.522005ms)
+✔ History removes only the permanent closing caveat and keeps restore and coverage conditions (1.233136ms)
+✔ closed chains are distinct name/date rows with sibling reading targets and small right-side restore tools (134.317734ms)
+✔ selected History keeps its chain identity through reorder and filtering and never opens a sibling timeline (83.800347ms)
+✔ lightweight restore retains locked, dirty, missing-state and viewer gates, with keyboard and hover reading feedback (111.57559ms)
+✖ success is concise while unknown and failure messages remain explicit and list copy has no permanent caveats (25.536938ms)
+✔ history is discoverable in grouped Web navigation and mobile More (4.156921ms)
+✔ history deep links resolve only supported categories (0.387933ms)
+✔ category changes preserve the original query and date input without storing source entries (1.198367ms)
+✔ reset clears filters but keeps the current category and scope (0.495094ms)
+✔ scope change clears private search and dates before using another child or identity (0.465512ms)
+✔ date filters accept empty or inclusive same-day bounds and reject malformed or reversed dates (33.271433ms)
+✔ record review and preparation categories keep their own deep links and conservative filters (0.422399ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 15
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3997.353924
+
+✖ failing tests:
+
+test at scripts/history-controls.test.mjs:253:1
+✖ success is concise while unknown and failure messages remain explicit and list copy has no permanent caveats (25.536938ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(screen.includes('!growthCategory ? <Text style={styles.meta}>{current.description}'))
+  
+      at TestContext.<anonymous> (file:///workspace/shared/growth_history_subtitle_20261006/frontend/scripts/history-controls.test.mjs:264:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

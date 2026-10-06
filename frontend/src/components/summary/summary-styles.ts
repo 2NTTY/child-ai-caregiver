@@ -36,5 +36,5 @@ export const summaryStyles = StyleSheet.create({
   disclosureLabel: {fontFamily: chineseFont, ...readingType.tool, color: colors.ink, fontWeight: '600', flexShrink: 1, minWidth: 0},
   disclosureContent: {paddingTop: spacing.sm, gap: spacing.sm, paddingBottom: spacing.sm},
   sourceRow: {gap: spacing.xs, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm},
-  pressed: {opacity: 0.65},
+  pressed: {backgroundColor: colors.pressedOverlay},
 });

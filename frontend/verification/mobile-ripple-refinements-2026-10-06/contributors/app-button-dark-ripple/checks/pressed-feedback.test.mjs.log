@@ -1,0 +1,15 @@
+✔ all 27 former enabled press fades retain opacity and provide local surface feedback (180.542559ms)
+✔ selection fields, options, tabs and lightweight links keep distinct resting roles (103.341667ms)
+✔ disclosure and checkbox keep focus, dimensions and disabled opacity (33.869138ms)
+✔ selected rows and calendar cells deepen without losing selected or warning markers (41.087021ms)
+✔ warning and accent actions retain their own palettes while held (44.140952ms)
+✔ chat send feedback is local to its accent surface and disabled state is unchanged (24.702399ms)
+✔ selected preparation rows no longer switch to a lighter pressed surface (33.995408ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1003.73132

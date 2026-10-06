@@ -1,0 +1,50 @@
+{
+  "button": {
+    "bottom": 535,
+    "height": 56,
+    "left": 0,
+    "right": 56,
+    "top": 479,
+    "width": 56,
+    "x": 0,
+    "y": 479
+  },
+  "hits": [
+    {
+      "cameraContainsHit": true,
+      "closestButton": "mobile-quick-camera",
+      "name": "center",
+      "tag": "svg",
+      "testid": null,
+      "x": 28,
+      "y": 507
+    },
+    {
+      "cameraContainsHit": false,
+      "name": "decorative-right-only",
+      "tag": "DIV",
+      "testid": null,
+      "x": 64,
+      "y": 530
+    },
+    {
+      "cameraContainsHit": false,
+      "name": "decorative-top-only",
+      "tag": "DIV",
+      "testid": null,
+      "x": 8,
+      "y": 471
+    }
+  ],
+  "surface": {
+    "bottom": 535,
+    "height": 72,
+    "left": 0,
+    "right": 72,
+    "top": 463,
+    "width": 72,
+    "x": 0,
+    "y": 463
+  },
+  "surfacePointerEvents": "none"
+}

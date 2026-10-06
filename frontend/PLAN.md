@@ -3,29 +3,26 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## FE-W39：前端舊實作清理與驗收入口收斂
+## FE-W41：手機選中提示、水滴拍照鈕及深色按鈕回饋
 
-更新：2026-10-06 UTC。基線為已合併 PR #88 的 master `6477fe65964adea0cde48c784c0598b2cb47d5bf`；其 tree 與已驗修訂相同。本包只修改 `frontend/**`，使用獨立分支／PR，不自動合併。
+更新：2026-10-06 UTC。本包沿已發布 v47 的凍結來源，獨立整合，不回寫 v47 檢查證據；只處理 frontend。
 
-### 範圍與裁決
+### 範圍與來源
 
-- 逐項核對前端目前用途及引用；保留「家長跟 Agent 說，然後查看」的主要流程，手動輸入作補救
-- 已替代且沒有 consumer 的 8 個舊元件／helper 移出 runtime，連同必要舊測試、browser flow 原文保存於 [_archive/fe-w38-replaced-ui](_archive/fe-w38-replaced-ui/README.md)，附原路徑、雜湊及替代入口
-- 清除 86 個證實無引用的 style keys（首批 6 個及後續 80 個），以及舊假 checklist state、單照片 handoff、Growth 無作用 props；不改 canonical owner、事件、版本或來源權限
-- 7 個已過時 browser 選項明確回報待遷移。預設舊 aggregate／未知選項在啟動瀏覽器前失敗；25 個其他 runner 保留入口，但「可執行」不等於在新修訂通過
-- 保留 legacy-preparation、unknown 原操作恢復、scope／authority guards、a11y 隱藏文字、動態樣式、平台 adapter，以及尚有公開／測試用途的 helpers。安全求助相關候選不隨清理移除
-- DESIGN_SYSTEM 的舊元件連結已更新到現行 HomeFocus／HomeActionSummary／RightRailContent；根文件不由本域改動
+- 手機底部入口補持續淺青選中面及短頂線，Records 提供 selected／aria-current，保留路由判斷、長按上拉及離頁守衛
+- 左下拍照鈕改為 72×72 原生 SVG 黏附曲線，實際命中區維持 56×56；裝飾不接收 pointer，不遮擋導航／安全區，不改拍照、長按、拖曳選單及草稿流程
+- AppButton primary／danger 的白色 ripple 已在 v47 實測確認，現局部使用黑色 12% darkActionRipple；白字、底色、busy／disabled、尺寸及其他角色不變
+- 不修改套件時鐘 ripple、內容／孩子安全遮幕，也不以本次修正宣稱所有平台逐幀無閃動
 
-### 驗證與交付關口
+### 驗證與交付
 
-1. 63 檔清理 patch 的 preimages 已對照合併基線，zero-fuzz 套用至獨立工作區；新舊 source／snapshot 及原失敗證據保持可追溯
-2. 暫存階段 typecheck、67 項必要純測試、逐 symbol／AST 等價及本地連結檢查通過；最終整合 [typecheck、278 項 aggregate 及 37 路由 fresh export](verification/cleanup-v2-final-2026-10-06T0622Z/checks.json)均通過，不把前一 PR 的結果當本包通過
-3. v46 已於 2026-10-06 06:33 UTC 公開發布；[桌面／320px 限定 smoke](verification/cleanup-v2-final-2026-10-06T0622Z/browser-smoke/verification-summary.md)通過，覆蓋 Home／Care／Growth／Memory、關注恢復、孩子切換及未送出草稿保留；真 API／持久化／原生與逐幀無閃動仍未驗
-4. [Draft PR #89](https://github.com/2NTTY/child-ai-caregiver/pull/89) 已建立，首個 head 為 `4fc6fff6`，本次 smoke 證據另行追加。可讀 exact-head checks／statuses／workflow 均無項目，不稱 CI 全綠；本包沒有自動合併授權。使用者新提出的其他按鈕閃動問題另作診斷，不以此 cleanup smoke 當其驗收
+Mobile 9-file 與 ripple 3-file patch 無重疊，以 zero-fuzz 套入新來源；combined typecheck、aggregate 300/300 首輪通過。Fresh export 37 路由通過，v48 已於 2026-10-06 07:25 UTC 發布；[限定按壓及手機導航／水滴手勢畫面驗收](verification/mobile-ripple-refinements-2026-10-06/browser-qa/v48-browser-report.md)通過：主／危險按鈕黑色 state layer、390／320 持續選中、56px hitbox／72px 裝飾穿透及安全手勢均已觀察，沒有拍攝或傳送；任何原生、真資料／模型、圖片外發都未包含於本包。
 
-### 已合併的前包
+必要畫面範圍為深色主／危險按鈕的按住與放開、手機導航持續選中、SVG 實際邊界／hit target、方向手勢及取消；只用合成資料，不送照片或訊息。Git 使用明確後續 commit，不自動合併 PR #89。
 
-PR #88 已於 2026-10-06 06:19 UTC 合併。其 [274 項測試／typecheck／37 路由建置](verification/reconstructed-revision-2026-10-06T0533Z/checks.json)及[限定 browser 檢查](verification/reconstructed-revision-2026-10-06T0533Z/browser-qa/verification-summary.md)均保留原範圍，公開 v45 屬該修訂。首頁圖為使用者補交的新資產，不冒稱舊 Git 原件逐位元一致。
+### 已完成基線
+
+清理 PR #89 與 v46 的 278 項測試、建置及 smoke 已交付。v47 的 292 項測試、37 路由 export 及 [11 控件／44 按住樣本與歷史／準備頁檢查](verification/ui-refinements-2026-10-06/browser-qa/v47-browser-report.md)完成；v47 的 primary／danger 白色 ripple 是本包要修的已知殘留，不能把舊版說成全部已修。
 
 ### 保留限制
 

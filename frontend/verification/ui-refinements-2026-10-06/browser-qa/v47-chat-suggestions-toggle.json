@@ -1,0 +1,1092 @@
+{
+  "name": "v47-chat-suggestions-toggle",
+  "before": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(255, 255, 254)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "chat-composer-panel"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "chat-composer"
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-route"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-child-scope"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(242, 242, 242)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "frontend-preview-ready"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "BODY",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "HTML",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "border": "rgb(0, 0, 0)",
+    "color": "rgb(0, 0, 0)",
+    "label": "展開建議問題",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 736,
+      "height": 40,
+      "left": 463,
+      "right": 503,
+      "top": 696,
+      "width": 40,
+      "x": 463,
+      "y": 696
+    },
+    "routeText": "助手對話歷史記憶與參考Agent 活動與候選後續操作候選屬於這一則示例回覆；先核對內容，再決定下一步。查看來源與候選私人背景結果由你手動讀取，最多展示 20 項；內容只供本人查看。這份清單展示已保存的背景運行結果。請開啟個別結果核對內容、候選及來源。讀取私人背景結果尚未讀取私人背",
+    "spans": [],
+    "tag": "BUTTON",
+    "testid": "composer-suggestions-toggle"
+  },
+  "samples": [
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "chat-composer-panel"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "chat-composer"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgb(237, 250, 249)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "展開建議問題",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 736,
+        "height": 40,
+        "left": 463,
+        "right": 503,
+        "top": 696,
+        "width": 40,
+        "x": 463,
+        "y": 696
+      },
+      "routeText": "助手對話歷史記憶與參考Agent 活動與候選後續操作候選屬於這一則示例回覆；先核對內容，再決定下一步。查看來源與候選私人背景結果由你手動讀取，最多展示 20 項；內容只供本人查看。這份清單展示已保存的背景運行結果。請開啟個別結果核對內容、候選及來源。讀取私人背景結果尚未讀取私人背",
+      "spans": [],
+      "tag": "BUTTON",
+      "testid": "composer-suggestions-toggle"
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "chat-composer-panel"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "chat-composer"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgb(227, 246, 245)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "展開建議問題",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 736,
+        "height": 40,
+        "left": 463,
+        "right": 503,
+        "top": 696,
+        "width": 40,
+        "x": 463,
+        "y": 696
+      },
+      "routeText": "助手對話歷史記憶與參考Agent 活動與候選後續操作候選屬於這一則示例回覆；先核對內容，再決定下一步。查看來源與候選私人背景結果由你手動讀取，最多展示 20 項；內容只供本人查看。這份清單展示已保存的背景運行結果。請開啟個別結果核對內容、候選及來源。讀取私人背景結果尚未讀取私人背",
+      "spans": [],
+      "tag": "BUTTON",
+      "testid": "composer-suggestions-toggle"
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "chat-composer-panel"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "chat-composer"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgb(227, 246, 245)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "展開建議問題",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 736,
+        "height": 40,
+        "left": 463,
+        "right": 503,
+        "top": 696,
+        "width": 40,
+        "x": 463,
+        "y": 696
+      },
+      "routeText": "助手對話歷史記憶與參考Agent 活動與候選後續操作候選屬於這一則示例回覆；先核對內容，再決定下一步。查看來源與候選私人背景結果由你手動讀取，最多展示 20 項；內容只供本人查看。這份清單展示已保存的背景運行結果。請開啟個別結果核對內容、候選及來源。讀取私人背景結果尚未讀取私人背",
+      "spans": [],
+      "tag": "BUTTON",
+      "testid": "composer-suggestions-toggle"
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(255, 255, 254)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "chat-composer-panel"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "chat-composer"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgb(227, 246, 245)",
+      "border": "rgb(0, 0, 0)",
+      "color": "rgb(0, 0, 0)",
+      "label": "展開建議問題",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 736,
+        "height": 40,
+        "left": 463,
+        "right": 503,
+        "top": 696,
+        "width": 40,
+        "x": 463,
+        "y": 696
+      },
+      "routeText": "助手對話歷史記憶與參考Agent 活動與候選後續操作候選屬於這一則示例回覆；先核對內容，再決定下一步。查看來源與候選私人背景結果由你手動讀取，最多展示 20 項；內容只供本人查看。這份清單展示已保存的背景運行結果。請開啟個別結果核對內容、候選及來源。讀取私人背景結果尚未讀取私人背",
+      "spans": [],
+      "tag": "BUTTON",
+      "testid": "composer-suggestions-toggle"
+    }
+  ],
+  "after": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(255, 255, 254)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "chat-composer-panel"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "chat-composer"
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-route"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-child-scope"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(242, 242, 242)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "frontend-preview-ready"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "BODY",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "HTML",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "border": "rgb(0, 0, 0)",
+    "color": "rgb(0, 0, 0)",
+    "label": "收起建議問題",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 696,
+      "height": 40,
+      "left": 463,
+      "right": 503,
+      "top": 656,
+      "width": 40,
+      "x": 463,
+      "y": 656
+    },
+    "routeText": "助手對話歷史記憶與參考Agent 活動與候選後續操作候選屬於這一則示例回覆；先核對內容，再決定下一步。查看來源與候選私人背景結果由你手動讀取，最多展示 20 項；內容只供本人查看。這份清單展示已保存的背景運行結果。請開啟個別結果核對內容、候選及來源。讀取私人背景結果尚未讀取私人背",
+    "spans": [],
+    "tag": "BUTTON",
+    "testid": "composer-suggestions-toggle"
+  },
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat"
+}

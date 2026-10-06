@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { PanResponder, View, type StyleProp, type ViewStyle } from "react-native";
 
 export type DirectionalPressableProps = {
-  children: ReactNode; label: string; hint?: string; disabled?: boolean; expanded?: boolean; testID?: string;
+  children: ReactNode; label: string; hint?: string; disabled?: boolean; expanded?: boolean; selected?: boolean; current?: boolean; testID?: string;
   style: StyleProp<ViewStyle>; scopeKey: string; onPress(): void; onExpand?(): void; onLongPress?(): void;
   onGestureStart(): void; onGestureMove(dx: number, dy: number): void;
   onGestureEnd(dx: number, dy: number, dragged: boolean): void; onGestureCancel(): void;
@@ -42,7 +42,7 @@ export function DirectionalPressable(props: DirectionalPressableProps) {
     return () => { clearLongPress(); cancelled.current = true; latest.current.onGestureCancel(); };
   }, [props.scopeKey, props.disabled]);
   return <View {...responder.panHandlers} accessible accessibilityRole="button" accessibilityLabel={props.label}
-    accessibilityHint={props.hint} accessibilityState={{ disabled: !!props.disabled, expanded: props.expanded }}
+    accessibilityHint={props.hint} accessibilityState={{ disabled: !!props.disabled, expanded: props.expanded, selected: props.selected }}
     accessibilityActions={[{ name: "activate", label: props.label }, ...(props.onExpand ? [{ name: props.expanded ? "collapse" : "expand", label: props.expanded ? "收起選項" : "更多選項" }] : [])]}
     onAccessibilityAction={event => { if (props.disabled) return; if (event.nativeEvent.actionName === "expand") props.onExpand?.(); else if (event.nativeEvent.actionName === "collapse") props.onGestureCancel(); else if (event.nativeEvent.actionName === "activate") props.onPress(); }}
     onAccessibilityEscape={() => { if (props.expanded) props.onGestureCancel(); }}

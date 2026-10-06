@@ -1,0 +1,80 @@
+{
+  "source_base": "Frozen first-batch runtime based on cleanup v46 / PR89 193affe2b2b8a2956cf976c1d3d3e11d9d4dadb7",
+  "base_build_input_fingerprint": "459128602754492d317b4b801e0ddba790b829788ce225786236873f78217d34",
+  "changes": [
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "before_sha256": "c2a9e9ac78c693afd9c2baf42f9edacc45fbc22287b512ea304b0246779c08a6",
+      "after_sha256": "b1f11e0517093f0fcf108de39753875c0d745b37f86ea09889b3707a3e7b49c7"
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "before_sha256": "718c227194759d468c800bbd8e90a4f5aa3a6f93d1107e05675329cdbff4cae1",
+      "after_sha256": "72399711633f1ba3ada14695423a644e1ae7c6fd0758888b244a37c9d02dd88b"
+    },
+    {
+      "path": "frontend/src/components/navigation/RecordsNavButton.tsx",
+      "before_sha256": "d061c50f00ef82086bda74c4993b0a9483e5c8b830ebd94295995590baa4febf",
+      "after_sha256": "0b91ec31c4d3f00224c260999d8f5a5f0e5f2575964b612e19497ae0298e34de"
+    },
+    {
+      "path": "frontend/src/components/navigation/DirectionalPressable.tsx",
+      "before_sha256": "67b1083cab2fbbc83ac861746dfade44bd9431bdacada90cfa83ef308faef34d",
+      "after_sha256": "bfe8d130ef9b1f240758a12f675acb33251ad623b83098c28d9e2a2d50e9ea23"
+    },
+    {
+      "path": "frontend/src/components/navigation/DirectionalPressable.web.tsx",
+      "before_sha256": "67e811bb48888ace603440bbb063b63e389eb9a808c7080dd9e82664cb99b7fc",
+      "after_sha256": "cb8f42db379c986e6e84df0dd1039b2c6ab51b2224703a394ac453260f16bdb4"
+    },
+    {
+      "path": "frontend/src/components/navigation/MobileNavSelection.tsx",
+      "before_sha256": null,
+      "after_sha256": "083d317b9f294697565339fb60fac0513d9db2cef8922f11fc6ba283d09ac1e7"
+    },
+    {
+      "path": "frontend/src/components/agent/MobileQuickInputDock.tsx",
+      "before_sha256": "25a7ac350f058685de851e4952e5406a99728cf972061b552d1089e54e9b2888",
+      "after_sha256": "0e6c2ce1fb8750dd2261b7ba52e2b1cf76111b2d63f87b7be6ce745a34b166be"
+    },
+    {
+      "path": "frontend/src/components/agent/CornerCaptureSurface.tsx",
+      "before_sha256": null,
+      "after_sha256": "aff7c11df6aff089bbdc09e35d35a5046c4e48c633b6a2810f94626bec1ec689"
+    },
+    {
+      "path": "frontend/scripts/mobile-navigation-corner.test.mjs",
+      "before_sha256": null,
+      "after_sha256": "4b8702bf302ee6ad156374edb7ee6255187fed7137f21711e88ab0c06857d943"
+    }
+  ],
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exit_code": 0
+    },
+    "focused_tests": {
+      "command": "node --test scripts/mobile-navigation-corner.test.mjs scripts/more-navigation.test.mjs scripts/pointer-click-gate.test.mts",
+      "passed": 10,
+      "failed": 0,
+      "log": "focused-tests.log"
+    }
+  },
+  "viewed_images": [
+    {
+      "path": "/workspace/scratch/c112a98a8be9/mobile-corner-library/image(20261006-070046).png",
+      "kind": "Actual user screenshot; materialized and viewed"
+    },
+    {
+      "path": "/workspace/shared/mobile_corner_navigation_20261006/corner-geometry-inspection.png",
+      "kind": "Standalone path geometry rendered with sampled cubic/arc boundaries; viewed; not a browser screenshot"
+    }
+  ],
+  "limits": [
+    "No browser operation, Git operation, Sites operation, fresh export or first-batch runtime edits",
+    "Browser computed bounds, elementFromPoint, focus appearance and pixels remain unverified",
+    "Android/native device rendering remains unverified",
+    "ImageMagick/CairoSVG standalone SVG render unavailable; no dependencies installed; geometry-only view supplied instead"
+  ],
+  "rationale": "Primary mobile predicates remain unchanged. Compact NavItem previously omitted desktop selectedNav surface and active/inactive ink tokens are nearly identical. Records now forwards selected and current semantics. SVG drawing extends to 72px with concave tangent edge joins but camera hit box and closed dock remain 56px; decorative drawing ignores pointer events."
+}

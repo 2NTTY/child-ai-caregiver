@@ -1,0 +1,4 @@
+patching file frontend/src/screens/historyScreen.tsx
+patching file frontend/src/components/history/history-filters.ts
+patching file frontend/scripts/history-controls.test.mjs
+Hunk #3 succeeded at 263 (offset 2 lines).

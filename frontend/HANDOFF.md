@@ -51,7 +51,7 @@ Dashboard 共同祖先各掛一次 owner，consumer 不能再掛自己的 fixtur
 <a id="visit-preparation-reading"></a>
 ## 孩子概況與準備單
 
-`/summary` 預設概況，`?tab=preparation` 讀多用途準備單，`?tab=legacy-preparation` 保留原共享準備及 unknown 恢復。概況共用 Profile owner，缺值保留未知；量度須有相符孩子／scope、record ID／版本、原值、日期及來源，未接入即 unavailable。
+`/summary` 預設概況，`?tab=preparation` 讀多用途準備單，`?tab=legacy-preparation` 只保留原共享準備及 unknown 恢復的相容深連結；正常準備單頁不再顯示該舊入口，沒有刪除或遷移資料／收據。概況共用 Profile owner，缺值保留未知；量度須有相符孩子／scope、record ID／版本、原值、日期及來源，未接入即 unavailable。
 
 [PreparationWorkspace](src/workspaces/PreparationWorkspace.tsx) 與歷史共用同一文件 owner。到診、入學／轉校、外出／旅行、照顧交接以重點、問題及清單閱讀為主；請 Agent 準備只建立未送出草稿，不覆蓋已有問題或假稱已生成。合成歸檔保留當時 revision；來源更新標 stale，撤權連歷史正文一起遮罩。正式多文件生成、持久化、清單、歸檔／重開均未接通；舊共享準備收據沒有因此遷移。
 

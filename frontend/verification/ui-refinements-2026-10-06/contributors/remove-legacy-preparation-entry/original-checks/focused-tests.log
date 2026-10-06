@@ -1,0 +1,23 @@
+✔ preparation opens as a sheet, explicit modify opens the existing mounted editor (422.343922ms)
+✔ returning to the sheet preserves raw draft and does not discard, save or reset its basis (98.004093ms)
+✔ unknown and changed-basis preparation keeps recovery visible and submission unavailable (73.294467ms)
+✔ sheet uses existing questions and sources, states missing appointment explicitly, and blocks Agent while dirty (65.180191ms)
+✔ Summary reuses the unsent assistant intent and leaves explicit save/discard controllers intact (0.615436ms)
+✔ the route defaults to current-child overview and recognizes only explicit preparation destinations (363.923178ms)
+✔ injected measurement projections stay canonical and source navigation waits for the current-scope guard (156.15503ms)
+✔ tab changes wait for the guard and reset reading scroll only after approved route selection (82.646459ms)
+✔ profile history opens through the same shared owner only after guarded navigation approval (62.556389ms)
+✔ late tab or profile requests cannot act on another child, identity, route or unmounted screen (274.144019ms)
+✔ current preparation keeps its two tabs and history without exposing the obsolete recovery entry (40.542561ms)
+✔ legacy recovery deep links retain guarded returns and reject stale navigation intents (131.315517ms)
+✔ scope changes reset presentation while a hidden native route renders no second reader (23.687917ms)
+✔ shared owners mount once beneath Preview without altering five native tabs or navigation groups (9.725793ms)
+✔ legacy composition retains the original controller and its guarded identity changes (0.696089ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2130.555636

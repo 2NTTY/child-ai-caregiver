@@ -1,0 +1,1164 @@
+{
+  "name": "v47-disclosure",
+  "before": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "preparation-workspace"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "child-preparation-scroll"
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "app-scroll-host"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-route"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-child-scope"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(242, 242, 242)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "frontend-preview-ready"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "BODY",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "HTML",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "border": "rgb(115, 114, 132)",
+    "color": "rgb(0, 0, 0)",
+    "label": "預覽來源與限制",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 733,
+      "height": 40,
+      "left": 240,
+      "right": 390,
+      "top": 693,
+      "width": 150,
+      "x": 240,
+      "y": 693
+    },
+    "routeText": "孩子概況與準備查看孩子目前的資料，打開到診、入學、外出或照顧交接的準備單。孩子概況準備單待用準備單 · 4 份到診準備可查閱小昕的到診準備把這次想談的近況、問題和出門前清單放在一起。使用日期 2026年10月8日打開準備單 ›入學／轉校可查閱小昕的迎新準備先看孩子的適應需要，再核",
+    "spans": [],
+    "tag": "BUTTON",
+    "testid": null
+  },
+  "samples": [
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "preparation-workspace"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "child-preparation-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "rgb(39, 35, 67)",
+      "color": "rgb(0, 0, 0)",
+      "label": "預覽來源與限制",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 733,
+        "height": 40,
+        "left": 240,
+        "right": 390,
+        "top": 693,
+        "width": 150,
+        "x": 240,
+        "y": 693
+      },
+      "routeText": "孩子概況與準備查看孩子目前的資料，打開到診、入學、外出或照顧交接的準備單。孩子概況準備單待用準備單 · 4 份到診準備可查閱小昕的到診準備把這次想談的近況、問題和出門前清單放在一起。使用日期 2026年10月8日打開準備單 ›入學／轉校可查閱小昕的迎新準備先看孩子的適應需要，再核",
+      "spans": [],
+      "tag": "BUTTON",
+      "testid": null
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "preparation-workspace"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "child-preparation-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(39, 35, 67, 0.08)",
+      "border": "rgb(39, 35, 67)",
+      "color": "rgb(0, 0, 0)",
+      "label": "預覽來源與限制",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 733,
+        "height": 40,
+        "left": 240,
+        "right": 390,
+        "top": 693,
+        "width": 150,
+        "x": 240,
+        "y": 693
+      },
+      "routeText": "孩子概況與準備查看孩子目前的資料，打開到診、入學、外出或照顧交接的準備單。孩子概況準備單待用準備單 · 4 份到診準備可查閱小昕的到診準備把這次想談的近況、問題和出門前清單放在一起。使用日期 2026年10月8日打開準備單 ›入學／轉校可查閱小昕的迎新準備先看孩子的適應需要，再核",
+      "spans": [],
+      "tag": "BUTTON",
+      "testid": null
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "preparation-workspace"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "child-preparation-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(39, 35, 67, 0.08)",
+      "border": "rgb(39, 35, 67)",
+      "color": "rgb(0, 0, 0)",
+      "label": "預覽來源與限制",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 733,
+        "height": 40,
+        "left": 240,
+        "right": 390,
+        "top": 693,
+        "width": 150,
+        "x": 240,
+        "y": 693
+      },
+      "routeText": "孩子概況與準備查看孩子目前的資料，打開到診、入學、外出或照顧交接的準備單。孩子概況準備單待用準備單 · 4 份到診準備可查閱小昕的到診準備把這次想談的近況、問題和出門前清單放在一起。使用日期 2026年10月8日打開準備單 ›入學／轉校可查閱小昕的迎新準備先看孩子的適應需要，再核",
+      "spans": [],
+      "tag": "BUTTON",
+      "testid": null
+    },
+    {
+      "active": true,
+      "ancestors": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "preparation-workspace"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "child-preparation-scroll"
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "app-scroll-host"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-route"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "motion-child-scope"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(242, 242, 242)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgb(247, 252, 252)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": "frontend-preview-ready"
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "DIV",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "BODY",
+          "testid": null
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "tag": "HTML",
+          "testid": null
+        }
+      ],
+      "background": "rgba(39, 35, 67, 0.08)",
+      "border": "rgb(39, 35, 67)",
+      "color": "rgb(0, 0, 0)",
+      "label": "預覽來源與限制",
+      "opacity": "1",
+      "ready": "ready",
+      "rect": {
+        "bottom": 733,
+        "height": 40,
+        "left": 240,
+        "right": 390,
+        "top": 693,
+        "width": 150,
+        "x": 240,
+        "y": 693
+      },
+      "routeText": "孩子概況與準備查看孩子目前的資料，打開到診、入學、外出或照顧交接的準備單。孩子概況準備單待用準備單 · 4 份到診準備可查閱小昕的到診準備把這次想談的近況、問題和出門前清單放在一起。使用日期 2026年10月8日打開準備單 ›入學／轉校可查閱小昕的迎新準備先看孩子的適應需要，再核",
+      "spans": [],
+      "tag": "BUTTON",
+      "testid": null
+    }
+  ],
+  "after": {
+    "active": false,
+    "ancestors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "preparation-workspace"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "child-preparation-scroll"
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "app-scroll-host"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-route"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "motion-child-scope"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(242, 242, 242)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgb(247, 252, 252)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": "frontend-preview-ready"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "DIV",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "BODY",
+        "testid": null
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "opacity": "1",
+        "tag": "HTML",
+        "testid": null
+      }
+    ],
+    "background": "rgba(0, 0, 0, 0)",
+    "border": "rgb(39, 35, 67)",
+    "color": "rgb(0, 0, 0)",
+    "label": "預覽來源與限制",
+    "opacity": "1",
+    "ready": "ready",
+    "rect": {
+      "bottom": 733,
+      "height": 40,
+      "left": 240,
+      "right": 390,
+      "top": 693,
+      "width": 150,
+      "x": 240,
+      "y": 693
+    },
+    "routeText": "孩子概況與準備查看孩子目前的資料，打開到診、入學、外出或照顧交接的準備單。孩子概況準備單待用準備單 · 4 份到診準備可查閱小昕的到診準備把這次想談的近況、問題和出門前清單放在一起。使用日期 2026年10月8日打開準備單 ›入學／轉校可查閱小昕的迎新準備先看孩子的適應需要，再核",
+    "spans": [],
+    "tag": "BUTTON",
+    "testid": null
+  },
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/summary?tab=preparation"
+}
