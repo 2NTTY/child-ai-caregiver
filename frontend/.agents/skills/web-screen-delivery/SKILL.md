@@ -24,6 +24,8 @@ description: 在育有方 frontend/ 隔離 Expo 工程中，依參考圖實作�
 
 ## 元件及狀態方法
 
+- 聊天工具與管理面板不放在 `justifyContent: flex-end` 的時間線 header 充當正文。先驗空白／短對話／長對話三種排列；移動工具時維持同一 composer、讀取游標及原 run／pending owner。視覺收合只影響呈現，不能清掉未決請求或把正常重讀當歷史功能。
+
 - 文案整理先沿 production route → owner → renderer 核對狀態和可達性，不按「預覽／未接線」全域替換。依 [文案呈現原則](../../../DESIGN_SYSTEM.md#control-roles) 檢查 loading、真空白、失敗、部分／舊資料及 pending mutation；同義 badge／title／正文合併時保留讀屏名稱。重試必須呼叫該資料 owner，不能只改文案掩蓋卡住的 loading；實際寫入不可保留模擬標籤。
 
 - 沿用 Expo Router：app/ 只作路由／layout，src/screens/ 放畫面，src/components/ 放共用呈現，src/theme.ts 放 tokens，src/preview/ 放合成資料及控制器。樣式用共置 StyleSheet；不要因新版模板搬路由根。Portal 內需用的 scope 資料／回調由擁有者傳入，避免越出 provider 後再讀 context。

@@ -1,6 +1,7 @@
 import { useContainerWidth } from "../components/useContainerWidth";
 import { brand } from "../branding";
 import { useEffect, useId, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 import { usePreviewNavigation, usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Divider, Text } from "react-native-paper";
@@ -9,6 +10,7 @@ import { MotionSettings } from "../components/appearance/MotionSettings";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTabPanel, AppTextField, SectionHeader, TextLink } from "../components/ui";
 import { useProduction } from "../production/ProductionProvider";
+import { AgentAuthorization } from "../production/AgentAuthorization";
 import { ModelSettingsView } from "../components/model-settings/ModelSettingsView";
 import { ProductionChannelSettings, ProductionNotificationPreferences, useProductionSettingsDomains } from "../production/SettingsDomains";
 import { AppIcon } from "../components/AppIcon";
@@ -16,11 +18,11 @@ import { SettingsNavigation } from "../components/settings/SettingsNavigation";
 import { SettingsSection as SectionCard } from "../components/settings/SettingsSection";
 import { chineseFont, colors, readingType, spacing, typeScale } from "../theme";
 
-type SettingsTab = "account" | "children" | "family" | "preferences" | "notifications" | "model" | "privacy";
+type SettingsTab = "account" | "children" | "family" | "preferences" | "notifications" | "model" | "assistant" | "privacy";
 const tabs: { key: SettingsTab; label: string }[] = [
   { key: "account", label: "個人與帳戶" }, { key: "children", label: "孩子設定" },
   { key: "family", label: "家庭成員" }, { key: "preferences", label: "應用偏好" }, { key: "notifications", label: "通知渠道" },
-  { key: "model", label: "模型設定" }, { key: "privacy", label: "資料與私隱" },
+  { key: "assistant", label: "助手設定" }, { key: "model", label: "模型設定" }, { key: "privacy", label: "資料與私隱" },
 ];
 
 function LabeledValue({ label, value }: { label: string; value: string }) {
@@ -31,9 +33,14 @@ export default function SettingsPage() {
   const leave = usePreviewNavigation();
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
-  const { model, actions, user, identityKey, signOut } = useProduction();
+  const { model, actions, user, identityKey, scopeKey, authorization, signOut } = useProduction();
   const { modelSettings } = useProductionSettingsDomains();
-  const [tab, setTab] = useState<SettingsTab>("account");
+  const { section } = useLocalSearchParams<{ section?: string | string[] }>();
+  const requestedSection = Array.isArray(section) ? section[0] : section;
+  const initialTab = tabs.find(item => item.key === requestedSection)?.key ?? "account";
+  const [tab, setTab] = useState<SettingsTab>(initialTab);
+  useEffect(() => { setTab(initialTab); }, [initialTab]);
+  useEffect(() => { if (authorization.pending) setTab("assistant"); }, [authorization.pending]);
   const tabsId = useId();
   const accountName = user?.name ?? "";
   const [displayName, setDisplayName] = useState(accountName);
@@ -102,6 +109,9 @@ export default function SettingsPage() {
       </View>
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="notifications" active={tab === "notifications"}><ProductionChannelSettings /></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="assistant" active={tab === "assistant"}>
+      {scopeKey ? <AgentAuthorization key={scopeKey} /> : <SectionCard><Text style={styles.body}>先選擇孩子。</Text></SectionCard>}
+    </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsView model={modelSettings.model} actions={modelSettings.actions} active={tab === "model"} /></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} style={styles.sections}>
       <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="資料與私隱" />
