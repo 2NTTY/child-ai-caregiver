@@ -1,8 +1,8 @@
 import { HomeDashboard } from "../../src/components/HomeDashboard";
-import { usePreview } from "../../src/preview/PreviewContext";
+import { useProduction } from "../../src/production/ProductionProvider";
 
 export default function HomePage() {
-  const { model, actions, homeIntroductionPending, markHomeIntroductionPresented } = usePreview();
+  const { model, actions, homeIntroductionPending, markHomeIntroductionPresented } = useProduction();
   return <HomeDashboard model={model} actions={actions} introductionPending={homeIntroductionPending}
     onIntroductionPresented={markHomeIntroductionPresented} />;
 }

@@ -19,7 +19,7 @@ const choices: { key: QuickInputKind; label: string; icon: AppIconName }[] = [
 ];
 
 // The host ends above navigation. Only the button and open choices accept input.
-export function MobileQuickInputDock() {
+export function MobileQuickInputDock({ supportedKinds = ["file", "voice", "text"] }: { supportedKinds?: readonly QuickInputKind[] }) {
   const pathname = usePathname();
   const { actions, agentDraftScope, addAgentAttachment, openAgentDraft, agentAttachments, chatDraft } = usePreview();
   const enabled = !!agentDraftScope && pathname === "/";
@@ -59,6 +59,7 @@ export function MobileQuickInputDock() {
   function choose(kind: QuickInputKind) {
     cancelGesture(); setError(null);
     if (!enabled) return;
+    if (!supportedKinds.includes(kind)) { setError(`${kind === "voice" ? "語音" : "文件"}功能正在接線；你可以先用文字或照片草稿。`); return; }
     if (kind === "text") openAgentDraft(true); else setDialog(kind);
   }
   const pending = agentAttachments.length > 0 || !!chatDraft.trim();
@@ -84,9 +85,9 @@ export function MobileQuickInputDock() {
       </>} />
     {expanded && enabled ? <MotionEntrance preset="dialog" animateOnMount triggerKey="quick-input" scopeKey={scopeKey}
       testID="quick-input-directions" pointerEvents="box-none" style={styles.menu}>
-      {choices.map(item => <Pressable key={item.key} testID={`quick-input-${item.key}`} accessibilityRole="button" accessibilityLabel={`快捷${item.label}`}
-        accessibilityState={{ selected: selected === item.key }} onPress={() => choose(item.key)} style={[styles.choice, styles[item.key], selected === item.key && styles.selected]}>
-        <AppIcon name={item.icon} size={20} /><Text style={styles.choiceLabel}>{item.label}</Text>
+      {choices.map(item => <Pressable key={item.key} testID={`quick-input-${item.key}`} accessibilityRole="button" accessibilityLabel={`快捷${item.label}${supportedKinds.includes(item.key) ? "" : "，正在接線"}`}
+        accessibilityState={{ selected: selected === item.key, disabled: !supportedKinds.includes(item.key) }} onPress={() => choose(item.key)} style={[styles.choice, styles[item.key], selected === item.key && styles.selected, !supportedKinds.includes(item.key) && styles.disabled]}>
+        <AppIcon name={item.icon} size={20} /><Text style={styles.choiceLabel}>{item.label}</Text>{!supportedKinds.includes(item.key) ? <Text style={styles.choiceLabel}>正在接線</Text> : null}
       </Pressable>)}
     </MotionEntrance> : null}
     <AssistantInputDialog kind={dialog} enabled={enabled} onDismiss={() => setDialog(null)} onUseText={() => { setDialog(null); openAgentDraft(true); }}

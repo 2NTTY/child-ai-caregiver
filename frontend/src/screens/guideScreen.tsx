@@ -3,10 +3,11 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { brand } from "../branding";
 import { PageFrame } from "../components/PageFrame";
-import { AppButton } from "../components/ui";
+import { AppButton, AppTextField } from "../components/ui";
 import { AppIcon } from "../components/AppIcon";
 import { useContainerWidth } from "../components/useContainerWidth";
-import { usePreview } from "../preview/PreviewContext";
+import { useProduction } from "../production/ProductionProvider";
+import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../theme";
 import type { HomeDestination } from "../view-model";
 
@@ -30,16 +31,30 @@ const steps: { title: string; description: string; action: string; destination: 
 
 export default function GuideScreen() {
   const layout = useContainerWidth();
-  const { model, actions } = usePreview();
+  const { model, actions, controller, recordsState, refresh, signOut, user } = useProduction();
   const [currentStep, setCurrentStep] = useState(0);
-  const [toolsOpen, setToolsOpen] = useState(false);
+  const lockedChild = !!recordsState.busy || recordsState.childrenLoading || recordsState.childOutcome !== "draft";
+  usePreviewLeaveGuard(!!recordsState.childName, recordsState.childOutcome === "unknown" || recordsState.childOutcome === "checked" || recordsState.busy === "createChild", "account");
   const step = steps[currentStep];
   const narrow = layout.width < 720;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   return <PageFrame density="compact" title="使用引導" description="先認識資料與操作的分別，按需要走到相關頁面；隨時可以回來。" eyebrow={`${brand.name} · 開始使用`}>
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{needsGuide ? "從你需要的一步開始" : "隨時重看使用方法"}</Text>
-
+      <Text style={styles.body}>{user?.name} · {user?.email}</Text>
+      <View style={styles.checklist} testID="production-child-setup">
+        <Text accessibilityRole="header" style={styles.pointTitle}>你的孩子</Text>
+        {recordsState.childrenLoading ? <Text style={styles.body}>正在讀取孩子列表…</Text> : null}
+        {recordsState.childrenError ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childrenError}</Text> : null}
+        {recordsState.childrenLoadedAt && !recordsState.childrenError && model.children.length === 0 ? <Text style={styles.body}>目前沒有可存取的孩子；可以先建立第一位孩子。</Text> : null}
+        <View style={styles.stepControls}>{model.children.map(child => <AppButton key={child.id} label={`${child.displayName}${child.id === model.selectedChildId ? "（目前孩子）" : ""}`} variant={child.id === model.selectedChildId ? "primary" : "secondary"} disabled={lockedChild} onPress={() => actions.selectChild(child.id)} />)}</View>
+        <AppTextField label="孩子稱呼" accessibilityLabel="孩子稱呼" value={recordsState.childName} onChangeText={value => controller.setChildName(value)} disabled={lockedChild} maxLength={80} />
+        <View style={styles.stepControls}><AppButton label="建立孩子" loading={recordsState.busy === "createChild"} disabled={lockedChild || !recordsState.online || !recordsState.childName.trim()} onPress={() => { void controller.createChild(); }} />
+          <AppButton label={recordsState.childOutcome === "unknown" || recordsState.childOutcome === "checked" ? "查核原建立操作" : "重新讀取孩子"} variant="quiet" disabled={!recordsState.online || !!recordsState.busy} onPress={() => { void refresh(); }} /></View>
+        {recordsState.childMessage ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childMessage}</Text> : null}
+        {recordsState.childOutcome === "checked" ? <><Text style={styles.body}>已重讀目前孩子清單；原建立結果仍未確認。只可以查核或重試同一項原操作。</Text><AppButton label="重試原建立操作" variant="secondary" disabled={!!recordsState.busy || !recordsState.online} onPress={() => { controller.resolveUnknownChild(false); void controller.createChild(); }} /></> : null}
+        <AppButton label="登出" variant="quiet" disabled={!recordsState.online || !!recordsState.busy} onPress={() => { void signOut(); }} />
+      </View>
     </View>
     <View ref={layout.ref} onLayout={layout.onLayout} style={[styles.workspace, narrow && styles.workspaceNarrow]}>
       <View style={[styles.steps, narrow && styles.stepsNarrow]} accessibilityLabel="使用引導步驟">
@@ -71,7 +86,6 @@ export default function GuideScreen() {
       <View style={styles.startCopy}><Text accessibilityRole="header" style={styles.pointTitle}>已有孩子，便可以開始提問</Text><Text style={styles.body}>Agent 的回答應以獲授權的孩子資料和已確認內容為準。</Text></View>
       <AppButton label="與 Agent 對話" onPress={() => actions.open("chat")} />
     </View>
-    {needsGuide ? <View style={styles.previewFooter}><AppButton label={toolsOpen ? "收起預覽工具" : "預覽工具"} variant="quiet" expanded={toolsOpen} onPress={() => setToolsOpen(value => !value)} />{toolsOpen ? <><Text style={styles.meta}>以下只切換本地預覽的引導顯示，不代表真實設定已保存或通過核對。</Text><AppButton label="模擬設定已完成" variant="quiet" disabled={model.children.length === 0} onPress={actions.completeGuidePreview} /></> : null}</View> : null}
   </PageFrame>;
 }
 

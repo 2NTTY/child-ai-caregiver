@@ -51,8 +51,14 @@ dist
 dist/**
 build
 build/**
-.expo
-.expo/**
+**/.expo
+**/.expo/**
+**/dist
+**/dist/**
+**/dist-android
+**/dist-android/**
+**/.cache
+**/.cache/**
 .next
 .next/**
 coverage
@@ -72,3 +78,9 @@ presentation
 presentation/**
 tests
 tests/**
+frontend/.agents
+frontend/.agents/**
+frontend/_archive
+frontend/_archive/**
+frontend/verification
+frontend/verification/**

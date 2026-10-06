@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "package": "INT-W01",
+  "recordedOn": "2026-10-06",
+  "baseCommit": "61a8faa214ed265511f3a9ff3bd03ee4b66b7732",
+  "scope": "Production frontend build, shared authenticated owner, login and child selection/creation. No Agent/domain wiring or public deployment claimed.",
+  "checks": [
+    {
+      "name": "workspace dependency and peer resolution",
+      "status": "passed",
+      "detail": "Node 24.19.0 / npm 11.8.0; one React/Expo resolution; Query 5.103.2; root dependency versions preserved"
+    },
+    {
+      "name": "root TypeScript",
+      "status": "passed"
+    },
+    {
+      "name": "frontend TypeScript",
+      "status": "passed",
+      "detail": "Final check includes the restored existing API-address guard"
+    },
+    {
+      "name": "production identity/scope checks",
+      "status": "passed",
+      "cases": 3,
+      "priorFailure": "One fake API fixture captured the original method; changed to controlled closure and reran only the affected case"
+    },
+    {
+      "name": "production Web export",
+      "status": "passed",
+      "detail": "35 static routes; frontend/dist; existing Push SW and notices copied. Export preceded the final API-address guard reuse and app display-name cleanup; those final changes received TypeScript and a zero-network owner guard smoke check, not another export."
+    },
+    {
+      "name": "final API-address guard wiring",
+      "status": "passed",
+      "detail": "Owner rejects non-loopback HTTP and normalizes approved localhost URL; zero network calls"
+    }
+  ],
+  "browser": {
+    "package": "INT-W01",
+    "status": "passed",
+    "cases": 1,
+    "durationSeconds": 34.4,
+    "wrapperExitCode": 0,
+    "environment": {
+      "node": "24.19.0",
+      "api": "http://localhost:3101",
+      "web": "http://localhost:8181",
+      "database": "localhost:5434/yuban_s06_test",
+      "browser": {
+        "name": "chromium-headless-shell",
+        "revision": "1243",
+        "packageBrowserVersion": "153.0.8010.12",
+        "runtimeVersionCaptured": false
+      }
+    },
+    "confirmedNewAccounts": 2,
+    "newChildren": 1,
+    "childSubmissions": 1,
+    "responseLostAfterConfirmedWrite": true,
+    "originalOpIdLookupConfirmed": true,
+    "originalOpId": null,
+    "reloadPersistence": true,
+    "otherAccountPrivateProjectionAbsent": true,
+    "ownChildDeleted": true,
+    "actualHttpCount": null,
+    "httpCap": 100,
+    "preCleanupHttpMaximum": 92,
+    "cleanupRequests": 3,
+    "totalHttpUpperBound": 95,
+    "blockedExternalRequests": 0,
+    "evidence": ".cache/int-browser-results/.last-run.json",
+    "limitations": [
+      "Inline testInfo attachment was not persisted by the line reporter; exact HTTP count, childId and originalOpId values are unavailable.",
+      "Browser version is package metadata for installed revision1243; runtime browser.version was not captured."
+    ],
+    "additionalRuns": 0
+  },
+  "review": {
+    "executor": "main model",
+    "findingsResolved": [
+      "Focus/online refresh uses existing signed-in read flow; does not unnecessarily clear conversation drafts",
+      "Desktop capture capability uses actual identity/child scope, not unrequested profile fields",
+      "Production owner reuses existing API-address validation; Docker includes config module",
+      "Inline acceptance metadata was not saved by line reporter; JSON reporter added for future runs, no rerun solely for logging"
+    ],
+    "design": "Existing styles, art and motion preserved. Required setup fields use existing components. Unconnected screens remain in source but do not mount under the production route gate."
+  },
+  "sourceFilesAtReview": {
+    "frontend/src/production/ProductionOwner.ts": "53e0af4f6ca2b9428453dc7833e42c408c80aaafcba4dd41cf5a3c4895f7242a",
+    "frontend/src/production/ProductionProvider.tsx": "9920b04747de307fe922a82681bc7e9e51d01b5bab1c7b4a9e1b2b813214d2d5",
+    "frontend/src/screens/loginScreen.tsx": "542e0b640c686f8f9736b4e47abc43c3ba28e6d9c1da851c172781983e7d40b3",
+    "frontend/src/screens/guideScreen.tsx": "4edc30ca50a6dde05bd84a2b3b02c7cd01abece9d950ab2121b706965d520667",
+    "frontend/app/(dashboard)/_layout.tsx": "7d47b5e9468f596dcd2f9c50c65832e86a7f2c88c8253ea9a3f1a368554d7493",
+    "frontend/src/production/records-query.ts": "564dae47c4f01f47b47a30e0b3e7a498e2ef36cdd79a08d8be302c6f594b7936",
+    "playwright.int.config.mjs": "6579f73a30e331e9a5484b539b949de888b3ce418310c24c6aae2d2251ca5978",
+    "tests/browser/int-foundation.spec.mjs": "e24373272766ed8a3d3e59a64e480969e13b8d1f6a2eb4a623a883122c57ec6d"
+  },
+  "notVerified": [
+    "Public deployment / Docker image build",
+    "Agent, profile and other P2 domain wiring",
+    "Android / Firefox full compatibility",
+    "A complete preview visual matrix"
+  ],
+  "next": "Merge foundation, then connect the real Agent flow; do not expose the transitional gates as completed production delivery."
+}

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S13-W06",
-  "recordedOn": "2026-09-30",
+  "workPackage": "INT-W01",
+  "recordedOn": "2026-10-06",
   "scope": "Original licenses for all selected direct dependencies; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "58ee71424d3287e34cc4a6905c8d18952c10e016f9d6e04facb0bb3e881f8dba"
+    "sha256": "5c987e8dbd4c035f407fb25000833e94b747e181401b9cf33e7a1b9edf82b7bf"
   },
   "packages": [
     {
@@ -662,6 +662,176 @@
           "path": "licenses/grammyjs-types/LICENSE",
           "sha256": "025bc2c612e74a74c55a4bf24aa22d0c71a5ae93c81d8194aa6f7532985d4880",
           "source": "node_modules/@grammyjs/types/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@expo/vector-icons",
+      "version": "15.1.1",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/vector-icons.git"
+      },
+      "tarball": "https://registry.npmjs.org/@expo/vector-icons/-/vector-icons-15.1.1.tgz",
+      "integrity": "sha512-Iu2VkcoI5vygbtYngm7jb4ifxElNVXQYdDrYkT7UCEIiKLeWnQY0wf2ZhHZ+Wro6Sc5TaumpKUOqDRpLi5rkvw==",
+      "files": [
+        {
+          "path": "licenses/expo-vector-icons/LICENSE",
+          "sha256": "a5416f6b586be51823285bc9a389bfd756eef80cfb7616ea90aaa11bae6189e1",
+          "source": "node_modules/@expo/vector-icons/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@tanstack/react-query",
+      "version": "5.103.2",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/TanStack/query.git",
+        "directory": "packages/react-query"
+      },
+      "tarball": "https://registry.npmjs.org/@tanstack/react-query/-/react-query-5.103.2.tgz",
+      "integrity": "sha512-B+fWiYZBc+0uUD5zDZAeLw9dKj7XEsdnuu6zRZ+no6LNKpeE3P3bJ+N6HINjcIlWR6fW3vUoTneEaGa2V6ehqw==",
+      "files": [
+        {
+          "path": "licenses/tanstack-react-query/LICENSE",
+          "sha256": "a405ee70c632bb938acb7ac5f210e814409b3760ea9d2329d8ed8ffcfd11a0e7",
+          "source": "node_modules/@tanstack/react-query/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@tanstack/query-core",
+      "version": "5.103.2",
+      "dependencyType": "transitive",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/TanStack/query.git",
+        "directory": "packages/query-core"
+      },
+      "tarball": "https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.103.2.tgz",
+      "integrity": "sha512-I8DkFXls5jXLqtm8+QpOhEmG07hIblhSZFzafg9wHsMSEvMzULy9hK17wU1T/ahfhMbtITJhbxutwwCoihkR7A==",
+      "files": [
+        {
+          "path": "licenses/tanstack-query-core/LICENSE",
+          "sha256": "a405ee70c632bb938acb7ac5f210e814409b3760ea9d2329d8ed8ffcfd11a0e7",
+          "source": "node_modules/@tanstack/query-core/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-blur",
+      "version": "57.0.3",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-blur"
+      },
+      "tarball": "https://registry.npmjs.org/expo-blur/-/expo-blur-57.0.3.tgz",
+      "integrity": "sha512-uyBeJwxIuXzWXXNrnRub5pcF8VzQsiOz0VBTWDpMG2UztmaFyfAz6pI/GCwRtWpHhiOpLoJj79WLdg1GMB+9cg==",
+      "files": [
+        {
+          "path": "licenses/expo-blur/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/expo-blur/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "lucide-react-native",
+      "version": "1.49.0",
+      "dependencyType": "dependency",
+      "license": "ISC",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/lucide-icons/lucide.git",
+        "directory": "packages/lucide-react-native"
+      },
+      "tarball": "https://registry.npmjs.org/lucide-react-native/-/lucide-react-native-1.49.0.tgz",
+      "integrity": "sha512-CibGb5eKeIf4UN8nMUOXwNjPid2SmD2zFglR1NS0FtFK4Im2SWCNT6qPm3f6Q3gKsXdYdGTMQ62i4hDK+h+X5Q==",
+      "files": [
+        {
+          "path": "licenses/lucide-react-native/LICENSE",
+          "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+          "source": "node_modules/lucide-react-native/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "luxon",
+      "version": "3.7.2",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": "https://github.com/moment/luxon",
+      "tarball": "https://registry.npmjs.org/luxon/-/luxon-3.7.2.tgz",
+      "integrity": "sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==",
+      "files": [
+        {
+          "path": "licenses/luxon/LICENSE.md",
+          "sha256": "6cb2f2bf697ee9c6fa9eb8f227c63ee6e7a3cba42d4717f14c745ef9b6cbc006",
+          "source": "node_modules/luxon/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "name": "overlayscrollbars",
+      "version": "2.16.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/KingSora/OverlayScrollbars.git",
+        "directory": "packages/overlayscrollbars"
+      },
+      "tarball": "https://registry.npmjs.org/overlayscrollbars/-/overlayscrollbars-2.16.0.tgz",
+      "integrity": "sha512-N03oje/q7j93D0aLZtoCdsDSYLmhheSsv8H7oSLE7HhdV9P/bmCURtLV/KbPye7P/bpfyt/obSfDpGUYoJ0OWg==",
+      "files": [
+        {
+          "path": "licenses/overlayscrollbars/LICENSE",
+          "sha256": "e15ad22c5d4a4e4d63ddfe8cf1993e9fecfcf87dd320a701daa939d55beeefbc",
+          "source": "https://raw.githubusercontent.com/KingSora/OverlayScrollbars/v2.16.0/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native-paper-dates",
+      "version": "0.24.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": "https://github.com/web-ridge/react-native-paper-dates",
+      "tarball": "https://registry.npmjs.org/react-native-paper-dates/-/react-native-paper-dates-0.24.0.tgz",
+      "integrity": "sha512-IBQK9OPMHWLu+7NLxnh/HUWJSbQLkvp7fwdP/8RnCXBNkOk9MI+PnHWbdE7P6V5v3XTjAPGN95iMm8TfGQv97Q==",
+      "files": [
+        {
+          "path": "licenses/react-native-paper-dates/LICENSE",
+          "sha256": "8de8bbdc9d518799d0d4e67518e79ad8a6260c470e0270d329db03f612a37c2e",
+          "source": "node_modules/react-native-paper-dates/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "react-native-svg",
+      "version": "15.15.4",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/react-native-community/react-native-svg"
+      },
+      "tarball": "https://registry.npmjs.org/react-native-svg/-/react-native-svg-15.15.4.tgz",
+      "integrity": "sha512-boT/vIRgj6zZKBpfTPJJiYWMbZE9duBMOwPK6kCSTgxsS947IFMOq9OgIFkpWZTB7t229H24pDRkh3W9ZK/J1A==",
+      "files": [
+        {
+          "path": "licenses/react-native-svg/LICENSE",
+          "sha256": "1bc2aa7dad15097cd71308d9ae013ff14d11a84357b170c1554f4035fb8a3acb",
+          "source": "node_modules/react-native-svg/LICENSE"
         }
       ]
     }

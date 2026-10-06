@@ -9,19 +9,20 @@ import { PreviewNavigationGuard } from "../src/preview/PreviewNavigationGuard";
 import { MotionProvider } from "../src/motion";
 import { MotionPaperProvider } from "../src/motion/MotionPaperProvider";
 import { FirstScreenGate } from "../src/startup/FirstScreenGate";
+import { ProductionProvider } from "../src/production/ProductionProvider";
 
 export default function RootLayout() {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   return (
     <SafeAreaProvider><MotionProvider><MotionPaperProvider>
-      <Head><title>{brand.previewName}</title></Head>
-      <PreviewNavigationGuard><FirstScreenGate pathname={pathname} width={width} launch={<View style={styles.launch}>
+      <Head><title>{brand.name}</title></Head>
+      <PreviewNavigationGuard><ProductionProvider><FirstScreenGate pathname={pathname} width={width} launch={<View style={styles.launch}>
           <BrandLogo style={styles.logo} decorative />
           <Text accessibilityRole="text" style={styles.launchText}>正在開啟{brand.name}…</Text>
         </View>}>
         <Stack screenOptions={{ headerShown: false, animation: "none" }} />
-      </FirstScreenGate></PreviewNavigationGuard>
+      </FirstScreenGate></ProductionProvider></PreviewNavigationGuard>
     </MotionPaperProvider></MotionProvider></SafeAreaProvider>
   );
 }

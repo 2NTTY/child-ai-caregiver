@@ -37,6 +37,8 @@
 <a id="frontend-backend"></a>
 ## 前後端聊天分工
 
+- 使用者已於 2026-10-06 授權主聊天把 `frontend/` 納入正式應用並修改所需根依賴、Server／client 接點及部署；正式整合以 [INT 工作包](PLAN.md#production-integration) 為準，不受下列「前端設計聊天只做隔離預覽」的修改範圍限制。保留已確認的設計、互動與美術，不為接線重做 UI；未接功能明示，不保留假成功。前端設計聊天須先核對正式 owner 的歸屬，不能另開合成副本覆蓋已接資料。
+
 - 主聊天管 Server／Agent／資料庫與正式 App 整合；前端聊天管 `frontend/**` 隔離 Expo 預覽，包括本域程式、依賴／配置、合成資料、測試及文件，不呼叫真 Server。各用獨立 worktree／分支，改目錄外內容須先明確分配；前端不改 `server/**`、`deploy/**`、`src/shared/**`、正式 `app/**`／`src/client/**` 或根依賴／權威文件。可唯讀相關契約／型別及品牌素材，view model 不是新 wire contract。merge 依有效使用者指示，不自動開包／聊天。
 - 使用者 2026-09-29 已准前端提前做 Android 共用畫面、Tabs／Safe Area 及合成預覽，取代「整套 Web 確認後才可做手機介面」的舊次序。正式 P3 接線／APK／真機仍依根 PLAN 前置；窄 Web、bundle、真機證據分開。
 - 前端 PLAN／STATUS 只管 FE，根 PLAN／STATUS 管產品及正式包。主模型各自親寫指導；共享必要接口、權限、安全、原 opId／unknown 與清理邊界，細節留所屬域。交接按 [P2 UI 入口](docs/P2_UI_HANDOFF.md#chat-handoff) → 相關專項，帶固定版本、元件／API／回調差異及已驗／未驗；正式整合保留草稿及身份／孩子清理，不把預覽當產品完成。前置原則上須驗收合併，既有 P2 分支例外見 [PLAN](PLAN.md#p2-deferred-acceptance)。

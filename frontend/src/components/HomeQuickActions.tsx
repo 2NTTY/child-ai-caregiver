@@ -23,7 +23,7 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
   const child = model.children.find(item => item.id === model.selectedChildId);
   const [error, setError] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
-  const available = !!child && model.profileLoad === "ready" && active;
+  const available = !!child && active && (model.scopeKey !== undefined ? !!model.scopeKey : model.profileLoad === "ready");
   return <View testID="home-quick-actions" style={[styles.section, docked && styles.docked]}>
     <Text accessibilityRole="header" style={styles.heading}>有新情況，直接交代</Text>
     <View style={styles.captureRow}><PhotoFilePicker disabled={!available || opening} capturePreferred captureOriginal={captureOriginal}

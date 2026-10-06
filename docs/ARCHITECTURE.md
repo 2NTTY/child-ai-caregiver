@@ -36,9 +36,16 @@
 
 保留已驗收的 ADK、Expo Router、Better Auth、Zod、pgvector、家庭授權／在線收據／加密／知識發布等成果。新增通用能力按 [AGENTS 復用規則](../AGENTS.md#technical-skills) 選型；[固定版本研究與相容性閘](TECH_REUSE.md#decisions) 是證據，不表示候選已安裝或通過本工程驗收。
 
-新複雜表單優先驗證 React Hook Form＋現有 Zod；新增共用頁面先小範圍試 React Native Paper，Expo UI Universal 留作有原生控制需要的局部候選，兩者均須核對 Web／Expo 57／Android，P1 不批量換 UI。P3 TanStack Query 首批限讀取快取與失效管理，沿用原 opId／收據寫入 transport；權限／Server 切換必須取消及清理快取，不能形成離線 mutation queue。P2 先建 Playwright Test 共用 Web 測試基礎，延用至 P4；保留 node:test／既有腳本，不能替代 Android 原生驗收。
+新複雜表單優先驗證 React Hook Form＋現有 Zod；新前端已採納的 Paper、表單及動效繼續復用，Expo UI Universal 留作有原生控制需要的局部候選，不批量換 UI。正式整合提前採用已研究的 TanStack Query 5.103.2，限讀取快取與失效管理，沿用原 opId／收據寫入 transport；權限／Server 切換必須取消及清理快取，不能形成離線 mutation queue。P2 的 Playwright Test Web 基礎延用至後續包，保留 node:test／既有腳本；Web 證據不能替代 Android 真機驗收。
 
-當前前端另在 `frontend/` 建隔離 Web 預覽，以 view model／操作回調及合成資料交付元件；它不是第二個業務客戶端或新的 API 權威。主聊天按 [交接清單](P2_UI_HANDOFF.md#chat-handoff) 接入正式 App／既有控制器，審核根依賴及保持預覽資料與正式來源分離；不將整份獨立專案或 lockfile 直接覆蓋正式工程。Web 預覽驗收與正式 API／Android 驗收分開。
+`frontend/` 從已確認的隔離預覽轉為正式應用，納入根 npm workspace 與單一 lockfile；根 Web 啟動／建置及 Docker Web 產物指向它。保留既有設計，以正式身份／資料 provider 取代合成 owner；有效的 `src/client` 控制器及 `src/shared` 契約繼續復用。舊 `app/` 測試呈現只作過渡參考，不與新前端各自保存業務資料；舊入口的退出及實際部署狀態見 [INT 計劃](../PLAN.md#production-integration)。正式畫面不掛載合成 owner，未接能力不得顯示假成功；過渡 gate 之後仍須逐項移除正式 screen 的預覽依賴。
+
+<a id="production-ui-data"></a>
+### 正式 UI 的共用資料邊界
+
+每個領域只有一個正式 owner，向首頁、聊天及領域頁提供同源投影；PostgreSQL 資源／操作台帳保持權威。讀取 query key 包含 Server、本人、身份世代及孩子／角色 scope；登出、身份不明、撤權或切換 scope 時取消舊讀取並清理私有快取、草稿及附件，遲到回應不得寫進新 scope。頁面草稿不是第二份業務資料庫。
+
+Agent／頁面修改成功後以實際資源 ID／版本使相關讀取失效並同步 owner；跨可見分頁／裝置沿用 changes cursor，每 5 秒只核對 metadata，回前景立即核對。一般讀頁不呼叫模型；來源變更令衍生報告標記待整理／失效，不繼續冒稱最新。寫入保留各領域的版本、原 opId、unknown 核對及授權邊界，不用 Query 的自動重試代替業務恢復。
 
 <a id="section-3-2"></a>
 ## 3.2 数据存储

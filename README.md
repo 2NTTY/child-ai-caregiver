@@ -8,7 +8,7 @@ Planned capabilities include:
 - Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
 - A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
 
-P1 and the original P2 packages are complete; P3 has not started. The redesigned frontend remains an isolated preview. See [STATUS](STATUS.md) for the short current snapshot and domain entry points. The last recorded public deployment was revision `43ab10c`; its scheduled stop time has passed and current availability has not been checked. [Deployment observation](STATUS.md#deployment).
+P1 and the original P2 packages are complete; P3 has not started. Production integration of the redesigned frontend is in progress. The public deployment has not yet been switched; see [STATUS](STATUS.md) and the [active integration package](PLAN.md#active) for connected capabilities and remaining work. The last recorded public application revision was `43ab10c`; check the [deployment observation](STATUS.md#deployment) before operating the VM.
 
 Product requirements belong in [SPEC](SPEC.md); package scope and completion gates belong in [PLAN](PLAN.md#phases). The shared Prompt Pack and visual assets are reused.
 
@@ -47,12 +47,14 @@ Frozen documents keep the relative-link context of their source commit. Their co
 <a id="run-test"></a>
 ## Running and testing
 
-Use Node.js 24.3 or newer within the Node 24 release line, and npm 11. The development baseline is Node 24.11.0 and npm 11.6.1. From the repository root:
+Use Node.js 24.3 or newer within the Node 24 release line and npm 11.8 or newer within npm 11. The verified development baseline is Node 24.19.0 and npm 11.8.0. From the repository root:
 
 ```sh
 npm ci
 npm run web
 ```
+
+The root npm workspace uses `frontend/` for Web and a single root lockfile. Set `EXPO_PUBLIC_API_BASE_URL` to the existing Server's `/api` URL for local development (for example `http://localhost:3001/api`); the production default is same-origin `/api`. `npm run build:web` writes `frontend/dist`, including the existing Push service worker and license notices. The Docker Web stage serves this output through the existing Caddy configuration. Routes not yet connected are explicitly unavailable during integration, never simulated successes. `npm run legacy:web` and `legacy:build:web` retain the old test interface only for temporary reference; they are not the new production entry.
 
 Open the local address printed by Expo (normally `http://localhost:8081`). The record workflow requires the local server and database setup below; no model key is needed. Use synthetic data throughout P1.
 
@@ -62,13 +64,13 @@ npm test
 npm run build:web
 ```
 
-The tests exercise shared public inputs, API-address and server configuration, and workspace authorization using Node's built-in runner. `build:web` creates a static export under `dist/`; generated output is not committed. These checks do not represent integration, browser E2E, Android, persistence, or live-service acceptance.
+The tests exercise shared public inputs, API-address and server configuration, and workspace authorization using Node's built-in runner. `build:web` creates a static export under `frontend/dist/`; generated output is not committed. Select only checks needed for a change; the commands above are available entry points, not a requirement to run the full suite. Static checks do not represent integration, browser E2E, Android, persistence, or live-service acceptance.
 
 `EXPO_PUBLIC_API_BASE_URL` defaults to `/api` for a same-origin deployment. See [.env.example](.env.example) for a local separate-server example. This is a public value embedded in the client bundle: never put provider keys, credentials, or private data in `EXPO_PUBLIC_*`. Only HTTPS remote addresses and HTTP loopback addresses are accepted; embedded credentials, query parameters, and fragments are rejected. This configuration does not implement runtime server switching.
 
 Code boundaries:
 
-- `app/`: the Expo Router Web interface.
+- `frontend/app/`: the production Expo Router Web entry; `frontend/src/production/` owns authenticated shared data. Root `app/` remains a temporary legacy reference during integration.
 - `src/shared/`: platform-independent child and text-record input contracts and validation; no storage or network access.
 - `src/config/`: public deployment-address validation, loaded by the app entry.
 - `server/`: PostgreSQL persistence, Better Auth, and the HTTP authorization boundary.

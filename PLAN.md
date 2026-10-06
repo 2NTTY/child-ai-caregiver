@@ -7,13 +7,34 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-核對時間：2026-10-04；本次文件整理基線為 master `c51dd52`（PR #83）。開工仍須重查遠端／相關 PR 及本機差異；快照不代表之後沒有新提交。
+核對時間：2026-10-06；正式整合基線為 master `61a8faa`（PR #90），已 fetch 至本機。開工及交付仍須重查遠端／相關 PR 及本機差異。
 
 - **文件維護**：[DOC-R04](#doc-r04) 已驗收，隨 [PR #86](https://github.com/2NTTY/child-ai-caregiver/pull/86) 合併結案；沒有因此啟動下一個文件或產品包。
 - **前端獨立工作流**：只沿 [frontend/PLAN#active](frontend/PLAN.md#active) 接續；根計劃不複製 FE-Wxx 的工作狀態。
-- **Server／Agent／正式整合**：目前沒有在本次任務獲啟動的新產品包。下一步是按前端實際交付及使用者指示界定一個正式接線包，讀 [P2 UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff) → [相關功能交接](frontend/HANDOFF.md#p2-coverage)；正式 API、身份／草稿／原 opId、未驗項和必要驗收不能由合成預覽代替。不自行啟動 P3。
+- **INT-W01 已驗收**：正式建置、登入、孩子與共用 owner／讀取快取已實作，隨 [PR #91](https://github.com/2NTTY/child-ai-caregiver/pull/91) 合併結案；分支 `codex/int-w01-production-foundation`。保留已確認的版面、動效及美術，未改後端資料契約。
+- **下一步／未驗**：合併後從最新 master 開 INT-W02，先接真 Agent 對話。[INT-W01 固定範圍證據](artifacts/verification/INT_W01_CHECKS.json)。未接頁面暫時標明接線中，不 mount 合成 owner；Agent／其餘 P2 接線、Android 及公開部署未驗。
+- **入口及結案**：依 [正式整合安排](#production-integration) → [P2 UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff) → [前端交接](frontend/HANDOFF.md#reading-order)。INT-W01 的必要驗收及 review 通過並合併才結案，不能將建置入口就緒寫成全產品已接通。
 
 包開始時在此保留一份簡短現行卡：目標／範圍、基線及活動 PR／branch、所需契約位置、下一動作、阻塞／未驗、完成及停止條件。新證據原位更新；已完成內容收短到下方包記錄及證據，勿在 STATUS／HANDOFF 再建第二張卡。[更新職責](AGENTS.md#document-updates)。
+
+<a id="production-integration"></a>
+## 正式前端整合（P2 結案後增補）
+
+2026-10-06 使用者確認先完成接線，並建立持續目標直到新前端取代正式入口。核心體驗及新增能力見 [SPEC](SPEC.md#agent-first-experience)，決策見 [ADR-017](docs/DECISIONS.md#adr-017)。沿用最新前端設計、既有 Server／Prompt Pack／素材；不把已確認的新 Agent 能力或預覽效果當作已實作。正式頁面接既有業務服務，缺少後端的關注鏈、多份準備文件及報告必須明示，不用相似 API 冒充。
+
+| 包 | 狀態／交付 | 前置 | 主責及預分配 |
+|---|---|---|---|
+| <a id="int-w01"></a>INT-W01 | 已完成（隨 [PR #91](https://github.com/2NTTY/child-ai-caregiver/pull/91) 合併生效）：正式建置、登入、孩子与共用 owner／讀取快取；[EV](artifacts/verification/INT_W01_CHECKS.json) | master `61a8faa` | B；權重 3，B 60%／C 30%／A 10% |
+| <a id="int-w02"></a>INT-W02 | 未開始：先接真聊天、歷史、來源、工具結果、確認及背景結果；再補普通指令／自動保存授權、持久確認與記憶接縫 | INT-W01 | A；C／B 協作 |
+| <a id="int-w03"></a>INT-W03 | 未開始：既有 UI-P2-01～18、照片、記錄、任務、記憶、設定、通知／聯絡及跨頁同步 | INT-W02 | B；C／D 協作 |
+| <a id="int-w04"></a>INT-W04 | 未開始：私人來源的對話設定、讀取、引用及管理 | INT-W03 | A；C／B 協作 |
+| <a id="int-w05"></a>INT-W05 | 未開始：持續關注、主動跟進、事件鏈及結束／恢復 | INT-W03 | C；A／B 協作 |
+| <a id="int-w06"></a>INT-W06 | 未開始：Agent 操作多份準備文件、成長報告及同版 PDF | INT-W04、INT-W05 | A；C／B 協作 |
+| <a id="int-w07"></a>INT-W07 | 未開始：正式入口部署、必要整體驗收、舊 UI 退出正式建置及功能接點清單 | INT-W01～06 | C；B／D 協作 |
+
+每包獨立分支／worktree，必要驗收、主模型 review、按主責帳號 PR／合併後才啟動依賴包；後續包開工時再定權重及份額。分配是責任安排，不冒稱個人手寫程式或實測工時。INT-W01 由共用 AI 在 A 統籌下執行，主模型統籌驗收及最終裁決。
+
+驗收只取通常路徑及必要邊界：正式登入／Agent、跨頁同源、重開持久化、身份／孩子隔離、一次原操作 unknown 恢復；新增能力各取一條代表路徑，重用已有證據。不重跑完整預覽矩陣，不使用 Computer Use。真模型／通知仍受既有次數、成本、明確目的地及內容授權限制；部署前重查 VM 期限、備份及相容遷移。完成需列明已接、待驗及未接項，不能在過渡頁仍存在時宣稱正式接線完成。
 
 <a id="phases"></a>
 ## 五階段及完成門檻
