@@ -1,0 +1,48 @@
+{
+  "baseline": "e3060e2afa723de59ef45d867ae81f6b284ad3b1",
+  "scope": "FE-W45 clean production chat layout; synthetic shallow tests and frontend build only",
+  "node": "v24.19.0",
+  "npm": "11.9.0",
+  "focused_tests": {
+    "command": "node --test scripts/clean-chat-layout.test.mjs",
+    "exit_code": 0,
+    "tests": 8,
+    "passed": 8,
+    "failed": 0,
+    "evidence": "focused-tests.log"
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "cwd": "frontend",
+    "exit_code": 0,
+    "evidence": "typecheck.log"
+  },
+  "web_export": {
+    "command": "CI=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_API_BASE_URL=/api npm run build:web",
+    "cwd": "frontend",
+    "exit_code": 0,
+    "routes": 35,
+    "evidence": "web-export.log",
+    "bundle": "_expo/static/js/web/entry-837c1dbf74bfd2072be56dac1fa2c348.js",
+    "bundle_sha256": "082b20173f64c765aac2ef98c770c3101630e083bdfae9bfcdd2b9bc63270d87",
+    "same_origin_api": "/api"
+  },
+  "source_integrity": {
+    "manifest": "source-sha256.txt",
+    "verified_files": 6,
+    "result": "All six frozen source hashes match when checked from repository root",
+    "command_setup_note": "The initial sha256sum utility invocation used frontend cwd for repo-root-relative paths and reported six missing files. This was a working-directory error, not a product test failure; the same manifest passed from repository root. No code or assertions changed."
+  },
+  "not_run": [
+    "browser visual acceptance",
+    "live production API or model calls",
+    "external notifications",
+    "native device",
+    "full regression matrix",
+    "production deployment"
+  ],
+  "review": {
+    "result": "No confirmed blocking source regressions",
+    "limits": "Read-only code review, not live browser acceptance; dialog scroll/focus return, narrow-screen keyboard/IME and real history anchors remain untested."
+  }
+}

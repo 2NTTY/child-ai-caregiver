@@ -1,0 +1,7 @@
+Initial command: sha256sum -c verification/clean-chat-layout-2026-10-06/source-sha256.txt
+Initial cwd: frontend
+Result: six frontend/... paths could not be opened because the manifest paths are repository-root relative.
+Corrected command: sha256sum -c frontend/verification/clean-chat-layout-2026-10-06/source-sha256.txt
+Corrected cwd: repository root
+Result: all six files OK; exit 0.
+No product code or test assertions were changed.

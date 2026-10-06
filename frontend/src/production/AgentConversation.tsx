@@ -1,34 +1,28 @@
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { useProduction } from "./ProductionProvider";
 import { AgentInboxView } from "../components/agent/AgentInboxView";
 import { AgentRunView } from "../components/agent/AgentRunView";
-import { AppIcon } from "../components/AppIcon";
-import type { LocateAnswerSource } from "../components/chat/AnswerSources";
+import { AppDialog } from "../components/AppDialog";
+import { AppScrollView } from "../components/AppScrollView";
+import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatType } from "../components/chat/chat-presentation";
-import { MotionDisclosure } from "../motion";
-import { AgentAuthorization } from "./AgentAuthorization";
 import { AppButton, SectionCard, SectionHeader } from "../components/ui";
 import { agentProposalLabels, agentTime, proposalExpired } from "../agent-view-model";
 import { colors, spacing } from "../theme";
 
-export function AgentConversation({ onLocateSource }: { onLocateSource?: LocateAnswerSource }) {
-  const { agentModel, agentActions, agentInbox, agentInboxActions, agentPending, readAgentPending, selectAgentRun, authorization, authorizationActions, scopeKey } = useProduction();
-  const [expanded, setExpanded] = useState(false);
-  useEffect(() => { if (agentModel.readState !== "idle") setExpanded(true); }, [agentModel.run?.id, agentModel.readState]);
+export function AgentConversation({ visible, onDismiss, onOpenSettings, onReloadChat, reloadDisabled }: { visible: boolean; onDismiss(): void; onOpenSettings(): void; onReloadChat(): void; reloadDisabled: boolean }) {
+  const { agentModel, agentActions, agentInbox, agentInboxActions, agentPending, readAgentPending, selectAgentRun, authorization, authorizationActions } = useProduction();
+  const scrollRef = useRef<ScrollView | null>(null);
+  const onLocateSource = (target: View | null, horizontalScroll?: ScrollView | null, verticalTarget?: View | null) =>
+    locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
   const run = agentModel.readState === "ready" ? agentModel.run : null;
   const receipt = run ? authorization.receipts[run.id] : undefined;
-  useEffect(() => { if (run && !receipt) authorizationActions.readReceipts(run.id); }, [run?.id, receipt?.state]);
-  return <View style={styles.root}>
-    <Pressable testID="agent-conversation-toggle" accessibilityRole="button" accessibilityLabel="Agent 活動與候選"
-      accessibilityState={{ expanded }} aria-expanded={expanded} onPress={() => setExpanded(value => !value)}
-      style={({ pressed }) => [styles.disclosure, pressed && styles.pressed]}>
-      <AppIcon name={expanded ? "chevron-down" : "chevron-right"} size={16} color={chatColors.secondary} />
-      <Text style={styles.label}>Agent 活動與候選{agentModel.pendingDecision ? " · 原決定待查核" : ""}</Text>
-    </Pressable>
-    <MotionDisclosure expanded={expanded} scopeKey={scopeKey ?? "no-child"}>
-      <View style={styles.contents}>
+  useEffect(() => { if (visible && run && !receipt) authorizationActions.readReceipts(run.id); }, [visible, run?.id, receipt?.state]);
+  return <AppDialog visible={visible} onDismiss={onDismiss} accessibilityLabel="對話詳情與活動" style={styles.dialog}>
+    <AppDialog.Title>對話詳情與活動</AppDialog.Title>
+    <AppDialog.ScrollArea style={styles.scrollArea}><AppScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.contents}>
         {agentModel.readState !== "idle" ? <AgentRunView model={agentModel} actions={agentActions} onLocateSource={onLocateSource} /> : null}
         {run?.privateSourceCitations?.length?<SectionCard><SectionHeader title="本人的私人參考" density="compact" subtitle="回答當時獲授權的原文快照；不是已核對的官方育兒來源，停用或更正後不供新回答使用。"/>
           {run.privateSourceCitations.map((source,index)=><View key={source.citationId} style={styles.receipt}>
@@ -56,14 +50,12 @@ export function AgentConversation({ onLocateSource }: { onLocateSource?: LocateA
           {agentPending.nextCursor ? <AppButton label="讀取下一頁候選" variant="quiet" disabled={!!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || !agentModel.online} onPress={() => readAgentPending(true)} /> : null}
         </SectionCard>
         <AgentInboxView model={agentInbox} actions={agentInboxActions} />
-      </View>
-    </MotionDisclosure>
-    <AgentAuthorization />
-  </View>;
+    </AppScrollView></AppDialog.ScrollArea>
+    <AppDialog.Actions><AppButton label="重新讀取聊天" variant="quiet" onPress={onReloadChat} disabled={reloadDisabled} /><AppButton label="助手設定" variant="quiet" onPress={onOpenSettings} />
+      <AppButton label="關閉" variant="quiet" onPress={onDismiss} /></AppDialog.Actions>
+  </AppDialog>;
 }
 const styles = StyleSheet.create({
-  root: { minWidth: 0 }, receipt: { gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.sm }, contents: { gap: spacing.md, minWidth: 0, paddingTop: spacing.md },
-  disclosure: { backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10,
-    paddingHorizontal: spacing.sm, alignSelf: "flex-start", minHeight: 48, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
-  label: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool }, pressed: { backgroundColor: colors.paleTeal },
+  dialog: { maxWidth: 800 }, scrollArea: { paddingHorizontal: 0, minHeight: 0 }, receipt: { gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.sm }, contents: { gap: spacing.md, minWidth: 0, padding: spacing.md },
+  label: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool },
 });
