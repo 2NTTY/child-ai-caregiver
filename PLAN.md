@@ -11,8 +11,8 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 - **文件維護**：[DOC-R04](#doc-r04) 已驗收，隨 [PR #86](https://github.com/2NTTY/child-ai-caregiver/pull/86) 合併結案；沒有因此啟動下一個文件或產品包。
 - **前端獨立工作流**：只沿 [frontend/PLAN#active](frontend/PLAN.md#active) 接續；根計劃不複製 FE-Wxx 的工作狀態。
-- **INT-W01 進行中**：新前端正式建置、登入、家庭／孩子身份與共用資料 owner；分支 `codex/int-w01-production-foundation`。範圍包括根 npm workspace／單一 lock、`frontend/` 正式 provider、既有登入及孩子 API 接線、讀取快取與私有子樹清理；不重做已確認的版面、動效及美術。
-- **下一步／未驗**：INT-W01 實作及主模型 review 就緒；必要型別、Web export、三項 scope 檢查及一條真登入／原操作恢復／重開／隔離驗收通過，正按 B 主責交付 PR／合併。[固定範圍證據](artifacts/verification/INT_W01_CHECKS.json)。未接頁面暫時標明接線中，不 mount 合成 owner；Agent／其餘 P2 接線、Android 及公開部署未驗。
+- **INT-W01 已驗收**：正式建置、登入、孩子與共用 owner／讀取快取已實作，隨 [PR #91](https://github.com/2NTTY/child-ai-caregiver/pull/91) 合併結案；分支 `codex/int-w01-production-foundation`。保留已確認的版面、動效及美術，未改後端資料契約。
+- **下一步／未驗**：合併後從最新 master 開 INT-W02，先接真 Agent 對話。[INT-W01 固定範圍證據](artifacts/verification/INT_W01_CHECKS.json)。未接頁面暫時標明接線中，不 mount 合成 owner；Agent／其餘 P2 接線、Android 及公開部署未驗。
 - **入口及結案**：依 [正式整合安排](#production-integration) → [P2 UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff) → [前端交接](frontend/HANDOFF.md#reading-order)。INT-W01 的必要驗收及 review 通過並合併才結案，不能將建置入口就緒寫成全產品已接通。
 
 包開始時在此保留一份簡短現行卡：目標／範圍、基線及活動 PR／branch、所需契約位置、下一動作、阻塞／未驗、完成及停止條件。新證據原位更新；已完成內容收短到下方包記錄及證據，勿在 STATUS／HANDOFF 再建第二張卡。[更新職責](AGENTS.md#document-updates)。
@@ -24,7 +24,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 | 包 | 狀態／交付 | 前置 | 主責及預分配 |
 |---|---|---|---|
-| <a id="int-w01"></a>INT-W01 | 進行中：正式建置、登入、孩子與共用 owner／讀取快取已實作，必要驗收通過，待 PR 合併；[EV](artifacts/verification/INT_W01_CHECKS.json) | master `61a8faa` | B；權重 3，B 60%／C 30%／A 10% |
+| <a id="int-w01"></a>INT-W01 | 已完成（隨 [PR #91](https://github.com/2NTTY/child-ai-caregiver/pull/91) 合併生效）：正式建置、登入、孩子与共用 owner／讀取快取；[EV](artifacts/verification/INT_W01_CHECKS.json) | master `61a8faa` | B；權重 3，B 60%／C 30%／A 10% |
 | <a id="int-w02"></a>INT-W02 | 未開始：先接真聊天、歷史、來源、工具結果、確認及背景結果；再補普通指令／自動保存授權、持久確認與記憶接縫 | INT-W01 | A；C／B 協作 |
 | <a id="int-w03"></a>INT-W03 | 未開始：既有 UI-P2-01～18、照片、記錄、任務、記憶、設定、通知／聯絡及跨頁同步 | INT-W02 | B；C／D 協作 |
 | <a id="int-w04"></a>INT-W04 | 未開始：私人來源的對話設定、讀取、引用及管理 | INT-W03 | A；C／B 協作 |
