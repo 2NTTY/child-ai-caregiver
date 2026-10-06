@@ -1,0 +1,124 @@
+{
+  "capturedAt": "2026-10-05T19:38:28.090869+00:00",
+  "baselineManifest": "verification/next-release-2026-10-05T19-23Z/source-manifest.json",
+  "baselineManifestSha256": "97217818ab8ff1a43d9d626b09faa8e25c7d78a8245f1b4c6b4bf701b8935d23",
+  "changedExistingFilesAgainstV43": [
+    "DESIGN_SYSTEM.md",
+    "PLAN.md",
+    "STATUS.md",
+    ".agents/skills/web-screen-delivery/SKILL.md",
+    ".agents/skills/web-screen-delivery/references/forms-controls.md",
+    "scripts/growth-refresh.test.mjs",
+    "src/components/AppShell.tsx",
+    "src/components/growth/GrowthHistoryView.tsx",
+    "src/preview/GrowthWorkspaceProvider.tsx",
+    "src/preview/MemoryReferenceWorkspaceProvider.tsx",
+    "src/screens/historyScreen.tsx"
+  ],
+  "files": {
+    "src/preview/useOwnerProjection.ts": {
+      "sha256": "46a40d012d5dcf523b603d9315a939f00014de036fe8d9fa1f95865772a822ff",
+      "bytes": 1966,
+      "v43Sha256": null
+    },
+    "src/preview/GrowthWorkspaceProvider.tsx": {
+      "sha256": "525e68891aba604181eaa3e9e7162a3a1d83faae4301a47baa6b22e07a2415af",
+      "bytes": 3814,
+      "v43Sha256": "101266458e198da89c081b4d9b078bcc86c24a0ffe5bd9ce6ed94c67bb38bd82"
+    },
+    "src/preview/MemoryReferenceWorkspaceProvider.tsx": {
+      "sha256": "e62c87fbffbf44a9f1da47240f5e95890c119876c33ff76ffa6e8dc55a64b4c4",
+      "bytes": 5301,
+      "v43Sha256": "ebe64e456a0d8456ccc41cb981dddaf7004068843da688385cdb13e61345a36b"
+    },
+    "src/components/AppShell.tsx": {
+      "sha256": "e08f91b5859c97fa3ef3db032672132b25488f5fbcdba5704f1c299971157e94",
+      "bytes": 18202,
+      "v43Sha256": "199f436513c9ea28008f202394b2e48720f590d51ef7f07064fdd96ae05829ca"
+    },
+    "scripts/owner-shell-lifecycle.test.mjs": {
+      "sha256": "916827577799dd914750318ef7f81fbaae90ae6c03d8ff63a9838905fb1ddf7d",
+      "bytes": 16560,
+      "v43Sha256": null
+    },
+    "scripts/growth-refresh.test.mjs": {
+      "sha256": "3dfe1bc6cfbe8dd257d626c9916c6aa04be527971582e9513f15ac7cbdf39086",
+      "bytes": 33001,
+      "v43Sha256": "50cb4bb2f72075b584bde089cfcfd7cd7d705bdee5909b202a408daf69900bba"
+    }
+  },
+  "unchangedCoreFiles": {
+    "src/preview/useGrowthPreview.ts": true,
+    "src/preview/useMemoryPreview.ts": true,
+    "src/motion/MotionScopeBoundary.tsx": true,
+    "src/components/HomeWelcome.tsx": true,
+    "src/motion/preferences.tsx": true,
+    "src/motion/MotionEntrance.tsx": true
+  },
+  "checks": [
+    {
+      "command": "node --test scripts/owner-shell-lifecycle.test.mjs",
+      "exitCode": 0,
+      "passed": 5,
+      "failed": 0,
+      "run": "initial"
+    },
+    {
+      "command": "node --test scripts/memory-reference.test.mjs scripts/growth-refresh.test.mjs scripts/workspace-injection.test.mjs",
+      "exitCode": 1,
+      "passed": 33,
+      "failed": 1,
+      "failure": {
+        "file": "scripts/growth-refresh.test.mjs",
+        "line": 223,
+        "assertion": "source.includes('<GrowthOwner key={scopeKey}')",
+        "cause": "Source-shape assertion still expected the former key spelling. Runtime owner cleanup and isolation assertions passed. Batch stopped before its chained typecheck."
+      }
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "qualification": "Independent full TypeScript check; no build or browser."
+    },
+    {
+      "command": "node --test --test-name-pattern='scope remount cancels' scripts/growth-refresh.test.mjs",
+      "exitCode": 0,
+      "passed": 1,
+      "failed": 0,
+      "qualification": "Parent explicitly approved adapting only the obsolete source shape assertion to the generation key and self-closing sibling; original cleanup/isolation assertions unchanged."
+    },
+    {
+      "command": "node --test scripts/owner-shell-lifecycle.test.mjs",
+      "exitCode": 0,
+      "passed": 5,
+      "failed": 0,
+      "run": "final",
+      "qualification": "Includes forced invocation of old timer callbacks after cleanup."
+    }
+  ],
+  "coverage": [
+    "A to B to A preserves shell and scope-boundary identity in deterministic keyed lifecycle harness",
+    "Scope, authority, role and absent-child mismatch synchronously return null before effects",
+    "Old generation publishers, actions and cancelled timer callbacks cannot affect the new owner",
+    "Model and Memory facts are passed by original reference; no second writable domain state",
+    "Memory source-changed, expired, revoked and restored transitions do not remount Growth or lose its archived concern",
+    "Reduced motion settles immediately; session welcome consumed once and not remounted",
+    "NavItem keeps opaque text and uses selectedNav pressed background; route opacity remains one"
+  ],
+  "limits": [
+    "Harness is not React DOM/browser/frame evidence",
+    "No new export, browser, Git, publication or fixed artifact changes",
+    "Sidebar press washout is addressed; an actual route white frame is not yet diagnosed or claimed fixed",
+    "Original 33 passing tests were not mechanically repeated after the assertion-only adaptation"
+  ],
+  "otherObservedChangesNotOwned": [
+    "DESIGN_SYSTEM.md",
+    "PLAN.md",
+    "STATUS.md",
+    ".agents/skills/web-screen-delivery/SKILL.md",
+    ".agents/skills/web-screen-delivery/references/forms-controls.md",
+    "src/components/growth/GrowthHistoryView.tsx",
+    "src/screens/historyScreen.tsx"
+  ],
+  "qualification": "Only the six files listed under files are owned by this patch. Other source/document changes were already or concurrently present and were not edited by this worker. Typecheck is an observed pass; aggregate final-source checks remain with the parent."
+}

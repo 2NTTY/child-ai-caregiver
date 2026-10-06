@@ -1,3 +1,4 @@
+import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Platform, StyleSheet, View } from "react-native";
@@ -50,7 +51,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
     {childPicker}{previewControls}
   </>);
   return frame(<>
-    <Text style={styles.meta}>合成資料預覽 · 沒有連接 Server。草稿只保留在此頁；切換孩子、離開或關閉頁面會清除。</Text>
+
     {!model.online ? <View style={styles.warning}><Text style={styles.body}>目前離線，當前草稿暫時保留。恢復連線後先重新讀取及核對；刷新或關閉頁面可能遺失草稿。</Text></View> : null}
     {model.online && model.needsRefresh && model.child ? <View style={styles.warning}><Text style={styles.body}>連線已恢復，請先重新讀取及核對檔案，再確認共享。</Text><AppButton label="重新讀取及核對" onPress={actions.refresh} disabled={model.reading || pending} /></View> : null}
     {model.notice ? <Text style={styles.body}>{model.notice}</Text> : null}
@@ -58,7 +59,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
     {childPicker}
     {model.child ? <View style={styles.identityHeader} testID="profile-identity">
       <View style={styles.identityRow}><View style={styles.avatar}><Text style={styles.avatarText}>{model.child.name.slice(0, 1)}</Text></View><View style={styles.identityCopy}>
-        <Text style={styles.meta}>目前孩子 · {model.current?.data ? `已確認檔案版本 ${model.current.version}` : model.reading ? "正在讀取檔案" : "尚未確認檔案"}</Text>
+        <AppStatusBadge label={model.current?.data ? `已確認檔案版本 ${model.current.version}` : model.reading ? "正在讀取檔案" : "尚未確認檔案"} tone={model.current?.data ? "success" : model.reading ? "info" : "warning"} />
         <Text accessibilityRole="header" style={styles.childName}>{model.child.name}</Text>
         <Text style={styles.meta}>{model.current?.confirmedAtLabel ? `最後確認：${model.current.confirmedAtLabel}` : "未知欄位不作推算"}</Text>
       </View><TextLink label="查看照顧記錄" onPress={onOpenCare} /></View>
@@ -69,10 +70,10 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
         <SectionCard surface="plain"><SectionHeader density="compact" title={model.child ? "已確認資料" : "尚未有孩子"} subtitle="原文、來源及確認版本一起保留。" />
           {model.child ? <>
             {model.reading ? <Text style={styles.body}>檔案正在讀取，草稿暫停確認。</Text> : null}
-            <AppButton label={detailsOpen ? "收起完整已確認檔案" : "查看完整已確認檔案"} variant="secondary" onPress={() => setDetailsOpen(value => !value)} />
+            <AppButton expanded={detailsOpen} label={detailsOpen ? "收起完整已確認檔案" : "查看完整已確認檔案"} variant="secondary" onPress={() => setDetailsOpen(value => !value)} />
             <MotionDisclosure expanded={detailsOpen} scopeKey={scopeKey}><MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown ? <ProfileRevisionSummary revision={shown} /> : !model.reading ? <Text style={styles.body}>沒有可顯示的檔案。</Text> : null}</MotionReveal></MotionDisclosure>
             <AppButton label="重新讀取檔案" variant="quiet" onPress={actions.refresh} disabled={!model.online || model.reading || pending} />
-          </> : <Text style={styles.body}>可從上方「新增或管理孩子」加入第一位合成孩子。正式建立孩子仍須接既有孩子 API；本頁不會保存真家庭資料。</Text>}
+          </> : <Text style={styles.body}>可從上方「新增或管理孩子」加入第一位孩子。</Text>}
           {model.access === "read_only" ? <Text style={styles.notice}>目前是 viewer 唯讀角色，可以查看檔案及歷史；不能更正或刪除。</Text> : null}
         </SectionCard>
         {model.child ? <SectionCard surface="plain" style={styles.sectionRule}><SectionHeader density="compact" title="確認及更正歷史" />
@@ -104,7 +105,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
             <Text style={styles.meta}>更新基準會保留表單；仍須重新預覽及確認。</Text>
             <AppButton label="已比較，使用最新基準" onPress={actions.useLatestVersion} disabled={!model.latest || !model.online || model.reading} />
           </View> : null}
-          {model.child && model.current?.data ? <AppButton label="永久刪除檔案及歷史" variant="quiet" onPress={actions.reviewDeletion} disabled={!canReview || model.intent === "delete"} /> : null}
+          {model.child && model.current?.data ? <AppButton label="永久刪除檔案及歷史" variant="danger-secondary" onPress={actions.reviewDeletion} disabled={!canReview || model.intent === "delete"} /> : null}
           {model.operation.state === "needs_confirmation" && model.intent === "delete" ? <View style={[styles.confirmation, styles.deletionConfirmation]}>
             <Text style={[styles.confirmationTitle, styles.deletionTitle]}>再次確認永久刪除</Text><Text style={styles.body}>會清除整個檔案及全部更正歷史，不能從歷史復原。孩子及照顧記錄仍會保留。</Text>
             <AppButton label="確認永久刪除檔案及歷史" variant="danger" onPress={actions.submitReviewed} disabled={!canReview} />

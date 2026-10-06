@@ -1,0 +1,57 @@
+{
+  "recordedAt": "2026-10-05T12:18:59.295392+00:00",
+  "testedArtifact": "Published v35 only; workspace is being edited for future Growth/navigation changes and was not rebuilt or treated as v35",
+  "entry": "_expo/static/js/web/entry-fb3f33d31f110361befa79b4143e54c6.js",
+  "sourceManifest": "../source-manifest.json",
+  "scope": "Home/capture, Tasks, Care, Summary, More bounded four-width QA. Growth acceptance deferred; next-version guide navigation not accepted here.",
+  "status": "stopped-unmet-task-return-assertion-and-approval-review-block",
+  "lastCompletedAction": "Opened the single filtered review task, then pressed 關閉詳情",
+  "unmetAssertion": "Exactly one task row plus exact accessible name 事項狀態：待覆核 after closing detail",
+  "cause": "Unresolved. No current DOM row/filter text or post-close screenshot was obtained. Do not label this a confirmed product regression, a tool artifact, or a pass.",
+  "deniedDiagnostic": {
+    "tool": "mcp__cua_repl.js",
+    "title": "Save and diagnose the stopped task-return assertion",
+    "target": "Cloud browser tab18, public v35 Tasks page",
+    "actions": [
+      "Read current DOM snapshot",
+      "Read visible task row and filter labels",
+      "Capture current screenshot",
+      "Save only synthetic QA evidence"
+    ],
+    "executed": false
+  },
+  "reviewAttempts": [
+    {
+      "time": "2026-10-05T12:14:46Z",
+      "result": "JavaScript execution did not receive approval"
+    },
+    {
+      "time": "2026-10-05T12:16:41Z",
+      "context": "One exact-call retry after parent supplied original user authorization",
+      "result": "Automatic approval review failed: authorization changed before approval could be applied. The action was not executed because automatic approval review could not be completed. This is a review failure, not a determination that the action is unsafe."
+    },
+    {
+      "time": "2026-10-05T12:17:42Z",
+      "context": "One exact-call retry after fresh explicit user approval was forwarded by parent",
+      "result": "JavaScript execution did not receive approval"
+    }
+  ],
+  "authorization": "User approval was provided; approval review still did not permit execution. Do not report that the user refused or had not approved QA.",
+  "preserved": [
+    "Home initial reading and settled four-width screenshots",
+    "320px child-picker cancel/change and home return evidence",
+    "Capture hold-release/menu/cancel/keyboard/drag results",
+    "Tasks four-width screenshots and ended/review entry results",
+    "Task detail screenshot taken before the return assertion",
+    "Original unmet assertion in checks.json"
+  ],
+  "notRun": [
+    "Care matrix/search/detail",
+    "Summary matrix/tabs/draft/source-update/unknown",
+    "More matrix/catalogue/navigation",
+    "Growth acceptance, deliberately deferred",
+    "Real camera/mic/API/model/native",
+    "Broad regression or old welcome script"
+  ],
+  "noBypass": true
+}

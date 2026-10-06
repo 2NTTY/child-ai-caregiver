@@ -107,7 +107,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
       contentContainerStyle={[styles.content, compact && styles.compact]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16}
       onScroll={onScroll} onScrollBeginDrag={readerIntent} onContentSizeChange={contentChanged} onLayout={event => { metrics.current.viewport = event.nativeEvent.layout.height; if (following.current) queueBottom(); else updateLatestVisibility(); }}>
       {header}
-      {start > 0 ? <View testID="chat-history-entry" style={styles.history}><AppButton label={`查看較早記錄（${start} 則）`} variant="quiet" onPress={revealEarlier} />
+      {start > 0 ? <View testID="chat-history-entry" style={styles.history}><AppButton label={`查看較早記錄（${start} 則）`} variant="quiet" style={styles.historyButton} onPress={revealEarlier} />
         <Text style={styles.hint}>分批展開已載入的記錄</Text></View> : items.length ? <Text testID="chat-history-start" style={styles.hint}>已到本次載入記錄的最早位置</Text> : null}
       {items.slice(start).map(item => <TimelineEntry key={item.id} id={item.id} scopeKey={motionScope} arriving={arrivingId === item.id}>{renderItem(item)}</TimelineEntry>)}
     </AppScrollView>
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   // Match the composer's normal-flow overlap so the last message and scroll range stay clear of its panel.
   content: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: chatLayout.wideInset, paddingVertical: chatLayout.turnGap, paddingBottom: chatLayout.turnGap + chatLayout.composerOverlap, gap: chatLayout.turnGap },
   compact: { paddingHorizontal: chatLayout.compactInset, paddingVertical: chatLayout.compactTurnGap, paddingBottom: chatLayout.compactTurnGap + chatLayout.composerOverlap, gap: chatLayout.compactTurnGap }, item: { minWidth: 0 },
-  history: { alignItems: "center", gap: spacing.xs, minWidth: 0 }, hint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
+  history: { alignItems: "center", gap: spacing.xs, minWidth: 0 }, historyButton: { alignSelf: "center" }, hint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
   returnOverlay: { position: "absolute", bottom: spacing.md + chatLayout.composerOverlap, left: 0, right: 0, alignItems: "center", zIndex: 1 },
   returnButton: { width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, borderWidth: 1, borderColor: chatColors.outline, backgroundColor: chatColors.surface, alignItems: "center", justifyContent: "center" },
   compactReturnButton: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },

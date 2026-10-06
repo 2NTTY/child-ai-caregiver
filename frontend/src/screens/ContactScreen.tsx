@@ -10,8 +10,8 @@ import {PageFrame} from '../components/PageFrame';
 
 function ContactWorkspace({child, online, identity, server, onIdentity, onServer, onTask, onSettings}: {child: HomeChild; online: boolean; identity: string; server: string; onIdentity: () => void; onServer: () => void; onTask: (id: string) => void; onSettings: () => void}) {
   const preview = useContactPreview(child, online, identity, server), [tools, setTools] = useState(false);
-  return <ContactView model={preview.model} actions={preview.actions} onTask={onTask} onSettings={onSettings} previewTools={<SectionCard><SectionHeader density="compact" title="合成聯絡情境" subtitle="不取得瀏覽器權限、不綁定渠道、不外發或啟動背景執行。" icon="information-outline" />
-    <AppButton label={tools ? '收起聯絡情境' : '顯示聯絡情境'} variant="quiet" onPress={() => setTools(value => !value)} />
+  return <ContactView model={preview.model} actions={preview.actions} onTask={onTask} onSettings={onSettings} previewTools={<SectionCard><SectionHeader density="compact" title="預覽工具" subtitle={tools ? "不取得瀏覽器權限、不綁定渠道、不外發或啟動背景執行。" : undefined} icon="information-outline" />
+    <AppButton expanded={tools} label={tools ? '收起聯絡情境' : '顯示聯絡情境'} variant="quiet" onPress={() => setTools(value => !value)} />
     {tools ? <>
       <AppSelect label="聯絡資料情境" value={preview.condition} options={([{value: 'normal', label: '一般'}, {value: 'empty', label: '沒有任務或紀錄'}, {value: 'loading', label: '載入中'}, {value: 'read_error', label: '讀取失敗'}, {value: 'read_only', label: '唯讀'}, {value: 'no_bindings', label: '沒有本人綁定'}, {value: 'primary_ineligible', label: '負責人未同意渠道'}, {value: 'worker_paused', label: '背景聯絡暫停'}, {value: 'expired_grant', label: '已保存授權過期'}, {value: 'lost', label: '失去存取'}] as {value: ContactCondition; label: string}[])} onChange={preview.changeCondition} />
       <AppSelect label="聯絡決定保存結果" value={preview.outcome} options={([{value: 'success', label: '成功'}, {value: 'failed', label: '未獲接受'}, {value: 'unknown', label: '結果未知'}, {value: 'conflict', label: '版本衝突'}, {value: 'confirmed_unread', label: '保存已確認但未讀回'}] as {value: ContactOutcome; label: string}[])} onChange={preview.setOutcome} />

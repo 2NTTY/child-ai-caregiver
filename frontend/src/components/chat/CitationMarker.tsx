@@ -13,5 +13,5 @@ export function CitationMarker({ number, label, onPress, ref }: { number: number
 }
 const styles = StyleSheet.create({
   slot: { transform: [{ translateY: -4 }] }, marker: { alignItems: "center", justifyContent: "center" },
-  text: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: 11, lineHeight: 16, fontWeight: "700" },
+  text: { textDecorationLine: "underline", fontFamily: chineseFont, color: colors.deepTeal, fontSize: 11, lineHeight: 16, fontWeight: "700" },
 });

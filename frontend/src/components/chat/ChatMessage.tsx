@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   status: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600", flexShrink: 1 },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool, flexShrink: 1 },
   error: { color: colors.errorInk },
-  process: { minWidth: 0 }, processToggle: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 },
+  process: { minWidth: 0 }, processToggle: { backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, paddingHorizontal: spacing.sm, alignSelf: "flex-start", minHeight: 48, flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 },
   processLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, minWidth: 0, flexShrink: 1 },
   processDetails: { gap: spacing.sm, paddingBottom: spacing.sm }, activity: { gap: spacing.xs, minWidth: 0 },
   divider: { paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: chatColors.line },

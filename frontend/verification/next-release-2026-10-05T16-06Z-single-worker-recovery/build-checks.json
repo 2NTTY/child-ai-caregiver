@@ -1,0 +1,134 @@
+{
+  "startedAt": "2026-10-05T16:07:29.459053+00:00",
+  "priorRemoteHeadReference": "65f8cf37bceeb15b05f46326c49e0370349ae3a5",
+  "scope": "One approved export-only recovery with fresh cache and max-workers 1 for the final NEXT child overview, multipurpose preparation/archive/history, legacy summary recovery, six-item multi-chat important-pending record review, expired-operation guard and fill-or-outline button integration. Owners focused evidence is reused, not rerun. Original browser failures and all earlier evidence are preserved. No browser actions until root publishes and hands off the exact artifact.",
+  "rootSourceFreeze": "2026-10-05T16:06:25Z",
+  "cwd": "/workspace/shared/caregiver_preparations_update/frontend",
+  "sourceManifestSha256": "90325e659e6c3d8763e8b6cbb175a1572816590f221115b1d28f108a9f555c96",
+  "runtimeManifestSha256": "1a1f5a25120932a2f287d12fa0041bc57938ba6bd6863529c16a4707809a365c",
+  "environmentSource": "Root-specified known Expo variables with a new isolated TMPDIR; previous shared-cache script was not sourced",
+  "environment": {
+    "TMPDIR": "/workspace/scratch/c112a98a8be9/metro-next-release-20261005-1606-single-worker",
+    "EXPO_NO_TELEMETRY": "1",
+    "EXPO_OFFLINE": "1",
+    "__UNSAFE_EXPO_HOME_DIRECTORY": "/workspace/scratch/c112a98a8be9/expo-export-home"
+  },
+  "dependencyTarget": "/workspace/shared/caregiver_recovery_impl/frontend/node_modules",
+  "buildPath": "/workspace/shared/caregiver_preparations_update_builds/next-release-2026-10-05T16-06Z-single-worker-recovery",
+  "commands": [
+    {
+      "name": "web-export",
+      "argv": [
+        "npm",
+        "run",
+        "build:web",
+        "--",
+        "--clear",
+        "--max-workers",
+        "1",
+        "--output-dir",
+        "/workspace/shared/caregiver_preparations_update_builds/next-release-2026-10-05T16-06Z-single-worker-recovery"
+      ],
+      "startedAt": "2026-10-05T16:07:29.613146+00:00",
+      "log": "web-export.log",
+      "exitCode": 0,
+      "finishedAt": "2026-10-05T16:10:19.277671+00:00",
+      "logSha256": "44828d43f6e022e8a6dcd92d266a3e991300aa93c51af0cfbba2abf90eb372a0"
+    }
+  ],
+  "status": "passed-next-local-build-browser-pending",
+  "notRun": [
+    "Browser: awaits root publication handoff of this exact artifact; v38 ChildPicker/footer pointer failures remain unresolved",
+    "Owners focused tests and comprehensive action-source audit are reused; no blanket rerun",
+    "Prior full frontend matrix or screenshot uploads",
+    "Real backend/model/family data/camera/microphone/native devices",
+    "Git, Sites or authoritative documentation changes"
+  ],
+  "deltaFromInitialNextFreeze": {
+    "actual": [
+      "frontend/src/components/care/CareRecordsView.tsx"
+    ],
+    "priorManifest": "/workspace/shared/caregiver_preparations_update/frontend/verification/next-release-2026-10-05T16-00Z/source-manifest.json",
+    "priorManifestSha256": "62551f4597cd187dde2301b8627f2a945fb2983cd0f2cd01b9484b39a8da52b0"
+  },
+  "browserAcceptance": "Pending publication. Four-width changed-page geometry, runtime button and status flows remain distinct from source-only audit; prior pointer failures are not converted into passes.",
+  "aggregateTypecheckReuse": {
+    "path": "frontend/verification/next-release-2026-10-05T16-00Z/build-checks.json",
+    "sha256": "7e05e2a26be2df975d326ed821c0a538c890b10b3d653f2157ef7a9302d98898",
+    "result": "Complete aggregate typecheck exit 0 on initial freeze; final source differs at only expected CareRecordsView.tsx runtime path",
+    "currentDelta": [
+      "frontend/src/components/care/CareRecordsView.tsx"
+    ],
+    "expectedDelta": [
+      "frontend/src/components/care/CareRecordsView.tsx"
+    ],
+    "scopedSemantic": "Owner reported zero scoped semantic diagnostics plus six guards passed for moving the unchanged manual input button into the existing collapsed secondary area; not rerun or represented as verifier stdout"
+  },
+  "originalExportFailure": {
+    "path": "frontend/verification/next-release-2026-10-05T16-00Z/export-failure-diagnosis.json",
+    "result": "Exit 137 Killed; cause unknown, OOM not established; original evidence preserved"
+  },
+  "careOwnerManifest": {
+    "path": "/workspace/shared/caregiver_preparations_update/frontend/verification/records-next-integration-2026-10-05/multi-chat-review-checks.json",
+    "sha256": "cb4bc77001ceaf4bb1d673d2aaa5820ab096f0659d530077feabdc6c9f6860c7",
+    "sourceSetSha256": "b0f5e30ad2568d8bcf99888f843c75781f8b67e7cb19ee05b735495e78c2c826",
+    "expectedSourceSetSha256": "b0f5e30ad2568d8bcf99888f843c75781f8b67e7cb19ee05b735495e78c2c826",
+    "fileDrift": []
+  },
+  "routerAppRootEvidence": {
+    "path": "router-app-root.json",
+    "sha256": "7f8af4154fadcbaee56c8b5c9971422988a703383500c8747956f363078de96e"
+  },
+  "focusedEvidenceReuse": {
+    "care": "/workspace/shared/caregiver_preparations_update/frontend/verification/records-next-integration-2026-10-05/multi-chat-review-checks.json",
+    "reportedPasses": {
+      "overlap": 6,
+      "query": 1,
+      "child": 7,
+      "preparation": 21,
+      "composition": 8,
+      "buttons": 11
+    },
+    "qualification": "Owner/root-reported focused passes; not rerun or claimed as verifier stdout"
+  },
+  "preflight": {
+    "status": "passed",
+    "errors": [],
+    "sourceFiles": 413,
+    "runtimeFiles": 385,
+    "preservedEvidenceFiles": 506,
+    "existingTestFiles": 36,
+    "installedPackages": false
+  },
+  "integrity": {
+    "status": "passed",
+    "runtimeDrift": [],
+    "allSourceDrift": [],
+    "preservedEvidenceDrift": []
+  },
+  "finishedAt": "2026-10-05T16:10:19.581430+00:00",
+  "buildManifestSha256": "f1bf4c203740f4e8abc2eefd898bcf475092f3365b0b75d15b639d6dd59e8132",
+  "exportedFileCount": 63,
+  "webEntry": [
+    {
+      "path": "_expo/static/js/web/entry-29f5685892ac54b0ca53a9bde3814118.js",
+      "bytes": 4695862,
+      "sha256": "01512f96a992b364160705fa094d90ff4dfe71d78d94298acce50318f3004bc9"
+    }
+  ],
+  "exportSourceIntegrity": {
+    "status": "passed",
+    "checks": {
+      "historyRouteExported": true,
+      "summaryRouteExported": true,
+      "historyInClientRouteMap": true,
+      "newChildOverview": true,
+      "multipurposePreparation": true,
+      "archiveAction": true,
+      "importantPendingFirst": true,
+      "crossChatSemantics": true,
+      "noOldCheckoutAssetRoot": true
+    },
+    "method": "Observed fixed source strings checked in literal or minified Unicode-escape form; authoritative installed Expo router resolver confirms exact NEXT app root. Not browser proof."
+  }
+}

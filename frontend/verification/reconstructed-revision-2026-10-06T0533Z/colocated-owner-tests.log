@@ -1,0 +1,32 @@
+✔ Pending proposals and opening an editable draft never change canonical records (10.584647ms)
+✔ Confirming an update uses its existing record and expected version without creating a duplicate (11.257033ms)
+✔ Skip preserves both canonical records and a distinct skipped item in the shared history (2.612925ms)
+✔ Unknown freezes the same approved body and result, with no duplicate write or skip (11.554869ms)
+✔ Failed writes remain pending and do not change canonical records (2.896564ms)
+✔ Source changes invalidate confirmation while preserving the uncommitted draft and raw snapshot (2.015551ms)
+✔ Read-only, changed source, stale record basis and create-only capability block inappropriate writes (9.773975ms)
+✔ Scope changes abort late callbacks and withhold other children's proposals (3.804997ms)
+✔ An already written item reads current canonical values after later correction (4.464582ms)
+✔ The gate is capped at ten ten-item pages without auto-processing older pending items (1.199217ms)
+✔ Stored record pagination replaces the page, supports previous and retains applied filters (6.840679ms)
+✔ Storage success is independent of important human confirmation and ordinary records need no acknowledgement (5.689545ms)
+✔ Explicit important confirmation binds current content and does not rewrite canonical records (2.411446ms)
+✔ An unknown important acknowledgement keeps its yellow state until the original receipt is known (1.968977ms)
+✔ Changing an important record preserves yellow and rejects a confirmation for the old version (2.67208ms)
+✔ Important confirmation rejects stale source, proposal, target or scope and cannot be skipped (12.509988ms)
+✔ Automatic chat prompts require an explicit matching conversation/source/version event (1.982468ms)
+✔ Multi-chat viewing and returning keeps accumulated changes without dispatching writes (2.436348ms)
+✔ Multi-chat expired operation remains important and unresolved without stale submission (1.883774ms)
+✔ Multi-chat saved update retains its before value and ordinary correction uses the canonical owner (2.071244ms)
+✔ Normal fixtures auto-save ordinary writes while retaining explicit prior-consent scenarios (1.561783ms)
+✔ Acknowledgement ignores hidden task fields; task creation preserves raw content and requires eligible assignment (25.664972ms)
+✔ Context confirms only explicit finite choices while freezing all original fact references (2.038303ms)
+✔ Snooze requires an explicit future instant and source links remain restricted to credential-free HTTPS (2.962612ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 890.538142

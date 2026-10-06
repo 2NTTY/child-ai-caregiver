@@ -1,0 +1,105 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px" [active]
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 1024 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link "育有方，返回主頁":
+    - /url: /
+    - generic: 用資料 · 陪伴成長
+  - generic: 常用
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - generic: 行動與成長
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦與預約
+  - link "成長檔案":
+    - /url: /growth
+    - generic: 成長檔案
+  - generic: 照顧資料
+  - link "記錄與核對":
+    - /url: /care
+    - generic: 記錄與核對
+  - link "回顧與到診":
+    - /url: /summary
+    - generic: 回顧與到診
+  - generic: 資料管理
+  - link "子女檔案":
+    - /url: /profile
+    - generic: 子女檔案
+  - link "記憶與話題":
+    - /url: /memory
+    - generic: 記憶與話題
+  - link "更多功能":
+    - /url: /more
+    - generic: 更多功能
+  - link "與 Agent 對話":
+    - /url: /chat
+    - generic: 與 Agent 對話
+    - generic: 提問・整理・規劃
+  - link "設定":
+    - /url: /settings
+    - generic: 設定
+  - link "使用引導":
+    - /url: /guide
+    - generic: 說明
+  - button "選擇孩子，目前小昕":
+    - generic: 小
+    - generic: 小昕
+    - generic: 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic "小昕的關鍵資料":
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading "今日" [level=1]
+  - generic: 10月5日 · 先看重要的，再繼續日常
+  - generic: 助手提醒你
+  - generic: 待你核對
+  - heading "先核對一項照顧建議" [level=1]
+  - generic: 合成候選仍等你核對內容及共享範圍，尚未成為已確認安排。
+  - button "查看提醒的依據與詳情":
+    - generic: 合成示例 · 查看依據與詳情
+  - button "前往 Agent 對話":
+    - generic: 前往 Agent 對話
+  - heading "持續關注" [level=1]
+  - button "查看全部":
+    - generic: 查看全部
+  - button "想整理睡前流程，查看話題與依據":
+    - generic: 想整理睡前流程
+    - generic: 待續話題 · 家人確認睡前會一起看圖畫書。
+  - heading "有新情況，直接交代" [level=1]
+  - button "拍照給助手":
+    - generic: 拍照給助手
+  - button "用文字告訴助手":
+    - generic: 用文字說
+  - button "查看記錄及補改資料":
+    - generic: 補改資料
+  - generic: 照片只作本地預覽；Agent 整理及保存尚未接通。
+  - heading "待辦摘要" [level=1]
+  - button "查看全部":
+    - generic: 查看全部
+  - generic: 目前合成快照沒有指定待處理事項。
+  - generic: 只摘錄已載入安排；送達及照顧完成須另核對。
+  - button "核對照顧記錄":
+    - generic: 核對照顧記錄
+    - generic: 整理結果、原文及更正歷史
+  - button "家庭協調":
+    - generic: 家庭協調
+    - generic: 成員、角色與共享範圍
+  - generic: 育有方 · 用資料陪伴成長

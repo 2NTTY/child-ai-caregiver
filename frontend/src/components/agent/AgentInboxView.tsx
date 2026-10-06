@@ -53,7 +53,7 @@ export function AgentInboxView({ model, actions }: { model: AgentInboxModel; act
             disabled={model.locked || !model.online || loading} onPress={() => actions.select(entry.runId)} style={styles.button} />
         </View>;
       })}
-      {model.selectedRunId ? <AppButton label="收起私人背景結果" variant="quiet" disabled={model.locked}
+      {model.selectedRunId ? <AppButton expanded label="收起私人背景結果" variant="quiet" disabled={model.locked}
         onPress={actions.collapse} style={styles.button} /> : null}
     </> : null}
   </SectionCard></View>;

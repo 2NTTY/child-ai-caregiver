@@ -45,50 +45,50 @@ export default function SettingsPage() {
   usePreviewLeaveGuard(displayName !== model.caregiverName);
   const compactNavigation = width < 720;
   const accountDirty = displayName !== model.caregiverName;
-  return <PageFrame density="compact" title="設定" description="管理個人偏好、孩子與家庭資料；帳戶資料為合成預覽，裝置動畫偏好只在本機套用。" eyebrow={`${brand.name} · 個人空間`}>
+  return <PageFrame density="compact" title="設定" description="管理個人偏好、孩子與家庭資料。" eyebrow={`${brand.name} · 個人空間`}>
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.workspace, compactNavigation && styles.workspaceStack]}>
     <SettingsNavigation id={tabsId} items={tabs} value={tab} onChange={setTab} compact={compactNavigation} />
     <View style={styles.settingsContent}>
     <View style={styles.scopeNote}><Text style={styles.valueLabel}>本人的設定</Text><Text style={styles.muted}>分類之間保留草稿；各項操作須分別核對及確認</Text></View>
     <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
       <View style={styles.sectionGroup}>
-        <SectionCard><SectionHeader density="compact" title="個人資料" subtitle="目前資料只屬合成示例。" />
-          <View style={styles.identity}><View style={styles.avatar}><Text style={styles.avatarText}>{displayName.slice(0, 1) || "育"}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{displayName || "未命名"}</Text><Text style={styles.muted}>preview@example.invalid · 合成資料</Text></View></View>
+        <SectionCard><SectionHeader density="compact" title="個人資料" />
+          <View style={styles.identity}><View style={styles.avatar}><Text style={styles.avatarText}>{displayName.slice(0, 1) || "育"}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{displayName || "未命名"}</Text><Text style={styles.muted}>preview@example.invalid</Text></View></View>
           <Divider style={styles.divider} />
           <Text style={styles.label}>顯示名稱</Text><AppTextField accessibilityLabel="顯示名稱預覽草稿" value={displayName} onChangeText={setDisplayName} />
-          <View style={styles.draftBoundary}><Text style={styles.draftTitle}>{accountDirty ? "顯示名稱有未保存修改" : "顯示名稱只作本頁預覽"}</Text><Text style={styles.draftNote}>尚未接入帳戶保存；不會更改正式顯示名稱。</Text>{accountDirty ? <AppButton label="還原顯示名稱草稿" variant="quiet" onPress={() => setDisplayName(model.caregiverName)} /> : null}</View>
-          <LabeledValue label="電郵地址" value="preview@example.invalid（合成）" />
-          <LabeledValue label="登入方式" value="電郵與密碼（正式 App 已支援）" />
+          {accountDirty ? <View style={styles.draftBoundary}><Text style={styles.draftTitle}>顯示名稱有未保存修改</Text><Text style={styles.draftNote}>帳戶保存暫不可用。</Text><AppButton label="還原顯示名稱草稿" variant="quiet" onPress={() => setDisplayName(model.caregiverName)} /></View> : null}
+          <LabeledValue label="電郵地址" value="preview@example.invalid" />
+          <LabeledValue label="登入方式" value="電郵與密碼" />
         </SectionCard>
-        <SectionCard><SectionHeader density="compact" title="語言與地區" subtitle="畫面現以香港繁體中文呈現；偏好尚未接線。" />
+        <SectionCard><SectionHeader density="compact" title="語言與地區" />
           <LabeledValue label="介面語言" value="繁體中文（香港）" /><LabeledValue label="地區" value="香港" /><LabeledValue label="時間顯示" value="24 小時制 · Asia/Hong_Kong" />
         </SectionCard>
       </View>
       <View style={styles.sectionGroup}>
         <SectionCard testID="account-settings"><SectionHeader density="compact" title="登入與安全" subtitle="切換帳戶入口集中在這裏。" />
-          <Text style={styles.body}>下方會開啟登入預覽，目前不會登出或切換真帳戶。</Text>
-          <AppButton label="切換帳戶" variant="secondary" onPress={() => leave(() => router.push("/login"))} />
+
+          <AppButton label="查看登入畫面" variant="secondary" onPress={() => leave(() => router.push("/login"))} />
           <View style={styles.settingGroup}><SectionHeader density="compact" title="模型服務" subtitle="管理平台服務、個人密鑰及呼叫上限。" />
             <AppButton label="管理模型設定" variant="secondary" onPress={() => setTab("model")} />
           </View>
           <View style={styles.settingGroup}><SectionHeader density="compact" title="資料狀態" />
-            <Text style={styles.body}>目前展示的是合成孩子與記錄。真資料是否已保存，以原操作收據和授權讀取結果為準。</Text>
+            <Text style={styles.body}>查看資料的使用方式與私人範圍。</Text>
             <TextLink label="查看資料與私隱" onPress={() => setTab("privacy")} />
           </View>
           <View style={styles.settingGroup}><SectionHeader density="compact" title="使用引導" subtitle="即使完成初始設定，也可隨時重看操作次序。" />
             <Text style={styles.body}>查看孩子資料、已確認記錄及家庭偏好的入口。</Text>
             <TextLink label="開啟使用引導" onPress={() => actions.open("guide")} />
           </View>
-          <View style={styles.settingGroup}><Text style={styles.helpTitle}>需要協助？</Text><Text style={styles.body}>正式支援入口須由產品提供；預覽不會開啟不存在的客服渠道。</Text></View>
+          <View style={styles.settingGroup}><Text style={styles.helpTitle}>需要協助？</Text><Text style={styles.body}>客服支援暫不可用。</Text></View>
         </SectionCard>
       </View>
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="children" active={tab === "children"}><SectionCard><SectionHeader density="compact" title="孩子設定" subtitle="切換孩子時必須隔離另一位孩子的資料與草稿。" />
       {model.children.length === 0 ? <Text style={styles.body}>目前沒有孩子檔案。</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
-      <Text style={styles.draftNote}>新增、刪除及共享孩子資料屬正式 API 與權限控制；此預覽不執行。</Text>
+
     </SectionCard></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><SectionHeader density="compact" title="家庭成員" subtitle="共享記錄與私人聊天的權限分開處理。" />
-      <Text style={styles.body}>正式版已有家庭邀請、角色和撤權流程。這裏只提供視覺入口，權限由 Server 核定。</Text><View style={styles.timeRow}><AppButton label="查看家庭協調" onPress={() => actions.open("family")} /><AppButton label="聯絡與授權" variant="secondary" onPress={() => actions.open("contact")} /></View>
+      <View style={styles.timeRow}><AppButton label="查看家庭協調" onPress={() => actions.open("family")} /><AppButton label="聯絡與授權" variant="secondary" onPress={() => actions.open("contact")} /></View>
     </SectionCard></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={styles.sections}>
       <View style={styles.sectionGroup}>
@@ -98,7 +98,7 @@ export default function SettingsPage() {
       </View><View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="通知渠道" />
           <LabeledValue label="站內狀態" value="依原事項／收據顯示" />
-          <Text style={styles.body}>本人綁定與安靜時段分開設定。Web Push／Telegram 可比較合成流程，真渠道尚未接駁此介面。</Text>
+          <Text style={styles.body}>本人綁定與安靜時段分開設定。</Text>
           <TextLink label="查看本人通知渠道" onPress={() => setTab("notifications")} />
         </SectionCard>
       </View>
@@ -113,11 +113,11 @@ export default function SettingsPage() {
         <SectionCard testID="settings-data-sources"><SectionHeader density="compact" title="資料來源" subtitle="你提供的來源，在同一處查看和管理。" icon="link-variant" />
           <Text style={styles.body}>加入連結或原文，說明想怎樣使用；可以交助手協助整理，再回到同一表單核對，也可以自行填寫。</Text>
           <AppButton label="管理資料來源" variant="secondary" onPress={() => actions.open("sources")} />
-          <Text style={styles.draftNote}>完整來源保持本人私人。用途編輯是合成草稿；正式接入、原地修改與停用仍待接線。</Text>
+          <Text style={styles.draftNote}>完整來源保持本人私人。</Text>
         </SectionCard>
       </View>
       <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="帳戶操作" />
-        <Text style={styles.body}>匯出資料、刪除帳戶及儲存用量未有此預覽可用的完整契約；不顯示可點擊的假操作。</Text>
+        <Text style={styles.body}>資料匯出、刪除帳戶及儲存用量暫不可用。</Text>
         <TextLink label="查看接線說明" onPress={() => setTab("account")} />
       </SectionCard></View>
     </AppTabPanel>

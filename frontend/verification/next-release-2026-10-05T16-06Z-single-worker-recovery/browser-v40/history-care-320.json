@@ -1,0 +1,559 @@
+{
+  "buttons": [
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 55.5,
+        "height": 48,
+        "left": 8,
+        "right": 140,
+        "top": 7.5,
+        "width": 132,
+        "x": 8,
+        "y": 7.5
+      },
+      "role": "button",
+      "selected": null,
+      "text": "選擇孩子，目前小昕"
+    },
+    {
+      "background": "rgb(237, 250, 249)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 55.5,
+        "height": 48,
+        "left": 156,
+        "right": 204,
+        "top": 7.5,
+        "width": 48,
+        "x": 156,
+        "y": 7.5
+      },
+      "role": "button",
+      "selected": null,
+      "text": "顯示更多孩子資料"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 55.5,
+        "height": 48,
+        "left": 208,
+        "right": 256,
+        "top": 7.5,
+        "width": 48,
+        "x": 208,
+        "y": 7.5
+      },
+      "role": "button",
+      "selected": null,
+      "text": "開啟訊息提示"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 55.5,
+        "height": 48,
+        "left": 264,
+        "right": 312,
+        "top": 7.5,
+        "width": 48,
+        "x": 264,
+        "y": 7.5
+      },
+      "role": "button",
+      "selected": null,
+      "text": "開啟資訊側欄"
+    },
+    {
+      "background": "rgb(237, 250, 249)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 108,
+        "height": 44,
+        "left": 181.953125,
+        "right": 304,
+        "top": 64,
+        "width": 122.046875,
+        "x": 181.953125,
+        "y": 64
+      },
+      "role": "button",
+      "selected": null,
+      "text": "切換合成預覽情境"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 265,
+        "height": 48,
+        "left": 16,
+        "right": 304,
+        "top": 217,
+        "width": 288,
+        "x": 16,
+        "y": 217
+      },
+      "role": "button",
+      "selected": null,
+      "text": "歷史分類：核對記錄"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px",
+      "borderColor": "rgb(0, 0, 0)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 391,
+        "height": 48,
+        "left": 17,
+        "right": 139.703125,
+        "top": 343,
+        "width": 122.703125,
+        "x": 17,
+        "y": 343
+      },
+      "role": "button",
+      "selected": null,
+      "text": "開啟記錄與核對"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px",
+      "borderColor": "rgb(0, 0, 0)",
+      "disabled": "true",
+      "expanded": null,
+      "rect": {
+        "bottom": 573,
+        "height": 48,
+        "left": 17,
+        "right": 129.40625,
+        "top": 525,
+        "width": 112.40625,
+        "x": 17,
+        "y": 525
+      },
+      "role": "button",
+      "selected": null,
+      "text": "清除搜尋"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 823,
+        "height": 48,
+        "left": 16,
+        "right": 304,
+        "top": 775,
+        "width": 288,
+        "x": 16,
+        "y": 775
+      },
+      "role": "button",
+      "selected": null,
+      "text": "處理狀態：全部變更"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 879,
+        "height": 48,
+        "left": 16,
+        "right": 304,
+        "top": 831,
+        "width": 288,
+        "x": 16,
+        "y": 831
+      },
+      "role": "button",
+      "selected": null,
+      "text": "來源對話：所有已載入對話"
+    },
+    {
+      "background": "rgb(227, 246, 245)",
+      "border": "1px",
+      "borderColor": "rgb(39, 35, 67)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1111,
+        "height": 132,
+        "left": 16,
+        "right": 304,
+        "top": 979,
+        "width": 288,
+        "x": 16,
+        "y": 979
+      },
+      "role": "button",
+      "selected": null,
+      "text": "核對接送人安排待核實，待確認"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1309,
+        "height": 98,
+        "left": 16,
+        "right": 304,
+        "top": 1211,
+        "width": 288,
+        "x": 16,
+        "y": 1211
+      },
+      "role": "button",
+      "selected": null,
+      "text": "核對已整理的體溫記錄，已寫入"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1415,
+        "height": 98,
+        "left": 16,
+        "right": 304,
+        "top": 1317,
+        "width": 288,
+        "x": 16,
+        "y": 1317
+      },
+      "role": "button",
+      "selected": null,
+      "text": "核對補充睡眠記錄，待確認"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1575,
+        "height": 98,
+        "left": 16,
+        "right": 304,
+        "top": 1477,
+        "width": 288,
+        "x": 16,
+        "y": 1477
+      },
+      "role": "button",
+      "selected": null,
+      "text": "核對例行檢查安排是否已確認，已寫入"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1735,
+        "height": 98,
+        "left": 16,
+        "right": 304,
+        "top": 1637,
+        "width": 288,
+        "x": 16,
+        "y": 1637
+      },
+      "role": "button",
+      "selected": null,
+      "text": "核對午睡前的固定安排，待確認"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1895,
+        "height": 98,
+        "left": 16,
+        "right": 304,
+        "top": 1797,
+        "width": 288,
+        "x": 16,
+        "y": 1797
+      },
+      "role": "button",
+      "selected": null,
+      "text": "核對睡眠記錄的補充，已寫入"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 3159,
+        "height": 48,
+        "left": 16,
+        "right": 166,
+        "top": 3111,
+        "width": 150,
+        "x": 16,
+        "y": 3111
+      },
+      "role": "button",
+      "selected": null,
+      "text": "來源與版本資料"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px",
+      "borderColor": "rgb(0, 0, 0)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 900,
+        "height": 64,
+        "left": 256,
+        "right": 320,
+        "top": 836,
+        "width": 64,
+        "x": 256,
+        "y": 836
+      },
+      "role": "button",
+      "selected": null,
+      "text": "記錄，向上拖曳開啟更多頁面"
+    }
+  ],
+  "headings": [
+    {
+      "rect": {
+        "bottom": 157,
+        "height": 32,
+        "left": 16,
+        "right": 304,
+        "top": 125,
+        "width": 288,
+        "x": 16,
+        "y": 125
+      },
+      "text": "歷史"
+    },
+    {
+      "rect": {
+        "bottom": 308,
+        "height": 27,
+        "left": 16,
+        "right": 304,
+        "top": 281,
+        "width": 288,
+        "x": 16,
+        "y": 281
+      },
+      "text": "核對記錄"
+    },
+    {
+      "rect": {
+        "bottom": 673,
+        "height": 24,
+        "left": 16,
+        "right": 304,
+        "top": 649,
+        "width": 288,
+        "x": 16,
+        "y": 649
+      },
+      "text": "核對記錄"
+    },
+    {
+      "rect": {
+        "bottom": 917,
+        "height": 22,
+        "left": 16,
+        "right": 304,
+        "top": 895,
+        "width": 288,
+        "x": 16,
+        "y": 895
+      },
+      "text": "重要內容，仍待你確認"
+    },
+    {
+      "rect": {
+        "bottom": 949,
+        "height": 20,
+        "left": 16,
+        "right": 304,
+        "top": 929,
+        "width": 288,
+        "x": 16,
+        "y": 929
+      },
+      "text": "下週的接送安排"
+    },
+    {
+      "rect": {
+        "bottom": 1149,
+        "height": 22,
+        "left": 16,
+        "right": 304,
+        "top": 1127,
+        "width": 288,
+        "x": 16,
+        "y": 1127
+      },
+      "text": "其他對話變更，可按需要查看"
+    },
+    {
+      "rect": {
+        "bottom": 1181,
+        "height": 20,
+        "left": 16,
+        "right": 304,
+        "top": 1161,
+        "width": 288,
+        "x": 16,
+        "y": 1161
+      },
+      "text": "補充睡眠與體溫"
+    },
+    {
+      "rect": {
+        "bottom": 1447,
+        "height": 20,
+        "left": 16,
+        "right": 304,
+        "top": 1427,
+        "width": 288,
+        "x": 16,
+        "y": 1427
+      },
+      "text": "例行檢查的安排"
+    },
+    {
+      "rect": {
+        "bottom": 1607,
+        "height": 20,
+        "left": 16,
+        "right": 304,
+        "top": 1587,
+        "width": 288,
+        "x": 16,
+        "y": 1587
+      },
+      "text": "午睡前的安排"
+    },
+    {
+      "rect": {
+        "bottom": 1767,
+        "height": 20,
+        "left": 16,
+        "right": 304,
+        "top": 1747,
+        "width": 288,
+        "x": 16,
+        "y": 1747
+      },
+      "text": "補充夜間醒來的觀察"
+    },
+    {
+      "rect": {
+        "bottom": 1952,
+        "height": 24,
+        "left": 16,
+        "right": 304,
+        "top": 1928,
+        "width": 288,
+        "x": 16,
+        "y": 1928
+      },
+      "text": "接送人安排待核實"
+    },
+    {
+      "rect": {
+        "bottom": 2206,
+        "height": 22,
+        "left": 16,
+        "right": 304,
+        "top": 2184,
+        "width": 288,
+        "x": 16,
+        "y": 2184
+      },
+      "text": "你的原話與來源"
+    },
+    {
+      "rect": {
+        "bottom": 2669.5,
+        "height": 22,
+        "left": 16,
+        "right": 304,
+        "top": 2647.5,
+        "width": 288,
+        "x": 16,
+        "y": 2647.5
+      },
+      "text": "Agent 的理解"
+    }
+  ],
+  "inner": {
+    "clientWidth": 320,
+    "height": 900,
+    "scrollWidth": 320,
+    "width": 320
+  },
+  "outer": {
+    "iframe": {
+      "bottom": 970,
+      "height": 902,
+      "left": 12,
+      "right": 334,
+      "top": 68,
+      "width": 322,
+      "x": 12,
+      "y": 68
+    },
+    "viewport": {
+      "height": 757,
+      "scrollX": 0,
+      "scrollY": 0,
+      "width": 1180
+    }
+  }
+}

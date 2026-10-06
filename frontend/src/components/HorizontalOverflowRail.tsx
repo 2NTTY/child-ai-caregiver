@@ -36,6 +36,8 @@ export const HorizontalOverflowRail = forwardRef<ScrollView, HorizontalOverflowR
   const metrics = useRef<HorizontalRailMetrics>({ rowWidth: 0, viewportWidth: 0, contentWidth: 0, x: 0 });
   const pending = useRef<{ key: string; x: number } | null>(null);
   const [hint, setHint] = useState({ overflow: false, more: false });
+  const [hintHovered, setHintHovered] = useState(false);
+  const [hintFocused, setHintFocused] = useState(false);
   const [layout, setLayout] = useState({ viewportWidth: 0, contentWidth: 0 });
   const opacity = useSharedValue(0);
   useImperativeHandle(forwardedRef, () => scrollRef.current!, []);
@@ -164,8 +166,13 @@ export const HorizontalOverflowRail = forwardRef<ScrollView, HorizontalOverflowR
         aria-hidden={!hint.more} accessibilityElementsHidden={!hint.more} importantForAccessibility={hint.more ? "auto" : "no-hide-descendants"}>
         <Pressable ref={hintRef} testID={hintTestID} accessibilityRole="button" accessibilityLabel={hintLabel}
           accessibilityState={{ disabled: !hint.more }} aria-disabled={!hint.more} disabled={!hint.more}
-          tabIndex={hint.more ? 0 : -1} onPress={revealNext} style={({ pressed }) => [styles.hint, pressed && styles.pressed]}>
-          <AppIcon name="chevron-right" size={20} color={hintColor} />
+          tabIndex={hint.more ? 0 : -1} onPress={revealNext} style={styles.hint}
+          onHoverIn={() => setHintHovered(true)} onHoverOut={() => setHintHovered(false)}
+          onFocus={() => setHintFocused(true)} onBlur={() => setHintFocused(false)}>
+          {({ pressed }) => <View pointerEvents="none" style={[styles.hintGlyph,
+            hintHovered && styles.hovered, pressed && styles.pressed, hintFocused && styles.focused]}>
+            <AppIcon name="chevron-right" size={20} color={hintColor} />
+          </View>}
         </Pressable>
       </Animated.View>
     </View> : null}
@@ -177,5 +184,8 @@ const styles = StyleSheet.create({
   viewport: { flex: 1, minWidth: 0 },
   slot: { width: 48, minHeight: 48, flexShrink: 0, justifyContent: "center" },
   hint: { width: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
-  pressed: { opacity: 0.7 },
+  hintGlyph: { width: 32, height: 32, borderRadius: 16, backgroundColor: "transparent", borderWidth: 2, borderColor: "transparent", alignItems: "center", justifyContent: "center" },
+  hovered: { backgroundColor: colors.quietSurface },
+  pressed: { backgroundColor: colors.paleTeal },
+  focused: { borderColor: colors.ink },
 });

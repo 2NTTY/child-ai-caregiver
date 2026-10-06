@@ -63,7 +63,7 @@ export interface ProfileViewModel {
   formKey: number;
   reviewedValues: ProfileFormValues | null;
   intent: "save" | "delete" | null;
-  operation: { state: "none" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown" | "conflict"; message: string; reference: string | null };
+  operation: { state: "none" | "needs_confirmation" | "saving" | "saved" | "failed" | "unknown" | "conflict"; message: string; reference: string | null; resultUnavailable?: boolean };
   notice: string | null;
 }
 export interface ProfileActions {

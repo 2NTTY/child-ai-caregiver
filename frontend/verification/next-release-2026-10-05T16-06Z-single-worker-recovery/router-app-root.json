@@ -1,0 +1,7 @@
+{
+  "projectRoot": "/workspace/shared/caregiver_preparations_update/frontend",
+  "routerEntry": "/workspace/shared/caregiver_recovery_impl/frontend/node_modules/expo-router/entry.js",
+  "routerDirectory": "app",
+  "appRootRelativeToRouterEntry": "../../../../caregiver_preparations_update/frontend/app",
+  "resolvedAppRoot": "/workspace/shared/caregiver_preparations_update/frontend/app"
+}

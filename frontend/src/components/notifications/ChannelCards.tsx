@@ -1,3 +1,4 @@
+import { AppStatusBadge } from "../AppStatusBadge";
 import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
@@ -125,7 +126,7 @@ function RecentDeliveries({ deliveries }: { deliveries: ChannelDeliveryView[] })
     <Text style={styles.meta}>最多顯示最近 20 項。渠道已接受不等於已送達或已讀；投遞及本人回覆均不代表照護任務已完成。</Text>
     {latest.length === 0 ? <Text style={styles.meta}>目前沒有投遞紀錄。</Text> : latest.map(delivery => <View key={delivery.id} style={styles.entry}>
       <View style={styles.top}><Text style={styles.title}>{delivery.label}</Text>
-        <Text style={[styles.badge, delivery.status === "unknown" && styles.warningBadge, delivery.status === "rejected" && styles.errorBadge]}>{channelDeliveryLabels[delivery.status]}</Text></View>
+        <AppStatusBadge label={channelDeliveryLabels[delivery.status]} tone={delivery.status === "unknown" ? "warning" : delivery.status === "rejected" ? "error" : delivery.status === "stopped" ? "neutral" : "info"} /></View>
       <Text style={styles.meta}>建立：{channelTime(delivery.createdAt)}（香港時間）</Text>
       {delivery.reasonLabel ? <Text style={styles.meta}>狀態說明：{delivery.reasonLabel}</Text> : null}
       {delivery.status === "unknown" ? <Text style={styles.warning}>結果未知，請查核原投遞狀態；不要盲目重發。</Text> : null}
@@ -175,14 +176,14 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
     <ChannelAnnouncements model={model} />
     <StatusAnnouncement eventKey={model.permission} message={`通知權限：${permissionLabels[model.permission]}。${permissionGuidance[model.permission]}`} urgent={model.permission === "denied"} />
     <StatusAnnouncement eventKey={`${model.available}:${model.browserSupported}`} message={!model.available ? "瀏覽器通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。" : !model.browserSupported ? "這個瀏覽器未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。" : ""} />
-    <SectionHeader density="compact" title="我的瀏覽器通知" icon="bell-outline" subtitle="只管理本人的瀏覽器訂閱；此頁是合成預覽。"
+    <SectionHeader density="compact" title="我的瀏覽器通知" icon="bell-outline" subtitle="只管理本人的瀏覽器訂閱。"
       action={ready ? <AppButton label="重新讀取瀏覽器狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {!ready ? <ReadState state={model.readState} online={model.online} locked={model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />
       {operationNotice}
       {!model.available ? <StateNote tone="warning">瀏覽器通知服務目前未可用，不能啟用訂閱或發送測試；你仍可撤銷既有本人訂閱。</StateNote> : null}
       <View style={styles.entry}>
-        <Text style={styles.title}>通知權限：{permissionLabels[model.permission]}</Text>
+        <AppStatusBadge label={`通知權限：${permissionLabels[model.permission]}`} tone={model.permission === "granted" ? "success" : model.permission === "denied" ? "warning" : "neutral"} />
         <Text style={styles.body}>{permissionGuidance[model.permission]}</Text>
         {!model.browserSupported && model.permission !== "unsupported" ? <Text style={styles.warning}>這個瀏覽器未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。</Text> : null}
       </View>
@@ -197,14 +198,14 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
           return <View key={binding.id} style={styles.entry}>
             <MotionFeedback active={confirmed} triggerKey={confirmed ? confirmedOperation?.reference ?? null : null} scopeKey={`${scopeKey}:${binding.id}`} testID="push-binding-feedback" animateOnMount={confirmed && bindingIntent?.kind === "enable" && stagedBinding.current === null} style={styles.bindingMetadata}>
             <View style={styles.top}><Text style={styles.title}>{binding.label}</Text>
-              <Text style={styles.badge}>{binding.status === "active" ? "有效" : binding.status === "revoked" ? "已撤銷" : "已過期"}</Text>
-              {model.currentBindingId === binding.id ? <Text style={[styles.badge, styles.currentBadge]}>目前瀏覽器</Text> : null}</View>
+              <AppStatusBadge label={binding.status === "active" ? "有效綁定" : binding.status === "revoked" ? "已撤銷" : "已過期"} tone={binding.status === "active" ? "success" : binding.status === "revoked" ? "neutral" : "warning"} />
+              {model.currentBindingId === binding.id ? <AppStatusBadge label="目前瀏覽器" tone="info" /> : null}</View>
             <Text style={styles.meta}>提供者：{binding.providerLabel} · 版本 {binding.version}</Text>
             <Text style={styles.meta}>到期：{binding.expiresAt ? `${channelTime(binding.expiresAt)}（香港時間）` : "未提供到期時間"}</Text>
             </MotionFeedback>
             {binding.status === "active" ? <>
               <View style={styles.actions}>
-                <AppButton label="撤銷此訂閱" variant="secondary" disabled={actionBlocked} onPress={() => actions.stageRevoke(binding.id)} />
+                <AppButton label="撤銷此訂閱" variant="danger-secondary" disabled={actionBlocked} onPress={() => actions.stageRevoke(binding.id)} />
                 <AppButton label="預覽一般測試" variant="quiet" disabled={actionBlocked || !pushTestAllowed(model, binding)} onPress={() => actions.stageTest(binding.id)} />
               </View>
               {deliveryNeedsReview ? <Text style={styles.warning}>這項訂閱仍有排隊中、發送中或結果未知的投遞；請查核原投遞，切勿盲目重送。若服務、worker 及測試限額允許，可明確發起另一項一般測試。</Text> : null}
@@ -252,7 +253,7 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
     <ChannelAnnouncements model={model} />
     <StatusAnnouncement eventKey={String(model.configured)} message={!model.configured ? "Telegram 渠道目前未設定或未可用，不能開始、確認新綁定或發送測試；既有本人綁定仍可撤銷。" : ""} />
     <StatusAnnouncement eventKey={`${model.binding?.id ?? ""}:${model.binding?.status ?? "none"}`} message={model.binding?.status === "blocked" ? "本人 Telegram 渠道已封鎖，不能發送測試；須先撤銷，才可重新開始私人綁定。" : ""} urgent={model.binding?.status === "blocked"} />
-    <SectionHeader density="compact" title="我的 Telegram" icon="message-text-outline" subtitle="只綁定本人的私人帳號；此頁是合成預覽。"
+    <SectionHeader density="compact" title="我的 Telegram" icon="message-text-outline" subtitle="只綁定本人的私人帳號。"
       action={ready ? <AppButton label="重新讀取 Telegram 狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {!ready ? <ReadState state={model.readState} online={model.online} locked={model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />
@@ -261,13 +262,13 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
       {model.binding ? <View style={styles.entry}>
         <MotionFeedback active={confirmed} triggerKey={confirmed ? confirmedOperation?.reference ?? null : null} scopeKey={`${scopeKey}:${model.binding.id}`} testID="telegram-binding-feedback" animateOnMount={confirmed && bindingIntent?.kind === "confirm" && bindingIntent.id === null} style={styles.bindingMetadata}>
         <View style={styles.top}><Text style={styles.title}>{model.binding.label}</Text>
-          <Text style={[styles.badge, model.binding.status === "blocked" && styles.errorBadge]}>{model.binding.status === "active" ? "有效綁定" : model.binding.status === "revoked" ? "已撤銷" : "渠道已封鎖"}</Text></View>
+          <AppStatusBadge label={model.binding.status === "active" ? "有效綁定" : model.binding.status === "revoked" ? "已撤銷" : "渠道已封鎖"} tone={model.binding.status === "active" ? "success" : model.binding.status === "blocked" ? "error" : "neutral"} /></View>
         <Text style={styles.body}>本人接收者：{model.binding.label}</Text>
         <Text style={styles.meta}>帳號提示：{model.binding.chatIdHint} · 版本 {model.binding.version}</Text>
         </MotionFeedback>
         {model.binding.status === "blocked" ? <Text style={styles.warning}>這項綁定已封鎖，不能發送測試；須先撤銷，才可重新開始私人綁定。</Text> : null}
         {model.binding.status !== "revoked" ? <View style={styles.actions}>
-          <AppButton label="撤銷 Telegram 綁定" variant="secondary" disabled={actionBlocked} onPress={actions.stageRevoke} />
+          <AppButton label="撤銷 Telegram 綁定" variant="danger-secondary" disabled={actionBlocked} onPress={actions.stageRevoke} />
           <AppButton label="預覽一般測試" variant="quiet" disabled={!canTest} onPress={actions.stageTest} />
         </View> : null}
         {model.binding.status !== "revoked" && testBlocked ? <Text style={styles.warning}>仍有排隊中、發送中或未有本人回覆的未知投遞；先查核原投遞，暫不可另發測試。</Text> : null}

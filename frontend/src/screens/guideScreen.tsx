@@ -32,13 +32,14 @@ export default function GuideScreen() {
   const layout = useContainerWidth();
   const { model, actions } = usePreview();
   const [currentStep, setCurrentStep] = useState(0);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const step = steps[currentStep];
   const narrow = layout.width < 720;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   return <PageFrame density="compact" title="使用引導" description="先認識資料與操作的分別，按需要走到相關頁面；隨時可以回來。" eyebrow={`${brand.name} · 開始使用`}>
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{needsGuide ? "從你需要的一步開始" : "隨時重看使用方法"}</Text>
-      <Text style={styles.body}>{model.guideStatus === "first_login" ? "目前是首次登入的合成預覽。" : model.guideStatus === "incomplete" ? "目前是設定未完成的合成預覽。" : "目前預覽已隱藏首次設定提示，仍可查看每一步。"}閱讀這些步驟不代表設定已完成；正式完成狀態須由 Server 提供。</Text>
+
     </View>
     <View ref={layout.ref} onLayout={layout.onLayout} style={[styles.workspace, narrow && styles.workspaceNarrow]}>
       <View style={[styles.steps, narrow && styles.stepsNarrow]} accessibilityLabel="使用引導步驟">
@@ -70,7 +71,7 @@ export default function GuideScreen() {
       <View style={styles.startCopy}><Text accessibilityRole="header" style={styles.pointTitle}>已有孩子，便可以開始提問</Text><Text style={styles.body}>Agent 的回答應以獲授權的孩子資料和已確認內容為準。</Text></View>
       <AppButton label="與 Agent 對話" onPress={() => actions.open("chat")} />
     </View>
-    {needsGuide ? <View style={styles.previewFooter}><Text style={styles.meta}>以下只切換本地預覽的引導顯示，不代表真實設定已保存或通過核對。</Text><AppButton label="模擬設定已完成" variant="quiet" disabled={model.children.length === 0} onPress={actions.completeGuidePreview} /></View> : null}
+    {needsGuide ? <View style={styles.previewFooter}><AppButton label={toolsOpen ? "收起預覽工具" : "預覽工具"} variant="quiet" expanded={toolsOpen} onPress={() => setToolsOpen(value => !value)} />{toolsOpen ? <><Text style={styles.meta}>以下只切換本地預覽的引導顯示，不代表真實設定已保存或通過核對。</Text><AppButton label="模擬設定已完成" variant="quiet" disabled={model.children.length === 0} onPress={actions.completeGuidePreview} /></> : null}</View> : null}
   </PageFrame>;
 }
 
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
   workspace: { flexDirection: "row", gap: spacing.xxl, alignItems: "flex-start", width: "100%", minWidth: 0 }, workspaceNarrow: { flexDirection: "column", gap: spacing.xl },
   steps: { width: 248, flexShrink: 0, gap: spacing.sm }, stepsNarrow: { width: "100%" },
   eyebrow: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, fontWeight: "700" },
-  step: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.small, borderWidth: 1, borderColor: "transparent" },
+  step: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.controlSurface },
   stepActive: { backgroundColor: colors.paleTeal, borderColor: colors.line }, stepCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
   stepNumber: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" },
   stepNumberActive: { backgroundColor: colors.ink, borderColor: colors.ink }, stepNumberText: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" }, stepNumberTextActive: { color: colors.white },

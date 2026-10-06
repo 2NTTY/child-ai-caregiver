@@ -1,6 +1,6 @@
 # 共用表單、日期時間及可存取控件
 
-適用 frontend/ 的 Paper 5.15.3／RN Web 0.21.2／RHF 7.88.0／resolvers 5.9.1／Zod 4.5.4／Paper Dates 0.24.0／Luxon 3.7.2；最後核對 2026-09-29。改表單／選單／日期／彈窗時才讀，產品及 payload 仍以根契約為準。
+適用 frontend/ 的 Paper 5.15.3／RN Web 0.21.2／RHF 7.88.0／resolvers 5.9.1／Zod 4.5.4／Paper Dates 0.24.0／Luxon 3.7.2；最後核對 2026-09-29。改表單／選單／日期／彈窗時才讀，產品及 payload 仍以根契約為準。控制項外觀先依 [DESIGN_SYSTEM 的操作角色](../../../../DESIGN_SYSTEM.md#control-roles)，本文只管行為與可及性；輕量工具、disclosure 及導航不因可點擊便一律套描邊按鈕。
 
 - 沿 Controller 接 AppTextField／AppSelect，將 field.ref 傳到實際欄位。ref callback 不回傳 RHF ref 的任意結果，避免 React 19 視為 cleanup。原值不為顯示而 trim／parse 後覆寫，schema 預設只驗證；根契約明確規範值時保留原草稿，另顯示實際規範內容再取得同意，不默改正文。錯誤靠近欄位。
 - 錯誤摘要沿 FormErrorSummary，按可見欄位次序及真正 ref 聚焦；help／error id 與實際 input／選擇／checkbox 關聯。普通表單沿 RHF onSubmit 及預設 onChange 重驗，避免 blur 驗證在 pointerdown／pointerup 之間插入摘要、令按鈕移位而丟失點擊；不以額外 timeout 修補。合成檢查須等待 document.activeElement 真正變成目標，包含第一次 pointer 提交及摘要返回，不只檢查 ref 的型別。FE-W35 在照片頁量得按鈕移位 106 px，照片／私人來源共用欄位及偏好修正後已驗；[交接與界線](../../../../HANDOFF.md#commercial-rollout)。
@@ -13,7 +13,7 @@
 - 日期是 YYYY-MM-DD，用 local noon carrier 給日曆而非當作 instant；安排時刻是帶 offset 的 ISO 字串加 IANA timeZone。沿 components/date-time.ts 的 Luxon 轉換，拒絕无效日、DST gap／ambiguous 本地時間，沒有自行選第一個 offset。未改時間保留原 ISO。
 - Paper Dates 註冊 zh-HK translation（沿 zhTW，局部香港按鈕文案）；使用 DatePickerModal／TimePickerModal 原生及 Web 公開 API。其標準時間 modal 寬度至少 328，小於 360 用公開 TimePicker 的 keyboard inputType 放 AppDialog，不修改 node_modules。保留有 label 的手填日期／HH:mm 欄位。
 - Paper 官方 Modal 說明需要 accessible modal 時用 React Native Modal。AppDialog 使用 RN Modal 包 Paper Dialog 視覺，Web 沿內建 focus trap／Escape／焦點還原；不要把所有 Portal 當成有 modal semantics。嵌套日曆／時鐘只關最上層，驗關閉後能回原欄位。
-- 頂部鈴鐺／資訊欄開關沿 ToolbarIconButton，Paper 公開 contentStyle 的邊框放在可點區；量實際 DOM 按鈕，不能只量外框便宣稱手機 48。被動 ConnectionPill 同表面／置中，保留狀態而不做按鈕。2026-10-01 已核對本機 Paper 5.15.3 公開 IconButton 實作及四尺寸結果，見 [FE-W22](../../../../HANDOFF.md#toolbar-delete-safeguards)。
+- 以下只適用既有頂部工具配方，不推廣至透明來源箭嘴或聊天工具：頂部鈴鐺／資訊欄開關沿 ToolbarIconButton，Paper 公開 contentStyle 的邊框放在可點區；量實際 DOM 按鈕，不能只量外框便宣稱手機 48。被動 ConnectionPill 同表面／置中，保留狀態而不做按鈕。2026-10-01 已核對本機 Paper 5.15.3 公開 IconButton 實作及四尺寸結果，見 [FE-W22](../../../../HANDOFF.md#toolbar-delete-safeguards)。
 - 不可逆刪除沿共用 AppButton danger／AppDialog danger／Title danger；按影響顯示精確範圍、版本及必要確認，不為每次小刪除堆疊彈窗。整位孩子須核對完整稱呼與範圍；unknown 保留原操作，不可用取消／Escape／再次提交避開查核。身份重新驗證只能靠 Server，不能用前端密碼框假驗證或在既有 API 任加 password。2026-10-01 已核對 [Carbon Remove](https://carbondesignsystem.com/community/patterns/remove-pattern/)／[OWASP Authentication](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#require-re-authentication-for-sensitive-features)；已驗合成 UI，真正身份重新驗證仍是 [交接缺口](../../../../HANDOFF.md#toolbar-delete-safeguards)。
 - RN Web 的狀態映射以本版實際 DOM 為準。AppSelectionTrigger、AppCheckbox、Radio.Item／UnderlineTabs 明確補 ARIA，原生仍給 accessibilityState。選單提供選項 labels、expanded、disabled，驗 Tab／Enter／Space／Escape。Paper Button 會替換自身部分狀態，選擇觸發器不用逐頁覆蓋其內部結構。
 - Expo Link asChild 的外部 Pressable 在 RN Web 須沿公開 `hrefAttrs` 傳 target／rel；僅把 target／rel 放 Link 未必出現在實際 anchor。用真 href，Web 給 `_blank`／`noopener noreferrer`，原生交 Expo 處理，驗 DOM 和鍵盤聚焦，不以 link 角色代替。2026-10-01 已核對 [官方 View 文件](https://necolas.github.io/react-native-web/docs/view/)（現頁 0.21.3）及本機 0.21.2 公開 View 實作；實測與固定入口證據見 [聯絡交接](../../../../CONTACT_HANDOFF.md)。

@@ -3,6 +3,12 @@ import { Platform } from "react-native";
 import { RecordsNavButton } from "../../src/components/navigation/RecordsNavButton";
 import { MobileQuickInputDock } from "../../src/components/agent/MobileQuickInputDock";
 import { PhotosWorkspaceProvider } from "../../src/preview/PhotosWorkspaceProvider";
+import { TasksWorkspaceProvider } from "../../src/preview/TasksWorkspaceProvider";
+import { ProfileWorkspaceProvider } from "../../src/preview/ProfileWorkspaceProvider";
+import { PreparationWorkspaceProvider } from "../../src/preview/PreparationWorkspaceProvider";
+import { CareWorkspaceProvider } from "../../src/preview/CareWorkspaceProvider";
+import { MemoryReferenceWorkspaceProvider } from "../../src/preview/MemoryReferenceWorkspaceProvider";
+import { GrowthWorkspaceProvider } from "../../src/preview/GrowthWorkspaceProvider";
 import { AppIcon } from "../../src/components/AppIcon";
 import { AppShell } from "../../src/components/AppShell";
 import { NativeAppShell } from "../../src/components/NativeAppShell";
@@ -21,7 +27,27 @@ export default function DashboardLayout() {
 
 function PreviewAppearance({ children }: { children: React.ReactNode }) {
   const { model } = usePreview();
-  return <BackgroundProvider key={model.caregiverName}><PhotosWorkspaceProvider>{children}</PhotosWorkspaceProvider></BackgroundProvider>;
+  // Reset identity-owned background resources only on caregiver/session changes.
+  // Child/source scopes are handled by their owners; the shell and motion boundary stay mounted.
+  return (
+    <BackgroundProvider key={model.caregiverName}>
+      <PhotosWorkspaceProvider>
+        <TasksWorkspaceProvider>
+          <ProfileWorkspaceProvider>
+            <PreparationWorkspaceProvider>
+              <CareWorkspaceProvider>
+                <MemoryReferenceWorkspaceProvider>
+                  <GrowthWorkspaceProvider>
+                    {children}
+                  </GrowthWorkspaceProvider>
+                </MemoryReferenceWorkspaceProvider>
+              </CareWorkspaceProvider>
+            </PreparationWorkspaceProvider>
+          </ProfileWorkspaceProvider>
+        </TasksWorkspaceProvider>
+      </PhotosWorkspaceProvider>
+    </BackgroundProvider>
+  );
 }
 
 function NativeDashboardTabs() {
@@ -37,7 +63,7 @@ function NativeDashboardTabs() {
       <Tabs.Screen name="chat" options={{ title: "助手", tabBarIcon: ({ color }) => <AppIcon name="message-text-outline" color={color} size={mobileIcons.navigation} /> }} />
       <Tabs.Screen name="tasks" options={{ title: "待辦", tabBarIcon: ({ color }) => <AppIcon name="clipboard-check-outline" color={color} size={mobileIcons.navigation} /> }} />
       <Tabs.Screen name="growth" options={{ title: "成長", tabBarIcon: ({ color }) => <AppIcon name="chart-bar" color={color} size={mobileIcons.navigation} /> }} />
-      <Tabs.Screen name="care" options={{ title: "記錄", tabBarButton: () => <RecordsNavButton active={pathname === "/care" || pathname === "/more" || pathname === "/photos"} scopeKey={scopeKey} /> }} />
-      {["more", "memory", "photos", "sources", "summary", "contact", "profile", "family", "settings", "guide", "motion-preview"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
+      <Tabs.Screen name="care" options={{ title: "記錄", tabBarButton: () => <RecordsNavButton active={pathname === "/care" || pathname === "/more" || pathname === "/photos" || pathname === "/history"} scopeKey={scopeKey} /> }} />
+      {["more", "history", "memory", "photos", "sources", "summary", "contact", "profile", "family", "settings", "guide", "motion-preview"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
     </Tabs>;
 }

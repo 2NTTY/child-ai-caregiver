@@ -1,0 +1,13 @@
+{
+  "atUtc": "2026-10-06T05:47:10Z",
+  "sourceBuildInputFingerprintSha256": "4584409d4061c2daa63c6d133386070a2b90626b9500e6f5035e895dc84d652c",
+  "freshExport": "/workspace/shared/frontend_verified_revision_20261006/frontend/dist",
+  "entry": "_expo/static/js/web/entry-95f28dfed645f645616bbf755e1c7e4e.js",
+  "method": "dot cloud browser through cua_repl; Expo CLI serve --port 8082",
+  "target": "http://localhost:8082/care",
+  "result": "Browser navigation blocked: net::ERR_BLOCKED_BY_CLIENT",
+  "classification": "Browser/network restriction, not application failure or bot detection",
+  "appVerificationStarted": false,
+  "nextStep": "Await authorized fresh Sites preview/publication; no alternate-host bypass attempted",
+  "toolConstraints": "No viewport-size API advertised; DevTools UI displays organization restriction. No DevTools retry. Proposed separate QA iframe wrapper needs allowed preview URL."
+}

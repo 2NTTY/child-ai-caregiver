@@ -10,8 +10,11 @@ export function DirectionalPressable(props: DirectionalPressableProps) {
   useLayoutEffect(() => {
     const element = node.current as unknown as HTMLElement | null;
     if (!element) return;
-    let pointer: { id: number; x: number; y: number; moved: boolean } | null = null;
+    let pointer: { id: number; x: number; y: number; moved: boolean; held: boolean } | null = null;
+    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearLongPress = () => { if (longPressTimer !== null) clearTimeout(longPressTimer); longPressTimer = null; };
     const cancel = () => {
+      clearLongPress();
       if (!pointer) return;
       const id = pointer.id; pointer = null; clickGate.suppressNextClick();
       if (element.hasPointerCapture(id)) element.releasePointerCapture(id);
@@ -19,23 +22,32 @@ export function DirectionalPressable(props: DirectionalPressableProps) {
     };
     const down = (event: PointerEvent) => {
       if (latest.current.disabled || event.button !== 0 || !event.isPrimary) return;
-      clickGate.beginActivation();
-      pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
+      clearLongPress(); clickGate.beginActivation();
+      pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false, held: false };
       element.setPointerCapture(event.pointerId); latest.current.onGestureStart();
+      if (latest.current.onLongPress) longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+        if (!pointer || pointer.moved || latest.current.disabled) return;
+        pointer.held = true; clickGate.suppressNextClick(); latest.current.onLongPress?.();
+      }, 450);
     };
     const move = (event: PointerEvent) => {
       if (!pointer || pointer.id !== event.pointerId) return;
       const dx = event.clientX - pointer.x, dy = event.clientY - pointer.y;
       pointer.moved ||= Math.hypot(dx, dy) > 8;
+      if (pointer.moved) clearLongPress();
       latest.current.onGestureMove(dx, dy);
     };
     const up = (event: PointerEvent) => {
       if (!pointer || pointer.id !== event.pointerId) return;
+      clearLongPress();
       const gesture = pointer; pointer = null;
       const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
       const dragged = gesture.moved || Math.hypot(dx, dy) > 8;
-      if (dragged) clickGate.suppressNextClick();
+      if (dragged || gesture.held) clickGate.suppressNextClick();
       if (element.hasPointerCapture(event.pointerId)) element.releasePointerCapture(event.pointerId);
+      // A stationary long press leaves the choices open for a separate tap.
+      if (gesture.held && !dragged) return;
       latest.current.onGestureEnd(dx, dy, dragged);
     };
     const click = (event: MouseEvent) => {
@@ -51,23 +63,24 @@ export function DirectionalPressable(props: DirectionalPressableProps) {
         event.preventDefault(); latest.current.onExpand();
       }
     };
+    const contextMenu = (event: MouseEvent) => { if (latest.current.onLongPress) event.preventDefault(); };
     const hidden = () => { if (document.hidden) cancel(); };
     element.style.touchAction = "none";
     element.addEventListener("pointerdown", down); element.addEventListener("pointermove", move);
     element.addEventListener("pointerup", up); element.addEventListener("pointercancel", cancel);
     element.addEventListener("lostpointercapture", cancel); element.addEventListener("click", click, true);
-    element.addEventListener("keydown", key); window.addEventListener("blur", cancel);
+    element.addEventListener("contextmenu", contextMenu); element.addEventListener("keydown", key); window.addEventListener("blur", cancel);
     document.addEventListener("visibilitychange", hidden);
     return () => {
       cancel(); element.removeEventListener("pointerdown", down); element.removeEventListener("pointermove", move);
       element.removeEventListener("pointerup", up); element.removeEventListener("pointercancel", cancel);
       element.removeEventListener("lostpointercapture", cancel); element.removeEventListener("click", click, true);
-      element.removeEventListener("keydown", key); window.removeEventListener("blur", cancel);
+      element.removeEventListener("contextmenu", contextMenu); element.removeEventListener("keydown", key); window.removeEventListener("blur", cancel);
       document.removeEventListener("visibilitychange", hidden);
     };
   }, [props.scopeKey, props.disabled, clickGate]);
   useEffect(() => { if (props.disabled) props.onGestureCancel(); }, [props.disabled]);
   return <Pressable ref={node} accessibilityRole="button" accessibilityLabel={props.label} accessibilityHint={props.hint}
-    accessibilityState={{ disabled: !!props.disabled }} disabled={props.disabled} testID={props.testID}
+    accessibilityState={{ disabled: !!props.disabled, expanded: props.expanded }} aria-expanded={props.expanded} disabled={props.disabled} testID={props.testID}
     style={props.style} onPress={props.onPress}>{props.children}</Pressable>;
 }

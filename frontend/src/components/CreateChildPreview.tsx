@@ -19,8 +19,8 @@ export function CreateChildPreview({ online, enabled = true, onCreated }: { onli
   const op = usePreviewOperation();
   const form = useForm({ defaultValues: { displayName: "" }, resolver: zodResolver(schema) });
   usePreviewLeaveGuard(form.formState.isDirty);
-  return <View style={styles.root}><AppButton label={open ? "收起新增孩子" : "新增孩子"} variant="secondary" disabled={op.locked || !enabled} onPress={() => setOpen(value => !value)} />
-    <MotionDisclosure expanded={open} scopeKey={motionScope} testID="create-child-disclosure"><View style={styles.form}><Text style={styles.body}>合成新增示例。只需要稱呼；其他未知資料不會推算。正式建立由現有家庭／孩子 API 處理。</Text>
+  return <View style={styles.root}><AppButton expanded={open} label={open ? "收起新增孩子" : "新增孩子"} variant="secondary" disabled={op.locked || !enabled} onPress={() => setOpen(value => !value)} />
+    <MotionDisclosure expanded={open} scopeKey={motionScope} testID="create-child-disclosure"><View style={styles.form}><Text style={styles.body}>只需要稱呼；其他未知資料不會推算。</Text>
       <PreviewWriteNotice controller={op} online={online} />
       <Controller name="displayName" control={form.control} render={({ field, fieldState }) => <View><AppTextField ref={field.ref} label="孩子稱呼" accessibilityLabel="新增孩子稱呼" value={field.value} onBlur={field.onBlur} disabled={op.locked || !enabled} error={!!fieldState.error} onChangeText={value => { field.onChange(value); setReview(null); op.edit(); }} />{fieldState.error ? <HelperText type="error">{fieldState.error.message}</HelperText> : null}</View>} />
       <AppButton label="預覽新增孩子" disabled={op.locked || !enabled} onPress={form.handleSubmit(values => { setReview(values.displayName); op.review(); })} />

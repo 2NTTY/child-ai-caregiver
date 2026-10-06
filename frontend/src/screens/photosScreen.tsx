@@ -23,7 +23,7 @@ export function PhotoWorkspace({ onCare, capturePreferred }: { onCare: () => voi
     ...(!["upload", "extract"].includes(preview.faultPhase) ? [{ value: "confirmed_unavailable" as const, label: "已確認但結果不可讀" }] : []),
   ];
   return <PhotosView model={preview.model} actions={preview.actions} onCare={onCare} capturePreferred={capturePreferred} scopeKey={preview.scopeKey} previewControls={<SectionCard>
-    <SectionHeader density="compact" title="合成預覽情境" subtitle="不呼叫 Server、Gemini 或裝置權限。" action={<AppButton label={controlsOpen ? "收起照片情境" : "顯示照片情境"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
+    <SectionHeader density="compact" title="預覽工具" subtitle={controlsOpen ? "不呼叫 Server、Gemini 或裝置權限。" : undefined} action={<AppButton expanded={controlsOpen} label={controlsOpen ? "收起照片情境" : "顯示照片情境"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
     {controlsOpen ? <><AppButton label="使用品牌示例原圖" variant="secondary" disabled={!preview.model.canPick} onPress={() => preview.actions.pickOriginal({ ...photoPreviewOriginal })} />
       <AppSelect label="照片情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} />
       <AppSelect label="模擬問題階段" value={preview.faultPhase} options={phases} onChange={value => { preview.setFaultPhase(value); preview.setOutcome("success"); }} />

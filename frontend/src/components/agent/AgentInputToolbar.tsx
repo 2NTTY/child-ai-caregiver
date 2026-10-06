@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, type PressableStateCallbackType } from "react-native";
 import { AppIcon, type AppIconName } from "../AppIcon";
 import { PhotoFilePicker, type PhotoFilePickerProps } from "../photos/PhotoFilePicker";
 import { chatColors, chatLayout } from "../chat/chat-presentation";
+type ControlInteraction = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
 
 export function AgentInputToolbar({ disabled, compact, onFiles, onVoice, onPickPhoto, onPhotoError, captureOriginal }: {
   disabled: boolean; compact: boolean; onFiles(): void; onVoice(): void;
@@ -20,13 +21,13 @@ function InputControl({ label, icon, onPress, compact, disabled, busy = false, h
 }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hint}
     accessibilityState={{ disabled, busy }} aria-disabled={disabled} aria-busy={busy}
-    disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.control, compact && styles.compactControl, disabled && styles.disabled, pressed && styles.pressed]}>
+    disabled={disabled} onPress={onPress} style={({ pressed, hovered, focused }: ControlInteraction) => [styles.control, compact && styles.compactControl, disabled && styles.disabled, !disabled && (pressed || hovered || focused) && styles.active]}>
     <AppIcon name={icon} size={20} color={chatColors.secondary} />
   </Pressable>;
 }
 const styles = StyleSheet.create({
-  controls: { flexDirection: "row", alignItems: "center" },
-  control: { width: chatLayout.controlSize, height: chatLayout.controlSize, alignItems: "center", justifyContent: "center", borderRadius: chatLayout.controlSize / 2 },
+  controls: { gap: 4, flexDirection: "row", alignItems: "center" },
+  control: { backgroundColor: "transparent", borderWidth: 0, width: chatLayout.controlSize, height: chatLayout.controlSize, alignItems: "center", justifyContent: "center", borderRadius: chatLayout.controlSize / 2 },
   compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
-  disabled: { opacity: .5 }, pressed: { backgroundColor: chatColors.hover },
+  disabled: { opacity: .5 }, active: { backgroundColor: chatColors.hover },
 });

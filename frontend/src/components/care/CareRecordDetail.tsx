@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { careKindOptions, type CareFormValues, type CareRecordsActions, type CareRecordsViewModel, type CareRevisionView } from "../../care-view-model";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
 import { MotionDisclosure, MotionReveal } from "../../motion";
-import { AppButton, SectionCard, SectionHeader } from "../ui";
+import { AppStatusBadge } from "../AppStatusBadge";
+import { AppButton, AppSelectionTrigger, SectionHeader } from "../ui";
 
 export function CareValueSummary({ values }: { values: CareFormValues }) {
   return <View style={styles.summary}>
@@ -37,33 +38,46 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
 }) {
   const { record } = detail;
   const headingRef = useRef<View>(null);
+  const [expanded, setExpanded] = useState({recordId: record.id, provenance: false, history: true});
+  const provenanceOpen = expanded.recordId === record.id && expanded.provenance;
+  const historyOpen = detail.historyOpen && (expanded.recordId !== record.id || expanded.history);
   useEffect(() => {
     if (active && Platform.OS === "web") (headingRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
   }, [record.id, active]);
   return <View style={styles.detail}><SectionHeader title="已確認的整理結果" density="compact" action={<AppButton label="返回記錄" density="compact" variant="quiet" onPress={actions.closePanel} />} />
-    <View ref={headingRef} accessibilityLabel={record.title} tabIndex={-1} style={styles.recordHeading}><Text accessibilityRole="header" style={styles.title}>{record.title}</Text><Text style={styles.confirmed}>已確認</Text></View>
-    <MotionReveal value={record.current} contentKey={JSON.stringify(record.current.values)} scopeKey={`${record.childId}:${record.id}`} regionKey="record-detail-text" triggerKey={revealIntent} eligible={revealEligible && active} preset="local">{revision => <CareRevisionContent revision={revision} createdAtLabel={record.createdAtLabel} />}</MotionReveal>
-    <View style={styles.provenance}><Text style={styles.title}>原始依據</Text><Text selectable style={styles.tool}>{record.current.values.source}</Text><Text style={styles.meta}>上方為已確認版本。私人對話原文不會自動跟隨共享；較早內容可按下方版本歷史核對。</Text></View>
-    <Text style={styles.tool}>這是家庭共享記錄；更正會建立新版本並保留舊版，不會改寫原文歷史。</Text>
-    <View style={styles.actions}>{canEdit ? <AppButton label="更正這筆記錄" onPress={() => actions.startCorrection(record.id)} /> : null}
-      {!detail.historyOpen ? <AppButton label="查看更正歷史" variant="secondary" onPress={actions.showHistory} /> : null}</View>
-    {canEdit ? <AppButton label="永久刪除此記錄及歷史" variant="quiet" disabled={!online} onPress={() => actions.startDeletion(record.id)} /> : null}
-    <MotionDisclosure expanded={detail.historyOpen} scopeKey={`${record.childId}:${record.id}`}><View style={styles.history}><Text accessibilityRole="header" style={styles.title}>更正歷史</Text>
+    <View ref={headingRef} accessibilityLabel={record.title} tabIndex={-1} style={styles.recordHeading}><Text accessibilityRole="header" style={styles.title}>{record.title}</Text><AppStatusBadge label="已確認保存" tone="success" /></View>
+    <MotionReveal value={record.current} contentKey={JSON.stringify(record.current.values)} scopeKey={`${record.childId}:${record.id}`} regionKey="record-detail-text" triggerKey={revealIntent} eligible={revealEligible && active} preset="local">{revision => <CareValueSummary values={revision.values} />}</MotionReveal>
+    {record.current.eventTimePrecision === "unknown" ? <Text style={styles.warning}>事件時間尚未確定，原文保留供核對。</Text> : null}
+    <View style={styles.summary}>
+      <AppSelectionTrigger label="來源、確認時間及版本" expanded={provenanceOpen} onPress={() => setExpanded({recordId: record.id, provenance: !provenanceOpen, history: expanded.recordId !== record.id || expanded.history})} />
+      <MotionDisclosure expanded={provenanceOpen} scopeKey={`${record.childId}:${record.id}`}><View style={styles.metadata}>
+        <Text style={styles.meta}>時間精度：{record.current.eventTimePrecision === "exact" ? "精確" : record.current.eventTimePrecision === "approximate" ? "約數" : "未知"} · {record.current.timeZoneLabel}</Text>
+        <Text style={styles.meta}>確認人：{record.current.confirmedByLabel} · {record.current.confirmedAtLabel}</Text>
+        <Text style={styles.meta}>版本 {record.current.version} · 最初加入：{record.createdAtLabel}</Text>
+        <Text style={styles.meta}>私人對話原文不會自動跟隨共享；此處來源描述不等於私人對話全文。</Text>
+      </View></MotionDisclosure>
+    </View>
+    <Text style={styles.meta}>家庭共享記錄；更正會建立新版本，並保留舊版。</Text>
+    {canEdit ? <View style={styles.actions}><AppButton label="更正這筆記錄" onPress={() => actions.startCorrection(record.id)} /></View> : null}
+    <AppSelectionTrigger label="更正歷史" expanded={historyOpen} onPress={() => {setExpanded({recordId: record.id, provenance: provenanceOpen, history: !historyOpen}); if (!detail.historyOpen) actions.showHistory();}} />
+    <MotionDisclosure expanded={historyOpen} scopeKey={`${record.childId}:${record.id}`}><View style={styles.history}><Text accessibilityRole="header" style={styles.title}>更正歷史</Text>
       {detail.history.length === 0 ? <Text style={styles.tool}>目前只有第一個已確認版本。</Text> : detail.history.map(revision => <View key={revision.version} style={styles.revision}>
         <CareRevisionContent revision={revision} />
       </View>)}
       {detail.hasMoreHistory ? <AppButton label="載入更早版本" variant="secondary" onPress={actions.loadOlderHistory} loading={detail.historyLoading} disabled={!online} /> : <Text style={styles.meta}>已到最早的已載入版本。</Text>}
     </View></MotionDisclosure>
+    {canEdit ? <AppButton label="永久刪除此記錄及歷史" variant="danger-secondary" disabled={!online} onPress={() => actions.startDeletion(record.id)} /> : null}
   </View>;
 }
 
 const styles = StyleSheet.create({
-  detail: {padding:spacing.lg,backgroundColor:colors.paper,gap:spacing.lg}, provenance:{padding:spacing.md,backgroundColor:colors.canvas,gap:spacing.sm},
+  detail: {padding:spacing.lg,backgroundColor:colors.paper,gap:spacing.lg},
   summary: { gap: spacing.md },
   valueContext: { gap: spacing.xs },
   metadata: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.xs },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   tool: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
+  warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
   recordHeading: { gap: spacing.xs },

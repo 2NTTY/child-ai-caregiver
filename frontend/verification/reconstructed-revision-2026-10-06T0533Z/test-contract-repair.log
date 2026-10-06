@@ -1,0 +1,23 @@
+✔ all seven owners mount once and keep Summary/Profile/Preparation and native route structure (2.07276ms)
+✔ review and older-pending deep links feed the single Care owner with no pretend date filter (160.678136ms)
+✔ review search is blocked by original operations or active forms and masks a missing scope (51.372255ms)
+✔ saved-record history owns its own search and paging without a duplicate toolbar (45.098902ms)
+✔ preparation History keeps its owner, dates, scroll connection and return tab after Care integration (39.968627ms)
+✔ category navigation waits for the guard and clears prior review-only URL filters (41.428027ms)
+✔ the route defaults to current-child overview and recognizes only explicit preparation destinations (106.557072ms)
+✔ injected measurement projections stay canonical and source navigation waits for the current-scope guard (58.431461ms)
+✔ tab changes wait for the guard and reset reading scroll only after approved route selection (17.536688ms)
+✔ profile history opens through the same shared owner only after guarded navigation approval (24.202116ms)
+✔ late tab or profile requests cannot act on another child, identity, route or unmounted screen (91.4279ms)
+✔ preparation history and legacy recovery preserve explicit return destinations without a third main tab (13.449251ms)
+✔ scope changes reset presentation while a hidden native route renders no second reader (14.416416ms)
+✔ shared owners mount once beneath Preview without altering five native tabs or navigation groups (9.917112ms)
+✔ legacy composition retains the original controller and its guarded identity changes (0.913577ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 814.140321

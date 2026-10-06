@@ -1,0 +1,47 @@
+{
+  "completed_at": "2026-10-05T18:49:24Z",
+  "owner": "compact_growth_header",
+  "frozen_source": {
+    "src/components/growth/GrowthView.tsx": "aaec7bd44c67ea56804bb00a239dac6731ef25a1097189bd7518831271823ba2",
+    "src/components/growth/growth-styles.ts": "a8f003762b2561370e40b94561053b2af5c8069bf43ec7e15e9bf22b5a7a0daf",
+    "src/components/PageFrame.tsx": "d88a25048f02d88e6be58c49288a08f240b247c66e3dbff39be8e2282a14b986",
+    "scripts/growth-refresh.test.mjs": "395a1fc517fac29bbd1c532a70bbe4930058f830692274ed3a7405d041696351"
+  },
+  "checks": {
+    "growth_refresh": {
+      "command": "node --test scripts/growth-refresh.test.mjs",
+      "passed": 13,
+      "failed": 0,
+      "scope": "Deterministic hook/component tests; no real layout"
+    },
+    "pageframe_default": {
+      "passed": 8,
+      "failed": 0,
+      "widths": [
+        1440,
+        1024,
+        390,
+        320
+      ],
+      "scope": "Default rendered structure/styles equivalence and new slot props; not browser layout"
+    },
+    "targeted_semantic": {
+      "targetFiles": 3,
+      "diagnostics": 0,
+      "scope": "Targeted syntactic and semantic diagnostics only; no aggregate typecheck or build"
+    }
+  },
+  "unverified": [
+    "Browser screenshots and real 1440/1024/390/320 layout",
+    "Aggregate typecheck/export/publication assigned to root"
+  ],
+  "preserved": [
+    "One mounted refresh in headerActions",
+    "Draft/unknown original-operation guards",
+    "Concern archival/controller/data logic",
+    "Growth and History shared owner",
+    "Report-first/archive behavior",
+    "previewTools location and behavior"
+  ],
+  "note": "GrowthView handed to fix_growth_refresh_position after this snapshot for separately requested archive-safe-flow changes"
+}

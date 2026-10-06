@@ -12,6 +12,7 @@ import { AppIcon } from "./AppIcon";
 import { AgentEntryButton } from "./AgentEntryButton";
 import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
 import { RecordsNavButton } from "./navigation/RecordsNavButton";
+import { desktopNavigationGroups, navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
 import { RightRailContent } from "./RightRailContent";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
@@ -23,35 +24,14 @@ import { scenarioLabels, type PreviewScenario } from "../preview/fixture";
 import { usePreview } from "../preview/PreviewContext";
 import type { HomeActions, HomeViewModel } from "../view-model";
 
-type AppPath = "/" | "/chat" | "/care" | "/photos" | "/sources" | "/growth" | "/summary" | "/contact" | "/profile" | "/family" | "/memory" | "/settings" | "/guide" | "/tasks" | "/more";
-const navigation: { href: AppPath; label: string; short: string; icon: React.ComponentProps<typeof AppIcon>["name"] }[] = [
-  { href: "/", label: "今日", short: "今日", icon: "home-outline" },
-  { href: "/chat", label: "助手", short: "助手", icon: "message-text-outline" },
-  { href: "/care", label: "記錄與核對", short: "記錄", icon: "notebook-outline" },
-  { href: "/photos", label: "照片與記錄", short: "照片", icon: "image-outline" },
-  { href: "/sources", label: "私人來源", short: "來源", icon: "link-variant" },
-  { href: "/tasks", label: "待辦與預約", short: "待辦", icon: "clipboard-check-outline" },
-  { href: "/growth", label: "成長與關注", short: "成長", icon: "chart-bar" },
-  { href: "/summary", label: "回顧與到診", short: "摘要", icon: "clipboard-check-outline" },
-  { href: "/contact", label: "聯絡授權", short: "聯絡", icon: "bell-outline" },
-  { href: "/profile", label: "子女檔案", short: "孩子", icon: "account-child-outline" },
-  { href: "/family", label: "家庭協調", short: "家庭", icon: "account-group-outline" },
-  { href: "/memory", label: "記憶與話題", short: "記憶", icon: "book-open-variant" },
-];
 const scenarios: PreviewScenario[] = ["normal", "first_login", "setup_incomplete", "empty", "loading", "offline", "needs_confirmation", "saving", "saved", "failed", "unknown", "focus_task", "focus_growth", "focus_unavailable"];
-const navigationGroups = [
-  { label: "常用", paths: ["/"] },
-  { label: "行動與成長", paths: ["/tasks", "/growth"] },
-  { label: "照顧資料", paths: ["/care", "/summary"] },
-  { label: "資料管理", paths: ["/profile"] },
-];
 
-function NavItem({ item, active, compact = false }: { item: typeof navigation[number]; active: boolean; compact?: boolean }) {
+function NavItem({ item, active, compact = false }: { item: NavigationItem; active: boolean; compact?: boolean }) {
   const [pressed, setPressed] = useState(false);
   return <PreviewLink href={item.href}><Pressable
     accessibilityRole="link" accessibilityLabel={item.label} accessibilityState={{ selected: active }} aria-current={active ? "page" : undefined}
     onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
-    style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.pressed])}
+    style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.navPressed])}
   >
     <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
     <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
@@ -63,17 +43,17 @@ export function PreviewToolbar() {
   const [expanded, setExpanded] = useState(false);
   return <View style={styles.previewArea}>
     <View style={styles.previewLine}>
-      <Text style={styles.previewLabel}>介面預覽 · 合成資料 · 未接駁 Server</Text>
-      <Pressable accessibilityRole="button" accessibilityLabel="切換合成預覽情境" accessibilityState={{ expanded }} aria-expanded={expanded}
+
+      <Pressable accessibilityRole="button" accessibilityLabel="預覽工具與技術狀態" accessibilityState={{ expanded }} aria-expanded={expanded}
         onPress={() => setExpanded(value => !value)} style={({ pressed }) => [styles.previewToggle, pressed && styles.pressed]}>
-        <Text style={styles.previewToggleText}>{scenarioLabels[scenario]}　{expanded ? "收起" : "切換情境"}</Text><AppIcon name={expanded ? "chevron-up" : "chevron-down"} size={16} />
+        <Text style={styles.previewToggleText}>{expanded ? "收起預覽工具" : "預覽工具"}</Text><AppIcon name={expanded ? "chevron-up" : "chevron-down"} size={16} />
       </Pressable>
     </View>
-    {expanded ? <View style={styles.scenarios}>{scenarios.map(item => <Pressable
+    {expanded ? <View style={styles.previewDetails}><Text style={styles.previewLabel}>介面預覽 · 合成資料 · 未接駁 Server</Text><Text style={styles.previewLabel}>保存、登入、邀請、通知與 Agent 回覆均為示例，不會改動正式資料。照片、語音與文件只留在本機草稿；正式上傳、整理及匯出尚未接通。</Text><Text style={styles.previewLabel}>目前情境：{scenarioLabels[scenario]}。各頁情境工具可查看固定快照、接線狀態及測試操作。</Text><View style={styles.scenarios}>{scenarios.map(item => <Pressable
       key={item} accessibilityRole="button" accessibilityLabel={scenarioLabels[item]}
       accessibilityState={{ selected: scenario === item }} onPress={() => setScenario(item)}
       style={({ pressed }) => [styles.scenario, scenario === item && styles.scenarioSelected, pressed && styles.pressed]}
-    ><Text style={[styles.scenarioText, scenario === item && styles.scenarioSelectedText]}>{scenarioLabels[item]}</Text></Pressable>)}</View> : null}
+    ><Text style={[styles.scenarioText, scenario === item && styles.scenarioSelectedText]}>{scenarioLabels[item]}</Text></Pressable>)}</View></View> : null}
   </View>;
 }
 
@@ -123,9 +103,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setRailModal(false);
   }
   const active = (path: AppPath) => pathname === path;
-  const mobileHome = width < 650 && active("/");
   const selectedChild = model.children.find(item => item.id === model.selectedChildId);
-  const showGuideNav = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   const motionScope = `${model.caregiverName}:${model.selectedChildId ?? "none"}:${selectedChild?.accessRole ?? "none"}`;
   const sameRailContext = railContext.current.path === pathname && railContext.current.scope === motionScope;
   const overlayOpen = railModal && !wide && sameRailContext;
@@ -139,22 +117,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Text style={styles.brandLine}>用資料 · 陪伴成長</Text>
       </Pressable></PreviewLink>
       <ScrollView testID="sidebar-navigation" style={styles.navScroll} contentContainerStyle={styles.navList}>
-        {navigationGroups.map(group => <View key={group.label} style={styles.navGroup}>
+        {desktopNavigationGroups.map(group => <View key={group.label} style={styles.navGroup}>
           <Text style={styles.navGroupLabel}>{group.label}</Text>
-          {group.paths.map(path => navigation.find(item => item.href === path)!).map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}
+          {group.keys.map(key => navigationItems[key]).map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}
         </View>)}
       </ScrollView>
       <View style={styles.sidebarBottom}>
         <AgentEntryButton active={active("/chat")} />
       </View>
-      <NavItem item={{ href: "/settings", label: "設定", short: "設定", icon: "cog-outline" }} active={active("/settings")} />
-      <NavItem item={{ href: "/more", label: "更多功能", short: "更多", icon: "dots-horizontal" }} active={active("/more")} />
-      {showGuideNav ? <NavItem item={{ href: "/guide", label: "使用引導", short: "引導", icon: "compass-outline" }} active={active("/guide")} /> : null}
+      <NavItem item={navigationItems.settings} active={active("/settings")} />
     </View> : null}
     <View style={styles.stage}>
       <MotionScopeBoundary scopeKey={motionScope} resetKey={pathname} eligible={model.selectedChildId !== null} style={styles.scopePane}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
-        {compact ? <CompactHeaderIdentity showContext={!mobileHome} scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
+        {compact ? <CompactHeaderIdentity showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
           brand={<PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></PreviewLink>} /> : null}
         {!compact ? <ChildPicker children={model.children} selectedId={model.selectedChildId} onSelect={actions.selectChild} /> : null}
         {!compact ? <ChildKeyFacts child={selectedChild} load={model.profileLoad} /> : null}
@@ -171,13 +147,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
       <View style={styles.body}>
         <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
+        {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} /> : null}
         {wide ? <MotionDrawerRight open={railOpen} width={310} mode="dock" scopeKey={motionScope} testID="motion-context-rail"><RightRail {...railProps} /></MotionDrawerRight> : null}
       </View>
       </MotionScopeBoundary>
-      {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} /> : null}
       {compact ? <View testID="mobile-bottom-navigation" style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
-        {["/", "/chat", "/tasks", "/growth"].map(path => navigation.find(item => item.href === path)!).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
-        <RecordsNavButton active={active("/care") || active("/photos") || active("/more")} scopeKey={motionScope} />
+        {(["home", "chat", "tasks", "growth"] as const).map(key => navigationItems[key]).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
+        <RecordsNavButton active={active("/care") || active("/photos") || active("/more") || active("/history")} scopeKey={motionScope} />
       </View> : null}
       <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}:${wide ? "dock" : "overlay"}`} label="照顧上下文" onRequestClose={closeRail}
         backgroundRef={shell} returnFocusRef={railAnchor} restoreFocusOnClose={sameRailContext}>
@@ -199,6 +175,7 @@ const styles = StyleSheet.create({
   navGroup: { gap: spacing.xs }, navGroupLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: 12, lineHeight: 18, paddingHorizontal: spacing.md },
   navItem: { minHeight: 46, borderRadius: radius.small, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
   navActive: { backgroundColor: colors.selectedNav, borderLeftColor: colors.teal, borderLeftWidth: 3 },
+  navPressed: { backgroundColor: colors.selectedNav },
   navGlyph: { width: 23, textAlign: "center", fontSize: 22, color: colors.deepTeal },
   navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
@@ -216,12 +193,13 @@ const styles = StyleSheet.create({
   panelIcon: { width: 20, height: 17, borderWidth: 1.7, borderColor: colors.deepTeal, borderRadius: 4, alignItems: "flex-end", justifyContent: "center" },
   panelIconDivider: { width: 6, height: 15, borderLeftWidth: 1.7, borderLeftColor: colors.deepTeal },
   menuDialog: { maxWidth: 400 },
-  previewArea: { backgroundColor: colors.previewSurface, borderBottomWidth: 1, borderBottomColor: colors.line },
-  previewLine: { minHeight: 36, paddingHorizontal: spacing.lg, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  previewArea: { backgroundColor: colors.canvas },
+  previewLine: { minHeight: 36, paddingHorizontal: spacing.lg, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: spacing.sm },
+  previewDetails: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, gap: spacing.sm },
   previewLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, flexShrink: 1 },
-  previewToggle: { minHeight: 32, flexDirection: "row", alignItems: "center", gap: spacing.xs, justifyContent: "center", paddingHorizontal: spacing.sm },
+  previewToggle: { backgroundColor: "transparent", borderRadius: 10, minHeight: 44, flexDirection: "row", alignItems: "center", gap: spacing.xs, justifyContent: "center", paddingHorizontal: spacing.sm },
   previewToggleText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.caption, fontWeight: "700" },
-  scenarios: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  scenarios: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, paddingBottom: spacing.sm },
   scenario: { minHeight: 36, paddingHorizontal: spacing.md, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white, justifyContent: "center" },
   scenarioSelected: { backgroundColor: colors.teal, borderColor: colors.teal },
   scenarioText: { fontFamily: chineseFont, fontSize: typeScale.caption, color: colors.ink, fontWeight: "700" },

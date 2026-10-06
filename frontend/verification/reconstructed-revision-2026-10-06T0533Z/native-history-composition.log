@@ -1,0 +1,15 @@
+✔ all seven owners mount once and keep Summary/Profile/Preparation and native route structure (2.317211ms)
+✔ native Records navigation recognizes History without adding a sixth primary tab (0.466139ms)
+✔ review and older-pending deep links feed the single Care owner with no pretend date filter (154.073369ms)
+✔ review search is blocked by original operations or active forms and masks a missing scope (44.362113ms)
+✔ saved-record history owns its own search and paging without a duplicate toolbar (39.623811ms)
+✔ preparation History keeps its owner, dates, scroll connection and return tab after Care integration (35.307555ms)
+✔ category navigation waits for the guard and clears prior review-only URL filters (42.19987ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 805.880922

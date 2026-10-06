@@ -1,0 +1,97 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px"
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 320 × 900 CSS px
+- iframe [active] [id="app-frame"]:
+  - link:
+    - /url: /
+  - generic "孩子及關鍵資料":
+    - button "選擇孩子，目前小昕":
+      - generic: 小
+      - generic: 小昕
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "顯示更多孩子資料":
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading "孩子概況與準備" [level=1]
+  - generic: 查看孩子目前的資料，打開到診、入學、外出或照顧交接的準備單。
+  - tablist "孩子概況與準備":
+    - tab "孩子概況":
+      - generic: 孩子概況
+    - tab "準備單" [active] [selected]:
+      - generic: 準備單
+  - tabpanel "準備單":
+    - generic: 合成準備單示例
+    - button "預覽來源與限制":
+      - generic: 預覽來源與限制
+    - heading "準備好，打開就能用" [level=1]
+    - generic: 到診、入學、外出或照顧交接，各自留成一份準備單。
+    - button "查看已歸檔":
+      - generic: 查看已歸檔
+    - generic: 下一次要準備甚麼？
+    - generic: 在助手交代需要；準備單的正式生成尚未接通。
+    - button "用途：到診準備":
+      - generic: 用途：到診準備
+    - button "到助手交代":
+      - generic: 到助手交代
+    - generic: 待用準備單 · 4 份
+    - button "開啟小昕的到診準備":
+      - generic: 到診準備
+      - generic: 可查閱
+      - heading "小昕的到診準備" [level=1]
+      - generic: 把這次想談的近況、問題和出門前清單放在一起。
+      - generic: 使用日期 2026年10月8日
+      - generic: 打開準備單 ›
+    - button "開啟小昕的迎新準備":
+      - generic: 入學／轉校
+      - generic: 可查閱
+      - heading "小昕的迎新準備" [level=1]
+      - generic: 先看孩子的適應需要，再核對校方安排。
+      - generic: 使用日期 2026年10月12日
+      - generic: 打開準備單 ›
+    - button "開啟週末公園半日遊":
+      - generic: 外出／旅行
+      - generic: 可查閱
+      - heading "週末公園半日遊" [level=1]
+      - generic: 出發前在手機打開，逐項看安排和物品。
+      - generic: 使用日期 2026年10月10日
+      - generic: 打開準備單 ›
+    - button "開啟週末照顧交接":
+      - generic: 照顧交接
+      - generic: 可查閱
+      - heading "週末照顧交接" [level=1]
+      - generic: 交接時按這張單說清重點，未確認的地方留待雙方補充。
+      - generic: 使用日期 日期未提供
+      - generic: 打開準備單 ›
+    - button "舊共享準備／原操作查核":
+      - generic: 舊共享準備／原操作查核
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - link "助手":
+    - /url: /chat
+    - generic: 助手
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長
+  - button "記錄，向上拖曳開啟更多頁面":
+    - generic: 記錄
+    - generic: 上拉更多

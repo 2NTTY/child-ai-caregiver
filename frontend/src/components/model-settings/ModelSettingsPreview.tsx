@@ -10,11 +10,11 @@ import { ModelSettingsView } from "./ModelSettingsView";
 export function ModelSettingsPreview({ controller, onSwitchAccount, active = true }: { controller: ModelSettingsPreviewController; onSwitchAccount: () => void; active?: boolean }) {
   const [toolsOpen, setToolsOpen] = useState(false);
   return <View style={styles.root}>
-    <Text style={styles.meta}>合成預覽 · 不連接供應商或保存真密鑰，請只使用測試文字</Text>
+    <Text style={styles.meta}>請勿輸入真密鑰，只使用測試文字。</Text>
     <ModelSettingsView key={controller.model.scopeKey} model={controller.model} actions={controller.actions} active={active} />
 
-    <SectionCard><SectionHeader density="compact" title="模型設定合成預覽" subtitle="這裏不會連接供應商或保存真密鑰。請只使用測試文字。" />
-      <AppButton label={toolsOpen ? "收起模型情境工具" : "顯示模型情境工具"} variant="quiet" onPress={() => setToolsOpen(value => !value)} />
+    <SectionCard><SectionHeader density="compact" title="預覽工具" subtitle={toolsOpen ? "這裏不會連接供應商或保存真密鑰。請只使用測試文字。" : undefined} />
+      <AppButton expanded={toolsOpen} label={toolsOpen ? "收起模型情境工具" : "顯示模型情境工具"} variant="quiet" onPress={() => setToolsOpen(value => !value)} />
       {toolsOpen ? <><View style={styles.controls}><AppSelect label="模型保存結果" value={controller.saveOutcome} disabled={!!controller.model.busy} onChange={controller.setSaveOutcome} options={[
         { value: "saved", label: "已保存" }, { value: "failed", label: "失敗（未保存）" }, { value: "unknown_applied", label: "結果未知（稍後讀到新版本）" },
         { value: "unknown_unapplied", label: "結果未知（稍後仍是原版本）" }, { value: "conflict", label: "版本衝突" }, { value: "denied", label: "身份或權限改變" },

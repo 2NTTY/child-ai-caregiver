@@ -1,56 +1,58 @@
-# 成長階段關注前端交接
+# 成長與關注前端交接
 
-更新：2026-10-01。FE-W15 基線 `3e153a7c5f8682429e380d6e8816ae5be128175d`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；源碼／驗證 commit：`ef536e8e1c71e5b28dd2e337ab4e6b478fbc489a`。主責 B，只修改 `frontend/**`，沒有改 Server、Agent、正式 App、根文件或業務規則。使用者視覺及真接線由原責任方驗收，不自行 merge。
+2026-10-06 UTC 重整。依已取回程式及較早 Growth v38 交接編寫的新文件；不是遺失的最終 v44 原件。當前驗證與下一步只見 [PLAN](PLAN.md#active)。
 
-## 關注時間線接點
+<a id="living-growth-archive"></a>
+## 持續關注與常態成長報告
 
-FE-W38 呈現 `GrowthPage.concerns?: GrowthConcernProjection`：每個 concern 帶孩子、穩定 id、狀態、關聯 attentionIds 及事件；事件區分助手提议／原始觀察／待核對記錄／已確認操作，保留來源標籤、時間及原記錄／任務 id。`historyComplete` 明示資料是否完整；缺正式投影為 unavailable，不以既有 MemoryTopic 或數值推斷成長異常。
+`/growth` 預設持續關注，`?tab=archive` 讀成長檔案。家長跟 Agent 對話後查看整理成果，手動輸入只是補救；關注處理一件事的持續經過，報告長期呈現孩子的成長。現有來源保留這兩個分頁，不把關注藏成報告底部的一張提醒卡。
 
-`GrowthConcernTimeline` 只呈現，唯一來源仍由成長 owner 注入；既有 Growth attention／topic 操作及 expectedVersion／unknown 不變。Agent 建立關注、持續時間線及與首頁同步的正式 port 尚未提供，不從合成 fixture 創造 endpoint。原記錄導向 `/care?record=…`，需保持同孩子授權；找不到 id 或無權時不可跳到別的記錄冒充成功。首頁既有 ongoing 仍是 MemoryTopic，不與 concern 混稱。當前實作／驗收見 [PLAN](PLAN.md#active)。
+[GrowthView](src/components/growth/GrowthView.tsx)、[GrowthHistoryView](src/components/growth/GrowthHistoryView.tsx) 與 [GrowthWorkspace](src/workspaces/GrowthWorkspace.tsx) 共用一個領域 owner。preview provider 在 dashboard 掛一次；正式 host 注入相同 scope 的 model／actions，讀頁及操作不另建可寫資料庫。合成狀態只保留在 session，換身份／Server／孩子／角色或重設情境會清理，並非持久化。
 
-## 已核對依據
+### 關注鏈、結束及恢復
 
-直接讀 GitHub master `ce87370b6375b25e45f016f2218d924b44f06f3c`：[UI-P2-07／S13-W08 交接](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/docs/P2_UI_HANDOFF.md#growth-ui-handoff)、[HTTP 契約](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/docs/API.md#growth-attention-http)、[growth 型別](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/shared/growth.ts)、[GrowthApi](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/client/growth-api.ts)、[正式 GrowthPanel](https://github.com/2NTTY/child-ai-caregiver/blob/ce87370b6375b25e45f016f2218d924b44f06f3c/src/client/GrowthPanel.tsx)。接線時再核對受影響契約；不因主聊天 checkout 未拉取便推造功能或重寫後端。
+- [GrowthConcern](src/growth-view-model.ts) 保留 childId、穩定 id／version、status、attentionIds、events、historyComplete；事件分 Agent 提案、原始觀察、待核對記錄及已確認行動。只按 canonical ID／版本組合 timeline，不靠標題猜關係
+- 選一條關注後閱讀其經過；歷史未完整時明示範圍。缺正式 concern 投影為 unavailable，不能以 MemoryTopic、單筆量測或文字推斷成長問題
+- [結束確認](src/components/growth/GrowthArchiveConcernButton.tsx) 顯示關注名稱與後果，開啟、取消及 dismiss 均不寫入。確認綁 scope／child／id／version／status／authorityVersion，一次消耗；版本或權限變更使舊確認失效
+- `archiveConcern(id, expectedVersion, authorityVersion)` 結束整條關注，保留事件、原始記錄及待核對狀態，不完成／取消已連結任務、不刪資料。合成 owner 增加 confirmed_action 事件並保存 statusBeforeArchive
+- [撤銷](src/components/growth/GrowthConcernChangeNotice.tsx) 只對匹配成功操作與現行版本提供；它與歷史的「恢復」都呼叫同一 `restoreConcern`。恢復原 proposed／following 狀態並追加事件，不把待核對升成已確認；缺 statusBeforeArchive 時停用，不猜原狀態
+- `/history?category=growth` 已呈現同源已結束關注。常態列只保留名稱、結束日期及閱讀入口；獨立恢復按鈕不觸發開詳情，恢復後從 closed 清單移出，完整經過仍保留。搜尋僅針對已取得關注；日期取 archivedAt，未知日期不冒配日期
+- archive／restore 的正式 endpoint、權威歷史、原狀態投影及持久化尚未接通。模擬時間不是 Server 收據；歷史頁的操作復原仍共享 [GrowthOperationRecovery](src/components/growth/GrowthOperationRecovery.tsx)
 
-## 前端入口
+時間線呈現依 [GrowthConcernTimeline](src/components/growth/GrowthConcernTimeline.tsx)；原記錄導向 `/care?record=…` 必須校驗同孩子授權及實際 id，找不到不能選別筆。Task callback 現時只到 `/tasks`，不可宣稱精確定位或兩個 domain 已正式同步。Home ongoing 仍為 MemoryTopic。
 
-`npm run web -- --port 8083`，入口 `/growth`；固定輸出預覽方法沿 [總交接](HANDOFF.md#預覽及驗證)。桌面導航「成長與關注」，手機由五項底欄的「成長」進入，次要入口保留相容路由。手機 Web 與 Android 使用同一功能元件。
+### Web 報告與導出選擇
 
-| 檔案 | 責任 |
-|---|---|
-| [growth 路由](app/(dashboard)/growth.tsx)、[GrowthScreen](src/screens/GrowthScreen.tsx) | 薄路由、合成情境及身份／Server／孩子範圍；正式版替換資料提供者 |
-| [GrowthView](src/components/growth/GrowthView.tsx)、[growth-view-model](src/growth-view-model.ts) | 純顯示模型／操作回調、狀態與清單；dataLabel 由 adapter 提供，無須保留預覽字句 |
-| [GrowthAttentionCard](src/components/growth/GrowthAttentionCard.tsx) | 理由／限制／狀態、完整來源與依據快照、接受／暫緩／關閉、任務另行同意 |
-| [GrowthTopicCard](src/components/growth/GrowthTopicCard.tsx) | 四主題及 API 有限近況選項、共享核對、停用／重新啟用；表單草稿保留原基準 |
-| [growth-form](src/components/growth/growth-form.ts) | RHF／Zod 顯示層驗證及回調投影；新任務復用既有 taskFormSchema／時間控件 |
-| [useGrowthPreview](src/preview/useGrowthPreview.ts)、[growthFixture](src/preview/growthFixture.ts) | component memory 的合成操作、故障和來源示例，不跑規則、worker／Agent、保存或外發 |
+[GrowthArchive](src/components/growth/GrowthArchive.tsx) 是持續可讀的標準 Web 報告。章節由正式分類投影安排孩子概況、身體與生活、能力與興趣、持續關注、近期變化與支持；舊未分類條目放中性「已記錄的情況」，不從文字猜分類。來源確認記錄、Agent 整理及尚待核對的標示分開，不把報告當發展評估或已確認的新事實。
 
-固定四個 topicId 沿原型別；實際標題、近況選項、適用性、來源及依據由 `GrowthPage` 提供。fixture 的選項、來源片段／hash／ID 均屬合成，不是正式規則或官方文章，不可發到 API，也不表示已驗四年齡段的評估。來源連結只允許無帳密 HTTPS；實際開啟是使用者明確操作。
+- `GrowthArchiveProjection` 必須匹配 scopeKey／childId／authorityVersion。periods 只以 snapshotId／snapshotVersion 指向實際取得的 snapshot／history；少量片段標部分涵蓋，不造全年／季度完整性
+- `GrowthArchiveSnapshot` 保存版本、年齡／期間、生成時間、sourceBasisVersion、coverageNote、內容及來源／更正引用。來源更正、刪除或撤權應使相關敘事失效；歷史也不得繞過現行權限
+- 未生成、生成中、可讀、有新資料待整理、資料不足、失敗及來源失效分開。只有仍有權讀的舊版可保留閱讀；前端沒有背景計時生成或自動更新正式報告
+- 導出視窗保留家庭成長、就診溝通、照護交接、入園認識四種用途，已取得期間，以及「原始記錄與依據」「本版更新說明」選項。這是意圖選擇，不是產物
+- [growthReportExportRequest](src/components/growth/growth-archive-view.ts) 綁 scope／child／authority、snapshot ID／version、period／用途及選項。GrowthView 目前沒有注入 onExportReport，因此明示未接通、PDF 下載停用；不能把選項可操作稱為已生成／下載
 
-## 回調映射及操作語義
+正式長期 Agent 更新、檔案讀取／生成、PDF 內容預覽與下載仍需原責任方提供。一處注入同版能力供 Web／PDF 使用；生成／下載前重新驗權限與來源，不靜默換版本、不自動外發。較廣的已採納導出需求包括按用途重用有效內容及必要補寫、選擇授權照片／量測／詳細記錄／關注歷史／可匯出對話、排除個別項目；這些較廣選項目前未實作。排除敏感來源時亦移除洩露其內容的衍生敘事，不能只藏連結。年度版不只是串接季度，沒有真產物不得回報成功。
 
-沿原 `createGrowthApi`、登入 cookie、`x-expected-user-id`、AbortSignal 和 online refresh。正式 API `getPage`／`decideAttention`／`updateTopic` 分別接 `refresh`／`decide`／`updateTopic`；本地 `GrowthDecision`／`GrowthTopicDecision` 只屬顯示投影，正式請求須用根目錄 schema 再核對。
+原始時間與加入時間分開；未知事件時間不拿 createdAt 代替。單筆量測不畫趨勢、不同單位不直接比較，不生成假里程碑、能力達標率或診斷。原始 Profile／Care／Photos／Tasks／對話仍由各自 owner 掌管，衍生報告只引用來源及版本，不反寫成事實；現有日／週 Summary 及到診準備不是長期成長報告。
 
-- 頁面資料供獲授權家庭成員查看；owner／caregiver 可管理，viewer 唯讀。來源理由不能洩漏私人資料；權限、`canManage`、成員授權／storage epoch 及 `authorityVersion` 由 Server 判定。
-- 每項顯示「為何現在」、觀察／安排／諮詢、適用限制、sourceAvailable、狀態、版本／時間、basis／已確認資料、來源片段／版本／hash／核對時間、previousId 和新提示原因。不可用代表來源或適用依據失效，不必然是網站下架；舊建議不當現行內容，不准接受／暫緩，仍保留追溯和真正任務狀態。
-- 接受預設只記錄知悉，沒有任務、預約、外發或完成。明確選新任務後核對原標題／內容、種類、目前合資格負責人、日期／時間／IANA 時區，再另行同意家庭共享。標題 160、內容 2,000 字，不靜默截短。時間沿共用 Paper Dates／Luxon，原文和 offset 保留。
-- 已有同階段連結的待處理／待覆核任務時，先到任務區核對，不在關注入口另建；來源變化不等於任務取消。已完成／取消仍顯示實際狀態。`onTask(taskId)` 預留精確查找；目前 preview 只到 `/tasks`，兩頁 fixture 不同步。API 支援連接指定版本既有任務，但正式 Panel 目前只露出知悉／新建；本包沿原 Panel，不造一個靠標題猜測的任務選單。
-- 暫緩需明確將來時刻；到期處理由原 Server 規則掌管，此預覽不自動復活或另建任務。關閉備註最多 1,000 字，相同階段／同依據的舊終態保持；新提示必須另列理由及前次關係。
-- 四主題永久停用和重新啟用各需明確勾選；重新啟用只恢復未來適用性評估，不復活舊關閉記錄、不取消連結任務。
-- 近況不預填否定；只有明確選的 API 有限選項才送出，未選保留原狀。共享同意獨立且選項改動後清除；`expectedFacts` 凍結**原主題全部** fact refs，去重並核對版本，不只包含被選的欄位。衝突或失效到記憶區覆核，這裏不覆蓋它。成功交易／更正歷史仍由原 API 保存。
+## 既有 Growth API 邊界
 
-RHF 會把名稱中的點解析成路徑。動態有限選項採穩定本地欄位名，再映回原 API key，避免改變 keys；不引入新的表單框架。本機 7.88.0 的公開 `set()` 行為已實際核對，既有 [表單 Skill](.agents/skills/web-screen-delivery/references/forms-controls.md) 及研究沿用。本次官方頁讀取受 403／cache miss 影響，沒有把未取得文件寫成已重新核對。
+下列沿較早已核對的 master `ce87370b6375b25e45f016f2218d924b44f06f3c`：`src/client/growth-api.ts`、`src/shared/growth.ts`、`docs/API.md` 的 Growth 契約。這是歷史靜態依據，整合前重核實際正式版本；本次沒有改 backend 或證明真服務行為。
 
-## 原操作、版本與清理
+- `createGrowthApi` 的 getPage／decideAttention／updateTopic 對應 refresh／decide／updateTopic，沿登入 cookie、x-expected-user-id、AbortSignal 及原 refresh。`GrowthDecision`／`GrowthTopicDecision` 是前端投影，不是新 wire schema；archive／restore 不能硬套既有 attention 關閉
+- owner／caregiver 可管理、viewer 唯讀；真正權限、canManage、storage epoch 及 authorityVersion 由 Server 決定。sourceAvailable=false 不必然是網站下架；舊建議不得當現行內容接受／暫緩，仍保留追溯與真 task 狀態
+- 接受 attention 預設只知悉；新任務須另核內容、種類、目前合資格負責人、日期／時間／IANA zone及家庭共享。標題 160、內容 2,000 字、不靜默截短；已有同階段待處理／待覆核任務先到 Tasks 核對，不重建
+- API 可連指定版本的既有任務，較早正式 Panel 只露知悉／新建；不能靠標題猜選取。暫緩需將來時刻，到期由 Server 處理；關閉備註上限 1,000 字，舊終態不自行復活
+- 既有四 topic 的停用／重啟與近況確認契約保留，現行關注頁不再以階段表單作主畫面。重啟只恢復未來評估，不復活舊關閉項或取消任務。近況不預填否定；只傳明確選項，共享同意獨立，expectedFacts 凍結原主題全部 refs／版本；衝突回原 Memory owner
 
-成長操作**沒有 opId 收據**；原版本＋相同 actor／完整 body 的最後一次成功結果由原 API 查回。unknown 凍結原對象、完整正文、`expectedVersion`／`authorityVersion`、fact refs 及原顯示名稱；停止所有新變更。先 GET；原對象在最新頁面才能重新明確同意查回同一份原請求，即使目前來源／狀態已改變，也不能把原基準默換成新操作。沒有找到對象時仍保留原操作及鎖定，不用相似文字猜測成功。
+## Unknown、草稿及隔離
 
-原 API 的明確 4xx 拒絕先停止重試；GET 後要求重新核對，不能用這次拒絕判定較早 unknown 成敗。表單第一次改動時捕捉項目／主題／授權／fact 基準，重讀保留草稿及同意；基準改變便停止該表單。放棄草稿須二次明確操作並重讀；這只清表單，**不清除 unknown 的原請求**。dirty 對象從最新頁面缺席時保留舊資料及草稿、停止相關新操作；原生／正式版沿原 ambient refresh 的延後及合併規則。
+Growth 操作沒有 opId 收據；較早契約以原版本、相同 actor／完整 body 查回最後成功結果。unknown 凍結原對象、body、expectedVersion／authorityVersion、fact refs 及顯示名稱，停止新變更；先 GET，找到原對象後重新明確同意查回原請求。不能換版本重送、按相似文字推測成功，或因找不到就解除鎖定。
 
-401／403／404、session_changed、帳號／Server／孩子切換清舊資料、草稿、原操作及計時回應；真 transport 要取消並忽略晚到結果。一般離線保留本頁草稿、禁提交／無 outbox，回線後依正式 refresh 控制器核對；preview 用明確手動重讀。撤權不拿 fixture 的角色當證據。
+明確 4xx 先停止重試，GET 後重新核對，不用本次拒絕推定較早 unknown 的結果。第一次修改捕捉原基準，重讀不覆蓋草稿；基準變更停止提交。二次明確放棄只清未送出草稿，不清 unknown 原請求。讀取失敗／dirty／pending／busy／read-only 均保留相應守衛。
 
-## 已驗及待驗
+401／403／404／session_changed、身份／Server／孩子或權限變更清理舊私人內容及回調；正式 transport 必須 abort／拒絕遲到結果。一般離線保留同 scope 草稿、禁提交、沒有 outbox；重新上線由原 controller 核對。fixture 角色、合成回應或本地事件都不是授權或 Server 收據。
 
-typecheck、三項規則／原文／有限選項／版本及時間檢查、Web 29 靜態路由和 Android Hermes／31 資產 export 通過。1440／1024／390／320 的成長頁／導航及關鍵合成流程、390／320 的 150% Web 文字／浮動標籤／共用表單重排通過，沒有 pageerror、console.error 或 /api/ 請求；[證據及 bundle](verification/fe-w15/build-checks.json)。共用配色／控件未改，沿 FE-W14 及更早未變證據，沒有機械重跑其他業務套件。
+## 證據使用
 
-仍待使用者視覺確認、正式 API／控制器／refresh／任務及記憶精確導航／首頁投影與跨頁同步；規則、抑制、真背景及四年齡段產品驗收沿主聊天已有證據，不由此預覽重做或冒充。Android 只是共用 UI 匯出，APK、系統字體、鍵盤／返回鍵／TalkBack／Safe Area 和真機待驗。到診摘要與主動聯絡另包接續，整套前端仍未結案。
+[舊定向確認／恢復檢查](verification/growth-confirm-restore-2026-10-05T18-59Z/checks.json)、[時間線標記檢查](verification/growth-timeline-2026-10-05T19-00Z/source-and-checks.json)及[外殼生命週期檢查](verification/scope-shell-stability-2026-10-05T19-38Z/checks.json)已取回；均限定其原版本、harness 或局部 semantic 範圍，不代表新修訂 browser／export／真 API／持久化／原生通過。未取回的最終 v44 QA 不補造，實際新結果只在 PLAN 記錄。

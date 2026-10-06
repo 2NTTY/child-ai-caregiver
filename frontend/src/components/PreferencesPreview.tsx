@@ -50,7 +50,7 @@ export function PreferencesPreview({ online }: { online: boolean }) {
   }
   return <SectionCard><SectionHeader density="compact" title="通知偏好" subtitle="只管理本人的安靜時段；設定不代表渠道已綁定或外發已獲授權。" />
     <StatusAnnouncement eventKey={String(online)} message={online ? "已恢復連線，可重新核對本人的通知偏好。" : "目前離線；可整理本次草稿，恢復連線後再確認。"} />
-    <Text style={styles.meta}>合成示例 · 未接駁 Server · 已讀版本 {basis}</Text>
+
     {!online ? <Text style={styles.warning}>目前離線；可整理本次草稿，恢復連線後再確認。</Text> : null}
     <PreviewWriteNotice controller={op} online={online} />
     <FormErrorSummary entries={errorEntries} onFocus={name => {

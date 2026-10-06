@@ -1,0 +1,23 @@
+{
+  "testedArtifact": "v35 entry-fb3f33d31f110361befa79b4143e54c6.js",
+  "status": "completed-partial-snapshot-awaiting-v36",
+  "passedScope": [
+    "Home settled four widths and initial desktop welcome reading/settled states",
+    "Mobile Home picker visible/open/cancel/actual child switch and return without welcome replay",
+    "Capture 650ms stationary hold/release, visible file option open/cancel, ArrowUp/Tab/Escape focus restoration, diagonal voice dialog/cancel, out-of-sector drag cancellation",
+    "Tasks four-width hierarchy, ended disclosure, review filter/detail/return with corrected full-label assertion"
+  ],
+  "notRunHere": [
+    "Care",
+    "Summary",
+    "More",
+    "Growth acceptance",
+    "New v36 guide/onboarding changes"
+  ],
+  "continuation": "Root will publish v36 and hand over that version for the unrun and newly changed scope. Do not reuse old layout acceptance for changed pages.",
+  "limitations": [
+    "No real camera/mic/API/model/native",
+    "No precise continuous-frame or exact 3s/360ms timing proof",
+    "Approval-review interruptions and original assertion-label error remain preserved in historical evidence"
+  ]
+}

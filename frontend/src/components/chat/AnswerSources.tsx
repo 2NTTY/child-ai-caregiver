@@ -6,6 +6,7 @@ import { colors, spacing } from "../../theme";
 import { AppScrollView } from "../AppScrollView";
 import { HorizontalOverflowRail } from "../HorizontalOverflowRail";
 import { AppButton } from "../ui";
+import { AppIcon } from "../AppIcon";
 import { CitationMarker } from "./CitationMarker";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 import { locateCitationSource } from "./locateCitationSource";
@@ -197,7 +198,7 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
             <View style={[styles.technicalGroup, styles.dividedGroup]}>
               <Pressable accessibilityRole="button" accessibilityLabel="版本與核對資料" accessibilityState={{ expanded: technicalOpen }}
                 aria-expanded={technicalOpen} aria-controls={`${groupId}-technical`} onPress={() => setTechnicalOpen(value => !value)} style={styles.technicalToggle}>
-                <Text style={styles.technicalTitle}>{technicalOpen ? "收起" : "查看"}版本與核對資料</Text>
+                <Text style={styles.technicalTitle}>{technicalOpen ? "收起" : "查看"}版本與核對資料</Text><AppIcon name={technicalOpen ? "chevron-up" : "chevron-down"} size={16} />
               </Pressable>
               <MotionDisclosure expanded={technicalOpen} scopeKey={`${groupId}:${selected.id}`}><View nativeID={`${groupId}-technical`} testID="source-detail-group" style={[styles.detailGroup, styles.technicalContents]}>
                 <Detail technical label="原來源版本" value={selected.versionId} />
@@ -234,13 +235,13 @@ const styles = StyleSheet.create({
   separator: { width: 1, height: 20, backgroundColor: chatColors.line, flexShrink: 0 },
   tab: { minHeight: 48, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent", minWidth: 0 },
   selectedTab: { borderBottomColor: chatColors.ink },
-  tabText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600" },
+  tabText: { textDecorationLine: "underline", fontFamily: chatFont, color: chatColors.ink, ...chatType.tool, fontWeight: "600" },
   detailScroll: { height: 280, flexGrow: 0 }, details: { paddingVertical: spacing.sm, gap: spacing.md }, detail: { gap: spacing.xs, minWidth: 0 },
   detailGroup: { gap: spacing.sm, minWidth: 0 }, dividedGroup: { borderTopWidth: 1, borderTopColor: chatColors.line, paddingTop: spacing.md },
   groupTitle: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
   quote: { borderLeftWidth: 2, borderLeftColor: chatColors.line, paddingLeft: spacing.md, minWidth: 0 },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.meta },
   technicalTitle: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, fontWeight: "600" },
-  technicalToggle: { minHeight: 48, justifyContent: "center", alignSelf: "flex-start" },
+  technicalToggle: { flexDirection: "row", alignItems: "center", gap: spacing.sm, backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, paddingHorizontal: spacing.sm, alignSelf: "flex-start", minHeight: 48, justifyContent: "center" },
   technicalGroup: { minWidth: 0 }, technicalContents: { paddingTop: spacing.sm },
 });

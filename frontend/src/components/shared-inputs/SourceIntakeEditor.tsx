@@ -26,12 +26,12 @@ export function SourceIntakeEditor({ model, actions }: { model: SourcesViewModel
       <Text style={s.body}>時效：{sourceTimeOptions.find(option => option.value === proposal.timeScope)?.label}</Text>
       {proposal.timeScope === "specific_period" ? <Text selectable style={s.body}>適用期間／條件：{proposal.validityText || "尚待補充"}</Text> : null}
       <Text style={s.body}>可見範圍：{model.accountName}本人，在{model.childName}的私人來源內。</Text>
-      <Text style={s.meta}>正式來源沿既有加密儲存保存，不加入公共官方／新聞知識庫。本次用途和對話只留在預覽記憶，離開或切換範圍後清除。</Text>
+      <Text style={s.meta}>來源保持私人，不加入公共知識庫。本次用途草稿和對話會在離開或切換範圍後清除。</Text>
       {proposal.purpose === "record_candidate" ? <Text style={s.meta}>只表達想整理候選；仍須分開核對孩子關係、記錄內容和家庭共享，現在不建立記錄。</Text>
         : proposal.purpose === "track_topic" ? <Text style={s.meta}>只表達持續關注意向；未建立話題、任務、提醒、訂閱或外發授權。</Text>
-          : <Text style={s.meta}>只表達回答時參考的意向；正式私人檢索／回答引用尚未接線。</Text>}
+          : <Text style={s.meta}>回答引用暫不可用。</Text>}
       {intake.stage === "review" ? <>
-        <AppButton label={editing ? "收起建議欄位" : "修改整理建議"} variant="quiet" disabled={locked} onPress={() => setEditing(value => !value)} />
+        <AppButton expanded={editing} label={editing ? "收起建議欄位" : "修改整理建議"} variant="quiet" disabled={locked} onPress={() => setEditing(value => !value)} />
         {editing ? <View style={s.stack}>
           <AppSelect label="建議用途" value={proposal.purpose} options={sourcePurposeOptions} disabled={locked} onChange={value => change("purpose", value)} />
           <AppSelect label="來源性質（不代表已核實）" value={proposal.nature} options={sourceNatureOptions} disabled={locked} onChange={value => change("nature", value)} />

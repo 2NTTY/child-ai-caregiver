@@ -29,7 +29,7 @@ export function BackgroundSettings({ pickImage }: { pickImage?: PickBackgroundIm
       <AppButton label={brand.restoreBackgroundLabel} variant="quiet" disabled={!background.selected || reading} onPress={() => { background.restore(); setError(null); }} />
     </View>
     {error ? <Text style={styles.error}>{error}</Text> : null}
-    <Text style={styles.note}>JPG／PNG／WebP · 最多 4 MiB。圖片只留在本次介面預覽，沒有上傳；重新整理或退出預覽會恢復原圖。正式保存及手機選圖待接線。</Text>
+    <Text style={styles.note}>JPG／PNG／WebP · 最多 4 MiB。圖片只在本次開啟期間套用，重新整理後恢復原圖。</Text>
   </SectionCard>;
 }
 const styles = StyleSheet.create({

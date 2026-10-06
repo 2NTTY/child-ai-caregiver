@@ -1,3 +1,4 @@
+import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
 import { brand } from "../../branding";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -82,7 +83,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
     {editorVisible ? <View style={s.steps}>{["選擇原照片", "私人保存", "核對草稿", "家庭共享"].map((label, index) => <View key={label} style={s.step}><Text style={s.stepNumber}>{index + 1}</Text><Text style={s.meta}>{label}</Text></View>)}</View> : null}
     {!model.online ? <View style={s.notice}><Text style={s.warning}>目前離線，已選原照片及草稿保留。重連後先核對最新狀態，不會自動重送。</Text></View> : null}
     {model.notice ? <Text style={s.body}>{model.notice}</Text> : null}
-    {model.operation.state !== "none" ? <View style={[s.status, model.operation.state === "failed" && s.statusError]} testID="photo-operation"><Text style={s.title}>{operationLabel}</Text><Text style={s.body}>{model.operation.message}</Text>
+    {model.operation.state !== "none" ? <View style={[s.status, model.operation.state === "failed" && s.statusError]} testID="photo-operation"><AppStatusBadge label={operationLabel} tone={model.operation.state === "failed" ? "error" : model.operation.state === "saved" && model.operation.phase !== "extract" ? "success" : model.operation.state === "saving" ? "info" : "warning"} /><Text style={s.body}>{model.operation.message}</Text>
       {model.operation.reference ? <Text style={s.meta}>合成操作參考：{model.operation.reference}；不是 Server opId。</Text> : null}
       <View style={s.row}>{["unknown", "unconfirmed"].includes(model.operation.state) ? <AppButton label={model.operation.phase === "upload" || model.operation.phase === "extract" ? "查核同一照片附件" : "查核原照片操作"} disabled={!model.online || model.busy} onPress={actions.checkOriginal} /> : null}
         {model.operation.state === "unconfirmed" && model.operation.checked ? <AppButton label="重試原操作" accessibilityLabel="明確重試原內容及原操作" variant="secondary" disabled={!model.fresh} onPress={actions.retryOriginal} /> : null}
@@ -98,7 +99,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
           <ReadStateNotice state={listReadState} message={readMessage} />
           <MotionList items={model.items} keyExtractor={item => item.id} scopeKey={listScope} regionKey="photo-list" eligible={listMotion} testID="photo-list-motion" renderItem={(item, row) => <View style={s.item} testID={`photo-item-${item.id}`}>
             <View style={s.itemHeader}>{item.imageSource ? <Image source={item.imageSource} resizeMode="contain" accessibilityLabel={`${item.fileName}縮圖`} style={s.thumbnail} /> : <View style={s.itemIcon}><AppIcon name="image-outline" size={20} color={colors.teal} /></View>}<View style={s.itemCopy}><Text style={s.title}>{item.fileName}</Text><Text style={s.meta}>{item.createdAtLabel} · 版本 {item.version}</Text></View></View>
-            <View style={s.row}><Text style={s.meta}>{item.visibility === "private" ? "私人" : "家庭共享"} · {item.state === "ready" ? "原檔已保存" : "原檔待上傳"}</Text></View>
+            <View style={s.row}><AppStatusBadge label={item.visibility === "private" ? "私人" : "家庭共享"} tone="neutral" /><AppStatusBadge label={item.state === "ready" ? "原檔已保存" : "原檔待上傳"} tone={item.state === "ready" ? "success" : "warning"} /></View>
             <AppButton ref={node => deletionFocus.rowRef(item.id, node)} label="開啟照片" accessibilityLabel={`開啟照片：${item.visibility === "private" ? "私人" : "共享"} · ${item.fileName}`} variant="quiet" disabled={row.exiting || locked || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openPhoto(item);}} />
           </View>} />
           <Text style={s.meta}>JPEG／PNG，每張最多 4 MiB；每個孩子最多 100 張及 100 MiB。清單數量不是全部容量統計。</Text>
@@ -108,7 +109,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
           <SectionCard testID="photo-original"><SectionHeader density="compact" title={selected ? "原照片" : "選擇原照片"} icon="image-outline" action={selected || model.original ? <AppButton label="清除本頁" variant="quiet" disabled={locked} onPress={actions.clearEditor} /> : undefined} />
             {image ? <Image source={image} resizeMode="contain" accessibilityLabel="原照片預覽" style={[s.image, compact && s.mobileImage]} /> : <View style={s.placeholder}><AppIcon name="image-outline" size={24} color={colors.teal} /><Text style={s.meta}>保留照片原檔，確認後才共享</Text></View>}
             {model.original || selected ? <><Text style={s.title}>{model.original?.fileName ?? selected?.fileName}</Text><Text style={s.meta}>{((model.original?.bytes ?? selected?.bytes ?? 0) / (1024 * 1024)).toFixed(2)} MiB · {selected?.state === "ready" ? "原檔已模擬保存" : "本次原檔尚未完整保存"}</Text></> : null}
-            {selected ? <View style={s.related}><MotionFeedback scopeKey={candidateScope} active={model.operation.state === 'saved' && model.operation.phase === 'confirm' && !!selected.recordId} triggerKey={model.operation.state === 'saved' && model.operation.phase === 'confirm' ? model.operation.reference : null} testID="photo-confirmation-feedback"><Text style={s.body}>{selected.visibility === "private" ? "私人，只有上傳者可讀取" : "已確認家庭共享"}</Text></MotionFeedback><Text style={s.body}>提取：{photoExtractionLabels[selected.extraction.state]}。{selected.recordId ? "已連結確認記錄，不能再次提取或確認。" : ""}</Text>
+            {selected ? <View style={s.related}><MotionFeedback scopeKey={candidateScope} active={model.operation.state === 'saved' && model.operation.phase === 'confirm' && !!selected.recordId} triggerKey={model.operation.state === 'saved' && model.operation.phase === 'confirm' ? model.operation.reference : null} testID="photo-confirmation-feedback"><AppStatusBadge label={selected.visibility === "private" ? "私人，只有上傳者可讀取" : "已確認家庭共享"} tone={selected.visibility === "private" ? "neutral" : "success"} /></MotionFeedback><AppStatusBadge label={photoExtractionLabels[selected.extraction.state]} tone={selected.extraction.state === "failed" ? "error" : selected.extraction.state === "unknown" || selected.extraction.state === "available" ? "warning" : selected.extraction.state === "running" ? "info" : "neutral"} />{selected.recordId ? <Text style={s.body}>已連結確認記錄，不能再次提取或確認。</Text> : null}
               <Text style={s.meta}>來源：{selected.source}；上傳者：{selected.ownerLabel}；版本 {selected.version}</Text></View> : null}
             {model.capacityReached ? <Text style={s.warning}>已模擬達到新增容量限制。可核對現有附件，不能再新增照片。</Text> : null}
             {model.reservationUnidentified ? <Text style={s.warning}>已確認操作的附件結果未能識別。保留原檔，不會再次建立；請逐項核對清單或明確清除本頁。</Text> : null}
@@ -126,7 +127,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
               </> : null}</MotionReveal>
               {candidate ? <><Text style={s.meta}>採用候選會取代本頁手動草稿。</Text><AppButton label="採用候選" accessibilityLabel="採用候選並取代本頁草稿" variant="secondary" disabled={model.formLocked} onPress={actions.adoptCandidate} /></> : null}
             </View> : null}
-            {selected?.canManage ? <AppButton label="刪除照片及連結記錄" variant="quiet" disabled={!model.canDelete} onPress={actions.openDeletion} /> : null}
+            {selected?.canManage ? <AppButton label="刪除照片及連結記錄" variant="danger-secondary" disabled={!model.canDelete} onPress={actions.openDeletion} /> : null}
           </SectionCard>
           {editable && (model.original || selected) ? <PhotoRecordForm key={model.formKey} model={model} actions={actions} /> : null}
         </View>

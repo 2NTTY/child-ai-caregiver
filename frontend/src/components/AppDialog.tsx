@@ -15,7 +15,7 @@ function Actions({ style, ...props }: ComponentProps<typeof PaperDialog.Actions>
 }
 
 // Paper supplies the appearance; RN Modal owns the modal focus and platform close behavior.
-export const AppDialog = Object.assign(function AppDialog({ danger = false, onClosed, ...props }: ComponentProps<typeof PaperDialog> & { danger?: boolean; onClosed?: () => void }) {
+export const AppDialog = Object.assign(function AppDialog({ danger = false, onClosed, accessibilityLabel, ...props }: ComponentProps<typeof PaperDialog> & { danger?: boolean; onClosed?: () => void; accessibilityLabel?: string }) {
   const preferences = useMotionPreferences();
   const backdrop = useModalBackdrop(props.visible ?? false);
   const progress = useRef(new Animated.Value(1)).current;
@@ -31,7 +31,7 @@ export const AppDialog = Object.assign(function AppDialog({ danger = false, onCl
     animation.start();
     return () => animation.stop();
   }, [props.visible, preferences.enabled, preferences.epoch, progress]);
-  return <Modal visible={props.visible} transparent animationType="none" onRequestClose={props.onDismiss} onDismiss={onClosed}>
+  return <Modal visible={props.visible} transparent animationType="none" accessibilityLabel={accessibilityLabel} onRequestClose={props.onDismiss} onDismiss={onClosed}>
     <MotionPaperScope><View style={styles.root}>
       <MotionBackdrop open={props.visible ?? false} {...backdrop} />
       <PaperDialog {...props} theme={{ ...props.theme, colors: { ...props.theme?.colors, backdrop: "transparent" }, animation: { scale: 0 } }} testID={props.testID ?? "app-dialog"} style={[styles.dialog, danger && styles.dangerDialog, props.style, { opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [motionTokens.dialog.distance, 0] }) }] }]} />

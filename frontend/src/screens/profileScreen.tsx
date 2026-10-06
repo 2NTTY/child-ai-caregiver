@@ -1,3 +1,4 @@
+import { useProfileWorkspace } from "../workspaces/ProfileWorkspace";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -11,7 +12,8 @@ import { useProfileSwitchAnchor } from "../components/profile/useProfileSwitchAn
 import { MotionDisclosure } from "../motion";
 import { AppButton, AppSelect, SectionCard, SectionHeader } from "../components/ui";
 import { usePreview } from "../preview/PreviewContext";
-import { useProfilePreview, type ProfilePreviewCondition } from "../preview/useProfilePreview";
+import type { ProfilePreviewCondition } from "../preview/useProfilePreview";
+import { useProfilePreviewWorkspace } from "../preview/ProfileWorkspaceProvider";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import type { HomeChild } from "../view-model";
 
@@ -19,15 +21,17 @@ function ProfileWorkspace({ child, online, reading, switchPosition }: {
   child: HomeChild | null; online: boolean; reading: boolean; switchPosition: ReturnType<typeof useProfileSwitchAnchor>;
 }) {
   const { model: home, actions: homeActions } = usePreview();
-  const preview = useProfilePreview(child, online, reading);
+  const preview = useProfilePreviewWorkspace();
+  const workspace = useProfileWorkspace();
   const [controlsOpen, setControlsOpen] = useState(false);
   const [managementOpen, setManagementOpen] = useState(false);
   const [childDeletionActive, setChildDeletionActive] = useState(false);
+  if (!preview || !workspace) return <Text style={styles.meta}>正在讀取目前孩子的檔案。</Text>;
   const conditions: { value: ProfilePreviewCondition; label: string }[] = [
     { value: "normal", label: "一般" }, { value: "no_profile", label: "尚未確認檔案" },
     { value: "read_only", label: "唯讀角色" }, { value: "access_lost", label: "權限失效" },
   ];
-  return <ProfileView model={preview.model} actions={preview.actions} onOpenCare={() => homeActions.open("care")} childDeletionActive={childDeletionActive} onLayoutReady={switchPosition.restorePosition}
+  return <ProfileView model={workspace.model} actions={workspace.actions} onOpenCare={() => homeActions.open("care")} childDeletionActive={childDeletionActive} onLayoutReady={switchPosition.restorePosition}
     writeNotice={<PreviewWriteNotice controller={preview.controller} online={online && !reading && preview.model.access === "editable"} />}
     childPicker={<View ref={switchPosition.pickerRef} style={styles.childBar}><SectionCard surface="plain"><SectionHeader density="compact" title="目前孩子" subtitle="只查看這位孩子的檔案；切換前會保護未保存草稿。" />
       <View style={styles.childOptions}>
@@ -39,14 +43,14 @@ function ProfileWorkspace({ child, online, reading, switchPosition }: {
         <Text style={styles.childName}>{item.displayName}</Text><Text style={styles.meta}>{item.id === child?.id ? "目前" : "切換"}</Text>
       </Pressable>) : <Text style={styles.meta}>沒有可切換的孩子。</Text>}
       </View>
-      <AppButton label={managementOpen ? "收起孩子管理" : "新增或管理孩子"} variant="quiet" onPress={() => setManagementOpen(value => !value)} />
+      <AppButton expanded={managementOpen} label={managementOpen ? "收起孩子管理" : "新增或管理孩子"} variant="quiet" onPress={() => setManagementOpen(value => !value)} />
       <MotionDisclosure expanded={managementOpen || childDeletionActive} scopeKey={child?.id ?? "no-child"}><View style={styles.childManagement}>
       <CreateChildPreview online={online && !reading} enabled={preview.model.access === "editable" && !preview.controller.locked && !childDeletionActive} onCreated={homeActions.createChildPreview} />
       {child && preview.model.access === "editable" ? <DeleteChildPreview key={child.id} child={child} online={online && !reading} enabled={!preview.controller.locked && preview.model.operation.state !== "conflict"} onDeleted={homeActions.deleteChildPreview} onActiveChange={setChildDeletionActive} /> : null}
       </View></MotionDisclosure>
     </SectionCard></View>}
-    previewControls={<SectionCard surface="plain" style={styles.previewTools}><SectionHeader density="compact" title="合成預覽情境" subtitle="只切換本頁示例，沒有呼叫 Server。"
-      action={<AppButton label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
+    previewControls={<SectionCard surface="plain" style={styles.previewTools}><SectionHeader density="compact" title="預覽工具" subtitle={controlsOpen ? "只切換共用檔案示例，沒有呼叫 Server。" : undefined}
+      action={<AppButton expanded={controlsOpen} label={controlsOpen ? "收起情境工具" : "顯示情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />} />
       {controlsOpen ? <>
         {child ? <AppSelect label="檔案情境" value={preview.condition} options={conditions} onChange={preview.changeCondition} /> : null}
         {child && preview.model.access !== "lost" ? <PreviewWriteControls controller={preview.controller} /> : null}
@@ -59,7 +63,7 @@ export default function ProfilePage() {
   const { model, actions } = usePreview();
   const child = model.children.find(item => item.id === model.selectedChildId) ?? null;
   const switchPosition = useProfileSwitchAnchor(child?.id ?? "no-child", actions.selectChild);
-  // Keep the viewport mounted while child-owned controllers, forms and operations reset.
+  // Keep the viewport mounted; the shared owner resets on scope, this form resets on child.
   return <PageFrame density="compact" title="子女檔案" description="只填已知資料；年齡原值、日期基準與未知欄位如實保留。" eyebrow={`${brand.name} · 孩子資料`}
     scrollRef={switchPosition.scrollRef} scrollTestID="profile-scroll">
     <ProfileWorkspace key={child?.id ?? "no-child"} child={child} online={model.connection === "online"} reading={model.profileLoad === "loading"} switchPosition={switchPosition} />
@@ -70,7 +74,7 @@ const styles = StyleSheet.create({
   childOptions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   childManagement: { gap: spacing.lg, paddingTop: spacing.md },
   previewTools: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.lg },
-  childOption: { flexGrow: 1, flexBasis: 180, minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.sm,
+  childOption: { backgroundColor: colors.controlSurface, flexGrow: 1, flexBasis: 180, minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.sm,
     borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   childOptionActive: { backgroundColor: colors.selectedNav, borderColor: colors.teal }, pressed: { opacity: 0.68 },
   childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { useAgentPreview, type AgentDecisionOutcome, type AgentReadOutcome } from "../../preview/useAgentPreview";
@@ -29,15 +29,15 @@ const readOptions: { value: AgentReadOutcome; label: string }[] = [
   { value: "failed", label: "讀取失敗" }, { value: "denied", label: "權限或登入失效" },
 ];
 
-export function AgentConversationPreview({ childId, online, onLocateSource, onPreviewReply }: { childId: string; online: boolean; onLocateSource?: LocateAnswerSource; onPreviewReply?: (phase: ChatReplyPhase) => void }) {
+export function AgentConversationPreview({ childId, online, onLocateSource, onPreviewReply, previewTools }: { previewTools?: ReactNode; childId: string; online: boolean; onLocateSource?: LocateAnswerSource; onPreviewReply?: (phase: ChatReplyPhase) => void }) {
   const [identity, setIdentity] = useState("preview-self");
   const [toolsVisible, setToolsVisible] = useState(false);
   // Server/user/child changes must replace private contents before an old result can render.
   return <AgentConversationContents key={JSON.stringify(["isolated-preview", identity, childId])}
-    childId={childId} online={online} identity={identity} setIdentity={setIdentity} toolsVisible={toolsVisible} setToolsVisible={setToolsVisible} onLocateSource={onLocateSource} onPreviewReply={onPreviewReply} />;
+    childId={childId} online={online} identity={identity} setIdentity={setIdentity} toolsVisible={toolsVisible} setToolsVisible={setToolsVisible} onLocateSource={onLocateSource} onPreviewReply={onPreviewReply} previewTools={previewTools} />;
 }
-function AgentConversationContents({ childId, online, identity, setIdentity, toolsVisible, setToolsVisible, onLocateSource, onPreviewReply }: {
-  childId: string; online: boolean; identity: string; setIdentity(value: string): void;
+function AgentConversationContents({ childId, online, identity, setIdentity, toolsVisible, setToolsVisible, onLocateSource, onPreviewReply, previewTools }: {
+  previewTools?: ReactNode; childId: string; online: boolean; identity: string; setIdentity(value: string): void;
   toolsVisible: boolean; setToolsVisible(value: boolean): void;
   onLocateSource?: LocateAnswerSource;
   onPreviewReply?: (phase: ChatReplyPhase) => void;
@@ -51,19 +51,19 @@ function AgentConversationContents({ childId, online, identity, setIdentity, too
       accessibilityState={{ expanded }} aria-expanded={expanded} onPress={() => setExpanded(!expanded)}
       style={({ pressed }) => [styles.disclosure, pressed && styles.pressed]}>
       <AppIcon name={expanded ? "chevron-down" : "chevron-right"} size={16} color={chatColors.secondary} />
-      <Text style={styles.disclosureText}>Agent 活動與候選</Text><Text style={styles.disclosureNote}>合成示例</Text>
+      <Text style={styles.disclosureText}>Agent 活動與候選</Text>
     </Pressable>
     <MotionDisclosure expanded={expanded} scopeKey={JSON.stringify([identity, childId])}>
     <View testID="agent-preview-content" style={[styles.stack, styles.disclosureContents]}>
     <SectionCard>
       <SectionHeader title="後續操作" icon="star-four-points" subtitle="候選屬於這一則示例回覆；先核對內容，再決定下一步。" />
-      <Text style={styles.body}>下方可操作的運行與候選均為合成資料，沒有連接 Agent、建立任務或寫入記憶。</Text>
+
       <AppButton label="查看來源與候選" variant="secondary" disabled={!online || blocked}
         onPress={() => preview.selectRun(conversationRunId(childId))} />
     </SectionCard>
     {preview.model.readState !== "idle" ? <AgentRunView model={preview.model} actions={preview.actions} onLocateSource={onLocateSource} /> : null}
     <AgentInboxView model={preview.inbox} actions={preview.inboxActions} />
-    <View style={styles.toolsToggle}><AppButton label={toolsVisible ? "收起 Agent 情境工具" : "顯示 Agent 情境工具"} variant="quiet" onPress={() => setToolsVisible(!toolsVisible)} /></View>
+    <View style={styles.toolsToggle}><AppButton expanded={toolsVisible} label={toolsVisible ? "收起 Agent 情境工具" : "顯示 Agent 情境工具"} variant="quiet" onPress={() => setToolsVisible(!toolsVisible)} /></View>
     {toolsVisible ? <SectionCard style={styles.tools}>
       <SectionHeader title="Agent 合成情境工具" subtitle="只測試畫面狀態；不改真正登入、不呼叫服務或外發。" />
       {onPreviewReply ? <>
@@ -78,6 +78,7 @@ function AgentConversationContents({ childId, online, identity, setIdentity, too
       <AppSelect label="Agent 運行情境" value={preview.scenario} options={scenarioOptions} onChange={preview.changeScenario} disabled={blocked} />
       <AppSelect label="模擬候選決定結果" value={preview.decisionOutcome} options={decisionOptions} onChange={preview.setDecisionOutcome} disabled={!!preview.model.busy} />
       <AppSelect label="模擬原運行讀取" value={preview.readOutcome} options={readOptions} onChange={preview.setReadOutcome} disabled={!!preview.model.busy} />
+      {previewTools}
     </SectionCard> : null}
     </View>
     </MotionDisclosure>
@@ -86,7 +87,7 @@ function AgentConversationContents({ childId, online, identity, setIdentity, too
 const styles = StyleSheet.create({
   stack: { gap: spacing.md, minWidth: 0 }, body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 23 },
   disclosureRoot: { minWidth: 0 }, disclosureContents: { paddingTop: spacing.md },
-  disclosure: { minHeight: 48, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
+  disclosure: { backgroundColor: colors.quietSurface, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: 10, paddingHorizontal: spacing.sm, alignSelf: "flex-start", minHeight: 48, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
   disclosureText: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool }, disclosureNote: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   pressed: { opacity: .7 },
   toolsToggle: { alignItems: "flex-start" }, tools: { backgroundColor: colors.quietSurface, borderRadius: radius.large },

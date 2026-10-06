@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import type { OperationState } from "../view-model";
+import type { OperationState, WriteOperationView } from "../view-model";
 import { usePreviewLeaveGuard, type LeaveScope } from "./PreviewNavigationGuard";
 
 export type PreviewWriteOutcome = "success" | "failed" | "unknown" | "conflict";
 export type PreviewCheckOutcome = "unknown" | "saved" | "not_applied" | "confirmed_unavailable" | "reload_failed";
 export type PreviewWriteState = OperationState | "conflict";
-export interface PreviewWriteOperation { state: PreviewWriteState; message: string; reference: string | null; recovery?: "check" | "retry" | "reload"; resultUnavailable?: boolean }
+export type PreviewWriteOperation = WriteOperationView;
 const empty: PreviewWriteOperation = { state: "none", message: "", reference: null };
 
 // Preview-only frozen callbacks. Production recovery is owned by the existing transport/controller.

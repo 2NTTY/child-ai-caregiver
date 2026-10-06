@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import type { HomeActions, HomeViewModel } from "../view-model";
 import { selectHomeOverview } from "../home-overview";
-import { chineseFont, colors, readingType, spacing } from "../theme";
+import { chineseFont, colors, readingType, spacing, workspaceType } from "../theme";
 import { AppButton, SectionCard, SectionHeader, TextLink } from "./ui";
 import { OperationNotice } from "./OperationNotice";
 import { ReadStateNotice } from "./ReadStateNotice";
@@ -38,17 +38,16 @@ export function HomeActionSummary({ model, actions }: { model: HomeViewModel; ac
   if (!overview) return null;
   const section = overview.attention;
   return <View testID="home-action-summary" style={styles.summary}>
-    <SectionHeader title="待辦摘要" subtitle="安排與下一步" density="compact" />
+    <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>待辦摘要</Text><TextLink label="查看全部" onPress={() => actions.open("tasks")} /></View>
     <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
       title={section.state === "unavailable" ? "暫未能確認待辦" : undefined}
       message={section.detail ?? "這次已載入快照沒有待辦事項。"}>
       {section.state === "unavailable" ? <AppButton label="重新讀取待辦" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
     </ReadStateNotice>
     {section.state === "ready" ? <HomeOverviewItems items={section.items.slice(0, 2)} actions={actions} compact /> : null}
-    <TextLink label="查看待辦與預約" onPress={() => actions.open("tasks")} />
-    <Text style={styles.meta}>只摘錄已載入的安排；通知送達及照顧完成須另行核對。</Text>
+    <Text style={styles.meta}>只摘錄已載入安排；送達及照顧完成須另核對。</Text>
     {model.connection !== "online" ? <Text style={styles.meta}>目前未連線；已載入的安排可能不是最新狀態。</Text> : null}
   </View>;
 }
 
-const styles = StyleSheet.create({ summary: { gap: spacing.md, minWidth: 0 }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });
+const styles = StyleSheet.create({ summary: { gap: spacing.sm, minWidth: 0 }, heading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }, title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });

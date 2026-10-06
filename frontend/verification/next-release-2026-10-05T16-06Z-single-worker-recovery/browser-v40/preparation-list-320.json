@@ -1,0 +1,448 @@
+{
+  "buttons": [
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 55.5,
+        "height": 48,
+        "left": 8,
+        "right": 140,
+        "top": 7.5,
+        "width": 132,
+        "x": 8,
+        "y": 7.5
+      },
+      "role": "button",
+      "selected": null,
+      "text": "選擇孩子，目前小昕"
+    },
+    {
+      "background": "rgb(237, 250, 249)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 55.5,
+        "height": 48,
+        "left": 156,
+        "right": 204,
+        "top": 7.5,
+        "width": 48,
+        "x": 156,
+        "y": 7.5
+      },
+      "role": "button",
+      "selected": null,
+      "text": "顯示更多孩子資料"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 55.5,
+        "height": 48,
+        "left": 208,
+        "right": 256,
+        "top": 7.5,
+        "width": 48,
+        "x": 208,
+        "y": 7.5
+      },
+      "role": "button",
+      "selected": null,
+      "text": "開啟訊息提示"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 55.5,
+        "height": 48,
+        "left": 264,
+        "right": 312,
+        "top": 7.5,
+        "width": 48,
+        "x": 264,
+        "y": 7.5
+      },
+      "role": "button",
+      "selected": null,
+      "text": "開啟資訊側欄"
+    },
+    {
+      "background": "rgb(237, 250, 249)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 108,
+        "height": 44,
+        "left": 181.953125,
+        "right": 304,
+        "top": 64,
+        "width": 122.046875,
+        "x": 181.953125,
+        "y": 64
+      },
+      "role": "button",
+      "selected": null,
+      "text": "切換合成預覽情境"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px 0px 2px",
+      "borderColor": "rgb(0, 0, 0) rgb(0, 0, 0) rgba(0, 0, 0, 0)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 265,
+        "height": 48,
+        "left": 16,
+        "right": 88,
+        "top": 217,
+        "width": 72,
+        "x": 16,
+        "y": 217
+      },
+      "role": "tab",
+      "selected": "false",
+      "text": "孩子概況"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px 0px 2px",
+      "borderColor": "rgb(0, 0, 0) rgb(0, 0, 0) rgba(0, 0, 0, 0)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 265,
+        "height": 48,
+        "left": 100,
+        "right": 158,
+        "top": 217,
+        "width": 58,
+        "x": 100,
+        "y": 217
+      },
+      "role": "tab",
+      "selected": "true",
+      "text": "準備單"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 330,
+        "height": 48,
+        "left": 143.015625,
+        "right": 293.015625,
+        "top": 282,
+        "width": 150,
+        "x": 143.015625,
+        "y": 282
+      },
+      "role": "button",
+      "selected": null,
+      "text": "預覽來源與限制"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px",
+      "borderColor": "rgb(0, 0, 0)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 483,
+        "height": 48,
+        "left": 17,
+        "right": 111.5,
+        "top": 435,
+        "width": 94.5,
+        "x": 17,
+        "y": 435
+      },
+      "role": "button",
+      "selected": null,
+      "text": "查看已歸檔"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(115, 114, 132)",
+      "disabled": null,
+      "expanded": "false",
+      "rect": {
+        "bottom": 621,
+        "height": 48,
+        "left": 29,
+        "right": 291,
+        "top": 573,
+        "width": 262,
+        "x": 29,
+        "y": 573
+      },
+      "role": "button",
+      "selected": null,
+      "text": "用途：到診準備"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px",
+      "borderColor": "rgb(0, 0, 0)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 681,
+        "height": 48,
+        "left": 29,
+        "right": 155.5,
+        "top": 633,
+        "width": 126.5,
+        "x": 29,
+        "y": 633
+      },
+      "role": "button",
+      "selected": null,
+      "text": "到助手交代"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 908,
+        "height": 164,
+        "left": 16,
+        "right": 304,
+        "top": 744,
+        "width": 288,
+        "x": 16,
+        "y": 744
+      },
+      "role": "button",
+      "selected": "false",
+      "text": "開啟小昕的到診準備"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1062,
+        "height": 142,
+        "left": 16,
+        "right": 304,
+        "top": 920,
+        "width": 288,
+        "x": 16,
+        "y": 920
+      },
+      "role": "button",
+      "selected": "false",
+      "text": "開啟小昕的迎新準備"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1216,
+        "height": 142,
+        "left": 16,
+        "right": 304,
+        "top": 1074,
+        "width": 288,
+        "x": 16,
+        "y": 1074
+      },
+      "role": "button",
+      "selected": "false",
+      "text": "開啟週末公園半日遊"
+    },
+    {
+      "background": "rgb(255, 255, 254)",
+      "border": "1px",
+      "borderColor": "rgb(202, 201, 212)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1392,
+        "height": 164,
+        "left": 16,
+        "right": 304,
+        "top": 1228,
+        "width": 288,
+        "x": 16,
+        "y": 1228
+      },
+      "role": "button",
+      "selected": "false",
+      "text": "開啟週末照顧交接"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px",
+      "borderColor": "rgb(0, 0, 0)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 1457,
+        "height": 48,
+        "left": 17,
+        "right": 196.109375,
+        "top": 1409,
+        "width": 179.109375,
+        "x": 17,
+        "y": 1409
+      },
+      "role": "button",
+      "selected": null,
+      "text": "舊共享準備／原操作查核"
+    },
+    {
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px",
+      "borderColor": "rgb(0, 0, 0)",
+      "disabled": null,
+      "expanded": null,
+      "rect": {
+        "bottom": 900,
+        "height": 64,
+        "left": 256,
+        "right": 320,
+        "top": 836,
+        "width": 64,
+        "x": 256,
+        "y": 836
+      },
+      "role": "button",
+      "selected": null,
+      "text": "記錄，向上拖曳開啟更多頁面"
+    }
+  ],
+  "headings": [
+    {
+      "rect": {
+        "bottom": 157,
+        "height": 32,
+        "left": 16,
+        "right": 304,
+        "top": 125,
+        "width": 288,
+        "x": 16,
+        "y": 125
+      },
+      "text": "孩子概況與準備"
+    },
+    {
+      "rect": {
+        "bottom": 374,
+        "height": 28,
+        "left": 16,
+        "right": 304,
+        "top": 346,
+        "width": 288,
+        "x": 16,
+        "y": 346
+      },
+      "text": "準備好，打開就能用"
+    },
+    {
+      "rect": {
+        "bottom": 817,
+        "height": 26,
+        "left": 29,
+        "right": 291,
+        "top": 791,
+        "width": 262,
+        "x": 29,
+        "y": 791
+      },
+      "text": "小昕的到診準備"
+    },
+    {
+      "rect": {
+        "bottom": 993,
+        "height": 26,
+        "left": 29,
+        "right": 291,
+        "top": 967,
+        "width": 262,
+        "x": 29,
+        "y": 967
+      },
+      "text": "小昕的迎新準備"
+    },
+    {
+      "rect": {
+        "bottom": 1147,
+        "height": 26,
+        "left": 29,
+        "right": 291,
+        "top": 1121,
+        "width": 262,
+        "x": 29,
+        "y": 1121
+      },
+      "text": "週末公園半日遊"
+    },
+    {
+      "rect": {
+        "bottom": 1301,
+        "height": 26,
+        "left": 29,
+        "right": 291,
+        "top": 1275,
+        "width": 262,
+        "x": 29,
+        "y": 1275
+      },
+      "text": "週末照顧交接"
+    }
+  ],
+  "inner": {
+    "clientWidth": 320,
+    "height": 900,
+    "scrollWidth": 320,
+    "width": 320
+  },
+  "outer": {
+    "iframe": {
+      "bottom": 970,
+      "height": 902,
+      "left": 12,
+      "right": 334,
+      "top": 68,
+      "width": 322,
+      "x": 12,
+      "y": 68
+    },
+    "viewport": {
+      "height": 757,
+      "scrollX": 0,
+      "scrollY": 0,
+      "width": 1180
+    }
+  }
+}

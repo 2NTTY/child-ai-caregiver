@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-10-05T12:22:59.365491+00:00",
+  "method": "Original read-only diagnostic succeeded after fresh explicit website-read authorization. No navigation, repeat state change or runtime edit.",
+  "observedTaskRows": 1,
+  "observedTaskTitle": "核對到診準備是否完成",
+  "observedFilterAccessibleName": "事項狀態：待覆核 · 已停催",
+  "observedFocus": "DOM marks the returned task row active; screenshot shows its visible outline",
+  "unmetAssertionCause": "Verifier expected the incomplete exact label 事項狀態：待覆核. The actual label also includes · 已停催. This was an assertion-label error, not evidence of lost filtering or failed detail return.",
+  "priorEvidence": "Original unmet assertion and review-block history remain preserved. Prior batch-status.json describes the state before this diagnosis.",
+  "remainingQA": "Care, Summary and More remain unrun; await root continuation decision. Growth and next-version guide navigation remain outside v35 acceptance.",
+  "files": [
+    "tasks-return-assertion-state.txt",
+    "tasks-return-assertion-state.jpg"
+  ]
+}

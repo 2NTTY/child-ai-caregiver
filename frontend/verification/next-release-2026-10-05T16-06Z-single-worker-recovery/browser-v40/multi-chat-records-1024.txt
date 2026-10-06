@@ -1,0 +1,163 @@
+- banner:
+  - strong: 合成前端尺寸驗收
+  - button "1440 px"
+  - button "1024 px" [active]
+  - button "390 px"
+  - button "320 px"
+  - button "高度 900 px"
+  - button "高度 600 px"
+  - button "重新載入應用"
+  - generic: 1024 × 900 CSS px
+- iframe [id="app-frame"]:
+  - link "育有方，返回主頁":
+    - /url: /
+    - generic: 用資料 · 陪伴成長
+  - generic: 常用
+  - link "今日":
+    - /url: /
+    - generic: 今日
+  - generic: 行動與成長
+  - link "待辦與預約":
+    - /url: /tasks
+    - generic: 待辦與預約
+  - link "成長與關注":
+    - /url: /growth
+    - generic: 成長與關注
+  - generic: 照顧資料
+  - link "記錄與核對":
+    - /url: /care
+    - generic: 記錄與核對
+  - link "孩子概況與準備":
+    - /url: /summary
+    - generic: 孩子概況與準備
+  - link "歷史":
+    - /url: /history
+    - generic: 歷史
+  - generic: 資料管理
+  - link "子女檔案":
+    - /url: /profile
+    - generic: 子女檔案
+  - link "記憶與話題":
+    - /url: /memory
+    - generic: 記憶與話題
+  - link "更多功能":
+    - /url: /more
+    - generic: 更多功能
+  - link "與 Agent 對話":
+    - /url: /chat
+    - generic: 與 Agent 對話
+    - generic: 提問・整理・規劃
+  - link "設定":
+    - /url: /settings
+    - generic: 設定
+  - button "選擇孩子，目前小昕":
+    - generic: 小
+    - generic: 小昕
+    - generic: 約 3 歲 2 個月 · 截至 2026 年 9 月
+  - generic "小昕的關鍵資料":
+    - generic: 地區
+    - generic: 香港
+    - generic: 檔案
+    - generic: 已確認
+    - generic: 過敏
+    - generic: 未提供
+  - button "開啟訊息提示":
+  - generic: "1"
+  - button "開啟資訊側欄":
+  - generic: 介面預覽 · 合成資料 · 未接駁 Server
+  - button "切換合成預覽情境":
+    - generic: 一般 切換情境
+  - heading "記錄與核對" [level=1]
+  - generic: 小昕 · 合成示例 · 未接駁 Server · 重新載入或切換孩子後重置
+  - button "核對歷史":
+    - generic: 核對歷史
+  - button "其他記錄入口":
+    - generic: 其他記錄入口
+  - generic: 重要記錄：2 筆仍待你明確確認
+  - heading "多次對話的記錄變更" [level=1]
+  - generic: 聊完幾次再回來，可一起查看留下了甚麼。普通已保存內容不用逐筆確認，有誤才更正；重要待確認會持續保留。
+  - generic: 4 筆待確認
+  - button "處理狀態：全部變更":
+    - generic: 處理狀態：全部變更
+  - button "來源對話：所有已載入對話":
+    - generic: 來源對話：所有已載入對話
+  - generic: 以下為多次對話的合成示例。普通已保存與重要待確認用於試看流程；正式跨對話讀取、普通自動寫入與持久核對仍未接通。
+  - heading "重要內容，仍待你確認" [level=1]
+  - heading "例行檢查的安排" [level=1]
+  - generic: 2026 年 10 月 4 日 晚上 9:15（香港時間） · 本頁 1 項
+  - button "核對例行檢查安排是否已確認，待確認":
+    - generic: 新增 · 例行檢查安排是否已確認
+    - generic: 照顧記錄
+    - generic: 已保存
+    - generic: 重要 · 待你確認
+  - heading "下週的接送安排" [level=1]
+  - generic: 2026 年 10 月 2 日 晚上 8:00（香港時間） · 本頁 1 項
+  - button "核對接送人安排待核實，待確認":
+    - generic: 新增 · 接送人安排待核實
+    - generic: 照顧記錄
+    - generic: 尚未寫入
+    - generic: 原操作已過期
+    - generic: 重要 · 待你確認
+  - heading "其他對話變更，可按需要查看" [level=1]
+  - heading "補充睡眠與體溫" [level=1]
+  - generic: 2026 年 10 月 5 日 上午 8:14（香港時間） · 本頁 2 項
+  - button "核對已整理的體溫記錄，已寫入":
+    - generic: 新增 · 已整理的體溫記錄
+    - generic: 照顧記錄
+    - generic: 已保存
+  - button "核對補充睡眠記錄，待確認":
+    - generic: 更新 · 補充睡眠記錄
+    - generic: 照顧記錄
+    - generic: 尚未寫入
+    - generic: 須先確認才寫入
+  - heading "午睡前的安排" [level=1]
+  - generic: 2026 年 10 月 3 日 下午 1:13（香港時間） · 本頁 1 項
+  - button "核對午睡前的固定安排，待確認":
+    - generic: 新增 · 午睡前的固定安排
+    - generic: 照顧記錄
+    - generic: 尚未寫入
+    - generic: 須先確認才寫入
+  - heading "補充夜間醒來的觀察" [level=1]
+  - generic: 2026 年 9 月 28 日 上午 9:10（香港時間） · 本頁 1 項
+  - button "核對睡眠記錄的補充，已寫入":
+    - generic: 更新 · 睡眠記錄的補充
+    - generic: 照顧記錄
+    - generic: 已保存
+  - heading "例行檢查安排是否已確認" [level=1]
+  - generic: 已保存
+  - generic: 重要 · 待你確認
+  - generic: 例行檢查的安排 · 2026 年 10 月 4 日 晚上 9:15（香港時間）
+  - heading "你的原話與來源" [level=1]
+  - generic: 私人原文
+  - generic: 下個月例行檢查，具體日期我未核實。先記低，但唔好當成已經預約咗。
+  - generic: 家長交代的預約狀態（合成）
+  - heading "Agent 的理解" [level=1]
+  - generic: 家人記下下次例行檢查的安排；這筆記錄不代表機構已確認預約。
+  - generic: 種類：預約
+  - generic: 來源：家人的行程筆記（合成）
+  - generic: 數量：未提供
+  - generic: 事件時間原文：下個月，具體日期待核對
+  - generic: 更正原因：首次確認
+  - generic: 為甚麼建議保留
+  - generic: 預約是否成立會影響後續安排，Agent 指定需要家長明確核對（合成分類）。
+  - generic: 寫入目的地：這個孩子的家庭共享記錄
+  - generic: 處理結果已保留供追溯。私人原始對話不會自動跟隨共享。
+  - generic: 確認前留意
+  - generic: • 只確認記錄有沒有理解錯，不代表機構已接受預約，也不會發送訊息或執行醫療行動。
+  - generic: 目前已保存的內容
+  - generic: 目前保存內容與上方整理一致。
+  - button "理解有誤，修正記錄":
+    - generic: 理解有誤，修正記錄
+  - generic: 重要記錄 · 仍需你明確確認
+  - generic: 已保存不代表你已核對。這個黃燈會保留至目前內容獲明確確認；如有誤解，請先修正。
+  - button "確認重要內容正確（預覽）":
+    - generic: 確認重要內容正確（預覽）
+  - generic: 已有合成保存結果；家長尚未明確核對此重要記錄。
+  - button "查看已保存記錄":
+    - generic: 查看已保存記錄
+  - button "來源與版本資料":
+    - generic: 來源與版本資料
+  - heading "合成預覽情境" [level=1]
+  - generic: 這些工具只切換示例狀態，沒有呼叫 Server。
+  - button "顯示情境工具":
+    - generic: 顯示情境工具

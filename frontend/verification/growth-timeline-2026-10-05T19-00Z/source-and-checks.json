@@ -1,0 +1,25 @@
+{
+  "source_sha256": {
+    "src/components/growth/GrowthConcernTimeline.tsx": "66293501af24cdc12c41585bd44c1070283d7fb215593ff6f0e5934f7edfd21f",
+    "src/components/growth/growth-styles.ts": "cc85b239ec7eeb61ea8162d8c1d755e470ca92ac288881d646607be97b4f6c87",
+    "scripts/growth-timeline-markers.test.mjs": "929ca9b911c607a399e9f88d00714251e623ead69d7f2896222dd7caf9a6d46f"
+  },
+  "root_cause": "Per-row full-height left border ran from row top across/above the first dot and below the last dot.",
+  "change": "Explicit leading/trailing segments stop at dot edges. Leading is omitted for first event, trailing omitted for last; trailing bottom:0 follows intrinsic row height. Dot is opaque and z-indexed above segments.",
+  "tests": {
+    "focused": {
+      "passed": 5,
+      "failed": 0
+    },
+    "targeted_semantic": {
+      "files": 2,
+      "diagnostics": 0
+    }
+  },
+  "unchanged_growthview_sha256": "5aee9cea3a11439d0704c242ee397a1173e5eeb377b80813099badec2fdaa968",
+  "unverified": [
+    "Actual browser rendering",
+    "Aggregate build/export/publication"
+  ],
+  "authorization_boundary": "No model, controller, GrowthView, browser, Git or publication changes"
+}

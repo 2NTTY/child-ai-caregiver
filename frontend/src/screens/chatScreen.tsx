@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import { usePathname } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, useWindowDimensions, type ScrollView as NativeScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppButton, SectionCard, TextLink } from "../components/ui";
+import { ImportantRecordPreviewTools } from "../preview/ImportantRecordPreviewTools";
 import { AgentConversationPreview } from "../components/agent/AgentConversationPreview";
 import { AgentComposer } from "../components/agent/AgentComposer";
 import { CitationText } from "../components/chat/AnswerSources";
@@ -12,7 +13,7 @@ import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatType } from "../components/chat/chat-presentation";
 import { useChatTimelinePreview } from "../preview/useChatTimelinePreview";
 import { usePreview } from "../preview/PreviewContext";
-import { usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
+import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { canPreviewAssistantDraft } from "../assistant-draft";
 import { mobileLayout } from "../theme";
 
@@ -30,6 +31,7 @@ export default function ChatPage() {
 
 function ChatContents({ compact }: { compact: boolean }) {
   const pathname = usePathname();
+  const router = useRouter(), navigate = usePreviewNavigation();
   const { model, actions, chatDraft, setChatDraft, agentAttachments, addAgentAttachment, removeAgentAttachment, clearAgentDraft, composerFocusRequest } = usePreview();
   const child = model.children.find(item => item.id === model.selectedChildId);
   const preview = useChatTimelinePreview(child?.id ?? "no-child");
@@ -48,10 +50,10 @@ function ChatContents({ compact }: { compact: boolean }) {
   }
   const header = <>
     <View style={styles.headingCard}>
-      <View style={styles.headingRow}><Text accessibilityRole="header" style={styles.title}>助手</Text><TextLink label="記憶與話題" onPress={() => actions.open("memory")} /></View>
-      <Text style={styles.previewNote}>合成畫面示例 · 尚未連接 Agent 或發送訊息</Text>
+      <View style={styles.headingRow}><Text accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text><View style={styles.headingActions}><TextLink label="對話歷史" onPress={() => navigate(() => router.push("/history?category=conversations"))} /><TextLink label="記憶與參考" onPress={() => actions.open("memory")} /></View></View>
+
     </View>
-    {child ? <AgentConversationPreview childId={child.id} online={model.connection === "online"} onLocateSource={locateSource} onPreviewReply={preview.showReply} />
+    {child ? <AgentConversationPreview childId={child.id} online={model.connection === "online"} onLocateSource={locateSource} onPreviewReply={preview.showReply} previewTools={<ImportantRecordPreviewTools onEdit={id => navigate(() => router.push({ pathname: "/care", params: { record: id } }))} />} />
       : <SectionCard><Text style={styles.body}>請先選擇孩子；不同孩子的私人對話不能混在一起。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard>}
   </>;
   return <>
@@ -78,8 +80,9 @@ function ChatContents({ compact }: { compact: boolean }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas }, headingCard: { gap: 4, minWidth: 0 },
-  headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" },
-  title: { fontFamily: chatFont, color: chatColors.ink, ...chatType.section },
+  headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 12, flexWrap: "wrap" },
+  headingActions: { flexDirection: "row", alignItems: "center", gap: 12, flexWrap: "wrap" },
+  screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
   previewNote: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   answerEyebrow: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta }, answerIntro: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body },

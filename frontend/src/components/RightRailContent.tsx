@@ -14,8 +14,8 @@ export function RightRailContent({ model, actions, home = false, contextPath = "
   const tabsId = useId();
   const [tab, setTab] = useState<RailTab>("attention");
   const child = model.children.find(item => item.id === model.selectedChildId);
-  const routeContext = contextPath === "/chat" ? { title: "目前對話", detail: "助手輸入只屬於目前孩子；候選操作仍須核對。", label: "記憶與話題", destination: "memory" as const }
-    : contextPath === "/growth" ? { title: "成長與關注", detail: "回看觀察依據及已確認跟進；關注不等於臨床判斷。", label: "回顧與到診", destination: "summary" as const }
+  const routeContext = contextPath === "/chat" ? { title: "目前對話", detail: "助手輸入只屬於目前孩子；候選操作仍須核對。", label: "記憶與參考", destination: "memory" as const }
+    : contextPath === "/growth" ? { title: "成長與關注", detail: "回看觀察依據及已確認跟進；關注不等於臨床判斷。", label: "孩子概況與準備", destination: "summary" as const }
     : contextPath === "/care" || contextPath === "/photos" ? { title: "記錄核對", detail: "先核對整理結果與原文，再作更正或確認。", label: "請助手協助", destination: "chat" as const }
     : contextPath === "/tasks" ? { title: "行動安排", detail: "核對時間、負責人與下一步；安排與完成分開。", label: "家庭日常交接", destination: "family" as const }
     : { title: "照顧空間", detail: "只顯示目前孩子已載入的背景與事項。", label: "前往助手", destination: "chat" as const };
@@ -42,7 +42,7 @@ export function RightRailContent({ model, actions, home = false, contextPath = "
           {model.recordsLoad === "loading" ? <Text style={styles.meta}>正在讀取記錄…</Text> : model.recordsLoad === "error" ? <Text style={styles.meta}>暫時讀不到記錄，不能確認最新資料。</Text> : records.length === 0 ? <Text style={styles.meta}>目前沒有已載入記錄。</Text> : records.map((record, index) => <View key={record.id}>
             {index > 0 ? <Divider style={styles.divider} /> : null}
             <Pressable accessibilityRole="button" accessibilityLabel={`查看${record.title}`} onPress={() => actions.open("care")} style={({ pressed }) => [styles.record, pressed && styles.pressed]}>
-              <AppIcon name="file-document-outline" size={20} /><View style={styles.copy}><Text style={styles.title}>{record.title}</Text><Text numberOfLines={2} style={styles.meta}>{record.eventTimeLabel} · {record.detail}</Text></View>
+              <AppIcon name="file-document-outline" size={20} /><View style={styles.copy}><Text style={styles.title}>{record.title}</Text><Text numberOfLines={2} style={styles.meta}>{record.eventTimeLabel} · {record.detail}</Text></View><AppIcon name="chevron-right" size={16} />
             </Pressable>
           </View>)}
         </SectionCard> : null}

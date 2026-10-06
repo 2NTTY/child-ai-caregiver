@@ -18,8 +18,8 @@ export function AssistantInputDialog({ kind, enabled, onPick, onDismiss, onUseTe
   return <Portal><AppDialog visible={!!kind && enabled} onDismiss={onDismiss} testID="assistant-input-dialog">
     <AppDialog.Title>{kind === "voice" ? "語音輸入" : "加入文件"}</AppDialog.Title>
     <AppDialog.Content><AppScrollView style={{ flexGrow: 0 }} contentContainerStyle={styles.content}>
-      <Text style={styles.body}>{kind === "voice" ? "錄音或選取音訊後，先試聽，再加入同一份未送出草稿。語音轉文字及正式發送尚未接通。" : "選取文件後，先與照片及文字放在同一份未送出草稿。此處不會讀取或整理文件內容。"}</Text>
-      <Text style={styles.note}>{kind === "voice" ? "亦可選取音訊原檔；前端本地預覽上限 20 MiB，不會轉錄或上傳。" : "本地預覽接受 PDF、TXT、Word 或 CSV，最多 20 MiB。這是預覽限制，並非正式服務已支援的檔案契約。"}</Text>
+      <Text style={styles.body}>{kind === "voice" ? "錄音或選取音訊後，先試聽，再加入未送出草稿。" : "選取文件後，先與照片及文字放在同一份未送出草稿。此處不會讀取或整理文件內容。"}</Text>
+      <Text style={styles.note}>{kind === "voice" ? "音訊原檔最多 20 MiB；目前不支援轉錄。" : "支援選取 PDF、TXT、Word 或 CSV，最多 20 MiB。"}</Text>
       {kind === "voice" && enabled ? <VoiceCapture onPick={onPick} /> : null}
       {kind ? <AssistantAttachmentPicker key={kind} kind={kind} disabled={!enabled} selectAttachment={selectAttachment} onError={setError}
         onPick={attachment => { setError(null); onPick(attachment); }} /> : null}

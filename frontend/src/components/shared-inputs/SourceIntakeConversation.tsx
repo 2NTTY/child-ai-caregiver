@@ -1,3 +1,4 @@
+import { AppStatusBadge } from "../AppStatusBadge";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
 import type { SourcesActions, SourcesViewModel } from "../../shared-input-view-model";
@@ -19,7 +20,7 @@ export function SourceIntakeConversation({ model, actions }: { model: SourcesVie
     <SectionHeader density="compact" title="和助手整理這份來源" subtitle="合成流程示範：沒有讀取網頁、呼叫模型或接入回答。" icon="star-four-points" />
     <View style={s.intakeSteps} accessibilityLabel={`目前步驟：${stageLabel}`}>{["查看來源", "釐清用途", "核對建議", "正式接入"].map((label, index) => <View key={label} style={[s.intakeStep, index === step && s.intakeStepCurrent]}><Text style={index === step ? s.stepActiveText : s.meta}>{index + 1} · {label}</Text></View>)}</View>
     <StatusAnnouncement eventKey={`${source.id}:${intake.stage}`} message={stageLabel} urgent={intake.stage === "unavailable"} />
-    <Text style={s.title}>{stageLabel}</Text>
+    <AppStatusBadge label={stageLabel} tone={intake.stage === "reading" || intake.stage === "clarifying" ? "info" : "warning"} />
     {["awaiting_read", "unavailable", "clarifying", "confirmed_pending_connection"].includes(intake.stage) ? <AppButton label={intake.stage === "confirmed_pending_connection" ? "編輯用途草稿" : "自行填寫接入資料"} variant="quiet" disabled={locked} onPress={adapter.editManually} /> : null}
     <View style={s.review}><Text style={s.meta}>你的說明</Text><Text selectable style={s.body}>{intake.intention || "先保存來源，用途稍後再談。"}</Text></View>
     {intake.stage === "awaiting_read" ? <>

@@ -1,0 +1,13 @@
+{
+  "src/growth-view-model.ts": "488f247d9f81517b9d38258d88fe9ec7f7ddb5cc03d9584635ba5194c2037cbb",
+  "src/preview/useGrowthPreview.ts": "a944552273dde772deb549df8fb6fdbd9db735f42f8d4abdd0a0d23395a6d0c1",
+  "src/components/growth/GrowthView.tsx": "5aee9cea3a11439d0704c242ee397a1173e5eeb377b80813099badec2fdaa968",
+  "src/components/growth/GrowthConcernTimeline.tsx": "d44120397e78418e4f16068765172a0dd509320a6703fa5cec35f0e679facd07",
+  "src/components/growth/GrowthArchiveConcernButton.tsx": "e2db4451539dd08611dd5101eb0b1b198dc733e444e2de1fe034a70aadaaebef",
+  "src/components/growth/GrowthConcernChangeNotice.tsx": "7df8943353096e8b23411d6cfb8f5158525d9a0b1af3f45e42fe99b0672886b6",
+  "src/components/growth/GrowthOperationRecovery.tsx": "9d723b53c769a1cb56e3680afb8168d554f810716a4f81121466efcc6f4a7028",
+  "src/components/growth/GrowthHistoryView.tsx": "123ec5f5ee0a9f331a1fcc1fe84ae06cf69807b30469109101e4a9b142f301c9",
+  "src/components/AppDialog.tsx": "f52db6e0392358f890e2f21f77c90a4227b29cf9c120a046b38e507f286bc55c",
+  "scripts/growth-refresh.test.mjs": "50cb4bb2f72075b584bde089cfcfd7cd7d705bdee5909b202a408daf69900bba",
+  "scripts/growth-dialog-accessibility.test.mjs": "f1e8e76ef748dce603c435ae2e3f5ffe4c6d3e875bbc86827c17de1260dd13a4"
+}

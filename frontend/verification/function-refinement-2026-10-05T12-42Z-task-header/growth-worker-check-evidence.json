@@ -1,0 +1,8 @@
+{
+  "evidenceType": "Original harness script preserved; outcome is root-forwarded worker report, not independently rerun and not raw stdout",
+  "sourcePath": "/tmp/growth-chapter-fix-20261005/check.cjs",
+  "scriptSha256": "a9f109e2bd547ba0f46f6d8810c4c9f2852f323a87eeec79fa14fe42f9e6dae6",
+  "reportedOutcome": "8/8 source-executed callback checks and syntax passed",
+  "reportTimeUtc": "2026-10-05T12:59:20Z",
+  "executedByIntegrationVerifier": false
+}

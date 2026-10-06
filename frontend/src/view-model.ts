@@ -72,3 +72,18 @@ export interface HomeActions {
   deleteChildPreview(childId: string): void;
   completeGuidePreview(): void;
 }
+
+// Display-only operation projection; the original domain controller retains the request and receipt.
+export interface WriteOperationView {
+  state: OperationState | "conflict";
+  message: string;
+  reference: string | null;
+  referenceLabel?: string;
+  recovery?: "check" | "retry" | "reload";
+  resultUnavailable?: boolean;
+}
+export interface WriteRecoveryActions {
+  checkOriginalOperation?(): void;
+  retryOriginalOperation?(): void;
+  reloadCurrent?(): void;
+}

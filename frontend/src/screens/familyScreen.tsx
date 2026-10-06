@@ -30,8 +30,8 @@ function FamilyWorkspace({ perspective, incomingCondition, setPerspective, setIn
   return <FamilyView onTasks={onTasks} onContact={onContact} model={preview.model} actions={{ ...preview.actions, openProfile: onProfile }}
     writeNotice={<PreviewWriteNotice controller={preview.controller} online={online} />}
     previewControls={<SectionCard>
-      <SectionHeader density="compact" title="合成預覽情境" subtitle="這些工具只切換示例；不屬於正式家庭操作。" />
-      <AppButton label={controlsOpen ? "收起家庭情境工具" : "顯示家庭情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />
+      <SectionHeader density="compact" title="預覽工具" subtitle={controlsOpen ? "這些工具只切換示例；不屬於正式家庭操作。" : undefined} />
+      <AppButton expanded={controlsOpen} label={controlsOpen ? "收起家庭情境工具" : "顯示家庭情境工具"} variant="quiet" onPress={() => setControlsOpen(value => !value)} />
       {controlsOpen ? <View style={styles.controls}>
         <AppSelect label="本人視角" value={perspective} options={perspectives} onChange={setPerspective} />
         <AppSelect label="收到邀請情境" value={incomingCondition} options={incomingConditions} onChange={setIncomingCondition} />

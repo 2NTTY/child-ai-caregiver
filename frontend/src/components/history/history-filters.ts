@@ -1,0 +1,59 @@
+import { calendarDate } from "../date-time.ts";
+
+export const historyCategories = [
+  { key: "tasks", label: "待辦與預約", description: "已完成及已取消的安排", sourceLabel: "待辦與預約", sourcePath: "/tasks", sourceAction: "開啟待辦", unavailable: "" },
+  { key: "preparations", label: "準備單", description: "使用後歸檔的文件與當時版本", sourceLabel: "準備單", sourcePath: "/summary", sourceAction: "開啟準備單", unavailable: "" },
+  { key: "review", label: "核對記錄", description: "寫入結果與家長確認分開查看", sourceLabel: "記錄與核對", sourcePath: "/care", sourceAction: "開啟記錄與核對", unavailable: "" },
+  { key: "care", label: "照顧記錄", description: "已保存記錄、更正與原始來源", sourceLabel: "照顧記錄", sourcePath: "/care", sourceAction: "開啟記錄與核對", unavailable: "" },
+  { key: "conversations", label: "助手對話", description: "本人與這位孩子相關的對話", sourceLabel: "助手", sourcePath: "/chat", sourceAction: "開啟助手", unavailable: "對話歷史尚未接入這個歷史頁。助手目前顯示的對話視窗不是完整歷史，這裏不會複製或搜尋那個片段。" },
+  { key: "growth", label: "關注與成長", description: "已結束的關注鏈；年度與季度檔案由原入口查閱", sourceLabel: "成長與關注", sourcePath: "/growth", sourceAction: "開啟成長與關注", unavailable: "" },
+  { key: "notifications", label: "通知與聯絡", description: "通知及聯絡請求的狀態歷程", sourceLabel: "聯絡授權", sourcePath: "/contact", sourceAction: "開啟聯絡授權", unavailable: "通知歷史尚未接通；目前的鈴鐺只顯示操作提示。聯絡授權頁可查看有限的聯絡請求記錄，渠道接受不代表本人已收到。" },
+] as const;
+
+export type HistoryCategory = typeof historyCategories[number]["key"];
+export type HistoryFilters = { scope: string; category: HistoryCategory; searchText: string; from: string; to: string };
+export type HistoryFilterAction =
+  | { type: "category"; value: HistoryCategory }
+  | { type: "search" | "from" | "to"; value: string }
+  | { type: "reset" }
+  | { type: "scope"; scope: string; category: HistoryCategory };
+
+export function normalizeHistoryCategory(value: string | string[] | undefined): HistoryCategory {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return historyCategories.find(item => item.key === candidate)?.key ?? "tasks";
+}
+
+export function normalizeReviewHistoryStatus(value: string | string[] | undefined): "all" | "pending" | "written" | "confirmed" | "skipped" {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return candidate === "pending" || candidate === "written" || candidate === "confirmed" || candidate === "skipped" ? candidate : "all";
+}
+
+export function normalizeHistoryOlderOnly(value: string | string[] | undefined): boolean {
+  return (Array.isArray(value) ? value[0] : value) === "1";
+}
+
+export function createHistoryFilters(scope: string, category: HistoryCategory): HistoryFilters {
+  return { scope, category, searchText: "", from: "", to: "" };
+}
+
+// Filters are transient presentation state. No history entries or source copies are stored here.
+export function historyFilterReducer(state: HistoryFilters, action: HistoryFilterAction): HistoryFilters {
+  if (action.type === "scope") return action.scope === state.scope ? state : createHistoryFilters(action.scope, action.category);
+  if (action.type === "reset") return createHistoryFilters(state.scope, state.category);
+  if (action.type === "category") return { ...state, category: action.value };
+  if (action.type === "search") return { ...state, searchText: action.value };
+  return { ...state, [action.type]: action.value };
+}
+
+export function historyDateErrors(from: string, to: string): { from?: string; to?: string } {
+  const errors: { from?: string; to?: string } = {};
+  if (from && !calendarDate(from)) errors.from = "請填寫有效日期（YYYY-MM-DD）。";
+  if (to && !calendarDate(to)) errors.to = "請填寫有效日期（YYYY-MM-DD）。";
+  if (!errors.from && !errors.to && from && to && from > to) errors.to = "結束日期不能早於開始日期。";
+  return errors;
+}
+
+export function historyDateRange(from: string, to: string): { from: string | null; to: string | null } | null {
+  if (Object.keys(historyDateErrors(from, to)).length) return null;
+  return { from: from || null, to: to || null };
+}

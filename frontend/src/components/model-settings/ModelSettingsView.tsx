@@ -1,3 +1,4 @@
+import { AppStatusBadge } from "../AppStatusBadge";
 import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useContainerWidth } from "../useContainerWidth";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
@@ -131,7 +132,7 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
           {!snapshot.enabled ? <Text style={styles.warning}>AI 總開關目前停用。你仍可管理或刪除本人密鑰。</Text> : null}
           {!available ? <Text style={styles.warning}>所選服務目前不可用；你仍可選擇停用或刪除密鑰。</Text> : null}
           <Text style={styles.meta}>模型：{settings.model}</Text>
-          <Text style={styles.body}>{settings.keyConfigured ? "個人密鑰已保存，不會顯示原文。" : "尚未保存個人密鑰。"}</Text>
+          <AppStatusBadge label={settings.keyConfigured ? "個人密鑰已保存" : "尚未保存個人密鑰"} tone={settings.keyConfigured ? "success" : "neutral"} /><Text style={styles.meta}>密鑰原文不會顯示。</Text>
           {mode === "personal" ? <View style={styles.group}>
             <Controller control={control} name="keyText" render={({ field }) => <AppTextField label={settings.keyConfigured ? "替換 API 密鑰" : "個人 API 密鑰"}
               accessibilityLabel="個人 API 密鑰" testID="model-api-key" secureTextEntry autoComplete="off" textContentType="none" autoCapitalize="none" autoCorrect={false}
@@ -153,11 +154,11 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
             </View>)}</View>
           </View> : <Text style={styles.meta}>{mode === "platform" ? "平台沿用既定配額，每次 Agent 最多生成 4 次、查詢向量 2 次。" : "保存停用後不會自行切回平台；已有密鑰會保留，刪除須另行確認。"}</Text>}
           <View style={[styles.actions, styles.group]}><AppButton label="保存模型設定" disabled={!canSave} loading={model.busy === "save"} onPress={() => void submit()} />
-            <AppButton label="刪除個人密鑰" variant="secondary" disabled={locked || !settings.keyConfigured} onPress={() => { clearSecret(); setDeleteConfirmed(false); setDeleteOpen(true); }} />
+            <AppButton label="刪除個人密鑰" variant="danger-secondary" disabled={locked || !settings.keyConfigured} onPress={() => { clearSecret(); setDeleteConfirmed(false); setDeleteOpen(true); }} />
           </View>
         </SectionCard>
         {settings.keyConfigured ? <SectionCard><SectionHeader density="compact" title="已保存密鑰的模型資料" subtitle="此檢查只讀取供應商模型資料，不使用未保存的輸入。" />
-          <Text style={styles.body}>{model.keyCheck?.version === settings.version ? model.keyCheck.status === "accessible" ? "模型資料可讀取。" : "目前未能讀取模型資料。" : "尚未取得此版本的模型資料查核結果。"}</Text>
+          <AppStatusBadge label={model.keyCheck?.version === settings.version ? model.keyCheck.status === "accessible" ? "模型資料可讀取" : "目前未能讀取模型資料" : "此版本模型資料待查核"} tone={model.keyCheck?.version === settings.version && model.keyCheck.status === "accessible" ? "success" : "warning"} />
           <Text style={styles.meta}>密鑰已保存、模型資料可讀及實際生成／查詢向量可用，須分開核對；這項檢查不能確認帳單或剩餘配額。</Text>
           <AppButton label="檢查已保存密鑰" variant="secondary" loading={model.busy === "check"} disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || settings.mode !== "personal" || !!keyText.trim()}
             onPress={() => actions.check(settings.version)} />

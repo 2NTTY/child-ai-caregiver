@@ -1,3 +1,4 @@
+import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
 import { useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
@@ -23,11 +24,11 @@ import { useContentDeletionFocus } from "./useContentDeletionFocus";
 
 function SourceStatus({ model, actions }: { model: SourcesViewModel; actions: SourcesActions }) {
   const op = model.operation;
-  const pill = op.state === "saved" && op.phase === "extract" ? "needs_confirmation" : op.state === "unconfirmed" ? "unknown" : op.state === "conflict" ? "failed"
+  const pill = op.state === "saved" && op.phase === "extract" ? "needs_confirmation" : op.state === "unconfirmed" ? "unknown" : op.state === "conflict" ? "needs_confirmation"
     : op.state === "confirmed_unavailable" ? "saved" : op.state;
   return <><StatusAnnouncement eventKey={`${op.state}:${op.phase}:${op.reference}:${op.message}:${model.notice}`} message={[op.message, model.notice].filter(Boolean).join(" ")} urgent={op.state === "failed"} />
     {op.state === "none" && !model.notice ? null : <SectionCard surface="plain" style={s.operationBanner} testID="source-operation"><SectionHeader density="compact" title="這次來源操作" />
-    {op.state === "confirmed_unavailable" ? <Text style={s.title}>原操作已確認 · 結果不可讀</Text> : op.state === "saved" && op.phase === "delete" ? <Text style={s.title}>已刪除（合成預覽）</Text> : op.state !== "none" ? <OperationPill state={pill} /> : null}
+    {op.state === "confirmed_unavailable" ? <AppStatusBadge label="原操作已確認 · 結果不可讀" tone="warning" /> : op.state === "saved" && op.phase === "delete" ? <AppStatusBadge label="已刪除（合成預覽）" tone="success" /> : op.state === "conflict" ? <AppStatusBadge label="版本衝突 · 待核對" tone="warning" /> : op.state !== "none" ? <OperationPill state={pill} /> : null}
     {op.reference ? <Text selectable style={s.meta}>合成原操作參考：{op.reference}</Text> : null}
     {op.message ? <Text style={s.body}>{op.message}</Text> : null}
     {model.notice ? <Text style={s.body}>{model.notice}</Text> : null}
@@ -93,7 +94,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
       <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={model.items.length} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
         {!model.items.length && model.load === "ready" && model.access !== "lost" ? <Text style={s.meta}>這個範圍尚未有私人來源。可從「加入資料來源」開始。</Text> : null}
         <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>
-          <Text style={s.title}>{input.sourceLabel}</Text><Text style={s.meta}>{fetchStateLabels[input.fetchState]}{input.recordId ? " · 已連結家庭記錄" : " · 尚未家庭共享"}</Text>
+          <Text style={s.title}>{input.sourceLabel}</Text><View style={s.row}><AppStatusBadge label={fetchStateLabels[input.fetchState]} tone={input.fetchState === "ready" ? "success" : input.fetchState === "failed" ? "error" : input.fetchState === "unknown" ? "warning" : input.fetchState === "running" ? "info" : "neutral"} /><AppStatusBadge label={input.recordId ? "已連結家庭記錄" : "尚未家庭共享"} tone={input.recordId ? "success" : "neutral"} /></View>
           <Text style={s.meta}>保存於 {sourceTime(input.createdAt)}</Text>
           {model.intake ? <Text style={s.meta}>{sourceIntakePurposeLabel(model.intakeByInputId?.[input.id])}</Text> : null}
           <AppButton ref={node => deletionFocus.rowRef(input.id, node)} label={model.selected?.id === input.id ? "目前來源" : "查看來源"} accessibilityLabel={`查看私人來源：${input.sourceLabel}`} variant={model.selected?.id === input.id ? "secondary" : "quiet"} disabled={row.exiting || !model.canChoose || !model.online || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openInput(input);}} />
@@ -108,7 +109,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
             <AppButton label="自行填寫接入資料" variant="secondary" disabled={!model.fresh || !model.selected.canManage || model.access !== "editable"} onPress={actions.intake.editManually} />
           </SectionCard> : null}
           <SourceDetails key={model.selected.id} model={model} actions={actions} onRecord={onRecord} resultTrigger={resultTrigger} showTools={showManual} />
-          {model.intake ? <AppButton label={showManual ? "收起手動來源操作" : "手動提取或核對家庭記錄"} variant="quiet" disabled={sourceIntakeIsUnresolved(model.intake.selected)} onPress={() => setManualSourceId(showManual ? null : model.selected!.id)} /> : null}
+          {model.intake ? <AppButton expanded={showManual} label={showManual ? "收起手動來源操作" : "手動提取或核對家庭記錄"} variant="quiet" disabled={sourceIntakeIsUnresolved(model.intake.selected)} onPress={() => setManualSourceId(showManual ? null : model.selected!.id)} /> : null}
         </> : null}
         {showManual && model.selected?.text.trim() && !model.selected.recordId && model.access === "editable" ? <SourceRecordForm key={model.formKey} model={model} actions={actions} /> : null}
       </View>

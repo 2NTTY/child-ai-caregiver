@@ -31,10 +31,10 @@ export function ChannelSettingsPreview({ controller }: { controller: ChannelSett
   const [tools, setTools] = useState(false);
   const { push, telegram, identity } = controller;
   return <View testID="channel-settings" style={styles.workspace}>
-    <SectionCard><SectionHeader density="compact" title="本人的通知渠道" subtitle="切換孩子不會重新綁定；切換帳戶或 Server 時必須清理舊渠道及待查操作。" />
-      <Text style={styles.meta}>渠道情境帳戶：{identity.name}（合成）。此處沒有登出、登入或外發。</Text>
-      <View style={styles.actions}><AppButton label={tools ? "收起渠道情境工具" : "顯示渠道情境工具"} variant="quiet" onPress={() => setTools(value => !value)} />
-        <AppButton label="切換渠道情境的合成帳戶" variant="secondary" onPress={controller.switchAccount} />
+    <SectionCard><SectionHeader density="compact" title="本人的通知渠道" subtitle="管理本人的接收方式與綁定狀態。" />
+      {tools ? <Text style={styles.meta}>渠道情境帳戶：{identity.name}（合成）。此處沒有登出、登入或外發。</Text> : null}
+      <View style={styles.actions}><AppButton expanded={tools} label={tools ? "收起渠道情境工具" : "顯示渠道情境工具"} variant="quiet" onPress={() => setTools(value => !value)} />
+        {tools ? <AppButton label="切換渠道情境的合成帳戶" variant="secondary" onPress={controller.switchAccount} /> : null}
       </View>
     </SectionCard>
     <View key={identity.id} ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.columns, width < 760 && styles.stack]}>

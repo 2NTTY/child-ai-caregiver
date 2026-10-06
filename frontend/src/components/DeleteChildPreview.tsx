@@ -24,7 +24,7 @@ export function DeleteChildPreview({ child, online, enabled, onDeleted, onActive
   if (child.accessRole !== "owner") return null;
   return <View style={styles.root}><Text style={styles.heading}>擁有人操作</Text><Text style={styles.body}>刪除整位孩子與刪除檔案是不同範圍。只有擁有人可啟動此操作。</Text>
     {/* Keep the trigger focusable while RN Modal captures/restores it; the modal owns background isolation. */}
-    <AppButton label="刪除整位孩子（預覽）" variant="quiet" disabled={!enabled || !online} onPress={() => {
+    <AppButton label="刪除整位孩子（預覽）" variant="danger-secondary" disabled={!enabled || !online} onPress={() => {
       if (open) return;
       setOpen(true); setChecked(false); setConfirmationName(""); op.review();
     }} />

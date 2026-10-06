@@ -1,0 +1,238 @@
+[
+  {
+    "name": "reused-capture-helper",
+    "status": "harness-error",
+    "reason": "Old helper retained a closed v39 tab20 handle; no app interaction failed. Replaced by explicit current-tab parameters."
+  },
+  {
+    "name": "child-overview-1440",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "child-overview-1024",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 1024,
+      "height": 900,
+      "scrollWidth": 1024,
+      "width": 1024
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "child-overview-390",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 390,
+      "height": 900,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "child-overview-320",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 320,
+      "height": 900,
+      "scrollWidth": 320,
+      "width": 320
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "preparation-list-320",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 320,
+      "height": 900,
+      "scrollWidth": 320,
+      "width": 320
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "preparation-reading-1440",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "preparation-reading-1024",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 1024,
+      "height": 900,
+      "scrollWidth": 1024,
+      "width": 1024
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "preparation-reading-390",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 390,
+      "height": 900,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "preparation-reading-320",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 320,
+      "height": 900,
+      "scrollWidth": 320,
+      "width": 320
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "preparation-checklist-toggle",
+    "status": "passed",
+    "checked": "true",
+    "method": "keyboard Space",
+    "scope": "synthetic preview only"
+  },
+  {
+    "name": "manual-fallback-collapsed",
+    "status": "passed",
+    "count": 0
+  },
+  {
+    "name": "multi-chat-records-1440",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "multi-chat-records-1024",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 1024,
+      "height": 900,
+      "scrollWidth": 1024,
+      "width": 1024
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "multi-chat-records-390",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 390,
+      "height": 900,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "multi-chat-records-320",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 320,
+      "height": 900,
+      "scrollWidth": 320,
+      "width": 320
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "manual-fallback-disclosure",
+    "status": "passed",
+    "method": "keyboard",
+    "defaultCollapsed": true
+  },
+  {
+    "name": "important-explicit-confirmation",
+    "status": "passed",
+    "beforeImportantPending": 2,
+    "afterImportantPending": 1,
+    "beforePending": 4,
+    "afterPending": 3,
+    "method": "keyboard",
+    "evidence": "care-important-confirmed.txt",
+    "scope": "synthetic confirmation receipt; no record rewrite or notification"
+  },
+  {
+    "name": "expired-important-operation-guard",
+    "status": "passed",
+    "evidence": "care-important-confirmed.txt",
+    "notes": "Expired item automatically selected, important warning persists, no confirm/write action rendered; do not equate persistence with approval."
+  },
+  {
+    "name": "history-care-1440",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "history-care-1024",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 1024,
+      "height": 900,
+      "scrollWidth": 1024,
+      "width": 1024
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "history-care-390",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 390,
+      "height": 900,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "history-care-320",
+    "status": "passed-no-document-overflow",
+    "viewport": {
+      "clientWidth": 320,
+      "height": 900,
+      "scrollWidth": 320,
+      "width": 320
+    },
+    "screenshotMode": "fullPage wrapper; pointer visible intersection is separate"
+  },
+  {
+    "name": "care-history-shared-confirmation-state",
+    "status": "passed",
+    "importantPending": 1,
+    "pending": 3,
+    "expiredItemStillUnresolved": true,
+    "method": "keyboard navigation",
+    "scope": "preview cross-view state only"
+  }
+]

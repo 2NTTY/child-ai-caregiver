@@ -1,0 +1,114 @@
+{
+  "files": [
+    {
+      "path": "batch-status.json",
+      "sha256": "42d4680d14585fbab195f9e200b05d4286bd9fe7388872da7681acdf23bbfa93",
+      "bytes": 2946
+    },
+    {
+      "path": "capture-longpress-menu-320.jpg",
+      "sha256": "da3e467edeb89d80751119738da3a11e052ddd5c92096ed48ddc78928a1eaa44",
+      "bytes": 52497
+    },
+    {
+      "path": "checks.json",
+      "sha256": "59adc784ec4df21e403d0f83f8e76b32deecdfe2acd2980104a483bc670b8163",
+      "bytes": 4943
+    },
+    {
+      "path": "home-1024.jpg",
+      "sha256": "d80072a856fa015d96b62905ebdbe30d04002a33d2b3fc6516fca089ac7b84db",
+      "bytes": 103365
+    },
+    {
+      "path": "home-1024.txt",
+      "sha256": "bcce3d99d36fa33fa4cc9558321664aa1900f623b6a3c55e44a38f697ab21033",
+      "bytes": 3392
+    },
+    {
+      "path": "home-1440.jpg",
+      "sha256": "c23e9d20081290675c2e83f416fa73e07a91b6edaa14ad23562e291860df159c",
+      "bytes": 109121
+    },
+    {
+      "path": "home-1440.txt",
+      "sha256": "fbbfe6f7feeeb89eab62050231fdee80ce5359f4ec2c8bddbb35b2de49ff9e34",
+      "bytes": 3392
+    },
+    {
+      "path": "home-320.jpg",
+      "sha256": "49d438167724d107b1faf2fae1ce061de784da44c0a831c0478330bd21d9b92b",
+      "bytes": 65203
+    },
+    {
+      "path": "home-320.txt",
+      "sha256": "116295934538a620cd76b9d7787b96a50a2a4c4d19e5e327679635bb799768c5",
+      "bytes": 2234
+    },
+    {
+      "path": "home-390.jpg",
+      "sha256": "bfdcb96b24284cfd987eae7b8f533b81d9ee2e65a1ea9eeddcd987521c9e1a84",
+      "bytes": 66691
+    },
+    {
+      "path": "home-390.txt",
+      "sha256": "5e11218a481312c9ba9c56c4f63e3dec985d3695a7e4d47f51ad4793d2c4673e",
+      "bytes": 2234
+    },
+    {
+      "path": "home-child-changed-320.txt",
+      "sha256": "9ac038a7b39443cef59ce20e3ede52f8fe678473886b571b5ca8a248188d58de",
+      "bytes": 2400
+    },
+    {
+      "path": "home-welcome-1440-initial.jpg",
+      "sha256": "01b16b4b57137e6269fc443fbc512e865159ac8d7c53533549aff37c5add0641",
+      "bytes": 119390
+    },
+    {
+      "path": "tasks-1024.jpg",
+      "sha256": "96c5eba9f30dfffae30218b533584e92bac8f8ed01bc6a1504f57df38242cdae",
+      "bytes": 107044
+    },
+    {
+      "path": "tasks-1024.txt",
+      "sha256": "a9927546b092237e250f16938637eb4e06000b0fec3fdbc95b162d531beec636",
+      "bytes": 4135
+    },
+    {
+      "path": "tasks-1440.jpg",
+      "sha256": "7fabe58b3cddcbce4355d52de79919944c740eaf208404eb101fdeb7535e5ae4",
+      "bytes": 119886
+    },
+    {
+      "path": "tasks-1440.txt",
+      "sha256": "c69ff2f6260e5791edc7c6877b553ecb83a115fce3a0bfb4ddaa81b1b34cec35",
+      "bytes": 4135
+    },
+    {
+      "path": "tasks-320.jpg",
+      "sha256": "4d5d6815a84f7c184ae2dd2317eab70be212090e8adb0da94a5a5a77069a2da9",
+      "bytes": 68093
+    },
+    {
+      "path": "tasks-320.txt",
+      "sha256": "337282954a2efd5b071215725ba13b8bc0aef6896b663d7c1c964407aa8da29a",
+      "bytes": 3470
+    },
+    {
+      "path": "tasks-390.jpg",
+      "sha256": "55516c0ff665dd24b3b3958315484ec0819fd5863e8305654199eac03ba402c6",
+      "bytes": 75133
+    },
+    {
+      "path": "tasks-390.txt",
+      "sha256": "32c42ecbb89a0b64e17b1fcff320be8f3d5c74dafffe988f087c60f50fd97ca8",
+      "bytes": 3470
+    },
+    {
+      "path": "tasks-review-detail-320.jpg",
+      "sha256": "c41bac6533cbfefa94cd229ab154b32b6e4b016dc21d67123342cad7098c41f4",
+      "bytes": 79747
+    }
+  ]
+}

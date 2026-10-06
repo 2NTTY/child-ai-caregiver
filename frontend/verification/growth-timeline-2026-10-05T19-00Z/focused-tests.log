@@ -1,0 +1,13 @@
+✔ empty and single-entry timelines have no dangling connector (3.974749ms)
+✔ mixed events start below the first dot and stop above the last dot (0.86009ms)
+✔ connector styles stop at dot edges and follow each row natural height (0.274325ms)
+✔ multiline descriptions remain intrinsic without fixed row or connector heights (0.46304ms)
+✔ archive confirmation keeps its original scope, authority and callback (0.407763ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 898.004075

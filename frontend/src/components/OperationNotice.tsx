@@ -4,6 +4,7 @@ import { Text } from "react-native-paper";
 import type { OperationState } from "../view-model";
 import { chineseFont, colors, radius, readingType, spacing } from "../theme";
 import { StatusAnnouncement } from "./StatusAnnouncement";
+import { AppStatusBadge } from "./AppStatusBadge";
 
 // Display-only state. Controllers own authorization, original requests and legal actions.
 export function OperationNotice({ state, title, message, referenceLabel, children, visible = true }: {
@@ -12,6 +13,7 @@ export function OperationNotice({ state, title, message, referenceLabel, childre
   return <><StatusAnnouncement eventKey={`${state}:${referenceLabel ?? ""}:${message}`} message={message ? `${title}。${message}` : ""} urgent={state === "failed"} />
     {visible && (state !== "none" || message) ? <View style={[styles.notice, state === "saved" && styles.saved, state === "failed" && styles.failed,
     (state === "unknown" || state === "conflict" || state === "needs_confirmation") && styles.attention]}>
+    <AppStatusBadge label={state === "saved" ? "已保存" : state === "failed" ? "操作失敗" : state === "unknown" ? "結果未知" : state === "conflict" ? "版本待核對" : state === "needs_confirmation" ? "待確認" : state === "saving" ? "處理中" : "提示"} tone={state === "saved" ? "success" : state === "failed" ? "error" : state === "unknown" || state === "conflict" || state === "needs_confirmation" ? "warning" : "info"} />
     <Text accessibilityRole="header" style={styles.title}>{title}</Text>
     <Text style={styles.body}>{message}</Text>
     {referenceLabel ? <Text selectable style={styles.meta}>{referenceLabel}</Text> : null}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Keyboard, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Keyboard, Platform, Pressable, StyleSheet, View, type PressableStateCallbackType } from "react-native";
 import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Portal, Text } from "react-native-paper";
 import { canPreviewAssistantDraft, photoAttachment, type AssistantAttachment } from "../../assistant-draft";
@@ -17,6 +17,7 @@ import { MotionDisclosure } from "../../motion";
 import { useInteractionDensity } from "../useInteractionDensity";
 
 const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄", "先列出想問的問題"];
+type ControlInteraction = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
 
 // Mount this private subtree with the current identity/child scope key.
 export function AgentComposer({ enabled, compact, draft, attachments, onChangeDraft, onPreview, onSources, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0 }: {
@@ -91,11 +92,11 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
       <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
         accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
         aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
-        style={({ pressed }) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, pressed && styles.pressed]}>
+        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, pressed && styles.pressed]}>
         <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable></View>
       <Pressable accessibilityRole="button" accessibilityLabel="預覽輸入" accessibilityState={{ disabled: !canPreview }}
         disabled={!canPreview} onPress={preview}
-        style={({ pressed }) => [styles.iconControl, touchControls && styles.compactControl, pressed && styles.pressed]}>
+        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, canPreview && (hovered || focused) && styles.controlActive, pressed && styles.pressed]}>
         <View style={[styles.sendCircle, !canPreview && styles.sendDisabled]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>
       </Pressable></View>
     <MotionDisclosure expanded={showSuggestions} scopeKey={JSON.stringify([enabled, hasDraft, automaticCollapse])} testID="composer-suggestions-disclosure"><ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
@@ -106,7 +107,7 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
         <Text style={styles.suggestionText}>{item}</Text></Pressable>)}
     </ScrollView></MotionDisclosure>
     </View>
-    <Text style={styles.composerHint}>{attachments.length ? "未送出 · 附件離頁清除；文字草稿保留" : "先補文字或附件 · 只作本地預覽"}</Text>
+    {attachments.length ? <Text style={styles.composerHint}>未送出 · 附件離頁清除；文字草稿保留</Text> : null}
     </View>
     <AssistantInputDialog kind={inputDialog} enabled={enabled} onPick={addAttachment}
       onDismiss={() => { setInputDialog(null); setReplacement(null); }}
@@ -129,14 +130,15 @@ const styles = StyleSheet.create({
     shadowColor: chatColors.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: .06, shadowRadius: 12, elevation: 2 },
   panelFocused: { borderColor: chatColors.focus },
   composerHint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
-  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }, leftActions: { flexDirection: "row", alignItems: "center", minWidth: 0 },
-  iconControl: { width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, alignItems: "center", justifyContent: "center" },
+  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }, leftActions: { gap: 4, flexDirection: "row", alignItems: "center", minWidth: 0 },
+  iconControl: { backgroundColor: "transparent", borderWidth: 0, width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, alignItems: "center", justifyContent: "center" },
+  controlActive: { backgroundColor: chatColors.hover },
   compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
   sendCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send, borderWidth: 1, borderColor: chatColors.onSend }, sendDisabled: { opacity: .35 },
   photoError: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
   suggestionScroll: { flexGrow: 0 }, suggestions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.xs },
   mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm }, suggestionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
-  suggestion: { minHeight: 40, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: chatColors.line, borderRadius: radius.pill, justifyContent: "center" },
+  suggestion: { backgroundColor: chatColors.hover, minHeight: 40, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: chatColors.line, borderRadius: radius.pill, justifyContent: "center" },
   mobileSuggestion: { minHeight: mobileLayout.touchTarget, flexShrink: 0 },
   suggestionText: { fontFamily: chatFont, color: chatColors.ink, ...chatType.tool }, disabled: { opacity: .5 }, pressed: { opacity: .68 },
 });

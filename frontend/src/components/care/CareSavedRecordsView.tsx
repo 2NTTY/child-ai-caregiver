@@ -1,0 +1,35 @@
+import { useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Text } from "react-native-paper";
+import { careKindOptions, type CareFilter, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
+import { chineseFont, colors, readingType, spacing } from "../../theme";
+import { AppButton, AppSelect, AppTextField } from "../ui";
+import { AppStatusBadge } from "../AppStatusBadge";
+import { ReadStateNotice } from "../ReadStateNotice";
+import { CareWriteNotice } from "./CareReviewHistoryView";
+import { CareRecordDetail } from "./CareRecordDetail";
+import { CareRecordForm } from "./CareRecordForm";
+import { CareRecordDelete } from "./CareRecordDelete";
+
+// History consumes the same Care owner. The current page replaces, never appends to, the visible list.
+export function CareSavedRecordsView(props: { model: CareRecordsViewModel; actions: CareRecordsActions }) { return <><CareWriteNotice {...props} /><CareSavedRecordsBody {...props} /></>; }
+function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel; actions: CareRecordsActions }) {
+  const [query, setQuery] = useState(model.list.activeQuery), [kind, setKind] = useState<CareFilter>(model.list.activeKind);
+  const occupied = ["saving", "unknown"].includes(model.operation.state) || !!model.draft || !!model.deletion;
+  const loading = ["loading", "loading_more"].includes(model.list.state);
+  if (model.access === "lost") return <ReadStateNotice state="unavailable" message="目前沒有權限查看這個孩子的記錄。" />;
+  if (model.deletion) return <CareRecordDelete model={model} actions={actions} />;
+  if (model.draft) return <CareRecordForm key={model.draft.key} model={model} actions={actions} />;
+  if (model.detail) return <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} />;
+  return <View style={s.workspace}>
+    <AppTextField label="搜尋已保存記錄" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} />
+    <View style={s.controls}><View style={s.filter}><AppSelect<CareFilter> label="種類" value={kind} options={[{ value: "all", label: "全部" }, ...careKindOptions]} onChange={setKind} disabled={occupied} /></View>
+      <AppButton label="搜尋" density="compact" disabled={occupied || loading || !model.online} onPress={() => actions.search(query, kind)} /></View>
+    <ReadStateNotice state={loading ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? "stale" : model.list.records.length ? "ready" : "empty"} message={model.list.message ?? (!model.list.records.length ? model.list.hasMore ? "這一頁沒有符合項目，仍可查看下一頁。" : "已載入範圍沒有符合的記錄。" : "") } />
+    {model.list.records.map(record => <Pressable key={record.id} accessibilityRole="button" accessibilityLabel={`查看${record.title}`} disabled={occupied || loading} onPress={() => actions.openRecord(record.id)} style={s.row}>
+      <Text style={s.title}>{record.title}</Text><Text numberOfLines={2} style={s.body}>{record.current.values.text}</Text><AppStatusBadge label={record.current.version > 1 ? "已更正" : "已保存"} tone="success" />
+    </Pressable>)}
+    {model.list.hasPrevious || model.list.hasMore ? <View style={s.controls}><AppButton label="上一頁" density="compact" variant="secondary" onPress={() => actions.previousPage?.()} disabled={occupied || loading || !model.online || !model.list.hasPrevious || !actions.previousPage} /><Text style={s.meta}>第 {model.list.page ?? 1} 頁</Text><AppButton label="下一頁" density="compact" variant="secondary" onPress={actions.loadMore} disabled={occupied || loading || !model.online || !model.list.hasMore || model.list.state === "stale"} /></View> : null}
+  </View>;
+}
+const s = StyleSheet.create({ workspace: { gap: spacing.md }, controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" }, filter: { flexGrow: 1, minWidth: 0 }, row: { padding: spacing.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.controlSurface, gap: spacing.sm }, title: { fontFamily: chineseFont, ...readingType.tool, fontWeight: "700", color: colors.ink }, body: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted } });

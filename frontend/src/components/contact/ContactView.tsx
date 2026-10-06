@@ -1,3 +1,5 @@
+import { AppStatusBadge } from "../AppStatusBadge";
+import { contactGrantStatus } from "./contact-status";
 import { useContainerWidth } from "../useContainerWidth";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import {useLayoutEffect, useRef, useState} from 'react';
@@ -41,7 +43,7 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={s.pageStack}>
       <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === "failed"} />
       <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
-      <View style={s.toolbar}><View style={s.copy}><Text style={s.meta}>{model.dataLabel}</Text><Text style={s.meta}>接收同意、任務授權、渠道結果各自核對；本頁不發送通知。</Text></View>
+      <View style={s.toolbar}><View style={s.copy}><Text style={s.meta}>接收同意、任務授權、渠道結果各自核對；本頁不發送通知。</Text></View>
         <AppButton label={model.pending ? '先查原收據及更新聯絡資料' : '更新聯絡資料並保留選項'} density="compact" variant="secondary" disabled={!model.online || model.busy || model.access === 'lost'} onPress={actions.refresh} />
       </View>
       {model.busy ? <Text style={s.meta}>正在讀取／提交，尚未確認最新狀態。</Text> : null}
@@ -54,17 +56,17 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
       {model.notice ? <Text style={model.load === 'error' || !model.online || model.pending || ['failed', 'conflict', 'unknown'].includes(model.operation) ? s.warning : s.body}>{model.notice}</Text> : null}
       {model.dirty ? <AppButton label="放棄全部未提交選項並載入已保存資料" variant="quiet" disabled={!model.online || model.busy || !!model.pending || model.load !== 'ready'} onPress={actions.discard} /> : null}
       {model.pending ? <SectionCard testID="contact-pending"><SectionHeader density="compact" title="原決定待核對" icon="information-outline" />
-        <Text selectable style={s.meta}>原操作：{model.pending.reference}（合成參考）</Text>{model.pending.labels.map((text, index) => <Text key={index} style={s.body}>{text}</Text>)}
-        <AppButton label={details ? '收起原提交內容' : '查看原提交內容及版本'} variant="quiet" onPress={() => setDetails(value => !value)} />
+        <AppStatusBadge label={model.pending.confirmed ? "原收據已確認 · 最新資料待讀回" : "原操作結果待核對"} tone="warning" /><Text selectable style={s.meta}>原操作：{model.pending.reference}（合成參考）</Text>{model.pending.labels.map((text, index) => <Text key={index} style={s.body}>{text}</Text>)}
+        <AppButton expanded={details} label={details ? '收起原提交內容' : '查看原提交內容及版本'} variant="quiet" onPress={() => setDetails(value => !value)} />
         <MotionDisclosure expanded={details} scopeKey={`${model.scopeKey}:${model.pending.reference}`}><Text testID="contact-original-body" selectable style={s.meta}>{JSON.stringify(JSON.parse(model.pending.body), null, 2)}</Text></MotionDisclosure>
         <Text style={s.meta}>{model.pending.confirmed ? '原收據已確認，最新資料尚未讀回；不能重送或另建提交。' : '原識別、接收者、內容及版本保持不變；GET 本身不證明原決定成功。'}</Text>
         <AppCheckbox label="我已核對目前資料，同意以原識別內容及版本重試" checked={model.originalConsent} disabled={!canRetry} onChange={actions.setOriginalConsent} /><AppButton label="明確重試原聯絡決定" disabled={!canRetry || !model.originalConsent} onPress={actions.retryOriginal} />
       </SectionCard> : null}
       {page ? <>
         <View testID="contact-reachability" style={[s.reachability, !wide && s.reachabilityStack]}>
-          <View style={s.checkpoint}><Text style={s.step}>01 · 本人同意</Text><Text style={s.title}>{page.consent.enabled ? '已允許一般提示' : '尚未允許接收'}</Text><Text style={s.meta}>{page.consent.allowBackup ? '亦已同意作後備接收者' : '沒有後備接收同意'}</Text></View>
-          <View style={s.checkpoint}><Text style={s.step}>02 · 本人渠道</Text><Text style={s.title}>{page.availableBindings.length ? `${page.availableBindings.length} 個可選綁定` : '尚無可選綁定'}</Text><Text style={s.meta}>{page.availableBindings.map(binding => contactChannelLabels[binding.channel]).join(' · ') || '到設定管理綁定；不會自動取得權限'}</Text></View>
-          <View style={s.checkpoint}><Text style={s.step}>03 · 背景執行</Text><Text style={s.title}>{page.workerEnabled ? '開關已啟用' : '目前未啟用'}</Text><Text style={s.meta}>{page.workerEnabled ? '不代表服務在線、已投遞或已讀' : '保存授權不會啟動投遞'}</Text></View>
+          <View style={s.checkpoint}><Text style={s.step}>01 · 本人同意</Text><AppStatusBadge label={page.consent.enabled ? '已允許一般提示' : '尚未允許接收'} tone={page.consent.enabled ? 'success' : 'neutral'} /><Text style={s.meta}>{page.consent.allowBackup ? '亦已同意作後備接收者' : '沒有後備接收同意'}</Text></View>
+          <View style={s.checkpoint}><Text style={s.step}>02 · 本人渠道</Text><AppStatusBadge label={page.availableBindings.length ? `${page.availableBindings.length} 個可選綁定` : '尚無可選綁定'} tone={page.availableBindings.length ? 'info' : 'neutral'} /><Text style={s.meta}>{page.availableBindings.map(binding => contactChannelLabels[binding.channel]).join(' · ') || '到設定管理綁定；不會自動取得權限'}</Text></View>
+          <View style={s.checkpoint}><Text style={s.step}>03 · 背景執行</Text><AppStatusBadge label={page.workerEnabled ? '開關已啟用' : '目前未啟用'} tone={page.workerEnabled ? 'info' : 'neutral'} /><Text style={s.meta}>{page.workerEnabled ? '不代表服務在線、已投遞或已讀' : '保存授權不會啟動投遞'}</Text></View>
         </View>
         <ContactConsentCard key={`${model.scopeKey}:${model.userId}`} model={model} actions={actions} onSettings={onSettings} />
         <View style={s.section}><SectionHeader density="compact" title="任務聯絡授權" subtitle="選一項安排，核對主要接收者及授權期限。" />
@@ -74,14 +76,13 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
             <View style={wide && selectedId ? s.taskIndex : s.full} testID="contact-task-index">{tasks.map(task => {
               const grant = page.grants.find(item => item.taskId === task.id);
               const primary = page.recipients.find(item => item.userId === task.assigneeUserId);
-              const expired = !!grant?.enabled && (!Number.isFinite(Date.parse(grant.validUntil)) || Date.parse(grant.validUntil) <= Date.now() || grant.taskVersion !== task.version);
               return <Pressable key={task.id} ref={node => { if (node) taskRows.current.set(task.id, node); else taskRows.current.delete(task.id); }} accessibilityRole="button" accessibilityLabel={`核對${task.title}的聯絡授權`} aria-current={selectedId === task.id ? 'true' : undefined} accessibilityState={{disabled: model.busy || !!model.pending, selected: selectedId === task.id}} aria-disabled={model.busy || !!model.pending} disabled={model.busy || !!model.pending} onPress={() => setSelection({epoch: model.epoch, id: task.id})} style={({pressed}) => [s.taskRow, selectedId === task.id && s.selectedTask, pressed && s.pressed]}>
                 <View style={s.copy}><Text style={s.title}>{task.title}</Text><Text style={s.meta}>接收者：{contactName(page, task.assigneeUserId)}</Text><Text style={s.meta}>{primary?.enabled && primary.channels.length ? primary.channels.map(channel => contactChannelLabels[channel]).join(' · ') : '接收同意或可用渠道待核對'}</Text>
-                  <Text style={expired ? s.warning : s.step}>{!grant ? '尚無已保存授權' : !grant.enabled ? '已撤回授權' : expired ? '授權期限或任務版本待更新' : '已有保存授權，請核對範圍'}</Text></View><AppIcon name="chevron-right" size={18} />
+                  <AppStatusBadge {...contactGrantStatus(grant, task.version)} /></View><AppIcon name="chevron-right" size={18} />
               </Pressable>;
             })}</View>
             <View ref={taskPanel} tabIndex={-1} testID="contact-task-detail" style={[wide && selectedId ? s.taskDetail : s.full, !selectedId && s.hidden]}>
-              {selectedId ? <AppButton label="收起任務授權詳情" density="compact" variant="quiet" onPress={() => setSelection(null)} disabled={model.busy || !!model.pending} /> : null}
+              {selectedId ? <AppButton expanded label="收起任務授權詳情" density="compact" variant="quiet" onPress={() => setSelection(null)} disabled={model.busy || !!model.pending} /> : null}
               {tasks.map(task => <View key={`${model.scopeKey}:${task.id}`} style={selectedId !== task.id ? s.hidden : undefined} pointerEvents={selectedId === task.id ? 'auto' : 'none'} aria-hidden={selectedId !== task.id} accessibilityElementsHidden={selectedId !== task.id} importantForAccessibility={selectedId === task.id ? 'auto' : 'no-hide-descendants'}><ContactTaskCard task={task} missing={!page.tasks.some(item => item.id === task.id)} model={model} actions={actions} onTask={onTask} /></View>)}
             </View>
           </View>

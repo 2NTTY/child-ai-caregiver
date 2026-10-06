@@ -23,7 +23,7 @@ export function AssistantAttachmentPreview({ attachments, enabled, onRemove, onR
         {item.photo ? <Image source={item.photo.imageSource} accessibilityLabel="本地照片，未上傳" style={styles.thumbnail} /> : <View style={styles.thumbnail}><AppIcon name={item.kind === "voice" ? "microphone-outline" : "file-document-outline"} size={24} /></View>}
         <View style={styles.copy}><Text numberOfLines={1} style={styles.name}>{item.fileName}</Text><Text style={styles.meta}>{labels[item.kind]} · 未送出 · {Math.max(1, Math.round(item.bytes / 1024))} KB</Text></View>
       </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel={`移除附件：${item.fileName}`} disabled={!enabled} onPress={() => onRemove(item.id)} style={styles.remove}><AppIcon name="close" size={18} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={`移除附件：${item.fileName}`} disabled={!enabled} onPress={() => onRemove(item.id)} accessibilityState={{disabled: !enabled}} aria-disabled={!enabled} style={[styles.remove, !enabled && styles.disabled]}><AppIcon name="close" size={18} color={colors.errorInk} /></Pressable>
     </View>)}
   </AppScrollView><Portal><AppDialog visible={!!selected && enabled} onDismiss={() => setSelectedId(null)} testID="assistant-attachment-preview">
     <AppDialog.Title>未送出附件</AppDialog.Title><AppDialog.Content><View style={styles.detail}>
@@ -43,6 +43,6 @@ const styles = StyleSheet.create({
   preview: { flex: 1, minWidth: 0, minHeight: 60, flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.sm },
   thumbnail: { width: 40, height: 40, borderRadius: radius.small, alignItems: "center", justifyContent: "center", backgroundColor: colors.controlSurface },
   copy: { flex: 1, minWidth: 0 }, name: { fontFamily: chatFont, color: colors.ink, ...chatType.tool }, meta: { fontFamily: chatFont, color: colors.muted, ...chatType.meta },
-  remove: { width: mobileLayout.touchTarget, minHeight: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center" },
-  detail: { gap: spacing.sm }, fullPhoto: { width: "100%", height: 220, backgroundColor: colors.quietSurface },
+  remove: { backgroundColor: colors.paleCoral, borderLeftWidth: 1, borderLeftColor: colors.errorInk, borderTopRightRadius: radius.small, borderBottomRightRadius: radius.small, width: mobileLayout.touchTarget, minHeight: mobileLayout.touchTarget, alignItems: "center", justifyContent: "center" },
+  disabled: { opacity: 0.5 }, detail: { gap: spacing.sm }, fullPhoto: { width: "100%", height: 220, backgroundColor: colors.quietSurface },
 });
