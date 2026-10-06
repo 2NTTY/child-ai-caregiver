@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **P1／P2 原定工作包已結案，P3 未啟動。** 新前端仍是隔離合成預覽，未取代正式 App；[階段及證據](PLAN.md#phases)。
+- **P1／P2 原定工作包已結案，P3 未啟動。** 正在以 INT 系列把已確認的新前端接入正式服務，公開入口尚未切換；[當前包及未驗项](PLAN.md#active)／[階段及證據](PLAN.md#phases)。
 - **前端工作**：直接讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN 當前包](frontend/PLAN.md#active)，該處區分已合併成果與活動前端 PR；不用先讀整份根計劃或歷史 HANDOFF。
 - **Server／Agent／正式整合、文件維護**：讀 [根 PLAN 當前包](PLAN.md#active)，再按範圍讀契約或 [正式 UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。
 - S06-W05 本人模型設定增補已交付；真生成／embedding 因服務地區限制待驗、公開部署未做，詳見 [所屬包](PLAN.md#s06-w05)。

@@ -20,6 +20,7 @@ FROM node:24.19.0-bookworm-slim AS deps
 
 WORKDIR /app
 COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/package.json
 RUN npm install --global npm@11.8.0 --no-audit --no-fund \
     && npm ci --no-audit --no-fund
 
@@ -29,11 +30,17 @@ ENV CI=1 \
     EXPO_NO_TELEMETRY=1 \
     EXPO_PUBLIC_API_BASE_URL=/api
 
-COPY app.json tsconfig.json ./
-COPY app ./app
-COPY assets ./assets
-COPY src ./src
+COPY frontend/app.json frontend/tsconfig.json ./frontend/
+COPY frontend/app ./frontend/app
+COPY frontend/assets ./frontend/assets
+COPY frontend/src ./frontend/src
+COPY src/client ./src/client
+COPY src/config ./src/config
+COPY src/shared ./src/shared
 COPY public ./public
+COPY licenses ./licenses
+COPY THIRD_PARTY_NOTICES.md ./THIRD_PARTY_NOTICES.md
+COPY scripts/prepare-web-output.mjs ./scripts/prepare-web-output.mjs
 RUN npm run build:web
 
 FROM node:24.19.0-bookworm-slim AS server-runtime
@@ -44,6 +51,7 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/package.json
 RUN npm install --global npm@11.8.0 --no-audit --no-fund \
     && npm ci --omit=dev --no-audit --no-fund \
     && npm cache clean --force
@@ -69,7 +77,7 @@ ENTRYPOINT ["node"]
 CMD ["scripts/storage-backup.mjs"]
 
 FROM caddy:2.11.4-alpine AS web
-COPY --from=web-build /app/dist /srv
+COPY --from=web-build /app/frontend/dist /srv
 COPY deploy/p1/Caddyfile /etc/caddy/Caddyfile
 COPY licenses/caddy/LICENSE /usr/share/licenses/caddy/LICENSE
 COPY licenses /srv/licenses

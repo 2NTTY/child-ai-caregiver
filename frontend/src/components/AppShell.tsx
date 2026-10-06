@@ -21,11 +21,10 @@ import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
 import { NotificationBell } from "./NotificationBell";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
-import { scenarioLabels, type PreviewScenario } from "../preview/fixture";
-import { usePreview } from "../preview/PreviewContext";
+
+import { useProduction } from "../production/ProductionProvider";
 import type { HomeActions, HomeViewModel } from "../view-model";
 
-const scenarios: PreviewScenario[] = ["normal", "first_login", "setup_incomplete", "empty", "loading", "offline", "needs_confirmation", "saving", "saved", "failed", "unknown", "focus_task", "focus_growth", "focus_unavailable"];
 
 function NavItem({ item, active, compact = false }: { item: NavigationItem; active: boolean; compact?: boolean }) {
   const [pressed, setPressed] = useState(false);
@@ -38,25 +37,6 @@ function NavItem({ item, active, compact = false }: { item: NavigationItem; acti
     <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
     <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
   </Pressable></PreviewLink>;
-}
-
-export function PreviewToolbar() {
-  const { scenario, setScenario } = usePreview();
-  const [expanded, setExpanded] = useState(false);
-  return <View style={styles.previewArea}>
-    <View style={styles.previewLine}>
-
-      <Pressable accessibilityRole="button" accessibilityLabel="預覽工具與技術狀態" accessibilityState={{ expanded }} aria-expanded={expanded}
-        onPress={() => setExpanded(value => !value)} style={({ pressed }) => [styles.previewToggle, pressed && styles.pressed]}>
-        <Text style={styles.previewToggleText}>{expanded ? "收起預覽工具" : "預覽工具"}</Text><AppIcon name={expanded ? "chevron-up" : "chevron-down"} size={16} />
-      </Pressable>
-    </View>
-    {expanded ? <View style={styles.previewDetails}><Text style={styles.previewLabel}>介面預覽 · 合成資料 · 未接駁 Server</Text><Text style={styles.previewLabel}>保存、登入、邀請、通知與 Agent 回覆均為示例，不會改動正式資料。照片、語音與文件只留在本機草稿；正式上傳、整理及匯出尚未接通。</Text><Text style={styles.previewLabel}>目前情境：{scenarioLabels[scenario]}。各頁情境工具可查看固定快照、接線狀態及測試操作。</Text><View style={styles.scenarios}>{scenarios.map(item => <Pressable
-      key={item} accessibilityRole="button" accessibilityLabel={scenarioLabels[item]}
-      accessibilityState={{ selected: scenario === item }} onPress={() => setScenario(item)}
-      style={({ pressed }) => [styles.scenario, scenario === item && styles.scenarioSelected, pressed && (scenario === item ? styles.scenarioPressed : styles.pressed)]}
-    ><Text style={[styles.scenarioText, scenario === item && styles.scenarioSelectedText]}>{scenarioLabels[item]}</Text></Pressable>)}</View></View> : null}
-  </View>;
 }
 
 export function RightRail({ model, actions, home = false, contextPath = "/", overlay = false, onClose }: {
@@ -83,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const compact = width < 900;
   const tiny = width < 390;
   const wide = !compact;
-  const { model, actions, notice, dismissNotice } = usePreview();
+  const { model, actions, notice, dismissNotice, scopeKey, identityKey } = useProduction();
   const railProps = { model, actions, home: pathname === "/", contextPath: pathname };
   // The docked context rail is shell state, not a separate choice for every route.
   const [railOpen, setRailOpen] = useState(false);
@@ -106,7 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
   const active = (path: AppPath) => pathname === path;
   const selectedChild = model.children.find(item => item.id === model.selectedChildId);
-  const motionScope = `${model.caregiverName}:${model.selectedChildId ?? "none"}:${selectedChild?.accessRole ?? "none"}`;
+  const motionScope = scopeKey ?? identityKey ?? "signed-out";
   const sameRailContext = railContext.current.path === pathname && railContext.current.scope === motionScope;
   const overlayOpen = railModal && !wide && sameRailContext;
   const railExpanded = wide ? railOpen : overlayOpen;
@@ -145,11 +125,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             }} />
         </View>
       </View>
-      <PreviewToolbar />
-      {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉預覽提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
+
+      {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={styles.noticeText}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
       <View style={styles.body}>
         <MotionEntrance ref={routeSurface} preset="route" triggerKey={pathname} scopeKey={motionScope} style={styles.content} testID="motion-route">{children}</MotionEntrance>
-        {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} /> : null}
+        {compact && pathname === "/" ? <MobileQuickInputDock key={motionScope} supportedKinds={["text"]} /> : null}
         {wide ? <MotionDrawerRight open={railOpen} width={310} mode="dock" scopeKey={motionScope} testID="motion-context-rail"><RightRail {...railProps} /></MotionDrawerRight> : null}
       </View>
       </MotionScopeBoundary>

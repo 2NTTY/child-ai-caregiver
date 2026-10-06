@@ -38,8 +38,17 @@ The exact dependency tree and registry integrity values are recorded in [package
 | @grammyjs/types (transitive) | 5.0.0 | MIT | [LICENSE](licenses/grammyjs-types/LICENSE) |
 | @types/node (development) | 24.13.6 | MIT | [LICENSE](licenses/types-node/LICENSE) |
 | @types/pg (development) | 8.23.1 | MIT | [LICENSE](licenses/types-pg/LICENSE) |
+| @expo/vector-icons | 15.1.1 | MIT | [LICENSE](licenses/expo-vector-icons/LICENSE) |
+| @tanstack/react-query | 5.103.2 | MIT | [LICENSE](licenses/tanstack-react-query/LICENSE) |
+| @tanstack/query-core (transitive) | 5.103.2 | MIT | [LICENSE](licenses/tanstack-query-core/LICENSE) |
+| expo-blur | 57.0.3 | MIT | [LICENSE](licenses/expo-blur/LICENSE) |
+| lucide-react-native | 1.49.0 | ISC and included Feather MIT notice | [LICENSE](licenses/lucide-react-native/LICENSE) |
+| luxon | 3.7.2 | MIT | [LICENSE](licenses/luxon/LICENSE.md) |
+| overlayscrollbars | 2.16.0 | MIT | [LICENSE](licenses/overlayscrollbars/LICENSE) |
+| react-native-paper-dates | 0.24.0 | MIT | [LICENSE](licenses/react-native-paper-dates/LICENSE) |
+| react-native-svg | 15.15.4 | MIT | [LICENSE](licenses/react-native-svg/LICENSE) |
 
-The expo-router 57.0.22 npm tarball does not contain a root LICENSE file. Its npm `gitHead` is `7687b07947a5c866adeb11abbceae72403ccb188`; its preserved MIT license comes from the [Expo repository at that exact commit](https://github.com/expo/expo/blob/7687b07947a5c866adeb11abbceae72403ccb188/LICENSE). All other texts above were copied directly from the installed package. The project has not modified these upstream packages.
+The expo-router 57.0.22 npm tarball does not contain a root LICENSE file. Its npm `gitHead` is `7687b07947a5c866adeb11abbceae72403ccb188`; its preserved MIT license comes from the [Expo repository at that exact commit](https://github.com/expo/expo/blob/7687b07947a5c866adeb11abbceae72403ccb188/LICENSE). OverlayScrollbars 2.16.0 omits the standalone license from its package; its text comes from the [matching upstream tag](https://github.com/KingSora/OverlayScrollbars/blob/v2.16.0/LICENSE). All other texts above were copied directly from the installed package. The project has not modified these upstream packages.
 
 ## SDK 57 dependency constraints
 

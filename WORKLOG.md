@@ -1400,3 +1400,16 @@
 - Actual Work／Changes：核對 master `c51dd52`、活動 PR #84／#85 及附件快照，收斂根／前端閱讀入口與文件職責，保留前端獨立 PLAN／STATUS；移出重複交付史、標明舊部署／決策／研究身份。歷史原文以固定 Git 版本及 hash 定位，舊錨點保留；沒有修改業務程式、API 語義、UI 或模型調度規則。
 - Verification／Evidence：[EV-DOC-R04](artifacts/verification/DOC_R04_CHECKS.json) 保存本機文件連結／錨點、TOML、歷史內容、prompt 正文、Skill 靜態替代檢查及唯讀接手結果；只做文件驗收，沒有產品測試／部署、原生載入或 token 節省量測。官方 Skill validator 缺 PyYAML，沒有假報該命令通過；原 metadata 及適用結構條件另行核對。
 - Limitations／Next：活動前端成果及現場可能繼續變動，整合時重查 head、保留新增內容和未驗項；網站現況未查，STOP 設定不當成停機實證。提交文件 PR 供 review，合併另候使用者指示；未修改其他聊天 checkout 或活動 PR。
+
+<a id="log-20261006-int-w01"></a>
+## LOG-20261006-INT-W01
+
+- Recorded At／Work Date：2026-10-06，Asia/Hong_Kong。
+- Step / Package：INT-W01，P2 結案後的新前端正式接線基礎。
+- Goal：保留已確認設計，以正式登入／孩子資料與共用 owner 取代根合成 provider，接根 Web 建置及 Docker 產物。
+- Executor／AI Assistance：A 統籌共用 AI；主模型親寫需求／契約／指導及 review，Sol 6.1 XHigh 實作 application host、Sol 6.1 High 實作 workspace／建置及執行一條必要本機驗收。B 主責介面，C 建置／接點，A 政策／整合；權重3、60%／30%／10% 是責任分配，不是個人手寫或實測工時。
+- Human Verification：未新增人工驗收；沿用使用者已確認的前端設計，本次沒有重新設計。
+- Actual Work：根 npm workspace／單一 lock、ProductionOwner／登入與孩子建立／選擇、原收據恢復、身份遮罩及草稿清理、移除正式預覽工具；未接 screen 由共同 gate 阻止掛載。普通 focus 只重讀，避免誤清草稿。復用既有 API 地址校驗，補正式分發的既有前端依賴 notices；ADR-017 記錄接線及 Agent-first 目標。
+- Verification：必要型別、三項 scope 記憶檢查、一次 Web export 通過；一次 Chromium 真 API 情景 34.4秒通過，兩合成帳號、一孩子，保存回應遺失後只查原 opId、不重建，重開及換帳戶隔離通過，孩子已刪。0模型／通知／外網。HTTP實際數及原opId未由line reporter留檔，只證明含清理不超過95；不為補計數重跑。詳見 [EV-INT-W01](artifacts/verification/INT_W01_CHECKS.json)。
+- Failures／Limits：一項純記憶測試首次使用固定fake方法導致失敗，修fixture後只補該項通過。瀏覽器情景一次通過；最後API地址guard／app顯示名稱整理後只做必要型別及零網絡guard檢查，不重跑瀏覽器或export。公開部署、Agent／其餘領域正式接線、Android及全面視覺未驗。
+- Delivery／Next：從master 61a8faa獨立分支交付，B帳號推送／PR／合併；A為本機實際Committer，共同責任按實作範圍署名，實際GitHub身份／簽署於交付時核對。合併後開始真Agent接線；目前不是全部正式前端完成。

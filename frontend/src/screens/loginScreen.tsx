@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { BlurView } from "expo-blur";
 import { brand } from "../branding";
 import { BrandLogo } from "../components/BrandLogo";
@@ -14,6 +14,7 @@ import { AppIcon } from "../components/AppIcon";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 import { useFirstScreenImage } from "../startup/FirstScreenGate";
 import { useContainerSize } from "../components/useContainerSize";
+import { useProduction } from "../production/ProductionProvider";
 
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
 const harbourSourceSize = { width: 1672, height: 941 };
@@ -23,6 +24,8 @@ type Mode = "signIn" | "signUp";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { authenticate, refresh, identityKey, auth, online, recordsState } = useProduction();
+  useEffect(() => { if (identityKey) router.replace("/"); }, [identityKey, router]);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const narrow = width < 900;
@@ -41,7 +44,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [previewDetailsOpen, setPreviewDetailsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const busy = recordsState.busy === "auth" || auth === "checking";
 
   function selectMode(next: Mode) { setMode(next); setResult(null); }
   function moveMode(event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }) {
@@ -51,12 +55,14 @@ export default function LoginPage() {
     event.preventDefault(); selectMode(next);
     (modeControls.current.get(next) as unknown as HTMLElement | undefined)?.focus();
   }
-  function validate() {
-    if (mode === "signUp" && !name.trim()) { setResult("請填寫稱呼。這是本地表單檢查，沒有建立帳戶。"); return; }
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setResult("請輸入有效電郵地址。這是本地表單檢查。"); return; }
-    if (!password) { setResult("請輸入密碼。這是本地表單檢查。"); return; }
-    if (mode === "signUp" && password.length < 12) { setResult("建立帳戶需要至少 12 個字元的密碼；預覽不會提交資料。"); return; }
-    setResult(`表單格式已通過；此預覽沒有連接 Server，未有${mode === "signIn" ? "登入" : "建立帳戶"}。`);
+  async function submit() {
+    if (mode === "signUp" && !name.trim()) { setResult("請填寫稱呼。"); return; }
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setResult("請輸入有效電郵地址。"); return; }
+    if (!password) { setResult("請輸入密碼。"); return; }
+    if (mode === "signUp" && password.length < 12) { setResult("建立帳戶需要至少 12 個字元的密碼。"); return; }
+    setResult(null);
+    try { await authenticate(mode, { name, email, password }); }
+    finally { setPassword(""); }
   }
 
   return <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView style={styles.scroll} contentContainerStyle={[styles.root, narrow && styles.rootStack, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
@@ -96,11 +102,12 @@ export default function LoginPage() {
         <MotionDisclosure expanded={mode === "signUp"} scopeKey={modeScope} testID="login-name-disclosure"><AppTextField label="稱呼" accessibilityLabel="稱呼" value={name} onChangeText={setName} autoComplete="name" /></MotionDisclosure>
         <AppTextField label="電郵地址" accessibilityLabel="電郵地址" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" />
         <View style={styles.passwordBlock}><AppTextField label={mode === "signUp" ? "密碼（至少 12 個字元）" : "密碼"} accessibilityLabel="密碼" value={password} onChangeText={setPassword} secureTextEntry={!passwordVisible} autoCapitalize="none" autoComplete={mode === "signUp" ? "new-password" : "current-password"} /><Pressable accessibilityRole="button" accessibilityLabel={passwordVisible ? "隱藏密碼" : "顯示密碼"} onPress={() => setPasswordVisible(value => !value)} style={({ pressed }) => [styles.passwordToggle, pressed && styles.pressed]}><Text style={styles.passwordToggleText}>{passwordVisible ? "隱藏" : "顯示"}</Text></Pressable></View>
-        <AppButton label={mode === "signIn" ? "登入（預覽）" : "建立帳戶（預覽）"} onPress={validate} />
-        {result ? <Text accessibilityLiveRegion="polite" style={styles.result}>{result}</Text> : null}
-        <Text style={styles.formNote}>請使用測試資料，勿輸入真實密碼。</Text>
-        <AppButton label={previewDetailsOpen ? "收起預覽說明" : "關於預覽"} variant="quiet" expanded={previewDetailsOpen} onPress={() => setPreviewDetailsOpen(value => !value)} />
-        {previewDetailsOpen ? <Text style={styles.formNote}>本頁只檢查輸入及展示介面；不會傳送密碼，也不會建立登入狀態。手機、Google／Apple 登入及忘記密碼尚未接通。</Text> : null}
+        <AppButton label={mode === "signIn" ? "登入" : "建立帳戶"} loading={busy} disabled={!online || auth === "unavailable" || !!identityKey} onPress={() => { void submit(); }} />
+        {result || recordsState.notice ? <Text accessibilityLiveRegion="polite" style={styles.result}>{result ?? recordsState.notice}</Text> : null}
+        {!online ? <Text style={styles.formNote}>目前未能連線，請連線後再試。</Text> : null}
+        {auth === "unavailable" ? <AppButton label="重新檢查登入狀態" disabled={!online} variant="secondary" onPress={() => { void refresh(); }} /> : null}
+        <AppButton label={detailsOpen ? "收起登入說明" : "登入說明"} variant="quiet" expanded={detailsOpen} onPress={() => setDetailsOpen(value => !value)} />
+        {detailsOpen ? <Text style={styles.formNote}>支援電郵登入及註冊。手機、Google／Apple 登入及忘記密碼尚未接通。密碼不會保存在本機。</Text> : null}
         <View style={styles.divider} />
 
         <Pressable accessibilityRole="link" accessibilityLabel="返回主頁" onPress={() => router.replace("/")} style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}><Text style={styles.backLinkText}>返回主頁</Text><AppIcon name="arrow-right" size={18} /></Pressable>

@@ -44,6 +44,8 @@ export type HomeFocusView =
       action: { label: string; destination: HomeDestination } };
 
 export interface HomeViewModel {
+  // A production owner supplies a stable server/user/session/child/role scope.
+  scopeKey?: string | null;
   caregiverName: string;
   children: HomeChild[];
   selectedChildId: string | null;
