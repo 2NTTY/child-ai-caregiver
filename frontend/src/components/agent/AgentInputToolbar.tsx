@@ -21,13 +21,13 @@ function InputControl({ label, icon, onPress, compact, disabled, busy = false, h
 }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={hint}
     accessibilityState={{ disabled, busy }} aria-disabled={disabled} aria-busy={busy}
-    disabled={disabled} onPress={onPress} style={({ pressed, hovered, focused }: ControlInteraction) => [styles.control, compact && styles.compactControl, disabled && styles.disabled, !disabled && (pressed || hovered || focused) && styles.active]}>
+    disabled={disabled} onPress={onPress} style={({ pressed, hovered, focused }: ControlInteraction) => [styles.control, compact && styles.compactControl, disabled && styles.disabled, !disabled && (pressed || hovered || focused) && styles.active, !disabled && focused && styles.focused]}>
     <AppIcon name={icon} size={20} color={chatColors.secondary} />
   </Pressable>;
 }
 const styles = StyleSheet.create({
-  controls: { gap: 4, flexDirection: "row", alignItems: "center" },
+  controls: { gap: 0, flexDirection: "row", alignItems: "center" },
   control: { backgroundColor: "transparent", borderWidth: 0, width: chatLayout.controlSize, height: chatLayout.controlSize, alignItems: "center", justifyContent: "center", borderRadius: chatLayout.controlSize / 2 },
   compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
-  disabled: { opacity: .5 }, active: { backgroundColor: chatColors.hover },
+  disabled: { opacity: .5 }, active: { backgroundColor: chatColors.hover }, focused: { borderWidth: 1, borderColor: chatColors.focus },
 });

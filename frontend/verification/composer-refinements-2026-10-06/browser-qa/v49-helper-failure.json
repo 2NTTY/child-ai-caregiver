@@ -1,0 +1,33 @@
+{
+  "observedAt": "2026-10-06T08:07:23Z",
+  "type": "tool-approval-denied",
+  "tool": "mcp__cua_repl__js",
+  "action": "Replace synthetic composer draft, click visible tasks sidebar link, read current AX state",
+  "target": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/chat",
+  "exactCode": "await composerTab.playwright.getByRole('textbox',{name:'撰寫對話問題'}).fill('合成草稿保留驗收'); await composerTab.playwright.getByRole('link',{name:'待辦與預約',exact:true}).click(); await composerTab.getAXState();",
+  "message": "JavaScript execution did not receive approval",
+  "response": "Stopped batch and reported to parent. No retry or alternative pending transcript evidence.",
+  "executionOutcome": "Unknown whether any action executed; last confirmed screen had 12-line synthetic draft.",
+  "notYetTested": [
+    "same-scope navigation draft retention",
+    "child scope reset",
+    "390/320 responsive layouts",
+    "send hover",
+    "send held feedback"
+  ],
+  "lastConfirmedPassed": [
+    "v49 script entry",
+    "desktop empty geometry",
+    "Shift+Enter newline without preview",
+    "autoheight 48 to60 to168",
+    "internal textarea scrollTop132",
+    "40px tools",
+    "36px unoutlined send circle",
+    "keyboard-visible tool and send focus"
+  ],
+  "recovery": {
+    "observedAt": "2026-10-06T08:09:04Z",
+    "method": "Parent supplied exact transcript evidence; original call retried once unchanged",
+    "result": "Succeeded; navigated to tasks. Return to chat verified draft retained; child switch cleared it."
+  }
+}

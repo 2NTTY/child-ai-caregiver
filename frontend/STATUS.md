@@ -1,8 +1,8 @@
 # 育伴港前端現況
 
-2026-10-06 UTC：清理與前批按壓／歷史／準備頁修正已交付或進入最後 Git 同步，公開站已更新為 v48。手機底部選中提示、水滴拍照鈕及 primary／danger ripple 修正已發布，限定畫面驗收通過，程式及證據正同步 GitHub。
+2026-10-06 UTC：公開 v48 的按鈕、手機導航及水滴拍照鈕限定驗收已完成。正在依 Codex 參考整理聊天輸入框外觀，v49 已發布，限定桌面／390／320 畫面與輸入檢查通過。
 
-- 本包 combined typecheck 與 300 項測試通過；37 路由建置通過，限定畫面檢查通過，Git 同步狀態見 [PLAN](PLAN.md#active)
-- 操作／資料 owner／權限／unknown 恢復保留，不送真照片或訊息
-- PR #89 未自動合併；正式 API、持久化、原生及逐幀無閃動不屬已完成宣稱
-- 接線依 [HANDOFF](HANDOFF.md)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)
+- 只改比例、留白、邊界、工具列及送出圓形呈現，保留原輸入／草稿／附件行為
+- 本包 304 項測試、typecheck 及建置通過；v49 已發布、限定驗收通過，send 持續按壓／IME／真機未新增實測
+- 前批 v47／v48 已同步至 PR #89 的 `046ded1f`，本輸入框修訂另行追加；PR #89 不自動合併
+- 本包實際檢查及交付狀態見 [PLAN](PLAN.md#active)，呈現依 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)，接線依 [HANDOFF](HANDOFF.md)

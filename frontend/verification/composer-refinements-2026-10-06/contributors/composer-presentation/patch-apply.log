@@ -1,0 +1,6 @@
+patching file frontend/src/components/agent/AgentComposer.tsx
+patching file frontend/src/components/agent/AgentInputToolbar.tsx
+patching file frontend/src/components/agent/ChatComposerInput.web.tsx
+patching file frontend/src/components/agent/ChatComposerInput.tsx
+patching file frontend/src/components/chat/chat-presentation.ts
+patching file frontend/scripts/composer-presentation.test.mjs

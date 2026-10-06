@@ -1,0 +1,98 @@
+{
+  "startedAt": "2026-10-06T07:52:07.026093+00:00",
+  "baselineRevision": "Final frozen v48 source and evidence",
+  "baselineBuildInputFingerprintSha256": "81cb84068fa95ae59687e2b18a2ec08ea1f96ac92803c0de8911dc628fe7e089",
+  "sourceBuildInputFingerprintSha256": "0cbda1c53061d573b6cca5b3e1b8af294c3762059aaf275e5c96e450fe330e76",
+  "checks": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "startedAt": "2026-10-06T07:52:07.026202+00:00",
+      "endedAt": "2026-10-06T07:52:22.378824+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "typecheck.log",
+      "logSha256": "36909e4212b55a6cfd8f3e2bae14fb164f0589f81b1563e66628f7ec63f8a6ce"
+    },
+    "aggregate": {
+      "command": "node --test scripts/*.test.mts scripts/*.test.mjs src/components/care/care-review.test.mjs src/components/growth/growth-form.test.mjs",
+      "startedAt": "2026-10-06T07:52:22.385653+00:00",
+      "endedAt": "2026-10-06T07:52:37.566687+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "aggregate.log",
+      "logSha256": "aea15c8ad930c7243557d34e013fae178c6fa9a801c6f2ef2e05abe28ed91e91",
+      "tests": 304,
+      "passed": 304,
+      "failed": 0
+    },
+    "webExport": {
+      "command": "npm run build:web -- --output-dir dist",
+      "startedAt": "2026-10-06T07:53:33.841590+00:00",
+      "endedAt": "2026-10-06T07:54:28.024590+00:00",
+      "exitCode": 0,
+      "status": "passed",
+      "log": "export.log",
+      "logSha256": "c7c837d5d988a66ba072538d61ef079983a6c9f3511ae13669cea80f221a16c8",
+      "staticRoutes": 37,
+      "manifest": "export-manifest.json",
+      "exportFingerprintSha256": "3c9e0c501ae18a8372281d48a36faae75ea8b45f4837bce6e7616ed8f81a6102"
+    },
+    "parentOwnedBrowserQA": {
+      "status": "passed-executed-bounded-scope",
+      "publishedVersion": 49,
+      "report": "browser-qa/v49-browser-report.md",
+      "reportSha256": "4951ce821c6f8aeacaa1e836cfac132f624e26c13ec67f6d62b34b97c7694284",
+      "summary": "browser-qa/v49-summary.json",
+      "summarySha256": "42afbf80011bcc266b81e4f8c0020b3d6087342b1676222f9b9cc2238dfcb4b1",
+      "parentReview": "Parent read the full report, viewed the actual desktop screenshot, accepted the executed bounded pass, and released source/docs/evidence freeze",
+      "integrationWorkerRanBrowser": false,
+      "verifiedLiveEntry": "3e2f8d0fc2f8a09690edb0560b8a9fe3",
+      "viewports": [
+        {
+          "width": 1180,
+          "height": 757,
+          "mode": "normal browser"
+        },
+        {
+          "width": 390,
+          "height": 600,
+          "mode": "same-origin QA iframe"
+        },
+        {
+          "width": 320,
+          "height": 600,
+          "mode": "same-origin QA iframe"
+        }
+      ],
+      "instrumentationFailures": [
+        "approval-denied-retried-once-with-transcript",
+        "invalid-outer-frame-measurement",
+        "string-function-evaluate-undefined"
+      ],
+      "invalidMeasurementPreserved": "browser-qa/v49-mobile-390-empty.json",
+      "correctedMeasurement": "browser-qa/v49-mobile-390-empty-corrected.json",
+      "notRun": [
+        "held send activation/release",
+        "normal Enter submit",
+        "IME composition",
+        "native mobile keyboard",
+        "cross browser",
+        "every-frame stability"
+      ],
+      "safety": {
+        "draft": "",
+        "sendDisabled": true,
+        "textareaHeight": 48,
+        "noSubmissionOrMedia": true
+      }
+    }
+  },
+  "stoppingRule": "Stop on the first failed check; retain its original log. No assertion or scope weakening.",
+  "limits": [
+    "No browser or held-press visual verification by integration worker",
+    "No real API or native-device verification",
+    "No Git or Sites operations by integration worker"
+  ],
+  "firstPassResult": "Combined typecheck and aggregate passed on the first run; no product or assertion retries",
+  "contributorEvidenceLimit": "Owner recorded an initial omitted shared-family dependency failure, but the full original stdout was not retained. Its original checks.json and corrected passing typecheck log are preserved unchanged."
+}

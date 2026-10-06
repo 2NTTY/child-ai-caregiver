@@ -1,0 +1,97 @@
+{
+  "at": "2026-10-06T07:49:03.521172+00:00",
+  "baseline": "Frozen v48 at /workspace/shared/frontend_mobile_ripple_refinements_20261006/frontend",
+  "staging": "/workspace/shared/frontend_codex_composer_restore_20261006/frontend",
+  "sourceFiles": [
+    {
+      "path": "frontend/src/components/agent/AgentComposer.tsx",
+      "baselineSha256": "4144ad802daaabab9ff7d982fa4de2284ce371eb733bcbdf3af65228199df95f",
+      "sha256": "411e5eab72bb5275e5e2ab00702550ecf15cc23d259a0f119e5f01833620e222"
+    },
+    {
+      "path": "frontend/src/components/agent/AgentInputToolbar.tsx",
+      "baselineSha256": "8ad43cd248f85bc87faffd832252a9ad655a79ce965922f440a827b9d5240767",
+      "sha256": "64c3b2e3c9bb0726c49c7eef94e302574dd8400e5a44146db67f232e5e8ffea3"
+    },
+    {
+      "path": "frontend/src/components/agent/ChatComposerInput.web.tsx",
+      "baselineSha256": "a8015843c849949f7d4a26ed059011144eb33647930804af5e21ffc641aa9f24",
+      "sha256": "bf4caad7149bac4b19481afc7f2943fafedf2548d575a70393b285230dec5f36"
+    },
+    {
+      "path": "frontend/src/components/agent/ChatComposerInput.tsx",
+      "baselineSha256": "09100b601e07b4054831879034a758ae5c36e5a9aabfd549df1aa290fbb2c47d",
+      "sha256": "a0a4ffddf98915e886c98b7c158d3c91f662a292a83eeef2e13780c00278baff"
+    },
+    {
+      "path": "frontend/src/components/chat/chat-presentation.ts",
+      "baselineSha256": "31ca3f08e0a3715e42d4ce537d1f6246269bd1c190c3ab6828edee636626268a",
+      "sha256": "ea5e3c0374e73d0d580d90e6b9a25af908e5acff7c9d411c3c3ca1dac90c7180"
+    },
+    {
+      "path": "frontend/scripts/composer-presentation.test.mjs",
+      "baselineSha256": null,
+      "sha256": "fe12ac1f4038ac5d482db1545ee1dcff1ba6bf8129854c6c41e4de3fa99ad64a"
+    }
+  ],
+  "patchSha256": "ac220f65d37ecf3ac4fc13689f749452e3b36a92232579f19e0e15401f69f556",
+  "checks": {
+    "targetedTests": {
+      "command": "node --test scripts/composer-presentation.test.mjs scripts/pressed-feedback.test.mjs",
+      "status": "passed",
+      "passed": 11,
+      "failed": 0,
+      "log": "targeted-tests.tap"
+    },
+    "typecheckInitial": {
+      "command": "npm run typecheck",
+      "status": "failed",
+      "exitCode": 2,
+      "cause": "Initial isolated staging omitted frozen sibling src/shared/family.ts, required by frontend/src/family-view-model.ts:1. The tool output contained family types and dependent view model errors. Full initial stdout was not retained as a file. No business source or type assertion was modified."
+    },
+    "typecheckCorrected": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "exitCode": 0,
+      "log": "typecheck.log",
+      "fix": "Copied unchanged frozen sibling src/shared/family.ts",
+      "sharedTypeSha256": "8d6ad55ce5624c539ce0768b5261fa27a09dd81bfe97b647f2fa85db354904ae"
+    },
+    "sourceInvariants": {
+      "status": "passed",
+      "detail": "Composer hooks and handlers before render, and both input adapter bodies before styles, are byte-identical to frozen v48."
+    }
+  },
+  "values": {
+    "panelRadius": 24,
+    "panelBorderToken": "colors.line (#CAC9D4)",
+    "panelPaddingHorizontal": 8,
+    "panelPaddingVertical": 4,
+    "panelShadow": {
+      "y": 1,
+      "opacity": 0.04,
+      "radius": 10,
+      "elevation": 1
+    },
+    "inputPadding": {
+      "top": 8,
+      "horizontal": 8,
+      "bottom": 4
+    },
+    "inputHeightMin": 48,
+    "inputHeightMax": 168,
+    "toolbarGap": 0,
+    "mouseHitTarget": 40,
+    "touchHitTarget": 48,
+    "sendCircle": 36,
+    "sendOutline": 0,
+    "sendDisabledOpacity": 0.35,
+    "focusedControlBorderWidth": 1,
+    "focusedControlBorderColor": "chatColors.focus (#272343)"
+  },
+  "limits": [
+    "No browser, export, publication, Git, real API, media permissions, model call, or native-device verification",
+    "Panel height calculations (98 desktop / 106 touch) are predicted from styles; awaiting actual browser geometry",
+    "Root owns final visual review and guidance/document synchronization"
+  ]
+}

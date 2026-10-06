@@ -1,0 +1,22 @@
+{
+  "buttons": [],
+  "frame": {
+    "h": 602,
+    "w": 392,
+    "x": 12,
+    "y": 68
+  },
+  "panel": null,
+  "scripts": [
+    ""
+  ],
+  "textarea": null,
+  "toolbar": null,
+  "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+  "viewport": {
+    "clientW": 1180,
+    "h": 757,
+    "scrollW": 1180,
+    "w": 1180
+  }
+}

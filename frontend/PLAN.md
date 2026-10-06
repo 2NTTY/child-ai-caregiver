@@ -3,26 +3,25 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## FE-W41：手機選中提示、水滴拍照鈕及深色按鈕回饋
+## FE-W42：Codex 參考的聊天輸入框呈現
 
-更新：2026-10-06 UTC。本包沿已發布 v47 的凍結來源，獨立整合，不回寫 v47 檢查證據；只處理 frontend。
+更新：2026-10-06 UTC。依使用者提供的實際截圖及 [Codex 官方參考](https://developers.openai.com/blog/mastering-codex-remote-for-engineering)，在已驗 v48 來源另建獨立修訂；不是桌面 Codex 逐像素複製。
 
-### 範圍與來源
+### 本包變動與限制
 
-- 手機底部入口補持續淺青選中面及短頂線，Records 提供 selected／aria-current，保留路由判斷、長按上拉及離頁守衛
-- 左下拍照鈕改為 72×72 原生 SVG 黏附曲線，實際命中區維持 56×56；裝飾不接收 pointer，不遮擋導航／安全區，不改拍照、長按、拖曳選單及草稿流程
-- AppButton primary／danger 的白色 ripple 已在 v47 實測確認，現局部使用黑色 12% darkActionRipple；白字、底色、busy／disabled、尺寸及其他角色不變
-- 不修改套件時鐘 ripple、內容／孩子安全遮幕，也不以本次修正宣稱所有平台逐幀無閃動
+只改 composer 呈現：24 圓角、較柔和邊界與輕陰影；面板內距上／下 4、左／右 8，輸入 8／8／4；透明工具間距收緊但維持滑鼠 40／觸控 48 點按區；送出改 36 黃圓且移除常駐描邊，按住及 hover 只作用於圓形，focus 另有清楚細框。
+
+輸入 48–168 自動高度、稳定 textarea、IME、Enter／Shift+Enter、既有 refs／handlers、附件與草稿 scope／遲到回呼保持原樣。不得因造型修改改成真正送出或新增資料處理。
 
 ### 驗證與交付
 
-Mobile 9-file 與 ripple 3-file patch 無重疊，以 zero-fuzz 套入新來源；combined typecheck、aggregate 300/300 首輪通過。Fresh export 37 路由通過，v48 已於 2026-10-06 07:25 UTC 發布；[限定按壓及手機導航／水滴手勢畫面驗收](verification/mobile-ripple-refinements-2026-10-06/browser-qa/v48-browser-report.md)通過：主／危險按鈕黑色 state layer、390／320 持續選中、56px hitbox／72px 裝飾穿透及安全手勢均已觀察，沒有拍攝或傳送；任何原生、真資料／模型、圖片外發都未包含於本包。
+Owner 定向 11 項檢查及補齊同基線唯讀 family 型別後的 typecheck 通過；首次缺依賴失敗僅有 checks 記錄、未留原 stdout，不補造。Combined typecheck、aggregate 304/304、fresh export 37 路由均通過；v49 已於 2026-10-06 08:03 UTC 發布，[桌面／390／320 限定驗收](verification/composer-refinements-2026-10-06/browser-qa/v49-browser-report.md)通過：多行上限／捲動、Shift+Enter、focus、草稿隔離及局部 hover 正常；send 按住／釋放與 IME／真機未新增實測，不算已通過。
 
-必要畫面範圍為深色主／危險按鈕的按住與放開、手機導航持續選中、SVG 實際邊界／hit target、方向手勢及取消；只用合成資料，不送照片或訊息。Git 使用明確後續 commit，不自動合併 PR #89。
+只保存可重用的呈現原則於 DESIGN_SYSTEM，實際檢查與未驗限制留本包；沿既有 PR 更新流程，不自動合併。v47／v48 程式、文件及證據已核實同步至 PR #89 的 `046ded1f`，本輸入框修訂另行追加，不能由公開站已更新推定 Git 完成。
 
 ### 已完成基線
 
-清理 PR #89 與 v46 的 278 項測試、建置及 smoke 已交付。v47 的 292 項測試、37 路由 export 及 [11 控件／44 按住樣本與歷史／準備頁檢查](verification/ui-refinements-2026-10-06/browser-qa/v47-browser-report.md)完成；v47 的 primary／danger 白色 ripple 是本包要修的已知殘留，不能把舊版說成全部已修。
+v48 的 300 項測試、37 路由 export 及 [主／危險按鈕、手機導航及水滴手勢限定驗收](verification/mobile-ripple-refinements-2026-10-06/browser-qa/v48-browser-report.md)已完成；保留原 source／dist／證據，不將其視作此輸入框改動通過。
 
 ### 保留限制
 

@@ -92,12 +92,12 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
       <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
         accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
         aria-expanded={showSuggestions} disabled={!enabled || hasDraft} onPress={toggleSuggestions}
-        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, pressed && enabled && !hasDraft && styles.pressed]}>
+        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, focused && enabled && !hasDraft && styles.controlFocused, pressed && enabled && !hasDraft && styles.pressed]}>
         <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable></View>
       <Pressable accessibilityRole="button" accessibilityLabel="預覽輸入" accessibilityState={{ disabled: !canPreview }}
         disabled={!canPreview} onPress={preview}
-        style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, canPreview && (hovered || focused) && styles.controlActive, pressed && canPreview && styles.pressed]}>
-        {({ pressed }) => <View style={[styles.sendCircle, !canPreview && styles.sendDisabled, pressed && canPreview && styles.sendPressed]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>}
+        style={({ focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, focused && canPreview && styles.controlFocused]}>
+        {({ pressed, hovered }: ControlInteraction) => <View style={[styles.sendCircle, !canPreview && styles.sendDisabled, (pressed || hovered) && canPreview && styles.sendPressed]}><AppIcon name="arrow-up" size={20} color={chatColors.onSend} /></View>}
       </Pressable></View>
     <MotionDisclosure expanded={showSuggestions} scopeKey={JSON.stringify([enabled, hasDraft, automaticCollapse])} testID="composer-suggestions-disclosure"><ScrollView horizontal={compact} showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}
       contentContainerStyle={[styles.suggestions, compact && styles.mobileSuggestions]} keyboardShouldPersistTaps="handled">
@@ -126,15 +126,16 @@ const styles = StyleSheet.create({
   mobileComposer: { paddingTop: 8, paddingBottom: 8 },
   composerContent: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", paddingHorizontal: chatLayout.wideInset, gap: 6 },
   mobileComposerContent: { paddingHorizontal: chatLayout.compactInset },
-  panel: { minWidth: 0, borderWidth: 1, borderColor: chatColors.outline, borderRadius: chatLayout.composerRadius, padding: 8, backgroundColor: chatColors.surface,
-    shadowColor: chatColors.ink, shadowOffset: { width: 0, height: 2 }, shadowOpacity: .06, shadowRadius: 12, elevation: 2 },
+  panel: { minWidth: 0, borderWidth: 1, borderColor: colors.line, borderRadius: chatLayout.composerRadius, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: chatColors.surface,
+    shadowColor: chatColors.ink, shadowOffset: { width: 0, height: 1 }, shadowOpacity: .04, shadowRadius: 10, elevation: 1 },
   panelFocused: { borderColor: chatColors.focus },
   composerHint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
-  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }, leftActions: { gap: 4, flexDirection: "row", alignItems: "center", minWidth: 0 },
+  composerActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }, leftActions: { gap: 0, flexDirection: "row", alignItems: "center", minWidth: 0 },
   iconControl: { backgroundColor: "transparent", borderWidth: 0, width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, alignItems: "center", justifyContent: "center" },
   controlActive: { backgroundColor: chatColors.hover },
+  controlFocused: { borderWidth: 1, borderColor: chatColors.focus },
   compactControl: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },
-  sendCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send, borderWidth: 1, borderColor: chatColors.onSend }, sendDisabled: { opacity: .35 },
+  sendCircle: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: chatColors.send }, sendDisabled: { opacity: .35 },
   photoError: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
   suggestionScroll: { flexGrow: 0 }, suggestions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.xs },
   mobileSuggestions: { flexWrap: "nowrap", gap: spacing.sm }, suggestionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
