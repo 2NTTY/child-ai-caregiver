@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
+import { usePathname } from "expo-router";
 import { createSharedInputApi, SharedInputApiError, type SharedInputWriteResult } from "../../../src/client/shared-input-api";
 import { ONLINE_REFRESH_EVENT } from "../../../src/client/use-online-updates";
 import type { SharedInput, SharedInputConfirmation, SharedInputCreate, PublicInputSource, SourceManagement, SourceManagementChange } from "../../../src/shared/shared-inputs";
@@ -32,7 +33,7 @@ export function usePhotoInputSources() {
   const production = useProduction(), productionRef = useRef(production); productionRef.current = production;
   const api = useMemo(() => createSharedInputApi(env.apiBaseUrl), [env.apiBaseUrl]);
   const [state, setState] = useState(() => ({
-    inputs: [] as SharedInput[], sources: [] as PublicInputSource[], canCreate: false, load: "loading" as SourcesViewModel["load"], lost: false,
+    inputs: [] as SharedInput[], sources: [] as PublicInputSource[], canCreate: false, load: "loading" as SourcesViewModel["load"], lost: false, resourceUnavailable: false,
     selected: null as SharedInput | null, latest: null as SharedInput | null, busy: false, operation: noOperation(), notice: "",
     pending: null as PendingSource | null, direct: null as DirectSource | null,
     draft: emptyPhotoDraft(), reviewed: null as PhotoDraftFields | null, uncertainties: [] as readonly string[], formKey: 0,
@@ -48,9 +49,9 @@ export function usePhotoInputSources() {
   const editable = () => envRef.current.role !== "viewer" && envRef.current.role !== null;
   const fresh = () => available() && ref.current.load === "ready" && !ref.current.busy && !ref.current.pending && !ref.current.latest && ref.current.operation.state !== "conflict";
   const consentReset = { fetchConsent: false, modelConsent: false, sharedConsent: false, childFactConsent: false, reviewed: null, deleteScope: false, deleteFinal: false };
-  const clearEditor = () => update({ selected: null, latest: null, direct: null, composerSeed: null, draft: emptyPhotoDraft(), uncertainties: [], excerpt: "",
+  const clearEditor = () => update({ resourceUnavailable: false, selected: null, latest: null, direct: null, composerSeed: null, draft: emptyPhotoDraft(), uncertainties: [], excerpt: "",
     confirmationKind: "reference", formKey: ref.current.formKey + 1, deleteOpen: false, intention: "", intakeStage: "awaiting_read", managementDraft: null, managementHistory: emptyHistory(), ...consentReset });
-  const put = (input: SharedInput) => update({ inputs: [input, ...ref.current.inputs.filter(item => item.id !== input.id)], selected: input });
+  const put = (input: SharedInput) => update({ resourceUnavailable: false, inputs: [input, ...ref.current.inputs.filter(item => item.id !== input.id)], selected: input });
   const op = (phase: SourceOperation["phase"], value: SourceOperation["state"], message: string, checked = false) => update({ notice: "", operation: { phase, state: value, message, reference: null, checked } });
   const manageable = () => !!ref.current.selected?.canManage && ref.current.selected.ownerUserId === envRef.current.userId && editable();
   const manualAllowed = () => !ref.current.direct || ref.current.direct.kind === "extract" && ref.current.direct.checked && ref.current.selected?.extraction.state !== "running";
@@ -65,7 +66,31 @@ export function usePhotoInputSources() {
   }
   function deny(error: SharedInputApiError) {
     api.resetOnline(); clearEditor(); update({ inputs: [], sources: [], pending: null, canCreate: false, lost: true, load: "error", operation: noOperation(), notice: "登入或孩子權限已改變，私人原文、候選及草稿已清除。" });
-    envRef.current.accessError({ status: error.status, code: error.onlineCode });
+    envRef.current.accessError(error.status === 404 ? { status: 403, code: "access_denied" } : { status: error.status, code: error.onlineCode });
+  }
+  async function readResource<T>(id: string, signal: AbortSignal, action: () => Promise<T>): Promise<T | null> {
+    try { return await action(); }
+    catch (error) {
+      if (!(error instanceof SharedInputApiError) || error.status !== 404) throw error;
+      if (!current() || signal.aborted) return null;
+      // A missing resource does not prove child revocation. Hide its old content before checking access.
+      const pending = ref.current.pending, direct = ref.current.direct;
+      clearEditor();
+      update({ pending, direct, resourceUnavailable: !!pending || !!direct, inputs: [], sources: [], canCreate: false, load: "error",
+        notice: "所選來源已刪除或目前不可讀；正在重新核對孩子存取權限。" });
+      const e = envRef.current;
+      const page = await api.inputs(e.childId!, signal, e.userId!);
+      if (!current() || signal.aborted) return null;
+      update({ inputs: page.inputs.filter(input => input.id !== id), sources: page.sources, canCreate: page.canCreate, load: "ready" });
+      if (pending) {
+        update({ pending: { ...pending, checked: pending.confirmed } });
+        op(pending.kind, pending.confirmed ? "confirmed_unavailable" : "unknown", "原操作仍按同一收據查核；所選來源已刪除或目前不可讀，不會另行提交。", pending.confirmed);
+      } else if (direct) {
+        update({ direct: { ...direct, checked: false } });
+        op(direct.kind, "unknown", "原次處理仍未查明，所選來源已刪除或目前不可讀；保留原操作，不能重送。");
+      } else update({ operation: noOperation(), notice: "所選來源已刪除或目前不可讀；清單已更新，可繼續查看其他來源。" });
+      return null;
+    }
   }
   async function run(action: (signal: AbortSignal) => Promise<void>, phase: SourceOperation["phase"] = null) {
     if (!available() || ref.current.busy) return;
@@ -138,7 +163,7 @@ export function usePhotoInputSources() {
     }
     const attempt = ref.current.direct;
     if (attempt) {
-      const next = await api.input(e.childId!, attempt.basis.id, signal, e.userId!); if (!current()) return;
+      const next = await readResource(attempt.basis.id, signal, () => api.input(e.childId!, attempt.basis.id, signal, e.userId!)); if (!current() || !next) return;
       if (attempt.kind === "extract" && attempt.basis.extraction.runId && next.extraction.runId !== attempt.basis.extraction.runId && !next.recordId) throw new SharedInputApiError(409, "version_conflict");
       finishDirect(attempt, next);
     }
@@ -147,7 +172,7 @@ export function usePhotoInputSources() {
     update({ inputs: page.inputs, sources: page.sources, canCreate: page.canCreate, load: "ready" });
     const basis = ref.current.selected, unresolved = ref.current.pending;
     if (basis && !ref.current.direct && !(unresolved?.confirmed && unresolved.kind === "delete")) {
-      const next = await api.input(e.childId!, basis.id, signal, e.userId!); if (!current()) return;
+      const next = await readResource(basis.id, signal, () => api.input(e.childId!, basis.id, signal, e.userId!)); if (!current() || !next) return;
       if (unresolved?.confirmed && unresolved.kind === "confirm" && next.recordId && next.confirmationKind === unresolved.input.kind) finishWrite(unresolved, { input: next, recordId: next.recordId });
       else if (basis.version !== next.version || ref.current.operation.state === "conflict") {
         update({ selected: { ...basis, canManage: next.canManage }, latest: next, ...consentReset });
@@ -171,6 +196,12 @@ export function usePhotoInputSources() {
     const listener = () => refreshRef.current(); window.addEventListener(ONLINE_REFRESH_EVENT, listener);
     return () => window.removeEventListener(ONLINE_REFRESH_EVENT, listener);
   }, []);
+  const pathname = usePathname(), previousPath = useRef(pathname);
+  useEffect(() => {
+    const previous = previousPath.current; previousPath.current = pathname;
+    if (previous !== "/sources" || pathname === previous || ref.current.busy || ref.current.pending || ref.current.direct) return;
+    clearEditor(); update({ operation: noOperation(), notice: "", resourceUnavailable: false });
+  }, [pathname]);
   const pending = state.busy || !!state.pending || !!state.direct;
   useDomainWriteGuard(!!state.draft.text && !state.selected?.recordId || !!state.managementDraft?.dirty || !!state.intention && !state.selected, pending);
   const isFresh = fresh(), managed = manageable(), directManual = manualAllowed(), selected = state.selected;
@@ -183,7 +214,7 @@ export function usePhotoInputSources() {
     scopeKey: env.scopeKey, childName: env.childName, accountName: "你", online: env.online, access: state.lost ? "lost" : editable() ? "editable" : "read_only",
     load: state.load, canCreate: state.canCreate, items: state.inputs.map(projectSource), sources: state.sources,
     selected: selected ? projectSource(selected) : null, latest: state.latest ? projectSource(state.latest) : null,
-    operation: state.operation, direct: state.direct ? { kind: state.direct.kind, basisVersion: state.direct.basis.version, excerpt: state.direct.excerpt, checked: state.direct.checked } : null,
+    operation: state.operation, direct: state.direct ? { kind: state.direct.kind, basisVersion: state.direct.basis.version, excerpt: state.resourceUnavailable ? "" : state.direct.excerpt, checked: state.direct.checked } : null,
     notice: state.notice, draft: state.draft, draftUncertainties: state.uncertainties, formKey: state.formKey, reviewed: state.reviewed, confirmationKind: state.confirmationKind,
     composerSeed: state.composerSeed ? projectSource(state.composerSeed) : null, excerpt: state.excerpt, fetchConsent: state.fetchConsent, modelConsent: state.modelConsent,
     sharedConsent: state.sharedConsent, childFactConsent: state.childFactConsent, deleteOpen: state.deleteOpen, deleteScope: state.deleteScope, deleteFinal: state.deleteFinal,
@@ -245,7 +276,7 @@ export function usePhotoInputSources() {
       history: () => { const basis = ref.current.selected; if (!basis || !fresh() || ref.current.direct) return;
         void run(async signal => {
           update({ managementHistory: { ...emptyHistory(), load: "loading" } });
-          try { const page = await api.managementHistory(basis, signal, envRef.current.userId!); if (current() && ref.current.selected?.id === basis.id) update({ managementHistory: { ...page, load: "ready" } }); }
+          try { const page = await readResource(basis.id, signal, () => api.managementHistory(basis, signal, envRef.current.userId!)); if (page && current() && ref.current.selected?.id === basis.id) update({ managementHistory: { ...page, load: "ready" } }); }
           catch (error) { if (error instanceof SharedInputApiError && ([401, 403, 404].includes(error.status) || error.onlineCode === "session_changed")) throw error;
             if (current()) update({ managementHistory: { ...emptyHistory(), load: "error" } }); }
         });
@@ -256,7 +287,7 @@ export function usePhotoInputSources() {
       const entry: PendingSource = { kind: "create", input: { ...input }, checked: false, confirmed: false };
       void run(signal => sendWrite(entry, signal), "create"); },
     openInput: item => { if (pending) return; void run(async signal => {
-      const next = await api.input(envRef.current.childId!, item.id, signal, envRef.current.userId!); if (!current()) return;
+      const next = await readResource(item.id, signal, () => api.input(envRef.current.childId!, item.id, signal, envRef.current.userId!)); if (!current() || !next) return;
       clearEditor(); put(next); update({ excerpt: initialExcerpt(next), operation: noOperation(), load: "ready" });
       syncManagement(next);
       if (!next.recordId && (next.fetchState === "unknown" || next.fetchState === "running" || next.extraction.state === "unknown" || next.extraction.state === "running")) {

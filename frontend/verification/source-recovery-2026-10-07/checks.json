@@ -1,0 +1,77 @@
+{
+  "baseCommit": "a75ebb6d0fba799314d78be895c83fde526be2ed",
+  "environment": "Isolated dot cloud filesystem; synthetic in-memory API and React hook lifecycle harness",
+  "node": "v24.19.0",
+  "typescript": "6.0.3",
+  "commands": [
+    {
+      "command": "node --test frontend/scripts/source-photo-recovery.test.mjs",
+      "result": "passed",
+      "tests": 25,
+      "failed": 0,
+      "log": "tests.log"
+    },
+    {
+      "command": "npm run typecheck --workspace frontend",
+      "result": "passed",
+      "exitCode": 0,
+      "log": "typecheck.log"
+    }
+  ],
+  "baselineReproductions": [
+    {
+      "log": "before.log",
+      "result": "Both actual owners incorrectly mark the workspace lost after an ordinary missing-resource 404; assertions fail as expected on baseline"
+    },
+    {
+      "log": "before-discard.log",
+      "result": "Both actual owners retain dirty drafts after real guard approval and route departure; assertions fail as expected on baseline"
+    }
+  ],
+  "scope": [
+    "Source and photo resource GET recovery with fresh child collection access validation",
+    "Confirmed ordinary draft discard on real route departure, including legacy Care photo route",
+    "Retained Sources stack form unmount outside active route",
+    "Pending and unknown preservation, delayed access reply rejection, local original disposal, chat-to-Photos original handoff"
+  ],
+  "notRun": [
+    "Browser or live API acceptance",
+    "Production or preview deployment",
+    "GCP, database, model calls",
+    "Full test suite or production Web export"
+  ],
+  "limits": [
+    "React and API dependencies are bounded test doubles; production owner and navigation guard code execute",
+    "Resource mutation HTTP 404 handling is outside this GET-read recovery package",
+    "A missing resource with unresolved direct processing remains guarded and manually recheckable; no outcome is inferred and no model or write is retried"
+  ],
+  "sha256": {
+    "frontend/src/production/usePhotoInputSources.ts": "218dead5946269380ce29e0c1e7691513e8b05c45256115a196b789bd974cc26",
+    "frontend/src/production/PhotoInputDomains.tsx": "a8293cbbda3158cdf3981b1b607bbe2806c56700a7903e6ee27af73e5d81a9c8",
+    "frontend/src/screens/SourcesScreen.tsx": "63e8dd8ffa0573bd6b5a56dcdc84e7e29af6bbb3963a180beab002c9fcda38d0",
+    "frontend/scripts/source-photo-recovery.test.mjs": "30505ac240bc7ac997309e49995540079497d3d6603354665e3ff44b83381b18"
+  },
+  "reviewRevision": {
+    "baseHead": "4d63ddbf4f6551652d8f9ef72bbc13ce704bc759",
+    "finding": "Photo metadata can reveal an existing unknown/running extraction before a content GET fails. The direct-operation guard must be established before that second read.",
+    "beforeLog": "before-content-run.log",
+    "result": "Both unknown/running cases fail before the fix; 21 targeted tests and frontend typecheck pass after the fix",
+    "addedCoverage": [
+      "Metadata unknown/running plus content 404 preserves the original run and manual check, blocks new photo actions",
+      "True child revocation after content 404 remains fail-closed",
+      "Late content failure after scope exit cannot revalidate or publish"
+    ]
+  },
+  "photoIdentityRevision": {
+    "baseHead": "1f298a392fa4f7b130baddd4008944c856946eab",
+    "finding": "After A has a preview, selecting B with an unresolved extraction and failing B content read must not carry A image/source into B reconciliation.",
+    "beforeLog": "before-photo-identity.log",
+    "result": "Both unknown/running A-to-B cases fail before the fix; 25 targeted tests and frontend typecheck pass after the fix",
+    "addedCoverage": [
+      "A preview URL disposal before binding B unresolved metadata",
+      "B content 503 preserves its original run, allows manual B-only lookup and never displays A image/source under B",
+      "Same-child late A content is serialized by the existing busy lock before B can be selected",
+      "Child revocation clears both previous image and unresolved B state"
+    ]
+  }
+}
