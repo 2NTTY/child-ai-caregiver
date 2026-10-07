@@ -7,15 +7,17 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### QA-POST-RELEASE — 正式入口人工 QA 的局部修正（draft）
+### QA-GROWTH-READ-BOUNDARY — 合法檔案與知識 filter 的 GET 邊界（draft）
 
-- 前置：PR #98／#99 已合併，基線 `9c088c8`；隔離分支 `codex/qa-child-selection`。本輪只準備 draft PR，不合併或部署；其他 checkout 保留。
-- 範圍：孩子選擇在重新整理後先經目前帳號／fresh list／workspace 核對再恢復；完成任務使用 Server 已確認終態時間；更正歷史載入不冒稱第一／最早版本。沿用 sessionStorage／既有 owner，沒有新依賴、後端或資料契約變更。
-- 必要證據：[QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。首次 61 項中 57 通過；兩檔 strip-only harness 問題局部改旗標後 15 項通過，兩項 PR #98 舊文案斷言的原始失敗保留，pre-#98 基線 2 項通過、同步現行預期後 2 項通過；完成時間 4 項、更正歷史 HTTP／解析失敗、unknown 與重試共 8 項及 frontend typecheck 通過。沒有真模型、通知、資料庫改動或全面瀏覽器驗收。
-- 成長問題只診斷：API healthy、Agent enabled、017／027 migration 存在；兩服務的 authority 格式相同。已查 2026-10-07 02:18–02:25 UTC，Web／API 既有日誌均 0 行；Caddy 無 access log，API 無逐請求 metadata。尚缺既有 QA 的去識別化 Network／parser 診斷，不能確定根因；不改真家庭資料。首頁助手提醒未接通另屬既有缺口。
-- 審查補正：離線失效 history request 清除當前 loading、標記 unread 並保留原頁重試意向；同版本重連不需關閉重開，舊 generation 不寫回。Growth／concerns 失敗加入暫時 console 診斷，僅固定 endpoint／status／allowlist code／category，成功及過期／abort 靜默；15 項隱私／失敗類別測試及型別通過。根因仍未確認；獨立覆核後才按另次部署派遣收集一次正常合成 UI 讀取，修好後移除不必要診斷。沒有新增後端日誌、存取權或 authenticated API 重播。
-- B 主責、權重 2：B 70%／C 20%／A 10%，按客戶端、Server／現場診斷及整合責任分配；共用 AI 實作／執行本機核對，不冒稱個人人手實作或人工驗收。下一步由 dot 合併獨立 UI QA 與 review；只有後續明確派遣才可合併／部署，停止於 draft。
+- 基線 `01c25a4`（PR #100 已合併）；隔離分支 `codex/fix-growth-filter-boundary`。按 dot 新派遣，只交付修復、單測及 draft PR，不合併、部署或修改 DB。
+- 原因：孩子 profile.region 接受自由文字，Growth 共用 load 無條件把它傳給只接受兩碼地域／最多 120 個月的知識 parser。合成地域 A／B、未知年齡離線重現 GET 400；已有 UI 回報吻合，尚無正式請求的 HTTP capture，不冒稱全面線上根因驗收。
+- 只讓 list／GET 在本機 filter 轉換不可用時略過知識查詢、提示地域／0–10 歲限制，保留原 profile、家庭讀取 scope、authority 及其他資料。既有候選仍可讀，回應 sourceAvailable=false 表示未能確認適用性；不保存此旗標，不改候選狀態、版本或歷史。DB、解密及網絡錯誤沒有被降級吞掉。
+- decide／topic（含回傳 page）／evaluate 及 Agent search 仍走原嚴格契約；不令 worker 因空來源把候選轉為 inapplicable。其不支援 filter 的原失敗仍是保留限制，本輪沒有擴大寫入／背景行為。
+- [必要證據](artifacts/verification/GROWTH_READ_BOUNDARY_CHECKS.json)：修復前 5／9、最終 10／10 定向單測通過；Server／shared／Growth tests 局部 typecheck 通過。完整 Server typecheck 的 11 個前端 NodeNext／erasable 相容性錯誤與 master 對照完全相同，未順手修；首次缺 frontend mount 的 harness 失敗亦保存。沒有真模型、通知、DB 操作、全面瀏覽器或全套回歸。
+- 獨立覆核補正：兩則知識限制 notice 共用固定常數，候選區只在此明確限制且空頁時顯示「地區資料待確認」／「目前無法提供適用建議」；正常空狀態不改。6 項真候選 renderer 的 shallow 回歸、frontend typecheck、10 項 Growth 單測及已提交配置的 scope typecheck 通過。確切命令／[配置及對照限制](artifacts/verification/GROWTH_READ_BOUNDARY/README.md) 可重跑；舊 11 diagnostics 證據是單一 Growth store 替換對照，並非 pristine master checkout。本輪沒有再跑完整 Server typecheck。
+- C 主責、權重 2：C 60%／B 20%／A 20%（初稿 C 75%／A 25%；覆核補上 B 候選文案責任），共用 AI 在 A 統籌下實作及離線核對，不冒稱個人人手或人工驗收。下一步獨立 review；另次明確授權後才部署後端及用原合成 QA 查一次正常 Growth UI，停止於 draft。
 
+此前 QA-POST-RELEASE 已隨 [PR #100](https://github.com/2NTTY/child-ai-caregiver/pull/100) 合併；Web `01c25a4` 的另次部署及公開唯讀核對已交接給 dot。原始修復／失敗證據見 [QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。本包沒有重做或再次部署。
 
 核對時間：2026-10-06；目前 INT-W07 從 master `053658b`（PR #96）建立，分支 `codex/int-w07-production-delivery`；開工時沒有其他 open PR。交付仍須重查遠端／相關 PR 及本機差異。
 

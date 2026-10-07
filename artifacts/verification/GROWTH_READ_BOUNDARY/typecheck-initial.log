@@ -1,0 +1,6 @@
+Command: node node_modules/typescript/bin/tsc --project tsconfig.server.json
+Offline Docker yuban-qa-deps:9c088c8; read-only source mounts; synthetic fixtures only
+tests/child-selection.test.ts(7,52): error TS2307: Cannot find module '../frontend/src/production/child-selection.ts' or its corresponding type declarations.
+tests/child-selection.test.ts(8,33): error TS2307: Cannot find module '../frontend/src/production/ProductionOwner.ts' or its corresponding type declarations.
+
+Exit code: 2

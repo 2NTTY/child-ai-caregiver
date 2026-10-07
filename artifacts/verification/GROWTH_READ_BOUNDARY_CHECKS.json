@@ -1,0 +1,127 @@
+{
+  "package": "QA-GROWTH-READ-BOUNDARY",
+  "date_utc": "2026-10-07T03:37:59.994829+00:00",
+  "baseline_commit": "01c25a4333ea5f046e29172801fc53e6d507d2b3",
+  "branch": "codex/fix-growth-filter-boundary",
+  "finding": {
+    "source": "free-text profile.region reaches the strict two-uppercase-letter knowledge filter from Growth load",
+    "synthetic_reproduction": "A/B regions and unknown ages produce Growth GET 400 before the patch",
+    "production_http_capture": false,
+    "reported_qa_profiles": "Parent reports explicitly saved synthetic A/B free-text regions and unknown ages; no database inspected"
+  },
+  "implementation": {
+    "production_files": [
+      "server/growth-store.ts",
+      "src/shared/growth.ts",
+      "frontend/src/production/TaskKnowledgeGrowthCandidates.tsx"
+    ],
+    "only_list_allows_degradation": true,
+    "preserve_original_profile": true,
+    "no_HK_fallback_for_unknown_region": true,
+    "age_scope": "0–120 months per existing strict parser; exact dates beyond scope do not become any-age queries, including >216 months",
+    "saved_items": "Read projection sourceAvailable=false plus limitation notice; stored state/version/payload remain unchanged",
+    "strict_paths_unchanged": [
+      "decide",
+      "topic including returned page",
+      "evaluate",
+      "search_knowledge"
+    ],
+    "errors": "Only local parseKnowledgeFilter Zod conversion errors are degraded. Query, memory, decode and network failures are not caught by the new boundary.",
+    "candidate_empty_state": "Only the shared exact region/age limitation notices replace normal empty copy with compact statuses. Other notices and existing candidates retain their presentation."
+  },
+  "verification": {
+    "runtime": "offline existing yuban-qa-deps:9c088c8, Node 24.19.0, read-only bind mounts",
+    "baseline_tests": {
+      "total": 9,
+      "pass": 5,
+      "fail": 4,
+      "parent_test_included_in_counts": true,
+      "log": "GROWTH_READ_BOUNDARY/baseline.log"
+    },
+    "final_tests": {
+      "total": 10,
+      "pass": 10,
+      "fail": 0,
+      "log": "GROWTH_READ_BOUNDARY/review-server.log"
+    },
+    "scoped_typecheck": {
+      "exit_code": 0,
+      "scope": [
+        "server/**/*.ts",
+        "src/shared/**/*.ts",
+        "tests/growth*.test.ts"
+      ],
+      "log": "GROWTH_READ_BOUNDARY/review-scope.log",
+      "config": "GROWTH_READ_BOUNDARY/tsconfig.json",
+      "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/GROWTH_READ_BOUNDARY/tsconfig.json"
+    },
+    "full_server_typecheck": {
+      "exit_code": 2,
+      "baseline_exit_code": 2,
+      "same_diagnostics": true,
+      "existing_errors": 11,
+      "cause": "PR #100 child-selection test imports frontend modules into NodeNext/erasableSyntaxOnly server test compilation",
+      "baseline_method": "Single-file substitution, NOT a pristine checkout: replace only Growth store with the 01c25a4 blob in the same offline mount workspace; other files, including the new test, remain",
+      "initial_harness_failure": "frontend mount absent; saved separately, then mounted read-only",
+      "logs": [
+        "GROWTH_READ_BOUNDARY/typecheck-initial.log",
+        "GROWTH_READ_BOUNDARY/typecheck.log",
+        "GROWTH_READ_BOUNDARY/typecheck-baseline.log"
+      ],
+      "evidence_version": "b31f10f before the follow-up UI/shared-notice patch",
+      "rerun_for_followup": false
+    },
+    "frontend_typecheck": {
+      "exit_code": 0,
+      "command": "node node_modules/typescript/bin/tsc --project frontend/tsconfig.json",
+      "log": "GROWTH_READ_BOUNDARY/review-frontend-typecheck.log"
+    },
+    "focused_ui": {
+      "total": 6,
+      "pass": 6,
+      "fail": 0,
+      "command": "node --experimental-transform-types --test frontend/scripts/qa-growth-candidates.test.mjs",
+      "log": "GROWTH_READ_BOUNDARY/review-ui.log",
+      "method": "Real candidate renderer using the existing shallow UI harness; not browser acceptance"
+    },
+    "reproduction_instructions": "GROWTH_READ_BOUNDARY/README.md"
+  },
+  "not_performed": [
+    "deployment",
+    "database modifications",
+    "authenticated production reads",
+    "real model calls",
+    "notifications",
+    "browser acceptance",
+    "full test suite"
+  ],
+  "remaining": [
+    "Independent review and normal synthetic Growth UI check after a separately authorized backend deployment",
+    "Strict write/worker/Agent filter handling remains unchanged and may still reject unsupported profile filters",
+    "Full Server typecheck frontend compatibility failure remains outside this patch"
+  ],
+  "responsibility": {
+    "lead": "C",
+    "weight": 2,
+    "shares": {
+      "C": 60,
+      "B": 20,
+      "A": 20
+    },
+    "implementation": "Shared AI under A coordination; attribution denotes responsibility, not personal human coding/testing",
+    "followup": "B responsibility for compact candidate UI and its regression; C for shared/server filter notices and reproducible scope verification; A coordination"
+  },
+  "evidence_sha256": {
+    "baseline.log": "69f6cc4b854dd3dca8cc3fabd4e987c59d45f85904f525ecd2f825d4bafbbec9",
+    "final.log": "87dc244e88d9b4e49d6aea584e2f1c84219824017993b106845d838c74ea22d8",
+    "fixed.log": "2c6b656983bb0d550d1a4f00269a20bcd4d1cee42a8648b2ca3f9698425a6a7b",
+    "review-frontend-typecheck.log": "791460d3f9030c75390adf8e724b0db035a2a7847c916e5b395b339fb3e51d36",
+    "review-scope.log": "ef0d79a40cb552815ef17e5bbd11662c125b8bb2f2029cc61fcf3ef1209e01d9",
+    "review-server.log": "85b942b912a8133622b860e3d50108f1de606e7049c2ffc15b5b0b09b0c9da2c",
+    "review-ui.log": "77f0fd69ee2dff1090fae52c8e7deedf6f83092943aff9e22cb387362d6f6912",
+    "typecheck-baseline.log": "ea2e4420376b01a50d2f4e95c0b5e9205480b27ef1952a73a8a72fdf2ed1387a",
+    "typecheck-initial.log": "433deecee850c6bb9540bd8f705b47902f9b3cb1f7ee2b25ef021f0e6548720c",
+    "typecheck-scoped.log": "5ccba8e626c2c33b15734dde65836e60b10527a012549100ee8db438a2468521",
+    "typecheck.log": "ea2e4420376b01a50d2f4e95c0b5e9205480b27ef1952a73a8a72fdf2ed1387a"
+  }
+}

@@ -1,0 +1,4 @@
+Command: node node_modules/typescript/bin/tsc --project artifacts/verification/GROWTH_READ_BOUNDARY/tsconfig.json
+Offline Docker yuban-qa-deps:9c088c8; read-only source mounts; synthetic fixtures only
+
+Exit code: 0
