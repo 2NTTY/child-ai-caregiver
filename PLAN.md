@@ -7,7 +7,16 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### QA-ADK-RUNTIME — 指令資料分層與安全終結（整合覆核中）
+### QA-REPORT-PERIOD — 關注觀察的固定期間歸屬（實作中）
+
+- 基線0a39e018。純函數合成重現：關注最近5條被聚合成單一來源並取最後事件日期，跨季新增會排除上一季觀察，亦可能夾入季前內容。
+- 每條觀察以原事件ID／日期篩選期間，關注背景另標；維持來源權威／版本、未知日期、80項有界coverage與同版PDF。舊聚合只作临時校驗投影，不新增持久副本，不遷移／刪除舊資料。
+- 必驗跨季／香港跨日、超過5條、來源更正／撤權、舊快照兼容與新basis stale、整體上限及同版PDF。定向、獨立覆核與正式驗收分開；當前不宣稱修復或部署完成。
+
+
+### QA-ADK-RUNTIME — 指令資料分層與安全終結（已合併，待部署）
+
+- PR #113 已正常合併為0a39e018，正式網站仍待批次部署。
 
 - 使用者批准按 ADK 審查結果修正。基線 PR #112／a347956b，保留互動64k／背景32k的獨立上限；本包不改 selector、跨輪來源或 DB。
 - input.context 從 instruction 移到有標籤資料 part；受信指令用 InstructionProvider，保留大括號原文與原生 parts。present_answer 成功後終結原生 loop，最終引用／授權驗證保留；同批 terminal 混其他工具在任何 handler 前拒絕。
@@ -434,3 +443,4 @@ P1 按真實流程實作 DataStore／ModelGateway；P2 加入 AgentRuntime／Att
 保留冻结基线的十章编号；现行文件使用稳定 REQ／AC／S／工作包／ADR／LOG／EV／SRC 标识，标题可以完善，锚点不能随意失效。只修改被新决定影响的部分，未变有效内容继续保留。
 
 刪除或替代設計須在 DECISIONS 記原因、影響及替代，WORKLOG 只追加實際驗證及狀態。日常按現行 REQ／AC 與工作包追溯；只有需要回查遷移來源時，先讀 [_archive 索引](_archive/README.md) 再定位歷史 MIGRATION_MAP。文件移入 `_archive/` 或改為 archived-in-place，必須同包同步索引；不得直接掃描歸檔或改寫舊 LOG 連結。舊「待處理」不是狀態；使用本文件五狀態與四證據層級。[歷史拆分依據](docs/DECISIONS.md#adr-001)／[五階段依據](docs/DECISIONS.md#adr-005)／[Server 替代決策](docs/DECISIONS.md#adr-008)／[工作規則決策](docs/DECISIONS.md#adr-009)。
+
