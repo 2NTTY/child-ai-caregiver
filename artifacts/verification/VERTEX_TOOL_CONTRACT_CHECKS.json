@@ -1,6 +1,6 @@
 {
   "package": "QA-VERTEX-TOOL-CONTRACT",
-  "observedAt": "2026-10-07T05:37:30Z",
+  "observedAt": "2026-10-07T05:43:50Z",
   "baseCommit": "b7dec9d891f3f3e1a6d5c06443171f32f9180e1c",
   "scope": "Provider-facing concern/document declarations only. Business schemas, handlers, tool selection, prompts, provider settings and authorization are unchanged.",
   "incidentEvidence": {
@@ -43,7 +43,8 @@
     "zod": "4.5.4",
     "typescript": "6.0.3",
     "pg": "8.23.0",
-    "pgTypes": "8.23.1"
+    "pgTypes": "8.23.1",
+    "nodeTypes": "24.13.6"
   },
   "checks": [
     {
@@ -82,7 +83,8 @@
       "status": "passed",
       "exitCode": 0,
       "command": "node node_modules/typescript/bin/tsc --noEmit --skipLibCheck --strict --erasableSyntaxOnly --target ES2023 --module NodeNext --moduleResolution NodeNext --allowImportingTsExtensions --types node server/agent-concern-tools.ts server/agent-document-tools.ts tests/vertex-tool-contract.test.ts tests/product-agent-schema.test.ts",
-      "note": "Pinned dependencies and complete transitive source closure were available. This is not a full repository typecheck."
+      "note": "Passed again with the repository-declared @types/node 24.13.6 pinned in the isolated validation prefix, alongside the complete transitive source closure. This is not a full repository typecheck.",
+      "priorEnvironmentCorrection": "The earlier scoped pass used transitively installed @types/node 26.6.4. That environment discrepancy was found in review and corrected; the declared-version rerun also exits 0."
     }
   ],
   "privacy": "No provider payload, response body, credentials, real family data, or headers are logged or retained. Contract evidence contains selected capability names and schema-violation paths only.",
@@ -104,5 +106,6 @@
     "tests/vertex-tool-contract.test.ts": "48f4e8eab447298ddc9cb1523c5819d87ee9b6e961f96e721cb9b5dfa42854f5",
     "docs/API.md": "8e8c18c1138ba50bad62d01d395c050fbfb0180a3a267513e82bb9813a7d5beb"
   },
-  "installedSourceEvidence": "Inspected @google/adk 2.1.0 dist/esm/utils/simple_zod_to_json.js and @google/genai 2.24.0 dist/node/index.mjs locally; remote ADK source URL could not be verified."
+  "installedSourceEvidence": "Inspected @google/adk 2.1.0 dist/esm/utils/simple_zod_to_json.js and @google/genai 2.24.0 dist/node/index.mjs locally; remote ADK source URL could not be verified.",
+  "runtimeTestReuse": "The 5/5 runtime test result remains from the unchanged code and runtime dependency versions. Only @types/node type declarations changed for this review correction; runtime tests were not repeated."
 }

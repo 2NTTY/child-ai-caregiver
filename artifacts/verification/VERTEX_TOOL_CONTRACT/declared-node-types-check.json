@@ -1,0 +1,9 @@
+{
+  "node": "v24.19.0",
+  "nodeTypes": "24.13.6",
+  "typescript": "6.0.3",
+  "command": "node node_modules/typescript/bin/tsc --noEmit --skipLibCheck --strict --erasableSyntaxOnly --target ES2023 --module NodeNext --moduleResolution NodeNext --allowImportingTsExtensions --types node server/agent-concern-tools.ts server/agent-document-tools.ts tests/vertex-tool-contract.test.ts tests/product-agent-schema.test.ts",
+  "exitCode": 0,
+  "stdout": "",
+  "stderr": ""
+}
