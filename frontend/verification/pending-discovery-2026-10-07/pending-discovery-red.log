@@ -1,0 +1,102 @@
+✖ an initial gated discovery is coalesced and resumes once after the existing write gate clears (7.798953ms)
+✖ discovery deferred by another owner request resumes when that request finishes (2.949167ms)
+✔ network failure is not empty and does not self-retry; an explicit retry can confirm empty (3.274332ms)
+✔ a scope change clears queued intent and rejects late results from the previous child (1.326051ms)
+✔ blocked intent does not cross a scope change or disposal (1.742716ms)
+✖ an offline-aborted response cannot confirm empty and reconnect resumes an explicitly queued read (0.719986ms)
+✖ access denial is explicit and clears deferred discovery without retrying (2.137131ms)
+✖ an unknown decision retains its guard and discovery resumes only after original resolution (2.007096ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 3
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 998.934766
+
+✖ failing tests:
+
+test at frontend/scripts/agent-pending-discovery.test.mjs:40:1
+✖ an initial gated discovery is coalesced and resumes once after the existing write gate clears (7.798953ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/agent-pending-discovery.test.mjs:45:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/agent-pending-discovery.test.mjs:51:1
+✖ discovery deferred by another owner request resumes when that request finishes (2.949167ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/agent-pending-discovery.test.mjs:57:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/agent-pending-discovery.test.mjs:86:1
+✖ an offline-aborted response cannot confirm empty and reconnect resumes an explicitly queued read (0.719986ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+  
+  'ready'
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/agent-pending-discovery.test.mjs:90:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ready',
+    expected: 'ready',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/agent-pending-discovery.test.mjs:96:1
+✖ access denial is explicit and clears deferred discovery without retrying (2.137131ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'idle' !== 'denied'
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/agent-pending-discovery.test.mjs:100:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'idle',
+    expected: 'denied',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/agent-pending-discovery.test.mjs:104:1
+✖ an unknown decision retains its guard and discovery resumes only after original resolution (2.007096ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/agent-pending-discovery.test.mjs:111:62)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

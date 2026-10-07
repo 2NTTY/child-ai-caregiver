@@ -1,0 +1,69 @@
+✖ an initial gated discovery is coalesced and resumes once after the existing write gate clears (11.181522ms)
+✖ discovery deferred by another owner request resumes when that request finishes (3.46108ms)
+✔ network failure is not empty and does not self-retry; an explicit retry can confirm empty (3.105194ms)
+✔ a scope change clears queued intent and rejects late results from the previous child (0.88991ms)
+✔ blocked intent does not cross a scope change or disposal (1.706199ms)
+✖ an offline-aborted response cannot confirm empty and reconnect resumes an explicitly queued read (2.078083ms)
+✔ access denial is explicit and clears deferred discovery without retrying (1.990207ms)
+✔ an unknown decision retains its guard and discovery resumes only after original resolution (1.12246ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 5
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 899.041278
+
+✖ failing tests:
+
+test at frontend/scripts/agent-pending-discovery.test.mjs:40:1
+✖ an initial gated discovery is coalesced and resumes once after the existing write gate clears (11.181522ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'failed' !== 'ready'
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/agent-pending-discovery.test.mjs:45:43)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'ready',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/agent-pending-discovery.test.mjs:51:1
+✖ discovery deferred by another owner request resumes when that request finishes (3.46108ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'failed' !== 'ready'
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/agent-pending-discovery.test.mjs:57:43)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'ready',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/agent-pending-discovery.test.mjs:86:1
+✖ an offline-aborted response cannot confirm empty and reconnect resumes an explicitly queued read (2.078083ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/agent-pending-discovery.test.mjs:93:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

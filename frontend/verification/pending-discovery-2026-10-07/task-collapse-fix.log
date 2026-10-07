@@ -1,0 +1,36 @@
+✔ initial task read failure becomes error without creating a mutation; one retry becomes ready (323.425606ms)
+✔ failed refresh retains stale tasks, and revoked access exposes no old items (102.410462ms)
+✔ task read recovery cannot bypass unknown original-request checks or resubmit implicitly (107.315751ms)
+✔ read notices have one normal loading line and nonempty live status without body copy (34.523303ms)
+✔ partial and stale Home tasks stay explicit, and unavailable assistant reminders only navigate (94.1778ms)
+✔ operation notices deduplicate matching headings without hiding unknown or conflicting results (32.148951ms)
+✔ Home refresh reaches the scoped task reader once and never reuses another scope (65.471456ms)
+✖ production task rows toggle closed and history collapse is local without another request (93.716871ms)
+✔ task disclosure callbacks preserve drafts and unknown-operation guards (103.571407ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1428.915966
+
+✖ failing tests:
+
+test at frontend/scripts/shared-status-read-state.test.mjs:215:1
+✖ production task rows toggle closed and history collapse is local without another request (93.716871ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/shared-status-read-state.test.mjs:224:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

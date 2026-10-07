@@ -1,0 +1,56 @@
+{
+  "base": "a75ebb6d0fba799314d78be895c83fde526be2ed",
+  "environment": "dot cloud filesystem, Node 24.19.0, installed project dependencies; synthetic APIs and shallow rendering only",
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/agent-pending-discovery.test.mjs frontend/scripts/clean-chat-layout.test.mjs frontend/scripts/shared-status-read-state.test.mjs",
+      "result": "passed",
+      "tests": 28,
+      "log": "final-focused-tests.log"
+    },
+    {
+      "command": "npm run typecheck --workspace frontend",
+      "result": "passed",
+      "log": "final-typecheck.log"
+    }
+  ],
+  "firstFailures": [
+    {
+      "log": "pending-discovery-red.log",
+      "result": "5 regression failures reproduced before implementation; 3 safeguards passed"
+    },
+    {
+      "log": "pending-discovery-first-fix.log",
+      "result": "3 failures due to new synthetic fixture using proposal rather than actual value payload; fixture corrected without weakening assertions"
+    },
+    {
+      "log": "task-collapse-red.log",
+      "result": "row toggle and draft history guard failures reproduced before implementation"
+    },
+    {
+      "log": "task-collapse-fix.log",
+      "result": "8 passed, 1 failed because synthetic reconnect was not rendered before settling its existing refresh; harness sequencing corrected"
+    }
+  ],
+  "notRun": [
+    "browser",
+    "production Web export",
+    "live API",
+    "live model",
+    "database",
+    "GCP",
+    "deployment",
+    "merge"
+  ],
+  "sourceSha256": {
+    "frontend/src/production/ProductAgentOwner.ts": "dae1611b189f1dda9b285f8a052d8ce9f2c9c2bba6519ef264734d78ad90f846",
+    "frontend/src/production/ProductionOwner.ts": "7017ff80af2f33ac8831ba6f2fee32170528d0bcc6ff11f4dfd99e94800e1284",
+    "frontend/src/production/AgentConversation.tsx": "ad2a6abb9cf1d99c0475a31166265b50e6bff917a5334e4766b85ab732e82e7e",
+    "frontend/src/screens/careScreen.tsx": "bf61597d7733bf4cc590f8d2f6e5d87bc80772bddd2031dc83166d0a02e7c11c",
+    "frontend/src/screens/chatScreen.tsx": "18cf41105ff0d28543ac1b9fef2d714c4afdd4be6c78e2e0fee9646d525c7c04",
+    "frontend/src/production/task-knowledge-tasks.ts": "b42897d9dd4fa0369e6f0a56e07e6b8016c9cabf48a5491fb99d4a573a4f5d7a",
+    "frontend/scripts/agent-pending-discovery.test.mjs": "7a921389c3a4a9641eea86eaf3cbc62d05c5327bee9f07f19a324e2f85b206d7",
+    "frontend/scripts/clean-chat-layout.test.mjs": "d465629e1d5ebc1a8517b0c6e2f1e82d4e70f310ae27a45a0953e0e1162ffa10",
+    "frontend/scripts/shared-status-read-state.test.mjs": "53426f67700531f224535bc4675df916e2970d5ff6588bd69ac39882b65d88f9"
+  }
+}
