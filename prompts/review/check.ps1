@@ -50,7 +50,9 @@ try {
     $CaseDoc = (Read-Doc (Join-Path $PackRootPath 'review/cases.json')) | ConvertFrom-Json -Depth 50 -ErrorAction Stop
     Assert-Doc ($ManifestDoc.runtimeStatus -eq 'partially_integrated') 'Manifest must distinguish foundation integration from the complete product Agent.'
     Assert-Doc ($CaseDoc.execution -eq 'not_run_against_model') 'Cases must not claim model execution.'
-    Assert-Doc ($ManifestDoc.version -eq $FixtureDoc.formatVersion -and $ManifestDoc.version -eq $CaseDoc.formatVersion) 'Document versions disagree.'
+    foreach ($Version in @($ManifestDoc.version, $FixtureDoc.formatVersion, $CaseDoc.formatVersion)) {
+        Assert-Doc ($Version -match '^\d+\.\d+\.\d+$') 'Document version must be a semantic version.'
+    }
     Assert-Doc (@($ManifestDoc.outputModeRequirements.structured) -contains 'outputContract') 'Structured mode must require an output contract regardless of recipe.'
 
     $ModuleMap = @{}
@@ -59,7 +61,7 @@ try {
         Assert-Doc (-not $ModuleMap.ContainsKey($PromptModule.id)) "Duplicate module ID: $($PromptModule.id)"
         $ModuleMap[$PromptModule.id] = $PromptModule
         Assert-Doc ($ModulePaths.Add($PromptModule.path)) "Duplicate module path: $($PromptModule.path)"
-        Assert-Doc ($PromptModule.version -eq $ManifestDoc.version) "Module version mismatch: $($PromptModule.id)"
+        Assert-Doc ($PromptModule.version -match '^\d+\.\d+\.\d+$') "Invalid module version: $($PromptModule.id)"
         $PromptPath = [IO.Path]::GetFullPath((Join-Path $PackRootPath $PromptModule.path))
         Assert-Doc ($PromptPath.StartsWith($PackRootPath + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) "Module path escapes pack: $($PromptModule.path)"
         Assert-Doc ([IO.File]::Exists($PromptPath)) "Missing module: $($PromptModule.path)"
@@ -71,7 +73,7 @@ try {
         $BodyMatch = [regex]::Match($PromptDoc, '(?s)<!-- prompt:begin -->(.*?)<!-- prompt:end -->')
         Assert-Doc ($BodyMatch.Success -and $BodyMatch.Groups[1].Value.Trim().Length -gt 0) "Missing prompt body: $($PromptModule.id)"
         Assert-Doc ($PromptDoc.Contains('- ID：`' + $PromptModule.id + '`')) "Module ID metadata mismatch: $($PromptModule.id)"
-        Assert-Doc ($PromptDoc.Contains('- 版本：`' + $ManifestDoc.version + '`')) "Module version metadata mismatch: $($PromptModule.id)"
+        Assert-Doc ($PromptDoc.Contains('- 版本：`' + $PromptModule.version + '`')) "Module version metadata mismatch: $($PromptModule.id)"
         Assert-Doc ($PromptDoc.Contains('## 維護與靜態例子')) "Missing maintenance/examples: $($PromptModule.id)"
         Assert-Doc (-not ($BodyMatch.Groups[1].Value -match '\{\{[^}]+\}\}')) "Unresolved placeholder in prompt body: $($PromptModule.id)"
     }

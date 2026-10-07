@@ -1,5 +1,11 @@
 # Prompt Pack 變更記錄
 
+## 0.1.24 — 2026-10-07
+
+- 主模型局部同步產品 context 的單份原訊息／IDs 摘要批次及 quantityEvidence／grounding status；配合相關後端修復同批部署，不改執行權限或模型預算。
+- core.output 0.1.2 釐清 tool_cycle 有 present_answer 時的展示入口，product-tools 0.1.12 保留收據與自然收尾的區別；P1 text 行為不改。這是指令一致性修正，不宣稱已消除 F4 真實運行的收尾失敗。
+- README／recipes 說明改按現有 manifest 的 22 模組／12 配方及 5 個直接入口，未接入口與未實作能力分開，沒有新增動態 SkillToolset 或 MCP。0.1.20–0.1.23 的既有 manifest／Git 歷史保留，本次沒有補造其驗收記錄。
+
 ## 0.1.19 — 2026-10-06
 
 - INT-W02 接通普通預授權操作、私人交代及摘要覆蓋接縫；復用原配方，重要健康資料／擴大共享仍明確確認，結果依真正收據。產品工具 0.1.7、task-intents 0.1.3、capture-confirmation／summary-report 0.1.2。

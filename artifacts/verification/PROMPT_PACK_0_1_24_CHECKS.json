@@ -1,0 +1,296 @@
+{
+  "evidenceId": "PROMPT-PACK-0.1.24",
+  "observedAtUtc": "2026-10-07T07:16:31.973904+00:00",
+  "sourceCommit": "9cb6f635d71de0eef3d85adb22b5e598b0618997",
+  "scope": "Prompt documentation, static loader validation and test-script version-contract correction; no live model, GCP, deployment or merge.",
+  "environment": {
+    "node": "v24.19.0",
+    "powershell": "not installed; script not executed"
+  },
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/agent-prompt.test.ts tests/agent-prompt-wiring.test.ts",
+      "status": "passed",
+      "tests": 7,
+      "failures": 0,
+      "scope": "Existing fail-closed tests plus independent semantic versions, all 12 recipes / 20 declared modes, structured outputContract requirement, direct-entry mapping and critical wording inclusion."
+    },
+    {
+      "name": "Modified source baseline hashes",
+      "status": "passed",
+      "files": 9
+    },
+    {
+      "name": "Unmodified baseline source hashes",
+      "status": "passed",
+      "files": 41
+    },
+    {
+      "name": "Backend contract correspondence",
+      "status": "reviewed",
+      "scope": "quantityEvidence, quantityGrounding statuses, source role distinction, privateSummaryInput.messageIds and exact uncoveredConversation prefix; requires companion context-integrity backend patch before deployment."
+    },
+    {
+      "command": "pwsh ./prompts/review/check.ps1",
+      "status": "not_run",
+      "reason": "PowerShell is unavailable; no installation attempted. Version-predicate edits reviewed, with corresponding version contract checked by Node tests. Not a full PowerShell-script equivalence claim."
+    },
+    {
+      "name": "T5 selector and actual ADK Runner capacity with prompt 0.1.24",
+      "status": "passed",
+      "sourceCommit": "33326d9b652f1bda5f6428ef78a7325b281a49c6",
+      "logicalRequestCharacters": [
+        24703,
+        25327,
+        25659
+      ],
+      "limit": 32000,
+      "modelCalls": 3,
+      "provider": "scripted offline; no live model call",
+      "scope": "Original T5 latest-three-message fixture with empty older memory; no expanded matrix."
+    }
+  ],
+  "legacyStaticCheckerFindings": {
+    "source": "prompts/review/check.ps1 maintenance/examples heading assertion; inspected against baseline source",
+    "modules": [
+      "module.product-tools",
+      "module.photo-capture",
+      "module.shared-capture"
+    ],
+    "status": "pre_existing_assertion_mismatches_preserved",
+    "note": "These three module documents lack the maintenance heading required by the existing script; the assertion was not removed. Other full-script checks, such as repository-wide links and anchors, were not run."
+  },
+  "promptSizes": {
+    "moduleCount": 22,
+    "recipeCount": 12,
+    "recipeModeCount": 20,
+    "sizes": [
+      {
+        "recipe": "p1-chat",
+        "modules": 9,
+        "beforeCharacters": 6465,
+        "afterCharacters": 6569,
+        "addedCharacters": 104,
+        "percentGrowth": 1.61
+      },
+      {
+        "recipe": "capture-confirm",
+        "modules": 11,
+        "beforeCharacters": 7422,
+        "afterCharacters": 7526,
+        "addedCharacters": 104,
+        "percentGrowth": 1.4
+      },
+      {
+        "recipe": "knowledge-answer",
+        "modules": 10,
+        "beforeCharacters": 7205,
+        "afterCharacters": 7309,
+        "addedCharacters": 104,
+        "percentGrowth": 1.44
+      },
+      {
+        "recipe": "memory-refresh",
+        "modules": 8,
+        "beforeCharacters": 5646,
+        "afterCharacters": 5750,
+        "addedCharacters": 104,
+        "percentGrowth": 1.84
+      },
+      {
+        "recipe": "proactive-follow-up",
+        "modules": 11,
+        "beforeCharacters": 8207,
+        "afterCharacters": 8311,
+        "addedCharacters": 104,
+        "percentGrowth": 1.27
+      },
+      {
+        "recipe": "contact-reply",
+        "modules": 12,
+        "beforeCharacters": 8702,
+        "afterCharacters": 8806,
+        "addedCharacters": 104,
+        "percentGrowth": 1.2
+      },
+      {
+        "recipe": "knowledge-review",
+        "modules": 9,
+        "beforeCharacters": 6377,
+        "afterCharacters": 6481,
+        "addedCharacters": 104,
+        "percentGrowth": 1.63
+      },
+      {
+        "recipe": "summary-visit",
+        "modules": 13,
+        "beforeCharacters": 12826,
+        "afterCharacters": 13288,
+        "addedCharacters": 462,
+        "percentGrowth": 3.6
+      },
+      {
+        "recipe": "product-interactive",
+        "modules": 15,
+        "beforeCharacters": 14288,
+        "afterCharacters": 14750,
+        "addedCharacters": 462,
+        "percentGrowth": 3.23
+      },
+      {
+        "recipe": "product-background",
+        "modules": 12,
+        "beforeCharacters": 12266,
+        "afterCharacters": 12728,
+        "addedCharacters": 462,
+        "percentGrowth": 3.77
+      },
+      {
+        "recipe": "photo-capture",
+        "modules": 12,
+        "beforeCharacters": 7724,
+        "afterCharacters": 7828,
+        "addedCharacters": 104,
+        "percentGrowth": 1.35
+      },
+      {
+        "recipe": "shared-capture",
+        "modules": 12,
+        "beforeCharacters": 7916,
+        "afterCharacters": 8020,
+        "addedCharacters": 104,
+        "percentGrowth": 1.31
+      }
+    ]
+  },
+  "modifiedSourceFiles": [
+    {
+      "path": "prompts/CHANGELOG.md",
+      "baseGitBlobSha": "118eb1f08ed87d2c40b4c217c5e3cab83a21999f",
+      "baseSha256": "d5567b3bc03a8bf276867b956c8914b2715a68d068de58eccc792ddac09a77f7",
+      "sha256": "65c726fa2dff51495e7763d6b737af795108eb21c315f8f754eb00c88e570c90",
+      "beforeBytes": 5454,
+      "afterBytes": 6188
+    },
+    {
+      "path": "prompts/README.md",
+      "baseGitBlobSha": "73531e2f35981fdcdd879064bf9c364924b93afc",
+      "baseSha256": "b4ce5a13fb99c9c84049c6e5cdda85c8d6b0f961b9a45baf27a6cde5fa74c8a9",
+      "sha256": "accf9a40bb0aeb3accbc7a0ca264e478cc102f83456e826114032e32af1b7e79",
+      "beforeBytes": 5811,
+      "afterBytes": 6298
+    },
+    {
+      "path": "prompts/contracts/output.md",
+      "baseGitBlobSha": "5e439e462bdd3494dc4b83fdc236d65ae8cddb0c",
+      "baseSha256": "5563d49fc94a94478634d0d425882da548d4ecce29cfe3773154b91211610c22",
+      "sha256": "aff4545074a21cce89fe216871b4cf70c343612cd98f655ade5cdd51d0d82a20",
+      "beforeBytes": 4951,
+      "afterBytes": 5409
+    },
+    {
+      "path": "prompts/core/output.md",
+      "baseGitBlobSha": "3c82f331b8d22e3b04036c07a1b869fc5c82064f",
+      "baseSha256": "04b69d862fdcecb3fce43152994106586db9fc4d80b53f6a194ebf6448a2a458",
+      "sha256": "efd4e43f0924362053bb486c52cd56ce6ae1dec1195b310ab6f9d70f19ca92b7",
+      "beforeBytes": 2569,
+      "afterBytes": 2795
+    },
+    {
+      "path": "prompts/manifest.json",
+      "baseGitBlobSha": "9bd30f2abb265f7edc513f6ebd4092da63f4795a",
+      "baseSha256": "525e022bb2edb8e8a885db539c5fce2ff43b4612b031340f47770a711fd06706",
+      "sha256": "db7162143b7717d211acf663b33c568a8f8d6684fcb1a2122f6f8f66fd1355ea",
+      "beforeBytes": 13295,
+      "afterBytes": 13295
+    },
+    {
+      "path": "prompts/modules/product-tools.md",
+      "baseGitBlobSha": "a0809d366bdd683f8a5d7424c4b04f8d4acc83b4",
+      "baseSha256": "3a60021be2680d0cd01ae37b28ecb86ab4e9a4b98e79fe988ec490b38577fccd",
+      "sha256": "e4b3006562475830833ab82cb88c428d874348daaeac789a2bd8bf0a3fb63d85",
+      "beforeBytes": 10347,
+      "afterBytes": 11091
+    },
+    {
+      "path": "prompts/recipes/README.md",
+      "baseGitBlobSha": "703ecb3593e9aba9f34a19afc3ee44b4fa84b7fc",
+      "baseSha256": "05ac8006b660568e847d6e8731d14ab663402ffcc0c3dfed23b573b91fdfc980",
+      "sha256": "5f9b20e1124419d7901ab467aff63bc3e05ac4f7c75c5d3a8844ebfe9e52680d",
+      "beforeBytes": 5502,
+      "afterBytes": 6504
+    },
+    {
+      "path": "prompts/review/README.md",
+      "baseGitBlobSha": "34dbb6e5c8c0c8d826ca451a6c5c70dededdf111",
+      "baseSha256": "6be3def7e00c520b1224393f5c0a6bec3600b2811f1c36f149396d3207c5c4e8",
+      "sha256": "ed3eb9037ea961f90cc24c574c01de468f25969a988481d7dd225c3046cfbc31",
+      "beforeBytes": 3340,
+      "afterBytes": 3942
+    },
+    {
+      "path": "prompts/review/check.ps1",
+      "baseGitBlobSha": "18f9d40b2546154a0b32f05dbdd70940243b7e01",
+      "baseSha256": "95d57346af12df37ac473720de450989d8c5911d28686d0d1984d99e2f0070b7",
+      "sha256": "8fccedd8f107cd1d45e52df896c53b62595b9e47814f27d7dea12d073dc34c1a",
+      "beforeBytes": 14624,
+      "afterBytes": 14684
+    }
+  ],
+  "untouchedScope": [
+    "All other prompt module bodies and their safety rules",
+    "Independent prompts/p1/childcare-chat.txt",
+    "Server and shared implementation",
+    "Model execution and limits"
+  ],
+  "limitations": [
+    "Static wording checks do not prove model compliance.",
+    "F4 finalization reliability has not been revalidated or declared fixed.",
+    "Must deploy together with the companion backend context-integrity patch after both are merged."
+  ],
+  "publishBaseCommit": "33326d9b652f1bda5f6428ef78a7325b281a49c6",
+  "latestBasePromptHashesMatch": true,
+  "t5BudgetCheck": {
+    "sourceCommit": "33326d9b652f1bda5f6428ef78a7325b281a49c6",
+    "script": "node evidence/t5-size.mjs",
+    "environment": {
+      "node": "v24.19.0",
+      "provider": "scripted offline, real ADK Runner"
+    },
+    "packVersion": "0.1.24",
+    "promptCharacters": 14750,
+    "promptSHA256": "0a93eb9af22373417b94acfd7619433cefa1a62edce2d854baf408a06a83a107",
+    "oldLogicalSizes": [
+      24237,
+      24861,
+      25193
+    ],
+    "newLogicalSizes": [
+      24703,
+      25327,
+      25659
+    ],
+    "differencePerRequest": 466,
+    "hardLimit": 32000,
+    "unit": "Logical contents/config JSON UTF-16 code units, not wire bytes",
+    "status": "completed",
+    "modelCalls": 3,
+    "tools": [
+      {
+        "name": "read_context",
+        "status": "succeeded"
+      },
+      {
+        "name": "present_answer",
+        "status": "succeeded"
+      }
+    ],
+    "limits": [
+      "Synthetic T5 latest-three conversation with empty older memory fixture; no live model, GCP, database, notifications or task creation",
+      "Only the requested T5 capacity check; not a broader acceptance matrix"
+    ],
+    "harnessSha256": "3f86d9bd5478f7dd715d37567dc77e5b64e7fcaadb29ac491cd3b5d31108c28c",
+    "logSha256": "675180c57033d2ee69d21cb2d62a763eafadfaafcb50ba386a0d90618c9d45db",
+    "reproductionNote": "The scoped offline harness and raw log are retained with the local verification evidence; this entry records its exact version, fixture scope and observed results."
+  }
+}
