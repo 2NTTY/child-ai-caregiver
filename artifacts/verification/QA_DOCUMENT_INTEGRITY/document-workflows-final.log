@@ -1,0 +1,38 @@
+(node:12) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ document workflow integrity with synthetic sources and a serialized fake Pool
+  ✔ refresh preserves only matching checklist identity, text and source provenance (8.075192ms)
+  ✔ undated active concerns are honest body content while closed and dated out-of-period concerns stay out (10.592635ms)
+  ✔ checked stale preparation archives the exact used snapshot without refresh and stays stale (20.854009ms)
+  ✔ PDF route retains the selected old version and rechecks source access after rendering (12.060723ms)
+  ✔ changed or revoked sources cannot be archived, read through history, receipt or exported (2.822072ms)
+  ✔ concurrent standard creates with different opIds allow exactly one without deleting existing rows (12.910995ms)
+✔ document workflow integrity with synthetic sources and a serialized fake Pool (310.328887ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 767.193009
+
+--- Prepared-base focused verification: f7741b8, 2026-10-07 05:04 UTC ---
+(node:12) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ document workflow integrity with synthetic sources and a serialized fake Pool
+  ✔ refresh preserves only matching checklist identity, text and source provenance (5.201814ms)
+  ✔ undated active concerns are honest body content while closed and dated out-of-period concerns stay out (9.545455ms)
+  ✔ checked stale preparation archives the exact used snapshot without refresh and stays stale (14.905506ms)
+  ✔ PDF route retains the selected old version and rechecks source access after rendering (11.159976ms)
+  ✔ changed or revoked sources cannot be archived, read through history, receipt or exported (4.645039ms)
+  ✔ concurrent standard creates with different opIds allow exactly one without deleting existing rows (22.034363ms)
+✔ document workflow integrity with synthetic sources and a serialized fake Pool (232.659239ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 501.151343

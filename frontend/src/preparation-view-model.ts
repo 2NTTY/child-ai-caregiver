@@ -101,16 +101,22 @@ export function canChangePreparation(document: PreparationDocumentView, scope: P
     && scope.online && scope.role !== "viewer" && scope.condition === "ready";
 }
 
-function mutationDocument(state: PreparationOwnerState, scope: PreparationScope, input: PreparationMutation) {
+export function canArchivePreparation(document: PreparationDocumentView, scope: PreparationScope) {
+  return document.childId === scope.childId && document.status === "active" && !!document.revision
+    && (document.readState === "ready" || document.readState === "stale")
+    && scope.online && scope.role !== "viewer" && scope.condition === "ready";
+}
+
+function mutationDocument(state: PreparationOwnerState, scope: PreparationScope, input: PreparationMutation, archive = false) {
   if (input.authorityKey !== state.authorityKey || input.authorityKey !== scope.authorityKey || input.childId !== scope.childId) return null;
   if (!/(Z|[+-]\d{2}:\d{2})$/.test(input.at) || !DateTime.fromISO(input.at).isValid) return null;
   const view = projectPreparations(state, scope).find(document => document.id === input.documentId);
-  if (!view || view.version !== input.expectedVersion || !canChangePreparation(view, scope)) return null;
+  if (!view || view.version !== input.expectedVersion || !(archive ? canArchivePreparation(view, scope) : canChangePreparation(view, scope))) return null;
   return state.documents.find(document => document.id === view.id)!;
 }
 
 export function archivePreparation(state: PreparationOwnerState, scope: PreparationScope, input: PreparationMutation): PreparationOwnerState {
-  const document = mutationDocument(state, scope, input);
+  const document = mutationDocument(state, scope, input, true);
   if (!document) return state;
   return { ...state, documents: state.documents.map(item => item.id !== document.id ? item : {
     ...item, status: "archived", version: item.version + 1, archivedAt: input.at, archivedRevisionId: item.currentRevisionId,

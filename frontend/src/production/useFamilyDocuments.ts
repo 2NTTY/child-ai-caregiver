@@ -132,7 +132,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const locked = busy || exportBusy || !!pending || runtime.lost || !env.online || load !== "ready" || !canManage || !visible?.canManage;
   const change = (id: string, expectedVersion: number, action: DocumentChange["action"], extra = {}) => {
     const actual = latest.current.page?.items.find(item => item.id === id && item.childId === env.childId);
-    if (locked || !runtime.live() || !actual || actual.version !== expectedVersion || action === "archive" && (actual.status !== "active" || actual.readState !== "ready")
+    if (locked || !runtime.live() || !actual || actual.version !== expectedVersion || action === "archive" && (actual.status !== "active" || actual.readState === "invalidated" || !actual.current)
       || action === "refresh" && actual.status !== "active"
       || action === "restore" && actual.status !== "archived" || action === "check_item" && (actual.readState !== "ready" || actual.status !== "active")) return;
     const parsed = documentChangeSchema.safeParse({ action, expectedVersion, authorityVersion: latest.current.page!.authorityVersion, ...extra });
@@ -150,8 +150,9 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const createDocument = (input: DocumentRequest) => {
     const parsed = documentRequestSchema.safeParse(input);
     if (parsed.success && parsed.data.kind === "growth_report" && parsed.data.purpose === "family"
-      && latest.current.page?.items.some(item => item.kind === "growth_report" && item.purpose === "family" && item.status === "active")) {
-      setNotice("已有標準成長報告；請閱讀現行報告，來源有更新時再整理新版本。"); return;
+      && latest.current.page?.items.some(item => item.kind === "growth_report" && item.purpose === "family" && item.status === "active"
+        && item.current?.period.from === parsed.data.period.from && item.current.period.to === parsed.data.period.to)) {
+      setNotice("這個期間已有標準成長報告；請閱讀現行報告，來源有更新時再整理新版本。"); return;
     }
     if (!locked && parsed.success) write({ kind: "create", input: structuredClone(parsed.data) });
   };

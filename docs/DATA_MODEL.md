@@ -472,3 +472,6 @@ INT-W04 在同一加密 payload 保存可選 management：用途、來源性質�
 FamilyDocument 保存 kind／purpose／目前版本／歸檔與自動更新狀態；DocumentSnapshot 保存期間、來源依據、有限覆蓋說明、章節、精確來源 ID／版本及更新說明。加密修訂和原操作收據沿既有穩定 AAD／epoch／權限規則。來源業務資源保持權威，文件是可失效的衍生快照，不能反寫成另一份可編輯孩子事實。
 
 文件排程只保存待更新的資源識別，不保存明文家庭資料或模型思考。來源更正／刪除時隱藏受影響舊正文；歷史快照不能繞過目前權限。詳見 [API 契約](API.md#int-family-documents)。
+
+
+家庭標準 growth_report／family 在同孩子及相同起訖期間內的 active 防重由既有 workspace 寫入鎖下的 create／restore 守衛保障；不新增 schema 或重寫既有文件。Checklist 刷新只保留身份、文字及來源均未變的勾選狀態。未有事件日期的現行關注可作明示未知日期的正文來源，不能偽造時間。

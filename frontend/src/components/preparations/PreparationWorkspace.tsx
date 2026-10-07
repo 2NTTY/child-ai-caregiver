@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } fro
 import { Platform, Pressable, StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import {
-  canChangePreparation, preparationDateLabel, preparationPurposeLabel, preparationPurposes, searchPreparationHistory,
+  canArchivePreparation, canChangePreparation, preparationDateLabel, preparationPurposeLabel, preparationPurposes, searchPreparationHistory,
   type PreparationCondition, type PreparationDateRange, type PreparationDocumentView, type PreparationPurpose,
 } from "../../preparation-view-model";
 import { usePreparationWorkspace, type PreparationWorkspaceValue } from "../../workspaces/PreparationWorkspace";
@@ -17,7 +17,7 @@ import { DocumentCreateForm } from "./DocumentCreateForm";
 
 const stateLabels: Record<PreparationDocumentView["readState"], { label: string; tone: AppStatusTone; detail: string }> = {
   ready: { label: "可查閱", tone: "success", detail: "" },
-  stale: { label: "來源已有更新", tone: "warning", detail: "這份準備使用較早資料，內容保留作參考；請先核對更新後的來源，再改動或歸檔。" },
+  stale: { label: "來源已有更新", tone: "warning", detail: "這份準備使用較早資料，內容保留作參考；如已使用完畢，可直接歸檔並保留此版本；如要改清單，請先核對更新後的來源。" },
   restricted: { label: "來源權限已改變", tone: "warning", detail: "來源權限已改變，正文及清單暫不可讀，不能修改或歸檔。" },
   invalidated: { label: "來源已失效", tone: "warning", detail: "來源已失效，正文及清單暫不可讀，不能修改或歸檔。" },
   unknown: { label: "來源狀態未知", tone: "warning", detail: "尚未確認這份準備的來源及版本，內容暫不展示，也不能修改或歸檔。" },
@@ -51,7 +51,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
   const pending = !!workspace.model.operation && ["saving", "unknown", "conflict"].includes(workspace.model.operation.state);
   const editable = canChangePreparation(document, workspace.model.scope) && !pending;
   const canCheck = editable && workspace.model.capabilities?.checkItem === true;
-  const canArchive = editable && workspace.model.capabilities?.archive === true;
+  const canArchive = canArchivePreparation(document, workspace.model.scope) && !pending && workspace.model.capabilities?.archive === true;
   const checked = revision?.sections.flatMap(section => section.kind === "checklist" ? section.items : []) ?? [];
   useLayoutEffect(() => { setArchiveAsked(false); setSourceOpen(false); }, [document.id, document.version, document.readState, workspace.scopeKey]);
   return <View testID="preparation-document-detail" style={styles.document}>

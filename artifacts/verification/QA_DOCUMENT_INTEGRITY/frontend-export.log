@@ -1,0 +1,33 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> yuban-hk-frontend-preview@0.1.0 build:web
+> expo export --platform web --output-dir dist-document-integrity
+
+<shared-dependencies>/node_modules/expo/node_modules/@expo/cli/build/src/utils/errors.js:130
+    throw error;
+    ^
+
+Error: ENOENT: no such file or directory, mkdir '/home/agent/.expo'
+    at Object.mkdirSync (node:fs:1411:26)
+    at write (<shared-dependencies>/node_modules/@expo/json-file/build/JsonFile.js:228:27)
+    at setSync (<shared-dependencies>/node_modules/@expo/json-file/build/JsonFile.js:276:12)
+    at JsonFile.set (<shared-dependencies>/node_modules/@expo/json-file/build/JsonFile.js:108:16)
+    at getAnonymousId (<shared-dependencies>/node_modules/expo/node_modules/@expo/cli/build/src/api/user/UserSettings.js:191:18)
+    at new Telemetry (<shared-dependencies>/node_modules/expo/node_modules/@expo/cli/build/src/utils/telemetry/Telemetry.js:32:66)
+    at getTelemetry (<shared-dependencies>/node_modules/expo/node_modules/@expo/cli/build/src/utils/telemetry/index.js:43:21)
+    at recordCommand (<shared-dependencies>/node_modules/expo/node_modules/@expo/cli/build/src/utils/telemetry/index.js:64:26)
+    at <shared-dependencies>/node_modules/expo/node_modules/@expo/cli/build/bin/cli:274:9 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'mkdir',
+  path: '/home/agent/.expo'
+}
+
+Node.js v24.19.0
+npm error Lifecycle script `build:web` failed with error:
+npm error code 7
+npm error path <workspace>/frontend
+npm error workspace yuban-hk-frontend-preview@0.1.0
+npm error location <workspace>/frontend
+npm error command failed
+npm error command sh -c expo export --platform web --output-dir dist-document-integrity

@@ -1502,3 +1502,11 @@
 - QA-GROWTH-READ-BOUNDARY 獨立覆核補正：已提交局部 `tsconfig.json` 及 repository-root 確切重跑命令；明示舊完整 typecheck 對照只換 Growth store，其餘 mount workspace（含新增測試）不變，並非 pristine master 全量驗證。旧 11 diagnostics 仍是首稿證據，本輪沒有擴跑完整 typecheck。
 - 候選區原先未呈現 notices，令合法但不支援的 basis 冒稱正常空建議。將原兩則 notice 抽為 shared 固定常數（線上 response 文字與契約不變），只在這两個明確限制且 items 為空時替換為短提示；正常空頁／其他 notices／已有候選／失權呈現保留，沒有重構布局。6 項 focused 真 renderer shallow 回歸、frontend 型別、已提交配置的 Server／shared／Growth tests 型別及 10 項 Growth 安全測試通過；原始 log 與 SHA 見同一 EV。沒有部署、DB、模型、通知或瀏覽器驗收。
 - 整包責任更新為 C 主責、權重 2，C 60%／B 20%／A 20%；初稿 C／A 份額保留追溯，新增候選呈現與回歸由 B 責任署名，共用 AI 執行不冒稱人手。只追加 commit／更新 draft PR head，交 dot 再覆核。
+
+<a id="log-qa-document-integrity"></a>
+## 2026-10-07 — QA-DOCUMENT-INTEGRITY（交付待覆核）
+
+- 基線 b23f12b，dot 雲端隔離實作；修準備單刷新保留未變 checklist、仍有權且來源有效的 stale 文件可原版歸檔、無日期現行關注納入同版報告正文，以及相同孩子／family 用途／精確期間 active 報告的 create／restore 409 防重。不同期間可並存，原 opId 重播不变，不自動刪除舊重複件。
+- 真合成 UI 已發現匯出 coverage 長句裁切；本包只按固定 coverage 句號分段呈現，原文字／快照不變。使用相同 React／react-pdf／字體實際輸出 A4、抽字及 bbox 檢查，原裁切可重現、修後句子完整；不宣稱任意無標點正文的所有排字問題已解決。
+- [固定驗證證據](artifacts/verification/QA_DOCUMENT_INTEGRITY_CHECKS.json)：Server source/store/API 合成 7/7、production hook／shallow 及準備回歸 25/25、兩份 scoped typecheck、Web export 35 路由及真 PDF 排版通過。原 fixture 缺 refresh mock、初次建置環境缺 HOME、依賴型別等失敗和基線對照保留。Mock Pool 不當成真 PostgreSQL 並發驗收；shallow 不當成瀏覽器。
+- 主模型親寫 PLAN／STATUS／API／DATA_MODEL 及本記錄；沒有真模型、GCP、DB／真家庭資料操作。固定報告期間仍未改；整體 Agent 首請求的 provider 不可用另由獨立診斷包處理。本包須獨立 review、合併後批次部署及原合成 UI 重測才結案。

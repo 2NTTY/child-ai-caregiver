@@ -1,0 +1,15 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: missing coverage sentence: 任務僅讀取首50項；來源及畫面均非完整期間統計
+    at file://<workspace>/scripts/.verify-family-document-pdf-baseline.mjs:32:68 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

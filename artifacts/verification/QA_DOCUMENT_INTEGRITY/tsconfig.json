@@ -1,0 +1,8 @@
+{
+  "extends": "../../../tsconfig.server.json",
+  "include": [
+    "../../../server/family-document-sources.ts",
+    "../../../server/family-document-store.ts",
+    "../../../tests/family-document-workflows.test.ts"
+  ]
+}

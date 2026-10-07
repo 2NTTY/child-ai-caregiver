@@ -1,0 +1,31 @@
+server/care.ts(2,39): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/care.ts(116,65): error TS7006: Parameter 'item' implicitly has an 'any' type.
+server/care.ts(153,51): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/concern-store.ts(3,39): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/concern-store.ts(47,43): error TS7006: Parameter 'event' implicitly has an 'any' type.
+server/family-access.ts(1,39): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/family-document-sources.ts(2,33): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/family-document-sources.ts(48,86): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly note: "共享文字記錄"; readonly feeding: "餵食記錄"; readonly sleep: "睡眠記錄"; readonly diaper: "尿片記錄"; readonly temperature: "體溫記錄"; readonly measurement: "量度記錄"; readonly appointment: "到診記錄"; }'.
+server/family-document-store.ts(3,39): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/family-document-store.ts(36,28): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+server/family-document-store.ts(37,34): error TS7006: Parameter 'item' implicitly has an 'any' type.
+server/family-document-store.ts(37,96): error TS7006: Parameter 'item' implicitly has an 'any' type.
+server/family-document-store.ts(66,19): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/family-document-store.ts(139,29): error TS18048: 'snapshot' is possibly 'undefined'.
+server/family-document-store.ts(143,13): error TS18048: 'snapshot' is possibly 'undefined'.
+server/family-document-store.ts(143,41): error TS18048: 'snapshot' is possibly 'undefined'.
+server/family-document-store.ts(143,73): error TS18048: 'snapshot' is possibly 'undefined'.
+server/family-document-store.ts(144,13): error TS18048: 'snapshot' is possibly 'undefined'.
+server/family-document-store.ts(145,32): error TS18048: 'snapshot' is possibly 'undefined'.
+server/memory-summary.ts(2,33): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/memory-summary.ts(18,30): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/memory-summary.ts(45,57): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/memory.ts(2,39): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/memory.ts(64,19): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/memory.ts(157,23): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/online-change.ts(1,33): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/tasks.ts(2,39): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/tasks.ts(65,76): error TS7006: Parameter 'item' implicitly has an 'any' type.
+server/tasks.ts(74,49): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/transaction-pool.ts(1,39): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+tests/family-document-workflows.test.ts(4,27): error TS2307: Cannot find module 'pg' or its corresponding type declarations.

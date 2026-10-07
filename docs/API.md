@@ -570,4 +570,11 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 
 `POST /:id/pdf` 指定 snapshotId／snapshotVersion／authorityVersion、用途及來源／更新說明選項。Web 與 PDF 使用同一快照；生成後再次核權及核對來源才送回 `application/pdf`，`Cache-Control: no-store`。不靜默換版，不自動外發。現版只導出已共享文字；照片、私人聊天逐項匯出等更廣選項仍未提供。
 
+家庭標準成長報告（kind=growth_report、purpose=family）同一孩子及相同 period.from／period.to 最多一份 active 文件。建立及恢復在既有 workspace 寫入鎖內重核；已有另一份相同期間的 active 標準報告時回 409 standard_report_exists，不以另一份資源冒充建立成功。同一原 opId 的合法重播仍返回原收據。不同年度／季度或其他期間報告可並存及歸檔保存；準備文件、其他用途及其他孩子不受此單一入口限制，不自動刪除或合併既有重複資料。
+
+準備文件只因新增來源而 stale、且原快照仍獲授權及來源有效時，可以保留使用時版本直接歸檔；不要求先刷新。這不允許修改 stale 勾選或把它當最新版本匯出，也不繞過來源更正／刪除／撤權的正文遮蔽。刷新只沿用同一穩定 ID 且文字與來源關聯未變的核對項目，其餘項目維持未核對。
+
+沒有觀察時間的現行持續關注仍列入成長報告正文，明示日期未提供；不把建立時間當事件時間。已知時間的來源仍依原文件期間篩選，PDF 沿用同版章節及來源。
+
 Agent 透過 read_family_documents／generate_family_document／change_family_document 使用同一服務。生成只接受用途／期間等結構化參數，不接受模型自由撰寫家庭正文；真實資源 ID／版本及操作收據才代表已保存。
+
