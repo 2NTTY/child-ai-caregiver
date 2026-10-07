@@ -9,7 +9,7 @@ import type { AgentPresentation, ProductAgentResult } from "../src/shared/produc
 import { AgentStopped } from "./agent-budget.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 import { AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
-import { PRODUCT_AGENT_TOOL_CATALOG } from "./product-agent-capabilities.ts";
+import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./product-agent-capabilities.ts";
 
 export function createProductAgent(options: {
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
@@ -34,7 +34,9 @@ export function createProductAgent(options: {
     },
     async background(input: { userId: string; childId: string; reference: string; context: Record<string, unknown>; authorize: () => Promise<boolean>; signal?: AbortSignal }): Promise<ProductAgentResult | null> {
       if (!await input.authorize()) return null;
-      const claim = await options.store.claim(input.userId, input.childId, { kind: "worker", reference: input.reference }, "product-background");
+      const privateContinuation = input.context.eventType === "work_continuation";
+      const recipeId = privateContinuation ? "product-work-followup" : "product-background";
+      const claim = await options.store.claim(input.userId, input.childId, { kind: "worker", reference: input.reference }, recipeId);
       if (!claim) return null;
       if (!claim.created) return options.store.get(input.userId, input.childId, claim.runId);
       const authorize = async () => await input.authorize() && await options.store.authorize(claim.scope,claim.runId);
@@ -42,15 +44,27 @@ export function createProductAgent(options: {
       const rendered: { value: AgentPresentation | null } = { value: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId,
         deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())),
-        trigger: { kind: "worker", reference: input.reference }, recipeId: "product-background",
+        trigger: { kind: "worker", reference: input.reference }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context: input.context,
-        messages: [{ role: "user", text: "這是 Server 核准的背景事件（context.eventType 或事件資料）。按需要讀取家庭共享資料，提供站內說明。若是成長關注，只解釋 Server 已核對的規則、適用性和來源；不創造醫療规则或把未知當未做。不自動改任務或披露私人資料。若是到期任務，按需要用 read_contact_options 及 contact_caregiver 在目前預授權內入列；缺授權只作站內說明。" }],
-        tools: run => { tools = createProductAgentTools({ ...options, contact: input.context.eventType === "concern_followup" ? undefined : options.contact, run, authorize, visibility: "family",
-          reviewedGrowthPresentation: input.context.eventType === "growth_attention" }); return tools.tools; },
+        ...(privateContinuation ? { toolCatalog: WORK_CONTINUATION_TOOL_CATALOG } : {}),
+        messages: [{ role: "user", text: privateContinuation ? "這是本人目前孩子的持久工作接續。只按 context 提供的相關變更／到期原因，讀取本人獲授權的資料，核對現況並作一次有用的站內回饋或必要補問。工作原話及背景結果不代表新的同意；不能執行修改、確認、共享或外發。涉及照護建議仍須查目前適用的官方來源。不重複催辦、不把模型推測當成已知事實。" : "這是 Server 核准的背景事件（context.eventType 或事件資料）。按需要讀取家庭共享資料，提供站內說明。若是成長關注，只解釋 Server 已核對的規則、適用性和來源；不創造醫療规则或把未知當未做。不自動改任務或披露私人資料。若是到期任務，按需要用 read_contact_options 及 contact_caregiver 在目前預授權內入列；缺授權只作站內說明。" }],
+        tools: run => {
+          tools = createProductAgentTools({ ...options,
+            contact: privateContinuation || input.context.eventType === "concern_followup" ? undefined : options.contact,
+            actions: privateContinuation ? undefined : options.actions,
+            includeDocuments: privateContinuation, run, authorize, visibility: privateContinuation ? "private" : "family",
+            reviewedGrowthPresentation: input.context.eventType === "growth_attention" });
+          // Trusted event purpose selects a read-only scope; user wording never selects capabilities.
+          const readable = new Set(["read_context", "search_knowledge", "read_knowledge_context", "present_answer", "read_care_records",
+            "read_private_instructions", "read_work", "read_background_result", "search_history", "read_history", "read_memory_facts",
+            "read_family_documents", "read_family_document_content", "list_family_document_versions", "read_care_summary",
+            "read_concerns", "list_private_sources", "read_private_source"]);
+          return privateContinuation ? tools.tools.filter(tool => readable.has(tool.name)) : tools.tools;
+        },
         authorize, signal: input.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer", finalize: async () => { rendered.value = await tools!.presentation();
           if (!rendered.value) throw new AgentStopped("invalid_response"); return rendered.value.text; },
       });
-      if(result.status==="stopped" && options.contact && await input.authorize()){
+      if(result.status==="stopped" && !privateContinuation && options.contact && await input.authorize()){
         const recorded=await options.contact.recordedForRun?.(claim.scope.userId,claim.scope.childId,claim.runId);
         for(const reference of recorded??[])if(!result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.reference===reference))result.tools.push({name:"contact_caregiver",callId:"persisted-ledger",status:"succeeded",reference});
       }

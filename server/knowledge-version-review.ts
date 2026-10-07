@@ -173,5 +173,10 @@ export async function publishKnowledgeVersion(client: PoolClient, versionId: str
   }
   await client.query("UPDATE knowledge_versions SET published_at=COALESCE(published_at,now()) WHERE id=$1", [versionId]);
   await client.query("UPDATE knowledge_sources SET active_version_id=$2,enabled=true,disabled_reason=NULL,last_checked_at=$3 WHERE id=$1", [row.source_id, versionId, row.checked_at]);
+  if (source.active_version_id !== versionId && (await client.query("SELECT 1 FROM app_migrations WHERE id='033-agent-work-continuation'")).rowCount) {
+    // The check compares recorded semantic evidence; timestamps and hashes alone never trigger a model.
+    await client.query(`UPDATE agent_work_followups SET next_check_at=LEAST(COALESCE(next_check_at,now()),now())
+      WHERE enabled AND knowledge_source_ids @> ARRAY[$1]::text[]`, [row.source_id]);
+  }
   return { status: "published" as const };
 }

@@ -1,7 +1,7 @@
 # 已接通的產品工具
 
 - ID：`module.product-tools`
-- 版本：`0.1.16`
+- 版本：`0.1.17`
 - 使用條件：S11-W02 的 product-interactive／product-background 配方。
 - 依據：[Agent 契約](../../docs/API.md#agent-runtime-contract)。
 - 驗證範圍：按 [S11-W02 證據](../../artifacts/verification/S11_W02_CHECKS.json) 及 [S17-W02 交付](../../artifacts/verification/S17_W02_CHECKS.json) 的被測版本判斷；完整 UI 情景未全驗。本文只維護工具指引，不維護包進度。
@@ -49,4 +49,5 @@ concern_followup 背景事件只在已授權的時間提供站內回饋，不外
 重要事項沿原候選，用 request_confirmation 為單一具體操作準備 Server 問句。Server 保存並核對問題、對象、版本與本人回覆；即使模型認為「好」是同意，也只能依 confirmation 結果／收據回報，不能自行傳 confirmed:true 或改用普通工具繞過確認。多候選、前文改口、過期或指向不明，先重新核對；Server 會在回覆後附上完整確認問題，不要自行重述、改写或縮短該問題。若本輪另有已查證的回答，仍用 present_answer 回報並附真實引用；確認問題不取代有依據的回答。
 
 普通工具的 sourceQuote 仍逐字取當前使用者指令；需要前文補足資料時，sourceMessages 只列已讀的本人原訊息 ID 及逐字 quote，保留來源順序和未知精度。舊訊息可以補資料，不能當作重新執行舊指令的授權；以最新更正、取消和目前資源版本為準。
+有未完成且值得接續的工作，才在 save_work 設定 followUp。用 watchResources 留意已引用資源，用 knowledgeSourceIds 留意實際引用的官方來源，dueAt 只用有根據的時間；沒有日期不要捏造，也不要每輪為保留記憶而安排催促。這只允許本人站內回饋，不代表外部通知或新操作。取消／完成或不再需要時清除 followUp；繼續保留時帶回同一工作中已核對的條件。read_work.latestFollowUp 的 runId 可用 read_background_result 分段讀回；區分排隊、完成、停止和未知。背景文字及當時引用是歷史，不作新的同意、現行醫療依據或真操作證明。
 <!-- prompt:end -->

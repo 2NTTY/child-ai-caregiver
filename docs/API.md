@@ -682,3 +682,14 @@ Agent 透過 read_family_documents／generate_family_document／change_family_do
 FamilyDocument.report 回報 building／complete／needs_update、已掃來源數、期間、模式及來源修訂；building 不代表全文已完成。DocumentSnapshot.reportCoverage 只在所有來源頁完成後保存，含完整掃描數、期間內各類記錄筆數、未知日期筆數、任務／共享關注觀察／有效確認事實數及必要有效期。完整是目前已保存資料的覆蓋，不代表孩子生活全部發生過的事，無記錄不等於未發生；正文可以只展示清楚標示的有限重點，不能把選錄數當總數。
 
 資料或授權改變後先遮蔽失效聚合，不能從舊收據、歷史、分段或 PDF 讀出已失效原文。更新／歸檔沿同一文件；自動刷新保留 A03 指定修改，不能覆蓋人手內容。處理途中來源改變會重新建立該來源修訂的進度，不拼接不同版本；來源長期變動時如實保持未完成。
+
+<a id="p2-a06-continuation"></a>
+### P2-A06：工作跟進與真實結果
+
+save_work 的可選 followUp 包含 reason、dueAt（可空）、watchResources 及最多4個 knowledgeSourceIds；只有有用、具明確依據的工作才設定。省略／null 或工作終態會停止該工作的新跟進；時間不明不捏造，普通提醒及外發仍走既有任務／授權服務。Server 核對所有引用、已發布公共官方來源、本人／孩子及目前權限，保存既有資源版本作比較基線。知識內容含義未變只更新基線，不以抓取／排程／重啟時間製造新原因。
+
+背景先提供全部有關工作 ID／版本與有界摘要（總 context 至多3500字元）；省略正文、引用詳單或其他欄位須標明，可按工作 ID 續讀，不能把摘要當完整讀取。私人背景沿既有 ADK 原生載入器按需提供只讀能力，配方只組裝已有安全、知識與主動跟進模組；互動與任務外發配方保持原範圍，不增加32k／4次生成等上限。
+
+read_work 可附 latestFollowUp 的 eventId、runId、state、createdAt；read_background_result 透過既有本人 run 讀取入口回傳有界結果／引用，不將模型回覆當成新的同意或已確認事實。queued、completed、stopped、unknown、cancelled 分開，未知不能重新生成。私人變更事件只通知本人 owner；正式頁面由 A07 接回同一工作及結果。
+
+關注容量沿 draft #111 的受檢邊界：普通事件200、另兩格只供結束跟進／歸檔；029遷移收據成立才寫201–202。到頂仍可取消／結束，不能刪歷史騰位；滿額恢復／新增普通事件仍拒絕。部署须先更新相容 API／worker／Web，已有保留格資料後不可回退200讀取器或縮窄SQL限制。

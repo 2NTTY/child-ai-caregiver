@@ -8,6 +8,7 @@ import { readAgentWorkSchema, saveAgentWorkSchema, historySearchSchema, historyR
 import { FamilyError, READ_ROLES, withChildAccess } from "./family-access.ts";
 import { appendOnlineChange } from "./online-change.ts";
 import { canonicalJson } from "./online-routing.ts";
+import { syncAgentWorkFollowUp, latestAgentWorkFollowUps } from "./agent-work-continuation.ts";
 const missing = () => new FamilyError(404, "not_found");
 const conflict = (code: string) => new FamilyError(409, code);
 const digest = (value: unknown) => createHash("sha256").update(canonicalJson(value)).digest("hex");
@@ -53,7 +54,8 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
       return access(userId, childId, false, async client => {
         if (input.workId) {
           const row = (await client.query<WorkRow>("SELECT * FROM agent_work WHERE id=$1 AND child_id=$2 AND owner_user_id=$3", [input.workId, childId, userId])).rows[0];
-          return { items: row ? [decode(row)] : [], nextCursor: null, complete: true };
+          const latest = await latestAgentWorkFollowUps(client, userId, childId, row ? [row.id] : []);
+          return { items: row ? [{ ...decode(row), ...(latest.has(row.id) ? { latestFollowUp: latest.get(row.id)! } : {}) }] : [], nextCursor: null, complete: true };
         }
         const high = cursor ?? (await client.query<{ id: string; cursor_at: string }>(`SELECT id,${at} FROM agent_work WHERE owner_user_id=$1 AND child_id=$2 ORDER BY created_at DESC,id DESC LIMIT 1`, [userId, childId])).rows[0];
         if (!high) return { items: [], nextCursor: null, complete: true };
@@ -69,7 +71,8 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
           items.push(row); size += length;
         }
         const last = items.at(-1), more = items.length < rows.length;
-        return { items: items.map(decode), complete: !more, nextCursor: more && last
+        const latest = await latestAgentWorkFollowUps(client, userId, childId, items.map(row => row.id));
+        return { items: items.map(row => ({ ...decode(row), ...(latest.has(row.id) ? { latestFollowUp: latest.get(row.id)! } : {}) })), complete: !more, nextCursor: more && last
           ? encode({ v: 1, userId, childId, kind: "work", queryHash: digest(""), highAt, highId, afterAt: last.cursor_at, afterId: last.id }) : null };
       });
     },
@@ -105,6 +108,8 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
         const row = old ? (await client.query<WorkRow>("UPDATE agent_work SET version=$2,status=$3,payload_encrypted=$4,updated_at=clock_timestamp() WHERE id=$1 RETURNING *", [id, version, input.values.status, encrypted])).rows[0]
           : (await client.query<WorkRow>("INSERT INTO agent_work(id,child_id,owner_user_id,version,status,payload_encrypted) VALUES($1,$2,$3,$4,$5,$6) RETURNING *", [id, scope.childId, scope.userId, version, input.values.status, encrypted])).rows[0];
         const result = decode(row);
+        await syncAgentWorkFollowUp(client, cipher, { work: result, userId: scope.userId, workspaceId,
+          authorizationVersion: space.access_version, storageEpoch: space.storage_epoch });
         await client.query("INSERT INTO agent_work_operations(owner_user_id,child_id,operation_id,run_id,call_id,work_id,payload_encrypted) VALUES($1,$2,$3,$4,$5,$6,$7)",
           [scope.userId, scope.childId, input.operationId, runId, callId, id, cipher.encrypt(JSON.stringify({ hash, result }), operationAad(scope.userId, scope.childId, input.operationId))]);
         if (old) await client.query("UPDATE agent_confirmations SET state='invalidated' WHERE work_id=$1 AND state IN ('waiting','asked')", [id]);

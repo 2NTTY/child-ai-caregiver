@@ -1,7 +1,7 @@
 import type { ReadFailureDiagnostic } from "./read-failure.ts";
 import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
-import { concernChangeSchema, concernValuesSchema, type Concern, type ConcernChange, type ConcernPage, type ConcernValues } from "../shared/concerns.ts";
+import { CONCERN_STORED_EVENT_LIMIT, concernChangeSchema, concernValuesSchema, type Concern, type ConcernChange, type ConcernPage, type ConcernValues } from "../shared/concerns.ts";
 
 export type ConcernErrorCode = "invalid_input" | "invalid_json" | "unauthorized" | "not_found" | "session_changed"
   | "account_precondition_required" | "concern_changed" | "concern_history_requires_review" | "operation_mismatch"
@@ -33,7 +33,7 @@ const eventSchema = z.object({ id: uuid, at: timestamp, kind: z.enum(["observati
   recordId: uuid.optional(), taskId: uuid.optional(), attentionId: uuid.optional(), attentionVersion: version.optional(), runId: uuid.optional() }).strict();
 const itemSchema = z.object({ id: uuid, childId: uuid, title: z.string().min(1).max(160), reason: z.string().min(1).max(2000),
   status: z.enum(["following", "closed"]), version, createdAt: timestamp, updatedAt: timestamp, archivedAt: timestamp.nullable(),
-  statusBeforeArchive: z.literal("following").optional(), attentionIds: z.array(uuid).max(200), events: z.array(eventSchema).max(200), historyComplete: z.literal(true),
+  statusBeforeArchive: z.literal("following").optional(), attentionIds: z.array(uuid).max(200), events: z.array(eventSchema).max(CONCERN_STORED_EVENT_LIMIT), historyComplete: z.literal(true),
   followUp: z.object({ id: uuid, at: timestamp, state: z.enum(["pending", "queued", "completed", "stopped", "unknown", "cancelled"]), runId: uuid.nullable() }).strict().nullable() }).strict();
 const pageSchema = z.object({ authorityVersion: z.string().min(1).max(100), items: z.array(itemSchema).max(200), canManage: z.boolean() }).strict();
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);

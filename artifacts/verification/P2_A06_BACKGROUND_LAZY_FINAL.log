@@ -1,0 +1,30 @@
+✖ private continuation reads owned work and prior result without mutation or external tools (77.2186ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8431.5707
+
+✖ failing tests:
+
+test at tests\p2-a06-background-scope.test.ts:9:1
+✖ private continuation reads owned work and prior result without mutation or external tools (77.2186ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"d4a1b662-d13d-476b-bf52-40a28aa1a1a7","provenance":{"packVersion":"0.1.32","recipeId":"product-background","model":"gemini-3.1-flash-lite"},"status":"stopped","stopReason":"input_limit","text":"","citations":[],"privateSourceCitations":[],"retrievalMode":"not_used","tools":[{"name":"read_context","status":"rejected"},{"name":"read_work","status":"succeeded"},{"name":"load_capabilities","status":"succeeded"}],"countsKnown":true,"counts":{"modelCalls":1,"toolCalls":3,"queryEmbeddings":0},"proposals":[]}
+  + actual - expected
+  
+  + 'stopped'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file:///C:/Users/2NTTY/.codex/worktrees/p2-a06-proactive-continuation/%E5%AD%A9%E5%AD%90ai%E6%8A%A4%E5%B7%A5/tests/p2-a06-background-scope.test.ts:41:53)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

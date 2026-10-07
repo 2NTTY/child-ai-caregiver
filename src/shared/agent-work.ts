@@ -6,12 +6,21 @@ export const workResourceSchema = z.object({
   id: z.uuid(), version,
 }).strict();
 export const workPendingSchema = z.object({ runId: z.uuid(), proposalId: z.uuid(), version }).strict();
+export const workFollowUpSchema = z.object({
+  reason: text(500), dueAt: z.iso.datetime({ offset: true }).nullable(), watchResources: z.boolean(),
+  knowledgeSourceIds: z.array(z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/)).max(4).refine(ids => new Set(ids).size === ids.length),
+}).strict().refine(value => value.dueAt !== null || value.watchResources || value.knowledgeSourceIds.length > 0);
+export const workContinuationSchema = z.object({
+  eventId: z.uuid(), runId: z.uuid().nullable(), state: z.enum(["queued", "completed", "stopped", "unknown", "cancelled"]),
+  createdAt: z.iso.datetime({ offset: true }),
+}).strict();
 export const agentWorkValuesSchema = z.object({
   goal: text(1000), focus: z.string().max(1000), questions: z.array(text(500)).max(6),
   sourceMessageIds: z.array(z.uuid()).max(6).refine(ids => new Set(ids).size === ids.length),
   resources: z.array(workResourceSchema).max(8),
   pending: z.array(workPendingSchema).max(8),
   status: z.enum(["active", "waiting", "completed", "cancelled"]),
+  followUp: workFollowUpSchema.nullable().optional(),
 }).strict();
 export const saveAgentWorkSchema = z.object({
   operationId: z.uuid(), workId: z.uuid().nullable(), expectedVersion: z.number().int().min(0).max(2147483646),
@@ -36,6 +45,7 @@ export type SaveAgentWork = z.infer<typeof saveAgentWorkSchema>;
 export type WorkResource = z.infer<typeof workResourceSchema>;
 export interface AgentWork extends AgentWorkValues {
   id: string; childId: string; version: number; createdAt: string; updatedAt: string;
+  latestFollowUp?: z.infer<typeof workContinuationSchema>;
 }
 export interface AgentWorkPage { items: AgentWork[]; nextCursor: string | null; complete: boolean }
 export interface HistoryMatch {
@@ -53,7 +63,7 @@ export interface AgentConfirmation {
   id: string; proposalRunId: string; proposalId: string; proposalVersion: number; expiresAt: string; question: string;
 }
 
-export const agentWorkSchema = agentWorkValuesSchema.extend({ id: z.uuid(), childId: z.uuid(), version, createdAt: z.iso.datetime({ offset: true }), updatedAt: z.iso.datetime({ offset: true }) }).strict();
+export const agentWorkSchema = agentWorkValuesSchema.extend({ id: z.uuid(), childId: z.uuid(), version, createdAt: z.iso.datetime({ offset: true }), updatedAt: z.iso.datetime({ offset: true }), latestFollowUp: workContinuationSchema.optional() }).strict();
 export const agentWorkPageSchema = z.object({ items: z.array(agentWorkSchema).max(10), nextCursor: z.string().max(2048).nullable(), complete: z.boolean() }).strict();
 export const agentHistoryPageSchema = z.object({ matches: z.array(z.object({ id: z.uuid(), kind: historySearchSchema.shape.kind, version, createdAt: z.iso.datetime({ offset: true }), role: z.enum(["user", "model"]).nullable(), excerpt: z.string().max(400) }).strict()).max(10), scanned: z.number().int().min(0).max(100), scanLimit: z.literal(100), complete: z.boolean(), nextCursor: z.string().max(2048).nullable() }).strict();
 export const agentHistoryMessageSchema = z.object({ id: z.uuid(), childId: z.uuid(), role: z.enum(["user", "model"]), version: z.literal(1), createdAt: z.iso.datetime({ offset: true }), text: z.string().max(4000), offset: z.number().int().min(0), nextOffset: z.number().int().min(0).nullable(), totalCharacters: z.number().int().min(0) }).strict();
