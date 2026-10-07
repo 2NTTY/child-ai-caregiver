@@ -1,0 +1,36 @@
+✖ concern and document ADK declarations use inclusive positive integer bounds (9.530942ms)
+✔ version validators keep positive integer limits and strict objects (4.960955ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1469.990079
+
+✖ failing tests:
+
+test at tests/agent-version-declarations.test.ts:9:1
+✖ concern and document ADK declarations use inclusive positive integer bounds (9.530942ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at check (file:///workspace/shared/model_failure_diagnostics_20261007/tests/agent-version-declarations.test.ts:19:53)
+      at check (file:///workspace/shared/model_failure_diagnostics_20261007/tests/agent-version-declarations.test.ts:21:7)
+      at check (file:///workspace/shared/model_failure_diagnostics_20261007/tests/agent-version-declarations.test.ts:21:7)
+      at check (file:///workspace/shared/model_failure_diagnostics_20261007/tests/agent-version-declarations.test.ts:21:7)
+      at check (file:///workspace/shared/model_failure_diagnostics_20261007/tests/agent-version-declarations.test.ts:21:7)
+      at check (file:///workspace/shared/model_failure_diagnostics_20261007/tests/agent-version-declarations.test.ts:21:7)
+      at check (file:///workspace/shared/model_failure_diagnostics_20261007/tests/agent-version-declarations.test.ts:21:7)
+      at TestContext.<anonymous> (file:///workspace/shared/model_failure_diagnostics_20261007/tests/agent-version-declarations.test.ts:25:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

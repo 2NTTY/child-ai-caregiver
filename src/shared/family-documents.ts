@@ -12,9 +12,9 @@ export const documentRequestSchema = z.object({
 }).strict().refine(value => value.kind !== "preparation" || value.purpose !== "family");
 export type DocumentRequest = z.infer<typeof documentRequestSchema>;
 export const documentChangeSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("refresh"), expectedVersion: z.number().int().positive(), authorityVersion: z.string().max(128) }).strict(),
-  z.object({ action: z.enum(["archive", "restore"]), expectedVersion: z.number().int().positive(), authorityVersion: z.string().max(128) }).strict(),
-  z.object({ action: z.literal("check_item"), expectedVersion: z.number().int().positive(), authorityVersion: z.string().max(128), sectionId: z.string().max(80), itemId: z.string().max(100), checked: z.boolean() }).strict(),
+  z.object({ action: z.literal("refresh"), expectedVersion: z.number().int().min(1), authorityVersion: z.string().max(128) }).strict(),
+  z.object({ action: z.enum(["archive", "restore"]), expectedVersion: z.number().int().min(1), authorityVersion: z.string().max(128) }).strict(),
+  z.object({ action: z.literal("check_item"), expectedVersion: z.number().int().min(1), authorityVersion: z.string().max(128), sectionId: z.string().max(80), itemId: z.string().max(100), checked: z.boolean() }).strict(),
 ]);
 export type DocumentChange = z.infer<typeof documentChangeSchema>;
 export interface DocumentSource {

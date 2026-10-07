@@ -249,6 +249,8 @@ S03-W01 在同一 `/api` 入口新增以下已登入端點；session、Origin、
 
 `003-ai-usage` 遷移新增每日配額及 `ai_attempts`；只保存帳號／孩子 ID、模型、固定結果碼、耗時及已回報 token 數，未知 token 為 null，不保存問題、回答、憑據或 raw error。遷移只新增資料表，不清空既有資料。設定見 `.env.example`；部署須使用 HTTPS、精確 origin、Server ADC 及私網 PostgreSQL，不信任客戶端 forwarding header。
 
+Vertex generate 失敗可在既有 Server 日誌記錄一次受限診斷：固定 event=vertex_generate_failure、httpStatus（只接受 400–599 整數，否則 null）及固定 category。不得包含問題／回答、家庭或帳號識別碼、網址、headers、憑據、原始錯誤字串或 stack。診斷不改原例外傳遞、取消／deadline、配額或 adapter 的單次嘗試；未知用量仍是未知，不能因顯示 0 tokens 推定零費用。這不改公開 API 或新增監控／存取權限；mock SDK 驗證不代表正式 provider 已恢復。
+
 身份／配額接線與真服務驗收分開核對：[S06-W01](../PLAN.md#s06-w01)／[S11-W01](../PLAN.md#s11-w01)；fake provider 不等於真模型證據。
 
 <a id="p1-chat-http"></a>

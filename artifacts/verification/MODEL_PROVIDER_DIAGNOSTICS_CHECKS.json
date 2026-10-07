@@ -1,0 +1,111 @@
+{
+  "package": "QA-MODEL-PROVIDER-DIAGNOSTICS",
+  "observedAt": "2026-10-07T04:30:00Z",
+  "baseCommit": "b23f12bb92f510d8fe3730ee87562187939b716f",
+  "scope": "Offline adapter diagnostics and semantically equivalent positive-integer declaration bounds; no live provider recovery claim.",
+  "environment": {
+    "node": "24.19.0",
+    "genai": "2.24.0",
+    "adk": "2.1.0",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "dependencies": "Exact SDK versions installed separately for local validation; no repository dependency or lockfile change."
+  },
+  "checks": [
+    {
+      "name": "new diagnostics regression before fix",
+      "status": "expected_failure",
+      "passed": 1,
+      "failed": 4,
+      "command": "node --test tests/vertex-provider-diagnostics.test.ts",
+      "evidence": "MODEL_PROVIDER_DIAGNOSTICS/diagnostics-before.log"
+    },
+    {
+      "name": "new declaration regression before fix",
+      "status": "expected_failure",
+      "passed": 1,
+      "failed": 1,
+      "command": "node --test tests/agent-version-declarations.test.ts",
+      "evidence": "MODEL_PROVIDER_DIAGNOSTICS/schema-before.log"
+    },
+    {
+      "name": "final focused tests",
+      "status": "passed",
+      "passed": 15,
+      "failed": 0,
+      "command": "node --test tests/agent-version-declarations.test.ts tests/vertex-provider-diagnostics.test.ts tests/model-gateway.test.ts",
+      "evidence": "MODEL_PROVIDER_DIAGNOSTICS/final-tests.log"
+    },
+    {
+      "name": "diagnostic helper and changed shared schema typecheck",
+      "status": "passed",
+      "command": "npx tsc --noEmit --skipLibCheck --strict --erasableSyntaxOnly --target ES2023 --module NodeNext --moduleResolution NodeNext --allowImportingTsExtensions --types node server/vertex-diagnostics.ts src/shared/concerns.ts src/shared/family-documents.ts",
+      "note": "Executed installed TypeScript 6.0.3 directly. This is a focused check, not the full Server or test-suite typecheck."
+    }
+  ],
+  "preserved": [
+    "Vertex enterprise:true, project/location, v1 endpoint, model and MINIMAL thinking",
+    "SDK retryOptions.attempts=1",
+    "Original exception propagation and sanitized gateway errors",
+    "Authorization, quotas, cancellation and shared deadlines",
+    "Unknown token usage remains null; no inferred free usage",
+    "Native protocol parts and opaque signatures"
+  ],
+  "logContract": {
+    "event": "vertex_generate_failure",
+    "httpStatus": "ApiError integer 400..599, otherwise null",
+    "category": [
+      "invalid_request",
+      "unauthenticated",
+      "permission_denied",
+      "not_found",
+      "timeout",
+      "rate_limited",
+      "provider_unavailable",
+      "http_error",
+      "aborted",
+      "unknown"
+    ],
+    "excluded": [
+      "request or response text",
+      "child/account IDs",
+      "URLs",
+      "headers",
+      "credentials",
+      "provider message/code strings",
+      "stack"
+    ],
+    "emission": "One warning only when a Vertex generate adapter throws; no success log, no new storage or telemetry service"
+  },
+  "findings": [
+    "The installed SDK accepts enterprise:true and constructs the configured global Vertex v1 endpoint. Latest official model page still lists the selected model and region; no configuration-name root cause was proven.",
+    "The prior adapter discarded HTTP status when normalizing provider errors. The old live failure cannot be retroactively diagnosed from available usage metadata.",
+    "Concern and family-document change declarations emitted exclusiveMinimum for positive integers. Equivalent minimum:1 declarations remove that unsupported field while preserving validation.",
+    "The same optional tool declarations still contain oneOf; concern archive/restore also has enum:[true]. Those shapes are not listed by the official Vertex v1 Schema contract. They remain unchanged as a separately identified compatibility risk; they are not proven to have caused the ordinary-note failure."
+  ],
+  "sources": [
+    "https://raw.githubusercontent.com/googleapis/js-genai/v2.24.0/src/errors.ts",
+    "https://raw.githubusercontent.com/googleapis/js-genai/v2.24.0/src/node/node_client.ts",
+    "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-1-flash-lite",
+    "https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/Schema",
+    "https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/models/api-errors"
+  ],
+  "notRun": [
+    "Live model/API calls",
+    "GCP operations, credentials or secret reads",
+    "Database or UI integration",
+    "Full Server typecheck or full regression suite",
+    "Deployment or merge"
+  ],
+  "nextGate": "After authorized review/merge/deployment, one bounded synthetic request through the original UI. Read only the fixed diagnostic fields and usage outcome. Stop immediately on failure; do not automatically retry an unknown result or expand the batch.",
+  "sha256": {
+    "server/agent-model-gateway.ts": "30a980c19c3be1d9620d460f78b9c19b206a86afa644f85accc6352be549a17b",
+    "server/vertex-provider.ts": "3e538775fe40b50a21365af5c752794519716a819961ffa841f8f5c3aeb9de0d",
+    "server/vertex-diagnostics.ts": "1e15fefaacdbfb1b747af7728841de8816dcffa1b126b069a63bfa39ffd7e531",
+    "src/shared/concerns.ts": "c0c69047eed97b0e1bdcb7e141a37cdb7a1174ce709a4f3ab0005d3c6247675f",
+    "src/shared/family-documents.ts": "9fe716fa4e8447b66fb469c189290bc5812bfe53fa51daafe37aa4edb907ecda",
+    "tests/vertex-provider-diagnostics.test.ts": "5ddc3f1d3cc91ec7a41a750e1a43fe26b2f0957182241413232c1d0106b038e4",
+    "tests/agent-version-declarations.test.ts": "5bf173723861171ff12a14175dde900853e057898ed75163e42f4f6a86a0eab1",
+    "docs/API.md": "6f780223ae318b68f13d904061dd06d120131c91388e279c5b6cf934f9e454e4"
+  }
+}

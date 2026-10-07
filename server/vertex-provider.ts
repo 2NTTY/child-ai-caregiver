@@ -3,6 +3,7 @@ import type { GenerateContentResponse } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import { ProviderFailure } from "./model-gateway.ts";
 import type { ModelProvider } from "./model-gateway.ts";
+import { logVertexFailure } from "./vertex-diagnostics.ts";
 
 function count(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
@@ -48,6 +49,7 @@ export function createVertexProvider(config: AiConfig): ModelProvider {
         return readVertexReply(response);
       } catch (error) {
         if (error instanceof ProviderFailure) throw error;
+        logVertexFailure(error, options.signal);
         throw new ProviderFailure(error instanceof ApiError && error.status === 429 ? "rate_limited" : "unavailable");
       }
     },

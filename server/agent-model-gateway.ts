@@ -5,6 +5,7 @@ import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
 import { decodePhoto } from "./photo-files.ts";
 import { AGENT_LIMITS, AgentBudget, AgentStopped } from "./agent-budget.ts";
+import { logVertexFailure } from "./vertex-diagnostics.ts";
 
 export interface AgentModelProvider {
   generate(request: LlmRequest, signal: AbortSignal): Promise<LlmResponse>;
@@ -25,13 +26,18 @@ export function createVertexAgentProvider(config: AiConfig): AgentModelProvider 
     httpOptions: { timeout: config.timeoutMs, retryOptions: { attempts: 1 } } });
   return {
     async generate(request, signal) {
-      const response = await client.models.generateContent({ model: config.model, contents: request.contents,
-        config: { ...request.config, candidateCount: 1, maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
-          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }, abortSignal: signal } });
-      const candidate = response.candidates?.[0];
-      // Preserve all native parts, including opaque signatures. Only presentation filters thoughts.
-      return { content: response.candidates?.length === 1 ? candidate?.content : undefined,
-        finishReason: candidate?.finishReason, usageMetadata: response.usageMetadata };
+      try {
+        const response = await client.models.generateContent({ model: config.model, contents: request.contents,
+          config: { ...request.config, candidateCount: 1, maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
+            thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }, abortSignal: signal } });
+        const candidate = response.candidates?.[0];
+        // Preserve all native parts, including opaque signatures. Only presentation filters thoughts.
+        return { content: response.candidates?.length === 1 ? candidate?.content : undefined,
+          finishReason: candidate?.finishReason, usageMetadata: response.usageMetadata };
+      } catch (error) {
+        logVertexFailure(error, signal);
+        throw error;
+      }
     },
   };
 }
