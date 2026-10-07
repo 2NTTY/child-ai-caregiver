@@ -68,6 +68,10 @@ ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 Instructi
 
 `present_answer` 為 terminal 工具，只有成功接受才令 ADK skipSummarization 停止模型循環，之後既有 finalize 仍重驗引用與目前授權。被拒、衝突或失敗的展示可在原剩餘預算內修正；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉尚未完成的副作用。模型自然 final 仍不能代替此工具；完全漏調 present_answer 及背景安靜 no_action 仍待獨立處理，本包不增加模型輪數、不全局設 ANY。
 
+工具參數修正提示：僅 `propose_task` 在執行前 strict schema 驗證失敗時，可在既有 `invalid_parameters`／`nextAction` 旁返回 `hints`。每項只有公開 schema 的固定 `path`、固定 `reason` 及 `expected` 字串；最多3項，整個提示陣列 JSON 最多512字元，超出時整項省略。只識別根、values及六個已宣告任務欄位；未知鍵不回鍵名，不轉傳原 issue、message、input、動態路徑或使用者值。這是模型 function response 的有界修參資訊，不是新增客戶端 HTTP 欄位或家庭資料副本。
+
+修正提示不放寬 schema，不替代身份、授權、版本或業務驗證；非法參數仍零執行。`not_authorized`、handler拒絕及unknown沿原規則，其他工具維持原泛用回覆。僅能使用本次剩餘預算修正，不能因收到提示而增加模型次數、換操作ID或重送未知副作用。這項改善不等於已確定歷史 T7／T8／T9 真實請求中哪個欄位失敗。
+
 <a id="agent-ordinary-actions"></a>
 INT-W02 增補：`GET／POST /api/children/:childId/agent/policy` 管理本人按孩子的普通操作預授權；POST 帶 `operationId／expectedVersion／confirm`，家庭記錄或任務另須 `confirmShared`。預設全部停用；變更身份授權或 storage epoch 令舊政策失效。記錄類別只限 note／feeding／sleep／diaper，普通私人交代與本人 ordinary 任務各自開關；重要健康事實、刪除及擴大共享維持明確確認。渠道權限綁目前本人同意版本及完整 binding 清單，不能因事後多綁渠道而靜默擴權；每項到期授權仍由既有 ContactStore 保存，無 fallback／額外跟進，收據只列實際核准的首個渠道。缺有效通知授權時只能回報站內安排。
 
