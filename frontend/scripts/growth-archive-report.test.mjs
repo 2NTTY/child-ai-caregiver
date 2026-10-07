@@ -5,6 +5,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import ts from 'typescript';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { Pressable, Text } from 'react-native-web';
 import { archiveReadingView, archiveReadableSource, archiveEntryReadable, filterArchiveItems, growthReportExportRequest, standardGrowthReportSections } from '../src/components/growth/growth-archive-view.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -78,6 +81,94 @@ const control = (tree, label) => find(tree, node => node.props?.accessibilityLab
 const text = tree => nodes(tree).filter(node => node.type === 'Text').map(node => node.props.children).flat().join(' ');
 const props = (value = model(), extra = {}) => ({model: value, wide: true, scrollRef: {current: null}, ...extra});
 
+function samePeriodVersions() {
+  const value = model(), archive = value.page.archive, source = archive.snapshot;
+  const snapshots = [5, 4, 3, 2, 1].map(version => ({...structuredClone(source), version, generatedAt: `2026-10-01T02:00:0${version}Z`}));
+  archive.snapshot = snapshots[0]; archive.history = snapshots.slice(1);
+  archive.periods = snapshots.map(snapshot => ({id: `report-a-v${snapshot.version}`, kind: 'range', year: 2026, label: 'R1',
+    snapshotId: snapshot.id, snapshotVersion: snapshot.version, currentAnnual: false, coverage: 'partial', coverageLabel: '只有部分內容'}));
+  return value;
+}
+function openHistory(h) {
+  const tree = h.render(); button(tree, '翻閱其他期間／版本').props.onPress();
+  return h.render();
+}
+
+test('same-period history cards show their actual versions and Hong Kong preparation times in text and accessible names', () => {
+  const value = deepFreeze(samePeriodVersions()), before = JSON.stringify(value), h = harness(props(value));
+  const tree = openHistory(h), cards = nodes(tree).filter(node => node.props?.testID?.startsWith('growth-archive-card-'));
+  assert.equal(cards.length, 5);
+  assert.equal(new Set(cards.map(card => card.props.accessibilityLabel)).size, 5);
+  for (const [index, card] of cards.entries()) {
+    const version = 5 - index, time = `1/10/2026\u200910:00:0${version}`;
+    assert.ok(text(card).includes(`版本 ${version} · 整理於 ${time}`));
+    assert.equal(card.props.accessibilityLabel, `閱讀R1，版本 ${version} · 整理於 ${time}，部分內容`);
+    assert.equal(card.props.accessibilityState.selected, index === 0);
+    assert.equal(card.props['aria-pressed'], index === 0);
+    assert.equal(card.props.accessibilityRole, 'button');
+  }
+  assert.equal(JSON.stringify(value), before);
+});
+
+test('history card selection closes the library, keeps the exact version through refresh, and returns to current', () => {
+  const p = props(samePeriodVersions()), h = harness(p); let tree = openHistory(h);
+  byId(tree, 'growth-archive-card-report-a-v3').props.onPress(); tree = h.render();
+  assert.equal(byId(tree, 'growth-archive-library'), undefined);
+  button(tree, '報告資料').props.onPress(); tree = h.render();
+  assert.match(text(byId(tree, 'growth-archive-revision')), /檔案版本\s+3\s/);
+  tree = h.render({...p, model: {...p.model, load: 'loading'}});
+  button(tree, '翻閱其他期間／版本').props.onPress(); tree = h.render();
+  for (const version of [1, 2, 3, 4, 5]) {
+    assert.equal(byId(tree, `growth-archive-card-report-a-v${version}`).props['aria-pressed'], version === 3);
+  }
+  button(tree, '回到目前報告').props.onPress(); tree = h.render();
+  assert.equal(byId(tree, 'growth-archive-library'), undefined);
+  button(tree, '翻閱其他期間／版本').props.onPress(); tree = h.render();
+  assert.equal(byId(tree, 'growth-archive-card-report-a-v5').props['aria-pressed'], true);
+});
+
+test('history cards use truthful fallbacks for absent or invalid metadata instead of positions or the current clock', () => {
+  for (const [version, generatedAt] of [[undefined, undefined], [null, null], [0, ''], [1.5, 'invalid'], ['5', 'invalid']]) {
+    const value = samePeriodVersions(), archive = value.page.archive;
+    archive.snapshot.version = version; archive.snapshot.generatedAt = generatedAt; archive.periods[0].snapshotVersion = version;
+    const tree = openHistory(harness(props(value))), card = byId(tree, 'growth-archive-card-report-a-v5');
+    assert.ok(text(card).includes('版本未提供 · 整理時間未提供'));
+    assert.equal(card.props.accessibilityLabel, '閱讀R1，版本未提供 · 整理時間未提供，部分內容');
+    assert.equal(text(card).includes('Invalid Date'), false);
+  }
+  const value = samePeriodVersions(); value.page.archive.snapshot.generatedAt = '';
+  assert.ok(text(byId(openHistory(harness(props(value))), 'growth-archive-card-report-a-v5')).includes('版本 5 · 整理時間未提供'));
+  delete value.page.archive.history[0].version; delete value.page.archive.periods[1].snapshotVersion;
+  assert.ok(text(byId(openHistory(harness(props(value))), 'growth-archive-card-report-a-v4')).includes('版本未提供 · 整理於 1/10/2026\u200910:00:04'));
+});
+
+test('history metadata retains natural wrapping styles at narrow and wide presentation widths', () => {
+  // Style/structure evidence only; actual pixels and clipping require browser verification.
+  for (const width of [320, 390, 1024, 1440]) {
+    const wide = width >= 880, tree = openHistory(harness(props(samePeriodVersions(), {wide, viewportWidth: width})));
+    const card = byId(tree, 'growth-archive-card-report-a-v5'), styles = Object.assign({}, ...card.props.style.filter(Boolean));
+    const copy = card.props.children[1], metadata = copy.props.children[2];
+    assert.equal(styles.minWidth, 0); assert.equal(copy.props.style.minWidth, 0);
+    assert.equal(copy.props.style.flex, 1); assert.equal(styles.height, undefined);
+    assert.equal(metadata.props.numberOfLines, undefined);
+    assert.equal(metadata.props.ellipsizeMode, undefined);
+    assert.equal(styles.width, wide ? '48%' : undefined);
+  }
+});
+
+test('installed RN Web renders history cards as focusable native buttons with distinct labels and explicit selected state', () => {
+  const h = harness(props(samePeriodVersions())), tree = openHistory(h);
+  const cards = nodes(tree).filter(node => node.props?.testID?.startsWith('growth-archive-card-'));
+  for (const [index, card] of cards.entries()) {
+    // The native button keeps browser Enter/Space activation; no custom keyboard handler replaces it.
+    const html = renderToStaticMarkup(createElement(Pressable, {...card.props, children: createElement(Text, null, text(card))}));
+    assert.match(html, /^<button\b/); assert.match(html, /type="button"/); assert.match(html, /tabindex="0"/);
+    assert.ok(html.includes(`aria-label="${card.props.accessibilityLabel}"`));
+    assert.ok(html.includes(`aria-pressed="${index === 0}"`));
+    assert.equal(card.props.onKeyDown, undefined); assert.equal(card.props.disabled, undefined);
+  }
+});
+
 test('default is the current full report and export is a distinct action; periods stay secondary', () => {
   const p = props(deepFreeze(model())), h = harness(p), tree = h.render();
   assert.ok(byId(tree, 'growth-current-report'));
@@ -141,7 +232,7 @@ test('typed export intent carries exact scope and version and rejects stale call
   button(tree, '導出報告').props.onPress(); tree = h.render();
   control(tree, '入園認識版').props.onPress(); tree = h.render();
   find(tree, node => node.type === 'AppCheckbox' && node.props.label === '本版更新說明').props.onChange(true); tree = h.render();
-  const callback = button(tree, '準備 PDF 報告').props.onPress; callback();
+  const callback = button(tree, '下載這個版本的 PDF').props.onPress; callback();
   assert.deepEqual(calls[0], {scopeKey: 'parent:child-a', childId: 'child-a', authorityVersion: 'auth:1', snapshotId: 'report-a', snapshotVersion: 2, periodId: 'year-2026', purpose: 'school', includeSources: true, includeRevision: true});
   button(tree, '關閉').props.onPress(); tree = h.render(); callback(); assert.equal(calls.length, 1);
   tree = h.render({...p, model: {...p.model, access: 'lost'}}); callback();
