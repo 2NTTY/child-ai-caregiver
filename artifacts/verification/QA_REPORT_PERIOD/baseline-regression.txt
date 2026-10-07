@@ -1,0 +1,40 @@
+(node:22) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ document workflow integrity with synthetic sources and a serialized fake Pool
+  ✖ concern observations stay in their own Hong Kong quarter beyond the previous last-five limit (14.261098ms)
+✖ document workflow integrity with synthetic sources and a serialized fake Pool (102.271323ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 237.48406
+
+✖ failing tests:
+
+test at tests/.report-period-baseline.test.ts:74:11
+✖ concern observations stay in their own Hong Kong quarter beyond the previous last-five limit (14.261098ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   'concern:quarter:observation:quarter-end',
+  -   'concern:quarter:observation:february',
+  -   'concern:quarter:observation:quarter-start'
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_report_observation_periods_20261007/tests/.report-period-baseline.test.ts:92:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async TestContext.<anonymous> (file:///workspace/shared/fix_report_observation_periods_20261007/tests/.report-period-baseline.test.ts:74:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ 'concern:quarter:observation:quarter-end', 'concern:quarter:observation:february', 'concern:quarter:observation:quarter-start' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

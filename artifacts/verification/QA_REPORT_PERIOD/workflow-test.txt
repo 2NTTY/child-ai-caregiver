@@ -1,0 +1,21 @@
+(node:13) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ document workflow integrity with synthetic sources and a serialized fake Pool
+  ✔ refresh preserves only matching checklist identity, text and source provenance (2.968409ms)
+  ✔ undated active concerns are honest body content while closed and dated out-of-period concerns stay out (6.492201ms)
+  ✔ concern observations stay in their own Hong Kong quarter beyond the previous last-five limit (1.203467ms)
+  ✔ global 80-source cap selects latest instants across concerns after period filtering (1.54241ms)
+  ✔ legacy aggregate snapshots remain exact and stale through read, history, receipt and same-version PDF (13.398748ms)
+  ✔ checked stale preparation archives the exact used snapshot without refresh and stays stale (3.847824ms)
+  ✔ PDF route retains the selected old version and rechecks source access after rendering (2.488635ms)
+  ✔ changed or revoked sources cannot be archived, read through history, receipt or exported (1.348953ms)
+  ✔ concurrent standard creates with different opIds allow exactly one without deleting existing rows (8.393646ms)
+✔ document workflow integrity with synthetic sources and a serialized fake Pool (109.477832ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 220.117591

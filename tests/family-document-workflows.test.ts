@@ -150,13 +150,14 @@ test("document workflow integrity with synthetic sources and a serialized fake P
       { id: "newer", version: 1, title: "Newer observations", status: "closed", reason: "Synthetic", events: [
         { id: "a", kind: "observation", at: "2026-03-30T23:00:00+08:00", text: "Earlier instant" },
         { id: "b", kind: "observation", at: "2026-03-30T16:00:00Z", text: "Later instant" },
+        { id: "c", kind: "observation", at: "2026-03-31T00:00:00+08:00", text: "Equal later instant" },
       ] },
     ];
     const loaded = await load(), snapshot = buildFamilyDocumentSnapshot(loaded, spec, 1, null);
     const selected = snapshot.sources.filter(source => source.at !== null);
     assert.equal(selected.length, 80);
-    assert.deepEqual(selected.slice(0, 2).map(source => source.id), ["concern:newer:observation:b", "concern:newer:observation:a"]);
-    assert.equal(selected.at(-1)!.id, "concern:many:observation:old-07");
+    assert.deepEqual(selected.slice(0, 3).map(source => source.id), ["concern:newer:observation:b", "concern:newer:observation:c", "concern:newer:observation:a"]);
+    assert.equal(selected.at(-1)!.id, "concern:many:observation:old-08");
     assert.match(snapshot.coverageNote, /最近80項/u);
     assert.equal(snapshot.sections.find(section => section.id === "concerns")!.items.length, 80);
     const reversed = { ...loaded, entries: [...loaded.entries].reverse() };
@@ -180,15 +181,14 @@ test("document workflow integrity with synthetic sources and a serialized fake P
     legacy.sourceBasis = documentSourceBasis(oldLoaded, spec);
     legacy.sources = oldLoaded.entries;
     legacy.sections.find(section => section.id === "concerns")!.items = [{ id: legacySource.id, text: legacySource.text, sourceIds: [legacySource.id] }];
-    const historical = { ...structuredClone(legacy), id: randomUUID(), version: 0 };
     snapshots.get(legacy.id).payload_encrypted = JSON.stringify(legacy);
-    snapshots.set(historical.id, { id: historical.id, document_id: created.id, version: historical.version, payload_encrypted: JSON.stringify(historical) });
     const receipt = receipts.get(userId + ":" + opId);
-    receipt.result_encrypted = JSON.stringify({ ...created, current: legacy, history: [historical] });
+    receipt.result_encrypted = JSON.stringify({ ...created, current: legacy });
     assert.equal(documentSnapshotValid(legacy, loaded), true);
     assert.notEqual(legacy.sourceBasis, documentSourceBasis(loaded, spec));
+    assert.equal(documentSourceBasis({ ...loaded, legacyConcernSources: new Map() }, spec), current.sourceBasis);
     const readable = (await store.get(userId, childId, created.id))!;
-    assert.equal(readable.readState, "stale"); assert.deepEqual(readable.current, legacy); assert.deepEqual(readable.history, [historical]);
+    assert.equal(readable.readState, "stale"); assert.deepEqual(readable.current, legacy); assert.deepEqual(readable.history, []);
     assert.deepEqual((await store.create(userId, childId, spec, opId))!.current, legacy);
     const input = exportInput(legacy);
     const pdfRequest = () => new Request(`https://synthetic.invalid/api/children/${childId}/documents/${created.id}/pdf`, {
