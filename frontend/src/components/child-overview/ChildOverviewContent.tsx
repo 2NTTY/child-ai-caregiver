@@ -23,8 +23,6 @@ export function ChildOverviewContent({ measurements, profileSource, onOpenProfil
   const reading = readChildProfile(model, scopeKey, DateTime.now().setZone("Asia/Hong_Kong").toISODate()!, profileSource ?? workspace?.profileSource);
   const data = reading.data;
   const projection = authorizedChildMeasurements(measurements ?? workspace?.measurements, scopeKey, model);
-  const unavailable = !projection || projection.state === "unavailable";
-  const measureMessage = unavailable ? "身高／體重的原照顧記錄尚未接入，暫不能顯示最新量度。" : projection.state === "loading" ? "正在讀取量度來源。" : projection.state === "error" ? "未能讀取量度來源，請稍後再核對。" : null;
   const tone: AppStatusTone = reading.state === "confirmed" ? "success" : reading.state === "loading" ? "info" : reading.state === "access_lost" || reading.state === "source_invalidated" ? "error" : "warning";
   const inaccessible = reading.state === "access_lost";
   const pending = model?.operation.state === "saving" || model?.operation.state === "unknown";
@@ -47,13 +45,13 @@ export function ChildOverviewContent({ measurements, profileSource, onOpenProfil
         <MeasurementCard label="身高" fact={projection?.height ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} />
         <MeasurementCard label="體重" fact={projection?.weight ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} />
       </View>
-      {measureMessage ? <Text style={styles.meta}>{measureMessage}</Text> : null}
       <View style={[styles.sections, wide && styles.sectionsWide]}>
         <View style={[styles.section, wide && styles.interests]}>
           <Text accessibilityRole="header" style={styles.sectionTitle}>興趣與生活偏好</Text>
-          <Text style={styles.meta}>{lastKnown ? "最後確認的照顧者原文" : "已確認的照顧者原文"}</Text>
-          <Text selectable style={data?.preferences ? styles.preference : styles.body}>{profileValue(data?.preferences)}</Text>
-          {!data?.preferences && reading.state !== "source_invalidated" && reading.state !== "source_unavailable" ? <Text style={styles.meta}>尚未確認興趣或生活偏好。</Text> : null}
+          {data?.preferences ? <>
+            {lastKnown ? <Text style={styles.meta}>最後確認的資料</Text> : null}
+            <Text selectable style={styles.preference}>{data.preferences}</Text>
+          </> : <Text style={styles.body}>{reading.state === "source_invalidated" || reading.state === "source_unavailable" ? profileValue(null) : reading.state === "loading" ? "正在讀取興趣與生活偏好" : "暫無興趣與生活偏好資料"}</Text>}
         </View>
         <View style={[styles.section, wide && styles.careFacts]}>
           <Text accessibilityRole="header" style={styles.sectionTitle}>日常照顧要點</Text>
@@ -63,18 +61,16 @@ export function ChildOverviewContent({ measurements, profileSource, onOpenProfil
           <Fact label="地區" value={profileValue(data?.region)} />
           {data?.dueDate ? <Fact label="預產期" value={data.dueDate} /> : null}
           {data?.gestationalWeeksRaw ? <Fact label="出生孕週原文" value={data.gestationalWeeksRaw} /> : null}
-          <Text style={styles.meta}>未知不代表沒有過敏或特別需要。</Text>
         </View>
       </View>
       <View style={styles.source}>
-        <View style={styles.sourceText}>
-          <Text style={styles.meta}>檔案來源：{data?.source || (reading.state === "source_invalidated" ? "已失效" : reading.state === "source_unavailable" ? "暫不可讀" : "未提供")}</Text>
-          {data ? <Text style={styles.meta}>最後確認：{model.current?.confirmedAtLabel ?? "未知"}{data.validUntil ? ` · 有效至 ${data.validUntil}` : ""}</Text> : null}
-        </View>
+        {data ? <View style={styles.sourceText}>
+          <Text style={styles.meta}>檔案來源：{data.source || "未提供"}</Text>
+          <Text style={styles.meta}>最後確認：{model.current?.confirmedAtLabel ?? "未知"}{data.validUntil ? ` · 有效至 ${data.validUntil}` : ""}</Text>
+        </View> : null}
         <AppButton label="查看檔案更正歷史" variant="quiet" density="compact" onPress={onOpenProfileHistory} disabled={!model.online || model.reading || pending} />
       </View>
     </> : null}
-    {workspace?.dataLabel ? <Text style={styles.preview}>{workspace.dataLabel}</Text> : null}
   </View>;
 }
 
@@ -84,12 +80,15 @@ function Fact({ label, value }: { label: string; value: string }) {
 function MeasurementCard({ label, fact, state, onOpen }: { label: string; fact: ChildMeasurementFact | null; state: ChildMeasurementsProjection["state"]; onOpen?: (recordId: string) => void }) {
   const invalid = fact?.state === "source_invalidated";
   const available = state === "ready" && fact && !invalid;
-  const status = invalid ? "原來源已失效" : fact?.state === "expired" ? "量度資料已過期" : available ? "最新已確認量度" : state === "ready" ? "尚未有已確認量度" : state === "loading" ? "正在讀取" : state === "error" ? "來源讀取失敗" : "尚未接入";
-  return <View style={styles.measurement} testID={`child-overview-${label === "身高" ? "height" : "weight"}`}>
-    <Text style={styles.factLabel}>{label}</Text>
-    <Text selectable style={styles.measurementValue}>{available ? fact.valueLabel : "未能提供"}</Text>
-    <AppStatusBadge label={status} tone={available && fact.state === "current" ? "neutral" : invalid ? "error" : "warning"} />
-    {available ? <><Text style={styles.meta}>量度日期：{fact.measuredAtLabel ?? "未知"}</Text><Text style={styles.meta}>來源：{fact.sourceLabel ?? "未提供"}</Text>{onOpen ? <AppButton label="查看量度原記錄" accessibilityLabel={`查看${label}量度原記錄`} variant="quiet" density="compact" onPress={() => onOpen(fact.recordId)} /> : null}</> : null}
+  const emptyLabel = invalid ? `${label}量度來源已失效` : state === "ready" ? `暫無${label}量度` : state === "loading" ? `正在讀取${label}量度` : state === "error" ? `${label}量度未能讀取` : `${label}量度暫不可用`;
+  return <View style={[styles.measurement, !available && styles.measurementEmpty]} testID={`child-overview-${label === "身高" ? "height" : "weight"}`}>
+    {available ? <>
+      <Text style={styles.factLabel}>{label}</Text>
+      <Text selectable style={styles.measurementValue}>{fact.valueLabel}</Text>
+      {fact.state === "expired" ? <AppStatusBadge label="量度資料已過期" tone="warning" /> : null}
+      <Text style={styles.meta}>量度日期：{fact.measuredAtLabel ?? "未知"}</Text><Text style={styles.meta}>來源：{fact.sourceLabel ?? "未提供"}</Text>
+      {onOpen ? <AppButton label="查看量度原記錄" accessibilityLabel={`查看${label}量度原記錄`} variant="quiet" density="compact" onPress={() => onOpen(fact.recordId)} /> : null}
+    </> : <Text style={styles.body}>{emptyLabel}</Text>}
   </View>;
 }
 
@@ -104,6 +103,7 @@ const styles = StyleSheet.create({
   noticeText: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk },
   measurements: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
   measurement: { flex: 1, flexBasis: 140, minWidth: 0, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, padding: spacing.md, gap: spacing.sm, backgroundColor: colors.white },
+  measurementEmpty: { borderWidth: 0, backgroundColor: "transparent", paddingHorizontal: 0, paddingVertical: spacing.sm },
   measurementValue: { fontFamily: chineseFont, fontSize: typeScale.title, lineHeight: 32, fontWeight: "700", color: colors.ink },
   sections: { gap: spacing.xl }, sectionsWide: { flexDirection: "row", alignItems: "flex-start" },
   section: { minWidth: 0, gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.lg },
@@ -116,5 +116,4 @@ const styles = StyleSheet.create({
   meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, flexShrink: 1 },
   source: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine },
   sourceText: { flex: 1, minWidth: 180, gap: spacing.xs },
-  preview: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted },
 });

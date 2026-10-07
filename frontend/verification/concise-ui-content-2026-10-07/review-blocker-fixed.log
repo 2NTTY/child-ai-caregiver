@@ -1,0 +1,16 @@
+✔ review empty is one named sentence without irrelevant filters and never replaces read failure (357.289896ms)
+✔ filtered review empty retains a working clear-filter action (78.722964ms)
+✔ saved-record true empty hides tools; filtered empty keeps tools and original search callback (74.765591ms)
+✔ ready empty records preserve 404 and offline deep-link notices before ordinary empty copy (29.439622ms)
+✔ agent proposal empty is concise while unread, denied and failed remain distinct (45.267929ms)
+✔ child overview removes repeated unknown teaching while retaining actual field values and measurement states (73.280881ms)
+✔ growth removes general notes and empty index but preserves local blocked-source and draft warnings (668.727841ms)
+✔ task general reminder explanation is removed while item-level delivery and unknown checks remain (0.572023ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2181.694039

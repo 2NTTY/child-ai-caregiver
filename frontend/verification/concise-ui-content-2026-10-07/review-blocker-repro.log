@@ -1,0 +1,32 @@
+✖ ready empty records preserve 404 and offline deep-link notices before ordinary empty copy (164.96994ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 779.147534
+
+✖ failing tests:
+
+test at frontend/scripts/redundant-ui-content.test.mjs:91:1
+✖ ready empty records preserve 404 and offline deep-link notices before ordinary empty copy (164.96994ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '暫無已保存記錄'
+  - '所選記錄已刪除或目前不可讀；不再顯示舊記錄。'
+  
+      at TestContext.<anonymous> (file:///workspace/shared/simplify_redundant_ui_20261007/frontend/scripts/redundant-ui-content.test.mjs:100:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '暫無已保存記錄',
+    expected: '所選記錄已刪除或目前不可讀；不再顯示舊記錄。',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

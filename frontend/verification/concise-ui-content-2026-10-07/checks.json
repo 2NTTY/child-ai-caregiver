@@ -1,0 +1,59 @@
+{
+  "base": "a347956b18328b32c9fa14fb1ac4e499ab49b513",
+  "delivery_parent": "0a39e018dc138b29a437ab52679866e3bfcc0378",
+  "delivery_parent_changes": "ADK runtime and documentation changes only; no frontend or client/shared dependency changes",
+  "scope": [
+    "Remove redundant reminder and growth disclosures",
+    "Render named one-line empty states and retain clear filters",
+    "Simplify child overview missing-data presentation without changing unknown/none semantics",
+    "Remove developer-only labels from summary and overview"
+  ],
+  "reference_images_inspected": {
+    "usable": 4,
+    "unidentifiable": 1,
+    "unidentifiable_reason": "The first input is a 14x65 plain background strip; no change inferred from it"
+  },
+  "checks": {
+    "new_shallow_tests": "7/7 passed",
+    "focused_final": "44/44 passed",
+    "frontend_typecheck": "passed after restoring missing local src/config/api-base-url.ts from the exact baseline",
+    "initial_existing_suite": "45/46 passed; known baseline dashboard fixture-provider assertion failed in task-workspace.test.mjs:152; no related code/assertion was changed",
+    "initial_new_suite": "6/7 passed; the first synthetic renderer unintentionally loaded expo-router. Added a test-only router stub, then 7/7 passed"
+  },
+  "preserved": [
+    "unread/loading/error/unavailable are never rendered as successful empty",
+    "filtered empty keeps the original search/clear path and locks",
+    "unknown operations and explicit confirmation/recovery remain",
+    "allergy/special-needs unknown values are unchanged",
+    "unavailable measurement source is distinct from successful empty measurement",
+    "growth source guards, missing drafts and background failures remain local",
+    "per-task reminder delivery and unknown checks remain"
+  ],
+  "not_run": [
+    "Browser and viewport validation; parent will run one integrated pass with loading/refresh changes",
+    "Production API, real model, database writes, notifications, native device",
+    "Web export; coordinated integration build pending"
+  ],
+  "source_sha256": {
+    "frontend/DESIGN_SYSTEM.md": "8165fdfdf66d2714de3243c32bd81cb9c5f5593eed85faa66876150a5ab974e5",
+    "frontend/src/child-overview-view-model.ts": "05cba47111a6e5d1cb7d611d02ccf923d5771518a0e5fe878ddc5a473ae34463",
+    "frontend/src/screens/careScreen.tsx": "5cfdd76d44607a8445b4a7016ce73b678cd81d7a7e07bea9de86d0381a8cc7af",
+    "frontend/src/production/CareProfileDomains.tsx": "4127aa4c31df953138db7f8ac6fff1c7fc854e27fce30983f7c9878fd5b89995",
+    "frontend/src/production/task-knowledge-summary.ts": "a824c01a1309542178e34c0e5b6a01bcbee44bb12041cde830d3a2292bd8dca3",
+    "frontend/src/components/growth/GrowthView.tsx": "65a49fcbed86099930cfb4e809a706dc79063d8dc2ed8c68ea6a8832e34a47eb",
+    "frontend/src/components/care/CareSavedRecordsView.tsx": "fe378d09c0c7b7eb7a45815822ca7e1a9cbc6ccedf96b0c326701f4e0a96bf4e",
+    "frontend/src/components/care/CareReviewHistoryView.tsx": "d5cf7bbfcdb98d892a2091d56e6d068dd628df31287320a09cbc117786faadda",
+    "frontend/src/components/tasks/TasksView.tsx": "0f6d400f1825584827b3811d93c1126773912d972f43904bbbe4c741b1fb5aee",
+    "frontend/src/components/child-overview/ChildOverviewContent.tsx": "4f380f98b7e83d30e32d5707ee35b5ad81e95278737467f64555562058819f4d",
+    "frontend/scripts/redundant-ui-content.test.mjs": "0ca9ff6007373fd4fc400baef4f5c24576c69493ad9ead2048fae5f6b3d002c5"
+  },
+  "review_fix": {
+    "base_head": "99d509a51b2d7439569c1f25bbca204e313accf0",
+    "blocker": "Ready lists can carry a 404/deep-link warning even after their final record is removed. The first version replaced that warning with ordinary empty copy.",
+    "reproduction": "New test failed before the fix; original failure retained in review-blocker-repro.log.",
+    "fix": "Preserve list.message before ordinary empty copy, render ready+warning as unavailable, and hide tools only for ready+zero records+message null.",
+    "targeted_tests": "8/8 passed, covering both 404 and offline deep-link warning states, plus recovery to true empty.",
+    "typecheck": "passed",
+    "browser": "not run; coordinated integration remains pending"
+  }
+}
