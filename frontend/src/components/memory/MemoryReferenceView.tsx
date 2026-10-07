@@ -2,8 +2,8 @@ import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { factIsApplicable, factSourceLabel, factStatusLabels, factUnavailableReason, visibilityLabels, type MemoryFactView, type MemorySummaryView } from "../../memory-view-model";
-import { memoryClarificationQuestion, memoryDateLabel, visibleKnowledgeReferences, visibleMemoryFacts, visibleMemoryHistory,
-  type KnowledgeReferenceView, type MemoryReadProjection, type MemoryReferenceModel, type MemoryReferenceWorkspaceValue } from "../../memory-reference-view-model";
+import { memoryClarificationQuestion, memoryConfirmerLabel, memoryDateLabel, visibleKnowledgeReferences, visibleMemoryFacts, visibleMemoryHistory,
+  type KnowledgeReferenceView, type MemoryConfirmerDisplay, type MemoryReadProjection, type MemoryReferenceModel, type MemoryReferenceWorkspaceValue } from "../../memory-reference-view-model";
 import { useMemoryReferenceWorkspace } from "../../workspaces/MemoryReferenceWorkspace";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 import { AppStatusBadge } from "../AppStatusBadge";
@@ -27,8 +27,9 @@ function ReadNotice({ read, unavailable, empty, children }: {
 function Metadata({ label, children }: { label: string; children: ReactNode }) {
   return <Text selectable style={styles.meta}>{label}：{children}</Text>;
 }
-function FactCard({ fact, model, workspace, onQuestion }: {
+function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
   fact: Readonly<MemoryFactView>; model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue; onQuestion?: (fact: Readonly<MemoryFactView>) => void;
+  confirmerDisplay?: MemoryConfirmerDisplay;
 }) {
   const [details, setDetails] = useState(false), [historyOpen, setHistoryOpen] = useState(false);
   const history = model.longTerm.data?.histories[fact.id];
@@ -46,12 +47,11 @@ function FactCard({ fact, model, workspace, onQuestion }: {
     {details ? <View style={styles.details}>
       <Metadata label="記憶版本">{fact.version}</Metadata>
       <Metadata label="來源狀態">{fact.sourceState === "current" ? "目前版本" : "來源已更改，須重新核對"}</Metadata>
-      <Metadata label="確認者">{fact.confirmedBy ?? "尚未確認"}</Metadata>
+      <Metadata label="確認者">{memoryConfirmerLabel(fact.confirmedBy, confirmerDisplay)}</Metadata>
       <Metadata label="確認時間">{memoryDateLabel(fact.confirmedAt)}</Metadata>
       <Metadata label="有效至">{fact.validUntil ? memoryDateLabel(fact.validUntil) : "未設定期限"}</Metadata>
       {fact.reason ? <Metadata label="最近變更原因">{fact.reason}</Metadata> : null}
-      {fact.source.kind === "care_record" ? <Metadata label="原記錄">{fact.source.recordId} · 版本 {fact.source.version}</Metadata>
-        : fact.source.kind === "private_chat" && fact.source.messageId ? <Metadata label="原訊息">{fact.source.messageId}</Metadata> : null}
+      {fact.source.kind === "care_record" ? <Metadata label="原記錄">{fact.source.recordId} · 版本 {fact.source.version}</Metadata> : null}
       <AppButton label={historyOpen ? "收起版本記錄" : "查看版本記錄"} expanded={historyOpen} variant="quiet" density="compact" onPress={() => {
         if (!historyOpen && !currentHistory && model.online) workspace.reads?.readFactHistory?.(fact.id, fact.version);
         setHistoryOpen(value => !value);
@@ -64,7 +64,7 @@ function FactCard({ fact, model, workspace, onQuestion }: {
             <Text style={styles.cardTitle}>版本 {version.version} · {factStatusLabels[version.status]}</Text>
             <Text selectable style={styles.body}>{version.content}</Text>
             <Text style={styles.meta}>{visibilityLabels[version.visibility]} · {factSourceLabel(version.source)}</Text>
-            <Metadata label="確認者">{version.confirmedBy ?? "尚未確認"}</Metadata>
+            <Metadata label="確認者">{memoryConfirmerLabel(version.confirmedBy, confirmerDisplay)}</Metadata>
             <Metadata label="確認時間">{memoryDateLabel(version.confirmedAt)}</Metadata>
             <Metadata label="有效至">{version.validUntil ? memoryDateLabel(version.validUntil) : "未設定期限"}</Metadata>
             <Metadata label="適用狀態">{factUnavailableReason(version)}</Metadata>
@@ -129,7 +129,8 @@ function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; w
       : <Text style={styles.meta}>仍有來源未載入</Text> : null}
   </View>;
 }
-function ScopedMemoryReferenceView({ workspace, onPrepareQuestion }: { workspace: MemoryReferenceWorkspaceValue; onPrepareQuestion?: (question: string) => void }) {
+type MemoryReferenceViewProps = { confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void };
+function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuestion }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
   const { model } = workspace;
   const [tab, setTab] = useState<Tab>("long"), [otherOpen, setOtherOpen] = useState(false);
   const tabsId = useId(), container = useContainerWidth();
@@ -147,7 +148,7 @@ function ScopedMemoryReferenceView({ workspace, onPrepareQuestion }: { workspace
   } : undefined;
   function renderFact(fact: Readonly<MemoryFactView>) {
     return <View key={`${fact.id}:${fact.version}`} style={[styles.factSlot, container.width < 760 && styles.fullWidth]}>
-      <FactCard fact={fact} model={model} workspace={workspace} onQuestion={onQuestion} /></View>;
+      <FactCard fact={fact} model={model} workspace={workspace} confirmerDisplay={confirmerDisplay} onQuestion={onQuestion} /></View>;
   }
   return <View ref={container.ref} onLayout={container.onLayout} style={styles.root}>
     <View style={styles.context}><View style={styles.contextCopy}><Text style={styles.sectionTitle}>{model.childName}的記憶與參考</Text>
@@ -178,9 +179,10 @@ function ScopedMemoryReferenceView({ workspace, onPrepareQuestion }: { workspace
     <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} workspace={workspace} /></AppTabPanel>
   </View>;
 }
-export function MemoryReferenceView({ onPrepareQuestion }: { onPrepareQuestion?: (question: string) => void }) {
+export function MemoryReferenceView({ confirmerDisplay, onPrepareQuestion }: MemoryReferenceViewProps) {
   const workspace = useMemoryReferenceWorkspace();
-  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} workspace={workspace} onPrepareQuestion={onPrepareQuestion} />
+  const currentDisplay = workspace && confirmerDisplay?.scopeKey === workspace.scopeKey && confirmerDisplay.childId === workspace.model.childId ? confirmerDisplay : undefined;
+  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} workspace={workspace} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} />
     : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。" />;
 }
 const styles = StyleSheet.create({

@@ -84,7 +84,7 @@ export function factConfirmationLabel(fact: MemoryFactView) {
 }
 export function factSourceLabel(source: FactSourceView) {
   const kind = source.kind === "manual" ? "手動描述" : source.kind === "care_record" ? "照顧記錄" : "私人聊天";
-  return `${kind}：${source.description}${source.kind === "care_record" ? ` · 來源版本 ${source.version}` : ""}`;
+  return `${kind}：${source.description.trim() ? source.description : "未提供"}${source.kind === "care_record" ? ` · 來源版本 ${source.version}` : ""}`;
 }
 
 const requiredText = (max: number) => z.string().max(max, `最多 ${max} 字元`).refine(value => !!value.trim(), "請填寫內容");

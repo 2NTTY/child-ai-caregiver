@@ -74,6 +74,19 @@ export interface MemoryReferenceWorkspaceValue {
   };
 }
 
+export interface MemoryConfirmerDisplay {
+  readonly scopeKey: string;
+  readonly childId: string;
+  readonly userId: string;
+  readonly members: readonly { readonly userId: string; readonly name: string }[];
+}
+
+export function memoryConfirmerLabel(confirmedBy: string | null, display?: MemoryConfirmerDisplay): string {
+  if (confirmedBy === null) return "尚未確認";
+  if (display?.userId === confirmedBy) return "你";
+  return display?.members.find(member => member.userId === confirmedBy)?.name?.trim() || "名稱未提供";
+}
+
 export function memoryReferenceScopeMatches(scopeKey: string, value: MemoryReferenceWorkspaceValue | null): value is MemoryReferenceWorkspaceValue {
   if (!value || !scopeKey || value.scopeKey !== scopeKey || value.model.scopeKey !== scopeKey || value.model.access !== "active") return false;
   const { shortTerm, longTerm, references, childId } = value.model;

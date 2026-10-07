@@ -1,0 +1,84 @@
+{
+  "baseCommit": "85e3a846587192f9eaaccde2b324adb21a65514c",
+  "scope": "Display-only memory confirmer labels and private-chat source cleanup; no API or owner mutation changes.",
+  "changedFiles": [
+    {
+      "path": "frontend/src/components/memory/MemoryReferenceView.tsx",
+      "sha256": "e580da076e26cbd033e68e372865f341ba577fba70e3dbf0278617fbe0c388aa",
+      "git_blob": "cca6cd00f9ec1ada03a1f93fd71d581932b5d9c0",
+      "bundled": true
+    },
+    {
+      "path": "frontend/src/screens/memoryScreen.tsx",
+      "sha256": "25dd8d4bd7336eb89f3cf3a6d26a7aec9e9f9dd98f4e6949c9ffc77f2e0d0def",
+      "git_blob": "942d81446355205f99e80f3528f39cc6fe580c4a",
+      "bundled": true
+    },
+    {
+      "path": "frontend/src/production/useProductionFamily.ts",
+      "sha256": "3905d66b198b4a3eff1dae5ec8f608317f927841b7a1a69fb1dd9ffa33e5303b",
+      "git_blob": "4fcefd990b91060bd561e2d7382b72ea5df6d412",
+      "bundled": true
+    },
+    {
+      "path": "frontend/src/memory-reference-view-model.ts",
+      "sha256": "34842f9e6f63bc40d945f3a999ede14eab585f23b9da4403f16f4480d9eb732b",
+      "git_blob": "5a40c89a672e0d5f6200094a5a0f8dab8df06fbe",
+      "bundled": true
+    },
+    {
+      "path": "frontend/src/memory-view-model.ts",
+      "sha256": "822f4be051b5cd69f2c06ccc3467dd4a7997e507858e2d0af4ede7f258c0e094",
+      "git_blob": "f96cdcf9d2d64baf4e3c9c7da7d63ce7ca85f4aa",
+      "bundled": true
+    },
+    {
+      "path": "frontend/scripts/memory-source-display.test.mjs",
+      "sha256": "da501af8a6b53bd33e7ebdeafb0a15232ef2a91ab3378634d7cf9a90538d425c",
+      "git_blob": "4d8ca4b3440c9db6ee22502369ed4e486b2f1f29",
+      "bundled": false
+    }
+  ],
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/memory-source-display.test.mjs",
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "command": "npm run typecheck --workspace frontend",
+      "result": "passed"
+    },
+    {
+      "command": "git apply --check --whitespace=error against the fixed baseline",
+      "result": "passed"
+    }
+  ],
+  "review": "Parent reports root patch review and independent 7/7 tests, typecheck and manifest verification passed before authorizing this build and draft PR.",
+  "retainedInitialFailure": "The first typecheck rejected the intersection array find overload; using Omit<FamilyViewModel, \"families\"> plus the already-loaded FamilySpace[] fixed the type projection without changing owner runtime behavior.",
+  "build": {
+    "method": "Offline Expo export, explicit frontend cwd, isolated TMPDIR, absolute EXPO_ROUTER_APP_ROOT, --clear --source-maps",
+    "exitCode": 0,
+    "staticRoutes": 35,
+    "bundle": "_expo/static/js/web/entry-40455f32b4b6f8396c252f86c2e765aa.js",
+    "bundleSha256": "2091719961285e85ff60042729edabad072dd3317ff8fdd67c6d0f516941219e",
+    "bundleBytes": 5010837,
+    "sourceMapSha256": "744a1f81c156c895a518e1faf5979744c3b2f7e4433645f3385626f0f6e543af",
+    "repositorySourceMapModulesByteVerified": 327,
+    "sourceMapMismatches": [],
+    "changedProductionModulesByteVerified": 5,
+    "testFileBundled": false,
+    "testFileBytesVerified": true,
+    "unmodifiedApplicationFilesMatchBase": 322,
+    "missingStaticAssets": [],
+    "artifactManifestSha256": "939c5c76d8fb8deb78d63dbef6ba1eb21939aa83ba563e75cdecb16b6e6db939"
+  },
+  "notRun": [
+    "browser QA",
+    "production API",
+    "model calls",
+    "full suite",
+    "deployment"
+  ],
+  "publicationScope": "Draft PR only; no merge or deployment."
+}
