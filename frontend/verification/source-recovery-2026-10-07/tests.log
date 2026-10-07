@@ -1,29 +1,33 @@
-✔ sources: missing resource does not poison child workspace (386.644983ms)
-✔ photos: missing resource does not poison child workspace (161.219564ms)
-✔ sources: approved route departure discards only ordinary drafts (261.573266ms)
-✔ sources: resource 404 rechecks child access and revocation stays fail-closed (91.88505ms)
-✔ sources: inconclusive access check hides stale data and can recover (97.605915ms)
-✔ sources: unknown operation remains guarded across route cleanup and missing resource (76.964882ms)
-✔ sources: late access revalidation cannot publish after scope changes (91.011996ms)
-✔ photos: approved route departure discards only ordinary drafts (139.269103ms)
-✔ photos: resource 404 rechecks child access and revocation stays fail-closed (77.283776ms)
-✔ photos: inconclusive access check hides stale data and can recover (91.805118ms)
-✔ photos: unknown operation remains guarded across route cleanup and missing resource (81.58992ms)
-✔ photos: late access revalidation cannot publish after scope changes (56.299705ms)
-✔ photos: original ownership survives chat-to-Photos entry and releases on approved departure (78.334333ms)
-✔ photos: leaving the legacy Care photo view clears its ordinary draft (92.149366ms)
-✔ sources: retained stack screens unmount local forms outside the active route (6.38382ms)
-✔ sources: pending receipt payload survives departure without retry or reset (47.081228ms)
-✔ photos: pending receipt payload survives departure without retry or reset (41.614934ms)
-✔ photos: unknown metadata retains the original run when content is missing (68.474255ms)
-✔ photos: running metadata retains the original run when content is missing (57.527731ms)
-✔ photos: missing content followed by true child revocation clears the known original run (58.363107ms)
-✔ photos: late missing-content response after scope exit cannot revalidate or publish (83.156366ms)
-ℹ tests 21
+✔ sources: missing resource does not poison child workspace (342.575482ms)
+✔ photos: missing resource does not poison child workspace (190.886807ms)
+✔ sources: approved route departure discards only ordinary drafts (149.109325ms)
+✔ sources: resource 404 rechecks child access and revocation stays fail-closed (83.286975ms)
+✔ sources: inconclusive access check hides stale data and can recover (69.584933ms)
+✔ sources: unknown operation remains guarded across route cleanup and missing resource (86.149862ms)
+✔ sources: late access revalidation cannot publish after scope changes (78.075918ms)
+✔ photos: approved route departure discards only ordinary drafts (222.050963ms)
+✔ photos: resource 404 rechecks child access and revocation stays fail-closed (38.495216ms)
+✔ photos: inconclusive access check hides stale data and can recover (55.575214ms)
+✔ photos: unknown operation remains guarded across route cleanup and missing resource (84.154472ms)
+✔ photos: late access revalidation cannot publish after scope changes (57.629329ms)
+✔ photos: original ownership survives chat-to-Photos entry and releases on approved departure (54.694358ms)
+✔ photos: leaving the legacy Care photo view clears its ordinary draft (78.15516ms)
+✔ sources: retained stack screens unmount local forms outside the active route (5.857151ms)
+✔ sources: pending receipt payload survives departure without retry or reset (50.988503ms)
+✔ photos: pending receipt payload survives departure without retry or reset (39.663779ms)
+✔ photos: unknown metadata retains the original run when content is missing (44.0716ms)
+✔ photos: running metadata retains the original run when content is missing (52.239249ms)
+✔ photos: missing content followed by true child revocation clears the known original run (55.922886ms)
+✔ photos: late missing-content response after scope exit cannot revalidate or publish (77.453951ms)
+✔ photos: A preview is released before B unknown content failure and reconciliation (41.375975ms)
+✔ photos: A preview is released before B running content failure and reconciliation (42.66331ms)
+✔ photos: same-child late A content cannot race a B selection past the busy lock (46.361183ms)
+✔ photos: A preview and B unresolved state are both cleared on child revocation (46.001833ms)
+ℹ tests 25
 ℹ suites 0
-ℹ pass 21
+ℹ pass 25
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 2956.557064
+ℹ duration_ms 2650.42006

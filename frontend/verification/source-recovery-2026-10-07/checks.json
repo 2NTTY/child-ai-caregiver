@@ -7,7 +7,7 @@
     {
       "command": "node --test frontend/scripts/source-photo-recovery.test.mjs",
       "result": "passed",
-      "tests": 21,
+      "tests": 25,
       "failed": 0,
       "log": "tests.log"
     },
@@ -47,9 +47,9 @@
   ],
   "sha256": {
     "frontend/src/production/usePhotoInputSources.ts": "218dead5946269380ce29e0c1e7691513e8b05c45256115a196b789bd974cc26",
-    "frontend/src/production/PhotoInputDomains.tsx": "c8f5249c2e65a4e295589684009313167dd773d8226fb542cf8664764a62f49f",
+    "frontend/src/production/PhotoInputDomains.tsx": "a8293cbbda3158cdf3981b1b607bbe2806c56700a7903e6ee27af73e5d81a9c8",
     "frontend/src/screens/SourcesScreen.tsx": "63e8dd8ffa0573bd6b5a56dcdc84e7e29af6bbb3963a180beab002c9fcda38d0",
-    "frontend/scripts/source-photo-recovery.test.mjs": "5386451539f1c998039a564fdfa860a279a69967ddf577c1efbdfa00aed67c68"
+    "frontend/scripts/source-photo-recovery.test.mjs": "30505ac240bc7ac997309e49995540079497d3d6603354665e3ff44b83381b18"
   },
   "reviewRevision": {
     "baseHead": "4d63ddbf4f6551652d8f9ef72bbc13ce704bc759",
@@ -60,6 +60,18 @@
       "Metadata unknown/running plus content 404 preserves the original run and manual check, blocks new photo actions",
       "True child revocation after content 404 remains fail-closed",
       "Late content failure after scope exit cannot revalidate or publish"
+    ]
+  },
+  "photoIdentityRevision": {
+    "baseHead": "1f298a392fa4f7b130baddd4008944c856946eab",
+    "finding": "After A has a preview, selecting B with an unresolved extraction and failing B content read must not carry A image/source into B reconciliation.",
+    "beforeLog": "before-photo-identity.log",
+    "result": "Both unknown/running A-to-B cases fail before the fix; 25 targeted tests and frontend typecheck pass after the fix",
+    "addedCoverage": [
+      "A preview URL disposal before binding B unresolved metadata",
+      "B content 503 preserves its original run, allows manual B-only lookup and never displays A image/source under B",
+      "Same-child late A content is serialized by the existing busy lock before B can be selected",
+      "Child revocation clears both previous image and unresolved B state"
     ]
   }
 }

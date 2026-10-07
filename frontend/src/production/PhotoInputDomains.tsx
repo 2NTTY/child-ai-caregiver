@@ -269,9 +269,10 @@ function useProductionPhotos() {
     if (ref.current.original || ref.current.draft.text) { update({ replacement: { kind: "item", item } }); return; }
     void run(async signal => {
       const next = await readResource(item.id, signal, () => api.photo(envRef.current.childId!, item.id, signal, envRef.current.userId!)); if (!current() || !next) return;
-      // Metadata already proves an unresolved run, even if the following content read fails.
+      // Bind the unresolved run to its own editor before a fallible content read.
       if (!next.recordId && ["running", "unknown"].includes(next.extraction.state)) {
-        update({ direct: { kind: "extract", photo: next, checked: false } });
+        releaseEditor();
+        update({ source: next.source, direct: { kind: "extract", photo: next, checked: false } });
       }
       const blob = next.state === "ready" ? await readResource(item.id, signal, () => api.content(next, signal, envRef.current.userId!)) : null; if (!current() || next.state === "ready" && !blob) return;
       releaseEditor(); put(next); update({ previewUrl: blob ? URL.createObjectURL(blob) : null, source: next.source, load: "ready", operation: noOperation() });

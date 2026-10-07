@@ -209,3 +209,50 @@ test('photos: late missing-content response after scope exit cannot revalidate o
   f.current = false; rejectContent(new ApiError(404)); await settle();
   assert.equal(f.listReads, reads); assert.equal(f.render().model.selected, null); assert.equal(f.denied.length, 0); f.unmount();
 });
+
+for (const extractionState of ['unknown', 'running']) {
+  test('photos: A preview is released before B ' + extractionState + ' content failure and reconciliation', async () => {
+    const f = fixture('photos'), b = {...photo, id: 'photo-b', source: 'Synthetic B', extraction: {state: extractionState, runId: 'run-b', draft: null}};
+    let photoReads = [], revoked = []; const revoke = URL.revokeObjectURL;
+    URL.revokeObjectURL = value => {revoked.push(value); revoke(value);};
+    try {
+      f.api.photos = async () => ({photos: [photo, b], canCreate: true});
+      f.api.photo = async (_childId, id) => {photoReads.push(id); return id === 'photo-b' ? b : photo;};
+      f.api.content = async target => {if (target.id === 'photo-b') throw new ApiError(503); return new Blob(['A']);};
+      let v = await f.open(); const aUrl = v.model.selected.imageSource.uri; assert.equal(v.model.selected.id, 'photo-a');
+      v.actions.openPhoto(v.model.items.find(item => item.id === 'photo-b')); await settle(); v = f.render();
+      assert.ok(revoked.includes(aUrl)); assert.equal(v.model.selected, null); assert.equal(v.model.source, 'Synthetic B');
+      assert.equal(f.guard.pending, true); assert.equal(v.model.operation.state, 'unknown'); assert.equal(v.model.canPick, false);
+      const reads = photoReads.length; v.actions.checkOriginal(); await settle(); v = f.render();
+      assert.deepEqual(photoReads.slice(reads), ['photo-b']); assert.equal(v.model.selected.id, 'photo-b');
+      assert.equal(v.model.selected.imageSource, null); assert.equal(v.model.source, 'Synthetic B'); assert.equal(f.guard.pending, true);
+      assert.equal(v.model.operation.state, 'unconfirmed'); assert.equal(v.model.canPick, false); f.unmount();
+    } finally {URL.revokeObjectURL = revoke;}
+  });
+}
+test('photos: same-child late A content cannot race a B selection past the busy lock', async () => {
+  const f = fixture('photos'), b = {...photo, id: 'photo-b', source: 'Synthetic B', extraction: {state: 'unknown', runId: 'run-b', draft: null}};
+  const reads = []; let releaseA;
+  f.api.photos = async () => ({photos: [photo, b], canCreate: true});
+  f.api.photo = async (_childId, id) => {reads.push(id); return id === 'photo-b' ? b : photo;};
+  f.api.content = target => target.id === 'photo-a' ? new Promise(resolve => {releaseA = resolve;}) : Promise.reject(new ApiError(503));
+  let v = await f.ready(); v.actions.openPhoto(v.model.items[0]); await settle(); v = f.render();
+  v.actions.openPhoto(v.model.items[1]); assert.deepEqual(reads, ['photo-a']); assert.equal(f.guard.pending, true);
+  releaseA(new Blob(['A'])); await settle(); v = f.render(); assert.equal(v.model.selected.id, 'photo-a');
+  v.actions.openPhoto(v.model.items.find(item => item.id === 'photo-b')); await settle(); v = f.render();
+  assert.deepEqual(reads, ['photo-a', 'photo-b']); assert.equal(v.model.selected, null);
+  v.actions.checkOriginal(); await settle(); v = f.render(); assert.equal(v.model.selected.id, 'photo-b'); assert.equal(v.model.selected.imageSource, null); f.unmount();
+});
+test('photos: A preview and B unresolved state are both cleared on child revocation', async () => {
+  const f = fixture('photos'), b = {...photo, id: 'photo-b', source: 'Synthetic B', extraction: {state: 'unknown', runId: 'run-b', draft: null}};
+  let revoked = []; const revoke = URL.revokeObjectURL; URL.revokeObjectURL = value => {revoked.push(value); revoke(value);};
+  try {
+    f.api.photos = async () => ({photos: [photo, b], canCreate: true});
+    f.api.photo = async (_childId, id) => id === 'photo-b' ? b : photo;
+    f.api.content = async target => {if (target.id === 'photo-b') throw new ApiError(403); return new Blob(['A']);};
+    let v = await f.open(); const aUrl = v.model.selected.imageSource.uri;
+    v.actions.openPhoto(v.model.items.find(item => item.id === 'photo-b')); await settle(); v = f.render();
+    assert.ok(revoked.includes(aUrl)); assert.equal(v.model.access, 'lost'); assert.equal(v.model.selected, null); assert.deepEqual(v.model.items, []);
+    assert.equal(f.guard.pending, false); assert.equal(f.denied.at(-1).status, 403); f.unmount();
+  } finally {URL.revokeObjectURL = revoke;}
+});
