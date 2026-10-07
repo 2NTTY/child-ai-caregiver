@@ -1,0 +1,213 @@
+✖ context stays untrusted content and literal ADK placeholders survive unchanged (68.568578ms)
+✔ untrusted context cannot declare a tool or expand the server tool allowlist (20.716133ms)
+✖ accepted terminal presentation ends the native loop and still finalizes once (19.945084ms)
+✖ a completed operation is not repeated for terminal presentation and native parts survive (12.384015ms)
+✖ mixed terminal batch is rejected before every handler, terminalFirst=false (18.382185ms)
+✖ mixed terminal batch is rejected before every handler, terminalFirst=true (16.836159ms)
+✖ terminal rejected can be corrected without ending the loop (12.412327ms)
+✖ terminal conflict can be corrected without ending the loop (11.505329ms)
+✖ terminal failed can be corrected without ending the loop (15.637957ms)
+✖ invalid terminal arguments are rejected and do not mark presentation complete (16.175434ms)
+✔ unknown terminal outcome stops without recovery or finalization (10.884487ms)
+✖ accepted presentation is hidden when final validation fails or authorization is revoked (12.163977ms)
+✔ plain final without a terminal call stays invalid without adding repair model calls (11.493546ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 3
+ℹ fail 10
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1950.827234
+
+✖ failing tests:
+
+test at tests/agent-runtime-contract.test.ts:39:1
+✖ context stays untrusted content and literal ADK placeholders survive unchanged (68.568578ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"1982f55e-7b09-44cb-b455-b3b8e6b7193f","status":"stopped","text":null,"tools":[],"counts":{"modelCalls":0,"toolCalls":0,"queryEmbeddings":0},"provenance":{"packVersion":"0.1.25","recipeId":"p1-chat","model":"gemini-3.1-flash-lite"},"stopReason":"unavailable"}
+  + actual - expected
+  
+  + 'stopped'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:57:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/agent-runtime-contract.test.ts:72:1
+✖ accepted terminal presentation ends the native loop and still finalizes once (19.945084ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"cade0a95-1ef5-46c2-a269-2e4e9f9179da","status":"stopped","text":null,"tools":[{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"}],"counts":{"modelCalls":4,"toolCalls":4,"queryEmbeddings":0},"provenance":{"packVersion":"0.1.25","recipeId":"p1-chat","model":"gemini-3.1-flash-lite"},"stopReason":"model_limit"}
+  + actual - expected
+  
+  + 'stopped'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:75:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/agent-runtime-contract.test.ts:82:1
+✖ a completed operation is not repeated for terminal presentation and native parts survive (12.384015ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"28aa86a1-d06c-4af8-8c6c-7ec7f5a40e18","status":"stopped","text":null,"tools":[{"name":"save_item","callId":"call-save_item","status":"succeeded","reference":"saved-once"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"}],"counts":{"modelCalls":3,"toolCalls":2,"queryEmbeddings":0},"provenance":{"packVersion":"0.1.25","recipeId":"p1-chat","model":"gemini-3.1-flash-lite"},"stopReason":"unavailable"}
+  + actual - expected
+  
+  + 'stopped'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:92:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/agent-runtime-contract.test.ts:98:44
+✖ mixed terminal batch is rejected before every handler, terminalFirst=false (18.382185ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'model_limit'
+  - 'invalid_response'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:103:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'model_limit',
+    expected: 'invalid_response',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/agent-runtime-contract.test.ts:98:44
+✖ mixed terminal batch is rejected before every handler, terminalFirst=true (16.836159ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'model_limit'
+  - 'invalid_response'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:103:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'model_limit',
+    expected: 'invalid_response',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/agent-runtime-contract.test.ts:110:67
+✖ terminal rejected can be corrected without ending the loop (12.412327ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"d7cf5854-90be-4c5a-8ab2-7119934ec2cd","status":"stopped","text":null,"tools":[{"name":"present_answer","callId":"call-present_answer","status":"rejected"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"}],"counts":{"modelCalls":4,"toolCalls":4,"queryEmbeddings":0},"provenance":{"packVersion":"0.1.25","recipeId":"p1-chat","model":"gemini-3.1-flash-lite"},"stopReason":"model_limit"}
+  + actual - expected
+  
+  + 'stopped'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:116:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/agent-runtime-contract.test.ts:110:67
+✖ terminal conflict can be corrected without ending the loop (11.505329ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"3111a846-7ce0-431b-b4f2-761a270d2c24","status":"stopped","text":null,"tools":[{"name":"present_answer","callId":"call-present_answer","status":"conflict"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"}],"counts":{"modelCalls":4,"toolCalls":4,"queryEmbeddings":0},"provenance":{"packVersion":"0.1.25","recipeId":"p1-chat","model":"gemini-3.1-flash-lite"},"stopReason":"model_limit"}
+  + actual - expected
+  
+  + 'stopped'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:116:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/agent-runtime-contract.test.ts:110:67
+✖ terminal failed can be corrected without ending the loop (15.637957ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"9a50e73c-d271-4525-a652-3fbed65006a5","status":"stopped","text":null,"tools":[{"name":"present_answer","callId":"call-present_answer","status":"failed"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"}],"counts":{"modelCalls":4,"toolCalls":4,"queryEmbeddings":0},"provenance":{"packVersion":"0.1.25","recipeId":"p1-chat","model":"gemini-3.1-flash-lite"},"stopReason":"model_limit"}
+  + actual - expected
+  
+  + 'stopped'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:116:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/agent-runtime-contract.test.ts:122:1
+✖ invalid terminal arguments are rejected and do not mark presentation complete (16.175434ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"8d81214b-5648-4885-a91a-d83871dba312","status":"stopped","text":null,"tools":[{"name":"present_answer","callId":"call-present_answer","status":"rejected"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"},{"name":"present_answer","callId":"call-present_answer","status":"succeeded"}],"counts":{"modelCalls":4,"toolCalls":4,"queryEmbeddings":0},"provenance":{"packVersion":"0.1.25","recipeId":"p1-chat","model":"gemini-3.1-flash-lite"},"stopReason":"model_limit"}
+  + actual - expected
+  
+  + 'stopped'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:125:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/agent-runtime-contract.test.ts:141:1
+✖ accepted presentation is hidden when final validation fails or authorization is revoked (12.163977ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'model_limit'
+  - 'invalid_response'
+  
+      at TestContext.<anonymous> (file://<workspace>/tests/agent-runtime-contract.test.ts:151:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'model_limit',
+    expected: 'invalid_response',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

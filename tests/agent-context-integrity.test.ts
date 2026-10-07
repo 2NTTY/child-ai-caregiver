@@ -22,7 +22,7 @@ for (const characters of [200, 800]) test(`native Runner keeps ${characters}-cha
     recentMessages: messages, conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } };
   let calls = 0, claimed = false, saved: ProductAgentResult | null = null, summary: any, seen: any;
   const sizes: number[] = [];
-  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: "32000" }),
     usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async request => {
       sizes.push(JSON.stringify({ contents: request.contents, config: request.config }).length);
       assert.ok(sizes.at(-1)! <= AGENT_LIMITS.inputCharacters);
@@ -58,7 +58,7 @@ for (const characters of [200, 800]) test(`native Runner keeps ${characters}-cha
   assert.deepEqual(summary.coveredMessageIds, seen.privateSummaryInput.messageIds);
   assert.equal(summary.previousVersion, 0); assert.equal(summary.basis, "a".repeat(64));
   if (characters === 800) assert.ok(summary.coveredMessageIds.length < messages.length);
-  assert.deepEqual(await service.reply(userId, childId, messageId, async () => true), result); assert.equal(calls, 4);
+  assert.deepEqual(await service.reply(userId, childId, messageId, async () => true), result); assert.equal(calls, 3);
 });
 
 test("context capacity rejection is explicit and family reads never prepare private summaries", async () => {

@@ -16,6 +16,10 @@
 
 當 capabilities 有 present_answer，該工具是 Server 驗證展示文字／引用的入口；純 provider final 不能替代。已保存候選或直接操作收據是独立結果，收尾失敗時仍須保留並按台帳呈現，不重做保存。此規則不要求 P1 text 模式呼叫不存在的工具，也不把未驗證文字自動當成功。
 
+present_answer 是本產品唯一標記為 terminal 的工具。成功接受後，ADK skipSummarization 結束本次模型循環，既有 finalize 仍重新驗證身份、引用及目前授權；接受不是繞過最終校驗。被拒絕的展示不觸發終結，只能在剩餘預算內修正。gateway 必須在執行任何工具前拒絕 terminal 與其他工具的同批回應，避免截斷副作用或先展示後寫入；不改 ID 重送未知操作。
+
+此輪不保證模型一定調用 present_answer：完全漏調而自然停止仍是未解限制，不默默增加生成次數、全局強制 ANY 或將未校驗 final 轉成成功。背景 no_action 的安靜成功契約亦待獨立實作；以下 AgentResult 是合成語義，不代表該終結路徑已接通。
+
 ## AgentResult 語義
 
 以下為合成範例使用的共同外層。八個欄位均列出，沒有內容的集合使用空陣列；只有背景且無需人類文字時 `replyText` 可以為 `null`。識別由程式提供，不由模型任意生成。

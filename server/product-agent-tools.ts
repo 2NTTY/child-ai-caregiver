@@ -179,7 +179,7 @@ export function createProductAgentTools(options: {
       }) },
     { name: "present_answer", description: "提交顯示文字；citationIds 用本 run search_knowledge.chunkId，或 read_private_source.citationId。私人材料回述用 private_reference，不能冒充官方；每項育兒／安全建議仍須支持的官方片段。純澄清、操作或記錄回述可無公共引用。不執行其他操作，不稱未完成事項成功。" + (options.reviewedGrowthPresentation
         ? " 本次是成長關注：選取支持此關注的官方 chunkId；Server 只呈現片段的已核對正文，不使用你改寫的 text。沒有可用片段時呈現固定限制說明。" : ""),
-      parameters: agentAnswerSchema, authorize: permitted,
+      parameters: agentAnswerSchema, authorize: permitted, terminal: true,
       execute: args => guard(async () => {
         const parsed = agentAnswerSchema.parse(args);
         const official = options.reviewedGrowthPresentation || parsed.kind === "caregiving" || parsed.kind === "safety_help";
