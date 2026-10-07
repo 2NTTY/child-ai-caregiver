@@ -1,6 +1,6 @@
 # 育有方 Agent Prompt Pack
 
-版本 **0.1.17** · 原文件工作包 **DOC-P01** · 配方／模組定義以 [manifest](manifest.json) 為準；實作／驗收狀態只按 [根 PLAN](../PLAN.md#roadmap-packages) 的所屬包與 EV，不在本入口維護另一份進度。
+版本 **0.1.24** · 原文件工作包 **DOC-P01** · 配方／模組定義以 [manifest](manifest.json) 為準；實作／驗收狀態只按 [根 PLAN](../PLAN.md#roadmap-packages) 的所屬包與 EV，不在本入口維護另一份進度。
 
 這裏的主要交付是直接給產品 Agent 閱讀的指令正文。Gemini 是首個接入目標；Agent 在 Server 執行，Web／Android 使用同一套行為與業務契約。一般聊天輸出自然文字，工具參數和必要的草稿／背景結果才使用結構化資料。
 
@@ -15,6 +15,10 @@ S11-W01 如只需要簡單文字聊天，可直接採用 [P1 最小入口](p1/RE
 
 本目錄保存指令與契約；[Server 組裝器](../server/agent-prompt.ts) 與 [ADK runtime](../server/agent-runtime.ts) 已復用原有正文，`p1-chat` 配方完成 [S11-W03 必要驗收](../artifacts/verification/S11_W03_CHECKS.json)。P2 產品配方的記憶／RAG／任務及通知接線證據見 [S11-W02](../artifacts/verification/S11_W02_CHECKS.json) 與 [S17-W02](../artifacts/verification/S17_W02_CHECKS.json)；配方存在不表示任意環境已啟用全部能力，仍須按 Server capabilities。原靜態範例仍全為合成資料，不當作整套模型效果測試。
 
+## 正式入口與宣告配方
+
+manifest 保存 22 模組、12 配方；目前產品入口直接選取 product-interactive、product-background、summary-visit、photo-capture、shared-capture 五種，位置及用途見 [配方入口對照](recipes/README.md#runtime-entry-map)。其餘配方是保留的組合定義，不代表各有獨立排程或公開 API。開發用 `.agents/skills` 並非此產品 Prompt Pack，原生 SkillToolset／MCP 也不因檔案存在而自動啟用。
+
 ## 模組與閱讀對象
 
 | 位置 | 內容 | 是否送給模型 |
@@ -26,7 +30,7 @@ S11-W01 如只需要簡單文字聊天，可直接採用 [P1 最小入口](p1/RE
 | `recipes/`、`integration/` | 組裝、Gemini 映射與故障處理 | 給實作者，不整份送模型 |
 | `review/` | 合成案例、需求映射、靜態檢查 | 驗收材料，不當作家庭歷史 |
 
-19 個模組各有一對 `<!-- prompt:begin -->`／`<!-- prompt:end -->`；中間才是模型正文。標題、版本、權威條款、維護說明與靜態例子不自動加入 system instruction。獨立 P1 入口的 `.txt` 則全檔都是正文，版本由旁邊的說明維護。案例並非使用者曾經說過的話。
+22 個模組各有一對 `<!-- prompt:begin -->`／`<!-- prompt:end -->`；中間才是模型正文。標題、版本、權威條款、維護說明與靜態例子不自動加入 system instruction。獨立 P1 入口的 `.txt` 則全檔都是正文，版本由旁邊的說明維護。案例並非使用者曾經說過的話。
 
 ## 組裝及權威
 

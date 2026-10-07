@@ -1,6 +1,6 @@
 # 輸出契約與結構化例子
 
-Prompt Pack 版本 `0.1.1`。本文件固定本包範例的語義；**不是產品 HTTP response 或資料庫 schema**。正式 ModelGateway 按所選 Gemini 能力提供精簡 response schema／function declarations，並在 Server 校驗輸出。
+本文件的合成輸出語義版本為 `0.1.1`；當前 Prompt Pack 版本以 manifest 為準。本文件固定本包範例的語義；**不是產品 HTTP response 或資料庫 schema**。正式 ModelGateway 按所選 Gemini 能力提供精簡 response schema／function declarations，並在 Server 校驗輸出。
 
 ## 三種輸出通道
 
@@ -11,6 +11,10 @@ Prompt Pack 版本 `0.1.1`。本文件固定本包範例的語義；**不是產�
 | 結構化任務結果 | 指定 schema 的 `AgentResult` 語義 | 互動時只呈現已校驗的 `replyText`；背景可以不呈現 |
 
 不得以從自然語言解析出「已完成」取代工具狀態。不得把一段文字加上 JSON 印在聊天中當作 function call。配方明確指定模式；模型不能自行切換到不存在的結構。任何配方選擇 `structured` 時，`outputContract` 與相應 schema 都是條件必需輸入；缺少時由應用在請求前選擇受支援的文字降級或回報錯誤，不能要求模型猜測。純文字模式不需 schema。
+
+## 產品 tool_cycle 展示接點
+
+當 capabilities 有 present_answer，該工具是 Server 驗證展示文字／引用的入口；純 provider final 不能替代。已保存候選或直接操作收據是独立結果，收尾失敗時仍須保留並按台帳呈現，不重做保存。此規則不要求 P1 text 模式呼叫不存在的工具，也不把未驗證文字自動當成功。
 
 ## AgentResult 語義
 
