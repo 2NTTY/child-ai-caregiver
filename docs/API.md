@@ -424,7 +424,7 @@ owner／caregiver 可管理共享記憶；viewer 只能管理本人私人記憶�
 
 migration 011 啟用 `memory` 類無正文變更及收據刪除；私人候選／話題／摘要只向本人發出更新，共享事實／話題在家庭內可見。Server 仍校驗每項記憶的可見範圍及角色，READ 入口資格不允許 viewer 寫共享事實。讀取與修改回應同樣隱藏其他作者的私人訊息 ID。刪事實／話題時保守清除該孩子 memory 類收據正文；原操作仍 confirmed，不能另建重複候選。模型摘要與產品 Agent 接線維持 S11-W02。
 
-內部 `MemoryStore.prepareSummary` 回傳前一有效摘要、當前權威版本摘要值 `basis`、`previousVersion` 及按 Server 次序排列的最多 50 條未覆蓋訊息；`saveSummary` 只接受完全吻合的實際 ID 清單及版本。資料變化、缺段、越權、重複或過時輸入均不當作成功。摘要不寫入事實／話題／任務狀態。`context` 分開私人及家庭模式；家庭模式不含私人聊天／摘要，亦不提供私人來源 ID。超過 200 項事實或話題時拒絕無篩選 context，不能靜默省略終態；訊息未全部覆蓋以 `truncated.messages` 明示。S11-W02 接入模型時必須處理這些狀態、有效性及 `conflictingKeys`，本包未改 P1 聊天入口或宣稱已由 Gemini 生成摘要。
+內部 `MemoryStore.prepareSummary` 回傳前一有效摘要、當前權威版本摘要值 `basis`、`previousVersion` 及按 Server 次序排列的最多 50 條未覆蓋訊息；`saveSummary` 只接受完全吻合的實際 ID 清單及版本。資料變化、缺段、越權、重複或過時輸入均不當作成功。摘要不寫入事實／話題／任務狀態。`context` 分開私人及家庭模式；家庭模式不含私人聊天／摘要，亦不提供私人來源 ID。context 在 200 項事實上限之前排除 inactive 歷史事實，歷史／一般列表仍保留它們；inactive 舊 key 不再否決另行確認的替代事實。候選、過期或來源改變的 confirmed 事實仍納入完整範圍及 unavailable-key／conflict 核對。超過 200 項非 inactive 事實或任何狀態的話題時仍拒絕無篩選 context，不能取前 200 項而暗藏衝突或終態；訊息未全部覆蓋以 `truncated.messages` 明示。S11-W02 接入模型時必須處理這些狀態、有效性及 `conflictingKeys`，本包未改 P1 聊天入口或宣稱已由 Gemini 生成摘要。
 
 
 <a id="p2-web-push-http"></a>
