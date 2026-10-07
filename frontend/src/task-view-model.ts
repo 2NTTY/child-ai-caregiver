@@ -50,8 +50,9 @@ export interface TasksViewModel {
   history: TaskRevisionView[]; historyOpen: boolean; hasMoreHistory: boolean;
   draft: TaskDraft | null; latest: TaskView | null; operation: WriteOperationView;
 }
+export type TaskSelectionIntent = "open" | "toggle";
 export interface TasksActions {
-  selectTask(id: string): void; closePanel(): void;
+  selectTask(id: string, intent?: TaskSelectionIntent): void; closePanel(): void;
   startCreate(): void; startChange(id: string, action: TaskAction): void;
   reviewDraft(values: TaskFormValues): void; editDraft(): void; submitReviewed(): void;
   useLatestVersion(): void; showHistory(): void; loadOlderHistory(): void;

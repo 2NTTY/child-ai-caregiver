@@ -88,9 +88,9 @@ export function useTasksPreview(child: HomeChild, online: boolean, reading: bool
   useEffect(() => () => { generation.current++; }, []);
   const scopeReady = controllerScope === scopeKey;
   const actions: TasksActions = {
-    selectTask(id) {
+    selectTask(id, intent = "open") {
       if (!currentRead() || live.current.blocked || live.current.draft) return;
-      setSelectedId(previous => previous === id ? null : id); setHistoryLimit(0);
+      setSelectedId(previous => intent === "toggle" && previous === id ? null : id); setHistoryLimit(0);
     },
     closePanel() {
       if (currentScope.current !== scopeKey || live.current.locked) return;

@@ -24,8 +24,9 @@ function AgentPendingReview() {
   const locked = !!recovery?.pending || !!workspace?.model.draft || !!workspace?.model.deletion;
   return <SectionCard surface="plain"><SectionHeader density="compact" title="Agent 待確認事項" subtitle="健康事實及家庭待辦只會在你核對內容、對象及共享範圍後保存。"
     action={<AppButton label="重新讀取" variant="quiet" disabled={!online || agentPending.state === "loading" || locked} onPress={() => readAgentPending()} />} />
-    {agentPending.state === "loading" ? <Text>正在讀取待確認事項…</Text> : agentPending.state === "failed" ? <Text>未能讀取待確認事項，請重試。</Text>
-      : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : !agentPending.entries.length ? <Text>目前已載入範圍沒有待確認事項。</Text> : null}
+    {agentPending.state === "idle" ? <Text>{online ? "待確認事項尚未讀取；等候目前操作完成後會自動讀取。" : "目前離線，待確認事項尚未核對。"}</Text>
+      : agentPending.state === "loading" ? <Text>正在讀取待確認事項…</Text> : agentPending.state === "failed" ? <Text>未能讀取待確認事項，請重試。</Text>
+      : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : agentPending.state === "ready" && !agentPending.entries.length ? <Text>目前已載入範圍沒有待確認事項。</Text> : null}
     {agentPending.entries.map(({ runId, proposal }) => <View key={runId + ":" + proposal.id} style={{ gap: spacing.sm }}>
       <Text>{proposal.title}</Text><Text>{proposal.scope === "family" ? "家庭共享" : "私人"} · {proposal.status === "expired" ? "原提案已過期；仍可查看及略過" : "待你核對"}</Text>
       <AppButton label="查看原提案及確認範圍" variant="secondary" disabled={locked || !!agentModel.busy || !!agentModel.pendingDecision}

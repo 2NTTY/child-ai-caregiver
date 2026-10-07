@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createTaskApi, TaskApiError } from "../../../src/client/task-api";
 import { taskChangeSchema, taskValuesSchema, type TaskChange, type TaskCreate, type TaskPage } from "../../../src/shared/tasks";
 import { emptyTaskForm, taskChangeFromForm, taskFormFromBasis, taskFormSchema, taskValuesFromForm } from "../components/tasks/task-form";
-import { taskChangeAllowed, taskWithCompletionRevision, type TaskDraft, type TaskRevisionView, type TaskView, type TasksViewModel } from "../task-view-model";
+import { taskChangeAllowed, taskWithCompletionRevision, type TaskDraft, type TaskSelectionIntent, type TaskRevisionView, type TaskView, type TasksViewModel } from "../task-view-model";
 import type { TasksWorkspaceValue } from "../workspaces/TasksWorkspace";
 import type { WriteOperationView } from "../view-model";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
@@ -24,7 +24,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const [historyOpen, setHistoryOpen] = useState(false), [loadingMore, setLoadingMore] = useState(false);
   const busy = useRef(false), attempt = useRef<Attempt | null>(null), committed = useRef(false), checked = useRef(false);
   const clock = useRef(new Date().toISOString());
-  const queuedSelection = useRef<string | null>(null), selectLatest = useRef<(id: string) => void>(() => {});
+  const queuedSelection = useRef<{ id: string; intent: TaskSelectionIntent } | null>(null), selectLatest = useRef<(id: string, intent: TaskSelectionIntent) => void>(() => {});
   const canManage = env.role === "owner" || env.role === "caregiver";
   const pending = operation.state === "saving" || operation.state === "unknown";
   useDomainWriteGuard(!runtime.lost && !!draft, !runtime.lost && pending);
@@ -86,7 +86,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
         if (attempt.current || committed.current || operation.state === "unknown") {
           setOperation(previous => ({ ...previous, message: committed.current ? "已提交，清單暫時無法更新；請重新讀取。" : "暫時無法查核，原操作及草稿已保留。", recovery: previous.state === "unknown" ? "check" : "reload" }));
         }
-      } finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const id = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id); } } }
+      } finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const { id, intent } = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id, intent); } } }
     });
   };
   useTaskKnowledgeRefresh(refresh, env.online && !!env.childId && !runtime.lost, reading || operation.state === "saving");
@@ -130,18 +130,18 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
           items: before === null ? value.revisions : [...(previous[basis.id]?.items ?? []), ...value.revisions.filter(item => !previous[basis.id]?.items.some(old => old.task.version === item.task.version))], cursor: value.nextBeforeVersion,
         } }));
       } catch (error) { if (current() && !runtime.accessError(error)) setOperation(previous => ({ ...previous, message: "任務歷史尚未讀取；完成時間不會以安排時間代替。" })); }
-      finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const id = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id); } } }
+      finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const { id, intent } = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id, intent); } } }
     });
   };
-  const selectTask = (id: string) => {
+  const selectTask = (id: string, intent: TaskSelectionIntent = "open") => {
       if (pending || draft || operation.state === "conflict" || !runtime.live()) return;
       if (id.length > 36 || !z.uuid().safeParse(id).success) {
         queuedSelection.current = null; setSelectedId(null); setLinkedTask(null); setHistoryOpen(false);
         setOperation({ state: "failed", message: "事項連結識別無效，沒有套用其他事項或孩子資料。", reference: null });
         return;
       }
-      if (busy.current) { queuedSelection.current = id; return; }
-      if (items.some(item => item.id === id)) { setSelectedId(id); setHistoryOpen(false); return; }
+      if (busy.current) { queuedSelection.current = { id, intent }; return; }
+      if (items.some(item => item.id === id)) { setSelectedId(previous => intent === "toggle" && previous === id ? null : id); setHistoryOpen(false); return; }
       if (!env.online) return;
       busy.current = true; setReading(true);
       void runtime.request(async (signal, current) => {
@@ -156,7 +156,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
             setOperation({ state: "failed", message: "找不到此孩子的事項，或目前已無權查看；沒有套用舊資料。", reference: null, recovery: "reload" });
           } else if (!runtime.accessError(error)) setOperation(previous => ({ ...previous, message: "連結事項未能讀取，沒有按標題替代或顯示其他孩子資料。" }));
         }
-        finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const id = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id); } } }
+        finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const { id, intent } = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id, intent); } } }
       });
     };
   selectLatest.current = selectTask;
@@ -201,7 +201,10 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       if (!draft || draft.mode === "create" || !latest || !taskChangeAllowed(latest, draft.mode) || busy.current || pending) return;
       setDraft({ ...draft, key: crypto.randomUUID(), basis: structuredClone(latest), initialValues: draft.reviewedValues ?? draft.initialValues, reviewedValues: null }); setLatest(null); setOperation(none);
     },
-    showHistory() { readHistory(); }, loadOlderHistory() { if (selected && histories[selected.id]?.cursor) readHistory(histories[selected.id]!.cursor); },
+    showHistory() {
+      if (locked || draft) return;
+      if (historyOpen) setHistoryOpen(false); else readHistory();
+    }, loadOlderHistory() { if (selected && histories[selected.id]?.cursor) readHistory(histories[selected.id]!.cursor); },
     loadMoreTasks() {
       const after = page?.nextAfterId;
       if (!after || busy.current || !env.online || !runtime.live() || pending) return;

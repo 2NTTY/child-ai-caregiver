@@ -80,11 +80,11 @@ test("one task owner keeps confirmed updates across Tasks and History entry chan
 
 test("selected rows toggle closed, other rows switch, and drafts prevent either", () => {
   const w = workspace(), [first, second] = w.value.model.items;
-  w.act(p => p.actions.selectTask(first.id)); assert.equal(w.value.model.selected.id, first.id);
-  w.act(p => p.actions.selectTask(first.id)); assert.equal(w.value.model.selected, null);
-  w.act(p => p.actions.selectTask(first.id)); w.act(p => p.actions.selectTask(second.id)); assert.equal(w.value.model.selected.id, second.id);
+  w.act(p => p.actions.selectTask(first.id, "toggle")); assert.equal(w.value.model.selected.id, first.id);
+  w.act(p => p.actions.selectTask(first.id, "toggle")); assert.equal(w.value.model.selected, null);
+  w.act(p => p.actions.selectTask(first.id, "toggle")); w.act(p => p.actions.selectTask(second.id, "toggle")); assert.equal(w.value.model.selected.id, second.id);
   w.act(p => p.actions.startChange(second.id, "complete"));
-  w.act(p => p.actions.selectTask(first.id)); assert.equal(w.value.model.selected.id, second.id);
+  w.act(p => p.actions.selectTask(first.id, "toggle")); assert.equal(w.value.model.selected.id, second.id);
   w.unmount();
 });
 
@@ -154,4 +154,12 @@ test("dashboard mounts one task owner and screens consume it without duplicate f
   assert.ok(!read("../src/components/tasks/TaskHistoryView.tsx").includes("useTasksPreview("));
   assert.ok(read("../src/screens/tasksScreen.tsx").includes("/history?category=tasks"));
   assert.ok(!read("../src/screens/careScreen.tsx").includes("task-history"));
+});
+
+
+test("preview task navigation is idempotent while row selection explicitly toggles", () => {
+  const w = workspace(), [first, second] = w.value.model.items;
+  w.act(p => p.actions.selectTask(first.id)); w.act(p => p.actions.selectTask(first.id)); assert.equal(w.value.model.selected.id, first.id);
+  w.act(p => p.actions.selectTask(second.id)); assert.equal(w.value.model.selected.id, second.id);
+  w.act(p => p.actions.selectTask(second.id, "toggle")); assert.equal(w.value.model.selected, null); w.unmount();
 });

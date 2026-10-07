@@ -188,7 +188,7 @@ test("backlog UI keeps remote loading separate and preserves guarded local filte
   assert.match(view, /onPress=\{actions.loadMoreTasks\}/);
   assert.match(view, /仍有事項未載入；月曆、搜尋及數目只包括已載入事項/);
   assert.match(view, /setPage\(backlog.page [+-] 1\)/);
-  assert.match(view, /rememberList\(task.id\); actions.selectTask\(task.id\)/);
+  assert.match(view, /rememberList\(task.id\); actions.selectTask\(task.id, "toggle"\)/);
   assert.match(view, /scrollTo\(\{ y: saved.position, animated: false \}\)/);
 });
 

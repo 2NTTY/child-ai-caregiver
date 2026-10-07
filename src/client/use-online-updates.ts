@@ -1,12 +1,13 @@
 import { useEffect, useRef } from "react";
 
+export type OnlineRefreshReason = "changed" | "forced" | "unavailable";
 export const ONLINE_REFRESH_EVENT = "yuban-online-refresh";
 const uuid = /^[0-9a-f-]{36}$/iu;
 const seq = /^(0|[1-9][0-9]{0,18})$/u;
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 
 /** Visible-page invalidations only. No writes, local storage, model calls or outbox. */
-export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, online: boolean, refresh: () => Promise<void>) {
+export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, online: boolean, refresh: (reason: OnlineRefreshReason) => Promise<void>) {
   const latestRefresh = useRef(refresh); latestRefresh.current = refresh;
   useEffect(() => {
     if (!userId || !online || typeof window === "undefined") return;
@@ -20,9 +21,9 @@ export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, onli
       if (!response.ok) throw new Error("Online status unavailable");
       return response.json() as Promise<unknown>;
     }
-    const notify = async () => {
+    const notify = async (reason: OnlineRefreshReason) => {
       if (stopped) return;
-      await latestRefresh.current();
+      await latestRefresh.current(reason);
       if (!stopped) window.dispatchEvent(new Event(ONLINE_REFRESH_EVENT));
     };
     const check = async (force = false) => {
@@ -47,11 +48,11 @@ export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, onli
           cursors.set(id, { epoch: storageEpoch, cursor: page.cursor, accessVersion: page.accessVersion as number });
         }
         for (const id of cursors.keys()) if (!seen.has(id)) { cursors.delete(id); changed = true; }
-        if (changed || force) await notify();
+        if (changed || force) await notify(changed ? "changed" : "forced");
       } catch {
         // A failed incremental read cannot confirm logout, deletion or successful writes.
         // Fresh normal reads still check identity and clear genuinely revoked scopes.
-        if (!stopped) await notify().catch(() => {});
+        if (!stopped) await notify("unavailable").catch(() => {});
       } finally { busy = false; }
     };
     const event = () => { void check(true); };

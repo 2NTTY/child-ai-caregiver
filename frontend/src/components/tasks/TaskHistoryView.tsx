@@ -75,7 +75,7 @@ export function TaskHistoryView({ searchText, dateRange, scrollRef, scrollPositi
             const cancelledAt = task.terminalAt ? DateTime.fromISO(task.terminalAt, { setZone: true }).setZone(model.scheduleContext.timeZone) : null;
             const time = task.occurrence.state === "completed" ? taskCompletionLabel(task, model.scheduleContext.timeZone) : cancelledAt?.isValid ? `${cancelledAt.toFormat("M月d日 HH:mm")} 取消` : "取消時間未提供";
             return <TaskListRow key={task.id} task={task} time={time} assignee={taskAssigneeLabel(task.assigneeUserId, model.eligibleAssignees)} selected={selected?.id === task.id} disabled={locked}
-              rowRef={node => { if (node) rowRefs.current.set(task.id, node); else rowRefs.current.delete(task.id); }} onPress={() => { anchor.current = { id: task.id, y: getScrollPosition?.() ?? scrollPosition, scope }; actions.selectTask(task.id); }} />;
+              rowRef={node => { if (node) rowRefs.current.set(task.id, node); else rowRefs.current.delete(task.id); }} onPress={() => { anchor.current = { id: task.id, y: getScrollPosition?.() ?? scrollPosition, scope }; actions.selectTask(task.id, "toggle"); }} />;
           })}
           {model.hasMoreTasks ? <AppButton label={model.loadingMoreTasks ? "正在載入…" : "載入更多事項"} variant="secondary" disabled={locked || model.loadingMoreTasks || !model.online} onPress={actions.loadMoreTasks} /> : null}
         </View>

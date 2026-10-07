@@ -165,15 +165,16 @@ export class ProductionOwner {
     } finally { this.syncingChat = false; }
     this.snapshot = this.project(); this.emit();
   }
-  invalidatePrivateReads = (emitEvent = true) => {
+  invalidatePrivateReads = (emitEvent = true, refreshPending = true) => {
     const scope = this.scopeKey();
     if (this.identity) void this.queryClient.invalidateQueries({ queryKey: ["production", this.identity] });
     if (scope) {
       void this.queryClient.invalidateQueries({ queryKey: ["production", scope] });
     }
     this.authorizationOwner?.invalidateReceipts();
-    const authorization = this.authorizationOwner?.getSnapshot(), agent = this.agentOwner?.getSnapshot();
-    if (agent?.pending.state === "ready" && !agent.model.busy && !agent.model.pendingDecision && !agent.model.writesBlocked) void this.agentOwner.readPending();
+    const authorization = this.authorizationOwner?.getSnapshot();
+    // New chat proposals must be discoverable even before the list has ever been opened.
+    if (scope && refreshPending) void this.agentOwner?.readPending();
     if (authorization?.notesState === "ready" && !authorization.busy && !authorization.pending) void this.authorizationOwner.readNotes(false, true);
     if (emitEvent && typeof window !== "undefined") window.dispatchEvent(new Event("yuban-online-refresh"));
   };

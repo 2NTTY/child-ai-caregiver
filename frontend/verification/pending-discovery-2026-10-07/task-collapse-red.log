@@ -1,0 +1,68 @@
+✖ production task rows toggle closed and history collapse is local without another request (366.976483ms)
+✖ task disclosure callbacks preserve drafts and unknown-operation guards (101.672363ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 910.161496
+
+✖ failing tests:
+
+test at frontend/scripts/shared-status-read-state.test.mjs:215:1
+✖ production task rows toggle closed and history collapse is local without another request (366.976483ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   assigneeUserId: 'user',
+  +   childId: 'child',
+  +   completedAt: undefined,
+  +   createdAt: '2026-10-06T01:00:00Z',
+  +   createdBy: 'user',
+  +   details: '',
+  +   id: '8c0614da-d04f-454e-837a-b0d0f1649034',
+  +   kind: 'ordinary',
+  +   occurrence: {
+  +     dueAt: '2026-10-06T02:00:00Z',
+  +     id: 'occurrence',
+  +     state: 'scheduled',
+  +     terminalBasisVersion: null,
+  +     timeZone: 'Asia/Hong_Kong'
+  +   },
+  +   terminalAt: undefined,
+  +   title: 'Synthetic task',
+  +   updatedAt: '2026-10-06T01:00:00Z',
+  +   version: 1
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/shared-status-read-state.test.mjs:218:69)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { id: '8c0614da-d04f-454e-837a-b0d0f1649034', childId: 'child', version: 1, title: 'Synthetic task', details: '', kind: 'ordinary', assigneeUserId: 'user', createdBy: 'user', createdAt: '2026-10-06T01:00:00Z', updatedAt: '2026-10-06T01:00:00Z', occurrence: { id: 'occurrence', dueAt: '2026-10-06T02:00:00Z', timeZone: 'Asia/Hong_Kong', state: 'scheduled', terminalBasisVersion: null }, terminalAt: undefined, completedAt: undefined },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/shared-status-read-state.test.mjs:229:1
+✖ task disclosure callbacks preserve drafts and unknown-operation guards (101.672363ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'none' !== 'unknown'
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/shared-status-read-state.test.mjs:236:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'none',
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

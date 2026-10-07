@@ -1,0 +1,36 @@
+✔ an initial gated discovery is coalesced and resumes once after the existing write gate clears (9.326764ms)
+✔ discovery deferred by another owner request resumes when that request finishes (2.968548ms)
+✔ network failure is not empty and does not self-retry; an explicit retry can confirm empty (3.22206ms)
+✔ a scope change clears queued intent and rejects late results from the previous child (1.173655ms)
+✔ blocked intent does not cross a scope change or disposal (1.283572ms)
+✔ an offline-aborted response cannot confirm empty and reconnect resumes an explicitly queued read (2.064896ms)
+✔ access denial is explicit and clears deferred discovery without retrying (1.147804ms)
+✔ an unknown decision retains its guard and discovery resumes only after original resolution (3.335721ms)
+✔ post-reply invalidation discovers a cold pending owner and preserves the mutation gate (458.372224ms)
+✔ clean empty chat has one prompt, separate toolbar, stable composer, and compact privacy access (11.525224ms)
+✔ conversation timeline opts into top alignment and centered empty prompt without changing generic defaults (4.519369ms)
+✔ earlier chat appears only for a real cursor and calls the existing pagination owner (1.06187ms)
+✔ message details select the original run and pending decisions remain discoverable after dismissal (5.807258ms)
+✔ send, unknown recovery, stop, original reply retry, and attachment gates keep existing callbacks (4.444461ms)
+✔ activity owns a real dialog and reads no receipts while closed; manual candidates and settings remain reachable (1.84508ms)
+✔ assistant settings uses the existing authorization view with child scope and explicit route selection (3.858491ms)
+✔ authorization keeps private-note confirmation and child-scoped dirty/pending leave guards (2.462073ms)
+✔ fresh Chat automatically requests pending discovery and shows the loaded cross-conversation candidate badge (3.233939ms)
+✔ Care and activity never describe unread, loading, failed or denied discovery as empty (23.727966ms)
+✔ initial task read failure becomes error without creating a mutation; one retry becomes ready (440.59356ms)
+✔ failed refresh retains stale tasks, and revoked access exposes no old items (135.996373ms)
+✔ task read recovery cannot bypass unknown original-request checks or resubmit implicitly (119.105967ms)
+✔ read notices have one normal loading line and nonempty live status without body copy (35.700481ms)
+✔ partial and stale Home tasks stay explicit, and unavailable assistant reminders only navigate (88.007667ms)
+✔ operation notices deduplicate matching headings without hiding unknown or conflicting results (31.942843ms)
+✔ Home refresh reaches the scoped task reader once and never reuses another scope (64.155248ms)
+✔ production task rows toggle closed and history collapse is local without another request (139.970122ms)
+✔ task disclosure callbacks preserve drafts and unknown-operation guards (70.969818ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1704.420413

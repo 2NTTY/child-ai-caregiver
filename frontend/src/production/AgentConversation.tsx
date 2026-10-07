@@ -41,6 +41,9 @@ export function AgentConversation({ visible, onDismiss, onOpenSettings, onReload
         </SectionCard> : null}
         <SectionCard><SectionHeader title="待確認候選" density="compact" subtitle="每頁 20 項，包含過期事項；不受聊天歷史範圍限制。" />
           <AppButton label="讀取待確認候選" variant="quiet" loading={agentPending.state === "loading"} disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"} onPress={() => readAgentPending()} />
+          {agentPending.state === "idle" ? <Text style={styles.label}>{agentModel.online ? "待確認候選尚未讀取；等候目前操作完成後會自動讀取。" : "目前離線，待確認候選尚未核對。"}</Text> : null}
+          {agentPending.state === "loading" ? <Text style={styles.label}>正在讀取待確認候選…</Text> : null}
+          {agentPending.state === "denied" ? <Text style={styles.label}>目前沒有權限查看這個孩子的待確認候選。</Text> : null}
           {agentPending.state === "failed" ? <Text style={styles.label}>未能讀取候選，原清單已隱藏。</Text> : null}
           {agentPending.state === "ready" ? agentPending.entries.length ? agentPending.entries.map(entry => <View key={entry.proposal.id} style={styles.receipt}>
             <Text style={styles.label}>{entry.proposal.title} · {entry.proposal.status === "expired" || proposalExpired(entry.proposal) ? "已過期" : agentProposalLabels[entry.proposal.status]}</Text>
