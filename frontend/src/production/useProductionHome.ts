@@ -20,19 +20,19 @@ export function useProductionHome() {
   const concerns = currentGrowth?.access !== "lost" && currentGrowth?.page?.concerns?.state === "ready"
     ? currentGrowth.page.concerns.items.filter(item => item.childId === base.selectedChildId && item.status !== "closed") : null;
   const ongoingState: HomeOverviewSection["state"] = !currentGrowth || currentGrowth.access === "lost" ? "unavailable"
-    : currentGrowth.load === "loading" || currentGrowth.page?.concerns?.state === "loading" ? "loading" : concerns && (currentGrowth.load === "error" || !currentGrowth.online) ? "stale"
+    : currentGrowth.load === "loading" && !currentGrowth.page || currentGrowth.page?.concerns?.state === "loading" ? "loading" : concerns && (currentGrowth.load === "error" || !currentGrowth.online) ? "stale"
       : currentGrowth.load === "error" || currentGrowth.page?.concerns?.state === "error" ? "error" : concerns ? "ready" : "unavailable";
   const ongoing: HomeOverviewSection = { state: ongoingState, items: (concerns ?? []).map(item => ({
     id: item.id, title: item.title, detail: item.reason, statusLabel: growthConcernFollowUpLabel(item) ?? "持續關注",
     action: { label: "查看關注經過", destination: "growth" as const },
   })), detail: ongoingState === "loading" ? "正在讀取關注…" : ongoingState === "stale" ? "暫時無法更新，顯示較早的關注"
     : ongoingState === "error" || ongoingState === "unavailable" ? "暫時無法顯示持續關注" : undefined };
-  const profileData = currentProfile && !currentProfile.reading && !currentProfile.needsRefresh ? currentProfile.current?.data : null;
+  const profileData = currentProfile && currentProfile.access !== "lost" && !currentProfile.needsRefresh ? currentProfile.current?.data : null;
   const tasksAvailable = !!currentTasks && currentTasks.access !== "lost";
   const pending = tasksAvailable ? currentTasks.items.filter(item => item.childId === base.selectedChildId && (item.occurrence.state === "scheduled" || item.occurrence.state === "needs_review")) : [];
   const taskReadState = currentTasks?.readState ?? (currentTasks?.reading ? "loading" : "ready");
   const attentionState: HomeOverviewSection["state"] = !tasksAvailable ? "unavailable"
-    : currentTasks.reading ? "loading" : taskReadState === "ready" && !currentTasks.online ? "stale" : taskReadState;
+    : taskReadState === "ready" && !currentTasks.online ? "stale" : taskReadState;
   const tasksReady = attentionState === "ready";
   const attention: HomeOverviewSection = { state: attentionState, items: pending.slice(0, 6).map(item => ({
     id: item.id, title: item.title, detail: `${new Date(item.occurrence.dueAt).toLocaleString("zh-HK", { timeZone: item.occurrence.timeZone })} · ${item.occurrence.timeZone}`,
@@ -47,8 +47,8 @@ export function useProductionHome() {
       regionLabel: profileData?.region ?? "地區未提供", allergiesLabel: profileData?.allergies ?? null,
       profileConfirmed: !!profileData && !!currentProfile?.current?.confirmedAtLabel,
     }),
-    profileLoad: currentProfile?.reading ? "loading" : currentProfile?.current && !currentProfile.needsRefresh ? "ready" : base.profileLoad,
-    recordsLoad: currentCare?.list.state === "ready" ? "ready" : currentCare?.list.state === "loading" || currentCare?.list.state === "loading_more" ? "loading" : "error",
+    profileLoad: currentProfile?.reading && !currentProfile.current ? "loading" : currentProfile?.current && !currentProfile.needsRefresh ? "ready" : base.profileLoad,
+    recordsLoad: currentCare?.list.state === "ready" || currentCare?.list.hasSnapshot && (currentCare.list.state === "loading" || currentCare.list.state === "loading_more") ? "ready" : currentCare?.list.state === "loading" || currentCare?.list.state === "loading_more" ? "loading" : "error",
     lastReadLabel: null,
     records: currentCare ? currentCare.list.records.map(record => ({
       id: record.id, childId: record.childId,

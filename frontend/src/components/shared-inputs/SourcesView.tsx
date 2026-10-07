@@ -77,20 +77,22 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     settled: !['saving', 'unknown', 'unconfirmed'].includes(model.operation.state), targetId: listIntent.current?.targetId});
   const columns = width >= 780;
   const readState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online ? "stale" : model.access !== "lost" && model.items.length === 0 ? "empty" : "ready";
-  const readMessage = readState === "loading" ? "正在讀取私人來源…" : readState === "error" ? "讀取未能確認；最近內容及草稿保留，暫不提交新的操作。"
+  const readMessage = readState === "loading" ? "正在讀取私人來源…" : readState === "error" ? model.notice || "未能讀取來源，請重試。"
     : readState === "stale" ? "目前離線。本頁文字草稿保留，沒有離線提交；恢復連線後請手動重新讀取。" : readState === "empty" ? "暫時沒有私人來源，可從「加入資料來源」開始。" : "";
   return <PageFrame density="compact" title="資料來源" description="你提供的私人來源統一在這裏管理。說明用途，讓助手協助整理，再由你核對；也可以自行填寫。" eyebrow="私人保存 · 核對後才接入">
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "目前沒有存取權限。舊原文、候選、草稿及操作已清除。" : ""} urgent={model.access === "lost"} />
     <View style={s.toolbar}><View style={s.scope}><Text style={s.meta}>目前範圍</Text><Text style={s.title}>{model.childName} · {model.accountName}本人</Text></View><View style={s.row}>
-      <AppButton label="重新讀取來源" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} />
+      {model.operation.state === "conflict" ? <AppButton label="重新核對來源版本" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /> : null}
       <AppButton label="清除草稿並新增來源" variant="quiet" disabled={!model.canChoose || !model.canCreate} onPress={actions.newInput} />
       <AppButton label="照片與記錄" variant="quiet" onPress={onPhotos} />
     </View></View>
-    <ReadStateNotice state={readState} message={readMessage} />
+    {model.access !== "lost" ? <ReadStateNotice state={readState} message={readMessage}>
+      {model.load === "error" || !model.online ? <AppButton label="重新讀取來源" variant="quiet" disabled={!model.online || model.busy} onPress={actions.refresh} /> : null}
+    </ReadStateNotice> : null}
     {model.access === "lost" ? <SectionCard><Text style={s.warning}>目前沒有存取權限。舊原文、候選、草稿及操作已清除。</Text></SectionCard> : null}
     {model.access === "read_only" ? <Text style={s.warning}>唯讀權限：可查看自己的私人來源，不能新增、提取、確認或刪除。</Text> : null}
     {model.access === "editable" && !model.canCreate ? <Text style={s.warning}>{production ? "目前不能新增來源" : "合成新增容量限制"}；已有來源及人工草稿仍可核對。</Text> : null}
-    <SourceStatus model={model} actions={actions} production={production} />
+    <SourceStatus model={model.load === "error" && model.operation.state === "none" && model.access !== "lost" ? { ...model, notice: "" } : model} actions={actions} production={production} />
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
       <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={model.items.length} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
         <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>

@@ -54,7 +54,7 @@ export function useTaskKnowledgeSummary(env: TaskKnowledgeEnvironment): TaskKnow
           setNotice("已讀取目前摘要；原操作尚未確認。重試保留原識別、內容及依據版本。");
         } else {
           original.current = null; setPending(null); setOperation(entry?.confirmed ? "saved" : "none");
-          setNotice(entry?.confirmed ? "原保存已確認，最新摘要及到診準備已讀回。" : entry ? "目前沒有待查操作識別；草稿保留，請核對摘要後重新確認。" : "摘要已重新讀取，未提交草稿保留。");
+          setNotice(entry?.confirmed ? "原保存已確認，最新摘要及到診準備已讀回。" : entry ? "目前沒有待查操作識別；草稿保留，請核對摘要後重新確認。" : "");
         }
       } catch (error) {
         if (!current() || clearAccess(error)) return;

@@ -102,7 +102,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
   function publishPage(page: CarePage, query: string, kind: CareFilter, index: number) {
     page.records.forEach(record => env.queryClient.setQueryData([...careKey, "record", record.id], record));
     nextCursor.current = page.nextCursor; pageIndex.current = index;
-    setCare(previous => ({ ...previous, list: { state: "ready", records: page.records.map(record => careRecordView(record, userId)),
+    setCare(previous => ({ ...previous, list: { state: "ready", hasSnapshot: true, records: page.records.map(record => careRecordView(record, userId)),
       activeQuery: query, activeKind: kind, scanned: page.scanned, hasMore: page.nextCursor !== null, page: index + 1, hasPrevious: index > 0, message: null },
       detail: previous.detail && !previous.draft && !previous.deletion && page.records.some(record => record.id === previous.detail!.record.id)
         ? { ...previous.detail, record: careRecordView(page.records.find(record => record.id === previous.detail!.record.id)!, userId),
@@ -114,8 +114,11 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     careRead.current?.abort(); const control = controller(); careRead.current = control; const generation = ++careGeneration.current;
     if (index === 0) { pageCursors.current = [null]; pageIndex.current = 0; nextCursor.current = null; }
     const cursor = pageCursors.current[index] ?? null;
-    setCare(previous => ({ ...previous, list: { ...previous.list, state: index ? "loading_more" : "loading", message: null,
-      ...(index === 0 ? { page: 1, hasPrevious: false, hasMore: false, activeQuery: query, activeKind: kind } : {}) } }));
+    setCare(previous => {
+      const hasSnapshot = !!previous.list.hasSnapshot && previous.list.activeQuery === query && previous.list.activeKind === kind && previous.list.page === index + 1;
+      return { ...previous, list: { ...previous.list, state: index ? "loading_more" : "loading", message: null, hasSnapshot,
+        ...(index === 0 ? { page: 1, hasPrevious: false, hasMore: hasSnapshot ? previous.list.hasMore : false, activeQuery: query, activeKind: kind } : {}) } };
+    });
     try {
       await env.queryClient.cancelQueries({ queryKey: [...careKey, "search"] });
       if (!current() || generation !== careGeneration.current || control.signal.aborted) return false;
@@ -137,8 +140,8 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     } catch (error) {
       if (!current() || generation !== careGeneration.current || control.signal.aborted) return false;
       if (!accessError(error, true)) setCare(previous => ({ ...previous, list: { ...previous.list,
-        state: error instanceof CareApiError && error.onlineCode === "cursor_stale" ? "stale" : "error",
-        message: error instanceof CareApiError && error.onlineCode === "cursor_stale" ? "記錄已變更，請重新搜尋；不會沿用舊分頁游標。" : "未能讀取目前記錄；請重新搜尋。" } }));
+        state: previous.list.hasSnapshot || error instanceof CareApiError && error.onlineCode === "cursor_stale" ? "stale" : "error",
+        message: error instanceof CareApiError && error.onlineCode === "cursor_stale" ? "記錄已變更，請重新搜尋；不會沿用舊分頁游標。" : previous.list.hasSnapshot ? "未能更新，仍顯示上次讀取的記錄。" : "未能讀取記錄，請重試。" } }));
       return false;
     } finally { released(control); }
   }
@@ -433,7 +436,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
   };
   const careModel: CareRecordsViewModel = { ...care, online: env.online, access: editable ? "editable" : "read_only",
     child: { ...care.child, name: env.childName }, checkLabel: attempt.current?.confirmed ? "重新讀取目前資料" : "查核原操作",
-    review: { state: care.list.state === "loading" || care.list.state === "loading_more" ? "loading" : care.list.state === "error" ? "error" : "ready",
+    review: { state: (care.list.state === "loading" || care.list.state === "loading_more") && !care.list.hasSnapshot ? "loading" : care.list.state === "error" ? "error" : care.list.state === "stale" && !care.list.hasSnapshot ? "unavailable" : "ready",
       scopeKey: env.scopeKey, label: "已保存照護記錄", hasMore: care.list.hasMore, capabilities: { create: false, update: false, skip: false, confirmImportant: false },
       notice: "待確認的健康事實及待辦提案在下方 Agent 待確認事項中處理。", items: care.list.records.flatMap(record => { const raw = rawRecord(record.id); return raw ? [savedRecordReview(raw, userId)] : []; }) } };
   const profileModel = { ...profile, online: env.online, child: { id: childId, name: env.childName }, access: editable ? "editable" as const : "read_only" as const,

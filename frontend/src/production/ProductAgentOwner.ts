@@ -5,7 +5,7 @@ import { mayCheckShared, mayDecide, mayRetryOriginal, type AgentDecisionKind, ty
 import { projectAgentRun, projectAgentProposal } from "./agent-projection.ts";
 
 interface PrivateScope { key: string; userId: string; childId: string }
-export interface AgentPendingDiscovery { state: AgentReadState; entries: { runId: string; proposal: AgentProposalView }[]; nextCursor: string | null }
+export interface AgentPendingDiscovery { state: AgentReadState; hasSnapshot?: boolean; entries: { runId: string; proposal: AgentProposalView }[]; nextCursor: string | null }
 export interface ProductAgentSnapshot { pending: AgentPendingDiscovery; model: AgentRunModel; inbox: AgentInboxModel; runs: Readonly<Record<string, AgentRunView>> }
 const runsSchema = z.object({ runs: z.array(z.object({ runId: z.uuid(), createdAt: z.iso.datetime({ offset: true }) })).max(20) });
 const accessLost = (error: unknown) => error instanceof ProductAgentApiError
@@ -173,18 +173,18 @@ export class ProductAgentOwner {
     more = this.pendingRead === "more"; this.pendingRead = null;
     const request = this.begin("read"); if (!request) return;
     const cursor = more ? this.snapshot.pending.nextCursor : null;
-    this.update({ pending: { ...this.snapshot.pending, state: "loading", entries: more ? this.snapshot.pending.entries : [], nextCursor: null } });
+    this.update({ pending: { ...this.snapshot.pending, state: "loading", entries: this.snapshot.pending.entries } });
     try {
       const page = await this.api.getPendingProposals(request.scope.childId, request.controller.signal, request.scope.userId, cursor);
       if (!request.current()) return;
-      if (request.controller.signal.aborted) { this.update({ pending: { state: "idle", entries: [], nextCursor: null } }); return; }
+      if (request.controller.signal.aborted) { this.update({ pending: { ...this.snapshot.pending, state: this.snapshot.pending.hasSnapshot ? "failed" : "idle" } }); return; }
       const ids = new Set(page.proposals.map(item => item.id));
       const prior = more ? this.snapshot.pending.entries.filter(item => !ids.has(item.proposal.id)) : [];
-      this.update({ pending: { state: "ready", entries: [...prior, ...page.proposals.map(proposal => ({ runId: proposal.runId, proposal: projectAgentProposal(proposal) }))], nextCursor: page.nextCursor } });
+      this.update({ pending: { state: "ready", hasSnapshot: true, entries: [...prior, ...page.proposals.map(proposal => ({ runId: proposal.runId, proposal: projectAgentProposal(proposal) }))], nextCursor: page.nextCursor } });
     } catch (error) {
       if (!request.current()) return;
       if (accessLost(error)) this.deny(error as ProductAgentApiError);
-      else this.update({ pending: { state: request.controller.signal.aborted ? "idle" : "failed", entries: [], nextCursor: null } });
+      else this.update({ pending: { ...this.snapshot.pending, state: request.controller.signal.aborted && !this.snapshot.pending.hasSnapshot ? "idle" : "failed" } });
     } finally { request.finish(); }
   };
   readInbox = async () => {

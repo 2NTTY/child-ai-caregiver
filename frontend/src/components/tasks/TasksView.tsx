@@ -118,8 +118,8 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
   }
   const calendar = <TasksCalendar items={pending} context={model.scheduleContext} selectedDay={selectedDay} month={calendarMonth} disabled={occupied}
     onSelectDay={selectCalendarDay} onChangeMonth={month => { if (!occupied) setCalendarMonth(month); }} />;
-  const readState = loading || listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty";
-  const readMessage = model.reading || listReadState === "loading" ? "正在讀取事項…" : model.loadingMoreTasks ? "正在載入更多事項…" : listReadState === "error" ? "未能讀取事項，請重試。" : !model.online ? "目前離線，已載入內容只供參考；恢復連線後才可提交。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : visible.length ? "" : tab === "pending" ? "沒有符合篩選的事項。" : "暫時沒有已回報完成的事項。";
+  const readState = listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty";
+  const readMessage = listReadState === "loading" ? "正在讀取事項…" : listReadState === "error" ? "未能讀取事項，請重試。" : !model.online ? "目前離線，已載入內容只供參考；恢復連線後才可提交。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : visible.length ? "" : tab === "pending" ? "沒有符合篩選的事項。" : "暫時沒有已回報完成的事項。";
   return <View ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={styles.pageScroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View style={styles.pageHeader}><View style={styles.headerCopy}><Text accessibilityRole="header" style={[styles.pageTitle, compact && mobileType.heading]}>待辦與預約</Text><Text style={styles.description}>跟助手說好安排，在這裏查看及回報</Text></View>
       {model.access === "editable" ? <View style={styles.headerActions}><AppButton label="請助手安排" density="compact" disabled={occupied} onPress={onAgent} /><AppButton label="手動新增" accessibilityLabel="手動新增共享事項" density="compact" variant="secondary" disabled={occupied} onPress={() => { rememberList(null); actions.startCreate(); }} /></View> : null}
@@ -144,7 +144,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
                 ]} disabled={occupied} onChange={value => { if (value !== "day") changeFilter(value); }} />
                 {!wide ? <AppSelectionTrigger label={selectedDay ? "日期 · 已選" : "日期"} calendar expanded={calendarOpen} disabled={occupied} onPress={() => { if (!occupied) setCalendarOpen(open => !open); }} /> : null}
               </View> : null}
-              {tab === "pending" && !wide && !model.reading ? <MotionDisclosure expanded={calendarOpen} scopeKey={scopeKey}><View style={styles.mobileCalendar}>{calendar}</View></MotionDisclosure> : null}
+              {tab === "pending" && !wide && !readUnavailable ? <MotionDisclosure expanded={calendarOpen} scopeKey={scopeKey}><View style={styles.mobileCalendar}>{calendar}</View></MotionDisclosure> : null}
               <View style={styles.scheduleList}>
               {tab === "pending" && !readUnavailable ? <View style={styles.listContext}>
                 <Text style={styles.meta} accessibilityLiveRegion="polite">{selectedDay ? `${DateTime.fromISO(selectedDay).toFormat("M月d日")}` : backlogLabels[filter]}{!selectedDay && filter === "near" && backlog.nearLabel ? ` · ${backlog.nearLabel}` : ""}{query.trim() ? " · 搜尋結果" : ""} · {timeZoneLabel} · 已載入 {backlog.total} 項{backlog.total > 0 ? `，顯示 ${backlog.from}–${backlog.to}` : ""}</Text>
@@ -155,7 +155,6 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
                 {(readState === "error" || readState === "stale") && recovery?.reloadCurrent ? <AppButton label="重新讀取事項" variant="secondary" density="compact" disabled={!model.online || model.reading || locked || !!model.draft} onPress={recovery.reloadCurrent} /> : null}
                 {readState === "empty" && tab === "pending" ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied} onPress={() => { if (occupied) return; anchor.current = null; actions.closePanel(); setQuery(""); setSelectedDay(null); setFilter("all"); setPage(0); }} /> : null}
               </ReadStateNotice>
-              {model.reading && model.draft ? <Text style={styles.meta}>草稿已保留。</Text> : null}
               {!readUnavailable && sections.map(section => <View key={section.id} testID={`task-time-group-${section.id}`} style={styles.timeGroup}>
                 <View style={styles.groupHeading}><Text accessibilityRole="header" style={styles.groupTitle}>{section.label}</Text><Text style={styles.meta}>{section.items.length} 項</Text></View>
                 <MotionList items={section.items} keyExtractor={task => task.id} scopeKey={`${scopeKey}:${tab}`} regionKey={`tasks:${section.id}`} eligible={model.operation.state === "saved" && !loading && !previousLoading.current && listVisible} renderItem={(task, { exiting }) => {

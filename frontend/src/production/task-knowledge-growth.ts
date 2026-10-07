@@ -72,7 +72,7 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
         } else setNotice(growthRefreshNotice);
       } catch (error) {
         if (!current() || clearAccess(error)) return;
-        setLoad("error"); setNotice("未能核對目前關注、成長候選及授權基準；原草稿及操作保留，請重新讀取後再提交。");
+        setLoad("error"); setNotice(entry ? "未能核對原操作；原草稿及操作保留，請重新讀取。" : page ? "未能更新，仍顯示上次讀取的關注。" : "未能讀取關注，請重試。");
       } finally { if (current()) { inFlight.current = false; setBusy(false); } }
     });
   };

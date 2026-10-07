@@ -1,6 +1,7 @@
 import {useId, useLayoutEffect, useRef, useState} from 'react';
 import {Platform, View} from 'react-native';
 import {Text} from 'react-native-paper';
+import {ReadStateNotice} from "../ReadStateNotice";
 import type {SummaryActions, SummaryViewModel} from '../../summary-view-model';
 import {sameSummaryPeriod, summaryPeriodLabel, summaryTime} from '../../summary-view-model';
 import {MotionReveal} from '../../motion';
@@ -57,10 +58,10 @@ export function SummaryView({model, actions, onRecord, onTask, onAgent, previewT
         <View style={s.row}><AppButton label="套用期間並更新報告" density="compact" variant="secondary" disabled={!model.online || model.busy || model.access === 'lost' || !!model.pending || !queryValid} onPress={refresh} /></View>
       </SummaryDisclosure>
       {queryChanged ? <Text style={s.warning}>新選項尚未套用，目前仍顯示：{summaryPeriodLabel(page!.period)}。</Text> : null}
-      {model.busy ? <Text style={s.meta}>正在讀取／提交，尚未確認最新狀態。</Text> : null}
+      {model.busy && model.operation === 'saving' ? <Text style={s.meta}>正在保存…</Text> : model.busy && !page ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取摘要…" /> : null}
       {!model.online ? <Text style={s.warning}>目前離線；草稿及原操作只留本頁，不會排隊提交。</Text> : null}
       {model.access === 'lost' ? <Text style={s.warning}>已無權存取；舊資料、草稿及原操作已清除。</Text> : null}
-      {model.readFailed && page ? <Text style={s.warning}>目前摘要尚未重新核對，暫停保存；已顯示資料可能過時。</Text> : null}
+      {model.readFailed && page && !model.notice ? <Text style={s.warning}>目前摘要尚未重新核對，暫停保存；已顯示資料可能過時。</Text> : null}
       {model.notice ? <Text style={model.operation === 'saved' ? s.body : s.warning}>{model.notice}</Text> : null}
       {(model.readFailed || model.pending) && model.access !== 'lost' ? <View style={s.row}><AppButton label={model.pending ? '先查原收據及更新摘要' : '重新讀取摘要'} density="compact" variant="secondary" disabled={!model.online || model.busy || !model.pending && !queryValid} onPress={refresh} /></View> : null}
     </View>

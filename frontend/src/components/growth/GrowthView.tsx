@@ -1,5 +1,6 @@
 import { useContainerWidth } from "../useContainerWidth";
 import { StatusAnnouncement } from "../StatusAnnouncement";
+import { ReadStateNotice } from "../ReadStateNotice";
 import { useEffect, useRef, useState } from "react";
 import { View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
@@ -30,7 +31,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onExportRepo
   const refreshed = model.notice === growthRefreshNotice;
   const showLoading = model.load === "loading" && !page;
   const showStatus = !model.online || model.access !== "editable" || model.load === "error" || !!model.notice && !refreshed || model.refreshPending;
-  const refreshButton = <AppButton label={model.pending?"重讀並核對原操作":"重新讀取"} accessibilityLabel={model.pending?"重讀並核對原操作":"重讀成長關注並保留草稿"} loading={model.busy} variant="secondary" density="compact" style={s.headerRefreshButton} disabled={model.busy||!model.online||model.access==="lost"} onPress={actions.refresh} />;
+  const refreshButton = model.pending || model.load === "error" || model.refreshPending || model.operation === "conflict" ? <AppButton label={model.pending?"重讀並核對原操作":"重新讀取"} accessibilityLabel={model.pending?"重讀並核對原操作":"重讀成長關注並保留草稿"} variant="secondary" density="compact" style={s.headerRefreshButton} disabled={model.busy||!model.online||model.access==="lost"} onPress={actions.refresh} /> : null;
   const footerActions = <>
     {tab === "archive" && onRecord && page ? <AppButton label="前往原始記錄" variant="secondary" density="compact" onPress={() => onRecord()} /> : null}
     {page?.notices.length ? <AppButton label={notesOpen ? "收起資料說明" : "資料說明"} variant="secondary" density="compact" expanded={notesOpen} onPress={() => setNotesOpen(value => !value)} /> : null}
@@ -42,17 +43,16 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onExportRepo
         {refreshButton}
         {onHistory ? <AppButton label="查看關注歷史" variant="secondary" density="compact" onPress={onHistory} /> : null}
       </View>
-      {/* Keep read feedback and button widths stable without inserting another page row. */}
-      <Text style={[s.meta, s.headerStatus]} numberOfLines={1} accessibilityLiveRegion="polite" testID="growth-refresh-status">{model.load === "loading" ? "正在讀取關注…" : refreshed ? growthRefreshNotice : "\u00a0"}</Text>
     </View>
   }>
-    <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === "failed"} />
+    <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={refreshed ? "" : model.notice} urgent={model.operation === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
+    {showLoading ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取關注…" /> : null}
     {showStatus ? <View style={s.smallStack}>
       {!model.online?<Text style={s.warning}>目前離線；資料未代表最新狀態，不能提交，沒有離線操作佇列。</Text>:null}
       {model.access==="read_only"?<Text style={s.meta}>目前只有閱讀權限；不能更改關注、接受候選或確認近況。</Text>:null}
       {model.access==="lost"?<Text style={s.warning}>已無權存取；舊關注、草稿及操作已清除。</Text>:null}
-      {model.load==="error"?<Text style={s.warning}>尚未成功讀取目前狀態；保留的草稿不能提交。</Text>:null}
+      {model.load==="error"&&!model.notice?<Text style={s.warning}>尚未成功讀取目前狀態；保留的草稿不能提交。</Text>:null}
       {model.notice && !refreshed?<Text style={model.operation==="unknown"||model.operation==="conflict"||model.operation==="failed"?s.warning:s.body}>{model.notice}</Text>:null}
       {model.refreshPending?<Text style={s.meta}>有更新等候核對，未提交草稿沒有被自動覆寫。</Text>:null}
     </View> : null}
