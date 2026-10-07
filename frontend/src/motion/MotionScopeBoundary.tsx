@@ -12,10 +12,10 @@ import { isCurrentPresentation, type PresentationStamp } from "./lifecycle";
 type ScopePresentation = PresentationStamp & { resetKey: string };
 const delayedStatusMs = 5000;
 
-export interface MotionScopeBoundaryProps extends MotionViewProps { scopeKey: string; resetKey?: string; eligible?: boolean }
-export function MotionScopeBoundary({ scopeKey, resetKey = "", eligible = true, children, style, ...props }: MotionScopeBoundaryProps) {
+export interface MotionScopeBoundaryProps extends MotionViewProps { scopeKey: string; resetKey?: string; eligible?: boolean; childKey?: string | null }
+export function MotionScopeBoundary({ scopeKey, resetKey = "", eligible = true, childKey = scopeKey, children, style, ...props }: MotionScopeBoundaryProps) {
   const preferences = useMotionPreferences();
-  const previous = useRef({ scopeKey, resetKey, epoch: preferences.epoch });
+  const previous = useRef({ scopeKey, resetKey, childKey, eligible, epoch: preferences.epoch });
   const generation = useRef(0);
   const token = useRef(0);
   const operation = useRef<ScopePresentation | null>(null);
@@ -47,17 +47,17 @@ export function MotionScopeBoundary({ scopeKey, resetKey = "", eligible = true, 
     if (Platform.OS === "web" && node.current) (node.current as unknown as HTMLElement).inert = conceal;
   }, [conceal]);
   useLayoutEffect(() => {
-    const old = previous.current; previous.current = { scopeKey, resetKey, epoch: preferences.epoch };
+    const old = previous.current; previous.current = { scopeKey, resetKey, childKey, eligible, epoch: preferences.epoch };
     if (old.scopeKey === scopeKey && old.resetKey === resetKey && old.epoch === preferences.epoch && preferences.enabled && eligible) return;
     const current = ++token.current; cancelAnimation(progress);
     if (old.scopeKey !== scopeKey) generation.current += 1;
-    if (old.scopeKey === scopeKey || old.resetKey !== resetKey || !preferences.enabled || !eligible || old.epoch !== preferences.epoch || measured.current <= 0) {
+    if (!old.eligible || !old.childKey || !childKey || old.childKey === childKey || old.scopeKey === scopeKey || old.resetKey !== resetKey || !preferences.enabled || !eligible || old.epoch !== preferences.epoch || measured.current <= 0) {
       progress.value = 1; operation.current = null; setState({ scopeKey, resetKey, generation: current, epoch: preferences.epoch, phase: "settled" }); return;
     }
     operation.current = { scopeKey, resetKey, generation: current, epoch: preferences.epoch };
     progress.value = -1; setState({ ...operation.current, phase: "covering" });
     progress.value = withTiming(0, { duration: motionTokens.scope.cover, easing: motionTokens.coverEase, reduceMotion: ReduceMotion.System }, finished => { if (finished) runOnJS(covered)(current); else runOnJS(complete)(current); });
-  }, [scopeKey, resetKey, eligible, preferences.enabled, preferences.epoch, progress, covered, complete]);
+  }, [scopeKey, resetKey, childKey, eligible, preferences.enabled, preferences.epoch, progress, covered, complete]);
   useLayoutEffect(() => {
     const active = operation.current, now = latest.current;
     if (state.phase !== "swapping" || !active || active.resetKey !== now.resetKey || !isCurrentPresentation(state, active)

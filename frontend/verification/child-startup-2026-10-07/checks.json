@@ -1,0 +1,69 @@
+{
+  "baseCommit": "a347956b18328b32c9fa14fb1ac4e499ab49b513",
+  "investigationBase": "9d1024cddd162bfc59198223f2a9e1ab2c6afeb2",
+  "date": "2026-10-07",
+  "environment": "Node 24.19.0; offline synthetic data, deterministic hook/animation harness; no model or live API",
+  "checks": [
+    {
+      "name": "Actual startup gate, production readiness, child transition and loading dot hooks",
+      "command": "node --test frontend/scripts/startup-readiness.test.mjs",
+      "result": "16/16 pass after the route-consumer correction, including care photo-view and growth archive deep links and stale view report rejection"
+    },
+    {
+      "name": "Existing shell/owner lifecycle, image readiness and motion lifecycle",
+      "command": "node --test frontend/scripts/owner-shell-lifecycle.test.mjs frontend/src/startup/imageReadiness.test.mts frontend/src/motion/lifecycle.test.mts",
+      "result": "12/12 pass in the adjacent batch; the separate scope module failed to start without transform-types"
+    },
+    {
+      "name": "Existing production owner scope, photo cleanup, identity and original-operation checks",
+      "command": "node --experimental-transform-types --test frontend/src/production/scope.test.mts",
+      "result": "4/4 pass after correcting runner flag"
+    },
+    {
+      "name": "Frontend strict typecheck on final a347 dependencies",
+      "command": "node node_modules/typescript/bin/tsc --project frontend/tsconfig.json --noEmit",
+      "result": "pass after final route-consumer corrections"
+    },
+    {
+      "name": "Expo production Web export on final a347 dependencies",
+      "command": "EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 CI=1 TMPDIR=/tmp/child-loading-metro EXPO_PUBLIC_API_BASE_URL=/api node ../node_modules/expo/bin/cli export --platform web --output-dir ../dist-loading",
+      "cwd": "frontend",
+      "result": "pass after final route-consumer corrections; 35 static routes; entry-efb726f09b6280baa9b2e63ab83bc039.js"
+    }
+  ],
+  "failuresAndLimits": [
+    "Pinned original FirstScreenGate and MotionScopeBoundary reproduce both new assertions as failures: early reveal after artwork and a curtain on initial null-to-child selection. This was an intentional baseline reproduction, not a product pass.",
+    "The adjacent batch initially invoked scope.test.mts without --experimental-transform-types. It failed to parse a pre-existing TypeScript parameter property. The corrected scoped runner passed without source or assertion changes.",
+    "A first scoped retry used the frontend working directory with root-relative output paths and did not launch; it was then run from the repository root.",
+    "Source materialization normalized connector-added trailing newlines against Git blob hashes. No unrelated source changes are included.",
+    "No browser pixels, continuous animation frames, screen reader, native device, real network, real family data, model, deployment or merge was tested or performed."
+  ],
+  "sourceSha256": {
+    "frontend/app/(dashboard)/_layout.tsx": "bd2c6c98489e98c5d1b4aa3071a3a971928d68f5a975bc38a3dffdc1420f8bd6",
+    "frontend/app/_layout.tsx": "a2460fda7b85594ec2635f45b64f4c01df696b3488f2125f5dfe1ac89841a02a",
+    "frontend/src/components/AppShell.tsx": "463326e3f9cc284164b85152af0101100cc64d3eb7c627d04c5e3f4e9db37f5a",
+    "frontend/src/motion/MotionScopeBoundary.tsx": "5b17d08245ccd10fa07be0cde179e89be39c1654f3608f78f765627c9ab81c49",
+    "frontend/src/production/PhotoInputDomains.tsx": "d487fffa9308f192465837bd317c5581333c7df30ef4d4740d5e85a6f05e43a2",
+    "frontend/src/production/ProductionDomains.tsx": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9",
+    "frontend/src/production/ProductionGate.tsx": "6182864f4cefb89d68370e82187f6b3aa2a75f28fbc088bb55bfc596238f514c",
+    "frontend/src/production/SettingsDomains.tsx": "9ea31941f3ab4ef52feb49e2b147f69d3aaeeee5809607be4a9ff0bc8df34272",
+    "frontend/src/production/useFamilyDocuments.ts": "f1c54575ee66bae46cd7420d9c32a4c96c592352a5626730285e6a59856a2ac2",
+    "frontend/src/production/useProductionFamily.ts": "27256a95cb3570ddf2569313740aaf45596dfc6fade62cf18bb9a007a9f30501",
+    "frontend/src/startup/FirstScreenGate.tsx": "87c4b78a0dac1a69a89216edcc0bfc9282b78432923ef03f25ffb53f347b831c",
+    "frontend/scripts/startup-readiness.test.mjs": "1b6c167b474fbee2f47ff3acb53368e4a3c267e943d372ab30b313a26e027961",
+    "frontend/src/startup/dataReadiness.ts": "0b4820e89cb89851f63f0efc38ec06c5b84ada56f642f2767b2040c497377099",
+    "frontend/src/startup/StartupLoadingLabel.tsx": "9cf42b1affffdf24f6e66c696dc9281bd8ca6784562ac3025af6d145fa4a9d6c",
+    "frontend/src/production/ProductionFirstScreenGate.tsx": "22311003a8ab45bb8baedaa81f79d289e433599c126c485f8145e1365a5a5c81",
+    "frontend/src/production/ProductionStartupReadiness.tsx": "ea92caa7f57e64bdf7e2a9bf17d7af938b5943d200ba28eef2c02e523fd63cf7"
+  },
+  "bundleSha256": {
+    "entry-efb726f09b6280baa9b2e63ab83bc039.js": "525a1386d3233e5f03a6821398cd0e7abdcf52c0958598234bc2ae8dcdf80c92"
+  },
+  "reviewCorrections": [
+    "Independent source review identified that preferences deep links omitted their notification-preferences read, and the zero-child fast path skipped identity-scoped reads. Existing owner projections are now mapped without new requests; no-child onboarding skips child reads only.",
+    "Independent recheck: all 13 startup tests and frontend strict typecheck pass after the corrections. Existing 16 adjacent/production-owner checks remain applicable. Browser and native behavior are still not verified.",
+    "Integration review identified two route-consumer omissions: care?view=photos was waiting for care rather than photos, and growth?tab=archive did not wait for documents. The view parameter is now part of the startup report key; archive readiness waits for the growth page authority plus documents. These changes only project existing reads.",
+    "Three focused assertions failed against the prior head, then all 16 startup tests, strict frontend typecheck and the 35-route offline Web export passed locally. The 16 earlier adjacent/owner checks are retained separately, not presented as a fresh 32-test batch.",
+    "Independent final re-review confirmed all four route-fix file hashes, the exact CarePage view and GrowthScreen tab consumers, 16/16 startup tests and frontend typecheck. No new blocker was found; browser evidence remains pending and the local final export is recorded separately."
+  ]
+}

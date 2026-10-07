@@ -31,10 +31,10 @@ function ConnectedRoute({ children }: { children: ReactNode }) {
 function NativeDashboardTabs() {
   const insets = useSafeAreaInsets();
   const leave = usePreviewNavigation();
-  const { scopeKey: childScope, identityKey } = useProduction();
+  const { scopeKey: childScope, identityKey, selectedChildId } = useProduction();
   const pathname = usePathname();
   const scopeKey = childScope ?? identityKey ?? "signed-out";
-  return <Tabs screenLayout={({ children }) => <MotionScopeBoundary scopeKey={scopeKey} eligible={!!childScope} style={{ flex: 1 }}>
+  return <Tabs screenLayout={({ children }) => <MotionScopeBoundary scopeKey={scopeKey} resetKey={`${identityKey}:${pathname}`} childKey={selectedChildId} eligible={!!childScope} style={{ flex: 1 }}>
     <MotionEntrance preset="route" triggerKey={pathname} scopeKey={scopeKey} style={{ flex: 1 }} testID="motion-route"><ConnectedRoute>{children}</ConnectedRoute></MotionEntrance>
     {pathname === "/" ? <MobileQuickInputDock key={scopeKey} supportedKinds={["text"]} /> : null}
   </MotionScopeBoundary>} screenListeners={({ navigation, route }) => ({ tabPress: event => {

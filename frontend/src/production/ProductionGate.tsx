@@ -9,11 +9,18 @@ import { useProduction } from "./ProductionProvider";
 
 export function ProductionGate({ children }: { children: ReactNode }) {
   const { identityKey, auth, recordsState, refresh, online } = useProduction();
-  if (identityKey) return children;
+  if (identityKey) {
+    if (recordsState.childrenError && recordsState.childrenLoadedAt === null) return <View style={styles.gate} testID="production-children-error">
+      <BrandLogo style={styles.logo} />
+      <Text accessibilityLiveRegion="polite">{recordsState.childrenError}</Text>
+      <AppButton label="重新讀取孩子" disabled={!online || recordsState.childrenLoading} onPress={() => { void refresh(); }} />
+    </View>;
+    return children;
+  }
   if (auth === "signedOut") return <Redirect href="/login" />;
   return <View style={styles.gate} testID="production-session-gate">
     <BrandLogo style={styles.logo} />
-    <Text accessibilityLiveRegion="polite">{recordsState.busy === "logout" ? "正在確認登出…" : auth === "checking" ? "正在確認登入狀態…" : "暫時未能確認登入狀態；私人內容已隱藏。"}</Text>
+    <Text accessibilityLiveRegion="polite">{recordsState.busy === "logout" ? "正在確認登出…" : !online ? "目前離線，連線後可重新確認登入狀態。" : auth === "checking" ? "正在確認登入狀態…" : "暫時未能確認登入狀態；私人內容已隱藏。"}</Text>
     {recordsState.notice ? <Text>{recordsState.notice}</Text> : null}
     {auth !== "checking" && recordsState.busy !== "logout" ? <AppButton label="重新檢查登入狀態" disabled={!online} onPress={() => { void refresh(); }} /> : null}
   </View>;

@@ -215,7 +215,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
       } finally { if (url) URL.revokeObjectURL(url); if (current()) { inFlight.current = false; setExportBusy(false); } }
     });
   };
-  return { preparation, archive, operation, recovery, busy, exportBusy, locked, dirty, epoch, notice, standard,
+  return { readState: load, preparation, archive, operation, recovery, busy, exportBusy, locked, dirty, epoch, notice, standard,
     authorityVersion: visible?.authorityVersion ?? "", createDocument, exportReport,
     refreshReport() { if (standard) change(standard.id, standard.version, "refresh"); },
     refresh() { refresh(); }, markDraft: preparation.actions.markDraft!, discardDraft: preparation.actions.discardDraft! };
