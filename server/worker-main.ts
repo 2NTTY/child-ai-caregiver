@@ -4,6 +4,8 @@ import { createGrowthStore } from "./growth-store.ts";
 import { createGrowthWorker } from "./growth-worker.ts";
 import { createConcernStore } from "./concern-store.ts";
 import { createConcernWorker } from "./concern-worker.ts";
+import { createAgentWorkContinuationStore } from "./agent-work-continuation.ts";
+import { createAgentWorkContinuationWorker } from "./agent-work-continuation-worker.ts";
 import { createFamilyDocumentStore } from "./family-document-store.ts";
 import { createFamilyDocumentWorker } from "./family-document-worker.ts";
 import { createPool } from "./database.ts";
@@ -37,6 +39,7 @@ let queue: ReturnType<typeof createWorkerQueue> | undefined;
 let knowledgeWorker: ReturnType<typeof createKnowledgeRefreshWorker> | undefined;
 let growthWorker: ReturnType<typeof createGrowthWorker> | undefined;
 let concernWorker: ReturnType<typeof createConcernWorker> | undefined;
+let continuationWorker: ReturnType<typeof createAgentWorkContinuationWorker> | undefined;
 let documentWorker: ReturnType<typeof createFamilyDocumentWorker> | undefined;
 let agentBackground: ReturnType<typeof createAgentBackground> | undefined;
 let pushQueue: ReturnType<typeof createWebPushQueue> | undefined;
@@ -45,6 +48,7 @@ const stop = () => stopping ??= (async () => {
   telegramAbort.abort();
   const deadline = setTimeout(() => { console.error("worker_stop_deadline"); process.exit(1); }, 20000).unref();
   agentBackground?.stop();
+  try { await continuationWorker?.stop(); } finally {
   try { await documentWorker?.stop(); } finally {
   try { await concernWorker?.stop(); } finally {
     try { await growthWorker?.stop(); } finally {
@@ -52,6 +56,7 @@ const stop = () => stopping ??= (async () => {
         try { await pushQueue?.stop(); } finally { try { await telegramConsumer?.stop(); } finally { try { await contactConsumer?.stop(); } finally { try { await queue?.stop(); } finally { try { await pool?.end(); } finally { clearTimeout(deadline); } } } } }
       }
     }
+  }
   }
   }
 })();
@@ -79,6 +84,9 @@ try {
     if(growth){growthWorker=createGrowthWorker(pool,queue.boss,growth,services.agent);await growthWorker.start();}
     if((await pool.query("SELECT 1 FROM app_migrations WHERE id='027-concerns'")).rowCount){
       concernWorker=createConcernWorker(pool,queue.boss,createConcernStore(pool,cipher),services.agent);await concernWorker.start();
+    }
+    if ((await pool.query("SELECT 1 FROM app_migrations WHERE id='033-agent-work-continuation'")).rowCount) {
+      continuationWorker=createAgentWorkContinuationWorker(pool,queue.boss,createAgentWorkContinuationStore(pool,cipher),services.agent);await continuationWorker.start();
     }
     agentBackground = createAgentBackground(pool, cipher, queue.boss, services.agent);
     await agentBackground.start();

@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.server.json",
+  "include": [
+    "../server/agent-work-continuation.ts",
+    "../server/agent-work-continuation-worker.ts",
+    "../server/agent-work-store.ts",
+    "../server/online-change.ts",
+    "../server/knowledge-version-review.ts",
+    "../server/worker-queue.ts",
+    "../server/worker-main.ts",
+    "../tests/p2-a06-continuation.test.ts",
+    "../tests/p2-a06-background-scope.test.ts",
+    "../tests/concern-capacity.test.ts"
+  ]
+}

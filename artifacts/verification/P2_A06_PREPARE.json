@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "scope": "encrypted database-only checkpoint; no photo changes or restore",
+  "checkpoint": {
+    "path": "C:/Users/2NTTY/.codex/p2-a06-local/before-029-033.ybak",
+    "bytes": 405418,
+    "sha256": "459a74f55347d7e038981fb54075214917bfce37d52c831d531a489815309f45"
+  },
+  "migrations": [
+    {
+      "id": "029-concern-terminal-reserve",
+      "checksum": "e67df4c47d2977a8761e8966e07bafa25425f7792011c9dabcfc082b1a1a6891",
+      "alreadyApplied": false
+    },
+    {
+      "id": "033-agent-work-continuation",
+      "checksum": "d61197b64912785f69348a747872b285444437f148defef253eb9cf894e6bb0e",
+      "alreadyApplied": false
+    }
+  ],
+  "worker": {
+    "enabled": false,
+    "generation": "0fc82841-ae94-4d10-ab9f-c5a53df5cbd8"
+  }
+}

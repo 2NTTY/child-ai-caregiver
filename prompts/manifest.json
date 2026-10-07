@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.31",
+  "version": "0.1.32",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -136,7 +136,7 @@
     {
       "id": "module.proactive-run",
       "path": "modules/proactive-run.md",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -203,7 +203,7 @@
     {
       "id": "module.product-tools",
       "path": "modules/product-tools.md",
-      "version": "0.1.16",
+      "version": "0.1.17",
       "requires": [
         "core.tool-use",
         "core.output",
@@ -482,6 +482,30 @@
         "S13-W07"
       ],
       "missingCapability": "只按 Server 可用工具處理站內結果；沒有通知或任務寫入工具時不執行或聲稱已外發。"
+    },
+    {
+      "id": "product-work-followup",
+      "additionalModules": [
+        "domain.childcare-hk.sources-freshness",
+        "domain.childcare-hk.care-workflows",
+        "module.knowledge-answering",
+        "module.proactive-run"
+      ],
+      "outputModes": [
+        "tool_cycle"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "context",
+        "evidence",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "P2-A06"
+      ],
+      "missingCapability": "只在目前可讀範圍保存本站回饋；寫入、確認、共享及外發均不屬本事件權限。"
     },
     {
       "id": "photo-capture",

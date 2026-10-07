@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Text } from "react-native-paper";
-import { growthArchivedConcerns, growthConcernCanRestore } from "../../growth-view-model";
+import { growthArchivedConcerns, growthConcernAtCapacity, growthConcernCanRestore } from "../../growth-view-model";
 import { useGrowthWorkspace } from "../../workspaces/GrowthWorkspace";
 import { AppButton } from "../ui";
 import { AppIcon } from "../AppIcon";
@@ -45,7 +45,7 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
         <AppButton label="返回關注歷史" variant="quiet" style={styles.action} onPress={() => setSelection(null)} />
         {model.page.canManage ? restore(selected) : null}
       </View>
-      {model.page.canManage && !growthConcernCanRestore(selected) ? <Text style={s.meta}>未取得原狀態，暫未能恢復。</Text> : null}
+      {model.page.canManage && !growthConcernCanRestore(selected) ? <Text style={s.meta}>{growthConcernAtCapacity(selected) ? "已達歷史容量限制" : "未取得原狀態，暫未能恢復。"}</Text> : null}
       <GrowthConcernTimeline concern={selected} page={model.page} onRecord={onRecord} onTask={onTask} />
     </View> : <>
       {!archived.length ? <Text style={s.body}>{searchText || dateRange.from || dateRange.to ? "沒有符合篩選的關注。" : "暫無已結束關注。"}</Text> : null}
@@ -62,7 +62,7 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
           </Pressable>
           {model.page?.canManage ? restore(concern) : null}
         </View>
-        {model.page?.canManage && !growthConcernCanRestore(concern) ? <Text style={[s.meta, styles.restoreUnavailable]}>未取得原狀態，暫未能恢復。</Text> : null}
+        {model.page?.canManage && !growthConcernCanRestore(concern) ? <Text style={[s.meta, styles.restoreUnavailable]}>{growthConcernAtCapacity(concern) ? "已達歷史容量限制" : "未取得原狀態，暫未能恢復。"}</Text> : null}
       </View>)}
     </>}
   </View>;

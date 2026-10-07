@@ -1645,3 +1645,15 @@
 - 只沿同現場補22 calls／1次同snapshot重渲染：六頁PDF抽字、隔離、fixed/living防重、未選錄來源更正後archive/content/history/export/receipt遮蔽及重建104筆通過。兩批合共37／40 calls、2 renders；沒有重建來源。精確核對電郵後清理兩個合成帳戶cascade，非fixture totals前後相同，worker=false／generation不變。
 - [EV](artifacts/verification/P2_A05_CHECKS.json)及原失敗／補驗raw分開；主模型最低gate通過。零模型／embedding／外網／通知／瀏覽器／部署；pool重建不稱VM重啟，真排程／跨日與整體交付留A09。
 - 交付前master及draft #111/#130未變；按C帳號PR及合併，再進A06。完整P2未完成。
+
+
+<a id="log-20261008-p2-a06"></a>
+## 2026-10-08｜P2-A06 有用的主動接續
+
+- 基線35fcb0d；A主責、權重3，A50%／C40%／B10%。主模型親寫契約、Prompt Pack0.1.32及review，Luna只定位，兩個Sol6.1分別接背景引擎與draft111容量適配；共用AI由A統籌，不稱成員獨立人工驗收。
+- 復用持久工作／pg-boss：033保存加密比較基線與每日本人／孩子合併事件，相關資料／有效來源變更及到期才接續，原run防重；cancel／終態／撤權重查。只讀私人配方沿原生能力載入、3500字元context及原32k限額，不外發、不自行寫事實。跟進結果事件不反向喚醒自己。
+- 029沿draft111的200普通＋2終態保留格，保留A05報告reader；滿額仍可取消跟進並歸檔，UI只調整容量提示。未合併draft整枝或接管#130。
+- 五個必要离線案例有通過證據（capacity2、continuation2、真Runner＋scripted provider1）；限定型別通過。原背景測例失敗包括缺變數、錯誤要求完整頁及無剩餘context；局部修正provider／有界context並移除私人背景不適用的互動寫入prompt後，五工作／按需只讀／歷史續讀在原限額內成功。原失敗raw保留，不稱真模型理解通過。
+- 工程外加密DB checkpoint後套029／033。原SQL9次因UUID比較錯誤停批；只續同現場至24次，停於harness取錯重設前baseline，readonly證明另一owner未被私人變更喚醒。主模型核對後修正baseline，重建原收據inputs，只續剩餘30次，combined54／55通過；同2帳號／1孩子、1stub run，零真模型／外網／通知。
+- 驗得交易回滾／原op、5項合併／第6項延期、撤權／取消、store及worker重建沿原run、關注200→202並停止舊跟進。精確清理後非fixture totals一致，worker=false／generation未變。store重建不代替OS／VM重啟；真流程及完整UI留A07／A09。
+- [EV](artifacts/verification/P2_A06_CHECKS.json)及原SQL兩次失敗／phase2成功分開保存；Node24.11／npm11.6.1／PG18.6／ADK2.1，lockfile與部署固定版本不改。主模型最低gate通過。按A帳號交付，合併後開A08；完整P2與新部署未完成。

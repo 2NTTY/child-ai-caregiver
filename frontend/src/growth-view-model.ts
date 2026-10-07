@@ -1,5 +1,6 @@
 import type { TaskAssigneeView, TaskState, TaskValues } from "./task-view-model";
 import type { ConcernChange, ConcernValues } from "../../src/shared/concerns";
+import { CONCERN_EVENT_LIMIT } from "../../src/shared/concerns.ts";
 
 // Display projections of ce87370 growth.ts/GrowthPanel; the existing API remains authoritative.
 export type GrowthTopicId = "solid_food" | "toddler_play" | "preschool_development" | "school_vision";
@@ -98,8 +99,10 @@ export type GrowthActions = {
 export const growthStateLabels:Record<GrowthState,string>={proposed:"待確認",snoozed:"已延後",accepted:"已接受",dismissed:"已關閉",inapplicable:"目前不適用"};
 export const growthKindLabels={observe:"觀察",arrange:"安排",consult:"諮詢"};
 export const growthRefreshNotice = "已重新讀取";
+export const growthConcernAtCapacity = (concern: GrowthConcern) => concern.events.length >= CONCERN_EVENT_LIMIT;
+export const growthConcernArchiveReachesCapacity = (concern: GrowthConcern) => concern.events.length + 1 >= CONCERN_EVENT_LIMIT;
 export const growthConcernCanRestore = (concern: GrowthConcern) => concern.status === "closed"
-  && (concern.statusBeforeArchive === "proposed" || concern.statusBeforeArchive === "following");
+  && !growthConcernAtCapacity(concern) && (concern.statusBeforeArchive === "proposed" || concern.statusBeforeArchive === "following");
 export type GrowthConcernTimelineEntry =
   | { kind: "event"; at: string; event: GrowthConcernEvent }
   | { kind: "attention_state"; at: string; item: GrowthAttention };

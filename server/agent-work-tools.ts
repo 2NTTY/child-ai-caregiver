@@ -26,6 +26,20 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
   const { kind: _deactivationKind, ...deactivationShape } = deactivation.shape;
   return [
     make("read_work", readAgentWorkSchema, args => guard(() => store.readWork(userId, childId, readAgentWorkSchema.parse(args)))),
+    make("read_background_result", z.object({ runId: z.uuid(), offset: z.number().int().min(0).max(1000000),
+      limit: z.number().int().min(1).max(4000) }).strict(), args => guard(async () => {
+      const input = args as { runId: string; offset: number; limit: number };
+      const value = await store.get(userId, childId, input.runId);
+      if (!value) return null;
+      if (input.offset > value.text.length) throw new FamilyError(400, "invalid_input");
+      const metadata = { runId: value.runId, status: value.status, stopReason: value.stopReason, counts: value.counts,
+        tools: value.tools, citationReferences: value.citations.map(item => ({ chunkId: item.chunkId, sourceId: item.sourceId, versionId: item.versionId })),
+        evidenceUse: "historical_result_not_current_evidence", offset: input.offset, totalCharacters: value.text.length };
+      const available = Math.max(0, Math.min(input.limit, run.budget.toolResponseCharacters - JSON.stringify(metadata).length - 900));
+      const text = value.text.slice(input.offset, input.offset + available), end = input.offset + text.length;
+      return { ...metadata, text, complete: end === value.text.length, nextOffset: end < value.text.length ? end : null,
+        budgetLimited: available < input.limit && end < value.text.length };
+    })),
     make("save_work", saveAgentWorkSchema, (args, call) => guard(() => store.saveWork(run.scope, run.runId, call.callId, saveAgentWorkSchema.parse(args)))),
     make("search_history", historySearchSchema, args => guard(() => store.searchHistory(userId, childId, historySearchSchema.parse(args)))),
     make("read_history", historyReadSchema, args => guard(() => store.readHistory(userId, childId, historyReadSchema.parse(args)))),

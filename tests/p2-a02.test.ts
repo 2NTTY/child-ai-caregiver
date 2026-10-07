@@ -44,6 +44,8 @@ function harness() {
     if (sql.startsWith("SELECT workspace_id FROM children")) return result([{ workspace_id: workspaceId }]);
     if (sql.startsWith("SELECT owner_user_id, access_version FROM workspaces")) return result([{ owner_user_id: userId, access_version: 1 }]);
     if (sql.startsWith("SELECT 1 FROM children")) return result([{}]);
+    // This legacy synthetic adapter keeps additive migrations disabled.
+    if (sql.startsWith("SELECT 1 FROM app_migrations")) return result();
     if (sql.startsWith("SELECT access_version::text")) return result([space]);
     if (sql.startsWith("SELECT version FROM agent_operation_policies")) return result();
     if (sql.includes("FROM agent_runs") && !sql.includes("JOIN")) return result([run]);

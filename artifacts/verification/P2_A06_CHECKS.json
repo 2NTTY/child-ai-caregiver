@@ -1,0 +1,88 @@
+{
+  "package": "P2-A06",
+  "base": "35fcb0d54411e70a08a1727beb80ce45151d4bb8",
+  "review": {
+    "primary": true,
+    "scope": "Original work authority, encrypted event/baseline, current access and versions, native queue atomicity, daily limits, unknown recovery, private read-only context and terminal concern reserve"
+  },
+  "runtime": {
+    "node": "24.11.0",
+    "postgres": "18.6",
+    "pgvector": "0.8.6",
+    "adk": "2.1.0"
+  },
+  "verification": {
+    "offline": {
+      "distinctCases": 5,
+      "capacity": "2 aggregate cases passed; executor output retained, no separate raw stdout",
+      "continuation": "2 aggregate cases passed after review, including context bound and metadata wake suppression; executor output retained",
+      "background": "One real ADK Runner with scripted provider; five work contexts, read-only lazy capability loading, successful tools, bounded historical result and same-event reuse",
+      "types": "Scoped Server and these tests passed; not whole repository",
+      "finalEvidence": [
+        "P2_A06_BACKGROUND_RECIPE_FINAL.log",
+        "P2_A06_TYPES_FINAL.log"
+      ],
+      "originalFailures": [
+        {
+          "evidence": "P2_A06_BACKGROUND_SCOPE.log",
+          "cause": "Missing privateContinuation local declaration; fixed before scope execution"
+        },
+        {
+          "evidence": "P2_A06_BACKGROUND_SCOPE_REPAIR.log",
+          "cause": "Scripted provider asserted full requested page although bounded read correctly returned partial"
+        },
+        {
+          "evidence": "P2_A06_BACKGROUND_SCOPE_DIAGNOSIS.log",
+          "cause": "Same bounded-page assertion exposed outside model provider; actual partial metadata verified"
+        },
+        {
+          "evidence": "P2_A06_BACKGROUND_LAZY_FINAL.log",
+          "cause": "Five contexts plus full interactive write guidance and document schemas exceeded background input budget"
+        },
+        {
+          "evidence": "P2_A06_BACKGROUND_BOUNDED_FINAL.log",
+          "cause": "Remaining response allowance empty despite completed run; replaced irrelevant write module in private-only recipe, preserved mandatory safety modules and limits"
+        }
+      ]
+    },
+    "sql": {
+      "status": "passed_remaining_groups_on_same_fixture",
+      "evidence": "P2_A06_SQL_PHASE2.log",
+      "combinedBusinessCalls": 54,
+      "budget": 55,
+      "accounts": 2,
+      "children": 1,
+      "stubRuns": 1,
+      "realModelCalls": 0,
+      "networkAttempts": 0,
+      "notifications": 0,
+      "originalFailures": [
+        {
+          "evidence": "P2_A06_SQL.log",
+          "businessCalls": 9,
+          "cause": "UUID trigger_reference compared with e.id::text; fixed to UUID equality; failed transaction rolled back."
+        },
+        {
+          "evidence": "P2_A06_SQL_RESUME.log",
+          "combinedBusinessCalls": 24,
+          "cause": "Harness compared stale pre-reset other-owner timestamp; readonly next_check_at equaled explicit due_at reset, so no private wake occurred. Corrected expected baseline and resumed only remaining groups."
+        }
+      ],
+      "cleanup": "Exact fixture accounts/cascades and recorded queue job IDs removed; nonfixture totals equal baseline; worker paused with original generation.",
+      "coverage": [
+        "029 full-history cancellation/archive to202 and original operation replay",
+        "Transactional queue rollback, five-work daily event and deferred sixth basis",
+        "Private context, cancel, revoke and same persisted run after reconstructed store/worker"
+      ],
+      "limits": "SQL plus stub pipeline, not real Gemini quality, live cron, full process restart, UI or delivery."
+    },
+    "checkpoint": "P2_A06_PREPARE.json"
+  },
+  "limitations": [
+    "No real model, embedding, notification, browser, cloud deployment, live cron or OS/VM restart executed by this package.",
+    "Private work projections and complete background history UI belong to A07.",
+    "Existing due-task notification evidence reused; new end-to-end and restore evidence belongs to A09.",
+    "Other chat draft130 remains separate; draft111 capacity work adapted to current A05 readers, not merged wholesale."
+  ],
+  "gate": "Primary review: minimum A06 package gate satisfied; full P2 and deployment remain incomplete."
+}
