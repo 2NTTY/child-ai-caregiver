@@ -1546,3 +1546,5 @@
 - Recorded At：2026-10-07 09:34 UTC；Work Date：同日。dot主模型親寫契約；原生代理只讀核對與合成重現、另一代理實作。未新增人工驗收。
 - 七項純快照斷言證明聚合日期不等於各觀察的固定期間歸屬；此證據不是DB或正式PDF驗收。
 - 採逐observation來源、原關注authority、原未知日期及80上限；舊snapshot以臨時舊算法投影核對，不持久化副本，不刪歷史。程式與兼容測試待完成，未部署／真模型／DB操作。
+
+- 09:48 UTC 補記：獨立10/10與source/store scoped semantic typecheck通過；與master對照確實重現跨季缺陷。fake Pool/mock renderer不等同真SQL或PDF排版。無觀察事件的原undated source/basis保留；退役聚合僅指已有observation的舊整串來源。程式/測試已push 0bef714d，文件最終同步待追加，沒有部署。
