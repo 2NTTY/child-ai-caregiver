@@ -6,6 +6,9 @@ import type { AgentRunContext, AgentTool, AgentToolResult } from "./agent-runtim
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import { FamilyError } from "./family-access.ts";
 
+// The disjoint action branches retain their strict validators but declare Vertex-compatible anyOf.
+const documentChangeParameters = z.union(documentChangeSchema.options);
+
 const receiptId = (runId: string, callId: string) => {
   const hash = createHash("sha256").update(`family-document:${runId}:${callId}`).digest("hex");
   return `${hash.slice(0,8)}-${hash.slice(8,12)}-4${hash.slice(13,16)}-a${hash.slice(17,20)}-${hash.slice(20,32)}`;
@@ -47,7 +50,7 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
         return item ? { status: "succeeded", reference: item.id, data: { receiptId: opId, document: metadata(item), message: "已保存家庭資料整理；不是新確認事實或照護完成。" } } : { status: "rejected" };
       }) },
     { name: "change_family_document", description: "sourceQuote 逐字引用本次家長要求；先查原文件 ID／版本／authorityVersion，按家長明確要求重整、歸檔、重開或勾選文件清單。只改這份文件，不完成照護任務；來源已變先 refresh。歸檔保留歷史，不刪資料；不能改共享權限或複製私人原文。", authorize,
-      parameters: z.object({ sourceQuote: z.string().min(2).max(1000), documentId: z.uuid(), change: documentChangeSchema }).strict(), execute: (args, context) => guard(async () => {
+      parameters: z.object({ sourceQuote: z.string().min(2).max(1000), documentId: z.uuid(), change: documentChangeParameters }).strict(), execute: (args, context) => guard(async () => {
         const opId = receiptId(runId, context.callId), change = documentChangeSchema.parse(args.change);
         const item = await agent.writeDocument(scope, runId, opId, args.sourceQuote as string, { id: args.documentId as string, change });
         return item ? { status: "succeeded", reference: item.id, data: { receiptId: opId, document: metadata(item) } } : { status: "rejected" };

@@ -1,0 +1,108 @@
+{
+  "package": "QA-VERTEX-TOOL-CONTRACT",
+  "observedAt": "2026-10-07T05:37:30Z",
+  "baseCommit": "b7dec9d891f3f3e1a6d5c06443171f32f9180e1c",
+  "scope": "Provider-facing concern/document declarations only. Business schemas, handlers, tool selection, prompts, provider settings and authorization are unchanged.",
+  "incidentEvidence": {
+    "source": "Parent relayed the deployed fixed diagnostic for the second synthetic UI request",
+    "at": "2026-10-07T05:25:25.813948367Z",
+    "event": "vertex_generate_failure",
+    "httpStatus": 400,
+    "category": "invalid_request",
+    "toolCalls": 0,
+    "queryEmbeddings": 0,
+    "limitation": "No provider body was retained. HTTP 400 alone does not identify the specific rejected field."
+  },
+  "reconstruction": {
+    "messages": "The exact three synthetic UI messages are retained in the regression fixture; no real family data was used.",
+    "recipe": "product-interactive",
+    "selectionReason": "The phrase 日常觀察 matches 觀察 in the existing capability selector, so this ordinary note includes concern tools.",
+    "toolCount": 15,
+    "beforeViolations": [
+      "propose_concern_change.properties.change.oneOf",
+      "propose_concern_change.properties.change.oneOf[1].properties.confirm.enum(non-string)",
+      "propose_concern_change.properties.change.oneOf[2].properties.confirm.enum(non-string)"
+    ],
+    "afterViolations": [],
+    "evidence": [
+      "VERTEX_TOOL_CONTRACT/note-contract-before.json",
+      "VERTEX_TOOL_CONTRACT/note-contract-after.json"
+    ],
+    "confidence": "High confidence in the source-proven request-contract defect. It is consistent with the live 400, but the exact server rejection and live recovery remain unverified."
+  },
+  "implementation": [
+    "Use ordinary Zod unions only in provider tool parameters so pinned ADK emits supported anyOf for disjoint action branches.",
+    "For concern archive/restore, emit BOOLEAN while a local refine still rejects every value except true.",
+    "Keep original strict concernChangeSchema.parse and documentChangeSchema.parse in the execution path unchanged.",
+    "Reuse all original branch validators; reject forged outer identity, cross-action properties, false/string confirmation, and invalid versions before store calls."
+  ],
+  "versions": {
+    "node": "24.19.0",
+    "genai": "2.24.0",
+    "adk": "2.1.0",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "pg": "8.23.0",
+    "pgTypes": "8.23.1"
+  },
+  "checks": [
+    {
+      "name": "initial targeted regression",
+      "status": "expected_failure",
+      "tests": 3,
+      "passed": 0,
+      "failed": 3,
+      "evidence": "VERTEX_TOOL_CONTRACT/contract-before.log",
+      "note": "Failures name only unsupported schema paths; mocked transport assertions are not live provider errors."
+    },
+    {
+      "name": "final focused tests",
+      "status": "passed",
+      "tests": 5,
+      "failed": 0,
+      "command": "node --test tests/vertex-tool-contract.test.ts tests/product-agent-schema.test.ts",
+      "evidence": "VERTEX_TOOL_CONTRACT/final-tests.log",
+      "coverage": [
+        "Exact selected tool declarations through native SDK serialization",
+        "Document declaration and strict execution validation",
+        "Real product-interactive Runner request with original Prompt Pack and mock ADC/fetch",
+        "True-only confirmation, strict branch validation and denied authorization",
+        "Existing integer bounds and server-owned filters"
+      ]
+    },
+    {
+      "name": "initial scoped typecheck harness",
+      "status": "blocked_then_resolved",
+      "diagnostics": 45,
+      "evidence": "VERTEX_TOOL_CONTRACT/typecheck-initial-harness.log",
+      "cause": "The isolated workspace initially lacked transitive source/type dependencies. No product failure was inferred."
+    },
+    {
+      "name": "final scoped semantic TypeScript check",
+      "status": "passed",
+      "exitCode": 0,
+      "command": "node node_modules/typescript/bin/tsc --noEmit --skipLibCheck --strict --erasableSyntaxOnly --target ES2023 --module NodeNext --moduleResolution NodeNext --allowImportingTsExtensions --types node server/agent-concern-tools.ts server/agent-document-tools.ts tests/vertex-tool-contract.test.ts tests/product-agent-schema.test.ts",
+      "note": "Pinned dependencies and complete transitive source closure were available. This is not a full repository typecheck."
+    }
+  ],
+  "privacy": "No provider payload, response body, credentials, real family data, or headers are logged or retained. Contract evidence contains selected capability names and schema-violation paths only.",
+  "notRun": [
+    "Live Vertex/model/API requests",
+    "GCP operations",
+    "Database or external notifications",
+    "Full regression suite or full repository typecheck",
+    "Deployment or merge"
+  ],
+  "nextGate": "Independent review, then parent-controlled authorized merge/deployment and a separately bounded fresh synthetic UI request. Stop on failure; do not replay unknown outcomes.",
+  "sources": [
+    "https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/Schema",
+    "https://github.com/googleapis/js-genai/blob/v2.24.0/src/_transformers.ts"
+  ],
+  "sha256": {
+    "server/agent-concern-tools.ts": "5366a74193316b692d17919a3b7c8911ba52a1618077ce269124309afdcb0e9b",
+    "server/agent-document-tools.ts": "f931fa22a876441d1f81cdff1ccd6fd5e6eaaa4015d744d541b4cb475a4f75b5",
+    "tests/vertex-tool-contract.test.ts": "48f4e8eab447298ddc9cb1523c5819d87ee9b6e961f96e721cb9b5dfa42854f5",
+    "docs/API.md": "8e8c18c1138ba50bad62d01d395c050fbfb0180a3a267513e82bb9813a7d5beb"
+  },
+  "installedSourceEvidence": "Inspected @google/adk 2.1.0 dist/esm/utils/simple_zod_to_json.js and @google/genai 2.24.0 dist/node/index.mjs locally; remote ADK source URL could not be verified."
+}

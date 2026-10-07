@@ -1,0 +1,13 @@
+✔ product tool declarations use Vertex-compatible integer bounds and server-owned topic filters (13.85916ms)
+✔ the exact ordinary-observation request selects concerns and serializes only documented Vertex schema fields (33.154242ms)
+✔ document change declarations use supported union fields without changing strict execution (9.14184ms)
+✔ the real product-interactive Runner request keeps its system configuration and supported schemas (69.563685ms)
+✔ concern tool declarations preserve true-only confirmation, strict branch validation and authorization (14.029393ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1880.020104

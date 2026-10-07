@@ -1,0 +1,45 @@
+server/agent-action-tools.ts(4,40): error TS2307: Cannot find module './agent-actions-store.ts' or its corresponding type declarations.
+server/agent-concern-tools.ts(3,35): error TS2307: Cannot find module './concern-store.ts' or its corresponding type declarations.
+server/agent-concern-tools.ts(4,40): error TS2307: Cannot find module './product-agent-store.ts' or its corresponding type declarations.
+server/agent-concern-tools.ts(33,39): error TS7006: Parameter 'item' implicitly has an 'any' type.
+server/agent-concern-tools.ts(34,110): error TS7031: Binding element 'id' implicitly has an 'any' type.
+server/agent-concern-tools.ts(34,113): error TS7031: Binding element 'title' implicitly has an 'any' type.
+server/agent-concern-tools.ts(34,119): error TS7031: Binding element 'version' implicitly has an 'any' type.
+server/agent-concern-tools.ts(34,127): error TS7031: Binding element 'status' implicitly has an 'any' type.
+server/agent-concern-tools.ts(34,134): error TS7031: Binding element 'followUp' implicitly has an 'any' type.
+server/agent-concern-tools.ts(36,34): error TS7006: Parameter 'value' implicitly has an 'any' type.
+server/agent-document-tools.ts(4,42): error TS2307: Cannot find module './family-document-store.ts' or its corresponding type declarations.
+server/agent-document-tools.ts(6,40): error TS2307: Cannot find module './product-agent-store.ts' or its corresponding type declarations.
+server/agent-model-gateway.ts(5,63): error TS2307: Cannot find module './ai-usage.ts' or its corresponding type declarations.
+server/agent-record-time.ts(1,34): error TS2307: Cannot find module '../src/shared/care.ts' or its corresponding type declarations.
+server/agent-runtime.ts(5,35): error TS2307: Cannot find module './ai-usage.ts' or its corresponding type declarations.
+server/agent-runtime.ts(33,59): error TS2307: Cannot find module './embedding-gateway.ts' or its corresponding type declarations.
+server/agent-runtime.ts(68,20): error TS2307: Cannot find module './model-routing.ts' or its corresponding type declarations.
+server/agent-source-tools.ts(4,39): error TS2307: Cannot find module './shared-input-store.ts' or its corresponding type declarations.
+server/agent-source-tools.ts(5,40): error TS2307: Cannot find module './product-agent-store.ts' or its corresponding type declarations.
+server/agent-source-tools.ts(19,119): error TS7006: Parameter 'input' implicitly has an 'any' type.
+server/family-access.ts(1,39): error TS2307: Cannot find module 'pg' or its corresponding type declarations.
+server/family-access.ts(2,33): error TS2307: Cannot find module '../src/shared/family.ts' or its corresponding type declarations.
+server/photo-files.ts(5,36): error TS2307: Cannot find module './storage-crypto.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(3,50): error TS2307: Cannot find module '../src/shared/memory.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(6,57): error TS2307: Cannot find module '../src/shared/knowledge.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(10,47): error TS2307: Cannot find module './knowledge-retriever.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(11,34): error TS2307: Cannot find module './memory.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(12,32): error TS2307: Cannot find module './tasks.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(13,40): error TS2307: Cannot find module './product-agent-store.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(60,22): error TS2307: Cannot find module './family-document-store.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(63,21): error TS2307: Cannot find module './concern-store.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(64,20): error TS2307: Cannot find module './shared-input-store.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(65,20): error TS2307: Cannot find module './agent-actions-store.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(66,19): error TS2307: Cannot find module './care-summary-store.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(67,19): error TS2307: Cannot find module './contact-store.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(68,19): error TS2307: Cannot find module './growth-store.ts' or its corresponding type declarations.
+server/product-agent-tools.ts(108,52): error TS7006: Parameter 'item' implicitly has an 'any' type.
+server/product-agent-tools.ts(108,229): error TS7006: Parameter 'topic' implicitly has an 'any' type.
+server/product-agent-tools.ts(108,256): error TS7006: Parameter 'topic' implicitly has an 'any' type.
+server/product-agent-tools.ts(194,35): error TS7006: Parameter 'r' implicitly has an 'any' type.
+server/product-agent-tools.ts(215,52): error TS7006: Parameter 'message' implicitly has an 'any' type.
+src/shared/care-summary.ts(2,57): error TS2307: Cannot find module './care.ts' or its corresponding type declarations.
+src/shared/photos.ts(2,33): error TS2307: Cannot find module './care.ts' or its corresponding type declarations.
+src/shared/product-agent.ts(3,40): error TS2307: Cannot find module './knowledge.ts' or its corresponding type declarations.
+src/shared/shared-inputs.ts(3,33): error TS2307: Cannot find module './care.ts' or its corresponding type declarations.
