@@ -6,7 +6,7 @@ import { authorizedCareCaptureReview } from '../src/care-view-model.ts';
 
 // Execute the shipped read/publish functions with synthetic ports, not a second owner implementation.
 const source = readFileSync(new URL('../src/production/CareProfileDomains.tsx', import.meta.url), 'utf8');
-const functions = source.slice(source.indexOf('  function publishPage('), source.indexOf('  function publishProfile('));
+const functions = source.slice(source.indexOf('  const rawRecord ='), source.indexOf('  function publishProfile('));
 const projection = source.slice(source.indexOf('  const careModel:'), source.indexOf('  const profileModel ='));
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 class CareApiError extends Error { constructor(status, onlineCode) { super('Synthetic read failure'); Object.assign(this, { status, onlineCode }); } }
@@ -14,9 +14,9 @@ function owner() {
   let active = true, result = async () => ({ records: [], scanned: 0, nextCursor: null });
   const cache = new Map(), careRef = { current: { scopeKey: 'scope', child: { id: 'child' }, access: 'editable', detail: null,
     list: { state: 'loading', records: [], activeQuery: '', activeKind: 'all', scanned: 0, hasMore: false, page: 1, hasPrevious: false, message: null } } };
-  const env = { childName: 'Synthetic child', scopeKey: 'scope', online: true, queryClient: { async cancelQueries() {}, setQueryData(key, value) { cache.set(key.join(':'), value); } } };
+  const env = { childName: 'Synthetic child', scopeKey: 'scope', online: true, queryClient: { async cancelQueries() {}, async invalidateQueries() {}, getQueryData(key) { return cache.get(key.join(':')); }, setQueryData(key, value) { cache.set(key.join(':'), value); } } };
   const deps = { env, careRef, userId: 'user', childId: 'child', current: () => active, envRef: { current: env },
-    careKey: ['care'], writing: { current: false }, attempt: { current: null }, careRead: { current: null }, careGeneration: { current: 0 },
+    careKey: ['care'], recordReadGeneration: { current: 0 }, recordRemovals: { current: new Map() }, openGeneration: { current: 0 }, writing: { current: false }, attempt: { current: null }, careRead: { current: null }, careGeneration: { current: 0 },
     pageCursors: { current: [null] }, pageIndex: { current: 0 }, nextCursor: { current: null }, historyGeneration: { current: 0 },
     controller: () => new AbortController(), setCare: change => { careRef.current = change(careRef.current); },
     read: (_key, control, action) => action(control.signal), api: { search: (...args) => result(...args) }, released() {}, latestCare() {},
