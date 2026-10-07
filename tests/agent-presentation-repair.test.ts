@@ -33,10 +33,10 @@ function setup(generate: (request: LlmRequest, index: number, signal: AbortSigna
     execute: async () => { writes++; return { status: "succeeded", reference: "pending-candidate", data: { pending: true } }; } };
   const read: AgentTool = { name: "read_context", description: "Read synthetic context.", parameters: z.object({}), authorize: async () => true,
     execute: async () => { reads++; return { status: "succeeded", data: { synthetic: true } }; } };
-  let onDiagnostic: ((event: AgentDiagnostic) => void) | undefined;
+  let onDiagnostic: ((event: AgentDiagnostic) => void | Promise<void>) | undefined;
   const config = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: "32000" });
   const runtime = createAgentRuntime({ config, usage: { reserve: async () => { reserved++; return quota; }, record: async () => {} },
-    diagnostics: event => { events.push(event); onDiagnostic?.(event); }, provider: { generate: async (request, signal) => {
+    diagnostics: event => { events.push(event); return onDiagnostic?.(event); }, provider: { generate: async (request, signal) => {
       const index = requests.length;
       requests.push(structuredClone({ ...request, toolsDict: {} }));
       return generate(request, index, signal);
@@ -48,7 +48,7 @@ function setup(generate: (request: LlmRequest, index: number, signal: AbortSigna
     finalize: async () => { finalized++; return accepted ? "Server validated presentation" : null; } };
   return { runtime, input, terminal, write, read, requests, events, writes: () => writes, reads: () => reads,
     finalized: () => finalized, reservations: () => reserved, revoke: () => { authorized = false; }, denyQuota: () => { quota = false; },
-    observe: (callback: (event: AgentDiagnostic) => void) => { onDiagnostic = callback; } };
+    observe: (callback: (event: AgentDiagnostic) => void | Promise<void>) => { onDiagnostic = callback; } };
 }
 
 test("presentation repair is pinned to the verified ADK and GenAI versions", () => {
@@ -169,6 +169,42 @@ test("accepted presentation and failed final validation never trigger repair", a
   s.input.finalize = async () => { throw new AgentStopped("invalid_response"); };
   const result = await s.runtime.run(s.input);
   assert.equal(result.stopReason, "invalid_response"); assert.equal(s.requests.length, 1); assert.equal(result.text, null);
+});
+
+test("repair rejection diagnostics stay metadata-only and cannot change finalization", { timeout: 3000 }, async () => {
+  const secret = "PRIVATE_REPAIR_DIAGNOSTIC_SENTINEL";
+  for (const stage of ["schema", "execution"] as const) for (const sink of ["throw", "reject", "pending"] as const) {
+    let diagnosticCalls = 0, executions = 0;
+    const s = setup((_, index) => {
+      assert.ok(index < 2, "A diagnostic failure cannot add another provider call");
+      return !index ? natural(secret) : stage === "schema" ? call("present_answer", { unexpected: secret }) : present();
+    });
+    s.terminal.execute = async () => { executions++; return { status: "rejected", data: { code: secret, message: secret, input: secret } }; };
+    s.observe(event => {
+      if (event.phase !== "tool_rejection") return;
+      diagnosticCalls++;
+      if (sink === "throw") throw new Error(secret);
+      if (sink === "reject") return Promise.reject(new Error(secret));
+      return new Promise<void>(() => {});
+    });
+    const result = await s.runtime.run(s.input);
+    const events = s.events.filter(event => event.phase === "tool_rejection");
+    assert.equal(diagnosticCalls, 1);
+    assert.equal(events.length, 1);
+    assert.equal(events[0]!.tool, "present_answer");
+    assert.equal(events[0]!.stage, stage);
+    assert.equal(events[0]!.code, stage === "schema" ? "invalid_parameters" : "unknown");
+    assert.equal(events[0]!.outcome, "rejected");
+    assert.equal(events[0]!.hints, undefined);
+    assert.doesNotMatch(JSON.stringify(s.events), /PRIVATE_REPAIR_DIAGNOSTIC_SENTINEL|synthetic-user|synthetic-child|synthetic-workspace|opaque-/u);
+    assert.equal(result.stopReason, "invalid_response");
+    assert.equal(result.text, null);
+    assert.equal(s.requests.length, 2);
+    assert.equal(s.finalized(), 1);
+    assert.equal(executions, stage === "schema" ? 0 : 1);
+    assert.equal(s.writes(), 0);
+    assert.deepEqual(result.counts, { modelCalls: 2, toolCalls: 1, queryEmbeddings: 0 });
+  }
 });
 
 test("unknown tool outcome stops before presentation repair", async () => {

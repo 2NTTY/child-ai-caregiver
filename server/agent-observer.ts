@@ -1,11 +1,20 @@
 import { BasePlugin } from "@google/adk";
+import { taskParameterDiagnosticHints, type TaskParameterDiagnosticHint } from "./task-parameter-hints.ts";
+
+type ToolRejectionStage = "schema" | "authorization" | "execution";
+type ToolRejectionCode = "invalid_parameters" | "not_authorized" | "unknown"
+  | "invalid_input" | "invalid_assignee" | "agent_run_expired" | "confirmation_requires_interactive_scope"
+  | "version_conflict" | "operation_conflict" | "agent_proposal_limit" | "agent_scope_changed" | "agent_source_mismatch";
 
 export type AgentDiagnostic = Readonly<{
   runId: string;
-  phase: "run_start" | "run_end" | "model_start" | "model_end" | "tool_start" | "tool_end" | "tool_error" | "model_error";
+  phase: "run_start" | "run_end" | "model_start" | "model_end" | "tool_start" | "tool_end" | "tool_error" | "model_error" | "tool_rejection";
   tool?: string;
   elapsedMs: number;
   outcome?: "succeeded" | "rejected" | "conflict" | "failed" | "unknown";
+  stage?: ToolRejectionStage;
+  code?: ToolRejectionCode;
+  hints?: readonly TaskParameterDiagnosticHint[];
 }>;
 
 type AgentObserverOptions = {
@@ -27,6 +36,17 @@ function knownOutcome(status: unknown): AgentDiagnostic["outcome"] {
   }
 }
 
+function rejectionCode(tool: string, stage: ToolRejectionStage, code: unknown): ToolRejectionCode {
+  if (stage === "schema") return "invalid_parameters";
+  if (stage === "authorization") return "not_authorized";
+  if (tool === "propose_task") {
+    const allowed = ["invalid_input", "invalid_assignee", "agent_run_expired", "confirmation_requires_interactive_scope",
+      "version_conflict", "operation_conflict", "agent_proposal_limit", "agent_scope_changed", "agent_source_mismatch"] as const;
+    return allowed.find(value => value === code) ?? "unknown";
+  }
+  return "unknown";
+}
+
 class MetadataAgentObserver extends BasePlugin {
   private readonly runId: string;
   private readonly toolNames: ReadonlySet<string>;
@@ -40,9 +60,15 @@ class MetadataAgentObserver extends BasePlugin {
     this.sink = options.sink;
   }
 
-  private emit(phase: AgentDiagnostic["phase"], toolName?: string, outcome?: AgentDiagnostic["outcome"]): void {
+  private emit(phase: AgentDiagnostic["phase"], toolName?: string, outcome?: AgentDiagnostic["outcome"], rejection?: {
+    stage: ToolRejectionStage; code?: unknown; hints?: unknown;
+  }): void {
     if (!this.sink) return;
     const tool = toolName !== undefined && this.toolNames.has(toolName) ? toolName : undefined;
+    const stage = tool !== undefined && phase === "tool_rejection"
+      && (rejection?.stage === "schema" || rejection?.stage === "authorization" || rejection?.stage === "execution") ? rejection.stage : undefined;
+    if (phase === "tool_rejection" && stage === undefined) return;
+    const hints = tool === "propose_task" && stage === "schema" ? taskParameterDiagnosticHints(rejection?.hints) : [];
     // All phase timestamps are elapsed milliseconds since run_start.
     const elapsed = performance.now() - this.runStartedAt;
     const event: AgentDiagnostic = {
@@ -51,11 +77,29 @@ class MetadataAgentObserver extends BasePlugin {
       elapsedMs: Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0,
       ...(tool !== undefined ? { tool } : {}),
       ...(outcome !== undefined ? { outcome } : {}),
+      ...(stage !== undefined ? { stage, code: rejectionCode(tool!, stage, rejection?.code) } : {}),
+      ...(hints.length ? { hints } : {}),
     };
     try {
       void Promise.resolve(this.sink(event)).catch(() => {});
     } catch {
       // Diagnostic failures must not change the agent's control flow.
+    }
+  }
+
+  recordToolRejection(toolName: string, stage: ToolRejectionStage, result: {
+    status: unknown; data?: { code?: unknown; hints?: unknown };
+  }): void {
+    if (!this.sink || !this.toolNames.has(toolName)) return;
+    try {
+      const outcome = knownOutcome(result.status);
+      if (!outcome || outcome === "succeeded") return;
+      // The sink boundary rebuilds every field from its fixed allowlists.
+      this.emit("tool_rejection", toolName, outcome, { stage,
+        code: stage === "execution" && toolName === "propose_task" ? result.data?.code : undefined,
+        hints: stage === "schema" && toolName === "propose_task" ? result.data?.hints : undefined });
+    } catch {
+      // Malformed diagnostic metadata must not affect a tool's business result.
     }
   }
 
@@ -101,6 +145,6 @@ class MetadataAgentObserver extends BasePlugin {
   }
 }
 
-export function createAgentObserver(options: AgentObserverOptions): BasePlugin {
+export function createAgentObserver(options: AgentObserverOptions): MetadataAgentObserver {
   return new MetadataAgentObserver(options);
 }

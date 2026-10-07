@@ -78,6 +78,10 @@ ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 Instructi
 
 修正提示不放寬 schema，不替代身份、授權、版本或業務驗證；非法參數仍零執行。`not_authorized`、handler拒絕及unknown沿原規則，其他工具維持原泛用回覆。僅能使用本次剩餘預算修正，不能因收到提示而增加模型次數、換操作ID或重送未知副作用。這項改善不等於已確定歷史 T7／T8／T9 真實請求中哪個欄位失敗。
 
+Agent拒絕診斷沿既有 `AGENT_DIAGNOSTICS=true` 的metadata-only sink，不開啟ADK原始spans／logger或新增內容日誌。`tool_rejection` 事件只帶既有runId／elapsedMs、configured工具白名單名稱，以及固定stage（schema／authorization／execution）、outcome與code白名單；其他code只記unknown，不能回傳任意程式例外或工具data正文。僅propose_task的schema拒絕可加最多3項、JSON最多256字元的固定path／reason，不記expected、原參數、message、input、issues、未知鍵、動態路徑、使用者或孩子ID。
+
+observer在sink前再次投影白名單，診斷故障不能改變業務結果或產生額外操作。這些事件供關聯已發生的拒絕階段，不授權、不中止既有守衛、不重試副作用；沒有事件也不能推斷歷史運行必定是哪種錯誤。診斷flag的實際生效與真實驗收另核，不因程式支援就宣稱已有過去T9參數證據。
+
 <a id="agent-ordinary-actions"></a>
 INT-W02 增補：`GET／POST /api/children/:childId/agent/policy` 管理本人按孩子的普通操作預授權；POST 帶 `operationId／expectedVersion／confirm`，家庭記錄或任務另須 `confirmShared`。預設全部停用；變更身份授權或 storage epoch 令舊政策失效。記錄類別只限 note／feeding／sleep／diaper，普通私人交代與本人 ordinary 任務各自開關；重要健康事實、刪除及擴大共享維持明確確認。渠道權限綁目前本人同意版本及完整 binding 清單，不能因事後多綁渠道而靜默擴權；每項到期授權仍由既有 ContactStore 保存，無 fallback／額外跟進，收據只列實際核准的首個渠道。缺有效通知授權時只能回報站內安排。
 

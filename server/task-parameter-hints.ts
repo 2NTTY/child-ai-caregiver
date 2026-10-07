@@ -15,6 +15,28 @@ const taskFields = {
 const root = { path: "$", expected: "object with only values" };
 const values = { path: "values", expected: "object with all declared task fields" };
 
+export type TaskParameterDiagnosticHint = Readonly<{
+  path: "$" | "values" | typeof taskFields[keyof typeof taskFields]["path"];
+  reason: HintReason;
+}>;
+
+/** Re-project public repair hints at the diagnostic boundary; never read expected or extra fields. */
+export function taskParameterDiagnosticHints(input: unknown): TaskParameterDiagnosticHint[] {
+  if (!Array.isArray(input)) return [];
+  const hints: TaskParameterDiagnosticHint[] = [];
+  const paths = ["$", "values", ...Object.values(taskFields).map(field => field.path)] as const;
+  const reasons = ["wrong_type", "invalid_value", "invalid_format", "out_of_range", "undeclared_fields"] as const;
+  for (const item of input.slice(0, 3)) {
+    if (!item || typeof item !== "object") continue;
+    const path = paths.find(path => path === item.path);
+    const reason = reasons.find(reason => reason === item.reason);
+    if (path === undefined || reason === undefined || hints.some(hint => hint.path === path && hint.reason === reason)) continue;
+    const hint = { path, reason };
+    if (JSON.stringify([...hints, hint]).length <= 256) hints.push(hint);
+  }
+  return hints;
+}
+
 /** Repair hints for propose_task only; validation and authorization remain separate. */
 export function taskParameterHints(issues: readonly z.core.$ZodIssue[]): TaskParameterHint[] {
   const hints: TaskParameterHint[] = [];

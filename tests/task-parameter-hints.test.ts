@@ -9,6 +9,7 @@ import { createAgentRuntime, type AgentTool } from "../server/agent-runtime.ts";
 import { createProductAgentTools } from "../server/product-agent-tools.ts";
 import { AgentBudget } from "../server/agent-budget.ts";
 import { readAiConfig } from "../server/ai-config.ts";
+import type { AgentDiagnostic } from "../server/agent-observer.ts";
 
 const schema = z.object({ values: taskValuesSchema }).strict();
 const valid = { values: { title: "Synthetic task", details: "", kind: "ordinary", assigneeUserId: "synthetic-user",
@@ -34,16 +35,17 @@ const cases = [
 
 async function runOnce(args: Record<string, unknown>, options: {
   hints?: boolean; authorize?: boolean; response?: { status: "rejected" | "unknown"; data?: Record<string, unknown> };
+  executeThrows?: boolean; diagnosticSink?: (event: AgentDiagnostic) => void | Promise<void>;
 } = {}) {
   let providerCalls = 0, executed = 0, authorized = 0;
   let response: Record<string, unknown> | undefined;
-  const diagnostics: unknown[] = [], usage: unknown[] = [];
+  const diagnostics: AgentDiagnostic[] = [], usage: unknown[] = [];
   const tool: AgentTool = { name: "propose_task", description: "Synthetic task proposal validation.", parameters: schema,
     ...(options.hints === false ? {} : { parameterErrorHints: taskParameterHints }),
     authorize: async () => { authorized++; return options.authorize !== false; },
-    execute: async () => { executed++; return options.response ?? { status: "succeeded" }; } };
+    execute: async () => { executed++; if (options.executeThrows) throw new Error(secret); return options.response ?? { status: "succeeded" }; } };
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
-    diagnostics: event => { diagnostics.push(event); }, usage: { reserve: async () => true, record: async record => { usage.push(record); } },
+    diagnostics: event => { diagnostics.push(event); return options.diagnosticSink?.(event); }, usage: { reserve: async () => true, record: async record => { usage.push(record); } },
     provider: { generate: async request => {
       if (providerCalls++ === 0) return { finishReason: FinishReason.STOP,
         content: { role: "model", parts: [{ functionCall: { id: "synthetic-call", name: tool.name, args } }] } };
@@ -136,4 +138,44 @@ test("unregistered tools keep generic feedback and authorization or handler outc
   assert.deepEqual(business.response, { status: "rejected", data: { code: "invalid_input" } }); assert.equal(business.executed, 1);
   const unknown = await runOnce(valid, { response: { status: "unknown" } });
   assert.equal(unknown.result.stopReason, "tool_unknown"); assert.equal(unknown.providerCalls, 1); assert.equal(unknown.executed, 1);
+});
+
+test("real Runner distinguishes schema, authorization and handler rejection without retaining private content", async () => {
+  const schema = await runOnce({ values: { ...valid.values, dueAt: secret } });
+  const authorization = await runOnce(valid, { authorize: false });
+  const execution = await runOnce(valid, { response: { status: "rejected", data: { code: "invalid_assignee", message: secret, input: secret } } });
+  const unrecognized = await runOnce(valid, { response: { status: "rejected", data: { code: secret } } });
+  const thrown = await runOnce(valid, { executeThrows: true });
+  const expected = [
+    [schema, "schema", "invalid_parameters", 0], [authorization, "authorization", "not_authorized", 0],
+    [execution, "execution", "invalid_assignee", 1], [unrecognized, "execution", "unknown", 1], [thrown, "execution", "unknown", 1],
+  ] as const;
+  for (const [run, stage, code, executions] of expected) {
+    const failures = run.diagnostics.filter(event => event.phase === "tool_rejection");
+    assert.equal(failures.length, 1);
+    assert.equal(failures[0]!.stage, stage);
+    assert.equal(failures[0]!.code, code);
+    assert.equal(failures[0]!.tool, "propose_task");
+    assert.equal(failures[0]!.runId, run.result.runId);
+    assert.equal(run.executed, executions);
+    assert.doesNotMatch(JSON.stringify(run.diagnostics), new RegExp(`${secret}|synthetic-user|synthetic-child|synthetic-workspace|synthetic-call|Synthetic task validation`, "u"));
+  }
+  assert.deepEqual(schema.diagnostics.find(event => event.phase === "tool_rejection")?.hints, [
+    { path: "values.dueAt", reason: "invalid_format" }, { path: "values.dueAt", reason: "out_of_range" },
+  ]);
+  assert.equal(execution.diagnostics.find(event => event.phase === "tool_rejection")?.hints, undefined);
+  assert.equal(thrown.result.stopReason, "tool_unknown");
+  assert.equal(thrown.providerCalls, 1);
+  assert.equal((await runOnce(valid)).diagnostics.some(event => event.phase === "tool_rejection"), false);
+});
+
+test("throwing, rejecting or pending diagnostic sinks preserve Runner outcomes and call counts", { timeout: 3000 }, async () => {
+  for (const diagnosticSink of [() => { throw new Error(secret); }, () => Promise.reject(new Error(secret)), () => new Promise<void>(() => {})]) {
+    const run = await runOnce(valid, { diagnosticSink, response: { status: "rejected", data: { code: "invalid_input" } } });
+    assert.equal(run.result.status, "completed");
+    assert.deepEqual(run.response, { status: "rejected", data: { code: "invalid_input" } });
+    assert.equal(run.executed, 1);
+    assert.equal(run.providerCalls, 2);
+    assert.equal(run.result.counts.toolCalls, 1);
+  }
 });
