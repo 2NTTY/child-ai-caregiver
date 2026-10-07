@@ -7,10 +7,10 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### DOC-P2-AGENT — 完整 Agent 與穩定 Web 服務定案（進行中）
+### DOC-P2-AGENT — 完整 Agent 與穩定 Web 服務定案（文件及 review 完成，合併生效）
 
 - 先完成本文件的完整目標、依賴、前移／延後及最低驗收，再局部更新 SPEC／契約／ADR／STATUS；本包只改文件，P2-A01～A09 尚未實作。唯一增補入口為[總計劃](#p2-agent-service)。
-- 基線為已 fetch 的遠端 master `218625b`；本工作樹分支 `codex/p2-agent-service-plan`，PR 尚未建立。舊 P2／INT 的完成證據保留，不能視為新增門檻已完成。
+- 基線為已 fetch 的遠端 master `218625b`；本工作樹分支 `codex/p2-agent-service-plan`，[PR #131](https://github.com/2NTTY/child-ai-caregiver/pull/131)；文件檢查與主模型 review 通過，完成隨本 PR 合併生效。舊 P2／INT 的完成證據保留，不能視為新增門檻已完成。
 - 本包 A 主責、權重 2、A100%，主模型親寫與 review；文件驗收合併後從 P2-A01 開始。P2-A08 可在獨立邊界就緒後推進。
 - 另一聊天可能合併：2026-10-08 核對 #111（`c31e4c7`）及 #130（`fe1bb33`）仍為 draft。每包開工、實作整合邊界及交付前 fetch／核對 master、相關 PR head 及本地差異；有新合併先判斷重疊，保護 dirty，不修改其他 checkout。
 - 正式環境版本／期限只採 [STATUS](STATUS.md) 的最後觀察，開工不等於部署。舊測試前端退役已隨 PR #118 合併；下方 QA／INT 是既有結果，非本輪當前包。
