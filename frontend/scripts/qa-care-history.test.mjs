@@ -83,13 +83,13 @@ test('offline then reconnect keeps the same selection retryable and rejects the 
   const first = owner.load(false); assert.equal(owner.state().detail.historyLoading, true);
   const start = ownerSource.indexOf('  useEffect(() => {\n    if (env.online)');
   const effect = ownerSource.slice(start, ownerSource.indexOf('  useEffect(() => {\n    const refresh', start));
-  const pageStart = ownerSource.indexOf('  function publishPage(');
+  const pageStart = ownerSource.indexOf('  const rawRecord =');
   const pageFunction = ownerSource.slice(pageStart, ownerSource.indexOf('  async function loadCare(', pageStart));
-  const pageDeps = { ...owner.deps, env: { queryClient: { setQueryData() {} } }, nextCursor: { current: null }, pageIndex: { current: 0 }, careRecordView: item => ({ id: item.id, childId: 'child', title: 'Synthetic', current: { values: {}, version: item.version } }) };
+  const pageDeps = { ...owner.deps, recordRemovals: { current: new Map() }, recordReadGeneration: { current: 0 }, env: { queryClient: { getQueryData() {}, setQueryData() {} } }, nextCursor: { current: null }, pageIndex: { current: 0 }, careRecordView: item => ({ id: item.id, childId: 'child', title: 'Synthetic', current: { values: {}, version: item.version } }) };
   const pageModule = {}; new Function('deps', 'exports', ts.transpileModule('const { '+Object.keys(pageDeps).join(',')+' } = deps;\n'+pageFunction+'\nexports.publish=publishPage;', { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(pageDeps, pageModule);
   const effectDeps = { ...owner.deps, env: { online: false }, careGeneration: { current: 0 }, profileGeneration: { current: 0 }, careRead: { current: null }, profileRead: { current: null },
     refreshDeferred: { current: false }, writing: { current: false }, attempt: { current: null }, setProfile() {}, useEffect: action => action(),
-    reloadRef: { current: { loadCare: () => pageModule.publish({ records: [{ id: 'record', version: 2 }], nextCursor: null, scanned: 1 }, '', 'all', 0), loadProfile() {} } } };
+    reloadRef: { current: { loadCare: () => pageModule.publish({ records: [{ id: 'record', childId: 'child', version: 2 }], nextCursor: null, scanned: 1 }, '', 'all', 0, 0), loadProfile() {} } } };
   function online(value) { owner.deps.envRef.current.online = value; effectDeps.env.online = value; new Function('deps', ts.transpileModule('const { '+Object.keys(effectDeps).join(',')+' } = deps;\n'+effect, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(effectDeps); }
   online(false); assert.equal(owner.state().detail.historyLoading, false); assert.equal(owner.state().detail.historyState, 'unread');
   online(true); assert.equal(owner.state().detail.record.id, 'record'); assert.equal(owner.state().detail.historyLoading, false);

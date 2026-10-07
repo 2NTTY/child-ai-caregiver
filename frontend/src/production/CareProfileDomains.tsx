@@ -70,6 +70,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
   const careHistoryCursor = useRef<number | null>(null), profileHistoryCursor = useRef<number | null>(null);
   const careGeneration = useRef(0), profileGeneration = useRef(0), historyGeneration = useRef(0);
   const openGeneration = useRef(0);
+  const recordReadGeneration = useRef(0), recordRemovals = useRef(new Map<string, number>());
   const controllers = useRef(new Set<AbortController>()), careRead = useRef<AbortController | null>(null), profileRead = useRef<AbortController | null>(null);
   useDomainWriteGuard(!!care.draft || !!care.deletion || profileDirty, pending, "child");
 
@@ -99,19 +100,44 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     } });
   }
   const rawRecord = (id: string) => env.queryClient.getQueryData<CareSnapshot>([...careKey, "record", id]) ?? null;
-  function publishPage(page: CarePage, query: string, kind: CareFilter, index: number) {
-    page.records.forEach(record => env.queryClient.setQueryData([...careKey, "record", record.id], record));
+  function freshRecord(id: string) {
+    const cached = env.queryClient.getQueryState<CareSnapshot>([...careKey, "record", id]);
+    return cached?.status === "success" && !cached.isInvalidated ? cached.data ?? null : null;
+  }
+  function publishRecord(record: CareSnapshot, generation: number): CareSnapshot | null {
+    if (record.childId !== childId || (recordRemovals.current.get(record.id) ?? 0) > generation) return null;
+    const known = rawRecord(record.id);
+    // Search and single-record reads can complete out of order within the same scope.
+    if (known && known.version > record.version) return known;
+    env.queryClient.setQueryData([...careKey, "record", record.id], record);
+    return record;
+  }
+  function removeRecord(id: string) {
+    recordRemovals.current.set(id, ++recordReadGeneration.current);
+    env.queryClient.removeQueries({ queryKey: [...careKey, "record", id] });
+    env.queryClient.removeQueries({ queryKey: [...careKey, "history", id] });
+    env.queryClient.removeQueries({ queryKey: [...careKey, "latest", id] });
+    historyGeneration.current++;
+  }
+  function publishPage(page: CarePage, query: string, kind: CareFilter, index: number, generation: number) {
+    const records = page.records.flatMap(record => { const published = publishRecord(record, generation); return published ? [published] : []; });
     nextCursor.current = page.nextCursor; pageIndex.current = index;
-    setCare(previous => ({ ...previous, list: { state: "ready", hasSnapshot: true, records: page.records.map(record => careRecordView(record, userId)),
-      activeQuery: query, activeKind: kind, scanned: page.scanned, hasMore: page.nextCursor !== null, page: index + 1, hasPrevious: index > 0, message: null },
-      detail: previous.detail && !previous.draft && !previous.deletion && page.records.some(record => record.id === previous.detail!.record.id)
-        ? { ...previous.detail, record: careRecordView(page.records.find(record => record.id === previous.detail!.record.id)!, userId),
-          ...(page.records.find(record => record.id === previous.detail!.record.id)!.version !== previous.detail.record.current.version
-            ? { historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : {}) } : previous.detail }));
+    setCare(previous => {
+      const selected = previous.detail && records.find(record => record.id === previous.detail!.record.id);
+      return { ...previous, list: { state: "ready", hasSnapshot: true, records: records.map(record => careRecordView(record, userId)),
+        activeQuery: query, activeKind: kind, scanned: page.scanned, hasMore: page.nextCursor !== null, page: index + 1, hasPrevious: index > 0, message: null },
+        detail: previous.detail && !previous.draft && !previous.deletion && selected
+          ? { ...previous.detail, record: careRecordView(selected, userId),
+            ...(selected.version !== previous.detail.record.current.version
+              ? { historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : {}) } : previous.detail };
+    });
   }
   async function loadCare(query = careRef.current.list.activeQuery, kind = careRef.current.list.activeKind, index = 0, recovery = false): Promise<boolean> {
     if (!current() || !envRef.current.online || writing.current || attempt.current && !recovery) return false;
     careRead.current?.abort(); const control = controller(); careRead.current = control; const generation = ++careGeneration.current;
+    const recordGeneration = ++recordReadGeneration.current;
+    // Retain off-page snapshots, but a search refresh cannot verify records it did not return.
+    void env.queryClient.invalidateQueries({ queryKey: [...careKey, "record"], refetchType: "none" });
     if (index === 0) { pageCursors.current = [null]; pageIndex.current = 0; nextCursor.current = null; }
     const cursor = pageCursors.current[index] ?? null;
     setCare(previous => {
@@ -127,10 +153,12 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       if (!current() || generation !== careGeneration.current || control.signal.aborted) return false;
       const selected = careRef.current.detail, selectedInPage = selected ? page.records.find(record => record.id === selected.record.id) : null;
       if (selectedInPage && selectedInPage.version !== selected?.record.current.version) historyGeneration.current++;
-      publishPage(page, query, kind, index);
+      publishPage(page, query, kind, index, recordGeneration);
       if (selected && !selectedInPage && !careRef.current.draft && !careRef.current.deletion) {
+        const selectedGeneration = openGeneration.current;
         const latest = await latestCare(selected.record.id);
-        if (current() && generation === careGeneration.current && latest && careRef.current.detail?.record.id === latest.id) {
+        if (current() && generation === careGeneration.current && !control.signal.aborted && selectedGeneration === openGeneration.current
+          && !careRef.current.draft && !careRef.current.deletion && latest && careRef.current.detail?.record.id === latest.id) {
           if (latest.version !== selected.record.current.version) historyGeneration.current++;
           setCare(previous => ({ ...previous, detail: previous.detail?.record.id === latest.id
             ? { record: careRecordView(latest, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : previous.detail }));
@@ -217,22 +245,34 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       reference: value.receipt?.operation.opId ?? previous.operation.reference, retryAvailable: value.retry && !value.confirmed } }));
     else setProfile(previous => ({ ...previous, operation: { state: "unknown", message, reference: value.receipt?.operation.opId ?? previous.operation.reference, resultUnavailable: value.confirmed } }));
   }
-  async function latestCare(id: string): Promise<CareSnapshot | null> {
-    const basis = rawRecord(id);
+  async function latestCare(id: string, revalidate = true): Promise<CareSnapshot | null> {
+    if (!current() || !envRef.current.online) return null;
+    const basis = rawRecord(id), generation = ++recordReadGeneration.current, refreshGeneration = careGeneration.current;
     const control = controller();
     try {
       const page = await read([...careKey, "latest", id], control, signal => api.history(childId, id, null, signal));
       if (!current() || control.signal.aborted) return null;
       const latest = [...page.revisions].sort((a, b) => b.version - a.version)[0];
-      if (!latest) return null;
-      const result: CareSnapshot = { ...latest, id, childId, createdAt: basis?.createdAt ?? null };
-      env.queryClient.setQueryData([...careKey, "record", id], result); return result;
+      if (!latest) throw new Error("The current record revision was not returned");
+      if (refreshGeneration !== careGeneration.current) {
+        const known = freshRecord(id);
+        // A later page can verify this id, but its absence cannot validate an earlier detail read.
+        if (known && known.version >= latest.version) return known;
+        return revalidate ? await latestCare(id, false) : null;
+      }
+      const result: CareSnapshot = { ...latest, id, childId, createdAt: rawRecord(id)?.createdAt ?? basis?.createdAt ?? null };
+      return publishRecord(result, generation);
     } catch (error) {
-      if (current() && !accessError(error) && error instanceof CareApiError && error.status === 404) {
-        env.queryClient.removeQueries({ queryKey: [...careKey, "record", id] });
-        env.queryClient.removeQueries({ queryKey: [...careKey, "history", id] }); historyGeneration.current++;
+      if (!current() || control.signal.aborted || accessError(error)) return null;
+      if (refreshGeneration !== careGeneration.current) return freshRecord(id) ?? (revalidate ? await latestCare(id, false) : null);
+      if (error instanceof CareApiError && error.status === 404) {
+        removeRecord(id);
         setCare(previous => ({ ...previous, detail: previous.detail?.record.id === id ? null : previous.detail,
           list: { ...previous.list, records: previous.list.records.filter(record => record.id !== id), message: "所選記錄已刪除或目前不可讀；不再顯示舊記錄。" } }));
+      } else {
+        void env.queryClient.invalidateQueries({ queryKey: [...careKey, "record", id], exact: true, refetchType: "none" });
+        setCare(previous => previous.detail?.record.id === id ? { ...previous,
+          operation: { ...previous.operation, message: "未能核對所選記錄的目前版本；仍顯示上次讀取的內容，請稍後重試。" } } : previous);
       }
       return null;
     }
@@ -241,16 +281,14 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
   function finish(value: Attempt, record?: CareRecord, savedProfile?: ChildProfile) {
     attempt.current = null; setPending(false); draftBasis.current = null;
     if (value.domain === "care") {
-      if (record) env.queryClient.setQueryData([...careKey, "record", record.id], record);
+      const saved = record ? publishRecord(record, ++recordReadGeneration.current) : null;
       if (value.kind === "delete" && value.recordId) {
-        env.queryClient.removeQueries({ queryKey: [...careKey, "record", value.recordId] });
-        env.queryClient.removeQueries({ queryKey: [...careKey, "history", value.recordId] });
-        env.queryClient.removeQueries({ queryKey: [...careKey, "latest", value.recordId] });
+        removeRecord(value.recordId);
         env.queryClient.removeQueries({ queryKey: [...careKey, "search"] });
       }
       setCare(previous => ({ ...previous, draft: null, deletion: null,
         ...(value.kind === "delete" ? { list: { ...previous.list, records: previous.list.records.filter(item => item.id !== value.recordId) } } : {}),
-        detail: record ? { record: careRecordView(record, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : null,
+        detail: saved ? { record: careRecordView(saved, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : null,
         operation: { state: "saved", kind: value.kind === "delete" ? "delete" : "review", message: value.kind === "delete" ? "Server 已確認永久刪除記錄及歷史。" : "Server 已確認家庭共享保存。",
           reference: value.receipt?.operation.opId ?? null, latest: null } }));
     } else {
@@ -376,9 +414,11 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     previousPage() { if (pageIndex.current > 0 && !attempt.current) void loadCare(undefined, undefined, pageIndex.current - 1); },
     openRecord(id) {
       if (!current() || attempt.current || careRef.current.draft || careRef.current.deletion) return;
-      const record = rawRecord(id), generation = ++openGeneration.current; historyGeneration.current++;
+      const record = freshRecord(id), generation = ++openGeneration.current;
+      if (record && careRef.current.detail?.record.id === id && careRef.current.detail.record.current.version === record.version) return;
+      historyGeneration.current++;
       if (!record) {
-        if (!envRef.current.online) { setCare(previous => ({ ...previous, list: { ...previous.list, message: "所指定記錄未載入；連線恢復後才可核對。" } })); return; }
+        if (!envRef.current.online) { setCare(previous => ({ ...previous, detail: null, list: { ...previous.list, message: "所指定記錄未載入或已過期；連線恢復後才可核對。" } })); return; }
         setCare(previous => ({ ...previous, detail: null, operation: { ...careOperation(), message: "正在核對所指定記錄的目前版本。" } }));
         void latestCare(id).then(latest => {
           if (!current() || generation !== openGeneration.current || attempt.current || careRef.current.draft || careRef.current.deletion) return;

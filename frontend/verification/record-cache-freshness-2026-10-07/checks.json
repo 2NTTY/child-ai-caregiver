@@ -1,0 +1,98 @@
+{
+  "base_source_git_blob": "4704d259edb96694ee2301447d87d5040b232120",
+  "scope": "record cache correctness with synthetic ports and real TanStack QueryClient",
+  "changed_files": {
+    "frontend/src/production/CareProfileDomains.tsx": "ffdc9dc98e3d857a64467de37c7b02095716e8581bbe06768e28e3bc2413f714",
+    "frontend/scripts/care-record-cache.test.mjs": "e13c0c81637e68140e860e8bb6189f77d34a8ecd6fc6eed3569efd471eaf01c1",
+    "frontend/scripts/quiet-care-refresh.test.mjs": "5e58fb0f5070681911253b0cd78c1b60b4a37eb90cc60e56732bbec0e6c1167a",
+    "frontend/scripts/qa-care-history.test.mjs": "f08fcfb37c30a5a228ee6fd258e0f34b517890297f3e515bdceeca9d0d1041b6"
+  },
+  "checks": [
+    {
+      "command": "node canonical-probes.mjs (in audit_canonical_20261007)",
+      "result": "Both reported baseline bugs reproduced; cross-child control passed"
+    },
+    {
+      "command": "node --test --test-name-pattern \"opening an invalidated|late detail v1|late list v1\" evidence/baseline/frontend/scripts/care-record-cache.test.mjs",
+      "result": "3/3 regression assertions failed on unchanged canonical baseline as expected"
+    },
+    {
+      "command": "node --test --test-name-pattern \"late detail reply from before\" frontend/scripts/care-record-cache.test.mjs",
+      "result": "Reviewer interleaving reproduced on initial patch, fixed before final pass"
+    },
+    {
+      "command": "node --test frontend/scripts/care-record-cache.test.mjs frontend/scripts/quiet-care-refresh.test.mjs frontend/scripts/qa-care-history.test.mjs",
+      "result": "29/29 passed"
+    },
+    {
+      "command": "npm run typecheck --workspace frontend",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    {
+      "command": "node --test frontend/scripts/qa-care-history.test.mjs frontend/scripts/records-history-integration.test.mjs",
+      "result": "Initial extra test run failed: one helper-extraction harness updated without weakening assertions; six unchanged records-history-integration tests fail due to pre-existing PreviewProvider/ProductionProvider mocks"
+    },
+    {
+      "command": "node --test evidence/baseline/frontend/scripts/records-history-integration.test.mjs",
+      "result": "Same six unrelated integration failures confirmed using unchanged files; first copied fixture run lacked date-time.ts and was retained separately"
+    }
+  ],
+  "not_run": [
+    "browser QA",
+    "production API",
+    "model calls",
+    "publish/deploy",
+    "full suite"
+  ],
+  "publication": "Draft PR only. No merge or deployment performed.",
+  "source_baseline_commit": "2830a2680b21f8e50cb72552a30c50c57c4c834e",
+  "publication_base_commit": "96bed5cf2bc27242f6488e43f77c7fbf638c9c82",
+  "build": {
+    "exit_code": 0,
+    "static_routes": 35,
+    "artifact_files": 62,
+    "bundle": "_expo/static/js/web/entry-c4538d864e2c235eeba2e376ea7de6e0.js",
+    "bundle_sha256": "6933b90e363f50f9dc11b043e91287cbff316c6490812e246c2392d36c6a8ae5",
+    "bundle_bytes": 5008250,
+    "source_map_sha256": "f0271e9f5b9c83cd38df1dbd28e18320eb26722cb88ea1db2bb0fb1273666b00",
+    "repository_text_modules_byte_verified": 326,
+    "source_map_mismatches": [],
+    "source_map_non_text_entries": [
+      "frontend/app?ctx=c9915d5ced2b656047aa496292a87964b21f4221",
+      "frontend/assets/images/harbour-family-hero.png"
+    ],
+    "owner_sha256": "ffdc9dc98e3d857a64467de37c7b02095716e8581bbe06768e28e3bc2413f714",
+    "owner_git_blob": "bf2d1f9c97fb418822e8121d9baffd9e66bb6c4b",
+    "receipt_git_blob": "58b1991360c6a7ee493dd707d306a8c76b980485",
+    "bundle_checks": {
+      "current_revision_failure": true,
+      "unverified_detail_notice": true,
+      "cache_invalidation_state": true,
+      "preserved_concern_receipt": true
+    },
+    "manifest_sha256": "8d21b2bad4e43abd62c7d349402ea1053a9c7faa4e8ebe2b466883a51c7d6277",
+    "method": "Isolated TMPDIR, explicit frontend cwd, absolute EXPO_ROUTER_APP_ROOT, EXPO_PUBLIC_API_BASE_URL=/api, EXPO_OFFLINE=1, CI=1, pinned dependencies, Expo export --platform web --source-maps --clear",
+    "browser_tested": false,
+    "published": false,
+    "non_text_entries_explanation": "Router context is generated; the PNG module has no text source content. They are excluded from text byte comparison.",
+    "compiled_text_check": "JavaScript Unicode escapes decoded before checking the compiled notice and receipt strings; initial literal Unicode matcher was corrected without rebuilding or changing application source.",
+    "limitations": "Static Web export only; no browser, deployed API, model, Android or device verification.",
+    "unmodified_repository_text_modules_matching_build_base": 325
+  },
+  "validation_base": "29/29 targeted tests and frontend typecheck passed after bringing build inputs to b3b915f; owner source unchanged from reviewed SHA-256.",
+  "review": "Parent reports independent 29/29 tests and typecheck, root diff review, and old-404 interleaving probe completed before authorizing the isolated export and draft PR.",
+  "baseline_normalization": "Removed only retrieval-added final blank lines from the two existing changed test files to preserve canonical formatting; no unrelated records-history file is included.",
+  "build_base_commit": "b3b915f157ee9cdcf56cbe192d9af8b3472791a7",
+  "base_advance": {
+    "commit": "96bed5cf2bc27242f6488e43f77c7fbf638c9c82",
+    "reason": "PR #125 merged during export verification",
+    "overlap_with_changed_files": false,
+    "preserved_in_commit": true,
+    "combined_export_tested": false,
+    "limitation": "The export validates b3b915f plus this cache fix and preserves the receipt fix; the later unrelated GrowthArchive version-label change is preserved by the Git tree but was not included in this build."
+  }
+}
