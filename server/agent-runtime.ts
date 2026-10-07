@@ -101,6 +101,7 @@ export function createAgentRuntime(options: {
           const configuredTools = typeof input.tools === "function" ? input.tools(runContext) : input.tools;
           const definitions = new Map(configuredTools.map(tool => [tool.name, tool]));
           if (definitions.size !== configuredTools.length || configuredTools.some(tool => !/^[a-z][a-z0-9_]{0,63}$/u.test(tool.name))) throw new AgentStopped("invalid_tool");
+          const observer = createAgentObserver({ runId, toolNames: [...definitions.keys()], sink: options.diagnostics });
           const terminalToolNames = new Set(configuredTools.filter(tool => tool.terminal).map(tool => tool.name));
           if (terminalToolNames.size && !input.finalize) throw new AgentStopped("invalid_tool");
           const prompt = await loadAgentPrompt(input.recipeId, "tool_cycle", input.availableInputs ?? ["run", "scope", "conversation", "capabilities"]);
@@ -117,10 +118,12 @@ export function createAgentRuntime(options: {
                 if (!["succeeded", "rejected", "conflict", "failed", "unknown"].includes(response.status)) throw new Error("Invalid tool result");
                 progress.status = response.status;
                 if (response.reference) progress.reference = response.reference;
+                observer.recordToolRejection(tool.name, "execution", response);
                 return response;
               } catch {
                 // A thrown/aborted handler may already have acted. Do not invite an automatic retry.
                 progress.status = "unknown";
+                observer.recordToolRejection(tool.name, "execution", { status: "unknown" });
                 return { status: "unknown" };
               }
             } }));
@@ -142,10 +145,14 @@ export function createAgentRuntime(options: {
                 response = { status: "rejected", data: { code: "invalid_parameters",
                   nextAction: "Use the declared tool parameter shape. No operation was executed; correct the arguments within the remaining run budget.",
                   ...(hints?.length ? { hints } : {}) } };
+                observer.recordToolRejection(tool.name, "schema", response);
               }
               else if (!await budget.wait(authorize)
-                || !await budget.wait(() => definition!.authorize(parsed.data, scope))) response = { status: "rejected", data: { code: "not_authorized",
+                || !await budget.wait(() => definition!.authorize(parsed.data, scope))) {
+                response = { status: "rejected", data: { code: "not_authorized",
                   nextAction: "Stop this operation. Do not retry with another identity or resource." } };
+                observer.recordToolRejection(tool.name, "authorization", response);
+              }
               if (response) result.tools.push({ name: tool.name, callId: context.functionCallId ?? "", status: response.status });
               budget.check();
               return response ? { ...response } : undefined;
@@ -173,7 +180,7 @@ export function createAgentRuntime(options: {
               author: message.role === "user" ? "user" : agent.name, content: { role: message.role, parts: [{ text: message.text }] } }) });
           }
           const runner = new Runner({ appName, agent, sessionService,
-            plugins: [createAgentObserver({ runId, toolNames: [...definitions.keys()], sink: options.diagnostics })] });
+            plugins: [observer] });
           try {
             let finalizeAfterModelLimit = false;
             let confirmedFrameworkModelLimit = false;
