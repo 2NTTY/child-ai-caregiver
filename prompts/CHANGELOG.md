@@ -1,5 +1,11 @@
 # Prompt Pack 變更記錄
 
+## 0.1.26 — 2026-10-07
+
+- 主模型修正 memory-maintenance 0.1.2 與 stage_private_summary text-only 工具的責任矛盾：模型只交摘要正文，Server 持有覆蓋／版本，其他模式依當次 outputContract。
+- 區分本批完整與全部歷史完整；moreUncovered 不阻止已完整指定前綴的整理，缺頁仍停止。未新增游標參數、寫入權限、模型輪數或持久state。
+- 本版僅為提示詞契約一致性；不宣稱 F4漏present、quiet背景終結、能力裁剪或正式真模型驗收已完成。
+
 ## 0.1.25 — 2026-10-07
 
 - 主模型同步 ADK runtime 的指令／資料分層及 present_answer 終結契約；core.output 0.1.3、product-tools 0.1.13。成功展示接受後不再要求額外自然 final，仍經 Server 最終引用／授權核對。
