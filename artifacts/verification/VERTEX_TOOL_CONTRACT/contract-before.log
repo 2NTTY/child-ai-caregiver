@@ -1,0 +1,98 @@
+{"event":"vertex_generate_failure","httpStatus":null,"category":"unknown"}
+✖ the exact ordinary-observation request selects concerns and serializes only Vertex-supported schemas (32.935576ms)
+✖ document change declarations use supported union fields without changing strict execution (2.497606ms)
+✖ concern tool declarations preserve true-only confirmation, strict branch validation and authorization (1.376999ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1408.31096
+
+✖ failing tests:
+
+test at tests/vertex-tool-contract.test.ts:40:1
+✖ the exact ordinary-observation request selects concerns and serializes only Vertex-supported schemas (32.935576ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'propose_concern_change.properties.change.oneOf',
+  +   'propose_concern_change.properties.change.oneOf[1].properties.confirm.enum(non-string)',
+  +   'propose_concern_change.properties.change.oneOf[2].properties.confirm.enum(non-string)'
+  + ]
+  - []
+  
+      at file:///workspace/shared/vertex_tool_contract_20261007/tests/vertex-tool-contract.test.ts:64:14
+      at Object.apply (node:internal/test_runner/mock/mock:767:20)
+      at runFetch (file:///workspace/shared/model_failure_diagnostics_20261007/evidence/node_modules/@google/genai/dist/node/index.mjs:13825:34)
+      at RetryOperation._fn (/workspace/shared/model_failure_diagnostics_20261007/evidence/node_modules/p-retry/index.js:50:18)
+      at RetryOperation.attempt (/workspace/shared/model_failure_diagnostics_20261007/evidence/node_modules/retry/lib/retry_operation.js:116:8)
+      at /workspace/shared/model_failure_diagnostics_20261007/evidence/node_modules/p-retry/index.js:48:12
+      at new Promise (<anonymous>)
+      at pRetry (/workspace/shared/model_failure_diagnostics_20261007/evidence/node_modules/p-retry/index.js:39:36)
+      at ApiClient.apiCall (file:///workspace/shared/model_failure_diagnostics_20261007/evidence/node_modules/@google/genai/dist/node/index.mjs:13861:16)
+      at ApiClient.unaryApiCall (file:///workspace/shared/model_failure_diagnostics_20261007/evidence/node_modules/@google/genai/dist/node/index.mjs:13698:21) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'propose_concern_change.properties.change.oneOf', 'propose_concern_change.properties.change.oneOf[1].properties.confirm.enum(non-string)', 'propose_concern_change.properties.change.oneOf[2].properties.confirm.enum(non-string)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple',
+    attemptNumber: 1,
+    retriesLeft: 0
+  }
+
+test at tests/vertex-tool-contract.test.ts:75:1
+✖ document change declarations use supported union fields without changing strict execution (2.497606ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'change_family_document.properties.change.oneOf'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///workspace/shared/vertex_tool_contract_20261007/tests/vertex-tool-contract.test.ts:79:36)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'change_family_document.properties.change.oneOf' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/vertex-tool-contract.test.ts:93:1
+✖ concern tool declarations preserve true-only confirmation, strict branch validation and authorization (1.376999ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'propose_concern_change.properties.change.oneOf',
+  +   'propose_concern_change.properties.change.oneOf[1].properties.confirm.enum(non-string)',
+  +   'propose_concern_change.properties.change.oneOf[2].properties.confirm.enum(non-string)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///workspace/shared/vertex_tool_contract_20261007/tests/vertex-tool-contract.test.ts:99:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'propose_concern_change.properties.change.oneOf', 'propose_concern_change.properties.change.oneOf[1].properties.confirm.enum(non-string)', 'propose_concern_change.properties.change.oneOf[2].properties.confirm.enum(non-string)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

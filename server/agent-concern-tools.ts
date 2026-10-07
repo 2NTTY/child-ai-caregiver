@@ -6,6 +6,15 @@ import type { AgentRunContext, AgentTool, AgentToolResult } from "./agent-runtim
 import { FamilyError } from "./family-access.ts";
 import { concernAgentContext } from "./concern-context.ts";
 
+// Provider declarations use anyOf and a boolean, while both validation layers still require true.
+const confirmation = z.boolean().refine(value => value === true);
+const concernChangeParameters = z.union([
+  concernChangeSchema.options[0],
+  concernChangeSchema.options[1].extend({ confirm: confirmation }),
+  concernChangeSchema.options[2].extend({ confirm: confirmation }),
+  concernChangeSchema.options[3],
+]);
+
 export function createAgentConcernTools(concerns:ConcernStore, store:ProductAgentStore, run:AgentRunContext, authorize:()=>Promise<boolean>, background=false):AgentTool[] {
   const {scope,runId}=run;
   const guarded=async(action:()=>Promise<unknown>):Promise<AgentToolResult>=>{
@@ -33,7 +42,7 @@ export function createAgentConcernTools(concerns:ConcernStore, store:ProductAgen
     {name:"propose_concern",description:"按家長交代提出共享持續關注候選，列出將共享的整理內容，待確認後才建立。observation 是家長陳述，不是診斷。followUpAt 只在家長明確指定時填具體未來時間，否則 null；到期只提供站內回饋，不外發通知。",
       parameters:concernValuesSchema,authorize,execute:(args,context)=>guarded(()=>store.propose(scope,runId,context.callId,{kind:"concern_create",values:concernValuesSchema.parse(args)}))},
     {name:"propose_concern_change",description:"先 read_concerns 核對原 ID／版本／authorityVersion，再提出追加觀察、結束、恢復或一次站內跟進的候選。結束不完成／取消關聯任務；恢復不重啟舊跟進；改時間使用 schedule_followup，null 表示撤回。不得複製私人原文或擴大共享。",
-      parameters:z.object({concernId:z.uuid(),change:concernChangeSchema}).strict(),authorize,
+      parameters:z.object({concernId:z.uuid(),change:concernChangeParameters}).strict(),authorize,
       execute:(args,context)=>guarded(()=>store.propose(scope,runId,context.callId,{kind:"concern_change",concernId:args.concernId as string,change:concernChangeSchema.parse(args.change)}))}
   );
   return tools;

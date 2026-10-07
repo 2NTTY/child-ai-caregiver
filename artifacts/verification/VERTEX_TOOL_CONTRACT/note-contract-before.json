@@ -1,0 +1,116 @@
+{
+  "selection": {
+    "includeDocuments": false,
+    "includeConcerns": true,
+    "includePrivateSources": false,
+    "ordinaryToolNames": [
+      "read_care_records",
+      "read_private_instructions",
+      "save_ordinary_record",
+      "revise_ordinary_record"
+    ],
+    "includeTaskProposals": false,
+    "includeContact": true
+  },
+  "toolNames": [
+    "read_context",
+    "search_knowledge",
+    "propose_fact",
+    "stage_private_summary",
+    "read_care_records",
+    "read_private_instructions",
+    "save_ordinary_record",
+    "revise_ordinary_record",
+    "read_concerns",
+    "propose_concern",
+    "propose_concern_change",
+    "read_care_summary",
+    "read_contact_options",
+    "contact_caregiver",
+    "present_answer"
+  ],
+  "serializedContract": {
+    "method": "POST",
+    "endpoint": "https://aiplatform.googleapis.com",
+    "configFields": [
+      "candidateCount",
+      "maxOutputTokens",
+      "thinkingConfig"
+    ],
+    "tools": [
+      {
+        "name": "read_context",
+        "issues": []
+      },
+      {
+        "name": "search_knowledge",
+        "issues": []
+      },
+      {
+        "name": "propose_fact",
+        "issues": []
+      },
+      {
+        "name": "stage_private_summary",
+        "issues": []
+      },
+      {
+        "name": "read_care_records",
+        "issues": []
+      },
+      {
+        "name": "read_private_instructions",
+        "issues": []
+      },
+      {
+        "name": "save_ordinary_record",
+        "issues": []
+      },
+      {
+        "name": "revise_ordinary_record",
+        "issues": []
+      },
+      {
+        "name": "read_concerns",
+        "issues": []
+      },
+      {
+        "name": "propose_concern",
+        "issues": []
+      },
+      {
+        "name": "propose_concern_change",
+        "issues": [
+          {
+            "path": "propose_concern_change.properties.change.oneOf",
+            "issue": "unsupported-field"
+          },
+          {
+            "path": "propose_concern_change.properties.change.oneOf[1].properties.confirm.enum",
+            "issue": "non-string-enum"
+          },
+          {
+            "path": "propose_concern_change.properties.change.oneOf[2].properties.confirm.enum",
+            "issue": "non-string-enum"
+          }
+        ]
+      },
+      {
+        "name": "read_care_summary",
+        "issues": []
+      },
+      {
+        "name": "read_contact_options",
+        "issues": []
+      },
+      {
+        "name": "contact_caregiver",
+        "issues": []
+      },
+      {
+        "name": "present_answer",
+        "issues": []
+      }
+    ]
+  }
+}

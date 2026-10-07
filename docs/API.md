@@ -42,6 +42,7 @@ S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime
 - <a id="api-ar-01"></a>內部入口接受受信互動請求或 worker 事件及必要輸入／待確認參照；Server 建立 runId，注入身份、孩子／資料空間、觸發來源、時間／時區、授權及資料版本、配方／工具集合。客戶端正文不能聲稱自己是 worker 或提供可直接採信的權限。
 - <a id="api-ar-02"></a>ModelGateway 的 ADK 路徑傳遞完整模型／工具 parts、呼叫關聯及必要 opaque metadata，不壓成 P1 文字介面。每次生成／查詢 embedding 均受[運行配置](ARCHITECTURE.md#p2-agent-budgets)、全局開關、配額及共享取消／deadline 約束；語料維護另有有限額，不能繞過全局控制。
 - <a id="api-ar-03"></a>FunctionTool 只映射本次允許的業務操作；呼叫必須核對 schema、資源及來源權限、授權版本、終態、確認參照和穩定 opId／occurrenceId。結果區分成功、部分成功、拒絕、衝突、失敗及 unknown，帶實際操作參照；框架自動呼叫工具不豁免校驗。
+  Concern／family-document 的模型工具宣告使用 Vertex 支援的 anyOf；confirm 在 wire schema 表達 boolean，但本機 refine 及執行前原業務 schema 仍要求 true。模型用宣告不替代 Server 嚴格驗證，不放寬身份、action 專屬欄位、版本、家庭共享確認或存取權限。SDK 序列化契約以固定版本離線檢查，正式 400 的具體拒絕欄位仍須與真服務驗收區分；不得以重送未知結果驗證格式。
 - <a id="api-ar-04"></a>原生工具呼叫是副作用入口；收尾的文字／actionRequests 不能再次執行同一操作。必要結構化結果使用宣告 schema；不支援同次工具／schema 時的獨立收尾仍計同一預算。收尾失敗從台帳呈現已確認結果，不重做工具。
 - <a id="api-ar-05"></a>待確認參照綁種類、原事項／訊息、對象、內容版本、可見範圍及有效性，跨 run 持久保存。確認回覆重新核對指向、發言者與當前權限；多個可能指向先補問。事實確認、任務確認、完成及外發授權不可互換。
 - <a id="api-ar-06"></a>輸出供 UI 使用的 runId、狀態／停止原因、可理解結果、可引用來源及最小工具進度，須在呈現前重新核對權限及版本。進度只取實際工具／台帳證據，不回傳原始 provider 協定、內部推理、憑據或無權資料。API 路由與完整序列化隨工作包落碼，不把 Prompt Pack 語義直接當現有 wire format。
