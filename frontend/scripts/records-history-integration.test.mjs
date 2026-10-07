@@ -21,6 +21,7 @@ const label = (tree, value) => nodes(tree).find(node => node.props?.label === va
 function harness() {
   const slots = [], effects = [], events = [];
   let cursor = 0, pending, params = {}, width = 1024;
+  const production = { scopeKey: 'scope-a', model: { caregiverName: 'Parent', selectedChildId: 'child-a', children: [{ id: 'child-a', displayName: 'A', accessRole: 'owner' }] }, actions: { prepareQuestion: question => events.push(['prepare-question', question]) } };
   let care = { scopeKey: 'scope-a', model: { scopeKey: 'scope-a', access: 'editable', online: true, list: { state: 'ready' }, operation: { state: 'none' }, draft: null, deletion: null, review: { state: 'ready' } }, actions: { closePanel: () => events.push('close-care') } };
   const preparations = { scopeKey: 'scope-a', model: { condition: 'ready', documents: [], selected: null }, actions: { closeDocument: () => events.push('close-preparation') } };
   const tasks = { model: { reading: false, access: 'editable', operation: { state: 'none' }, draft: null, selected: null, scheduleContext: { timeZone: 'Asia/Hong_Kong' } }, actions: { closePanel: () => events.push('close-task') } };
@@ -33,7 +34,7 @@ function harness() {
     'react': react, 'react/jsx-runtime': require('react/jsx-runtime'),
     'expo-router': { usePathname: () => '/history', useLocalSearchParams: () => params, useRouter: () => ({ push: target => events.push(['push', target]), setParams: value => { params = { ...params, ...value }; events.push(['params', value]); } }) },
     'react-native': { View: 'View', StyleSheet: { create: value => value } }, 'react-native-paper': { Text: 'Text' },
-    '../preview/PreviewContext': { usePreview: () => ({ model: { caregiverName: 'Parent', selectedChildId: 'child-a', children: [{ id: 'child-a', displayName: 'A', accessRole: 'owner' }] }, actions: { prepareQuestion: question => events.push(['prepare-question', question]) } }) },
+    '../production/ProductionProvider': { useProduction: () => production },
     '../preview/PreviewNavigationGuard': { usePreviewNavigation: () => action => { events.push('guard'); pending = action; } },
     '../workspaces/TasksWorkspace': { useTasksWorkspace: () => tasks },
     '../workspaces/PreparationWorkspace': { usePreparationWorkspace: () => preparations },
@@ -41,32 +42,57 @@ function harness() {
     '../workspaces/GrowthWorkspace': { useGrowthWorkspace: () => null },
     '../components/useContainerWidth': { useContainerWidth: () => ({ width, ref: null, onLayout() {} }) },
     '../components/history/history-filters': filters,
-    '../components/date-time': { timeZoneLabel: value => value },
+    '../components/DateTimeFields': { AppDateField: 'AppDateField' },
+    '../components/PageFrame': { PageFrame: 'PageFrame' },
+    '../components/ui': { AppButton: 'AppButton', AppSelect: 'AppSelect', AppTabPanel: 'AppTabPanel', AppTextField: 'AppTextField', UnderlineTabs: 'UnderlineTabs' },
+    '../components/tasks/TaskHistoryView': { TaskHistoryView: 'TaskHistoryView' },
+    '../components/care/CareReviewHistoryView': { CareReviewHistoryView: 'CareReviewHistoryView' },
+    '../components/care/CareSavedRecordsView': { CareSavedRecordsView: 'CareSavedRecordsView' },
+    '../components/preparations/PreparationWorkspace': { PreparationHistoryView: 'PreparationHistoryView' },
+    '../components/growth/GrowthHistoryView': { GrowthHistoryView: 'GrowthHistoryView' },
     '../preparation-view-model': { searchPreparationHistory: () => [] },
     '../theme': { colors: {}, readingType: {}, spacing: {} },
   };
   const output = ts.transpileModule(readFileSync(path.join(root, 'src/screens/historyScreen.tsx'), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
   const module = { exports: {} };
-  new Function('require', 'module', 'exports', output + '\nexports.HistoryWorkspace = HistoryWorkspace;')(name => dependencies[name] ?? new Proxy({}, { get: (_target, key) => String(key) }), module, module.exports);
+  new Function('require', 'module', 'exports', output + '\nexports.HistoryWorkspace = HistoryWorkspace;')(name => {
+    assert.ok(Object.hasOwn(dependencies, name), `Unmocked History dependency: ${name}`);
+    return dependencies[name];
+  }, module, module.exports);
   const defaults = { scope: 'scope-a', childName: 'A', initialCategory: 'review', initialReviewStatus: 'all', olderOnly: false };
   return {
-    events, get care() { return care; }, setCare(value) { care = value; }, query(value) { params = value; }, width(value) { width = value; },
+    events, production, get care() { return care; }, setCare(value) { care = value; }, query(value) { params = value; }, width(value) { width = value; },
     route() { return module.exports.default(); },
     render(props = {}) { cursor = 0; let tree = module.exports.HistoryWorkspace({ ...defaults, ...props }); while (effects.length) effects.shift()(); return tree; },
     approve() { const action = pending; pending = null; action?.(); },
   };
 }
 
-test('all seven owners mount once and keep Summary/Profile/Preparation and native route structure', () => {
+test('production owners compose once and keep Summary/Profile/Preparation and native route structure', () => {
+  const rootLayout = readFileSync(path.join(root, 'app/_layout.tsx'), 'utf8');
   const layout = readFileSync(path.join(root, 'app/(dashboard)/_layout.tsx'), 'utf8');
-  for (const provider of ['PreviewProvider', 'BackgroundProvider', 'PhotosWorkspaceProvider', 'TasksWorkspaceProvider', 'ProfileWorkspaceProvider', 'PreparationWorkspaceProvider', 'CareWorkspaceProvider']) {
-    assert.equal((layout.match(new RegExp(`<${provider}(?:>|\\s)`, 'g')) ?? []).length, 1, provider);
+  const domains = readFileSync(path.join(root, 'src/production/ProductionDomains.tsx'), 'utf8');
+  const care = readFileSync(path.join(root, 'src/production/CareProfileDomains.tsx'), 'utf8');
+  const knowledge = readFileSync(path.join(root, 'src/production/TaskKnowledgeDomains.tsx'), 'utf8');
+  const photos = readFileSync(path.join(root, 'src/production/PhotoInputDomains.tsx'), 'utf8');
+  const composition = [rootLayout, layout, domains, care, knowledge, photos].join('\n');
+  for (const provider of ['ProductionProvider', 'BackgroundProvider', 'ProductionDomains', 'ProductionCareProfileDomains', 'ProductionTaskKnowledgeDomains', 'ProductionPhotoInputDomains', 'ProductionSettingsDomains', 'TasksWorkspaceProvider', 'ProfileWorkspaceProvider', 'PreparationWorkspaceProvider', 'CareWorkspaceProvider']) {
+    assert.equal((composition.match(new RegExp(`<${provider}(?:>|\\s)`, 'g')) ?? []).length, 1, provider);
   }
-  assert.match(layout, /<TasksWorkspaceProvider>\s*<ProfileWorkspaceProvider>\s*<PreparationWorkspaceProvider>\s*<CareWorkspaceProvider>/);
+  assert.doesNotMatch(composition, /<(?:PreviewProvider|PhotosWorkspaceProvider)(?:>|\s)/);
+  assert.match(rootLayout, /<ProductionProvider><ProductionFirstScreenGate\b[\s\S]*<Stack\b/);
+  assert.match(layout, /<ProductionGate><BackgroundProvider key=\{identityKey\}><ProductionDomains>/);
+  assert.match(domains, /<ProductionCareProfileDomains><ProductionTaskKnowledgeDomains><ProductionPhotoInputDomains><ProductionSettingsDomains>/);
+  assert.match(care, /<CareWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{scoped\?\.care \?\? null\}>\s*<ProfileWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{scoped\?\.profile \?\? null\}>/);
+  assert.match(knowledge, /<TasksWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{current\?\.tasks \?\? null\}>\s*<PreparationWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{current\?\.documents.preparation \?\? null\}>/);
+  assert.equal((photos.match(/<PhotoInputContext\.Provider\b/g) ?? []).length, 1);
   assert.equal((layout.match(/<Tabs\.Screen name=/g) ?? []).length, 5);
   assert.match(layout, /\["more", "history", "memory", "photos", "sources", "summary"/);
   const summary = readFileSync(path.join(root, 'src/screens/SummaryScreen.tsx'), 'utf8');
-  assert.ok(summary.includes('LegacySummaryRecovery')); assert.ok(summary.includes('ChildOverviewContent'));
+  assert.match(summary, /<ChildOverviewContent\b/);
+  assert.match(summary, /<PreparationWorkspace\b/);
+  assert.match(summary, /tab === "legacy-preparation" \? <TaskKnowledgeSummaryContent preparation\b/);
+  // Source-level composition only; this does not exercise React provider lifecycles.
 });
 
 test('native Records navigation recognizes History without adding a sixth primary tab', () => {
@@ -83,6 +109,7 @@ test('native Records navigation recognizes History without adding a sixth primar
 test('review and older-pending deep links feed the single Care owner with no pretend date filter', () => {
   const h = harness(); h.query({ category: 'review', status: 'pending', older: '1' });
   const route = h.route(), tree = h.render(route.props), review = find(tree, 'CareReviewHistoryView');
+  assert.equal(route.key, h.production.scopeKey); assert.equal(route.props.scope, h.production.scopeKey);
   assert.equal(review.props.model, h.care.model); assert.equal(review.props.actions, h.care.actions);
   assert.equal(review.props.initialStatus, 'pending'); assert.equal(review.props.olderOnly, true);
   assert.equal(find(tree, 'AppDateField'), undefined); assert.ok(label(tree, '搜尋核對記錄'));
@@ -107,6 +134,7 @@ test('saved-record history owns its own search and paging without a duplicate to
 
 test('preparation History keeps its owner, dates, scroll connection and return tab after Care integration', () => {
   const h = harness(), tree = h.render({ initialCategory: 'preparations' }), preparation = find(tree, 'PreparationHistoryView');
+  assert.equal(preparation.props.onPrepareQuestion, h.production.actions.prepareQuestion);
   assert.deepEqual(preparation.props.dateRange, { from: null, to: null });
   assert.equal(preparation.props.scrollRef, tree.props.scrollRef);
   tree.props.onScroll({ nativeEvent: { contentOffset: { y: 315 } } }); assert.equal(preparation.props.getScrollPosition(), 315);

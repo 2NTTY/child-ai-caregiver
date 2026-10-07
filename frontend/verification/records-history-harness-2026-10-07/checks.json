@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-07",
+  "base_commit": "85e3a846587192f9eaaccde2b324adb21a65514c",
+  "scope": "Repair the existing records-history-integration test harness after the production-provider migration; no product changes",
+  "test_file": "frontend/scripts/records-history-integration.test.mjs",
+  "test_sha256": "03581c2dc2ab8764fb040585c49f04384cf5d177f015c7cede25bc67d60ea0b6",
+  "baseline": {
+    "passed": 1,
+    "failed": 6,
+    "cause": "Retired PreviewProvider/PhotosWorkspaceProvider/LegacySummaryRecovery assertions and the obsolete usePreview mock"
+  },
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/records-history-integration.test.mjs",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "node --check frontend/scripts/records-history-integration.test.mjs",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    {
+      "check": "Pinned source verification",
+      "result": "10 production/source inputs and the original test match their canonical Git blob SHAs"
+    },
+    {
+      "check": "Independent review",
+      "result": "7/7 rerun passed; 10 source blobs verified; source and diff review passed"
+    }
+  ],
+  "unchanged": "Existing History interaction, search, guard, owner handoff, date, scroll, category navigation, and native route assertions are retained",
+  "additions": "Production scope/action identity assertions and fail-fast unmocked dependencies",
+  "limits": [
+    "Shallow interaction and source composition checks only; no real React provider lifecycle or native navigator validation",
+    "No full-suite run, product build, browser, production API, model call, deployment, or product-code change"
+  ]
+}
