@@ -69,7 +69,7 @@ INT-W02 增補：`GET／POST /api/children/:childId/agent/policy` 管理本人�
 
 `GET /agent/notes?query=…&afterId=…` 返回 `{notes:{items,nextAfterId}}`；是本人普通交代的權威來源，不複製成已確認事實。`POST /agent/notes/:id/delete` 需 `operationId／expectedVersion／confirmDelete:true`。`GET /agent/actions?runId=…` 返回 `{receipts}`，只讀本人／孩子原運行的已提交操作；收據含資源 ID、版本、保存／排程／終態及通知授權狀態，不以模型文字推定成功。上述路徑均以 `/api/children/:childId` 為前綴並重核 session；未套用 migration 025 不啟用新操作。
 
-容量契約增補：工具選擇以當前本人指令為主，只有明確短延續語才參考上一則本人訊息，不把助手回覆或無關舊意圖疊入；明確待辦標題／內容屬資料，禁止通知等子句不會僅因關鍵字開啟該工具。多個正向意圖保留，工具選擇從不代表授權。gateway 的完整 contents／config 邏輯 JSON 仍受原 32,000 UTF-16 字元上限（不等於 SDK 後續加入固定設定後的 HTTP body 大小），沒有提高模型次數或配額。
+容量契約增補：工具選擇以當前本人指令為主，只有明確短延續語才參考上一則本人訊息，不把助手回覆或無關舊意圖疊入；明確待辦標題／內容屬資料，禁止通知等子句不會僅因關鍵字開啟該工具。多個正向意圖保留，工具選擇從不代表授權。gateway 的完整 contents／config 邏輯 JSON 按運行共用的 inputCharacters 上限檢查（UTF-16 字元，不等於 SDK 後續加入固定設定後的 HTTP body 大小或 token 數）。互動 Agent 由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 設定，預設 64,000、允許 32,000–64,000；背景仍為 32,000。原 P1 AI_MAX_INPUT_CHARACTERS 與模型次數／輸出／時間及配額不因此改變。
 
 `read_context` 在整體 request 剩餘容量內只給一份完整、有序的原訊息前綴；`privateSummaryInput.messageIds` 引用同次提供的原文，舊摘要只提供一次。明示 omitted／more／complete，不能把未讀部分說成已摘要。Server 對摘要批次重新核對 previousVersion、basis 及連續前綴 coverage，來源改變仍拒絕。固定 metadata 放不下時明示 context_input_limit，不暗刪事實或任務；原生工具協定／signatures 不被截斷。
 
@@ -494,7 +494,7 @@ Agent 的唯讀 `read_care_summary` 復用同一服務、身份與運行預算�
 | POST `/:id/confirm`（online 收據） | `{expectedVersion,confirmShared:true,values:CareValues}`；家長核對文字、種類、約數／單位／模糊時間後，在同交易建立照護記錄及共享原圖；source 由 Server 綁 ID／hash／上傳時間／原來源，不接受偽造來源 |
 | POST `/:id/delete`（online 收據） | `{expectedVersion,confirmDelete:true}`；私人原圖由上傳者管理，共享原圖由 owner／caregiver 管理；同時刪相關照護記錄／修訂及附件 metadata，原檔進持久刪除清單，回 cleanupPending，不謊稱磁碟已即時清除 |
 
-AI 候選不是事實，原圖共享也不自動公開上傳者的私人提取候選；確認畫面明確說明原圖及已核對記錄會共享。提取受同一 Agent／模型配額控制，最多四次生成、八次工具及 90 秒；單張二進位大小另限，32,000 字元仍計全部文字、schema 及協定 metadata。模型只能交候選，不能建立任務或外發。
+AI 候選不是事實，原圖共享也不自動公開上傳者的私人提取候選；確認畫面明確說明原圖及已核對記錄會共享。提取受同一 Agent／模型配額控制，最多四次生成、八次工具及 90 秒；單張二進位大小另限；照片提取屬 interactive，全部文字、schema 及協定 metadata 使用同一 AI_AGENT_MAX_INPUT_CHARACTERS 上限（32,000–64,000，預設 64,000），不因此提高圖片二進位上限。模型只能交候選，不能建立任務或外發。
 
 上傳／提取回應遺失先 GET 原 ID；確認／刪除查原 opId。未知結果不改新識別重做。未提交檔案及文字只留本頁，斷線保留，換孩子／帳號／Server、撤權或登出清理；重開不保證草稿恢復。原圖缺失／hash 錯誤不得宣稱成功。大小及 MIME 簽名檢查不是完整影像解碼或辨識品質證據。
 
@@ -546,7 +546,7 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 
 版本衝突回 409；保存回應失聯先重讀版本，由使用者核對，不自動重送 key。輸入框在送出／失敗／斷線／身份或 Server 變更時清除。存取檢查每帳號每分鐘一次，Server 最多保留四個當分鐘槽位；逾限回 429。
 
-個人每日上限 1–1000（預設 100）、每次 Agent 生成 1–12（預設 4）、查詢 embedding 1–6（預設 2），UI 可編輯並經 Server 驗證。只有 personal 模式採用這些限額；平台維持原配額及每次 4／2。工具 8 次、90 秒、輸出 1024 tokens／次及上下文 32000 字元仍是固定安全上限。每個運行固定選定版本，後續模型／向量／工具及回報重查；撤回不能取消供應商已接受的呼叫。
+個人每日上限 1–1000（預設 100）、每次 Agent 生成 1–12（預設 4）、查詢 embedding 1–6（預設 2），UI 可編輯並經 Server 驗證。只有 personal 模式採用這些限額；平台維持原配額及每次 4／2。工具 8 次、90 秒及輸出 1024 tokens／次不變。互動上下文由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 決定（預設 64,000、允許 32,000–64,000 UTF-16 邏輯字元）；個人設定不可提高此界限，背景仍為 32,000。GET /api/ai/settings 回應頂層的可選 agentInputCharacters 回傳實際互動上限，嚴格驗證範圍及整數；舊 Server 缺欄位時 UI 顯示「互動上下文上限未提供」，不可猜測新預設。每個運行固定選定版本，後續模型／向量／工具及回報重查；撤回不能取消供應商已接受的呼叫。
 
 `/api/ai/status`、`/api/ai/usage` 依本人目前模式回報；設定頁同時列兩種來源。UTC 每日 00:00（香港 08:00）重置計數；生成與查詢 embedding 的嘗試均計次，用量 metadata 不代表完整供應商帳單。
 
@@ -584,4 +584,3 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 沒有觀察時間的現行持續關注仍列入成長報告正文，明示日期未提供；不把建立時間當事件時間。已知時間的來源仍依原文件期間篩選，PDF 沿用同版章節及來源。
 
 Agent 透過 read_family_documents／generate_family_document／change_family_document 使用同一服務。生成只接受用途／期間等結構化參數，不接受模型自由撰寫家庭正文；真實資源 ID／版本及操作收據才代表已保存。
-

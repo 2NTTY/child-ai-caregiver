@@ -1,0 +1,62 @@
+✔ each kind of attempt has an independent finite budget (3.781551ms)
+✔ cancellation prevents starting work and stops waiting for an uncooperative operation (1.095147ms)
+✔ one deadline bounds model and tool waits and cannot exceed the production maximum (14.531829ms)
+✔ interactive input configuration is finite and independent of the P1 text limit (4.326944ms)
+✔ one selected ceiling drives tool allowance and personal call settings cannot change it (2.600252ms)
+✔ native Runner enforces exact logical boundary: interactive default (224.830095ms)
+ℹ {"scope":"interactive default","acceptedLogicalCharacters":64000,"rejectedLogicalCharacters":64001,"reserveBeforeRejection":2,"reserveAfterRejection":2}
+✔ native Runner enforces exact logical boundary: interactive rollback (44.464773ms)
+ℹ {"scope":"interactive rollback","acceptedLogicalCharacters":32000,"rejectedLogicalCharacters":32001,"reserveBeforeRejection":2,"reserveAfterRejection":2}
+✔ native Runner enforces exact logical boundary: worker keeps base limit (39.744827ms)
+ℹ {"scope":"worker keeps base limit","acceptedLogicalCharacters":32000,"rejectedLogicalCharacters":32001,"reserveBeforeRejection":2,"reserveAfterRejection":2}
+✔ real ADK Runner performs two tool steps, preserves native signatures and returns text only (87.432381ms)
+✔ invalid parameters and forged scope are rejected before handler execution (41.571361ms)
+✔ tool authorization rejects expired confirmations and unauthorized resources (32.691592ms)
+✔ unknown tools count as attempts and cannot reach any handler (8.520295ms)
+✔ model and tool budgets bound scripted loops without extra provider calls (45.174178ms)
+✔ model limit finalizes four successful tool steps once without a fifth provider call (50.068279ms)
+✔ model limit with no prepared finalization text stays stopped (15.566129ms)
+✔ successful tools survive final model failure without executing again (44.342598ms)
+✔ unknown tool outcomes stop before a model can propose a blind retry (9.870154ms)
+✔ oversized context is rejected without calling or reserving the model (7.448465ms)
+✔ revocation after generation prevents tools and returning private results (17.658404ms)
+✔ quota denial stops before the provider and does not trigger a hidden retry (11.822989ms)
+✔ fallback tool progress is hidden when authorization changes during model limit finalization (22.668799ms)
+✔ cancellation reaches provider and no following operation starts (6.866577ms)
+✔ photo transport keeps bounded image bytes outside text budget through the real Runner tool cycle (12.441907ms)
+✔ AI configuration defaults to a disabled server-only setup (2.006131ms)
+✔ AI configuration accepts safe identifiers and numeric boundaries (0.376944ms)
+✔ AI configuration requires a valid project when enabled (0.790759ms)
+✔ AI configuration rejects ambiguous booleans and unsafe URL components (0.564654ms)
+✔ AI configuration enforces integer ranges without leaking values (0.786752ms)
+✔ AI configuration accepts documented multi-region locations (0.153274ms)
+✔ settings server reports the resolved interactive default and configured rollback without generation (515.903263ms)
+✔ old settings payload remains readable and actual view reports unknown rather than a guessed ceiling (91.993423ms)
+✔ settings client accepts only bounded integer input metadata and preserves strict parsing (9.293064ms)
+✔ T7 native Runner preserves full text and repairs a rejected task within budget (observed v1 controls; 32000) (223.999808ms)
+ℹ {"policy":"observed_v1_controls_mapped_to_contract","logicalCharacters":[25255,27296,27861,29047],"rejectedResponseCharacters":194,"limit":32000}
+✔ T7 native Runner preserves full text and repairs a rejected task within budget (observed v1 controls; 64000) (76.364331ms)
+ℹ {"policy":"observed_v1_controls_mapped_to_contract","logicalCharacters":[25255,27911,28476,29662],"rejectedResponseCharacters":194,"limit":64000}
+✔ T7 native Runner preserves full text and repairs a rejected task within budget (no active policy; 32000) (40.570215ms)
+ℹ {"policy":"none","logicalCharacters":[25057,27190,27755,28941],"rejectedResponseCharacters":194,"limit":32000}
+✔ T7 native Runner preserves full text and repairs a rejected task within budget (no active policy; 64000) (31.835328ms)
+ℹ {"policy":"none","logicalCharacters":[25057,27533,28098,29284],"rejectedResponseCharacters":194,"limit":64000}
+✔ a new explicit task uses current user intent without title data, negative notifications or previous fact instructions (16.56882ms)
+✔ positive multiple intents and unlabelled quoted requirements keep their capabilities (1.402118ms)
+✔ literal prohibitions do not disable positive requests to remember or act without another question (0.912704ms)
+✔ only short explicit references reuse prior user intent and neutral reads do not expose mutation groups (0.398564ms)
+✔ modified ordinary-task clauses keep titles and details as data without selecting care records (0.590376ms)
+✔ task disposition does not erase explicit parallel care records or quoted instructions outside task labels (0.394958ms)
+✔ a labelled task cannot consume a separate quoted document, private source or contact intent (0.474581ms)
+✔ the exact ordinary-observation request selects concerns and serializes only documented Vertex schema fields (37.683237ms)
+✔ document change declarations use supported union fields without changing strict execution (17.501105ms)
+✔ the real product-interactive Runner request keeps its system configuration and supported schemas (72.379666ms)
+✔ concern tool declarations preserve true-only confirmation, strict branch validation and authorization (10.001014ms)
+ℹ tests 47
+ℹ suites 0
+ℹ pass 47
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2648.338138

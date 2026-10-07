@@ -1,0 +1,148 @@
+{
+  "baseline": "9d1024cddd162bfc59198223f2a9e1ab2c6afeb2",
+  "sourcePath": "server/product-tool-selection.ts",
+  "firstSourceSha256": "f484b01ccae72832b365833bbf4173a0d9186ed4f9aa85c99959a91d67ff7f86",
+  "correctedSourceSha256": "0b03c76db6da0fb383ad0e6790ba30eefd46b6f528b0aa7a95174c745e64c533",
+  "cases": [
+    {
+      "text": "請新增普通待辦「帶書」，另外請建立「成長報告」。",
+      "baseline": {
+        "includeDocuments": true,
+        "includeConcerns": false,
+        "includePrivateSources": false,
+        "ordinaryToolNames": [
+          "read_care_records",
+          "read_private_instructions",
+          "create_ordinary_reminder",
+          "change_ordinary_reminder"
+        ],
+        "includeTaskProposals": true,
+        "includeContact": false
+      },
+      "firstImplementation": {
+        "includeDocuments": false,
+        "includeConcerns": false,
+        "includePrivateSources": false,
+        "ordinaryToolNames": [
+          "read_care_records",
+          "read_private_instructions",
+          "create_ordinary_reminder",
+          "change_ordinary_reminder"
+        ],
+        "includeTaskProposals": true,
+        "includeContact": false
+      },
+      "corrected": {
+        "includeDocuments": true,
+        "includeConcerns": false,
+        "includePrivateSources": false,
+        "ordinaryToolNames": [
+          "read_care_records",
+          "read_private_instructions",
+          "create_ordinary_reminder",
+          "change_ordinary_reminder"
+        ],
+        "includeTaskProposals": true,
+        "includeContact": false
+      }
+    },
+    {
+      "text": "請建立待辦「帶書」，另外新增「私人來源 https://example.com」。",
+      "baseline": {
+        "includeDocuments": false,
+        "includeConcerns": false,
+        "includePrivateSources": true,
+        "ordinaryToolNames": [
+          "read_care_records",
+          "read_private_instructions",
+          "create_ordinary_reminder",
+          "change_ordinary_reminder"
+        ],
+        "includeTaskProposals": true,
+        "includeContact": false
+      },
+      "firstImplementation": {
+        "includeDocuments": false,
+        "includeConcerns": false,
+        "includePrivateSources": false,
+        "ordinaryToolNames": [
+          "read_care_records",
+          "read_private_instructions",
+          "create_ordinary_reminder",
+          "change_ordinary_reminder"
+        ],
+        "includeTaskProposals": true,
+        "includeContact": false
+      },
+      "corrected": {
+        "includeDocuments": false,
+        "includeConcerns": false,
+        "includePrivateSources": true,
+        "ordinaryToolNames": [
+          "read_care_records",
+          "read_private_instructions",
+          "create_ordinary_reminder",
+          "change_ordinary_reminder"
+        ],
+        "includeTaskProposals": true,
+        "includeContact": false
+      }
+    },
+    {
+      "text": "請建立待辦「帶書」，另外安排「聯絡老師」。",
+      "baseline": {
+        "includeDocuments": false,
+        "includeConcerns": false,
+        "includePrivateSources": false,
+        "ordinaryToolNames": [
+          "read_care_records",
+          "read_private_instructions",
+          "create_ordinary_reminder",
+          "change_ordinary_reminder"
+        ],
+        "includeTaskProposals": true,
+        "includeContact": true
+      },
+      "firstImplementation": {
+        "includeDocuments": false,
+        "includeConcerns": false,
+        "includePrivateSources": false,
+        "ordinaryToolNames": [
+          "read_care_records",
+          "read_private_instructions",
+          "create_ordinary_reminder",
+          "change_ordinary_reminder"
+        ],
+        "includeTaskProposals": true,
+        "includeContact": false
+      },
+      "corrected": {
+        "includeDocuments": false,
+        "includeConcerns": false,
+        "includePrivateSources": false,
+        "ordinaryToolNames": [
+          "read_care_records",
+          "read_private_instructions",
+          "create_ordinary_reminder",
+          "change_ordinary_reminder"
+        ],
+        "includeTaskProposals": true,
+        "includeContact": true
+      }
+    }
+  ],
+  "initialChecks": {
+    "focusedTests": 46,
+    "passed": 46,
+    "scopedServerTypecheck": "passed",
+    "scopedClientTypecheck": "passed"
+  },
+  "correctedChecks": {
+    "selectorAndT7": "11/11 passed",
+    "scopedServerTypecheck": "passed",
+    "inspection": "No further blocker found; first regression results preserved"
+  },
+  "limitations": [
+    "No live model, paid resource, deployment, production data or browser validation"
+  ]
+}

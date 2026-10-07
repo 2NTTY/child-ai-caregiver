@@ -73,7 +73,7 @@ export class AgentGatewayModel extends BaseLlm {
       return {...part,inlineData:{...part.inlineData,data:"[bounded image bytes]"}};
     })}));
     const requestCharacters = JSON.stringify({ contents, config: request.config }).length;
-    if (requestCharacters > AGENT_LIMITS.inputCharacters) {
+    if (requestCharacters > budget.limits.inputCharacters) {
       throw new AgentStopped("input_limit");
     }
     budget.take("modelCalls");

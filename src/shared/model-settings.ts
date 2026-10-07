@@ -42,6 +42,7 @@ export interface ModelSettingsView {
   platformAvailable: boolean;
   personalAvailable: boolean;
   personalGlobalLimit: number;
+  agentInputCharacters?: number;
   usage: { platform: ModelSettingsUsage; personal: ModelSettingsUsage };
 }
 export interface ModelKeyCheck {

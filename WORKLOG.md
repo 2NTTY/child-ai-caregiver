@@ -1519,3 +1519,10 @@
 - 普通記錄增加 optional quantityEvidence，Server 核對逐字原值／單位及鄰近約數，欠依據保存 null。資料原文保留，手動 API 不變；未改舊量只保持舊值，不冒稱重新核對。既有 A3 錯誤不以 DB 直接回填。
 - 38/38 定向測試、scoped strict typecheck 及固定 Runner mock 容量驗證見 [證據](artifacts/verification/QA_AGENT_CONTEXT_INTEGRITY_CHECKS.json)。保留最初失敗、原 master 對照、必要 fixture 補正；無真模型／DB／GCP操作，不以 mock completed 宣稱正式任務成功。
 - 原 F4 嚴格 present_answer 收尾、完全禁止背景待辦能力、201項記憶／200關注事件界線未在本包擴修。待獨立覆核及後續部署驗收；仍保留整體未完成狀態。
+
+
+## LOG-20261007-INTERACTIVE-INPUT-CONTRACT
+
+- Recorded At：2026-10-07 08:14 UTC；Work Date：同日。dot 主模型親寫契約，原生實作代理負責程式及離線測試；未有新增人工驗收。
+- 使用者批准調整舊輸入限制；新增互動專用 32k–64k、預設 64k 的有限設定，背景及 P1 分開。設定頁必須顯示 Server 真值，舊回應缺欄位不能猜測。未增加模型次數／輸出／時間或個人配額。
+- 本條僅記契約與工作狀態；程式測試數量及最終 head 以後續證據為準，目前未部署、沒有本次新增真模型呼叫。T7 未建待辦，線上拒絕參數根因未確認；保留首次失敗，不把 scripted 成功當作正式成功。

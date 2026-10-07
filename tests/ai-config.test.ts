@@ -10,9 +10,11 @@ test("AI configuration defaults to a disabled server-only setup", () => {
     model: "gemini-3.1-flash-lite",
     dailyUserAttempts: 20,
     dailyGlobalAttempts: 100,
+    personalDailyGlobalAttempts: 1000,
     maxAttempts: 2,
     timeoutMs: 30000,
     maxInputCharacters: 10000,
+    agentMaxInputCharacters: 64000,
     maxOutputTokens: 1024,
   });
   assert.equal(readAiConfig({ GCP_PROJECT_ID: "" }).project, "");
@@ -37,9 +39,11 @@ test("AI configuration accepts safe identifiers and numeric boundaries", () => {
     model: "gemini-2.5-flash",
     dailyUserAttempts: 1,
     dailyGlobalAttempts: 10000,
+    personalDailyGlobalAttempts: 1000,
     maxAttempts: 1,
     timeoutMs: 60000,
     maxInputCharacters: 20000,
+    agentMaxInputCharacters: 64000,
     maxOutputTokens: 4096,
   });
 });
