@@ -66,7 +66,13 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 
 ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 InstructionProvider 提供，input.context 獨立放入有標籤的 user Content 資料 part；原使用者訊息仍第一個 part，原生附件、歷史及工具關聯保留。正文中的 `{name}`／`{name?}` 不作 state 展開或刪除，資料內容不能授權，也不能聲稱封裝本身保證抵禦所有 prompt injection。
 
-`present_answer` 為 terminal 工具，只有成功接受才令 ADK skipSummarization 停止模型循環，之後既有 finalize 仍重驗引用與目前授權。被拒、衝突或失敗的展示可在原剩餘預算內修正；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉尚未完成的副作用。模型自然 final 仍不能代替此工具；完全漏調 present_answer 及背景安靜 no_action 仍待獨立處理，本包不增加模型輪數、不全局設 ANY。
+`present_answer` 為 terminal 工具。一般階段成功接受後，ADK skipSummarization 結束循環，既有 finalize 仍重驗引用及目前授權；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉未完成副作用。
+
+產品互動／家庭背景入口可由 Server 內部明確 opt-in `presentationRepair: "present_answer"`；不是客戶端欄位，照片／分享提取不自動啟用。僅在主流程以可確認的自然文字 final 結束、尚無已接受展示且沒有錯誤／unknown／取消／撤權／額度阻擋時，才可在同一 invocation 用一次剩餘模型呼叫補展示。主流程 MAX_TOKENS、SAFETY、partial、空回應或不能明確辨識者不因此重試。既有model/tool/input/deadline共用，不重設、不增總上限。
+
+修正階段 request 的工具宣告／toolsDict 只留 present_answer，function-calling ANY 及 allowedFunctionNames 僅限此階段；Server 亦拒其他工具及混批，不能只依賴模型遵從。固定Server控制訊息只加到該請求，不寫聊天／session事件、不提供新操作授權；原原生parts、signatures與既有工具結果完整保留，不偽造模型工具呼叫。收到修正的首個functionResponse後，僅用ADK控制位結束此階段並完整收束generator清理，即使展示被拒也不第三次生成；控制位不代表業務接受。finalize仍判斷是否有有效展示，修正失敗為invalid_response；真正預算／權限停止保持原分類，不以總額度錯誤冒充階段耗盡。
+
+修正只能回報已知結果或必要補問，不能重新執行被拒／未知／已成功操作，也不能把pending候選當正式任務。自然 final 本身仍不可直接展示成成功。這不保證所有F4／T9情境成功，也未建立背景安靜no_action契約；定向scripted驗證不代表真模型或正式使用已通過。
 
 工具參數修正提示：僅 `propose_task` 在執行前 strict schema 驗證失敗時，可在既有 `invalid_parameters`／`nextAction` 旁返回 `hints`。每項只有公開 schema 的固定 `path`、固定 `reason` 及 `expected` 字串；最多3項，整個提示陣列 JSON 最多512字元，超出時整項省略。只識別根、values及六個已宣告任務欄位；未知鍵不回鍵名，不轉傳原 issue、message、input、動態路徑或使用者值。這是模型 function response 的有界修參資訊，不是新增客戶端 HTTP 欄位或家庭資料副本。
 

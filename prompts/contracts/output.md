@@ -16,9 +16,11 @@
 
 當 capabilities 有 present_answer，該工具是 Server 驗證展示文字／引用的入口；純 provider final 不能替代。已保存候選或直接操作收據是独立結果，收尾失敗時仍須保留並按台帳呈現，不重做保存。此規則不要求 P1 text 模式呼叫不存在的工具，也不把未驗證文字自動當成功。
 
-present_answer 是本產品唯一標記為 terminal 的工具。成功接受後，ADK skipSummarization 結束本次模型循環，既有 finalize 仍重新驗證身份、引用及目前授權；接受不是繞過最終校驗。被拒絕的展示不觸發終結，只能在剩餘預算內修正。gateway 必須在執行任何工具前拒絕 terminal 與其他工具的同批回應，避免截斷副作用或先展示後寫入；不改 ID 重送未知操作。
+present_answer 是本產品唯一標記為 terminal 的工具。成功接受後，ADK skipSummarization 結束本次模型循環，既有 finalize 仍重新驗證身份、引用及目前授權；接受不是繞過最終校驗。一般階段被拒的展示只能在剩餘預算內修正；下述一次展示修正階段會在任何functionResponse後停止，不把停止標記當作接受。gateway 必須在執行任何工具前拒絕 terminal 與其他工具的同批回應，避免截斷副作用或先展示後寫入；不改 ID 重送未知操作。
 
-此輪不保證模型一定調用 present_answer：完全漏調而自然停止仍是未解限制，不默默增加生成次數、全局強制 ANY 或將未校驗 final 轉成成功。背景 no_action 的安靜成功契約亦待獨立實作；以下 AgentResult 是合成語義，不代表該終結路徑已接通。
+產品run由Server內部明確啟用時，可在正常自然final但缺少已接受展示後，以原剩餘預算作至多一次僅限present_answer的修正。仍共用同一invocation、deadline及總配額，保留原生工具結果／signatures；修正專用ANY allowlist加Server allowlist，不全局強制工具。控制訊息不成為聊天来源或操作授權，不能重做副作用、假稱pending已執行，或將未校驗final直接轉成功。取消、unknown、權限／預算停止、非正常／不確定模型終態不觸發修正。
+
+修正的functionResponse即結束該階段並完成原生generator清理；無論accepted或rejected，都沒有第三次修正。最後仍由Server校驗展示，失敗保持invalid_response或實際停止原因。這不保證模型遵循／任務成功，亦不提高原模型上限。背景no_action的安靜成功契約仍待獨立實作；以下AgentResult只是合成語義，不代表該路徑已接通。
 
 ## AgentResult 語義
 
