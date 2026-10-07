@@ -10,6 +10,9 @@ const stopReasons: Record<string, string> = {
   invalid_tool: "工具要求未能通過核對", tool_unknown: "工具結果未能確認", interrupted: "處理中斷，沒有自動重新執行",
 };
 const toolNames: Record<string, string> = {
+  load_capabilities: "載入相關能力", read_work: "讀取未完成工作", save_work: "保存工作進度",
+  search_history: "搜尋已授權歷史", read_history: "閱讀歷史原文", read_memory_facts: "讀取記憶事實及版本",
+  propose_fact_revision: "提出事實更正", propose_fact_deactivation: "提出事實停用", request_confirmation: "準備具體確認", confirmed_proposal: "已按本人確認保存",
   read_concerns:"讀取持續關注",propose_concern:"保存持續關注候選",propose_concern_change:"保存關注變更候選",
   list_private_sources:"讀取本人來源清單",read_private_source:"讀取獲授權的私人原文",propose_private_source:"保存私人來源候選",propose_private_source_change:"保存來源修改候選",
   stage_private_summary: "整理私有輔助摘要", read_context: "讀取已確認記憶及任務", search_knowledge: "檢索知識來源",
@@ -42,6 +45,18 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
     createdAt: proposal.createdAt, expiresAt: proposal.expiresAt,
     result: proposal.result ? { kind: proposal.result.kind, version: proposal.result.version,
       label: `${proposal.result.kind === "task" ? "任務" : proposal.result.kind==="concern"?"持續關注":proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+  if (value.kind === "memory_fact_revise" || value.kind === "memory_fact_deactivate") {
+    if (!proposal.targetVisibility) throw new Error("Missing fact proposal visibility");
+    return { ...common, scope: proposal.targetVisibility, title: proposal.targetLabel ?? "原記憶事實",
+      content: value.kind === "memory_fact_revise" ? value.content : "停用這項事實；保留更正歷史，不代表永久刪除。",
+      details: [{ label: "操作", value: value.kind === "memory_fact_revise" ? "更正原事實" : "停用原事實" },
+        { label: "原事實與版本", value: value.factId + " · " + value.expectedVersion },
+        ...(value.kind === "memory_fact_revise" ? [{ label: "更新後名稱", value: value.key },
+          { label: "有效至", value: value.validUntil ?? "未設期限" },
+          { label: "本人原話參照", value: value.sourceMessageId }] : []),
+        { label: "原因", value: value.reason },
+        { label: "範圍", value: proposal.targetVisibility === "family" ? "更新原孩子共用事實，不分享私人聊天原文" : "只更新本人可見事實" }] };
+  }
   if(value.kind==="concern_create") return {...common,scope:"family",title:value.values.title,content:value.values.reason,
     details:[{label:"將共享的觀察",value:value.values.observation},{label:"觀察時間",value:value.values.observedAt},
       {label:"一次站內跟進",value:value.values.followUpAt??"未安排；不自動發通知"},

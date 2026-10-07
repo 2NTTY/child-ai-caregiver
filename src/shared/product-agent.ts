@@ -12,8 +12,11 @@ export const agentProposalSchema = z.discriminatedUnion("kind", [
   z.object({kind:z.literal("private_source_change"),inputId:z.uuid(),change:sourceManagementChangeSchema}).strict(),
   z.object({ kind: z.literal("task_create"), values: taskValuesSchema }).strict(),
   z.object({ kind: z.literal("task_change"), taskId: z.uuid(), change: taskChangeSchema }).strict(),
+  z.object({ kind: z.literal("memory_fact_revise"), factId: z.uuid(), expectedVersion: z.number().int().min(1).max(2147483646),
+    key: text(100), content: text(2000), validUntil: z.iso.datetime({ offset: true }).nullable(), sourceMessageId: z.uuid(), reason: text(500) }).strict(),
+  z.object({ kind: z.literal("memory_fact_deactivate"), factId: z.uuid(), expectedVersion: z.number().int().min(1).max(2147483646), reason: text(500) }).strict(),
   z.object({ kind: z.literal("memory_fact"), key: text(100), content: text(2000),
-    intendedVisibility: z.enum(["private", "family"]), validUntil: z.iso.datetime({ offset: true }).nullable() }).strict(),
+    intendedVisibility: z.enum(["private", "family"]), validUntil: z.iso.datetime({ offset: true }).nullable(), sourceMessageId: z.uuid().optional() }).strict(),
 ]);
 export type AgentProposalValue = z.infer<typeof agentProposalSchema>;
 export const agentDecisionSchema = z.object({
@@ -24,7 +27,7 @@ export type AgentDecision = z.infer<typeof agentDecisionSchema>;
 export interface AgentProposal {
   id: string; runId: string; childId: string; version: number;
   status: "pending" | "accepted" | "dismissed" | "expired";
-  createdAt: string; expiresAt: string; value: AgentProposalValue; targetLabel: string | null;
+  createdAt: string; expiresAt: string; value: AgentProposalValue; targetLabel: string | null; targetVisibility?: "private" | "family";
   result: { kind: "task" | "memory_fact" | "private_source" | "concern"; id: string; version: number } | null;
 }
 export interface AgentPendingPage {
@@ -35,7 +38,7 @@ export const agentPendingPageSchema = z.object({
   proposals: z.array(z.object({
     id: z.uuid(), runId: z.uuid(), childId: z.uuid(), version: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
     status: z.enum(["pending", "expired"]), createdAt: z.iso.datetime({ offset: true }), expiresAt: z.iso.datetime({ offset: true }),
-    value: agentProposalSchema, targetLabel: z.string().nullable(), result: z.null(),
+    value: agentProposalSchema, targetLabel: z.string().nullable(), targetVisibility: z.enum(["private", "family"]).optional(), result: z.null(),
   })).max(20),
   nextCursor: z.string().regex(/^[A-Za-z0-9_-]{1,1024}$/).nullable(),
 }).strict();

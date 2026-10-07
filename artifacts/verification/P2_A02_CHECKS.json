@@ -1,0 +1,97 @@
+{
+  "package": "P2-A02",
+  "base": "968646fb0914dde1943508071ff5b167e721cae4",
+  "recordedAt": "2026-10-07T20:16:45Z",
+  "environment": {
+    "node": "24.11.0",
+    "npm": "11.6.1",
+    "postgres": "18.6",
+    "pgvector": "0.8.6",
+    "database": "yuban_s06_test",
+    "worker": "paused"
+  },
+  "verification": {
+    "offline": [
+      {
+        "command": "node --experimental-test-module-mocks --test tests/p2-a02.test.ts",
+        "exit": 0,
+        "passed": 3,
+        "evidence": "Implementation agent tool output report; raw stdout not retained."
+      },
+      {
+        "command": "node --experimental-test-module-mocks --test tests/memory-context-capacity.test.ts",
+        "exit": 0,
+        "passed": 7,
+        "evidence": "Affected existing checks; implementation agent tool output report; raw stdout not retained."
+      }
+    ],
+    "scopedTypecheck": {
+      "command": "node node_modules/typescript/bin/tsc -p .p2-a02-tsconfig.json --noEmit",
+      "exit": 0,
+      "config": {
+        "extends": "./tsconfig.server.json",
+        "include": [
+          "server/product-agent-services.ts",
+          "server/product-agent-api.ts",
+          "src/client/product-agent-api.ts"
+        ],
+        "exclude": [
+          "tests",
+          "frontend"
+        ]
+      }
+    },
+    "projection": {
+      "result": "passed",
+      "scope": "One direct projection check: private fact retirement and missing visibility rejection; no browser."
+    },
+    "migration": {
+      "id": "030-agent-work",
+      "exit": 0,
+      "backupSha256": "13e12b6f7f9f31a6bec5bee49b50766b54b5af225b7ba2f316c80a8fafdddec2",
+      "note": "Database-only encrypted checkpoint before migration; photo files unchanged. Not a paired restore test."
+    },
+    "sql": {
+      "originalExit": 1,
+      "executedBusinessCalls": 90,
+      "attemptedBusinessCalls": 91,
+      "accounts": 2,
+      "children": 2,
+      "facts": 2,
+      "tasks": 1,
+      "messages": 23,
+      "poolRebuilds": 1,
+      "networkAttempts": 0,
+      "reason": "Harness omitted a redundant cursor-check call from its budget. First failure stopped before that 91st call; no rerun.",
+      "passed": [
+        "cross-turn quoted source and operation receipt dedup",
+        "encrypted work persistence after pool recreation",
+        "specific unique confirmation and response replay",
+        "expiry, multiple proposals and later correction suppression",
+        "original fact revision and shared deactivation",
+        "validity metadata backfill",
+        "history high-water, no duplicate/missing returned IDs and unknown original-run reuse assertions reached before cap"
+      ],
+      "notExecuted": "Final redundant cursor-to-other-child check; covered by offline case, not claimed as SQL pass.",
+      "harnessChange": "Removed duplicate final check and moved counter guard before increment. Changed script not rerun."
+    },
+    "cleanup": {
+      "exit": 0,
+      "children": 14,
+      "messages": 17,
+      "facts": 1,
+      "photos": 2,
+      "workerEnabled": false
+    },
+    "review": {
+      "primary": "Key diffs, scoped authorization, savepoints, latest-message confirmation, scoped pagination, API and original memory services reviewed.",
+      "diffCheck": "passed"
+    }
+  },
+  "limitations": [
+    "No true Gemini, embedding, browser, external notification or deployment.",
+    "Pool recreation proves reconnect persistence, not OS/VM reboot recovery.",
+    "Full history/work UI is A07; A02 only candidate projection and safe tools/API.",
+    "Minimum gate accepted by primary from actual successful assertions and cleanup; original SQL batch remains failed at harness cap."
+  ]
+}

@@ -1,6 +1,6 @@
 /** Server-authored capability descriptions; user text never selects this catalog. */
 export const PRODUCT_AGENT_TOOL_CATALOG = {
-  coreToolNames: ["read_context", "search_knowledge", "present_answer", "read_care_records", "read_private_instructions"],
+  coreToolNames: ["read_context", "search_knowledge", "present_answer", "read_care_records", "read_private_instructions", "read_work", "save_work", "search_history", "read_history", "request_confirmation"],
   loader: {
     name: "load_capabilities",
     description: "依目前對話、前文指向及工具結果，載入所需的產品能力。可一次選多個能力；載入只提供工具及指引，不執行業務操作或取得授權。需要讀上下文／知識時可在同一輪分別調用讀取與載入；載入成功後才使用新增工具。只載入相關能力，不必按固定順序或把每種能力都載入。",
@@ -10,7 +10,7 @@ export const PRODUCT_AGENT_TOOL_CATALOG = {
     { id: "care_records", description: "按家長交代保存或更正普通照護記錄；由 Server 檢查本人預授權及原資源。",
       toolNames: ["save_ordinary_record", "revise_ordinary_record"], promptModuleIds: ["module.capture-confirmation"] },
     { id: "memory", description: "保存／更正普通私人交代、提出重要事實候選或整理已讀對話；推測不升格為事實。",
-      toolNames: ["save_private_instruction", "revise_private_instruction", "propose_fact", "stage_private_summary"], promptModuleIds: ["module.memory-maintenance"] },
+      toolNames: ["save_private_instruction", "revise_private_instruction", "propose_fact", "stage_private_summary", "read_memory_facts", "propose_fact_revision", "propose_fact_deactivation"], promptModuleIds: ["module.memory-maintenance"] },
     { id: "tasks", description: "安排、改期、取消或完成待辦／提醒；低風險指令按現有授權直接做，其餘提出具體候選。",
       toolNames: ["create_ordinary_reminder", "change_ordinary_reminder", "propose_task", "propose_task_change"], promptModuleIds: ["module.task-intents"] },
     { id: "documents", description: "查閱或整理準備單／成長報告、勾選與歸檔，同時可讀指定期間照護摘要。只執行目前工具真正支援的修改。",
