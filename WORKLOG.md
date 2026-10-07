@@ -1556,3 +1556,5 @@
 - 已替代根app、13個Panel及其專用hook/runner逐byte可恢復歸檔；legacy命令與預設Playwright明確停止，不換測試冒充成功。共用API/controller/權限/收據、FamilyPanel/Emergency能力和舊單份準備reader/資料保留。
 - 新前端後端能力差距另列PLAN，不改寫舊工作包歷史pass；準備正文生成/編輯、Agent文件分段讀取、年度季度與長期歷史等仍未完成。
 - 初步2/2歸檔hash／退休命令定向檢查通過；完整import closure/typecheck/build及獨立覆核仍待核。沒有刪正式資料、DB遷移、真模型或部署。
+
+- 10:10 UTC 補記：head43955c8的歸檔/active-import/failclosed測試3/3、root與frontend typecheck已獨立重跑通過。23檔459,274 bytes、原Git blob及SHA-256全核准；實作者35routebuild成功，review只核其log及bundle hash，未重跑build。AgentInbox連結及意外三份.merged中間檔已正常後續commit修正，canonical文件與31025前綴保留。沒有真browser/DB/model或部署。

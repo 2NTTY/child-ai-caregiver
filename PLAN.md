@@ -7,11 +7,11 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### QA-LEGACY-ARCHIVE — 退出已替代的測試前端（實作及驗證中）
+### QA-LEGACY-ARCHIVE — 退出已替代的測試前端（必要檢查及覆核通過，待合併）
 
 - 使用者要求清理無用功能、同步計劃及可恢復歸檔；只退役23個已被替代的根入口／Panel／專用runner，見[清單](./_archive/legacy-web-2026-10-07/README.md)。共用controller/API/權限/收據、FamilyPanel及Emergency能力保留。
 - 舊命令與預設Playwright配置明確非零退出，不能靜默換測試假稱通過。原碼逐byte歸檔並核hash；需要重播以固定來源commit隔離恢復，非現行入口。
-- 單份準備compatibility及DB/歷史/unknown恢復不在退休範圍。必要typecheck、import closure、build和獨立覆核結果分開記錄；尚不宣稱驗證／部署完成。
+- 單份準備compatibility及DB/歷史/unknown恢復不在退休範圍。23份原碼逐byte/hash及active import closure已核對；實作者3/3、root/frontend typecheck及35路由build通過，獨立重跑3/3與兩份typecheck通過。build由覆核者核log及bundle hash，沒有獨立重跑；未驗browser／DB／真模型，未部署。
 
 <a id="current-capability-gaps"></a>
 ## 新前端能力差距（2026-10-07 源碼核對）
