@@ -1,0 +1,93 @@
+{
+  "observedAt": "2026-10-07T14:38:26.675089+00:00",
+  "baseCommit": "2830a2680b21f8e50cb72552a30c50c57c4c834e",
+  "scope": "Growth archive history-card labels and selected accessibility state only; synthetic local verification",
+  "files": [
+    {
+      "path": "frontend/src/components/growth/GrowthArchive.tsx",
+      "baseBlobSha": "49431833130d23f124a7b69f757c4443d8f54b91",
+      "resultBlobSha": "c5e94a7c98fa94056d5a8f6daf20f1d2b8c99732",
+      "resultSha256": "3853d9789865db5e372f42b2e911d8c6628201204cddbb2da531c5cba91cd541"
+    },
+    {
+      "path": "frontend/scripts/growth-archive-report.test.mjs",
+      "baseBlobSha": "5a21a68d03cedafcf4573021c0d2b04af28b46cd",
+      "resultBlobSha": "fc5905b45de0abdc462fcba171b43fa0a0e0fb6d",
+      "resultSha256": "697a416be1030ea8fb4e2865c0adecc5d5f32b684f0d1f8f28cee5783c918fac"
+    }
+  ],
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/growth-archive-report.test.mjs",
+      "stage": "unmodified pinned baseline",
+      "passed": 15,
+      "failed": 1,
+      "detail": "Existing typed-export test searched for the obsolete label 準備 PDF 報告; current component label is 下載這個版本的 PDF. Only this selector was corrected; existing export assertions are preserved."
+    },
+    {
+      "command": "node --test --test-name-pattern='history card|history metadata|same-period' frontend/scripts/growth-archive-report.test.mjs",
+      "stage": "first new-test run",
+      "passed": 4,
+      "failed": 1,
+      "detail": "The shallow text helper inserts separator spaces around dynamic React children. Corrected the test to match whitespace around the exact selected version; product selection code was unchanged."
+    },
+    {
+      "command": "node --test frontend/scripts/growth-archive-report.test.mjs frontend/scripts/growth-dialog-accessibility.test.mjs",
+      "stage": "final",
+      "passed": 23,
+      "failed": 0
+    },
+    {
+      "command": "node --test frontend/src/components/growth/growth-form.test.mjs",
+      "stage": "final",
+      "passed": 1,
+      "failed": 0
+    },
+    {
+      "command": "./node_modules/.bin/tsc --noEmit -p frontend",
+      "stage": "baseline and final",
+      "exitCode": 0
+    },
+    {
+      "command": "CI=1 EXPO_NO_TELEMETRY=1 EXPO_PUBLIC_API_BASE_URL=/api TMPDIR=<isolated package temp> EXPO_ROUTER_APP_ROOT=<absolute frontend/app> node ../node_modules/expo/bin/cli export --platform web --clear --source-maps --max-workers 2 --output-dir <package evidence/web-export>",
+      "cwd": "frontend",
+      "exitCode": 0,
+      "staticRoutes": 35,
+      "bundle": "_expo/static/js/web/entry-4ce607b66244db70eb6ebb517eb05181.js",
+      "bundleSha256": "21b3a85b06b7b619191feec07162490d2d9675370f05d229f4e81af097bb52a8",
+      "bundleBytes": 5005896,
+      "newMetadataMarkers": {
+        "版本未提供": true,
+        "整理時間未提供": true
+      },
+      "sourceMapVerification": [
+        {
+          "mapSource": "/frontend/src/components/growth/GrowthArchive.tsx",
+          "blobSha": "c5e94a7c98fa94056d5a8f6daf20f1d2b8c99732",
+          "exactReviewedSourceMatch": true
+        }
+      ],
+      "limits": "Local static export only, no browser or deployment"
+    }
+  ],
+  "coverage": [
+    "Five versions of the same period retain distinct actual version and Hong Kong preparation-time labels",
+    "Plain visible metadata and identical screen-reader metadata; native selected state plus explicit Web aria-pressed",
+    "Missing or invalid metadata shows truthful independent fallbacks",
+    "Selecting a prior version closes history, survives ordinary loading refresh, and returns to current through the existing callback",
+    "Installed RN Web server rendering emits native button elements with tabindex=0 and aria-pressed; no replacement keyboard handler",
+    "320/390/1024/1440 presentation-style assertions preserve shrinkable content and natural text wrapping; no fixed height or truncation"
+  ],
+  "notRun": [
+    "Actual browser pixels, physical keyboard or assistive-technology sessions",
+    "Production API, database, GCP, live model, PDF generation or deployment"
+  ],
+  "limitations": [
+    "Shallow rendering and static markup do not prove visual overflow, focus movement or native-device behavior; browser acceptance remains with the assigned browser worker."
+  ],
+  "dependencies": {
+    "reactNativeWeb": "0.21.2",
+    "react": "19.2.3",
+    "typescript": "6.0.3"
+  }
+}

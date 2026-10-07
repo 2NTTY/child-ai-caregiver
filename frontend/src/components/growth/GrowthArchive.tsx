@@ -142,13 +142,20 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
           </Pressable>)}
       </View>
       <View style={wide ? a.archiveGrid : s.stack}>
-        {visibleItems.map(item => <Pressable key={item.key} accessibilityRole="button" accessibilityLabel={`閱讀${item.period?.label ?? item.snapshot.periodLabel}${item.period?.coverage === "partial" ? "，部分內容" : ""}`}
-          accessibilityState={{selected: selected?.key === item.key}} onPress={() => selectArchive(item)}
+        {visibleItems.map(item => {
+          const version = Number.isInteger(item.snapshot.version) && item.snapshot.version > 0 ? `版本 ${item.snapshot.version}` : "版本未提供";
+          const generatedAt = typeof item.snapshot.generatedAt === "string" && Number.isFinite(Date.parse(item.snapshot.generatedAt))
+            ? `整理於 ${growthTime(item.snapshot.generatedAt)}` : "整理時間未提供";
+          const metadata = `${version} · ${generatedAt}`;
+          return <Pressable key={item.key} accessibilityRole="button" accessibilityLabel={`閱讀${item.period?.label ?? item.snapshot.periodLabel}，${metadata}${item.period?.coverage === "partial" ? "，部分內容" : ""}`}
+          accessibilityState={{selected: selected?.key === item.key}} aria-pressed={selected?.key === item.key} onPress={() => selectArchive(item)}
           testID={`growth-archive-card-${item.key}`} style={[a.archiveCard, wide && a.archiveCardWide, selected?.key === item.key && a.archiveCardSelected]}>
           <AppIcon name="book-open-variant" size={22} />
-          <View style={a.cardCopy}><Text style={s.title}>{item.period?.label ?? "成長報告"}</Text><Text style={s.meta}>{item.snapshot.periodLabel}{item.period?.coverage === "partial" ? " · 部分內容" : ""}</Text></View>
+          <View style={a.cardCopy}><Text style={s.title}>{item.period?.label ?? "成長報告"}</Text><Text style={s.meta}>{item.snapshot.periodLabel}{item.period?.coverage === "partial" ? " · 部分內容" : ""}</Text>
+            <Text style={s.meta}>{metadata}</Text></View>
           <AppIcon name="chevron-right" size={18} />
-        </Pressable>)}
+        </Pressable>;
+        })}
       </View>
       {!visibleItems.length ? <Text style={s.body}>暫時沒有已取得的{filter === "year" ? "年度" : filter === "quarter" ? "季度" : "日期範圍"}檔案。</Text> : null}
     </View> : null}
