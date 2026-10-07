@@ -1,3 +1,4 @@
+import { projectConfirmedTask } from "./task-projection.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { createTaskApi, TaskApiError } from "../../../src/client/task-api";
@@ -116,7 +117,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
     });
   };
   const rawItems = runtime.lost ? [] : [...(page?.items ?? []), ...(linkedTask && !page?.items.some(item => item.id === linkedTask.id) ? [linkedTask] : [])];
-  const items = rawItems.map(item => taskWithCompletionRevision(item, histories[item.id]?.items ?? []));
+  const items = rawItems.map(item => taskWithCompletionRevision(projectConfirmedTask(item), histories[item.id]?.items ?? []));
   const selected = items.find(item => item.id === selectedId) ?? null;
   const locked = busy.current || pending || operation.state === "conflict" || runtime.lost;
   const readHistory = (before: number | null = null) => {

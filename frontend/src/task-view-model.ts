@@ -91,7 +91,8 @@ export function taskWithCompletionRevision(task: TaskView, revisions: readonly T
     item.task.occurrence.id === task.occurrence.id && item.task.occurrence.state === task.occurrence.state &&
     (item.action === "resolve" || item.action === (task.occurrence.state === "completed" ? "complete" : "cancel")) &&
     DateTime.fromISO(item.at, { setZone: true }).isValid) : undefined;
-  return { ...task, completedAt: task.occurrence.state === "completed" ? revision?.at : undefined, terminalAt: revision?.at };
+  return { ...task, completedAt: task.occurrence.state === "completed" ? revision?.at ?? task.completedAt : undefined,
+    terminalAt: terminal ? revision?.at ?? task.terminalAt : undefined };
 }
 function completionTime(task: TaskView) {
   const value = task.completedAt ? Date.parse(task.completedAt) : NaN;

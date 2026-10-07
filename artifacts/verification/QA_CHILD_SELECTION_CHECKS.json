@@ -1,0 +1,91 @@
+{
+  "baseline": "9c088c84eda6c39340cfe2652e9fc6543830adde",
+  "branch": "codex/qa-child-selection",
+  "recordedAt": "2026-10-07T02:35:54.470072+00:00",
+  "status": "draft_only_not_merged_or_deployed",
+  "changes": [
+    {
+      "issue": "child B lost on full refresh",
+      "cause": "RecordsController selected children[0] after a fresh owner; no navigation preference was restored.",
+      "fix": "Read endpoint+user sessionStorage hint after verified authentication and fresh authorized children, before first selectChild; validate child and workspace; keep transient/unknown failures isolated."
+    },
+    {
+      "issue": "confirmed completed task lacks date",
+      "cause": "The frontend derived terminal dates only from detail history loaded explicitly, ignoring the confirmed current terminal task updatedAt.",
+      "fix": "Server changeTask sets updatedAt to the same now used for TaskRevision.at; terminal edits are prohibited. Project this confirmed time, with matching loaded revision preferred; never use dueAt or the device clock."
+    },
+    {
+      "issue": "first-version claim while correction history loads",
+      "cause": "Empty history during loading was rendered as a confirmed first/oldest version.",
+      "fix": "Show loading and withhold oldest-version claim until history loading settles."
+    }
+  ],
+  "validation": {
+    "runtime": "Offline Docker yuban-qa-deps:9c088c8, Node 24.19.0; read-only source mounts; --network none",
+    "initialFocused": {
+      "tests": 61,
+      "passed": 57,
+      "failed": 4,
+      "evidence": "QA_CHILD_SELECTION/focused-tests.log",
+      "failures": [
+        "Two test files imported TypeScript parameter properties; Node strip-only was unsuitable.",
+        "Two unchanged task-calendar source-text assertions require UI wording removed in baseline PR #98. No product copy was restored merely to satisfy these assertions."
+      ]
+    },
+    "selectionAndExistingScope": {
+      "tests": 15,
+      "passed": 15,
+      "failed": 0,
+      "flag": "--experimental-transform-types",
+      "evidence": "QA_CHILD_SELECTION/selection-tests.log"
+    },
+    "confirmedTaskProjection": {
+      "tests": 4,
+      "passed": 4,
+      "evidence": "QA_CHILD_SELECTION/task-projection-tests.log"
+    },
+    "historyLoading": {
+      "tests": 2,
+      "passed": 2,
+      "evidence": "QA_CHILD_SELECTION/focused-tests.log"
+    },
+    "frontendTypecheck": {
+      "exitCode": 0,
+      "evidence": "QA_CHILD_SELECTION/frontend-typecheck.log"
+    },
+    "liveBrowser": false,
+    "realModelCalls": 0,
+    "notificationsSent": 0,
+    "familyDataRead": false,
+    "databaseMutation": false
+  },
+  "growthDiagnosis": {
+    "status": "not_fixed_root_cause_unconfirmed",
+    "runtimeReadOnly": {
+      "apiImage": "yuban-int-api:053658b",
+      "apiHealthy": true,
+      "agentServiceEnabled": true,
+      "growthMigrationPresent": true,
+      "concernsMigrationPresent": true,
+      "familyDataRead": false
+    },
+    "confirmed": "Growth and concerns share storage_epoch:access_version authority. Both are joined with Promise.all; either request or schema validation failure prevents page readiness and affects the home feed.",
+    "needed": "Redacted HTTP status/error.code or schema/authority mismatch from dot existing QA; no cookie, child identifiers or family response bodies.",
+    "excluded": "Service disabled and migrations 017/027 missing. Assistant reminders remain unconnected and out of scope."
+  },
+  "remaining": [
+    "Independent dot UI QA, draft review, separate merge/deploy authorization.",
+    "Two unrelated baseline task-calendar source-text assertions remain failing.",
+    "Growth failure lacks decisive sanitized HTTP metadata."
+  ],
+  "responsibility": {
+    "owner": "B",
+    "weight": 2,
+    "shares": {
+      "B": 70,
+      "C": 20,
+      "A": 10
+    },
+    "note": "Team responsibility allocation: client behavior B, server/runtime diagnosis C, integration coordination A. Shared AI executed coding and offline checks under A coordination; no personal hand-coding or human QA is claimed."
+  }
+}

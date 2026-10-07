@@ -61,10 +61,10 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
     {canEdit ? <View style={styles.actions}><AppButton label="更正這筆記錄" onPress={() => actions.startCorrection(record.id)} /></View> : null}
     <AppSelectionTrigger label="更正歷史" expanded={historyOpen} onPress={() => {setExpanded({recordId: record.id, provenance: provenanceOpen, history: !historyOpen}); if (!detail.historyOpen) actions.showHistory();}} />
     <MotionDisclosure expanded={historyOpen} scopeKey={`${record.childId}:${record.id}`}><View style={styles.history}><Text accessibilityRole="header" style={styles.title}>更正歷史</Text>
-      {detail.history.length === 0 ? <Text style={styles.tool}>目前只有第一個已確認版本。</Text> : detail.history.map(revision => <View key={revision.version} style={styles.revision}>
+      {detail.history.length === 0 ? <Text style={styles.tool}>{detail.historyLoading ? "正在讀取更正歷史…" : "目前只有第一個已確認版本。"}</Text> : detail.history.map(revision => <View key={revision.version} style={styles.revision}>
         <CareRevisionContent revision={revision} />
       </View>)}
-      {detail.hasMoreHistory ? <AppButton label="載入更早版本" variant="secondary" onPress={actions.loadOlderHistory} loading={detail.historyLoading} disabled={!online} /> : <Text style={styles.meta}>已到最早的已載入版本。</Text>}
+      {detail.hasMoreHistory ? <AppButton label="載入更早版本" variant="secondary" onPress={actions.loadOlderHistory} loading={detail.historyLoading} disabled={!online} /> : !detail.historyLoading ? <Text style={styles.meta}>已到最早的已載入版本。</Text> : null}
     </View></MotionDisclosure>
     {canEdit ? <AppButton label="永久刪除此記錄及歷史" variant="danger-secondary" disabled={!online} onPress={() => actions.startDeletion(record.id)} /> : null}
   </View>;

@@ -1470,3 +1470,14 @@
 - 3 次公開唯讀 GET 確認新 index hash、API healthy、Push worker hash。一次真瀏覽器對話已送出及收到保存回覆；在收據階段碰到腳本 154 次 HTTP 門檻而停止，沒有產品 HTTP／page error。保留原失敗，不重跑瀏覽器或模型；同一 fixture 8 次 API 補核 run、單筆操作收據、記錄版本及聊天來源並清理新孩子、登出，帳號保留。真運行 completed：3 生成／2 工具／0 embedding，零通知；API 未提供實際 tokens／美元成本。
 - 主模型按使用者減少測試要求，沿用 INT-W01～06 的隔離、跨頁、unknown、worker 及各新能力證據，結合本次公開接線結果裁定必要交付成立；不把 API 補核寫成完整瀏覽器通過。收據／Care／Home／reload／logout UI 的本輪剩餘斷言未執行；沒有擴充矩陣。瀏覽器啟動前的零呼叫環境失敗亦保留於 [EV](artifacts/verification/INT_W07_CHECKS.json)。
 - 已補 [正式入口／啟動部署／功能清單與缺口](docs/PRODUCTION_FRONTEND.md)，更新根及前端交接入口。主責 C，權重 3，C 60%／B 20%／A 20%；D 人工驗收沒有代填。共用 AI 由 A 統籌，Committer 保留 A，依團隊責任由 C 帳號推送／PR／合併；不冒稱個人人手實作或工時。
+
+
+<a id="log-qa-post-release"></a>
+## 2026-10-07 — QA-POST-RELEASE 局部修正（未合併／未部署）
+
+- 由 dot 現有正式入口合成 QA 派遣，從 `9c088c8` 開隔離分支，保留其他 worktree／未提交內容；沒有操作 QA 瀏覽器、建立重複測試家庭、呼叫模型或外發通知。
+- 孩子 B 全頁刷新退回 A 的根因是新 owner 只取列表首項；新增 endpoint＋userId 的 sessionStorage 導航提示，只存 childId／workspaceId。通過登入及 fresh 授權列表後、首次私有讀取前恢復；已確認失權／workspace 不符才清除，暫時失败、未知／取消登出及 dispose 保留，成功登出只清本人。
+- 任務終態日期原先只從手動載入歷史取得；Server `changeTask` 的终態 `updatedAt` 與同次 revision `at` 使用相同時間，終態不可編輯，故投影該權威時間。衝突待核對不帶日期、resolve 用其本次時間，不用排程日期或裝置時間。歷史 loading 空陣列不再宣稱首版／最早版本。
+- 必要離線測試及型別檢查、原始失敗／局部重跑與未驗項見 [QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。首次 57／61 通過；兩檔補 transform-types 後 15 項通過，兩個 PR #98 舊文案斷言沒有改產品迎合；任務投影 4 項、歷史 loading 2 項通過，frontend typecheck exit 0。
+- 成長讀取只做現有 runtime allowlist／migration metadata 核對，不讀家庭資料：API healthy、Agent enabled、017／027 均存在；growth／concerns authority 格式相同。缺 dot 已有 QA 的去識別化 HTTP status／error.code，根因未確認，沒有擅改功能或 DB。助手提醒未接通不屬本輪。
+- B 主責，權重 2，B 70%／C 20%／A 10%；B 客戶端、C Server／現場診斷、A 統籌，責任份額不代表個人人手或實測工時。共用 AI 在使用者 A 統籌下實作及執行離線測試；人工 QA 由 dot 接手。只準備 draft PR，合併／部署須等待後續明確派遣。

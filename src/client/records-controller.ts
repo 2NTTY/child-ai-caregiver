@@ -1,3 +1,4 @@
+import type { ChildSelection, ChildSelectionPreferences } from "./child-selection.ts";
 import { validateCreateChild, validateCreateTextRecord } from "../shared/inputs.ts";
 import type { Child, TextRecord } from "../shared/records.ts";
 import { ClientApiError, type AuthMode, type Credentials, type RecordsApi, type SessionUser } from "./records-api.ts";
@@ -88,7 +89,7 @@ function hasInput(input: { childName: string; drafts: Record<string, RecordDraft
   return input.childName.length > 0 || Object.values(input.drafts).some(draft => draft.text.length > 0);
 }
 
-/** Page-memory state only. Each account generation owns all requests and drafts. */
+/** Requests and drafts stay in page memory; an optional validated navigation hint survives reload. */
 export class RecordsController {
   private state: RecordsState;
   private readonly api: RecordsApi;
@@ -100,11 +101,13 @@ export class RecordsController {
   private retained: RetainedInput | null = null;
   private readonly childDeletion?: ChildDeletionEvents;
   private readonly readRecords: boolean;
+  private readonly selectionPreferences?: ChildSelectionPreferences;
 
-  constructor(api: RecordsApi, online = true, childDeletion?: ChildDeletionEvents, readRecords = true) {
+  constructor(api: RecordsApi, online = true, childDeletion?: ChildDeletionEvents, readRecords = true, selectionPreferences?: ChildSelectionPreferences) {
     this.api = api;
     this.childDeletion = childDeletion;
     this.readRecords = readRecords;
+    this.selectionPreferences = selectionPreferences;
     this.state = initialState(online);
   }
 
@@ -141,7 +144,17 @@ export class RecordsController {
     this.update({ drafts: { ...this.state.drafts, [childId]: { ...(this.state.drafts[childId] ?? emptyDraft()), ...patch } } });
   }
 
+  private readSelection(userId: string): ChildSelection | null {
+    try { return this.selectionPreferences?.read(userId) ?? null; } catch { return null; }
+  }
+
+  private clearSelection(userId: string): void {
+    try { this.selectionPreferences?.clear(userId); } catch { /* Navigation is optional. */ }
+  }
+
   private forgetChild(childId: string): void {
+    const userId = this.state.auth === "signedIn" ? this.state.user?.id : null;
+    if (userId && this.readSelection(userId)?.childId === childId) this.clearSelection(userId);
     const unresolvedDeletion = this.state.deletion?.childId === childId && this.state.deletion.phase === "unknown";
     this.childDeletion?.forget(childId);
     const selected = this.state.selectedChildId === childId;
@@ -318,6 +331,9 @@ export class RecordsController {
   async selectChild(childId: string): Promise<void> {
     if (this.state.auth !== "signedIn" || this.state.busy || this.state.childrenLoading || this.state.deletion
       || !this.state.children.some(child => child.id === childId)) return;
+    const child = this.state.children.find(item => item.id === childId)!;
+    try { this.selectionPreferences?.write(this.state.user!.id, { childId, workspaceId: child.workspaceId }); }
+    catch { /* Navigation is optional; no private data is persisted. */ }
     this.recordAbort?.abort();
     this.recordRequest += 1;
     this.update({ selectedChildId: childId, records: [], recordsError: null, recordsLoadedAt: null, recordsLoading: false, confirmation: null });
@@ -337,6 +353,15 @@ export class RecordsController {
       if (!this.current(scope)) return;
       const children = await this.api.listChildren(scope.controller.signal);
       if (!await this.verifyIdentity(scope)) return;
+      const preference = this.readSelection(scope.userId);
+      if (!this.current(scope)) return;
+      const preferred = preference && children.find(child => child.id === preference.childId && child.workspaceId === preference.workspaceId);
+      const previous = this.state.children.find(child => child.id === this.state.selectedChildId);
+      const selected = children.find(child => child.id === this.state.selectedChildId &&
+        (!previous || previous.workspaceId === child.workspaceId) &&
+        (!preference || preference.childId !== child.id || preference.workspaceId === child.workspaceId));
+      const nextId = selected?.id ?? preferred?.id ?? children[0]?.id;
+      if (preference && !preferred) this.clearSelection(scope.userId);
       this.childDeletion?.reconcile(children.map(child => child.id), this.state.deletion?.childId ?? null);
       const present = new Set(children.map(child => child.id));
       const known = new Set([...this.state.children.map(child => child.id), ...Object.keys(this.state.drafts),
@@ -352,7 +377,8 @@ export class RecordsController {
           ? { ...this.state.deletion, phase: "checked", message: "重新讀取後孩子仍在列表；請核對後才決定是否再次刪除。" }
           : this.state.deletion,
       });
-      const id = children.some(child => child.id === this.state.selectedChildId) ? this.state.selectedChildId : children[0]?.id;
+      if (!this.current(scope)) return;
+      const id = nextId;
       if (id && !this.state.deletion) await this.selectChild(id);
       else if (!id) this.update({ selectedChildId: null, records: [], recordsLoadedAt: null, recordsError: null });
     } catch (error) {
@@ -583,6 +609,7 @@ export class RecordsController {
       if (!await this.verifyIdentity(scope)) return;
       await this.api.signOut(scope.controller.signal);
       if (!this.current(scope)) return;
+      this.clearSelection(scope.userId);
       this.abortRequests();
       this.retained = null;
       this.update({ ...initialState(this.state.online), auth: "signedOut", notice: "已登出，這個頁面的未提交內容已清除。" });

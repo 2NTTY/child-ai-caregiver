@@ -7,6 +7,15 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
+### QA-POST-RELEASE — 正式入口人工 QA 的局部修正（draft）
+
+- 前置：PR #98／#99 已合併，基線 `9c088c8`；隔離分支 `codex/qa-child-selection`。本輪只準備 draft PR，不合併或部署；其他 checkout 保留。
+- 範圍：孩子選擇在重新整理後先經目前帳號／fresh list／workspace 核對再恢復；完成任務使用 Server 已確認終態時間；更正歷史載入不冒稱第一／最早版本。沿用 sessionStorage／既有 owner，沒有新依賴、後端或資料契約變更。
+- 必要證據：[QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。首次 61 項中 57 通過；兩檔 strip-only harness 問題局部改旗標後 15 項通過，兩項 PR #98 已移除文案的舊斷言保留失敗；完成時間 4 項、更正歷史 2 項與 frontend typecheck 通過。沒有真模型、通知、資料庫改動或全面瀏覽器驗收。
+- 成長問題只診斷：API healthy、Agent enabled、017／027 migration 存在；兩服務的 authority 格式相同。尚缺 dot 既有 QA 的去識別化 HTTP status／error code 或 parser 錯誤，不能確定根因；不改真家庭資料。首頁助手提醒未接通另屬既有缺口。
+- B 主責、權重 2：B 70%／C 20%／A 10%，按客戶端、Server／現場診斷及整合責任分配；共用 AI 實作／執行本機核對，不冒稱個人人手實作或人工驗收。下一步由 dot 合併獨立 UI QA 與 review；只有後續明確派遣才可合併／部署，停止於 draft。
+
+
 核對時間：2026-10-06；目前 INT-W07 從 master `053658b`（PR #96）建立，分支 `codex/int-w07-production-delivery`；開工時沒有其他 open PR。交付仍須重查遠端／相關 PR 及本機差異。
 
 - **文件維護**：[DOC-R04](#doc-r04) 已驗收，隨 [PR #86](https://github.com/2NTTY/child-ai-caregiver/pull/86) 合併結案；沒有因此啟動下一個文件或產品包。
