@@ -7,6 +7,7 @@ import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped } from
 import type { AgentStopReason } from "./agent-budget.ts";
 import { AgentGatewayModel } from "./agent-model-gateway.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
+import { PresentationRepairAgent } from "./agent-presentation-repair.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
 import { createAgentObserver, type AgentDiagnostic } from "./agent-observer.ts";
 
@@ -42,6 +43,8 @@ export interface AgentRunInput {
   finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext) => Promise<string | null>;
   /** Opt-in Server presentation after a confirmed model limit; never retries tools. */
   finalizeOnModelLimit?: boolean;
+  /** Internal product opt-in; never accepted from HTTP input or inferred from model text. */
+  presentationRepair?: "present_answer";
   scope: AgentScope;
   trigger: { kind: "interactive" | "worker"; reference: string };
   recipeId: string;
@@ -101,6 +104,7 @@ export function createAgentRuntime(options: {
           if (definitions.size !== configuredTools.length || configuredTools.some(tool => !/^[a-z][a-z0-9_]{0,63}$/u.test(tool.name))) throw new AgentStopped("invalid_tool");
           const terminalToolNames = new Set(configuredTools.filter(tool => tool.terminal).map(tool => tool.name));
           if (terminalToolNames.size && !input.finalize) throw new AgentStopped("invalid_tool");
+          if (input.presentationRepair && (!input.finalize || !terminalToolNames.has(input.presentationRepair))) throw new AgentStopped("invalid_tool");
           const prompt = await loadAgentPrompt(input.recipeId, "tool_cycle", input.availableInputs ?? ["run", "scope", "conversation", "capabilities"]);
           result.provenance = { packVersion: prompt.packVersion, recipeId: prompt.recipeId, model: selected.config.model };
           budget.check();
@@ -126,12 +130,16 @@ export function createAgentRuntime(options: {
           const instruction = `${prompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
             now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: prompt.packVersion,
             recipeId: prompt.recipeId, capabilities: tools.map(tool => tool.name), limits: budget.limits })}`;
-          const agent = new LlmAgent({ name: "yuban_agent", model,
+          const agentConfig: ConstructorParameters<typeof LlmAgent>[0] = { name: "yuban_agent", model,
             // Providers return literal instructions without ADK session-state template interpolation.
             instruction: async () => instruction,
             tools,
             beforeToolCallback: async ({ tool, args, context }) => {
               budget.check();
+              if (agent instanceof PresentationRepairAgent && agent.repairing && tool.name !== "present_answer") {
+                toolFailure = new AgentStopped("invalid_tool");
+                throw toolFailure;
+              }
               const definition = definitions.get(tool.name);
               const parsed = definition?.parameters.strict().safeParse(args);
               let response: AgentToolResult | undefined;
@@ -158,7 +166,11 @@ export function createAgentRuntime(options: {
               }
               return undefined;
             },
-          });
+          };
+          const agent = input.presentationRepair ? new PresentationRepairAgent(agentConfig, { budget, authorize,
+            accepted: () => result.tools.some(tool => tool.name === "present_answer" && tool.status === "succeeded"),
+            stopped: () => Boolean(model.failure || toolFailure),
+          }) : new LlmAgent(agentConfig);
           const sessionService = new InMemorySessionService();
           const appName = "yuban_hk";
           const session = await sessionService.createSession({ appName, userId: scope.userId, sessionId: runId });
@@ -183,7 +195,7 @@ export function createAgentRuntime(options: {
                   confirmedFrameworkModelLimit = !model.failure && event.errorCode === "UNKNOWN_ERROR"
                     && event.errorMessage === `Max number of llm calls limit of ${budget.limits.modelCalls} exceeded`
                     && budget.counts.modelCalls === budget.limits.modelCalls;
-                  throw model.failure ?? new AgentStopped(budget.counts.modelCalls >= budget.limits.modelCalls ? "model_limit" : "unavailable");
+                  throw model.failure ?? (agent instanceof PresentationRepairAgent ? agent.failure : undefined) ?? new AgentStopped(budget.counts.modelCalls >= budget.limits.modelCalls ? "model_limit" : "unavailable");
                 }
                 if (event.content?.role === "model" && !event.content.parts?.some(part => part.functionCall)) {
                   const text = event.content.parts?.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("");
