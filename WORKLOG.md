@@ -1490,3 +1490,11 @@
 
 - Growth 診斷派遣增補：兩端 schema／authority 原碼不足以判定實際線上故障，舊錯誤會丟失 schema／範圍／重複資料及 unavailable code。現以獨立 read diagnostic metadata 保存實際 HTTP status 與受控類別，原業務 status／code 與重試／unknown 邏輯不改；只有當前 loader 失敗 console 輸出固定 `[growth-read]` 加 endpoint／status／code／category 四欄，成功、abort、過期讀取靜默，不序列化 error／stack／Zod paths／URL／payload／身份。15 項合成隱私／類別測試及 frontend typecheck 通過；只提交 draft，未部署、未呼叫實際模型／通知／authenticated API。稍後另次明確部署派遣與一次正常合成 UI 讀取才能確認根因，修好後移除不必要診斷。修正 TaskView 過時的 never updatedAt 註解。
 - 同一 Care history 審查補正：offline 原只令 generation 過期卻保留 historyLoading，故同記錄重連後 retry 被阻止。現同步清 loading、標記 unread 並保留原頁重試意向；即使已有修訂也提供讀取入口，旧 generation 不能寫回。新增 offline→reconnect、同一選擇／相同版本重試案例，最終 8 項通過。新增 harness 首次因缺 transpile options 停止在執行 offline 前，保留 7／8 初始失敗 log，局部修正後通過，沒有全面重跑。
+
+<a id="log-qa-growth-read-boundary"></a>
+## 2026-10-07 — QA-GROWTH-READ-BOUNDARY（draft，未合併／未部署）
+
+- 從 PR #100 合併後 master `01c25a4` 建立隔離分支；原主 checkout／其他 worktree 不變。dot 已有合成 A／B UI 回報顯示自由文字地域、未知年齡，本輪只用合成 fixture 重現實際 Growth store／API 的 parser 邊界，沒有重播 authenticated 正式請求。
+- 修復前合成地域 GET 返回 400；agentKnowledgeFilter 傳自由文字，但 parseKnowledgeFilter 只接受兩碼地域，另有 216／120 個月上限差距。只在 list／GET 的本機 filter 轉換邊界安全降級；不把未知地域默認香港、不覆寫 profile，明示 0–10 歲範圍。現有關注可讀，來源適用性未確認在回應中標示不可用並提示，不保存旗標或改舊候選狀態／版本。decide／topic／evaluate／Agent 搜尋的嚴格契約與失敗行為保留，不以空 sources 觸發背景 inapplicable。
+- [證據](artifacts/verification/GROWTH_READ_BOUNDARY_CHECKS.json)：修復前 Node 計數 5／9 通過（含 parent wrapper），最終 10／10 通過；有效地域／香港 aliases、無 fallback、超齡、不改已存候選、DB／實際 decode 失敗仍 503、worker／topic 無 mutation 均已核對。Server／shared／Growth tests 型別通過；完整 Server typecheck 初次缺 frontend mount，補 mount 後見 11 個前端相容錯誤，master Growth store 對照完全相同，保留所有失敗，不擴修 PR #100 的測試配置。沿用離線既有依賴／嚴格 parser／SQL 篩選，沒有新框架或來源權限。
+- 沒有部署、DB／真家庭資料變更、模型／通知、完整測試或瀏覽器驗收。真 UI 驗收、正式 HTTP capture 及嚴格寫入／worker 不支援地域的完整行為仍未驗／未改；需 dot review，另次授權後部署後端才能檢查正常頁面。C 主責、權重 2，C 75%／A 25%；共用 AI 實作與本機核對由 A 統籌，署名只代表責任，不代填人手工作或人工 QA。只建立 draft PR。

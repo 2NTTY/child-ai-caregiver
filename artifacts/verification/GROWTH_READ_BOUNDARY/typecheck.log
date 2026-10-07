@@ -1,0 +1,15 @@
+Command: node node_modules/typescript/bin/tsc --project tsconfig.server.json
+Offline Docker yuban-qa-deps:9c088c8; read-only source mounts; synthetic fixtures only
+frontend/src/agent-view-model.ts(2,39): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './chat-view-model.js'?
+frontend/src/agent-view-model.ts(23,34): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../../src/shared/product-agent.js'?
+frontend/src/assistant-draft.ts(1,36): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './photo-view-model.js'?
+frontend/src/production/AgentAuthorizationOwner.ts(51,49): error TS1294: This syntax is not allowed when 'erasableSyntaxOnly' is enabled.
+frontend/src/production/AgentAuthorizationOwner.ts(52,5): error TS1294: This syntax is not allowed when 'erasableSyntaxOnly' is enabled.
+frontend/src/production/ProductAgentOwner.ts(28,15): error TS1294: This syntax is not allowed when 'erasableSyntaxOnly' is enabled.
+frontend/src/production/ProductAgentOwner.ts(29,5): error TS1294: This syntax is not allowed when 'erasableSyntaxOnly' is enabled.
+frontend/src/production/ProductAgentOwner.ts(29,75): error TS1294: This syntax is not allowed when 'erasableSyntaxOnly' is enabled.
+frontend/src/production/ProductAgentOwner.ts(29,113): error TS1294: This syntax is not allowed when 'erasableSyntaxOnly' is enabled.
+frontend/src/production/scope.ts(1,35): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../../../src/client/records-controller.js'?
+frontend/src/production/scope.ts(14,37): error TS7006: Parameter 'item' implicitly has an 'any' type.
+
+Exit code: 2

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
 import type { Pool, PoolClient } from "pg";
 import { growthActionSchema, growthTopicActionSchema, growthTopicSchema } from "../src/shared/growth.ts";
 import type { GrowthAction, GrowthAttention, GrowthPage, GrowthTopicAction, GrowthTopicId } from "../src/shared/growth.ts";
@@ -10,6 +11,7 @@ import { createMemoryStore } from "./memory.ts";
 import { createTaskStore, type TaskScheduling } from "./tasks.ts";
 import { createKnowledgeStore } from "./knowledge-store.ts";
 import { agentKnowledgeFilter } from "./product-agent-tools.ts";
+import { parseKnowledgeFilter } from "./knowledge-inputs.ts";
 import { GROWTH_CATALOG_REVISION, GROWTH_RULES, growthBasisChanged, growthInputs, growthProposals, nextGrowthCheck } from "./growth-rules.ts";
 import { appendOnlineChange } from "./online-change.ts";
 
@@ -41,7 +43,7 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
       [item.id,item.version,item.state,payload,item.updatedAt]);
     await client.query("INSERT INTO growth_revisions(attention_id,version,payload_encrypted) VALUES($1,$2,$3)", [item.id,item.version,payload]);
   }
-  async function load(client: PoolClient, userId: string, childId: string, lockSources = false) {
+  async function load(client: PoolClient, userId: string, childId: string, lockSources = false, readOnly = false) {
     const borrowed = transactionPool(client), memory = createMemoryStore(borrowed.pool, cipher, true);
     const context = await memory.context(userId, childId, "family"); borrowed.assertReleased();
     if (!context) throw missing();
@@ -51,9 +53,27 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
       await client.query("SELECT id FROM knowledge_watches WHERE id=ANY($1::text[]) ORDER BY id FOR SHARE", [ids]);
       await client.query("SELECT source_id FROM knowledge_observations WHERE source_id=ANY($1::text[]) ORDER BY source_id FOR SHARE", [ids]);
     }
-    const sources = await createKnowledgeStore(borrowed.pool).candidates(agentKnowledgeFilter(context), null);
+    const now = new Date(), filter = agentKnowledgeFilter(context, now);
+    let knowledgeNotice: string | null = null;
+    if (readOnly) {
+      const profile = context.profileApplicable ? context.profile.data : null;
+      const regionNotice = "尚未能把已確認地域轉為知識篩選；原地域資料已保留，沒有假定香港。現有關注仍可查閱，來源適用性尚未能確認。";
+      const ageNotice = "知識及成長規則目前只覆蓋 0–10 歲；原出生日期已保留，沒有套用其他年齡的來源。現有關注仍可查閱，來源適用性尚未能確認。";
+      // The Agent's broader age calculation can return null beyond 216 months.
+      // An out-of-scope exact birth date must not become an unrestricted-age query.
+      const beyondAgeScope = profile?.age.kind === "birth_date" &&
+        (now.getUTCFullYear() - Number(profile.age.date.slice(0, 4)) > 10 || (filter.age?.maxMonths ?? 0) > 120);
+      if (beyondAgeScope) knowledgeNotice = ageNotice;
+      else if (!profile?.region?.trim()) knowledgeNotice = regionNotice;
+      else {
+        // Catch only this local conversion boundary, never a query/decryption failure.
+        try { parseKnowledgeFilter(filter); }
+        catch (error) { if (!(error instanceof z.ZodError)) throw error; knowledgeNotice = regionNotice; }
+      }
+    }
+    const sources = knowledgeNotice ? [] : await createKnowledgeStore(borrowed.pool).candidates(filter, null);
     borrowed.assertReleased();
-    return { context, sources, memory, borrowed, tasks: createTaskStore(borrowed.pool, cipher, scheduling) };
+    return { context, sources, knowledgeNotice, memory, borrowed, tasks: createTaskStore(borrowed.pool, cipher, scheduling) };
   }
   async function visible(item: GrowthAttention, loaded: Awaited<ReturnType<typeof load>>, userId: string): Promise<GrowthAttention> {
     const applicable = growthProposals(loaded.context, loaded.sources, new Date()).proposals.find(value => value.topicId === item.topicId);
@@ -61,8 +81,8 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
     const task = item.taskId ? await loaded.tasks.get(userId, item.childId, item.taskId) : null; loaded.borrowed.assertReleased();
     return { ...item, sourceAvailable: available, taskState: task?.occurrence.state ?? null };
   }
-  async function page(client: PoolClient, userId: string, childId: string, canManage: boolean): Promise<GrowthPage> {
-    const loaded = await load(client, userId, childId), records = await all(client, childId);
+  async function page(client: PoolClient, userId: string, childId: string, canManage: boolean, readOnly = false): Promise<GrowthPage> {
+    const loaded = await load(client, userId, childId, false, readOnly), records = await all(client, childId);
     const states = (await client.query<TopicRow>("SELECT * FROM growth_topics WHERE child_id=$1", [childId])).rows;
     const items: GrowthAttention[] = [], active = records.filter(value => ["proposed","snoozed"].includes(value.item.state));
     const history = records.filter(value => !["proposed","snoozed"].includes(value.item.state)).reverse();
@@ -71,7 +91,7 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
     const taskPage = await loaded.tasks.list(userId, childId); loaded.borrowed.assertReleased();
     const workspace=(await client.query<{workspace_id:string}>("SELECT workspace_id FROM children WHERE id=$1",[childId])).rows[0];
     return { authorityVersion:await authority(client,workspace.workspace_id), items, historyHasMore: history.length > 30, canManage, eligibleAssignees: taskPage?.eligibleAssignees ?? [],
-      notices: [...growthProposals(loaded.context, loaded.sources, new Date()).notices,...(failure?.failures===3?["背景評估已達有限重試上限，需核查故障；沒有假稱已完成。"]:[])],
+      notices: [...(loaded.knowledgeNotice ? [loaded.knowledgeNotice] : growthProposals(loaded.context, loaded.sources, new Date()).notices),...(failure?.failures===3?["背景評估已達有限重試上限，需核查故障；沒有假稱已完成。"]:[])],
       topics: GROWTH_RULES.map(rule => { const state = states.find(value => value.topic_id === rule.id);
         return { id: rule.id, title: rule.title, version: state?.version ?? 1, disabled: state?.disabled ?? false, inputs: growthInputs(rule, loaded.context) }; }) };
   }
@@ -91,7 +111,7 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
         await client.query("UPDATE growth_checks SET failures=CASE WHEN catalog_revision=$2 THEN LEAST(3,failures+1) ELSE 1 END,next_check_at=CASE WHEN catalog_revision=$2 AND failures>=2 THEN NULL ELSE now()+interval '1 minute' END,catalog_revision=$2,last_failure_code='evaluation_failed' WHERE child_id=$1",[childId,GROWTH_CATALOG_REVISION]);
       });
     },
-    list(userId: string, childId: string) { return access(userId, childId, false, (client, _workspaceId, canManage) => page(client,userId,childId,canManage)); },
+    list(userId: string, childId: string) { return access(userId, childId, false, (client, _workspaceId, canManage) => page(client,userId,childId,canManage,true)); },
     async decide(userId: string, childId: string, id: string, raw: GrowthAction) {
       const input = growthActionSchema.parse(raw);
       return access(userId, childId, true, async (client, workspaceId) => {

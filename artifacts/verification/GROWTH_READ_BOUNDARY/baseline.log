@@ -1,0 +1,130 @@
+Command: node --experimental-transform-types --experimental-test-module-mocks --test tests/growth-read-boundary.test.ts tests/growth-policy.test.ts
+Offline Docker yuban-qa-deps:9c088c8; read-only source mounts; synthetic fixtures only
+(node:13) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ growth advice requires exact age and the reviewed published chunk (8.728672ms)
+✔ a closed basis changes only with substantive confirmed information, stage or rule (1.329797ms)
+(node:14) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+✔ free-text profiles reproduce the strict knowledge contract mismatch without a database (2.869064ms)
+▶ Growth GET degrades only unsupported profile filters and keeps writes strict
+  ✖ synthetic A/B and missing regions remain readable without HK fallback (19.2935ms)
+  ✔ valid regions and HK aliases keep the existing exact filter (1.793713ms)
+  ✖ ages beyond 10 years remain readable without broadening the 120-month contract (1.516452ms)
+  ✖ database and decryption failures are not converted to successful empty pages (1.642769ms)
+  ✔ topic writes and worker evaluation retain strict validation before any mutation (1.451069ms)
+✖ Growth GET degrades only unsupported profile filters and keeps writes strict (63.965298ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 5
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 358.593452
+
+✖ failing tests:
+
+test at tests/growth-read-boundary.test.ts:63:11
+✖ synthetic A/B and missing regions remain readable without HK fallback (19.2935ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  400 !== 200
+  
+      at TestContext.<anonymous> (/app/tests/growth-read-boundary.test.ts:66:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async TestContext.<anonymous> (/app/tests/growth-read-boundary.test.ts:63:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/growth-read-boundary.test.ts:81:11
+✖ ages beyond 10 years remain readable without broadening the 120-month contract (1.516452ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  400 !== 200
+  
+      at TestContext.<anonymous> (/app/tests/growth-read-boundary.test.ts:85:73)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async TestContext.<anonymous> (/app/tests/growth-read-boundary.test.ts:81:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/growth-read-boundary.test.ts:93:11
+✖ database and decryption failures are not converted to successful empty pages (1.642769ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    Comparison {
+  +   message: '[\n' +
+  +     '  {\n' +
+  +     '    "origin": "string",\n' +
+  +     '    "code": "invalid_format",\n' +
+  +     '    "format": "regex",\n' +
+  +     '    "pattern": "/^[A-Z]{2}$/",\n' +
+  +     '    "path": [\n' +
+  +     '      "region"\n' +
+  +     '    ],\n' +
+  +     '    "message": "Invalid string: must match pattern /^[A-Z]{2}$/"\n' +
+  +     '  }\n' +
+  +     ']',
+  +   name: 'ZodError'
+  -   message: 'synthetic database failure',
+  -   name: 'Error'
+    }
+  
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (/app/tests/growth-read-boundary.test.ts:96:7)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async TestContext.<anonymous> (/app/tests/growth-read-boundary.test.ts:93:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: ZodError: [
+      {
+        "origin": "string",
+        "code": "invalid_format",
+        "format": "regex",
+        "pattern": "/^[A-Z]{2}$/",
+        "path": [
+          "region"
+        ],
+        "message": "Invalid string: must match pattern /^[A-Z]{2}$/"
+      }
+    ]
+        at parseKnowledgeFilter (/app/server/knowledge-inputs.ts:44:93)
+        at Object.candidates (/app/server/knowledge-store.ts:142:22)
+        at load (/app/server/growth-store.ts:54:63)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async page (/app/server/growth-store.ts:65:20),
+    expected: Error: synthetic database failure
+        at TestContext.<anonymous> (/app/tests/growth-read-boundary.test.ts:31:17)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1382:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+        at Test.postRun (node:internal/test_runner/test:1522:19)
+        at Test.run (node:internal/test_runner/test:1447:12)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3),
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+Exit code: 1

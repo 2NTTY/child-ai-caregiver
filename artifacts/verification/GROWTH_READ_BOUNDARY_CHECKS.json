@@ -1,0 +1,100 @@
+{
+  "package": "QA-GROWTH-READ-BOUNDARY",
+  "date_utc": "2026-10-07T03:37:59.994829+00:00",
+  "baseline_commit": "01c25a4333ea5f046e29172801fc53e6d507d2b3",
+  "branch": "codex/fix-growth-filter-boundary",
+  "finding": {
+    "source": "free-text profile.region reaches the strict two-uppercase-letter knowledge filter from Growth load",
+    "synthetic_reproduction": "A/B regions and unknown ages produce Growth GET 400 before the patch",
+    "production_http_capture": false,
+    "reported_qa_profiles": "Parent reports explicitly saved synthetic A/B free-text regions and unknown ages; no database inspected"
+  },
+  "implementation": {
+    "production_files": [
+      "server/growth-store.ts"
+    ],
+    "only_list_allows_degradation": true,
+    "preserve_original_profile": true,
+    "no_HK_fallback_for_unknown_region": true,
+    "age_scope": "0–120 months per existing strict parser; exact dates beyond scope do not become any-age queries, including >216 months",
+    "saved_items": "Read projection sourceAvailable=false plus limitation notice; stored state/version/payload remain unchanged",
+    "strict_paths_unchanged": [
+      "decide",
+      "topic including returned page",
+      "evaluate",
+      "search_knowledge"
+    ],
+    "errors": "Only local parseKnowledgeFilter Zod conversion errors are degraded. Query, memory, decode and network failures are not caught by the new boundary."
+  },
+  "verification": {
+    "runtime": "offline existing yuban-qa-deps:9c088c8, Node 24.19.0, read-only bind mounts",
+    "baseline_tests": {
+      "total": 9,
+      "pass": 5,
+      "fail": 4,
+      "parent_test_included_in_counts": true,
+      "log": "GROWTH_READ_BOUNDARY/baseline.log"
+    },
+    "final_tests": {
+      "total": 10,
+      "pass": 10,
+      "fail": 0,
+      "log": "GROWTH_READ_BOUNDARY/final.log"
+    },
+    "scoped_typecheck": {
+      "exit_code": 0,
+      "scope": [
+        "server/**/*.ts",
+        "src/shared/**/*.ts",
+        "tests/growth*.test.ts"
+      ],
+      "log": "GROWTH_READ_BOUNDARY/typecheck-scoped.log"
+    },
+    "full_server_typecheck": {
+      "exit_code": 2,
+      "baseline_exit_code": 2,
+      "same_diagnostics": true,
+      "existing_errors": 11,
+      "cause": "PR #100 child-selection test imports frontend modules into NodeNext/erasableSyntaxOnly server test compilation",
+      "baseline_method": "Replace only changed production Growth store with origin/master blob in the same offline image; remaining files identical, including the new test",
+      "initial_harness_failure": "frontend mount absent; saved separately, then mounted read-only",
+      "logs": [
+        "GROWTH_READ_BOUNDARY/typecheck-initial.log",
+        "GROWTH_READ_BOUNDARY/typecheck.log",
+        "GROWTH_READ_BOUNDARY/typecheck-baseline.log"
+      ]
+    }
+  },
+  "not_performed": [
+    "deployment",
+    "database modifications",
+    "authenticated production reads",
+    "real model calls",
+    "notifications",
+    "browser acceptance",
+    "full test suite"
+  ],
+  "remaining": [
+    "Independent review and normal synthetic Growth UI check after a separately authorized backend deployment",
+    "Strict write/worker/Agent filter handling remains unchanged and may still reject unsupported profile filters",
+    "Full Server typecheck frontend compatibility failure remains outside this patch"
+  ],
+  "responsibility": {
+    "lead": "C",
+    "weight": 2,
+    "shares": {
+      "C": 75,
+      "A": 25
+    },
+    "implementation": "Shared AI under A coordination; attribution denotes responsibility, not personal human coding/testing"
+  },
+  "evidence_sha256": {
+    "baseline.log": "69f6cc4b854dd3dca8cc3fabd4e987c59d45f85904f525ecd2f825d4bafbbec9",
+    "final.log": "87dc244e88d9b4e49d6aea584e2f1c84219824017993b106845d838c74ea22d8",
+    "fixed.log": "2c6b656983bb0d550d1a4f00269a20bcd4d1cee42a8648b2ca3f9698425a6a7b",
+    "typecheck-baseline.log": "ea2e4420376b01a50d2f4e95c0b5e9205480b27ef1952a73a8a72fdf2ed1387a",
+    "typecheck-initial.log": "433deecee850c6bb9540bd8f705b47902f9b3cb1f7ee2b25ef021f0e6548720c",
+    "typecheck-scoped.log": "5ccba8e626c2c33b15734dde65836e60b10527a012549100ee8db438a2468521",
+    "typecheck.log": "ea2e4420376b01a50d2f4e95c0b5e9205480b27ef1952a73a8a72fdf2ed1387a"
+  }
+}
