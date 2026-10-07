@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Pool, PoolClient } from "pg";
-import { concernChangeSchema, concernValuesSchema, type Concern, type ConcernChange, type ConcernEvent, type ConcernPage, type ConcernValues } from "../src/shared/concerns.ts";
+import { CONCERN_EVENT_LIMIT, CONCERN_STORED_EVENT_LIMIT, concernChangeSchema, concernValuesSchema, type Concern, type ConcernChange, type ConcernEvent, type ConcernPage, type ConcernValues } from "../src/shared/concerns.ts";
 import type { ProductAgentResult } from "../src/shared/product-agent.ts";
 import { FamilyError, READ_ROLES, WRITE_ROLES, withChildAccess } from "./family-access.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
@@ -23,7 +23,7 @@ const missing = () => new FamilyError(404, "not_found");
 const conflict = () => new FamilyError(409, "concern_changed");
 const context = (row: Pick<Row, "child_id" | "id" | "created_by">) => `concern:${row.child_id}:${row.id}:${row.created_by}`;
 const receiptContext = (userId: string, childId: string, opId: string, field: string) => `concern-operation:${userId}:${childId}:${opId}:${field}`;
-const MAX_CONCERNS = 200, MAX_EVENTS = 200;
+const MAX_CONCERNS = 200, MAX_EVENTS = CONCERN_EVENT_LIMIT;
 
 /** Shared concern authority. It never promotes private conversation or mutates a linked task. */
 export function createConcernStore(pool: Pool, cipher: StorageCipher) {
@@ -41,8 +41,8 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
   async function decode(client: PoolClient, row: Row): Promise<Concern> {
     const value = JSON.parse(cipher.decrypt(row.payload_encrypted, context(row) + ":" + row.version)) as Stored;
     const events = (await client.query<{ id: string; actor_user_id: string; payload_encrypted: string }>(
-      "SELECT id,actor_user_id,payload_encrypted FROM concern_events WHERE concern_id=$1 ORDER BY sequence LIMIT 201", [row.id])).rows;
-    if (events.length > MAX_EVENTS) throw new FamilyError(400, "concern_history_requires_review");
+      "SELECT id,actor_user_id,payload_encrypted FROM concern_events WHERE concern_id=$1 ORDER BY sequence LIMIT $2", [row.id, CONCERN_STORED_EVENT_LIMIT + 1])).rows;
+    if (events.length > CONCERN_STORED_EVENT_LIMIT) throw new FamilyError(400, "concern_history_requires_review");
     const scheduled = await followup(client, row.follow_up_id);
     return { ...value, events: events.map(event => JSON.parse(cipher.decrypt(event.payload_encrypted,
       context(row) + ":event:" + event.id + ":" + event.actor_user_id)) as ConcernEvent), historyComplete: true,
@@ -52,17 +52,22 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
     const row = (await client.query<Row>("SELECT * FROM concerns WHERE id=$1 AND child_id=$2", [id, childId])).rows[0];
     return row ? { row, item: await decode(client, row) } : null;
   }
-  async function save(client: PoolClient, workspaceId: string, row: Row, item: Concern, insert = false, event?: ConcernEvent) {
+  async function terminalReserveEnabled(client: PoolClient) {
+    return Boolean((await client.query("SELECT 1 FROM app_migrations WHERE id='029-concern-terminal-reserve'")).rowCount);
+  }
+  async function save(client: PoolClient, workspaceId: string, row: Row, item: Concern, insert = false, events: ConcernEvent[] = []) {
+    if (item.events.length > CONCERN_STORED_EVENT_LIMIT || item.events.length > MAX_EVENTS
+      && !await terminalReserveEnabled(client))
+      throw new FamilyError(400, "concern_history_requires_review");
     const { events: _events, historyComplete: _complete, followUp: scheduled, ...value } = item;
     const payload = cipher.encrypt(JSON.stringify(value), context(row) + ":" + item.version);
     if (insert) await client.query("INSERT INTO concerns(id,child_id,created_by,version,status,payload_encrypted,follow_up_id,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",
       [item.id, item.childId, row.created_by, item.version, item.status, payload, scheduled?.id ?? null, item.createdAt, item.updatedAt]);
     else await client.query("UPDATE concerns SET version=$2,status=$3,payload_encrypted=$4,follow_up_id=$5,updated_at=$6 WHERE id=$1",
       [item.id, item.version, item.status, payload, scheduled?.id ?? null, item.updatedAt]);
-    if (event) {
-      if (item.events.length > MAX_EVENTS) throw new FamilyError(400, "concern_history_requires_review");
+    for (const [index, event] of events.entries()) {
       await client.query("INSERT INTO concern_events(id,concern_id,sequence,actor_user_id,payload_encrypted) VALUES($1,$2,$3,$4,$5)",
-        [event.id, item.id, item.events.length, event.actorUserId,
+        [event.id, item.id, item.events.length - events.length + index + 1, event.actorUserId,
           cipher.encrypt(JSON.stringify(event), context(row) + ":event:" + event.id + ":" + event.actorUserId)]);
     }
     await client.query("INSERT INTO concern_revisions(concern_id,version,payload_encrypted) VALUES($1,$2,$3)",
@@ -116,6 +121,17 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
   function event(userId: string, at: string, kind: ConcernEvent["kind"], title: string, text: string, references: Partial<ConcernEvent> = {}): ConcernEvent {
     return { id: randomUUID(), at, kind, title, text, sourceLabel: "家庭共享關注", actorUserId: userId, ...references };
   }
+  const hasOpenFollowup = (item: Concern) => Boolean(item.followUp && ["pending", "queued"].includes(item.followUp.state));
+  async function cancelForCapacity(client: PoolClient, workspaceId: string, row: Row, item: Concern, actor: string) {
+    // One terminal slot remains reserved for the user's archive operation.
+    if (item.events.length >= CONCERN_STORED_EVENT_LIMIT - 1) throw new FamilyError(400, "concern_history_requires_review");
+    await cancel(client, item);
+    const now = new Date().toISOString(), added = event(actor, now, "confirmed_action", "站內跟進因紀錄容量停止",
+      "此關注的日常事件紀錄已達容量上限；本次尚未完成的站內跟進已取消，沒有重新安排。原有事件保留，仍可結束關注。",
+      { sourceLabel: "Server 站內跟進狀態" });
+    item.version++; item.updatedAt = now; item.events.push(added);
+    await save(client, workspaceId, row, item, false, [added]);
+  }
   async function controlled(client: PoolClient, workspaceId: string, scope: ConcernWorkerScope) {
     const row = (await client.query<{ enabled: boolean; generation: string; storage_epoch: string }>(
       "SELECT c.enabled,c.generation,w.storage_epoch FROM worker_control c CROSS JOIN workspaces w WHERE c.id=1 AND w.id=$1 FOR SHARE OF c", [workspaceId])).rows[0];
@@ -155,7 +171,7 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
       // Missing model confirmation is a state, not a fabricated Agent receipt event.
       await stopCurrent(client, workspaceId, row, item, "unknown"); return "settled" as const;
     }
-    if (item.events.length >= MAX_EVENTS) throw new FamilyError(400, "concern_history_requires_review");
+    if (item.events.length >= CONCERN_STORED_EVENT_LIMIT - 1) throw new FamilyError(400, "concern_history_requires_review");
     const summary = { completed: "本次站內跟進已完成；本人可查看原 Agent 結果。",
       stopped: "本次站內跟進已停止；本人可查看原 Agent 收據。",
       unknown: "未能確認本次站內跟進結果；保留原操作，沒有自動重新執行。" }[state];
@@ -164,7 +180,7 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
       { runId: run.id, sourceLabel: "Agent 站內跟進收據" });
     await client.query("UPDATE concern_followups SET state=$2,run_id=$3,updated_at=now() WHERE id=$1", [scheduled.id, state, run.id]);
     item.followUp = { ...item.followUp!, state, runId: run.id }; item.version++; item.updatedAt = now; item.events.push(added);
-    await save(client, workspaceId, row, item, false, added); return "settled" as const;
+    await save(client, workspaceId, row, item, false, [added]); return "settled" as const;
   }
   return {
     list(userId: string, childId: string) {
@@ -190,7 +206,7 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
         const row: Row = { id, child_id: childId, created_by: userId, version: 1, payload_encrypted: "", follow_up_id: null };
         // Both references are committed together; every revision is inserted once.
         if (input.followUpAt) await schedule(client, workspaceId, userId, item, input.followUpAt);
-        await save(client, workspaceId, row, item, true, first);
+        await save(client, workspaceId, row, item, true, [first]);
         return item;
       }));
     },
@@ -201,9 +217,14 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
         const found = await find(client, childId, id); if (!found) throw missing();
         const { row, item } = found;
         if (item.version !== input.expectedVersion || item.version >= 2147483647) throw conflict();
-        if (item.events.length >= MAX_EVENTS) throw new FamilyError(400, "concern_history_requires_review");
+        const full = item.events.length >= MAX_EVENTS, cancelling = input.action === "schedule_followup" && input.followUpAt === null;
+        if (full && input.action !== "archive" && !(cancelling && hasOpenFollowup(item))) throw new FamilyError(400, "concern_history_requires_review");
+        const archiveCancellation = full && input.action === "archive" && hasOpenFollowup(item);
+        const eventCount = archiveCancellation ? 2 : 1;
+        if (item.events.length + eventCount > CONCERN_STORED_EVENT_LIMIT || full && cancelling && item.events.length >= CONCERN_STORED_EVENT_LIMIT - 1)
+          throw new FamilyError(400, "concern_history_requires_review");
         const now = new Date().toISOString(); item.version++; item.updatedAt = now;
-        let added: ConcernEvent;
+        let added: ConcernEvent; const terminalEvents: ConcernEvent[] = [];
         if (input.action === "append") {
           if (item.status !== "following") throw conflict();
           const refs = await links(client, childId, input.links);
@@ -214,6 +235,7 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
         } else if (input.action === "archive") {
           if (item.status !== "following") throw conflict();
           await cancel(client, item); item.status = "closed"; item.archivedAt = now; item.statusBeforeArchive = "following";
+          if (archiveCancellation) terminalEvents.push(event(userId, now, "confirmed_action", "取消站內跟進", "家長結束此關注，尚未完成的站內跟進已取消；原有事件保留。"));
           added = event(userId, now, "confirmed_action", "結束持續關注", "家長確認結束此關注；原有事件及相關任務保留。");
         } else if (input.action === "restore") {
           if (item.status !== "closed") throw conflict();
@@ -226,7 +248,8 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
           added = event(userId, now, "confirmed_action", input.followUpAt ? "安排站內跟進" : "取消站內跟進",
             input.followUpAt ? "家長確認在指定時間進行一次站內跟進。" : "家長取消尚未完成的站內跟進。");
         }
-        item.events.push(added); await save(client, workspaceId, row, item, false, added); return item;
+        const addedEvents = [...terminalEvents, added]; item.events.push(...addedEvents);
+        await save(client, workspaceId, row, item, false, addedEvents); return item;
       }));
     },
     async checkDue(generation: string, enqueue: ConcernEnqueue) {
@@ -234,8 +257,10 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
         FROM concern_followups f JOIN concerns c ON c.id=f.concern_id AND c.follow_up_id=f.id
         JOIN children ch ON ch.id=f.child_id JOIN workspaces w ON w.id=ch.workspace_id
         JOIN worker_control ctl ON ctl.id=1 AND ctl.enabled AND ctl.generation=$1
-        WHERE (f.state='pending' AND f.due_at<=now()) OR f.state='queued'
-        ORDER BY f.due_at,f.id LIMIT 10`, [generation])).rows;
+        WHERE ((f.state='pending' AND f.due_at<=now()) OR f.state='queued')
+          AND (EXISTS(SELECT 1 FROM app_migrations WHERE id='029-concern-terminal-reserve')
+            OR NOT EXISTS(SELECT 1 FROM concern_events e WHERE e.concern_id=f.concern_id AND e.sequence>=$2))
+        ORDER BY f.due_at,f.id LIMIT 10`, [generation, MAX_EVENTS])).rows;
       for (const value of due) await workerAccess({ childId: value.child_id, id: value.concern_id }, async (client, workspaceId, row, item, scheduled) => {
         const scope = { workerGeneration: generation, storageEpoch: value.storage_epoch };
         if (!await controlled(client, workspaceId, scope)) return;
@@ -243,6 +268,8 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
           if (["pending", "queued"].includes(scheduled.state)) await stopCurrent(client, workspaceId, row, item, "cancelled");
           return;
         }
+        // Selection precedes this lock; an ordinary append may have filled the history meanwhile.
+        if (item.events.length >= MAX_EVENTS && !await terminalReserveEnabled(client)) return;
         if (scheduled.state === "queued") {
           const job = (await client.query<{ state: string }>("SELECT state FROM pgboss.job WHERE name=$1 AND id=$2", [CONCERN_AGENT_QUEUE, scheduled.job_id])).rows[0];
           if (scheduled.worker_generation !== generation) await stopCurrent(client, workspaceId, row, item, "cancelled");
@@ -250,7 +277,7 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
           return;
         }
         if (scheduled.state !== "pending" || scheduled.due_at.getTime() > Date.now()) return;
-        if (item.events.length >= MAX_EVENTS) throw new FamilyError(400, "concern_history_requires_review");
+        if (item.events.length >= MAX_EVENTS) { await cancelForCapacity(client, workspaceId, row, item, scheduled.actor_user_id); return; }
         item.version++; item.updatedAt = new Date().toISOString(); item.followUp = { ...item.followUp!, state: "queued" };
         const jobId = randomUUID(), job: ConcernJob = { childId: item.childId, id: item.id, followUpId: scheduled.id, version: item.version, jobId, ...scope };
         await client.query("UPDATE concern_followups SET state='queued',concern_version=$2,worker_generation=$3,job_id=$4,updated_at=now() WHERE id=$1", [scheduled.id, item.version, generation, jobId]);
@@ -264,6 +291,7 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
         if (item.status !== "following" || item.version !== job.version || scheduled.concern_version !== job.version || !await actorAllowed(client, workspaceId, scheduled)) {
           await stopCurrent(client, workspaceId, row, item, "cancelled"); return null;
         }
+        if (item.events.length >= MAX_EVENTS) { await cancelForCapacity(client, workspaceId, row, item, scheduled.actor_user_id); return null; }
         return { userId: scheduled.actor_user_id, concern: item };
       });
     },

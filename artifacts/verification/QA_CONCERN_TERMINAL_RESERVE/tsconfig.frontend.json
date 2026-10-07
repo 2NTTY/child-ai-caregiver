@@ -1,0 +1,10 @@
+{
+  "extends": "../../../frontend/node_modules/expo/tsconfig.base",
+  "compilerOptions": { "strict": true, "allowImportingTsExtensions": true, "noEmit": true },
+  "include": [
+    "../../../frontend/src/growth-view-model.ts",
+    "../../../frontend/src/components/growth/GrowthArchiveConcernButton.tsx",
+    "../../../frontend/src/components/growth/GrowthConcernChangeNotice.tsx",
+    "../../../frontend/src/components/growth/GrowthHistoryView.tsx"
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "package": "QA-CONCERN-TERMINAL-RESERVE",
+  "baselineCommit": "4a2257a43abfc3fca9f23e860ed01bafb753aa18",
+  "backendSourceBaseline": "33326d9b652f1bda5f6428ef78a7325b281a49c6",
+  "environment": {
+    "node": "24.19.0",
+    "method": "Offline real ConcernStore and client adapter, encrypted synthetic rows, transactional SQL mock, static migration checks; no live database, model, notification, GCP or deployment"
+  },
+  "contract": {
+    "ordinaryEventCap": 200,
+    "storedEventCap": 202,
+    "reservedUses": [
+      "Cancelling or settling one open follow-up",
+      "Archiving the concern"
+    ],
+    "archiveAt200WithOpenFollowup": "One transaction and version increment, two appended terminal events, all 200 original event ciphertexts unchanged",
+    "fullRestore": "Still rejected; this fixes stopping and closing only, not indefinite history growth or full-chain restoration",
+    "belowCapacityRestore": "Existing behavior retained; old follow-up remains cancelled"
+  },
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/concern-capacity.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "scope": "Archive/cancel at capacity, exact receipts and ciphertext retention, bounded reserve, migration guard rollback, due batch progress, queued authorization/settlement, scope/version/authority, normal restore, client/store 202 acceptance and 203 rejection, static SQL/checksum registration; pre-migration ten-full-row deferral before LIMIT, selection-to-locked-read capacity race, strict migration gate on all reserve follow-up paths"
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='concern tool declarations' tests/vertex-tool-contract.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "scope": "Existing ADK declaration conversion and strict confirmation/authorization validation; no provider generation"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/tsconfig.json",
+      "result": "passed",
+      "scope": "Strict scoped NodeNext typecheck, not a full-project check"
+    },
+    {
+      "command": "node --check server/migrate.ts",
+      "result": "passed",
+      "scope": "Syntax check only; migration script was not executed"
+    },
+    {
+      "name": "Unchanged transitive relative-import dependency closure",
+      "result": "passed",
+      "files": 15,
+      "method": "Git blob SHA match against fixed baseline"
+    },
+    {
+      "command": "node --test frontend/scripts/growth-concern-capacity.test.mjs frontend/src/components/growth/growth-form.test.mjs",
+      "passed": 4,
+      "failed": 0,
+      "scope": "Shallow actual confirmation/Undo/history components at 198/199/200 and returned 199/200/201/202; original HTTPS source-link guard; not browser layout or focus verification"
+    },
+    {
+      "command": "node frontend/node_modules/typescript/bin/tsc --project artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/tsconfig.frontend.json",
+      "result": "passed",
+      "scope": "Strict Expo/Bundler UI dependency closure for the changed view model and three components; not full frontend/application typecheck"
+    }
+  ],
+  "baselineReproduction": {
+    "cases": [
+      "Archive at 200 events",
+      "Cancel at 200 events"
+    ],
+    "failed": 2,
+    "code": "concern_history_requires_review",
+    "comparison": "Same new fixtures and source closure, replacing only ConcernStore with pinned original source"
+  },
+  "migration": {
+    "id": "029-concern-terminal-reserve",
+    "original027Sha256": "89e48065c9123fcf4933366267778e9ee2ab7b51461927c7740e4e66e369d356",
+    "existingMigrationChanged": false,
+    "rowRewriteOrDeletion": false,
+    "runtimeGate": "Reserve writes require the 029 migration receipt; compatible readers can be deployed beforehand",
+    "execution": "Not performed; static constraint shape/checksum/runner registration checks only",
+    "readiness": "Source/static verification only; no postgres, initdb, psql or Docker executable was available, and nothing was installed. Real isolated PostgreSQL constraint verification remains required before activation."
+  },
+  "deploymentWarnings": [
+    "Upgrade every API/worker/client reader before allowing 201-202-event writes; old readers reject that history",
+    "Refresh known open/cached clients before activation; an old cached tab rejects a 201-202-event successful result",
+    "Do not roll back to old 200-event readers or narrow the SQL constraint after reserve events exist; never delete history to make rollback pass",
+    "The runtime migration receipt is a guard, not proof of deployment readiness or real PostgreSQL execution",
+    "Actual migration and deployment require the coordinating review and separately authorized operator"
+  ],
+  "limits": [
+    "No live PostgreSQL constraint execution, lock/concurrency or migration acceptance was performed",
+    "No browser, real model, notification, GCP or full-project regression",
+    "The mock enforces sequence uniqueness and transactional rollback but is not PostgreSQL",
+    "No new linked chains, history deletion, permission changes or extra normal-event capacity",
+    "All concerns still have the existing 200-concern list/create bound"
+  ],
+  "sourceSha256": {
+    "server/concern-store.ts": "47d46a8faf24fecf5c093bc9828e98b227ebaea706c49caad85f31e95b6840e5",
+    "src/shared/concerns.ts": "2238dc853c7318d04234a68d15c5d6597113b269287792b04319a49d53a4d32b",
+    "src/client/concerns-api.ts": "c0254db49464b1d076dc3c9d07fd548e57b9338ee1c07fdc92f67df7997ed441",
+    "server/migrate.ts": "a9d12ddb7954b42032568c3bd493177a7d63471dc9ff2f8048398402f43cd54d",
+    "server/migrations/029-concern-terminal-reserve.sql": "e67df4c47d2977a8761e8966e07bafa25425f7792011c9dabcfc082b1a1a6891",
+    "tests/concern-capacity.test.ts": "0b7db5111842febefc488c51a21b892bf220b58413d98bbea9e035fd6be52683",
+    "artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/tsconfig.json": "c406ccf64b905e20fa0c00948d0e684a72df41f46cf9f5c28c14b72d0bbbd8a6",
+    "frontend/src/growth-view-model.ts": "f44f56f75361a44749bf93811fcc694d225e2d40753716fb93d10f10b8c08480",
+    "frontend/src/components/growth/GrowthArchiveConcernButton.tsx": "5f94ce37caf7e291dccb6dee513ea1cbd1ec5fc0c509f3f66fc400e40009aed7",
+    "frontend/src/components/growth/GrowthConcernChangeNotice.tsx": "44e80946d857ca8e8b58b5a0ee14546294bb805af575cff789da7519437ae2e1",
+    "frontend/src/components/growth/GrowthHistoryView.tsx": "5c066d7dcb605a6a22431224d438eec5b446b5daf07418cbec16a54fbaec662c",
+    "frontend/scripts/growth-concern-capacity.test.mjs": "d1a38c6bcaf8ae547a80efadff078b594f99a4ad746dfd31d9cd2991c45f44a4",
+    "artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/tsconfig.frontend.json": "fd3b1ea39c43443a579d7def55f383edae6447e4d1978297a5d31c4eaac44ffc"
+  },
+  "reviewCorrections": [
+    {
+      "finding": "A full due concern blocked later rows before migration 029 was applied",
+      "change": "Defer full concerns with an indexed migration/sequence EXISTS predicate before LIMIT 10",
+      "verification": "Ten full pending concerns remain unchanged while the next ordinary concern queues"
+    },
+    {
+      "finding": "A selected 199-event row could fill before workerAccess acquired its lock, bypassing selection-time deferral",
+      "change": "Repeat the migration/capacity defer check under the existing workspace lock",
+      "verification": "Deterministic real store append between due selection and locked read; full row stays pending and later ordinary row queues. This is a mock ordering test, not real PostgreSQL concurrency"
+    },
+    {
+      "finding": "Archive confirmation and history promised restoration at the capacity boundary",
+      "change": "Use the shared ordinary-event constant; warn before archive at 199+, disable closed>=200 Undo/Restore and show the root-authored capacity reason",
+      "verification": "Actual component shallow checks at 198/199/200 and post-archive 199/200/201/202; normal copy and history reading retained"
+    }
+  ]
+}
