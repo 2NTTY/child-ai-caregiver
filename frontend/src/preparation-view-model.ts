@@ -9,7 +9,7 @@ export const preparationPurposes = [
   { key: "handoff", label: "照顧交接", description: "讓接手照顧的人掌握今天的重點" },
 ] as const;
 export type PreparationPurpose = typeof preparationPurposes[number]["key"];
-export type PreparationCondition = "ready" | "empty" | "loading" | "unavailable" | "source_changed" | "source_invalidated" | "private_revoked" | "unknown" | "read_only" | "lost";
+export type PreparationCondition = "ready" | "empty" | "loading" | "unavailable" | "refresh_failed" | "source_changed" | "source_invalidated" | "private_revoked" | "unknown" | "read_only" | "lost";
 export type PreparationSourceState = "available" | "invalidated" | "restricted" | "unknown";
 export interface PreparationSource {
   id: string; childId: string; label: string; version: number; updatedAt: string | null;

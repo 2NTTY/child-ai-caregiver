@@ -11,7 +11,7 @@ import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
 
 type Attempt = { kind: "create"; input: DocumentRequest } | { kind: "change"; id: string; input: DocumentChange };
-type Pending = { attempt: Attempt; checked: boolean; reconfirm: boolean };
+type Pending = { attempt: Attempt; checked: boolean; reconfirm: boolean; selectionGeneration: number };
 const snapshotKey = (snapshot: DocumentSnapshot) => snapshot.id + ":" + snapshot.version;
 const preparationView = (item: FamilyDocument): PreparationDocumentView => {
   const snapshot = item.readState === "invalidated" ? null : item.current;
@@ -47,6 +47,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const [selectedId, setSelectedId] = useState<string | null>(null), [justArchivedId, setJustArchivedId] = useState<string | null>(null);
   const [refreshQueued, setRefreshQueued] = useState(false);
   const original = useRef<Pending | null>(null), inFlight = useRef(false), latest = useRef({ page, load, dirty });
+  const selection = useRef({ id: null as string | null, generation: 0 });
   latest.current = { page, load, dirty };
   const canManage = env.role === "owner" || env.role === "caregiver";
   useDomainWriteGuard(!runtime.lost && dirty, !runtime.lost && !!pending);
@@ -54,6 +55,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const clearAccess = (error: unknown) => {
     if (!runtime.accessError(error)) return false;
     api.reset(); original.current = null; setPending(null); setPage(null); setDirty(false); setSelectedId(null); setJustArchivedId(null);
+    selection.current = { id: null, generation: selection.current.generation + 1 };
     setOperation({ state: "none", message: "", reference: null }); setEpoch(value => value + 1); return true;
   };
   const read = (signal: AbortSignal) => runtime.read(["page"], next => api.getPage(env.childId!, next, env.userId!), signal);
@@ -95,7 +97,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     const actual = latest.current.page;
     if (inFlight.current || !runtime.live() || !env.online || !canManage || !actual?.canManage || latest.current.load !== "ready"
       || !retry && (original.current || !env.canStartWrite())) return;
-    const entry: Pending = { attempt, checked: false, reconfirm: false };
+    const entry: Pending = { attempt, checked: false, reconfirm: false,
+      selectionGeneration: retry && original.current ? original.current.selectionGeneration : selection.current.generation };
     inFlight.current = true; original.current = entry; setPending(entry); setBusy(true);
     setOperation({ state: "saving", reference: null, message: "正在保存家庭共享文件。" });
     void runtime.request(async (signal, current) => {
@@ -103,12 +106,18 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         const item = attempt.kind === "create" ? await api.create(env.childId!, attempt.input, signal, env.userId!)
           : await api.change(env.childId!, attempt.id, attempt.input, signal, env.userId!);
         if (!current()) return;
-        original.current = null; setPending(null); setDirty(false); setEpoch(value => value + 1);
+        original.current = null; setPending(null);
+        if (attempt.kind === "create") { setDirty(false); setEpoch(value => value + 1); }
         setPage(before => before ? { ...before, items: before.items.some(old => old.id === item.id)
           ? before.items.map(old => old.id === item.id ? item : old) : [item, ...before.items] } : null);
         setOperation({ state: "saved", reference: null, message: "文件已獲 Server 確認保存。" });
-        if (attempt.kind === "change" && attempt.input.action === "archive") { setSelectedId(null); setJustArchivedId(item.id); }
-        else if (item.kind === "preparation") { setSelectedId(item.id); setJustArchivedId(null); }
+        if (selection.current.generation === entry.selectionGeneration) {
+          if (attempt.kind === "change" && attempt.input.action === "archive" && selection.current.id === item.id) {
+            selection.current.id = null; setSelectedId(null); setJustArchivedId(item.id);
+          } else if (attempt.kind === "create" && item.kind === "preparation") {
+            selection.current.id = item.id; setSelectedId(item.id); setJustArchivedId(null);
+          }
+        }
         setNotice("已按家庭共享資料保存文件及版本；沒有把整理內容寫回成事實。");
         try {
           const next = await read(signal);
@@ -146,7 +155,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     retryOriginalOperation() { const entry = original.current; if (entry?.checked && !entry.reconfirm && !inFlight.current) write(entry.attempt, true); } };
   const preparationDocuments = visible?.items.filter(item => item.kind === "preparation").map(preparationView) ?? [];
   const condition = runtime.lost ? "lost" : !visible ? busy ? "loading" : load === "error" ? "unavailable" : "empty"
-    : pending ? "unknown" : !canManage || !visible.canManage ? "read_only" : "ready";
+    : load === "error" ? "refresh_failed" : pending ? "unknown" : !canManage || !visible.canManage ? "read_only" : "ready";
   const createDocument = (input: DocumentRequest) => {
     const parsed = documentRequestSchema.safeParse(input);
     if (parsed.success && parsed.data.kind === "growth_report" && parsed.data.purpose === "family"
@@ -163,8 +172,12 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     online: env.online, notice, justArchivedId, dataLabel: "Server 家庭共享多用途文件；依據來源及版本整理。", archiveNotice: "只歸檔文件，原來源及任務保留。",
     operation: runtime.lost ? undefined : operation, capabilities: { archive: !locked, checkItem: !locked, restore: !locked, refresh: !locked, create: !locked },
     busy, locked, dirty, epoch, authorityVersion: visible?.authorityVersion ?? "" }, actions: {
-    selectDocument(id) { if (runtime.live() && preparationDocuments.some(item => item.id === id)) { setSelectedId(id); setJustArchivedId(null); } },
-    closeDocument() { if (runtime.live()) { setSelectedId(null); setJustArchivedId(null); } },
+    selectDocument(id) { if (runtime.live() && preparationDocuments.some(item => item.id === id)) {
+      selection.current = { id, generation: selection.current.generation + 1 }; setSelectedId(id); setJustArchivedId(null);
+    } },
+    closeDocument() { if (runtime.live()) {
+      selection.current = { id: null, generation: selection.current.generation + 1 }; setSelectedId(null); setJustArchivedId(null);
+    } },
     archiveDocument(id, expectedVersion) { change(id, expectedVersion, "archive"); },
     restoreDocument(id, expectedVersion) { change(id, expectedVersion, "restore"); },
     refreshDocument(id, expectedVersion) { change(id, expectedVersion, "refresh"); },
@@ -178,7 +191,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const snapshots = Array.from(new Map(readableReports.flatMap(item => [...(item.current ? [item.current] : []), ...item.history]).map(snapshot => [snapshotKey(snapshot), snapshot])).values());
   const projectedSnapshots = snapshots.map(reportSnapshot), currentSnapshot = standard?.readState !== "invalidated" && standard?.current ? reportSnapshot(standard.current) : null;
   const archive: GrowthArchiveProjection = { scopeKey: env.scopeKey, childId: env.childId!, authorityVersion: visible?.authorityVersion ?? "",
-    state: runtime.lost ? "invalidated" : !visible ? load === "error" ? "error" : "loading" : standard?.readState === "invalidated" ? "invalidated"
+    state: runtime.lost ? "invalidated" : !visible ? load === "error" ? "error" : "loading" : standard?.readState === "invalidated" && !projectedSnapshots.length ? "invalidated"
       : standard?.readState === "stale" ? "needs_update" : currentSnapshot || projectedSnapshots.length ? "ready" : "not_generated",
     label: "Server 依家庭共享來源整理，並非模型生成或發展評估。", snapshot: currentSnapshot,
     history: projectedSnapshots.filter(snapshot => snapshot.id !== currentSnapshot?.id || snapshot.version !== currentSnapshot.version),

@@ -24,6 +24,7 @@ const stateLabels: Record<PreparationDocumentView["readState"], { label: string;
 };
 function PreparationEmptyState({ workspace, history = false }: { workspace: PreparationWorkspaceValue; history?: boolean }) {
   const { condition } = workspace.model;
+  if (condition === "refresh_failed") return null;
   const title = condition === "loading" ? "正在讀取準備單" : condition === "unavailable" ? "暫時未能取得準備單"
     : condition === "lost" ? "孩子權限已失效" : history ? "這裏還沒有符合條件的準備單" : "目前沒有已備妥的準備單";
   const detail = condition === "loading" ? "" : condition === "unavailable" ? "請重新讀取。"
@@ -48,7 +49,8 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
 }) {
   const [sourceOpen, setSourceOpen] = useState(false), [archiveAsked, setArchiveAsked] = useState(false);
   const revision = document.revision, state = stateLabels[document.readState], archived = document.status === "archived";
-  const pending = !!workspace.model.operation && ["saving", "unknown", "conflict"].includes(workspace.model.operation.state);
+  const pending = workspace.model.busy || !!workspace.model.operation &&
+    (["saving", "unknown"].includes(workspace.model.operation.state) || !!workspace.model.operation.recovery);
   const editable = canChangePreparation(document, workspace.model.scope) && !pending;
   const canCheck = editable && workspace.model.capabilities?.checkItem === true;
   const canArchive = canArchivePreparation(document, workspace.model.scope) && !pending && workspace.model.capabilities?.archive === true;
@@ -87,7 +89,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
       onPress={() => workspace.actions.refreshDocument?.(document.id, document.version)} /> : null}
     {archived && workspace.model.capabilities?.restore ? <AppButton label="恢復這份準備單" variant="secondary" onPress={() => workspace.actions.restoreDocument?.(document.id, document.version)} /> : null}
     {!archived ? <View style={styles.footer}>
-      {workspace.model.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{workspace.model.notice}</Text> : null}
+      {workspace.model.notice && workspace.model.condition !== "refresh_failed" ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{workspace.model.notice}</Text> : null}
       <View style={styles.actions}><AppButton label="使用完畢，歸檔" variant="primary" disabled={!canArchive} onPress={() => setArchiveAsked(true)} />
         <AppButton label="到助手補充／更新" variant="secondary" disabled={!revision || !workspace.model.online || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我更新${workspace.model.child.displayName}的「${revision!.title}」準備單；先核對現有資料及未確認的地方。`)} /></View>
       {archiveAsked && canArchive ? <View testID="preparation-archive-confirm" style={styles.archiveNote}>
@@ -150,6 +152,7 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
     {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
     {workspace.actions.refresh ? <AppButton label={workspace.model.busy ? "正在處理文件…" : workspace.model.operation?.recovery === "check" ? "重讀並核對原操作" : "重新讀取準備單"}
       variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
+    {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{active.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
     {!selected ? <Text style={styles.meta}>待用準備單{["loading", "unavailable", "lost"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
     <PreparationReader workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
     {!selected ? <View testID="preparation-list-actions" style={styles.intentControls}>
@@ -178,6 +181,7 @@ export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestio
     {previewControls}
     {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
     {workspace.actions.refresh ? <AppButton label="重新讀取／核對文件" variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
+    {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{documents.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
     <Text style={styles.meta}>只搜尋可查看的已歸檔準備單：標題、內容、用途及來源名稱。日期按歸檔時間，並非使用日期。{available ? "只涵蓋目前已載入資料。" : "目前尚未取得可確認的結果。"}</Text>
     {unknownDates ? <Text style={styles.meta}>{unknownDates} 份未提供歸檔時間，套用日期範圍時不會把它們歸入任何日期。</Text> : null}
     {available ? <Text style={styles.meta}>{documents.length} 份符合</Text> : null}
