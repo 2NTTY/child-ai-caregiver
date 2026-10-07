@@ -5,6 +5,7 @@ import { agentAnswerSchema } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation } from "../src/shared/product-agent.ts";
 import type { KnowledgeEvidence, KnowledgeFilter } from "../src/shared/knowledge.ts";
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
+import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
@@ -147,7 +148,7 @@ export function createProductAgentTools(options: {
         return result;
       }) },
     { name: "propose_task", description: "保存待本人明確確認的家庭任務候選，尚未建立任務或通知任何人。對象只可取 read_context 的 eligibleAssignees，時間不清楚先補問。",
-      parameters: z.object({ values: taskValuesSchema }), authorize: permitted,
+      parameters: z.object({ values: taskValuesSchema }), parameterErrorHints: taskParameterHints, authorize: permitted,
       execute: (args, context) => guard(async () => {
         const proposal = await store.propose(scope, runId, context.callId, { kind: "task_create", values: taskValuesSchema.parse(args.values) });
         if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
