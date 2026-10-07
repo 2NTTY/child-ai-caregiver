@@ -64,6 +64,10 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 
 `read_context` 按入口區分本人／家庭；私人摘要只在取得完整批次時透過 `stage_private_summary` 暫存，運行結束再核對來源版本及精確覆蓋，衝突保留原摘要。摘要及候選不成為確認事實。`search_knowledge` 使用既有 public retriever 與同一運行預算；`present_answer` 核對引用 ID、官方類別及當前有效版本，回傳結構不等於已驗證語義支持。
 
+ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 InstructionProvider 提供，input.context 獨立放入有標籤的 user Content 資料 part；原使用者訊息仍第一個 part，原生附件、歷史及工具關聯保留。正文中的 `{name}`／`{name?}` 不作 state 展開或刪除，資料內容不能授權，也不能聲稱封裝本身保證抵禦所有 prompt injection。
+
+`present_answer` 為 terminal 工具，只有成功接受才令 ADK skipSummarization 停止模型循環，之後既有 finalize 仍重驗引用與目前授權。被拒、衝突或失敗的展示可在原剩餘預算內修正；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉尚未完成的副作用。模型自然 final 仍不能代替此工具；完全漏調 present_answer 及背景安靜 no_action 仍待獨立處理，本包不增加模型輪數、不全局設 ANY。
+
 <a id="agent-ordinary-actions"></a>
 INT-W02 增補：`GET／POST /api/children/:childId/agent/policy` 管理本人按孩子的普通操作預授權；POST 帶 `operationId／expectedVersion／confirm`，家庭記錄或任務另須 `confirmShared`。預設全部停用；變更身份授權或 storage epoch 令舊政策失效。記錄類別只限 note／feeding／sleep／diaper，普通私人交代與本人 ordinary 任務各自開關；重要健康事實、刪除及擴大共享維持明確確認。渠道權限綁目前本人同意版本及完整 binding 清單，不能因事後多綁渠道而靜默擴權；每項到期授權仍由既有 ContactStore 保存，無 fallback／額外跟進，收據只列實際核准的首個渠道。缺有效通知授權時只能回報站內安排。
 

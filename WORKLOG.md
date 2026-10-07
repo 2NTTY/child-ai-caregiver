@@ -1526,3 +1526,15 @@
 - Recorded At：2026-10-07 08:14 UTC；Work Date：同日。dot 主模型親寫契約，原生實作代理負責程式及離線測試；未有新增人工驗收。
 - 使用者批准調整舊輸入限制；新增互動專用 32k–64k、預設 64k 的有限設定，背景及 P1 分開。設定頁必須顯示 Server 真值，舊回應缺欄位不能猜測。未增加模型次數／輸出／時間或個人配額。
 - 本條僅記契約與工作狀態；程式測試數量及最終 head 以後續證據為準，目前未部署、沒有本次新增真模型呼叫。T7 未建待辦，線上拒絕參數根因未確認；保留首次失敗，不把 scripted 成功當作正式成功。
+
+
+## LOG-20261007-ADK-RUNTIME-CONTRACT
+
+- Recorded At：2026-10-07 08:41 UTC；Work Date：同日。主模型親寫提示詞／契約，原生實作及獨立覆核代理執行離線驗證；未新增人工驗收。
+- 同版 ADK Runner 重現 instruction 字串大括號模板故障；runtime 將 context 移為獨立資料 part，受信指令改 provider。present_answer 成功後用原生終結機制，仍重驗引用／授權；mixed terminal response 執行前零副作用拒絕。
+- 最小包獨立44/44與scoped typecheck通過；實作者另11項通過。合併 #112 後的四輪fixture與完整組合結果另以最終證據為準，尚未部署／真模型重測。
+- F4漏調展示工具、跨輪澄清来源與背景no_action仍未完成，不以提示詞改版假稱解決。沒有新增DB、通知、模型輪數或付費操作。
+
+- 08:43 UTC 補記：實作者對 a347956b 組合版83/83定向與兩份 scoped strict typecheck通過；四組T7保留32k／64k及兩種政策，四輪最多29,624邏輯字元、各一個pending候選，沒有第五輪。最終組合的獨立覆核待核，不把 scripted 結果當正式保存。
+
+- 08:46 UTC 補記：最終組合獨立覆核53/53與兩份 scoped strict typecheck通過；diff SHA-256 2e97d099b843a92847c134e77049bead115aa8ee40dd1c91119711f228cd7ae4。未執行真模型、DB、部署或UI，遠端head及必要checks發布後另核。

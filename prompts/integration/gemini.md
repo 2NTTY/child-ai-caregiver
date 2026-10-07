@@ -18,12 +18,16 @@ Google 官方建議用 system instructions 定義角色、語言與語氣；本�
 ## 文字、工具及結構化模式
 
 1. **一般對話**：自然文字。工具選擇使用允許自然文字回覆的模式，不為了讓工具看似活躍強制每輪呼叫。若本次沒有工具，就不提供虛構宣告。
-2. **有工具的對話**：模型提出 function call；Server 檢查資料、授權、當前狀態及配額後才執行；實際 function response 回到同一對話，再以自然語言收尾。工具呼叫不是對外投遞證據。
+2. **有工具的對話**：模型提出 function call；Server 檢查資料、授權、當前狀態及配額後才執行；實際 function response 回到同一對話。現行 P2 product tool_cycle 的最終文字由 present_answer 提交，接受後直接結束模型循環，再經 Server finalize 驗證；不要求额外自然 final。工具呼叫不是對外投遞證據。
 3. **記錄／摘要／背景結果**：只在配方需要時使用結構化輸出；人機互動包含可展示的 `replyText`，背景無動作可以為 null。Native function calling 和 response schema 能否同次組合，按所選端點／模型實際支援核對；不支援時保留有界工具循環與獨立的必要任務結果步驟，不能默默丟失候選或工具請求。
 
 官方 function calling 文件說明，`AUTO` 可按上下文選擇工具呼叫或自然文字；宣告工具不等於模型自己執行操作。[Function calling](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/tools/function-calling)
 
 不要強制所有聊天套完整 JSON 外層，也不要為每輪純聊天固定增加第二次模型調用。工具執行後若不需新的推理，應用可依真實結果用簡短文字收尾；最終文字失敗不重做副作用。需要重新生成文字時，帶入已確認結果並維持原操作識別。
+
+### ADK 2.1.0 的產品接點
+
+固定指引及受信 runtime metadata 經 InstructionProvider 提供；input.context 作有標籤的 contents 資料，避免 ADK 把正文大括號當 state 模板。只換 provider 不能代替指令／資料隔離。present_answer 是 terminal，成功後用 skipSummarization；同一 response 混入其他工具須在任何執行前拒絕。finalize 的引用／授權驗證、unknown 台帳及原生 parts 保留，無新增模型輪數。漏調 present_answer 及背景 no_action 仍屬未解接點，不把本修復說成全流程已完成。
 
 ## 歷史、工具循環及私隱
 

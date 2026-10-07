@@ -43,6 +43,7 @@ for (const policy of [observedPolicy, null]) for (const inputLimit of [32000, 64
       const texts = request.contents.flatMap(content => content.parts ?? []).flatMap(part => typeof part.text === "string" ? [part.text] : []);
       for (const original of conversation) assert.ok(texts.includes(original.text), "The full original user/model text must reach the model unchanged");
       const index = calls++;
+      assert.ok(index < 4, "Terminal presentation must not start a fifth model call");
       if (index === 2) {
         const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.id === "invalid-task")?.functionResponse?.response;
         assert.equal(response?.status, "rejected"); assert.equal((response?.data as any)?.code, "invalid_parameters");
@@ -51,9 +52,8 @@ for (const policy of [observedPolicy, null]) for (const inputLimit of [32000, 64
       }
       const parts = index === 0 ? [{ functionCall: { id: "context", name: "read_context", args: {} } }]
         : index === 1 ? [{ functionCall: { id: "invalid-task", name: "propose_task", args: { values: { ...task, dueAt: "2026-10-12T19:30" } } } }]
-        : index === 2 ? [{ functionCall: { id: "repair-task", name: "propose_task", args: { values: task } } },
-          { functionCall: { id: "answer", name: "present_answer", args: { kind: "operation", paragraphs: [{ text: "已整理待確認候選，尚未建立正式待辦。", citationIds: [] }] } } }]
-        : [{ text: "Synthetic final turn." }];
+        : index === 2 ? [{ functionCall: { id: "repair-task", name: "propose_task", args: { values: task } } }]
+        : [{ functionCall: { id: "answer", name: "present_answer", args: { kind: "operation", paragraphs: [{ text: "已整理待確認候選，尚未建立正式待辦。", citationIds: [] }] } } }];
       return { finishReason: FinishReason.STOP, content: { role: "model", parts } };
     } } });
   const service = createProductAgent({ runtime, store: {

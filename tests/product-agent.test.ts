@@ -52,13 +52,13 @@ test("product reply uses native tools, keeps proposals unconfirmed, validates di
   assert.equal(first.proposals[0].status, "pending");
   assert.equal(first.proposals[0].result, null);
   assert.equal(first.provenance?.recipeId, "product-interactive");
-  assert.deepEqual(first.counts, { modelCalls: 3, toolCalls: 2, queryEmbeddings: 0 });
+  assert.deepEqual(first.counts, { modelCalls: 2, toolCalls: 2, queryEmbeddings: 0 });
   assert.equal(writes, 1);
   assert.deepEqual(await service.reply(userId, childId, messageId, async () => true), first);
-  assert.equal(calls, 3); assert.equal(writes, 1);
+  assert.equal(calls, 2); assert.equal(writes, 1);
 });
 
-test("product reply preserves validated citations at the model limit without confirming its task candidate", async () => {
+for (const validCitation of [true, false]) test(`terminal product presentation revalidates citations on the last model step, valid=${validCitation}`, async () => {
   const userId = "synthetic-user", childId = "1ebcb39d-a2db-4b8c-a432-7ffcb3de5808";
   const runId = "d4a1b662-d13d-476b-bf52-40a28aa1a1a7", messageId = "7de5a0e8-e106-4485-b7d2-3b572741da39";
   const scope = { userId, childId, workspaceId: "synthetic-workspace", authorizationVersion: "1", dataVersion: "epoch:1" };
@@ -68,8 +68,8 @@ test("product reply preserves validated citations at the model limit without con
   const steps = [
     { id: "context-call", name: "read_context", args: {} },
     { id: "search-call", name: "search_knowledge", args: { query: "合成照護主題", classification: "official_guidance" } },
-    { id: "answer-call", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: chunk.text, citationIds: [chunk.chunkId] }] } },
     { id: "candidate-call", name: "propose_task", args: { values } },
+    { id: "answer-call", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: chunk.text, citationIds: [chunk.chunkId] }] } },
   ];
   let calls = 0, writes = 0, revalidations = 0, claimed = false, saved: ProductAgentResult | null = null;
   const proposals: AgentProposal[] = [];
@@ -98,14 +98,14 @@ test("product reply preserves validated citations at the model limit without con
     chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: "請整理合成照護說明及待确认跟進，並提出待確認的家庭任務。" }] }) },
     tasks: { list: async () => ({ items: [], eligibleAssignees: [{ userId, name: "Synthetic caregiver" }], nextAfterId: null }) },
     knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
-      revalidateCitations: async (items: unknown[]) => { revalidations++; assert.deepEqual(items, [chunk]); return true; } }) },
+      revalidateCitations: async (items: unknown[]) => { revalidations++; assert.deepEqual(items, [chunk]); return validCitation; } }) },
   } as unknown as Parameters<typeof createProductAgent>[0];
   const service = createProductAgent(options);
   const result = await service.reply(userId, childId, messageId, async () => true);
-  assert.equal(result?.status, "completed", JSON.stringify(result));
-  assert.equal(result.stopReason, null);
-  assert.equal(result.text, chunk.text + " [1]");
-  assert.deepEqual(result.citations, [chunk]);
+  assert.equal(result?.status, validCitation ? "completed" : "stopped", JSON.stringify(result));
+  assert.equal(result.stopReason, validCitation ? null : "invalid_response");
+  assert.equal(result.text, validCitation ? chunk.text + " [1]" : "");
+  assert.deepEqual(result.citations, validCitation ? [chunk] : []);
   assert.deepEqual(result.tools.map(tool => ({ name: tool.name, status: tool.status })),
     steps.map(step => ({ name: step.name, status: "succeeded" })));
   assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
@@ -167,6 +167,5 @@ for (const growth of [false, true]) test(growth
   assert.equal(result?.status, "completed", JSON.stringify(result));
   assert.equal(result.provenance?.recipeId, "product-background");
   assert.equal(result.text, growth ? chunk.text + " [1]" : "原任務已到期，完成狀態仍待你確認。");
-  assert.equal(reads, 1); assert.equal(calls, 4); assert.deepEqual(result.proposals, []);
+  assert.equal(reads, 1); assert.equal(calls, 3); assert.deepEqual(result.proposals, []);
 });
-

@@ -48,6 +48,7 @@ export class AgentGatewayModel extends BaseLlm {
   private readonly options: {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
+    terminalToolNames?: ReadonlySet<string>;
   };
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
@@ -94,6 +95,10 @@ export class AgentGatewayModel extends BaseLlm {
       if (calls.length) budget.take("toolCalls", calls.length);
       if (calls.some(part => !part.functionCall?.name || !Object.hasOwn(request.toolsDict, part.functionCall.name))) {
         throw new AgentStopped("invalid_tool");
+      }
+      // Reject the complete batch before ADK can execute even its first handler.
+      if (calls.length > 1 && calls.some(part => this.options.terminalToolNames?.has(part.functionCall!.name!))) {
+        throw new AgentStopped("invalid_response");
       }
       budget.prepareToolResponseBudget(requestCharacters, JSON.stringify(response.content).length);
       outcome = "succeeded";

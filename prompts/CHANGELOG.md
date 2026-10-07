@@ -1,5 +1,11 @@
 # Prompt Pack 變更記錄
 
+## 0.1.25 — 2026-10-07
+
+- 主模型同步 ADK runtime 的指令／資料分層及 present_answer 終結契約；core.output 0.1.3、product-tools 0.1.13。成功展示接受後不再要求額外自然 final，仍經 Server 最終引用／授權核對。
+- 同批 terminal 與其他工具在任何執行前拒絕；不修改副作用權限、模型次數、unknown 或原生 parts 協定。
+- 漏調 present_answer、澄清意圖延續、背景安靜 no_action 及按能力分拆指引仍待各自處理；本版不代表正式部署或全面真模型驗收。
+
 ## 0.1.24 — 2026-10-07
 
 - 主模型局部同步產品 context 的單份原訊息／IDs 摘要批次及 quantityEvidence／grounding status；配合相關後端修復同批部署，不改執行權限或模型預算。

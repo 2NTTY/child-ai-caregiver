@@ -1,0 +1,111 @@
+{
+  "package": "QA-ADK-RUNTIME",
+  "baseCommit": "a347956b18328b32c9fa14fb1ac4e499ab49b513",
+  "promptPack": "0.1.25",
+  "recordedAt": "2026-10-07T08:47:39.069792+00:00",
+  "scope": [
+    "Separate untrusted context content from literal trusted instructions",
+    "Stop accepted terminal presentation through ADK and revalidate before display",
+    "Reject mixed terminal batches before every handler",
+    "Preserve merged interactive input bounds and four-turn rejected-task recovery"
+  ],
+  "environment": {
+    "node": "24.19.0",
+    "adk": "2.1.0",
+    "genai": "2.24.0"
+  },
+  "externalCalls": {
+    "realModel": 0,
+    "database": 0,
+    "deployment": 0,
+    "notifications": 0
+  },
+  "checks": [
+    {
+      "name": "known-defect regression against pre-fix runtime plus owner-authored 0.1.25 prompt",
+      "command": "node --test tests/agent-runtime-contract.test.ts",
+      "expectedFailure": true,
+      "passed": 3,
+      "failed": 10,
+      "evidence": "QA_ADK_RUNTIME_CONTRACT/before.tap"
+    },
+    {
+      "name": "final merged targeted regression",
+      "command": "node --experimental-test-module-mocks --test tests/ai-config.test.ts tests/agent-budget.test.ts tests/agent-input-limit.test.ts tests/agent-runtime.test.ts tests/product-agent-task-budget.test.ts tests/product-tool-selection.test.ts tests/model-input-limit-display.test.ts tests/vertex-tool-contract.test.ts tests/agent-runtime-contract.test.ts tests/product-agent.test.ts tests/agent-context-integrity.test.ts tests/agent-prompt.test.ts tests/agent-prompt-wiring.test.ts tests/vertex-provider-diagnostics.test.ts tests/product-agent-schema.test.ts tests/agent-observer.test.ts",
+      "passed": 83,
+      "failed": 0,
+      "exitCode": 0,
+      "evidence": "QA_ADK_RUNTIME_CONTRACT/tests.tap"
+    },
+    {
+      "name": "scoped strict runtime typecheck",
+      "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/QA_ADK_RUNTIME_CONTRACT/tsconfig.runtime.json",
+      "exitCode": 0,
+      "diagnostics": 0
+    },
+    {
+      "name": "merged budget scoped strict typecheck",
+      "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/QA_TASK_INTENT_BUDGET/tsconfig.server.json",
+      "exitCode": 0,
+      "diagnostics": 0
+    }
+  ],
+  "independentReview": {
+    "preIntegration": "44 tests and scoped typecheck independently passed; no blocker reported",
+    "finalMerged": {
+      "passed": 53,
+      "failed": 0,
+      "runtimeTypecheckExitCode": 0,
+      "budgetTypecheckExitCode": 0,
+      "reviewedDiffSha256": "2e97d099b843a92847c134e77049bead115aa8ee40dd1c91119711f228cd7ae4",
+      "scope": "T7, budget/input, runtime/contract, product/context and Vertex transport; metadata-only test outcomes and fixed source hashes"
+    }
+  },
+  "t7": {
+    "cases": 4,
+    "policies": [
+      "observed_v1_controls_mapped_to_contract",
+      "no_active_policy"
+    ],
+    "inputLimits": [
+      32000,
+      64000
+    ],
+    "turns": [
+      "read_context",
+      "rejected_propose_task",
+      "repaired_propose_task",
+      "terminal_present_answer"
+    ],
+    "maxLogicalCharacters": 29624,
+    "pendingProposalsPerCase": 1,
+    "modelCallsPerCase": 4,
+    "rejectedResponseCharacters": 194
+  },
+  "limitations": [
+    "Missing present_answer still stops with invalid_response; no automatic repair generation or global ANY",
+    "Cross-run clarification source evidence and state remain a separate undecided package; no new persistent state",
+    "Quiet background no_action and capability-specific prompt composition remain unresolved",
+    "Content-role separation and server gates do not prove general prompt-injection immunity",
+    "Scripted Runner and intercepted SDK transport do not replace real model or UI acceptance",
+    "No publication or deployment is established by these local checks"
+  ],
+  "sha256": {
+    "server/agent-runtime.ts": "f8c0e1f0566323bc8c8604dbd0d35bd5e6b04678a28578263056cdc97387b17a",
+    "server/agent-model-gateway.ts": "d87d83e84af43d2b2c89dc8353b62b7f516e1c7b6ed0be27f51b2e8949e33506",
+    "server/product-agent-tools.ts": "d889966be8b75f7a47660eccb6e7503f00d9185b11e7560a270d5ceb01d5dd95",
+    "tests/agent-runtime-contract.test.ts": "841a1df01595cb30f59acba659e6bfeb2b1f8a9200afc60bfb040a33085a721a",
+    "tests/product-agent.test.ts": "9e841cd91e5e41e15ccba1b5797fa09199e274dfefad5d52663a1ebeffa4de7d",
+    "tests/agent-context-integrity.test.ts": "97ef59707ec3066827cb8faec23e29c059b1e28b9bb3200e6265c8feaf3862fa",
+    "tests/vertex-tool-contract.test.ts": "b43ac4244cc6ab114afb67d22240abd66326e2ec73c43cb20c20cb0c169b917e",
+    "tests/product-agent-task-budget.test.ts": "f67e44fbbb805d6dec7901b8ac5f9fa4b73310deb579c011005760d6287d6a2a",
+    "prompts/manifest.json": "4ff49cbd2975c34b19dad2bc4edaf2db59e7004486cbe8c4d9b5abc910042e71",
+    "prompts/README.md": "286d00af15de50a90ff660d820affdd7da6ec65cafc88a4990e07402dc86709f",
+    "prompts/CHANGELOG.md": "fea2d78fd9f536108db133ffb04eee08440601cd9ef07dc5092fec5fc587d04a",
+    "prompts/core/output.md": "52076acd7c9900037aade03d389635e974501d99822015f9ac735f15d9e5fa58",
+    "prompts/modules/product-tools.md": "471b502c58a673013e9c5b86410bafc3746d83546b9b31a0e280f923b55641eb",
+    "prompts/integration/gemini.md": "27db4cad32b21efa887a3de0eac21b980ee96f4e2c6a33859b4a18f656d52d6c",
+    "prompts/contracts/output.md": "f77a39fe3449737a43f6c89427ceb7c1fe2b9f24154de7ce3c3218db5d59dc52",
+    "prompts/contracts/run-context.md": "52ee7053f8aba1265f4ffdbf93b522706682e09a5aff184c800417f74c5759e1"
+  }
+}

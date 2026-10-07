@@ -94,12 +94,16 @@ test("document change declarations use supported union fields without changing s
 test("the real product-interactive Runner request keeps its system configuration and supported schemas", async context => {
   const config = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" });
   let requests = 0, reservations = 0, records = 0;
+  let productTools: ReturnType<typeof createProductAgentTools>;
+  const sourceContext = { excerpt: "UNTRUSTED_TRANSPORT_SENTINEL {literal_state} {optional_state?}" };
   context.mock.method(GoogleAuth.prototype, "getRequestHeaders", async () => new Headers({ authorization: "Bearer synthetic" }));
   context.mock.method(globalThis, "fetch", async (_url: string | URL | Request, init: RequestInit) => {
     requests++;
     const body = JSON.parse(String(init.body));
     assert.ok(body.systemInstruction.parts.every((part: { text: unknown }) => typeof part.text === "string"));
-    assert.equal(body.contents.at(-1).parts.at(-1).text, messages.at(-1));
+    assert.doesNotMatch(JSON.stringify(body.systemInstruction), /UNTRUSTED_TRANSPORT_SENTINEL|literal_state|optional_state/u);
+    assert.equal(body.contents.at(-1).parts[0].text, messages.at(-1));
+    assert.ok(body.contents.at(-1).parts[1].text.endsWith(JSON.stringify(sourceContext)));
     assert.equal(body.generationConfig.candidateCount, 1);
     assert.equal(body.generationConfig.maxOutputTokens, 1024);
     assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, "MINIMAL");
@@ -107,21 +111,25 @@ test("the real product-interactive Runner request keeps its system configuration
     assert.equal(declarations.length, 13);
     assert.equal(declarations.some((tool: { name: string }) => ["read_contact_options", "contact_caregiver"].includes(tool.name)), false);
     assert.deepEqual(declarations.flatMap((tool: { name: string; parameters: unknown }) => contractIssues(tool.parameters, tool.name)), []);
-    return Response.json({ candidates: [{ content: { role: "model", parts: [{ text: "Synthetic transport response" }] }, finishReason: "STOP" }] });
+    return Response.json({ candidates: [{ content: { role: "model", parts: [{ functionCall: { id: "terminal-call", name: "present_answer",
+      args: { kind: "clarification", paragraphs: [{ text: "Synthetic transport response", citationIds: [] }] } } }] }, finishReason: "STOP" }] });
   });
   const runtime = createAgentRuntime({ config, provider: createVertexAgentProvider(config),
     usage: { reserve: async () => { reservations++; return true; }, record: async () => { records++; } } });
   const result = await runtime.run({ scope: { userId: "synthetic-user", childId: "synthetic-child", workspaceId: "synthetic-workspace", authorizationVersion: "1", dataVersion: "1" },
     recipeId: "product-interactive", trigger: { kind: "interactive", reference: "synthetic" },
     availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
+    context: sourceContext,
     messages: messages.map((text, index) => ({ role: index === 1 ? "model" : "user", text })), authorize: async () => true,
-    tools: run => createProductAgentTools({ ...productToolSelection(messages), run,
-      memory: {}, tasks: {}, store: {}, knowledge: { createRun: () => ({}) }, authorize: async () => false,
+    tools: run => { productTools = createProductAgentTools({ ...productToolSelection(messages), run,
+      memory: {}, tasks: {}, store: {}, knowledge: { createRun: () => ({}) }, authorize: async () => true,
       actions: {}, summary: {}, contact: {}, concerns: {}, sources: {}, documents: {}, growth: {},
-    } as unknown as Parameters<typeof createProductAgentTools>[0]).tools,
+    } as unknown as Parameters<typeof createProductAgentTools>[0]); return productTools.tools; },
+    finalize: async () => (await productTools.presentation())?.text ?? null,
   });
   assert.equal(result.status, "completed");
-  assert.deepEqual(result.counts, { modelCalls: 1, toolCalls: 0, queryEmbeddings: 0 });
+  assert.equal(result.text, "Synthetic transport response");
+  assert.deepEqual(result.counts, { modelCalls: 1, toolCalls: 1, queryEmbeddings: 0 });
   assert.equal(requests, 1); assert.equal(reservations, 1); assert.equal(records, 1);
 });
 

@@ -7,7 +7,17 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### QA-INTERACTIVE-INPUT — 待辦意圖與互動容量（實作及覆核中）
+### QA-ADK-RUNTIME — 指令資料分層與安全終結（整合覆核中）
+
+- 使用者批准按 ADK 審查結果修正。基線 PR #112／a347956b，保留互動64k／背景32k的獨立上限；本包不改 selector、跨輪來源或 DB。
+- input.context 從 instruction 移到有標籤資料 part；受信指令用 InstructionProvider，保留大括號原文與原生 parts。present_answer 成功後終結原生 loop，最終引用／授權驗證保留；同批 terminal 混其他工具在任何 handler 前拒絕。
+- Prompt Pack 0.1.25 由主模型同步契約。最小包44項獨立測試／scoped typecheck通過，另外11項為實作者證據；與 #112 的最終組合版由實作者重跑83/83及兩份 scoped strict typecheck通過，四組T7仍為4輪且只保存一個pending候選。最終組合獨立覆核53/53及兩份 scoped strict typecheck通過；正式部署及真UI仍待核。
+- 未解界線：完全漏調 present_answer、自然澄清跨輪的來源鏈、背景 no_action、按能力裁剪指引。不能把最小終結修復標成全部ADK或Agent完成；不擅自新增persistent state或第二套記憶。
+
+
+### QA-INTERACTIVE-INPUT — 待辦意圖與互動容量（已合併，待部署驗收）
+
+- PR #112 已正常合併為 a347956b；47項定向及兩份 scoped strict typecheck通過，獨立多意圖回歸修正已重驗。GitHub該head沒有CI checks／workflows，不能宣稱CI成功。
 
 - 基線 PR #110／9d1024c。正式 T7 在一次生成及一次被拒的 propose_task 後超限，沒有建立待辦；確切線上參數錯誤未取得，不臆測原因。
 - 修正含修飾語的明確待辦意圖與標題／內容資料邊界；互動容量依使用者批准改用獨立 AI_AGENT_MAX_INPUT_CHARACTERS，預設 64k、有限範圍 32k–64k。背景 32k、P1、次數、輸出、時間及授權保持既有契約；去重與有限工具仍需保留。
