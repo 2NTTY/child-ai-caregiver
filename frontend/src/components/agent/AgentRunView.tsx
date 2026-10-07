@@ -25,6 +25,12 @@ const retrievalLabels = {
   keyword_degraded: "已降級為關鍵詞檢索",
   not_used: "本次沒有使用知識檢索",
 } as const;
+const receiptDescriptions: Record<NonNullable<AgentProposalView["result"]>["kind"], string> = {
+  task: "此收據代表任務資料已保存；照護事項的完成狀態另行記錄。",
+  memory_fact: "此收據代表確認事實已保存；不代表照護事項已完成。",
+  concern: "關注鏈已保存。",
+  private_source: "私人來源設定已保存；連結保存不等於取得正文，亦沒有建立家庭事實、提醒或公共知識。",
+};
 
 function timeLabel(value: string | null): string {
   return value === null ? "未提供" : Number.isFinite(Date.parse(value)) ? `${agentTime(value)}（香港時間）` : "時間資料無效，請重新讀取";
@@ -100,9 +106,9 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
     {proposal.result ? <View style={styles.receipt}>
       <Text style={styles.title}>保存收據：{proposal.result.label}</Text>
       <Text style={styles.meta}>保存結果版本：{proposal.result.version}</Text>
-      <Text style={styles.meta}>{proposal.result.kind === "task"
-        ? "此收據代表任務資料已保存；照護事項的完成狀態另行記錄。"
-        : proposal.result.kind==="private_source"?"私人來源設定已保存；連結保存不等於取得正文，亦沒有建立家庭事實、提醒或公共知識。":"此收據代表確認事實已保存；不代表照護事項已完成。"}</Text>
+      <Text style={styles.meta}>{Object.hasOwn(receiptDescriptions, proposal.result.kind)
+        ? receiptDescriptions[proposal.result.kind]
+        : "保存收據種類未能辨識，請重新讀取核對。"}</Text>
     </View> : proposal.status === "accepted" ? <Text style={styles.meta}>此候選已接受；本次快照未提供保存收據詳情。</Text> : null}
     {proposal.status === "dismissed" ? <Text style={styles.meta}>此候選已略過，沒有以此決定執行候選事項。</Text> : null}
     {proposal.status === "expired" ? <Text style={styles.meta}>此候選已過期。請重新讀取運行結果核對最新狀態。</Text> : null}

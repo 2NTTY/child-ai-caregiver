@@ -1,0 +1,44 @@
+{
+  "baseline_commit": "2830a2680b21f8e50cb72552a30c50c57c4c834e",
+  "baseline_component_blob": "d7b7b675106d852154734f030d1e80e6b6443355",
+  "fixed_component_blob": "58b1991360c6a7ee493dd707d306a8c76b980485",
+  "environment": "Offline source snapshot, Node.js v24.19.0, reused installed dependencies; synthetic HTTP responses and shallow rendering only",
+  "scope": [
+    "Render explicit task, memory_fact, private_source and concern receipt descriptions",
+    "Preserve task, memory_fact and private_source wording",
+    "Render concern_create and concern_change receipts as 關注鏈已保存。",
+    "Reject unknown and mismatched receipt kinds through the unchanged real HTTP parser",
+    "Render a neutral fallback for unsupported in-memory receipt kinds"
+  ],
+  "checks": [
+    {
+      "command": "node --test --test-name-pattern='concern_create renders' frontend/scripts/agent-receipt-kind.test.mjs",
+      "stage": "baseline",
+      "result": "failed as expected",
+      "passed": 0,
+      "failed": 1,
+      "evidence": "The parsed and projected concern_create receipt rendered 此收據代表確認事實已保存；不代表照護事項已完成。"
+    },
+    {
+      "command": "node --test frontend/scripts/agent-receipt-kind.test.mjs",
+      "stage": "fixed",
+      "result": "passed",
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "command": "npm run typecheck --workspace frontend",
+      "stage": "initial snapshot",
+      "result": "failed",
+      "evidence": "Snapshot lacked src/config/api-base-url.ts; no product code error was reported"
+    },
+    {
+      "command": "npm run typecheck --workspace frontend",
+      "stage": "complete frontend dependency snapshot",
+      "result": "passed",
+      "evidence": "Recovered unchanged api-base-url.ts blob a4a7936aa26c3daccb60cbdec6b9aa0bfbc9d146; exit code 0"
+    }
+  ],
+  "not_performed": ["Browser QA", "Web export", "Deployment", "Real API calls", "Model calls", "Database or schema changes", "Full regression suite"],
+  "review": "Independent source review, independent repeat of 7/7 focused tests and full frontend typecheck, and parent diff review passed before publication; browser and deployment acceptance remain unverified"
+}
