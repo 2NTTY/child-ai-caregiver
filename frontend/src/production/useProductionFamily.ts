@@ -153,5 +153,5 @@ export function useProductionFamily(env: SettingsEnvironment) {
     online: env.online, loadState: lost || !env.currentIdentity() ? "lost" : requests.busy && !loaded ? "loading" : "ready", canManage: family?.role === "owner" && loaded,
     canStartAction: loaded && env.online && !requests.busy && !original, locked: requests.busy || !!original || !loaded || !env.currentIdentity(), draft, latest: latestFamily, incoming, incomingError, oneTimeCode,
     inviteFormKey: formKey, operation, notice };
-  return { model, actions, original, busy: requests.busy, confirmOriginal(value: boolean) { if (pending.current && pending.current.reviewed) { pending.current.consent = value; retain(pending.current); } }, retryOriginal: () => { void submit(true); } };
+  return { readState: (lost || !loaded && notice && !requests.busy ? "error" : loaded ? "ready" : "loading") as "loading" | "ready" | "error", model, actions, original, busy: requests.busy, confirmOriginal(value: boolean) { if (pending.current && pending.current.reviewed) { pending.current.consent = value; retain(pending.current); } }, retryOriginal: () => { void submit(true); } };
 }

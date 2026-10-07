@@ -38,7 +38,6 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
   const [calendarMonth, setCalendarMonth] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const tabsId = useId();
-  const [backgroundOpen, setBackgroundOpen] = useState(false);
   const listReadState = model.readState ?? (model.reading ? "loading" : "ready");
   const readUnavailable = listReadState === "loading" || listReadState === "error";
   const loading = model.reading || model.loadingMoreTasks;
@@ -186,13 +185,6 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
             </> : calendar}
           </View></MotionDetail> : null}
         </View>
-        <View style={styles.background}><AppSelectionTrigger label="提醒說明" expanded={backgroundOpen} onPress={() => setBackgroundOpen(value => !value)} />
-          <MotionDisclosure expanded={backgroundOpen} scopeKey={scopeKey}><View style={styles.stack}>
-            <Text style={styles.meta}>{model.dataLabel}</Text>
-            <Text style={styles.meta}>{model.workerEnabled === true ? "背景提醒已啟用；送達情況請查看各項提醒。" : model.workerEnabled === false ? "背景提醒暫停；仍可保存安排。" : "背景提醒狀態暫未提供。"}</Text>
-            <Text style={styles.meta}>站內提醒可見，不代表 Web Push／Telegram 送達、已讀或照護完成；本頁沒有發送通知。</Text>
-          </View></MotionDisclosure>
-        </View>
       </>}
       {previewControls}
     </View>
@@ -226,5 +218,4 @@ const styles = StyleSheet.create({
   pressed: { backgroundColor: colors.pressedOverlay }, reviewPressed: { backgroundColor: colors.warningPressed },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   notice: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool }, breadcrumb: { fontFamily: chineseFont, color: colors.teal, ...readingType.meta, fontWeight: "700" },
-  background: { alignItems: "flex-start", borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm, gap: spacing.sm },
 });

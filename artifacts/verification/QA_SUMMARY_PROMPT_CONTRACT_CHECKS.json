@@ -1,0 +1,78 @@
+{
+  "base": "fe05c01b07b50027cbcbe81a6927045979fbec3e",
+  "pack": {
+    "from": "0.1.25",
+    "to": "0.1.26"
+  },
+  "moduleChanges": [
+    {
+      "id": "module.memory-maintenance",
+      "from": "0.1.1",
+      "to": "0.1.2"
+    }
+  ],
+  "recipeCount": 12,
+  "recipeModeCount": 20,
+  "tests": {
+    "command": "node --test tests/agent-prompt.test.ts tests/agent-prompt-wiring.test.ts tests/summary-prompt-contract.test.ts tests/private-summary-contract.test.ts",
+    "passed": 14,
+    "failed": 0,
+    "newTests": 7,
+    "originalPromptRegression": {
+      "passed": 0,
+      "failed": 1,
+      "expectedFailure": true,
+      "comparisonScope": "Only the executable memory-maintenance module and manifest were restored to the pinned base; the copied README and changelog remained at 0.1.26. This was a focused executable-prompt comparison, not a pristine baseline checkout."
+    },
+    "scopedTypecheck": {
+      "command": "node node_modules/typescript/bin/tsc --noEmit --strict --skipLibCheck --allowImportingTsExtensions --module NodeNext --moduleResolution NodeNext --target ES2024 --types node tests/summary-prompt-contract.test.ts",
+      "result": "passed",
+      "scope": "Prompt regression test and its loader imports only"
+    }
+  },
+  "scope": "Prompt contract alignment and synthetic offline regression tests only",
+  "limitations": [
+    "No real ADK Runner or model call",
+    "No real PostgreSQL, network, deployment or migration",
+    "Direct tool execution uses the same strict Zod boundary as agent-runtime; it is not a model compliance test",
+    "No full-repository typecheck or full regression suite",
+    "The source-prefix persistence checks use a synthetic fake PoolClient and do not validate PostgreSQL query execution, transaction behavior or migrations.",
+    "Prompt assertions verify assembled instruction text, not whether a live model follows it.",
+    "The comparison restored only executable module/manifest inputs; it is not a pristine baseline checkout."
+  ],
+  "runtime": {
+    "node": "v24.19.0",
+    "zod": "4.5.4"
+  },
+  "files": [
+    {
+      "path": "prompts/modules/memory-maintenance.md",
+      "sha256": "e7406f183c332d74cc90da0f33f32f415f8ae3d54e3ba9da50c1041d3a074511"
+    },
+    {
+      "path": "prompts/manifest.json",
+      "sha256": "c421f8a44db0ed224f935b4165161cdc98da5a7b15f4d0a218f8de01330ce6dd"
+    },
+    {
+      "path": "prompts/README.md",
+      "sha256": "bda62b887871cdf0b52516f8783103d55c574cbc8bb66ecacae9d0c8d9bc2c46"
+    },
+    {
+      "path": "prompts/CHANGELOG.md",
+      "sha256": "00338e66dd4f8082be38ad7c701687195c66d2d240380e687a86e3471563ba0d"
+    },
+    {
+      "path": "tests/summary-prompt-contract.test.ts",
+      "sha256": "4f32af45c7de243c686453a575d0b9740832c71fad361fd33ef0bbeac58beb07"
+    },
+    {
+      "path": "tests/private-summary-contract.test.ts",
+      "sha256": "962b446d07ea35cb4b51d4c1d060f701360c18dc7814c4ffa4281f4c18b10805"
+    }
+  ],
+  "verificationDate": "2026-10-07",
+  "independentReview": {
+    "result": "passed",
+    "evidence": "Independent reviewer reran all 14 focused tests and the scoped TypeScript check; result confirmed by parent before publication."
+  }
+}

@@ -34,7 +34,7 @@ export function readChildProfile(model: ProfileViewModel | null, scopeKey: strin
   if (source?.state === "invalidated") return empty("source_invalidated", "原來源已失效", "這份檔案需要重新核對，舊來源內容不再作為目前資料。");
   if (model.operation.resultUnavailable) return empty("source_unavailable", "原操作已確認，結果不可讀", "請返回原檔案核對；不以舊內容代替目前結果。");
   const data = model.current?.data ?? null;
-  if (!data) return empty("missing", "尚未有已確認檔案", "未有資料的欄位保留未知；可到原檔案補充。");
+  if (!data) return empty("missing", "尚未有已確認檔案");
   const validUntil = data.validUntil;
   const validDate = !validUntil || /^\d{4}-\d{2}-\d{2}$/.test(validUntil) && !Number.isNaN(Date.parse(`${validUntil}T00:00:00Z`)) && new Date(`${validUntil}T00:00:00Z`).toISOString().slice(0, 10) === validUntil;
   if (!validDate) return { state: "validity_unknown", data, statusLabel: "有效日期待核對", message: "以下為最後確認資料，資料有效期尚未能核對。" };

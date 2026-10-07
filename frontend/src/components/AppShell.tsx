@@ -110,7 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <NavItem item={navigationItems.settings} active={active("/settings")} />
     </View> : null}
     <View style={styles.stage}>
-      <MotionScopeBoundary scopeKey={motionScope} resetKey={pathname} eligible={model.selectedChildId !== null} style={styles.scopePane}>
+      <MotionScopeBoundary scopeKey={motionScope} resetKey={`${identityKey}:${pathname}`} childKey={model.selectedChildId} eligible={model.selectedChildId !== null} style={styles.scopePane}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
         {compact ? <CompactHeaderIdentity showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
           brand={<PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></PreviewLink>} /> : null}

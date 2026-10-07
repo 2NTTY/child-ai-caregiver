@@ -1,0 +1,209 @@
+{
+  "sourceCommit": "0a39e018dc138b29a437ab52679866e3bfcc0378",
+  "integrationMaster": "31025d624b16fb67ceacc4461b38201ddaf8a3b9",
+  "archiveFiles": 23,
+  "archivedBytes": 459274,
+  "checks": [
+    {
+      "name": "archive bytes, active imports, preserved capabilities and fail-closed commands",
+      "command": "node --test tests/legacy-frontend-archive.test.ts",
+      "result": "passed",
+      "tests": 3,
+      "evidence": "QA_LEGACY_FRONTEND_ARCHIVE/archive-tests.tap"
+    },
+    {
+      "name": "original 0a39 root TypeScript control",
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "result": "passed",
+      "evidence": "QA_LEGACY_FRONTEND_ARCHIVE/baseline-root-typecheck.log"
+    },
+    {
+      "name": "root TypeScript after explicit Expo environment types",
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "result": "passed",
+      "evidence": "QA_LEGACY_FRONTEND_ARCHIVE/root-typecheck-fixed.log"
+    },
+    {
+      "name": "production frontend TypeScript",
+      "command": "npm run typecheck --workspace frontend",
+      "result": "passed",
+      "evidence": "QA_LEGACY_FRONTEND_ARCHIVE/frontend-typecheck.log"
+    },
+    {
+      "name": "new archive test TypeScript",
+      "command": "node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --target es2023 --module nodenext --moduleResolution nodenext --allowImportingTsExtensions --types node --skipLibCheck tests/legacy-frontend-archive.test.ts",
+      "result": "passed",
+      "evidence": "QA_LEGACY_FRONTEND_ARCHIVE/archive-test-typecheck-fixed.log"
+    },
+    {
+      "name": "production Web export and static output preparation",
+      "command": "CI=1 EXPO_OFFLINE=1 EXPO_PUBLIC_API_BASE_URL=/api npm run build:web",
+      "result": "passed",
+      "routes": 35,
+      "evidence": "QA_LEGACY_FRONTEND_ARCHIVE/production-build.log"
+    }
+  ],
+  "preservedFailures": [
+    {
+      "evidence": "QA_LEGACY_FRONTEND_ARCHIVE/root-typecheck.log",
+      "error": "TS2591: process is no longer defined after removing the transitive legacy Expo Router type import",
+      "resolution": "Explicit compilerOptions.types = [expo/types] in the root browser/shared TypeScript configuration. The unmodified baseline passes."
+    },
+    {
+      "evidence": "QA_LEGACY_FRONTEND_ARCHIVE/archive-test-typecheck.log",
+      "error": "TS5112: TypeScript 6 requires --ignoreConfig when specifying files in a directory with tsconfig.json",
+      "resolution": "Corrected only the focused command; no test or source assertion was weakened."
+    }
+  ],
+  "bundle": {
+    "filename": "entry-e6ce7da84fa6de007ba9eceff291b107.js",
+    "sha256": "ea63e9fd5bd7a024e61a25fd6119dac707d8025ccc3068a59032958cca1cc284",
+    "bytes": 4997258,
+    "outputContainsPushServiceWorker": true,
+    "outputContainsLicenseManifest": true,
+    "outputContainsNotices": true
+  },
+  "sourceIntegrity": {
+    "runtimeFrontendAndBuildInputs": 506,
+    "matchedGitBlobs": 506,
+    "mismatches": 0,
+    "originalSourceBytesUsedForSnapshots": true,
+    "frontendRuntimeSourceChanges": false,
+    "apiAndDatabaseChanges": false
+  },
+  "testedFileHashes": [
+    {
+      "path": "playwright.config.mjs",
+      "sha256": "1a02c61867605da33437abaa82eef7329a00e8e5f44a12fa1d2cf62d2f23a5db"
+    },
+    {
+      "path": "package.json",
+      "sha256": "fe0b6338169c59462fbd8261f3bf1f35aafe6eb74e2266bf4fa4bc01b97e81d8"
+    },
+    {
+      "path": ".gitattributes",
+      "sha256": "68b5badc4a2c61111fd7f44fad319fa04f73b16e93ff993c2131d689ce4559b3"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "8475b4745ff4de7df5b3af3b5247c21c5e449ad7d66397515427359215792210"
+    },
+    {
+      "path": "scripts/legacy-web-retired.mjs",
+      "sha256": "623b2f2c9bf6a373313ada0a3c6832d9ee131410b9ef194157d46afdadbaf3f8"
+    },
+    {
+      "path": "scripts/verify-web.mjs",
+      "sha256": "97ca63c31012c6da034dbdddca6988dc85abc321a9615f6b06b1e83972ed0ad0"
+    },
+    {
+      "path": "tests/legacy-frontend-archive.test.ts",
+      "sha256": "36f5b5b39c373bdc5f1a040c9f716a6f8667fce0c1797523ed3141d13b9dbd80"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/app.json.snapshot",
+      "sha256": "d8e8b0d97d5636dfc65da9ca5bb3d4a84e1d285fa8228b6bd961555553d50df4"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/manifest.json",
+      "sha256": "e50a897791fa3201056a8da0a1204f6f00cc75fbd6a53b925f46b172d270cb53"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/playwright.config.mjs.snapshot",
+      "sha256": "efb73948540ac37fcd91b30ba271f5f1675a077f30f2e1e4c5a81351c2b9e851"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/app/index.tsx.snapshot",
+      "sha256": "130811d107ab0fcc93539377df16488ed6c19c3346366a9598263396c8339c59"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/app/_layout.tsx.snapshot",
+      "sha256": "144f475e11e47df653c78d74862cd79f8864e598ca47634ac062fa437db53cca"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/scripts/verify-web.mjs.snapshot",
+      "sha256": "c72169364325a0abaf5f26765a5f7c4cba1718d99a67fc0e6cf024f7bf1e4a84"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/use-records-browser.ts.snapshot",
+      "sha256": "ca04364c98fcb8bef843ace68817869fb16e2618d05503fd2065919298ab98d4"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/ChatPanel.tsx.snapshot",
+      "sha256": "a7d5a6743d4db683105a7e0ab28345b839ef3ce3ec576af4d04dc20be98255b0"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/MemoryPanel.tsx.snapshot",
+      "sha256": "4b67700622d23aa8df86985f43268df086e85a7ab63ef2cde02116867bda15e5"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/ModelSettingsPanel.tsx.snapshot",
+      "sha256": "c161d007257eee8ecd2ce25ea905531ac9266dd05b15df9c7df92778b24d8202"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/TaskPanel.tsx.snapshot",
+      "sha256": "8d5964adb82968ac9010a49910e166bfce79ae1dc25446b03f1bd22fdce2f6cb"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/TelegramPanel.tsx.snapshot",
+      "sha256": "711cac9db57e0f390ecb26bcb3f97a2133d7dc6b8f055c7c74f7e12bc43df86d"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/AgentInbox.tsx.snapshot",
+      "sha256": "30aa665f9892f9e76ad468c3483d50e51ee3788986a99b390617ca63bc94adaf"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/WebPushPanel.tsx.snapshot",
+      "sha256": "4ba71374639ca808aed3224f883dea50b917940876aa75ebc81a644594d61d1a"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/GrowthPanel.tsx.snapshot",
+      "sha256": "84b7d21f8608bce06effb734cf81c9d84a4e6b9f8dda068accc70c50d56f20b6"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/AgentRunPanel.tsx.snapshot",
+      "sha256": "47bae2e20ba02fbde6845e1be8c355ade1ab8ed55c027cfddf40506ec1ab4946"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/use-web-push.ts.snapshot",
+      "sha256": "bdd50bc9fad44f7cdf44fa5387182a6ada3bbade1134fe88d7bef4fc03bdbe04"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/SharedInputPanel.tsx.snapshot",
+      "sha256": "90b5db9e702911b6f5f44d1e5d89af3ef88b1657176d6582654197f97debd95c"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/PhotoPanel.tsx.snapshot",
+      "sha256": "c45273ad41485fd5396fdf7834a722803053d99d53d4a39825185984068fc055"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/CareSummaryPanel.tsx.snapshot",
+      "sha256": "8e4c1b6a20530d72c766aab6b223a703a836b90bc807cd49e7b03fdf030b5b32"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/ContactPanel.tsx.snapshot",
+      "sha256": "a6ff9c1d722cc33d5422768d75a855c013fb0f9953c07aad784d146deb9c08cb"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/src/client/CarePanel.tsx.snapshot",
+      "sha256": "90f95b45c6678b84e010c56a90f24fa7e323b5033eabd4faed4a3c8bc65d6470"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/tests/browser/family-boundaries.spec.mjs.snapshot",
+      "sha256": "d0472643f8a627fd62a87931ee34ac2b1fd3c15426170b11133059ac4ec8cca3"
+    },
+    {
+      "path": "_archive/legacy-web-2026-10-07/tests/browser/family-fixture.mjs.snapshot",
+      "sha256": "e9502700b9b1315c5d9da63667dc06684a35ce40e83f24a5c4640d0ba4a87175"
+    }
+  ],
+  "notRun": [
+    "browser/UI/accessibility/native-device acceptance",
+    "database or migration operations",
+    "real-model calls",
+    "notifications",
+    "deployment",
+    "full backend suite"
+  ],
+  "status": "draft; independent review and final root documentation verification pending"
+}

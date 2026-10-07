@@ -60,7 +60,7 @@ function emptyPersonalDomains(env: SettingsEnvironment): PersonalDomains {
   const modelSettings: PersonalDomains["modelSettings"] = { model: { scopeKey: env.identityKey, accountName: "", serverLabel: env.apiBaseUrl, snapshot: null,
     online: env.online, authorized: false, busy: "read", operation: "none", notice: "正在核對目前本人設定。", needsRead: false,
     formRevision: 0, secretRevision: 0, keyCheck: null }, actions: { refresh: noop, save: noop, check: noop } };
-  const family: PersonalDomains["family"] = { model: { families: [], family: null, selfUserId: env.userId ?? "", children: [], online: env.online,
+  const family: PersonalDomains["family"] = { readState: "loading", model: { families: [], family: null, selfUserId: env.userId ?? "", children: [], online: env.online,
     loadState: "loading", canManage: false, canStartAction: false, locked: true, draft: null, latest: null, incoming: null, incomingError: null,
     oneTimeCode: null, inviteFormKey: 0, operation: { state: "none", message: "", reference: null }, notice: "正在核對目前家庭。" },
     actions: { selectFamily: noop, refresh: noop, editInvite: noop, reviewInvite: noop, stageMember: noop, stageRevokeInvitation: noop,

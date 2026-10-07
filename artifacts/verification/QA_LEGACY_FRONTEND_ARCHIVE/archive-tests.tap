@@ -1,0 +1,11 @@
+✔ legacy frontend snapshots preserve all approved original bytes (3.549672ms)
+✔ legacy commands and the default browser configuration fail before starting services (207.594612ms)
+✔ active source does not import archived UI and retained capabilities stay present (22.589126ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 376.781761

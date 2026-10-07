@@ -14,6 +14,7 @@ import { canonicalJson } from "./online-routing.ts";
 export interface FamilyDocumentSources {
   profile: ChildProfile; entries: DocumentSource[]; domains: Map<string, DocumentSection["domain"]>;
   questions: Set<string>; activeConcernIds: Set<string>; limited: boolean;
+  legacyConcernSources?: Map<string, DocumentSource>;
 }
 const labels = { note: "共享文字記錄", feeding: "餵食記錄", sleep: "睡眠記錄", diaper: "尿片記錄",
   temperature: "體溫記錄", measurement: "量度記錄", appointment: "到診記錄" } as const;
@@ -37,7 +38,7 @@ export async function loadFamilyDocumentSources(client: PoolClient, cipher: Stor
   const concerns = await createConcernStore(borrowed.pool, cipher).list(userId, childId); borrowed.assertReleased();
   if (!care || !memory || !tasks || !concerns) throw new FamilyError(404, "not_found");
   const entries: DocumentSource[] = [], domains = new Map<string, DocumentSection["domain"]>(), questions = new Set<string>();
-  const activeConcernIds = new Set<string>();
+  const activeConcernIds = new Set<string>(), legacyConcernSources = new Map<string, DocumentSource>();
   const add = (source: DocumentSource, domain: DocumentSection["domain"]) => { entries.push(source); domains.set(source.id, domain); };
   const profile = { ...care.profile, data: memory.profileApplicable ? care.profile.data : null };
   add({ id: "profile:" + childId, resourceId: childId, kind: "profile", version: care.profile.version,
@@ -63,11 +64,18 @@ export async function loadFamilyDocumentSources(client: PoolClient, cipher: Stor
     // Only the shared concern authority supplies observations; no Agent run or private conversation is read.
     const events = concern.events.filter(event => event.kind === "observation");
     const observations = events.slice(-5).map(event => `${event.at}：${event.text}`).join("\n");
-    add({ id: "concern:" + concern.id, resourceId: concern.id, kind: "concern", version: concern.version,
+    const legacy: DocumentSource = { id: "concern:" + concern.id, resourceId: concern.id, kind: "concern", version: concern.version,
       label: "家庭持續關注", text: `${concern.title}（${concern.status === "following" ? "關注中" : "已結束"}）：${concern.reason}\n最近最多5項共享觀察：\n${observations}`,
-      at: events.at(-1)?.at ?? null }, "concerns");
+      at: events.at(-1)?.at ?? null };
+    // Reconstruct only from current shared authority to validate existing snapshots, never for new period sources.
+    if (events.length === 0) add(legacy, "concerns");
+    else legacyConcernSources.set(legacy.id, legacy);
+    for (const event of events) add({ id: `concern:${concern.id}:observation:${event.id}`, resourceId: concern.id,
+      kind: "concern", version: concern.version, label: "家庭共享關注觀察",
+      text: `關注背景：${concern.title}（${concern.status === "following" ? "關注中" : "已結束"}）：${concern.reason}\n共享觀察（${event.at}）：${event.text}`,
+      at: event.at }, "concerns");
   }
-  return { profile, entries, domains, questions, activeConcernIds, limited: Boolean(tasks.nextAfterId) };
+  return { profile, entries, domains, questions, activeConcernIds, limited: Boolean(tasks.nextAfterId), legacyConcernSources };
 }
 
 export function documentSourceBasis(loaded: FamilyDocumentSources, request: DocumentRequest): string {
@@ -76,7 +84,10 @@ export function documentSourceBasis(loaded: FamilyDocumentSources, request: Docu
 }
 export function documentSnapshotValid(snapshot: DocumentSnapshot, loaded: FamilyDocumentSources): boolean {
   const current = new Map(loaded.entries.map(source => [source.id, source]));
-  return snapshot.sources.every(source => current.get(source.id)?.version === source.version && current.get(source.id)?.text === source.text);
+  return snapshot.sources.every(source => {
+    const available = current.get(source.id) ?? (source.kind === "concern" ? loaded.legacyConcernSources?.get(source.id) : undefined);
+    return available?.version === source.version && available?.text === source.text;
+  });
 }
 
 const templates: Record<Exclude<DocumentRequest["purpose"], "family">, string[]> = {
@@ -87,7 +98,7 @@ const templates: Record<Exclude<DocumentRequest["purpose"], "family">, string[]>
 };
 export function buildFamilyDocumentSnapshot(loaded: FamilyDocumentSources, request: DocumentRequest, version: number, previous: DocumentSnapshot | null): DocumentSnapshot {
   const known = loaded.entries.filter(source => source.at && hkDay(source.at) >= request.period.from && hkDay(source.at) <= request.period.to)
-    .sort((a, b) => b.at!.localeCompare(a.at!) || a.id.localeCompare(b.id)).slice(0, 80);
+    .sort((a, b) => Date.parse(b.at!) - Date.parse(a.at!) || a.id.localeCompare(b.id)).slice(0, 80);
   const timeless = loaded.entries.filter(source => source.at === null && source.kind !== "record"
     && (request.kind !== "growth_report" || source.kind !== "concern" || loaded.activeConcernIds.has(source.id))).slice(0, 40);
   const unknown = loaded.entries.filter(source => source.kind === "record" && source.at === null).slice(-20).reverse();
@@ -130,4 +141,5 @@ export function buildFamilyDocumentSnapshot(loaded: FamilyDocumentSources, reque
     coverageNote: "按香港日期篩選；最多展示期間內最近80項、40項無事件日期的已確認資料、20項發生時間未確認記錄。任務僅讀取首50項；來源及畫面均非完整期間統計。未知時間另列，沒有以儲存日期代替發生時間。沒有觀察日期的目前持續關注另列，不視為期間內事件。歷史只展示最近10個仍有效快照。" + (loaded.limited ? "另有任務未納入。" : ""),
     sections, sources, changes: [...new Set(changes)].slice(0, 30) };
 }
+
 

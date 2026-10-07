@@ -1,6 +1,6 @@
 # P2 UI 功能及對接清單
 
-現行品牌為「育有方」（2026-10-01 更名）；下文的既有聊天標題、版本及驗收記錄保留當時名稱。新版前端品牌由 FE-W21 交付，正式網站須部署改名版本後才更新。
+現行品牌為「育有方」（2026-10-01 更名）；下文的既有聊天標題、版本及驗收記錄保留當時名稱。新版前端品牌已沿正式frontend接線；本頁舊版驗收記錄不代表最新部署狀態。
 
 供後續 Web UI 設計及接線使用；版面、視覺及互動細節可另行設計。產品要求仍以 [SPEC](../SPEC.md) 為準，進度以 [PLAN](../PLAN.md#roadmap-packages)／[STATUS](../STATUS.md) 為準，本表不另立需求或完成門檻。沿用既有美術及 Prompt Pack。
 
@@ -17,6 +17,8 @@ INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴
 
 <a id="production-owners"></a>
 ## 新前端正式資料接點
+
+根舊app／Panel及專用runner已[可恢復歸檔](../_archive/legacy-web-2026-10-07/README.md)。本節owner為現行接線；後文各Sxx舊Panel位置僅保留歷史參考，不能照其舊路徑重新掛回正式頁面。
 
 以下是 INT 系列的接線位置；完成與驗收狀態只看 [根 PLAN](../PLAN.md#production-integration)。不改既有版面、美術或動效，不把舊面板直接掛到新入口。表內 owner 是 Server 資源的受權投影，不能另建頁面資料副本。
 
@@ -45,21 +47,21 @@ P2 功能包及 S16 必要本機／真服務驗收已合併；2026-09-30 正式 
 | 功能 | 使用者可做的事 | 必須能呈現的資料及狀態 | 工作包／對接落點 |
 |---|---|---|---|
 | UI-P2-01 家庭與成員 | 邀請、接受邀請、查看成員；owner 變更角色或撤權 | owner／caregiver／viewer、邀請有效性、權限失效；一次性碼及共享範圍二次確認 | S06-W02 [FamilyPanel](../src/client/FamilyPanel.tsx)／[API](API.md#p2-family-http)／[型別](../src/shared/family.ts) 已落碼 |
-| UI-P2-02 孩子檔案 | 切換孩子，按需要補充及確認年齡、地區和照護資料 | 精確／約數年齡及日期基準、未知、實際／矯正年齡、共享範圍 | S06-W02 家庭建立／切換；S05-W02 [CarePanel](../src/client/CarePanel.tsx)／[API](API.md#p2-care-http)／[型別](../src/shared/care.ts) 已接確認檔案、版本及歷史 |
-| UI-P2-03 記錄與確認 | 快捷新增、確認候選、更正、搜尋及查看時間軸 | 原文、來源、精度、確認人、版本、更正歷史；候選不冒充已保存 | S05-W02 [CarePanel](../src/client/CarePanel.tsx)／[API](API.md#p2-care-http) 已接；按加入時間分頁，事件原時間分開；AI 提取／核對入口已分別接入照片及分享面板，沿用明確確認後保存 |
-| UI-P2-04 記憶與話題 | 新增候選、明確確認／共享、更正／停用／刪除；管理話題終態與按原因重開，查看本人摘要覆蓋 | 候選不作事實，來源變更／過期／版本衝突，私有候選歷史遮蔽；暫緩日期、舊終態保留；未知提交先核對 | S09-W02 [MemoryPanel](../src/client/MemoryPanel.tsx)／[API](API.md#p2-memory-http)／[型別](../src/shared/memory.ts) 已接通，必要本機驗收通過，完成隨 PR #34 合併生效；完整記憶面板瀏覽器情景未驗，S11-W02 已接 AI 摘要暫存／覆蓋校驗與候選確認工具，必要核心證據分列於本包驗收記錄 |
-| UI-P2-05 Agent 對話 | 提出照護需求、核對候選完整內容及共享範圍、明確接受／略過、查核未知提交；手動查看背景結果 | 運行／工具結果、候選／實際任務分開、版本衝突、停止／unknown、統計未知，不展示內部推理 | S11-W02 [ChatPanel](../src/client/ChatPanel.tsx)、[AgentRunPanel](../src/client/AgentRunPanel.tsx)、[AgentInbox](../src/client/AgentInbox.tsx)／[HTTP](API.md#product-agent-http)／[型別](../src/shared/product-agent.ts) 已接線，必要核心證據見 [EV-S11-W02](../artifacts/verification/S11_W02_CHECKS.json)；完整 Agent UI 情景未全驗；設定預設關閉，現網已明確啟用 |
-| UI-P2-06 知識引用 | 從原回答查看支持片段及官方頁、辨認降級／來源時間；使用固定緊急求助入口 | 標題、章節、短原文、版本／核對時間、來源分類、降級；原引用不保證目前仍適用 | S11-W02 [AgentRunPanel](../src/client/AgentRunPanel.tsx) 已接既有 public [retriever](../server/knowledge-retriever.ts)；[EmergencyHelp](../src/client/EmergencyHelp.tsx) 在模型回覆前可見。S10-W02 已驗；本包有限真引用樣例及成長引用修正的離線證據分列，完整 UI 情景未全驗，公開部署已完成；CHP／RTHK 組內限制不變 |
-| UI-P2-07 成長關注 | 閱讀「為何現在」、接受、暫緩、關閉或永久停用主題 | 所依據的已確認資料、觀察／安排／諮詢建議、來源、處理結果及新提示原因 | S13-W08 [GrowthPanel](../src/client/GrowthPanel.tsx)／[對接](#growth-ui-handoff) 已接線，必要規則／真背景及抑制驗收通過；完整面板瀏覽器情景未驗 |
-| UI-P2-08 任務與預約 | 查看、確認、指派、改期、完成、取消、衝突覆核及歷史 | 任務／穩定發生實例、含 offset 時間／IANA 時區、合資格負責人、原版本、原因／備註及終態；過期不等於完成 | S13-W01 [API](API.md#p2-task-http)／[型別](../src/shared/tasks.ts) 已接 [TaskPanel](../src/client/TaskPanel.tsx)／[client API](../src/client/task-api.ts)，本機 HTTP 及 Web export 通過；公開候選確認建任務已通過；改期／完成以使用者批准後的 API 核對，不冒充全 TaskPanel E2E |
-| UI-P2-09 聯絡授權 | 設定或撤回預授權，核對對象、內容、渠道及 fallback | 授權範圍／版本、合資格對象、待確認的超範圍動作 | S13-W07 [ContactPanel](../src/client/ContactPanel.tsx)／[對接](#contact-handoff) 已接線，本機真 Agent 聯絡／收到／明確完成通過；公開真聯絡已通過；任務 grant 按使用者批准以 API 補存，完整面板操作未全驗 |
+| UI-P2-02 孩子檔案 | 切換孩子，按需要補充及確認年齡、地區和照護資料 | 精確／約數年齡及日期基準、未知、實際／矯正年齡、共享範圍 | S06-W02 家庭建立／切換；S05-W02 [CarePanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/CarePanel.tsx)／[API](API.md#p2-care-http)／[型別](../src/shared/care.ts) 已接確認檔案、版本及歷史 |
+| UI-P2-03 記錄與確認 | 快捷新增、確認候選、更正、搜尋及查看時間軸 | 原文、來源、精度、確認人、版本、更正歷史；候選不冒充已保存 | S05-W02 [CarePanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/CarePanel.tsx)／[API](API.md#p2-care-http) 已接；按加入時間分頁，事件原時間分開；AI 提取／核對入口已分別接入照片及分享面板，沿用明確確認後保存 |
+| UI-P2-04 記憶與話題 | 新增候選、明確確認／共享、更正／停用／刪除；管理話題終態與按原因重開，查看本人摘要覆蓋 | 候選不作事實，來源變更／過期／版本衝突，私有候選歷史遮蔽；暫緩日期、舊終態保留；未知提交先核對 | S09-W02 [MemoryPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/MemoryPanel.tsx)／[API](API.md#p2-memory-http)／[型別](../src/shared/memory.ts) 已接通，必要本機驗收通過，完成隨 PR #34 合併生效；完整記憶面板瀏覽器情景未驗，S11-W02 已接 AI 摘要暫存／覆蓋校驗與候選確認工具，必要核心證據分列於本包驗收記錄 |
+| UI-P2-05 Agent 對話 | 提出照護需求、核對候選完整內容及共享範圍、明確接受／略過、查核未知提交；手動查看背景結果 | 運行／工具結果、候選／實際任務分開、版本衝突、停止／unknown、統計未知，不展示內部推理 | S11-W02 [ChatPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/ChatPanel.tsx)、[AgentRunPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/AgentRunPanel.tsx)、[AgentInbox](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/AgentInbox.tsx)／[HTTP](API.md#product-agent-http)／[型別](../src/shared/product-agent.ts) 已接線，必要核心證據見 [EV-S11-W02](../artifacts/verification/S11_W02_CHECKS.json)；完整 Agent UI 情景未全驗；設定預設關閉，現網已明確啟用 |
+| UI-P2-06 知識引用 | 從原回答查看支持片段及官方頁、辨認降級／來源時間；使用固定緊急求助入口 | 標題、章節、短原文、版本／核對時間、來源分類、降級；原引用不保證目前仍適用 | S11-W02 [AgentRunPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/AgentRunPanel.tsx) 已接既有 public [retriever](../server/knowledge-retriever.ts)；[EmergencyHelp](../src/client/EmergencyHelp.tsx) 在模型回覆前可見。S10-W02 已驗；本包有限真引用樣例及成長引用修正的離線證據分列，完整 UI 情景未全驗，公開部署已完成；CHP／RTHK 組內限制不變 |
+| UI-P2-07 成長關注 | 閱讀「為何現在」、接受、暫緩、關閉或永久停用主題 | 所依據的已確認資料、觀察／安排／諮詢建議、來源、處理結果及新提示原因 | S13-W08 [GrowthPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/GrowthPanel.tsx)／[對接](#growth-ui-handoff) 已接線，必要規則／真背景及抑制驗收通過；完整面板瀏覽器情景未驗 |
+| UI-P2-08 任務與預約 | 查看、確認、指派、改期、完成、取消、衝突覆核及歷史 | 任務／穩定發生實例、含 offset 時間／IANA 時區、合資格負責人、原版本、原因／備註及終態；過期不等於完成 | S13-W01 [API](API.md#p2-task-http)／[型別](../src/shared/tasks.ts) 已接 [TaskPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/TaskPanel.tsx)／[client API](../src/client/task-api.ts)，本機 HTTP 及 Web export 通過；公開候選確認建任務已通過；改期／完成以使用者批准後的 API 核對，不冒充全 TaskPanel E2E |
+| UI-P2-09 聯絡授權 | 設定或撤回預授權，核對對象、內容、渠道及 fallback | 授權範圍／版本、合資格對象、待確認的超範圍動作 | S13-W07 [ContactPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/ContactPanel.tsx)／[對接](#contact-handoff) 已接線，本機真 Agent 聯絡／收到／明確完成通過；公開真聯絡已通過；任務 grant 按使用者批准以 API 補存，完整面板操作未全驗 |
 | UI-P2-10 通知偏好 | 個別設定渠道、安靜時段及明確的預約例外 | 香港時間預設 22:00–08:00、普通提示合併及跟進限制 | S06-W02 已有偏好保存；S13-W04 已接站內持久批次及執行，必要 DB 驗收通過；W05／W06／W07 已接渠道授權與執行時偏好檢查 |
-| UI-P2-11 Web Push | 訂閱、退訂及查看裝置渠道狀態 | 未授權／已拒絕／不支援／已訂閱／訂閱失效，站內仍可查事項 | S13-W05 [WebPushPanel](../src/client/WebPushPanel.tsx)／[HTTP](API.md#p2-web-push-http)／[型別](../src/shared/web-push.ts) 已落碼：本人訂閱／撤銷、固定測試、原操作查核及投遞狀態；SQL／一次 Firefox 真 Push 及撤銷通過；公開 origin 一則 Firefox Push 已收到，Server 綁定已撤銷；未操作瀏覽器 provider 退訂 |
+| UI-P2-11 Web Push | 訂閱、退訂及查看裝置渠道狀態 | 未授權／已拒絕／不支援／已訂閱／訂閱失效，站內仍可查事項 | S13-W05 [WebPushPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/WebPushPanel.tsx)／[HTTP](API.md#p2-web-push-http)／[型別](../src/shared/web-push.ts) 已落碼：本人訂閱／撤銷、固定測試、原操作查核及投遞狀態；SQL／一次 Firefox 真 Push 及撤銷通過；公開 origin 一則 Firefox Push 已收到，Server 綁定已撤銷；未操作瀏覽器 provider 退訂 |
 | UI-P2-12 Telegram | 啟動 bot 後完成綁定、解除綁定及回覆正確事項 | 綁定狀態、接收者、事項關聯；收到回覆不自動當作照護完成 | S13-W06 本人雙向綁定／撤銷、一般測試及原操作查核已落碼；[功能及未驗項](#telegram-ui-handoff)，SQL 及真本人接收／回覆通過；公開 webhook／本人綁定／一般訊息 callback 已通過；公開照護聯絡／本人 callback 及明確完成已通過 |
 | UI-P2-13 執行與投遞台帳 | 查看實際聯絡進度及待處理結果 | 渠道接受、送達、已讀、回應、照護完成各自的證據；unknown 不冒充失敗 | S13-W04 已接站內提醒／處理狀態，必要 DB 驗收通過；W07 已接真渠道台帳、收到及完成分開呈現 |
-| UI-P2-14 照片輸入 | 選圖、上傳、查看提取結果、修正及確認 | 原檔／來源、上傳與提取狀態、不確定欄位、容量／權限錯誤 | S12-W03 [PhotoPanel](../src/client/PhotoPanel.tsx)／[對接](#photo-handoff) 已接線，原圖／真提取／確認及備份必要證據已驗；完整面板瀏覽器情景未驗 |
-| UI-P2-15 分享輸入 | 貼上、上傳或主動分享指定來源；管理本人私人資料來源 | 原文、來源／時間、可讀性、候選與確認；不背景讀私人動態 | S12-W04 [SharedInputPanel](../src/client/SharedInputPanel.tsx)／[對接](#shared-input-handoff) 已接線，文字提取及私人來源保存／取得／隔離必要驗收通過；完整面板瀏覽器情景未驗 |
-| UI-P2-16 到診準備與摘要 | 選孩子／期間，查看到診問題、準備清單及日／週摘要 | 程式計算的數字、來源、缺項、版本、更正後更新 | S14-W01 [CareSummaryPanel](../src/client/CareSummaryPanel.tsx)／[對接](#care-summary-handoff)，必要 API／Agent 驗收通過、完整面板 E2E 未驗 |
+| UI-P2-14 照片輸入 | 選圖、上傳、查看提取結果、修正及確認 | 原檔／來源、上傳與提取狀態、不確定欄位、容量／權限錯誤 | S12-W03 [PhotoPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/PhotoPanel.tsx)／[對接](#photo-handoff) 已接線，原圖／真提取／確認及備份必要證據已驗；完整面板瀏覽器情景未驗 |
+| UI-P2-15 分享輸入 | 貼上、上傳或主動分享指定來源；管理本人私人資料來源 | 原文、來源／時間、可讀性、候選與確認；不背景讀私人動態 | S12-W04 [SharedInputPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/SharedInputPanel.tsx)／[對接](#shared-input-handoff) 已接線，文字提取及私人來源保存／取得／隔離必要驗收通過；完整面板瀏覽器情景未驗 |
+| UI-P2-16 到診準備與摘要 | 選孩子／期間，查看到診問題、準備清單及日／週摘要 | 程式計算的數字、來源、缺項、版本、更正後更新 | S14-W01 [CareSummaryPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/CareSummaryPanel.tsx)／[對接](#care-summary-handoff)，必要 API／Agent 驗收通過、完整面板 E2E 未驗 |
 | UI-P2-17 在線確認與更新 | 查核未知提交、沿原操作重試、查看最新資料及比較版本 | 未提交／未知／已確認但結果不可用、版本／世代衝突、搜尋頁面失效、權限變更；不可按文字相同猜測成功 | S07-W03 [API](API.md#online-http)／[型別](../src/shared/online.ts)／[transport](../src/client/online-transport.ts) 已接；本機 PostgreSQL／HTTP 及 S16-W05 Chromium 原 opId／撤權情景通過；不代表所有面板已全驗 |
 
 ## 共同互動與對接要求
@@ -90,7 +92,7 @@ S13-W01 任務設計需預留：家庭共享新增確認、ordinary／appointmen
 <a id="care-summary-handoff"></a>
 ## S14-W01 摘要與到診準備
 
-[CareSummaryPanel](../src/client/CareSummaryPanel.tsx) 已接基本頁；props 為 apiBaseUrl／userId／childId／online／onSessionChanged，契約見 [API](API.md#care-summary-http)。沿用現有孩子選擇器；切換後面板以帳號／孩子／Server 身份重建，沒有混算不同孩子。
+[CareSummaryPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/CareSummaryPanel.tsx) 已接基本頁；props 為 apiBaseUrl／userId／childId／online／onSessionChanged，契約見 [API](API.md#care-summary-http)。沿用現有孩子選擇器；切換後面板以帳號／孩子／Server 身份重建，沒有混算不同孩子。
 
 功能清單：開始日、一日／七日、時區 → 手動產生摘要；孩子／年齡依據、期間／生成時間、各類紀錄及數值／原單位／約數、未知與缺項、原始記錄版本／更正、已確認預約及待覆核任務；到診問題／準備勾選／可選預約、明確共享保存及家長核對。未知時間不可假歸入當週；所有資料變動後需重核。PDF／分享未交付。
 
@@ -101,7 +103,7 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 <a id="growth-ui-handoff"></a>
 ## S13-W08 功能接線清單（必要後端驗收通過；完整 UI 情景未驗）
 
-[GrowthPanel](../src/client/GrowthPanel.tsx)／[growth-api](../src/client/growth-api.ts)／[共享型別](../src/shared/growth.ts)／[HTTP](API.md#growth-attention-http)。正式 App 以帳號及孩子掛載，使用既有 online refresh；未變更 `frontend/**` 的視覺預覽。
+[GrowthPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/GrowthPanel.tsx)／[growth-api](../src/client/growth-api.ts)／[共享型別](../src/shared/growth.ts)／[HTTP](API.md#growth-attention-http)。正式 App 以帳號及孩子掛載，使用既有 online refresh；未變更 `frontend/**` 的視覺預覽。
 
 - 查看四主題的關注理由、建議、限制、官方片段／版本、前次關係及真實狀態；來源／依據失效時顯示歷史限制，停止現行建議及操作。
 - 接受只作知悉，或經明確核對新增已確認任務；API 亦支援連接指定版本既有任務。顯示任務 ID／實際終態，改期／完成／取消到既有任務區。没有另建不存在的任務導航路由。
@@ -128,7 +130,7 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 <a id="shared-input-handoff"></a>
 ## 主動分享輸入（S12-W04）
 
-[SharedInputPanel](../src/client/SharedInputPanel.tsx)／[shared-input-api](../src/client/shared-input-api.ts) 掛在正式基本頁；props 與照片面板一致。獨立 frontend 可依 [契約](API.md#p2-shared-inputs) 替換視覺，未修改其預覽。
+[SharedInputPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/SharedInputPanel.tsx)／[shared-input-api](../src/client/shared-input-api.ts) 掛在正式基本頁；props 與照片面板一致。獨立 frontend 可依 [契約](API.md#p2-shared-inputs) 替換視覺，未修改其預覽。
 
 - 預設「自行設定私人來源」：名稱、HTTPS 網址、備註、來源日期及可選正文；網址／正文至少一項，可貼上自備訂閱／付費材料。按目前孩子保存，只供本人讀取。另保留原 paste 模式（網址只保存）及固定公開來源；照片沿用 PhotoPanel。
 - 只存連結時顯示「連結已保存，尚未取得正文」，不呈現可提取／確認的假狀態。可明確「取得此網頁內容」，只支援公開可直接訪問的 HTML；登入／付費正文可自行貼上，沒有帳密連接欄位。
@@ -144,7 +146,7 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 <a id="contact-handoff"></a>
 ## S13-W07 聯絡功能交接
 
-[ContactPanel](../src/client/ContactPanel.tsx) 已掛正式基本頁，props 為 apiBaseUrl／userId／childId／online／onSessionChanged；[contact-api](../src/client/contact-api.ts) 復用原操作收據，wire contract 見 [API](API.md#proactive-contact-http)。獨立 frontend 可按此對接，沒有改動其預覽。
+[ContactPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/ContactPanel.tsx) 已掛正式基本頁，props 為 apiBaseUrl／userId／childId／online／onSessionChanged；[contact-api](../src/client/contact-api.ts) 復用原操作收據，wire contract 見 [API](API.md#proactive-contact-http)。獨立 frontend 可按此對接，沒有改動其預覽。
 
 - 本人同意：可選已綁定的 Web Push／Telegram 及順序、後備資格、明確保存／撤銷；綁定本身不是同意。
 - 每項任務：顯示負責人與版本、明確期限、最多一次跟進、已知失敗 fallback 及可選後備；超期／改期／轉派須重新確認。viewer 唯讀。
@@ -155,7 +157,7 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 <a id="personal-model-ui"></a>
 ## UI-P2-18 本人模型 key 與可調上限（S06-W05 增補）
 
-入口：[ModelSettingsPanel](../src/client/ModelSettingsPanel.tsx)，props userId／online／apiBaseUrl，掛於正式 Web 登入帳號區；[API](API.md#personal-model-http)／[共用型別](../src/shared/model-settings.ts)。獨立前端後續接此 view model，毋須接觸或讀回密鑰。
+入口：[ModelSettingsPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/ModelSettingsPanel.tsx)，props userId／online／apiBaseUrl，掛於正式 Web 登入帳號區；[API](API.md#personal-model-http)／[共用型別](../src/shared/model-settings.ts)。獨立前端後續接此 view model，毋須接觸或讀回密鑰。
 
 - 選平台／個人 key／停用，輸入或替換 key、明確費用／外送同意、背景 opt-in、二次確認刪除。
 - 可編輯個人每日總呼叫數、每次 Agent 生成呼叫數及查詢 embedding 數；顯示目前版本、全站個人安全上限、固定工具／逾時／輸出限額及 UTC 重置時間。

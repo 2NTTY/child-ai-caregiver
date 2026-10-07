@@ -21,7 +21,7 @@ test("document workflow integrity with synthetic sources and a serialized fake P
   } }) } });
   t.mock.module("../server/tasks.ts", { exports: { createTaskStore: () => ({ list: async () => ({ items: [] }) }) } });
   t.mock.module("../server/concern-store.ts", { exports: { createConcernStore: () => ({ list: async () => ({ items: concerns }) }) } });
-  const { buildFamilyDocumentSnapshot, documentSnapshotValid, loadFamilyDocumentSources } = await import("../server/family-document-sources.ts");
+  const { buildFamilyDocumentSnapshot, documentSnapshotValid, documentSourceBasis, loadFamilyDocumentSources } = await import("../server/family-document-sources.ts");
   const { createFamilyDocumentStore } = await import("../server/family-document-store.ts");
   let renderedSnapshot: DocumentSnapshot | null = null, afterRender = () => {};
   t.mock.module("../server/family-document-pdf.ts", { exports: { renderFamilyDocumentPdf: async (snapshot: DocumentSnapshot) => {
@@ -88,8 +88,8 @@ test("document workflow integrity with synthetic sources and a serialized fake P
     concerns = [
       { id: "active", version: 1, title: "Synthetic active concern", status: "following", reason: "No observation yet", events: [] },
       { id: "closed", version: 1, title: "Synthetic closed concern", status: "closed", reason: "No observation", events: [] },
-      { id: "outside", version: 1, title: "Synthetic old concern", status: "following", reason: "Outside period", events: [{ kind: "observation", at: "2026-09-01T00:00:00Z", text: "Old observation" }] },
-      { id: "inside", version: 1, title: "Synthetic current concern", status: "following", reason: "In period", events: [{ kind: "observation", at: "2026-10-06T00:00:00Z", text: "Current observation" }] },
+      { id: "outside", version: 1, title: "Synthetic old concern", status: "following", reason: "Outside period", events: [{ id: "outside-event", kind: "observation", at: "2026-09-01T00:00:00Z", text: "Old observation" }] },
+      { id: "inside", version: 1, title: "Synthetic current concern", status: "following", reason: "In period", events: [{ id: "inside-event", kind: "observation", at: "2026-10-06T00:00:00Z", text: "Current observation" }] },
     ];
     const loaded = await load();
     loaded.entries.push(source("unknown-record", "record", null));
@@ -98,13 +98,120 @@ test("document workflow integrity with synthetic sources and a serialized fake P
     assert.match(undated.title, /未提供觀察日期.*未計入期間/u);
     assert.deepEqual(undated.items.map(item => item.id), ["concern:active"]);
     assert.equal(report.sources.find(item => item.id === "concern:active")!.at, null);
-    assert.deepEqual(report.sections.find(section => section.id === "concerns")!.items.map(item => item.id), ["concern:inside"]);
+    assert.deepEqual(report.sections.find(section => section.id === "concerns")!.items.map(item => item.id), ["concern:inside:observation:inside-event"]);
     assert.ok(!report.sources.some(item => ["concern:closed", "concern:outside"].includes(item.id)));
     assert.equal(report.sections.find(section => section.id === "unknown-time")!.items[0].id, "unknown-record");
     assert.ok(scopes.every(scope => scope === "family"));
     const revoked = { ...loaded, entries: loaded.entries.filter(item => item.id !== "concern:active") };
     assert.equal(documentSnapshotValid(report, revoked), false);
     concerns = [];
+  });
+
+  await t.test("concern observations stay in their own Hong Kong quarter beyond the previous last-five limit", async () => {
+    const period = { from: "2026-01-01", to: "2026-03-31" };
+    const spec = { ...request("growth_report", "handoff"), period };
+    const observation = (id: string, at: string, text = id) => ({ id, kind: "observation", at, text });
+    const events = [
+      observation("before-quarter", "2025-12-31T15:59:59Z"),
+      observation("quarter-start", "2025-12-31T16:00:00Z"),
+      observation("february", "2026-02-01T00:00:00Z"),
+      observation("quarter-end", "2026-03-31T15:59:59Z"),
+      observation("next-quarter", "2026-03-31T16:00:00Z"),
+      ...Array.from({ length: 6 }, (_, index) => observation(`april-${index}`, `2026-04-0${index + 1}T00:00:00Z`)),
+      { id: "action", kind: "confirmed_action", at: "2026-03-01T00:00:00Z", text: "Not an observation" },
+    ];
+    concerns = [{ id: "quarter", version: 1, title: "Synthetic concern", status: "following", reason: "Background has no event date", events: events.slice(0, 4) }];
+    const first = buildFamilyDocumentSnapshot(await load(), spec, 1, null);
+    concerns = [{ ...(concerns[0] as object), version: 2, events }];
+    const loaded = await load(), current = buildFamilyDocumentSnapshot(loaded, spec, 2, first);
+    const items = current.sections.find(section => section.id === "concerns")!.items;
+    assert.deepEqual(items.map(item => item.id), ["quarter-end", "february", "quarter-start"].map(id => `concern:quarter:observation:${id}`));
+    assert.deepEqual(items.map(item => item.text), first.sections.find(section => section.id === "concerns")!.items.map(item => item.text));
+    assert.ok(items.every(item => item.text.startsWith("關注背景：") && item.text.includes("共享觀察（")));
+    assert.ok(!items.some(item => /before-quarter|next-quarter|april-|Not an observation/u.test(item.text)));
+    assert.equal(current.sections.find(section => section.id === "undated-concerns")!.items.length, 0);
+    assert.ok(!loaded.entries.some(source => source.id === "concern:quarter"));
+    assert.deepEqual(current.sources.filter(source => source.kind === "concern").map(source => [source.resourceId, source.version]), [["quarter", 2], ["quarter", 2], ["quarter", 2]]);
+    assert.equal(documentSnapshotValid(first, loaded), false, "concern authority versions remain conservative");
+    assert.equal(documentSnapshotValid(current, loaded), true);
+    const corrected = structuredClone(concerns) as any[];
+    corrected[0].events.find((event: any) => event.id === "february").at = "2026-04-01T00:00:00Z";
+    concerns = corrected;
+    assert.equal(documentSnapshotValid(current, await load()), false, "changed observation dates cannot expose the previous body even without a version bump");
+    concerns = [];
+    assert.equal(documentSnapshotValid(current, await load()), false);
+  });
+
+  await t.test("global 80-source cap selects latest instants across concerns after period filtering", async () => {
+    const spec = { ...request("growth_report", "handoff"), period: { from: "2026-01-01", to: "2026-03-31" } };
+    const early = Array.from({ length: 85 }, (_, index) => ({ id: `old-${String(index).padStart(2, "0")}`, kind: "observation", at: new Date(Date.UTC(2026, 0, 1, 0, index)).toISOString(), text: `Older observation ${index}` }));
+    concerns = [
+      { id: "many", version: 1, title: "Many observations", status: "following", reason: "Synthetic", events: early },
+      { id: "newer", version: 1, title: "Newer observations", status: "closed", reason: "Synthetic", events: [
+        { id: "a", kind: "observation", at: "2026-03-30T23:00:00+08:00", text: "Earlier instant" },
+        { id: "b", kind: "observation", at: "2026-03-30T16:00:00Z", text: "Later instant" },
+        { id: "c", kind: "observation", at: "2026-03-31T00:00:00+08:00", text: "Equal later instant" },
+      ] },
+    ];
+    const loaded = await load(), snapshot = buildFamilyDocumentSnapshot(loaded, spec, 1, null);
+    const selected = snapshot.sources.filter(source => source.at !== null);
+    assert.equal(selected.length, 80);
+    assert.deepEqual(selected.slice(0, 3).map(source => source.id), ["concern:newer:observation:b", "concern:newer:observation:c", "concern:newer:observation:a"]);
+    assert.equal(selected.at(-1)!.id, "concern:many:observation:old-08");
+    assert.match(snapshot.coverageNote, /最近80項/u);
+    assert.equal(snapshot.sections.find(section => section.id === "concerns")!.items.length, 80);
+    const reversed = { ...loaded, entries: [...loaded.entries].reverse() };
+    assert.deepEqual(buildFamilyDocumentSnapshot(reversed, spec, 2, null).sources, snapshot.sources);
+    concerns = [];
+  });
+
+  await t.test("legacy aggregate snapshots remain exact and stale through read, history, receipt and same-version PDF", async () => {
+    concerns = [{ id: "legacy", version: 3, title: "Legacy concern", status: "following", reason: "Synthetic context", events: [
+      { id: "old", kind: "observation", at: "2026-09-30T00:00:00Z", text: "Historical prior-period observation" },
+      { id: "current", kind: "observation", at: "2026-10-06T00:00:00Z", text: "Historical current-period observation" },
+    ] }];
+    const spec = request("growth_report", "handoff"), opId = randomUUID();
+    const created = (await store.create(userId, childId, spec, opId))!;
+    const loaded = await load(), current = created.current!;
+    // Exact prior-format fixture; the compatibility path may validate it, never rewrite its stored body.
+    const legacySource: DocumentSource = { id: "concern:legacy", resourceId: "legacy", kind: "concern", version: 3, label: "家庭持續關注",
+      text: "Legacy concern（關注中）：Synthetic context\n最近最多5項共享觀察：\n2026-09-30T00:00:00Z：Historical prior-period observation\n2026-10-06T00:00:00Z：Historical current-period observation", at: "2026-10-06T00:00:00Z" };
+    const oldLoaded = { ...loaded, entries: [...loaded.entries.filter(source => source.kind !== "concern"), legacySource] };
+    const legacy = structuredClone(current);
+    legacy.sourceBasis = documentSourceBasis(oldLoaded, spec);
+    legacy.sources = oldLoaded.entries;
+    legacy.sections.find(section => section.id === "concerns")!.items = [{ id: legacySource.id, text: legacySource.text, sourceIds: [legacySource.id] }];
+    snapshots.get(legacy.id).payload_encrypted = JSON.stringify(legacy);
+    const receipt = receipts.get(userId + ":" + opId);
+    receipt.result_encrypted = JSON.stringify({ ...created, current: legacy });
+    assert.equal(documentSnapshotValid(legacy, loaded), true);
+    assert.notEqual(legacy.sourceBasis, documentSourceBasis(loaded, spec));
+    assert.equal(documentSourceBasis({ ...loaded, legacyConcernSources: new Map() }, spec), current.sourceBasis);
+    const readable = (await store.get(userId, childId, created.id))!;
+    assert.equal(readable.readState, "stale"); assert.deepEqual(readable.current, legacy); assert.deepEqual(readable.history, []);
+    assert.deepEqual((await store.create(userId, childId, spec, opId))!.current, legacy);
+    const input = exportInput(legacy);
+    const pdfRequest = () => new Request(`https://synthetic.invalid/api/children/${childId}/documents/${created.id}/pdf`, {
+      method: "POST", headers: { "content-type": "application/json", "x-expected-user-id": userId }, body: JSON.stringify(input),
+    });
+    assert.equal((await handleFamilyDocumentRequest(pdfRequest(), userId, store, async () => true)).status, 200);
+    assert.deepEqual(renderedSnapshot, legacy);
+    const refreshed = (await change(created, "refresh"))!;
+    assert.deepEqual(refreshed.history.find(snapshot => snapshot.id === legacy.id), legacy);
+    assert.ok(refreshed.current!.sources.filter(source => source.kind === "concern").every(source => source.id.includes(":observation:")));
+    assert.ok(!refreshed.current!.sections.find(section => section.id === "concerns")!.items.some(item => item.text.includes("Historical prior-period")));
+    assert.deepEqual(await store.exportSnapshot(userId, childId, created.id, input), legacy);
+    (concerns[0] as any).version++;
+    assert.equal(documentSnapshotValid(legacy, await load()), false);
+    (concerns[0] as any).version--;
+    (concerns[0] as any).events[0].text = "Corrected prior observation";
+    assert.equal(documentSnapshotValid(legacy, await load()), false);
+    concerns = [];
+    const invalid = (await store.get(userId, childId, created.id))!;
+    assert.equal(invalid.current, null); assert.deepEqual(invalid.history, []);
+    assert.equal((await store.create(userId, childId, spec, opId))!.current, null);
+    await assert.rejects(store.exportSnapshot(userId, childId, created.id, input), { code: "source_changed" });
+    assert.equal((await handleFamilyDocumentRequest(pdfRequest(), userId, store, async () => true)).status, 409);
   });
 
   await t.test("checked stale preparation archives the exact used snapshot without refresh and stays stale", async () => {
@@ -191,3 +298,4 @@ test("document workflow integrity with synthetic sources and a serialized fake P
     assert.ok(!queries.some(sql => /^DELETE /u.test(sql)));
   });
 });
+

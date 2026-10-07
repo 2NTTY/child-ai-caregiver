@@ -7,7 +7,39 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### QA-ADK-RUNTIME — 指令資料分層與安全終結（整合覆核中）
+### QA-LEGACY-ARCHIVE — 退出已替代的測試前端（必要檢查及覆核通過，待合併）
+
+- 使用者要求清理無用功能、同步計劃及可恢復歸檔；只退役23個已被替代的根入口／Panel／專用runner，見[清單](./_archive/legacy-web-2026-10-07/README.md)。共用controller/API/權限/收據、FamilyPanel及Emergency能力保留。
+- 舊命令與預設Playwright配置明確非零退出，不能靜默換測試假稱通過。原碼逐byte歸檔並核hash；需要重播以固定來源commit隔離恢復，非現行入口。
+- 單份準備compatibility及DB/歷史/unknown恢復不在退休範圍。23份原碼逐byte/hash及active import closure已核對；實作者3/3、root/frontend typecheck及35路由build通過，獨立重跑3/3與兩份typecheck通過。build由覆核者核log及bundle hash，沒有獨立重跑；未驗browser／DB／真模型，未部署。
+
+<a id="current-capability-gaps"></a>
+## 新前端能力差距（2026-10-07 源碼核對）
+
+舊工作包的完成只指當時範圍與證據，不等於下列產品目標已完成。核對基線0a39e018；正式部署及真使用驗收另見STATUS，不由master推定。
+
+- 準備單已有多文件權威／版本／清單／歸檔及Agent工具；正文仍是確定性來源整理與固定清單，未有Agent依要求撰寫／修改正文、日期及增刪項目。下一步先定同一document的編輯、來源grounding與版本契約，不另建內容副本。
+- Agent文件讀取只列前20份，正文超7000字不返回且無分段續讀；需有界搜尋／游標及固定版本章節讀取，不能以內容部分標誌當已讀完。
+- 成長報告目前固定range且partial，不代表完整年度／季度檔案；逐觀察期間篩選修復已隨PR #117合併，尚未部署。年度／季度分類、長期容量與合法歷史查閱另待完成，不放寬撤權遮蔽。
+- 每孩子50文件含歸檔、歷史僅最近仍有效快照、聯絡首50項及無游標，長期可找回／可新增能力須規劃；不能把載入前綴冒充完整歷史。
+- 提醒通知及人工核對已有後端、新UI及權限／unknown流程；仍須真流程驗收。任務尚無完全禁背景的獨立模式，不將無外發授權說成沒有站內事件。
+- 長期記憶人工管理已接，短期脈絡／參考目錄及Agent更正／停用已有事實未接；管理表單只作後備，不要求家長管理資料庫。
+- 指定共享家庭建立孩子及簡潔可達的緊急求助入口未等價接回新UI；保留原能力，不能列為无用退休。舊單份準備仍有資料／原操作恢復入口，不刪或自動複製成新文件。
+
+
+
+### QA-REPORT-PERIOD — 關注觀察的固定期間歸屬（已合併，待部署）
+
+- PR #117 已合併為31025d6，尚未部署。
+
+- 基線0a39e018。純函數合成重現：關注最近5條被聚合成單一來源並取最後事件日期，跨季新增會排除上一季觀察，亦可能夾入季前內容。
+- 每條觀察以原事件ID／日期篩選期間，關注背景另標；維持來源權威／版本、未知日期、80項有界coverage與同版PDF。舊聚合只作临時校驗投影，不新增持久副本，不遷移／刪除舊資料。
+- 必驗跨季／香港跨日、超過5條、來源更正／撤權、舊快照兼容與新basis stale、整體上限及同版PDF。實作者與獨立覆核各10/10定向通過，source/store scoped semantic typecheck通過；測試用fake Pool／mock PDF renderer，未驗真DB／PDF排版／正式UI。遠端exact head及合併部署另核，不稱全面產品完成。
+
+
+### QA-ADK-RUNTIME — 指令資料分層與安全終結（已合併，待部署）
+
+- PR #113 已正常合併為0a39e018，正式網站仍待批次部署。
 
 - 使用者批准按 ADK 審查結果修正。基線 PR #112／a347956b，保留互動64k／背景32k的獨立上限；本包不改 selector、跨輪來源或 DB。
 - input.context 從 instruction 移到有標籤資料 part；受信指令用 InstructionProvider，保留大括號原文與原生 parts。present_answer 成功後終結原生 loop，最終引用／授權驗證保留；同批 terminal 混其他工具在任何 handler 前拒絕。
@@ -434,3 +466,4 @@ P1 按真實流程實作 DataStore／ModelGateway；P2 加入 AgentRuntime／Att
 保留冻结基线的十章编号；现行文件使用稳定 REQ／AC／S／工作包／ADR／LOG／EV／SRC 标识，标题可以完善，锚点不能随意失效。只修改被新决定影响的部分，未变有效内容继续保留。
 
 刪除或替代設計須在 DECISIONS 記原因、影響及替代，WORKLOG 只追加實際驗證及狀態。日常按現行 REQ／AC 與工作包追溯；只有需要回查遷移來源時，先讀 [_archive 索引](_archive/README.md) 再定位歷史 MIGRATION_MAP。文件移入 `_archive/` 或改為 archived-in-place，必須同包同步索引；不得直接掃描歸檔或改寫舊 LOG 連結。舊「待處理」不是狀態；使用本文件五狀態與四證據層級。[歷史拆分依據](docs/DECISIONS.md#adr-001)／[五階段依據](docs/DECISIONS.md#adr-005)／[Server 替代決策](docs/DECISIONS.md#adr-008)／[工作規則決策](docs/DECISIONS.md#adr-009)。
+

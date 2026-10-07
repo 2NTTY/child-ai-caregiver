@@ -66,7 +66,7 @@ Dashboard 共同祖先各掛一次 owner，consumer 不能再掛自己的 fixtur
 
 `/summary` 預設概況，`?tab=preparation` 讀多用途準備單，`?tab=legacy-preparation` 只保留原共享準備及 unknown 恢復的相容深連結；正常準備單頁不再顯示該舊入口，沒有刪除或遷移資料／收據。概況共用 Profile owner，缺值保留未知；量度須有相符孩子／scope、record ID／版本、原值、日期及來源，未接入即 unavailable。
 
-[PreparationWorkspace](src/workspaces/PreparationWorkspace.tsx) 與歷史共用同一文件 owner。到診、入學／轉校、外出／旅行、照顧交接以重點、問題及清單閱讀為主；請 Agent 準備只建立未送出草稿，不覆蓋已有問題或假稱已生成。合成歸檔保留當時 revision；來源更新標 stale，撤權連歷史正文一起遮罩。正式多文件生成、持久化、清單、歸檔／重開均未接通；舊共享準備收據沒有因此遷移。
+[PreparationWorkspace](src/workspaces/PreparationWorkspace.tsx) 與歷史共用同一文件 owner。到診、入學／轉校、外出／旅行、照顧交接以重點、問題及清單閱讀為主；請 Agent 準備只建立未送出草稿，不覆蓋已有問題或假稱已生成。合成歸檔保留當時 revision；來源更新標 stale，撤權連歷史正文一起遮罩。正式多文件生成、持久化、清單、歸檔／重開已由 useFamilyDocuments 接同一API；正文仍為確定性來源整理，未有Agent自訂正文編輯。舊共享準備收據沒有因此遷移，完整能力差距見[根PLAN](../PLAN.md#current-capability-gaps)。
 
 原到診閱讀沿 Summary controller，明確修改才顯示表單，返回閱讀保留草稿。沒有權威相關性／負責人映射時不從普通記錄推導醫療關聯或編造姓名；只導向清單的按鈕不能稱為精確記錄／任務定位。
 
@@ -125,7 +125,7 @@ Care／Task／Memory／Summary 的原 opId 與 confirmed／unconfirmed／null �
 
 [ChatTimeline](src/components/chat/ChatTimeline.tsx)、[ChatMessage](src/components/chat/ChatMessage.tsx)、[AnswerSources](src/components/chat/AnswerSources.tsx) 與 AgentComposer 共用呈現；保留 stable message id、最終快照、IME／多行輸入、每訊息引用及閱讀位置。只顯示公開活動，不顯示內部思維鏈；合成逐字 timer 不是正式 stream。來源需原 id／版本／用途及權限，無真逐句映射只呈底部來源，不能猜上標關係。
 
-已取消常駐緊急求助卡及聊天頭像；需要時仍用統一權威求助入口，不代表取消求助功能。舊版字型缺字與連續轉場沒有新實測便不宣稱修好。
+已取消常駐緊急求助卡及聊天頭像；求助功能並未退休，但目前新 EmergencyHelpView 未實際掛載，統一入口仍待補接，不得宣稱已可使用。舊版字型缺字與連續轉場沒有新實測便不宣稱修好。
 
 <a id="semantic-motion"></a>
 <a id="responsive-scroll"></a>

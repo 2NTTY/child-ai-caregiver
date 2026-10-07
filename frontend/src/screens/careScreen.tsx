@@ -23,11 +23,11 @@ function AgentPendingReview() {
   const [selected, setSelected] = useState<string | null>(null);
   useEffect(() => { setSelected(null); if (scopeKey && online) readAgentPending(); }, [scopeKey, online]);
   const locked = !!recovery?.pending || !!workspace?.model.draft || !!workspace?.model.deletion;
-  return <SectionCard surface="plain"><SectionHeader density="compact" title="Agent 待確認事項" subtitle="健康事實及家庭待辦只會在你核對內容、對象及共享範圍後保存。"
+  return <SectionCard surface="plain"><SectionHeader density="compact" title="助手待確認事項"
     action={agentPending.state === "failed" ? <AppButton label="重試" variant="quiet" disabled={!online || locked} onPress={() => readAgentPending()} /> : undefined} />
     {agentPending.state === "idle" ? <Text>{online ? "待確認事項尚未讀取；等候目前操作完成後會自動讀取。" : "目前離線，待確認事項尚未核對。"}</Text>
       : agentPending.state === "loading" && !agentPending.hasSnapshot ? <ReadStateNotice state="loading" scopeKey={scopeKey ?? undefined} refreshing={!!agentPending.hasSnapshot} message="正在讀取待確認事項…" /> : agentPending.state === "failed" ? <Text>{agentPending.hasSnapshot ? "未能更新，仍顯示上次讀取的待確認事項。" : "未能讀取待確認事項，請重試。"}</Text>
-      : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : (agentPending.state === "ready" || agentPending.state === "loading" && agentPending.hasSnapshot) && !agentPending.entries.length ? <Text>目前已載入範圍沒有待確認事項。</Text> : null}
+      : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : (agentPending.state === "ready" || agentPending.state === "loading" && agentPending.hasSnapshot) && !agentPending.entries.length ? <Text>{agentPending.nextCursor ? "此頁暫無待確認提案" : "暫無待確認提案"}</Text> : null}
     {agentPending.entries.map(({ runId, proposal }) => <View key={runId + ":" + proposal.id} style={{ gap: spacing.sm }}>
       <Text>{proposal.title}</Text><Text>{proposal.scope === "family" ? "家庭共享" : "私人"} · {proposal.status === "expired" ? "原提案已過期；仍可查看及略過" : "待你核對"}</Text>
       <AppButton label="查看原提案及確認範圍" variant="secondary" disabled={locked || !!agentModel.busy || !!agentModel.pendingDecision}
