@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { documentChangeSchema, documentExportSchema, documentRequestSchema } from "../src/shared/family-documents.ts";
+import { documentChangeSchema, documentExportSchema, documentRequestSchema, documentContentQuerySchema, documentListQuerySchema } from "../src/shared/family-documents.ts";
 import type { FamilyDocumentStore } from "./family-document-store.ts";
 import { renderFamilyDocumentPdf } from "./family-document-pdf.ts";
 import { FamilyError } from "./family-access.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-const route = new RegExp("^/api/children/(" + uuid + ")/documents(?:/(" + uuid + ")(?:/(actions|pdf))?)?$", "i");
-const createSchema = z.object({ opId: z.uuid(), request: documentRequestSchema }).strict();
+const route = new RegExp("^/api/children/(" + uuid + ")/documents(?:/(" + uuid + ")(?:/(actions|pdf|content|versions))?)?$", "i");
+const createSchema = z.object({ opId: z.uuid(), request: documentRequestSchema, documentContentQuerySchema, documentListQuerySchema }).strict();
 const changeSchema = z.object({ opId: z.uuid(), change: documentChangeSchema }).strict();
 export async function handleFamilyDocumentRequest(request: Request, userId: string | null, store: FamilyDocumentStore,
   isCurrentUser: (userId: string) => Promise<boolean>): Promise<Response> {
@@ -17,16 +17,25 @@ export async function handleFamilyDocumentRequest(request: Request, userId: stri
   const match = route.exec(new URL(request.url).pathname);
   if (!match) return apiError("not_found", "找不到文件。", 404);
   try {
+    const url = new URL(request.url);
     const childId = match[1].toLowerCase(), id = match[2]?.toLowerCase(), action = match[3];
+    if (request.method === "GET" && (action === "content" || action === "versions")) {
+      const page = action === "content" ? await store.readContent(userId, childId, id!, documentContentQuerySchema.parse({
+        snapshotId: url.searchParams.get("snapshotId"), snapshotVersion: Number(url.searchParams.get("snapshotVersion")), offset: Number(url.searchParams.get("offset") ?? "0") }))
+        : await store.listVersions(userId, childId, id!, url.searchParams.get("cursor"));
+      if (!await isCurrentUser(userId)) return apiError("session_changed", "登入帳號已改變。", 409);
+      return page ? jsonResponse({ page }) : apiError("not_found", "沒有可讀取的文件版本。", 404);
+    }
     if (request.method === "GET" && !action) {
       if (id) {
         const item = await store.get(userId, childId, id);
         return item && await isCurrentUser(userId) ? jsonResponse({ item }) : apiError("not_found", "沒有可讀取的文件。", 404);
       }
-      const page = await store.list(userId, childId);
+      const page = await store.list(userId, childId, documentListQuerySchema.parse({ cursor: url.searchParams.get("cursor"),
+        status: url.searchParams.get("status") ?? "all", limit: Number(url.searchParams.get("limit") ?? "50") }));
       return page && await isCurrentUser(userId) ? jsonResponse({ page }) : apiError("not_found", "沒有可讀取的文件。", 404);
     }
-    if (request.method !== "POST" || id && !action) return apiError("method_not_allowed", "不支援此操作。", 405);
+    if (request.method !== "POST" || id && !action || action === "content" || action === "versions") return apiError("method_not_allowed", "不支援此操作。", 405);
     if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") return apiError("unsupported_media_type", "請以 JSON 提交。", 415);
     let raw: unknown;
     try { raw = await request.json(); } catch { return apiError("invalid_json", "請核對輸入。", 400); }

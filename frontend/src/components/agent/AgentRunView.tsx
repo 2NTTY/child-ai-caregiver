@@ -26,6 +26,7 @@ const retrievalLabels = {
   not_used: "本次沒有使用知識檢索",
 } as const;
 const receiptDescriptions: Record<NonNullable<AgentProposalView["result"]>["kind"], string> = {
+  family_document: "指定修改已保存到同一份家庭文件；請按目前來源及版本核對正文。",
   task: "此收據代表任務資料已保存；照護事項的完成狀態另行記錄。",
   memory_fact: "此收據代表確認事實已保存；不代表照護事項已完成。",
   concern: "關注鏈已保存。",

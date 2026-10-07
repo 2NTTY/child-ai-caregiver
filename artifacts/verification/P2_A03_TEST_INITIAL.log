@@ -1,0 +1,34 @@
+(node:40204) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ local typed edits preserve unrelated content, checks, order and protected refresh (3.6213ms)
+✔ fixed long snapshot reads and keyset document/version pages remain resumable (288.9009ms)
+✖ native ADK declares document edits and saves one bound shared candidate before decision (27.6085ms)
+﹣ source invalidation, atomic rejection, scope and original unknown operation stay protected (0.3524ms) # Stopped at the first focused failure
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 1700.8826
+
+✖ failing tests:
+
+test at tests\p2-a03.test.ts:18:3
+✖ native ADK declares document edits and saves one bound shared candidate before decision (27.6085ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(question .question.includes("共享"))
+  
+      at file:///C:/Users/2NTTY/.codex/worktrees/p2-a03-document-editing/%E5%AD%A9%E5%AD%90ai%E6%8A%A4%E5%B7%A5/tests/p2-a03.test.ts:180:101
+      at async TestContext.<anonymous> (file:///C:/Users/2NTTY/.codex/worktrees/p2-a03-document-editing/%E5%AD%A9%E5%AD%90ai%E6%8A%A4%E5%B7%A5/tests/p2-a03.test.ts:20:11)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

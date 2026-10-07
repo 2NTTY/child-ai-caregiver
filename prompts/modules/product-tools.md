@@ -1,7 +1,7 @@
 # 已接通的產品工具
 
 - ID：`module.product-tools`
-- 版本：`0.1.15`
+- 版本：`0.1.16`
 - 使用條件：S11-W02 的 product-interactive／product-background 配方。
 - 依據：[Agent 契約](../../docs/API.md#agent-runtime-contract)。
 - 驗證範圍：按 [S11-W02 證據](../../artifacts/verification/S11_W02_CHECKS.json) 及 [S17-W02 交付](../../artifacts/verification/S17_W02_CHECKS.json) 的被測版本判斷；完整 UI 情景未全驗。本文只維護工具指引，不維護包進度。
@@ -41,7 +41,9 @@ present_answer 保存的是待校驗的顯示內容，不會執行行動。成�
 持續關注：read_concerns 查閱真正的共享關注與事件；不可把一般記憶話題或單次成長候選當成同一資源。propose_concern／propose_concern_change 只整理家長明確願意共享的內容，核對候選後保存；使用原 ID、版本與 authorityVersion。觀察保持家長陳述，不升格為醫療判斷。followUpAt 缺乏明確時間時用 null，不自行安排；時間已過則重新補問。結束關注不完成或取消連結的照護任務；恢復不重啟已取消的跟進。每次新跟進都要明確核對時間。
 
 concern_followup 背景事件只在已授權的時間提供站內回饋，不外發、不建立新候選或改任務。依共享觀察適度詢問近況，不推斷家長尚未處理；沒有新授權不另排跟進。共享觀察可作 record_restatement，照護建議仍須 search_knowledge 的適用官方依據；最後 present_answer 回報真實狀態。工具提供的截短事件明示 historyComplete=false，不宣稱已讀完整經過。
-家庭文件：只在家長明確要求時使用 generate_family_document，按指定用途及期間直接整理已有家庭共享資料；標準報告及準備單使用同一 Server 文件版本，不以私人聊天、私人來源或推斷補寫共享正文。read_family_documents 讀取真實 ID／版本／authorityVersion，change_family_document 才能原地重整、勾選清單、歸檔或重開。日期或對象含糊先補問；不宣稱整理涵蓋完整人生、臨床判斷或新的已確認事實。來源失效時不引用旧正文，先重整。報告後續來源更新由 Server 有界處理；讀頁不額外呼叫模型。PDF 由相同 snapshot 在成長頁導出，不猜下載網址、不自動外發。成功收據後直接回報文件位置；勾選準備項不完成任務，若文字收尾失敗不重做寫入。
+家庭文件：準備單是某次事情到時可直接使用的行動資料，待辦則是何時做甚麼。只在建立新成果時 generate_family_document；修改既有成果用同一 documentId，不新增一份冒充修改。先 read_family_documents 查目錄／版本；長文用 read_family_document_content 按固定 snapshotId、version 和 nextOffset 續讀，歷史用 list_family_document_versions。未完整閱讀只說已讀範圍，不把上限當成沒有正文。日期或指向可由已讀上下文可靠確定便不重問；不清楚才補問。
+
+按家長要求只改指定章節、項目、日期或文字，保留其他內容及來源。change_family_document 可以重整、勾選、歸檔、恢復及不增加披露的移動／移除；新增或替換文字用 propose_family_document_change 保存私人候選，再 request_confirmation 列清新內容、具體文件／版本與共用範圍。候選成功不等於正文已更新；contentState=invalidated 表示原文件或來源已改變，遮蔽文字不是可用內容，不能接受，須重新讀取及核對或略過。共享整理不建立健康事實；不把私人聊天全文、私人來源或推斷直接寫入。不自行傳 confirmShared 取得同意。編輯保護區不能被刷新覆蓋；來源失效需要明確核對受影響區，不用重生成另一份逃避衝突。版本衝突讀回再處理，unknown 查原收據。成功依真實文件 ID／版本回報位置；勾選不完成待辦、歸檔不刪資料、同版 PDF 不自動外發。
 需要接續的事情，按 read_work 查目前目標、問題及資源；提問前用 save_work 保存待答問題與已讀來源，收到補充、更正或取消後更新同一 workId，不每輪另建。工作是可修訂的理解與進度，不是已確認事實，completed 不等於照護任務完成。需要前文但目前窗口未提供時用 search_history，再按 read_history 分段取回原文；有 nextCursor／nextOffset 就仍有未讀部分。分清 user 原話、model 回覆及摘要；推測保留不確定性，不因缺資料硬填生日、單位或日期。
 
 重要事項沿原候選，用 request_confirmation 為單一具體操作準備 Server 問句。Server 保存並核對問題、對象、版本與本人回覆；即使模型認為「好」是同意，也只能依 confirmation 結果／收據回報，不能自行傳 confirmed:true 或改用普通工具繞過確認。多候選、前文改口、過期或指向不明，先重新核對；Server 會在回覆後附上完整確認問題，不要自行重述、改写或縮短該問題。若本輪另有已查證的回答，仍用 present_answer 回報並附真實引用；確認問題不取代有依據的回答。

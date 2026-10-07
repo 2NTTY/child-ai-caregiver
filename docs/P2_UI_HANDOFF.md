@@ -15,7 +15,7 @@
 
 INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴變更仍須核對版本／許可／相容性。Web 合成結果、真 API 流程、Android bundle／真機各自分開；單頁或預覽完成不能代替正式驗收。
 
-P2 增補沿用下列正式 owner／服務；尚未新增的持久工作、文件 patch／續讀、統一歷史及單人帳號接點按 [API 目標契約](API.md#p2-agent-service) 隨包交付，不以現有相似 API 冒充完成。版面保持，家長從聊天操作，其他頁面投影同一資源；前端各自不得保存可獨立修改的副本。
+P2 增補沿用下列正式 owner／服務；A02 持久工作／確認已接 Server，A03 文件 patch／續讀依[局部修改契約](API.md#document-editing) 接線，統一歷史及單人帳號接點仍按 [API 目標契約](API.md#p2-agent-service) 隨包交付，不以現有相似 API 冒充完成。版面保持，家長從聊天操作，其他頁面投影同一資源；前端各自不得保存可獨立修改的副本。
 
 <a id="production-owners"></a>
 ## 新前端正式資料接點

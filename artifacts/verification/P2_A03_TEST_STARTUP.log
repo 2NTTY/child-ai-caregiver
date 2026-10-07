@@ -1,0 +1,27 @@
+(node:45748) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+file:///C:/Users/2NTTY/.codex/worktrees/p2-a03-document-editing/%E5%AD%A9%E5%AD%90ai%E6%8A%A4%E5%B7%A5/server/family-document-sources.ts:5
+import { createCareStore } from "./care.ts";
+         ^^^^^^^^^^^^^^^
+SyntaxError: The requested module './care.ts' does not provide an export named 'createCareStore'
+    at #_instantiate (node:internal/modules/esm/module_job:254:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:369:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:691:26)
+    at async file:///C:/Users/2NTTY/.codex/worktrees/p2-a03-document-editing/%E5%AD%A9%E5%AD%90ai%E6%8A%A4%E5%B7%A5/tests/p2-a03.test.ts:26:124
+
+Node.js v24.11.0
+✖ tests\p2-a03.test.ts (5208.3626ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5213.03
+
+✖ failing tests:
+
+test at tests\p2-a03.test.ts:1:1
+✖ tests\p2-a03.test.ts (5208.3626ms)
+  'test failed'

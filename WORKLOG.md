@@ -1609,3 +1609,15 @@
 - 停批原因為 harness 少算一次重複檢查，不改產品斷言或擴上限。後續移除該重複檢查並讓計數在上限檢查後增加；修正版腳本未重新跑。獨立精確清理核對本輪 userId／email／孩子歸屬後刪合成帳號 cascade，exit 0；原庫恢復 children 14／messages 17／facts 1／photos 2、worker=false。不把原失敗改成整批通過。
 - 主模型根據已執行關鍵結果、離線游標邊界及清理證據裁定本包最低 gate 足夠；[結構化證據](artifacts/verification/P2_A02_CHECKS.json)／[原 SQL 停批與清理](artifacts/verification/P2_A02_LOCAL.txt)。實際 Node 24.11.0／npm 11.6.1，lockfile 未改；engine 警告沿前包保留。沒有真模型／通知／瀏覽器／部署費用。
 - 限制：pool 重建是重連持久化，不代表 OS／VM 重啟；完整歷史／工作頁由 A07 接入，真模型完整成果及部署仍待後包。合併前再核對 master／相關 draft，按 C 帳號 PR／merge；A02 合併後先開 A03，不將九包目標標完成。
+
+
+<a id="log-20261008-p2-a03"></a>
+## 2026-10-08｜P2-A03 同一文件修改及有界續讀
+
+- 基線 `770ad48`；C 主責，權重5，C50%／A30%／B20%。A 操作 AI／Git，主模型親寫契約、工具指引及 Prompt Pack 0.1.29；不宣稱其他成員獨立執行測試。
+- 原加密文件／快照／opId 交易補穩定 ID 局部修改、編輯保護、來源待核對、固定版4,000字元續讀、清單／歷史keyset與50份active上限；歸檔不佔終身額度。新正文沿 A02 綁定確認，模型不能自己授權共享；不新建文件冒充修改。
+- review 補正 profile 年齡依據、純結構修復的遮蔽過渡、候選來源basis／失效遮蔽，以及單份待核對不阻塞worker批次。前端只補候選差異、不可接受狀態及收據，未改設計或接管 #130 草稿。
+- 最少離線4聚合案例有通過證據。首次mock fixture啟動失敗；修正後前2項通過但第3項用詞斷言失敗停批；改核正式完整共用範圍句後只跑後2項通過。review後只重核受影響2項。原失敗／通過raw保存。scoped Server/client/test及前端投影 TypeScript通過，不是全倉檢查。
+- 一次真本機SQL通過：既有030 checksum與暫停worker核對；2合成帳號、1孩子、3文件、1共享record、49/60業務呼叫、1pool重建。長文／中間項修改、原op與版本衝突、失效候選拒絕／遮蔽、真問句綁定／consume、歸檔／恢復／刷新保留修改通過。精確清理新帳號cascade後原children14／documents0／versions0／messages17／records9／worker=false不變。
+- [結構化證據](artifacts/verification/P2_A03_CHECKS.json)／[SQL raw](artifacts/verification/P2_A03_LOCAL.log)。Node24.11.0/npm11.6.1，lockfile未改。零模型、embedding、外網、通知、瀏覽器或部署；pool重建不等於VM重啟。完整頁面歷史留A07、完整期間報告留A05。
+- 交付前核對master及draft #111/#130，按C帳號PR/merge；合併後再開始依賴包。

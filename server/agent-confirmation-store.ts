@@ -7,6 +7,8 @@ import type { AgentConfirmation } from "../src/shared/agent-work.ts";
 import { requestAgentConfirmationSchema } from "../src/shared/agent-work.ts";
 import { buildAgentConfirmationQuestion, isExplicitAgentConsent } from "./agent-work-tool-descriptions.ts";
 import { FamilyError, READ_ROLES, withChildAccess } from "./family-access.ts";
+import { createFamilyDocumentStore } from "./family-document-store.ts";
+import { transactionPool } from "./transaction-pool.ts";
 import { canonicalJson } from "./online-routing.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 interface Row {
@@ -29,7 +31,7 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
       FROM agent_proposals p JOIN agent_runs r ON r.id=p.run_id WHERE p.id=$1 AND p.run_id=$2 AND r.owner_user_id=$3 AND r.child_id=$4 FOR UPDATE OF p`, [id, runId, userId, childId])).rows[0];
     if (!row) throw new FamilyError(404, "not_found");
     const saved = JSON.parse(cipher.decrypt(row.payload_encrypted, `agent-run:${childId}:${userId}:${runId}:proposal:${id}:${row.version}`));
-    return { row, value: { id, runId, childId, version: row.version, status: row.state, createdAt: row.created_at.toISOString(),
+    return { row, documentSourceBasis: saved.documentSourceBasis as string | undefined, value: { id, runId, childId, version: row.version, status: row.state, createdAt: row.created_at.toISOString(),
       expiresAt: row.expires_at.toISOString(), ...saved } as AgentProposal };
   }
   async function scope(client: PoolClient, workspaceId: string, userId: string, childId: string) {
@@ -56,7 +58,13 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
           if (!work) throw conflict("work_cancelled"); workVersion = work.version;
         }
         const value = target.value.value;
-        let shared = ["task_create", "task_change", "concern_create", "concern_change"].includes(value.kind) || value.kind === "memory_fact" && value.intendedVisibility === "family";
+        let shared = ["family_document_change", "task_create", "task_change", "concern_create", "concern_change"].includes(value.kind) || value.kind === "memory_fact" && value.intendedVisibility === "family";
+        if (value.kind === "family_document_change") {
+          const borrowed = transactionPool(client);
+          const document = await createFamilyDocumentStore(borrowed.pool, cipher).validatePatch(userId, childId, value.documentId, value.change);
+          borrowed.assertReleased();
+          if (!target.documentSourceBasis || document?.sourceBasis !== target.documentSourceBasis) throw conflict("source_changed");
+        }
         if (value.kind === "memory_fact_revise" || value.kind === "memory_fact_deactivate") {
           const fact = (await client.query<{ visibility: string; version: number }>("SELECT visibility,version FROM memory_facts WHERE id=$1 AND child_id=$2 AND (visibility='family' OR created_by=$3) FOR SHARE", [value.factId, childId, userId])).rows[0];
           if (!fact || fact.version !== value.expectedVersion) throw conflict("version_conflict");
