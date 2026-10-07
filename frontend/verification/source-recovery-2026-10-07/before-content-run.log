@@ -1,0 +1,46 @@
+✖ photos: unknown metadata retains the original run when content is missing (406.977558ms)
+✖ photos: running metadata retains the original run when content is missing (116.118724ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1271.854359
+
+✖ failing tests:
+
+test at frontend/scripts/source-photo-recovery.test.mjs:181:3
+✖ photos: unknown metadata retains the original run when content is missing (406.977558ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_source_recovery_20261007/frontend/scripts/source-photo-recovery.test.mjs:190:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/source-photo-recovery.test.mjs:181:3
+✖ photos: running metadata retains the original run when content is missing (116.118724ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_source_recovery_20261007/frontend/scripts/source-photo-recovery.test.mjs:190:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

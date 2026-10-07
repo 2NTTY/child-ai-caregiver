@@ -176,3 +176,36 @@ for (const kind of ['sources', 'photos']) {
     f.unmount();
   });
 }
+
+for (const extractionState of ['unknown', 'running']) {
+  test('photos: ' + extractionState + ' metadata retains the original run when content is missing', async () => {
+    const f = fixture('photos', {extraction: {state: extractionState, runId: 'original-run', draft: null}});
+    let contentReads = 0, resourceReads = 0;
+    f.api.content = async () => {contentReads++; throw new ApiError(404);};
+    f.api.photo = async (childId, id, _signal, userId) => {
+      resourceReads++; assert.equal(childId, 'child-a'); assert.equal(id, 'photo-a'); assert.equal(userId, 'synthetic-parent'); return f.target;
+    };
+    f.api.extract = async () => assert.fail('Reconciliation must not repeat extraction');
+    let v = await f.open();
+    assert.equal(f.guard.pending, true); assert.equal(v.model.operation.state, 'unknown'); assert.equal(v.model.selected, null);
+    assert.equal(v.model.original, null); assert.equal(v.model.canPick, false); assert.equal(v.model.canUpload, false); assert.equal(f.resets, 0);
+    const reads = resourceReads; v.actions.checkOriginal(); await settle(); v = f.render();
+    assert.equal(resourceReads, reads + 1); assert.equal(contentReads, 1); assert.equal(f.guard.pending, true);
+    assert.equal(v.model.operation.state, 'unconfirmed'); assert.equal(v.model.selected.extraction.state, extractionState); assert.equal(v.model.canPick, false);
+    f.unmount();
+  });
+}
+test('photos: missing content followed by true child revocation clears the known original run', async () => {
+  const f = fixture('photos', {extraction: {state: 'unknown', runId: 'original-run', draft: null}});
+  const v = await f.ready(); f.api.content = async () => {throw new ApiError(404);}; f.listError = new ApiError(404);
+  v.actions.openPhoto(v.model.items[0]); await settle(); const denied = f.render();
+  assert.equal(denied.model.access, 'lost'); assert.equal(denied.model.selected, null); assert.deepEqual(denied.model.items, []);
+  assert.equal(f.guard.pending, false); assert.equal(f.denied.at(-1).status, 403); assert.equal(f.resets, 1); f.unmount();
+});
+test('photos: late missing-content response after scope exit cannot revalidate or publish', async () => {
+  const f = fixture('photos', {extraction: {state: 'running', runId: 'original-run', draft: null}}); let rejectContent;
+  const v = await f.ready(); f.api.content = () => new Promise((_resolve, reject) => {rejectContent = reject;});
+  v.actions.openPhoto(v.model.items[0]); await settle(); f.render(); const reads = f.listReads;
+  f.current = false; rejectContent(new ApiError(404)); await settle();
+  assert.equal(f.listReads, reads); assert.equal(f.render().model.selected, null); assert.equal(f.denied.length, 0); f.unmount();
+});

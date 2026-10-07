@@ -7,7 +7,7 @@
     {
       "command": "node --test frontend/scripts/source-photo-recovery.test.mjs",
       "result": "passed",
-      "tests": 17,
+      "tests": 21,
       "failed": 0,
       "log": "tests.log"
     },
@@ -47,8 +47,19 @@
   ],
   "sha256": {
     "frontend/src/production/usePhotoInputSources.ts": "218dead5946269380ce29e0c1e7691513e8b05c45256115a196b789bd974cc26",
-    "frontend/src/production/PhotoInputDomains.tsx": "d1e2d074bb5572bc9791b265582ef8ecdb959ef85d89c537d3a26423f55689d9",
+    "frontend/src/production/PhotoInputDomains.tsx": "c8f5249c2e65a4e295589684009313167dd773d8226fb542cf8664764a62f49f",
     "frontend/src/screens/SourcesScreen.tsx": "63e8dd8ffa0573bd6b5a56dcdc84e7e29af6bbb3963a180beab002c9fcda38d0",
-    "frontend/scripts/source-photo-recovery.test.mjs": "9af8ccb29c0f787e52869f42f90c28e11fdfdd747ad2bc80262afe5f78527c5c"
+    "frontend/scripts/source-photo-recovery.test.mjs": "5386451539f1c998039a564fdfa860a279a69967ddf577c1efbdfa00aed67c68"
+  },
+  "reviewRevision": {
+    "baseHead": "4d63ddbf4f6551652d8f9ef72bbc13ce704bc759",
+    "finding": "Photo metadata can reveal an existing unknown/running extraction before a content GET fails. The direct-operation guard must be established before that second read.",
+    "beforeLog": "before-content-run.log",
+    "result": "Both unknown/running cases fail before the fix; 21 targeted tests and frontend typecheck pass after the fix",
+    "addedCoverage": [
+      "Metadata unknown/running plus content 404 preserves the original run and manual check, blocks new photo actions",
+      "True child revocation after content 404 remains fail-closed",
+      "Late content failure after scope exit cannot revalidate or publish"
+    ]
   }
 }

@@ -1,25 +1,29 @@
-✔ sources: missing resource does not poison child workspace (193.953813ms)
-✔ photos: missing resource does not poison child workspace (87.885861ms)
-✔ sources: approved route departure discards only ordinary drafts (89.650415ms)
-✔ sources: resource 404 rechecks child access and revocation stays fail-closed (64.25608ms)
-✔ sources: inconclusive access check hides stale data and can recover (39.330481ms)
-✔ sources: unknown operation remains guarded across route cleanup and missing resource (50.370102ms)
-✔ sources: late access revalidation cannot publish after scope changes (39.923065ms)
-✔ photos: approved route departure discards only ordinary drafts (83.314699ms)
-✔ photos: resource 404 rechecks child access and revocation stays fail-closed (44.996947ms)
-✔ photos: inconclusive access check hides stale data and can recover (34.891364ms)
-✔ photos: unknown operation remains guarded across route cleanup and missing resource (55.465558ms)
-✔ photos: late access revalidation cannot publish after scope changes (40.964831ms)
-✔ photos: original ownership survives chat-to-Photos entry and releases on approved departure (46.693288ms)
-✔ photos: leaving the legacy Care photo view clears its ordinary draft (60.97884ms)
-✔ sources: retained stack screens unmount local forms outside the active route (4.494559ms)
-✔ sources: pending receipt payload survives departure without retry or reset (30.317915ms)
-✔ photos: pending receipt payload survives departure without retry or reset (28.517378ms)
-ℹ tests 17
+✔ sources: missing resource does not poison child workspace (386.644983ms)
+✔ photos: missing resource does not poison child workspace (161.219564ms)
+✔ sources: approved route departure discards only ordinary drafts (261.573266ms)
+✔ sources: resource 404 rechecks child access and revocation stays fail-closed (91.88505ms)
+✔ sources: inconclusive access check hides stale data and can recover (97.605915ms)
+✔ sources: unknown operation remains guarded across route cleanup and missing resource (76.964882ms)
+✔ sources: late access revalidation cannot publish after scope changes (91.011996ms)
+✔ photos: approved route departure discards only ordinary drafts (139.269103ms)
+✔ photos: resource 404 rechecks child access and revocation stays fail-closed (77.283776ms)
+✔ photos: inconclusive access check hides stale data and can recover (91.805118ms)
+✔ photos: unknown operation remains guarded across route cleanup and missing resource (81.58992ms)
+✔ photos: late access revalidation cannot publish after scope changes (56.299705ms)
+✔ photos: original ownership survives chat-to-Photos entry and releases on approved departure (78.334333ms)
+✔ photos: leaving the legacy Care photo view clears its ordinary draft (92.149366ms)
+✔ sources: retained stack screens unmount local forms outside the active route (6.38382ms)
+✔ sources: pending receipt payload survives departure without retry or reset (47.081228ms)
+✔ photos: pending receipt payload survives departure without retry or reset (41.614934ms)
+✔ photos: unknown metadata retains the original run when content is missing (68.474255ms)
+✔ photos: running metadata retains the original run when content is missing (57.527731ms)
+✔ photos: missing content followed by true child revocation clears the known original run (58.363107ms)
+✔ photos: late missing-content response after scope exit cannot revalidate or publish (83.156366ms)
+ℹ tests 21
 ℹ suites 0
-ℹ pass 17
+ℹ pass 21
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 1437.28614
+ℹ duration_ms 2956.557064
