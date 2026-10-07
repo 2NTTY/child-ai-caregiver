@@ -82,6 +82,7 @@ test("observer emits metadata only and diagnostic sinks cannot change or block c
 test("tool rejection diagnostics allow only configured tools and canonical metadata", () => {
   const secret = "PRIVATE_DIAGNOSTIC_SENTINEL";
   const events: AgentDiagnostic[] = [];
+  const reads = { otherToolData: 0, unknownToolStatus: 0, successData: 0 };
   const observer = createAgentObserver({ runId: "synthetic-run", toolNames: ["propose_task", "save_record"], sink: event => { events.push(event); } });
   const hints = [
     { path: "values.dueAt", reason: "invalid_format", expected: secret, input: secret, message: secret },
@@ -93,11 +94,12 @@ test("tool rejection diagnostics allow only configured tools and canonical metad
   observer.recordToolRejection("propose_task", "execution", { status: "rejected", data: { code: "invalid_assignee", hints } });
   observer.recordToolRejection("propose_task", "execution", { status: "failed", data: { code: secret, hints } });
   observer.recordToolRejection("propose_task", "execution", { status: "unknown" });
-  observer.recordToolRejection("save_record", "execution", { status: "conflict", get data() { return assert.fail("Other tool data must not be read"); } });
-  observer.recordToolRejection(secret, "schema", { get status() { return assert.fail("Unknown tool results must not be read"); } });
+  observer.recordToolRejection("save_record", "execution", { status: "conflict", get data() { reads.otherToolData++; return { code: secret }; } });
+  observer.recordToolRejection(secret, "schema", { get status() { reads.unknownToolStatus++; return "rejected"; } });
   observer.recordToolRejection("propose_task", secret as "schema", { status: "rejected" });
   observer.recordToolRejection("propose_task", "execution", { status: secret, data: { code: secret } });
-  observer.recordToolRejection("propose_task", "execution", { status: "succeeded", get data() { return assert.fail("Success data must not be read"); } });
+  observer.recordToolRejection("propose_task", "execution", { status: "succeeded", get data() { reads.successData++; return { code: secret }; } });
+  assert.deepEqual(reads, { otherToolData: 0, unknownToolStatus: 0, successData: 0 });
   assert.equal(events.length, 6);
   assert.deepEqual(events.map(({ stage, code, outcome, hints }) => ({ stage, code, outcome, hints })), [
     { stage: "schema", code: "invalid_parameters", outcome: "rejected", hints: [{ path: "values.dueAt", reason: "invalid_format" }] },
@@ -116,19 +118,20 @@ test("tool rejection diagnostics allow only configured tools and canonical metad
 
 test("tool rejection projection is bounded and ignores extra fields without affecting control flow", async () => {
   const events: AgentDiagnostic[] = [];
-  const hint = { path: "values.title", reason: "wrong_type", get expected() { return assert.fail("Expected text must not be read"); },
-    get message() { return assert.fail("Issue messages must not be read"); }, get input() { return assert.fail("Input must not be read"); } };
+  const reads = { expected: 0, message: 0, input: 0, fourthHint: 0, disabledStatus: 0, malformedData: 0 };
+  const hint = { path: "values.title", reason: "wrong_type", get expected() { reads.expected++; return "PRIVATE_EXPECTED"; },
+    get message() { reads.message++; return "PRIVATE_MESSAGE"; }, get input() { reads.input++; return "PRIVATE_INPUT"; } };
   const observer = createAgentObserver({ runId: "synthetic-run", toolNames: ["propose_task"], sink: event => { events.push(event); } });
   observer.recordToolRejection("propose_task", "schema", { status: "rejected", data: {
     hints: [hint, { path: "values.details", reason: "out_of_range" }, { path: "values.dueAt", reason: "invalid_format" },
-      { get path() { return assert.fail("Only three incoming hints may be inspected"); } }],
+      { get path() { reads.fourthHint++; return "values.timeZone"; }, reason: "wrong_type" }],
   } });
   assert.equal(events[0]?.hints?.length, 3);
   assert.ok(JSON.stringify(events[0]!.hints).length <= 256);
   observer.recordToolRejection("propose_task", "schema", { status: "rejected", data: { hints: [hint, hint] } });
   assert.deepEqual(events[1]?.hints, [{ path: "values.title", reason: "wrong_type" }]);
   assert.doesNotThrow(() => observer.recordToolRejection("propose_task", "execution", {
-    status: "rejected", get data(): never { throw new Error("PRIVATE_GETTER_ERROR"); },
+    status: "rejected", get data(): never { reads.malformedData++; throw new Error("PRIVATE_GETTER_ERROR"); },
   }));
   for (const sink of [() => { throw new Error("PRIVATE_SINK_ERROR"); }, () => Promise.reject(new Error("PRIVATE_SINK_ERROR")),
     () => new Promise<void>(() => {})]) {
@@ -136,6 +139,8 @@ test("tool rejection projection is bounded and ignores extra fields without affe
     assert.equal(failing.recordToolRejection("propose_task", "execution", { status: "rejected", data: { code: "invalid_input" } }), undefined);
   }
   const disabled = createAgentObserver({ runId: "synthetic-run", toolNames: ["propose_task"] });
-  disabled.recordToolRejection("propose_task", "execution", { get status() { return assert.fail("Disabled diagnostics must not inspect results"); } });
+  disabled.recordToolRejection("propose_task", "execution", { get status() { reads.disabledStatus++; return "rejected"; } });
+  assert.deepEqual(reads, { expected: 0, message: 0, input: 0, fourthHint: 0, disabledStatus: 0, malformedData: 1 });
+  assert.equal(events.length, 2);
   await setImmediate();
 });
