@@ -207,3 +207,29 @@ test('startup only depends on the current route, and any required error remains 
   assert.equal(productionStartupReadiness(records({ auth: 'unavailable' }), null, 'loading'), 'error');
   assert.equal(productionStartupReadiness(records({ online: false }), null, 'loading'), 'error');
 });
+
+
+test('no-child onboarding skips child reads but still waits for identity-scoped pages', () => {
+  const h = harness(), { routeStartupReadiness, productionStartupReadiness } = h.load('src/startup/dataReadiness.ts');
+  const none = records({ children: [], selectedChildId: null });
+  assert.equal(routeStartupReadiness('/', {}, {}, false), 'ready');
+  for (const [pathname, params, key] of [['/family', {}, 'family'], ['/settings', { section: 'model' }, 'model'],
+    ['/settings', { section: 'notifications' }, 'push'], ['/settings', { section: 'preferences' }, 'preferences']]) {
+    const pending = routeStartupReadiness(pathname, params, {}, false);
+    assert.equal(pending, 'loading', `${pathname} must not treat an unread identity owner as empty`);
+    assert.equal(productionStartupReadiness(none, null, pending), 'loading');
+    assert.equal(productionStartupReadiness(none, null, routeStartupReadiness(pathname, params, { [key]: 'error' }, false)), 'error');
+  }
+});
+
+test('preferences deep links wait for their existing read, then expose success or retry', () => {
+  const h = harness(), { routeStartupReadiness } = h.load('src/startup/dataReadiness.ts');
+  const params = { section: 'preferences' };
+  assert.equal(routeStartupReadiness('/settings', params, { preferences: 'loading' }), 'loading');
+  assert.equal(routeStartupReadiness('/settings', params, { preferences: 'ready' }), 'ready');
+  assert.equal(routeStartupReadiness('/settings', params, { preferences: 'error' }), 'error');
+  h.render(startup(h, { state: records({ children: [], selectedChildId: null }), report: 'loading' }));
+  assert.ok(h.node('frontend-startup-loading'));
+  h.render(startup(h, { state: records({ children: [], selectedChildId: null }), report: 'error' }));
+  assert.ok(h.node('frontend-preview-ready'));
+});

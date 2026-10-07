@@ -22,7 +22,7 @@ export function ProductionStartupReadiness() {
   const { scopeKey, chatState } = useProduction();
   const care = useCareWorkspace(), profile = useProfileWorkspace(), tasks = useTasksWorkspace(), growth = useGrowthWorkspace();
   const memory = useMemoryReferenceWorkspace(), documents = useProductionFamilyDocuments(), summary = useProductionTaskKnowledgeSummary();
-  const photos = useProductionPhotoInputDomains(), { family, modelSettings, push, telegram } = useProductionSettingsDomains(), contact = useProductionContactDomain();
+  const photos = useProductionPhotoInputDomains(), { family, modelSettings, push, telegram, preferences } = useProductionSettingsDomains(), contact = useProductionContactDomain();
   const currentProfile = profile?.scopeKey === scopeKey ? profile.model : null;
   const currentSummary = summary?.model.scopeKey === scopeKey ? summary.model : null;
   useProductionStartupReadiness(routeStartupReadiness(pathname, { tab: first(params.tab), category: first(params.category), section: first(params.section) }, {
@@ -40,6 +40,7 @@ export function ProductionStartupReadiness() {
     contact: readState(contact.model.load),
     model: modelSettings.model.busy === "read" ? "loading" : modelSettings.model.snapshot ? "ready" : modelSettings.model.notice ? "error" : "loading",
     push: readState(push.model.readState), telegram: readState(telegram.model.readState),
-  }));
+    preferences: preferences.preferences ? "ready" : !preferences.busy && preferences.notice ? "error" : "loading",
+  }, !!scopeKey));
   return null;
 }

@@ -7,7 +7,7 @@
     {
       "name": "Actual startup gate, production readiness, child transition and loading dot hooks",
       "command": "node --test frontend/scripts/startup-readiness.test.mjs",
-      "result": "11/11 pass"
+      "result": "13/13 pass, including review-found preferences deep-link and zero-child identity-scoped readiness cases"
     },
     {
       "name": "Existing shell/owner lifecycle, image readiness and motion lifecycle",
@@ -22,13 +22,13 @@
     {
       "name": "Frontend strict typecheck on final a347 dependencies",
       "command": "node node_modules/typescript/bin/tsc --project frontend/tsconfig.json --noEmit",
-      "result": "pass"
+      "result": "pass after review corrections"
     },
     {
       "name": "Expo production Web export on final a347 dependencies",
       "command": "EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 CI=1 TMPDIR=/tmp/child-loading-metro EXPO_PUBLIC_API_BASE_URL=/api node ../node_modules/expo/bin/cli export --platform web --output-dir ../dist-loading",
       "cwd": "frontend",
-      "result": "pass; 35 static routes; entry-29f840f270ca1a314dd6db5d44887c2f.js"
+      "result": "pass after review corrections; 35 static routes; entry-667017bf3633b097566bef049143e042.js"
     }
   ],
   "failuresAndLimits": [
@@ -50,13 +50,17 @@
     "frontend/src/production/useFamilyDocuments.ts": "f1c54575ee66bae46cd7420d9c32a4c96c592352a5626730285e6a59856a2ac2",
     "frontend/src/production/useProductionFamily.ts": "27256a95cb3570ddf2569313740aaf45596dfc6fade62cf18bb9a007a9f30501",
     "frontend/src/startup/FirstScreenGate.tsx": "87c4b78a0dac1a69a89216edcc0bfc9282b78432923ef03f25ffb53f347b831c",
-    "frontend/scripts/startup-readiness.test.mjs": "9ad5082cc31124e0765ab26b282500a89417a368367c17cf75f652489a1a9f43",
-    "frontend/src/startup/dataReadiness.ts": "ab22c586f03851082bb791c0dc775a80016a3317a3517ee95033cad6bf5b0b67",
+    "frontend/scripts/startup-readiness.test.mjs": "a7f696bb18a3cc9cba0e3da237d1e60a46638430d60a4add3f91584d29cd139e",
+    "frontend/src/startup/dataReadiness.ts": "3a41432dfcf9f919ab62edaf0b87565e2039f2ccb44c6238216140076b45aa68",
     "frontend/src/startup/StartupLoadingLabel.tsx": "9cf42b1affffdf24f6e66c696dc9281bd8ca6784562ac3025af6d145fa4a9d6c",
     "frontend/src/production/ProductionFirstScreenGate.tsx": "c198457c169a7cc623fb80110d807753b36957bbf8450a95402a5db0ed7dcadd",
-    "frontend/src/production/ProductionStartupReadiness.tsx": "17848b94d812d464cc9b3dc0fd7381305a1a005b0a740d66b62d0255fcde1ef2"
+    "frontend/src/production/ProductionStartupReadiness.tsx": "ab486a7ff3f15184e370f1ade08a87a69c13ada0432555da0606625106ba9031"
   },
   "bundleSha256": {
-    "entry-29f840f270ca1a314dd6db5d44887c2f.js": "e5bed12955b27f4d3a9dde339565a10edeaef04472a3be34cc929d108f163ea3"
-  }
+    "entry-667017bf3633b097566bef049143e042.js": "578dde46526235606afc6a0fbbb2324a50cca86e434f91954b3a169915051f40"
+  },
+  "reviewCorrections": [
+    "Independent source review identified that preferences deep links omitted their notification-preferences read, and the zero-child fast path skipped identity-scoped reads. Existing owner projections are now mapped without new requests; no-child onboarding skips child reads only.",
+    "Independent recheck: all 13 startup tests and frontend strict typecheck pass after the corrections. Existing 16 adjacent/production-owner checks remain applicable. Browser and native behavior are still not verified."
+  ]
 }
