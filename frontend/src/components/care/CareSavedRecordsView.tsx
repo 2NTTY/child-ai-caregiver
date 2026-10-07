@@ -18,7 +18,7 @@ function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel;
   const occupied = ["saving", "unknown"].includes(model.operation.state) || !!model.draft || !!model.deletion;
   const loading = ["loading", "loading_more"].includes(model.list.state);
   const filtered = !!model.list.activeQuery.trim() || model.list.activeKind !== "all";
-  const empty = model.list.state === "ready" && !model.list.records.length;
+  const empty = model.list.state === "ready" && !model.list.records.length && model.list.message === null;
   const showSearch = !empty || filtered || !!query.trim() || kind !== "all" || model.list.hasPrevious || model.list.hasMore;
   if (model.access === "lost") return <ReadStateNotice state="unavailable" message="目前沒有權限查看這個孩子的記錄。" />;
   if (model.deletion) return <CareRecordDelete model={model} actions={actions} />;
@@ -28,7 +28,7 @@ function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel;
     {showSearch ? <><AppTextField label="搜尋已保存記錄" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} />
     <View style={s.controls}><View style={s.filter}><AppSelect<CareFilter> label="種類" value={kind} options={[{ value: "all", label: "全部" }, ...careKindOptions]} onChange={setKind} disabled={occupied} /></View>
       <AppButton label="搜尋" density="compact" disabled={occupied || loading || !model.online} onPress={() => actions.search(query, kind)} /></View></> : null}
-    <ReadStateNotice state={loading ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? "stale" : model.list.records.length ? "ready" : "empty"} message={empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : model.list.message ?? ""}>
+    <ReadStateNotice state={loading ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? "stale" : model.list.message ? "unavailable" : model.list.records.length ? "ready" : "empty"} message={model.list.message ?? (empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : "")}>
       {empty && filtered ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied || !model.online} onPress={() => { if (occupied || !model.online) return; setQuery(""); setKind("all"); actions.search("", "all"); }} /> : null}
     </ReadStateNotice>
     {model.list.records.map(record => <Pressable key={record.id} accessibilityRole="button" accessibilityLabel={`查看${record.title}`} disabled={occupied || loading} onPress={() => actions.openRecord(record.id)} style={s.row}>

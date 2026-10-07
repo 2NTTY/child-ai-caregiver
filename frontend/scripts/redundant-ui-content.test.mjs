@@ -47,7 +47,7 @@ function renderer(relative, symbol, overrides = {}, expose = '') {
   return props => { cursor = 0; return component(props); };
 }
 const careModel = () => ({ scopeKey: 'scope', child: { id: 'child' }, access: 'editable', online: true, operation: { state: 'none' }, draft: null, deletion: null, detail: null,
-  list: { state: 'ready', records: [], activeQuery: '', activeKind: 'all', hasMore: false, hasPrevious: false },
+  list: { state: 'ready', records: [], activeQuery: '', activeKind: 'all', hasMore: false, hasPrevious: false, message: null },
   review: { state: 'ready', scopeKey: 'scope', items: [], hasMore: false } });
 
 test('review empty is one named sentence without irrelevant filters and never replaces read failure', () => {
@@ -86,6 +86,27 @@ test('saved-record true empty hides tools; filtered empty keeps tools and origin
     assert.equal(type(tree, 'ReadStateNotice').props.state, state);
     assert.equal(type(tree, 'ReadStateNotice').props.message, 'Synthetic read status');
   }
+});
+
+test('ready empty records preserve 404 and offline deep-link notices before ordinary empty copy', () => {
+  const render = renderer('src/components/care/CareSavedRecordsView.tsx', '__body', {}, '\nmodule.exports.__body = CareSavedRecordsBody;');
+  const model = careModel(), actions = { search: noop };
+  for (const [online, message] of [
+    [true, '所選記錄已刪除或目前不可讀；不再顯示舊記錄。'],
+    [false, '所指定記錄未載入；連線恢復後才可核對。'],
+  ]) {
+    model.online = online; model.list.message = message;
+    const tree = render({ model, actions }), notice = type(tree, 'ReadStateNotice');
+    assert.equal(notice.props.message, message);
+    assert.equal(notice.props.state, 'unavailable');
+    assert.ok(type(tree, 'AppTextField'), 'Recovery/search tools remain available instead of presenting confirmed global empty');
+    assert.equal(label(tree, '搜尋').props.disabled, !online);
+  }
+  model.online = true; model.list.message = null;
+  const tree = render({ model, actions });
+  assert.equal(type(tree, 'ReadStateNotice').props.state, 'empty');
+  assert.equal(type(tree, 'ReadStateNotice').props.message, '暫無已保存記錄');
+  assert.equal(type(tree, 'AppTextField'), undefined);
 });
 
 test('agent proposal empty is concise while unread, denied and failed remain distinct', () => {

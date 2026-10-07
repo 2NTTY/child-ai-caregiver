@@ -41,10 +41,19 @@
     "frontend/src/production/CareProfileDomains.tsx": "4127aa4c31df953138db7f8ac6fff1c7fc854e27fce30983f7c9878fd5b89995",
     "frontend/src/production/task-knowledge-summary.ts": "a824c01a1309542178e34c0e5b6a01bcbee44bb12041cde830d3a2292bd8dca3",
     "frontend/src/components/growth/GrowthView.tsx": "65a49fcbed86099930cfb4e809a706dc79063d8dc2ed8c68ea6a8832e34a47eb",
-    "frontend/src/components/care/CareSavedRecordsView.tsx": "169e737376e63d041dd5c5129112079ee28fb0dcc6c8e5735ac486bcb8eafaed",
+    "frontend/src/components/care/CareSavedRecordsView.tsx": "fe378d09c0c7b7eb7a45815822ca7e1a9cbc6ccedf96b0c326701f4e0a96bf4e",
     "frontend/src/components/care/CareReviewHistoryView.tsx": "d5cf7bbfcdb98d892a2091d56e6d068dd628df31287320a09cbc117786faadda",
     "frontend/src/components/tasks/TasksView.tsx": "0f6d400f1825584827b3811d93c1126773912d972f43904bbbe4c741b1fb5aee",
     "frontend/src/components/child-overview/ChildOverviewContent.tsx": "4f380f98b7e83d30e32d5707ee35b5ad81e95278737467f64555562058819f4d",
-    "frontend/scripts/redundant-ui-content.test.mjs": "24ca6a8e05939d170ece247cd1454a428c103cf13487aae3b84900a18aaa6a4c"
+    "frontend/scripts/redundant-ui-content.test.mjs": "0ca9ff6007373fd4fc400baef4f5c24576c69493ad9ead2048fae5f6b3d002c5"
+  },
+  "review_fix": {
+    "base_head": "99d509a51b2d7439569c1f25bbca204e313accf0",
+    "blocker": "Ready lists can carry a 404/deep-link warning even after their final record is removed. The first version replaced that warning with ordinary empty copy.",
+    "reproduction": "New test failed before the fix; original failure retained in review-blocker-repro.log.",
+    "fix": "Preserve list.message before ordinary empty copy, render ready+warning as unavailable, and hide tools only for ready+zero records+message null.",
+    "targeted_tests": "8/8 passed, covering both 404 and offline deep-link warning states, plus recovery to true empty.",
+    "typecheck": "passed",
+    "browser": "not run; coordinated integration remains pending"
   }
 }
