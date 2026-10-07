@@ -130,6 +130,87 @@
       "Independent reviewer verified all five source/test Git blobs match the remote head; runtime/helper code remained unchanged",
       "External counters are asserted after the protected call; prohibited reads are zero and the deliberate malformed-data getter is one"
     ],
-    "remaining": "Combined acceptance with the bounded-finalization change remains separate; no real model, database, production UI or deployment acceptance claimed"
+    "remaining": "Standalone review limitation retained for history; combined offline acceptance is recorded separately in combinedValidation. Real model, database, production UI and deployment acceptance remain unperformed."
+  },
+  "combinedValidation": {
+    "head": "d06355ad3777c89cdf373232207a4b3de9785f10",
+    "tree": "c1e8f2b8ba79a99bea7ab2de05f06601de83475d",
+    "parents": [
+      "f9f79f379d1930cef033f2d5bb0aa38ff9e91bc0",
+      "c50ec97e551e4f291b3067071fb7bbc3169fddf9"
+    ],
+    "merge": "Normal two-parent merge; non-force branch update; runtime and API merged cleanly from the common 13279acc baseline",
+    "command": "node --experimental-test-module-mocks --test tests/agent-observer.test.ts tests/agent-runtime.test.ts tests/agent-runtime-contract.test.ts tests/agent-presentation-repair.test.ts tests/product-agent-task-budget.test.ts tests/product-agent-presentation-repair.test.ts tests/task-parameter-hints.test.ts",
+    "tests": {
+      "passed": 88,
+      "failed": 0,
+      "uniqueSuites": 7
+    },
+    "semanticTypecheck": "Strict scoped semantic check passed across runtime, observer, presentation repair, product agent, task hints and all seven test files; no stubs or noCheck",
+    "combinedCoverage": "Eligible repair schema/execution rejection each emits exactly one metadata-only event under throwing, rejecting and pending sinks; finalizer remains once, provider calls remain two, rejected business status stays invalid_response, schema rejection executes no handler and no candidate writes occur",
+    "preserved": "Repair guard precedes schema and authorization. The reviewed repair implementation, product opt-in and both root-authored prompt contracts remain byte-identical to c50ec97; API retains all three contracts",
+    "sourceHashes": [
+      {
+        "path": "server/agent-observer.ts",
+        "sha": "23c065ca4213cb48d23bea62971169eaa828aea1",
+        "sha256": "fd6ab2ff37cebfdf37dae765187f020d679ac9765e18d5e4054395c7c974f0f8"
+      },
+      {
+        "path": "server/task-parameter-hints.ts",
+        "sha": "5145ad4d3098513bd475eb86fd4f73ef238ac32b",
+        "sha256": "3828454d196be0bab7c470ef950372cede84aa8b384771a24cd36add05dc4b9a"
+      },
+      {
+        "path": "server/agent-runtime.ts",
+        "sha": "07d4fa75ed79fc7af0d225b3132611ab65cb681d",
+        "sha256": "6e09295a0f0526b0222fffb34f5905d67c735213a95a38f49ef9b51ff53e9482"
+      },
+      {
+        "path": "server/agent-presentation-repair.ts",
+        "sha": "7205e760360789ef7fa2bb3a1a43167dd030d9d6",
+        "sha256": "8b25ca68086d2449ac3da77a644dca9559ce2c59e6b668a80deffac070b17ca2"
+      },
+      {
+        "path": "server/product-agent.ts",
+        "sha": "0447b9338374658e1abdc946053e49d1ce8cb462",
+        "sha256": "d4a93763fdfcad34099b5d6e6dcded3ace772c19ad62bb184f11f37f9c39497c"
+      },
+      {
+        "path": "tests/agent-observer.test.ts",
+        "sha": "fb019fafcda451a4ca0564a8aadade397e12aa41",
+        "sha256": "895e6878689cb535c0fc5af397129c156d3d04c5a76b25859db0dfdee48b6f70"
+      },
+      {
+        "path": "tests/task-parameter-hints.test.ts",
+        "sha": "eab0baf83a4a384e0364eed9a397111834a42b2d",
+        "sha256": "8e06ae4be438809cc405fb1d53da521c9e526fe359b46633af70dafdf3ec320c"
+      },
+      {
+        "path": "tests/agent-presentation-repair.test.ts",
+        "sha": "f1ef2e75bc7b5b982343ff04e77e73bd10bc7794",
+        "sha256": "8cedbbe118c3d1954f756735c3432bf1ece919f7fa8aa7a474ec7f7678091e87"
+      },
+      {
+        "path": "tests/product-agent-presentation-repair.test.ts",
+        "sha": "343c21dc7c520d21eaaa757e529fa7f49ebc4bfa",
+        "sha256": "7d8e5931b1e5496a0dfc6e6db3c43ec7d4283882abf0818b62bdebcbb1e21cf6"
+      },
+      {
+        "path": "docs/API.md",
+        "sha": "ea05048da18c018db411c3c256b0a09e7916970c",
+        "sha256": "18847e16e54698528681ba0d7d748022fad27df5749ed54932a86a809434fa8f"
+      },
+      {
+        "path": "prompts/contracts/output.md",
+        "sha": "acfe74a94365c98fb3e6202a0d36a32cef962832",
+        "sha256": "13c36bb57d5e0b578baab21b2fa740c7838e8c5945c6032220e9680934360137"
+      },
+      {
+        "path": "prompts/integration/gemini.md",
+        "sha": "5df6e3bdd2e7f47670d67326218e34f60b0ba652",
+        "sha256": "10c48dff39ef66d5150f48b986b2332127f350a0f05afaf7be6e573c6add1108"
+      }
+    ],
+    "review": "Passed: independent 88/88 across all seven suites and strict scoped semantic rerun; 15 source/test/API/prompt Git blobs match exact d06355ad; normal merge tree/parents, repair guard order, all API contracts and unchanged prompt bytes independently verified. No blocker."
   }
 }
