@@ -9,3 +9,5 @@ OPEN_SOURCE_REUSE.md -text
 licenses/** -text -whitespace
 package-lock.json text eol=lf
 server/migrations/*.sql text eol=lf
+
+_archive/legacy-web-2026-10-07/** -text

@@ -7,7 +7,7 @@
 - 正式網址：**https://ex-machina.eu.org**。`frontend/` 是正式 Expo Web 應用，使用已確認的版面、互動及美術；根 `app/` 不再是正式 Web 產物。
 - Node 24.19.0／npm 11.8.0；根目錄 `npm ci` 使用唯一 lockfile。先按 `.env.example` 配好既有 PostgreSQL／Server，`npm run server` 啟動 API；另執行 `npm run web`。本機 API 座標用 `EXPO_PUBLIC_API_BASE_URL=http://localhost:3001/api`；公開部署用同源 `/api`。密鑰不可放在 `EXPO_PUBLIC_*`。
 - `npm run build:web` 匯出 `frontend/dist`，並複製 Push service worker 及許可。Docker `web` target 經 Caddy 供應這份產物，`/api/*` 轉到同一 API。
-- 舊入口只以 `npm run legacy:web`／`legacy:build:web` 保留開發參考；不掛在正式網址。有效 controller、API client、收據及權限處理繼續共用，沒有為新頁另建業務資料庫。
+- 舊根入口及專用Panel／runner已退出現行開發路徑，原碼見[可恢復歸檔](../_archive/legacy-web-2026-10-07/README.md)；legacy Web/build/test命令明確停止。有效 controller、API client、收據及權限處理繼續共用，沒有為新頁另建業務資料庫。
 
 ## 使用方式及共用資料
 
@@ -28,7 +28,9 @@
 
 完整 callback／API 對照見 [P2 UI 接點](P2_UI_HANDOFF.md#production-owners)。首頁、側欄及歷史讀取這些 owner；沒有另一份可寫副本。Agent 或人工寫入後刷新相關投影，可見頁按 changes cursor 每 5 秒核對 metadata，返回前景立即核對；沒有新事件不呼叫模型。已載入清單不當作完整歷史。
 
-## 部署及回復
+## 部署及回復（以下保留 INT-W07 歷史版本）
+
+目前部署版本以 [STATUS](../STATUS.md#deployment) 的具日期觀察為準，不把下列053658b當最新版本。
 
 沿用專案 `ai-caregivers-for-children`、`asia-east2-a`、VM `yuban-p1`（ID `2846984358678394356`、IP `35.241.127.20`），Compose project `yuban-p1`。不新增服務、公網資料庫或另一個資料卷。
 

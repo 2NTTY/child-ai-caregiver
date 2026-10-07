@@ -1,0 +1,166 @@
+{
+  "sourceCommit": "0a39e018dc138b29a437ab52679866e3bfcc0378",
+  "files": [
+    {
+      "originalPath": "app/index.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/app/index.tsx.snapshot",
+      "gitBlobSha1": "c06cf6f61967d4a9f843c59b91334b3f192e54b8",
+      "sha256": "130811d107ab0fcc93539377df16488ed6c19c3346366a9598263396c8339c59",
+      "bytes": 21405
+    },
+    {
+      "originalPath": "app/_layout.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/app/_layout.tsx.snapshot",
+      "gitBlobSha1": "f501bc4dbf57d23aa49ac4295417dbbba4bd6bbc",
+      "sha256": "144f475e11e47df653c78d74862cd79f8864e598ca47634ac062fa437db53cca",
+      "bytes": 133
+    },
+    {
+      "originalPath": "app.json",
+      "archivePath": "_archive/legacy-web-2026-10-07/app.json.snapshot",
+      "gitBlobSha1": "46b5421f0397e1f3f38ecfdd9ecddb79380a0d01",
+      "sha256": "d8e8b0d97d5636dfc65da9ca5bb3d4a84e1d285fa8228b6bd961555553d50df4",
+      "bytes": 221
+    },
+    {
+      "originalPath": "src/client/PhotoPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/PhotoPanel.tsx.snapshot",
+      "gitBlobSha1": "2692f0f44b2f191c3172ff762804e691d38face2",
+      "sha256": "c45273ad41485fd5396fdf7834a722803053d99d53d4a39825185984068fc055",
+      "bytes": 38563
+    },
+    {
+      "originalPath": "src/client/AgentRunPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/AgentRunPanel.tsx.snapshot",
+      "gitBlobSha1": "b976c080675dfac1f3ad4fde478256e749c91803",
+      "sha256": "47bae2e20ba02fbde6845e1be8c355ade1ab8ed55c027cfddf40506ec1ab4946",
+      "bytes": 21454
+    },
+    {
+      "originalPath": "src/client/CareSummaryPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/CareSummaryPanel.tsx.snapshot",
+      "gitBlobSha1": "da2ef6617bf86d13b748f710f54d0684f48caa33",
+      "sha256": "8e4c1b6a20530d72c766aab6b223a703a836b90bc807cd49e7b03fdf030b5b32",
+      "bytes": 29069
+    },
+    {
+      "originalPath": "src/client/GrowthPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/GrowthPanel.tsx.snapshot",
+      "gitBlobSha1": "6e9485153bde98223aec8c91dcfadab1115f1c22",
+      "sha256": "84b7d21f8608bce06effb734cf81c9d84a4e6b9f8dda068accc70c50d56f20b6",
+      "bytes": 40561
+    },
+    {
+      "originalPath": "src/client/ChatPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/ChatPanel.tsx.snapshot",
+      "gitBlobSha1": "a29e8fade80b8e0255d9a422dde48877bdaf4571",
+      "sha256": "a7d5a6743d4db683105a7e0ab28345b839ef3ce3ec576af4d04dc20be98255b0",
+      "bytes": 8226
+    },
+    {
+      "originalPath": "src/client/TaskPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/TaskPanel.tsx.snapshot",
+      "gitBlobSha1": "c2aecb1294dfa9e6bb559a0a2966e005f495d7a6",
+      "sha256": "8d5964adb82968ac9010a49910e166bfce79ae1dc25446b03f1bd22fdce2f6cb",
+      "bytes": 30842
+    },
+    {
+      "originalPath": "src/client/WebPushPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/WebPushPanel.tsx.snapshot",
+      "gitBlobSha1": "e9db11f0e136b059133526c63ace09d2b6781a61",
+      "sha256": "4ba71374639ca808aed3224f883dea50b917940876aa75ebc81a644594d61d1a",
+      "bytes": 8388
+    },
+    {
+      "originalPath": "src/client/ContactPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/ContactPanel.tsx.snapshot",
+      "gitBlobSha1": "c0537090792d74890daf4c7ad4e73caf2c5e111d",
+      "sha256": "a6ff9c1d722cc33d5422768d75a855c013fb0f9953c07aad784d146deb9c08cb",
+      "bytes": 33467
+    },
+    {
+      "originalPath": "src/client/SharedInputPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/SharedInputPanel.tsx.snapshot",
+      "gitBlobSha1": "e172549bad8feda885a87adb011fb6d89d05aaca",
+      "sha256": "90b5db9e702911b6f5f44d1e5d89af3ef88b1657176d6582654197f97debd95c",
+      "bytes": 44484
+    },
+    {
+      "originalPath": "src/client/MemoryPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/MemoryPanel.tsx.snapshot",
+      "gitBlobSha1": "6f95163b3276038776406e2d4491a3ae1a966629",
+      "sha256": "4b67700622d23aa8df86985f43268df086e85a7ab63ef2cde02116867bda15e5",
+      "bytes": 45116
+    },
+    {
+      "originalPath": "src/client/TelegramPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/TelegramPanel.tsx.snapshot",
+      "gitBlobSha1": "d16fec8d021a871ba580c75b68384a4d73a338e0",
+      "sha256": "711cac9db57e0f390ecb26bcb3f97a2133d7dc6b8f055c7c74f7e12bc43df86d",
+      "bytes": 22600
+    },
+    {
+      "originalPath": "src/client/ModelSettingsPanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/ModelSettingsPanel.tsx.snapshot",
+      "gitBlobSha1": "7ee57f66a0bb63226577e68a71431f67eff095d5",
+      "sha256": "c161d007257eee8ecd2ce25ea905531ac9266dd05b15df9c7df92778b24d8202",
+      "bytes": 20797
+    },
+    {
+      "originalPath": "src/client/CarePanel.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/CarePanel.tsx.snapshot",
+      "gitBlobSha1": "92d2e54573bb6967ce92a507486f440d103dd5ed",
+      "sha256": "90f95b45c6678b84e010c56a90f24fa7e323b5033eabd4faed4a3c8bc65d6470",
+      "bytes": 41445
+    },
+    {
+      "originalPath": "src/client/AgentInbox.tsx",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/AgentInbox.tsx.snapshot",
+      "gitBlobSha1": "8d3eee15d77facd419052ee99d9307a5e7f1492b",
+      "sha256": "30aa665f9892f9e76ad468c3483d50e51ee3788986a99b390617ca63bc94adaf",
+      "bytes": 6828
+    },
+    {
+      "originalPath": "src/client/use-records-browser.ts",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/use-records-browser.ts.snapshot",
+      "gitBlobSha1": "6698dc6d4b77d63acc31df6b5585be2080de3151",
+      "sha256": "ca04364c98fcb8bef843ace68817869fb16e2618d05503fd2065919298ab98d4",
+      "bytes": 1984
+    },
+    {
+      "originalPath": "src/client/use-web-push.ts",
+      "archivePath": "_archive/legacy-web-2026-10-07/src/client/use-web-push.ts.snapshot",
+      "gitBlobSha1": "57851d60a435bc4fcaaf8ba278c724c90e08a5ae",
+      "sha256": "bdd50bc9fad44f7cdf44fa5387182a6ada3bbade1134fe88d7bef4fc03bdbe04",
+      "bytes": 6248
+    },
+    {
+      "originalPath": "scripts/verify-web.mjs",
+      "archivePath": "_archive/legacy-web-2026-10-07/scripts/verify-web.mjs.snapshot",
+      "gitBlobSha1": "0663e0df81d042c519c297023621a2a5b65a7c67",
+      "sha256": "c72169364325a0abaf5f26765a5f7c4cba1718d99a67fc0e6cf024f7bf1e4a84",
+      "bytes": 26218
+    },
+    {
+      "originalPath": "playwright.config.mjs",
+      "archivePath": "_archive/legacy-web-2026-10-07/playwright.config.mjs.snapshot",
+      "gitBlobSha1": "197d6ce01610942bc17e983fd75493a6b7f0199d",
+      "sha256": "efb73948540ac37fcd91b30ba271f5f1675a077f30f2e1e4c5a81351c2b9e851",
+      "bytes": 2843
+    },
+    {
+      "originalPath": "tests/browser/family-fixture.mjs",
+      "archivePath": "_archive/legacy-web-2026-10-07/tests/browser/family-fixture.mjs.snapshot",
+      "gitBlobSha1": "a2ed3810f23e159534a5c56617af6cde6e5f3150",
+      "sha256": "e9502700b9b1315c5d9da63667dc06684a35ce40e83f24a5c4640d0ba4a87175",
+      "bytes": 4576
+    },
+    {
+      "originalPath": "tests/browser/family-boundaries.spec.mjs",
+      "archivePath": "_archive/legacy-web-2026-10-07/tests/browser/family-boundaries.spec.mjs.snapshot",
+      "gitBlobSha1": "b54e9c0a349a270c12f473343aaff75abb8ef120",
+      "sha256": "d0472643f8a627fd62a87931ee34ac2b1fd3c15426170b11133059ac4ec8cca3",
+      "bytes": 3806
+    }
+  ]
+}

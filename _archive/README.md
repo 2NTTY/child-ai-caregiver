@@ -11,6 +11,7 @@
 
 | 要追溯甚麼 | 下一層入口／查閱時機 |
 |---|---|
+| 已替代的舊根測試前端 | [2026-10-07逐byte歸檔](legacy-web-2026-10-07/README.md)，僅用於歷史比較／固定commit恢復，不作現行開發入口 |
 | P1 完成與交付 | [PLAN P1](../PLAN.md#phase-1) → [S16-W01](../artifacts/verification/S16_W01_CHECKS.json)／[S17-W01](../artifacts/verification/S17_W01_CHECKS.json)；需要重核 P1 驗收或交付限制時 |
 | P2 功能包／總交付 | [PLAN 工作包表](../PLAN.md#roadmap-packages) → 該包 EV；整合讀 [S16-W02](../artifacts/verification/S16_W02_CHECKS.json)，公開展示讀 [S17-W02](../artifacts/verification/S17_W02_CHECKS.json) |
 | 本人模型增補 | [S06-W05](../PLAN.md#s06-w05) → [EV](../artifacts/verification/S06_W05_CHECKS.json)，真服務未驗不能由本機檢查代替 |
