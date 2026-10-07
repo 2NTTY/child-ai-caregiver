@@ -435,7 +435,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     child: { ...care.child, name: env.childName }, checkLabel: attempt.current?.confirmed ? "重新讀取目前資料" : "查核原操作",
     review: { state: care.list.state === "loading" || care.list.state === "loading_more" ? "loading" : care.list.state === "error" ? "error" : "ready",
       scopeKey: env.scopeKey, label: "已保存照護記錄", hasMore: care.list.hasMore, capabilities: { create: false, update: false, skip: false, confirmImportant: false },
-      notice: "待確認的健康事實及待辦提案在下方 Agent 待確認事項中處理。", items: care.list.records.flatMap(record => { const raw = rawRecord(record.id); return raw ? [savedRecordReview(raw, userId)] : []; }) } };
+      items: care.list.records.flatMap(record => { const raw = rawRecord(record.id); return raw ? [savedRecordReview(raw, userId)] : []; }) } };
   const profileModel = { ...profile, online: env.online, child: { id: childId, name: env.childName }, access: editable ? "editable" as const : "read_only" as const,
     reading: profile.reading || pending && attempt.current?.domain === "care" };
   useLayoutEffect(() => { publish({ scopeKey: env.scopeKey,

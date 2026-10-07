@@ -45,6 +45,9 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
     ? status === "all" || status === "important_pending" && careReviewIsImportantPending(item) || status === "written" && item.writeState === "saved" || item.reviewState === status
     : careReviewMatchesTab(item, tab))
     && (sourceKey === "all" || careReviewSourceKey(item) === sourceKey) && careReviewMatchesQuery(item, query)));
+  const filtered = !!query || sourceKey !== "all" || history && status !== "all";
+  const hasTabItems = sourceItems.some(item => history || careReviewMatchesTab(item, tab));
+  const showFilters = review.state === "ready" && (hasTabItems || filtered || !!review.hasMore);
   const visiblePage = careReviewPage(items, page), currentPage = visiblePage.page, pageItems = visiblePage.items;
   const sections = [
     { key: "important", label: "重要內容", items: pageItems.filter(careReviewIsImportantPending) },
@@ -84,17 +87,19 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
     <ReviewContent history={history} tabsId={tabsId} tab={tab}>
     <View style={[s.columns, wide && showPanel && s.split]}>
       <View ref={listRef} tabIndex={-1} style={[s.listColumn, wide && showPanel && s.narrowList, !listVisible && s.hidden]} testID="care-review-list" pointerEvents={listVisible ? "auto" : "none"} aria-hidden={!listVisible} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
-        <View style={s.filterBar}><Text style={s.filterContext}>{sourceKey === "all" ? history ? "所有已載入對話" : tab === "pending" ? "重要內容優先" : "已保存，有誤時可更正" : sourceGroups.find(group => group.key === sourceKey)?.label ?? "所選對話"}{query ? " · 已搜尋" : ""}</Text>
+        {showFilters ? <View style={s.filterBar}><Text style={s.filterContext}>{sourceKey === "all" ? history ? "所有已載入對話" : tab === "pending" ? "重要內容優先" : "已保存，有誤時可更正" : sourceGroups.find(group => group.key === sourceKey)?.label ?? "所選對話"}{query ? " · 已搜尋" : ""}</Text>
           <AppButton label={filtersOpen ? "收起篩選" : "篩選"} expanded={filtersOpen} density="compact" variant="quiet" disabled={occupied} onPress={() => { if (!occupied) setFiltersOpen(value => !value); }} />
-        </View>
-        {filtersOpen ? <View style={s.filters}>
+        </View> : null}
+        {showFilters && filtersOpen ? <View style={s.filters}>
           {searchText === undefined ? <AppTextField label="搜尋核對內容" value={localQuery} onChangeText={value => { if (!occupied) setLocalQuery(value); }} maxLength={200} disabled={occupied} /> : null}
           {history ? <AppSelect<CareReviewStatusFilter> label="處理狀態" value={status} options={[{ value: "all", label: "全部變更" }, { value: "important_pending", label: "重要待確認" }, { value: "pending", label: "所有待確認" }, { value: "written", label: "已寫入" }, { value: "confirmed", label: "已明確確認" }, { value: "skipped", label: "已略過" }]} onChange={value => { if (!occupied) setStatus(value); }} disabled={occupied} /> : null}
           <AppSelect<string> label="來源對話" value={sourceKey} options={[{ value: "all", label: "所有已載入對話" }, ...sourceGroups.map(group => ({ value: group.key, label: `${group.label} · ${group.dateLabel}` }))]} onChange={value => { if (!occupied) setSourceKey(value); }} disabled={occupied} />
         </View> : null}
         {!history && window.older.length ? <View style={s.older}><Text style={s.meta}>近期保留最多 10 頁；較早的 {window.olderPendingCount} 項待確認仍未處理。</Text>
           {window.olderPendingCount && onOlderPending ? <AppButton label="查看較早待確認" density="compact" variant="secondary" onPress={onOlderPending} disabled={occupied} /> : onHistory ? <AppButton label="查看較早記錄" density="compact" variant="secondary" onPress={onHistory} disabled={occupied} /> : null}</View> : null}
-        {review.state !== "ready" ? <ReadStateNotice state={review.state === "loading" ? "loading" : review.state === "error" ? "error" : "unavailable"} title={review.state === "loading" ? "正在讀取核對記錄…" : review.state === "error" ? "未能讀取核對記錄，請重試" : "核對記錄暫不可用"} message={review.state === "unavailable" ? review.notice ?? (model.access === "lost" ? "目前沒有查看這個孩子的權限。" : "暫未取得這個孩子的核對記錄。") : ""} /> : !items.length ? <ReadStateNotice state="empty" title={query || sourceKey !== "all" || history && status !== "all" ? "沒有符合篩選條件的內容" : history ? "目前沒有核對記錄" : tab === "pending" ? window.olderPendingCount ? "近期沒有待確認內容" : "目前沒有待確認內容" : "目前沒有已記錄內容"} message={review.hasMore ? "" : !history && tab === "pending" ? window.olderPendingCount ? "較早的待確認事項仍保留，可由上方入口查看。" : "普通已保存內容可在「最近已記錄」查看，有誤時再更正。" : "可調整篩選，查看其他已載入內容。"} /> : <View style={s.list}>
+        {review.state !== "ready" ? <ReadStateNotice state={review.state === "loading" ? "loading" : review.state === "error" ? "error" : "unavailable"} title={review.state === "loading" ? "正在讀取核對記錄…" : review.state === "error" ? "未能讀取核對記錄，請重試" : "核對記錄暫不可用"} message={review.state === "unavailable" ? review.notice ?? (model.access === "lost" ? "目前沒有查看這個孩子的權限。" : "暫未取得這個孩子的核對記錄。") : ""} /> : !items.length ? <ReadStateNotice state="empty" message={filtered ? "沒有符合篩選的核對記錄" : history ? "暫無核對記錄" : tab === "pending" ? window.olderPendingCount || review.hasMore ? "近期暫無待確認記錄" : "暫無待確認記錄" : "暫無最近已記錄內容"}>
+          {filtered && searchText === undefined ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied} onPress={() => { if (occupied) return; setLocalQuery(""); setSourceKey("all"); setStatus("all"); }} /> : null}
+        </ReadStateNotice> : <View style={s.list}>
           {sections.filter(section => section.items.length).map(section => <View key={section.key} style={s.groupSection}>
             {section.label ? <Text accessibilityRole="header" style={s.sectionLabel}>{section.label}</Text> : null}
             {section.items.map(item => {

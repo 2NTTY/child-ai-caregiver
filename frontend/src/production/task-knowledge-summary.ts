@@ -87,7 +87,7 @@ export function useTaskKnowledgeSummary(env: TaskKnowledgeEnvironment): TaskKnow
     });
   };
   const visible = runtime.lost ? null : page;
-  const model: SummaryViewModel = { childName: env.childName, scopeKey: env.scopeKey, dataLabel: "Server 已確認照顧記錄的完整期間摘要；現有 API 只保存一份家庭共享到診準備。",
+  const model: SummaryViewModel = { childName: env.childName, scopeKey: env.scopeKey, dataLabel: "",
     query, page: visible, online: env.online, access: runtime.lost ? "lost" : canManage ? "editable" : "read_only", readFailed, busy,
     operation: runtime.lost ? "none" : operation, notice, pending: runtime.lost ? null : pending, originalConsent, dirty: !runtime.lost && dirty, formEpoch, confirmationEpoch };
   const actions: SummaryActions = {

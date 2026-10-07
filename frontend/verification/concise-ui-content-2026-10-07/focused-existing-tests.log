@@ -1,0 +1,77 @@
+✔ the main review tabs use one pending counter and ordinary saved content needs no confirmation (223.812524ms)
+✔ explicit prior-consent pending items remain discoverable and sort after important ones (96.080466ms)
+✔ compact source filtering is read-only and original operations guard tabs, rows and filters (94.868944ms)
+✔ mobile selection opens the detail and Back returns without confirming or dropping the row (68.87695ms)
+✔ desktop keeps list and detail together and keeps the selected receipt after confirmation (48.607483ms)
+✔ split review reserves the list basis while narrow panels use natural content height (431.75685ms)
+✔ original and interpretation only share flex space in a horizontal comparison (27.015355ms)
+✔ multi-chat pager replaces ten items while retaining the selected source (43.514492ms)
+✔ older pending remains in the same total and has an explicit route beyond the recent window (77.692149ms)
+✔ the Records page removes entry-hub buttons without removing its correction workspace (7.016299ms)
+✔ multi-chat detail retains original, Agent interpretation and update-before comparison (20.177137ms)
+✔ multi-chat unrelated domains and missing source dates cannot inherit Care ownership or fabricated chronology (0.794298ms)
+✔ confirmed profile edits and deletion have one owner across profile and overview (99.088419ms)
+✔ approved departure clears transient review but preserves confirmed source and history entry (54.645988ms)
+✔ unknown retains its original operation and reviewed values across attempted departure (71.729894ms)
+✔ scope changes and revocation reject late saves and callbacks captured by the prior child (57.087409ms)
+✔ last confirmed values preserve unknowns and raw age while missing and expired profiles stay explicit (54.775404ms)
+✔ measurements require same-scope canonical read projection and never reuse unavailable payloads (40.716461ms)
+✔ original profile and current child content consume shared owner without copying care fixtures (0.846452ms)
+✔ ordinary refresh keeps one top toolbar and stable content slots through loading and success (640.240127ms)
+✔ selection, tab and newer reading position are not reset by refresh completion (220.278483ms)
+✔ normal reading removes stage forms and their entrance without removing source/history data (180.377877ms)
+✔ dirty and unknown original operations retain their frozen body and guard through a read (182.049648ms)
+✔ lost access cancels in-flight reads and clears private data without restoring stale selection (137.731089ms)
+✔ failed reads and viewer permission remain explicit and keep a single refresh control (340.219164ms)
+✔ scope remount cancels the previous response and does not reuse the previous child data (161.734787ms)
+✔ the chain composes related outcomes by child and canonical id without making new stored events (59.14379ms)
+✔ the related result is inside the chain and keeps coverage and task-state caveats (129.973542ms)
+✔ archive, History, return and refresh share one closed chain without changing attention or tasks (201.376919ms)
+✔ archive rejects stale version, authority, source, viewer and dirty inputs (208.311975ms)
+✔ unknown archive freezes one original request until read and explicit recovery consent (58.177333ms)
+✔ Growth and History consume the same injected owner and mismatched scopes are withheld (59.699217ms)
+✔ ending a concern uses a filled control and frozen confirmation; cancel and dismissal never write (78.185031ms)
+✔ archive confirmation is invalidated by a new version, authority, scope, or write guard (81.485284ms)
+✔ undo restores the original review status and preserves both archive and restore history exactly once (166.536844ms)
+✔ History restores through the same owner and provides recovery locally for an unknown restore (112.306777ms)
+✔ restore and undo reject stale versions, dirty drafts, lost sources, and unmounted scope callbacks (88.415667ms)
+✔ one task owner keeps confirmed updates across Tasks and History entry changes (346.188645ms)
+✔ selected rows toggle closed, other rows switch, and drafts prevent either (96.026815ms)
+✔ unknown original operation stays locked with original reference across attempted departure (87.881572ms)
+✔ scope and access revocation clear old tasks, drafts and pending callbacks (58.181839ms)
+✔ callbacks captured in an old scope cannot open or write a new child workspace (53.481314ms)
+✔ shared pagination extends history and access loss cancels late pages (43.074742ms)
+✔ offline prevents reviewed submission while loading hides stale task data and keeps draft (52.847573ms)
+✖ dashboard mounts one task owner and screens consume it without duplicate fixtures (3.425352ms)
+✔ preview task navigation is idempotent while row selection explicitly toggles (36.60584ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 45
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4071.382328
+
+✖ failing tests:
+
+test at frontend/scripts/task-workspace.test.mjs:149:1
+✖ dashboard mounts one task owner and screens consume it without duplicate fixtures (3.425352ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  undefined !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/shared/simplify_redundant_ui_20261007/frontend/scripts/task-workspace.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

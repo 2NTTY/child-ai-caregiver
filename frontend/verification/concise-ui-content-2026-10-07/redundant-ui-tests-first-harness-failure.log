@@ -1,0 +1,31 @@
+✔ review empty is one named sentence without irrelevant filters and never replaces read failure (258.269689ms)
+✔ filtered review empty retains a working clear-filter action (98.80578ms)
+✔ saved-record true empty hides tools; filtered empty keeps tools and original search callback (66.260964ms)
+✖ agent proposal empty is concise while unread, denied and failed remain distinct (39.806245ms)
+✔ child overview removes repeated unknown teaching while retaining actual field values and measurement states (87.346439ms)
+✔ growth removes general notes and empty index but preserves local blocked-source and draft warnings (281.17028ms)
+✔ task general reminder explanation is removed while item-level delivery and unknown checks remain (0.547342ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1432.823893
+
+✖ failing tests:
+
+test at frontend/scripts/redundant-ui-content.test.mjs:90:1
+✖ agent proposal empty is concise while unread, denied and failed remain distinct (39.806245ms)
+  SyntaxError: Unexpected token 'typeof'
+      at compileSourceTextModule (node:internal/modules/esm/utils:318:16)
+      at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:336:18)
+      at loadESMFromCJS (node:internal/modules/cjs/loader:1690:24)
+      at Module._compile (node:internal/modules/cjs/loader:1854:5)
+      at Object..js (node:internal/modules/cjs/loader:2003:10)
+      at Module.load (node:internal/modules/cjs/loader:1594:32)
+      at Module._load (node:internal/modules/cjs/loader:1396:12)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+      at Module.require (node:internal/modules/cjs/loader:1617:12)
+      at require (node:internal/modules/helpers:153:16)
