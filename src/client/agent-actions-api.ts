@@ -60,6 +60,7 @@ const receiptSchema = z.object({
   state: z.enum(["saved", "updated", "scheduled", "completed", "cancelled"]),
   notification: z.enum(["not_authorized", "authorized_for_due_event"]),
   channels: z.array(contactChannelSchema).max(2).refine(values => new Set(values).size === values.length), createdAt: timestamp,
+  quantityGrounding: z.object({ status: z.enum(["source_supported", "removed", "absent", "unchanged"]) }).strict().optional(),
 }).strict();
 const receiptsResponse = z.object({ receipts: z.array(receiptSchema).max(8) }).strict();
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);

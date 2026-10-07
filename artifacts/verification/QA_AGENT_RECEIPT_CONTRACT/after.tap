@@ -1,0 +1,12 @@
+✔ receipt HTTP 200 accepts legacy receipts and every declared status-only quantity grounding (11.307637ms)
+✔ receipt parsing stays strict about status, private measurement fields, identity and duplicate receipts (5.745517ms)
+✔ real receipt owner and shallow conversation render the saved legacy receipt (412.939973ms)
+✔ real receipt owner and shallow conversation render the saved status-only receipt (153.549127ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2073.114935

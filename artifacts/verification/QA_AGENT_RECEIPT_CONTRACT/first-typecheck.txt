@@ -1,0 +1,2 @@
+frontend/src/agent-view-model.ts(2,39): error TS2834: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Consider adding an extension to the import path.
+frontend/src/agent-view-model.ts(23,34): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../../src/shared/product-agent.js'?

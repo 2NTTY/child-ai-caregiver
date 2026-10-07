@@ -1,0 +1,66 @@
+✖ receipt HTTP 200 accepts legacy receipts and every declared status-only quantity grounding (36.358228ms)
+✔ receipt parsing stays strict about status, private measurement fields, identity and duplicate receipts (17.159559ms)
+✔ real receipt owner and shallow conversation render the saved legacy receipt (1704.119327ms)
+✖ real receipt owner and shallow conversation render the saved status-only receipt (427.621414ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3838.232432
+
+✖ failing tests:
+
+test at tests/agent-receipt-contract.test.ts:58:1
+✖ receipt HTTP 200 accepts legacy receipts and every declared status-only quantity grounding (36.358228ms)
+  Error [AgentActionsApiError]: Agent action request could not be confirmed
+      at Object.receipts (file:///workspace/shared/fix_agent_receipt_contract_20261007/src/client/agent-actions-api.ts:141:107)
+      at async TestContext.<anonymous> (file:///workspace/shared/fix_agent_receipt_contract_20261007/tests/agent-receipt-contract.test.ts:62:22)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    status: 0,
+    code: null
+  }
+
+test at tests/agent-receipt-contract.test.ts:75:44
+✖ real receipt owner and shallow conversation render the saved status-only receipt (427.621414ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   items: [],
+  +   state: 'failed'
+  -   items: [
+  -     {
+  -       channels: [],
+  -       createdAt: '2026-10-07T07:37:35Z',
+  -       id: '33333333-3333-4333-8333-333333333333',
+  -       kind: 'save_record',
+  -       notification: 'not_authorized',
+  -       quantityGrounding: {
+  -         status: 'removed'
+  -       },
+  -       resource: {
+  -         id: '44444444-4444-4444-8444-444444444444',
+  -         kind: 'care_record',
+  -         version: 1
+  -       },
+  -       runId: '22222222-2222-4222-8222-222222222222',
+  -       state: 'saved'
+  -     }
+  -   ],
+  -   state: 'ready'
+    }
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_agent_receipt_contract_20261007/tests/agent-receipt-contract.test.ts:89:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { state: 'failed', items: [] },
+    expected: { state: 'ready', items: [ [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

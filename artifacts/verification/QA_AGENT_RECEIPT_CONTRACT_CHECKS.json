@@ -1,0 +1,49 @@
+{
+  "package": "QA-AGENT-RECEIPT-CONTRACT",
+  "baseline": "4a2257a43abfc3fca9f23e860ed01bafb753aa18",
+  "observedAt": "2026-10-07T07:45:00Z",
+  "rootCause": "Server emits optional status-only quantityGrounding on record receipts; the client strict receipt schema omitted it and rejected an otherwise valid HTTP 200. AgentAuthorizationOwner then marked receipts failed; AgentConversation rendered the existing unconfirmed warning.",
+  "change": "Add exactly the existing optional status-only object to the client schema. Both object levels remain strict. No server, receipt content, UI, policy or data changes.",
+  "verification": {
+    "tests": {
+      "command": "node --test tests/agent-receipt-contract.test.ts",
+      "before": {
+        "passed": 2,
+        "failed": 2
+      },
+      "after": {
+        "passed": 4,
+        "failed": 0
+      },
+      "coverage": [
+        "Legacy receipts and four valid statuses",
+        "Invalid status and null object rejected",
+        "Nested/top-level measurement or source fields rejected",
+        "Wrong run and duplicate IDs rejected",
+        "Actual receipt owner plus shallow actual AgentConversation renders saved for old/new receipts"
+      ]
+    },
+    "typecheck": {
+      "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/QA_AGENT_RECEIPT_CONTRACT/tsconfig.json",
+      "result": "passed",
+      "scope": "Strict browser/Bundler mode for changed client, real receipt owner and focused tests",
+      "initialLimit": "Initial NodeNext harness rejects existing frontend extensionless imports; switched to browser-appropriate Bundler resolution. A missing unchanged chat-view-model mirror was materialized. No production source was changed for typecheck."
+    }
+  },
+  "environment": {
+    "node": "24.19.0",
+    "network": "Only synthetic injected HTTP responses; no actual API, model, browser, database or GCP operations"
+  },
+  "sourceHashes": {
+    "src/client/agent-actions-api.ts": "72e4722ff1fc13af2a0bead6eb560eb0c779d19839f6784ae81949b95555bbad",
+    "tests/agent-receipt-contract.test.ts": "ed15f2a22db1475e8bc9768b1fdbee6eeb1ca4bcfab89e11fb096d2545ef00a3"
+  },
+  "limits": [
+    "Shallow component checks are not browser acceptance; the original A6 receipt should be reread after normal deployment",
+    "T7 task-input capacity is a separate investigation and is not changed here"
+  ],
+  "integrationBase": {
+    "commit": "3c6d1632d45a49c783fff83bcab50a12320e315d",
+    "comparison": "PR #109 only changed memory server, its tests/evidence and API/data documentation; no overlap with this patch or its client/owner typecheck dependencies"
+  }
+}
