@@ -17,6 +17,10 @@ import { createStorageCipher, readSecretKey } from "../server/storage-crypto.ts"
 import { verifyEncryptedStorage } from "../server/storage-upgrade.ts";
 import { createWorkerQueue } from "../server/worker-queue.ts";
 
+// Historical harness: the required semantic assessment contract supersedes these old approval calls.
+console.error("knowledge_historical_harness_retired_use_verify_knowledge_a04_with_approved_a04_local_sql");
+process.exit(1);
+
 // A fresh approval is single-use in this protected directory. There is no automatic retry/resume.
 const limits = Object.freeze({ watches: 4, sources: 6, business: 120, polls: 180, workers: 1,
   sourceFetchCalls: 6, publicHttpRequestsMaximum: 18, cronMilliseconds: 100000, totalMilliseconds: 480000 });

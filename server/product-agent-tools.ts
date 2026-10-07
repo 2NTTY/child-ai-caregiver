@@ -3,7 +3,11 @@ import { summaryQuery } from "../src/shared/care-summary.ts";
 import type { MemoryContext, SummaryInput } from "../src/shared/memory.ts";
 import { agentAnswerSchema } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation } from "../src/shared/product-agent.ts";
-import type { KnowledgeEvidence, KnowledgeFilter } from "../src/shared/knowledge.ts";
+import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor } from "../src/shared/knowledge.ts";
+import { accumulateKnowledgeRead } from "./knowledge-read-coverage.ts";
+import { knowledgeQueryAgeSchema } from "./knowledge-inputs.ts";
+import { baseAgentKnowledgeFilter, resolveKnowledgeQueryContext } from "./knowledge-query-context.ts";
+import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descriptions.ts";
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
@@ -36,25 +40,8 @@ export function uncoveredConversation(context: MemoryContext) {
     moreUncovered: context.truncated.messages,
     complete: messages.length === context.recentMessages.length && !context.truncated.messages };
 }
-/** Exact birth dates only. Approximate input is retained in context, never guessed into a narrow filter. */
 export function agentKnowledgeFilter(context: MemoryContext, now = new Date()): KnowledgeFilter {
-  const profile = context.profileApplicable ? context.profile.data : null;
-  let age: KnowledgeFilter["age"] = null;
-  if (profile?.age.kind === "birth_date") {
-    const birth = new Date(profile.age.date + "T00:00:00Z");
-    const months = (now.getUTCFullYear() - birth.getUTCFullYear()) * 12 + now.getUTCMonth() - birth.getUTCMonth();
-    function anniversary(offset: number) {
-      const first = new Date(Date.UTC(birth.getUTCFullYear(), birth.getUTCMonth() + offset, 1));
-      const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
-      return new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), Math.min(birth.getUTCDate(), last))).getTime();
-    }
-    const whole = now.getTime() < anniversary(months) ? months - 1 : months;
-    const value = whole + (now.getTime() - anniversary(whole)) / (anniversary(whole + 1) - anniversary(whole));
-    if (Number.isFinite(value) && value >= 0 && value <= 216) age = { basis: "actual", minMonths: value, maxMonths: value };
-  }
-  // Hong Kong is the declared product locale; an explicitly different region is never replaced.
-  const region = profile?.region?.trim() || "HK";
-  return { region: /^(香港|Hong Kong)$/iu.test(region) ? "HK" : region, classification: "official_guidance", age, topics: [] };
+  return baseAgentKnowledgeFilter(context, now);
 }
 
 export function createProductAgentTools(options: {
@@ -147,17 +134,38 @@ export function createProductAgentTools(options: {
         summaryText = null;
         return makeResult(selected);
       }) },
-    { name: "search_knowledge", description: "以不含身份／私人正文的短主題問題搜尋已發布的公共知識。年齡、地區及公開使用範圍由 Server 決定。每 run 最多兩個查詢；無適用片段不可憑常識補造。",
-      parameters: z.object({ query: shortText(300),
-        classification: z.enum(["official_guidance", "recent_information"]) }), authorize: permitted,
+    { name: "search_knowledge", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.search_knowledge,
+      parameters: z.object({ query: shortText(300), classification: z.enum(["official_guidance", "recent_information"]),
+        queryAge: knowledgeQueryAgeSchema.optional() }).strict(), authorize: permitted,
       execute: args => guard(async () => {
         const query = args.query as string;
         if (/@|https?:|[0-9a-f]{8}-[0-9a-f-]{27}|(?:\d[ -]?){8}/iu.test(query)) throw new FamilyError(400, "public_query_required");
-        const filter = { ...agentKnowledgeFilter(await current()),
-          classification: args.classification as KnowledgeFilter["classification"] };
-        const result = await retrieval.search(query, filter);
+        const resolved = await resolveKnowledgeQueryContext(await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
+          { childId: scope.childId, visibility: options.visibility ?? "private", readHistory: (messageId, offset) =>
+            budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
+        const filter = { ...resolved.filter, classification: args.classification as KnowledgeFilter["classification"] };
+        const result = { ...await retrieval.search(query, filter), queryContext: resolved.queryContext, complete: true, omittedChunks: 0, returned: 0, hasMore: false };
+        result.returned = result.chunks.length;
         if (result.mode === "keyword_degraded" || mode === "not_used") mode = result.mode;
+        const allowance = Math.max(0, budget.toolResponseCharacters - 512);
+        while (result.chunks.length && JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) {
+          result.chunks.pop(); result.omittedChunks++; result.complete = false; result.hasMore = true; result.returned = result.chunks.length;
+        }
+        if (JSON.stringify({ status: "succeeded", data: { result } }).length > allowance) throw new FamilyError(400, "knowledge_context_input_limit");
         for (const chunk of result.chunks) evidence.set(chunk.chunkId, { chunk, filter });
+        return result;
+      }) },
+    { name: "read_knowledge_context", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.read_knowledge_context,
+      parameters: z.object({ anchorChunkId: z.uuid(), cursor: z.object({ versionId: z.uuid(), anchorChunkId: z.uuid(),
+        afterKey: z.string().max(80).nullable(), chunkId: z.uuid().nullable(), offset: z.number().int().min(0).max(4000) }).strict().nullable().optional() }).strict(),
+      authorize: permitted, execute: args => guard(async () => {
+        const anchor = evidence.get(args.anchorChunkId as string);
+        if (!anchor) throw new FamilyError(400, "invalid_citation");
+        const result = await retrieval.readContext(anchor.chunk, anchor.filter, args.cursor as KnowledgeContextCursor | null ?? null,
+          Math.max(0, budget.toolResponseCharacters - 512));
+        for (const chunk of result.chunks) {
+          evidence.set(chunk.chunkId, { chunk: accumulateKnowledgeRead(evidence.get(chunk.chunkId)?.chunk, chunk), filter: anchor.filter });
+        }
         return result;
       }) },
     { name: "propose_task", description: "保存待本人明確確認的家庭任務候選，尚未建立任務或通知任何人。對象只可取 read_context 的 eligibleAssignees，時間不清楚先補問。",
@@ -249,7 +257,7 @@ export function createProductAgentTools(options: {
      }},
   );
   return {
-    tools: options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
+    tools: options.visibility === "family" ? tools.filter(tool => ["read_context", "read_concerns", "search_knowledge", "read_knowledge_context", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"].includes(tool.name))
       : tools.filter(tool => (options.includeTaskProposals!==false || !["propose_task","propose_task_change"].includes(tool.name))
         && (options.includeContact!==false || !["read_contact_options","contact_caregiver"].includes(tool.name))),
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,

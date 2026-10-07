@@ -318,6 +318,13 @@ P2 任務及外發須保存以下必要語義；實際表名、欄名及枚舉�
 
 S10-W01 的 [009 migration](../server/migrations/009-public-knowledge.sql) 已通過必要真 DB／embedding／還原驗收：`knowledge_sources` 保存啟用狀態／活躍版本；`knowledge_versions` 保存不可變內容、核對／發布及日期語義；`knowledge_chunks` 保存短原文、核對轉述、適用性及 hash；`knowledge_vectors` 以真正 embedding 輸入 hash＋模型／維度／pipeline 重用。`embedding_attempts` 分 query／maintenance，公共文件可記 document hash，私人查詢不保存正文或 hash。停用標 withdrawn 且保留舊正文／核對依據；重新發布先重核。這些公共資料不替換原私人加密表；備份還原須涵蓋 vector extension 及全部表。
 
+<a id="knowledge-a04-model"></a>
+P2-A04 沿同一來源／版本／片段權威，增加可選 `originalText` 與實際 PDF 頁碼；來源的 extraction 保存正文／檔案 hash、格式、選取頁及技術覆蓋，不把抽取文字成功等同原意完整。舊片段只有短摘錄時，繼續標示 excerpt-only；不能把已核對轉述冒充全文。
+
+新增的版本語義審核證據綁 source、候選版本／hash、當時 active 版本及來源 observation。審核保存實際變動／移除的 key、舊新引文、含義比較、關鍵限制、代表問題及規則影響；hold 與 approve 分開，只有仍對應當前觀察且向量齊備才發布。歷史發布前證據不回寫成已通過新門檻；後續換版、停用重啟須按新門檻核對。
+
+查詢假設只屬當次受限檢索情境，保留本人使用者訊息或檔案版本依據及不確定性；不寫入孩子年齡／事實。conditional／requires_clarification 的片段不是精確資格。引用快照記錄實際讀過的固定版本與範圍；它是可追溯副本，不能另行修改知識權威。
+
 <a id="knowledge-refresh-model"></a>
 S10-W02 的 [014 migration](../server/migrations/014-knowledge-refresh.sql) 增加三張公共維護表：`knowledge_watches` 保存固定來源定義、條款核對、啟用／配置版本及最後嘗試／成功狀態；`knowledge_observations` 保存每個原 URL 的最近正文指紋、可核對內容、來源日期、抓取／成功時間及人工批准所指向的既有版本；`knowledge_source_checks` 以 job ID 保存一次結果，避免同一 job 重領重寫效果。首次或 hash 改變只形成候選，不另建一套向量／發布模型。
 

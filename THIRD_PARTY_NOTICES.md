@@ -89,3 +89,8 @@ S16-W05 pins development-only @playwright/test, playwright and playwright-core t
 ## Family document PDF
 
 Server PDF rendering uses unmodified @react-pdf/renderer 4.9.0 (MIT), by Diego Muracciole and contributors. The original license is retained in [licenses/react-pdf/LICENSE](licenses/react-pdf/LICENSE); transitive packages retain their own licenses in the installed distribution. The bundled LXGW WenKai TC v1.522 Regular font is unmodified and licensed under SIL OFL 1.1; [original font license](server/assets/fonts/OFL.txt) and [source/hash](server/assets/fonts/README.md) are retained. The font license does not apply to documents produced with it.
+
+
+## Official knowledge PDF extraction
+
+P2-A04 uses unmodified Mozilla PDF.js (`pdfjs-dist` 6.4.299, Apache-2.0) for bounded Server-side text extraction. Its original [license](licenses/pdfjs-dist/LICENSE) and package integrity are preserved in the [manifest](licenses/manifest.json). The official Node legacy build provides runtime compatibility; package CMaps and standard-font resources retain upstream notices in the installed distribution. This reader is separate from the existing report renderer. The selected Family Health Service passages and booklet page remain attributed government content, available here only within the stated non-commercial reuse scope; they are not relicensed as application code.

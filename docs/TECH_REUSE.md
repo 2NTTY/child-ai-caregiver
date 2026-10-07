@@ -130,3 +130,10 @@ Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定�
 ### P2-A03 文件局部修改（2026-10-08）
 
 沿用現有 typed actions、Zod、PostgreSQL 交易及原 opId 收據，不新增編輯框架或 PDF 引擎。主模型核對 [RFC 6902 §3–5](https://www.rfc-editor.org/rfc/rfc6902) 的依序操作、明確目標與失敗中止；通用 JSON Pointer／陣列索引不處理本項目的穩定章節、來源權限及編輯保護，因此採受限業務 edits，並非實作通用 RFC 6902 endpoint。改寫同一份快照、固定版本分段讀取及 SQL keyset 分頁均沿既有依賴；不下載或複製第三方 patch 原始碼，沒有新增 license 義務。文件已核對，實測結果依 A03 驗收證據記錄。
+
+
+### P2-A04 官方資料解析與檢索（2026-10-08）
+
+沿用 PostgreSQL 18.6／pgvector 0.8.6 的精確搜尋、Cheerio 1.2.0 及既有來源 worker。排名在過濾後的 SQL 有界取回，引用按 ID 重驗；沒有新增 RAG framework、第二資料庫或相似度即可信度的判定。含義核對及來源授權仍是產品責任。
+
+文字型 PDF 採固定 `pdfjs-dist 6.4.299`（Apache-2.0，官方宣告 Node >=22.13.0 或 >=24），已有 react-pdf 是報告輸出工具，不提供正文抽取，故不重用為解析器。主模型核對 [官方 Node 範例](https://github.com/mozilla/pdf.js/blob/v6.4.299/examples/node/getinfo.mjs)、[固定 API](https://github.com/mozilla/pdf.js/blob/v6.4.299/src/display/api.js) 及套件 metadata；本機 Node24.11 的標準 build 缺 toHex，沿官方 legacy build 解決，不自建polyfill。頁批次、hash、取消、local CMap／font resources及抽取品質分開驗。PDF頁有文字不等於完整正文，只有頁碼亦不能合格；不新增OCR或外部文件服務。

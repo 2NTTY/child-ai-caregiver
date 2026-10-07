@@ -11,7 +11,9 @@ export function publicSourceAddress(address: string): boolean { return isIP(addr
 type SourceResponse = {status:number;location?:string;contentType:string;body:Buffer};
 type SourceResult = {status:"response";response:SourceResponse}|{status:"failed";reason:"network"|"timeout"|"response"};
 /** Shared public-network transport; callers must provide their own URL-scope validator. */
-export async function fetchPublicSourceResponse(initialUrl:string,validate:(value:string)=>URL,outerSignal:AbortSignal,accept:string):Promise<SourceResult>{
+export async function fetchPublicSourceResponse(initialUrl:string,validate:(value:string)=>URL,outerSignal:AbortSignal,accept:string,options:{maxBytes?:number}={}):Promise<SourceResult>{
+  const maxBytes=options.maxBytes??1024*1024;
+  if(!Number.isSafeInteger(maxBytes)||maxBytes<1||maxBytes>32*1024*1024)throw new Error("source_max_bytes_invalid");
   const signal = AbortSignal.any([outerSignal, AbortSignal.timeout(20000)]);
   try {
     let url = validate(initialUrl);
@@ -42,7 +44,7 @@ export async function fetchPublicSourceResponse(initialUrl:string,validate:(valu
           const chunks: Buffer[] = []; let bytes = 0;
           response.on("data", (chunk: Buffer) => {
             bytes += chunk.length;
-            if (bytes > 1024 * 1024) response.destroy(new Error("source_body_too_large"));
+            if (bytes > maxBytes) response.destroy(new Error("source_body_too_large"));
             else chunks.push(chunk);
           });
           response.on("error", reject);

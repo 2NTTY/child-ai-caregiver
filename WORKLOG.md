@@ -1621,3 +1621,15 @@
 - 一次真本機SQL通過：既有030 checksum與暫停worker核對；2合成帳號、1孩子、3文件、1共享record、49/60業務呼叫、1pool重建。長文／中間項修改、原op與版本衝突、失效候選拒絕／遮蔽、真問句綁定／consume、歸檔／恢復／刷新保留修改通過。精確清理新帳號cascade後原children14／documents0／versions0／messages17／records9／worker=false不變。
 - [結構化證據](artifacts/verification/P2_A03_CHECKS.json)／[SQL raw](artifacts/verification/P2_A03_LOCAL.log)。Node24.11.0/npm11.6.1，lockfile未改。零模型、embedding、外網、通知、瀏覽器或部署；pool重建不等於VM重啟。完整頁面歷史留A07、完整期間報告留A05。
 - 交付前核對master及draft #111/#130，按C帳號PR/merge；合併後再開始依賴包。
+
+
+<a id="log-20261008-p2-a04"></a>
+## 2026-10-08｜P2-A04 有界官方 RAG、原文及換版
+
+- 基線 f46ab8e；A主責，權重5，A60%／C40%。主模型親寫契約、官方來源／Prompt Pack0.1.30、Skill及review；Luna唯讀定位，Sol6.1分別承接PDF reader與獨立RAG/發布接線。共用AI由A統籌，不稱成員獨立人工測試。
+- 復用ADK/pgvector/worker，增加有來源的語義查詢年齡提示（含asOf）、SQL混合排序、同版原文cursor及實際讀取ranges；未知／約數不轉成精確資格。031保存語義審核，舊新quote、變動key、七類限制、代表問題及規則影響須核對，向量齊備後同服務自動發布；hash不是批准。
+- PDF.js6.4.299固定Node legacy，32MiB／8頁／20秒受限worker；頁碼／覆蓋不代表語義完整。主模型核對四官方頁及一份PDF第3頁；其餘圖片／錯碼頁拒絕納入，沒有整冊完整或臨床聲稱。來源及license證據隨包保存，受限制近期來源維持組內。
+- 離線4聚合有有效結果，最後僅重核age/續讀2項；原型別fixture及coverage容量斷言失敗照錄（原stdout未存）。PDF1聚合最終通過，原WindowsURL／Node標準build相容失敗raw保留。12入口scoped TS 0 diagnostics；不是全倉。
+- 先建立工程外加密DB checkpoint，再真套031。SQL原批次9次store呼叫停於續讀、generic診斷不足，原因未能重現；保留原失敗。原現場兩次共8次唯讀search→context成功（一次原pool），只補未執行3組語義核對共16次store呼叫通過。共33次，2合成source、1,105片段，零家庭修改／模型／外網／通知，成功後按精確ID清理、worker=false。不得把原批次改為通過。
+- [EV](artifacts/verification/P2_A04_CHECKS.json)／[官方內容核對](artifacts/verification/P2_A04_SOURCE_REVIEW.json)。主模型裁定最低功能gate成立；新真模型／embedding、source cron、部署、完整還原及新seed發布未做，完整成果留A09，原SQL不明失敗保留風險。
+- Node24.11/npm11.6.1，部署固定版本未改；必要diff／seed schema通過。交付前fetch及draft heads未變；按A帳號PR／merge後才開C主責A05。

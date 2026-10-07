@@ -9,7 +9,10 @@ export type RefreshJob = z.infer<typeof refreshJobSchema>;
 export interface SourceWatchDefinition {
   id: string;
   url: string;
-  kind: "page" | "rss";
+  kind: "page" | "rss" | "pdf";
+  title?: string;
+  /** Fixed reviewed page window, at most eight pages. */
+  pdfPages?: { startPage: number; endPage: number };
   classification: "official_guidance" | "recent_information";
   publisher: string;
   termsUrl: string;
@@ -26,6 +29,8 @@ export interface ObservedContent {
   sourcePublishedAt: string | null;
   sourceUpdatedAt: string | null;
   sourceDateText: string | null;
+  extraction?: import("../src/shared/knowledge.ts").KnowledgeExtraction;
+  pages?: { page: number; text: string; status: "text" | "empty" | "unreadable" }[];
 }
 export type SourceFetchResult = { status: "ok"; items: ObservedContent[] }
   | { status: "unavailable"; httpStatus: 404 | 410 }

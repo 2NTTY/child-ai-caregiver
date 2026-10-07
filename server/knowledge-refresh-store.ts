@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
-import type { KnowledgeSourceInput } from "../src/shared/knowledge.ts";
+import { reviewKnowledgeVersion } from "./knowledge-version-review.ts";
+import type { KnowledgeReviewAssessment } from "./knowledge-version-review.ts";
 import { knowledgeHash } from "./knowledge-inputs.ts";
 import { refreshJobSchema } from "./knowledge-refresh-types.ts";
 import type { ObservedContent, RefreshJob, SourceFetcher, SourceWatchDefinition } from "./knowledge-refresh-types.ts";
@@ -10,15 +11,16 @@ interface ObservationRow { source_id: string; watch_id: string; url: string; con
   fetched_at: Date; last_successful_check_at: Date; unavailable: boolean }
 const operatorAlias = (value: string) => { if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$/.test(value)) throw new Error("knowledge_operator_invalid"); };
 export function observationId(definition: SourceWatchDefinition, item: ObservedContent): string {
-  return definition.kind === "page" ? definition.id : `${definition.id}-${knowledgeHash(item.url).slice(0,32)}`;
+  return definition.kind !== "rss" ? definition.id : `${definition.id}-${knowledgeHash(item.url).slice(0,32)}`;
 }
 export function observationHash(item: ObservedContent): string {
-  return knowledgeHash([item.url,item.title,item.text,item.sourcePublishedAt,item.sourceUpdatedAt,item.sourceDateText]);
+  return knowledgeHash([item.url,item.title,item.text,item.sourcePublishedAt,item.sourceUpdatedAt,item.sourceDateText,
+    ...(item.extraction || item.pages ? [item.extraction ?? null,item.pages ?? null] : [])]);
 }
 export function definitionHash(definition: SourceWatchDefinition): string {
   // JSONB changes object key order; compare explicit fields rather than JSON.stringify(row).
   return knowledgeHash([definition.id,definition.url,definition.kind,definition.classification,definition.publisher,
-    definition.termsUrl,definition.audience,definition.selector ?? null,definition.itemHosts ?? []]);
+    definition.termsUrl,definition.audience,definition.selector ?? null,definition.itemHosts ?? [],definition.pdfPages ?? null,definition.title ?? null]);
 }
 
 async function tx<T>(pool: Pool, action: (client: PoolClient) => Promise<T>): Promise<T> {
@@ -77,24 +79,16 @@ export function createKnowledgeRefreshStore(pool: Pool, definitions: readonly So
       return (await pool.query<WatchRow>("SELECT * FROM knowledge_watches WHERE enabled ORDER BY id LIMIT 32")).rows
         .filter(matches).map(row => ({ definition: row.definition, data: { watchId: row.id, revision: row.revision, workerGeneration: control.generation } }));
     },
-    async approve(sourceId: string, contentHash: string, versionId: string, versionHash: string, operator: string) {
+    async approve(sourceId: string, contentHash: string, versionId: string, versionHash: string, operator: string, assessment: KnowledgeReviewAssessment) {
       operatorAlias(operator);
       return tx(pool, async client => {
-        // Same order as knowledge publication: source, watch, observation. No network inside this transaction.
         if (!(await client.query("SELECT id FROM knowledge_sources WHERE id=$1 FOR UPDATE", [sourceId])).rowCount) throw new Error("knowledge_source_unknown");
         const reference = (await client.query<{ watch_id: string }>("SELECT watch_id FROM knowledge_observations WHERE source_id=$1", [sourceId])).rows[0];
         const watch = reference && (await client.query<WatchRow>("SELECT * FROM knowledge_watches WHERE id=$1 FOR SHARE", [reference.watch_id])).rows[0];
-        const observed = (await client.query<ObservationRow>("SELECT * FROM knowledge_observations WHERE source_id=$1 FOR UPDATE", [sourceId])).rows[0];
-        const version = (await client.query<{ document: KnowledgeSourceInput; version_hash: string; review_state: string }>(
-          "SELECT document,version_hash,review_state FROM knowledge_versions WHERE id=$1 AND source_id=$2", [versionId, sourceId])).rows[0];
-        if (!watch?.enabled || !matches(watch) || !observed || observed.unavailable || observed.content_hash !== contentHash
-          || !version || version.review_state !== "reviewed" || version.version_hash !== versionHash
-          || version.document.url !== observed.url || version.document.classification !== watch.definition.classification
-          || version.document.publisher !== watch.definition.publisher || version.document.termsUrl !== watch.definition.termsUrl
-          || version.document.sourcePublishedAt !== observed.document.sourcePublishedAt
-          || version.document.sourceUpdatedAt !== observed.document.sourceUpdatedAt) throw new Error("knowledge_observation_review_mismatch");
-        await client.query(`UPDATE knowledge_observations SET approved_hash=$2,approved_version_id=$3,approved_by=$4,approved_at=now() WHERE source_id=$1`,
-          [sourceId, contentHash, versionId, operator]);
+        if (!watch?.enabled || !matches(watch) || assessment.observationHash !== contentHash) throw new Error("knowledge_observation_review_mismatch");
+        const owner = (await client.query<{ source_id: string }>("SELECT source_id FROM knowledge_versions WHERE id=$1", [versionId])).rows[0];
+        if (owner?.source_id !== sourceId) throw new Error("knowledge_observation_review_mismatch");
+        return reviewKnowledgeVersion(client, versionId, versionHash, operator, assessment, watch.definition.audience === "internal_noncommercial", watch.revision);
       });
     },
     async process(input: RefreshJob, jobId: string, fetcher: SourceFetcher, signal: AbortSignal) {
@@ -120,7 +114,7 @@ export function createKnowledgeRefreshStore(pool: Pool, definitions: readonly So
         let status: "changed" | "unchanged" | "failed" | "unavailable" | "superseded" = "superseded", changed = 0, count = 0;
         if (current && !signal.aborted) {
           if (fetched.status === "ok") {
-            if (fetched.items.length > 50 || (current.definition.kind === "page" && fetched.items.length !== 1)) throw new Error("knowledge_fetch_items_invalid");
+            if (fetched.items.length > 50 || (current.definition.kind !== "rss" && fetched.items.length !== 1)) throw new Error("knowledge_fetch_items_invalid");
             count = fetched.items.length;
             for (const item of fetched.items) {
               const id = observationId(current.definition, item), hash = observationHash(item);

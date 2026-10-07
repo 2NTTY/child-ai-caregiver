@@ -157,3 +157,18 @@ export function parseSourceContent(definition: SourceWatchDefinition, body: stri
     return invalidContent();
   }
 }
+
+/** Preserve the selected original page texts and full-file identity without claiming full-book coverage. */
+export function parsedKnowledgePdfContent(definition: SourceWatchDefinition, result: import("./knowledge-pdf.ts").KnowledgePdfResult): ObservedContent[] {
+  const window = definition.pdfPages;
+  if (definition.kind !== "pdf" || !window || !Number.isSafeInteger(window.startPage) || !Number.isSafeInteger(window.endPage)
+    || window.startPage < 1 || window.endPage < window.startPage || window.endPage - window.startPage >= 8
+    || result.startPage !== window.startPage || result.pages.length !== window.endPage - window.startPage + 1
+    || result.pages.some((page, index) => page.page !== window.startPage + index || page.status === "unreadable" || page.text.length > 32000)
+    || !result.pages.some(page => page.status === "text" && page.text.trim())) throw new Error("knowledge_pdf_selected_pages_incomplete");
+  return [{ url: definition.url, title: definition.title ?? definition.id,
+    text: result.pages.map(page => page.text).join("\n\n"), sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null,
+    pages: result.pages, extraction: { format: "text_pdf", extractionQuality: result.extractionQuality, contentHash: result.fileHash, totalPages: result.totalPages,
+      pageStart: window.startPage, pageEnd: window.endPage, complete: result.complete && window.startPage === 1
+        && result.pages.every(page => page.status === "text") } }];
+}

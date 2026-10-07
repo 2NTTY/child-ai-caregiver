@@ -7,6 +7,10 @@ export const SOURCE_WATCHES: readonly SourceWatchDefinition[] = ([
 ].map(([id, page]) => ({ id: id!, url: `https://www.fhs.gov.hk/tc_chi/health_info/child/${page}.html`,
   kind: "page", classification: "official_guidance", publisher: "香港特別行政區政府衞生署家庭健康服務",
   termsUrl: "https://www.fhs.gov.hk/english/notice/notice.html", selector: "#content", audience: "public_noncommercial" })) as SourceWatchDefinition[]).concat([
+  { id: "fhs-feeding-booklet-en", url: "https://www.fhs.gov.hk/english/health_info/child/14727.pdf", kind: "pdf",
+    pdfPages: { startPage: 3, endPage: 3 }, classification: "official_guidance",
+    publisher: "香港特別行政區政府衞生署家庭健康服務", termsUrl: "https://www.fhs.gov.hk/english/notice/notice.html",
+    audience: "public_noncommercial" },
   { id: "chp-recent", url: "https://www.chp.gov.hk/rss/pressreleases_zh_tw_RSS.xml", kind: "rss",
     classification: "recent_information", publisher: "香港特別行政區政府衞生署衞生防護中心",
     termsUrl: "https://www.chp.gov.hk/tc/static/24027.html", itemHosts: ["www.chp.gov.hk"], audience: "internal_noncommercial" },

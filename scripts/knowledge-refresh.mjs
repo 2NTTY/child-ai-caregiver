@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFile, stat } from "node:fs/promises";
 
 const args = process.argv.slice(2);
 const operation = args[0];
@@ -7,10 +8,10 @@ const operationFlags = new Map([
   ["catalog", []], ["list", []], ["inspect", []],
   ["register", [...operatorFlags, "--source-and-terms-checked"]],
   ["disable", operatorFlags],
-  ["approve", [...operatorFlags, "--observation-hash", "--version", "--version-hash", "--source-and-terms-checked"]],
+  ["approve", [...operatorFlags, "--observation-hash", "--version", "--version-hash", "--source-and-terms-checked", "--assessment"]],
   ["check", [...operatorFlags, "--approved-source-check"]],
 ]);
-const valueFlags = new Set(["--operator", "--observation-hash", "--version", "--version-hash"]);
+const valueFlags = new Set(["--operator", "--observation-hash", "--version", "--version-hash", "--assessment"]);
 const readOperations = new Set(["catalog", "list", "inspect"]);
 const idPattern = /^[a-z0-9][a-z0-9-]{0,79}$/;
 const hashPattern = /^[a-f0-9]{64}$/;
@@ -72,8 +73,11 @@ try {
       console.log(JSON.stringify({ event: "knowledge_watch_disabled", watchId: target }));
     }
     if (operation === "approve") {
-      await store.approve(target, options.get("--observation-hash"), options.get("--version"), options.get("--version-hash"), operator);
-      console.log(JSON.stringify({ event: "knowledge_observation_approved", sourceId: target, versionId: options.get("--version") }));
+      const file = options.get("--assessment");
+      if (!file || (await stat(file)).size > 256000) throw new Error("Invalid review assessment input");
+      const assessment = JSON.parse(await readFile(file, "utf8"));
+      const publication = await store.approve(target, options.get("--observation-hash"), options.get("--version"), options.get("--version-hash"), operator, assessment);
+      console.log(JSON.stringify({ event: "knowledge_observation_review", sourceId: target, versionId: options.get("--version"), publication }));
     }
     if (operation === "check") {
       const [{ createWorkerQueue }, { KNOWLEDGE_REFRESH_QUEUE, REFRESH_JOB_OPTIONS }] = await Promise.all([
