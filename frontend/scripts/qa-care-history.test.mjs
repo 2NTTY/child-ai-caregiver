@@ -56,7 +56,7 @@ function historyOwner(detail, history) {
     setCare: update => { careRef.current = update(careRef.current); }, read: (_key, control, action) => action(control.signal),
     careKey: ['synthetic'], childId: 'child', userId: 'user', api: { history }, careRevisionView: value => value, accessError: () => false, released() {} };
   const compiled = ts.transpileModule('const { '+Object.keys(deps).join(',')+' } = deps;\n'+historyFunction+'\nexports.load = careHistory;', { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-  const module = {}; new Function('deps', 'exports', compiled)(deps, module); return { load: module.load, state: () => careRef.current };
+  const module = {}; new Function('deps', 'exports', compiled)(deps, module); return { load: module.load, state: () => careRef.current, deps };
 }
 for (const failure of ['HTTP', 'parse']) test(`${failure} history failure sets the actual owner error state and a successful retry clears it`, async () => {
   let fail = true; const owner = historyOwner({ record: { id: 'record', current: { version: 2 } }, historyLoading: false, history: [], hasMoreHistory: false }, async () => {
@@ -72,4 +72,29 @@ test('older-page failure preserves loaded revisions and the original retry curso
   });
   await owner.load(true); assert.equal(owner.state().detail.historyState, 'error'); assert.equal(owner.state().detail.historyRetryMore, true);
   assert.deepEqual(owner.state().detail.history, [revision]);
+});
+
+test('offline then reconnect keeps the same selection retryable and rejects the invalidated history result', async () => {
+  let resolveOld, attempts = 0; const beforeVersions = [];
+  const owner = historyOwner({ record: { id: 'record', childId: 'child', title: 'Synthetic', current: { values: {}, version: 2 } }, historyOpen: true, historyLoading: false, history: [], hasMoreHistory: false }, async (_child, _record, before) => {
+    beforeVersions.push(before); if (++attempts === 1) return new Promise(resolve => { resolveOld = resolve; });
+    return { revisions: [{ version: 1 }], nextBeforeVersion: null };
+  });
+  const first = owner.load(false); assert.equal(owner.state().detail.historyLoading, true);
+  const start = ownerSource.indexOf('  useEffect(() => {\n    if (env.online)');
+  const effect = ownerSource.slice(start, ownerSource.indexOf('  useEffect(() => {\n    const refresh', start));
+  const pageStart = ownerSource.indexOf('  function publishPage(');
+  const pageFunction = ownerSource.slice(pageStart, ownerSource.indexOf('  async function loadCare(', pageStart));
+  const pageDeps = { ...owner.deps, env: { queryClient: { setQueryData() {} } }, nextCursor: { current: null }, pageIndex: { current: 0 }, careRecordView: item => ({ id: item.id, childId: 'child', title: 'Synthetic', current: { values: {}, version: item.version } }) };
+  const pageModule = {}; new Function('deps', 'exports', ts.transpileModule('const { '+Object.keys(pageDeps).join(',')+' } = deps;\n'+pageFunction+'\nexports.publish=publishPage;', { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(pageDeps, pageModule);
+  const effectDeps = { ...owner.deps, env: { online: false }, careGeneration: { current: 0 }, profileGeneration: { current: 0 }, careRead: { current: null }, profileRead: { current: null },
+    refreshDeferred: { current: false }, writing: { current: false }, attempt: { current: null }, setProfile() {}, useEffect: action => action(),
+    reloadRef: { current: { loadCare: () => pageModule.publish({ records: [{ id: 'record', version: 2 }], nextCursor: null, scanned: 1 }, '', 'all', 0), loadProfile() {} } } };
+  function online(value) { owner.deps.envRef.current.online = value; effectDeps.env.online = value; new Function('deps', ts.transpileModule('const { '+Object.keys(effectDeps).join(',')+' } = deps;\n'+effect, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(effectDeps); }
+  online(false); assert.equal(owner.state().detail.historyLoading, false); assert.equal(owner.state().detail.historyState, 'unread');
+  online(true); assert.equal(owner.state().detail.record.id, 'record'); assert.equal(owner.state().detail.historyLoading, false);
+  assert.ok(render(owner.state().detail).buttons.some(button => button.label === '讀取更正歷史' && !button.disabled));
+  resolveOld({ revisions: [{ version: 999 }], nextBeforeVersion: null }); await first;
+  assert.deepEqual(owner.state().detail.history, []); await owner.load(false);
+  assert.deepEqual(beforeVersions, [2, 2]); assert.equal(owner.state().detail.historyState, 'ready'); assert.deepEqual(owner.state().detail.history, [{ version: 1 }]);
 });

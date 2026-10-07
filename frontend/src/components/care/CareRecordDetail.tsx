@@ -67,7 +67,7 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
       {detail.historyLoading ? <Text style={styles.tool}>正在讀取更正歷史…</Text> : historyError ? <Text style={styles.tool}>未能讀取更正歷史，請重試。</Text>
         : detail.history.length === 0 ? <Text style={styles.tool}>{historyReady && record.current.version === 1 ? "目前只有第一個已確認版本。" : historyReady ? "未有已載入的更正歷史，請重新讀取核對。" : "尚未讀取更正歷史。"}</Text> : null}
       {detail.history.map(revision => <View key={revision.version} style={styles.revision}><CareRevisionContent revision={revision} /></View>)}
-      {!detail.historyLoading && (historyError || emptyUnconfirmed) ? <AppButton label={historyError ? "重試讀取歷史" : "讀取更正歷史"} variant="secondary" onPress={detail.historyRetryMore ? actions.loadOlderHistory : actions.showHistory} disabled={!online} />
+      {!detail.historyLoading && (historyError || !historyReady || emptyUnconfirmed) ? <AppButton label={historyError ? "重試讀取歷史" : "讀取更正歷史"} variant="secondary" onPress={detail.historyRetryMore ? actions.loadOlderHistory : actions.showHistory} disabled={!online} />
         : detail.hasMoreHistory ? <AppButton label="載入更早版本" variant="secondary" onPress={actions.loadOlderHistory} loading={detail.historyLoading} disabled={!online} />
           : historyReady && !detail.historyLoading ? <Text style={styles.meta}>已到最早的已載入版本。</Text> : null}
     </View></MotionDisclosure>

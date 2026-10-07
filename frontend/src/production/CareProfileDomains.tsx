@@ -176,7 +176,8 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     } else {
       careGeneration.current++; profileGeneration.current++; historyGeneration.current++;
       careRead.current?.abort(); profileRead.current?.abort();
-      setCare(previous => ({ ...previous, list: { ...previous.list, state: "stale" } })); setProfile(previous => ({ ...previous, reading: false, needsRefresh: true }));
+      setCare(previous => ({ ...previous, list: { ...previous.list, state: "stale" },
+        detail: previous.detail?.historyLoading ? { ...previous.detail, historyLoading: false, historyState: "unread" } : previous.detail })); setProfile(previous => ({ ...previous, reading: false, needsRefresh: true }));
     }
   }, [env.online]);
   useEffect(() => {

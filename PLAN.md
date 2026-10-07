@@ -11,8 +11,9 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 - 前置：PR #98／#99 已合併，基線 `9c088c8`；隔離分支 `codex/qa-child-selection`。本輪只準備 draft PR，不合併或部署；其他 checkout 保留。
 - 範圍：孩子選擇在重新整理後先經目前帳號／fresh list／workspace 核對再恢復；完成任務使用 Server 已確認終態時間；更正歷史載入不冒稱第一／最早版本。沿用 sessionStorage／既有 owner，沒有新依賴、後端或資料契約變更。
-- 必要證據：[QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。首次 61 項中 57 通過；兩檔 strip-only harness 問題局部改旗標後 15 項通過，兩項 PR #98 舊文案斷言的原始失敗保留，pre-#98 基線 2 項通過、同步現行預期後 2 項通過；完成時間 4 項、更正歷史 HTTP／解析失敗、unknown 與重試共 7 項及 frontend typecheck 通過。沒有真模型、通知、資料庫改動或全面瀏覽器驗收。
+- 必要證據：[QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。首次 61 項中 57 通過；兩檔 strip-only harness 問題局部改旗標後 15 項通過，兩項 PR #98 舊文案斷言的原始失敗保留，pre-#98 基線 2 項通過、同步現行預期後 2 項通過；完成時間 4 項、更正歷史 HTTP／解析失敗、unknown 與重試共 8 項及 frontend typecheck 通過。沒有真模型、通知、資料庫改動或全面瀏覽器驗收。
 - 成長問題只診斷：API healthy、Agent enabled、017／027 migration 存在；兩服務的 authority 格式相同。已查 2026-10-07 02:18–02:25 UTC，Web／API 既有日誌均 0 行；Caddy 無 access log，API 無逐請求 metadata。尚缺既有 QA 的去識別化 Network／parser 診斷，不能確定根因；不改真家庭資料。首頁助手提醒未接通另屬既有缺口。
+- 審查補正：離線失效 history request 清除當前 loading、標記 unread 並保留原頁重試意向；同版本重連不需關閉重開，舊 generation 不寫回。Growth／concerns 失敗加入暫時 console 診斷，僅固定 endpoint／status／allowlist code／category，成功及過期／abort 靜默；15 項隱私／失敗類別測試及型別通過。根因仍未確認；獨立覆核後才按另次部署派遣收集一次正常合成 UI 讀取，修好後移除不必要診斷。沒有新增後端日誌、存取權或 authenticated API 重播。
 - B 主責、權重 2：B 70%／C 20%／A 10%，按客戶端、Server／現場診斷及整合責任分配；共用 AI 實作／執行本機核對，不冒稱個人人手實作或人工驗收。下一步由 dot 合併獨立 UI QA 與 review；只有後續明確派遣才可合併／部署，停止於 draft。
 
 

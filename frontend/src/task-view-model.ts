@@ -10,7 +10,7 @@ export interface TaskValues {
 }
 export interface TaskView {
   id: string; childId: string; version: number; title: string; details: string;
-  // Presentation metadata must come from the matching completion revision, never dueAt/updatedAt.
+  // Prefer the matching terminal revision; confirmed Server terminal updatedAt supplies the same transition time. Never use dueAt or the device clock.
   completedAt?: string; terminalAt?: string;
   kind: TaskValues["kind"]; assigneeUserId: string; createdBy: string; createdAt: string; updatedAt: string;
   occurrence: { id: string; dueAt: string; timeZone: string; state: TaskState; terminalBasisVersion: number | null };

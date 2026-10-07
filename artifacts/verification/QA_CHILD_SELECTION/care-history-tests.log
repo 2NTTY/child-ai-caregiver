@@ -1,15 +1,20 @@
-✔ loading correction history never claims a first or oldest confirmed version (0.9291ms)
-✔ only successfully read first-version history confirms there are no earlier versions (0.12004ms)
-✔ unread or empty version-two history stays unconfirmed and offers a fresh read (0.536452ms)
-✔ failed initial or older-page history stays unknown and retries the same page (0.231033ms)
-✔ HTTP history failure sets the actual owner error state and a successful retry clears it (8.170842ms)
-✔ parse history failure sets the actual owner error state and a successful retry clears it (4.016594ms)
-✔ older-page failure preserves loaded revisions and the original retry cursor (4.144916ms)
-ℹ tests 7
+Command: node --test frontend/scripts/qa-care-history.test.mjs
+Runtime: offline Docker yuban-qa-deps:9c088c8, Node 24.19.0; read-only source mounts
+✔ loading correction history never claims a first or oldest confirmed version (0.941101ms)
+✔ only successfully read first-version history confirms there are no earlier versions (0.127877ms)
+✔ unread or empty version-two history stays unconfirmed and offers a fresh read (0.651133ms)
+✔ failed initial or older-page history stays unknown and retries the same page (0.311463ms)
+✔ HTTP history failure sets the actual owner error state and a successful retry clears it (7.676208ms)
+✔ parse history failure sets the actual owner error state and a successful retry clears it (4.447972ms)
+✔ older-page failure preserves loaded revisions and the original retry cursor (5.370509ms)
+✔ offline then reconnect keeps the same selection retryable and rejects the invalidated history result (10.775967ms)
+ℹ tests 8
 ℹ suites 0
-ℹ pass 7
+ℹ pass 8
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 343.673223
+ℹ duration_ms 339.050101
+
+Exit code: 0

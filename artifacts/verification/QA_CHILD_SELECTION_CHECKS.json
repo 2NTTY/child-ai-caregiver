@@ -45,8 +45,8 @@
       "evidence": "QA_CHILD_SELECTION/task-projection-tests.log"
     },
     "historyLoading": {
-      "tests": 7,
-      "passed": 7,
+      "tests": 8,
+      "passed": 8,
       "failed": 0,
       "evidence": "QA_CHILD_SELECTION/care-history-tests.log",
       "coverage": [
@@ -55,7 +55,8 @@
         "unread or empty version 2",
         "initial/older error and offline retry guards",
         "actual owner HTTP and parse error, successful retry",
-        "older-page failure preserves revisions and cursor"
+        "older-page failure preserves revisions and cursor",
+        "offline→reconnect same selected record: clear loading, retain retry intent, ignore old generation result, retry same version without closing panel"
       ],
       "supersedes": "The initial 2 render tests are retained in focused-tests.log; the version-2 settled-empty expectation was incorrect and has been replaced."
     },
@@ -98,10 +99,34 @@
       ],
       "change": "Only obsolete source-text expectations updated; product source unchanged."
     },
-    "logsCommitted": true
+    "logsCommitted": true,
+    "historyOfflineInitial": {
+      "tests": 8,
+      "passed": 7,
+      "failed": 1,
+      "cause": "New extracted-effect harness omitted the required TypeScript transpile options; failed before offline action execution. Corrected harness then all 8 passed.",
+      "evidence": "QA_CHILD_SELECTION/care-history-offline-initial.log"
+    },
+    "growthReadDiagnostic": {
+      "tests": 15,
+      "passed": 15,
+      "failed": 0,
+      "evidence": "QA_CHILD_SELECTION/growth-read-diagnostic-tests.log",
+      "coverage": [
+        "success emits nothing",
+        "growth/concerns HTTP metadata with original business code/status preserved",
+        "schema and invalid JSON with actual HTTP status",
+        "scope and duplicate categories only",
+        "authority/access mismatch categories only",
+        "unknown codes/messages/stacks/identifiers never emitted",
+        "aborted/obsolete reads silent",
+        "console failure keeps original rejection",
+        "category metadata is revalidated"
+      ]
+    }
   },
   "growthDiagnosis": {
-    "status": "not_fixed_root_cause_unconfirmed",
+    "status": "temporary_diagnostic_implemented_not_deployed_root_cause_unconfirmed",
     "runtimeReadOnly": {
       "apiImage": "yuban-int-api:053658b",
       "apiHealthy": true,
@@ -111,13 +136,56 @@
       "familyDataRead": false
     },
     "confirmed": "Growth and concerns share storage_epoch:access_version authority. Both are joined with Promise.all; either request or schema validation failure prevents page readiness and affects the home feed.",
-    "needed": "Existing logs lack request metadata. Minimal next step is sanitized Network diagnostics from the existing synthetic QA session, or a separately reviewed/authorized temporary Web-only diagnostic deployment.",
+    "needed": "Independent review, then later authorized Web deployment and one normal UI read by dot; capture only [growth-read] lines. No helper authenticated API replay.",
     "excluded": "Service disabled and migrations 017/027 missing. Assistant reminders remain unconnected and out of scope.",
-    "logWindowEvidence": "QA_CHILD_SELECTION/growth-log-window.json"
+    "logWindowEvidence": "QA_CHILD_SELECTION/growth-log-window.json",
+    "sourceFinding": "Server/client page contracts and authority format do not establish the actual live failure; previous errors discarded successful-read validation reason and backend unavailable codes.",
+    "temporaryDiagnostic": {
+      "prefix": "[growth-read] ",
+      "onlyOn": "current loader failure; success, aborted and obsolete reads are silent",
+      "fields": [
+        "endpoint",
+        "status",
+        "code",
+        "category"
+      ],
+      "endpoints": [
+        "growth",
+        "concerns",
+        "combined"
+      ],
+      "categories": [
+        "http",
+        "schema",
+        "scope",
+        "duplicates",
+        "invalid_json",
+        "request",
+        "authority_mismatch",
+        "access_mismatch"
+      ],
+      "statusZeroMeans": "No known HTTP response status, including combined agreement failure; not an HTTP status.",
+      "code": "Fixed allowlist or null; unknown strings dropped.",
+      "excluded": [
+        "childId",
+        "workspaceId",
+        "userId",
+        "URL",
+        "payload",
+        "names",
+        "credentials",
+        "original error message",
+        "stack",
+        "raw Zod issue paths"
+      ],
+      "businessSemantics": "Existing API status/code sanitization, reconfirmation, unknown writes, authorized scopes, request count and retries remain unchanged.",
+      "lifecycle": "Review this draft first. Deployment requires later explicit instruction; after collecting one normal synthetic UI read and fixing the cause, remove unnecessary diagnostic."
+    }
   },
   "remaining": [
-    "Independent dot UI QA, draft review, separate merge/deploy authorization.",
-    "Growth root cause unconfirmed: existing logs lack status/error.code."
+    "Independent review of latest head; no merge/deploy authorization in this turn.",
+    "Live Growth root cause needs one normal UI read after separately authorized Web deployment; temporary diagnostic is not live yet.",
+    "Remove unnecessary diagnostic after confirming/fixing the live cause."
   ],
   "responsibility": {
     "owner": "B",

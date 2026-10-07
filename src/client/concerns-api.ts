@@ -1,3 +1,4 @@
+import type { ReadFailureDiagnostic } from "./read-failure.ts";
 import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
 import { concernChangeSchema, concernValuesSchema, type Concern, type ConcernChange, type ConcernPage, type ConcernValues } from "../shared/concerns.ts";
@@ -11,10 +12,12 @@ const knownStatuses = new Set([400, 401, 403, 404, 405, 409, 415, 422, 428, 429,
 export class ConcernApiError extends Error {
   readonly status: number;
   readonly code: ConcernErrorCode | null;
-  constructor(status = 0, code: ConcernErrorCode | null = null) {
+  readonly readFailure: ReadFailureDiagnostic | null;
+  constructor(status = 0, code: ConcernErrorCode | null = null, readFailure: ReadFailureDiagnostic | null = null) {
     super("Concern request could not be confirmed"); this.name = "ConcernApiError";
     this.status = knownStatuses.has(status) ? status : 0;
     this.code = code !== null && knownCodes.has(code) ? code : null;
+    this.readFailure = readFailure;
   }
 }
 export const requiresFreshConcernConfirmation = (error: ConcernApiError) => error.status >= 400 && error.status < 500;
@@ -35,10 +38,11 @@ const itemSchema = z.object({ id: uuid, childId: uuid, title: z.string().min(1).
 const pageSchema = z.object({ authorityVersion: z.string().min(1).max(100), items: z.array(itemSchema).max(200), canManage: z.boolean() }).strict();
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const unique = (values: string[]) => new Set(values).size === values.length;
-function checkedItem(value: unknown, childId: string, id?: string): Concern {
+function checkedItem(value: unknown, childId: string, id?: string, status = 0): Concern {
   const parsed = itemSchema.safeParse(value);
-  if (!parsed.success || parsed.data.childId !== childId || id !== undefined && parsed.data.id !== id
-    || !unique(parsed.data.events.map(event => event.id)) || !unique(parsed.data.attentionIds)) throw new ConcernApiError();
+  if (!parsed.success) throw new ConcernApiError(0, null, { category: "schema", status, code: null });
+  if (parsed.data.childId !== childId || id !== undefined && parsed.data.id !== id) throw new ConcernApiError(0, null, { category: "scope", status, code: null });
+  if (!unique(parsed.data.events.map(event => event.id)) || !unique(parsed.data.attentionIds)) throw new ConcernApiError(0, null, { category: "duplicates", status, code: null });
   return parsed.data;
 }
 interface PendingWrite { kind: "create" | "change"; childId: string; userId: string; id: string; payload: string; body: string; reviewed: boolean; reconfirm: boolean }
@@ -52,7 +56,7 @@ export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch): 
     if (activeScope !== next) { pending = null; activeScope = next; }
   }
   const path = (childId: string) => "/children/" + encodeURIComponent(childId) + "/concerns";
-  async function request(url: string, signal: AbortSignal, userId: string, body?: string): Promise<unknown> {
+  async function request(url: string, signal: AbortSignal, userId: string, body?: string, received?: (status: number) => void): Promise<unknown> {
     const controller = new AbortController(), abort = () => controller.abort();
     signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort();
     const timeout = setTimeout(abort, body === undefined ? 15_000 : 20_000);
@@ -61,15 +65,22 @@ export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch): 
       const response = await fetcher(apiUrl + url, { method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
         headers: { Accept: "application/json", "x-expected-user-id": userId, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
         ...(body === undefined ? {} : { body }), signal: controller.signal });
+      received?.(response.status);
       if (!response.ok) {
         let code: ConcernErrorCode | null = null;
+        let diagnosticCode: string | null = null;
         try { const value: unknown = await response.json();
-          if (object(value) && object(value.error) && typeof value.error.code === "string" && knownCodes.has(value.error.code as ConcernErrorCode)) code = value.error.code as ConcernErrorCode;
+          if (object(value) && object(value.error) && typeof value.error.code === "string") {
+            if (knownCodes.has(value.error.code as ConcernErrorCode)) code = value.error.code as ConcernErrorCode;
+            if (code || value.error.code === "concern_unavailable") diagnosticCode = value.error.code;
+          }
         } catch { /* Preserve only the allowlisted HTTP status. */ }
         if (controller.signal.aborted) throw new ConcernApiError();
-        throw new ConcernApiError(response.status, code);
+        throw new ConcernApiError(response.status, code, { category: "http", status: response.status, code: diagnosticCode });
       }
-      const value: unknown = await response.json();
+      let value: unknown;
+      try { value = await response.json(); }
+      catch { throw new ConcernApiError(0, null, { category: "invalid_json", status: response.status, code: null }); }
       if (controller.signal.aborted) throw new ConcernApiError(); return value;
     } catch (error) { if (error instanceof ConcernApiError) throw error; throw new ConcernApiError(); }
     finally { clearTimeout(timeout); signal.removeEventListener("abort", abort); }
@@ -102,9 +113,11 @@ export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch): 
     async getPage(childId, signal, userId) {
       scope(childId, userId);
       try {
-        const value = await request(path(childId), signal, userId), parsed = pageSchema.safeParse(object(value) ? value.page : null);
-        if (!parsed.success || !unique(parsed.data.items.map(item => item.id))) throw new ConcernApiError();
-        for (const item of parsed.data.items) checkedItem(item, childId);
+        let status = 0;
+        const value = await request(path(childId), signal, userId, undefined, value => { status = value; }), parsed = pageSchema.safeParse(object(value) ? value.page : null);
+        if (!parsed.success) throw new ConcernApiError(0, null, { category: "schema", status, code: null });
+        if (!unique(parsed.data.items.map(item => item.id))) throw new ConcernApiError(0, null, { category: "duplicates", status, code: null });
+        for (const item of parsed.data.items) checkedItem(item, childId, undefined, status);
         if (pending && pending.childId === childId && pending.userId === userId) {
           if (pending.reconfirm) pending = null;
           else pending.reviewed = pending.kind === "create" || parsed.data.items.some(item => item.id === pending!.id);
