@@ -424,7 +424,7 @@ owner／caregiver 可管理共享記憶；viewer 只能管理本人私人記憶�
 
 migration 011 啟用 `memory` 類無正文變更及收據刪除；私人候選／話題／摘要只向本人發出更新，共享事實／話題在家庭內可見。Server 仍校驗每項記憶的可見範圍及角色，READ 入口資格不允許 viewer 寫共享事實。讀取與修改回應同樣隱藏其他作者的私人訊息 ID。刪事實／話題時保守清除該孩子 memory 類收據正文；原操作仍 confirmed，不能另建重複候選。模型摘要與產品 Agent 接線維持 S11-W02。
 
-內部 `MemoryStore.prepareSummary` 回傳前一有效摘要、當前權威版本摘要值 `basis`、`previousVersion` 及按 Server 次序排列的最多 50 條未覆蓋訊息；`saveSummary` 只接受完全吻合的實際 ID 清單及版本。資料變化、缺段、越權、重複或過時輸入均不當作成功。摘要不寫入事實／話題／任務狀態。`context` 分開私人及家庭模式；家庭模式不含私人聊天／摘要，亦不提供私人來源 ID。超過 200 項事實或話題時拒絕無篩選 context，不能靜默省略終態；訊息未全部覆蓋以 `truncated.messages` 明示。S11-W02 接入模型時必須處理這些狀態、有效性及 `conflictingKeys`，本包未改 P1 聊天入口或宣稱已由 Gemini 生成摘要。
+內部 `MemoryStore.prepareSummary` 回傳前一有效摘要、當前權威版本摘要值 `basis`、`previousVersion` 及按 Server 次序排列的最多 50 條未覆蓋訊息；`saveSummary` 只接受完全吻合的實際 ID 清單及版本。資料變化、缺段、越權、重複或過時輸入均不當作成功。摘要不寫入事實／話題／任務狀態。`context` 分開私人及家庭模式；家庭模式不含私人聊天／摘要，亦不提供私人來源 ID。context 在 200 項事實上限之前排除 inactive 歷史事實，歷史／一般列表仍保留它們；inactive 舊 key 不再否決另行確認的替代事實。候選、過期或來源改變的 confirmed 事實仍納入完整範圍及 unavailable-key／conflict 核對。超過 200 項非 inactive 事實或任何狀態的話題時仍拒絕無篩選 context，不能取前 200 項而暗藏衝突或終態；訊息未全部覆蓋以 `truncated.messages` 明示。S11-W02 接入模型時必須處理這些狀態、有效性及 `conflictingKeys`，本包未改 P1 聊天入口或宣稱已由 Gemini 生成摘要。
 
 
 <a id="p2-web-push-http"></a>
@@ -560,6 +560,14 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 - Agent `read_concerns` 可查共享歷史；`propose_concern`／`propose_concern_change` 使用持久候選，接受時明確核對將共享的整理內容、時間及關聯，經同一 store 原子保存。私人聊天全文不自動共享；觀察不升格為已確認健康事實。
 - 結束保留歷史與關聯，取消尚未執行的本關注跟進；不完成、取消或刪除相連任務。恢復回到結束前的 following，不重啟舊跟進。使用者另行明確指定未來時間才安排新的跟進。
 - 背景 `concern_followup` 只在目前角色／版本／worker generation／storage epoch 有效時啟動；工具不提供外發或寫入能力。模型呼叫在交易外，使用同一 follow-up reference 防重；已知完成可讀回，unknown 不重新推理。結果連結實際 Agent run，站內回饋不代表發送通知或照護完成。
+
+### 待啟用：滿額關注的停止／結束保留槽（029）
+
+此為 PR #111 的待啟用契約，未代表正式環境已套用。一般觀察／恢復／新增跟進仍受 200 事件上限；完成兼容升級及 029 後，只給既有跟進停止／結算及結束保留最多兩個終態槽，總歷史上限 202。原 200 條歷史、密文及版本／原 opId 重播均保留，不以刪除歷史換容量。滿額結束後只供查閱，不支援恢復繼續記錄；UI 在第 199 條起的結束操作前須說明此結果，不能承諾可撤銷。
+
+未套用 029 時不能寫保留槽；due 選取及加鎖後均重核容量，滿額工作暫緩但不阻止後面的正常批次，不因此入列／呼叫模型。套用後終態變更仍受授權、版本、storage epoch／generation、原跟進身份及收據保護。
+
+啟用 gate：先完成真 PostgreSQL 約束／交易／歷史不變驗證，再部署兼容 API、worker、Web readers 並處理已開啟的舊分頁，才可另行執行 029。當已有 201–202 事件時，不能回退只讀 200 的舊版或收窄約束，更不能刪歷史遷就 rollback。2026-10-07 本輪真 SQL 驗證因官方套件下載 403／Proxy CONNECT 受阻，沒有執行；此 gate 仍開放。
 
 新關注由本人核對後屬家庭共享；背景回覆仍按原使用者的 Agent run 權限呈現。事件只保存共享觀察、操作與結果 ID，不把私人聊天／模型背景正文複製成家庭紀錄。外發仍須另有既有任務／渠道授權，不由本包擴權。
 
