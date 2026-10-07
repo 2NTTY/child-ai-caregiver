@@ -16,6 +16,8 @@ import { summarySaveSchema } from "./memory-validation.ts";
 import { createMemoryStore } from "./memory.ts";
 import { createTaskStore, type TaskScheduling } from "./tasks.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
+import { createAgentWorkStore } from "./agent-work-store.ts";
+import { createAgentConfirmationStore } from "./agent-confirmation-store.ts";
 
 interface RunRow {
   id: string; child_id: string; owner_user_id: string; trigger_kind: "interactive" | "worker";
@@ -43,7 +45,7 @@ function pendingCursor(raw: string | null, userId: string, childId: string) {
     return cursor;
   } catch { throw new FamilyError(400, "invalid_input"); }
 }
-interface ProposalPayload { value: AgentProposalValue; result: AgentProposal["result"]; targetLabel: string | null }
+interface ProposalPayload { value: AgentProposalValue; result: AgentProposal["result"]; targetLabel: string | null; targetVisibility?: "private" | "family" }
 export interface AgentRunClaim {
   runId: string; scope: AgentScope; created: boolean; sourceMessageId: string | null;
   state: ProductAgentResult["status"]; expiresAt: string;
@@ -83,6 +85,12 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     if (expired) { row.state = "unknown"; row.stop_reason = "interrupted"; }
   }
   return {
+    ...createAgentWorkStore(pool, cipher),
+    ...createAgentConfirmationStore(pool, cipher, async (client, userId, childId, runId, proposalId, input): Promise<AgentProposal | null> => {
+      const borrowed = transactionPool(client);
+      try { return await createProductAgentStore(borrowed.pool, cipher, scheduling).decide(userId, childId, runId, proposalId, input); }
+      finally { borrowed.assertReleased(); }
+    }),
     async writeDocument(scope: AgentScope, runId: string, opId: string, sourceQuote: string,
       mutation: { request: DocumentRequest } | { id: string; change: DocumentChange }) {
       z.uuid().parse(opId); z.string().trim().min(2).max(1000).parse(sourceQuote);
@@ -216,6 +224,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         const borrowed = transactionPool(client), tasks = createTaskStore(borrowed.pool, cipher, scheduling);
         const page = await tasks.list(scope.userId, scope.childId); borrowed.assertReleased();
         if (!page) throw missing();
+        let targetVisibility: "private" | "family" | undefined;
         let targetLabel: string | null = value.kind === "task_create" ? page.eligibleAssignees.find(person => person.userId === value.values.assigneeUserId)?.name ?? null : null;
         if (value.kind === "task_create" && !page.eligibleAssignees.some(person => person.userId === value.values.assigneeUserId)) throw new FamilyError(400, "invalid_assignee");
         if (value.kind === "task_change") {
@@ -237,6 +246,20 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           if(!source||source.version!==value.change.expectedVersion)throw new FamilyError(409,"version_conflict");
           targetLabel=source.sourceLabel;
         } else if(value.kind === "private_source_create") targetLabel=value.input.sourceLabel;
+        if (value.kind === "memory_fact_revise" || value.kind === "memory_fact_deactivate") {
+          const fact = await createMemoryStore(borrowed.pool, cipher, true).getFact(scope.userId, scope.childId, value.factId);
+          borrowed.assertReleased();
+          if (!fact || fact.version !== value.expectedVersion || fact.status === "inactive") throw new FamilyError(409, "version_conflict");
+          targetLabel = fact.key; targetVisibility = fact.visibility;
+          if (value.kind === "memory_fact_revise" && !(await client.query(`SELECT 1 FROM chat_messages WHERE id=$1 AND owner_user_id=$2 AND author_user_id=$2 AND child_id=$3 AND role='user'
+            AND (created_at,id)<=(SELECT created_at,id FROM chat_messages WHERE id=$4 AND owner_user_id=$2 AND child_id=$3) FOR SHARE`,
+            [value.sourceMessageId, scope.userId, scope.childId, run.source_message_id])).rowCount) throw new FamilyError(409, "source_changed");
+        }
+        if (value.kind === "memory_fact") {
+          const sourceId = value.sourceMessageId ?? run.source_message_id;
+          if (!sourceId || !(await client.query(`SELECT 1 FROM chat_messages WHERE id=$1 AND owner_user_id=$2 AND author_user_id=$2 AND child_id=$3 AND role='user'
+            AND (created_at,id)<=(SELECT created_at,id FROM chat_messages WHERE id=$4 AND owner_user_id=$2 AND child_id=$3) FOR SHARE`, [sourceId, scope.userId, scope.childId, run.source_message_id])).rowCount) throw new FamilyError(409, "source_changed");
+        }
         const previous = (await client.query<ProposalRow>("SELECT * FROM agent_proposals WHERE run_id=$1", [runId])).rows;
         const encoded = canonicalJson(value);
         for (const row of previous) {
@@ -247,7 +270,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         if (previous.length >= 8) throw new FamilyError(409, "agent_proposal_limit");
         const id = randomUUID();
         const row = (await client.query<ProposalRow>("INSERT INTO agent_proposals(id,run_id,call_id,payload_encrypted) VALUES($1,$2,$3,$4) RETURNING *",
-          [id, runId, callId, cipher.encrypt(JSON.stringify({ value, result: null, targetLabel }), proposalAad(run, { id, version: 1 }))])).rows[0];
+          [id, runId, callId, cipher.encrypt(JSON.stringify({ value, result: null, targetLabel, ...(targetVisibility ? { targetVisibility } : {}) }), proposalAad(run, { id, version: 1 }))])).rows[0];
         return decodeProposal(run, row);
       });
     },
@@ -268,7 +291,14 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           if (run.authorization_version.toString() !== current.authorizationVersion
             || run.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) throw new FamilyError(409, "confirmation_scope_changed");
         }
-        const value = proposal.value, shared = value.kind === "concern_create" || value.kind === "concern_change" || value.kind === "task_create" || value.kind === "task_change" || value.kind === "memory_fact" && value.intendedVisibility === "family";
+        const value = proposal.value;
+        let factScope: import("../src/shared/memory.ts").MemoryFact | null = null;
+        if (value.kind === "memory_fact_revise" || value.kind === "memory_fact_deactivate") {
+          const borrowed = transactionPool(client);
+          factScope = await createMemoryStore(borrowed.pool, cipher, true).getFact(userId, childId, value.factId); borrowed.assertReleased();
+          if (!factScope || factScope.version !== value.expectedVersion || factScope.status === "inactive") throw new FamilyError(409, "version_conflict");
+        }
+        const shared = value.kind === "concern_create" || value.kind === "concern_change" || value.kind === "task_create" || value.kind === "task_change" || value.kind === "memory_fact" && value.intendedVisibility === "family" || Boolean(factScope && factScope.visibility === "family");
         if (input.decision === "accept" && shared && !input.confirmShared) throw new FamilyError(400, "sharing_confirmation_required");
         let result: AgentProposal["result"] = null;
         if (input.decision === "accept") {
@@ -289,11 +319,22 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
             } else source=await sources.manage(userId,childId,value.inputId,value.change);
             borrowed.assertReleased(); if(!source)throw missing();
             result={kind:"private_source",id:source.id,version:source.version};
+          } else if (value.kind === "memory_fact_revise" || value.kind === "memory_fact_deactivate") {
+            const memory = createMemoryStore(borrowed.pool, cipher, true);
+            if (value.kind === "memory_fact_revise" && !(await client.query("SELECT 1 FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user' FOR SHARE", [value.sourceMessageId, childId, userId])).rowCount) throw new FamilyError(409, "source_changed");
+            const changed = value.kind === "memory_fact_revise" ? await memory.reviseFact(userId, childId, value.factId, {
+              expectedVersion: value.expectedVersion, confirm: true, confirmShared: input.confirmShared, reason: value.reason,
+              values: { key: value.key, content: value.content, validUntil: value.validUntil, source: { kind: "private_chat", messageId: value.sourceMessageId, description: "由本人聊天提出，經本人核對更正" } },
+            }) : await memory.deactivateFact(userId, childId, value.factId, { expectedVersion: value.expectedVersion, reason: value.reason });
+            borrowed.assertReleased(); if (!changed) throw missing();
+            result = { kind: "memory_fact", id: changed.id, version: changed.version };
           } else if (value.kind === "memory_fact") {
-            if (!run.source_message_id) throw new FamilyError(409, "source_changed");
+            const sourceId = value.sourceMessageId ?? run.source_message_id;
+            if (!sourceId || !(await client.query(`SELECT 1 FROM chat_messages WHERE id=$1 AND owner_user_id=$2 AND author_user_id=$2 AND child_id=$3 AND role='user'
+              AND (created_at,id)<=(SELECT created_at,id FROM chat_messages WHERE id=$4 AND owner_user_id=$2 AND child_id=$3) FOR SHARE`, [sourceId, userId, childId, run.source_message_id])).rowCount) throw new FamilyError(409, "source_changed");
             const memory = createMemoryStore(borrowed.pool, cipher, true);
             const fact = await memory.createFact(userId, childId, { values: { key: value.key, content: value.content, validUntil: value.validUntil,
-              source: { kind: "private_chat", messageId: run.source_message_id, description: "由本人聊天提出，經本人核對確認" } }, intendedVisibility: value.intendedVisibility });
+              source: { kind: "private_chat", messageId: sourceId, description: "由本人聊天提出，經本人核對確認" } }, intendedVisibility: value.intendedVisibility });
             borrowed.assertReleased(); if (!fact) throw missing();
             const confirmed = await memory.confirmFact(userId, childId, fact.id, { expectedVersion: fact.version, confirm: true, confirmShared: input.confirmShared });
             borrowed.assertReleased(); if (!confirmed) throw missing();
@@ -308,7 +349,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         }
         const updated = { id: row.id, version: row.version + 1 };
         const saved = (await client.query<ProposalRow>("UPDATE agent_proposals SET version=$2,state=$3,payload_encrypted=$4 WHERE id=$1 RETURNING *",
-          [row.id, updated.version, wanted, cipher.encrypt(JSON.stringify({ value, result, targetLabel: proposal.targetLabel }), proposalAad(run, updated))])).rows[0];
+          [row.id, updated.version, wanted, cipher.encrypt(JSON.stringify({ value, result, targetLabel: proposal.targetLabel, ...(proposal.targetVisibility ? { targetVisibility: proposal.targetVisibility } : {}) }), proposalAad(run, updated))])).rows[0];
         return decodeProposal(run, saved);
       });
     },

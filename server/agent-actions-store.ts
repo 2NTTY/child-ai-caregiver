@@ -262,11 +262,22 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
         if (run.authorization_version !== String(space.access_version) || scope.authorizationVersion !== String(space.access_version)
           || scope.dataVersion.split(":")[0] !== space.storage_epoch || run.data_version !== space.storage_epoch + ":" + space.change_seq) throw conflict("agent_scope_changed");
         if (rows.length >= 8) throw conflict("agent_action_limit");
-        const source = (await client.query<{ text_encrypted: string }>(`SELECT text_encrypted FROM chat_messages
+        const source = (await client.query<{ text_encrypted: string; created_at: Date }>(`SELECT text_encrypted,created_at FROM chat_messages
           WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user' FOR SHARE`, [run.source_message_id, scope.childId, scope.userId])).rows[0];
         if (!source) throw missing();
         const original = cipher.decrypt(source.text_encrypted, `chat_messages:${run.source_message_id}:${scope.childId}:${scope.userId}:user::text`);
         if (!original.includes(input.sourceQuote)) throw conflict("agent_source_mismatch");
+        const sources = [{ quote: input.sourceQuote, original }];
+        for (const ref of input.sourceMessages ?? []) {
+          const old = (await client.query<{ text_encrypted: string }>(`SELECT text_encrypted FROM chat_messages
+            WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user'
+            AND (created_at,id)<=(SELECT created_at,id FROM chat_messages WHERE id=$4 AND owner_user_id=$3 AND child_id=$2) FOR SHARE`,
+            [ref.messageId, scope.childId, scope.userId, run.source_message_id])).rows[0];
+          if (!old) throw conflict("agent_source_mismatch");
+          const text = cipher.decrypt(old.text_encrypted, `chat_messages:${ref.messageId}:${scope.childId}:${scope.userId}:user::text`);
+          if (!text.includes(ref.quote)) throw conflict("agent_source_mismatch");
+          sources.push({ quote: ref.quote, original: text });
+        }
         const policy = await policyFor(client, space, role, scope.userId, scope.childId);
         if (!policy.effective || input.expectedPolicyVersion !== policy.version) throw conflict("agent_policy_changed");
         const borrowed = transactionPool(client), tasks = createTaskStore(borrowed.pool, cipher, scheduling);
@@ -276,8 +287,9 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
         if (input.kind === "save_record" || input.kind === "revise_record") {
           if (!policy.recordKinds.includes(input.details.kind)) throw conflict("agent_policy_denied");
           const care = createCareStore(borrowed.pool, cipher, true);
-          let details = groundedRecordTime(input.details, input.sourceQuote);
-          quantityGrounding = groundedRecordQuantity(input.details.quantity, input.quantityEvidence, input.sourceQuote, original);
+          let details = groundedRecordTime(input.details, sources.map(item => item.quote).join("\n"));
+          const grounded = sources.map(item => groundedRecordQuantity(input.details.quantity, input.quantityEvidence, item.quote, item.original));
+          quantityGrounding = grounded.find(item => item.status === "source_supported") ?? grounded[0];
           details = { ...details, quantity: quantityGrounding.quantity };
           if (input.kind === "revise_record") {
             if (!policy.allowRecordCorrections) throw conflict("agent_policy_denied");
@@ -350,7 +362,7 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
         await client.query(`INSERT INTO agent_action_receipts(id,run_id,child_id,owner_user_id,source_message_id,request_encrypted,payload_encrypted)
           VALUES($1,$2,$3,$4,$5,$6,$7)`, [receipt.id, runId, scope.childId, scope.userId, run.source_message_id,
           cipher.encrypt(requestHash, receiptAad(identity) + ":request"),
-          cipher.encrypt(JSON.stringify({ receipt, action: { kind: input.kind, requestHash }, sourceMessageId: run.source_message_id, policyVersion: policy.version }), receiptAad(identity))]);
+          cipher.encrypt(JSON.stringify({ receipt, action: { kind: input.kind, requestHash }, sourceMessageId: run.source_message_id, sourceMessageIds: (input.sourceMessages ?? []).map(item => item.messageId), policyVersion: policy.version }), receiptAad(identity))]);
         await client.query("INSERT INTO agent_action_calls(run_id,call_id,receipt_id) VALUES($1,$2,$3)", [runId, callId, receipt.id]);
         await client.query("UPDATE agent_runs SET data_version=$2||':'||(SELECT change_seq::text FROM workspaces WHERE id=$3) WHERE id=$1", [runId, space.storage_epoch, space.id]);
         return receipt;

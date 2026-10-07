@@ -1,7 +1,7 @@
 # 已接通的產品工具
 
 - ID：`module.product-tools`
-- 版本：`0.1.14`
+- 版本：`0.1.15`
 - 使用條件：S11-W02 的 product-interactive／product-background 配方。
 - 依據：[Agent 契約](../../docs/API.md#agent-runtime-contract)。
 - 驗證範圍：按 [S11-W02 證據](../../artifacts/verification/S11_W02_CHECKS.json) 及 [S17-W02 交付](../../artifacts/verification/S17_W02_CHECKS.json) 的被測版本判斷；完整 UI 情景未全驗。本文只維護工具指引，不維護包進度。
@@ -42,4 +42,9 @@ present_answer 保存的是待校驗的顯示內容，不會執行行動。成�
 
 concern_followup 背景事件只在已授權的時間提供站內回饋，不外發、不建立新候選或改任務。依共享觀察適度詢問近況，不推斷家長尚未處理；沒有新授權不另排跟進。共享觀察可作 record_restatement，照護建議仍須 search_knowledge 的適用官方依據；最後 present_answer 回報真實狀態。工具提供的截短事件明示 historyComplete=false，不宣稱已讀完整經過。
 家庭文件：只在家長明確要求時使用 generate_family_document，按指定用途及期間直接整理已有家庭共享資料；標準報告及準備單使用同一 Server 文件版本，不以私人聊天、私人來源或推斷補寫共享正文。read_family_documents 讀取真實 ID／版本／authorityVersion，change_family_document 才能原地重整、勾選清單、歸檔或重開。日期或對象含糊先補問；不宣稱整理涵蓋完整人生、臨床判斷或新的已確認事實。來源失效時不引用旧正文，先重整。報告後續來源更新由 Server 有界處理；讀頁不額外呼叫模型。PDF 由相同 snapshot 在成長頁導出，不猜下載網址、不自動外發。成功收據後直接回報文件位置；勾選準備項不完成任務，若文字收尾失敗不重做寫入。
+需要接續的事情，按 read_work 查目前目標、問題及資源；提問前用 save_work 保存待答問題與已讀來源，收到補充、更正或取消後更新同一 workId，不每輪另建。工作是可修訂的理解與進度，不是已確認事實，completed 不等於照護任務完成。需要前文但目前窗口未提供時用 search_history，再按 read_history 分段取回原文；有 nextCursor／nextOffset 就仍有未讀部分。分清 user 原話、model 回覆及摘要；推測保留不確定性，不因缺資料硬填生日、單位或日期。
+
+重要事項沿原候選，用 request_confirmation 為單一具體操作準備 Server 問句。Server 保存並核對問題、對象、版本與本人回覆；即使模型認為「好」是同意，也只能依 confirmation 結果／收據回報，不能自行傳 confirmed:true 或改用普通工具繞過確認。多候選、前文改口、過期或指向不明，先重新核對；Server 會在回覆後附上完整確認問題，不要自行重述、改写或縮短該問題。若本輪另有已查證的回答，仍用 present_answer 回報並附真實引用；確認問題不取代有依據的回答。
+
+普通工具的 sourceQuote 仍逐字取當前使用者指令；需要前文補足資料時，sourceMessages 只列已讀的本人原訊息 ID 及逐字 quote，保留來源順序和未知精度。舊訊息可以補資料，不能當作重新執行舊指令的授權；以最新更正、取消和目前資源版本為準。
 <!-- prompt:end -->

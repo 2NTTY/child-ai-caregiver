@@ -1594,3 +1594,18 @@
 - 實際環境 Node 24.11.0／npm 11.6.1，ADK 2.1.0／GenAI 2.24.0；npm ci 使用原 lock，npm engine >=11.8 警告保留，未全局升級。建置配置的固定版本未改。
 - 主模型 review／git diff --check 通過；[最低證據](artifacts/verification/P2_A01_CHECKS.json)／[原 Runner 失敗及補驗](artifacts/verification/P2_A01_OFFLINE.txt)。真 Gemini、DB、通知、部署沒有執行；新模型理解與完整成果留後續連貫驗收，本包只完成原生工具接線及必要安全邊界。
 - 下一步：本包 review／PR 合併後解鎖 P2-A02，先 fetch 並核對其他聊天成果；A08 是獨立 Ready 包，不自動擴大本包範圍。完整 P2 目標仍未完成。
+
+
+<a id="log-20261008-p2-a02"></a>
+## LOG-20261008-P2-A02
+
+- Recorded At：2026-10-07 20:16:45 UTC；Work Date：2026-10-08 HKT。Package：P2-A02；基線 968646f（A01／PR #132 已合併）。
+- Executor／AI Assistance：C 主責、權重 5，C60%／A30%／B10%；共用 AI 由 A 統籌，不稱其他組員獨立手寫／驗收。主模型親寫契約、Prompt Pack／工具指引、前端小型投影及 review；一個 Sol 6.1 xhigh 實作 stores、接線與限定驗收。一個 Luna 唯讀定位因 runtime 失敗，未採用其結果。Human Verification：無新增。
+- 沿原 ADK／PostgreSQL／MemoryStore／proposal decide，新增加密持久工作、原 opId 去重、bounded history 與長訊息續讀、最多六項跨輪本人逐字來源、Agent 事實更正／停用及 Server 具體對話確認。保存操作、候選、問句、回覆與版本／授權綁定；多候選、延遲舊「好」及後續改口不接受，未知先查原結果。
+- Review 修正：確認查詢改 SQL 有界定位及最新訊息核對；完整確認問句附在已驗回答後、不丟引用；已確認收據與收尾失敗分開。移除 20 項記憶頁的舊整次拒絕，保留 cursor／partial；摘要 basis 的有效期限 metadata 有界補回。歷史 fact 命中只作定位，仍須原 memory 服務核當前適用性。
+- Prompt Pack 0.1.28 局部補跨輪／確認指引，未重寫 Pack；新前端只補事實候選和工具狀態標籤，未改設計／互動／美術。migration 030 保留其他 draft 的 029 編號，沒有依賴未合併 PR #111／#130。
+- 最低離線驗收：3 個真 Runner＋scripted provider／store 案例及 7 個受影響既有容量檢查通過，原 stdout 未另存，只保留執行者工具回報；不當真模型證據。scoped strict TypeScript exit 0；主模型另以一條純投影檢查確認私人範圍及缺失 visibility 拒絕。未跑整倉 build／lint／unit。
+- 真本機驗收：先建立工程外加密 DB checkpoint（照片未改，非配對恢復驗收），套用 030 exit 0。沿合成庫建立 2 帳號／2 孩子／2 facts／1 task／23 messages，真正執行 90 次 business call、重建 pool 一次；跨輪來源、保存／去重、唯一確認、過期／多候選／改口、記憶更正停用與 metadata 補回通過。最後 history 高水位／unknown 原操作斷言已執行，末個重複游標跨孩子檢查在第 91 次呼叫前被上限擋住；原 run **exit 1**，首次失敗停批，沒有重跑。
+- 停批原因為 harness 少算一次重複檢查，不改產品斷言或擴上限。後續移除該重複檢查並讓計數在上限檢查後增加；修正版腳本未重新跑。獨立精確清理核對本輪 userId／email／孩子歸屬後刪合成帳號 cascade，exit 0；原庫恢復 children 14／messages 17／facts 1／photos 2、worker=false。不把原失敗改成整批通過。
+- 主模型根據已執行關鍵結果、離線游標邊界及清理證據裁定本包最低 gate 足夠；[結構化證據](artifacts/verification/P2_A02_CHECKS.json)／[原 SQL 停批與清理](artifacts/verification/P2_A02_LOCAL.txt)。實際 Node 24.11.0／npm 11.6.1，lockfile 未改；engine 警告沿前包保留。沒有真模型／通知／瀏覽器／部署費用。
+- 限制：pool 重建是重連持久化，不代表 OS／VM 重啟；完整歷史／工作頁由 A07 接入，真模型完整成果及部署仍待後包。合併前再核對 master／相關 draft，按 C 帳號 PR／merge；A02 合併後先開 A03，不將九包目標標完成。

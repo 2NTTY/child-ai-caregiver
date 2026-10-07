@@ -7,7 +7,7 @@ export type AgentDecisionKind = "accept" | "dismiss";
 export interface AgentDetailRow { label: string; value: string }
 export interface AgentProposalView {
   id: string; version: number; status: AgentProposalStatus;
-  kind: "task_create" | "task_change" | "memory_fact" | "private_source_create" | "private_source_change" | "concern_create" | "concern_change";
+  kind: "task_create" | "task_change" | "memory_fact" | "memory_fact_revise" | "memory_fact_deactivate" | "private_source_create" | "private_source_change" | "concern_create" | "concern_change";
   title: string; content: string; scope: "family" | "private";
   details: AgentDetailRow[]; createdAt: string; expiresAt: string;
   result: { kind: "task" | "memory_fact" | "private_source" | "concern"; version: number; label: string } | null;
