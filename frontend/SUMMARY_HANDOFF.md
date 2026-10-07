@@ -1,4 +1,6 @@
-# 照顧摘要與到診準備前端交接
+# 照顧摘要與到診準備前端交接（FE-W16歷史包）
+
+本頁固定記錄2026-10-01的合成版交付，以下待接線／命令不是現行工作要求。現行摘要／多份準備／舊資料恢復請讀[總交接](HANDOFF.md#child-overview-preparations)與[正式owner](../docs/P2_UI_HANDOFF.md#production-owners)；後端能力缺口見[根PLAN](../PLAN.md#current-capability-gaps)。
 
 更新：2026-10-01。FE-W16 基線 `e61bca203784d2ed87b81fe3e7294998933fcea7`，沿 `codex/fe-w11-photos`／[draft PR #73](https://github.com/2NTTY/child-ai-caregiver/pull/73)；源碼／驗證 commit `10aa70bdb3565b4f92e978f99afbe96604f55bf5`。主責 B，只修改 `frontend/**`，沒有修改 Server、Agent、正式 App、根文件或規則。不自行 merge。
 

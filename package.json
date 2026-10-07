@@ -14,11 +14,11 @@
   },
   "scripts": {
     "web": "npm run web --workspace frontend",
-    "legacy:web": "expo start --web --localhost",
+    "legacy:web": "node scripts/legacy-web-retired.mjs",
     "typecheck": "npm run typecheck --workspace frontend && tsc --noEmit && tsc --project tsconfig.server.json",
     "test": "node --experimental-test-module-mocks --test tests/*.test.ts",
     "build:web": "npm run build:web --workspace frontend && node scripts/prepare-web-output.mjs",
-    "legacy:build:web": "expo export --platform web",
+    "legacy:build:web": "node scripts/legacy-web-retired.mjs",
     "server": "node --env-file-if-exists=.env server/index.ts",
     "worker": "node --env-file-if-exists=.env server/worker-main.ts",
     "worker:control": "node --env-file-if-exists=.env scripts/worker-control.mjs",

@@ -54,7 +54,7 @@ npm ci
 npm run web
 ```
 
-The root npm workspace uses `frontend/` for Web and a single root lockfile. Set `EXPO_PUBLIC_API_BASE_URL` to the existing Server's `/api` URL for local development (for example `http://localhost:3001/api`); the production default is same-origin `/api`. `npm run build:web` writes `frontend/dist`, including the existing Push service worker and license notices. The Docker Web stage serves this output through the existing Caddy configuration. Routes not yet connected are explicitly unavailable during integration, never simulated successes. `npm run legacy:web` and `legacy:build:web` retain the old test interface only for temporary reference; they are not the new production entry.
+The root npm workspace uses `frontend/` for Web and a single root lockfile. Set `EXPO_PUBLIC_API_BASE_URL` to the existing Server's `/api` URL for local development (for example `http://localhost:3001/api`); the production default is same-origin `/api`. `npm run build:web` writes `frontend/dist`, including the existing Push service worker and license notices. The Docker Web stage serves this output through the existing Caddy configuration. Routes not yet connected are explicitly unavailable during integration, never simulated successes. The replaced root test interface is retained as byte-preserving snapshots in [_archive/legacy-web-2026-10-07](_archive/legacy-web-2026-10-07/README.md). Legacy Web/build/test commands fail explicitly; they do not run production acceptance.
 
 Open the local address printed by Expo (normally `http://localhost:8081`). The record workflow requires the local server and database setup below; no model key is needed. Use synthetic data throughout P1.
 
@@ -70,7 +70,7 @@ The tests exercise shared public inputs, API-address and server configuration, a
 
 Code boundaries:
 
-- `frontend/app/`: the production Expo Router Web entry; `frontend/src/production/` owns authenticated shared data. Root `app/` remains a temporary legacy reference during integration.
+- `frontend/app/`: the production Expo Router Web entry; `frontend/src/production/` owns authenticated shared data. The replaced root `app/` is archived; shared controllers and API clients remain active.
 - `src/shared/`: platform-independent child and text-record input contracts and validation; no storage or network access.
 - `src/config/`: public deployment-address validation, loaded by the app entry.
 - `server/`: PostgreSQL persistence, Better Auth, and the HTTP authorization boundary.

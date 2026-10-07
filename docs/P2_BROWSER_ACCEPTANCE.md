@@ -1,4 +1,6 @@
-# P2 最小正式 Web 驗收入口
+# P2 最小正式 Web 驗收入口（歷史驗收）
+
+此頁舊根UI命令已退休，只作固定版本歷史證據。恢復方法與原碼見[歸檔](../_archive/legacy-web-2026-10-07/README.md)。不能在目前checkout執行下列舊命令，亦不能把原pass當新前端驗收；現行測試須指定相應INT config。
 
 S16-W05 已以 Playwright Test 1.63.0 通過一次必要 Chromium 真 API 情景。2026-09-29 使用者確認 Firefox 專項延後，不阻塞 P2；後續必要功能檢查使用 Codex 內置瀏覽器，不因更換工具重跑已通過項。前端 `frontend/` 的合成預覽不在本入口；P1 `verify-web.mjs` 與 node:test 保留。
 

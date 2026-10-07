@@ -3,11 +3,12 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "types": [
+      "expo/types"
+    ]
   },
   "include": [
-    "app/**/*.ts",
-    "app/**/*.tsx",
     "src/**/*.ts",
     "src/**/*.tsx"
   ],
