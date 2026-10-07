@@ -141,7 +141,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
         return;
       }
       if (busy.current) { queuedSelection.current = id; return; }
-      if (items.some(item => item.id === id)) { setSelectedId(id); setHistoryOpen(false); return; }
+      if (items.some(item => item.id === id)) { setSelectedId(previous => previous === id ? null : id); setHistoryOpen(false); return; }
       if (!env.online) return;
       busy.current = true; setReading(true);
       void runtime.request(async (signal, current) => {
@@ -201,7 +201,10 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       if (!draft || draft.mode === "create" || !latest || !taskChangeAllowed(latest, draft.mode) || busy.current || pending) return;
       setDraft({ ...draft, key: crypto.randomUUID(), basis: structuredClone(latest), initialValues: draft.reviewedValues ?? draft.initialValues, reviewedValues: null }); setLatest(null); setOperation(none);
     },
-    showHistory() { readHistory(); }, loadOlderHistory() { if (selected && histories[selected.id]?.cursor) readHistory(histories[selected.id]!.cursor); },
+    showHistory() {
+      if (locked || draft) return;
+      if (historyOpen) setHistoryOpen(false); else readHistory();
+    }, loadOlderHistory() { if (selected && histories[selected.id]?.cursor) readHistory(histories[selected.id]!.cursor); },
     loadMoreTasks() {
       const after = page?.nextAfterId;
       if (!after || busy.current || !env.online || !runtime.live() || pending) return;

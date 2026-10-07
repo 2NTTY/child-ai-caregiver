@@ -81,11 +81,12 @@ const task = { id: "8c0614da-d04f-454e-837a-b0d0f1649034", childId: "child", ver
   occurrence: { id: "occurrence", dueAt: "2026-10-06T02:00:00Z", timeZone: "Asia/Hong_Kong", state: "scheduled", terminalBasisVersion: null } };
 class ApiError extends Error { constructor(status) { super("Synthetic transport error"); this.status = status; } }
 function taskOwner() {
-  const state = { readFailure: null, pending: false, receipt: null, writeInputs: [], reads: 0, checks: 0, invalidations: 0, active: true };
+  const state = { readFailure: null, pending: false, receipt: null, writeInputs: [], reads: 0, historyReads: 0, checks: 0, invalidations: 0, active: true };
   const api = { async getSession() { return "user"; },
     async tasks() { state.reads++; if (state.readFailure) throw state.readFailure;
       return { items: [task], eligibleAssignees: [{ userId: "user", name: "Synthetic caregiver" }], nextAfterId: null }; },
     async changeTask(child, id, input) { state.pending = true; state.writeInputs.push(input); throw new ApiError(0); },
+    async history() { state.historyReads++; return { revisions: [], nextBeforeVersion: null }; },
     async reconcilePending() { state.checks++; return state.receipt; },
     hasPendingOnline() { return state.pending; }, resetOnline() { state.pending = false; } };
   const env = { apiBaseUrl: "https://synthetic.invalid", userId: "user", childId: "child", childName: "Synthetic child", role: "owner", scopeKey: "scope", online: true,
@@ -208,4 +209,32 @@ test("Home refresh reaches the scoped task reader once and never reuses another 
   workspace.scopeKey = "old-scope"; value = view.render();
   assert.equal(value.model.overview.attention.state, "unavailable"); assert.deepEqual(value.model.overview.attention.items, []);
   value.actions.refresh(); assert.equal(counts.tasks, 1);
+});
+
+
+test("production task rows toggle closed and history collapse is local without another request", async () => {
+  const { owner, state, env } = taskOwner(); owner.render(); let value = await owner.settle();
+  value.actions.selectTask(task.id); value = owner.render(); assert.equal(value.model.selected.id, task.id);
+  value.actions.selectTask(task.id); value = owner.render(); assert.equal(value.model.selected, null);
+  value.actions.selectTask(task.id); value = owner.render();
+  value.actions.showHistory(); value = await owner.settle(); assert.equal(value.model.historyOpen, true); assert.equal(state.historyReads, 1);
+  env.online = false; value = owner.render(); value.actions.showHistory(); value = owner.render();
+  assert.equal(value.model.historyOpen, false); assert.equal(state.historyReads, 1);
+  env.online = true; owner.render(); value = await owner.settle(); value.actions.showHistory(); value = await owner.settle();
+  assert.equal(value.model.historyOpen, true); assert.equal(state.historyReads, 2);
+  value.actions.selectTask(task.id); value = owner.render(); assert.equal(value.model.selected, null); assert.equal(value.model.historyOpen, false);
+  assert.equal(state.writeInputs.length, 0); owner.unmount();
+});
+
+test("task disclosure callbacks preserve drafts and unknown-operation guards", async () => {
+  const { owner, state } = taskOwner(); owner.render(); let value = await owner.settle();
+  value.actions.selectTask(task.id); value = owner.render(); value.actions.startChange(task.id, "complete"); value = owner.render();
+  const key = value.model.draft.key;
+  value.actions.selectTask(task.id); value.actions.showHistory(); value = owner.render();
+  assert.equal(value.model.selected.id, task.id); assert.equal(value.model.draft.key, key); assert.equal(state.historyReads, 0);
+  value.actions.reviewDraft(value.model.draft.initialValues); value = owner.render(); value.actions.submitReviewed(); value = await owner.settle();
+  assert.equal(value.model.operation.state, "unknown");
+  value.actions.selectTask(task.id); value.actions.showHistory(); value = owner.render();
+  assert.equal(value.model.selected.id, task.id); assert.equal(value.model.draft.key, key);
+  assert.equal(state.historyReads, 0); assert.equal(state.writeInputs.length, 1); owner.unmount();
 });
