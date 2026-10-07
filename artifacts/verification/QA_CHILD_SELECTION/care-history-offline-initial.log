@@ -1,0 +1,35 @@
+Command: node --test frontend/scripts/qa-care-history.test.mjs
+Runtime: offline Docker yuban-qa-deps:9c088c8, Node 24.19.0; read-only source mounts
+✔ loading correction history never claims a first or oldest confirmed version (1.244825ms)
+✔ only successfully read first-version history confirms there are no earlier versions (0.137892ms)
+✔ unread or empty version-two history stays unconfirmed and offers a fresh read (0.800701ms)
+✔ failed initial or older-page history stays unknown and retries the same page (0.313902ms)
+✔ HTTP history failure sets the actual owner error state and a successful retry clears it (9.640282ms)
+✔ parse history failure sets the actual owner error state and a successful retry clears it (5.629082ms)
+✔ older-page failure preserves loaded revisions and the original retry cursor (4.863114ms)
+✖ offline then reconnect keeps the same selection retryable and rejects the invalidated history result (5.870064ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 332.378735
+
+✖ failing tests:
+
+test at frontend/scripts/qa-care-history.test.mjs:77:1
+✖ offline then reconnect keeps the same selection retryable and rejects the invalidated history result (5.870064ms)
+  TypeError: Cannot read properties of undefined (reading 'compilerOptions')
+      at transpileWorker (/app/node_modules/typescript/lib/typescript.js:146025:36)
+      at Object.transpileModule (/app/node_modules/typescript/lib/typescript.js:145986:10)
+      at TestContext.<anonymous> (file:///app/frontend/scripts/qa-care-history.test.mjs:89:61)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+
+Exit code: 1

@@ -41,6 +41,9 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
   const [expanded, setExpanded] = useState({recordId: record.id, provenance: false, history: true});
   const provenanceOpen = expanded.recordId === record.id && expanded.provenance;
   const historyOpen = detail.historyOpen && (expanded.recordId !== record.id || expanded.history);
+  const historyReady = detail.historyState === "ready" || detail.historyState === undefined && detail.history.length > 0;
+  const historyError = detail.historyState === "error";
+  const emptyUnconfirmed = detail.history.length === 0 && (!historyReady || record.current.version > 1);
   useEffect(() => {
     if (active && Platform.OS === "web") (headingRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
   }, [record.id, active]);
@@ -61,10 +64,12 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
     {canEdit ? <View style={styles.actions}><AppButton label="更正這筆記錄" onPress={() => actions.startCorrection(record.id)} /></View> : null}
     <AppSelectionTrigger label="更正歷史" expanded={historyOpen} onPress={() => {setExpanded({recordId: record.id, provenance: provenanceOpen, history: !historyOpen}); if (!detail.historyOpen) actions.showHistory();}} />
     <MotionDisclosure expanded={historyOpen} scopeKey={`${record.childId}:${record.id}`}><View style={styles.history}><Text accessibilityRole="header" style={styles.title}>更正歷史</Text>
-      {detail.history.length === 0 ? <Text style={styles.tool}>目前只有第一個已確認版本。</Text> : detail.history.map(revision => <View key={revision.version} style={styles.revision}>
-        <CareRevisionContent revision={revision} />
-      </View>)}
-      {detail.hasMoreHistory ? <AppButton label="載入更早版本" variant="secondary" onPress={actions.loadOlderHistory} loading={detail.historyLoading} disabled={!online} /> : <Text style={styles.meta}>已到最早的已載入版本。</Text>}
+      {detail.historyLoading ? <Text style={styles.tool}>正在讀取更正歷史…</Text> : historyError ? <Text style={styles.tool}>未能讀取更正歷史，請重試。</Text>
+        : detail.history.length === 0 ? <Text style={styles.tool}>{historyReady && record.current.version === 1 ? "目前只有第一個已確認版本。" : historyReady ? "未有已載入的更正歷史，請重新讀取核對。" : "尚未讀取更正歷史。"}</Text> : null}
+      {detail.history.map(revision => <View key={revision.version} style={styles.revision}><CareRevisionContent revision={revision} /></View>)}
+      {!detail.historyLoading && (historyError || !historyReady || emptyUnconfirmed) ? <AppButton label={historyError ? "重試讀取歷史" : "讀取更正歷史"} variant="secondary" onPress={detail.historyRetryMore ? actions.loadOlderHistory : actions.showHistory} disabled={!online} />
+        : detail.hasMoreHistory ? <AppButton label="載入更早版本" variant="secondary" onPress={actions.loadOlderHistory} loading={detail.historyLoading} disabled={!online} />
+          : historyReady && !detail.historyLoading ? <Text style={styles.meta}>已到最早的已載入版本。</Text> : null}
     </View></MotionDisclosure>
     {canEdit ? <AppButton label="永久刪除此記錄及歷史" variant="danger-secondary" disabled={!online} onPress={() => actions.startDeletion(record.id)} /> : null}
   </View>;

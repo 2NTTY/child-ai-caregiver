@@ -107,7 +107,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       detail: previous.detail && !previous.draft && !previous.deletion && page.records.some(record => record.id === previous.detail!.record.id)
         ? { ...previous.detail, record: careRecordView(page.records.find(record => record.id === previous.detail!.record.id)!, userId),
           ...(page.records.find(record => record.id === previous.detail!.record.id)!.version !== previous.detail.record.current.version
-            ? { historyOpen: false, history: [], historyLoading: false, hasMoreHistory: false } : {}) } : previous.detail }));
+            ? { historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : {}) } : previous.detail }));
   }
   async function loadCare(query = careRef.current.list.activeQuery, kind = careRef.current.list.activeKind, index = 0, recovery = false): Promise<boolean> {
     if (!current() || !envRef.current.online || writing.current || attempt.current && !recovery) return false;
@@ -130,7 +130,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
         if (current() && generation === careGeneration.current && latest && careRef.current.detail?.record.id === latest.id) {
           if (latest.version !== selected.record.current.version) historyGeneration.current++;
           setCare(previous => ({ ...previous, detail: previous.detail?.record.id === latest.id
-            ? { record: careRecordView(latest, userId), historyOpen: false, history: [], historyLoading: false, hasMoreHistory: false } : previous.detail }));
+            ? { record: careRecordView(latest, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : previous.detail }));
         }
       }
       return current() && generation === careGeneration.current;
@@ -176,7 +176,8 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     } else {
       careGeneration.current++; profileGeneration.current++; historyGeneration.current++;
       careRead.current?.abort(); profileRead.current?.abort();
-      setCare(previous => ({ ...previous, list: { ...previous.list, state: "stale" } })); setProfile(previous => ({ ...previous, reading: false, needsRefresh: true }));
+      setCare(previous => ({ ...previous, list: { ...previous.list, state: "stale" },
+        detail: previous.detail?.historyLoading ? { ...previous.detail, historyLoading: false, historyState: "unread" } : previous.detail })); setProfile(previous => ({ ...previous, reading: false, needsRefresh: true }));
     }
   }, [env.online]);
   useEffect(() => {
@@ -246,7 +247,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       }
       setCare(previous => ({ ...previous, draft: null, deletion: null,
         ...(value.kind === "delete" ? { list: { ...previous.list, records: previous.list.records.filter(item => item.id !== value.recordId) } } : {}),
-        detail: record ? { record: careRecordView(record, userId), historyOpen: false, history: [], historyLoading: false, hasMoreHistory: false } : null,
+        detail: record ? { record: careRecordView(record, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : null,
         operation: { state: "saved", kind: value.kind === "delete" ? "delete" : "review", message: value.kind === "delete" ? "Server 已確認永久刪除記錄及歷史。" : "Server 已確認家庭共享保存。",
           reference: value.receipt?.operation.opId ?? null, latest: null } }));
     } else {
@@ -340,16 +341,16 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     if (!detail || !current() || !envRef.current.online || detail.historyLoading || more && !detail.hasMoreHistory) return;
     const id = detail.record.id, before = more ? careHistoryCursor.current : detail.record.current.version;
     const generation = ++historyGeneration.current, control = controller();
-    setCare(previous => ({ ...previous, detail: previous.detail ? { ...previous.detail, historyOpen: true, historyLoading: true } : null }));
+    setCare(previous => ({ ...previous, detail: previous.detail ? { ...previous.detail, historyOpen: true, historyLoading: true, historyState: "unread", historyRetryMore: more } : null }));
     try {
       const page = await read([...careKey, "history", id, before], control, signal => api.history(childId, id, before, signal));
       if (!current() || generation !== historyGeneration.current || careRef.current.detail?.record.id !== id) return;
       careHistoryCursor.current = page.nextBeforeVersion;
-      setCare(previous => ({ ...previous, detail: previous.detail ? { ...previous.detail, historyLoading: false,
+      setCare(previous => ({ ...previous, detail: previous.detail ? { ...previous.detail, historyLoading: false, historyState: "ready", historyRetryMore: false,
         history: [...(more ? previous.detail.history : []), ...page.revisions.map(revision => careRevisionView(revision, userId))], hasMoreHistory: page.nextBeforeVersion !== null } : null }));
     } catch (error) {
       if (current() && generation === historyGeneration.current && !accessError(error)) setCare(previous => ({ ...previous,
-        detail: previous.detail ? { ...previous.detail, historyLoading: false } : null, list: { ...previous.list, message: "未能讀取所選記錄的歷史，可能已更改或刪除。" } }));
+        detail: previous.detail ? { ...previous.detail, historyLoading: false, historyState: "error", historyRetryMore: more } : null }));
     } finally { released(control); }
   }
   async function profileHistory(more: boolean) {
@@ -378,12 +379,12 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
         setCare(previous => ({ ...previous, detail: null, operation: { ...careOperation(), message: "正在核對所指定記錄的目前版本。" } }));
         void latestCare(id).then(latest => {
           if (!current() || generation !== openGeneration.current || attempt.current || careRef.current.draft || careRef.current.deletion) return;
-          setCare(previous => ({ ...previous, detail: latest ? { record: careRecordView(latest, userId), historyOpen: false, history: [], historyLoading: false, hasMoreHistory: false } : null,
+          setCare(previous => ({ ...previous, detail: latest ? { record: careRecordView(latest, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : null,
             operation: latest ? careOperation() : { ...careOperation(), message: "所指定記錄目前不可讀或未能核對；沒有顯示舊記錄或其他孩子資料。" } }));
         });
         return;
       }
-      setCare(previous => ({ ...previous, detail: { record: careRecordView(record, userId), historyOpen: false, history: [], historyLoading: false, hasMoreHistory: false }, operation: careOperation() }));
+      setCare(previous => ({ ...previous, detail: { record: careRecordView(record, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false }, operation: careOperation() }));
     },
     closePanel() { if (attempt.current) return; draftBasis.current = null; historyGeneration.current++; openGeneration.current++; setCare(previous => ({ ...previous, detail: null, draft: null, deletion: null, operation: careOperation() })); },
     startCreate(kind = "note") { if (!canWrite()) return; draftBasis.current = null; setCare(previous => ({ ...previous, detail: null, deletion: null,

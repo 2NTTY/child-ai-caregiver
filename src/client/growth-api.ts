@@ -1,3 +1,4 @@
+import type { ReadFailureDiagnostic } from "./read-failure.ts";
 import { z } from "zod";
 import { growthActionSchema, growthTopicActionSchema, growthTopicSchema,
   type GrowthAction, type GrowthAttention, type GrowthPage, type GrowthTopicAction, type GrowthTopicId } from "../shared/growth.ts";
@@ -13,11 +14,13 @@ const knownStatuses = new Set([400, 401, 403, 404, 405, 409, 415, 422, 428, 429,
 export class GrowthApiError extends Error {
   readonly status: number;
   readonly code: GrowthErrorCode | null;
-  constructor(status = 0, code: GrowthErrorCode | null = null) {
+  readonly readFailure: ReadFailureDiagnostic | null;
+  constructor(status = 0, code: GrowthErrorCode | null = null, readFailure: ReadFailureDiagnostic | null = null) {
     super("Growth request could not be confirmed");
     this.name = "GrowthApiError";
     this.status = knownStatuses.has(status) ? status : 0;
     this.code = code !== null && knownCodes.has(code) ? code : null;
+    this.readFailure = readFailure;
   }
 }
 export const requiresFreshGrowthConfirmation = (error: GrowthApiError): boolean => error.status >= 400 && error.status < 500;
@@ -54,13 +57,14 @@ const pageSchema = z.object({
 });
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const unique = (values: string[]) => new Set(values).size === values.length;
-function checkedPage(value: unknown, childId: string): GrowthPage {
+function checkedPage(value: unknown, childId: string, status = 0): GrowthPage {
   const parsed = object(value) ? pageSchema.safeParse(value.page) : null;
-  if (!parsed?.success || parsed.data.items.some(item => item.childId !== childId)
-    || !unique(parsed.data.items.map(item => item.id)) || !unique(parsed.data.topics.map(topic => topic.id))
+  if (!parsed?.success) throw new GrowthApiError(0, null, { category: "schema", status, code: null });
+  if (parsed.data.items.some(item => item.childId !== childId)) throw new GrowthApiError(0, null, { category: "scope", status, code: null });
+  if (!unique(parsed.data.items.map(item => item.id)) || !unique(parsed.data.topics.map(topic => topic.id))
     || !unique(parsed.data.eligibleAssignees.map(assignee => assignee.userId))
     || parsed.data.topics.some(topic => !unique(topic.inputs.map(input => input.key))
-      || topic.inputs.some(input => !unique(input.choices.map(choice => choice.value))))) throw new GrowthApiError();
+      || topic.inputs.some(input => !unique(input.choices.map(choice => choice.value))))) throw new GrowthApiError(0, null, { category: "duplicates", status, code: null });
   return parsed.data;
 }
 interface PendingWrite {
@@ -75,7 +79,7 @@ export function createGrowthApi(baseUrl = "", fetcher: typeof fetch = fetch): Gr
     if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success) throw new GrowthApiError(400, "invalid_input");
   }
   const path = (childId: string) => "/children/" + encodeURIComponent(childId) + "/growth";
-  async function request(url: string, signal: AbortSignal, userId: string, body?: string): Promise<unknown> {
+  async function request(url: string, signal: AbortSignal, userId: string, body?: string, received?: (status: number) => void): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal.addEventListener("abort", abort, { once: true });
@@ -89,18 +93,23 @@ export function createGrowthApi(baseUrl = "", fetcher: typeof fetch = fetch): Gr
           ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
         ...(body === undefined ? {} : { body }), signal: controller.signal,
       });
+      received?.(response.status);
       if (!response.ok) {
         let code: GrowthErrorCode | null = null;
+        let diagnosticCode: string | null = null;
         try {
           const value: unknown = await response.json();
-          if (object(value) && object(value.error) && typeof value.error.code === "string" && knownCodes.has(value.error.code as GrowthErrorCode)) {
-            code = value.error.code as GrowthErrorCode;
+          if (object(value) && object(value.error) && typeof value.error.code === "string") {
+            if (knownCodes.has(value.error.code as GrowthErrorCode)) code = value.error.code as GrowthErrorCode;
+            if (code || ["growth_unavailable", "memory_context_requires_selection"].includes(value.error.code)) diagnosticCode = value.error.code;
           }
         } catch { /* Keep the allowlisted status when the response body is malformed. */ }
         if (controller.signal.aborted) throw new GrowthApiError();
-        throw new GrowthApiError(response.status, code);
+        throw new GrowthApiError(response.status, code, { category: "http", status: response.status, code: diagnosticCode });
       }
-      const value: unknown = await response.json();
+      let value: unknown;
+      try { value = await response.json(); }
+      catch { throw new GrowthApiError(0, null, { category: "invalid_json", status: response.status, code: null }); }
       if (controller.signal.aborted) throw new GrowthApiError();
       return value;
     } catch (error) {
@@ -124,7 +133,8 @@ export function createGrowthApi(baseUrl = "", fetcher: typeof fetch = fetch): Gr
   return {
     async getPage(childId, signal, userId) {
       checkScope(childId, userId);
-      const page = checkedPage(await request(path(childId), signal, userId), childId);
+      let status = 0;
+      const page = checkedPage(await request(path(childId), signal, userId, undefined, value => { status = value; }), childId, status);
       if (pending && pending.childId === childId && pending.userId === userId) {
         if (pending.reconfirm) pending = null;
         else pending.reviewed = pending.kind === "item"

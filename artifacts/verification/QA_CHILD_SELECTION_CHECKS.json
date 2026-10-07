@@ -1,0 +1,200 @@
+{
+  "baseline": "9c088c84eda6c39340cfe2652e9fc6543830adde",
+  "branch": "codex/qa-child-selection",
+  "recordedAt": "2026-10-07T02:35:54.470072+00:00",
+  "status": "draft_only_not_merged_or_deployed",
+  "changes": [
+    {
+      "issue": "child B lost on full refresh",
+      "cause": "RecordsController selected children[0] after a fresh owner; no navigation preference was restored.",
+      "fix": "Read endpoint+user sessionStorage hint after verified authentication and fresh authorized children, before first selectChild; validate child and workspace; keep transient/unknown failures isolated."
+    },
+    {
+      "issue": "confirmed completed task lacks date",
+      "cause": "The frontend derived terminal dates only from detail history loaded explicitly, ignoring the confirmed current terminal task updatedAt.",
+      "fix": "Server changeTask sets updatedAt to the same now used for TaskRevision.at; terminal edits are prohibited. Project this confirmed time, with matching loaded revision preferred; never use dueAt or the device clock."
+    },
+    {
+      "issue": "first-version claim while correction history loads",
+      "cause": "Loading, failed and unread empty arrays were rendered as confirmed first/oldest history. The original added settled-empty test used current version 2 and missed this error boundary.",
+      "fix": "Explicit unread/ready/error history state, local error and same-page retry. Only successful version-1 empty history confirms there are no earlier versions; version-2 empty remains unconfirmed. Older-page failure retains revisions/cursor; no stale list-error claim after retry."
+    }
+  ],
+  "validation": {
+    "runtime": "Offline Docker yuban-qa-deps:9c088c8, Node 24.19.0; read-only source mounts; --network none",
+    "initialFocused": {
+      "tests": 61,
+      "passed": 57,
+      "failed": 4,
+      "evidence": "QA_CHILD_SELECTION/focused-tests.log",
+      "failures": [
+        "Two test files imported TypeScript parameter properties; Node strip-only was unsuitable.",
+        "Two unchanged task-calendar source-text assertions require UI wording removed in baseline PR #98. No product copy was restored merely to satisfy these assertions."
+      ]
+    },
+    "selectionAndExistingScope": {
+      "tests": 15,
+      "passed": 15,
+      "failed": 0,
+      "flag": "--experimental-transform-types",
+      "evidence": "QA_CHILD_SELECTION/selection-tests.log"
+    },
+    "confirmedTaskProjection": {
+      "tests": 4,
+      "passed": 4,
+      "evidence": "QA_CHILD_SELECTION/task-projection-tests.log"
+    },
+    "historyLoading": {
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "evidence": "QA_CHILD_SELECTION/care-history-tests.log",
+      "coverage": [
+        "loading",
+        "successful first-version empty",
+        "unread or empty version 2",
+        "initial/older error and offline retry guards",
+        "actual owner HTTP and parse error, successful retry",
+        "older-page failure preserves revisions and cursor",
+        "offline→reconnect same selected record: clear loading, retain retry intent, ignore old generation result, retry same version without closing panel"
+      ],
+      "supersedes": "The initial 2 render tests are retained in focused-tests.log; the version-2 settled-empty expectation was incorrect and has been replaced."
+    },
+    "frontendTypecheck": {
+      "exitCode": 0,
+      "evidence": "QA_CHILD_SELECTION/frontend-typecheck.log"
+    },
+    "liveBrowser": false,
+    "realModelCalls": 0,
+    "notificationsSent": 0,
+    "familyDataRead": false,
+    "databaseMutation": false,
+    "calendarExpectations": {
+      "prePR98Commit": "f2aa299d418c10586e99260ef36685619dbb67b2",
+      "originalTestBlob": "2a532cbae8a1d3a673efe53d993b6f0e51eb2ff0",
+      "originalTestBlobUnchangedAt": [
+        "e3060e2",
+        "9c088c8",
+        "b7b80ce"
+      ],
+      "prePR98": {
+        "tests": 2,
+        "passed": 2,
+        "evidence": "QA_CHILD_SELECTION/calendar-before-pr98.log"
+      },
+      "baseline9c088c8": {
+        "tests": 2,
+        "failed": 2,
+        "evidence": "QA_CHILD_SELECTION/focused-tests.log"
+      },
+      "updated": {
+        "tests": 2,
+        "passed": 2,
+        "evidence": "QA_CHILD_SELECTION/calendar-expectations-tests.log"
+      },
+      "introducedBy": "PR #98 (e3060e2); PR #99 changes none of these three files.",
+      "tests": [
+        "calendar JSX preserves button semantics, lock guards and loaded-only presentation",
+        "backlog UI keeps remote loading separate and preserves guarded local filter/page state"
+      ],
+      "change": "Only obsolete source-text expectations updated; product source unchanged."
+    },
+    "logsCommitted": true,
+    "historyOfflineInitial": {
+      "tests": 8,
+      "passed": 7,
+      "failed": 1,
+      "cause": "New extracted-effect harness omitted the required TypeScript transpile options; failed before offline action execution. Corrected harness then all 8 passed.",
+      "evidence": "QA_CHILD_SELECTION/care-history-offline-initial.log"
+    },
+    "growthReadDiagnostic": {
+      "tests": 15,
+      "passed": 15,
+      "failed": 0,
+      "evidence": "QA_CHILD_SELECTION/growth-read-diagnostic-tests.log",
+      "coverage": [
+        "success emits nothing",
+        "growth/concerns HTTP metadata with original business code/status preserved",
+        "schema and invalid JSON with actual HTTP status",
+        "scope and duplicate categories only",
+        "authority/access mismatch categories only",
+        "unknown codes/messages/stacks/identifiers never emitted",
+        "aborted/obsolete reads silent",
+        "console failure keeps original rejection",
+        "category metadata is revalidated"
+      ]
+    }
+  },
+  "growthDiagnosis": {
+    "status": "temporary_diagnostic_implemented_not_deployed_root_cause_unconfirmed",
+    "runtimeReadOnly": {
+      "apiImage": "yuban-int-api:053658b",
+      "apiHealthy": true,
+      "agentServiceEnabled": true,
+      "growthMigrationPresent": true,
+      "concernsMigrationPresent": true,
+      "familyDataRead": false
+    },
+    "confirmed": "Growth and concerns share storage_epoch:access_version authority. Both are joined with Promise.all; either request or schema validation failure prevents page readiness and affects the home feed.",
+    "needed": "Independent review, then later authorized Web deployment and one normal UI read by dot; capture only [growth-read] lines. No helper authenticated API replay.",
+    "excluded": "Service disabled and migrations 017/027 missing. Assistant reminders remain unconnected and out of scope.",
+    "logWindowEvidence": "QA_CHILD_SELECTION/growth-log-window.json",
+    "sourceFinding": "Server/client page contracts and authority format do not establish the actual live failure; previous errors discarded successful-read validation reason and backend unavailable codes.",
+    "temporaryDiagnostic": {
+      "prefix": "[growth-read] ",
+      "onlyOn": "current loader failure; success, aborted and obsolete reads are silent",
+      "fields": [
+        "endpoint",
+        "status",
+        "code",
+        "category"
+      ],
+      "endpoints": [
+        "growth",
+        "concerns",
+        "combined"
+      ],
+      "categories": [
+        "http",
+        "schema",
+        "scope",
+        "duplicates",
+        "invalid_json",
+        "request",
+        "authority_mismatch",
+        "access_mismatch"
+      ],
+      "statusZeroMeans": "No known HTTP response status, including combined agreement failure; not an HTTP status.",
+      "code": "Fixed allowlist or null; unknown strings dropped.",
+      "excluded": [
+        "childId",
+        "workspaceId",
+        "userId",
+        "URL",
+        "payload",
+        "names",
+        "credentials",
+        "original error message",
+        "stack",
+        "raw Zod issue paths"
+      ],
+      "businessSemantics": "Existing API status/code sanitization, reconfirmation, unknown writes, authorized scopes, request count and retries remain unchanged.",
+      "lifecycle": "Review this draft first. Deployment requires later explicit instruction; after collecting one normal synthetic UI read and fixing the cause, remove unnecessary diagnostic."
+    }
+  },
+  "remaining": [
+    "Independent review of latest head; no merge/deploy authorization in this turn.",
+    "Live Growth root cause needs one normal UI read after separately authorized Web deployment; temporary diagnostic is not live yet.",
+    "Remove unnecessary diagnostic after confirming/fixing the live cause."
+  ],
+  "responsibility": {
+    "owner": "B",
+    "weight": 2,
+    "shares": {
+      "B": 70,
+      "C": 20,
+      "A": 10
+    },
+    "note": "Team responsibility allocation: client behavior B, server/runtime diagnosis C, integration coordination A. Shared AI executed coding and offline checks under A coordination; no personal hand-coding or human QA is claimed."
+  }
+}

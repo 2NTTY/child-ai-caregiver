@@ -1470,3 +1470,23 @@
 - 3 次公開唯讀 GET 確認新 index hash、API healthy、Push worker hash。一次真瀏覽器對話已送出及收到保存回覆；在收據階段碰到腳本 154 次 HTTP 門檻而停止，沒有產品 HTTP／page error。保留原失敗，不重跑瀏覽器或模型；同一 fixture 8 次 API 補核 run、單筆操作收據、記錄版本及聊天來源並清理新孩子、登出，帳號保留。真運行 completed：3 生成／2 工具／0 embedding，零通知；API 未提供實際 tokens／美元成本。
 - 主模型按使用者減少測試要求，沿用 INT-W01～06 的隔離、跨頁、unknown、worker 及各新能力證據，結合本次公開接線結果裁定必要交付成立；不把 API 補核寫成完整瀏覽器通過。收據／Care／Home／reload／logout UI 的本輪剩餘斷言未執行；沒有擴充矩陣。瀏覽器啟動前的零呼叫環境失敗亦保留於 [EV](artifacts/verification/INT_W07_CHECKS.json)。
 - 已補 [正式入口／啟動部署／功能清單與缺口](docs/PRODUCTION_FRONTEND.md)，更新根及前端交接入口。主責 C，權重 3，C 60%／B 20%／A 20%；D 人工驗收沒有代填。共用 AI 由 A 統籌，Committer 保留 A，依團隊責任由 C 帳號推送／PR／合併；不冒稱個人人手實作或工時。
+
+
+<a id="log-qa-post-release"></a>
+## 2026-10-07 — QA-POST-RELEASE 局部修正（未合併／未部署）
+
+- 由 dot 現有正式入口合成 QA 派遣，從 `9c088c8` 開隔離分支，保留其他 worktree／未提交內容；沒有操作 QA 瀏覽器、建立重複測試家庭、呼叫模型或外發通知。
+- 孩子 B 全頁刷新退回 A 的根因是新 owner 只取列表首項；新增 endpoint＋userId 的 sessionStorage 導航提示，只存 childId／workspaceId。通過登入及 fresh 授權列表後、首次私有讀取前恢復；已確認失權／workspace 不符才清除，暫時失败、未知／取消登出及 dispose 保留，成功登出只清本人。
+- 任務終態日期原先只從手動載入歷史取得；Server `changeTask` 的终態 `updatedAt` 與同次 revision `at` 使用相同時間，終態不可編輯，故投影該權威時間。衝突待核對不帶日期、resolve 用其本次時間，不用排程日期或裝置時間。歷史 loading 空陣列不再宣稱首版／最早版本。
+- 必要離線測試及型別檢查、原始失敗／局部重跑與未驗項見 [QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。首次 57／61 通過；兩檔補 transform-types 後 15 項通過，兩個 PR #98 舊文案斷言沒有改產品迎合；任務投影 4 項、歷史 loading 2 項通過，frontend typecheck exit 0。
+- 成長讀取只做現有 runtime allowlist／migration metadata 核對，不讀家庭資料：API healthy、Agent enabled、017／027 均存在；growth／concerns authority 格式相同。缺 dot 已有 QA 的去識別化 HTTP status／error.code，根因未確認，沒有擅改功能或 DB。助手提醒未接通不屬本輪。
+- B 主責，權重 2，B 70%／C 20%／A 10%；B 客戶端、C Server／現場診斷、A 統籌，責任份額不代表個人人手或實測工時。共用 AI 在使用者 A 統籌下實作及執行離線測試；人工 QA 由 dot 接手。只準備 draft PR，合併／部署須等待後續明確派遣。
+
+
+- QA-POST-RELEASE 追溯增補：兩項失敗的 `task-calendar.test.mts` blob 在 pre-#98、#98、#99 及初稿均相同；#98 移除月曆冗餘說明、縮短 load-more 範圍文案，#99 沒改相關元件／測試。pre-#98 元件快照的兩個原斷言通過；本輪只更新舊預期，兩項局部重跑通過，產品檔案未再改動。四份原始必要測試 log 及新增局部證據已去敏納入 commit，原始失敗保留。
+- 沿既有部署連線只查 2026-10-07 02:18–02:25 UTC 的 Web／API Docker logs，均 0 行；現有 Caddy 無 access log，API 沒有逐請求 status／error.code 日誌，不能推定請求未發生或判定根因。loader 是兩個 growth／concerns GET 的 Promise.all，HTTP、schema 或 authority／canManage 不一致皆可導致目前 error 狀態。最小診斷是由既有合成 QA Network 只取 status／allowlist code／失敗類別；若介面做不到，暫時 Web 診斷須另行 review 及明確部署授權。未重放 authenticated API、改 logging 設定／權限或輸出 payload／身份資料。[去識別化證據](artifacts/verification/QA_CHILD_SELECTION/growth-log-window.json)。
+
+- 獨立審查補正同一歷史空狀態邊界：首稿只防 loading，HTTP／解析失敗及未讀取仍可能冒稱首版；首稿 version 2＋空 history 的「settled」測試預期亦不正確。現已由 owner 標示 unread／ready／error，只有成功讀取且 current.version=1 的空頁才宣稱沒有舊版；version 2 空頁仍待核對。失敗在 detail 顯示重試、保留較早頁原 cursor／已載入修訂，重試成功清除 error，不留下 list 的失敗訊息。7 項局部測試直接執行實際 history request 函數及 detail render，frontend typecheck 通過；没有全面重跑或部署。
+
+- Growth 診斷派遣增補：兩端 schema／authority 原碼不足以判定實際線上故障，舊錯誤會丟失 schema／範圍／重複資料及 unavailable code。現以獨立 read diagnostic metadata 保存實際 HTTP status 與受控類別，原業務 status／code 與重試／unknown 邏輯不改；只有當前 loader 失敗 console 輸出固定 `[growth-read]` 加 endpoint／status／code／category 四欄，成功、abort、過期讀取靜默，不序列化 error／stack／Zod paths／URL／payload／身份。15 項合成隱私／類別測試及 frontend typecheck 通過；只提交 draft，未部署、未呼叫實際模型／通知／authenticated API。稍後另次明確部署派遣與一次正常合成 UI 讀取才能確認根因，修好後移除不必要診斷。修正 TaskView 過時的 never updatedAt 註解。
+- 同一 Care history 審查補正：offline 原只令 generation 過期卻保留 historyLoading，故同記錄重連後 retry 被阻止。現同步清 loading、標記 unread 並保留原頁重試意向；即使已有修訂也提供讀取入口，旧 generation 不能寫回。新增 offline→reconnect、同一選擇／相同版本重試案例，最終 8 項通過。新增 harness 首次因缺 transpile options 停止在執行 offline 前，保留 7／8 初始失敗 log，局部修正後通過，沒有全面重跑。

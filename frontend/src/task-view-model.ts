@@ -10,7 +10,7 @@ export interface TaskValues {
 }
 export interface TaskView {
   id: string; childId: string; version: number; title: string; details: string;
-  // Presentation metadata must come from the matching completion revision, never dueAt/updatedAt.
+  // Prefer the matching terminal revision; confirmed Server terminal updatedAt supplies the same transition time. Never use dueAt or the device clock.
   completedAt?: string; terminalAt?: string;
   kind: TaskValues["kind"]; assigneeUserId: string; createdBy: string; createdAt: string; updatedAt: string;
   occurrence: { id: string; dueAt: string; timeZone: string; state: TaskState; terminalBasisVersion: number | null };
@@ -91,7 +91,8 @@ export function taskWithCompletionRevision(task: TaskView, revisions: readonly T
     item.task.occurrence.id === task.occurrence.id && item.task.occurrence.state === task.occurrence.state &&
     (item.action === "resolve" || item.action === (task.occurrence.state === "completed" ? "complete" : "cancel")) &&
     DateTime.fromISO(item.at, { setZone: true }).isValid) : undefined;
-  return { ...task, completedAt: task.occurrence.state === "completed" ? revision?.at : undefined, terminalAt: revision?.at };
+  return { ...task, completedAt: task.occurrence.state === "completed" ? revision?.at ?? task.completedAt : undefined,
+    terminalAt: terminal ? revision?.at ?? task.terminalAt : undefined };
 }
 function completionTime(task: TaskView) {
   const value = task.completedAt ? Date.parse(task.completedAt) : NaN;

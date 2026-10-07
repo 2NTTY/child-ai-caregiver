@@ -1,0 +1,4 @@
+Command: node node_modules/typescript/bin/tsc --noEmit --project frontend/tsconfig.json
+Runtime: offline Docker yuban-qa-deps:9c088c8, Node 24.19.0; read-only source mounts
+
+Exit code: 0

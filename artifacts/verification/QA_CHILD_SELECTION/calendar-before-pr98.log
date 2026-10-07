@@ -1,0 +1,13 @@
+Runtime: Node 24.19.0, offline Docker yuban-qa-deps:9c088c8, read-only sources
+✔ calendar JSX preserves button semantics, lock guards and loaded-only presentation (89.222335ms)
+✔ backlog UI keeps remote loading separate and preserves guarded local filter/page state (1.999924ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 371.609399
+
+Exit code: 0

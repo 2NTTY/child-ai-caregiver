@@ -1,0 +1,29 @@
+Command: node --experimental-transform-types --test frontend/src/production/growth-read.test.mts
+Runtime: offline Docker yuban-qa-deps:9c088c8, Node 24.19.0; read-only source mounts
+(node:13) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ successful combined growth read emits no diagnostic (25.487255ms)
+✔ growth HTTP failure reports fixed metadata without changing business error code (0.76032ms)
+✔ concerns HTTP failure reports fixed metadata without changing business error code (0.335443ms)
+✔ growth rejects malformed successful pages with a schema category (1.092734ms)
+✔ concerns rejects malformed successful pages with a schema category (0.625932ms)
+✔ growth malformed JSON retains HTTP status only (0.715248ms)
+✔ concerns malformed JSON retains HTTP status only (0.585415ms)
+✔ authority_mismatch never prints either authority or role value (0.349376ms)
+✔ access_mismatch never prints either authority or role value (0.242721ms)
+✔ concern child mismatch and duplicate page items report categories without identifiers (1.997586ms)
+✔ growth duplicate topics report no topic data (0.666462ms)
+✔ unknown code and arbitrary exception contents never reach console (0.509914ms)
+✔ aborted and obsolete reads keep their rejection but emit no diagnostic (0.424541ms)
+✔ console failure cannot change the original rejection (0.322365ms)
+✔ agreement categories are revalidated before console emission (0.251138ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 278.928171
+
+Exit code: 0

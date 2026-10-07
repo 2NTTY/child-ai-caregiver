@@ -1,3 +1,5 @@
+import type { ChildSelectionPreferences } from "../../../src/client/child-selection.ts";
+import { createWebChildSelectionPreferences } from "./child-selection.ts";
 import { QueryClient } from "@tanstack/react-query";
 import { resolveApiBaseUrl } from "../../../src/config/api-base-url.ts";
 import { createRecordsApi, type AuthMode, type Credentials, type RecordsApi } from "../../../src/client/records-api.ts";
@@ -49,7 +51,7 @@ export class ProductionOwner {
   private unsubscribe: (() => void) | null;
   private unsubscribeChat: (() => void) | null;
 
-  constructor(apiBaseUrl: string, online: boolean, api?: RecordsApi, chatApi?: ChatApi) {
+  constructor(apiBaseUrl: string, online: boolean, api?: RecordsApi, chatApi?: ChatApi, selectionPreferences?: ChildSelectionPreferences) {
     this.apiBaseUrl = resolveApiBaseUrl(apiBaseUrl);
     const recordsApi = api ?? createRecordsApi(this.apiBaseUrl);
     this.chatController = new ChatController(chatApi ?? createChatApi(this.apiBaseUrl, async signal => {
@@ -64,7 +66,7 @@ export class ProductionOwner {
       release: childId => childEvent(() => this.chatController.releaseChildDeletion(childId)),
       forget: childId => childEvent(() => this.chatController.forgetChild(childId)),
       reconcile: (ids, pending) => childEvent(() => this.chatController.reconcileChildren(ids, pending)),
-    }, false); // CareProfileDomains owns record reads; this controller owns identity and children.
+    }, false, selectionPreferences ?? createWebChildSelectionPreferences(this.apiBaseUrl)); // CareProfileDomains owns record reads; this controller owns identity and children.
     this.agentOwner = new ProductAgentOwner(this.apiBaseUrl, online, error => {
       if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
       else this.denySelectedChild();

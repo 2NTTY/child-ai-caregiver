@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { readGrowthPages } from "./growth-read";
 import { createGrowthApi, GrowthApiError, requiresFreshGrowthConfirmation } from "../../../src/client/growth-api";
 import { createConcernsApi, ConcernApiError, requiresFreshConcernConfirmation } from "../../../src/client/concerns-api";
 import { concernChangeSchema, concernValuesSchema, type Concern, type ConcernPage } from "../../../src/shared/concerns";
@@ -23,13 +24,10 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
   const canManage = env.role === "owner" || env.role === "caregiver";
   useDomainWriteGuard(!runtime.lost && dirty, !runtime.lost && (operation === "saving" || !!pending));
   const readPage = async (signal: AbortSignal): Promise<GrowthPage> => {
-    const [growth, concerns] = await Promise.all([
-      runtime.read(["page"], next => api.getPage(env.childId!, next, env.userId!), signal),
-      runtime.read(["concerns"], next => concernsApi.getPage(env.childId!, next, env.userId!), signal),
-    ]);
-    if (growth.authorityVersion !== concerns.authorityVersion || growth.canManage !== concerns.canManage) {
-      throw new Error("Growth and concern authority do not match");
-    }
+    const [growth, concerns] = await readGrowthPages(
+      () => runtime.read(["page"], next => api.getPage(env.childId!, next, env.userId!), signal),
+      () => runtime.read(["concerns"], next => concernsApi.getPage(env.childId!, next, env.userId!), signal), signal, undefined, runtime.live,
+    );
     return projected(growth, concerns);
   };
   const projected = (value: GrowthPage, concerns: ConcernPage): GrowthPage => ({ ...value,
