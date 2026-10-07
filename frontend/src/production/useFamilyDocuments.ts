@@ -151,8 +151,10 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     const parsed = documentRequestSchema.safeParse(input);
     if (parsed.success && parsed.data.kind === "growth_report" && parsed.data.purpose === "family"
       && latest.current.page?.items.some(item => item.kind === "growth_report" && item.purpose === "family" && item.status === "active"
-        && item.current?.period.from === parsed.data.period.from && item.current.period.to === parsed.data.period.to)) {
-      setNotice("這個期間已有標準成長報告；請閱讀現行報告，來源有更新時再整理新版本。"); return;
+        && ((item.report?.mode ?? "fixed") === (parsed.data.reportMode ?? "fixed"))
+        && (parsed.data.reportMode === "living" || (item.report?.period ?? item.current?.period)?.from === parsed.data.period.from
+          && (item.report?.period ?? item.current?.period)?.to === parsed.data.period.to))) {
+      setNotice(parsed.data.reportMode === "living" ? "已有持續更新的日常檔案；請沿同一份檔案接續。" : "這個期間已有標準成長報告；請閱讀現行報告，來源有更新時再整理新版本。"); return;
     }
     if (!locked && parsed.success) write({ kind: "create", input: structuredClone(parsed.data) });
   };
@@ -173,18 +175,21 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     discardDraft() { if (!original.current && runtime.live()) { setDirty(false); setEpoch(value => value + 1); if (refreshQueued) refresh(); } },
   }, recovery };
   const reports = visible?.items.filter(item => item.kind === "growth_report") ?? [];
-  const standard = reports.find(item => item.purpose === "family" && item.status === "active") ?? null;
+  const standard = reports.find(item => item.purpose === "family" && item.status === "active" && item.report?.mode === "living")
+    ?? reports.find(item => item.purpose === "family" && item.status === "active") ?? null;
   const readableReports = reports.filter(item => item.readState !== "invalidated");
   const snapshots = Array.from(new Map(readableReports.flatMap(item => [...(item.current ? [item.current] : []), ...item.history]).map(snapshot => [snapshotKey(snapshot), snapshot])).values());
   const projectedSnapshots = snapshots.map(reportSnapshot), currentSnapshot = standard?.readState !== "invalidated" && standard?.current ? reportSnapshot(standard.current) : null;
   const archive: GrowthArchiveProjection = { scopeKey: env.scopeKey, childId: env.childId!, authorityVersion: visible?.authorityVersion ?? "",
-    state: runtime.lost ? "invalidated" : !visible ? load === "error" ? "error" : "loading" : standard?.readState === "invalidated" ? "invalidated"
+    state: runtime.lost ? "invalidated" : !visible ? load === "error" ? "error" : "loading" : standard?.report?.phase === "building" ? "generating" : standard?.readState === "invalidated" ? "invalidated"
       : standard?.readState === "stale" ? "needs_update" : currentSnapshot || projectedSnapshots.length ? "ready" : "not_generated",
     label: "Server 依家庭共享來源整理，並非模型生成或發展評估。", snapshot: currentSnapshot,
     history: projectedSnapshots.filter(snapshot => snapshot.id !== currentSnapshot?.id || snapshot.version !== currentSnapshot.version),
-    periods: snapshots.map(snapshot => ({ id: snapshotKey(snapshot), kind: "range", year: Number(snapshot.period.from.slice(0, 4)),
+    periods: snapshots.map(snapshot => ({ id: snapshotKey(snapshot), kind: snapshot.reportCoverage?.periodKind === "annual" ? "year" : snapshot.reportCoverage?.periodKind === "quarter" ? "quarter" : "range",
+      year: Number(snapshot.period.from.slice(0, 4)), ...(snapshot.reportCoverage?.periodKind === "quarter" ? { quarter: (Math.floor((Number(snapshot.period.from.slice(5, 7)) - 1) / 3) + 1) as 1 | 2 | 3 | 4 } : {}),
       from: snapshot.period.from, to: snapshot.period.to, label: snapshot.title + " · " + snapshot.period.from + " 至 " + snapshot.period.to,
-      snapshotId: snapshot.id, snapshotVersion: snapshot.version, currentAnnual: false, coverage: "partial", coverageLabel: snapshot.coverageNote })) };
+      snapshotId: snapshot.id, snapshotVersion: snapshot.version, currentAnnual: snapshot.reportCoverage?.mode === "living" && standard?.current?.id === snapshot.id,
+      coverage: snapshot.reportCoverage?.status === "complete" ? "complete" : "partial", coverageLabel: snapshot.coverageNote })) };
   const exportReport = async (request: GrowthReportExportRequest) => {
     const actualPage = latest.current.page;
     const findSnapshot = (item: FamilyDocument) => item.readState !== "invalidated" && [item.current, ...item.history].some(snapshot => snapshot?.id === request.snapshotId && snapshot.version === request.snapshotVersion);

@@ -604,3 +604,8 @@ Agent 工具、準備單、成長頁及歷史共用 FamilyDocumentStore；前端
 有界讀取統一交代所讀版本／範圍、complete／未讀理由及續讀位置；查詢錯誤不偽裝空結果。完整期間工作保存可恢復進度，不能截前綴交作完整報告。沿當前有效單次及每日上限（互動文字上限依 [API 容量契約](API.md#agent-input-capacity)，背景 32,000），修正／載入／收尾均計入 run；維護向量另有有限批次。超限不靜默丟必要權限／來源／工具配對，不自動新 run 繞過。
 
 方法參考：沿用 [ADK 2.1.0 LlmAgent](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/agents/llm_agent.ts) 原生工具集合；借鑑 [Codex 工具循環](https://developers.openai.com/blog/codex-as-a-platform)、[OpenHands 持久事件與狀態](https://docs.openhands.dev/sdk/guides/convo-persistence)、[查詢轉換](https://developers.llamaindex.ai/python/framework/optimizing/advanced_retrieval/query_transformations/)及[檢索後上下文擴展](https://developers.llamaindex.ai/python/examples/node_postprocessor/metadatareplacementdemo/)。只採方法，不因此引入另一個 runtime 或 Python 檢索服務；官方已核對與產品實測分開。
+
+<a id="p2-a05-reports"></a>
+### P2-A05：同源日常與季度／年度報告
+
+使用既有 FamilyDocument store 及 pg-boss 文件 worker，採有界掃描、加密累計、來源修訂核對和原子發布。每次只處理一批，沒有年度全量交易／全量載入；完整統計與有限正文選錄分開。日常 living 報告隨來源事件及香港日期延展更新，季度／年度固定期間保持原界線。前端只投影同一文件及 reportCoverage，PDF 讀同一固定快照並在輸出前後覆核來源。正常讀頁不整理、不呼叫模型；舊固定／部分報告保留 partial 身份直到明確刷新完成。

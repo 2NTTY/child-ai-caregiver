@@ -11,10 +11,19 @@ export async function appendOnlineChange(client: PoolClient, workspaceId: string
     [workspaceId, seq, kind, childId, privateUserId, ownerOnly, deleted]);
   if (!privateUserId && !ownerOnly && childId && ["care", "profile", "memory", "tasks", "growth", "children"].includes(kind)
     && (await client.query("SELECT 1 FROM app_migrations WHERE id='028-family-documents'")).rowCount) {
+    // Revisions include archived documents: old aggregates cannot survive a source correction or deletion.
+    if ((await client.query("SELECT 1 FROM app_migrations WHERE id='032-growth-report-progress'")).rowCount)
+      await client.query("UPDATE family_documents SET source_revision=source_revision+1 WHERE child_id=$1", [childId]);
     // Coalesce shared source changes durably, even while workers are paused. Documents never trigger themselves.
     await client.query(`UPDATE family_documents d SET dirty=true,dirty_epoch=w.storage_epoch,dirty_generation=c.generation
       FROM workspaces w,worker_control c WHERE d.child_id=$1 AND d.status='active' AND d.auto_refresh
       AND w.id=$2 AND c.id=1`, [childId, workspaceId]);
+  }
+  if (!privateUserId && kind === "family" && (await client.query("SELECT 1 FROM app_migrations WHERE id='032-growth-report-progress'")).rowCount) {
+    // Role changes may be owner-only online events, but every affected shared aggregate must be invalidated.
+    await client.query(`UPDATE family_documents d SET source_revision=source_revision+1,
+      dirty=(d.status='active' AND d.auto_refresh),dirty_epoch=w.storage_epoch,dirty_generation=c.generation
+      FROM children ch,workspaces w,worker_control c WHERE ch.id=d.child_id AND w.id=ch.workspace_id AND w.id=$1 AND c.id=1`, [workspaceId]);
   }
   return seq;
 }

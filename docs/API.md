@@ -673,3 +673,12 @@ Agent 透過 read_family_documents／generate_family_document／change_family_do
 `save_work` 使用 `operationId／workId／expectedVersion`，每個 run／call 與原操作皆防重；`request_confirmation` 指向既有 `runId／proposalId／expectedVersion`，可綁 `workId`。新 `memory_fact_revise／memory_fact_deactivate` 候選由 Server 讀出 `targetVisibility`，前端不可猜測分享範圍。確認成功的實際收據加入當輪結果；後续模型或文字收尾失敗仍保留已成功操作，不重做。
 
 完整前端呈現由 A07 接回同一 owner，不在 A02 重做介面。
+
+<a id="p2-a05-reports"></a>
+### P2-A05：完整期間與日常成長成果
+
+沿用同一 documents create／refresh、原 opId、expectedVersion、authorityVersion 及固定 snapshot 的 content／PDF。growth_report 可選 reportMode=fixed（省略時沿用）或 living；living 的起日保留使用者指定、止日隨香港當日延展，固定季度／年度由實際起訖分類，不由標題猜測。準備單不接受 reportMode。建立或 refresh 只做有界的一批，剩餘工作保存並由既有文件 worker 接續；重試原 opId 不多處理一批。讀頁無副作用、不呼叫模型。
+
+FamilyDocument.report 回報 building／complete／needs_update、已掃來源數、期間、模式及來源修訂；building 不代表全文已完成。DocumentSnapshot.reportCoverage 只在所有來源頁完成後保存，含完整掃描數、期間內各類記錄筆數、未知日期筆數、任務／共享關注觀察／有效確認事實數及必要有效期。完整是目前已保存資料的覆蓋，不代表孩子生活全部發生過的事，無記錄不等於未發生；正文可以只展示清楚標示的有限重點，不能把選錄數當總數。
+
+資料或授權改變後先遮蔽失效聚合，不能從舊收據、歷史、分段或 PDF 讀出已失效原文。更新／歸檔沿同一文件；自動刷新保留 A03 指定修改，不能覆蓋人手內容。處理途中來源改變會重新建立該來源修訂的進度，不拼接不同版本；來源長期變動時如實保持未完成。

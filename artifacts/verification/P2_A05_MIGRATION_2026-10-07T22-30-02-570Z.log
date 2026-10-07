@@ -1,0 +1,2 @@
+{"stage":"migration_preflight","node":"24.11.0","database":"127.0.0.1:5434/yuban_s06_test","workerEnabled":false,"migration":"032-growth-report-progress","checksum":"e9d058603f4179976d6bcd71dd9dfb495acb63b3af252e8394315b6b5a48c3a4","checkpointVerified":true}
+{"stage":"migration_apply","status":"passed","applied":true,"workerEnabled":false}

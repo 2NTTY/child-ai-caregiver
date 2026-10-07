@@ -1,0 +1,4 @@
+{
+  "extends": "../tsconfig.server.json",
+  "include": ["../server/family-document-store.ts", "../server/family-document-api.ts", "../server/family-document-worker.ts", "../server/online-change.ts", "../tests/p2-a05-reports.test.ts"]
+}

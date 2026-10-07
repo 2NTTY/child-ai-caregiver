@@ -212,6 +212,10 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChange
         return true;
       });
     },
+    // Reports reuse the authorized fact decoder without reading conversation summaries or topics.
+    reportFacts(userId: string, childId: string, afterId?: string) {
+      return transaction(userId, childId, false, client => facts(client, userId, childId, afterId, 20, true, true));
+    },
     async context(userId: string, childId: string, scope: "private" | "family", pages: { factsAfterId?: string; topicsAfterId?: string } = {}): Promise<MemoryContext | null> {
       return transaction(userId, childId, false, async (client, _role, profileVersion) => {
         const profileRow = (await client.query<{ payload_encrypted: string }>("SELECT payload_encrypted FROM child_profile_revisions WHERE child_id=$1 AND version=$2", [childId, profileVersion])).rows[0];

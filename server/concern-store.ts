@@ -38,14 +38,16 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
   async function followup(client: PoolClient, id: string | null) {
     return id ? (await client.query<FollowUpRow>("SELECT *,authorization_version::text FROM concern_followups WHERE id=$1", [id])).rows[0] : undefined;
   }
+  const decodeHeader = (row: Row): Stored => JSON.parse(cipher.decrypt(row.payload_encrypted, context(row) + ":" + row.version));
+  const decodeEvent = (row: Row, event: { id: string; actor_user_id: string; payload_encrypted: string }): ConcernEvent =>
+    JSON.parse(cipher.decrypt(event.payload_encrypted, context(row) + ":event:" + event.id + ":" + event.actor_user_id));
   async function decode(client: PoolClient, row: Row): Promise<Concern> {
-    const value = JSON.parse(cipher.decrypt(row.payload_encrypted, context(row) + ":" + row.version)) as Stored;
+    const value = decodeHeader(row);
     const events = (await client.query<{ id: string; actor_user_id: string; payload_encrypted: string }>(
       "SELECT id,actor_user_id,payload_encrypted FROM concern_events WHERE concern_id=$1 ORDER BY sequence LIMIT 201", [row.id])).rows;
     if (events.length > MAX_EVENTS) throw new FamilyError(400, "concern_history_requires_review");
     const scheduled = await followup(client, row.follow_up_id);
-    return { ...value, events: events.map(event => JSON.parse(cipher.decrypt(event.payload_encrypted,
-      context(row) + ":event:" + event.id + ":" + event.actor_user_id)) as ConcernEvent), historyComplete: true,
+    return { ...value, events: events.map(event => decodeEvent(row, event)), historyComplete: true,
       followUp: scheduled ? { id: scheduled.id, at: scheduled.due_at.toISOString(), state: scheduled.state, runId: scheduled.run_id } : null };
   }
   async function find(client: PoolClient, childId: string, id: string) {
@@ -167,6 +169,34 @@ export function createConcernStore(pool: Pool, cipher: StorageCipher) {
     await save(client, workspaceId, row, item, false, added); return "settled" as const;
   }
   return {
+    /** Bounded shared report scan, including a header per concern. Terminal capacity rules stay unchanged. */
+    reportPage(userId: string, childId: string, after?: { id: string; sequence: number }) {
+      return access(userId, childId, false, async client => {
+        const rows = (await client.query<Row & { sequence: number; event_id: string | null; actor_user_id: string; event_encrypted: string; has_observations: boolean }>(`
+          SELECT c.*,p.sequence,p.event_id,p.actor_user_id,p.event_encrypted,
+            EXISTS(SELECT 1 FROM concern_events e WHERE e.concern_id=c.id) AS has_observations
+          FROM concerns c JOIN LATERAL (
+            SELECT 0 AS sequence,NULL::uuid AS event_id,NULL::text AS actor_user_id,NULL::text AS event_encrypted
+            UNION ALL SELECT sequence,id,actor_user_id,payload_encrypted FROM concern_events WHERE concern_id=c.id
+          ) p ON true WHERE c.child_id=$1 AND ($2::uuid IS NULL OR (c.id,p.sequence)>($2::uuid,$3::integer))
+          ORDER BY c.id,p.sequence LIMIT 101`, [childId, after?.id ?? null, after?.sequence ?? null])).rows;
+        const page = rows.slice(0, 100), last = page.at(-1);
+        return { items: page.map(row => ({ concern: decodeHeader(row), hasEvents: row.has_observations,
+          event: row.event_id ? decodeEvent(row, { id: row.event_id, actor_user_id: row.actor_user_id, payload_encrypted: row.event_encrypted }) : null })),
+          next: rows.length > 100 && last ? { id: last.id, sequence: last.sequence } : null };
+      });
+    },
+    /** Exact references do not invoke the ordinary full-history decoder. */
+    reportReference(userId: string, childId: string, id: string, eventId?: string) {
+      return access(userId, childId, false, async client => {
+        const row = (await client.query<Row>("SELECT * FROM concerns WHERE id=$1 AND child_id=$2", [id, childId])).rows[0];
+        if (!row) return null;
+        const events = (await client.query<{ id: string; actor_user_id: string; payload_encrypted: string }>(
+          "SELECT id,actor_user_id,payload_encrypted FROM concern_events WHERE concern_id=$1 AND ($2::uuid IS NULL OR id=$2) ORDER BY sequence DESC LIMIT 201", [id, eventId ?? null])).rows;
+        // Legacy concern snapshots referenced their most recent observations. Refuse unknown oversized legacy content.
+        return { concern: decodeHeader(row), events: events.slice(0, 200).reverse().map(event => decodeEvent(row, event)), complete: events.length <= 200 };
+      });
+    },
     list(userId: string, childId: string) {
       return access(userId, childId, false, async (client, workspaceId, canManage): Promise<ConcernPage> => {
         const rows = (await client.query<Row>("SELECT * FROM concerns WHERE child_id=$1 ORDER BY created_at,id LIMIT 201", [childId])).rows;
