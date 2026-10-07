@@ -9,8 +9,9 @@
 
 - 合併一次待讀意圖，守衛解除或既有讀取結束後補讀，不輪詢、不繞過寫入／unknown／權限守衛。孩子、身份或授權失效清除過期意圖，舊回覆不得覆蓋新 scope。
 - UI 區分未讀、讀取中、失敗、失權及成功空頁；只有成功空頁可說沒有待確認。Chat 活動標記由同一持久候選資料決定，關閉視窗不清除待確認事項。
+- 獨立覆核補正：一般導航與深連結維持 idempotent open，只有列互動明確傳 toggle；排隊選取保留 intent。`src/client/use-online-updates.ts` 傳遞 changed／forced／unavailable，metadata 失敗不能觸發候選每 5 秒重試，真實改變、focus／manual 及新回覆仍可更新。擴大測試的 39/40 中唯一舊 dashboard preview-provider 斷言在原 master 同樣失敗，沒有弱化斷言，原失敗保留。
 - 同包最小修正待辦列再次點按收起詳情，以及安排記錄本地收合；收合不重發歷史 API，保留草稿、pending／unknown 守衛及離線可關閉操作。
-- 28 項 owner／定向呈現測試與 frontend typecheck 通過，原 fixture 欄位失敗保留；[證據](verification/pending-discovery-2026-10-07/checks.json)。未宣稱新建置、部署、正式 UI 或全量回歸完成；後續獨立覆核及批次部署後須用持久合成候選重測。
+- 32 項 owner／定向呈現測試及 2 項 preview 選取補驗與 frontend typecheck 通過，原 fixture 欄位失敗保留；[證據](verification/pending-discovery-2026-10-07/checks.json)。未宣稱新建置、部署、正式 UI 或全量回歸完成；後續獨立覆核及批次部署後須用持久合成候選重測。
 - 其他來源工作區 404／捨棄草稿修復及 Agent context／數量 grounding 由獨立工作包處理，不在此包混改。
 
 ### 已部署成果與未驗界線

@@ -1,0 +1,30 @@
+✖ task navigation selection stays open for the same id and switches to another id (369.495773ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 818.420078
+
+✖ failing tests:
+
+test at frontend/scripts/shared-status-read-state.test.mjs:243:1
+✖ task navigation selection stays open for the same id and switches to another id (369.495773ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - '8c0614da-d04f-454e-837a-b0d0f1649034'
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/shared-status-read-state.test.mjs:246:69)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: '8c0614da-d04f-454e-837a-b0d0f1649034',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

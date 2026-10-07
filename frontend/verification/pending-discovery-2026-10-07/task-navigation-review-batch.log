@@ -1,0 +1,71 @@
+✔ initial task read failure becomes error without creating a mutation; one retry becomes ready (991.986275ms)
+✔ failed refresh retains stale tasks, and revoked access exposes no old items (201.235764ms)
+✔ task read recovery cannot bypass unknown original-request checks or resubmit implicitly (321.889478ms)
+✔ read notices have one normal loading line and nonempty live status without body copy (62.640416ms)
+✔ partial and stale Home tasks stay explicit, and unavailable assistant reminders only navigate (126.181413ms)
+✔ operation notices deduplicate matching headings without hiding unknown or conflicting results (38.861504ms)
+✔ Home refresh reaches the scoped task reader once and never reuses another scope (59.192443ms)
+✔ production task rows toggle closed and history collapse is local without another request (124.794839ms)
+✔ task disclosure callbacks preserve drafts and unknown-operation guards (263.252115ms)
+✔ task deep-link navigation stays open for the same id and opens another id (502.649458ms)
+✔ Growth task navigation uses idempotent open selection (488.526091ms)
+✔ a selection queued during a read retains navigation versus row intent (85.420913ms)
+✔ calendar derives pending dates and review dots from the same loaded task objects (22.484076ms)
+✔ calendar and selected-day list use the viewing IANA zone across a UTC day boundary (10.036626ms)
+✔ month cells handle leap February, Monday-first alignment, and year rollover (16.485054ms)
+✔ changing or completing a source item immediately changes the projection without copied task state (4.021426ms)
+✔ selected-day filtering and clearing retain only current pending and review items (5.391283ms)
+✔ invalid and offset-free timestamps stay unconfirmed without a guessed day or device clock (8.507717ms)
+✔ day names explain counts and review state without relying on dots or claiming complete coverage (13.014151ms)
+✔ calendar JSX preserves button semantics, lock guards and loaded-only presentation (421.395366ms)
+✔ backlog defaults to seven local calendar days while older, review and later remain counted (5.014984ms)
+✔ backlog near-term boundaries use the snapshot zone instead of UTC or the device clock (2.982751ms)
+✔ backlog display pages retain every loaded pending item and clamp a shortened final page (253.914286ms)
+✔ backlog pages cover eleven and twenty-five same-day tasks without losing selected-day or search filters (195.043069ms)
+✔ scope count badges receive structured numbers and preserve accessible radio and trigger states (109.720495ms)
+✔ backlog search and calendar-day filters use loaded titles, contents and eligible assignee names (51.864112ms)
+✔ backlog unknown dates stay discoverable and no old item is completed or discarded (12.853577ms)
+✔ backlog UI keeps remote loading separate and preserves guarded local filter/page state (4.961184ms)
+✔ calendar date toggle cancels only an identical selected date (14.162172ms)
+✔ calendar date toggle restores the previous range and preserves the search text (78.782943ms)
+✔ calendar replacement uses the existing detail slot and keeps month state in the view owner (2.480965ms)
+✔ one task owner keeps confirmed updates across Tasks and History entry changes (543.428882ms)
+✔ selected rows toggle closed, other rows switch, and drafts prevent either (152.423979ms)
+✔ unknown original operation stays locked with original reference across attempted departure (64.844338ms)
+✔ scope and access revocation clear old tasks, drafts and pending callbacks (54.395974ms)
+✔ callbacks captured in an old scope cannot open or write a new child workspace (123.274714ms)
+✔ shared pagination extends history and access loss cancels late pages (38.914833ms)
+✔ offline prevents reviewed submission while loading hides stale task data and keeps draft (52.6176ms)
+✖ dashboard mounts one task owner and screens consume it without duplicate fixtures (2.809936ms)
+✔ preview task navigation is idempotent while row selection explicitly toggles (38.500404ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 39
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4570.465375
+
+✖ failing tests:
+
+test at frontend/scripts/task-workspace.test.mjs:149:1
+✖ dashboard mounts one task owner and screens consume it without duplicate fixtures (2.809936ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  undefined !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_pending_discovery_20261007/frontend/scripts/task-workspace.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

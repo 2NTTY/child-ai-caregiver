@@ -44,13 +44,62 @@
   ],
   "sourceSha256": {
     "frontend/src/production/ProductAgentOwner.ts": "dae1611b189f1dda9b285f8a052d8ce9f2c9c2bba6519ef264734d78ad90f846",
-    "frontend/src/production/ProductionOwner.ts": "7017ff80af2f33ac8831ba6f2fee32170528d0bcc6ff11f4dfd99e94800e1284",
+    "frontend/src/production/ProductionOwner.ts": "5bdcc1ed78e75267e31c90a3ab319c701b0f1b7ed7a7b4c847dc27c5b5884c52",
     "frontend/src/production/AgentConversation.tsx": "ad2a6abb9cf1d99c0475a31166265b50e6bff917a5334e4766b85ab732e82e7e",
     "frontend/src/screens/careScreen.tsx": "bf61597d7733bf4cc590f8d2f6e5d87bc80772bddd2031dc83166d0a02e7c11c",
     "frontend/src/screens/chatScreen.tsx": "18cf41105ff0d28543ac1b9fef2d714c4afdd4be6c78e2e0fee9646d525c7c04",
-    "frontend/src/production/task-knowledge-tasks.ts": "b42897d9dd4fa0369e6f0a56e07e6b8016c9cabf48a5491fb99d4a573a4f5d7a",
-    "frontend/scripts/agent-pending-discovery.test.mjs": "7a921389c3a4a9641eea86eaf3cbc62d05c5327bee9f07f19a324e2f85b206d7",
+    "frontend/src/production/task-knowledge-tasks.ts": "17b690f2ba4ac181590413d0ce35ec5ff53e6898e27fb6fcd489b4c209dc696a",
+    "frontend/scripts/agent-pending-discovery.test.mjs": "f20d73258238a6700147c5442315015f74012fa6fdab81f0d578c9e5ffd248cb",
     "frontend/scripts/clean-chat-layout.test.mjs": "d465629e1d5ebc1a8517b0c6e2f1e82d4e70f310ae27a45a0953e0e1162ffa10",
-    "frontend/scripts/shared-status-read-state.test.mjs": "53426f67700531f224535bc4675df916e2970d5ff6588bd69ac39882b65d88f9"
+    "frontend/scripts/shared-status-read-state.test.mjs": "107970f03c72505c316a73890efdf1df76d8e8cc0292c2315b77b3e787b4248c",
+    "src/client/use-online-updates.ts": "5faa646b48c9c2ddcd9dc1ad1df61c2fec84bcf0e1198331f729d9568e1296d1",
+    "frontend/src/production/ProductionProvider.tsx": "8677665e9542720311a8688e9f54f9a20cabbee1fd68451d0ecbec209da69734",
+    "frontend/src/task-view-model.ts": "c399393b853b83d2594f6d54ce63f1fbed04041b5d05eea60b8eecbc9ca92caf",
+    "frontend/src/preview/useTasksPreview.ts": "d857541f37941b8a90252a4033d9a35dbab1b88ad3f3c7264552c8619b61eb10",
+    "frontend/src/components/tasks/TasksView.tsx": "776615c9206d5148d2e085e07b3ebdd7cdf5b33c10976568015619b08c66704b",
+    "frontend/src/components/tasks/TaskHistoryView.tsx": "e396ad1a5d314fa58fbbd13e1acee03c957a4efa126ec776233008c13a7d5778",
+    "frontend/scripts/task-workspace.test.mjs": "b19bcbdf7298437ea73d3d6a2b9d87ef78a83fa78231eba407469aaeb1da246d",
+    "frontend/scripts/task-calendar.test.mts": "37e29c434cf603a5aace83c3b85c2baf16b115c5167652aa03edc0905b6dae8a"
+  },
+  "initialVerifiedHead": "30d3660041365ddae3cbd925bbf55284442127f5",
+  "reviewRevision": {
+    "fixes": [
+      "selectTask defaults to idempotent open; rows explicitly toggle; deferred selection retains intent",
+      "online metadata refresh passes changed/forced/unavailable; only unavailable suppresses pending discovery while preserving other-domain refresh"
+    ],
+    "additionalScope": "src/client/use-online-updates.ts reason-only callback propagation within the assigned review correction",
+    "checks": [
+      {
+        "command": "node --test frontend/scripts/agent-pending-discovery.test.mjs frontend/scripts/clean-chat-layout.test.mjs frontend/scripts/shared-status-read-state.test.mjs",
+        "result": "passed",
+        "tests": 32,
+        "log": "review-final-focused-tests.log"
+      },
+      {
+        "command": "node --test --test-name-pattern='selected rows toggle closed|preview task navigation' frontend/scripts/task-workspace.test.mjs",
+        "result": "passed",
+        "tests": 2,
+        "log": "review-preview-selection-tests.log"
+      },
+      {
+        "command": "npm run typecheck --workspace frontend",
+        "result": "passed",
+        "log": "review-final-typecheck.log"
+      }
+    ],
+    "firstFailures": [
+      {
+        "log": "deep-link-review-red.log",
+        "result": "reproduced same-ID navigation closing selected detail before the review correction"
+      },
+      {
+        "log": "task-navigation-review-batch.log",
+        "result": "39/40 passed; unchanged dashboard test expects the removed preview TasksWorkspaceProvider"
+      },
+      {
+        "log": "task-preview-baseline-failure.log",
+        "result": "same dashboard assertion fails on untouched a75ebb6d snapshot; left unchanged and reported, not counted as passed"
+      }
+    ]
   }
 }
