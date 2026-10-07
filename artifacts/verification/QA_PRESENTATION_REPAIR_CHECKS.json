@@ -1,0 +1,104 @@
+{
+  "workPackage": "QA-ADK-PRESENTATION-REPAIR",
+  "baseline": "13279acc1e9e528d461a16c71009241c8ab8f46f",
+  "checkedAt": "2026-10-07T12:54:57Z",
+  "versions": {
+    "adk": "2.1.0",
+    "genai": "2.24.0",
+    "zod": "4.5.4",
+    "node": "24.19.0"
+  },
+  "implementation": {
+    "productOptInOnly": true,
+    "sameRunnerAndInvocation": true,
+    "sameBudgetAndDeadline": true,
+    "repairProviderCallsMaximum": 1,
+    "repairToolAllowlist": [
+      "present_answer"
+    ],
+    "serverBatchGuard": true,
+    "nativePartsPreserved": true,
+    "controlMessageRequestLocalOnly": true,
+    "repairResponseStopsNativeLoopWithoutAcceptingRejectedResult": true,
+    "nativeGeneratorDrained": true,
+    "finalizerRemainsAuthoritative": true
+  },
+  "checks": [
+    {
+      "kind": "focused",
+      "command": "node --experimental-test-module-mocks --test tests/agent-runtime.test.ts tests/agent-runtime-contract.test.ts tests/agent-presentation-repair.test.ts tests/product-agent-task-budget.test.ts tests/product-agent-presentation-repair.test.ts tests/task-parameter-hints.test.ts",
+      "passed": 82,
+      "failed": 0
+    },
+    {
+      "kind": "strict_scoped_semantic_typecheck",
+      "result": "passed",
+      "scope": [
+        "server/agent-runtime.ts",
+        "server/agent-presentation-repair.ts",
+        "server/product-agent.ts",
+        "server/task-parameter-hints.ts",
+        "tests/agent-presentation-repair.test.ts",
+        "tests/product-agent-presentation-repair.test.ts",
+        "tests/task-parameter-hints.test.ts",
+        "tests/product-agent-task-budget.test.ts"
+      ],
+      "notes": "Real TypeScript 6.0.3 and imported source closure; no stubs or noCheck"
+    },
+    {
+      "kind": "native_call_llm_span_cleanup",
+      "cases": {
+        "accepted": "2 started / 2 ended",
+        "rejected": "2 started / 2 ended",
+        "invalid_arguments": "2 started / 2 ended",
+        "accepted_fourth_model_slot": "4 started / 4 ended"
+      }
+    },
+    {
+      "kind": "genai_vertex_v1_wire",
+      "result": "passed",
+      "networkRequests": 0,
+      "method": "Actual pinned SDK with injected local fetch and synthetic auth client"
+    }
+  ],
+  "review": {
+    "initialFinding": "Breaking after the repair function response skipped ADK 2.1.0 call_llm span cleanup",
+    "fix": "Set only the repair response skipSummarization action and drain the native superclass flow",
+    "independentRecheck": "passed: 82/82 focused tests and strict scoped semantic typecheck; separate native span instrumentation confirms primary/repaired/rejected/invalid arguments each close every started span",
+    "independentRepairSourceSha256": "8b25ca68086d2449ac3da77a644dca9559ce2c59e6b668a80deffac070b17ca2"
+  },
+  "correctedImplementationIssues": [
+    "The package entry does not export appendTools; use the existing generated declaration without internal imports",
+    "Wire test used raw strings where TypeScript requires SDK enums; corrected to the exported enums"
+  ],
+  "notRun": [
+    "Live provider/model reliability",
+    "Real database",
+    "T9/F4 live UI repetition",
+    "GCP deployment",
+    "Full repository regression"
+  ],
+  "limitations": [
+    "Scripted provider and stores prove runtime/protocol behavior, not real-model success",
+    "The historical T9 final body and actual invalid tool arguments were not captured",
+    "Presentation completion does not turn a rejected or pending operation into a completed task",
+    "No new persistent schema/state, HTTP control, prompt-module changes or SDK patches"
+  ],
+  "files": {
+    "server/agent-runtime.ts": {
+      "sha256": "edf2ff4e45119d83bf13d5a4f432d18c7494146f1631fd94243d86956f0877f5"
+    },
+    "server/agent-presentation-repair.ts": {
+      "sha256": "8b25ca68086d2449ac3da77a644dca9559ce2c59e6b668a80deffac070b17ca2"
+    },
+    "server/product-agent.ts": {
+      "sha256": "d4a93763fdfcad34099b5d6e6dcded3ace772c19ad62bb184f11f37f9c39497c"
+    },
+    "tests/agent-presentation-repair.test.ts": {
+      "sha256": "6b107662f66c16867e458bd6761dcf0f3b0a541a73f3d846f419d2a13039a4cc"
+    },
+    "tests/product-agent-presentation-repair.test.ts": {
+      "sha256": "7d8e5931b1e5496a0dfc6e6db3c43ec7d4283882abf0818b62bdebcbb1e21cf6"
+    }
+  }
+}
