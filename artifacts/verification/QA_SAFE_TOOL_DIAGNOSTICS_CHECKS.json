@@ -1,0 +1,135 @@
+{
+  "package": "QA-SAFE-TOOL-DIAGNOSTICS",
+  "verifiedAtUtc": "2026-10-07T12:59:19Z",
+  "baselineCommit": "13279acc1e9e528d461a16c71009241c8ab8f46f",
+  "codeBranch": "codex/safe-tool-rejection-diagnostics",
+  "codeHead": "f406722e5351fc69f84ddac53922ee0e052db358",
+  "scope": "Metadata-only tool rejection classification using the existing AgentDiagnostic observer and sink",
+  "implementation": {
+    "phase": "tool_rejection",
+    "stages": [
+      "schema",
+      "authorization",
+      "execution"
+    ],
+    "outcomes": [
+      "rejected",
+      "conflict",
+      "failed",
+      "unknown"
+    ],
+    "tools": "Only names from the validated, configured tool definitions",
+    "schemaCode": "invalid_parameters",
+    "authorizationCode": "not_authorized",
+    "executionCodesForProposeTask": [
+      "invalid_input",
+      "invalid_assignee",
+      "agent_run_expired",
+      "confirmation_requires_interactive_scope",
+      "version_conflict",
+      "operation_conflict",
+      "agent_proposal_limit",
+      "agent_scope_changed",
+      "agent_source_mismatch"
+    ],
+    "otherExecutionCodes": "unknown",
+    "hints": {
+      "tool": "propose_task",
+      "stage": "schema",
+      "fields": [
+        "path",
+        "reason"
+      ],
+      "maximumEntries": 3,
+      "maximumJsonCharacters": 256,
+      "source": "Canonical projection of the existing bounded public-schema repair hints"
+    },
+    "retainedCorrelation": [
+      "runId",
+      "elapsedMs"
+    ],
+    "excluded": [
+      "user IDs",
+      "child IDs",
+      "call IDs",
+      "messages",
+      "arguments",
+      "input",
+      "raw errors",
+      "raw issues",
+      "unknown keys or values",
+      "dynamic paths",
+      "expected text"
+    ],
+    "controlFlow": "Best-effort synchronous projection; thrown/rejected/pending sinks do not change or await business outcomes"
+  },
+  "activation": {
+    "existingFlag": "AGENT_DIAGNOSTICS=true",
+    "sink": "server/product-agent-services.ts: console.info(agent_diagnostic, JSON.stringify(event))",
+    "wiring": "server/index.ts passes the existing flag to createProductAgentServices",
+    "contentSpans": "ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS remains false",
+    "adkLogger": "setLogger(null) remains unchanged",
+    "deployment": "No deployment, GCP operation or environment flag change performed; current deployed flag value not inspected"
+  },
+  "checks": [
+    {
+      "name": "Focused observer/runtime/task repair regression",
+      "command": "node --experimental-test-module-mocks --test tests/agent-observer.test.ts tests/agent-runtime.test.ts tests/agent-runtime-contract.test.ts tests/task-parameter-hints.test.ts tests/product-agent-task-budget.test.ts",
+      "result": "43/43 passed",
+      "coverage": [
+        "Real ADK Runner with scripted provider distinguishes strict-schema, authorization and handler rejection",
+        "Synthetic secret keys, values, dynamic paths, errors, identifiers and text never appear in diagnostic events",
+        "Only three input hints inspected; canonical path/reason projection excludes expected and extra fields, deduplicates and enforces the byte-independent JSON character bound",
+        "Other tools do not inspect data; disabled diagnostics and unknown tools do not inspect result metadata",
+        "Unknown handler outcome stops without another provider call or execution",
+        "Throwing, rejecting and pending diagnostic sinks preserve outcomes and call counts",
+        "External read counters assert zero access for other-tool data, unknown/success/disabled result metadata, expected/message/input and the fourth hint; a throwing malformed-data getter is checked outside the protected callback"
+      ]
+    },
+    {
+      "name": "Strict scoped semantic typecheck",
+      "result": "Passed without noCheck or stubs",
+      "files": [
+        "server/agent-runtime.ts",
+        "server/agent-observer.ts",
+        "server/task-parameter-hints.ts",
+        "tests/agent-observer.test.ts",
+        "tests/task-parameter-hints.test.ts"
+      ],
+      "method": "TypeScript 6.0.3, repository server compiler options, real transitive source closure, pinned Node and pg declarations"
+    }
+  ],
+  "firstCheckFindings": [
+    "The initial scoped typecheck command referenced a missing .bin/tsc in the source snapshot; rerun used the existing pinned TypeScript entrypoint",
+    "The initial 42/43 test run had one over-narrow new expectation: existing schema validation emits invalid_format and out_of_range for the synthetic invalid date. The fixture now asserts both; product validation was not changed",
+    "New test poison getters initially needed explicit return typing; test-only typing was corrected before the final passing check",
+    "Independent review found that assertions inside poison getters could be swallowed by the observer catch. All affected new observer tests now assert external read counters after the callback; runtime code was unchanged and the final 43 tests plus scoped typecheck passed again."
+  ],
+  "environment": {
+    "node": "24.19.0",
+    "adk": "2.1.0",
+    "genai": "2.24.0",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "workspace": "Verified source snapshot with existing selected runtime dependencies; not a full clean npm ci checkout"
+  },
+  "notPerformed": [
+    "Real model calls",
+    "Real database access",
+    "Real family data processing",
+    "Deployment or GCP changes",
+    "Full repository regression"
+  ],
+  "interpretation": "These events can classify future rejected calls when the existing metadata sink is enabled. They do not recover historical T7/T8/T9 arguments or establish their actual rejection fields.",
+  "review": {
+    "result": "Passed with no remaining blocker",
+    "exactCodeHead": "f406722e5351fc69f84ddac53922ee0e052db358",
+    "checks": [
+      "Independent focused 43/43 and strict scoped semantic typecheck passed before the test-only counter correction",
+      "After the counter correction, independent observer suite 3/3 and strict scoped semantic typecheck passed again",
+      "Independent reviewer verified all five source/test Git blobs match the remote head; runtime/helper code remained unchanged",
+      "External counters are asserted after the protected call; prohibited reads are zero and the deliberate malformed-data getter is one"
+    ],
+    "remaining": "Combined acceptance with the bounded-finalization change remains separate; no real model, database, production UI or deployment acceptance claimed"
+  }
+}
