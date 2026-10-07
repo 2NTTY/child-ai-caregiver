@@ -1,0 +1,99 @@
+{
+  "baseline": "70aea0721a3a64ba895a9b3f2e005e3d5ddb8355",
+  "scope": "Only propose_task rejected invalid_assignee execution feedback; unchanged store, eligibility, budgets, prompt pack and other hints",
+  "implementation": "Adds fixed nextAction read_context, field values.assigneeUserId and root-approved no-private-value message",
+  "sourceSha256": {
+    "server/product-agent-tools.ts": "bce2a11aefe97fc1fa3b94a8612cac1d0d4e13ff062f32d89d9e2dc4204f5280",
+    "tests/product-agent-assignee-recovery.test.ts": "2f9184c2519fc1c3abc87fdca6df592db1363260d17baaa65492766fbbd144e8",
+    "docs/API.md": "a880ad9da5122ea1f53b7c4ecf04894236d4e22fb4b4c7f9c6262ffae39ffe8f"
+  },
+  "runtime": {
+    "node": "v24.19.0",
+    "@google/adk": "2.1.0",
+    "@google/genai": "2.24.0",
+    "zod": "4.5.4"
+  },
+  "checks": [
+    {
+      "name": "Pristine baseline regression",
+      "result": "expected failure",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='invalid assignee recovers' tests/product-agent-assignee-recovery.test.ts",
+      "detail": "Fails only because fixed recovery fields are absent",
+      "capturedOutput": "✖ invalid assignee recovers through read_context and one pending proposal within the original four-model/eight-tool budget (63.8886ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 948.157658\n\n✖ failing tests:\n\ntest at tests/product-agent-assignee-recovery.test.ts:91:1\n✖ invalid assignee recovers through read_context and one pending proposal within the original four-model/eight-tool budget (63.8886ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n  + actual - expected\n  \n    {\n      data: {\n        code: 'invalid_assignee',\n  -     field: 'values.assigneeUserId',\n  -     message: '請先讀取 read_context 的 eligibleAssignees。指派給本人時，使用其中與 Server scope.userId 相符的 userId；若本人不在名單內，請如實說明不能指派。不得猜測 ID 或改派他人。',\n  -     nextAction: 'read_context'\n      },\n      status: 'rejected'\n    }\n  \n      at TestContext.<anonymous> (file://<isolated-workspace>/tests/product-agent-assignee-recovery.test.ts:127:10)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: { status: 'rejected', data: { code: 'invalid_assignee' } },\n    expected: { status: 'rejected', data: { code: 'invalid_assignee', nextAction: 'read_context', field: 'values.assigneeUserId', message: '請先讀取 read_context 的 eligibleAssignees。指派給本人時，使用其中與 Server scope.userId 相符的 userId；若本人不在名單內，請如實說明不能指派。不得猜測 ID 或改派他人。' } },\n    operator: 'deepStrictEqual',\n    diff: 'simple'\n  }\n",
+      "exitCode": 1
+    },
+    {
+      "name": "Focused tests",
+      "result": "passed",
+      "tests": 15,
+      "command": "node --experimental-test-module-mocks --test tests/product-agent-assignee-recovery.test.ts tests/task-parameter-hints.test.ts tests/product-agent-task-budget.test.ts",
+      "capturedOutput": "✔ invalid assignee recovers through read_context and one pending proposal within the original four-model/eight-tool budget (84.674697ms)\n✔ recovery cannot make a viewer, a revoked member or another family's caregiver eligible (3.163608ms)\n✔ assignee recovery is limited to propose_task and preserves conflicts, unknown errors and citation hints (2.240968ms)\n✔ T7 native Runner preserves full text and repairs a rejected task within budget (observed v1 controls; 32000) (74.403793ms)\nℹ {\"policy\":\"observed_v1_controls_mapped_to_contract\",\"logicalCharacters\":[25681,27413,28132,29027],\"rejectedResponseCharacters\":348,\"limit\":32000}\n✔ T7 native Runner preserves full text and repairs a rejected task within budget (observed v1 controls; 64000) (19.637914ms)\nℹ {\"policy\":\"observed_v1_controls_mapped_to_contract\",\"logicalCharacters\":[25681,28337,29056,29951],\"rejectedResponseCharacters\":348,\"limit\":64000}\n✔ T7 native Runner preserves full text and repairs a rejected task within budget (no active policy; 32000) (16.294529ms)\nℹ {\"policy\":\"none\",\"logicalCharacters\":[25483,27344,28063,28958],\"rejectedResponseCharacters\":348,\"limit\":32000}\n✔ T7 native Runner preserves full text and repairs a rejected task within budget (no active policy; 64000) (14.171275ms)\nℹ {\"policy\":\"none\",\"logicalCharacters\":[25483,27959,28678,29573],\"rejectedResponseCharacters\":348,\"limit\":64000}\n✔ fourteen synthetic task shapes preserve validation and reject before authorization or execution (143.888226ms)\n✔ only propose_task registers field hints in the product tool set (2.261188ms)\n✔ hints never read messages, values or unknown keys and never copy dynamic paths (0.208791ms)\n✔ hints use fixed reasons for known refinements and preserve exact contract boundaries (1.951317ms)\n✔ hints are deduplicated, complete and bounded to three entries and 512 JSON characters (0.314777ms)\n✔ unregistered tools keep generic feedback and authorization or handler outcomes never gain hints (17.118072ms)\n✔ real Runner distinguishes schema, authorization and handler rejection without retaining private content (31.727527ms)\n✔ throwing, rejecting or pending diagnostic sinks preserve Runner outcomes and call counts (15.016171ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1038.321713\n",
+      "exitCode": 0
+    },
+    {
+      "name": "Scoped strict semantic typecheck",
+      "result": "passed",
+      "command": "tsc --project evidence/tsconfig.focused.json",
+      "capturedOutput": "",
+      "exitCode": 0,
+      "compilerVersion": "6.0.3",
+      "configuration": {
+        "extends": "../tsconfig.server.json",
+        "compilerOptions": {
+          "note": "The isolated execution resolved Node/pg declarations from existing pinned dependency caches; source/test inputs and strict compiler settings were unchanged."
+        },
+        "files": [
+          "../server/product-agent-tools.ts",
+          "../tests/product-agent-assignee-recovery.test.ts",
+          "../tests/task-parameter-hints.test.ts",
+          "../tests/product-agent-task-budget.test.ts"
+        ],
+        "include": []
+      },
+      "compilerOptions": {
+        "target": "ES2023",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "strict": true,
+        "erasableSyntaxOnly": true,
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+        "skipLibCheck": true,
+        "types": [
+          "node"
+        ]
+      }
+    }
+  ],
+  "coverage": [
+    "Real ADK Runner with scripted model: invalid_assignee -> read_context -> eligible self candidate -> present_answer in four model and four tool calls",
+    "Real proposal/task store over bounded fake Pool: first rejection has zero inserts and zero proposal lookups; one pending candidate after repair; repeated product reply does not replay",
+    "Viewer self, cross-family assignee and revoked actor cannot save a proposal",
+    "Fixed response excludes submitted values and source identifiers; metadata diagnostics remain execution invalid_assignee without extra hints",
+    "Conflict, unknown exception, authorization, other tool invalid_assignee and citation hints unchanged; existing schema-hint tests pass"
+  ],
+  "limits": [
+    "No real PostgreSQL, paid model, browser, GCP, migrations, deployment or full regression",
+    "Scripted model plus bounded SQL double; claim, authorize, finish and get are test stubs, so no proof of real-model compliance, real PostgreSQL transactions or persistent replay",
+    "Draft PR only; no merge or deployment performed."
+  ],
+  "review": {
+    "model": "gpt-6-astra",
+    "reasoningEffort": "xhigh",
+    "independent": true,
+    "verdict": "passed; no blocking safety or behavior finding",
+    "checks": [
+      "15/15 focused tests independently passed",
+      "Scoped strict typecheck independently passed",
+      "142 tracked copied files Git-blob checked; only execution code and parent-authored API paragraph differ from pinned baseline",
+      "Original baseline failure log read, not independently rerun"
+    ],
+    "documentation": "Parent-authored docs/API.md paragraph reviewed and matches implementation",
+    "sourceChanges": [
+      "server/product-agent-tools.ts",
+      "tests/product-agent-assignee-recovery.test.ts",
+      "docs/API.md"
+    ]
+  },
+  "evidenceFormat": "Captured implementation output is embedded; only isolated-workspace paths in stack traces are normalized. Independent review results are reported separately."
+}

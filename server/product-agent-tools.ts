@@ -149,10 +149,16 @@ export function createProductAgentTools(options: {
       }) },
     { name: "propose_task", description: "保存待本人明確確認的家庭任務候選，尚未建立任務或通知任何人。對象只可取 read_context 的 eligibleAssignees，時間不清楚先補問。",
       parameters: z.object({ values: taskValuesSchema }), parameterErrorHints: taskParameterHints, authorize: permitted,
-      execute: (args, context) => guard(async () => {
-        const proposal = await store.propose(scope, runId, context.callId, { kind: "task_create", values: taskValuesSchema.parse(args.values) });
-        if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
-      }) },
+      execute: async (args, context) => {
+        const response = await guard(async () => {
+          const proposal = await store.propose(scope, runId, context.callId, { kind: "task_create", values: taskValuesSchema.parse(args.values) });
+          if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
+        });
+        if (response.status === "rejected" && response.data?.code === "invalid_assignee") return { ...response, data: { ...response.data,
+          nextAction: "read_context", field: "values.assigneeUserId",
+          message: "請先讀取 read_context 的 eligibleAssignees。指派給本人時，使用其中與 Server scope.userId 相符的 userId；若本人不在名單內，請如實說明不能指派。不得猜測 ID 或改派他人。" } };
+        return response;
+      } },
     { name: "propose_task_change", description: "提出改期、完成或取消既有家庭任務的候選；必須指向 read_context 的原任務及版本，使用者明確確認後才執行。「收到」不代表完成。",
       parameters: z.object({ taskId: z.uuid(), expectedVersion: z.number().int().min(1),
         action: z.enum(["complete", "cancel", "reschedule"]), note: z.string().max(1000),
