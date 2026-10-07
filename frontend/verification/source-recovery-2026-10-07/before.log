@@ -1,0 +1,44 @@
+✖ sources: missing resource does not poison child workspace (210.838726ms)
+✖ photos: missing resource does not poison child workspace (111.944139ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 831.524526
+
+✖ failing tests:
+
+test at frontend/scripts/source-photo-recovery.test.mjs:66:3
+✖ sources: missing resource does not poison child workspace (210.838726ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+  
+  'lost'
+      at TestContext.<anonymous> (file:///workspace/shared/fix_source_recovery_20261007/frontend/scripts/source-photo-recovery.test.mjs:69:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'lost',
+    expected: 'lost',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/source-photo-recovery.test.mjs:66:3
+✖ photos: missing resource does not poison child workspace (111.944139ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+  
+  'lost'
+      at TestContext.<anonymous> (file:///workspace/shared/fix_source_recovery_20261007/frontend/scripts/source-photo-recovery.test.mjs:69:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'lost',
+    expected: 'lost',
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
