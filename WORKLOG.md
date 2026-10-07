@@ -1558,3 +1558,25 @@
 - 初步2/2歸檔hash／退休命令定向檢查通過；完整import closure/typecheck/build及獨立覆核仍待核。沒有刪正式資料、DB遷移、真模型或部署。
 
 - 10:10 UTC 補記：head43955c8的歸檔/active-import/failclosed測試3/3、root與frontend typecheck已獨立重跑通過。23檔459,274 bytes、原Git blob及SHA-256全核准；實作者35routebuild成功，review只核其log及bundle hash，未重跑build。AgentInbox連結及意外三份.merged中間檔已正常後續commit修正，canonical文件與31025前綴保留。沒有真browser/DB/model或部署。
+
+<a id="log-20261008-p2-agent-service-plan"></a>
+## LOG-20261008-P2-AGENT-SERVICE-PLAN
+
+- Recorded At：2026-10-07 19:02 UTC 後（2026-10-08 HKT）；Work Date：2026-10-08 HKT。
+- Step / Package：DOC-P2-AGENT。Executor／AI Assistance：主模型親寫完整計劃、需求、契約及 review，未委派子代理；Human Verification：使用者已定案總計劃，未新增產品人工驗收。A 主責，權重 2，A100%；共用 AI 由 A 統籌，本包未宣稱其他成員實作。
+- Goal：把已確認的 P2 完整 Agent／邀請制穩定單人 Web 服務納入唯一計劃，先寫 PLAN 再更新權威；不把前期 P2／INT 證據當成新門檻完成。
+
+### Actual Work / Changes
+- 新增 P2-A01～A09、依賴、分工、前移／延後對照及成果門檻；保留原工作包錨點。移除現行契約把「最後一句＋延續詞」能力閘作最終要求的描述，標為待替代實作；確認綁定、範圍隔離、有界讀取及官方語義換版成共同約束。
+- SPEC 新增 REQ-P2A-01～11／AC-P2A-01～08；架構／資料／API 各管自身契約，追加 ADR-018。STATUS 清理已合併退役快照並維持最後部署觀察；前端只補單人及頁面用途／接口引用，無 UI 程式、美術或 Prompt Pack 改動。
+- 開工與中途重新 fetch；master 218625b，#111 c31e4c7、#130 fe1bb33 仍 draft。本包不接管其分支，也不推定已部署。
+
+### Verification
+- Requirement / Acceptance：已批准總計劃完整範圍、九包依賴、原錨點／歷史保留及文件職責一致。
+- Method／Environment：Windows PowerShell＋Node，基線 218625b 的獨立 codex/p2-agent-service-plan；新增本地連結／錨點、舊錨點保留、60 個明列工作包的顯式依賴與循環檢查、git diff --check；主模型核對關鍵 diff／原文。
+- Result：通過；34 個新增連結、無缺失／重複錨點或顯式依賴循環。修正 review 發現的交接字面換行後完成檢查；WORKLOG 僅追加。
+- Evidence：[文件檢查](artifacts/verification/P2_AGENT_SERVICE_PLAN_CHECKS.json)。不跑 build、unit、integration、E2E、真模型、通知或部署，無新增服務費用。
+
+### Limitations / Next
+- 文件定案不代表 A01～A09 實作、真服務或 GCP 新版部署完成。現有未驗／失敗證據保留，新增完成門檻沿本包 PLAN。
+- 本聊天獲准按包直接最低必要驗收；外發內容／對象與新增雲端費用仍依實際批准。下一步文件合併後從最新 master 開 A01，先核對其他聊天新合併，A08 只在獨立邊界就緒時推進。
