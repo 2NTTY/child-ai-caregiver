@@ -8,9 +8,9 @@ type Report = { key: string; state: StartupReadiness };
 const StartupContext = createContext<{ key: string; report(value: Report): void } | null>(null);
 
 export function ProductionFirstScreenGate({ width, launch, children }: { width: number; launch: ReactNode; children: ReactNode }) {
-  const pathname = usePathname(), { tab, category, section } = useGlobalSearchParams();
+  const pathname = usePathname(), { tab, category, section, view } = useGlobalSearchParams();
   const { identityKey, scopeKey, recordsState } = useProduction();
-  const key = JSON.stringify([identityKey, scopeKey, pathname, tab ?? null, category ?? null, section ?? null]);
+  const key = JSON.stringify([identityKey, scopeKey, pathname, tab ?? null, category ?? null, section ?? null, view ?? null]);
   const [readiness, setReadiness] = useState<Report | null>(null);
   const report = useCallback((value: Report) => setReadiness(current => current?.key === value.key && current.state === value.state ? current : value), []);
   const context = useMemo(() => ({ key, report }), [key, report]);

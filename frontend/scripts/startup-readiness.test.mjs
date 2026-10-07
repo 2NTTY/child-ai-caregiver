@@ -96,12 +96,12 @@ function harness() {
 const records = (patch = {}) => ({ auth: 'signedIn', online: true, children: [{ id: 'A' }], childrenLoading: false, childrenError: null,
   childrenLoadedAt: '2026-10-07', selectedChildId: 'A', ...patch });
 
-function startup(h, { image = true, report = 'ready', includeReport = true, identity = 'parent:1', state = records(), path: route = '/' } = {}) {
+function startup(h, { image = true, report = 'ready', includeReport = true, identity = 'parent:1', state = records(), path: route = '/', search = {} } = {}) {
   const { ProductionFirstScreenGate, useProductionStartupReadiness } = h.load('src/production/ProductionFirstScreenGate.tsx');
   const { useFirstScreenImage } = h.load('src/startup/FirstScreenGate.tsx');
   const Probe = startup.Probe ??= (props) => { props.reportHook(props.report); const hero = props.imageHook('home-hero');
     props.hookReact.useLayoutEffect(() => { if (props.image) hero.onLoad(); }, [props.image]); return h.jsx('ReadyContent', {}); };
-  h.production({ identityKey: identity, scopeKey: state.selectedChildId ? `${identity}:${state.selectedChildId}` : null, recordsState: state }); h.route(route);
+  h.production({ identityKey: identity, scopeKey: state.selectedChildId ? `${identity}:${state.selectedChildId}` : null, recordsState: state }); h.route(route, search);
   return h.jsx(ProductionFirstScreenGate, { width: 1000, launch: h.jsx('Launch', {}), children: includeReport ? h.jsx(Probe, {
     image, report, reportHook: useProductionStartupReadiness, imageHook: useFirstScreenImage, hookReact: h.react,
   }) : null });
@@ -231,5 +231,34 @@ test('preferences deep links wait for their existing read, then expose success o
   h.render(startup(h, { state: records({ children: [], selectedChildId: null }), report: 'loading' }));
   assert.ok(h.node('frontend-startup-loading'));
   h.render(startup(h, { state: records({ children: [], selectedChildId: null }), report: 'error' }));
+  assert.ok(h.node('frontend-preview-ready'));
+});
+
+
+test('care photo deep links wait only for the photo consumer', () => {
+  const h = harness(), { routeStartupReadiness } = h.load('src/startup/dataReadiness.ts');
+  assert.equal(routeStartupReadiness('/care', { view: 'photos' }, { care: 'ready', photos: 'loading' }), 'loading');
+  assert.equal(routeStartupReadiness('/care', { view: 'photos' }, { care: 'loading', photos: 'ready' }), 'ready');
+  assert.equal(routeStartupReadiness('/care', { view: 'photos' }, { care: 'loading', photos: 'error' }), 'error');
+  assert.equal(routeStartupReadiness('/care', {}, { care: 'ready', photos: 'loading' }), 'ready');
+});
+
+test('growth archive deep links wait for both the visible page authority and document archive', () => {
+  const h = harness(), { routeStartupReadiness } = h.load('src/startup/dataReadiness.ts');
+  assert.equal(routeStartupReadiness('/growth', { tab: 'archive' }, { growth: 'ready', documents: 'loading' }), 'loading');
+  assert.equal(routeStartupReadiness('/growth', { tab: 'archive' }, { growth: 'loading', documents: 'ready' }), 'loading');
+  assert.equal(routeStartupReadiness('/growth', { tab: 'archive' }, { growth: 'ready', documents: 'ready' }), 'ready');
+  assert.equal(routeStartupReadiness('/growth', { tab: 'archive' }, { growth: 'loading', documents: 'error' }), 'error');
+  assert.equal(routeStartupReadiness('/growth', {}, { growth: 'ready', documents: 'loading' }), 'ready');
+  assert.equal(routeStartupReadiness('/growth', { tab: 'archive' }, {}, false), 'ready');
+});
+
+test('an earlier care-view report cannot reveal a pending photo-view startup', () => {
+  const h = harness();
+  h.render(startup(h, { path: '/care', state: records({ childrenLoading: true }) }));
+  assert.ok(h.node('frontend-startup-loading'));
+  h.render(startup(h, { path: '/care', search: { view: 'photos' }, includeReport: false }));
+  assert.ok(h.node('frontend-startup-loading'), 'changing view invalidates the previous route report');
+  h.render(startup(h, { path: '/care', search: { view: 'photos' }, report: 'ready' }));
   assert.ok(h.node('frontend-preview-ready'));
 });

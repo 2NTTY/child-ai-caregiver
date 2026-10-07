@@ -21,10 +21,10 @@ export function productionStartupReadiness(state: Pick<RecordsState, "auth" | "o
   return route;
 }
 
-export function routeStartupReadiness(pathname: string, params: { tab?: string; category?: string; section?: string }, reads: Readonly<Record<string, StartupReadiness>>, hasChild = true): StartupReadiness {
+export function routeStartupReadiness(pathname: string, params: { tab?: string; category?: string; section?: string; view?: string }, reads: Readonly<Record<string, StartupReadiness>>, hasChild = true): StartupReadiness {
   const requirements: Record<string, readonly string[]> = {
-    "/": ["profile", "care", "tasks", "growth"], "/chat": ["chat"], "/care": ["care"], "/profile": ["profile"],
-    "/tasks": ["tasks"], "/growth": ["growth"], "/memory": ["memory"], "/history": params.category === "preparations" ? ["documents"] : params.category === "growth" ? ["growth"] : params.category === "care" || params.category === "review" ? ["care"] : params.category === "conversations" || params.category === "notifications" ? [] : ["tasks"],
+    "/": ["profile", "care", "tasks", "growth"], "/chat": ["chat"], "/care": params.view === "photos" ? ["photos"] : ["care"], "/profile": ["profile"],
+    "/tasks": ["tasks"], "/growth": params.tab === "archive" ? ["growth", "documents"] : ["growth"], "/memory": ["memory"], "/history": params.category === "preparations" ? ["documents"] : params.category === "growth" ? ["growth"] : params.category === "care" || params.category === "review" ? ["care"] : params.category === "conversations" || params.category === "notifications" ? [] : ["tasks"],
     "/photos": ["photos"], "/sources": ["sources"], "/family": ["family"], "/contact": ["contact"],
     "/summary": params.tab === "preparation" ? ["documents"] : ["profile", "summary"],
     "/settings": params.section === "model" ? ["model"] : params.section === "notifications" ? ["push", "telegram"] : params.section === "preferences" ? ["preferences"] : [],

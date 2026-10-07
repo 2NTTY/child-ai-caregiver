@@ -1,21 +1,24 @@
-✔ loaded artwork cannot reveal a slow child list or a slow required route read (142.921425ms)
-✔ errors reveal recovery without waiting for artwork and retries do not rehide it (45.280895ms)
-✔ zero children and anonymous login settle; initialization never invents a selected child (61.758836ms)
-✔ same-identity refresh stays open but a new identity or session epoch waits again (26.885435ms)
-✔ a report for a previous route/scope cannot release a new startup (25.459807ms)
-✔ children-list failure exposes the actual refresh control (8.349768ms)
-✔ first null-to-child selection and same-child refresh/role changes never play a switch curtain (38.388936ms)
-✔ real child changes conceal immediately and discard stale rapid-switch callbacks (27.080344ms)
-✔ revocation, identity reset and reduced motion cancel the current presentation (70.769476ms)
-✔ loading dots stagger without resizing, retain one accessible label, and stop on reduce/unmount (7.365439ms)
-✔ startup only depends on the current route, and any required error remains reachable (4.083695ms)
-✔ no-child onboarding skips child reads but still waits for identity-scoped pages (3.509566ms)
-✔ preferences deep links wait for their existing read, then expose success or retry (16.823772ms)
-ℹ tests 13
+✔ loaded artwork cannot reveal a slow child list or a slow required route read (186.096682ms)
+✔ errors reveal recovery without waiting for artwork and retries do not rehide it (52.973266ms)
+✔ zero children and anonymous login settle; initialization never invents a selected child (137.800604ms)
+✔ same-identity refresh stays open but a new identity or session epoch waits again (28.081681ms)
+✔ a report for a previous route/scope cannot release a new startup (31.516185ms)
+✔ children-list failure exposes the actual refresh control (12.747921ms)
+✔ first null-to-child selection and same-child refresh/role changes never play a switch curtain (79.057673ms)
+✔ real child changes conceal immediately and discard stale rapid-switch callbacks (50.907061ms)
+✔ revocation, identity reset and reduced motion cancel the current presentation (86.899421ms)
+✔ loading dots stagger without resizing, retain one accessible label, and stop on reduce/unmount (11.625182ms)
+✔ startup only depends on the current route, and any required error remains reachable (5.585792ms)
+✔ no-child onboarding skips child reads but still waits for identity-scoped pages (3.60307ms)
+✔ preferences deep links wait for their existing read, then expose success or retry (22.734123ms)
+✔ care photo deep links wait only for the photo consumer (4.579146ms)
+✔ growth archive deep links wait for both the visible page authority and document archive (4.334233ms)
+✔ an earlier care-view report cannot reveal a pending photo-view startup (41.371716ms)
+ℹ tests 16
 ℹ suites 0
-ℹ pass 13
+ℹ pass 16
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 951.517299
+ℹ duration_ms 1914.266367

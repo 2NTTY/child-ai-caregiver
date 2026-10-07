@@ -18,14 +18,14 @@ const first = (value: string | string[] | undefined) => Array.isArray(value) ? v
 
 /** Uses the same scoped projections as the visible route, without starting extra reads. */
 export function ProductionStartupReadiness() {
-  const pathname = usePathname(), params = useGlobalSearchParams<{ tab?: string | string[]; category?: string | string[]; section?: string | string[] }>();
+  const pathname = usePathname(), params = useGlobalSearchParams<{ tab?: string | string[]; category?: string | string[]; section?: string | string[]; view?: string | string[] }>();
   const { scopeKey, chatState } = useProduction();
   const care = useCareWorkspace(), profile = useProfileWorkspace(), tasks = useTasksWorkspace(), growth = useGrowthWorkspace();
   const memory = useMemoryReferenceWorkspace(), documents = useProductionFamilyDocuments(), summary = useProductionTaskKnowledgeSummary();
   const photos = useProductionPhotoInputDomains(), { family, modelSettings, push, telegram, preferences } = useProductionSettingsDomains(), contact = useProductionContactDomain();
   const currentProfile = profile?.scopeKey === scopeKey ? profile.model : null;
   const currentSummary = summary?.model.scopeKey === scopeKey ? summary.model : null;
-  useProductionStartupReadiness(routeStartupReadiness(pathname, { tab: first(params.tab), category: first(params.category), section: first(params.section) }, {
+  useProductionStartupReadiness(routeStartupReadiness(pathname, { tab: first(params.tab), category: first(params.category), section: first(params.section), view: typeof params.view === "string" ? params.view : undefined }, {
     care: readState(care?.scopeKey === scopeKey ? care.model.list.state : undefined),
     profile: !currentProfile ? "loading" : currentProfile.needsRefresh ? "error" : currentProfile.reading ? "loading" : currentProfile.current ? "ready" : "error",
     tasks: readState(tasks?.scopeKey === scopeKey ? tasks.model.access === "lost" ? "error" : tasks.model.readState : undefined),
