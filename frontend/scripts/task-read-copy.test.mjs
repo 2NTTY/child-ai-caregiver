@@ -10,10 +10,10 @@ import { createTaskFixture, taskPreviewClock } from '../src/preview/task-fixture
 // Pure component projections. No API calls or browser/layout claims.
 const jsx = (type, props) => ({ type, props });
 const elements = new Proxy({}, { get: (_target, key) => String(key) });
-function renderTasks(readState, { items, operation = 'idle', online = true, history = false } = {}) {
+function renderTasks(readState, { items, operation = 'idle', online = true, history = false, refreshing = false } = {}) {
   const fixture = createTaskFixture('copy-child', 'normal');
   const model = { ...fixture, child: { id: 'copy-child', displayName: 'Test child' }, access: 'editable', online,
-    items: items ?? fixture.items, readState, reading: readState === 'loading', loadingMoreTasks: false,
+    items: items ?? fixture.items, readState, reading: refreshing || readState === 'loading', loadingMoreTasks: false,
     scheduleContext: taskPreviewClock, hasMoreTasks: false, selected: null, draft: null,
     operation: { state: operation, message: '' }, dataLabel: '家庭共享事項' };
   let retries = 0;
@@ -99,4 +99,18 @@ test('task history preserves the same failed-versus-stale distinction without un
   const stale = renderTasks('stale', { history: true });
   assert.equal(named(stale.tree, 'ReadStateNotice')[0].props.state, 'stale');
   assert.ok(named(stale.tree, 'TaskListRow').length > 0);
+});
+
+
+test('same-scope task refresh keeps the existing list and count without a loading notice', () => {
+  for (const history of [false, true]) {
+    const state = renderTasks('ready', { refreshing: true, history });
+    const notice = named(state.tree, 'ReadStateNotice')[0];
+    assert.notEqual(notice.props.state, 'loading');
+    assert.doesNotMatch(notice.props.message, /正在讀取|正在載入/);
+    assert.equal(named(notice, 'AppButton').some(node => node.props.label === '重新讀取事項'), false);
+    assert.ok(named(state.tree, 'MotionList').some(node => node.props.items.length) || named(state.tree, 'TaskList').length || history);
+  }
+  const empty = renderTasks('ready', { items: [], refreshing: true });
+  assert.equal(named(empty.tree, 'ReadStateNotice')[0].props.state, 'empty');
 });

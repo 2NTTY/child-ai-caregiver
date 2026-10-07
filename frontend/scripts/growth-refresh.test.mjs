@@ -57,7 +57,7 @@ function harness(entry, symbol, initialArgs, injectedWorkspace = () => null) {
       if (name === './GrowthConcernManualFallback') return { GrowthConcernManualFallback: 'GrowthConcernManualFallback' };
       if (name === './GrowthConcernTimeline') return { GrowthConcernIndex: 'GrowthConcernIndex', GrowthConcernTimeline: 'GrowthConcernTimeline' };
       if (name.endsWith('/ui')) return Object.fromEntries(['AppButton', 'AppSelect', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'UnderlineTabs'].map(value => [value, value]));
-      for (const component of ['AppCheckbox', 'PageFrame', 'StatusAnnouncement', 'AppIcon', 'AppStatusBadge']) {
+      for (const component of ['AppCheckbox', 'PageFrame', 'StatusAnnouncement', 'ReadStateNotice', 'AppIcon', 'AppStatusBadge']) {
         if (name.endsWith(`/${component}`)) return { [component]: component };
       }
       if (!name.startsWith('.')) return require(name);
@@ -94,36 +94,28 @@ const refreshNodes = tree => nodes(tree, node => node.type === 'AppButton' && /^
 const owner = (currentChild = child) => harness('src/preview/useGrowthPreview.ts', 'useGrowthPreview', [currentChild, true, 'parent', 'server']);
 const view = (model, actions) => harness('src/components/growth/GrowthView.tsx', 'GrowthView', [{ model, actions, onTask() {}, onMemory() {}, onSource() {}, onHistory() {} }]);
 
-test('ordinary refresh keeps one top toolbar and stable content slots through loading and success', () => {
+test('ordinary refresh keeps content stable without a toolbar reload or loading/success feedback', () => {
   const o = owner(); let state = o.render(); const v = view(state.model, state.actions);
-  let tree = v.render(); const pathBefore = refreshNodes(tree)[0].path, pageBefore = state.model.page;
-  const contents = tree.props.children;
-  assert.equal(refreshNodes(tree).length, 1);
+  let tree = v.render(); const pageBefore = state.model.page;
+  assert.equal(refreshNodes(tree).length, 0);
   assert.equal(tree.props.headerActions.props.testID, 'growth-refresh-toolbar');
-  assert.equal(tree.props.description, undefined, 'The tabs already explain the two workspaces');
+  assert.equal(tree.props.description, undefined);
   const headerButtons = byType(tree.props.headerActions, 'AppButton');
-  assert.deepEqual(headerButtons.map(button => button.props.variant), ['secondary', 'secondary']);
-  assert.equal(headerButtons.filter(button => button.props.label === '查看關注歷史').length, 1);
-  assert.equal(contents[2], null, 'No loading/status block should be inserted above ordinary reading');
-  refreshNodes(tree)[0].node.props.onPress();
-  state.actions.refresh();
-  assert.equal(o.timers.size, 1, 'Repeated clicks cannot start a second read');
+  assert.deepEqual(headerButtons.map(button => button.props.label), ['查看關注歷史']);
+  state.actions.refresh(); state.actions.refresh();
+  assert.equal(o.timers.size, 1, 'Repeated requests cannot start a second read');
   state = o.render(); tree = v.render([{ model: state.model, actions: state.actions }]);
-  assert.deepEqual(state.model.page, pageBefore, 'Reading content remains available while fetching');
-  assert.equal(state.model.page.concerns, pageBefore.concerns, 'The ordinary read keeps the same concern projection during loading');
+  assert.deepEqual(state.model.page, pageBefore);
+  assert.equal(state.model.page.concerns, pageBefore.concerns);
   assert.equal(state.model.load, 'loading');
-  assert.equal(refreshNodes(tree)[0].node.props.disabled, true);
-  assert.deepEqual(refreshNodes(tree)[0].path, pathBefore);
-  assert.equal(tree.props.children[2], null);
-  assert.equal(byId(tree, 'growth-refresh-status')[0].props.children, '正在讀取關注…');
+  assert.equal(refreshNodes(tree).length, 0);
+  assert.equal(byId(tree, 'growth-refresh-status').length, 0);
+  assert.equal(byType(tree, 'Text').some(node => /正在讀取關注|已重新讀取/.test(String(node.props.children))), false);
   o.tick(); state = o.render(); tree = v.render([{ model: state.model, actions: state.actions }]);
-  assert.deepEqual(state.model.page, pageBefore, 'A read must not write or disable any source data');
-  assert.equal(state.model.notice, '已重新讀取');
+  assert.deepEqual(state.model.page, pageBefore);
   assert.equal(state.model.load, 'ready');
-  assert.deepEqual(refreshNodes(tree)[0].path, pathBefore);
-  assert.equal(refreshNodes(tree).length, 1);
-  assert.equal(tree.props.children[2], null);
-  assert.equal(byId(tree, 'growth-refresh-status')[0].props.children, '已重新讀取');
+  assert.equal(refreshNodes(tree).length, 0);
+  assert.equal(byType(tree, 'StatusAnnouncement').some(node => node.props.message === '已重新讀取'), false);
 });
 
 test('selection, tab and newer reading position are not reset by refresh completion', () => {
@@ -198,7 +190,7 @@ test('lost access cancels in-flight reads and clears private data without restor
   assert.equal(state.model.dirty, false);
   assert.equal(byType(tree, 'GrowthConcernTimeline').length, 0);
   assert.equal(byType(tree, 'UnderlineTabs')[0].props.value, 'concerns');
-  assert.equal(refreshNodes(tree)[0].node.props.disabled, true);
+  assert.ok(refreshNodes(tree).every(({ node }) => node.props.disabled));
 });
 
 test('failed reads and viewer permission remain explicit and keep a single refresh control', () => {
@@ -206,11 +198,13 @@ test('failed reads and viewer permission remain explicit and keep a single refre
   state.actions.refresh(); o.render(); o.tick(); state = o.render();
   let tree = view(state.model, state.actions).render();
   assert.equal(state.model.load, 'error'); assert.equal(state.model.locked, true);
-  assert.equal(refreshNodes(tree).length, 1); assert.ok(tree.props.children[2]);
+  assert.equal(refreshNodes(tree).length, 1); assert.ok(byType(tree, 'Text').some(node => /讀取/.test(String(node.props.children))));
   const viewer = owner({ ...child, accessRole: 'viewer' }); const readonly = viewer.render();
   tree = view(readonly.model, readonly.actions).render();
   assert.equal(readonly.model.page.canManage, false); assert.equal(readonly.model.locked, true);
-  assert.equal(refreshNodes(tree)[0].node.props.disabled, false, 'Viewers can still refresh readable data');
+  assert.equal(refreshNodes(tree).length, 0, 'Normal read-only pages do not need a reload control');
+  const failedViewer = { ...readonly.model, load: 'error' };
+  assert.equal(refreshNodes(view(failedViewer, readonly.actions).render())[0].node.props.disabled, false, 'Viewers can retry failed readable data');
   assert.ok(byType(tree, 'Text').some(node => String(node.props.children).includes('目前只有閱讀權限')));
 });
 
