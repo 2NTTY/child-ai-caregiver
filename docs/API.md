@@ -89,7 +89,8 @@ INT-W02 增補：`GET／POST /api/children/:childId/agent/policy` 管理本人�
 
 `GET /agent/notes?query=…&afterId=…` 返回 `{notes:{items,nextAfterId}}`；是本人普通交代的權威來源，不複製成已確認事實。`POST /agent/notes/:id/delete` 需 `operationId／expectedVersion／confirmDelete:true`。`GET /agent/actions?runId=…` 返回 `{receipts}`，只讀本人／孩子原運行的已提交操作；收據含資源 ID、版本、保存／排程／終態及通知授權狀態，不以模型文字推定成功。上述路徑均以 `/api/children/:childId` 為前綴並重核 session；未套用 migration 025 不啟用新操作。
 
-容量契約增補：工具選擇以當前本人指令為主，只有明確短延續語才參考上一則本人訊息，不把助手回覆或無關舊意圖疊入；明確待辦標題／內容屬資料，禁止通知等子句不會僅因關鍵字開啟該工具。多個正向意圖保留，工具選擇從不代表授權。gateway 的完整 contents／config 邏輯 JSON 按運行共用的 inputCharacters 上限檢查（UTF-16 字元，不等於 SDK 後續加入固定設定後的 HTTP body 大小或 token 數）。互動 Agent 由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 設定，預設 64,000、允許 32,000–64,000；背景仍為 32,000。原 P1 AI_MAX_INPUT_CHARACTERS 與模型次數／輸出／時間及配額不因此改變。
+<a id="agent-input-capacity"></a>
+容量契約增補：既有「當前指令＋短延續詞」工具選擇是待替代實作；P2-A01 以[語義工具契約](#p2-agent-service)取代能力閘，授權仍由 Server 判定，資料正文不升格為指令。gateway 的完整 contents／config 邏輯 JSON 按運行共用的 inputCharacters 上限檢查（UTF-16 字元，不等於 SDK 後續加入固定設定後的 HTTP body 大小或 token 數）。互動 Agent 由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 設定，預設 64,000、允許 32,000–64,000；背景仍為 32,000。原 P1 AI_MAX_INPUT_CHARACTERS 與模型次數／輸出／時間及配額不因此改變。
 
 `read_context` 在整體 request 剩餘容量內只給一份完整、有序的原訊息前綴；`privateSummaryInput.messageIds` 引用同次提供的原文，舊摘要只提供一次。明示 omitted／more／complete，不能把未讀部分說成已摘要。Server 對摘要批次重新核對 previousVersion、basis 及連續前綴 coverage，來源改變仍拒絕。固定 metadata 放不下時明示 context_input_limit，不暗刪事實或任務；原生工具協定／signatures 不被截斷。
 
@@ -121,7 +122,7 @@ INT-W03 增補 `allowRecordCorrections`，既有政策及未提供欄位預設 f
 
 共用 worker 以 pg-boss 原生每週／每日排程檢查固定、經條款核對的來源；job 只帶 watch ID、配置版本及 worker 世代。暫停、還原或配置失效後不抓取，網絡等待不持有 SQL 交易；回寫前再次核對。`knowledge-refresh.mjs` 只供主機操作者使用，沒有新增 Web 路由或模型可調用的管理工具。
 
-抓取結果是公共來源觀察資料，並非已發布知識。首次／變更內容須經操作者核對，將 observation hash 綁定至既有 reviewed version，再沿用有限 embedding／publish；hash 未變不重算向量，受影響片段以既有 embedding hash 去重。已登記來源的觀察版本不符、停用或 404／410 均不供引用；重新啟用或登記定義改變時，同一交易內撤銷舊內容批准，即使再改回原設定也不自動恢復。暫時抓取失敗保留先前內容及成功查核時間。候選新聞不自動寫入家庭事實或任務。
+抓取結果是公共來源觀察資料，並非已發布知識。P2-A04 在這個邊界增加語義核對與依政策自動發布，未接入前不把人工 hash 批准當成新門檻已完成。既有 S10-W02 實作中，首次／變更內容須經操作者核對，將 observation hash 綁定至既有 reviewed version，再沿用有限 embedding／publish；hash 未變不重算向量，受影響片段以既有 embedding hash 去重。已登記來源的觀察版本不符、停用或 404／410 均不供引用；重新啟用或登記定義改變時，同一交易內撤銷舊內容批准，即使再改回原設定也不自動恢復。暫時抓取失敗保留先前內容及成功查核時間。候選新聞不自動寫入家庭事實或任務。
 
 `KnowledgeEvidence.checkedAt` 保持人工核對時間；新增 `lastSuccessfulCheckAt` 表示成功來源抓取，未建立證據為 null。來源發布／修訂時間另存，缺日期不代填；近期資訊只取已核對發布、七日內且 24 小時內成功查核的項目。CHP／RTHK 來源只容許主機操作者明確使用 internal audience；公開 store 預設排除，usageScope 不由模型或瀏覽器選擇。這些 metadata 檢查不等於語義支持核對。操作與待驗項見 [P2_KNOWLEDGE](P2_KNOWLEDGE.md#source-refresh)。
 
@@ -606,3 +607,18 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 有觀察事件的舊版 concern:<id> 聚合來源只在讀取時用原算法建立臨時校驗投影，以原ID／版本／文字核對既有快照；不持久保存另一份資料、不放入新生成或新sourceBasis。舊來源仍有效時可按原同版讀取／PDF規則查看，但因來源模型更新而stale時須整理後才作需最新版本的操作；來源更正、刪除及撤權仍遮蔽。新觀察来源使用穩定 concern:<id>:observation:<eventId>，authority仍歸原關注資源，不放寬舊資料可見性。完全沒有觀察事件的關注保留原 concern:<id> 未提供日期來源及既有basis規則，不屬上述退役聚合。
 
 Agent 透過 read_family_documents／generate_family_document／change_family_document 使用同一服務。生成只接受用途／期間等結構化參數，不接受模型自由撰寫家庭正文；真實資源 ID／版本及操作收據才代表已保存。
+
+<a id="p2-agent-service"></a>
+## P2 增補接口邊界
+
+本節為後續工作包的必要語義，不宣稱新增 HTTP 路由已實作；具體 wire 型別隨各包接既有服務。產品及驗收見 [SPEC](../SPEC.md#p2-agent-service)。
+
+- **能力目錄／載入：**Server 依入口、身份／授權及事件核定可用集合，提供簡短能力描述及核心讀取／搜尋／結果工具；模型以原生 function calling 選擇所需集合，再由 ADK 繼續循環。不得以最後一句／延續詞 regex 篩掉能力。載入不等於授權，任何未知／非法工具仍拒絕並計入上限。
+- **工作／歷史／原文讀取：**接受受權資源 ID、查詢及有界游標／範圍；返回實際資源版本、已讀範圍、完整度、續讀位置及限制原因。授權／資料庫錯誤與成功空結果分開。通用工作保存目標／焦點／問題／資源／結果，不另造任務副本或固定流程。
+- **操作／確認：**沿 expectedVersion、operationId、原訊息／工具及收據。跨輪確認必須能核對原提問、使用者回應、參數／對象及資源／授權版本；模糊、多候選、取消或舊版返回需要重新核對，不能由 confirmed:true 放行。相同已提交操作返回原收據；unknown 先查原操作，取消不宣稱已撤回外部接受結果。
+- **文件讀寫：**提供目錄／穩定節點 ID、固定版本範圍閱讀及局部新增／替換／刪除／移動。寫入含 documentId、expectedVersion、opId、具體 patch；交易核對後回傳保存版本與變更片段。版本衝突讀回再處理，不整份覆蓋；沒有讀全須明示。歸檔／歷史分頁，恢復沿原文件新版本。
+- **知識搜尋／擴讀：**query 保留必要語義及未知精度，Server 決定適用／權限過濾；SQL 先篩選排名及有界取回，RRF 去重。回傳穩定來源／片段／版本、章節頁碼、適用條件、核對及發布狀態、降級／不完整狀態及可續讀位置。同版本上下文擴讀也有界。引用須指實際返回的支持片段；embedding 失敗的關鍵詞降級不算向量驗收。
+- **範圍及衍生輸出：**讀取、摘要、文件及背景任務均核對來源／目的地，保留 coverage／版本／可見範圍；私人材料不擴至公共或共享。更正／撤權／失效時刷新相關 owner／候選／報告狀態；metadata 更新不能成為另一份正文權威。
+- **成長／報告：**日常讀取不生成；完整期間工作回傳固定期間、分批進度／coverage、來源版本及同版 PDF 引用，部分結果不稱完整。期間資料增多不以總數超限全失敗，也不隱藏未知日期。
+- **帳戶／資料退出：**復用 Better Auth 驗證／找回／會話原生機制；邀請單次資格與本人資料空間分開。下載／刪除需本人身份及相應具體確認，返回可追蹤狀態與保留政策；不在對話或模型參數傳 key／找回憑據。
+- **成本與結果：**讀取、工具載入、模型補查／修正／收尾仍在既有 run 預算；完整 HTTP／工具協定不靜默截斷。超限回傳已提交／未完成／unknown 與可接續工作，不自動新 run 或提高配額。前端只根據正式收據與目前資源顯示成功。

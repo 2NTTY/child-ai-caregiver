@@ -1,0 +1,21 @@
+{
+  "package": "DOC-P2-AGENT",
+  "base": "218625b65179dee196ce786cf1fc75f775f3a8ac",
+  "scope": "documentation only; no product acceptance",
+  "checks": {
+    "addedLocalLinks": 34,
+    "explicitPackageNodes": 60,
+    "missingLinksOrAnchors": 0,
+    "duplicateAnchors": 0,
+    "removedExistingAnchors": 0,
+    "missingExplicitDependencies": 0,
+    "dependencyCycles": 0,
+    "diffCheck": "passed",
+    "primaryReview": "passed",
+    "worklogAppendOnly": true
+  },
+  "productTests": "not run; not necessary for documentation",
+  "deployment": "unchanged",
+  "subagents": 0,
+  "recordedAt": "2026-10-07T19:04:06.628Z"
+}

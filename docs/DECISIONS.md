@@ -270,3 +270,16 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 - 產品政策：對話是主要操作入口；使用者明確的低風險指令在授權充分時可直接執行，普通記錄自動保存另有本人／孩子預授權。重要資料、刪除、擴大共享及越出授權仍確認；待確認事項持久保存。取代「所有操作必須逐次接受候選」作為最終體驗的假設，不把目前候選 API 冒稱已有新政策。
 - 範圍：沿用 Prompt Pack、ADK、既有 P2 業務服務及美術；新增關注鏈、多份準備文件、報告／PDF、私人來源對話能力按 INT 依賴落實。先接現有能力，未具備的後端明示缺口，不以相似 API 或模型說法替代收據；P3 真機仍未啟動。
 - 驗證與取捨：只做必要登入／Agent／同源同步／持久化／隔離／原操作恢復及新增能力代表路徑；不用 Computer Use，不重跑全部預覽矩陣。原 P2 完成證據不改寫；實際部署與尚未接線功能只依 PLAN 及固定版本驗收記錄判斷。
+
+<a id="adr-018"></a>
+## ADR-018 — P2 完整 Agent 與邀請制穩定單人 Web 服務
+
+- 日期／依據：2026-10-08，使用者定案完整 Agent 總計劃，要求先寫 PLAN、核對遠端 master 與其他聊天，依工作包實作；本次先落需求及契約，不將目標當成果。
+- 決定：P2 增補以 GCP 邀請制、可保存真實資料、單人直接使用為門檻。平台提供基本 AI，BYOK 可選；不要求先建立家庭或配置雲端。主要流程是自然交代、查證與辦事、回報真結果、同源查閱及適時接續。保留現有 ADK、業務服務、前端設計、美術和 Prompt Pack。
+- Agent 方法：拆除最後一句關鍵詞／短延續詞作能力開關，使用原生語義選工具及按需工具集合；程式保證權限、確認、版本、收據及成本。提示詞引導自然具體確認，Server 綁定操作／對象／版本，不能以模型自報或含糊「好」取代同意。通用工作保存目標、問題及結果，不預寫育兒流程；不以多 Agent 或新框架作目的。
+- 檢索及知識：沿向量＋關鍵詞 RRF，必要改寫／補查及同版本上下文閱讀；SQL 先授權與適用過濾、限量，長文／歷史有界續讀並標 coverage。收集與發布時核對官方重要變更的含義，不能只看 hash／格式；通過政策才發布，不確定保留候選。私有搜尋、摘要與輸出遵守同一來源／分享邊界。
+- 真正成果：同一文件可按穩定節點局部修改／續讀，版本衝突不整份覆蓋；歸檔不佔終身容量。成長日常同源投影，完整期間分批整理及同版 PDF；來源變更標失效。持久 worker 以相關事件觸發，沒有新條件不空轉模型。
+- 替代範圍：ADR-010／011 的既有問答、安全、引用及最小向量 RAG 邊界保留；P2 新完成門檻不再以多人協作作必經體驗。ADR-017 的正式前端與低風險直接操作保留並補完整讀寫／接續。S09-W03、S07-W01／W02、S10-W03、S14-W02、S15-W02 僅前移本目標所需 Web／知識／報告／恢復部分；原錨點與剩餘 Android、自選 Server、完整搬遷、大型管理及非核心分析留後續，對照只維護 [PLAN](../PLAN.md#p2-agent-service)。舊 ADR／WORKLOG／已完成包不回寫。
+- 服務取捨：沿 Better Auth 與單 VM Compose，補邀請、電郵驗證／找回／會話撤銷、真實資料說明、資料下載／退出、必要備份恢復及告警。不承諾高可用，不借新計劃提高配額／延長主機／增加外發授權；部署前核定規模及預算。
+- 方法依據：沿 [ADK 2.1.0 原生工具集合](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/agents/llm_agent.ts)，借鑑 [Codex 工具循環](https://developers.openai.com/blog/codex-as-a-platform)、[OpenHands 持久狀態](https://docs.openhands.dev/sdk/guides/convo-persistence)、[查詢轉換](https://developers.llamaindex.ai/python/framework/optimizing/advanced_retrieval/query_transformations/)及[上下文擴展](https://developers.llamaindex.ai/python/examples/node_postprocessor/metadatareplacementdemo/)，復用 [Better Auth email 流程](https://better-auth.com/docs/concepts/email)及成熟 PDF 解析器。這些是方法／文件依據，不是本產品新能力實測；實際版本與最小相容檢查隨觸發包記錄，不為參考而引入所有框架。
+- 驗收：只作必要連貫成果驗證，復用有效證據，不用 Computer Use，不把 mock、unit 或工具存在當 Agent 完成。主模型親寫權威與提示詞；普通工程按明確方案交 Sol。文件定案與各包完成、真服務、部署分開記錄。
