@@ -1,76 +1,220 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { productToolSelection } from "../server/product-tool-selection.ts";
+import type { LlmRequest, LlmResponse } from "@google/adk";
+import { FinishReason } from "@google/genai";
+import { z } from "zod";
+import { createAgentRuntime } from "../server/agent-runtime.ts";
+import type { AgentRunInput, AgentTool } from "../server/agent-runtime.ts";
+import { AgentCapabilitySelection } from "../server/agent-tool-capabilities.ts";
+import type { AgentToolCatalog } from "../server/agent-tool-capabilities.ts";
+import { createAgentActionTools } from "../server/agent-action-tools.ts";
+import type { AgentActionsStore } from "../server/agent-actions-store.ts";
+import type { AgentActionReceipt, AgentDirectAction } from "../src/shared/agent-actions.ts";
+import { loadAgentPrompt } from "../server/agent-prompt.ts";
+import { PRODUCT_AGENT_TOOL_CATALOG } from "../server/product-agent-capabilities.ts";
+import { readAiConfig } from "../server/ai-config.ts";
 
-const t5 = "請只處理這個新的純合成任務。替目前的合成验收小星 A 建立普通待辦『[合成驗收 T5] 準備故事書』，分派給我本人 dot 專用驗收帳戶 20261006，預定完成時間是2026年10月8日香港時間19:30。內容是『純合成驗收：把故事書放進交接袋』。只記在站內待辦；不要任何到期提示、外部通知、電話、訊息或背景跟進。";
-test("a new explicit task uses current user intent without title data, negative notifications or previous fact instructions", () => {
-  const selected = productToolSelection(["請保存這則重要健康事實候選，待我核對，不要發送通知。", t5]);
-  assert.equal(selected.includeDocuments, false); assert.equal(selected.includeConcerns, false); assert.equal(selected.includeContact, false);
-  assert.equal(selected.includeTaskProposals, true);
-  assert.deepEqual(selected.ordinaryToolNames, ["read_care_records", "read_private_instructions", "create_ordinary_reminder", "change_ordinary_reminder"]);
+const inputs = ["run", "scope", "conversation", "context", "evidence", "capabilities"];
+const call = (name: string, args: Record<string, unknown> = {}): LlmResponse => ({ finishReason: FinishReason.STOP,
+  content: { role: "model", parts: [{ functionCall: { id: "call-" + name, name, args }, thoughtSignature: "opaque-native-signature" }] } });
+const batch = (...responses: LlmResponse[]): LlmResponse => ({ finishReason: FinishReason.STOP,
+  content: { role: "model", parts: responses.flatMap(response => response.content!.parts!) } });
+const load = (capabilities = ["writes"]) => call("load_capabilities", { capabilities });
+const present = () => call("present_answer", { text: "Synthetic final" });
+const natural = (): LlmResponse => ({ finishReason: FinishReason.STOP,
+  content: { role: "model", parts: [{ text: "Unvalidated synthetic closing text" }] } });
+const instructionText = (request: LlmRequest) => {
+  const content = request.config?.systemInstruction as { parts?: { text?: string }[] } | string;
+  return typeof content === "string" ? content : content?.parts?.map(part => part.text ?? "").join("\n") ?? "";
+};
+const metadata = (request: LlmRequest) => JSON.parse(instructionText(request).split("Server runtime metadata:\n").at(-1)!) as {
+  capabilities: string[];
+  capabilityCatalog: { loader?: string; loaded: string[]; groups: { id: string; toolNames: string[] }[] };
+};
+const catalog: AgentToolCatalog = { coreToolNames: ["read_context"], loader: PRODUCT_AGENT_TOOL_CATALOG.loader,
+  groups: [{ id: "writes", description: "Synthetic authorized writes", toolNames: ["save_item"], promptModuleIds: ["module.capture-confirmation"] },
+    { id: "unavailable", description: "Unavailable synthetic service", toolNames: ["missing_service"], promptModuleIds: ["module.summary-report"] }] };
+
+function setup(generate: (request: LlmRequest, index: number, signal: AbortSignal) => LlmResponse | Promise<LlmResponse>) {
+  let accepted = false, writes = 0, finalized = 0;
+  const requests: LlmRequest[] = [];
+  const terminal: AgentTool = { name: "present_answer", terminal: true, description: "Validate a synthetic answer.",
+    parameters: z.object({ text: z.string() }), authorize: async () => true,
+    execute: async () => { accepted = true; return { status: "succeeded" }; } };
+  const write: AgentTool = { name: "save_item", description: "Save one synthetic item.", parameters: z.object({}),
+    authorize: async () => true, execute: async () => { writes++; return { status: "succeeded", reference: "saved-once" }; } };
+  const read: AgentTool = { name: "read_context", description: "Read synthetic context.", parameters: z.object({}),
+    authorize: async () => true, execute: async () => ({ status: "succeeded", data: { synthetic: true } }) };
+  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+    usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async (request, signal) => {
+      const index = requests.length;
+      requests.push(structuredClone({ ...request, toolsDict: {} }));
+      return generate(request, index, signal);
+    } } });
+  const input: AgentRunInput = { scope: { userId: "synthetic-user", childId: "synthetic-child", workspaceId: "synthetic-workspace",
+    authorizationVersion: "1", dataVersion: "1" }, recipeId: "product-interactive", trigger: { kind: "interactive", reference: "synthetic-message" },
+    availableInputs: inputs, messages: [{ role: "user", text: "Synthetic continuation" }], tools: [read, write, terminal], toolCatalog: catalog,
+    authorize: async () => true, presentationRepair: "present_answer",
+    finalize: async () => { finalized++; return accepted ? "Server validated presentation" : null; } };
+  return { runtime, input, terminal, write, read, requests, writes: () => writes, finalized: () => finalized };
+}
+
+test("semantic continuation loads actual services and trusted modules before the real action handler", async () => {
+  const initial = await loadAgentPrompt("product-interactive", "tool_cycle", inputs);
+  const expanded = await loadAgentPrompt("product-interactive", "tool_cycle", inputs, ["module.task-intents", "module.summary-report", "module.task-intents"]);
+  assert.equal(expanded.moduleIds.filter(id => id === "module.task-intents").length, 1);
+  assert.ok(!initial.moduleIds.includes("module.task-intents"));
+  await assert.rejects(loadAgentPrompt("product-interactive", "tool_cycle", inputs, ["../../AGENTS.md"]));
+  const operations: { runId: string; callId: string; action: AgentDirectAction }[] = [];
+  const receipt: AgentActionReceipt = { id: "synthetic-receipt", runId: "synthetic-run", kind: "create_self_task",
+    resource: { kind: "task", id: "synthetic-task", version: 1 }, state: "scheduled", notification: "not_authorized", channels: [],
+    createdAt: "2026-10-08T00:00:00.000Z" };
+  const actions = { execute: async (_scope, runId, callId, action) => {
+    operations.push({ runId, callId, action }); return { ...receipt, runId };
+  } } as AgentActionsStore;
+  const s = setup((request, index) => {
+    const meta = metadata(request);
+    if (!index) {
+      assert.ok(instructionText(request).includes(initial.text));
+      assert.deepEqual(meta.capabilityCatalog.loaded, []);
+      assert.ok(!Object.hasOwn(request.toolsDict, "create_ordinary_reminder"));
+      assert.deepEqual(meta.capabilityCatalog.groups.find(group => group.id === "documents")!.toolNames, ["read_care_summary"]);
+      assert.ok(!meta.capabilityCatalog.groups.some(group => ["concerns", "private_sources", "contact"].includes(group.id)));
+      assert.equal(request.contents.at(-1)!.parts![0]!.text, "就按剛才的安排處理。");
+      assert.ok(request.contents.some(content => content.parts?.some(part => part.text?.includes("待辦"))));
+      return load(["tasks", "documents"]);
+    }
+    assert.ok(instructionText(request).includes(expanded.text));
+    assert.deepEqual(meta.capabilityCatalog.loaded, ["tasks", "documents"]);
+    assert.ok(Object.hasOwn(request.toolsDict, "create_ordinary_reminder"));
+    assert.ok(!Object.hasOwn(request.toolsDict, "save_ordinary_record"));
+    const parts = request.contents.flatMap(content => content.parts ?? []);
+    assert.ok(parts.some(part => part.thoughtSignature === "opaque-native-signature"));
+    assert.ok(parts.some(part => part.functionResponse?.id === "call-load_capabilities"));
+    if (index === 1) return batch(call("create_ordinary_reminder", {
+      sourceQuote: "就按剛才的安排處理。", expectedPolicyVersion: 1, title: "帶故事書", details: "放入袋內",
+      dueAt: "2026-10-09T11:30:00.000Z", timeZone: "Asia/Hong_Kong",
+    }), load(["tasks", "documents"]));
+    assert.equal(index, 2);
+    assert.ok(parts.some(part => part.functionResponse?.response?.reference === receipt.id));
+    return present();
+  });
+  s.input.toolCatalog = PRODUCT_AGENT_TOOL_CATALOG;
+  s.input.messages = [{ role: "user", text: "明天晚上七時半建立帶故事書的待辦，並核對七日摘要。" },
+    { role: "model", text: "已理解內容與時間，待按現有授權處理。" }, { role: "user", text: "就按剛才的安排處理。" }];
+  s.input.tools = run => [...createAgentActionTools(actions, run, s.input.authorize), s.read, s.terminal,
+    { name: "read_care_summary", description: "Read a synthetic summary.", parameters: z.object({}), authorize: async () => true,
+      execute: async () => ({ status: "succeeded" }) }];
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, "completed", JSON.stringify(result));
+  assert.equal(operations.length, 1); assert.equal(operations[0]!.runId, result.runId);
+  assert.equal(operations[0]!.callId, "call-create_ordinary_reminder"); assert.equal(operations[0]!.action.kind, "create_self_task");
+  assert.equal(s.finalized(), 1);
+  assert.deepEqual(result.counts, { modelCalls: 3, toolCalls: 4, queryEmbeddings: 0 });
+  assert.deepEqual(result.tools.map(tool => tool.status), ["succeeded", "succeeded", "succeeded", "succeeded"]);
 });
 
-test("positive multiple intents and unlabelled quoted requirements keep their capabilities", () => {
-  const selected = productToolSelection(["請建立待辦『帶書』，另請整理準備文件、追蹤持續關注，並發送通知。"]);
-  assert.equal(selected.includeDocuments, true); assert.equal(selected.includeConcerns, true); assert.equal(selected.includeContact, true);
-  assert.equal(selected.includeTaskProposals, true);
-  assert.equal(productToolSelection(["請建立待辦『帶書』，另請處理『整理準備文件』。"]).includeDocuments, true);
+test("capability loading is isolated across runs and never grants handler authorization", async () => {
+  const s = setup((request, index) => {
+    if (index === 0 || index === 2) {
+      assert.deepEqual(metadata(request).capabilityCatalog.loaded, []);
+      assert.ok(!Object.hasOwn(request.toolsDict, "save_item"));
+      assert.deepEqual(metadata(request).capabilityCatalog.groups.map(group => group.id), ["writes"]);
+      return load();
+    }
+    assert.deepEqual(metadata(request).capabilityCatalog.loaded, ["writes"]);
+    if (index === 3) return call("save_item");
+    if (index === 4) {
+      const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.name === "save_item")!.functionResponse!.response!;
+      assert.equal(response.status, "rejected"); assert.equal((response.data as Record<string, unknown>).code, "not_authorized");
+    }
+    return present();
+  });
+  assert.equal((await s.runtime.run(s.input)).status, "completed");
+  s.write.authorize = async () => false;
+  const result = await s.runtime.run({ ...s.input, scope: { ...s.input.scope, userId: "second-synthetic-user" } });
+  assert.equal(result.status, "completed", JSON.stringify(result)); assert.equal(s.writes(), 0);
+  assert.deepEqual(result.tools.map(tool => tool.status), ["succeeded", "rejected", "succeeded"]);
+  assert.deepEqual(result.counts, { modelCalls: 3, toolCalls: 3, queryEmbeddings: 0 });
 });
 
-test("literal prohibitions do not disable positive requests to remember or act without another question", () => {
-  assert.equal(productToolSelection(["不要忘記提醒我帶書"]).includeTaskProposals, true);
-  assert.equal(productToolSelection(["不用問我，直接建立待辦『帶書』"]).includeTaskProposals, true);
-  assert.equal(productToolSelection(["建立待辦『不要忘記整理文件與通知老師』"]).includeTaskProposals, true);
-  assert.equal(productToolSelection(["建立待辦『不要忘記整理文件與通知老師』"]).includeContact, false);
-  assert.equal(productToolSelection(["請記錄喝奶120ml，不要發送通知，也不要建立待辦。"]).includeTaskProposals, false);
-  assert.equal(productToolSelection(["請記錄喝奶120ml，不要發送通知，也不要建立待辦。"]).includeContact, false);
-  assert.ok(productToolSelection(["不要通知我但請記錄喝奶120ml"]).ordinaryToolNames.includes("save_ordinary_record"));
-  assert.equal(productToolSelection(["不用建立提醒但請整理成長報告"]).includeDocuments, true);
+test("illegal loader parameters and unloaded same-batch tools fail closed with counted attempts", async () => {
+  const s = setup((request, index) => {
+    assert.deepEqual(metadata(request).capabilityCatalog.loaded, []);
+    assert.ok(!Object.hasOwn(request.toolsDict, "save_item"));
+    if (!index) return load(["unavailable"]);
+    if (index === 1) return call("load_capabilities", { capabilities: ["writes"], extra: true });
+    assert.equal(index, 2);
+    return batch(load(), call("save_item"));
+  });
+  assert.throws(() => new AgentCapabilitySelection([s.read, s.write, s.terminal], { ...catalog, groups: [] }));
+  assert.throws(() => new AgentCapabilitySelection([s.read, s.write, s.terminal], { ...catalog,
+    loader: { ...catalog.loader, name: "save_item" } }));
+  assert.throws(() => new AgentCapabilitySelection([s.read, s.write, s.terminal], { ...catalog,
+    groups: [...catalog.groups, { ...catalog.groups[0]!, id: "duplicate_owner" }] }));
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "invalid_tool", JSON.stringify(result)); assert.equal(s.writes(), 0);
+  assert.equal(s.finalized(), 0);
+  assert.deepEqual(result.tools.map(tool => tool.status), ["rejected", "rejected"]);
+  assert.deepEqual(result.counts, { modelCalls: 3, toolCalls: 4, queryEmbeddings: 0 });
 });
 
-test("only short explicit references reuse prior user intent and neutral reads do not expose mutation groups", () => {
-  assert.equal(productToolSelection(["請建立待辦『帶書』", "就這樣"]).includeTaskProposals, true);
-  assert.equal(productToolSelection(["請建立待辦『帶書』", "改成明天19:30"]).includeTaskProposals, true);
-  const selected = productToolSelection(["請記錄奶量、建立待辦並通知我", "請核對目前資料"]);
-  assert.deepEqual(selected.ordinaryToolNames, ["read_care_records", "read_private_instructions"]);
-  assert.equal(selected.includeTaskProposals, false); assert.equal(selected.includeContact, false);
-  assert.equal(selected.includeDocuments, false); assert.equal(selected.includeConcerns, false); assert.equal(selected.includePrivateSources, false);
+test("cancellation after loading stops the same run before a business operation", async () => {
+  const controller = new AbortController();
+  const s = setup((request, index) => {
+    if (!index) return load();
+    assert.equal(index, 1); assert.ok(Object.hasOwn(request.toolsDict, "save_item"));
+    controller.abort(); return call("save_item");
+  });
+  s.input.signal = controller.signal;
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "cancelled", JSON.stringify(result)); assert.equal(s.writes(), 0);
+  assert.deepEqual(result.tools, []); assert.equal(s.finalized(), 0);
+  assert.deepEqual(result.counts, { modelCalls: 2, toolCalls: 1, queryEmbeddings: 0 });
 });
 
-test("modified ordinary-task clauses keep titles and details as data without selecting care records", () => {
-  for (const text of [
-    "請新增這個純合成普通待辦。為小星建立「整理繪本袋」。內容是「把繪本放入交接袋」。只在站內記錄，不要發送外部通知。",
-    "這項普通待辦請幫我安排，標題是「整理交接文件」，內容是「記錄奶量表放在袋內」。請只在站內保存此待辦。",
-    "麻煩幫小星新增一項明天要做的普通任務「準備故事書」，內容是「把交接文件放好」。僅在站內存檔即可。",
-  ]) {
-    const selected = productToolSelection([text]);
-    assert.equal(selected.includeDocuments, false, text);
-    assert.equal(selected.includeTaskProposals, true, text);
-    assert.ok(selected.ordinaryToolNames.includes("create_ordinary_reminder"));
-    assert.ok(selected.ordinaryToolNames.includes("change_ordinary_reminder"));
-    assert.ok(!selected.ordinaryToolNames.includes("save_ordinary_record"), text);
-    assert.ok(!selected.ordinaryToolNames.includes("revise_ordinary_record"), text);
-  }
+test("repeated capability loads remain monotonic and consume the shared tool limit", async () => {
+  const s = setup((request, index) => {
+    if (index) assert.deepEqual(metadata(request).capabilityCatalog.loaded, ["writes"]);
+    return batch(load(), load(), load());
+  });
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "tool_limit", JSON.stringify(result)); assert.equal(s.requests.length, 3);
+  assert.equal(s.writes(), 0); assert.equal(s.finalized(), 0);
+  assert.deepEqual(result.counts, { modelCalls: 3, toolCalls: 6, queryEmbeddings: 0 });
+  assert.equal(result.tools.length, 6); assert.ok(result.tools.every(tool => tool.status === "succeeded"));
 });
 
-test("task disposition does not erase explicit parallel care records or quoted instructions outside task labels", () => {
-  const task = "請新增這個普通待辦，建立「整理交接袋」，內容是「把文件放好」。只在站內記錄。";
-  for (const extra of ["另外記錄孩子喝奶120ml。", "另外記錄寶寶今日主動收好玩具。", "另外只在站內記錄孩子喝奶120ml。"]) {
-    const selected = productToolSelection([task + extra]);
-    assert.ok(selected.ordinaryToolNames.includes("save_ordinary_record"), extra);
-    assert.equal(selected.includeDocuments, false);
-    assert.equal(selected.includeTaskProposals, true);
-  }
-  assert.equal(productToolSelection([task + "另外請執行『整理準備文件』。"]).includeDocuments, true);
-  assert.ok(productToolSelection(["只在站內記錄寶寶今日微笑。"]).ordinaryToolNames.includes("save_ordinary_record"));
+test("presentation-only repair after a saved tool never reloads or replays business operations", async () => {
+  let repairChecked = false;
+  const s = setup((request, index) => {
+    if (!index) return load();
+    if (index === 1) return call("save_item");
+    if (index === 2) return natural();
+    assert.equal(index, 3);
+    assert.deepEqual(Object.keys(request.toolsDict), ["present_answer"]);
+    assert.deepEqual(request.config?.toolConfig, { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["present_answer"] } });
+    repairChecked = true;
+    throw new Error("Synthetic final provider failure");
+  });
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "unavailable", JSON.stringify(result)); assert.equal(result.text, null);
+  assert.equal(s.writes(), 1); assert.equal(s.finalized(), 0);
+  assert.equal(repairChecked, true);
+  assert.deepEqual(result.tools.map(tool => [tool.name, tool.status]), [["load_capabilities", "succeeded"], ["save_item", "succeeded"]]);
+  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 2, queryEmbeddings: 0 });
 });
 
-test("a labelled task cannot consume a separate quoted document, private source or contact intent", () => {
-  assert.equal(productToolSelection(["請新增普通待辦「帶書」，另外請建立「成長報告」。"]).includeDocuments, true);
-  assert.equal(productToolSelection(["請建立待辦「帶書」，另外新增「私人來源 https://example.com」。"]).includePrivateSources, true);
-  assert.equal(productToolSelection(["請建立待辦「帶書」，另外安排「聯絡老師」。"]).includeContact, true);
-  assert.equal(productToolSelection(["請建立待辦「帶書」並建立「成長報告」。"]).includeDocuments, true);
-  assert.equal(productToolSelection(["請新增普通待辦帶水樽。建立「成長報告」。"]).includeDocuments, true);
-  assert.equal(productToolSelection(["請新增普通待辦「帶書」，另外新增普通待辦「整理成長報告」。"]).includeDocuments, false);
-  assert.equal(productToolSelection(["請新增普通待辦「帶書」。標題是「準備故事書，整理交接袋」。內容是「將文件放好」。只在站內記錄。"]).includeDocuments, false);
+test("unknown loaded-tool outcomes stop without replay or a fresh run", async () => {
+  let executions = 0;
+  const s = setup((_, index) => {
+    if (!index) return load();
+    assert.equal(index, 1); return call("save_item");
+  });
+  s.write.execute = async () => { executions++; throw new Error("Synthetic uncertain side effect"); };
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "tool_unknown", JSON.stringify(result)); assert.equal(executions, 1);
+  assert.equal(s.requests.length, 2); assert.equal(s.finalized(), 0); assert.equal(result.text, null);
+  assert.deepEqual(result.tools.map(tool => tool.status), ["succeeded", "unknown"]);
+  assert.deepEqual(result.counts, { modelCalls: 2, toolCalls: 2, queryEmbeddings: 0 });
 });

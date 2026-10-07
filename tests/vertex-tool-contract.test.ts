@@ -3,7 +3,8 @@ import test from "node:test";
 import { FunctionTool } from "@google/adk";
 import { GoogleAuth } from "google-auth-library";
 import { createProductAgentTools } from "../server/product-agent-tools.ts";
-import { productToolSelection } from "../server/product-tool-selection.ts";
+import { PRODUCT_AGENT_TOOL_CATALOG } from "../server/product-agent-capabilities.ts";
+import { AgentCapabilitySelection } from "../server/agent-tool-capabilities.ts";
 import { createAgentConcernTools } from "../server/agent-concern-tools.ts";
 import { createAgentDocumentTools } from "../server/agent-document-tools.ts";
 import { createVertexAgentProvider } from "../server/agent-model-gateway.ts";
@@ -12,7 +13,7 @@ import { readAiConfig } from "../server/ai-config.ts";
 import type { AgentTool } from "../server/agent-runtime.ts";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 
-// Exact synthetic conversation that selected the failed request's capabilities.
+// Synthetic conversation retained as transport data, never as a tool selector.
 const messages = [
   "這是純合成驗收資料。請幫合成驗收小星 A 記下：2026年10月7日香港時間中午12點，他自己把黃色積木收回盒子。請保存為日常觀察記錄，標記「合成驗收 Agent A1」，不要建立待辦，也不要通知任何人。",
   "Agent 暫未能完成回覆；原訊息仍已保存。請查看運行狀態及未完成事項。",
@@ -38,21 +39,18 @@ function native(tool: AgentTool, execute: (args: Record<string, unknown>) => Pro
   return new FunctionTool({ name: tool.name, description: tool.description, parameters: tool.parameters.strict(), execute });
 }
 
-test("the exact ordinary-observation request selects concerns and serializes only documented Vertex schema fields", async context => {
+test("all Server capabilities serialize only documented Vertex schema fields", async context => {
   const budget = new AgentBudget();
   try {
-    const selected = productToolSelection(messages);
-    assert.equal(selected.includeConcerns, true);
-    assert.equal(selected.includeDocuments, false);
-    assert.equal(selected.includePrivateSources, false);
-    const tools = createProductAgentTools({ ...selected, run: { scope: {}, runId: "synthetic", budget },
+    const tools = createProductAgentTools({ includeDocuments: true, run: { scope: {}, runId: "synthetic", budget },
       memory: {}, tasks: {}, store: {}, knowledge: { createRun: () => ({}) }, authorize: async () => false,
       actions: {}, summary: {}, contact: {}, concerns: {}, sources: {}, documents: {}, growth: {},
     } as unknown as Parameters<typeof createProductAgentTools>[0]).tools;
-    assert.deepEqual(tools.map(tool => tool.name), ["read_context", "search_knowledge", "propose_fact", "stage_private_summary",
-      "read_care_records", "read_private_instructions", "save_ordinary_record", "revise_ordinary_record",
-      "read_concerns", "propose_concern", "propose_concern_change", "read_care_summary", "present_answer"]);
-    const declarations = tools.map(tool => native(tool)._getDeclaration()!);
+    assert.equal(tools.length, 28);
+    assert.deepEqual(tools.map(tool => tool.name).sort(), [...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames,
+      ...PRODUCT_AGENT_TOOL_CATALOG.groups.flatMap(group => group.toolNames)].sort());
+    const selection = new AgentCapabilitySelection(tools, PRODUCT_AGENT_TOOL_CATALOG);
+    const declarations = [...tools, selection.loader(async () => {})!].map(tool => native(tool)._getDeclaration()!);
     let calls = 0;
     context.mock.method(GoogleAuth.prototype, "getRequestHeaders", async () => new Headers({ authorization: "Bearer synthetic" }));
     context.mock.method(globalThis, "fetch", async (url: string | URL | Request, init: RequestInit) => {
@@ -61,7 +59,7 @@ test("the exact ordinary-observation request selects concerns and serializes onl
       const body = JSON.parse(String(init.body));
       assert.deepEqual(Object.keys(body.generationConfig).sort(), ["candidateCount", "maxOutputTokens", "thinkingConfig"]);
       const sent = body.tools.flatMap((tool: { functionDeclarations: { name: string; parameters: unknown }[] }) => tool.functionDeclarations);
-      assert.equal(sent.length, 13);
+      assert.equal(sent.length, 29);
       assert.deepEqual(sent.flatMap((tool: { name: string; parameters: unknown }) => contractIssues(tool.parameters, tool.name)), []);
       return Response.json({ candidates: [{ content: { role: "model", parts: [{ text: "synthetic" }] }, finishReason: "STOP" }] });
     });
@@ -108,7 +106,9 @@ test("the real product-interactive Runner request keeps its system configuration
     assert.equal(body.generationConfig.maxOutputTokens, 1024);
     assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, "MINIMAL");
     const declarations = body.tools.flatMap((tool: { functionDeclarations: { name: string; parameters: unknown }[] }) => tool.functionDeclarations);
-    assert.equal(declarations.length, 13);
+    assert.equal(declarations.length, 6);
+    assert.deepEqual(declarations.map((tool: { name: string }) => tool.name).sort(),
+      ["load_capabilities", "present_answer", "read_care_records", "read_context", "read_private_instructions", "search_knowledge"]);
     assert.equal(declarations.some((tool: { name: string }) => ["read_contact_options", "contact_caregiver"].includes(tool.name)), false);
     assert.deepEqual(declarations.flatMap((tool: { name: string; parameters: unknown }) => contractIssues(tool.parameters, tool.name)), []);
     return Response.json({ candidates: [{ content: { role: "model", parts: [{ functionCall: { id: "terminal-call", name: "present_answer",
@@ -121,7 +121,8 @@ test("the real product-interactive Runner request keeps its system configuration
     availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
     context: sourceContext,
     messages: messages.map((text, index) => ({ role: index === 1 ? "model" : "user", text })), authorize: async () => true,
-    tools: run => { productTools = createProductAgentTools({ ...productToolSelection(messages), run,
+    toolCatalog: PRODUCT_AGENT_TOOL_CATALOG,
+    tools: run => { productTools = createProductAgentTools({ includeDocuments: true, run,
       memory: {}, tasks: {}, store: {}, knowledge: { createRun: () => ({}) }, authorize: async () => true,
       actions: {}, summary: {}, contact: {}, concerns: {}, sources: {}, documents: {}, growth: {},
     } as unknown as Parameters<typeof createProductAgentTools>[0]); return productTools.tools; },

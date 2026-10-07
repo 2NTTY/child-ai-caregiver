@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -203,7 +203,7 @@
     {
       "id": "module.product-tools",
       "path": "modules/product-tools.md",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "requires": [
         "core.tool-use",
         "core.output",
@@ -437,10 +437,7 @@
         "domain.childcare-hk.care-workflows",
         "module.knowledge-answering",
         "module.chat",
-        "module.capture-confirmation",
-        "module.task-intents",
-        "module.product-tools",
-        "module.memory-maintenance"
+        "module.product-tools"
       ],
       "outputModes": [
         "tool_cycle"
@@ -454,7 +451,8 @@
         "capabilities"
       ],
       "plannedPackages": [
-        "S11-W02"
+        "S11-W02",
+        "P2-A01"
       ],
       "missingCapability": "缺權限、引用、明確确认或目前可用工具時停止相關操作，回報限制。"
     },
