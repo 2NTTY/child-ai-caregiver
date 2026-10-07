@@ -30,7 +30,7 @@ const label = (tree, name) => nodes(tree).find(item => item.props?.label === nam
 const content = tree => !tree ? '' : Array.isArray(tree) ? tree.map(content).join(' ') : typeof tree === 'object' ? content(tree.props?.children) : String(tree);
 const theme = load('src/theme.ts');
 const presentation = load('src/components/chat/chat-presentation.ts');
-function load(relative) {
+function load(relative, suffix = "") {
   const filename = path.join(root, relative);
   const output = ts.transpileModule(readFileSync(filename, 'utf8'), { fileName: filename, compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
   const module = { exports: {} };
@@ -42,6 +42,8 @@ function load(relative) {
     : name.endsWith('/theme') ? theme
     : name.endsWith('/chat-presentation') ? presentation
     : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/CareProfileDomains') ? { useProductionCareProfile: () => null }
+    : name.endsWith('/CareWorkspace') ? { useCareWorkspace: () => null }
     : name.endsWith('/SettingsDomains') ? { useProductionSettingsDomains: () => ({ modelSettings: { model: {}, actions: {} } }), ProductionChannelSettings: 'ProductionChannelSettings', ProductionNotificationPreferences: 'ProductionNotificationPreferences' }
     : name.endsWith('/PreviewNavigationGuard') ? { usePreviewNavigation: () => action => action(), usePreviewLeaveGuard: (...args) => current.guards.push(args) }
     : name.endsWith('/AppDialog') ? { AppDialog: dialog }
@@ -55,7 +57,7 @@ function load(relative) {
     : name.endsWith('/routes') ? { isProductionRouteConnected: () => true }
     : name.endsWith('/branding') ? { brand: { name: '育伴港' } }
     : new Proxy({}, { get: (_target, key) => String(key) });
-  new Function('require', 'module', 'exports', output)(localRequire, module, module.exports);
+  new Function('require', 'module', 'exports', output + suffix)(localRequire, module, module.exports);
   return module.exports;
 }
 function render(component, props = {}, instance) {
@@ -197,4 +199,33 @@ test('authorization keeps private-note confirmation and child-scoped dirty/pendi
   state.pending = { kind: 'policy', input: { recordKinds: [], reminderBindings: [], expectedVersion: 1 } };
   const pending = render(AgentAuthorization); assert.equal(pending.guards[0][1], true);
   assert.ok(label(pending.tree, '明確重試原操作'));
+});
+
+
+test('fresh Chat automatically requests pending discovery and shows the loaded cross-conversation candidate badge', () => {
+  base(); let view = chat(); view.effects.forEach(fn => fn());
+  assert.deepEqual(calls, [['pending']]);
+  assert.ok(label(view.tree, '活動 · 尚未讀取'));
+  production.agentPending = { state: 'loading', entries: [] }; rerender(view);
+  assert.ok(label(view.tree, '活動 · 讀取中'));
+  production.agentPending = { state: 'failed', entries: [] }; rerender(view);
+  assert.ok(label(view.tree, '活動 · 讀取失敗'));
+  production.agentPending = { state: 'ready', entries: [{ runId: 'older-conversation', proposal: { id: 'pending-fact', status: 'pending', expiresAt: '2099-01-01T00:00:00Z' } }] };
+  rerender(view); assert.ok(label(view.tree, '活動 · 待確認'));
+  production.agentPending = { state: 'ready', entries: [] }; rerender(view); assert.ok(label(view.tree, '活動'));
+  base(); production.chatState.online = false; view = chat(); view.effects.forEach(fn => fn()); assert.deepEqual(calls, []);
+});
+
+test('Care and activity never describe unread, loading, failed or denied discovery as empty', () => {
+  const { AgentPendingReview } = load('src/screens/careScreen.tsx', '\nexports.AgentPendingReview = AgentPendingReview;');
+  base(); production.online = true;
+  for (const state of ['idle', 'loading', 'failed', 'denied', 'ready']) {
+    production.agentPending = { state, entries: [] };
+    const care = content(render(AgentPendingReview).tree);
+    const activity = content(render(AgentConversation, { visible: true, onDismiss: noop, onOpenSettings: noop, onReloadChat: noop, reloadDisabled: false }).tree);
+    if (state === 'ready') { assert.match(care, /沒有待確認/u); assert.match(activity, /沒有待確認/u); }
+    else { assert.doesNotMatch(care, /沒有待確認/u); assert.doesNotMatch(activity, /沒有待確認/u); }
+    if (state === 'idle') { assert.match(care, /尚未讀取/u); assert.match(activity, /尚未讀取/u); }
+    if (state === 'denied') { assert.match(care, /沒有權限/u); assert.match(activity, /沒有權限/u); }
+  }
 });
