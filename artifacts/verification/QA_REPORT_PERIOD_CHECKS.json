@@ -1,0 +1,81 @@
+{
+  "package": "QA-REPORT-PERIOD",
+  "recordedAt": "2026-10-07T09:45:00Z",
+  "baseCommit": "0a39e018dc138b29a437ab52679866e3bfcc0378",
+  "draftPullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/117",
+  "environment": {
+    "node": "v24.19.0",
+    "typescript": "6.0.3",
+    "zod": "4.5.4",
+    "typesNode": "24.13.6",
+    "typesPg": "8.23.1",
+    "scope": "Materialized pinned repository files; official fixed-version dependencies installed in a temporary directory; no database or real model"
+  },
+  "changes": [
+    "Each current shared observation has concern:<concernId>:observation:<eventId>, original concern resourceId/version, and its own at",
+    "Concern title, state and reason are labeled as background; events are filtered by Hong Kong day before the shared 80-source cap",
+    "Known sources sort by actual timestamp then stable source ID, including equivalent timestamps expressed with different offsets",
+    "Undated concerns keep the prior source key and selection policy; no confirmed-action event is promoted to observation",
+    "Legacy dated aggregates are reconstructed only from current authority for exact ID/version/text validation, excluded from new entries and sourceBasis",
+    "No schema, store, PDF renderer, model prompt, source authority, or persistent data changes"
+  ],
+  "checks": [
+    {
+      "name": "Directed workflow tests",
+      "command": "node --experimental-test-module-mocks --test tests/family-document-workflows.test.ts",
+      "exitCode": 0,
+      "passed": 10,
+      "failed": 0,
+      "countNote": "9 named subtests plus the enclosing test; not 10 independent business cases",
+      "evidence": "QA_REPORT_PERIOD/workflow-test.txt"
+    },
+    {
+      "name": "Strict source/store semantic typecheck",
+      "command": "node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2023 --types node --allowImportingTsExtensions --skipLibCheck --erasableSyntaxOnly server/family-document-sources.ts server/family-document-store.ts",
+      "exitCode": 0,
+      "diagnostics": 0,
+      "scope": "Actual source/store and their transitive imported repository types; does not claim full-project or test-file semantic typechecking"
+    },
+    {
+      "name": "Baseline regression",
+      "method": "Run only the new quarter-boundary subtest with the pinned master family-document-sources.ts restored temporarily; then restore the final source",
+      "exitCode": 1,
+      "expectedFailure": true,
+      "observed": "The original aggregation returns no Q1 observations after April observations are appended; expected three Q1 event sources",
+      "evidence": "QA_REPORT_PERIOD/baseline-regression.txt"
+    },
+    {
+      "name": "Diff whitespace",
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "coverage": [
+    "Quarter start/end at Hong Kong midnight; observations before and after the quarter excluded",
+    "Appending more than five later events does not remove an earlier in-period observation from a refreshed report",
+    "Closed concerns with in-period events remain usable; undated closed concerns and out-of-period dated concerns stay out",
+    "80-source cap across multiple concerns, offset-aware ordering and deterministic equal-instant source-ID tie-break",
+    "Current source IDs/resource IDs/versions and observation-date changes, source version changes and removals",
+    "Exact legacy snapshot remains readable and stale without rewriting; receipt replay, refreshed history and same-version PDF selection",
+    "Legacy source text/version changes and revocation invalidate old snapshot content, history, receipt and export",
+    "Existing checklist refresh, stale archive, PDF post-render recheck, child isolation and canonical report deduplication regressions"
+  ],
+  "retainedSetupFailures": [
+    "Initial npm attempt could not write its default cache; bounded retry used a writable temporary cache and eventually installed exact versions",
+    "First workflow invocation ran before zod was available and stopped before business assertions; not counted as a product failure or pass",
+    "An initial TypeScript CLI attempt needed the TypeScript 6 --ignoreConfig flag",
+    "An attempted test-inclusive semantic check encountered incomplete materialization and pre-existing mock.module exports vs @types/node MockModuleOptions incompatibility; final narrower source/store check passed after restoring its dependency closure"
+  ],
+  "notRun": [
+    "Real PostgreSQL or migrations",
+    "Real model calls",
+    "Real PDF renderer or PDF layout regression",
+    "Browser/UI acceptance",
+    "Full test suite or full-project semantic typecheck",
+    "Deployment or merge"
+  ],
+  "fileSha256": {
+    "server/family-document-sources.ts": "42af2aea64779cff293b9fa959e5a4dda3b80da6f0cf0377270f159e14c10991",
+    "tests/family-document-workflows.test.ts": "b9919cc70863765d19915f4266d82704b992bf0bbaadfdb24d2de11f141a3245"
+  }
+}

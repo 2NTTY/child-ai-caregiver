@@ -1,0 +1,73 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> yuban-hk@0.1.0 build:web
+> npm run build:web --workspace frontend && node scripts/prepare-web-output.mjs
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> yuban-hk-frontend-preview@0.1.0 build:web
+> expo export --platform web
+
+Expo Autolinking module resolution enabled
+Starting Metro Bundler
+
+Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
+| (node:41) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:41) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:41) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:41) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:41) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:41) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+λ Bundled 22693ms ../../fix_quiet_refresh_recovery_20261007/node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1990 modules)
+Web Bundled 23912ms ../../fix_quiet_refresh_recovery_20261007/node_modules/expo-router/entry.js (1960 modules)
+
+› web bundles (4):
+_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css (731B)
+_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css (14KB)
+_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css (210B)
+_expo/static/js/web/entry-e6ce7da84fa6de007ba9eceff291b107.js (5MB)
+
+› Static routes (35):
+/care (33KB)
+/chat (33KB)
+/more (33KB)
+/login (33KB)
+/guide (33KB)
+/ (index) (33KB)
+/tasks (33KB)
+/family (33KB)
+/growth (33KB)
+/memory (33KB)
+/photos (33KB)
+/contact (33KB)
+/history (33KB)
+/profile (33KB)
+/sources (33KB)
+/summary (33KB)
+/_sitemap (31KB)
+/settings (33KB)
+/+not-found (31KB)
+/(dashboard)/care (33KB)
+/(dashboard)/chat (33KB)
+/(dashboard)/more (33KB)
+/(dashboard)/guide (33KB)
+/(dashboard) (33KB)
+/(dashboard)/tasks (33KB)
+/(dashboard)/family (33KB)
+/(dashboard)/growth (33KB)
+/(dashboard)/memory (33KB)
+/(dashboard)/photos (33KB)
+/(dashboard)/contact (33KB)
+/(dashboard)/history (33KB)
+/(dashboard)/profile (33KB)
+/(dashboard)/sources (33KB)
+/(dashboard)/summary (33KB)
+/(dashboard)/settings (33KB)
+
+Exported: dist

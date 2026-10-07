@@ -1,0 +1,470 @@
+# 五階段實施計劃
+
+本文件維護長期階段、工作包、依賴、狀態及驗收。產品要求見 [SPEC](SPEC.md)，現況見 [STATUS](STATUS.md)，歷史證據按需定位 [WORKLOG](WORKLOG.md)。按工作包推進，不按日期或周分配任務。
+
+Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策修訂時保留錨點，以 [ADR-008](docs/DECISIONS.md#adr-008) 追溯替代關係；不得把被替代要求當成已完成。
+
+<a id="active"></a>
+## 當前任務入口
+
+<<<<<<< /workspace/shared/archive_replaced_frontend_features_20261007/root-authored/PLAN.md
+### QA-LEGACY-ARCHIVE — 退出已替代的測試前端（實作及驗證中）
+
+- 使用者要求清理無用功能、同步計劃及可恢復歸檔；只退役23個已被替代的根入口／Panel／專用runner，見[清單](./_archive/legacy-web-2026-10-07/README.md)。共用controller/API/權限/收據、FamilyPanel及Emergency能力保留。
+- 舊命令與預設Playwright配置明確非零退出，不能靜默換測試假稱通過。原碼逐byte歸檔並核hash；需要重播以固定來源commit隔離恢復，非現行入口。
+- 單份準備compatibility及DB/歷史/unknown恢復不在退休範圍。必要typecheck、import closure、build和獨立覆核結果分開記錄；尚不宣稱驗證／部署完成。
+
+<a id="current-capability-gaps"></a>
+## 新前端能力差距（2026-10-07 源碼核對）
+
+舊工作包的完成只指當時範圍與證據，不等於下列產品目標已完成。核對基線0a39e018；正式部署及真使用驗收另見STATUS，不由master推定。
+
+- 準備單已有多文件權威／版本／清單／歸檔及Agent工具；正文仍是確定性來源整理與固定清單，未有Agent依要求撰寫／修改正文、日期及增刪項目。下一步先定同一document的編輯、來源grounding與版本契約，不另建內容副本。
+- Agent文件讀取只列前20份，正文超7000字不返回且無分段續讀；需有界搜尋／游標及固定版本章節讀取，不能以內容部分標誌當已讀完。
+- 成長報告目前固定range且partial，不代表完整年度／季度檔案；逐觀察期間篩選缺陷正由獨立修復包處理。年度／季度分類、長期容量與合法歷史查閱另待完成，不放寬撤權遮蔽。
+- 每孩子50文件含歸檔、歷史僅最近仍有效快照、聯絡首50項及無游標，長期可找回／可新增能力須規劃；不能把載入前綴冒充完整歷史。
+- 提醒通知及人工核對已有後端、新UI及權限／unknown流程；仍須真流程驗收。任務尚無完全禁背景的獨立模式，不將無外發授權說成沒有站內事件。
+- 長期記憶人工管理已接，短期脈絡／參考目錄及Agent更正／停用已有事實未接；管理表單只作後備，不要求家長管理資料庫。
+- 指定共享家庭建立孩子及簡潔可達的緊急求助入口未等價接回新UI；保留原能力，不能列為无用退休。舊單份準備仍有資料／原操作恢復入口，不刪或自動複製成新文件。
+
+
+### QA-ADK-RUNTIME — 指令資料分層與安全終結（整合覆核中）
+=======
+### QA-REPORT-PERIOD — 關注觀察的固定期間歸屬（定向覆核通過，待合併部署）
+
+- 基線0a39e018。純函數合成重現：關注最近5條被聚合成單一來源並取最後事件日期，跨季新增會排除上一季觀察，亦可能夾入季前內容。
+- 每條觀察以原事件ID／日期篩選期間，關注背景另標；維持來源權威／版本、未知日期、80項有界coverage與同版PDF。舊聚合只作临時校驗投影，不新增持久副本，不遷移／刪除舊資料。
+- 必驗跨季／香港跨日、超過5條、來源更正／撤權、舊快照兼容與新basis stale、整體上限及同版PDF。實作者與獨立覆核各10/10定向通過，source/store scoped semantic typecheck通過；測試用fake Pool／mock PDF renderer，未驗真DB／PDF排版／正式UI。遠端exact head及合併部署另核，不稱全面產品完成。
+
+
+### QA-ADK-RUNTIME — 指令資料分層與安全終結（已合併，待部署）
+
+- PR #113 已正常合併為0a39e018，正式網站仍待批次部署。
+>>>>>>> /workspace/shared/archive_replaced_frontend_features_20261007/master31025/PLAN.md
+
+- 使用者批准按 ADK 審查結果修正。基線 PR #112／a347956b，保留互動64k／背景32k的獨立上限；本包不改 selector、跨輪來源或 DB。
+- input.context 從 instruction 移到有標籤資料 part；受信指令用 InstructionProvider，保留大括號原文與原生 parts。present_answer 成功後終結原生 loop，最終引用／授權驗證保留；同批 terminal 混其他工具在任何 handler 前拒絕。
+- Prompt Pack 0.1.25 由主模型同步契約。最小包44項獨立測試／scoped typecheck通過，另外11項為實作者證據；與 #112 的最終組合版由實作者重跑83/83及兩份 scoped strict typecheck通過，四組T7仍為4輪且只保存一個pending候選。最終組合獨立覆核53/53及兩份 scoped strict typecheck通過；正式部署及真UI仍待核。
+- 未解界線：完全漏調 present_answer、自然澄清跨輪的來源鏈、背景 no_action、按能力裁剪指引。不能把最小終結修復標成全部ADK或Agent完成；不擅自新增persistent state或第二套記憶。
+
+
+### QA-INTERACTIVE-INPUT — 待辦意圖與互動容量（已合併，待部署驗收）
+
+- PR #112 已正常合併為 a347956b；47項定向及兩份 scoped strict typecheck通過，獨立多意圖回歸修正已重驗。GitHub該head沒有CI checks／workflows，不能宣稱CI成功。
+
+- 基線 PR #110／9d1024c。正式 T7 在一次生成及一次被拒的 propose_task 後超限，沒有建立待辦；確切線上參數錯誤未取得，不臆測原因。
+- 修正含修飾語的明確待辦意圖與標題／內容資料邊界；互動容量依使用者批准改用獨立 AI_AGENT_MAX_INPUT_CHARACTERS，預設 64k、有限範圍 32k–64k。背景 32k、P1、次數、輸出、時間及授權保持既有契約；去重與有限工具仍需保留。
+- 模型設定頁讀取 Server 真實互動上限；舊 metadata 不猜數值。離線測試、獨立覆核、批次部署及有界真 UI 重測分別記錄，尚未宣稱上線或真待辦流程通過。
+- PR #109／#110 已合併但未部署；PR #111 的終態保留容量仍為 draft，真 PostgreSQL 遷移驗證受阻，不隨本包啟用。
+
+
+### QA-AGENT-CONTEXT-INTEGRITY — 工具容量與數量依據（已部署，保留交付快照）
+
+- PR #107／#108 已部署；A6 真 UI 已讀回未知數量，收據客戶端相容修復在 PR #110。以下 32k 是該包歷史邊界，後續互動容量見上方 QA-INTERACTIVE-INPUT。
+
+- 基線 a75ebb6。正式第 5 次合成請求在模型／工具皆 0 時撞 input_limit；固定 Runner 重建為 35,748 字元，工具選擇誤含前文與禁止通知句。另 12 則各 200 字原訊息被 read_context 重複載入，下一輪也超限。普通記錄 A3 同時揭露模型補入未提供的「1 次」。
+- 僅修當前意圖選工具、有界單份 context／精確摘要前綴及 Server 數量 grounding；保留原 gateway contents／config 邏輯 JSON 的 32k 字元上限、原生 parts、權限、opId／unknown、既有 store 及來源邊界。不新增「完全無背景待辦」能力，不改固定報告期間。
+- 離線定向 38/38 及 scoped strict typecheck 通過，證據與失敗對照隨包交付；mock completed 只驗容量／循環，不代表真服務已保存待辦。原 fixture 舊斷言有原 master 對照，僅修本包必要測例。須獨立覆核、合併及批次部署後使用有界新合成訊息重測。
+- 第 3 次真 Agent 普通保存及第 4 次私人重要候選明確確認已讀回；第 4 次最終文字未通過 present_answer 驗證仍未修。本包不把保存收據等同整個 run 成功。201 項記憶／200 條關注事件的容量死角另待修復。
+
+
+### QA-DOCUMENT-INTEGRITY — 已合併部署及定向 UI 重測
+
+- 後續核對：PR #103 隨 Web／API b7dec9d 部署；2026-10-07 合成 UI 已重測 stale 歸檔／恢復、刷新勾選保留及真 PDF coverage 完整，其他驗證限制仍保留。
+- 基線 b23f12b；只修準備單刷新保留未變核對項目、來源仍有效的 stale 準備單可直接歸檔、未有觀察日期的關注納入報告正文，以及 Server 對同孩子、相同起訖期間 active 標準報告的 create／restore 防重。
+- 保留原來源、家庭及孩子隔離、撤權遮蔽、同版 PDF、原 opId／unknown。固定期間仍固定，不在本包把年度／季度報告改成移動期間，不刪除舊文件或更改資料庫。
+- dot 負責程式、測試、覆核、PR 及合併；Codex 輔助只做已授權 GCP 操作與部署。先本地有界驗證、保留首次失敗和基線對照，再批次部署並重測；不把 shallow／mock 當正式 UI 或真 PostgreSQL 驗收。
+- 同包修復真 PDF coverage 長句裁切，僅按固定句號分段，保留原快照文字。離線 Server 7/7、frontend 25/25、scoped typecheck、35 路由 export 及真 PDF 抽字／邊界驗證見 [證據](artifacts/verification/QA_DOCUMENT_INTEGRITY_CHECKS.json)，不代表全面或正式 UI 通過。
+- 交付及停止條件：定向證據、獨立覆核與修復後 UI 流程均明確區分；目前未宣稱本包已部署或全面驗收。真 Agent 首次請求另因服務暫不可用停批，與本包無模型的文件整理分開處理。
+
+
+### QA-GROWTH-READ-BOUNDARY — 已合併，保留交付證據
+
+- 後續核對：PR #101 已合併，API／Web b23f12b 於 2026-10-07 04:02 UTC 完成部署；原合成地區資料的 Growth UI 已於 04:09 UTC 正常讀取並呈現限制提示。以下保留該包交付時的驗證範圍，不再表示仍停於 draft。
+- 基線 `01c25a4`（PR #100 已合併）；隔離分支 `codex/fix-growth-filter-boundary`。按 dot 新派遣，只交付修復、單測及 draft PR，不合併、部署或修改 DB。
+- 原因：孩子 profile.region 接受自由文字，Growth 共用 load 無條件把它傳給只接受兩碼地域／最多 120 個月的知識 parser。合成地域 A／B、未知年齡離線重現 GET 400；已有 UI 回報吻合，尚無正式請求的 HTTP capture，不冒稱全面線上根因驗收。
+- 只讓 list／GET 在本機 filter 轉換不可用時略過知識查詢、提示地域／0–10 歲限制，保留原 profile、家庭讀取 scope、authority 及其他資料。既有候選仍可讀，回應 sourceAvailable=false 表示未能確認適用性；不保存此旗標，不改候選狀態、版本或歷史。DB、解密及網絡錯誤沒有被降級吞掉。
+- decide／topic（含回傳 page）／evaluate 及 Agent search 仍走原嚴格契約；不令 worker 因空來源把候選轉為 inapplicable。其不支援 filter 的原失敗仍是保留限制，本輪沒有擴大寫入／背景行為。
+- [必要證據](artifacts/verification/GROWTH_READ_BOUNDARY_CHECKS.json)：修復前 5／9、最終 10／10 定向單測通過；Server／shared／Growth tests 局部 typecheck 通過。完整 Server typecheck 的 11 個前端 NodeNext／erasable 相容性錯誤與 master 對照完全相同，未順手修；首次缺 frontend mount 的 harness 失敗亦保存。沒有真模型、通知、DB 操作、全面瀏覽器或全套回歸。
+- 獨立覆核補正：兩則知識限制 notice 共用固定常數，候選區只在此明確限制且空頁時顯示「地區資料待確認」／「目前無法提供適用建議」；正常空狀態不改。6 項真候選 renderer 的 shallow 回歸、frontend typecheck、10 項 Growth 單測及已提交配置的 scope typecheck 通過。確切命令／[配置及對照限制](artifacts/verification/GROWTH_READ_BOUNDARY/README.md) 可重跑；舊 11 diagnostics 證據是單一 Growth store 替換對照，並非 pristine master checkout。本輪沒有再跑完整 Server typecheck。
+- C 主責、權重 2：C 60%／B 20%／A 20%（初稿 C 75%／A 25%；覆核補上 B 候選文案責任），共用 AI 在 A 統籌下實作及離線核對，不冒稱個人人手或人工驗收。下一步獨立 review；另次明確授權後才部署後端及用原合成 QA 查一次正常 Growth UI，停止於 draft。
+
+此前 QA-POST-RELEASE 已隨 [PR #100](https://github.com/2NTTY/child-ai-caregiver/pull/100) 合併；Web `01c25a4` 的另次部署及公開唯讀核對已交接給 dot。原始修復／失敗證據見 [QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。本包沒有重做或再次部署。
+
+核對時間：2026-10-06；目前 INT-W07 從 master `053658b`（PR #96）建立，分支 `codex/int-w07-production-delivery`；開工時沒有其他 open PR。交付仍須重查遠端／相關 PR 及本機差異。
+
+- **文件維護**：[DOC-R04](#doc-r04) 已驗收，隨 [PR #86](https://github.com/2NTTY/child-ai-caregiver/pull/86) 合併結案；沒有因此啟動下一個文件或產品包。
+- **前端獨立工作流**：只沿 [frontend/PLAN#active](frontend/PLAN.md#active) 接續；根計劃不複製 FE-Wxx 的工作狀態。
+- **INT-W01 已驗收**：正式建置、登入、孩子與共用 owner／讀取快取已實作，隨 [PR #91](https://github.com/2NTTY/child-ai-caregiver/pull/91) 合併結案；分支 `codex/int-w01-production-foundation`。保留已確認的版面、動效及美術，未改後端資料契約。
+- **INT-W02 已完成**：真聊天、引用與收據、本人普通預授權、私人交代及跨 run 待確認索引已接通，隨 C 帳號 [PR #92](https://github.com/2NTTY/child-ai-caregiver/pull/92) 合併；[必要驗收及保留失敗](artifacts/verification/INT_W02_CHECKS.json)。
+- **INT-W03 已完成（PR #93）**：既有功能頁、照片／分享輸入、記憶人工備援、家庭／通知／模型設定及共用 owner 已接線；補普通記錄更正、聊天游標及取消。一次零模型的本機代表流程通過，沿用 INT-W01／02 證據；[EV](artifacts/verification/INT_W03_CHECKS.json)／[功能接點](docs/P2_UI_HANDOFF.md#production-owners)。保留設計，未部署，未跑全表單／相容性矩陣。
+- **INT-W04 已完成（PR #94）**：復用同一 `shared_inputs`，補私人用途／原地管理、版本歷史、明確選取正文的模型授權，以及對話候選與獨立私人引用。主責 A，權重 3，A 50%／C 30%／B 20%；主模型統籌驗收。必要型別檢查及一條零模型來源流程通過（28 次本機業務呼叫），沒有重跑瀏覽器或完整矩陣；[EV](artifacts/verification/INT_W04_CHECKS.json)。
+- **INT-W05 已完成（PR #95）**：同一共享持續關注、事件歷史、Agent 候選及站內到期跟進；結束不完成／取消連結任務，恢復不重排舊跟進。C 主責，權重 5，C 50%／A 30%／B 20%；主模型統籌驗收。必要契約見 [API](docs/API.md#int-concerns)。沿用現有 pg-boss、共享權限與前端版面；一條零模型本機流程首次通過（40 次業務呼叫／3 次狀態讀取），手動備援已接。按需工具宣告通過，保留原 input_limit 失敗；沒有擴大矩陣或呼叫真模型。[EV](artifacts/verification/INT_W05_CHECKS.json)。
+- **INT-W06 已完成（PR #96）**：Agent／頁面共用多份準備文件、來源驅動報告及同版 PDF；A 主責，權重 5，A 40%／C 40%／B 20%。主模型 review；一條本機流程 35 次業務呼叫、零外部服務，一份繁中 PDF 通過；[證據及保留失敗](artifacts/verification/INT_W06_CHECKS.json)。沒有追加瀏覽器或完整矩陣。
+- **INT-W07 已交付（隨本包 PR 合併生效）**：C 主責，正式入口使用 `053658b` 的 Web／API／worker；遷移 024–028、原 68 張表資料保留。一次真對話 3 生成／0 embedding；瀏覽器在 HTTP 上限停批後，只用同一 fixture 的 8 次 API 核對實際收據／記錄／聊天及清理，不重跑模型或瀏覽器。沿用 W01～06 證據，主模型裁定必要接線驗收成立；本次剩餘 UI 斷言仍未驗，見 [EV](artifacts/verification/INT_W07_CHECKS.json)。權重 3，C 60%／B 20%／A 20%，D 人工驗收沒有代填。
+- **接線目標完成後**：啟動／部署及功能清單在 [正式 Web](docs/PRODUCTION_FRONTEND.md)。語音、其他文件輸入、短期 run context／全域知識目錄專頁及照片／私人聊天 PDF 等限制明示，沒有假接線；不自動啟動 P3 或額外測試矩陣。
+- **入口及結案**：依 [正式整合安排](#production-integration) → [P2 UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff) → [前端交接](frontend/HANDOFF.md#reading-order)。INT-W01 的必要驗收及 review 通過並合併才結案，不能將建置入口就緒寫成全產品已接通。
+
+包開始時在此保留一份簡短現行卡：目標／範圍、基線及活動 PR／branch、所需契約位置、下一動作、阻塞／未驗、完成及停止條件。新證據原位更新；已完成內容收短到下方包記錄及證據，勿在 STATUS／HANDOFF 再建第二張卡。[更新職責](AGENTS.md#document-updates)。
+
+<a id="production-integration"></a>
+## 正式前端整合（P2 結案後增補）
+
+2026-10-06 使用者確認先完成接線，並建立持續目標直到新前端取代正式入口。核心體驗及新增能力見 [SPEC](SPEC.md#agent-first-experience)，決策見 [ADR-017](docs/DECISIONS.md#adr-017)。沿用最新前端設計、既有 Server／Prompt Pack／素材；不把已確認的新 Agent 能力或預覽效果當作已實作。正式頁面接既有業務服務，缺少後端的關注鏈、多份準備文件及報告必須明示，不用相似 API 冒充。
+
+| 包 | 狀態／交付 | 前置 | 主責及預分配 |
+|---|---|---|---|
+| <a id="int-w01"></a>INT-W01 | 已完成（隨 [PR #91](https://github.com/2NTTY/child-ai-caregiver/pull/91) 合併生效）：正式建置、登入、孩子与共用 owner／讀取快取；[EV](artifacts/verification/INT_W01_CHECKS.json) | master `61a8faa` | B；權重 3，B 60%／C 30%／A 10% |
+| <a id="int-w02"></a>INT-W02 | 已完成（PR #92）：真聊天／引用、持久候選、普通記錄／私人交代與本人提醒的預授權操作及收據；[EV](artifacts/verification/INT_W02_CHECKS.json) | INT-W01 | C；權重 5，C 50%／A 30%／B 20% |
+| <a id="int-w03"></a>INT-W03 | 已完成（PR #93）：既有 UI-P2-01～18 接線、共用 owner／跨頁同步及人工備援；普通記錄更正、聊天游標及取消。一次代表流程通過，未全驗表單及新照片提取；[EV](artifacts/verification/INT_W03_CHECKS.json) | INT-W02 | B；權重 5，B 50%／C 30%／A 10%／D 10% |
+| <a id="int-w04"></a>INT-W04 | 已完成（PR #94）：私人來源的對話設定、讀取、引用及管理 | INT-W03（PR #93） | A；權重 3，A 50%／C 30%／B 20% |
+| <a id="int-w05"></a>INT-W05 | 已完成（PR #95）：持續關注、站內主動跟進、事件鏈及結束／恢復 | INT-W03 | C；權重 5，C 50%／A 30%／B 20% |
+| <a id="int-w06"></a>INT-W06 | 已完成（PR #96）：Agent 操作多份準備文件、成長報告及同版 PDF；[EV](artifacts/verification/INT_W06_CHECKS.json) | INT-W04、INT-W05 | A；權重 5，A 40%／C 40%／B 20% |
+| <a id="int-w07"></a>INT-W07 | 已交付，隨本包 PR 合併完成：正式入口部署、必要接線證據及舊 UI 退出；[功能清單](docs/PRODUCTION_FRONTEND.md)／[EV](artifacts/verification/INT_W07_CHECKS.json)（完整瀏覽器序列未通過；沿用既有證據並補核同一資料） | INT-W01～06 | C；權重 3，C 60%／B 20%／A 20%；D 人工驗收另記 |
+
+每包獨立分支／worktree，必要驗收、主模型 review、按主責帳號提交／推送／PR／合併後才啟動依賴包；後續包開工時再定權重及份額。2026-10-06 使用者要求將一半工作包交 C：餘下六包中 INT-W02／05／07 由 C 主責交付，INT-W03 由 B，INT-W04／06 由 A；已合併 INT-W01 保留 B 的原交付紀錄，不改歷史署名。INT-W02 的 C 負責 Server 授權／持久化及接線，A 負責 Agent 政策／工具與整合，B 負責既有 UI 回調；主模型仍親自處理指導、契約及提示詞。分配是責任安排，不冒稱個人手寫程式或實測工時；共用 AI 在 A 統籌下執行，主模型統籌驗收及最終裁決，Committer 保留實際操作者。
+
+驗收只取通常路徑及必要邊界：正式登入／Agent、跨頁同源、重開持久化、身份／孩子隔離、一次原操作 unknown 恢復；新增能力各取一條代表路徑，重用已有證據。不重跑完整預覽矩陣，不使用 Computer Use。真模型／通知仍受既有次數、成本、明確目的地及內容授權限制；部署前重查 VM 期限、備份及相容遷移。完成需列明已接、待驗及未接項，不能在過渡頁仍存在時宣稱正式接線完成。
+
+<a id="phases"></a>
+## 五階段及完成門檻
+
+| 階段 | 交付範圍 | 完成門檻 |
+|---|---|---|
+| <a id="phase-1"></a>**P1 基礎成品** | 在線 Web、最小登入隔離、孩子／文字記錄、Server 持久化與聊天、Gemini／簡單 prompt | 合成資料先玩通；Server 加密／最小加密備份還原、憑據及日誌保護通過；完成時交付組員可獨立試玩的 URL |
+| <a id="phase-2"></a>**P2 中級成品／比賽目標** | Web＋ADK 產品 Agent、最小向量 RAG、持續 worker、家庭權限、長期記憶、Web 照片、可信育兒問答與成長階段關注、知識／資訊更新、任務、Web Push＋Telegram 與授權 fallback | 真 ADK 多步工具、向量檢索及引用有證據；家長需求與網頁關閉後背景事件均可完成任務／聯絡／回報；四年齡段、撤權／重試／終態及全部 P2 功能通過，不以 mock 代替真服務 |
+| <a id="phase-3"></a>**P3 高級完善成品** | Android 在線客戶端、跨端更新、原生通知／FCM、語音／相機、家庭交接 | 真機與 Web 共用服務；權限／資料一致性／通知及平台行為已驗收，不建本地 Agent 或離線主庫 |
+| <a id="phase-4"></a>**P4 完整版** | 自選相容 Server API、Windows Docker Compose 少步部署、裝置配對／臨時會話、既有 RAG 的完整管理／規模／維運擴充、分享／趨勢／PDF、Server 搬遷／災備 | 全部現行有效 REQ／AC 及 S01–S17 工作包結案；原驗收條款的保留／修訂／替代均可追溯，待驗收不得當完成 |
+| <a id="phase-5"></a>**P5 以後升級版** | 另行確認的非必要增值 | 不阻塞 P1–P4，不承接未完成的必要功能，不預建空框架 |
+
+P1 驗收於 2026-09-23 通過；本次結案隨 [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23) 合併生效。證據見 [EV-S17-W01](artifacts/verification/S17_W01_CHECKS.json)；不代表跨階段 Sxx 或 P2–P4 已完成。
+
+P2 的 20 個工作包必要驗收於 2026-09-30 齊備，已隨 [PR #71](https://github.com/2NTTY/child-ai-caregiver/pull/71) 合併結案；[公開交付證據](artifacts/verification/S17_W02_CHECKS.json)。前端隔離預覽尚未接回正式 App，Firefox 全套相容性依使用者決定延後，不自動啟動 P3。
+
+2026-09-30 使用者在 P2 結案後新增必備項：**網站／軟件可設定本人模型 key**。另以 S06-W05 作 P2 增補包，立即實作及獨立驗收；原 20 包的完成證據保留。此包不列入已結案 S16-W02 的「P2 全部功能包」前置集合，避免反向循環；其驗收由本包承擔。Android 在 P3 復用同一設定契約，P4 自選 Server 為另一項功能。
+
+Server 從 P1 起保存權威資料；Web／App 在線存取，業務 Agent 在 Server 執行。斷線只保留當前表單及所選照片、提示刷新／關閉風險，恢復連線後由使用者重試；不建立跨關閉恢復草稿或離線寫入隊列。P1 以合成資料驗收；首次模型請求起即有權限、憑據、配額、有限重試及日誌保護。
+
+P2 由 ADK 實際編排受限產品工具，按預先確認的對象／內容／渠道及 fallback 規則自動聯絡，不逐次要求人工確認；每次執行重查授權。P2 直接建立可延續的最小 pgvector RAG，官方穩定知識與近期資訊分開更新／引用，支援可信育兒問答及非醫療分流的成長關注；P4 擴充管理介面、大規模導入、批量重建管理、效能及完整遷移，不重建另一套核心。總決定見 [ADR-011](docs/DECISIONS.md#adr-011)，行為見 [SPEC](SPEC.md#section-5-11)／[freshness](SPEC.md#knowledge-freshness)。P4 自部署接受 Docker Desktop／WSL2 前置，保留既定模型外送及通知授權要求。
+
+<a id="states"></a>
+## 状态
+
+步骤和工作包仅使用下列五种状态。实现与证据层级不是额外状态。
+
+| 状态 | 含义 |
+|---|---|
+| 未開始 | 尚未開始該步驟／工作包；已有研究只是輸入 |
+| 進行中 | 正在實施，或驗證失敗後繼續修復；跨階段 Sxx 部分包完成亦屬此狀態 |
+| 受阻 | 缺少必要条件导致无法推进；记录原因、所缺条件及解除方法 |
+| 待驗收 | 实现准备完成，但必需测试或人工确认尚未完成 |
+| 已完成 | 实现、全部必需验证和记录均完成 |
+
+<a id="steps"></a>
+## 步驟範圍與結案
+
+狀態由工作包及現行驗收累積；部分包完成不等於整個 Sxx 完成。
+
+| 步驟 | 狀態 | 工作 | 驗收條件 |
+|---|---|---|---|
+| <a id="s00"></a>**S00 文件遷移** | 已完成 | 固定基線、逐條映射、文件權威及執行入口 | M01–M09 全部通過；歷史基線可追溯 |
+| <a id="s01"></a>**S01 開源復用核查** | 已完成 | 有界核查必要候選、固定版本與許可 | 可核對的版本／許可／採用清單；未核實程式碼不進入交付 |
+| <a id="s02"></a>**S02 最小共享工程** | 已完成 | Expo Router／TypeScript、共享契約與必要配置 | Web 可啟動；只建立縱向流程使用的工程與邊界 |
+| <a id="s03"></a>**S03 Web 最小縱向流程** | 已完成 | 登入後建立孩子、文字記錄及 Server 保存／顯示 | 不依賴 AI；關閉重開並登入後資料可恢復；[保存驗收](SPEC.md#section-10-2) |
+| <a id="s04"></a>**S04 Android 同一縱向流程** | 未開始 | 重用 Server 與共享業務的在線 App、APK | 使用者真機完成同一流程；不以 Web 驗證代替真機 |
+| <a id="s05"></a>**S05 記錄與資料保護** | 進行中 | 確認、更正、時間軸、搜尋、Server 加密／刪除／備份及平台安全保存 | 原文、約數、時間、修訂與來源保留；備份還原可核對；[資料規則](docs/DATA_MODEL.md#section-5-1) |
+| <a id="s06"></a>**S06 Server 身份與資料** | 進行中 | TypeScript、PostgreSQL、Better Auth、家庭權限及相容 Server 連線 | 真實登入／持久化、跨家庭隔離、私人聊天邊界及 Server 選擇；[權限驗收](SPEC.md#section-10-5) |
+| <a id="s07"></a>**S07 在線更新與一致性** | 進行中 | 請求冪等、版本／衝突、跨端更新、附件狀態、刪除與撤權 | 中斷／重試／並行操作不靜默丟資料，終態不復活；[一致性驗收](SPEC.md#section-10-2) |
+| <a id="s08"></a>**S08 裝置配對與臨時會話** | 未開始 | QR／短碼、已登入裝置確認、臨時電腦、裝置管理及撤權 | 拒絕過期／重放／未批准連線；裝置直接連 Server；[配對契約](docs/API.md#section-4-1) |
+| <a id="s09"></a>**S09 聊天與長期記憶** | 進行中 | 原始聊天、確認事實、摘要、話題與任務台帳 | 新會話／換端／清空模型快取後從 Server 重建授權記憶；[記憶驗收](SPEC.md#section-10-3) |
+| <a id="s10"></a>**S10 知識與資訊更新** | 進行中 | 官方來源、pgvector／embedding、引用、版本、近期資訊、定期更新及管理擴充 | 最小向量 RAG、穩定／近期隔離、發布／停用及 freshness 正確；[知識驗收](SPEC.md#section-10-4)／[向量驗收](SPEC.md#ac-p2-vector-rag) |
+| <a id="s11"></a>**S11 Gemini 與 Agent 編排** | 進行中 | P1 文字聊天；P2 ADK 基礎、Prompt Pack 接線、結構化草稿／確認及互動／背景工具循環 | 真實工具及結果回饋，模型不能繞過權限；配額及失敗可核對；[Agent 驗收](SPEC.md#ac-p2-agent-loop) |
+| <a id="s12"></a>**S12 照片、語音與分享輸入** | 進行中 | Web 照片、主動分享、公開來源及 Android 語音／相機／系統分享 | 來源可追溯；數字及不確定內容確認；拒絕權限與失敗明確；[輸入邊界](SPEC.md#section-1-5) |
+| <a id="s13"></a>**S13 主動任務、聯絡與家庭交接** | 進行中 | Server worker、任務／授權、成長階段關注、Web Push／Telegram／FCM、fallback 與交接 | 唯一執行、撤權即停、終態不復活；發送／回應／完成分開；[任務驗收](SPEC.md#section-10-3)／[成長關注驗收](SPEC.md#ac-growth-attention) |
+| <a id="s14"></a>**S14 摘要與報告** | 進行中 | 多孩子、到診準備、日／週摘要、趨勢及 PDF | 數字由程式計算，來源／版本可追溯，更正後產生新報告；[報告規則](SPEC.md#section-5-8) |
+| <a id="s15"></a>**S15 Server 搬遷與災備** | 未開始 | 統一匯出、Server 搬遷、加密備份、空環境恢復與 rollback | 身份／資料／附件／知識／任務完整，切換單主，rollback 保留新寫入；[災備驗收](SPEC.md#section-10-6) |
+| <a id="s16"></a>**S16 驗證與成本核對** | 進行中 | 相關功能、四年齡段、權限／故障／成本及可用性驗收 | 全部有效 AC 有證據；高成本驗證先獲批准，缺驗收用待驗收；[驗證制度](#verification) |
+| <a id="s17"></a>**S17 交付與接續能力** | 進行中 | Web／APK、Windows 部署、源碼配置、操作及接續資料 | 另一位組員可依說明使用並重現；[交付驗收](SPEC.md#section-10-8) |
+
+<a id="vertical-slice"></a>
+## 最小縱向流程與依賴
+
+S03：登入 → 建立孩子 → 輸入文字記錄 → Server 保存／顯示 → 關閉重開並登入 → 仍可讀取。S04 在 P3 Android 真機完成同一流程。
+
+S03 依賴最小 Server 身份及資料能力，不依賴 Gemini、家庭邀請、配對、知識或通知。P1 預設順序：**S01-W01 → S02-W01 → S06-W03 → S03-W01 → S06-W01 → S09-W01 → S11-W01 → S05-W01 → S16-W01 → S17-W01**。加密／備份排在最早可玩流程之後，但仍是 P1 完成前置；不能以清空既有資料代替升級。
+
+<a id="roadmap-packages"></a>
+## 工作包、階段與依賴
+
+前置原則上指已驗收並合併的工作包；既有 P2 隔離分支依[收束安排](#p2-deferred-acceptance) 完成必要驗收及合併，不再新增延後驗收的接續例外。S16 的「本階段全部功能包」包括同階段所有功能包（P4 包含 S17-W05），不包括該階段 S16 驗收包及 S17-W01／W02／W03／W04 結案交付包。父 Sxx 的有效 AC 與局部驗收共同適用。
+
+新增驗收包括 [Server／授權外發 AC](SPEC.md#ac-server-agent)、[freshness AC](SPEC.md#ac-knowledge-freshness)、[P2 知識 AC](SPEC.md#ac-p2-knowledge)、[成長關注 AC](SPEC.md#ac-growth-attention)、[ADK／完整流程 AC](SPEC.md#ac-p2-agent-loop)及[最小向量 RAG AC](SPEC.md#ac-p2-vector-rag)，隨所屬功能包驗收；原 AC 的修訂按 [替代索引](docs/DECISIONS.md#adr-008-replacements) 追溯。
+
+通用能力先復用現有程式／Skill，再核對同版本 Google／Expo 原生能力及必要成熟候選；[選型與驗證閘](docs/TECH_REUSE.md#decisions) 按包使用，文件相容不代表已實測。已完成 P1／P2 成果不為換框架返工。前端聊天／主聊天的責任及共享修改次序依 [AGENTS](AGENTS.md#frontend-backend)，混合工作包須兩邊交付並完成相關整合驗收才結案。
+
+| 工作包 | 階段 | 狀態 | 前置 | 目標、局部驗收及範圍界線 |
+|---|---|---|---|---|
+| <a id="s01-w01"></a>S01-W01 | P1 | 已完成 | S00、DOC-R02 文件規範合併 | 有界核查 coo 與當前流程必要候選，固定版本／許可／實際復用結論；不能核實就不採用，不無限除錯舊專案 |
+| <a id="s02-w01"></a>S02-W01 | P1 | 已完成 | S01-W01 | 最小 Expo／TypeScript Web 工程、共享契約／驗證與可配置入口；必要檢查可執行，不建通用平台 |
+| <a id="s06-w03"></a>S06-W03 | P1 | 已完成 | S02-W01 | 最小 Server／PostgreSQL／Better Auth 登入與帳號／資料空間隔離；Server 重啟後資料仍在、未授權請求拒絕；不含家庭邀請 |
+| <a id="s03-w01"></a>S03-W01 | P1 | 已完成 | S06-W03 | Web 登入、孩子／文字記錄及 Server 保存／顯示；關閉重開後登入可恢復；斷線保留當前表單，不假稱保存 |
+| <a id="s06-w01"></a>S06-W01 | P1 | 已完成 | S03-W01 | 安全 AI API／部署配置；供應商憑據只在 Server，從首次請求套用權限、配額、有限重試／總開關及無正文日誌 |
+| <a id="s09-w01"></a>S09-W01 | P1 | 已完成 | S03-W01 | 原始聊天與孩子／作者關聯保存於 Server，授權後可恢復；不提前建立全部長期記憶 |
+| <a id="s11-w01"></a>S11-W01 | P1 | 已完成 | S06-W01、S09-W01 | 真 Gemini、簡單 prompt、相關孩子／近期聊天及調用統計；失敗保留當前輸入，先以合成資料玩通 |
+| <a id="s05-w01"></a>S05-W01 | P1 | 已完成 | S11-W01 | Server 儲存加密／密鑰保護、必要刪除、最小加密備份／還原；既有記錄聊天可接續，不以清空資料代替升級 |
+| <a id="s16-w01"></a>S16-W01 | P1 | 已完成 | P1 全部功能包 | 核心流程、持久化、斷線／AI 失敗、憑據／日誌與備份還原的必要驗收；實際模型及服務驗證先取得批准 |
+| <a id="s17-w01"></a>S17-W01 | P1 | 已完成 | S16-W01 | 交付組員可開啟的 Web URL、操作說明及證據；另一位組員獨立試玩通過才算 P1 完成 |
+| <a id="s11-w03"></a>S11-W03 | P2 | 已完成 | S17-W01 | ADK 基礎與相容性：固定依賴／許可、npm 與建置版本、既有 Prompt Pack 組裝、真 Runner／FunctionTool 有界循環、配額及取消；必要 scripted model 輕量檢查與另行批准的最小真 Gemini 驗收分開記錄；[EV-S11-W03](artifacts/verification/S11_W03_CHECKS.json) 通過，完整記憶／知識／任務接線留 S11-W02 |
+| <a id="s06-w02"></a>S06-W02 | P2 | 已完成 | S17-W01 | 家庭邀請／owner、caregiver、viewer 角色及按需孩子資料入口；owner／caregiver 可確認更正共享事實及改期／完成／關閉事項，僅 owner 可邀請／變更或撤銷成員權限／刪整個孩子，viewer 唯讀；個人通知偏好可管理，私人聊天不因家庭管理權而共享 |
+| <a id="s05-w02"></a>S05-W02 | P2 | 已完成 | S06-W02 | 確認／更正歷史、來源及精度、時間軸／快捷記錄／搜尋與原文／約數／單位／模糊時間；出生日期按需，約數年齡保留精度與日期基準，不猜精準窗口；私人聊天不自動轉共享事實；新持久資料納入刪除／備份 |
+| <a id="s09-w02"></a>S09-W02 | P2 | 已完成 | S05-W02、S07-W03 | 長期確認事實及來源／年齡日期基準、摘要覆蓋、話題／任務記憶及已解決／暫緩話題的再問條件，供後續關注復用；新會話及清空模型快取不重問已解決事項；摘要不改終態，已關閉事項不復活；[EV-S09-W02](artifacts/verification/S09_W02_CHECKS.json) 必要驗收通過，完成隨 [PR #34](https://github.com/2NTTY/child-ai-caregiver/pull/34) 合併生效 |
+| <a id="s07-w03"></a>S07-W03 | P2 | 已完成 | S06-W02、S05-W02 | 在線請求冪等／版本確認、並行修改與重連、刪除及撤權；重試不重建，衝突可見；不建離線 outbox；[EV-S07-W03](artifacts/verification/S07_W03_CHECKS.json) 必要驗收通過，已隨 PR #36 合併 |
+| <a id="s13-w01"></a>S13-W01 | P2 | 已完成 | S09-W02、S07-W03 | Server 任務／對象／時間、穩定 occurrenceId、改期／取消／完成及站內台帳；任務、occurrence 與投遞分開，與後續關注候選保持獨立語義，家庭成員完成狀態同步；每日普通提示合併一次、普通任務最多跟進一次，安靜時段預設 Asia/Hong_Kong 22:00–08:00 可調，預約例外須明確選擇；先由手動入口驗收確定性規則，不在本包自建通用 worker；新 TaskPanel 接入 RHF＋Zod／Paper，保留既有 UI；[EV-S13-W01](artifacts/verification/S13_W01_CHECKS.json) 必要驗收通過，完成隨本包 PR 合併生效；持久 worker／投遞另由 W04／W07 交付 |
+| <a id="s13-w04"></a>S13-W04 | P2 | 已完成 | S13-W01 | 持久 worker、事件／到期觸發、分鐘級故障恢復及有限重試，業務有效結果唯一；優先驗證 pg-boss，業務台帳與入列同交易，job 只存參照；授權／終態／外發去重／unknown 由項目掌管。雙 worker、hard-kill、取消撤權、重試上限及備份還原按 [採用閘](docs/TECH_REUSE.md#worker) 驗收；Web 關閉仍執行，框架成功不代表任務完成；[EV-S13-W04](artifacts/verification/S13_W04_CHECKS.json) 27 項輕量檢查及獲批分段本機驗收通過，hard-kill 恢復 68.895 秒；完成隨本包 PR 合併生效 |
+| <a id="s10-w01"></a>S10-W01 | P2 | 已完成 | S17-W01 | 最小向量 RAG：有限官方知識分段／版本／適用性、固定 pgvector、embedding、精確向量＋關鍵詞／RRF 及最多六片段引用；可重複匯入／核對發布／停用指令、失敗／降級、既有資料保留及擴展備份還原必要驗收；不建完整管理平台；[EV-S10-W01](artifacts/verification/S10_W01_CHECKS.json) 必要本機／真 embedding／擴展還原通過，完成隨 PR #35 合併生效；Agent／引用 UI 在 S11-W02 接線 |
+| <a id="s10-w02"></a>S10-W02 | P2 | 已完成 | S10-W01、S13-W04 | 共用 worker 定期檢查：官方穩定每週、官方＋指定媒體近期每日；未變 hash 不重算向量，變更只更新受影響片段且核對後發布；驗收無變／失敗／停用／過期／日期／分類隔離；依使用者確認，CHP／RTHK 只限組內試用，公開檢索預設排除，見 [ADR-013](docs/DECISIONS.md#adr-013)；不做新聞分析平台；必要集中驗收及來源失效／登記撤回閘通過，完成隨本包 PR 合併生效，見 [EV-S10-W02](artifacts/verification/S10_W02_CHECKS.json) |
+| <a id="s11-w02"></a>S11-W02 | P2 | 已完成 | S11-W03、S09-W02、S13-W04、S10-W02 | 接通互動／背景共用 AgentRuntime、已確認記憶、真向量檢索及任務工具；復用 Prompt Pack 的草稿／補問／確認／結構化結果，工具授權、版本、配額及取消一致；育兒問答／成長關注／安全求助引用適用官方片段，不足時明示；原生工具與收尾不重複執行副作用，不建立醫療分流；依 [ADK 原生能力核查](docs/TECH_REUSE.md#adk) 保留單次 Session／Pack，優先 BasePlugin＋原生 spans 最小診斷並驗無正文外洩，不另建 session／skill 平台；共用真 ADK／檢索／確認與背景重啟證據、引用修正的必要 Runner／離線重播覆核通過，範圍分列於 [EV-S11-W02](artifacts/verification/S11_W02_CHECKS.json)；真聯絡留 W07，完成隨本包 PR 合併生效 |
+| <a id="s12-w03"></a>S12-W03 | P2 | 已完成 | S06-W02、S11-W02 | Web 照片上傳／附件識別與授權、提取及確認；原檔／hash／來源／刪除／備份／容量限制與失敗保留當前輸入；原檔／ADK 私人候選／確認及功能 UI 已接，見 [EV-S12-W03](artifacts/verification/S12_W03_CHECKS.json)；021／原資料保留、39 HTTP 中的照片流程、單次真照片候選與配對備份／空庫還原必要證據通過；刪除快照限制及完整面板未驗分列，完成隨本包 PR 合併生效 |
+| <a id="s12-w04"></a>S12-W04 | P2 | 已完成 | S12-W03 | 使用者主動分享／貼上／上傳、指定公開來源及本人自訂私人來源（含自備訂閱／付費材料）；保存來源／時間／備註，公開可直接訪問 HTML 由本人明確取得，需登入正文由本人提供；不背景讀私人動態，不把帖子直接當家庭事實或執行授權；私人來源、受限提取、確認及功能 UI 已接，見 [EV-S12-W04](artifacts/verification/S12_W04_CHECKS.json)；023／私人來源保存、一次取得及隔離已通過；原提取日期失敗保留；修正版真候選及原文／確認／還原必要證據通過，完整分享面板瀏覽器未驗；完成隨本包 PR 合併生效，不重跑已通過項 |
+| <a id="s13-w05"></a>S13-W05 | P2 | 已完成 | S06-W02、S13-W04 | Web Push adapter：優先 web-push 處理 VAPID／協定；家庭成員訂閱／授權／撤銷、站內狀態與失敗回報；發送不冒充已讀或完成，依 [渠道採用閘](docs/TECH_REUSE.md#channels) 驗證重試／unknown 及許可；49 業務／2 輪詢 SQL 與一次 Firefox 關頁後真通知／撤銷通過；完成隨本包 PR 合併生效，公開 origin 留 S17-W02，見 [EV-S13-W05](artifacts/verification/S13_W05_CHECKS.json) |
+| <a id="s13-w06"></a>S13-W06 | P2 | 已完成 | S06-W02、S13-W04 | Telegram adapter：優先 grammY，不預設開自動重試；接收者先啟動 bot 並綁定、授權／撤銷、發送／回應及錯誤狀態；憑據／最小通知內容保護、webhook 去重及 unknown 依 [渠道採用閘](docs/TECH_REUSE.md#channels) 驗證；migration／還原及 45 業務／2 輪詢 SQL、一次真訊息及本人收到回覆通過，公開 webhook／即時 callback 回應留 S17-W02；完成隨本包 PR 合併生效，見 [EV-S13-W06](artifacts/verification/S13_W06_CHECKS.json) |
+| <a id="s13-w08"></a>S13-W08 | P2 | 已完成 | S11-W02 | 四年齡段有限且已核對的非醫療分流的成長關注規則、按已確認孩子情況判斷適用；站內候選生命週期及來源，關閉後同階段同依據不再催，新階段／實質新確認資料／官方規則實質變更才產生新候選並說明原因；舊終態不復活，可永久停用主題；[成長關注驗收](SPEC.md#ac-growth-attention)；四年齡段規則、家長控制／原操作唯一任務與保存、關閉抑制／新依據、真背景檢索及重啟去重的必要證據已核對；引用修正沿用必要 Runner／離線重播，範圍見 [EV-S13-W08](artifacts/verification/S13_W08_CHECKS.json)，完成隨本包 PR 合併生效 |
+| <a id="s13-w07"></a>S13-W07 | P2 | 已完成 | S11-W02、S13-W08、S13-W05、S13-W06 | 預先授權的對象／內容／渠道／fallback 及 S13-W01 提醒控制規則內主動聯絡；每次重查授權，失敗／回應／逾時按規則處理，完成／取消／撤權即停，未知結果不盲重發；沒新事件不空轉模型；預授權／工具／持久投遞及功能 UI 已接，見 [EV-S13-W07](artifacts/verification/S13_W07_CHECKS.json)；019／配對還原、SQL fallback／撤權／終態／unknown，以及一次真 Agent→Telegram→收到→明確完成及清理通過；原清理呼叫上限失敗保留。完成隨本包 PR 合併生效；公開 webhook／部署仍留 S17-W02 |
+| <a id="s14-w01"></a>S14-W01 | P2 | 已完成 | S11-W02 | 多孩子切換、到診問題／準備清單、簡單日／週摘要；數字程式計算、資料可追溯、更正可更新；真 API 摘要／準備保存、來源刪除後失效、migration／加密還原及真 Agent 摘要工具證據已核對，範圍見 [EV-S14-W01](artifacts/verification/S14_W01_CHECKS.json)；完成隨本包 PR 合併生效 |
+| <a id="s16-w05"></a>S16-W05 | P2 | 已完成 | S06-W02、S07-W03 | 提前建立共用 Playwright Test Web 測試基礎：隔離合成資料、單 test worker、Chromium；Firefox 依 2026-09-29 使用者確認延後作相容性驗收，不阻塞 P2；先驗家庭隔離／角色、遺失寫入回應後查原 opId、撤權後清 UI 三條流程。主聊天負責正式 App／真 API 瀏覽器層及受控測試資料，前端 preview 測試另記；保留 node:test／P1 腳本，不以 mock 或 Web 代替真服務／Android；E2E 執行仍先按驗證制度批准；Chromium 單一真 API 情景通過；後續必要功能檢查用 Codex 內置瀏覽器，不重跑已通過項，Firefox 保留未驗；完成隨本包 PR 合併生效，見 [EV-S16-W05](artifacts/verification/S16_W05_CHECKS.json) |
+| <a id="s16-w02"></a>S16-W02 | P2 | 已完成 | P2 全部功能包、S16-W05 | 真 ADK 工具循環、四年齡段向量召回／引用、成長關注與抑制、記憶／任務、worker 恢復、家庭隔離、照片／來源、freshness、通知／fallback、失敗及成本必要驗收；復用 S16-W05 瀏覽器基礎及既有 scripted Runner，有限真 Gemini 情境另驗，不把 TS conformance 或靜態 Pack 當產品品質證據；證明家長需求與網頁關閉後背景事件兩條完整流程，高成本項先批准；必要本機／真服務證據已按包收束，全部功能包已合併；一次真聯絡與明確完成／清理已通過，原失敗保留，主模型最終證據核對通過，完成隨本包 PR 合併生效，見 [EV-S16-W02](artifacts/verification/S16_W02_CHECKS.json)。公開 HTTPS／正常部署接線及組員展示仍由 S17-W02 驗收 |
+| <a id="s17-w02"></a>S17-W02 | P2 | 已完成 | S16-W02 | Web＋ADK 產品 Agent＋最小向量 RAG 比賽成品；演示家長需求及背景觸發的工具／任務／真實聯絡／回報，交付來源與操作／投遞證據及限制；不以 mock、靜態 Pack 或兩條演示取代真服務及其他 P2 驗收。S16 已隨 PR #67 合併；[部署及交付](docs/P2_DELIVERY.md)／[EV-S17-W02](artifacts/verification/S17_W02_CHECKS.json)，P2 `43ab10c` 已部署，原資料保留／023／向量初始化、23 次合成 HTTP 及配對備份空庫還原通過；兩條公開 ADK／來源／任務／關頁後真聯絡流程、本人 Push／Telegram 收到、明確完成及清理通過；原失敗及修正保留，配額恢復 12／20；必要驗收已齊，完成隨本包 PR 合併生效 |
+| <a id="s06-w05"></a>S06-W05 | P2 增補 | 已完成 | S17-W02 | 本人模型 key 必備入口：首版 Gemini Developer API，保留平台 Vertex；Web 設定／替換／停用／刪除、帳號隔離及加密、明確同意／背景 opt-in、執行期版本重核、生成與查詢向量同一付費來源、分開配額／用量且無靜默 fallback；共用語料維護仍用平台。個人每日／單次生成／query embedding 上限可在 UI 調整並真正約束運行；平台上限不變。本次依使用者追加確認，只驗保存／隔離／刪除、原資料保留、scripted Runner 限額及撤回後停止；Google 地區限制下真 key 生成／向量保留待驗，不阻塞此次設定與接線交付。024／10 HTTP／31 store及必要 Runner 已通過，完成隨本包 PR 合併生效；[證據](artifacts/verification/S06_W05_CHECKS.json)。C 主責，權重 3，C 60%／A 25%／B 15%；主模型整合及最終驗收。軟件端於 S04-W01 復用，無需先自部署或切換 Server；本次設定增補尚未公開部署 |
+| <a id="s04-w01"></a>S04-W01 | P3 | 未開始 | S17-W02、S06-W05 | Android 在線登入／孩子／記錄／聊天、APK 與使用者真機流程；重用同一 Server 和業務，不建 SQLite 主庫；正式 P3 接線／真機仍須使用者明確確認整套 Web 滿意；隔離 Android 共用 UI 可按 [分工例外](AGENTS.md#frontend-backend) 提前實作，手機瀏覽器／單頁確認不能代替正式關口 |
+| <a id="s05-w03"></a>S05-W03 | P3 | 未開始 | S04-W01 | Android 憑據安全保存、附件暫存／清理及退出／撤權處理；平台 adapter 不成為權威業務資料庫 |
+| <a id="s07-w01"></a>S07-W01 | P3 | 未開始 | S05-W03、S07-W03 | Web／Android 在線更新、並行修改、重連與附件狀態；首批優先 TanStack Query 讀取快取／失效及 RN focus／online adapter，沿用 opId 寫入 transport；版本／刪除／撤權／終態一致，驗身份／Server 切換、撤權／late response 清理及單一刷新機制，不實作離線操作隊列 |
+| <a id="s09-w03"></a>S09-W03 | P3 | 未開始 | S07-W01 | 跨端授權歷史與記憶恢復，新會話／摘要／模型快取場景；不把清空業務資料庫當清快取 |
+| <a id="s12-w01"></a>S12-W01 | P3 | 未開始 | S05-W03、S12-W03 | 粵語與 Android 相機／照片／便條，重用 Web 提取契約；數字單位確認，拒絕權限或失敗回表單 |
+| <a id="s13-w02"></a>S13-W02 | P3 | 未開始 | S07-W01、S13-W07 | 家庭交接與 FCM／原生通知 adapter；客戶端優先 Expo Notifications，Server 優先 Google Auth＋單次 FCM HTTP v1，依 [候選與限制](docs/TECH_REUSE.md#channels) 驗 native build／權限／token／unknown；業務排程仍在 Server，投遞／回應／完成分離及撤權有效 |
+| <a id="s16-w03"></a>S16-W03 | P3 | 未開始 | P3 全部功能包 | 雙端真機／在線一致性／家庭隔離／多模態／通知必要驗收；先批准高成本項，不能用 Web 代替真機 |
+| <a id="s17-w03"></a>S17-W03 | P3 | 未開始 | S16-W03 | 可安裝 APK、跨端 Web、家庭操作／權限／連線說明及真實證據 |
+| <a id="s06-w04"></a>S06-W04 | P4 | 未開始 | S17-W03 | 使用者選擇相容 Server API；確認地址、版本／能力及身份，憑據隔離，不自動把舊 Server 家庭資料送往新地址 |
+| <a id="s17-w05"></a>S17-W05 | P4 | 未開始 | S06-W04 | Windows Docker Desktop／WSL2 前置檢查、Compose 設定與少步啟動 API／worker／PostgreSQL／pgvector；儲存持久化、私密配置、TLS 與操作限制說明；驗沒有 GCP 附加身份且關閉 AI 時仍可使用核心資料及確定性任務，Gemini／外部通知另驗，不宣稱離線模型 |
+| <a id="s08-w01"></a>S08-W01 | P4 | 未開始 | S06-W04 | QR／短碼／已登入裝置確認、裝置撤權及臨時電腦會話；拒絕重放／過期，客戶端直接連 Server，不作手機資料中繼 |
+| <a id="s10-w03"></a>S10-W03 | P4 | 未開始 | S17-W03、S10-W02 | 沿用 P2 RAG 核心，擴充完整管理頁、大規模來源導入、批量重建管理、效能及完整遷移支援；版本／發布／停用與穩定／近期隔離延續，不另建向量／引用權威 |
+| <a id="s12-w02"></a>S12-W02 | P4 | 未開始 | S17-W03、S12-W01、S12-W04 | 系統分享及其餘既定平台 adapter；來源／確認／權限與失敗行為完整 |
+| <a id="s07-w02"></a>S07-W02 | P4 | 未開始 | S08-W01、S07-W01、S12-W02 | 完整在線故障矩陣、附件中斷／重試及不同 Server 連線邊界；S07 現行有效 AC 結案 |
+| <a id="s13-w03"></a>S13-W03 | P4 | 未開始 | S07-W02、S13-W02 | Server 切換的任務／授權交接、唯一執行、舊執行者失效與必要審計；為正式遷移提供切換邊界 |
+| <a id="s14-w02"></a>S14-W02 | P4 | 未開始 | S10-W03、S12-W02 | 趨勢、一頁主摘要、PDF、附錄／來源與版本、雙端預覽分享及更正後新報告 |
+| <a id="s15-w01"></a>S15-W01 | P4 | 未開始 | S13-W03、S17-W05 | Server 搬遷、資料／身份／附件／知識／任務完整性核對、確認後切換權威 Server；失敗不提早停用來源 |
+| <a id="s15-w02"></a>S15-W02 | P4 | 未開始 | S15-W01、S14-W02 | 完整加密備份、空環境災備、統一格式與保留新寫入的 rollback；核對未完成請求／任務，不恢復已撤權或終態工作 |
+| <a id="s16-w04"></a>S16-W04 | P4 | 未開始 | P4 全部功能包 | 現行 AC 全量追溯及原條款替代核對；完整成本／快取／權限／過期／可用性驗收先按驗證制度批准 |
+| <a id="s17-w04"></a>S17-W04 | P4 | 未開始 | S16-W04 | 全部 APK／Web／源碼配置／Windows 部署／知識／遷移／許可／操作說明／證據交付，另一組員可重現 |
+
+<a id="team-package-allocation"></a>
+## 四人工作包責任預分配
+
+2026-09-28：以下分配適用於尚未完成的 P2–P4 工作包，只增加交付責任，不改上表的範圍、前置、狀態或驗收。已結案工作及已交付的前端預覽保留原紀錄與署名，不追溯重新分配；責任預分配本身不啟動功能包，開工按後續使用者指示及前置狀態。
+
+| 成員代號 | 主責方向 |
+|---|---|
+| A | Agent 行為、提示詞、工具編排、記憶／知識接線及整體功能整合 |
+| B | Web／Android 介面、客戶端互動、平台 adapter 及前端交接 |
+| C | Server API、權限、持久化、一致性、worker、部署及恢復 |
+| D | Web Push／Telegram 渠道功能；另負責獲安排的測試執行、人工驗收及 PPT |
+
+主責負責整包交付協調，配合欄只列需要的分工，並非已完成貢獻或自動共同作者名單。開包時按使用者已授權的本機協作指引分配及記錄實際參與／修改歸屬；權重、份額、帳號、email 及署名操作按本機 `docs/TEAM_CONTRIBUTIONS.md` 管理，不將該本機指引重新加入 Git。
+
+每包必要技術驗收由主聊天統籌，相關實作者提供證據，A 作整包確認；D 執行另外安排的人工／跨功能驗收及整理結果，未實際執行不能代填通過。功能開發、測試執行及 PPT 交付分開記錄；需批准的驗收依[驗證制度](#verification)處理；按現行按包驗收及其限定例外執行，不沿用已被取代的集中安排。
+
+人類責任不改變[前後端聊天邊界](AGENTS.md#frontend-backend)：B 的畫面交付沿用 [frontend/HANDOFF](frontend/HANDOFF.md)，正式 App／API 接線仍由主聊天統籌並明確分配修改範圍。新預覽未替代正式介面，對已完成業務的新 UI 接線須另界定實際範圍及驗收，不倒算為舊包的新貢獻。指導文件、計劃與 AI 提示詞仍由相關聊天的主模型親自處理。
+
+### P2 原責任預分配（歷史；狀態以上表為準）
+
+| 工作包 | 主責 | 配合範圍 |
+|---|---|---|
+| [S13-W01](#s13-w01) 任務台帳 | C | B：任務表單／狀態操作；A：後續工具所需的任務語義邊界 |
+| [S13-W04](#s13-w04) 持久 worker | C | A：背景事件與後續 Agent 運行邊界 |
+| [S10-W02](#s10-w02) 知識／資訊更新 | A | C：worker 接駁、版本保存及增量向量更新 |
+| [S11-W02](#s11-w02) 完整 Agent 接線 | A | C：授權業務服務；B：引用、確認及真實工具結果介面 |
+| [S12-W03](#s12-w03) Web 照片與提取 | A | C：附件保存／權限／刪除；B：上傳、提取確認與失敗保留 |
+| [S12-W04](#s12-w04) 主動分享輸入 | B | A：提取及確認流程；C：來源保存與公開來源取得邊界 |
+| [S13-W05](#s13-w05) Web Push | D | B：瀏覽器訂閱及權限介面；C：訂閱保存、授權及 worker 接駁 |
+| [S13-W06](#s13-w06) Telegram | D | C：綁定／授權及 webhook 持久化；B：綁定與撤銷介面；Agent 聯絡編排留 S13-W07 |
+| [S13-W08](#s13-w08) 成長階段關注 | A | C：規則適用判斷及候選／終態保存；B：來源與關注處理入口 |
+| [S13-W07](#s13-w07) 授權主動聯絡 | A | C：投遞前校驗／終態；D：渠道回應及 fallback；B：預授權／結果介面 |
+| [S14-W01](#s14-w01) 到診準備與摘要 | A | B：多孩子／清單／摘要介面；C：可追溯查詢及數字計算 |
+| [S16-W05](#s16-w05) 正式 Web 測試基礎 | C | B：正式介面選取與跨端狀態配合；D：核對案例及獲批後的測試執行；由主聊天接真 API |
+| [S16-W02](#s16-w02) P2 整體驗收 | A | B／C／D：按所屬功能處理缺口；D：人工驗收與證據整理；不代替各包必要驗收 |
+| [S17-W02](#s17-w02) 比賽交付 | C | A：Agent 展示及能力界線；B：Web 交付；D：獨立試玩、PPT 及展示材料 |
+
+2026-09-28 使用者恢復 P2，S13-W01 必要驗收通過，完成隨本包 PR 合併生效；已隨 [PR #47](https://github.com/2NTTY/child-ai-caregiver/pull/47) 合併，S13-W04 從 master `a591f87` 開始，A 確認權重 3、C 80%／A 20%。S16-W05 亦已 Ready，仍未開始；分配給不同人不解除前置。S13-W01 分工已由 A 確認：權重 3，C 70%／B 20%／A 10%；實際 Server／UI／整合均有交付，主模型統籌技術驗收。
+
+### P3 工作包
+
+| 工作包 | 主責 | 配合範圍 |
+|---|---|---|
+| [S04-W01](#s04-w01) Android 縱向流程 | B | C：同一 Server 的登入及業務接駁；仍須 P2 結案及整套 Web 獲確認 |
+| [S05-W03](#s05-w03) Android 資料保護 | B | C：憑據、撤權與附件清理邊界 |
+| [S07-W01](#s07-w01) 跨端在線一致性 | B | C：版本／冪等契約與撤權邊界 |
+| [S09-W03](#s09-w03) 跨端記憶恢復 | A | B：歷史／記憶恢復介面；C：授權查詢與保存邊界 |
+| [S12-W01](#s12-w01) 語音與相機 | B | A：沿用提取／確認工具；C：附件服務接駁 |
+| [S13-W02](#s13-w02) 家庭交接與原生通知 | B | C：FCM Server adapter；D：渠道結果／回應語義及既有通知協作 |
+| [S16-W03](#s16-w03) 跨端真機驗收 | B | A／C：Agent 與 Server 缺口；D：獲批真機／跨端驗收及證據 |
+| [S17-W03](#s17-w03) APK 與跨端交付 | B | C：建置／服務配置；A：Agent 能力說明；D：獨立安裝試玩 |
+
+### P4 工作包
+
+| 工作包 | 主責 | 配合範圍 |
+|---|---|---|
+| [S06-W04](#s06-w04) 相容 Server 選擇 | C | B：地址／身份／能力確認及切換介面 |
+| [S17-W05](#s17-w05) Windows 自部署 | C | A：模型關閉時的能力界線與 Agent 配置；D：獲批後獨立重現 |
+| [S08-W01](#s08-w01) 配對與臨時會話 | C | B：QR／短碼／確認及裝置管理介面 |
+| [S10-W03](#s10-w03) RAG 管理與擴充 | A | C：批量導入／重建／效能／遷移；B：來源與版本管理介面 |
+| [S12-W02](#s12-w02) 系統分享 adapter | B | A：沿用來源／提取／確認流程；C：權限及附件接駁 |
+| [S07-W02](#s07-w02) 完整在線故障矩陣 | C | B：跨端連線／附件失敗狀態；D：獲批案例執行 |
+| [S13-W03](#s13-w03) 任務權威切換 | C | A：Agent／工具授權交接；D：渠道執行者及 unknown 邊界 |
+| [S14-W02](#s14-w02) 趨勢與 PDF 報告 | A | B：圖表／雙端預覽／分享；C：數字、來源及版本查詢 |
+| [S15-W01](#s15-w01) Server 搬遷 | C | B：確認／切換介面；A：記憶、知識及任務接續核對 |
+| [S15-W02](#s15-w02) 災備與 rollback | C | A：Agent 相關資料／終態完整性；B：恢復操作及結果介面 |
+| [S16-W04](#s16-w04) 完整驗收 | A | B／C／D：按功能處理缺口；D：獲批驗收執行及 AC 證據整理 |
+| [S17-W04](#s17-w04) 完整版交付 | C | A：Agent／知識／工具說明；B：Web／APK 成品；D：獨立重現與交付材料 |
+
+<a id="extension-boundaries"></a>
+## 共享邊界與漸進實作
+
+以下為 P2 接續的歷史基線；當前狀態以工作包表及 STATUS 為準，P2 必要驗收已齊，不重啟已完成包。
+
+S11-W03／S06-W02／S05-W02／S07-W03 已分別隨 PR #30／#31／#32／#36 合併。S09-W02 必要驗收通過，完成隨 PR #34 合併生效；因接入相同操作收據，加入已完成的 S07-W03 作前置。S09-W02 已隨 PR #34 合併；使用者於 2026-09-28 恢復 P2，S13-W01 從 master `54e53d6` 開始。使用者另行批准 S10-W01 必要驗收及收尾；已整合最新 master，真 embedding、同卷升級、原資料保留及加密擴展還原通過，完成隨 PR #35 合併生效；先前暫停已由本次使用者恢復指示解除。S13-W04 已隨 PR #48 合併；S10-W02 從 master `70dda82` 開始，權重 3、A 60%／C 40%，主模型統籌必要驗收。按依賴推進，不按 Sxx／Wxx 數字排序；未完成必要驗收及合併前不解鎖依賴包。ADK 選型與初始限額見[架構](docs/ARCHITECTURE.md#p2-agent-runtime)；實作與真服務驗收分開記錄。
+
+P1 按真實流程實作 DataStore／ModelGateway；P2 加入 AgentRuntime／AttachmentStore／KnowledgeRetriever／TaskExecutor／渠道無關的 NotificationGateway。在線更新／版本／確認沿用 SyncEngine 契約名稱，不保留離線同步框架。詳細職責由 [API](docs/API.md#section-3-3) 維護。
+
+共享 TypeScript 承載業務、驗證、AI orchestration 與任務規則；Web／Android UI、資料 driver、相機／通知／分享保持薄 adapter。Agent／權威寫入在 Server，不把平台或資料庫 SDK 寫進核心。育有方仍是唯一領域實作；集中領域模型、prompt、來源及受限 skills，不建立插件平台或第二主題。Android、相容 Server 選擇、配對與完整災備只在相應階段實作；之前保留必要識別、版本、權限與接口責任。
+
+<a id="packages"></a>
+## 工作包与有限并行
+
+- 分支、提交、推送与合并遵循 [AGENTS Git 工作流](AGENTS.md#git-workflow)。
+- 主模型同一时间只推进一个生产代码工作包；工作包通过不代表整个步骤通过。
+- 主模型先拆分，再按 [子代理政策](AGENTS.md#models) 委派可獨立核查的任務；先收齊並整合結果，不輪詢進度或持續追加代理。
+- 不并行实现依赖不稳定接口的模块；相同同步、权限、迁移或共享模型修改优先串行。
+- 前後端依 [聊天分工](AGENTS.md#frontend-backend) 使用獨立分支；前端當前先在 `frontend/` 交付 Web 合成預覽，主聊天負責正式接線與整合。FE-Wxx 及其專用文件由前端管理，Sxx 業務包及正式驗收仍由本 PLAN 管；preview 完成不計作 Sxx 接線完成。穩定接口且無前置依賴的交付才可並行；S16-W05 可先於 P2 總驗收準備並由 S16-W03／W04 沿用，各功能包的必要驗收不因此延後。
+- 未驗收並合併的前置工作包不能當作已完成基礎；阻塞寫明原因及解除方法，不以擴展功能掩蓋。分支、review、合併以包為單位；父 Sxx 全部包完成才結案。
+
+工作包记录格式：
+
+```text
+工作包 ID：Sxx-Wxx
+所属步骤：
+階段／前置工作包：
+狀態：未開始 / 進行中 / 受阻 / 待驗收 / 已完成（選一）
+目标：
+关联 REQ／AC：
+修改范围：
+前後端交付／共享契約與修改歸屬（適用時）：
+復用結論／必要候選及未驗證項（一句或引用既有研究即可）：
+範圍外：
+验证方法：
+完成证据：
+```
+
+<a id="doc-r01"></a>
+## DOC-R01 — 五階段文件重排及歸檔
+
+- 狀態：已完成。
+- 驗收：五階段／依賴、原錨點及當時有效 AC 保留；歸檔原文／唯一 JSON、WORKLOG 舊前綴及連結核對。
+- 證據：[LOG-20260920-007](WORKLOG.md#log-20260920-007)／[EV-DOC-R01](artifacts/verification/DOC_R01_CHECKS.json)。證据適用當時版本；後續替代依 ADR 追溯。
+
+<a id="doc-r02"></a>
+## DOC-R02 — Server 路線與專案代理規則修訂
+
+- 狀態：已完成。
+- 前置：DOC-R01 文件基線。
+- 範圍：五階段／工作包、Server 契約、規則／專案配置及必要狀態與追加記錄；不含產品實作。
+- 驗收：現行要求與替代關係一致、舊錨點可追溯、依賴無循環、WORKLOG 舊前綴及歷史資料未改、專案配置可解析與當前 Codex 識別；角色限額與硬配置明確區分。
+- 證據：[LOG-20260922-001](WORKLOG.md#log-20260922-001)／[EV-DOC-R02](artifacts/verification/DOC_R02_CHECKS.json)。
+
+<a id="doc-r03"></a>
+## DOC-R03 — P1–P4 技術復用與前後端分工
+
+以下保留當時結案範圍；其中「下一包／Android 次序」不是現行指令，現行分工見 [AGENTS](AGENTS.md#frontend-backend)。
+
+- 狀態：已完成；文件驗收通過，交付隨本包 PR review／合併生效。
+- 基線：master `80cf50c`；保留已完成工作包及六份技術 Skill 的有效成果。
+- 範圍：有界復用規則、原生能力／候選證據、工作包採用閘、提前 S16-W05 及前後端交接；不改產品程式、依賴、部署或既有驗收結果。
+- 驗收：文件連結／錨點、工作包依賴、候選與實測分類、歷史 WORKLOG 前綴及 STATUS 位元組保留。使用者明確要求本包不改 STATUS，完成記錄只在本節及追加 WORKLOG。
+- 證據：[選型核查](docs/TECH_REUSE.md)／[ADR-012](docs/DECISIONS.md#adr-012)／[LOG-20260926-001](WORKLOG.md#log-20260926-001)。新功能包仍未開始，下一後端功能包仍為 S13-W01。
+- 前端交接補充：與「檢查育伴港前端現況」最新計劃對齊，採隔離 Web 預覽／主聊天正式整合及整套 Web 確認後才開 Android；[LOG-20260926-002](WORKLOG.md#log-20260926-002)。前端目錄及 FE-W01 尚未實作，不更改原產品包完成狀態。
+
+<a id="doc-r04"></a>
+## DOC-R04 — 文件職責及閱讀路徑收斂
+
+- 狀態：已完成；2026-10-04 使用者確認合併，隨 [PR #86](https://github.com/2NTTY/child-ai-caregiver/pull/86) 合併生效。
+- 成果／基線：從 master `c51dd52` 收斂根／前端閱讀入口、文件職責、過時 metadata 及歷史索引；附件按現行資料取捨，保留前端獨立進度、固定歷史原文及證據。沒有業務程式、API 語義、UI 或部署改動。
+- 驗收：[EV-DOC-R04](artifacts/verification/DOC_R04_CHECKS.json)／[LOG](WORKLOG.md#log-20261004-001)。引用／錨點、TOML、歷史內容及接手入口已核對；追加 STATUS 更新／清理規則已靜態核對。官方 Skill validator 缺 PyYAML，替代檢查及未驗限制照實保留；沒有產品測試或 runtime／token 節省量測。
+- 後續整合限制：#84／#85 的新內容及各自驗收由原包處理；整合時保留其新增內容，不整檔覆蓋。本包不操作其源分支或啟動正式接線。
+
+<a id="s00-w01"></a>
+## S00-W01 — 完整文档迁移
+
+- 状态：已完成。
+- 目标：原样保留磁盘完整基线及四份旧材料，完成职责拆分、逐条映射与执行制度。
+- 关联验收：AC-S00-M01 至 AC-S00-M09（下表稳定锚点）。
+- 验证：完整覆盖／原文保留、哈希、链接锚点、状态、单一权威、Luna 只读獨立核查。
+- 完成证据：[LOG-20260920-002](WORKLOG.md#log-20260920-002)、[EV-001](artifacts/verification/S00_CHECKS.json)、[EV-002](artifacts/verification/S00_AUDIT.md)。
+
+| 子步骤／验收 ID | 状态 | 工作 | 验收条件 |
+|---|---|---|---|
+| <a id="ac-s00-m01"></a>M01 / AC-S00-M01 | 已完成 | 固定已有磁盘基线，登记五份原文件版本与校验值 | 原文可回看、来源明确、五文件哈希未变，没有摘要重建 |
+| <a id="ac-s00-m02"></a>M02 / AC-S00-M02 | 已完成 | 逐段、逐列表项、逐表格行清点 | 有效设计、验收与结构信息全部可定位，冲突有依据 |
+| <a id="ac-s00-m03"></a>M03 / AC-S00-M03 | 已完成 | 文档权威职责、稳定编号 | 每类信息有唯一维护位置，引用可解析 |
+| <a id="ac-s00-m04"></a>M04 / AC-S00-M04 | 已完成 | 完整内容搬迁 | 正文有实质规则，不是只有标题／链接／TODO；已有未定细节明确保留 |
+| <a id="ac-s00-m05"></a>M05 / AC-S00-M05 | 已完成 | 建立执行入口 | PLAN 全步骤、短 AGENTS／STATUS、append-only WORKLOG、诚实 README，产品步骤未假完成 |
+| <a id="ac-s00-m06"></a>M06 / AC-S00-M06 | 已完成 | 完成逐条映射 | 有效条款无遗漏；复合条款各部分有落点；所有 AC 保留；unresolved 不隐瞒 |
+| <a id="ac-s00-m07"></a>M07 / AC-S00-M07 | 已完成 | 一致性与结构检查 | 无断链、重复锚点、错误状态、竞争权威、虚假运行命令 |
+| <a id="ac-s00-m08"></a>M08 / AC-S00-M08 | 已完成 | Luna 獨立只读核查，主模型处理 | 发现项有解决记录、复核通过；子代理无文件修改 |
+| <a id="ac-s00-m09"></a>M09 / AC-S00-M09 | 已完成 | 冻结迁移结果和交接 | 记录完整，PLAN 与 STATUS 一致；歷史遷移範圍結案，不代表產品功能完成 |
+
+<a id="section-7-reuse"></a>
+## 技術與開源復用原則
+
+<a id="rule-7-reuse-01"></a>
+先復用現有實作／依賴／Skill，再核對同版本 Google／Expo／已採用框架的原生能力，缺口才有界比較成熟開源方案；具體執行依 [AGENTS](AGENTS.md#technical-skills)，已核對候選及驗證方法見 [TECH_REUSE](docs/TECH_REUSE.md#decisions)。育伴港的家庭授權、任務終態、外發去重及安全規則由項目控制，核心支援自部署，不為更知名的框架重寫已驗收功能。
+
+<a id="rule-7-reuse-02"></a>
+保留 S01 已完成調查的來源及結論；`coo-ai-agent` 的 AWS、短信及會話設計與目標有差異，不整套作產品底座，也不再作所有通用能力的預設首查入口。[參考項目](https://github.com/skidx64/coo-ai-agent)。其他歷史設計參考：
+
+- <a id="rule-7-reuse-03"></a>Baby Buddy：育儿事件字段和成熟记录流程；
+- <a id="rule-7-reuse-04"></a>CareLoop：语音、照顾者和交接设计参考；
+- <a id="rule-7-reuse-05"></a>BreastfeedingTracker：记录、提醒和统计界面候选；
+- <a id="rule-7-reuse-06"></a>UNICEF Bebbo：多孩子、年龄分类和内容组织参考。
+
+<a id="rule-7-reuse-07"></a>
+仅移植许可明确、经过核验、确实减少工作的模块。发现许可文件不完整时保留研究结论，不把不确定代码直接放入交付物。沿用部分保留归属、许可证、版本和修改说明。
+
+<a id="verification"></a>
+## 验证与证据层级
+
+| 用语 | 含义 | 依据 |
+|---|---|---|
+| 已确认 | 设计或需求确定 | SPEC／ADR／用户决定 |
+| 已实现 | 代码确实存在 | 文件与修改版本；文档迁移只能说明文档已写入 |
+| 已验证 | 指定场景实际通过 | 命令或人工步骤、环境／版本、结果与证据 |
+| 已完成 | 实现、全部必需验证和记录齐备 | 本步驟必要驗收及證據齊備；按文件職責更新受影響位置 |
+
+驗證範圍、成本、批准與失敗停批統一依 [AGENTS 驗證與收尾](AGENTS.md#finish)。此處只定義證據層級及下列既有分支例外，不複製另一份測試規則。
+
+<a id="p2-deferred-acceptance"></a>
+### 按包驗收與既有 P2 隔離分支收束
+
+2026-09-30 使用者更新：恢復每個工作包完成實作及 review 後，提出最小必要範圍、次數與成本並獲批驗收，不再延後至整個 P2。2026-09-28 的先實作／集中驗收安排是既有分支的歷史依據，不能用來新開尚欠前置驗收的依賴包。
+
+- **實作與完成分開：**程式及接線準備好仍只標已實作／待驗收；必要驗收和交付門檻不取消。只測通常使用路徑及必要正確性／安全邊界，不補偏僻情景、完整矩陣或重跑已有可信證據。
+- **既有分支收束：**保留已建立的各包分支／worktree、固定前置及未驗項，無須為恢復按包驗收重建成果。將 S16-W02 已取得的有效證據歸回相應包，只補缺項，按真實依賴完成 review／PR／合併；新包恢復從已驗收合併的最新 master 開始。
+- **正式合併：**尚欠必要驗收的功能包不合併 master、不部署。前置修正只補受影響的必要驗證；S16-W02 統籌跨包缺項，S17-W02 完成門檻不變。
+- **目前主聊天例外：**使用者在 `01a0c876-a538-7a51-8b99-648131cc56f4` 明確授權本聊天直接執行最低必要驗收，毋須逐次詢問；主模型仍先準備／review 有界入口，報告範圍及實際次數，失敗定位後只補受影響部分。既有具體上限繼續沿用，不把免詢問理解為可加跑大量／深度測試；新增高成本操作先向使用者說明。例外不延伸至其他聊天，也不授權部署、續期或擴大雲端資源。
+
+用户真机操作需要真实反馈；代码已准备但缺真机验收用“待驗收”。必需账号／权限／环境缺失且无法继续用“受阻”。单次演示成功、界面好看或计划写完都不等于产品完成。
+
+<a id="maintenance"></a>
+## 计划与规范维护
+
+保留冻结基线的十章编号；现行文件使用稳定 REQ／AC／S／工作包／ADR／LOG／EV／SRC 标识，标题可以完善，锚点不能随意失效。只修改被新决定影响的部分，未变有效内容继续保留。
+
+刪除或替代設計須在 DECISIONS 記原因、影響及替代，WORKLOG 只追加實際驗證及狀態。日常按現行 REQ／AC 與工作包追溯；只有需要回查遷移來源時，先讀 [_archive 索引](_archive/README.md) 再定位歷史 MIGRATION_MAP。文件移入 `_archive/` 或改為 archived-in-place，必須同包同步索引；不得直接掃描歸檔或改寫舊 LOG 連結。舊「待處理」不是狀態；使用本文件五狀態與四證據層級。[歷史拆分依據](docs/DECISIONS.md#adr-001)／[五階段依據](docs/DECISIONS.md#adr-005)／[Server 替代決策](docs/DECISIONS.md#adr-008)／[工作規則決策](docs/DECISIONS.md#adr-009)。
+
