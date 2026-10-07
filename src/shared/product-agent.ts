@@ -3,9 +3,12 @@ import { taskChangeSchema, taskValuesSchema } from "./tasks.ts";
 import type { KnowledgeEvidence } from "./knowledge.ts";
 import { sharedInputCreateSchema, sourceManagementSchema, sourceManagementChangeSchema } from "./shared-inputs.ts";
 import { concernValuesSchema, concernChangeSchema } from "./concerns.ts";
+import { documentPatchSchema } from "./family-documents.ts";
 
 const text = (max: number) => z.string().min(1).max(max).refine(value => value.trim().length > 0);
 export const agentProposalSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("family_document_change"), documentId: z.uuid(), change: documentPatchSchema }).strict()
+    .refine(value => JSON.stringify(value).length <= 6000, "Document candidate exceeds the complete confirmation limit"),
   z.object({ kind: z.literal("concern_create"), values: concernValuesSchema }).strict(),
   z.object({ kind: z.literal("concern_change"), concernId: z.uuid(), change: concernChangeSchema }).strict(),
   z.object({kind:z.literal("private_source_create"),input:sharedInputCreateSchema.options[0],management:sourceManagementSchema}).strict(),
@@ -27,8 +30,8 @@ export type AgentDecision = z.infer<typeof agentDecisionSchema>;
 export interface AgentProposal {
   id: string; runId: string; childId: string; version: number;
   status: "pending" | "accepted" | "dismissed" | "expired";
-  createdAt: string; expiresAt: string; value: AgentProposalValue; targetLabel: string | null; targetVisibility?: "private" | "family";
-  result: { kind: "task" | "memory_fact" | "private_source" | "concern"; id: string; version: number } | null;
+  createdAt: string; expiresAt: string; value: AgentProposalValue; targetLabel: string | null; targetVisibility?: "private" | "family"; contentState?: "ready" | "invalidated";
+  result: { kind: "task" | "memory_fact" | "private_source" | "concern" | "family_document"; id: string; version: number } | null;
 }
 export interface AgentPendingPage {
   proposals: AgentProposal[];
@@ -38,7 +41,7 @@ export const agentPendingPageSchema = z.object({
   proposals: z.array(z.object({
     id: z.uuid(), runId: z.uuid(), childId: z.uuid(), version: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
     status: z.enum(["pending", "expired"]), createdAt: z.iso.datetime({ offset: true }), expiresAt: z.iso.datetime({ offset: true }),
-    value: agentProposalSchema, targetLabel: z.string().nullable(), targetVisibility: z.enum(["private", "family"]).optional(), result: z.null(),
+    value: agentProposalSchema, targetLabel: z.string().nullable(), targetVisibility: z.enum(["private", "family"]).optional(), contentState: z.enum(["ready", "invalidated"]).optional(), result: z.null(),
   })).max(20),
   nextCursor: z.string().regex(/^[A-Za-z0-9_-]{1,1024}$/).nullable(),
 }).strict();

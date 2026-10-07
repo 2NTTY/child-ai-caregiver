@@ -1,0 +1,4 @@
+
+Scoped A03 server/client/test typecheck exit: 0
+Temporary config: {"extends":"./tsconfig.server.json","include":[],"files":["server/family-document-store.ts","server/family-document-sources.ts","server/family-document-edits.ts","server/family-document-reading.ts","server/family-document-api.ts","server/agent-document-tools.ts","server/agent-confirmation-store.ts","server/product-agent-store.ts","src/client/family-documents-api.ts","src/client/product-agent-api.ts","tests/p2-a03.test.ts"],"exclude":[]}
+

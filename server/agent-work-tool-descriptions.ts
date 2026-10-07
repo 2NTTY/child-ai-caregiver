@@ -23,7 +23,7 @@ const operationNames: Record<string, string> = {
   task_create: "建立待辦", task_change: "更改待辦", memory_fact: "保存已確認事實",
   memory_fact_revise: "更正已有事實", memory_fact_deactivate: "停用已有事實",
   concern_create: "建立持續關注", concern_change: "更改持續關注",
-  private_source_create: "建立私人來源", private_source_change: "更改私人來源",
+  family_document_change: "修改同一份文件", private_source_create: "建立私人來源", private_source_change: "更改私人來源",
 };
 const fieldNames: Record<string, string> = {
   title: "標題", details: "內容", kind: "種類", dueAt: "時間", timeZone: "時區", note: "備註",
@@ -35,7 +35,7 @@ const fieldNames: Record<string, string> = {
   validityText: "適用條件", enabled: "啟用", modelExcerpt: "允許交給模型的片段",
   observation: "觀察內容", observedAt: "觀察時間", links: "相關資料", followUpAt: "跟進時間",
   factId: "原事實參照", taskId: "原待辦參照", concernId: "原關注參照", inputId: "原来源參照",
-  recordId: "記錄參照", attentionId: "成長關注參照", sourceMessageId: "本人原話參照",
+  documentId: "原文件參照", edits: "逐項修改", sectionId: "章節參照", itemId: "項目參照", beforeId: "放在此項之前", summary: "摘要", eventDate: "事情日期", sourceIds: "共享來源參照", recordId: "記錄參照", attentionId: "成長關注參照", sourceMessageId: "本人原話參照",
   messageId: "原話參照", sourceQuote: "本人原話", expectedVersion: "核對版本",
   authorityVersion: "資料版本", assigneeUserId: "負責人參照",
 };
@@ -43,7 +43,7 @@ const valueNames: Record<string, string> = {
   ordinary: "普通事項", appointment: "預約", private: "只供本人", family: "孩子共用資料",
   reschedule: "改期", complete: "標記已完成", cancel: "取消", resolve: "處理衝突",
   completed: "已完成", cancelled: "已取消", append: "追加觀察", archive: "結束並歸檔",
-  restore: "恢復", schedule_followup: "更改跟進時間", personal_source: "私人來源",
+  patch: "局部修改", upsert_section: "新增／修改章節", remove_section: "移除章節", move_section: "移動章節", upsert_item: "新增／修改項目", remove_item: "移除項目", move_item: "移動項目", set_metadata: "修改文件資料", restore: "恢復", schedule_followup: "更改跟進時間", personal_source: "私人來源",
   private_chat: "本人對話", care_record: "照護記錄", manual: "本人核對",
   answer_reference: "回答參考", record_candidate: "記錄候選", track_topic: "持續關注",
   unspecified: "未指定", external_material: "外部材料", claimed_official: "自稱官方材料（未核實）",

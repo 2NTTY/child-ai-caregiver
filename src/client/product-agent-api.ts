@@ -5,10 +5,10 @@ import { agentDecisionSchema, agentProposalSchema, agentPendingPageSchema, type 
 export type ProductAgentErrorCode = "invalid_input" | "unauthorized" | "not_found" | "session_changed"
   | "account_precondition_required" | "version_conflict" | "confirmation_expired" | "confirmation_scope_changed"
   | "agent_run_expired" | "sharing_confirmation_required" | "source_changed" | "fact_key_conflict"
-  | "ai_unavailable" | "check_original_run";
+  | "document_changed" | "document_edits_need_review" | "document_capacity_exceeded" | "invalid_document_edit" | "ai_unavailable" | "check_original_run";
 const knownCodes = new Set<ProductAgentErrorCode>(["invalid_input", "unauthorized", "not_found", "session_changed",
   "account_precondition_required", "version_conflict", "confirmation_expired", "confirmation_scope_changed",
-  "agent_run_expired", "sharing_confirmation_required", "source_changed", "fact_key_conflict", "ai_unavailable", "check_original_run"]);
+  "agent_run_expired", "sharing_confirmation_required", "source_changed", "fact_key_conflict", "document_changed", "document_edits_need_review", "document_capacity_exceeded", "invalid_document_edit", "ai_unavailable", "check_original_run"]);
 const knownStatuses = new Set([400, 401, 403, 404, 405, 409, 415, 428, 429, 500, 502, 503, 504]);
 export const requiresFreshAgentConfirmation = (error: ProductAgentApiError): boolean => error.status === 409 && error.code !== "session_changed";
 
@@ -41,10 +41,10 @@ const count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const proposalSchema = z.object({
   id: uuid, runId: uuid, childId: uuid, version,
   status: z.enum(["pending", "accepted", "dismissed", "expired"]),
-  createdAt: timestamp, expiresAt: timestamp, value: agentProposalSchema, targetLabel: z.string().nullable(), targetVisibility: z.enum(["private", "family"]).optional(),
-  result: z.object({ kind: z.enum(["task", "memory_fact", "private_source", "concern"]), id: uuid, version }).nullable(),
+  createdAt: timestamp, expiresAt: timestamp, value: agentProposalSchema, targetLabel: z.string().nullable(), targetVisibility: z.enum(["private", "family"]).optional(), contentState: z.enum(["ready", "invalidated"]).optional(),
+  result: z.object({ kind: z.enum(["task", "memory_fact", "private_source", "concern", "family_document"]), id: uuid, version }).nullable(),
 }).refine(value => value.status === "accepted"
-  ? value.result !== null && value.result.kind === (value.value.kind.startsWith("concern_")?"concern":value.value.kind.startsWith("private_source_")?"private_source":value.value.kind.startsWith("memory_fact") ? "memory_fact" : "task")
+  ? value.result !== null && value.result.kind === (value.value.kind === "family_document_change" ? "family_document" : value.value.kind.startsWith("concern_")?"concern":value.value.kind.startsWith("private_source_")?"private_source":value.value.kind.startsWith("memory_fact") ? "memory_fact" : "task")
   : value.result === null);
 const citationSchema = z.object({
   key: z.string(), section: z.string(), sourceExcerpt: z.string(), text: z.string(), keywords: z.array(z.string()),

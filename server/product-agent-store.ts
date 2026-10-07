@@ -16,6 +16,7 @@ import { summarySaveSchema } from "./memory-validation.ts";
 import { createMemoryStore } from "./memory.ts";
 import { createTaskStore, type TaskScheduling } from "./tasks.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
+import { documentPatchIsStructural } from "./family-document-edits.ts";
 import { createAgentWorkStore } from "./agent-work-store.ts";
 import { createAgentConfirmationStore } from "./agent-confirmation-store.ts";
 
@@ -45,7 +46,7 @@ function pendingCursor(raw: string | null, userId: string, childId: string) {
     return cursor;
   } catch { throw new FamilyError(400, "invalid_input"); }
 }
-interface ProposalPayload { value: AgentProposalValue; result: AgentProposal["result"]; targetLabel: string | null; targetVisibility?: "private" | "family" }
+interface ProposalPayload { value: AgentProposalValue; result: AgentProposal["result"]; targetLabel: string | null; targetVisibility?: "private" | "family"; documentSourceBasis?: string }
 export interface AgentRunClaim {
   runId: string; scope: AgentScope; created: boolean; sourceMessageId: string | null;
   state: ProductAgentResult["status"]; expiresAt: string;
@@ -67,13 +68,42 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
   }
   function decodeProposal(run: Pick<RunRow, "id" | "child_id" | "owner_user_id">, row: ProposalRow): AgentProposal {
     const payload = JSON.parse(cipher.decrypt(row.payload_encrypted, proposalAad(run, row))) as ProposalPayload;
+    const { documentSourceBasis: _documentSourceBasis, ...publicPayload } = payload;
     return { id: row.id, runId: run.id, childId: run.child_id, version: row.version, status: row.state === "pending" && (row.is_expired ?? row.expires_at.getTime() <= Date.now()) ? "expired" : row.state,
-      createdAt: row.created_at.toISOString(), expiresAt: row.expires_at.toISOString(), ...payload };
+      createdAt: row.created_at.toISOString(), expiresAt: row.expires_at.toISOString(), ...publicPayload };
+  }
+  async function publicProposal(client: PoolClient, run: Pick<RunRow, "id" | "child_id" | "owner_user_id">, row: ProposalRow): Promise<AgentProposal> {
+    const proposal = decodeProposal(run, row);
+    if (proposal.value.kind !== "family_document_change") return proposal;
+    const payload = JSON.parse(cipher.decrypt(row.payload_encrypted, proposalAad(run, row))) as ProposalPayload;
+    let valid = false;
+    if (payload.documentSourceBasis) {
+      const borrowed = transactionPool(client);
+      try {
+        const current = await createFamilyDocumentStore(borrowed.pool, cipher).validatePatch(run.owner_user_id, run.child_id,
+          proposal.value.documentId, proposal.value.change, proposal.status === "accepted" ? proposal.result?.version : undefined);
+        valid = current?.sourceBasis === payload.documentSourceBasis;
+      } catch (error) {
+        if (!(error instanceof FamilyError)) throw error;
+        if (!["document_changed", "source_changed", "invalid_document_edit", "document_capacity_exceeded", "not_found"].includes(error.code)) throw error;
+      } finally { borrowed.assertReleased(); }
+    }
+    if (valid) return { ...proposal, contentState: "ready" };
+    const edits = proposal.value.change.edits.map(edit => {
+      if (edit.op === "set_metadata") return { ...edit, ...(edit.title !== undefined ? { title: "內容已失效，請重新核對" } : {}),
+        ...(edit.summary !== undefined ? { summary: "內容已失效，請重新核對" } : {}), ...(edit.eventDate !== undefined ? { eventDate: null } : {}) };
+      if (edit.op === "upsert_section") return { ...edit, ...(edit.title !== undefined ? { title: "內容已失效，請重新核對" } : {}), ...(edit.domain !== undefined ? { domain: null } : {}) };
+      if (edit.op === "upsert_item") return { ...edit, ...(edit.text !== undefined ? { text: "內容已失效，請重新核對" } : {}), sourceIds: [] };
+      return edit;
+    });
+    return { ...proposal, contentState: "invalidated", targetLabel: null, value: { ...proposal.value, change: { ...proposal.value.change, edits } } };
   }
   async function proposals(client: PoolClient, run: RunRow): Promise<AgentProposal[]> {
     // Each run has at most eight tool calls, hence at most eight proposals.
     const rows = (await client.query<ProposalRow>("SELECT * FROM agent_proposals WHERE run_id=$1 ORDER BY created_at,id", [run.id])).rows;
-    return rows.map(row => decodeProposal(run, row));
+    const items: AgentProposal[] = [];
+    for (const row of rows) items.push(await publicProposal(client, run, row));
+    return items;
   }
   async function currentScope(client: PoolClient, workspaceId: string, userId: string, childId: string): Promise<AgentScope> {
     const row = (await client.query<{ access_version: string; storage_epoch: string; change_seq: string }>(
@@ -94,6 +124,8 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     async writeDocument(scope: AgentScope, runId: string, opId: string, sourceQuote: string,
       mutation: { request: DocumentRequest } | { id: string; change: DocumentChange }) {
       z.uuid().parse(opId); z.string().trim().min(2).max(1000).parse(sourceQuote);
+      if ("change" in mutation && mutation.change.action === "patch" && !documentPatchIsStructural(mutation.change))
+        throw new FamilyError(400, "document_confirmation_required");
       return access(scope.userId, scope.childId, true, async (client, workspaceId) => {
         const row = await runFor(client, scope.userId, scope.childId, runId);
         const current = await currentScope(client, workspaceId, scope.userId, scope.childId);
@@ -156,7 +188,8 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     },
     async pendingProposals(userId: string, childId: string, rawCursor: string | null = null): Promise<AgentPendingPage | null> {
       const cursor = pendingCursor(rawCursor, userId, childId);
-      return access(userId, childId, false, async client => {
+      // Document proposal validation borrows WRITE-locked stores; acquire that lock before reading the page.
+      return access(userId, childId, true, async client => {
         const rows = (await client.query<PendingProposalRow>(
           `SELECT p.*,r.child_id,r.owner_user_id,
              to_char(p.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_created_at,
@@ -167,8 +200,10 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
            ORDER BY p.created_at DESC,p.id DESC LIMIT 21`,
           [userId, childId, cursor?.createdAt ?? null, cursor?.id ?? null])).rows;
         const page = rows.slice(0, 20), last = page.at(-1);
+        const items: AgentProposal[] = [];
+        for (const row of page) items.push(await publicProposal(client, { id: row.run_id, child_id: row.child_id, owner_user_id: row.owner_user_id }, row));
         return {
-          proposals: page.map(row => decodeProposal({ id: row.run_id, child_id: row.child_id, owner_user_id: row.owner_user_id }, row)),
+          proposals: items,
           nextCursor: rows.length > 20 && last ? Buffer.from(JSON.stringify({ version: 1, userId, childId,
             createdAt: last.cursor_created_at, id: last.id }), "utf8").toString("base64url") : null,
         };
@@ -224,8 +259,12 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         const borrowed = transactionPool(client), tasks = createTaskStore(borrowed.pool, cipher, scheduling);
         const page = await tasks.list(scope.userId, scope.childId); borrowed.assertReleased();
         if (!page) throw missing();
-        let targetVisibility: "private" | "family" | undefined;
+        let targetVisibility: "private" | "family" | undefined, documentSourceBasis: string | undefined;
         let targetLabel: string | null = value.kind === "task_create" ? page.eligibleAssignees.find(person => person.userId === value.values.assigneeUserId)?.name ?? null : null;
+        if (value.kind === "family_document_change") {
+          const target = await createFamilyDocumentStore(borrowed.pool, cipher).validatePatch(scope.userId, scope.childId, value.documentId, value.change);
+          borrowed.assertReleased(); if (!target) throw missing(); targetLabel = target.title; targetVisibility = "family"; documentSourceBasis = target.sourceBasis;
+        }
         if (value.kind === "task_create" && !page.eligibleAssignees.some(person => person.userId === value.values.assigneeUserId)) throw new FamilyError(400, "invalid_assignee");
         if (value.kind === "task_change") {
           const task = await tasks.get(scope.userId, scope.childId, value.taskId); borrowed.assertReleased();
@@ -265,12 +304,12 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         for (const row of previous) {
           const decoded = decodeProposal(run, row), same = canonicalJson(decoded.value) === encoded;
           if (row.call_id === callId && !same) throw new FamilyError(409, "operation_conflict");
-          if (same) return decoded;
+          if (same) return publicProposal(client, run, row);
         }
         if (previous.length >= 8) throw new FamilyError(409, "agent_proposal_limit");
         const id = randomUUID();
         const row = (await client.query<ProposalRow>("INSERT INTO agent_proposals(id,run_id,call_id,payload_encrypted) VALUES($1,$2,$3,$4) RETURNING *",
-          [id, runId, callId, cipher.encrypt(JSON.stringify({ value, result: null, targetLabel, ...(targetVisibility ? { targetVisibility } : {}) }), proposalAad(run, { id, version: 1 }))])).rows[0];
+          [id, runId, callId, cipher.encrypt(JSON.stringify({ value, result: null, targetLabel, ...(targetVisibility ? { targetVisibility } : {}), ...(documentSourceBasis ? { documentSourceBasis } : {}) }), proposalAad(run, { id, version: 1 }))])).rows[0];
         return decodeProposal(run, row);
       });
     },
@@ -282,7 +321,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         if (!row) throw missing();
         const proposal = decodeProposal(run, row), wanted = input.decision === "accept" ? "accepted" : "dismissed";
         // Exact repeat after response loss returns the already committed effect, never another task.
-        if (proposal.status === wanted && proposal.version === input.expectedVersion + 1) return proposal;
+        if (proposal.status === wanted && proposal.version === input.expectedVersion + 1) return publicProposal(client, run, row);
         if ((proposal.status !== "pending" && proposal.status !== "expired") || proposal.version !== input.expectedVersion) throw new FamilyError(409, "version_conflict");
         if (input.decision === "accept" && proposal.status === "expired") throw new FamilyError(409, "confirmation_expired");
         // An expired dismissal only retires the candidate; it never creates a business effect.
@@ -292,18 +331,30 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
             || run.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) throw new FamilyError(409, "confirmation_scope_changed");
         }
         const value = proposal.value;
+        const payload = JSON.parse(cipher.decrypt(row.payload_encrypted, proposalAad(run, row))) as ProposalPayload;
+        if (input.decision === "accept" && value.kind === "family_document_change") {
+          const borrowed = transactionPool(client);
+          const current = await createFamilyDocumentStore(borrowed.pool, cipher).validatePatch(userId, childId, value.documentId, value.change);
+          borrowed.assertReleased();
+          if (!payload.documentSourceBasis || current?.sourceBasis !== payload.documentSourceBasis) throw new FamilyError(409, "source_changed");
+        }
         let factScope: import("../src/shared/memory.ts").MemoryFact | null = null;
         if (value.kind === "memory_fact_revise" || value.kind === "memory_fact_deactivate") {
           const borrowed = transactionPool(client);
           factScope = await createMemoryStore(borrowed.pool, cipher, true).getFact(userId, childId, value.factId); borrowed.assertReleased();
           if (!factScope || factScope.version !== value.expectedVersion || factScope.status === "inactive") throw new FamilyError(409, "version_conflict");
         }
-        const shared = value.kind === "concern_create" || value.kind === "concern_change" || value.kind === "task_create" || value.kind === "task_change" || value.kind === "memory_fact" && value.intendedVisibility === "family" || Boolean(factScope && factScope.visibility === "family");
+        const shared = value.kind === "family_document_change" || value.kind === "concern_create" || value.kind === "concern_change" || value.kind === "task_create" || value.kind === "task_change" || value.kind === "memory_fact" && value.intendedVisibility === "family" || Boolean(factScope && factScope.visibility === "family");
         if (input.decision === "accept" && shared && !input.confirmShared) throw new FamilyError(400, "sharing_confirmation_required");
         let result: AgentProposal["result"] = null;
         if (input.decision === "accept") {
           const borrowed = transactionPool(client);
-          if(value.kind === "concern_create" || value.kind === "concern_change") {
+          if (value.kind === "family_document_change") {
+            const document = await createFamilyDocumentStore(borrowed.pool, cipher).change(userId, childId, value.documentId,
+              { ...value.change, confirmShared: true }, row.id);
+            borrowed.assertReleased(); if (!document) throw missing();
+            result = { kind: "family_document", id: document.id, version: document.version };
+          } else if(value.kind === "concern_create" || value.kind === "concern_change") {
             const concerns=createConcernStore(borrowed.pool,cipher);
             const concern=value.kind === "concern_create" ? await concerns.create(userId,childId,value.values,row.id)
               : await concerns.change(userId,childId,value.concernId,value.change,row.id);
@@ -349,8 +400,8 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         }
         const updated = { id: row.id, version: row.version + 1 };
         const saved = (await client.query<ProposalRow>("UPDATE agent_proposals SET version=$2,state=$3,payload_encrypted=$4 WHERE id=$1 RETURNING *",
-          [row.id, updated.version, wanted, cipher.encrypt(JSON.stringify({ value, result, targetLabel: proposal.targetLabel, ...(proposal.targetVisibility ? { targetVisibility: proposal.targetVisibility } : {}) }), proposalAad(run, updated))])).rows[0];
-        return decodeProposal(run, saved);
+          [row.id, updated.version, wanted, cipher.encrypt(JSON.stringify({ value, result, targetLabel: proposal.targetLabel, ...(proposal.targetVisibility ? { targetVisibility: proposal.targetVisibility } : {}), ...(payload.documentSourceBasis ? { documentSourceBasis: payload.documentSourceBasis } : {}) }), proposalAad(run, updated))])).rows[0];
+        return publicProposal(client, run, saved);
       });
     },
   };

@@ -1,4 +1,5 @@
 import type { AgentProposal, ProductAgentResult } from "../../../src/shared/product-agent.ts";
+import type { DocumentEdit } from "../../../src/shared/family-documents.ts";
 import type { KnowledgeEvidence } from "../../../src/shared/knowledge.ts";
 import type { AgentProposalView, AgentRunView } from "../agent-view-model.ts";
 import type { ChatCitationView } from "../chat-view-model.ts";
@@ -17,6 +18,7 @@ const toolNames: Record<string, string> = {
   list_private_sources:"讀取本人來源清單",read_private_source:"讀取獲授權的私人原文",propose_private_source:"保存私人來源候選",propose_private_source_change:"保存來源修改候選",
   stage_private_summary: "整理私有輔助摘要", read_context: "讀取已確認記憶及任務", search_knowledge: "檢索知識來源",
   propose_task: "保存建立任務候選", propose_task_change: "保存任務變更候選", propose_fact: "保存記憶候選", present_answer: "整理回覆及引用",
+  read_family_document_content: "續讀文件固定版本", list_family_document_versions: "讀取文件版本目錄", propose_family_document_change: "保存文件修改候選",
   read_family_documents: "讀取家庭文件", generate_family_document: "整理及保存家庭文件", change_family_document: "更新家庭文件",
   read_private_instructions: "讀取本人普通交代", execute_ordinary_instruction: "執行已授權的本人普通交代",
   save_ordinary_record: "保存普通照護記錄", revise_ordinary_record: "更正普通照護記錄", read_care_records: "讀取照護記錄及原版本", save_private_instruction: "保存本人私人備註", revise_private_instruction: "更正本人私人備註",
@@ -39,12 +41,39 @@ export function projectAgentCitation(source: KnowledgeEvidence): ChatCitationVie
       ...age.topics, ...age.conditions].join(" · "),
   };
 }
+function documentEditDetail(edit: DocumentEdit): string {
+  if (edit.op === "set_metadata") return [edit.title !== undefined ? "文件標題：" + edit.title : null,
+    edit.summary !== undefined ? "摘要：" + (edit.summary || "清除摘要") : null,
+    edit.eventDate !== undefined ? "事情日期：" + (edit.eventDate ?? "清除日期") : null].filter(value => value !== null).join("\n");
+  const section = "目標章節：" + edit.sectionId;
+  if (edit.op === "upsert_section") return [section, edit.title !== undefined ? "章節標題：" + edit.title : null,
+    edit.kind !== undefined ? "章節種類：" + ({ notes: "筆記", questions: "問題", checklist: "核對清單" })[edit.kind] : null,
+    edit.domain !== undefined ? "內容分類：" + (edit.domain === null ? "清除分類" : ({ profile: "孩子及家庭資料", body_life: "身體與生活",
+      abilities_interests: "能力與興趣", concerns: "持續關注", changes_support: "共享記事與照護安排" })[edit.domain]) : null].filter(value => value !== null).join("\n");
+  if (edit.op === "remove_section") return section + "\n移除此章節及其項目。";
+  if (edit.op === "move_section") return section + "\n移至：" + (edit.beforeId === null ? "章節末尾" : "章節「" + edit.beforeId + "」之前");
+  const item = section + "\n目標項目：" + edit.itemId;
+  if (edit.op === "remove_item") return item + "\n移除此項目。";
+  if (edit.op === "move_item") return item + "\n移至：" + (edit.beforeId === null ? "此章節的項目末尾" : "項目「" + edit.beforeId + "」之前");
+  return [item, edit.text !== undefined ? "項目文字：" + edit.text : null,
+    edit.sourceIds !== undefined ? "共享來源參照：" + (edit.sourceIds.length ? edit.sourceIds.join("、") : "沒有共享來源引用") : null].filter(value => value !== null).join("\n");
+}
 export function projectAgentProposal(proposal: AgentProposal): AgentProposalView {
   const value = proposal.value;
   const common = { id: proposal.id, version: proposal.version, status: proposal.status, kind: value.kind,
-    createdAt: proposal.createdAt, expiresAt: proposal.expiresAt,
+    createdAt: proposal.createdAt, expiresAt: proposal.expiresAt, contentState: proposal.contentState,
     result: proposal.result ? { kind: proposal.result.kind, version: proposal.result.version,
-      label: `${proposal.result.kind === "task" ? "任務" : proposal.result.kind==="concern"?"持續關注":proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+      label: `${proposal.result.kind === "family_document" ? "家庭文件" : proposal.result.kind === "task" ? "任務" : proposal.result.kind==="concern"?"持續關注":proposal.result.kind==="private_source"?"私人來源":"確認記憶"} · ${proposal.result.id}` } : null };
+  if (value.kind === "family_document_change") {
+    if (proposal.contentState === "invalidated") return { ...common, scope: "family", title: "原家庭文件修改",
+      content: "原文件或來源已改變，候選正文已遮蔽；請重新核對", details: [{ label: "原文件及版本", value: `${value.documentId} · ${value.change.expectedVersion}` }] };
+    const labels = { set_metadata: "修改文件資料", upsert_section: "新增／修改章節", remove_section: "移除章節", move_section: "移動章節",
+      upsert_item: "新增／修改項目", remove_item: "移除項目", move_item: "移動項目" };
+    return { ...common, scope: "family", title: proposal.targetLabel ?? "原家庭文件", content: "核對以下指定修改後，保存到同一份家庭共享文件。",
+      details: [{ label: "原文件及版本", value: `${value.documentId} · ${value.change.expectedVersion}` },
+        ...value.change.edits.map((edit, index) => ({ label: `${index + 1}. ${labels[edit.op]}`, value: documentEditDetail(edit) })),
+        { label: "範圍", value: "只共享列出的文件修改，不建立新事實或分享整段私人聊天。" }] };
+  }
   if (value.kind === "memory_fact_revise" || value.kind === "memory_fact_deactivate") {
     if (!proposal.targetVisibility) throw new Error("Missing fact proposal visibility");
     return { ...common, scope: proposal.targetVisibility, title: proposal.targetLabel ?? "原記憶事實",

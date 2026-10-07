@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
-import { documentChangeSchema, documentExportSchema, documentPeriodSchema, documentRequestSchema,
-  type DocumentChange, type DocumentExport, type DocumentPage, type DocumentRequest, type FamilyDocument } from "../shared/family-documents.ts";
+import { documentChangeSchema, documentExportSchema, documentPeriodSchema, documentRequestSchema, documentContentQuerySchema, documentListQuerySchema,
+  type DocumentContentPage, type DocumentContentQuery, type DocumentVersionPage, type DocumentListQuery, type DocumentChange, type DocumentExport, type DocumentPage, type DocumentRequest, type FamilyDocument } from "../shared/family-documents.ts";
 
 export class FamilyDocumentApiError extends Error {
   readonly status: number;
@@ -20,12 +20,20 @@ const sectionSchema = z.object({ id: z.string(), title: z.string(), kind: z.enum
   items: z.array(z.object({ id: z.string(), text: z.string(), sourceIds: z.array(z.string()), checked: z.boolean().optional() }).strict()) }).strict();
 const snapshotSchema = z.object({ id: uuid, version, generatedAt: timestamp, sourceBasis: z.string(), title: z.string(), summary: z.string(),
   ageLabel: z.string(), period: documentPeriodSchema, eventDate: z.string().nullable(), coverageNote: z.string(),
-  sections: z.array(sectionSchema), sources: z.array(sourceSchema), changes: z.array(z.string()) }).strict();
+  sections: z.array(sectionSchema), sources: z.array(sourceSchema), changes: z.array(z.string()),
+  editProtection: z.object({ sectionIds: z.array(z.string()), removedSectionIds: z.array(z.string()), metadataFields: z.array(z.enum(["title", "summary", "eventDate"])) }).strict().optional() }).strict();
+const manifestSchema = z.object({ snapshotId: uuid, snapshotVersion: version, invalidated: z.boolean(),
+  sections: z.array(z.object({ id: z.string(), kind: z.enum(["notes", "questions", "checklist"]), itemIds: z.array(z.string()) }).strict()) }).strict();
+const contentPageSchema = z.object({ documentId: uuid, documentVersion: version, authorityVersion: z.string(), snapshotId: uuid, snapshotVersion: version,
+  offset: z.number().int().nonnegative(), text: z.string().max(4000), totalCharacters: z.number().int().nonnegative(),
+  nextOffset: z.number().int().nonnegative().nullable(), complete: z.boolean(), invalidated: z.boolean(), contentKind: z.enum(["snapshot_json", "redacted_manifest_json"]) }).strict();
+const versionPageSchema = z.object({ documentId: uuid, authorityVersion: z.string(), items: z.array(z.object({ snapshotId: uuid,
+  snapshotVersion: version, generatedAt: timestamp, invalidated: z.boolean() }).strict()).max(10), nextCursor: z.string().max(2048).nullable() }).strict();
 const itemSchema = z.object({ id: uuid, childId: uuid, kind: z.enum(["preparation", "growth_report"]),
   purpose: z.enum(["appointment", "school", "outing", "handoff", "family"]), version, status: z.enum(["active", "archived"]),
   archivedAt: timestamp.nullable(), current: snapshotSchema.nullable(), history: z.array(snapshotSchema),
-  readState: z.enum(["ready", "stale", "invalidated"]), autoRefresh: z.boolean() }).strict();
-const pageSchema = z.object({ authorityVersion: z.string(), canManage: z.boolean(), items: z.array(itemSchema), hasMore: z.boolean() }).strict();
+  readState: z.enum(["ready", "stale", "invalidated"]), autoRefresh: z.boolean(), manifest: manifestSchema.optional() }).strict();
+const pageSchema = z.object({ authorityVersion: z.string(), canManage: z.boolean(), items: z.array(itemSchema), hasMore: z.boolean(), nextCursor: z.string().max(2048).nullable().optional() }).strict();
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const unique = (values: string[]) => new Set(values).size === values.length;
 function checkedItem(value: unknown, childId: string, id?: string): FamilyDocument {
@@ -109,9 +117,12 @@ export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = f
     reset() { pending = null; activeScope = ""; },
     pendingReference() { return pending?.opId ?? null; },
     hasUnknownOriginal() { return pending?.everUnknown === true; },
-    async getPage(childId: string, signal: AbortSignal, userId: string): Promise<DocumentPage> {
+    async getPage(childId: string, signal: AbortSignal, userId: string, options: Partial<DocumentListQuery> = {}): Promise<DocumentPage> {
       scope(childId, userId);
-      const value = await request(path(childId), signal, userId), parsed = pageSchema.safeParse(object(value) ? value.page : null);
+      const input = documentListQuerySchema.safeParse(options); if (!input.success) throw new FamilyDocumentApiError(400, "invalid_input");
+      const query = new URLSearchParams({ status: input.data.status, limit: String(input.data.limit) });
+      if (input.data.cursor) query.set("cursor", input.data.cursor);
+      const value = await request(path(childId) + (Object.keys(options).length ? "?" + query : ""), signal, userId), parsed = pageSchema.safeParse(object(value) ? value.page : null);
       if (!parsed.success || !unique(parsed.data.items.map(item => item.id))) throw new FamilyDocumentApiError();
       const page: DocumentPage = { ...parsed.data, items: parsed.data.items.map(item => checkedItem(item, childId)) };
       if (pending) {
@@ -126,6 +137,28 @@ export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = f
       const item = checkedItem(object(value) ? value.item : null, childId, id);
       if (pending?.kind === "change" && pending.id === id && !pending.reconfirm) pending.reviewed = true;
       return item;
+    },
+    async readContent(childId: string, id: string, raw: DocumentContentQuery, signal: AbortSignal, userId: string): Promise<DocumentContentPage> {
+      scope(childId, userId); const input = documentContentQuerySchema.safeParse(raw);
+      if (!uuid.safeParse(id).success || !input.success) throw new FamilyDocumentApiError(400, "invalid_input");
+      const query = new URLSearchParams({ snapshotId: input.data.snapshotId, snapshotVersion: String(input.data.snapshotVersion), offset: String(input.data.offset) });
+      const value = await request(path(childId) + "/" + encodeURIComponent(id) + "/content?" + query, signal, userId);
+      const parsed = contentPageSchema.safeParse(object(value) ? value.page : null);
+      if (!parsed.success || parsed.data.documentId !== id || parsed.data.snapshotId !== input.data.snapshotId || parsed.data.snapshotVersion !== input.data.snapshotVersion
+        || parsed.data.offset !== input.data.offset)
+        throw new FamilyDocumentApiError();
+      const page = parsed.data, end = page.offset + page.text.length;
+      if (page.invalidated !== (page.contentKind === "redacted_manifest_json") || end > page.totalCharacters
+        || page.complete !== (end === page.totalCharacters) || page.nextOffset !== (page.complete ? null : end)) throw new FamilyDocumentApiError();
+      return page;
+    },
+    async getVersions(childId: string, id: string, signal: AbortSignal, userId: string, cursor: string | null = null): Promise<DocumentVersionPage> {
+      scope(childId, userId);
+      if (!uuid.safeParse(id).success || cursor !== null && !/^[A-Za-z0-9_-]{1,2048}$/.test(cursor)) throw new FamilyDocumentApiError(400, "invalid_input");
+      const value = await request(path(childId) + "/" + encodeURIComponent(id) + "/versions" + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""), signal, userId);
+      const parsed = versionPageSchema.safeParse(object(value) ? value.page : null);
+      if (!parsed.success || parsed.data.documentId !== id || !unique(parsed.data.items.map(item => item.snapshotId)) || !unique(parsed.data.items.map(item => String(item.snapshotVersion)))) throw new FamilyDocumentApiError();
+      return parsed.data;
     },
     async create(childId: string, raw: DocumentRequest, signal: AbortSignal, userId: string) {
       scope(childId, userId); const parsed = documentRequestSchema.safeParse(raw);

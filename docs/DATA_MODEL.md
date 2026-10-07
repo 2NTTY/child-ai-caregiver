@@ -478,6 +478,8 @@ FamilyDocument 保存 kind／purpose／目前版本／歸檔與自動更新狀�
 
 家庭標準 growth_report／family 在同孩子及相同起訖期間內的 active 防重由既有 workspace 寫入鎖下的 create／restore 守衛保障；不新增 schema 或重寫既有文件。Checklist 刷新只保留身份、文字及來源均未變的勾選狀態。未有事件日期的現行關注可作明示未知日期的正文來源，不能偽造時間。
 
+A03 的 patch 沿既有文件及快照密文保存，不另建文件主庫。快照新增可選的編輯保護 metadata：被指定的章節、刪除章節及指定欄位；舊快照缺少時視為全由來源整理。此 metadata 不由任意模型 path 寫入。新正文候選沿 agent_proposals／agent_confirmations 保存並綁版本，接受後才成為共享文件正文；不建立確認事實。清單／修訂依既有 created_at、id、version keyset 續讀，游標必須重新核權。當前文件版本、快照版本和歷史版本分開；詳見 [局部修改契約](API.md#document-editing)。
+
 <a id="p2-agent-service"></a>
 ## P2 增補資料語義
 

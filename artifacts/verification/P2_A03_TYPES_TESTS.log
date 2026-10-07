@@ -1,0 +1,1 @@
+tests/p2-a03.test.ts(162,43): error TS18048: 'args.config' is possibly 'undefined'.

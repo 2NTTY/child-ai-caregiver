@@ -1,0 +1,4 @@
+
+Scoped A03 frontend projection/view typecheck exit: 0
+Temporary config: {"extends":"./frontend/tsconfig.json","include":[],"files":["frontend/src/agent-view-model.ts","frontend/src/production/agent-projection.ts","frontend/src/components/agent/AgentRunView.tsx"],"exclude":[]}
+

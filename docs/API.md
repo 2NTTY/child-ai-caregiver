@@ -616,7 +616,20 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 
 有觀察事件的舊版 concern:<id> 聚合來源只在讀取時用原算法建立臨時校驗投影，以原ID／版本／文字核對既有快照；不持久保存另一份資料、不放入新生成或新sourceBasis。舊來源仍有效時可按原同版讀取／PDF規則查看，但因來源模型更新而stale時須整理後才作需最新版本的操作；來源更正、刪除及撤權仍遮蔽。新觀察来源使用穩定 concern:<id>:observation:<eventId>，authority仍歸原關注資源，不放寬舊資料可見性。完全沒有觀察事件的關注保留原 concern:<id> 未提供日期來源及既有basis規則，不屬上述退役聚合。
 
-Agent 透過 read_family_documents／generate_family_document／change_family_document 使用同一服務。生成只接受用途／期間等結構化參數，不接受模型自由撰寫家庭正文；真實資源 ID／版本及操作收據才代表已保存。
+Agent 透過 read_family_documents／generate_family_document／change_family_document 使用同一服務。初次來源整理保留用途／期間等結構化參數；P2-A03 以下述局部修改取代「所有正文只能由固定模板產生」的限制。真實資源 ID／版本及操作收據才代表已保存。
+
+<a id="document-editing"></a>
+### P2-A03：同一文件的局部修改與續讀
+
+- 沿用 actions 與原 opId；新增 patch 動作，包含 expectedVersion、authorityVersion 及最多 12 個依序執行的 edits。所有修改在同一交易提交，任一不合法即整批回滾。只使用穩定 sectionId／itemId，不用畫面第幾行作持久索引，不接受可改權限／來源版本的任意 JSON path。
+- edits 支援 set_metadata（title／summary／eventDate）、upsert_section、remove_section、move_section、upsert_item、remove_item、move_item；文字有明確上限，整份文件有容量上限。未提及內容、ID、核對狀態及來源保持；換文字或來源的核對項目回到未核對。增補內容不是新孩子事實或醫療判斷，引用只能指向當前獲授權的共享來源。
+- 由本人直接在備援 API 提交的 patch 需明確 confirmShared；Agent 不可自行填 true 代替同意。Agent 僅移動／刪除既有項目等不增加披露的明確指令可經現有 writeDocument 直接執行；任何新增／替換正文、標題或摘要，先保存 family_document_change 候選，使用 A02 的綁定確認。候選列清文件、版本及逐項差異，共享範圍只限列出的整理；私人聊天原文、私人來源不隨之整批公開。接受時再次核對文件／授權／來源及原操作；可在聊天確認，不另建文件。 Server 在候選密文另綁 documentSourceBasis；接受前核對同一來源依據，不把舊候選文字自動套新來源版本。原文件或來源改變後，候選 public view 的 contentState=invalidated，正文／標題等遮蔽，原 ID／版本及真收據可保留；只能略過或重新核對，不能把遮蔽投影當作完整可接受內容。原加密候選不改寫。
+- 修改過的章節與欄位標記為人工／Agent 指定內容，刷新及背景來源整理保留；已刪章節不自動長回。受保護內容的原來源更正／失效時，停止刷新並回 document_edits_need_review，不把舊文當新資料或靜默覆盖。讀取仍遮蔽失效正文，只提供無正文的穩定結構識別，供明確刪除／替換後重新核對。背景刷新遇此明確待核對結果，只停止該文件的 dirty 重試，保留原快照並繼續其他文件；新的相關事件仍可標記待更新。純結構修復若只餘 ageLabel 的失效 profile 依據，可保存仍被遮蔽的過渡版本，下一次明確 refresh 才以新 profile 更新年齡；不丟失依據或冒稱正文已可用。版本恢复只形成同一文件的新版本，原歷史不改。
+- 清單及歷史採權限內 SQL keyset 分頁，游標綁本人／孩子／範圍／高水位，不以首頁表示全部。歸檔不佔用 50 份 active 文件額度；恢復同樣核對 active 上限及既有標準報告唯一性。
+- 工具先取得文件目錄與 snapshotId／snapshotVersion，再透過 read_family_document_content 依固定版本和 offset 讀每次最多 4,000 字元的快照 JSON；回傳已讀範圍、totalCharacters、nextOffset、complete 及 contentKind。有效正文為 snapshot_json；失效正文只可讀 redacted_manifest_json，僅穩定結構識別與必要版本，不含標題、摘要、正文或來源原文。complete 只指該 contentKind 讀完。目錄工具的章節概要亦有界，manifestPartial 明示未列齊，不在每段正文重帶完整目錄。不得因超過舊 7,000 字元限制而只返回空正文。中途換版不能拼接不同版本；歷史版本以 list_family_document_versions 的游標選取，再按同一固定版本讀取，當前權限及來源有效性仍適用。
+- HTTP 清單可帶 cursor；新增 /:id/content 與 /:id/versions 唯讀入口，共用工具與頁面的資料服務。範圍錯誤、權限失效及資料庫故障不偽裝成沒有資料。前端仍以閱讀、核對及對話整理為主，不改設計或另建可寫副本。
+
+實作沿用現有 typed actions／PostgreSQL 收據與版本交易；參考 [RFC 6902](https://www.rfc-editor.org/rfc/rfc6902) 的序列修改與失敗中止語義，並不宣稱提供其通用 JSON Patch 協定。任意 path／陣列位置不能代替本項目的穩定識別與來源控制，故無須引入通用 patch 引擎。2026-10-08 文件已核對，實作驗收按 A03 證據另記。
 
 <a id="p2-agent-service"></a>
 ## P2 增補接口邊界

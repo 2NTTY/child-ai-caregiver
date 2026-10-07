@@ -125,3 +125,8 @@ Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定�
 沿已確認方案採 `@react-pdf/renderer 4.9.0`（MIT），復用 Node `renderToBuffer`／自動分頁／字體內嵌，不自建 PDF 排版器。[官方 Node API](https://react-pdf.org/docs/v4/node)、[字體限制](https://react-pdf.org/docs/v4/fonts)、[相容性](https://react-pdf.org/docs/v4/compatibility)及官方 package／license 已核對。React 19 在支援範圍；官方相容頁沒有列 Node 24，不將文件相容當實測。實際 Node 24.19 的一份繁中合成 PDF 已輸出、抽取文字及渲染核對，零模型。
 
 字體採原版 LXGW WenKai TC v1.522 靜態 TTF（OFL 1.1），原授權及 hash 見 [字體記錄](../server/assets/fonts/README.md)。不用官方明示不適用的可變字體，不向外部 URL 傳送家庭正文；server/assets 隨既有 Server image 複製。這是 PDF 字體，不替换使用者確認的前端設計。
+
+
+### P2-A03 文件局部修改（2026-10-08）
+
+沿用現有 typed actions、Zod、PostgreSQL 交易及原 opId 收據，不新增編輯框架或 PDF 引擎。主模型核對 [RFC 6902 §3–5](https://www.rfc-editor.org/rfc/rfc6902) 的依序操作、明確目標與失敗中止；通用 JSON Pointer／陣列索引不處理本項目的穩定章節、來源權限及編輯保護，因此採受限業務 edits，並非實作通用 RFC 6902 endpoint。改寫同一份快照、固定版本分段讀取及 SQL keyset 分頁均沿既有依賴；不下載或複製第三方 patch 原始碼，沒有新增 license 義務。文件已核對，實測結果依 A03 驗收證據記錄。

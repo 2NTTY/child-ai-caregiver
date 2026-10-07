@@ -10,11 +10,13 @@ import { transactionPool } from "./transaction-pool.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { FamilyError } from "./family-access.ts";
 import { canonicalJson } from "./online-routing.ts";
+import { preserveFamilyDocumentEdits } from "./family-document-edits.ts";
 
 export interface FamilyDocumentSources {
   profile: ChildProfile; entries: DocumentSource[]; domains: Map<string, DocumentSection["domain"]>;
   questions: Set<string>; activeConcernIds: Set<string>; limited: boolean;
   legacyConcernSources?: Map<string, DocumentSource>;
+  referencedSources?: Map<string, DocumentSource>; checkedReferences?: Set<string>;
 }
 const labels = { note: "共享文字記錄", feeding: "餵食記錄", sleep: "睡眠記錄", diaper: "尿片記錄",
   temperature: "體溫記錄", measurement: "量度記錄", appointment: "到診記錄" } as const;
@@ -75,7 +77,7 @@ export async function loadFamilyDocumentSources(client: PoolClient, cipher: Stor
       text: `關注背景：${concern.title}（${concern.status === "following" ? "關注中" : "已結束"}）：${concern.reason}\n共享觀察（${event.at}）：${event.text}`,
       at: event.at }, "concerns");
   }
-  return { profile, entries, domains, questions, activeConcernIds, limited: Boolean(tasks.nextAfterId), legacyConcernSources };
+  return { profile, entries, domains, questions, activeConcernIds, limited: Boolean(tasks.nextAfterId) || memory.truncated.facts, legacyConcernSources };
 }
 
 export function documentSourceBasis(loaded: FamilyDocumentSources, request: DocumentRequest): string {
@@ -83,7 +85,7 @@ export function documentSourceBasis(loaded: FamilyDocumentSources, request: Docu
     .sort((a, b) => a.id.localeCompare(b.id)) })).digest("hex");
 }
 export function documentSnapshotValid(snapshot: DocumentSnapshot, loaded: FamilyDocumentSources): boolean {
-  const current = new Map(loaded.entries.map(source => [source.id, source]));
+  const current = new Map([...loaded.entries, ...(loaded.referencedSources?.values() ?? [])].map(source => [source.id, source]));
   return snapshot.sources.every(source => {
     const available = current.get(source.id) ?? (source.kind === "concern" ? loaded.legacyConcernSources?.get(source.id) : undefined);
     return available?.version === source.version && available?.text === source.text;
@@ -135,11 +137,34 @@ export function buildFamilyDocumentSnapshot(loaded: FamilyDocumentSources, reque
   ] : ["首次建立共享資料快照。"];
   const age = loaded.profile.data?.age;
   const ageLabel = age?.kind === "birth_date" ? "出生日期 " + age.date : age?.kind === "approximate" ? `約 ${age.rawValue} ${age.unit}（截至 ${age.asOf}）` : "年齡未確認";
-  return { id: randomUUID(), version, generatedAt: new Date().toISOString(), sourceBasis: documentSourceBasis(loaded, request),
+  return preserveFamilyDocumentEdits({ id: randomUUID(), version, generatedAt: new Date().toISOString(), sourceBasis: documentSourceBasis(loaded, request),
     title: request.title, summary: "按已確認家庭共享資料整理；沒有推斷診斷、能力或完整期間統計。", ageLabel,
     period: request.period, eventDate: request.eventDate,
-    coverageNote: "按香港日期篩選；最多展示期間內最近80項、40項無事件日期的已確認資料、20項發生時間未確認記錄。任務僅讀取首50項；來源及畫面均非完整期間統計。未知時間另列，沒有以儲存日期代替發生時間。沒有觀察日期的目前持續關注另列，不視為期間內事件。歷史只展示最近10個仍有效快照。" + (loaded.limited ? "另有任務未納入。" : ""),
-    sections, sources, changes: [...new Set(changes)].slice(0, 30) };
+    coverageNote: "按香港日期篩選；最多展示期間內最近80項、40項無事件日期的已確認資料、20項發生時間未確認記錄。任務僅讀取首50項；來源及畫面均非完整期間統計。未知時間另列，沒有以儲存日期代替發生時間。沒有觀察日期的目前持續關注另列，不視為期間內事件。記憶事實只讀取首20項；歷史可透過版本目錄續讀。" + (loaded.limited ? "另有任務或記憶事實未納入。" : ""),
+    sections, sources, changes: [...new Set(changes)].slice(0, 30) }, previous, loaded);
 }
 
 
+
+/** Validate referenced facts/tasks absent from a bounded source prefix through their authorized stores. */
+export async function supplementFamilyDocumentSources(client: PoolClient, cipher: StorageCipher, userId: string, childId: string,
+  loaded: FamilyDocumentSources, snapshots: DocumentSnapshot[]): Promise<void> {
+  loaded.referencedSources ??= new Map(); loaded.checkedReferences ??= new Set();
+  const known = new Set(loaded.entries.map(source => source.id));
+  const references = new Map(snapshots.flatMap(snapshot => snapshot.sources).map(source => [source.id, source]));
+  const borrowed = transactionPool(client);
+  for (const source of references.values()) {
+    if (known.has(source.id) || loaded.checkedReferences.has(source.id) || !["fact", "task"].includes(source.kind)) continue;
+    loaded.checkedReferences.add(source.id);
+    if (source.kind === "fact") {
+      const fact = await createMemoryStore(borrowed.pool, cipher).getFact(userId, childId, source.resourceId); borrowed.assertReleased();
+      if (fact?.visibility === "family" && fact.status === "confirmed" && fact.applicable && fact.sourceState === "current")
+        loaded.referencedSources.set(source.id, { id: "fact:" + fact.id, resourceId: fact.id, kind: "fact", version: fact.version,
+          label: "已確認家庭事實", text: fact.key + "：" + fact.content, at: null });
+    } else {
+      const task = await createTaskStore(borrowed.pool, cipher).get(userId, childId, source.resourceId); borrowed.assertReleased();
+      if (task) loaded.referencedSources.set(source.id, { id: "task:" + task.id, resourceId: task.id, kind: "task", version: task.version,
+        label: "家庭照護任務", text: `${task.title}：${task.details}（${{ scheduled: "待處理", completed: "已完成", cancelled: "已取消", needs_review: "需核對" }[task.occurrence.state]}）`, at: task.occurrence.dueAt });
+    }
+  }
+}
