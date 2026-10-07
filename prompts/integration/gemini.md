@@ -27,7 +27,7 @@ Google 官方建議用 system instructions 定義角色、語言與語氣；本�
 
 ### ADK 2.1.0 的產品接點
 
-固定指引及受信 runtime metadata 經 InstructionProvider 提供；input.context 作有標籤的 contents 資料，避免 ADK 把正文大括號當 state 模板。只換 provider 不能代替指令／資料隔離。present_answer 是 terminal，成功後用 skipSummarization；同一 response 混入其他工具須在任何執行前拒絕。finalize 的引用／授權驗證、unknown 台帳及原生 parts 保留，無新增模型輪數。漏調 present_answer 及背景 no_action 仍屬未解接點，不把本修復說成全流程已完成。
+固定指引及受信 runtime metadata 經 InstructionProvider 提供；input.context 作有標籤的 contents 資料，避免 ADK 把正文大括號當 state 模板。只換 provider 不能代替指令／資料隔離。present_answer 是 terminal，成功後用 skipSummarization；同一 response 混入其他工具須在任何執行前拒絕。finalize的引用／授權驗證、unknown台帳及原生parts保留。产品入口可明確啟用同invocation的一次展示修正：只在正常自然final且欠accepted展示、仍有原預算時，限制唯一present_answer，使用該階段ANY allowlist及Server二次工具限制。固定控制訊息只放request、不寫聊天；不重做副作用，不增加總限額，可能消耗一次剩餘生成。修正收到functionResponse即停止並完整收束generator，控制位不代表accepted，最後仍驗展示。其他入口不自動啟用；背景no_action與完整真模型可靠性仍未完成。
 
 ## 歷史、工具循環及私隱
 
