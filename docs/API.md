@@ -78,6 +78,8 @@ ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 Instructi
 
 修正提示不放寬 schema，不替代身份、授權、版本或業務驗證；非法參數仍零執行。`not_authorized`、handler拒絕及unknown沿原規則，其他工具維持原泛用回覆。僅能使用本次剩餘預算修正，不能因收到提示而增加模型次數、換操作ID或重送未知副作用。這項改善不等於已確定歷史 T7／T8／T9 真實請求中哪個欄位失敗。
 
+另僅 `propose_task` 執行時回覆 `rejected／invalid_assignee`，補上固定 `nextAction=read_context`、`field=values.assigneeUserId` 及無私人值的取值指引。本人須以 Server scope.userId 比對 read_context.eligibleAssignees 的 userId；不在有效名單內便不可指派，不猜 ID、不靜默改派。既有 code、拒絕及零候選寫入不變；conflict、unknown、撤權及其他工具不套用。這只改善錯誤後恢復，不保證模型首次呼叫正確，也不增加預算或取代每次執行的資格檢查。
+
 Agent拒絕診斷沿既有 `AGENT_DIAGNOSTICS=true` 的metadata-only sink，不開啟ADK原始spans／logger或新增內容日誌。`tool_rejection` 事件只帶既有runId／elapsedMs、configured工具白名單名稱，以及固定stage（schema／authorization／execution）、outcome與code白名單；其他code只記unknown，不能回傳任意程式例外或工具data正文。僅propose_task的schema拒絕可加最多3項、JSON最多256字元的固定path／reason，不記expected、原參數、message、input、issues、未知鍵、動態路徑、使用者或孩子ID。
 
 observer在sink前再次投影白名單，診斷故障不能改變業務結果或產生額外操作。這些事件供關聯已發生的拒絕階段，不授權、不中止既有守衛、不重試副作用；沒有事件也不能推斷歷史運行必定是哪種錯誤。診斷flag的實際生效與真實驗收另核，不因程式支援就宣稱已有過去T9參數證據。
@@ -604,4 +606,3 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 有觀察事件的舊版 concern:<id> 聚合來源只在讀取時用原算法建立臨時校驗投影，以原ID／版本／文字核對既有快照；不持久保存另一份資料、不放入新生成或新sourceBasis。舊來源仍有效時可按原同版讀取／PDF規則查看，但因來源模型更新而stale時須整理後才作需最新版本的操作；來源更正、刪除及撤權仍遮蔽。新觀察来源使用穩定 concern:<id>:observation:<eventId>，authority仍歸原關注資源，不放寬舊資料可見性。完全沒有觀察事件的關注保留原 concern:<id> 未提供日期來源及既有basis規則，不屬上述退役聚合。
 
 Agent 透過 read_family_documents／generate_family_document／change_family_document 使用同一服務。生成只接受用途／期間等結構化參數，不接受模型自由撰寫家庭正文；真實資源 ID／版本及操作收據才代表已保存。
-
