@@ -1,0 +1,33 @@
+✔ production owner archives a readable stale snapshot using the original version without refresh (157.030357ms)
+✔ production owner retains invalidated, old-version, foreign-child, offline, role and pending guards (403.474712ms)
+✔ production creation guard rejects only the same family-report period and allows another fixed period (27.208778ms)
+✔ readable stale preparation exposes archive confirmation while checklist editing remains disabled (80.61943ms)
+✔ PDF composition includes undated concern body with sources omitted and keeps the exact snapshot (9.118231ms)
+✔ one owner exposes four purposes plus an archived document for the authorized child only (2.958253ms)
+✔ archive changes only the selected document, reuses its frozen revision and is immediately searchable (14.572699ms)
+✔ checklist changes create a new revision while preserving the earlier snapshot (0.876345ms)
+✔ stale versions, foreign documents, repeated archive, and non-checklist item IDs cannot mutate (1.420861ms)
+✔ identity, server, child authorization and role changes invalidate the old authority before reading (0.674954ms)
+✔ source revocation and invalidation mask both active and frozen archived content (1.095697ms)
+✔ source version changes preserve a labelled old snapshot but cannot save or archive (0.539703ms)
+✔ offline, viewer, unknown and read-only states never permit a local mutation (0.860312ms)
+✔ history searches body, purpose and accessible source labels but does not search active documents (0.570725ms)
+✔ history date filtering uses inclusive archive dates in Hong Kong and excludes unknown dates only when filtered (2.043756ms)
+✔ preparation documents lead the page and compact actions plus preview tools follow the content (235.140923ms)
+✔ the relocated actions keep history navigation and the unchanged unsent purpose draft callback (96.302895ms)
+✔ selected documents and write recovery retain their existing composition and disabled boundaries (71.919554ms)
+✔ normal preview detail stays inside the existing accessible disclosure (59.003257ms)
+✔ document evidence, actionable warnings, archive guards and responsive reader remain present (0.787532ms)
+✔ the single owner keeps checked and archived documents across entry and child switches (274.581023ms)
+✔ an old child callback cannot archive after the selected scope changes (82.562634ms)
+✔ identity and role changes mask old data in render before the reset effect (125.859836ms)
+✔ revoked source masks active and archived detail immediately and rejects prior controls (54.078103ms)
+✔ reading a historical selection never announces a new archive operation (39.616669ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2508.371358

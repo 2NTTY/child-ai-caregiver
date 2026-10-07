@@ -58,6 +58,18 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
       [snapshot.id, row.id, snapshot.version, cipher.encrypt(JSON.stringify(snapshot), context(row) + ":snapshot:" + snapshot.id + ":" + snapshot.version)]);
     await appendOnlineChange(client, workspaceId, "documents", row.child_id);
   }
+  async function requireNoActiveStandardReport(client: PoolClient, childId: string, request: DocumentRequest, exceptId?: string) {
+    if (request.kind !== "growth_report" || request.purpose !== "family") return;
+    // The caller holds the workspace UPDATE lock; another create/restore cannot race this check.
+    // Purpose stays in the encrypted payload, and existing duplicates are never rewritten or removed.
+    const rows = (await client.query<Row>("SELECT * FROM family_documents WHERE child_id=$1 AND kind='growth_report' AND status='active' ORDER BY created_at,id", [childId])).rows;
+    if (rows.some(row => {
+      const existing = decode(row).request;
+      return row.id !== exceptId && existing.purpose === "family"
+        && existing.period.from === request.period.from && existing.period.to === request.period.to;
+    }))
+      throw new FamilyError(409, "standard_report_exists");
+  }
   async function receipt(client: PoolClient, workspaceId: string, userId: string, childId: string, opId: string, request: unknown,
     loaded: FamilyDocumentSources, operation: () => Promise<FamilyDocument>): Promise<FamilyDocument> {
     z.uuid().parse(opId);
@@ -100,6 +112,7 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
       return access(userId, childId, true, async (client, workspaceId) => {
         const loaded = await loadFamilyDocumentSources(client, cipher, userId, childId);
         return receipt(client, workspaceId, userId, childId, opId, { action: "create", request }, loaded, async () => {
+          await requireNoActiveStandardReport(client, childId, request);
           const count = (await client.query<{ count: number }>("SELECT count(*)::integer AS count FROM family_documents WHERE child_id=$1", [childId])).rows[0].count;
           if (count >= MAX_DOCUMENTS) throw new FamilyError(400, "document_limit");
           const snapshot = buildFamilyDocumentSnapshot(loaded, request, 1, null);
@@ -125,7 +138,8 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
             snapshot = buildFamilyDocumentSnapshot(loaded, stored.request, row.version, prior.current);
             stored.currentId = snapshot.id;
           } else if (change.action === "check_item") {
-            if (stored.status !== "active" || !prior.current || !documentSnapshotValid(prior.current, loaded)) throw new FamilyError(409, "source_changed");
+            if (stored.status !== "active" || !prior.current || !documentSnapshotValid(prior.current, loaded)
+              || prior.current.sourceBasis !== documentSourceBasis(loaded, stored.request)) throw new FamilyError(409, "source_changed");
             snapshot = structuredClone(prior.current);
             const section = snapshot.sections.find(section => section.id === change.sectionId && section.kind === "checklist");
             const item = section?.items.find(item => item.id === change.itemId);
@@ -136,6 +150,10 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
             stored.currentId = snapshot.id;
           } else {
             if (change.action === "archive" && stored.status !== "active" || change.action === "restore" && stored.status !== "archived") throw changed();
+            if (change.action === "archive" && (!prior.current || !documentSnapshotValid(prior.current, loaded)))
+              throw new FamilyError(409, "source_changed");
+            if (change.action === "restore")
+              await requireNoActiveStandardReport(client, childId, stored.request, row.id);
             stored.status = change.action === "archive" ? "archived" : "active";
             stored.archivedAt = change.action === "archive" ? new Date().toISOString() : null;
           }
@@ -197,3 +215,4 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
   };
 }
 export type FamilyDocumentStore = ReturnType<typeof createFamilyDocumentStore>;
+

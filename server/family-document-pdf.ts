@@ -21,7 +21,8 @@ export async function renderFamilyDocumentPdf(snapshot: DocumentSnapshot, option
       h(Text, { style: style.title }, snapshot.title),
       text(`${purposeLabels[options.purpose]} · 版本 ${snapshot.version} · ${snapshot.period.from} 至 ${snapshot.period.to}`, true),
       text(`${snapshot.ageLabel} · 整理時間 ${snapshot.generatedAt}`, true),
-      text(snapshot.coverageNote, true), text(snapshot.summary),
+      // The fixed CJK coverage has no spaces; sentence breaks prevent an unbreakable off-page run.
+      text(snapshot.coverageNote.replace(/。(?=.)/gu, "。\n"), true), text(snapshot.summary),
       ...snapshot.sections.map(section => h(View, { key: section.id },
         h(Text, { style: style.heading, minPresenceAhead: 35 }, section.title),
         ...section.items.map(item => h(Text, { key: item.id, style: style.item, orphans: 2, widows: 2 },
@@ -37,3 +38,4 @@ export async function renderFamilyDocumentPdf(snapshot: DocumentSnapshot, option
         `育伴港 · 家庭共享資料整理，非診斷或發展評估 · ${pageNumber} / ${totalPages}` }),
     )));
 }
+

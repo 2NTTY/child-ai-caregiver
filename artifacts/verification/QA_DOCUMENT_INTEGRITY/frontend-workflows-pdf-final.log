@@ -1,0 +1,28 @@
+✔ production owner archives a readable stale snapshot using the original version without refresh (81.250555ms)
+✔ production owner retains invalidated, old-version, foreign-child, offline, role and pending guards (332.093232ms)
+✔ production creation guard rejects only the same family-report period and allows another fixed period (23.928917ms)
+✔ readable stale preparation exposes archive confirmation while checklist editing remains disabled (70.651211ms)
+✔ PDF composition includes undated concern body with sources omitted and keeps the exact snapshot (8.235202ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1247.112435
+
+--- Prepared-base focused verification: f7741b8, 2026-10-07 05:04 UTC ---
+✔ production owner archives a readable stale snapshot using the original version without refresh (109.231322ms)
+✔ production owner retains invalidated, old-version, foreign-child, offline, role and pending guards (400.582445ms)
+✔ production creation guard rejects only the same family-report period and allows another fixed period (23.130512ms)
+✔ readable stale preparation exposes archive confirmation while checklist editing remains disabled (92.420182ms)
+✔ PDF composition includes undated concern body with sources omitted and keeps the exact snapshot (15.625455ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1520.116882

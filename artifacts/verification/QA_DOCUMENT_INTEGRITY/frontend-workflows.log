@@ -1,0 +1,71 @@
+✔ production owner archives a readable stale snapshot using the original version without refresh (86.204837ms)
+✔ production owner retains invalidated, old-version, foreign-child, offline, role and pending guards (353.422167ms)
+✔ readable stale preparation exposes archive confirmation while checklist editing remains disabled (70.377565ms)
+✔ PDF composition includes undated concern body with sources omitted and keeps the exact snapshot (10.529692ms)
+✔ one owner exposes four purposes plus an archived document for the authorized child only (4.806039ms)
+✔ archive changes only the selected document, reuses its frozen revision and is immediately searchable (32.254176ms)
+✔ checklist changes create a new revision while preserving the earlier snapshot (1.742582ms)
+✔ stale versions, foreign documents, repeated archive, and non-checklist item IDs cannot mutate (1.379853ms)
+✔ identity, server, child authorization and role changes invalidate the old authority before reading (0.623928ms)
+✔ source revocation and invalidation mask both active and frozen archived content (0.968857ms)
+✔ source version changes preserve a labelled old snapshot but cannot save or archive (0.845881ms)
+✔ offline, viewer, unknown and read-only states never permit a local mutation (0.859207ms)
+✔ history searches body, purpose and accessible source labels but does not search active documents (0.617695ms)
+✔ history date filtering uses inclusive archive dates in Hong Kong and excludes unknown dates only when filtered (2.120284ms)
+✖ preparation documents lead the page and compact actions plus preview tools follow the content (219.944971ms)
+✖ the relocated actions keep history navigation and the unchanged unsent purpose draft callback (70.876579ms)
+✖ selected documents and write recovery retain their existing composition and disabled boundaries (60.951166ms)
+✔ normal preview detail stays inside the existing accessible disclosure (56.105519ms)
+✔ document evidence, actionable warnings, archive guards and responsive reader remain present (0.612837ms)
+✔ the single owner keeps checked and archived documents across entry and child switches (717.321591ms)
+✔ an old child callback cannot archive after the selected scope changes (337.077876ms)
+✔ identity and role changes mask old data in render before the reset effect (562.955381ms)
+✔ revoked source masks active and archived detail immediately and rejects prior controls (65.788394ms)
+✔ reading a historical selection never announces a new archive operation (55.235386ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 21
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3076.170585
+
+✖ failing tests:
+
+test at frontend/scripts/preparation-layout.test.mjs:56:1
+✖ preparation documents lead the page and compact actions plus preview tools follow the content (219.944971ms)
+  TypeError: Cannot read properties of undefined (reading 'refresh')
+      at PreparationWorkspace (eval at compile (file://<workspace>/frontend/scripts/preparation-layout.test.mjs:44:5), <anonymous>:88:352)
+      at Object.render (file://<workspace>/frontend/scripts/preparation-layout.test.mjs:51:49)
+      at TestContext.<anonymous> (file://<workspace>/frontend/scripts/preparation-layout.test.mjs:57:33)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at frontend/scripts/preparation-layout.test.mjs:71:1
+✖ the relocated actions keep history navigation and the unchanged unsent purpose draft callback (70.876579ms)
+  TypeError: Cannot read properties of undefined (reading 'refresh')
+      at PreparationWorkspace (eval at compile (file://<workspace>/frontend/scripts/preparation-layout.test.mjs:44:5), <anonymous>:88:352)
+      at Object.render (file://<workspace>/frontend/scripts/preparation-layout.test.mjs:51:49)
+      at TestContext.<anonymous> (file://<workspace>/frontend/scripts/preparation-layout.test.mjs:72:37)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at frontend/scripts/preparation-layout.test.mjs:81:1
+✖ selected documents and write recovery retain their existing composition and disabled boundaries (60.951166ms)
+  TypeError: Cannot read properties of undefined (reading 'refresh')
+      at PreparationWorkspace (eval at compile (file://<workspace>/frontend/scripts/preparation-layout.test.mjs:44:5), <anonymous>:88:352)
+      at Object.render (file://<workspace>/frontend/scripts/preparation-layout.test.mjs:51:49)
+      at TestContext.<anonymous> (file://<workspace>/frontend/scripts/preparation-layout.test.mjs:85:18)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)

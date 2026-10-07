@@ -1,0 +1,158 @@
+{
+  "package": "QA-DOCUMENT-INTEGRITY",
+  "baseCommit": "b23f12bb92f510d8fe3730ee87562187939b716f",
+  "date": "2026-10-07",
+  "environment": {
+    "node": "24.19.0",
+    "workspace": "isolated dot cloud workspace",
+    "source": "GitHub connector reads pinned to base commit; reused frontend dependencies; only missing PDF/pg type dependencies installed in an isolated temporary prefix",
+    "fontSha256": "b1a0795862c1415bf3f393ea50b2a4ea6275012cf5bad3f94feeb1222f555731",
+    "pdfVersions": {
+      "renderer": "4.9.0",
+      "layout": "5.2.0",
+      "textkit": "7.0.1",
+      "font": "4.1.2",
+      "react": "19.2.3"
+    }
+  },
+  "scope": [
+    "Preserve matching checklist IDs, text and empty template provenance on same-document refresh",
+    "Archive a still-valid stale preparation without generating a new snapshot; invalidated source and stale checklist edits stay blocked",
+    "Display undated active concerns separately from period events in report body and the same PDF snapshot",
+    "Reject new/restored duplicate active family reports for the same child and exact period under the workspace UPDATE lock; preserve different periods and original receipts",
+    "Render fixed CJK coverage as complete sentences without clipping"
+  ],
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/family-document-workflows.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "note": "Includes parent wrapper; 6 source/store/API scenarios. Serialized fake Pool tests lock ordering and application decisions, not real PostgreSQL concurrency. PDF route renderer is stubbed for source-revalidation testing.",
+      "log": "QA_DOCUMENT_INTEGRITY/document-workflows-final.log"
+    },
+    {
+      "command": "node --test frontend/scripts/family-document-workflows.test.mjs frontend/scripts/preparation-documents.test.mts frontend/scripts/preparation-owner.test.mjs frontend/scripts/preparation-layout.test.mjs",
+      "passed": 25,
+      "failed": 0,
+      "note": "Deterministic production hook and shallow renderer plus existing preparation regression; no browser.",
+      "log": "QA_DOCUMENT_INTEGRITY/frontend-workflows-final.log"
+    },
+    {
+      "command": "node --test frontend/scripts/family-document-workflows.test.mjs",
+      "passed": 5,
+      "failed": 0,
+      "note": "Focused rerun after final PDF formatting edit.",
+      "log": "QA_DOCUMENT_INTEGRITY/frontend-workflows-pdf-final.log"
+    },
+    {
+      "command": "npm run typecheck --workspace frontend",
+      "exitCode": 0,
+      "log": "QA_DOCUMENT_INTEGRITY/frontend-typecheck-final.log"
+    },
+    {
+      "command": "tsc -p artifacts/verification/QA_DOCUMENT_INTEGRITY/tsconfig.json",
+      "exitCode": 0,
+      "note": "Locally the equivalent scoped config mapped pg and @react-pdf/renderer to an isolated dependency prefix, because the reusable node_modules only contained frontend dependencies. The committed config uses regular package resolution after the repository dependency install. Initial missing-package and NodeNext directory-path failures are retained; no product types were weakened.",
+      "log": "QA_DOCUMENT_INTEGRITY/server-typecheck-final.log"
+    },
+    {
+      "command": "HOME=<temporary-home> EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 EXPO_PUBLIC_API_BASE_URL=/api npm run build:web --workspace frontend -- --output-dir dist-document-integrity",
+      "exitCode": 0,
+      "routes": 35,
+      "log": "QA_DOCUMENT_INTEGRITY/frontend-export-retry.log"
+    },
+    {
+      "command": "node scripts/verify-family-document-pdf.mjs <output-directory>",
+      "exitCode": 0,
+      "note": "Real react-pdf renderer and repository-pinned WenKaiTC font; Poppler verifies all 135 CJK coverage characters, every sentence, A4 text bounds and immutable snapshot. Final PNG visually inspected. Fixed coverage only; arbitrary unspaced source-body layout is not redesigned.",
+      "result": "QA_DOCUMENT_INTEGRITY/pdf-checks.json",
+      "log": "QA_DOCUMENT_INTEGRITY/pdf-layout-fixed.log"
+    }
+  ],
+  "retainedFailures": [
+    {
+      "kind": "pre-existing test fixture",
+      "initial": "21/24 passed; 3 layout cases failed before reaching assertions because workspace.actions.refresh was absent",
+      "baseline": "Exact pinned master renderer with the same old fixture produced the same 3 failures; this is a focused module comparison, not a pristine full master checkout",
+      "fix": "Added only actions.refresh() mock; no assertions changed; all 5 layout cases then passed",
+      "logs": [
+        "QA_DOCUMENT_INTEGRITY/frontend-workflows.log",
+        "QA_DOCUMENT_INTEGRITY/preparation-layout-baseline.log",
+        "QA_DOCUMENT_INTEGRITY/preparation-layout-fixed-fixture.log"
+      ]
+    },
+    {
+      "kind": "verification environment",
+      "details": "Frontend export first failed creating the unavailable default HOME/.expo; a temporary writable HOME with offline/no-telemetry export passed. npm initially lacked a writable default cache; installed declared missing dependencies in an isolated prefix with a temporary cache."
+    },
+    {
+      "kind": "confirmed PDF regression",
+      "details": "Baseline renderer lost complete coverage sentences in actual rendered PDF extraction; the same long-CJK regression passed after sentence formatting. Baseline repeated with pinned React 19.2.3 and failed identically.",
+      "logs": [
+        "QA_DOCUMENT_INTEGRITY/pdf-layout-baseline.log",
+        "QA_DOCUMENT_INTEGRITY/pdf-layout-baseline-pinned.log"
+      ]
+    }
+  ],
+  "notRun": [
+    "real PostgreSQL or live DB mutations",
+    "post-fix authenticated UI acceptance",
+    "real model or notification calls",
+    "full repository test suite",
+    "deployment or merge"
+  ],
+  "externalCalls": {
+    "model": 0,
+    "database": 0,
+    "notifications": 0
+  },
+  "sourceSha256": {
+    "server/family-document-sources.ts": "1d503d94f125cc91f0fffccbecd11b206c709f974f5a8163b0e79ba428baf57e",
+    "server/family-document-store.ts": "0134f4e63187c406ad92f1f1b62113ffe0325586b73f5957e6c1b175a0dec5b1",
+    "server/family-document-pdf.ts": "2bf4c6456ffd9bdc401780c690dbfc60e74f2e651819973d462d683c38f3c2d6",
+    "frontend/src/production/useFamilyDocuments.ts": "bbc16707c2426ea11337dff7fda66b49caa4b911905be38ef656b002cf4ff1ca",
+    "frontend/src/preparation-view-model.ts": "8051136d785d4051ad9c12dbaaec1cf410bdc7e6af32bbe7297e3e9e06525a88",
+    "frontend/src/components/preparations/PreparationWorkspace.tsx": "40eba6e7d33290f6a324feb6193401cdd6eca316ba91848d0f383362c3a3b818",
+    "tests/family-document-workflows.test.ts": "c3334b6b3b3adc51bdddcd10430114c063d821f69889d29f1fae8243a5f4ca64",
+    "frontend/scripts/family-document-workflows.test.mjs": "eee20c88c4b7b8a07d1bf0eb85c24ff62c757a9fcd29efda285546460a17662f",
+    "frontend/scripts/preparation-layout.test.mjs": "d7d59ea2da352febecf26b26decaf747ed2b493a45539da4c1f7cf4a2524d7a3",
+    "scripts/verify-family-document-pdf.mjs": "908a051e06bdd8abdc2264d1296f4b7bf8d9d6839f13572af19748d5535bca00"
+  },
+  "pdfSha256": "523b6ab58b5cbd850b111a0d29d4f1f88154c29072ad9a684f1196e14ece3537",
+  "pdfImageReview": {
+    "scope": "Coverage-only regression acceptance; not a full PDF text/completeness pass",
+    "command": "pdftoppm -r 120 -png -singlefile <final-pinned-PDF> <image-prefix>",
+    "reviewed": "2026-10-07T04:39:38Z",
+    "pdfSha256": "523b6ab58b5cbd850b111a0d29d4f1f88154c29072ad9a684f1196e14ece3537",
+    "imageSha256": "549a765066a1bd7ad5b2f33ccee98e5d0a0e874b5e45232bf3ac06edb511f0c9",
+    "result": "Final pinned React 19.2.3 PDF was re-rendered and its image inspected. All coverage sentences are visible without clipping or overlap."
+  },
+  "knownLimitations": [
+    "Footer text is missing from both the baseline and fixed PDF extraction/image. This separate issue is not changed or accepted here.",
+    "Arbitrary unspaced source-body typesetting and full-PDF text completeness are outside this coverage-only fix."
+  ],
+  "preparedBaseCommit": "f7741b8a3758a171b82405a9500ebc339bfd702c",
+  "integration": {
+    "date": "2026-10-07T05:04:38Z",
+    "baseCommit": "f7741b8a3758a171b82405a9500ebc339bfd702c",
+    "method": "Three-way local merge of docs/API.md; no other proposed path overlaps PR #102. All 11 non-overlapping PR #102 files materialized and verified by their Git blob SHA.",
+    "preserved": [
+      "PR #102 provider diagnostic API paragraph",
+      "src/shared/family-documents.ts expectedVersion .int().min(1)",
+      "src/shared/concerns.ts version .int().min(1)"
+    ],
+    "checks": [
+      {
+        "command": "node --experimental-test-module-mocks --test tests/family-document-workflows.test.ts",
+        "passed": 7,
+        "failed": 0
+      },
+      {
+        "command": "node --test frontend/scripts/family-document-workflows.test.mjs",
+        "passed": 5,
+        "failed": 0
+      }
+    ],
+    "limits": "No additional broad test suite or export; no publication retry, merge, deployment, model or database call."
+  }
+}

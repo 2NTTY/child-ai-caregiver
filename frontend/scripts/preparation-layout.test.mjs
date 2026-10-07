@@ -19,7 +19,7 @@ const actions = tree => nodes(tree).find(node => node.props?.testID === 'prepara
 function harness() {
   let cursor = 0;
   const slots = [], events = [];
-  const workspace = { scopeKey: 'child-a', model: { child: { displayName: '甲' }, documents: [{ id: 'active-a', status: 'active' }, { id: 'archive-a', status: 'archived' }], selected: null, condition: 'ready', online: true } };
+  const workspace = { scopeKey: 'child-a', actions: { refresh() {} }, model: { child: { displayName: '甲' }, documents: [{ id: 'active-a', status: 'active' }, { id: 'archive-a', status: 'archived' }], selected: null, condition: 'ready', online: true } };
   const preview = { condition: 'ready', setCondition: value => events.push(['preview-condition', value]) };
   const dependencies = {
     react: { useState(value) { const index = cursor++; if (!(index in slots)) slots[index] = value; return [slots[index], next => { slots[index] = typeof next === 'function' ? next(slots[index]) : next; }]; }, useLayoutEffect() {}, useRef: value => ({ current: value }) },

@@ -7,8 +7,18 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### QA-GROWTH-READ-BOUNDARY — 合法檔案與知識 filter 的 GET 邊界（draft）
+### QA-DOCUMENT-INTEGRITY — 準備文件與標準報告一致性（進行中）
 
+- 基線 b23f12b；只修準備單刷新保留未變核對項目、來源仍有效的 stale 準備單可直接歸檔、未有觀察日期的關注納入報告正文，以及 Server 對同孩子、相同起訖期間 active 標準報告的 create／restore 防重。
+- 保留原來源、家庭及孩子隔離、撤權遮蔽、同版 PDF、原 opId／unknown。固定期間仍固定，不在本包把年度／季度報告改成移動期間，不刪除舊文件或更改資料庫。
+- dot 負責程式、測試、覆核、PR 及合併；Codex 輔助只做已授權 GCP 操作與部署。先本地有界驗證、保留首次失敗和基線對照，再批次部署並重測；不把 shallow／mock 當正式 UI 或真 PostgreSQL 驗收。
+- 同包修復真 PDF coverage 長句裁切，僅按固定句號分段，保留原快照文字。離線 Server 7/7、frontend 25/25、scoped typecheck、35 路由 export 及真 PDF 抽字／邊界驗證見 [證據](artifacts/verification/QA_DOCUMENT_INTEGRITY_CHECKS.json)，不代表全面或正式 UI 通過。
+- 交付及停止條件：定向證據、獨立覆核與修復後 UI 流程均明確區分；目前未宣稱本包已部署或全面驗收。真 Agent 首次請求另因服務暫不可用停批，與本包無模型的文件整理分開處理。
+
+
+### QA-GROWTH-READ-BOUNDARY — 已合併，保留交付證據
+
+- 後續核對：PR #101 已合併，API／Web b23f12b 於 2026-10-07 04:02 UTC 完成部署；原合成地區資料的 Growth UI 已於 04:09 UTC 正常讀取並呈現限制提示。以下保留該包交付時的驗證範圍，不再表示仍停於 draft。
 - 基線 `01c25a4`（PR #100 已合併）；隔離分支 `codex/fix-growth-filter-boundary`。按 dot 新派遣，只交付修復、單測及 draft PR，不合併、部署或修改 DB。
 - 原因：孩子 profile.region 接受自由文字，Growth 共用 load 無條件把它傳給只接受兩碼地域／最多 120 個月的知識 parser。合成地域 A／B、未知年齡離線重現 GET 400；已有 UI 回報吻合，尚無正式請求的 HTTP capture，不冒稱全面線上根因驗收。
 - 只讓 list／GET 在本機 filter 轉換不可用時略過知識查詢、提示地域／0–10 歲限制，保留原 profile、家庭讀取 scope、authority 及其他資料。既有候選仍可讀，回應 sourceAvailable=false 表示未能確認適用性；不保存此旗標，不改候選狀態、版本或歷史。DB、解密及網絡錯誤沒有被降級吞掉。
