@@ -158,9 +158,9 @@ const ProductionContext = createContext<ProductionContextValue | null>(null);
 export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || "/api" }: { children: ReactNode; apiBaseUrl?: string }) {
   const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline()));
   const value = useProductionValue(owner);
-  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" ? value.userId : null, value.online, async () => {
+  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" ? value.userId : null, value.online, async reason => {
     await owner.refresh();
-    owner.invalidatePrivateReads(false);
+    owner.invalidatePrivateReads(false, reason !== "unavailable");
   });
   useEffect(() => {
     owner.connect();

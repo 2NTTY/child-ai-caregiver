@@ -131,3 +131,55 @@ test('post-reply invalidation discovers a cold pending owner and preserves the m
   assert.equal(calls.length, 1); assert.equal(agent.getSnapshot().pending.entries.length, 1);
   owner.dispose();
 });
+
+test('unavailable metadata polls do not retry failed discovery, while genuine changes, focus and explicit refresh do', async context => {
+  const { ProductionOwner } = load('frontend/src/production/ProductionOwner.ts');
+  const owner = new ProductionOwner('/api', true, {}, {}), agent = owner.agentOwner;
+  let currentScope = 'child-a', pendingReads = 0, metadata = 'failed', cursor = '1', poll, focus, cleanup;
+  const reasons = [], invalidations = [];
+  owner.scopeKey = () => currentScope;
+  agent.syncContext(scope(currentScope), true);
+  agent.api = { getPendingProposals: async () => { pendingReads++; throw new Error('Synthetic pending failure'); } };
+  context.mock.method(owner.queryClient, 'invalidateQueries', async options => { invalidations.push(options); });
+  context.mock.method(globalThis, 'setInterval', (callback, ms) => { assert.equal(ms, 5_000); poll = callback; return 1; });
+  context.mock.method(globalThis, 'clearInterval', () => {});
+  const previousWindow = globalThis.window, previousDocument = globalThis.document;
+  globalThis.window = { addEventListener: (event, callback) => { if (event === 'focus') focus = callback; }, removeEventListener() {}, dispatchEvent() {} };
+  globalThis.document = { visibilityState: 'visible', addEventListener() {}, removeEventListener() {} };
+  context.after(() => { cleanup?.(); owner.dispose();
+    if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow;
+    if (previousDocument === undefined) delete globalThis.document; else globalThis.document = previousDocument;
+  });
+  const workspaceId = '8c0614da-d04f-454e-837a-b0d0f1649034', epoch = 'cd90c73b-7934-4eac-b34e-4262cecf26ab';
+  context.mock.method(globalThis, 'fetch', async url => {
+    if (metadata === 'failed') throw new Error('Synthetic metadata unavailable');
+    return Response.json(String(url).endsWith('/online/spaces') ? { workspaces: [{ id: workspaceId, storageEpoch: epoch }] }
+      : { workspaceId, storageEpoch: epoch, cursor, accessVersion: 1, changes: metadata === 'changed' ? [{ kind: 'synthetic' }] : [], hasMore: false });
+  });
+  const filename = path.join(root, 'src/client/use-online-updates.ts');
+  const code = ts.transpileModule(readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const hookModule = { exports: {} };
+  new Function('require', 'module', 'exports', code)(name => {
+    assert.equal(name, 'react'); return { useRef: value => ({ current: value }), useEffect: callback => { cleanup = callback(); } };
+  }, hookModule, hookModule.exports);
+  await agent.readPending(); assert.equal(pendingReads, 1); assert.equal(agent.getSnapshot().pending.state, 'failed');
+  hookModule.exports.useOnlineUpdates('/api', 'synthetic-parent', true, async reason => {
+    reasons.push(reason); owner.invalidatePrivateReads(false, reason !== 'unavailable');
+  });
+  await settle(); poll(); await settle(); poll(); await settle();
+  assert.deepEqual(reasons, ['unavailable', 'unavailable', 'unavailable']); assert.equal(pendingReads, 1);
+  assert.equal(invalidations.length, 3, 'other domains retain their existing unavailable-metadata refresh');
+  metadata = 'changed'; poll(); await settle(); assert.equal(reasons.at(-1), 'changed'); assert.equal(pendingReads, 2);
+  metadata = 'unchanged'; poll(); await settle(); assert.equal(pendingReads, 2);
+  focus(); await settle(); assert.equal(reasons.at(-1), 'forced'); assert.equal(pendingReads, 3);
+  await agent.readPending(); assert.equal(pendingReads, 4);
+  owner.invalidatePrivateReads(false); await settle(); assert.equal(pendingReads, 5, 'post-reply invalidation can retry discovery');
+  owner.setDomainPending('synthetic-write', true); metadata = 'changed'; cursor = '2'; poll(); await settle(); assert.equal(pendingReads, 5);
+  owner.setDomainPending('synthetic-write', false); await settle(); assert.equal(pendingReads, 6, 'genuine change remains queued behind the existing guard');
+  owner.setDomainPending('synthetic-write', true); cursor = '3'; poll(); await settle(); assert.equal(pendingReads, 6);
+  currentScope = 'child-b'; agent.syncContext(scope(currentScope), true);
+  owner.setDomainPending('synthetic-write', false); await settle(); assert.equal(pendingReads, 6, 'the previous child queued intent is discarded');
+  assert.equal(agent.getSnapshot().pending.state, 'idle');
+  const provider = readFileSync(path.join(root, 'frontend/src/production/ProductionProvider.tsx'), 'utf8');
+  assert.match(provider, /value\.online, async reason => \{\s*await owner\.refresh\(\);\s*owner\.invalidatePrivateReads\(false, reason !== "unavailable"\)/u);
+});

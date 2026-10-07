@@ -81,12 +81,12 @@ const task = { id: "8c0614da-d04f-454e-837a-b0d0f1649034", childId: "child", ver
   occurrence: { id: "occurrence", dueAt: "2026-10-06T02:00:00Z", timeZone: "Asia/Hong_Kong", state: "scheduled", terminalBasisVersion: null } };
 class ApiError extends Error { constructor(status) { super("Synthetic transport error"); this.status = status; } }
 function taskOwner() {
-  const state = { readFailure: null, pending: false, receipt: null, writeInputs: [], reads: 0, historyReads: 0, checks: 0, invalidations: 0, active: true };
+  const state = { readFailure: null, pending: false, receipt: null, writeInputs: [], reads: 0, historyReads: 0, historyResult: null, items: [task], checks: 0, invalidations: 0, active: true };
   const api = { async getSession() { return "user"; },
     async tasks() { state.reads++; if (state.readFailure) throw state.readFailure;
-      return { items: [task], eligibleAssignees: [{ userId: "user", name: "Synthetic caregiver" }], nextAfterId: null }; },
+      return { items: state.items, eligibleAssignees: [{ userId: "user", name: "Synthetic caregiver" }], nextAfterId: null }; },
     async changeTask(child, id, input) { state.pending = true; state.writeInputs.push(input); throw new ApiError(0); },
-    async history() { state.historyReads++; return { revisions: [], nextBeforeVersion: null }; },
+    async history() { state.historyReads++; return state.historyResult ?? { revisions: [], nextBeforeVersion: null }; },
     async reconcilePending() { state.checks++; return state.receipt; },
     hasPendingOnline() { return state.pending; }, resetOnline() { state.pending = false; } };
   const env = { apiBaseUrl: "https://synthetic.invalid", userId: "user", childId: "child", childName: "Synthetic child", role: "owner", scopeKey: "scope", online: true,
@@ -214,15 +214,15 @@ test("Home refresh reaches the scoped task reader once and never reuses another 
 
 test("production task rows toggle closed and history collapse is local without another request", async () => {
   const { owner, state, env } = taskOwner(); owner.render(); let value = await owner.settle();
-  value.actions.selectTask(task.id); value = owner.render(); assert.equal(value.model.selected.id, task.id);
-  value.actions.selectTask(task.id); value = owner.render(); assert.equal(value.model.selected, null);
-  value.actions.selectTask(task.id); value = owner.render();
+  value.actions.selectTask(task.id, "toggle"); value = owner.render(); assert.equal(value.model.selected.id, task.id);
+  value.actions.selectTask(task.id, "toggle"); value = owner.render(); assert.equal(value.model.selected, null);
+  value.actions.selectTask(task.id, "toggle"); value = owner.render();
   value.actions.showHistory(); value = await owner.settle(); assert.equal(value.model.historyOpen, true); assert.equal(state.historyReads, 1);
   env.online = false; value = owner.render(); value.actions.showHistory(); value = owner.render();
   assert.equal(value.model.historyOpen, false); assert.equal(state.historyReads, 1);
   env.online = true; owner.render(); value = await owner.settle(); value.actions.showHistory(); value = await owner.settle();
   assert.equal(value.model.historyOpen, true); assert.equal(state.historyReads, 2);
-  value.actions.selectTask(task.id); value = owner.render(); assert.equal(value.model.selected, null); assert.equal(value.model.historyOpen, false);
+  value.actions.selectTask(task.id, "toggle"); value = owner.render(); assert.equal(value.model.selected, null); assert.equal(value.model.historyOpen, false);
   assert.equal(state.writeInputs.length, 0); owner.unmount();
 });
 
@@ -237,4 +237,57 @@ test("task disclosure callbacks preserve drafts and unknown-operation guards", a
   value.actions.selectTask(task.id); value.actions.showHistory(); value = owner.render();
   assert.equal(value.model.selected.id, task.id); assert.equal(value.model.draft.key, key);
   assert.equal(state.historyReads, 0); assert.equal(state.writeInputs.length, 1); owner.unmount();
+});
+
+
+test("task deep-link navigation stays open for the same id and opens another id", async () => {
+  const { owner, state } = taskOwner();
+  const other = { ...task, id: "cd90c73b-7934-4eac-b34e-4262cecf26ab", title: "Other synthetic task" }; state.items = [task, other];
+  owner.render(); let workspace = await owner.settle(), params = {};
+  workspace.actions.selectTask(task.id); workspace = owner.render(); assert.equal(workspace.model.selected.id, task.id);
+  const route = harness("src/screens/tasksScreen.tsx", "default", [], {
+    "expo-router": { useLocalSearchParams: () => params, useRouter: () => ({ push() {} }) },
+    "../production/ProductionProvider": { useProduction: () => ({ model: {}, actions: {}, openAgentDraft() {}, chatDraft: "", setChatDraft() {} }) },
+    "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
+    "../components/PageFrame": { PageFrame: "PageFrame" }, "../components/tasks/TasksView": { TasksView: "TasksView" },
+    "../preview/PreviewNavigationGuard": { usePreviewNavigation: () => callback => callback() },
+  });
+  route.render(); params = { taskId: task.id }; route.render(); workspace = owner.render();
+  assert.equal(workspace.model.selected.id, task.id);
+  params = { taskId: other.id }; route.render(); workspace = owner.render(); assert.equal(workspace.model.selected.id, other.id);
+  workspace.actions.selectTask(other.id, "toggle"); workspace = owner.render(); assert.equal(workspace.model.selected, null);
+  assert.equal(state.writeInputs.length, 0); route.unmount(); owner.unmount();
+});
+
+test("Growth task navigation uses idempotent open selection", async () => {
+  const { owner } = taskOwner(); owner.render(); let workspace = await owner.settle();
+  workspace.actions.selectTask(task.id); workspace = owner.render();
+  const destinations = [];
+  const growth = harness("src/screens/GrowthScreen.tsx", "GrowthScreen", [], {
+    "expo-router": { useLocalSearchParams: () => ({}), useRouter: () => ({ push: value => destinations.push(value) }) },
+    "../production/ProductionProvider": { useProduction: () => ({ model: { children: [{ id: "child" }], selectedChildId: "child" }, actions: {} }) },
+    "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
+    "../workspaces/GrowthWorkspace": { useGrowthWorkspace: () => ({ scopeKey: "scope", model: {}, actions: {} }) },
+    "../production/TaskKnowledgeDomains": { useProductionFamilyDocuments: () => null },
+    "../production/FamilyReportControls": { FamilyReportControls: "FamilyReportControls" },
+    "../production/TaskKnowledgeGrowthCandidates": { TaskKnowledgeGrowthCandidates: "TaskKnowledgeGrowthCandidates" },
+    "../components/PageFrame": { PageFrame: "PageFrame" }, "../components/growth/GrowthView": { GrowthView: "GrowthView" },
+    "../preview/PreviewNavigationGuard": { usePreviewNavigation: () => callback => callback() },
+  });
+  growth.render().props.onTask(task.id); workspace = owner.render();
+  assert.equal(workspace.model.selected.id, task.id); assert.deepEqual(destinations, ["/tasks"]);
+  growth.unmount(); owner.unmount();
+});
+
+test("a selection queued during a read retains navigation versus row intent", async () => {
+  const { owner, state } = taskOwner(); owner.render(); let value = await owner.settle();
+  value.actions.selectTask(task.id); value = owner.render();
+  for (const intent of ["open", "toggle"]) {
+    let release; state.historyResult = new Promise(resolve => { release = resolve; });
+    value.actions.showHistory(); value = owner.render(); assert.equal(value.model.reading, true);
+    value.actions.selectTask(task.id, intent);
+    release({ revisions: [], nextBeforeVersion: null }); value = await owner.settle();
+    assert.equal(value.model.selected?.id ?? null, intent === "open" ? task.id : null);
+  }
+  owner.unmount();
 });
