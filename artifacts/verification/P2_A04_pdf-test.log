@@ -1,0 +1,21 @@
+✖ official PDF extraction keeps page continuation bound to the same file (87.2237ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 471.4189
+
+✖ failing tests:
+
+test at tests\knowledge-pdf.test.ts:8:1
+✖ official PDF extraction keeps page continuation bound to the same file (87.2237ms)
+  Error: knowledge_pdf_unreadable
+      at Worker.<anonymous> (file:///C:/Users/2NTTY/.codex/worktrees/p2-a04-official-retrieval/%E5%AD%A9%E5%AD%90ai%E6%8A%A4%E5%B7%A5/server/knowledge-pdf.ts:73:19)
+      at Object.onceWrapper (node:events:623:26)
+      at Worker.emit (node:events:508:28)
+      at MessagePort.<anonymous> (node:internal/worker:331:53)
+      at [nodejs.internal.kHybridDispatch] (node:internal/event_target:845:20)
+      at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)

@@ -8,7 +8,7 @@
     "sourcePublishedAt": null,
     "sourceUpdatedAt": null,
     "sourceDateText": "02/2026 修訂內容；未列確切日期",
-    "fetchedAt": "2026-09-24T12:09:34Z",
+    "fetchedAt": "2026-10-07T21:28:06.298Z",
     "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
     "chunks": [
       {
@@ -16,10 +16,35 @@
         "section": "引進固體食物的時間與質感",
         "sourceExcerpt": "未足四個月大的寶寶不應吃奶以外的食物",
         "text": "衞生署家庭健康服務指出，孩子約六個月時，單靠母乳已不足以滿足營養需要，應開始加入固體食物；初期可用匙羹餵稀滑質感食物，再按適應情況逐漸增加稠度。未滿四個月不應加入奶以外食物。這是一般餵養指引；對孩子的飲食有疑問，應詢問醫護人員。",
-        "keywords": ["加固", "固體食物", "米糊", "六個月", "BB食嘢"],
-        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 0, "maxAgeMonths": 12, "topics": ["feeding"], "conditions": ["按實際月齡理解約六個月及未滿四個月的不同限制；本檢索範圍不是提醒窗口。", "沒有個別過敏或特殊醫療需要的個人化處方；不把未記錄加固當成尚未加固。"]}
+        "keywords": [
+          "加固",
+          "固體食物",
+          "米糊",
+          "六個月",
+          "BB食嘢"
+        ],
+        "applicability": {
+          "region": "HK",
+          "ageBasis": "actual",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "topics": [
+            "feeding"
+          ],
+          "conditions": [
+            "按實際月齡理解約六個月及未滿四個月的不同限制；本檢索範圍不是提醒窗口。",
+            "沒有個別過敏或特殊醫療需要的個人化處方；不把未記錄加固當成尚未加固。",
+            "原文只收錄本主題所需段落，不代表已收錄或讀完整個官方網頁。"
+          ]
+        },
+        "originalText": "母乳是寶寶最天然的食物，出生後首六個月應全以母乳餵哺，到了六個月大後，單靠吃母乳已不能滿足寶寶的營養需要。所以當寶寶踏入六個月大時，便應已開始進食固體食物。家長先以匙羹餵寶寶食稀滑狀食物，如瓜菜蓉、蛋黃、米糊等，適應後他便可漸漸吃質感較稠的食物。\n若太遲引進固體食物，有可能令寶寶缺乏生長所需的營養素，寶寶亦較難接受質感粗糙食物。\n須注意：未足四個月大的寶寶不應吃奶以外的食物，因寶寶的腎臟和消化功能還未成熟，而且容易引致食物過敏。過早加入固體食物亦會令寶寶減少吃奶，影響營養攝取及生長。\n讓你為寶寶踏入健康飲食的另一階段作好準備，衞生署特別編製了以下一系列有關引進固體食物的小冊子及光碟給妳參考：\n6 至24 個月嬰幼兒健康飲食(1)起步篇\n6 至24 個月嬰幼兒健康飲食(2)進展篇（上）(6-12個月)\n6 至24 個月嬰幼兒健康飲食(3)進展篇（下）(12-24個月)\n6-24 個月嬰幼兒7 日飲食全攻略\n母嬰健康院會按寶寶的年齡派發以上資訊。\n如你對嬰幼兒的飲食有任何疑問，請與醫護人員聯絡或致電衞生罯家庭健康服務"
       }
-    ]
+    ],
+    "extraction": {
+      "format": "html",
+      "contentHash": "4585223d60cbd3454387eda9cc56bc6b3effbd5a3acf4abbb23e373ef68e2655",
+      "complete": false
+    }
   },
   {
     "sourceId": "fhs-toddler-development",
@@ -30,7 +55,7 @@
     "sourcePublishedAt": null,
     "sourceUpdatedAt": null,
     "sourceDateText": "02/2023 修訂內容；02/2026 重印；未列確切日期",
-    "fetchedAt": "2026-09-24T12:09:34Z",
+    "fetchedAt": "2026-10-07T21:28:06.517Z",
     "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
     "chunks": [
       {
@@ -38,10 +63,38 @@
         "section": "促進孩子的發展／你可以做的／個別發展差異",
         "sourceExcerpt": "你的孩子是獨一無二的，有自己的發展速度。",
         "text": "一至兩歲幼童需要安全環境、成人引導和穩定常規。家長可透過日常談話、一起看圖畫書、唱童謠及玩積木或扮演遊戲，支持探索和學習。各孩子的發展速度不同，表現清單只供參考，不能單憑一項差異判定疾病。若擔心孩子的發展，可向母嬰健康院或家庭／兒科醫生查詢。",
-        "keywords": ["一歲", "歲半", "遊戲", "玩具", "語言", "講嘢", "發展"],
-        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 12, "maxAgeMonths": 24, "topics": ["development", "play"], "conditions": ["官方本頁對象是一至兩歲，不外推為整個一至三歲的發展指標。", "發展差異不等於診斷；不憑此片段建立醫療分流。"]}
+        "keywords": [
+          "一歲",
+          "歲半",
+          "遊戲",
+          "玩具",
+          "語言",
+          "講嘢",
+          "發展"
+        ],
+        "applicability": {
+          "region": "HK",
+          "ageBasis": "actual",
+          "minAgeMonths": 12,
+          "maxAgeMonths": 24,
+          "topics": [
+            "development",
+            "play"
+          ],
+          "conditions": [
+            "官方本頁對象是一至兩歲，不外推為整個一至三歲的發展指標。",
+            "發展差異不等於診斷；不憑此片段建立醫療分流。",
+            "原文只收錄本主題所需段落，不代表已收錄或讀完整個官方網頁。"
+          ]
+        },
+        "originalText": "促進孩子的發展\n一至兩歲的幼童需要安全的環境和成人的引導，令他可以自由自在地探索。要達到這效果，你可以多陪伴孩子，支持及引導他，並表示你對他的愛和關注。你亦需要建立穩定的常規，訂立簡單的安全「守則」。預備各式各樣的玩具給孩子，鼓勵他學習獨自玩耍，不需要你經常陪伴。幼童很會模仿他人的說話和行為，所以記得以身作則，做個好榜樣。\n你可以做的：\n避免讓孩子使用各種電子屏幕媒體。\n讓孩子每天最少有3小時不同的體能活動，分布在不同時段。帶他到公園讓他跑跑跳跳、玩滑梯、鞦韆等戶外遊戲，鍛鍊他的體能。\n避免讓孩子久坐。坐嬰兒車、高餐椅或使用揹帶的時間，每次不多於1小時。\n把握每個機會跟孩子談天。\n和孩子一同閱讀圖畫書和簡單的故事書。\n和孩子一起聽和唱童謠。\n你可以選擇的玩具：\n各種大小的球兒，給孩子踢和拋。\n可以推或拉的玩具。\n積木。\n用來塗鴉的顏色筆和紙張。\n簡單的辨別形狀玩具和插孔遊戲板。\n洋娃娃、玩具動物、玩具電話、「煮飯仔」和塑膠的家居用品都可以用來玩扮演遊戲（男女孩都適合）。\n玩具樂器，例如玩具鋼琴和玩具鼓。\n你的孩子是獨一無二的，有自己的發展速度。以上資料只作為孩子在發展上轉變的參考。即使孩子在某方面的發展進度與上文不同，只是表示他可能在這些方面需要多點關注，家長亦不必過份擔心。\n如有以下情況，應請教醫護人員：\n孩子已一歲半，可是卻：\n仍不會走路。\n不懂把玩玩具，只會重複把物件拋擲或放進嘴。\n甚少與照顧者有眼神接觸。\n沒興趣與照顧者玩耍，安於獨個兒玩耍。\n未能明白熟悉的人物或物品的名稱，例如婆婆、杯、奶等。\n不會用手指指着來表達自己的需要 。\n不會說單字。\n孩子已兩歲，可是卻：\n仍走得不穩。\n未能辨認常用的家居用品或身體部位的名稱。\n未會用動作或說話引領你去注意他感興趣的事物。\n只能說單字。\n沒興趣與照顧者玩耍，安於獨個兒玩耍。\n不會玩假想遊戲（如煮飯仔）。\n聽覺或視力不佳。\n如果你對孩子的發展有任何疑問，請向母嬰健康院、家庭／兒科醫生或有關醫護人員查詢。"
       }
-    ]
+    ],
+    "extraction": {
+      "format": "html",
+      "contentHash": "a6963ea7b6c3eb795a98a5793583c9860e4c4d514cf0c7907cb417c5326f54fa",
+      "complete": false
+    }
   },
   {
     "sourceId": "fhs-preschool-development",
@@ -51,8 +104,8 @@
     "classification": "official_guidance",
     "sourcePublishedAt": null,
     "sourceUpdatedAt": null,
-    "sourceDateText": "04/2025 修訂網上內容；未列確切日期",
-    "fetchedAt": "2026-09-24T12:09:34Z",
+    "sourceDateText": "10/2026 修訂網上內容；未列確切日期",
+    "fetchedAt": "2026-10-07T21:28:06.734Z",
     "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
     "chunks": [
       {
@@ -60,10 +113,36 @@
         "section": "觀察發展的重點／持續出現多項問題的跟進",
         "sourceExcerpt": "假如孩子出現以上多項問題，而且情況持續",
         "text": "學前兒童在不同環境的表現和發展速度可以不同，家長宜與老師溝通，也要考慮孩子適應學校所需的時間。若多項發展或學習問題持續出現，應盡快經老師轉介，或聯絡所屬母嬰健康院約見護士檢查。這個跟進條件不是把短暫或單一表現直接當成發展障礙。",
-        "keywords": ["學前", "幼稚園", "發展", "學習", "老師", "母嬰健康院"],
-        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 36, "maxAgeMonths": 72, "topics": ["development"], "conditions": ["本頁分別討論約三至四、四至五、五至六歲；此片段只涵蓋一般觀察及求助途徑。", "轉介段落須保留多項問題並且持續的限制，不構成診斷或急症分流。"]}
+        "keywords": [
+          "學前",
+          "幼稚園",
+          "發展",
+          "學習",
+          "老師",
+          "母嬰健康院"
+        ],
+        "applicability": {
+          "region": "HK",
+          "ageBasis": "actual",
+          "minAgeMonths": 36,
+          "maxAgeMonths": 72,
+          "topics": [
+            "development"
+          ],
+          "conditions": [
+            "本頁分別討論約三至四、四至五、五至六歲；此片段只涵蓋一般觀察及求助途徑。",
+            "轉介段落須保留多項問題並且持續的限制，不構成診斷或急症分流。",
+            "原文只收錄本主題所需段落，不代表已收錄或讀完整個官方網頁。"
+          ]
+        },
+        "originalText": "作為父母，都希望孩子在認知、語言、體能、自理及社群等各方面有着均衡的發展。當懷疑孩子有任何發展或學習問題時，為避免不必要的擔憂，家長和老師在觀察孩子的表現時應先考慮以下各重點：\n孩子的發展是一個持續的過程，有既定的先後次序，但個別的發展進度會因人而異。\n有些孩子在某方面的發展比較快，但在其他發展範疇則與同齡相符或稍慢，這是很自然的事。\n孩子在不同的環境，可能會有不同的表現；家長和老師須多點溝通，藉此加深了解孩子的情況。\n班上孩子的年齡可能有很大的差異。較年幼的孩子或會比其他同學需要較多的時間和輔導才能掌握所學的知識和技巧，因此家長和老師應相對地調整學習上的要求。\n若對孩子的發展有擔心，可先觀察孩子在適應學校生活一段時間後情況有否改善。若問題只是短暫出現，又或只是在某個發展範疇內（如語言、認知、大小肌肉、自理及行為等）其中一、兩項表現稍弱，便無須過分擔心，因為孩子在這個階段的發展還未穩定。但假如孩子的發展持續地與其他兒童有明顯的差別，那家長和老師就要特別留意，並商討是否需要安排進一步的跟進。\n\n假如孩子出現以上多項問題，而且情況持續，便須盡快由老師透過「兒童身心全面發展服務」作出轉介，或家長可致電所屬母嬰健康院，約見護士為孩子作檢查。幼兒的成長發展可以有很大的變化，及早識別和介入會有助孩子健康成長。"
       }
-    ]
+    ],
+    "extraction": {
+      "format": "html",
+      "contentHash": "db9e1579528c7f46e21ee9f1a09a468a3a671fa2e4f87ada8a629e84e70a781b",
+      "complete": false
+    }
   },
   {
     "sourceId": "fhs-child-vision",
@@ -74,7 +153,7 @@
     "sourcePublishedAt": null,
     "sourceUpdatedAt": null,
     "sourceDateText": "02/2022 修訂內容；02/2026 重印；未列確切日期",
-    "fetchedAt": "2026-09-24T12:09:34Z",
+    "fetchedAt": "2026-10-07T21:28:06.951Z",
     "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
     "chunks": [
       {
@@ -82,16 +161,121 @@
         "section": "服務對象／檢查項目／普查限制",
         "sourceExcerpt": "為四至五歲的學前兒童提供",
         "text": "家庭健康服務的學前視力普查面向四至五歲孩子，檢查視力及雙眼協調；不包括色覺、眼疾檢查或近視等度數評估。已戴眼鏡的孩子應依視光師或眼科醫生指示跟進。普查通過也不能保證日後沒有視力問題；出現眼睛異常應盡快求醫，不要等候普查預約。",
-        "keywords": ["視力普查", "驗眼", "四歲", "五歲", "預約", "眼鏡"],
-        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 48, "maxAgeMonths": 72, "maxAgeMonthsExclusive": true, "topics": ["vision", "checkup"], "conditions": ["產品用足四歲至未滿六歲對應四至五歲；這是檢索篩選換算，不是另訂官方期限。", "不把沒有普查記錄當成未曾接受普查。"]}
+        "keywords": [
+          "視力普查",
+          "驗眼",
+          "四歲",
+          "五歲",
+          "預約",
+          "眼鏡"
+        ],
+        "applicability": {
+          "region": "HK",
+          "ageBasis": "actual",
+          "minAgeMonths": 48,
+          "maxAgeMonths": 72,
+          "maxAgeMonthsExclusive": true,
+          "topics": [
+            "vision",
+            "checkup"
+          ],
+          "conditions": [
+            "產品用足四歲至未滿六歲對應四至五歲；這是檢索篩選換算，不是另訂官方期限。",
+            "不把沒有普查記錄當成未曾接受普查。",
+            "原文只收錄本主題所需段落，不代表已收錄或讀完整個官方網頁。"
+          ]
+        },
+        "originalText": "四歲及以上的孩子，可接受「學前兒童視力普查」\n衞生署家庭健康服務為四至五歲的學前兒童提供由註冊視光師/視覺矯正師進行的「學前兒童視力普查」服務。\n我的孩子為何要接受視力普查？\n兒童的視覺發展大概於八歲時完成發育。假如視力在這發育期間出現異常*，而未能矯正，視覺發展或會受損。在日常生活上，家長或照顧者較難察覺孩子的視力問題。透過視力普查，可及早發現視力異常的兒童，以便安排轉介及治療，有助他們將來的視力及視覺發展。\n*常見的視力異常的成因：\n弱視\n斜視\n較嚴重的屈光問題（如近視、遠視或散光）\n若孩子現已佩戴眼鏡，他需要視力普查嗎？\n他並不需要視力普查，但必須按視光師或眼科醫生的指示定時檢查及跟進屈光度數。\n為什麼視力普查在四歲才進行？\n幼童的理解及表達能力有限，但到了四、五歲，他們大多數能在檢查中合作，所以結果較為可靠。\n這個年紀的孩子視力仍處發展期，及早發現與治療弱視和相關的視力問題，孩子的視力及視覺發展會較佳。\n視力普查包括什麼項目？\n註冊視光師/視覺矯正師會為學前兒童檢查的項目\n包括\n視力\n雙眼協調（包括斜視）\n若孩子視力較弱，會再作：\n初步的屈光檢查\n眼底檢查\n不包括\n色覺檢查\n眼疾（如青光眼、視網膜病變等）\n評估近視、遠視或散光的度數\n孩子要進行視力普查，家長可如何配合？\n若孩子合作，可令檢查順利進行。家長可以：\n避免安排在孩子有睡意時進行檢查\n利用本單張的圖片，給孩子預告檢查的大概情況\n安排自己或熟識孩子的照顧者陪同進行檢查\n通過視力普查代表什麼？\n這表示孩子患有弱視或斜視的機會相對較低，但仍有機會在日後的成長階段才出現視力問題。因此，家長可安排孩子在小學一年級時參加衞生署學生健康服務提供的視力檢查。\n未能通過視力普查又是什麼意思？\n這表示孩子需要接受轉介作進一步檢查及跟進。母嬰健康院會因應檢查的結果作以下安排：\n只是一般屈光問題 → 建議由社區視光師作深入的屈光度數檢查\n懷疑孩子有弱視、斜視或嚴重的屈光問題 → 轉介到眼科專科診所跟進\n視力檢查合格，是否表示孩子沒有屈光問題？\n不是。孩子視力合格，並不能排除遠視、近視、散光等情況。如其他類型的篩查一樣，視力普查並不能將所有視覺問題都檢查出來。若有需要，家長可諮詢社區視光師，讓孩子接受屈光度數檢查。\n孩子的視覺仍處發展期, 倘若家長對孩子的視力有所懷疑, 或發覺孩子看東西時有異常習慣, 例如: 經常側頭或眨眼、瞇着眼睛或遮蓋着一隻眼睛看東西、看較遠景物時總要走得很近看, 應盡早安排孩子到醫生或社區視光師作檢查。\n怎樣預約母嬰健康院的視力普查？\n如孩子已在母嬰健康院登記, 家長可在孩子足四歲後, 聯絡所屬母嬰健康院或透過本服務網頁之兒童健康服務網上預約系統，依照<兒童健康服務網上預約系統-使用須知>的指示為你的孩子預約、更改、取消或翻查預約的日期。\n若孩子從未在母嬰健康院登記，家長須先為孩子登記，你可登入衞生署家庭健康服務網頁www.fhs.gov.hk，或致電24小時資訊熱線2112 9900，參考登記方法。\n注意﹕如發現孩子的眼睛有異常情況，請盡快到家庭或眼科醫生求診，不應等待視力普查預約。"
       },
       {
         "key": "school-eye-care",
         "section": "通過視力普查代表甚麼／如何保護眼睛",
         "sourceExcerpt": "若眼睛或視力有毛病，應請教醫生或視光師。",
         "text": "學前普查正常不表示之後一定沒有視力問題。家長可在孩子小學一年級時參加學生健康服務的視力檢查。平日閱讀宜有足夠光線，閱讀或看屏幕一段時間後要休息和望遠；若懷疑視力問題，應詢問醫生或視光師。",
-        "keywords": ["小學", "學童", "護眼", "閱讀", "視力檢查", "望遠", "睇書"],
-        "applicability": {"region": "HK", "ageBasis": "actual", "minAgeMonths": 72, "maxAgeMonths": 120, "topics": ["vision", "checkup"], "conditions": ["六至十歲是本產品學童檢索範圍；小一檢查按就讀年級判斷，不能把所有六至十歲孩子當小一生。", "一般護眼及後續檢查建議不會把四至五歲普查的服務資格擴大至學童。"]}
+        "keywords": [
+          "小學",
+          "學童",
+          "護眼",
+          "閱讀",
+          "視力檢查",
+          "望遠",
+          "睇書"
+        ],
+        "applicability": {
+          "region": "HK",
+          "ageBasis": "actual",
+          "minAgeMonths": 72,
+          "maxAgeMonths": 120,
+          "topics": [
+            "vision",
+            "checkup"
+          ],
+          "conditions": [
+            "六至十歲是本產品學童檢索範圍；小一檢查按就讀年級判斷，不能把所有六至十歲孩子當小一生。",
+            "一般護眼及後續檢查建議不會把四至五歲普查的服務資格擴大至學童。",
+            "原文只收錄本主題所需段落，不代表已收錄或讀完整個官方網頁。"
+          ]
+        },
+        "originalText": "通過視力普查代表什麼？\n這表示孩子患有弱視或斜視的機會相對較低，但仍有機會在日後的成長階段才出現視力問題。因此，家長可安排孩子在小學一年級時參加衞生署學生健康服務提供的視力檢查。\n\n如何保護眼睛？\n要\n有充足睡眠、均衡飲食及每天做適量戶外運動。\n在光線充足環境下閱讀及工作。\n閱讀時，書本與眼睛最少要距離30厘米。\n限制使用電子屏幕產品；２至５歲的孩子每天不應多於1小時，使用時家長亦要在旁指導。\n使用屏幕產品，眼睛與電腦屏幕保持最少50厘米距離，與平板電腦保持最少 40厘米距離，而與智能電話保持最少 30厘米距離。看電視時，距離熒幕越遠越好。\n閱讀、看電視或使用屏幕產品 20至 30分鐘，應小休 20至 30秒，遠望景物，讓眼內肌肉放鬆。\n進行球類運動時（如壁球），應佩戴保護眼罩。\n若眼睛或視力有毛病，應請教醫生或視光師。\n不要\n讓強光直接照在圖文或眼睛上。\n在沒有配戴太陽眼鏡的情況下，長時間暴露於猛烈的陽光下。\n在行車中或床上閱讀。\n在過暗的環境看電視。\n用手揉擦眼睛。若有沙塵入眼，先閉上眼睛休息，讓沙塵隨淚水流出。\n讓小孩輕易接觸尖銳的物件及家用清潔劑。\n自行購買眼藥水給小孩使用。"
+      }
+    ],
+    "extraction": {
+      "format": "html",
+      "contentHash": "8823cc04b3fddf61c937e4185ab61f1576f5b42466ff998e5e4b75575c0eac2c",
+      "complete": false
+    }
+  },
+  {
+    "sourceId": "fhs-feeding-booklet-en",
+    "url": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+    "title": "Healthy Eating for 6 to 24 month old children (1) — Getting Started",
+    "publisher": "香港特別行政區政府衞生署家庭健康服務",
+    "classification": "official_guidance",
+    "sourcePublishedAt": null,
+    "sourceUpdatedAt": null,
+    "sourceDateText": null,
+    "fetchedAt": "2026-10-07T21:31:20.641Z",
+    "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
+    "extraction": {
+      "format": "text_pdf",
+      "contentHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+      "totalPages": 20,
+      "pageStart": 3,
+      "pageEnd": 3,
+      "complete": false,
+      "extractionQuality": "requires_review"
+    },
+    "chunks": [
+      {
+        "key": "introducing-solids-page-3",
+        "section": "PDF p.3 — Introduce solid foods at around 6 months",
+        "sourceExcerpt": "After 6 months, babies have a higher demand for iron;",
+        "originalText": "Getting Started \nWhat will happen when the introduction\nof solid food is delayed? \n3 \nAfter 6 months, babies have a higher demand\nfor iron; breastmilk alone cannot satisfy their\nnutritional needs;\nApart from breastmilk or infant formula, babies\nneed a variety of foods to provide various nutrients\nto support their growth and development. \nTo keep pace with babies '   maturation and development \nBabies may not get adequate nutrients,\ne.g. iron and z i nc, for growth, development and\nhealth. \nRisk of nutritional problems \nThey may not accept a wide range of foods in the\nfuture and may thus become picky eaters. Some\nmay refuse food with coarse textures. \nProblems with eating habits \nIntroduce solid foods at around 6 months \nTo satisfy babies '   nutritional requirements \nE\nating solid foods helps babies develop chewing;\nGiving babies a wide range of foods, food\ntextures and tastes helps them accept family\nfoods more easily;\nBabies are less likely to become picky eaters if\nthey experience a variety of foods early.\nI am 6 months.\nI need eating other\nfoods too.\nTo protect your baby from developing allergy, \nD\nO\nN\nO\nT\nfeed him any solid foods before 4   months of age.",
+        "pageStart": 3,
+        "pageEnd": 3,
+        "text": "這份家庭健康服務手冊第3頁說明，約六個月開始加入固體食物，以配合營養及發展需要；六個月後單靠母乳不能滿足鐵質等需要。未足四個月不應餵固體食物。這是一般指引，不代表只憑約數年齡便能確認個別孩子已準備好。",
+        "keywords": [
+          "加固",
+          "固體食物",
+          "半歲",
+          "六個月",
+          "iron",
+          "solid foods"
+        ],
+        "applicability": {
+          "region": "HK",
+          "ageBasis": "actual",
+          "minAgeMonths": 0,
+          "maxAgeMonths": 12,
+          "topics": [
+            "feeding"
+          ],
+          "conditions": [
+            "僅核對PDF第3頁，並與同一官方現行網頁14727.html的開始時機及未滿四個月限制交叉核對。",
+            "本檢索範圍不是加固資格或提醒窗口；其他準備條件須另查適用資料。",
+            "書冊日期未知，不宣稱較現行官方網頁更新；不把本頁當整本手冊已抽取。"
+          ]
+        }
       }
     ]
   }

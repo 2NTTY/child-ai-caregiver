@@ -10,6 +10,10 @@ import { createVertexEmbeddingProvider } from "../server/vertex-embedding.ts";
 import { createKnowledgeRetriever } from "../server/knowledge-retriever.ts";
 import { AgentBudget } from "../server/agent-budget.ts";
 
+// Historical harness: the required semantic assessment contract supersedes these old approval calls.
+console.error("knowledge_historical_harness_retired_use_verify_knowledge_a04_with_approved_a04_local_sql");
+process.exit(1);
+
 let pool, step = "preflight", groups = 0, calls = 0, storeCalls = 0;
 let accepted = false;
 const countStoreCall = () => { if (storeCalls >= 120) throw new Error("Store scope exhausted"); storeCalls++; };

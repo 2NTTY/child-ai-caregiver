@@ -34,10 +34,10 @@ try {
   }
   if (operation === "review") {
     if (!args.includes("--source-and-terms-checked")) throw new Error("Source and terms review required");
-    await store.review(args[1], option("--hash"), reviewer);
-    console.log("knowledge_version_reviewed");
+    const assessment = await readJson(option("--assessment"));
+    console.log(JSON.stringify({ event: "knowledge_version_review", ...await store.review(args[1], option("--hash"), reviewer, assessment) }));
   }
-  if (operation === "publish") { await store.publish(args[1], option("--hash")); console.log("knowledge_version_published"); }
+  if (operation === "publish") { console.log(JSON.stringify({ event: "knowledge_publication", ...await store.publish(args[1], option("--hash")) })); }
   if (operation === "disable") { await store.disable(args[1], option("--reason") ?? ""); console.log("knowledge_source_disabled"); }
   if (operation === "embed" || operation === "search") {
     if (!args.includes("--approved-cost")) throw new Error("Model cost approval required");
@@ -56,7 +56,9 @@ try {
         const result = await store.embedDocument(document, () => gateway.embed({ text: document.text, title: document.title, task: "RETRIEVAL_DOCUMENT" }, actor, signal, async () => true));
         if (!result.reused) generated++;
       }
-      console.log(JSON.stringify({ event: "knowledge_embedding_finished", generated, remaining: (await store.missingDocuments(args[1])).length }));
+      const remaining = (await store.missingDocuments(args[1])).length;
+      const publication = await store.tryPublish(args[1]);
+      console.log(JSON.stringify({ event: "knowledge_embedding_finished", generated, remaining, publication }));
     } else {
       const input = await readJson(args[1]);
       budget = new AgentBudget();
@@ -67,5 +69,5 @@ try {
         chunks: result.chunks.map(chunk => ({ chunkId: chunk.chunkId, sourceId: chunk.sourceId, versionId: chunk.versionId, key: chunk.key, url: chunk.url })) }));
     }
   }
-} catch { console.error("knowledge_operation_failed_check_scope_version_quota_and_source_review"); process.exitCode = 1; }
+} catch (error) { console.error(JSON.stringify({ event: "knowledge_operation_failed_check_scope_version_quota_and_source_review", reason: error instanceof Error && /^knowledge_[a-z_]+$/.test(error.message) ? error.message : "operation_failed" })); process.exitCode = 1; }
 finally { budget?.close(); await pool?.end(); }

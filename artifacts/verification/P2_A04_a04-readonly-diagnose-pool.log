@@ -1,0 +1,10 @@
+{"event":"readonly_store_read","storeCalls":1,"selection":{"query":"Late target"}}
+{"event":"readonly_store_result","storeCalls":1,"durationMs":152,"count":5,"keys":["section-1102","section-1100","section-1101","section-1104","section-1103"]}
+{"event":"readonly_search","count":5,"anchors":[{"chunkId":"38eda3a5-7b85-4793-b985-c68962391dd7","key":"section-1102","versionId":"2222eae4-c477-4b82-8442-209e9a8646a0"},{"chunkId":"c2b589d3-3726-4f26-bfc1-3fe3e6636405","key":"section-1100","versionId":"2222eae4-c477-4b82-8442-209e9a8646a0"},{"chunkId":"c79c860a-8562-40d2-9e08-699303387409","key":"section-1101","versionId":"2222eae4-c477-4b82-8442-209e9a8646a0"},{"chunkId":"f8f761fe-f9bd-4d3b-b1dd-d01e57517184","key":"section-1104","versionId":"2222eae4-c477-4b82-8442-209e9a8646a0"},{"chunkId":"fc2df951-0809-4d42-a946-8d6dd3de686a","key":"section-1103","versionId":"2222eae4-c477-4b82-8442-209e9a8646a0"}]}
+{"event":"readonly_store_read","storeCalls":2,"selection":{"chunkIds":["38eda3a5-7b85-4793-b985-c68962391dd7"],"versionId":"2222eae4-c477-4b82-8442-209e9a8646a0","limit":1}}
+{"event":"readonly_store_result","storeCalls":2,"durationMs":8,"count":1,"keys":["section-1102"]}
+{"event":"readonly_store_read","storeCalls":3,"selection":{"chunkIds":["38eda3a5-7b85-4793-b985-c68962391dd7"],"versionId":"2222eae4-c477-4b82-8442-209e9a8646a0","limit":1}}
+{"event":"readonly_store_result","storeCalls":3,"durationMs":7,"count":1,"keys":["section-1102"]}
+{"event":"readonly_store_read","storeCalls":4,"selection":{"versionId":"2222eae4-c477-4b82-8442-209e9a8646a0","afterKey":"section-1102","limit":4}}
+{"event":"readonly_store_result","storeCalls":4,"durationMs":171,"count":2,"keys":["section-1103","section-1104"]}
+{"event":"readonly_context","complete":true,"count":3,"start":{"key":"section-1102","offset":0},"nextCursor":null}

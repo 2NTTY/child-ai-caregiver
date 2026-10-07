@@ -1,0 +1,1 @@
+{"event":"knowledge_a04_acceptance_failed","step":"bounded_rank_exact_reference_and_context","groups":0,"storeCalls":9,"code":"fixture_scope_or_precondition_failed","assertionOperator":null,"retainedForDiagnosis":true,"sourceIds":["qa-a04-a75cc74ea94dfd9d-bounded","qa-a04-a75cc74ea94dfd9d-semantic"],"versionIds":["2222eae4-c477-4b82-8442-209e9a8646a0"]}

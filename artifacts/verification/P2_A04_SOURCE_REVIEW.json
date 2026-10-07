@@ -1,0 +1,119 @@
+{
+  "workPackage": "P2-A04",
+  "recordedOn": "2026-10-08",
+  "reviewer": "primary_model",
+  "scope": "Selected official passages for an attributed non-commercial trial; no clinical or full-corpus claim.",
+  "sourceReview": [
+    {
+      "sourceId": "fhs-solid-food",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html",
+      "fetchedAt": "2026-10-07T21:28:06.298Z",
+      "contentHash": "4585223d60cbd3454387eda9cc56bc6b3effbd5a3acf4abbb23e373ef68e2655",
+      "sourceDateText": "02/2026 修訂內容；未列確切日期",
+      "selectedKeys": [
+        "starting-solids"
+      ],
+      "coverage": {
+        "format": "html",
+        "contentHash": "4585223d60cbd3454387eda9cc56bc6b3effbd5a3acf4abbb23e373ef68e2655",
+        "complete": false
+      },
+      "meaningReview": "Around six months and not before four months remain distinct; age range is retrieval scope, not eligibility or scheduled deadline."
+    },
+    {
+      "sourceId": "fhs-toddler-development",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/15654.html",
+      "fetchedAt": "2026-10-07T21:28:06.517Z",
+      "contentHash": "a6963ea7b6c3eb795a98a5793583c9860e4c4d514cf0c7907cb417c5326f54fa",
+      "sourceDateText": "02/2023 修訂內容；02/2026 重印；未列確切日期",
+      "selectedKeys": [
+        "play-and-language"
+      ],
+      "coverage": {
+        "format": "html",
+        "contentHash": "a6963ea7b6c3eb795a98a5793583c9860e4c4d514cf0c7907cb417c5326f54fa",
+        "complete": false
+      },
+      "meaningReview": "Selected development, interaction and consultation paragraphs keep one-to-two-year scope and individual differences; no automatic diagnosis."
+    },
+    {
+      "sourceId": "fhs-preschool-development",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14821.html",
+      "fetchedAt": "2026-10-07T21:28:06.734Z",
+      "contentHash": "db9e1579528c7f46e21ee9f1a09a468a3a671fa2e4f87ada8a629e84e70a781b",
+      "sourceDateText": "10/2026 修訂網上內容；未列確切日期",
+      "selectedKeys": [
+        "persistent-concerns"
+      ],
+      "coverage": {
+        "format": "html",
+        "contentHash": "db9e1579528c7f46e21ee9f1a09a468a3a671fa2e4f87ada8a629e84e70a781b",
+        "complete": false
+      },
+      "meaningReview": "Official revision label changed to 10/2026; selected advice still requires multiple persistent difficulties and retains differences between children/settings. No new growth rule."
+    },
+    {
+      "sourceId": "fhs-child-vision",
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/14812.html",
+      "fetchedAt": "2026-10-07T21:28:06.951Z",
+      "contentHash": "8823cc04b3fddf61c937e4185ab61f1576f5b42466ff998e5e4b75575c0eac2c",
+      "sourceDateText": "02/2022 修訂內容；02/2026 重印；未列確切日期",
+      "selectedKeys": [
+        "preschool-screening",
+        "school-eye-care"
+      ],
+      "coverage": {
+        "format": "html",
+        "contentHash": "8823cc04b3fddf61c937e4185ab61f1576f5b42466ff998e5e4b75575c0eac2c",
+        "complete": false
+      },
+      "meaningReview": "Four-to-five-year screening, existing-glasses exception and primary-one follow-up remain distinct; general eye care does not expand screening eligibility."
+    },
+    {
+      "sourceId": "fhs-feeding-booklet-en",
+      "url": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+      "fetchedAt": "2026-10-07T21:31:20.641Z",
+      "contentHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+      "sourceDateText": null,
+      "selectedKeys": [
+        "introducing-solids-page-3"
+      ],
+      "coverage": {
+        "format": "text_pdf",
+        "contentHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+        "totalPages": 20,
+        "pageStart": 3,
+        "pageEnd": 3,
+        "complete": false
+      },
+      "meaningReview": "PDF p.3 timing and before-four-month prohibition cross-checked against current official 14727.html; no readiness, dose or other pages inferred. Other PDF pages contain extraction artifacts and were excluded."
+    }
+  ],
+  "terms": {
+    "url": "https://www.fhs.gov.hk/english/notice/notice.html",
+    "sha256": "37fd99e51d66fb215a1f245c2b1d4c7d6c35e6d835ef0d7d736cf1f9af5b93a7",
+    "checked": "Attribution and non-commercial reproduction permitted; no new commercial/public permission for restricted CHP/RTHK."
+  },
+  "pdf": {
+    "library": "pdfjs-dist@6.4.299",
+    "node": "24.11.0",
+    "usableSelection": {
+      "fileHash": "3b0975745750c9c450e34797f3d3ab43dd37090be8d0ab3210936bdd7a405f0f",
+      "totalPages": 20,
+      "selectedPages": [
+        3
+      ]
+    },
+    "excludedSource": {
+      "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30036.pdf",
+      "bytes": 26707354,
+      "fileHash": "345a36a06f2feffd5bee79d038c2f070ac4a0d5f50c45a9e952e19e573227505",
+      "reason": "Most inspected initial pages contain only page numbers or partial text. Not registered, imported or published."
+    },
+    "technicalCoverage": "Selected batches only, no whole-book extraction claim."
+  },
+  "notDone": [
+    "No new source version has been published by this file review alone.",
+    "No GCP deployment or model-quality acceptance represented by this artifact."
+  ]
+}

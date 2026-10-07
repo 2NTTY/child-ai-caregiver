@@ -1,0 +1,92 @@
+{
+  "package": "P2-A04",
+  "base": "f46ab8ed3e949fe36e674ad60bc3b3bb5f176723",
+  "recordedAt": "2026-10-07T21:57:48.390Z",
+  "runtime": {
+    "node": "v24.11.0",
+    "npm": "11.6.1",
+    "postgres": "18.6",
+    "pgvector": "0.8.6",
+    "pdfjs": "6.4.299"
+  },
+  "review": {
+    "primary": true,
+    "scope": "Bounded SQL, age provenance/date precision, fixed-version continuation, actual-read citation ranges, semantic edition approval, source fetching and PDF worker bounds, source attribution and contracts"
+  },
+  "verification": {
+    "offline": {
+      "aggregateCases": 4,
+      "latestAffectedPassed": 2,
+      "evidence": "Agent tool output, not retained stdout",
+      "toolOutputIds": [
+        "fcf745",
+        "0408e2",
+        "dda6a7",
+        "a00e70",
+        "46f695"
+      ],
+      "limitations": "Original fixture type diagnostics and one reduced-capacity continuation failure preserved as executor report; no fabricated historical stdout."
+    },
+    "pdf": {
+      "synthetic": "One aggregate with file-bound continuation and page-number-only rejection passed",
+      "failures": "Original Windows resource URL and Node24.11 standard-build toHex compatibility failures retained; fixed using official legacy build.",
+      "official": "Selected actual PDF p.3 cross-checked with current official HTML; other unreadable/image/text-artifact pages excluded."
+    },
+    "sql": {
+      "migration031": "passed",
+      "originalBatch": {
+        "exitCode": 1,
+        "storeCalls": 9,
+        "completedGroups": 0,
+        "stop": "During bounded context group; original diagnostic was generic and cause remains undetermined."
+      },
+      "retainedFixtureReadOnly": {
+        "storeCalls": 8,
+        "passes": 2,
+        "meaning": "Same fixture search and context succeeded, once with original pool configuration; does not relabel original failure."
+      },
+      "remainingBatch": {
+        "exitCode": 0,
+        "groups": 3,
+        "storeCalls": 16,
+        "scope": "Only previously unexecuted semantic publication groups; original fixture reused; no repeated capacity group."
+      },
+      "totalStoreCalls": 33,
+      "syntheticSources": 2,
+      "syntheticCorpusChunks": 1105,
+      "familyWrites": 0,
+      "realModels": 0,
+      "externalFetches": 0,
+      "cleanup": "Exact fixture IDs removed; original FHS sources and family counts retained; worker false."
+    },
+    "typecheck": "Executor scoped strict 12 roots: 0 diagnostics; not whole-repo",
+    "seed": "5 sources/6 chunks parse with actual schema",
+    "diffCheck": "passed"
+  },
+  "checkpoint": {
+    "type": "encrypted local database only",
+    "bytes": 402126,
+    "sha256": "2b980112ee60aa3d8a38145e7d4d10d7a5857b30c0778e7ca2d98df917650a5c",
+    "photos": "Untouched; not paired restore acceptance"
+  },
+  "notRun": [
+    "new real Gemini/embedding",
+    "live source worker schedule",
+    "browser E2E",
+    "cloud deployment",
+    "new seed publication in local or production database",
+    "paired restore"
+  ],
+  "gate": "Primary accepts minimal package functional evidence; original unreproduced SQL batch failure retained as limitation for A09 representative deployment flow.",
+  "raw": [
+    "P2_A04_a04-acceptance-1791409803279.log",
+    "P2_A04_a04-migration-1791409583775.log",
+    "P2_A04_a04-readonly-diagnose-pool.log",
+    "P2_A04_a04-readonly-diagnose.log",
+    "P2_A04_a04-remainder-acceptance-1791410173217.log",
+    "P2_A04_pdf-test-quality.log",
+    "P2_A04_pdf-test-repair-1.log",
+    "P2_A04_pdf-test-repair-2.log",
+    "P2_A04_pdf-test.log"
+  ]
+}
