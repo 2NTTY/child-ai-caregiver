@@ -90,7 +90,7 @@ INT-W02 增補：`GET／POST /api/children/:childId/agent/policy` 管理本人�
 `GET /agent/notes?query=…&afterId=…` 返回 `{notes:{items,nextAfterId}}`；是本人普通交代的權威來源，不複製成已確認事實。`POST /agent/notes/:id/delete` 需 `operationId／expectedVersion／confirmDelete:true`。`GET /agent/actions?runId=…` 返回 `{receipts}`，只讀本人／孩子原運行的已提交操作；收據含資源 ID、版本、保存／排程／終態及通知授權狀態，不以模型文字推定成功。上述路徑均以 `/api/children/:childId` 為前綴並重核 session；未套用 migration 025 不啟用新操作。
 
 <a id="agent-input-capacity"></a>
-容量契約增補：既有「當前指令＋短延續詞」工具選擇是待替代實作；P2-A01 以[語義工具契約](#p2-agent-service)取代能力閘，授權仍由 Server 判定，資料正文不升格為指令。gateway 的完整 contents／config 邏輯 JSON 按運行共用的 inputCharacters 上限檢查（UTF-16 字元，不等於 SDK 後續加入固定設定後的 HTTP body 大小或 token 數）。互動 Agent 由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 設定，預設 64,000、允許 32,000–64,000；背景仍為 32,000。原 P1 AI_MAX_INPUT_CHARACTERS 與模型次數／輸出／時間及配額不因此改變。
+容量契約增補：P2-A01 已以[語義能力集合](#semantic-capability-tools)取代「當前指令＋短延續詞」工具選擇，目標依[語義工具契約](#p2-agent-service)，授權仍由 Server 判定，資料正文不升格為指令。gateway 的完整 contents／config 邏輯 JSON 按運行共用的 inputCharacters 上限檢查（UTF-16 字元，不等於 SDK 後續加入固定設定後的 HTTP body 大小或 token 數）。互動 Agent 由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 設定，預設 64,000、允許 32,000–64,000；背景仍為 32,000。原 P1 AI_MAX_INPUT_CHARACTERS 與模型次數／輸出／時間及配額不因此改變。
 
 `read_context` 在整體 request 剩餘容量內只給一份完整、有序的原訊息前綴；`privateSummaryInput.messageIds` 引用同次提供的原文，舊摘要只提供一次。明示 omitted／more／complete，不能把未讀部分說成已摘要。Server 對摘要批次重新核對 previousVersion、basis 及連續前綴 coverage，來源改變仍拒絕。固定 metadata 放不下時明示 context_input_limit，不暗刪事實或任務；原生工具協定／signatures 不被截斷。
 
@@ -103,6 +103,16 @@ INT-W03 增補 `allowRecordCorrections`，既有政策及未提供欄位預設 f
 原生 `save_ordinary_record`／`save_private_instruction`／`revise_private_instruction`／`create_ordinary_reminder`／`change_ordinary_reminder` 各採單一參數形狀，共用相同業務操作與收據；只接受互動 run、當次來源訊息、精確 sourceQuote、目前政策版本及允許的動作，由同一交易調用原 CareStore／TaskStore 並保存收據；背景 run 不取得此工具。原 call ID 的精確重試及同 run 等價動作沿用原收據；政策撤回、權限／版本改變及任務終態仍拒絕新效果。工具成功但文字收尾失敗，依台帳顯示已保存結果，不再次執行。`read_context.uncoveredConversation` 顯式區分摘要已覆蓋與尚未覆蓋的原文；只返回完整訊息，超出有界輸入時列未讀部分，不承諾完整記得全部聊天。
 
 背景 product-background 因已核准到期提醒或 S13-W08 新關注基準入列，讀取家庭共享上下文並保存本人站內說明；不讀私人聊天、建立新任務或發出外部通知。成長關注接線見 S13-W08；預授權聯絡由 W07 的接線及授權掌管。必要真 SQL、Gemini／embedding、worker 恢復與修正範圍分列 [S11 證據](../artifacts/verification/S11_W02_CHECKS.json)及 [W08 證據](../artifacts/verification/S13_W08_CHECKS.json)；完整 Agent／關注 UI 情景未驗，不以其他包的瀏覽器證據代替。
+
+
+<a id="semantic-capability-tools"></a>
+### P2-A01 已接線的語義能力集合
+
+互動 reply 固定使用 product-interactive，工具是否存在不再由最後一句／延續詞 regex 或 summary 字詞决定。Server 提供的實際業務工具按 `PRODUCT_AGENT_TOOL_CATALOG` 分為常用核心與能力群；`load_capabilities({capabilities:[id,...]})` 沿同一 strict schema、授權、用量與取消管線載入，不能擴權或直接執行業務。不存在的服務不列目錄；配置遺漏／重複歸屬拒絕。
+
+ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog 列出可用群與 loaded；同一 batch 尚未載入的工具仍拒絕。群對應的 Server prompt module IDs 沿既有 manifest 去重／依賴核對，不接受模型路徑。集合按 run 隔離、單調增加；terminal 收尾保持可見，repair 僅可 present_answer。未提供 catalog 的背景／其他 run 保留原固定工具邊界。
+
+此接線沒有新增持久工作、跨輪寫入來源、確認政策、正文 patch 或新業務 API；相關增補依 [總計劃](../PLAN.md#p2-agent-service) 的後續包。最低離線證據見 [A01](../artifacts/verification/P2_A01_CHECKS.json)，不當作完整真 Agent 驗收。
 
 <a id="knowledge-retrieval-contract"></a>
 ### P2 最小向量檢索契約

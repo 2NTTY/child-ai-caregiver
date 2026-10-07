@@ -1580,3 +1580,17 @@
 ### Limitations / Next
 - 文件定案不代表 A01～A09 實作、真服務或 GCP 新版部署完成。現有未驗／失敗證據保留，新增完成門檻沿本包 PLAN。
 - 本聊天獲准按包直接最低必要驗收；外發內容／對象與新增雲端費用仍依實際批准。下一步文件合併後從最新 master 開 A01，先核對其他聊天新合併，A08 只在獨立邊界就緒時推進。
+
+
+<a id="log-20261008-p2-a01"></a>
+## LOG-20261008-P2-A01
+
+- Recorded At：2026-10-07 19:32:13 UTC；Work Date：2026-10-08 HKT。Step / Package：P2-A01；基線 1df2f7a（文件 PR #131 已合併）。
+- Executor／AI Assistance：主模型親寫 PLAN、能力目錄、Prompt Pack、契約及 Skill，核對方案／關鍵 diff 與證據；一個 Sol 6.1 xhigh 實作 runtime、接線及必要離線驗收。A 主責，權重 3，A60%／C40%，共用 AI 由 A 統籌；份額依 Agent 行為與 Server 接線責任，非人工手寫／實測工時。Human Verification：未新增。
+- 拆除末句／延續詞工具閘及摘要 recipe regex；互動固定 product-interactive，ADK BaseToolset 以常用工具＋受信能力目錄／loader 暴露 schema。載入／失敗仍計同 run，授權、版本、原收據、unknown、取消及安全收尾保持。背景固定範圍不擴大。
+- Prompt Pack 0.1.27／product-tools 0.1.14 局部補語義指引；記錄、記憶、待辦、摘要與聯絡模組按需復用並去重。沒有新增框架、重新撰寫整份 Pack、改 UI、DB migration 或提高配額。
+- 最低驗收：七個真 ADK Runner＋scripted provider 集中案例通過，覆蓋前文承接載入／實際 action handler、run 隔離／權限、非法／未載工具、取消、上限、成功後收尾失敗及 unknown 不重做；兩個受影響 Vertex schema／mocked transport 案例通過。業務 Store 為合成 stub，不當 DB 證據。
+- 失敗保留：首個 Runner fixture 錯誤假設 prompt 位於 system 最前，ADK 原生前綴令斷言失敗；停批、核對後改為完整 prompt 包含位置，單獨補驗通過。廣域 tsconfig.server.json 初檢失敗（包含前端／其他 tests，另有已移除 selector 的舊 import）；只修該必要 test 接點，沒有順修非本包診斷。限定 server／shared＋兩份測試編譯通過；主模型為補足初次未保存 exit code 的缺口重跑一次，exit 0。廣域診斷只保留執行者回報，未保存原始全文；未宣稱全倉 typecheck 通過。
+- 實際環境 Node 24.11.0／npm 11.6.1，ADK 2.1.0／GenAI 2.24.0；npm ci 使用原 lock，npm engine >=11.8 警告保留，未全局升級。建置配置的固定版本未改。
+- 主模型 review／git diff --check 通過；[最低證據](artifacts/verification/P2_A01_CHECKS.json)／[原 Runner 失敗及補驗](artifacts/verification/P2_A01_OFFLINE.txt)。真 Gemini、DB、通知、部署沒有執行；新模型理解與完整成果留後續連貫驗收，本包只完成原生工具接線及必要安全邊界。
+- 下一步：本包 review／PR 合併後解鎖 P2-A02，先 fetch 並核對其他聊天成果；A08 是獨立 Ready 包，不自動擴大本包範圍。完整 P2 目標仍未完成。

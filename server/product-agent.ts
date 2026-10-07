@@ -8,7 +8,7 @@ import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
-import { productToolSelection } from "./product-tool-selection.ts";
+import { PRODUCT_AGENT_TOOL_CATALOG } from "./product-agent-capabilities.ts";
 
 export function createProductAgent(options: {
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
@@ -65,7 +65,7 @@ export function createProductAgent(options: {
       const index = page?.messages.findIndex(item => item.id === messageId && item.role === "user") ?? -1;
       if (!page || index < 0 || !context || !await isCurrentUser()) return null;
       const operationPolicy = options.actions ? await options.actions.policy(userId, childId) : null;
-      const recipeId=options.summary&&/摘要|總結|总结|報告|报告|(?:到診|到诊|覆診|复诊).{0,4}(?:準備|准备|問題|问题)|summary|report/iu.test(page.messages[index].text)?"summary-visit":"product-interactive";
+      const recipeId = "product-interactive";
       const claim = await options.store.claim(userId, childId, { kind: "interactive", reference: messageId }, recipeId);
       if (!claim) return null;
       if (!claim.created) return options.store.get(userId, childId, claim.runId);
@@ -86,9 +86,9 @@ export function createProductAgent(options: {
           outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions" },
         // A bounded recent window is distinct from the coverage-tracked summary and confirmed facts.
         messages: page.messages.slice(Math.max(0, index - 5), index + 1).map(item => ({ role: item.role, text: item.text })),
+        toolCatalog: PRODUCT_AGENT_TOOL_CATALOG,
         tools: run => {
-          tools = createProductAgentTools({ ...options, ...productToolSelection(page.messages.slice(0,index+1)
-            .filter(message=>message.role==="user").slice(-2).map(message=>message.text)), run, authorize });
+          tools = createProductAgentTools({ ...options, includeDocuments: true, run, authorize });
           return tools.tools;
         }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
         finalize: async () => {

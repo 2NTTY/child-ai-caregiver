@@ -9,6 +9,7 @@ import { AgentGatewayModel } from "./agent-model-gateway.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { PresentationRepairAgent } from "./agent-presentation-repair.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
+import { AgentCapabilitySelection, AgentCapabilityToolset, type AgentToolCatalog } from "./agent-tool-capabilities.ts";
 import { createAgentObserver, type AgentDiagnostic } from "./agent-observer.ts";
 
 // The application owns metadata-only observability. ADK's default spans/logs may contain bodies.
@@ -54,6 +55,8 @@ export interface AgentRunInput {
   /** One server-authorized original; no client URLs or arbitrary content parts. */
   image?: { mimeType: "image/jpeg" | "image/png"; data: string };
   tools: AgentTool[] | ((context: AgentRunContext) => AgentTool[]);
+  /** Trusted Server catalog; omitted runs retain their fixed tool scope. */
+  toolCatalog?: AgentToolCatalog;
   authorize: () => Promise<boolean>;
   signal?: AbortSignal;
 }
@@ -101,14 +104,28 @@ export function createAgentRuntime(options: {
             || input.messages.some(message => !message.text.trim() || /[\u0000\uD800-\uDFFF]/u.test(message.text))) throw new AgentStopped("invalid_response");
           const runContext: AgentRunContext = { scope, runId, budget, authorize,
             embeddings: "embeddings" in selected ? selected.embeddings : undefined };
-          const configuredTools = typeof input.tools === "function" ? input.tools(runContext) : input.tools;
+          const configuredTools = [...(typeof input.tools === "function" ? input.tools(runContext) : input.tools)];
+          const capabilitySelection = input.toolCatalog ? new AgentCapabilitySelection(configuredTools, input.toolCatalog) : undefined;
+          const promptCache = new Map<string, ReturnType<typeof loadAgentPrompt>>();
+          const getPrompt = (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
+            const key = JSON.stringify(ids);
+            let pending = promptCache.get(key);
+            if (!pending) {
+              pending = loadAgentPrompt(input.recipeId, "tool_cycle",
+                input.availableInputs ?? ["run", "scope", "conversation", "capabilities"], capabilitySelection?.moduleIds(ids));
+              promptCache.set(key, pending);
+            }
+            return pending;
+          };
+          const loader = capabilitySelection?.loader(async ids => { await budget.wait(() => getPrompt(ids)); budget.check(); });
+          if (loader) configuredTools.push(loader);
           const definitions = new Map(configuredTools.map(tool => [tool.name, tool]));
           if (definitions.size !== configuredTools.length || configuredTools.some(tool => !/^[a-z][a-z0-9_]{0,63}$/u.test(tool.name))) throw new AgentStopped("invalid_tool");
           const observer = createAgentObserver({ runId, toolNames: [...definitions.keys()], sink: options.diagnostics });
           const terminalToolNames = new Set(configuredTools.filter(tool => tool.terminal).map(tool => tool.name));
           if (terminalToolNames.size && !input.finalize) throw new AgentStopped("invalid_tool");
           if (input.presentationRepair && (!input.finalize || !terminalToolNames.has(input.presentationRepair))) throw new AgentStopped("invalid_tool");
-          const prompt = await loadAgentPrompt(input.recipeId, "tool_cycle", input.availableInputs ?? ["run", "scope", "conversation", "capabilities"]);
+          const prompt = await getPrompt();
           result.provenance = { packVersion: prompt.packVersion, recipeId: prompt.recipeId, model: selected.config.model };
           budget.check();
           const tools = configuredTools.map(tool => new FunctionTool({ name: tool.name, description: tool.description,
@@ -132,13 +149,20 @@ export function createAgentRuntime(options: {
               }
             } }));
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames });
-          const instruction = `${prompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
-            now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: prompt.packVersion,
-            recipeId: prompt.recipeId, capabilities: tools.map(tool => tool.name), limits: budget.limits })}`;
+          const runtimeTools = capabilitySelection ? [new AgentCapabilityToolset(tools, () => {
+            budget.check(); return capabilitySelection.visibleToolNames();
+          })] : tools;
           const agentConfig: ConstructorParameters<typeof LlmAgent>[0] = { name: "yuban_agent", model,
             // Providers return literal instructions without ADK session-state template interpolation.
-            instruction: async () => instruction,
-            tools,
+            instruction: async () => {
+              const currentPrompt = await budget.wait(() => getPrompt());
+              budget.check();
+              return `${currentPrompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
+                now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: currentPrompt.packVersion,
+                recipeId: currentPrompt.recipeId, capabilities: capabilitySelection ? [...capabilitySelection.visibleToolNames()] : tools.map(tool => tool.name),
+                ...(capabilitySelection ? { capabilityCatalog: capabilitySelection.metadata() } : {}), limits: budget.limits })}`;
+            },
+            tools: runtimeTools,
             beforeToolCallback: async ({ tool, args, context }) => {
               budget.check();
               if (agent instanceof PresentationRepairAgent && agent.repairing && tool.name !== "present_answer") {

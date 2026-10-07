@@ -1,0 +1,111 @@
+✖ semantic continuation loads actual services and trusted modules before the real action handler (30.8853ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1130.3071
+
+✖ failing tests:
+
+test at tests\product-tool-selection.test.ts:62:1
+✖ semantic continuation loads actual services and trusted modules before the real action handler (30.8853ms)
+  AssertionError [ERR_ASSERTION]: {"runId":"8a632adc-02ca-4d2e-930a-c8a057248ce3","status":"stopped","text":null,"tools":[],"counts":{"modelCalls":1,"toolCalls":0,"queryEmbeddings":0},"provenance":{"packVersion":"0.1.27","recipeId":"product-interactive","model":"gemini-3.1-flash-lite"},"stopReason":"unavailable"}
+  + actual - expected
+  
+  + 'stopped'
+  - 'completed'
+  
+      at TestContext.<anonymous> (file:///C:/Users/2NTTY/.codex/worktrees/p2-a01-semantic-tools/%E5%AD%A9%E5%AD%90ai%E6%8A%A4%E5%B7%A5/tests/product-tool-selection.test.ts:109:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'stopped',
+    expected: 'completed',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+✔ semantic continuation loads actual services and trusted modules before the real action handler (48.6013ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1130.03
+✔ capability loading is isolated across runs and never grants handler authorization (38.8202ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1115.3566
+✔ illegal loader parameters and unloaded same-batch tools fail closed with counted attempts (25.2226ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1103.8163
+✔ cancellation after loading stops the same run before a business operation (32.7756ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1107.454
+✔ repeated capability loads remain monotonic and consume the shared tool limit (30.7029ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1093.41
+✔ presentation-only repair after a saved tool never reloads or replays business operations (29.516ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1091.1517
+✔ unknown loaded-tool outcomes stop without replay or a fresh run (35.9953ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1117.199
+✔ all Server capabilities serialize only documented Vertex schema fields (20.8921ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1127.7635
+✔ the real product-interactive Runner request keeps its system configuration and supported schemas (40.0623ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1138.2027
