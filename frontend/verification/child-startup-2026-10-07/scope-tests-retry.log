@@ -1,0 +1,14 @@
+(node:12) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ production scope uses server, stable identity, generation, child and role, and gates logout (11.819267ms)
+✔ child change releases local photo resources and identity uncertainty conceals private projections (6.500688ms)
+✔ unconnected home feeds remain unavailable and logout unknown never exposes old identity (1.533606ms)
+✔ production original decision requires reread and renewed sharing, then reuses exact input (2.634219ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1158.269496

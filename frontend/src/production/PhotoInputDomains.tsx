@@ -370,6 +370,7 @@ function useProductionPhotos() {
 
 type Domains = { scopeKey: string; photos: ReturnType<typeof useProductionPhotos>; sources: ReturnType<typeof usePhotoInputSources> };
 const PhotoInputContext = createContext<Domains | null>(null);
+export const useProductionPhotoInputDomains = () => useContext(PhotoInputContext);
 const ScopedPhotoInputBridge = memo(function ScopedPhotoInputBridge({ scopeKey, publish }: { scopeKey: string; publish: (value: Domains) => void }) {
   const photos = useProductionPhotos(), sources = usePhotoInputSources();
   useLayoutEffect(() => { publish({ scopeKey, photos, sources }); }, [scopeKey, photos, sources, publish]);
@@ -406,3 +407,4 @@ export function AgentPhotoInput({ original, onTransferred, onPhotos }: { origina
     {domain.model.original || domain.model.selected ? <AppButton label="繼續核對照片" variant="secondary" disabled={domain.pending} onPress={onPhotos} /> : null}
   </SectionCard>;
 }
+

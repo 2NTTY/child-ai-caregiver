@@ -1,0 +1,62 @@
+{
+  "baseCommit": "a347956b18328b32c9fa14fb1ac4e499ab49b513",
+  "investigationBase": "9d1024cddd162bfc59198223f2a9e1ab2c6afeb2",
+  "date": "2026-10-07",
+  "environment": "Node 24.19.0; offline synthetic data, deterministic hook/animation harness; no model or live API",
+  "checks": [
+    {
+      "name": "Actual startup gate, production readiness, child transition and loading dot hooks",
+      "command": "node --test frontend/scripts/startup-readiness.test.mjs",
+      "result": "11/11 pass"
+    },
+    {
+      "name": "Existing shell/owner lifecycle, image readiness and motion lifecycle",
+      "command": "node --test frontend/scripts/owner-shell-lifecycle.test.mjs frontend/src/startup/imageReadiness.test.mts frontend/src/motion/lifecycle.test.mts",
+      "result": "12/12 pass in the adjacent batch; the separate scope module failed to start without transform-types"
+    },
+    {
+      "name": "Existing production owner scope, photo cleanup, identity and original-operation checks",
+      "command": "node --experimental-transform-types --test frontend/src/production/scope.test.mts",
+      "result": "4/4 pass after correcting runner flag"
+    },
+    {
+      "name": "Frontend strict typecheck on final a347 dependencies",
+      "command": "node node_modules/typescript/bin/tsc --project frontend/tsconfig.json --noEmit",
+      "result": "pass"
+    },
+    {
+      "name": "Expo production Web export on final a347 dependencies",
+      "command": "EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 CI=1 TMPDIR=/tmp/child-loading-metro EXPO_PUBLIC_API_BASE_URL=/api node ../node_modules/expo/bin/cli export --platform web --output-dir ../dist-loading",
+      "cwd": "frontend",
+      "result": "pass; 35 static routes; entry-29f840f270ca1a314dd6db5d44887c2f.js"
+    }
+  ],
+  "failuresAndLimits": [
+    "Pinned original FirstScreenGate and MotionScopeBoundary reproduce both new assertions as failures: early reveal after artwork and a curtain on initial null-to-child selection. This was an intentional baseline reproduction, not a product pass.",
+    "The adjacent batch initially invoked scope.test.mts without --experimental-transform-types. It failed to parse a pre-existing TypeScript parameter property. The corrected scoped runner passed without source or assertion changes.",
+    "A first scoped retry used the frontend working directory with root-relative output paths and did not launch; it was then run from the repository root.",
+    "Source materialization normalized connector-added trailing newlines against Git blob hashes. No unrelated source changes are included.",
+    "No browser pixels, continuous animation frames, screen reader, native device, real network, real family data, model, deployment or merge was tested or performed."
+  ],
+  "sourceSha256": {
+    "frontend/app/(dashboard)/_layout.tsx": "bd2c6c98489e98c5d1b4aa3071a3a971928d68f5a975bc38a3dffdc1420f8bd6",
+    "frontend/app/_layout.tsx": "a2460fda7b85594ec2635f45b64f4c01df696b3488f2125f5dfe1ac89841a02a",
+    "frontend/src/components/AppShell.tsx": "463326e3f9cc284164b85152af0101100cc64d3eb7c627d04c5e3f4e9db37f5a",
+    "frontend/src/motion/MotionScopeBoundary.tsx": "5b17d08245ccd10fa07be0cde179e89be39c1654f3608f78f765627c9ab81c49",
+    "frontend/src/production/PhotoInputDomains.tsx": "d487fffa9308f192465837bd317c5581333c7df30ef4d4740d5e85a6f05e43a2",
+    "frontend/src/production/ProductionDomains.tsx": "7fd1250c3860fc262ee9480a1e0f8f6e9f59319aa582186255051367300d8ae9",
+    "frontend/src/production/ProductionGate.tsx": "6182864f4cefb89d68370e82187f6b3aa2a75f28fbc088bb55bfc596238f514c",
+    "frontend/src/production/SettingsDomains.tsx": "9ea31941f3ab4ef52feb49e2b147f69d3aaeeee5809607be4a9ff0bc8df34272",
+    "frontend/src/production/useFamilyDocuments.ts": "f1c54575ee66bae46cd7420d9c32a4c96c592352a5626730285e6a59856a2ac2",
+    "frontend/src/production/useProductionFamily.ts": "27256a95cb3570ddf2569313740aaf45596dfc6fade62cf18bb9a007a9f30501",
+    "frontend/src/startup/FirstScreenGate.tsx": "87c4b78a0dac1a69a89216edcc0bfc9282b78432923ef03f25ffb53f347b831c",
+    "frontend/scripts/startup-readiness.test.mjs": "9ad5082cc31124e0765ab26b282500a89417a368367c17cf75f652489a1a9f43",
+    "frontend/src/startup/dataReadiness.ts": "ab22c586f03851082bb791c0dc775a80016a3317a3517ee95033cad6bf5b0b67",
+    "frontend/src/startup/StartupLoadingLabel.tsx": "9cf42b1affffdf24f6e66c696dc9281bd8ca6784562ac3025af6d145fa4a9d6c",
+    "frontend/src/production/ProductionFirstScreenGate.tsx": "c198457c169a7cc623fb80110d807753b36957bbf8450a95402a5db0ed7dcadd",
+    "frontend/src/production/ProductionStartupReadiness.tsx": "17848b94d812d464cc9b3dc0fd7381305a1a005b0a740d66b62d0255fcde1ef2"
+  },
+  "bundleSha256": {
+    "entry-29f840f270ca1a314dd6db5d44887c2f.js": "e5bed12955b27f4d3a9dde339565a10edeaef04472a3be34cc929d108f163ea3"
+  }
+}
