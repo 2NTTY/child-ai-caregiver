@@ -134,8 +134,8 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     {historyOpen && !contextChanged ? <View style={a.history} testID="growth-archive-library">
       <Text style={s.meta}>{rangePeriods ? "已取得的期間與版本" : "已取得的年度與季度"}</Text>
       <View style={a.filters} accessibilityLabel="檔案期間類別">
-        {(rangePeriods ? [{key: "all", label: "全部"}, {key: "range", label: "日期範圍"}] as const
-          : [{key: "all", label: "全部"}, {key: "year", label: "年度"}, {key: "quarter", label: "季度"}] as const).map(option =>
+        {([{key: "all", label: "全部"}, {key: "year", label: "年度"}, {key: "quarter", label: "季度"},
+          ...(rangePeriods ? [{key: "range", label: "日期範圍"} as const] : [])] as const).map(option =>
           <Pressable key={option.key} accessibilityRole="button" accessibilityLabel={`顯示${option.label}成長檔案`} accessibilityState={{selected: filter === option.key}}
             aria-pressed={filter === option.key} onPress={() => setFilter(option.key)} style={[a.filterButton, filter === option.key && a.filterSelected]}>
             <Text style={[a.filterText, filter === option.key && a.filterTextSelected]}>{option.label}</Text>

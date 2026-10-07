@@ -10,7 +10,8 @@ export const documentPeriodSchema = z.object({ from: day, to: day }).strict().re
 export const documentRequestSchema = z.object({
   kind: z.enum(["preparation", "growth_report"]), purpose: z.enum(["appointment", "school", "outing", "handoff", "family"]),
   title: z.string().trim().min(1).max(160), eventDate: day.nullable(), period: documentPeriodSchema,
-}).strict().refine(value => value.kind !== "preparation" || value.purpose !== "family");
+  reportMode: z.enum(["fixed", "living"]).optional(),
+}).strict().refine(value => value.kind !== "preparation" || (value.purpose !== "family" && value.reportMode === undefined));
 export type DocumentRequest = z.infer<typeof documentRequestSchema>;
 const metadataEdit = z.object({ op: z.literal("set_metadata"), title: z.string().trim().min(1).max(160).optional(),
   summary: z.string().max(2000).optional(), eventDate: day.nullable().optional() }).strict()
@@ -46,10 +47,24 @@ export interface DocumentSection {
   domain: "profile" | "body_life" | "abilities_interests" | "concerns" | "changes_support" | null;
   items: { id: string; text: string; sourceIds: string[]; checked?: boolean }[];
 }
+export const reportCoverageSchema = z.object({
+  status: z.literal("complete"), mode: z.enum(["fixed", "living"]), periodKind: z.enum(["range", "quarter", "annual"]),
+  sourceRevision: z.string().min(1).max(160), completedAt: z.iso.datetime({ offset: true }), validUntil: z.iso.datetime({ offset: true }).nullable(),
+  scanned: z.number().int().nonnegative(), counts: z.object({ recordsInPeriod: z.number().int().nonnegative(), recordsUnknownTime: z.number().int().nonnegative(),
+    tasksInPeriod: z.number().int().nonnegative(), observationsInPeriod: z.number().int().nonnegative(), confirmedFacts: z.number().int().nonnegative(),
+    recordKinds: z.record(z.string(), z.number().int().nonnegative()) }).strict(),
+}).strict();
+export type ReportCoverage = z.infer<typeof reportCoverageSchema>;
+export const reportProgressSchema = z.object({
+  mode: z.enum(["fixed", "living"]), phase: z.enum(["building", "complete", "needs_update"]), processedSources: z.number().int().nonnegative(),
+  sourceRevision: z.string().min(1).max(160), periodKind: z.enum(["range", "quarter", "annual"]), period: documentPeriodSchema, title: z.string().max(160),
+}).strict();
+export type ReportProgress = z.infer<typeof reportProgressSchema>;
 export interface DocumentSnapshot {
   id: string; version: number; generatedAt: string; sourceBasis: string;
   title: string; summary: string; ageLabel: string; period: { from: string; to: string };
   eventDate: string | null; coverageNote: string; sections: DocumentSection[]; sources: DocumentSource[]; changes: string[];
+  reportCoverage?: ReportCoverage;
   editProtection?: { sectionIds: string[]; removedSectionIds: string[]; metadataFields: ("title" | "summary" | "eventDate")[] };
 }
 export interface DocumentManifest {
@@ -60,7 +75,7 @@ export interface FamilyDocument {
   id: string; childId: string; kind: DocumentRequest["kind"]; purpose: DocumentRequest["purpose"];
   version: number; status: "active" | "archived"; archivedAt: string | null;
   current: DocumentSnapshot | null; history: DocumentSnapshot[]; manifest?: DocumentManifest;
-  readState: "ready" | "stale" | "invalidated"; autoRefresh: boolean;
+  readState: "ready" | "stale" | "invalidated"; autoRefresh: boolean; report?: ReportProgress;
 }
 export const documentListQuerySchema = z.object({ cursor: z.string().max(2048).nullable().default(null),
   status: z.enum(["all", "active", "archived"]).default("all"), limit: z.number().int().min(1).max(50).default(50) }).strict();

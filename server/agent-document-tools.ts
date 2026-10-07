@@ -23,7 +23,7 @@ const receiptId = (runId: string, callId: string) => {
   return `${hash.slice(0,8)}-${hash.slice(8,12)}-4${hash.slice(13,16)}-a${hash.slice(17,20)}-${hash.slice(20,32)}`;
 };
 const metadata = (item: FamilyDocument) => ({ id: item.id, kind: item.kind, purpose: item.purpose, version: item.version,
-  status: item.status, readState: item.readState, title: item.current?.title ?? null,
+  status: item.status, readState: item.readState, title: item.current?.title ?? item.report?.title ?? null, report: item.report ?? null,
   snapshotId: item.current?.id ?? item.manifest?.snapshotId ?? null, snapshotVersion: item.current?.version ?? item.manifest?.snapshotVersion ?? null,
   autoRefresh: item.autoRefresh, path: item.kind === "growth_report" ? "/growth?tab=archive" : "/summary?tab=preparation" });
 export function createAgentDocumentTools(store: FamilyDocumentStore, agent: ProductAgentStore, run: AgentRunContext, authorize: () => Promise<boolean>): AgentTool[] {
@@ -69,13 +69,13 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
         return page ? { status: "succeeded", data: { ...page } } : { status: "rejected", data: { code: "not_found" } };
       }) },
     { name: "generate_family_document", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.generate_family_document, authorize,
-      parameters: z.object({ sourceQuote: z.string().min(2).max(1000), kind: z.enum(["preparation", "growth_report"]), purpose: z.enum(["appointment", "school", "outing", "handoff", "family"]), eventDate: z.string().nullable(), period: documentPeriodSchema }).strict(),
+      parameters: z.object({ sourceQuote: z.string().min(2).max(1000), kind: z.enum(["preparation", "growth_report"]), purpose: z.enum(["appointment", "school", "outing", "handoff", "family"]), eventDate: z.string().nullable(), period: documentPeriodSchema, reportMode: z.enum(["fixed", "living"]).optional() }).strict(),
       execute: (args, context) => guard(async () => {
         const labels = { appointment: "到診準備", school: "入學／轉校準備", outing: "外出／旅行準備", handoff: "照顧交接", family: "家庭成長報告" };
         const { sourceQuote, ...values } = args;
         const request = documentRequestSchema.parse({ ...values, title: args.kind === "growth_report" ? "家庭成長報告" : labels[args.purpose as keyof typeof labels] });
         const opId = receiptId(runId, context.callId), item = await agent.writeDocument(scope, runId, opId, sourceQuote as string, { request });
-        return item ? { status: "succeeded", reference: item.id, data: { receiptId: opId, document: metadata(item), message: "已保存家庭資料整理；不是新確認事實或照護完成。" } } : { status: "rejected" };
+        return item ? { status: "succeeded", reference: item.id, data: { receiptId: opId, document: metadata(item), message: item.report?.phase === "building" ? "已保存報告整理工作，資料仍在分批處理；尚未完成報告。" : "已保存家庭資料整理；不是新確認事實或照護完成。" } } : { status: "rejected" };
       }) },
     { name: "change_family_document", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.change_family_document, authorize,
       parameters: z.object({ sourceQuote: z.string().min(2).max(1000), documentId: z.uuid(), change: documentChangeParameters }).strict(), execute: (args, context) => guard(async () => {

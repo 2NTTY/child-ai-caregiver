@@ -137,3 +137,8 @@ Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定�
 沿用 PostgreSQL 18.6／pgvector 0.8.6 的精確搜尋、Cheerio 1.2.0 及既有來源 worker。排名在過濾後的 SQL 有界取回，引用按 ID 重驗；沒有新增 RAG framework、第二資料庫或相似度即可信度的判定。含義核對及來源授權仍是產品責任。
 
 文字型 PDF 採固定 `pdfjs-dist 6.4.299`（Apache-2.0，官方宣告 Node >=22.13.0 或 >=24），已有 react-pdf 是報告輸出工具，不提供正文抽取，故不重用為解析器。主模型核對 [官方 Node 範例](https://github.com/mozilla/pdf.js/blob/v6.4.299/examples/node/getinfo.mjs)、[固定 API](https://github.com/mozilla/pdf.js/blob/v6.4.299/src/display/api.js) 及套件 metadata；本機 Node24.11 的標準 build 缺 toHex，沿官方 legacy build 解決，不自建polyfill。頁批次、hash、取消、local CMap／font resources及抽取品質分開驗。PDF頁有文字不等於完整正文，只有頁碼亦不能合格；不新增OCR或外部文件服務。
+
+
+### P2-A05 成長整理（2026-10-08）
+
+沿用 pg-boss、PostgreSQL 交易、現有領域來源解碼及 FamilyDocument；每批有界掃描、加密進度與完整統計是本項目資料／權限語義，沒有引入通用報表或新 workflow 框架。PDF 沿用上方 INT-W06 的 @react-pdf/renderer 4.9.0／靜態繁中文字體，不重做研究或改版。既有文件相容性證據復用；本包必要實測與未驗範圍另記 verification。

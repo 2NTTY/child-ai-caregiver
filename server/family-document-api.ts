@@ -6,7 +6,7 @@ import { FamilyError } from "./family-access.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const route = new RegExp("^/api/children/(" + uuid + ")/documents(?:/(" + uuid + ")(?:/(actions|pdf|content|versions))?)?$", "i");
-const createSchema = z.object({ opId: z.uuid(), request: documentRequestSchema, documentContentQuerySchema, documentListQuerySchema }).strict();
+const createSchema = z.object({ opId: z.uuid(), request: documentRequestSchema }).strict();
 const changeSchema = z.object({ opId: z.uuid(), change: documentChangeSchema }).strict();
 export async function handleFamilyDocumentRequest(request: Request, userId: string | null, store: FamilyDocumentStore,
   isCurrentUser: (userId: string) => Promise<boolean>): Promise<Response> {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
-import { documentChangeSchema, documentExportSchema, documentPeriodSchema, documentRequestSchema, documentContentQuerySchema, documentListQuerySchema,
+import { documentChangeSchema, documentExportSchema, documentPeriodSchema, documentRequestSchema, documentContentQuerySchema, documentListQuerySchema, reportCoverageSchema, reportProgressSchema,
   type DocumentContentPage, type DocumentContentQuery, type DocumentVersionPage, type DocumentListQuery, type DocumentChange, type DocumentExport, type DocumentPage, type DocumentRequest, type FamilyDocument } from "../shared/family-documents.ts";
 
 export class FamilyDocumentApiError extends Error {
@@ -20,7 +20,7 @@ const sectionSchema = z.object({ id: z.string(), title: z.string(), kind: z.enum
   items: z.array(z.object({ id: z.string(), text: z.string(), sourceIds: z.array(z.string()), checked: z.boolean().optional() }).strict()) }).strict();
 const snapshotSchema = z.object({ id: uuid, version, generatedAt: timestamp, sourceBasis: z.string(), title: z.string(), summary: z.string(),
   ageLabel: z.string(), period: documentPeriodSchema, eventDate: z.string().nullable(), coverageNote: z.string(),
-  sections: z.array(sectionSchema), sources: z.array(sourceSchema), changes: z.array(z.string()),
+  sections: z.array(sectionSchema), sources: z.array(sourceSchema), changes: z.array(z.string()), reportCoverage: reportCoverageSchema.optional(),
   editProtection: z.object({ sectionIds: z.array(z.string()), removedSectionIds: z.array(z.string()), metadataFields: z.array(z.enum(["title", "summary", "eventDate"])) }).strict().optional() }).strict();
 const manifestSchema = z.object({ snapshotId: uuid, snapshotVersion: version, invalidated: z.boolean(),
   sections: z.array(z.object({ id: z.string(), kind: z.enum(["notes", "questions", "checklist"]), itemIds: z.array(z.string()) }).strict()) }).strict();
@@ -32,7 +32,7 @@ const versionPageSchema = z.object({ documentId: uuid, authorityVersion: z.strin
 const itemSchema = z.object({ id: uuid, childId: uuid, kind: z.enum(["preparation", "growth_report"]),
   purpose: z.enum(["appointment", "school", "outing", "handoff", "family"]), version, status: z.enum(["active", "archived"]),
   archivedAt: timestamp.nullable(), current: snapshotSchema.nullable(), history: z.array(snapshotSchema),
-  readState: z.enum(["ready", "stale", "invalidated"]), autoRefresh: z.boolean(), manifest: manifestSchema.optional() }).strict();
+  readState: z.enum(["ready", "stale", "invalidated"]), autoRefresh: z.boolean(), manifest: manifestSchema.optional(), report: reportProgressSchema.optional() }).strict();
 const pageSchema = z.object({ authorityVersion: z.string(), canManage: z.boolean(), items: z.array(itemSchema), hasMore: z.boolean(), nextCursor: z.string().max(2048).nullable().optional() }).strict();
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const unique = (values: string[]) => new Set(values).size === values.length;

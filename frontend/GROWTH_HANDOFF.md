@@ -7,7 +7,7 @@
 
 `/growth` 預設持續關注，`?tab=archive` 讀成長檔案。家長跟 Agent 對話後查看整理成果，手動輸入只是補救；關注處理一件事的持續經過，報告長期呈現孩子的成長。現有來源保留這兩個分頁，不把關注藏成報告底部的一張提醒卡。
 
-[GrowthView](src/components/growth/GrowthView.tsx)、[GrowthHistoryView](src/components/growth/GrowthHistoryView.tsx) 與 [GrowthWorkspace](src/workspaces/GrowthWorkspace.tsx) 共用一個領域 owner。preview provider 在 dashboard 掛一次；正式 host 注入相同 scope 的 model／actions，讀頁及操作不另建可寫資料庫。合成狀態只保留在 session，換身份／Server／孩子／角色或重設情境會清理，並非持久化。
+[GrowthView](src/components/growth/GrowthView.tsx)、[GrowthHistoryView](src/components/growth/GrowthHistoryView.tsx) 與 [GrowthWorkspace](src/workspaces/GrowthWorkspace.tsx) 共用一個領域 owner。preview provider 在 dashboard 掛一次；正式 host 已用 TaskKnowledgeDomains／useFamilyDocuments 注入相同 scope 的 model／actions，讀頁及操作不另建可寫資料庫。合成 provider 僅供隔離預覽，不能覆蓋正式資料。
 
 ### 關注鏈、結束及恢復
 
@@ -23,17 +23,17 @@
 
 ### Web 報告與導出選擇
 
-產品需求：打開成長檔案即可閱讀由 Agent 持續整理的標準報告；特殊內容或用途由家長在聊天交代給 Agent。PDF 是選定期間／版本的導出產物，不取代可持續更新的網頁正文。特殊報告同樣遵守來源、權限及版本限制；目前沒有因這項需求而接通生成 API。
+產品需求：打開成長檔案即可閱讀由 Agent 持續整理的標準報告；特殊內容或用途由家長在聊天交代給 Agent。PDF 是選定期間／版本的導出產物，不取代可持續更新的網頁正文。特殊報告同樣遵守來源、權限及版本限制；正式 create／refresh 已接同一 FamilyDocument；Agent 或手動備援發起，讀頁本身不生成。
 
 [GrowthArchive](src/components/growth/GrowthArchive.tsx) 是持續可讀的標準 Web 報告。章節由正式分類投影安排孩子概況、身體與生活、能力與興趣、持續關注、近期變化與支持；舊未分類條目放中性「已記錄的情況」，不從文字猜分類。來源確認記錄、Agent 整理及尚待核對的標示分開，不把報告當發展評估或已確認的新事實。
 
 - `GrowthArchiveProjection` 必須匹配 scopeKey／childId／authorityVersion。periods 只以 snapshotId／snapshotVersion 指向實際取得的 snapshot／history；少量片段標部分涵蓋，不造全年／季度完整性
 - `GrowthArchiveSnapshot` 保存版本、年齡／期間、生成時間、sourceBasisVersion、coverageNote、內容及來源／更正引用。來源更正、刪除或撤權應使相關敘事失效；歷史也不得繞過現行權限
-- 未生成、生成中、可讀、有新資料待整理、資料不足、失敗及來源失效分開。只有仍有權讀的舊版可保留閱讀；前端沒有背景計時生成或自動更新正式報告
+- 未生成、生成中、可讀、有新資料待整理、資料不足、失敗及來源失效分開。只有仍有權讀的舊版可保留閱讀；既有 Server worker 分批整理並由 changes 刷新 owner，前端不另開生成計時器。手動備援可接續一批，原操作結果未知時先查收據
 - 導出視窗保留家庭成長、就診溝通、照護交接、入園認識四種用途，已取得期間，以及「原始記錄與依據」「本版更新說明」選項。這是意圖選擇，不是產物
-- [growthReportExportRequest](src/components/growth/growth-archive-view.ts) 綁 scope／child／authority、snapshot ID／version、period／用途及選項。GrowthView 目前沒有注入 onExportReport，因此明示未接通、PDF 下載停用；不能把選項可操作稱為已生成／下載
+- [growthReportExportRequest](src/components/growth/growth-archive-view.ts) 綁 scope／child／authority、snapshot ID／version、period／用途及選項。正式 owner 已注入同版 PDF callback；只有 Server 回傳實際 PDF 才交瀏覽器下載，不能把選項可操作稱為已生成／收到
 
-正式長期 Agent 更新、檔案讀取／生成、PDF 內容預覽與下載仍需原責任方提供。一處注入同版能力供 Web／PDF 使用；生成／下載前重新驗權限與來源，不靜默換版本、不自動外發。較廣的已採納導出需求包括按用途重用有效內容及必要補寫、選擇授權照片／量測／詳細記錄／關注歷史／可匯出對話、排除個別項目；這些較廣選項目前未實作。排除敏感來源時亦移除洩露其內容的衍生敘事，不能只藏連結。年度版不只是串接季度，沒有真產物不得回報成功。
+P2-A05 以 reportMode=fixed／living 區分固定期間與日常延展；report.phase 的 building／complete／needs_update 投影至既有 generating／ready／needs_update。進度保存於 Server，跨頁共用 owner；完整季度／年度分類及 coverage 只採 reportCoverage，不把舊 partial 快照升格。正常頁面沒有模型呼叫，一處注入同版能力供 Web／PDF 使用；生成／下載前重新驗權限與來源，不靜默換版本、不自動外發。較廣的已採納導出需求包括按用途重用有效內容及必要補寫、選擇授權照片／量測／詳細記錄／關注歷史／可匯出對話、排除個別項目；這些較廣選項目前未實作。排除敏感來源時亦移除洩露其內容的衍生敘事，不能只藏連結。年度版不只是串接季度，沒有真產物不得回報成功。
 
 原始時間與加入時間分開；未知事件時間不拿 createdAt 代替。單筆量測不畫趨勢、不同單位不直接比較，不生成假里程碑、能力達標率或診斷。原始 Profile／Care／Photos／Tasks／對話仍由各自 owner 掌管，衍生報告只引用來源及版本，不反寫成事實；現有日／週 Summary 及到診準備不是長期成長報告。
 

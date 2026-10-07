@@ -1633,3 +1633,15 @@
 - 先建立工程外加密DB checkpoint，再真套031。SQL原批次9次store呼叫停於續讀、generic診斷不足，原因未能重現；保留原失敗。原現場兩次共8次唯讀search→context成功（一次原pool），只補未執行3組語義核對共16次store呼叫通過。共33次，2合成source、1,105片段，零家庭修改／模型／外網／通知，成功後按精確ID清理、worker=false。不得把原批次改為通過。
 - [EV](artifacts/verification/P2_A04_CHECKS.json)／[官方內容核對](artifacts/verification/P2_A04_SOURCE_REVIEW.json)。主模型裁定最低功能gate成立；新真模型／embedding、source cron、部署、完整還原及新seed發布未做，完整成果留A09，原SQL不明失敗保留風險。
 - Node24.11/npm11.6.1，部署固定版本未改；必要diff／seed schema通過。交付前fetch及draft heads未變；按A帳號PR／merge後才開C主責A05。
+
+
+<a id="log-20261008-p2-a05"></a>
+## 2026-10-08｜P2-A05 同源成長與完整期間報告
+
+- 基線 f67b807；C 主責、權重3，C50%／B30%／A20%。主模型親寫契約／Prompt Pack0.1.31、UI投影及review；Luna只定位，一個Sol6.1 xhigh負責報告引擎／store與最低驗收。共用AI由A統籌，不称其他成員獨立人工實作或驗收。
+- 復用文件權威／pg-boss／react-pdf；032保存來源revision及加密進度，逐批累計完整counts、有界正文選錄，固定季度／年度與living日常共存。來源更正／刪除／期限／權限變化遮蔽失效聚合，歸檔及舊收據不繞過；新快照沿同文件及同版PDF。UI保留版型，只接進度、期間及模式。
+- 離線1聚合通過（executor結果、未另存stdout），scoped Server型別通過；main 1條真route＋strict client合成store及5個UI/client roots型別通過。沒有全倉lint/build/unit。來源revision曾錯作數字，review已改opaque并重核strict client；Node24.11/npm11.6.1既有engine警告保留。
+- 先做工程外加密DB checkpoint，再真套032。首次15 business calls通過跨批／原op／pool重建及105期間記錄、1未知日期、101觀察／209掃描，停於PDF harness錯誤使用proxy.destroy；立即停批，原失敗保留。唯一被攔fetch後續確認為Yoga內嵌data: WASM，非外網。
+- 只沿同現場補22 calls／1次同snapshot重渲染：六頁PDF抽字、隔離、fixed/living防重、未選錄來源更正後archive/content/history/export/receipt遮蔽及重建104筆通過。兩批合共37／40 calls、2 renders；沒有重建來源。精確核對電郵後清理兩個合成帳戶cascade，非fixture totals前後相同，worker=false／generation不變。
+- [EV](artifacts/verification/P2_A05_CHECKS.json)及原失敗／補驗raw分開；主模型最低gate通過。零模型／embedding／外網／通知／瀏覽器／部署；pool重建不稱VM重啟，真排程／跨日與整體交付留A09。
+- 交付前master及draft #111/#130未變；按C帳號PR及合併，再進A06。完整P2未完成。
