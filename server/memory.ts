@@ -83,9 +83,9 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChange
     await client.query("INSERT INTO memory_topic_revisions(topic_id,version,payload_encrypted) VALUES($1,$2,$3)", [value.id, value.version, payload]);
     await changed(client, value.childId, value.visibility, creator);
   }
-  async function facts(client: PoolClient, userId: string, childId: string, after?: string, limit = 50, familyOnly = false): Promise<MemoryPage<MemoryFact>> {
+  async function facts(client: PoolClient, userId: string, childId: string, after?: string, limit = 50, familyOnly = false, excludeInactive = false): Promise<MemoryPage<MemoryFact>> {
     const rows = (await client.query<Row>(`SELECT * FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR (NOT $5::boolean AND created_by=$2))
-      AND ($3::uuid IS NULL OR id>$3::uuid) ORDER BY id LIMIT $4`, [childId, userId, after ?? null, limit + 1, familyOnly])).rows;
+      AND ($3::uuid IS NULL OR id>$3::uuid) AND (NOT $6::boolean OR status<>'inactive') ORDER BY id LIMIT $4`, [childId, userId, after ?? null, limit + 1, familyOnly, excludeInactive])).rows;
     const items: MemoryFact[] = []; for (const row of rows.slice(0, limit)) items.push(await factResult(client, row, familyOnly ? "" : userId));
     return { items, nextAfterId: rows.length > limit ? rows[limit - 1].id : null };
   }
@@ -210,7 +210,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChange
         const profileRow = (await client.query<{ payload_encrypted: string }>("SELECT payload_encrypted FROM child_profile_revisions WHERE child_id=$1 AND version=$2", [childId, profileVersion])).rows[0];
         const profile: ChildProfile = profileRow ? JSON.parse(cipher.decrypt(profileRow.payload_encrypted, `child-profile:${childId}:${profileVersion}`))
           : { childId, version: profileVersion, data: null, confirmedBy: null, confirmedAt: null, reason: null };
-        const factPage = await facts(client, userId, childId, undefined, 200, scope === "family"), topicPage = await topics(client, userId, childId, undefined, 200, scope === "family");
+        const factPage = await facts(client, userId, childId, undefined, 200, scope === "family", true), topicPage = await topics(client, userId, childId, undefined, 200, scope === "family");
         if (factPage.nextAfterId || topicPage.nextAfterId) throw new FamilyError(400, "memory_context_requires_selection");
         const input = scope === "private" ? await summaryInput(client, cipher, userId, childId) : null;
         const applicable = factPage.items.filter(value => value.applicable), values = new Map<string, Set<string>>();

@@ -1,0 +1,56 @@
+{
+  "package": "QA-MEMORY-INACTIVE-CONTEXT",
+  "baselineCommit": "33326d9b652f1bda5f6428ef78a7325b281a49c6",
+  "integrationBaseCommit": "4a2257a43abfc3fca9f23e860ed01bafb753aa18",
+  "integrationDifference": "Prompt files, prompt-wiring tests and their evidence only; no overlap with this patch or the verified memory test dependency closure.",
+  "environment": {
+    "node": "24.19.0",
+    "method": "Offline encrypted synthetic records and SQL adapter; real MemoryStore and existing memory API tests. No live database, model, GCP or deployment."
+  },
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/memory-context-capacity.test.ts tests/memory.test.ts",
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/QA_MEMORY_INACTIVE_CONTEXT/tsconfig.json",
+      "result": "passed",
+      "scope": "Strict NodeNext memory implementation and focused tests, not full application typecheck"
+    },
+    {
+      "name": "Pinned source verification",
+      "result": "passed",
+      "files": 15,
+      "scope": "Unchanged transitive relative-import dependency closure matches baseline Git blob SHAs"
+    }
+  ],
+  "baselineReproduction": {
+    "cases": [
+      "201 inactive facts",
+      "200 inactive facts with a confirmed replacement"
+    ],
+    "failed": 2,
+    "code": "memory_context_requires_selection",
+    "comparison": "Identical focused tests and pinned dependency closure with the original baseline memory.ts"
+  },
+  "preservedFailure": {
+    "check": "First scoped typecheck",
+    "result": "Failed on the new fixture concat() narrow candidate-status type",
+    "resolution": "Changed fixture construction to array spread; no product behavior changed; final strict check passed"
+  },
+  "limits": [
+    "Inactive history remains in ordinary 50-item fact pagination and existing revisions; no data is deleted or rewritten",
+    "Candidate and confirmed facts, including expired or changed-source facts, still count toward context selection and unavailable-key safeguards",
+    "The context query retains its 201-row overflow sentinel and 200-item hard limit; all topic states and their existing overflow behavior remain",
+    "More than 200 non-inactive facts or 200 topics still produces memory_context_requires_selection; no new selection UI is claimed",
+    "No prompt, gateway/model budget, summary coverage, schema, migration or concern changes",
+    "The existing summary basis scan is unchanged; this patch does not claim to bound all database scans",
+    "No real PostgreSQL SQL execution, concurrency, browser acceptance, live model or full-project regression"
+  ],
+  "sourceSha256": {
+    "server/memory.ts": "12d0f2356369ca06b2300622f1f82318f1dfc38b36c5a4da821c17160a9bd981",
+    "tests/memory-context-capacity.test.ts": "e4c2e13a7b5c2ce2543a317fc95f9b4f3d41fbef179c940694b851fd659c32ca",
+    "artifacts/verification/QA_MEMORY_INACTIVE_CONTEXT/tsconfig.json": "c556b2ea28724b70b00ecabc58c31051a44c1eadb052b006de6440a1ee37f52f"
+  }
+}
