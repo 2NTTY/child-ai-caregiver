@@ -3,7 +3,7 @@ import { FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, 
 import { z } from "zod";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
-import { AGENT_LIMITS, AgentBudget, AgentStopped } from "./agent-budget.ts";
+import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped } from "./agent-budget.ts";
 import type { AgentStopReason } from "./agent-budget.ts";
 import { AgentGatewayModel } from "./agent-model-gateway.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
@@ -82,6 +82,8 @@ export function createAgentRuntime(options: {
         await budget.wait(async () => {
           if (!await input.authorize()) throw new AgentStopped("unauthorized");
           const selected = options.resolve ? await options.resolve(scope.userId, input.trigger.kind) : options;
+          budget.configureInputCharacters(input.trigger.kind === "interactive"
+            ? selected.config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default : AGENT_LIMITS.inputCharacters);
           if ("runLimits" in selected && selected.runLimits) budget.configurePersonal(selected.runLimits);
           if ("authorize" in selected) authorize = async () => await input.authorize() && await selected.authorize();
           budget.check();

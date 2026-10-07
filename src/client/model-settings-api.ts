@@ -22,6 +22,7 @@ const usageSchema = z.object({
 const viewSchema = z.object({
   settings: settingsSchema, enabled: z.boolean(), platformAvailable: z.boolean(), personalAvailable: z.boolean(),
   personalGlobalLimit: count, usage: z.object({ platform: usageSchema, personal: usageSchema }).strict(),
+  agentInputCharacters: z.number().int().min(32000).max(64000).optional(),
 }).strict();
 const checkSchema = z.object({
   version: count, status: z.enum(["accessible", "unavailable"]), scope: z.literal("model_metadata_only"),

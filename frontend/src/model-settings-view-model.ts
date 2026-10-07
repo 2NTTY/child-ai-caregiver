@@ -20,6 +20,7 @@ export interface ModelSettingsUsage {
 export interface ModelSettingsSnapshot {
   settings: ModelSettings; enabled: boolean; platformAvailable: boolean; personalAvailable: boolean;
   personalGlobalLimit: number; usage: { platform: ModelSettingsUsage; personal: ModelSettingsUsage };
+  agentInputCharacters?: number;
 }
 export interface ModelSettingsCommand {
   expectedVersion: number; mode: ModelMode; apiKey?: string; removeKey?: boolean;

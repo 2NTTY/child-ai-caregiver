@@ -7,7 +7,17 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### QA-AGENT-CONTEXT-INTEGRITY — 工具容量與數量依據（待覆核）
+### QA-INTERACTIVE-INPUT — 待辦意圖與互動容量（實作及覆核中）
+
+- 基線 PR #110／9d1024c。正式 T7 在一次生成及一次被拒的 propose_task 後超限，沒有建立待辦；確切線上參數錯誤未取得，不臆測原因。
+- 修正含修飾語的明確待辦意圖與標題／內容資料邊界；互動容量依使用者批准改用獨立 AI_AGENT_MAX_INPUT_CHARACTERS，預設 64k、有限範圍 32k–64k。背景 32k、P1、次數、輸出、時間及授權保持既有契約；去重與有限工具仍需保留。
+- 模型設定頁讀取 Server 真實互動上限；舊 metadata 不猜數值。離線測試、獨立覆核、批次部署及有界真 UI 重測分別記錄，尚未宣稱上線或真待辦流程通過。
+- PR #109／#110 已合併但未部署；PR #111 的終態保留容量仍為 draft，真 PostgreSQL 遷移驗證受阻，不隨本包啟用。
+
+
+### QA-AGENT-CONTEXT-INTEGRITY — 工具容量與數量依據（已部署，保留交付快照）
+
+- PR #107／#108 已部署；A6 真 UI 已讀回未知數量，收據客戶端相容修復在 PR #110。以下 32k 是該包歷史邊界，後續互動容量見上方 QA-INTERACTIVE-INPUT。
 
 - 基線 a75ebb6。正式第 5 次合成請求在模型／工具皆 0 時撞 input_limit；固定 Runner 重建為 35,748 字元，工具選擇誤含前文與禁止通知句。另 12 則各 200 字原訊息被 read_context 重複載入，下一輪也超限。普通記錄 A3 同時揭露模型補入未提供的「1 次」。
 - 僅修當前意圖選工具、有界單份 context／精確摘要前綴及 Server 數量 grounding；保留原 gateway contents／config 邏輯 JSON 的 32k 字元上限、原生 parts、權限、opId／unknown、既有 store 及來源邊界。不新增「完全無背景待辦」能力，不改固定報告期間。

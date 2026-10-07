@@ -1,0 +1,80 @@
+✖ AI configuration defaults to a disabled server-only setup (6.28992ms)
+✖ AI configuration accepts safe identifiers and numeric boundaries (1.27692ms)
+✔ AI configuration requires a valid project when enabled (0.8009ms)
+✔ AI configuration rejects ambiguous booleans and unsafe URL components (0.997679ms)
+✔ AI configuration enforces integer ranges without leaking values (1.102773ms)
+✔ AI configuration accepts documented multi-region locations (0.921461ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 4
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 247.277339
+
+✖ failing tests:
+
+test at evidence/config-baseline/tests/ai-config.test.ts:5:1
+✖ AI configuration defaults to a disabled server-only setup (6.28992ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      dailyGlobalAttempts: 100,
+      dailyUserAttempts: 20,
+      enabled: false,
+      location: 'global',
+  ...
+      model: 'gemini-3.1-flash-lite',
+  +   personalDailyGlobalAttempts: 1000,
+      project: '',
+      timeoutMs: 30000
+    }
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_task_intent_budget_20261007/evidence/config-baseline/tests/ai-config.test.ts:6:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { enabled: false, project: '', location: 'global', model: 'gemini-3.1-flash-lite', dailyUserAttempts: 20, dailyGlobalAttempts: 100, personalDailyGlobalAttempts: 1000, maxAttempts: 2, timeoutMs: 30000, maxInputCharacters: 10000, maxOutputTokens: 1024 },
+    expected: { enabled: false, project: '', location: 'global', model: 'gemini-3.1-flash-lite', dailyUserAttempts: 20, dailyGlobalAttempts: 100, maxAttempts: 2, timeoutMs: 30000, maxInputCharacters: 10000, maxOutputTokens: 1024 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at evidence/config-baseline/tests/ai-config.test.ts:21:1
+✖ AI configuration accepts safe identifiers and numeric boundaries (1.27692ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      dailyGlobalAttempts: 10000,
+      dailyUserAttempts: 1,
+      enabled: true,
+      location: 'asia-east1',
+  ...
+      model: 'gemini-2.5-flash',
+  +   personalDailyGlobalAttempts: 1000,
+      project: 'care-project-123',
+      timeoutMs: 60000
+    }
+  
+      at TestContext.<anonymous> (file:///workspace/shared/fix_task_intent_budget_20261007/evidence/config-baseline/tests/ai-config.test.ts:22:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { enabled: true, project: 'care-project-123', location: 'asia-east1', model: 'gemini-2.5-flash', dailyUserAttempts: 1, dailyGlobalAttempts: 10000, personalDailyGlobalAttempts: 1000, maxAttempts: 1, timeoutMs: 60000, maxInputCharacters: 20000, maxOutputTokens: 4096 },
+    expected: { enabled: true, project: 'care-project-123', location: 'asia-east1', model: 'gemini-2.5-flash', dailyUserAttempts: 1, dailyGlobalAttempts: 10000, maxAttempts: 1, timeoutMs: 60000, maxInputCharacters: 20000, maxOutputTokens: 4096 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

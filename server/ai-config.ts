@@ -1,3 +1,5 @@
+import { AGENT_INTERACTIVE_INPUT } from "./agent-budget.ts";
+
 export interface AiConfig {
   enabled: boolean;
   project: string;
@@ -9,6 +11,7 @@ export interface AiConfig {
   maxAttempts: number;
   timeoutMs: number;
   maxInputCharacters: number;
+  agentMaxInputCharacters?: number;
   maxOutputTokens: number;
 }
 
@@ -55,6 +58,8 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
     maxAttempts: readInteger(env.AI_MAX_ATTEMPTS, "AI_MAX_ATTEMPTS", 2, 1, 2),
     timeoutMs: readInteger(env.AI_TIMEOUT_MS, "AI_TIMEOUT_MS", 30000, 1000, 60000),
     maxInputCharacters: readInteger(env.AI_MAX_INPUT_CHARACTERS, "AI_MAX_INPUT_CHARACTERS", 10000, 1, 20000),
+    agentMaxInputCharacters: readInteger(env.AI_AGENT_MAX_INPUT_CHARACTERS, "AI_AGENT_MAX_INPUT_CHARACTERS",
+      AGENT_INTERACTIVE_INPUT.default, AGENT_INTERACTIVE_INPUT.min, AGENT_INTERACTIVE_INPUT.max),
     maxOutputTokens: readInteger(env.AI_MAX_OUTPUT_TOKENS, "AI_MAX_OUTPUT_TOKENS", 1024, 1, 4096),
   };
 }

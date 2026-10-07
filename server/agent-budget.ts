@@ -2,6 +2,7 @@ import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
 
 export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: 8, queryEmbeddings: 2,
   deadlineMs: 90000, outputTokens: 1024, inputCharacters: 32000 });
+export const AGENT_INTERACTIVE_INPUT = Object.freeze({ default: 64000, min: 32000, max: 64000 });
 
 export type AgentStopReason = "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
   | "input_limit" | "unauthorized" | "quota_exceeded" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown";
@@ -14,6 +15,7 @@ export class AgentBudget {
   readonly signal: AbortSignal;
   private readonly used = { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 };
   private configured = false;
+  private inputConfigured = false;
   private responseCharacters: number | null = null;
   private selectedLimits: { [K in keyof typeof AGENT_LIMITS]: number } = { ...AGENT_LIMITS };
   private readonly expiresAt: number;
@@ -38,9 +40,17 @@ export class AgentBudget {
   }
   get counts() { return { ...this.used }; }
   get limits() { return { ...this.selectedLimits }; }
+  /** Only Server configuration selects the interactive input ceiling; workers keep the base limit. */
+  configureInputCharacters(value: number) {
+    if (this.inputConfigured || Object.values(this.used).some(count => count !== 0)
+      || !Number.isSafeInteger(value) || value < AGENT_INTERACTIVE_INPUT.min || value > AGENT_INTERACTIVE_INPUT.max)
+      throw new Error("Invalid agent input limit");
+    this.inputConfigured = true;
+    this.selectedLimits = { ...this.selectedLimits, inputCharacters: value };
+  }
   /** Latest complete request plus the model's native response; leave room for the next tool/presentation turn. */
   prepareToolResponseBudget(requestCharacters: number, modelContentCharacters: number) {
-    this.responseCharacters = Math.max(0, AGENT_LIMITS.inputCharacters - requestCharacters - modelContentCharacters - 4096);
+    this.responseCharacters = Math.max(0, this.selectedLimits.inputCharacters - requestCharacters - modelContentCharacters - 4096);
   }
   get toolResponseCharacters() { return this.responseCharacters ?? 8000; }
   accountToolResponse(characters: number) {
@@ -53,7 +63,7 @@ export class AgentBudget {
       const value = limits[key], range = PERSONAL_RUN_LIMITS[key];
       if (!Number.isSafeInteger(value) || value < range.min || value > range.max) throw new Error("Invalid personal agent limits");
     }
-    this.selectedLimits = { ...AGENT_LIMITS, ...limits };
+    this.selectedLimits = { ...this.selectedLimits, modelCalls: limits.modelCalls, queryEmbeddings: limits.queryEmbeddings };
     this.configured = true;
   }
   take(kind: keyof AgentBudget["counts"], amount = 1) {

@@ -22,7 +22,7 @@ function setup(generate: (request: LlmRequest, index: number, signal: AbortSigna
   const tool: AgentTool = { name: "read_context", description: "Read a synthetic approved context field.",
     parameters: z.object({ key: z.enum(["age", "region"]) }), authorize: async () => true,
     execute: async () => { executed++; return { status: "succeeded", reference: "synthetic-record", data: { value: "synthetic context" } }; } };
-  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+  const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: "32000" }),
     usage: { reserve: async () => { reserved++; return quotaAvailable; }, record: async record => { records.push(record); } },
     provider: { generate: async (request, signal) => { const index = requests.length; requests.push(structuredClone({ ...request, toolsDict: {} })); return generate(request, index, signal); } } });
   const input: AgentRunInput = { scope: { userId: "user", childId: "child", workspaceId: "workspace", authorizationVersion: "1", dataVersion: "1" },

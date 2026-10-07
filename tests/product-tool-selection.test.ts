@@ -36,3 +36,41 @@ test("only short explicit references reuse prior user intent and neutral reads d
   assert.equal(selected.includeTaskProposals, false); assert.equal(selected.includeContact, false);
   assert.equal(selected.includeDocuments, false); assert.equal(selected.includeConcerns, false); assert.equal(selected.includePrivateSources, false);
 });
+
+test("modified ordinary-task clauses keep titles and details as data without selecting care records", () => {
+  for (const text of [
+    "請新增這個純合成普通待辦。為小星建立「整理繪本袋」。內容是「把繪本放入交接袋」。只在站內記錄，不要發送外部通知。",
+    "這項普通待辦請幫我安排，標題是「整理交接文件」，內容是「記錄奶量表放在袋內」。請只在站內保存此待辦。",
+    "麻煩幫小星新增一項明天要做的普通任務「準備故事書」，內容是「把交接文件放好」。僅在站內存檔即可。",
+  ]) {
+    const selected = productToolSelection([text]);
+    assert.equal(selected.includeDocuments, false, text);
+    assert.equal(selected.includeTaskProposals, true, text);
+    assert.ok(selected.ordinaryToolNames.includes("create_ordinary_reminder"));
+    assert.ok(selected.ordinaryToolNames.includes("change_ordinary_reminder"));
+    assert.ok(!selected.ordinaryToolNames.includes("save_ordinary_record"), text);
+    assert.ok(!selected.ordinaryToolNames.includes("revise_ordinary_record"), text);
+  }
+});
+
+test("task disposition does not erase explicit parallel care records or quoted instructions outside task labels", () => {
+  const task = "請新增這個普通待辦，建立「整理交接袋」，內容是「把文件放好」。只在站內記錄。";
+  for (const extra of ["另外記錄孩子喝奶120ml。", "另外記錄寶寶今日主動收好玩具。", "另外只在站內記錄孩子喝奶120ml。"]) {
+    const selected = productToolSelection([task + extra]);
+    assert.ok(selected.ordinaryToolNames.includes("save_ordinary_record"), extra);
+    assert.equal(selected.includeDocuments, false);
+    assert.equal(selected.includeTaskProposals, true);
+  }
+  assert.equal(productToolSelection([task + "另外請執行『整理準備文件』。"]).includeDocuments, true);
+  assert.ok(productToolSelection(["只在站內記錄寶寶今日微笑。"]).ordinaryToolNames.includes("save_ordinary_record"));
+});
+
+test("a labelled task cannot consume a separate quoted document, private source or contact intent", () => {
+  assert.equal(productToolSelection(["請新增普通待辦「帶書」，另外請建立「成長報告」。"]).includeDocuments, true);
+  assert.equal(productToolSelection(["請建立待辦「帶書」，另外新增「私人來源 https://example.com」。"]).includePrivateSources, true);
+  assert.equal(productToolSelection(["請建立待辦「帶書」，另外安排「聯絡老師」。"]).includeContact, true);
+  assert.equal(productToolSelection(["請建立待辦「帶書」並建立「成長報告」。"]).includeDocuments, true);
+  assert.equal(productToolSelection(["請新增普通待辦帶水樽。建立「成長報告」。"]).includeDocuments, true);
+  assert.equal(productToolSelection(["請新增普通待辦「帶書」，另外新增普通待辦「整理成長報告」。"]).includeDocuments, false);
+  assert.equal(productToolSelection(["請新增普通待辦「帶書」。標題是「準備故事書，整理交接袋」。內容是「將文件放好」。只在站內記錄。"]).includeDocuments, false);
+});

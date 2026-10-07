@@ -171,7 +171,8 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
           <Text style={styles.body}>已保存的個人每日上限：{settings.dailyLimit} 次</Text>
           <Text style={styles.meta}>全站個人服務安全上限：{snapshot.personalGlobalLimit} 次；個人上限只在個人模式生效。</Text>
           <Text style={styles.meta}>每日 UTC 00:00（香港 08:00）重置。生成及查詢向量的嘗試均計次，metadata 不代表完整供應商帳單。</Text>
-          <Text style={styles.meta}>固定上限：工具 8 次 · 每次運行 90 秒 · 每次輸出 1024 tokens · 上下文 32000 字元。</Text>
+          <Text style={styles.meta}>固定上限：工具 8 次 · 每次運行 90 秒 · 每次輸出 1024 tokens。</Text>
+          <Text style={styles.meta}>{snapshot.agentInputCharacters === undefined ? "互動上下文上限未提供" : `互動上下文上限：${snapshot.agentInputCharacters} 字元`}</Text>
           <Text style={styles.meta}>停用或刪除不會撤回供應商已接受的呼叫。</Text>
         </SectionCard>
       </View>

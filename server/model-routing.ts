@@ -10,6 +10,7 @@ import { createModelSettingsStore } from "./model-settings.ts";
 import { ModelSettingsError } from "./model-settings-contract.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { PERSONAL_MODEL, type ModelSettingsView, type ModelKeyCheck } from "../src/shared/model-settings.ts";
+import { AGENT_INTERACTIVE_INPUT } from "./agent-budget.ts";
 
 /** Credentials stay in this Server closure; never put the resolved object in a job or response. */
 export function createModelRouting(pool: Pool, cipher: StorageCipher, config: AiConfig) {
@@ -26,6 +27,7 @@ export function createModelRouting(pool: Pool, cipher: StorageCipher, config: Ai
       const state = await settings.get(userId);
       return { settings: state, enabled: config.enabled, platformAvailable: config.enabled && Boolean(config.project),
         personalAvailable: config.enabled, personalGlobalLimit,
+        agentInputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default,
         usage: { platform: await usage.platform.getForUser(userId), personal: await usage.personal.getForUser(userId) } };
     },
     async currentUsage(userId: string) {

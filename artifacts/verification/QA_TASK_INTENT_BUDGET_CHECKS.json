@@ -1,0 +1,141 @@
+{
+  "package": "QA-TASK-INTENT-BUDGET",
+  "baseline": "9d1024cddd162bfc59198223f2a9e1ab2c6afeb2",
+  "observedAt": "2026-10-07T08:28:00Z",
+  "changes": [
+    "Clause-scoped ordinary-task title/details data, modifier-tolerant task context and in-app task disposition; preserve independent document, private source, contact and care-record requests",
+    "Interactive-only AI_AGENT_MAX_INPUT_CHARACTERS default64000, allowed integer32000–64000; worker32000 and P1 AI_MAX_INPUT_CHARACTERS unchanged",
+    "Runtime, logical gateway gate and tool-response allowance use the same selected ceiling; personal call limits cannot modify it",
+    "Optional top-level agentInputCharacters metadata passes strict settings client/view-model and renders actual configured value; missing old response field is shown as unknown"
+  ],
+  "checks": {
+    "targetedTests": {
+      "command": "node --experimental-test-module-mocks --test tests/ai-config.test.ts tests/agent-budget.test.ts tests/agent-input-limit.test.ts tests/agent-runtime.test.ts tests/product-agent-task-budget.test.ts tests/product-tool-selection.test.ts tests/model-input-limit-display.test.ts tests/vertex-tool-contract.test.ts",
+      "passed": 47,
+      "failed": 0,
+      "evidence": "QA_TASK_INTENT_BUDGET/tests.tap"
+    },
+    "typecheck": [
+      {
+        "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/QA_TASK_INTENT_BUDGET/tsconfig.server.json",
+        "result": "passed"
+      },
+      {
+        "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/QA_TASK_INTENT_BUDGET/tsconfig.client.json",
+        "result": "passed"
+      }
+    ],
+    "sdkBoundaries": {
+      "interactiveDefault": {
+        "accepted": 64000,
+        "rejected": 64001
+      },
+      "interactiveRollback": {
+        "accepted": 32000,
+        "rejected": 32001
+      },
+      "workerWith64000Setting": {
+        "accepted": 32000,
+        "rejected": 32001
+      },
+      "overLimitReservesOrProviderCalls": 0
+    },
+    "unchangedLimits": {
+      "platformModelCalls": 4,
+      "toolCalls": 8,
+      "queryEmbeddings": 2,
+      "outputTokensPerGeneration": 1024,
+      "deadlineMs": 90000
+    },
+    "display": "Actual server routing view -> real strict HTTP client -> frontend snapshot -> actual ModelSettingsView shallow render. Default64000, override32000, old missing field and invalid values tested; no browser acceptance claimed"
+  },
+  "T7": {
+    "source": "Exact last six observed synthetic UI messages, including T7; v1 UI controls mapped through AgentAuthorization and policy contract. Not captured raw API JSON.",
+    "policy": {
+      "version": 1,
+      "effective": true,
+      "recordKinds": [
+        "note"
+      ],
+      "allowPrivateNotes": false,
+      "allowSelfTasks": true,
+      "allowRecordCorrections": false,
+      "reminderConsentVersion": null,
+      "reminderBindings": []
+    },
+    "unit": "Logical contents/config JSON UTF-16 code units, not HTTP wire bytes or token counts",
+    "beforeSelectorAt32000": [
+      31893,
+      32444
+    ],
+    "beforeResult": "1 scripted model call / 1 rejected propose_task / input_limit",
+    "afterSelectorAt32000": [
+      25255,
+      25806,
+      26138
+    ],
+    "readRejectRepairAt32000": [
+      25255,
+      27296,
+      27861,
+      29047
+    ],
+    "readRejectRepairAt64000": [
+      25255,
+      27911,
+      28476,
+      29662
+    ],
+    "rejectionBodyCharacters": 194,
+    "rejectionEnvelopeCharacters": 242,
+    "result": "Both configured limits complete read_context -> rejected parameters -> repaired pending candidate -> validated presentation with 4 scripted model calls; original conversation text preserved.",
+    "limits": "Rejected arguments are representative synthetic invalid-time arguments, not the observed live tool arguments. Actual live rejection cause and unobserved shared state remain unknown. Candidates are pending; no actual task or notification is created."
+  },
+  "preservedFailures": [
+    "Baseline ai-config tests already omitted personalDailyGlobalAttempts=1000 in two exact-object assertions. Baseline and first new-config failures are retained; assertions now include the existing field and new configured field without changing the personal daily quota.",
+    "First selector implementation masked separate quoted document/private-source/contact requests. The three exact baseline/failed/corrected cases and source hashes are retained; final clause scope fixes them and adds positive/negative regressions."
+  ],
+  "review": {
+    "result": "Independent read-only review accepted final scope after regression correction",
+    "firstChecks": "46/46 and both scoped typechecks",
+    "correctedChecks": "11/11 selector/T7 and scoped server typecheck",
+    "evidence": "QA_TASK_INTENT_BUDGET/selection-review-cases.json"
+  },
+  "environment": {
+    "node": "24.19.0",
+    "adk": "2.1.0",
+    "genai": "2.24.0",
+    "method": "Offline native ADK Runner and mocked SDK transport, injected HTTP responses and deterministic synthetic store adapters; zero real generation, database or GCP operations"
+  },
+  "deploymentSourceCheck": "P1/P2 Compose consumes private server.env via env_file; this package does not read or change the live file. The deployment operator must verify AI_AGENT_MAX_INPUT_CHARACTERS. No Compose/runtime setting was changed here.",
+  "remaining": [
+    "No real-model, browser, PostgreSQL, GCP or production-environment acceptance in this package",
+    "Bounded input can still stop honestly for oversized requests; the configuration does not increase provider context limits or generation counts",
+    "The separate ADK instruction/data and terminal-presentation package is not included",
+    "Unlabelled clarification such as a bare next-turn time still needs a separately reviewed pending-intent state design"
+  ],
+  "sourceHashes": {
+    "WORKLOG.md": "ee12044a74eafebfd5414baa87260cdf1644faa74f85abb5a362aeef3d16fe39",
+    ".env.example": "17ab7d0b3d65201a452c624e225376dee3f316b546915e8c94dd2d058d7c829e",
+    "PLAN.md": "91978ea165d310de60cc230a0a18a7d280a5ed987d66908b1d240d733a92f9f1",
+    "STATUS.md": "5337a65c948707b4c2309c3b80ebfe790e7a4e8d77c8ddfc72b5815efd12c92f",
+    "tests/ai-config.test.ts": "f069349dee8449f813fad3e344876cf7de3851e091474771aa8042f17c39086d",
+    "tests/product-tool-selection.test.ts": "909b8b8d305c8062df2a41345a2b38cf513d21fc6391bbd4bffb37fe06d6b03a",
+    "tests/agent-runtime.test.ts": "c0d8f34e8725c46c30ea416ab1d2172431d6913161c933170ddd88105d8b75d9",
+    "frontend/MODEL_SETTINGS_HANDOFF.md": "9160f41c80afca5b2c99180b9cbbfbb86c888f08f6cc1bc23cb363212826c0ac",
+    "docs/API.md": "4a2c1792860df48612c54dcc4ff85b3ff412fb90ca625acd1c7fc0f2dc6ad9bc",
+    "server/ai-config.ts": "62a26fa5cf623df071fe12f5c6f4a5c780aed06e3a4d0c04ac1f750019f5e3e5",
+    "server/agent-runtime.ts": "de45752f2fb4fc59c9d3739a5a40094b0514f01480c6c6023dec8ba6c6eb93a9",
+    "server/product-tool-selection.ts": "0b03c76db6da0fb383ad0e6790ba30eefd46b6f528b0aa7a95174c745e64c533",
+    "server/model-routing.ts": "b4e96aea72a88ef90a22571bfabc41de4a759a72e8c23de0cbc1184d780a627a",
+    "server/agent-budget.ts": "77efaf31fd5e914c704a45f56daa9e5cbf08244a54e0644b49d73db64337b613",
+    "server/agent-model-gateway.ts": "93f031c235be5027750a654c23e7af3c667a527fd6f6bae607469dc176d914de",
+    "frontend/src/model-settings-view-model.ts": "b4b4162c953f702a11265068497b3c55a9245ee1496248981ccfe6ca0f85c24b",
+    "frontend/src/components/model-settings/ModelSettingsView.tsx": "5223072b0de0b592d63b538ba7ede4dc66d808a0651995d587ba859cb4cbdab0",
+    "src/client/model-settings-api.ts": "3d6d208659b63c0b05afaa0ba6921a726d8745957b8d3641c8e84711204bd39b",
+    "src/shared/model-settings.ts": "af397cfceb76ae06aae0f193ce337b1b4e864b557723efa64da0a2a8be41a266",
+    "tests/product-agent-task-budget.test.ts": "3514cb39fe547e51bd8ccf17b4e2cc157ede516e2eb5bc815435778e8b87d302",
+    "tests/agent-input-limit.test.ts": "b02c23c8d7c700024279d2951425b261c8416bd3e93ac724a935e14be435d932",
+    "tests/model-input-limit-display.test.ts": "38d6089a5bca63b0af01db408ccf794f80c9633ccbfcbe7150f0496cf628e789"
+  }
+}
