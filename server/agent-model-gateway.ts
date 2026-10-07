@@ -72,7 +72,8 @@ export class AgentGatewayModel extends BaseLlm {
       try{decodePhoto(part.inlineData.data??"",part.inlineData.mimeType??"");}catch{throw new AgentStopped("input_limit");}
       return {...part,inlineData:{...part.inlineData,data:"[bounded image bytes]"}};
     })}));
-    if (JSON.stringify({ contents, config: request.config }).length > AGENT_LIMITS.inputCharacters) {
+    const requestCharacters = JSON.stringify({ contents, config: request.config }).length;
+    if (requestCharacters > AGENT_LIMITS.inputCharacters) {
       throw new AgentStopped("input_limit");
     }
     budget.take("modelCalls");
@@ -94,6 +95,7 @@ export class AgentGatewayModel extends BaseLlm {
       if (calls.some(part => !part.functionCall?.name || !Object.hasOwn(request.toolsDict, part.functionCall.name))) {
         throw new AgentStopped("invalid_tool");
       }
+      budget.prepareToolResponseBudget(requestCharacters, JSON.stringify(response.content).length);
       outcome = "succeeded";
     } catch (error) {
       if (error instanceof AgentStopped) {

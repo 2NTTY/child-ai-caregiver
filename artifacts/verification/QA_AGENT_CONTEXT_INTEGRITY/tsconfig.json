@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2024",
+      "DOM"
+    ]
+  },
+  "include": [
+    "../../../server/agent-budget.ts",
+    "../../../server/agent-runtime.ts",
+    "../../../server/agent-model-gateway.ts",
+    "../../../server/product-agent.ts",
+    "../../../server/product-agent-tools.ts",
+    "../../../server/product-tool-selection.ts",
+    "../../../server/agent-record-quantity.ts",
+    "../../../server/agent-actions-store.ts",
+    "../../../server/memory-summary.ts",
+    "../../../tests/agent-context-integrity.test.ts",
+    "../../../tests/agent-record-quantity.test.ts",
+    "../../../tests/product-tool-selection.test.ts",
+    "../../../tests/vertex-tool-contract.test.ts"
+  ]
+}

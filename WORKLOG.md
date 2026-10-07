@@ -1510,3 +1510,12 @@
 - 真合成 UI 已發現匯出 coverage 長句裁切；本包只按固定 coverage 句號分段呈現，原文字／快照不變。使用相同 React／react-pdf／字體實際輸出 A4、抽字及 bbox 檢查，原裁切可重現、修後句子完整；不宣稱任意無標點正文的所有排字問題已解決。
 - [固定驗證證據](artifacts/verification/QA_DOCUMENT_INTEGRITY_CHECKS.json)：Server source/store/API 合成 7/7、production hook／shallow 及準備回歸 25/25、兩份 scoped typecheck、Web export 35 路由及真 PDF 排版通過。原 fixture 缺 refresh mock、初次建置環境缺 HOME、依賴型別等失敗和基線對照保留。Mock Pool 不當成真 PostgreSQL 並發驗收；shallow 不當成瀏覽器。
 - 主模型親寫 PLAN／STATUS／API／DATA_MODEL 及本記錄；沒有真模型、GCP、DB／真家庭資料操作。固定報告期間仍未改；整體 Agent 首請求的 provider 不可用另由獨立診斷包處理。本包須獨立 review、合併後批次部署及原合成 UI 重測才結案。
+
+<a id="log-qa-agent-context-integrity"></a>
+## 2026-10-07 — QA-AGENT-CONTEXT-INTEGRITY（待覆核）
+
+- 固定基線 a75ebb6，dot 雲端隔離實作。原合成 T5 首輪 35,748 字元、模型／工具 0 即停止；另 read_context 重複裝載原文可令後續輪次超限。工具改依目前本人明確意圖、短延續才參考上一則本人話；保留多意圖、否定例外及所有執行授權。
+- 原 gateway contents／config 邏輯 JSON 的 32k UTF-16 字元上限不變（非 HTTP body byte cap），以該口徑與 native parts 實測剩餘容量提供完整原訊息前綴；摘要只以 IDs 引用同批原文，Server 再核 basis／版本／連續覆蓋。不截斷協議、原訊息、事實或任務；metadata 本身放不下仍明示拒絕。
+- 普通記錄增加 optional quantityEvidence，Server 核對逐字原值／單位及鄰近約數，欠依據保存 null。資料原文保留，手動 API 不變；未改舊量只保持舊值，不冒稱重新核對。既有 A3 錯誤不以 DB 直接回填。
+- 38/38 定向測試、scoped strict typecheck 及固定 Runner mock 容量驗證見 [證據](artifacts/verification/QA_AGENT_CONTEXT_INTEGRITY_CHECKS.json)。保留最初失敗、原 master 對照、必要 fixture 補正；無真模型／DB／GCP操作，不以 mock completed 宣稱正式任務成功。
+- 原 F4 嚴格 present_answer 收尾、完全禁止背景待辦能力、201項記憶／200關注事件界線未在本包擴修。待獨立覆核及後續部署驗收；仍保留整體未完成狀態。

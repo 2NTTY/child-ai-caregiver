@@ -14,6 +14,7 @@ export class AgentBudget {
   readonly signal: AbortSignal;
   private readonly used = { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 };
   private configured = false;
+  private responseCharacters: number | null = null;
   private selectedLimits: { [K in keyof typeof AGENT_LIMITS]: number } = { ...AGENT_LIMITS };
   private readonly expiresAt: number;
   private readonly controller = new AbortController();
@@ -37,6 +38,14 @@ export class AgentBudget {
   }
   get counts() { return { ...this.used }; }
   get limits() { return { ...this.selectedLimits }; }
+  /** Latest complete request plus the model's native response; leave room for the next tool/presentation turn. */
+  prepareToolResponseBudget(requestCharacters: number, modelContentCharacters: number) {
+    this.responseCharacters = Math.max(0, AGENT_LIMITS.inputCharacters - requestCharacters - modelContentCharacters - 4096);
+  }
+  get toolResponseCharacters() { return this.responseCharacters ?? 8000; }
+  accountToolResponse(characters: number) {
+    if (this.responseCharacters !== null) this.responseCharacters = Math.max(0, this.responseCharacters - characters);
+  }
   /** Only the Server-resolved, versioned personal settings may raise the default counts. */
   configurePersonal(limits: { modelCalls: number; queryEmbeddings: number }) {
     if (this.configured || Object.values(this.used).some(count => count !== 0)) throw new Error("Agent limits already selected");

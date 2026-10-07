@@ -95,7 +95,7 @@ test("product reply preserves validated citations at the model limit without con
     memory: { context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
       facts: [], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
       truncated: { facts: false, topics: false, messages: false } }) },
-    chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: "請整理合成照護說明及待確認跟進。" }] }) },
+    chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: "請整理合成照護說明及待确认跟進，並提出待確認的家庭任務。" }] }) },
     tasks: { list: async () => ({ items: [], eligibleAssignees: [{ userId, name: "Synthetic caregiver" }], nextAfterId: null }) },
     knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
       revalidateCitations: async (items: unknown[]) => { revalidations++; assert.deepEqual(items, [chunk]); return true; } }) },
@@ -135,7 +135,7 @@ for (const growth of [false, true]) test(growth
         assert.equal(response?.status, "rejected");
         const data = response?.data as Record<string, unknown> | undefined;
         assert.deepEqual(data && { code: data.code, nextAction: data.nextAction, citationField: data.citationField },
-          { code: "invalid_citation", nextAction: "search_knowledge", citationField: "chunks[].chunkId" });
+          { code: "citation_required", nextAction: undefined, citationField: undefined });
       }
       const functionCall = index === 0 ? { id: "invalid-source", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: "未有有效引用的合成建議", citationIds: ["source-metadata-id"] }] } }
         : index === 1 ? (growth ? { id: "search-call", name: "search_knowledge", args: {
@@ -169,3 +169,4 @@ for (const growth of [false, true]) test(growth
   assert.equal(result.text, growth ? chunk.text + " [1]" : "原任務已到期，完成狀態仍待你確認。");
   assert.equal(reads, 1); assert.equal(calls, 4); assert.deepEqual(result.proposals, []);
 });
+

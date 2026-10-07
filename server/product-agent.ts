@@ -87,7 +87,8 @@ export function createProductAgent(options: {
         // A bounded recent window is distinct from the coverage-tracked summary and confirmed facts.
         messages: page.messages.slice(Math.max(0, index - 5), index + 1).map(item => ({ role: item.role, text: item.text })),
         tools: run => {
-          tools = createProductAgentTools({ ...options, ...productToolSelection(page.messages.slice(Math.max(0,index-2),index+1).map(message=>message.text)), run, authorize });
+          tools = createProductAgentTools({ ...options, ...productToolSelection(page.messages.slice(0,index+1)
+            .filter(message=>message.role==="user").slice(-2).map(message=>message.text)), run, authorize });
           return tools.tools;
         }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true,
         finalize: async () => {

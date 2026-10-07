@@ -51,7 +51,7 @@ test("the exact ordinary-observation request selects concerns and serializes onl
     } as unknown as Parameters<typeof createProductAgentTools>[0]).tools;
     assert.deepEqual(tools.map(tool => tool.name), ["read_context", "search_knowledge", "propose_fact", "stage_private_summary",
       "read_care_records", "read_private_instructions", "save_ordinary_record", "revise_ordinary_record",
-      "read_concerns", "propose_concern", "propose_concern_change", "read_care_summary", "read_contact_options", "contact_caregiver", "present_answer"]);
+      "read_concerns", "propose_concern", "propose_concern_change", "read_care_summary", "present_answer"]);
     const declarations = tools.map(tool => native(tool)._getDeclaration()!);
     let calls = 0;
     context.mock.method(GoogleAuth.prototype, "getRequestHeaders", async () => new Headers({ authorization: "Bearer synthetic" }));
@@ -61,7 +61,7 @@ test("the exact ordinary-observation request selects concerns and serializes onl
       const body = JSON.parse(String(init.body));
       assert.deepEqual(Object.keys(body.generationConfig).sort(), ["candidateCount", "maxOutputTokens", "thinkingConfig"]);
       const sent = body.tools.flatMap((tool: { functionDeclarations: { name: string; parameters: unknown }[] }) => tool.functionDeclarations);
-      assert.equal(sent.length, 15);
+      assert.equal(sent.length, 13);
       assert.deepEqual(sent.flatMap((tool: { name: string; parameters: unknown }) => contractIssues(tool.parameters, tool.name)), []);
       return Response.json({ candidates: [{ content: { role: "model", parts: [{ text: "synthetic" }] }, finishReason: "STOP" }] });
     });
@@ -104,7 +104,8 @@ test("the real product-interactive Runner request keeps its system configuration
     assert.equal(body.generationConfig.maxOutputTokens, 1024);
     assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, "MINIMAL");
     const declarations = body.tools.flatMap((tool: { functionDeclarations: { name: string; parameters: unknown }[] }) => tool.functionDeclarations);
-    assert.equal(declarations.length, 15);
+    assert.equal(declarations.length, 13);
+    assert.equal(declarations.some((tool: { name: string }) => ["read_contact_options", "contact_caregiver"].includes(tool.name)), false);
     assert.deepEqual(declarations.flatMap((tool: { name: string; parameters: unknown }) => contractIssues(tool.parameters, tool.name)), []);
     return Response.json({ candidates: [{ content: { role: "model", parts: [{ text: "Synthetic transport response" }] }, finishReason: "STOP" }] });
   });
