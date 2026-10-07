@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const text = (max: number) => z.string().trim().min(1).max(max);
-const version = z.number().int().positive().max(2147483646);
+const version = z.number().int().min(1).max(2147483646);
 export const concernLinksSchema = z.object({
   recordId: z.uuid().nullable(), taskId: z.uuid().nullable(), attentionId: z.uuid().nullable(),
 }).strict();

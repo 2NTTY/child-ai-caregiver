@@ -1,0 +1,99 @@
+✖ Vertex failures retain only allowlisted HTTP metadata and never retry the SDK call (12.5565ms)
+✔ successful native SDK requests preserve the endpoint, bounds, parts and silence (2.74222ms)
+✖ Agent failure accounting stays unknown, sanitized and single-attempt (2.891152ms)
+✖ unknown transport failures and cancellation cannot leak exception properties (2.291765ms)
+✖ plain Vertex provider logs safe metadata before preserving its sanitized failure (1.960631ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 1
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1319.910782
+
+✖ failing tests:
+
+test at tests/vertex-provider-diagnostics.test.ts:29:1
+✖ Vertex failures retain only allowlisted HTTP metadata and never retry the SDK call (12.5565ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   '{"event":"vertex_generate_failure","httpStatus":400,"category":"invalid_request"}'
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/shared/model_failure_diagnostics_20261007/tests/vertex-provider-diagnostics.test.ts:42:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ '{"event":"vertex_generate_failure","httpStatus":400,"category":"invalid_request"}' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/vertex-provider-diagnostics.test.ts:72:1
+✖ Agent failure accounting stays unknown, sanitized and single-attempt (2.891152ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///workspace/shared/model_failure_diagnostics_20261007/tests/vertex-provider-diagnostics.test.ts:92:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/vertex-provider-diagnostics.test.ts:97:1
+✖ unknown transport failures and cancellation cannot leak exception properties (2.291765ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   [
+  -     '{"event":"vertex_generate_failure","httpStatus":null,"category":"unknown"}'
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/shared/model_failure_diagnostics_20261007/tests/vertex-provider-diagnostics.test.ts:104:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ [ '{"event":"vertex_generate_failure","httpStatus":null,"category":"unknown"}' ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/vertex-provider-diagnostics.test.ts:112:1
+✖ plain Vertex provider logs safe metadata before preserving its sanitized failure (1.960631ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   [
+  -     '{"event":"vertex_generate_failure","httpStatus":403,"category":"permission_denied"}'
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///workspace/shared/model_failure_diagnostics_20261007/tests/vertex-provider-diagnostics.test.ts:120:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ [ '{"event":"vertex_generate_failure","httpStatus":403,"category":"permission_denied"}' ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

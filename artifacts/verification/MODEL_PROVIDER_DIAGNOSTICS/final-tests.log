@@ -1,0 +1,23 @@
+✔ concern and document ADK declarations use inclusive positive integer bounds (10.045797ms)
+✔ version validators keep positive integer limits and strict objects (7.698598ms)
+✔ denied authorization, disabled AI and invalid input never reserve or call a provider (3.863238ms)
+✔ exhausted durable quota fails closed before provider execution (0.432785ms)
+✔ successful generation returns the reply and records metadata without prompt or reply text (1.010535ms)
+✔ only an explicit rate limit receives one bounded retry and each attempt consumes quota (1010.288149ms)
+✔ unknown provider failures are sanitized and never retried (8.469847ms)
+✔ timeouts abort the provider, do not retry, and release the account concurrency slot (24.134841ms)
+✔ concurrent requests from one account are rejected and revocation prevents returning a reply (1.018691ms)
+✔ invalid model output is rejected without returning provider data (0.45272ms)
+✔ Vertex failures retain only allowlisted HTTP metadata and never retry the SDK call (18.040765ms)
+✔ successful native SDK requests preserve the endpoint, bounds, parts and silence (2.410993ms)
+✔ Agent failure accounting stays unknown, sanitized and single-attempt (2.406677ms)
+✔ unknown transport failures and cancellation cannot leak exception properties (1.635066ms)
+✔ plain Vertex provider logs safe metadata before preserving its sanitized failure (1.347818ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1376.342609
