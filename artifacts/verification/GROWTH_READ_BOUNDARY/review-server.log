@@ -1,0 +1,28 @@
+Command: node --experimental-transform-types --experimental-test-module-mocks --test tests/growth-read-boundary.test.ts tests/growth-policy.test.ts
+Offline Docker yuban-qa-deps:9c088c8; read-only source mounts; synthetic fixtures only
+(node:13) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ growth advice requires exact age and the reviewed published chunk (9.308333ms)
+✔ a closed basis changes only with substantive confirmed information, stage or rule (1.604894ms)
+(node:14) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+✔ free-text profiles reproduce the strict knowledge contract mismatch without a database (2.245589ms)
+▶ Growth GET degrades only unsupported profile filters and keeps writes strict
+  ✔ synthetic A/B and missing regions remain readable without HK fallback (22.105234ms)
+  ✔ valid regions and HK aliases keep the existing exact filter (1.758338ms)
+  ✔ ages beyond 10 years remain readable without broadening the 120-month contract (1.699227ms)
+  ✔ saved candidates stay readable and unchanged while source applicability is explicitly unconfirmed (0.502384ms)
+  ✔ database and decryption failures are not converted to successful empty pages (1.300223ms)
+  ✔ topic writes and worker evaluation retain strict validation before any mutation (1.577456ms)
+✔ Growth GET degrades only unsupported profile filters and keeps writes strict (72.339017ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 312.343851
+
+Exit code: 0

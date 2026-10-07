@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Pool, PoolClient } from "pg";
-import { growthActionSchema, growthTopicActionSchema, growthTopicSchema } from "../src/shared/growth.ts";
+import { GROWTH_KNOWLEDGE_NOTICES, growthActionSchema, growthTopicActionSchema, growthTopicSchema } from "../src/shared/growth.ts";
 import type { GrowthAction, GrowthAttention, GrowthPage, GrowthTopicAction, GrowthTopicId } from "../src/shared/growth.ts";
 import { FamilyError, READ_ROLES, WRITE_ROLES, withChildAccess } from "./family-access.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
@@ -57,8 +57,8 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
     let knowledgeNotice: string | null = null;
     if (readOnly) {
       const profile = context.profileApplicable ? context.profile.data : null;
-      const regionNotice = "尚未能把已確認地域轉為知識篩選；原地域資料已保留，沒有假定香港。現有關注仍可查閱，來源適用性尚未能確認。";
-      const ageNotice = "知識及成長規則目前只覆蓋 0–10 歲；原出生日期已保留，沒有套用其他年齡的來源。現有關注仍可查閱，來源適用性尚未能確認。";
+      const regionNotice = GROWTH_KNOWLEDGE_NOTICES.region;
+      const ageNotice = GROWTH_KNOWLEDGE_NOTICES.age;
       // The Agent's broader age calculation can return null beyond 216 months.
       // An out-of-scope exact birth date must not become an unrestricted-age query.
       const beyondAgeScope = profile?.age.kind === "birth_date" &&

@@ -11,7 +11,9 @@
   },
   "implementation": {
     "production_files": [
-      "server/growth-store.ts"
+      "server/growth-store.ts",
+      "src/shared/growth.ts",
+      "frontend/src/production/TaskKnowledgeGrowthCandidates.tsx"
     ],
     "only_list_allows_degradation": true,
     "preserve_original_profile": true,
@@ -24,7 +26,8 @@
       "evaluate",
       "search_knowledge"
     ],
-    "errors": "Only local parseKnowledgeFilter Zod conversion errors are degraded. Query, memory, decode and network failures are not caught by the new boundary."
+    "errors": "Only local parseKnowledgeFilter Zod conversion errors are degraded. Query, memory, decode and network failures are not caught by the new boundary.",
+    "candidate_empty_state": "Only the shared exact region/age limitation notices replace normal empty copy with compact statuses. Other notices and existing candidates retain their presentation."
   },
   "verification": {
     "runtime": "offline existing yuban-qa-deps:9c088c8, Node 24.19.0, read-only bind mounts",
@@ -39,7 +42,7 @@
       "total": 10,
       "pass": 10,
       "fail": 0,
-      "log": "GROWTH_READ_BOUNDARY/final.log"
+      "log": "GROWTH_READ_BOUNDARY/review-server.log"
     },
     "scoped_typecheck": {
       "exit_code": 0,
@@ -48,7 +51,9 @@
         "src/shared/**/*.ts",
         "tests/growth*.test.ts"
       ],
-      "log": "GROWTH_READ_BOUNDARY/typecheck-scoped.log"
+      "log": "GROWTH_READ_BOUNDARY/review-scope.log",
+      "config": "GROWTH_READ_BOUNDARY/tsconfig.json",
+      "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/GROWTH_READ_BOUNDARY/tsconfig.json"
     },
     "full_server_typecheck": {
       "exit_code": 2,
@@ -56,14 +61,30 @@
       "same_diagnostics": true,
       "existing_errors": 11,
       "cause": "PR #100 child-selection test imports frontend modules into NodeNext/erasableSyntaxOnly server test compilation",
-      "baseline_method": "Replace only changed production Growth store with origin/master blob in the same offline image; remaining files identical, including the new test",
+      "baseline_method": "Single-file substitution, NOT a pristine checkout: replace only Growth store with the 01c25a4 blob in the same offline mount workspace; other files, including the new test, remain",
       "initial_harness_failure": "frontend mount absent; saved separately, then mounted read-only",
       "logs": [
         "GROWTH_READ_BOUNDARY/typecheck-initial.log",
         "GROWTH_READ_BOUNDARY/typecheck.log",
         "GROWTH_READ_BOUNDARY/typecheck-baseline.log"
-      ]
-    }
+      ],
+      "evidence_version": "b31f10f before the follow-up UI/shared-notice patch",
+      "rerun_for_followup": false
+    },
+    "frontend_typecheck": {
+      "exit_code": 0,
+      "command": "node node_modules/typescript/bin/tsc --project frontend/tsconfig.json",
+      "log": "GROWTH_READ_BOUNDARY/review-frontend-typecheck.log"
+    },
+    "focused_ui": {
+      "total": 6,
+      "pass": 6,
+      "fail": 0,
+      "command": "node --experimental-transform-types --test frontend/scripts/qa-growth-candidates.test.mjs",
+      "log": "GROWTH_READ_BOUNDARY/review-ui.log",
+      "method": "Real candidate renderer using the existing shallow UI harness; not browser acceptance"
+    },
+    "reproduction_instructions": "GROWTH_READ_BOUNDARY/README.md"
   },
   "not_performed": [
     "deployment",
@@ -83,15 +104,21 @@
     "lead": "C",
     "weight": 2,
     "shares": {
-      "C": 75,
-      "A": 25
+      "C": 60,
+      "B": 20,
+      "A": 20
     },
-    "implementation": "Shared AI under A coordination; attribution denotes responsibility, not personal human coding/testing"
+    "implementation": "Shared AI under A coordination; attribution denotes responsibility, not personal human coding/testing",
+    "followup": "B responsibility for compact candidate UI and its regression; C for shared/server filter notices and reproducible scope verification; A coordination"
   },
   "evidence_sha256": {
     "baseline.log": "69f6cc4b854dd3dca8cc3fabd4e987c59d45f85904f525ecd2f825d4bafbbec9",
     "final.log": "87dc244e88d9b4e49d6aea584e2f1c84219824017993b106845d838c74ea22d8",
     "fixed.log": "2c6b656983bb0d550d1a4f00269a20bcd4d1cee42a8648b2ca3f9698425a6a7b",
+    "review-frontend-typecheck.log": "791460d3f9030c75390adf8e724b0db035a2a7847c916e5b395b339fb3e51d36",
+    "review-scope.log": "ef0d79a40cb552815ef17e5bbd11662c125b8bb2f2029cc61fcf3ef1209e01d9",
+    "review-server.log": "85b942b912a8133622b860e3d50108f1de606e7049c2ffc15b5b0b09b0c9da2c",
+    "review-ui.log": "77f0fd69ee2dff1090fae52c8e7deedf6f83092943aff9e22cb387362d6f6912",
     "typecheck-baseline.log": "ea2e4420376b01a50d2f4e95c0b5e9205480b27ef1952a73a8a72fdf2ed1387a",
     "typecheck-initial.log": "433deecee850c6bb9540bd8f705b47902f9b3cb1f7ee2b25ef021f0e6548720c",
     "typecheck-scoped.log": "5ccba8e626c2c33b15734dde65836e60b10527a012549100ee8db438a2468521",

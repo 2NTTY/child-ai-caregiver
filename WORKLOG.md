@@ -1498,3 +1498,7 @@
 - 修復前合成地域 GET 返回 400；agentKnowledgeFilter 傳自由文字，但 parseKnowledgeFilter 只接受兩碼地域，另有 216／120 個月上限差距。只在 list／GET 的本機 filter 轉換邊界安全降級；不把未知地域默認香港、不覆寫 profile，明示 0–10 歲範圍。現有關注可讀，來源適用性未確認在回應中標示不可用並提示，不保存旗標或改舊候選狀態／版本。decide／topic／evaluate／Agent 搜尋的嚴格契約與失敗行為保留，不以空 sources 觸發背景 inapplicable。
 - [證據](artifacts/verification/GROWTH_READ_BOUNDARY_CHECKS.json)：修復前 Node 計數 5／9 通過（含 parent wrapper），最終 10／10 通過；有效地域／香港 aliases、無 fallback、超齡、不改已存候選、DB／實際 decode 失敗仍 503、worker／topic 無 mutation 均已核對。Server／shared／Growth tests 型別通過；完整 Server typecheck 初次缺 frontend mount，補 mount 後見 11 個前端相容錯誤，master Growth store 對照完全相同，保留所有失敗，不擴修 PR #100 的測試配置。沿用離線既有依賴／嚴格 parser／SQL 篩選，沒有新框架或來源權限。
 - 沒有部署、DB／真家庭資料變更、模型／通知、完整測試或瀏覽器驗收。真 UI 驗收、正式 HTTP capture 及嚴格寫入／worker 不支援地域的完整行為仍未驗／未改；需 dot review，另次授權後部署後端才能檢查正常頁面。C 主責、權重 2，C 75%／A 25%；共用 AI 實作與本機核對由 A 統籌，署名只代表責任，不代填人手工作或人工 QA。只建立 draft PR。
+
+- QA-GROWTH-READ-BOUNDARY 獨立覆核補正：已提交局部 `tsconfig.json` 及 repository-root 確切重跑命令；明示舊完整 typecheck 對照只換 Growth store，其餘 mount workspace（含新增測試）不變，並非 pristine master 全量驗證。旧 11 diagnostics 仍是首稿證據，本輪沒有擴跑完整 typecheck。
+- 候選區原先未呈現 notices，令合法但不支援的 basis 冒稱正常空建議。將原兩則 notice 抽為 shared 固定常數（線上 response 文字與契約不變），只在這两個明確限制且 items 為空時替換為短提示；正常空頁／其他 notices／已有候選／失權呈現保留，沒有重構布局。6 項 focused 真 renderer shallow 回歸、frontend 型別、已提交配置的 Server／shared／Growth tests 型別及 10 項 Growth 安全測試通過；原始 log 與 SHA 見同一 EV。沒有部署、DB、模型、通知或瀏覽器驗收。
+- 整包責任更新為 C 主責、權重 2，C 60%／B 20%／A 20%；初稿 C／A 份額保留追溯，新增候選呈現與回歸由 B 責任署名，共用 AI 執行不冒稱人手。只追加 commit／更新 draft PR head，交 dot 再覆核。

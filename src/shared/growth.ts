@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { taskValuesSchema } from "./tasks.ts";
 import type { TaskAssignee, TaskState } from "./tasks.ts";
+/** Exact notices shared by the read boundary and its compact empty-state presentation. */
+export const GROWTH_KNOWLEDGE_NOTICES = {
+  region: "尚未能把已確認地域轉為知識篩選；原地域資料已保留，沒有假定香港。現有關注仍可查閱，來源適用性尚未能確認。",
+  age: "知識及成長規則目前只覆蓋 0–10 歲；原出生日期已保留，沒有套用其他年齡的來源。現有關注仍可查閱，來源適用性尚未能確認。",
+} as const;
 export const growthTopicSchema = z.enum(["solid_food", "toddler_play", "preschool_development", "school_vision"]);
 export type GrowthTopicId = z.infer<typeof growthTopicSchema>;
 export type GrowthState = "proposed" | "snoozed" | "accepted" | "dismissed" | "inapplicable";

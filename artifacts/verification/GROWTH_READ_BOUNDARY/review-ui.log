@@ -1,0 +1,20 @@
+Command: node --experimental-transform-types --test frontend/scripts/qa-growth-candidates.test.mjs
+Offline Docker yuban-qa-deps:9c088c8; read-only source mounts; synthetic fixtures only
+(node:13) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ unsupported region renders a compact limitation rather than a successful empty suggestion state (0.904672ms)
+✔ out-of-scope age renders a compact applicability limitation (0.122775ms)
+✔ a normal empty page keeps its existing empty-state copy (0.102452ms)
+✔ other notices do not create the new unsupported-basis state (0.076222ms)
+✔ existing candidates remain visible instead of being replaced by an empty-state limitation (0.291998ms)
+✔ lost access and unread pages expose neither candidates nor limitations (0.122425ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 466.767058
+
+Exit code: 0

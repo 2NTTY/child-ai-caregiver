@@ -14,7 +14,8 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 - 只讓 list／GET 在本機 filter 轉換不可用時略過知識查詢、提示地域／0–10 歲限制，保留原 profile、家庭讀取 scope、authority 及其他資料。既有候選仍可讀，回應 sourceAvailable=false 表示未能確認適用性；不保存此旗標，不改候選狀態、版本或歷史。DB、解密及網絡錯誤沒有被降級吞掉。
 - decide／topic（含回傳 page）／evaluate 及 Agent search 仍走原嚴格契約；不令 worker 因空來源把候選轉為 inapplicable。其不支援 filter 的原失敗仍是保留限制，本輪沒有擴大寫入／背景行為。
 - [必要證據](artifacts/verification/GROWTH_READ_BOUNDARY_CHECKS.json)：修復前 5／9、最終 10／10 定向單測通過；Server／shared／Growth tests 局部 typecheck 通過。完整 Server typecheck 的 11 個前端 NodeNext／erasable 相容性錯誤與 master 對照完全相同，未順手修；首次缺 frontend mount 的 harness 失敗亦保存。沒有真模型、通知、DB 操作、全面瀏覽器或全套回歸。
-- C 主責、權重 2：C 75%／A 25%，共用 AI 在 A 統籌下實作及離線核對，不冒稱個人人手或人工驗收。下一步獨立 review；另次明確授權後才部署後端及用原合成 QA 查一次正常 Growth UI，停止於 draft。
+- 獨立覆核補正：兩則知識限制 notice 共用固定常數，候選區只在此明確限制且空頁時顯示「地區資料待確認」／「目前無法提供適用建議」；正常空狀態不改。6 項真候選 renderer 的 shallow 回歸、frontend typecheck、10 項 Growth 單測及已提交配置的 scope typecheck 通過。確切命令／[配置及對照限制](artifacts/verification/GROWTH_READ_BOUNDARY/README.md) 可重跑；舊 11 diagnostics 證據是單一 Growth store 替換對照，並非 pristine master checkout。本輪沒有再跑完整 Server typecheck。
+- C 主責、權重 2：C 60%／B 20%／A 20%（初稿 C 75%／A 25%；覆核補上 B 候選文案責任），共用 AI 在 A 統籌下實作及離線核對，不冒稱個人人手或人工驗收。下一步獨立 review；另次明確授權後才部署後端及用原合成 QA 查一次正常 Growth UI，停止於 draft。
 
 此前 QA-POST-RELEASE 已隨 [PR #100](https://github.com/2NTTY/child-ai-caregiver/pull/100) 合併；Web `01c25a4` 的另次部署及公開唯讀核對已交接給 dot。原始修復／失敗證據見 [QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。本包沒有重做或再次部署。
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Linking, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
-import { growthActionSchema, growthTopicActionSchema } from "../../../src/shared/growth";
+import { GROWTH_KNOWLEDGE_NOTICES, growthActionSchema, growthTopicActionSchema } from "../../../src/shared/growth";
 import { growthActionable, growthKindLabels, growthSourceUrl, growthStateLabels, growthTime, type GrowthAttention, type GrowthTopic, type GrowthViewModel, type GrowthActions } from "../growth-view-model";
 import type { TaskValues } from "../task-view-model";
 import { AppCheckbox } from "../components/AppCheckbox";
@@ -22,6 +22,8 @@ export function TaskKnowledgeGrowthCandidates({ model, actions, onTask }: { mode
   const page = model.access === "lost" ? null : model.page;
   if (!page) return null;
   const selected = page.items.find(item => item.id === selectedId);
+  const emptyMessage = page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.region) ? "地區資料待確認。"
+    : page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.age) ? "目前無法提供適用建議。" : "暫時沒有建議。";
   return <View style={s.stack}>
     <SectionCard><SectionHeader density="compact" title="成長建議" />
       {page.items.length ? <Text style={s.meta}>接受建議只記錄知悉或建立共享事項，不代表已完成、已預約或醫療判斷。</Text> : null}
@@ -29,7 +31,7 @@ export function TaskKnowledgeGrowthCandidates({ model, actions, onTask }: { mode
         <Text style={s.title}>{item.title}</Text><Text style={s.meta}>{growthKindLabels[item.kind]} · {growthStateLabels[item.state]} · 版本 {item.version}</Text>
         <Text style={s.body}>{item.whyNow}</Text>
         <AppButton label="查看來源與核對候選" variant="secondary" density="compact" disabled={model.busy} onPress={() => setSelectedId(item.id)} />
-      </View>) : <Text style={s.body}>暫時沒有建議。</Text>}
+      </View>) : <Text style={s.body}>{emptyMessage}</Text>}
       {page.historyHasMore ? <Text style={s.meta}>仍有較早建議未載入。</Text> : null}
     </SectionCard>
     <SummaryDisclosure label="有限主題及人工確認近況" scopeKey={model.scopeKey}>
