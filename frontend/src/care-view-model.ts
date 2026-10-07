@@ -242,6 +242,8 @@ export interface CareRecordsViewModel {
     historyOpen: boolean;
     history: CareRevisionView[];
     historyLoading: boolean;
+    historyState?: "unread" | "ready" | "error";
+    historyRetryMore?: boolean;
     hasMoreHistory: boolean;
   } | null;
   draft: CareDraftView | null;

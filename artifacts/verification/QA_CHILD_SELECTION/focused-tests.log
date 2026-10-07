@@ -1,0 +1,381 @@
+✔ loading correction history never claims a first or oldest confirmed version (0.891138ms)
+✔ settled empty correction history retains the truthful empty state (0.130187ms)
+✔ calendar derives pending dates and review dots from the same loaded task objects (6.261623ms)
+✔ calendar and selected-day list use the viewing IANA zone across a UTC day boundary (4.081801ms)
+✔ month cells handle leap February, Monday-first alignment, and year rollover (3.827377ms)
+✔ changing or completing a source item immediately changes the projection without copied task state (1.221564ms)
+✔ selected-day filtering and clearing retain only current pending and review items (0.973027ms)
+✔ invalid and offset-free timestamps stay unconfirmed without a guessed day or device clock (1.457733ms)
+✔ day names explain counts and review state without relying on dots or claiming complete coverage (1.45433ms)
+✖ calendar JSX preserves button semantics, lock guards and loaded-only presentation (6.462069ms)
+✔ backlog defaults to seven local calendar days while older, review and later remain counted (1.053307ms)
+✔ backlog near-term boundaries use the snapshot zone instead of UTC or the device clock (0.725144ms)
+✔ backlog display pages retain every loaded pending item and clamp a shortened final page (6.645865ms)
+✔ backlog pages cover eleven and twenty-five same-day tasks without losing selected-day or search filters (25.709848ms)
+✔ scope count badges receive structured numbers and preserve accessible radio and trigger states (76.17545ms)
+✔ backlog search and calendar-day filters use loaded titles, contents and eligible assignee names (1.81177ms)
+✔ backlog unknown dates stay discoverable and no old item is completed or discarded (0.965307ms)
+✖ backlog UI keeps remote loading separate and preserves guarded local filter/page state (3.642583ms)
+✔ calendar date toggle cancels only an identical selected date (0.116802ms)
+✔ calendar date toggle restores the previous range and preserves the search text (1.347164ms)
+✔ calendar replacement uses the existing detail slot and keeps month state in the view owner (6.833867ms)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+file:///app/frontend/src/production/ProductAgentOwner.ts:28
+  private selectedRunId: string | null = null;
+  constructor(private readonly baseUrl: string, online: boolean,
+                               ^^^^^^^^^^^^^^^
+    private readonly onAccessLost: (error: ProductAgentApiError) => void, private readonly onSaved: () => void, private readonly createApi = () => createProductAgentApi(baseUrl)) {
+
+SyntaxError [ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX]: TypeScript parameter property is not supported in strip-only mode
+    at parseTypeScript (node:internal/modules/typescript:68:40)
+    at processTypeScriptCode (node:internal/modules/typescript:146:42)
+    at stripTypeScriptModuleTypes (node:internal/modules/typescript:215:22)
+    at ModuleLoader.<anonymous> (node:internal/modules/esm/translators:680:29)
+    at #translate (node:internal/modules/esm/loader:434:20)
+    at afterLoad (node:internal/modules/esm/loader:502:29)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:507:12)
+    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:560:36)
+    at afterResolve (node:internal/modules/esm/loader:607:52)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:613:12) {
+  code: 'ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX'
+}
+
+Node.js v24.19.0
+✖ frontend/src/production/scope.test.mts (186.504905ms)
+✔ complete uses the confirmed Server transition time without loading history (31.347111ms)
+✔ cancel uses the confirmed Server transition time without loading history (0.476807ms)
+✔ opposing terminal write clears dates; resolve supplies its own confirmed time (0.166035ms)
+✔ matching revision is authoritative, and invalid or scheduled timestamps never create a terminal date (0.234586ms)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+file:///app/frontend/src/production/AgentAuthorizationOwner.ts:51
+  private readonly listeners = new Set<() => void>();
+  constructor(baseUrl: string, online: boolean, private readonly onAccessLost: (identity: boolean) => void,
+                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    private readonly onSaved: () => void) {
+
+SyntaxError [ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX]: TypeScript parameter property is not supported in strip-only mode
+    at parseTypeScript (node:internal/modules/typescript:68:40)
+    at processTypeScriptCode (node:internal/modules/typescript:146:42)
+    at stripTypeScriptModuleTypes (node:internal/modules/typescript:215:22)
+    at ModuleLoader.<anonymous> (node:internal/modules/esm/translators:680:29)
+    at #translate (node:internal/modules/esm/loader:434:20)
+    at afterLoad (node:internal/modules/esm/loader:502:29)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:507:12)
+    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:560:36)
+    at afterResolve (node:internal/modules/esm/loader:607:52)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:613:12) {
+  code: 'ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX'
+}
+
+Node.js v24.19.0
+✖ tests/child-selection.test.ts (209.498123ms)
+✔ online receipt recovery clears only the confirmed record draft without another write (8.332785ms)
+✔ an online epoch conflict keeps the account and unconfirmed input instead of logging out (0.269638ms)
+✔ authorized family records retain other caregiver authors and viewer cannot submit or delete (0.199084ms)
+✔ a forbidden record refresh clears revoked child data and drafts (0.771491ms)
+✔ record saving needs explicit confirmation and only clears exact input after the server confirms (0.326197ms)
+✔ switching children keeps separate drafts and ignores a late response for the previous child (0.756507ms)
+✔ unknown writes retain input, block repeated writes, and require a successful read and explicit reconciliation (0.54686ms)
+✔ definite rejection preserves the draft without claiming a saved receipt (0.260233ms)
+✔ expired authentication hides private data and restores page input only for the same account (0.709186ms)
+✔ a late write from an old account cannot change a new account or its draft (0.599958ms)
+✔ a changed cookie session blocks a write before sending the old account draft (0.50863ms)
+✔ offline actions preserve page input and reconnecting never replays writes (0.52461ms)
+✔ unknown child creation also requires a read and deliberate reconciliation (0.622187ms)
+✔ logout needs consent to discard drafts, unknown logout is gated, and successful logout clears page input (0.891506ms)
+✔ a new page instance restores server data without persisting page drafts (0.262643ms)
+✔ switching children while the old identity check is being cancelled keeps the new view authenticated (0.50306ms)
+✔ server session-conflict rejection hides and retains the original account input for both write routes (0.804495ms)
+✔ a failed fresh read cannot unlock an earlier unknown write using stale reconciliation (0.420038ms)
+✔ transient session rechecks hide drafts without signing out and restore only the same identity (1.446944ms)
+✔ an accepted login with a failed session check is unconfirmed rather than rejected (0.281687ms)
+✔ delete API sends the selected ID and expected account and requires a matching receipt (30.608778ms)
+✔ confirmed deletion clears only the selected child's records and chat drafts (6.435551ms)
+✔ unknown deletion needs a fresh child list and clears stale drafts if another tab removed the child (1.829443ms)
+✔ an in-flight AI reply prevents opening child deletion (3.114927ms)
+✔ opening deletion synchronously blocks stale chat actions and cancellation preserves the draft (3.103164ms)
+✔ task inputs preserve exact text and require explicit confirmation and an offset (12.463242ms)
+✔ rescheduling retains task and occurrence identities and rejects a stale basis (0.504094ms)
+✔ opposing terminal writes retain a conflict in either order and stop reminders (0.190724ms)
+✔ terminal states never reschedule, repeat completion or resolve without a conflict (0.135421ms)
+✔ reminder eligibility distinguishes overdue from complete, authorization and unknown delivery (0.691354ms)
+✔ ordinary prompts share one recipient-local day and at most one later follow-up (0.163255ms)
+✔ quiet time uses the recipient zone with explicit appointment exception and exact boundaries (0.340736ms)
+✔ task write routing excludes viewers, history and direct unreceipted HTTP mutations (14.773349ms)
+✔ task HTTP normalizes UUID scope before encrypted store operations (0.604775ms)
+ℹ tests 61
+ℹ suites 0
+ℹ pass 57
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 499.836642
+
+✖ failing tests:
+
+test at frontend/scripts/task-calendar.test.mts:81:1
+✖ calendar JSX preserves button semantics, lock guards and loaded-only presentation (6.462069ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /無色點不代表當日沒有安排/. Input:
+
+  'import { useState } from "react";\n' +
+    'import { Pressable, StyleSheet, View } from "react-native";\n' +
+    'import { Text } from "react-native-paper";\n' +
+    'import { DateTime } from "luxon";\n' +
+    'import type { TaskScheduleContext, TaskView } from "../../task-view-model";\n' +
+    'import { chineseFont, colors, radius, readingType, spacing } from "../../theme";\n' +
+    'import { AppIcon } from "../AppIcon";\n' +
+    'import { AppButton } from "../ui";\n' +
+    'import { projectTaskCalendar, shiftTaskCalendarMonth, taskCalendarDayLabel, type TaskCalendarDay } from "./task-calendar";\n' +
+    '\n' +
+    'function CalendarDay({ day, current, selected, disabled, onPress }: {\n' +
+    '  day: TaskCalendarDay; current: boolean; selected: boolean; disabled: boolean; onPress(): void;\n' +
+    '}) {\n' +
+    '  const [focused, setFocused] = useState(false);\n' +
+    '  return <Pressable testID={`task-calendar-day-${day.date}`} accessibilityRole="button"\n' +
+    '    accessibilityLabel={`${taskCalendarDayLabel(day)}${current ? "；資料基準日" : ""}${selected ? "；已選取，再按取消日期篩選" : ""}`}\n' +
+    '    accessibilityState={{ selected, disabled }} aria-pressed={selected} aria-disabled={disabled}\n' +
+    '    disabled={disabled} onPress={onPress} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}\n' +
+    '    style={({ pressed }) => [styles.day, selected && styles.selectedDay, focused && styles.focused, disabled && styles.disabled, pressed && !disabled && (selected ? styles.selectedPressed : styles.pressed)]}>\n' +
+    '    <View style={[styles.dayNumber, current && styles.currentDay]}><Text style={[styles.dayText, selected && styles.selectedText]}>{day.day}</Text></View>\n' +
+    '    <View accessible={false} aria-hidden style={styles.dots}>\n' +
+    '      {day.scheduled > 0 ? <View style={[styles.dot, styles.scheduledDot]} /> : null}\n' +
+    '      {day.review > 0 ? <View style={[styles.dot, styles.reviewDot]} /> : null}\n' +
+    '    </View>\n' +
+    '  </Pressable>;\n' +
+    '}\n' +
+    '\n' +
+    'export function TasksCalendar({ items, context, selectedDay, month, disabled, onSelectDay, onChangeMonth }: {\n' +
+    '  items: readonly TaskView[]; context: TaskScheduleContext; selectedDay: string | null;\n' +
+    '  month: string | null; disabled: boolean; onSelectDay(day: string | null): void; onChangeMonth(month: string | null): void;\n' +
+    '}) {\n' +
+    '  const calendar = projectTaskCalendar(items, context, month);\n' +
+    '  const currentLabel = calendar.currentDay ? DateTime.fromISO(calendar.currentDay, { zone: context.timeZone }).toFormat("M月d日") : null;\n' +
+    '  function moveMonth(amount: number) {\n' +
+    '    if (disabled || !calendar.month) return;\n' +
+    '    onChangeMonth(shiftTaskCalendarMonth(calendar.month, amount));\n' +
+    '  }\n' +
+    '  return <View testID="tasks-calendar" style={styles.calendar}>\n' +
+    '    <View style={styles.header}>\n' +
+    '      <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={styles.month}>{calendar.label}</Text>\n' +
+    '      <View style={styles.monthActions}>\n' +
+    '        <Pressable accessibilityRole="button" accessibilityLabel="上一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}\n' +
+    '          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-left" size={20} color={colors.ink} /></Pressable>\n' +
+    '        <Pressable accessibilityRole="button" accessibilityLabel="下一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}\n' +
+    '          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-right" size={20} color={colors.ink} /></Pressable>\n' +
+    '      </View>\n' +
+    '    </View>\n' +
+    '    {calendar.weeks.length ? <View style={styles.grid}>\n' +
+    '      <View accessible={false} aria-hidden style={styles.week}>{["一", "二", "三", "四", "五", "六", "日"].map(day => <Text key={day} style={styles.weekday}>{day}</Text>)}</View>\n' +
+    '      {calendar.weeks.map((week, index) => <View key={index} style={styles.week}>{week.map((day, column) => day\n' +
+    '        ? <CalendarDay key={day.date} day={day} current={calendar.currentDay === day.date} selected={selectedDay === day.date} disabled={disabled} onPress={() => onSelectDay(day.date)} />\n' +
+    '        : <View key={`empty-${column}`} style={styles.emptyDay} />)}</View>)}\n' +
+    '    </View> : <Text style={styles.note}>未有有效的資料日期或時區，請先查看清單。</Text>}\n' +
+    '    <View style={styles.legend}>\n' +
+    '      <View style={styles.legendItem}><View accessible={false} style={[styles.dot, styles.scheduledDot]} /><Text style={styles.note}>待辦／預約</Text></View>\n' +
+    '      <View style={styles.legendItem}><View accessible={false} style={[styles.dot, styles.reviewDot]} /><Text style={styles.note}>待覆核</Text></View>\n' +
+    '    </View>\n' +
+    '    <View style={styles.actions}>\n' +
+    '      {selectedDay ? <AppButton label="取消日期篩選" accessibilityLabel="只取消日期篩選，保留搜尋及原有範圍" variant="quiet" density="compact" disabled={disabled} onPress={() => onSelectDay(null)} /> : null}\n' +
+    '      {calendar.currentDay ? <AppButton label={`回到 ${currentLabel}`} accessibilityLabel={`回到資料基準日所在月份 ${calendar.currentDay}`} variant="quiet" density="compact" disabled={disabled} onPress={() => onChangeMonth(null)} /> : null}\n' +
+    '    </View>\n' +
+    '    {calendar.unconfirmedCount > 0 ? <Text style={styles.warning}>{calendar.unconfirmedCount} 項日期待核對，可從清單範圍選擇查看。</Text> : null}\n' +
+    '  </View>;\n' +
+    '}\n' +
+    '\n' +
+    'const styles = StyleSheet.create({\n' +
+    '  calendar: { width: "100%", maxWidth: 360, minWidth: 0, alignSelf: "flex-start", padding: spacing.md, gap: spacing.sm, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.medium },\n' +
+    '  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.xs },\n' +
+    '  month: { fontFamily: chineseFont, color: colors.ink, fontSize: 16, lineHeight: 24, fontWeight: "700", flexShrink: 1 },\n' +
+    '  monthActions: { flexDirection: "row" }, monthButton: { width: 40, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.small },\n' +
+    '  grid: { gap: 2 }, week: { flexDirection: "row", minWidth: 0 },\n' +
+    '  weekday: { flex: 1, minWidth: 0, textAlign: "center", fontFamily: chineseFont, color: colors.muted, ...readingType.meta, paddingVertical: spacing.xs },\n' +
+    '  day: { flex: 1, minWidth: 0, minHeight: 44, alignItems: "center", justifyContent: "center", paddingVertical: 3, borderWidth: 1, borderColor: "transparent", borderRadius: radius.small },\n' +
+    '  emptyDay: { flex: 1, minWidth: 0 }, dayNumber: { minWidth: 26, height: 26, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "transparent", borderRadius: radius.pill },\n' +
+    '  dayText: { fontFamily: chineseFont, color: colors.ink, fontSize: 14, lineHeight: 20 }, selectedText: { fontWeight: "700" },\n' +
+    '  currentDay: { borderColor: colors.controlOutline }, selectedDay: { backgroundColor: colors.paleTeal, borderColor: colors.ink },\n' +
+    '  focused: { borderColor: colors.ink, borderWidth: 2 }, disabled: { opacity: 0.5 }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },\n' +
+    '  dots: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, height: 8 }, dot: { width: 6, height: 6, borderRadius: radius.pill },\n' +
+    '  scheduledDot: { backgroundColor: colors.ink }, reviewDot: { backgroundColor: colors.statusWarmLine },\n' +
+    '  legend: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.md, rowGap: spacing.xs }, legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },\n' +
+    '  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },\n' +
+    '  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta }, warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta },\n' +
+    '});\n'
+
+      at TestContext.<anonymous> (file:///app/frontend/scripts/task-calendar.test.mts:87:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'import { useState } from "react";\nimport { Pressable, StyleSheet, View } from "react-native";\nimport { Text } from "react-native-paper";\nimport { DateTime } from "luxon";\nimport type { TaskScheduleContext, TaskView } from "../../task-view-model";\nimport { chineseFont, colors, radius, readingType, spacing } from "../../theme";\nimport { AppIcon } from "../AppIcon";\nimport { AppButton } from "../ui";\nimport { projectTaskCalendar, shiftTaskCalendarMonth, taskCalendarDayLabel, type TaskCalendarDay } from "./task-calendar";\n\nfunction CalendarDay({ day, current, selected, disabled, onPress }: {\n  day: TaskCalendarDay; current: boolean; selected: boolean; disabled: boolean; onPress(): void;\n}) {\n  const [focused, setFocused] = useState(false);\n  return <Pressable testID={`task-calendar-day-${day.date}`} accessibilityRole="button"\n    accessibilityLabel={`${taskCalendarDayLabel(day)}${current ? "；資料基準日" : ""}${selected ? "；已選取，再按取消日期篩選" : ""}`}\n    accessibilityState={{ selected, disabled }} aria-pressed={selected} aria-disabled={disabled}\n    disabled={disabled} onPress={onPress} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}\n    style={({ pressed }) => [styles.day, selected && styles.selectedDay, focused && styles.focused, disabled && styles.disabled, pressed && !disabled && (selected ? styles.selectedPressed : styles.pressed)]}>\n    <View style={[styles.dayNumber, current && styles.currentDay]}><Text style={[styles.dayText, selected && styles.selectedText]}>{day.day}</Text></View>\n    <View accessible={false} aria-hidden style={styles.dots}>\n      {day.scheduled > 0 ? <View style={[styles.dot, styles.scheduledDot]} /> : null}\n      {day.review > 0 ? <View style={[styles.dot, styles.reviewDot]} /> : null}\n    </View>\n  </Pressable>;\n}\n\nexport function TasksCalendar({ items, context, selectedDay, month, disabled, onSelectDay, onChangeMonth }: {\n  items: readonly TaskView[]; context: TaskScheduleContext; selectedDay: string | null;\n  month: string | null; disabled: boolean; onSelectDay(day: string | null): void; onChangeMonth(month: string | null): void;\n}) {\n  const calendar = projectTaskCalendar(items, context, month);\n  const currentLabel = calendar.currentDay ? DateTime.fromISO(calendar.currentDay, { zone: context.timeZone }).toFormat("M月d日") : null;\n  function moveMonth(amount: number) {\n    if (disabled || !calendar.month) return;\n    onChangeMonth(shiftTaskCalendarMonth(calendar.month, amount));\n  }\n  return <View testID="tasks-calendar" style={styles.calendar}>\n    <View style={styles.header}>\n      <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={styles.month}>{calendar.label}</Text>\n      <View style={styles.monthActions}>\n        <Pressable accessibilityRole="button" accessibilityLabel="上一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}\n          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-left" size={20} color={colors.ink} /></Pressable>\n        <Pressable accessibilityRole="button" accessibilityLabel="下一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}\n          accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-right" size={20} color={colors.ink} /></Pressable>\n      </View>\n    </View>\n    {calendar.weeks.length ? <View style={styles.grid}>\n      <View accessible={false} aria-hidden style={styles.week}>{["一", "二", "三", "四", "五", "六", "日"].map(day => <Text key={day} style={styles.weekday}>{day}</Text>)}</View>\n      {calendar.weeks.map((week, index) => <View key={index} style={styles.week}>{week.map((day, column) => day\n        ? <CalendarDay key={day.date} day={day} current={calendar.currentDay === day.date} selected={selectedDay === day.date} disabled={disabled} onPress={() => onSelectDay(day.date)} />\n        : <View key={`empty-${column}`} style={styles.emptyDay} />)}</View>)}\n    </View> : <Text style={styles.note}>未有有效的資料日期或時區，請先查看清單。</Text>}\n    <View style={styles.legend}>\n      <View style={styles.legendItem}><View accessible={false} style={[styles.dot, styles.scheduledDot]} /><Text style={styles.note}>待辦／預約</Text></View>\n      <View style={styles.legendItem}><View accessible={false} style={[styles.dot, styles.reviewDot]} /><Text style={styles.note}>待覆核</Text></View>\n    </View>\n    <View style={styles.actions}>\n      {selectedDay ? <AppButton label="取消日期篩選" accessibilityLabel="只取消日期篩選，保留搜尋及原有範圍" variant="quiet" density="compact" disabled={disabled} onPress={() => onSelectDay(null)} /> : null}\n      {calendar.currentDay ? <AppButton label={`回到 ${currentLabel}`} accessibilityLabel={`回到資料基準日所在月份 ${calendar.currentDay}`} variant="quiet" density="compact" disabled={disabled} onPress={() => onChangeMonth(null)} /> : null}\n    </View>\n    {calendar.unconfirmedCount > 0 ? <Text style={styles.warning}>{calendar.unconfirmedCount} 項日期待核對，可從清單範圍選擇查看。</Text> : null}\n  </View>;\n}\n\nconst styles = StyleSheet.create({\n  calendar: { width: "100%", maxWidth: 360, minWidth: 0, alignSelf: "flex-start", padding: spacing.md, gap: spacing.sm, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.medium },\n  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.xs },\n  month: { fontFamily: chineseFont, color: colors.ink, fontSize: 16, lineHeight: 24, fontWeight: "700", flexShrink: 1 },\n  monthActions: { flexDirection: "row" }, monthButton: { width: 40, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.small },\n  grid: { gap: 2 }, week: { flexDirection: "row", minWidth: 0 },\n  weekday: { flex: 1, minWidth: 0, textAlign: "center", fontFamily: chineseFont, color: colors.muted, ...readingType.meta, paddingVertical: spacing.xs },\n  day: { flex: 1, minWidth: 0, minHeight: 44, alignItems: "center", justifyContent: "center", paddingVertical: 3, borderWidth: 1, borderColor: "transparent", borderRadius: radius.small },\n  emptyDay: { flex: 1, minWidth: 0 }, dayNumber: { minWidth: 26, height: 26, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "transparent", borderRadius: radius.pill },\n  dayText: { fontFamily: chineseFont, color: colors.ink, fontSize: 14, lineHeight: 20 }, selectedText: { fontWeight: "700" },\n  currentDay: { borderColor: colors.controlOutline }, selectedDay: { backgroundColor: colors.paleTeal, borderColor: colors.ink },\n  focused: { borderColor: colors.ink, borderWidth: 2 }, disabled: { opacity: 0.5 }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },\n  dots: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, height: 8 }, dot: { width: 6, height: 6, borderRadius: radius.pill },\n  scheduledDot: { backgroundColor: colors.ink }, reviewDot: { backgroundColor: colors.statusWarmLine },\n  legend: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.md, rowGap: spacing.xs }, legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },\n  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },\n  note: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta }, warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta },\n});\n',
+    expected: /無色點不代表當日沒有安排/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at frontend/scripts/task-calendar.test.mts:183:1
+✖ backlog UI keeps remote loading separate and preserves guarded local filter/page state (3.642583ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /清單翻頁不會載入其他資料/. Input:
+
+  'import { useContainerWidth } from "../useContainerWidth";\n' +
+    'import { useEffect, useLayoutEffect, useRef, useState, useId, type ReactNode } from "react";\n' +
+    'import { Platform, Pressable, StyleSheet, View, type ScrollView as NativeScrollView } from "react-native";\n' +
+    'import { Text, TextInput } from "react-native-paper";\n' +
+    'import { DateTime } from "luxon";\n' +
+    'import { currentTaskMetadata, pendingTasks, recentCompletedTasks, taskCompletionLabel, taskScheduleSections, taskScheduleTime, type TasksActions, type TasksViewModel } from "../../task-view-model";\n' +
+    'import type { WriteRecoveryActions } from "../../view-model";\n' +
+    'import { chineseFont, colors, mobileLayout, mobileType, readingType, spacing, workspaceType } from "../../theme";\n' +
+    'import { MotionDetail, MotionDisclosure, MotionList } from "../../motion";\n' +
+    'import { AppIcon } from "../AppIcon";\n' +
+    'import { AppScrollView as ScrollView } from "../AppScrollView";\n' +
+    'import { WriteRecoveryNotice } from "../WriteRecoveryNotice";\n' +
+    'import { ReadStateNotice } from "../ReadStateNotice";\n' +
+    'import { StatusAnnouncement } from "../StatusAnnouncement";\n' +
+    'import { AppButton, AppSelect, AppSelectionTrigger, AppTextField, SectionCard, UnderlineTabs, AppTabPanel } from "../ui";\n' +
+    'import { TaskListRow } from "./TaskListRow";\n' +
+    'import { TaskDetail } from "./TaskDetail";\n' +
+    'import { TaskForm } from "./TaskForm";\n' +
+    'import { taskAssigneeLabel } from "./TaskContent";\n' +
+    'import { TasksCalendar } from "./TasksCalendar";\n' +
+    'import { projectTaskBacklog, toggleTaskCalendarDay, type TaskBacklogFilter } from "./task-calendar";\n' +
+    '\n' +
+    'const backlogFilters: { key: TaskBacklogFilter; label: string }[] = [\n' +
+    '  { key: "near", label: "近期 7 天" }, { key: "earlier", label: "較早未處理" },\n' +
+    '  { key: "later", label: "之後" }, { key: "all", label: "全部" }, { key: "review", label: "待覆核" }, { key: "unconfirmed", label: "時間待核對" },\n' +
+    '];\n' +
+    'const backlogLabels: Record<TaskBacklogFilter, string> = { near: "近期 7 天", earlier: "較早未處理", later: "之後", review: "待覆核", unconfirmed: "時間待核對", all: "全部日期" };\n' +
+    '\n' +
+    'export function TasksView({ model, actions, recovery, previewControls, onAgent, onHistory }: { onAgent(): void; onHistory(): void; model: TasksViewModel; actions: TasksActions; recovery?: WriteRecoveryActions; previewControls?: ReactNode }) {\n' +
+    '  const pageLayout = useContainerWidth();\n' +
+    '  const containerLayout = useContainerWidth();\n' +
+    '  const compact = pageLayout.width < mobileLayout.breakpoint;\n' +
+    '  const [tab, setTab] = useState<"pending" | "completed">("pending");\n' +
+    '  const [filter, setFilter] = useState<TaskBacklogFilter>("near");\n' +
+    '  const [query, setQuery] = useState("");\n' +
+    '  const [page, setPage] = useState(0);\n' +
+    '  const [selectedDay, setSelectedDay] = useState<string | null>(null);\n' +
+    '  const [calendarMonth, setCalendarMonth] = useState<string | null>(null);\n' +
+    '  const [calendarOpen, setCalendarOpen] = useState(false);\n' +
+    '  const tabsId = useId();\n' +
+    '  const [backgroundOpen, setBackgroundOpen] = useState(false);\n' +
+    '  const listReadState = model.readState ?? (model.reading ? "loading" : "ready");\n' +
+    '  const readUnavailable = listReadState === "loading" || listReadState === "error";\n' +
+    '  const loading = model.reading || model.loadingMoreTasks;\n' +
+    '  const previousLoading = useRef(loading);\n' +
+    '  useLayoutEffect(() => { previousLoading.current = loading; }, [loading]);\n' +
+    '  const wide = containerLayout.width >= 840;\n' +
+    '  const scopeKey = `${model.child.id}:${model.access}`;\n' +
+    '  const locked = ["saving", "unknown", "conflict"].includes(model.operation.state);\n' +
+    '  const occupied = locked || !!model.draft || model.reading || readUnavailable;\n' +
+    '  const pending = pendingTasks(model.items);\n' +
+    '  const completed = recentCompletedTasks(model.items);\n' +
+    '  const backlog = projectTaskBacklog(model.items, model.scheduleContext, { filter, query, page, selectedDay }, model.eligibleAssignees);\n' +
+    '  const visible = tab === "completed" ? completed : backlog.items;\n' +
+    '  const sections = tab === "completed" ? [{ id: "completed", label: "最近回報完成", items: visible }]\n' +
+    '    : selectedDay ? [{ id: selectedDay, label: DateTime.fromISO(selectedDay, { zone: model.scheduleContext.timeZone }).setLocale("zh-HK").toFormat("M月d日 cccc"), items: visible }]\n' +
+    '      : taskScheduleSections(visible, model.scheduleContext);\n' +
+    '  const openCount = pending.length;\n' +
+    '  const reviewCount = backlog.counts.review;\n' +
+    '  const timeZoneLabel = model.scheduleContext.timeZone === "Asia/Hong_Kong" ? "香港時間" : model.scheduleContext.timeZone;\n' +
+    '  const showPanel = !!(model.selected || model.draft);\n' +
+    '  const showAside = showPanel || (wide && tab === "pending" && !readUnavailable);\n' +
+    '  const listVisible = wide || !showPanel;\n' +
+    '  const scrollRef = useRef<NativeScrollView>(null);\n' +
+    '  const scrollPosition = useRef(0);\n' +
+    '  const rowRefs = useRef(new Map<string, View>());\n' +
+    '  const listRef = useRef<View>(null);\n' +
+    '  const panelRef = useRef<View>(null);\n' +
+    '  const anchor = useRef<{ id: string | null; position: number; scope: string } | null>(null);\n' +
+    '  const previousPanel = useRef(showPanel);\n' +
+    '  const previousDraft = useRef(model.draft?.key);\n' +
+    '  const restoreFrame = useRef<number | null>(null);\n' +
+    '  const returnState = useRef({ showPanel, wide, scopeKey });\n' +
+    '  returnState.current = { showPanel, wide, scopeKey };\n' +
+    '  useEffect(() => { anchor.current = null; setTab("pending"); }, [scopeKey]);\n' +
+    '  useEffect(() => { setSelectedDay(null); setCalendarMonth(null); setCalendarOpen(false); setFilter("near"); setQuery(""); setPage(0); }, [scopeKey, model.scheduleContext.timeZone]);\n' +
+    '  useEffect(() => { if (page !== backlog.page) setPage(backlog.page); }, [page, backlog.page]);\n' +
+    '  useLayoutEffect(() => () => { if (restoreFrame.current !== null) cancelAnimationFrame(restoreFrame.current); }, []);\n' +
+    '  useLayoutEffect(() => {\n' +
+    '    const entering = !previousPanel.current && showPanel;\n' +
+    '    const returning = previousPanel.current && !showPanel;\n' +
+    '    const editing = !!model.draft && model.draft.key !== previousDraft.current;\n' +
+    '    previousPanel.current = showPanel; previousDraft.current = model.draft?.key;\n' +
+    '    if ((entering || editing || model.access === "lost") && restoreFrame.current !== null) {\n' +
+    '      cancelAnimationFrame(restoreFrame.current); restoreFrame.current = null;\n' +
+    '    }\n' +
+    '    if (model.access === "lost") return;\n' +
+    '    if (!wide && (entering || editing)) {\n' +
+    '      scrollRef.current?.scrollTo({ y: 0, animated: false });\n' +
+    '      if (Platform.OS === "web") (panelRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });\n' +
+    '    }\n' +
+    '    const saved = anchor.current;\n' +
+    '    if (returning && saved?.scope === scopeKey) {\n' +
+    '      if (Platform.OS === "web") {\n' +
+    '        const candidates = [saved.id ? rowRefs.current.get(saved.id) : null, listRef.current];\n' +
+    '        for (const candidate of candidates) {\n' +
+    '          const target = candidate as unknown as HTMLElement | null;\n' +
+    '          if (!target?.isConnected || !target.getClientRects().length || target.getAttribute("aria-disabled") === "true") continue;\n' +
+    '          target.focus({ preventScroll: true });\n' +
+    '          if (document.activeElement === target) break;\n' +
+    '        }\n' +
+    '      }\n' +
+    '      if (!wide) restoreFrame.current = requestAnimationFrame(() => {\n' +
+    '        restoreFrame.current = null;\n' +
+    '        const current = returnState.current;\n' +
+    '        if (!current.showPanel && !current.wide && current.scopeKey === saved.scope) scrollRef.current?.scrollTo({ y: saved.position, animated: false });\n' +
+    '      });\n' +
+    '    }\n' +
+    '  }, [showPanel, model.draft?.key, model.access, scopeKey, wide]);\n' +
+    '  function rememberList(id: string | null) { anchor.current = { id, position: scrollPosition.current, scope: scopeKey }; }\n' +
+    '  function changeFilter(next: TaskBacklogFilter) {\n' +
+    '    if (occupied) return;\n' +
+    '    anchor.current = null; actions.closePanel(); setFilter(next); setSelectedDay(null); setPage(0);\n' +
+    '  }\n' +
+    '  function selectCalendarDay(day: string | null) {\n' +
+    '    if (occupied) return;\n' +
+    '    anchor.current = null; actions.closePanel(); setSelectedDay(current => toggleTaskCalendarDay(current, day)); setPage(0);\n' +
+    '  }\n' +
+    '  const calendar = <TasksCalendar items={pending} context={model.scheduleContext} selectedDay={selectedDay} month={calendarMonth} disabled={occupied}\n' +
+    '    onSelectDay={selectCalendarDay} onChangeMonth={month => { if (!occupied) setCalendarMonth(month); }} />;\n' +
+    '  const readState = loading || listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty";\n' +
+    '  const readMessage = model.reading || listReadState === "loading" ? "正在讀取事項…" : model.loadingMoreTasks ? "正在載入更多事項…" : listReadState === "error" ? "未能讀取事項，請重試。" : !model.online ? "目前離線，已載入內容只供參考；恢復連線後才可提交。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : visible.length ? "" : tab === "pending" ? "沒有符合篩選的事項。" : "暫時沒有已回報完成的事項。";\n' +
+    '  return <View ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={styles.pageScroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) scrollPosition.current = event.nativeEvent.contentOffset.y; }}>\n' +
+    '    <View style={styles.pageHeader}><View style={styles.headerCopy}><Text accessibilityRole="header" style={[styles.pageTitle, compact && mobileType.heading]}>待辦與預約</Text><Text style={styles.description}>跟助手說好安排，在這裏查看及回報</Text></View>\n' +
+    '      {model.access === "editable" ? <View style={styles.headerActions}><AppButton label="請助手安排" density="compact" disabled={occupied} onPress={onAgent} /><AppButton label="手動新增" accessibilityLabel="手動新增共享事項" density="compact" variant="secondary" disabled={occupied} onPress={() => { rememberList(null); actions.startCreate(); }} /></View> : null}\n' +
+    '    </View>\n' +
+    '    <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.stack}>\n' +
+    '      <StatusAnnouncement key={model.child.id} eventKey={model.access} urgent={model.access === "lost"} message={model.access === "lost" ? "孩子權限已失效。任務、提醒、歷史、草稿及待查核原操作已清除。" : model.access === "read_only" ? "目前為唯讀：可以查看共享事項及歷史，不能新增或更改。" : model.access === "editable" ? "已恢復共享事項的編輯權限。" : ""} />\n' +
+    '      {model.access === "read_only" ? '... 14910 more characters
+
+      at TestContext.<anonymous> (file:///app/frontend/scripts/task-calendar.test.mts:189:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'import { useContainerWidth } from "../useContainerWidth";\nimport { useEffect, useLayoutEffect, useRef, useState, useId, type ReactNode } from "react";\nimport { Platform, Pressable, StyleSheet, View, type ScrollView as NativeScrollView } from "react-native";\nimport { Text, TextInput } from "react-native-paper";\nimport { DateTime } from "luxon";\nimport { currentTaskMetadata, pendingTasks, recentCompletedTasks, taskCompletionLabel, taskScheduleSections, taskScheduleTime, type TasksActions, type TasksViewModel } from "../../task-view-model";\nimport type { WriteRecoveryActions } from "../../view-model";\nimport { chineseFont, colors, mobileLayout, mobileType, readingType, spacing, workspaceType } from "../../theme";\nimport { MotionDetail, MotionDisclosure, MotionList } from "../../motion";\nimport { AppIcon } from "../AppIcon";\nimport { AppScrollView as ScrollView } from "../AppScrollView";\nimport { WriteRecoveryNotice } from "../WriteRecoveryNotice";\nimport { ReadStateNotice } from "../ReadStateNotice";\nimport { StatusAnnouncement } from "../StatusAnnouncement";\nimport { AppButton, AppSelect, AppSelectionTrigger, AppTextField, SectionCard, UnderlineTabs, AppTabPanel } from "../ui";\nimport { TaskListRow } from "./TaskListRow";\nimport { TaskDetail } from "./TaskDetail";\nimport { TaskForm } from "./TaskForm";\nimport { taskAssigneeLabel } from "./TaskContent";\nimport { TasksCalendar } from "./TasksCalendar";\nimport { projectTaskBacklog, toggleTaskCalendarDay, type TaskBacklogFilter } from "./task-calendar";\n\nconst backlogFilters: { key: TaskBacklogFilter; label: string }[] = [\n  { key: "near", label: "近期 7 天" }, { key: "earlier", label: "較早未處理" },\n  { key: "later", label: "之後" }, { key: "all", label: "全部" }, { key: "review", label: "待覆核" }, { key: "unconfirmed", label: "時間待核對" },\n];\nconst backlogLabels: Record<TaskBacklogFilter, string> = { near: "近期 7 天", earlier: "較早未處理", later: "之後", review: "待覆核", unconfirmed: "時間待核對", all: "全部日期" };\n\nexport function TasksView({ model, actions, recovery, previewControls, onAgent, onHistory }: { onAgent(): void; onHistory(): void; model: TasksViewModel; actions: TasksActions; recovery?: WriteRecoveryActions; previewControls?: ReactNode }) {\n  const pageLayout = useContainerWidth();\n  const containerLayout = useContainerWidth();\n  const compact = pageLayout.width < mobileLayout.breakpoint;\n  const [tab, setTab] = useState<"pending" | "completed">("pending");\n  const [filter, setFilter] = useState<TaskBacklogFilter>("near");\n  const [query, setQuery] = useState("");\n  const [page, setPage] = useState(0);\n  const [selectedDay, setSelectedDay] = useState<string | null>(null);\n  const [calendarMonth, setCalendarMonth] = useState<string | null>(null);\n  const [calendarOpen, setCalendarOpen] = useState(false);\n  const tabsId = useId();\n  const [backgroundOpen, setBackgroundOpen] = useState(false);\n  const listReadState = model.readState ?? (model.reading ? "loading" : "ready");\n  const readUnavailable = listReadState === "loading" || listReadState === "error";\n  const loading = model.reading || model.loadingMoreTasks;\n  const previousLoading = useRef(loading);\n  useLayoutEffect(() => { previousLoading.current = loading; }, [loading]);\n  const wide = containerLayout.width >= 840;\n  const scopeKey = `${model.child.id}:${model.access}`;\n  const locked = ["saving", "unknown", "conflict"].includes(model.operation.state);\n  const occupied = locked || !!model.draft || model.reading || readUnavailable;\n  const pending = pendingTasks(model.items);\n  const completed = recentCompletedTasks(model.items);\n  const backlog = projectTaskBacklog(model.items, model.scheduleContext, { filter, query, page, selectedDay }, model.eligibleAssignees);\n  const visible = tab === "completed" ? completed : backlog.items;\n  const sections = tab === "completed" ? [{ id: "completed", label: "最近回報完成", items: visible }]\n    : selectedDay ? [{ id: selectedDay, label: DateTime.fromISO(selectedDay, { zone: model.scheduleContext.timeZone }).setLocale("zh-HK").toFormat("M月d日 cccc"), items: visible }]\n      : taskScheduleSections(visible, model.scheduleContext);\n  const openCount = pending.length;\n  const reviewCount = backlog.counts.review;\n  const timeZoneLabel = model.scheduleContext.timeZone === "Asia/Hong_Kong" ? "香港時間" : model.scheduleContext.timeZone;\n  const showPanel = !!(model.selected || model.draft);\n  const showAside = showPanel || (wide && tab === "pending" && !readUnavailable);\n  const listVisible = wide || !showPanel;\n  const scrollRef = useRef<NativeScrollView>(null);\n  const scrollPosition = useRef(0);\n  const rowRefs = useRef(new Map<string, View>());\n  const listRef = useRef<View>(null);\n  const panelRef = useRef<View>(null);\n  const anchor = useRef<{ id: string | null; position: number; scope: string } | null>(null);\n  const previousPanel = useRef(showPanel);\n  const previousDraft = useRef(model.draft?.key);\n  const restoreFrame = useRef<number | null>(null);\n  const returnState = useRef({ showPanel, wide, scopeKey });\n  returnState.current = { showPanel, wide, scopeKey };\n  useEffect(() => { anchor.current = null; setTab("pending"); }, [scopeKey]);\n  useEffect(() => { setSelectedDay(null); setCalendarMonth(null); setCalendarOpen(false); setFilter("near"); setQuery(""); setPage(0); }, [scopeKey, model.scheduleContext.timeZone]);\n  useEffect(() => { if (page !== backlog.page) setPage(backlog.page); }, [page, backlog.page]);\n  useLayoutEffect(() => () => { if (restoreFrame.current !== null) cancelAnimationFrame(restoreFrame.current); }, []);\n  useLayoutEffect(() => {\n    const entering = !previousPanel.current && showPanel;\n    const returning = previousPanel.current && !showPanel;\n    const editing = !!model.draft && model.draft.key !== previousDraft.current;\n    previousPanel.current = showPanel; previousDraft.current = model.draft?.key;\n    if ((entering || editing || model.access === "lost") && restoreFrame.current !== null) {\n      cancelAnimationFrame(restoreFrame.current); restoreFrame.current = null;\n    }\n    if (model.access === "lost") return;\n    if (!wide && (entering || editing)) {\n      scrollRef.current?.scrollTo({ y: 0, animated: false });\n      if (Platform.OS === "web") (panelRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });\n    }\n    const saved = anchor.current;\n    if (returning && saved?.scope === scopeKey) {\n      if (Platform.OS === "web") {\n        const candidates = [saved.id ? rowRefs.current.get(saved.id) : null, listRef.current];\n        for (const candidate of candidates) {\n          const target = candidate as unknown as HTMLElement | null;\n          if (!target?.isConnected || !target.getClientRects().length || target.getAttribute("aria-disabled") === "true") continue;\n          target.focus({ preventScroll: true });\n          if (document.activeElement === target) break;\n        }\n      }\n      if (!wide) restoreFrame.current = requestAnimationFrame(() => {\n        restoreFrame.current = null;\n        const current = returnState.current;\n        if (!current.showPanel && !current.wide && current.scopeKey === saved.scope) scrollRef.current?.scrollTo({ y: saved.position, animated: false });\n      });\n    }\n  }, [showPanel, model.draft?.key, model.access, scopeKey, wide]);\n  function rememberList(id: string | null) { anchor.current = { id, position: scrollPosition.current, scope: scopeKey }; }\n  function changeFilter(next: TaskBacklogFilter) {\n    if (occupied) return;\n    anchor.current = null; actions.closePanel(); setFilter(next); setSelectedDay(null); setPage(0);\n  }\n  function selectCalendarDay(day: string | null) {\n    if (occupied) return;\n    anchor.current = null; actions.closePanel(); setSelectedDay(current => toggleTaskCalendarDay(current, day)); setPage(0);\n  }\n  const calendar = <TasksCalendar items={pending} context={model.scheduleContext} selectedDay={selectedDay} month={calendarMonth} disabled={occupied}\n    onSelectDay={selectCalendarDay} onChangeMonth={month => { if (!occupied) setCalendarMonth(month); }} />;\n  const readState = loading || listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty";\n  const readMessage = model.reading || listReadState === "loading" ? "正在讀取事項…" : model.loadingMoreTasks ? "正在載入更多事項…" : listReadState === "error" ? "未能讀取事項，請重試。" : !model.online ? "目前離線，已載入內容只供參考；恢復連線後才可提交。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : visible.length ? "" : tab === "pending" ? "沒有符合篩選的事項。" : "暫時沒有已回報完成的事項。";\n  return <View ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={styles.pageScroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) scrollPosition.current = event.nativeEvent.contentOffset.y; }}>\n    <View style={styles.pageHeader}><View style={styles.headerCopy}><Text accessibilityRole="header" style={[styles.pageTitle, compact && mobileType.heading]}>待辦與預約</Text><Text style={styles.description}>跟助手說好安排，在這裏查看及回報</Text></View>\n      {model.access === "editable" ? <View style={styles.headerActions}><AppButton label="請助手安排" density="compact" disabled={occupied} onPress={onAgent} /><AppButton label="手動新增" accessibilityLabel="手動新增共享事項" density="compact" variant="secondary" disabled={occupied} onPress={() => { rememberList(null); actions.startCreate(); }} /></View> : null}\n    </View>\n    <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.stack}>\n      <StatusAnnouncement key={model.child.id} eventKey={model.access} urgent={model.access === "lost"} message={model.access === "lost" ? "孩子權限已失效。任務、提醒、歷史、草稿及待查核原操作已清除。" : model.access === "read_only" ? "目前為唯讀：可以查看共享事項及歷史，不能新增或更改。" : model.access === "editable" ? "已恢復共享事項的編輯權限。" : ""} />\n      {model.access === "read_only" ? '... 14910 more characters,
+    expected: /清單翻頁不會載入其他資料/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at frontend/src/production/scope.test.mts:1:1
+✖ frontend/src/production/scope.test.mts (186.504905ms)
+  'test failed'
+
+test at tests/child-selection.test.ts:1:1
+✖ tests/child-selection.test.ts (209.498123ms)
+  'test failed'

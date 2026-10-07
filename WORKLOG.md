@@ -1481,3 +1481,9 @@
 - 必要離線測試及型別檢查、原始失敗／局部重跑與未驗項見 [QA_CHILD_SELECTION_CHECKS](artifacts/verification/QA_CHILD_SELECTION_CHECKS.json)。首次 57／61 通過；兩檔補 transform-types 後 15 項通過，兩個 PR #98 舊文案斷言沒有改產品迎合；任務投影 4 項、歷史 loading 2 項通過，frontend typecheck exit 0。
 - 成長讀取只做現有 runtime allowlist／migration metadata 核對，不讀家庭資料：API healthy、Agent enabled、017／027 均存在；growth／concerns authority 格式相同。缺 dot 已有 QA 的去識別化 HTTP status／error.code，根因未確認，沒有擅改功能或 DB。助手提醒未接通不屬本輪。
 - B 主責，權重 2，B 70%／C 20%／A 10%；B 客戶端、C Server／現場診斷、A 統籌，責任份額不代表個人人手或實測工時。共用 AI 在使用者 A 統籌下實作及執行離線測試；人工 QA 由 dot 接手。只準備 draft PR，合併／部署須等待後續明確派遣。
+
+
+- QA-POST-RELEASE 追溯增補：兩項失敗的 `task-calendar.test.mts` blob 在 pre-#98、#98、#99 及初稿均相同；#98 移除月曆冗餘說明、縮短 load-more 範圍文案，#99 沒改相關元件／測試。pre-#98 元件快照的兩個原斷言通過；本輪只更新舊預期，兩項局部重跑通過，產品檔案未再改動。四份原始必要測試 log 及新增局部證據已去敏納入 commit，原始失敗保留。
+- 沿既有部署連線只查 2026-10-07 02:18–02:25 UTC 的 Web／API Docker logs，均 0 行；現有 Caddy 無 access log，API 沒有逐請求 status／error.code 日誌，不能推定請求未發生或判定根因。loader 是兩個 growth／concerns GET 的 Promise.all，HTTP、schema 或 authority／canManage 不一致皆可導致目前 error 狀態。最小診斷是由既有合成 QA Network 只取 status／allowlist code／失敗類別；若介面做不到，暫時 Web 診斷須另行 review 及明確部署授權。未重放 authenticated API、改 logging 設定／權限或輸出 payload／身份資料。[去識別化證據](artifacts/verification/QA_CHILD_SELECTION/growth-log-window.json)。
+
+- 獨立審查補正同一歷史空狀態邊界：首稿只防 loading，HTTP／解析失敗及未讀取仍可能冒稱首版；首稿 version 2＋空 history 的「settled」測試預期亦不正確。現已由 owner 標示 unread／ready／error，只有成功讀取且 current.version=1 的空頁才宣稱沒有舊版；version 2 空頁仍待核對。失敗在 detail 顯示重試、保留較早頁原 cursor／已載入修訂，重試成功清除 error，不留下 list 的失敗訊息。7 項局部測試直接執行實際 history request 函數及 detail render，frontend typecheck 通過；没有全面重跑或部署。

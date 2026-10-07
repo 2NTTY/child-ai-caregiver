@@ -1,0 +1,27 @@
+(node:13) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ production scope uses server, stable identity, generation, child and role, and gates logout (6.692071ms)
+✔ child change releases local photo resources and identity uncertainty conceals private projections (4.360118ms)
+✔ unconnected home feeds remain unavailable and logout unknown never exposes old identity (0.817181ms)
+✔ production original decision requires reread and renewed sharing, then reuses exact input (1.430898ms)
+(node:14) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ fresh controller restores B before any private read and persists only navigation IDs (2.376457ms)
+✔ ProductionOwner's first non-null child scope is B, never A (6.230441ms)
+✔ account and endpoint preferences stay isolated without generation keys (0.35127ms)
+✔ authoritative missing mismatch falls back before reading a child (0.26023ms)
+✔ authoritative workspace mismatch falls back before reading a child (0.194155ms)
+✔ an authoritative empty child list clears an inaccessible hint (0.217463ms)
+✔ temporary list or auth failure preserves B until a successful retry (0.387173ms)
+✔ late child list from A cannot restore or rewrite navigation after switching to B's account (1.171219ms)
+✔ corrupt content, disabled storage and throwing ports do not prevent login (0.698902ms)
+✔ cancelled logout and disposal keep B; confirmed logout clears only its account (0.446677ms)
+✔ unknown logout never clears the navigation hint (0.419449ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 351.886623

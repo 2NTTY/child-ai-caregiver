@@ -1,0 +1,14 @@
+(node:13) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ complete uses the confirmed Server transition time without loading history (34.590039ms)
+✔ cancel uses the confirmed Server transition time without loading history (0.391039ms)
+✔ opposing terminal write clears dates; resolve supplies its own confirmed time (0.104377ms)
+✔ matching revision is authoritative, and invalid or scheduled timestamps never create a terminal date (0.450848ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 190.239063

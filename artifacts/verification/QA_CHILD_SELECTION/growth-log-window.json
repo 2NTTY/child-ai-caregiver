@@ -1,0 +1,33 @@
+{
+  "window": {
+    "since": "2026-10-07T02:18:00Z",
+    "until": "2026-10-07T02:25:00Z"
+  },
+  "requests": [
+    "GET /api/children/:childId/growth",
+    "GET /api/children/:childId/concerns"
+  ],
+  "loader": "Promise.all, React Query retry:false; strict page validation; authorityVersion and canManage must match.",
+  "liveLogRead": {
+    "web": {
+      "image": "yuban-int-web:9c088c8",
+      "loggingDriver": "json-file",
+      "logReadSucceeded": true,
+      "windowLogLines": 0,
+      "accessLogDirectivePresent": false
+    },
+    "api": {
+      "image": "yuban-int-api:053658b",
+      "loggingDriver": "json-file",
+      "logReadSucceeded": true,
+      "windowLogLines": 0
+    }
+  },
+  "status": "Existing logs do not contain request status/error.code; root cause remains unconfirmed.",
+  "minimalNext": "Inspect only the two requests from the existing synthetic QA browser Network panel: HTTP status and allowlisted error.code; if both succeed, record only validation failure category or authority/canManage mismatch booleans. No request replay by this helper; no identifiers, cookies, response payloads or raw HAR export.",
+  "fallbackProposalOnly": "If the existing browser cannot provide Network metadata, a separately authorized temporary Web diagnostic can emit endpoint category, status, allowlisted code and schema/authority failure category only. It would require a reviewed code change and Web deployment; none performed.",
+  "requestReplayed": false,
+  "configurationChanged": false,
+  "payloadExported": false,
+  "newPermissions": false
+}

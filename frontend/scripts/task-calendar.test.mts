@@ -84,7 +84,7 @@ test("calendar JSX preserves button semantics, lock guards and loaded-only prese
   assert.match(calendar, /aria-pressed=\{selected\}/);
   assert.match(calendar, /taskCalendarDayLabel\(day\)/);
   assert.match(calendar, /disabled=\{disabled\}/);
-  assert.match(calendar, /無色點不代表當日沒有安排/);
+  assert.match(calendar, /calendar\.unconfirmedCount > 0/);
   assert.match(view, /items=\{pending\} context=\{model.scheduleContext\}/);
   assert.match(view, /function selectCalendarDay\(day: string \| null\) \{\s+if \(occupied\) return;/);
   for (const [fileName, source] of [["TasksCalendar.tsx", calendar], ["TasksView.tsx", view]]) {
@@ -186,7 +186,7 @@ test("backlog UI keeps remote loading separate and preserves guarded local filte
   assert.match(view, /projectTaskBacklog\(model.items, model.scheduleContext/);
   assert.match(view, /items=\{pending\} context=\{model.scheduleContext\}/);
   assert.match(view, /onPress=\{actions.loadMoreTasks\}/);
-  assert.match(view, /清單翻頁不會載入其他資料/);
+  assert.match(view, /仍有事項未載入；月曆、搜尋及數目只包括已載入事項/);
   assert.match(view, /setPage\(backlog.page [+-] 1\)/);
   assert.match(view, /rememberList\(task.id\); actions.selectTask\(task.id\)/);
   assert.match(view, /scrollTo\(\{ y: saved.position, animated: false \}\)/);

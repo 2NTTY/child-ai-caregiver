@@ -16,8 +16,8 @@
     },
     {
       "issue": "first-version claim while correction history loads",
-      "cause": "Empty history during loading was rendered as a confirmed first/oldest version.",
-      "fix": "Show loading and withhold oldest-version claim until history loading settles."
+      "cause": "Loading, failed and unread empty arrays were rendered as confirmed first/oldest history. The original added settled-empty test used current version 2 and missed this error boundary.",
+      "fix": "Explicit unread/ready/error history state, local error and same-page retry. Only successful version-1 empty history confirms there are no earlier versions; version-2 empty remains unconfirmed. Older-page failure retains revisions/cursor; no stale list-error claim after retry."
     }
   ],
   "validation": {
@@ -45,9 +45,19 @@
       "evidence": "QA_CHILD_SELECTION/task-projection-tests.log"
     },
     "historyLoading": {
-      "tests": 2,
-      "passed": 2,
-      "evidence": "QA_CHILD_SELECTION/focused-tests.log"
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "evidence": "QA_CHILD_SELECTION/care-history-tests.log",
+      "coverage": [
+        "loading",
+        "successful first-version empty",
+        "unread or empty version 2",
+        "initial/older error and offline retry guards",
+        "actual owner HTTP and parse error, successful retry",
+        "older-page failure preserves revisions and cursor"
+      ],
+      "supersedes": "The initial 2 render tests are retained in focused-tests.log; the version-2 settled-empty expectation was incorrect and has been replaced."
     },
     "frontendTypecheck": {
       "exitCode": 0,
@@ -57,7 +67,38 @@
     "realModelCalls": 0,
     "notificationsSent": 0,
     "familyDataRead": false,
-    "databaseMutation": false
+    "databaseMutation": false,
+    "calendarExpectations": {
+      "prePR98Commit": "f2aa299d418c10586e99260ef36685619dbb67b2",
+      "originalTestBlob": "2a532cbae8a1d3a673efe53d993b6f0e51eb2ff0",
+      "originalTestBlobUnchangedAt": [
+        "e3060e2",
+        "9c088c8",
+        "b7b80ce"
+      ],
+      "prePR98": {
+        "tests": 2,
+        "passed": 2,
+        "evidence": "QA_CHILD_SELECTION/calendar-before-pr98.log"
+      },
+      "baseline9c088c8": {
+        "tests": 2,
+        "failed": 2,
+        "evidence": "QA_CHILD_SELECTION/focused-tests.log"
+      },
+      "updated": {
+        "tests": 2,
+        "passed": 2,
+        "evidence": "QA_CHILD_SELECTION/calendar-expectations-tests.log"
+      },
+      "introducedBy": "PR #98 (e3060e2); PR #99 changes none of these three files.",
+      "tests": [
+        "calendar JSX preserves button semantics, lock guards and loaded-only presentation",
+        "backlog UI keeps remote loading separate and preserves guarded local filter/page state"
+      ],
+      "change": "Only obsolete source-text expectations updated; product source unchanged."
+    },
+    "logsCommitted": true
   },
   "growthDiagnosis": {
     "status": "not_fixed_root_cause_unconfirmed",
@@ -70,13 +111,13 @@
       "familyDataRead": false
     },
     "confirmed": "Growth and concerns share storage_epoch:access_version authority. Both are joined with Promise.all; either request or schema validation failure prevents page readiness and affects the home feed.",
-    "needed": "Redacted HTTP status/error.code or schema/authority mismatch from dot existing QA; no cookie, child identifiers or family response bodies.",
-    "excluded": "Service disabled and migrations 017/027 missing. Assistant reminders remain unconnected and out of scope."
+    "needed": "Existing logs lack request metadata. Minimal next step is sanitized Network diagnostics from the existing synthetic QA session, or a separately reviewed/authorized temporary Web-only diagnostic deployment.",
+    "excluded": "Service disabled and migrations 017/027 missing. Assistant reminders remain unconnected and out of scope.",
+    "logWindowEvidence": "QA_CHILD_SELECTION/growth-log-window.json"
   },
   "remaining": [
     "Independent dot UI QA, draft review, separate merge/deploy authorization.",
-    "Two unrelated baseline task-calendar source-text assertions remain failing.",
-    "Growth failure lacks decisive sanitized HTTP metadata."
+    "Growth root cause unconfirmed: existing logs lack status/error.code."
   ],
   "responsibility": {
     "owner": "B",
