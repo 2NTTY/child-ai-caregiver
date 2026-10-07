@@ -228,6 +228,7 @@ export interface CareRecordsViewModel {
   review?: CareReviewProjection;
   list: {
     state: CareListState;
+    hasSnapshot?: boolean;
     records: CareRecordView[];
     activeQuery: string;
     activeKind: CareFilter;

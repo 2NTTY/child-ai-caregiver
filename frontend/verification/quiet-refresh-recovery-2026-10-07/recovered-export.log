@@ -1,0 +1,63 @@
+Expo Autolinking module resolution enabled
+Starting Metro Bundler
+
+Static rendering is enabled. Learn more: https://docs.expo.dev/router/web/static-rendering/
+| (node:4) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:4) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:4) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:4) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:4) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:4) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+λ Bundled 27238ms ../fix_quiet_refresh_recovery_20261007/node_modules/expo/node_modules/@expo/cli/node_modules/@expo/router-server/node/render.js (1995 modules)
+Web Bundled 27794ms ../fix_quiet_refresh_recovery_20261007/node_modules/expo-router/entry.js (1964 modules)
+
+› web bundles (4):
+_expo/static/css/appScrollView-6f986a3ecd1fe2401851b9bfaecc47d6.css (731B)
+_expo/static/css/overlayscrollbars-324d68570742a2024c1752a5bda2d127.css (14KB)
+_expo/static/css/paperMotion-6434b3e3c8b5092feeac23f391cbd7d2.css (210B)
+_expo/static/js/web/entry-8a425f0b0a81b43b5cd4abccdb687503.js (5MB)
+
+› Static routes (35):
+/care (34KB)
+/chat (34KB)
+/more (34KB)
+/login (34KB)
+/guide (34KB)
+/ (index) (34KB)
+/tasks (34KB)
+/family (34KB)
+/growth (34KB)
+/memory (34KB)
+/photos (34KB)
+/contact (34KB)
+/history (34KB)
+/profile (34KB)
+/sources (34KB)
+/summary (34KB)
+/_sitemap (31KB)
+/settings (34KB)
+/+not-found (31KB)
+/(dashboard)/care (34KB)
+/(dashboard)/chat (34KB)
+/(dashboard)/more (34KB)
+/(dashboard)/guide (34KB)
+/(dashboard) (34KB)
+/(dashboard)/tasks (34KB)
+/(dashboard)/family (34KB)
+/(dashboard)/growth (34KB)
+/(dashboard)/memory (34KB)
+/(dashboard)/photos (34KB)
+/(dashboard)/contact (34KB)
+/(dashboard)/history (34KB)
+/(dashboard)/profile (34KB)
+/(dashboard)/sources (34KB)
+/(dashboard)/summary (34KB)
+/(dashboard)/settings (34KB)
+
+Exported: ../dist-recovered

@@ -80,6 +80,9 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   const openRecord = (id: string) => { if (occupied) return; setRecordOpen(true); focusRequested.current = true; actions.openRecord(id); };
   const changeTab = (next: CareReviewTab) => { if (occupied) return; actions.closePanel(); setTab(next); setRecordOpen(false); setSelectedId(null); };
   return <View ref={layout.ref} onLayout={layout.onLayout} style={s.workspace} testID={history ? "care-review-history" : "care-review-gate"}>
+    {history && review.state === "ready" && (model.list.state === "error" || model.list.state === "stale") ? <ReadStateNotice state={model.list.hasSnapshot ? "stale" : "error"} message={model.list.message ?? "未能更新記錄，請重試。"}>
+      <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} />
+    </ReadStateNotice> : null}
     {review.state === "ready" && review.notice ? <Text accessibilityLiveRegion="polite" style={s.notice}>{review.notice}</Text> : null}
     {history ? <View style={s.heading}><Text accessibilityRole="header" style={s.title}>{olderOnly ? "較早的核對記錄" : "核對記錄"}</Text><Text style={s.meta}>寫入結果與核對狀態會保留；移到歷史不會清除待確認事項。</Text></View>
       : <UnderlineTabs id={tabsId} label="記錄分類" items={[{ key: "pending", label: review.state === "ready" ? `待確認 ${window.pendingCount}` : "待確認" }, { key: "recorded", label: "最近已記錄" }]} value={tab} onChange={changeTab} />}
@@ -97,7 +100,9 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
         </View> : null}
         {!history && window.older.length ? <View style={s.older}><Text style={s.meta}>近期保留最多 10 頁；較早的 {window.olderPendingCount} 項待確認仍未處理。</Text>
           {window.olderPendingCount && onOlderPending ? <AppButton label="查看較早待確認" density="compact" variant="secondary" onPress={onOlderPending} disabled={occupied} /> : onHistory ? <AppButton label="查看較早記錄" density="compact" variant="secondary" onPress={onHistory} disabled={occupied} /> : null}</View> : null}
-        {review.state !== "ready" ? <ReadStateNotice state={review.state === "loading" ? "loading" : review.state === "error" ? "error" : "unavailable"} title={review.state === "loading" ? "正在讀取核對記錄…" : review.state === "error" ? "未能讀取核對記錄，請重試" : "核對記錄暫不可用"} message={review.state === "unavailable" ? review.notice ?? (model.access === "lost" ? "目前沒有查看這個孩子的權限。" : "暫未取得這個孩子的核對記錄。") : ""} /> : !items.length ? <ReadStateNotice state="empty" message={filtered ? "沒有符合篩選的核對記錄" : history ? "暫無核對記錄" : tab === "pending" ? window.olderPendingCount || review.hasMore ? "近期暫無待確認記錄" : "暫無待確認記錄" : "暫無最近已記錄內容"}>
+        {review.state !== "ready" ? <ReadStateNotice state={review.state === "loading" ? "loading" : review.state === "error" ? "error" : "unavailable"} title={review.state === "loading" ? "正在讀取核對記錄…" : review.state === "error" ? "未能讀取核對記錄，請重試" : "核對記錄暫不可用"} message={review.state === "unavailable" ? review.notice ?? (model.access === "lost" ? "目前沒有查看這個孩子的權限。" : "暫未取得這個孩子的核對記錄。") : ""}>
+          {history && model.access !== "lost" && (model.list.state === "error" || model.list.state === "stale") ? <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} /> : null}
+        </ReadStateNotice> : !items.length ? <ReadStateNotice state="empty" message={filtered ? "沒有符合篩選的核對記錄" : history ? "暫無核對記錄" : tab === "pending" ? window.olderPendingCount || review.hasMore ? "近期暫無待確認記錄" : "暫無待確認記錄" : "暫無最近已記錄內容"}>
           {filtered && searchText === undefined ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied} onPress={() => { if (occupied) return; setLocalQuery(""); setSourceKey("all"); setStatus("all"); }} /> : null}
         </ReadStateNotice> : <View style={s.list}>
           {sections.filter(section => section.items.length).map(section => <View key={section.key} style={s.groupSection}>

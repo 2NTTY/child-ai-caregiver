@@ -4,6 +4,7 @@ import { Text } from "react-native-paper";
 import { useProduction } from "./ProductionProvider";
 import { AgentInboxView } from "../components/agent/AgentInboxView";
 import { AgentRunView } from "../components/agent/AgentRunView";
+import { ReadStateNotice } from "../components/ReadStateNotice";
 import { AppDialog } from "../components/AppDialog";
 import { AppScrollView } from "../components/AppScrollView";
 import { locateCitationSource } from "../components/chat/locateCitationSource";
@@ -40,12 +41,12 @@ export function AgentConversation({ visible, onDismiss, onOpenSettings, onReload
           <AppButton label="重新讀取本次收據" variant="quiet" disabled={!authorization.online || receipt?.state === "loading"} onPress={() => authorizationActions.readReceipts(run.id, true)} />
         </SectionCard> : null}
         <SectionCard><SectionHeader title="待確認候選" density="compact" subtitle="每頁 20 項，包含過期事項；不受聊天歷史範圍限制。" />
-          <AppButton label="讀取待確認候選" variant="quiet" loading={agentPending.state === "loading"} disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"} onPress={() => readAgentPending()} />
+          {agentPending.state === "failed" ? <AppButton label="重新讀取待確認候選" variant="quiet" disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"} onPress={() => readAgentPending()} /> : null}
           {agentPending.state === "idle" ? <Text style={styles.label}>{agentModel.online ? "待確認候選尚未讀取；等候目前操作完成後會自動讀取。" : "目前離線，待確認候選尚未核對。"}</Text> : null}
-          {agentPending.state === "loading" ? <Text style={styles.label}>正在讀取待確認候選…</Text> : null}
+          {agentPending.state === "loading" ? <ReadStateNotice state="loading" refreshing={!!agentPending.hasSnapshot} message="正在讀取待確認候選…" /> : null}
           {agentPending.state === "denied" ? <Text style={styles.label}>目前沒有權限查看這個孩子的待確認候選。</Text> : null}
-          {agentPending.state === "failed" ? <Text style={styles.label}>未能讀取候選，原清單已隱藏。</Text> : null}
-          {agentPending.state === "ready" ? agentPending.entries.length ? agentPending.entries.map(entry => <View key={entry.proposal.id} style={styles.receipt}>
+          {agentPending.state === "failed" ? <Text style={styles.label}>{agentPending.hasSnapshot ? "未能更新，仍顯示上次讀取的候選。" : "未能讀取候選，請重試。"}</Text> : null}
+          {agentPending.state === "ready" || agentPending.hasSnapshot ? agentPending.entries.length ? agentPending.entries.map(entry => <View key={entry.proposal.id} style={styles.receipt}>
             <Text style={styles.label}>{entry.proposal.title} · {entry.proposal.status === "expired" || proposalExpired(entry.proposal) ? "已過期" : agentProposalLabels[entry.proposal.status]}</Text>
             <Text style={styles.label}>建立：{agentTime(entry.proposal.createdAt)} · 版本 {entry.proposal.version}</Text>
             <AppButton label="核對原運行與候選" variant="quiet" disabled={!!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || !agentModel.online} onPress={() => selectAgentRun(entry.runId)} />

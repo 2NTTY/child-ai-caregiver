@@ -1,0 +1,21 @@
+/workspace/shared/fix_quiet_refresh_recovery_20261007/node_modules/expo/node_modules/@expo/cli/build/src/utils/errors.js:130
+    throw error;
+    ^
+
+Error: ENOENT: no such file or directory, mkdir '/home/agent/.expo'
+    at Object.mkdirSync (node:fs:1411:26)
+    at write (/workspace/shared/fix_quiet_refresh_recovery_20261007/node_modules/@expo/json-file/build/JsonFile.js:228:27)
+    at setSync (/workspace/shared/fix_quiet_refresh_recovery_20261007/node_modules/@expo/json-file/build/JsonFile.js:276:12)
+    at JsonFile.set (/workspace/shared/fix_quiet_refresh_recovery_20261007/node_modules/@expo/json-file/build/JsonFile.js:108:16)
+    at getAnonymousId (/workspace/shared/fix_quiet_refresh_recovery_20261007/node_modules/expo/node_modules/@expo/cli/build/src/api/user/UserSettings.js:191:18)
+    at new Telemetry (/workspace/shared/fix_quiet_refresh_recovery_20261007/node_modules/expo/node_modules/@expo/cli/build/src/utils/telemetry/Telemetry.js:32:66)
+    at getTelemetry (/workspace/shared/fix_quiet_refresh_recovery_20261007/node_modules/expo/node_modules/@expo/cli/build/src/utils/telemetry/index.js:43:21)
+    at recordCommand (/workspace/shared/fix_quiet_refresh_recovery_20261007/node_modules/expo/node_modules/@expo/cli/build/src/utils/telemetry/index.js:64:26)
+    at /workspace/shared/fix_quiet_refresh_recovery_20261007/node_modules/expo/node_modules/@expo/cli/build/bin/cli:274:9 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'mkdir',
+  path: '/home/agent/.expo'
+}
+
+Node.js v24.19.0

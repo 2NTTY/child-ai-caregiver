@@ -83,7 +83,7 @@ test('saved-record true empty hides tools; filtered empty keeps tools and origin
   label(tree, '清除篩選').props.onPress(); assert.deepEqual(calls, [['', 'all']]);
   for (const state of ['loading', 'error', 'stale']) {
     model.list.state = state; model.list.message = 'Synthetic read status'; tree = render({ model, actions });
-    assert.equal(type(tree, 'ReadStateNotice').props.state, state);
+    assert.equal(type(tree, 'ReadStateNotice').props.state, state === 'stale' ? 'unavailable' : state);
     assert.equal(type(tree, 'ReadStateNotice').props.message, 'Synthetic read status');
   }
 });
@@ -154,4 +154,33 @@ test('task general reminder explanation is removed while item-level delivery and
   const detail = readFileSync(path.join(root, 'src/components/tasks/TaskDetail.tsx'), 'utf8');
   assert.ok(!view.includes('提醒說明')); assert.ok(!view.includes('本頁沒有發送通知'));
   assert.ok(detail.includes('提醒處理結果未確定')); assert.ok(detail.includes('外部通知送達仍須另行核對'));
+});
+
+
+test('confirmed empty Care remains quiet on refresh, while a cold offline read never becomes empty', () => {
+  const render = renderer('src/components/care/CareSavedRecordsView.tsx', '__body', {}, '\nmodule.exports.__body = CareSavedRecordsBody;');
+  const model = careModel(), actions = { search: noop };
+  model.list.hasSnapshot = true; model.list.state = 'loading';
+  let tree = render({ model, actions });
+  assert.equal(type(tree, 'ReadStateNotice').props.state, 'empty');
+  assert.equal(type(tree, 'ReadStateNotice').props.message, '暫無已保存記錄');
+  assert.equal(type(tree, 'AppTextField'), undefined, 'A background refresh cannot bring hidden empty filters back');
+  model.online = false; model.list.state = 'stale'; tree = render({ model, actions });
+  assert.equal(type(tree, 'ReadStateNotice').props.state, 'stale');
+  model.list.hasSnapshot = false; tree = render({ model, actions });
+  assert.equal(type(tree, 'ReadStateNotice').props.state, 'unavailable');
+  assert.doesNotMatch(type(tree, 'ReadStateNotice').props.message, /暫無|沒有符合/);
+});
+
+test('review history has one failed-read notice and one same-owner retry on cold and stale reads', () => {
+  for (const [listState, reviewState, hasSnapshot] of [['error', 'error', false], ['stale', 'unavailable', false], ['stale', 'ready', true]]) {
+    const render = renderer('src/components/care/CareReviewHistoryView.tsx', 'CareReviewWorkspace');
+    const model = careModel(), calls = [], actions = { closePanel: noop, search: (...args) => calls.push(args) };
+    Object.assign(model.list, { state: listState, hasSnapshot, message: 'Synthetic read failure' }); model.review.state = reviewState;
+    const tree = render({ model, actions, history: true });
+    const failures = nodes(tree).filter(node => node.type === 'ReadStateNotice' && ['error', 'stale', 'unavailable'].includes(node.props.state));
+    assert.equal(failures.length, 1);
+    const retries = nodes(tree).filter(node => node.props?.label === '重新讀取記錄'); assert.equal(retries.length, 1);
+    retries[0].props.onPress(); assert.deepEqual(calls, [['', 'all']]);
+  }
 });

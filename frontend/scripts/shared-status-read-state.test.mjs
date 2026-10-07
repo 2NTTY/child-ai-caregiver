@@ -46,6 +46,7 @@ function harness(entry, symbol, args = [], overrides = {}) {
     const resolve = name => {
       if (name in overrides) return overrides[name];
       if (name === "react") return react;
+      if (name.endsWith("/motion/preferences")) return { useMotionPreferences: () => ({ enabled: true, reducedMotion: false, preferenceReady: true }) };
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
       if (name === "react-native") return { View: "View", Pressable: "Pressable", StyleSheet: { create: value => value } };
       if (name === "react-native-paper") return { Text: "Text", ActivityIndicator: "ActivityIndicator" };
@@ -147,9 +148,12 @@ test("task read recovery cannot bypass unknown original-request checks or resubm
   value.recovery.retryOriginalOperation(); await owner.settle(); assert.equal(state.writeInputs.length, 2); owner.unmount();
 });
 
-test("read notices have one normal loading line and nonempty live status without body copy", () => {
+test("read notices have one normal loading line and nonempty live status without body copy", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
   const notice = harness("src/components/ReadStateNotice.tsx", "ReadStateNotice", [{ state: "loading", message: "" }]);
-  let tree = notice.render(); assert.deepEqual(visibleText(tree), ["正在讀取…"]);
+  let tree = notice.render(); assert.equal(byType(tree, "View").length, 0);
+  t.mock.timers.tick(499); assert.equal(byType(notice.render(), "View").length, 0);
+  t.mock.timers.tick(1); tree = notice.render(); assert.deepEqual(visibleText(tree), ["正在讀取…"]);
   assert.equal(byType(tree, "AppStatusBadge").length, 0);
   let announcement = byType(tree, "StatusAnnouncement")[0]; assert.equal(announcement.props.message, "正在讀取…");
   tree = notice.render([{ state: "error", message: "" }]); announcement = byType(tree, "StatusAnnouncement")[0];
@@ -290,4 +294,94 @@ test("a selection queued during a read retains navigation versus row intent", as
     assert.equal(value.model.selected?.id ?? null, intent === "open" ? task.id : null);
   }
   owner.unmount();
+});
+
+test("read notices cancel fast reads, stay quiet for retained snapshots, and reset their delay per scope", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const notice = harness("src/components/ReadStateNotice.tsx", "ReadStateNotice", [{ state: "loading", scopeKey: "a" }]);
+  assert.equal(byType(notice.render(), "View").length, 0); t.mock.timers.tick(200);
+  assert.equal(byType(notice.render([{ state: "ready", scopeKey: "a" }]), "View").length, 0);
+  t.mock.timers.tick(500); assert.equal(byType(notice.render(), "View").length, 0, "A completed fast read cannot reveal its old spinner");
+  assert.equal(byType(notice.render([{ state: "loading", scopeKey: "a", refreshing: true }]), "View").length, 0);
+  t.mock.timers.tick(500); assert.equal(byType(notice.render(), "View").length, 0);
+  assert.equal(byType(notice.render([{ state: "loading", scopeKey: "b" }]), "View").length, 0);
+  t.mock.timers.tick(499); assert.equal(byType(notice.render(), "View").length, 0);
+  t.mock.timers.tick(1); assert.equal(byType(notice.render(), "ActivityIndicator").length, 1);
+  assert.equal(byType(notice.render([{ state: "loading", scopeKey: "c" }]), "View").length, 0);
+  const denied = notice.render([{ state: "unavailable", scopeKey: "c", refreshing: true, message: "存取權已失效" }]);
+  assert.ok(visibleText(denied).includes("存取權已失效"), "Quiet refresh never hides an unavailable state");
+  notice.unmount(); t.mock.timers.tick(500);
+});
+
+test("Home keeps same-scope loaded task, care, profile and growth projections while owners refresh", () => {
+  const owners = {
+    care: { scopeKey: "scope", model: { list: { state: "loading", hasSnapshot: true, records: [] } } },
+    profile: { scopeKey: "scope", model: { reading: true, needsRefresh: false, access: "editable", current: { data: { region: "香港", age: { kind: "unknown" } }, confirmedAtLabel: "now" } } },
+    tasks: { scopeKey: "scope", model: { readState: "ready", reading: true, online: true, access: "editable", items: [task], operation: { state: "none" } } },
+    growth: { scopeKey: "scope", model: { load: "loading", online: true, access: "editable", page: { concerns: { state: "ready", items: [] } } } },
+  };
+  const view = harness("src/production/useProductionHome.ts", "useProductionHome", [], {
+    "./ProductionProvider": { useProduction: () => ({ scopeKey: "scope", model: home, actions: {} }) },
+    "../workspaces/CareWorkspace": { useCareWorkspace: () => owners.care },
+    "../workspaces/ProfileWorkspace": { useProfileWorkspace: () => owners.profile },
+    "../workspaces/TasksWorkspace": { useTasksWorkspace: () => owners.tasks },
+    "../workspaces/GrowthWorkspace": { useGrowthWorkspace: () => owners.growth },
+  });
+  let value = view.render().model;
+  assert.equal(value.overview.attention.state, "ready"); assert.equal(value.overview.attention.items.length, 1);
+  assert.equal(value.overview.ongoing.state, "ready"); assert.equal(value.recordsLoad, "ready");
+  assert.equal(value.profileLoad, "ready"); assert.equal(value.children[0].regionLabel, "香港");
+  for (const owner of Object.values(owners)) owner.scopeKey = "old-scope";
+  value = view.render().model;
+  assert.equal(value.overview.attention.state, "unavailable"); assert.equal(value.overview.ongoing.state, "unavailable");
+  assert.deepEqual(value.records, []); assert.equal(value.children[0].regionLabel, "地區未提供");
+});
+
+test("Summary refresh is quiet on success, preserves the same snapshot on failure, and clears lost access", async () => {
+  const page = { profile: { data: null, version: 0, source: '', confirmedBy: null, confirmedAt: null, reason: '' }, records: [], appointments: [], preparation: { version: 0 }, reviewCurrent: false };
+  let read = async () => page;
+  const api = { summary: (...args) => read(...args), resetOnline() {}, hasPendingOnline: () => false };
+  const { env } = taskOwner();
+  const owner = harness("src/production/task-knowledge-summary.ts", "useTaskKnowledgeSummary", [env], {
+    "../../../src/client/care-summary-api": { createCareSummaryApi: () => api },
+    "./useDomainEnvironment": { useDomainWriteGuard() {} },
+  });
+  owner.render(); let value = await owner.settle(); assert.ok(value.model.page); assert.equal(value.model.notice, '');
+  const snapshot = value.model.page;
+  let reject; read = () => new Promise((_resolve, no) => { reject = no; });
+  value.actions.refresh(); value = owner.render(); assert.equal(value.model.busy, true);
+  assert.equal(value.model.page, snapshot); assert.equal(value.model.notice, '');
+  reject(new ApiError(503)); value = await owner.settle(); assert.equal(value.model.page, snapshot);
+  assert.equal(value.model.readFailed, true); assert.match(value.model.notice, /未能讀取/);
+  read = async () => { throw new ApiError(403); }; value.actions.refresh(); value = await owner.settle();
+  assert.equal(value.model.access, 'lost'); assert.equal(value.model.page, null); owner.unmount();
+});
+
+test("the same mounted live region announces delayed loading and a ready-to-error transition", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const notice = harness("src/components/ReadStateNotice.tsx", "ReadStateNotice", [{ state: "ready" }]);
+  let region = byType(notice.render(), "StatusAnnouncement")[0]; assert.ok(region);
+  const type = region.type, live = harness("src/components/StatusAnnouncement.tsx", "StatusAnnouncement", [region.props]);
+  assert.equal(live.render().props.children, "");
+  region = byType(notice.render([{ state: "loading" }]), "StatusAnnouncement")[0];
+  assert.equal(region.type, type); assert.equal(live.render([region.props]).props.children, "");
+  t.mock.timers.tick(500); region = byType(notice.render(), "StatusAnnouncement")[0];
+  assert.equal(live.render([region.props]).props.children, "狀態：正在讀取…");
+  region = byType(notice.render([{ state: "ready" }]), "StatusAnnouncement")[0];
+  assert.equal(live.render([region.props]).props.children, "");
+  region = byType(notice.render([{ state: "error", message: "請重試" }]), "StatusAnnouncement")[0];
+  assert.equal(region.type, type); const announced = live.render([region.props]);
+  assert.equal(announced.props.children, "狀態：請重試"); assert.equal(announced.props.accessibilityRole, "alert");
+  notice.unmount(); live.unmount();
+});
+
+test("reduced motion uses static loading feedback without mounting Paper's rotating indicator", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const notice = harness("src/components/ReadStateNotice.tsx", "ReadStateNotice", [{ state: "loading" }], {
+    "../motion/preferences": { useMotionPreferences: () => ({ enabled: false, reducedMotion: true, preferenceReady: true }) },
+  });
+  notice.render(); t.mock.timers.tick(500); const tree = notice.render();
+  assert.equal(byType(tree, "ActivityIndicator").length, 0);
+  assert.ok(nodes(tree).some(node => node.props?.testID === "read-loading-static"));
+  assert.deepEqual(visibleText(tree), ["正在讀取…"]); notice.unmount();
 });

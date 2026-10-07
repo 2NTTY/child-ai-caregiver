@@ -407,4 +407,3 @@ export function AgentPhotoInput({ original, onTransferred, onPhotos }: { origina
     {domain.model.original || domain.model.selected ? <AppButton label="繼續核對照片" variant="secondary" disabled={domain.pending} onPress={onPhotos} /> : null}
   </SectionCard>;
 }
-

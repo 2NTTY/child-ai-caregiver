@@ -1,0 +1,151 @@
+{
+  "baseMaster": "41918a341b59d100a9815cf9999a02339c372e5b",
+  "firstParent": "0047bfffcbf2422c69a4341c1c1eed5ef92d1a84",
+  "sourceTreeSha256": "37ec92108e1b234e3198b58e56bf27cf51570a73e18225ba11558715c01f249e",
+  "files": [
+    {
+      "path": "frontend/scripts/agent-pending-discovery.test.mjs",
+      "gitBlobSha": "c21207776b25871e0ce0680a53155c0d772ce0ae",
+      "sha256": "b0838eed133cab91fafc614d9dccf846fb2d5c73b9a942314f301ee1118e5568"
+    },
+    {
+      "path": "frontend/scripts/growth-refresh.test.mjs",
+      "gitBlobSha": "bc8dd44d872e9af27c190faa1e07055c743cac3b",
+      "sha256": "3ce3b208abf80648368893b42b52b062c38892b4ab1418b4f568834be6a75b09"
+    },
+    {
+      "path": "frontend/scripts/quiet-care-refresh.test.mjs",
+      "gitBlobSha": "3e3c384150e0439860bfa45225c116b7228043b9",
+      "sha256": "2fc4d3ecd58f0840b4f29ec736d8727a5e28931f8e7d70dc4846a1ebe00dab33"
+    },
+    {
+      "path": "frontend/scripts/quiet-summary-view.test.mjs",
+      "gitBlobSha": "f35e91393675618fa76f674cc53eca20340f7230",
+      "sha256": "1ee56db28e5c7d9d83529016b5bb41bda204f3a945f8c18da9430a4a94aea068"
+    },
+    {
+      "path": "frontend/scripts/redundant-ui-content.test.mjs",
+      "gitBlobSha": "580c67d24e7dfabdf528171129502b55f089a309",
+      "sha256": "d83687b461ee11fdf7690457827cada3ba6350a8bb4e5e9771973a3afa599408"
+    },
+    {
+      "path": "frontend/scripts/shared-status-read-state.test.mjs",
+      "gitBlobSha": "e29eaf53db178afa07ebf0850be065af914196d5",
+      "sha256": "2adb43a26cdec129d62af8e50676a1c4fe91b21dd08ac2bc1b4094ced67c97ae"
+    },
+    {
+      "path": "frontend/scripts/task-read-copy.test.mjs",
+      "gitBlobSha": "13f3c7add76654f6b07ff369327dd9109a9281a8",
+      "sha256": "04e8d6534b8779b077c3de0dfaf9ab1accc18f26370c2c6ced10e4ab921e4e16"
+    },
+    {
+      "path": "frontend/src/care-view-model.ts",
+      "gitBlobSha": "66ee34e5331023f33a7742a7e887e4c0a61e5b99",
+      "sha256": "ead1313795e4ce94038480e495c37ac8f2334c0fd37a5b6b62ac9afaaefb2e99"
+    },
+    {
+      "path": "frontend/src/components/ReadStateNotice.tsx",
+      "gitBlobSha": "f2f2853faf7342d125e3717245c8dd0058c0edef",
+      "sha256": "739a34258408cb9e4d1a77462fc95944ff6400fba7033163907cc62955dcd86e"
+    },
+    {
+      "path": "frontend/src/components/care/CareReviewHistoryView.tsx",
+      "gitBlobSha": "b7388c6912f5d7aef0d0661a8c7185cc5e0315f6",
+      "sha256": "d9d6a3ff02fb8e37cdf230e805dc045bb0c2ec6333e0bd8333844bac2fd54c3e"
+    },
+    {
+      "path": "frontend/src/components/care/CareSavedRecordsView.tsx",
+      "gitBlobSha": "f8c82070d0411a28be79e2e0826e4bf9f5c6c021",
+      "sha256": "02092da31bc4c4fae2ea5b1cd61a7d16cdbf5873f49ee451fc1a3e04c5e05b08"
+    },
+    {
+      "path": "frontend/src/components/growth/GrowthView.tsx",
+      "gitBlobSha": "e7118521c3f3163d321745ea6316fdac0e72d527",
+      "sha256": "99a3fb11cc7b51c3dc73c86bc4df3cdbecc04a9af15588b28ff8f48f60e574b3"
+    },
+    {
+      "path": "frontend/src/components/photos/PhotosView.tsx",
+      "gitBlobSha": "c6ed74102b41a71eb48a3c190bae033809973d87",
+      "sha256": "d877aa74ccb3e5712e653e91ea98bbc9619b6cc5761700d8a2ed942cc5d4bb80"
+    },
+    {
+      "path": "frontend/src/components/shared-inputs/SourcesView.tsx",
+      "gitBlobSha": "420044fa790b3a7b31d5bd2abf65f8218ec57d08",
+      "sha256": "26879cc9da7453a312fe9914b21be42b5db47511ed66e55047cce74b7c7c2513"
+    },
+    {
+      "path": "frontend/src/components/summary/SummaryView.tsx",
+      "gitBlobSha": "4e232376f1b76c1f9694b058d96d357f69377594",
+      "sha256": "7bf933850fb4c6678f367856ab67123cabd8ff75f10fb7fe172ec21fd422b805"
+    },
+    {
+      "path": "frontend/src/components/tasks/TaskHistoryView.tsx",
+      "gitBlobSha": "d7bd442fcccc1c2b671fdbeef7f3fe00259c8fbd",
+      "sha256": "ca4ca7d859eafae25cbbf84af2950c23fbbbb916adbc3a5726df21bb6a774935"
+    },
+    {
+      "path": "frontend/src/components/tasks/TasksView.tsx",
+      "gitBlobSha": "df2c30375a68b2571a5bfb74a04581b47b9678ad",
+      "sha256": "34eea2e2883bcc1a70aefc91ce62c9962ccb8c2a94519c637b72c896e57fec68"
+    },
+    {
+      "path": "frontend/src/production/AgentConversation.tsx",
+      "gitBlobSha": "8d2eddf1f9c5794d1f05baab7908ebe33be12063",
+      "sha256": "9aec2d113181d7fca27f8428449265fea116ffade444a3b98804ba6d1c91e6e9"
+    },
+    {
+      "path": "frontend/src/production/CareProfileDomains.tsx",
+      "gitBlobSha": "4704d259edb96694ee2301447d87d5040b232120",
+      "sha256": "ce0ccf92a1dc0110784a491f0c0fe82a0c847733dd3ef5202ca3426c4575c9f2"
+    },
+    {
+      "path": "frontend/src/production/PhotoInputDomains.tsx",
+      "gitBlobSha": "3a73a7f70908245098f50e516465c8c512c293b4",
+      "sha256": "75697d76ef49af44c75940094da6af51d08b6ebfed06449a9cb5c35a07d2bc49"
+    },
+    {
+      "path": "frontend/src/production/ProductAgentOwner.ts",
+      "gitBlobSha": "242a8fb99f591ab97cf351abc8be26abc6896ddb",
+      "sha256": "c9f3dffd14ee940bfebbeeaed1106495073d0cec16a0f647475a1542eaad83f0"
+    },
+    {
+      "path": "frontend/src/production/TaskKnowledgeSummaryContent.tsx",
+      "gitBlobSha": "d41dfc37070995c8b52d37dd6f9e8e21555ffee0",
+      "sha256": "1b8743d00c561fcaf893deed9a5828fb553501c6880967bcaac9384ba124c57d"
+    },
+    {
+      "path": "frontend/src/production/task-knowledge-growth.ts",
+      "gitBlobSha": "4443d0cc3ef30888f89c56f606aa935c27f1c7d8",
+      "sha256": "7e75f2688e0d2b8e977c3d44432828626752caa5dc2de7c99b9ac3c3a0d64f5c"
+    },
+    {
+      "path": "frontend/src/production/task-knowledge-summary.ts",
+      "gitBlobSha": "8959b11bd9faa872fd798f34e0ca59dd27836b87",
+      "sha256": "dbc919c5a07bacd6ee6d51c6d5edc6e785b88da04c7a478b4fdaee1cb6a0f007"
+    },
+    {
+      "path": "frontend/src/production/useProductionHome.ts",
+      "gitBlobSha": "faa156fd42ae0d911d653f82f56e07acf107b5f3",
+      "sha256": "671a6984f99e89040900ee99c560b3950ef1af6dda4b92820bc89b796e0cdde2"
+    },
+    {
+      "path": "frontend/src/screens/careScreen.tsx",
+      "gitBlobSha": "6bbd92d607a31ae400bbe580ba2e225f469839ae",
+      "sha256": "68a04c1357c07a505028899d1c0f4c54564e9dc683892c5a009e75cd9d6bdd42"
+    }
+  ],
+  "checks": {
+    "tests": "85/85 passed",
+    "typecheck": "exit 0",
+    "diffCheck": "passed",
+    "export": "exit 0; 35 routes; first attempt failed because HOME did not exist, retained failure log; one corrected HOME retry passed"
+  },
+  "browser": {
+    "siteVersion": 50,
+    "siteSource": "e0579ef414bba2740e169d4cc824972f1c9a8a0a",
+    "result": "Representative synthetic CUA passed; see cua/CUA-RESULTS.md for exact scope and untested limits"
+  },
+  "bundleSha256": {
+    "dist-final-integration/_expo/static/js/web/entry-8a425f0b0a81b43b5cd4abccdb687503.js": "7d3dea3fbc19cb4dbc490bda454606a2274237b5c8679558c788308c03cf8f86"
+  }
+}

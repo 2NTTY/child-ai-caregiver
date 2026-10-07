@@ -63,7 +63,7 @@ test('network failure is not empty and does not self-retry; an explicit retry ca
   h.owner.setWritesBlocked(true); h.owner.setWritesBlocked(false); await settle();
   assert.equal(h.calls.length, 1);
   h.api.getPendingProposals = async () => page(); await h.owner.readPending();
-  assert.deepEqual(h.owner.getSnapshot().pending, { state: 'ready', entries: [], nextCursor: null }); h.owner.dispose();
+  assert.deepEqual(h.owner.getSnapshot().pending, { state: 'ready', hasSnapshot: true, entries: [], nextCursor: null }); h.owner.dispose();
 });
 
 test('a scope change clears queued intent and rejects late results from the previous child', async () => {
@@ -182,4 +182,36 @@ test('unavailable metadata polls do not retry failed discovery, while genuine ch
   assert.equal(agent.getSnapshot().pending.state, 'idle');
   const provider = readFileSync(path.join(root, 'frontend/src/production/ProductionProvider.tsx'), 'utf8');
   assert.match(provider, /value\.online, async reason => \{\s*await owner\.refresh\(\);\s*owner\.invalidatePrivateReads\(false, reason !== "unavailable"\)/u);
+});
+
+
+test('a same-scope pending refresh retains the snapshot until success, transient failure, or access loss', async () => {
+  const h = harness(); await h.owner.readPending();
+  const first = h.owner.getSnapshot().pending.entries[0];
+  const pending = deferred(); h.api.getPendingProposals = () => pending.promise;
+  const work = h.owner.readPending();
+  assert.equal(h.owner.getSnapshot().pending.state, 'loading');
+  assert.equal(h.owner.getSnapshot().pending.hasSnapshot, true);
+  assert.equal(h.owner.getSnapshot().pending.entries[0], first);
+  pending.reject(new ProductAgentApiError(503)); await work;
+  assert.equal(h.owner.getSnapshot().pending.state, 'failed');
+  assert.equal(h.owner.getSnapshot().pending.entries[0], first);
+  h.api.getPendingProposals = async () => page(); await h.owner.readPending();
+  assert.deepEqual(h.owner.getSnapshot().pending.entries, [], 'A successful empty response removes deleted/settled candidates');
+  const empty = deferred(); h.api.getPendingProposals = () => empty.promise;
+  const emptyWork = h.owner.readPending(); assert.equal(h.owner.getSnapshot().pending.hasSnapshot, true);
+  empty.reject(new ProductAgentApiError(403)); await emptyWork;
+  assert.equal(h.owner.getSnapshot().pending.state, 'denied');
+  assert.deepEqual(h.owner.getSnapshot().pending.entries, []); assert.equal(h.owner.getSnapshot().pending.hasSnapshot, undefined);
+  h.owner.dispose();
+});
+
+test('late refresh responses cannot restore a previous child snapshot', async () => {
+  const h = harness(); await h.owner.readPending();
+  const delayed = deferred(); h.api.getPendingProposals = () => delayed.promise;
+  const work = h.owner.readPending(); h.owner.syncContext(scope('child-b'), true);
+  assert.equal(h.owner.getSnapshot().pending.hasSnapshot, undefined);
+  assert.deepEqual(h.owner.getSnapshot().pending.entries, []);
+  delayed.resolve(page(proposal('previous-child'))); await work;
+  assert.deepEqual(h.owner.getSnapshot().pending.entries, []); h.owner.dispose();
 });

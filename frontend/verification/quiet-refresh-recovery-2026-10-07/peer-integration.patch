@@ -1,0 +1,616 @@
+diff --git a/frontend/scripts/redundant-ui-content.test.mjs b/frontend/scripts/redundant-ui-content.test.mjs
+index cb28c3b..580c67d 100644
+--- a/frontend/scripts/redundant-ui-content.test.mjs
++++ b/frontend/scripts/redundant-ui-content.test.mjs
+@@ -83,7 +83,7 @@ test('saved-record true empty hides tools; filtered empty keeps tools and origin
+   label(tree, '清除篩選').props.onPress(); assert.deepEqual(calls, [['', 'all']]);
+   for (const state of ['loading', 'error', 'stale']) {
+     model.list.state = state; model.list.message = 'Synthetic read status'; tree = render({ model, actions });
+-    assert.equal(type(tree, 'ReadStateNotice').props.state, state);
++    assert.equal(type(tree, 'ReadStateNotice').props.state, state === 'stale' ? 'unavailable' : state);
+     assert.equal(type(tree, 'ReadStateNotice').props.message, 'Synthetic read status');
+   }
+ });
+@@ -155,3 +155,32 @@ test('task general reminder explanation is removed while item-level delivery and
+   assert.ok(!view.includes('提醒說明')); assert.ok(!view.includes('本頁沒有發送通知'));
+   assert.ok(detail.includes('提醒處理結果未確定')); assert.ok(detail.includes('外部通知送達仍須另行核對'));
+ });
++
++
++test('confirmed empty Care remains quiet on refresh, while a cold offline read never becomes empty', () => {
++  const render = renderer('src/components/care/CareSavedRecordsView.tsx', '__body', {}, '\nmodule.exports.__body = CareSavedRecordsBody;');
++  const model = careModel(), actions = { search: noop };
++  model.list.hasSnapshot = true; model.list.state = 'loading';
++  let tree = render({ model, actions });
++  assert.equal(type(tree, 'ReadStateNotice').props.state, 'empty');
++  assert.equal(type(tree, 'ReadStateNotice').props.message, '暫無已保存記錄');
++  assert.equal(type(tree, 'AppTextField'), undefined, 'A background refresh cannot bring hidden empty filters back');
++  model.online = false; model.list.state = 'stale'; tree = render({ model, actions });
++  assert.equal(type(tree, 'ReadStateNotice').props.state, 'stale');
++  model.list.hasSnapshot = false; tree = render({ model, actions });
++  assert.equal(type(tree, 'ReadStateNotice').props.state, 'unavailable');
++  assert.doesNotMatch(type(tree, 'ReadStateNotice').props.message, /暫無|沒有符合/);
++});
++
++test('review history has one failed-read notice and one same-owner retry on cold and stale reads', () => {
++  for (const [listState, reviewState, hasSnapshot] of [['error', 'error', false], ['stale', 'unavailable', false], ['stale', 'ready', true]]) {
++    const render = renderer('src/components/care/CareReviewHistoryView.tsx', 'CareReviewWorkspace');
++    const model = careModel(), calls = [], actions = { closePanel: noop, search: (...args) => calls.push(args) };
++    Object.assign(model.list, { state: listState, hasSnapshot, message: 'Synthetic read failure' }); model.review.state = reviewState;
++    const tree = render({ model, actions, history: true });
++    const failures = nodes(tree).filter(node => node.type === 'ReadStateNotice' && ['error', 'stale', 'unavailable'].includes(node.props.state));
++    assert.equal(failures.length, 1);
++    const retries = nodes(tree).filter(node => node.props?.label === '重新讀取記錄'); assert.equal(retries.length, 1);
++    retries[0].props.onPress(); assert.deepEqual(calls, [['', 'all']]);
++  }
++});
+diff --git a/frontend/src/care-view-model.ts b/frontend/src/care-view-model.ts
+index 6110b18..66ee34e 100644
+--- a/frontend/src/care-view-model.ts
++++ b/frontend/src/care-view-model.ts
+@@ -228,6 +228,7 @@ export interface CareRecordsViewModel {
+   review?: CareReviewProjection;
+   list: {
+     state: CareListState;
++    hasSnapshot?: boolean;
+     records: CareRecordView[];
+     activeQuery: string;
+     activeKind: CareFilter;
+diff --git a/frontend/src/components/ReadStateNotice.tsx b/frontend/src/components/ReadStateNotice.tsx
+index 079eafb..f2f2853 100644
+--- a/frontend/src/components/ReadStateNotice.tsx
++++ b/frontend/src/components/ReadStateNotice.tsx
+@@ -1,21 +1,35 @@
+-import type { ReactNode } from "react";
++import { useEffect, useState, type ReactNode } from "react";
+ import { StyleSheet, View } from "react-native";
+ import { ActivityIndicator, Text } from "react-native-paper";
+ import { chineseFont, colors, readingType, spacing } from "../theme";
+ import { StatusAnnouncement } from "./StatusAnnouncement";
++import { useMotionPreferences } from "../motion/preferences";
+ 
+-// Pure presentation; the caller owns retained data, authorization and retry callbacks.
+-export function ReadStateNotice({ state, title, message = "", children }: {
++export const READ_NOTICE_DELAY_MS = 500;
++
++// Presentation only; the owner decides whether a same-scope snapshot is still safe to show.
++export function ReadStateNotice({ state, title, message = "", children, refreshing = false, scopeKey }: {
+   state: "ready" | "loading" | "empty" | "error" | "stale" | "unavailable";
+-  title?: string; message?: string; children?: ReactNode;
++  title?: string; message?: string; children?: ReactNode; refreshing?: boolean; scopeKey?: string;
+ }) {
++  const motion = useMotionPreferences();
++  const [delayedScope, setDelayedScope] = useState<string | null>(null);
++  const loadingKey = scopeKey ?? "read";
++  const loading = state === "loading" && !refreshing;
++  useEffect(() => {
++    setDelayedScope(null);
++    if (!loading) return;
++    const timer = setTimeout(() => setDelayedScope(loadingKey), READ_NOTICE_DELAY_MS);
++    return () => clearTimeout(timer);
++  }, [loading, loadingKey]);
++  const visible = state !== "ready" && (state !== "loading" || loading && delayedScope === loadingKey);
+   const label = ({ ready: "資料讀取完成", loading: "正在讀取…", empty: "目前沒有資料", error: "暫時無法讀取", stale: "目前顯示較早資料", unavailable: "暫時無法顯示" } as const)[state];
+   const heading = title || message || label;
+   const detail = state !== "loading" && title && message && title !== message ? message : "";
+-  const announcement = state === "ready" ? label : [heading, detail].filter(Boolean).join("。");
+-  return <><StatusAnnouncement eventKey={`${state}:${announcement}`} message={announcement} urgent={state === "error"} />
+-    {state !== "ready" ? <View testID={`read-state-${state}`} style={[styles.notice, state === "error" && styles.error]}>
+-      {state === "loading" ? <ActivityIndicator color={colors.teal} /> : null}
++  const announcement = visible ? [heading, detail].filter(Boolean).join("。") : "";
++  return <><StatusAnnouncement eventKey={announcement ? `${state}:${announcement}` : "quiet"} message={announcement} urgent={state === "error"} />
++    {visible ? <View testID={`read-state-${state}`} style={[styles.notice, state === "error" && styles.error]}>
++      {state === "loading" ? motion.enabled ? <ActivityIndicator color={colors.teal} /> : <View testID="read-loading-static" accessible={false} aria-hidden style={styles.staticIndicator} /> : null}
+       <View style={styles.copy}>
+         <Text accessibilityRole={title ? "header" : "text"} style={title ? styles.title : styles.body}>{heading}</Text>
+         {detail ? <Text style={styles.body}>{detail}</Text> : null}{children}
+@@ -23,6 +37,7 @@ export function ReadStateNotice({ state, title, message = "", children }: {
+     </View> : null}</>;
+ }
+ const styles = StyleSheet.create({
++  staticIndicator: { width: 16, height: 16, marginTop: 2, borderRadius: 8, borderWidth: 2, borderColor: colors.teal },
+   notice: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, paddingVertical: spacing.sm },
+   error: { borderLeftWidth: 2, borderLeftColor: colors.errorInk, paddingLeft: spacing.md },
+   copy: { flex: 1, minWidth: 0, gap: spacing.sm },
+diff --git a/frontend/src/components/care/CareReviewHistoryView.tsx b/frontend/src/components/care/CareReviewHistoryView.tsx
+index 2d57147..b7388c6 100644
+--- a/frontend/src/components/care/CareReviewHistoryView.tsx
++++ b/frontend/src/components/care/CareReviewHistoryView.tsx
+@@ -80,6 +80,9 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus
+   const openRecord = (id: string) => { if (occupied) return; setRecordOpen(true); focusRequested.current = true; actions.openRecord(id); };
+   const changeTab = (next: CareReviewTab) => { if (occupied) return; actions.closePanel(); setTab(next); setRecordOpen(false); setSelectedId(null); };
+   return <View ref={layout.ref} onLayout={layout.onLayout} style={s.workspace} testID={history ? "care-review-history" : "care-review-gate"}>
++    {history && review.state === "ready" && (model.list.state === "error" || model.list.state === "stale") ? <ReadStateNotice state={model.list.hasSnapshot ? "stale" : "error"} message={model.list.message ?? "未能更新記錄，請重試。"}>
++      <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} />
++    </ReadStateNotice> : null}
+     {review.state === "ready" && review.notice ? <Text accessibilityLiveRegion="polite" style={s.notice}>{review.notice}</Text> : null}
+     {history ? <View style={s.heading}><Text accessibilityRole="header" style={s.title}>{olderOnly ? "較早的核對記錄" : "核對記錄"}</Text><Text style={s.meta}>寫入結果與核對狀態會保留；移到歷史不會清除待確認事項。</Text></View>
+       : <UnderlineTabs id={tabsId} label="記錄分類" items={[{ key: "pending", label: review.state === "ready" ? `待確認 ${window.pendingCount}` : "待確認" }, { key: "recorded", label: "最近已記錄" }]} value={tab} onChange={changeTab} />}
+@@ -97,7 +100,9 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus
+         </View> : null}
+         {!history && window.older.length ? <View style={s.older}><Text style={s.meta}>近期保留最多 10 頁；較早的 {window.olderPendingCount} 項待確認仍未處理。</Text>
+           {window.olderPendingCount && onOlderPending ? <AppButton label="查看較早待確認" density="compact" variant="secondary" onPress={onOlderPending} disabled={occupied} /> : onHistory ? <AppButton label="查看較早記錄" density="compact" variant="secondary" onPress={onHistory} disabled={occupied} /> : null}</View> : null}
+-        {review.state !== "ready" ? <ReadStateNotice state={review.state === "loading" ? "loading" : review.state === "error" ? "error" : "unavailable"} title={review.state === "loading" ? "正在讀取核對記錄…" : review.state === "error" ? "未能讀取核對記錄，請重試" : "核對記錄暫不可用"} message={review.state === "unavailable" ? review.notice ?? (model.access === "lost" ? "目前沒有查看這個孩子的權限。" : "暫未取得這個孩子的核對記錄。") : ""} /> : !items.length ? <ReadStateNotice state="empty" message={filtered ? "沒有符合篩選的核對記錄" : history ? "暫無核對記錄" : tab === "pending" ? window.olderPendingCount || review.hasMore ? "近期暫無待確認記錄" : "暫無待確認記錄" : "暫無最近已記錄內容"}>
++        {review.state !== "ready" ? <ReadStateNotice state={review.state === "loading" ? "loading" : review.state === "error" ? "error" : "unavailable"} title={review.state === "loading" ? "正在讀取核對記錄…" : review.state === "error" ? "未能讀取核對記錄，請重試" : "核對記錄暫不可用"} message={review.state === "unavailable" ? review.notice ?? (model.access === "lost" ? "目前沒有查看這個孩子的權限。" : "暫未取得這個孩子的核對記錄。") : ""}>
++          {history && model.access !== "lost" && (model.list.state === "error" || model.list.state === "stale") ? <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} /> : null}
++        </ReadStateNotice> : !items.length ? <ReadStateNotice state="empty" message={filtered ? "沒有符合篩選的核對記錄" : history ? "暫無核對記錄" : tab === "pending" ? window.olderPendingCount || review.hasMore ? "近期暫無待確認記錄" : "暫無待確認記錄" : "暫無最近已記錄內容"}>
+           {filtered && searchText === undefined ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied} onPress={() => { if (occupied) return; setLocalQuery(""); setSourceKey("all"); setStatus("all"); }} /> : null}
+         </ReadStateNotice> : <View style={s.list}>
+           {sections.filter(section => section.items.length).map(section => <View key={section.key} style={s.groupSection}>
+diff --git a/frontend/src/components/care/CareSavedRecordsView.tsx b/frontend/src/components/care/CareSavedRecordsView.tsx
+index 9e8c48f..f8c8207 100644
+--- a/frontend/src/components/care/CareSavedRecordsView.tsx
++++ b/frontend/src/components/care/CareSavedRecordsView.tsx
+@@ -17,9 +17,12 @@ function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel;
+   const [query, setQuery] = useState(model.list.activeQuery), [kind, setKind] = useState<CareFilter>(model.list.activeKind);
+   const occupied = ["saving", "unknown"].includes(model.operation.state) || !!model.draft || !!model.deletion;
+   const loading = ["loading", "loading_more"].includes(model.list.state);
++  const hasSnapshot = model.list.hasSnapshot ?? model.list.records.length > 0;
+   const filtered = !!model.list.activeQuery.trim() || model.list.activeKind !== "all";
+-  const empty = model.list.state === "ready" && !model.list.records.length && model.list.message === null;
++  const empty = (model.list.state === "ready" || loading && hasSnapshot) && !model.list.records.length && model.list.message === null;
+   const showSearch = !empty || filtered || !!query.trim() || kind !== "all" || model.list.hasPrevious || model.list.hasMore;
++  const readState = loading && !hasSnapshot ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? hasSnapshot ? "stale" : "unavailable" : model.list.message ? "unavailable" : model.list.records.length ? "ready" : "empty";
++  const readMessage = model.list.message ?? (loading && !hasSnapshot ? "正在讀取記錄…" : model.list.state === "error" ? "未能讀取記錄，請重試。" : model.list.state === "stale" ? model.online ? "記錄尚待重新核對。" : "目前離線，記錄尚未核對。" : empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : "");
+   if (model.access === "lost") return <ReadStateNotice state="unavailable" message="目前沒有權限查看這個孩子的記錄。" />;
+   if (model.deletion) return <CareRecordDelete model={model} actions={actions} />;
+   if (model.draft) return <CareRecordForm key={model.draft.key} model={model} actions={actions} />;
+@@ -28,10 +31,11 @@ function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel;
+     {showSearch ? <><AppTextField label="搜尋已保存記錄" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} />
+     <View style={s.controls}><View style={s.filter}><AppSelect<CareFilter> label="種類" value={kind} options={[{ value: "all", label: "全部" }, ...careKindOptions]} onChange={setKind} disabled={occupied} /></View>
+       <AppButton label="搜尋" density="compact" disabled={occupied || loading || !model.online} onPress={() => actions.search(query, kind)} /></View></> : null}
+-    <ReadStateNotice state={loading ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? "stale" : model.list.message ? "unavailable" : model.list.records.length ? "ready" : "empty"} message={model.list.message ?? (empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : "")}>
+-      {empty && filtered ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied || !model.online} onPress={() => { if (occupied || !model.online) return; setQuery(""); setKind("all"); actions.search("", "all"); }} /> : null}
++    <ReadStateNotice state={readState} message={readMessage}>
++      {(model.list.state === "error" || model.list.state === "stale") ? <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || loading || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} /> : null}
++      {empty && filtered ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied || loading || !model.online} onPress={() => { if (occupied || loading || !model.online) return; setQuery(""); setKind("all"); actions.search("", "all"); }} /> : null}
+     </ReadStateNotice>
+-    {model.list.records.map(record => <Pressable key={record.id} accessibilityRole="button" accessibilityLabel={`查看${record.title}`} disabled={occupied || loading} onPress={() => actions.openRecord(record.id)} style={s.row}>
++    {(loading && !hasSnapshot ? [] : model.list.records).map(record => <Pressable key={record.id} accessibilityRole="button" accessibilityLabel={`查看${record.title}`} disabled={occupied || loading} onPress={() => actions.openRecord(record.id)} style={s.row}>
+       <Text style={s.title}>{record.title}</Text><Text numberOfLines={2} style={s.body}>{record.current.values.text}</Text><AppStatusBadge label={record.current.version > 1 ? "已更正" : "已保存"} tone="success" />
+     </Pressable>)}
+     {model.list.hasPrevious || model.list.hasMore ? <View style={s.controls}><AppButton label="上一頁" density="compact" variant="secondary" onPress={() => actions.previousPage?.()} disabled={occupied || loading || !model.online || !model.list.hasPrevious || !actions.previousPage} /><Text style={s.meta}>第 {model.list.page ?? 1} 頁</Text><AppButton label="下一頁" density="compact" variant="secondary" onPress={actions.loadMore} disabled={occupied || loading || !model.online || !model.list.hasMore || model.list.state === "stale"} /></View> : null}
+diff --git a/frontend/src/components/growth/GrowthView.tsx b/frontend/src/components/growth/GrowthView.tsx
+index 7b5a42e..e711852 100644
+--- a/frontend/src/components/growth/GrowthView.tsx
++++ b/frontend/src/components/growth/GrowthView.tsx
+@@ -1,6 +1,7 @@
+ import { GROWTH_KNOWLEDGE_NOTICES } from "../../../../src/shared/growth";
+ import { useContainerWidth } from "../useContainerWidth";
+ import { StatusAnnouncement } from "../StatusAnnouncement";
++import { ReadStateNotice } from "../ReadStateNotice";
+ import { useEffect, useRef, useState } from "react";
+ import { View, type ScrollView } from "react-native";
+ import { Text } from "react-native-paper";
+@@ -30,7 +31,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onExportRepo
+   const refreshed = model.notice === growthRefreshNotice;
+   const showLoading = model.load === "loading" && !page;
+   const showStatus = !model.online || model.access !== "editable" || model.load === "error" || !!model.notice && !refreshed || model.refreshPending;
+-  const refreshButton = <AppButton label={model.pending?"重讀並核對原操作":"重新讀取"} accessibilityLabel={model.pending?"重讀並核對原操作":"重讀成長關注並保留草稿"} loading={model.busy} variant="secondary" density="compact" style={s.headerRefreshButton} disabled={model.busy||!model.online||model.access==="lost"} onPress={actions.refresh} />;
++  const refreshButton = model.pending || model.load === "error" || model.refreshPending || model.operation === "conflict" ? <AppButton label={model.pending?"重讀並核對原操作":"重新讀取"} accessibilityLabel={model.pending?"重讀並核對原操作":"重讀成長關注並保留草稿"} variant="secondary" density="compact" style={s.headerRefreshButton} disabled={model.busy||!model.online||model.access==="lost"} onPress={actions.refresh} /> : null;
+   const footerActions = tab === "archive" && onRecord && page
+     ? <AppButton label="前往原始記錄" variant="secondary" density="compact" onPress={() => onRecord()} /> : null;
+   const unavailableAdvice = !!concern && page?.items.some(item => concern.attentionIds.includes(item.id) && !item.sourceAvailable);
+@@ -46,17 +47,16 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onExportRepo
+         {refreshButton}
+         {onHistory ? <AppButton label="查看關注歷史" variant="secondary" density="compact" onPress={onHistory} /> : null}
+       </View>
+-      {/* Keep read feedback and button widths stable without inserting another page row. */}
+-      <Text style={[s.meta, s.headerStatus]} numberOfLines={1} accessibilityLiveRegion="polite" testID="growth-refresh-status">{model.load === "loading" ? "正在讀取關注…" : refreshed ? growthRefreshNotice : "\u00a0"}</Text>
+     </View>
+   }>
+-    <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === "failed"} />
++    <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={refreshed ? "" : model.notice} urgent={model.operation === "failed"} />
+     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
++    {showLoading ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取關注…" /> : null}
+     {showStatus ? <View style={s.smallStack}>
+       {!model.online?<Text style={s.warning}>目前離線；資料未代表最新狀態，不能提交，沒有離線操作佇列。</Text>:null}
+       {model.access==="read_only"?<Text style={s.meta}>目前只有閱讀權限；不能更改關注、接受候選或確認近況。</Text>:null}
+       {model.access==="lost"?<Text style={s.warning}>已無權存取；舊關注、草稿及操作已清除。</Text>:null}
+-      {model.load==="error"?<Text style={s.warning}>尚未成功讀取目前狀態；保留的草稿不能提交。</Text>:null}
++      {model.load==="error"&&!model.notice?<Text style={s.warning}>尚未成功讀取目前狀態；保留的草稿不能提交。</Text>:null}
+       {model.notice && !refreshed?<Text style={model.operation==="unknown"||model.operation==="conflict"||model.operation==="failed"?s.warning:s.body}>{model.notice}</Text>:null}
+       {model.refreshPending?<Text style={s.meta}>有更新等候核對，未提交草稿沒有被自動覆寫。</Text>:null}
+     </View> : null}
+diff --git a/frontend/src/components/photos/PhotosView.tsx b/frontend/src/components/photos/PhotosView.tsx
+index 9a15f15..c6ed741 100644
+--- a/frontend/src/components/photos/PhotosView.tsx
++++ b/frontend/src/components/photos/PhotosView.tsx
+@@ -70,7 +70,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
+     settled: !['saving', 'unknown', 'unconfirmed'].includes(model.operation.state), targetId: listIntent.current?.targetId});
+   const locked = model.busy || ["unknown", "unconfirmed", "confirmed_unavailable", "conflict"].includes(model.operation.state);
+   const listReadState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online ? "stale" : model.items.length ? "ready" : "empty";
+-  const readMessage = model.load === "loading" ? model.items.length ? "正在重新讀取照片；已載入清單及草稿保留。" : "正在讀取照片…" : model.load === "error" ? "讀取未確認。原照片及草稿保留，先手動重新讀取。" : !model.online ? "已載入清單可能不是最新；重連後先重新讀取。" : listReadState === "empty" ? "目前沒有可讀取的照片。選擇原照片後，可先私人保存。" : "";
++  const readMessage = model.load === "loading" ? model.items.length ? "正在重新讀取照片；已載入清單及草稿保留。" : "正在讀取照片…" : model.load === "error" ? model.notice || "未能讀取照片，請重試。" : !model.online ? "已載入清單可能不是最新；重連後先重新讀取。" : listReadState === "empty" ? "目前沒有可讀取的照片。選擇原照片後，可先私人保存。" : "";
+   const extractionState = selected?.extraction.state;
+   const extractionMessage = extractionState && extractionState !== "not_requested" && !(model.operation.phase === "extract" && model.operation.state !== "none") ? `照片提取：${photoExtractionLabels[extractionState]}。` : "";
+   return <PageFrame density="compact" title="記錄 · 原始照片" description="照片先私人保存，確認後才與家庭共享。" eyebrow={`${brand.name} · 孩子資料`}>
+@@ -78,10 +78,10 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
+     <StatusAnnouncement key={selected?.id ?? "no-selected-photo"} eventKey={extractionState ?? "not_requested"} message={extractionMessage} urgent={extractionState === "failed"} />
+     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權查看這個孩子。照片、原檔、候選及草稿已清除。" : ""} urgent={model.access === "lost"} />
+     <StatusAnnouncement eventKey={model.sourceError} message={model.sourceError} urgent />
+-    <View style={s.context}><Text style={s.title}>{model.childName}的照片</Text><View style={s.row}><AppButton label="重新讀取照片" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /><AppButton label="返回記錄" accessibilityLabel="返回照顧記錄" variant="quiet" onPress={onCare} disabled={locked} /></View></View>
++    <View style={s.context}><Text style={s.title}>{model.childName}的照片</Text><View style={s.row}>{model.operation.state === "conflict" ? <AppButton label="重新核對照片版本" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /> : null}<AppButton label="返回記錄" accessibilityLabel="返回照顧記錄" variant="quiet" onPress={onCare} disabled={locked} /></View></View>
+     {editorVisible ? <View style={s.steps}>{["選擇原照片", "私人保存", "核對草稿", "家庭共享"].map((label, index) => <View key={label} style={s.step}><Text style={s.stepNumber}>{index + 1}</Text><Text style={s.meta}>{label}</Text></View>)}</View> : null}
+     {!model.online ? <View style={s.notice}><Text style={s.warning}>目前離線，已選原照片及草稿保留。重連後先核對最新狀態，不會自動重送。</Text></View> : null}
+-    {model.notice ? <Text style={s.body}>{model.notice}</Text> : null}
++    {model.notice && model.load !== "error" ? <Text style={s.body}>{model.notice}</Text> : null}
+     {model.operation.state !== "none" ? <View style={[s.status, model.operation.state === "failed" && s.statusError]} testID="photo-operation"><AppStatusBadge label={operationLabel} tone={model.operation.state === "failed" ? "error" : model.operation.state === "saved" && model.operation.phase !== "extract" ? "success" : model.operation.state === "saving" ? "info" : "warning"} /><Text style={s.body}>{model.operation.message}</Text>
+       {model.operation.reference ? <Text style={s.meta}>{production ? "原操作參考：" : "合成操作參考："}{model.operation.reference}{production ? "" : "；不是 Server opId。"}</Text> : null}
+       <View style={s.row}>{["unknown", "unconfirmed"].includes(model.operation.state) ? <AppButton label={model.operation.phase === "upload" || model.operation.phase === "extract" ? "查核同一照片附件" : "查核原照片操作"} disabled={!model.online || model.busy} onPress={actions.checkOriginal} /> : null}
+@@ -95,7 +95,9 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
+       <View style={[s.columns, !split && s.single]} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
+         <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="照片清單" style={[s.list, (!split || !editorVisible) && s.full, !split && editorVisible && s.hidden]}><View style={s.library} testID="photo-list"><SectionHeader density="compact" title="原始附件" icon="image-outline" action={<AppButton label={selected || model.original ? "繼續核對本頁" : "加入原照片"} variant="quiet" disabled={locked || !selected && !model.original && !model.canPick} onPress={() => {setAdding(!selected && !model.original); setInspecting(true);}} />} />
+           {model.access === "read_only" ? <Text style={s.meta}>你目前可查看家庭共享照片及本人既有的私人照片；不能上傳、提取、確認或刪除。</Text> : null}
+-          <ReadStateNotice state={listReadState} message={readMessage} />
++          <ReadStateNotice state={listReadState} message={readMessage}>
++            {model.load === "error" || !model.online ? <AppButton label="重新讀取照片" variant="quiet" disabled={!model.online || model.busy} onPress={actions.refresh} /> : null}
++          </ReadStateNotice>
+           <MotionList items={model.items} keyExtractor={item => item.id} scopeKey={listScope} regionKey="photo-list" eligible={listMotion} testID="photo-list-motion" renderItem={(item, row) => <View style={s.item} testID={`photo-item-${item.id}`}>
+             <View style={s.itemHeader}>{item.imageSource ? <Image source={item.imageSource} resizeMode="contain" accessibilityLabel={`${item.fileName}縮圖`} style={s.thumbnail} /> : <View style={s.itemIcon}><AppIcon name="image-outline" size={20} color={colors.teal} /></View>}<View style={s.itemCopy}><Text style={s.title}>{item.fileName}</Text><Text style={s.meta}>{item.createdAtLabel} · 版本 {item.version}</Text></View></View>
+             <View style={s.row}><AppStatusBadge label={item.visibility === "private" ? "私人" : "家庭共享"} tone="neutral" /><AppStatusBadge label={item.state === "ready" ? "原檔已保存" : "原檔待上傳"} tone={item.state === "ready" ? "success" : "warning"} /></View>
+diff --git a/frontend/src/components/shared-inputs/SourcesView.tsx b/frontend/src/components/shared-inputs/SourcesView.tsx
+index 5b76a19..420044f 100644
+--- a/frontend/src/components/shared-inputs/SourcesView.tsx
++++ b/frontend/src/components/shared-inputs/SourcesView.tsx
+@@ -77,20 +77,22 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
+     settled: !['saving', 'unknown', 'unconfirmed'].includes(model.operation.state), targetId: listIntent.current?.targetId});
+   const columns = width >= 780;
+   const readState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online ? "stale" : model.access !== "lost" && model.items.length === 0 ? "empty" : "ready";
+-  const readMessage = readState === "loading" ? "正在讀取私人來源…" : readState === "error" ? "讀取未能確認；最近內容及草稿保留，暫不提交新的操作。"
++  const readMessage = readState === "loading" ? "正在讀取私人來源…" : readState === "error" ? model.notice || "未能讀取來源，請重試。"
+     : readState === "stale" ? "目前離線。本頁文字草稿保留，沒有離線提交；恢復連線後請手動重新讀取。" : readState === "empty" ? "暫時沒有私人來源，可從「加入資料來源」開始。" : "";
+   return <PageFrame density="compact" title="資料來源" description="你提供的私人來源統一在這裏管理。說明用途，讓助手協助整理，再由你核對；也可以自行填寫。" eyebrow="私人保存 · 核對後才接入">
+     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "目前沒有存取權限。舊原文、候選、草稿及操作已清除。" : ""} urgent={model.access === "lost"} />
+     <View style={s.toolbar}><View style={s.scope}><Text style={s.meta}>目前範圍</Text><Text style={s.title}>{model.childName} · {model.accountName}本人</Text></View><View style={s.row}>
+-      <AppButton label="重新讀取來源" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} />
++      {model.operation.state === "conflict" ? <AppButton label="重新核對來源版本" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /> : null}
+       <AppButton label="清除草稿並新增來源" variant="quiet" disabled={!model.canChoose || !model.canCreate} onPress={actions.newInput} />
+       <AppButton label="照片與記錄" variant="quiet" onPress={onPhotos} />
+     </View></View>
+-    <ReadStateNotice state={readState} message={readMessage} />
++    {model.access !== "lost" ? <ReadStateNotice state={readState} message={readMessage}>
++      {model.load === "error" || !model.online ? <AppButton label="重新讀取來源" variant="quiet" disabled={!model.online || model.busy} onPress={actions.refresh} /> : null}
++    </ReadStateNotice> : null}
+     {model.access === "lost" ? <SectionCard><Text style={s.warning}>目前沒有存取權限。舊原文、候選、草稿及操作已清除。</Text></SectionCard> : null}
+     {model.access === "read_only" ? <Text style={s.warning}>唯讀權限：可查看自己的私人來源，不能新增、提取、確認或刪除。</Text> : null}
+     {model.access === "editable" && !model.canCreate ? <Text style={s.warning}>{production ? "目前不能新增來源" : "合成新增容量限制"}；已有來源及人工草稿仍可核對。</Text> : null}
+-    <SourceStatus model={model} actions={actions} production={production} />
++    <SourceStatus model={model.load === "error" && model.operation.state === "none" && model.access !== "lost" ? { ...model, notice: "" } : model} actions={actions} production={production} />
+     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
+       <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={model.items.length} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
+         <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>
+diff --git a/frontend/src/components/summary/SummaryView.tsx b/frontend/src/components/summary/SummaryView.tsx
+index d12ca86..4e23237 100644
+--- a/frontend/src/components/summary/SummaryView.tsx
++++ b/frontend/src/components/summary/SummaryView.tsx
+@@ -1,6 +1,7 @@
+ import {useId, useLayoutEffect, useRef, useState} from 'react';
+ import {Platform, View} from 'react-native';
+ import {Text} from 'react-native-paper';
++import {ReadStateNotice} from "../ReadStateNotice";
+ import type {SummaryActions, SummaryViewModel} from '../../summary-view-model';
+ import {sameSummaryPeriod, summaryPeriodLabel, summaryTime} from '../../summary-view-model';
+ import {MotionReveal} from '../../motion';
+@@ -57,10 +58,10 @@ export function SummaryView({model, actions, onRecord, onTask, onAgent, previewT
+         <View style={s.row}><AppButton label="套用期間並更新報告" density="compact" variant="secondary" disabled={!model.online || model.busy || model.access === 'lost' || !!model.pending || !queryValid} onPress={refresh} /></View>
+       </SummaryDisclosure>
+       {queryChanged ? <Text style={s.warning}>新選項尚未套用，目前仍顯示：{summaryPeriodLabel(page!.period)}。</Text> : null}
+-      {model.busy ? <Text style={s.meta}>正在讀取／提交，尚未確認最新狀態。</Text> : null}
++      {model.busy && model.operation === 'saving' ? <Text style={s.meta}>正在保存…</Text> : model.busy && !page ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取摘要…" /> : null}
+       {!model.online ? <Text style={s.warning}>目前離線；草稿及原操作只留本頁，不會排隊提交。</Text> : null}
+       {model.access === 'lost' ? <Text style={s.warning}>已無權存取；舊資料、草稿及原操作已清除。</Text> : null}
+-      {model.readFailed && page ? <Text style={s.warning}>目前摘要尚未重新核對，暫停保存；已顯示資料可能過時。</Text> : null}
++      {model.readFailed && page && !model.notice ? <Text style={s.warning}>目前摘要尚未重新核對，暫停保存；已顯示資料可能過時。</Text> : null}
+       {model.notice ? <Text style={model.operation === 'saved' ? s.body : s.warning}>{model.notice}</Text> : null}
+       {(model.readFailed || model.pending) && model.access !== 'lost' ? <View style={s.row}><AppButton label={model.pending ? '先查原收據及更新摘要' : '重新讀取摘要'} density="compact" variant="secondary" disabled={!model.online || model.busy || !model.pending && !queryValid} onPress={refresh} /></View> : null}
+     </View>
+diff --git a/frontend/src/components/tasks/TaskHistoryView.tsx b/frontend/src/components/tasks/TaskHistoryView.tsx
+index ae15572..d7bd442 100644
+--- a/frontend/src/components/tasks/TaskHistoryView.tsx
++++ b/frontend/src/components/tasks/TaskHistoryView.tsx
+@@ -67,7 +67,7 @@ export function TaskHistoryView({ searchText, dateRange, scrollRef, scrollPositi
+       {!readUnavailable && unknownDates > 0 ? <Text style={styles.meta}>{unknownDates} 項完成／取消日期未提供，不包括在日期篩選內。</Text> : null}
+       <View ref={layout.ref} onLayout={layout.onLayout} style={[styles.workspace, wide && showPanel && styles.split]}>
+         <View ref={listRef} tabIndex={-1} testID="task-history-list" style={[styles.column, !listVisible && styles.hidden]} aria-hidden={!listVisible} pointerEvents={listVisible ? "auto" : "none"} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
+-          <ReadStateNotice state={model.reading || model.loadingMoreTasks || listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty"} message={model.reading || listReadState === "loading" ? "正在讀取事項歷史…" : model.loadingMoreTasks ? "正在載入更多事項…" : listReadState === "error" ? "未能讀取事項歷史，請重試。" : !model.online ? "目前離線，已載入內容可能不是最新。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : !visible.length ? "沒有符合篩選的事項。" : ""}>
++          <ReadStateNotice state={listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty"} message={listReadState === "loading" ? "正在讀取事項歷史…" : listReadState === "error" ? "未能讀取事項歷史，請重試。" : !model.online ? "目前離線，已載入內容可能不是最新。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : !visible.length ? "沒有符合篩選的事項。" : ""}>
+             {(listReadState === "error" || listReadState === "stale" || !model.online) && recovery?.reloadCurrent ? <AppButton label="重新讀取事項" variant="secondary" density="compact" disabled={!model.online || model.reading || ["saving", "unknown", "conflict"].includes(model.operation.state) || !!model.draft} onPress={recovery.reloadCurrent} /> : null}
+           </ReadStateNotice>
+           {!readUnavailable ? <Text style={styles.meta}>{visible.length} 項符合</Text> : null}
+diff --git a/frontend/src/components/tasks/TasksView.tsx b/frontend/src/components/tasks/TasksView.tsx
+index cab4060..df2c303 100644
+--- a/frontend/src/components/tasks/TasksView.tsx
++++ b/frontend/src/components/tasks/TasksView.tsx
+@@ -117,8 +117,8 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent,
+   }
+   const calendar = <TasksCalendar items={pending} context={model.scheduleContext} selectedDay={selectedDay} month={calendarMonth} disabled={occupied}
+     onSelectDay={selectCalendarDay} onChangeMonth={month => { if (!occupied) setCalendarMonth(month); }} />;
+-  const readState = loading || listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty";
+-  const readMessage = model.reading || listReadState === "loading" ? "正在讀取事項…" : model.loadingMoreTasks ? "正在載入更多事項…" : listReadState === "error" ? "未能讀取事項，請重試。" : !model.online ? "目前離線，已載入內容只供參考；恢復連線後才可提交。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : visible.length ? "" : tab === "pending" ? "沒有符合篩選的事項。" : "暫時沒有已回報完成的事項。";
++  const readState = listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty";
++  const readMessage = listReadState === "loading" ? "正在讀取事項…" : listReadState === "error" ? "未能讀取事項，請重試。" : !model.online ? "目前離線，已載入內容只供參考；恢復連線後才可提交。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : visible.length ? "" : tab === "pending" ? "沒有符合篩選的事項。" : "暫時沒有已回報完成的事項。";
+   return <View ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={styles.pageScroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
+     <View style={styles.pageHeader}><View style={styles.headerCopy}><Text accessibilityRole="header" style={[styles.pageTitle, compact && mobileType.heading]}>待辦與預約</Text><Text style={styles.description}>跟助手說好安排，在這裏查看及回報</Text></View>
+       {model.access === "editable" ? <View style={styles.headerActions}><AppButton label="請助手安排" density="compact" disabled={occupied} onPress={onAgent} /><AppButton label="手動新增" accessibilityLabel="手動新增共享事項" density="compact" variant="secondary" disabled={occupied} onPress={() => { rememberList(null); actions.startCreate(); }} /></View> : null}
+@@ -143,7 +143,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent,
+                 ]} disabled={occupied} onChange={value => { if (value !== "day") changeFilter(value); }} />
+                 {!wide ? <AppSelectionTrigger label={selectedDay ? "日期 · 已選" : "日期"} calendar expanded={calendarOpen} disabled={occupied} onPress={() => { if (!occupied) setCalendarOpen(open => !open); }} /> : null}
+               </View> : null}
+-              {tab === "pending" && !wide && !model.reading ? <MotionDisclosure expanded={calendarOpen} scopeKey={scopeKey}><View style={styles.mobileCalendar}>{calendar}</View></MotionDisclosure> : null}
++              {tab === "pending" && !wide && !readUnavailable ? <MotionDisclosure expanded={calendarOpen} scopeKey={scopeKey}><View style={styles.mobileCalendar}>{calendar}</View></MotionDisclosure> : null}
+               <View style={styles.scheduleList}>
+               {tab === "pending" && !readUnavailable ? <View style={styles.listContext}>
+                 <Text style={styles.meta} accessibilityLiveRegion="polite">{selectedDay ? `${DateTime.fromISO(selectedDay).toFormat("M月d日")}` : backlogLabels[filter]}{!selectedDay && filter === "near" && backlog.nearLabel ? ` · ${backlog.nearLabel}` : ""}{query.trim() ? " · 搜尋結果" : ""} · {timeZoneLabel} · 已載入 {backlog.total} 項{backlog.total > 0 ? `，顯示 ${backlog.from}–${backlog.to}` : ""}</Text>
+@@ -154,7 +154,6 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent,
+                 {(readState === "error" || readState === "stale") && recovery?.reloadCurrent ? <AppButton label="重新讀取事項" variant="secondary" density="compact" disabled={!model.online || model.reading || locked || !!model.draft} onPress={recovery.reloadCurrent} /> : null}
+                 {readState === "empty" && tab === "pending" ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied} onPress={() => { if (occupied) return; anchor.current = null; actions.closePanel(); setQuery(""); setSelectedDay(null); setFilter("all"); setPage(0); }} /> : null}
+               </ReadStateNotice>
+-              {model.reading && model.draft ? <Text style={styles.meta}>草稿已保留。</Text> : null}
+               {!readUnavailable && sections.map(section => <View key={section.id} testID={`task-time-group-${section.id}`} style={styles.timeGroup}>
+                 <View style={styles.groupHeading}><Text accessibilityRole="header" style={styles.groupTitle}>{section.label}</Text><Text style={styles.meta}>{section.items.length} 項</Text></View>
+                 <MotionList items={section.items} keyExtractor={task => task.id} scopeKey={`${scopeKey}:${tab}`} regionKey={`tasks:${section.id}`} eligible={model.operation.state === "saved" && !loading && !previousLoading.current && listVisible} renderItem={(task, { exiting }) => {
+diff --git a/frontend/src/production/AgentConversation.tsx b/frontend/src/production/AgentConversation.tsx
+index 76302b3..8d2eddf 100644
+--- a/frontend/src/production/AgentConversation.tsx
++++ b/frontend/src/production/AgentConversation.tsx
+@@ -4,6 +4,7 @@ import { Text } from "react-native-paper";
+ import { useProduction } from "./ProductionProvider";
+ import { AgentInboxView } from "../components/agent/AgentInboxView";
+ import { AgentRunView } from "../components/agent/AgentRunView";
++import { ReadStateNotice } from "../components/ReadStateNotice";
+ import { AppDialog } from "../components/AppDialog";
+ import { AppScrollView } from "../components/AppScrollView";
+ import { locateCitationSource } from "../components/chat/locateCitationSource";
+@@ -40,12 +41,12 @@ export function AgentConversation({ visible, onDismiss, onOpenSettings, onReload
+           <AppButton label="重新讀取本次收據" variant="quiet" disabled={!authorization.online || receipt?.state === "loading"} onPress={() => authorizationActions.readReceipts(run.id, true)} />
+         </SectionCard> : null}
+         <SectionCard><SectionHeader title="待確認候選" density="compact" subtitle="每頁 20 項，包含過期事項；不受聊天歷史範圍限制。" />
+-          <AppButton label="讀取待確認候選" variant="quiet" loading={agentPending.state === "loading"} disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"} onPress={() => readAgentPending()} />
++          {agentPending.state === "failed" ? <AppButton label="重新讀取待確認候選" variant="quiet" disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"} onPress={() => readAgentPending()} /> : null}
+           {agentPending.state === "idle" ? <Text style={styles.label}>{agentModel.online ? "待確認候選尚未讀取；等候目前操作完成後會自動讀取。" : "目前離線，待確認候選尚未核對。"}</Text> : null}
+-          {agentPending.state === "loading" ? <Text style={styles.label}>正在讀取待確認候選…</Text> : null}
++          {agentPending.state === "loading" ? <ReadStateNotice state="loading" refreshing={!!agentPending.hasSnapshot} message="正在讀取待確認候選…" /> : null}
+           {agentPending.state === "denied" ? <Text style={styles.label}>目前沒有權限查看這個孩子的待確認候選。</Text> : null}
+-          {agentPending.state === "failed" ? <Text style={styles.label}>未能讀取候選，原清單已隱藏。</Text> : null}
+-          {agentPending.state === "ready" ? agentPending.entries.length ? agentPending.entries.map(entry => <View key={entry.proposal.id} style={styles.receipt}>
++          {agentPending.state === "failed" ? <Text style={styles.label}>{agentPending.hasSnapshot ? "未能更新，仍顯示上次讀取的候選。" : "未能讀取候選，請重試。"}</Text> : null}
++          {agentPending.state === "ready" || agentPending.hasSnapshot ? agentPending.entries.length ? agentPending.entries.map(entry => <View key={entry.proposal.id} style={styles.receipt}>
+             <Text style={styles.label}>{entry.proposal.title} · {entry.proposal.status === "expired" || proposalExpired(entry.proposal) ? "已過期" : agentProposalLabels[entry.proposal.status]}</Text>
+             <Text style={styles.label}>建立：{agentTime(entry.proposal.createdAt)} · 版本 {entry.proposal.version}</Text>
+             <AppButton label="核對原運行與候選" variant="quiet" disabled={!!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || !agentModel.online} onPress={() => selectAgentRun(entry.runId)} />
+diff --git a/frontend/src/production/CareProfileDomains.tsx b/frontend/src/production/CareProfileDomains.tsx
+index 138e8e1..4704d25 100644
+--- a/frontend/src/production/CareProfileDomains.tsx
++++ b/frontend/src/production/CareProfileDomains.tsx
+@@ -102,7 +102,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
+   function publishPage(page: CarePage, query: string, kind: CareFilter, index: number) {
+     page.records.forEach(record => env.queryClient.setQueryData([...careKey, "record", record.id], record));
+     nextCursor.current = page.nextCursor; pageIndex.current = index;
+-    setCare(previous => ({ ...previous, list: { state: "ready", records: page.records.map(record => careRecordView(record, userId)),
++    setCare(previous => ({ ...previous, list: { state: "ready", hasSnapshot: true, records: page.records.map(record => careRecordView(record, userId)),
+       activeQuery: query, activeKind: kind, scanned: page.scanned, hasMore: page.nextCursor !== null, page: index + 1, hasPrevious: index > 0, message: null },
+       detail: previous.detail && !previous.draft && !previous.deletion && page.records.some(record => record.id === previous.detail!.record.id)
+         ? { ...previous.detail, record: careRecordView(page.records.find(record => record.id === previous.detail!.record.id)!, userId),
+@@ -114,8 +114,11 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
+     careRead.current?.abort(); const control = controller(); careRead.current = control; const generation = ++careGeneration.current;
+     if (index === 0) { pageCursors.current = [null]; pageIndex.current = 0; nextCursor.current = null; }
+     const cursor = pageCursors.current[index] ?? null;
+-    setCare(previous => ({ ...previous, list: { ...previous.list, state: index ? "loading_more" : "loading", message: null,
+-      ...(index === 0 ? { page: 1, hasPrevious: false, hasMore: false, activeQuery: query, activeKind: kind } : {}) } }));
++    setCare(previous => {
++      const hasSnapshot = !!previous.list.hasSnapshot && previous.list.activeQuery === query && previous.list.activeKind === kind && previous.list.page === index + 1;
++      return { ...previous, list: { ...previous.list, state: index ? "loading_more" : "loading", message: null, hasSnapshot,
++        ...(index === 0 ? { page: 1, hasPrevious: false, hasMore: hasSnapshot ? previous.list.hasMore : false, activeQuery: query, activeKind: kind } : {}) } };
++    });
+     try {
+       await env.queryClient.cancelQueries({ queryKey: [...careKey, "search"] });
+       if (!current() || generation !== careGeneration.current || control.signal.aborted) return false;
+@@ -137,8 +140,8 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
+     } catch (error) {
+       if (!current() || generation !== careGeneration.current || control.signal.aborted) return false;
+       if (!accessError(error, true)) setCare(previous => ({ ...previous, list: { ...previous.list,
+-        state: error instanceof CareApiError && error.onlineCode === "cursor_stale" ? "stale" : "error",
+-        message: error instanceof CareApiError && error.onlineCode === "cursor_stale" ? "記錄已變更，請重新搜尋；不會沿用舊分頁游標。" : "未能讀取目前記錄；請重新搜尋。" } }));
++        state: previous.list.hasSnapshot || error instanceof CareApiError && error.onlineCode === "cursor_stale" ? "stale" : "error",
++        message: error instanceof CareApiError && error.onlineCode === "cursor_stale" ? "記錄已變更，請重新搜尋；不會沿用舊分頁游標。" : previous.list.hasSnapshot ? "未能更新，仍顯示上次讀取的記錄。" : "未能讀取記錄，請重試。" } }));
+       return false;
+     } finally { released(control); }
+   }
+@@ -433,7 +436,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
+   };
+   const careModel: CareRecordsViewModel = { ...care, online: env.online, access: editable ? "editable" : "read_only",
+     child: { ...care.child, name: env.childName }, checkLabel: attempt.current?.confirmed ? "重新讀取目前資料" : "查核原操作",
+-    review: { state: care.list.state === "loading" || care.list.state === "loading_more" ? "loading" : care.list.state === "error" ? "error" : "ready",
++    review: { state: (care.list.state === "loading" || care.list.state === "loading_more") && !care.list.hasSnapshot ? "loading" : care.list.state === "error" ? "error" : care.list.state === "stale" && !care.list.hasSnapshot ? "unavailable" : "ready",
+       scopeKey: env.scopeKey, label: "已保存照護記錄", hasMore: care.list.hasMore, capabilities: { create: false, update: false, skip: false, confirmImportant: false },
+       items: care.list.records.flatMap(record => { const raw = rawRecord(record.id); return raw ? [savedRecordReview(raw, userId)] : []; }) } };
+   const profileModel = { ...profile, online: env.online, child: { id: childId, name: env.childName }, access: editable ? "editable" as const : "read_only" as const,
+diff --git a/frontend/src/production/PhotoInputDomains.tsx b/frontend/src/production/PhotoInputDomains.tsx
+index c56dc97..3a73a7f 100644
+--- a/frontend/src/production/PhotoInputDomains.tsx
++++ b/frontend/src/production/PhotoInputDomains.tsx
+@@ -407,4 +407,3 @@ export function AgentPhotoInput({ original, onTransferred, onPhotos }: { origina
+     {domain.model.original || domain.model.selected ? <AppButton label="繼續核對照片" variant="secondary" disabled={domain.pending} onPress={onPhotos} /> : null}
+   </SectionCard>;
+ }
+-
+diff --git a/frontend/src/production/ProductAgentOwner.ts b/frontend/src/production/ProductAgentOwner.ts
+index 2c105f7..242a8fb 100644
+--- a/frontend/src/production/ProductAgentOwner.ts
++++ b/frontend/src/production/ProductAgentOwner.ts
+@@ -5,7 +5,7 @@ import { mayCheckShared, mayDecide, mayRetryOriginal, type AgentDecisionKind, ty
+ import { projectAgentRun, projectAgentProposal } from "./agent-projection.ts";
+ 
+ interface PrivateScope { key: string; userId: string; childId: string }
+-export interface AgentPendingDiscovery { state: AgentReadState; entries: { runId: string; proposal: AgentProposalView }[]; nextCursor: string | null }
++export interface AgentPendingDiscovery { state: AgentReadState; hasSnapshot?: boolean; entries: { runId: string; proposal: AgentProposalView }[]; nextCursor: string | null }
+ export interface ProductAgentSnapshot { pending: AgentPendingDiscovery; model: AgentRunModel; inbox: AgentInboxModel; runs: Readonly<Record<string, AgentRunView>> }
+ const runsSchema = z.object({ runs: z.array(z.object({ runId: z.uuid(), createdAt: z.iso.datetime({ offset: true }) })).max(20) });
+ const accessLost = (error: unknown) => error instanceof ProductAgentApiError
+@@ -173,18 +173,18 @@ export class ProductAgentOwner {
+     more = this.pendingRead === "more"; this.pendingRead = null;
+     const request = this.begin("read"); if (!request) return;
+     const cursor = more ? this.snapshot.pending.nextCursor : null;
+-    this.update({ pending: { ...this.snapshot.pending, state: "loading", entries: more ? this.snapshot.pending.entries : [], nextCursor: null } });
++    this.update({ pending: { ...this.snapshot.pending, state: "loading", entries: this.snapshot.pending.entries } });
+     try {
+       const page = await this.api.getPendingProposals(request.scope.childId, request.controller.signal, request.scope.userId, cursor);
+       if (!request.current()) return;
+-      if (request.controller.signal.aborted) { this.update({ pending: { state: "idle", entries: [], nextCursor: null } }); return; }
++      if (request.controller.signal.aborted) { this.update({ pending: { ...this.snapshot.pending, state: this.snapshot.pending.hasSnapshot ? "failed" : "idle" } }); return; }
+       const ids = new Set(page.proposals.map(item => item.id));
+       const prior = more ? this.snapshot.pending.entries.filter(item => !ids.has(item.proposal.id)) : [];
+-      this.update({ pending: { state: "ready", entries: [...prior, ...page.proposals.map(proposal => ({ runId: proposal.runId, proposal: projectAgentProposal(proposal) }))], nextCursor: page.nextCursor } });
++      this.update({ pending: { state: "ready", hasSnapshot: true, entries: [...prior, ...page.proposals.map(proposal => ({ runId: proposal.runId, proposal: projectAgentProposal(proposal) }))], nextCursor: page.nextCursor } });
+     } catch (error) {
+       if (!request.current()) return;
+       if (accessLost(error)) this.deny(error as ProductAgentApiError);
+-      else this.update({ pending: { state: request.controller.signal.aborted ? "idle" : "failed", entries: [], nextCursor: null } });
++      else this.update({ pending: { ...this.snapshot.pending, state: request.controller.signal.aborted && !this.snapshot.pending.hasSnapshot ? "idle" : "failed" } });
+     } finally { request.finish(); }
+   };
+   readInbox = async () => {
+diff --git a/frontend/src/production/TaskKnowledgeSummaryContent.tsx b/frontend/src/production/TaskKnowledgeSummaryContent.tsx
+index 7fdb894..d41dfc3 100644
+--- a/frontend/src/production/TaskKnowledgeSummaryContent.tsx
++++ b/frontend/src/production/TaskKnowledgeSummaryContent.tsx
+@@ -4,6 +4,7 @@ import { Text } from "react-native-paper";
+ import { AppDialog } from "../components/AppDialog";
+ import { AppScrollView } from "../components/AppScrollView";
+ import { AppCheckbox } from "../components/AppCheckbox";
++import { ReadStateNotice } from "../components/ReadStateNotice";
+ import { AppDateField, AppTimeZoneSelect } from "../components/DateTimeFields";
+ import { AppButton, AppSelect, SectionCard, SectionHeader } from "../components/ui";
+ import { PreparationCard } from "../components/summary/PreparationCard";
+@@ -22,26 +23,26 @@ export function TaskKnowledgeSummaryContent({ preparation = false, onRecord, onT
+   const [open, setOpen] = useState(false), navigate = usePreviewNavigation();
+   const latest = useRef(owner); latest.current = owner;
+   useEffect(() => () => { const value = latest.current; if (value?.model.dirty && !value.model.pending && !value.model.busy) value.actions.discard(); }, []);
+-  if (!owner) return <Text style={s.meta}>正在讀取摘要…</Text>;
++  if (!owner) return <ReadStateNotice state="loading" message="正在讀取摘要…" />;
+   const { model, actions } = owner, page = model.page;
+   const canRetry = model.online && !model.busy && !model.readFailed && model.access === "editable" && !!page?.canManage && !!model.pending?.checked && !model.pending.confirmed;
+   const locked = model.busy || !!model.pending || model.access === "lost";
+   return <View style={s.stack}>
+     <SectionCard><SectionHeader density="compact" title={preparation ? "單一到診準備" : "已確認照顧摘要"} subtitle={model.dataLabel}
+-      action={<AppButton label={model.busy ? "正在讀取／提交…" : model.pending ? "查原收據及更新摘要" : "重新讀取摘要"} variant="secondary" density="compact" disabled={!model.online || model.busy || model.access === "lost" || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} />} />
++      action={model.readFailed || model.pending ? <AppButton label={model.pending ? "查原收據及更新摘要" : "重新讀取摘要"} variant="secondary" density="compact" disabled={!model.online || model.busy || model.access === "lost" || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} /> : undefined} />
+       <SummaryDisclosure label="選擇摘要期間" scopeKey={model.scopeKey}>
+         <AppDateField label="摘要開始日" value={model.query.startDay} disabled={locked} onChange={startDay => actions.updateQuery({ ...model.query, startDay })} />
+         <AppSelect label="摘要期間" value={model.query.period} options={[{ value: "day", label: "一日" }, { value: "week", label: "連續七日" }]} disabled={locked} onChange={period => actions.updateQuery({ ...model.query, period })} />
+         <AppTimeZoneSelect value={model.query.timeZone} disabled={locked} onChange={timeZone => actions.updateQuery({ ...model.query, timeZone })} />
+-        <Text style={s.meta}>選項須重新讀取後才套用；目前摘要：{page ? summaryPeriodLabel(page.period) : "尚未取得"}。</Text>
++        <AppButton label="套用期間" variant="secondary" density="compact" disabled={locked || !model.online || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} />
+       </SummaryDisclosure>
+       {!model.online ? <Text style={s.warning}>目前離線；已有資料可能過時，沒有離線提交佇列。</Text> : null}
+-      {model.readFailed ? <Text style={s.warning}>最新摘要未能核對，暫停保存；目前已顯示資料可能過時。</Text> : null}
++      {model.readFailed && !model.notice ? <Text style={s.warning}>最新摘要未能核對，暫停保存；目前已顯示資料可能過時。</Text> : null}
+       {model.notice ? <Text accessibilityLiveRegion="polite" style={s.meta}>{model.notice}</Text> : null}
+       {page ? <><Text style={s.meta}>{summaryPeriodLabel(page.period)} · 整理於 {summaryTime(page.generatedAt, page.period.timeZone)}</Text>
+         {preparation ? <AppButton label={model.access === "editable" ? "查看／人工修改共享到診準備" : "查看共享到診準備"} variant="secondary" disabled={model.access === "lost"} onPress={() => setOpen(true)} />
+           : <SummaryRecords page={page} onRecord={onRecord} onTask={onTask} motion={{ scopeKey: model.scopeKey, triggerKey: null, eligible: false }} />}
+-      </> : <Text style={s.body}>{model.access === "lost" ? "已無權讀取這位孩子的摘要。" : model.busy ? "正在讀取摘要。" : "摘要尚未取得，沒有顯示部分總計。"}</Text>}
++      </> : model.access === "lost" ? <Text style={s.body}>已無權讀取這位孩子的摘要。</Text> : model.busy ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取摘要…" /> : !model.readFailed ? <Text style={s.body}>摘要尚未取得。</Text> : null}
+     </SectionCard>
+     {model.pending ? <SectionCard><SectionHeader density="compact" title={model.pending.confirmed ? "原保存已確認，摘要待讀回" : "原保存結果待核對"} />
+       <Text style={s.warning}>{model.pending.confirmed ? "不能再次提交；先查收據及讀取最新摘要。" : "原內容、版本及操作識別保留，不能另建一次保存。"}</Text>
+diff --git a/frontend/src/production/task-knowledge-growth.ts b/frontend/src/production/task-knowledge-growth.ts
+index bfd8c08..4443d0c 100644
+--- a/frontend/src/production/task-knowledge-growth.ts
++++ b/frontend/src/production/task-knowledge-growth.ts
+@@ -72,7 +72,7 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
+         } else setNotice(growthRefreshNotice);
+       } catch (error) {
+         if (!current() || clearAccess(error)) return;
+-        setLoad("error"); setNotice("未能核對目前關注、成長候選及授權基準；原草稿及操作保留，請重新讀取後再提交。");
++        setLoad("error"); setNotice(entry ? "未能核對原操作；原草稿及操作保留，請重新讀取。" : page ? "未能更新，仍顯示上次讀取的關注。" : "未能讀取關注，請重試。");
+       } finally { if (current()) { inFlight.current = false; setBusy(false); } }
+     });
+   };
+diff --git a/frontend/src/production/task-knowledge-summary.ts b/frontend/src/production/task-knowledge-summary.ts
+index 579722d..8959b11 100644
+--- a/frontend/src/production/task-knowledge-summary.ts
++++ b/frontend/src/production/task-knowledge-summary.ts
+@@ -54,7 +54,7 @@ export function useTaskKnowledgeSummary(env: TaskKnowledgeEnvironment): TaskKnow
+           setNotice("已讀取目前摘要；原操作尚未確認。重試保留原識別、內容及依據版本。");
+         } else {
+           original.current = null; setPending(null); setOperation(entry?.confirmed ? "saved" : "none");
+-          setNotice(entry?.confirmed ? "原保存已確認，最新摘要及到診準備已讀回。" : entry ? "目前沒有待查操作識別；草稿保留，請核對摘要後重新確認。" : "摘要已重新讀取，未提交草稿保留。");
++          setNotice(entry?.confirmed ? "原保存已確認，最新摘要及到診準備已讀回。" : entry ? "目前沒有待查操作識別；草稿保留，請核對摘要後重新確認。" : "");
+         }
+       } catch (error) {
+         if (!current() || clearAccess(error)) return;
+diff --git a/frontend/src/production/useProductionHome.ts b/frontend/src/production/useProductionHome.ts
+index 4f70bc7..faa156f 100644
+--- a/frontend/src/production/useProductionHome.ts
++++ b/frontend/src/production/useProductionHome.ts
+@@ -20,19 +20,19 @@ export function useProductionHome() {
+   const concerns = currentGrowth?.access !== "lost" && currentGrowth?.page?.concerns?.state === "ready"
+     ? currentGrowth.page.concerns.items.filter(item => item.childId === base.selectedChildId && item.status !== "closed") : null;
+   const ongoingState: HomeOverviewSection["state"] = !currentGrowth || currentGrowth.access === "lost" ? "unavailable"
+-    : currentGrowth.load === "loading" || currentGrowth.page?.concerns?.state === "loading" ? "loading" : concerns && (currentGrowth.load === "error" || !currentGrowth.online) ? "stale"
++    : currentGrowth.load === "loading" && !currentGrowth.page || currentGrowth.page?.concerns?.state === "loading" ? "loading" : concerns && (currentGrowth.load === "error" || !currentGrowth.online) ? "stale"
+       : currentGrowth.load === "error" || currentGrowth.page?.concerns?.state === "error" ? "error" : concerns ? "ready" : "unavailable";
+   const ongoing: HomeOverviewSection = { state: ongoingState, items: (concerns ?? []).map(item => ({
+     id: item.id, title: item.title, detail: item.reason, statusLabel: growthConcernFollowUpLabel(item) ?? "持續關注",
+     action: { label: "查看關注經過", destination: "growth" as const },
+   })), detail: ongoingState === "loading" ? "正在讀取關注…" : ongoingState === "stale" ? "暫時無法更新，顯示較早的關注"
+     : ongoingState === "error" || ongoingState === "unavailable" ? "暫時無法顯示持續關注" : undefined };
+-  const profileData = currentProfile && !currentProfile.reading && !currentProfile.needsRefresh ? currentProfile.current?.data : null;
++  const profileData = currentProfile && currentProfile.access !== "lost" && !currentProfile.needsRefresh ? currentProfile.current?.data : null;
+   const tasksAvailable = !!currentTasks && currentTasks.access !== "lost";
+   const pending = tasksAvailable ? currentTasks.items.filter(item => item.childId === base.selectedChildId && (item.occurrence.state === "scheduled" || item.occurrence.state === "needs_review")) : [];
+   const taskReadState = currentTasks?.readState ?? (currentTasks?.reading ? "loading" : "ready");
+   const attentionState: HomeOverviewSection["state"] = !tasksAvailable ? "unavailable"
+-    : currentTasks.reading ? "loading" : taskReadState === "ready" && !currentTasks.online ? "stale" : taskReadState;
++    : taskReadState === "ready" && !currentTasks.online ? "stale" : taskReadState;
+   const tasksReady = attentionState === "ready";
+   const attention: HomeOverviewSection = { state: attentionState, items: pending.slice(0, 6).map(item => ({
+     id: item.id, title: item.title, detail: `${new Date(item.occurrence.dueAt).toLocaleString("zh-HK", { timeZone: item.occurrence.timeZone })} · ${item.occurrence.timeZone}`,
+@@ -47,8 +47,8 @@ export function useProductionHome() {
+       regionLabel: profileData?.region ?? "地區未提供", allergiesLabel: profileData?.allergies ?? null,
+       profileConfirmed: !!profileData && !!currentProfile?.current?.confirmedAtLabel,
+     }),
+-    profileLoad: currentProfile?.reading ? "loading" : currentProfile?.current && !currentProfile.needsRefresh ? "ready" : base.profileLoad,
+-    recordsLoad: currentCare?.list.state === "ready" ? "ready" : currentCare?.list.state === "loading" || currentCare?.list.state === "loading_more" ? "loading" : "error",
++    profileLoad: currentProfile?.reading && !currentProfile.current ? "loading" : currentProfile?.current && !currentProfile.needsRefresh ? "ready" : base.profileLoad,
++    recordsLoad: currentCare?.list.state === "ready" || currentCare?.list.hasSnapshot && (currentCare.list.state === "loading" || currentCare.list.state === "loading_more") ? "ready" : currentCare?.list.state === "loading" || currentCare?.list.state === "loading_more" ? "loading" : "error",
+     lastReadLabel: null,
+     records: currentCare ? currentCare.list.records.map(record => ({
+       id: record.id, childId: record.childId,
+diff --git a/frontend/src/screens/careScreen.tsx b/frontend/src/screens/careScreen.tsx
+index 69faccd..6bbd92d 100644
+--- a/frontend/src/screens/careScreen.tsx
++++ b/frontend/src/screens/careScreen.tsx
+@@ -3,6 +3,7 @@ import { View } from "react-native";
+ import { Text } from "react-native-paper";
+ import { useLocalSearchParams, useRouter, usePathname } from "expo-router";
+ import { careKindOptions, type CareKind } from "../care-view-model";
++import { ReadStateNotice } from "../components/ReadStateNotice";
+ import { PageFrame } from "../components/PageFrame";
+ import { CareRecordsView } from "../components/care/CareRecordsView";
+ import { CareSavedRecordsView } from "../components/care/CareSavedRecordsView";
+@@ -23,10 +24,10 @@ function AgentPendingReview() {
+   useEffect(() => { setSelected(null); if (scopeKey && online) readAgentPending(); }, [scopeKey, online]);
+   const locked = !!recovery?.pending || !!workspace?.model.draft || !!workspace?.model.deletion;
+   return <SectionCard surface="plain"><SectionHeader density="compact" title="助手待確認事項"
+-    action={<AppButton label="重新讀取" variant="quiet" disabled={!online || agentPending.state === "loading" || locked} onPress={() => readAgentPending()} />} />
++    action={agentPending.state === "failed" ? <AppButton label="重試" variant="quiet" disabled={!online || locked} onPress={() => readAgentPending()} /> : undefined} />
+     {agentPending.state === "idle" ? <Text>{online ? "待確認事項尚未讀取；等候目前操作完成後會自動讀取。" : "目前離線，待確認事項尚未核對。"}</Text>
+-      : agentPending.state === "loading" ? <Text>正在讀取待確認事項…</Text> : agentPending.state === "failed" ? <Text>未能讀取待確認事項，請重試。</Text>
+-      : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : agentPending.state === "ready" && !agentPending.entries.length ? <Text>{agentPending.nextCursor ? "此頁暫無待確認提案" : "暫無待確認提案"}</Text> : null}
++      : agentPending.state === "loading" && !agentPending.hasSnapshot ? <ReadStateNotice state="loading" scopeKey={scopeKey ?? undefined} refreshing={!!agentPending.hasSnapshot} message="正在讀取待確認事項…" /> : agentPending.state === "failed" ? <Text>{agentPending.hasSnapshot ? "未能更新，仍顯示上次讀取的待確認事項。" : "未能讀取待確認事項，請重試。"}</Text>
++      : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : (agentPending.state === "ready" || agentPending.state === "loading" && agentPending.hasSnapshot) && !agentPending.entries.length ? <Text>{agentPending.nextCursor ? "此頁暫無待確認提案" : "暫無待確認提案"}</Text> : null}
+     {agentPending.entries.map(({ runId, proposal }) => <View key={runId + ":" + proposal.id} style={{ gap: spacing.sm }}>
+       <Text>{proposal.title}</Text><Text>{proposal.scope === "family" ? "家庭共享" : "私人"} · {proposal.status === "expired" ? "原提案已過期；仍可查看及略過" : "待你核對"}</Text>
+       <AppButton label="查看原提案及確認範圍" variant="secondary" disabled={locked || !!agentModel.busy || !!agentModel.pendingDecision}
+@@ -53,7 +54,7 @@ function CareWorkspace({ initialKind, initialRecordId }: { initialKind?: CareKin
+     if (initialRecordId) workspace.actions.openRecord(initialRecordId);
+     else if (initialKind) workspace.actions.startCreate(initialKind);
+   }, [workspace?.scopeKey, workspace?.model.list.state, workspace?.model.online, workspace?.model.access, recovery?.pending, externalLocked, initialKind, initialRecordId]);
+-  if (!workspace) return <PageFrame title="記錄與核對" density="compact"><Text>正在讀取記錄…</Text></PageFrame>;
++  if (!workspace) return <PageFrame title="記錄與核對" density="compact"><ReadStateNotice state="loading" message="正在讀取記錄…" /></PageFrame>;
+   const { model, actions } = workspace, panelOpen = !!model.detail || !!model.draft || !!model.deletion;
+   return <CareRecordsView model={model} actions={actions} initialRecordId={model.detail?.record.id ?? initialRecordId}
+     onReviewHistory={() => navigate(() => router.push("/history?category=review"))}
