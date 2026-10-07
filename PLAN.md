@@ -7,8 +7,17 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### QA-DOCUMENT-INTEGRITY — 準備文件與標準報告一致性（進行中）
+### QA-AGENT-CONTEXT-INTEGRITY — 工具容量與數量依據（待覆核）
 
+- 基線 a75ebb6。正式第 5 次合成請求在模型／工具皆 0 時撞 input_limit；固定 Runner 重建為 35,748 字元，工具選擇誤含前文與禁止通知句。另 12 則各 200 字原訊息被 read_context 重複載入，下一輪也超限。普通記錄 A3 同時揭露模型補入未提供的「1 次」。
+- 僅修當前意圖選工具、有界單份 context／精確摘要前綴及 Server 數量 grounding；保留原 gateway contents／config 邏輯 JSON 的 32k 字元上限、原生 parts、權限、opId／unknown、既有 store 及來源邊界。不新增「完全無背景待辦」能力，不改固定報告期間。
+- 離線定向 38/38 及 scoped strict typecheck 通過，證據與失敗對照隨包交付；mock completed 只驗容量／循環，不代表真服務已保存待辦。原 fixture 舊斷言有原 master 對照，僅修本包必要測例。須獨立覆核、合併及批次部署後使用有界新合成訊息重測。
+- 第 3 次真 Agent 普通保存及第 4 次私人重要候選明確確認已讀回；第 4 次最終文字未通過 present_answer 驗證仍未修。本包不把保存收據等同整個 run 成功。201 項記憶／200 條關注事件的容量死角另待修復。
+
+
+### QA-DOCUMENT-INTEGRITY — 已合併部署及定向 UI 重測
+
+- 後續核對：PR #103 隨 Web／API b7dec9d 部署；2026-10-07 合成 UI 已重測 stale 歸檔／恢復、刷新勾選保留及真 PDF coverage 完整，其他驗證限制仍保留。
 - 基線 b23f12b；只修準備單刷新保留未變核對項目、來源仍有效的 stale 準備單可直接歸檔、未有觀察日期的關注納入報告正文，以及 Server 對同孩子、相同起訖期間 active 標準報告的 create／restore 防重。
 - 保留原來源、家庭及孩子隔離、撤權遮蔽、同版 PDF、原 opId／unknown。固定期間仍固定，不在本包把年度／季度報告改成移動期間，不刪除舊文件或更改資料庫。
 - dot 負責程式、測試、覆核、PR 及合併；Codex 輔助只做已授權 GCP 操作與部署。先本地有界驗證、保留首次失敗和基線對照，再批次部署並重測；不把 shallow／mock 當正式 UI 或真 PostgreSQL 驗收。

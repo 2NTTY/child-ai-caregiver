@@ -50,7 +50,7 @@ export async function summaryInput(client: PoolClient, cipher: StorageCipher, us
 export async function saveSummary(client: PoolClient, cipher: StorageCipher, userId: string, childId: string, raw: unknown): Promise<ConversationSummary> {
   const input = summarySaveSchema.parse(raw), expected = await summaryInput(client, cipher, userId, childId);
   if (input.previousVersion !== expected.previousVersion || input.basis !== expected.basis
-    || JSON.stringify(input.coveredMessageIds) !== JSON.stringify(expected.messages.map(message => message.id))) throw new FamilyError(409, "summary_coverage_changed");
+    || JSON.stringify(input.coveredMessageIds) !== JSON.stringify(expected.messages.slice(0, input.coveredMessageIds.length).map(message => message.id))) throw new FamilyError(409, "summary_coverage_changed");
   if (!expected.previous) {
     await client.query("UPDATE conversation_summaries SET invalidated=true WHERE child_id=$1 AND owner_user_id=$2", [childId, userId]);
     await client.query("DELETE FROM summary_message_coverage c USING conversation_summaries s WHERE c.summary_id=s.id AND s.child_id=$1 AND s.owner_user_id=$2", [childId, userId]);

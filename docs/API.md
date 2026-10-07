@@ -69,6 +69,12 @@ INT-W02 增補：`GET／POST /api/children/:childId/agent/policy` 管理本人�
 
 `GET /agent/notes?query=…&afterId=…` 返回 `{notes:{items,nextAfterId}}`；是本人普通交代的權威來源，不複製成已確認事實。`POST /agent/notes/:id/delete` 需 `operationId／expectedVersion／confirmDelete:true`。`GET /agent/actions?runId=…` 返回 `{receipts}`，只讀本人／孩子原運行的已提交操作；收據含資源 ID、版本、保存／排程／終態及通知授權狀態，不以模型文字推定成功。上述路徑均以 `/api/children/:childId` 為前綴並重核 session；未套用 migration 025 不啟用新操作。
 
+容量契約增補：工具選擇以當前本人指令為主，只有明確短延續語才參考上一則本人訊息，不把助手回覆或無關舊意圖疊入；明確待辦標題／內容屬資料，禁止通知等子句不會僅因關鍵字開啟該工具。多個正向意圖保留，工具選擇從不代表授權。gateway 的完整 contents／config 邏輯 JSON 仍受原 32,000 UTF-16 字元上限（不等於 SDK 後續加入固定設定後的 HTTP body 大小），沒有提高模型次數或配額。
+
+`read_context` 在整體 request 剩餘容量內只給一份完整、有序的原訊息前綴；`privateSummaryInput.messageIds` 引用同次提供的原文，舊摘要只提供一次。明示 omitted／more／complete，不能把未讀部分說成已摘要。Server 對摘要批次重新核對 previousVersion、basis 及連續前綴 coverage，來源改變仍拒絕。固定 metadata 放不下時明示 context_input_limit，不暗刪事實或任務；原生工具協定／signatures 不被截斷。
+
+Agent 普通記錄的 quantityEvidence 為可空逐字數量片語，只在本次 sourceQuote／原訊息存在、原值與受支持單位對應時保留 quantity。未提供、無法核對或僅有日期／時鐘時保存 null，不補一次、不換算或求和。有限語法支援數字、中文數詞、半數及已知約數；原文約數或範圍不得升為 exact，不支持形式保留在記錄原文。該證據不另存共享欄位；手動 Care API 不變。更正未改量度時可保留舊欄位，但不視為新核對或提升可信度；既有錯誤記錄不自動回填。
+
 `read_context.uncoveredConversation` 依既有摘要 coverage 讀取未覆蓋的本人原訊息，保持完整訊息及最後來源 ID；超過本次工具文字預算時明示未讀部分，不靜默截斷或宣稱全部記得。長期普通交代另由 `read_private_instructions` 按主題查回，不把最近幾則聊天當長期記憶。
 
 INT-W03 增補 `allowRecordCorrections`，既有政策及未提供欄位預設 false，不因升級而擴大舊授權。`read_care_records` 讀目前共享記錄及版本；`revise_ordinary_record` 只按本次明確指令更正本人、原普通類別及目前版本，並要求此新開關與原類別均獲授權。更正沿用 CareStore 歷史及原資源，保留未變的時間精度；共享確認、來源原文、權限／版本、操作收據及未知結果規則不變。

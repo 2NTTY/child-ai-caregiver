@@ -1,0 +1,148 @@
+{
+  "package": "QA-AGENT-CONTEXT-INTEGRITY",
+  "observedAt": "2026-10-07T06:51:00Z",
+  "baseline": {
+    "commit": "a75ebb6d0fba799314d78be895c83fde526be2ed",
+    "tree": "0fc030b63b88442f114108275a569ce4c8992865"
+  },
+  "environment": {
+    "node": "24.19.0",
+    "adk": "2.1.0",
+    "genai": "2.24.0",
+    "method": "Offline native ADK Runner with scripted providers; deterministic synthetic stores and SQL adapters. No external generation, database, GCP or deployment."
+  },
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/agent-context-integrity.test.ts tests/agent-record-quantity.test.ts tests/product-tool-selection.test.ts tests/product-agent.test.ts tests/agent-runtime.test.ts tests/vertex-tool-contract.test.ts tests/product-agent-schema.test.ts tests/agent-version-declarations.test.ts",
+      "passed": 38,
+      "failed": 0
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --project artifacts/verification/QA_AGENT_CONTEXT_INTEGRITY/tsconfig.json",
+      "result": "passed",
+      "scope": "Changed server/shared entrypoints and focused tests with strict NodeNext; not full frontend/application typecheck"
+    }
+  ],
+  "requestSizes": {
+    "unit": "Logical {contents,config} JSON UTF-16 code units, same unit as the unchanged 32000 gateway limit; not actual provider wire size",
+    "prior12x200": {
+      "before": [
+        25921,
+        36262
+      ],
+      "after": [
+        19928,
+        25930,
+        26262
+      ]
+    },
+    "prior12x500": {
+      "before": [
+        25921,
+        42767
+      ],
+      "after": [
+        19928,
+        27314,
+        27646
+      ]
+    },
+    "prior12x800": {
+      "before": [
+        25921,
+        45661
+      ],
+      "after": [
+        19928,
+        26887,
+        27219
+      ]
+    },
+    "T5verifiedLatest3": {
+      "before": [
+        35748
+      ],
+      "after": [
+        24237,
+        24861,
+        25193
+      ],
+      "note": "Exact synthetic T5 plus verified prior user and assistant messages. This proves selection/input capacity and scripted tools, not real task creation or no-background support."
+    }
+  },
+  "preservedFailures": [
+    {
+      "check": "First new quantity fixture",
+      "result": "3/4 passed; evidence fixture accidentally included trailing noun after the quantity",
+      "resolution": "Corrected only the fixture evidence span; 4/4 passed, no product change"
+    },
+    {
+      "check": "First affected regression set",
+      "result": "24/30 passed, six failed",
+      "baselineComparison": "Four matched the unchanged source mirror: missing photo prompt dependencies, a task fixture lacking task intent, and two stale citation error expectations",
+      "resolution": "Materialized unchanged pinned photo prompt files; explicit task wording and citation_required assertion corrected with parent approval. Two notification-tool expectations changed from 15 to 13 for approved negative-intent selection, retaining explicit tool-name assertions."
+    },
+    {
+      "check": "First scoped typecheck",
+      "result": "Only new test fixture typings failed (FinishReason enum and discriminated ordinary action types)",
+      "resolution": "Corrected fixture types; strict scoped typecheck passed"
+    }
+  ],
+  "limits": [
+    "No real model/provider generation, PostgreSQL, browser acceptance, live records, notifications, GCP changes, merge or deploy",
+    "No change to the 32000 request limit or native protocol parts; large required metadata returns explicit context_input_limit and oversized native/current requests still stop",
+    "Quantity grounding is a finite source-phrase check, not a general natural-language quantity parser; unsupported or missing evidence becomes null",
+    "Unchanged prior quantities during revisions stay unchanged and are not newly confirmed or re-grounded; no existing record migration",
+    "F4 propose_fact followed by plain final text remains invalid_response; this package does not alter finalization",
+    "The inability to request a task with no background process is not claimed fixed by selection/capacity checks",
+    "Supported quantity grammar deliberately has false negatives: unusual units, unknown attached modifiers or nouns, unrecognized numeric words, and comparison/range snippets become null; original record text is preserved for review. This is not semantic interpretation of all natural language."
+  ],
+  "sourceHashes": {
+    "server/agent-runtime.ts": "6b9ffa334261bcbc008309ec0271b2bcf8cfe2fdabc3f5f81132a5b2ff06caff",
+    "server/product-tool-selection.ts": "40ed59c2e5b55f94712a042bf3cb7ed691800ac64c32f321a1e693ed4a90a8c3",
+    "server/memory-summary.ts": "6236e54f702a1b10d982a365c554e74980376fe80ef1d169e3eec1ce2f4b9eb6",
+    "server/product-agent.ts": "726a345b1e04b04abd0e80bf35e8d35f52e346e5649554d3c2cec0eb1efb8889",
+    "server/agent-record-quantity.ts": "dfa9461f799a7fe015bdf2ac54fcafd266c26ac2515ac94a52b4beb68355104f",
+    "server/agent-action-tools.ts": "75f48706d67090a8967d469e17ceba490b6664e37aef0e8fbb7f0e8d35a2ca69",
+    "server/agent-budget.ts": "f58341932a0f72518bee49e4abe90eb1c457f7ee8474bad12f6a9787f04fce2e",
+    "server/agent-actions-store.ts": "cbe2b1f7a5c15e30731e05fa0cf9ca252182e374611e71538d29d5940614a036",
+    "server/agent-model-gateway.ts": "6ec0a414f95b11245725a470852916ee4a601400239e03ececccc0472d20d368",
+    "server/product-agent-tools.ts": "f8602f8e70d8cf54cfb390e462c4797499862727cb9e4bef1f97e23e43b4dabc",
+    "src/shared/agent-actions.ts": "0a5ac2f8e783082da82937af410d26ceb938263dacacf923b1daf0216c9f759a",
+    "tests/agent-context-integrity.test.ts": "60dc82e60b4dda9456595ca97480c1fb5de10349ef7d308f6cbb8063f1ca77b0",
+    "tests/product-tool-selection.test.ts": "d3561e7a925d3164a1442fba02a4bc26022b6016d0612effa3847452f75cfe83",
+    "tests/vertex-tool-contract.test.ts": "eb2b6602c4e62d532d3e7e7dadc155da4595d4af979ba01bb0d0d42657d7795e",
+    "tests/product-agent.test.ts": "1a8a2bdc2762b6a92426531f88557d451ae956594bdc8b5ccaac590d32f50140",
+    "tests/agent-record-quantity.test.ts": "3c937744c7b894ddf991cbd289f68212a64d70af73bc801a85a374d2b2fdfc6a",
+    "PLAN.md": "de6aaf24ac502bec8e91f370ab08409b25da3a5ca198b751efd732a6d9e89f7d",
+    "STATUS.md": "b1fa61cc9bd7aea28b34279681fc8918e0553de121a6f5cf0bf0aa16d98c9060",
+    "docs/API.md": "0a6269d9c927833610294265d767df12870d42d7346f9e43b6bedf1fe78b6300",
+    "WORKLOG.md": "187bad9be8b7075d8e0e37b4936d908c3e92708f2c01f78655ba3966f3ed900a"
+  },
+  "reviewCorrections": [
+    {
+      "finding": "Unpunctuated negative clause also containing a positive task dropped that capability",
+      "change": "Keep ambiguous contrast/request clauses as capabilities; original prohibitions remain in model input and execution guards are unchanged",
+      "tests": "Original two review examples added; selector and quantity tests 8/8 passed; full affected 38/38 rechecked"
+    },
+    {
+      "finding": "Collective Chinese numeral and near prefix were classified exact",
+      "change": "Adjacent Chinese numeral pairs and near markers remain verbatim and are downgraded approximate; no numerical conversion",
+      "tests": "一兩次、兩三次、三四次、近120ml、接近120ml asserted approximate"
+    },
+    {
+      "finding": "Unit substrings, alternative quantities and comparison limits could be accepted as exact",
+      "change": "Require finite lexical boundaries, reject unrecognized prefixes/suffixes, alternatives and comparison bounds; preserve only supported approximate wording without numeric conversion",
+      "tests": "2l in 2lb, 2克 in 2克拉, 2ml in 2mls, 2次 in 2次方, 100或120ml, 少於120ml, 至少120ml, 120ml以上, unknown estimate prefix all become null"
+    },
+    {
+      "finding": "Quantity value copied into retained receipts could outlive deletion of the canonical record",
+      "change": "Persist and return only quantityGrounding.status in receipts, with no raw value, unit, quantity evidence or source phrase",
+      "tests": "Actual action store reads persisted receipts after canonical details are absent; fields contain only status and no measurement"
+    }
+  ],
+  "integrationBase": {
+    "commit": "9cb6f635d71de0eef3d85adb22b5e598b0618997",
+    "comparison": "a75ebb6..9cb6f635 includes frontend/** and src/client/use-online-updates.ts only; no changed backend/shared/test/prompt/docs paths overlap this patch or its scoped typecheck dependency closure. Original 38-test and strict typecheck evidence remains applicable; no full frontend integration pass is claimed."
+  }
+}

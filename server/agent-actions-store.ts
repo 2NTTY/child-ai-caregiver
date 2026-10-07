@@ -16,6 +16,7 @@ import type { StorageCipher } from "./storage-crypto.ts";
 import { createTaskStore, type TaskScheduling } from "./tasks.ts";
 import { transactionPool } from "./transaction-pool.ts";
 import { groundedRecordTime } from "./agent-record-time.ts";
+import { groundedRecordQuantity, type QuantityGrounding } from "./agent-record-quantity.ts";
 
 interface Space { id: string; access_version: number; storage_epoch: string; change_seq: string }
 interface VersionRow { version: number; payload_encrypted: string }
@@ -270,11 +271,14 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
         if (!policy.effective || input.expectedPolicyVersion !== policy.version) throw conflict("agent_policy_changed");
         const borrowed = transactionPool(client), tasks = createTaskStore(borrowed.pool, cipher, scheduling);
         let resource: AgentActionReceipt["resource"], state: AgentActionReceipt["state"];
+        let quantityGrounding: QuantityGrounding | undefined;
         let notification: Pick<AgentActionReceipt, "notification" | "channels"> = { notification: "not_authorized", channels: [] };
         if (input.kind === "save_record" || input.kind === "revise_record") {
           if (!policy.recordKinds.includes(input.details.kind)) throw conflict("agent_policy_denied");
           const care = createCareStore(borrowed.pool, cipher, true);
           let details = groundedRecordTime(input.details, input.sourceQuote);
+          quantityGrounding = groundedRecordQuantity(input.details.quantity, input.quantityEvidence, input.sourceQuote, original);
+          details = { ...details, quantity: quantityGrounding.quantity };
           if (input.kind === "revise_record") {
             if (!policy.allowRecordCorrections) throw conflict("agent_policy_denied");
             const originalRecord = await care.get(scope.userId, scope.childId, input.recordId); borrowed.assertReleased();
@@ -284,6 +288,10 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
               throw conflict("agent_policy_denied");
             if (canonicalJson(originalRecord.details.eventTime) === canonicalJson(input.details.eventTime))
               details = { ...details, eventTime: originalRecord.details.eventTime };
+            if (canonicalJson(originalRecord.details.quantity) === canonicalJson(input.details.quantity)) {
+              details = { ...details, quantity: originalRecord.details.quantity };
+              quantityGrounding = { quantity: originalRecord.details.quantity, status: "unchanged" };
+            }
           }
           const values = {
             text: input.text, details, source: "依本人預先授權，由 Agent 整理的使用者陳述；未逐項確認為事實",
@@ -335,7 +343,8 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
           resource = { kind: "task", id: task.id, version: task.version };
         }
         borrowed.assertReleased();
-        const receipt: AgentActionReceipt = { id: randomUUID(), runId, kind: input.kind, resource, state, ...notification, createdAt: new Date().toISOString() };
+        const receipt: AgentActionReceipt = { id: randomUUID(), runId, kind: input.kind, resource, state, ...notification,
+          ...(quantityGrounding ? { quantityGrounding: { status: quantityGrounding.status } } : {}), createdAt: new Date().toISOString() };
         const identity = { id: receipt.id, run_id: runId, child_id: scope.childId, owner_user_id: scope.userId };
         // Keep encrypted fingerprints rather than copies of source quotes or deleted text.
         await client.query(`INSERT INTO agent_action_receipts(id,run_id,child_id,owner_user_id,source_message_id,request_encrypted,payload_encrypted)

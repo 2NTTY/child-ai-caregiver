@@ -39,7 +39,7 @@ export function createAgentActionTools(actions: AgentActionsStore, run: AgentRun
       const { kind, ...shape } = schema.shape;
       const actionKind = kind.value;
       return { name: agentActionToolNames[actionKind],
-      description: ({ save_record: "保存目前政策允許類別的普通照護記錄；details 不含推斷，未知數量用 null，相對日期保留 approximate 與原文。",
+      description: ({ save_record: "保存目前政策允許類別的普通照護記錄；details 不含推斷。只有本次原文明确數量才填 quantity，quantityEvidence 逐字引用數量片語；未提供均填 null，不把一句敘述算成一次，不換算或求和，保留約數。相對日期保留 approximate 與原文；回報以 Server 實際保存欄位為準。",
         revise_record: "更正本人原有、相同普通類別的照護記錄。先 read_care_records 查原 id/version；明確說明 reason，保留未更改內容，不能變更其他人記錄或重要健康資料。",
         save_private_note: "保存本人明確交代的普通私人備註，屬 user_statement，不是已確認健康事實。",
         revise_private_note: "更正指定本人私人備註，先查原 ID 與版本。",

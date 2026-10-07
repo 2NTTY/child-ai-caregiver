@@ -136,7 +136,10 @@ export function createAgentRuntime(options: {
               budget.check();
               return response ? { ...response } : undefined;
             },
-            afterToolCallback: ({ response }) => {
+            afterToolCallback: ({ tool, response, context }) => {
+              budget.accountToolResponse(JSON.stringify({ role: "user", parts: [{ functionResponse: {
+                id: context.functionCallId, name: tool.name, response,
+              } }] }).length);
               if (response.status === "unknown") {
                 toolFailure = new AgentStopped("tool_unknown");
                 throw toolFailure;

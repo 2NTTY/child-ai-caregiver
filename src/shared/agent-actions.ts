@@ -33,9 +33,11 @@ const ordinaryDetails = z.object({ kind: z.enum(ordinaryRecordKinds),
 }).strict();
 /** These actions express user statements and ordinary instructions, never diagnoses or inferred facts. */
 export const agentDirectActionSchema = z.discriminatedUnion("kind", [
-  z.object({ ...evidence, kind: z.literal("save_record"), text: text(2000), details: ordinaryDetails }).strict(),
+  z.object({ ...evidence, kind: z.literal("save_record"), text: text(2000), details: ordinaryDetails,
+    quantityEvidence: text(200).nullable().optional().describe("本次原文中逐字提供的數量片語；未提供填 null，不含日期或時鐘，不換算、不求和") }).strict(),
   z.object({ ...evidence, kind: z.literal("revise_record"), recordId: z.uuid(), expectedVersion: version,
-    text: text(2000), details: ordinaryDetails, reason: text(1000) }).strict(),
+    text: text(2000), details: ordinaryDetails, reason: text(1000), quantityEvidence: text(200).nullable().optional()
+      .describe("本次原文中逐字提供的數量片語；未提供填 null，不含日期或時鐘，不換算、不求和") }).strict(),
   z.object({ ...evidence, kind: z.literal("save_private_note"), title: text(100), text: text(2000) }).strict(),
   z.object({ ...evidence, kind: z.literal("revise_private_note"), noteId: z.uuid(), expectedVersion: version,
     title: text(100), text: text(2000) }).strict(),
@@ -65,4 +67,5 @@ export interface AgentActionReceipt {
   notification: "not_authorized" | "authorized_for_due_event";
   channels: ContactBinding["channel"][];
   createdAt: string;
+  quantityGrounding?: { status: "source_supported" | "removed" | "absent" | "unchanged" };
 }
