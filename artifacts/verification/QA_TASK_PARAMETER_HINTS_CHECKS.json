@@ -1,0 +1,74 @@
+{
+  "package": "QA-TASK-PARAMETER-HINTS",
+  "verifiedAtUtc": "2026-10-07T12:37:24Z",
+  "baselineCommit": "58d70da13cfe3e2f8cc018c9b15bf1f966069665",
+  "scope": "Bounded public-schema hints only for propose_task beforeTool strict validation failure",
+  "implementation": {
+    "registration": "Explicit parameterErrorHints callback registered only by propose_task",
+    "payload": "Fixed path, reason and expected strings; no issue messages, input, unknown keys or dynamic paths",
+    "limits": {
+      "maximumHints": 3,
+      "maximumHintArrayJsonCharacters": 512
+    },
+    "unchanged": [
+      "strict validator",
+      "authorization",
+      "business rejection and unknown handling",
+      "side effects",
+      "model and tool budgets",
+      "gateway and finalization"
+    ]
+  },
+  "environment": {
+    "node": "24.19.0",
+    "adk": "2.1.0",
+    "genai": "2.24.0",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "nodeTypes": "24.13.6",
+    "pgTypes": "8.23.1"
+  },
+  "checks": [
+    {
+      "name": "Focused runtime and repair regression",
+      "command": "node --experimental-test-module-mocks --test tests/agent-runtime.test.ts tests/agent-runtime-contract.test.ts tests/task-parameter-hints.test.ts tests/product-agent-task-budget.test.ts",
+      "result": "38/38 passed",
+      "coverage": [
+        "Fourteen task shapes: two valid and twelve rejected before tool authorization or execution",
+        "Only propose_task registers hints; unregistered tools keep the generic response",
+        "Synthetic secret keys, values and dynamic paths are not reflected in responses or metadata diagnostics",
+        "Message/input/keys getters are never read; known custom refinements receive fixed schema hints",
+        "Hints are deduplicated, whole and bounded to three entries and 512 JSON characters",
+        "not_authorized, handler invalid_input and unknown outcomes remain unchanged",
+        "Four existing real-ADK scripted task-repair variants finish within four calls, persist one fake-store pending candidate and perform no direct task action"
+      ],
+      "scriptedRepairResponseCharacters": 348,
+      "maximumScriptedRequestCharacters": 29951
+    },
+    {
+      "name": "Strict scoped semantic typecheck",
+      "result": "Passed without noCheck or stubs",
+      "files": [
+        "server/agent-runtime.ts",
+        "server/product-agent-tools.ts",
+        "server/task-parameter-hints.ts",
+        "tests/task-parameter-hints.test.ts",
+        "tests/product-agent-task-budget.test.ts"
+      ],
+      "method": "TypeScript 6.0.3, root server compiler options, real transitive source closure and pinned Node/pg type declarations"
+    }
+  ],
+  "verificationSetupLimits": [
+    "Initial snapshot runs were blocked by missing source/type files; the exact baseline source closure was then materialized and the final semantic check passed",
+    "The workspace is a verified source snapshot with selected runtime dependencies, not a full clean npm ci checkout"
+  ],
+  "notPerformed": [
+    "Real provider calls",
+    "Real database or persistent candidate writes",
+    "GCP operations",
+    "Deployment",
+    "Full repository regression"
+  ],
+  "interpretation": "The actual arguments and rejection category for T7/T8/T9 are unavailable. These tests demonstrate repair feedback and preserved guards; they do not establish the cause of those historical rejections.",
+  "review": "Independent review passed: 38/38 focused tests and strict scoped semantic typecheck; no blocker reported"
+}

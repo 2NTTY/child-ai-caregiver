@@ -79,10 +79,11 @@ export class PresentationRepairAgent extends LlmAgent {
     this.repairStarted = true;
     // Reuse the same invocation, shared model-call counter, signal and deadline.
     for await (const event of super.runAsyncImpl(context)) {
+      // This flag ends only the repair phase, including a rejected presentation;
+      // tool status and the finalizer still decide acceptance. Drain the native
+      // generator so ADK 2.1.0 closes its call_llm span after yielding the response.
+      if (event.content?.parts?.some(part => part.functionResponse)) event.actions.skipSummarization = true;
       yield event;
-      // Rejected or invalid-argument presentation is the end of this one repair
-      // too. Never let the native loop start a third presentation attempt.
-      if (event.errorCode || event.content?.parts?.some(part => part.functionResponse)) break;
     }
   }
 }

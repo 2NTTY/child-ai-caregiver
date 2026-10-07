@@ -47,7 +47,11 @@ for (const policy of [observedPolicy, null]) for (const inputLimit of [32000, 64
       if (index === 2) {
         const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.id === "invalid-task")?.functionResponse?.response;
         assert.equal(response?.status, "rejected"); assert.equal((response?.data as any)?.code, "invalid_parameters");
-        responseSizes.push(JSON.stringify(response).length); assert.ok(responseSizes[0] < 250, "No verbose validation data is returned");
+        const hints = (response?.data as any)?.hints;
+        assert.deepEqual(hints, [{ path: "values.dueAt", reason: "invalid_format",
+          expected: "ISO datetime with Z or offset, from 2000-01-01 inclusive to 2101-01-01 exclusive" }]);
+        assert.ok(hints.length <= 3 && JSON.stringify(hints).length <= 512);
+        responseSizes.push(JSON.stringify(response).length); assert.ok(responseSizes[0] < 800, "Only bounded public schema repair hints are returned");
         assert.equal(proposalsWritten, 0, "Invalid parameters must not execute a proposal write");
       }
       const parts = index === 0 ? [{ functionCall: { id: "context", name: "read_context", args: {} } }]

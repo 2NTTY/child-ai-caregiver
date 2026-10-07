@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { InMemorySessionService } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
-import { FinishReason } from "@google/genai";
+import { FinishReason, GoogleGenAI, FunctionCallingConfigMode, Type } from "@google/genai";
+import type { GoogleGenAIOptions } from "@google/genai";
 import { z } from "zod";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import type { AgentRunInput, AgentTool } from "../server/agent-runtime.ts";
@@ -258,3 +260,59 @@ test("actual daily-quota denial remains distinct from exhausted repair phase", a
   const result = await s.runtime.run(s.input);
   assert.equal(result.stopReason, "quota_exceeded"); assert.equal(s.requests.length, 1); assert.equal(s.reservations(), 2);
 });
+
+
+test("pinned GenAI sends the repair allowlist and opaque native history on Vertex v1 wire", async () => {
+  const bodies: Record<string, unknown>[] = [];
+  const authClient = { getRequestHeaders: async () => new Headers() } as unknown as NonNullable<GoogleGenAIOptions["googleAuthOptions"]>["authClient"];
+  const client = new GoogleGenAI({ enterprise: true, project: "synthetic-project", location: "global", apiVersion: "v1",
+    googleAuthOptions: { authClient }, httpOptions: { retryOptions: { attempts: 1 }, fetch: async (_url, init) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response(JSON.stringify({ candidates: [{ finishReason: "STOP", content: present().content }] }),
+        { status: 200, headers: { "Content-Type": "application/json" } });
+    } } });
+  const contents = [{ role: "user", parts: [{ text: "Synthetic request" }] }, call("propose_task", { wrong: "synthetic" }).content!,
+    { role: "user", parts: [{ functionResponse: { id: "call-propose_task", name: "propose_task", response: { status: "rejected", data: { code: "invalid_parameters" } } } }] },
+    natural().content!, { role: "user", parts: [{ text: PRESENTATION_REPAIR_MESSAGE }] }];
+  await client.models.generateContent({ model: "gemini-3.1-flash-lite", contents, config: {
+    tools: [{ functionDeclarations: [{ name: "present_answer", parameters: { type: Type.OBJECT, properties: { text: { type: Type.STRING } }, required: ["text"] } }] }],
+    toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY, allowedFunctionNames: ["present_answer"] } },
+  } });
+  assert.equal(bodies.length, 1, "The custom fetch intercepts the only request; no network is used");
+  assert.deepEqual(bodies[0]!.toolConfig, { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["present_answer"] } });
+  assert.deepEqual(bodies[0]!.contents, contents);
+});
+
+
+for (const outcome of ["accepted", "rejected", "invalid-arguments", "accepted-fourth-slot"] as const)
+  test(`repair ${outcome} drains both native model spans without another provider request`, async context => {
+    const require = createRequire(import.meta.url);
+    // Version-specific cleanup regression: instrument the exact installed SDK
+    // tracer, without changing its implementation or enabling telemetry export.
+    const { tracer } = await import(new URL("./dist/esm/telemetry/tracing.js", pathToFileURL(require.resolve("@google/adk/package.json"))).href);
+    const startSpan = tracer.startSpan.bind(tracer);
+    let starts = 0, ends = 0;
+    context.mock.method(tracer, "startSpan", (name: string, ...args: unknown[]) => {
+      const span = startSpan(name, ...args);
+      if (name !== "call_llm") return span;
+      starts++;
+      return new Proxy(span, { get(target, key) {
+        if (key === "end") return (...endArgs: unknown[]) => { ends++; return target.end(...endArgs); };
+        const value = Reflect.get(target, key);
+        return typeof value === "function" ? value.bind(target) : value;
+      } });
+    });
+    const accepted = outcome === "accepted" || outcome === "accepted-fourth-slot";
+    const s = setup((_, index) => {
+      if (outcome === "accepted-fourth-slot") return index < 2 ? call("read_context") : index === 2 ? natural() : present();
+      return !index ? natural() : outcome === "invalid-arguments" ? call("present_answer", { bad: true }) : present();
+    });
+    if (outcome === "rejected") s.terminal.execute = async () => ({ status: "rejected", data: { code: "citation_required" } });
+    const result = await s.runtime.run(s.input);
+    assert.equal(result.status, accepted ? "completed" : "stopped");
+    assert.equal(result.stopReason, accepted ? undefined : "invalid_response");
+    assert.equal(result.tools.at(-1)!.status, accepted ? "succeeded" : "rejected");
+    const expected = outcome === "accepted-fourth-slot" ? 4 : 2;
+    assert.equal(s.requests.length, expected); assert.equal(s.finalized(), 1);
+    assert.equal(starts, expected); assert.equal(ends, expected);
+  });

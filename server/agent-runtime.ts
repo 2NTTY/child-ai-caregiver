@@ -29,6 +29,8 @@ export interface AgentTool {
   /** Server-owned presentation boundary; successful execution still requires finalize. */
   terminal?: true;
   parameters: z.ZodObject;
+  /** Explicit tool-owned, bounded public-schema hints; never raw validation details. */
+  parameterErrorHints?: (issues: readonly z.core.$ZodIssue[]) => readonly { path: string; reason: string; expected: string }[];
   authorize: (args: Record<string, unknown>, scope: Readonly<AgentScope>) => Promise<boolean>;
   execute: (args: Record<string, unknown>, context: { scope: Readonly<AgentScope>; runId: string; callId: string; signal: AbortSignal }) => Promise<AgentToolResult>;
 }
@@ -143,8 +145,12 @@ export function createAgentRuntime(options: {
               const definition = definitions.get(tool.name);
               const parsed = definition?.parameters.strict().safeParse(args);
               let response: AgentToolResult | undefined;
-              if (!parsed?.success) response = { status: "rejected", data: { code: "invalid_parameters",
-                nextAction: "Use the declared tool parameter shape. No operation was executed; correct the arguments within the remaining run budget." } };
+              if (!parsed?.success) {
+                const hints = parsed && definition?.parameterErrorHints?.(parsed.error.issues);
+                response = { status: "rejected", data: { code: "invalid_parameters",
+                  nextAction: "Use the declared tool parameter shape. No operation was executed; correct the arguments within the remaining run budget.",
+                  ...(hints?.length ? { hints } : {}) } };
+              }
               else if (!await budget.wait(authorize)
                 || !await budget.wait(() => definition!.authorize(parsed.data, scope))) response = { status: "rejected", data: { code: "not_authorized",
                   nextAction: "Stop this operation. Do not retry with another identity or resource." } };
