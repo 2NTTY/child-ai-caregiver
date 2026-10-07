@@ -37,8 +37,37 @@
       "stage": "complete frontend dependency snapshot",
       "result": "passed",
       "evidence": "Recovered unchanged api-base-url.ts blob a4a7936aa26c3daccb60cbdec6b9aa0bfbc9d146; exit code 0"
+    },
+    {
+      "command": "npm run build:web --workspace frontend -- --output-dir ../evidence/dist-web",
+      "stage": "initial export with shared dependency/cache resolution",
+      "result": "rejected despite exit code 0",
+      "evidence": "Expo emitted 35 routes, but bundle entry-7da2b68595fd41efd9612e1abf7c3758.js still contained the old receipt ternary and neither new receipt string. This output is not accepted as patch verification."
+    },
+    {
+      "command": "node ../node_modules/expo/bin/cli export --platform web --clear --source-maps --output-dir ../evidence/dist-web-pinned",
+      "stage": "isolated cache and explicit project root",
+      "result": "passed",
+      "input_commit": "8908ceaafc77a2d048f7ee9635dba92a1055319d",
+      "environment": "frontend cwd; isolated TMPDIR; absolute EXPO_ROUTER_APP_ROOT; CI=1; EXPO_NO_TELEMETRY=1; EXPO_OFFLINE=1; EXPO_PUBLIC_API_BASE_URL=/api; existing Expo 57.0.24 / Router 57.0.22 / React 19.2.3 dependencies",
+      "exit_code": 0,
+      "static_routes": 35,
+      "bundle": "_expo/static/js/web/entry-c61c79d1e3227155fd3c3e36ddab68a2.js",
+      "bundle_sha256": "6ade9f7dafe71d89c459e775426a95a8f6e093bc792f5e6206c492cb026a48ed",
+      "source_map_component_blob": "58b1991360c6a7ee493dd707d306a8c76b980485",
+      "source_map_repository_text_modules_verified": 326,
+      "source_map_text_mismatches": [],
+      "evidence": "Both new receipt strings are present in the minified bundle. All 326 repository text source-map modules match the reviewed local source. The exported hero image matches its source bytes exactly. All referenced static HTML assets exist. No source asset was missing.",
+      "limitations": "The first stale output is preserved and excluded. Cache and resolver contributions were not isolated individually. A positional project argument was rejected by this CLI; the supported explicit working-directory form was used successfully."
     }
   ],
-  "not_performed": ["Browser QA", "Web export", "Deployment", "Real API calls", "Model calls", "Database or schema changes", "Full regression suite"],
+  "not_performed": [
+    "Browser QA",
+    "Deployment",
+    "Real API calls",
+    "Model calls",
+    "Database or schema changes",
+    "Full regression suite"
+  ],
   "review": "Independent source review, independent repeat of 7/7 focused tests and full frontend typecheck, and parent diff review passed before publication; browser and deployment acceptance remain unverified"
 }
