@@ -1,0 +1,104 @@
+{
+  "baseline": "2830a268",
+  "date": "2026-10-07",
+  "scope": "ChildPicker and ordinary AppSelect radio items; existing counted AppSelect path retained",
+  "baselineGitBlobs": {
+    "frontend/src/components/ChildPicker.tsx": "eaee393d65e560889e35dd5d22439538f042bca0",
+    "frontend/src/components/ui.tsx": "39251f05eec365acae5e76b7089502f590739050"
+  },
+  "environment": {
+    "node": "24.19.0",
+    "react": "19.2.3",
+    "reactDom": "19.2.3",
+    "reactNativeWeb": "0.21.2",
+    "reactNativePaper": "5.15.3"
+  },
+  "finding": {
+    "confirmed": true,
+    "method": "ReactDOM SSR of the installed Paper RadioButton.Item with react-native resolved to installed react-native-web",
+    "actual": "Two options render four focusable role=radio elements, none with aria-checked despite explicit checked props",
+    "cause": "Paper Item drops unknown ARIA props and renders an interactive inner radio; RN Web does not map the accessibilityState object to aria-checked"
+  },
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/selector-accessibility.test.mjs",
+      "result": "passed",
+      "tests": 7,
+      "limits": "Actual Paper/RN Web option DOM; owner open-state and unrelated modal/motion wrappers are stubbed. Enter uses the installed RN Web press responder with a synthetic event/document. No live DOM event dispatch or browser focus trap test."
+    },
+    {
+      "command": "./node_modules/.bin/tsc --noEmit --project frontend/tsconfig.json",
+      "result": "passed",
+      "diagnostics": 0
+    },
+    {
+      "command": "node ../node_modules/expo/bin/cli export --platform web --output-dir ../evidence/dist-web --clear --source-maps",
+      "result": "passed",
+      "staticRoutes": 35,
+      "sourceMapRepositoryModulesByteMatched": 327
+    }
+  ],
+  "initialHarnessFailure": "First test attempt could not import cheerio because this existing dependency directory lacks it. No product assertion ran. Switched the read-only markup parser to the already installed @xmldom/xmldom 0.8.15; no dependency or lockfile changes.",
+  "notRun": [
+    "Live browser / accessibility tree",
+    "Real screen-reader announcement",
+    "Actual Tab / Escape and dialog focus restoration",
+    "Native device"
+  ],
+  "publication": "Prepared for a draft PR only; no merge or deployment performed by this package.",
+  "publicationBase": "96bed5cf2bc27242f6488e43f77c7fbf638c9c82",
+  "latestSourceVerification": {
+    "filesChecked": 436,
+    "missingFrontend": [],
+    "unexpectedDifferences": [],
+    "preservedMergedChanges": [
+      "AgentRunView concern receipts",
+      "GrowthArchive report history labels"
+    ]
+  },
+  "webExport": {
+    "base_commit": "96bed5cf2bc27242f6488e43f77c7fbf638c9c82",
+    "method": "Offline Expo export, explicit frontend cwd, isolated TMPDIR, absolute EXPO_ROUTER_APP_ROOT, --clear --source-maps",
+    "exit_code": 0,
+    "static_routes": 35,
+    "bundle": "_expo/static/js/web/entry-ebc14db06a007e5ed1f5d0da377b9dd3.js",
+    "bundle_sha256": "730250ba2b8d07899f1552644d77aa0c4b8c3d214bcb4ee162756b1609fc9d1e",
+    "bundle_bytes": 5009073,
+    "source_map_sha256": "40d97aaa6a91701f0c4b37a68926741e1dd6bde28695d3c5c9ebeb7f1bd636ff",
+    "source_map_repository_modules_verified": 327,
+    "source_map_mismatches": [],
+    "key_source_matches": [
+      {
+        "path": "frontend/src/components/ui.tsx",
+        "source_map_blob": "457faea5f8125cbefe60a7f46747e3b100db27ba",
+        "local_blob": "457faea5f8125cbefe60a7f46747e3b100db27ba"
+      },
+      {
+        "path": "frontend/src/components/AppRadioItem.tsx",
+        "source_map_blob": "72d88c44fe25dc825834b04ba4eef4d3226e7f8b",
+        "local_blob": "72d88c44fe25dc825834b04ba4eef4d3226e7f8b"
+      },
+      {
+        "path": "frontend/src/components/ChildPicker.tsx",
+        "source_map_blob": "0118f7fe3a8b6021fa48608c4efd86061181d40c",
+        "local_blob": "0118f7fe3a8b6021fa48608c4efd86061181d40c"
+      },
+      {
+        "path": "frontend/src/components/agent/AgentRunView.tsx",
+        "source_map_blob": "58b1991360c6a7ee493dd707d306a8c76b980485",
+        "local_blob": "58b1991360c6a7ee493dd707d306a8c76b980485"
+      },
+      {
+        "path": "frontend/src/components/growth/GrowthArchive.tsx",
+        "source_map_blob": "c5e94a7c98fa94056d5a8f6daf20f1d2b8c99732",
+        "local_blob": "c5e94a7c98fa94056d5a8f6daf20f1d2b8c99732"
+      }
+    ],
+    "manifest_sha256": "0f5484ea8bf797164f8d1e9b775b6087185863130062607451a69d09d0a86e75",
+    "missing_static_html_assets": [],
+    "browser_tested": false,
+    "deployed": false
+  },
+  "review": "Parent independently reviewed source, reran all seven focused tests and frontend typecheck, and checked additional RN Web keypress behavior. No blocker reported.",
+  "remainingAccessibilityScope": "Full radiogroup arrow-key behavior is unchanged and not implemented by this repair."
+}

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
-import { Portal, RadioButton, Text } from "react-native-paper";
+import { Portal, Text } from "react-native-paper";
+import { AppRadioItem } from "./AppRadioItem";
 import { AppDialog as Dialog } from "./AppDialog";
 import { AppButton } from "./ui";
 import { AppIcon } from "./AppIcon";
@@ -27,7 +28,7 @@ export function ChildPicker({ children, selectedId, onSelect, compact = false, t
       <AppIcon name="chevron-down" size={homeIdentity ? homeArrowSize : 18} color={visible ? colors.teal : colors.muted} />
     </>}
   </Pressable><Portal><Dialog visible={visible} onDismiss={() => setOpen(false)}><Dialog.Title>選擇孩子</Dialog.Title><Dialog.ScrollArea><ScrollView style={{ maxHeight: 360 }}>
-    {children.map(child => <RadioButton.Item key={child.id} label={`${child.displayName} · ${child.ageLabel}`} value={child.id} aria-checked={child.id === selectedId} status={child.id === selectedId ? "checked" : "unchecked"} labelStyle={styles.optionLabel} style={[styles.option, child.id === selectedId && styles.optionSelected]} onPress={() => { setOpen(false); onSelect(child.id); }} />)}
+    {children.map(child => <AppRadioItem key={child.id} label={`${child.displayName} · ${child.ageLabel}`} value={child.id} checked={child.id === selectedId} labelStyle={styles.optionLabel} style={[styles.option, child.id === selectedId && styles.optionSelected]} onPress={() => { setOpen(false); onSelect(child.id); }} />)}
   </ScrollView></Dialog.ScrollArea><Dialog.Actions><AppButton label="關閉" variant="quiet" onPress={() => setOpen(false)} /></Dialog.Actions></Dialog></Portal></>;
 }
 const styles = StyleSheet.create({

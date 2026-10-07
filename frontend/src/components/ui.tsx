@@ -2,7 +2,8 @@ import { useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "rea
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { AppIcon } from "./AppIcon";
-import { Button, Portal, RadioButton, Text, TextInput } from "react-native-paper";
+import { Button, Portal, Text, TextInput } from "react-native-paper";
+import { AppRadioItem } from "./AppRadioItem";
 import { AppDialog as Dialog } from "./AppDialog";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale, workspaceType } from "../theme";
 import type { ConnectionState, OperationState } from "../view-model";
@@ -120,8 +121,8 @@ export function AppSelect<T extends string>({ label, value, options, onChange, o
         {options.map(item => {
           const checked = item.value === value;
           const select = () => { pendingSelection.current = onSelectionClosed ? item.value : null; onChange(item.value); close(); };
-          return item.count === undefined ? <RadioButton.Item key={item.value} label={item.label} value={item.value} aria-checked={checked}
-            accessibilityLabel={`${label}選項：${item.label}`} status={checked ? "checked" : "unchecked"} onPress={select} />
+          return item.count === undefined ? <AppRadioItem key={item.value} label={item.label} value={item.value} checked={checked}
+            accessibilityLabel={`${label}選項：${item.label}`} disabled={disabled} onPress={select} />
             : <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={`${label}選項：${item.label}，${item.count} 項`}
               accessibilityState={{ checked, disabled }} aria-checked={checked} aria-disabled={disabled} disabled={disabled} onPress={select}
               {...(Platform.OS === "web" ? { onKeyDown: (event: { key: string; repeat?: boolean; preventDefault(): void }) => {
