@@ -1,3 +1,7 @@
+import { openAccountRuntime } from "./account-runtime.ts";
+import { createAccountExportStore } from "./account-data.ts";
+import { handleAccountDataRequest } from "./account-data-api.ts";
+import { createAuthMail } from "./auth-mail.ts";
 import { createSharedInputStore } from "./shared-input-store.ts";
 import { createSharedInputService } from "./shared-input-service.ts";
 import { createPhotoFiles } from "./photo-files.ts";
@@ -56,7 +60,8 @@ try {
   startupCleanup = () => pool.end();
   await verifyEncryptedStorage(pool, cipher);
   if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='024-personal-model-settings'")).rowCount) throw new Error("model_settings_migration_required");
-  const modelRouting = createModelRouting(pool, cipher, aiConfig);
+  const account = await openAccountRuntime(pool, cipher, process.env);
+  const modelRouting = createModelRouting(pool, cipher, aiConfig, account?.allowed);
   // Additive rollout: older databases keep their existing stores until the new
   // migration has completed. Never make ordinary writes depend on missing tables.
   const onlineEnabled = (await pool.query<{ ready: boolean }>("SELECT EXISTS(SELECT 1 FROM app_migrations WHERE id='010-online-operations') AS ready")).rows[0].ready;
@@ -72,7 +77,9 @@ try {
   const telegramServices=telegramReady?{config:telegramConfig,queue:queue?telegramQueue(queue.boss):undefined}:undefined;
   const telegram=telegramServices?{store:createTelegramStore(pool,cipher,telegramServices),config:telegramConfig,gateway:createTelegramGateway(telegramConfig)}:undefined;
   const aiUsage = createAiUsageStore(pool);
-  const auth = createAuth(config, pool);
+  if (account?.config.enabled && !queue) throw new Error("account_mail_queue_required");
+  const authMail = account?.config.enabled && queue ? createAuthMail(pool, cipher, queue.boss, config) : undefined;
+  const auth = createAuth(config, pool, { admission: account?.admission, mail: authMail });
   const agentEnabled = process.env.P2_AGENT_ENABLED === "true";
   if (agentEnabled && !(await pool.query("SELECT 1 FROM app_migrations WHERE id='016-product-agent'")).rowCount) throw new Error("agent_migration_required");
   const chat = createChatStore(pool, cipher, onlineEnabled, agentEnabled);
@@ -86,7 +93,7 @@ try {
   const contact=contactServices?createContactStore(pool,cipher,contactServices):undefined;
   const summaryEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='020-care-summaries'")).rowCount);
   const summary=summaryEnabled?createCareSummaryStore(pool,cipher):undefined;
-  const photosEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='021-photo-attachments'")).rowCount);
+  const photosEnabled=(agentEnabled||Boolean(account))&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='021-photo-attachments'")).rowCount);
   const photoFiles=photosEnabled?await createPhotoFiles(process.env.ATTACHMENTS_DIR??"",cipher):undefined;
   const photoStore=photoFiles?createPhotoStore(pool,cipher,photoFiles):undefined;
   const agentActions = agentEnabled && (await pool.query("SELECT 1 FROM app_migrations WHERE id='025-agent-actions'")).rowCount
@@ -97,18 +104,27 @@ try {
   const inputsEnabled=agentEnabled&&Boolean((await pool.query("SELECT 1 FROM app_migrations WHERE id='022-shared-inputs'")).rowCount);
   const inputStore=inputsEnabled?createSharedInputStore(pool,cipher):undefined;
   const inputs=inputStore&&productServices?{store:inputStore,service:createSharedInputService(inputStore,productServices.runtime)}:undefined;
-  if(photos){
+  if(photoStore){
     let purging=false;
-    const purge=async()=>{if(purging)return;purging=true;try{await photos.store.purgeDeleted();}catch{console.warn("attachment_cleanup_pending");}finally{purging=false;}};
+    const purge=async()=>{if(purging)return;purging=true;try{await photoStore.purgeDeleted();}catch{console.warn("attachment_cleanup_pending");}finally{purging=false;}};
     await purge();photoCleanupTimer=setInterval(()=>{void purge();},30000);photoCleanupTimer.unref();
   }
+  if (account && !photoFiles) throw new Error("account_photo_storage_required");
+  const exporter = account && photoFiles ? createAccountExportStore(pool, cipher, { photoFiles }) : undefined;
   const handler = createRequestHandler({
     config, auth, workspaces: createWorkspaceStore(pool),
+    account: account && exporter ? { admission: account.admission,
+      handleData: (request, userId) => handleAccountDataRequest(request, userId, { data: account.data,
+        exporter,
+        verifyPassword: async (headers, password) => {
+          try { return (await auth.api.verifyPassword({ headers, body: { password } })).status === true; }
+          catch { return false; }
+        } }) } : undefined,
     webPush: pushServices ? createWebPushStore(pool, cipher, pushServices, true) : undefined,
-    records: createRecordStore(pool, cipher, onlineEnabled),
+    records: createRecordStore(pool, cipher, onlineEnabled, account?.data.recordChildIntent),
     families: createFamilyStore(pool, cipher, onlineEnabled),
     care: createCareStore(pool, cipher, onlineEnabled),
-    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, contactServices,summaryEnabled,photoFiles,Boolean(inputs)) : undefined,
+    online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, contactServices,summaryEnabled,photoFiles,Boolean(inputs),account?.data.recordChildIntent) : undefined,
     tasks, chat, memory, productAgent, productAgentStore, agentActions, growth, concerns, documents, telegram, contact, summary, photos, inputs,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelRouting,

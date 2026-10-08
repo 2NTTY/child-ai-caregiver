@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.server.json",
+  "include": [
+    "../server/index.ts",
+    "../server/worker-main.ts",
+    "../server/migrate.ts",
+    "../server/backup.ts",
+    "../tests/p2-a08-auth.test.ts",
+    "../tests/p2-a08-data.test.ts",
+    "../src/client/account-api.ts"
+  ]
+}

@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **P2-A01～A05 已合併，P2-A06 最低驗收完成、待本包合併。** 唯一當前入口為 [PLAN#active](PLAN.md#active)。有界知識、持久工作、文件局部修改與完整期間報告已有最低證據，相關事件跟進及終態抑制已補，原失敗及局部補驗分開保存；合併後進 A08（Ready）。完整 Agent／穩定服務及本輪部署仍未完成，舊 P1／P2／INT 證據保留，P3 未啟動。
+- **P2-A01～A06 已合併，P2-A08 邀請制帳戶與資料控制最低驗收通過、交付中。** 唯一當前入口為 [PLAN#active](PLAN.md#active)。有界知識、持久工作、文件修改、完整期間報告及主動接續已有最低證據；身份及資料控制已完成本機接線，A07正式流程及A09部署待前置合併。完整 Agent／穩定服務及本輪部署仍未完成，舊 P1／P2／INT 證據保留，P3 未啟動。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。

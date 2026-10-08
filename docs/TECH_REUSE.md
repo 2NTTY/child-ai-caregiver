@@ -142,3 +142,10 @@ Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定�
 ### P2-A05 成長整理（2026-10-08）
 
 沿用 pg-boss、PostgreSQL 交易、現有領域來源解碼及 FamilyDocument；每批有界掃描、加密進度與完整統計是本項目資料／權限語義，沒有引入通用報表或新 workflow 框架。PDF 沿用上方 INT-W06 的 @react-pdf/renderer 4.9.0／靜態繁中文字體，不重做研究或改版。既有文件相容性證據復用；本包必要實測與未驗範圍另記 verification。
+
+
+### P2-A08 帳戶與郵件（2026-10-08）
+
+沿用 Better Auth 1.7.5 的驗證、密碼找回及會話撤銷，沒有重造身份或 token 系統。主模型核對原生 transaction／hook 及 server-only verifyPassword；業務邀請、資料處理確認、可靠刪除及備份後抑制仍由產品服務處理。方法見 [Skill](../.agents/skills/better-auth-account-lifecycle/SKILL.md)。
+
+根依賴缺郵件 transport，採固定 Nodemailer 10.0.16（MIT-0；Node >=20）及 @types/nodemailer 8.0.2（MIT），沿現有 pg-boss 交易 outbox；使用標準 SMTP／STARTTLS 與正常憑證驗證，不綁單一商用郵件平台或自寫 SMTP 生產 client。[官方 SMTP](https://nodemailer.com/smtp)及安裝版本已核對；本機 capture、真收件箱及正式部署的證據分開記錄。

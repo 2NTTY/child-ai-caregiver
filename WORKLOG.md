@@ -1657,3 +1657,15 @@
 - 工程外加密DB checkpoint後套029／033。原SQL9次因UUID比較錯誤停批；只續同現場至24次，停於harness取錯重設前baseline，readonly證明另一owner未被私人變更喚醒。主模型核對後修正baseline，重建原收據inputs，只續剩餘30次，combined54／55通過；同2帳號／1孩子、1stub run，零真模型／外網／通知。
 - 驗得交易回滾／原op、5項合併／第6項延期、撤權／取消、store及worker重建沿原run、關注200→202並停止舊跟進。精確清理後非fixture totals一致，worker=false／generation未變。store重建不代替OS／VM重啟；真流程及完整UI留A07／A09。
 - [EV](artifacts/verification/P2_A06_CHECKS.json)及原SQL兩次失敗／phase2成功分開保存；Node24.11／npm11.6.1／PG18.6／ADK2.1，lockfile與部署固定版本不改。主模型最低gate通過。按A帳號交付，合併後開A08；完整P2與新部署未完成。
+
+
+<a id="log-20261008-p2-a08"></a>
+## 2026-10-08｜P2-A08 邀請、帳戶生命週期及資料退出
+
+- 基線94508e9；C主責、權重3，C70%／B20%／A10%。主模型親寫方案、契約、Skill及整合review；一個Luna只定位，兩個Sol6.1各負責原生身份／郵件及資料下載／刪除。共用AI由A統籌，不稱成員獨立人工實作或驗收。
+- 沿Better Auth1.7.5及Nodemailer10.0.16，補邀請资格、原生電郵驗證／找回／會話撤銷、當版資料同意、加密有限郵件outbox及HTTP／模型准入。034／035保留既有帳號；正式 invited 模式需要工程外SMTP設定。
+- 本人資料33分區有界下載、身份／scope綁定cursor、原op刪除收據、native password核對及獨立加密fsync刪除日誌。舊備份在開放存取前重放目前日誌；child直接與online刪除共用intent，附件清理結果另列。備份不帶session／驗證token／郵件outbox；實際外部journal備份及照片配對恢復留A09。
+- 離線auth2／data2聚合及兩份scoped TypeScript通過，executor工具結果未另存完整stdout；不是全倉回歸。首次本機準備在ACL preflight失敗、零DB寫入：Windows PowerShell繼承不相容PSModulePath；只清空ACL子程序的該變數後通過，原失敗保留。
+- 最低真SQL連貫流程通過：先工程外加密checkpoint，再還原到新合成庫套034／035；原庫65users／14children／17messages及暫停worker不變。1新帳號／1孩子，auth11HTTP／11business、4次真HTTP准入、data53／60business；2封本機SMTP capture。驗註冊→驗證→同意→找回→舊會話／密碼失效→完整allowlist下載→刪除／原收據→舊備份還原並重放目前日誌不復活。
+- 新帳號／孩子已刪，兩還原庫worker暫停，原庫未變；工程外密文備份／日誌保留。空分區只證明查詢／契約，不冒稱所有業務樣例完整回歸。沒有真SMTP、模型／embedding、通知、瀏覽器、雲端或VM重啟；UI由A07接線。
+- [EV](artifacts/verification/P2_A08_CHECKS.json)、[SQL raw](artifacts/verification/P2_A08_SQL.log)、[準備及保留失敗](artifacts/verification/P2_A08_PREPARE_FAILURE.json)。Node24.11／npm11.6.1，部署固定版本未改；不重跑全套。按C帳號交付後開始A07，完整P2與部署仍未完成。

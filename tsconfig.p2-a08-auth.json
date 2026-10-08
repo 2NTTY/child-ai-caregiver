@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.server.json",
+  "include": ["server/auth.ts", "server/account-admission.ts", "server/account-service-config.ts", "server/auth-mail.ts", "server/auth-mail-worker.ts", "tests/p2-a08-auth.test.ts"]
+}

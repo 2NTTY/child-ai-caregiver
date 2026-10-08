@@ -1,3 +1,5 @@
+import { openAccountRuntime } from "./account-runtime.ts";
+import { createAuthMailWorker } from "./auth-mail-worker.ts";
 import { createContactStore } from "./contact-store.ts";
 import { contactQueue,startContactWorker } from "./contact-worker.ts";
 import { createGrowthStore } from "./growth-store.ts";
@@ -36,6 +38,7 @@ let contactConsumer:Awaited<ReturnType<typeof startContactWorker>>|undefined;
 let telegramConsumer:Awaited<ReturnType<typeof startTelegramWorker>>|undefined;
 let pool: ReturnType<typeof createPool> | undefined;
 let queue: ReturnType<typeof createWorkerQueue> | undefined;
+let mailWorker: ReturnType<typeof createAuthMailWorker> | undefined;
 let knowledgeWorker: ReturnType<typeof createKnowledgeRefreshWorker> | undefined;
 let growthWorker: ReturnType<typeof createGrowthWorker> | undefined;
 let concernWorker: ReturnType<typeof createConcernWorker> | undefined;
@@ -48,6 +51,7 @@ const stop = () => stopping ??= (async () => {
   telegramAbort.abort();
   const deadline = setTimeout(() => { console.error("worker_stop_deadline"); process.exit(1); }, 20000).unref();
   agentBackground?.stop();
+  await mailWorker?.stop();
   try { await continuationWorker?.stop(); } finally {
   try { await documentWorker?.stop(); } finally {
   try { await concernWorker?.stop(); } finally {
@@ -64,13 +68,19 @@ try {
   const telegramConfig=await readTelegramConfig(process.env);
   const pushConfig=await readWebPushConfig(process.env);
   const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
-  pool = createPool(readServerConfig(process.env));
+  const serverConfig = readServerConfig(process.env);
+  pool = createPool(serverConfig);
   await verifyEncryptedStorage(pool, cipher);
   if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='024-personal-model-settings'")).rowCount) throw new Error("model_settings_migration_required");
+  const account = await openAccountRuntime(pool, cipher, process.env);
   const ready = (await pool.query("SELECT 1 FROM app_migrations WHERE id='014-knowledge-refresh'")).rowCount;
   if (!ready) throw new Error("worker_migration_required");
   queue = createWorkerQueue(pool, "worker");
   await queue.start();
+  if (account?.config.enabled && account.config.smtp) {
+    mailWorker = createAuthMailWorker(pool, queue.boss, cipher, { ...serverConfig, smtp: account.config.smtp, admission: account.admission });
+    await mailWorker.start();
+  }
   if ((await pool.query("SELECT 1 FROM app_migrations WHERE id='028-family-documents'")).rowCount) {
     documentWorker=createFamilyDocumentWorker(pool,queue.boss,createFamilyDocumentStore(pool,cipher)); await documentWorker.start();
   }
@@ -80,7 +90,7 @@ try {
     const contact=(await pool.query("SELECT 1 FROM app_migrations WHERE id='019-proactive-contact'")).rowCount ? createContactStore(pool,cipher,{queue:contactQueue(queue.boss),pushKey:pushConfig?.publicKey??null,telegramBotId:telegramConfig?.botId??null}) : undefined;
     if(contact)contactConsumer=await startContactWorker(queue.boss,contact,{push:createWebPushGateway(pushConfig),telegram:createTelegramGateway(telegramConfig)},telegramAbort.signal);
     const aiConfig = readAiConfig(process.env);
-    const services = createProductAgentServices(pool, cipher, aiConfig, undefined, process.env.AGENT_DIAGNOSTICS === "true",growth,contact,undefined,createModelRouting(pool,cipher,aiConfig));
+    const services = createProductAgentServices(pool, cipher, aiConfig, undefined, process.env.AGENT_DIAGNOSTICS === "true",growth,contact,undefined,createModelRouting(pool,cipher,aiConfig,account?.allowed));
     if(growth){growthWorker=createGrowthWorker(pool,queue.boss,growth,services.agent);await growthWorker.start();}
     if((await pool.query("SELECT 1 FROM app_migrations WHERE id='027-concerns'")).rowCount){
       concernWorker=createConcernWorker(pool,queue.boss,createConcernStore(pool,cipher),services.agent);await concernWorker.start();

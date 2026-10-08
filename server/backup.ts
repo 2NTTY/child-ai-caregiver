@@ -35,7 +35,7 @@ async function runPgTool(options: PgTools, tool: "pg_dump" | "pg_restore" | "psq
 
 export async function createEncryptedBackup(options: PgTools, outputPath: string, backupKey: Buffer): Promise<void> {
   const dump = await runPgTool(options, "pg_dump", ["--no-password", "--format=custom", "--no-owner", "--no-privileges",
-    "--exclude-table-data=public.session", "--exclude-table-data=public.verification"]);
+    "--exclude-table-data=public.session", "--exclude-table-data=public.verification", "--exclude-table-data=public.auth_mail_outbox"]);
   if (!dump.subarray(0, 5).equals(Buffer.from("PGDMP"))) throw new Error("Invalid PostgreSQL archive");
   const encrypted = sealBuffer(dump, backupKey, CONTEXT);
   const output = await open(outputPath, "wx", 0o600);

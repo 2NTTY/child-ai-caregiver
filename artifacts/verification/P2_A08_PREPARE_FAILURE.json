@@ -1,0 +1,13 @@
+{
+  "state": "failed",
+  "stage": "preflight",
+  "code": "prepare_failed",
+  "cause": "Windows PowerShell inherited PowerShell 7 module lookup; Get-Acl module could not load",
+  "effects": {
+    "databaseCreated": false,
+    "originalDatabaseChanged": false,
+    "mailSent": 0
+  },
+  "repair": "Clear PSModulePath only in the ACL subprocess; restricted directory ACL confirmed unchanged",
+  "localRecheck": "assertPrivatePath passed"
+}
