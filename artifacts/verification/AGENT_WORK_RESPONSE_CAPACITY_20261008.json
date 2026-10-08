@@ -1,0 +1,25 @@
+{
+  "scope": "Bound read_work success responses by the current tool-response allowance; return response_limit without altering data or pagination.",
+  "baseline": "11ae4655b676ae09d587cfadfe69eb853e8f930a",
+  "checks": {
+    "focused_tests": {
+      "passed": 2,
+      "failed": 0
+    },
+    "scoped_types": "passed",
+    "diff_whitespace": "passed"
+  },
+  "cases": [
+    "Adequate allowance preserves full page and original cursor",
+    "Updated allowance after a prior tool response is enforced",
+    "Oversized result is rejected without an empty success or skipped items",
+    "Existing unauthorized and FamilyError outcomes retained",
+    "Minimal rejection allows bounded next request when it fits; existing input_limit remains when it does not"
+  ],
+  "limits": [
+    "Scripted provider and synthetic stores only",
+    "No true model, database, network, full-repository or deployment verification",
+    "Initial fixture type errors corrected only in tests and final sources rechecked"
+  ],
+  "status": "offline_verified"
+}
