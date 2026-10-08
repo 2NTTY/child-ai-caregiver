@@ -1,0 +1,253 @@
+2026-10-08 15:02:49.831 UTC [28] NOTICE:  database system was shut down at 2026-10-08 15:02:49 UTC
+
+PostgreSQL stand-alone backend 17.11 (Debian 17.11-0+deb13u1)
+backend> 	 1: version	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: version = "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+backend> 	 1: exit_on_error	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: exit_on_error = "off"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+backend> 	 1: listen_addresses	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: listen_addresses = ""	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+backend> 	 1: unix_socket_directories	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: unix_socket_directories = ""	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> backend> 2026-10-08 15:02:49.845 UTC [28] NOTICE:  PASS: 036 DDL rollback leaves no table or added constraint
+2026-10-08 15:02:49.845 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	 1: assert_test	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: assert_test = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> backend> backend> backend> backend> 2026-10-08 15:02:49.847 UTC [28] NOTICE:  PASS: 036 preserves all pre-existing synthetic operation payloads
+2026-10-08 15:02:49.847 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	 1: assert_test	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: assert_test = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 	 1: conname	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "agent_document_operations_owner_user_id_op_id_child_id_fkey"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "f"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "FOREIGN KEY (owner_user_id, op_id, child_id) REFERENCES family_document_operations(user_id, op_id, child_id) ON DELETE CASCADE"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "agent_document_operations_pkey"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "p"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "PRIMARY KEY (owner_user_id, op_id)"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "agent_document_operations_run_id_child_id_owner_user_id_fkey"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "f"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "FOREIGN KEY (run_id, child_id, owner_user_id) REFERENCES agent_runs(id, child_id, owner_user_id) ON DELETE CASCADE"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "agent_document_operations_run_id_op_id_key"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "u"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "UNIQUE (run_id, op_id)"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "agent_document_operations_tool_name_check"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "c"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "CHECK ((tool_name = ANY (ARRAY['generate_family_document'::text, 'change_family_document'::text])))"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "family_document_operations_agent_scope"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "u"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "UNIQUE (user_id, op_id, child_id)"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "family_document_operations_child_id_fkey"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "f"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "family_document_operations_pkey"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "p"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "PRIMARY KEY (user_id, op_id)"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "family_document_operations_request_encrypted_check"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "c"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "CHECK ((request_encrypted ~~ 'yb1.%'::text))"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "family_document_operations_result_encrypted_check"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "c"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "CHECK ((result_encrypted ~~ 'yb1.%'::text))"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: conname = "family_document_operations_user_id_fkey"	(typeid = 19, len = 64, typmod = -1, byval = f)
+	 2: contype = "f"	(typeid = 18, len = 1, typmod = -1, byval = t)
+	 3: definition = "FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+backend> 2026-10-08 15:02:49.848 UTC [28] NOTICE:  PASS: both receipt uniqueness keys exist
+2026-10-08 15:02:49.848 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	 1: assert_test	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: assert_test = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.848 UTC [28] NOTICE:  PASS: run FK rejects mismatching owner [23503 agent_document_operations_run_id_child_id_owner_user_id_fkey]
+2026-10-08 15:02:49.848 UTC [28] CONTEXT:  PL/pgSQL function expect_error(text,text,text,text) line 16 at RAISE
+	 1: expect_error	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: expect_error = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.849 UTC [28] NOTICE:  PASS: run FK rejects mismatching child [23503 agent_document_operations_run_id_child_id_owner_user_id_fkey]
+2026-10-08 15:02:49.849 UTC [28] CONTEXT:  PL/pgSQL function expect_error(text,text,text,text) line 16 at RAISE
+	 1: expect_error	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: expect_error = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.849 UTC [28] NOTICE:  PASS: run FK rejects nonexistent run [23503 agent_document_operations_run_id_child_id_owner_user_id_fkey]
+2026-10-08 15:02:49.849 UTC [28] CONTEXT:  PL/pgSQL function expect_error(text,text,text,text) line 16 at RAISE
+	 1: expect_error	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: expect_error = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.849 UTC [28] NOTICE:  PASS: operation FK rejects mismatching owner [23503 agent_document_operations_owner_user_id_op_id_child_id_fkey]
+2026-10-08 15:02:49.849 UTC [28] CONTEXT:  PL/pgSQL function expect_error(text,text,text,text) line 16 at RAISE
+	 1: expect_error	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: expect_error = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.849 UTC [28] NOTICE:  PASS: operation FK rejects mismatching child [23503 agent_document_operations_owner_user_id_op_id_child_id_fkey]
+2026-10-08 15:02:49.849 UTC [28] CONTEXT:  PL/pgSQL function expect_error(text,text,text,text) line 16 at RAISE
+	 1: expect_error	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: expect_error = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.850 UTC [28] NOTICE:  PASS: operation FK rejects missing committed operation [23503 agent_document_operations_owner_user_id_op_id_child_id_fkey]
+2026-10-08 15:02:49.850 UTC [28] CONTEXT:  PL/pgSQL function expect_error(text,text,text,text) line 16 at RAISE
+	 1: expect_error	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: expect_error = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.850 UTC [28] NOTICE:  PASS: unsupported receipt tool is rejected [23514 agent_document_operations_tool_name_check]
+2026-10-08 15:02:49.850 UTC [28] CONTEXT:  PL/pgSQL function expect_error(text,text,text,text) line 16 at RAISE
+	 1: expect_error	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: expect_error = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> backend> 2026-10-08 15:02:49.850 UTC [28] NOTICE:  PASS: both allowed tools create scoped receipts
+2026-10-08 15:02:49.850 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	 1: assert_test	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: assert_test = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.850 UTC [28] NOTICE:  PASS: owner operation cannot be linked to another valid run [23505 agent_document_operations_pkey]
+2026-10-08 15:02:49.850 UTC [28] CONTEXT:  PL/pgSQL function expect_error(text,text,text,text) line 16 at RAISE
+	 1: expect_error	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: expect_error = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.850 UTC [28] NOTICE:  PASS: run operation unique key rejects duplicate across owner keys [23505 agent_document_operations_run_id_op_id_key]
+2026-10-08 15:02:49.850 UTC [28] CONTEXT:  PL/pgSQL function expect_error(text,text,text,text) line 16 at RAISE
+	 1: expect_error	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: expect_error = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> backend> 2026-10-08 15:02:49.851 UTC [28] NOTICE:  PASS: same operation retry retains one original receipt
+2026-10-08 15:02:49.851 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	 1: assert_test	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: assert_test = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> backend> 2026-10-08 15:02:49.851 UTC [28] NOTICE:  PASS: conflicting retry cannot overwrite original run or tool
+2026-10-08 15:02:49.851 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	 1: assert_test	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: assert_test = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> backend> backend> backend> backend> 2026-10-08 15:02:49.851 UTC [28] NOTICE:  PASS: explicit transaction rollback removes operation and receipt
+2026-10-08 15:02:49.851 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	 1: assert_test	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: assert_test = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.852 UTC [28] NOTICE:  PASS: failed receipt link atomically rolls back preceding operation insert
+2026-10-08 15:02:49.852 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	SQL statement "SELECT assert_test('failed receipt link atomically rolls back preceding operation insert',
+	  observed_state='23503' AND NOT EXISTS(SELECT 1 FROM family_document_operations WHERE op_id='30000000-0000-4000-8000-000000000011') AND
+	  NOT EXISTS(SELECT 1 FROM agent_document_operations WHERE op_id='30000000-0000-4000-8000-000000000011'))"
+	PL/pgSQL function inline_code_block line 11 at PERFORM
+backend> backend> 2026-10-08 15:02:49.852 UTC [28] NOTICE:  PASS: run deletion cascades its receipt and retains committed operation
+2026-10-08 15:02:49.852 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	 1: assert_test	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: assert_test = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> backend> 2026-10-08 15:02:49.852 UTC [28] NOTICE:  PASS: operation deletion cascades its receipt and retains unrelated run
+2026-10-08 15:02:49.852 UTC [28] CONTEXT:  PL/pgSQL function assert_test(text,boolean) line 5 at RAISE
+	 1: assert_test	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+	 1: assert_test = ""	(typeid = 2278, len = 4, typmod = -1, byval = t)
+	----
+backend> 	 1: test_name	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "036 DDL rollback leaves no table or added constraint"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "036 preserves all pre-existing synthetic operation payloads"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "both receipt uniqueness keys exist"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "run FK rejects mismatching owner"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS 23503 agent_document_operations_run_id_child_id_owner_user_id_fkey"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "run FK rejects mismatching child"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS 23503 agent_document_operations_run_id_child_id_owner_user_id_fkey"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "run FK rejects nonexistent run"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS 23503 agent_document_operations_run_id_child_id_owner_user_id_fkey"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "operation FK rejects mismatching owner"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS 23503 agent_document_operations_owner_user_id_op_id_child_id_fkey"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "operation FK rejects mismatching child"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS 23503 agent_document_operations_owner_user_id_op_id_child_id_fkey"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "operation FK rejects missing committed operation"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS 23503 agent_document_operations_owner_user_id_op_id_child_id_fkey"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "unsupported receipt tool is rejected"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS 23514 agent_document_operations_tool_name_check"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "both allowed tools create scoped receipts"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "owner operation cannot be linked to another valid run"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS 23505 agent_document_operations_pkey"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "run operation unique key rejects duplicate across owner keys"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS 23505 agent_document_operations_run_id_op_id_key"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "same operation retry retains one original receipt"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "conflicting retry cannot overwrite original run or tool"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "explicit transaction rollback removes operation and receipt"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "failed receipt link atomically rolls back preceding operation insert"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "run deletion cascades its receipt and retains committed operation"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+	 1: test_name = "operation deletion cascades its receipt and retains unrelated run"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	 2: result = "PASS"	(typeid = 25, len = -1, typmod = -1, byval = f)
+	----
+backend> 	 1: passed_checks	(typeid = 20, len = 8, typmod = -1, byval = t)
+	----
+	 1: passed_checks = "19"	(typeid = 20, len = 8, typmod = -1, byval = t)
+	----
+backend> 2026-10-08 15:02:49.853 UTC [28] NOTICE:  ALL_CHECKS_PASSED:19
+2026-10-08 15:02:49.853 UTC [28] CONTEXT:  PL/pgSQL function inline_code_block line 6 at RAISE
+backend> 2026-10-08 15:02:49.853 UTC [28] NOTICE:  shutting down
+2026-10-08 15:02:49.853 UTC [28] LOG:  checkpoint starting: shutdown immediate
+2026-10-08 15:02:49.853 UTC [28] LOG:  checkpoint complete: wrote 109 buffers (5.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.001 s; sync files=78, longest=0.001 s, average=0.000 s; distance=451 kB, estimate=451 kB; lsn=0/157BA78, redo lsn=0/157BA78
+2026-10-08 15:02:49.854 UTC [28] NOTICE:  database system is shut down
+
+POSTGRES_EXIT_CODE:0
