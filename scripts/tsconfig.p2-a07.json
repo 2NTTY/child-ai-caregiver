@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.server.json",
+  "include": [
+    "../server/index.ts",
+    "../server/personal-library-api.ts",
+    "../src/shared/personal-library.ts"
+  ]
+}

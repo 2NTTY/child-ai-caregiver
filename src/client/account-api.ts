@@ -19,7 +19,8 @@ export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch) {
   const recoveries = new Map<string, { operationId: string; receiptToken: string | null; executionUnknown: boolean }>();
   function setIdentity(userId: string | null) {
     if (identity === userId) return;
-    if (pending) recoveries.set(pending.userId, { operationId: pending.operationId, receiptToken: pending.receipt?.receiptToken ?? recoveries.get(pending.userId)?.receiptToken ?? null, executionUnknown: pending.executionUnknown });
+    if (pending?.receipt?.state === "completed") recoveries.delete(pending.userId);
+    else if (pending) recoveries.set(pending.userId, { operationId: pending.operationId, receiptToken: pending.receipt?.receiptToken ?? recoveries.get(pending.userId)?.receiptToken ?? null, executionUnknown: pending.executionUnknown });
     for (const controller of active) controller.abort(); active.clear(); identity = userId; generation++; pending = null;
   }
   function requireIdentity(userId: string) {
@@ -124,6 +125,7 @@ export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch) {
         pending.executionUnknown = false;
         if (pending.receipt) pending.receipt = { ...pending.receipt, state: result.state, attachmentsPending: result.attachmentsPending };
       }
+      if (result.state === "completed") for (const [userId, recovery] of recoveries) if (recovery.operationId === result.operationId) recoveries.delete(userId);
       return result;
     },
     async discardPreparedDeletion(userId: string, signal: AbortSignal) {

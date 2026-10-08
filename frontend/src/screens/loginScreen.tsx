@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { BlurView } from "expo-blur";
 import { brand } from "../branding";
 import { BrandLogo } from "../components/BrandLogo";
-import { useRouter } from "expo-router";
+import { useIsFocused, useRouter } from "expo-router";
 import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { AppScrollView as ScrollView } from "../components/AppScrollView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,8 +24,9 @@ type Mode = "signIn" | "signUp";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { authenticate, refresh, identityKey, auth, online, recordsState } = useProduction();
-  useEffect(() => { if (identityKey) router.replace("/"); }, [identityKey, router]);
+  const focused = useIsFocused();
+  const { authenticate, refresh, identityKey, auth, online, recordsState, account, accountActions, owner } = useProduction();
+  useEffect(() => { if (focused && identityKey) router.replace("/"); }, [focused, identityKey, router]);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const narrow = width < 900;
@@ -45,9 +46,10 @@ export default function LoginPage() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const busy = recordsState.busy === "auth" || auth === "checking";
+  const busy = recordsState.busy === "auth" || auth === "checking" || !!account.busy;
+  useEffect(() => { setPassword(""); setPasswordVisible(false); }, [identityKey, online]);
 
-  function selectMode(next: Mode) { setMode(next); setResult(null); }
+  function selectMode(next: Mode) { setMode(next); setPassword(""); setPasswordVisible(false); setResult(null); }
   function moveMode(event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }) {
     const key = event.nativeEvent?.key ?? event.key;
     const next = key === "ArrowLeft" || key === "ArrowRight" ? mode === "signIn" ? "signUp" : "signIn" : key === "Home" ? "signIn" : key === "End" ? "signUp" : null;
@@ -58,10 +60,12 @@ export default function LoginPage() {
   async function submit() {
     if (mode === "signUp" && !name.trim()) { setResult("請填寫稱呼。"); return; }
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setResult("請輸入有效電郵地址。"); return; }
+    if (password.length > 128) { setResult("密碼最多 128 個字元。"); return; }
     if (!password) { setResult("請輸入密碼。"); return; }
     if (mode === "signUp" && password.length < 12) { setResult("建立帳戶需要至少 12 個字元的密碼。"); return; }
     setResult(null);
-    try { await authenticate(mode, { name, email, password }); }
+    const credentials = { name, email, password }; setPassword(""); setPasswordVisible(false);
+    try { await authenticate(mode, credentials); }
     finally { setPassword(""); }
   }
 
@@ -89,6 +93,7 @@ export default function LoginPage() {
 
         <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
         <Text style={styles.formIntro}>{mode === "signIn" ? "登入後，繼續整理孩子的照顧資料。" : "先建立自己的帳戶，再新增孩子的資料。"}</Text>
+        {account.status?.registration === "invite" ? <Text style={styles.formNote}>目前只接受獲邀請的電郵註冊。完成驗證及資料使用確認後，便可新增孩子；毋須建立家庭或自備模型 key。</Text> : account.status?.registration === "trial" ? <Text style={styles.formNote}>目前為試用模式，請依服務說明使用合成資料。</Text> : null}
         <View accessibilityRole="tablist" accessibilityLabel="登入方式" style={styles.modeTabs}>
           {([{ key: "signIn", label: "電郵登入" }, { key: "signUp", label: "註冊帳戶" }] as const).map(item => <Pressable key={item.key}
             ref={instance => { if (instance) modeControls.current.set(item.key, instance); else modeControls.current.delete(item.key); }}
@@ -102,12 +107,17 @@ export default function LoginPage() {
         <MotionDisclosure expanded={mode === "signUp"} scopeKey={modeScope} testID="login-name-disclosure"><AppTextField label="稱呼" accessibilityLabel="稱呼" value={name} onChangeText={setName} autoComplete="name" /></MotionDisclosure>
         <AppTextField label="電郵地址" accessibilityLabel="電郵地址" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" />
         <View style={styles.passwordBlock}><AppTextField label={mode === "signUp" ? "密碼（至少 12 個字元）" : "密碼"} accessibilityLabel="密碼" value={password} onChangeText={setPassword} secureTextEntry={!passwordVisible} autoCapitalize="none" autoComplete={mode === "signUp" ? "new-password" : "current-password"} /><Pressable accessibilityRole="button" accessibilityLabel={passwordVisible ? "隱藏密碼" : "顯示密碼"} onPress={() => setPasswordVisible(value => !value)} style={({ pressed }) => [styles.passwordToggle, pressed && styles.pressed]}><Text style={styles.passwordToggleText}>{passwordVisible ? "隱藏" : "顯示"}</Text></Pressable></View>
-        <AppButton label={mode === "signIn" ? "登入" : "建立帳戶"} loading={busy} disabled={!online || auth === "unavailable" || !!identityKey} onPress={() => { void submit(); }} />
-        {result || recordsState.notice ? <Text accessibilityLiveRegion="polite" style={styles.result}>{result ?? recordsState.notice}</Text> : null}
+        <AppButton label={mode === "signIn" ? "登入" : "建立帳戶"} loading={busy} disabled={!online || auth === "unavailable" || !!identityKey || !account.status} onPress={() => { void submit(); }} />
+        {result || account.notice || recordsState.notice ? <Text accessibilityLiveRegion="polite" style={styles.result}>{result ?? account.notice ?? recordsState.notice}</Text> : null}
         {!online ? <Text style={styles.formNote}>目前未能連線，請連線後再試。</Text> : null}
         {auth === "unavailable" ? <AppButton label="重新檢查登入狀態" disabled={!online} variant="secondary" onPress={() => { void refresh(); }} /> : null}
+        {account.gate === "error" ? <AppButton label="重新確認帳戶服務" variant="secondary" disabled={!online} onPress={() => { void owner.accountOwner.loadStatus(); }} /> : null}
+        <View style={styles.features}>
+          <AppButton label="忘記密碼" variant="quiet" disabled={!online || busy || !account.status?.mailConfigured} onPress={() => { setPassword(""); setResult(null); void accountActions.requestEmail("reset", email); }} />
+          <AppButton label="重新要求驗證指引" variant="quiet" disabled={!online || busy || !account.status?.mailConfigured} onPress={() => { setPassword(""); setResult(null); void accountActions.requestEmail("verification", email); }} />
+        </View>
         <AppButton label={detailsOpen ? "收起登入說明" : "登入說明"} variant="quiet" expanded={detailsOpen} onPress={() => setDetailsOpen(value => !value)} />
-        {detailsOpen ? <Text style={styles.formNote}>支援電郵登入及註冊。手機、Google／Apple 登入及忘記密碼尚未接通。密碼不會保存在本機。</Text> : null}
+        {detailsOpen ? <Text style={styles.formNote}>支援電郵登入、獲邀註冊、電郵驗證及重設密碼。指引請求不代表帳戶存在或電郵已送達。手機及 Google／Apple 登入暫不可用。密碼只送往本服務，不加入聊天或保存在本機。</Text> : null}
         <View style={styles.divider} />
 
         <Pressable accessibilityRole="link" accessibilityLabel="返回主頁" onPress={() => router.replace("/")} style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}><Text style={styles.backLinkText}>返回主頁</Text><AppIcon name="arrow-right" size={18} /></Pressable>

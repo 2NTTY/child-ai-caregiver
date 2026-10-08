@@ -102,12 +102,14 @@ export class RecordsController {
   private readonly childDeletion?: ChildDeletionEvents;
   private readonly readRecords: boolean;
   private readonly selectionPreferences?: ChildSelectionPreferences;
+  private readonly admissionReady: () => boolean;
 
-  constructor(api: RecordsApi, online = true, childDeletion?: ChildDeletionEvents, readRecords = true, selectionPreferences?: ChildSelectionPreferences) {
+  constructor(api: RecordsApi, online = true, childDeletion?: ChildDeletionEvents, readRecords = true, selectionPreferences?: ChildSelectionPreferences, admissionReady: () => boolean = () => true) {
     this.api = api;
     this.childDeletion = childDeletion;
     this.readRecords = readRecords;
     this.selectionPreferences = selectionPreferences;
+    this.admissionReady = admissionReady;
     this.state = initialState(online);
   }
 
@@ -253,7 +255,7 @@ export class RecordsController {
       childMessage: retained && retained.childOutcome !== "draft" ? UNKNOWN_WRITE : null,
       drafts: retained?.drafts ?? {}, selectedChildId: retained?.selectedChildId ?? null,
     });
-    await this.reloadChildren();
+    if (this.admissionReady()) await this.reloadChildren();
   }
 
   async restoreSession(): Promise<void> {
@@ -295,7 +297,7 @@ export class RecordsController {
       const user = await this.api.getSession(controller.signal);
       if (epoch !== this.epoch) return;
       if (!user) {
-        this.update({ busy: null, notice: "未能確認登入成功，請重新檢查登入狀態。" });
+        this.update({ busy: null, notice: mode === "signUp" ? "註冊請求已處理。請查看電郵驗證指引，完成後再登入；這並不代表電郵已送達。" : "未能確認登入成功，請重新檢查登入狀態。" });
         return;
       }
       await this.activate(user);
@@ -305,6 +307,8 @@ export class RecordsController {
         busy: null, auth: unconfirmed ? "unavailable" : "signedOut",
         notice: unconfirmed ? "登入或註冊結果未能確認，請先重新檢查登入狀態。"
           : error instanceof ClientApiError && error.status === 429 ? "嘗試次數過多，請稍後再試。"
+          : error instanceof ClientApiError && error.onlineCode === "invitation_required" ? "目前只接受獲邀請的電郵。請核對邀請及所填地址。"
+          : error instanceof ClientApiError && error.onlineCode === "EMAIL_NOT_VERIFIED" ? "請先完成電郵驗證，再登入。可在本頁重新要求驗證指引。"
           : mode === "signUp" ? "未能完成註冊，請核對資料；如已有帳號，請登入。" : "未能登入，請核對電郵及密碼後再試。",
       });
     } finally {
@@ -341,7 +345,7 @@ export class RecordsController {
   }
 
   async reloadChildren(): Promise<void> {
-    if (this.state.auth !== "signedIn" || this.state.busy || this.state.childrenLoading) return;
+    if (this.state.auth !== "signedIn" || this.state.busy || this.state.childrenLoading || !this.admissionReady()) return;
     if (!this.state.online) {
       this.update({ childrenError: OFFLINE });
       return;

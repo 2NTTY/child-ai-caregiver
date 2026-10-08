@@ -10,6 +10,7 @@ import { MotionSettings } from "../components/appearance/MotionSettings";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTabPanel, AppTextField, SectionHeader, TextLink } from "../components/ui";
 import { useProduction } from "../production/ProductionProvider";
+import { AccountDataControls, AccountSecurityControls } from "../components/account/AccountDataControls";
 import { AgentAuthorization } from "../production/AgentAuthorization";
 import { ModelSettingsView } from "../components/model-settings/ModelSettingsView";
 import { ProductionChannelSettings, ProductionNotificationPreferences, useProductionSettingsDomains } from "../production/SettingsDomains";
@@ -72,7 +73,8 @@ export default function SettingsPage() {
         <SectionCard testID="account-settings"><SectionHeader density="compact" title="登入與安全" subtitle="切換帳戶入口集中在這裏。" />
 
           <AppButton label="登出本人帳戶" variant="secondary" onPress={() => leave(() => { void signOut(); })} />
-          <Text style={styles.draftNote}>社交登入、重設密碼及刪除帳戶暫不可用。</Text>
+          <AccountSecurityControls />
+          <Text style={styles.draftNote}>社交登入暫不可用。</Text>
           <View style={styles.settingGroup}><SectionHeader density="compact" title="模型服務" subtitle="管理平台服務、個人密鑰及呼叫上限。" />
             <AppButton label="管理模型設定" variant="secondary" onPress={() => setTab("model")} />
           </View>
@@ -125,7 +127,7 @@ export default function SettingsPage() {
         </SectionCard>
       </View>
       <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="帳戶操作" />
-        <Text style={styles.body}>資料匯出、刪除帳戶及儲存用量暫不可用。</Text>
+        <AccountDataControls />
         <TextLink label="查看帳戶資料" onPress={() => setTab("account")} />
       </SectionCard></View>
     </AppTabPanel>

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
 import { documentChangeSchema, documentExportSchema, documentPeriodSchema, documentRequestSchema, documentContentQuerySchema, documentListQuerySchema, reportCoverageSchema, reportProgressSchema,
-  type DocumentContentPage, type DocumentContentQuery, type DocumentVersionPage, type DocumentListQuery, type DocumentChange, type DocumentExport, type DocumentPage, type DocumentRequest, type FamilyDocument } from "../shared/family-documents.ts";
+  type DocumentSnapshot, type DocumentContentPage, type DocumentContentQuery, type DocumentVersionPage, type DocumentListQuery, type DocumentChange, type DocumentExport, type DocumentPage, type DocumentRequest, type FamilyDocument } from "../shared/family-documents.ts";
 
 export class FamilyDocumentApiError extends Error {
   readonly status: number;
@@ -50,6 +50,15 @@ function checkedItem(value: unknown, childId: string, id?: string): FamilyDocume
     }
   }
   return item;
+}
+export function parseFamilyDocumentSnapshot(value: unknown, snapshotId: string, snapshotVersion: number): DocumentSnapshot {
+  const parsed = snapshotSchema.safeParse(value);
+  if (!parsed.success || parsed.data.id !== snapshotId || parsed.data.version !== snapshotVersion) throw new FamilyDocumentApiError();
+  const snapshot = parsed.data;
+  if (!unique(snapshot.sources.map(source => source.id)) || !unique(snapshot.sections.map(section => section.id))
+    || snapshot.sections.some(section => !unique(section.items.map(item => item.id)) || section.items.some(item => !unique(item.sourceIds)
+      || item.sourceIds.some(id => !snapshot.sources.some(source => source.id === id))))) throw new FamilyDocumentApiError();
+  return snapshot;
 }
 interface PendingWrite { kind: "create" | "change"; childId: string; userId: string; id: string; payload: string; body: string; reviewed: boolean; reconfirm: boolean; everUnknown: boolean; opId: string }
 export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = fetch) {
@@ -123,7 +132,8 @@ export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = f
       const query = new URLSearchParams({ status: input.data.status, limit: String(input.data.limit) });
       if (input.data.cursor) query.set("cursor", input.data.cursor);
       const value = await request(path(childId) + (Object.keys(options).length ? "?" + query : ""), signal, userId), parsed = pageSchema.safeParse(object(value) ? value.page : null);
-      if (!parsed.success || !unique(parsed.data.items.map(item => item.id))) throw new FamilyDocumentApiError();
+      if (!parsed.success || !unique(parsed.data.items.map(item => item.id)) || parsed.data.items.length > input.data.limit
+        || Object.keys(options).length > 0 && (parsed.data.hasMore && !parsed.data.nextCursor || input.data.status !== "all" && parsed.data.items.some(item => item.status !== input.data.status))) throw new FamilyDocumentApiError();
       const page: DocumentPage = { ...parsed.data, items: parsed.data.items.map(item => checkedItem(item, childId)) };
       if (pending) {
         if (pending.reconfirm) pending = null;
@@ -148,7 +158,7 @@ export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = f
         || parsed.data.offset !== input.data.offset)
         throw new FamilyDocumentApiError();
       const page = parsed.data, end = page.offset + page.text.length;
-      if (page.invalidated !== (page.contentKind === "redacted_manifest_json") || end > page.totalCharacters
+      if (page.invalidated !== (page.contentKind === "redacted_manifest_json") || !page.complete && !page.text.length || end > page.totalCharacters
         || page.complete !== (end === page.totalCharacters) || page.nextOffset !== (page.complete ? null : end)) throw new FamilyDocumentApiError();
       return page;
     },

@@ -63,6 +63,7 @@ export type GrowthArchivePeriod = {
   coverage: "partial" | "complete"; coverageLabel: string;
 };
 export type GrowthArchiveProjection = {
+  reading?: import("./preparation-view-model").FamilyDocumentReadingPort;
   scopeKey: string; childId: string; authorityVersion: string;
   state: "unavailable" | "loading" | "not_generated" | "generating" | "ready" | "needs_update" | "insufficient" | "error" | "invalidated";
   label: string; snapshot: GrowthArchiveSnapshot | null;

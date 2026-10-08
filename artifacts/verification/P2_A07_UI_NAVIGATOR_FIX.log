@@ -1,0 +1,1 @@
+{"state":"failed","stage":"document_read","lastAction":"recover_child","code":"ui_acceptance_failed","checks":["real_login_and_consent","child_original_operation_recovered_once","saved_private_chat_history"],"http":204,"stores":2,"blocked":4,"lost":true,"submissions":1,"lookup":true,"fixtureUsers":2,"fixtureChildren":1}

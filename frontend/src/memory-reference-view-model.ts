@@ -1,4 +1,7 @@
 import type { MemoryFactView, MemorySummaryView } from "./memory-view-model";
+import type { AgentWork } from "../../src/shared/agent-work";
+import type { PersonalLibraryItem } from "../../src/shared/personal-library";
+import type { HistoryMessageRead } from "./history-view-model";
 
 // Frontend read projections, not new HTTP contracts or separate memory databases.
 // The host supplies snapshots from the same authorized domain owners used by Agent and history.
@@ -9,8 +12,11 @@ export type MemoryReadProjection<T> = {
   | { readonly state: "loading" | "unavailable" | "error"; readonly revision: null; readonly data: null });
 
 export interface ShortTermContextView {
-  readonly runId: string;
-  // Exactly the run's authorized context, not MemoryContext.recentMessages (a summary batch).
+  readonly runId?: string;
+  readonly works?: readonly AgentWork[];
+  readonly hasMoreWorks?: boolean;
+  readonly messageRead?: MemoryReadProjection<HistoryMessageRead>;
+  // Persistent work and its linked original messages; never claims to expose internal model context.
   readonly messages: readonly { readonly id: string; readonly role: "user" | "assistant"; readonly text: string }[];
 }
 export interface LongTermMemoryView {
@@ -49,6 +55,7 @@ export interface KnowledgeReferenceView {
 export interface KnowledgeReferencesView {
   readonly audience: "public" | "internal";
   readonly items: readonly KnowledgeReferenceView[];
+  readonly catalog?: readonly PersonalLibraryItem[];
   readonly hasMore: boolean;
 }
 export interface MemoryReferenceModel {
@@ -71,6 +78,14 @@ export interface MemoryReferenceWorkspaceValue {
     readFactHistory?(factId: string, expectedVersion: number): void;
     loadMoreFactHistory?(factId: string, expectedVersion: number): void;
     loadMoreReferences?(): void;
+    loadMoreWork?(): void;
+    readWorkMessage?(id: string): void;
+    loadMoreWorkMessage?(): void;
+    closeWorkMessage?(): void;
+    refreshContext?(): void;
+    readonly workBusy?: boolean;
+    readonly messageBusy?: boolean;
+    readonly referencesBusy?: boolean;
   };
 }
 

@@ -9,7 +9,7 @@ export const preparationPurposes = [
   { key: "handoff", label: "照顧交接", description: "讓接手照顧的人掌握今天的重點" },
 ] as const;
 export type PreparationPurpose = typeof preparationPurposes[number]["key"];
-export type PreparationCondition = "ready" | "empty" | "loading" | "unavailable" | "source_changed" | "source_invalidated" | "private_revoked" | "unknown" | "read_only" | "lost";
+export type PreparationCondition = "ready" | "empty" | "loading" | "unavailable" | "refresh_failed" | "source_changed" | "source_invalidated" | "private_revoked" | "unknown" | "read_only" | "lost";
 export type PreparationSourceState = "available" | "invalidated" | "restricted" | "unknown";
 export interface PreparationSource {
   id: string; childId: string; label: string; version: number; updatedAt: string | null;
@@ -38,8 +38,24 @@ export type PreparationReadState = "ready" | "stale" | "restricted" | "invalidat
 export interface PreparationDocumentView {
   id: string; childId: string; purpose: PreparationPurpose; version: number;
   status: PreparationDocument["status"]; archivedAt: string | null;
-  readState: PreparationReadState; revision: PreparationRevision | null;
+  historical?: boolean; readState: PreparationReadState; revision: PreparationRevision | null;
   sources: readonly PreparationSource[];
+}
+// Transient reading state supplied by the document owner; never an editable copy.
+export interface DocumentRevisionIndex {
+  documentId: string; title: string; versions: { snapshotId: string; snapshotVersion: number; generatedAt: string; invalidated: boolean }[];
+  started: boolean; busy: boolean; error: boolean; hasMore: boolean;
+}
+export interface DocumentContentReading {
+  documentId: string; snapshotId: string; snapshotVersion: number; loadedCharacters: number; totalCharacters: number;
+  busy: boolean; error: boolean; invalidated: boolean; complete: boolean;
+}
+export interface FamilyDocumentReadingPort {
+  indexes: DocumentRevisionIndex[]; content: DocumentContentReading | null; online: boolean;
+  activeHasMore: boolean; archiveStarted: boolean; archiveHasMore: boolean; pageBusy: boolean; pageError: boolean;
+  ensureArchived(): void; loadMoreDocuments(status: "active" | "archived"): void;
+  loadVersions(documentId: string): void; readVersion(documentId: string, snapshotId: string, snapshotVersion: number): void;
+  continueVersion(): void; closeVersion(): void;
 }
 export interface PreparationScope {
   authorityKey: string; childId: string; role: HomeChild["accessRole"];
@@ -97,12 +113,12 @@ export function projectPreparations(state: PreparationOwnerState, scope: Prepara
 }
 
 export function canChangePreparation(document: PreparationDocumentView, scope: PreparationScope) {
-  return document.childId === scope.childId && document.status === "active" && document.readState === "ready"
+  return !document.historical && document.childId === scope.childId && document.status === "active" && document.readState === "ready"
     && scope.online && scope.role !== "viewer" && scope.condition === "ready";
 }
 
 export function canArchivePreparation(document: PreparationDocumentView, scope: PreparationScope) {
-  return document.childId === scope.childId && document.status === "active" && !!document.revision
+  return !document.historical && document.childId === scope.childId && document.status === "active" && !!document.revision
     && (document.readState === "ready" || document.readState === "stale")
     && scope.online && scope.role !== "viewer" && scope.condition === "ready";
 }

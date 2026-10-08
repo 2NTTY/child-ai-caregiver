@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { personalLibraryPageSchema, type PersonalLibraryPage } from "../shared/personal-library.ts";
 import { privateSourceCitationSchema } from "../shared/product-agent.ts";
 import { agentDecisionSchema, agentProposalSchema, agentPendingPageSchema, type AgentDecision, type AgentProposal, type AgentPendingPage, type ProductAgentResult } from "../shared/product-agent.ts";
 
@@ -25,6 +26,7 @@ export class ProductAgentApiError extends Error {
 
 import { agentWorkPageSchema, agentHistoryPageSchema, agentHistoryMessageSchema, type AgentWorkPage, type AgentHistoryPage, type AgentHistoryMessage } from "../shared/agent-work.ts";
 export interface ProductAgentApi {
+  getLibrary(childId: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<PersonalLibraryPage>;
   getWork(childId: string, signal: AbortSignal, userId: string, workId?: string | null, cursor?: string | null): Promise<AgentWorkPage>;
   searchHistory(childId: string, kind: "message" | "private_instruction" | "memory_fact", query: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<AgentHistoryPage>;
   readHistory(childId: string, messageId: string, offset: number, signal: AbortSignal, userId: string): Promise<AgentHistoryMessage>;
@@ -110,18 +112,27 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     }
   }
   return {
+    async getLibrary(childId, signal, userId, cursor = null) {
+      if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success
+        || cursor !== null && !/^[A-Za-z0-9_-]{1,2048}$/.test(cursor)) throw new ProductAgentApiError(400, "invalid_input");
+      const parsed = personalLibraryPageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/library${cursor ? "?cursor=" + encodeURIComponent(cursor) : ""}`, signal, userId));
+      if (!parsed.success) throw new ProductAgentApiError();
+      return parsed.data;
+    },
     async getWork(childId, signal, userId, workId = null, cursor = null) {
       if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success || workId !== null && !uuid.safeParse(workId).success || cursor !== null && !/^[A-Za-z0-9_-]{1,2048}$/.test(cursor)) throw new ProductAgentApiError(400, "invalid_input");
       const data = await request(`/children/${encodeURIComponent(childId)}/agent/work${workId ? "/" + workId : ""}${cursor ? "?cursor=" + encodeURIComponent(cursor) : ""}`, signal, userId);
       const parsed = agentWorkPageSchema.safeParse(data);
-      if (!parsed.success || parsed.data.items.some(item => item.childId !== childId)) throw new ProductAgentApiError();
+      if (!parsed.success || parsed.data.complete !== (parsed.data.nextCursor === null) || parsed.data.items.some(item => item.childId !== childId)
+        || new Set(parsed.data.items.map(item => item.id)).size !== parsed.data.items.length) throw new ProductAgentApiError();
       return parsed.data;
     },
     async searchHistory(childId, kind, query, signal, userId, cursor = null) {
       if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success || query.length > 200 || !["message", "private_instruction", "memory_fact"].includes(kind) || cursor !== null && !/^[A-Za-z0-9_-]{1,2048}$/.test(cursor)) throw new ProductAgentApiError(400, "invalid_input");
       const params = new URLSearchParams({ kind, query }); if (cursor) params.set("cursor", cursor);
       const parsed = agentHistoryPageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/agent/history?${params}`, signal, userId));
-      if (!parsed.success) throw new ProductAgentApiError(); return parsed.data;
+      if (!parsed.success || parsed.data.complete !== (parsed.data.nextCursor === null) || parsed.data.matches.some(item => item.kind !== kind)
+        || new Set(parsed.data.matches.map(item => item.id)).size !== parsed.data.matches.length) throw new ProductAgentApiError(); return parsed.data;
     },
     async readHistory(childId, messageId, offset, signal, userId) {
       if (!uuid.safeParse(childId).success || !uuid.safeParse(messageId).success || !identifier.safeParse(userId).success || !Number.isInteger(offset) || offset < 0) throw new ProductAgentApiError(400, "invalid_input");

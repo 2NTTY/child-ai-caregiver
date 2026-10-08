@@ -11,6 +11,7 @@ import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import type { PreviewScenario } from "../preview/fixture";
 import type { HomeActions } from "../view-model";
 import { ProductionOwner } from "./ProductionOwner";
+import { AccountCallbackGate } from "../components/account/AccountCallbackGate";
 import { projectProductionHome } from "./home-projection";
 import { productionDestinations } from "./routes";
 import { useOnlineUpdates } from "../../../src/client/use-online-updates";
@@ -109,6 +110,21 @@ function useProductionValue(owner: ProductionOwner) {
     selectedChildId: model.selectedChildId, scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey,
     sessionGeneration: snapshot.sessionGeneration, auth: snapshot.records.auth, online: snapshot.records.online,
     authenticate, signOut, refresh, model, actions, notice,
+    account: snapshot.account,
+    canPrepareAccountDeletion: owner.canStartDomainWrite() && !snapshot.records.busy && snapshot.records.childOutcome === "draft" && !snapshot.records.deletion
+      && Object.values(snapshot.records.drafts).every(item => item.outcome === "draft") && !owner.chatController.hasUnsavedInput() && !visibleDraft.attachments.length,
+    accountActions: {
+      requestEmail: (kind: "verification" | "reset", email: string) => owner.accountOwner.requestEmail(kind, email),
+      revokeOtherSessions: () => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.revokeOtherSessions(); },
+      prepareDeletion: () => { const raw = owner.controller.getSnapshot();
+        if (current.current.identityKey === snapshot.identityKey && owner.canStartDomainWrite() && !raw.busy && raw.childOutcome === "draft" && !raw.deletion
+          && Object.values(raw.drafts).every(item => item.outcome === "draft") && !owner.chatController.hasUnsavedInput() && !owner.draftOwner.getSnapshot().attachments.length) return owner.accountOwner.prepareDeletion(); },
+      executeDeletion: (password: string, confirmation: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.executeDeletion(password, confirmation); },
+      cancelPreparedDeletion: () => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.cancelPreparedDeletion(); },
+      checkDeletion: () => owner.accountOwner.checkDeletion(),
+      downloadNextPart: (save: (text: string, filename: string) => void | Promise<void>) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.downloadNextPart(save); },
+      clearDownload: () => { if (current.current.identityKey === snapshot.identityKey) owner.accountOwner.clearDownload(); },
+    },
     dismissNotice: () => { setLocalNotice(null); setDismissedNotice(snapshot.records.notice); },
     homeIntroductionPending: snapshot.homeIntroductionPending, markHomeIntroductionPresented: owner.markHomeIntroductionPresented,
     chatState: snapshot.chat, chatController: owner.chatController,
@@ -156,9 +172,9 @@ export type ProductionContextValue = ReturnType<typeof useProductionValue>;
 const ProductionContext = createContext<ProductionContextValue | null>(null);
 
 export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || "/api" }: { children: ReactNode; apiBaseUrl?: string }) {
-  const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline()));
+  const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }));
   const value = useProductionValue(owner);
-  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" ? value.userId : null, value.online, async reason => {
+  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, value.online, async reason => {
     await owner.refresh();
     owner.invalidatePrivateReads(false, reason !== "unavailable");
   });
@@ -181,7 +197,7 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
     window.addEventListener("beforeunload", beforeUnload); window.addEventListener("online", connection); window.addEventListener("offline", connection); window.addEventListener("focus", focus);
     return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
   }, [owner]);
-  return <QueryClientProvider client={owner.queryClient}><ProductionContext.Provider value={value}>{children}
+  return <QueryClientProvider client={owner.queryClient}><ProductionContext.Provider value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
     <AppDialog visible={value.recordsState.deletion !== null} onDismiss={() => owner.controller.cancelDeleteChild()}>
       <AppDialog.Title>永久刪除這位孩子及附屬資料？</AppDialog.Title>
       <AppDialog.Content><Text>這會刪除所選孩子、照護記錄、私人聊天、記憶、任務及附屬資料。此操作不能撤銷。</Text>

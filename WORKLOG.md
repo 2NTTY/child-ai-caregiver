@@ -1669,3 +1669,14 @@
 - 最低真SQL連貫流程通過：先工程外加密checkpoint，再還原到新合成庫套034／035；原庫65users／14children／17messages及暫停worker不變。1新帳號／1孩子，auth11HTTP／11business、4次真HTTP准入、data53／60business；2封本機SMTP capture。驗註冊→驗證→同意→找回→舊會話／密碼失效→完整allowlist下載→刪除／原收據→舊備份還原並重放目前日誌不復活。
 - 新帳號／孩子已刪，兩還原庫worker暫停，原庫未變；工程外密文備份／日誌保留。空分區只證明查詢／契約，不冒稱所有業務樣例完整回歸。沒有真SMTP、模型／embedding、通知、瀏覽器、雲端或VM重啟；UI由A07接線。
 - [EV](artifacts/verification/P2_A08_CHECKS.json)、[SQL raw](artifacts/verification/P2_A08_SQL.log)、[準備及保留失敗](artifacts/verification/P2_A08_PREPARE_FAILURE.json)。Node24.11／npm11.6.1，部署固定版本未改；不重跑全套。按C帳號交付後開始A07，完整P2與部署仍未完成。
+
+
+<a id="log-20261008-p2-a07"></a>
+## 2026-10-08｜P2-A07 正式單人頁面接線
+
+- 基線ddb212a；B主責、權重3，B60%／C30%／A10%。主模型親寫契約、引導文案、整合及review；三個Sol6.1 xhigh分別處理帳號、歷史／參考及文件讀取。共用AI由A統籌，不稱各成員獨立人工實作或驗收。
+- 復用AccountService／業務owner、原op與scope：登入／邀請、原生驗證找回回頁、同意、會話、分批下載及退出接點；持久工作、私訊續讀、本人通知及有權公共目錄；文件／版本分頁、固定快照續讀及draft130必要生命週期修正。保留版型／動效，不合併整條draft。
+- 三域各2個必要離線聚合由executor回報通過，帳號收據小修後1項補核；整合frontend及scoped Server型別通過。Overlay曾用不支援StyleSheet欄位，改明確定位後型別通過；沒有全倉build/lint/test。
+- 真UI沿A08加密還原庫、同2帳號／1孩子／1聊天／1文件。首次Windows bind、inert填表及root navigator卸載導致deep link遺失分別保留失敗；後者局部修正保持navigator。後續原op丟回覆／查核一次、私人歷史、公共目錄、同文件跨頁／重開通過。一次200 HTTP上限停批後只續剩餘項；未重新建立fixture。
+- 額外sidebar more/profile等待未完成，沒有足夠證據判定產品根因，保留未驗；最終改直接核對相同帳戶切換後native身份、首頁、權威孩子空清單與跨孩子404，最後173HTTP／4store通過並精確清理，baseline totals一致、worker暫停。各批合共911次嘗試HTTP（含攔截／失敗）／8store，並非單次流程；[EV](artifacts/verification/P2_A07_CHECKS.json)及原raw保留。
+- 零模型／embedding／外部SMTP／通知／部署；復用A08驗證、找回、刪除恢復證據，不稱全站或真Agent完成。A09須觀察剩餘路由、完成代表Agent／GCP交付及真SMTP設定。按B帳號review／PR／合併後再開A09。

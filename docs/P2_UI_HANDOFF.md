@@ -15,7 +15,7 @@
 
 INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴變更仍須核對版本／許可／相容性。Web 合成結果、真 API 流程、Android bundle／真機各自分開；單頁或預覽完成不能代替正式驗收。
 
-P2 增補沿用下列正式 owner／服務；A02 持久工作／確認已接 Server，A03 文件 patch／續讀依[局部修改契約](API.md#document-editing) 接線，統一歷史及單人帳號接點仍按 [API 目標契約](API.md#p2-agent-service) 隨包交付，不以現有相似 API 冒充完成。版面保持，家長從聊天操作，其他頁面投影同一資源；前端各自不得保存可獨立修改的副本。
+P2 增補沿用下列正式 owner／服務；A02 持久工作／確認已接 Server，A03 文件 patch／續讀依[局部修改契約](API.md#document-editing) 接線，A07 的單人帳號／歷史接點沿 [帳戶服務](API.md#p2-a08-service) 與 [參考目錄](API.md#p2-a07-library) 契約，不以現有相似 API 冒充完成。版面保持，家長從聊天操作，其他頁面投影同一資源；前端各自不得保存可獨立修改的副本。
 
 <a id="production-owners"></a>
 ## 新前端正式資料接點
@@ -26,16 +26,18 @@ P2 增補沿用下列正式 owner／服務；A02 持久工作／確認已接 Ser
 
 | 使用者功能／頁面 | 同一權威來源及前端 owner |
 |---|---|
-| 登入、家庭選擇、孩子切換與刪除 | `ProductionOwner`／既有 RecordsController；Server session、家庭角色及 children |
+| 登入、本人資料同意、孩子切換與刪除 | `ProductionOwner`／RecordsController＋`AccountServiceOwner`；Server session、account admission、children。未驗證／未同意時保留身份但不開放業務 scope；不要求建立家庭 |
+| 驗證／找回、撤銷其他會話、資料下載及帳戶退出 | 同一 AccountServiceOwner → Better Auth 原生入口與 Account API；callback token、password、刪除 receipt 不進 Agent／日誌／網址持久副本。下載按 manifest／scope 分批，不以一頁冒充完整資料 |
 | 對話、歷史、來源、工具結果、持久待確認及取消 | ChatController／AgentConversationOwner／AgentAuthorizationOwner；messages、agent runs／pending／operation receipts |
 | 記錄、搜尋、更正、歷史及孩子檔案；首頁照護資料 | `CareProfileDomains`；同一 Care API／profile 版本。首頁只組合已載入資料，不另外保存 |
 | 任務、預約、改期、完成、取消、成員指派及歷史 | `TaskKnowledgeDomains`；Task API 的 task／occurrence／版本，側欄讀相同 owner |
 | 記憶、摘要覆蓋、人工備援；成長關注及原單份到診準備 | `TaskKnowledgeDomains`；Memory／Growth／CareSummary API；舊到診準備保留 `/summary?tab=legacy-preparation` 查閱入口 |
-| 多份準備文件、清單、歸檔／恢復、成長報告與同版 PDF | `TaskKnowledgeDomains/useFamilyDocuments` → FamilyDocument API／Store；Agent 工具及頁面共用加密資源、版本與收據。來源更正遮蔽失效正文，普通讀取不生成；worker 合併刷新共享文字報告。PDF 明確綁定所選快照／權限，不包含私人聊天或照片。契約見 [API](API.md#int-family-documents) |
+| 多份準備文件、清單、歸檔／恢復、成長報告與同版 PDF | `TaskKnowledgeDomains/useFamilyDocuments` → FamilyDocument API／Store；Agent 工具及頁面共用加密資源、版本與收據。來源更正遮蔽失效正文，active／archived 及版本按需分頁；正文綁固定快照每次最多4000字元，權威不一致時遮蔽正文與續讀回調。普通讀取不生成；worker 合併刷新共享文字報告。PDF 明確綁定所選快照／權限，不包含私人聊天或照片。契約見 [API](API.md#int-family-documents) |
 | 共享持續關注、事件、結束／恢復與一次站內跟進 | 同一 `TaskKnowledgeDomains/useTaskKnowledgeGrowth` → Concern API／ConcernStore；首頁及歷史只讀此 owner。Agent 以持久候選確認同一服務；與 GrowthAttention／MemoryTopic 分開。根 INT-W05 記驗收，未聲稱已公開部署 |
 | 對話照片轉交、照片上傳／提取／確認、分享文字／連結輸入 | `PhotoInputDomains`；Photo／SharedInput API，原檔與人工草稿共用一次操作上下文；模型提取與家庭共享分開同意 |
 | 本人模型 key／限額、通知偏好、Push／Telegram、家庭成員及聯絡授權 | `SettingsDomains`；各既有 API／版本／收據，個人設定按身份、家庭操作按孩子清理；不自動發送渠道測試 |
 | 私人來源、用途、原地修改／停用、修訂歷史及對話設定 | `PhotoInputDomains`／`usePhotoInputSources`／同一 SharedInput API；設定與聊天導向同一來源清單，Agent 候選確認亦寫入同一 shared_inputs。引用原文另經本人選取授權，私人引用不當官方知識 |
+| 持久工作、聊天／通知歷史、記憶參考目錄 | `TaskKnowledgeDomains/usePersonalHistory`；Agent work／history／原文續讀、Account export 的 notification_deliveries、Personal Library API。工作狀態不是模型當時完整上下文；通知頁是本人的跨孩子結果，渠道接受不等於照護完成 |
 | 首頁、側欄與歷史頁 | 組合上述 owner 的受權結果；已載入清單不冒充完整清單，未能讀取不顯示為「沒有資料」 |
 
 寫入成功按 Server 收據刷新共用讀取；可見頁面沿 changes cursor 每 5 秒核對變更 metadata，回到前景即核對。沒有變更不定時重跑模型。busy／unknown 保留原操作，先查核再容許新提交；登出、撤權及身份／孩子切換清理舊內容與遲到回應。
@@ -48,9 +50,9 @@ P2 增補沿用下列正式 owner／服務；A02 持久工作／確認已接 Ser
 
 沿既有 AgentConversation／ProductAgentOwner 讀取候選及原收據；事實更正／停用使用同一候選卡及 decide 入口，新增 targetVisibility 由 Server 從原事實產生，不能由前端猜共享範圍。對話中的具體確認問題由 Server 保存及綁定；一般回覆仍由聊天入口提交，不在頁面另造「好＝接受候選」邏輯。工具結果增補歷史／工作讀寫標籤，版型與動效保持。
 
-工作／歷史與原文分頁契約见 [API](API.md#persistent-agent-work)；完整工作／參考目錄與統一歷史頁由 P2-A07 接回同一 owner，不能把目前工具接線當作這些頁面已完成。過期候選沿原入口重新核對，原訊息／版本與具名操作是權威；私人範圍及 unknown 守衛維持。
+工作／歷史與原文分頁契約见 [API](API.md#persistent-agent-work)；工作／參考目錄與聊天／通知歷史由 A07 的同一 usePersonalHistory owner 接回；結果標明已掃描範圍、續讀及局部日期篩選，不聲稱一頁即完整歷史。過期候選沿原入口重新核對，原訊息／版本與具名操作是權威；私人範圍及 unknown 守衛維持。
 
-P2-A06 的本人站內接續沿同一 `agent_work`／Agent run：`read_work.latestFollowUp` 指向原 event／run，結果經本人權限讀回，不能另存一份可寫工作或把舊引用當現行證據。完成後只發本人可見的 changes metadata，A07 將工作狀態及背景結果接回助手／今日／歷史的共用 owner；本包不宣稱這些新呈現已接通。排隊、停止、未知、回饋已保存與照護已完成須分清。契約及有界續讀見 [工作跟進](API.md#p2-a06-continuation)。
+P2-A06 的本人站內接續沿同一 `agent_work`／Agent run：`read_work.latestFollowUp` 指向原 event／run，結果經本人權限讀回，不能另存一份可寫工作或把舊引用當現行證據。完成後只發本人可見的 changes metadata，A07 的記憶與參考／歷史沿同一工作 owner 讀回，返回助手只準備草稿，不能自動發問或執行。排隊、停止、未知、回饋已保存與照護已完成須分清。契約及有界續讀見 [工作跟進](API.md#p2-a06-continuation)。
 
 ## 狀態與使用方式
 

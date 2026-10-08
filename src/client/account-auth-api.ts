@@ -1,4 +1,4 @@
-import { ClientApiError } from "./records-api";
+import { ClientApiError } from "./records-api.ts";
 
 /** Native Better Auth operations. Secrets are sent only to the configured Server, never to Agent context. */
 export function createAccountAuthApi(baseUrl: string, fetcher: typeof fetch = fetch) {

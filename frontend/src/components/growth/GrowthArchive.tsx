@@ -46,6 +46,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   footerActions?: ReactNode; footerDetails?: ReactNode;
 }) {
   const {authorized, state, items, current} = archiveReadingView(model);
+  const reading = authorized ? model.page?.archive?.reading : undefined;
   const touch = useInteractionDensity();
   const compactControls = useWindowDimensions().width >= mobileLayout.breakpoint && !touch;
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -75,6 +76,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     setSelectedKey(null); setHistoryOpen(false); setFilter("all"); setPurpose("family"); setExportKey(null);
     setIncludeSources(true); setIncludeRevision(false); jumpToReport.current = false;
   }, [contextKey]);
+  useEffect(() => { if (historyOpen) reading?.ensureArchived(); }, [historyOpen, reading?.archiveStarted, reading?.pageBusy, contextKey]);
   useEffect(() => {
     setOpened([]); setRevisionOpen(false); setExportOpen(false); setChapter("profile");
   }, [contextKey, model.page?.authorityVersion, archive?.id, archive?.version, selected?.key, authorized]);
@@ -99,7 +101,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   function selectArchive(item: ArchiveReadingItem) {
     if (latest.current.contextKey !== contextKey || !archiveReadingView(latest.current.model).items.some(value => value.key === item.key
       && value.snapshot.id === item.snapshot.id && value.snapshot.version === item.snapshot.version)) return;
-    jumpToReport.current = true; setSelectedKey(item.key); setHistoryOpen(false);
+    reading?.closeVersion(); jumpToReport.current = true; setSelectedKey(item.key); setHistoryOpen(false);
   }
   const readableSource = (id: string) => archive ? archiveReadableSource(model, archive, id) : undefined;
   function openRecord(source: GrowthArchiveSource) {
@@ -127,7 +129,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   }
   const visibleItems = filterArchiveItems(items, filter);
   const rangePeriods = items.some(item => item.period?.kind === "range");
-  const periods = items.length > 0 && (items.length > 1 || selectedKey !== null && !selected) ? <View style={s.stack}>
+  const periods = reading || items.length > 0 && (items.length > 1 || selectedKey !== null && !selected) ? <View style={s.stack}>
     <View style={s.row}><AppButton label={historyOpen ? "收起其他期間" : rangePeriods ? "翻閱其他期間／版本" : "翻閱年度／季度"} expanded={historyOpen} variant="quiet" onPress={() => setHistoryOpen(value => !value)} />
       {current && selectedKey !== null && selectedKey !== current.key ? <AppButton label="回到目前報告" variant="secondary" onPress={() => selectArchive(current)} /> : null}
     </View>
@@ -157,6 +159,24 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
         </Pressable>;
         })}
       </View>
+      {reading ? <View style={s.stack} testID="growth-document-reading">
+        <Text style={s.meta}>只涵蓋已載入文件與版本；較早修訂及歸檔按需讀取。</Text>
+        <View style={s.row}>
+          {reading.activeHasMore ? <AppButton label="載入更多報告" variant="quiet" disabled={reading.pageBusy || !reading.online} onPress={() => reading.loadMoreDocuments("active")} /> : null}
+          {!reading.archiveStarted || reading.archiveHasMore || reading.pageError ? <AppButton label={reading.pageError ? "重試載入歸檔報告" : "載入更多歸檔報告"} variant="quiet" disabled={reading.pageBusy || !reading.online} onPress={() => reading.loadMoreDocuments("archived")} /> : null}
+        </View>
+        {reading.pageError ? <Text accessibilityRole="alert" style={s.warning}>未能載入更多報告，已取得的內容保留。</Text> : null}
+        {reading.indexes.map(index => <View key={index.documentId} style={s.smallStack}>
+          <AppButton label={index.busy ? "正在讀取修訂…" : index.started ? index.hasMore ? "載入「" + index.title + "」更多修訂" : "「" + index.title + "」已載入修訂" : "查看「" + index.title + "」較早修訂"} variant="quiet" disabled={index.busy || !reading.online || index.started && !index.hasMore && !index.error} onPress={() => reading.loadVersions(index.documentId)} />
+          {index.error ? <Text accessibilityRole="alert" style={s.warning}>未能讀取較早修訂，請再試一次。</Text> : null}
+          {index.versions.map(version => <AppButton key={version.snapshotId} label={"版本 " + version.snapshotVersion + " · " + growthTime(version.generatedAt) + (version.invalidated ? " · 來源已失效" : "")} variant="quiet" density="compact" disabled={version.invalidated || !reading.online}
+            onPress={() => { reading.readVersion(index.documentId, version.snapshotId, version.snapshotVersion); setSelectedKey(version.snapshotId + ":" + version.snapshotVersion); jumpToReport.current = true; }} />)}
+        </View>)}
+        {reading.content && !reading.content.complete ? <View style={s.smallStack} testID="growth-version-content">
+          <Text style={s.body}>{reading.content.invalidated ? "這個版本的來源已失效，正文已隱藏。" : reading.content.error ? "這個版本未能讀取，可沿同一版本繼續。" : reading.content.busy ? "正在讀取這個版本…" : "已讀取 " + reading.content.loadedCharacters + "／" + reading.content.totalCharacters + " 字，完成後可閱讀正文。"}</Text>
+          {!reading.content.invalidated ? <AppButton label={reading.content.error ? "重試讀取這個版本" : "繼續載入這個版本"} variant="quiet" disabled={reading.content.busy || !reading.online} onPress={reading.continueVersion} /> : null}
+        </View> : null}
+      </View> : null}
       {!visibleItems.length ? <Text style={s.body}>暫時沒有已取得的{filter === "year" ? "年度" : filter === "quarter" ? "季度" : "日期範圍"}檔案。</Text> : null}
     </View> : null}
   </View> : null;
