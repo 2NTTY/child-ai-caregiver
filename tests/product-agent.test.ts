@@ -130,7 +130,11 @@ for (const growth of [false, true]) test(growth
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
     usage: { reserve: async () => true, record: async () => {} },
     provider: { generate: async request => {
-      assert.deepEqual(Object.keys(request.toolsDict).sort(), ["present_answer", "read_context", "search_knowledge"]);
+      const toolNames = Object.keys(request.toolsDict).sort();
+      assert.deepEqual(toolNames, ["present_answer", "read_context", "read_knowledge_context", "search_knowledge"]);
+      assert.ok(!toolNames.some(name => /^(?:propose_|save_|revise_|change_|create_|execute_|stage_|contact_)/u.test(name)));
+      for (const name of ["search_history", "read_history", "read_private_instructions", "read_private_source", "list_private_sources"])
+        assert.ok(!toolNames.includes(name));
       const index = calls++;
       if (index === 1) {
         const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse)?.functionResponse?.response;

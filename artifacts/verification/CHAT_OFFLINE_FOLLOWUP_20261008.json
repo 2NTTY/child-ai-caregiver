@@ -1,0 +1,102 @@
+{
+  "baseline": {
+    "pr145_head": "411c579f22878f4da13d6728fe60b907ebeb3c70",
+    "master": "de6110425924fb003c694b196c1a7283d153c912",
+    "method": "PR145 snapshot plus only newer master concern-capacity test blob; source is composite, not an invented Git commit.",
+    "verified_pr145_files": 1347
+  },
+  "changes_against_pr145_head": [
+    {
+      "path": "tests/concern-capacity.test.ts",
+      "git_blob_sha": "bc40720766fbee6c4e11745fc827ee6345fb3f64"
+    },
+    {
+      "path": "tests/product-agent.test.ts",
+      "git_blob_sha": "9062c7c68703ee3ca4b0bf78388ed85c803ba82a"
+    }
+  ],
+  "patch": "background-tools.patch",
+  "runs": [
+    {
+      "file": "tests/product-agent.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "file": "tests/chat-client.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "file": "tests/chat-api-client.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "file": "tests/agent-receipt-contract.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "file": "tests/agent-document-receipts.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "file": "tests/product-agent-pending.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "file": "tests/agent-runtime.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "file": "tests/agent-runtime-contract.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "exit": 0
+    }
+  ],
+  "total_passed": 50,
+  "total_failed": 0,
+  "typecheck": {
+    "status": "passed",
+    "exit": 0,
+    "log": "product-agent-typecheck.locked.log",
+    "scope": "Changed product-agent test plus imported dependency graph; not full-repository typecheck."
+  },
+  "commands": {
+    "tests": "bash chat_offline_followup_20261008/run-tests.sh tests/product-agent.test.ts tests/chat-client.test.ts tests/chat-api-client.test.ts tests/agent-receipt-contract.test.ts tests/agent-document-receipts.test.ts tests/product-agent-pending.test.ts tests/agent-runtime.test.ts tests/agent-runtime-contract.test.ts",
+    "types": "node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --target ES2023 --module NodeNext --moduleResolution NodeNext --strict --erasableSyntaxOnly --allowImportingTsExtensions --skipLibCheck --types node tests/product-agent.test.ts"
+  },
+  "unrun": [
+    "Full repository typecheck/build/test",
+    "Browser/UI",
+    "Live model/database/cloud"
+  ],
+  "boundaries": "Offline synthetic fixtures with deny-network preload; no product/runtime/budget/other-agent implementation changes; no push. Concern-capacity is unchanged newer-master blob, not this fix.",
+  "previous_failure": "../chat_offline_regression_20261008/evidence/product-agent.first-failure.log",
+  "final_environment": {
+    "node": "24.19.0",
+    "typescript": "6.0.3",
+    "adk": "2.1.0",
+    "genai": "2.24.0",
+    "zod": "4.5.4",
+    "uuid": "7.0.3",
+    "verified_locked_packages": 186,
+    "all_against_pr145_lock": true,
+    "isolated_path": "/workspace/scratch/c112a98a8be9/chat_offline_followup_20261008/locked-deps",
+    "verification": "locked-deps-verification.json"
+  },
+  "environment_history": "Preserved in environment-mismatch-history: baseline/candidate identical errors under nested Zod4.6.5; resolved with lock-aligned deps. Initial minimal locked closure missed undeclared ADK uuid import; restored original-lock uuid7.0.3 then reran full50 and typecheck. These were environment failures, not product defects.",
+  "patch_sha256": "e047f56141f26da4a6e4210ef323f7b29610357c39089e8a70820d85b3994e27"
+}
