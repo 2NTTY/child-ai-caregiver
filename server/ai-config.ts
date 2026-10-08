@@ -1,5 +1,7 @@
 import { AGENT_INTERACTIVE_INPUT } from "./agent-budget.ts";
 
+export type AgentThinkingLevel = "minimal" | "low" | "medium" | "high";
+
 export interface AiConfig {
   enabled: boolean;
   project: string;
@@ -12,6 +14,7 @@ export interface AiConfig {
   timeoutMs: number;
   maxInputCharacters: number;
   agentMaxInputCharacters?: number;
+  agentThinkingLevel?: AgentThinkingLevel;
   maxOutputTokens: number;
 }
 
@@ -40,6 +43,14 @@ function readInteger(value: string | undefined, key: string, fallback: number, m
   return result;
 }
 
+function readAgentThinkingLevel(value: string | undefined): AgentThinkingLevel {
+  if (value === undefined) return "minimal";
+  switch (value) {
+    case "minimal": case "low": case "medium": case "high": return value;
+    default: return invalidConfig("AI_AGENT_THINKING_LEVEL");
+  }
+}
+
 export function readAiConfig(env: Record<string, string | undefined>): AiConfig {
   const enabled = readBoolean(env.AI_ENABLED, "AI_ENABLED", false);
   const project = env.GCP_PROJECT_ID === undefined || env.GCP_PROJECT_ID === ""
@@ -60,6 +71,7 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
     maxInputCharacters: readInteger(env.AI_MAX_INPUT_CHARACTERS, "AI_MAX_INPUT_CHARACTERS", 10000, 1, 20000),
     agentMaxInputCharacters: readInteger(env.AI_AGENT_MAX_INPUT_CHARACTERS, "AI_AGENT_MAX_INPUT_CHARACTERS",
       AGENT_INTERACTIVE_INPUT.default, AGENT_INTERACTIVE_INPUT.min, AGENT_INTERACTIVE_INPUT.max),
+    agentThinkingLevel: readAgentThinkingLevel(env.AI_AGENT_THINKING_LEVEL),
     maxOutputTokens: readInteger(env.AI_MAX_OUTPUT_TOKENS, "AI_MAX_OUTPUT_TOKENS", 1024, 1, 4096),
   };
 }
