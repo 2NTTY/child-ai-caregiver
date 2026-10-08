@@ -1,0 +1,110 @@
+{
+  "repository": "2NTTY/child-ai-caregiver",
+  "baseline_sha": "e73f0230617f70751968c1f4fed80ea12cf78d38",
+  "baseline_verified_files": 1347,
+  "baseline_missing_required_files": 0,
+  "changed_files": [
+    {
+      "path": "tests/agent-receipt-contract.test.ts",
+      "baseline_git_blob_sha": "5481dad9a5f38ce6bebaebb17f8c5a4db4aa7fa5",
+      "final_git_blob_sha": "72c65ec8dc7a7031217e32276380aa41e3a481e4",
+      "sha256": "601f1094c3445f65965a7d90c0baa32367201ce6df1f60a919d3edb8a58bb40e"
+    },
+    {
+      "path": "tests/product-agent-pending.test.ts",
+      "baseline_git_blob_sha": "829ac92eb6c82848aa0caa51f6616e40d4d18819",
+      "final_git_blob_sha": "32566438e6a1f6baaf1e7d0377fe9554c816041a",
+      "sha256": "70d53a8ebda82a5af442353063539fff1e3b9ca399b833d12813a8d244910924"
+    },
+    {
+      "path": "tests/product-agent.test.ts",
+      "baseline_git_blob_sha": "d7f21e5d060040e7b7bc95020c90efd56729df9d",
+      "final_git_blob_sha": "2e5c8fbfed93ade97591e4efba5c15120401d6ac",
+      "sha256": "e7962b8fe0763aa7a9944cd61c21f857442ddb7af41c03a7f65f5fa3dfc6bd80"
+    }
+  ],
+  "runs": [
+    {
+      "log": "chat-client.log",
+      "exit": 0,
+      "passed": 8,
+      "failed": 0
+    },
+    {
+      "log": "chat-api-client.log",
+      "exit": 0,
+      "passed": 2,
+      "failed": 0
+    },
+    {
+      "log": "agent-receipt-contract.log",
+      "exit": 0,
+      "passed": 4,
+      "failed": 0
+    },
+    {
+      "log": "agent-document-receipts.log",
+      "exit": 0,
+      "passed": 1,
+      "failed": 0
+    },
+    {
+      "log": "product-agent-pending.log",
+      "exit": 0,
+      "passed": 2,
+      "failed": 0
+    },
+    {
+      "log": "agent-runtime.log",
+      "exit": 0,
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "log": "agent-runtime-contract.log",
+      "exit": 0,
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "log": "product-agent.interactive.log",
+      "exit": 0,
+      "passed": 3,
+      "failed": 0
+    }
+  ],
+  "final_scoped_passes": 48,
+  "final_scoped_failures": 0,
+  "unresolved_out_of_scope_failures": [
+    "product-agent.test.ts: background Runner toolsDict assertion excludes current read_knowledge_context",
+    "product-agent.test.ts: growth Runner same obsolete toolsDict assertion"
+  ],
+  "never_run": [
+    "Full repository suite/typecheck/build",
+    "Live model or embedding calls",
+    "Live database or cloud integration",
+    "UI/browser/device acceptance (separate worker)"
+  ],
+  "network_guard": "deny-network.mjs blocks net.Socket.connect and global fetch; tests inject scripted providers / in-memory stores",
+  "fixes": "Tests only. No product/runtime/prompts/budget files changed. No push/PR/merge/deployment.",
+  "historical_failure_logs": [
+    "agent-receipt-contract.first-failure.log",
+    "product-agent-pending.first-failure.log",
+    "product-agent.first-failure.log"
+  ],
+  "dependencies": {
+    "@google/adk": "2.1.0",
+    "@google/genai": "2.24.0",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "pg": "missing",
+    "node": "24.19.0",
+    "npm": "11.9.0"
+  },
+  "commands": [
+    "bash chat_offline_regression_20261008/run-tests.sh tests/chat-client.test.ts tests/chat-api-client.test.ts tests/agent-receipt-contract.test.ts tests/agent-document-receipts.test.ts tests/product-agent-pending.test.ts",
+    "bash chat_offline_regression_20261008/run-tests.sh tests/agent-receipt-contract.test.ts tests/agent-document-receipts.test.ts tests/product-agent-pending.test.ts tests/agent-runtime.test.ts tests/agent-runtime-contract.test.ts tests/product-agent.test.ts",
+    "bash chat_offline_regression_20261008/run-tests.sh tests/product-agent-pending.test.ts tests/agent-runtime.test.ts tests/agent-runtime-contract.test.ts tests/product-agent.test.ts",
+    "cd chat_offline_regression_20261008/source && timeout 60s node --import ../deny-network.mjs --experimental-test-module-mocks --test --test-concurrency=1 --test-name-pattern='^(product reply|terminal product presentation)' tests/product-agent.test.ts"
+  ]
+}

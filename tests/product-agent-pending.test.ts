@@ -65,7 +65,7 @@ function fixture(rows: ReturnType<typeof row>[]) {
     setAuthorizationVersion(version: string) { authorizationVersion = version; } };
 }
 
-test("pending discovery is private, read-only and bounded with microsecond and ID pagination", async () => {
+test("pending discovery is private, bounded and does not write business data with microsecond and ID pagination", async () => {
   const rows = Array.from({ length: 22 }, (_, i) => row(i + 1));
   rows[20].is_expired = true;
   rows[19].state = "expired";
@@ -84,8 +84,14 @@ test("pending discovery is private, read-only and bounded with microsecond and I
   assert.equal(second.nextCursor, null);
   assert.equal(new Set([...first.proposals, ...second.proposals].map(item => item.id)).size, 22);
   assert.equal(setup.updates, 0);
-  assert.ok(setup.queries.some(query => query.sql.endsWith("FOR SHARE")));
-  assert.ok(!setup.queries.some(query => query.sql.endsWith("FOR UPDATE")));
+  for (const pageQuery of setup.queries.filter(query => query.sql.includes("JOIN agent_runs r"))) {
+    const pageIndex = setup.queries.indexOf(pageQuery);
+    const transactionStart = setup.queries.findLastIndex((query, index) => index < pageIndex && query.sql === "BEGIN");
+    assert.ok(transactionStart >= 0);
+    assert.ok(setup.queries.slice(transactionStart + 1, pageIndex).some(query =>
+      query.sql === "SELECT owner_user_id, access_version FROM workspaces WHERE id=$1 FOR UPDATE"));
+  }
+  assert.ok(!setup.queries.some(query => query.sql.endsWith("FOR SHARE")));
   const queryCount = setup.queries.length;
   for (const invalid of ["%", "A".repeat(1025), Buffer.from(JSON.stringify({ ...cursor, userId: "synthetic-other" })).toString("base64url"),
     Buffer.from(JSON.stringify({ ...cursor, childId: otherChildId })).toString("base64url"),

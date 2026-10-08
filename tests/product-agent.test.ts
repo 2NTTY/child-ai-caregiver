@@ -17,9 +17,10 @@ test("product reply uses native tools, keeps proposals unconfirmed, validates di
     provider: { generate: async request => {
       const index = calls++;
       if (index > 0) assert.ok(request.contents.some(content => content.parts?.some(part => part.functionResponse)));
-      const functionCall = index === 0 ? { id: "candidate-call", name: "propose_fact", args: {
+      const functionCall = index === 0 ? { id: "load-memory", name: "load_capabilities", args: { capabilities: ["memory"] } }
+        : index === 1 ? { id: "candidate-call", name: "propose_fact", args: {
         key: "preferred_contact", content: "只在站內查看", intendedVisibility: "private", validUntil: null } }
-        : index === 1 ? { id: "answer-call", name: "present_answer", args: { kind: "operation",
+        : index === 2 ? { id: "answer-call", name: "present_answer", args: { kind: "operation",
           paragraphs: [{ text: "已保存私人候選，尚待你確認。", citationIds: [] }] } } : null;
       return { content: { role: "model", parts: functionCall ? [{ functionCall }] : [{ text: "Unvalidated model closing text must not be displayed." }] },
         finishReason: FinishReason.STOP };
@@ -52,10 +53,10 @@ test("product reply uses native tools, keeps proposals unconfirmed, validates di
   assert.equal(first.proposals[0].status, "pending");
   assert.equal(first.proposals[0].result, null);
   assert.equal(first.provenance?.recipeId, "product-interactive");
-  assert.deepEqual(first.counts, { modelCalls: 2, toolCalls: 2, queryEmbeddings: 0 });
+  assert.deepEqual(first.counts, { modelCalls: 3, toolCalls: 3, queryEmbeddings: 0 });
   assert.equal(writes, 1);
   assert.deepEqual(await service.reply(userId, childId, messageId, async () => true), first);
-  assert.equal(calls, 2); assert.equal(writes, 1);
+  assert.equal(calls, 3); assert.equal(writes, 1);
 });
 
 for (const validCitation of [true, false]) test(`terminal product presentation revalidates citations on the last model step, valid=${validCitation}`, async () => {
@@ -66,7 +67,8 @@ for (const validCitation of [true, false]) test(`terminal product presentation r
   const values = { title: "合成跟進候選", details: "尚待本人明確確認。", kind: "ordinary", assigneeUserId: userId,
     dueAt: new Date(Date.now() + 3600000).toISOString(), timeZone: "Asia/Hong_Kong" };
   const steps = [
-    { id: "context-call", name: "read_context", args: {} },
+    [{ id: "context-call", name: "read_context", args: {} },
+      { id: "load-tasks", name: "load_capabilities", args: { capabilities: ["tasks"] } }],
     { id: "search-call", name: "search_knowledge", args: { query: "合成照護主題", classification: "official_guidance" } },
     { id: "candidate-call", name: "propose_task", args: { values } },
     { id: "answer-call", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: chunk.text, citationIds: [chunk.chunkId] }] } },
@@ -77,7 +79,7 @@ for (const validCitation of [true, false]) test(`terminal product presentation r
     usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async () => {
       const step = steps[calls++];
       assert.ok(step, "A fifth provider call must not start");
-      return { content: { role: "model", parts: [{ functionCall: step }] }, finishReason: FinishReason.STOP };
+      return { content: { role: "model", parts: [step].flat().map(functionCall => ({ functionCall })) }, finishReason: FinishReason.STOP };
     } } });
   const options = { runtime,
     store: {
@@ -107,8 +109,8 @@ for (const validCitation of [true, false]) test(`terminal product presentation r
   assert.equal(result.text, validCitation ? chunk.text + " [1]" : "");
   assert.deepEqual(result.citations, validCitation ? [chunk] : []);
   assert.deepEqual(result.tools.map(tool => ({ name: tool.name, status: tool.status })),
-    steps.map(step => ({ name: step.name, status: "succeeded" })));
-  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
+    steps.flat().map(step => ({ name: step.name, status: "succeeded" })));
+  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 5, queryEmbeddings: 0 });
   assert.equal(result.proposals[0].status, "pending");
   assert.equal(result.proposals[0].result, null);
   assert.equal(calls, 4); assert.equal(writes, 1); assert.equal(revalidations, 1);
@@ -128,7 +130,11 @@ for (const growth of [false, true]) test(growth
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
     usage: { reserve: async () => true, record: async () => {} },
     provider: { generate: async request => {
-      assert.deepEqual(Object.keys(request.toolsDict).sort(), ["present_answer", "read_context", "search_knowledge"]);
+      const toolNames = Object.keys(request.toolsDict).sort();
+      assert.deepEqual(toolNames, ["present_answer", "read_context", "read_knowledge_context", "search_knowledge"]);
+      assert.ok(!toolNames.some(name => /^(?:propose_|save_|revise_|change_|create_|execute_|stage_|contact_)/u.test(name)));
+      for (const name of ["search_history", "read_history", "read_private_instructions", "read_private_source", "list_private_sources"])
+        assert.ok(!toolNames.includes(name));
       const index = calls++;
       if (index === 1) {
         const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse)?.functionResponse?.response;

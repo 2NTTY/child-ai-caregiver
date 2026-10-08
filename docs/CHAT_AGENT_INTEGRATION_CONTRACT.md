@@ -1,0 +1,80 @@
+# 聊天 Agent 接入邊界（F01 局部交付）
+
+狀態：接入契約，尚未接線或啟用多角色 runtime；不代表 F01 全包完成。
+核對基線：`e73f0230617f70751968c1f4fed80ea12cf78d38`（2026-10-08）。
+
+本文件收斂聊天端與其他實作者的交接面，不取代 [API 角色契約](API.md#p2-agent-roles)、[架構](ARCHITECTURE.md#p2-agent-roles)及[資料不變量](DATA_MODEL.md#p2-agent-roles)。衝突須先協調，不以本文件擴大功能、權限或費用。
+
+## 範圍與修改歸屬
+
+聊天端負責對話控制、既有確定性工具與收據呈現，以及未來消費其他角色的受限接口。資料編製、唯讀審核、獨立公共知識維護由各自實作者負責；本局部交付不修改其 prompt、模型呼叫、業務邏輯、排程或發布流程。
+
+聊天不直接喚醒公共知識維護 Agent。它沿既有 KnowledgeRetriever 讀取已發布且目前有效的知識；候選、未核內容與私人家庭資料不得因此混入公共維護。
+
+共享 runtime、budget、Auth provider、儲存／交易／outbox、Prompt Pack manifest 及根計劃屬協調點，不能因聊天需要接入便自行改寫。實作前固定檔案歸屬、接口版本及合併基線。其他人的未推送工作未知；沒有 open PR 不代表無人修改。
+
+## 已有接點與目標差距
+
+| 接點 | 基線的實際行為 | 後續接入限制 |
+|---|---|---|
+| `server/product-agent.ts` 的 `reply` | 先核原訊息／身份、確認、私人記憶，再由 `store.claim` 取得 runId／scope；重複 claim 讀原 run | 沿同一受理及恢復鏈，不另造第二份聊天或以新 run 重試副作用 |
+| `AgentScope` | userId、workspaceId、childId、authorizationVersion、dataVersion | 只使用 Server 查驗後注入的 scope，不採信模型或 client 自報身份 |
+| `AgentRunInput` | runId、scope、deadlineMs、authorize、signal、tools 等 | 現有 runId 不等於已存在角色父子執行 DTO；不得杜撰 wire 欄位為既成事實 |
+| `product-agent-services.ts` | 集中組裝 runtime、stores、usage、routing、KnowledgeRetriever | 未來可選依賴注入的候選位置；目前沒有其餘三角色 adapter |
+| `finalize` | 讀 `tools.presentation()` 並拒絕空結果 | 不是獨立審核 Agent，不得標示「已通過審核」 |
+| `AgentBudget` | 每次 runtime.run 新建；預設 4 次生成、8 工具、2 embedding、90 秒 | 不可直接各開 runtime 假裝共用預算；6 次為目標，這次不改配置或本人／每日上限 |
+| 取消／並發 | activeReplies、activeUsers 為 process-local | 不宣稱跨 instance 持久取消或全局排他已完成 |
+| 非同步雲端受理 | API 文件規劃 202／queued、交易 outbox、Firebase session | 尚未落實，不能當現有路由或遷移已完成 |
+
+## 聊天端接入契約
+
+以下列出必要語義，不預先固定尚未共同決定的 TypeScript 型別、HTTP route、collection 或 enum。
+
+### 受信輸入
+
+- 根運行與原操作由 Server 持久受理鏈提供；子執行保存父關聯及允許角色。模型只能給受限任務參數，不能選任意工具、prompt 路徑或服務身份。子角色不可再委派；共同 ModelGateway、scope、根預算及取消須由 Server 明確注入，不能假定 ADK 子 Runner 自動繼承。
+- 保留用途 schema／模板版本、來源 ID／版本／coverage、目標資源及 expectedVersion。來源最小化且逐次授權；歷史審核不能恢復已刪或已撤權資料。
+- 沿同一根預算、deadline 與取消語義。僅傳一個「剩餘次數」數字不足以防止並行超支；須先落實由共同 owner 提供的原子預留／記帳及恢復接口。
+- 委派、子工具、失敗與拒絕均按既定規則計入根上限，審核生成亦計數；重啟／重試不清零。預算不足時保留可恢復進度並回報未完成。
+
+### 資料編製輸出
+
+只消費經 schema 與引用程式校驗的 draft／patch、缺項、來源／coverage及所需確認。草稿不是正式記憶、任務或文件；普通確定性操作保留既有工具路徑，不強迫所有聊天委派。
+
+正式保存仍由既有領域服務負責，沿原 opId／fingerprint、目標 ID／版本與必要使用者確認。不得把聊天文字或 UI actionRequests 再轉成第二次執行。
+
+### 唯讀審核輸出
+
+Server 決定必審成果並調度審核，生成者不能自行免審。接收既定 pass／revise／insufficient_evidence 及有界問題／支持依據；審核綁定草稿 hash、來源、對象、版本及披露範圍。具體保存型別／參照由審核與共同資料 owner 協調。
+
+審核不是使用者同意。正式提交前須重新核對目前權限、來源有效性、目標版本、審核綁定及確認。任何相關內容或範圍變更都不能沿用舊 pass。未核正文／串流不外露；通過後不得任意改寫成另一份未核內容。
+
+### 未接入與失敗
+
+- 缺少編製或審核實作時，對依賴該能力的流程明確回報尚未接入／未完成；禁止 stub pass、聊天代審或假保存。
+- 本契約不全域停用既有聊天；確定性操作、真收據、純澄清及仍適用的預核緊急內容沿原守衛。新必審流程須在接線前有 Server gate，否則不得啟用。
+- 已提交的工具效果不能因審核、取消或文字收尾失敗而重做。沿原收據分開呈現「已保存」與「未完成」，unknown 先查原操作，不換 opId。
+- 介面只呈現必要進度、核准正文及可授權讀取的版本參照，不輸出推理或私人證據全文。新增角色狀態碼須相容協調，這次不改歷史 enum。
+
+## 接線前須共同固定
+
+1. 角色識別、父子執行參照、委派輸入／輸出 typed schema 及相容版本。
+2. 共用 ModelGateway／預算預留與恢復、取消、跨 instance 限制的 owner 和可用接口。
+3. Server 必審判定、審核記錄綁定與失效、草稿到正式提交的交易接點。
+4. 未接入／不足／衝突／unknown 的客戶端投影及相容測試。
+5. 聊天 adapter 的檔案歸屬；候選為新專用 adapter、product-agent 的單一掛接點及 services 可選依賴注入。此清單不是已實作方案。
+
+以上未固定前，本包只交付契約與既有行為回歸，不引入無法安全啟用的半套 runtime。F02 真雲端切片及 F03 完整接線仍遵守 [工作包依賴](../PLAN.md#p2-firestore-migration)。
+
+## 後續最小接入驗收
+
+以合成資料及本地可控制的測試替身驗證，不能把替身結果當其他 Agent／真模型完成：
+
+- 未接入能力不產生核准或正式成果；既有確定性路徑不回歸。
+- 跨身份／孩子、撤權、舊版本及失效來源被拒絕；拒絕不留下成功效果。
+- 子執行、審核、重試與恢復共用根上限及取消，不以新 run 繞過。
+- draft／patch 不直接保存；pass 與使用者確認分開；變更使舊審核失效。
+- 回應丟失及文字收尾失敗沿原收據讀回，不重複保存或外發。
+- 客戶端不看到未核內容、私密推理或不屬其 scope 的進度。
+
+這些是後續接入的通過條件，不是本文件已執行的測試結果。正式資料搬遷、模型測試、雲端費用及部署均不在本局部交付內。
