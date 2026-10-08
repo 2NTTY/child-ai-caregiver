@@ -1679,3 +1679,12 @@
 - 真UI沿A08加密還原庫、同2帳號／1孩子／1聊天／1文件。首次Windows bind、inert填表及root navigator卸載導致deep link遺失分別保留失敗；後者局部修正保持navigator。後續原op丟回覆／查核一次、私人歷史、公共目錄、同文件跨頁／重開通過。一次200 HTTP上限停批後只續剩餘項；未重新建立fixture。
 - 額外sidebar more/profile等待未完成，沒有足夠證據判定產品根因，保留未驗；最終改直接核對相同帳戶切換後native身份、首頁、權威孩子空清單與跨孩子404，最後173HTTP／4store通過並精確清理，baseline totals一致、worker暫停。各批合共911次嘗試HTTP（含攔截／失敗）／8store，並非單次流程；[EV](artifacts/verification/P2_A07_CHECKS.json)及原raw保留。
 - 零模型／embedding／外部SMTP／通知／部署；復用A08驗證、找回、刪除恢復證據，不稱全站或真Agent完成。A09須觀察剩餘路由、完成代表Agent／GCP交付及真SMTP設定。按B帳號review／PR／合併後再開A09。
+
+## 2026-10-08｜PR #111 剩餘回歸覆蓋收尾
+
+- 基線 master `1b3ef078`。依使用者要求處理舊 draft #111；核心產品修復已由 #137 適配合併，本次只補仍有價值的回歸測試及重跑所需 scoped 設定，不再次合併舊分支或修改產品程式。
+- 保留現有 2 組聚合測試，新增普通寫入與重新排期容量界線、終態遷移 gate 的交易回滾、滿額到期工作與後續項目進度、queued 取消／既有收據結算，以及 Server／client 接受 202、拒絕 203 的回歸；恢復 3 組前端 198–202 容量呈現測試。
+- 當次 backend／client 7/7、前端 shallow 3/3 通過；scoped Server／client strict typecheck 與前端 typecheck 通過。獨立覆核重跑同一批 10/10 通過，不重複計為額外案例。7 個隔離副本的 guard mutation 均被斷言攔住；候選產品檔未改。首次 mutation harness 因定位字串不唯一停止，修正定位後重跑，失敗過程保留於當次證據。
+- 測試使用 fake Pool、合成資料及 shallow 元件；本次未重跑真 PostgreSQL、真瀏覽器或正式部署。#137 的本機 PostgreSQL 18.6／029 遷移合成驗證是既有歷史證據，不算成本次結果；正式環境的 readers／029 啟用狀態未核對。
+- 缺少的測試型別依賴只在本地依精確 lock 版本及完整性值補齊，未改 package-lock。PLAN 區分原執行時限制與後續 #137 承接；其餘歷史紀錄不改。新補充 PR 正常合併並核對後，才關閉 #111 並留下接替連結；此記錄不預先宣稱遠端合併或關閉完成。
+- 當次證據：`artifacts/verification/PR111_REGRESSION_RECOVERY_CHECKS.json`。零模型／外送／正式資料庫變更／GCP 部署。

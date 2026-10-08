@@ -6,6 +6,7 @@ import type { Pool } from "pg";
 import { createConcernStore, type ConcernJob } from "../server/concern-store.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { FamilyError } from "../server/family-access.ts";
+import { createConcernsApi, ConcernApiError } from "../src/client/concerns-api.ts";
 import { CONCERN_EVENT_LIMIT, CONCERN_STORED_EVENT_LIMIT, type Concern, type ConcernChange, type ConcernEvent } from "../src/shared/concerns.ts";
 
 const childId = randomUUID(), workspaceId = randomUUID(), epoch = randomUUID(), generation = randomUUID();
@@ -209,4 +210,73 @@ test("migration receipt and under-lock capacity gate preserve bounded due progre
     assert.match(runner, /applied.rows\[0\].checksum !== checksum && applied.rows\[0\].checksum !== windowsChecksum/u);
     assert.match(runner, /"029-concern-terminal-reserve", "030-agent-work"/u);
   }
+});
+
+test("ordinary append and rescheduling cannot consume terminal reserve", async () => {
+  const h = harness(), original = h.fixture(200, "pending");
+  for (const input of [
+    { action: "append", expectedVersion: 10, authorityVersion, text: "New observation", observedAt: at, links: { recordId: null, taskId: null, attentionId: null } },
+    { action: "schedule_followup", expectedVersion: 10, authorityVersion, followUpAt: "2099-01-01T00:00:00Z" },
+  ] as ConcernChange[]) await assert.rejects(h.store.change(userId, childId, original.id, input, randomUUID()), capacityError);
+  assert.equal(h.state.events.get(original.id)!.length, 200);
+  assert.equal(h.state.rows.get(original.id)?.version, 10);
+  assert.equal(h.state.follows.get(original.followUp!.id)?.state, "pending");
+  assert.equal(h.state.operations.size, 0);
+});
+
+test("a due full concern stops without enqueueing and the next due item still queues", async () => {
+  const h = harness(), full = h.fixture(200, "pending"), normal = h.fixture(10, "pending");
+  await h.store.checkDue(generation, h.enqueue);
+  assert.deepEqual(h.jobs.map(job => job.id), [normal.id]);
+  const read = await h.store.get(userId, childId, full.id);
+  assert.equal(read?.followUp?.state, "cancelled"); assert.equal(read?.events.length, 201);
+  assert.equal(read?.events.at(-1)?.sourceLabel, "Server 站內跟進狀態");
+  assert.ok(read);
+  const ended = await h.store.change(userId, childId, full.id, archive(read), randomUUID());
+  assert.equal(ended?.events.length, 202);
+});
+
+test("all follow-up reserve write paths still require migration and roll back safely", async () => {
+  for (const action of ["cancel", "authorize", "settle"] as const) {
+    const h = harness(), original = h.fixture(200, action === "cancel" ? "pending" : "queued");
+    h.options.migration = false;
+    if (action === "settle") {
+      const runId = randomUUID();
+      h.state.runs.set(original.followUp!.id, { id: runId, state: "completed", expires_at: new Date(at),
+        result_encrypted: cipher.encrypt(JSON.stringify({ runId, status: "completed" }), "agent-run:" + childId + ":" + userId + ":" + runId) });
+    }
+    const before = structuredClone(h.state);
+    await assert.rejects(action === "cancel" ? h.store.change(userId, childId, original.id, cancel(original), randomUUID())
+      : action === "authorize" ? h.store.backgroundInput(h.job(original)) : h.store.finishBackground(h.job(original), null), capacityError);
+    assert.deepEqual(h.state, before, action + " must roll back every persistent change");
+  }
+});
+
+test("queued capacity input is cancelled before model authorization and a recorded result can settle once", async () => {
+  const blocked = harness(), full = blocked.fixture(200, "queued"), oldJob = blocked.job(full);
+  assert.equal(await blocked.store.backgroundInput(oldJob), null);
+  assert.equal((await blocked.store.get(userId, childId, full.id))?.followUp?.state, "cancelled");
+  assert.equal(await blocked.store.finishBackground(oldJob, null), "ignored");
+  const h = harness(), original = h.fixture(200, "queued"), job = h.job(original), runId = randomUUID();
+  h.state.runs.set(original.followUp!.id, { id: runId, state: "completed", expires_at: new Date(at),
+    result_encrypted: cipher.encrypt(JSON.stringify({ runId, status: "completed" }), "agent-run:" + childId + ":" + userId + ":" + runId) });
+  assert.equal(await h.store.finishBackground(job, null), "settled");
+  const settled = await h.store.get(userId, childId, original.id);
+  assert.ok(settled); assert.equal(settled.followUp?.state, "completed"); assert.equal(settled.events.length, 201);
+  assert.equal(settled.events.at(-1)?.runId, runId);
+  assert.equal(await h.store.finishBackground(job, null), "ignored");
+  const ended = await h.store.change(userId, childId, original.id, archive(settled), randomUUID());
+  assert.equal(ended?.events.length, 202);
+});
+
+test("readers accept complete 202-event history and reject 203 events", async () => {
+  const h = harness(), accepted = h.fixture(202, null, "closed");
+  const read = await h.store.get(userId, childId, accepted.id); assert.equal(read?.events.length, 202);
+  const api = createConcernsApi("https://synthetic.invalid", async () => Response.json({ page: { authorityVersion, canManage: true, items: [accepted] } }));
+  assert.equal((await api.getPage(childId, new AbortController().signal, userId)).items[0].events.length, 202);
+  const bad = h.fixture(203, null, "closed");
+  await assert.rejects(h.store.get(userId, childId, bad.id), capacityError);
+  const badApi = createConcernsApi("https://synthetic.invalid", async () => Response.json({ page: { authorityVersion, canManage: true, items: [bad] } }));
+  await assert.rejects(badApi.getPage(childId, new AbortController().signal, userId), error => error instanceof ConcernApiError && error.readFailure?.category === "schema");
+  assert.ok(h.queries.some(sql => sql.includes("ORDER BY sequence LIMIT $2")));
 });
