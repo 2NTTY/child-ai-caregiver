@@ -60,7 +60,7 @@ COPY server ./server
 COPY src/shared ./src/shared
 COPY prompts ./prompts
 COPY knowledge ./knowledge
-COPY scripts/encrypt-storage.mjs scripts/storage-backup.mjs scripts/photos-backup.mjs scripts/knowledge.mjs scripts/knowledge-refresh.mjs scripts/worker-control.mjs ./scripts/
+COPY scripts/encrypt-storage.mjs scripts/storage-backup.mjs scripts/photos-backup.mjs scripts/knowledge.mjs scripts/knowledge-refresh.mjs scripts/worker-control.mjs scripts/account-invitation.mjs scripts/account-erasure-journal.mjs ./scripts/
 
 USER node
 EXPOSE 3001

@@ -1680,3 +1680,15 @@
 - 真UI沿A08加密還原庫、同2帳號／1孩子／1聊天／1文件。首次Windows bind、inert填表及root navigator卸載導致deep link遺失分別保留失敗；後者局部修正保持navigator。後續原op丟回覆／查核一次、私人歷史、公共目錄、同文件跨頁／重開通過。一次200 HTTP上限停批後只續剩餘項；未重新建立fixture。
 - 額外sidebar more/profile等待未完成，沒有足夠證據判定產品根因，保留未驗；最終改直接核對相同帳戶切換後native身份、首頁、權威孩子空清單與跨孩子404，最後173HTTP／4store通過並精確清理，baseline totals一致、worker暫停。各批合共911次嘗試HTTP（含攔截／失敗）／8store，並非單次流程；[EV](artifacts/verification/P2_A07_CHECKS.json)及原raw保留。
 - 零模型／embedding／外部SMTP／通知／部署；復用A08驗證、找回、刪除恢復證據，不稱全站或真Agent完成。A09須觀察剩餘路由、完成代表Agent／GCP交付及真SMTP設定。按B帳號review／PR／合併後再開A09。
+
+
+<a id="log-20261008-p2-a09-preparation"></a>
+## 2026-10-08｜P2-A09 穩定交付準備及代表Agent停批
+
+- 基線b30a7b2，獨立A09分支；C主責，原權重3及C60%／B20%／A10%／D10%屬整包預分配。本次實際改動屬C的部署／Server與A的Agent指引／整合；共用AI由A統籌，兩個Sol6.1執行有界工程與驗收、Luna唯讀定位。B／D本批沒有新增改動或人工驗收，不據預分配代填貢獻。
+- 增補Docker行政CLI、invited Compose overlay、受保護SMTP與journal掛載；主模型親寫部署及API契約。候選Web／API／maintenance建置通過，沒有部署。首次本機receipt建置誤用不存在的api stage即停，改用已有server stage後通過；詳見[建置](artifacts/verification/P2_A09_BUILD.json)。
+- 真Agent沿既有加密還原庫，只建1帳號／1孩子，保留原庫、原用量與worker暫停。第一次unavailable無充分根因；第二次tool_unknown經零網絡重現為summary-report header0.1.3與manifest0.1.4不符，主模型修正並升pack0.1.33，沒有重寫既有Prompt Pack。其後真補問completed；下一步查知識／保存準備單成功，但局部修改conflict及一次歷史讀取rejected，達4次model_limit而停止，沒有可認定的完整引用回答或修改結果。
+- 各批總計4個run、9生成＋1embedding（共10／12）、25業務呼叫／38唯讀SQL；已知生成input124973／output708，但9筆用量包含未知欄位，不把已知總和當完整成本。失敗現場及同一文件保留，不新建fixture繞限；此輪不再呼叫真模型。[原run與邊界](artifacts/verification/P2_A09_AGENT_RUN.json)。
+- 發現文件成功收據缺少下一步所需authorityVersion／正文，補同授權、同文件與快照且符合budget的完整短正文；過大／失效仍續讀，寫入成功後readback失敗仍保留真收據，不誘導重複寫入。主模型親寫工具描述，Sol局部實作；一個既有prompt版本聚合、一個adapter聚合通過，主模型review實際diff／測例，沒有再跑整套。修正版真Agent未驗。[檢查](artifacts/verification/P2_A09_CHECKS.json)。
+- 已核實VM的IAP／SSH唯讀現場為85e3a846，服務健康、SMTP未配置，20GB磁碟餘2.2GB；原STOP為2026-10-10 20:50:44 HKT。未刪映像／資料、未續期／擴容、未外發郵件／通知；[現場證據](artifacts/verification/P2_A09_REMOTE_PREFLIGHT.log)。
+- A09仍未完成：真引用／修改／接續、正式SMTP、邀請規模／資料保留／維運條件及新部署／恢复待完成。保留draft交付，不合併為已驗收或把舊P2證據當新服務通過；下一步從同一已保存文件及原台帳接續，不重跑已通過的A01～A08或A07瀏覽器。

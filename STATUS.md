@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **P2-A01～A06、A08已合併；A07最低接線驗收通過，待本包交付。** 唯一當前入口為 [PLAN#active](PLAN.md#active)。正式帳號、持久工作／歷史及文件接點已接好；合成資料已清理。新部署、真SMTP及完整Agent／穩定服務由A09完成，尚未宣稱整輪完成；舊P1／P2／INT證據保留，P3未啟動。
+- **P2-A01～A08均已合併，A09穩定交付進行中。** 唯一當前入口為 [PLAN#active](PLAN.md#active)。正式帳號、Agent資料／文件與歷史接點已有最低本機證據；代表Agent已補問並保存準備單，但引用／局部修改未完整通過；修正版只完成離線核對及建置。新部署及真SMTP仍未完成。邀請規模／保留與運行設定尚待核定，不能把本機SMTP當公開服務；P3未啟動。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。
@@ -12,9 +12,9 @@
 <a id="deployment"></a>
 ## 最後部署觀察（非即時狀態）
 
-2026-10-07 07:33:47 UTC 的部署觀察：https://ex-machina.eu.org 的 Web／API 使用 `4a2257a`，worker 保持 `053658b`；本次未執行 migration，DB 卷與既有備份保留。API／worker 共用映像設定已更新，後續整包 Compose 啟動可能改動 worker，必須先核對目標，不能當作 Web-only 操作。啟動／部署及功能清單見 [正式 Web](docs/PRODUCTION_FRONTEND.md)。
+2026-10-08 約01:41 UTC，經已核實 VM／IAP 唯讀觀察：Web、API、worker 均使用 `85e3a846`；API／PostgreSQL healthy，服務正在運行。本輪 A01～A08 尚未部署，SMTP／帳號服務設定未配置，根磁碟剩約2.2GB（89%已用）。原資料卷／秘密保留；證據見 [A09現場](artifacts/verification/P2_A09_REMOTE_PREFLIGHT.log)，後續部署及容量另須重新核對。啟動／部署方法見 [正式Web](docs/PRODUCTION_FRONTEND.md#p2-a09-deployment)。
 
-已核對使用者先前續期生效，VM 的 STOP 為 **2026-10-10 20:50:44 HKT**；本包未再續期。觀察時 VM running／API healthy；這是有日期的結果，不代替日後操作前核對。
+Compute API 已重新核對原 VM ID 2846984358678394356，STOP 仍為 **2026-10-10 20:50:44 HKT**；本包沒有續期或擴容。以上是有日期的觀察，不是即時狀態。
 
 ## 按需追溯
 

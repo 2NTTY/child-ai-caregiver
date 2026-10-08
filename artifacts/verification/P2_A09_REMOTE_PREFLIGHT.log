@@ -1,0 +1,91 @@
+P2-A09 remote preflight evidence
+Source: successful exec output chunk 2c8074; copied from that existing tool result, not rerun.
+Exit code: 0
+Observation time: approximately 2026-10-08 01:41 UTC.
+First clock read after the run: 2026-10-08 01:41:24 UTC.
+Exact run start/end timestamps were not recorded.
+Scope: read-only IAP/SSH preflight against yuban-p1, project ai-caregivers-for-children, zone asia-east2-a, VM ID 2846984358678394356.
+Sanitization: no token, key content, SMTP body or database content appears in this output.
+
+Captured stdout:
+CONTAINERS
+yuban-p1-api-1|yuban-int-api:85e3a846|Up 9 hours (healthy)
+yuban-p1-worker-1|yuban-int-api:85e3a846|Up 9 hours
+yuban-p1-web-1|yuban-int-web:85e3a846|Up 9 hours
+yuban-p1-postgres-1|yuban-postgres:18.6-pgvector0.8.6|Up 4 days (healthy)
+COMPOSE_PATHS
+/yuban-p1-api-1|/opt/yuban-int-053658b/deploy/p1/compose.yaml,/opt/yuban-int-053658b/deploy/p2/compose.yaml|/opt/yuban-int-053658b/deploy/p1
+/yuban-p1-worker-1|/opt/yuban-int-053658b/deploy/p1/compose.yaml,/opt/yuban-int-053658b/deploy/p2/compose.yaml|/opt/yuban-int-053658b/deploy/p1
+/yuban-p1-web-1|/opt/yuban-int-053658b/deploy/p1/compose.yaml,/opt/yuban-int-053658b/deploy/p2/compose.yaml|/opt/yuban-int-053658b/deploy/p1
+/yuban-p1-postgres-1|/opt/yuban-p2-635a545/deploy/p1/compose.yaml,/opt/yuban-p2-635a545/deploy/p2/compose.yaml|/opt/yuban-p2-635a545/deploy/p1
+CAPACITY
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        20G   17G  2.2G  89% /
+/dev/sda1        20G   17G  2.2G  89% /
+/dev/sda1        20G   17G  2.2G  89% /
+ACCOUNT_SETTINGS
+SMTP_MOUNTS
+EXPECTED_SMTP_FILE
+/etc/yuban-p1/account-smtp.json|absent
+PREFLIGHT_PASS
+tunnel_cleanup=stopped
+token_cleanup=removed
+
+P2-A09 read-only capacity batch
+Local batch start UTC: 2026-10-08T01:43:22.951Z
+Local capture UTC: 2026-10-08T01:43:31.138Z
+SSH exit code: 0
+Scope: docker system df/image sizes; matching deployment archive filenames/sizes in /home/2NTTY at maxdepth 1; /var/backups and /opt directory sizes. No deletion or file content read.
+Captured stdout:
+CAPACITY_BATCH_START_UTC
+2026-10-08T01:43:28Z
+DOCKER_SYSTEM_DF
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          30        3         10.08GB   3.598GB (35%)
+Containers      4         4         94.21kB   0B (0%)
+Local Volumes   3         3         113.2MB   0B (0%)
+Build Cache     35        0         592.6MB   53.25kB
+DOCKER_IMAGE_SIZES
+yuban-int-web:85e3a846|285d56442234|104MB
+yuban-int-api:85e3a846|87002ee921d8|1.33GB
+yuban-int-api:70aea07|790354312a66|1.33GB
+yuban-int-web:58d70da|4df5abbdb751|104MB
+yuban-int-api:58d70da|2e2176fc8b6c|1.33GB
+yuban-int-web:4a2257a|929d00c57093|104MB
+yuban-int-api:4a2257a|5b4800ecd790|1.33GB
+yuban-int-api:a75ebb6|52f4e8c37f23|1.33GB
+yuban-int-web:b7dec9d|d925f480702d|104MB
+yuban-int-api:b7dec9d|86031d250ecd|1.33GB
+yuban-int-web:b23f12b|efa9234e3737|104MB
+yuban-int-api:b23f12b|bca85ddc255a|1.33GB
+yuban-int-web:01c25a4|182f53f688b4|104MB
+yuban-int-web:9c088c8|152c1e31c1e3|104MB
+yuban-int-web:053658b|b6f6ecb2c993|104MB
+yuban-int-maintenance:053658b|5da56fd58187|1.77GB
+yuban-int-api:053658b|7f9d5560d6ab|1.33GB
+yuban-p2-maintenance:s17-43ab10c|29bc3f4c242d|1.6GB
+yuban-p2-api:s17-43ab10c|4fbd7b08af9f|1.16GB
+yuban-p2-web:s17|91433e7c213b|92.4MB
+yuban-p2-maintenance:s17|b781eb34fc31|1.6GB
+yuban-p2-api:s17|94ec079e426f|1.16GB
+yuban-postgres:18.6-pgvector0.8.6|932c5117c1b8|625MB
+yuban-p1-web:local|87a1aac3398a|90.5MB
+yuban-p1-maintenance:local|09339a3bf728|1.46GB
+yuban-p1-api:local|b5716a6d351c|1GB
+yuban-p1-web:before-session-fix|4cde74558d29|90.5MB
+yuban-p1-maintenance:before-session-fix|77483768bd7a|1.46GB
+yuban-p1-api:before-session-fix|f2db5a2a4244|1GB
+postgres:18.6-bookworm|3725f4e2499e|630MB
+DEPLOYMENT_ARCHIVES_HOME_TOP_LEVEL
+BACKUP_AND_OPT_DIRECTORY_SIZES
+2.4M	/var/backups/yuban-p1
+3.4M	/var/backups
+12K	/opt/containerd
+24M	/opt/yuban-p1
+32K	/opt/yuban-int-053658b
+35M	/opt/yuban-p2-635a545
+35M	/opt/yuban-p2-43ab10c
+16K	/opt/yuban-p1-auth-rollback
+93M	/opt
+CAPACITY_BATCH_END_UTC
+2026-10-08T01:43:31Z

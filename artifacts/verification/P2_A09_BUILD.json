@@ -1,0 +1,80 @@
+{
+  "package": "P2-A09",
+  "sourceBase": "b30a7b28b8f00f72013e2f6a01a6e65832856549",
+  "sourceChange": "Dockerfile additionally includes account invitation and erasure-journal administrative scripts.",
+  "builtAtObserved": "2026-10-08T01:49:45.332Z",
+  "state": "built_not_deployed",
+  "runtime": {
+    "node": "24.19.0",
+    "npm": "11.8.0"
+  },
+  "images": [
+    {
+      "tag": "yuban-a09-api:b30a7b2-candidate",
+      "id": "sha256:162537ed431eea15bd5e7d4ea272f295942e6a318380ee805d597c06cc2647f6",
+      "reportedBytes": 299218313
+    },
+    {
+      "tag": "yuban-a09-web:b30a7b2-candidate",
+      "id": "sha256:6b50e8023d1ce56db35f36fbde9465eb306fe60f4129529498edba18bb892b00",
+      "reportedBytes": 28561014
+    },
+    {
+      "tag": "yuban-a09-maintenance:b30a7b2-candidate",
+      "id": "sha256:558163a254035ed9f7d2b576aad16f016a8ab783c610be0d6d541d206a8a27e3",
+      "reportedBytes": 418169918
+    }
+  ],
+  "web": {
+    "routes": 35,
+    "bundledModules": 1978,
+    "exported": "dist"
+  },
+  "validation": "Three Docker target builds exited 0. Compose merge checked with worker and ops profiles by executor. No image was started, transferred or deployed in this step.",
+  "limitations": [
+    "Build is not runtime/SMTP/restore acceptance.",
+    "Transitive npm deprecation warnings were not changed as unrelated dependencies.",
+    "Reported local image size is not a prediction of remote disk increment."
+  ],
+  "promptFix": {
+    "packVersion": "0.1.33",
+    "module": "summary-report 0.1.4 header aligned with existing manifest",
+    "images": [
+      {
+        "tag": "yuban-a09-api:b30a7b2-prompt-fix",
+        "id": "sha256:8fb5da6a0324c660ac19ee0c85805392a2ff90cecaea556d6bf21b4bb4445be6",
+        "reportedBytes": 299218291
+      },
+      {
+        "tag": "yuban-a09-maintenance:b30a7b2-prompt-fix",
+        "id": "sha256:b5cb7c927e52ac89c7a998b2419c8e14e9823537fc29ce410ca8f3137251362d",
+        "reportedBytes": 418169840
+      }
+    ],
+    "web": "Unchanged; retain b30a7b2-candidate image",
+    "validation": "Offline document module load reproduced failure before header fix and succeeded after; one existing pack/module version aggregate passed. API and maintenance targets rebuilt, exit 0. No deployment."
+  },
+  "documentReceiptFix": {
+    "builtAtObserved": "2026-10-08T02:20:29.943Z",
+    "sourceChange": "Same-version authorized short snapshots on document read/write receipts; preserve successful receipts when readback fails.",
+    "images": [
+      {
+        "tag": "yuban-a09-api:b30a7b2-document-receipt",
+        "id": "sha256:ecd6205c405fdbdfa311fb8338fee80e7ecfd199f6a3de1cb5265769108f0dc8",
+        "reportedBytes": 299219161
+      },
+      {
+        "tag": "yuban-a09-maintenance:b30a7b2-document-receipt",
+        "id": "sha256:2dc22497996d7740493a49d578fcf3bb0879968ab9f4c81772eae65dbda6b070",
+        "reportedBytes": 418170831
+      }
+    ],
+    "web": "Unchanged; retain b30a7b2-candidate image",
+    "commands": [
+      "docker build --target server -t yuban-a09-api:b30a7b2-document-receipt .",
+      "docker build --target maintenance -t yuban-a09-maintenance:b30a7b2-document-receipt ."
+    ],
+    "validation": "Both reviewed targets exited 0; no containers started and no image transferred or deployed.",
+    "preservedCommandFailure": "Initial local command used nonexistent --target api and stopped before build; corrected to existing server stage without changing Dockerfile."
+  }
+}

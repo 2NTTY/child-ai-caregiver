@@ -67,3 +67,28 @@ docker compose --project-name yuban-p1 \
 - 本人下載使用固定manifest及有界資料頁；失效歷史會明示不可用，並非所有歷史正文均可匯出。模型key、密碼hash、session及渠道secret不回傳。大量資料的頁面呈現沿exportPage分批，不能把已讀前綴說成完整下載。
 
 真郵件供應商、寄件身份、邀請規模、保留期限、VM期限及運行預算仍須在A09部署前核定；A08本機SMTP證據不代表公開找回信已送達。
+
+
+<a id="p2-a09-deployment"></a>
+## P2-A09 邀請制部署接線（待正式部署驗收）
+
+此節是現行部署方法；上方 INT-W07 保留歷史觀察，不能把舊映像當成已包含 A01～A08。實際主機／映像、驗收及未完成項見 STATUS／PLAN。
+
+### Compose 與工程外設定
+
+在原 `deploy/p1/compose.yaml`、`deploy/p2/compose.yaml` 後追加 `deploy/p2/service.compose.yaml`；沿用同一 `yuban-p1` project、pilot env 與原 secrets，不建立新資料卷。`service.env.template` 只列 SMTP 檔及 journal 目錄座標，實際值合入工程外 pilot env。核對合併配置時啟用 `--profile p2-worker --profile ops`，否則看不到 worker／maintenance。
+
+- API／worker 共同使用 invited 模式、受保護 SMTP JSON 及同一目前 journal；maintenance 只掛 journal／原備份能力，不需要 SMTP 憑據。API 不取得 backup key。
+- 主機目錄須由 UID 1000 可穿越及讀寫；SMTP 檔 0600、journal 0700。Compose 不代修 owner／mode，缺 bind 來源拒絕啟動。
+- 首次 journal 尚未存在時，先按照 [P1_STORAGE 的初始化／綁定步驟](P1_STORAGE.md#account-erasure-journal) 在受保護父目錄完成初始化，再掛最終目錄。不能先建立空的 journal 子目錄代替 initialize，也不能把正式 API 當初始化工具。
+- 映像包含 `scripts/account-invitation.mjs` 及 `scripts/account-erasure-journal.mjs`。邀請由已配置的 API 容器執行 `node scripts/account-invitation.mjs issue <email> <days>`；該 CLI 只登記資格，不發邀請信。不要在缺 SMTP 的 maintenance 服務執行它。
+
+### 升級與恢复界線
+
+1. 核對指定 VM 身份、STOP 時間、磁碟容量、正在使用的 Compose 檔／映像及 migration；先 fetch master／核對相關 PR，映像不得只依目錄名稱認定版本。保留原映像及完整工程外設定，不變更已有平台配額。
+2. 建置 reviewed Web／API／maintenance；SMTP、ADC、密鑰、使用者資料不進 build context。傳輸到同一已核實 VM 前核對 hash，原 pgvector 映像及資料目錄沿用。
+3. 暫停 worker、停止寫入，使用原相容工具保存 DB＋照片加密配對備份；journal 另存工程外受保護副本，密鑰保持分開。只有備份檔存在不算恢復通過。
+4. 按實際尚缺的 migration 升級；首次 035 部署在開放之前完成 journal initialize／bind，以後只能 replay。核對原資料保留。先保留固定 proxy IP 啟動 Web，再啟動同版 API／worker，正式 SMTP 與資料說明／邀請政策備妥才開放 invited 服務。
+5. 空目標還原使用配對 DB／照片及**目前** journal，先 replay 並檢查刪除結果，再決定是否開放；worker 保持暫停，不重發舊郵件／提醒。單 VM 及本機恢復證據不等於高可用。
+
+套用 035 之後，不可直接回退到不懂 journal 的 API／worker。回復必須保留新寫入和刪除意圖，使用相容映像或新空目標恢復；禁止 down -v、清庫、覆蓋目前 journal 或以舊備份復活帳戶。正式 SMTP 送達、邀請規模、保留期限、維運告警及預算未核定前，這份接線不能視為穩定服務已交付。

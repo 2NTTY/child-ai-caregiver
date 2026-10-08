@@ -1,0 +1,32 @@
+# Opt-in invited service; combine after deploy/p1/compose.yaml and deploy/p2/compose.yaml.
+# Host permissions must be provisioned separately; bind mounts do not change UID or mode.
+services:
+  api:
+    environment: &account-service-environment
+      SERVICE_MODE: invited
+      ACCOUNT_SMTP_CONFIG_FILE: /run/secrets/account_smtp
+      ACCOUNT_SMTP_ALLOW_INSECURE_LOOPBACK: 'false'
+      ACCOUNT_ERASURE_JOURNAL_DIR: /var/lib/yuban/account-erasure-journal
+    volumes: &account-service-volumes
+      - type: bind
+        source: ${P2_SMTP_CONFIG_FILE:?Set absolute protected SMTP JSON file}
+        target: /run/secrets/account_smtp
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${P2_ACCOUNT_JOURNAL_DIR:?Set absolute protected account erasure journal directory}
+        target: /var/lib/yuban/account-erasure-journal
+        read_only: false
+        bind: {create_host_path: false}
+  worker:
+    environment: *account-service-environment
+    volumes: *account-service-volumes
+  maintenance:
+    environment:
+      ACCOUNT_ERASURE_JOURNAL_DIR: /var/lib/yuban/account-erasure-journal
+    volumes:
+      - type: bind
+        source: ${P2_ACCOUNT_JOURNAL_DIR:?Set absolute protected account erasure journal directory}
+        target: /var/lib/yuban/account-erasure-journal
+        read_only: false
+        bind: {create_host_path: false}
