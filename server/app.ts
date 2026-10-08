@@ -1,3 +1,4 @@
+import { handlePersonalLibraryRequest } from "./personal-library-api.ts";
 import { AccountAdmissionError } from "./account-admission.ts";
 import { handleAccountServiceRequest, type AccountServiceApi } from "./account-service-api.ts";
 import { handleSharedInputRequest } from "./shared-input-api.ts";
@@ -105,6 +106,7 @@ export function createRequestHandler(options: {
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   productAgent?: import("./product-agent.ts").ProductAgent;
   productAgentStore?: import("./product-agent-store.ts").ProductAgentStore;
+  personalLibrary?: import("./personal-library-api.ts").PersonalLibrary;
   agentActions?: import("./agent-actions-store.ts").AgentActionsStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
   telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
@@ -233,7 +235,10 @@ export function createRequestHandler(options: {
         || url.pathname.startsWith("/api/online/") || url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/") || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(url.pathname)&&options.inputs
+        result = /^\/api\/children\/[^/]+\/library$/u.test(url.pathname) && options.personalLibrary
+          ? await handlePersonalLibraryRequest(webRequest, userId, { library: options.personalLibrary,
+            isCurrentUser: async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected })
+          : /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(url.pathname)&&options.inputs
           ? await handleSharedInputRequest(webRequest,userId,options.inputs.store,{service:options.inputs.service,
               isCurrentUser:async()=>Boolean(userId)&&(await options.auth.api.getSession({headers}))?.user.id===userId})
           : /^\/api\/children\/[^/]+\/photos(?:\/|$)/u.test(url.pathname)&&options.photos

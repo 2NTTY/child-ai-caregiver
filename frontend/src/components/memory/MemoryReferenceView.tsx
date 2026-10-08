@@ -1,5 +1,11 @@
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { Linking, StyleSheet, View } from "react-native";
+import { useRouter, type Href } from "expo-router";
+import { usePreviewNavigation } from "../../preview/PreviewNavigationGuard";
+import type { PersonalLibraryItem } from "../../../../src/shared/personal-library";
+import { historyMessageQuestion, personalWorkQuestion } from "../../history-view-model";
+import { PersistentWorkCards } from "../history/PersistentWorkCards";
+import { HistoryMessageDetail } from "../history/HistoryMessageDetail";
 import { Text } from "react-native-paper";
 import { factIsApplicable, factSourceLabel, factStatusLabels, factUnavailableReason, visibilityLabels, type MemoryFactView, type MemorySummaryView } from "../../memory-view-model";
 import { memoryClarificationQuestion, memoryConfirmerLabel, memoryDateLabel, visibleKnowledgeReferences, visibleMemoryFacts, visibleMemoryHistory,
@@ -113,25 +119,42 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
     </View> : null}
   </View>;
 }
+function CatalogCard({ source }: { source: PersonalLibraryItem }) {
+  const [details, setDetails] = useState(false), [linkFailed, setLinkFailed] = useState(false);
+  return <View style={styles.card} testID={`memory-catalog-source-${source.sourceId}`}>
+    <Text accessibilityRole="header" style={styles.cardTitle}>{source.title}</Text><Text style={styles.meta}>{source.publisher}</Text>
+    <Text style={styles.meta}>覆核於 {memoryDateLabel(source.checkedAt)}</Text>
+    <View style={styles.actions}><AppButton label="閱讀來源" variant="quiet" density="compact" onPress={() => { setLinkFailed(false); void Linking.openURL(source.url).catch(() => setLinkFailed(true)); }} />
+      <AppButton label={details ? "收起來源資料" : "查看來源資料"} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(value => !value)} /></View>
+    {linkFailed ? <Text style={styles.warning}>暫未能開啟來源，可複製下方網址。</Text> : null}
+    {details || linkFailed ? <View style={styles.details}><Metadata label="原文網址">{source.url}</Metadata><Metadata label="來源更新">{memoryDateLabel(source.sourceUpdatedAt)}</Metadata>
+      <Metadata label="有效至">{source.validUntil ? memoryDateLabel(source.validUntil) : "未設定期限"}</Metadata></View> : null}
+  </View>;
+}
 function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue }) {
   const sources = visibleKnowledgeReferences(model.references);
+  const catalog = model.references.data?.catalog;
   const groups = [{ key: "official_guidance", title: "官方指引", detail: "公共機構及專業指引的來源資料" }, { key: "recent_information", title: "近期資訊", detail: "新聞及具時效性的參考來源" }] as const;
-  return <View style={styles.section}><SectionHeader density="compact" title="參考資料" subtitle="查看資料出處、日期及適用範圍" />
+  return <View style={styles.section}><SectionHeader density="compact" title="參考資料" subtitle={catalog ? "查看目前可查閱的公共來源目錄" : "查看資料出處、日期及適用範圍"} />
     {model.references.state !== "ready" ? <ReadNotice read={model.references} unavailable="參考來源暫未提供" /> : null}
     {!["loading", "error", "unavailable"].includes(model.references.state) ? groups.map(group => {
       const entries = sources.filter(source => source.classification === group.key);
+      const catalogEntries = catalog?.filter(source => source.classification === group.key);
       return <View key={group.key} style={styles.section}><View><Text accessibilityRole="header" style={styles.sectionTitle}>{group.title}</Text><Text style={styles.meta}>{group.detail}</Text></View>
-        {entries.length ? entries.map(source => <ReferenceCard key={`${source.sourceId}:${source.versionId}:${source.chunkId}`} source={source} />)
+        {catalogEntries ? catalogEntries.length ? catalogEntries.map(source => <CatalogCard key={`${source.sourceId}:${source.versionId}`} source={source} />) : <View style={styles.emptyCard}><Text style={styles.meta}>目前沒有可查閱的來源</Text></View> : entries.length ? entries.map(source => <ReferenceCard key={`${source.sourceId}:${source.versionId}:${source.chunkId}`} source={source} />)
           : <View style={styles.emptyCard}><Text style={styles.meta}>暫無可顯示來源</Text></View>}
       </View>;
     }) : null}
-    {model.references.data?.hasMore ? workspace.reads?.loadMoreReferences ? <AppButton label="載入更多來源" variant="quiet" disabled={!model.online} onPress={workspace.reads.loadMoreReferences} />
+    {catalog ? <Text style={styles.meta}>這是來源目錄，未逐項判定適用於這位孩子；來源存在亦不代表支持某句回答。</Text> : null}
+    {["error", "unavailable", "stale"].includes(model.references.state) && workspace.reads?.refreshContext ? <AppButton label="重新讀取參考" variant="quiet" disabled={!model.online || workspace.reads.referencesBusy} onPress={workspace.reads.refreshContext} /> : null}
+    {model.references.data?.hasMore ? workspace.reads?.loadMoreReferences ? <AppButton label="載入更多來源" variant="quiet" disabled={!model.online || workspace.reads.referencesBusy} onPress={workspace.reads.loadMoreReferences} />
       : <Text style={styles.meta}>仍有來源未載入</Text> : null}
   </View>;
 }
 type MemoryReferenceViewProps = { confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void };
 function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuestion }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
   const { model } = workspace;
+  const router = useRouter(), navigate = usePreviewNavigation();
   const [tab, setTab] = useState<Tab>("long"), [otherOpen, setOtherOpen] = useState(false);
   const tabsId = useId(), container = useContainerWidth();
   const current = useRef<MemoryReferenceWorkspaceValue | null>(workspace);
@@ -155,12 +178,29 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
       <Text style={styles.meta}>{model.dataLabel || "查看已保存記憶及來源"}</Text></View></View>
     <UnderlineTabs id={tabsId} label="記憶與參考分類" items={tabs} value={tab} onChange={setTab} />
     <AppTabPanel tabsId={tabsId} tabKey="short" active={tab === "short"}><View style={styles.section}>
-      <SectionHeader density="compact" title="短期脈絡" subtitle="這次回覆使用的近期對話片段" />
-      <ReadNotice read={model.shortTerm} unavailable="本輪對話脈絡暫未提供" empty={model.shortTerm.data?.messages.length === 0}>
+      <SectionHeader density="compact" title="目前工作脈絡" subtitle="Agent 已保存的工作、待答問題及相關訊息" />
+      <ReadNotice read={model.shortTerm} unavailable="目前工作脈絡暫未提供" empty={model.shortTerm.data?.works ? model.shortTerm.data.works.length === 0 && model.shortTerm.data.messages.length === 0 : model.shortTerm.data?.messages.length === 0}>
+        {model.shortTerm.data?.works ? <PersistentWorkCards items={model.shortTerm.data.works} online={model.online} busy={workspace.reads?.messageBusy}
+          onMessage={workspace.reads?.readWorkMessage ? id => {
+            if (current.current !== workspace || !current.current.model.shortTerm.data?.works?.some(work => work.sourceMessageIds.includes(id))) return;
+            workspace.reads?.readWorkMessage?.(id);
+          } : undefined}
+          onResource={path => { if (current.current === workspace) navigate(() => router.push(path as Href)); }}
+          onContinue={onPrepareQuestion ? work => {
+            if (current.current !== workspace || !current.current.model.shortTerm.data?.works?.some(item => item.id === work.id && item.version === work.version)) return;
+            onPrepareQuestion(personalWorkQuestion(model.childName, work));
+          } : undefined} /> : null}
         {model.shortTerm.data?.messages.map(message => <View key={message.id} style={styles.card}><Text style={styles.meta}>{message.role === "user" ? "你的訊息" : "Agent 回覆"}</Text><Text selectable style={styles.body}>{message.text}</Text></View>)}
+        {model.shortTerm.data?.hasMoreWorks ? <AppButton label="載入更多工作" variant="quiet" disabled={!model.online || workspace.reads?.workBusy} onPress={() => workspace.reads?.loadMoreWork?.()} /> : null}
         {model.shortTerm.asOf ? <Text style={styles.meta}>讀取於 {memoryDateLabel(model.shortTerm.asOf)}</Text> : null}
       </ReadNotice>
-      {model.shortTerm.data ? <Text style={styles.meta}>只包括這次回覆使用的近期對話片段。</Text> : null}
+      {model.shortTerm.data ? <Text style={styles.meta}>工作是 Agent 的整理內容，供核對及接續；不代表已確認的事實。</Text> : null}
+      {["error", "unavailable", "stale"].includes(model.shortTerm.state) && workspace.reads?.refreshContext ? <AppButton label="重新讀取工作脈絡" variant="quiet" disabled={!model.online || workspace.reads.workBusy} onPress={workspace.reads.refreshContext} /> : null}
+      {model.shortTerm.data?.messageRead ? <HistoryMessageDetail read={model.shortTerm.data.messageRead} busy={workspace.reads?.messageBusy} online={model.online}
+        onMore={workspace.reads?.loadMoreWorkMessage} onClose={workspace.reads?.closeWorkMessage} onPrepareQuestion={onPrepareQuestion ? message => {
+          if (current.current !== workspace || current.current.model.shortTerm.data?.messageRead?.data !== message) return;
+          onPrepareQuestion(historyMessageQuestion(model.childName, message));
+        } : undefined} /> : null}
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="long" active={tab === "long"}><View style={styles.section}>
       <SectionHeader density="compact" title="長期記憶" subtitle="已保存的事實、來源及對話摘要" />

@@ -1,0 +1,1 @@
+{"state":"failed","stage":"child_unknown_recovery","lastAction":"child_name","code":"ui_acceptance_failed","checks":["real_login_and_consent"],"http":55,"stores":0,"blocked":0,"lost":false,"submissions":0,"lookup":false,"fixtureUsers":2,"fixtureChildren":0}

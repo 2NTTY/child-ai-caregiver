@@ -11,9 +11,10 @@ import { confirmedUserId, productionIdentityKey, productionScopeKey } from "./sc
 import { withRecordsQueries } from "./records-query.ts";
 import { AgentAuthorizationOwner } from "./AgentAuthorizationOwner.ts";
 import { ProductAgentOwner } from "./ProductAgentOwner.ts";
+import { AccountServiceOwner, type AccountServiceDependencies, type AccountServiceSnapshot } from "./AccountServiceOwner.ts";
 
 export interface ProductionSnapshot {
-  records: RecordsState; chat: ChatState;
+  records: RecordsState; chat: ChatState; account: AccountServiceSnapshot;
   identityKey: string | null; scopeKey: string | null;
   sessionGeneration: number; homeIntroductionPending: boolean;
 }
@@ -25,17 +26,19 @@ export class ProductionOwner {
   readonly chatController: ChatController;
   readonly agentOwner: ProductAgentOwner;
   readonly authorizationOwner: AgentAuthorizationOwner;
+  readonly accountOwner: AccountServiceOwner;
   private readonly domainPending = new Set<string>();
   setDomainPending = (key: string, pending: boolean) => {
     if (this.domainPending.has(key) === pending) return;
     if (pending) this.domainPending.add(key); else this.domainPending.delete(key);
     this.syncMutationLocks(); this.snapshot = this.project(); this.emit();
   };
-  hasDomainPending = () => this.domainPending.size > 0;
+  hasDomainPending = () => this.domainPending.size > 0 || Boolean(this.accountOwner?.hasPending());
   handleDomainAccessError = (error: { status?: number; code?: string | null }) => {
     if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
     else if (error.status === 403 || error.code === "access_denied") this.denySelectedChild();
   };
+  private unsubscribeAccount: (() => void) | null = null;
   private unsubscribeAgent: (() => void) | null = null;
   private unsubscribeAuthorization: (() => void) | null = null;
   private generation = 0;
@@ -51,9 +54,10 @@ export class ProductionOwner {
   private unsubscribe: (() => void) | null;
   private unsubscribeChat: (() => void) | null;
 
-  constructor(apiBaseUrl: string, online: boolean, api?: RecordsApi, chatApi?: ChatApi, selectionPreferences?: ChildSelectionPreferences) {
+  constructor(apiBaseUrl: string, online: boolean, api?: RecordsApi, chatApi?: ChatApi, selectionPreferences?: ChildSelectionPreferences, accountDependencies?: AccountServiceDependencies) {
     this.apiBaseUrl = resolveApiBaseUrl(apiBaseUrl);
     const recordsApi = api ?? createRecordsApi(this.apiBaseUrl);
+    this.accountOwner = new AccountServiceOwner(this.apiBaseUrl, online, () => { void this.controller.restoreSession(); }, () => { void this.controller.restoreSession(); }, accountDependencies);
     this.chatController = new ChatController(chatApi ?? createChatApi(this.apiBaseUrl, async signal => {
       try { return await recordsApi.getSession(signal); }
       catch (error) { if (!signal.aborted) void this.controller.restoreSession(); throw error; }
@@ -66,13 +70,14 @@ export class ProductionOwner {
       release: childId => childEvent(() => this.chatController.releaseChildDeletion(childId)),
       forget: childId => childEvent(() => this.chatController.forgetChild(childId)),
       reconcile: (ids, pending) => childEvent(() => this.chatController.reconcileChildren(ids, pending)),
-    }, false, selectionPreferences ?? createWebChildSelectionPreferences(this.apiBaseUrl)); // CareProfileDomains owns record reads; this controller owns identity and children.
+    }, false, selectionPreferences ?? createWebChildSelectionPreferences(this.apiBaseUrl), this.accountOwner.isReady); // CareProfileDomains owns record reads; this controller owns identity and children.
     this.agentOwner = new ProductAgentOwner(this.apiBaseUrl, online, error => {
       if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
       else this.denySelectedChild();
     }, this.invalidatePrivateReads);
     this.authorizationOwner = new AgentAuthorizationOwner(this.apiBaseUrl, online, identity => { if (identity) void this.controller.restoreSession(); else this.denySelectedChild(); }, this.invalidatePrivateReads);
     this.snapshot = this.project();
+    this.unsubscribeAccount = this.accountOwner.subscribe(this.accountChanged);
     this.unsubscribeAgent = this.agentOwner.subscribe(() => this.syncMutationLocks());
     this.unsubscribeAuthorization = this.authorizationOwner.subscribe(() => this.syncMutationLocks());
     this.unsubscribe = this.controller.subscribe(() => this.sync());
@@ -82,19 +87,26 @@ export class ProductionOwner {
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private emit() { this.listeners.forEach(listener => listener()); }
   private scopeKey() {
+    if (!this.accountOwner?.isReady()) return null;
     const raw = this.controller.getSnapshot();
     return raw.selectedChildId && this.deniedChildren.has(raw.selectedChildId) ? null : productionScopeKey(this.apiBaseUrl, raw, this.generation);
   }
   private project(): ProductionSnapshot {
     const raw = this.controller.getSnapshot(), scopeKey = this.scopeKey(), userId = confirmedUserId(raw);
-    const records = userId ? raw : { ...raw, user: null, children: [], selectedChildId: null,
+    const records = userId && this.accountOwner.isReady() ? raw : { ...raw, user: userId ? raw.user : null, children: [], selectedChildId: null,
       records: [], drafts: {}, childName: "", confirmation: null, deletion: null };
     const chat = this.chatController.getSnapshot();
     const chatVisible = scopeKey && chat.userId === userId && chat.selectedChildId === raw.selectedChildId;
-    return { records, chat: chatVisible ? chat : { ...chat, userId: null, selectedChildId: null, messages: [], drafts: {} },
+    return { records, account: this.accountOwner.getSnapshot(), chat: chatVisible ? chat : { ...chat, userId: null, selectedChildId: null, messages: [], drafts: {} },
       identityKey: this.identity, scopeKey, sessionGeneration: this.generation,
       homeIntroductionPending: Boolean(this.identity && this.introductionPending) };
   }
+  private accountChanged = () => {
+    if (this.syncingChat) return;
+    const wasReady = this.snapshot.account.gate === "ready";
+    this.sync();
+    if (!wasReady && this.accountOwner.isReady()) void this.controller.reloadChildren();
+  };
   private syncMutationLocks() {
     if (!this.authorizationOwner) return;
     const chat = this.chatController.getSnapshot(), agent = this.agentOwner.getSnapshot().model, authorization = this.authorizationOwner.getSnapshot();
@@ -105,7 +117,7 @@ export class ProductionOwner {
   }
   chatWritesAllowed = () => {
     const agent = this.agentOwner.getSnapshot().model, authorization = this.authorizationOwner.getSnapshot();
-    return !this.hasDomainPending() && !agent.busy && !agent.pendingDecision && !authorization.busy && !authorization.pending;
+    return this.accountOwner.isReady() && !this.hasDomainPending() && !agent.busy && !agent.pendingDecision && !authorization.busy && !authorization.pending;
   };
   canStartDomainWrite = () => {
     const chat = this.chatController.getSnapshot();
@@ -140,6 +152,7 @@ export class ProductionOwner {
         this.draftScopes.clear(); this.deniedChildren.clear();
         this.chatController.syncContext(null, raw.online, null); this.identity = nextIdentity;
       }
+      this.accountOwner.syncContext(userId, raw.online, this.identity);
       for (const [key, entry] of this.draftScopes) {
         const child = raw.children.find(item => item.id === entry.childId);
         if (!child || (child.accessRole ?? null) !== entry.role || entry.identity !== this.identity) {
@@ -182,6 +195,9 @@ export class ProductionOwner {
     const state = this.controller.getSnapshot();
     if (state.busy) return;
     if (state.auth !== "signedIn") { await this.controller.restoreSession(); return; }
+    if (this.accountOwner.hasPending()) return;
+    await this.accountOwner.loadStatus();
+    if (!this.accountOwner.isReady()) return;
     await this.controller.reloadChildren();
     const latest = this.controller.getSnapshot();
     if (latest.childrenLoadedAt !== state.childrenLoadedAt && latest.selectedChildId && latest.children.some(item => item.id === latest.selectedChildId)) {
@@ -203,13 +219,15 @@ export class ProductionOwner {
     if (this.unsubscribe) return;
     this.unsubscribe = this.controller.subscribe(() => this.sync());
     this.unsubscribeChat = this.chatController.subscribe(() => this.chatChanged());
+    this.unsubscribeAccount = this.accountOwner.subscribe(this.accountChanged);
     this.unsubscribeAgent = this.agentOwner.subscribe(() => this.syncMutationLocks());
     this.unsubscribeAuthorization = this.authorizationOwner.subscribe(() => this.syncMutationLocks()); this.sync();
   }
   dispose() {
     this.unsubscribe?.(); this.unsubscribe = null; this.unsubscribeChat?.(); this.unsubscribeChat = null;
     this.unsubscribeAgent?.(); this.unsubscribeAgent = null; this.unsubscribeAuthorization?.(); this.unsubscribeAuthorization = null;
-    this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
+    this.unsubscribeAccount?.(); this.unsubscribeAccount = null;
+    this.accountOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
     void this.queryClient.cancelQueries(); this.queryClient.clear(); this.listeners.clear();
   }
 }

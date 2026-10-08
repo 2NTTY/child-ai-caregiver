@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { personalLibraryItemSchema, type PersonalLibraryItem } from "../src/shared/personal-library.ts";
 import type { Pool, PoolClient } from "pg";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { KnowledgeCandidate, KnowledgeChunkInput, KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
@@ -28,6 +29,13 @@ async function version(client: Pick<Pool, "query"> | PoolClient, versionId: stri
 const vectorJoin = `JOIN knowledge_vectors e ON e.input_hash = c.embedding_hash AND e.model = $1 AND e.dimensions = $2 AND e.pipeline = $3`;
 const embeddingKey = [KNOWLEDGE_EMBEDDING.model, KNOWLEDGE_EMBEDDING.dimensions, KNOWLEDGE_EMBEDDING.pipeline];
 const restrictedSource = `(v.document->>'url' ~* '^https://(www[.]chp[.]gov[.]hk|([a-z]+[.])?rthk[.]hk)(/|$)')`;
+// Shared eligibility for public retrieval and the read-only catalog. A catalog entry is not a citation.
+const knowledgeEligibility = (allowInternal: string) => `s.enabled AND v.review_state = 'reviewed' AND v.published_at IS NOT NULL
+  AND (w.id IS NULL OR (o.source_id IS NOT NULL AND w.enabled AND NOT o.unavailable AND o.approved_hash=o.content_hash AND o.approved_version_id=v.id))
+  AND (${allowInternal} OR (w.definition->>'audience' IS DISTINCT FROM 'internal_noncommercial' AND NOT ${restrictedSource}))
+  AND (v.document->>'validUntil' IS NULL OR (v.document->>'validUntil')::timestamptz > now())
+  AND (v.document->>'classification' <> 'recent_information' OR ((v.document->>'sourcePublishedAt')::timestamptz >= now() - interval '7 days'
+    AND (v.document->>'sourcePublishedAt')::timestamptz <= now() AND o.last_successful_check_at >= now() - interval '24 hours'))`;
 
 /** Operator-only maintenance methods are not exposed as browser/Agent tools. */
 export function createKnowledgeStore(pool: Pool, options: { audience?: "public" | "internal" } = {}) {
@@ -117,6 +125,21 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
         client.release(failed);
       }
     },
+    async catalog(afterSourceId: string | null = null, connection: Pick<Pool, "query"> = pool): Promise<{ items: PersonalLibraryItem[]; nextSourceId: string | null }> {
+      if (afterSourceId !== null && !/^[a-z0-9][a-z0-9-]{0,79}$/.test(afterSourceId)) throw new Error("Invalid catalog cursor");
+      const result = await connection.query<{ source_id: string; version_id: string; source_document: KnowledgeSourceInput; checked_at: Date }>(
+        `SELECT s.id AS source_id,v.id AS version_id,v.document AS source_document,v.checked_at
+         FROM knowledge_sources s JOIN knowledge_versions v ON v.id=s.active_version_id AND v.source_id=s.id
+         LEFT JOIN knowledge_observations o ON o.source_id=s.id LEFT JOIN knowledge_watches w ON w.id=COALESCE(o.watch_id,s.id)
+         WHERE ${knowledgeEligibility("false")} AND v.document->>'classification' IN ('official_guidance','recent_information')
+           AND ($1::text IS NULL OR s.id>$1) ORDER BY s.id LIMIT 11`, [afterSourceId]);
+      const items = result.rows.slice(0, 10).map(row => personalLibraryItemSchema.parse({
+        sourceId: row.source_id, versionId: row.version_id, title: row.source_document.title, publisher: row.source_document.publisher,
+        url: row.source_document.url, classification: row.source_document.classification, checkedAt: row.checked_at.toISOString(),
+        sourceUpdatedAt: row.source_document.sourceUpdatedAt, validUntil: row.source_document.validUntil ?? null,
+      }));
+      return { items, nextSourceId: result.rows.length > 10 ? items.at(-1)!.sourceId : null };
+    },
     async candidates(input: KnowledgeFilter, vector: readonly number[] | null, selection: {
       query?: string; chunkIds?: string[]; versionId?: string; afterKey?: string; limit?: number;
     } = {}): Promise<KnowledgeCandidate[]> {
@@ -157,10 +180,7 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
            WHERE listed.chunk->>'key'=c.section_key) ord ON true
          LEFT JOIN knowledge_observations o ON o.source_id=s.id
          LEFT JOIN knowledge_watches w ON w.id=COALESCE(o.watch_id,s.id)
-         WHERE s.enabled AND v.review_state = 'reviewed' AND v.published_at IS NOT NULL
-           AND (w.id IS NULL OR (o.source_id IS NOT NULL AND w.enabled AND NOT o.unavailable AND o.approved_hash=o.content_hash AND o.approved_version_id=v.id))
-           AND ($11::boolean OR (w.definition->>'audience' IS DISTINCT FROM 'internal_noncommercial' AND NOT ${restrictedSource}))
-           AND (v.document->>'validUntil' IS NULL OR (v.document->>'validUntil')::timestamptz > now())
+         WHERE ${knowledgeEligibility("$11::boolean")}
            AND v.document->>'classification' = $5 AND c.document->'applicability'->>'region' = $6
            AND (c.document->'applicability'->>'ageBasis' = 'any' OR $12='unknown' OR ($7::text IS NOT NULL
              AND c.document->'applicability'->>'ageBasis' = $7
@@ -169,8 +189,6 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
                THEN (c.document->'applicability'->>'maxAgeMonths')::numeric > CASE WHEN $12='overlap' THEN $8::numeric ELSE $9::numeric END
                ELSE (c.document->'applicability'->>'maxAgeMonths')::numeric >= CASE WHEN $12='overlap' THEN $8::numeric ELSE $9::numeric END END))
            AND (cardinality($10::text[]) = 0 OR c.document->'applicability'->'topics' ?| $10::text[])
-           AND ($5 <> 'recent_information' OR ((v.document->>'sourcePublishedAt')::timestamptz >= now() - interval '7 days'
-             AND (v.document->>'sourcePublishedAt')::timestamptz <= now() AND o.last_successful_check_at >= now() - interval '24 hours'))
            AND $16::text[] IS NOT NULL
            AND ($13::uuid[] IS NULL OR c.id=ANY($13::uuid[]))
            AND ($14::uuid IS NULL OR v.id=$14)

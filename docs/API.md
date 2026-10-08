@@ -709,3 +709,11 @@ GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POS
 單人帳戶刪除本人workspace／孩子及附屬私人內容、key、渠道、會話；其他workspace只撤去本人成員及連帶本人內容，並使既有來源／版本重新核對。本人仍擁有其他使用者參與的共享workspace時先明示阻塞，避免暗中刪掉其他成員資料；多人轉移不列本輪單人門檻。照片實體清理與資料庫刪除狀態分開。
 
 下載入口為 GET /api/account/export；固定section、childId、scopeVersion及加密cursor由 manifest 引導，不接受表名／SQL。收據查詢為 GET /api/account/deletion/:operationId，以 x-erasure-receipt 傳能力token；不放URL或日誌。短時效prepare收據綁原範圍；登出／切換身份清掉瀏覽器暫存，未知提交在同次會話沿原收據核對。
+
+
+<a id="p2-a07-library"></a>
+### P2-A07 正式歷史及參考讀取
+
+正式歷史沿A02工作／訊息原文cursor、各領域原清單與修訂API；通知沿A08本人notification_deliveries安全分頁，只代表本人渠道／聯絡／驗證信的投遞metadata，不冒稱全部屬當前孩子。搜尋及日期篩選須標示已掃範圍與續讀位置，不能以未載入當不存在。私人工作是Agent保存的目標／焦點／問題，不稱模型內部推理或完整run context。
+
+新增 GET /api/children/:childId/library?cursor=… 為唯讀公共來源目錄；核對session、expected user及孩子現行存取後，以sourceId keyset每頁最多10項。cursor綁本人／孩子及權限版本；只返回目前enabled、reviewed、published、未過期且符合既有watch／observation及公開使用範圍的版本metadata（sourceId、versionId、title、publisher、url、classification、checkedAt、sourceUpdatedAt、validUntil），附nextCursor／complete。目錄不判定每份內容適用該孩子，也不將來源存在當作支持某句回答；不返回私有来源、不呼叫模型或embedding。

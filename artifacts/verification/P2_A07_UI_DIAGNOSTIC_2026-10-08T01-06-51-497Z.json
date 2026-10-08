@@ -1,0 +1,1517 @@
+{
+  "state": "failed",
+  "code": "ui_acceptance_failed",
+  "stage": "account_switch",
+  "lastAction": "wait_reloaded_document",
+  "path": "/summary",
+  "exceptionType": "TimeoutError",
+  "checks": [
+    "real_login_and_consent",
+    "same_document_visible",
+    "authorised_library_catalog",
+    "reload_reads_saved_document"
+  ],
+  "http": 193,
+  "httpCap": 200,
+  "stores": 0,
+  "blocked": 0,
+  "lost": false,
+  "submissions": 0,
+  "lookup": false,
+  "network": [
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/sign-in/email",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/notification-preferences",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/web-push",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/spaces",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/telegram",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/families",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/changes",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/summary",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/agent/work",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/concerns",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/library",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/inputs",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/contact",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/photos",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/status",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/growth",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/usage",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/documents",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/messages",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/facts",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/topics",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/tasks",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/summary",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/profile",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/care/search",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/messages",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/notification-preferences",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/telegram",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/agent/pending",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/summary",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/agent/work",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/concerns",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/library",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/web-push",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/contact",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/photos",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/inputs",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/growth",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/documents",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/families",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/facts",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/topics",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/tasks",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/summary",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/profile",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/care/search",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/notification-preferences",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/spaces",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/web-push",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/telegram",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/families",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/changes",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/summary",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/agent/work",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/concerns",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/library",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/contact",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/photos",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/inputs",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/growth",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/documents",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/status",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/usage",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/tasks",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/messages",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/topics",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/facts",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/summary",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/care/search",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/profile",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/messages",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/notification-preferences",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/agent/pending",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/telegram",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/summary",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/agent/work",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/concerns",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/library",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/web-push",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/contact",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/inputs",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/photos",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/growth",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/documents",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/facts",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/families",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/topics",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/tasks",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/memory/summary",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/profile",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children/:child/care/search",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/spaces",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/changes",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/spaces",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/changes",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "pageErrors": [],
+  "checkpoints": [
+    {
+      "name": "before_credential_input",
+      "path": "/login",
+      "http": 2,
+      "dom": {
+        "startup": [
+          {
+            "state": "ready",
+            "data": "ready"
+          }
+        ],
+        "accountGate": false,
+        "inputs": [
+          {
+            "tag": "INPUT",
+            "type": null,
+            "label": "<redacted-label>",
+            "disabled": false,
+            "readOnly": false,
+            "visible": false,
+            "opacity": "1",
+            "inert": true,
+            "ariaHidden": true
+          },
+          {
+            "tag": "INPUT",
+            "type": "email",
+            "label": "電郵地址",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "tag": "INPUT",
+            "type": "password",
+            "label": "密碼",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "buttons": [
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "登入",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "忘記密碼",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "重新要求驗證指引",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "staticMessages": [
+          "電郵登入",
+          "註冊帳戶",
+          "電郵地址",
+          "密碼",
+          "登入",
+          "忘記密碼",
+          "重新要求驗證指引"
+        ]
+      }
+    },
+    {
+      "name": "before_login_click",
+      "path": "/login",
+      "http": 2,
+      "dom": {
+        "startup": [
+          {
+            "state": "ready",
+            "data": "ready"
+          }
+        ],
+        "accountGate": false,
+        "inputs": [
+          {
+            "tag": "INPUT",
+            "type": null,
+            "label": "<redacted-label>",
+            "disabled": false,
+            "readOnly": false,
+            "visible": false,
+            "opacity": "1",
+            "inert": true,
+            "ariaHidden": true
+          },
+          {
+            "tag": "INPUT",
+            "type": "email",
+            "label": "電郵地址",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "tag": "INPUT",
+            "type": "password",
+            "label": "密碼",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "buttons": [
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "登入",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "忘記密碼",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "重新要求驗證指引",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "staticMessages": [
+          "電郵登入",
+          "註冊帳戶",
+          "電郵地址",
+          "密碼",
+          "登入",
+          "忘記密碼",
+          "重新要求驗證指引"
+        ]
+      }
+    },
+    {
+      "name": "after_login_click",
+      "path": "/login",
+      "http": 3,
+      "dom": {
+        "startup": [
+          {
+            "state": "ready",
+            "data": "ready"
+          }
+        ],
+        "accountGate": false,
+        "inputs": [
+          {
+            "tag": "INPUT",
+            "type": null,
+            "label": "<redacted-label>",
+            "disabled": false,
+            "readOnly": false,
+            "visible": false,
+            "opacity": "1",
+            "inert": true,
+            "ariaHidden": true
+          },
+          {
+            "tag": "INPUT",
+            "type": "email",
+            "label": "電郵地址",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "tag": "INPUT",
+            "type": "password",
+            "label": "密碼",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "buttons": [
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "登入",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "忘記密碼",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "重新要求驗證指引",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "staticMessages": [
+          "電郵登入",
+          "註冊帳戶",
+          "電郵地址",
+          "密碼",
+          "登入",
+          "忘記密碼",
+          "重新要求驗證指引"
+        ]
+      }
+    }
+  ],
+  "dom": {
+    "startup": [
+      {
+        "state": "ready",
+        "data": "ready"
+      }
+    ],
+    "accountGate": false,
+    "inputs": [
+      {
+        "tag": "INPUT",
+        "type": null,
+        "label": "<redacted-label>",
+        "disabled": false,
+        "readOnly": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      },
+      {
+        "tag": "INPUT",
+        "type": null,
+        "label": "<redacted-label>",
+        "disabled": false,
+        "readOnly": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      },
+      {
+        "tag": "INPUT",
+        "type": null,
+        "label": "<redacted-label>",
+        "disabled": false,
+        "readOnly": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      },
+      {
+        "tag": "INPUT",
+        "type": null,
+        "label": "<redacted-label>",
+        "disabled": false,
+        "readOnly": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      }
+    ],
+    "buttons": [
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      },
+      {
+        "role": "checkbox",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": true,
+        "visible": false,
+        "opacity": "1",
+        "inert": true,
+        "ariaHidden": true
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      }
+    ],
+    "staticMessages": []
+  }
+}

@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
-import type { PreparationCondition, PreparationDocumentView, PreparationScope } from "../preparation-view-model";
+import type { PreparationCondition, PreparationDocumentView, PreparationScope, FamilyDocumentReadingPort } from "../preparation-view-model";
 import type { HomeChild, WriteOperationView, WriteRecoveryActions } from "../view-model";
 import type { DocumentRequest } from "../../../src/shared/family-documents";
 
@@ -12,6 +12,7 @@ export interface PreparationWorkspaceValue {
     documents: readonly PreparationDocumentView[];
     selected: PreparationDocumentView | null;
     condition: PreparationCondition;
+    reading?: FamilyDocumentReadingPort;
     online: boolean;
     notice: string | null;
     justArchivedId: string | null;

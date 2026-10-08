@@ -1,0 +1,719 @@
+{
+  "state": "failed",
+  "code": "ui_acceptance_failed",
+  "stage": "child_unknown_recovery",
+  "lastAction": "child_name",
+  "path": "/",
+  "exceptionType": "TimeoutError",
+  "checks": [
+    "real_login_and_consent"
+  ],
+  "http": 55,
+  "httpCap": 200,
+  "stores": 0,
+  "blocked": 0,
+  "lost": false,
+  "submissions": 0,
+  "lookup": false,
+  "network": [
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/sign-in/email",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/spaces",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/web-push",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/notification-preferences",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/telegram",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/api/families",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/notification-preferences",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/telegram",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/families",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/web-push",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/spaces",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/notification-preferences",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/telegram",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/api/ai/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/web-push",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/account",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/families",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/children",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/notification-preferences",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/telegram",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/api/ai/settings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/web-push",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/families",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/spaces",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/online/spaces",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "pageErrors": [],
+  "checkpoints": [
+    {
+      "name": "before_credential_input",
+      "path": "/login",
+      "http": 2,
+      "dom": {
+        "startup": [
+          {
+            "state": "ready",
+            "data": "ready"
+          }
+        ],
+        "accountGate": false,
+        "inputs": [
+          {
+            "tag": "INPUT",
+            "type": null,
+            "label": "<redacted-label>",
+            "disabled": false,
+            "readOnly": false,
+            "visible": false,
+            "opacity": "1",
+            "inert": true,
+            "ariaHidden": true
+          },
+          {
+            "tag": "INPUT",
+            "type": "email",
+            "label": "電郵地址",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "tag": "INPUT",
+            "type": "password",
+            "label": "密碼",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "buttons": [
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "登入",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "忘記密碼",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "重新要求驗證指引",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "staticMessages": [
+          "電郵登入",
+          "註冊帳戶",
+          "電郵地址",
+          "密碼",
+          "登入",
+          "忘記密碼",
+          "重新要求驗證指引"
+        ]
+      }
+    },
+    {
+      "name": "before_login_click",
+      "path": "/login",
+      "http": 2,
+      "dom": {
+        "startup": [
+          {
+            "state": "ready",
+            "data": "ready"
+          }
+        ],
+        "accountGate": false,
+        "inputs": [
+          {
+            "tag": "INPUT",
+            "type": null,
+            "label": "<redacted-label>",
+            "disabled": false,
+            "readOnly": false,
+            "visible": false,
+            "opacity": "1",
+            "inert": true,
+            "ariaHidden": true
+          },
+          {
+            "tag": "INPUT",
+            "type": "email",
+            "label": "電郵地址",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "tag": "INPUT",
+            "type": "password",
+            "label": "密碼",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "buttons": [
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "登入",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "忘記密碼",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "重新要求驗證指引",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "staticMessages": [
+          "電郵登入",
+          "註冊帳戶",
+          "電郵地址",
+          "密碼",
+          "登入",
+          "忘記密碼",
+          "重新要求驗證指引"
+        ]
+      }
+    },
+    {
+      "name": "after_login_click",
+      "path": "/login",
+      "http": 3,
+      "dom": {
+        "startup": [
+          {
+            "state": "ready",
+            "data": "ready"
+          }
+        ],
+        "accountGate": false,
+        "inputs": [
+          {
+            "tag": "INPUT",
+            "type": null,
+            "label": "<redacted-label>",
+            "disabled": false,
+            "readOnly": false,
+            "visible": false,
+            "opacity": "1",
+            "inert": true,
+            "ariaHidden": true
+          },
+          {
+            "tag": "INPUT",
+            "type": "email",
+            "label": "電郵地址",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "tag": "INPUT",
+            "type": "password",
+            "label": "密碼",
+            "disabled": false,
+            "readOnly": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "buttons": [
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "登入",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "忘記密碼",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "重新要求驗證指引",
+            "disabled": true,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          },
+          {
+            "role": "button",
+            "label": "<redacted-label>",
+            "disabled": false,
+            "visible": true,
+            "opacity": "1",
+            "inert": false,
+            "ariaHidden": false
+          }
+        ],
+        "staticMessages": [
+          "電郵登入",
+          "註冊帳戶",
+          "電郵地址",
+          "密碼",
+          "登入",
+          "忘記密碼",
+          "重新要求驗證指引"
+        ]
+      }
+    }
+  ],
+  "dom": {
+    "startup": [
+      {
+        "state": "ready",
+        "data": "ready"
+      }
+    ],
+    "accountGate": false,
+    "inputs": [
+      {
+        "tag": "INPUT",
+        "type": "file",
+        "label": "<redacted-label>",
+        "disabled": true,
+        "readOnly": false,
+        "visible": false,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      }
+    ],
+    "buttons": [
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": true,
+        "visible": true,
+        "opacity": "0.5",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": true,
+        "visible": true,
+        "opacity": "0.5",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": true,
+        "visible": true,
+        "opacity": "0.5",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": true,
+        "visible": true,
+        "opacity": "0.5",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      },
+      {
+        "role": "button",
+        "label": "<redacted-label>",
+        "disabled": false,
+        "visible": true,
+        "opacity": "1",
+        "inert": false,
+        "ariaHidden": false
+      }
+    ],
+    "staticMessages": []
+  }
+}

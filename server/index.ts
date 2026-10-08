@@ -1,3 +1,4 @@
+import { createPersonalLibrary } from "./personal-library-api.ts";
 import { openAccountRuntime } from "./account-runtime.ts";
 import { createAccountExportStore } from "./account-data.ts";
 import { handleAccountDataRequest } from "./account-data-api.ts";
@@ -126,6 +127,7 @@ try {
     care: createCareStore(pool, cipher, onlineEnabled),
     online: onlineEnabled ? createOnlineStore(pool, cipher, taskScheduling, pushServices, telegramServices, contactServices,summaryEnabled,photoFiles,Boolean(inputs),account?.data.recordChildIntent) : undefined,
     tasks, chat, memory, productAgent, productAgentStore, agentActions, growth, concerns, documents, telegram, contact, summary, photos, inputs,
+    personalLibrary: agentEnabled ? createPersonalLibrary(pool, cipher) : undefined,
     chatPrompt, aiMaxInputCharacters: aiConfig.maxInputCharacters, aiUsage,
     modelRouting,
     modelGateway: createModelGateway({ config: aiConfig, usage: aiUsage, provider, resolve: modelRouting.resolve }),
