@@ -1,6 +1,6 @@
 # 育有方 Agent Prompt Pack
 
-版本 **0.1.30** · 原文件工作包 **DOC-P01** · 配方／模組定義以 [manifest](manifest.json) 為準；實作／驗收狀態只按 [根 PLAN](../PLAN.md#roadmap-packages) 的所屬包與 EV，不在本入口維護另一份進度。
+版本 **0.1.34** · 原文件工作包 **DOC-P01** · 配方／模組定義以 [manifest](manifest.json) 為準；實作／驗收狀態只按 [根 PLAN](../PLAN.md#roadmap-packages) 的所屬包與 EV，不在本入口維護另一份進度。
 
 這裏的主要交付是直接給產品 Agent 閱讀的指令正文。Gemini 是首個接入目標；Agent 在 Server 執行，Web／Android 使用同一套行為與業務契約。一般聊天輸出自然文字，工具參數和必要的草稿／背景結果才使用結構化資料。
 
@@ -17,7 +17,7 @@ S11-W01 如只需要簡單文字聊天，可直接採用 [P1 最小入口](p1/RE
 
 ## 正式入口與宣告配方
 
-manifest 保存 22 模組、12 配方；目前產品入口直接選取 product-interactive、product-background、summary-visit、photo-capture、shared-capture 五種，位置及用途見 [配方入口對照](recipes/README.md#runtime-entry-map)。其餘配方是保留的組合定義，不代表各有獨立排程或公開 API。開發用 `.agents/skills` 並非此產品 Prompt Pack，原生 SkillToolset／MCP 也不因檔案存在而自動啟用。
+manifest 保存 22 模組、13 配方；目前產品入口直接選取 product-interactive、product-background、product-work-followup、summary-visit、photo-capture、shared-capture 六種，位置及用途見 [配方入口對照](recipes/README.md#runtime-entry-map)。其餘配方是保留的組合定義，不代表各有獨立排程或公開 API。開發用 `.agents/skills` 並非此產品 Prompt Pack，原生 SkillToolset／MCP 也不因檔案存在而自動啟用。
 
 ## 模組與閱讀對象
 
