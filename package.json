@@ -29,7 +29,9 @@
     "setup:local": "node scripts/setup-local-env.mjs",
     "storage:encrypt": "node --env-file-if-exists=.env scripts/encrypt-storage.mjs",
     "storage:backup": "node --env-file-if-exists=.env scripts/storage-backup.mjs backup",
-    "storage:restore": "node --env-file-if-exists=.env scripts/storage-backup.mjs restore"
+    "storage:restore": "node --env-file-if-exists=.env scripts/storage-backup.mjs restore",
+    "account:invitation": "node --env-file-if-exists=.env scripts/account-invitation.mjs",
+    "account:journal": "node --env-file-if-exists=.env scripts/account-erasure-journal.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "57.0.16",
@@ -44,6 +46,7 @@
     "expo-linking": "57.0.10",
     "expo-router": "57.0.22",
     "grammy": "1.46.0",
+    "nodemailer": "10.0.16",
     "pdfjs-dist": "6.4.299",
     "pg": "8.23.0",
     "pg-boss": "12.34.0",
@@ -64,6 +67,7 @@
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "@types/node": "24.13.6",
+    "@types/nodemailer": "8.0.2",
     "@types/pg": "8.23.1",
     "@types/react": "19.2.4",
     "@types/web-push": "3.6.4",

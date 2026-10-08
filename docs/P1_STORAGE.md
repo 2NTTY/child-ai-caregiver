@@ -25,3 +25,17 @@ S05-W01 的權威範圍是 Server 孩子稱呼、照護文字及私人聊天正�
 已登入 owner 經二次確認，可刪除所選孩子及其全部照護文字、私人聊天／回覆、相關 AI attempt metadata；本頁相應草稿／緩存一併清理。保留孩子 ID／workspace／刪除時間的最小標記及每日已用配額，不保留正文、不因刪除退回調用額度。其他帳號、其他孩子及已保存資料不受該次操作影響；過期畫面不能用舊 ID 再寫入。
 
 已存在的加密備份是建立時的快照，刪除不會改寫它們。應按保留政策撤回過時備份，還原前核對快照時間與刪除要求；完整跨環境刪除／遷移協調由 P4 S15 接續，不能聲稱本包會自動清除所有歷史副本。
+
+
+<a id="account-erasure-journal"></a>
+## P2 帳戶退出與舊備份抑制
+
+035起，API／worker在開放前必須讀取工程外的目前刪除journal並重放；缺檔、認證失敗、錯identity或截短chain拒絕啟動。此段補充上方P1歷史邊界，不能再只依舊DB中的刪除標記。每個部署使用自己的journal，不能還原為備份當天的旧副本。
+
+1. 保留原storage key及配對加密備份，停止API／worker。先按部署環境建立受保護的父目錄（POSIX0700；Windows僅目前SID／SYSTEM／Administrators），設定ACCOUNT_ERASURE_JOURNAL_DIR為其中尚未建立的獨立子目錄。
+2. 套034／035後，只在首次建立部署執行npm run account:journal -- initialize，再執行npm run account:journal -- bind。工具不覆蓋既有檔案，不把不同journal綁到已有DB；後續只用replay。
+3. journal每筆意圖先fsync再SQL；確認後的SQL失敗沿原意圖恢復，不換opId。照片仍經原刪除佇列清理，收據attachmentsPending與DB完成分開。
+4. 空庫還原及照片manifest核對完畢後，使用**目前**journal執行npm run account:journal -- replay，再核對照片清理與權限；原worker世代保持暫停。API／worker亦重做此啟動閘，不能回退到不懂journal的舊binary。
+5. 加密DB備份排除session、verification及auth_mail_outbox資料；還原不重發舊驗證郵件。journal與backup分開安全保存及備份，密鑰再分開；實際保留／異地恢復安排由A09交付，不宣稱本機journal能抵禦整台主機丟失。
+
+已刪帳戶的收據只回處理狀態；下載／刪除契約見[API](API.md#p2-a08-service)。完整跨Server搬遷仍非本包範圍。

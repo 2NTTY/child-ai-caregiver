@@ -693,3 +693,19 @@ save_work 的可選 followUp 包含 reason、dueAt（可空）、watchResources 
 read_work 可附 latestFollowUp 的 eventId、runId、state、createdAt；read_background_result 透過既有本人 run 讀取入口回傳有界結果／引用，不將模型回覆當成新的同意或已確認事實。queued、completed、stopped、unknown、cancelled 分開，未知不能重新生成。私人變更事件只通知本人 owner；正式頁面由 A07 接回同一工作及結果。
 
 關注容量沿 draft #111 的受檢邊界：普通事件200、另兩格只供結束跟進／歸檔；029遷移收據成立才寫201–202。到頂仍可取消／結束，不能刪歷史騰位；滿額恢復／新增普通事件仍拒絕。部署须先更新相容 API／worker／Web，已有保留格資料後不可回退200讀取器或縮窄SQL限制。
+
+
+<a id="p2-a08-service"></a>
+### P2-A08：邀請資格、本人資料與退出
+
+沿Better Auth原生註冊、電郵驗證、找回密碼及會話API；營運者以指定電郵授予有限期註冊資格，資格不加入別人的workspace。正式invited模式須具可用SMTP設定，新用戶驗證電郵並確認當前資料處理說明後才可使用業務API；原逐項模型／照片／私人來源／外發授權仍有效，不以一次確認擴大使用範圍。未啟用模式保留原合成試用相容，不等於已開放真實資料服務。
+
+GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POST /api/account/acknowledgement 帶policyVersion／accepted／operationId。原生找回後撤銷全部舊會話，使用者亦可主動撤銷其他會話。驗證／找回URL以原生期限及同源目的地校驗，固定電郵經加密outbox及既有queue送出；queued／accepted／failed／unknown分開，未知不自動重發；客戶端只說已受理請求。
+
+本人下載由固定白名單的有界資料頁／既有安全讀取器提供，標明scopeVersion、section、已讀／未讀及nextCursor；身份、權限或資料版本改變則停止該次下載重新核對，不把前綴當完整。只包含目前仍有權查看的本人／孩子資料及可追溯成果，私人來源／聊天不混入別人資料；不下載密碼、會話、API key、通知token或其他人的私人內容。照片透過原有受權限保護的讀取，不公開儲存目錄。
+
+永久刪除先POST /api/account/deletion/prepare（原operationId），保存短時效範圍及回覆收據能力；再POST /api/account/delete，帶同一operationId、receiptToken、完整「永久刪除我的帳戶」及由Better Auth核對的本人密碼。直接原生deleteUser保持關閉，不能繞過業務清理。未知結果以同一收據查回，不換新op；已刪帳戶的收據只顯示處理狀態，不披露身份或正文。
+
+單人帳戶刪除本人workspace／孩子及附屬私人內容、key、渠道、會話；其他workspace只撤去本人成員及連帶本人內容，並使既有來源／版本重新核對。本人仍擁有其他使用者參與的共享workspace時先明示阻塞，避免暗中刪掉其他成員資料；多人轉移不列本輪單人門檻。照片實體清理與資料庫刪除狀態分開。
+
+下載入口為 GET /api/account/export；固定section、childId、scopeVersion及加密cursor由 manifest 引導，不接受表名／SQL。收據查詢為 GET /api/account/deletion/:operationId，以 x-erasure-receipt 傳能力token；不放URL或日誌。短時效prepare收據綁原範圍；登出／切換身份清掉瀏覽器暫存，未知提交在同次會話沿原收據核對。

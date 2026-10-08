@@ -1,0 +1,336 @@
+{
+  "package": "P2-A08",
+  "baseline": "94508e9cacb89764ca539646668ccf2a327b7d63",
+  "recordedAt": "2026-10-08T00:12:04.416Z",
+  "decision": "minimum acceptance passed; deployment and actual email delivery pending",
+  "environment": {
+    "node": "24.11.0",
+    "npm": "11.6.1",
+    "postgres": "18.6",
+    "betterAuth": "1.7.5",
+    "nodemailer": "10.0.16"
+  },
+  "checks": {
+    "offline": {
+      "authAggregates": 2,
+      "dataAggregates": 2,
+      "result": "passed, executor tool reports; not real service evidence"
+    },
+    "typescript": {
+      "serverClientScoped": "passed",
+      "clientScoped": "passed"
+    },
+    "preparation": {
+      "state": "prepared",
+      "name": "p2_a08_service_20261008",
+      "checkpoint": "C:\\Users\\2NTTY\\.codex\\p2-a08-local\\before-a08.ybak",
+      "baseline": {
+        "users": 65,
+        "children": 14,
+        "chats": 17,
+        "generation": "0fc82841-ae94-4d10-ab9f-c5a53df5cbd8",
+        "enabled": false
+      },
+      "preserved": {
+        "users": 65,
+        "children": 14,
+        "chats": 17
+      },
+      "migrations": {
+        "034-account-admission": "540dc86741b40f0ed85592e624ff75fc21565adba11434beec910e41cfffa942",
+        "035-account-data-exit": "fca6ee0c3151095b567497137dc5f07e47f08febc10d923b58fcd34dca18182a"
+      },
+      "originalDatabaseUnchanged": true,
+      "journalBound": true
+    },
+    "sql": {
+      "state": "passed",
+      "checks": [
+        "native_signup_verification_reset_and_revoked_session",
+        "real_http_service_consent_gate",
+        "complete_download_and_original_erasure_receipt",
+        "old_backup_replayed_current_erasure_before_access",
+        "original_database_unchanged"
+      ],
+      "auth": {
+        "runId": "663e05b2-352f-4db3-a421-02abf3403a5d",
+        "userId": "TJ41jM11F5WjLjsr0NxzR83RrTIx7sw7",
+        "stage": "complete",
+        "httpCalls": 11,
+        "businessCalls": 11,
+        "lastHttpStatus": 200,
+        "localSmtpAccepted": 2
+      },
+      "httpGateCalls": 4,
+      "data": {
+        "fixture": {
+          "userId": "TJ41jM11F5WjLjsr0NxzR83RrTIx7sw7",
+          "childId": "1d0e6724-53d7-4cc5-856b-5c65ca45870c",
+          "recordId": "9e307db3-d29c-4b01-98ad-90830616339f",
+          "messageId": "9e3d9c5f-0f56-4102-bd45-8e8739b123a8",
+          "documentId": "cacde75c-504a-4a5e-828b-0216fe772cd2",
+          "operationId": "3dfcd70f-f377-4d3a-b185-c4b5d6da9da9"
+        },
+        "calls": 53,
+        "checks": {
+          "completeAllowlistedDownload": true,
+          "sourceContentPresent": true,
+          "otherIdentityRejected": true,
+          "childErased": true,
+          "accountErased": true,
+          "originalReceiptRecovered": true,
+          "nativePasswordVerified": true
+        },
+        "coverage": [
+          {
+            "section": "account",
+            "childScoped": false,
+            "pages": 1,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "children",
+            "childScoped": false,
+            "pages": 1,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "notification_deliveries",
+            "childScoped": false,
+            "pages": 4,
+            "items": 2,
+            "complete": true
+          },
+          {
+            "section": "notification_bindings",
+            "childScoped": false,
+            "pages": 2,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "profile",
+            "childScoped": true,
+            "pages": 1,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "profile_history",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "care",
+            "childScoped": true,
+            "pages": 1,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "care_history",
+            "childScoped": true,
+            "pages": 1,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "chat",
+            "childScoped": true,
+            "pages": 1,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "instructions",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "instruction_history",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "agent_policy",
+            "childScoped": true,
+            "pages": 1,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "agent_work",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "agent_runs",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "agent_receipts",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "memory_facts",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "memory_fact_history",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "memory_topics",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "memory_topic_history",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "summary",
+            "childScoped": true,
+            "pages": 1,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "summary_history",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "tasks",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "task_history",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "concerns",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "documents",
+            "childScoped": true,
+            "pages": 1,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "document_versions",
+            "childScoped": true,
+            "pages": 2,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "document_content",
+            "childScoped": true,
+            "pages": 3,
+            "items": 1,
+            "complete": true
+          },
+          {
+            "section": "private_sources",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "private_source_history",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "photos",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "photo_content",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "preparation",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          },
+          {
+            "section": "preparation_history",
+            "childScoped": true,
+            "pages": 1,
+            "items": 0,
+            "complete": true
+          }
+        ]
+      },
+      "realModelCalls": 0,
+      "externalMail": 0,
+      "localSmtpMessages": 2,
+      "restoredDatabase": "p2_a08_restore_20261008"
+    }
+  },
+  "failures": [
+    "First preparation stopped before database writes because Windows PowerShell inherited an incompatible PSModulePath. The ACL subprocess now starts with an empty PSModulePath. Original evidence remains in P2_A08_PREPARE_FAILURE.json.",
+    "Offline fixture corrections and callback rejection expectations are documented in WORKLOG; no real acceptance failure was overwritten."
+  ],
+  "limits": [
+    "Synthetic restored database only; original database unchanged.",
+    "Two SMTP messages accepted by a local capture server, not external inbox delivery.",
+    "No models, embedding, notifications, browser, deployment or VM restart.",
+    "Empty manifest sections verify bounded queries and response contracts, not full seeded domain regression.",
+    "Restore checks database replay of current external erasure journal; photo pairing and operational journal backups remain A09.",
+    "Account pages and bounded download UI remain A07; real SMTP, invitation scale and GCP operations remain A09."
+  ]
+}

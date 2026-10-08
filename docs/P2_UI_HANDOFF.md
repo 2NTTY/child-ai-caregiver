@@ -176,3 +176,13 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 - 分別呈現平台／私人用量、metadata 未知及供應商限制；key 保存不等於連線成功，metadata 可讀不等於生成／embedding 已驗。
 - 保存 unknown 不重播，清除密鑰輸入後重讀版本；身份／Server／離線切換清除輸入及舊請求，孩子切換不切換本人 key。
 - 本包先完成設定及本機接線；Google Developer API 地區限制導致真服務待驗。正式試用網站尚未部署此增補，Android 於 S04-W01 復用，不以共用 RN 元件當作真機已驗。
+
+
+<a id="account-service"></a>
+## P2-A08 帳戶安全接點
+
+A07沿既有登入／設定版型接createAccountApi（status、acknowledge、exportPage／download、prepareDeletion／executeDeletion／checkDeletion）及createAccountAuthApi（驗證信、找回、reset、撤銷其他會話）。原生登入仍用RecordsApi；invite signup成功可能沒有session，應引導驗證電郵，不假稱已登入。
+
+業務API會回email_verification_required／service_consent_required／invitation_required，對照GET /api/account，先完成安全入口再掛載業務owner。once acknowledgement不是照片／外發的全域授權；本人不必建立家庭或填key。密鑰、密碼、郵件token及刪除receipt不交Agent。
+
+找回頁取同源callback的token後從網址移除；本人刪除先顯示prepare範圍，再具名確認及核密碼。未知結果沿原receipt核對，setIdentity會取消遲到回應／清舊敏感暫存，不把失敗自動换新op；完整退出成功才清理其餘owner。下載按manifest讀完並核scopeVersion；歷史不可用需原樣提示。API權威見[契約](API.md#p2-a08-service)，部署步驟見[正式服務](PRODUCTION_FRONTEND.md#invited-account-service)。

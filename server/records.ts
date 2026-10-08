@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
 import type { CreateChildInput, CreateTextRecordInput } from "../src/shared/inputs.ts";
 import type { Child, RecordList, TextRecord } from "../src/shared/records.ts";
@@ -35,7 +35,7 @@ interface RecordRow {
   created_at: Date;
 }
 
-export function createRecordStore(pool: Pool, cipher: StorageCipher, trackChanges = false): RecordStore {
+export function createRecordStore(pool: Pool, cipher: StorageCipher, trackChanges = false, beforeDelete?: (client: PoolClient, childId: string) => Promise<void>): RecordStore {
   function toChild(row: ChildRow): Child {
     return { id: row.id, workspaceId: row.workspace_id,
       displayName: cipher.decrypt(row.display_name, `children:${row.id}:${row.owner_user_id}:display_name`), accessRole: row.access_role,
@@ -49,6 +49,7 @@ export function createRecordStore(pool: Pool, cipher: StorageCipher, trackChange
   return {
     async deleteChildForUser(userId, childId) {
       return (await withChildAccess(pool, userId, childId, ["owner"], async (client, _role, workspaceId) => {
+      await beforeDelete?.(client, childId);
       const result = await client.query(
         `WITH removed AS (
            DELETE FROM children child USING workspaces workspace
@@ -58,7 +59,7 @@ export function createRecordStore(pool: Pool, cipher: StorageCipher, trackChange
            SELECT id, workspace_id FROM removed RETURNING id`, [userId, childId]);
       if (trackChanges && result.rowCount === 1) await appendOnlineChange(client, workspaceId, "children", childId, true);
       return result.rowCount === 1;
-      }, trackChanges)) ?? false;
+      }, trackChanges || Boolean(beforeDelete))) ?? false;
     },
     async listChildrenForUser(userId) {
       const result = await pool.query<ChildRow>(

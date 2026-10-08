@@ -44,7 +44,7 @@ interface SpaceRow { id: string; owner_user_id: string; storage_epoch: string; a
 const receiptContext = (userId: string, opId: string, field: string) => `online-operation:${userId}:${opId}:${field}`;
 const missing = () => new FamilyError(404, "not_found");
 
-export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskScheduling?: TaskScheduling, pushServices?: WebPushServices, telegram?: TelegramServices, contact?:ContactServices,summaryEnabled=false,photoFiles?:PhotoFiles,inputsEnabled=false) {
+export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskScheduling?: TaskScheduling, pushServices?: WebPushServices, telegram?: TelegramServices, contact?:ContactServices,summaryEnabled=false,photoFiles?:PhotoFiles,inputsEnabled=false,beforeChildDelete?:(client:PoolClient,childId:string)=>Promise<void>) {
   async function transaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await pool.connect(); let discard = false;
     try {
@@ -115,7 +115,7 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskSchedul
       result: childExists && row.result_encrypted ? JSON.parse(cipher.decrypt(row.result_encrypted, receiptContext(userId, row.op_id, "result"))) : null };
   }
   async function dispatch(client: PoolClient, userId: string, command: OnlineCommand): Promise<Response> {
-    const borrowed = transactionPool(client), records = createRecordStore(borrowed.pool, cipher, true);
+    const borrowed = transactionPool(client), records = createRecordStore(borrowed.pool, cipher, true, beforeChildDelete);
     const request = new Request(`http://online.internal${command.path}`, { method: "POST", headers: { "content-type": "application/json", "x-expected-user-id": userId }, body: JSON.stringify(command.payload) });
     const response = /\/inputs(?:\/|$)/u.test(command.path)&&inputsEnabled
       ? await handleSharedInputRequest(request,userId,createSharedInputStore(borrowed.pool,cipher),{inReceipt:true})

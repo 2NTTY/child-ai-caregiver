@@ -1,3 +1,4 @@
+import { AUTH_MAIL_QUEUE, AUTH_MAIL_OPTIONS } from "./auth-mail.ts";
 import { CONTACT_QUEUE,CONTACT_OPTIONS } from "./contact-events.ts";
 import { PgBoss, type Db, type JobWithMetadata } from "pg-boss";
 import { TELEGRAM_QUEUE,TELEGRAM_JOB_OPTIONS } from "./telegram-events.ts";
@@ -57,6 +58,7 @@ export function createWorkerQueue(pool: Pool, mode: "producer" | "worker" | "mig
       }
       await boss.start();
       if (mode === "migrate") {
+        await boss.createQueue(AUTH_MAIL_QUEUE, AUTH_MAIL_OPTIONS);
         await boss.createQueue(WEB_PUSH_QUEUE, WEB_PUSH_JOB_OPTIONS);
         await boss.createQueue(TELEGRAM_QUEUE, TELEGRAM_JOB_OPTIONS);
         await boss.createQueue(CONTACT_QUEUE, CONTACT_OPTIONS);
