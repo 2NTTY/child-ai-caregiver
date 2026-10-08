@@ -47,7 +47,8 @@ function renderReceiptText(authorization: unknown): string {
     "../agent-view-model": { agentTime: (value: string) => value, proposalExpired: () => false, agentProposalLabels: {} },
   };
   for (const name of ["../components/agent/AgentInboxView", "../components/agent/AgentRunView", "../components/AppDialog",
-    "../components/AppScrollView", "../components/chat/locateCitationSource", "../components/ui"]) overrides[name] = placeholder;
+    "../components/AppScrollView", "../components/EmptyListCard", "../components/ReadStateNotice",
+    "../components/chat/locateCitationSource", "../components/ui"]) overrides[name] = placeholder;
   const { AgentConversation } = load("frontend/src/production/AgentConversation.tsx", overrides);
   const tree = AgentConversation({ visible: true, onDismiss() {}, onOpenSettings() {}, onReloadChat() {}, reloadDisabled: false });
   const text = (value: any): string => typeof value === "string" ? value : Array.isArray(value) ? value.map(text).join("")
