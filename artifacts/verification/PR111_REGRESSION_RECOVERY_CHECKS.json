@@ -1,0 +1,239 @@
+{
+  "task": "PR #111 remaining regression recovery",
+  "recorded_at": "2026-10-08T04:52:00Z",
+  "repository": "2NTTY/child-ai-caregiver",
+  "upstream_base_commit": "1b3ef07882ed3e8e88db6f9cef85176dd0f6000c",
+  "historical_pr111_head": "c31e4c73b00cfd97a84771602d7fc107d06333f0",
+  "superseding_core_pr": 137,
+  "source_materialization": {
+    "kind": "Verified connector text/blob snapshot, not a fetched Git object checkout",
+    "original_snapshot_commit": "b30a7b28b8f00f72013e2f6a01a6e65832856549",
+    "upstream_delta": "Only WORKLOG.md differs at upstream master; its base bytes match Git blob 91e7de91d0a4454e50967c7c46768f00cf2f6906",
+    "unchanged_materialized_files_matching_git_blob_sha1": 2185,
+    "mismatches": [],
+    "local_baseline_commit": "b3d4b7528ab5754c5b9daa194382ff61ffcd7d02",
+    "local_baseline_note": "Local synthetic snapshot commit, never a remote/source revision; do not push this history"
+  },
+  "changes": {
+    "production_code": false,
+    "backend_client": "Keep both master aggregate cases; add five nonduplicated cases for ordinary reserve rejection, bounded due progress, migration rollback on cancel/authorize/settle, queued cancellation and once-only settlement, and 202/203 readers",
+    "frontend": "Restore three shallow UI capacity regressions from PR111 for confirmation at 198/199/200, undo at 199/200/201/202, and readable history with capacity-disabled restore",
+    "configuration": "Restore the strict scoped Server/client configuration; use current frontend/tsconfig.json rather than the old unhoisted Expo config path",
+    "documentation": "Root-reviewed PLAN note separates original PR111 PostgreSQL blocker from later PR137 local SQL evidence; no production deployment claim"
+  },
+  "environment": {
+    "node": "24.19.0",
+    "npm": "11.9.0",
+    "typescript": "6.0.3",
+    "zod": "4.5.4",
+    "network_during_tests": "Blocked fetch, TCP socket connect, HTTP and HTTPS request/get via offline guard",
+    "local_dependency_recovery": [
+      {
+        "name": "@types/pg",
+        "version": "8.23.1",
+        "integrity_verified": true,
+        "registry": "https://registry.npmjs.org/@types/pg/-/pg-8.23.1.tgz"
+      },
+      {
+        "name": "pg-protocol",
+        "version": "1.16.0",
+        "integrity_verified": true,
+        "registry": "https://registry.npmjs.org/pg-protocol/-/pg-protocol-1.16.0.tgz"
+      },
+      {
+        "name": "pg-types",
+        "version": "2.2.0",
+        "integrity_verified": true,
+        "registry": "https://registry.npmjs.org/pg-types/-/pg-types-2.2.0.tgz"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/concern-capacity.test.ts",
+      "scope": "Unmodified master baseline",
+      "exit": 0,
+      "pass": 2,
+      "fail": 0,
+      "evidence": "artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/backend-baseline.log"
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test tests/concern-capacity.test.ts",
+      "scope": "Final candidate Server/client tests",
+      "exit": 0,
+      "pass": 7,
+      "fail": 0,
+      "evidence": "artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/backend-final.log"
+    },
+    {
+      "command": "node --test frontend/scripts/growth-concern-capacity.test.mjs",
+      "scope": "Final candidate shallow UI tests",
+      "exit": 0,
+      "pass": 3,
+      "fail": 0,
+      "evidence": "artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/frontend-final.log"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --noEmit --project artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/tsconfig.json",
+      "scope": "Final candidate scoped strict semantic typecheck",
+      "exit": 0,
+      "stdout": "empty"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --noEmit --project frontend/tsconfig.json",
+      "scope": "Existing frontend semantic typecheck",
+      "exit": 0,
+      "stdout": "empty"
+    }
+  ],
+  "failures_preserved": [
+    {
+      "evidence": "artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/scoped-types-first.log",
+      "kind": "Local dependency gap",
+      "detail": "Initial scoped typecheck stopped on missing pg declarations and derived implicit-any diagnostics. Installed only package-lock exact declaration dependencies after verifying SRI; no source, compiler-rule, lockfile or assertion change."
+    },
+    {
+      "evidence": "artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/mutation-harness-first.log",
+      "kind": "Mutation harness selector",
+      "detail": "Stopped before migration mutation when the guard substring matched twice. Scoped to save() full condition, then all seven mutants failed the targeted assertion as expected. This is not a product failure."
+    }
+  ],
+  "mutation_coverage": {
+    "scope": "Seven bounded single-guard mutants on a separate disposable source copy, never candidate files",
+    "mutants_killed": 7,
+    "restoration": "All mutated production bytes were restored and compared equal to the candidate after the run",
+    "cases": [
+      {
+        "mutation": "ordinary-reserve",
+        "target": "server/concern-store.ts",
+        "removed_guard": "const full = item.events.length >= MAX_EVENTS",
+        "replacement": "const full = item.events.length > MAX_EVENTS",
+        "command": "node --experimental-test-module-mocks --test --test-name-pattern=ordinary append tests/concern-capacity.test.ts",
+        "exit": 1,
+        "killed_by_assertion": true,
+        "failure_excerpt": [
+          "ℹ tests 1",
+          "ℹ pass 0",
+          "ℹ fail 1",
+          "AssertionError [ERR_ASSERTION]: Missing expected rejection (capacityError)."
+        ],
+        "raw_log_sha256": "a8accd864ee125bdceb75d9e5fa7882c3857fe2c727c725af23c845803ebd399"
+      },
+      {
+        "mutation": "due-capacity",
+        "target": "server/concern-store.ts",
+        "removed_guard": "if (item.events.length >= MAX_EVENTS) { await cancelForCapacity(client, workspaceId, row, item, scheduled.actor_user_id); return; }",
+        "replacement": "if (item.events.length > MAX_EVENTS) { await cancelForCapacity(client, workspaceId, row, item, scheduled.actor_user_id); return; }",
+        "command": "node --experimental-test-module-mocks --test --test-name-pattern=a due full concern tests/concern-capacity.test.ts",
+        "exit": 1,
+        "killed_by_assertion": true,
+        "failure_excerpt": [
+          "ℹ tests 1",
+          "ℹ pass 0",
+          "ℹ fail 1",
+          "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:"
+        ],
+        "raw_log_sha256": "970f4c2d480726e41626abdd7c4d3e3d6d0c00223dae1dc4fb6ed10cc81b5bae"
+      },
+      {
+        "mutation": "migration-gate",
+        "target": "server/concern-store.ts",
+        "removed_guard": "if (item.events.length > CONCERN_STORED_EVENT_LIMIT || item.events.length > MAX_EVENTS\n      && !await terminalReserveEnabled(client))",
+        "replacement": "if (item.events.length > CONCERN_STORED_EVENT_LIMIT)",
+        "command": "node --experimental-test-module-mocks --test --test-name-pattern=all follow-up reserve tests/concern-capacity.test.ts",
+        "exit": 1,
+        "killed_by_assertion": true,
+        "failure_excerpt": [
+          "ℹ tests 1",
+          "ℹ pass 0",
+          "ℹ fail 1",
+          "AssertionError [ERR_ASSERTION]: The \"capacityError\" validation function is expected to return \"true\". Received false",
+          "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:",
+          "actual: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:"
+        ],
+        "raw_log_sha256": "661a62dd39d8d8c88fb8a6f76e87a4d267613832bf62925b25362090515809a3"
+      },
+      {
+        "mutation": "queued-capacity",
+        "target": "server/concern-store.ts",
+        "removed_guard": "if (item.events.length >= MAX_EVENTS) { await cancelForCapacity(client, workspaceId, row, item, scheduled.actor_user_id); return null; }",
+        "replacement": "if (item.events.length > MAX_EVENTS) { await cancelForCapacity(client, workspaceId, row, item, scheduled.actor_user_id); return null; }",
+        "command": "node --experimental-test-module-mocks --test --test-name-pattern=queued capacity input tests/concern-capacity.test.ts",
+        "exit": 1,
+        "killed_by_assertion": true,
+        "failure_excerpt": [
+          "ℹ tests 1",
+          "ℹ pass 0",
+          "ℹ fail 1",
+          "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+        ],
+        "raw_log_sha256": "7f59f3c32f4eda816f12b82029d883fbee201b2c41f6572a421ec16bdd08a774"
+      },
+      {
+        "mutation": "server-reader",
+        "target": "server/concern-store.ts",
+        "removed_guard": "if (events.length > CONCERN_STORED_EVENT_LIMIT) throw",
+        "replacement": "if (events.length > CONCERN_STORED_EVENT_LIMIT + 1) throw",
+        "command": "node --experimental-test-module-mocks --test --test-name-pattern=readers accept complete tests/concern-capacity.test.ts",
+        "exit": 1,
+        "killed_by_assertion": true,
+        "failure_excerpt": [
+          "ℹ tests 1",
+          "ℹ pass 0",
+          "ℹ fail 1",
+          "AssertionError [ERR_ASSERTION]: Missing expected rejection (capacityError)."
+        ],
+        "raw_log_sha256": "6eb40db9637a18141f13b993ca75b1a955854d0a0e8de865fc3745ed7752f6a0"
+      },
+      {
+        "mutation": "client-reader",
+        "target": "src/client/concerns-api.ts",
+        "removed_guard": "events: z.array(eventSchema).max(CONCERN_STORED_EVENT_LIMIT)",
+        "replacement": "events: z.array(eventSchema).max(CONCERN_STORED_EVENT_LIMIT + 1)",
+        "command": "node --experimental-test-module-mocks --test --test-name-pattern=readers accept complete tests/concern-capacity.test.ts",
+        "exit": 1,
+        "killed_by_assertion": true,
+        "failure_excerpt": [
+          "ℹ tests 1",
+          "ℹ pass 0",
+          "ℹ fail 1",
+          "AssertionError [ERR_ASSERTION]: Missing expected rejection."
+        ],
+        "raw_log_sha256": "a044a21401f9769230127204b39691f823675cfd09fc522362caa511f240e4e0"
+      },
+      {
+        "mutation": "frontend-restore",
+        "target": "frontend/src/growth-view-model.ts",
+        "removed_guard": "concern.events.length >= CONCERN_EVENT_LIMIT",
+        "replacement": "concern.events.length > CONCERN_EVENT_LIMIT",
+        "command": "node --experimental-test-module-mocks --test --test-name-pattern=post-archive frontend/scripts/growth-concern-capacity.test.mjs",
+        "exit": 1,
+        "killed_by_assertion": true,
+        "failure_excerpt": [
+          "ℹ tests 1",
+          "ℹ pass 0",
+          "ℹ fail 1",
+          "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:"
+        ],
+        "raw_log_sha256": "54ce9ae4e7ba03cebad3659e27a198a37d00eecd7e0c9b15b29ecc6f0dfc6f34"
+      }
+    ]
+  },
+  "historical_evidence_reused": {
+    "path": "artifacts/verification/P2_A06_CHECKS.json",
+    "source": "Merged PR137",
+    "scope": "Existing local PostgreSQL18.6 synthetic migration029/full-history cancel/archive to202/original-operation replay evidence",
+    "not_rerun_now": true
+  },
+  "limitations": [
+    "Fake Pool and in-memory transaction simulation do not prove PostgreSQL semantics.",
+    "Shallow component calls do not prove browser layout, DOM event dispatch, accessibility or real UI behaviour.",
+    "No real model, production database, family data, notification, deployment, browser, full repository test suite or full Server typecheck in this task.",
+    "No remote write, PR creation, merge, PR111 closure or branch deletion performed by this local implementation stage."
+  ],
+  "final_test_source_sha256": {
+    "tests/concern-capacity.test.ts": "d0d33d5d765bfae55238a0c7a159ad75e5b38840526f924f995704ec3488033e",
+    "frontend/scripts/growth-concern-capacity.test.mjs": "d1a38c6bcaf8ae547a80efadff078b594f99a4ad746dfd31d9cd2991c45f44a4",
+    "artifacts/verification/QA_CONCERN_TERMINAL_RESERVE/tsconfig.json": "c406ccf64b905e20fa0c00948d0e684a72df41f46cf9f5c28c14b72d0bbbd8a6"
+  }
+}

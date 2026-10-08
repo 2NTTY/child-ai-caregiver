@@ -1,0 +1,11 @@
+✔ archive confirmation preserves normal undo copy at 198 and warns at 199 and 200 (220.393818ms)
+✔ post-archive 199 remains restorable while 200, 201 and 202 have an honest disabled undo (104.269537ms)
+✔ history list and detail retain reading but explain capacity-blocked restore (111.327488ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 754.088303
