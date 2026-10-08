@@ -1,0 +1,1 @@
+{"state":"failed","stage":"account_switch","lastAction":"wait_reloaded_document","code":"ui_acceptance_failed","checks":["real_login_and_consent","same_document_visible","authorised_library_catalog","reload_reads_saved_document"],"http":193,"stores":0,"blocked":0,"lost":false,"submissions":0,"lookup":false,"fixtureUsers":2,"fixtureChildren":1}

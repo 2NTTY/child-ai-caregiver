@@ -1,0 +1,12 @@
+(node:34688) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ native ADK declares document edits and saves one bound shared candidate before decision (32.4865ms)
+✔ source invalidation, atomic rejection, scope and original unknown operation stay protected (52.6675ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1382.1643

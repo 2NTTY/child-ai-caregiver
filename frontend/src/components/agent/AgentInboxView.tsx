@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../EmptyListCard";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { agentTime, type AgentInboxActions, type AgentInboxModel } from "../../agent-view-model";
@@ -42,7 +43,7 @@ export function AgentInboxView({ model, actions }: { model: AgentInboxModel; act
     {model.locked && !denied ? <Text style={styles.warning}>目前有原操作待查核，暫時不能切換或收起私人背景結果。</Text> : null}
     {ready ? <>
       <Text style={styles.meta}>清單讀取時間：{model.loadedAt ? timeLabel(model.loadedAt) : "未知"}</Text>
-      {entries.length === 0 ? <Text style={styles.meta}>目前沒有私人背景結果。</Text> : entries.map(entry => {
+      {entries.length === 0 ? model.online ? <EmptyListCard title="目前沒有私人背景結果" /> : null : entries.map(entry => {
         const selected = entry.runId === model.selectedRunId;
         return <View key={entry.runId} accessibilityState={{ selected }} aria-selected={selected}
           style={[styles.entry, selected && styles.selectedEntry]}>

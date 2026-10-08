@@ -70,7 +70,7 @@ export function AppTextField({ style, outlineStyle, contentStyle, multiline, lab
     contentStyle={[multiline && label ? styles.multilineContent : undefined, contentStyle]} />;
 }
 
-function SelectionCount({ count }: { count: number }) {
+function SelectionCount({ count }: { count: number | string }) {
   return <View style={styles.selectionCount} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><Text style={styles.selectionCountText}>{count}</Text></View>;
 }
 
@@ -156,7 +156,7 @@ export function SectionHeader({ title, subtitle, action, icon, count, density = 
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.headerText}>
-        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={[styles.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>{count !== undefined ? <Text style={styles.countText}>{count}</Text> : null}</View>
+        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={[styles.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>{count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}</View>
         {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
       </View>
       {action}
@@ -203,7 +203,7 @@ function tabPanelId(tabsId: string, key: string) { return `${tabsId}-panel-${enc
 export function UnderlineTabs<T extends string>({ id, label, items, value, onChange }: {
   id: string;
   label?: string;
-  items: ReadonlyArray<{ key: T; label: string }>;
+  items: ReadonlyArray<{ key: T; label: string; count?: number | string }>;
   value: T;
   onChange: (next: T) => void;
 }) {
@@ -233,11 +233,11 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
     <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs}>
     {items.map((item, index) => <Pressable
       key={item.key} nativeID={tabId(id, item.key)} onLayout={event => { const { x, width } = event.nativeEvent.layout; setPositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
-      accessibilityRole="tab" accessibilityLabel={item.label} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
+      accessibilityRole="tab" accessibilityLabel={item.count === undefined ? item.label : `${item.label} ${item.count}`} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
       accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => select(item.key)}
       {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
-      style={({ pressed }) => [styles.tab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.tabPressed]}
-    ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text></Pressable>)}
+      style={({ pressed }) => [styles.tab, item.count !== undefined && styles.countedTab, (compact || touch) && styles.mobileTarget, !selection && value === item.key && styles.tabActive, pressed && styles.tabPressed]}
+    ><Text style={[styles.tabText, value === item.key && styles.tabTextActive]}>{item.label}</Text>{item.count !== undefined ? <SelectionCount count={item.count} /> : null}</Pressable>)}
     <MotionSelectionMarker x={selection?.x ?? 0} width={selection?.width ?? 0} selectionKey={`${id}:${value}`} />
     </View>
   </HorizontalOverflowRail>;
@@ -307,6 +307,7 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   hiddenPanel: { display: "none" },
   tab: { minHeight: 46, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
+  countedTab: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   tabActive: { borderBottomColor: colors.teal },
   tabText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },
   tabTextActive: { color: colors.deepTeal, fontWeight: "800" },

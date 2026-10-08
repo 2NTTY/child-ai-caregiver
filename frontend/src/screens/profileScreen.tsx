@@ -38,13 +38,13 @@ function ProfileContent({ switchPosition }: { switchPosition: ReturnType<typeof 
       <Text style={styles.childName}>{item.displayName}</Text><Text style={styles.meta}>{item.id === child?.id ? "目前" : "切換"}</Text>
     </Pressable>) : <Text style={styles.meta}>沒有可切換的孩子。</Text>}</View>
     <AppButton expanded={managementOpen} label={managementOpen ? "收起孩子管理" : "新增或管理孩子"} variant="quiet" onPress={() => setManagementOpen(value => !value)} />
-    <MotionDisclosure expanded={managementOpen || creating || createUnknown} scopeKey={identityKey ?? "no-identity"}><View style={styles.childManagement}>
-      <Text>新增孩子只需要稱呼；其他未知資料不會推算。家庭成員按角色查看共享孩子資料，私人聊天不會共享。</Text>
-      <AppTextField label="孩子稱呼" value={recordsState.childName} maxLength={80} disabled={managementLocked}
+    <MotionDisclosure expanded={managementOpen || !home.children.length || creating || createUnknown} scopeKey={identityKey ?? "no-identity"}><View style={styles.childManagement}>
+      <Text>新增孩子只需要稱呼；不必先建立家庭或邀請他人。資料保存於你的空間；若日後邀請成員，才按角色提供共享資料，私人聊天保持私有。</Text>
+      <AppTextField label="孩子稱呼" accessibilityLabel="孩子稱呼" value={recordsState.childName} maxLength={80} disabled={managementLocked}
         onChangeText={value => { setReviewName(null); controller.setChildName(value); }} />
       <AppButton label="核對新增孩子" variant="secondary" disabled={managementLocked || !recordsState.childName.trim()}
         onPress={() => setReviewName(recordsState.childName)} />
-      {reviewName && reviewName === recordsState.childName && !createUnknown ? <View style={styles.review}><Text>將新增「{reviewName}」，並按現有家庭權限共享孩子資料。</Text>
+      {reviewName && reviewName === recordsState.childName && !createUnknown ? <View style={styles.review}><Text>將新增「{reviewName}」，保存到你的資料空間；如已有成員，按現有權限可見。</Text>
         <AppButton label="確認新增孩子" disabled={!online || managementLocked}
           onPress={() => leave(() => { homeActions.createChildPreview(reviewName); setReviewName(null); }, "child")} />
         <AppButton label="返回修改稱呼" variant="quiet" disabled={creating} onPress={() => setReviewName(null)} />
@@ -59,7 +59,7 @@ function ProfileContent({ switchPosition }: { switchPosition: ReturnType<typeof 
         onPress={() => homeActions.deleteChildPreview(child.id)} /> : null}
     </View></MotionDisclosure>
   </SectionCard></View>;
-  if (!workspace) return <>{childPicker}<SectionCard><Text>{child ? "正在讀取孩子檔案…" : "尚未有孩子。新增或選擇孩子後才可確認檔案及家庭共享資料。"}</Text></SectionCard></>;
+  if (!workspace) return <>{childPicker}<SectionCard><Text>{child ? "正在讀取孩子檔案…" : "先填一個稱呼建立孩子，便可以跟助手交代事情；其他資料可稍後補充。"}</Text></SectionCard></>;
   const { model, actions } = workspace;
   return <ProfileView model={model} actions={actions} childPicker={childPicker} onOpenCare={() => homeActions.open("care")}
     childDeletionActive={!!recordsState.deletion || creating || createUnknown} onLayoutReady={switchPosition.restorePosition} previewControls={null}

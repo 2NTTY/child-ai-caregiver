@@ -13,6 +13,8 @@ import { PreparationHistoryView } from "../components/preparations/PreparationWo
 import { GrowthHistoryView } from "../components/growth/GrowthHistoryView";
 import { createHistoryFilters, historyCategories, historyDateErrors, historyDateRange, historyFilterReducer, normalizeHistoryCategory, normalizeReviewHistoryStatus, normalizeHistoryOlderOnly, type HistoryCategory, type HistoryFilterAction } from "../components/history/history-filters";
 import { useProduction } from "../production/ProductionProvider";
+import { usePersonalHistoryWorkspace } from "../production/usePersonalHistory";
+import { PersonalConversationHistoryView, PersonalNotificationHistoryView } from "../components/history/PersonalHistoryViews";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useTasksWorkspace } from "../workspaces/TasksWorkspace";
 import { useCareWorkspace } from "../workspaces/CareWorkspace";
@@ -28,11 +30,14 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
   const preparations = usePreparationWorkspace();
   const care = useCareWorkspace();
   const growth = useGrowthWorkspace();
+  const personal = usePersonalHistoryWorkspace();
   const [filters, dispatch] = useReducer(historyFilterReducer, undefined, () => createHistoryFilters(scope, initialCategory));
   const layout = useContainerWidth(), compact = layout.width < 680;
   const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(0);
   const current = historyCategories.find(item => item.key === filters.category)!;
   const dateErrors = historyDateErrors(filters.from, filters.to), dateRange = historyDateRange(filters.from, filters.to);
+  const conversationCategory = filters.category === "conversations", notificationCategory = filters.category === "notifications";
+  const personalCategory = conversationCategory || notificationCategory;
   const taskCategory = filters.category === "tasks";
   const preparationCategory = filters.category === "preparations";
   const growthCategory = filters.category === "growth";
@@ -45,7 +50,7 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
     || reviewCategory && care.model.review?.state !== "ready";
   const growthLocked = !growth || growth.model.access === "lost" || growth.model.busy || !!growth.model.pending || growth.model.dirty || growth.model.page?.concerns?.state !== "ready";
   const currentLocked = taskCategory ? taskLocked : preparationCategory ? preparationLocked : growthCategory ? growthLocked : reviewCategory || careCategory ? careLocked : false;
-  const filterDisabled = taskCategory ? !tasks || taskLocked : preparationCategory ? preparationLocked : growthCategory ? growthLocked : reviewCategory ? careLocked : true;
+  const filterDisabled = taskCategory ? !tasks || taskLocked : preparationCategory ? preparationLocked : growthCategory ? growthLocked : reviewCategory ? careLocked : personalCategory ? !personal : true;
   const showingCompactPreparationDetail = preparationCategory && layout.width < 840 && preparations?.model.selected?.status === "archived" && !!dateRange
     && searchPreparationHistory(preparations.model.documents, filters.searchText, dateRange).some(document => document.id === preparations.model.selected?.id);
   const hasFilters = !!(filters.searchText || filters.from || filters.to);
@@ -79,19 +84,22 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
     : growthCategory ? dateRange ? <GrowthHistoryView key={growth?.scopeKey ?? scope} searchText={filters.searchText} dateRange={dateRange}
       onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={id => navigate(() => { tasks?.actions.selectTask(id); router.push("/tasks"); })} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
+    : personalCategory ? dateRange ? conversationCategory ? <PersonalConversationHistoryView searchText={filters.searchText} dateRange={dateRange} onPrepareQuestion={homeActions.prepareQuestion} />
+      : <PersonalNotificationHistoryView searchText={filters.searchText} dateRange={dateRange} />
+      : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : <View testID={`history-unavailable-${filters.category}`}  style={styles.unavailable}>
       <Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
       <Text style={styles.body}>{current.unavailable}</Text>
       <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath))} />
     </View>;
 
-  return <PageFrame density="compact" title="歷史" description={`分類回看${childName}的過往資料，從原始來源查看詳情。`} scrollRef={scrollRef} scrollTestID="history-scroll"
+  return <PageFrame density="compact" title="歷史" description={notificationCategory ? "查看你各渠道的通知與聯絡投遞資料。" : `分類回看${childName}的過往資料，從原始來源查看詳情。`} scrollRef={scrollRef} scrollTestID="history-scroll"
     onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
       {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
         : <UnderlineTabs<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
       <View style={styles.sourceRow}>
-        <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.meta}>{current.description}{!growthCategory ? ` · 來源：${current.sourceLabel}` : null}</Text></View>
+        <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.meta}>{notificationCategory ? "查閱本人各渠道的投遞資料，涵蓋帳戶及其他孩子" : current.description}{!growthCategory ? ` · 來源：${(notificationCategory ? "本人通知投遞資料" : current.sourceLabel)}` : null}</Text></View>
         {reviewCategory || careCategory ? <AppButton label="開啟記錄與核對" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/care"))} /> : null}
         {taskCategory ? <AppButton label="開啟待辦" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/tasks"))} /> : null}
         {preparationCategory ? <AppButton label="開啟準備單" variant="secondary" density="compact" onPress={() => navigate(() => router.push({ pathname: "/summary", params: { tab: "preparation" } }))} /> : null}

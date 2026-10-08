@@ -5,21 +5,31 @@ import type { ConversationSummary, SummaryInput } from "../src/shared/memory.ts"
 import type { StorageCipher } from "./storage-crypto.ts";
 import { FamilyError } from "./family-access.ts";
 import { summarySaveSchema } from "./memory-validation.ts";
-import { factIsApplicable, profileIsApplicable } from "./memory-policy.ts";
+import { profileIsApplicable } from "./memory-policy.ts";
 
 interface SavedSummary extends ConversationSummary { basis: string; invalidated?: boolean }
 const aad = (childId: string, userId: string, id: string) => `memory-summary:${childId}:${userId}:${id}`;
 
 // Current authority versions invalidate derived text. The digest never grants access.
 async function basis(client: PoolClient, cipher: StorageCipher, userId: string, childId: string) {
+  const pending = (await client.query<{ id: string; version: number; payload_encrypted: string }>(
+    "SELECT id,version,payload_encrypted FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed ORDER BY id LIMIT 100",
+    [childId, userId])).rows;
+  for (const row of pending) {
+    const fact = JSON.parse(cipher.decrypt(row.payload_encrypted, `memory-fact:${childId}:${row.id}:${row.version}`));
+    await client.query("UPDATE memory_facts SET valid_until=$3,validity_indexed=true WHERE id=$1 AND version=$2 AND NOT validity_indexed", [row.id, row.version, fact.validUntil]);
+  }
   const profile = (await client.query("SELECT profile_version FROM children WHERE id=$1", [childId])).rows;
-  const records = (await client.query("SELECT id,version FROM text_records WHERE child_id=$1 ORDER BY id", [childId])).rows;
-  const factRows = (await client.query("SELECT id,version,payload_encrypted FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) ORDER BY id", [childId, userId])).rows;
-  const facts = factRows.map(row => { const value = JSON.parse(cipher.decrypt(row.payload_encrypted, `memory-fact:${childId}:${row.id}:${row.version}`)); return [row.id, row.version, factIsApplicable(value)]; });
   const profileRow = (await client.query("SELECT version,payload_encrypted FROM child_profile_revisions WHERE child_id=$1 AND version=$2", [childId, profile[0]?.profile_version ?? 0])).rows[0];
   const profileValid = profileRow ? profileIsApplicable(JSON.parse(cipher.decrypt(profileRow.payload_encrypted, `child-profile:${childId}:${profileRow.version}`)).data) : false;
-  const topics = (await client.query("SELECT id,version FROM memory_topics WHERE child_id=$1 AND (visibility='family' OR created_by=$2) ORDER BY id", [childId, userId])).rows;
-  return createHash("sha256").update(JSON.stringify([profile, profileValid, records, facts, topics])).digest("hex");
+  const row = (await client.query<{ authority: unknown; metadata_complete: boolean }>(`SELECT md5(jsonb_build_array(
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM text_records WHERE child_id=$1),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version,status,visibility,valid_until,valid_until IS NULL OR valid_until>clock_timestamp()) ORDER BY id),'[]'::jsonb)
+      FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2)),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM memory_topics WHERE child_id=$1 AND (visibility='family' OR created_by=$2))
+    )::text) AS authority, NOT EXISTS(SELECT 1 FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed) AS metadata_complete`,
+    [childId, userId])).rows[0];
+  return { digest: createHash("sha256").update(JSON.stringify(["v2", profile, profileValid, row.authority])).digest("hex"), complete: row.metadata_complete };
 }
 async function latest(client: PoolClient, cipher: StorageCipher, userId: string, childId: string) {
   const row = (await client.query<{ id: string; payload_encrypted: string; invalidated: boolean }>("SELECT id,payload_encrypted,invalidated FROM conversation_summaries WHERE child_id=$1 AND owner_user_id=$2 ORDER BY version DESC LIMIT 1", [childId, userId])).rows[0];
@@ -32,12 +42,13 @@ async function intact(client: PoolClient, userId: string, childId: string) {
 }
 export async function readSummary(client: PoolClient, cipher: StorageCipher, userId: string, childId: string): Promise<ConversationSummary | null> {
   const value = await latest(client, cipher, userId, childId);
-  if (!value || value.invalidated || value.basis !== await basis(client, cipher, userId, childId) || !await intact(client, userId, childId)) return null;
+  const current = await basis(client, cipher, userId, childId);
+  if (!value || value.invalidated || !current.complete || value.basis !== current.digest || !await intact(client, userId, childId)) return null;
   const { basis: _basis, invalidated: _invalidated, ...publicValue } = value; return publicValue;
 }
 export async function summaryInput(client: PoolClient, cipher: StorageCipher, userId: string, childId: string): Promise<SummaryInput> {
   const value = await latest(client, cipher, userId, childId), currentBasis = await basis(client, cipher, userId, childId);
-  const previous = value && !value.invalidated && value.basis === currentBasis && await intact(client, userId, childId) ? value : null;
+  const previous = value && !value.invalidated && currentBasis.complete && value.basis === currentBasis.digest && await intact(client, userId, childId) ? value : null;
   const rows = (await client.query<{ id: string; author_user_id: string | null; role: "user" | "model"; in_reply_to: string | null; text_encrypted: string; created_at: Date }>(
     `SELECT m.* FROM chat_messages m WHERE m.child_id=$1 AND m.owner_user_id=$2
       AND ($3::boolean OR NOT EXISTS(SELECT 1 FROM summary_message_coverage c WHERE c.message_id=m.id))
@@ -45,10 +56,11 @@ export async function summaryInput(client: PoolClient, cipher: StorageCipher, us
   const messages: ChatMessage[] = rows.slice(0, 50).map(row => ({ id: row.id, childId, authorUserId: row.author_user_id, role: row.role,
     inReplyTo: row.in_reply_to, createdAt: row.created_at.toISOString(), text: cipher.decrypt(row.text_encrypted,
       `chat_messages:${row.id}:${childId}:${userId}:${row.role}:${row.in_reply_to ?? ""}:text`) }));
-  return { previous, previousVersion: value?.version ?? 0, basis: currentBasis, messages, moreUncovered: rows.length > 50 };
+  return { previous, previousVersion: value?.version ?? 0, basis: currentBasis.digest, messages, moreUncovered: rows.length > 50, ...(currentBasis.complete ? {} : { unavailableReason: "fact_metadata_pending" as const }) };
 }
 export async function saveSummary(client: PoolClient, cipher: StorageCipher, userId: string, childId: string, raw: unknown): Promise<ConversationSummary> {
   const input = summarySaveSchema.parse(raw), expected = await summaryInput(client, cipher, userId, childId);
+  if (expected.unavailableReason) throw new FamilyError(409, "summary_metadata_pending");
   if (input.previousVersion !== expected.previousVersion || input.basis !== expected.basis
     || JSON.stringify(input.coveredMessageIds) !== JSON.stringify(expected.messages.slice(0, input.coveredMessageIds.length).map(message => message.id))) throw new FamilyError(409, "summary_coverage_changed");
   if (!expected.previous) {

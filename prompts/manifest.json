@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.26",
+  "version": "0.1.32",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -76,7 +76,7 @@
     {
       "id": "module.capture-confirmation",
       "path": "modules/capture-confirmation.md",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -86,7 +86,7 @@
     {
       "id": "module.memory-maintenance",
       "path": "modules/memory-maintenance.md",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -96,7 +96,7 @@
     {
       "id": "module.knowledge-answering",
       "path": "modules/knowledge-answering.md",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -106,7 +106,7 @@
     {
       "id": "module.knowledge-maintenance",
       "path": "modules/knowledge-maintenance.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -126,7 +126,7 @@
     {
       "id": "module.task-intents",
       "path": "modules/task-intents.md",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -136,7 +136,7 @@
     {
       "id": "module.proactive-run",
       "path": "modules/proactive-run.md",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -157,7 +157,7 @@
     {
       "id": "module.summary-report",
       "path": "modules/summary-report.md",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -203,7 +203,7 @@
     {
       "id": "module.product-tools",
       "path": "modules/product-tools.md",
-      "version": "0.1.13",
+      "version": "0.1.17",
       "requires": [
         "core.tool-use",
         "core.output",
@@ -437,10 +437,7 @@
         "domain.childcare-hk.care-workflows",
         "module.knowledge-answering",
         "module.chat",
-        "module.capture-confirmation",
-        "module.task-intents",
-        "module.product-tools",
-        "module.memory-maintenance"
+        "module.product-tools"
       ],
       "outputModes": [
         "tool_cycle"
@@ -454,7 +451,8 @@
         "capabilities"
       ],
       "plannedPackages": [
-        "S11-W02"
+        "S11-W02",
+        "P2-A01"
       ],
       "missingCapability": "缺權限、引用、明確确认或目前可用工具時停止相關操作，回報限制。"
     },
@@ -484,6 +482,30 @@
         "S13-W07"
       ],
       "missingCapability": "只按 Server 可用工具處理站內結果；沒有通知或任務寫入工具時不執行或聲稱已外發。"
+    },
+    {
+      "id": "product-work-followup",
+      "additionalModules": [
+        "domain.childcare-hk.sources-freshness",
+        "domain.childcare-hk.care-workflows",
+        "module.knowledge-answering",
+        "module.proactive-run"
+      ],
+      "outputModes": [
+        "tool_cycle"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "conversation",
+        "context",
+        "evidence",
+        "capabilities"
+      ],
+      "plannedPackages": [
+        "P2-A06"
+      ],
+      "missingCapability": "只在目前可讀範圍保存本站回饋；寫入、確認、共享及外發均不屬本事件權限。"
     },
     {
       "id": "photo-capture",

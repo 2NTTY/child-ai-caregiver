@@ -149,7 +149,15 @@ test("scope count badges receive structured numbers and preserve accessible radi
   assert.match(ui, /label: string; count\?: number/);
   assert.match(ui, /count=\{selected\?\.count\}/);
   assert.match(ui, /count !== undefined \? <SelectionCount count=\{count\}/);
-  assert.match(ui, /item.count === undefined \? <RadioButton.Item/);
+  assert.match(ui, /item.count === undefined \? <AppRadioItem/);
+  assert.match(ui, /<AppRadioItem[^>]*checked=\{checked\}[\s\S]*?disabled=\{disabled\} onPress=\{select\}/);
+  const radio = readFileSync(new URL("../src/components/AppRadioItem.tsx", import.meta.url), "utf8");
+  assert.match(radio, /Platform.OS !== "web"\) return <RadioButton.Item/);
+  assert.match(radio, /<TouchableRipple accessibilityRole="radio" accessibilityLabel=\{accessibilityLabel\}/);
+  assert.match(radio, /accessibilityState=\{\{ checked, disabled \}\} aria-checked=\{checked\} aria-disabled=\{disabled\}/);
+  assert.match(radio, /if \(!disabled && !\(event.nativeEvent\?\.repeat \?\? event.repeat\)\) onPress\(\)/);
+  assert.match(radio, /<View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"/);
+  assert.doesNotMatch(radio.slice(radio.indexOf("return <TouchableRipple")), /<RadioButton/);
   assert.match(ui, /<SelectionCount count=\{item.count\}/);
   assert.match(ui, /accessibilityRole="radio" accessibilityLabel=\{`\$\{label\}選項：\$\{item.label\}，\$\{item.count\} 項`\}/);
   assert.match(ui, /accessibilityState=\{\{ checked, disabled \}\} aria-checked=\{checked\}/);
@@ -220,7 +228,8 @@ test("calendar replacement uses the existing detail slot and keeps month state i
   assert.match(view, /month=\{calendarMonth\}/);
   assert.match(view, /testID=\{showPanel \? "task-detail-panel" : "task-calendar-panel"\}/);
   assert.match(view, /<\/\> : calendar\}/);
-  assert.match(view, /tab === "pending" && !wide && !model.reading \? <MotionDisclosure expanded=\{calendarOpen\}/);
+  assert.match(view, /const readUnavailable = listReadState === "loading" \|\| listReadState === "error"/);
+  assert.match(view, /tab === "pending" && !wide && !readUnavailable && !noPendingTasks \? <MotionDisclosure expanded=\{calendarOpen\}/);
   assert.doesNotMatch(view, /styles\.calendarColumn|styles\.scheduleWide|styles\.filterActions/);
   assert.doesNotMatch(calendar, /const \[month, setMonth\]/);
   const handler = view.slice(view.indexOf("function selectCalendarDay"), view.indexOf("const calendar ="));

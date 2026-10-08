@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { contactGrantStatus } from "./contact-status";
 import { useContainerWidth } from "../useContainerWidth";
@@ -71,7 +72,7 @@ export function ContactView({model, actions, onSettings, onTask, previewTools, p
         <ContactConsentCard key={`${model.scopeKey}:${model.userId}`} model={model} actions={actions} onSettings={onSettings} />
         <View style={s.section}><SectionHeader density="compact" title="任務聯絡授權" subtitle="選一項安排，核對主要接收者及授權期限。" />
           <Text style={s.meta}>{page.tasksHaveMore ? '僅顯示最多 50 個任務內已載入的清單，並非全部任務。' : '顯示本次已載入的任務。'}主要接收者依任務負責人，後備須本人另行同意。</Text>
-          {!page.tasks.length ? <Text style={s.body}>目前沒有載入任務；沒有據此推定已有授權全部失效。</Text> : null}
+          {!tasks.length && model.load === "ready" && model.online && model.access !== "lost" ? <EmptyListCard title="已載入資料中暫無任務" detail={page.tasksHaveMore ? "任務清單未完整載入；不能據此判斷所有授權已失效。" : "不能據此判斷已有授權全部失效。"} /> : null}
           <View style={wide && selectedId ? s.columns : s.stack}>
             <View style={wide && selectedId ? s.taskIndex : s.full} testID="contact-task-index">{tasks.map(task => {
               const grant = page.grants.find(item => item.taskId === task.id);

@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
 import { useRef, useState, type ReactNode } from "react";
@@ -76,9 +77,10 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     eventKey: listIntent.current ? String(listIntent.current.serial) : null, change: listChange,
     settled: !['saving', 'unknown', 'unconfirmed'].includes(model.operation.state), targetId: listIntent.current?.targetId});
   const columns = width >= 780;
-  const readState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online ? "stale" : model.access !== "lost" && model.items.length === 0 ? "empty" : "ready";
+  const canRead = model.fresh && !model.direct && model.access !== "lost";
+  const readState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online || !model.fresh ? "stale" : "ready";
   const readMessage = readState === "loading" ? "正在讀取私人來源…" : readState === "error" ? model.notice || "未能讀取來源，請重試。"
-    : readState === "stale" ? "目前離線。本頁文字草稿保留，沒有離線提交；恢復連線後請手動重新讀取。" : readState === "empty" ? "暫時沒有私人來源，可從「加入資料來源」開始。" : "";
+    : readState === "stale" ? !model.online ? "目前離線。本頁文字草稿保留，沒有離線提交；恢復連線後請手動重新讀取。" : "來源最新狀態尚未核對，請重新讀取。" : "";
   return <PageFrame density="compact" title="資料來源" description="你提供的私人來源統一在這裏管理。說明用途，讓助手協助整理，再由你核對；也可以自行填寫。" eyebrow="私人保存 · 核對後才接入">
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "目前沒有存取權限。舊原文、候選、草稿及操作已清除。" : ""} urgent={model.access === "lost"} />
     <View style={s.toolbar}><View style={s.scope}><Text style={s.meta}>目前範圍</Text><Text style={s.title}>{model.childName} · {model.accountName}本人</Text></View><View style={s.row}>
@@ -94,12 +96,13 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     {model.access === "editable" && !model.canCreate ? <Text style={s.warning}>{production ? "目前不能新增來源" : "合成新增容量限制"}；已有來源及人工草稿仍可核對。</Text> : null}
     <SourceStatus model={model.load === "error" && model.operation.state === "none" && model.access !== "lost" ? { ...model, notice: "" } : model} actions={actions} production={production} />
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
-      <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={model.items.length} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
+      <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={listResultAvailable && model.fresh ? model.items.length : undefined} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
+        {listResultAvailable && model.fresh && model.items.length === 0 ? <EmptyListCard title="暫時沒有私人來源" detail="可在旁邊的新增來源區加入資料。" /> : null}
         <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>
           <Text style={s.title}>{input.sourceLabel}</Text><View style={s.row}><AppStatusBadge label={fetchStateLabels[input.fetchState]} tone={input.fetchState === "ready" ? "success" : input.fetchState === "failed" ? "error" : input.fetchState === "unknown" ? "warning" : input.fetchState === "running" ? "info" : "neutral"} /><AppStatusBadge label={input.recordId ? "已連結家庭記錄" : "尚未家庭共享"} tone={input.recordId ? "success" : "neutral"} /></View>
           <Text style={s.meta}>保存於 {sourceTime(input.createdAt)}</Text>
           {model.intake ? <Text style={s.meta}>{model.intake.mode === "production" ? input.management ? `${sourcePurposeOptions.find(option => option.value === input.management?.purpose)?.label} · ${input.management.enabled ? "可使用" : "已停用"}` : "用途尚未設定" : sourceIntakePurposeLabel(model.intakeByInputId?.[input.id])}</Text> : null}
-          <AppButton ref={node => deletionFocus.rowRef(input.id, node)} label={model.selected?.id === input.id ? "目前來源" : "查看來源"} accessibilityLabel={`查看私人來源：${input.sourceLabel}`} variant={model.selected?.id === input.id ? "secondary" : "quiet"} disabled={row.exiting || !model.canChoose || !model.online || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openInput(input);}} />
+          <AppButton ref={node => deletionFocus.rowRef(input.id, node)} label={model.selected?.id === input.id ? "目前來源" : "查看來源"} accessibilityLabel={`查看私人來源：${input.sourceLabel}`} variant={model.selected?.id === input.id ? "secondary" : "quiet"} disabled={row.exiting || !canRead || !model.online || model.load !== "ready"} onPress={() => {if (!row.exiting) actions.openInput(input);}} />
         </View>} />
       </SectionCard></View>
       <View style={[s.main, s.editorSurface, !columns && s.full]}>

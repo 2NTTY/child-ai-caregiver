@@ -27,7 +27,7 @@ const flatten = value => Array.isArray(value) ? Object.assign({}, ...value.filte
 const nodes = value => !value || typeof value !== 'object' ? [] : [value, ...[value.props?.children].flat(Infinity).flatMap(nodes)];
 const node = (tree, type) => nodes(tree).find(item => item.type === type);
 const label = (tree, name) => nodes(tree).find(item => item.props?.label === name);
-const content = tree => !tree ? '' : Array.isArray(tree) ? tree.map(content).join(' ') : typeof tree === 'object' ? content(tree.props?.children) : String(tree);
+const content = tree => !tree ? '' : Array.isArray(tree) ? tree.map(content).join(' ') : typeof tree === 'object' ? (tree.type === 'EmptyListCard' ? [tree.props.title, tree.props.detail].filter(Boolean).join(' ') : content(tree.props?.children)) : String(tree);
 const theme = load('src/theme.ts');
 const presentation = load('src/components/chat/chat-presentation.ts');
 function load(relative, suffix = "") {
@@ -56,9 +56,29 @@ function load(relative, suffix = "") {
     : name.endsWith('/AgentAuthorizationOwner') ? { mayRetryAuthorization: () => false, maySavePolicy: () => false, reminderEligible: () => false }
     : name.endsWith('/routes') ? { isProductionRouteConnected: () => true }
     : name.endsWith('/branding') ? { brand: { name: '育伴港' } }
-    : new Proxy({}, { get: (_target, key) => String(key) });
+    : name.endsWith('/care-view-model') ? { careKindOptions: [] }
+    : name.endsWith('/useDomainEnvironment') ? { useDomainEnvironment: () => ({ scopeKey: production.scopeKey }) }
+    : name.endsWith('/locateCitationSource') ? { locateCitationSource: () => { throw new Error('Citation scrolling is outside this shallow harness'); } }
+    : componentDependency(name);
   new Function('require', 'module', 'exports', output + suffix)(localRequire, module, module.exports);
   return module.exports;
+}
+function componentDependency(name) {
+  const modules = {
+    '/EmptyListCard': ['EmptyListCard'],
+    '/ui': ['AppButton', 'AppTextField', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'TextLink'],
+    '/AgentComposer': ['AgentComposer'], '/ChatMessage': ['ChatMessage'], '/ChatTimeline': ['ChatTimeline'],
+    '/AgentConversation': ['AgentConversation'], '/PhotoInputDomains': ['AgentPhotoInput'],
+    '/AppScrollView': ['AppScrollView'], '/AppIcon': ['AppIcon'], '/motion': ['MotionEntrance'],
+    '/AgentInboxView': ['AgentInboxView'], '/AgentRunView': ['AgentRunView'], '/ReadStateNotice': ['ReadStateNotice'],
+    '/AppCheckbox': ['AppCheckbox'], '/BackgroundSettings': ['BackgroundSettings'], '/MotionSettings': ['MotionSettings'],
+    '/PageFrame': ['PageFrame'], '/AgentAuthorization': ['AgentAuthorization'], '/ModelSettingsView': ['ModelSettingsView'],
+    '/SettingsNavigation': ['SettingsNavigation'], '/SettingsSection': ['SettingsSection'],
+    '/CareRecordsView': ['CareRecordsView'], '/CareSavedRecordsView': ['CareSavedRecordsView'], '/photosScreen': ['PhotoWorkspace'],
+  };
+  const exports = Object.entries(modules).find(([suffix]) => name.endsWith(suffix))?.[1];
+  assert.ok(exports, `Unmocked chat dependency: ${name}`);
+  return Object.fromEntries(exports.map(component => [component, component]));
 }
 function render(component, props = {}, instance) {
   current = instance ?? { slots: [] };
@@ -71,6 +91,7 @@ function base() {
   calls.length = 0; section = undefined;
   const action = name => (...args) => calls.push([name, ...args]);
   production = {
+    online: true, recordsState: { childrenLoadedAt: '2026-10-07', childrenLoading: false, childrenError: null },
     scopeKey: 'synthetic-user:synthetic-child', identityKey: 'synthetic-user', user: { name: '合成用戶', email: 'synthetic@example.invalid' },
     model: { selectedChildId: 'synthetic-child', children: [{ id: 'synthetic-child', displayName: '合成孩子' }] },
     actions: { open: action('open'), refresh: noop },
@@ -170,15 +191,27 @@ test('send, unknown recovery, stop, original reply retry, and attachment gates k
   assert.ok(node(node(view.tree, 'ChatTimeline').props.footer, 'AgentPhotoInput'));
 });
 
-test('activity owns a real dialog and reads no receipts while closed; manual candidates and settings remain reachable', () => {
+test('activity owns a real dialog, reads no receipts while closed, and exposes guarded retry only after candidate failure', () => {
   base(); production.agentModel = { ...production.agentModel, readState: 'ready', run: { id: 'synthetic-run', proposals: [] } };
   let view = render(AgentConversation, { visible: false, onDismiss: noop, onOpenSettings: noop, onReloadChat: noop, reloadDisabled: false });
   view.effects.forEach(fn => fn()); assert.deepEqual(calls, []); assert.equal(view.tree.type, dialog);
   assert.equal(node(view.tree, 'AgentAuthorization'), undefined);
-  assert.ok(label(view.tree, '讀取待確認候選')); assert.ok(label(view.tree, '助手設定'));
+  assert.equal(label(view.tree, '重新讀取待確認候選'), undefined); assert.ok(label(view.tree, '助手設定'));
+  assert.match(content(view.tree), /會自動讀取/);
   view = render(AgentConversation, { ...view.props, visible: true }); view.effects.forEach(fn => fn());
   assert.deepEqual(calls, [['receipts', 'synthetic-run']]);
-  label(view.tree, '讀取待確認候選').props.onPress(); assert.deepEqual(calls.at(-1), ['pending']);
+  production.agentPending = { state: 'failed', entries: [] }; rerender(view);
+  const retry = label(view.tree, '重新讀取待確認候選');
+  assert.equal(retry.props.disabled, false); retry.props.onPress(); assert.deepEqual(calls.at(-1), ['pending']);
+  for (const guard of [{ online: false }, { busy: 'read' }, { pendingDecision: {} }, { writesBlocked: true }, { readState: 'denied' }]) {
+    const original = production.agentModel; production.agentModel = { ...original, ...guard }; rerender(view);
+    assert.equal(label(view.tree, '重新讀取待確認候選').props.disabled, true);
+    production.agentModel = original;
+  }
+  for (const state of ['idle', 'loading', 'ready', 'denied']) {
+    production.agentPending = { state, entries: [] }; rerender(view);
+    assert.equal(label(view.tree, '重新讀取待確認候選'), undefined);
+  }
 });
 
 test('assistant settings uses the existing authorization view with child scope and explicit route selection', () => {
@@ -223,9 +256,65 @@ test('Care and activity never describe unread, loading, failed or denied discove
     production.agentPending = { state, entries: [] };
     const care = content(render(AgentPendingReview).tree);
     const activity = content(render(AgentConversation, { visible: true, onDismiss: noop, onOpenSettings: noop, onReloadChat: noop, reloadDisabled: false }).tree);
-    if (state === 'ready') { assert.match(care, /沒有待確認/u); assert.match(activity, /沒有待確認/u); }
-    else { assert.doesNotMatch(care, /沒有待確認/u); assert.doesNotMatch(activity, /沒有待確認/u); }
+    if (state === 'ready') { assert.match(care, /暫無待確認提案/u); assert.match(activity, /沒有待確認/u); }
+    else { assert.doesNotMatch(care, /沒有待確認|暫無待確認提案/u); assert.doesNotMatch(activity, /沒有待確認/u); }
     if (state === 'idle') { assert.match(care, /尚未讀取/u); assert.match(activity, /尚未讀取/u); }
     if (state === 'denied') { assert.match(care, /沒有權限/u); assert.match(activity, /沒有權限/u); }
   }
+});
+
+test('reply details retain the pressed node before selecting a run and restore only after dialog closes', () => {
+  base(); const message = { id: 'a1', role: 'model', text: 'Synthetic reply', agentRunId: 'synthetic-run' };
+  production.chatState.messages = [message]; const view = chat();
+  const entry = label(node(view.tree, 'ChatTimeline').props.renderItem(message).props.footer, '詳情');
+  const button = render(entry.type, entry.props).tree;
+  const focused = [];
+  const trigger = { isConnected: true, hasAttribute: () => false, getAttribute: () => null, closest: () => null, focus: options => focused.push(options) };
+  button.props.ref.current = trigger;
+  production.selectAgentRun = id => { calls.push(['select-run', id]); production.agentModel.busy = 'read'; };
+  button.props.onPress(); rerender(view);
+  assert.deepEqual(calls, [['select-run', 'synthetic-run']]);
+  assert.equal(node(view.tree, 'AgentConversation').props.visible, true);
+  production.agentModel.busy = null;
+  node(view.tree, 'AgentConversation').props.onDismiss(); rerender(view);
+  assert.deepEqual(focused, [], 'closing must not race the still-active modal focus trap');
+  node(view.tree, 'AgentConversation').props.onClosed();
+  assert.deepEqual(focused, [{ preventScroll: true }]);
+  node(view.tree, 'AgentConversation').props.onClosed();
+  assert.equal(focused.length, 1, 'a completed close must consume the trigger');
+  label(view.tree, '活動 · 尚未讀取').props.onPress(); rerender(view);
+  node(view.tree, 'AgentConversation').props.onDismiss(); rerender(view);
+  node(view.tree, 'AgentConversation').props.onClosed();
+  assert.equal(focused.length, 1, 'header keeps its existing native modal focus restoration');
+});
+
+test('reply details do not restore a detached, disabled, or hidden trigger', () => {
+  for (const guard of [{ isConnected: false }, { hasAttribute: () => true }, { getAttribute: () => 'true' }, { closest: () => ({}) }]) {
+    base(); const message = { id: 'a1', role: 'model', text: 'Synthetic reply', agentRunId: 'synthetic-run' };
+    production.chatState.messages = [message]; const view = chat(); let focused = false;
+    const trigger = { isConnected: true, hasAttribute: () => false, getAttribute: () => null, closest: () => null, focus: () => { focused = true; }, ...guard };
+    label(node(view.tree, 'ChatTimeline').props.renderItem(message).props.footer, '詳情').props.onPress(trigger);
+    rerender(view); node(view.tree, 'AgentConversation').props.onDismiss(); rerender(view);
+    node(view.tree, 'AgentConversation').props.onClosed();
+    assert.equal(focused, false);
+  }
+});
+
+test('settings navigation drops the reply details focus target', () => {
+  base(); const message = { id: 'a1', role: 'model', text: 'Synthetic reply', agentRunId: 'synthetic-run' };
+  production.chatState.messages = [message]; const view = chat(); let focused = false;
+  const trigger = { isConnected: true, hasAttribute: () => false, getAttribute: () => null, closest: () => null, focus: () => { focused = true; } };
+  label(node(view.tree, 'ChatTimeline').props.renderItem(message).props.footer, '詳情').props.onPress(trigger);
+  rerender(view); node(view.tree, 'AgentConversation').props.onOpenSettings(); rerender(view);
+  node(view.tree, 'AgentConversation').props.onClosed();
+  assert.deepEqual(calls.at(-1), ['route', '/settings?section=assistant']);
+  assert.equal(focused, false);
+});
+
+test('activity forwards post-close notification and shares dismissal with its close button', () => {
+  base(); const dismiss = () => {}, closed = () => {};
+  const view = render(AgentConversation, { visible: true, onDismiss: dismiss, onClosed: closed, onOpenSettings: noop, onReloadChat: noop, reloadDisabled: false });
+  assert.equal(view.tree.props.onDismiss, dismiss);
+  assert.equal(view.tree.props.onClosed, closed);
+  assert.equal(label(view.tree, '關閉').props.onPress, dismiss);
 });

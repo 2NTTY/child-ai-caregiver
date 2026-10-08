@@ -58,19 +58,22 @@ export function TaskHistoryView({ searchText, dateRange, scrollRef, scrollPositi
   const readUnavailable = listReadState === "loading" || listReadState === "error";
   const locked = model.reading || readUnavailable || ["saving", "unknown", "conflict"].includes(model.operation.state) || !!model.draft;
   const listVisible = wide || !showPanel;
+  const filtered = !!searchText.trim() || !!dateRange.from || !!dateRange.to;
+  const emptyMessage = filtered ? model.hasMoreTasks ? "已載入的事項中沒有符合篩選的事項" : "沒有符合篩選的事項"
+    : model.hasMoreTasks ? "已載入的事項中暫無完成或取消的事項" : "暫無完成或取消的事項";
   return <View style={styles.workspace}>
     <StatusAnnouncement eventKey={model.access} urgent={model.access === "lost"} message={model.access === "lost" ? "孩子權限已失效；事項及歷史已清除。" : ""} />
     {model.access === "lost" ? <SectionCard><Text style={styles.warning}>孩子權限已失效，沒有顯示這個孩子的事項或歷史。</Text></SectionCard> : <>
       <WriteRecoveryNotice operation={model.operation} recovery={recovery} online={model.online && !model.reading} />
       {model.access === "read_only" ? <Text style={styles.meta}>目前為唯讀；可查看已載入事項及歷史。</Text> : null}
       <Text style={styles.meta}>按完成／取消日期篩選（{model.scheduleContext.timeZone === "Asia/Hong_Kong" ? "香港時間" : model.scheduleContext.timeZone}）。{model.hasMoreTasks ? "搜尋只包括已載入事項；仍有事項未載入。" : ""}</Text>
-      {!readUnavailable && unknownDates > 0 ? <Text style={styles.meta}>{unknownDates} 項完成／取消日期未提供，不包括在日期篩選內。</Text> : null}
+      {!readUnavailable && (dateRange.from || dateRange.to) && unknownDates > 0 ? <Text style={styles.meta}>{unknownDates} 項完成／取消日期未提供，不包括在日期篩選內。</Text> : null}
       <View ref={layout.ref} onLayout={layout.onLayout} style={[styles.workspace, wide && showPanel && styles.split]}>
         <View ref={listRef} tabIndex={-1} testID="task-history-list" style={[styles.column, !listVisible && styles.hidden]} aria-hidden={!listVisible} pointerEvents={listVisible ? "auto" : "none"} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
-          <ReadStateNotice state={listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty"} message={listReadState === "loading" ? "正在讀取事項歷史…" : listReadState === "error" ? "未能讀取事項歷史，請重試。" : !model.online ? "目前離線，已載入內容可能不是最新。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : !visible.length ? "沒有符合篩選的事項。" : ""}>
+          <ReadStateNotice state={listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty"} message={listReadState === "loading" ? "正在讀取事項歷史…" : listReadState === "error" ? "未能讀取事項歷史，請重試。" : !model.online ? "目前離線，已載入內容可能不是最新。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : !visible.length ? emptyMessage : ""}>
             {(listReadState === "error" || listReadState === "stale" || !model.online) && recovery?.reloadCurrent ? <AppButton label="重新讀取事項" variant="secondary" density="compact" disabled={!model.online || model.reading || ["saving", "unknown", "conflict"].includes(model.operation.state) || !!model.draft} onPress={recovery.reloadCurrent} /> : null}
           </ReadStateNotice>
-          {!readUnavailable ? <Text style={styles.meta}>{visible.length} 項符合</Text> : null}
+          {!readUnavailable && visible.length > 0 ? <Text style={styles.meta}>{model.hasMoreTasks ? "已載入的事項中有 " : ""}{visible.length} 項符合</Text> : null}
           {!readUnavailable && visible.map(task => {
             const cancelledAt = task.terminalAt ? DateTime.fromISO(task.terminalAt, { setZone: true }).setZone(model.scheduleContext.timeZone) : null;
             const time = task.occurrence.state === "completed" ? taskCompletionLabel(task, model.scheduleContext.timeZone) : cancelledAt?.isValid ? `${cancelledAt.toFormat("M月d日 HH:mm")} 取消` : "取消時間未提供";

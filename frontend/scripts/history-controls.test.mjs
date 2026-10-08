@@ -35,12 +35,31 @@ function harness(width = 1024, initialCategory = 'growth') {
   const dependencies = {
     'react': react, 'react/jsx-runtime': require('react/jsx-runtime'), 'react-native': native, 'react-native-paper': paper,
     'expo-router': {useRouter: () => ({push: value => events.push(['push', value]), setParams() {}})},
-    '../preview/PreviewContext': {usePreview: () => ({actions: {}})},
+    '../production/ProductionProvider': {useProduction: () => ({identityKey: 'synthetic-parent', scopeKey: 'scope-a', model: {selectedChildId: 'child-a', children: [{id: 'child-a', displayName: 'A', accessRole: 'owner'}]}, actions: {prepareQuestion: value => events.push(['prepare-question', value])}})},
     '../preview/PreviewNavigationGuard': {usePreviewNavigation: () => callback => {events.push('guard'); callback();}},
     '../components/useContainerWidth': {useContainerWidth: () => ({width, ref: null, onLayout() {}})},
     '../components/history/history-filters': historyFilters,
     '../components/date-time': {timeZoneLabel: value => value},
     '../preparation-view-model': {searchPreparationHistory: () => []},
+    '../components/DateTimeFields': {AppDateField: 'AppDateField'},
+    '../components/PageFrame': {PageFrame: 'PageFrame'},
+    '../components/ui': {AppButton: 'AppButton', AppSelect: 'AppSelect', AppTabPanel: 'AppTabPanel', AppTextField: 'AppTextField', UnderlineTabs: 'UnderlineTabs'},
+    '../components/tasks/TaskHistoryView': {TaskHistoryView: 'TaskHistoryView'},
+    '../components/care/CareReviewHistoryView': {CareReviewHistoryView: 'CareReviewHistoryView'},
+    '../components/care/CareSavedRecordsView': {CareSavedRecordsView: 'CareSavedRecordsView'},
+    '../components/preparations/PreparationWorkspace': {PreparationHistoryView: 'PreparationHistoryView'},
+    '../components/growth/GrowthHistoryView': {GrowthHistoryView: 'GrowthHistoryView'},
+    '../workspaces/TasksWorkspace': {useTasksWorkspace: workspace.useTasksWorkspace},
+    '../workspaces/CareWorkspace': {useCareWorkspace: workspace.useCareWorkspace},
+    '../workspaces/PreparationWorkspace': {usePreparationWorkspace: workspace.usePreparationWorkspace},
+    '../workspaces/GrowthWorkspace': {useGrowthWorkspace: workspace.useGrowthWorkspace},
+    '../theme': theme,
+    './useInteractionDensity': {useInteractionDensity: () => false},
+    './AppScrollView': {AppScrollView: 'AppScrollView'}, './AppIcon': {AppIcon: 'AppIcon'},
+    './AppRadioItem': {AppRadioItem: 'AppRadioItem'}, './AppDialog': {AppDialog: 'AppDialog'},
+    '../motion': {MotionEntrance: 'MotionEntrance'}, './AppStatusBadge': {AppStatusBadge: 'AppStatusBadge'},
+    '../motion/MotionSelectionMarker': {MotionSelectionMarker: 'MotionSelectionMarker'},
+    './HorizontalOverflowRail': {HorizontalOverflowRail: 'HorizontalOverflowRail'},
   };
   function load(relative) {
     if (cache.has(relative)) return cache.get(relative);
@@ -48,7 +67,7 @@ function harness(width = 1024, initialCategory = 'growth') {
     const output = ts.transpileModule(readFileSync(filename, 'utf8'), {fileName: filename, compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022}, reportDiagnostics: true});
     assert.equal(output.diagnostics.filter(item => item.category === ts.DiagnosticCategory.Error).length, 0);
     const module = {exports: {}};
-    const resolve = name => dependencies[name] ?? (name.includes('/workspaces/') ? workspace : name.endsWith('/theme') ? theme : name.endsWith('/useInteractionDensity') ? {useInteractionDensity: () => false} : new Proxy({}, {get: (_target, key) => String(key)}));
+    const resolve = name => { assert.ok(Object.hasOwn(dependencies, name), `Unmocked History dependency: ${name}`); return dependencies[name]; };
     new Function('require', 'module', 'exports', output.outputText + (relative.endsWith('historyScreen.tsx') ? '\nexports.HistoryWorkspace = HistoryWorkspace;' : ''))(resolve, module, module.exports);
     cache.set(relative, module.exports); return module.exports;
   }
@@ -171,8 +190,12 @@ function closedHistoryHarness(width = 1024, touch = false) {
     '../../workspaces/GrowthWorkspace': {useGrowthWorkspace: () => workspace},
     '../../theme': {colors: {line: '#CAC9D4', controlSurface: '#FFFFFE', ink: '#272343', quietSurface: '#EDFAF9', paleTeal: '#E3F6F5'}, mobileLayout: {breakpoint: 650, touchTarget: 48}, radius: {small: 10}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}},
     './growth-styles': {growthStyles: {stack: {gap: 12}}},
+    '../ui': {AppButton: 'AppButton'}, '../AppIcon': {AppIcon: 'AppIcon'},
+    './GrowthConcernTimeline': {GrowthConcernTimeline: 'GrowthConcernTimeline'},
+    './GrowthOperationRecovery': {GrowthOperationRecovery: 'GrowthOperationRecovery'},
+    '../StatusAnnouncement': {StatusAnnouncement: 'StatusAnnouncement'},
   };
-  new Function('require', 'module', 'exports', output)(name => dependencies[name] ?? new Proxy({}, {get: (_target, key) => String(key)}), module, module.exports);
+  new Function('require', 'module', 'exports', output)(name => { assert.ok(Object.hasOwn(dependencies, name), `Unmocked closed-history dependency: ${name}`); return dependencies[name]; }, module, module.exports);
   return {calls, get workspace() {return workspace;}, setWorkspace(value) {workspace = value;}, render(searchText = '') {cursor = 0; return module.exports.GrowthHistoryView({searchText, dateRange: {from: null, to: null}, onTask() {}});}};
 }
 const identified = (tree, id) => nodes(tree).find(node => node.props?.testID === id);

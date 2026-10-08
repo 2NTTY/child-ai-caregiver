@@ -125,3 +125,27 @@ Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定�
 沿已確認方案採 `@react-pdf/renderer 4.9.0`（MIT），復用 Node `renderToBuffer`／自動分頁／字體內嵌，不自建 PDF 排版器。[官方 Node API](https://react-pdf.org/docs/v4/node)、[字體限制](https://react-pdf.org/docs/v4/fonts)、[相容性](https://react-pdf.org/docs/v4/compatibility)及官方 package／license 已核對。React 19 在支援範圍；官方相容頁沒有列 Node 24，不將文件相容當實測。實際 Node 24.19 的一份繁中合成 PDF 已輸出、抽取文字及渲染核對，零模型。
 
 字體採原版 LXGW WenKai TC v1.522 靜態 TTF（OFL 1.1），原授權及 hash 見 [字體記錄](../server/assets/fonts/README.md)。不用官方明示不適用的可變字體，不向外部 URL 傳送家庭正文；server/assets 隨既有 Server image 複製。這是 PDF 字體，不替换使用者確認的前端設計。
+
+
+### P2-A03 文件局部修改（2026-10-08）
+
+沿用現有 typed actions、Zod、PostgreSQL 交易及原 opId 收據，不新增編輯框架或 PDF 引擎。主模型核對 [RFC 6902 §3–5](https://www.rfc-editor.org/rfc/rfc6902) 的依序操作、明確目標與失敗中止；通用 JSON Pointer／陣列索引不處理本項目的穩定章節、來源權限及編輯保護，因此採受限業務 edits，並非實作通用 RFC 6902 endpoint。改寫同一份快照、固定版本分段讀取及 SQL keyset 分頁均沿既有依賴；不下載或複製第三方 patch 原始碼，沒有新增 license 義務。文件已核對，實測結果依 A03 驗收證據記錄。
+
+
+### P2-A04 官方資料解析與檢索（2026-10-08）
+
+沿用 PostgreSQL 18.6／pgvector 0.8.6 的精確搜尋、Cheerio 1.2.0 及既有來源 worker。排名在過濾後的 SQL 有界取回，引用按 ID 重驗；沒有新增 RAG framework、第二資料庫或相似度即可信度的判定。含義核對及來源授權仍是產品責任。
+
+文字型 PDF 採固定 `pdfjs-dist 6.4.299`（Apache-2.0，官方宣告 Node >=22.13.0 或 >=24），已有 react-pdf 是報告輸出工具，不提供正文抽取，故不重用為解析器。主模型核對 [官方 Node 範例](https://github.com/mozilla/pdf.js/blob/v6.4.299/examples/node/getinfo.mjs)、[固定 API](https://github.com/mozilla/pdf.js/blob/v6.4.299/src/display/api.js) 及套件 metadata；本機 Node24.11 的標準 build 缺 toHex，沿官方 legacy build 解決，不自建polyfill。頁批次、hash、取消、local CMap／font resources及抽取品質分開驗。PDF頁有文字不等於完整正文，只有頁碼亦不能合格；不新增OCR或外部文件服務。
+
+
+### P2-A05 成長整理（2026-10-08）
+
+沿用 pg-boss、PostgreSQL 交易、現有領域來源解碼及 FamilyDocument；每批有界掃描、加密進度與完整統計是本項目資料／權限語義，沒有引入通用報表或新 workflow 框架。PDF 沿用上方 INT-W06 的 @react-pdf/renderer 4.9.0／靜態繁中文字體，不重做研究或改版。既有文件相容性證據復用；本包必要實測與未驗範圍另記 verification。
+
+
+### P2-A08 帳戶與郵件（2026-10-08）
+
+沿用 Better Auth 1.7.5 的驗證、密碼找回及會話撤銷，沒有重造身份或 token 系統。主模型核對原生 transaction／hook 及 server-only verifyPassword；業務邀請、資料處理確認、可靠刪除及備份後抑制仍由產品服務處理。方法見 [Skill](../.agents/skills/better-auth-account-lifecycle/SKILL.md)。
+
+根依賴缺郵件 transport，採固定 Nodemailer 10.0.16（MIT-0；Node >=20）及 @types/nodemailer 8.0.2（MIT），沿現有 pg-boss 交易 outbox；使用標準 SMTP／STARTTLS 與正常憑證驗證，不綁單一商用郵件平台或自寫 SMTP 生產 client。[官方 SMTP](https://nodemailer.com/smtp)及安裝版本已核對；本機 capture、真收件箱及正式部署的證據分開記錄。

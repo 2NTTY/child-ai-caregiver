@@ -1,3 +1,4 @@
+import { AUTH_MAIL_QUEUE, AUTH_MAIL_OPTIONS } from "./auth-mail.ts";
 import { CONTACT_QUEUE,CONTACT_OPTIONS } from "./contact-events.ts";
 import { PgBoss, type Db, type JobWithMetadata } from "pg-boss";
 import { TELEGRAM_QUEUE,TELEGRAM_JOB_OPTIONS } from "./telegram-events.ts";
@@ -11,6 +12,7 @@ import { WEB_PUSH_QUEUE, WEB_PUSH_JOB_OPTIONS } from "./web-push-types.ts";
 import { GROWTH_CHECK_QUEUE,GROWTH_AGENT_QUEUE,GROWTH_JOB_OPTIONS } from "./growth-events.ts";
 import { CONCERN_CHECK_QUEUE,CONCERN_AGENT_QUEUE,CONCERN_JOB_OPTIONS } from "./concern-events.ts";
 import { DOCUMENT_REFRESH_QUEUE,DOCUMENT_REFRESH_OPTIONS } from "./family-document-worker.ts";
+import { WORK_CONTINUATION_CHECK_QUEUE, WORK_CONTINUATION_QUEUE, WORK_CONTINUATION_OPTIONS } from "./agent-work-continuation.ts";
 
 export const TASK_QUEUE = "task-due-v1", FAILED_QUEUE = "task-failed-v1";
 export const JOB_OPTIONS = { heartbeatSeconds: 60, expireInSeconds: 90, retryLimit: 2, retryDelay: 5,
@@ -56,6 +58,7 @@ export function createWorkerQueue(pool: Pool, mode: "producer" | "worker" | "mig
       }
       await boss.start();
       if (mode === "migrate") {
+        await boss.createQueue(AUTH_MAIL_QUEUE, AUTH_MAIL_OPTIONS);
         await boss.createQueue(WEB_PUSH_QUEUE, WEB_PUSH_JOB_OPTIONS);
         await boss.createQueue(TELEGRAM_QUEUE, TELEGRAM_JOB_OPTIONS);
         await boss.createQueue(CONTACT_QUEUE, CONTACT_OPTIONS);
@@ -68,6 +71,8 @@ export function createWorkerQueue(pool: Pool, mode: "producer" | "worker" | "mig
         await boss.createQueue(CONCERN_CHECK_QUEUE, {...CONCERN_JOB_OPTIONS,policy:"exclusive"});
         await boss.createQueue(CONCERN_AGENT_QUEUE, CONCERN_JOB_OPTIONS);
         await boss.createQueue(DOCUMENT_REFRESH_QUEUE, { ...DOCUMENT_REFRESH_OPTIONS, policy: "exclusive" });
+        await boss.createQueue(WORK_CONTINUATION_CHECK_QUEUE, { ...WORK_CONTINUATION_OPTIONS, policy: "exclusive" });
+        await boss.createQueue(WORK_CONTINUATION_QUEUE, WORK_CONTINUATION_OPTIONS);
         if ((await boss.getBamEntries()).some(entry => entry.status !== "completed")) throw new Error("worker_schema_maintenance_pending");
       } else if (!await boss.getQueue(TASK_QUEUE) || !await boss.getQueue(FAILED_QUEUE)) throw new Error("worker_queues_missing");
     },

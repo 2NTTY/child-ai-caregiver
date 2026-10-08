@@ -1,0 +1,128 @@
+{
+  "package": "P2-A05",
+  "base": "f67b8077dc18c5f05d868a0e1a823f065b4a40a8",
+  "recordedAt": "2026-10-07T22:41:57.923Z",
+  "runtime": {
+    "node": "24.11.0",
+    "npm": "11.6.1",
+    "postgres": "18.6",
+    "pgvector": "0.8.6",
+    "pdfjs": "6.4.299"
+  },
+  "review": {
+    "primary": true,
+    "scope": "Bounded encrypted aggregation, source revision and access/expiry invalidation, same document/snapshot identity, limited excerpt vs complete counts, UI progress and strict wire parsing"
+  },
+  "verification": {
+    "offline": {
+      "reportAggregate": "One aggregate case passed; executor tool output retained, original stdout not separately saved",
+      "client": "One real route plus strict client building/complete case passed; stub store, not SQL evidence",
+      "types": "Scoped server/test typecheck and five UI/client roots passed; not whole repository",
+      "evidence": [
+        "P2_A05_CLIENT_FINAL.log",
+        "P2_A05_UI_TYPES_FINAL.log"
+      ]
+    },
+    "sql": {
+      "migration032": "passed",
+      "checksum": "e9d058603f4179976d6bcd71dd9dfb495acb63b3af252e8394315b6b5a48c3a4",
+      "originalBatch": {
+        "status": "failed",
+        "businessCalls": 15,
+        "poolRebuilds": 1,
+        "pdfRenders": 1,
+        "passed": [
+          "encrypted checkpoint and reviewed migration",
+          "paused worker and encrypted synthetic sources",
+          "operation replay, resumed pages and pool reconstruction",
+          "105 period records, 1 unknown date, 101 observations, 209 scanned",
+          "fixed snapshot export and content match"
+        ],
+        "stop": "PDF harness called destroy on PDF proxy instead of its loading task; text assertion and later groups did not execute",
+        "blockedFetchAttempts": 1,
+        "successfulExternalFetches": 0,
+        "fixture": "Preserved for bounded remaining acceptance; original failure is not relabelled"
+      },
+      "supplemental": {
+        "status": "passed",
+        "businessCalls": 22,
+        "pdfRenders": 1,
+        "groups": [
+          "original_fixture_and_successful_receipt_recovered",
+          "same_snapshot_pdf_and_current_isolation",
+          "fixed_living_coexist_and_one_active_living",
+          "unselected_correction_hides_archive_content_history_pdf_and_original_receipt",
+          "exact_original_fixture_cleanup"
+        ],
+        "pdf": {
+          "snapshotId": "87e679e8-4747-46d4-8d08-33ad240d3fe3",
+          "snapshotVersion": 8,
+          "bytes": 66430,
+          "pages": 6,
+          "sha256": "bd2f523a7550aa570c36ea2b90a2f2c803625838835f6db447c9631a64edd2ae",
+          "countConfirmed": 105
+        },
+        "originalNetworkCountClarification": "The only fetch was yoga-layout embedded data: WASM, not an external request; original log remains unchanged.",
+        "networkAttempts": 0,
+        "combinedBusinessCalls": 37,
+        "combinedPdfRenders": 2,
+        "nonFixtureBefore": {
+          "users": 65,
+          "workspaces": 37,
+          "children": 14,
+          "documents": 0,
+          "snapshots": 0,
+          "operations": 0,
+          "records": 9,
+          "record_revisions": 1,
+          "concerns": 0,
+          "events": 0,
+          "online_changes": 242,
+          "worker_enabled": false,
+          "worker_generation": "0fc82841-ae94-4d10-ab9f-c5a53df5cbd8"
+        },
+        "nonFixtureAfter": {
+          "users": 65,
+          "workspaces": 37,
+          "children": 14,
+          "documents": 0,
+          "snapshots": 0,
+          "operations": 0,
+          "records": 9,
+          "record_revisions": 1,
+          "concerns": 0,
+          "events": 0,
+          "online_changes": 242,
+          "worker_enabled": false,
+          "worker_generation": "0fc82841-ae94-4d10-ab9f-c5a53df5cbd8"
+        },
+        "raw": "P2_A05_RESUME_2026-10-07T22-39-59-521Z.log"
+      }
+    },
+    "diffCheck": "passed before final evidence updates"
+  },
+  "checkpoint": {
+    "type": "encrypted local database only",
+    "bytes": 404913,
+    "sha256": "4c6e1a80c7de877d38a812d83469fedb7c6e963e97da2d9d87c0ab5de4aceb6a",
+    "photos": "Untouched; not paired restore acceptance"
+  },
+  "notRun": [
+    "new real model or embedding",
+    "live scheduled worker or midnight transition",
+    "browser E2E",
+    "cloud deployment",
+    "paired restore"
+  ],
+  "gate": "Primary accepts minimal A05 functional evidence; first harness failure retained. Real scheduled worker/day transition and deployed representative flow remain A09.",
+  "attribution": {
+    "owner": "C",
+    "weight": 3,
+    "shares": {
+      "C": 50,
+      "B": 30,
+      "A": 20
+    },
+    "assistance": "Shared AI coordinated by A; main contracts/prompt/UI/review, one Sol6.1 xhigh report implementation and minimal acceptance, Luna readonly location. No claim of independent human implementation/test."
+  }
+}

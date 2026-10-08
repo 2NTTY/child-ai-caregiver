@@ -114,7 +114,18 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch)
         signal: controller.signal,
       });
       // Remote error bodies may contain private data or infrastructure details.
-      if (!response.ok) throw new ClientApiError(response.status);
+      if (!response.ok) {
+        let code: string | null = null;
+        if (path.startsWith("/auth/")) {
+          try { const value = await response.json();
+            const candidate = value?.code ?? value?.error?.code;
+            if (candidate === "invitation_required" || candidate === "EMAIL_NOT_VERIFIED") code = candidate;
+            // Better Auth's create-user validation may return the approved invitation reason as its message.
+            if (value?.message === "invitation_required") code = "invitation_required";
+          } catch { /* Keep status only; never expose remote error text. */ }
+        }
+        throw new ClientApiError(response.status, code);
+      }
       return await response.json();
     } catch (error) {
       if (error instanceof ClientApiError) throw error;

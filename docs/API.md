@@ -89,7 +89,8 @@ INT-W02 增補：`GET／POST /api/children/:childId/agent/policy` 管理本人�
 
 `GET /agent/notes?query=…&afterId=…` 返回 `{notes:{items,nextAfterId}}`；是本人普通交代的權威來源，不複製成已確認事實。`POST /agent/notes/:id/delete` 需 `operationId／expectedVersion／confirmDelete:true`。`GET /agent/actions?runId=…` 返回 `{receipts}`，只讀本人／孩子原運行的已提交操作；收據含資源 ID、版本、保存／排程／終態及通知授權狀態，不以模型文字推定成功。上述路徑均以 `/api/children/:childId` 為前綴並重核 session；未套用 migration 025 不啟用新操作。
 
-容量契約增補：工具選擇以當前本人指令為主，只有明確短延續語才參考上一則本人訊息，不把助手回覆或無關舊意圖疊入；明確待辦標題／內容屬資料，禁止通知等子句不會僅因關鍵字開啟該工具。多個正向意圖保留，工具選擇從不代表授權。gateway 的完整 contents／config 邏輯 JSON 按運行共用的 inputCharacters 上限檢查（UTF-16 字元，不等於 SDK 後續加入固定設定後的 HTTP body 大小或 token 數）。互動 Agent 由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 設定，預設 64,000、允許 32,000–64,000；背景仍為 32,000。原 P1 AI_MAX_INPUT_CHARACTERS 與模型次數／輸出／時間及配額不因此改變。
+<a id="agent-input-capacity"></a>
+容量契約增補：P2-A01 已以[語義能力集合](#semantic-capability-tools)取代「當前指令＋短延續詞」工具選擇，目標依[語義工具契約](#p2-agent-service)，授權仍由 Server 判定，資料正文不升格為指令。gateway 的完整 contents／config 邏輯 JSON 按運行共用的 inputCharacters 上限檢查（UTF-16 字元，不等於 SDK 後續加入固定設定後的 HTTP body 大小或 token 數）。互動 Agent 由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 設定，預設 64,000、允許 32,000–64,000；背景仍為 32,000。原 P1 AI_MAX_INPUT_CHARACTERS 與模型次數／輸出／時間及配額不因此改變。
 
 `read_context` 在整體 request 剩餘容量內只給一份完整、有序的原訊息前綴；`privateSummaryInput.messageIds` 引用同次提供的原文，舊摘要只提供一次。明示 omitted／more／complete，不能把未讀部分說成已摘要。Server 對摘要批次重新核對 previousVersion、basis 及連續前綴 coverage，來源改變仍拒絕。固定 metadata 放不下時明示 context_input_limit，不暗刪事實或任務；原生工具協定／signatures 不被截斷。
 
@@ -102,6 +103,16 @@ INT-W03 增補 `allowRecordCorrections`，既有政策及未提供欄位預設 f
 原生 `save_ordinary_record`／`save_private_instruction`／`revise_private_instruction`／`create_ordinary_reminder`／`change_ordinary_reminder` 各採單一參數形狀，共用相同業務操作與收據；只接受互動 run、當次來源訊息、精確 sourceQuote、目前政策版本及允許的動作，由同一交易調用原 CareStore／TaskStore 並保存收據；背景 run 不取得此工具。原 call ID 的精確重試及同 run 等價動作沿用原收據；政策撤回、權限／版本改變及任務終態仍拒絕新效果。工具成功但文字收尾失敗，依台帳顯示已保存結果，不再次執行。`read_context.uncoveredConversation` 顯式區分摘要已覆蓋與尚未覆蓋的原文；只返回完整訊息，超出有界輸入時列未讀部分，不承諾完整記得全部聊天。
 
 背景 product-background 因已核准到期提醒或 S13-W08 新關注基準入列，讀取家庭共享上下文並保存本人站內說明；不讀私人聊天、建立新任務或發出外部通知。成長關注接線見 S13-W08；預授權聯絡由 W07 的接線及授權掌管。必要真 SQL、Gemini／embedding、worker 恢復與修正範圍分列 [S11 證據](../artifacts/verification/S11_W02_CHECKS.json)及 [W08 證據](../artifacts/verification/S13_W08_CHECKS.json)；完整 Agent／關注 UI 情景未驗，不以其他包的瀏覽器證據代替。
+
+
+<a id="semantic-capability-tools"></a>
+### P2-A01 已接線的語義能力集合
+
+互動 reply 固定使用 product-interactive，工具是否存在不再由最後一句／延續詞 regex 或 summary 字詞决定。Server 提供的實際業務工具按 `PRODUCT_AGENT_TOOL_CATALOG` 分為常用核心與能力群；`load_capabilities({capabilities:[id,...]})` 沿同一 strict schema、授權、用量與取消管線載入，不能擴權或直接執行業務。不存在的服務不列目錄；配置遺漏／重複歸屬拒絕。
+
+ADK BaseToolset 每步解析核心＋已載入群，metadata.capabilityCatalog 列出可用群與 loaded；同一 batch 尚未載入的工具仍拒絕。群對應的 Server prompt module IDs 沿既有 manifest 去重／依賴核對，不接受模型路徑。集合按 run 隔離、單調增加；terminal 收尾保持可見，repair 僅可 present_answer。未提供 catalog 的背景／其他 run 保留原固定工具邊界。
+
+此接線沒有新增持久工作、跨輪寫入來源、確認政策、正文 patch 或新業務 API；相關增補依 [總計劃](../PLAN.md#p2-agent-service) 的後續包。最低離線證據見 [A01](../artifacts/verification/P2_A01_CHECKS.json)，不當作完整真 Agent 驗收。
 
 <a id="knowledge-retrieval-contract"></a>
 ### P2 最小向量檢索契約
@@ -116,12 +127,23 @@ INT-W03 增補 `allowRecordCorrections`，既有政策及未提供欄位預設 f
 
 [KnowledgeRetriever](../server/knowledge-retriever.ts) 的 `createRun({actor,budget,authorize})` 接收 Server 權威身份、既有運行預算及即時權限回查。`search(query, filter)` 回傳 [KnowledgeResult](../src/shared/knowledge.ts)，包括實際模式、片段短原文 `sourceExcerpt`、經核對精簡轉述 `text`、來源及版本；此處是內部檢索契約，S11-W02 的 ADK／HTTP 接線見上文。`revalidateCitations` 在交付前重查片段／版本／hash 和適用性，不作內容語義判定。維護 CLI 及限額見 [操作文件](P2_KNOWLEDGE.md)；接線驗收按 [S11-W02](../PLAN.md#s11-w02) 的版本化證據。
 
+<a id="knowledge-a04-contract"></a>
+### P2-A04 語義查詢、同版擴讀及新版核對
+
+- Agent 自行按多輪情境提出公共主題查詢，不解析思考文字或按最後一句關鍵詞開能力。`search_knowledge` 可帶查詢年齡假設及原話依據；Server 核對本人／孩子的使用者訊息或目前檔案版本。這只供找資料，不能寫成生日、確認事實或精確時程資格。原話／數值詮釋／未知精度分開；條件性命中須補問或明說適用條件。
+- 精確已確認年齡沿既有包含範圍；數字約數按原 asOf 與經過時間作仍屬約數的檢索提示，回傳日期基準；無效／未來基準保持未知。約數／查詢假設可按相交年齡範圍找候選，未知年齡可找相關內容但回傳需要核對適用性。不因缺生日封死知識，也不把模型的數值解讀當 Server 已驗事實。地區、分類、公開範圍、來源有效性仍由 Server 控制。
+- SQL 先套用有效版本／權限／地域，再分別取有界向量及關鍵詞排名並 RRF；不先拉全庫，也不因總量超過 1,000 便失敗。最多六個結果；引用重驗按實際 ID 查，不能在排名前綴中找不到便判引用失效。embedding 及總 run 限額不變。
+- `read_knowledge_context` 只擴讀當次已取得片段的同一有效版本；按穩定片段次序／頁碼分批取回，回傳已讀範圍、完整性及續讀位置。新片段也套用範圍及適用性標示，並累積實際回傳的引用範圍，未讀間隙不補造；不把只讀目錄、短摘錄或一頁當讀完全文。每次工具輸出有界，不能截斷必要例外卻不標示。
+- 官方文字型 PDF 用 PDF.js 按頁抽取，沿固定來源抓取安全限制；不執行附件脚本或另抓遠端資源。每批最多八頁、固定檔案 hash、保留實際頁碼與下一頁；空白／圖片／抽取失敗不冒充完整原文。匯入的有限章節可單獨核對，但須標明選取範圍，不宣稱整冊已收錄。私人附件不進此管線。
+- 新版 review 須保存對照版本／hash、變更片段、舊新原文依據、含義說明、年齡／數值單位／時程／條件／例外／禁止／撤回核對及受影響代表問題；成長規則有影響時保留待核，不自動改規則。只按 hash 或勾選已看條款不能發布重要新版。無法確定則 hold，已失效或有未核對變更的舊內容不得冒充最新。
+- 保留原 import／review／embed／publish 權威及操作人身分；review 與觀察資料在交易內綁當前版本。首次核對、重要改動核對及向量完成後按批准政策自動嘗試發布，失效／來源觀察變更時保留未發布並列明原因；不繞過維護費用上限。僅完全相同已核對內容的觀察刷新可沿用批准，不靠模型自報信心自動批准改動。來源暫時抓取失敗不等於撤回。
+
 <a id="knowledge-refresh-contract"></a>
 ### S10-W02 來源更新邊界
 
 共用 worker 以 pg-boss 原生每週／每日排程檢查固定、經條款核對的來源；job 只帶 watch ID、配置版本及 worker 世代。暫停、還原或配置失效後不抓取，網絡等待不持有 SQL 交易；回寫前再次核對。`knowledge-refresh.mjs` 只供主機操作者使用，沒有新增 Web 路由或模型可調用的管理工具。
 
-抓取結果是公共來源觀察資料，並非已發布知識。首次／變更內容須經操作者核對，將 observation hash 綁定至既有 reviewed version，再沿用有限 embedding／publish；hash 未變不重算向量，受影響片段以既有 embedding hash 去重。已登記來源的觀察版本不符、停用或 404／410 均不供引用；重新啟用或登記定義改變時，同一交易內撤銷舊內容批准，即使再改回原設定也不自動恢復。暫時抓取失敗保留先前內容及成功查核時間。候選新聞不自動寫入家庭事實或任務。
+抓取結果是公共來源觀察資料，並非已發布知識。P2-A04 在這個邊界增加語義核對與依政策自動發布，未接入前不把人工 hash 批准當成新門檻已完成。既有 S10-W02 實作中，首次／變更內容須經操作者核對，將 observation hash 綁定至既有 reviewed version，再沿用有限 embedding／publish；hash 未變不重算向量，受影響片段以既有 embedding hash 去重。已登記來源的觀察版本不符、停用或 404／410 均不供引用；重新啟用或登記定義改變時，同一交易內撤銷舊內容批准，即使再改回原設定也不自動恢復。暫時抓取失敗保留先前內容及成功查核時間。候選新聞不自動寫入家庭事實或任務。
 
 `KnowledgeEvidence.checkedAt` 保持人工核對時間；新增 `lastSuccessfulCheckAt` 表示成功來源抓取，未建立證據為 null。來源發布／修訂時間另存，缺日期不代填；近期資訊只取已核對發布、七日內且 24 小時內成功查核的項目。CHP／RTHK 來源只容許主機操作者明確使用 internal audience；公開 store 預設排除，usageScope 不由模型或瀏覽器選擇。這些 metadata 檢查不等於語義支持核對。操作與待驗項見 [P2_KNOWLEDGE](P2_KNOWLEDGE.md#source-refresh)。
 
@@ -605,4 +627,93 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 
 有觀察事件的舊版 concern:<id> 聚合來源只在讀取時用原算法建立臨時校驗投影，以原ID／版本／文字核對既有快照；不持久保存另一份資料、不放入新生成或新sourceBasis。舊來源仍有效時可按原同版讀取／PDF規則查看，但因來源模型更新而stale時須整理後才作需最新版本的操作；來源更正、刪除及撤權仍遮蔽。新觀察来源使用穩定 concern:<id>:observation:<eventId>，authority仍歸原關注資源，不放寬舊資料可見性。完全沒有觀察事件的關注保留原 concern:<id> 未提供日期來源及既有basis規則，不屬上述退役聚合。
 
-Agent 透過 read_family_documents／generate_family_document／change_family_document 使用同一服務。生成只接受用途／期間等結構化參數，不接受模型自由撰寫家庭正文；真實資源 ID／版本及操作收據才代表已保存。
+Agent 透過 read_family_documents／generate_family_document／change_family_document 使用同一服務。初次來源整理保留用途／期間等結構化參數；P2-A03 以下述局部修改取代「所有正文只能由固定模板產生」的限制。真實資源 ID／版本及操作收據才代表已保存。
+
+<a id="document-editing"></a>
+### P2-A03：同一文件的局部修改與續讀
+
+- 沿用 actions 與原 opId；新增 patch 動作，包含 expectedVersion、authorityVersion 及最多 12 個依序執行的 edits。所有修改在同一交易提交，任一不合法即整批回滾。只使用穩定 sectionId／itemId，不用畫面第幾行作持久索引，不接受可改權限／來源版本的任意 JSON path。
+- edits 支援 set_metadata（title／summary／eventDate）、upsert_section、remove_section、move_section、upsert_item、remove_item、move_item；文字有明確上限，整份文件有容量上限。未提及內容、ID、核對狀態及來源保持；換文字或來源的核對項目回到未核對。增補內容不是新孩子事實或醫療判斷，引用只能指向當前獲授權的共享來源。
+- 由本人直接在備援 API 提交的 patch 需明確 confirmShared；Agent 不可自行填 true 代替同意。Agent 僅移動／刪除既有項目等不增加披露的明確指令可經現有 writeDocument 直接執行；任何新增／替換正文、標題或摘要，先保存 family_document_change 候選，使用 A02 的綁定確認。候選列清文件、版本及逐項差異，共享範圍只限列出的整理；私人聊天原文、私人來源不隨之整批公開。接受時再次核對文件／授權／來源及原操作；可在聊天確認，不另建文件。 Server 在候選密文另綁 documentSourceBasis；接受前核對同一來源依據，不把舊候選文字自動套新來源版本。原文件或來源改變後，候選 public view 的 contentState=invalidated，正文／標題等遮蔽，原 ID／版本及真收據可保留；只能略過或重新核對，不能把遮蔽投影當作完整可接受內容。原加密候選不改寫。
+- 修改過的章節與欄位標記為人工／Agent 指定內容，刷新及背景來源整理保留；已刪章節不自動長回。受保護內容的原來源更正／失效時，停止刷新並回 document_edits_need_review，不把舊文當新資料或靜默覆盖。讀取仍遮蔽失效正文，只提供無正文的穩定結構識別，供明確刪除／替換後重新核對。背景刷新遇此明確待核對結果，只停止該文件的 dirty 重試，保留原快照並繼續其他文件；新的相關事件仍可標記待更新。純結構修復若只餘 ageLabel 的失效 profile 依據，可保存仍被遮蔽的過渡版本，下一次明確 refresh 才以新 profile 更新年齡；不丟失依據或冒稱正文已可用。版本恢复只形成同一文件的新版本，原歷史不改。
+- 清單及歷史採權限內 SQL keyset 分頁，游標綁本人／孩子／範圍／高水位，不以首頁表示全部。歸檔不佔用 50 份 active 文件額度；恢復同樣核對 active 上限及既有標準報告唯一性。
+- 工具先取得文件目錄與 snapshotId／snapshotVersion，再透過 read_family_document_content 依固定版本和 offset 讀每次最多 4,000 字元的快照 JSON；回傳已讀範圍、totalCharacters、nextOffset、complete 及 contentKind。有效正文為 snapshot_json；失效正文只可讀 redacted_manifest_json，僅穩定結構識別與必要版本，不含標題、摘要、正文或來源原文。complete 只指該 contentKind 讀完。目錄工具的章節概要亦有界，manifestPartial 明示未列齊，不在每段正文重帶完整目錄。不得因超過舊 7,000 字元限制而只返回空正文。中途換版不能拼接不同版本；歷史版本以 list_family_document_versions 的游標選取，再按同一固定版本讀取，當前權限及來源有效性仍適用。
+- HTTP 清單可帶 cursor；新增 /:id/content 與 /:id/versions 唯讀入口，共用工具與頁面的資料服務。範圍錯誤、權限失效及資料庫故障不偽裝成沒有資料。前端仍以閱讀、核對及對話整理為主，不改設計或另建可寫副本。
+
+實作沿用現有 typed actions／PostgreSQL 收據與版本交易；參考 [RFC 6902](https://www.rfc-editor.org/rfc/rfc6902) 的序列修改與失敗中止語義，並不宣稱提供其通用 JSON Patch 協定。任意 path／陣列位置不能代替本項目的穩定識別與來源控制，故無須引入通用 patch 引擎。2026-10-08 文件已核對，實作驗收按 A03 證據另記。
+
+<a id="p2-agent-service"></a>
+## P2 增補接口邊界
+
+本節為後續工作包的必要語義，不宣稱新增 HTTP 路由已實作；具體 wire 型別隨各包接既有服務。產品及驗收見 [SPEC](../SPEC.md#p2-agent-service)。
+
+- **能力目錄／載入：**Server 依入口、身份／授權及事件核定可用集合，提供簡短能力描述及核心讀取／搜尋／結果工具；模型以原生 function calling 選擇所需集合，再由 ADK 繼續循環。不得以最後一句／延續詞 regex 篩掉能力。載入不等於授權，任何未知／非法工具仍拒絕並計入上限。
+- **工作／歷史／原文讀取：**接受受權資源 ID、查詢及有界游標／範圍；返回實際資源版本、已讀範圍、完整度、續讀位置及限制原因。授權／資料庫錯誤與成功空結果分開。通用工作保存目標／焦點／問題／資源／結果，不另造任務副本或固定流程。
+- **操作／確認：**沿 expectedVersion、operationId、原訊息／工具及收據。跨輪確認必須能核對原提問、使用者回應、參數／對象及資源／授權版本；模糊、多候選、取消或舊版返回需要重新核對，不能由 confirmed:true 放行。相同已提交操作返回原收據；unknown 先查原操作，取消不宣稱已撤回外部接受結果。
+- **文件讀寫：**提供目錄／穩定節點 ID、固定版本範圍閱讀及局部新增／替換／刪除／移動。寫入含 documentId、expectedVersion、opId、具體 patch；交易核對後回傳保存版本與變更片段。版本衝突讀回再處理，不整份覆蓋；沒有讀全須明示。歸檔／歷史分頁，恢復沿原文件新版本。
+- **知識搜尋／擴讀：**query 保留必要語義及未知精度，Server 決定適用／權限過濾；SQL 先篩選排名及有界取回，RRF 去重。回傳穩定來源／片段／版本、章節頁碼、適用條件、核對及發布狀態、降級／不完整狀態及可續讀位置。同版本上下文擴讀也有界。引用須指實際返回的支持片段；embedding 失敗的關鍵詞降級不算向量驗收。
+- **範圍及衍生輸出：**讀取、摘要、文件及背景任務均核對來源／目的地，保留 coverage／版本／可見範圍；私人材料不擴至公共或共享。更正／撤權／失效時刷新相關 owner／候選／報告狀態；metadata 更新不能成為另一份正文權威。
+- **成長／報告：**日常讀取不生成；完整期間工作回傳固定期間、分批進度／coverage、來源版本及同版 PDF 引用，部分結果不稱完整。期間資料增多不以總數超限全失敗，也不隱藏未知日期。
+- **帳戶／資料退出：**復用 Better Auth 驗證／找回／會話原生機制；邀請單次資格與本人資料空間分開。下載／刪除需本人身份及相應具體確認，返回可追蹤狀態與保留政策；不在對話或模型參數傳 key／找回憑據。
+- **成本與結果：**讀取、工具載入、模型補查／修正／收尾仍在既有 run 預算；完整 HTTP／工具協定不靜默截斷。超限回傳已提交／未完成／unknown 與可接續工作，不自動新 run 或提高配額。前端只根據正式收據與目前資源顯示成功。
+
+<a id="persistent-agent-work"></a>
+### P2-A02 實作邊界：工作、原文及對話確認
+
+沿用原私人聊天、memory、proposal 及業務收據。新增本人／孩子範圍的工作保存目標、焦點、待答問題、原訊息引用、相關資源與待確認引用；它是模型整理的恢復資料，不能取代事實或任務終態。更新帶工作版本及原操作 ID，服務重啟後可查回，取消使該工作的未確認綁定失效；背景不自動取得私人工作。
+
+- **有界歷史與原文：**先 SQL 限定本人／孩子／資料類別及 keyset 頁，再解密有界資料；加密正文暫用有界掃描而非另建明文／公共索引。回傳掃描範圍、命中、完整度與續讀 cursor；查詢未掃完不說不存在。原文按訊息 ID＋範圍續讀；role 保留，模型回覆不能當本人陳述。記憶採分頁及有效性核對，不因超過一批便拒絕整個對話。
+- **多輪來源：**普通操作仍必須引用當前指令；可附最多六項已授權舊使用者訊息的逐字來源，補足日期、對象與內容。Server 核對本人／孩子、原文、時間先後及來源版本；引用歷史只補資料，不構成再次執行舊指令或新的共享／外發同意。歷史原文和工作都是不受信資料，不能覆盖工具規則。
+- **事實更正：**Agent 讀回具體 fact／version，提出 revise 或 deactivate 候選，接受時用原 MemoryStore 交易處理；重要事實不直接自動更正。私人／共享範圍不擴大，原來源與歷史保留，更正使依賴摘要重新核對。
+- **對話確認：**從一項既有 proposal 建立具體確認請求，綁定 proposal／參數摘要、目標／版本、當前授權／政策版本及期限。Server 產生完整具體問題，隨真正保存的 assistant 訊息綁定；不是模型自報已問。只有該問題為緊接上一則訊息、唯一有效候選、回覆為完整而無附帶更改的明確同意，才可沿原 decide 交易接受。此窄同意識別只保護確認，不篩選 Agent 可用能力；其餘說法交模型理解並重新列明或使用現有具名確認入口。多候選、已取消、過期、跨孩子、版本／權限／政策變更都不能以一句「好」執行。共享目的地須由 Server 問題明示；永久刪除不加入此快捷確認。
+- **重試：**綁定的本人回覆訊息、原候選及原操作識別共同去重，未知先查原結果。有權讀取的過期候選保留重新核對入口，不自動延長或換新候選繞過失效。
+
+實際接點沿 `/api/children/:childId/agent`：`GET /work`（cursor）及 `/work/:workId` 查本人工作；`GET /history?kind=message|private_instruction|memory_fact&query=…&cursor=…` 查有界歷史；`GET /history/messages/:messageId?offset=…&limit=…` 續讀同一原訊息（每次最多 4,000 字元）。維持 session 及 `x-expected-user-id`；工具與 HTTP 共用 store，不另建可寫頁面副本。工作每頁最多 10 項、歷史每頁最多掃 100 項／回 10 個命中；游標綁本人、孩子、類別、查詢及本次最高建立位置，新增訊息不改先前掃描範圍。記憶命中只是定位，當前適用性須讀回原事實核對。
+
+`save_work` 使用 `operationId／workId／expectedVersion`，每個 run／call 與原操作皆防重；`request_confirmation` 指向既有 `runId／proposalId／expectedVersion`，可綁 `workId`。新 `memory_fact_revise／memory_fact_deactivate` 候選由 Server 讀出 `targetVisibility`，前端不可猜測分享範圍。確認成功的實際收據加入當輪結果；後续模型或文字收尾失敗仍保留已成功操作，不重做。
+
+完整前端呈現由 A07 接回同一 owner，不在 A02 重做介面。
+
+<a id="p2-a05-reports"></a>
+### P2-A05：完整期間與日常成長成果
+
+沿用同一 documents create／refresh、原 opId、expectedVersion、authorityVersion 及固定 snapshot 的 content／PDF。growth_report 可選 reportMode=fixed（省略時沿用）或 living；living 的起日保留使用者指定、止日隨香港當日延展，固定季度／年度由實際起訖分類，不由標題猜測。準備單不接受 reportMode。建立或 refresh 只做有界的一批，剩餘工作保存並由既有文件 worker 接續；重試原 opId 不多處理一批。讀頁無副作用、不呼叫模型。
+
+FamilyDocument.report 回報 building／complete／needs_update、已掃來源數、期間、模式及來源修訂；building 不代表全文已完成。DocumentSnapshot.reportCoverage 只在所有來源頁完成後保存，含完整掃描數、期間內各類記錄筆數、未知日期筆數、任務／共享關注觀察／有效確認事實數及必要有效期。完整是目前已保存資料的覆蓋，不代表孩子生活全部發生過的事，無記錄不等於未發生；正文可以只展示清楚標示的有限重點，不能把選錄數當總數。
+
+資料或授權改變後先遮蔽失效聚合，不能從舊收據、歷史、分段或 PDF 讀出已失效原文。更新／歸檔沿同一文件；自動刷新保留 A03 指定修改，不能覆蓋人手內容。處理途中來源改變會重新建立該來源修訂的進度，不拼接不同版本；來源長期變動時如實保持未完成。
+
+<a id="p2-a06-continuation"></a>
+### P2-A06：工作跟進與真實結果
+
+save_work 的可選 followUp 包含 reason、dueAt（可空）、watchResources 及最多4個 knowledgeSourceIds；只有有用、具明確依據的工作才設定。省略／null 或工作終態會停止該工作的新跟進；時間不明不捏造，普通提醒及外發仍走既有任務／授權服務。Server 核對所有引用、已發布公共官方來源、本人／孩子及目前權限，保存既有資源版本作比較基線。知識內容含義未變只更新基線，不以抓取／排程／重啟時間製造新原因。
+
+背景先提供全部有關工作 ID／版本與有界摘要（總 context 至多3500字元）；省略正文、引用詳單或其他欄位須標明，可按工作 ID 續讀，不能把摘要當完整讀取。私人背景沿既有 ADK 原生載入器按需提供只讀能力，配方只組裝已有安全、知識與主動跟進模組；互動與任務外發配方保持原範圍，不增加32k／4次生成等上限。
+
+read_work 可附 latestFollowUp 的 eventId、runId、state、createdAt；read_background_result 透過既有本人 run 讀取入口回傳有界結果／引用，不將模型回覆當成新的同意或已確認事實。queued、completed、stopped、unknown、cancelled 分開，未知不能重新生成。私人變更事件只通知本人 owner；正式頁面由 A07 接回同一工作及結果。
+
+關注容量沿 draft #111 的受檢邊界：普通事件200、另兩格只供結束跟進／歸檔；029遷移收據成立才寫201–202。到頂仍可取消／結束，不能刪歷史騰位；滿額恢復／新增普通事件仍拒絕。部署须先更新相容 API／worker／Web，已有保留格資料後不可回退200讀取器或縮窄SQL限制。
+
+
+<a id="p2-a08-service"></a>
+### P2-A08：邀請資格、本人資料與退出
+
+沿Better Auth原生註冊、電郵驗證、找回密碼及會話API；營運者以指定電郵授予有限期註冊資格，資格不加入別人的workspace。正式invited模式須具可用SMTP設定，新用戶驗證電郵並確認當前資料處理說明後才可使用業務API；原逐項模型／照片／私人來源／外發授權仍有效，不以一次確認擴大使用範圍。未啟用模式保留原合成試用相容，不等於已開放真實資料服務。
+
+GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POST /api/account/acknowledgement 帶policyVersion／accepted／operationId。原生找回後撤銷全部舊會話，使用者亦可主動撤銷其他會話。驗證／找回URL以原生期限及同源目的地校驗，固定電郵經加密outbox及既有queue送出；queued／accepted／failed／unknown分開，未知不自動重發；客戶端只說已受理請求。
+
+本人下載由固定白名單的有界資料頁／既有安全讀取器提供，標明scopeVersion、section、已讀／未讀及nextCursor；身份、權限或資料版本改變則停止該次下載重新核對，不把前綴當完整。只包含目前仍有權查看的本人／孩子資料及可追溯成果，私人來源／聊天不混入別人資料；不下載密碼、會話、API key、通知token或其他人的私人內容。照片透過原有受權限保護的讀取，不公開儲存目錄。
+
+永久刪除先POST /api/account/deletion/prepare（原operationId），保存短時效範圍及回覆收據能力；再POST /api/account/delete，帶同一operationId、receiptToken、完整「永久刪除我的帳戶」及由Better Auth核對的本人密碼。直接原生deleteUser保持關閉，不能繞過業務清理。未知結果以同一收據查回，不換新op；已刪帳戶的收據只顯示處理狀態，不披露身份或正文。
+
+單人帳戶刪除本人workspace／孩子及附屬私人內容、key、渠道、會話；其他workspace只撤去本人成員及連帶本人內容，並使既有來源／版本重新核對。本人仍擁有其他使用者參與的共享workspace時先明示阻塞，避免暗中刪掉其他成員資料；多人轉移不列本輪單人門檻。照片實體清理與資料庫刪除狀態分開。
+
+下載入口為 GET /api/account/export；固定section、childId、scopeVersion及加密cursor由 manifest 引導，不接受表名／SQL。收據查詢為 GET /api/account/deletion/:operationId，以 x-erasure-receipt 傳能力token；不放URL或日誌。短時效prepare收據綁原範圍；登出／切換身份清掉瀏覽器暫存，未知提交在同次會話沿原收據核對。
+
+
+<a id="p2-a07-library"></a>
+### P2-A07 正式歷史及參考讀取
+
+正式歷史沿A02工作／訊息原文cursor、各領域原清單與修訂API；通知沿A08本人notification_deliveries安全分頁，只代表本人渠道／聯絡／驗證信的投遞metadata，不冒稱全部屬當前孩子。搜尋及日期篩選須標示已掃範圍與續讀位置，不能以未載入當不存在。私人工作是Agent保存的目標／焦點／問題，不稱模型內部推理或完整run context。
+
+新增 GET /api/children/:childId/library?cursor=… 為唯讀公共來源目錄；核對session、expected user及孩子現行存取後，以sourceId keyset每頁最多10項。cursor綁本人／孩子及權限版本；只返回目前enabled、reviewed、published、未過期且符合既有watch／observation及公開使用範圍的版本metadata（sourceId、versionId、title、publisher、url、classification、checkedAt、sourceUpdatedAt、validUntil），附nextCursor／complete。目錄不判定每份內容適用該孩子，也不將來源存在當作支持某句回答；不返回私有来源、不呼叫模型或embedding。

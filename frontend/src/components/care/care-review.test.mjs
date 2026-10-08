@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import fs from "node:fs";
 import vm from "node:vm";
-import ts from "../../../node_modules/typescript/lib/typescript.js";
+import ts from "typescript";
 import * as values from "../../care-view-model.ts";
 import * as fixtures from "../../preview/care-fixture.ts";
 import * as forms from "./care-form.ts";

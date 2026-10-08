@@ -5,18 +5,23 @@ import { summaryPeriodLabel, summaryTime } from "../../summary-view-model";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon } from "../AppIcon";
 import { AppButton } from "../ui";
+import { EmptyListCard } from "../EmptyListCard";
 import type { PreparationFormValues } from "./summary-form";
 import { SummaryDisclosure } from "./SummaryDisclosure";
 import { summaryStyles as s } from "./summary-styles";
 
-export function PreparationSheet({ model, values, onEdit, onAgent, onRecord, onTask, editable }: {
+export function PreparationSheet({ model, values, onEdit, onAgent, onRecord, onTask, editable, stale = false }: {
   model: SummaryViewModel; values: PreparationFormValues; onEdit(): void; editable: boolean;
-  onAgent?: () => void; onRecord?: (id: string) => void; onTask?: (id: string) => void;
+  onAgent?: () => void; onRecord?: (id: string) => void; onTask?: (id: string) => void; stale?: boolean;
 }) {
   const page = model.page!;
   const appointment = page.appointments.find(task => task.id === values.appointmentTaskId);
   const missingAppointment = !!values.appointmentTaskId && !appointment;
   const questions = values.questions ?? [], checklist = values.checklist ?? [];
+  const emptyReady = model.online && !model.readFailed && !model.busy && !model.pending && model.access !== "lost"
+    && (model.operation === "none" || model.operation === "saved");
+  const draftEmptyReady = model.dirty && model.access !== "lost";
+  const preparationEmptyReady = draftEmptyReady || emptyReady && !stale;
   const agentBlocked = model.dirty || !!model.pending || model.busy || !model.online || model.readFailed || model.access === "lost";
   return <View style={s.preparationSheet} testID="preparation-reading-sheet">
     <View style={s.preparationHeading}>
@@ -38,7 +43,7 @@ export function PreparationSheet({ model, values, onEdit, onAgent, onRecord, onT
     </View>
     <View style={s.preparationSection} testID="preparation-reading-questions">
       <Text accessibilityRole="header" style={s.title}>想問的問題</Text>
-      {questions.length ? questions.map((question, index) => <View key={index} style={s.preparationListRow}><Text style={s.preparationNumber}>{index + 1}</Text><Text selectable style={[s.reading, s.preparationItemCopy]}>{question.text || "空白問題，待補充"}</Text></View>) : <Text style={s.meta}>目前沒有已記錄的問題。可自行補充，或請助手協助整理後再核對。</Text>}
+      {questions.length ? questions.map((question, index) => <View key={index} style={s.preparationListRow}><Text style={s.preparationNumber}>{index + 1}</Text><Text selectable style={[s.reading, s.preparationItemCopy]}>{question.text || "空白問題，待補充"}</Text></View>) : preparationEmptyReady ? <EmptyListCard title={draftEmptyReady ? "目前草稿沒有到診問題" : "已載入的準備單沒有到診問題"} detail="可在修改準備單時補充想問的問題。" icon="help-circle" testID="preparation-reading-questions-empty" /> : null}
       {questions.length ? <AppStatusBadge label={model.dirty ? "問題草稿 · 未保存" : page.reviewCurrent ? "問題已核對" : "問題待核對"} tone={!model.dirty && page.reviewCurrent ? "success" : "warning"} /> : null}
     </View>
     <View style={s.preparationSection} testID="preparation-reading-observations">
@@ -51,7 +56,7 @@ export function PreparationSheet({ model, values, onEdit, onAgent, onRecord, onT
         <View style={s.row}>{onRecord ? <AppButton label="前往記錄核對" variant="quiet" density="compact" onPress={() => onRecord(record.id)} /> : null}
           <SummaryDisclosure label="確認資料" scopeKey={`${model.scopeKey}:${record.id}`}><Text style={s.meta}>{record.confirmedBy || "確認者未提供"} · {summaryTime(record.confirmedAt)} · 版本 {record.version}</Text><Text style={s.meta}>{record.reason || "確認原因未提供"}</Text></SummaryDisclosure>
         </View>
-      </View>) : <Text style={s.meta}>這個期間沒有已取得的原記錄；目前沒有可展示的觀察來源。</Text>}
+      </View>) : emptyReady ? <EmptyListCard title="本期間已載入的原記錄清單為空" detail="目前沒有可展示的觀察來源；沒有記錄不等於沒有發生。" icon="notebook-outline" testID="preparation-reading-observations-empty" /> : null}
       {page.missing.unknownEventTime > 0 ? <AppStatusBadge label={`${page.missing.unknownEventTime} 筆原記錄事件時間未知，未納入本期間`} tone="warning" /> : null}
     </View>
     <View style={s.preparationSection} testID="preparation-reading-checklist">
@@ -59,7 +64,7 @@ export function PreparationSheet({ model, values, onEdit, onAgent, onRecord, onT
       {checklist.length ? checklist.map((item, index) => <View key={index} style={s.preparationListRow}>
         <AppIcon name={item.done ? "check-circle" : "checkbox-blank-outline"} size={19} />
         <View style={s.preparationItemCopy}><Text selectable style={s.reading}>{item.text || "空白準備項目，待補充"}</Text><AppStatusBadge label={item.done ? model.dirty ? "草稿已勾選 · 未保存" : "已回報準備好" : "尚待準備"} tone={item.done && !model.dirty ? "success" : "warning"} /></View>
-      </View>) : <Text style={s.meta}>目前沒有已記錄的攜帶物品或準備清單。</Text>}
+      </View>) : preparationEmptyReady ? <EmptyListCard title={draftEmptyReady ? "目前草稿沒有準備清單項目" : "已載入的準備單沒有準備清單項目"} detail="可在修改準備單時補充要帶的物品與準備。" icon="clipboard-check-outline" testID="preparation-reading-checklist-empty" /> : null}
     </View>
   </View>;
 }

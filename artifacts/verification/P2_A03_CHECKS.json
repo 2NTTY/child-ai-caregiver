@@ -1,0 +1,158 @@
+{
+  "package": "P2-A03",
+  "base": "770ad4813fca9497cb33594c3bb5b16e48660a73",
+  "recordedAt": "2026-10-07T21:10:00.614Z",
+  "environment": {
+    "node": "24.11.0",
+    "npm": "11.6.1",
+    "database": "127.0.0.1:5434/yuban_s06_test",
+    "worker": "paused",
+    "migration": "Existing 030; no migration added or applied"
+  },
+  "verification": {
+    "offline": {
+      "cases": 4,
+      "result": "All four have passing evidence; first two in INITIAL, remaining two in REPAIR; affected two after primary review in REVIEW.",
+      "runs": [
+        {
+          "file": "P2_A03_TEST_STARTUP.log",
+          "exit": 1,
+          "reason": "Fixture mock.module exports instead of namedExports; no product assertions ran"
+        },
+        {
+          "file": "P2_A03_TEST_INITIAL.log",
+          "exit": 1,
+          "passed": 2,
+          "reason": "Confirmation assertion expected 共享 rather than actual 共用資料; stopped before fourth case"
+        },
+        {
+          "file": "P2_A03_TEST_REPAIR.log",
+          "exit": 0,
+          "passed": 2
+        },
+        {
+          "file": "P2_A03_TEST_REVIEW.log",
+          "exit": 0,
+          "passed": 2
+        }
+      ],
+      "limits": "Native ADK Runner with scripted model/store, not real Gemini"
+    },
+    "typecheck": {
+      "runtime": {
+        "exit": 0,
+        "config": {
+          "extends": "./tsconfig.server.json",
+          "include": [],
+          "files": [
+            "server/family-document-store.ts",
+            "server/family-document-sources.ts",
+            "server/family-document-edits.ts",
+            "server/family-document-reading.ts",
+            "server/family-document-api.ts",
+            "server/agent-document-tools.ts",
+            "server/agent-confirmation-store.ts",
+            "server/product-agent-store.ts",
+            "src/client/family-documents-api.ts",
+            "src/client/product-agent-api.ts",
+            "tests/p2-a03.test.ts"
+          ],
+          "exclude": []
+        },
+        "evidence": "P2_A03_TYPES_FINAL.log"
+      },
+      "frontend": {
+        "exit": 0,
+        "config": {
+          "extends": "./frontend/tsconfig.json",
+          "include": [],
+          "files": [
+            "frontend/src/agent-view-model.ts",
+            "frontend/src/production/agent-projection.ts",
+            "frontend/src/components/agent/AgentRunView.tsx"
+          ],
+          "exclude": []
+        },
+        "evidence": "P2_A03_TYPES_FRONTEND.log"
+      },
+      "scope": "Affected files/import closure only"
+    },
+    "local": {
+      "exit": 0,
+      "command": "node scripts/p2-a03-acceptance.mjs --approved-local-p2-a03",
+      "evidence": "P2_A03_LOCAL.log",
+      "status": "passed",
+      "baseline": {
+        "children": 14,
+        "documents": 0,
+        "versions": 0,
+        "messages": 17,
+        "records": 9,
+        "worker_enabled": false
+      },
+      "afterCleanup": {
+        "children": 14,
+        "documents": 0,
+        "versions": 0,
+        "messages": 17,
+        "records": 9,
+        "worker_enabled": false
+      },
+      "node": "24.11.0",
+      "passed": [
+        "existing_migration_and_paused_worker",
+        "two_synthetic_accounts_one_child_and_three_documents",
+        "long_snapshot_partial_edit_and_fixed_version_continuation",
+        "pool_restart_original_receipt_conflict_and_scoped_pages",
+        "shared_candidate_question_and_single_document_receipt",
+        "archive_lookup_and_restore_preserve_edits"
+      ],
+      "counts": {
+        "accounts": 2,
+        "children": 1,
+        "documents": 3,
+        "businessCalls": 49,
+        "poolRebuilds": 1,
+        "networkAttempts": 0
+      },
+      "limits": {
+        "accounts": 2,
+        "children": 1,
+        "documents": 3,
+        "businessCalls": 60
+      },
+      "cleanup": "Only newly created synthetic users and their cascading rows removed."
+    },
+    "diffCheck": {
+      "exit": 0,
+      "scope": "Code and documents; immutable raw logs excluded",
+      "rawLogWhitespace": "Staged raw test output contains trailing whitespace/blank lines; retained verbatim rather than edited as a passing run."
+    }
+  },
+  "review": {
+    "by": "primary",
+    "fixes": [
+      "Protected edits retain profile/age provenance",
+      "Explicit document_edits_need_review stops one dirty item, not worker batch",
+      "Candidate server-only source basis and invalidated public-view redaction",
+      "Same receipt and no accepting/retrying invalidated edits",
+      "Workspace lock acquired before nested proposal validation"
+    ],
+    "reuse": "Existing typed actions, Zod, PostgreSQL receipts and A02 confirmation; RFC 6902 sequence/atomicity only, no generic patch engine"
+  },
+  "notRun": [
+    "No real model/embedding/notification/browser/deployment/full build or regression",
+    "Pool reconstruction does not verify VM restart",
+    "Full UI history/list pagination belongs to A07; PR130 remains draft"
+  ],
+  "contribution": {
+    "lead": "C",
+    "weight": 5,
+    "shares": {
+      "C": 50,
+      "A": 30,
+      "B": 20
+    },
+    "operator": "A operates AI and Git; no independent manual-work claim for others"
+  }
+}

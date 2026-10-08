@@ -1,0 +1,1 @@
+The first local mutation harness run stopped after two correctly rejected mutants: its exact-match guard found two occurrences of the migration fragment (AssertionError: ('migration-gate', 2)) before making that mutation. No product or candidate test failure occurred. Repaired the harness to match save()'s full capacity condition; candidate source was never mutated.

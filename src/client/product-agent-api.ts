@@ -1,14 +1,15 @@
 import { z } from "zod";
+import { personalLibraryPageSchema, type PersonalLibraryPage } from "../shared/personal-library.ts";
 import { privateSourceCitationSchema } from "../shared/product-agent.ts";
 import { agentDecisionSchema, agentProposalSchema, agentPendingPageSchema, type AgentDecision, type AgentProposal, type AgentPendingPage, type ProductAgentResult } from "../shared/product-agent.ts";
 
 export type ProductAgentErrorCode = "invalid_input" | "unauthorized" | "not_found" | "session_changed"
   | "account_precondition_required" | "version_conflict" | "confirmation_expired" | "confirmation_scope_changed"
   | "agent_run_expired" | "sharing_confirmation_required" | "source_changed" | "fact_key_conflict"
-  | "ai_unavailable" | "check_original_run";
+  | "document_changed" | "document_edits_need_review" | "document_capacity_exceeded" | "invalid_document_edit" | "ai_unavailable" | "check_original_run";
 const knownCodes = new Set<ProductAgentErrorCode>(["invalid_input", "unauthorized", "not_found", "session_changed",
   "account_precondition_required", "version_conflict", "confirmation_expired", "confirmation_scope_changed",
-  "agent_run_expired", "sharing_confirmation_required", "source_changed", "fact_key_conflict", "ai_unavailable", "check_original_run"]);
+  "agent_run_expired", "sharing_confirmation_required", "source_changed", "fact_key_conflict", "document_changed", "document_edits_need_review", "document_capacity_exceeded", "invalid_document_edit", "ai_unavailable", "check_original_run"]);
 const knownStatuses = new Set([400, 401, 403, 404, 405, 409, 415, 428, 429, 500, 502, 503, 504]);
 export const requiresFreshAgentConfirmation = (error: ProductAgentApiError): boolean => error.status === 409 && error.code !== "session_changed";
 
@@ -23,7 +24,12 @@ export class ProductAgentApiError extends Error {
   }
 }
 
+import { agentWorkPageSchema, agentHistoryPageSchema, agentHistoryMessageSchema, type AgentWorkPage, type AgentHistoryPage, type AgentHistoryMessage } from "../shared/agent-work.ts";
 export interface ProductAgentApi {
+  getLibrary(childId: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<PersonalLibraryPage>;
+  getWork(childId: string, signal: AbortSignal, userId: string, workId?: string | null, cursor?: string | null): Promise<AgentWorkPage>;
+  searchHistory(childId: string, kind: "message" | "private_instruction" | "memory_fact", query: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<AgentHistoryPage>;
+  readHistory(childId: string, messageId: string, offset: number, signal: AbortSignal, userId: string): Promise<AgentHistoryMessage>;
   getPendingProposals(childId: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<AgentPendingPage>;
   getRun(childId: string, runId: string, signal: AbortSignal, userId: string): Promise<ProductAgentResult>;
   decideProposal(childId: string, runId: string, proposalId: string, input: AgentDecision, signal: AbortSignal, userId: string): Promise<AgentProposal>;
@@ -37,10 +43,10 @@ const count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const proposalSchema = z.object({
   id: uuid, runId: uuid, childId: uuid, version,
   status: z.enum(["pending", "accepted", "dismissed", "expired"]),
-  createdAt: timestamp, expiresAt: timestamp, value: agentProposalSchema, targetLabel: z.string().nullable(),
-  result: z.object({ kind: z.enum(["task", "memory_fact", "private_source", "concern"]), id: uuid, version }).nullable(),
+  createdAt: timestamp, expiresAt: timestamp, value: agentProposalSchema, targetLabel: z.string().nullable(), targetVisibility: z.enum(["private", "family"]).optional(), contentState: z.enum(["ready", "invalidated"]).optional(),
+  result: z.object({ kind: z.enum(["task", "memory_fact", "private_source", "concern", "family_document"]), id: uuid, version }).nullable(),
 }).refine(value => value.status === "accepted"
-  ? value.result !== null && value.result.kind === (value.value.kind.startsWith("concern_")?"concern":value.value.kind.startsWith("private_source_")?"private_source":value.value.kind === "memory_fact" ? "memory_fact" : "task")
+  ? value.result !== null && value.result.kind === (value.value.kind === "family_document_change" ? "family_document" : value.value.kind.startsWith("concern_")?"concern":value.value.kind.startsWith("private_source_")?"private_source":value.value.kind.startsWith("memory_fact") ? "memory_fact" : "task")
   : value.result === null);
 const citationSchema = z.object({
   key: z.string(), section: z.string(), sourceExcerpt: z.string(), text: z.string(), keywords: z.array(z.string()),
@@ -106,6 +112,33 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
     }
   }
   return {
+    async getLibrary(childId, signal, userId, cursor = null) {
+      if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success
+        || cursor !== null && !/^[A-Za-z0-9_-]{1,2048}$/.test(cursor)) throw new ProductAgentApiError(400, "invalid_input");
+      const parsed = personalLibraryPageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/library${cursor ? "?cursor=" + encodeURIComponent(cursor) : ""}`, signal, userId));
+      if (!parsed.success) throw new ProductAgentApiError();
+      return parsed.data;
+    },
+    async getWork(childId, signal, userId, workId = null, cursor = null) {
+      if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success || workId !== null && !uuid.safeParse(workId).success || cursor !== null && !/^[A-Za-z0-9_-]{1,2048}$/.test(cursor)) throw new ProductAgentApiError(400, "invalid_input");
+      const data = await request(`/children/${encodeURIComponent(childId)}/agent/work${workId ? "/" + workId : ""}${cursor ? "?cursor=" + encodeURIComponent(cursor) : ""}`, signal, userId);
+      const parsed = agentWorkPageSchema.safeParse(data);
+      if (!parsed.success || parsed.data.complete !== (parsed.data.nextCursor === null) || parsed.data.items.some(item => item.childId !== childId)
+        || new Set(parsed.data.items.map(item => item.id)).size !== parsed.data.items.length) throw new ProductAgentApiError();
+      return parsed.data;
+    },
+    async searchHistory(childId, kind, query, signal, userId, cursor = null) {
+      if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success || query.length > 200 || !["message", "private_instruction", "memory_fact"].includes(kind) || cursor !== null && !/^[A-Za-z0-9_-]{1,2048}$/.test(cursor)) throw new ProductAgentApiError(400, "invalid_input");
+      const params = new URLSearchParams({ kind, query }); if (cursor) params.set("cursor", cursor);
+      const parsed = agentHistoryPageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/agent/history?${params}`, signal, userId));
+      if (!parsed.success || parsed.data.complete !== (parsed.data.nextCursor === null) || parsed.data.matches.some(item => item.kind !== kind)
+        || new Set(parsed.data.matches.map(item => item.id)).size !== parsed.data.matches.length) throw new ProductAgentApiError(); return parsed.data;
+    },
+    async readHistory(childId, messageId, offset, signal, userId) {
+      if (!uuid.safeParse(childId).success || !uuid.safeParse(messageId).success || !identifier.safeParse(userId).success || !Number.isInteger(offset) || offset < 0) throw new ProductAgentApiError(400, "invalid_input");
+      const parsed = agentHistoryMessageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/agent/history/messages/${messageId}?offset=${offset}&limit=4000`, signal, userId));
+      if (!parsed.success || parsed.data.childId !== childId || parsed.data.id !== messageId || parsed.data.offset !== offset) throw new ProductAgentApiError(); return parsed.data;
+    },
     async getPendingProposals(childId, signal, userId, cursor = null) {
       if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success
         || (cursor !== null && !/^[A-Za-z0-9_-]{1,1024}$/.test(cursor))) throw new ProductAgentApiError(400, "invalid_input");

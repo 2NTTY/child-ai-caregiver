@@ -1,3 +1,6 @@
+import { handlePersonalLibraryRequest } from "./personal-library-api.ts";
+import { AccountAdmissionError } from "./account-admission.ts";
+import { handleAccountServiceRequest, type AccountServiceApi } from "./account-service-api.ts";
 import { handleSharedInputRequest } from "./shared-input-api.ts";
 import { handleModelSettingsRequest } from "./model-settings-api.ts";
 import { handlePhotoRequest } from "./photo-api.ts";
@@ -87,6 +90,7 @@ export function createRequestHandler(options: {
   config: ServerConfig;
   auth: ReturnType<typeof createAuth>;
   workspaces: WorkspaceStore;
+  account?: AccountServiceApi;
   records: RecordStore;
   families?: import("./families.ts").FamilyStore;
   care?: import("./care.ts").CareStore;
@@ -102,6 +106,7 @@ export function createRequestHandler(options: {
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   productAgent?: import("./product-agent.ts").ProductAgent;
   productAgentStore?: import("./product-agent-store.ts").ProductAgentStore;
+  personalLibrary?: import("./personal-library-api.ts").PersonalLibrary;
   agentActions?: import("./agent-actions-store.ts").AgentActionsStore;
   webPush?: import("./web-push-store.ts").WebPushStore;
   telegram?:{store:TelegramStore;config:TelegramConfig|null;gateway:TelegramGateway};
@@ -144,7 +149,7 @@ export function createRequestHandler(options: {
       if (method === "OPTIONS") {
         const preflight = new Response(null, { status: 204, headers: {
           "access-control-allow-methods": "GET, POST, OPTIONS",
-          "access-control-allow-headers": "content-type, x-expected-user-id",
+          "access-control-allow-headers": "content-type, x-expected-user-id, x-erasure-receipt",
         } });
         await writeResponse(preflight, response, permittedOrigin);
         return;
@@ -164,6 +169,18 @@ export function createRequestHandler(options: {
         request.resume();
         await writeResponse(apiError("forbidden_origin", "此來源未獲授權。", 403), response, null);
         return;
+      }
+      const accountPath = url.pathname === "/api/account" || url.pathname.startsWith("/api/account/");
+      if (options.account?.admission.enabled && !accountPath && !telegramWebhook
+        && !url.pathname.startsWith("/api/auth/") && url.pathname !== "/api/health") {
+        const session = await options.auth.api.getSession({ headers });
+        if (!session?.user.id) throw new AccountAdmissionError(401, "unauthorized");
+        await options.account.admission.assertUsable(session.user.id);
+      }
+      if (url.pathname === "/api/auth/revoke-other-sessions") {
+        const session = await options.auth.api.getSession({ headers });
+        if (!session?.user.id) throw new AccountAdmissionError(401, "unauthorized");
+        if (headers.get("x-expected-user-id") !== session.user.id) throw new AccountAdmissionError(409, "session_changed");
       }
       let bodyLimit=MAX_BODY_BYTES;
       if (url.pathname.startsWith("/api/ai/settings")) bodyLimit = 2048;
@@ -196,6 +213,10 @@ export function createRequestHandler(options: {
       } else if (url.pathname === "/api/health" && method === "GET") {
         await options.checkDatabase();
         result = jsonResponse({ status: "ok" });
+      } else if (accountPath && options.account) {
+        const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
+        result = await handleAccountServiceRequest(webRequest, sessionResult.response?.user.id ?? null, options.account);
+        for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (["/api/ai/settings", "/api/ai/settings/check"].includes(url.pathname) && options.modelRouting) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         result = await handleModelSettingsRequest(webRequest, sessionResult.response?.user.id ?? null, options.modelRouting);
@@ -214,7 +235,10 @@ export function createRequestHandler(options: {
         || url.pathname.startsWith("/api/online/") || url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/") || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
         const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
-        result = /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(url.pathname)&&options.inputs
+        result = /^\/api\/children\/[^/]+\/library$/u.test(url.pathname) && options.personalLibrary
+          ? await handlePersonalLibraryRequest(webRequest, userId, { library: options.personalLibrary,
+            isCurrentUser: async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected })
+          : /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(url.pathname)&&options.inputs
           ? await handleSharedInputRequest(webRequest,userId,options.inputs.store,{service:options.inputs.service,
               isCurrentUser:async()=>Boolean(userId)&&(await options.auth.api.getSession({headers}))?.user.id===userId})
           : /^\/api\/children\/[^/]+\/photos(?:\/|$)/u.test(url.pathname)&&options.photos
@@ -270,6 +294,8 @@ export function createRequestHandler(options: {
       if (error instanceof BodyTooLargeError) {
         response.setHeader("connection", "close");
         await writeResponse(apiError("payload_too_large", "請求內容過大。", 413), response, permittedOrigin);
+      } else if (error instanceof AccountAdmissionError) {
+        await writeResponse(apiError(error.code, "請先完成邀請資格、電郵驗證及資料使用確認。", error.status), response, permittedOrigin);
       } else {
         await writeResponse(apiError("service_unavailable", "服務暫時未能處理，請稍後重試。", 503), response, permittedOrigin);
       }

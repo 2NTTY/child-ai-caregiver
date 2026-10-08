@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {randomBytes,createHash} from 'node:crypto';
+import {readFile,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {Pool} from 'pg';
+import {createEncryptedBackup,restoreEncryptedBackup} from '../server/backup.ts';
+import {readSecretKey,createStorageCipher} from '../server/storage-crypto.ts';
+import {verifyEncryptedStorage} from '../server/storage-upgrade.ts';
+import {openErasureJournal} from '../server/erasure-journal.ts';
+import {createAccountDataStore} from '../server/account-data.ts';
+import {assertPrivatePath} from '../server/private-path.ts';
+const root='C:/Users/2NTTY/.codex/p2-a08-local', container='ai-postgres-test-1', name='p2_a08_service_20261008';
+let admin,pool,stage='preflight';
+try {
+ assert.deepEqual(process.argv.slice(2),['--approved-local-only']);
+ await assertPrivatePath(root);
+ const info=JSON.parse(execFileSync('docker',['inspect',container],{encoding:'utf8'}))[0];
+ const pairs=Object.fromEntries(info.Config.Env.map(x=>{const i=x.indexOf('=');return [x.slice(0,i),x.slice(i+1)];}));
+ const source=new URL('postgres://127.0.0.1:5434/yuban_s06_test'); source.username=pairs.POSTGRES_USER;source.password=pairs.POSTGRES_PASSWORD;
+ admin=new Pool({connectionString:source.toString()});
+ assert.equal((await admin.query('SELECT 1 FROM pg_database WHERE datname=$1',[name])).rowCount,0,'Dedicated target must be new');
+ const baseline=(await admin.query('SELECT (SELECT count(*)::int FROM "user") AS users,(SELECT count(*)::int FROM children) AS children,(SELECT count(*)::int FROM chat_messages) AS chats,(SELECT generation FROM worker_control WHERE id=1) AS generation,(SELECT enabled FROM worker_control WHERE id=1) AS enabled')).rows[0];
+ assert.equal(baseline.enabled,false);
+ const storageKey=await readSecretKey('C:/Users/2NTTY/.codex/s05-local-storage-keys/storage.key');
+ const backupKey=await readSecretKey('C:/Users/2NTTY/.codex/s05-local-storage-keys/backup.key');
+ const checkpoint=join(root,'before-a08.ybak');
+ stage='encrypted_checkpoint'; await createEncryptedBackup({databaseUrl:source.toString(),container},checkpoint,backupKey);
+ stage='isolated_restore';await admin.query('CREATE DATABASE "'+name+'"');
+ const target=new URL(source);target.pathname='/'+name;
+ await restoreEncryptedBackup({databaseUrl:target.toString(),container},checkpoint,backupKey);
+ stage='migrations';
+ execFileSync(process.execPath,['server/migrate.ts'],{env:{...process.env,DATABASE_URL:target.toString(),BETTER_AUTH_SECRET:randomBytes(32).toString('hex'),NODE_ENV:'test',SERVER_ORIGIN:'http://127.0.0.1:3099',WEB_ORIGIN:'http://127.0.0.1:3099'},encoding:'utf8',timeout:90000,windowsHide:true,stdio:['ignore','pipe','pipe']});
+ pool=new Pool({connectionString:target.toString()});const cipher=createStorageCipher(storageKey);await verifyEncryptedStorage(pool,cipher);
+ const after=(await pool.query('SELECT (SELECT count(*)::int FROM "user") AS users,(SELECT count(*)::int FROM children) AS children,(SELECT count(*)::int FROM chat_messages) AS chats')).rows[0];
+ assert.deepEqual(after,{users:baseline.users,children:baseline.children,chats:baseline.chats});
+ const journal=await openErasureJournal({directory:join(root,'journal'),repositoryPath:process.cwd(),cipher,initialize:true,assertProtectedDirectory:assertPrivatePath});
+ await createAccountDataStore(pool,cipher,journal).replay({initializeBinding:true});
+ const hashes={};for(const id of ['034-account-admission','035-account-data-exit'])hashes[id]=createHash('sha256').update((await readFile('server/migrations/'+id+'.sql','utf8')).replace(/\r\n/g,'\n')).digest('hex');
+ const report={state:'prepared',name,checkpoint,baseline,preserved:after,migrations:hashes,originalDatabaseUnchanged:true,journalBound:true};
+ await writeFile(join(root,'prepared.json'),JSON.stringify(report,null,2),{flag:'wx',mode:0o600});
+ console.log(JSON.stringify(report));
+} catch(error){console.log(JSON.stringify({state:'failed',stage,code:typeof error?.code==='string'?error.code:'prepare_failed'}));process.exitCode=1;}
+finally{await pool?.end();await admin?.end();}

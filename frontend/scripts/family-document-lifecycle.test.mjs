@@ -65,8 +65,9 @@ function owner(items = [item(a), item(b)]) {
     if (options.method === 'GET') {
       if (readGate) await readGate.promise;
       if (readStatus !== 200) return response({ error: { code: 'synthetic_read_failure' } }, readStatus);
-      const id = url.split('/').at(-1);
-      return response(id === 'documents' ? { page: structuredClone(page) } : { item: page.items.find(value => value.id === id) });
+      const parsed = new URL(url, 'https://synthetic.test'), id = parsed.pathname.split('/').at(-1);
+      const status = parsed.searchParams.get('status');
+      return response(id === 'documents' ? { page: { ...structuredClone(page), items: page.items.filter(value => !status || status === 'all' || value.status === status), nextCursor: null } } : { item: page.items.find(value => value.id === id) });
     }
     const body = JSON.parse(options.body); calls.push({ url, body: structuredClone(body) });
     if (writeGate) await writeGate.promise;
@@ -91,7 +92,9 @@ function owner(items = [item(a), item(b)]) {
     throw new Error('Unmocked owner dependency: ' + name);
   });
   return { env, calls, render: () => h.render(() => useFamilyDocuments(env)),
-    async load() { this.render().refresh(); await this.settle(); return this.render(); },
+    async load() { await this.settle(); this.render().refresh(); await this.settle();
+      if (items.some(value => value.status === "archived") && this.render().preparation.model.condition === "ready") { this.render().preparation.model.reading.ensureArchived(); await this.settle(); }
+      return this.render(); },
     async settle() { while (jobs.length) await jobs.shift(); },
     holdWrite() { return writeGate = deferred(); }, holdRead() { return readGate = deferred(); },
     failRead(status = 503) { readStatus = status; }, failWrite(status = 409) { writeStatus = status; },
@@ -113,7 +116,7 @@ function view(symbol, owner, props = {}) {
     if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: 1024 }) };
     if (name.endsWith('/theme')) return { colors: {}, radius: {}, readingType: {}, spacing: {} };
     if (name.endsWith('/ui')) return { AppButton: 'AppButton', AppSelect: 'AppSelect' };
-    const components = ['WriteRecoveryNotice', 'AppCheckbox', 'AppStatusBadge', 'SummaryDisclosure', 'DocumentCreateForm'];
+    const components = ['EmptyListCard', 'WriteRecoveryNotice', 'AppCheckbox', 'AppStatusBadge', 'SummaryDisclosure', 'DocumentCreateForm'];
     const component = components.find(value => name.endsWith('/' + value));
     if (component) return { [component]: component };
     throw new Error('Unmocked preparation dependency: ' + name);
@@ -332,4 +335,40 @@ test('report export keeps exact document, scope, authority and version guards pl
     assert.equal(h.calls.length, 2); h.revoke(); gate.resolve(); await Promise.all([first, repeated]); await h.settle();
     assert.equal(downloads, 1, 'The delayed blob cannot download into another scope');
   } finally { if (previousDocument === undefined) delete globalThis.document; else globalThis.document = previousDocument; }
+});
+
+test('building reports retain generating precedence and other authorized snapshots remain readable', async () => {
+  const building = { ...item(a), kind: 'growth_report', purpose: 'family', readState: 'invalidated', current: null, history: [snapshot(a)],
+    report: { mode: 'living', phase: 'building', processedSources: 50, sourceRevision: 'synthetic:1', periodKind: 'annual',
+      period: { from: '2026-01-01', to: '2026-12-31' }, title: 'Synthetic living report' } };
+  const valid = { ...item(b), kind: 'growth_report', purpose: 'handoff' };
+  for (const items of [[building], [valid, building]]) {
+    const h = owner(items); await h.load(); const archive = h.render().archive;
+    assert.equal(h.render().standard.id, a); assert.equal(archive.state, 'generating'); assert.equal(archive.snapshot, null);
+    assert.deepEqual(archive.history.map(value => value.id), items.length === 2 ? [valid.current.id] : []);
+    h.render().refreshReport(); await h.settle(); assert.equal(h.calls.length, 1);
+    assert.equal(h.calls[0].body.change.action, 'refresh'); assert.equal(h.calls[0].body.change.expectedVersion, 1);
+    h.failRead(403); h.render().refresh(); await h.settle();
+    assert.equal(h.render().archive.state, 'invalidated'); assert.deepEqual(h.render().archive.history, []);
+  }
+});
+
+test('living selection and annual or quarterly completed coverage survive strict parsing and projection', async () => {
+  const completed = (id, mode, periodKind, period) => ({ ...item(id), kind: 'growth_report', purpose: 'family',
+    report: { mode, phase: 'complete', processedSources: 121, sourceRevision: 'synthetic:1', periodKind, period, title: 'Synthetic report' },
+    current: { ...snapshot(id), period, reportCoverage: { status: 'complete', mode, periodKind, sourceRevision: 'synthetic:1',
+      completedAt: '2026-10-07T00:00:00Z', validUntil: null, scanned: 121,
+      counts: { recordsInPeriod: 120, recordsUnknownTime: 1, tasksInPeriod: 0, observationsInPeriod: 0, confirmedFacts: 0, recordKinds: { note: 120 } } } } });
+  const fixed = completed(a, 'fixed', 'quarter', { from: '2026-07-01', to: '2026-09-30' });
+  const living = completed(b, 'living', 'annual', { from: '2026-01-01', to: '2026-12-31' });
+  const h = owner([fixed, living]); await h.load();
+  assert.equal(h.render().standard.id, b); assert.equal(h.render().archive.snapshot.id, living.current.id);
+  assert.deepEqual(h.render().archive.periods.map(value => [value.kind, value.quarter, value.currentAnnual, value.coverage]),
+    [['quarter', 3, false, 'complete'], ['year', undefined, true, 'complete']]);
+  const request = { kind: 'growth_report', purpose: 'family', title: 'Synthetic duplicate', eventDate: null };
+  h.render().createDocument({ ...request, period: { from: '2025-01-01', to: '2025-12-31' }, reportMode: 'living' });
+  h.render().createDocument({ ...request, period: fixed.report.period, reportMode: 'fixed' });
+  await h.settle(); assert.equal(h.calls.length, 0, 'Existing living reports and matching fixed periods remain deduplicated');
+  h.render().createDocument({ ...request, period: { from: '2025-01-01', to: '2025-12-31' }, reportMode: 'fixed' });
+  await h.settle(); assert.equal(h.calls.length, 1); assert.equal(h.calls[0].body.request.reportMode, 'fixed');
 });

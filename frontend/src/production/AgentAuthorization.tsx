@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../components/EmptyListCard";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -72,7 +73,7 @@ export function AgentAuthorization() {
           <Text style={styles.meta}>本人交代 · 版本 {note.version} · {new Date(note.updatedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" })}</Text>
           <Text selectable style={styles.meta}>來源聊天：{note.sourceMessageId}</Text>
           <AppButton label="刪除此私人備註" variant="quiet" disabled={!owner.authorizationOwner.mayDelete(note.id)} onPress={() => setDeleteId(note.id)} />
-        </View>) : <Text style={styles.meta}>目前沒有符合搜尋的私人備註。</Text> : null}
+        </View>) : state.online ? <EmptyListCard title="已載入頁面暫無符合搜尋的私人備註" detail={state.nextAfterId ? "仍有備註未載入，可繼續讀取。" : undefined} /> : <Text style={styles.meta}>私人備註尚未重新核對。</Text> : null}
         {state.nextAfterId ? <AppButton label="讀取下一頁" variant="quiet" disabled={locked || !!state.pending} onPress={() => actions.readNotes(true)} /> : null}
       </SectionCard>
     </View>

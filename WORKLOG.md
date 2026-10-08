@@ -13,11 +13,10 @@
 ## 8.5 四人 log
 
 <a id="rule-8-5-01"></a>
-保留当前真实分工：
-
-- <a id="rule-8-5-02"></a>你：主力使用 AI、整合、验收和产品决定；
-- <a id="rule-8-5-03"></a>两位组员：经费支持，以及实际认领并完成的其他工作；
-- <a id="rule-8-5-04"></a>另一位组员：实际协助、测试或材料整理。
+<a id="rule-8-5-02"></a>
+<a id="rule-8-5-03"></a>
+<a id="rule-8-5-04"></a>
+本項目由 A、B、C、D 共同負責。
 
 <a id="rule-8-5-05"></a>
 你要求生成 log 时，根据工作证据整理四份草稿，各人核对。团队成果不自动变成四个人各自独立完成的工作。
@@ -1558,3 +1557,134 @@
 - 初步2/2歸檔hash／退休命令定向檢查通過；完整import closure/typecheck/build及獨立覆核仍待核。沒有刪正式資料、DB遷移、真模型或部署。
 
 - 10:10 UTC 補記：head43955c8的歸檔/active-import/failclosed測試3/3、root與frontend typecheck已獨立重跑通過。23檔459,274 bytes、原Git blob及SHA-256全核准；實作者35routebuild成功，review只核其log及bundle hash，未重跑build。AgentInbox連結及意外三份.merged中間檔已正常後續commit修正，canonical文件與31025前綴保留。沒有真browser/DB/model或部署。
+
+<a id="log-20261008-p2-agent-service-plan"></a>
+## LOG-20261008-P2-AGENT-SERVICE-PLAN
+
+- Recorded At：2026-10-07 19:02 UTC 後（2026-10-08 HKT）；Work Date：2026-10-08 HKT。
+- Step / Package：DOC-P2-AGENT。Executor／AI Assistance：主模型親寫完整計劃、需求、契約及 review，未委派子代理；Human Verification：使用者已定案總計劃，未新增產品人工驗收。A 主責，權重 2，A100%；共用 AI 由 A 統籌，本包未宣稱其他成員實作。
+- Goal：把已確認的 P2 完整 Agent／邀請制穩定單人 Web 服務納入唯一計劃，先寫 PLAN 再更新權威；不把前期 P2／INT 證據當成新門檻完成。
+
+### Actual Work / Changes
+- 新增 P2-A01～A09、依賴、分工、前移／延後對照及成果門檻；保留原工作包錨點。移除現行契約把「最後一句＋延續詞」能力閘作最終要求的描述，標為待替代實作；確認綁定、範圍隔離、有界讀取及官方語義換版成共同約束。
+- SPEC 新增 REQ-P2A-01～11／AC-P2A-01～08；架構／資料／API 各管自身契約，追加 ADR-018。STATUS 清理已合併退役快照並維持最後部署觀察；前端只補單人及頁面用途／接口引用，無 UI 程式、美術或 Prompt Pack 改動。
+- 開工與中途重新 fetch；master 218625b，#111 c31e4c7、#130 fe1bb33 仍 draft。本包不接管其分支，也不推定已部署。
+
+### Verification
+- Requirement / Acceptance：已批准總計劃完整範圍、九包依賴、原錨點／歷史保留及文件職責一致。
+- Method／Environment：Windows PowerShell＋Node，基線 218625b 的獨立 codex/p2-agent-service-plan；新增本地連結／錨點、舊錨點保留、60 個明列工作包的顯式依賴與循環檢查、git diff --check；主模型核對關鍵 diff／原文。
+- Result：通過；34 個新增連結、無缺失／重複錨點或顯式依賴循環。修正 review 發現的交接字面換行後完成檢查；WORKLOG 僅追加。
+- Evidence：[文件檢查](artifacts/verification/P2_AGENT_SERVICE_PLAN_CHECKS.json)。不跑 build、unit、integration、E2E、真模型、通知或部署，無新增服務費用。
+
+### Limitations / Next
+- 文件定案不代表 A01～A09 實作、真服務或 GCP 新版部署完成。現有未驗／失敗證據保留，新增完成門檻沿本包 PLAN。
+- 本聊天獲准按包直接最低必要驗收；外發內容／對象與新增雲端費用仍依實際批准。下一步文件合併後從最新 master 開 A01，先核對其他聊天新合併，A08 只在獨立邊界就緒時推進。
+
+
+<a id="log-20261008-p2-a01"></a>
+## LOG-20261008-P2-A01
+
+- Recorded At：2026-10-07 19:32:13 UTC；Work Date：2026-10-08 HKT。Step / Package：P2-A01；基線 1df2f7a（文件 PR #131 已合併）。
+- Executor／AI Assistance：主模型親寫 PLAN、能力目錄、Prompt Pack、契約及 Skill，核對方案／關鍵 diff 與證據；一個 Sol 6.1 xhigh 實作 runtime、接線及必要離線驗收。A 主責，權重 3，A60%／C40%，共用 AI 由 A 統籌；份額依 Agent 行為與 Server 接線責任，非人工手寫／實測工時。Human Verification：未新增。
+- 拆除末句／延續詞工具閘及摘要 recipe regex；互動固定 product-interactive，ADK BaseToolset 以常用工具＋受信能力目錄／loader 暴露 schema。載入／失敗仍計同 run，授權、版本、原收據、unknown、取消及安全收尾保持。背景固定範圍不擴大。
+- Prompt Pack 0.1.27／product-tools 0.1.14 局部補語義指引；記錄、記憶、待辦、摘要與聯絡模組按需復用並去重。沒有新增框架、重新撰寫整份 Pack、改 UI、DB migration 或提高配額。
+- 最低驗收：七個真 ADK Runner＋scripted provider 集中案例通過，覆蓋前文承接載入／實際 action handler、run 隔離／權限、非法／未載工具、取消、上限、成功後收尾失敗及 unknown 不重做；兩個受影響 Vertex schema／mocked transport 案例通過。業務 Store 為合成 stub，不當 DB 證據。
+- 失敗保留：首個 Runner fixture 錯誤假設 prompt 位於 system 最前，ADK 原生前綴令斷言失敗；停批、核對後改為完整 prompt 包含位置，單獨補驗通過。廣域 tsconfig.server.json 初檢失敗（包含前端／其他 tests，另有已移除 selector 的舊 import）；只修該必要 test 接點，沒有順修非本包診斷。限定 server／shared＋兩份測試編譯通過；主模型為補足初次未保存 exit code 的缺口重跑一次，exit 0。廣域診斷只保留執行者回報，未保存原始全文；未宣稱全倉 typecheck 通過。
+- 實際環境 Node 24.11.0／npm 11.6.1，ADK 2.1.0／GenAI 2.24.0；npm ci 使用原 lock，npm engine >=11.8 警告保留，未全局升級。建置配置的固定版本未改。
+- 主模型 review／git diff --check 通過；[最低證據](artifacts/verification/P2_A01_CHECKS.json)／[原 Runner 失敗及補驗](artifacts/verification/P2_A01_OFFLINE.txt)。真 Gemini、DB、通知、部署沒有執行；新模型理解與完整成果留後續連貫驗收，本包只完成原生工具接線及必要安全邊界。
+- 下一步：本包 review／PR 合併後解鎖 P2-A02，先 fetch 並核對其他聊天成果；A08 是獨立 Ready 包，不自動擴大本包範圍。完整 P2 目標仍未完成。
+
+
+<a id="log-20261008-p2-a02"></a>
+## LOG-20261008-P2-A02
+
+- Recorded At：2026-10-07 20:16:45 UTC；Work Date：2026-10-08 HKT。Package：P2-A02；基線 968646f（A01／PR #132 已合併）。
+- Executor／AI Assistance：C 主責、權重 5，C60%／A30%／B10%；共用 AI 由 A 統籌，不稱其他組員獨立手寫／驗收。主模型親寫契約、Prompt Pack／工具指引、前端小型投影及 review；一個 Sol 6.1 xhigh 實作 stores、接線與限定驗收。一個 Luna 唯讀定位因 runtime 失敗，未採用其結果。Human Verification：無新增。
+- 沿原 ADK／PostgreSQL／MemoryStore／proposal decide，新增加密持久工作、原 opId 去重、bounded history 與長訊息續讀、最多六項跨輪本人逐字來源、Agent 事實更正／停用及 Server 具體對話確認。保存操作、候選、問句、回覆與版本／授權綁定；多候選、延遲舊「好」及後續改口不接受，未知先查原結果。
+- Review 修正：確認查詢改 SQL 有界定位及最新訊息核對；完整確認問句附在已驗回答後、不丟引用；已確認收據與收尾失敗分開。移除 20 項記憶頁的舊整次拒絕，保留 cursor／partial；摘要 basis 的有效期限 metadata 有界補回。歷史 fact 命中只作定位，仍須原 memory 服務核當前適用性。
+- Prompt Pack 0.1.28 局部補跨輪／確認指引，未重寫 Pack；新前端只補事實候選和工具狀態標籤，未改設計／互動／美術。migration 030 保留其他 draft 的 029 編號，沒有依賴未合併 PR #111／#130。
+- 最低離線驗收：3 個真 Runner＋scripted provider／store 案例及 7 個受影響既有容量檢查通過，原 stdout 未另存，只保留執行者工具回報；不當真模型證據。scoped strict TypeScript exit 0；主模型另以一條純投影檢查確認私人範圍及缺失 visibility 拒絕。未跑整倉 build／lint／unit。
+- 真本機驗收：先建立工程外加密 DB checkpoint（照片未改，非配對恢復驗收），套用 030 exit 0。沿合成庫建立 2 帳號／2 孩子／2 facts／1 task／23 messages，真正執行 90 次 business call、重建 pool 一次；跨輪來源、保存／去重、唯一確認、過期／多候選／改口、記憶更正停用與 metadata 補回通過。最後 history 高水位／unknown 原操作斷言已執行，末個重複游標跨孩子檢查在第 91 次呼叫前被上限擋住；原 run **exit 1**，首次失敗停批，沒有重跑。
+- 停批原因為 harness 少算一次重複檢查，不改產品斷言或擴上限。後續移除該重複檢查並讓計數在上限檢查後增加；修正版腳本未重新跑。獨立精確清理核對本輪 userId／email／孩子歸屬後刪合成帳號 cascade，exit 0；原庫恢復 children 14／messages 17／facts 1／photos 2、worker=false。不把原失敗改成整批通過。
+- 主模型根據已執行關鍵結果、離線游標邊界及清理證據裁定本包最低 gate 足夠；[結構化證據](artifacts/verification/P2_A02_CHECKS.json)／[原 SQL 停批與清理](artifacts/verification/P2_A02_LOCAL.txt)。實際 Node 24.11.0／npm 11.6.1，lockfile 未改；engine 警告沿前包保留。沒有真模型／通知／瀏覽器／部署費用。
+- 限制：pool 重建是重連持久化，不代表 OS／VM 重啟；完整歷史／工作頁由 A07 接入，真模型完整成果及部署仍待後包。合併前再核對 master／相關 draft，按 C 帳號 PR／merge；A02 合併後先開 A03，不將九包目標標完成。
+
+
+<a id="log-20261008-p2-a03"></a>
+## 2026-10-08｜P2-A03 同一文件修改及有界續讀
+
+- 基線 `770ad48`；C 主責，權重5，C50%／A30%／B20%。A 操作 AI／Git，主模型親寫契約、工具指引及 Prompt Pack 0.1.29；不宣稱其他成員獨立執行測試。
+- 原加密文件／快照／opId 交易補穩定 ID 局部修改、編輯保護、來源待核對、固定版4,000字元續讀、清單／歷史keyset與50份active上限；歸檔不佔終身額度。新正文沿 A02 綁定確認，模型不能自己授權共享；不新建文件冒充修改。
+- review 補正 profile 年齡依據、純結構修復的遮蔽過渡、候選來源basis／失效遮蔽，以及單份待核對不阻塞worker批次。前端只補候選差異、不可接受狀態及收據，未改設計或接管 #130 草稿。
+- 最少離線4聚合案例有通過證據。首次mock fixture啟動失敗；修正後前2項通過但第3項用詞斷言失敗停批；改核正式完整共用範圍句後只跑後2項通過。review後只重核受影響2項。原失敗／通過raw保存。scoped Server/client/test及前端投影 TypeScript通過，不是全倉檢查。
+- 一次真本機SQL通過：既有030 checksum與暫停worker核對；2合成帳號、1孩子、3文件、1共享record、49/60業務呼叫、1pool重建。長文／中間項修改、原op與版本衝突、失效候選拒絕／遮蔽、真問句綁定／consume、歸檔／恢復／刷新保留修改通過。精確清理新帳號cascade後原children14／documents0／versions0／messages17／records9／worker=false不變。
+- [結構化證據](artifacts/verification/P2_A03_CHECKS.json)／[SQL raw](artifacts/verification/P2_A03_LOCAL.log)。Node24.11.0/npm11.6.1，lockfile未改。零模型、embedding、外網、通知、瀏覽器或部署；pool重建不等於VM重啟。完整頁面歷史留A07、完整期間報告留A05。
+- 交付前核對master及draft #111/#130，按C帳號PR/merge；合併後再開始依賴包。
+
+
+<a id="log-20261008-p2-a04"></a>
+## 2026-10-08｜P2-A04 有界官方 RAG、原文及換版
+
+- 基線 f46ab8e；A主責，權重5，A60%／C40%。主模型親寫契約、官方來源／Prompt Pack0.1.30、Skill及review；Luna唯讀定位，Sol6.1分別承接PDF reader與獨立RAG/發布接線。共用AI由A統籌，不稱成員獨立人工測試。
+- 復用ADK/pgvector/worker，增加有來源的語義查詢年齡提示（含asOf）、SQL混合排序、同版原文cursor及實際讀取ranges；未知／約數不轉成精確資格。031保存語義審核，舊新quote、變動key、七類限制、代表問題及規則影響須核對，向量齊備後同服務自動發布；hash不是批准。
+- PDF.js6.4.299固定Node legacy，32MiB／8頁／20秒受限worker；頁碼／覆蓋不代表語義完整。主模型核對四官方頁及一份PDF第3頁；其餘圖片／錯碼頁拒絕納入，沒有整冊完整或臨床聲稱。來源及license證據隨包保存，受限制近期來源維持組內。
+- 離線4聚合有有效結果，最後僅重核age/續讀2項；原型別fixture及coverage容量斷言失敗照錄（原stdout未存）。PDF1聚合最終通過，原WindowsURL／Node標準build相容失敗raw保留。12入口scoped TS 0 diagnostics；不是全倉。
+- 先建立工程外加密DB checkpoint，再真套031。SQL原批次9次store呼叫停於續讀、generic診斷不足，原因未能重現；保留原失敗。原現場兩次共8次唯讀search→context成功（一次原pool），只補未執行3組語義核對共16次store呼叫通過。共33次，2合成source、1,105片段，零家庭修改／模型／外網／通知，成功後按精確ID清理、worker=false。不得把原批次改為通過。
+- [EV](artifacts/verification/P2_A04_CHECKS.json)／[官方內容核對](artifacts/verification/P2_A04_SOURCE_REVIEW.json)。主模型裁定最低功能gate成立；新真模型／embedding、source cron、部署、完整還原及新seed發布未做，完整成果留A09，原SQL不明失敗保留風險。
+- Node24.11/npm11.6.1，部署固定版本未改；必要diff／seed schema通過。交付前fetch及draft heads未變；按A帳號PR／merge後才開C主責A05。
+
+
+<a id="log-20261008-p2-a05"></a>
+## 2026-10-08｜P2-A05 同源成長與完整期間報告
+
+- 基線 f67b807；C 主責、權重3，C50%／B30%／A20%。主模型親寫契約／Prompt Pack0.1.31、UI投影及review；Luna只定位，一個Sol6.1 xhigh負責報告引擎／store與最低驗收。共用AI由A統籌，不称其他成員獨立人工實作或驗收。
+- 復用文件權威／pg-boss／react-pdf；032保存來源revision及加密進度，逐批累計完整counts、有界正文選錄，固定季度／年度與living日常共存。來源更正／刪除／期限／權限變化遮蔽失效聚合，歸檔及舊收據不繞過；新快照沿同文件及同版PDF。UI保留版型，只接進度、期間及模式。
+- 離線1聚合通過（executor結果、未另存stdout），scoped Server型別通過；main 1條真route＋strict client合成store及5個UI/client roots型別通過。沒有全倉lint/build/unit。來源revision曾錯作數字，review已改opaque并重核strict client；Node24.11/npm11.6.1既有engine警告保留。
+- 先做工程外加密DB checkpoint，再真套032。首次15 business calls通過跨批／原op／pool重建及105期間記錄、1未知日期、101觀察／209掃描，停於PDF harness錯誤使用proxy.destroy；立即停批，原失敗保留。唯一被攔fetch後續確認為Yoga內嵌data: WASM，非外網。
+- 只沿同現場補22 calls／1次同snapshot重渲染：六頁PDF抽字、隔離、fixed/living防重、未選錄來源更正後archive/content/history/export/receipt遮蔽及重建104筆通過。兩批合共37／40 calls、2 renders；沒有重建來源。精確核對電郵後清理兩個合成帳戶cascade，非fixture totals前後相同，worker=false／generation不變。
+- [EV](artifacts/verification/P2_A05_CHECKS.json)及原失敗／補驗raw分開；主模型最低gate通過。零模型／embedding／外網／通知／瀏覽器／部署；pool重建不稱VM重啟，真排程／跨日與整體交付留A09。
+- 交付前master及draft #111/#130未變；按C帳號PR及合併，再進A06。完整P2未完成。
+
+
+<a id="log-20261008-p2-a06"></a>
+## 2026-10-08｜P2-A06 有用的主動接續
+
+- 基線35fcb0d；A主責、權重3，A50%／C40%／B10%。主模型親寫契約、Prompt Pack0.1.32及review，Luna只定位，兩個Sol6.1分別接背景引擎與draft111容量適配；共用AI由A統籌，不稱成員獨立人工驗收。
+- 復用持久工作／pg-boss：033保存加密比較基線與每日本人／孩子合併事件，相關資料／有效來源變更及到期才接續，原run防重；cancel／終態／撤權重查。只讀私人配方沿原生能力載入、3500字元context及原32k限額，不外發、不自行寫事實。跟進結果事件不反向喚醒自己。
+- 029沿draft111的200普通＋2終態保留格，保留A05報告reader；滿額仍可取消跟進並歸檔，UI只調整容量提示。未合併draft整枝或接管#130。
+- 五個必要离線案例有通過證據（capacity2、continuation2、真Runner＋scripted provider1）；限定型別通過。原背景測例失敗包括缺變數、錯誤要求完整頁及無剩餘context；局部修正provider／有界context並移除私人背景不適用的互動寫入prompt後，五工作／按需只讀／歷史續讀在原限額內成功。原失敗raw保留，不稱真模型理解通過。
+- 工程外加密DB checkpoint後套029／033。原SQL9次因UUID比較錯誤停批；只續同現場至24次，停於harness取錯重設前baseline，readonly證明另一owner未被私人變更喚醒。主模型核對後修正baseline，重建原收據inputs，只續剩餘30次，combined54／55通過；同2帳號／1孩子、1stub run，零真模型／外網／通知。
+- 驗得交易回滾／原op、5項合併／第6項延期、撤權／取消、store及worker重建沿原run、關注200→202並停止舊跟進。精確清理後非fixture totals一致，worker=false／generation未變。store重建不代替OS／VM重啟；真流程及完整UI留A07／A09。
+- [EV](artifacts/verification/P2_A06_CHECKS.json)及原SQL兩次失敗／phase2成功分開保存；Node24.11／npm11.6.1／PG18.6／ADK2.1，lockfile與部署固定版本不改。主模型最低gate通過。按A帳號交付，合併後開A08；完整P2與新部署未完成。
+
+
+<a id="log-20261008-p2-a08"></a>
+## 2026-10-08｜P2-A08 邀請、帳戶生命週期及資料退出
+
+- 基線94508e9；C主責、權重3，C70%／B20%／A10%。主模型親寫方案、契約、Skill及整合review；一個Luna只定位，兩個Sol6.1各負責原生身份／郵件及資料下載／刪除。共用AI由A統籌，不稱成員獨立人工實作或驗收。
+- 沿Better Auth1.7.5及Nodemailer10.0.16，補邀請资格、原生電郵驗證／找回／會話撤銷、當版資料同意、加密有限郵件outbox及HTTP／模型准入。034／035保留既有帳號；正式 invited 模式需要工程外SMTP設定。
+- 本人資料33分區有界下載、身份／scope綁定cursor、原op刪除收據、native password核對及獨立加密fsync刪除日誌。舊備份在開放存取前重放目前日誌；child直接與online刪除共用intent，附件清理結果另列。備份不帶session／驗證token／郵件outbox；實際外部journal備份及照片配對恢復留A09。
+- 離線auth2／data2聚合及兩份scoped TypeScript通過，executor工具結果未另存完整stdout；不是全倉回歸。首次本機準備在ACL preflight失敗、零DB寫入：Windows PowerShell繼承不相容PSModulePath；只清空ACL子程序的該變數後通過，原失敗保留。
+- 最低真SQL連貫流程通過：先工程外加密checkpoint，再還原到新合成庫套034／035；原庫65users／14children／17messages及暫停worker不變。1新帳號／1孩子，auth11HTTP／11business、4次真HTTP准入、data53／60business；2封本機SMTP capture。驗註冊→驗證→同意→找回→舊會話／密碼失效→完整allowlist下載→刪除／原收據→舊備份還原並重放目前日誌不復活。
+- 新帳號／孩子已刪，兩還原庫worker暫停，原庫未變；工程外密文備份／日誌保留。空分區只證明查詢／契約，不冒稱所有業務樣例完整回歸。沒有真SMTP、模型／embedding、通知、瀏覽器、雲端或VM重啟；UI由A07接線。
+- [EV](artifacts/verification/P2_A08_CHECKS.json)、[SQL raw](artifacts/verification/P2_A08_SQL.log)、[準備及保留失敗](artifacts/verification/P2_A08_PREPARE_FAILURE.json)。Node24.11／npm11.6.1，部署固定版本未改；不重跑全套。按C帳號交付後開始A07，完整P2與部署仍未完成。
+
+
+<a id="log-20261008-p2-a07"></a>
+## 2026-10-08｜P2-A07 正式單人頁面接線
+
+- 基線ddb212a；B主責、權重3，B60%／C30%／A10%。主模型親寫契約、引導文案、整合及review；三個Sol6.1 xhigh分別處理帳號、歷史／參考及文件讀取。共用AI由A統籌，不稱各成員獨立人工實作或驗收。
+- 復用AccountService／業務owner、原op與scope：登入／邀請、原生驗證找回回頁、同意、會話、分批下載及退出接點；持久工作、私訊續讀、本人通知及有權公共目錄；文件／版本分頁、固定快照續讀及draft130必要生命週期修正。保留版型／動效，不合併整條draft。
+- 三域各2個必要離線聚合由executor回報通過，帳號收據小修後1項補核；整合frontend及scoped Server型別通過。Overlay曾用不支援StyleSheet欄位，改明確定位後型別通過；沒有全倉build/lint/test。
+- 真UI沿A08加密還原庫、同2帳號／1孩子／1聊天／1文件。首次Windows bind、inert填表及root navigator卸載導致deep link遺失分別保留失敗；後者局部修正保持navigator。後續原op丟回覆／查核一次、私人歷史、公共目錄、同文件跨頁／重開通過。一次200 HTTP上限停批後只續剩餘項；未重新建立fixture。
+- 額外sidebar more/profile等待未完成，沒有足夠證據判定產品根因，保留未驗；最終改直接核對相同帳戶切換後native身份、首頁、權威孩子空清單與跨孩子404，最後173HTTP／4store通過並精確清理，baseline totals一致、worker暫停。各批合共911次嘗試HTTP（含攔截／失敗）／8store，並非單次流程；[EV](artifacts/verification/P2_A07_CHECKS.json)及原raw保留。
+- 零模型／embedding／外部SMTP／通知／部署；復用A08驗證、找回、刪除恢復證據，不稱全站或真Agent完成。A09須觀察剩餘路由、完成代表Agent／GCP交付及真SMTP設定。按B帳號review／PR／合併後再開A09。
+
+## 2026-10-08｜PR #111 剩餘回歸覆蓋收尾
+
+- 基線 master `1b3ef078`。依使用者要求處理舊 draft #111；核心產品修復已由 #137 適配合併，本次只補仍有價值的回歸測試及重跑所需 scoped 設定，不再次合併舊分支或修改產品程式。
+- 保留現有 2 組聚合測試，新增普通寫入與重新排期容量界線、終態遷移 gate 的交易回滾、滿額到期工作與後續項目進度、queued 取消／既有收據結算，以及 Server／client 接受 202、拒絕 203 的回歸；恢復 3 組前端 198–202 容量呈現測試。
+- 當次 backend／client 7/7、前端 shallow 3/3 通過；scoped Server／client strict typecheck 與前端 typecheck 通過。獨立覆核重跑同一批 10/10 通過，不重複計為額外案例。7 個隔離副本的 guard mutation 均被斷言攔住；候選產品檔未改。首次 mutation harness 因定位字串不唯一停止，修正定位後重跑，失敗過程保留於當次證據。
+- 測試使用 fake Pool、合成資料及 shallow 元件；本次未重跑真 PostgreSQL、真瀏覽器或正式部署。#137 的本機 PostgreSQL 18.6／029 遷移合成驗證是既有歷史證據，不算成本次結果；正式環境的 readers／029 啟用狀態未核對。
+- 缺少的測試型別依賴只在本地依精確 lock 版本及完整性值補齊，未改 package-lock。PLAN 區分原執行時限制與後續 #137 承接；其餘歷史紀錄不改。新補充 PR 正常合併並核對後，才關閉 #111 並留下接替連結；此記錄不預先宣稱遠端合併或關閉完成。
+- 當次證據：`artifacts/verification/PR111_REGRESSION_RECOVERY_CHECKS.json`。零模型／外送／正式資料庫變更／GCP 部署。

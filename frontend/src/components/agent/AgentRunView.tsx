@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
@@ -26,6 +27,7 @@ const retrievalLabels = {
   not_used: "本次沒有使用知識檢索",
 } as const;
 const receiptDescriptions: Record<NonNullable<AgentProposalView["result"]>["kind"], string> = {
+  family_document: "指定修改已保存到同一份家庭文件；請按目前來源及版本核對正文。",
   task: "此收據代表任務資料已保存；照護事項的完成狀態另行記錄。",
   memory_fact: "此收據代表確認事實已保存；不代表照護事項已完成。",
   concern: "關注鏈已保存。",
@@ -115,7 +117,7 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
   </View>;
 }
 
-function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
+function RunDetails({ run, emptyReady }: { emptyReady: boolean; run: NonNullable<AgentRunModel["run"]> }) {
   const [expanded, setExpanded] = useState(false);
   return <View style={[styles.section, styles.disclosureSection]}>
     <AppButton expanded={expanded} label={expanded ? "收起運行詳情" : "查看運行詳情"} variant="quiet"
@@ -129,7 +131,7 @@ function RunDetails({ run }: { run: NonNullable<AgentRunModel["run"]> }) {
       </View>
       <Text style={run.retrievalMode === "keyword_degraded" ? styles.warning : styles.meta}>檢索方式：{retrievalLabels[run.retrievalMode]}</Text>
       <Text accessibilityRole="header" style={styles.title}>工具結果</Text>
-      {run.tools.length === 0 ? <Text style={styles.meta}>本次沒有工具結果。</Text> : run.tools.map(tool => <View key={tool.id} style={styles.tool}>
+      {run.tools.length === 0 ? emptyReady ? <EmptyListCard title="本次沒有工具結果" /> : <Text style={styles.meta}>尚未取得可確認的工具結果。</Text> : run.tools.map(tool => <View key={tool.id} style={styles.tool}>
         <View style={styles.top}><Text style={styles.body}>{tool.nameLabel}</Text><AppStatusBadge label={agentToolLabels[tool.status]} tone={tool.status === "succeeded" ? "success" : tool.status === "failed" ? "error" : "warning"} /></View>
         {tool.status === "succeeded" ? <Text style={styles.meta}>{tool.savesCandidate
           ? "候選已保存，尚未執行；請核對下方內容，再明確決定。"
@@ -217,10 +219,10 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource }: 
       {run.status === "unknown" ? <StateNote tone="warning">本次運行結果未知，請讀取原運行核對；未知不能當作已成功或已完成。</StateNote> : null}
       <ChatMessage key={`answer-${run.id}`} testID="agent-answer" embedded message={{ id: run.id, role: "assistant", text: run.text, sources: run.citations }}
         onOpenSource={actions.openSource} onLocateSource={onLocateSource} degraded={run.retrievalMode === "keyword_degraded"} />
-      <RunDetails key={run.id} run={run} />
+      <RunDetails key={run.id} run={run} emptyReady={ready && model.online && run.status === "completed"} />
       <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.title}>待核對及已處理候選</Text>
-        {run.proposals.length === 0 ? <Text style={styles.meta}>本次沒有候選事項。</Text> : run.proposals.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
+        {run.proposals.length === 0 ? ready && model.online && run.status === "completed" ? <EmptyListCard title="本次沒有候選事項" /> : <Text style={styles.meta}>尚未取得可確認的候選事項。</Text> : run.proposals.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
       </View>
     </View> : null}
   </SectionCard></View>;

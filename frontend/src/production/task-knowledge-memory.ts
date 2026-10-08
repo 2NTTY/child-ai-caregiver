@@ -1,3 +1,4 @@
+import type { PersonalHistoryOwner } from "./usePersonalHistory";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createMemoryApi, MemoryApiError } from "../../../src/client/memory-api";
 import type { MemoryFact, MemoryTopic } from "../../../src/shared/memory";
@@ -6,7 +7,7 @@ import type { LongTermMemoryView, MemoryReferenceWorkspaceValue } from "../memor
 import { useTaskKnowledgeMemoryManagement, type MemoryManagementEntity } from "./task-knowledge-memory-management";
 import { mergeById, useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
 
-export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment) {
+export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHistory?: PersonalHistoryOwner | null) {
   const api = useMemo(() => createMemoryApi(env.apiBaseUrl), [env.apiBaseUrl]);
   const runtime = useTaskKnowledgeRuntime(env, "memory");
   const [facts, setFacts] = useState<MemoryFactView[]>([]), [summary, setSummary] = useState<MemorySummaryView | null>(null);
@@ -128,12 +129,16 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment) {
   const value: MemoryReferenceWorkspaceValue = { scopeKey: env.scopeKey, model: {
     scopeKey: env.scopeKey, childId: env.childId!, childName: env.childName, access: runtime.lost ? "revoked" : "active", online: env.online,
     dataLabel: "查看已保存記憶及來源",
-    shortTerm: { scopeKey: env.scopeKey, state: "unavailable", revision: null, data: null, asOf: null },
-    references: { scopeKey: env.scopeKey, state: "unavailable", revision: null, data: null, asOf: null },
+    shortTerm: personalHistory?.scopeKey === env.scopeKey ? personalHistory.shortTerm : { scopeKey: env.scopeKey, state: "unavailable", revision: null, data: null, asOf: null },
+    references: personalHistory?.scopeKey === env.scopeKey ? personalHistory.references : { scopeKey: env.scopeKey, state: "unavailable", revision: null, data: null, asOf: null },
     longTerm: loaded && !runtime.lost ? { scopeKey: env.scopeKey, state: failed || !env.online ? "stale" : "ready", revision: JSON.stringify([facts.map(item => [item.id, item.version]), summary?.id, summary?.version]),
       asOf, data: { childId: env.childId!, facts, hasMoreFacts: cursor !== null, summary, histories } }
       : { scopeKey: env.scopeKey, state: failed ? "error" : "loading", revision: null, data: null, asOf: null },
   }, reads: {
+    loadMoreReferences: personalHistory?.actions.moreReferences, loadMoreWork: personalHistory?.actions.moreWork,
+    readWorkMessage: personalHistory?.actions.readMessage, loadMoreWorkMessage: personalHistory?.actions.moreMessage,
+    closeWorkMessage: personalHistory?.actions.closeMessage, refreshContext: personalHistory?.actions.refresh,
+    workBusy: personalHistory?.busy.work, messageBusy: personalHistory?.busy.message, referencesBusy: personalHistory?.busy.references,
     loadMoreFacts() { if (cursor) refresh(cursor); }, readFactHistory(id, expectedVersion) { history(id, expectedVersion, false); },
     loadMoreFactHistory(id, expectedVersion) { history(id, expectedVersion, true); },
   } };

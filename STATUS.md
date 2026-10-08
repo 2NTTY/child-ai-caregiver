@@ -4,15 +4,10 @@
 
 ## 目前與接手
 
-- PR #117 報告期間修復已合併未部署。已替代的舊根測試前端正作可恢復歸檔；共用業務與舊準備資料恢復保留。新前端準備正文生成／編輯、文件分段讀取、長期報告與歷史等能力差距詳見 [PLAN](PLAN.md#current-capability-gaps)，不把有API或舊包完成等同完整產品驗收。
-
-- **目前仍在正式使用驗收與修復**：PR #105–#108 已部署，普通 Agent 記錄未知數量已真 UI 讀回；PR #109 記憶讀取及 #110 收據解析已合併未部署。PR #112 待辦意圖／互動輸入上限及設定頁真值已合併未部署，最終文字與完整 Agent 待辦流程仍未全部通過。PR #111 保持 draft，未通過真 PostgreSQL 遷移驗證；ADK 指令資料分層與安全終結已獲批准，已通過最終組合定向及獨立覆核，Prompt Pack 0.1.25尚未部署。詳見根 PLAN 當前入口。
-
-- **P1／P2 原定工作包已結案，P3 未啟動。** INT 新前端已接線並切換至公開入口，最後 INT-W07 隨本包 PR 合併結案；[當前包及未驗项](PLAN.md#active)／[階段及證據](PLAN.md#phases)。
-- 新前端設計保持；最後一則真 Agent 對話的收據／記錄／聊天核對一致，合成孩子已清理。完整瀏覽器序列在 HTTP 上限停批，未重跑；以既有各包證據及同一 fixture 的 API 補核作必要交付依據，不冒稱本輪全部 UI 斷言通過。[唯一當前入口](PLAN.md#active)。
-- **前端工作**：直接讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN 當前包](frontend/PLAN.md#active)，該處區分已合併成果與活動前端 PR；不用先讀整份根計劃或歷史 HANDOFF。
-- **Server／Agent／正式整合、文件維護**：讀 [根 PLAN 當前包](PLAN.md#active)，再按範圍讀契約或 [正式 UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。
-- 本人模型 key／限額設定已隨 INT 部署；個人 Gemini 真生成／embedding 的服務地區限制仍保留，見 [所屬包](PLAN.md#s06-w05)／[正式入口及限制](docs/PRODUCTION_FRONTEND.md)。
+- **P2-A01～A06、A08已合併；A07最低接線驗收通過，待本包交付。** 唯一當前入口為 [PLAN#active](PLAN.md#active)。正式帳號、持久工作／歷史及文件接點已接好；合成資料已清理。新部署、真SMTP及完整Agent／穩定服務由A09完成，尚未宣稱整輪完成；舊P1／P2／INT證據保留，P3未啟動。
+- 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
+- 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
+- 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。
 
 <a id="deployment"></a>
 ## 最後部署觀察（非即時狀態）

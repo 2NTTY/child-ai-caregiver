@@ -72,6 +72,7 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChange
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [value.id, value.childId, value.createdBy, value.visibility, value.status, value.version, message, record, sourceVersion, payload]);
     else await client.query("UPDATE memory_facts SET visibility=$2,status=$3,version=$4,source_message_id=$5,source_record_id=$6,source_record_version=$7,payload_encrypted=$8 WHERE id=$1",
       [value.id, value.visibility, value.status, value.version, message, record, sourceVersion, payload]);
+    await client.query("UPDATE memory_facts SET valid_until=$2,validity_indexed=true WHERE id=$1 AND version=$3", [value.id, value.validUntil, value.version]);
     await client.query("INSERT INTO memory_fact_revisions(fact_id,version,visibility,payload_encrypted) VALUES($1,$2,$3,$4)", [value.id, value.version, value.visibility, payload]);
     await changed(client, value.childId, value.visibility, value.createdBy);
   }
@@ -95,7 +96,13 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChange
     return { items: rows.slice(0, limit).map(topicResult), nextAfterId: rows.length > limit ? rows[limit - 1].id : null };
   }
   return {
-    facts: (userId: string, childId: string, after?: string) => transaction(userId, childId, false, client => facts(client, userId, childId, after)),
+    facts: (userId: string, childId: string, after?: string, limit = 50) => {
+      if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw new FamilyError(400, "invalid_input");
+      return transaction(userId, childId, false, client => facts(client, userId, childId, after, limit));
+    },
+    getFact: (userId: string, childId: string, id: string) => transaction(userId, childId, false, async client => {
+      const row = await find(client, "facts", userId, childId, id); return row ? factResult(client, row, userId) : null;
+    }),
     topics: (userId: string, childId: string, after?: string) => transaction(userId, childId, false, client => topics(client, userId, childId, after)),
     summary: (userId: string, childId: string) => transaction(userId, childId, false, async client => ({ summary: await readSummary(client, cipher, userId, childId) })),
     prepareSummary: (userId: string, childId: string) => transaction(userId, childId, false, client => summaryInput(client, cipher, userId, childId)),
@@ -205,13 +212,16 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChange
         return true;
       });
     },
-    async context(userId: string, childId: string, scope: "private" | "family"): Promise<MemoryContext | null> {
+    // Reports reuse the authorized fact decoder without reading conversation summaries or topics.
+    reportFacts(userId: string, childId: string, afterId?: string) {
+      return transaction(userId, childId, false, client => facts(client, userId, childId, afterId, 20, true, true));
+    },
+    async context(userId: string, childId: string, scope: "private" | "family", pages: { factsAfterId?: string; topicsAfterId?: string } = {}): Promise<MemoryContext | null> {
       return transaction(userId, childId, false, async (client, _role, profileVersion) => {
         const profileRow = (await client.query<{ payload_encrypted: string }>("SELECT payload_encrypted FROM child_profile_revisions WHERE child_id=$1 AND version=$2", [childId, profileVersion])).rows[0];
         const profile: ChildProfile = profileRow ? JSON.parse(cipher.decrypt(profileRow.payload_encrypted, `child-profile:${childId}:${profileVersion}`))
           : { childId, version: profileVersion, data: null, confirmedBy: null, confirmedAt: null, reason: null };
-        const factPage = await facts(client, userId, childId, undefined, 200, scope === "family", true), topicPage = await topics(client, userId, childId, undefined, 200, scope === "family");
-        if (factPage.nextAfterId || topicPage.nextAfterId) throw new FamilyError(400, "memory_context_requires_selection");
+        const factPage = await facts(client, userId, childId, pages.factsAfterId, 20, scope === "family", true), topicPage = await topics(client, userId, childId, pages.topicsAfterId, 20, scope === "family");
         const input = scope === "private" ? await summaryInput(client, cipher, userId, childId) : null;
         const applicable = factPage.items.filter(value => value.applicable), values = new Map<string, Set<string>>();
         for (const fact of applicable) { const key = normalizedFactKey(fact.key), contents = values.get(key) ?? new Set<string>(); contents.add(fact.content); values.set(key, contents); }
@@ -219,7 +229,8 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChange
         const profileApplicable = profileIsApplicable(profile.data);
         const unavailableFactKeys = factPage.items.filter(value => !value.applicable).map(value => normalizedFactKey(value.key));
         return { profile, profileApplicable, facts: applicable, topics: topicPage.items, summary: input?.previous ?? null, conflictingKeys, unavailableFactKeys,
-          recentMessages: input?.messages ?? [], truncated: { facts: false, topics: false, messages: input?.moreUncovered ?? false } };
+          recentMessages: input?.messages ?? [], nextFactsAfterId: factPage.nextAfterId, nextTopicsAfterId: topicPage.nextAfterId, summaryUnavailable: input?.unavailableReason ?? null,
+          truncated: { facts: Boolean(factPage.nextAfterId), topics: Boolean(topicPage.nextAfterId), messages: input?.moreUncovered ?? false } };
       });
     },
   };

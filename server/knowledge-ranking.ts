@@ -10,7 +10,7 @@ function compareId(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
-function tokens(text: string, question = false): Set<string> {
+export function knowledgeTokens(text: string, question = false): Set<string> {
   let normalized = text.normalize("NFKC").toLowerCase();
   if (question) normalized = normalized.replace(QUESTION_PHRASES, " ").replace(QUESTION_PARTICLES, "");
   const result = new Set<string>();
@@ -22,11 +22,11 @@ function tokens(text: string, question = false): Set<string> {
     }
     for (let index = 0; index + 1 < word.length; index++) result.add(word.slice(index, index + 2));
   }
-  return result;
+  return new Set([...result].slice(0, 64));
 }
 
 function matches(query: ReadonlySet<string>, text: string): number {
-  const field = tokens(text);
+  const field = knowledgeTokens(text);
   let count = 0;
   for (const token of query) if (field.has(token)) count++;
   return count;
@@ -70,7 +70,9 @@ export function rankKnowledge(
     }
   }
 
-  const queryTokens = tokens(query, true);
+  if (candidates.length && candidates.every(candidate => candidate.rankScore !== undefined)) return candidates
+    .slice(0, limit).map(({ distance: _distance, rankScore: _rankScore, ...item }) => item);
+  const queryTokens = knowledgeTokens(query, true);
   if (queryTokens.size === 0) return [];
   const items = [...unique.values()];
   const vectorRank = items

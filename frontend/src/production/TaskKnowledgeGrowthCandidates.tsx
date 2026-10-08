@@ -22,21 +22,23 @@ export function TaskKnowledgeGrowthCandidates({ model, actions, onTask }: { mode
   const page = model.access === "lost" ? null : model.page;
   if (!page) return null;
   const selected = page.items.find(item => item.id === selectedId);
-  const emptyMessage = page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.region) ? "地區資料待確認。"
-    : page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.age) ? "目前無法提供適用建議。" : "暫時沒有建議。";
+  const applicabilityNotice = page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.region)
+    ? "目前未能將已確認地區用於建議篩選；原有資料已保留。"
+    : page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.age) ? "目前的建議只適用於 0–10 歲。" : null;
   return <View style={s.stack}>
-    <SectionCard><SectionHeader density="compact" title="成長建議" />
+    {page.items.length || page.historyHasMore ? <SectionCard><SectionHeader density="compact" title="成長建議" />
       {page.items.length ? <Text style={s.meta}>接受建議只記錄知悉或建立共享事項，不代表已完成、已預約或醫療判斷。</Text> : null}
       {page.items.length ? page.items.map(item => <View key={item.id} style={s.smallStack}>
         <Text style={s.title}>{item.title}</Text><Text style={s.meta}>{growthKindLabels[item.kind]} · {growthStateLabels[item.state]} · 版本 {item.version}</Text>
         <Text style={s.body}>{item.whyNow}</Text>
         <AppButton label="查看來源與核對候選" variant="secondary" density="compact" disabled={model.busy} onPress={() => setSelectedId(item.id)} />
-      </View>) : <Text style={s.body}>{emptyMessage}</Text>}
+      </View>) : null}
       {page.historyHasMore ? <Text style={s.meta}>仍有較早建議未載入。</Text> : null}
-    </SectionCard>
-    <SummaryDisclosure label="有限主題及人工確認近況" scopeKey={model.scopeKey}>
+    </SectionCard> : null}
+    {page.topics.length ? <SummaryDisclosure label="建議設定" scopeKey={model.scopeKey}>
+      {applicabilityNotice ? <Text style={s.meta}>{applicabilityNotice}</Text> : null}
       {page.topics.map(topic => <TopicForm key={`${model.scopeKey}:${topic.id}:${model.epoch}:${model.resetCounts[`topic:${topic.id}`] ?? 0}`} topic={topic} model={model} actions={actions} />)}
-    </SummaryDisclosure>
+    </SummaryDisclosure> : null}
     <AppDialog visible={!!selected} accessibilityLabel="核對成長候選" onDismiss={() => navigate(() => { if (model.dirty && !model.pending) actions.discardDrafts(); setSelectedId(null); })}>
       <AppDialog.Title>{selected?.title ?? "核對成長候選"}</AppDialog.Title>
       <AppDialog.ScrollArea><AppScrollView>{selected ? <AttentionForm key={`${model.scopeKey}:${selected.id}:${model.epoch}:${model.resetCounts[`item:${selected.id}`] ?? 0}`} item={selected} model={model} actions={actions} onTask={onTask} /> : null}

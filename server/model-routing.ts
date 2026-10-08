@@ -13,7 +13,7 @@ import { PERSONAL_MODEL, type ModelSettingsView, type ModelKeyCheck } from "../s
 import { AGENT_INTERACTIVE_INPUT } from "./agent-budget.ts";
 
 /** Credentials stay in this Server closure; never put the resolved object in a job or response. */
-export function createModelRouting(pool: Pool, cipher: StorageCipher, config: AiConfig) {
+export function createModelRouting(pool: Pool, cipher: StorageCipher, config: AiConfig, isUserAllowed: (userId: string) => Promise<boolean> = async () => true) {
   const settings = createModelSettingsStore(pool, cipher);
   const usage = { platform: createAiUsageStore(pool), personal: createAiUsageStore(pool, "personal") };
   const personalGlobalLimit = config.personalDailyGlobalAttempts ?? 1000;
@@ -36,9 +36,10 @@ export function createModelRouting(pool: Pool, cipher: StorageCipher, config: Ai
     },
     async available(userId: string) {
       const state = await settings.get(userId);
-      return config.enabled && (state.mode === "platform" ? Boolean(config.project) : state.mode === "personal" && state.keyConfigured);
+      return config.enabled && await isUserAllowed(userId) && (state.mode === "platform" ? Boolean(config.project) : state.mode === "personal" && state.keyConfigured);
     },
     async check(userId: string, version: number, signal: AbortSignal): Promise<ModelKeyCheck> {
+      if (!await isUserAllowed(userId)) throw new ModelSettingsError("unavailable", 403);
       const now = Date.now();
       for (const [id, time] of checks) if (now - time >= 60000) checks.delete(id);
       if (checks.has(userId) || checks.size >= 4) throw new ModelSettingsError("unavailable", 429);
@@ -53,12 +54,12 @@ export function createModelRouting(pool: Pool, cipher: StorageCipher, config: Ai
     async resolve(userId: string, trigger: "interactive" | "worker") {
       const snapshot = await settings.resolve(userId), state = snapshot.settings;
       const personal = state.mode === "personal";
-      const allowed = config.enabled && state.mode !== "disabled" && (personal
+      const allowed = config.enabled && await isUserAllowed(userId) && state.mode !== "disabled" && (personal
         ? Boolean(snapshot.apiKey) && (trigger !== "worker" || state.backgroundEnabled) : Boolean(config.project));
       const selectedConfig: AiConfig = { ...config, enabled: allowed,
         ...(personal ? { maxAttempts: 1, model: PERSONAL_MODEL, dailyUserAttempts: state.dailyLimit, dailyGlobalAttempts: personalGlobalLimit } : {}) };
       const providers = personal && snapshot.apiKey ? createGeminiKeyProviders(selectedConfig, snapshot.apiKey) : platform;
-      const authorize = async () => allowed && await settings.isCurrent(userId, state.version);
+      const authorize = async () => allowed && await isUserAllowed(userId) && await settings.isCurrent(userId, state.version);
       const gateway = createEmbeddingGateway({ config: selectedConfig, provider: allowed ? providers.embedding : undefined,
         usage: createEmbeddingUsage(pool, personal ? "personal" : "platform") });
       return { config: selectedConfig, provider: providers.agent, model: providers.model,

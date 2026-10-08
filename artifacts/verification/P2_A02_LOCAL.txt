@@ -1,0 +1,29 @@
+Original SQL batch (exit 1; retained)
+{"status":"failed","step":"history_high_water_and_unknown_run_recovery","passed":["reviewed_migration_and_paused_worker","two_synthetic_accounts_and_two_children","cross_turn_work_source_and_original_receipt","pool_rebuild_preserves_encrypted_work","unique_specific_confirmation_and_response_retry","expired_multiple_and_later_correction_do_not_accept","original_fact_revision_and_shared_deactivation"],"counts":{"accounts":2,"children":2,"tasks":1,"facts":2,"messages":23,"businessCalls":91,"poolRebuilds":1,"networkAttempts":0},"fixtures":{"users":["iP4FF7zdbrZZ1zIXwZkXzlFA05TNAIIE","lUT9E81RO9WTeLG8cvBUbTsTTCU7X8YU"],"emails":["p2-a02-6bdaf08b-9eee-440e-aef2-ddca7a004e77@example.test","p2-a02-b8df81ed-39b8-49c0-beda-9dac896d9b3a@example.test"],"children":["61dbeddd-da4b-4ffa-947e-24efde8a8ccc","fccb5a21-468d-4871-b4f8-8efdc9c21270"]},"code":"ERR_ASSERTION","message":"The validation function is expected to return \"true\". Received false\n\nCaught error:\n\nAssertionError [ERR_ASSERTION]: Business call cap exceeded"}
+node:internal/errors:985
+  const err = new Error(message);
+              ^
+
+Error: Command failed: C:\Program Files\nodejs\node.exe scripts/p2-a02-acceptance.mjs --approved-local-p2-a02
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execFileSync (node:child_process:961:15)
+    at file:///C:/Users/2NTTY/.codex/worktrees/p2-a02-persistent-work/%E5%AD%A9%E5%AD%90ai%E6%8A%A4%E5%B7%A5/.cache/p2-a02-local.mjs:32:2
+    at ModuleJob.run (node:internal/modules/esm/module_job:377:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:691:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 20040,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v24.11.0
+
+Exact synthetic cleanup (exit 0)
+{"status":"cleaned","node":"24.11.0","accounts":2,"children":2,"before":{"database":"yuban_s06_test","children":16,"messages":40,"facts":3,"photos":2,"worker_enabled":false},"after":{"database":"yuban_s06_test","children":14,"messages":17,"facts":1,"photos":2,"worker_enabled":false},"acceptance":"Original run remains exit 1; no acceptance rerun or new business/model calls."}
+
+Scoped TypeScript exit: 0

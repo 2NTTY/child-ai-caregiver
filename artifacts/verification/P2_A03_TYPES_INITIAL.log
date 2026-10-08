@@ -1,0 +1,8 @@
+server/agent-document-tools.ts(88,123): error TS2345: Argument of type '() => Promise<{ status: "rejected"; data: { code: string; }; reference?: undefined; } | { status: "succeeded"; reference: string; data: AgentProposal; } | { status: "rejected"; data?: undefined; reference?: undefined; }>' is not assignable to parameter of type '() => Promise<AgentToolResult>'.
+  Type 'Promise<{ status: "rejected"; data: { code: string; }; reference?: undefined; } | { status: "succeeded"; reference: string; data: AgentProposal; } | { status: "rejected"; data?: undefined; reference?: undefined; }>' is not assignable to type 'Promise<AgentToolResult>'.
+    Type '{ status: "rejected"; data: { code: string; }; reference?: undefined; } | { status: "succeeded"; reference: string; data: AgentProposal; } | { status: "rejected"; data?: undefined; reference?: undefined; }' is not assignable to type 'AgentToolResult'.
+      Type '{ status: "succeeded"; reference: string; data: AgentProposal; }' is not assignable to type 'AgentToolResult'.
+        Types of property 'data' are incompatible.
+          Type 'AgentProposal' is not assignable to type 'Record<string, unknown>'.
+            Index signature for type 'string' is missing in type 'AgentProposal'.
+server/product-agent-store.ts(234,52): error TS18047: 'target' is possibly 'null'.

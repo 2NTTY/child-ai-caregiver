@@ -1,0 +1,290 @@
+{
+  "package": "P2-A07",
+  "baseline": "ddb212a434cd4093485127140828db50248f5a39",
+  "recordedAt": "2026-10-08T01:18:46.400Z",
+  "decision": "minimum package acceptance passed; deployment and complete service evidence belong to A09",
+  "environment": {
+    "node": "24.11.0",
+    "npm": "11.6.1",
+    "postgres": "18.6",
+    "browser": "Chromium headless 1243",
+    "database": "p2_a08_service_20261008"
+  },
+  "offline": {
+    "accountAggregates": 2,
+    "documentAggregates": 2,
+    "historyAggregates": 2,
+    "result": "executor reports passed; not real service evidence",
+    "receiptProjectionRecheck": "one affected account aggregate passed"
+  },
+  "typescript": {
+    "frontend": "passed after integration and root navigator fix",
+    "serverEntryScoped": "passed scripts/tsconfig.p2-a07.json",
+    "preservedFailure": "Root overlay initially used unsupported StyleSheet.absoluteFillObject; replaced with explicit positioning and frontend typecheck passed."
+  },
+  "reusedEvidence": [
+    "P2_A08_CHECKS.json native auth/email capture/data erasure/restore; not repeated",
+    "P2_A02_CHECKS.json work/history backend",
+    "P2_A03_CHECKS.json fixed-version document reads"
+  ],
+  "ui": {
+    "attempts": [
+      {
+        "file": "P2_A07_UI.log",
+        "state": "failed",
+        "stage": "start_real_server",
+        "code": "local_process_stopped",
+        "checks": [],
+        "http": 0,
+        "stores": 2,
+        "blocked": 0,
+        "lost": false,
+        "submissions": 0,
+        "lookup": false,
+        "fixtureUsers": [
+          "7omo6eDdCulBiuxRMhbl42NcX7wIcvCF",
+          "7BvUaQlW3YREwLFa4dIg4Zsw7l39gdLr"
+        ],
+        "childId": null
+      },
+      {
+        "file": "P2_A07_UI_ACCOUNT_FINISH.log",
+        "state": "failed",
+        "stage": "account_switch",
+        "lastAction": "wait_profile_readiness",
+        "code": "ui_acceptance_failed",
+        "checks": [
+          "real_login_and_consent"
+        ],
+        "http": 183,
+        "stores": 0,
+        "blocked": 0,
+        "lost": false,
+        "submissions": 0,
+        "lookup": false,
+        "fixtureUsers": 2,
+        "fixtureChildren": 1
+      },
+      {
+        "file": "P2_A07_UI_NAVIGATOR_FIX.log",
+        "state": "failed",
+        "stage": "document_read",
+        "lastAction": "recover_child",
+        "code": "ui_acceptance_failed",
+        "checks": [
+          "real_login_and_consent",
+          "child_original_operation_recovered_once",
+          "saved_private_chat_history"
+        ],
+        "http": 204,
+        "stores": 2,
+        "blocked": 4,
+        "lost": true,
+        "submissions": 1,
+        "lookup": true,
+        "fixtureUsers": 2,
+        "fixtureChildren": 1
+      },
+      {
+        "file": "P2_A07_UI_PORT_FIX.log",
+        "state": "failed",
+        "stage": "child_unknown_recovery",
+        "code": "ui_acceptance_failed",
+        "checks": [
+          "real_login_and_consent"
+        ],
+        "http": 47,
+        "stores": 0,
+        "blocked": 0,
+        "lost": false,
+        "submissions": 0,
+        "lookup": false,
+        "fixtureUsers": [
+          "7omo6eDdCulBiuxRMhbl42NcX7wIcvCF",
+          "7BvUaQlW3YREwLFa4dIg4Zsw7l39gdLr"
+        ],
+        "childId": null
+      },
+      {
+        "file": "P2_A07_UI_PROFILE.log",
+        "state": "failed",
+        "stage": "login_and_consent",
+        "lastAction": null,
+        "code": "ui_acceptance_failed",
+        "checks": [],
+        "http": 3,
+        "stores": 0,
+        "blocked": 0,
+        "lost": false,
+        "submissions": 0,
+        "lookup": false,
+        "fixtureUsers": [
+          "7omo6eDdCulBiuxRMhbl42NcX7wIcvCF",
+          "7BvUaQlW3YREwLFa4dIg4Zsw7l39gdLr"
+        ],
+        "childId": null
+      },
+      {
+        "file": "P2_A07_UI_PROFILE_RESUME.log",
+        "state": "failed",
+        "stage": "login_and_consent",
+        "lastAction": null,
+        "code": "ui_acceptance_failed",
+        "checks": [],
+        "http": 2,
+        "stores": 0,
+        "blocked": 0,
+        "lost": false,
+        "submissions": 0,
+        "lookup": false,
+        "fixtureUsers": [
+          "7omo6eDdCulBiuxRMhbl42NcX7wIcvCF",
+          "7BvUaQlW3YREwLFa4dIg4Zsw7l39gdLr"
+        ],
+        "childId": null
+      },
+      {
+        "file": "P2_A07_UI_READY_FIX.log",
+        "state": "failed",
+        "stage": "child_unknown_recovery",
+        "lastAction": "child_name",
+        "code": "ui_acceptance_failed",
+        "checks": [
+          "real_login_and_consent"
+        ],
+        "http": 55,
+        "stores": 0,
+        "blocked": 0,
+        "lost": false,
+        "submissions": 0,
+        "lookup": false,
+        "fixtureUsers": 2,
+        "fixtureChildren": 0
+      },
+      {
+        "file": "P2_A07_UI_REMAINING.log",
+        "state": "failed",
+        "stage": "account_switch",
+        "lastAction": "wait_reloaded_document",
+        "code": "ui_acceptance_failed",
+        "checks": [
+          "real_login_and_consent",
+          "same_document_visible",
+          "authorised_library_catalog",
+          "reload_reads_saved_document"
+        ],
+        "http": 193,
+        "stores": 0,
+        "blocked": 0,
+        "lost": false,
+        "submissions": 0,
+        "lookup": false,
+        "fixtureUsers": 2,
+        "fixtureChildren": 1
+      },
+      {
+        "file": "P2_A07_UI_RESUME.log",
+        "state": "failed",
+        "stage": "start_real_server",
+        "code": "local_process_stopped",
+        "checks": [],
+        "http": 0,
+        "stores": 0,
+        "blocked": 0,
+        "lost": false,
+        "submissions": 0,
+        "lookup": false,
+        "startupCodes": [
+          "server_start_failed"
+        ],
+        "fixtureUsers": [
+          "7omo6eDdCulBiuxRMhbl42NcX7wIcvCF",
+          "7BvUaQlW3YREwLFa4dIg4Zsw7l39gdLr"
+        ],
+        "childId": null
+      },
+      {
+        "file": "P2_A07_UI_ROUTE_FIX.log",
+        "state": "failed",
+        "stage": "child_unknown_recovery",
+        "lastAction": "child_name",
+        "code": "ui_acceptance_failed",
+        "checks": [
+          "real_login_and_consent"
+        ],
+        "http": 51,
+        "stores": 0,
+        "blocked": 0,
+        "lost": false,
+        "submissions": 0,
+        "lookup": false,
+        "fixtureUsers": 2,
+        "fixtureChildren": 0
+      },
+      {
+        "file": "P2_A07_UI_SCOPE_FINISH.log",
+        "state": "passed",
+        "checks": [
+          "real_login_and_consent",
+          "account_and_child_scope_isolation",
+          "only_own_fixtures_removed"
+        ],
+        "http": 173,
+        "httpCap": 200,
+        "stores": 4,
+        "storeCap": 12,
+        "blocked": 0,
+        "realModel": 0,
+        "embedding": 0,
+        "externalMail": 0,
+        "notifications": 0,
+        "fixtureUsers": 2,
+        "fixtureChildren": 1,
+        "cleanup": true,
+        "limits": "Verified identities are fixture setup; native verification/reset reuse A08. No true Agent run or deployment."
+      }
+    ],
+    "passedCoverage": [
+      "real_login_and_consent",
+      "child_original_operation_recovered_once",
+      "saved_private_chat_history",
+      "same_document_visible",
+      "authorised_library_catalog",
+      "reload_reads_saved_document",
+      "account_and_child_scope_isolation",
+      "only_own_fixtures_removed"
+    ],
+    "pending": [],
+    "fixture": {
+      "users": 2,
+      "children": 1,
+      "messages": 1,
+      "documents": 1,
+      "preserved": false,
+      "cleanup": "passed; baseline totals restored, worker remains paused"
+    },
+    "zeroExternal": {
+      "generation": 0,
+      "embedding": 0,
+      "mail": 0,
+      "notifications": 0,
+      "cloud": 0
+    },
+    "attemptedHttpTotal": 911,
+    "storeCallsTotal": 8,
+    "preservedFailures": [
+      "Windows local bind/startup failed before HTTP; moved dedicated local ports.",
+      "First-screen inert input requires actual reveal, not presence.",
+      "Root admission unmounted navigator and cleared deep links; keep navigator mounted, overlay admission, focused login redirect.",
+      "HTTP cap stopped repeated full-page loading; resumed only remaining checks with same fixtures.",
+      "Additional sidebar more/profile navigation did not complete in harness; no proof of cause. Isolation verified using switched native identity, home, authoritative child list and other-child 404."
+    ]
+  },
+  "limitations": [
+    "No live Agent reasoning or deployment claimed; A09 owns integrated product/service evidence.",
+    "Verified fixture identities do not claim actual email verification.",
+    "No full preview suite or browser matrix.",
+    "Two extra sidebar navigation waits unresolved; no full-site navigation claim. Observe route and leave guard in A09 representative flow."
+  ],
+  "review": "Main reviewed code/interfaces and actual evidence. Reused A08 native auth and data lifecycle evidence. No full matrix."
+}

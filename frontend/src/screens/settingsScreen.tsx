@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../components/EmptyListCard";
 import { useContainerWidth } from "../components/useContainerWidth";
 import { brand } from "../branding";
 import { useEffect, useId, useState } from "react";
@@ -10,6 +11,7 @@ import { MotionSettings } from "../components/appearance/MotionSettings";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTabPanel, AppTextField, SectionHeader, TextLink } from "../components/ui";
 import { useProduction } from "../production/ProductionProvider";
+import { AccountDataControls, AccountSecurityControls } from "../components/account/AccountDataControls";
 import { AgentAuthorization } from "../production/AgentAuthorization";
 import { ModelSettingsView } from "../components/model-settings/ModelSettingsView";
 import { ProductionChannelSettings, ProductionNotificationPreferences, useProductionSettingsDomains } from "../production/SettingsDomains";
@@ -33,7 +35,7 @@ export default function SettingsPage() {
   const leave = usePreviewNavigation();
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
-  const { model, actions, user, identityKey, scopeKey, authorization, signOut } = useProduction();
+  const { model, actions, user, identityKey, scopeKey, authorization, signOut, recordsState, online } = useProduction();
   const { modelSettings } = useProductionSettingsDomains();
   const { section } = useLocalSearchParams<{ section?: string | string[] }>();
   const requestedSection = Array.isArray(section) ? section[0] : section;
@@ -72,7 +74,8 @@ export default function SettingsPage() {
         <SectionCard testID="account-settings"><SectionHeader density="compact" title="登入與安全" subtitle="切換帳戶入口集中在這裏。" />
 
           <AppButton label="登出本人帳戶" variant="secondary" onPress={() => leave(() => { void signOut(); })} />
-          <Text style={styles.draftNote}>社交登入、重設密碼及刪除帳戶暫不可用。</Text>
+          <AccountSecurityControls />
+          <Text style={styles.draftNote}>社交登入暫不可用。</Text>
           <View style={styles.settingGroup}><SectionHeader density="compact" title="模型服務" subtitle="管理平台服務、個人密鑰及呼叫上限。" />
             <AppButton label="管理模型設定" variant="secondary" onPress={() => setTab("model")} />
           </View>
@@ -89,7 +92,7 @@ export default function SettingsPage() {
       </View>
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="children" active={tab === "children"}><SectionCard><SectionHeader density="compact" title="孩子設定" />
-      {model.children.length === 0 ? <Text style={styles.body}>目前沒有孩子檔案。</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
+      {model.children.length === 0 ? recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && online ? <EmptyListCard title="目前沒有孩子檔案" /> : <Text style={styles.body}>{recordsState.childrenLoading ? "正在讀取孩子列表…" : recordsState.childrenError ? "孩子列表未能讀取，請重新核對。" : "孩子列表尚未核對。"}</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
 
     </SectionCard></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><SectionHeader density="compact" title="家庭成員" subtitle="共享記錄與私人聊天的權限分開處理。" />
@@ -125,7 +128,7 @@ export default function SettingsPage() {
         </SectionCard>
       </View>
       <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="帳戶操作" />
-        <Text style={styles.body}>資料匯出、刪除帳戶及儲存用量暫不可用。</Text>
+        <AccountDataControls />
         <TextLink label="查看帳戶資料" onPress={() => setTab("account")} />
       </SectionCard></View>
     </AppTabPanel>

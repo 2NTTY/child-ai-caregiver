@@ -4,7 +4,7 @@ S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢
 
 ## 首批內容與適用性
 
-[語料](../knowledge/hk-official-seed.json) 有四個家庭健康服務來源、五個經主模型核對的精簡轉述；`sourceExcerpt` 另保留必要短原文，與轉述 `text` 清楚分開。保留原題、章節、URL、原日期字樣及限制，不把轉述冒充逐字引文。以人工取得／核對片段開始，不建完整爬蟲。`fetchedAt` 記本次彙集時間，不是官方發布時間；來源只列月份時，精確發布／修訂欄為 `null`。
+[語料](../knowledge/hk-official-seed.json) 沿用四個家庭健康服務網頁，補一份英文官方手冊的第3頁，共六個有限片段。`sourceExcerpt` 保留短原文，`originalText` 保存核對過的選錄段落／頁面，與轉述 `text` 清楚分開；extraction 記檔案 hash、PDF 實際頁碼及選取範圍，不宣稱已收錄整頁／整冊。保留原題、章節、URL、原日期字樣及限制，不把轉述冒充逐字引文。以人工取得／核對片段開始，不建完整爬蟲。`fetchedAt` 記本次彙集時間，不是官方發布時間；來源只列月份時，精確發布／修訂欄為 `null`。
 
 | 產品年齡段 | 初始片段 | 實際覆蓋及限制 |
 |---|---|---|
@@ -23,8 +23,8 @@ S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢
 
 1. `list`：列出版本、核對／發布、向量完成及缺失失敗數。
 2. `import knowledge/hk-official-seed.json`：只建立未發布版本，輸出 `versionId`／hash；相同內容重入不重新生成。
-3. `review VERSION --hash HASH --source-and-terms-checked`：操作者核對實際來源、條款、片段及適用性後記錄；檔案存在不等於已核對。
-4. `embed VERSION --max-calls N --approved-cost`：只生成缺失向量，每次一段；N 為 1–16，超過即停止，不自行拆多輪繞過批准。
+3. `review VERSION --hash HASH --source-and-terms-checked --assessment REVIEW.json`：核對實際來源與含義差異，按[新版核對](#a04-review)提供對照版本、原文依據與代表問題；只有旗標／hash 不能核准新版。
+4. `embed VERSION --max-calls N --approved-cost`：只生成缺失向量，每次一段；N 為 1–16，超過即停止，不自行拆多輪繞過批准。完成後只對已有有效語義審核的版本嘗試發布，來源或觀察已變時保持未發布。
 5. `publish VERSION --hash HASH`：只容許已核對、未過期、向量完整的版本；原子替換活躍指向，歷史版本保留。
 6. `disable SOURCE --reason REASON`：立即停用；原活躍版本標 withdrawn，重新發布須再次核對。
 7. `search INPUT.json --approved-cost`：輸入 `{query, filter}`；CLI 只印公共引用識別及實際模式，不回印查詢或向量。
@@ -33,13 +33,14 @@ S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢
 
 ## 檢索契約與限制
 
-- [KnowledgeFilter／KnowledgeResult](../src/shared/knowledge.ts) 是內部共用契約。Server 提供地區、實際或矯正年齡區間、主題及分類；約數區間須整段落在片段範圍。未知年齡只允許無年齡限制片段；此 seed 沒有這類片段。年齡不是模型自行推算的事實。
+- [KnowledgeFilter／KnowledgeResult](../src/shared/knowledge.ts) 由 Server 核定地域、分類及範圍。精確年齡用包含篩選；有來源的約數／查詢假設可找相交範圍，未知年齡亦可發現相關資料，但必須回傳 conditional／requires_clarification 語義。數字約數須連同原 asOf 推移為仍屬約數的當前檢索提示，不造生日；日期無效或未來便保留未知。原話及數值解讀不是已確認事實；檢索假設不改孩子檔案或精確任務資格。
 - [KnowledgeRetriever](../server/knowledge-retriever.ts) 每個 Agent run 建立一次，重用現有 `AgentBudget`；兩次查詢 embedding／90 秒與生成及工具共用同一運行期限。同 query 只重用向量，來源狀態每次重新查 DB；引用在交付前再以 chunk／版本／hash 核對。這項 metadata 檢查不證明語義支持。
-- PostgreSQL 先過濾發布、有效期、年齡、地區、主題及分類，再計算精確 cosine distance；標題／關鍵詞的繁中 bigram 與 Latin token 排序一起做 RRF，最多六片段。`0.4` 距離門檻為初始產品參數，須由少量召回案例核對，並非官方置信度。首版最多 1,000 個適用候選；超限明確拒絕，P4 再按實測擴充。
-- 只有 embedding 暫時不可用才標 `keyword_degraded`；取消、越權、額度、畸形向量或過長输入不被降級掩蓋。query 使用者及 corpus maintenance 都消耗既有同一全站每日 counter；maintenance 自身每日最多 16 次。沒有提高現網 5／20 額度。
+- PostgreSQL 先過濾發布、有效期、年齡、地區、主題及分類，再計算精確 cosine distance；標題／關鍵詞的繁中 bigram 與 Latin token 排序一起做 RRF，最多六片段。`0.4` 距離門檻為初始產品參數，須由少量召回案例核對，並非官方置信度。P2-A04 在 SQL 內分別排名及限量取回，不因全庫候選超过 1,000 便失敗；引用重驗按確切 ID，與排名前綴分開。
+- 只有 embedding 暫時不可用才標 `keyword_degraded`；取消、越權、額度、畸形向量或過長输入不被降級掩蓋。query 使用者及 corpus maintenance 都消耗既有同一全站每日 counter；maintenance 自身每日最多 16 次。不提高現行平台／本人用量配置；本文件的舊驗收數字不作運行上限。
 - 公共片段／向量與私人加密資料分開；不向量化家庭聊天。用量只存 operation／actor、模型、維度、成功／失敗、已知 token／billable characters；只有公共文件記 hash，查詢正文不入日誌。實際帳單仍由 GCP 提供。
 
-## 必要驗收與映像切換
+<a id="必要驗收與映像切換"></a>
+## 原 S10-W01 驗收與映像切換（歷史方法）
 
 `Dockerfile` 的 `postgres-vector` target 固定 PostgreSQL 18.6／pgvector 0.8.6；來源 commit 與許可見 [notices](../THIRD_PARTY_NOTICES.md#p2-vector-extension-and-public-knowledge)。Compose volume 及 PGDATA 不變，不能刪 volume 或另建空庫冒充升級。
 
@@ -52,16 +53,16 @@ docker build --network=none --file deploy/postgres/Dockerfile.package --tag yuba
 映像會檢查 hash、版本、架構及動態依賴；不執行套件 maintainer scripts。這條套件建置、同卷啟動及還原路徑已實測；原 source-build 路徑因下載逾時未完成，不冒稱通過。使用既有 Compose project／環境檔，以 `up -d --no-deps --no-build --wait postgres-test` 只替換獲准的合成容器，避免再走 source build；不能另改 project 名稱而誤建新 volume。其他平台不套用 amd64 套件。
 
 
-本機獲批後：先以 `verify-knowledge-storage.mjs capture --approved-knowledge-storage` 建工程外加密備份及既有表 hash；再建置並只重建合成 DB 容器，保留原 volume；執行 migration 009（既有 008／010／011 保持原 checksum）；然後 `verify-knowledge.mjs --approved-knowledge`。它預標四年齡段八條改寫問題及一條無關問題，最多 16 次 embedding、120 次 store 操作，失敗不自動重試或上調額度。原私人資料保留；測試新版本及歷史不刪除，最後恢复核對過的 seed 版本。
+以下是原 S10-W01 的已留證驗收方法，不作 A04 的重跑指令；舊 verify-knowledge.mjs 已由新語義核對契約取代。當時本機獲批後，先以 `verify-knowledge-storage.mjs capture --approved-knowledge-storage` 建工程外加密備份及既有表 hash；再建置並只重建合成 DB 容器，保留原 volume；執行 migration 009（既有 008／010／011 保持原 checksum）；然後 `verify-knowledge.mjs --approved-knowledge`。它預標四年齡段八條改寫問題及一條無關問題，最多 16 次 embedding、120 次 store 操作，失敗不自動重試或上調額度。原私人資料保留；測試新版本及歷史不刪除，最後恢复核對過的 seed 版本。
 
 最後 `verify-knowledge-storage.mjs restore --approved-knowledge-storage` 驗證既有資料、全庫加密備份及新空目標還原，實際查詢 pgvector，再只移除本次新建的還原庫。備份目錄由 `KNOWLEDGE_ACCEPTANCE_DIR` 指定、必須在工程外，沿用獨立 storage／backup key。必要環境用現有 `TEST_DATABASE_URL`、`PG_TOOL_CONTAINER`；不把它們寫入 Git。
 
 缺擴展、錯版本、pg_restore 錯誤或資料 hash 不符均不得標成功。上述腳本語法／純單元不是此驗收的替代品；S10-W01 證據會分列真服務、DB、還原及未執行項目。
 
 <a id="source-refresh"></a>
-## S10-W02 定期來源檢查（已實作、待必要驗收）
+## S10-W02 定期來源檢查與 A04 核對接點
 
-固定來源登記見 [catalog](../server/knowledge-source-catalog.ts)。四個 FHS 穩定頁每週一香港時間 09:00 檢查；CHP／RTHK 近期 RSS 每日香港時間 09:00 檢查。使用同一 pg-boss 的原生 cron／missed:once，停機漏跑合併為一次，不另建 scheduler。worker 啟動及每分鐘同步登記／暫停狀態，真正到期由原生 timekeeper 處理；網頁關閉仍運行，worker 本身須開啟。初始 migration 不自動登記或啟用來源。
+固定來源登記見 [catalog](../server/knowledge-source-catalog.ts)。四個 FHS 穩定頁及已登記的有限 PDF 頁面每週一香港時間 09:00 檢查；CHP／RTHK 近期 RSS 每日香港時間 09:00 檢查。使用同一 pg-boss 的原生 cron／missed:once，停機漏跑合併為一次，不另建 scheduler。worker 啟動及每分鐘同步登記／暫停狀態，真正到期由原生 timekeeper 處理；網頁關閉仍運行，worker 本身須開啟。初始 migration 不自動登記或啟用來源。
 
 ### 使用範圍
 
@@ -76,16 +77,32 @@ docker build --network=none --file deploy/postgres/Dockerfile.package --tag yuba
 1. register WATCH_ID --source-and-terms-checked：只登記固定清單的來源及用途；需要同時啟用共用 worker 時按 [worker 操作](P2_WORKER.md)確認目標及唯一執行者，不在此指令偷偷啟用。新登記來源在首次抓取／核對前不供引用。已啟用且定義相同時保留批准；定義變更或重新啟用則原子撤銷舊批准，不因改回原設定而自動恢復引用。
 2. check WATCH_ID --approved-source-check：以目前 watch revision／worker generation 入列一次；queued 或 already_pending 均不等於抓取完成。list 查工作實際結果；亦可等候正常每週／每日排程。
 3. inspect SOURCE_ID：查看受大小限制的公共觀察正文、原日期、content hash 及抓取時間。首次／實質變更後人工整理受影響片段，沿用原 knowledge.mjs import／review；不把整頁自動發表。原版失效或待新 hash 核對時停止引用，已保存版本不刪除。
-4. approve SOURCE_ID --observation-hash HASH --version UUID --version-hash HASH --source-and-terms-checked：把確切觀察版本與已核對知識版本綁定。日期、URL、分類、發布者及條款要一致；版本或觀察已變即拒絕，不能用舊確認批准新內容。
-5. 沿用 knowledge.mjs embed 的 --approved-cost／有限 max-calls，再 publish；internal 來源需明確帶 --internal-source-review。未變 title／片段 text／模型／pipeline 復用既有向量；正文觀察有變但核對後片段不變，可再批准原版，不為此重算。這些旗標不代替 AGENTS 的本輪服務成本批准。
+4. approve SOURCE_ID --observation-hash HASH --version UUID --version-hash HASH --source-and-terms-checked --assessment REVIEW.json：把確切觀察版本與已核對知識版本綁定。日期、URL、分類、發布者及條款要一致；版本或觀察已變即拒絕，不能用舊確認批准新內容。
+5. 沿用 knowledge.mjs embed 的 --approved-cost／有限 max-calls；核對及向量均齊備時 approve／review／embed 自動嘗試同一發布服務，pending 會回報實際缺項。publish 保留為操作者的明確入口；internal 來源需明確帶 --internal-source-review。未變 title／片段 text／模型／pipeline 復用既有向量；正文觀察有變但核對後片段不變，可再批准原版，不為此重算。這些旗標不代替 AGENTS 的本輪服務成本批准。
 6. disable WATCH_ID：立即停止該登記的後續查詢及排程，撤銷觀察批准。停用單個既有知識來源仍用 knowledge.mjs disable SOURCE；任何重新發布先核對，不因來源重現而自動復活。
 
 ### 失敗、日期與恢復
 
-抓取固定 HTTPS host，IPv4 DNS 檢查及地址固定、最多兩次同 host redirect；每次來源呼叫總計 20 秒、1 MiB、最多 50 個 RSS 項目。Cheerio 1.2.0 只解析內容，拒絕 RSS DTD／ENTITY；FHS 明確使用 #content，頁尾／導覽變動不應成為育兒正文。XML 各項 pubDate 分別保存；月份／無日期保持未知，不套用頻道 lastBuildDate。正文過長明確失敗，不靜默裁去限制條件。
+抓取固定 HTTPS host，IPv4 DNS 檢查及地址固定、最多兩次同 host redirect；網絡呼叫總計 20 秒，HTML／RSS 最多1MiB／50個RSS項目；已登記PDF最多32MiB，另用受限20秒worker解析已指定的最多八頁。Cheerio 1.2.0 只解析內容，拒絕 RSS DTD／ENTITY；FHS 明確使用 #content，頁尾／導覽變動不應成為育兒正文。XML 各項 pubDate 分別保存；月份／無日期保持未知，不套用頻道 lastBuildDate。正文過長明確失敗，不靜默裁去限制條件。
 
 觀察的 fetched_at 與 last_successful_check_at、來源發布／修訂日期及既有版本 checked_at（人工核對）分開。hash 未變只更新成功抓取 metadata，沒有向量呼叫；失敗保留最後成功內容與時間。404／410 或停用立即排除，恢復後也需重新批准。feed 不再列某項不自動判斷官方撤回，其成功時間停止前進；超過 24 小時或七日發布窗口便不進近期結果。
 
 SQL 回寫前重查登記／世代／全局暫停，job ID 唯一結果；網絡請求不持有 SQL 交易。每日／每週取回都是有界 GET，沒有模型或私人家庭資料外送。還原保留三張維護表及 pg-boss schedules/jobs，沿用 worker_control 關閉／新世代；核對唯一來源後才重新啟用，操作者可用 check 補查，不能把還原舊抓取時間當最新。
 
-目前已核對六份原 HTML／RSS 的 selector／日期欄位，並完成離線解析：四 FHS 月份精度保持未知日期；CHP 原 feed 有舊項目，不能因今天取回而寫成最新；RTHK description 有完整句段，不能冒充僅標題。這是來源格式研究及離線檢查，並非新 SQL／真 worker／網絡 adapter 驗收。[必要驗收腳本](../scripts/verify-knowledge-refresh.mjs)已準備並 review，使用者於 2026-09-28 選擇先保留待驗收，尚未執行；使用工程外受保護目錄、原加密合成庫、先備份及單次批准標記，檢查上限及已驗／未驗見 [EV-S10-W02](../artifacts/verification/S10_W02_CHECKS.json)。增量向量檢查使用明示合成向量，真來源只取回解析、不保存正文；沒有新 Gemini／embedding 呼叫、E2E 或部署。
+以下是 S10-W02 初始準備時點的證據，後續結果以原 EV／PLAN 為準：當時已核對六份原 HTML／RSS 的 selector／日期欄位，並完成離線解析：四 FHS 月份精度保持未知日期；CHP 原 feed 有舊項目，不能因今天取回而寫成最新；RTHK description 有完整句段，不能冒充僅標題。這是來源格式研究及離線檢查，並非新 SQL／真 worker／網絡 adapter 驗收。[必要驗收腳本](../scripts/verify-knowledge-refresh.mjs)已準備並 review，使用者於 2026-09-28 選擇先保留待驗收，尚未執行；使用工程外受保護目錄、原加密合成庫、先備份及單次批准標記，檢查上限及已驗／未驗見 [EV-S10-W02](../artifacts/verification/S10_W02_CHECKS.json)。增量向量檢查使用明示合成向量，真來源只取回解析、不保存正文；沒有新 Gemini／embedding 呼叫、E2E 或部署。
+
+
+<a id="a04-review"></a>
+## P2-A04 原文與含義核對
+
+2026-10-08 主模型重新核對現有四頁與 FHS 非商業署名條款。學前發展頁現列「10/2026 修訂網上內容」，因此更新種子的日期字樣；其餘日期仍保留原精度。選取的「多項且持續」、四至五歲普查、小一與一般護眼區別均保留；沒有因換版創建新醫療規則。seed 是可匯入內容，檔案更新不代表部署庫已發布。
+
+`REVIEW.json` 依 [A04 契約](API.md#knowledge-a04-contract) 及實際維護 schema，綁目前活躍版本／hash、來源 observation hash、所有變動／移除片段的舊新原文與含義、七個關鍵維度、受影響代表問題及成長規則影響。初次版本沒有旧版就明示 null，不能編造。hold 或規則待核不得發布；核對後向量齊備才沿同一發布服務自動切換，原觀察已更新／停用時需重新核對。這是操作者的可追溯內容判斷，不是模型信心分數或臨床認證。
+
+### 文字型 PDF
+
+`node scripts/extract-knowledge-pdf.mjs <可信本機官方PDF> --output <新結果.json> --start-page 1 --page-limit 8`；續讀帶前次 `--expected-hash` 及 `nextPage`。最多32MiB、每批八頁、20秒及獨立 worker 記憶界線；來源 worker 只抓已登記的官方 URL／選定頁碼，不接受模型任意網絡位置。
+
+`extractionQuality: requires_review` 固定保留；complete 只說明技術頁範圍，不證明版面／意思完整。頁碼字元、圖片頁、缺字／錯碼、表格順序及數值必須人工核對，不能用 OCR 猜測補造。本次30036.pdf前段多為圖像，未登記發布；14727.pdf僅第3頁的六個月及未滿四個月限制經主模型對照現行同題HTML核對，其他頁的抽取數值有錯碼，沒有納入語料。
+
+Agent 透過 `read_knowledge_context` 讀取當次已命中片段的同版內容；原文選錄、核對轉述、頁碼及未讀範圍分開。完整版面／PDF抽取成功不代表育兒建議都已核對，公開／組內來源限制亦不變。

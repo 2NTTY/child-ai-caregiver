@@ -5,7 +5,6 @@ import type { Pool } from "pg";
 import type { MemoryFact, MemoryTopic } from "../src/shared/memory.ts";
 import { createMemoryStore } from "../server/memory.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
-import { FamilyError } from "../server/family-access.ts";
 
 const childId = randomUUID(), workspaceId = randomUUID(), userId = "synthetic-owner";
 const cipher = createStorageCipher(Buffer.alloc(32, 37));
@@ -23,7 +22,7 @@ const topic = (status: MemoryTopic["status"]): MemoryTopic => ({
 });
 function harness(facts: MemoryFact[], topics: MemoryTopic[] = [], sourceVersions = new Map<string, number>()) {
   const factRows = facts.map(value => ({ id: value.id, child_id: value.childId, created_by: value.createdBy,
-    visibility: value.visibility, status: value.status, version: value.version,
+    visibility: value.visibility, status: value.status, version: value.version, validity_indexed: true,
     payload_encrypted: cipher.encrypt(JSON.stringify(value), `memory-fact:${value.childId}:${value.id}:${value.version}`) }));
   const topicRows = topics.map(value => ({ id: value.id, child_id: value.childId, created_by: value.updatedBy,
     visibility: value.visibility, status: value.status, version: value.version,
@@ -43,12 +42,14 @@ function harness(facts: MemoryFact[], topics: MemoryTopic[] = [], sourceVersions
       return result(version === undefined ? [] : [{ version }]);
     }
     if (sql.startsWith("SELECT id,version FROM text_records")) return result([]);
+    if (sql.startsWith("SELECT md5(jsonb_build_array")) return result([{ authority: "synthetic-authority", metadata_complete: true }]);
     if (sql.includes("FROM conversation_summaries") || sql.includes("FROM chat_messages")) return result([]);
     if (sql.includes("FROM memory_facts") || sql.includes("FROM memory_topics")) {
       const source = sql.includes("FROM memory_facts") ? factRows : topicRows;
       const paged = sql.includes("LIMIT $4");
       const familyOnly = paged && params[4] === true;
       const excludeInactive = sql.includes("NOT $6::boolean OR status<>'inactive'") && params[5] === true;
+      if (sql.includes("NOT validity_indexed")) return result([]);
       let rows = source.filter(row => row.child_id === params[0]
         && (row.visibility === "family" || !familyOnly && row.created_by === params[1])
         && (!excludeInactive || row.status !== "inactive"));
@@ -60,7 +61,6 @@ function harness(facts: MemoryFact[], topics: MemoryTopic[] = [], sourceVersions
   } };
   return { store: createMemoryStore({ query: client.query, connect: async () => client } as unknown as Pool, cipher), calls };
 }
-const isCapacityError = (error: unknown) => error instanceof FamilyError && error.status === 400 && error.code === "memory_context_requires_selection";
 
 test("201 inactive facts do not block private or family context", async () => {
   for (const scope of ["private", "family"] as const) {
@@ -73,7 +73,7 @@ test("201 inactive facts do not block private or family context", async () => {
     assert.equal(context.truncated.facts, false);
     const query = calls.find(call => call.sql.startsWith("SELECT * FROM memory_facts"))!;
     assert.match(query.sql, /status<>'inactive'.*ORDER BY id LIMIT \$4/u);
-    assert.equal(query.params[3], 201);
+    assert.equal(query.params[3], 21);
     assert.equal(query.params[5], true);
   }
 });
@@ -119,7 +119,7 @@ test("current facts keep private, family and child scope and redact private-chat
   assert.deepEqual(family.facts[0].source, { kind: "private_chat", description: "Explicitly shared synthetic fact" });
 });
 
-test("complete current facts preserve conflicts and still reject relevant overflow", async () => {
+test("current fact prefixes preserve visible conflicts and expose resumable overflow", async () => {
   const first = fact({ key: "same-key", content: "one" }), second = fact({ key: "same-key", content: "two", visibility: "family" });
   const inactive = Array.from({ length: 201 }, () => fact({ status: "inactive" }));
   const context = await harness([...inactive, first, second]).store.context(userId, childId, "private");
@@ -128,8 +128,10 @@ test("complete current facts preserve conflicts and still reject relevant overfl
   assert.deepEqual(context.conflictingKeys, ["same-key"]);
   const current = Array.from({ length: 200 }, (_, index) => fact({ id: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`, key: "key-" + index }));
   const last = fact({ id: "ffffffff-ffff-4fff-bfff-ffffffffffff", key: current[0].key, content: "conflicting last value" });
-  await assert.rejects(harness([...inactive, ...current, last]).store.context(userId, childId, "private"), isCapacityError);
-  await assert.rejects(harness([...current.map(value => ({ ...value, status: "candidate" as const })), last]).store.context(userId, childId, "private"), isCapacityError);
+  for (const rows of [[...inactive, ...current, last], [...current.map(value => ({ ...value, status: "candidate" as const })), last]]) {
+    const partial = await harness(rows).store.context(userId, childId, "private");
+    assert.ok(partial); assert.equal(partial.truncated.facts, true); assert.equal(partial.nextFactsAfterId, current[19].id);
+  }
 });
 
 test("historical fact pagination retains inactive rows and its original 50-item bound", async () => {
@@ -150,11 +152,12 @@ test("historical fact pagination retains inactive rows and its original 50-item 
   }
 });
 
-test("all topic states and their overflow gate are unchanged", async () => {
+test("all topic states remain visible and overflow exposes the next prefix", async () => {
   const topics = (["pending", "answered", "snoozed", "resolved"] as const).map(topic);
   const context = await harness([], topics).store.context(userId, childId, "family");
   assert.ok(context);
   assert.deepEqual(context.topics.map(value => value.status).sort(), ["pending", "answered", "snoozed", "resolved"].sort());
   assert.ok(context.topics.filter(value => value.status !== "pending").every(value => !value.mayAsk));
-  await assert.rejects(harness([], Array.from({ length: 201 }, () => topic("resolved"))).store.context(userId, childId, "family"), isCapacityError);
+  const partial = await harness([], Array.from({ length: 201 }, () => topic("resolved"))).store.context(userId, childId, "family");
+  assert.ok(partial); assert.equal(partial.topics.length, 20); assert.equal(partial.truncated.topics, true); assert.ok(partial.nextTopicsAfterId);
 });

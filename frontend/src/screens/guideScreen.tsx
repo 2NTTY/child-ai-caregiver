@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../components/EmptyListCard";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -12,33 +13,33 @@ import { chineseFont, colors, radius, readingType, spacing, workspaceType } from
 import type { HomeDestination } from "../view-model";
 
 const steps: { title: string; description: string; action: string; destination: HomeDestination; points: { title: string; body: string }[] }[] = [
-  { title: "核對孩子檔案", description: "先確認正在查看哪位孩子，再補上你已知道的資料。", action: "查看子女檔案", destination: "profile", points: [
-    { title: "確認稱呼及年齡基準", body: "出生日期、約數年齡與未知資料分開保留。約數年齡不會自動變成生日。" },
-    { title: "保留未知，核對重要資料", body: "過敏、特別需要和照顧偏好只填已知內容；空白不代表沒有。" },
-    { title: "先預覽，再確認共享", body: "更正會列出共享內容和修改基準。核對後才確認；切換孩子前會提醒未保存草稿。" },
+  { title: "先跟助手說", description: "選擇孩子，直接交代你的問題或要做的事。", action: "與 Agent 對話", destination: "chat", points: [
+    { title: "只需孩子稱呼便可開始", body: "不必建立家庭、邀請成員或填寫模型 key。生日等資料可以按需要再補；半歲等約數不會變成精確生日。" },
+    { title: "普通交代，按授權保存", body: "在助手設定開啟本人普通記錄授權後，可直接交代日常照護情況；重要資料及超出授權的操作仍會清楚詢問。" },
+    { title: "只補影響辦事的資料", body: "助手可根據前文補問。推測與未知不當作事實；回答的重要建議應有實際支持的官方來源。" },
   ] },
-  { title: "認識照顧記錄", description: "看清楚助手整理了甚麼，並隨時回到原始依據。", action: "查看照顧記錄", destination: "care", points: [
-    { title: "候選仍須你核對", body: "助手整理的候選與已確認記錄分開。核對文字、時間、數值和不確定內容後，再決定是否採用。" },
-    { title: "有原操作結果才算保存", body: "處理中、已知失敗和結果未知是不同狀態。結果未知時先查核原次操作，不重新提交。" },
-    { title: "更正留下脈絡", body: "保留來源與更正歷史，方便之後查看。手動補記也是可用的次要入口。" },
+  { title: "查看及接續結果", description: "在對話得到回饋，也可在各頁查看同一份結果。", action: "查看照顧記錄", destination: "care", points: [
+    { title: "核對重要事項", body: "對話會列清對象及將要修改的內容。待確認事項持續保留，不因關閉面板消失。" },
+    { title: "待辦與準備單各有用途", body: "待辦提醒何時做甚麼；準備單整理到了那時怎麼做、要看甚麼。可以請助手修改同一份內容，用完歸檔後仍可找回。" },
+    { title: "結果未知先查原操作", body: "只有 Server 確認才算保存。逾時或斷線後先查原結果，不重做；手動更正是必要時的備援。" },
   ] },
-  { title: "查看家庭及偏好", description: "按自己的需要管理照顧協作、提醒及資料可見範圍。", action: "前往設定", destination: "settings", points: [
-    { title: "家庭共享與私人資料分開", body: "家庭成員按孩子及角色查看共享資料。私人聊天與完整私人來源，不會自動變成家庭資料。" },
-    { title: "通知按本人設定", body: "安靜時段、通知渠道與外發授權分開核對。綁定渠道不代表已發出或收到提醒。" },
-    { title: "按需要調整操作方式", body: "設定可調整減少動畫及本次首頁背景，也可管理模型服務。未接線的功能會如實標示。" },
+  { title: "按需要開啟提醒", description: "本人通知與資料控制可按需要設定，不阻擋日常對話。", action: "前往設定", destination: "settings", points: [
+    { title: "通知需要本人授權", body: "瀏覽器通知或 Telegram 綁定由你操作。安靜時段、渠道與外發範圍分開核對；綁定不等於已發出提醒。" },
+    { title: "收到不等於完成", body: "收到提示只表示訊息到達；事情做完後，告訴助手或在待辦回報完成，避免繼續催辦。" },
+    { title: "保留本人資料控制", body: "可下載資料、撤銷其他登入會話或刪除帳戶。模型 key 是可選設定，密鑰不交給助手。私人聊天不會自動變成家庭共享資料。" },
   ] },
 ];
 
 export default function GuideScreen() {
   const layout = useContainerWidth();
-  const { model, actions, controller, recordsState, refresh, signOut, user } = useProduction();
+  const { model, actions, controller, recordsState, refresh, signOut, user, online } = useProduction();
   const [currentStep, setCurrentStep] = useState(0);
   const lockedChild = !!recordsState.busy || recordsState.childrenLoading || recordsState.childOutcome !== "draft";
   usePreviewLeaveGuard(!!recordsState.childName, recordsState.childOutcome === "unknown" || recordsState.childOutcome === "checked" || recordsState.busy === "createChild", "account");
   const step = steps[currentStep];
   const narrow = layout.width < 720;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
-  return <PageFrame density="compact" title="使用引導" description="先認識資料與操作的分別，按需要走到相關頁面；隨時可以回來。" eyebrow={`${brand.name} · 開始使用`}>
+  return <PageFrame density="compact" title="使用引導" description="跟助手說，再查看結果；以下引導可隨時回來閱讀。" eyebrow={`${brand.name} · 開始使用`}>
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{needsGuide ? "從你需要的一步開始" : "隨時重看使用方法"}</Text>
       <Text style={styles.body}>{user?.name} · {user?.email}</Text>
@@ -46,7 +47,7 @@ export default function GuideScreen() {
         <Text accessibilityRole="header" style={styles.pointTitle}>你的孩子</Text>
         {recordsState.childrenLoading ? <Text style={styles.body}>正在讀取孩子列表…</Text> : null}
         {recordsState.childrenError ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childrenError}</Text> : null}
-        {recordsState.childrenLoadedAt && !recordsState.childrenError && model.children.length === 0 ? <Text style={styles.body}>目前沒有可存取的孩子；可以先建立第一位孩子。</Text> : null}
+        {online && recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && model.children.length === 0 ? <EmptyListCard title="目前沒有可存取的孩子" detail="可以先建立第一位孩子。" /> : null}
         <View style={styles.stepControls}>{model.children.map(child => <AppButton key={child.id} label={`${child.displayName}${child.id === model.selectedChildId ? "（目前孩子）" : ""}`} variant={child.id === model.selectedChildId ? "primary" : "secondary"} disabled={lockedChild} onPress={() => actions.selectChild(child.id)} />)}</View>
         <AppTextField label="孩子稱呼" accessibilityLabel="孩子稱呼" value={recordsState.childName} onChangeText={value => controller.setChildName(value)} disabled={lockedChild} maxLength={80} />
         <View style={styles.stepControls}><AppButton label="建立孩子" loading={recordsState.busy === "createChild"} disabled={lockedChild || !recordsState.online || !recordsState.childName.trim()} onPress={() => { void controller.createChild(); }} />

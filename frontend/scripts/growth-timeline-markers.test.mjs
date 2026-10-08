@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import path from 'node:path';
+import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import test from 'node:test';
 import ts from 'typescript';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const cache = new Map();
+const require = createRequire(import.meta.url);
 const jsx = (type, props, key) => ({type, props, key});
 function load(relative) {
   const filename = path.resolve(root, relative);
@@ -14,15 +16,18 @@ function load(relative) {
   const module = {exports: {}};
   const code = ts.transpileModule(readFileSync(filename, 'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022}}).outputText;
   const resolve = name => {
+    if (name === 'zod') return require('zod');
+    if (name === '../../src/shared/concerns.ts') return load('../src/shared/concerns.ts');
     if (name === 'react/jsx-runtime') return {jsx, jsxs: jsx, Fragment: 'Fragment'};
     if (name === 'react-native') return {View: 'View', Pressable: 'Pressable', StyleSheet: {create: value => value}, Platform: {OS: 'web', select: values => values.web}};
     if (name === 'react-native-paper') return {Text: 'Text', MD3LightTheme: {colors: {}}, configureFonts: value => value};
-    if (name.endsWith('/growth-view-model')) return {growthConcernTimelineEntries: (_concern, page) => page.entries, growthStateLabels: {dismissed: '已關閉'}, growthTime: value => value};
+    if (name.endsWith('/growth-view-model')) return {growthConcernTimelineEntries: (_concern, page) => page.entries, growthConcernFollowUpLabel: load('src/growth-view-model.ts').growthConcernFollowUpLabel, growthStateLabels: {dismissed: '已關閉'}, growthTime: value => value};
     if (name.endsWith('/task-view-model')) return {taskStateLabels: {}};
     if (name.endsWith('/ui')) return {AppButton: 'AppButton', SectionHeader: 'SectionHeader'};
     for (const component of ['AppStatusBadge', 'AppIcon', 'GrowthArchiveConcernButton']) {
       if (name.endsWith(`/${component}`)) return {[component]: component};
     }
+    assert.ok(['/theme', '/growth-styles'].some(suffix => name.endsWith(suffix)), `Unexpected timeline dependency: ${name}`);
     return load(path.relative(root, path.resolve(path.dirname(filename), `${name}.ts`)));
   };
   new Function('require', 'module', 'exports', code)(resolve, module, module.exports);
@@ -46,6 +51,8 @@ const flatten = value => Object.assign({}, ...(Array.isArray(value) ? value.filt
 
 test('empty and single-entry timelines have no dangling connector', () => {
   assert.equal(markerNodes(render([])).length, 0);
+  const followUp = render([], {concern: {id: 'concern', status: 'following', followUp: {at: '2026-10-05T12:00:00Z', state: 'pending'}}});
+  assert.ok(nodes(followUp, node => node.type === 'Text').some(node => typeof node.props.children === 'string' && /^站內跟進：.+ · 已安排$/u.test(node.props.children)));
   for (const entry of [event(0), attention]) {
     const markers = markerNodes(render([entry]));
     assert.deepEqual(markers.map(node => node.props.testID), ['growth-timeline-dot-0']);

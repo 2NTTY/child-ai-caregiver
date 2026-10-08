@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { personalLibraryItemSchema, type PersonalLibraryItem } from "../src/shared/personal-library.ts";
 import type { Pool, PoolClient } from "pg";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { KnowledgeCandidate, KnowledgeChunkInput, KnowledgeFilter, KnowledgeSourceInput } from "../src/shared/knowledge.ts";
+import { knowledgeTokens } from "./knowledge-ranking.ts";
+import { reviewKnowledgeVersion, publishKnowledgeVersion } from "./knowledge-version-review.ts";
+import type { KnowledgeReviewAssessment } from "./knowledge-version-review.ts";
 import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeFilter, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 
 interface VersionRow { id: string; source_id: string; version_hash: string; document: KnowledgeSourceInput; review_state: "draft" | "reviewed" | "withdrawn"; checked_at: Date | null }
@@ -13,7 +17,7 @@ export function vectorLiteral(values: readonly number[]): string {
 async function transaction<T>(pool: Pool, action: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
   let failed = false;
-  try { await client.query("BEGIN"); const value = await action(client); await client.query("COMMIT"); return value; }
+  try { await client.query("BEGIN"); await client.query("SET LOCAL statement_timeout='10s'; SET LOCAL lock_timeout='5s'"); const value = await action(client); await client.query("COMMIT"); return value; }
   catch (error) { failed = true; try { await client.query("ROLLBACK"); } catch { /* Destroy failed connection. */ } throw error; }
   finally { client.release(failed); }
 }
@@ -25,6 +29,13 @@ async function version(client: Pick<Pool, "query"> | PoolClient, versionId: stri
 const vectorJoin = `JOIN knowledge_vectors e ON e.input_hash = c.embedding_hash AND e.model = $1 AND e.dimensions = $2 AND e.pipeline = $3`;
 const embeddingKey = [KNOWLEDGE_EMBEDDING.model, KNOWLEDGE_EMBEDDING.dimensions, KNOWLEDGE_EMBEDDING.pipeline];
 const restrictedSource = `(v.document->>'url' ~* '^https://(www[.]chp[.]gov[.]hk|([a-z]+[.])?rthk[.]hk)(/|$)')`;
+// Shared eligibility for public retrieval and the read-only catalog. A catalog entry is not a citation.
+const knowledgeEligibility = (allowInternal: string) => `s.enabled AND v.review_state = 'reviewed' AND v.published_at IS NOT NULL
+  AND (w.id IS NULL OR (o.source_id IS NOT NULL AND w.enabled AND NOT o.unavailable AND o.approved_hash=o.content_hash AND o.approved_version_id=v.id))
+  AND (${allowInternal} OR (w.definition->>'audience' IS DISTINCT FROM 'internal_noncommercial' AND NOT ${restrictedSource}))
+  AND (v.document->>'validUntil' IS NULL OR (v.document->>'validUntil')::timestamptz > now())
+  AND (v.document->>'classification' <> 'recent_information' OR ((v.document->>'sourcePublishedAt')::timestamptz >= now() - interval '7 days'
+    AND (v.document->>'sourcePublishedAt')::timestamptz <= now() AND o.last_successful_check_at >= now() - interval '24 hours'))`;
 
 /** Operator-only maintenance methods are not exposed as browser/Agent tools. */
 export function createKnowledgeStore(pool: Pool, options: { audience?: "public" | "internal" } = {}) {
@@ -50,40 +61,16 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
         return { versionId, hash, unchanged: false, state: "draft" };
       });
     },
-    async review(versionId: string, expectedHash: string, reviewer: string) {
-      if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$/.test(reviewer)) throw new Error("Use an operator alias");
-      return transaction(pool, async client => {
-        const row = await version(client, versionId);
-        await client.query("SELECT id FROM knowledge_sources WHERE id = $1 FOR UPDATE", [row.source_id]);
-        if (row.version_hash !== expectedHash) throw new Error("Knowledge review version mismatch");
-        // Explicit operator review is required; importing or generating vectors never approves content.
-        await client.query("UPDATE knowledge_versions SET review_state = 'reviewed', reviewed_by = $2, checked_at = now() WHERE id = $1", [versionId, reviewer]);
-        await client.query("UPDATE knowledge_sources SET last_checked_at = now() WHERE active_version_id = $1", [versionId]);
-      });
+    async review(versionId: string, expectedHash: string, reviewer: string, assessment: KnowledgeReviewAssessment) {
+      return transaction(pool, client => reviewKnowledgeVersion(client, versionId, expectedHash, reviewer, assessment, internal));
     },
     async publish(versionId: string, expectedHash: string) {
+      return transaction(pool, client => publishKnowledgeVersion(client, versionId, expectedHash, internal, false));
+    },
+    async tryPublish(versionId: string, expectedHash?: string) {
       return transaction(pool, async client => {
-        let row = await version(client, versionId);
-        await client.query("SELECT id FROM knowledge_sources WHERE id = $1 FOR UPDATE", [row.source_id]);
-        row = await version(client, versionId);
-        if (row.review_state !== "reviewed" || row.version_hash !== expectedHash) throw new Error("Unreviewed knowledge version");
-        if (row.document.validUntil && Date.parse(row.document.validUntil) <= Date.now()) throw new Error("Knowledge version expired");
-        const watch = (await client.query<{ enabled: boolean; audience: string }>(`SELECT w.enabled,w.definition->>'audience' AS audience FROM knowledge_watches w
-          WHERE w.id=(SELECT watch_id FROM knowledge_observations WHERE source_id=$1)
-            OR (w.definition->>'kind'='page' AND w.id=$1) FOR SHARE`, [row.source_id])).rows[0];
-        // Read after acquiring the watch lock: a concurrent successful fetch may have replaced the observation.
-        const observation = watch && (await client.query<{ approved: boolean }>(`SELECT
-          (NOT unavailable AND approved_hash=content_hash AND approved_version_id=$2) AS approved
-          FROM knowledge_observations WHERE source_id=$1 FOR SHARE`, [row.source_id, versionId])).rows[0];
-        if (watch ? !watch.enabled || !observation?.approved : row.document.classification === "recent_information") throw new Error("Knowledge source observation needs review");
-        if (!internal && (watch?.audience === "internal_noncommercial" || internalKnowledgeSource(row.document.url))) throw new Error("Knowledge source is restricted to internal review");
-        const readiness = await client.query<{ missing: string }>(
-          `SELECT count(*)::text AS missing FROM knowledge_chunks c WHERE c.version_id = $4 AND NOT EXISTS
-           (SELECT 1 FROM knowledge_vectors e WHERE e.input_hash = c.embedding_hash AND e.model = $1 AND e.dimensions = $2 AND e.pipeline = $3)`,
-          [...embeddingKey, versionId]);
-        if (Number(readiness.rows[0]?.missing) !== 0) throw new Error("Knowledge vectors incomplete");
-        await client.query("UPDATE knowledge_versions SET published_at = COALESCE(published_at, now()) WHERE id = $1", [versionId]);
-        await client.query("UPDATE knowledge_sources SET active_version_id = $2, enabled = true, disabled_reason = NULL, last_checked_at = $3 WHERE id = $1", [row.source_id, versionId, row.checked_at]);
+        const row = await version(client, versionId);
+        return publishKnowledgeVersion(client, versionId, expectedHash ?? row.version_hash, internal, true);
       });
     },
     async disable(sourceId: string, reason: string) {
@@ -138,38 +125,80 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
         client.release(failed);
       }
     },
-    async candidates(input: KnowledgeFilter, vector: readonly number[] | null): Promise<KnowledgeCandidate[]> {
+    async catalog(afterSourceId: string | null = null, connection: Pick<Pool, "query"> = pool): Promise<{ items: PersonalLibraryItem[]; nextSourceId: string | null }> {
+      if (afterSourceId !== null && !/^[a-z0-9][a-z0-9-]{0,79}$/.test(afterSourceId)) throw new Error("Invalid catalog cursor");
+      const result = await connection.query<{ source_id: string; version_id: string; source_document: KnowledgeSourceInput; checked_at: Date }>(
+        `SELECT s.id AS source_id,v.id AS version_id,v.document AS source_document,v.checked_at
+         FROM knowledge_sources s JOIN knowledge_versions v ON v.id=s.active_version_id AND v.source_id=s.id
+         LEFT JOIN knowledge_observations o ON o.source_id=s.id LEFT JOIN knowledge_watches w ON w.id=COALESCE(o.watch_id,s.id)
+         WHERE ${knowledgeEligibility("false")} AND v.document->>'classification' IN ('official_guidance','recent_information')
+           AND ($1::text IS NULL OR s.id>$1) ORDER BY s.id LIMIT 11`, [afterSourceId]);
+      const items = result.rows.slice(0, 10).map(row => personalLibraryItemSchema.parse({
+        sourceId: row.source_id, versionId: row.version_id, title: row.source_document.title, publisher: row.source_document.publisher,
+        url: row.source_document.url, classification: row.source_document.classification, checkedAt: row.checked_at.toISOString(),
+        sourceUpdatedAt: row.source_document.sourceUpdatedAt, validUntil: row.source_document.validUntil ?? null,
+      }));
+      return { items, nextSourceId: result.rows.length > 10 ? items.at(-1)!.sourceId : null };
+    },
+    async candidates(input: KnowledgeFilter, vector: readonly number[] | null, selection: {
+      query?: string; chunkIds?: string[]; versionId?: string; afterKey?: string; limit?: number;
+    } = {}): Promise<KnowledgeCandidate[]> {
       const filter = parseKnowledgeFilter(input);
       const values = vector === null ? null : vectorLiteral(vector);
-      const rows = await pool.query<{ id: string; source_id: string; version_id: string; version_hash: string; content_hash: string;
+      if (selection.chunkIds && (!selection.chunkIds.length || selection.chunkIds.length > 6
+        || selection.chunkIds.some(id => !/^[a-f0-9-]{36}$/i.test(id)))) throw new Error("Invalid knowledge citation IDs");
+      const limit = Math.min(selection.limit ?? (selection.query ? 6 : 60), selection.query ? 6 : 60);
+      if (!Number.isInteger(limit) || limit < 1 || selection.afterKey && !/^[a-z0-9-]{1,80}$/.test(selection.afterKey))
+        throw new Error("Invalid knowledge selection");
+      const queryTokens = [...knowledgeTokens(selection.query ?? "", true)];
+      const tokenScore = (field: string, weight: number) => `(SELECT COALESCE(sum(CASE WHEN
+        CASE WHEN qt.token ~ '^[a-z0-9]+$' THEN normalize(lower(${field}), NFKC) ~ ('(^|[^a-z0-9])' || qt.token || '([^a-z0-9]|$)')
+        ELSE strpos(normalize(lower(${field}), NFKC),qt.token)>0 END THEN ${weight} ELSE 0 END),0) FROM unnest($16::text[]) AS qt(token))`;
+      const keywordScore = `${tokenScore("source_document->>'title'", 4)} + ${tokenScore("document->>'section'", 3)}
+        + (SELECT COALESCE(sum(${tokenScore("kw.value", 5)}),0) FROM jsonb_array_elements_text(document->'keywords') AS kw(value))
+        + (SELECT COALESCE(sum(${tokenScore("tp.value", 4)}),0) FROM jsonb_array_elements_text(document->'applicability'->'topics') AS tp(value))
+        + ${tokenScore("document->>'text'", 1)}`;
+      const ranked = selection.query ? `, vector_top AS (SELECT id,row_number() OVER (ORDER BY distance,id) AS r
+        FROM eligible WHERE distance<=0.4 ORDER BY distance,id LIMIT 60),
+        keyword_scores AS (SELECT id,${keywordScore} AS score FROM eligible),
+        keyword_top AS (SELECT id,row_number() OVER (ORDER BY score DESC,id) AS r FROM keyword_scores
+          WHERE score>0 ORDER BY score DESC,id LIMIT 60),
+        fused AS (SELECT id,sum(1.0/(60+r)) AS rank_score,min(r) AS best_rank
+          FROM (SELECT * FROM vector_top UNION ALL SELECT * FROM keyword_top) ranks GROUP BY id)
+        SELECT eligible.*,fused.rank_score FROM fused JOIN eligible USING(id) ORDER BY fused.rank_score DESC,fused.best_rank,id LIMIT $15`
+        : `SELECT *,NULL::numeric AS rank_score FROM eligible ORDER BY chunk_order,id LIMIT $15`;
+      const rows = await transaction(pool, client => client.query<{ id: string; source_id: string; version_id: string; version_hash: string; content_hash: string;
         source_document: KnowledgeSourceInput; document: KnowledgeChunkInput; checked_at: Date; last_successful_check_at: Date | null;
-        usage_scope: "public_noncommercial" | "internal_noncommercial"; distance: number | null }>(
-        `SELECT c.id,c.version_id,c.content_hash,c.document,v.source_id,v.version_hash,v.document AS source_document,v.checked_at,
+        usage_scope: "public_noncommercial" | "internal_noncommercial"; distance: number | null; rank_score: string | null }>(
+        `WITH eligible AS MATERIALIZED (SELECT c.id,c.version_id,c.content_hash,c.document,v.source_id,v.version_hash,v.document AS source_document,v.checked_at,
          o.last_successful_check_at,CASE WHEN ${restrictedSource} THEN 'internal_noncommercial'
            ELSE COALESCE(w.definition->>'audience','public_noncommercial') END AS usage_scope,
-         CASE WHEN $4::vector IS NULL THEN NULL ELSE e.embedding <=> $4::vector END AS distance
+         ord.chunk_order,CASE WHEN $4::vector IS NULL THEN NULL ELSE e.embedding <=> $4::vector END AS distance
          FROM knowledge_sources s JOIN knowledge_versions v ON v.id = s.active_version_id AND v.source_id = s.id
          JOIN knowledge_chunks c ON c.version_id = v.id ${vectorJoin}
+         JOIN LATERAL (SELECT chunk_order FROM jsonb_array_elements(v.document->'chunks') WITH ORDINALITY AS listed(chunk,chunk_order)
+           WHERE listed.chunk->>'key'=c.section_key) ord ON true
          LEFT JOIN knowledge_observations o ON o.source_id=s.id
          LEFT JOIN knowledge_watches w ON w.id=COALESCE(o.watch_id,s.id)
-         WHERE s.enabled AND v.review_state = 'reviewed' AND v.published_at IS NOT NULL
-           AND (w.id IS NULL OR (o.source_id IS NOT NULL AND w.enabled AND NOT o.unavailable AND o.approved_hash=o.content_hash AND o.approved_version_id=v.id))
-           AND ($11::boolean OR (w.definition->>'audience' IS DISTINCT FROM 'internal_noncommercial' AND NOT ${restrictedSource}))
-           AND (v.document->>'validUntil' IS NULL OR (v.document->>'validUntil')::timestamptz > now())
+         WHERE ${knowledgeEligibility("$11::boolean")}
            AND v.document->>'classification' = $5 AND c.document->'applicability'->>'region' = $6
-           AND (c.document->'applicability'->>'ageBasis' = 'any' OR ($7::text IS NOT NULL
+           AND (c.document->'applicability'->>'ageBasis' = 'any' OR $12='unknown' OR ($7::text IS NOT NULL
              AND c.document->'applicability'->>'ageBasis' = $7
-             AND (c.document->'applicability'->>'minAgeMonths')::numeric <= $8
+             AND (c.document->'applicability'->>'minAgeMonths')::numeric <= CASE WHEN $12='overlap' THEN $9::numeric ELSE $8::numeric END
              AND CASE WHEN COALESCE((c.document->'applicability'->>'maxAgeMonthsExclusive')::boolean, false)
-               THEN (c.document->'applicability'->>'maxAgeMonths')::numeric > $9
-               ELSE (c.document->'applicability'->>'maxAgeMonths')::numeric >= $9 END))
+               THEN (c.document->'applicability'->>'maxAgeMonths')::numeric > CASE WHEN $12='overlap' THEN $8::numeric ELSE $9::numeric END
+               ELSE (c.document->'applicability'->>'maxAgeMonths')::numeric >= CASE WHEN $12='overlap' THEN $8::numeric ELSE $9::numeric END END))
            AND (cardinality($10::text[]) = 0 OR c.document->'applicability'->'topics' ?| $10::text[])
-           AND ($5 <> 'recent_information' OR ((v.document->>'sourcePublishedAt')::timestamptz >= now() - interval '7 days'
-             AND (v.document->>'sourcePublishedAt')::timestamptz <= now() AND o.last_successful_check_at >= now() - interval '24 hours'))
-         ORDER BY c.id LIMIT 1001`,
+           AND $16::text[] IS NOT NULL
+           AND ($13::uuid[] IS NULL OR c.id=ANY($13::uuid[]))
+           AND ($14::uuid IS NULL OR v.id=$14)
+           AND ($17::text IS NULL OR ord.chunk_order>(SELECT listed.chunk_order
+             FROM jsonb_array_elements(v.document->'chunks') WITH ORDINALITY AS listed(chunk,chunk_order)
+             WHERE listed.chunk->>'key'=$17))
+         ) ${ranked}`,
         [...embeddingKey, values, filter.classification, filter.region, filter.age?.basis ?? null,
-          filter.age?.minMonths ?? null, filter.age?.maxMonths ?? null, filter.topics, internal]);
-      if (rows.rows.length > 1000) throw new Error("Knowledge corpus exceeds the reviewed exact-search capacity");
+          filter.age?.minMonths ?? null, filter.age?.maxMonths ?? null, filter.topics, internal, filter.ageMatch ?? "contained",
+          selection.chunkIds ?? null, selection.versionId ?? null, limit, queryTokens, selection.afterKey ?? null]));
       return rows.rows.map(row => ({ ...row.document, chunkId: row.id, sourceId: row.source_id, versionId: row.version_id,
         versionHash: row.version_hash, contentHash: row.content_hash, url: row.source_document.url, title: row.source_document.title,
         publisher: row.source_document.publisher, classification: row.source_document.classification,
@@ -177,7 +206,11 @@ export function createKnowledgeStore(pool: Pool, options: { audience?: "public" 
         sourceDateText: row.source_document.sourceDateText ?? null, validUntil: row.source_document.validUntil ?? null,
         fetchedAt: row.source_document.fetchedAt, checkedAt: row.checked_at.toISOString(),
         lastSuccessfulCheckAt: row.last_successful_check_at?.toISOString() ?? null, usageScope: row.usage_scope,
-        reviewState: "reviewed", distance: row.distance }));
+        reviewState: "reviewed", extraction: row.source_document.extraction,
+        originalCoverage: row.document.originalText ? "chunk_original" : "excerpt_only",
+        applicabilityStatus: row.document.applicability.ageBasis === "any" ? "applicable"
+          : filter.ageMatch === "unknown" ? "requires_clarification" : filter.ageMatch === "overlap" ? "conditional" : "applicable",
+        distance: row.distance, ...(row.rank_score === null ? {} : { rankScore: Number(row.rank_score) }) }));
     },
   };
 }

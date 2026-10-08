@@ -7,10 +7,10 @@ export type AgentDecisionKind = "accept" | "dismiss";
 export interface AgentDetailRow { label: string; value: string }
 export interface AgentProposalView {
   id: string; version: number; status: AgentProposalStatus;
-  kind: "task_create" | "task_change" | "memory_fact" | "private_source_create" | "private_source_change" | "concern_create" | "concern_change";
-  title: string; content: string; scope: "family" | "private";
+  kind: "family_document_change" | "task_create" | "task_change" | "memory_fact" | "memory_fact_revise" | "memory_fact_deactivate" | "private_source_create" | "private_source_change" | "concern_create" | "concern_change";
+  contentState?: "ready" | "invalidated"; title: string; content: string; scope: "family" | "private";
   details: AgentDetailRow[]; createdAt: string; expiresAt: string;
-  result: { kind: "task" | "memory_fact" | "private_source" | "concern"; version: number; label: string } | null;
+  result: { kind: "task" | "memory_fact" | "private_source" | "concern" | "family_document"; version: number; label: string } | null;
 }
 export type AgentCitationView = ChatCitationView;
 export interface AgentRunView {
@@ -57,13 +57,13 @@ export function proposalExpired(proposal: AgentProposalView, now = Date.now()): 
 }
 export function mayDecide(model: AgentRunModel, proposal: AgentProposalView, decision: AgentDecisionKind): boolean {
   return model.readState === "ready" && model.online && !model.busy && !model.pendingDecision
-    && !model.writesBlocked && (decision === "dismiss" ? proposal.status === "pending" || proposal.status === "expired" : proposal.status === "pending" && !proposalExpired(proposal))
+    && !model.writesBlocked && (decision === "dismiss" ? proposal.status === "pending" || proposal.status === "expired" : proposal.status === "pending" && proposal.contentState !== "invalidated" && !proposalExpired(proposal))
     && (decision !== "accept" || proposal.scope === "private" || !!model.sharedConfirmed[proposal.id]);
 }
 export function mayCheckShared(model: AgentRunModel, proposal: AgentProposalView): boolean {
   const pending = model.pendingDecision;
   return model.readState === "ready" && model.online && !model.busy && !model.writesBlocked
-    && proposal.status === "pending" && !proposalExpired(proposal)
+    && proposal.status === "pending" && proposal.contentState !== "invalidated" && !proposalExpired(proposal)
     && (!pending || pending.reviewed && pending.runId === model.run?.id && pending.proposalId === proposal.id
       && pending.input.decision === "accept" && pending.input.expectedVersion === proposal.version);
 }
@@ -72,6 +72,6 @@ export function mayRetryOriginal(model: AgentRunModel): boolean {
   const proposal = model.run?.proposals.find(item => item.id === pending?.proposalId);
   return !!pending && !!proposal && pending.runId === model.run?.id && pending.reviewed && !pending.reconfirm
     && model.readState === "ready" && model.online && !model.busy
-    && !model.writesBlocked && (pending.input.decision === "dismiss" ? proposal.status === "pending" || proposal.status === "expired" : proposal.status === "pending" && !proposalExpired(proposal)) && proposal.version === pending.input.expectedVersion
+    && !model.writesBlocked && (pending.input.decision === "dismiss" ? proposal.status === "pending" || proposal.status === "expired" : proposal.status === "pending" && proposal.contentState !== "invalidated" && !proposalExpired(proposal)) && proposal.version === pending.input.expectedVersion
     && (pending.input.decision !== "accept" || proposal.scope === "private" || !!model.sharedConfirmed[proposal.id]);
 }

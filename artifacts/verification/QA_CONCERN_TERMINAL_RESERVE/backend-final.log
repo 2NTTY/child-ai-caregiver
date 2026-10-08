@@ -1,0 +1,15 @@
+✔ full archive and cancellation preserve history, receipts and terminal reserve (135.986794ms)
+✔ migration receipt and under-lock capacity gate preserve bounded due progress (104.914577ms)
+✔ ordinary append and rescheduling cannot consume terminal reserve (14.074233ms)
+✔ a due full concern stops without enqueueing and the next due item still queues (22.588386ms)
+✔ all follow-up reserve write paths still require migration and roll back safely (34.823904ms)
+✔ queued capacity input is cancelled before model authorization and a recorded result can settle once (47.323108ms)
+✔ readers accept complete 202-event history and reject 203 events (25.345631ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 589.068908

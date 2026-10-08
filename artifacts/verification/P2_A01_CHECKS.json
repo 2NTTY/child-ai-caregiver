@@ -1,0 +1,77 @@
+{
+  "package": "P2-A01",
+  "recordedAt": "2026-10-07T19:32:13Z",
+  "base": "1df2f7a94b8d2ad619ca5825a29b6a69fa6c5a23",
+  "scope": "Semantic capability loading through the existing native ADK runtime; no new business operations or deployment.",
+  "environment": {
+    "node": "24.11.0",
+    "npm": "11.6.1",
+    "adk": "2.1.0",
+    "genai": "2.24.0",
+    "npmEngineWarning": "Repository requires npm >=11.8; the installed version was not upgraded. Lockfile unchanged."
+  },
+  "checks": [
+    {
+      "name": "Native Runner scripted-provider cases",
+      "passed": 7,
+      "file": "tests/product-tool-selection.test.ts",
+      "limitations": "Business handlers use a synthetic store; not PostgreSQL or model semantic acceptance."
+    },
+    {
+      "name": "Affected Vertex schema and mocked transport",
+      "passed": 2,
+      "file": "tests/vertex-tool-contract.test.ts",
+      "limitations": "No live Gemini request."
+    },
+    {
+      "name": "Scoped TypeScript",
+      "command": "node node_modules/typescript/bin/tsc --project tmp/tsconfig.p2-a01.json --pretty false",
+      "exitCode": 0,
+      "scope": [
+        "server/**/*.ts",
+        "src/shared/**/*.ts",
+        "tests/product-tool-selection.test.ts",
+        "tests/vertex-tool-contract.test.ts"
+      ],
+      "note": "Primary reran once because the initial executor output did not include an exit code."
+    },
+    {
+      "name": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "name": "Lockfile unchanged",
+      "passed": true
+    }
+  ],
+  "failures": [
+    {
+      "name": "First Runner fixture",
+      "outcome": "Stopped; assertion incorrectly assumed project prompt precedes ADK's own system prefix. After inspecting the request, assert complete prompt inclusion instead; case passed.",
+      "raw": "P2_A01_OFFLINE.txt"
+    },
+    {
+      "name": "Broad tsconfig.server.json",
+      "outcome": "Failed. Includes unrelated frontend/tests and the removed-selector import in an affected test. Updated the affected import; did not repair or rerun unrelated diagnostics.",
+      "representativeDiagnostics": [
+        "frontend/src/agent-view-model.ts TS2835",
+        "frontend/src/production/AgentAuthorizationOwner.ts TS1294",
+        "tests/family-document-workflows.test.ts TS2353"
+      ],
+      "evidenceLimit": "Reported executor diagnostics; original broad compiler output was not saved. No claim that every diagnostic was independently proven pre-existing."
+    }
+  ],
+  "review": {
+    "by": "Primary model",
+    "result": "No remaining blocking findings in catalog, per-run dynamic exposure, trusted prompt loading, budget/auth/cancellation and terminal handling."
+  },
+  "notRun": [
+    "Live Gemini",
+    "PostgreSQL integration",
+    "Notifications",
+    "Browser E2E",
+    "Deployment",
+    "Full repository checks"
+  ],
+  "remaining": "P2-A02 onward and combined real outcomes remain unfinished. A01 does not establish overall Agent completeness."
+}

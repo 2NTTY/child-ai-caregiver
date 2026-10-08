@@ -5,7 +5,7 @@ description: 修改 PostgreSQL 公共知識向量、版本發布／停用、混�
 
 # PostgreSQL 公共知識檢索
 
-適用 PostgreSQL 18.6、pgvector 0.8.6、Node 24、@google/genai 2.24.0。官方文件／固定版本原始碼最後核對 2026-09-24；adapter、排序及有界檢索單元、真 embedding、本機 SQL、同卷升級及加密擴展還原已驗證；部署及 Agent 接線未驗證。產品選型、年齡及費用限制以 [ARCHITECTURE](../../../docs/ARCHITECTURE.md#p2-vector-rag) 為準。
+適用 PostgreSQL 18.6、pgvector 0.8.6、Node 24、@google/genai 2.24.0；文字型 PDF 補 pdfjs-dist 6.4.299。官方文件／固定版本原始碼最後核對 2026-09-24；adapter、排序及有界檢索單元、真 embedding、本機 SQL、同卷升級及加密擴展還原已驗證；部署及 Agent 接線未驗證。產品選型、年齡及費用限制以 [ARCHITECTURE](../../../docs/ARCHITECTURE.md#p2-vector-rag) 為準。
 
 - pgvector 預設為精確搜尋；cosine distance 使用 `<=>`，距離並不是內容適用或支持說法的證據。小型庫先硬性篩選有效版本及適用條件，再排序；不能先取全庫 top-k 才過濾，導致相關片段落空。近似索引須有規模／延遲證據才加入。[查詢與過濾](https://github.com/pgvector/pgvector/tree/v0.8.6#querying)
 - extension 的二進位與目標 PostgreSQL major／平台匹配；固定來源 commit、保留許可。使用官方預編譯套件時核對發行版、架構、hash 及動態依賴；本機已驗證的 PGDG 替代建置見 [操作文件](../../../docs/P2_KNOWLEDGE.md#必要驗收與映像切換)，不將 amd64 套件用於其他平台。官方 Makefile 預設本機 CPU 優化，可分發映像用 `make OPTFLAGS=""`；建置依賴留在 builder。保留原 PGDATA／volume；升級前備份，還原目標須有擴展檔案，`CREATE EXTENSION`／`pg_restore` 成功及實際向量查詢才算恢復。[固定 Dockerfile](https://github.com/pgvector/pgvector/blob/v0.8.6/Dockerfile)、[Makefile](https://github.com/pgvector/pgvector/blob/v0.8.6/Makefile)
@@ -16,5 +16,7 @@ description: 修改 PostgreSQL 公共知識向量、版本發布／停用、混�
 
 - 來源變更檢查先界定可重用條款、固定 host／正文 selector 與日期精度；CSS／feed 可讀不能代替內容授權。Cheerio 1.2.0 可用同一依賴解析 HTML（parse5）／XML（htmlparser2），一般 load 不執行 JS 或抓外部資源；不要改用其網絡 helper 繞過既有 DNS、redirect、大小及期限邊界。RSS 拒絕 DTD／ENTITY，保留缺失或不完整日期，不將頻道 lastBuildDate 套成每項發布時間。[固定版本](https://github.com/cheeriojs/cheerio/blob/v1.2.0/package.json)／[解析模式](https://cheerio.js.org/docs/advanced/configuring-cheerio/)。2026-09-28 已核對，新增產品抓取流程待驗。
 - JSONB 可能重排 object keys。比較登記定義或正文指紋時用固定欄位／canonical 表示，不把原始 JSON.stringify 的 key order 當內容差異；網絡成功時間不進正文 hash。抓取快照、人工批准及發布版本分開，失敗不刷新成功時間，未知發布日期不進最新窗口；先鎖更新登記再重讀觀察資料，避免核對舊 snapshot 後發布競態。
+
+- 官方文字型 PDF 用固定 PDF.js 的 Node `legacy/build/pdf.mjs`；6.4.299 engines 接受 Node24，但標準 build 在24.11缺 `Uint8Array.toHex`，legacy提供相容，不自建polyfill。`data:Uint8Array`、固定本機 CMap／字體及受限 BinaryDataFactory 避免額外取網；資源URL須以 `/` 結尾（Windows亦然）。逐頁cleanup、loading task destroy與外層worker取消分開；時間／記憶及選頁有界。6.4.299已無isEvalSupported，不套用舊選項。[固定Node範例](https://github.com/mozilla/pdf.js/blob/v6.4.299/examples/node/getinfo.mjs)／[API](https://github.com/mozilla/pdf.js/blob/v6.4.299/src/display/api.js)。2026-10-08文件核對、合成PDF續頁與實際官方文件抽取已驗；抽取品質仍需原文核對，完整頁範圍不等於字形／數字／表格語義完整，勿自動發布僅有頁碼或錯碼的內容。
 
 以上是技術實作約束；語料適用性、引用是否支持建議與來源重用條款仍需另作內容 review。mock、單元及文件證據均不代替真服務驗收。

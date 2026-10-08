@@ -9,11 +9,12 @@ import { useTaskKnowledgeSummary, type TaskKnowledgeSummaryValue } from "./task-
 import { useTaskKnowledgeMemory } from "./task-knowledge-memory";
 import { useTaskKnowledgeGrowth } from "./task-knowledge-growth";
 import { useFamilyDocuments } from "./useFamilyDocuments";
+import { usePersonalHistory, PersonalHistoryProvider, type PersonalHistoryOwner } from "./usePersonalHistory";
 import type { TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
 
 type MemoryOwner = ReturnType<typeof useTaskKnowledgeMemory>;
 type DocumentOwner = ReturnType<typeof useFamilyDocuments>;
-type Snapshot = { scopeKey: string; tasks: TasksWorkspaceValue; summary: TaskKnowledgeSummaryValue; memory: MemoryOwner; growth: GrowthWorkspaceValue; documents: DocumentOwner };
+type Snapshot = { scopeKey: string; tasks: TasksWorkspaceValue; summary: TaskKnowledgeSummaryValue; memory: MemoryOwner; growth: GrowthWorkspaceValue; documents: DocumentOwner; history: PersonalHistoryOwner };
 const SummaryContext = createContext<TaskKnowledgeSummaryValue | null>(null);
 const MemoryContext = createContext<MemoryOwner | null>(null);
 const DocumentContext = createContext<DocumentOwner | null>(null);
@@ -24,16 +25,17 @@ export const useProductionFamilyDocuments = () => useContext(DocumentContext);
 // Only the nonvisual controller bridge is replaced on scope changes. The shell stays mounted.
 const DomainBridge = memo(function DomainBridge({ env, publish }: { env: TaskKnowledgeEnvironment; publish(value: Snapshot): void }) {
   const tasks = useTaskKnowledgeTasks(env), summary = useTaskKnowledgeSummary(env);
-  const memory = useTaskKnowledgeMemory(env), growth = useTaskKnowledgeGrowth(env);
+  const history = usePersonalHistory(env);
+  const memory = useTaskKnowledgeMemory(env, history), growth = useTaskKnowledgeGrowth(env);
   const documents = useFamilyDocuments(env);
   const archive = growth.model.page?.authorityVersion === documents.archive.authorityVersion ? documents.archive
     : { ...documents.archive, authorityVersion: growth.model.page?.authorityVersion ?? documents.archive.authorityVersion,
       state: documents.archive.authorityVersion ? "invalidated" as const : documents.archive.state,
-      snapshot: null, history: [], periods: [], label: "文件及成長頁的授權基準未能同步，請重新讀取。" };
+      snapshot: null, history: [], periods: [], reading: undefined, label: "文件及成長頁的授權基準未能同步，請重新讀取。" };
   const connectedGrowth: GrowthWorkspaceValue = { ...growth, model: { ...growth.model,
     page: growth.model.page ? { ...growth.model.page, archive } : null }, actions: { ...growth.actions,
     refresh() { growth.actions.refresh(); documents.refresh(); } } };
-  useLayoutEffect(() => { publish({ scopeKey: env.scopeKey, tasks, summary, memory, growth: connectedGrowth, documents }); }, [env.scopeKey, tasks, summary, memory, growth, documents, publish]);
+  useLayoutEffect(() => { publish({ scopeKey: env.scopeKey, tasks, summary, memory, growth: connectedGrowth, documents, history }); }, [env.scopeKey, tasks, summary, memory, growth, documents, history, publish]);
   return null;
 });
 
@@ -50,7 +52,7 @@ export function ProductionTaskKnowledgeDomains({ children }: { children: ReactNo
           <MemoryReferenceWorkspaceProvider scopeKey={env.scopeKey} value={current?.memory.value ?? null}>
             <SummaryContext.Provider value={current?.summary ?? null}>
               <MemoryContext.Provider value={current?.memory ?? null}>
-                <DocumentContext.Provider value={current?.documents ?? null}>{children}</DocumentContext.Provider>
+                <DocumentContext.Provider value={current?.documents ?? null}><PersonalHistoryProvider scopeKey={env.scopeKey} value={current?.history ?? null}>{children}</PersonalHistoryProvider></DocumentContext.Provider>
               </MemoryContext.Provider>
             </SummaryContext.Provider>
           </MemoryReferenceWorkspaceProvider>

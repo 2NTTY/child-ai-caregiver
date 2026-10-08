@@ -39,13 +39,13 @@ export function createAgentActionTools(actions: AgentActionsStore, run: AgentRun
       const { kind, ...shape } = schema.shape;
       const actionKind = kind.value;
       return { name: agentActionToolNames[actionKind],
-      description: ({ save_record: "保存目前政策允許類別的普通照護記錄；details 不含推斷。只有本次原文明确數量才填 quantity，quantityEvidence 逐字引用數量片語；未提供均填 null，不把一句敘述算成一次，不換算或求和，保留約數。相對日期保留 approximate 與原文；回報以 Server 實際保存欄位為準。",
+      description: ({ save_record: "保存目前政策允許類別的普通照護記錄；details 不含推斷。只有當前或 sourceMessages 引用的本人原文明確數量才填 quantity，quantityEvidence 逐字引用數量片語；未提供均填 null，不把一句敘述算成一次，不換算或求和，保留約數。相對日期保留 approximate 與原文；回報以 Server 實際保存欄位為準。",
         revise_record: "更正本人原有、相同普通類別的照護記錄。先 read_care_records 查原 id/version；明確說明 reason，保留未更改內容，不能變更其他人記錄或重要健康資料。",
         save_private_note: "保存本人明確交代的普通私人備註，屬 user_statement，不是已確認健康事實。",
         revise_private_note: "更正指定本人私人備註，先查原 ID 與版本。",
         create_self_task: "建立本人清楚指定、時間明確的普通提醒；醫療預約及其他人的任務用候選。",
         change_self_task: "完成、取消或改期指定本人普通提醒；先查原 ID 與版本，收到不等於完成。" }[actionKind])
-        + " 僅有效 operationPolicy 涵蓋的本次指令；sourceQuote 逐字引用本次使用者訊息，expectedPolicyVersion 取 Server 政策。參數直接放最外層，不加 action 包裝或 kind。結果只按 receipt 回報，未授權外發不能稱已通知。",
+        + " 僅有效 operationPolicy 涵蓋的本次指令；sourceQuote 逐字引用本次使用者訊息；sourceMessages 可附最多六項已讀本人原訊息的 ID／逐字 quote 補資料，不能充當新的執行授權，遵從最新改口。expectedPolicyVersion 取 Server 政策。參數直接放最外層，不加 action 包裝或 kind。結果只按 receipt 回報，未授權外發不能稱已通知。",
       // Each native tool has one concrete shape; the shared business union retains all refinements.
       parameters: z.object(shape), authorize,
       execute: async (args, call) => {
@@ -54,7 +54,7 @@ export function createAgentActionTools(actions: AgentActionsStore, run: AgentRun
           const receipt = await actions.execute(run.scope, run.runId, call.callId, action);
           if (!receipt) throw new AgentStopped("unauthorized");
           return { status: "succeeded", reference: receipt.id, data: { receipt,
-            ...(action.kind === "save_record" ? { savedEventTime: groundedRecordTime(action.details, action.sourceQuote).eventTime } : {}) } };
+            ...(action.kind === "save_record" ? { savedEventTime: groundedRecordTime(action.details, [action.sourceQuote, ...(action.sourceMessages ?? []).map(item => item.quote)].join("\n")).eventTime } : {}) } };
         } catch (error) {
           if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
           if (error instanceof FamilyError) return { status: error.status === 409 ? "conflict" : "rejected",

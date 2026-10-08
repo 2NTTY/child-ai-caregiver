@@ -23,7 +23,9 @@ export interface AgentOperationPolicy {
   allowRecordCorrections: boolean;
   reminderConsentVersion: number | null; reminderBindings: ContactBinding[];
 }
-const evidence = { sourceQuote: text(2000), expectedPolicyVersion: version };
+const evidence = { sourceQuote: text(2000), expectedPolicyVersion: version,
+  sourceMessages: z.array(z.object({ messageId: z.uuid(), quote: text(2000) }).strict()).max(6)
+    .refine(items => new Set(items.map(item => item.messageId)).size === items.length).optional() };
 const ordinaryDetails = z.object({ kind: z.enum(ordinaryRecordKinds),
   quantity: z.object({ rawValue: text(100), unit: text(50), precision: z.enum(["exact", "approximate"]) }).strict().nullable(),
   eventTime: z.object({ rawText: z.string().max(300), at: z.iso.datetime({ offset: true }).nullable()
@@ -34,10 +36,10 @@ const ordinaryDetails = z.object({ kind: z.enum(ordinaryRecordKinds),
 /** These actions express user statements and ordinary instructions, never diagnoses or inferred facts. */
 export const agentDirectActionSchema = z.discriminatedUnion("kind", [
   z.object({ ...evidence, kind: z.literal("save_record"), text: text(2000), details: ordinaryDetails,
-    quantityEvidence: text(200).nullable().optional().describe("本次原文中逐字提供的數量片語；未提供填 null，不含日期或時鐘，不換算、不求和") }).strict(),
+    quantityEvidence: text(200).nullable().optional().describe("當前原文或 sourceMessages 已引用原文的逐字數量片語；未提供填 null，不含日期或時鐘，不換算、不求和") }).strict(),
   z.object({ ...evidence, kind: z.literal("revise_record"), recordId: z.uuid(), expectedVersion: version,
     text: text(2000), details: ordinaryDetails, reason: text(1000), quantityEvidence: text(200).nullable().optional()
-      .describe("本次原文中逐字提供的數量片語；未提供填 null，不含日期或時鐘，不換算、不求和") }).strict(),
+      .describe("當前原文或 sourceMessages 已引用原文的逐字數量片語；未提供填 null，不含日期或時鐘，不換算、不求和") }).strict(),
   z.object({ ...evidence, kind: z.literal("save_private_note"), title: text(100), text: text(2000) }).strict(),
   z.object({ ...evidence, kind: z.literal("revise_private_note"), noteId: z.uuid(), expectedVersion: version,
     title: text(100), text: text(2000) }).strict(),

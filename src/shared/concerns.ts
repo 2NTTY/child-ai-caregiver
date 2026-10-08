@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export const CONCERN_EVENT_LIMIT = 200;
+export const CONCERN_STORED_EVENT_LIMIT = CONCERN_EVENT_LIMIT + 2;
+
 const text = (max: number) => z.string().trim().min(1).max(max);
 const version = z.number().int().min(1).max(2147483646);
 export const concernLinksSchema = z.object({
