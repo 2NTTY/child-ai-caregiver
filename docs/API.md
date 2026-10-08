@@ -39,7 +39,7 @@ P2 檢索適用範圍包含地區、年齡依據及精度、主題與必要條�
 <a id="agent-runtime-contract"></a>
 ### P2 AgentRuntime／工具契約
 
-S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止。S11-W02 已接業務工具及跨 run 確認／記憶；HTTP 契約見下文，驗收範圍見所屬工作包。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
+四角色擴充目標見[角色與審核接口](#p2-agent-roles)，下列為既有單 Agent 接點及證據。S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止。S11-W02 已接業務工具及跨 run 確認／記憶；HTTP 契約見下文，驗收範圍見所屬工作包。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
 
 - <a id="api-ar-01"></a>內部入口接受受信互動請求或 worker 事件及必要輸入／待確認參照；Server 建立 runId，注入身份、孩子／資料空間、觸發來源、時間／時區、授權及資料版本、配方／工具集合。客戶端正文不能聲稱自己是 worker 或提供可直接採信的權限。
 - <a id="api-ar-02"></a>ModelGateway 的 ADK 路徑傳遞完整模型／工具 parts、呼叫關聯及必要 opaque metadata，不壓成 P1 文字介面。每次生成／查詢 embedding 均受[運行配置](ARCHITECTURE.md#p2-agent-budgets)、全局開關、配額及共享取消／deadline 約束；語料維護另有有限額，不能繞過全局控制。
@@ -748,3 +748,15 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 附件維持預留／完成／授權下載語義，完成時由 Server 查實際 generation／hash 才回 ready；下載及 PDF 再核對孩子／本人／來源有效性，不返回永久公開 URL。資料搬遷保留穩定 asset/document ID，不要求頁面記住雲端路徑。
 
 恢復環境在最新刪除 journal、現行 Auth／撤銷、附件與 epoch 核對前不接受一般 API／Agent／通知。維護狀態明確返回暫不可寫／未完成，不偽造成功；重新開放時舊 cursor／session 必須重新取得，原 opId 仍用於查已保存效果。
+
+<a id="p2-agent-roles"></a>
+## 四角色、編製及知識維護接口（待實作）
+
+沿既有 AgentRuntime、ModelGateway、領域 store、KnowledgeRetriever 及知識發布服務擴充；不是新增四套公開 API，也不宣稱現有 HTTP 已具備以下欄位。資料不變量見 [DATA_MODEL](DATA_MODEL.md#p2-agent-roles)，預算與流程見 [架構](ARCHITECTURE.md#p2-agent-roles)。
+
+- **委派：**Server 將根 run／原操作、允許角色、身份／範圍、用途 schema、來源參照、版本及剩餘預算傳給子執行；模型只能提交受限任務參數，不能傳任意工具、prompt 路徑、服務身份或權限。輸出沿父子關聯回原流程，子角色不可再委派；子模型、委派／子工具及失敗均計根上限。
+- **編製：**接收授權資料參照及新增／局部修改意圖，返回符合目標領域 schema 的 draft／patch、缺項、來源／coverage 及所需確認；正文／段落／項目按穩定 ID 修改。直接普通操作沿原 API，不必呼叫編製；任務、記憶及文件的保存仍呼叫其既有服務，不由聊天文字或 actionRequests 二次執行。
+- **審核：**Server 提供草稿與原始證據，唯讀 Agent 返回 pass／revise／insufficient_evidence 及有界問題／支持依據。程式先驗 schema、來源身份／有效性與 scope，回傳後再驗審核綁定；生成者不能提交可採信的 approved／免審標記。使用者確認及審核是兩個獨立條件；必審內容須同時符合審核、當前授權及業務 gate 才正式呈現／提交。
+- **提交與恢復：**帶原 opId／fingerprint、目標 ID／expectedVersion、草稿 hash、來源與授權版本及 Server 審核參照；交易重核後回真資源版本／收據。衝突返回現行版本及重新核對需要；回應丟失先查原收據，不換 opId。逾時、取消、審核失敗或待確認分開回報，草稿不冒稱正式保存；已成功操作的真收據可獨立回報。
+- **獨立知識維護：**受信管理／排程入口傳已核准來源 ID／scope 版本及持久工作關聯，沒有家長聊天或私人 key。站內查閱／取得工具逐次校驗 URL、redirect、路徑、附件及批次上限，返回原檔／章節頁碼、抽取方式、完整度和續讀位置；未核內容不經一般聊天搜尋返回。發布工具重核內容／來源版本、語義審核及規則影響資格後原子更新；疑義保持候選，不讓 Agent 自行批准擴大來源或醫療規則。
+- **客戶端投影：**沿既有持久受理／run 結果接口，提供必要的編製中、核對中、待確認／修正、未完成及已保存結果，附可授權讀取的草稿／資源／版本參照。具體 wire 狀態隨包相容擴充，不直接改歷史狀態 enum。只顯示核准正文與真實進度，不回傳內部推理、子模型協定、未核串流或私人證據全文；身份切換／撤權清理保持。

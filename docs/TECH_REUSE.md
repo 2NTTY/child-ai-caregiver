@@ -182,3 +182,14 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 | [Emulator](https://docs.cloud.google.com/firestore/native/docs/emulator) | 本機基本測試輔助；不把 emulator 結果當 production vector／交易競爭／IAM／縮零與計費證據 |
 
 本次只查文件、既有版本及原碼，沒有新增依賴或複製第三方實作。F01 固定官方 Node SDK 的實際版本／license／lockfile 及 Node 相容性，按現有 license manifest 納入；代管服務條款／區域／計費另核，不能以 SDK 開源 license 當服務免費。新短 Skill 只在首次實作出現可復用方法時建立，不為本研究預建框架。價格屬易變資料，核對與假設見 [成本](ARCHITECTURE.md#firestore-cost)。
+
+
+<a id="multi-agent-reuse"></a>
+## 四角色編排及多模態知識維護核查
+
+2026-10-08，基線 e6842fc；以下為固定版本原碼／官方文件與本機程式唯讀核對，不是四角色或多模態流程已實測。現行採用見 [ADR-020](DECISIONS.md#adr-020)／[架構](ARCHITECTURE.md#p2-agent-roles)，不新增 framework、依賴或預建 Skill。
+
+- **可復用原生能力：**ADK 的 [Agent-as-Tool](https://adk.dev/tools-custom/function-tools/) 讓子任務回傳主 Agent，主 Agent 保留對話控制；適合聊天按需調資料編製，背景維護另由受信工作入口啟動。[2.1.0 AgentTool](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/tools/agent_tool.ts) 為 Apache-2.0，已有子 Runner／取消傳遞，但 runAsync 不帶專案 RunConfig／maxLlmCalls，schema 驗證亦有 TODO；不能推定共享 scope、預算及 observer 自動完整繼承。採原生 FunctionTool／Runner 薄接點明確注入現有 gateway／validator／根預算，不複製整個框架；首次實作才核最少相容情景。
+- **現有 runtime 與審核缺口：**[agent-runtime](../server/agent-runtime.ts) 有有界 Runner／FunctionTool／取消／收尾；[product-agent-tools](../server/product-agent-tools.ts) 的 present_answer 驗引用 ID、分類與範圍，不是獨立模型判斷每項說法是否獲原文支持。[knowledge-version-review](../server/knowledge-version-review.ts) 已有變更含義、原文片段、growthRuleImpact 與發布 gate，可接審核角色；資料編製復用 [文件工具](../server/agent-document-tools.ts)及其他領域服務，不另存可寫副本。
+- **多模態缺口：**[knowledge-pdf](../server/knowledge-pdf.ts)／worker 沿 pdfjs 文字分批抽取，完整度不代表圖表含義已核對；[agent-model-gateway](../server/agent-model-gateway.ts) 目前拒 fileData 且最多一張受控照片。官方 [Vertex 文件理解](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/document-understanding) 提醒長文件分拆、機讀文字優先，以及掃描／手寫／定位誤差；採來源維護專用有界視覺輸入，保留原頁供審核，不以模型抽取當逐字原文。沿現有 Vertex／GenAI 路線；實作時核固定模型與 SDK 的實際媒體相容，不因通用文件宣稱本產品已支援。
+- **證據／成本限制：**原單 Runner scripted／真 Gemini、文字 PDF 及來源版本 gate 的證據只適用原情景。六次是互動共同上限，不是平均成本或成功保證；四角色、視覺來源與自動語義審核的實際費用／品質要隨 F 包最低連貫流程量測。不得用靜態 prompt、引用格式合法或另一角色說通過作實證。
