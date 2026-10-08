@@ -21,7 +21,7 @@ type Operation = { child_id: string; storage_epoch: string; request_hash_encrypt
 type Run = { id: string; state: string; expires_at: Date; result_encrypted: string | null };
 interface State { rows: Map<string, Row>; events: Map<string, EventRow[]>; follows: Map<string, Follow>;
   operations: Map<string, Operation>; revisions: Map<string, string>; runs: Map<string, Run>; changes: number }
-function harness() {
+function harness(childIds: readonly string[] = [childId]) {
   let state: State = { rows: new Map(), events: new Map(), follows: new Map(), operations: new Map(), revisions: new Map(), runs: new Map(), changes: 0 };
   let snapshot: State | null = null;
   const options = { migration: true, allowed: true, workerEnabled: true, afterDueSelection: null as (() => Promise<void>) | null };
@@ -50,9 +50,9 @@ function harness() {
     if (sql === "COMMIT") { snapshot = null; return result([]); }
     if (sql === "ROLLBACK") { if (snapshot) state = snapshot; snapshot = null; return result([]); }
     if (sql.startsWith("SET LOCAL") || sql.startsWith("SELECT pg_advisory")) return result([]);
-    if (sql.startsWith("SELECT workspace_id FROM children")) return result(values[0] === childId ? [{ workspace_id: workspaceId }] : []);
+    if (sql.startsWith("SELECT workspace_id FROM children")) return result(childIds.includes(String(values[0])) ? [{ workspace_id: workspaceId }] : []);
     if (sql.startsWith("SELECT owner_user_id, access_version FROM workspaces")) return result([{ owner_user_id: userId, access_version: 1 }]);
-    if (sql.startsWith("SELECT 1 FROM children")) return result(values[0] === childId && values[1] === workspaceId ? [{}] : []);
+    if (sql.startsWith("SELECT 1 FROM children")) return result(childIds.includes(String(values[0])) && values[1] === workspaceId ? [{}] : []);
     if (sql.startsWith("SELECT storage_epoch,access_version")) return result([{ storage_epoch: epoch, access_version: "1" }]);
     if (sql.startsWith("SELECT 1 FROM app_migrations")) return result(sql.includes("029-concern-terminal-reserve") && options.migration ? [{}] : []);
     if (sql.startsWith("SELECT * FROM concern_operations")) return result(state.operations.has(String(values[1])) ? [state.operations.get(String(values[1]))] : []);
@@ -267,6 +267,23 @@ test("queued capacity input is cancelled before model authorization and a record
   assert.equal(await h.store.finishBackground(job, null), "ignored");
   const ended = await h.store.change(userId, childId, original.id, archive(settled), randomUUID());
   assert.equal(ended?.events.length, 202);
+});
+
+test("capacity escape retains scope, authority and version checks", async () => {
+  const otherChildId = randomUUID(), h = harness([childId, otherChildId]), original = h.fixture(200, "pending");
+  const before = structuredClone(h.state);
+  assert.equal(await h.store.change(userId, otherChildId, original.id, archive(original), randomUUID()), null);
+  assert.ok(h.queries.some(sql => sql.startsWith("SELECT * FROM concerns WHERE id=")));
+  assert.deepEqual(h.state, before);
+  for (const input of [{ ...archive(original), expectedVersion: 9 }, { ...archive(original), authorityVersion: epoch + ":0" }]) {
+    await assert.rejects(h.store.change(userId, childId, original.id, input, randomUUID()), error => error instanceof FamilyError && error.code === "concern_changed");
+    assert.equal(h.state.events.get(original.id)!.length, 200); assert.equal(h.state.operations.size, 0);
+    assert.deepEqual(h.state, before);
+  }
+  const ended = await h.store.change(userId, childId, original.id, archive(original), randomUUID());
+  assert.ok(ended); assert.equal(ended.status, "closed"); assert.equal(ended.version, 11);
+  assert.equal(ended.events.length, 202); assert.equal(ended.followUp?.state, "cancelled");
+  assert.equal(h.state.operations.size, 1);
 });
 
 test("readers accept complete 202-event history and reject 203 events", async () => {
