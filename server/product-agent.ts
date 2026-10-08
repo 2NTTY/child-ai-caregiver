@@ -26,11 +26,10 @@ export function createProductAgent(options: {
   const replyKey = (userId: string, childId: string, messageId: string) => JSON.stringify([userId, childId, messageId]);
   return {
     async cancelReply(userId: string, childId: string, messageId: string, isCurrentUser: () => Promise<boolean>) {
-      if (!await isCurrentUser() || !await options.chat.listForUser(userId, childId)) return false;
-      const controller = activeReplies.get(replyKey(userId, childId, messageId));
-      if (!controller) return false;
-      controller.abort();
-      return true;
+      if (!await isCurrentUser()) return false;
+      const accepted = await options.store.cancelReply(userId, childId, messageId);
+      if (accepted) activeReplies.get(replyKey(userId, childId, messageId))?.abort();
+      return await isCurrentUser() && accepted;
     },
     async background(input: { userId: string; childId: string; reference: string; context: Record<string, unknown>; authorize: () => Promise<boolean>; signal?: AbortSignal }): Promise<ProductAgentResult | null> {
       if (!await input.authorize()) return null;
@@ -156,7 +155,10 @@ export function createProductAgent(options: {
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         countsKnown: true, counts: result.counts, proposals: [] };
       if (!await isCurrentUser()) return null;
-      if (!await options.store.finish(claim.scope, value, value.status === "completed" ? tools?.summaryDraft() : undefined)) return null;
+      if (!await options.store.finish(claim.scope, value, value.status === "completed" ? tools?.summaryDraft() : undefined)) {
+        const cancelled = await options.store.readCancelled(claim.scope, claim.runId);
+        return await isCurrentUser() ? cancelled : null;
+      }
       const stored = await options.store.get(userId, childId, claim.runId);
       return await isCurrentUser() ? stored : null;
       } finally { if (activeReplies.get(key) === cancellation) activeReplies.delete(key); }

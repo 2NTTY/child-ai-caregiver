@@ -19,6 +19,7 @@ import type { StorageCipher } from "./storage-crypto.ts";
 import { documentPatchIsStructural } from "./family-document-edits.ts";
 import { createAgentWorkStore } from "./agent-work-store.ts";
 import { createAgentConfirmationStore } from "./agent-confirmation-store.ts";
+import { createAgentActionsStore } from "./agent-actions-store.ts";
 import { AGENT_LIMITS } from "./agent-budget.ts";
 
 interface RunRow {
@@ -101,7 +102,9 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
   }
   async function proposals(client: PoolClient, run: RunRow): Promise<AgentProposal[]> {
     // Each run has at most eight tool calls, hence at most eight proposals.
-    const rows = (await client.query<ProposalRow>("SELECT * FROM agent_proposals WHERE run_id=$1 ORDER BY created_at,id", [run.id])).rows;
+    const rows = (await client.query<ProposalRow>("SELECT * FROM agent_proposals WHERE run_id=$1 ORDER BY created_at,id LIMIT $2",
+      [run.id, AGENT_LIMITS.toolCalls + 1])).rows;
+    if (rows.length > AGENT_LIMITS.toolCalls) throw new FamilyError(409, "agent_proposal_limit");
     const items: AgentProposal[] = [];
     for (const row of rows) items.push(await publicProposal(client, run, row));
     return items;
@@ -151,6 +154,60 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     if (after.workspaceId !== current.workspaceId || after.authorizationVersion !== current.authorizationVersion
       || after.dataVersion.split(":")[0] !== current.dataVersion.split(":")[0]) return null;
     return { receipts, unavailable: receipts.length !== links.length, linked: true };
+  }
+  // Durable cancellation leaves the result null; legacy finish always writes ciphertext.
+  // Revisit this marker before persisting in-flight progress in result_encrypted.
+  const cancelled = (run: RunRow) => run.state === "stopped" && run.stop_reason === "cancelled" && run.result_encrypted === null;
+  async function cancelledResult(client: PoolClient, workspaceId: string, run: RunRow, expected?: AgentScope): Promise<ProductAgentResult | null> {
+    if (!cancelled(run)) return null;
+    const current = await currentScope(client, workspaceId, run.owner_user_id, run.child_id);
+    if (run.trigger_kind !== "interactive" || !run.source_message_id || run.trigger_reference !== run.source_message_id
+      || String(run.authorization_version) !== current.authorizationVersion
+      || run.data_version.split(":")[0] !== current.dataVersion.split(":")[0]
+      || expected && (expected.userId !== run.owner_user_id || expected.childId !== run.child_id
+        || expected.workspaceId !== workspaceId || expected.authorizationVersion !== current.authorizationVersion
+        || expected.dataVersion.split(":")[0] !== current.dataVersion.split(":")[0])) return null;
+    if (!(await client.query("SELECT 1 FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user' FOR SHARE",
+      [run.source_message_id, run.child_id, run.owner_user_id])).rowCount) return null;
+    const value = { ...empty(run), privateSourceCitations: [] };
+    try {
+      await client.query("UPDATE agent_proposals SET state='expired' WHERE run_id=$1 AND state='pending' AND expires_at<=clock_timestamp()", [run.id]);
+      value.proposals = await proposals(client, run);
+      const actionIds = (await client.query<{ id: string }>(`SELECT id FROM agent_action_receipts
+        WHERE run_id=$1 AND owner_user_id=$2 AND child_id=$3 ORDER BY created_at,id LIMIT $4`,
+        [run.id, run.owner_user_id, run.child_id, AGENT_LIMITS.toolCalls + 1])).rows;
+      if (actionIds.length > AGENT_LIMITS.toolCalls) throw new FamilyError(409, "agent_action_limit");
+      const borrowed = transactionPool(client);
+      try {
+        const actions = await createAgentActionsStore(borrowed.pool, cipher).receipts(run.owner_user_id, run.child_id, run.id);
+        borrowed.assertReleased();
+        if (!actions || actions.length !== actionIds.length || actions.some(receipt => !actionIds.some(row => row.id === receipt.id)))
+          throw new FamilyError(409, "agent_action_receipt_changed");
+        for (const receipt of actions) value.tools.push({ name: agentActionToolNames[receipt.kind], status: "succeeded", reference: receipt.id });
+        const confirmation = await createAgentConfirmationStore(borrowed.pool, cipher, async () => {
+          throw new Error("A receipt read cannot decide a confirmation");
+        }).recordedConfirmation(run.owner_user_id, run.child_id, run.source_message_id);
+        borrowed.assertReleased();
+        if (confirmation) value.tools.push({ name: "confirmed_proposal", status: "succeeded", reference: confirmation.proposalId });
+      } finally { borrowed.assertReleased(); }
+      const contacts = (await client.query<{ id: string }>(`SELECT r.id FROM contact_requests r
+        JOIN agent_runs a ON a.id=r.run_id AND a.owner_user_id=$1 AND a.child_id=r.child_id
+        WHERE r.run_id=$2 AND r.child_id=$3 ORDER BY r.created_at,r.id LIMIT $4`,
+        [run.owner_user_id, run.id, run.child_id, AGENT_LIMITS.toolCalls + 1])).rows;
+      if (contacts.length > AGENT_LIMITS.toolCalls) throw new FamilyError(409, "contact_receipt_limit");
+      for (const receipt of contacts) value.tools.push({ name: "contact_caregiver", status: "succeeded", reference: receipt.id });
+      const documents = await documentReceiptsFor(client, workspaceId, run);
+      if (!documents) return null;
+      if (!documents.unavailable) for (const receipt of documents.receipts)
+        value.tools.push({ name: receipt.toolName, status: "succeeded", reference: receipt.documentId });
+      value.text = documents.unavailable
+        ? "文件操作的目前資料或來源已變，未能顯示原收據；請重新讀取目前資料，勿重複提交操作。"
+        : value.tools.length ? "已有操作保存了 Server 收據；請查看原操作及目前結果，勿重複提交。已安排或入列不代表送達、成果完整或照護完成。" : "";
+      return value;
+    } catch {
+      return { ...value, status: "unknown", stopReason: "cancelled_receipt_unavailable", tools: [],
+        text: "取消已接受，但未能核對原操作收據；請查核原運行及台帳，勿重新提交同一操作。" };
+    }
   }
   return {
     ...createAgentWorkStore(pool, cipher),
@@ -227,10 +284,32 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           && current.dataVersion === (liveRun?.data_version ?? scope.dataVersion);
       }));
     },
+    async cancelReply(userId: string, childId: string, messageId: string): Promise<boolean> {
+      return Boolean(await access(userId, childId, true, async (client, workspaceId) => {
+        const row = (await client.query<RunRow>(`SELECT * FROM agent_runs WHERE owner_user_id=$1 AND child_id=$2
+          AND trigger_kind='interactive' AND trigger_reference=$3 AND source_message_id=$3 FOR UPDATE`, [userId, childId, messageId])).rows[0];
+        if (!row) return false;
+        const current = await currentScope(client, workspaceId, userId, childId);
+        if (String(row.authorization_version) !== current.authorizationVersion
+          || row.data_version.split(":")[0] !== current.dataVersion.split(":")[0]
+          || row.result_encrypted !== null
+          || !(await client.query("SELECT 1 FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user' FOR SHARE",
+            [messageId, childId, userId])).rowCount) return false;
+        await expireRun(client, row);
+        if (cancelled(row)) return true;
+        if (row.state !== "running") return false;
+        return Boolean((await client.query("UPDATE agent_runs SET state='stopped',stop_reason='cancelled',updated_at=now() WHERE id=$1 AND state='running' RETURNING id", [row.id])).rowCount);
+      }));
+    },
+    async readCancelled(scope: AgentScope, runId: string): Promise<ProductAgentResult | null> {
+      return access(scope.userId, scope.childId, true, async (client, workspaceId) =>
+        cancelledResult(client, workspaceId, await runFor(client, scope.userId, scope.childId, runId), scope));
+    },
     async get(userId: string, childId: string, runId: string): Promise<ProductAgentResult | null> {
       return access(userId, childId, true, async (client, workspaceId) => {
         const row = await runFor(client, userId, childId, runId);
         await expireRun(client, row);
+        if (cancelled(row)) return cancelledResult(client, workspaceId, row);
         await client.query("UPDATE agent_proposals SET state='expired' WHERE run_id=$1 AND state='pending' AND expires_at<=clock_timestamp()", [runId]);
         const saved = row.result_encrypted ? JSON.parse(cipher.decrypt(row.result_encrypted, aad(row))) as ProductAgentResult : empty(row);
         const value: ProductAgentResult = { ...saved, runId, status: row.state, stopReason: row.stop_reason, proposals: await proposals(client, row),

@@ -17,9 +17,10 @@ test("committed document run association is atomic, scoped and recoverable witho
   const opId = "6697e43e-648d-4edb-a356-eac5f330ca76", quote = "請把準備單首項勾選為已準備。";
   let profileVersion = 1;
   const profile = () => ({ childId, version: profileVersion, data: null, confirmedBy: null, confirmedAt: null, reason: null });
+  const { decodeTask, taskSelection } = await import("../server/tasks.ts");
   t.mock.module("../server/care.ts", { namedExports: { createCareStore: () => ({ profile: async () => profile(), search: async () => ({ records: [] }) }) } });
   t.mock.module("../server/memory.ts", { namedExports: { createMemoryStore: () => ({ reportFacts: async () => ({ items: [] }) }) } });
-  t.mock.module("../server/tasks.ts", { namedExports: { createTaskStore: () => ({ list: async () => ({ items: [] }) }) } });
+  t.mock.module("../server/tasks.ts", { namedExports: { decodeTask, taskSelection, createTaskStore: () => ({ list: async () => ({ items: [] }) }) } });
   t.mock.module("../server/concern-store.ts", { namedExports: { createConcernStore: () => ({ reportPage: async () => ({ items: [] }) }) } });
   const { createProductAgentStore } = await import("../server/product-agent-store.ts");
   const { loadFamilyDocumentSources, buildFamilyDocumentSnapshot } = await import("../server/family-document-sources.ts");
@@ -58,8 +59,12 @@ test("committed document run association is atomic, scoped and recoverable witho
       if (sql.startsWith("SELECT owner_user_id, access_version")) return rows([{ owner_user_id: state.allowed ? userId : "revoked-owner", access_version: state.space.access_version }]);
       if (sql.includes("FROM family_members")) return rows();
       if (sql.startsWith("SELECT 1 FROM children")) return rows(values[0] === childId && values[1] === workspaceId ? [{}] : []);
-      if (sql.startsWith("SELECT access_version::text") || sql.startsWith("SELECT storage_epoch") || sql.startsWith("SELECT w.storage_epoch")) return rows([state.space]);
-      if (sql.startsWith("SELECT * FROM agent_runs")) return rows(values[0] === runId && values[1] === userId && values[2] === childId ? [state.run] : []);
+      if (sql.startsWith("SELECT access_version::text") || sql.startsWith("SELECT id,access_version") || sql.startsWith("SELECT storage_epoch") || sql.startsWith("SELECT w.storage_epoch")) return rows([state.space]);
+      if (sql.startsWith("SELECT * FROM agent_runs")) return rows(sql.includes("WHERE owner_user_id=")
+        ? values[0] === userId && values[1] === childId && values[2] === messageId && state.run.source_message_id === messageId ? [state.run] : []
+        : values[0] === runId && values[1] === userId && values[2] === childId ? [state.run] : []);
+      if (sql.startsWith("SELECT 1 FROM agent_runs")) return rows(values[0] === runId && values[1] === childId && values[2] === userId ? [{}] : []);
+      if (sql.includes("FROM agent_action_receipts") || sql.includes("FROM agent_confirmations c") || sql.startsWith("SELECT r.id FROM contact_requests")) return rows();
       if (sql.startsWith("SELECT text_encrypted FROM chat_messages")) return rows(state.sourceExists ? [{ text_encrypted:
         cipher.encrypt(quote, `chat_messages:${messageId}:${childId}:${userId}:user::text`) }] : []);
       if (sql.startsWith("SELECT 1 FROM chat_messages")) return rows(state.sourceExists && values[0] === messageId && values[1] === childId && values[2] === userId ? [{}] : []);
@@ -106,6 +111,10 @@ test("committed document run association is atomic, scoped and recoverable witho
         if (state.run.state === "running" && state.run.expires_at.getTime() <= Date.now()) { state.run.state = "unknown"; state.run.stop_reason = "interrupted"; return rows([{ id: runId }]); }
         return rows();
       }
+      if (sql.startsWith("UPDATE agent_runs SET state='stopped'")) {
+        if (state.run.state !== "running") return rows();
+        state.run.state = "stopped"; state.run.stop_reason = "cancelled"; return rows([{ id: runId }]);
+      }
       if (sql.startsWith("UPDATE agent_runs SET state=$2")) { Object.assign(state.run, { state: values[1], stop_reason: values[2], result_encrypted: values[3] }); return rows(); }
       if (sql.startsWith("UPDATE agent_proposals") || sql.startsWith("SELECT * FROM agent_proposals")) return rows();
       throw new Error("Unhandled synthetic query: " + sql);
@@ -122,6 +131,39 @@ test("committed document run association is atomic, scoped and recoverable witho
     assert.match(value.text, /文件操作已保存/u); assert.doesNotMatch(value.text, /最新|第4版|Synthetic document/u);
     assert.deepEqual(value.citations, []); assert.ok(!JSON.stringify(value).includes("【通用模板】"));
   };
+  for (const cancelFirst of [false, true]) {
+    const h = await harness();
+    if (!cancelFirst) await h.write();
+    assert.equal(await h.store.cancelReply(userId, childId, messageId), true);
+    assert.equal(await h.store.cancelReply(userId, childId, messageId), true);
+    await assert.rejects(h.write, { code: "agent_scope_changed" });
+    const recovered = await createProductAgentStore(h.pool, cipher).get(userId, childId, runId);
+    assert.equal(recovered?.status, "stopped"); assert.equal(recovered?.stopReason, "cancelled");
+    assert.equal(recovered?.countsKnown, false);
+    if (cancelFirst) {
+      assert.deepEqual(recovered?.tools, []); assert.equal(h.state.operations.size, 0); assert.equal(h.state.documentChanges, 0);
+    } else {
+      assert.ok(recovered); assert.deepEqual(recovered.tools, [{ name: "change_family_document", status: "succeeded", reference: documentId }]);
+      assert.match(recovered.text, /收據/u); assert.match(recovered.text, /不代表送達/u);
+      assert.equal(h.state.operations.size, 1); assert.equal(h.state.links.size, 1); assert.equal(h.state.documentChanges, 1);
+      assert.equal(h.state.operations.has(userId + ":" + opId), true); assert.equal(h.state.run.data_version, epoch + ":2");
+    }
+    assert.equal(await h.store.finish(scope, { runId, status: "completed", stopReason: null, provenance: null,
+      text: "PRIVATE LATE ANSWER", citations: [], retrievalMode: "not_used", tools: [], proposals: [],
+      counts: { modelCalls: 2, toolCalls: 2, queryEmbeddings: 0 } }), false);
+    assert.equal(h.state.run.result_encrypted, null); assert.equal(h.state.run.state, "stopped");
+    assert.deepEqual(await h.store.readCancelled(scope, runId), recovered);
+    for (let index = 0; index < h.queries.length; index++) if (h.queries[index] === "BEGIN") {
+      const end = h.queries.findIndex((sql, offset) => offset > index && (sql === "COMMIT" || sql === "ROLLBACK"));
+      const transactionQueries = h.queries.slice(index + 1, end);
+      const authority = transactionQueries.findIndex(sql => sql.startsWith("SELECT owner_user_id, access_version"));
+      const runLock = transactionQueries.findIndex(sql => sql.startsWith("SELECT * FROM agent_runs"));
+      const nestedRead = transactionQueries.findIndex(sql => sql.startsWith("SAVEPOINT "));
+      assert.ok(authority >= 0); assert.match(transactionQueries[authority], /FOR UPDATE$/u);
+      assert.ok(runLock > authority); assert.ok(nestedRead < 0 || nestedRead > runLock);
+    }
+  }
+  console.log("PASS synthetic commit-before-cancel preserves original receipt; cancel-before-commit rejects new write; no SQL concurrency claim");
   {
     const h = await harness(), first = await h.write(); assert.equal(first?.version, 4);
     assert.equal(h.state.operations.size, 1); assert.equal(h.state.links.size, 1); assert.equal(h.state.run.data_version, epoch + ":2");

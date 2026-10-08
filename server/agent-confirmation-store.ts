@@ -40,6 +40,36 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
     return { ...row, policyVersion: policy?.version ?? 0 };
   }
   return {
+    async recordedConfirmation(userId: string, childId: string, responseMessageId: string): Promise<{ proposalId: string } | null> {
+      return access(userId, childId, async (client, workspaceId) => {
+        const current = (await client.query<{ access_version: string; storage_epoch: string }>(
+          "SELECT access_version::text,storage_epoch::text FROM workspaces WHERE id=$1", [workspaceId])).rows[0];
+        const rows = (await client.query<Row & { proposal_owner: string; proposal_child: string;
+          proposal_authorization: string; proposal_epoch: string; proposal_state: string; saved_proposal_version: number }>(`SELECT c.*,
+            r.owner_user_id AS proposal_owner,r.child_id AS proposal_child,r.authorization_version::text AS proposal_authorization,
+            split_part(r.data_version,':',1) AS proposal_epoch,p.state AS proposal_state,p.version AS saved_proposal_version
+          FROM agent_confirmations c
+          LEFT JOIN agent_runs r ON r.id=c.proposal_run_id
+          LEFT JOIN agent_proposals p ON p.id=c.proposal_id AND p.run_id=r.id
+          JOIN chat_messages m ON m.id=c.response_message_id AND m.owner_user_id=c.owner_user_id
+            AND m.child_id=c.child_id AND m.author_user_id=c.owner_user_id AND m.role='user'
+          WHERE c.owner_user_id=$1 AND c.child_id=$2 AND c.response_message_id=$3 AND c.state='accepted'
+          ORDER BY c.id LIMIT 2`, [userId, childId, responseMessageId])).rows;
+        if (rows.length > 1) throw conflict("confirmation_receipt_limit");
+        const row = rows[0];
+        if (!row) return null;
+        if (String(row.authorization_version) !== current.access_version || row.storage_epoch !== current.storage_epoch
+          || row.proposal_owner !== userId || row.proposal_child !== childId || row.proposal_state !== "accepted"
+          || row.proposal_authorization !== current.access_version || row.proposal_epoch !== current.storage_epoch)
+          throw conflict("confirmation_receipt_changed");
+        // Expiration limits a new decision, never hides an already committed effect.
+        const result = decode(row).result;
+        if (!result?.result || result.id !== row.proposal_id || result.runId !== row.proposal_run_id
+          || result.childId !== childId || result.status !== "accepted" || result.version !== row.saved_proposal_version)
+          throw conflict("confirmation_receipt_changed");
+        return { proposalId: result.id };
+      });
+    },
     async requestConfirmation(agentScope: AgentScope, askingRunId: string, raw: z.infer<typeof requestAgentConfirmationSchema>): Promise<AgentConfirmation | null> {
       const input = requestAgentConfirmationSchema.parse(raw), { userId, childId } = agentScope;
       return access(userId, childId, async (client, workspaceId) => {

@@ -1,0 +1,232 @@
+{
+  "repository": "2NTTY/child-ai-caregiver",
+  "base_commit": "284af419c592e0ccb50ec58af8bd1270fc937a15",
+  "baseline_scope": "Reused partial immutable source snapshot; all four changed pre-existing product/test files independently verified against remote master by Git blob SHA. This is not a complete master checkout.",
+  "remote_master_verified": "2026-10-08T15:19Z, compare identical",
+  "implementation": "Durable interactive run cancellation with strict original-scope recovery; no new migration or wire DTO fields.",
+  "environment": {
+    "node": "24.19.0",
+    "dependencies": "Existing locked dependency installation reused; no dependency changes or installation.",
+    "network": "All test invocations imported ../deny-network.mjs; no real model, network, database or external-effect execution."
+  },
+  "changed_files": [
+    {
+      "path": "server/product-agent-store.ts",
+      "baseline_git_blob_sha": "df4dc64044784681a0b5981e7eed09434d86e61e",
+      "final_git_blob_sha": "c1267c082210741c1504f933b5eeff722e07158f",
+      "sha256": "a63979dc560d8b0b87fcbb754ab76ea4735dca0eb542bcc5f493da998f9ba560"
+    },
+    {
+      "path": "server/product-agent.ts",
+      "baseline_git_blob_sha": "07660383730565fc3e7e676966c25cbf87dcf27a",
+      "final_git_blob_sha": "84cde2a009fd5daadfc62e494b626e9e7e87dc00",
+      "sha256": "8d044c2841c754a0e12a54803dc39f5ffc17f2c8127c1df9a0ba323a01b55991"
+    },
+    {
+      "path": "server/agent-confirmation-store.ts",
+      "baseline_git_blob_sha": "52018e2262513ad27c4a81e9445ccf7f02f431e2",
+      "final_git_blob_sha": "c1b5fb0c2133a5fd85f4c2534453869be3dbcca0",
+      "sha256": "49ee1fd5e42e084303952f4b92c2e9fff6abe69f5cb4a5ff6119d2522573d3de"
+    },
+    {
+      "path": "tests/product-agent-document-store.test.ts",
+      "baseline_git_blob_sha": "2544163c31721dc66882e9b21c0e4433104cc571",
+      "final_git_blob_sha": "44ef39cddff6dc4a18af64389d6b11e219b36f7d",
+      "sha256": "66c0854cb66485a551e4c5b4bd35e584d956fda4899827addc57880f94bead10"
+    },
+    {
+      "path": "tests/product-agent-durable-cancellation.test.ts",
+      "baseline_git_blob_sha": null,
+      "final_git_blob_sha": "a935c127f000526c312c24212cb4e711bb7a766c",
+      "sha256": "68f6225cb8d70720ed73bfc569061cf12b72d3b6ac2bd12c29de394d47910827"
+    }
+  ],
+  "persistent_invariants": [
+    "Cancellation commits stopped/cancelled before an optional process-local abort. Another service instance can cancel without a controller.",
+    "New tools/model calls fail the existing running authorization gate; an already in-flight remote provider request is not promised to stop immediately.",
+    "Committed document, ordinary-action, contact and consumed-confirmation references are recovered with current owner/child/authorization/epoch/source checks. Saved candidates retain their existing source-valid projection and expiry behavior, without automatic decisions or execution. No finalized answer body or delivery/completion claim is revived.",
+    "Durable cancellation marker is stopped/cancelled with result_encrypted null. Legacy encrypted cancellation retains its existing projection. An anomalous running encrypted result is preserved and cancellation returns false. Reassess this marker before introducing in-flight result persistence.",
+    "Same-message retry keeps the original unique run; finish cannot overwrite a cancelled terminal run.",
+    "Bounded receipt errors/overflow return unknown with original-receipt guidance; cancellation remains durably accepted."
+  ],
+  "failure_evidence": [
+    "first-durable.log/exit (124): incorrect scripted-provider signal location and incomplete fake receipt identity fields; failed assertions left pending deferred models until timeout. First sources/hashes retained.",
+    "retry-cross-instance.log/exit (1): fake Pool misread the existing four-parameter claim lookup as the new three-parameter cancellation lookup.",
+    "retry-receipts.log/exit (1): expected an action kind instead of the existing wire tool name save_private_instruction.",
+    "first-document-store.log/exit (1): old tasks module mock omitted decodeTask/taskSelection required by the existing action reader import graph.",
+    "retry-document-store.log/exit (1): new assertion incorrectly required nested borrowed read locks to use UPDATE; corrected to require the outer authority UPDATE before run/nested locks."
+  ],
+  "corrections": "All failed-fixture and new-assertion corrections were reported and approved by the parent. No product behavior was weakened to satisfy tests.",
+  "not_verified": [
+    "Real PostgreSQL statement execution, concurrent locking/races or process persistence",
+    "Actual multi-process/cloud service behavior, HTTP/browser end-to-end or deployment",
+    "Real model calls, provider cost or minimum Node 24.3 runtime",
+    "Full repository/server/frontend typecheck or full regression suite"
+  ],
+  "not_performed": [
+    "New migration",
+    "Authority-document changes",
+    "202/outbox/root budgets/other agent roles",
+    "Dependency installation",
+    "Git push/PR/merge/deployment"
+  ],
+  "historical_validation": {
+    "scope": "Pre-candidate-review implementation only; these regressions were not all rerun after the candidate projection correction.",
+    "tests": [
+      {
+        "name": "durable",
+        "exit_code": 0,
+        "passed": 31,
+        "failed": 0,
+        "log": "accepted-durable.log",
+        "log_sha256": "accea7aa1d439193b1be351d9a49a2bed8bad54b9e396536b9fcb8c52706b961"
+      },
+      {
+        "name": "document-store",
+        "exit_code": 0,
+        "passed": 2,
+        "failed": 0,
+        "log": "accepted-document-store.log",
+        "log_sha256": "112c8f6f992593a19a05b9b19aad61edaad363f495b7d6a79577f0ff44dc1db0"
+      },
+      {
+        "name": "document-cancellation",
+        "exit_code": 0,
+        "passed": 5,
+        "failed": 0,
+        "log": "accepted-document-cancellation.log",
+        "log_sha256": "2d812dfa35be7730a87cd42287486a7ca410ac314055e08e96497a3cc47b431b"
+      },
+      {
+        "name": "product",
+        "exit_code": 0,
+        "passed": 5,
+        "failed": 0,
+        "log": "accepted-product.log",
+        "log_sha256": "9066c8efe641f6d2bc1a1e39e1c2b70ca0cfb30aac7c77fd4c52c0c0f1230771"
+      },
+      {
+        "name": "runtime",
+        "exit_code": 0,
+        "passed": 15,
+        "failed": 0,
+        "log": "accepted-runtime.log",
+        "log_sha256": "99ac885e3cc92ce1f6122560c3a8333bd278f189ba20355dc84a57cf5a8ee999"
+      },
+      {
+        "name": "receipts",
+        "exit_code": 0,
+        "passed": 1,
+        "failed": 0,
+        "log": "accepted-receipts.log",
+        "log_sha256": "fa22a72a2596306e792a6d435def8c834b1b6ab11c7fca22c7e0fd415bb17b0e"
+      }
+    ],
+    "passed_tests": 59,
+    "failed_tests": 0,
+    "scoped_typecheck": {
+      "exit_code": 0,
+      "diagnostics": "",
+      "command": "node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --allowImportingTsExtensions --module NodeNext --moduleResolution NodeNext --target ES2023 --strict --erasableSyntaxOnly --skipLibCheck --types node server/product-agent-store.ts server/product-agent.ts server/agent-confirmation-store.ts tests/product-agent-durable-cancellation.test.ts tests/product-agent-document-store.test.ts"
+    },
+    "source_report": "pre-candidate-review-report.json"
+  },
+  "tests": [
+    {
+      "name": "durable",
+      "exit_code": 0,
+      "passed": 34,
+      "failed": 0,
+      "log": "frozen-final-durable.log",
+      "log_sha256": "19c3d6acd2be9b2d98a293567cbc6147755c7fc2ce450b772e0d5fb060a8f194"
+    },
+    {
+      "name": "document-store",
+      "exit_code": 0,
+      "passed": 2,
+      "failed": 0,
+      "log": "frozen-final-document-store.log",
+      "log_sha256": "9c1e0caeedfbe42a09a679cb001cf4f05f468eb6d6e47571241554cd86ed9f38"
+    },
+    {
+      "name": "document-cancellation",
+      "exit_code": 0,
+      "passed": 5,
+      "failed": 0,
+      "log": "frozen-final-document-cancellation.log",
+      "log_sha256": "e33c12d7b335d03b5d84183524a8d37ae1ac4e0ad9a68f2afd8b073344909f66"
+    },
+    {
+      "name": "product",
+      "exit_code": 0,
+      "passed": 5,
+      "failed": 0,
+      "log": "frozen-final-product.log",
+      "log_sha256": "681ae3995ef10d2eb44db70ce01dacba5fd5bee4961730d7390c0e1af7664663"
+    },
+    {
+      "name": "runtime",
+      "exit_code": 0,
+      "passed": 15,
+      "failed": 0,
+      "log": "frozen-final-runtime.log",
+      "log_sha256": "a30eb6beaf2a49e61d9840d86455fc6e038f78cdae116666e298c38815690aeb"
+    },
+    {
+      "name": "receipts",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "log": "frozen-final-receipts.log",
+      "log_sha256": "7c0402c9adeb0e193584277a74bff939828f63413016b1d65adad077b9024097"
+    }
+  ],
+  "passed_tests": 62,
+  "failed_tests": 0,
+  "scoped_typecheck": {
+    "exit_code": 0,
+    "diagnostics": "",
+    "command": "node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --allowImportingTsExtensions --module NodeNext --moduleResolution NodeNext --target ES2023 --strict --erasableSyntaxOnly --skipLibCheck --types node server/product-agent-store.ts server/product-agent.ts server/agent-confirmation-store.ts tests/product-agent-durable-cancellation.test.ts tests/product-agent-document-store.test.ts",
+    "log": "frozen-final-typecheck.log"
+  },
+  "parent_review_correction": {
+    "finding": "New durable cancelled projection dropped saved proposals and bypassed their existing expiration/source projection.",
+    "change": "After strict current authority/source checks, expire pending proposals using the existing query and return the existing proposals projection. The shared proposal query now reads at most eight plus one overflow sentinel and rejects overflow. No new decisions, execution or business effects.",
+    "new_coverage": [
+      "Pending candidate remains visible after cancellation; expires to expired with result null.",
+      "Candidate projection does not execute or decide any proposal or create effects.",
+      "Revocation returns null before proposal expiry/read changes.",
+      "Candidate lookup errors and overflow return unknown."
+    ],
+    "latest_validation_scope": "All six original bounded test files plus scoped compilation rerun on the final frozen source after parent approval."
+  },
+  "candidate_review_validation": {
+    "tests": [
+      {
+        "name": "durable",
+        "exit_code": 0,
+        "passed": 34,
+        "failed": 0,
+        "log": "review-final-durable.log",
+        "log_sha256": "660f9e7681a7d4da467202e412a3094dd1a057c7902f0a1328918c5485335d27"
+      },
+      {
+        "name": "document-store",
+        "exit_code": 0,
+        "passed": 2,
+        "failed": 0,
+        "log": "review-final-document-store.log",
+        "log_sha256": "27297fff31719e1ee84f72f338b89240ff2c048d8f58aa86816b0af18e0d60a6"
+      }
+    ],
+    "passed_tests": 36,
+    "failed_tests": 0,
+    "scoped_typecheck": {
+      "exit_code": 0,
+      "diagnostics": "",
+      "command": "node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --allowImportingTsExtensions --module NodeNext --moduleResolution NodeNext --target ES2023 --strict --erasableSyntaxOnly --skipLibCheck --types node server/product-agent-store.ts server/product-agent.ts server/agent-confirmation-store.ts tests/product-agent-durable-cancellation.test.ts tests/product-agent-document-store.test.ts",
+      "log": "review-final-typecheck.log"
+    }
+  },
+  "frozen_source_verified": "Final file hashes still equal the parent-reviewed source; no code changes during or after the final 62-test run."
+}
