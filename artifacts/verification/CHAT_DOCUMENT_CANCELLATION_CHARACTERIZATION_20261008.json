@@ -1,0 +1,214 @@
+{
+  "kind": "Offline characterization, not product acceptance or a real database race test",
+  "repository": "2NTTY/child-ai-caregiver",
+  "baseline_commit": "5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa",
+  "baseline_tree": "7f8d438a52fd6687560e4915ba87bb455015d37d",
+  "baseline_remote_verified": true,
+  "source_snapshot": {
+    "partial": true,
+    "all_present_baseline_files_git_blob_match": true,
+    "matched_files": 2139,
+    "missing_files": 1513,
+    "missing_execution_code": [],
+    "unused_missing_server_asset": "server/assets/fonts/LXGWWenKaiTC-Regular.ttf"
+  },
+  "environment": {
+    "node": "24.19.0",
+    "adk": "2.1.0",
+    "genai": "2.24.0",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "verified_master_lock_dependencies": 186,
+    "dependency_environment": "Existing chat_offline_followup_20261008 locked-deps; no old mixed-Zod dependency environment",
+    "network": "deny-network.mjs blocks global fetch and net.Socket.connect"
+  },
+  "tests": {
+    "file": "tests/product-agent-document-cancellation.test.ts",
+    "final_characterization_passed": 2,
+    "final_failed": 0,
+    "typecheck": "Passed for the new test and imported dependency graph; full-repository checks not run",
+    "batch_stop_policy": "Sequential retained then revoked; log and exit status saved; stop immediately on first failure",
+    "expected_current_baseline": "The tests deliberately assert absent document reporting in the retained case, recording the reporting gap without weakening cancellation or authority guards."
+  },
+  "observations": {
+    "retained": {
+      "fixture_commit": {
+        "operationId": "6697e43e-648d-4edb-a356-eac5f330ca76",
+        "runId": "d4a1b662-d13d-476b-bf52-40a28aa1a1a7",
+        "documentId": "11111111-1111-4111-8111-111111111111",
+        "version": 4,
+        "change": {
+          "action": "check_item",
+          "expectedVersion": 3,
+          "authorityVersion": "synthetic-authority:6",
+          "sectionId": "checklist",
+          "itemId": "bag",
+          "checked": true
+        }
+      },
+      "documentVersion": 4,
+      "checked": true,
+      "status": "stopped",
+      "stopReason": "cancelled",
+      "text": "",
+      "tools": [],
+      "same_message_retry_equals_original": true,
+      "provider_calls": 2,
+      "write_calls": 1,
+      "runtime_calls": 1,
+      "claims": 2,
+      "finish_calls": 1,
+      "document_readback_calls": 1,
+      "new_tool_or_provider_after_abort": false
+    },
+    "revoked": {
+      "fixture_commit": {
+        "operationId": "6697e43e-648d-4edb-a356-eac5f330ca76",
+        "runId": "d4a1b662-d13d-476b-bf52-40a28aa1a1a7",
+        "documentId": "11111111-1111-4111-8111-111111111111",
+        "version": 4,
+        "change": {
+          "action": "check_item",
+          "expectedVersion": 3,
+          "authorityVersion": "synthetic-authority:6",
+          "sectionId": "checklist",
+          "itemId": "bag",
+          "checked": true
+        }
+      },
+      "first": null,
+      "retry": null,
+      "runtime_stopReason": "cancelled",
+      "runtime_tools": [],
+      "provider_calls": 2,
+      "write_calls": 1,
+      "finish_calls": 0,
+      "document_readback_calls": 0,
+      "private_result_exposed": false
+    }
+  },
+  "reporting_gap": "After the synthetic commit marker and external cancellation, an authorized caller receives/persists stopped/cancelled with empty text and tools; the original-message retry returns that original empty result without another runtime or write. This does not establish a lost-write defect.",
+  "future_acceptance_difference": {
+    "still_current_authorized_scope": "A separate authorized read of the original durable ledger should expose only a minimal committed receipt/reference and distinguish saved effect from unfinished text, without re-execution. Current baseline does not do this.",
+    "revoked_or_changed_identity_scope_epoch_source": "No stale body, reference or unauthorized receipt may be exposed; current revoked fixture passes this boundary.",
+    "runtime_guard": "The runtime tools=[] cancellation/authority guard must remain intact."
+  },
+  "root_reviewed_interface_direction": {
+    "proposed_read_only_port": "ProductAgentStore.documentReceipts(scope, runId), naming subject to root decision",
+    "minimal_data": [
+      "operationId",
+      "documentId",
+      "documentVersion",
+      "operationKind"
+    ],
+    "required_guard": "Revalidate current identity, user/child/workspace scope, authorization version, storage epoch, original source message and committed ledger record before projection. No receipt from an uncommitted attempt.",
+    "durability": "Persist minimal run-to-operation association atomically in the existing writeDocument document transaction. Existing family_document_operations has no run relation; process-local handles alone are insufficient.",
+    "existing_reusable_constraint": "agent_runs_action_scope UNIQUE(id,child_id,owner_user_id) can anchor a scoped relationship. Existing agent_action_calls cannot be repurposed because its FK requires an agent_action_receipts row.",
+    "no_implementation_in_this_delivery": true
+  },
+  "evidence_symbols": [
+    {
+      "path": "server/agent-document-tools.ts",
+      "symbol": "receiptId",
+      "lines": "21-24",
+      "blob_sha": "89e4bb4583dc6ba381e7fb3b1c193a80f9101556",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/agent-document-tools.ts#L21"
+    },
+    {
+      "path": "server/agent-document-tools.ts",
+      "symbol": "savedView",
+      "lines": "54-65",
+      "blob_sha": "89e4bb4583dc6ba381e7fb3b1c193a80f9101556",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/agent-document-tools.ts#L54"
+    },
+    {
+      "path": "server/agent-document-tools.ts",
+      "symbol": "change_family_document",
+      "lines": "113-118",
+      "blob_sha": "89e4bb4583dc6ba381e7fb3b1c193a80f9101556",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/agent-document-tools.ts#L113"
+    },
+    {
+      "path": "server/agent-runtime.ts",
+      "symbol": "FunctionTool.execute / budget.wait",
+      "lines": "131-151",
+      "blob_sha": "8a8312365018c1d192b1a294e5dfa3b852db0c4a",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/agent-runtime.ts#L131"
+    },
+    {
+      "path": "server/agent-runtime.ts",
+      "symbol": "cancelled / unauthorized result.tools guard",
+      "lines": "267-278",
+      "blob_sha": "8a8312365018c1d192b1a294e5dfa3b852db0c4a",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/agent-runtime.ts#L267"
+    },
+    {
+      "path": "server/product-agent.ts",
+      "symbol": "duplicate claim retrieves original run",
+      "lines": "87-89",
+      "blob_sha": "b27bdfd02689487d5bc36bfd072309987ba5bbad",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/product-agent.ts#L87"
+    },
+    {
+      "path": "server/product-agent.ts",
+      "symbol": "persisted receipt reconstruction and stopped text",
+      "lines": "118-135",
+      "blob_sha": "b27bdfd02689487d5bc36bfd072309987ba5bbad",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/product-agent.ts#L118"
+    },
+    {
+      "path": "server/product-agent-store.ts",
+      "symbol": "writeDocument / original document transaction",
+      "lines": "124-151",
+      "blob_sha": "f5178328e3ddbbc6890c33743b427f6b32861e21",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/product-agent-store.ts#L124"
+    },
+    {
+      "path": "server/product-agent-store.ts",
+      "symbol": "authorize / current run scope",
+      "lines": "169-178",
+      "blob_sha": "f5178328e3ddbbc6890c33743b427f6b32861e21",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/product-agent-store.ts#L169"
+    },
+    {
+      "path": "server/family-document-store.ts",
+      "symbol": "receipt / committed operation ledger",
+      "lines": "132-158",
+      "blob_sha": "a90d91ec74cfe1d5198f49eba16b21c6a1fd4649",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/family-document-store.ts#L132"
+    },
+    {
+      "path": "server/migrations/028-family-documents.sql",
+      "symbol": "family_document_operations has no runId",
+      "lines": "18-23",
+      "blob_sha": "db9f0a4b09159da743d482a6cb05897c22035b57",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/migrations/028-family-documents.sql#L18"
+    },
+    {
+      "path": "server/migrations/025-agent-actions.sql",
+      "symbol": "agent_runs_action_scope composite uniqueness",
+      "lines": "3",
+      "blob_sha": "5b7127a22755f14d766bbec233c5643764cf2d6f",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/migrations/025-agent-actions.sql#L3"
+    },
+    {
+      "path": "server/product-agent-api.ts",
+      "symbol": "stopped result generic message projection (static only)",
+      "lines": "67-76",
+      "blob_sha": "dbd933a407165a2b5d4625b2a4e203d6389aafce",
+      "url": "https://github.com/2NTTY/child-ai-caregiver/blob/5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa/server/product-agent-api.ts#L67"
+    }
+  ],
+  "unrun": [
+    "Real model/embedding/database/cloud calls",
+    "Real PostgreSQL transaction race",
+    "API/browser/device acceptance",
+    "Other three product Agent implementations or tests",
+    "Full repository test/typecheck/build"
+  ],
+  "mutations": "Only one new test file and this evidence artifact. No product, runtime, prompt, budget or migration changes. No push, PR, merge or deployment.",
+  "commands": {
+    "characterization": "bash chat_commit_cancellation_20261008/run-characterization.sh",
+    "typecheck": "cd chat_commit_cancellation_20261008/source && node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --target ES2023 --module NodeNext --moduleResolution NodeNext --strict --erasableSyntaxOnly --allowImportingTsExtensions --skipLibCheck --types node tests/product-agent-document-cancellation.test.ts"
+  }
+}

@@ -1,0 +1,241 @@
+{
+  "kind": "Offline implementation review evidence; synthetic transaction mechanics, not real PostgreSQL race acceptance",
+  "repository": "2NTTY/child-ai-caregiver",
+  "baseline_commit": "5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa",
+  "baseline_tree": "7f8d438a52fd6687560e4915ba87bb455015d37d",
+  "remote_master_last_verified": "2026-10-08T14:46Z",
+  "baseline_open_prs_at_last_check": [],
+  "scope": "Four existing implementation/registration files, additive migration036, two necessary tests and verification evidence only",
+  "changed_files_excluding_this_report": [
+    {
+      "path": "server/family-document-store.ts",
+      "baseline_git_blob_sha": "a90d91ec74cfe1d5198f49eba16b21c6a1fd4649",
+      "final_git_blob_sha": "4044c0ed8287cd25fa9dad51e95d6c6a4d2b0465",
+      "sha256": "c5f4fe64247ce86b954d3e560153c98839e4f11fa13f059a7b45acfedc21b586"
+    },
+    {
+      "path": "server/migrate.ts",
+      "baseline_git_blob_sha": "ed37f0b8f3ec46fc0c495efae0cf0a24fe350599",
+      "final_git_blob_sha": "fab008290edfd6ebfb759021940ec6875c4e5342",
+      "sha256": "2333638932a76bcf823fda4e4fae1219b34b14576e445cbdcd512549b12ba8be"
+    },
+    {
+      "path": "server/product-agent-store.ts",
+      "baseline_git_blob_sha": "f5178328e3ddbbc6890c33743b427f6b32861e21",
+      "final_git_blob_sha": "df4dc64044784681a0b5981e7eed09434d86e61e",
+      "sha256": "f2cc5b7a3e0904e311b2ae3934a138c5c86577121aff75919acf4eebefd72b07"
+    },
+    {
+      "path": "server/product-agent.ts",
+      "baseline_git_blob_sha": "b27bdfd02689487d5bc36bfd072309987ba5bbad",
+      "final_git_blob_sha": "07660383730565fc3e7e676966c25cbf87dcf27a",
+      "sha256": "3575941e98dbae2fbc48415b514c09ef4631b721b1542c4b9d93f5411e337eda"
+    },
+    {
+      "path": "server/migrations/036-agent-document-operations.sql",
+      "baseline_git_blob_sha": null,
+      "final_git_blob_sha": "4c094197b18e1117ca7ada2bbc0f63ab16b3d5a9",
+      "sha256": "34c745dd391b82b839150e7298aa6355b303ab2297b5f8e4580239ac52c6f436"
+    },
+    {
+      "path": "tests/product-agent-document-cancellation.test.ts",
+      "baseline_git_blob_sha": null,
+      "final_git_blob_sha": "ecaab937187b47a07e1f0e08dcf4607dbf3576d0",
+      "sha256": "b77e77b80a9c07afc94288c6ff9ac79e416778ef2d42dd412b55dfb90830b9e8"
+    },
+    {
+      "path": "tests/product-agent-document-store.test.ts",
+      "baseline_git_blob_sha": null,
+      "final_git_blob_sha": "2544163c31721dc66882e9b21c0e4433104cc571",
+      "sha256": "8ff0db197cf410df92cd4fb8ab933f5f19f5e1b0e8026814afbebc9fe1913424"
+    },
+    {
+      "path": "artifacts/verification/CHAT_DOCUMENT_CANCELLATION_CHARACTERIZATION_20261008.json",
+      "baseline_git_blob_sha": null,
+      "final_git_blob_sha": "13b8933cd26cf82a194d58e8e0ed9141c8e3cae6",
+      "sha256": "0f0fd187b3ccc7c0880f94641adf0033fd82c926088b5a30f49460aaeb7e22be"
+    }
+  ],
+  "implementation": {
+    "association": "agent_document_operations stores run/child/owner/op/tool only; no body. Scoped composite FK to both original run and document operation, with duplicate protection and parent cascades.",
+    "atomicity": "writeDocument uses its original outer transaction and nested document savepoint. Receipt child checked before and after association; relation insert and run dataVersion update are part of the same commit.",
+    "read_port": "documentReceipts returns explicit {receipts, unavailable, linked}. Its eight-tool bound includes a ninth-row overflow sentinel and fails closed; no partial overflow success.",
+    "read_authority": "New linked runs recheck current child/workspace access, original run authVersion, epoch, original owner-authored message, current document and source validity. Expiry permits only reads of existing committed effects. The outer UPDATE authority lock matches nested document reads.",
+    "projection": "Only existing schema tool references are added. Internal opId and savedVersion are never portrayed as a newly available wire field or latest document version. Original completed text/summary is blocked before finish if any linked receipt is invalid. Query errors use unknown rather than successful empty output.",
+    "recovery": "get rebuilds references from the durable original run association after crash-before-finish/expiry; no new runtime or mutation. Non-completed status/stopReason is preserved when source validity fails.",
+    "identity": "Both ordinary return and duplicate-message get recheck isCurrentUser after reading.",
+    "legacy": "Zero new association rows retain original get access and historical projection. This delivery does not add source validation to legacy historical text."
+  },
+  "runs": [
+    {
+      "scope": "document store + migration",
+      "log": "root-review-store.log",
+      "passed": 2,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "scope": "native Runner recovery",
+      "log": "delivery-runner.log",
+      "passed": 5,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "scope": "document adapter",
+      "log": "root-review-receipts.log",
+      "passed": 1,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "scope": "existing product Runner",
+      "log": "root-review-product.log",
+      "passed": 5,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "scope": "runtime contract",
+      "log": "root-review-runtime.log",
+      "passed": 13,
+      "failed": 0,
+      "exit": 0
+    }
+  ],
+  "total_final_required_passed": 26,
+  "total_final_required_failed": 0,
+  "typecheck": {
+    "status": "passed",
+    "log": "delivery-typecheck.log",
+    "scope": "Two new tests and imported dependency graph; not full repository."
+  },
+  "observations": {
+    "authorized_cancelled_commit": {
+      "first": {
+        "runId": "d4a1b662-d13d-476b-bf52-40a28aa1a1a7",
+        "provenance": {
+          "packVersion": "0.1.33",
+          "recipeId": "product-interactive",
+          "model": "gemini-3.1-flash-lite"
+        },
+        "status": "stopped",
+        "stopReason": "cancelled",
+        "text": "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件及版本，勿重複建立；文件清單不代表照護任務完成。",
+        "citations": [],
+        "privateSourceCitations": [],
+        "retrievalMode": "not_used",
+        "tools": [
+          {
+            "name": "change_family_document",
+            "status": "succeeded",
+            "reference": "11111111-1111-4111-8111-111111111111"
+          }
+        ],
+        "countsKnown": true,
+        "counts": {
+          "modelCalls": 2,
+          "toolCalls": 2,
+          "queryEmbeddings": 0
+        },
+        "proposals": []
+      },
+      "same_message_retry_equals_original": true,
+      "writes": 1,
+      "provider_calls": 2,
+      "runtime_return_tools": []
+    },
+    "revoked_after_commit": {
+      "first": null,
+      "retry": null,
+      "writes": 1,
+      "provider_calls": 2,
+      "finishes": 0,
+      "readbacks": 0
+    },
+    "retry_identity_changed_during_get": {
+      "result": null,
+      "writes": 1,
+      "provider_calls": 2,
+      "runtime_count": 1
+    },
+    "completed_then_source_invalid": {
+      "raw_runtime_status": "completed",
+      "raw_summary_tool_succeeded": true,
+      "stored_result_status": "stopped",
+      "stored_body_hidden": true,
+      "summary_passed_to_finish": null,
+      "same_message_provider_calls": 3,
+      "writes": 1
+    },
+    "partial_valid_receipts_with_other_invalid_source": {
+      "raw_runtime_status": "completed",
+      "stored_result_status": "stopped",
+      "stored_body_hidden": true,
+      "summary_passed_to_finish": null,
+      "writes": 2,
+      "provider_calls": 3
+    }
+  },
+  "synthetic_store_invariants": [
+    "Atomic document/receipt/link/run advance",
+    "Rollback on linkage failure, later run advance failure or receipt-child mismatch",
+    "Original op replay performs no new document write/version or changeSeq increment",
+    "Expiry blocks new mutations but permits authorized committed reads",
+    "New store after crash-before-finish retrieves original unknown/interrupted run and minimal committed reference",
+    "Cross user/child/authVersion/epoch/source-message denial exposes no document receipt",
+    "Deleted document or invalid source clears new linked references and derived text",
+    "Unknown/interrupted status survives invalid-source projection",
+    "Legacy zero-link result remains unchanged under original access rules",
+    "Query error and >8 associations become unknown with no document reference or replay"
+  ],
+  "migration": {
+    "id": "036-agent-document-operations",
+    "canonical_checksum": "34c745dd391b82b839150e7298aa6355b303ab2297b5f8e4580239ac52c6f436",
+    "prior_001_035_git_blobs_unchanged": true,
+    "prior_migrations_verified": 35,
+    "registration_count": 36,
+    "new_registration_occurs_once": true,
+    "live_postgresql_applied": false
+  },
+  "preserved_failure_history": [
+    {
+      "log": "implementation-typecheck.log",
+      "cause": "New fixture used exports option absent from locked Node types; root-approved namedExports alias fixed it."
+    },
+    {
+      "log": "implementation-store.log",
+      "cause": "Snapshot initialization client lacked query needed by transactionPool.bind; replaced with a no-query initializer that throws on unexpected SQL."
+    },
+    {
+      "log": "implementation2-migration.log",
+      "cause": "Static DELETE-word assertion misclassified approved ON DELETE CASCADE; root-approved statement-level check corrected the test."
+    }
+  ],
+  "baseline_characterization": "Historical baseline 2/2 and absent saved-document reporting are preserved separately; they are not the final implementation acceptance assertions.",
+  "environment": {
+    "node": "24.19.0",
+    "adk": "2.1.0",
+    "genai": "2.24.0",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "verified_lock_packages": 186,
+    "network_guard": "deny-network.mjs: blocks net.Socket.connect and global fetch",
+    "warning": "namedExports is runtime-deprecated but supported; used because locked @types/node exposes that alias. No dependency change."
+  },
+  "unchanged": [
+    "server/agent-runtime.ts and cancellation tools=[] guard",
+    "budgets, prompts, source quote/opId derivation",
+    "shared wire schema/enums",
+    "other three product Agent implementations",
+    "frontend",
+    "authority docs/API/DATA_MODEL/PLAN/STATUS"
+  ],
+  "not_run": [
+    "Real PostgreSQL execution/DDL/transaction race",
+    "Live model/embedding/cloud calls",
+    "Full-repository test/typecheck/build",
+    "API/browser/device acceptance"
+  ],
+  "external_actions": "No push, PR, merge, deployment or new cloud task. Root review and any true PostgreSQL acceptance remain separate."
+}
