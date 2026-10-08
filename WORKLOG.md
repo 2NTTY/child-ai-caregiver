@@ -1688,3 +1688,14 @@
 - 測試使用 fake Pool、合成資料及 shallow 元件；本次未重跑真 PostgreSQL、真瀏覽器或正式部署。#137 的本機 PostgreSQL 18.6／029 遷移合成驗證是既有歷史證據，不算成本次結果；正式環境的 readers／029 啟用狀態未核對。
 - 缺少的測試型別依賴只在本地依精確 lock 版本及完整性值補齊，未改 package-lock。PLAN 區分原執行時限制與後續 #137 承接；其餘歷史紀錄不改。新補充 PR 正常合併並核對後，才關閉 #111 並留下接替連結；此記錄不預先宣稱遠端合併或關閉完成。
 - 當次證據：`artifacts/verification/PR111_REGRESSION_RECOVERY_CHECKS.json`。零模型／外送／正式資料庫變更／GCP 部署。
+
+<a id="log-20261008-firestore-plan"></a>
+## 2026-10-08｜Firestore 集中服務遷移文件定案
+
+- Recorded At：2026-10-08T14:58:41+08:00；Work Date：2026-10-08。文件包 A 主責、權重 2、A100%；主模型親寫／核對需求、計劃、契約及 ADR，共用 AI 由 A 統籌，無新實作／測試子代理或共同作者。
+- 核對遠端 master 0c22180、實際 35 份 migration／97 建表定義／27 store factory 及必要原碼；保留此前唯讀調查和官方研究，不重做全棧調查。A01～A08 已合併、#130 已合併；#140／93c64e4 仍 draft 且有衝突，其修正／未通過 Agent 成果／現場證據保留，未合併其分支。
+- 先寫 PLAN，再局部更新 SPEC、ARCHITECTURE、DATA_MODEL、API、TECH_REUSE、PRODUCTION_FRONTEND；追加 ADR-019，STATUS 原位修正 A07 過時快照及具日期部署觀察。新路線採 Firestore Standard／Storage／Cloud Run／Hosting／Firebase Auth／Tasks／Scheduler；不採 SQL Connect／Cloud SQL，不重寫 ADK／前端。
+- F01～F08 分列原子收據／outbox、Auth 相容與准入、權限／索引／有界讀取、正文加向量、附件／持久刪除、14 天配對恢復及有新寫入的反向回退；F02 真雲端合成切片是完整遷移 gate。A09 的完整 Agent 引用、文件修改及新對話讀回仍須完成。
+- 主模型 review；git diff --check 及新增／改動本地連結／錨點、八包依賴無環核對通過；既有錨點和歷史 ADR 保留，WORKLOG 原 bytes 嚴格追加。沒有產品 unit／integration／E2E、模型、通知、Computer Use 或新雲端探測。
+- 文件相容、成本推算與實際服務驗證分開：$2–6／月及 $8–20／月是公開費率／低用量假設，不是帳單或提高配額授權。沒有改正式資料、建立資源、遷移、部署、續期；VM 期限仍是原日期觀察，不能假定在期限前遷完。
+- 下一步只依 [PLAN#active](PLAN.md#active)：處置 #140 有效修正後 F01；F02 建資源前核准具體資源／成本，F08 前核准維護窗口及實測預算。遷移與完整 P2 門檻仍未完成。

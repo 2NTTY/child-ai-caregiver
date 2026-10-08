@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **P2-A01～A06、A08已合併；A07最低接線驗收通過，待本包交付。** 唯一當前入口為 [PLAN#active](PLAN.md#active)。正式帳號、持久工作／歷史及文件接點已接好；合成資料已清理。新部署、真SMTP及完整Agent／穩定服務由A09完成，尚未宣稱整輪完成；舊P1／P2／INT證據保留，P3未啟動。
+- **P2-A01～A08 均已合併；本輪定案 Firestore 集中服務，遷移未開始。** [PLAN#active](PLAN.md#active) 是唯一入口，F01 先處置 A09 [draft #140](https://github.com/2NTTY/child-ai-caregiver/pull/140)／93c64e4 的有效修正及衝突。其完整 Agent 引用／文件修改／新對話讀回與穩定交付仍未完成，由 F07／F08 承接；不把新方向寫成已實作。原 P1／P2／INT 證據保留，P3 未啟動。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。
@@ -12,9 +12,9 @@
 <a id="deployment"></a>
 ## 最後部署觀察（非即時狀態）
 
-2026-10-07 07:33:47 UTC 的部署觀察：https://ex-machina.eu.org 的 Web／API 使用 `4a2257a`，worker 保持 `053658b`；本次未執行 migration，DB 卷與既有備份保留。API／worker 共用映像設定已更新，後續整包 Compose 啟動可能改動 worker，必須先核對目標，不能當作 Web-only 操作。啟動／部署及功能清單見 [正式 Web](docs/PRODUCTION_FRONTEND.md)。
+2026-10-08 約 01:41 UTC，A09 既有唯讀現場觀察：正式網址 https://ex-machina.eu.org 的 Web／API／worker 均為 85e3a846，API／PostgreSQL healthy；A01～A08 尚未部署，SMTP／正式帳號設定未配置，根磁碟餘約 2.2 GB（89% 已用）。這是 [#140 固定版本現場證據](https://github.com/2NTTY/child-ai-caregiver/blob/93c64e41de076d9429cbe6f938fbc6042d2de857/artifacts/verification/P2_A09_REMOTE_PREFLIGHT.log)，不是本輪重新探測或部署，也不以 draft 作 master。啟動／現有及目標部署分見 [正式 Web](docs/PRODUCTION_FRONTEND.md)。
 
-已核對使用者先前續期生效，VM 的 STOP 為 **2026-10-10 20:50:44 HKT**；本包未再續期。觀察時 VM running／API healthy；這是有日期的結果，不代替日後操作前核對。
+該次核對原 VM STOP 為 **2026-10-10 20:50:44 HKT**；本輪未續期、擴容、建資源或遷移，不假定期限前完成。Firebase Auth／Firestore／Cloud Run／Storage 及恢復均待實作／驗證；雲端切片資源／費用及正式切換窗口另核准。
 
 ## 按需追溯
 

@@ -1,6 +1,6 @@
 # 正式 Web 前端與功能接點
 
-本頁說明正式入口、啟動／部署及仍未支援的內容；工作狀態只看 [PLAN](../PLAN.md#active)，實際部署與驗收見 [INT-W07 證據](../artifacts/verification/INT_W07_CHECKS.json)。不是另一份產品需求或測試清單。
+本頁說明正式入口、啟動／部署及仍未支援的內容；工作狀態只看 [PLAN](../PLAN.md#active)，實際部署以 [STATUS 日期觀察](../STATUS.md#deployment) 為準，原 [INT-W07 證據](../artifacts/verification/INT_W07_CHECKS.json) 保留。不是另一份產品需求或測試清單。
 
 ## 入口與日常開發
 
@@ -56,7 +56,7 @@ docker compose --project-name yuban-p1 \
 
 
 <a id="invited-account-service"></a>
-## 邀請制服務設定（P2-A08 Server 接點）
+## 邀請制服務設定（現有 P2-A08 PostgreSQL 接點）
 
 正式真實資料模式用SERVICE_MODE=invited；A08提供Server／client，A07沿AccountServiceOwner接登入／同意及設定入口，是否上線仍以STATUS最後觀察為準。trial保留合成相容，不代表已開放真實資料。
 
@@ -66,4 +66,18 @@ docker compose --project-name yuban-p1 \
 - 註冊後驗證本人電郵、登入及確認當前資料說明；找回沿原生流程並撤銷舊會話。驗證／找回回到同源的/?account=verified或/?account=reset，畫面只說已受理，不保證郵件送達。
 - 本人下載使用固定manifest及有界資料頁；失效歷史會明示不可用，並非所有歷史正文均可匯出。模型key、密碼hash、session及渠道secret不回傳。大量資料的頁面呈現沿exportPage分批，不能把已讀前綴說成完整下載。
 
-真郵件供應商、寄件身份、邀請規模、保留期限、VM期限及運行預算仍須在A09部署前核定；A08本機SMTP證據不代表公開找回信已送達。
+上述 SMTP／Compose 是現有實作，未配置時仍須拒絕啟用，不因新方案而放寬。後續已選 Firebase Auth／集中服務，不再把購置 SMTP 當新目標前置；邀請初期 10 帳號及備份 14 天政策已定，實測預算／切換仍待核准。A08 本機 SMTP 不代表 Firebase 驗證／找回或公開送達已驗證。
+
+
+<a id="firestore-deployment"></a>
+## 集中服務的目標部署接點（尚未實作）
+
+採 [ADR-019](DECISIONS.md#adr-019)／[P2-F01～F08](../PLAN.md#p2-firestore-migration)。目前 npm／Compose 命令仍指 PostgreSQL，不將文件改名冒稱已有 Firebase 啟動腳本；固定 SDK、環境配置與正式命令由各包實作後更新本頁。
+
+- Firebase Hosting 發布同一 frontend/dist 及 Push service worker；同源 /api 轉 Cloud Run，保留域名、設計與前端 owner。保留直接原 API 的本機開發 adapter，不能換成合成成功。
+- Cloud Run API／私有 OIDC worker、Firestore Standard、私有 Storage、Tasks／Scheduler；request-based、min instances 0、明確 max／佇列速率。沿平台 ADC／受保護 secrets，不在前端 bundle 放服務帳戶、key 或 private bucket token。實際 hostname／DNS 切換與資源建立另按批准進行。
+- AuthServiceOwner 接 Firebase provider 的登入／驗證／找回及 Server __session，邀請、政策、家庭／私人 scope 仍 Server 權威；不要求用戶配置 Firebase。既有帳戶 ID 保留，重新登入／可能重設密碼，不讓舊 cookie 自動續命。
+- Agent 由 202／runId／原操作受理後讀同一結果，避免 Hosting 60 秒；頁面沿現有 queued／running／terminal／unknown／cancel 狀態。私有回應 no-store，切換帳戶／孩子清理快取與遲到回應，不重新設計頁面。
+- 保留各領域功能／權限、opId／版本／changes 游標、照片、來源、文件／PDF、本人通知與可選 key。Tasks 取代 pg-boss 不改收到／完成和未知不重發；檔案由授權 API 提供，不讓永久公開連結繞過撤權。
+
+F02 先合成真雲端切片；F07 驗全功能對照、14 天配對恢復及含新寫入的反向回退，F08 再核准窗口切換。DB／worker／入口只允許一套主寫；回退映像仍懂 Firebase Auth／journal。最後才收束舊 VM／磁碟／IP。#140 的有效修正與未通過 Agent 流程另由 PLAN 追溯，不把新部署規劃當作已上線或以切片代替正式成果。

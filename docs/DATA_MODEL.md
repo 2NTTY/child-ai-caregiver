@@ -1,5 +1,7 @@
 # 数据模型、版本与不变量
 
+**實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss／Compose 專項記錄現有機制，不能視為 Firestore 已接線。集中服務目標按 [ADR-019](DECISIONS.md#adr-019) 及 [Firestore 契約](#firestore-target) 取代其後續技術路線；業務、安全及既有證據保留，進度只見 [PLAN](../PLAN.md#active)。
+
 本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。
 
 本文件唯一維護已確定的概念實體、字段含義、關係、終態、版本及遷移格式。現行 Server 模型依 [ADR-008](DECISIONS.md#adr-008) 替代本地主庫及離線操作模型，保留既有錨點。不是已生成的 schema；SQL 類型、索引／約束名及序列化細節見 [待實施細化](DECISIONS.md#deferred)。各包只落實當前所需字段，不提前建立全部對象。
@@ -530,3 +532,38 @@ A02 使用 `agent_work`（目前版本及加密工作內容）、`agent_work_ope
 邀請按正規化電郵的hash及期限保存，不是家庭成員；註冊資格綁本人，消耗／撤回紀錄不因帳戶刪除而變回可用。資料處理確認保存政策版本及原操作，身份驗證和密碼由Better Auth權威處理。郵件URL與接收資料用現有StorageCipher加密，queue只帶參照；不假設SDK hook與另開Pool寫入共享交易。
 
 永久刪除意圖在工程外受保護、加密且fsync的append-only journal保存穩定user／child ID及原op，才交易刪除SQL資料；不含名字／正文／密碼。回應丟失仍按原意圖完成，不讓舊備份重新啟用已授權刪除的帳戶／孩子。還原及服務啟動須核對journal身份並先重放未套用意圖；journal缺失、認證失敗或不確定是否為最新便保持離線，不能使用備份裡較舊的副本代替。照片沿原file_deletions清理，狀態不冒稱立即物理清除所有備份。備份實際保留期由部署核定並顯示，不能承諾尚未執行的到期刪除。
+
+
+<a id="firestore-target"></a>
+## Firestore 目標資料與可靠寫入契約
+
+此為待遷移契約；下列 collection 分組不是已存在 schema，固定 path／SDK／index definition 隨 F01 核對逐項 store 後落實。身份供應商改 Firebase Auth，業務權威仍由 Server 注入，不開放客戶端任意 collection 操作。
+
+| 分組 | 沿用權威與必要調整 |
+|---|---|
+| 帳戶／workspace／members | 原 userId、workspaceId、角色及 accessVersion；Firebase uid 對應原 userId。邀請單次消耗、准入、政策同意、逐裝置 session／撤銷與 Auth 分開，email 更改不轉移資料 |
+| 孩子／記錄／檔案／記憶 | 保留 childId、原文、精度、來源、版本、可見範圍及歷史；列表以 workspace／child／scope、排序與 cursor 取有界頁，不複製孩子正文到每頁 |
+| 私人訊息／工作／確認 | 綁本人＋孩子；原訊息、coverage、工作焦點、候選、提問／回覆、原 opId 及授權版本保持，長正文／歷史分段，取消／撤權失效 |
+| 文件／修訂／報告 | 同一 documentId／version，固定 snapshot／章節／項目；分段與分頁不改變權威，來源刷新不覆蓋指定修改，PDF 指向同版 |
+| 任務／occurrence／通知 | 任務、發生實例、投遞和回應分開；保存原 generation、終態、授權、unknown／實際證據，Tasks 名稱不是完成證據 |
+| 操作／變更／outbox | deterministic op key、request fingerprint、結果／資源版本、workspace changeSeq、storageEpoch、派送／lease／retry 狀態；private changes 只向本人披露 |
+| 知識／來源／發布 | 固定 source／version／chunk ID、使用範圍、章節頁碼、hash、核對狀態、embedding 模型／維度／處理版；不可變批次與 active 指標，獨立停用閘 |
+| 附件／清理／刪除 | assetId、bucket／object／generation、hash、cipher metadata、資源／scope、reserved／ready／deleting 狀態；獨立 journal 意圖與可重放清理進度 |
+
+### 交易、不變量與查詢映射
+
+- 原 opId 的 scope、request fingerprint 和結果唯一性沿用；同 ID 不同參數拒絕。同一交易讀授權／准入／刪除狀態、storageEpoch、expectedVersion 與收據，寫業務、收據、變更及 outbox；並發相同操作只生效一次。業務拒絕／衝突不得留下半份成功寫入。
+- 唯一性以確定 ID claim 保存並交易核對，包含邀請消耗、唯一 run trigger／occurrence 及現有文件防重；不靠「先查不到再 add」。workspace changeSeq 保留字串 wire／單調順序，游標與權限版本／epoch 綁定；同一 workspace counter 的競爭需實測，不能改成全站一把鎖。
+- 交易回調全讀後寫且可重跑；原 SQL advisory lock／FOR UPDATE／savepoint 不能機械複製。多次有界步驟以進度文件、lease generation 和可恢復階段承接；大型刪除或報告不塞單交易。
+- F01 對每個查詢列出權威集合、授權範圍、等值／範圍／排序欄位、複合索引、投影來源／重建、page limit／cursor 及成本。加密正文不另建明文私人索引，沿授權頁掃描並標 complete／nextCursor；公共候選索引另計 posting 容量。query constraints 不足以表達現有語義時明示調整並以 F02 驗證，不刪功能。
+- FK／cascade／trigger 由建立／引用檢查與持久清理取代；parent tombstone 先阻止新讀寫／子項新增，再按固定 cursor 清理所有附屬記憶、文件、工作、通知、key 及附件。歷史版本不能繞過目前權限或恢復已刪資料。
+
+### Auth、附件與恢復關聯
+
+Auth 用戶並非 Firestore 子文件，匯入／刪除無法跨兩服務交易；保存穩定 mapping、pending／active／deleting 狀態及原操作，外部步驟按原 ID 查核恢復。STANDARD_SCRYPT 的 salt bytes／雜湊參數／NFKC 相容證據先取得；不把舊 session 搬成有效 Firebase session。
+
+Storage 先 reserved，確定 object generation／hash／大小／加密版本後才 ready。下載及覆寫／刪除綁實際 generation；metadata 存在不代表物件已成功保存，物件存在也不能自行擴大 scope。孤立物件及部分刪除有持久清理記錄。
+
+獨立刪除 journal 用不可覆寫的加密 intent 物件，保存最小本人／孩子／asset ID、原 op、類型、時點及完整性證據；不保存家庭正文或密碼。它不受資料庫 restore 回退，正常備份到期不順帶刪 journal；其保留須覆蓋全部可用備份及回退副本，未能證明不再可能復活時不清除。
+
+配對 manifest 綁資料恢復點、附件 generation／hash、cipher 版本及完整度；每日 14 天資料庫備份有同期間附件副本，7 天 soft-delete 不充當唯一副本。還原對照最新 journal、現行 Auth／撤銷與 scope，重放刪除、驗附件／索引、換 epoch 後才可開放。工作和 unknown 收據保留，不將舊 pending 全數重發。
