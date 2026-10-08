@@ -1,3 +1,4 @@
+export const AGENT_CONFIRMATION_PENDING_TEXT = "已準備待確認事項，所列操作尚未執行。請核對下方確認問題；如仍有其他問題，本輪尚未完成回答。";
 export const AGENT_CONFIRMATION_SAVED_TEXT = "已按你確認的事項保存操作結果；本輪後續文字整理未完成。請查看下方實際收據，不需重做已成功的操作。";
 
 /* Trusted product tool instructions, maintained by the primary model. */

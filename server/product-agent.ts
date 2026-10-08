@@ -8,7 +8,7 @@ import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
-import { AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
+import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
 import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./product-agent-capabilities.ts";
 
 export function createProductAgent(options: {
@@ -95,6 +95,7 @@ export function createProductAgent(options: {
       const authorize = async () => await isCurrentUser() && await options.store.authorize(claim.scope,claim.runId);
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
+      let confirmationPendingFallbackUsed = false;
       const result = await options.runtime.run({
         scope: claim.scope, runId: claim.runId, deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
@@ -111,8 +112,19 @@ export function createProductAgent(options: {
           tools = createProductAgentTools({ ...options, includeDocuments: true, run, authorize });
           return tools.tools;
         }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
-        finalize: async () => {
+        finalize: async (result, _context, reason) => {
           rendered.value = await tools!.presentation();
+          if (!rendered.value && reason === "model_limit" && result.tools.length > 0
+            && result.tools.every(tool => tool.status === "succeeded")
+            && result.tools.at(-1)?.name === "request_confirmation") {
+            if (!await authorize()) throw new AgentStopped("unauthorized");
+            const questions = await options.store.confirmationQuestions?.(userId, childId, claim.runId) ?? [];
+            if (!await authorize()) throw new AgentStopped("unauthorized");
+            if (questions.length === 1 && typeof questions[0] === "string" && questions[0].trim()) {
+              rendered.value = { text: AGENT_CONFIRMATION_PENDING_TEXT, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+              confirmationPendingFallbackUsed = true;
+            }
+          }
           if (!rendered.value) throw new AgentStopped("invalid_response");
           return rendered.value.text;
         },
@@ -155,7 +167,7 @@ export function createProductAgent(options: {
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         countsKnown: true, counts: result.counts, proposals: [] };
       if (!await isCurrentUser()) return null;
-      if (!await options.store.finish(claim.scope, value, value.status === "completed" ? tools?.summaryDraft() : undefined)) {
+      if (!await options.store.finish(claim.scope, value, value.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined)) {
         const cancelled = await options.store.readCancelled(claim.scope, claim.runId);
         return await isCurrentUser() ? cancelled : null;
       }

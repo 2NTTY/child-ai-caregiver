@@ -96,8 +96,9 @@ test("model limit finalizes four successful tool steps once without a fifth prov
     executed.push(name); return s.tool.execute(args, context);
   } }));
   s.input.finalizeOnModelLimit = true;
-  s.input.finalize = async (result, context) => {
+  s.input.finalize = async (result, context, reason) => {
     finalized++;
+    assert.equal(reason, "model_limit");
     assert.deepEqual(result.tools.map(tool => tool.status), names.map(() => "succeeded"));
     assert.deepEqual(context.budget.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
     return "Server validated presentation.";
