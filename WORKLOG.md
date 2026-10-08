@@ -1692,3 +1692,10 @@
 - 發現文件成功收據缺少下一步所需authorityVersion／正文，補同授權、同文件與快照且符合budget的完整短正文；過大／失效仍續讀，寫入成功後readback失敗仍保留真收據，不誘導重複寫入。主模型親寫工具描述，Sol局部實作；一個既有prompt版本聚合、一個adapter聚合通過，主模型review實際diff／測例，沒有再跑整套。修正版真Agent未驗。[檢查](artifacts/verification/P2_A09_CHECKS.json)。
 - 已核實VM的IAP／SSH唯讀現場為85e3a846，服務健康、SMTP未配置，20GB磁碟餘2.2GB；原STOP為2026-10-10 20:50:44 HKT。未刪映像／資料、未續期／擴容、未外發郵件／通知；[現場證據](artifacts/verification/P2_A09_REMOTE_PREFLIGHT.log)。
 - A09仍未完成：真引用／修改／接續、正式SMTP、邀請規模／資料保留／維運條件及新部署／恢复待完成。保留draft交付，不合併為已驗收或把舊P2證據當新服務通過；下一步從同一已保存文件及原台帳接續，不重跑已通過的A01～A08或A07瀏覽器。
+
+
+<a id="log-20261008-p2-a09-blocked"></a>
+## 2026-10-08｜P2-A09 外部設定阻塞確認
+
+- 在前次修正及draft #140交付後，覆核既有健康API會查DB、Compose重啟及配對備份能力；沒有重造服務或再跑產品測試。2026-10-08 02:26:41 UTC經同一已核實VM的IAP唯讀核對，85e3a846仍healthy；`/etc/yuban-p1/account-smtp.json`及`/var/lib/yuban-p1/private/account-smtp.json`均不存在，API亦無SERVICE_MODE或SMTP／journal掛載。未讀秘密正文、未外發、未部署；本批臨時token與tunnel已清理。
+- 同一寄件身份／SMTP及營運核定条件連續阻塞，目標轉受阻而非完成；A09／draft保持未合併，所有原失敗及同一合成文件保留。主模型核對，沒有代填人工驗收。恢復需正式設定與營運條件就緒，並在原用量限制下完成剩餘Agent與部署驗收；不以新帳號、改quota或擅續費繞過。

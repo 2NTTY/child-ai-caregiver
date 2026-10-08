@@ -7,13 +7,14 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### P2-A09 — GCP穩定交付（進行中）
+### P2-A09 — GCP穩定交付（受阻，未完成）
 
-- 基線b30a7b2；A07／[PR #139](https://github.com/2NTTY/child-ai-caregiver/pull/139)已由B合併。獨立分支codex/p2-a09-stable-delivery；C主責、權重3，C60%／B20%／A10%／D10%，人工驗收只記實際參與。
+- 基線b30a7b2；A07／[PR #139](https://github.com/2NTTY/child-ai-caregiver/pull/139)已由B合併。獨立分支codex/p2-a09-stable-delivery／[draft PR #140](https://github.com/2NTTY/child-ai-caregiver/pull/140)；C主責、權重3，C60%／B20%／A10%／D10%，人工驗收只記實際參與。
 - 復用單VM、Compose、既有官方語料／Prompt Pack及配對備份；補journal與郵件部署接點、健康／恢復／容量維運，只做缺少便不能判斷交付的代表驗收。A07已清理同一合成現場，不復活或重建舊fixture。
 - Compose郵件／journal接點及候選映像已準備，尚未部署。真Agent已完成必要補問及建立同一準備單，但有依據回答／正文修改／新對話讀回未全程通過；原失敗、收據及同一合成現場保留。修正Prompt Pack版本不一致已實測；文件工具補回同版本短正文／authorityVersion僅完成離線核對，真流程待補驗。
 - 驗收累計9次生成＋1次embedding，共10／12次已記帳；保留每人12／全站20及每run上限，不清零、不換新fixture繞過額度。本輪不再增加真模型呼叫。下一步在可用原額度內，從已保存文件接續引用／修改而非重建；其後才做正式SMTP與新部署／恢復驗收。[真Agent證據](artifacts/verification/P2_A09_AGENT_RUN.json)／[當前檢查](artifacts/verification/P2_A09_CHECKS.json)。A07兩個sidebar等待仍未驗，不把ready標記當完整路徑證據。
 - 現場85e3a846正常運行；SMTP未配置、20GB磁碟餘約2.2GB，部署前須處理。真SMTP供應商／寄件身份、邀請規模及真實資料保留／運行預算尚待核定；缺設定不啟用invited正式模式，也不以trial模式代替已完成。使用者離開期間先完成可獨立處理的準備，重大外部決定保留。
+- 2026-10-08 02:26:41 UTC再次唯讀核對：現網85e3a846 healthy，兩個已知工程外SMTP位置均不存在，沒有invited模式或SMTP／journal掛載。連續接續仍欠同一寄件／營運條件，目標轉受阻而非完成；使用者提供核准寄件身份／受保護設定、核定營運條件，並有足够原額度完成剩餘真流程後，沿此draft及同一文件恢復。沒有新建外部帳號、提高額度或擴大主機費用。
 - A01～A08均已合併；完整Agent／穩定服務及新部署仍未完成。部署最後觀察與STOP期限見STATUS；master不代表已部署。
 
 <a id="current-capability-gaps"></a>
@@ -157,7 +158,7 @@ worker 只因相關資料／階段／到期／已授權跟進／有效知識換�
 | <a id="p2-a06"></a>**P2-A06** 有用的主動接續 | 已完成（[PR #137](https://github.com/2NTTY/child-ai-caregiver/pull/137)）；P2-A02、P2-A03、P2-A04 | 私人工作事件接續、原run去重、終態／撤權與滿額關注結束；沿用本人通知原授權。[EV](artifacts/verification/P2_A06_CHECKS.json)。 | A；3；A50%／C40%／B10% |
 | <a id="p2-a07"></a>**P2-A07** 正式單人使用流程 | 已完成（PR #139；[EV](artifacts/verification/P2_A07_CHECKS.json)）；P2-A02、P2-A03、P2-A04、P2-A05、P2-A06、P2-A08 | 各頁用途與共用 owner、統一歷史／完整聊天通知入口、單人引導、即時同源更新及安全操作入口；保留設計，不改成管理表格。 | B；3；B60%／C30%／A10% |
 | <a id="p2-a08"></a>**P2-A08** 邀請制真實資料服務 | 已合併[PR #138](https://github.com/2NTTY/child-ai-caregiver/pull/138)；[證據](artifacts/verification/P2_A08_CHECKS.json) | 本人獨立資料空間、邀請註冊、Better Auth 電郵驗證／找回／會話撤銷、真實資料授權、下載及帳戶退出／刪除與備份保留說明。 | C；3；C70%／B20%／A10% |
-| <a id="p2-a09"></a>**P2-A09** GCP 穩定交付 | 進行中；P2-A01、P2-A02、P2-A03、P2-A04、P2-A05、P2-A06、P2-A07、P2-A08 | 必要連貫驗收、部署／相容遷移／回滾、配對加密備份與空環境恢復、健康／容量／故障告警、成本及邀請規模核定。 | C；3；C60%／B20%／A10%／D10% |
+| <a id="p2-a09"></a>**P2-A09** GCP 穩定交付 | 受阻，未完成；P2-A01、P2-A02、P2-A03、P2-A04、P2-A05、P2-A06、P2-A07、P2-A08 | 必要連貫驗收、部署／相容遷移／回滾、配對加密備份與空環境恢復、健康／容量／故障告警、成本及邀請規模核定。 | C；3；C60%／B20%／A10%／D10% |
 
 文件定案包由 A 主責、權重 2、A100%，主模型實際整理／覆核。文件定案時 Ready 為 P2-A01 與 P2-A08；即時工作入口見 #active。A08 只在接口和修改歸屬不重疊時可獨立推進。約一半功能包由 C 主責；Author／共同作者按實際成果，推送／PR／合併按主責真實帳號，保留真實 Committer。
 

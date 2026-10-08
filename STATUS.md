@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **P2-A01～A08均已合併，A09穩定交付進行中。** 唯一當前入口為 [PLAN#active](PLAN.md#active)。正式帳號、Agent資料／文件與歷史接點已有最低本機證據；代表Agent已補問並保存準備單，但引用／局部修改未完整通過；修正版只完成離線核對及建置。新部署及真SMTP仍未完成。邀請規模／保留與運行設定尚待核定，不能把本機SMTP當公開服務；P3未啟動。
+- **P2-A01～A08均已合併，A09穩定交付受阻，未完成。** 唯一當前入口為 [PLAN#active](PLAN.md#active)。正式帳號、Agent資料／文件與歷史接點已有最低本機證據；代表Agent已補問並保存準備單，但引用／局部修改未完整通過；修正版只完成離線核對及建置。新部署及真SMTP仍未完成。02:26 UTC覆核正式SMTP仍未配置；邀請規模／保留與運行設定尚待核定，不能把本機SMTP當公開服務；P3未啟動。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。
