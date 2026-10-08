@@ -283,3 +283,17 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 - 服務取捨：沿 Better Auth 與單 VM Compose，補邀請、電郵驗證／找回／會話撤銷、真實資料說明、資料下載／退出、必要備份恢復及告警。不承諾高可用，不借新計劃提高配額／延長主機／增加外發授權；部署前核定規模及預算。
 - 方法依據：沿 [ADK 2.1.0 原生工具集合](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/agents/llm_agent.ts)，借鑑 [Codex 工具循環](https://developers.openai.com/blog/codex-as-a-platform)、[OpenHands 持久狀態](https://docs.openhands.dev/sdk/guides/convo-persistence)、[查詢轉換](https://developers.llamaindex.ai/python/framework/optimizing/advanced_retrieval/query_transformations/)及[上下文擴展](https://developers.llamaindex.ai/python/examples/node_postprocessor/metadatareplacementdemo/)，復用 [Better Auth email 流程](https://better-auth.com/docs/concepts/email)及成熟 PDF 解析器。這些是方法／文件依據，不是本產品新能力實測；實際版本與最小相容檢查隨觸發包記錄，不為參考而引入所有框架。
 - 驗收：只作必要連貫成果驗證，復用有效證據，不用 Computer Use，不把 mock、unit 或工具存在當 Agent 完成。主模型親寫權威與提示詞；普通工程按明確方案交 Sol。文件定案與各包完成、真服務、部署分開記錄。
+
+
+<a id="adr-019"></a>
+## ADR-019 — Firestore 與集中雲端低用量服務
+
+- 日期／狀態：2026-10-08，使用者定案，**文件已採納，遷移未實作／未驗證**。依遠端 master 0c22180 及實際 SQL／store／worker 盤點，保留 P2-A01～A08 成果；#140 修正與衝突另處置，不把 draft 當已合併。
+- 決定：集中邀請制、本人空間；Firestore Standard Native、私有 Cloud Storage、Cloud Run request-based／min 0、Firebase Hosting、Firebase Authentication，Tasks＋Scheduler＋持久台帳。明確排除 SQL Connect／Cloud SQL 及額外常駐搜尋叢集，不重寫 ADK、Prompt Pack 或前端。
+- 理由／取捨：降低低流量固定費，不把 Firebase 當免費。SQL join／savepoint／FK／trigger、交易內 pg-boss 及 pgvector 不能直接搬 API，須重做有界查詢／索引、read-first 交易／收據／outbox、清理及喚醒接線。Firestore Standard 無全文搜尋，補有界公共分詞／n-gram 候選並保留正文能力；原生向量承接兼容的 1024 維向量，免不必要重算。
+- 身份決定：有 MIT 的 [Better Auth Firestore 社群 adapter](https://github.com/yultyyev/better-auth-firestore)，保留原方案並非技術上不可能；但增加 adapter、寄信及跨身份／業務一致性維護。使用者選 Firebase Auth，接受 [認證資料在美國處理](https://firebase.google.com/support/privacy)，業務／運算預設香港。UID 保留，STANDARD_SCRYPT／salt／NFKC 要實測，舊 session 作廢、不相容重設；產品准入／成員及逐裝置會話仍由 Server 管理。
+- 不變條件：原 ID／版本／密文／收據與權限、來源及確認語義保留。Server IAM 不代替家庭授權；私人內容不進公共索引。Tasks 不是 exactly-once，未知模型／通知結果不盲重做；Hosting 60 秒轉送以持久 run 的 202 受理承接，不提高模型配額。來源新版以含義核對，不以 hash 即發布。
+- 恢復：短暫停寫、不長期雙寫；daily backup 14 天，附件 soft-delete 7 天另加配對副本覆蓋全部恢復期。刪除 journal 獨立、不可覆寫、不隨 DB 還原；隔離還原先重放刪除、核 Auth／附件、換 epoch 才開放。新環境產生寫入後須反向同步才能回退，Auth／撤銷不可回舊快照。
+- 替代範圍：替代 ADR-018 的 Better Auth／單 VM 服務交付及 SQL／pg-boss 作後續必要依賴；保留其全部 Agent 成果及安全門檻。ADR-008 與原自部署方向在本輪由代管服務取代，原 Sxx／P3／P4 錨點與延後範圍、歷史 ADR／WORKLOG 不回寫。A09 的 VM／SMTP 專項交付被替代，有效修正及未通過成果仍承接。
+- 採用門檻：先 F02 有界真雲端合成切片，覆蓋權限、交易／防重、縮零／重投遞、引用、附件與刪除還原；不能只憑 Emulator。再搬全功能、對帳及反向回退、F08 正式 Agent 交付。依賴／責任／唯一入口見 [PLAN](../PLAN.md#p2-firestore-migration)，契約見 [架構](ARCHITECTURE.md#firestore-target)，官方依據及未驗點見 [TECH_REUSE](TECH_REUSE.md#firestore-dependency-audit)。
+- 授權邊界：本輪只文件；不建付費資源／改正式資料／遷移／部署／續期。F02 資源與成本、F08 維護窗口及實測預算仍須核准。原配額、通知對象與內容不因計劃擴大，價格推算不當已付費或性能證據。
