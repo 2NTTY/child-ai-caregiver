@@ -159,6 +159,32 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
     return item;
   }
   return {
+    operationReceipt(userId: string, childId: string, opId: string) {
+      z.uuid().parse(opId);
+      return access(userId, childId, false, async (client, workspaceId): Promise<{
+        operationId: string; documentId: string; savedVersion: number;
+      } | null> => {
+        const prior = (await client.query<{ child_id: string; storage_epoch: string; result_encrypted: string }>(
+          "SELECT * FROM family_document_operations WHERE user_id=$1 AND op_id=$2", [userId, opId])).rows[0];
+        if (!prior || prior.child_id !== childId || prior.storage_epoch !== (await authority(client, workspaceId)).epoch) return null;
+        const original = JSON.parse(cipher.decrypt(prior.result_encrypted, receiptContext(userId, childId, opId, "result"))) as FamilyDocument;
+        z.uuid().parse(original.id); z.number().int().min(1).parse(original.version);
+        if (original.childId !== childId) return null;
+        const row = await find(client, childId, original.id);
+        if (!row) return null;
+        const loaded = await scopedSources(client, row, row.kind === "growth_report"
+          ? emptyFamilyDocumentSources(childId) : await loadFamilyDocumentSources(client, cipher, userId, childId));
+        await supplementFamilyDocumentSources(client, cipher, userId, childId, loaded,
+          original.current && !original.current.reportCoverage ? [original.current] : []);
+        const stored = decode(row), checked = safe(original, stored, loaded, progress(row));
+        const current = await result(client, row, loaded, userId);
+        const readable = (item: FamilyDocument) => item.current !== null && item.readState === "ready"
+          || item.report?.phase === "building" && item.report.sourceRevision === loaded.sourceRevision;
+        if (!readable(checked) || !readable(current)) return null;
+        // Only committed metadata is projected. Historical bodies never leave this read path.
+        return { operationId: opId, documentId: original.id, savedVersion: original.version };
+      });
+    },
     list(userId: string, childId: string, raw: Partial<DocumentListQuery> = {}) {
       const input = documentListQuerySchema.parse(raw);
       return access(userId, childId, false, async (client, workspaceId, canManage): Promise<DocumentPage> => {

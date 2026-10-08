@@ -19,6 +19,7 @@ import type { StorageCipher } from "./storage-crypto.ts";
 import { documentPatchIsStructural } from "./family-document-edits.ts";
 import { createAgentWorkStore } from "./agent-work-store.ts";
 import { createAgentConfirmationStore } from "./agent-confirmation-store.ts";
+import { AGENT_LIMITS } from "./agent-budget.ts";
 
 interface RunRow {
   id: string; child_id: string; owner_user_id: string; trigger_kind: "interactive" | "worker";
@@ -114,6 +115,43 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     const expired = (await client.query("UPDATE agent_runs SET state='unknown',stop_reason='interrupted',updated_at=now() WHERE id=$1 AND state='running' AND expires_at<=clock_timestamp() RETURNING id", [row.id])).rowCount;
     if (expired) { row.state = "unknown"; row.stop_reason = "interrupted"; }
   }
+  const documentTool = (name: string) => name === "generate_family_document" || name === "change_family_document";
+  type DocumentReceipt = { operationId: string; documentId: string; savedVersion: number;
+    toolName: "generate_family_document" | "change_family_document" };
+  async function documentReceiptsFor(client: PoolClient, workspaceId: string, run: RunRow): Promise<{
+    receipts: DocumentReceipt[]; unavailable: boolean; linked: boolean;
+  } | null> {
+    const links = (await client.query<{ op_id: string; tool_name: DocumentReceipt["toolName"]; child_id: string; receipt_child_id: string }>(
+      `SELECT a.op_id,a.tool_name,a.child_id,o.child_id AS receipt_child_id FROM agent_document_operations a
+       LEFT JOIN family_document_operations o ON o.user_id=a.owner_user_id AND o.op_id=a.op_id
+       WHERE a.run_id=$1 AND a.owner_user_id=$2 AND a.child_id=$3 ORDER BY a.op_id LIMIT $4`,
+      [run.id, run.owner_user_id, run.child_id, AGENT_LIMITS.toolCalls + 1])).rows;
+    if (links.length > AGENT_LIMITS.toolCalls) throw new FamilyError(409, "document_receipt_limit");
+    // No new linkage means legacy/non-document behavior; do not rewrite that historical result.
+    if (!links.length) return { receipts: [], unavailable: false, linked: false };
+    const current = await currentScope(client, workspaceId, run.owner_user_id, run.child_id);
+    // Expiry stops execution, not authorized reads of an already committed operation.
+    if (run.authorization_version.toString() !== current.authorizationVersion
+      || run.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) return null;
+    if (run.trigger_kind !== "interactive" || !run.source_message_id || !(await client.query(
+      "SELECT 1 FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user' FOR SHARE",
+      [run.source_message_id, run.child_id, run.owner_user_id])).rowCount) return null;
+    const borrowed = transactionPool(client), documents = createFamilyDocumentStore(borrowed.pool, cipher);
+    const receipts: DocumentReceipt[] = [];
+    try {
+      for (const link of links) {
+        if (link.child_id !== run.child_id || link.receipt_child_id !== run.child_id || !documentTool(link.tool_name))
+          throw new FamilyError(409, "document_receipt_scope_changed");
+        const receipt = await documents.operationReceipt(run.owner_user_id, run.child_id, link.op_id);
+        borrowed.assertReleased();
+        if (receipt) receipts.push({ ...receipt, toolName: link.tool_name });
+      }
+    } finally { borrowed.assertReleased(); }
+    const after = await currentScope(client, workspaceId, run.owner_user_id, run.child_id);
+    if (after.workspaceId !== current.workspaceId || after.authorizationVersion !== current.authorizationVersion
+      || after.dataVersion.split(":")[0] !== current.dataVersion.split(":")[0]) return null;
+    return { receipts, unavailable: receipts.length !== links.length, linked: true };
+  }
   return {
     ...createAgentWorkStore(pool, cipher),
     ...createAgentConfirmationStore(pool, cipher, async (client, userId, childId, runId, proposalId, input): Promise<AgentProposal | null> => {
@@ -145,6 +183,18 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           : await documents.change(scope.userId, scope.childId, z.uuid().parse(mutation.id), documentChangeSchema.parse(mutation.change), opId);
         borrowed.assertReleased();
         if (!item) throw missing();
+        const committed = (await client.query<{ child_id: string }>(
+          "SELECT child_id FROM family_document_operations WHERE user_id=$1 AND op_id=$2", [scope.userId, opId])).rows[0];
+        if (!committed || committed.child_id !== scope.childId) throw new FamilyError(409, "document_receipt_scope_changed");
+        const toolName = "request" in mutation ? "generate_family_document" : "change_family_document";
+        await client.query(`INSERT INTO agent_document_operations(run_id,child_id,owner_user_id,op_id,tool_name)
+          VALUES($1,$2,$3,$4,$5) ON CONFLICT(owner_user_id,op_id) DO NOTHING`, [runId, scope.childId, scope.userId, opId, toolName]);
+        const link = (await client.query<{ run_id: string; child_id: string; tool_name: string; receipt_child_id: string }>(
+          `SELECT a.run_id,a.child_id,a.tool_name,o.child_id AS receipt_child_id FROM agent_document_operations a
+           JOIN family_document_operations o ON o.user_id=a.owner_user_id AND o.op_id=a.op_id
+           WHERE a.owner_user_id=$1 AND a.op_id=$2`, [scope.userId, opId])).rows[0];
+        if (!link || link.run_id !== runId || link.child_id !== scope.childId || link.receipt_child_id !== scope.childId || link.tool_name !== toolName)
+          throw new FamilyError(409, "document_receipt_scope_changed");
         const after = await currentScope(client, workspaceId, scope.userId, scope.childId);
         await client.query("UPDATE agent_runs SET data_version=$2 WHERE id=$1", [runId, after.dataVersion]);
         return item;
@@ -178,12 +228,42 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
       }));
     },
     async get(userId: string, childId: string, runId: string): Promise<ProductAgentResult | null> {
-      return access(userId, childId, true, async client => {
+      return access(userId, childId, true, async (client, workspaceId) => {
         const row = await runFor(client, userId, childId, runId);
         await expireRun(client, row);
         await client.query("UPDATE agent_proposals SET state='expired' WHERE run_id=$1 AND state='pending' AND expires_at<=clock_timestamp()", [runId]);
         const saved = row.result_encrypted ? JSON.parse(cipher.decrypt(row.result_encrypted, aad(row))) as ProductAgentResult : empty(row);
-        return { ...saved, runId, status: row.state, stopReason: row.stop_reason, proposals: await proposals(client, row) };
+        const value: ProductAgentResult = { ...saved, runId, status: row.state, stopReason: row.stop_reason, proposals: await proposals(client, row),
+          tools: [...saved.tools] };
+        let recorded: Awaited<ReturnType<typeof documentReceiptsFor>>;
+        try { recorded = await documentReceiptsFor(client, workspaceId, row); }
+        catch {
+          return { ...value, status: "unknown", stopReason: "document_receipt_unavailable", text: "未能核對文件操作收據；請查核原運行結果，勿重新提交同一操作。",
+            tools: value.tools.filter(tool => !documentTool(tool.name)), citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+        }
+        if (!recorded) return null;
+        if (!recorded.linked) return value;
+        value.tools = value.tools.filter(tool => !documentTool(tool.name));
+        for (const receipt of recorded.receipts) if (!value.tools.some(tool => tool.name === receipt.toolName && tool.reference === receipt.documentId))
+          value.tools.push({ name: receipt.toolName, status: "succeeded", reference: receipt.documentId });
+        if (recorded.unavailable) return { ...value, status: value.status === "completed" ? "stopped" : value.status,
+          stopReason: value.status === "completed" ? "document_source_changed" : value.stopReason,
+          text: "文件操作的目前資料或來源已變，未能顯示原收據；請重新讀取目前資料，勿重複提交操作。",
+          tools: value.tools.filter(tool => !documentTool(tool.name)), citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+        if (recorded.receipts.length && !value.text) value.text = "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件，勿重複提交；已保存操作不代表成果完整或照護完成。";
+        return value;
+      });
+    },
+    async documentReceipts(scope: AgentScope, runId: string): Promise<{
+      receipts: DocumentReceipt[]; unavailable: boolean; linked: boolean;
+    } | null> {
+      // Match the nested document read's authority lock, avoiding concurrent SHARE-to-UPDATE upgrades.
+      return access(scope.userId, scope.childId, true, async (client, workspaceId) => {
+        const run = await runFor(client, scope.userId, scope.childId, runId);
+        if (workspaceId !== scope.workspaceId || run.authorization_version.toString() !== scope.authorizationVersion
+          || run.data_version.split(":")[0] !== scope.dataVersion.split(":")[0]) return null;
+        const recorded = await documentReceiptsFor(client, workspaceId, run);
+        return recorded;
       });
     },
     async pendingProposals(userId: string, childId: string, rawCursor: string | null = null): Promise<AgentPendingPage | null> {

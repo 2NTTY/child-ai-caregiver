@@ -86,7 +86,10 @@ export function createProductAgent(options: {
       const recipeId = "product-interactive";
       const claim = await options.store.claim(userId, childId, { kind: "interactive", reference: messageId }, recipeId);
       if (!claim) return null;
-      if (!claim.created) return options.store.get(userId, childId, claim.runId);
+      if (!claim.created) {
+        const original = await options.store.get(userId, childId, claim.runId);
+        return await isCurrentUser() ? original : null;
+      }
       const cancellation = new AbortController(), key = replyKey(userId, childId, messageId);
       activeReplies.set(key, cancellation);
       try {
@@ -123,16 +126,39 @@ export function createProductAgent(options: {
         ? await options.actions.receipts(userId, childId, claim.runId) ?? [] : [];
       for (const receipt of receipts) if (!result.tools.some(tool => tool.reference === receipt.id))
         result.tools.push({ name: agentActionToolNames[receipt.kind], callId: "persisted-ledger", status: "succeeded", reference: receipt.id });
+      let documentReceiptUnavailable = false, documentSourceUnavailable = false;
+      if (options.documents && options.store.documentReceipts) {
+        if (!await isCurrentUser()) return null;
+        // Rebuild only fresh, authorized committed references; cancelled runtime progress stays discarded.
+        try {
+          const recorded = await options.store.documentReceipts(claim.scope, claim.runId);
+          if (!recorded || !await isCurrentUser()) return null;
+          if (recorded.linked) {
+            result.tools = result.tools.filter(tool => !["generate_family_document", "change_family_document"].includes(tool.name));
+            documentSourceUnavailable = recorded.unavailable;
+            if (!recorded.unavailable) for (const receipt of recorded.receipts)
+              result.tools.push({ name: receipt.toolName, callId: "persisted-ledger", status: "succeeded", reference: receipt.documentId });
+          }
+        } catch {
+          documentReceiptUnavailable = true;
+          result.tools = result.tools.filter(tool => !["generate_family_document", "change_family_document"].includes(tool.name));
+        }
+      }
       if (confirmationResult?.result && !result.tools.some(tool => tool.name === "confirmed_proposal" && tool.reference === confirmationResult.id))
         result.tools.push({ name: "confirmed_proposal", callId: "persisted-confirmation", status: "succeeded", reference: confirmationResult.id });
-      const presentation = result.status === "completed" ? rendered.value : null;
-      const value: ProductAgentResult = { runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
-        text: presentation?.text ?? (confirmationResult?.result ? AGENT_CONFIRMATION_SAVED_TEXT : receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>["generate_family_document","change_family_document"].includes(tool.name)&&tool.status==="succeeded") ? "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件及版本，勿重複建立；文件清單不代表照護任務完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
+      const presentation = result.status === "completed" && !documentReceiptUnavailable && !documentSourceUnavailable ? rendered.value : null;
+      const value: ProductAgentResult = { runId: result.runId, provenance: result.provenance ?? null,
+        status: documentReceiptUnavailable ? "unknown" : documentSourceUnavailable && result.status === "completed" ? "stopped" : result.status,
+        stopReason: documentReceiptUnavailable ? "document_receipt_unavailable" : documentSourceUnavailable && result.status === "completed" ? "document_source_changed" : result.stopReason ?? null,
+        text: documentReceiptUnavailable ? "未能核對文件操作收據；請查核原運行結果，勿重新提交同一操作。"
+          : documentSourceUnavailable ? "文件操作的目前資料或來源已變，未能顯示原收據；請重新讀取目前資料，勿重複提交操作。"
+          : presentation?.text ?? (confirmationResult?.result ? AGENT_CONFIRMATION_SAVED_TEXT : receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>["generate_family_document","change_family_document"].includes(tool.name)&&tool.status==="succeeded") ? "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件及版本，勿重複建立；文件清單不代表照護任務完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         countsKnown: true, counts: result.counts, proposals: [] };
       if (!await isCurrentUser()) return null;
-      if (!await options.store.finish(claim.scope, value, result.status === "completed" ? tools?.summaryDraft() : undefined)) return null;
-      return options.store.get(userId, childId, claim.runId);
+      if (!await options.store.finish(claim.scope, value, value.status === "completed" ? tools?.summaryDraft() : undefined)) return null;
+      const stored = await options.store.get(userId, childId, claim.runId);
+      return await isCurrentUser() ? stored : null;
       } finally { if (activeReplies.get(key) === cancellation) activeReplies.delete(key); }
     },
   };
