@@ -24,10 +24,20 @@ function load(relative) {
     : name.endsWith('/theme') ? load('src/theme.ts') : name.endsWith('/AppStatusBadge') ? load('src/components/AppStatusBadge.tsx')
     : name.endsWith('/summary-styles') ? load('src/components/summary/summary-styles.ts')
     : name.endsWith('/useInteractionDensity') ? {useInteractionDensity: () => false}
-    : name.endsWith('/AppIcon') ? {AppIcon: 'AppIcon'} : new Proxy({}, {get: (_target, key) => String(key)});
+    : name.endsWith('/AppIcon') ? {AppIcon: 'AppIcon'} : componentDependency(name);
   new Function('require', 'module', 'exports', output)(localRequire, module, module.exports);
   cache.set(filename, module.exports);
   return module.exports;
+}
+function componentDependency(name) {
+  const modules = {
+    '/AppScrollView': ['AppScrollView'], '/AppRadioItem': ['AppRadioItem'], '/AppDialog': ['AppDialog'],
+    '/motion': ['MotionEntrance', 'MotionDisclosure'], '/MotionSelectionMarker': ['MotionSelectionMarker'],
+    '/HorizontalOverflowRail': ['HorizontalOverflowRail'], '/PhotoFilePicker': ['PhotoFilePicker'],
+  };
+  const exports = Object.entries(modules).find(([suffix]) => name.endsWith(suffix))?.[1];
+  assert.ok(exports, `Unmocked affordance dependency: ${name}`);
+  return Object.fromEntries(exports.map(component => [component, component]));
 }
 const {AppButton, TextLink, OperationPill} = load('src/components/ui.tsx');
 const {AppStatusBadge} = load('src/components/AppStatusBadge.tsx');
@@ -196,9 +206,12 @@ test('growth export requires an adapter and source conflicts stay warning states
   const archive = readFileSync(path.join(root, 'src/components/growth/GrowthArchive.tsx'), 'utf8');
   assert.ok(archive.includes('label="導出報告" variant="accent"'));
   assert.ok(archive.includes('testID="growth-report-export"'));
-  assert.ok(archive.includes('const canExport = !!onExportReport && !!exportItem && !!growthReportExportRequest('));
-  assert.ok(archive.includes('label={onExportReport ? "準備 PDF 報告" : "PDF 下載暫不可用"} disabled={!canExport} onPress={requestExport}'));
+  assert.ok(archive.includes('const canExport = !exportBusy && model.online && !!onExportReport && !!exportItem && !!growthReportExportRequest('));
+  assert.ok(archive.includes('label={exportBusy ? "正在準備 PDF…" : onExportReport ? "下載這個版本的 PDF" : "PDF 下載暫不可用"} disabled={!canExport} onPress={requestExport}'));
   assert.match(archive, /function requestExport\(\) \{\s*if \(!onExportReport \|\| !exportItem/);
+  assert.ok(archive.includes('!latest.current.exportOpen || latest.current.exportKey !== exportKey'));
+  assert.ok(archive.includes('latest.current.contextKey !== contextKey || latest.current.model.page?.authorityVersion !== model.page?.authorityVersion'));
+  assert.ok(archive.includes('growthReportExportRequest(latest.current.model, exportItem, purpose, includeSources, includeRevision)'));
   assert.ok(archive.includes('if (request) onExportReport(request);'));
   assert.ok(archive.includes('!onExportReport ? <View testID="growth-export-unavailable"'));
   assert.ok(archive.includes('報告生成及 PDF 下載暫未接通。'));

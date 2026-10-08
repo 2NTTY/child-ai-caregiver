@@ -69,6 +69,8 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
     eventKey: listIntent.current ? String(listIntent.current.serial) : null, change: listChange,
     settled: !['saving', 'unknown', 'unconfirmed'].includes(model.operation.state), targetId: listIntent.current?.targetId});
   const locked = model.busy || ["unknown", "unconfirmed", "confirmed_unavailable", "conflict"].includes(model.operation.state);
+  const receiptRetry = production && ["reserve", "confirm", "delete"].includes(model.operation.phase ?? "");
+  const retryBlocked = receiptRetry ? !model.online || model.busy || model.load !== "ready" || model.access !== "editable" : !model.fresh;
   const listReadState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online ? "stale" : model.items.length ? "ready" : "empty";
   const readMessage = model.load === "loading" ? model.items.length ? "正在重新讀取照片；已載入清單及草稿保留。" : "正在讀取照片…" : model.load === "error" ? model.notice || "未能讀取照片，請重試。" : !model.online ? "已載入清單可能不是最新；重連後先重新讀取。" : listReadState === "empty" ? "目前沒有可讀取的照片。選擇原照片後，可先私人保存。" : "";
   const extractionState = selected?.extraction.state;
@@ -84,8 +86,8 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
     {model.notice && model.load !== "error" ? <Text style={s.body}>{model.notice}</Text> : null}
     {model.operation.state !== "none" ? <View style={[s.status, model.operation.state === "failed" && s.statusError]} testID="photo-operation"><AppStatusBadge label={operationLabel} tone={model.operation.state === "failed" ? "error" : model.operation.state === "saved" && model.operation.phase !== "extract" ? "success" : model.operation.state === "saving" ? "info" : "warning"} /><Text style={s.body}>{model.operation.message}</Text>
       {model.operation.reference ? <Text style={s.meta}>{production ? "原操作參考：" : "合成操作參考："}{model.operation.reference}{production ? "" : "；不是 Server opId。"}</Text> : null}
-      <View style={s.row}>{["unknown", "unconfirmed"].includes(model.operation.state) ? <AppButton label={model.operation.phase === "upload" || model.operation.phase === "extract" ? "查核同一照片附件" : "查核原照片操作"} disabled={!model.online || model.busy} onPress={actions.checkOriginal} /> : null}
-        {model.operation.state === "unconfirmed" && model.operation.checked && (!production || model.operation.phase !== "extract") ? <AppButton label="重試原操作" accessibilityLabel="明確重試原內容及原操作" variant="secondary" disabled={!model.fresh} onPress={actions.retryOriginal} /> : null}
+      <View style={s.row}>{["unknown", "unconfirmed", "confirmed_unavailable"].includes(model.operation.state) ? <AppButton label={model.operation.phase === "upload" || model.operation.phase === "extract" ? "查核同一照片附件" : "查核原照片操作"} disabled={!model.online || model.busy} onPress={actions.checkOriginal} /> : null}
+        {model.operation.state === "unconfirmed" && model.operation.checked && (!production || model.operation.phase !== "extract") ? <AppButton label="重試原操作" accessibilityLabel="明確重試原內容及原操作" variant="secondary" disabled={retryBlocked} onPress={actions.retryOriginal} /> : null}
         {model.operation.state === "confirmed_unavailable" && (model.reservationUnidentified || production && model.operation.checked) ? <AppButton label="結束待查並核對清單" variant="secondary" disabled={model.busy || !model.online} onPress={actions.finishUnidentified} /> : null}
       </View>
       {model.operation.state === "conflict" ? <><Text style={s.meta}>本頁基準：版本 {selected?.version ?? "未確定"}；目前版本：{model.latest?.version ?? "尚待重新讀取"}。原文草稿不會被最新資料覆蓋。</Text>
@@ -116,7 +118,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
             {model.reservationUnidentified ? <Text style={s.warning}>已確認操作的附件結果未能識別。保留原檔，不會再次建立；請逐項核對清單或明確清除本頁。</Text> : null}
             {(!selected || selected.state === "reserved") && model.access === "editable" ? <>
               <PhotoFilePicker disabled={!model.canPick} onPick={actions.pickOriginal} onError={actions.reportFileError} selectOriginal={selectOriginal} capturePreferred={capturePreferred} captureOriginal={captureOriginal} />
-              {!selected ? <View><AppTextField nativeID={sourceId} label="照片來源" accessibilityLabel="照片來源" value={model.source} disabled={model.formLocked} onChangeText={actions.editSource} error={!!model.sourceError} aria-invalid={!!model.sourceError} aria-describedby={`${sourceId}-message`} /><FormFieldMessage id={`${sourceId}-message`} error={model.sourceError || undefined} help="保留原文字；私人保存後沿用原來源。" /></View> : <Text style={s.meta}>請重新選取同一張原照片。</Text>}
+              {!selected ? <View><AppTextField nativeID={sourceId} label="照片來源" accessibilityLabel="照片來源" value={model.source} disabled={model.formLocked} onChangeText={actions.editSource} error={!!model.sourceError} aria-invalid={!!model.sourceError} aria-describedby={`${sourceId}-message`} /><FormFieldMessage id={`${sourceId}-message`} error={model.sourceError || undefined} help="保留原文字；私人保存後沿用原來源。" /></View> : <Text style={s.meta}>{model.original ? "原檔已保留，可繼續上傳同一原檔。" : "請重新選取同一張原照片。"}</Text>}
               <AppButton label={selected ? "繼續上傳同一原檔" : "私人保存原照片"} disabled={!model.canUpload} onPress={actions.upload} />
             </> : null}
             {selected?.state === "ready" && editable ? <View style={s.related}><AppCheckbox label="我同意把原照片交由 Gemini 提取；候選仍需核對" checked={model.modelConsent} disabled={!model.canExtract} onChange={actions.setModelConsent} />
@@ -145,7 +147,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
           <AppCheckbox label="我已核對照片與連結記錄的刪除範圍" checked={model.deleteScope} disabled={locked} onChange={actions.setDeleteScope} />
           <AppCheckbox label="我確認要刪除這份照片及連結記錄" checked={model.deleteFinal} disabled={locked} onChange={actions.setDeleteFinal} />
           <Text style={s.meta}>刪除確認不等於實體檔案及備份即時清理完成。結果未知時先查核原操作。</Text>
-          {model.operation.phase === "delete" && ["unknown", "unconfirmed"].includes(model.operation.state) ? <AppButton label="查核原照片刪除" disabled={!model.online || model.busy} onPress={actions.checkOriginal} /> : null}
+          {model.operation.phase === "delete" && ["unknown", "unconfirmed", "confirmed_unavailable"].includes(model.operation.state) ? <AppButton label="查核原照片刪除" disabled={!model.online || model.busy} onPress={actions.checkOriginal} /> : null}
         </View></Dialog.Content><Dialog.Actions style={s.row}><AppButton label="返回照片" variant="quiet" disabled={model.busy} onPress={actions.closeDeletion} /><AppButton label="確認刪除" accessibilityLabel="確認刪除照片" variant="danger" disabled={!model.canDelete || !model.deleteScope || !model.deleteFinal} onPress={actions.deletePhoto} /></Dialog.Actions>
       </AppDialog></Portal>
   </PageFrame>;

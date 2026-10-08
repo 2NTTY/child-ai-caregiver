@@ -34,6 +34,8 @@ export function SummaryView({model, actions, onRecord, onTask, onAgent, previewT
   const [refreshTrigger, setRefreshTrigger] = useState<number | null>(null);
   const refreshSerial = useRef(0);
   const page = model.page, queryValid = summaryPeriodSchema.safeParse(model.query).success;
+  const emptyReady = !!page && model.online && !model.readFailed && !model.busy && !model.pending && model.access !== 'lost'
+    && (model.operation === 'none' || model.operation === 'saved');
   const revealEligible = !!page && model.online && !model.busy && !model.readFailed && !model.pending && model.access !== 'lost'
     && (model.operation === 'none' || model.operation === 'saved');
   const revealTrigger = !model.busy && !revealEligible ? null : refreshTrigger;
@@ -89,7 +91,7 @@ export function SummaryView({model, actions, onRecord, onTask, onAgent, previewT
               <Text style={s.meta}>{shown.profile.ageLabel}</Text>
             </>}</MotionReveal>
           </View>
-          <SummaryRecords key={model.scopeKey} page={page} onRecord={onRecord} onTask={onTask} motion={{scopeKey: model.scopeKey, triggerKey: revealTrigger, eligible: revealEligible && mode === 'report'}} />
+          <SummaryRecords key={model.scopeKey} page={page} onRecord={onRecord} onTask={onTask} emptyReady={emptyReady} motion={{scopeKey: model.scopeKey, triggerKey: revealTrigger, eligible: revealEligible && mode === 'report'}} />
           <SummaryDisclosure label="報告依據、更新時間與版本" scopeKey={model.scopeKey}>
             <Text style={s.meta}>生成：{summaryTime(page.generatedAt, page.period.timeZone)}</Text><Text selectable style={s.meta}>依據版本：{page.basisVersion}</Text>
             <Text style={s.meta}>檔案版本 {page.profile.version} · 來源：{page.profile.source}</Text>

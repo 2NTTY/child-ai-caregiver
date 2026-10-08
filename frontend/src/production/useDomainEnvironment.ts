@@ -22,6 +22,7 @@ export function useDomainEnvironment() {
 export function useDomainWriteGuard(dirty: boolean, pending: boolean, scope: LeaveScope = "child") {
   const { owner } = useProduction();
   const id = useId();
-  usePreviewLeaveGuard(dirty, pending, scope);
+  const leaveGuardId = usePreviewLeaveGuard(dirty, pending, scope);
   useEffect(() => { owner.setDomainPending(id, pending); return () => owner.setDomainPending(id, false); }, [owner, id, pending]);
+  return leaveGuardId;
 }

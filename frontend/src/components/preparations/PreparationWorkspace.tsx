@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../EmptyListCard";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Platform, Pressable, StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
@@ -25,10 +26,18 @@ const stateLabels: Record<PreparationDocumentView["readState"], { label: string;
 function PreparationEmptyState({ workspace, history = false }: { workspace: PreparationWorkspaceValue; history?: boolean }) {
   const { condition } = workspace.model;
   if (condition === "refresh_failed") return null;
+  const ready = workspace.model.online && ["ready", "empty", "read_only"].includes(condition);
+  const reading = workspace.model.reading;
+  if (ready && history && reading && (!reading.archiveReady || reading.pageBusy || reading.pageError)) {
+    return reading.pageError ? null : <Text style={styles.meta}>{reading.pageBusy ? "正在讀取歸檔準備單" : "歸檔準備單尚未讀取成功，請繼續讀取。"}</Text>;
+  }
+  const partial = history ? reading?.archiveHasMore : reading?.activeHasMore;
+  if (ready) return <EmptyListCard testID="preparation-empty" title={partial ? "已載入頁面暫無符合條件的準備單" : history ? "這裏還沒有符合條件的準備單" : "目前沒有已備妥的準備單"}
+    detail={partial ? "仍有更多文件未載入，可繼續讀取。" : history ? "試試其他搜尋或日期。" : "可以先到助手交代用途、日期和需要，之後在這裏打開已整理的文件。"} />;
   const title = condition === "loading" ? "正在讀取準備單" : condition === "unavailable" ? "暫時未能取得準備單"
-    : condition === "lost" ? "孩子權限已失效" : history ? "這裏還沒有符合條件的準備單" : "目前沒有已備妥的準備單";
+    : condition === "lost" ? "孩子權限已失效" : "準備單最新狀態尚未核對";
   const detail = condition === "loading" ? "" : condition === "unavailable" ? "請重新讀取。"
-    : condition === "lost" ? "準備單及歷史內容已隱藏，請先確認孩子的存取權。" : history ? "試試其他搜尋或日期。" : "可以先到助手交代用途、日期和需要，之後在這裏打開已整理的文件。";
+    : condition === "lost" ? "準備單及歷史內容已隱藏，請先確認孩子的存取權。" : "請連線後重新讀取，不能據此判斷沒有準備單。";
   return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.meta}>{detail}</Text> : null}</View>;
 }
 
@@ -166,7 +175,7 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
     {workspace.actions.refresh ? <AppButton label={workspace.model.busy ? "正在處理文件…" : workspace.model.operation?.recovery === "check" ? "重讀並核對原操作" : "重新讀取準備單"}
       variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
     {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{active.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
-    {!selected ? <Text style={styles.meta}>待用準備單{["loading", "unavailable", "lost"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
+    {!selected ? <Text style={styles.meta}>待用準備單{!workspace.model.online || !["ready", "empty", "read_only"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
     <PreparationReader workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
     {!selected && workspace.model.reading?.activeHasMore ? <AppButton label={workspace.model.reading.pageBusy ? "正在載入…" : "載入更多準備單"} variant="quiet" disabled={workspace.model.reading.pageBusy || !workspace.model.reading.online} onPress={() => workspace.model.reading?.loadMoreDocuments("active")} /> : null}
     {workspace.model.reading?.pageError ? <Text accessibilityRole="alert" style={styles.warningText}>未能載入更多文件，已取得的內容保留。</Text> : null}
@@ -192,7 +201,8 @@ export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestio
   useEffect(() => { reading?.ensureArchived(); }, [workspace?.scopeKey, reading?.archiveStarted, reading?.pageBusy]);
   if (!workspace) return <Text style={styles.meta}>先選擇有權查看的孩子，再查看準備單歷史。</Text>;
   const documents = searchPreparationHistory(workspace.model.documents, searchText, dateRange);
-  const available = !["loading", "unavailable", "lost"].includes(workspace.model.condition);
+  const available = workspace.model.online && ["ready", "empty", "read_only"].includes(workspace.model.condition)
+    && (!reading || reading.archiveReady && !reading.pageBusy && !reading.pageError);
   const unknownDates = workspace.model.documents.filter(document => document.status === "archived" && !document.archivedAt).length;
   return <View testID="preparation-history" style={styles.workspace}>
     {previewControls}
@@ -203,7 +213,7 @@ export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestio
     {unknownDates ? <Text style={styles.meta}>{unknownDates} 份未提供歸檔時間，套用日期範圍時不會把它們歸入任何日期。</Text> : null}
     {available ? <Text style={styles.meta}>{documents.length} 份符合</Text> : null}
     <PreparationReader workspace={workspace} documents={documents} history onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
-    {reading && (!reading.archiveStarted || reading.archiveHasMore || reading.pageError) ? <AppButton label={reading.pageBusy ? "正在載入歸檔…" : reading.pageError ? "重試載入歸檔" : "載入更多歸檔"} variant="quiet" disabled={reading.pageBusy || !reading.online} onPress={() => reading.loadMoreDocuments("archived")} /> : null}
+    {reading && (!reading.archiveStarted || reading.archiveHasMore || reading.pageError) ? <AppButton label={reading.pageBusy ? "正在載入歸檔…" : reading.pageError || !reading.archiveReady && reading.archiveStarted ? "重試載入歸檔" : "載入更多歸檔"} variant="quiet" disabled={reading.pageBusy || !reading.online} onPress={() => reading.loadMoreDocuments("archived")} /> : null}
     {reading?.pageError ? <Text accessibilityRole="alert" style={styles.warningText}>未能載入更多歸檔，已取得的內容保留。</Text> : null}
   </View>;
 }

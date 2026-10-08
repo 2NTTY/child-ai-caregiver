@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../components/EmptyListCard";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
@@ -27,7 +28,7 @@ function AgentPendingReview() {
     action={agentPending.state === "failed" ? <AppButton label="重試" variant="quiet" disabled={!online || locked} onPress={() => readAgentPending()} /> : undefined} />
     {agentPending.state === "idle" ? <Text>{online ? "待確認事項尚未讀取；等候目前操作完成後會自動讀取。" : "目前離線，待確認事項尚未核對。"}</Text>
       : agentPending.state === "loading" && !agentPending.hasSnapshot ? <ReadStateNotice state="loading" scopeKey={scopeKey ?? undefined} refreshing={!!agentPending.hasSnapshot} message="正在讀取待確認事項…" /> : agentPending.state === "failed" ? <Text>{agentPending.hasSnapshot ? "未能更新，仍顯示上次讀取的待確認事項。" : "未能讀取待確認事項，請重試。"}</Text>
-      : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : (agentPending.state === "ready" || agentPending.state === "loading" && agentPending.hasSnapshot) && !agentPending.entries.length ? <Text>{agentPending.nextCursor ? "此頁暫無待確認提案" : "暫無待確認提案"}</Text> : null}
+      : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : agentPending.state === "ready" && online && !agentPending.entries.length ? <EmptyListCard title={agentPending.nextCursor ? "已載入頁面暫無待確認提案" : "暫無待確認提案"} detail={agentPending.nextCursor ? "仍有待確認事項未載入，可繼續讀取。" : undefined} /> : null}
     {agentPending.entries.map(({ runId, proposal }) => <View key={runId + ":" + proposal.id} style={{ gap: spacing.sm }}>
       <Text>{proposal.title}</Text><Text>{proposal.scope === "family" ? "家庭共享" : "私人"} · {proposal.status === "expired" ? "原提案已過期；仍可查看及略過" : "待你核對"}</Text>
       <AppButton label="查看原提案及確認範圍" variant="secondary" disabled={locked || !!agentModel.busy || !!agentModel.pendingDecision}

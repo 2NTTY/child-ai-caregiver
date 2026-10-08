@@ -20,7 +20,7 @@ const labels: Record<keyof Fields, string> = { title: "關注名稱", reason: "�
 
 export function GrowthConcernManualFallback({ model, actions, concern }: { model: GrowthViewModel; actions: GrowthActions; concern: GrowthConcern | null }) {
   if (!actions.createConcern || !actions.updateConcern || model.access !== "editable" || !model.page) return null;
-  return <SummaryDisclosure label="手動備援" scopeKey={model.scopeKey}>
+  return <SummaryDisclosure label={concern ? "手動管理關注" : "手動新增關注"} scopeKey={model.scopeKey}>
     <ManualForm model={model} actions={actions} concern={concern} />
   </SummaryDisclosure>;
 }
@@ -87,7 +87,7 @@ function ManualForm({ model, actions, concern }: { model: GrowthViewModel; actio
   const options: { value: Mode; label: string }[] = [{ value: "create", label: "建立關注" },
     ...(concern ? [{ value: "append" as const, label: "追加目前關注的觀察" }, { value: "followup" as const, label: "更改／撤回站內跟進" }] : [])];
   return <View style={s.stack} testID="growth-concern-manual-fallback">
-    <Text style={s.meta}>通常可先向助手交代，再查看整理成果；這裏只供需要時手動補救。</Text>
+    <Text style={s.meta}>可在這裏手動建立關注或補充觀察；提交前請核對內容及家庭共享安排。</Text>
     <AppSelect label="這次手動操作" value={mode} options={options} disabled={disabled || !!basis} onChange={value => { setMode(value); reset(defaults); setShared(false); }} />
     {mode !== "create" ? <Text style={s.body}>對象：{target?.title ?? "尚未選擇關注"}</Text> : null}
     {stale ? <Text style={s.warning}>原草稿及版本保留；關注或授權基準已變。請回到原關注，或明確放棄草稿後重新核對。</Text> : null}

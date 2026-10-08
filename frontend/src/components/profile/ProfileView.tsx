@@ -71,7 +71,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
           {model.child ? <>
             {model.reading ? <Text style={styles.body}>檔案正在讀取，草稿暫停確認。</Text> : null}
             <AppButton expanded={detailsOpen} label={detailsOpen ? "收起完整已確認檔案" : "查看完整已確認檔案"} variant="secondary" onPress={() => setDetailsOpen(value => !value)} />
-            <MotionDisclosure expanded={detailsOpen} scopeKey={scopeKey}><MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown ? <ProfileRevisionSummary revision={shown} /> : !model.reading ? <Text style={styles.body}>沒有可顯示的檔案。</Text> : null}</MotionReveal></MotionDisclosure>
+            <MotionDisclosure expanded={detailsOpen} scopeKey={scopeKey}><MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown ? <ProfileRevisionSummary revision={shown} /> : !model.reading ? <Text style={styles.body}>尚未取得可顯示的檔案。</Text> : null}</MotionReveal></MotionDisclosure>
             <AppButton label="重新讀取檔案" variant="quiet" onPress={actions.refresh} disabled={!model.online || model.reading || pending} />
           </> : <Text style={styles.body}>可從上方「新增或管理孩子」加入第一位孩子。</Text>}
           {model.access === "read_only" ? <Text style={styles.notice}>目前是 viewer 唯讀角色，可以查看檔案及歷史；不能更正或刪除。</Text> : null}
@@ -79,7 +79,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
         {model.child ? <SectionCard surface="plain" style={styles.sectionRule}><SectionHeader density="compact" title="確認及更正歷史" />
           <AppButton label={model.historyOpen ? "已顯示歷史" : "查看較早版本"} variant="secondary" onPress={actions.showHistory} disabled={!model.online || model.reading || model.historyOpen} />
           <MotionDisclosure expanded={model.historyOpen} scopeKey={scopeKey} testID="profile-history-disclosure"><View style={styles.historyList}>
-            {model.history.length ? model.history.map(revision => <View key={revision.version} style={styles.historyItem}><ProfileRevisionSummary revision={revision} /></View>) : <Text style={styles.body}>沒有較早版本。</Text>}
+            {model.history.length ? model.history.map(revision => <View key={revision.version} style={styles.historyItem}><ProfileRevisionSummary revision={revision} /></View>) : <Text style={styles.body}>尚未取得較早版本。</Text>}
             {model.hasMoreHistory ? <AppButton label="載入更早版本" variant="quiet" onPress={actions.loadOlderHistory} disabled={!model.online || model.reading} /> : null}
           </View></MotionDisclosure>
         </SectionCard> : null}

@@ -25,6 +25,8 @@ export function TaskKnowledgeSummaryContent({ preparation = false, onRecord, onT
   useEffect(() => () => { const value = latest.current; if (value?.model.dirty && !value.model.pending && !value.model.busy) value.actions.discard(); }, []);
   if (!owner) return <ReadStateNotice state="loading" message="正在讀取摘要…" />;
   const { model, actions } = owner, page = model.page;
+  const emptyReady = !!page && model.online && !model.readFailed && !model.busy && !model.pending && model.access !== "lost"
+    && (model.operation === "none" || model.operation === "saved");
   const canRetry = model.online && !model.busy && !model.readFailed && model.access === "editable" && !!page?.canManage && !!model.pending?.checked && !model.pending.confirmed;
   const locked = model.busy || !!model.pending || model.access === "lost";
   return <View style={s.stack}>
@@ -41,7 +43,7 @@ export function TaskKnowledgeSummaryContent({ preparation = false, onRecord, onT
       {model.notice ? <Text accessibilityLiveRegion="polite" style={s.meta}>{model.notice}</Text> : null}
       {page ? <><Text style={s.meta}>{summaryPeriodLabel(page.period)} · 整理於 {summaryTime(page.generatedAt, page.period.timeZone)}</Text>
         {preparation ? <AppButton label={model.access === "editable" ? "查看／人工修改共享到診準備" : "查看共享到診準備"} variant="secondary" disabled={model.access === "lost"} onPress={() => setOpen(true)} />
-          : <SummaryRecords page={page} onRecord={onRecord} onTask={onTask} motion={{ scopeKey: model.scopeKey, triggerKey: null, eligible: false }} />}
+          : <SummaryRecords page={page} onRecord={onRecord} onTask={onTask} emptyReady={emptyReady} motion={{ scopeKey: model.scopeKey, triggerKey: null, eligible: false }} />}
       </> : model.access === "lost" ? <Text style={s.body}>已無權讀取這位孩子的摘要。</Text> : model.busy ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取摘要…" /> : !model.readFailed ? <Text style={s.body}>摘要尚未取得。</Text> : null}
     </SectionCard>
     {model.pending ? <SectionCard><SectionHeader density="compact" title={model.pending.confirmed ? "原保存已確認，摘要待讀回" : "原保存結果待核對"} />

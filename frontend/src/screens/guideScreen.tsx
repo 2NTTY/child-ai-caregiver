@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../components/EmptyListCard";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -31,7 +32,7 @@ const steps: { title: string; description: string; action: string; destination: 
 
 export default function GuideScreen() {
   const layout = useContainerWidth();
-  const { model, actions, controller, recordsState, refresh, signOut, user } = useProduction();
+  const { model, actions, controller, recordsState, refresh, signOut, user, online } = useProduction();
   const [currentStep, setCurrentStep] = useState(0);
   const lockedChild = !!recordsState.busy || recordsState.childrenLoading || recordsState.childOutcome !== "draft";
   usePreviewLeaveGuard(!!recordsState.childName, recordsState.childOutcome === "unknown" || recordsState.childOutcome === "checked" || recordsState.busy === "createChild", "account");
@@ -46,7 +47,7 @@ export default function GuideScreen() {
         <Text accessibilityRole="header" style={styles.pointTitle}>你的孩子</Text>
         {recordsState.childrenLoading ? <Text style={styles.body}>正在讀取孩子列表…</Text> : null}
         {recordsState.childrenError ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childrenError}</Text> : null}
-        {recordsState.childrenLoadedAt && !recordsState.childrenError && model.children.length === 0 ? <Text style={styles.body}>目前沒有可存取的孩子；可以先建立第一位孩子。</Text> : null}
+        {online && recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && model.children.length === 0 ? <EmptyListCard title="目前沒有可存取的孩子" detail="可以先建立第一位孩子。" /> : null}
         <View style={styles.stepControls}>{model.children.map(child => <AppButton key={child.id} label={`${child.displayName}${child.id === model.selectedChildId ? "（目前孩子）" : ""}`} variant={child.id === model.selectedChildId ? "primary" : "secondary"} disabled={lockedChild} onPress={() => actions.selectChild(child.id)} />)}</View>
         <AppTextField label="孩子稱呼" accessibilityLabel="孩子稱呼" value={recordsState.childName} onChangeText={value => controller.setChildName(value)} disabled={lockedChild} maxLength={80} />
         <View style={styles.stepControls}><AppButton label="建立孩子" loading={recordsState.busy === "createChild"} disabled={lockedChild || !recordsState.online || !recordsState.childName.trim()} onPress={() => { void controller.createChild(); }} />

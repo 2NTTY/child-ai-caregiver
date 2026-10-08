@@ -45,12 +45,17 @@ test("recent completed projection is newest ten by completion revision, excludin
 
 test("unknown completion dates never borrow due or updated time and stay stable", () => {
   const completed = fixture.items.find(task => task.occurrence.state === "completed")!;
-  const first = { ...completed, id: "unknown-a", completedAt: undefined, dueAt: "2099-01-01", updatedAt: "2099-01-01" };
+  const first = { ...completed, id: "unknown-a", completedAt: undefined, terminalAt: undefined, occurrence: { ...completed.occurrence, dueAt: "2099-01-01T00:00:00Z" }, updatedAt: "2099-01-01T00:00:00Z" };
   const second = { ...first, id: "unknown-b" };
   assert.deepEqual(recentCompletedTasks([first, completed, second]).map(task => task.id), [completed.id, "unknown-a", "unknown-b"]);
   assert.equal(taskCompletionLabel(first, "Asia/Hong_Kong"), "完成時間未提供");
-  assert.equal(taskWithCompletionRevision(completed, []).completedAt, undefined);
-  assert.equal(taskWithCompletionRevision(completed, [{ ...fixture.histories[completed.id][0], task: { ...completed, version: completed.version - 1 } }]).completedAt, undefined);
+  const olderRevision = { ...fixture.histories[completed.id][0], task: { ...first, version: first.version - 1 } };
+  assert.equal(taskWithCompletionRevision(first, []).completedAt, undefined);
+  assert.equal(taskWithCompletionRevision(first, []).terminalAt, undefined);
+  assert.equal(taskWithCompletionRevision(first, [olderRevision]).completedAt, undefined);
+  assert.ok(completed.completedAt, "The fixture already carries a trusted terminal-revision projection");
+  assert.equal(taskWithCompletionRevision(completed, []).completedAt, completed.completedAt);
+  assert.equal(taskWithCompletionRevision(completed, [{ ...olderRevision, task: { ...completed, version: completed.version - 1 } }]).completedAt, completed.completedAt);
 });
 
 test("history searches only terminal loaded items by title, contents or eligible assignee", () => {

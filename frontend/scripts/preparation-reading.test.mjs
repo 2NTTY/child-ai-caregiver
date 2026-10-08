@@ -88,11 +88,62 @@ test('sheet uses existing questions and sources, states missing appointment expl
   const plain = nodes(sheet).flatMap(node => typeof node.props?.children === 'string' ? [node.props.children] : []).join(' ');
   assert.ok(plain.includes('尚未指定預約'));
   assert.ok(plain.includes('原問題'));
-  assert.ok(plain.includes('目前沒有可展示的觀察來源'));
+  const observations = find(sheet, node => node.type === 'EmptyListCard' && node.props.testID === 'preparation-reading-observations-empty');
+  assert.equal(observations.props.title, '本期間已載入的原記錄清單為空');
+  assert.equal(observations.props.detail, '目前沒有可展示的觀察來源；沒有記錄不等於沒有發生。');
   assert.equal(label(sheet, '請 Agent 整理／更新').props.disabled, false);
   const dirty = h.sheet({model: {...p.model, dirty: true}, values: h.values(), editable: true, onEdit() {}, onAgent() {}});
   assert.equal(label(dirty, '請 Agent 整理／更新').props.disabled, true);
   assert.equal(nodes(sheet).some(node => ['Controller', 'AppTextField', 'AppSelect', 'AppCheckbox'].includes(node.type)), false);
+});
+
+test('saved empty preparation lists use the shared card only after a current successful read', () => {
+  const h = harness(), p = props();
+  p.model.page.preparation.questions = []; p.model.page.preparation.checklist = [];
+  h.render(p);
+  const renderSheet = (patch = {}, extra = {}) => h.sheet({model: {...p.model, ...patch}, values: h.values(), editable: true, onEdit() {}, ...extra});
+  const cards = tree => nodes(tree).filter(node => node.type === 'EmptyListCard');
+  const ready = cards(renderSheet());
+  assert.deepEqual(ready.map(card => card.props.testID), ['preparation-reading-questions-empty', 'preparation-reading-observations-empty', 'preparation-reading-checklist-empty']);
+  assert.equal(ready[0].props.title, '已載入的準備單沒有到診問題');
+  assert.equal(ready[2].props.title, '已載入的準備單沒有準備清單項目');
+  for (const patch of [{online: false}, {readFailed: true}, {busy: true}, {access: 'lost'}, {pending: {reference: 'original'}}, {operation: 'failed'}, {operation: 'unknown'}, {operation: 'conflict'}]) {
+    assert.equal(cards(renderSheet(patch)).length, 0, JSON.stringify(patch));
+  }
+  assert.deepEqual(cards(renderSheet({}, {stale: true})).map(card => card.props.testID), ['preparation-reading-observations-empty']);
+});
+
+test('current local draft empties stay labelled as drafts while read-derived observations stay guarded', () => {
+  const h = harness(), p = props();
+  p.model.page.preparation.questions = []; p.model.page.preparation.checklist = [];
+  h.render(p);
+  const draft = {...p.model, dirty: true, online: false, readFailed: true, busy: true, operation: 'unknown', pending: {reference: 'original'}};
+  const sheet = h.sheet({model: draft, values: h.values(), editable: false, stale: true, onEdit() {}});
+  const cards = nodes(sheet).filter(node => node.type === 'EmptyListCard');
+  assert.deepEqual(cards.map(card => card.props.title), ['目前草稿沒有到診問題', '目前草稿沒有準備清單項目']);
+  assert.equal(find(sheet, node => node.props?.testID === 'preparation-reading-observations-empty'), undefined);
+  const lost = h.sheet({model: {...draft, access: 'lost'}, values: h.values(), editable: false, onEdit() {}});
+  assert.equal(nodes(lost).filter(node => node.type === 'EmptyListCard').length, 0);
+});
+
+test('empty editor questions and checklist keep their existing add actions and stale guards', () => {
+  const h = harness(), p = props();
+  p.model.page.preparation.questions = []; p.model.page.preparation.checklist = [];
+  let tree = h.render(p); find(tree, node => node.type === 'PreparationSheet').props.onEdit();
+  tree = h.render(p);
+  const cards = () => nodes(tree).filter(node => node.type === 'EmptyListCard');
+  assert.deepEqual(cards().map(card => card.props.testID), ['preparation-editor-questions-empty', 'preparation-editor-checklist-empty']);
+  assert.equal(label(tree, '新增到診問題').props.disabled, false);
+  assert.equal(label(tree, '新增到診準備').props.disabled, false);
+  p.model.page.basisVersion = 'changed'; tree = h.render(p);
+  assert.equal(cards().length, 0);
+  p.model.dirty = true; p.model.online = false; tree = h.render(p);
+  assert.equal(cards().length, 2);
+  assert.equal(cards().every(card => card.props.title.startsWith('目前準備草稿')), true);
+  assert.equal(label(tree, '新增到診問題').props.disabled, true);
+  assert.equal(label(tree, '新增到診準備').props.disabled, true);
+  p.model.access = 'lost'; tree = h.render(p);
+  assert.equal(cards().length, 0);
 });
 
 test('Summary reuses the unsent assistant intent and leaves explicit save/discard controllers intact', () => {

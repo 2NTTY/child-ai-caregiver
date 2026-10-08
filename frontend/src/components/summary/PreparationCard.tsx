@@ -14,6 +14,7 @@ import {summaryStyles as s} from './summary-styles';
 import {AppStatusBadge} from '../AppStatusBadge';
 import {PreparationSheet} from './PreparationSheet';
 import {SummaryDisclosure} from './SummaryDisclosure';
+import {EmptyListCard} from '../EmptyListCard';
 
 export type PreparationDraftStatus = {scopeKey: string; formEpoch: number; stale: boolean; appointmentMissing: boolean};
 type PreparationProps = {model: SummaryViewModel; actions: SummaryActions; onAgent?: () => void; onRecord?: (id: string) => void; onTask?: (id: string) => void; onDraftStatusChange?: (status: PreparationDraftStatus) => void};
@@ -65,6 +66,8 @@ function PreparationForm({model, actions, onAgent, onRecord, onTask, onDraftStat
   const questionRows = questions.fields.map((item, index) => ({...item, index, text: values.questions?.[index]?.text ?? item.text, error: errors.questions?.[index]?.text?.message}));
   const checklistRows = checklist.fields.map((item, index) => ({...item, index, text: values.checklist?.[index]?.text ?? item.text, done: values.checklist?.[index]?.done ?? item.done, error: errors.checklist?.[index]?.text?.message}));
   const stale = summaryBasisChanged(basis.current, page);
+  const emptyReady = model.access !== 'lost' && (model.dirty || !stale && model.online && !model.readFailed && !model.busy && !model.pending
+    && (model.operation === 'none' || model.operation === 'saved'));
   const fieldsAvailable = model.online && !model.readFailed && !model.pending && model.access === 'editable' && page.canManage;
   const editable = fieldsAvailable && !model.busy;
   const appointmentValid = !values.appointmentTaskId || page.appointments.some(task => task.id === values.appointmentTaskId);
@@ -119,7 +122,7 @@ function PreparationForm({model, actions, onAgent, onRecord, onTask, onDraftStat
     {model.pending ? <AppStatusBadge label={model.pending.confirmed ? "保存已確認 · 最新準備待讀回" : "原保存結果未知 · 先查核"} tone="warning" /> : null}
     {stale ? <Text style={s.warning}>原草稿依據與目前資料不同，保存已暫停；請在修改時核對最新來源及家庭修改。</Text> : null}
     {!appointmentValid ? <Text style={s.warning}>草稿中的原預約已不在目前清單，原選擇仍保留。</Text> : null}
-    <View ref={readingRef} tabIndex={-1} accessibilityLabel="到診準備單閱讀內容" style={editing && s.hidden}>{!editing ? <PreparationSheet model={model} values={values as PreparationFormValues} editable={editable} onEdit={() => setEditing(true)} onAgent={onAgent} onRecord={onRecord} onTask={onTask} /> : null}</View>
+    <View ref={readingRef} tabIndex={-1} accessibilityLabel="到診準備單閱讀內容" style={editing && s.hidden}>{!editing ? <PreparationSheet model={model} values={values as PreparationFormValues} editable={editable} stale={stale} onEdit={() => setEditing(true)} onAgent={onAgent} onRecord={onRecord} onTask={onTask} /> : null}</View>
     <View ref={editorRef} tabIndex={-1} accessibilityLabel="修改到診準備單" testID="preparation-editor" style={[s.stack, !editing && s.hidden]} aria-hidden={!editing} accessibilityElementsHidden={!editing} importantForAccessibility={editing ? 'auto' : 'no-hide-descendants'} pointerEvents={editing ? 'auto' : 'none'}>
     <View style={s.row}><AppButton label={model.dirty ? "返回準備單（保留草稿）" : "取消修改，返回準備單"} variant="quiet" onPress={() => setEditing(false)} /></View>
     <Text style={s.meta}>修改只留在本頁；返回閱讀不會保存或丟棄草稿。</Text>
@@ -138,7 +141,7 @@ function PreparationForm({model, actions, onAgent, onRecord, onTask, onDraftStat
         <AppButton label={`移除${label}`} variant="quiet" disabled={!editable || removed} onPress={() => removeRow('questions', index, item.id)} />
       </View>;
     }} />
-    {!questions.fields.length ? <Text style={s.meta}>尚未記錄問題；不會由模型替你新增已確認內容。</Text> : null}
+    {!questions.fields.length && emptyReady ? <EmptyListCard title="目前準備草稿沒有到診問題" detail="可使用「新增到診問題」補充；新增內容仍須核對及保存。" icon="help-circle" testID="preparation-editor-questions-empty" /> : null}
     <AppButton ref={addQuestionRef} label="新增到診問題" variant="secondary" disabled={!editable || questions.fields.length >= 12} onPress={() => appendRow('questions')} />
     <Text style={s.title}>準備清單 · 最多 16 項</Text>
     <MotionList items={checklistRows} keyExtractor={item => item.id} scopeKey={`${model.scopeKey}:${model.formEpoch}:${model.access}:checklist`} regionKey="preparation-checklist" eligible={editable} style={s.stack} renderItem={(item, {exiting}) => {
@@ -149,6 +152,7 @@ function PreparationForm({model, actions, onAgent, onRecord, onTask, onDraftStat
         <AppButton label={`移除${label}`} variant="quiet" disabled={!editable || removed} onPress={() => removeRow('checklist', index, item.id)} />
       </View>;
     }} />
+    {!checklist.fields.length && emptyReady ? <EmptyListCard title="目前準備草稿沒有清單項目" detail="可使用「新增到診準備」補充；新增內容仍須核對及保存。" icon="clipboard-check-outline" testID="preparation-editor-checklist-empty" /> : null}
     <AppButton ref={addChecklistRef} label="新增到診準備" variant="secondary" disabled={!editable || checklist.fields.length >= 16} onPress={() => appendRow('checklist')} />
     <Text style={s.meta}>問題最多 500 字，準備項目最多 300 字；不截短。依正式契約，保存內容會移除兩端空白；原草稿保留，下方顯示實際保存內容。</Text>
     {parsed.success ? <View style={s.box} testID="summary-save-review"><Text style={s.title}>保存前核對</Text>{parsed.data.questions.map((item, index) => <Text key={index} selectable style={s.body}>問題 {index + 1}：{item.text}</Text>)}{parsed.data.checklist.map((item, index) => <Text key={index} selectable style={s.body}>準備 {index + 1}：{item.done ? '已完成' : '未完成'} · {item.text}</Text>)}<Text style={s.meta}>核對標記：{parsed.data.reviewed ? '已核對' : '未核對'}</Text></View> : <HelperText type="error">請核對空白欄位及字數；不會自動刪項或截短。</HelperText>}

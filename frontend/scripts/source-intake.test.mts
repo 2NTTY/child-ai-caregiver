@@ -50,7 +50,12 @@ test("specific validity stays raw and must be provided before confirming", () =>
   assert.equal(confirmSourceIntake(valid, "not_connected").proposal?.validityText, raw);
   assert.equal("verified" in valid.proposal, false);
   assert.equal("expiresAt" in valid.proposal, false);
-  assert.equal(validSourceIntakeProposal({ ...valid.proposal, timeScope: "unspecified", validityText: "a".repeat(301) }), true);
+  for (const timeScope of ["unspecified", "specific_period"] as const) {
+    assert.equal(validSourceIntakeProposal({ ...valid.proposal, timeScope, validityText: "a".repeat(300) }), true);
+    const tooLong = { ...valid, proposal: { ...valid.proposal, timeScope, validityText: "a".repeat(301) } };
+    assert.equal(validSourceIntakeProposal(tooLong.proposal), false);
+    assert.equal(confirmSourceIntake(tooLong, "not_connected"), tooLong);
+  }
 });
 
 test("unknown connection freezes the confirmed intent and never reports connected", () => {

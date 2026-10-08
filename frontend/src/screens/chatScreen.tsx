@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "expo-router";
-import { Pressable, StyleSheet, View, useWindowDimensions, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
 import { AppButton, SectionCard } from "../components/ui";
 import { AppDialog } from "../components/AppDialog";
@@ -37,6 +37,7 @@ function ChatContents({ compact }: { compact: boolean }) {
   const phase = draft?.phase ?? "draft", busy = chat.busy !== null;
   const scrollRef = useRef<NativeScrollView | null>(null), timelineRef = useRef<ChatTimelineControls | null>(null);
   const [followRequest, setFollowRequest] = useState<string>();
+  const detailsTrigger = useRef<View | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false), [privacyOpen, setPrivacyOpen] = useState(false);
   const previous = useRef({ ids: new Set(chat.messages.map(item => item.id)), busy: chat.busy });
   const lastMessage = chat.messages[chat.messages.length - 1];
@@ -51,14 +52,22 @@ function ChatContents({ compact }: { compact: boolean }) {
   const locateSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => {
     timelineRef.current?.holdReadingPosition(); locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
   };
-  usePreviewLeaveGuard(agentAttachments.length > 0 && pathname === "/chat", false, "child", attachmentLeaveCopy);
+  const composerGuardId = usePreviewLeaveGuard(agentAttachments.length > 0 && pathname === "/chat", false, "child", attachmentLeaveCopy);
   const canSend = !!scopeKey && !!child && chat.selectedChildId === child.id && chat.online && !busy && !chat.loading
     && chatWritesAllowed && agentAttachments.length === 0 && !!chat.loadedAt && phase === "draft" && !!chatDraft.trim() && chatDraft.length <= 10_000;
   function send() {
     if (!canSend) return;
     setFollowRequest(`send-${Date.now()}`); void sendChat();
   }
+  function restoreDetailsFocus() {
+    const target = detailsTrigger.current as unknown as HTMLElement | null;
+    detailsTrigger.current = null;
+    if (Platform.OS === "web" && !detailsOpen && pathname === "/chat" && target?.isConnected
+      && !target.hasAttribute("disabled") && target.getAttribute("aria-disabled") !== "true"
+      && !target.closest('[inert],[aria-hidden="true"]')) target.focus({ preventScroll: true });
+  }
   function openSettings() {
+    detailsTrigger.current = null;
     setDetailsOpen(false);
     navigate(() => router.push("/settings?section=assistant"));
   }
@@ -85,7 +94,7 @@ function ChatContents({ compact }: { compact: boolean }) {
     {authorization.pending ? <View style={styles.statusRow}><Text accessibilityRole="alert" style={styles.warning}>助手設定的原操作待查核。</Text>
       <ChatAction label="前往查核" onPress={openSettings} compact={compact} /></View> : null}
     {agentAttachments.map(attachment => attachment.photo ? <AgentPhotoInput key={attachment.id} original={attachment.photo}
-      onTransferred={() => removeAgentAttachment(attachment.id)} onPhotos={() => actions.open("photos")} /> : null)}
+      composerGuardId={composerGuardId} /> : null)}
   </View> : null;
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
     : chat.loading ? <View style={styles.emptyState}><ActivityIndicator size={18} color={chatColors.secondary} /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></View>
@@ -115,7 +124,7 @@ function ChatContents({ compact }: { compact: boolean }) {
           degraded={run?.retrievalMode === "keyword_degraded"} footer={<>
             {message.agentRunId ? <ChatAction label="詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
               disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"}
-              onPress={() => { selectAgentRun(message.agentRunId!); setDetailsOpen(true); }} /> : null}
+              onPress={target => { detailsTrigger.current = target; selectAgentRun(message.agentRunId!); setDetailsOpen(true); }} /> : null}
             {pendingReply ? <ChatAction label={chat.replyingMessageId === message.id ? "正在等候回覆" : "取得回覆"}
               accessibilityLabel="要求這則已保存訊息的回覆" compact={compact} disabled={busy || !chat.online || chat.loading || !chatWritesAllowed}
               onPress={() => { void requestChatReply(message.id); }} /> : null}
@@ -128,7 +137,7 @@ function ChatContents({ compact }: { compact: boolean }) {
       onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
     <View style={styles.privacyFooter}><ChatAction label="Google AI 處理 · 僅供合成資料試用" accessibilityLabel="查看 Google AI 資料處理說明"
       onPress={() => setPrivacyOpen(true)} subtle /></View>
-    <AgentConversation visible={detailsOpen} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
+    <AgentConversation visible={detailsOpen} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />
     <AppDialog visible={privacyOpen} onDismiss={() => setPrivacyOpen(false)} accessibilityLabel="AI 資料處理說明">
       <AppDialog.Title>AI 資料處理</AppDialog.Title><AppDialog.Content><Text style={styles.body}>送出後會保存聊天並要求 AI 回覆。孩子稱呼及獲授權資料可能交由 Google 處理；試用時請只使用合成資料。</Text></AppDialog.Content>
@@ -137,10 +146,11 @@ function ChatContents({ compact }: { compact: boolean }) {
   </>;
 }
 function ChatAction({ label, accessibilityLabel = label, onPress, disabled = false, compact = false, subtle = false }: {
-  label: string; accessibilityLabel?: string; onPress(): void; disabled?: boolean; compact?: boolean; subtle?: boolean;
+  label: string; accessibilityLabel?: string; onPress(target: View | null): void; disabled?: boolean; compact?: boolean; subtle?: boolean;
 }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityState={{ disabled }} aria-disabled={disabled}
-    disabled={disabled} onPress={onPress} style={({ pressed, hovered, focused }: PressableStateCallbackType & { hovered?: boolean; focused?: boolean }) => [
+  const actionRef = useRef<View | null>(null);
+  return <Pressable ref={actionRef} accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityState={{ disabled }} aria-disabled={disabled}
+    disabled={disabled} onPress={() => onPress(actionRef.current)} style={({ pressed, hovered, focused }: PressableStateCallbackType & { hovered?: boolean; focused?: boolean }) => [
       styles.action, compact && styles.compactAction, subtle && styles.subtleAction, disabled && styles.disabled,
       !disabled && (pressed || hovered) && styles.actionActive, focused && styles.actionFocused,
     ]}><Text style={subtle ? styles.meta : styles.actionLabel}>{label}</Text></Pressable>;

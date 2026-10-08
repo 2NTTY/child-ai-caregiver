@@ -27,6 +27,7 @@ export function GrowthScreen() {
     onTask={openTask}
     onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
     onHistory={() => navigate(() => router.push("/history?category=growth"))}
+    onChat={() => navigate(() => router.push("/chat"))}
     onExportReport={documents && typeof document !== "undefined" ? documents.exportReport : undefined}
     exportBusy={documents?.exportBusy}
     reportTools={<FamilyReportControls scopeKey={workspace.scopeKey} online={workspace.model.online} />}

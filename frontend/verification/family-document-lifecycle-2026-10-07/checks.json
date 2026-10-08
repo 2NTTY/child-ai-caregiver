@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-07",
+  "base_commit": "218625b65179dee196ce786cf1fc75f775f3a8ac",
+  "scope": "Fix five related family-document lifecycle defects in the existing owner and preparation presentation",
+  "files": [
+    {
+      "path": "frontend/src/production/useFamilyDocuments.ts",
+      "sha256": "327d7afa4f7d11253e1f046279d3cb379c9096d74099cecfddc60d8976c25fe2"
+    },
+    {
+      "path": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+      "sha256": "aed27b3979cab5c02811149dfe8e38ec0220e8018eb9e71bbdfe0119fe4cd62b"
+    },
+    {
+      "path": "frontend/src/preparation-view-model.ts",
+      "sha256": "550d8196354cd87cd908d3c35ccded1a8fc0e062a0441422462f830ab31bee22"
+    },
+    {
+      "path": "frontend/scripts/family-document-lifecycle.test.mjs",
+      "sha256": "3b3965047d666e41554ec2583b967f0d9ea0a52c6f883c020caeea53f53b9c31"
+    }
+  ],
+  "baseline": {
+    "initial_cases": 14,
+    "passed": 3,
+    "failed": 11,
+    "method": "Deterministic hook/component callbacks and real API adapter with synthetic HTTP"
+  },
+  "checks": [
+    {
+      "command": "node --test frontend/scripts/family-document-lifecycle.test.mjs",
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "command": "node --test frontend/scripts/growth-archive-report.test.mjs frontend/scripts/records-history-integration.test.mjs",
+      "passed": 28,
+      "failed": 0
+    },
+    {
+      "command": "npm run typecheck --workspace frontend",
+      "result": "passed"
+    },
+    {
+      "command": "node --check frontend/scripts/family-document-lifecycle.test.mjs",
+      "result": "passed"
+    },
+    {
+      "command": "expo export --platform web --source-maps --clear --max-workers 2 --output-dir dist-source-verified",
+      "cwd": "frontend",
+      "environment": "Isolated writable HOME and TMPDIR; telemetry disabled",
+      "result": "passed"
+    },
+    {
+      "check": "Independent review",
+      "result": "Parent confirmed 46/46 tests, typecheck and source review passed"
+    },
+    {
+      "check": "Source-map sourcesContent byte comparison against project sources",
+      "checked": 327,
+      "mismatches": 0,
+      "bundle": "frontend/dist-source-verified/_expo/static/js/web/entry-0c35fb970b920d232f9f92902b8cd63a.js",
+      "bundle_sha256": "f7daa2ec553d83d5019cb3a804dfa0c64cf03aa848e3d1abee7cd7b43334bd1c",
+      "map_sha256": "d2551d4d3925e1ad43b2f6084ac77990ed35d678cb4839971187ece1308f1a82",
+      "exclusions": "Generated router context and binary asset modules"
+    }
+  ],
+  "coverage": [
+    "Actual owner and component callback transitions with deterministic hook slots",
+    "Real family-document API adapter against synthetic HTTP, including exact original opId replay",
+    "Close and newer selection during checklist, refresh, archive and create responses",
+    "Unrelated existing-document writes preserve create-form values and dirty/epoch",
+    "Quiet cached-read failure and recovery in preparation list/history",
+    "Fresh 409 recheck restores actions without silently replaying rejected write",
+    "Unknown and later 409 preserve original operation lock and payload",
+    "Scope replacement, 403 clearance, report item isolation and export guards",
+    "One concise failure warning across nine empty, nonempty, filtered and selected list/history views; no duplicate empty-state or detail notice"
+  ],
+  "limits": [
+    "Deterministic hook/component tests do not prove real React scheduling, react-hook-form integration, DOM behavior or layout",
+    "Combined preview-browser acceptance is pending; no production API, database, real family data, model call or GCP deployment was exercised"
+  ]
+}

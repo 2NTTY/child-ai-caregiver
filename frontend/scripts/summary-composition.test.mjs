@@ -26,6 +26,8 @@ function compile(file, resolve) {
 function harness() {
   let cursor = 0, route = '/summary', params = {}, pending = null, measurements, profileSource;
   const slots = [], events = [], effects = [];
+  let identityKey = 'synthetic-parent';
+  const scope = () => model.selectedChildId ? JSON.stringify(['synthetic-server', identityKey, model.selectedChildId, model.children.find(child => child.id === model.selectedChildId)?.accessRole]) : null;
   let model = { caregiverName: 'Parent', selectedChildId: 'child-a', connection: 'online', children: [{ id: 'child-a', displayName: 'Child A', accessRole: 'owner' }, { id: 'child-b', displayName: 'Child B', accessRole: 'viewer' }] };
   const react = {
     useRef(value) { const index = cursor++; return slots[index] ??= { current: value }; },
@@ -45,19 +47,24 @@ function harness() {
       useRouter: () => ({ push: value => events.push(['push', value]), setParams: value => { events.push(['params', value]); params = { ...params, ...value }; } }) },
     'react-native': { View: 'View', StyleSheet: { create: value => value } },
     'react-native-paper': { Text: 'Text' },
-    '../preview/PreviewContext': { usePreview: () => ({ model, actions: { prepareQuestion: question => events.push(['prepare-question', question]) } }) },
+    '../production/ProductionProvider': { useProduction: () => ({ identityKey, scopeKey: scope(), model, actions: { prepareQuestion: question => events.push(['prepare-question', question]) } }) },
     '../preview/PreviewNavigationGuard': { usePreviewNavigation: () => action => { events.push(['guard']); pending = action; } },
-    '../workspaces/ProfileWorkspace': { useProfileWorkspace: () => ({ scopeKey: JSON.stringify(['preview-server', model.caregiverName, model.selectedChildId, model.children.find(child => child.id === model.selectedChildId)?.accessRole]), measurements, profileSource, actions: { showHistory: () => events.push(['profile-history']) } }) },
+    '../workspaces/ProfileWorkspace': { useProfileWorkspace: () => ({ scopeKey: scope(), measurements, profileSource, actions: { showHistory: () => events.push(['profile-history']) } }) },
     '../workspaces/PreparationWorkspace': { usePreparationWorkspace: () => ({ actions: { closeDocument: () => events.push(['close-preparation']) } }) },
     '../theme': { colors: {}, readingType: {}, spacing: {} },
+    '../components/child-overview/ChildOverviewContent': { ChildOverviewContent: 'ChildOverviewContent' },
+    '../components/preparations/PreparationWorkspace': { PreparationWorkspace: 'PreparationWorkspace' },
+    '../components/PageFrame': { PageFrame: 'PageFrame' },
+    '../components/ui': { AppButton: 'AppButton', AppTabPanel: 'AppTabPanel', UnderlineTabs: 'UnderlineTabs' },
+    '../production/TaskKnowledgeSummaryContent': { TaskKnowledgeSummaryContent: 'TaskKnowledgeSummaryContent' },
   };
-  const exports = compile('src/screens/SummaryScreen.tsx', name => dependencies[name] ?? new Proxy({}, { get: (_target, key) => String(key) }));
+  const exports = compile('src/screens/SummaryScreen.tsx', name => { assert.ok(Object.hasOwn(dependencies, name), `Unmocked Summary dependency: ${name}`); return dependencies[name]; });
   return {
     normalize: exports.normalizeSummaryTab, events,
     render() { cursor = 0; const tree = exports.SummaryScreen(); while (effects.length) effects.shift()(); return tree; },
     query(value) { params = value; }, route(value) { route = value; },
     child(value) { model = { ...model, selectedChildId: value }; },
-    identity(value) { model = { ...model, caregiverName: value }; },
+    identity(value) { identityKey = value; },
     profile(value) { ({ measurements, profileSource } = value); },
     approve() { const action = pending; pending = null; action?.(); },
     unmount() { slots.forEach(slot => slot?.cleanup?.()); },
@@ -86,7 +93,7 @@ test('the route defaults to current-child overview and recognizes only explicit 
 
 test('injected measurement projections stay canonical and source navigation waits for the current-scope guard', () => {
   const h = harness();
-  const scopeKey = JSON.stringify(['preview-server', 'Parent', 'child-a', 'owner']);
+  const scopeKey = JSON.stringify(['synthetic-server', 'synthetic-parent', 'child-a', 'owner']);
   const measurements = { scopeKey, childId: 'child-a', state: 'ready', height: { recordId: 'canonical-record', recordVersion: 3, valueLabel: '99 cm', state: 'current' }, weight: null };
   const profileSource = { scopeKey, childId: 'child-a', state: 'available' };
   h.profile({ measurements, profileSource });
@@ -150,22 +157,25 @@ test('current preparation keeps its two tabs and history without exposing the ob
   assert.match(source('src/screens/historyScreen.tsx'), /pathname: "\/summary", params: \{ tab: "preparation" \}/);
 });
 
-test('legacy recovery deep links retain guarded returns and reject stale navigation intents', () => {
+test('legacy preparation deep links use the production summary and retain guarded returns and stale-intent rejection', () => {
   const h = harness(); h.query({ tab: 'legacy-preparation' }); let tree = h.render();
-  assert.equal(tree.type, 'LegacySummaryRecovery'); assert.equal(find(tree, 'UnderlineTabs'), undefined);
-  tree.props.onReturn(); assert.deepEqual(h.events, [['guard']]);
-  assert.equal(h.render().type, 'LegacySummaryRecovery');
+  assert.equal(tree.type, 'PageFrame'); assert.equal(find(tree, 'LegacySummaryRecovery'), undefined);
+  const summary = find(tree, 'TaskKnowledgeSummaryContent'); assert.equal(summary.props.preparation, true);
+  assert.equal(nodes(tree).filter(node => node.type === 'TaskKnowledgeSummaryContent').length, 1);
+  assert.equal(find(tree, 'ChildOverviewContent'), undefined); assert.equal(find(tree, 'PreparationWorkspace'), undefined);
+  find(tree, 'UnderlineTabs').props.onChange('preparation'); assert.deepEqual(h.events, [['guard']]);
+  assert.equal(find(h.render(), 'TaskKnowledgeSummaryContent').props.preparation, true);
   h.approve(); tree = h.render();
   assert.deepEqual(h.events.slice(1), [['close-preparation'], ['params', { tab: 'preparation' }]]);
   assert.equal(find(tree, 'UnderlineTabs').props.value, 'preparation');
   for (const change of [h => h.child('child-b'), h => h.identity('Other parent'), h => h.route('/history'), h => h.query({ tab: 'overview' })]) {
-    const stale = harness(); stale.query({ tab: 'legacy-preparation' }); stale.render().props.onReturn();
+    const stale = harness(); stale.query({ tab: 'legacy-preparation' }); find(stale.render(), 'UnderlineTabs').props.onChange('preparation');
     change(stale); stale.render(); stale.approve(); assert.deepEqual(stale.events, [['guard']]);
   }
-  const unmounted = harness(); unmounted.query({ tab: 'legacy-preparation' }); unmounted.render().props.onReturn();
+  const unmounted = harness(); unmounted.query({ tab: 'legacy-preparation' }); find(unmounted.render(), 'UnderlineTabs').props.onChange('preparation');
   unmounted.unmount(); unmounted.approve(); assert.deepEqual(unmounted.events, [['guard']]);
   const missingChild = harness(); missingChild.query({ tab: 'legacy-preparation' }); missingChild.child(null);
-  assert.equal(find(missingChild.render(), 'LegacySummaryRecovery'), undefined);
+  assert.equal(find(missingChild.render(), 'TaskKnowledgeSummaryContent'), undefined);
 });
 
 test('scope changes reset presentation while a hidden native route renders no second reader', () => {
@@ -179,12 +189,21 @@ test('scope changes reset presentation while a hidden native route renders no se
   assert.equal(find(tree, 'PreparationWorkspace'), undefined); assert.equal(find(tree, 'ChildOverviewContent'), undefined);
 });
 
-test('shared owners mount once beneath Preview without altering five native tabs or navigation groups', () => {
-  const layout = source('app/(dashboard)/_layout.tsx');
-  for (const provider of ['PreviewProvider', 'BackgroundProvider', 'PhotosWorkspaceProvider', 'TasksWorkspaceProvider', 'ProfileWorkspaceProvider', 'PreparationWorkspaceProvider']) {
-    assert.equal((layout.match(new RegExp(`<${provider}(?:>|\\s)`, 'g')) ?? []).length, 1, provider);
+test('shared production owners mount once without altering five native tabs or navigation groups', () => {
+  const rootLayout = source('app/_layout.tsx'), layout = source('app/(dashboard)/_layout.tsx');
+  const domains = source('src/production/ProductionDomains.tsx'), care = source('src/production/CareProfileDomains.tsx');
+  const knowledge = source('src/production/TaskKnowledgeDomains.tsx'), photos = source('src/production/PhotoInputDomains.tsx');
+  const composition = [rootLayout, layout, domains, care, knowledge, photos].join('\n');
+  for (const provider of ['ProductionProvider', 'BackgroundProvider', 'ProductionDomains', 'ProductionCareProfileDomains', 'ProductionTaskKnowledgeDomains', 'ProductionPhotoInputDomains', 'ProductionSettingsDomains', 'TasksWorkspaceProvider', 'ProfileWorkspaceProvider', 'PreparationWorkspaceProvider']) {
+    assert.equal((composition.match(new RegExp(`<${provider}(?:>|\\s)`, 'g')) ?? []).length, 1, provider);
   }
-  assert.match(layout, /<TasksWorkspaceProvider>\s*<ProfileWorkspaceProvider>\s*<PreparationWorkspaceProvider>/);
+  assert.doesNotMatch(composition, /<(?:PreviewProvider|PhotosWorkspaceProvider)(?:>|\s)/);
+  assert.match(rootLayout, /<ProductionProvider><ProductionFirstScreenGate\b[\s\S]*<Stack\b/);
+  assert.match(layout, /<ProductionGate><BackgroundProvider key=\{identityKey\}><ProductionDomains>/);
+  assert.match(domains, /<ProductionCareProfileDomains><ProductionTaskKnowledgeDomains><ProductionPhotoInputDomains><ProductionSettingsDomains>/);
+  assert.match(care, /<ProfileWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{scoped\?\.profile \?\? null\}>/);
+  assert.match(knowledge, /<TasksWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{current\?\.tasks \?\? null\}>\s*<PreparationWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{current\?\.documents.preparation \?\? null\}>/);
+  assert.equal((photos.match(/<PhotoInputContext\.Provider\b/g) ?? []).length, 1);
   assert.equal((layout.match(/<Tabs\.Screen name=/g) ?? []).length, 5);
   assert.match(layout, /\["more", "history", "memory", "photos", "sources", "summary"/);
   const navigation = compile('src/components/navigation/app-navigation.ts', name => { throw new Error(`Unexpected import ${name}`); });
@@ -193,14 +212,15 @@ test('shared owners mount once beneath Preview without altering five native tabs
   assert.equal(navigation.moreNavigationGroups[0].items.find(item => item.key === 'summary').label, '孩子概況與準備');
 });
 
-test('legacy composition retains the original controller and its guarded identity changes', () => {
-  const legacy = source('src/screens/LegacySummaryRecovery.tsx'), view = source('src/components/summary/SummaryView.tsx');
-  assert.match(legacy, /useSummaryPreview\(child, online, identity, server\)/);
-  assert.match(legacy, /recoveryMode onReturn=\{onReturn\}/);
-  assert.match(legacy, /onIdentity=\{\(\) => navigate\(/);
-  assert.match(legacy, /onServer=\{\(\) => navigate\(/);
-  assert.ok(!legacy.includes('usePreparationWorkspace'));
-  assert.match(view, /mode: recoveryMode \? 'preparation' : 'report'/);
-  assert.ok(view.includes('summary-pending')); assert.ok(view.includes('onPress={actions.retryOriginal}'));
-  assert.ok(source('src/preview/useSummaryPreview.ts').includes('usePreviewLeaveGuard(dirty, busy || !!pending)'));
+test('production summary composition uses the shared owner and retains original-operation recovery guards', () => {
+  const screen = source('src/screens/SummaryScreen.tsx'), content = source('src/production/TaskKnowledgeSummaryContent.tsx');
+  const domains = source('src/production/TaskKnowledgeDomains.tsx');
+  assert.doesNotMatch(screen, /LegacySummaryRecovery|useSummaryPreview|PreviewContext/);
+  assert.match(content, /const owner = useProductionTaskKnowledgeSummary\(\)/);
+  assert.match(domains, /<SummaryContext.Provider value=\{current\?\.summary \?\? null\}>/);
+  assert.match(content, /model.online && !model.busy && !model.readFailed && model.access === "editable" && !!page\?\.canManage && !!model.pending\?\.checked && !model.pending.confirmed/);
+  assert.match(content, /disabled=\{!canRetry \|\| !model.originalConsent\} onPress=\{actions.retryOriginal\}/);
+  assert.match(content, /!model.pending.confirmed \? <>/);
+  assert.match(content, /onDismiss=\{\(\) => navigate\(\(\) => \{ actions.discard\(\); setOpen\(false\); \}\)\}/);
+  assert.match(content, /value\?\.model.dirty && !value.model.pending && !value.model.busy/);
 });

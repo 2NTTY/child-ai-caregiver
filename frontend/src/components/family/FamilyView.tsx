@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
@@ -144,6 +145,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
   const [inviteOpen, setInviteOpen] = useState(false);
   const [incomingOpen, setIncomingOpen] = useState(false);
   const scopeKey = `${model.selfUserId}:${model.family?.id ?? "none"}:${model.family?.role ?? "none"}`;
+  const emptyReady = model.online && model.loadState === "ready" && (!production || model.canStartAction);
   const eligible = model.loadState === "ready" && model.operation.state === "saved";
   return <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.workspace}>
     <StatusAnnouncement eventKey={model.loadState} message={model.loadState === "lost" ? "家庭權限已失效；原有家庭、成員、邀請碼及草稿已清除。" : model.loadState === "loading" ? "正在讀取家庭資料。" : ""} urgent={model.loadState === "lost"} />
@@ -170,11 +172,11 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
                 <MotionList items={model.family.members} keyExtractor={member => member.userId} scopeKey={scopeKey} regionKey="family-members" eligible={eligible} style={styles.list} renderItem={(member, { exiting }) => <MemberRow key={`${model.family!.id}:${member.userId}`} member={member}
                   self={member.userId === model.selfUserId} canManage={model.family!.role === "owner"} disabled={!model.canStartAction || exiting} actions={actions} scopeKey={scopeKey} feedbackEligible={eligible && !exiting} production={production} />} />
                 {model.family.role !== "owner" ? <Text style={styles.body}>只有擁有者可管理成員及邀請；此視角沒有這些管理操作或邀請電郵清單。</Text> : null}
-              </> : <Text style={styles.body}>沒有可查看的家庭。</Text>}
+              </> : emptyReady ? <EmptyListCard title="目前沒有可查看的家庭" /> : <Text style={styles.body}>家庭清單尚未重新核對。</Text>}
             </SectionCard>
             {model.family?.role === "owner" ? <View style={styles.section}>
               <SectionHeader density="compact" title="邀請與加入進度" subtitle="狀態來自本次快照，不表示已發出電郵。" />
-              {model.family.invitations.length === 0 ? <Text style={styles.body}>目前沒有邀請。</Text> : null}
+              {model.family.invitations.length === 0 && emptyReady ? <EmptyListCard title="目前沒有邀請" /> : null}
               <MotionList items={model.family.invitations} keyExtractor={invite => invite.id} scopeKey={scopeKey} regionKey="family-invitations" eligible={eligible} style={styles.list} renderItem={(invite, { exiting }) => <View key={invite.id} style={styles.invitation}>
                 <View style={styles.flexCopy}><Text selectable style={styles.memberName}>{invite.email}</Text>
                   <MotionFeedback active={eligible && !exiting} triggerKey={invite.status} scopeKey={`${scopeKey}:${invite.id}`}><View style={styles.actions}><Text style={styles.meta}>{familyRoleLabels[invite.role]}</Text><AppStatusBadge label={invitationStatusLabels[invite.status]} tone={invite.status === "accepted" ? "success" : invite.status === "pending" ? "warning" : "neutral"} /></View></MotionFeedback>
