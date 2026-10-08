@@ -92,3 +92,13 @@ Server 決定必審成果並調度審核，生成者不能自行免審。接收�
 同一訊息重試、finish 前程序中斷後查回，均讀原 run 及原收據，不重新建立運行、生成或修改。查詢有界，額外效果必須符合根工具上限與同操作防重；不靜默截斷後宣稱所有成果完整。這項可靠性修正不代表雲端非同步受理、跨 instance 取消或資料庫遷移已完成。
 
 此接點使用局部 SQL migration 036 的原 run／文件操作關聯；001–035 不改寫。新程式讀取關聯前須完成相容 migration，未執行的環境不得宣稱可部署或已具備恢復能力。新關聯的兩端綁同一 user／child，隨原運行及原操作清理；關聯不存在不表示 legacy 操作從未發生。沒有新關聯的舊運行沿原讀取行為，不借此局部修正宣稱歷史全文已重新驗證。
+
+## 已發布知識的聊天讀取接點
+
+`createProductAgentServices` 保留原十個位置參數，末尾增加可選 Server 組裝參數 `ProductAgentServicePorts`。其中 `publishedKnowledgeReader` 只有現行 `KnowledgeStore.candidates` 的讀取型別；未提供時仍使用原 `createKnowledgeStore(pool)`，不更換既有入口或資料來源。
+
+此接點只讓獲准的 Server 實作者注入已發布公共知識的讀取 adapter，不接受 HTTP、模型、使用者訊息或任意 URL 配置。不是背景資料收集 Agent 的呼叫入口，也不提供匯入、審核、發布或停用方法。
+
+既有 `createKnowledgeRetriever` 仍掌握每 run 的隔離、embedding 次數、取消、同版擴讀、cursor 和最後引用重驗；不整個交由外部 retriever 替代。型別只有讀取方法並不自動證明資料有效：外部 adapter 必須在每次候選查詢保證已發布、目前有效版、未撤回／未過期、適用性及公開使用範圍，支援原有版本／chunk 篩選及有界續讀。新 adapter 通過相同語義驗收前不得啟用。
+
+本接點不代表資料收集、資料編製或審核 Agent 已完成。後兩者保留前述契約；共同根預算、持久審核綁定及 Server 必審／提交 gate 未實作前，不註冊可被模型呼叫的空 handler，也不宣稱三角色已接通。

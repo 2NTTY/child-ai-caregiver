@@ -1,0 +1,128 @@
+{
+  "baseline_commit": "5c16c3b74aa3d1f13a4a1af0980e263fd0f895fa",
+  "baseline_tree": "7f8d438a52fd6687560e4915ba87bb455015d37d",
+  "verified_at": "2026-10-08T15:13:01.825071+00:00",
+  "status": "Implementation and bounded offline checks passed; parent review and publication pending.",
+  "scope": {
+    "production_files": [
+      "server/product-agent-services.ts"
+    ],
+    "new_tests": [
+      "tests/product-agent-services.test.ts"
+    ],
+    "behavior": "Optional candidates-only publishedKnowledgeReader at the trusted Server factory. Default remains createKnowledgeStore(pool). The existing createKnowledgeRetriever owns run isolation, vector caching, live source selection and citation revalidation.",
+    "external_reader_enabled": false,
+    "http_configuration_added": false,
+    "routes_or_tool_catalog_changed": false,
+    "model_runtime_or_budget_changed": false,
+    "other_agents_changed": false,
+    "pr147_changes_included": false
+  },
+  "adapter_requirement": "Any future injected reader must independently implement the existing eligible published public-knowledge selection contract, including current active version, publication/review, withdrawal, expiry and audience restrictions. This change does not verify or enable an external adapter.",
+  "baseline_verification": {
+    "method": "Reused immutable partial source snapshot, removed non-baseline additions and reversed the four PR147 baseline file modifications. All 2139 retained baseline regular files matched their immutable Git tree blobs before this implementation.",
+    "mismatch_count": 0,
+    "repository_lock_unchanged": true,
+    "shared_dependency_directory_unchanged": true
+  },
+  "dependencies": {
+    "method": "Independent npm ci using a transitive subset of the repository lock, ignore-scripts, no-audit and no-fund. No repository package manifest or lock edits.",
+    "cheerio_version": "1.2.0",
+    "cheerio_tar_sha512_matches_repository_lock": true,
+    "verified_package_versions": 208,
+    "all_versions_match_repository_lock": true,
+    "node": "24.19.0",
+    "npm": "11.9.0",
+    "typescript": "6.0.3"
+  },
+  "network_guard": "Test commands used a local import wrapper that denies net.Socket.connect and globalThis.fetch. Dependency installation used registry.npmjs.org and repository-pinned integrity/version metadata.",
+  "checks": [
+    {
+      "name": "Final new service tests after parent review correction",
+      "command": "node --import ../deny-network.mjs --experimental-test-module-mocks --test --test-concurrency=1 tests/product-agent-services.test.ts",
+      "exit_code": 0,
+      "passed": 4,
+      "failed": 0,
+      "detail": "One parent plus three subtests. Default ten-argument caller uses the existing SQL reader; SQL eligibility statements remain present. Fake reader is actually called through the existing retriever, per-run vectors are isolated, publication is reread, old versions/withdrawn citations fail revalidation, cancellation prevents new reader/embedding work, and the TypeScript surface exposes candidates only.",
+      "log_sha256": "dd1c30c2795ebfa629ad755269ce6a87be4bf1bec01fff84b6f6edb1164d7efc"
+    },
+    {
+      "name": "Existing A04 compatibility tests",
+      "command": "node --import ../deny-network.mjs --experimental-test-module-mocks --test --test-concurrency=1 tests/product-agent-services.test.ts tests/knowledge-a04.test.ts",
+      "exit_code": 0,
+      "a04_passed": 4,
+      "a04_failed": 0,
+      "detail": "Reused the four existing A04 results from the earlier successful eight-test batch. The only later change was the new service test module-mock configuration; product code and A04 sources remained unchanged. The earlier service-test counts are superseded by the final focused run.",
+      "log_sha256": "821765c792c5bddffc6b7d4a53139aaaa49f3fadfe63de7f60ba71b9bd1e755f"
+    },
+    {
+      "name": "Existing knowledge runtime checks",
+      "command": "node --import ../deny-network.mjs --experimental-test-module-mocks --test --test-concurrency=1 tests/knowledge-runtime.test.ts tests/knowledge-a04.test.ts",
+      "status": "knowledge-runtime passed; A04 initially failed during module loading before its tests ran, then passed in the final retry after dependency repair.",
+      "knowledge_runtime_passed": 6,
+      "knowledge_runtime_failed": 0,
+      "log_sha256": "f3ab42aa5911f6a2929c99184b53f3da7aad597172d7d70282a9a6e7b3f6b17a"
+    },
+    {
+      "name": "Final focused TypeScript compilation after parent review correction",
+      "command": "node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --allowImportingTsExtensions --module NodeNext --moduleResolution NodeNext --target ES2023 --strict --erasableSyntaxOnly --skipLibCheck --types node tests/product-agent-services.test.ts",
+      "exit_code": 0,
+      "diagnostics": 0,
+      "scope": "New test and its imported Server/shared dependency graph, not full Server or frontend.",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "preserved_failures_and_corrections": [
+    {
+      "stage": "Initial focused test",
+      "failure": "Fake reader expected the raw filter without the existing default ageMatch: contained.",
+      "correction": "Parent-approved fixture expectation explicitly includes contained; no normalizer reused in the expected value and no production change.",
+      "log_sha256": "e57a50bc71c8d6feabfe466ea64cf6e225b5ddd60e60348a7d9f32067e4cf016"
+    },
+    {
+      "stage": "First bounded existing-knowledge batch",
+      "failure": "A04 could not import cheerio from the reused incomplete locked dependency subset.",
+      "correction": "Parent-approved one bounded independent dependency installation from the repository lock. A04 passed after repair.",
+      "log_sha256": "f3ab42aa5911f6a2929c99184b53f3da7aad597172d7d70282a9a6e7b3f6b17a"
+    },
+    {
+      "stage": "Initial scoped tsc command",
+      "failure": "TypeScript 6 TS5112 requires --ignoreConfig when input files are supplied beside tsconfig.json.",
+      "correction": "Added the required command flag only.",
+      "log_sha256": "5b766b55df5bc15c215149742c8fe88d72a584cb45f5422c7edca1594b6d0cb5"
+    },
+    {
+      "stage": "First scoped code compilation",
+      "failure": "Three TS2339 errors in the new test after assert.deepEqual(array, []) narrowed callback-populated spy arrays to never[].",
+      "correction": "Parent-approved equivalent length === 0 assertions; all later exact filter/selection/version assertions retained.",
+      "log_sha256": "558a261f9e6bd491966213ff68d708ebcfd3f0f4e83da7337103b2728db7d57d"
+    }
+  ],
+  "not_verified": [
+    "Full Server/frontend typecheck or complete regression suite",
+    "Real SQL execution or live publication semantics of any external adapter",
+    "Real model calls, HTTP/browser end-to-end behavior or deployment",
+    "Data compilation/review Agent runtime, durable root budget or Server review/commit gate"
+  ],
+  "source_hashes": {
+    "server/product-agent-services.ts": {
+      "git_blob_sha": "a7c2ae0ae5c0d59c38d7583365f757f48644958e",
+      "sha256": "c7be0a262979c188e093d240c5e196507c1410ab13c6748225d1e17cb9e1c3a3"
+    },
+    "tests/product-agent-services.test.ts": {
+      "git_blob_sha": "1dec690f5579e5335f529a2d605b36e5a183065b",
+      "sha256": "0f85abbc4e8a41ab9477917682e2fa7de8816517fabb5ccd23b6ec4993e7ba71"
+    }
+  },
+  "review_corrections": [
+    {
+      "finding": "The module mock helper used a Node 24.19 exports option absent from the pinned Node types and newer than the declared minimum runtime.",
+      "correction": "Replaced the helper with a direct cache:false, namedExports module mock accepted by the pinned types. Removed the compatibility comment and helper. Retested the final new test and scoped compilation.",
+      "production_change": false
+    }
+  ],
+  "warnings": [
+    "Module mocking is experimental. Node 24.19 warns that namedExports is deprecated but supports it; the pinned Node types expose namedExports. No dependency/runtime version changes were made to the repository.",
+    "The declared minimum Node 24.3 runtime was not separately executed. Tests used Node 24.19.0."
+  ]
+}
