@@ -1,0 +1,29 @@
+{
+  "scope": "Server-controlled native Agent thinking configuration; default remains minimal.",
+  "baseline": "11ae4655b676ae09d587cfadfe69eb853e8f930a",
+  "also_compared_with": "98e77b0bc85fc61d22b42c92f564e7d2f6f97da5",
+  "checks": {
+    "focused_tests": {
+      "passed": 49,
+      "failed": 0
+    },
+    "scoped_types": "passed",
+    "patch_apply_and_byte_readback": "passed"
+  },
+  "preserved": [
+    "default MINIMAL",
+    "4 model calls / 8 tools",
+    "existing daily quotas",
+    "1024 output clamp",
+    "candidateCount 1",
+    "SDK attempts 1",
+    "abort and opaque native parts"
+  ],
+  "limits": [
+    "No true-model semantic acceptance",
+    "No database, full-repository or deployment verification",
+    "Initial TS2688 test configuration failure retained; corrected existing typeRoots and reran scoped checks"
+  ],
+  "official_reference": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/start/get-started-with-gemini-3",
+  "status": "offline_verified_default_behavior_unchanged"
+}

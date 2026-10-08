@@ -21,7 +21,18 @@ function readUsage(response: LlmResponse): TokenUsage {
     cachedTokens: tokenCount(response.usageMetadata?.cachedContentTokenCount) };
 }
 
+function nativeThinkingLevel(value: AiConfig["agentThinkingLevel"]): ThinkingLevel {
+  switch (value === undefined ? "minimal" : value) {
+    case "minimal": return ThinkingLevel.MINIMAL;
+    case "low": return ThinkingLevel.LOW;
+    case "medium": return ThinkingLevel.MEDIUM;
+    case "high": return ThinkingLevel.HIGH;
+    default: throw new Error("Invalid AI_AGENT_THINKING_LEVEL configuration");
+  }
+}
+
 export function createVertexAgentProvider(config: AiConfig): AgentModelProvider {
+  const thinkingLevel = nativeThinkingLevel(config.agentThinkingLevel);
   const client = new GoogleGenAI({ enterprise: true, project: config.project, location: config.location, apiVersion: "v1",
     httpOptions: { timeout: config.timeoutMs, retryOptions: { attempts: 1 } } });
   return {
@@ -29,7 +40,7 @@ export function createVertexAgentProvider(config: AiConfig): AgentModelProvider 
       try {
         const response = await client.models.generateContent({ model: config.model, contents: request.contents,
           config: { ...request.config, candidateCount: 1, maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
-            thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }, abortSignal: signal } });
+            thinkingConfig: { thinkingLevel }, abortSignal: signal } });
         const candidate = response.candidates?.[0];
         // Preserve all native parts, including opaque signatures. Only presentation filters thoughts.
         return { content: response.candidates?.length === 1 ? candidate?.content : undefined,
