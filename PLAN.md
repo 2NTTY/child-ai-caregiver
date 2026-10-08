@@ -7,13 +7,14 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### 四角色 Agent 文件已定案；下一實作仍為 P2-F01 前置
+### #140 有效修正收束；下一包 P2-F01
 
-- 本輪在遠端 master `e6842fc` 上定案[四角色 Agent](#p2-agent-roles)，分支 `codex/p2-agent-roles-plan`；A 主責、權重 2、A100%，主模型親寫／review，文件檢查通過，見[實際記錄](WORKLOG.md#log-20261008-agent-roles-plan)。Firestore 文件已隨 [PR #143](https://github.com/2NTTY/child-ai-caregiver/pull/143) 合併；本輪不啟動實作、產品測試或雲端操作。
-- P2-A01～A08 已合併；A07 為 [PR #139](https://github.com/2NTTY/child-ai-caregiver/pull/139)／b30a7b2，保留 [A07 證據](artifacts/verification/P2_A07_CHECKS.json) 及未驗導航範圍。PR #130 已合併至本基線；#111 已由合併的 #142 收束，不重做。
-- A09 保留 [draft PR #140](https://github.com/2NTTY/child-ai-caregiver/pull/140)／93c64e4，核對時與 master 有合併衝突，**未合併、未完成**。有效程式／Prompt Pack 版本修正及原失敗證據須逐項接回；舊 VM／SMTP 專用交付被新路線取代，不把整枝直接套入，也不丟棄未完成的 Agent 成果驗收。
-- 唯一下一實作入口為 [P2-F01](#p2-f01)：先處置 #140 有效修正及衝突，再固定資料／查詢／交易與 Auth 接點。此項前置尚未解除，本輪不開實作包。其他聊天合併後重新 fetch 並核對，不沿用舊 head 推定基線。
-- 完整遷移、費用假設及回退門檻見 [下節](#p2-firestore-migration)。舊 P2／INT 與 A01～A08 證據保留；Firestore／Firebase Auth／Cloud Run 均**待實作、待驗證**，master 不等於已部署。
+- 基線 master `c175eb9`；[PR #140](https://github.com/2NTTY/child-ai-caregiver/pull/140) 收束為「Prompt Pack 版本對齊及可靠文件收據」，隨本 PR 合併解除 F01 的修正前置。保留原 A09 失敗／未驗證據，並以 [收束證據](artifacts/verification/P2_A09_CLOSEOUT_CHECKS.json) 區分本次離線核對；不把原 A09 穩定服務交付標為完成。
+- P2-A01～A08 已合併，#130 已接回，#111 已由 #137／#142 收束；本包保留最新主線，不重做已有功能或驗收。舊 VM／SMTP 專用的未部署 overlay 不納入現行方案，原始版本仍可從 #140 的 `93c64e4` 追溯。既有行政 CLI 映像接點保留作目前 PostgreSQL 維護用途，沒有建置或部署新映像。
+- **唯一下一實作入口：[P2-F01](#p2-f01)**（本 PR 合併後 Ready）：資料／查詢／交易／清理對照、Auth／session 接點及四角色契約。Firestore／Firebase Auth／Cloud Run／四角色 Agent 均未開始實作；不把計劃或合併修正視為已上線。
+- A09 尚欠的真 Agent「官方引用 → 同一文件修改 → 新對話讀回」、正式帳號流程、配對恢復及穩定交付，由 F07／F08 承接。舊 SMTP 部署不再是 F01 的前置；新 Firebase Auth 的電郵／找回與准入仍須實際驗證。原合成現場及使用量限制保留，不能新開 run 繞過限制。
+- 後續順序：**F01 → F02 → F03 → F04／F05 → F06 → F07 → F08**；F04 與 F05 同在 F03 合併後可按獨立範圍安排，F06 等 F05，F07 等 F04 與 F06。細項以[依賴表](#p2-firestore-migration)為準，每包 review／必要驗收／合併後才解鎖依賴。
+- 交給其他聊天前先 fetch 最新 master、讀 AGENTS → STATUS → 本入口及所需契約；不從 #140 舊 head 開發。F02 真雲端切片建資源／費用上限另批，F08 維護窗口／實測預算另批；VM 期限不因本次收束延長。
 
 <a id="p2-firestore-migration"></a>
 ## P2 Firestore 與集中雲端服務遷移
@@ -52,7 +53,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 | 工作包 | 前置 | 交付／gate | 主責；權重；預分配 |
 |---|---|---|---|
-| <a id="p2-f01"></a>**P2-F01** 遷移契約與接點 | 文件定案；#140 有效修正／衝突處置並合併 | 逐 store 資料／查詢／交易／清理對照、Auth／session port、固定 SDK／索引、最小儲存接口；補四角色、草稿／審核／發布契約與互動／維護預算；保留 PostgreSQL 回退實作，不自建 SQL 引擎 | A；3；A60%／C40% |
+| <a id="p2-f01"></a>**P2-F01** 遷移契約與接點 | 文件定案；#140 修正收束合併 | 逐 store 資料／查詢／交易／清理對照、Auth／session port、固定 SDK／索引、最小儲存接口；補四角色、草稿／審核／發布契約與互動／維護預算；保留 PostgreSQL 回退實作，不自建 SQL 引擎 | A；3；A60%／C40% |
 | <a id="p2-f02"></a>**P2-F02** 合成雲端切片 | P2-F01；資源／費用上限另批 | 登入、引用、保存／修改、防重、排程、附件、刪除／隔離還原；真雲端通過才搬全部功能 | C；5；C70%／A20%／D10% |
 | <a id="p2-f03"></a>**P2-F03** 核心業務資料 | P2-F02 | 完整帳號／家庭權限、孩子、記錄、記憶、聊天、持久工作、確認、changes 與收據；聊天／審核 runtime、受限委派、持久審核狀態及根運行共同預算 | C；5；C70%／A20%／B10% |
 | <a id="p2-f04"></a>**P2-F04** 文件、檔案與退出 | P2-F03 | 資料編製 Agent 經既有記憶／任務／文件服務保存可重用成果及局部修改；文件／修訂／報告／照片、匯出、退出、持久刪除及配對加密備份，14 天資料／附件能一起恢復 | C；5；C60%／B20%／A20% |
@@ -273,7 +274,7 @@ worker 只因相關資料／階段／到期／已授權跟進／有效知識換�
 | <a id="p2-a06"></a>**P2-A06** 有用的主動接續 | 已完成（[PR #137](https://github.com/2NTTY/child-ai-caregiver/pull/137)）；P2-A02、P2-A03、P2-A04 | 私人工作事件接續、原run去重、終態／撤權與滿額關注結束；沿用本人通知原授權。[EV](artifacts/verification/P2_A06_CHECKS.json)。 | A；3；A50%／C40%／B10% |
 | <a id="p2-a07"></a>**P2-A07** 正式單人使用流程 | 已合併 [PR #139](https://github.com/2NTTY/child-ai-caregiver/pull/139)／b30a7b2；[證據](artifacts/verification/P2_A07_CHECKS.json) | 各頁用途與共用 owner、統一歷史／完整聊天通知入口、單人引導、即時同源更新及安全操作入口；保留設計，不改成管理表格。 | B；3；B60%／C30%／A10% |
 | <a id="p2-a08"></a>**P2-A08** 邀請制真實資料服務 | 已合併[PR #138](https://github.com/2NTTY/child-ai-caregiver/pull/138)；[證據](artifacts/verification/P2_A08_CHECKS.json) | 本人獨立資料空間、邀請註冊、Better Auth 電郵驗證／找回／會話撤銷、真實資料授權、下載及帳戶退出／刪除與備份保留說明。 | C；3；C70%／B20%／A10% |
-| <a id="p2-a09"></a>**P2-A09** GCP 穩定交付 | 受阻；[draft #140](https://github.com/2NTTY/child-ai-caregiver/pull/140)／93c64e4 未合併且有衝突；P2-A01、P2-A02、P2-A03、P2-A04、P2-A05、P2-A06、P2-A07、P2-A08 | 保留已做修正及原失敗／未驗；有效修正先作 F01 前置處置，完整 Agent／帳號／備份恢復及穩定交付由 F07／F08 承接。原 VM／SMTP 路線被替代，不能整包標完成。 | C；3；C60%／B20%／A10%／D10% |
+| <a id="p2-a09"></a>**P2-A09** GCP 穩定交付 | 有效修正隨 [PR #140](https://github.com/2NTTY/child-ai-caregiver/pull/140) 收束；完整交付仍未完成；前置 A01～A08 已合併 | Prompt 版本及文件收據修正、原失敗／未驗均保留；[收束證據](artifacts/verification/P2_A09_CLOSEOUT_CHECKS.json)。完整 Agent／帳號／備份恢復及穩定交付由 F07／F08 承接；原 VM／SMTP 專用路線被替代，不標整包完成。 | C；3；C60%／B20%／A10%／D10% |
 
 文件定案包由 A 主責、權重 2、A100%，主模型實際整理／覆核。原定案時 Ready 為 P2-A01 與 P2-A08，兩包現已合併；即時入口只見 [#active](#active)。約一半功能包由 C 主責；Author／共同作者按實際成果，推送／PR／合併按主責真實帳號，保留真實 Committer。
 

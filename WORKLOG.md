@@ -1712,3 +1712,33 @@
 - 零產品 unit／integration／E2E、模型／embedding、來源爬取、通知、Computer Use、資源建立、資料遷移或部署；程式、Prompt Pack、前端及依賴未改。文件已採納不等於四角色已接通或準確性已驗證。
 - 遠端交付前再次核 master e6842fc、#140 draft head 93c64e4，原修正／衝突及失敗證據未動。A 身份、Author／Committer 設定已核，按 A 實際帳號交付；開發與正式合併提交的遠端署名另核，不預先宣稱 Verified。
 - 下一步仍依 [PLAN#active](PLAN.md#active) 處置 #140 後 F01，F02 雲端切片及 F08 成本／維護窗口門檻不變，完整 P2 尚未完成。
+
+
+<a id="log-20261008-p2-a09-preparation"></a>
+## 2026-10-08｜P2-A09 穩定交付準備及代表Agent停批
+
+- 基線b30a7b2，獨立A09分支；C主責，原權重3及C60%／B20%／A10%／D10%屬整包預分配。本次實際改動屬C的部署／Server與A的Agent指引／整合；共用AI由A統籌，兩個Sol6.1執行有界工程與驗收、Luna唯讀定位。B／D本批沒有新增改動或人工驗收，不據預分配代填貢獻。
+- 增補Docker行政CLI、invited Compose overlay、受保護SMTP與journal掛載；主模型親寫部署及API契約。候選Web／API／maintenance建置通過，沒有部署。首次本機receipt建置誤用不存在的api stage即停，改用已有server stage後通過；詳見[建置](artifacts/verification/P2_A09_BUILD.json)。
+- 真Agent沿既有加密還原庫，只建1帳號／1孩子，保留原庫、原用量與worker暫停。第一次unavailable無充分根因；第二次tool_unknown經零網絡重現為summary-report header0.1.3與manifest0.1.4不符，主模型修正並升pack0.1.33，沒有重寫既有Prompt Pack。其後真補問completed；下一步查知識／保存準備單成功，但局部修改conflict及一次歷史讀取rejected，達4次model_limit而停止，沒有可認定的完整引用回答或修改結果。
+- 各批總計4個run、9生成＋1embedding（共10／12）、25業務呼叫／38唯讀SQL；已知生成input124973／output708，但9筆用量包含未知欄位，不把已知總和當完整成本。失敗現場及同一文件保留，不新建fixture繞限；此輪不再呼叫真模型。[原run與邊界](artifacts/verification/P2_A09_AGENT_RUN.json)。
+- 發現文件成功收據缺少下一步所需authorityVersion／正文，補同授權、同文件與快照且符合budget的完整短正文；過大／失效仍續讀，寫入成功後readback失敗仍保留真收據，不誘導重複寫入。主模型親寫工具描述，Sol局部實作；一個既有prompt版本聚合、一個adapter聚合通過，主模型review實際diff／測例，沒有再跑整套。修正版真Agent未驗。[檢查](artifacts/verification/P2_A09_CHECKS.json)。
+- 已核實VM的IAP／SSH唯讀現場為85e3a846，服務健康、SMTP未配置，20GB磁碟餘2.2GB；原STOP為2026-10-10 20:50:44 HKT。未刪映像／資料、未續期／擴容、未外發郵件／通知；[現場證據](artifacts/verification/P2_A09_REMOTE_PREFLIGHT.log)。
+- A09仍未完成：真引用／修改／接續、正式SMTP、邀請規模／資料保留／維運條件及新部署／恢复待完成。保留draft交付，不合併為已驗收或把舊P2證據當新服務通過；下一步從同一已保存文件及原台帳接續，不重跑已通過的A01～A08或A07瀏覽器。
+
+
+<a id="log-20261008-p2-a09-blocked"></a>
+## 2026-10-08｜P2-A09 外部設定阻塞確認
+
+- 在前次修正及draft #140交付後，覆核既有健康API會查DB、Compose重啟及配對備份能力；沒有重造服務或再跑產品測試。2026-10-08 02:26:41 UTC經同一已核實VM的IAP唯讀核對，85e3a846仍healthy；`/etc/yuban-p1/account-smtp.json`及`/var/lib/yuban-p1/private/account-smtp.json`均不存在，API亦無SERVICE_MODE或SMTP／journal掛載。未讀秘密正文、未外發、未部署；本批臨時token與tunnel已清理。
+- 同一寄件身份／SMTP及營運核定条件連續阻塞，目標轉受阻而非完成；A09／draft保持未合併，所有原失敗及同一合成文件保留。主模型核對，沒有代填人工驗收。恢復需正式設定與營運條件就緒，並在原用量限制下完成剩餘Agent與部署驗收；不以新帳號、改quota或擅續費繞過。
+
+
+<a id="log-20261008-pr140-closeout"></a>
+## 2026-10-08｜PR #140 有效修正收束
+
+- Recorded At：2026-10-08T18:38:44.099307+08:00；基線 master c175eb9、原 draft head 93c64e4，沿用原 A09 分支及 C 主責交付；A 統籌共用 AI、親寫 prompt／契約／計劃、整合及 review，本次不新派代理，不代填 B／D 人工驗收。
+- 按使用者要求快速收束，正常合入 master 並解決 PLAN／STATUS／WORKLOG／部署說明四處衝突。保留主線全部原日誌 bytes，另完整追加原 A09 兩段日誌；初次共祖 prefix 假設不符即停止，改按明確 A09 錨點保留，沒有改寫舊記錄或失敗證據。
+- 保留 summary-report 模組／manifest 版本對齊、同授權／文件及快照版本且有界的短正文讀回、readback 失敗仍保留成功寫入收據，以及現有行政 CLI 的 Docker 接點。未新增功能、未改前端設計。移除原未部署的 VM／SMTP overlay 與 env template，部署說明採最新主線；舊內容仍可從 93c64e4 追溯，不要求完成被新路線取代的部署。
+- 主模型 review 原 diff、授權／版本／budget／收據及錯誤路徑；只重跑既有 prompt 版本聚合及文件 adapter 聚合，各 1 項通過，Node 24.11.0。[本次證據](artifacts/verification/P2_A09_CLOSEOUT_CHECKS.json)與[原失敗／未驗](artifacts/verification/P2_A09_CHECKS.json)分開。文件差異／衝突標記／連結及 WORKLOG 追加完整性核對；不跑全倉 build／typecheck／測試。
+- 零真模型／embedding／資料庫／瀏覽器／通知／新映像／雲端或部署。原 A09 的完整引用、指定修改、新對話讀回及正式帳號／恢復／服務交付仍待 F07／F08；本 PR 只收束已 review 的修正，不宣稱 A09 或 P2 完成。
+- PLAN／STATUS 原位改為修正合併後 F01 Ready；列 F01 → F02 → F03 → F04／F05 → F06 → F07 → F08 及各依賴。F02 資源／費用與 F08 切換／預算仍另批，未續期 VM。本次按 C 已登入帳號推送／合併；實際 Author／共同作者／Committer／簽署在遠端交付時核對，不預先宣稱 Verified。

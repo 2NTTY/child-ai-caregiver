@@ -1,0 +1,75 @@
+{
+  "package": "P2-A09",
+  "state": "partial_not_deployed",
+  "base": "b30a7b28b8f00f72013e2f6a01a6e65832856549",
+  "recordedAt": "2026-10-08T02:20:29.944Z",
+  "scope": "Invited service deployment wiring and minimum representative Agent acceptance; no frontend redesign.",
+  "review": {
+    "executor": "Primary model",
+    "method": "Read exact adapter, descriptions, targeted aggregate, runtime wiring and sanitized real acceptance evidence; no inference of whole-product success.",
+    "sourceHashes": {
+      "server/agent-document-tools.ts": "e679e853e670cabb6f282ee36f3732956d0b7db0f836b1ba0d4761f64cf7212e",
+      "server/agent-document-tool-descriptions.ts": "2a38a848cddaa00a64d8d451c9473f7cf77a09a554c05e2adc77095c4894bb4c",
+      "tests/agent-document-receipts.test.ts": "2c7031ad4277afe2a67327bdcd11987ff1cef428e6e5bdb9aaa1218d031c536b",
+      "scripts/p2-a09-agent-acceptance.mjs": "7fc79e2373128ab38395dec7fa2e0dc90f460af749288ef47f45c649d8faef71",
+      "prompts/manifest.json": "636943906ca3b35ff2e1a52dcbd7dd6e034b1c446d6b15722eb59d19424ad164",
+      "prompts/modules/summary-report.md": "2a770666b4acca77225c164ae9d6e542019f54de792fe2cd026894b18260597a",
+      "deploy/p2/service.compose.yaml": "576859d0bfb560431446b17ad4d317908e6daf420961240422652f7303337a99",
+      "deploy/p2/service.env.template": "ef066111a60856a1b9edf75e844189c23b98d001c81898f59f64d043763d1017"
+    },
+    "acceptanceScriptDifference": "After execution, removed one trailing blank line for git diff --check. P2_A09_AGENT_RUN.json retains the exact executed script hash."
+  },
+  "offline": [
+    {
+      "command": "node --test --test-name-pattern=\"pack, module and synthetic format versions\" tests/agent-prompt-wiring.test.ts",
+      "result": "passed 1 existing aggregate",
+      "executor": "Primary model",
+      "limit": "Version alignment only, not answer quality."
+    },
+    {
+      "command": "node --test tests/agent-document-receipts.test.ts",
+      "result": "passed 1 adapter aggregate",
+      "executor": "Sol 6.1; source and assertions reviewed by primary model",
+      "environment": "Node 24.11.0; fake store only",
+      "limit": "No database or true model; same-version inline readback, partial/redacted fallback and successful write receipt preservation."
+    },
+    {
+      "method": "Compose config merge with p2-worker and ops profiles",
+      "result": "passed",
+      "executor": "Sol 6.1; wiring reviewed by primary model",
+      "limit": "Configuration only; initial checker omitted profiles twice, not a runtime failure."
+    }
+  ],
+  "buildEvidence": "P2_A09_BUILD.json",
+  "agentEvidence": "P2_A09_AGENT_RUN.json",
+  "remoteEvidence": "P2_A09_REMOTE_PREFLIGHT.log",
+  "representativeResult": {
+    "clarification": "completed; purpose/date question, no business mutation",
+    "groundedPreparation": "document saved but model_limit; one patch conflict and version read rejected; no completed citation presentation",
+    "editAndRestart": "not executed",
+    "knownCalls": {
+      "generation": 9,
+      "embedding": 1,
+      "shared": 10,
+      "cap": 12
+    },
+    "fixture": "One synthetic user and child preserved in the existing encrypted restored database; original database untouched; worker paused."
+  },
+  "rootCauses": {
+    "confirmed": "summary-report header 0.1.3 disagreed with manifest 0.1.4 and broke load_capabilities; fixed and the next true clarification succeeded.",
+    "documentGap": "Write responses lacked authorityVersion/snapshot required by a following patch; bounded readback implemented. Exact conflicting model arguments were not captured, so this is not proof of every failure cause.",
+    "unavailable": "First provider failure remains unexplained; no relevant cloud log entries were returned."
+  },
+  "notPerformed": [
+    "No further true model calls after shared usage reached 10.",
+    "No production migration, deployment or VM expiry/quota change.",
+    "No real SMTP, Push or Telegram message.",
+    "No browser rerun, broad regression or Computer Use."
+  ],
+  "remainingGates": [
+    "Complete the original document/citation/edit/new-conversation flow within the unchanged budget.",
+    "Provision approved SMTP sender/config and verify delivery; local capture evidence is insufficient.",
+    "Set invitation scale, retention, operations/alert destination and actual hosting budget.",
+    "Resolve VM capacity while preserving active images, rollback and data; backup, compatible migration, restore and deployment remain pending."
+  ]
+}

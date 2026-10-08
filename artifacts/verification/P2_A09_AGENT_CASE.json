@@ -1,0 +1,35 @@
+{
+  "purpose": "Synthetic connected Agent outcome acceptance; not a fixed tool sequence.",
+  "limits": {
+    "runs": 5,
+    "modelCalls": 12,
+    "queryEmbeddings": 6,
+    "businessCalls": 55,
+    "accounts": 1,
+    "children": 1,
+    "notifications": 0,
+    "externalMail": 0,
+    "automaticRetries": 0,
+    "sharedAttempts": 12,
+    "sharedAttemptsMeaning": "Generation and query embedding share the same daily usage ledger. Up to 3 runs consume at most 12 combined attempts; preserve incomplete state at the limit, do not raise 12/user or 20/global.",
+    "resumeReason": "Preserve two stopped runs: initial unavailable (one generation) and successful Vertex response followed by a document capability prompt-version mismatch (one generation, one loader call). Main reproduced the mismatch offline and aligned summary-report 0.1.4 / pack 0.1.33. One explicit continuation may now finish the three cases on the same fixture; total generation+embedding stays 12, daily 12/user and 20/global unchanged, no automatic retry."
+  },
+  "messages": [
+    {
+      "id": "clarify",
+      "text": "想幫阿仔整份準備單。",
+      "expect": "Clarify the missing purpose without inventing age, date or executing unrelated actions."
+    },
+    {
+      "id": "grounded_prepare",
+      "text": "係去香港健康院問加固，佢大約半歲。我想問點開始加固同要留意啲乜。請引用家庭健康服務資料，整理一份到診準備單，加上「帶健康手冊」及「問開始加固方法」這兩項。日期未定，唔好安排任務或通知。",
+      "expect": "Use applicable official evidence for the answer; retain approximate age, no invented birthday/date. Persist a preparation document, including scoped confirmation if required."
+    },
+    {
+      "id": "targeted_edit",
+      "text": "只把剛才準備單清單的「帶健康手冊」改為「帶最新生長記錄」，其他項目同標題都唔改。",
+      "expect": "Find the same document from preceding conversation; persist the requested item revision after the existing explicit confirmation boundary if required. Preserve other content and identity."
+    }
+  ],
+  "acceptance": "Use real ProductAgent handler, Runner, Vertex provider, PostgreSQL and current public knowledge. Reopen pool/services once, then read the same latest document/history with real scope checks. Stop on first failure; preserve encrypted fixture/results outside repository. Do not accept unexpected tasks, contacts, dates, health facts or sharing changes. Main reviews citations and useful clarification; automated structural checks cannot prove clinical quality."
+}

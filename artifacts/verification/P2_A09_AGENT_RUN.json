@@ -1,0 +1,426 @@
+{
+  "state": "stopped",
+  "code": "a09_run_not_completed",
+  "stage": "grounded_prepare",
+  "checkedAt": "2026-10-08T02:08:01.563Z",
+  "caseSha256": "686400e2cb455fdc6faa6949b99a92c1534f43e78d251f234ff5566ea518a8ee",
+  "version": "b30a7b28b8f00f72013e2f6a01a6e65832856549",
+  "scriptSha256": "9342f16b2303dfec9009c7f160c88a0756e23c5c378729f34e4e1bc7299b48cd",
+  "database": "p2_a08_service_20261008",
+  "limits": {
+    "runs": 5,
+    "modelCalls": 12,
+    "queryEmbeddings": 6,
+    "sharedAttempts": 12,
+    "businessCalls": 55
+  },
+  "sqlReadCap": 120,
+  "counters": {
+    "businessCalls": 25,
+    "sqlReads": 38,
+    "runs": 4,
+    "poolRebuilds": 0,
+    "generationRequests": 9,
+    "embeddingRequests": 1,
+    "adcRequests": 4,
+    "blockedNetwork": 0,
+    "suppressedLogs": 1
+  },
+  "fixture": {
+    "accounts": 1,
+    "children": 1,
+    "preserved": true,
+    "userHash": "4768c8f698a3af3f237716db3a6b56b78d069da5225def281cb71908598ea839",
+    "childHash": "fd97cbaff7a0f0ef5dd79ad758dd047718fa33698c720091c5c0cfaa3777a37b"
+  },
+  "checks": [
+    "trial_fixture_verified_and_acknowledged_not_smtp",
+    "first_failure_frozen_same_fixture_and_original_usage",
+    "second_failure_frozen_prompt_fix_loaded_same_fixture_usage",
+    "clarification_completed_without_business_mutation"
+  ],
+  "runs": [
+    {
+      "caseId": "clarify",
+      "runId": "bed0ab16-46a2-4288-81cd-ff8629baf19e",
+      "state": "stopped",
+      "stopReason": "unavailable",
+      "countsKnown": true,
+      "counts": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "queryEmbeddings": 0
+      },
+      "tools": [],
+      "retrievalMode": "not_used",
+      "citationCount": 0,
+      "proposalCount": 0,
+      "confirmationBindingCount": 0,
+      "acceptedProposalIds": []
+    },
+    {
+      "caseId": "clarify",
+      "runId": "9918ed23-8e76-46db-b573-5d2919fe2e6d",
+      "state": "stopped",
+      "stopReason": "tool_unknown",
+      "countsKnown": true,
+      "counts": {
+        "modelCalls": 1,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "tools": [
+        {
+          "name": "load_capabilities",
+          "status": "unknown"
+        }
+      ],
+      "retrievalMode": "not_used",
+      "citationCount": 0,
+      "proposalCount": 0,
+      "confirmationBindingCount": 0,
+      "acceptedProposalIds": []
+    },
+    {
+      "caseId": "clarify",
+      "runId": "3a0daa0d-bb52-408d-b949-f097d9672d97",
+      "state": "completed",
+      "stopReason": null,
+      "countsKnown": true,
+      "counts": {
+        "modelCalls": 3,
+        "toolCalls": 3,
+        "queryEmbeddings": 0
+      },
+      "tools": [
+        {
+          "name": "load_capabilities",
+          "status": "succeeded"
+        },
+        {
+          "name": "read_context",
+          "status": "succeeded"
+        },
+        {
+          "name": "present_answer",
+          "status": "succeeded"
+        }
+      ],
+      "retrievalMode": "not_used",
+      "citationCount": 0,
+      "proposalCount": 0,
+      "confirmationBindingCount": 0,
+      "acceptedProposalIds": []
+    },
+    {
+      "caseId": "grounded_prepare",
+      "runId": "a988569d-88b8-4c52-ba06-8a8150c6ede8",
+      "state": "stopped",
+      "stopReason": "model_limit",
+      "countsKnown": true,
+      "counts": {
+        "modelCalls": 4,
+        "toolCalls": 5,
+        "queryEmbeddings": 1
+      },
+      "tools": [
+        {
+          "name": "load_capabilities",
+          "status": "succeeded"
+        },
+        {
+          "name": "search_knowledge",
+          "status": "succeeded"
+        },
+        {
+          "name": "generate_family_document",
+          "status": "succeeded"
+        },
+        {
+          "name": "propose_family_document_change",
+          "status": "conflict"
+        },
+        {
+          "name": "list_family_document_versions",
+          "status": "rejected"
+        }
+      ],
+      "retrievalMode": "not_used",
+      "citationCount": 0,
+      "proposalCount": 0,
+      "confirmationBindingCount": 0,
+      "acceptedProposalIds": []
+    }
+  ],
+  "usage": [
+    {
+      "phase": "clarify_before",
+      "day": "2026-10-08",
+      "global_attempts": 0,
+      "user_attempts": 0,
+      "generations": 0,
+      "embeddings": 0,
+      "generation_usage_unknown": 0,
+      "generation_input_tokens": "0",
+      "generation_output_tokens": "0",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "0"
+    },
+    {
+      "phase": "clarify_after",
+      "day": "2026-10-08",
+      "global_attempts": 1,
+      "user_attempts": 1,
+      "generations": 1,
+      "embeddings": 0,
+      "generation_usage_unknown": 1,
+      "generation_input_tokens": "0",
+      "generation_output_tokens": "0",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "0"
+    },
+    {
+      "phase": "reviewed_resume_preflight",
+      "day": "2026-10-08",
+      "global_attempts": 1,
+      "user_attempts": 1,
+      "generations": 1,
+      "embeddings": 0,
+      "generation_usage_unknown": 1,
+      "generation_input_tokens": "0",
+      "generation_output_tokens": "0",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "0"
+    },
+    {
+      "phase": "clarify_before",
+      "day": "2026-10-08",
+      "global_attempts": 1,
+      "user_attempts": 1,
+      "generations": 1,
+      "embeddings": 0,
+      "generation_usage_unknown": 1,
+      "generation_input_tokens": "0",
+      "generation_output_tokens": "0",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "0"
+    },
+    {
+      "phase": "clarify_after",
+      "day": "2026-10-08",
+      "global_attempts": 2,
+      "user_attempts": 2,
+      "generations": 2,
+      "embeddings": 0,
+      "generation_usage_unknown": 2,
+      "generation_input_tokens": "12959",
+      "generation_output_tokens": "16",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "0"
+    },
+    {
+      "phase": "prompt_fix_resume_preflight",
+      "day": "2026-10-08",
+      "global_attempts": 2,
+      "user_attempts": 2,
+      "generations": 2,
+      "embeddings": 0,
+      "generation_usage_unknown": 2,
+      "generation_input_tokens": "12959",
+      "generation_output_tokens": "16",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "0"
+    },
+    {
+      "phase": "clarify_before",
+      "day": "2026-10-08",
+      "global_attempts": 2,
+      "user_attempts": 2,
+      "generations": 2,
+      "embeddings": 0,
+      "generation_usage_unknown": 2,
+      "generation_input_tokens": "12959",
+      "generation_output_tokens": "16",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "0"
+    },
+    {
+      "phase": "clarify_after",
+      "day": "2026-10-08",
+      "global_attempts": 5,
+      "user_attempts": 5,
+      "generations": 5,
+      "embeddings": 0,
+      "generation_usage_unknown": 5,
+      "generation_input_tokens": "61846",
+      "generation_output_tokens": "129",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "0"
+    },
+    {
+      "phase": "grounded_prepare_before",
+      "day": "2026-10-08",
+      "global_attempts": 5,
+      "user_attempts": 5,
+      "generations": 5,
+      "embeddings": 0,
+      "generation_usage_unknown": 5,
+      "generation_input_tokens": "61846",
+      "generation_output_tokens": "129",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "0"
+    },
+    {
+      "phase": "grounded_prepare_after",
+      "day": "2026-10-08",
+      "global_attempts": 10,
+      "user_attempts": 10,
+      "generations": 9,
+      "embeddings": 1,
+      "generation_usage_unknown": 9,
+      "generation_input_tokens": "124973",
+      "generation_output_tokens": "708",
+      "generation_cached_tokens": "0",
+      "embedding_usage_unknown": 0,
+      "embedding_input_tokens": "11"
+    }
+  ],
+  "reviewedResumeUsed": true,
+  "reviewedPromptFixUsed": true,
+  "promptFixVerification": {
+    "packVersion": "0.1.33",
+    "summaryModuleVersion": "0.1.4",
+    "moduleIds": [
+      "core.identity-and-trust",
+      "core.conversation",
+      "core.context-and-privacy",
+      "core.tool-use",
+      "core.output",
+      "domain.childcare-hk.profile",
+      "domain.childcare-hk.safety",
+      "domain.childcare-hk.sources-freshness",
+      "domain.childcare-hk.care-workflows",
+      "module.knowledge-answering",
+      "module.chat",
+      "module.product-tools",
+      "module.summary-report"
+    ],
+    "manifestSha256": "636943906ca3b35ff2e1a52dcbd7dd6e034b1c446d6b15722eb59d19424ad164",
+    "summaryModuleSha256": "2a770666b4acca77225c164ae9d6e542019f54de792fe2cd026894b18260597a"
+  },
+  "previousFailures": [
+    {
+      "batch": 1,
+      "code": "a09_run_not_completed",
+      "name": "Error"
+    },
+    {
+      "batch": 2,
+      "code": "a09_run_not_completed",
+      "name": "Error"
+    }
+  ],
+  "firstFailureCheckpoint": {
+    "batch-01-fixture.enc": {
+      "path": "C:/Users/2NTTY/.codex/p2-a09-local/batch-01-fixture.enc",
+      "sha256": "f251afb198e292987e7f6dcc4ce7632a60efa5d3f72dc563077a111db9fda130"
+    },
+    "batch-01-private.enc": {
+      "path": "C:/Users/2NTTY/.codex/p2-a09-local/batch-01-private.enc",
+      "sha256": "5c9c3733334a814ffc31b935c91c963ed4aa143e9e620a3f35604e1ed7d7e8f0"
+    },
+    "batch-01-metadata.json": {
+      "path": "C:/Users/2NTTY/.codex/p2-a09-local/batch-01-metadata.json",
+      "sha256": "102d05c9cb2e3f997f696241b9fed360180171dab2d9218ce935bd3e341a06b6"
+    }
+  },
+  "secondFailureCheckpoint": {
+    "batch-02-fixture.enc": {
+      "path": "C:/Users/2NTTY/.codex/p2-a09-local/batch-02-fixture.enc",
+      "sha256": "04fa4713cf895b3f038eff77c2ce20c3aebcee4535ffe98b3090fca1de77b09c"
+    },
+    "batch-02-private.enc": {
+      "path": "C:/Users/2NTTY/.codex/p2-a09-local/batch-02-private.enc",
+      "sha256": "681d9318b8453344516f7b2a4a1fba16086e864cdec8540b3bb23a7d63316cac"
+    },
+    "batch-02-metadata.json": {
+      "path": "C:/Users/2NTTY/.codex/p2-a09-local/batch-02-metadata.json",
+      "sha256": "91add74a57aeb9088ed5db0e1a8977726ea279add7698d8597bd227ae4732034"
+    }
+  },
+  "safeVertexFailures": [],
+  "vertexHttp": [
+    {
+      "caseId": "clarify",
+      "httpStatus": 200,
+      "modelMethod": "gemini-3.1-flash-lite:generateContent"
+    },
+    {
+      "caseId": "clarify",
+      "httpStatus": 200,
+      "modelMethod": "gemini-3.1-flash-lite:generateContent"
+    },
+    {
+      "caseId": "clarify",
+      "httpStatus": 200,
+      "modelMethod": "gemini-3.1-flash-lite:generateContent"
+    },
+    {
+      "caseId": "clarify",
+      "httpStatus": 200,
+      "modelMethod": "gemini-3.1-flash-lite:generateContent"
+    },
+    {
+      "caseId": "grounded_prepare",
+      "httpStatus": 200,
+      "modelMethod": "gemini-3.1-flash-lite:generateContent"
+    },
+    {
+      "caseId": "grounded_prepare",
+      "httpStatus": 200,
+      "modelMethod": "gemini-embedding-001:predict"
+    },
+    {
+      "caseId": "grounded_prepare",
+      "httpStatus": 200,
+      "modelMethod": "gemini-3.1-flash-lite:generateContent"
+    },
+    {
+      "caseId": "grounded_prepare",
+      "httpStatus": 200,
+      "modelMethod": "gemini-3.1-flash-lite:generateContent"
+    },
+    {
+      "caseId": "grounded_prepare",
+      "httpStatus": 200,
+      "modelMethod": "gemini-3.1-flash-lite:generateContent"
+    }
+  ],
+  "networkErrorCodes": [],
+  "poolRebuilds": 0,
+  "encrypted": {
+    "fixtureSha256": "8f3d88ab9dc2b01b90da68cad159fc92e83eaeb2d2dbaa93540ed805a2b995dd",
+    "evidenceSha256": "8435308f17afbaa37080eda59838365498caf2cba28f3c5432c81bd852bbc2b1",
+    "fixtureAad": "p2-a09:fixture:1",
+    "evidenceAad": "p2-a09:evidence:1"
+  },
+  "notifications": 0,
+  "externalMail": 0,
+  "automaticRetries": 0,
+  "reviewRequired": [
+    "Useful clarification and no invented age/date",
+    "Applicable FHS citations supporting the actual answer",
+    "Useful preparation content and scoped approval",
+    "Same document, exact requested item change and persistence"
+  ],
+  "limitation": "Structural checks only; main must privately review decrypted content. No browser, deployment, SMTP or human acceptance is claimed."
+}

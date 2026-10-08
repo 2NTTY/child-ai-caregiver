@@ -28,6 +28,41 @@ const metadata = (item: FamilyDocument) => ({ id: item.id, kind: item.kind, purp
   autoRefresh: item.autoRefresh, path: item.kind === "growth_report" ? "/growth?tab=archive" : "/summary?tab=preparation" });
 export function createAgentDocumentTools(store: FamilyDocumentStore, agent: ProductAgentStore, run: AgentRunContext, authorize: () => Promise<boolean>): AgentTool[] {
   const { scope, runId } = run;
+  type Description = NonNullable<Awaited<ReturnType<FamilyDocumentStore["describe"]>>>;
+  type SavedReceipt = { receiptId: string; message?: string };
+  const fits = (result: AgentToolResult) => JSON.stringify(result).length <= Math.min(8000, run.budget.toolResponseCharacters) - 256;
+  const minimal = (item: FamilyDocument, saved?: SavedReceipt, authorityVersion?: string): AgentToolResult => ({
+    status: "succeeded", ...(saved ? { reference: item.id } : {}), data: {
+      ...(saved ? { receiptId: saved.receiptId } : {}), document: { id: item.id, version: item.version },
+      ...(authorityVersion ? { authorityVersion } : {}), contentPartial: true, readRequired: true, snapshot: null,
+    },
+  });
+  const view = (description: Description, saved?: SavedReceipt): AgentToolResult => {
+    const item = description.item;
+    const result: AgentToolResult = { status: "succeeded", ...(saved ? { reference: item.id } : {}), data: {
+      ...(saved ?? {}), authorityVersion: description.authorityVersion, document: metadata(item),
+      manifest: item.manifest ? { snapshotId: item.manifest.snapshotId, snapshotVersion: item.manifest.snapshotVersion,
+        invalidated: item.manifest.invalidated, sections: item.manifest.sections.slice(0, 20).map(section => ({ id: section.id, kind: section.kind, itemCount: section.itemIds.length })) } : null,
+      manifestPartial: (item.manifest?.sections.length ?? 0) > 20, contentPartial: true, readRequired: true, snapshot: null,
+    } };
+    if (item.readState === "ready" && item.current && !item.manifest?.invalidated) {
+      const complete: AgentToolResult = { ...result, data: { ...result.data, snapshot: item.current, contentPartial: false, readRequired: false } };
+      if (fits(complete)) return complete;
+    }
+    return fits(result) ? result : minimal(item, saved, description.authorityVersion);
+  };
+  const savedView = async (item: FamilyDocument, saved: SavedReceipt): Promise<AgentToolResult> => {
+    // A successful write receipt survives any failed or changed readback; never invite a duplicate write.
+    const fallback = minimal(item, saved);
+    try {
+      if (!await authorize()) return fallback;
+      const description = await store.describe(scope.userId, scope.childId, item.id);
+      if (!description || description.item.id !== item.id || description.item.version !== item.version) return fallback;
+      const written = metadata(item), current = metadata(description.item);
+      if (current.snapshotId !== written.snapshotId || current.snapshotVersion !== written.snapshotVersion) return fallback;
+      return view(description, saved);
+    } catch { return fallback; }
+  };
   const guard = async (action: () => Promise<AgentToolResult>): Promise<AgentToolResult> => {
     if (!await authorize()) return { status: "rejected" };
     try { return await action(); } catch(error) {
@@ -46,9 +81,7 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
         if (args.cursor) return { status: "rejected", data: { code: "invalid_input" } };
         const description = await store.describe(scope.userId, scope.childId, args.documentId as string);
         if (!description) return { status: "rejected" };
-        return { status: "succeeded", data: { authorityVersion: description.authorityVersion, document: metadata(description.item), manifest: description.item.manifest ? { snapshotId: description.item.manifest.snapshotId, snapshotVersion: description.item.manifest.snapshotVersion,
-            invalidated: description.item.manifest.invalidated, sections: description.item.manifest.sections.slice(0, 20).map(section => ({ id: section.id, kind: section.kind, itemCount: section.itemIds.length })) } : null,
-          manifestPartial: (description.item.manifest?.sections.length ?? 0) > 20, contentPartial: true, snapshot: null } };
+        return view(description);
       }) },
     { name: "read_family_document_content", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.read_family_document_content, authorize,
       parameters: z.object({ documentId: z.uuid(), snapshotId: z.uuid(), snapshotVersion: z.number().int().min(1), offset: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER) }).strict(), execute: args => guard(async () => {
@@ -75,14 +108,14 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
         const { sourceQuote, ...values } = args;
         const request = documentRequestSchema.parse({ ...values, title: args.kind === "growth_report" ? "家庭成長報告" : labels[args.purpose as keyof typeof labels] });
         const opId = receiptId(runId, context.callId), item = await agent.writeDocument(scope, runId, opId, sourceQuote as string, { request });
-        return item ? { status: "succeeded", reference: item.id, data: { receiptId: opId, document: metadata(item), message: item.report?.phase === "building" ? "已保存報告整理工作，資料仍在分批處理；尚未完成報告。" : "已保存家庭資料整理；不是新確認事實或照護完成。" } } : { status: "rejected" };
+        return item ? savedView(item, { receiptId: opId, message: item.report?.phase === "building" ? "已保存報告整理工作，資料仍在分批處理；尚未完成報告。" : "已保存家庭資料整理；不是新確認事實或照護完成。" }) : { status: "rejected" };
       }) },
     { name: "change_family_document", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.change_family_document, authorize,
       parameters: z.object({ sourceQuote: z.string().min(2).max(1000), documentId: z.uuid(), change: documentChangeParameters }).strict(), execute: (args, context) => guard(async () => {
         const input = documentChangeParameters.parse(args.change);
         const change = documentChangeSchema.parse(input.action === "patch" ? { ...input, confirmShared: true } : input);
         const opId = receiptId(runId, context.callId), item = await agent.writeDocument(scope, runId, opId, args.sourceQuote as string, { id: args.documentId as string, change });
-        return item ? { status: "succeeded", reference: item.id, data: { receiptId: opId, document: metadata(item) } } : { status: "rejected" };
+        return item ? savedView(item, { receiptId: opId }) : { status: "rejected" };
       }) },
     { name: "propose_family_document_change", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.propose_family_document_change, authorize,
       parameters: z.object({ documentId: z.uuid(), change: patchParameters }).strict(), execute: (args, context) => guard(async () => {
