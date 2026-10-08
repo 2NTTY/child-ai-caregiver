@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useId, useRef, useState, type ReactNode } from "react";
@@ -119,12 +120,12 @@ function ChannelReviewPanel({ model, actions, production }: { model: SharedModel
   </>;
 }
 
-function RecentDeliveries({ deliveries }: { deliveries: ChannelDeliveryView[] }) {
+function RecentDeliveries({ deliveries, emptyReady }: { deliveries: ChannelDeliveryView[]; emptyReady: boolean }) {
   const latest = [...deliveries].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)).slice(0, 20);
   return <View style={[styles.stack, styles.group]}>
     <Text accessibilityRole="header" style={styles.title}>最近投遞</Text>
     <Text style={styles.meta}>最多顯示最近 20 項。渠道已接受不等於已送達或已讀；投遞及本人回覆均不代表照護任務已完成。</Text>
-    {latest.length === 0 ? <Text style={styles.meta}>目前沒有投遞紀錄。</Text> : latest.map(delivery => <View key={delivery.id} style={styles.entry}>
+    {latest.length === 0 ? emptyReady ? <EmptyListCard title="已載入資料中暫無投遞紀錄" detail="只代表本次取得的最近紀錄。" /> : null : latest.map(delivery => <View key={delivery.id} style={styles.entry}>
       <View style={styles.top}><Text style={styles.title}>{delivery.label}</Text>
         <AppStatusBadge label={channelDeliveryLabels[delivery.status]} tone={delivery.status === "unknown" ? "warning" : delivery.status === "rejected" ? "error" : delivery.status === "stopped" ? "neutral" : "info"} /></View>
       <Text style={styles.meta}>建立：{channelTime(delivery.createdAt)}（香港時間）</Text>
@@ -193,7 +194,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
       <ChannelReviewPanel model={model} actions={actions} production={production} />
       <View style={[styles.stack, styles.group]}>
         <Text accessibilityRole="header" style={styles.title}>本人瀏覽器訂閱</Text>
-        {model.bindings.length === 0 ? <Text style={styles.meta}>目前沒有本人瀏覽器訂閱。</Text> : model.bindings.map(binding => {
+        {model.bindings.length === 0 ? model.online ? <EmptyListCard title="目前沒有本人瀏覽器訂閱" /> : null : model.bindings.map(binding => {
           const deliveryNeedsReview = pushDeliveryNeedsReview(model.deliveries, binding.id);
           const confirmed = !!confirmedOperation && !!bindingIntent && model.online && ready && !model.locked && !model.review && !model.conflict
             && binding.version > bindingIntent.baseVersion && (bindingIntent.kind === "enable" ? binding.id === model.currentBindingId && binding.status === "active" : binding.id === bindingIntent.id && binding.status === "revoked");
@@ -218,7 +219,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
         <Text style={styles.meta}>一般測試按最近 24 小時計算，最多 3 次；兩次測試須相隔至少 60 秒。</Text>
         <Text style={cooldownReady ? styles.meta : styles.warning}>{model.nextTestAt ? `下一次可測試時間：${channelTime(model.nextTestAt)}（香港時間）${cooldownReady ? "，冷卻時間已過。" : "，冷卻期間不可再發測試。"}` : "目前沒有測試冷卻時間。"}</Text>
       </View>
-      <RecentDeliveries deliveries={model.deliveries} />
+      <RecentDeliveries deliveries={model.deliveries} emptyReady={ready && model.online} />
     </>}
   </SectionCard>;
 }
@@ -275,7 +276,7 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
           <AppButton label={production ? "發送一次一般測試" : "預覽一般測試"} variant="quiet" disabled={!canTest} onPress={actions.stageTest} />
         </View> : null}
         {model.binding.status !== "revoked" && testBlocked ? <Text style={styles.warning}>仍有排隊中、發送中或未有本人回覆的未知投遞；先查核原投遞，暫不可另發測試。</Text> : null}
-      </View> : <Text style={styles.meta}>目前沒有本人 Telegram 綁定。</Text>}
+      </View> : model.online ? <EmptyListCard title="目前沒有本人 Telegram 綁定" /> : null}
       {!existingBinding ? <AppButton label={production ? model.challenge ? "重新開始私人綁定" : "開始私人綁定" : model.challenge ? "預覽重新開始私人綁定" : "預覽開始私人綁定"} disabled={!canBegin} onPress={actions.stageBegin} /> : null}
       {model.challenge ? <View style={styles.entry}>
         <Text accessibilityRole="header" style={styles.title}>{challengeExpired ? "私人綁定步驟已過期" : "私人綁定步驟"}</Text>
@@ -297,7 +298,7 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
         </>}
       </View> : null}
       <ChannelReviewPanel model={model} actions={actions} production={production} />
-      <RecentDeliveries deliveries={model.deliveries} />
+      <RecentDeliveries deliveries={model.deliveries} emptyReady={ready && model.online} />
     </>}
   </SectionCard>;
 }

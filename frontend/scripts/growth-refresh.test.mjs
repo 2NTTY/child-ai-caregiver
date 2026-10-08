@@ -57,7 +57,7 @@ function harness(entry, symbol, initialArgs, injectedWorkspace = () => null) {
       if (name === './GrowthConcernManualFallback') return { GrowthConcernManualFallback: 'GrowthConcernManualFallback' };
       if (name === './GrowthConcernTimeline') return { GrowthConcernIndex: 'GrowthConcernIndex', GrowthConcernTimeline: 'GrowthConcernTimeline' };
       if (name.endsWith('/ui')) return Object.fromEntries(['AppButton', 'AppSelect', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'UnderlineTabs'].map(value => [value, value]));
-      for (const component of ['AppCheckbox', 'PageFrame', 'StatusAnnouncement', 'ReadStateNotice', 'AppIcon', 'AppStatusBadge']) {
+      for (const component of ['AppCheckbox', 'PageFrame', 'StatusAnnouncement', 'ReadStateNotice', 'EmptyListCard', 'AppIcon', 'AppStatusBadge']) {
         if (name.endsWith(`/${component}`)) return { [component]: component };
       }
       if (!name.startsWith('.')) return require(name);

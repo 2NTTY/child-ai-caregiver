@@ -21,7 +21,7 @@ function harness({ pathname = '/', width = 390, enabled = true, platform = 'web'
     useRef: value => ({ current: value }), useEffect() {}, useLayoutEffect() {}, useMemo: callback => callback(),
   };
   const leave = callback => { events.push('guard'); pending = callback; };
-  const preview = { model: { caregiverName: 'parent', selectedChildId: enabled ? 'child' : null, children: [{ id: 'child', accessRole: 'owner' }] },
+  const production = { identityKey: 'parent', scopeKey: enabled ? 'parent:child' : null, notice: null, dismissNotice() {}, model: { caregiverName: 'parent', selectedChildId: enabled ? 'child' : null, children: [{ id: 'child', accessRole: 'owner' }] },
     actions: { openAgentPhoto: () => events.push('photo') }, agentDraftScope: enabled ? 'parent:child' : null,
     agentAttachments: [], chatDraft: '', scenario: 'normal', openAgentDraft: (...args) => events.push(['draft', ...args]), addAgentAttachment: () => true };
   const native = { Platform: { OS: platform, select: values => values[platform] ?? values.default }, View: 'View', Pressable: 'Pressable',
@@ -40,7 +40,9 @@ function harness({ pathname = '/', width = 390, enabled = true, platform = 'web'
       if (name === 'react-native-svg') return { __esModule: true, default: 'Svg', Path: 'Path' };
       if (name === 'expo-router') return { usePathname: () => pathname, useRouter: () => ({ push: target => events.push(['push', target]) }) };
       if (name === 'react-native-safe-area-context') return { SafeAreaView: 'SafeAreaView', useSafeAreaInsets: () => ({ bottom: 24 }) };
-      if (name.endsWith('/PreviewContext')) return { usePreview: () => preview };
+      if (name.endsWith('/useProductionHome')) return { useProductionHome: () => production };
+      // PreviewContext is now a compatibility re-export of the same production owner.
+      if (name.endsWith('/PreviewContext')) return { usePreview: () => production };
       if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewNavigation: () => leave, PreviewLink: 'PreviewLink' };
       if (name.endsWith('/fixture')) return { scenarioLabels: {} };
       if (name.endsWith('/branding')) return { brand: {} };
@@ -48,7 +50,18 @@ function harness({ pathname = '/', width = 390, enabled = true, platform = 'web'
         const target = path.resolve(path.dirname(filename), name);
         return load(existsSync(`${target}.ts`) ? `${target}.ts` : `${target}.tsx`);
       }
-      return new Proxy({}, { get: (_target, key) => String(key) });
+      const components = {
+        '/AppScrollView': ['AppScrollView'], '/motion': ['MotionDrawerOverlay', 'MotionDrawerRight', 'MotionEntrance', 'MotionScopeBoundary'],
+        '/BrandLogo': ['BrandLogo'], '/AppIcon': ['AppIcon'], '/AgentEntryButton': ['AgentEntryButton'],
+        '/MobileQuickInputDock': ['MobileQuickInputDock'], '/RightRailContent': ['RightRailContent'],
+        '/ChildKeyFacts': ['ChildKeyFacts'], '/ChildPicker': ['ChildPicker'], '/CompactHeaderIdentity': ['CompactHeaderIdentity'],
+        '/NotificationBell': ['NotificationBell'], '/ToolbarIconButton': ['ToolbarIconButton'],
+        '/PhotoFilePicker': ['PhotoFilePicker'], '/DirectionalPressable': ['DirectionalPressable'],
+        '/AssistantInputDialog': ['AssistantInputDialog'],
+      };
+      const exports = Object.entries(components).find(([suffix]) => name.endsWith(suffix))?.[1];
+      assert.ok(exports, `Unmocked navigation dependency: ${name}`);
+      return Object.fromEntries(exports.map(component => [component, component]));
     }, module, module.exports);
     cache.set(filename, module.exports); return module.exports;
   }

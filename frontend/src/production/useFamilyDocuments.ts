@@ -15,6 +15,7 @@ type Pending = { attempt: Attempt; checked: boolean; reconfirm: boolean; selecti
 type VersionRead = { page: DocumentVersionPage | null; busy: boolean; error: boolean };
 type ContentBuffer = { documentId: string; snapshotId: string; snapshotVersion: number; documentVersion: number; authorityVersion: string;
   text: string; totalCharacters: number; nextOffset: number | null; complete: boolean; busy: boolean; error: boolean; invalidated: boolean; snapshot: DocumentSnapshot | null };
+const savedAwaitingSelectionRead = "先前文件的保存已確認；目前選取的文件仍待重新讀取。";
 const snapshotKey = (snapshot: DocumentSnapshot) => snapshot.id + ":" + snapshot.version;
 const preparationView = (item: FamilyDocument): PreparationDocumentView => {
   const snapshot = item.readState === "invalidated" ? null : item.current;
@@ -51,7 +52,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const [refreshQueued, setRefreshQueued] = useState(false);
   const original = useRef<Pending | null>(null), inFlight = useRef(false), latest = useRef({ page, load, dirty });
   const selection = useRef({ id: null as string | null, generation: 0 });
-  const [listPages, setListPages] = useState({ active: { cursor: null as string | null, more: false }, archived: { started: false, cursor: null as string | null, more: false } });
+  const readingNeedsRecheck = useRef(false);
+  const [listPages, setListPages] = useState({ active: { cursor: null as string | null, more: false }, archived: { started: false, ready: false, cursor: null as string | null, more: false } });
   const [pageError, setPageError] = useState(false);
   const [versionReads, setVersionReads] = useState<Record<string, VersionRead>>({});
   const [content, setContent] = useState<ContentBuffer | null>(null);
@@ -60,9 +62,20 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   reads.current.versions = versionReads; reads.current.content = content;
   const clearContent = () => { reads.current.contentGeneration++; reads.current.content = null; setContent(null); };
   const clearReading = () => { reads.current.generation++; reads.current.versions = {}; setVersionReads({}); clearContent(); };
-  const applyFreshPage = (value: DocumentPage) => {
-    clearReading(); setPage(value); setLoad("ready"); setPageError(false);
-    setListPages({ active: { cursor: value.nextCursor ?? null, more: value.hasMore }, archived: { started: false, cursor: null, more: false } });
+  const applyFreshPage = (value: DocumentPage, preserveUnchangedReading = false) => {
+    const before = latest.current.page;
+    if (!preserveUnchangedReading || before?.authorityVersion !== value.authorityVersion) clearReading();
+    else {
+      const unchanged = (id: string, version: number) => value.items.some(item => item.id === id && item.version === version && item.readState !== "invalidated");
+      reads.current.versions = Object.fromEntries(Object.entries(reads.current.versions).filter(([id]) => {
+        const item = before.items.find(item => item.id === id); return item && unchanged(id, item.version);
+      }));
+      setVersionReads(reads.current.versions);
+      const selected = reads.current.content;
+      if (selected && !unchanged(selected.documentId, selected.documentVersion)) clearContent();
+    }
+    setPage(value); setLoad("ready"); setPageError(false);
+    setListPages({ active: { cursor: value.nextCursor ?? null, more: value.hasMore }, archived: { started: false, ready: false, cursor: null, more: false } });
   };
   latest.current = { page, load, dirty };
   const canManage = env.role === "owner" || env.role === "caregiver";
@@ -71,7 +84,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const clearAccess = (error: unknown) => {
     if (!runtime.accessError(error)) return false;
     api.reset(); original.current = null; setPending(null); setPage(null); setDirty(false); setSelectedId(null); setJustArchivedId(null);
-    clearReading(); setPageError(false);
+    clearReading(); setPageError(false); readingNeedsRecheck.current = false;
     selection.current = { id: null, generation: selection.current.generation + 1 };
     setOperation({ state: "none", message: "", reference: null }); setEpoch(value => value + 1); return true;
   };
@@ -91,8 +104,24 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
             value = { ...value, items: [...value.items, item] };
           }
         }
+        const selected = { ...selection.current };
+        if (selected.id && !value.items.some(item => item.id === selected.id)) {
+          const item = await runtime.read(["item", selected.id], next => api.getItem(env.childId!, selected.id!, next, env.userId!), signal);
+          value = { ...value, items: [...value.items, item] };
+        }
         if (!current()) return;
-        applyFreshPage(value); setRefreshQueued(false);
+        // Automatic reads may still detect revocation, but only explicit recheck can reveal this selection again.
+        if (!manual && readingNeedsRecheck.current) {
+          clearReading(); setPage(null); setLoad("error"); return;
+        }
+        if (selection.current.generation !== selected.generation) {
+          readingNeedsRecheck.current = true;
+          clearReading(); setPage(null); setLoad("error"); setNotice("選取已改變，請重新讀取目前文件；未重新核對的內容暫不展示。"); return;
+        }
+        applyFreshPage(value, !manual);
+        if (manual && readingNeedsRecheck.current) setOperation(before => before.state === "saved" && before.message === savedAwaitingSelectionRead
+          ? { ...before, message: "先前文件的保存已確認。" } : before);
+        readingNeedsRecheck.current = false; setRefreshQueued(false);
         if (entry?.reconfirm) {
           original.current = null; setPending(null);
           setOperation({ state: "conflict", reference: null, message: "原提交未獲接納；已讀取目前版本，請重新核對後明確提交。" });
@@ -123,7 +152,11 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         const item = attempt.kind === "create" ? await api.create(env.childId!, attempt.input, signal, env.userId!)
           : await api.change(env.childId!, attempt.id, attempt.input, signal, env.userId!);
         if (!current()) return;
-        original.current = null; setPending(null); clearReading();
+        original.current = null; setPending(null);
+        // Invalidate the changed document without dismissing a newer reader on another document.
+        reads.current.versions = Object.fromEntries(Object.entries(reads.current.versions).filter(([id]) => id !== item.id));
+        setVersionReads(reads.current.versions);
+        if (reads.current.content?.documentId === item.id) clearContent();
         if (attempt.kind === "create") { setDirty(false); setEpoch(value => value + 1); }
         setPage(before => before ? { ...before, items: before.items.some(old => old.id === item.id)
           ? before.items.map(old => old.id === item.id ? item : old) : [item, ...before.items] } : null);
@@ -140,7 +173,21 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
           const next = await read(signal);
           // Preserve the confirmed archive result for the immediate success/undo projection.
           if (item.status === "archived" && next.authorityVersion === actual.authorityVersion && !next.items.some(value => value.id === item.id)) next.items.push(item);
-          if (current()) { applyFreshPage(next); }
+          const selected = { ...selection.current };
+          if (selected.id && !next.items.some(value => value.id === selected.id)) {
+            const selectedItem = await runtime.read(["item", selected.id], nextSignal => api.getItem(env.childId!, selected.id!, nextSignal, env.userId!), signal);
+            next.items.push(selectedItem);
+          }
+          if (current()) {
+            if (selection.current.generation === selected.generation) applyFreshPage(next, true);
+            else {
+              // Keep the newer selection intent, but do not expose an unverified page or snapshot.
+              readingNeedsRecheck.current = true;
+              clearReading(); setPage(null); setLoad("error");
+              setOperation({ state: "saved", reference: null, message: savedAwaitingSelectionRead });
+              setNotice("選取已改變；請重新讀取目前文件，毋須再次提交先前的保存。");
+            }
+          }
         } catch (error) {
           if (!current() || clearAccess(error)) return;
           setLoad("error"); setOperation({ state: "saved", reference: null, message: "原保存已確認，最新文件待讀回；請重新讀取，毋須再次提交。" });
@@ -169,7 +216,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         if (next.authorityVersion !== before.authorityVersion) { clearReading(); setPage(null); setLoad("error"); setPageError(true); setNotice("來源或權限基準已有變更，請重新讀取文件。"); return; }
         setPage(previous => previous && previous.authorityVersion === before.authorityVersion ? { ...previous,
           items: [...previous.items.filter(item => !next.items.some(value => value.id === item.id)), ...next.items] } : previous);
-        setListPages(previous => ({ ...previous, [status]: { ...previous[status], cursor: next.nextCursor ?? null, more: next.hasMore } }));
+        setListPages(previous => ({ ...previous, [status]: { ...previous[status], cursor: next.nextCursor ?? null, more: next.hasMore, ...(status === "archived" ? { ready: true } : {}) } }));
       } catch (error) { if (current() && !clearAccess(error)) { setPageError(true); setNotice("未能載入更多文件，已取得的內容保留。"); } }
       finally { if (current()) { inFlight.current = false; setBusy(false); } }
     });
@@ -257,7 +304,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     return preparationView(item);
   })[0] ?? null;
   const reading: FamilyDocumentReadingPort = { online: env.online && !runtime.lost, activeHasMore: listPages.active.more,
-    archiveStarted: listPages.archived.started, archiveHasMore: listPages.archived.more, pageBusy: busy, pageError,
+    archiveStarted: listPages.archived.started, archiveReady: listPages.archived.ready, archiveHasMore: listPages.archived.more, pageBusy: busy, pageError,
     indexes: visible?.items.map(item => { const value = versionReads[item.id]; return { documentId: item.id, title: item.current?.title ?? "文件",
       versions: value?.page?.items ?? [], started: !!value, busy: value?.busy ?? false, error: value?.error ?? false, hasMore: !!value?.page?.nextCursor }; }) ?? [],
     content: runtime.lost || !content ? null : { documentId: content.documentId, snapshotId: content.snapshotId, snapshotVersion: content.snapshotVersion,

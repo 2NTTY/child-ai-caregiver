@@ -1,0 +1,55 @@
+{
+  "package": "P2-A09 PR140 closeout",
+  "base": "c175eb9f124d6412da5541df7deb28614b27048c",
+  "originalHead": "93c64e41de076d9429cbe6f938fbc6042d2de857",
+  "recordedAt": "2026-10-08T18:37:26.635933+08:00",
+  "scope": "Merge current master; preserve prompt-version and bounded document-receipt fixes, original failures and administrative CLIs; remove the unused VM/SMTP overlay. No new runtime feature.",
+  "runtime": "v24.11.0",
+  "checks": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-name-pattern=pack, module and synthetic format versions",
+        "tests/agent-prompt-wiring.test.ts"
+      ],
+      "exit": 0,
+      "stdout": "✔ pack, module and synthetic format versions are valid independently (80.9294ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 192.3214\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/agent-document-receipts.test.ts"
+      ],
+      "exit": 0,
+      "stdout": "✔ document views inline authorized short snapshots and preserve bounded write receipts on readback failure (5.1086ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 697.1859\n",
+      "stderr": ""
+    }
+  ],
+  "originalEvidence": "P2_A09_CHECKS.json",
+  "remaining": [
+    "True Agent citation / document edit / new-conversation readback is not verified by this closeout.",
+    "Stable account service, backup recovery and deployment continue in F07/F08 on the Firestore route."
+  ],
+  "notPerformed": [
+    "No database, model, embedding, notification, browser, image rebuild, cloud resource or deployment operation."
+  ],
+  "localResolutionNote": "Initial WORKLOG common-prefix assertion stopped before rewriting the log; retained current master bytes and appended the exact two original A09 sections instead.",
+  "sourceHashes": {
+    "server/agent-document-tools.ts": "46e4cff08f65ab74bd1b4ce37416ac7952e51f94a32bbca60a796cca285a58ab",
+    "server/agent-document-tool-descriptions.ts": "4ed87af62cb28b5d235fd4665ac22477d58e251aa367718abd7c6686004a64c8",
+    "prompts/manifest.json": "636943906ca3b35ff2e1a52dcbd7dd6e034b1c446d6b15722eb59d19424ad164",
+    "prompts/modules/summary-report.md": "a1c4c595c43fc89869b78e979263d637d818add236dc5697e858ff09fee3c427",
+    "tests/agent-document-receipts.test.ts": "2c7031ad4277afe2a67327bdcd11987ff1cef428e6e5bdb9aaa1218d031c536b"
+  },
+  "staticReview": {
+    "diffCheck": "passed",
+    "conflictMarkers": "none",
+    "activeEntryLinks": "passed",
+    "masterWorklogPrefix": "unchanged",
+    "originalA09Logs": "preserved verbatim",
+    "originalFixFiles": "unchanged from reviewed PR140 head"
+  }
+}

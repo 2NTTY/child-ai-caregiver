@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "expo-router/entry",
+  "main": "index.js",
   "packageManager": "npm@11.8.0",
   "engines": {
     "node": ">=24.3.0 <25",

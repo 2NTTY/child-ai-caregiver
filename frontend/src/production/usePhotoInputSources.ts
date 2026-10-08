@@ -11,6 +11,7 @@ import type { SourceInput, SourceOperation, SourcesActions, SourcesViewModel, So
 import { validSourceIntakeProposal, validSourceIntakeText, type SourceIntake } from "../source-intake";
 import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironment";
 import { useProduction } from "./ProductionProvider";
+import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 
 type PendingSource = ({ kind: "create"; input: SharedInputCreate } | { kind: "confirm"; basis: SharedInput; input: SharedInputConfirmation } | { kind: "manage"; basis: SharedInput; input: SourceManagementChange } | { kind: "delete"; basis: SharedInput })
   & { checked: boolean; confirmed: boolean };
@@ -29,6 +30,7 @@ const intakeProjection = (draft: SourceManagementDraft, stage: SourceIntake["sta
 
 /** Existing shared-input HTTP actions, projected into the approved manual source UI. */
 export function usePhotoInputSources() {
+  const navigate = usePreviewNavigation();
   const env = useDomainEnvironment(), envRef = useRef(env); envRef.current = env;
   const production = useProduction(), productionRef = useRef(production); productionRef.current = production;
   const api = useMemo(() => createSharedInputApi(env.apiBaseUrl), [env.apiBaseUrl]);
@@ -48,6 +50,7 @@ export function usePhotoInputSources() {
   const available = () => current() && envRef.current.online && !!envRef.current.userId && !!envRef.current.childId && !ref.current.lost && Platform.OS === "web";
   const editable = () => envRef.current.role !== "viewer" && envRef.current.role !== null;
   const fresh = () => available() && ref.current.load === "ready" && !ref.current.busy && !ref.current.pending && !ref.current.latest && ref.current.operation.state !== "conflict";
+  const canRead = () => fresh() && !ref.current.direct && envRef.current.role !== null;
   const consentReset = { fetchConsent: false, modelConsent: false, sharedConsent: false, childFactConsent: false, reviewed: null, deleteScope: false, deleteFinal: false };
   const clearEditor = () => update({ resourceUnavailable: false, selected: null, latest: null, direct: null, composerSeed: null, draft: emptyPhotoDraft(), uncertainties: [], excerpt: "",
     confirmationKind: "reference", formKey: ref.current.formKey + 1, deleteOpen: false, intention: "", intakeStage: "awaiting_read", managementDraft: null, managementHistory: emptyHistory(), ...consentReset });
@@ -286,15 +289,23 @@ export function usePhotoInputSources() {
     create: input => { if (!model.fresh || !model.canChoose || !model.canCreate || state.selected || !sharedInputCreateSchema.safeParse(input).success || input.kind === "public_source" && !state.sources.some(source => source.id === input.sourceId) || !envRef.current.canStartWrite()) return;
       const entry: PendingSource = { kind: "create", input: { ...input }, checked: false, confirmed: false };
       void run(signal => sendWrite(entry, signal), "create"); },
-    openInput: item => { if (pending) return; void run(async signal => {
-      const next = await readResource(item.id, signal, () => api.input(envRef.current.childId!, item.id, signal, envRef.current.userId!)); if (!current() || !next) return;
-      clearEditor(); put(next); update({ excerpt: initialExcerpt(next), operation: noOperation(), load: "ready" });
-      syncManagement(next);
-      if (!next.recordId && (next.fetchState === "unknown" || next.fetchState === "running" || next.extraction.state === "unknown" || next.extraction.state === "running")) {
-        const kind = next.fetchState === "unknown" || next.fetchState === "running" ? "fetch" : "extract";
-        update({ direct: { kind, basis: next, excerpt: next.extraction.excerpt ?? "", checked: false } }); op(kind, "unknown", "這項輸入有未查明處理。先查核同一輸入，不會開始新的取得或提取。");
-      }
-    }); },
+    openInput: item => {
+      // Reselecting the current row must not replace either of its local drafts.
+      if (ref.current.selected?.id === item.id || !canRead()) return;
+      navigate(() => {
+        // Approval can arrive after a write, access change, or newer selection.
+        if (ref.current.selected?.id === item.id || !canRead()) return;
+        void run(async signal => {
+          const next = await readResource(item.id, signal, () => api.input(envRef.current.childId!, item.id, signal, envRef.current.userId!)); if (!current() || !next) return;
+          clearEditor(); put(next); update({ excerpt: initialExcerpt(next), operation: noOperation(), load: "ready" });
+          syncManagement(next);
+          if (!next.recordId && (next.fetchState === "unknown" || next.fetchState === "running" || next.extraction.state === "unknown" || next.extraction.state === "running")) {
+            const kind = next.fetchState === "unknown" || next.fetchState === "running" ? "fetch" : "extract";
+            update({ direct: { kind, basis: next, excerpt: next.extraction.excerpt ?? "", checked: false } }); op(kind, "unknown", "這項輸入有未查明處理。先查核同一輸入，不會開始新的取得或提取。");
+          }
+        });
+      });
+    },
     newInput: () => { if (model.canChoose) { clearEditor(); update({ operation: noOperation(), notice: "" }); } },
     recreateWithText: () => { if (!model.canChoose || !state.canCreate || selected?.kind !== "personal_source") return; const seed = selected;
       clearEditor(); update({ composerSeed: seed, operation: noOperation(), notice: "原來源仍保留。請自行貼上正文，保存後會建立另一項私人來源。" }); },

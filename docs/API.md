@@ -1,5 +1,7 @@
 # 接口与鉴权契约
 
+**實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss／Compose 專項記錄現有機制，不能視為 Firestore 已接線。集中服務目標按 [ADR-019](DECISIONS.md#adr-019) 及 [Firestore 契約](#firestore-target) 取代其後續技術路線；業務、安全及既有證據保留，進度只見 [PLAN](../PLAN.md#active)。
+
 本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。
 
 本文件維護已確定的共享介面職責、鑑權邊界及呼叫結果語義。介面名及錨點保留，現行 Server 契約依 [ADR-008](DECISIONS.md#adr-008) 原位替代舊模式，不表示程式碼或 HTTP 路由已存在。完整字段定義見 [DATA_MODEL](DATA_MODEL.md)，執行次序見 [ARCHITECTURE](ARCHITECTURE.md)，不複製 schema 或另立更新算法。
@@ -37,7 +39,7 @@ P2 檢索適用範圍包含地區、年齡依據及精度、主題與必要條�
 <a id="agent-runtime-contract"></a>
 ### P2 AgentRuntime／工具契約
 
-S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止。S11-W02 已接業務工具及跨 run 確認／記憶；HTTP 契約見下文，驗收範圍見所屬工作包。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
+四角色擴充目標見[角色與審核接口](#p2-agent-roles)，下列為既有單 Agent 接點及證據。S11-W03 的 [AgentRunInput／AgentRunResult／AgentTool](../server/agent-runtime.ts) 是 Server 內部型別，不是接受客戶端身份或工具定義的 HTTP API。已接通 ADK 有界循環、Prompt Pack 組裝、原生工具 parts、配額與安全停止。S11-W02 已接業務工具及跨 run 確認／記憶；HTTP 契約見下文，驗收範圍見所屬工作包。工具成功但生成失敗可返回已核實進度；取消／期限耗盡而不能重新核權時，不披露舊結果。
 
 - <a id="api-ar-01"></a>內部入口接受受信互動請求或 worker 事件及必要輸入／待確認參照；Server 建立 runId，注入身份、孩子／資料空間、觸發來源、時間／時區、授權及資料版本、配方／工具集合。客戶端正文不能聲稱自己是 worker 或提供可直接採信的權限。
 - <a id="api-ar-02"></a>ModelGateway 的 ADK 路徑傳遞完整模型／工具 parts、呼叫關聯及必要 opaque metadata，不壓成 P1 文字介面。每次生成／查詢 embedding 均受[運行配置](ARCHITECTURE.md#p2-agent-budgets)、全局開關、配額及共享取消／deadline 約束；語料維護另有有限額，不能繞過全局控制。
@@ -655,7 +657,7 @@ Agent 透過 read_family_documents／generate_family_document／change_family_do
 - **知識搜尋／擴讀：**query 保留必要語義及未知精度，Server 決定適用／權限過濾；SQL 先篩選排名及有界取回，RRF 去重。回傳穩定來源／片段／版本、章節頁碼、適用條件、核對及發布狀態、降級／不完整狀態及可續讀位置。同版本上下文擴讀也有界。引用須指實際返回的支持片段；embedding 失敗的關鍵詞降級不算向量驗收。
 - **範圍及衍生輸出：**讀取、摘要、文件及背景任務均核對來源／目的地，保留 coverage／版本／可見範圍；私人材料不擴至公共或共享。更正／撤權／失效時刷新相關 owner／候選／報告狀態；metadata 更新不能成為另一份正文權威。
 - **成長／報告：**日常讀取不生成；完整期間工作回傳固定期間、分批進度／coverage、來源版本及同版 PDF 引用，部分結果不稱完整。期間資料增多不以總數超限全失敗，也不隱藏未知日期。
-- **帳戶／資料退出：**復用 Better Auth 驗證／找回／會話原生機制；邀請單次資格與本人資料空間分開。下載／刪除需本人身份及相應具體確認，返回可追蹤狀態與保留政策；不在對話或模型參數傳 key／找回憑據。
+- **帳戶／資料退出：**保留驗證／找回／會話原生機制，目前 Better Auth、目標改 [Firebase adapter](#firestore-target)；邀請單次資格與本人資料空間分開。下載／刪除需本人身份及相應具體確認，返回可追蹤狀態與保留政策；不在對話或模型參數傳 key／找回憑據。
 - **成本與結果：**讀取、工具載入、模型補查／修正／收尾仍在既有 run 預算；完整 HTTP／工具協定不靜默截斷。超限回傳已提交／未完成／unknown 與可接續工作，不自動新 run 或提高配額。前端只根據正式收據與目前資源顯示成功。
 
 <a id="persistent-agent-work"></a>
@@ -718,3 +720,44 @@ GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POS
 正式歷史沿A02工作／訊息原文cursor、各領域原清單與修訂API；通知沿A08本人notification_deliveries安全分頁，只代表本人渠道／聯絡／驗證信的投遞metadata，不冒稱全部屬當前孩子。搜尋及日期篩選須標示已掃範圍與續讀位置，不能以未載入當不存在。私人工作是Agent保存的目標／焦點／問題，不稱模型內部推理或完整run context。
 
 新增 GET /api/children/:childId/library?cursor=… 為唯讀公共來源目錄；核對session、expected user及孩子現行存取後，以sourceId keyset每頁最多10項。cursor綁本人／孩子及權限版本；只返回目前enabled、reviewed、published、未過期且符合既有watch／observation及公開使用範圍的版本metadata（sourceId、versionId、title、publisher、url、classification、checkedAt、sourceUpdatedAt、validUntil），附nextCursor／complete。目錄不判定每份內容適用該孩子，也不將來源存在當作支持某句回答；不返回私有来源、不呼叫模型或embedding。
+
+
+<a id="firestore-target"></a>
+## Firebase／Cloud Run 目標接口差異
+
+以下為 F01～F08 待接契約，不宣稱現有路由已返回 202 或已改 Firebase。保留 Auth／AccountServiceOwner、各領域 owner、原操作／版本、history／run／proposal 結果語義；供應商 adapter 內部改造不重做前端頁面，也不允許瀏覽器直接讀寫 Firestore／Storage。
+
+### 登入及安全 session
+
+- 登入、驗證、找回及最近重新認證改 Firebase provider；正式 Server 驗 token 的 issuer／audience／期限／撤銷後才交換受保護 session。Hosting 同源只依 __session cookie，HttpOnly／Secure／適當 SameSite、origin／CSRF 與 x-expected-user-id 防護保持；不把 client 傳來的 uid 當授權。
+- Server session 同時核對每裝置 ledger、帳戶准入／政策、epoch 及 Auth 有效性。登出撤銷本裝置、撤銷其他或全部裝置沿原產品語義；Firebase 全用戶 revoke 不能代替逐裝置操作。私有 API 與錯誤／認證回應禁止 CDN 共用快取（private, no-store）。
+- 邀請檢查在 Identity Platform blocking function 及業務准入交易各有責任；Auth 已建但業務未完成時不開放資料，沿同一身份恢復。舊用戶保留 ID，舊 cookie 作廢，必要重設密碼先清楚告知。
+- 帳戶刪除由最近 Firebase 重新認證的 Server 可驗證證明替代 Better Auth 密碼核對；保留具名確認、原 operationId、範圍版本、短時效 receiptToken 及 unknown 查詢。模型不能觸發裸 Auth delete 繞過業務 journal。下載／退出、viewer／caregiver／owner 及私人資料邊界不變。
+
+### 非同步 Agent 受理
+
+- 現有 message／trigger 與 operation 關聯先保存；有效准入、權限及成本檢查通過後，在交易中建立唯一 run 和 outbox，才回 **202，含 runId、原 operationId／message 或 trigger 關聯及 queued 狀態**。202 只表示已受理，不表示模型／工具成功。
+- 相同原操作重試返回同一 run；不同 fingerprint 拒絕。逾時先查原受理／收據，不自動換 opId／runId。模型呼叫時仍作持久配額預留，排隊不能繞每日限制。
+- 沿既有本人／孩子 run 結果接口有界取得進度、工具收據、引用、候選及 terminal／unknown；等待／重連沿同一 owner，不複製為另一份聊天或任務。實際 route／typed DTO 相容對照在 F01 固定，不能把新路由當已存在。
+- 取消保存於同一 run，worker 每階段檢查；已提交的工具效果不因取消或收尾失敗回滾。頁面關閉不代表取消；長期未完成工作與待確認仍保留，重新登入可查回。無權、過期版本及 unknown 不偽裝空結果。
+- Hosting 的 60 秒限制不縮短產品 90 秒 run 為一個長 HTTP 請求，也不提高模型預算；前端只等短受理與必要結果讀取。私有 Tasks 入口用 OIDC 和固定 audience，payload 只帶穩定參照／generation，不帶 prompt、附件正文或憑據。
+
+### 業務、附件及恢復
+
+online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerprint 與收據狀態保持；changes cursor 仍按 workspace、本人可見性及固定頁返回。資料庫語法不是 wire contract；移除 SQL join 不取消原篩選、分頁或未知提交恢復。
+
+附件維持預留／完成／授權下載語義，完成時由 Server 查實際 generation／hash 才回 ready；下載及 PDF 再核對孩子／本人／來源有效性，不返回永久公開 URL。資料搬遷保留穩定 asset/document ID，不要求頁面記住雲端路徑。
+
+恢復環境在最新刪除 journal、現行 Auth／撤銷、附件與 epoch 核對前不接受一般 API／Agent／通知。維護狀態明確返回暫不可寫／未完成，不偽造成功；重新開放時舊 cursor／session 必須重新取得，原 opId 仍用於查已保存效果。
+
+<a id="p2-agent-roles"></a>
+## 四角色、編製及知識維護接口（待實作）
+
+沿既有 AgentRuntime、ModelGateway、領域 store、KnowledgeRetriever 及知識發布服務擴充；不是新增四套公開 API，也不宣稱現有 HTTP 已具備以下欄位。資料不變量見 [DATA_MODEL](DATA_MODEL.md#p2-agent-roles)，預算與流程見 [架構](ARCHITECTURE.md#p2-agent-roles)。
+
+- **委派：**Server 將根 run／原操作、允許角色、身份／範圍、用途 schema、來源參照、版本及剩餘預算傳給子執行；模型只能提交受限任務參數，不能傳任意工具、prompt 路徑、服務身份或權限。輸出沿父子關聯回原流程，子角色不可再委派；子模型、委派／子工具及失敗均計根上限。
+- **編製：**接收授權資料參照及新增／局部修改意圖，返回符合目標領域 schema 的 draft／patch、缺項、來源／coverage 及所需確認；正文／段落／項目按穩定 ID 修改。直接普通操作沿原 API，不必呼叫編製；任務、記憶及文件的保存仍呼叫其既有服務，不由聊天文字或 actionRequests 二次執行。
+- **審核：**Server 提供草稿與原始證據，唯讀 Agent 返回 pass／revise／insufficient_evidence 及有界問題／支持依據。程式先驗 schema、來源身份／有效性與 scope，回傳後再驗審核綁定；生成者不能提交可採信的 approved／免審標記。使用者確認及審核是兩個獨立條件；必審內容須同時符合審核、當前授權及業務 gate 才正式呈現／提交。
+- **提交與恢復：**帶原 opId／fingerprint、目標 ID／expectedVersion、草稿 hash、來源與授權版本及 Server 審核參照；交易重核後回真資源版本／收據。衝突返回現行版本及重新核對需要；回應丟失先查原收據，不換 opId。逾時、取消、審核失敗或待確認分開回報，草稿不冒稱正式保存；已成功操作的真收據可獨立回報。
+- **獨立知識維護：**受信管理／排程入口傳已核准來源 ID／scope 版本及持久工作關聯，沒有家長聊天或私人 key。站內查閱／取得工具逐次校驗 URL、redirect、路徑、附件及批次上限，返回原檔／章節頁碼、抽取方式、完整度和續讀位置；未核內容不經一般聊天搜尋返回。發布工具重核內容／來源版本、語義審核及規則影響資格後原子更新；疑義保持候選，不讓 Agent 自行批准擴大來源或醫療規則。
+- **客戶端投影：**沿既有持久受理／run 結果接口，提供必要的編製中、核對中、待確認／修正、未完成及已保存結果，附可授權讀取的草稿／資源／版本參照。具體 wire 狀態隨包相容擴充，不直接改歷史狀態 enum。只顯示核准正文與真實進度，不回傳內部推理、子模型協定、未核串流或私人證據全文；身份切換／撤權清理保持。

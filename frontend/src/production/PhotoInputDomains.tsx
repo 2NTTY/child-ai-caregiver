@@ -1,6 +1,6 @@
 import { createContext, memo, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Platform, View } from "react-native";
-import { useGlobalSearchParams, usePathname } from "expo-router";
+import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { Text } from "react-native-paper";
 import { createPhotoApi, PhotoApiError, type PhotoWriteResult } from "../../../src/client/photo-api";
 import { ONLINE_REFRESH_EVENT } from "../../../src/client/use-online-updates";
@@ -12,6 +12,8 @@ import { SourcesView } from "../components/shared-inputs/SourcesView";
 import { AppButton, SectionCard, SectionHeader } from "../components/ui";
 import { emptyPhotoDraft, samePhotoOriginal, type PhotoDraftFields, type PhotoItem, type PhotoOperation, type PhotoOriginal, type PhotoReplacement, type PhotosActions, type PhotosViewModel } from "../photo-view-model";
 import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironment";
+import { useProduction } from "./ProductionProvider";
+import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { usePhotoInputSources } from "./usePhotoInputSources";
 
 type PendingPhoto = ({ kind: "reserve"; metadata: PhotoMetadata } | { kind: "confirm"; photo: PhotoAttachment; input: PhotoConfirmation } | { kind: "delete"; photo: PhotoAttachment })
@@ -38,6 +40,7 @@ function useProductionPhotos() {
     busy: false, notice: "", reservationUnidentified: false,
   }));
   const ref = useRef(state);
+  const composerTransfer = useRef<{ source: PhotoOriginal; owned: PhotoOriginal } | null>(null);
   const update = (patch: Partial<typeof state>) => { ref.current = { ...ref.current, ...patch }; setState(ref.current); };
   const live = useRef(false), request = useRef<AbortController | null>(null);
   const refreshRequested = useRef(false);
@@ -45,6 +48,7 @@ function useProductionPhotos() {
   const consentReset = { modelConsent: false, sharedConsent: false, reviewed: null, deleteScope: false, deleteFinal: false };
   const put = (photo: PhotoAttachment) => update({ resourceUnavailable: false, photos: [photo, ...ref.current.photos.filter(item => item.id !== photo.id)], selected: photo });
   const releaseEditor = () => {
+    composerTransfer.current = null;
     ref.current.original?.dispose?.(); ref.current.replacement?.kind === "original" && ref.current.replacement.original.dispose?.();
     if (ref.current.previewUrl) URL.revokeObjectURL(ref.current.previewUrl);
     update({ resourceUnavailable: false, original: null, previewUrl: null, selected: null, latest: null, replacement: null, source: "使用者上傳照片", sourceError: "",
@@ -122,11 +126,22 @@ function useProductionPhotos() {
     }
   }
   function finishWrite(entry: PendingPhoto, result: PhotoWriteResult) {
+    if (result === null) {
+      // A confirmed receipt can redact its result. Keep the local recovery gate even
+      // though the transport has retired its opId; it must never be submitted again.
+      if (entry.kind !== "reserve") {
+        update({ photos: ref.current.photos.filter(item => item.id !== entry.photo.id) });
+        releaseEditor();
+      }
+      update({ pending: { ...entry, confirmed: true, checked: false }, direct: null, ...consentReset });
+      op(entry.kind, "confirmed_unavailable", "原收據已確認，結果已刪除或不可披露；不會重送。請先查核並重新讀取清單。");
+      return;
+    }
     update({ pending: null, ...consentReset });
-    if (result === null || "deleted" in result) {
+    if ("deleted" in result) {
       if (entry.kind !== "reserve") update({ photos: ref.current.photos.filter(item => item.id !== entry.photo.id) });
       releaseEditor(); update({ direct: null });
-      op(entry.kind, "saved", result === null ? "原收據已確認，結果已刪除或不可披露；不會重送。請重新讀取清單。" : "照片及連結記錄已移除，原檔實體清理已排程。");
+      op(entry.kind, "saved", "照片及連結記錄已移除，原檔實體清理已排程。");
     } else {
       put(result.photo); update({ latest: null, source: result.photo.source, load: "ready" });
       if (entry.kind === "confirm") update({ direct: null });
@@ -196,6 +211,7 @@ function useProductionPhotos() {
   useEffect(() => {
     live.current = true;
     return () => {
+      composerTransfer.current = null;
       live.current = false; refreshRequested.current = false; request.current?.abort(); api.resetOnline();
       ref.current.original?.dispose?.();
       if (ref.current.replacement?.kind === "original") ref.current.replacement.original.dispose?.();
@@ -212,6 +228,11 @@ function useProductionPhotos() {
     return () => window.removeEventListener(ONLINE_REFRESH_EVENT, listener);
   }, []);
   const pathname = usePathname(), { view } = useGlobalSearchParams<{ view?: string }>();
+  const routeRef = useRef(pathname); routeRef.current = pathname;
+  const composerOwns = (original: PhotoOriginal) => {
+    const draft = envRef.current.owner.draftOwner.getSnapshot();
+    return draft.scope === envRef.current.scopeKey && draft.attachments.some(item => item.photo === original);
+  };
   const photoRoute = pathname === "/photos" || pathname === "/care" && view === "photos";
   const routeKey = `${pathname}:${photoRoute}`, previousRoute = useRef(routeKey);
   useEffect(() => {
@@ -220,8 +241,23 @@ function useProductionPhotos() {
     if (previous === routeKey || photoRoute || ref.current.busy || ref.current.pending || ref.current.direct) return;
     releaseEditor(); update({ operation: noOperation(), notice: "", resourceUnavailable: false });
   }, [routeKey, photoRoute]);
+  useEffect(() => {
+    if (pathname !== "/chat") return;
+    let active = true;
+    const reconcile = () => {
+      const transfer = composerTransfer.current, s = ref.current;
+      if (!active || !current() || routeRef.current !== "/chat" || !transfer || composerOwns(transfer.source)
+        || transfer.owned !== s.original || s.busy || s.pending || s.direct || s.selected) return;
+      releaseEditor();
+    };
+    // Route commits clear the composer in a parent layout effect. Reconcile after
+    // that commit so entry into Photos retains its independent recipient bytes.
+    const unsubscribe = env.owner.draftOwner.subscribe(() => queueMicrotask(reconcile));
+    reconcile();
+    return () => { active = false; unsubscribe(); };
+  }, [env.owner, pathname, state.busy, state.pending, state.direct, state.original, state.selected]);
   const pending = state.busy || !!state.pending || !!state.direct;
-  useDomainWriteGuard(!!state.original && state.selected?.state !== "ready" || !!state.draft.text && !state.selected?.recordId || !!state.replacement, pending);
+  const leaveGuardId = useDomainWriteGuard(!!state.original && state.selected?.state !== "ready" || !!state.draft.text && !state.selected?.recordId || !!state.replacement, pending);
 
   async function sendContent(photo: PhotoAttachment, original: PhotoOriginal, signal: AbortSignal) {
     if (!original.readBase64 || !samePhotoOriginal(photo, original)) throw new PhotoApiError(400, "invalid_input");
@@ -325,9 +361,9 @@ function useProductionPhotos() {
       void run(async signal => { await sendWrite({ kind: "confirm", photo, input, confirmed: false, checked: false }, signal); }, "confirm"); },
     checkOriginal: refresh,
     retryOriginal: () => { const entry = ref.current.pending;
-      if (entry?.checked && !entry.confirmed && api.hasPendingOnline() && available() && ref.current.load === "ready") void run(async signal => { await sendWrite(entry, signal); }, entry.kind);
+      if (entry?.checked && !entry.confirmed && api.hasPendingOnline() && available() && editable() && ref.current.load === "ready" && ref.current.operation.state === "unconfirmed") void run(async signal => { await sendWrite(entry, signal); }, entry.kind);
       else if (ref.current.direct?.kind === "upload" && ref.current.direct.checked) upload(); },
-    finishUnidentified: () => { const entry = ref.current.pending; if (!ref.current.busy && entry?.confirmed && entry.checked && ref.current.load === "ready") {
+    finishUnidentified: () => { const entry = ref.current.pending; if (available() && !ref.current.busy && entry?.confirmed && entry.checked && ref.current.load === "ready") {
       update({ pending: null, reservationUnidentified: entry.kind === "reserve" }); op(entry.kind, "saved", "已結束確認結果不可讀的操作。不會重送或按 hash 猜測附件；請逐項核對清單。");
       if (entry.kind !== "reserve") releaseEditor(); } },
     useLatest: () => { if (!state.latest || !available() || state.busy || state.pending) return; const next = state.latest;
@@ -338,9 +374,14 @@ function useProductionPhotos() {
     setDeleteScope: deleteScope => update({ deleteScope, deleteFinal: false }), setDeleteFinal: deleteFinal => update({ deleteFinal }),
     deletePhoto: () => { if (model.canDelete && state.deleteScope && state.deleteFinal && state.selected && envRef.current.canStartWrite()) void run(async signal => { await sendWrite({ kind: "delete", photo: state.selected!, checked: false, confirmed: false }, signal); }, "delete"); },
   };
+  const canContinueComposerOriginal = (original: PhotoOriginal) => {
+    const transfer = composerTransfer.current, s = ref.current;
+    return available() && editable() && !!transfer && transfer.source === original && transfer.owned === s.original
+      && !s.busy && !s.pending && !s.direct && !s.lost && !s.selected && !s.replacement && !s.latest;
+  };
   async function receiveComposerOriginal(original: PhotoOriginal) {
     // Copy bytes to a new owned Blob before the composer releases its resource.
-    if (!model.canPick || state.original || state.selected || !original.readBase64) return false;
+    if (!model.canPick || state.original || state.selected || !original.readBase64 || !composerOwns(original)) return false;
     let owned: PhotoOriginal | null = null;
     let retained = false;
     await run(async () => {
@@ -354,18 +395,19 @@ function useProductionPhotos() {
       owned = { fileName: original.fileName, mimeType: original.mimeType, bytes: original.bytes, sha256: original.sha256, imageSource: { uri: url },
         readBase64: async () => { if (kept === null) throw new Error("Original released"); return kept; }, dispose: () => { URL.revokeObjectURL(url); kept = null; } };
       const s = ref.current;
-      if (!current() || !editable() || s.lost || s.pending || s.direct || s.selected || s.original || s.replacement || s.reservationUnidentified) {
+      if (!current() || !composerOwns(original) || !editable() || s.lost || s.pending || s.direct || s.selected || s.original || s.replacement || s.reservationUnidentified) {
         owned.dispose?.(); return;
       }
       // This operation owns the busy lock; public picker guards must not reject its internal transfer.
       update({ original: owned, source: "使用者上傳照片", sourceError: "", draft: emptyPhotoDraft(), formKey: s.formKey + 1,
         ...consentReset, operation: noOperation(), notice: "原檔只在本次記憶中，尚未上傳。" });
       retained = ref.current.original === owned;
+      if (retained) composerTransfer.current = { source: original, owned };
       if (!retained) owned.dispose?.();
     });
     return retained && current() && ref.current.original === owned;
   }
-  return { model, actions, scopeKey: env.scopeKey, receiveComposerOriginal, pending };
+  return { model, actions, scopeKey: env.scopeKey, receiveComposerOriginal, canContinueComposerOriginal, leaveGuardId, pending };
 }
 
 type Domains = { scopeKey: string; photos: ReturnType<typeof useProductionPhotos>; sources: ReturnType<typeof usePhotoInputSources> };
@@ -395,15 +437,38 @@ export function ProductionSourcesWorkspace({ onPhotos, onRecord }: { onPhotos: (
   if (Platform.OS !== "web") return <PageFrame density="compact" title="資料來源" description="原生來源操作尚未接通。"><Text>私人來源目前由 Web 正式入口處理。</Text></PageFrame>;
   return domain ? <SourcesView production model={domain.model} actions={domain.actions} onPhotos={onPhotos} onRecord={onRecord} previewControls={null} /> : null;
 }
-export function AgentPhotoInput({ original, onTransferred, onPhotos }: { original: PhotoOriginal; onTransferred: () => void; onPhotos: () => void }) {
+export function AgentPhotoInput({ original, composerGuardId }: { original: PhotoOriginal; composerGuardId: string }) {
   const domain = useContext(PhotoInputContext)?.photos;
+  const navigate = usePreviewNavigation(), router = useRouter();
+  const { owner, scopeKey } = useProduction();
+  const [navigationRequested, setNavigationRequested] = useState(false);
+  const continueTransfer = () => {
+    if (!domain?.canContinueComposerOriginal(original)) return;
+    const composer = owner.draftOwner.getSnapshot();
+    const retainedComposer = composer.scope === scopeKey && composer.attachments.length === 1 && composer.attachments[0]?.photo === original;
+    navigate(() => {
+      // Revalidate after a guard dialog: changed identity, child or access cannot carry bytes.
+      const latest = owner.draftOwner.getSnapshot();
+      if (owner.getSnapshot().scopeKey === scopeKey && latest.scope === scopeKey
+        && latest.attachments.some(item => item.photo === original)
+        && (!retainedComposer || latest.attachments.length === 1)
+        && domain.canContinueComposerOriginal(original)) router.push("/photos");
+    }, "navigation", [...(retainedComposer ? [composerGuardId] : []), domain.leaveGuardId]);
+  };
+  useEffect(() => {
+    if (!navigationRequested || !domain || domain.pending) return;
+    setNavigationRequested(false);
+    continueTransfer();
+  }, [navigationRequested, domain]);
   if (!domain) return null;
   return <SectionCard><SectionHeader density="compact" title="照片輸入" subtitle="先私人保存原照片，再分別同意提取與核對共享。" />
     <Text>{original.fileName} · {(original.bytes / (1024 * 1024)).toFixed(2)} MiB</Text>
     <View><AppButton label="把原照片帶入核對" disabled={!domain.model.canPick || !!domain.model.selected || !!domain.model.original || domain.pending} onPress={() => {
-      void domain.receiveComposerOriginal(original).then(transferred => { if (transferred) { onTransferred(); onPhotos(); } });
+      // Keep the composer resource until the router actually enters Photos. The provider
+      // clears attachments on committed route changes; a blocked navigation loses nothing.
+      void domain.receiveComposerOriginal(original).then(transferred => { if (transferred) setNavigationRequested(true); });
     }} /></View><Text>目前只在本次記憶中；帶入核對不代表已保存、已交模型或已發送聊天。</Text>
     {domain.model.operation.message || domain.model.notice ? <Text>{domain.model.operation.message || domain.model.notice}</Text> : null}
-    {domain.model.original || domain.model.selected ? <AppButton label="繼續核對照片" variant="secondary" disabled={domain.pending} onPress={onPhotos} /> : null}
+    {domain.model.original || domain.model.selected ? <AppButton label="繼續核對照片" variant="secondary" disabled={domain.pending} onPress={continueTransfer} /> : null}
   </SectionCard>;
 }

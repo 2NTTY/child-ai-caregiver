@@ -1,3 +1,4 @@
+import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useState } from "react";
 import { View } from "react-native";
@@ -67,7 +68,7 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
         <MotionDisclosure expanded={showHistory} scopeKey={scopeKey} style={s.stack}>
         {model.managementHistory?.load === "loading" ? <Text style={s.meta}>正在讀取來源修改記錄…</Text> : model.managementHistory?.load === "error" ? <><Text style={s.warning}>未能讀取修改記錄，請明確再讀取。</Text><AppButton label="重新讀取修改記錄" variant="quiet" disabled={!model.fresh || !!direct} onPress={actions.management.history} /></> : null}
         {model.managementHistory?.load === "ready" ? <View style={s.stack}>
-          {!model.managementHistory.revisions.length ? <Text style={s.meta}>目前沒有來源管理修訂記錄。</Text> : null}
+          {!model.managementHistory.revisions.length ? model.online && model.fresh ? <EmptyListCard title="已載入頁面暫無來源管理修訂記錄" detail={model.managementHistory.hasMore ? "仍有修訂未載入，可繼續讀取。" : undefined} /> : <Text style={s.meta}>來源管理修訂記錄尚未重新核對。</Text> : null}
           {model.managementHistory.revisions.map(revision => <View key={revision.version} style={s.group}>
             <Text style={s.meta}>版本 {revision.version} · {sourceTime(revision.changedAt)}</Text><Text selectable style={s.body}>原因：{revision.reason}</Text>
             <Text style={s.meta}>{revision.management ? `${sourcePurposeOptions.find(option => option.value === revision.management?.purpose)?.label} · ${sourceNatureOptions.find(option => option.value === revision.management?.nature)?.label} · ${sourceTimeOptions.find(option => option.value === revision.management?.timeScope)?.label}` : "尚未有來源管理設定"}</Text>

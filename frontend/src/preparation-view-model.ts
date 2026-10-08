@@ -52,7 +52,7 @@ export interface DocumentContentReading {
 }
 export interface FamilyDocumentReadingPort {
   indexes: DocumentRevisionIndex[]; content: DocumentContentReading | null; online: boolean;
-  activeHasMore: boolean; archiveStarted: boolean; archiveHasMore: boolean; pageBusy: boolean; pageError: boolean;
+  activeHasMore: boolean; archiveStarted: boolean; archiveReady: boolean; archiveHasMore: boolean; pageBusy: boolean; pageError: boolean;
   ensureArchived(): void; loadMoreDocuments(status: "active" | "archived"): void;
   loadVersions(documentId: string): void; readVersion(documentId: string, snapshotId: string, snapshotVersion: number): void;
   continueVersion(): void; closeVersion(): void;

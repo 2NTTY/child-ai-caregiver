@@ -283,3 +283,31 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 - 服務取捨：沿 Better Auth 與單 VM Compose，補邀請、電郵驗證／找回／會話撤銷、真實資料說明、資料下載／退出、必要備份恢復及告警。不承諾高可用，不借新計劃提高配額／延長主機／增加外發授權；部署前核定規模及預算。
 - 方法依據：沿 [ADK 2.1.0 原生工具集合](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/agents/llm_agent.ts)，借鑑 [Codex 工具循環](https://developers.openai.com/blog/codex-as-a-platform)、[OpenHands 持久狀態](https://docs.openhands.dev/sdk/guides/convo-persistence)、[查詢轉換](https://developers.llamaindex.ai/python/framework/optimizing/advanced_retrieval/query_transformations/)及[上下文擴展](https://developers.llamaindex.ai/python/examples/node_postprocessor/metadatareplacementdemo/)，復用 [Better Auth email 流程](https://better-auth.com/docs/concepts/email)及成熟 PDF 解析器。這些是方法／文件依據，不是本產品新能力實測；實際版本與最小相容檢查隨觸發包記錄，不為參考而引入所有框架。
 - 驗收：只作必要連貫成果驗證，復用有效證據，不用 Computer Use，不把 mock、unit 或工具存在當 Agent 完成。主模型親寫權威與提示詞；普通工程按明確方案交 Sol。文件定案與各包完成、真服務、部署分開記錄。
+
+
+<a id="adr-019"></a>
+## ADR-019 — Firestore 與集中雲端低用量服務
+
+- 日期／狀態：2026-10-08，使用者定案，**文件已採納，遷移未實作／未驗證**。依遠端 master 0c22180 及實際 SQL／store／worker 盤點，保留 P2-A01～A08 成果；#140 修正與衝突另處置，不把 draft 當已合併。
+- 決定：集中邀請制、本人空間；Firestore Standard Native、私有 Cloud Storage、Cloud Run request-based／min 0、Firebase Hosting、Firebase Authentication，Tasks＋Scheduler＋持久台帳。明確排除 SQL Connect／Cloud SQL 及額外常駐搜尋叢集，不重寫 ADK、Prompt Pack 或前端。
+- 理由／取捨：降低低流量固定費，不把 Firebase 當免費。SQL join／savepoint／FK／trigger、交易內 pg-boss 及 pgvector 不能直接搬 API，須重做有界查詢／索引、read-first 交易／收據／outbox、清理及喚醒接線。Firestore Standard 無全文搜尋，補有界公共分詞／n-gram 候選並保留正文能力；原生向量承接兼容的 1024 維向量，免不必要重算。
+- 身份決定：有 MIT 的 [Better Auth Firestore 社群 adapter](https://github.com/yultyyev/better-auth-firestore)，保留原方案並非技術上不可能；但增加 adapter、寄信及跨身份／業務一致性維護。使用者選 Firebase Auth，接受 [認證資料在美國處理](https://firebase.google.com/support/privacy)，業務／運算預設香港。UID 保留，STANDARD_SCRYPT／salt／NFKC 要實測，舊 session 作廢、不相容重設；產品准入／成員及逐裝置會話仍由 Server 管理。
+- 不變條件：原 ID／版本／密文／收據與權限、來源及確認語義保留。Server IAM 不代替家庭授權；私人內容不進公共索引。Tasks 不是 exactly-once，未知模型／通知結果不盲重做；Hosting 60 秒轉送以持久 run 的 202 受理承接，不提高模型配額。來源新版以含義核對，不以 hash 即發布。
+- 恢復：短暫停寫、不長期雙寫；daily backup 14 天，附件 soft-delete 7 天另加配對副本覆蓋全部恢復期。刪除 journal 獨立、不可覆寫、不隨 DB 還原；隔離還原先重放刪除、核 Auth／附件、換 epoch 才開放。新環境產生寫入後須反向同步才能回退，Auth／撤銷不可回舊快照。
+- 替代範圍：替代 ADR-018 的 Better Auth／單 VM 服務交付及 SQL／pg-boss 作後續必要依賴；保留其全部 Agent 成果及安全門檻。ADR-008 與原自部署方向在本輪由代管服務取代，原 Sxx／P3／P4 錨點與延後範圍、歷史 ADR／WORKLOG 不回寫。A09 的 VM／SMTP 專項交付被替代，有效修正及未通過成果仍承接。
+- 採用門檻：先 F02 有界真雲端合成切片，覆蓋權限、交易／防重、縮零／重投遞、引用、附件與刪除還原；不能只憑 Emulator。再搬全功能、對帳及反向回退、F08 正式 Agent 交付。依賴／責任／唯一入口見 [PLAN](../PLAN.md#p2-firestore-migration)，契約見 [架構](ARCHITECTURE.md#firestore-target)，官方依據及未驗點見 [TECH_REUSE](TECH_REUSE.md#firestore-dependency-audit)。
+- 授權邊界：本輪只文件；不建付費資源／改正式資料／遷移／部署／續期。F02 資源與成本、F08 維護窗口及實測預算仍須核准。原配額、通知對象與內容不因計劃擴大，價格推算不當已付費或性能證據。
+
+
+<a id="adr-020"></a>
+## ADR-020 — 聊天、審核、資料編製與獨立背景知識維護
+
+- 日期／狀態：2026-10-08，使用者定案；四角色是產品運行分工，不是 Codex 開發子代理規則。文件已採納，新增 runtime／語義審核／視覺知識維護尚未實作或驗證；遠端核對基線 e6842fc。
+- 決定：聊天保持家長唯一對話入口，使用已發布知識與業務工具；按需要委派資料編製；Server 調度唯讀審核；公共知識維護獨立排程／管理入口及預算，在已核准網站範圍內自主查閱與更新，不是聊天的搜尋子模型。不要求四角色每輪全部運行。
+- 資料編製取代先前提案的「文件生成」定位：產出可保存／重用、嚴格格式或專門風格的資料，包括準備內容、成長整理、照護說明、記憶／摘要與待辦草案。沿原領域 schema、權威服務、版本與 opId；文件／卡片／PDF 只是呈現，任務仍是任務。普通確定性操作不強制額外委派。
+- 審核決定：實質回答與模型編製內容交付前，程式驗格式／引用／版本／權限，獨立模型核對原始證據的含義及適用性；通過結果綁內容 hash、來源、對象與範圍。草稿不冒稱正式成果，重要操作仍需原使用者確認，審核不等於同意。純澄清、確定性收據及預核緊急求助不增加審核等待；不宣稱零幻覺或臨床有效性。
+- 背景決定：指定網域／路徑／主題／使用範圍內可讀目錄與站內連結，沿有界批次、SSRF／附件／redirect 守衛；文字先解析，視覺頁按需多模態，原文／模型抽取／綜合整理分開。通過語義審核與程式檢查後自動發布／更新／停用，不逐項要求人工搬資料；不確定保持候選，暫時抓取失敗不當來源失效。知識發布不授權改醫療／成長執行規則，家庭與私人付費來源不進公共管線。
+- 技術取捨：沿 ADK 2.1.0 的原生 LlmAgent／Runner／FunctionTool 及 Agent-as-Tool 模式，補必要共同 scope／取消／用量／審核接點，不換框架、不加四套常駐服務；不假定 AgentTool 子 Runner 自動繼承專案全部限制。依既有 manifest 按需增補角色指引，不重寫 Prompt Pack 或前端；[固定版本證據](TECH_REUSE.md#multi-agent-reuse)與實測分開。
+- 限額決定：互動所有角色合計最多 6 次生成，含審核／修正，保留本人更低限制；工具／embedding／deadline／上下文／輸出與每日配額不提高。預留審核，最多一次有餘額的修正／重核；超限保留進度，不新開 run 繞過。私人背景沿原配置；公共維護獨立平台有界預算，不用家長私人 key，具體源量／多模態費用仍在啟用前核准。
+- 替代範圍：替代 ADR-011 的單產品 LlmAgent 作未來完整編排及互動 4 次生成目標；保留其 ADK／工具／RAG／安全與歷史成果。延伸 ADR-018 的自主工具／真正資料成果及語義換版，保留 ADR-019 Firestore 遷移／回退／授權門檻。只取代尚未實作的「文件生成／聊天搜尋式收集」提案，不回寫舊 ADR／WORKLOG／失敗證據，也不把當前 4 次程式配置寫成已變。
+- 交付：納入既有 F01～F08，F05 增加 F03 前置；保留 #140 修正處置及完整 Agent 未完成門檻。四條最低連貫成果見 [SPEC](../SPEC.md#ac-p2m-01)，唯一任務入口見 [PLAN](../PLAN.md#active)。本輪只文件驗證；不開發、呼叫模型、爬取產品來源、建立資源、部署或更改正式資料。

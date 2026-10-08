@@ -13,11 +13,10 @@
 ## 8.5 四人 log
 
 <a id="rule-8-5-01"></a>
-保留当前真实分工：
-
-- <a id="rule-8-5-02"></a>你：主力使用 AI、整合、验收和产品决定；
-- <a id="rule-8-5-03"></a>两位组员：经费支持，以及实际认领并完成的其他工作；
-- <a id="rule-8-5-04"></a>另一位组员：实际协助、测试或材料整理。
+<a id="rule-8-5-02"></a>
+<a id="rule-8-5-03"></a>
+<a id="rule-8-5-04"></a>
+本項目由 A、B、C、D 共同負責。
 
 <a id="rule-8-5-05"></a>
 你要求生成 log 时，根据工作证据整理四份草稿，各人核对。团队成果不自动变成四个人各自独立完成的工作。
@@ -1681,6 +1680,39 @@
 - 額外sidebar more/profile等待未完成，沒有足夠證據判定產品根因，保留未驗；最終改直接核對相同帳戶切換後native身份、首頁、權威孩子空清單與跨孩子404，最後173HTTP／4store通過並精確清理，baseline totals一致、worker暫停。各批合共911次嘗試HTTP（含攔截／失敗）／8store，並非單次流程；[EV](artifacts/verification/P2_A07_CHECKS.json)及原raw保留。
 - 零模型／embedding／外部SMTP／通知／部署；復用A08驗證、找回、刪除恢復證據，不稱全站或真Agent完成。A09須觀察剩餘路由、完成代表Agent／GCP交付及真SMTP設定。按B帳號review／PR／合併後再開A09。
 
+## 2026-10-08｜PR #111 剩餘回歸覆蓋收尾
+
+- 基線 master `1b3ef078`。依使用者要求處理舊 draft #111；核心產品修復已由 #137 適配合併，本次只補仍有價值的回歸測試及重跑所需 scoped 設定，不再次合併舊分支或修改產品程式。
+- 保留現有 2 組聚合測試，新增普通寫入與重新排期容量界線、終態遷移 gate 的交易回滾、滿額到期工作與後續項目進度、queued 取消／既有收據結算，以及 Server／client 接受 202、拒絕 203 的回歸；恢復 3 組前端 198–202 容量呈現測試。
+- 當次 backend／client 7/7、前端 shallow 3/3 通過；scoped Server／client strict typecheck 與前端 typecheck 通過。獨立覆核重跑同一批 10/10 通過，不重複計為額外案例。7 個隔離副本的 guard mutation 均被斷言攔住；候選產品檔未改。首次 mutation harness 因定位字串不唯一停止，修正定位後重跑，失敗過程保留於當次證據。
+- 測試使用 fake Pool、合成資料及 shallow 元件；本次未重跑真 PostgreSQL、真瀏覽器或正式部署。#137 的本機 PostgreSQL 18.6／029 遷移合成驗證是既有歷史證據，不算成本次結果；正式環境的 readers／029 啟用狀態未核對。
+- 缺少的測試型別依賴只在本地依精確 lock 版本及完整性值補齊，未改 package-lock。PLAN 區分原執行時限制與後續 #137 承接；其餘歷史紀錄不改。新補充 PR 正常合併並核對後，才關閉 #111 並留下接替連結；此記錄不預先宣稱遠端合併或關閉完成。
+- 當次證據：`artifacts/verification/PR111_REGRESSION_RECOVERY_CHECKS.json`。零模型／外送／正式資料庫變更／GCP 部署。
+
+<a id="log-20261008-firestore-plan"></a>
+## 2026-10-08｜Firestore 集中服務遷移文件定案
+
+- Recorded At：2026-10-08T14:58:41+08:00；Work Date：2026-10-08。文件包 A 主責、權重 2、A100%；主模型親寫／核對需求、計劃、契約及 ADR，共用 AI 由 A 統籌，無新實作／測試子代理或共同作者。
+- 核對遠端 master 0c22180、實際 35 份 migration／97 建表定義／27 store factory 及必要原碼；保留此前唯讀調查和官方研究，不重做全棧調查。A01～A08 已合併、#130 已合併；#140／93c64e4 仍 draft 且有衝突，其修正／未通過 Agent 成果／現場證據保留，未合併其分支。
+- 先寫 PLAN，再局部更新 SPEC、ARCHITECTURE、DATA_MODEL、API、TECH_REUSE、PRODUCTION_FRONTEND；追加 ADR-019，STATUS 原位修正 A07 過時快照及具日期部署觀察。新路線採 Firestore Standard／Storage／Cloud Run／Hosting／Firebase Auth／Tasks／Scheduler；不採 SQL Connect／Cloud SQL，不重寫 ADK／前端。
+- F01～F08 分列原子收據／outbox、Auth 相容與准入、權限／索引／有界讀取、正文加向量、附件／持久刪除、14 天配對恢復及有新寫入的反向回退；F02 真雲端合成切片是完整遷移 gate。A09 的完整 Agent 引用、文件修改及新對話讀回仍須完成。
+- 主模型 review；git diff --check 及新增／改動本地連結／錨點、八包依賴無環核對通過；既有錨點和歷史 ADR 保留，WORKLOG 原 bytes 嚴格追加。沒有產品 unit／integration／E2E、模型、通知、Computer Use 或新雲端探測。
+- 文件相容、成本推算與實際服務驗證分開：$2–6／月及 $8–20／月是公開費率／低用量假設，不是帳單或提高配額授權。沒有改正式資料、建立資源、遷移、部署、續期；VM 期限仍是原日期觀察，不能假定在期限前遷完。
+- 下一步只依 [PLAN#active](PLAN.md#active)：處置 #140 有效修正後 F01；F02 建資源前核准具體資源／成本，F08 前核准維護窗口及實測預算。遷移與完整 P2 門檻仍未完成。
+
+
+<a id="log-20261008-agent-roles-plan"></a>
+## 2026-10-08｜育有方四角色 Agent 文件定案
+
+- Recorded At：2026-10-08T17:19:39+08:00；Work Date：2026-10-08。文件包基線 master e6842fc，分支 codex/p2-agent-roles-plan；A 主責、權重 2、A100%，主模型親寫及 review，共用 AI 由 A 統籌；無新子代理或共同作者。
+- 按使用者最後確認，角色為聊天、審核、資料編製、獨立背景知識維護。資料編製針對可保存／重用、嚴格格式或專門風格的資料，不限文件；背景在核准網站內自主閱讀／整理並經審核更新知識庫，獨立於聊天搜尋。
+- 先更新 PLAN，再補 SPEC 的 REQ-P2M／AC-P2M、架構／資料／API 目標、TECH_REUSE；追加 ADR-020，STATUS 原位同步。F05 增加 F03 前置；F03 共用 runtime／審核、F04 資料編製、F05 知識維護，沿原 F 包交付與主責安排，不開平行流程。
+- 明確草稿／審核／正式保存／使用者確認分界，引用與原始視覺證據、角色／來源範圍、版本與原操作、獨立維護預算及恢復。新互動目標合計 6 次生成，現有程式仍原配置；其他單次及每日上限不提高。原成本表只是平均 3 次呼叫的情景，新增角色／多模態費用待量測。
+- 主模型 review；git diff --check、44 個新增／受影響本地連結／錨點與八包依賴無環核對通過，原錨點及 ADR 正文保留。一次性依賴檢查初次誤匹配章節錨點而停止；收窄至八個工作包後通過，沒有產品失敗或重跑產品測試。WORKLOG 嚴格按原 bytes 追加。
+- 零產品 unit／integration／E2E、模型／embedding、來源爬取、通知、Computer Use、資源建立、資料遷移或部署；程式、Prompt Pack、前端及依賴未改。文件已採納不等於四角色已接通或準確性已驗證。
+- 遠端交付前再次核 master e6842fc、#140 draft head 93c64e4，原修正／衝突及失敗證據未動。A 身份、Author／Committer 設定已核，按 A 實際帳號交付；開發與正式合併提交的遠端署名另核，不預先宣稱 Verified。
+- 下一步仍依 [PLAN#active](PLAN.md#active) 處置 #140 後 F01，F02 雲端切片及 F08 成本／維護窗口門檻不變，完整 P2 尚未完成。
+
 
 <a id="log-20261008-p2-a09-preparation"></a>
 ## 2026-10-08｜P2-A09 穩定交付準備及代表Agent停批
@@ -1699,3 +1731,14 @@
 
 - 在前次修正及draft #140交付後，覆核既有健康API會查DB、Compose重啟及配對備份能力；沒有重造服務或再跑產品測試。2026-10-08 02:26:41 UTC經同一已核實VM的IAP唯讀核對，85e3a846仍healthy；`/etc/yuban-p1/account-smtp.json`及`/var/lib/yuban-p1/private/account-smtp.json`均不存在，API亦無SERVICE_MODE或SMTP／journal掛載。未讀秘密正文、未外發、未部署；本批臨時token與tunnel已清理。
 - 同一寄件身份／SMTP及營運核定条件連續阻塞，目標轉受阻而非完成；A09／draft保持未合併，所有原失敗及同一合成文件保留。主模型核對，沒有代填人工驗收。恢復需正式設定與營運條件就緒，並在原用量限制下完成剩餘Agent與部署驗收；不以新帳號、改quota或擅續費繞過。
+
+
+<a id="log-20261008-pr140-closeout"></a>
+## 2026-10-08｜PR #140 有效修正收束
+
+- Recorded At：2026-10-08T18:38:44.099307+08:00；基線 master c175eb9、原 draft head 93c64e4，沿用原 A09 分支及 C 主責交付；A 統籌共用 AI、親寫 prompt／契約／計劃、整合及 review，本次不新派代理，不代填 B／D 人工驗收。
+- 按使用者要求快速收束，正常合入 master 並解決 PLAN／STATUS／WORKLOG／部署說明四處衝突。保留主線全部原日誌 bytes，另完整追加原 A09 兩段日誌；初次共祖 prefix 假設不符即停止，改按明確 A09 錨點保留，沒有改寫舊記錄或失敗證據。
+- 保留 summary-report 模組／manifest 版本對齊、同授權／文件及快照版本且有界的短正文讀回、readback 失敗仍保留成功寫入收據，以及現有行政 CLI 的 Docker 接點。未新增功能、未改前端設計。移除原未部署的 VM／SMTP overlay 與 env template，部署說明採最新主線；舊內容仍可從 93c64e4 追溯，不要求完成被新路線取代的部署。
+- 主模型 review 原 diff、授權／版本／budget／收據及錯誤路徑；只重跑既有 prompt 版本聚合及文件 adapter 聚合，各 1 項通過，Node 24.11.0。[本次證據](artifacts/verification/P2_A09_CLOSEOUT_CHECKS.json)與[原失敗／未驗](artifacts/verification/P2_A09_CHECKS.json)分開。文件差異／衝突標記／連結及 WORKLOG 追加完整性核對；不跑全倉 build／typecheck／測試。
+- 零真模型／embedding／資料庫／瀏覽器／通知／新映像／雲端或部署。原 A09 的完整引用、指定修改、新對話讀回及正式帳號／恢復／服務交付仍待 F07／F08；本 PR 只收束已 review 的修正，不宣稱 A09 或 P2 完成。
+- PLAN／STATUS 原位改為修正合併後 F01 Ready；列 F01 → F02 → F03 → F04／F05 → F06 → F07 → F08 及各依賴。F02 資源／費用與 F08 切換／預算仍另批，未續期 VM。本次按 C 已登入帳號推送／合併；實際 Author／共同作者／Committer／簽署在遠端交付時核對，不預先宣稱 Verified。

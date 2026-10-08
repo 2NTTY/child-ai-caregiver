@@ -142,13 +142,10 @@ test('warning and accent actions retain their own palettes while held', () => {
   opaque(camera); assert.equal(camera.backgroundColor, theme.colors.accentPressed); assert.equal(camera.borderWidth, undefined);
   const blocked = stateStyle(home, usesStyle('styles.capture,'), { styles: homeStyles, trigger: { disabled: true } });
   assert.equal(blocked.opacity, .5); assert.equal(blocked.backgroundColor, theme.colors.accent);
-  const shell = 'src/components/AppShell.tsx', shellStyles = styles(shell);
-  const scenario = stateStyle(shell, usesStyle('styles.scenario,'), { styles: shellStyles, scenario: 'one', item: 'one' });
-  opaque(scenario); assert.equal(scenario.backgroundColor, theme.colors.inkPressed);
 });
 test('chat send feedback is local to its accent surface and disabled state is unchanged', () => {
   const file = 'src/components/agent/AgentComposer.tsx', shared = styles(file);
-  const { node, sf } = control(file, named('預覽輸入'));
+  const { node, sf } = control(file, (node, sf) => attribute(node, 'accessibilityLabel', sf)?.getText(sf) === '{submitLabel}');
   const child = node.parent.children.find(item => ts.isJsxExpression(item) && item.expression && ts.isArrowFunction(item.expression));
   assert.ok(child, 'send control exposes pressed state to its own circle');
   const render = canPreview => expression(child.expression.getText(sf), { styles: shared, canPreview, View: 'View', AppIcon: 'AppIcon' });

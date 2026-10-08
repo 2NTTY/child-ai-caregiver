@@ -14,7 +14,7 @@ const overrides = {
   'react-native-paper': { Text: 'Text' },
   '../../theme': { chineseFont: 'synthetic', colors: placeholder, radius: placeholder, readingType: {}, spacing: placeholder, workspaceType: {} },
 };
-for (const name of ['../AppStatusBadge', '../AppCheckbox', '../AppIcon', '../AppButton', '../ui',
+for (const name of ['../EmptyListCard', '../AppStatusBadge', '../AppCheckbox', '../AppIcon', '../AppButton', '../ui',
   '../StatusAnnouncement', '../chat/ChatMessage', '../../motion']) overrides[name] = placeholder;
 function load(entry) {
   const file = path.resolve(root, entry);
@@ -52,6 +52,10 @@ const fixtures = [
     observedAt: at, links: { recordId: null, taskId: null, attentionId: null }, followUpAt: null } }, expected: '關注鏈已保存。' },
   { kind: 'concern', value: { kind: 'concern_change', concernId: resourceId,
     change: { action: 'archive', expectedVersion: 1, authorityVersion: 'synthetic-authority', confirm: true } }, expected: '關注鏈已保存。' },
+  { kind: 'family_document', value: { kind: 'family_document_change', documentId: resourceId,
+    change: { action: 'patch', expectedVersion: 1, authorityVersion: 'synthetic-authority',
+      edits: [{ op: 'set_metadata', title: 'Synthetic document title' }] } },
+    expected: '指定修改已保存到同一份家庭文件；請按目前來源及版本核對正文。' },
 ];
 function response(fixture, kind = fixture.kind) {
   return { result: { runId, provenance: null, status: 'completed', stopReason: null, text: 'Synthetic response',

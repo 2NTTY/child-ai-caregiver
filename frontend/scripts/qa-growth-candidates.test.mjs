@@ -23,31 +23,62 @@ const mocks={
 const source=readFileSync(new URL('../src/production/TaskKnowledgeGrowthCandidates.tsx',import.meta.url),'utf8');
 const output={},compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
 new Function('require','exports',compiled)(name=>{assert.ok(mocks[name],name);return mocks[name];},output);
-const text=tree=>tree==null||typeof tree==='boolean'?'':typeof tree!=='object'?String(tree)
-  :Array.isArray(tree)?tree.map(text).join(' '):text(tree.props?.children);
-function render(notices=[],items=[],access='ready',pageAvailable=true){
-  return text(output.TaskKnowledgeGrowthCandidates({model:{access,scopeKey:'synthetic',resetCounts:{},epoch:1,
-    page:pageAvailable?{items,notices,topics:[],historyHasMore:false}:null},actions:{},onTask(){}}));
+function nodes(tree) {
+  if (Array.isArray(tree)) return tree.flatMap(nodes);
+  if (!tree || typeof tree !== 'object' || tree.props?.visible === false) return [];
+  return [tree, ...nodes(tree.props?.children)];
 }
-test('unsupported region renders a compact limitation rather than a successful empty suggestion state',()=>{
-  const view=render([GROWTH_KNOWLEDGE_NOTICES.region]);assert.match(view,/地區資料待確認。/u);
-  assert.doesNotMatch(view,/暫時沒有建議|尚未能把已確認地域/u);
+const text=tree=>tree==null||typeof tree==='boolean'?'':typeof tree!=='object'?String(tree)
+  :Array.isArray(tree)?tree.map(text).join(' '):tree.props?.visible === false ? '' : text(tree.props?.children);
+function render({notices=[],items=[],topics=[],access='editable',pageAvailable=true,historyHasMore=false,busy=false}={}) {
+  const model={access,scopeKey:'synthetic',resetCounts:{},epoch:1,busy,
+    page:pageAvailable?{items,notices,topics,historyHasMore}:null};
+  const before=structuredClone(model);
+  const tree=output.TaskKnowledgeGrowthCandidates({model,actions:{},onTask(){}});
+  assert.deepEqual(model,before);
+  return {tree,text:text(tree)};
+}
+test('successful empty suggestions have no extra card or misleading region and age prompts',()=>{
+  for (const notices of [[],[GROWTH_KNOWLEDGE_NOTICES.region],[GROWTH_KNOWLEDGE_NOTICES.age],['Synthetic unrelated notice']]) {
+    const view=render({notices});
+    assert.equal(nodes(view.tree).some(node=>node.type==='Card'),false);
+    assert.equal(nodes(view.tree).some(node=>node.type==='Disclosure'),false);
+    assert.doesNotMatch(view.text,/成長建議|暫時沒有建議|地區資料待確認|目前無法提供適用建議/u);
+  }
 });
-test('out-of-scope age renders a compact applicability limitation',()=>{
-  const view=render([GROWTH_KNOWLEDGE_NOTICES.age]);assert.match(view,/目前無法提供適用建議。/u);
-  assert.doesNotMatch(view,/暫時沒有建議|知識及成長規則目前只覆蓋/u);
+test('available topic settings keep applicability information in the secondary disclosure',()=>{
+  for (const [notice,expected] of [[GROWTH_KNOWLEDGE_NOTICES.region,'目前未能將已確認地區用於建議篩選；原有資料已保留。'],[GROWTH_KNOWLEDGE_NOTICES.age,'目前的建議只適用於 0–10 歲。']]) {
+    const view=render({notices:[notice],topics:[{id:'synthetic-topic'}]});
+    const disclosure=nodes(view.tree).find(node=>node.type==='Disclosure');
+    assert.equal(disclosure.props.label,'建議設定');
+    assert.ok(text(disclosure).includes(expected));
+    assert.equal(nodes(disclosure).filter(node=>node.type?.name==='TopicForm').length,1);
+    assert.equal(nodes(view.tree).some(node=>node.type==='Card'),false);
+  }
 });
-test('a normal empty page keeps its existing empty-state copy',()=>{
-  assert.match(render(),/暫時沒有建議。/u);assert.doesNotMatch(render(),/地區資料待確認|無法提供適用建議/u);
+test('actual pending suggestions retain their card, source-review action and busy guard',()=>{
+  const item={id:'synthetic-attention',title:'Synthetic saved candidate',kind:'observe',state:'proposed',version:3,whyNow:'Synthetic basis'};
+  for (const busy of [false,true]) {
+    const view=render({notices:[GROWTH_KNOWLEDGE_NOTICES.region],items:[item],busy});
+    assert.match(view.text,/Synthetic saved candidate/u);
+    assert.match(view.text,/Synthetic basis/u);
+    assert.equal(nodes(view.tree).filter(node=>node.type==='Card').length,1);
+    const button=nodes(view.tree).find(node=>node.type==='Button'&&node.props.label==='查看來源與核對候選');
+    assert.equal(button.props.disabled,busy);
+    assert.equal(typeof button.props.onPress,'function');
+    assert.doesNotMatch(view.text,/地區資料待確認|暫時沒有建議/u);
+  }
 });
-test('other notices do not create the new unsupported-basis state',()=>{
-  assert.match(render(['需要有效的出生日期才可套用本批年齡規則。','Synthetic unrelated notice']),/暫時沒有建議。/u);
+test('a partially loaded empty candidate window retains the explicit history limitation',()=>{
+  const view=render({historyHasMore:true});
+  assert.equal(nodes(view.tree).filter(node=>node.type==='Card').length,1);
+  assert.match(view.text,/仍有較早建議未載入。/u);
+  assert.doesNotMatch(view.text,/暫時沒有建議/u);
 });
-test('existing candidates remain visible instead of being replaced by an empty-state limitation',()=>{
-  const view=render([GROWTH_KNOWLEDGE_NOTICES.region],[{id:'synthetic-attention',title:'Synthetic saved candidate',kind:'observe',state:'proposed',version:3,whyNow:'Synthetic basis'}]);
-  assert.match(view,/Synthetic saved candidate/u);assert.doesNotMatch(view,/地區資料待確認|暫時沒有建議/u);
-});
-test('lost access and unread pages expose neither candidates nor limitations',()=>{
-  assert.equal(render([GROWTH_KNOWLEDGE_NOTICES.region],[],'lost'),'');
-  assert.equal(render([GROWTH_KNOWLEDGE_NOTICES.age],[],'ready',false),'');
+test('lost access and unread pages expose neither candidates nor settings',()=>{
+  for (const options of [{access:'lost'},{pageAvailable:false}]) {
+    const view=render({...options,notices:[GROWTH_KNOWLEDGE_NOTICES.region],topics:[{id:'synthetic-topic'}]});
+    assert.equal(view.tree,null);
+    assert.equal(view.text,'');
+  }
 });

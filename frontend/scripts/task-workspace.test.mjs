@@ -149,7 +149,14 @@ test("offline prevents reviewed submission while loading hides stale task data a
 test("dashboard mounts one task owner and screens consume it without duplicate fixtures", () => {
   const read = name => fs.readFileSync(new URL(name, import.meta.url), "utf8");
   const layout = read("../app/(dashboard)/_layout.tsx");
-  assert.equal(layout.match(/<TasksWorkspaceProvider>/g)?.length, 1);
+  const domains = read("../src/production/ProductionDomains.tsx"), knowledge = read("../src/production/TaskKnowledgeDomains.tsx");
+  const composition = [layout, domains, knowledge].join("\n");
+  assert.equal(layout.match(/<ProductionDomains>/g)?.length, 1);
+  assert.equal(domains.match(/<ProductionTaskKnowledgeDomains>/g)?.length, 1);
+  assert.equal(composition.match(/<TasksWorkspaceProvider(?:>|\s)/g)?.length, 1);
+  assert.match(knowledge, /<TasksWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{current\?\.tasks \?\? null\}>/);
+  assert.match(knowledge, /snapshot.scopeKey === env.scopeKey \? snapshot : null/);
+  assert.doesNotMatch(composition, /<(?:PreviewProvider|TasksPreviewProvider)(?:>|\s)/);
   assert.ok(!read("../src/screens/tasksScreen.tsx").includes("useTasksPreview("));
   assert.ok(!read("../src/components/tasks/TaskHistoryView.tsx").includes("useTasksPreview("));
   assert.ok(read("../src/screens/tasksScreen.tsx").includes("/history?category=tasks"));

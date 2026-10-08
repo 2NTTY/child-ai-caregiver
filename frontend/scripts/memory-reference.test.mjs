@@ -46,12 +46,18 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === 'react/jsx-runtime') return require(name);
     if (name === 'react-native') return { View: nativeElement('div'), StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: nativeElement('span') };
+    if (name === 'expo-router') return { useRouter: () => ({ push() {} }) };
+    if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewNavigation: () => ({ navigate: action => action() }) };
+    if (name.endsWith('/history-view-model')) return compile('../src/history-view-model.ts', require);
+    if (name.endsWith('/PersistentWorkCards')) return { PersistentWorkCards: () => null };
+    if (name.endsWith('/HistoryMessageDetail')) return { HistoryMessageDetail: () => null };
     if (name === '../../memory-view-model') return memory;
     if (name === '../../memory-reference-view-model') return projections;
     if (name === '../../workspaces/MemoryReferenceWorkspace') return { useMemoryReferenceWorkspace: () => workspace };
     if (name === '../../theme') return { colors: {}, spacing: {}, radius: {}, readingType: {}, workspaceType: {} };
     if (name === '../AppStatusBadge') return { AppStatusBadge: ({ label }) => React.createElement('span', null, label) };
     if (name === '../ReadStateNotice') return { ReadStateNotice: ({ title, message }) => React.createElement('aside', null, title, message) };
+    if (name === '../EmptyListCard') return { EmptyListCard: ({ title, detail }) => React.createElement('aside', { 'data-empty': 'true' }, title, detail) };
     if (name === '../ui') return ui;
     if (name === '../useContainerWidth') return { useContainerWidth: () => ({ width: 1440, ref: null, onLayout() {} }) };
     assert.fail(`Unexpected view dependency ${name}`);
@@ -136,7 +142,7 @@ test('all long-term disclosures remain read-only and clarification only hands an
 test('missing read ports, denied access and summary-null have honest visible states', () => {
   const value = snapshot();
   const short = renderView(value, { tab: 'short' }).html;
-  assert.match(short, /本輪對話脈絡暫未提供/); assert.doesNotMatch(short, /週末照顧安排|睡前觀察/);
+  assert.match(short, /目前工作脈絡暫未提供/); assert.doesNotMatch(short, /週末照顧安排|睡前觀察/);
   const references = renderView(value, { tab: 'references' }).html;
   assert.equal((references.match(/參考來源暫未提供/g) ?? []).length, 1);
   assert.doesNotMatch(references, /暫無可顯示來源|官方指引|近期資訊/);
@@ -160,7 +166,7 @@ test('one scoped production memory owner and an independent preview owner keep c
   const domains = fs.readFileSync(new URL('../src/production/ProductionDomains.tsx', import.meta.url), 'utf8');
   assert.equal((domains.match(/<ProductionTaskKnowledgeDomains>/g) ?? []).length, 1);
   const connected = fs.readFileSync(new URL('../src/production/TaskKnowledgeDomains.tsx', import.meta.url), 'utf8');
-  assert.equal((connected.match(/useTaskKnowledgeMemory\(env\)/g) ?? []).length, 1);
+  assert.equal((connected.match(/useTaskKnowledgeMemory\(env, history\)/g) ?? []).length, 1);
   assert.equal((connected.match(/<MemoryReferenceWorkspaceProvider\s/g) ?? []).length, 1);
   assert.match(connected, /snapshot\.scopeKey === env\.scopeKey \? snapshot : null/);
   assert.match(connected, /<MemoryReferenceWorkspaceProvider scopeKey=\{env\.scopeKey\} value=\{current\?\.memory\.value \?\? null\}>/);
@@ -169,7 +175,9 @@ test('one scoped production memory owner and an independent preview owner keep c
     assert.doesNotMatch(source, /useMemoryPreview|useSourcesPreview|MemoryEditorPanel|MemoryTopicList|beginFact|beginTopic|applyMemoryPreviewWrite|\.submit\(/);
   }
   const view = fs.readFileSync(new URL('../src/components/memory/MemoryReferenceView.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(view, /from\s+["'][^"']*preview\//);
+  assert.match(view, /usePreviewNavigation/);
+  assert.doesNotMatch(view, /preview\/(?:MemoryReferenceWorkspaceProvider|useMemoryPreview|useSourcesPreview)/);
+  assert.equal((connected.match(/usePersonalHistory\(env\)/g) ?? []).length, 1);
   assert.match(view, /current\.current !== workspace/);
 });
 
@@ -195,4 +203,37 @@ test('an explicitly supplied run context is displayed verbatim without expanding
   const { html } = renderView(freeze(value), { tab: 'short' });
   assert.match(html, /Unit-test supplied run context/); assert.doesNotMatch(html, /睡前觀察|週末照顧安排/);
   assert.equal(value.model.shortTerm.data.messages[0], message);
+});
+
+test('successful empty lists are cards, while stale and offline memory snapshots never claim absence', () => {
+  const value = snapshot();
+  value.model.longTerm.data.facts = [];
+  value.model.longTerm.data.summary = null;
+  value.model.shortTerm = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { runId: 'synthetic', messages: [] } };
+  value.model.references = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { audience: 'public', items: [], hasMore: true } };
+  for (const tab of ['long', 'short', 'references']) assert.match(renderView(value, { tab }).html, /data-empty="true"/);
+  assert.match(renderView(value, { tab: 'references' }).html, /仍有來源未載入/);
+  for (const state of ['stale', 'loading', 'error', 'unavailable']) {
+    const copy = structuredClone(value);
+    for (const key of ['longTerm', 'shortTerm', 'references']) copy.model[key] = state === 'stale' ? { ...copy.model[key], state } : { scopeKey, state, revision: null, data: null, asOf: null };
+    for (const tab of ['long', 'short', 'references']) assert.doesNotMatch(renderView(copy, { tab }).html, /data-empty="true"/);
+  }
+  value.model.online = false;
+  for (const tab of ['long', 'short', 'references']) assert.doesNotMatch(renderView(value, { tab }).html, /data-empty="true"/);
+});
+
+test('A07 work-only context is not empty and catalog emptiness is online-ready only', () => {
+  const value = snapshot();
+  value.model.shortTerm = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { runId: null, messages: [], works: [{ id: 'synthetic-work', version: 1, sourceMessageIds: [] }], hasMoreWorks: false } };
+  assert.doesNotMatch(renderView(value, { tab: 'short' }).html, /data-empty="true"/);
+  value.model.shortTerm.data.works = [];
+  assert.match(renderView(value, { tab: 'short' }).html, /data-empty="true"/);
+  value.model.references = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { audience: 'public', items: [], catalog: [], hasMore: true } };
+  assert.match(renderView(value, { tab: 'references' }).html, /仍有來源未載入/);
+  for (const state of ['stale', 'error', 'unavailable']) {
+    value.model.references.state = state;
+    assert.doesNotMatch(renderView(value, { tab: 'references' }).html, /data-empty="true"/);
+  }
+  value.model.references.state = 'ready'; value.model.online = false;
+  assert.doesNotMatch(renderView(value, { tab: 'references' }).html, /data-empty="true"/);
 });

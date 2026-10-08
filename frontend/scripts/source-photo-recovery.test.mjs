@@ -35,7 +35,9 @@ function fixture(kind, targetPatch = {}) {
     async photo() {if (resourceError) throw resourceError; if (deleted) throw new ApiError(404); return target;},
     async input() {if (resourceError) throw resourceError; if (deleted) throw new ApiError(404); return target;},
     async content() {return new Blob(['x']);}};
-  const env = {apiBaseUrl: '/api', scopeKey: 'child-a', childId: 'child-a', childName: 'A', userId: 'synthetic-parent', role: 'owner', online: true,
+  let attachments = []; const draftListeners = new Set();
+  const draftOwner = {getSnapshot: () => ({scope: 'child-a', attachments}), subscribe: listener => {draftListeners.add(listener); return () => draftListeners.delete(listener);}};
+  const env = {owner: {draftOwner}, apiBaseUrl: '/api', scopeKey: 'child-a', childId: 'child-a', childName: 'A', userId: 'synthetic-parent', role: 'owner', online: true,
     current: () => current, currentIdentity: () => current, canStartWrite: () => true, invalidate() {}, accessError(error) {denied.push(error);},
     queryClient: {fetchQuery: ({queryFn}) => queryFn()}};
   const resolve = name => {
@@ -48,6 +50,7 @@ function fixture(kind, targetPatch = {}) {
     if (name.includes('/use-online-updates')) return {ONLINE_REFRESH_EVENT: 'refresh'};
     if (name.includes('/photo-view-model')) return {emptyPhotoDraft, samePhotoOriginal: () => true};
     if (name === './useDomainEnvironment') return {useDomainEnvironment: () => env, useDomainWriteGuard(dirty, pending) {guard = {dirty: !!dirty, pending, scope: 'child'};}};
+    if (name.includes('/PreviewNavigationGuard')) return {usePreviewNavigation: () => action => action()};
     if (name === './ProductionProvider') return {useProduction: () => ({})};
     if (name === './usePhotoInputSources') return {};
     if (name.includes('/photo-form')) return {photoDraftSchema: {safeParse: () => ({success: true})}};
@@ -59,7 +62,7 @@ function fixture(kind, targetPatch = {}) {
   const load = kind === 'photos' ? compile('frontend/src/production/PhotoInputDomains.tsx', resolve, '\nexports.useProductionPhotos = useProductionPhotos;').useProductionPhotos
     : compile('frontend/src/production/usePhotoInputSources.ts', resolve).usePhotoInputSources;
   const render = () => {h.reset(); const v = load(); h.flush(); return v;};
-  return {api, render, env, target, get guard() {return guard;}, get listReads() {return listReads;}, get resets() {return resets;}, get denied() {return denied;},
+  return {api, render, env, target, attach(original) {attachments = original ? [{photo: original}] : []; draftListeners.forEach(fn => fn());}, get guard() {return guard;}, get listReads() {return listReads;}, get resets() {return resets;}, get denied() {return denied;},
     set pathname(v) {pathname = v;}, set view(v) {view = v;}, set deleted(v) {deleted = v;}, set listError(v) {listError = v;}, set resourceError(v) {resourceError = v;},
     set current(v) {current = v;}, set blockRead(v) {blockRead = v;}, unmount: h.unmount,
     async ready() {render(); await settle(); return render();}, async open() {const v = await this.ready(); (v.actions.openPhoto ?? v.actions.openInput)(v.model.items[0]); await settle(); return render();}};
@@ -104,6 +107,7 @@ for (const kind of ['sources', 'photos']) {
   test(kind + ': resource 404 rechecks child access and revocation stays fail-closed', async () => {
     const f = fixture(kind); const v = await f.open();
     f.resourceError = new ApiError(404); f.listError = new ApiError(404);
+    if (kind === 'sources') v.actions.newInput(); // Explicitly leave the current editor before reopening the same resource.
     (v.actions.openPhoto ?? v.actions.openInput)(v.model.items[0]); await settle();
     const lost = f.render(); assert.equal(lost.model.access, 'lost'); assert.equal(lost.model.selected, null); assert.deepEqual(lost.model.items, []);
     assert.equal(f.denied.at(-1).status, 403); assert.equal(f.denied.at(-1).code, 'access_denied'); f.unmount();
@@ -111,6 +115,7 @@ for (const kind of ['sources', 'photos']) {
   test(kind + ': inconclusive access check hides stale data and can recover', async () => {
     const f = fixture(kind); const v = await f.open();
     f.resourceError = new ApiError(404); f.listError = new ApiError(503);
+    if (kind === 'sources') v.actions.newInput(); // Explicitly leave the current editor before reopening the same resource.
     (v.actions.openPhoto ?? v.actions.openInput)(v.model.items[0]); await settle(); let next = f.render();
     assert.notEqual(next.model.access, 'lost'); assert.equal(next.model.selected, null); assert.deepEqual(next.model.items, []); assert.equal(next.model.load, 'error');
     f.listError = null; f.deleted = true; next.actions.refresh(); await settle(); next = f.render();
@@ -127,6 +132,7 @@ for (const kind of ['sources', 'photos']) {
   test(kind + ': late access revalidation cannot publish after scope changes', async () => {
     const f = fixture(kind); const v = await f.open(); let release;
     f.resourceError = new ApiError(404); f.blockRead = new Promise(resolve => {release = resolve;});
+    if (kind === 'sources') v.actions.newInput(); // Explicitly leave the current editor before reopening the same resource.
     (v.actions.openPhoto ?? v.actions.openInput)(v.model.items[0]); await settle(); f.current = false; release(); await settle();
     assert.deepEqual(f.render().model.items, []); assert.equal(f.render().model.selected, null); f.unmount();
   });
@@ -136,6 +142,7 @@ test('photos: original ownership survives chat-to-Photos entry and releases on a
   const bytes = new Uint8Array([1]), encoded = btoa(String.fromCharCode(...bytes));
   const sha256 = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), value => value.toString(16).padStart(2, '0')).join('');
   const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256, imageSource: {uri: 'synthetic'}, readBase64: async () => encoded};
+  f.attach(original);
   assert.equal(await f.render().receiveComposerOriginal(original), true); const owned = f.render().model.original;
   f.pathname = '/photos'; f.render(); assert.equal(f.render().model.original, owned); assert.equal(await owned.readBase64(), encoded);
   navigation(() => {f.pathname = '/tasks';}, () => f.guard).confirm(); f.render(); assert.equal(f.render().model.original, null);
@@ -255,4 +262,145 @@ test('photos: A preview and B unresolved state are both cleared on child revocat
     assert.ok(revoked.includes(aUrl)); assert.equal(v.model.access, 'lost'); assert.equal(v.model.selected, null); assert.deepEqual(v.model.items, []);
     assert.equal(f.guard.pending, false); assert.equal(f.denied.at(-1).status, 403); f.unmount();
   } finally {URL.revokeObjectURL = revoke;}
+});
+
+test('photos: handoff copies bytes without releasing composer and revalidates scope and access', async () => {
+  const f = fixture('photos'); f.pathname = '/chat'; await f.ready();
+  let released = false;
+  const bytes = new Uint8Array([1]), encoded = btoa(String.fromCharCode(...bytes));
+  const sha256 = Buffer.from(await crypto.subtle.digest('SHA-256', bytes)).toString('hex');
+  const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256, imageSource: {uri: 'synthetic'},
+    readBase64: async () => {if (released) throw new Error('Composer released'); return encoded;}, dispose() {released = true;}};
+  f.attach(original);
+  assert.equal(await f.render().receiveComposerOriginal(original), true);
+  let v = f.render(); assert.equal(v.canContinueComposerOriginal(original), true); assert.equal(released, false);
+  const owned = v.model.original; assert.notEqual(owned, original);
+  f.env.role = 'viewer'; assert.equal(v.canContinueComposerOriginal(original), false);
+  f.env.role = 'owner'; f.current = false; assert.equal(v.canContinueComposerOriginal(original), false);
+  f.current = true; assert.equal(v.canContinueComposerOriginal({...original}), false);
+  // Actual route commit releases the composer. Its independent recipient remains readable.
+  f.pathname = '/photos'; original.dispose(); f.render();
+  assert.equal(await owned.readBase64(), encoded); assert.equal(f.render().model.original, owned);
+  f.unmount(); await assert.rejects(owned.readBase64(), /Original released/);
+});
+
+test('photos: child change during byte read cannot publish a transferred original', async () => {
+  const f = fixture('photos'); f.pathname = '/chat'; await f.ready(); let release;
+  const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256: 'a'.repeat(64), imageSource: {uri: 'synthetic'},
+    readBase64: () => new Promise(resolve => {release = resolve;})};
+  f.attach(original);
+  const pending = f.render().receiveComposerOriginal(original); f.current = false; release('AQ==');
+  assert.equal(await pending, false); assert.equal(f.render().model.original, null); f.unmount();
+});
+
+test('navigation: retaining exact handoff drafts never exempts pending, unrelated dirty or child changes', () => {
+  const h = hooks(), jsx = (type, props) => ({type, props});
+  const Dialog = Object.assign(() => null, {Title: 'Title', Content: 'Content', Actions: 'Actions'});
+  const {PreviewNavigationGuard} = compile('frontend/src/preview/PreviewNavigationGuard.tsx', name =>
+    name === 'react' ? h.react : name === 'react/jsx-runtime' ? {jsx, jsxs: jsx} : name === 'react-native' ? {Platform: {OS: 'web'}, StyleSheet: {create: x => x}} :
+    name === 'react-native-paper' ? {Text: 'Text'} : name.includes('/AppDialog') ? {AppDialog: Dialog} : name.includes('/ui') ? {AppButton: 'Button'} :
+    name.includes('/theme') ? {colors: {}, typeScale: {}} : name.startsWith('expo-router') || name.includes('browser-history-guard') ? {} : assert.fail(name));
+  const render = () => {h.reset(); return PreviewNavigationGuard({children: null});};
+  const all = value => !value || typeof value !== 'object' ? [] : [value, ...(Array.isArray(value) ? value : [value.props?.children]).flatMap(all)];
+  let tree = render(), routes = 0; const guard = tree.props.value, go = () => routes++;
+  const ordinary = {dirty: true, pending: false, scope: 'child'};
+  guard.register('composer', ordinary); guard.register('photos', ordinary);
+  guard.request(go, 'navigation', ['composer', 'photos']); assert.equal(routes, 1);
+  guard.request(go); assert.equal(routes, 1, 'ordinary navigation still guards the same drafts');
+  guard.register('photos', {...ordinary, pending: true}); guard.request(go, 'navigation', ['composer', 'photos']);
+  tree = render(); assert.ok(all(tree).some(n => n.props?.children === '先處理原操作')); assert.equal(routes, 1);
+  guard.register('photos', ordinary); guard.register('source', ordinary); guard.request(go, 'navigation', ['composer', 'photos']);
+  tree = render(); assert.ok(all(tree).some(n => n.props?.label === '捨棄草稿並離開')); assert.equal(routes, 1);
+  all(tree).find(n => n.props?.label === '繼續編輯').props.onPress(); assert.equal(routes, 1);
+  guard.remove('source'); guard.request(go, 'child', ['composer', 'photos']); assert.equal(routes, 1);
+});
+
+test('chat photo control waits for committed idle owner and keeps composer when navigation is blocked', async () => {
+  const f = fixture('photos'); f.pathname = '/chat'; await f.ready();
+  const encoded = 'AQ==', sha256 = Buffer.from(await crypto.subtle.digest('SHA-256', new Uint8Array([1]))).toString('hex');
+  let disposed = false, sourceAttached = true, route = '/chat', requests = [], domain = f.render();
+  const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256, imageSource: {uri: 'synthetic'},
+    readBase64: async () => encoded, dispose() {disposed = true;}};
+  f.attach(original);
+  const owner = {getSnapshot: () => ({scopeKey: 'child-a'}), draftOwner: {getSnapshot: () => ({scope: 'child-a', text: 'Keep my question', attachments: sourceAttached ? [{photo: original}] : []})}};
+  const h = hooks(), jsx = (type, props) => ({type, props}); h.react.useContext = () => ({photos: domain});
+  const {AgentPhotoInput} = compile('frontend/src/production/PhotoInputDomains.tsx', name => {
+    if (name === 'react') return h.react;
+    if (name === 'react/jsx-runtime') return {jsx, jsxs: jsx};
+    if (name === 'expo-router') return {useRouter: () => ({push: path => {route = path;}})};
+    if (name === './ProductionProvider') return {useProduction: () => ({owner, scopeKey: 'child-a'})};
+    if (name.includes('/PreviewNavigationGuard')) return {usePreviewNavigation: () => (action, intent, retained) => requests.push({action, intent, retained})};
+    if (name === '../components/ui') return {AppButton: 'Button', SectionCard: 'Card', SectionHeader: 'Header'};
+    if (name === 'react-native') return {View: 'View'};
+    if (name === 'react-native-paper') return {Text: 'Text'};
+    return {};
+  });
+  const all = value => !value || typeof value !== 'object' ? [] : [value, ...(Array.isArray(value) ? value : [value.props?.children]).flatMap(all)];
+  const render = () => {h.reset(); const tree = AgentPhotoInput({original, composerGuardId: 'composer'}); h.flush(); return tree;};
+  let transferPromise; const receive = domain.receiveComposerOriginal;
+  domain = {...domain, receiveComposerOriginal: source => transferPromise = receive(source)};
+  all(render()).find(n => n.props?.label === '把原照片帶入核對').props.onPress();
+  domain = {...f.render(), leaveGuardId: 'photos'}; assert.equal(domain.pending, true); render(); assert.equal(requests.length, 0);
+  await transferPromise; domain = {...f.render(), leaveGuardId: 'photos'}; render();
+  assert.equal(requests.length, 1); assert.deepEqual(requests[0].retained, ['composer', 'photos']);
+  assert.equal(route, '/chat'); assert.equal(disposed, false); assert.equal(sourceAttached, true);
+  assert.equal(owner.draftOwner.getSnapshot().text, 'Keep my question');
+  f.current = false; requests[0].action(); assert.equal(route, '/chat', 'late child change invalidates the saved navigation callback');
+  f.current = true; requests[0].action(); assert.equal(route, '/photos');
+  sourceAttached = false; original.dispose(); f.pathname = route; f.render();
+  assert.equal(await f.render().model.original.readBase64(), encoded); f.unmount();
+});
+
+test('photos: cancelled handoff can replace detached composer source without orphaning recipient bytes', async () => {
+  const f = fixture('photos'); f.pathname = '/chat'; await f.ready();
+  const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1,
+    sha256: Buffer.from(await crypto.subtle.digest('SHA-256', new Uint8Array([1]))).toString('hex'), imageSource: {uri: 'synthetic'}, readBase64: async () => 'AQ=='};
+  f.attach(original); assert.equal(await f.render().receiveComposerOriginal(original), true);
+  const owned = f.render().model.original;
+  // The navigation guard was cancelled; source replacement happens on the same chat route.
+  const replacement = {...original, fileName: 'replacement.png'};
+  f.attach(replacement); await settle(); assert.equal(f.render().model.original, null);
+  await assert.rejects(owned.readBase64(), /Original released/);
+  assert.equal(await f.render().receiveComposerOriginal(replacement), true);
+  const nextOwned = f.render().model.original;
+  f.pathname = '/photos'; f.render(); f.attach(null); await settle();
+  assert.equal(f.render().model.original, nextOwned); assert.equal(await nextOwned.readBase64(), 'AQ=='); f.unmount();
+});
+
+test('photos: detached source during asynchronous copy cannot publish an orphaned handoff', async () => {
+  const f = fixture('photos'); f.pathname = '/chat'; await f.ready(); let release;
+  const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1,
+    sha256: Buffer.from(await crypto.subtle.digest('SHA-256', new Uint8Array([1]))).toString('hex'), imageSource: {uri: 'synthetic'},
+    readBase64: () => new Promise(resolve => {release = resolve;})};
+  f.attach(original); const pending = f.render().receiveComposerOriginal(original);
+  f.attach(null); release('AQ=='); assert.equal(await pending, false); assert.equal(f.render().model.original, null); f.unmount();
+});
+
+test('navigation recovery error stays visible and explicit leave still checks dirty and pending', () => {
+  const h = hooks(), jsx = (type, props) => ({type, props});
+  const Dialog = Object.assign(() => null, {Title: 'Title', Content: 'Content', Actions: 'Actions'});
+  let reportError, retries = 0, leaves = 0;
+  const {PreviewNavigationGuard} = compile('frontend/src/preview/PreviewNavigationGuard.tsx', name =>
+    name === 'react' ? h.react : name === 'react/jsx-runtime' ? {jsx, jsxs: jsx} : name === 'react-native' ? {Platform: {OS: 'web'}, View: 'View', StyleSheet: {create: x => x}} :
+    name === 'react-native-paper' ? {Text: 'Text'} : name.includes('/AppDialog') ? {AppDialog: Dialog} : name.includes('/ui') ? {AppButton: 'Button'} :
+    name.includes('/theme') ? {colors: {}, typeScale: {}} : name.includes('browser-history-guard') ? {guardBrowserHistory: (_target, _block, _request, report) => {reportError = report;}} : name.startsWith('expo-router') ? {} : assert.fail(name));
+  const originalWindow = globalThis.window; globalThis.window = {};
+  const render = () => {h.reset(); const tree = PreviewNavigationGuard({children: null}); h.flush(); return tree;};
+  const all = value => !value || typeof value !== 'object' ? [] : [value, ...(Array.isArray(value) ? value : [value.props?.children]).flatMap(all)];
+  try {
+    let tree = render(); const guard = tree.props.value;
+    reportError({retry: () => retries++, leave: () => leaves++}); tree = render();
+    const alert = all(tree).find(n => n.props?.testID === 'history-recovery-error');
+    assert.equal(alert.props.accessibilityRole, 'alert'); assert.ok(all(alert).some(n => String(n.props?.children).includes('網址與目前頁面暫未同步')));
+    all(tree).find(n => n.props?.label === '重試返回原頁').props.onPress(); assert.equal(retries, 1);
+    guard.register('photo', {dirty: true, pending: true, scope: 'child'});
+    all(tree).find(n => n.props?.label === '確認離開目前頁面').props.onPress(); tree = render();
+    assert.ok(all(tree).some(n => n.props?.children === '先處理原操作')); assert.equal(leaves, 0);
+    guard.register('photo', {dirty: true, pending: false, scope: 'child'});
+    all(tree).find(n => n.props?.label === '確認離開目前頁面').props.onPress(); tree = render();
+    all(tree).find(n => n.props?.label === '繼續編輯').props.onPress(); tree = render();
+    assert.equal(leaves, 0); assert.ok(all(tree).some(n => n.props?.testID === 'history-recovery-error'));
+    all(tree).find(n => n.props?.label === '確認離開目前頁面').props.onPress(); tree = render();
+    all(tree).find(n => n.props?.label === '捨棄草稿並離開').props.onPress(); assert.equal(leaves, 1);
+  } finally {globalThis.window = originalWindow; h.unmount();}
 });

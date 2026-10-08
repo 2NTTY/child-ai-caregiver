@@ -2,6 +2,8 @@
 
 核對日期：2026-09-25 至 2026-09-26；基線：`80cf50c08ee044e734d2463fe9a22ae30eeb786d`（當時本地及遠端 master）。本文件保存選型證據、代價及待驗證項；現行技術邊界由 [ARCHITECTURE](ARCHITECTURE.md#reuse-boundaries) 維護，工作包由 [PLAN](../PLAN.md#roadmap-packages) 維護，執行規則由 [AGENTS](../AGENTS.md#technical-skills) 維護。進入工作包時只補查版本變動或證據缺口，不重做整份調查。
 
+2026-10-08 集中服務變更的新增核查見 [Firestore 盤點](#firestore-dependency-audit)。以下原 PostgreSQL／Better Auth／Compose 選型及驗收仍是現有實作證據；其後續依賴方向由 ADR-019 替代，不要求重新跑歷史驗收。
+
 <a id="baseline"></a>
 ## 已有成果與證據層級
 
@@ -90,7 +92,7 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 <a id="local-deployment"></a>
 ## 本地部署與採用閘
 
-Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定性規則可由自有 Compose 承載，不以 Cloud Tasks、Vertex Session／Memory Bank 或代管 RAG 作核心前置。沿用 GCP 初期部署成果；S17-W05 驗證不附加 GCP 身份且關閉 AI 時仍能登入、管理資料／任務及執行確定性規則。Gemini 仍是外部模型服務，私有部署不代表離線推理；Google 官方支援 [GCP 以外 ADC](https://docs.cloud.google.com/docs/authentication/set-up-adc-on-premises)，具體憑據配置及模型授權須在交付驗證。FCM／Telegram／Web Push 亦是可失敗的外部渠道，不是資料權威。
+原自部署研究邊界（ADR-019 後不作本輪前置）：Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定性規則可由自有 Compose 承載。新集中服務採用 Tasks 等代管組件，不能沿用「無 GCP 核心依賴」宣稱。沿用 GCP 初期部署成果；S17-W05 驗證不附加 GCP 身份且關閉 AI 時仍能登入、管理資料／任務及執行確定性規則。Gemini 仍是外部模型服務，私有部署不代表離線推理；Google 官方支援 [GCP 以外 ADC](https://docs.cloud.google.com/docs/authentication/set-up-adc-on-premises)，具體憑據配置及模型授權須在交付驗證。FCM／Telegram／Web Push 亦是可失敗的外部渠道，不是資料權威。
 
 每個候選先做該包最小接入及必要輕量 typecheck／unit／build；有真服務、資料庫 integration、E2E 或真機成本時，按 [PLAN 驗證制度](../PLAN.md#verification) 先列明原因、範圍、次數／成本。通過才把「文件相容」更新為指定場景實測；失敗保留版本及原因，僅回查缺口。若既有實作已足夠，記一句復用結論便繼續，不為每個小功能建大型框架比較表。
 
@@ -149,3 +151,45 @@ Node／PostgreSQL／pgvector／worker、業務台帳、附件、權限及確定�
 沿用 Better Auth 1.7.5 的驗證、密碼找回及會話撤銷，沒有重造身份或 token 系統。主模型核對原生 transaction／hook 及 server-only verifyPassword；業務邀請、資料處理確認、可靠刪除及備份後抑制仍由產品服務處理。方法見 [Skill](../.agents/skills/better-auth-account-lifecycle/SKILL.md)。
 
 根依賴缺郵件 transport，採固定 Nodemailer 10.0.16（MIT-0；Node >=20）及 @types/nodemailer 8.0.2（MIT），沿現有 pg-boss 交易 outbox；使用標準 SMTP／STARTTLS 與正常憑證驗證，不綁單一商用郵件平台或自寫 SMTP 生產 client。[官方 SMTP](https://nodemailer.com/smtp)及安裝版本已核對；本機 capture、真收件箱及正式部署的證據分開記錄。
+
+
+<a id="firestore-dependency-audit"></a>
+## Firestore 遷移：實際依賴及原生能力核查
+
+核對日 2026-10-08，固定基線 0c22180（PR #130 已合併）；35 份 SQL migration、97 個建表定義及 27 個 store factory 是盤點口徑，不是 Firestore collection 數量，亦不含 #140 未合併修改。以下只記研究／差異，完成狀態在 PLAN，設計在 [架構](ARCHITECTURE.md#firestore-target)。
+
+| 現有依賴／必要原文位置 | 實際耦合／目標需要承接 |
+|---|---|
+| [online.ts](../server/online.ts)、[transaction-pool.ts](../server/transaction-pool.ts)、[online-change.ts](../server/online-change.ts) | advisory／workspace row lock、原 op fingerprint、savepoint、收據與 changeSeq 同一 SQL transaction；改 read-first 交易、確定 ID claim／receipt 及 outbox，不以獨立多次 set 冒充原子 |
+| [family-access.ts](../server/family-access.ts)、[auth.ts](../server/auth.ts) | SQL 授權鎖與 Better Auth 1.7.5／原生 Pool；保留資源／成員版本與逐裝置撤銷，Auth adapter 改 Firebase，限流／准入須跨 instance |
+| [task-worker.ts](../server/task-worker.ts)、[worker-queue.ts](../server/worker-queue.ts) | pg-boss 12.34.0／schema 42、原交易入列、lease／generation、暫停及恢復；Tasks outbox 與補償喚醒不能丟原 unknown／終態 |
+| [knowledge-store.ts](../server/knowledge-store.ts)、[knowledge-retriever.ts](../server/knowledge-retriever.ts) | pgvector 0.8.6、1024 維；先適用／scope 過濾、vector／keyword 有界候選再 RRF，標題4／章節3／keywords5／topics4／body1、RRF k=60；Firestore 須保留正文候選和引用版本 |
+| [photo-files.ts](../server/photo-files.ts)、[account-data.ts](../server/account-data.ts) | 本地 AES 檔案、SQL 刪除清理、獨立 fsync 刪除 journal；Storage generation／完成發布、獨立 intent 及可恢復清理替代，不能只刪 metadata |
+| [package.json](../package.json)／[lockfile](../package-lock.json) | pg 8.23.0、Better Auth 1.7.5、ADK 2.1.0／GenAI 2.24.0；保留 Node 24／現有框架，Firestore／Auth／Tasks／Storage SDK 尚未在本包安裝 |
+
+### 原生方案、取捨及待驗
+
+| 官方／固定來源 | 文件已核對的能力／本工程仍待驗 |
+|---|---|
+| [Firestore 交易](https://docs.cloud.google.com/firestore/native/docs/manage-data/transactions)／[限制](https://docs.cloud.google.com/firestore/quotas) | 交易重跑及容量、原生索引／cursor；現有跨 store 事務、防重、權限競爭及全部查詢組合須 F01 對照／F02 實證 |
+| [Server IAM](https://docs.cloud.google.com/firestore/native/docs/security/iam) | Server SDK 不靠 Security Rules 執行業務權限；保留本項目家庭、private scope 與刪除／撤權閘，不委派模型或 provider |
+| [Auth 匯入](https://firebase.google.com/docs/auth/admin/import-users)／[blocking](https://firebase.google.com/docs/auth/extend-with-blocking-functions)／[cookie](https://firebase.google.com/docs/auth/admin/manage-cookies) | STANDARD_SCRYPT 可配參數；Better Auth 現有 N=16384／r=16／p=1／64 bytes、16 隨機 bytes 的 hex 字串作 salt、密碼 NFKC 必須以合成資料核對。blocking 要 Identity Platform；per-device session／邀請消耗由產品補，不當原生已完整支援 |
+| [Better Auth adapter v1.3.2](https://github.com/yultyyev/better-auth-firestore/releases/tag/v1.3.2) | 社群 MIT、宣告支援 Better Auth 1.7；存在可保留方案，不宣稱原生／官方支援。未安裝或驗本工程交易／Auth 正確性；使用者選 Firebase 以減少 adapter／郵件維護 |
+| [Tasks HTTP](https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks)／[限制](https://docs.cloud.google.com/tasks/docs/quotas) | OIDC、重試、30 天最遠 schedule；task-name 去重是有限窗，不能取代永久業務收據或處理未知外發 |
+| [Hosting](https://firebase.google.com/docs/hosting/serverless-overview)／[cookie/cache](https://firebase.google.com/docs/hosting/manage-cache) | 60 秒轉送、__session cookie 限制；實際認證交換、非同步 run、私有 no-store 及取消接線待驗 |
+| [向量](https://docs.cloud.google.com/firestore/native/docs/vector-search)／[全文限制](https://docs.cloud.google.com/firestore/native/docs/text-search) | 原生向量上限 2048 維，1024 可沿用；Standard 無全文。採有界公共 posting／n-gram 候選是本項目必需缺口，不引入常駐搜尋；召回／索引容量／讀取費待切片量測 |
+| [Storage precondition](https://docs.cloud.google.com/storage/docs/request-preconditions)／[備份](https://docs.cloud.google.com/firestore/native/docs/backups) | generation 控制及原生 DB 備份可復用；交易外 object／metadata／journal 一致性、14 天配對物件與隔離還原須本項目驗證 |
+| [Emulator](https://docs.cloud.google.com/firestore/native/docs/emulator) | 本機基本測試輔助；不把 emulator 結果當 production vector／交易競爭／IAM／縮零與計費證據 |
+
+本次只查文件、既有版本及原碼，沒有新增依賴或複製第三方實作。F01 固定官方 Node SDK 的實際版本／license／lockfile 及 Node 相容性，按現有 license manifest 納入；代管服務條款／區域／計費另核，不能以 SDK 開源 license 當服務免費。新短 Skill 只在首次實作出現可復用方法時建立，不為本研究預建框架。價格屬易變資料，核對與假設見 [成本](ARCHITECTURE.md#firestore-cost)。
+
+
+<a id="multi-agent-reuse"></a>
+## 四角色編排及多模態知識維護核查
+
+2026-10-08，基線 e6842fc；以下為固定版本原碼／官方文件與本機程式唯讀核對，不是四角色或多模態流程已實測。現行採用見 [ADR-020](DECISIONS.md#adr-020)／[架構](ARCHITECTURE.md#p2-agent-roles)，不新增 framework、依賴或預建 Skill。
+
+- **可復用原生能力：**ADK 的 [Agent-as-Tool](https://adk.dev/tools-custom/function-tools/) 讓子任務回傳主 Agent，主 Agent 保留對話控制；適合聊天按需調資料編製，背景維護另由受信工作入口啟動。[2.1.0 AgentTool](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/tools/agent_tool.ts) 為 Apache-2.0，已有子 Runner／取消傳遞，但 runAsync 不帶專案 RunConfig／maxLlmCalls，schema 驗證亦有 TODO；不能推定共享 scope、預算及 observer 自動完整繼承。採原生 FunctionTool／Runner 薄接點明確注入現有 gateway／validator／根預算，不複製整個框架；首次實作才核最少相容情景。
+- **現有 runtime 與審核缺口：**[agent-runtime](../server/agent-runtime.ts) 有有界 Runner／FunctionTool／取消／收尾；[product-agent-tools](../server/product-agent-tools.ts) 的 present_answer 驗引用 ID、分類與範圍，不是獨立模型判斷每項說法是否獲原文支持。[knowledge-version-review](../server/knowledge-version-review.ts) 已有變更含義、原文片段、growthRuleImpact 與發布 gate，可接審核角色；資料編製復用 [文件工具](../server/agent-document-tools.ts)及其他領域服務，不另存可寫副本。
+- **多模態缺口：**[knowledge-pdf](../server/knowledge-pdf.ts)／worker 沿 pdfjs 文字分批抽取，完整度不代表圖表含義已核對；[agent-model-gateway](../server/agent-model-gateway.ts) 目前拒 fileData 且最多一張受控照片。官方 [Vertex 文件理解](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/document-understanding) 提醒長文件分拆、機讀文字優先，以及掃描／手寫／定位誤差；採來源維護專用有界視覺輸入，保留原頁供審核，不以模型抽取當逐字原文。沿現有 Vertex／GenAI 路線；實作時核固定模型與 SDK 的實際媒體相容，不因通用文件宣稱本產品已支援。
+- **證據／成本限制：**原單 Runner scripted／真 Gemini、文字 PDF 及來源版本 gate 的證據只適用原情景。六次是互動共同上限，不是平均成本或成功保證；四角色、視覺來源與自動語義審核的實際費用／品質要隨 F 包最低連貫流程量測。不得用靜態 prompt、引用格式合法或另一角色說通過作實證。
