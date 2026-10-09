@@ -1918,3 +1918,16 @@
 - 本人 counter 單獨遺失、兩者同失或一致回退仍無法分辨；現行 epoch／獨立 cloud journal 完整度／配對 manifest 權威未有共同正式閘。不以假布林值聲稱 restore 已安全，不啟用正式持久流量。無真模型、家庭資料、真刪除／restore、Emulator、雲端／權限變更或部署；真模型20／20用盡及其他三 Agent 只留接口維持。程式／文件獨立 review 及 dot 最終驗收待完成。
 
 - 2026-10-10 00:19 HKT 最終裁決追加：獨立 reviewer 已核三程式／測試及五文件／證據的 SHA、原 WORKLOG prefix／PLAN anchors，無 blocking finding，未重跑套件。dot 親審核心 diff，結合21項必要定向、Server typecheck與獨立 review，准予精確8檔小修正常 PR 交付。三程式／測試 hash 不變；未建立 PR、未部署或啟用正式持久流量，真正 restore／epoch gate 及不可辨識回退界線保留。
+
+
+<a id="log-20261010-chat-document-clarification"></a>
+## 2026-10-10｜聊天文件單字補問接續
+
+- Recorded At：2026-10-10T00:31:00+08:00；初讀基線 `afc4f15f`，前置 #170 合併後按 publisher parents／tree／8 檔遠端全文 SHA 核對並套入 master `5a805b3eba65abdda5f27818b80f71fb4c8f9a74`。指定 Astra xhigh 完成程式、測試及根文件，dot 統籌／最終裁決；沒有改動日額程式／測試、建立 PR 或部署。
+- 實際缺口：家長對已列明文件選項答「二」時，當前訊息沒有任何長度≥2的逐字引文；引用前輪整句又不屬目前原訊息。真文件工具 schema 與真 ProductAgentStore 各已留紅。產品僅改兩個檔案、三個驗證式：sourceQuote min(1)且 trim 非空，保留原引文字元，仍核本人／孩子／當前訊息、版本、授權、局部修改／新增文字確認與原 opId 收據。沒有關鍵字路由、prompt 擴張、新依賴或預算變更。
+- 連貫 scripted 流程經真 services／ProductAgent／runtime／ADK Runner、既有 Session／root／daily adapters，底層業務及 Firestore storage 是合成 fixture。第1輪讀兩份準備單並保存 waiting；第2輪回「二」後將同 work 更新為 active，再讀實際版本、同 documentId v3→v4只勾書包，水樽及另一整份文件不變；第3個額外使用者查回輪才把同 work 記為 completed；第4輪重建 services、無原聊天／work ID／document ID 注入，沿工具查回同份最新版。四個 root 用15次 scripted calls，沒有真模型或 embedding。
+- **保留產品缺口：**不能稱第2輪自動完整結案。這種「讀 work／載能力 → 讀文件 → 寫入 → 據成功結果保存 work → 獨立 present_answer」需5個依賴步，現行4次上限不變；本批以額外查回輪驗機械接續，後續另處理成果／進度接點。最初 harness 曾把 save_work 與 terminal present_answer 放同 batch，被既有安全閘正確拒絕；保留 red-continuity，僅修測試協定。其後協定正確的 red-continuity-02 重現單字 schema 拒絕，才做上述最小修正，沒有放鬆終結或成功斷言。
+- 4項核心定向（含既有 migration 測試）加6項受影響收據／取消檢查，共 **10／10必要定向入口通過**；Server typecheck exit0。純空／空白、外來「一」對本輪「二」的 agent_source_mismatch、正常長文、原收據／取消／撤權及版本保持均有實測。依「只測關鍵有用」未跑全量、前端或無關 suite。固定 code／logs hash及保留10份零network attempts audit 見[證據](artifacts/verification/CHAT_DOCUMENT_CLARIFICATION_20261009.json)。
+- scripted只證機械接線，不是語義理解／真雲端／真SQL競爭或UI新對話驗收；新建文件只驗單字schema，沒有假稱已驗新建執行。原A09知識引用、完整文件能力／產品成果及自動工作收尾未完成。沒有真家庭資料、外部查詢／訊息、雲端資源／權限或部署；原真模型20／20耗盡及三其他Agent只留接口維持。程式／文件獨立review與dot最終驗收待完成。
+
+- 2026-10-10 00:34 HKT 最終裁決追加：獨立 reviewer 已核精確9檔 SHA、兩產品檔的3處驗證差異、當前訊息反例、四輪狀態／原紅分類、PLAN anchors／原尾部、WORKLOG prefix及7份logs／10份零嘗試audit，無 blocking finding，未重跑測試或改碼。dot 親審核心差異、關鍵測試及review結論後，准予本精確9檔窄修正常 PR 交付；5個程式／測試檔SHA保持不變。第2輪work仍active、額外第3個查回輪才completed及真模型理解未驗界線保留；未建立PR、未部署，不解鎖完整A09／F01／自動同輪工作結案。
