@@ -166,6 +166,7 @@ for (const growth of [false, true]) test(growth
     chat: { listForUser: async () => { throw new Error("Private chat must not be read by background"); } },
     tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
     knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
+      readReviewedCitations: async (items: unknown[]) => { assert.deepEqual(items, [chunk]); return [chunk]; },
       revalidateCitations: async (items: unknown[]) => { assert.deepEqual(items, [chunk]); return true; } }) },
   } as unknown as Parameters<typeof createProductAgent>[0];
   const result = await createProductAgent(options).background({ userId, childId, reference,

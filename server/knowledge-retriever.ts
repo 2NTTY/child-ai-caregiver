@@ -16,6 +16,21 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
       const loaded = new Map<string, KnowledgeEvidence>();
       const issuedCursors = new Set<string>();
       const cache = new Map<string, Promise<number[] | null>>();
+      // The same live read owns both validity and reviewed wording. Original-read coverage is separate.
+      async function readReviewedCitations(citations: { chunkId: string; versionId: string; contentHash: string }[], applicability: KnowledgeFilter): Promise<KnowledgeEvidence[] | null> {
+        if (!citations.length || citations.length > 6 || new Set(citations.map(item => item.chunkId)).size !== citations.length) return null;
+        budget.check();
+        if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
+        const current = await budget.wait(() => store.candidates(parseKnowledgeFilter(applicability), null, { chunkIds: citations.map(item => item.chunkId), limit: 6 }));
+        const matched = citations.map(citation => current.find(chunk => chunk.chunkId === citation.chunkId
+          && chunk.versionId === citation.versionId && chunk.contentHash === citation.contentHash));
+        if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
+        if (matched.some(chunk => !chunk)) return null;
+        return matched.map(chunk => {
+          const { distance: _distance, rankScore: _rankScore, originalText: _originalText, ...reviewed } = chunk!;
+          return { ...reviewed, readCoverage: { kind: "reviewed_text_and_excerpt" as const, complete: false } };
+        });
+      }
       return {
         async search(input: string, applicability: KnowledgeFilter, queryEmbeddingAttemptKey?: string): Promise<KnowledgeResult> {
           const query = parseKnowledgeQuery(input);
@@ -113,15 +128,9 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
           budget.check(); return result();
         },
+        readReviewedCitations,
         async revalidateCitations(citations: { chunkId: string; versionId: string; contentHash: string }[], applicability: KnowledgeFilter): Promise<boolean> {
-          if (!citations.length || citations.length > 6 || new Set(citations.map(item => item.chunkId)).size !== citations.length) return false;
-          budget.check();
-          if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
-          const current = await budget.wait(() => store.candidates(parseKnowledgeFilter(applicability), null, { chunkIds: citations.map(item => item.chunkId), limit: 6 }));
-          const valid = citations.every(citation => current.some(chunk => chunk.chunkId === citation.chunkId
-            && chunk.versionId === citation.versionId && chunk.contentHash === citation.contentHash));
-          if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
-          return valid;
+          return await readReviewedCitations(citations, applicability) !== null;
         },
       };
     },

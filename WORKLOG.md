@@ -1987,3 +1987,20 @@
 - 四份 code／tests 已 freeze，原紅逐 byte 保留；必要契約／PLAN／STATUS 更新且本 LOG 嚴格 append-only。獨立 review／dot 最終驗收待完成，尚未建立本切片 PR，未合併／部署，不以測試通過代替最終裁決。
 
 - 2026-10-10T02:29:50.903194+08:00 最終裁決追加：dot 已親審 store 核心 diff、原紅、eda 基線6項定向／Server typecheck 及文件界線，獨立 reviewer 程式／5份文件覆核無 blocking；另1項 bigint 精確授權版本、proposal int 版本及 SQL 形狀補驗 exit0、零網絡。review report SHA-256 84e8c53aff0427d6afec9c51a3e4513a6992ab7edf9d26292d817270515810ee；此為合成／靜態邊界補驗，不冒稱真 PostgreSQL parser／鎖競爭。dot 最終 Allow 精確4份 code／tests＋5份 docs／artifact正常 PR 交付，9檔 publication manifest 已凍結。四份程式hash不变、未重跑產品測試；原紅、10份作者 audit＋1份 reviewer audit、舊 ciphertext及有效過期冪等證據保留，WORKLOG既有完整prefix不變。尚未建立本切片PR，未合併／發布／部署，不解鎖全流程／真模型／F01／resume／restore／outbox／fencing。
+
+
+<a id="log-20261010-reviewed-growth-evidence"></a>
+## 2026-10-10｜受核成長正文與原文擴讀分離
+
+- Recorded At：2026-10-10T03:09:00+08:00；只讀診斷基線 `c48b2eb41ee5f19c914ab6bee07b39d9cdd939a7`，#177 合併後固定 master `bc8868203316965be69d443dcf6e4d9f26637c97`。3份既有變更檔的原內容與新 tree 相符，858份現有未修改檔逐 Git blob 核對，0 mismatch；同步本地具備的 #177 新版檔，不回退其內容。指定 Astra xhigh 完成窄診斷／實作／必要測試及根文件，dot 統籌及最終裁決；人工驗收未進行。
+- 原缺陷：真 createProductAgentTools／KnowledgeRetriever 的 search→read_knowledge_context→present_answer 合成流程，第二片段3583字只讀1250字且 complete=false，成長關注仍把這個原文前綴當受核正文，末尾必要條件沒有呈現。單一原紅與零network audit保留，首次失敗停批；沒有線上或真模型觸發證據。
+- 候選只改 knowledge-retriever 與 product-agent-tools：復用既有按引用ID／version／hash／適用性、前後授權的同一次live候選查回，內部 readReviewedCitations 返回原受核 text；原 bool 重驗共用相同邊界。成長呈現只用該受信結果，失效／查詢失敗不回退模型文字或原文片段。引用原文快照與實際累積coverage不改、不把未讀間隙補齊；沒有新公開DTO、HTTP／模型工具、SQL、依賴、其他Agent內部或語義審核權威。
+- **4／4新定向、5／5受影響ProductAgent、1／1固定原文coverage**通過，Server typecheck exit0。新測試包含原反例修後正文／coverage分離、失效來源拒絕無fallback、一般聊天文字／原文coverage不變，以及真 ProductAgent背景入口／ADK Runner／真retriever搭合成provider，維持3次scripted生成、3工具、1次合成embedding及原預算；私人聊天入口若被讀會直接失敗。首個測試命令因工作目錄重複前綴找不到新檔，測試未啟動；修正相對路徑後才完成上述證據，原錯誤log保留，沒有產品斷言失敗被改綠。
+- 4份code／tests freeze；測試、原紅、命令、hash與零網絡audit見[固定證據](artifacts/verification/CHAT_REVIEWED_GROWTH_EVIDENCE_20261010.json)。僅本合成切片驗證，未跑全量、真模型／embedding、真SQL／Firestore／雲端、HTTP／UI或正式部署。合成呼叫不消耗或重置20／20已耗盡的真模型批准；preview來源阻塞、原A09成果／F01、同輪自動結案、per-work outcome、restore／resume／fencing等門檻完整保留。
+- 獨立review及dot最終驗收待完成；未建立本切片PR、發布或部署，不以本次機械修正宣稱產品整體完成。PLAN／STATUS同步本窄包現況，本LOG既有prefix逐byte保留。
+
+- 2026-10-10T03:12:30+08:00 review返修追加：reviewer以同ID／version／hash但空受核text證明呈現仍成功回「 [1]」，原紅保留；version／hash改變及live讀後撤權原三項拒絕正確。dot批准只在reviewedGrowthPresentation消費處核typeof string及trim非空，空／缺失／全空白停止；有效文字維持原字元，不改retriever及一般chat的原bool重驗，不回退原文或模型。修後3項定向（有效正文、三種空值、general相容）及Server typecheck exit0；上文4＋5＋1含真Runner是修前證據，沒有重跑。首次返修命令亦因重複相對路徑未套修改，隨後舊1項及tsc結果已另標not-applied保存，不能作修後通過。四檔新freeze與audit已更新；獨立再覆核及dot最終裁決仍待完成，未PR／部署。
+
+- 2026-10-10T03:13:00+08:00程式再覆核追加：reviewer核最新4檔hash／bytes／Git blob，沿同一原反例重跑version／hash變更、live讀後撤權及空正文4情境全部拒絕，修後log與零網絡audit另存、原紅不改。growth-only守衛與一般相容測試無blocking finding；文件覆核及dot最終裁決仍待完成，未重跑作者首輪4＋5＋1或真Runner。
+
+- 2026-10-10T03:15:36+08:00最終裁決追加：dot已親讀兩個Server核心diff，核對原擴讀混用紅、review空正文紅、成長專用守衛、修後作者3項／typecheck及review4項拒絕；程式／文件獨立覆核無剩餘阻塞，最終Allow精確4份code／tests＋4份根文件／artifact正常PR交付。最後只修正reviewer命令相對路徑及收短STATUS驗收數字，四份code／tests hash維持freeze，無新產品測試。8檔publication manifest固定bc886820基線、baseBlob／hash／bytes；PLAN140anchors及WORKLOG316708-byte原prefix完全保留。原紅、路徑失誤、修前4＋5＋1含Runner及修後3＋typecheck／review4各自保留，未聲稱Runner返修後重跑或整體完成。尚未建立本切片PR、發布／部署，不解鎖真模型／F01／A09／restore／resume等門檻。
