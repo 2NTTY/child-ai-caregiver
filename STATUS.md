@@ -5,7 +5,7 @@
 ## 目前與接手
 
 - **目前聚焦聊天 Agent 可靠辦事及 F01 接點。** 本輪只有家長聊天 Agent；其他三角色只保留接口，唯一工作入口及 gate 見 [PLAN#active](PLAN.md#active)／[ADR-021](docs/DECISIONS.md#adr-021)。原 A09 引用、同文件修改、新對話讀回與穩定服務仍未完成。#164～#166 的 HTTP Auth、交易對照／授權／照片停機及原收據 reader 均已合併、未部署；Firebase 身份／裝置 session 及完整 F01 尚未完成。
-- 本輪已核 master `bc886820`（#171～#177 已正常合併、未部署）。#176 原確認重試權威及 #177 匯出提示原碼已交付，既有預覽來源阻塞保留。當前窄修讓成長關注沿原引用重驗取得受核正文，避免呈現未讀完的原文片段；原文 coverage 保持真實。窄修及 review 揭示的空受核正文守衛已通過必要定向檢查；真 Runner 屬守衛返修前證據，返修後未重跑。程式／文件獨立覆核無剩餘阻塞，dot 最終 Allow 精確8檔正常 PR 交付；尚未建立本切片 PR。原紅及限制見 [PLAN](PLAN.md#active)。全平台 SQL 共額、正式 bootstrap／resume／restore／跨庫 fencing、per-work outcome 與同輪自動結案仍未完成，未啟用正式持久流量。
+- 本輪已核 master `bd5dc958`（#171～#178 已正常合併、未部署）。受核成長正文／原文 coverage 分離已交付；當前窄修補既有 PDF 頁尾提示及頁碼，原紅與兩個被拒候選保留，最終 footer-only 窄修已通過真 PDF 抽字、render 圖與正文不變檢查；獨立 review 無阻塞、dot 已准精確6檔正常 PR 交付，尚未建立本切片 PR。既有預覽來源及實際匯出驗收阻塞仍在，renderer 證據不能代替下載或正式 API；見 [PLAN](PLAN.md#active)。全平台 SQL 共額、正式 bootstrap／resume／restore／跨庫 fencing、per-work outcome 與同輪自動結案仍未完成，未啟用正式持久流量。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。

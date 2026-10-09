@@ -2004,3 +2004,17 @@
 - 2026-10-10T03:13:00+08:00程式再覆核追加：reviewer核最新4檔hash／bytes／Git blob，沿同一原反例重跑version／hash變更、live讀後撤權及空正文4情境全部拒絕，修後log與零網絡audit另存、原紅不改。growth-only守衛與一般相容測試無blocking finding；文件覆核及dot最終裁決仍待完成，未重跑作者首輪4＋5＋1或真Runner。
 
 - 2026-10-10T03:15:36+08:00最終裁決追加：dot已親讀兩個Server核心diff，核對原擴讀混用紅、review空正文紅、成長專用守衛、修後作者3項／typecheck及review4項拒絕；程式／文件獨立覆核無剩餘阻塞，最終Allow精確4份code／tests＋4份根文件／artifact正常PR交付。最後只修正reviewer命令相對路徑及收短STATUS驗收數字，四份code／tests hash維持freeze，無新產品測試。8檔publication manifest固定bc886820基線、baseBlob／hash／bytes；PLAN140anchors及WORKLOG316708-byte原prefix完全保留。原紅、路徑失誤、修前4＋5＋1含Runner及修後3＋typecheck／review4各自保留，未聲稱Runner返修後重跑或整體完成。尚未建立本切片PR、發布／部署，不解鎖真模型／F01／A09／restore／resume等門檻。
+
+
+<a id="log-20261010-pdf-footer"></a>
+## 2026-10-10｜家庭文件 PDF 頁尾與頁碼
+
+- Recorded At：2026-10-10T03:40:00+08:00；基線 master `bd5dc958500508afcc9e90e7662943689b9f0cc7`／tree `73cd25c29d5e8aa51a25c35795a9817c2988b505`，#178 已正常合併及全文 readback、未部署。指定 Astra xhigh 按 dot 批准完成原碼診斷、窄修及必要根文件；dot 統籌／最終裁決，獨立 review另行進行，人工未驗。隔離 partial source 的868份現有檔逐 Git blob 核對零差異，不宣稱完整 repo checkout。
+- 歷史 QA_DOCUMENT_INTEGRITY 留有頁尾缺失未解，現 renderer 仍同一blob。本輪先以 GitHub connector 讀原提交 TTF：base64內容空、blob回UTF-8技術格式拒絕，原證據保留。只讀倉庫 README／OFL 和官方 release metadata，取得已明列 LXGW WenKai TC v1.522 同名公開asset；dot批准正常下載後，實際15,267,616bytes、SHA256 `b1a0795862c1415bf3f393ea50b2a4ea6275012cf5bad3f94feeb1222f555731`及Git blob均完全吻合，保留原SIL OFL1.1，不換字型或依賴，不宣稱connector已支援binary。
+- 首次實際 render 同一18項合成 snapshot：2頁都缺非診斷提示及頁碼，抽字與兩張PNG直接確認，原紅保留。先試minHeight:14仍缺頁尾，拒絕；診斷hook先有語法、再有循環font物件JSON错误，兩份原log保留，dot批准只捕捉最小layout tree後取得文字／box證據。數值lineHeight經同版stylesheet反覆乘fontSize，兩頁footer分別高12,429.45和1,006,785.45pt、跑到頁面外。正文View繼承隔離雖恢復頁尾，但正文行距改變並多成3頁，立即拒絕停批，PDF／3張PNG／比較結果全保留，未放寬2頁斷言。
+- dot核同版stylesheet6.3.2／layout5.2.0／textkit7.0.1實作後准再一輪，恢復原Page及body樹，只在footer設lineHeight:0：零值解算保持0、textkit用自然font leading，不再繼承放大。沒有改動字型、dep、正文、用途、snapshot權威、PDF route／來源重驗或其他產品接口。固定render／pageNumber／totalPages原API保留，最小註解及既有PDF驗證腳本鎖住實際輸出。
+- 初次最終候選與加入字形上下界的定稿驗收各用同一snapshot、同一用途，均2頁；定稿PDF53,559bytes，163字coverage、18項正文及snapshot不可變通過。每頁非診斷提示及1/2、2/2抽字完整，glyph y=807.234009–817.890009pt、字高10.656pt，無零高壓扁、正文遮擋或邊界裁切。全部82個正文word／bbox與原紅完全一致；827×1097正文區逐像素相同，只有下方頁尾新增像素。最終兩頁已逐張視覺確認，定稿PNG與所看PNG逐byte一致。
+- 聚焦 renderer＋shared TypeScript 檢查 exit0；首次命令因現有tsconfig及缺少--ignoreConfig而未開始typecheck，原錯誤log保留，不當產品失敗或通過。所有render／診斷／typecheck以offline guard阻擋外聯、實際audit均零嘗試；官方字型下載另列為允許的前置網絡操作。沒有真模型／embedding、SQL／Firestore／API／雲端／preview重建／正式資料，也沒有四用途矩陣或全量測試。命令、版本、hash、原紅／候選／定稿PDF及PNG的時序見[固定證據](artifacts/verification/QA_PDF_FOOTER_20261010.json)。
+- 2份code／script freeze，獨立review與dot最終驗收待完成，尚未PR／部署。根PLAN／STATUS只更新當前窄包及#178已合併基線，WORKLOG既有321566-byte前綴逐byte保留。既有v65的36項觀察及另3次匯出被synthetic transport攔截仍不能驗PDF下載、跨孩子bytes或取消晚到；新renderer證據不冒稱這些結果。原A09、20／20真模型用盡、F01／F02、per-work outcome／同輪自動結案、restore／resume／fencing等gate不變，三其他Agent僅接口。
+
+- 2026-10-10T03:43:04+08:00 最終裁決追加：獨立 reviewer 已親看定稿兩頁PNG並覆核程式／4份文件，6檔hash及58項stage evidence／audit bytes與SHA全部吻合，無blocking。dot親看定稿第2頁完整非診斷提示及2/2、無遮擋，結合雙頁review、10.656pt實際字高、82正文word／bbox及正文像素不變證據，最終Allow精確2份code／script＋4份根文件／artifact正常PR交付。此次只追加review／裁決及更新狀態，2份程式hash不變、未重跑產品測試；publication manifest保留baseBlob／hash／Git blob／bytes、PLAN140anchors及WORKLOG321566-byte原prefix。原紅、minHeight與3頁候選拒絕、診斷工具及CLI錯誤、offline測試與合法字型下載區分完整保留；尚未建立本切片PR、發布／部署，renderer通過不代表v65下載／跨孩子／取消晚到／HTTP或整體完成。

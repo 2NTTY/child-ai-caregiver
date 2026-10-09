@@ -8,7 +8,8 @@ const style = StyleSheet.create({
   page: { fontFamily: "YubanTC", fontSize: 11, lineHeight: 1.55, padding: 38, paddingBottom: 52, color: "#243b32" },
   title: { fontSize: 21, marginBottom: 10 }, heading: { fontSize: 15, marginTop: 13, marginBottom: 6 },
   small: { fontSize: 9, color: "#52615b", marginBottom: 5 }, item: { marginBottom: 7 },
-  footer: { position: "absolute", bottom: 24, left: 38, right: 38, fontSize: 9, color: "#52615b" },
+  // Use natural font leading: zero survives dynamic relayout without multiplying inherited lineHeight.
+  footer: { lineHeight: 0, position: "absolute", bottom: 24, left: 38, right: 38, fontSize: 9, color: "#52615b" },
 });
 const purposeLabels = { family: "家庭成長", appointment: "就診溝通", handoff: "照護交接", school: "入園認識" };
 

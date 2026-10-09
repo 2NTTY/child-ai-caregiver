@@ -1,0 +1,618 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-10T03:40:00+08:00",
+  "baseCommit": "bd5dc958500508afcc9e90e7662943689b9f0cc7",
+  "baseTree": "73cd25c29d5e8aa51a25c35795a9817c2988b505",
+  "status": "root_accepted_ready_for_normal_publication",
+  "scope": "Restore only the fixed family-document PDF footer using the existing renderer, repository font, body tree and one synthetic multipage snapshot.",
+  "historicalUnresolvedEvidence": "artifacts/verification/QA_DOCUMENT_INTEGRITY_CHECKS.json: knownLimitations explicitly excludes the missing footer",
+  "code": [
+    {
+      "path": "server/family-document-pdf.ts",
+      "baseBlob": "f6965eb9f688cefd1bfac277e157b463e4a36cfe",
+      "sha256": "3f87b7d5e9a65fc99386456879c001ef5ae82d7934cf6ab9903e9ae3a686b6c3",
+      "gitBlob": "b50670f24e1d7c9a79f431532da81ab5b76d78d1",
+      "bytes": 3383
+    },
+    {
+      "path": "scripts/verify-family-document-pdf.mjs",
+      "baseBlob": "ece026a1126e7934196dd5d6ee95a165737483bb",
+      "sha256": "9fef89a0f2b6e9ae75422acc7788241fde1c7bd518fab8b40ead1cc6d0a6c0b7",
+      "gitBlob": "8a48c8fc4500e7c74c8b9644362818eaef5e5b17",
+      "bytes": 5542
+    }
+  ],
+  "localEvidenceRoot": "pdf_footer_20261009/evidence",
+  "environment": {
+    "node": "24.19.0",
+    "renderer": "4.9.0",
+    "layout": "5.2.0",
+    "stylesheet": "6.3.2",
+    "textkit": "7.0.1",
+    "font": "4.1.2",
+    "react": "19.2.3",
+    "dependenciesChanged": false,
+    "fontChanged": false,
+    "materialization": {
+      "base": "bd5dc958500508afcc9e90e7662943689b9f0cc7",
+      "tree": "73cd25c29d5e8aa51a25c35795a9817c2988b505",
+      "checked": 868,
+      "mismatches": [],
+      "partialMaterialization": true
+    }
+  },
+  "fontProvenance": {
+    "repositoryReadme": "server/assets/fonts/README.md",
+    "license": "SIL OFL 1.1; unchanged server/assets/fonts/OFL.txt",
+    "version": "v1.522",
+    "url": "https://github.com/lxgw/LxgwWenkaiTC/releases/download/v1.522/LXGWWenKaiTC-Regular.ttf",
+    "gitBlob": "b4a79650617dc7db626b196c50777b411340d023",
+    "bytes": 15267616,
+    "sha256": "b1a0795862c1415bf3f393ea50b2a4ea6275012cf5bad3f94feeb1222f555731",
+    "privateConnectorLimitation": {
+      "file": "font-materialization-blocked.json",
+      "bytes": 1308,
+      "sha256": "c294a56a1c19b7afef23b83c00db15fee4154c6cda0be985d67ffe64d8df3e3b"
+    },
+    "readOnlyPublicSourceEvidence": {
+      "file": "font-public-source.json",
+      "bytes": 7817,
+      "sha256": "4262a644d5b00e4b27803a7e01c0dfdb6262120055ac461bda1b0b036d0e1f83"
+    },
+    "allowedPublicAssetDownloadLog": {
+      "file": "font-download.log",
+      "bytes": 1503,
+      "sha256": "b459c3628415f28fa785cf47f77011d21c31fe2bb2542280e53a9d892afd3208"
+    },
+    "note": "Only the documented official public asset was downloaded after root approval; exact bytes/hash match. Private connector binary support remains unavailable."
+  },
+  "rootCause": {
+    "evidence": {
+      "file": "diagnostic-layout.json",
+      "bytes": 2817,
+      "sha256": "2e796bde99a9c1bfc305d74c7e177c4fbeb57d28212f3021d6f14bcd47e3113f"
+    },
+    "page1": {
+      "lineHeight": 12429.45,
+      "top": -11611.560546875
+    },
+    "page2": {
+      "lineHeight": 1006785.4500000001,
+      "top": -1005967.5625
+    },
+    "mechanism": "Inherited resolved lineHeight is reinterpreted as a unitless multiplier on dynamic relayout, moving the footer above the page.",
+    "references": [
+      {
+        "package": "@react-pdf/stylesheet",
+        "path": "lib/index.js",
+        "lines": "21-28,718-732",
+        "sha256": "a2235c30eb64721d69a9e8286422ce632402cb0ae4d82c98fd60d7dbc5495df4",
+        "meaning": "Non-null zero survives flattening and repeated fontSize multiplication."
+      },
+      {
+        "package": "@react-pdf/layout",
+        "path": "lib/index.js",
+        "lines": "2130-2144,3109,3210-3232",
+        "sha256": "5f590b51005749bad0b5eeaa3ae531ec582160c4a0d35b3d1d115a1e559154f6",
+        "meaning": "Own footer style overrides inheritance; dynamic nodes undergo relayout."
+      },
+      {
+        "package": "@react-pdf/textkit",
+        "path": "lib/textkit.js",
+        "lines": "761-763,1837",
+        "sha256": "887050937a8063e40312695555cea90f0873f5e81e6b9be639d227bf2ccc3ca7",
+        "meaning": "Zero lineHeight uses actual font ascent/descent/lineGap, not zero-height glyphs."
+      }
+    ],
+    "officialApiReferences": [
+      "https://react-pdf.org/docs/v4/advanced/dynamic-content",
+      "https://react-pdf.org/docs/v4/advanced/page-wrapping"
+    ],
+    "fix": "Single footer lineHeight:0 override and comment; original Page tree, body styles, fixed/render and disclaimer text unchanged."
+  },
+  "commandCwd": "pdf_footer_20261009/source",
+  "finalCommands": [
+    {
+      "command": "OFFLINE_AUDIT_RUN=pdf-footer-frozen node --import ../evidence/offline-guard.mjs scripts/verify-family-document-pdf.mjs ../evidence/frozen",
+      "exitCode": 0
+    },
+    {
+      "command": "OFFLINE_AUDIT_RUN=pdf-footer-types-final node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --ignoreConfig --noEmit --target es2023 --module nodenext --moduleResolution nodenext --strict --erasableSyntaxOnly --allowImportingTsExtensions --esModuleInterop --skipLibCheck --types node server/family-document-pdf.ts",
+      "exitCode": 0
+    }
+  ],
+  "chronologicalStages": [
+    {
+      "stage": "original-red",
+      "log": "red.log",
+      "directory": "red",
+      "exitCode": 1,
+      "pages": 2,
+      "result": "Both footers absent in actual PDF text and page PNGs; body complete.",
+      "logEvidence": {
+        "file": "red.log",
+        "bytes": 959,
+        "sha256": "8aa85189615315cc5ca23d5941a1327906bd6d03ea4f0b06f7fc9b3cde6919eb"
+      },
+      "artifacts": [
+        {
+          "file": "red/checks.json",
+          "bytes": 697,
+          "sha256": "4d73f1cc5a0666b16203073cb90dfb384e9807c033a4149ee783524e3fa46af4"
+        },
+        {
+          "file": "red/synthetic-coverage-1.png",
+          "bytes": 221171,
+          "sha256": "92f8ff0bbaeaaab5ba38887b66369fcd08e2cbcf72b3b78b6d9a15b9b3f76c83"
+        },
+        {
+          "file": "red/synthetic-coverage-2.png",
+          "bytes": 86168,
+          "sha256": "34c286ac07acf98eb161d773121981934395ab583cd59569c4f50e91606381aa"
+        },
+        {
+          "file": "red/synthetic-coverage.bbox.html",
+          "bytes": 20691,
+          "sha256": "c77e8c3e2f7fd1a07183afbed9f30d5c9a3c7abdcca7f24be2f1aeec7d83f9c0"
+        },
+        {
+          "file": "red/synthetic-coverage.pdf",
+          "bytes": 53567,
+          "sha256": "1d5e4a8b9304e76de7c54b6723562d19e334d9c9e58d6e3295fcdfad1e4b8db4"
+        },
+        {
+          "file": "red/synthetic-coverage.txt",
+          "bytes": 2399,
+          "sha256": "51c9d765e4b6e11bbe99606de41543f9a2f9d5379de50948d91dde56cb1968d7"
+        }
+      ]
+    },
+    {
+      "stage": "rejected-minimum-height",
+      "log": "fixed.log",
+      "directory": "fixed",
+      "exitCode": 1,
+      "pages": 2,
+      "result": "minHeight:14 did not restore either footer; not accepted.",
+      "renderer": "renderer-minheight-failed.ts",
+      "logEvidence": {
+        "file": "fixed.log",
+        "bytes": 959,
+        "sha256": "8aa85189615315cc5ca23d5941a1327906bd6d03ea4f0b06f7fc9b3cde6919eb"
+      },
+      "rendererEvidence": {
+        "file": "renderer-minheight-failed.ts",
+        "bytes": 3377,
+        "sha256": "0aa9889970fe940eab3267a6ba435c37e6233f0b1ec7f91d54a9c909aef77c36"
+      },
+      "artifacts": [
+        {
+          "file": "fixed/checks.json",
+          "bytes": 697,
+          "sha256": "4d73f1cc5a0666b16203073cb90dfb384e9807c033a4149ee783524e3fa46af4"
+        },
+        {
+          "file": "fixed/synthetic-coverage-1.png",
+          "bytes": 221171,
+          "sha256": "92f8ff0bbaeaaab5ba38887b66369fcd08e2cbcf72b3b78b6d9a15b9b3f76c83"
+        },
+        {
+          "file": "fixed/synthetic-coverage-2.png",
+          "bytes": 86168,
+          "sha256": "34c286ac07acf98eb161d773121981934395ab583cd59569c4f50e91606381aa"
+        },
+        {
+          "file": "fixed/synthetic-coverage.bbox.html",
+          "bytes": 20691,
+          "sha256": "2f4bf19503e7ed249563a49ba408f074d525f28f6eddb0819f13317d008c7b80"
+        },
+        {
+          "file": "fixed/synthetic-coverage.pdf",
+          "bytes": 53567,
+          "sha256": "310f5ed423ec5fc0189b01d587642ba4a2c3051f136f283cd6882f1df5380806"
+        },
+        {
+          "file": "fixed/synthetic-coverage.txt",
+          "bytes": 2399,
+          "sha256": "51c9d765e4b6e11bbe99606de41543f9a2f9d5379de50948d91dde56cb1968d7"
+        }
+      ]
+    },
+    {
+      "stage": "diagnostic-hook-syntax-error",
+      "log": "diagnostic-instrumentation-error.log",
+      "exitCode": 1,
+      "result": "Probe failed to parse; no PDF generated.",
+      "logEvidence": {
+        "file": "diagnostic-instrumentation-error.log",
+        "bytes": 889,
+        "sha256": "2d288f42903096db3bc8382797a5b368c41d0416dea7f924ab97119ef5b6d3b3"
+      }
+    },
+    {
+      "stage": "diagnostic-hook-circular-json",
+      "log": "diagnostic-circular-error.log",
+      "exitCode": 1,
+      "result": "Rendering reached onRender but font cycle prevented layout JSON/PDF export; not product acceptance.",
+      "logEvidence": {
+        "file": "diagnostic-circular-error.log",
+        "bytes": 1551,
+        "sha256": "139e7b3031b92b0f2640b391f81e9c575f7e4385d140feafbe373505bd09c9cb"
+      }
+    },
+    {
+      "stage": "diagnostic-minimal-layout",
+      "log": "diagnostic.log",
+      "directory": "diagnostic",
+      "exitCode": 1,
+      "pages": 2,
+      "result": "Same failed minimum-height candidate; plain layout proves huge inherited line height and negative footer top.",
+      "logEvidence": {
+        "file": "diagnostic.log",
+        "bytes": 1241,
+        "sha256": "3ad8dddb8ce5b01ced24cb140716258ff11603fb8f845e201f3e1256095f723e"
+      },
+      "artifacts": [
+        {
+          "file": "diagnostic/checks.json",
+          "bytes": 697,
+          "sha256": "4d73f1cc5a0666b16203073cb90dfb384e9807c033a4149ee783524e3fa46af4"
+        },
+        {
+          "file": "diagnostic/synthetic-coverage-1.png",
+          "bytes": 221171,
+          "sha256": "92f8ff0bbaeaaab5ba38887b66369fcd08e2cbcf72b3b78b6d9a15b9b3f76c83"
+        },
+        {
+          "file": "diagnostic/synthetic-coverage-2.png",
+          "bytes": 86168,
+          "sha256": "34c286ac07acf98eb161d773121981934395ab583cd59569c4f50e91606381aa"
+        },
+        {
+          "file": "diagnostic/synthetic-coverage.bbox.html",
+          "bytes": 20691,
+          "sha256": "0ef70f7f02f9e88056041584e542c92e0c355b466ba138704d8c0ee0a9b42635"
+        },
+        {
+          "file": "diagnostic/synthetic-coverage.pdf",
+          "bytes": 53567,
+          "sha256": "f48e37ec1998fcc40bd3ca8e84381a2b5ac69dc721b8ea034615db28097f1ab7"
+        },
+        {
+          "file": "diagnostic/synthetic-coverage.txt",
+          "bytes": 2399,
+          "sha256": "51c9d765e4b6e11bbe99606de41543f9a2f9d5379de50948d91dde56cb1968d7"
+        }
+      ]
+    },
+    {
+      "stage": "rejected-body-wrapper",
+      "log": "fixed-body.log",
+      "directory": "fixed-body",
+      "exitCode": 1,
+      "pages": 3,
+      "result": "Footers restored but body leading/page flow changed; rejected without relaxing assertion.",
+      "renderer": "renderer-body-isolation-failed.ts",
+      "logEvidence": {
+        "file": "fixed-body.log",
+        "bytes": 450,
+        "sha256": "ab3fe985d1ecf835555e520b972bf6f343ee03e2163637a2a44fbae1f40f0f5d"
+      },
+      "rendererEvidence": {
+        "file": "renderer-body-isolation-failed.ts",
+        "bytes": 3399,
+        "sha256": "4c714cc4836252aaea51277382a68a8d6060bbca6e256fac4ea0ba4dab88e229"
+      },
+      "artifacts": [
+        {
+          "file": "fixed-body/synthetic-coverage-1.png",
+          "bytes": 165988,
+          "sha256": "0dfece366a25c0849e301d5b82e340163ea3214d4a062afa4cc8334a61c98099"
+        },
+        {
+          "file": "fixed-body/synthetic-coverage-2.png",
+          "bytes": 130658,
+          "sha256": "cc39a4e4ee2e27d4eaaaf2e8ee0dbdb86072c4a3868bf28c23924f226ebc3f11"
+        },
+        {
+          "file": "fixed-body/synthetic-coverage-3.png",
+          "bytes": 40441,
+          "sha256": "cda21dcace974cd63dec5b09f4da9027794cdc27a4828ba3c88fd4a793063619"
+        },
+        {
+          "file": "fixed-body/synthetic-coverage.bbox.html",
+          "bytes": 23658,
+          "sha256": "8ad95057ac1b2d108cc72361e3cca7a888880256018c1744628142fd83399df8"
+        },
+        {
+          "file": "fixed-body/synthetic-coverage.pdf",
+          "bytes": 54326,
+          "sha256": "b28d9bfdf0d91b977436c23d66638b54cdb695d9cf3a0fe4af0089d65f922e10"
+        },
+        {
+          "file": "fixed-body/synthetic-coverage.txt",
+          "bytes": 2681,
+          "sha256": "d0b48b18211766e0c8c6711062df4313fac575764d8a1a0997807938f1b33c71"
+        }
+      ]
+    },
+    {
+      "stage": "footer-only-natural-leading",
+      "log": "final.log",
+      "directory": "final",
+      "exitCode": 0,
+      "pages": 2,
+      "result": "Original Page/body tree restored; footer lineHeight:0 only. Both final page PNGs visually inspected.",
+      "logEvidence": {
+        "file": "final.log",
+        "bytes": 670,
+        "sha256": "7af8b0f0820892e57054c7f836127d1fb9ebb8a13413b5fe95ac27c6aeab2b8d"
+      },
+      "artifacts": [
+        {
+          "file": "final/checks.json",
+          "bytes": 853,
+          "sha256": "f326e86f79d566c0427e13c22af3d22f0da881f47370c3432f2f0ad95ef98fbd"
+        },
+        {
+          "file": "final/synthetic-coverage-1.png",
+          "bytes": 228111,
+          "sha256": "0c300edae83ab7a197e2ac3f8fd98c09e89465804e66675bcb9fa0da7be1fe8c"
+        },
+        {
+          "file": "final/synthetic-coverage-2.png",
+          "bytes": 93472,
+          "sha256": "f9ba68b74a14aff73b79993768bb084830e1f015d1815394a52a824a290be3f4"
+        },
+        {
+          "file": "final/synthetic-coverage.bbox.html",
+          "bytes": 22609,
+          "sha256": "50ab34e6554ecf7b0abfb21091804e775e12c84017c3a0a162806ab92bbe02f7"
+        },
+        {
+          "file": "final/synthetic-coverage.pdf",
+          "bytes": 53559,
+          "sha256": "8d31ef933098d5251e61a5da8c2545fd6f904ab094d1c797206d0cadb3a446a1"
+        },
+        {
+          "file": "final/synthetic-coverage.txt",
+          "bytes": 2555,
+          "sha256": "c1c3edfcf994edb5ab3f888ddfac389cebdd55d145a1c6c47521f609bc1e959a"
+        }
+      ]
+    },
+    {
+      "stage": "frozen-script-bounds-check",
+      "log": "frozen.log",
+      "directory": "frozen",
+      "exitCode": 0,
+      "pages": 2,
+      "result": "Same snapshot, final bounds assertions added. PNGs byte-identical to visually inspected final stage.",
+      "logEvidence": {
+        "file": "frozen.log",
+        "bytes": 754,
+        "sha256": "3973dc68840d0fe1a5797378ce2a80922addcff747e2922d5fe6e181bac5c59a"
+      },
+      "artifacts": [
+        {
+          "file": "frozen/checks.json",
+          "bytes": 969,
+          "sha256": "b64e62ff8b95b2e26cd2c060711388642af504be70dd00c4c0b6f3aebbf84918"
+        },
+        {
+          "file": "frozen/synthetic-coverage-1.png",
+          "bytes": 228111,
+          "sha256": "0c300edae83ab7a197e2ac3f8fd98c09e89465804e66675bcb9fa0da7be1fe8c"
+        },
+        {
+          "file": "frozen/synthetic-coverage-2.png",
+          "bytes": 93472,
+          "sha256": "f9ba68b74a14aff73b79993768bb084830e1f015d1815394a52a824a290be3f4"
+        },
+        {
+          "file": "frozen/synthetic-coverage.bbox.html",
+          "bytes": 22609,
+          "sha256": "c8b813a13d56757a662b3b134dfa032d6aa3b07a81631067c161c8aa27673ea4"
+        },
+        {
+          "file": "frozen/synthetic-coverage.pdf",
+          "bytes": 53559,
+          "sha256": "898a93e0710873ae5a9c625e681e78fe57b52352d12ab2aea155b1843b08dc92"
+        },
+        {
+          "file": "frozen/synthetic-coverage.txt",
+          "bytes": 2555,
+          "sha256": "c1c3edfcf994edb5ab3f888ddfac389cebdd55d145a1c6c47521f609bc1e959a"
+        }
+      ]
+    },
+    {
+      "stage": "scoped-types-config-invocation-error",
+      "log": "scoped-tsc-config-error.log",
+      "exitCode": 1,
+      "result": "TS5112: initial CLI did not opt out of present tsconfig; no typecheck acceptance.",
+      "logEvidence": {
+        "file": "scoped-tsc-config-error.log",
+        "bytes": 142,
+        "sha256": "5b766b55df5bc15c215149742c8fe88d72a584cb45f5422c7edca1594b6d0cb5"
+      }
+    },
+    {
+      "stage": "scoped-types-final",
+      "log": "scoped-tsc.log",
+      "exitCode": 0,
+      "result": "Only renderer and imported shared types; not full server typecheck.",
+      "logEvidence": {
+        "file": "scoped-tsc.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "frozenResult": {
+    "status": "passed",
+    "pdfBytes": 53559,
+    "pages": 2,
+    "coverageCharacters": 163,
+    "checkedWords": 96,
+    "maxTextX": 457.4,
+    "snapshotUnchanged": true,
+    "bodyItems": 18,
+    "footerChecks": [
+      {
+        "page": 1,
+        "expected": "育伴港·家庭共享資料整理，非診斷或發展評估·1/2",
+        "actual": "育伴港·家庭共享資料整理，非診斷或發展評估·1/2",
+        "passed": true,
+        "minY": 807.234009,
+        "maxY": 817.890009,
+        "bodyMaxY": 741.674036,
+        "boundsPassed": true
+      },
+      {
+        "page": 2,
+        "expected": "育伴港·家庭共享資料整理，非診斷或發展評估·2/2",
+        "actual": "育伴港·家庭共享資料整理，非診斷或發展評估·2/2",
+        "passed": true,
+        "minY": 807.234009,
+        "maxY": 817.890009,
+        "bodyMaxY": 355.723993,
+        "boundsPassed": true
+      }
+    ],
+    "bounds": {
+      "minX": 38,
+      "maxX": 557.28
+    },
+    "models": 0,
+    "databaseCalls": 0
+  },
+  "bodyComparison": {
+    "evidence": {
+      "file": "body-comparison-frozen.json",
+      "bytes": 707,
+      "sha256": "b55752e59b89c70f71eee0c8990cb9ce259154391fdb98659eacd4911692e705"
+    },
+    "status": "passed",
+    "baseline": "red",
+    "candidate": "frozen",
+    "all82BodyWordsAndBboxesIdentical": true,
+    "images": [
+      {
+        "page": 1,
+        "bodyRegion": [
+          0,
+          0,
+          827,
+          1097
+        ],
+        "bodyPixelsIdentical": true,
+        "changedPixelsBounds": [
+          53,
+          1121,
+          357,
+          1134
+        ],
+        "identicalToVisuallyInspectedFinalPng": true
+      },
+      {
+        "page": 2,
+        "bodyRegion": [
+          0,
+          0,
+          827,
+          1097
+        ],
+        "bodyPixelsIdentical": true,
+        "changedPixelsBounds": [
+          53,
+          1121,
+          357,
+          1134
+        ],
+        "identicalToVisuallyInspectedFinalPng": true
+      }
+    ]
+  },
+  "networkAudits": [
+    {
+      "file": "network-audit-pdf-footer-diagnosis-6.json",
+      "bytes": 211,
+      "sha256": "7353dafc6b8638d515b5296659fa6a44103cacf257d47c57d163d7094af81fc0",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-pdf-footer-diagnosis-7.json",
+      "bytes": 211,
+      "sha256": "6b96b28250e17c5cf5f97f20ff477a03ec6cea72ceafa4127ca5c2e50a7a8574",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-pdf-footer-diagnosis-minimal-7.json",
+      "bytes": 211,
+      "sha256": "6b96b28250e17c5cf5f97f20ff477a03ec6cea72ceafa4127ca5c2e50a7a8574",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-pdf-footer-final-8.json",
+      "bytes": 223,
+      "sha256": "539d5ca8d2741db48b6863bfedb4c5c92ded11eeff74cd95a08bfacce1267523",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-pdf-footer-fixed-5.json",
+      "bytes": 223,
+      "sha256": "b182a7b5d0415c3a137bccc49d60f50a009cf75d41065498700f09ccb05082f8",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-pdf-footer-fixed-body-5.json",
+      "bytes": 228,
+      "sha256": "93b505e5c29612f726176f209efbc1b057113e6527324c74f540db51d47a680b",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-pdf-footer-frozen-5.json",
+      "bytes": 224,
+      "sha256": "30a91ad12c98248190dba922d6ca1a2080d29488381ad9b5a5e241065ee21bed",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-pdf-footer-red-13.json",
+      "bytes": 222,
+      "sha256": "fc8cfa4a8b657afce8246f450fe31f565f162db54134c8e28c75385822d28167",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-pdf-footer-types-26.json",
+      "bytes": 382,
+      "sha256": "58bd9c48b221e55e6892f2f1c329bccc958adc4e688d266aba49beb50ee702ad",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-pdf-footer-types-final-6.json",
+      "bytes": 449,
+      "sha256": "ed601e320783121b9ae5f3e32892b4bc3e1a00913ba00611e2e2d42a805b3b60",
+      "attempts": 0
+    }
+  ],
+  "auditBoundary": "Rendering, diagnostics and types are offline with zero observed attempts. The separately authorized official font download and connector documentation reads used network.",
+  "notClaimed": [
+    "Browser or v65 export/download success; the three synthetic-transport-blocked attempts produced no bytes.",
+    "Cross-child byte isolation, cancellation/late download, HTTP API, real Auth/Firestore/SQL/cloud or deployment.",
+    "All four export purposes, image-bearing documents, arbitrary unspaced body typesetting, all content lengths or a full regression suite.",
+    "True model/embedding, A09 semantic success, global budget, per-work outcome, automatic completion or restore/resume."
+  ],
+  "review": {
+    "status": "independent_code_docs_and_both_page_png_review_passed",
+    "evidenceEntriesVerified": 58,
+    "candidateManifestSha256": "8ff2dde6eb8503439a4159b09d260ea361613ff02b8167e70419947b1867bb68",
+    "rootFinalVerdict": "Allow exact 6 files for normal publication",
+    "rootVerdictAt": "2026-10-10T03:43:04+08:00",
+    "rootVisualCheck": "Frozen page 2: complete disclaimer, 2/2, no obstruction; combines independent both-page review and body pixel/bbox evidence.",
+    "codeUnchangedAfterFreeze": true,
+    "additionalProductTestsAfterReview": 0,
+    "prCreated": false,
+    "deployed": false
+  }
+}
