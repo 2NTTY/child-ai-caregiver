@@ -111,7 +111,7 @@ test("product services retain the default published reader and consume a trusted
   await t.test("the public reader type exposes candidates and no maintenance API", () => {
     const readerKeys: Record<keyof PublishedKnowledgeReader, true> = { candidates: true };
     assert.deepEqual(Object.keys(readerKeys), ["candidates"]);
-    const portKeys: Record<keyof ProductAgentServicePorts, true> = { publishedKnowledgeReader: true };
-    assert.deepEqual(Object.keys(portKeys), ["publishedKnowledgeReader"]);
+    const portKeys: Record<keyof ProductAgentServicePorts, true> = { publishedKnowledgeReader: true, claimedRunPersistence: true };
+    assert.deepEqual(Object.keys(portKeys), ["publishedKnowledgeReader", "claimedRunPersistence"]);
   });
 });

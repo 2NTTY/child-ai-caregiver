@@ -7,6 +7,8 @@ import type { AiUsageStore } from "./ai-usage.ts";
 import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import type { AgentStopReason, AgentDurableBudget } from "./agent-budget.ts";
 import { AgentGatewayModel } from "./agent-model-gateway.ts";
+import type { AgentRunClaim } from "./product-agent-store.ts";
+import type { RootBudgetLimits } from "./durable-root-budget.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { PresentationRepairAgent } from "./agent-presentation-repair.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
@@ -100,6 +102,10 @@ export interface AgentRunInput {
   /** Trusted persisted identity; never accepted directly from an HTTP body. */
   runId?: string;
   deadlineMs?: number;
+  /** Original claimed absolute deadline; never renewed at runtime entry. */
+  deadlineAtMs?: number;
+  /** Trusted business-store projection, used only by the opt-in server assembler. */
+  claimedRun?: AgentRunClaim;
   availableInputs?: readonly string[];
   context?: Record<string, unknown>;
   /** Trusted private summary for the first provider request only; never persisted in the session. */
@@ -131,6 +137,18 @@ export interface AgentRunResult {
   counts: { modelCalls: number; toolCalls: number; queryEmbeddings: number };
 }
 
+export type AgentDurableRunInput = Readonly<Pick<AgentRunInput, "runId" | "scope" | "trigger" | "recipeId" | "deadlineAtMs" | "claimedRun">>;
+export type AgentDurableRunBinder = (input: AgentDurableRunInput, promptPackVersion: string, limits: Readonly<RootBudgetLimits>) => AgentDurableBudget;
+
+function freezeDurable(durable: AgentDurableBudget): AgentDurableBudget {
+  return Object.freeze({ adapter: durable.adapter,
+    context: Object.freeze({ generation: durable.context.generation, binding: Object.freeze({
+      ...structuredClone(durable.context.binding), trigger: Object.freeze({ ...durable.context.binding.trigger }),
+      limits: Object.freeze({ ...durable.context.binding.limits }),
+    }) }), ...(durable.dailyUsage ? { dailyUsage: durable.dailyUsage } : {}),
+    ...(durable.runLimits ? { runLimits: Object.freeze({ ...durable.runLimits }) } : {}) });
+}
+
 /** Internal server entry only. HTTP bodies cannot supply scope, recipes, handlers or authorization. */
 export function createAgentRuntime(options: {
   config: AiConfig;
@@ -142,24 +160,29 @@ export function createAgentRuntime(options: {
   nativeSessionService?: BaseSessionService;
   /** Isolated fixed-config assembly only; version/epoch provenance remains the trusted caller's responsibility. */
   durableBudget?: AgentDurableBudget;
+  /** Binds an already claimed run, never selects a provider or dynamic account settings. */
+  bindDurableRun?: AgentDurableRunBinder;
 }) {
-  if (options.durableBudget && (options.resolve || !options.nativeSessionService
-    || !options.durableBudget.adapter || !options.durableBudget.context)) throw new Error("Invalid durable budget assembly");
-  const durable = options.durableBudget ? Object.freeze({ adapter: options.durableBudget.adapter,
-    context: Object.freeze({ generation: options.durableBudget.context.generation, binding: Object.freeze({
-      ...structuredClone(options.durableBudget.context.binding),
-      trigger: Object.freeze({ ...options.durableBudget.context.binding.trigger }),
-      limits: Object.freeze({ ...options.durableBudget.context.binding.limits }),
-    }) }), ...(options.durableBudget.dailyUsage ? { dailyUsage: options.durableBudget.dailyUsage } : {}),
-    ...(options.durableBudget.runLimits ? { runLimits: Object.freeze({ ...options.durableBudget.runLimits }) } : {}) }) : undefined;
-  const fixedOptions = durable ? { ...options, config: Object.freeze({ ...options.config }) } : options;
+  if ((options.durableBudget || options.bindDurableRun) && (options.resolve || !options.nativeSessionService
+    || options.durableBudget && options.bindDurableRun
+    || options.durableBudget && (!options.durableBudget.adapter || !options.durableBudget.context))) throw new Error("Invalid durable budget assembly");
+  const fixedDurable = options.durableBudget ? freezeDurable(options.durableBudget) : undefined;
+  const fixedOptions = fixedDurable || options.bindDurableRun ? { ...options, config: Object.freeze({ ...options.config }) } : options;
   const activeUsers = new Set<string>();
   return {
     async run(input: AgentRunInput): Promise<AgentRunResult> {
       const runId = input.runId ?? randomUUID();
-      const budget = new AgentBudget(input.signal, input.deadlineMs ?? AGENT_LIMITS.deadlineMs, durable?.context.binding.deadlineAtMs);
+      const bindingInput: AgentDurableRunInput = Object.freeze({ runId: input.runId, scope: Object.freeze({ ...input.scope }),
+        trigger: Object.freeze({ ...input.trigger }), recipeId: input.recipeId, deadlineAtMs: input.deadlineAtMs,
+        claimedRun: input.claimedRun ? structuredClone(input.claimedRun) : undefined });
+      if (input.deadlineAtMs !== undefined && (!Number.isSafeInteger(input.deadlineAtMs) || input.deadlineAtMs < 1))
+        return { runId, status: "stopped", stopReason: "unavailable", text: null, tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } };
+      let durable = fixedDurable;
+      const absoluteDeadline = Math.min(input.deadlineAtMs ?? Infinity, durable?.context.binding.deadlineAtMs ?? Infinity);
+      const budget = new AgentBudget(input.signal, input.deadlineMs ?? AGENT_LIMITS.deadlineMs,
+        absoluteDeadline === Infinity ? undefined : absoluteDeadline);
       const result: AgentRunResult = { runId, status: "stopped", text: null, tools: [], counts: budget.counts };
-      const scope = Object.freeze({ ...input.scope });
+      const scope = bindingInput.scope;
       let acquired = false;
       let toolFailure: AgentStopped | undefined;
       let authorize = input.authorize;
@@ -204,6 +227,11 @@ export function createAgentRuntime(options: {
           const prompt = await getPrompt();
           result.provenance = { packVersion: prompt.packVersion, recipeId: prompt.recipeId, model: selected.config.model };
           budget.check();
+          if (fixedOptions.bindDurableRun) {
+            durable = freezeDurable(fixedOptions.bindDurableRun(bindingInput, prompt.packVersion, budget.limits));
+            if (durable.runLimits || durable.context.binding.deadlineAtMs !== input.deadlineAtMs)
+              throw new AgentStopped("unavailable");
+          }
           if (durable) {
             const binding = durable.context.binding;
             if (!input.runId || runId !== binding.rootRunId || scope.userId !== binding.ownerId
@@ -286,7 +314,7 @@ export function createAgentRuntime(options: {
             },
             tools: runtimeTools,
             ...(durable ? { beforeModelCallback: ({ context, request }) => {
-              modelAnchors.set(request, modelAttemptKey(context, scope, runId, durable.context.binding.trigger));
+              modelAnchors.set(request, modelAttemptKey(context, scope, runId, durable!.context.binding.trigger));
             } } : {}),
             beforeToolCallback: async ({ tool, args, context }) => {
               budget.check();

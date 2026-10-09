@@ -1,6 +1,6 @@
 # 聊天根預算與 attempt 准入
 
-本契約定義根預算 adapter、[可選單次 runtime 接線](#runtime-connection)及[模型日額 attempt 台帳](#daily-usage)的不變量。沿用 Firestore 9.3.1 及現有 StorageCipher，不另建 workflow 或取代業務台帳；正式 Auth／index／worker 與恢復尚未啟用。各批基線及驗證範圍見[固定證據](#本輪證據)。
+本契約定義根預算 adapter、[可選單次 runtime 接線](#runtime-connection)、[模型日額 attempt 台帳](#daily-usage)及[已 claim run 的 services 組裝](#claimed-services)的不變量。沿用 Firestore 9.3.1 及現有 StorageCipher，不另建 workflow 或取代業務台帳；正式 Auth／index／worker 與恢復尚未啟用。各批基線及驗證範圍見[固定證據](#本輪證據)。
 
 ## 身份、額度與期限
 
@@ -29,7 +29,7 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 <a id="runtime-connection"></a>
 ## 2026-10-09：單次 runtime 持久扣額接線
 
-受信 constructor `{adapter, context, runLimits?, dailyUsage?}` 提供可選局部接線；`dailyUsage` 的模型日額行為見[下節](#daily-usage)。僅 fixed config、無 resolve 組裝；default memory不變，正式index／worker／services未啟用。context與config複製凍結，後改caller options不能切換resolver/session。scope／原run／trigger／pack／effective limits／絕對deadline由runtime比對；workflow/settings/billing/storageEpoch的來源仍由受信組裝者負責，不以重複同值或key hash假裝獨立核實。
+受信 constructor `{adapter, context, runLimits?, dailyUsage?}` 提供可選局部接線；`dailyUsage` 的模型日額行為見[下節](#daily-usage)。僅 fixed config、無 resolve 組裝；default memory不變，正式index／worker未啟用；services 的受信可選接點見[下節](#claimed-services)。context與config複製凍結，後改caller options不能切換resolver/session。scope／原run／trigger／pack／effective limits／絕對deadline由runtime比對；workflow/settings/billing/storageEpoch的來源仍由受信組裝者負責，不以重複同值或key hash假裝獨立核實。
 
 - ADK2.1公開beforeModel context已保存session events提供anchor。first用原business message/trigger＋固定step，不用新Runner user event；next只用當前agent/branch已提交實際event。保留PresentationRepair callbacks，不用私有hook或一般allocator。
 - 整批工具身份沿已committed model attempt固定子步，先原子扣batch再由SDK補call ID／保存event；不誤稱當前call event已在扣額前保存。embedding沿已保存call event＋callId唯一對應；缺失／重複即停止。
@@ -43,7 +43,7 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 <a id="daily-usage"></a>
 ## 模型日額 attempt 台帳及實際 gateway 接線
 
-`FirestoreAiUsage` 實作 `DurableAiUsage`，沿用已鎖定的 Firestore 9.3.1、StorageCipher 及現有 daily attempts 上限，不引入新 SDK／SQL migration。受信組裝者在 `createAgentRuntime` 的 `durableBudget.dailyUsage` 注入 adapter；實際 `AgentGatewayModel` 使用它取代該 run 的舊 `usage.reserve/record`，不雙扣 SQL。未注入時完全沿用舊路徑。仍只容許既有 fixed-config＋native session 組裝，不能混入 dynamic routing；正式 services／index／worker 尚未啟用。
+`FirestoreAiUsage` 實作 `DurableAiUsage`，沿用已鎖定的 Firestore 9.3.1、StorageCipher 及現有 daily attempts 上限，不引入新 SDK／SQL migration。受信組裝者在 `createAgentRuntime` 的 `durableBudget.dailyUsage` 注入 adapter；實際 `AgentGatewayModel` 使用它取代該 run 的舊 `usage.reserve/record`，不雙扣 SQL。未注入時完全沿用舊路徑。仍只容許既有 fixed-config＋native session 組裝，不能混入 dynamic routing；正式 index／worker 尚未啟用，services 僅有[受信固定平台可選組裝](#claimed-services)。
 
 ### 權威及執行界線
 
@@ -66,3 +66,17 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 此 adapter 不讀 ADC、不建資源、不接管 caller client、不刪資料、不加 TTL。account／child erasure、retention、restore epoch 與日額不能退款的協調仍未完成，故不能直接啟用正式流量。embedding 日額、動態本人設定、持久受理／outbox、跨庫 effect fencing、真正重啟 resume 與服務 bootstrap 均未因本切片完成；另外三個 Agent 內部仍暫緩。
 
 固定證據見 [F01 模型日額驗證](../artifacts/verification/F01_DAILY_AI_USAGE_20261009.json)。合成串行 transaction harness（Promise.all 同時提交）覆蓋重跑回調、並行 caller 防重、跨 instance 重建、回覆遺失及日界線，真 Runner 只搭 scripted provider；不能代替 Firestore 真競爭、真模型或產品 E2E。SDK 方法沿已安裝 9.3.1 公開型別，交易語義已再核[官方 transactions](https://docs.cloud.google.com/firestore/native/docs/manage-data/transactions)的全讀後寫、回調可能重跑及 atomic commit。
+
+
+<a id="claimed-services"></a>
+## 已 claim run 的固定平台 services 組裝
+
+`createProductAgentServices` 的既有第十一個 `ports` 可注入 `claimedRunPersistence`：已建好的 native Session／root budget／daily usage adapter、固定平台 profile，及可選受信 provider。保留原十個位置參數及 SQL／memory／dynamic routing 路徑；正式 index／worker 不傳此選項。此接點只供隔離、受信組裝，不是正式啟用開關，也沒有新 Firestore client、ADC、資源或 client 關閉權。
+
+- **單次固定 profile：**constructor 比對傳入 AiConfig 與 profile 的完整配置 fingerprint，複製凍結配置及 workflow／pack／settings／billing 版本；要求 enabled、platform billing 及對應 daily adapter。settingsVersion 綁明確版本字串加完整 config hash。缺失／不一致或同時傳 routing 一律拒絕，不能略過本人的停用／personal 選擇而偷偷改用平台。真實 provider 沿既有 gateway；測試只注入 scripted provider。這些版本是受信 Server 的宣告，不代表已獨立核實本人動態設定。
+- **沿原 claim：**SQL store 明確投影原 storageEpoch、trigger、recipeId；authorizationVersion 保留原字串，不經 Number。ProductAgent.reply 傳原 claim、scope、runId 及 `Date.parse(expiresAt)` 絕對期限。只有 created=true、running、原 sourceMessageId／interactive trigger 與 product-interactive recipe 相符的新 claim 才可綁定。服務層核 epoch 與原 SQL dataVersion 投影一致；runtime 核原 scope／run／trigger／pack／effective limits。期限必須有效且未過期；local deadline 取原 expiry 與既有 90 秒上限較早者，root 綁原 expiry，沒有重新起 90 秒。
+- **共用 runtime：**constructor 可選逐 run `bindDurableRun`，與舊單一 `durableBudget` 互斥，且必須有 native Session、不能有 dynamic resolve。binder 只產生該原 run 的 context，不選模型、key 或個人設定。整個 services 仍只建立一個 runtime，共用同 user 排他及每 instance 四個 active slots；成功、拒絕、儲存失敗或取消均沿原 finally 釋放，不以每 run 重建 runtime 繞過容量。這不是跨 instance 併發控制。
+- **持久化與中斷：**fresh claim 的 generation 固定為 1，沒有 lease／接管／遞增。provider 前 root.open 保存 bindingFingerprint、generation、原期限／限額及計數；不保存可讀回的完整 profile 或受理快照。Session 僅 create-only，root → daily → root／授權重查 → provider 次序不變。SQL claim 與 root／Session／daily 各自有交易權威，並非跨 store 原子提交。
+- **重投只查回：**claim.created=false 沿既有 get 原 run／收據，零 binder、Session create、root open、日額 reserve、provider 或 effect。SQL claim 後、root.open 前失聯亦不補建 profile 或執行；尚未完成的原 run 依既有業務狀態／到期投影保留 unknown。已提交文件仍用原 documentId／expectedVersion／opId 與原收據查回；取消／失聯不升格完成、不重做副作用，root.stop 不等於 SQL cancel。
+
+本切片的 services → ProductAgent.reply → 共用 runtime → 真 ADK Runner／gateway 使用三個實際 Firestore adapters，底層為串行合成 transaction harness；業務 store factories 及 provider 用合成替身。已合併的 SQL 收據／取消測試另作定向回歸，並不把新 harness 當真 SQL／Firestore 競爭。固定證據見 [services 驗證](../artifacts/verification/F01_CLAIMED_SERVICES_20261009.json)。尚未驗真模型理解、HTTP／UI、Emulator、真雲端、正式重啟或部署；原真模型 20／20 已用盡。動態本人設定、embedding 日額、清理／restore、完整持久受理／outbox、跨庫 effect fencing、跨 instance 限流及 resume 仍未完成；其他三個 Agent 只留接口。

@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-09T15:32:00Z",
+  "repository": "2NTTY/child-ai-caregiver",
+  "baseCommit": "495f2cdf430830c768442923c2cc8a6b5bb55b16",
+  "status": "root_accepted_ready_for_normal_publication",
+  "scope": "Trusted fixed-platform, create-only per-claimed-run services composition; production bootstrap remains unchanged",
+  "files": [
+    {
+      "path": "server/agent-runtime.ts",
+      "bytes": 32619,
+      "sha256": "7b373a3dfdb0536a0e7fcf854422096f1e64755ca70db6020c52bad094b82bc1"
+    },
+    {
+      "path": "server/product-agent-services.ts",
+      "bytes": 7444,
+      "sha256": "836061f1879a3060768c51d603b4af563b06993a66bb9773bf8e258adb3fdb26"
+    },
+    {
+      "path": "server/product-agent.ts",
+      "bytes": 17653,
+      "sha256": "e3757920754442f99290640b0143de1b17e3995af6263b1088de9b2cc1ae20dd"
+    },
+    {
+      "path": "server/product-agent-store.ts",
+      "bytes": 46340,
+      "sha256": "68f6bd684d8b5648a750698534e585eb5e285be9a713bdc9bc9954b5c4a46f15"
+    },
+    {
+      "path": "tests/product-agent-claimed-services.test.ts",
+      "bytes": 25498,
+      "sha256": "9dd51c4211b9a0f3b9c68be219b86cdc1ce35284ecb72fd130d543d62f976a64"
+    },
+    {
+      "path": "tests/helpers/firestore-session-memory.ts",
+      "bytes": 3854,
+      "sha256": "86cce528a3712ef3816f96edc4863c34a2a7eff3b82a3527761a3619e46aeeaa"
+    },
+    {
+      "path": "tests/product-agent-services.test.ts",
+      "bytes": 8608,
+      "sha256": "f3a46782780d64d737b715430d3e5235ba082c59aab24bb47ee22d6aef1efd8a"
+    }
+  ],
+  "checks": {
+    "focused": {
+      "command": "node --import offline-guard.mjs --experimental-test-module-mocks --test [seven affected suites]",
+      "tests": 160,
+      "passed": 160,
+      "failed": 0
+    },
+    "aggregate": {
+      "command": "npm test",
+      "tests": 792,
+      "passed": 792,
+      "failed": 0
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "scopes": [
+        "frontend",
+        "client",
+        "server"
+      ],
+      "exitCode": 0
+    },
+    "newTests": {
+      "countIncludingParent": 11,
+      "subsetOfAggregate": true
+    },
+    "candidateFailures": []
+  },
+  "logs": [
+    {
+      "file": "../evidence/claimed-services-01.log",
+      "sha256": "89548e39df6da225586779575e5e1c474921bb4d9571649145ab4a3ace12c698"
+    },
+    {
+      "file": "../evidence/focused-02.log",
+      "sha256": "270a9f35192cbd5583643a95c647621c9931157a1656c950e4eb8bd1a9a5e1e1"
+    },
+    {
+      "file": "../evidence/server-tsc-01.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "../evidence/server-tsc-02.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "../evidence/full-tests-01.log",
+      "sha256": "544e4ea40ff886f33653cce60fab83313394fb80b30283e36ca3bc511b3148e8"
+    },
+    {
+      "file": "../evidence/full-typecheck-01.log",
+      "sha256": "1cfe8aff9cb9fe99d81edc6889b83d6ab3373b4c031d2df7c57e76d743879fd4"
+    }
+  ],
+  "networkGuard": {
+    "finalProcessReports": 126,
+    "attempts": 0,
+    "environment": "Explicit environment allowlist; inherited credentials excluded",
+    "manifestSha256": "36af83897beef58f2b9a16caffb81589f8ad17ce8e63fc9d8c11158d861d1f4e",
+    "limits": "Process-level Node socket/TLS/DNS/fetch guard, not packet capture. Synthetic network-dependent suites retain their own mocks."
+  },
+  "independentReview": {
+    "reviewer": "assess_runtime_activation_slice",
+    "result": "No blocking findings across seven code/test files; no duplicate test execution",
+    "finding": "Root adapter persists bindingFingerprint and limited budget state, not a complete profile snapshot. Serial harness does not model Firestore competition or batch updateTime preconditions.",
+    "resolution": "Contract and evidence explicitly distinguish these limits.",
+    "documentReview": "No blocking findings after correcting the new WORKLOG Hong Kong timestamp from 00:32 on October 10 to 23:32 on October 9. Existing direct SQL adapter projection assertions were verified in the unchanged test file and logs."
+  },
+  "documentIntegrity": {
+    "worklogOriginalBytes": 287406,
+    "worklogOriginalPrefixEqual": true,
+    "appendBytes": 3880,
+    "originalPlanAnchors": 140,
+    "preservedPlanAnchors": true,
+    "preservedWorkPackageAndACIdentifiers": true
+  },
+  "proven": [
+    "Real createProductAgentServices -> ProductAgent.reply -> shared runtime -> ADK Runner/gateway; real Session/root/daily adapters over serial synthetic storage",
+    "Independent original roots accumulate daily usage; original document ID, expected version and operation ID retained",
+    "Services reconstruction and pre-root claim loss remain original lookup-only",
+    "Post-effect cancellation/finish loss preserves original receipt, stopped or unknown state and unknown counts",
+    "Scope/auth string/epoch/expiry/profile/recipe/fresh claim gates precede dispatch",
+    "Daily quota and lost reply do not refund root or use SQL fallback",
+    "Same-user and fifth concurrent user rejected; shared slots released",
+    "Default services regression and original SQL receipt/cancellation tests pass"
+  ],
+  "notProven": [
+    "Real model understanding; original approved batch remains exhausted at 20/20",
+    "Emulator or live Firestore/SQL competition",
+    "HTTP/UI/product E2E, cloud resources or deployment",
+    "Cross-store atomicity, cross-instance concurrency fencing, durable acceptance profile snapshot, resume/takeover",
+    "Dynamic personal settings, embedding daily quota, account/child cleanup and restore coordination"
+  ],
+  "productionActivation": false,
+  "deployment": false,
+  "realProviderCalls": 0,
+  "otherAgentInternalsChanged": false,
+  "rootFinalAcceptance": {
+    "approvedAt": "2026-10-09T15:42:33Z",
+    "decision": "allow_exact_twelve_file_slice_for_normal_pr_publication",
+    "codeUnchangedAfterValidation": true,
+    "pullRequestCreated": false,
+    "productionActivation": false,
+    "deployment": false
+  }
+}
