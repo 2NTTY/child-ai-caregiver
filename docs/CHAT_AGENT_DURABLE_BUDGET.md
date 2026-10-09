@@ -59,6 +59,13 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 3. record 必須已有同 request reservation，使用原 reservation day。期限後或 root 已停止仍可補該次必要 accounting，但不讀寫 root/run 終態、不授予新模型或工具執行。已保存 record 只接受完全相同重送，矛盾晚到結果拒絕；同 record 重投及 commit 回覆遺失不重加 tokens。取消期間 provider 的 late promise 不自動把已保存 timeout／unknown 改為成功。
 4. getForUser 僅投影當前 UTC 日、固定 billing source 的合計。原日 token 晚到不算進今天；查回不是對家庭資料的授權入口，caller 仍須依產品身份／准入閘使用。沒有 query／scan 或複合索引要求；實體 index exemption、讀費、真競爭及雲端驗收仍待 F02。
 
+<a id="daily-counter-consistency"></a>
+### 可證實的日額不一致
+
+新 reserve 與尚未記錄的 record 在原 transaction 內核對本人／全站 counter：本人存在但全站缺失，或本人 attempts、known、inputTokens、outputTokens、cachedTokens 任一大於全站，即拒絕且零寫入。tokens 各自加總已知值，不假定部分／null metadata 的欄位等式。原 attempt 的 lookup／read 及相同已保存 record 仍可查回，不因此再執行、退款或改 run 終態；缺口與必要定向見[本輪證據](../artifacts/verification/F01_DAILY_COUNTER_CONSISTENCY_20261009.json)。
+
+這只偵測現存資料已能證明的不一致。新用戶缺本人 counter、新 UTC 日兩 counter 皆缺仍沿既有初始化；本人 counter 單獨遺失、兩者一起遺失或一致回退不能與合法初始化／較早狀態區分。getForUser 仍只是單本人投影。尚無獨立現行 epoch、完整 cloud erasure journal／配對 manifest 的共同權威，本修正不是 restore 開放閘，不能解鎖正式持久流量。
+
 ### 私隱、保留及未完成範圍
 
 單文件上限 16 KiB；attempt、counters 都使用既有 AES-GCM 應用加密，AAD 綁格式／版本／project／namespace／hashed document identity。路徑只有固定類別及 hash，外層僅 format/version/ciphertext；不存 request/response 正文、prompt、工具資料、圖片、密鑰或原模型內容。request fingerprint 是原 payload 的 hash，仍作私人 metadata 加密，不放公共索引。

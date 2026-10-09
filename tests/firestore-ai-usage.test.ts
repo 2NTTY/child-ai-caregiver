@@ -13,6 +13,70 @@ const request = (patch: Partial<DurableAiUsageRequest> = {}): DurableAiUsageRequ
 const known: DurableAiUsageRecord = { outcome: 'succeeded', inputTokens: 12, outputTokens: 3, cachedTokens: 4, durationMs: 25 };
 const code = (value: string) => (error: unknown) => error instanceof DurableAiUsageError && error.code === value;
 
+function globalCounter(f: ReturnType<typeof firestoreUsageFixture>, day = '2026-10-09') {
+  const id = 'daily_' + agentBudgetFingerprint([f.options.billingSource, day, null]);
+  const path = `${f.options.namespace}/${id}`;
+  const aad = JSON.stringify(['yuban-ai-daily-usage', 1, f.options.projectId, f.options.namespace, id]);
+  const envelope = f.records.get(path) as { format: string; version: number; ciphertext: string };
+  return { path, replace(patch: Record<string, number>) {
+    const state = JSON.parse(f.options.cipher.decrypt(envelope.ciphertext, aad));
+    f.records.set(path, { ...envelope, ciphertext: f.options.cipher.encrypt(JSON.stringify({ ...state, ...patch }), aad) });
+  } };
+}
+
+test('new admission rejects a missing global counter without repairing it or losing the original receipt', async () => {
+  const f = firestoreUsageFixture(), input = request(); await f.service.reserve(input);
+  f.records.delete(globalCounter(f).path);
+  const before = structuredClone([...f.records]), transactionStart = f.transactions.length;
+  await assert.rejects(f.service.reserve({ ...input, attemptKey: 'new-step' }), code('counter_not_found'));
+  assert.deepEqual([...f.records], before);
+  assert.ok(f.transactions.slice(transactionStart).every(tx => tx.reads === 3 && tx.writes === 0));
+  assert.equal((await f.service.reserve(input)).decision, 'lookup');
+  assert.equal((await f.service.read(input))?.record, null);
+});
+
+test('new admission rejects each independently lower global counter even below the quota limits', async () => {
+  for (const field of ['attempts', 'known', 'inputTokens', 'outputTokens', 'cachedTokens']) {
+    const f = firestoreUsageFixture(), input = request(); await f.service.reserve(input); await f.service.record(input, known);
+    // Keep each document individually valid while breaking the aggregate relationship.
+    globalCounter(f).replace(field === 'attempts' ? { attempts: 0, known: 0 } : { [field]: 0 });
+    const before = structuredClone([...f.records]), transactionStart = f.transactions.length;
+    await assert.rejects(f.service.reserve({ ...input, attemptKey: 'new-step' }), code('counter_inconsistent'), field);
+    assert.deepEqual([...f.records], before, field);
+    assert.ok(f.transactions.slice(transactionStart).every(tx => tx.reads === 3 && tx.writes === 0), field);
+    assert.deepEqual((await f.service.read(input))?.record, known);
+    assert.equal((await f.service.reserve(input)).decision, 'lookup');
+    assert.deepEqual((await f.service.record(input, known)).record, known);
+  }
+});
+
+test('late accounting rejects inconsistent counters atomically while preserving an unknown original receipt', async () => {
+  const f = firestoreUsageFixture(), first = request(), second = request({ attemptKey: 'unrecorded-step' });
+  await f.service.reserve(first); await f.service.record(first, { ...known, cachedTokens: null }); await f.service.reserve(second);
+  globalCounter(f).replace({ inputTokens: 0 });
+  const before = structuredClone([...f.records]), transactionStart = f.transactions.length;
+  await assert.rejects(f.service.record(second, known), code('counter_inconsistent'));
+  assert.deepEqual([...f.records], before);
+  assert.ok(f.transactions.slice(transactionStart).every(tx => tx.reads === 3 && tx.writes === 0));
+  assert.equal((await f.service.read(second))?.record, null);
+});
+
+test('partial token metadata, a new user and a new UTC day do not make valid counters inconsistent', async () => {
+  const f = firestoreUsageFixture(), partial = request(), unknown = request({ attemptKey: 'unknown-step' });
+  await f.service.reserve(partial); await f.service.record(partial, { ...known, inputTokens: null, cachedTokens: 99 });
+  await f.service.reserve(unknown); await f.service.record(unknown, { ...known, inputTokens: null, outputTokens: null, cachedTokens: null });
+  const other = request({ rootRunId: 'other-root', userId: 'other-user' });
+  assert.equal((await f.service.reserve(other)).decision, 'execute'); await f.service.record(other, known);
+  assert.equal((await f.service.reserve({ ...partial, attemptKey: 'next-step' })).decision, 'execute');
+  assert.deepEqual(await f.service.getForUser(partial.userId), { day: '2026-10-09', attempts: 3,
+    inputTokens: 0, outputTokens: 3, cachedTokens: 99, unknownUsageAttempts: 3, billingSource: 'platform' });
+  const tomorrow = now + 86400000; f.setNow(tomorrow);
+  assert.equal((await f.service.reserve({ ...partial, rootRunId: 'next-day-root', deadlineAtMs: tomorrow + 90000 })).decision, 'execute');
+  assert.equal((await f.service.getForUser(partial.userId)).attempts, 1);
+  assert.equal((await f.service.reserve(partial)).decision, 'lookup');
+  assert.equal((await f.service.read(partial))?.day, '2026-10-09');
+});
+
 test('daily usage constructor is inert, requires trusted configuration and never owns client lifecycle', async () => {
   const f = firestoreUsageFixture();
   assert.deepEqual(f.transactions, []); assert.equal(f.records.size, 0);
