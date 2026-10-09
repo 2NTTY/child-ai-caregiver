@@ -1892,3 +1892,18 @@
 - 底層為 serial 合成 transaction harness（不建模 Firestore 真競爭、batch precondition 或真 updateTime）；provider／業務 store factories 為合成替身，既有 SQL 原收據／取消另做定向回歸。沒有跨 store 原子、正式 resume、動態本人設定、跨 instance 限流或完整 F01 的新結論；embedding 日額、清理／restore、持久受理／outbox、跨庫 effect fencing 仍待完成。未跑 Emulator、真 SQL／Firestore、真模型、HTTP／UI、真雲端、正式重啟或部署。文件獨立 review 已通過，dot 最終驗收另行裁決，不能以此 LOG 自行解鎖正式流量。
 
 - 23:42 HKT 最終裁決追加：dot 已親審四個核心差異、連貫測試與獨立程式／文件 review，結合 792 項聚合、完整 typecheck、126 份零嘗試 guard 及原文保留核查，准予本精確 12 檔切片正常 PR 交付。七個程式／測試檔保持凍結，未建立 PR、未部署或啟用正式流量；原真模型額度、unknown／原收據及全部未完成門檻不變。
+
+
+<a id="log-20261009-f01-owned-session-cleanup"></a>
+## 2026-10-09｜F01 已確認 create incarnation 的會話清理
+
+- Recorded At：2026-10-09T23:59:42+08:00；工作開始於 2026-10-09 23:43 HKT。基線 master `0fcddee37659d49478c6aeeeeeb2aa78ea4ad85c`（#168 已合併、未部署），沿 publisher 的 parents／tree／12 檔全文核對建立隔離候選。指定 Astra xhigh 實作程式、測試及契約，dot 統籌／最終裁決；沒有新增人工驗收，候選未建立 PR 或部署。
+- 實際缺口：原 runtime 用 active budget／authorize guard 清理，cancel／revoke 後 session 正文留存。新增可選 owned cleanup capability：只有同 adapter 已成功 create 回傳的原 Session 物件取得私有 incarnation 所有權；Firestore 沿既有 deleting 交易及 batch updateTime precondition 刪該 session/events。runtime 最外 finally 只對已確認所有權做獨立 5 秒等待，普通 storage guard 保留。未知 create 不刪，late cleanup 不刪新 incarnation；原 stop／收據保持，cleanup 單獨失敗才令原可完成結果 unavailable。shared state／root／daily／domain receipt 不在清理寫集。
+- 先有基線 red-01（取消後會話仍在）；首修 green-01 仍失敗，定位 outer budget.wait 在 inner finally 完成前返回，停批後移至最外 finally，green-02 通過。後續核心21、原 storage error＋cleanup error 1、legacy關鍵10，合共 **32 項定向（含父 test）通過**；新增測試為11項，重跑及子集不重複累加。首個 Server tsc 有測試覆寫回傳型別及 ES2023 Promise.withResolvers 共5項 diagnostics；只補明確 Promise<Session>／new Promise deferred，原斷言不變，受影響2項補驗及 Server tsc exit 0。
+- 使用者本批明確要求「只測關鍵和有用的」，因此選 cancel／revoke、unknown create、原 incarnation／batch precondition、late cleanup／timeout、原錯誤／receipt／root／daily 不重置及正常舊路徑。未跑 792 全量、前端／client typecheck或無關套件；原 #168 全量屬前一批。固定 source／log hashes、失敗及 network guard 範圍見[證據](artifacts/verification/F01_OWNED_SESSION_CLEANUP_20261009.json)。
+- 復用 ADK 2.1 公開 Session、Firestore 9.3.1 transaction／batch、StorageCipher 及現有產品 fixture；無新依賴／資源。serial 合成 harness 補每文件 updateTime／原子 batch precondition 模型，不當真 Firestore 競爭。沒有真 DB／Emulator／模型、HTTP／UI、正式資料刪除、雲端或部署；真模型20／20用盡、其他三 Agent 只留接口。帳戶／孩子 tombstone及清理索引、獨立 cloud journal、restore epoch／日額防回退仍未解，本切片不能解鎖正式持久流量。
+- 程式／文件獨立 review 與 dot 最終驗收待完成；後續只按具體 findings 局部修正及補驗，不將此記錄自行當作 PR／正式啟用批准。
+
+- 2026-10-10 00:01 HKT 追加：獨立 reviewer 完成六程式／測試與五文件／證據唯讀覆核，無 blocking finding；核 code/document/log/guard hashes 與原 WORKLOG prefix，未重跑相同測試。dot 最終裁決仍待完成，程式 hash 未變。
+
+- 2026-10-10 00:01 HKT 最終裁決追加：dot 已親讀 runtime／Firestore cleanup 核心差異，結合32項必要定向、Server tsc、獨立程式／文件 review 與原紅證據／原文保留，准予精確11檔切片正常 PR 交付。六個程式／測試 hash 不變，不跑全量；尚未建立 PR／部署或啟用正式流量，帳戶／孩子 erasure 與 restore／日額協調 gate 保留。

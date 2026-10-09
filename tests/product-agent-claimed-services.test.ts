@@ -212,6 +212,11 @@ test('claimed services compose real ProductAgent, shared runtime, Runner and all
     assert.deepEqual(original?.tools, [{ name: 'change_family_document', status: 'succeeded', reference: documentId }]);
     assert.equal(s.domain.ledger.size, 1); assert.equal(s.domain.document.version, 4);
     assert.deepEqual(s.stats(), { ...before, gets: before.gets + 1 });
+    assert.equal([...s.f.records.keys()].some(path => path.startsWith('synthetic_sessions/') && path.includes('/sessions/')), false);
+    assert.equal((await s.daily.getForUser(entry.claim.scope.userId)).attempts, before.dailyReserves);
+    const budget = await s.root.read(s.opens[0]);
+    assert.equal(budget.used.modelCalls, before.dailyReserves);
+    assert.ok(budget.used.toolCalls > 0);
   });
 
   await t.test('claim identity, original scope/auth/epoch/expiry, recipe and profile are required before storage/provider dispatch', async () => {

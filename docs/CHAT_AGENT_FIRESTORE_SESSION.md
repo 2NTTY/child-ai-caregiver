@@ -20,7 +20,7 @@
 ## 持久化不變量
 
 - 保留完整 JS camelCase Event JSON、原生 parts／IDs／signatures／workflow 欄位；不轉 Python 欄位或時間單位。symbol／undefined／prototype 按明示 JSON 邊界處理；不得把任意非 JSON 資料當已支持。
-- app／user／session state 及 Event 全部使用現有 StorageCipher，加密 AAD 綁格式、project／namespace、種類及 tuple。metadata 索引不保存正文；不能另存明文 stateDelta 或 rawEvent。共享 app/user scope 不可因此存放孩子私人狀態。
+- app／user／session state 及 Event 全部使用現有 StorageCipher，加密 AAD 綁格式、project／namespace、種類及 tuple。metadata 索引不保存正文；不能另存明文 stateDelta 或 rawEvent。新 create header 另有隨機 incarnation nonce，僅用於清理 fencing，不含身份／正文；舊 header 仍可讀取。共享 app/user scope 不可因此存放孩子私人狀態。
 - create 拒絕既存；append 以 Firestore 原生交易核 session revision，原子更新事件與狀態。marker 綁已讀出的 Session 物件，lastUpdateTime 不是 CAS。任意構造、list 投影、stale 或 poisoned Session 不可直接 append。
 - 相同 event.id 可合法 replacement；完全相同持久 payload 的重送在 super 前識別，不能將較舊事件重新套用造成 state 回退。業務防重仍獨立處理。
 - 公開 super 作用於原物件，保留原生程序內 write-order；不得在 Firestore 可重試 callback 中執行它、模型或工具。交易失敗／回應丟失及 Event 在 await 期間被改動會使該 Session 失效，必須 fresh get；不宣稱記憶體或已提交資料自動回滾。
@@ -55,11 +55,26 @@ app/user shared documents 不隨單 Session 刪除。產品准入仍須沿帳戶
 <a id="runtime-port"></a>
 ## 2026-10-09：可選單次 runtime 接線
 
-`createAgentRuntime` 接受受信的 `nativeSessionService` 公開 BaseSessionService 接點；預設每 run InMemory 不變。尚未在正式 index／worker 或共用 services 工廠啟用，不改照片、私人來源及背景其他配方。
+`createAgentRuntime` 接受受信的 `nativeSessionService` 公開 BaseSessionService 接點；預設每 run InMemory 不變。正式 index／worker 未啟用；services 已有[受信可選組裝](CHAT_AGENT_DURABLE_BUDGET.md#claimed-services)，不改照片、私人來源及背景其他配方。
 
 - 注入實作須原子拒絕已存在的 app/user/session；公開 BaseSessionService 型別本身不保證 create-only。原生 InMemory 的覆寫語義不可當作已符合此注入契約；本 Firestore 實作以交易拒絕 collision，並有本地實測。
 - 本輪 create-only，使用原 runId，不恢復舊 session、不 fallback 或重做工具。只對成功確認本次建立的 session 擁有清理責任；create 回應不確定／collision 不盲刪，seed 也在同一生命週期管理內。公開方法 guard 沿現有 budget／authorize，不複製 SDK private write-order；native Session/Event 原物件保留。
-- 取消／撤權／deadline 後無法安全執行 cleanup 時，不能稱已清除。清理錯誤不覆蓋原主要錯誤；無主要錯誤但清理失敗則保守 stopped/unavailable。已提交業務效果仍查原 receipt，不宣稱 storage error 能撤銷效果或殺死背景工具。測試組裝者另清自己的合成資料不等於 runtime 已清理。
+- 沒有下列 incarnation-fenced capability 的舊 adapter 繼續沿 active-run guard 清理；取消／撤權／deadline 後可能未能清除，不能稱已清除。已提交業務效果仍查原 receipt，不宣稱 storage error 能撤銷效果或殺死背景工具。測試組裝者另清自己的合成資料不等於 runtime 已清理。
 - 未驗真模型、HTTP／UI、正式 Firestore／Auth、雲端及部署。跨程序恢復還須 owner／child／auth／epoch 與原 run/work/message/interrupt 綁定、持久根 budget、lease/generation、取消和 domain receipt/changes/outbox 協調；原生事件不替代業務 authority。現有取消已 SQL 持久化，process Map 只是 Abort 加速。
 
 9544b3cc 上的[單次接線固定證據](../artifacts/verification/FIRESTORE_RUNTIME_INTEGRATION_20261009.json)記錄原 typecheck、離線及 Emulator 結果，並保留 focused 52／58、ES2023 型別錯誤、前置 guard 停止及依賴探針缺陷；不是早期 CRUD／workflow 的重跑。根文件及摘要另審，不包含在程式 test manifest。
+
+
+<a id="owned-cleanup"></a>
+## 已確認 create 的有界會話清理
+
+`NativeAgentSessionService.cleanupCreatedSession` 是受信的可選 teardown capability，`FirestoreSessionService` 已實作並沿 services → 共用 runtime 實際使用。它只持有同一 adapter 的 create 成功回傳 Session 原物件與私有 WeakMap 內的 tuple／incarnation；get、list、重建物件及其他 instance 不取得清理權。runtime 的 create 等待若失敗、逾時或回覆未知，不註冊清理，不以推測成功補刪。
+
+- 清理沿既有兩段交易與原子 batch：先比較 incarnation 才標 deleting，再重核相同 incarnation、取得有界 events 與 header updateTime，最後 batch 以 parent lastUpdateTime precondition 一起刪 session/events。舊清理不能刪同 tuple 的新 incarnation，包含重用 event ID；任一 precondition 失敗則整批不提交。沒有放寬普通 read／append／run 的授權或期限 guard。
+- outer budget wait 可以先於 Runner unwind 結束，故 cleanup 位於 runtime 最外 finally，在 run budget 關閉後只處理已確認所有權。獨立 **5 秒**上限只限制等待，不宣稱中止資料庫操作；遲到清理仍受 incarnation／batch precondition 約束。沒有自動重試或新 run。
+- cleanup 失敗／回覆未知保留原 cancelled／unauthorized／其他主要停止原因及原收據；若原 run 原可完成而只有 cleanup 失敗，結果保守 stopped/unavailable。timeout 不當已刪、失去回覆不當未刪。能力不存在的 adapter 保留原 guarded delete 行為。
+- 只刪該次 session 與 events。app/user shared state、root budget、daily attempt/counters、domain receipts 及獨立 journal 不在寫集；不退款、不重設 epoch 或復活 cancelled/unknown run。清理成功不代表帳戶／孩子刪除、備份抹除或跨程序恢復完成。
+
+沿用固定 Firestore 9.3.1 的 transaction／batch precondition、既有 StorageCipher 及 ADK 2.1 公開 Session，不加依賴／TTL 或新雲端資源。[官方 TTL](https://firebase.google.com/docs/firestore/ttl)仍非即時／非原子且不刪子集合，不能作這個授權或清理 gate。帳戶／孩子 scope 索引及 tombstone、獨立 cloud journal、restore 完整度／現行 epoch 與日額防回退的共同開放閘仍未接線；正式持久流量保持未啟用。
+
+本包[定向證據](../artifacts/verification/F01_OWNED_SESSION_CLEANUP_20261009.json)使用 serial 合成 transaction harness／真 Runner 搭 scripted provider。harness 新增每文件版本和原子 batch precondition 的模型，只證明此合成排程，不代替 Firestore 真競爭、真時間戳、IAM／Emulator 或雲端驗收；前包不建模 precondition 的歷史限制不回寫。
