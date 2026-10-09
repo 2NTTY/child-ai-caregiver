@@ -3,6 +3,14 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## QA：取消工作與同批跟進事件（原碼驗收通過，預覽發布受阻）
+
+2026-10-10 HKT，固定 master `6ef63e8a70db014a68a79baee7fab85fa2d836c8`。兩項工作合併同一背景事件時，取消的工作可能仍帶同批 completed；現行資料沒有逐成員 outcome／取消時間，不能猜先後或改寫真正已完成的歷史。
+
+- `PersistentWorkCards` 對 cancelled 工作優先寫「此工作已取消，不再接續」，原結果為 cancelled 時列明「此工作關聯接續」，其餘列明「同批跟進事件」，避免把仍排隊同批內的失效 link 說成整批取消。只有文字呈現，不改台帳／DTO、日期、owner、控制或樣式。
+- 取消先於另一工作完成、以及原事件先完成才取消，加上取消成員／仍排隊同批的投影，共三項真元件 React 靜態 render 反例通過；native controls 用替身，只證文字及輸入不變，並非真瀏覽器／responsive 驗收。frontend／Server typecheck 與根包4項核心／受影響檢查通過；review 後最後字串分支只重驗三個 render，未重跑核心，見[固定證據](../artifacts/verification/CHAT_FOLLOWUP_RECOVERY_20261010.json)。
+- 原 API per-work 斷言紅保留，未把本 UI 修正說成 API 精確 outcome 已提供。獨立 review 無剩餘阻塞、dot 最終原碼驗收通過，准予精確11檔正常 PR 交付，尚未建立 PR；既有預覽可重建來源受阻，不繞路重建或發布，真瀏覽器補驗待來源恢復。#173 已合併，下列搜尋／準備單段保留當時的交付快照與發布阻塞。
+
 ## QA：搜尋名稱與準備單鍵盤焦點（原碼驗收通過，預覽發布受阻）
 
 2026-10-09 UTC，固定基線 master `d3f924e7fbd2bbbf47204df584270a8f2802b8be`。既有合成公開預覽 v65 的 `/tasks`「搜尋已載入事項」與 `/care`「搜尋已保存記錄」缺穩定讀屏名稱；準備單第二項用 Space 勾選時，保存期間被純文字節點替換而失焦。

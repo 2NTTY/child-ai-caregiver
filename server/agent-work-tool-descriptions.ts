@@ -3,8 +3,8 @@ export const AGENT_CONFIRMATION_SAVED_TEXT = "已按你確認的事項保存操�
 
 /* Trusted product tool instructions, maintained by the primary model. */
 export const AGENT_WORK_TOOL_DESCRIPTIONS = {
-  "read_work": "讀取本人／目前孩子的持久工作，可按工作 ID 或游標續讀。這是未完成目標、焦點、問題及引用，不是已確認事實或新的任務副本。狀態與資源版本要核對；未讀完須沿 cursor 續讀。",
-  "read_background_result": "按 read_work.latestFollowUp 或已知本人 runId 分段讀回既有 Agent 結果、真實工具狀態及當時引用參照；這是歷史回報，不是新同意或目前仍適用的知識證據。需要新建議必須重新核對来源；若 running／unknown 只核對原 run，不另建執行。nextOffset 仍有未讀，budgetLimited 時保存限制，不空轉。",
+  "read_work": "讀取本人／目前孩子的持久工作，可按工作 ID 或游標續讀。這是未完成目標、焦點、問題及引用，不是已確認事實或新的任務副本。狀態與資源版本要核對；未讀完須沿 cursor 續讀。latestFollowUp 的 eventId／runId 可能涵蓋多項工作，completed 只證明同批運行完結，不證明本項曾執行或完成。cancelled 亦可能只是仍排隊同批內本項的失效投影，不代表整批取消。已取消工作以目前 status=cancelled 為準；不改寫歷史事件或推斷取消先後。",
+  "read_background_result": "按 read_work.latestFollowUp 或已知本人 runId 分段讀回既有 Agent 結果、真實工具狀態及當時引用參照；這是歷史回報，不是新同意或目前仍適用的知識證據。同批結果可能涉及其他工作，不可當成每項工作的執行收據；先核對目前工作狀態，已取消不再接續。需要新建議必須重新核對来源；若 running／unknown 只核對原 run，不另建執行。nextOffset 仍有未讀，budgetLimited 時保存限制，不空轉。",
   "save_work": "保存或更新本人／目前孩子的一項工作目標、目前焦點、待答問題及來源引用；提問前先保存等待內容。sourceMessageIds 只列本人撰寫的 user 原訊息，不把模型回覆列為本人來源。使用既有 workId／expectedVersion 更新同一工作，不每輪新建。工作 completed 只表示這段整理結束，不代表照護任務完成；實際成果須核對原收據。取消或改口時更新原工作，勿讓舊理解繼續執行。已 cancelled 的原工作不能改成其他狀態；work_cancelled 後不要重試改狀態或自動另建來繞過取消，只有本人明確的新交代才可另建工作，原取消保留。同一原操作的查回結果是歷史收據，不表示目前工作已恢復。有實際接續價值才設 followUp：watchResources 只看本工作引用，knowledgeSourceIds 只用已讀適用官方來源，dueAt 只用有依據時間、不捏造日期。只產生本人站內回饋，沒有外部提醒或寫入授權。followUp 省略／null 或工作結束會停止新跟進；需要保留時明確帶回已讀條件。",
   "search_history": "在本人／孩子授權範圍搜尋歷史原訊息、普通交代或事實。加密正文採有界掃描，結果標明完整度及續讀位置；一頁未命中不代表不存在。命中僅為歷史定位，不表示事實目前有效；memory_fact 命中須再用 read_memory_facts 核對 status／applicable／來源。保留 role、版本與精度，AI 原文不是使用者事實。公共 RAG 與私人歷史分開。",
   "read_history": "按歷史搜尋回傳的訊息 ID、offset 及範圍讀取原文，可續讀長訊息。只引用實際已讀字句；使用者原話可以作來源，模型回覆及摘要不能作同意或確定事實。",

@@ -20,7 +20,8 @@ export function PersistentWorkCards({ items, online, busy, onMessage, onResource
     {work.followUp ? <View style={styles.list}><Text style={styles.label}>接續安排</Text><Text style={styles.body}>{work.followUp.reason}</Text>
       {work.followUp.dueAt ? <Text style={styles.meta}>預定接續：{memoryDateLabel(work.followUp.dueAt)}</Text> : null}
       {work.followUp.watchResources ? <Text style={styles.meta}>留意相關資料變化</Text> : null}</View> : null}
-    {work.latestFollowUp ? <Text style={styles.meta}>最近接續：{followUpStatusLabels[work.latestFollowUp.state]} · {memoryDateLabel(work.latestFollowUp.createdAt)}</Text> : null}
+    {work.status === "cancelled" ? <Text style={styles.meta}>此工作已取消，不再接續。</Text> : null}
+    {work.latestFollowUp ? <Text style={styles.meta}>{work.latestFollowUp.state === "cancelled" ? "此工作關聯接續" : "同批跟進事件"}：{followUpStatusLabels[work.latestFollowUp.state]} · {memoryDateLabel(work.latestFollowUp.createdAt)}</Text> : null}
     {work.resources.length ? <View style={styles.list}><Text style={styles.label}>相關資料</Text><View style={styles.row}>{work.resources.map((resource, index) => {
       const destination = workResourceDestination(resource);
       return destination.path && onResource ? <AppButton key={`${resource.kind}:${resource.id}`} label={`${destination.label} ${index + 1} · 版本 ${resource.version}`}
