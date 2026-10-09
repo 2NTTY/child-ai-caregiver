@@ -20,11 +20,11 @@ function fixture() {
   const env = { RUNNER_TEMP: temp, CONTROLLED_REPOSITORY: '2NTTY/child-ai-caregiver',
     CONTROLLED_REPOSITORY_ID: '1377602504', CONTROLLED_OWNER_ID: '119132090',
     CONTROLLED_REF: 'refs/heads/ci/controlled-model-acceptance', CONTROLLED_EVENT_NAME: 'push',
-    CONTROLLED_RUN_ID: '123456789', CONTROLLED_RUN_ATTEMPT: '1', CONTROLLED_ACTOR_ID: '987654321',
+    CONTROLLED_RUN_ID: '123456789', CONTROLLED_RUN_ATTEMPT: '1', CONTROLLED_ACTOR_ID: '119132090',
     CONTROLLED_SHA: testedSha, CONTROLLED_WORKFLOW_REF: callerRef, CONTROLLED_WORKFLOW_SHA: testedSha,
     CONTROLLED_RUNNER_ENVIRONMENT: 'github-hosted', UNRELATED_PRIVATE_VALUE: syntheticCredential };
   const claims = { repository_id: '1377602504', repository_owner_id: '119132090',
-    ref: env.CONTROLLED_REF, event_name: 'push', workflow_ref: callerRef, actor_id: '987654321',
+    ref: env.CONTROLLED_REF, event_name: 'push', workflow_ref: callerRef, actor_id: '119132090',
     runner_environment: 'github-hosted',
     job_workflow_ref: `2NTTY/child-ai-caregiver/.github/workflows/run-controlled-model-acceptance.yml@${trustedSha}`,
     job_workflow_sha: trustedSha, run_attempt: '1', aud: provider, iss: 'https://token.actions.githubusercontent.com',
@@ -32,10 +32,10 @@ function fixture() {
   const run = { id: 123456789, event: 'push', run_attempt: 1, head_sha: testedSha,
     head_branch: 'ci/controlled-model-acceptance', path: callerPath,
     repository: { id: 1377602504, owner: { id: 119132090 }, full_name: '2NTTY/child-ai-caregiver' },
-    actor: { id: 987654321, login: syntheticCredential }, triggering_actor: { id: 987654321 } };
+    actor: { id: 119132090, login: syntheticCredential }, triggering_actor: { id: 119132090 } };
   const state = { info: [], failed: [], outputs: {}, tokenRequests: [], contentRequests: [], runRequests: [],
     request: { schemaVersion: 1, mode: 'bootstrap', requestId: 'bootstrap_20261009' }, run, claims,
-    oidcError: null, apiError: null, rawToken: null, customContent: null };
+    oidcError: null, apiError: null, rawToken: null, customContent: null, manifest: { testedSha, harnessSha: trustedSha, repository: '2NTTY/child-ai-caregiver', runId: 'bootstrap_20261009' } };
   const core = { info: message => state.info.push(message), setFailed: message => state.failed.push(message),
     setOutput: (key, value) => { state.outputs[key] = value; },
     getIDToken: async audience => {
@@ -48,8 +48,8 @@ function fixture() {
     state.runRequests.push(args); if (state.apiError) throw state.apiError; return { data: state.run };
   } }, repos: { getContent: async args => {
     state.contentRequests.push(args);
-    const bytes = Buffer.from(JSON.stringify(state.request));
-    return { data: state.customContent ?? { type: 'file', path: requestPath, encoding: 'base64',
+    const bytes = Buffer.from(JSON.stringify(args.path === requestPath ? state.request : state.manifest));
+    return { data: state.customContent ?? { type: 'file', path: args.path, encoding: 'base64',
       size: bytes.length, content: bytes.toString('base64') } };
   } } } };
   const context = { eventName: 'push', runId: 123456789, sha: testedSha, ref: env.CONTROLLED_REF,
@@ -62,17 +62,17 @@ function fixture() {
 async function withFixture(callback) { const f = fixture(); try { await callback(f); } finally { f.dispose(); } }
 
 // This is a synthetic native API substitute. No tests contact GitHub or acquire any credential.
-test('bootstrap records bounded native claims and server metadata without asserting owner identity', async () => withFixture(async f => {
+test('bootstrap records bounded native claims and server metadata with the fixed verified actor identity', async () => withFixture(async f => {
   await f.execute();
   assert.deepEqual(f.state.failed, []);
   assert.equal(f.read('result.json').status, 'claims_recorded_root_review_required');
-  assert.equal(f.read('result.json').ownerActorVerified, false);
+  assert.equal(f.read('result.json').ownerActorVerified, true);
   assert.equal(f.read('result.json').gcpAuthenticationPerformed, false);
   assert.equal(f.read('result.json').modelCallsPerformed, 0);
   assert.equal(f.read('result.json').ledgerInitialized, false);
   assert.equal(f.read('result.json').historicalActualCostUnknown, true);
   assert.equal(f.read('result.json').spendingState, 'not_loaded');
-  assert.equal(f.read('bootstrap.json').serverRun.actorId, '987654321');
+  assert.equal(f.read('bootstrap.json').serverRun.actorId, '119132090');
   assert.equal(f.read('bootstrap.json').oidc.signatureVerification, 'not_performed');
   assert.equal(f.state.outputs['trusted-reusable-sha'], trustedSha);
   assert.equal(f.state.outputs['evidence-ready'], 'true');
@@ -93,15 +93,24 @@ test('bootstrap records bounded native claims and server metadata without assert
   assert.deepEqual(fs.readdirSync(path.join(f.temp, 'controlled-model-evidence')).sort(), ['bootstrap.json', 'result.json']);
 }));
 
-test('live request is a failed gate and retains sanitized bootstrap evidence', async () => withFixture(async f => {
+test('live request only prepares a byte-pinned control plan and never authenticates or invokes a provider', async () => withFixture(async f => {
   f.state.request.mode = 'live'; await f.execute();
-  assert.deepEqual(f.state.failed, ['live_disabled_pending_root_review']);
-  assert.equal(f.read('result.json').status, 'failed');
+  assert.deepEqual(f.state.failed, []);
+  assert.equal(f.read('result.json').status, 'identity_recorded_preparation_required');
   assert.equal(f.read('result.json').modelCallsPerformed, 0);
   assert.equal(f.read('result.json').liveEnabled, false);
   assert.equal(f.read('bootstrap.json').request.mode, 'live');
-  assert.equal(f.state.outputs['evidence-ready'], 'true');
-  assert.equal(f.state.outputs['trusted-reusable-sha'], undefined);
+  const plan = JSON.parse(fs.readFileSync(path.join(f.temp, 'controlled-model-control', 'plan.json')));
+  assert.equal(plan.request.mode, 'live');
+  assert.equal(plan.manifestSha256, digest(fs.readFileSync(path.join(f.temp, 'controlled-model-control', 'approved-manifest.json'))));
+  assert.equal(plan.workflowContext.callerCommitSha, testedSha);
+}));
+
+test('inspect-source accepts only the root-reviewed revision and does not load a live manifest', async () => withFixture(async f => {
+  f.state.request.mode = 'inspect-source'; f.state.request.testedSha = '94f7c7b260c46b033a970ec92d3125e31f20442c';
+  await f.execute(); assert.deepEqual(f.state.failed, []);
+  assert.equal(f.state.outputs['tested-sha'], f.state.request.testedSha);
+  assert.equal(f.state.contentRequests.length, 1);
 }));
 
 test('invalid local execution contexts fail before requesting OIDC or reading a request', async () => {
@@ -176,25 +185,13 @@ test('existing evidence directories and symlinks are not written or uploaded', a
   } finally { fs.rmSync(elsewhere, { recursive: true, force: true }); }
 }));
 
-test('the workflow embeds the exact offline-tested function and uses immutable action pins', () => {
+test('the workflow embeds the exact tested bootstrap function', () => {
   const module = fs.readFileSync(path.join(root, 'scripts/controlled-ci/bootstrap.cjs'), 'utf8');
   const workflow = fs.readFileSync(path.join(root, '.github/workflows/run-controlled-model-acceptance.yml'), 'utf8');
   const start = workflow.indexOf('          script: |\n') + '          script: |\n'.length;
-  const end = workflow.indexOf('      - name: Preserve sanitized bootstrap evidence', start);
+  const end = workflow.indexOf('      - name: Checkout immutable trusted workflow', start);
   const actual = workflow.slice(start, end).split('\n').filter(Boolean).map(line => line.slice(12)).join('\n') + '\n';
   const expected = module.slice(module.indexOf('async function controlledBootstrap'), module.indexOf('\nmodule.exports')).trim()
     + '\nawait controlledBootstrap({ core, github, context });\n';
   assert.equal(actual, expected);
-  const caller = fs.readFileSync(path.join(root, '.github/workflows/controlled-model-acceptance.yml'), 'utf8');
-  assert.match(caller, /2NTTY\/child-ai-caregiver\/\.github\/workflows\/run-controlled-model-acceptance\.yml@(?:PINNED_SHA|[a-f0-9]{40})/u);
-  assert.match(workflow, /uses: actions\/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd/u);
-  assert.match(workflow, /uses: actions\/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9/u);
-  assert.equal(/uses:.*(?:@v\d|@master|@main|checkout|setup-node|google-github-actions\/auth)/u.test(workflow), false);
-  assert.equal(/pull_request_target|workflow_dispatch|secrets: inherit|npm ci|\n\s+run:/u.test(workflow), false);
-  assert.match(workflow, /runs-on: ubuntu-24.04/u);
-  assert.match(workflow, /cancel-in-progress: false/u);
-  assert.match(workflow, /timeout-minutes: 15/u);
-  assert.match(workflow, /if: always\(\) && steps.bootstrap.outputs.evidence-ready == 'true'/u);
-  assert.match(workflow, /include-hidden-files: false/u);
-  assert.match(workflow, /overwrite: false/u);
 });

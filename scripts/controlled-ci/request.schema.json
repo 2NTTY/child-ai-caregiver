@@ -1,11 +1,55 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["schemaVersion", "mode", "requestId"],
-  "properties": {
-    "schemaVersion": { "const": 1 },
-    "mode": { "enum": ["bootstrap", "live"] },
-    "requestId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{8,80}$" }
-  }
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "mode",
+        "requestId"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "mode": {
+          "enum": [
+            "bootstrap",
+            "preflight",
+            "live"
+          ]
+        },
+        "requestId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{8,80}$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "mode",
+        "requestId",
+        "testedSha"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "mode": {
+          "const": "inspect-source"
+        },
+        "requestId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{8,80}$"
+        },
+        "testedSha": {
+          "const": "94f7c7b260c46b033a970ec92d3125e31f20442c"
+        }
+      }
+    }
+  ]
 }

@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.server.json",
+  "include": ["server/agent-runtime.ts", "server/product-agent.ts", "server/product-agent-api.ts", "tests/product-agent.test.ts", "tests/product-agent-confirmation-budget.test.ts"]
+}
