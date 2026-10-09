@@ -1,0 +1,53 @@
+{
+  "checkedDate": "2026-10-09",
+  "baselineCommit": "9544b3ccacb496468639d492ddf4d28e96f3aa47",
+  "patchSha256": "ac3770287c7153e9096469aa1c7731cd8854f0cb01003d16ca975a90881d5bc0",
+  "codeDependencyTestPaths": 12,
+  "materializedBaselineFiles": 2261,
+  "candidateFiles": 2270,
+  "typecheck": "passed",
+  "originalNpmTest": {
+    "tests": 676,
+    "pass": 676,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0
+  },
+  "focusedFinal": {
+    "pass": 27,
+    "fail": 0
+  },
+  "emulator": {
+    "cases": 5,
+    "passed": 5,
+    "nonLoopbackAttempts": 0,
+    "ownedListenersStopped": 4,
+    "runtimeCleanupAndFixtureCleanupDistinguished": true
+  },
+  "candidateFilesUnchangedDuringTests": true,
+  "historicalFailuresRetained": [
+    "Initial focused 52/58; composition spy fix retained assertions",
+    "Five ES2023 fixture type errors; deferred helper correction",
+    "Aggregate run-2 preflight guard stop; no claimed test pass",
+    "Dependency probe workspace-link issue",
+    "Original module baseline aggregate errors and 403 unknown checks remain historical"
+  ],
+  "limits": [
+    "Create-only single-run port, no resume or production bootstrap enablement",
+    "No live-model, HTTP/UI, cloud or deployment acceptance; no CI pass claim",
+    "Live-model batch 20/20 exhausted",
+    "Other three Agent internals deferred"
+  ],
+  "rootDocuments": "Separately reviewed after code tests; outside tested manifest",
+  "logs": [
+    {
+      "command": "npm run typecheck",
+      "sha256": "1cfe8aff9cb9fe99d81edc6889b83d6ab3373b4c031d2df7c57e76d743879fd4"
+    },
+    {
+      "command": "npm test",
+      "sha256": "6f81ef63a4ff04d96cb5cf025578f012ad3aa6bd42ad4fe461413b74c3898367"
+    }
+  ]
+}

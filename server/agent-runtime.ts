@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, setLogger } from "@google/adk";
-import type { LlmRequest } from "@google/adk";
+import { BaseSessionService, FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, setLogger } from "@google/adk";
+import type { AppendEventRequest, CreateSessionRequest, DeleteSessionRequest, GetSessionRequest, ListSessionsRequest, LlmRequest } from "@google/adk";
 import { z } from "zod";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
@@ -103,6 +103,8 @@ export function createAgentRuntime(options: {
   provider: AgentModelProvider;
   resolve?: import("./model-routing.ts").ModelRouting["resolve"];
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
+  /** Trusted, preconfigured native storage. Single-run create-only; the caller owns its client. */
+  nativeSessionService?: BaseSessionService;
 }) {
   const activeUsers = new Set<string>();
   return {
@@ -265,16 +267,38 @@ export function createAgentRuntime(options: {
             accepted: () => result.tools.some(tool => tool.name === "present_answer" && tool.status === "succeeded"),
             stopped: () => Boolean(model.failure || toolFailure),
           }) : new LlmAgent(agentConfig);
-          const sessionService = new InMemorySessionService();
+          const nativeSessionService = options.nativeSessionService;
+          let sessionCreated = false;
+          let primaryFailure = false;
+          const storageGate = async () => {
+            if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+            budget.check();
+          };
+          const storageWait = async <T>(operation: () => Promise<T>, created = false): Promise<T> => {
+            await storageGate();
+            const value = await budget.wait(operation);
+            // A timed-out/failed create never grants cleanup ownership, even if it later commits.
+            if (created) sessionCreated = true;
+            await storageGate();
+            return value;
+          };
+          // Guard only the public storage boundary; preserve ADK's original Session/Event objects.
+          const sessionService = nativeSessionService ? new class extends BaseSessionService {
+            createSession(request: CreateSessionRequest) { return storageWait(() => nativeSessionService.createSession(request), true); }
+            getSession(request: GetSessionRequest) { return storageWait(() => nativeSessionService.getSession(request)); }
+            listSessions(request: ListSessionsRequest) { return storageWait(() => nativeSessionService.listSessions(request)); }
+            appendEvent(request: AppendEventRequest) { return storageWait(() => nativeSessionService.appendEvent(request)); }
+            deleteSession(request: DeleteSessionRequest) { return storageWait(() => nativeSessionService.deleteSession(request)); }
+          }() : new InMemorySessionService();
           const appName = "yuban_hk";
-          const session = await sessionService.createSession({ appName, userId: scope.userId, sessionId: runId });
-          for (const message of input.messages.slice(0, -1)) {
-            await sessionService.appendEvent({ session, event: createEvent({ invocationId: runId,
-              author: message.role === "user" ? "user" : agent.name, content: { role: message.role, parts: [{ text: message.text }] } }) });
-          }
-          const runner = new Runner({ appName, agent, sessionService,
-            plugins: [observer] });
           try {
+            const session = await sessionService.createSession({ appName, userId: scope.userId, sessionId: runId });
+            sessionCreated = true;
+            for (const message of input.messages.slice(0, -1)) {
+              await sessionService.appendEvent({ session, event: createEvent({ invocationId: runId,
+                author: message.role === "user" ? "user" : agent.name, content: { role: message.role, parts: [{ text: message.text }] } }) });
+            }
+            const runner = new Runner({ appName, agent, sessionService, plugins: [observer] });
             let finalizeAfterModelLimit = false;
             let confirmedFrameworkModelLimit = false;
             try {
@@ -317,8 +341,19 @@ export function createAgentRuntime(options: {
             }
             result.status = "completed";
             delete result.stopReason;
+          } catch (error) {
+            primaryFailure = true;
+            throw error;
           } finally {
-            await sessionService.deleteSession({ appName, userId: scope.userId, sessionId: runId });
+            if (sessionCreated) {
+              try {
+                // Cancellation/revocation may prevent cleanup; never delete an unacknowledged create.
+                await sessionService.deleteSession({ appName, userId: scope.userId, sessionId: runId });
+              } catch (error) {
+                // Preserve the main failure and committed tool receipts. Cleanup alone is unavailable.
+                if (!primaryFailure) throw error;
+              }
+            }
           }
         });
       } catch (error) {
