@@ -5,7 +5,7 @@
 ## 目前與接手
 
 - **目前聚焦聊天 Agent 可靠辦事及 F01 接點。** 本輪只有家長聊天 Agent；其他三角色只保留接口，唯一工作入口及 gate 見 [PLAN#active](PLAN.md#active)／[ADR-021](docs/DECISIONS.md#adr-021)。原 A09 引用、同文件修改、新對話讀回與穩定服務仍未完成。#164～#166 的 HTTP Auth、交易對照／授權／照片停機及原收據 reader 均已合併、未部署；Firebase 身份／裝置 session 及完整 F01 尚未完成。
-- 本輪基線 master `afc4f15f`（#169 已合併、未部署）；固定平台 services／reply／持久 Session／root／daily 接線及 owned cleanup 保留。當前窄候選補[日額可證實不一致拒絕](docs/CHAT_AGENT_DURABLE_BUDGET.md#daily-counter-consistency)，21 項必要定向及 Server typecheck 通過，獨立 review／dot 最終驗收已通過，准予正常 PR 交付；尚未建立 PR，不當 restore 安全證明。default SQL／memory、正式 index／worker 及原 run／receipt 查回不變；帳戶／孩子 erasure、完整 restore／epoch 權威、防副作用 fencing、動態本人設定、embedding 日額、持久受理及 resume 仍未完成，未啟用正式持久流量。
+- 本輪基線 master `5a805b3e`（#170 已合併、未部署）；固定平台 services／reply／持久 Session／root／daily 及 owned cleanup 保留。當前聊天窄候選已修合法單字補問答案被文件 sourceQuote 的 min(2) 拒絕；10 項定向及 Server typecheck 通過，獨立 review 無阻塞、dot 最終驗收已通過，准予精確9檔正常 PR 交付；尚未建立 PR／部署。合成四輪中第2輪只到 work active，額外查回輪才 completed，再由新對話讀回同文件；不能稱自動同輪結案或真模型理解已通過，見 [PLAN 當前入口](PLAN.md#active)。日額小修不是完整 restore gate；正式 bootstrap、持久受理／resume、清理／restore及跨庫 fencing仍未完成，未啟用正式持久流量。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。

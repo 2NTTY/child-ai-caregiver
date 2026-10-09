@@ -102,7 +102,7 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
         return page ? { status: "succeeded", data: { ...page } } : { status: "rejected", data: { code: "not_found" } };
       }) },
     { name: "generate_family_document", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.generate_family_document, authorize,
-      parameters: z.object({ sourceQuote: z.string().min(2).max(1000), kind: z.enum(["preparation", "growth_report"]), purpose: z.enum(["appointment", "school", "outing", "handoff", "family"]), eventDate: z.string().nullable(), period: documentPeriodSchema, reportMode: z.enum(["fixed", "living"]).optional() }).strict(),
+      parameters: z.object({ sourceQuote: z.string().min(1).max(1000).refine(value => Boolean(value.trim())), kind: z.enum(["preparation", "growth_report"]), purpose: z.enum(["appointment", "school", "outing", "handoff", "family"]), eventDate: z.string().nullable(), period: documentPeriodSchema, reportMode: z.enum(["fixed", "living"]).optional() }).strict(),
       execute: (args, context) => guard(async () => {
         const labels = { appointment: "到診準備", school: "入學／轉校準備", outing: "外出／旅行準備", handoff: "照顧交接", family: "家庭成長報告" };
         const { sourceQuote, ...values } = args;
@@ -111,7 +111,7 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
         return item ? savedView(item, { receiptId: opId, message: item.report?.phase === "building" ? "已保存報告整理工作，資料仍在分批處理；尚未完成報告。" : "已保存家庭資料整理；不是新確認事實或照護完成。" }) : { status: "rejected" };
       }) },
     { name: "change_family_document", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.change_family_document, authorize,
-      parameters: z.object({ sourceQuote: z.string().min(2).max(1000), documentId: z.uuid(), change: documentChangeParameters }).strict(), execute: (args, context) => guard(async () => {
+      parameters: z.object({ sourceQuote: z.string().min(1).max(1000).refine(value => Boolean(value.trim())), documentId: z.uuid(), change: documentChangeParameters }).strict(), execute: (args, context) => guard(async () => {
         const input = documentChangeParameters.parse(args.change);
         const change = documentChangeSchema.parse(input.action === "patch" ? { ...input, confirmShared: true } : input);
         const opId = receiptId(runId, context.callId), item = await agent.writeDocument(scope, runId, opId, args.sourceQuote as string, { id: args.documentId as string, change });

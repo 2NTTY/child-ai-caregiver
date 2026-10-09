@@ -190,7 +190,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     }),
     async writeDocument(scope: AgentScope, runId: string, opId: string, sourceQuote: string,
       mutation: { request: DocumentRequest } | { id: string; change: DocumentChange }) {
-      z.uuid().parse(opId); z.string().trim().min(2).max(1000).parse(sourceQuote);
+      z.uuid().parse(opId); z.string().trim().min(1).max(1000).parse(sourceQuote);
       if ("change" in mutation && mutation.change.action === "patch" && !documentPatchIsStructural(mutation.change))
         throw new FamilyError(400, "document_confirmation_required");
       return access(scope.userId, scope.childId, true, async (client, workspaceId) => {

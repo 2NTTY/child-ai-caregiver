@@ -1,0 +1,281 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-10T00:31:00+08:00",
+  "baseCommit": "5a805b3eba65abdda5f27818b80f71fb4c8f9a74",
+  "status": "root_accepted_ready_for_normal_publication",
+  "scope": "Permit nonblank one-character literal document source quotes; preserve current user/message/child, authority/version, confirmation and receipt boundaries.",
+  "productionChanges": [
+    {
+      "path": "server/agent-document-tools.ts",
+      "bytes": 11736,
+      "sha256": "2f87b6f7633bf4789d641f64a1e467aad080c7e83f4dc4d0e5da72a6f3448ce2"
+    },
+    {
+      "path": "server/product-agent-store.ts",
+      "bytes": 46340,
+      "sha256": "357b0e8f790d035da15506464d8c730fcca66bfb91c5433e511605cf06715ffc"
+    }
+  ],
+  "testChanges": [
+    {
+      "path": "tests/agent-document-source-quote.test.ts",
+      "bytes": 1770,
+      "sha256": "32c4d9779b95f2465175b488b4a35bb1a292e99b485b241b2da7d6887aa47e94"
+    },
+    {
+      "path": "tests/product-agent-document-store.test.ts",
+      "bytes": 25095,
+      "sha256": "c6ff8815a29af62e50511efb72658410490a7f6d1f441509371b5cd825441f1b"
+    },
+    {
+      "path": "tests/product-agent-task-continuity.test.ts",
+      "bytes": 19887,
+      "sha256": "d09f319a888e1e8dc9ec888fa4c03e3a74344c04c0227e9bcb421cf6822b801b"
+    }
+  ],
+  "mechanism": {
+    "reuse": "Existing ADK 2.1.0 Runner, native tools and capability loader; real ProductAgent services/runtime/gateway and existing Session/root/daily adapters. No new dependency or framework.",
+    "sourceQuote": "Both document tool schemas require min(1), max(1000), and nonempty trim; the Server entry uses trim().min(1).max(1000) for validation only. Original sourceQuote bytes are retained for exact current-message substring checking.",
+    "notChanged": [
+      "source ownership and current-message query",
+      "documentId, expectedVersion and authorityVersion checks",
+      "structural-only direct edits and confirmation for new/replacement text",
+      "stable run/call-derived opId",
+      "model or daily budgets",
+      "prompt text and Prompt Pack version",
+      "other agent internals",
+      "production bootstrap"
+    ]
+  },
+  "scenario": {
+    "syntheticOnly": true,
+    "userMessages": [
+      "請把準備單的書包勾好。",
+      "二",
+      "查核剛才改好的旅行準備。",
+      "查回我之前改過的準備單。"
+    ],
+    "turns": [
+      {
+        "turn": 1,
+        "modelCalls": 4,
+        "workState": "waiting",
+        "workVersion": 1,
+        "documentVersion": 3,
+        "outcome": "Read the two authorized document options; save one waiting work before the separate clarification answer."
+      },
+      {
+        "turn": 2,
+        "modelCalls": 4,
+        "workState": "active",
+        "workVersion": 2,
+        "documentVersion": 4,
+        "outcome": "Read the same work; record only the resolved target/ongoing intent before mutation; read exact current document/version; accept literal 二 and check only bag; independently present the committed receipt."
+      },
+      {
+        "turn": 3,
+        "modelCalls": 4,
+        "workState": "completed",
+        "workVersion": 3,
+        "documentVersion": 4,
+        "outcome": "An extra user-requested readback turn verifies the original current document and then marks the same work completed before the separate answer."
+      },
+      {
+        "turn": 4,
+        "modelCalls": 3,
+        "workState": "completed",
+        "workVersion": 3,
+        "documentVersion": 4,
+        "outcome": "Recreated services plus a fresh conversation without prior message/work/document IDs reads the same work and latest original document; no new write."
+      }
+    ],
+    "assertions": [
+      "One work ID throughout; work versions 1,2,3",
+      "One document ID and one stable original operation receipt; version 3 to 4",
+      "Only bag checked; bottle, snapshot content and the entire unselected document unchanged",
+      "All real tool responses and per-turn states checked",
+      "15 scripted model attempts across four distinct roots using real root/daily/session adapters and synthetic storage",
+      "Fresh conversation starts without previous chat, work ID or document ID; identifiers come from read_work"
+    ],
+    "limits": "Scripted choices are supplied by the test provider. Business storage factories are synthetic. This proves mechanical wiring, not model understanding, live storage semantics, UI conversation creation, or full A09 acceptance."
+  },
+  "checks": {
+    "passedTestEntrypoints": 10,
+    "core": {
+      "tests": 4,
+      "command": "node --experimental-test-module-mocks --test tests/agent-document-source-quote.test.ts tests/product-agent-document-store.test.ts tests/product-agent-task-continuity.test.ts",
+      "log": "green-core.log"
+    },
+    "affected": {
+      "tests": 6,
+      "command": "node --experimental-test-module-mocks --test tests/agent-document-receipts.test.ts tests/product-agent-document-cancellation.test.ts",
+      "log": "green-affected.log"
+    },
+    "serverTypecheck": {
+      "exitCode": 0,
+      "command": "node node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "log": "server-tsc.log"
+    },
+    "sourceBoundaries": [
+      "nonblank one-character quote accepted by both tool schemas and true ProductAgentStore",
+      "empty and whitespace-only quotes rejected without writes",
+      "foreign quote 一 for current 二 rejected by true current-message guard as agent_source_mismatch",
+      "normal long current quote remains accepted",
+      "existing cancellation, revoked identity, original receipt, invalid source and transaction rollback checks passed"
+    ]
+  },
+  "retainedFailures": [
+    {
+      "log": "red-schema.log",
+      "kind": "product_regression",
+      "reason": "Both initial document schemas have minLength 2; first schema assertion rejects a literal one-character reply."
+    },
+    {
+      "log": "red-store.log",
+      "kind": "product_regression",
+      "reason": "Real ProductAgentStore rejects 二 with Zod too_small minimum 2 before document mutation."
+    },
+    {
+      "log": "red-continuity.log",
+      "kind": "test_protocol_error",
+      "reason": "Initial scripted harness incorrectly batched save_work with terminal present_answer. Existing gateway correctly rejected the entire terminal batch. Harness fixed to respect separate presentation, no production guard weakened."
+    },
+    {
+      "log": "red-continuity-02.log",
+      "kind": "product_regression",
+      "reason": "Protocol-correct four-turn harness reaches the second-turn change_family_document and receives schema rejection for 二; no document write."
+    }
+  ],
+  "openGap": "Turn 2 remains active. Completing read_work/load -> current document read -> mutation -> success-grounded save_work -> separate present_answer requires five dependent model steps in this shape, beyond the unchanged four-call root limit. The passing scenario uses an extra user-requested readback turn; it does not claim automatic same-turn work closure.",
+  "notVerified": [
+    "true model semantics or provider integration",
+    "live SQL/Firestore concurrency or Emulator",
+    "real family data or official knowledge retrieval/citations",
+    "HTTP/UI",
+    "automatic same-turn work closure",
+    "new document generation execution with a one-character reply (schema only)",
+    "cloud, deployment or full-suite acceptance"
+  ],
+  "costBoundary": {
+    "realModelCalls": 0,
+    "queryEmbeddings": 0,
+    "originalTrueModelAllowance": "20/20 exhausted, zero remaining",
+    "externalMessages": 0,
+    "cloudOrPermissionChanges": 0
+  },
+  "logs": [
+    {
+      "file": "red-schema.log",
+      "bytes": 1123,
+      "sha256": "ea4559c5e9a71e3bd5aee55e37c68dee9a2a00f5b62be8a5fb5f59c1d628e65e"
+    },
+    {
+      "file": "red-store.log",
+      "bytes": 1588,
+      "sha256": "3914a54561e79441172ccd9e703ea35418161df3c2a06f314cdf3109786168f9"
+    },
+    {
+      "file": "red-continuity.log",
+      "bytes": 1826,
+      "sha256": "7b83ef031d309408435fad2757dc2259a6b44e9cd2ed2242b62574bf9c418154"
+    },
+    {
+      "file": "red-continuity-02.log",
+      "bytes": 1915,
+      "sha256": "aca18ae64a96f6a7452667f1d151c37c31547043948ad83c72d992cb48ac6729"
+    },
+    {
+      "file": "green-core.log",
+      "bytes": 1962,
+      "sha256": "6bf25d0c9216eafb659cb222e7310e67c9ad7735e075801a17a636e08c1e0998"
+    },
+    {
+      "file": "green-affected.log",
+      "bytes": 16231,
+      "sha256": "6cbf4825439577ccb9289942aed5dd63f5a8aed97c8122a91cff8bee8f48bf2e"
+    },
+    {
+      "file": "server-tsc.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "networkGuards": {
+    "files": [
+      {
+        "file": "network-audit-green-affected-12.json",
+        "bytes": 213,
+        "sha256": "0e42f2306d18a9febd94820496a879777d79ed0e1e0bb2bb5714e60fdbd0dbb1",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-green-affected-13.json",
+        "bytes": 225,
+        "sha256": "bf6d041d543c37f35061cd28cf98156ca1fe09d6337b74c7f1c00f52874a4edf",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-green-core-13.json",
+        "bytes": 217,
+        "sha256": "7b93619d8ab287136720b0c45df8b2883bee6ca08f7043b538b882b786cc0adc",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-green-core-14.json",
+        "bytes": 218,
+        "sha256": "65b4061eefc884fe77eb1b121712a913008d46bb5f126e55dea4f75ca799c460",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-green-core-15.json",
+        "bytes": 219,
+        "sha256": "e6676b4c4bc4b832e652d7db8e0e1ae50445bcaf8510db0ed16caccaf79272c4",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-red-continuity-02-13.json",
+        "bytes": 219,
+        "sha256": "274d3ec59cba7d619a573ebae6dd282d65d1de4988be646eca349348ca73cd30",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-red-continuity-47.json",
+        "bytes": 219,
+        "sha256": "3145a04f80fc14f9657d845874afe8ee91e519e06ec2b92da26d6cc3999c66cf",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-red-schema-13.json",
+        "bytes": 217,
+        "sha256": "7b93619d8ab287136720b0c45df8b2883bee6ca08f7043b538b882b786cc0adc",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-red-store-28.json",
+        "bytes": 218,
+        "sha256": "9080c1a3789a53112c606ae63b8deef5f822947f4f543bd92dd91ff97cbc6f6a",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-server-tsc-33.json",
+        "bytes": 242,
+        "sha256": "31f8e714940af21a1eea51801a98ebc3f8bd817d569b909c02479f24d15794b4",
+        "attempts": 0
+      }
+    ],
+    "allRetainedAttempts": 0,
+    "coverage": "Offline import guard used for every test and Server tsc command; retained runs are named separately. No external network attempt was recorded."
+  },
+  "acceptance": {
+    "recordedAt": "2026-10-10T00:34:00+08:00",
+    "independentReview": "No blocking finding. Reviewed all nine frozen file hashes, both product changes and source guard, four-turn limits, original failure classifications, PLAN anchors and retained tail, WORKLOG prefix, seven logs and ten network audits. No test rerun or code modification.",
+    "rootDecision": "Root reviewed both product files and three validation diffs, key tests and independent review; finalAllow normal PR publication of this exact nine-file slice.",
+    "codeAndTestHashesUnchanged": true,
+    "notYetPerformed": [
+      "PR creation",
+      "deployment",
+      "true-model acceptance",
+      "automatic same-turn work closure"
+    ]
+  }
+}

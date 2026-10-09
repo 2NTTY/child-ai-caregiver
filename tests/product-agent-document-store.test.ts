@@ -28,7 +28,7 @@ test("committed document run association is atomic, scoped and recoverable witho
   const request: DocumentRequest = { kind: "preparation", purpose: "school", title: "Synthetic document", eventDate: null,
     period: { from: "2026-10-01", to: "2026-10-08" } };
   const scope: AgentScope = { userId, childId, workspaceId, authorizationVersion: "1", dataVersion: epoch + ":1" };
-  async function harness() {
+  async function harness(sourceText = quote) {
     profileVersion = 1;
     const loaded = await loadFamilyDocumentSources({ query: async (sql: string) => { throw new Error("Unexpected snapshot initialization SQL: " + sql); } } as never, cipher, userId, childId);
     const snapshot = buildFamilyDocumentSnapshot(loaded, request, 3, null); snapshot.id = snapshotId;
@@ -66,7 +66,7 @@ test("committed document run association is atomic, scoped and recoverable witho
       if (sql.startsWith("SELECT 1 FROM agent_runs")) return rows(values[0] === runId && values[1] === childId && values[2] === userId ? [{}] : []);
       if (sql.includes("FROM agent_action_receipts") || sql.includes("FROM agent_confirmations c") || sql.startsWith("SELECT r.id FROM contact_requests")) return rows();
       if (sql.startsWith("SELECT text_encrypted FROM chat_messages")) return rows(state.sourceExists ? [{ text_encrypted:
-        cipher.encrypt(quote, `chat_messages:${messageId}:${childId}:${userId}:user::text`) }] : []);
+        cipher.encrypt(sourceText, `chat_messages:${messageId}:${childId}:${userId}:user::text`) }] : []);
       if (sql.startsWith("SELECT 1 FROM chat_messages")) return rows(state.sourceExists && values[0] === messageId && values[1] === childId && values[2] === userId ? [{}] : []);
       if (sql.startsWith("SELECT * FROM family_document_operations")) return rows([state.operations.get(values[0] + ":" + values[1])].filter(Boolean));
       if (sql.startsWith("SELECT child_id FROM family_document_operations")) {
@@ -122,10 +122,31 @@ test("committed document run association is atomic, scoped and recoverable witho
     const pool = { query, connect: async () => ({ query, release() { assert.equal(transaction, null); assert.equal(savepoints.size, 0); } }) } as unknown as Pool;
     const store = createProductAgentStore(pool, cipher);
     const mutation = { id: documentId, change: { action: "check_item" as const, expectedVersion: 3, authorityVersion: epoch + ":1", sectionId: "checklist", itemId: "template-0", checked: true } };
-    const write = () => store.writeDocument(scope, runId, opId, quote, mutation);
+    const write = (sourceQuote = sourceText) => store.writeDocument(scope, runId, opId, sourceQuote, mutation);
     return { store, pool, write, queries, snapshot, get state() { return state; }, setFailure(value: string | null) { failure = value; },
       setReadFailure() { readFailure = true; }, mismatchReceiptChild() { receiptChildMismatch = true; } };
   }
+  {
+    // Single-character clarification keeps exact current-message source validation.
+    const selected = await harness("二");
+    for (const invalid of ["", " ", "\t\n"]) {
+      await assert.rejects(() => selected.write(invalid));
+      assert.equal(selected.state.documentChanges, 0);
+    }
+    for (const foreign of ["一", quote]) {
+      await assert.rejects(() => selected.write(foreign));
+      assert.equal(selected.state.documentChanges, 0);
+    }
+    const saved = await selected.write();
+    assert.equal(saved?.id, documentId); assert.equal(saved?.version, 4);
+    assert.equal(selected.state.documentChanges, 1); assert.equal(selected.state.operations.size, 1);
+    // Once the single-character boundary passes, a foreign one-character quote must reach and fail the source guard.
+    const foreign = await harness("二");
+    await assert.rejects(() => foreign.write("一"), { code: "agent_source_mismatch" });
+    assert.equal(foreign.state.documentChanges, 0);
+    const normal = await harness(); assert.equal((await normal.write())?.version, 4);
+  }
+  console.log("PASS single-character clarification, blank and foreign source rejection, and normal long source");
   const assertSaved = (value: any) => {
     assert.ok(value); assert.equal(value.tools.length, 1); assert.deepEqual(value.tools[0], { name: "change_family_document", status: "succeeded", reference: documentId });
     assert.match(value.text, /文件操作已保存/u); assert.doesNotMatch(value.text, /最新|第4版|Synthetic document/u);
@@ -136,7 +157,7 @@ test("committed document run association is atomic, scoped and recoverable witho
     if (!cancelFirst) await h.write();
     assert.equal(await h.store.cancelReply(userId, childId, messageId), true);
     assert.equal(await h.store.cancelReply(userId, childId, messageId), true);
-    await assert.rejects(h.write, { code: "agent_scope_changed" });
+    await assert.rejects(() => h.write(), { code: "agent_scope_changed" });
     const recovered = await createProductAgentStore(h.pool, cipher).get(userId, childId, runId);
     assert.equal(recovered?.status, "stopped"); assert.equal(recovered?.stopReason, "cancelled");
     assert.equal(recovered?.countsKnown, false);
@@ -179,7 +200,7 @@ test("committed document run association is atomic, scoped and recoverable witho
   }
   for (const stage of ["link", "run-update", "receipt-child"]) {
     const h = await harness(); if (stage === "receipt-child") h.mismatchReceiptChild(); else h.setFailure(stage);
-    await assert.rejects(h.write);
+    await assert.rejects(() => h.write());
     assert.equal(h.state.documents.get(documentId).version, 3); assert.equal(h.state.documentChanges, 0);
     assert.equal(h.state.operations.size, 0); assert.equal(h.state.links.size, 0); assert.equal(h.state.space.change_seq, "1");
     assert.equal(h.state.run.data_version, epoch + ":1"); assert.ok(h.queries.includes("ROLLBACK"));
@@ -188,7 +209,7 @@ test("committed document run association is atomic, scoped and recoverable witho
   console.log("PASS relation/update/scope failure rolls back document, receipt, linkage and run advance");
   {
     const h = await harness(); h.state.run.expires_at = new Date(Date.now() - 1);
-    await assert.rejects(h.write); assert.equal(h.state.operations.size, 0); assert.equal(h.state.links.size, 0);
+    await assert.rejects(() => h.write()); assert.equal(h.state.operations.size, 0); assert.equal(h.state.links.size, 0);
     assert.equal(h.state.documentChanges, 0); assert.deepEqual(await h.store.documentReceipts(scope, runId), { receipts: [], unavailable: false, linked: false });
     assert.ok(h.queries.filter(sql => sql.startsWith("SELECT owner_user_id, access_version")).every(sql => sql.endsWith("FOR UPDATE")));
   }
