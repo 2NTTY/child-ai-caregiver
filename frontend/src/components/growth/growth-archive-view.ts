@@ -80,6 +80,9 @@ export type GrowthReportExportRequest = {
   snapshotId: string; snapshotVersion: number; periodId: string | null;
   purpose: GrowthReportPurpose; includeSources: boolean; includeRevision: boolean;
 };
+export type GrowthReportExportResult = { state: "ready" | "error"; message: string };
+// The reader owns this intent's lifetime; the adapter checks it before delivery.
+export type GrowthReportExportHandler = (request: GrowthReportExportRequest, isCurrent: () => boolean) => Promise<GrowthReportExportResult | undefined> | void;
 export function growthReportExportRequest(model: GrowthViewModel, item: ArchiveReadingItem, purpose: GrowthReportPurpose,
   includeSources: boolean, includeRevision: boolean): GrowthReportExportRequest | null {
   const current = archiveReadingView(model).items.find(value => value.key === item.key && value.snapshot.id === item.snapshot.id && value.snapshot.version === item.snapshot.version);

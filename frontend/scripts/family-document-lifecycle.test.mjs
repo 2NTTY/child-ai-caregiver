@@ -51,9 +51,10 @@ function hooks() {
   }, render(callback) { cursor = 0; const value = callback(); while (effects.length) effects.shift()(); return value; } };
 }
 function owner(items = [item(a), item(b)]) {
-  const h = hooks(), calls = [], jobs = [];
+  const h = hooks(), calls = [], readCalls = [], jobs = [];
   let page = { authorityVersion: 'auth:1', canManage: true, items: structuredClone(items), hasMore: false };
   let readStatus = 200, writeStatus = 200, readGate = null, writeGate = null, active = true;
+  let pdfBody = 'synthetic-pdf', pdfType = 'application/pdf';
   const env = { apiBaseUrl: '/api', userId: 'synthetic', childId: child, childName: 'Synthetic', role: 'owner', online: true,
     scopeKey: 'synthetic-scope', current: () => active, canStartWrite: () => true, invalidate() {} };
   const runtime = { lost: false, live: () => env.current() && !runtime.lost,
@@ -63,17 +64,24 @@ function owner(items = [item(a), item(b)]) {
   const response = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } });
   const fetcher = async (url, options) => {
     if (options.method === 'GET') {
-      if (readGate) await readGate.promise;
+      readCalls.push(url);
+      if (readGate) { readGate.entered.resolve(); await readGate.promise; }
       if (readStatus !== 200) return response({ error: { code: 'synthetic_read_failure' } }, readStatus);
       const parsed = new URL(url, 'https://synthetic.test'), id = parsed.pathname.split('/').at(-1);
       const status = parsed.searchParams.get('status');
+      if (id === 'versions') {
+        const documentId = parsed.pathname.split('/').at(-2), value = page.items.find(entry => entry.id === documentId);
+        return response({ page: { documentId, authorityVersion: page.authorityVersion, nextCursor: null,
+          items: [value.current, ...value.history].filter(Boolean).map(entry => ({ snapshotId: entry.id, snapshotVersion: entry.version,
+            generatedAt: entry.generatedAt, invalidated: value.readState === 'invalidated' })) } });
+      }
       return response(id === 'documents' ? { page: { ...structuredClone(page), items: page.items.filter(value => !status || status === 'all' || value.status === status), nextCursor: null } } : { item: page.items.find(value => value.id === id) });
     }
     const body = JSON.parse(options.body); calls.push({ url, body: structuredClone(body) });
     if (writeGate) await writeGate.promise;
     if (writeStatus === 0) throw new Error('Synthetic connection lost');
     if (writeStatus !== 200) return response({ error: { code: 'synthetic_write_failure' } }, writeStatus);
-    if (url.endsWith('/pdf')) return new Response(new Blob(['synthetic-pdf']), { headers: { 'Content-Type': 'application/pdf' } });
+    if (url.endsWith('/pdf')) return new Response(new Blob([pdfBody]), { headers: { 'Content-Type': pdfType } });
     if (body.request) { const next = { ...item(created), kind: body.request.kind, purpose: body.request.purpose }; page.items.unshift(next); return response({ item: next }); }
     const id = url.split('/').at(-2), old = page.items.find(value => value.id === id), next = structuredClone(old);
     next.version++;
@@ -91,13 +99,15 @@ function owner(items = [item(a), item(b)]) {
     if (name === './task-knowledge-runtime') return { useTaskKnowledgeRuntime: () => runtime, useTaskKnowledgeRefresh() {} };
     throw new Error('Unmocked owner dependency: ' + name);
   });
-  return { env, calls, render: () => h.render(() => useFamilyDocuments(env)),
+  return { env, calls, readCalls, render: () => h.render(() => useFamilyDocuments(env)),
     async load() { await this.settle(); this.render().refresh(); await this.settle();
       if (items.some(value => value.status === "archived") && this.render().preparation.model.condition === "ready") { this.render().preparation.model.reading.ensureArchived(); await this.settle(); }
       return this.render(); },
     async settle() { while (jobs.length) await jobs.shift(); },
-    holdWrite() { return writeGate = deferred(); }, holdRead() { return readGate = deferred(); },
+    async settleNext() { await jobs.shift(); },
+    holdWrite() { return writeGate = deferred(); }, holdRead() { return readGate = { ...deferred(), entered: deferred() }; },
     failRead(status = 503) { readStatus = status; }, failWrite(status = 409) { writeStatus = status; },
+    respondPdf(body, contentType = 'application/pdf') { pdfBody = body; pdfType = contentType; },
     changePage(update) { page = update(structuredClone(page)); }, revoke() { active = false; },
   };
 }
@@ -330,11 +340,149 @@ test('report export keeps exact document, scope, authority and version guards pl
       { ...input, snapshotVersion: 2 }, { ...input, periodId: 'other' }, { ...input, snapshotId: invalid.history[0].id, periodId: invalid.history[0].id + ':1' }])
       await h.render().exportReport(changed);
     assert.equal(h.calls.length, 0);
+    await h.render().exportReport(input, () => false); assert.equal(h.calls.length, 0, 'Stale UI intent cannot start an export');
     await h.render().exportReport(input); await h.settle(); assert.equal(downloads, 1); assert.ok(h.calls[0].url.includes('/' + b + '/pdf'));
     const gate = h.holdWrite(), first = h.render().exportReport(input), repeated = h.render().exportReport(input);
     assert.equal(h.calls.length, 2); h.revoke(); gate.resolve(); await Promise.all([first, repeated]); await h.settle();
     assert.equal(downloads, 1, 'The delayed blob cannot download into another scope');
   } finally { if (previousDocument === undefined) delete globalThis.document; else globalThis.document = previousDocument; }
+});
+
+const exportFailure = 'PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。';
+const exportReady = '已準備所選版本的 PDF 並交給瀏覽器下載；Web 與 PDF 使用同一份正文。';
+const report = () => ({ ...item(b), kind: 'growth_report', purpose: 'handoff' });
+const reportRequest = h => ({ scopeKey: h.env.scopeKey, childId: child, authorityVersion: 'auth:1', snapshotId: snapshot(b).id,
+  snapshotVersion: 1, periodId: snapshot(b).id + ':1', purpose: 'family', includeSources: true, includeRevision: false });
+async function withReportBrowser(action, throwClick = false) {
+  const previousDocument = globalThis.document, create = URL.createObjectURL, revoke = URL.revokeObjectURL;
+  const activity = { urls: [], revoked: [], downloads: 0, removed: 0 };
+  URL.createObjectURL = blob => { const url = create.call(URL, blob); activity.urls.push(url); return url; };
+  URL.revokeObjectURL = url => { activity.revoked.push(url); revoke.call(URL, url); };
+  globalThis.document = { createElement: () => ({ click() { if (throwClick) throw new Error('Synthetic browser handoff failure'); activity.downloads++; },
+    remove() { activity.removed++; } }), body: { appendChild() {} } };
+  try { await action(activity); }
+  finally { URL.createObjectURL = create; URL.revokeObjectURL = revoke;
+    if (previousDocument === undefined) delete globalThis.document; else globalThis.document = previousDocument; }
+}
+
+for (const status of [200, 503]) test(`report export pending cancel suppresses late ${status === 200 ? 'download' : 'error'} and releases single-flight`, async () => {
+  await withReportBrowser(async activity => {
+    const h = owner([report()]); await h.load(); h.failWrite(status);
+    let current = true;
+    const notice = h.render().notice;
+    const gate = h.holdWrite(), job = h.render().exportReport(reportRequest(h), () => current);
+    assert.equal(h.render().exportBusy, true);
+    assert.equal(h.render().notice, notice, 'Pending feedback belongs to the modal, not the shared document notice');
+    current = false; gate.resolve(); assert.equal(await job, undefined); await h.settle();
+    assert.equal(h.render().notice, notice, 'The canceled request cannot publish a late notice');
+    assert.equal(h.render().exportBusy, false); assert.equal(activity.downloads, 0); assert.deepEqual(activity.urls, []);
+    h.failWrite(200); await h.render().exportReport(reportRequest(h), () => true); await h.settle();
+    assert.equal(h.calls.length, 2, 'Canceled requests release the lock for a new export');
+  });
+});
+
+test('report export returns precise failure and a real browser handoff result on explicit retry', async () => {
+  await withReportBrowser(async activity => {
+    const h = owner([report()]); await h.load(); h.failWrite(503);
+    assert.deepEqual(await h.render().exportReport(reportRequest(h)), { state: 'error', message: exportFailure }); await h.settle();
+    assert.equal(h.render().notice, exportFailure); assert.equal(h.render().exportBusy, false);
+    assert.equal(activity.downloads, 0); assert.deepEqual(activity.urls, []);
+    h.failWrite(200);
+    assert.deepEqual(await h.render().exportReport(reportRequest(h)), { state: 'ready', message: exportReady }); await h.settle();
+    assert.equal(activity.downloads, 1); assert.equal(activity.removed, 1); assert.deepEqual(activity.revoked, activity.urls);
+    assert.equal(h.render().exportBusy, false); assert.deepEqual(h.calls[1].body, h.calls[0].body);
+  });
+});
+
+test('report export canceled UI still clears revoked access and its busy state', async () => {
+  await withReportBrowser(async activity => {
+    const h = owner([item(a), report()]); await h.load(); h.render().markDraft(); h.render().preparation.actions.selectDocument(a);
+    h.failWrite(403); let current = true;
+    const gate = h.holdWrite(), job = h.render().exportReport(reportRequest(h), () => current), notice = h.render().notice;
+    current = false; gate.resolve(); assert.equal(await job, undefined); await h.settle();
+    const state = h.render(); assert.equal(state.archive.state, 'invalidated'); assert.deepEqual(state.archive.history, []);
+    assert.equal(state.preparation.model.selected, null); assert.equal(state.dirty, false); assert.equal(state.exportBusy, false);
+    assert.equal(state.notice, notice); assert.deepEqual(activity.urls, []); assert.equal(activity.downloads, 0);
+  });
+});
+
+test('report export canceled conflict skips reread and cannot publish a late error', async () => {
+  await withReportBrowser(async activity => {
+    const h = owner([report()]); await h.load(); const reads = h.readCalls.length; h.failWrite(409); let current = true;
+    const gate = h.holdWrite(), job = h.render().exportReport(reportRequest(h), () => current), notice = h.render().notice;
+    current = false; gate.resolve(); assert.equal(await job, undefined); await h.settle();
+    assert.equal(h.readCalls.length, reads); assert.equal(h.render().notice, notice); assert.equal(h.render().exportBusy, false);
+    assert.deepEqual(activity.urls, []);
+  });
+});
+
+for (const interruption of ['cancel', 'scope', 'child', 'revoke']) test(`report export conflict reread rejects newer ${interruption} intent`, async () => {
+  await withReportBrowser(async activity => {
+    const h = owner([report()]); await h.load(); const before = h.render().archive; h.failWrite(409);
+    h.changePage(value => ({ ...value, authorityVersion: 'auth:2', items: value.items.map(entry => ({ ...entry, current: { ...entry.current, title: 'New synthetic page' } })) }));
+    let current = true; const gate = h.holdRead(), job = h.render().exportReport(reportRequest(h), () => current);
+    await gate.entered.promise; const notice = h.render().notice;
+    if (interruption === 'cancel') current = false;
+    if (interruption === 'scope') h.env.scopeKey = 'new-synthetic-scope';
+    if (interruption === 'child') h.env.childId = created;
+    if (interruption === 'revoke') h.revoke();
+    gate.resolve(); assert.equal(await job, undefined); await h.settle();
+    assert.equal(h.render().authorityVersion, 'auth:1'); assert.deepEqual(h.render().archive.history, before.history);
+    assert.equal(h.render().notice, notice); assert.equal(h.render().exportBusy, false); assert.deepEqual(activity.urls, []);
+  });
+});
+
+test('report export current conflict rereads once and returns the precise failure', async () => {
+  await withReportBrowser(async activity => {
+    const h = owner([report()]); await h.load(); const reads = h.readCalls.length; h.failWrite(409);
+    h.changePage(value => ({ ...value, authorityVersion: 'auth:2' }));
+    assert.deepEqual(await h.render().exportReport(reportRequest(h)), { state: 'error', message: exportFailure }); await h.settle();
+    assert.equal(h.readCalls.length, reads + 1); assert.equal(h.render().authorityVersion, 'auth:2');
+    assert.equal(h.render().notice, exportFailure); assert.equal(h.render().exportBusy, false); assert.deepEqual(activity.urls, []);
+  });
+});
+
+test('report export failed browser handoff never returns ready and cleans its object URL and link', async () => {
+  await withReportBrowser(async activity => {
+    const h = owner([report()]); await h.load();
+    assert.deepEqual(await h.render().exportReport(reportRequest(h)), { state: 'error', message: exportFailure }); await h.settle();
+    assert.equal(activity.downloads, 0); assert.equal(activity.removed, 1); assert.equal(activity.urls.length, 1);
+    assert.deepEqual(activity.revoked, activity.urls); assert.equal(h.render().exportBusy, false);
+  }, true);
+});
+
+test('report export late blob cannot download after an authorized version read invalidates its authority', async () => {
+  await withReportBrowser(async activity => {
+    const h = owner([report()]); await h.load(); const readGate = h.holdRead();
+    h.render().archive.reading.loadVersions(b); await readGate.entered.promise;
+    const writeGate = h.holdWrite(), job = h.render().exportReport(reportRequest(h));
+    h.changePage(value => ({ ...value, authorityVersion: 'auth:2' })); readGate.resolve(); await h.settleNext();
+    assert.equal(h.render().authorityVersion, ''); const notice = h.render().notice;
+    writeGate.resolve(); assert.equal(await job, undefined); await h.settle();
+    assert.equal(h.render().notice, notice); assert.equal(h.render().exportBusy, false); assert.deepEqual(activity.urls, []);
+    assert.equal(activity.downloads, 0);
+  });
+});
+
+test('report export real API rejects an empty PDF or wrong MIME without ready or object URLs', async () => {
+  await withReportBrowser(async activity => {
+    for (const [body, contentType] of [['', 'application/pdf'], ['Synthetic JSON response', 'application/json']]) {
+      const h = owner([report()]); await h.load(); h.respondPdf(body, contentType);
+      assert.deepEqual(await h.render().exportReport(reportRequest(h)), { state: 'error', message: exportFailure }); await h.settle();
+      assert.equal(h.render().exportBusy, false); assert.deepEqual(activity.urls, []); assert.equal(activity.downloads, 0);
+    }
+  });
+});
+
+test('report export canceled conflict reread still clears a 403 without publishing an old error', async () => {
+  await withReportBrowser(async activity => {
+    const h = owner([report()]); await h.load(); h.failWrite(409); h.failRead(403); let current = true;
+    const gate = h.holdRead(), job = h.render().exportReport(reportRequest(h), () => current);
+    await gate.entered.promise; const notice = h.render().notice; current = false;
+    gate.resolve(); assert.equal(await job, undefined); await h.settle();
+    assert.equal(h.render().archive.state, 'invalidated'); assert.equal(h.render().notice, notice);
+    assert.equal(h.render().exportBusy, false); assert.deepEqual(activity.urls, []);
+  });
 });
 
 test('building reports retain generating precedence and other authorized snapshots remain readable', async () => {

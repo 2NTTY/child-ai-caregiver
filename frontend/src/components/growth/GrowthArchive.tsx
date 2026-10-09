@@ -11,7 +11,7 @@ import { growthTime } from "../../growth-view-model";
 import { chineseFont, colors, mobileLayout, radius, readingType, spacing } from "../../theme";
 import { AppButton, AppSelect } from "../ui";
 import { archiveEntryReadable, archiveReadableSource, archiveReadingView, filterArchiveItems, growthReportExportRequest, growthReportPurposes, standardGrowthReportSections,
-  type ArchiveFilter, type ArchiveReadingItem, type GrowthReportExportRequest, type GrowthReportPurpose } from "./growth-archive-view";
+  type ArchiveFilter, type ArchiveReadingItem, type GrowthReportExportHandler, type GrowthReportExportResult, type GrowthReportPurpose } from "./growth-archive-view";
 import { useInteractionDensity } from "../useInteractionDensity";
 import { growthStyles as s } from "./growth-styles";
 
@@ -39,10 +39,11 @@ function SourceDisclosure({sources, onRecord}: {sources: GrowthArchiveSource[]; 
   </View>)}</View>;
 }
 
-export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport, exportBusy, footerActions, footerDetails}: {
+export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport, exportBusy, active = true, footerActions, footerDetails}: {
   model: GrowthViewModel; wide: boolean; scrollRef: RefObject<ScrollView | null>; onRecord?: (id?: string) => void;
-  onExportReport?: (request: GrowthReportExportRequest) => void;
+  onExportReport?: GrowthReportExportHandler;
   exportBusy?: boolean;
+  active?: boolean;
   footerActions?: ReactNode; footerDetails?: ReactNode;
 }) {
   const {authorized, state, items, current} = archiveReadingView(model);
@@ -59,6 +60,9 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   const [purpose, setPurpose] = useState<GrowthReportPurpose>("family");
   const [includeSources, setIncludeSources] = useState(true);
   const [includeRevision, setIncludeRevision] = useState(false);
+  const [exportFeedback, setExportFeedback] = useState<{ key: string; state: "pending" | GrowthReportExportResult["state"]; message: string } | null>(null);
+  const exportAttempt = useRef({ generation: 0, pending: false });
+  const exportButton = useRef<View>(null), exportFeedbackRef = useRef<View>(null);
   const [chapter, setChapter] = useState("profile");
   const contextKey = JSON.stringify([model.scopeKey, model.childId]);
   const previousContext = useRef(contextKey);
@@ -69,8 +73,14 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   const sectionRefs = useRef(new Map<string, View>());
   const reportRef = useRef<View>(null);
   const jumpToReport = useRef(false);
-  const latest = useRef({model, archive, contextKey, exportOpen, exportKey});
-  latest.current = {model, archive, contextKey, exportOpen, exportKey};
+  const exportIntentKey = JSON.stringify([contextKey, model.page?.authorityVersion, selected?.key, archive?.id, archive?.version,
+    active, authorized, model.online, exportKey, exportItem?.snapshot.id, exportItem?.snapshot.version, purpose, includeSources, includeRevision]);
+  const latest = useRef({model, archive, contextKey, exportOpen, exportKey, exportIntentKey, active});
+  latest.current = {model, archive, contextKey, exportOpen, exportKey, exportIntentKey, active};
+  function clearExportFeedback() { exportAttempt.current.generation++; exportAttempt.current.pending = false; setExportFeedback(null); }
+  function closeExport() { clearExportFeedback(); setExportOpen(false); }
+  useLayoutEffect(() => { clearExportFeedback(); }, [exportIntentKey, exportOpen]);
+  useEffect(() => () => { exportAttempt.current.generation++; exportAttempt.current.pending = false; }, []);
   useEffect(() => {
     previousContext.current = contextKey;
     setSelectedKey(null); setHistoryOpen(false); setFilter("all"); setPurpose("family"); setExportKey(null);
@@ -79,7 +89,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   useEffect(() => { if (historyOpen) reading?.ensureArchived(); }, [historyOpen, reading?.archiveStarted, reading?.pageBusy, contextKey]);
   useEffect(() => {
     setOpened([]); setRevisionOpen(false); setExportOpen(false); setChapter("profile");
-  }, [contextKey, model.page?.authorityVersion, archive?.id, archive?.version, selected?.key, authorized]);
+  }, [contextKey, model.page?.authorityVersion, archive?.id, archive?.version, selected?.key, authorized, active]);
 
   function scrollTarget(target: View | null | undefined) {
     if (!target) return;
@@ -121,11 +131,28 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     if (!authorized || !sections.some(section => section.id === id)) return;
     setChapter(id); scrollTarget(sectionRefs.current.get(id));
   }
-  function requestExport() {
-    if (!onExportReport || !exportItem || !latest.current.exportOpen || latest.current.exportKey !== exportKey
+  async function requestExport() {
+    if (exportBusy || exportAttempt.current.pending || !active || !onExportReport || !exportItem || !latest.current.exportOpen || latest.current.exportKey !== exportKey
       || latest.current.contextKey !== contextKey || latest.current.model.page?.authorityVersion !== model.page?.authorityVersion) return;
     const request = growthReportExportRequest(latest.current.model, exportItem, purpose, includeSources, includeRevision);
-    if (request) onExportReport(request);
+    if (!request || !latest.current.model.online) return;
+    const generation = ++exportAttempt.current.generation;
+    exportAttempt.current.pending = true;
+    const isCurrent = () => generation === exportAttempt.current.generation && latest.current.active && latest.current.exportOpen
+      && latest.current.exportIntentKey === exportIntentKey
+      && !!growthReportExportRequest(latest.current.model, exportItem, purpose, includeSources, includeRevision);
+    setExportFeedback({ key: exportIntentKey, state: "pending", message: "正在核對這個版本並準備 PDF。" });
+    // Move only the submitting control's focus before Paper disables it; never reclaim focus on settlement.
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      const button = exportButton.current as unknown as HTMLElement | null;
+      if (button?.contains(document.activeElement)) (exportFeedbackRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
+    }
+    try {
+      const result = await onExportReport(request, isCurrent);
+      if (isCurrent()) setExportFeedback(result ? { key: exportIntentKey, ...result } : null);
+    } catch {
+      if (isCurrent()) setExportFeedback({ key: exportIntentKey, state: "error", message: "PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。" });
+    } finally { if (isCurrent()) exportAttempt.current.pending = false; }
   }
   const visibleItems = filterArchiveItems(items, filter);
   const rangePeriods = items.some(item => item.period?.kind === "range");
@@ -200,7 +227,9 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     <Text style={s.body}>{state === "ready" ? rangePeriods ? "可翻閱其他已取得的期間與版本。" : "可翻閱其他已取得的年度與季度。" : stateCopy[state].detail}</Text>
   </View>{footerActions || footerDetails ? footer : null}</View>;
   const sections = standardGrowthReportSections(model, archive);
-  const canExport = !exportBusy && model.online && !!onExportReport && !!exportItem && !!growthReportExportRequest(model, exportItem, purpose, includeSources, includeRevision);
+  const feedback = exportOpen && exportFeedback?.key === exportIntentKey ? exportFeedback : null;
+  const preparingExport = exportBusy || feedback?.state === "pending";
+  const canExport = !preparingExport && model.online && !!onExportReport && !!exportItem && !!growthReportExportRequest(model, exportItem, purpose, includeSources, includeRevision);
   return <View style={s.stack} testID="growth-living-archive">
     <View ref={reportRef} tabIndex={-1} style={a.reportHeader} testID="growth-current-report">
       <View style={a.headerRow}>
@@ -208,7 +237,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
           <Text style={a.kicker}>{selected?.period?.kind === "range" ? "成長報告" : selected?.key === current?.key ? "標準成長報告" : selected?.period?.label ?? "成長報告"}</Text>
           <Text accessibilityRole="header" style={a.reportTitle}>{archive.title ?? `${model.childName}的成長報告`}</Text>
         </View>
-        <AppButton label="導出報告" variant="accent" onPress={() => {setExportKey(selected?.key ?? null); setExportOpen(true);}} />
+        <AppButton label="導出報告" variant="accent" onPress={() => {clearExportFeedback(); setExportKey(selected?.key ?? null); setExportOpen(true);}} />
       </View>
       <View style={s.row}><Text style={s.meta}>{archive.periodLabel}</Text>{selected?.period?.coverage === "partial" ? <AppStatusBadge label="部分內容" tone="warning" /> : null}</View>
       <Text style={s.meta}>最近整理：{growthTime(archive.generatedAt)}</Text>
@@ -253,36 +282,41 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
       </View>)}
     </View>
     {footer}
-    <AppDialog visible={exportOpen && authorized && !contextChanged} onDismiss={() => setExportOpen(false)} testID="growth-report-export">
+    <AppDialog visible={exportOpen && active && authorized && !contextChanged} onDismiss={closeExport} testID="growth-report-export">
       <AppDialog.Title>導出成長報告</AppDialog.Title>
       <AppDialog.ScrollArea style={a.exportScrollArea}><AppScrollView contentContainerStyle={a.exportContent}>
         <Text style={s.body}>按用途整理同一份成長記錄</Text>
         <View style={s.smallStack} accessibilityRole="radiogroup" accessibilityLabel="報告用途">
           {growthReportPurposes.map(option => <Pressable key={option.id} accessibilityRole="radio" accessibilityLabel={option.label}
-            accessibilityState={{checked: purpose === option.id}} aria-checked={purpose === option.id} onPress={() => setPurpose(option.id)}
+            accessibilityState={{checked: purpose === option.id}} aria-checked={purpose === option.id} onPress={() => {clearExportFeedback(); setPurpose(option.id);}}
             style={[a.purpose, purpose === option.id && a.purposeSelected]}>
             <AppIcon name={purpose === option.id ? "radiobox-marked" : "radiobox-blank"} size={20} />
             <View style={a.cardCopy}><Text style={s.title}>{option.label}</Text><Text style={s.body}>{option.detail}</Text></View>
           </Pressable>)}
         </View>
-        <AppSelect label="報告期間" value={exportKey ?? ""} options={items.map(item => ({value: item.key, label: `${item.period?.label ?? item.snapshot.periodLabel}${item.period?.coverage === "partial" ? " · 部分內容" : ""}`}))} onChange={setExportKey} />
+        <AppSelect label="報告期間" value={exportKey ?? ""} options={items.map(item => ({value: item.key, label: `${item.period?.label ?? item.snapshot.periodLabel}${item.period?.coverage === "partial" ? " · 部分內容" : ""}`}))} onChange={value => {clearExportFeedback(); setExportKey(value);}} />
         {exportItem?.period?.coverage === "partial" ? <Text style={s.warning}>{exportItem.period.coverageLabel}</Text> : null}
         <View style={s.smallStack}><Text style={s.title}>附加內容</Text>
-          <AppCheckbox label="原始記錄與依據" checked={includeSources} onChange={setIncludeSources} />
-          <AppCheckbox label="本版更新說明" checked={includeRevision} onChange={setIncludeRevision} />
+          <AppCheckbox label="原始記錄與依據" checked={includeSources} onChange={value => {clearExportFeedback(); setIncludeSources(value);}} />
+          <AppCheckbox label="本版更新說明" checked={includeRevision} onChange={value => {clearExportFeedback(); setIncludeRevision(value);}} />
         </View>
         {!onExportReport ? <View testID="growth-export-unavailable" style={a.exportNotice}><Text style={s.title}>報告版型預覽</Text>
           <Text style={s.body}>可先選擇用途與內容；報告生成及 PDF 下載暫未接通。</Text>
         </View> : null}
       </AppScrollView></AppDialog.ScrollArea>
-      <AppDialog.Actions><AppButton label="關閉" variant="secondary" onPress={() => setExportOpen(false)} />
-        <AppButton label={exportBusy ? "正在準備 PDF…" : onExportReport ? "下載這個版本的 PDF" : "PDF 下載暫不可用"} disabled={!canExport} onPress={requestExport} />
+      <View ref={exportFeedbackRef} tabIndex={-1} testID="growth-export-feedback" accessibilityRole={feedback?.state === "error" ? "alert" : undefined}
+        accessibilityLiveRegion={feedback?.state === "error" ? "assertive" : "polite"} aria-atomic style={feedback ? a.exportFeedback : undefined}>
+        <Text style={feedback?.state === "error" ? s.warning : s.body}>{feedback?.message ?? ""}</Text>
+      </View>
+      <AppDialog.Actions><AppButton label="關閉" variant="secondary" onPress={closeExport} />
+        <AppButton ref={exportButton} label={preparingExport ? "正在準備 PDF…" : onExportReport ? "下載這個版本的 PDF" : "PDF 下載暫不可用"} disabled={!canExport} onPress={requestExport} />
       </AppDialog.Actions>
     </AppDialog>
   </View>;
 }
 
 const a = StyleSheet.create({
+  exportFeedback: {paddingHorizontal: spacing.lg, paddingTop: spacing.md},
   reportHeader: {gap: spacing.sm, minWidth: 0, paddingVertical: spacing.sm},
   headerRow: {flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.md},
   headerCopy: {gap: spacing.xs, minWidth: 0, flexShrink: 1},

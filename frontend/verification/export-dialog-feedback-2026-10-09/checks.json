@@ -1,0 +1,255 @@
+{
+  "id": "EXPORT-DIALOG-FEEDBACK-20261009",
+  "base": "c48b2eb41ee5f19c914ab6bee07b39d9cdd939a7",
+  "codeFrozenAt": "2026-10-09T18:55:41Z",
+  "status": "Root accepted exact 11-file source fix for normal PR delivery after independent code/test/document review; preview publication and browser/PDF validation remain blocked",
+  "sourceFiles": [
+    {
+      "path": "frontend/src/components/growth/GrowthArchive.tsx",
+      "sha256": "fb8c732d2e071f01ed9f6d0994946908848360f99122dc6b867e90d4b04f6ebe"
+    },
+    {
+      "path": "frontend/src/components/growth/GrowthView.tsx",
+      "sha256": "0cf5a73dc69f5fabbd0de2a698f46b5603cbe407b207b389902325740200c5a4"
+    },
+    {
+      "path": "frontend/src/components/growth/growth-archive-view.ts",
+      "sha256": "5d4848000bc29cd913c60b66bbe0387045fc23d6c1fcdde3c968875b1922708e"
+    },
+    {
+      "path": "frontend/src/production/useFamilyDocuments.ts",
+      "sha256": "3847f848b3164af078a0326359be3b8609605d4235c575965f975a078feb1f12"
+    },
+    {
+      "path": "frontend/scripts/growth-export-feedback-dom.test.cjs",
+      "sha256": "937bffcb6a78a7dad62708491c5edd428caf9c8e4fd52a45366e91abdb2700ff"
+    },
+    {
+      "path": "frontend/scripts/family-document-lifecycle.test.mjs",
+      "sha256": "3004cc7eb16e8a62c582163334cff33557ca7468a083f6780370c4da9379032c"
+    },
+    {
+      "path": "frontend/scripts/growth-archive-report.test.mjs",
+      "sha256": "1a5f7029124eca0c6f75df2d899cf6ffbeacb45aaad4f7eb332bddb2bb4049a4"
+    }
+  ],
+  "observedPreview": {
+    "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/growth?tab=archive",
+    "reportedVersion": 65,
+    "observedBundle": "index-87312b4ec557a0e4502631f387892284.js",
+    "observedAt": "2026-10-09T18:41:29Z",
+    "failureReproductions": 3,
+    "pdfDownloads": 0,
+    "fixtureBlockedCount": 3,
+    "fixtureMutationPostCount": 0,
+    "confirmedBug": "Failure shown only in background report footer while export modal remains open; focus fell to AXWebArea",
+    "classification": "Isolated preview transport export gap, not a verified production endpoint failure"
+  },
+  "checks": [
+    {
+      "name": "DOM red before product changes",
+      "command": "JSDOM_MODULE=<existing jsdom directory> node --test --test-name-pattern='failed export announces' frontend/scripts/growth-export-feedback-dom.test.cjs",
+      "result": "1 failed",
+      "assertion": "The still-open export modal must own its failure feedback",
+      "logSha256": "a2eb893eda0d6177a34c6d6e30468acffdca14108c04603addfb9306a4b16d0d",
+      "revision": "Before final one-line removal of the shared pending notice; exact prior freeze retained"
+    },
+    {
+      "name": "Owner red before product changes",
+      "command": "node --test --test-name-pattern='report export pending cancel suppresses late download' frontend/scripts/family-document-lifecycle.test.mjs",
+      "result": "1 failed",
+      "assertion": "The canceled request cannot publish a late notice",
+      "logSha256": "06d3cc632c87245530288f3df1ed603a2307188bc445e3e4bb31c0efa0557796",
+      "revision": "Before final one-line removal of the shared pending notice; exact prior freeze retained"
+    },
+    {
+      "name": "DOM final",
+      "command": "JSDOM_MODULE=<existing jsdom directory> node --test frontend/scripts/growth-export-feedback-dom.test.cjs",
+      "result": "6 passed",
+      "real": [
+        "React DOM scheduler",
+        "GrowthArchive",
+        "AppDialog",
+        "AppButton",
+        "AppCheckbox",
+        "Paper Button/Dialog/Text",
+        "RN Web Modal and focus trap"
+      ],
+      "isolated": [
+        "motion and backdrop",
+        "zero safe-area insets",
+        "native select adapter for AppSelect",
+        "nonessential icons/status badge",
+        "synthetic export callback result"
+      ],
+      "runtime": "Node 24.19.0; React 19.2.3; RN Web 0.21.2; Paper 5.15.3",
+      "logSha256": "5f65ca46542b21ae9f1bfe34c2e13f224ae3d731b02541bf9dea6d7c75e7d2d3",
+      "revision": "Before final one-line removal of the shared pending notice; exact prior freeze retained"
+    },
+    {
+      "name": "Owner final",
+      "command": "node --test --test-name-pattern='report export' frontend/scripts/family-document-lifecycle.test.mjs",
+      "result": "15 passed",
+      "real": [
+        "useFamilyDocuments",
+        "FamilyDocuments client API and schemas"
+      ],
+      "isolated": [
+        "deterministic hook slots/runtime",
+        "synthetic HTTP",
+        "browser anchor/object URL delivery probes"
+      ],
+      "runtime": "Node 24.21.0",
+      "logSha256": "cc4817d2d4a8511895f63ef6772ed573d7d5b80d4981eafa33571e03e107ad6f",
+      "revision": "Before final one-line removal of the shared pending notice; exact prior freeze retained"
+    },
+    {
+      "name": "Existing affected checks",
+      "command": "node --test --test-name-pattern='export|loaded period choice' frontend/scripts/growth-archive-report.test.mjs",
+      "result": "4 passed",
+      "logSha256": "97ee2090bee93e07a2f7494d66677ab541e24331d37732cb91eae589e3cd1a23",
+      "revision": "Before final one-line removal of the shared pending notice; exact prior freeze retained"
+    },
+    {
+      "name": "Frontend typecheck",
+      "command": "node node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.json",
+      "result": "exit 0",
+      "runtime": "Node 24.19.0; TypeScript 6.0.3",
+      "revision": "Before final one-line removal of the shared pending notice; exact prior freeze retained"
+    },
+    {
+      "name": "Independent React integration before final notice correction",
+      "command": "JSDOM_MODULE=<existing jsdom directory> node --test <reviewer-owner-modal-integration.v1.cjs>",
+      "result": "2 passed",
+      "revision": "Before final shared pending notice correction",
+      "logSha256": "ccb775e9d4da0b0fd7b29d53f411bf1282eb23478b807468c029b0406d2cd1fe"
+    },
+    {
+      "name": "Shared pending notice owner red",
+      "command": "node --test --test-name-pattern='report export pending cancel' frontend/scripts/family-document-lifecycle.test.mjs",
+      "result": "2 failed",
+      "assertion": "Pending feedback belongs to the modal, not the shared document notice",
+      "revision": "Before final shared pending notice correction",
+      "logSha256": "2c1e735e630b32d84a4194c569089eb9e19e57a01ae36cfd7d1e2d060882aaba"
+    },
+    {
+      "name": "Shared pending notice independent React red",
+      "command": "JSDOM_MODULE=<existing jsdom directory> node --test --test-name-pattern='blocks late blobs' <reviewer-owner-modal-integration.test.cjs>",
+      "result": "1 failed",
+      "assertion": "Canceled export must not leave a permanent preparing-PDF notice in shared report/preparation UI",
+      "revision": "Before final shared pending notice correction",
+      "logSha256": "86be54a2155a25ddc3f6bc8495bfb0746987e0f0ecb672ecceb2cfe80574c993"
+    },
+    {
+      "name": "Final owner pending cancel checks",
+      "command": "node --test --test-name-pattern='report export pending cancel' frontend/scripts/family-document-lifecycle.test.mjs",
+      "result": "2 passed",
+      "revision": "Final code freeze",
+      "logSha256": "8cee547740be81acffb25946dc5db49be26d91d8f7ce3388b313a37289739f6e"
+    },
+    {
+      "name": "Final independent React owner-to-modal checks",
+      "command": "JSDOM_MODULE=<existing jsdom directory> node --test <reviewer-owner-modal-integration.test.cjs>",
+      "result": "2 passed",
+      "revision": "Final code freeze",
+      "real": [
+        "React DOM scheduler",
+        "useFamilyDocuments",
+        "task-knowledge-runtime",
+        "FamilyDocuments client API and schemas",
+        "GrowthArchive",
+        "AppDialog",
+        "AppButton",
+        "Paper Button/Dialog/Text",
+        "RN Web Modal and focus trap"
+      ],
+      "isolated": [
+        "synthetic HTTP",
+        "anchor click and object URL probes",
+        "domain write guard",
+        "AppSelect native select adapter",
+        "motion/backdrop and safe-area insets",
+        "nonessential icons/status badge"
+      ],
+      "notMounted": [
+        "Full GrowthScreen",
+        "DomainBridge",
+        "Expo Router"
+      ],
+      "logSha256": "b804988565423a566b01edf98fff6adde657ddf483adba9e2620ca2b1a4fa705",
+      "testSha256": "d5815d4d1ef8edb3545a0dca649e5edf05eaa1506b61d6cafb46de1e51fcfecb"
+    }
+  ],
+  "retainedFailures": [
+    "Five DOM harness setup runs failed before reaching the product assertion: native Flow module resolution, missing partial Paper exports, explicit TypeScript extension resolution and missing motion token were corrected in the harness. These are not product red evidence.",
+    "First existing affected run: 3 passed, 1 failed because a direct callback test omitted model.online and bypassed its disabled button. The case now explicitly supplies online:true and a void callback; expected payload and stale callback assertions remain unchanged.",
+    "Review found that canceled exports could leave the shared document notice permanently saying preparing PDF after exportBusy became false. Two owner red cases and one real-React integration red were retained. The final change removes only the owner pending setNotice; terminal notices and all authority guards remain. Two owner and two independent React integration checks were rerun; the earlier 15/6/4 checks and frontend typecheck were not rerun after this one-line deletion."
+  ],
+  "coverage": [
+    "Visible error and assertive live region inside modal",
+    "Explicit retry clears prior error and requires actual delivery result",
+    "Pending single-flight and focus stays in modal; settling respects moved focus",
+    "Close/reopen, purpose/version intent, navigation, child, authority, snapshot and unmount invalidate callbacks",
+    "Canceled successful or failed export emits no new download/result notice",
+    "Canceled 403 still revokes owner and releases busy state",
+    "409 late reread obeys latest intent and original guards",
+    "Object URL and temporary link cleanup on success and browser handoff failure",
+    "Starting and canceling export preserves the pre-existing shared document notice; pending feedback is owned only by the modal"
+  ],
+  "network": "All checks ran with offline socket/DNS/fetch guard; zero attempted external connections in recorded audits",
+  "notRun": [
+    "Full regression suite",
+    "Production build",
+    "Preview deployment or post-fix browser QA",
+    "1440/1024/390/320 layout screenshots or physical screen reader",
+    "Actual PDF bytes, content, layout, redaction or cross-child byte isolation",
+    "Real API, real family data, photos, messages or model calls",
+    "Android or native devices",
+    "Real browser Back/Forward; full route/provider integration"
+  ],
+  "publication": "No branch, PR, merge or deployment performed in this task",
+  "previewBlocker": "The v65 source retrieval was denied and original staging is unavailable. No alternate download, fixture modification or substitute preview reconstruction was attempted.",
+  "priorFreezeSourceFiles": [
+    {
+      "path": "frontend/src/components/growth/GrowthArchive.tsx",
+      "sha256": "fb8c732d2e071f01ed9f6d0994946908848360f99122dc6b867e90d4b04f6ebe"
+    },
+    {
+      "path": "frontend/src/components/growth/GrowthView.tsx",
+      "sha256": "0cf5a73dc69f5fabbd0de2a698f46b5603cbe407b207b389902325740200c5a4"
+    },
+    {
+      "path": "frontend/src/components/growth/growth-archive-view.ts",
+      "sha256": "5d4848000bc29cd913c60b66bbe0387045fc23d6c1fcdde3c968875b1922708e"
+    },
+    {
+      "path": "frontend/src/production/useFamilyDocuments.ts",
+      "sha256": "3dc66e02b6be5673e31fb88889600697f59c5155b8f24c8f560ec57ed4fb6379"
+    },
+    {
+      "path": "frontend/scripts/growth-export-feedback-dom.test.cjs",
+      "sha256": "937bffcb6a78a7dad62708491c5edd428caf9c8e4fd52a45366e91abdb2700ff"
+    },
+    {
+      "path": "frontend/scripts/family-document-lifecycle.test.mjs",
+      "sha256": "710d3d37d12aea200110b237963882c26854bb98f5efbe7b7a30c7defdd37435"
+    },
+    {
+      "path": "frontend/scripts/growth-archive-report.test.mjs",
+      "sha256": "1a5f7029124eca0c6f75df2d899cf6ffbeacb45aaad4f7eb332bddb2bb4049a4"
+    }
+  ],
+  "finalAdjudication": {
+    "decision": "Allow",
+    "at": "2026-10-09T18:57:50Z",
+    "scope": "Exact 11-file local source correction and normal PR delivery",
+    "basis": [
+      "Root reviewed GrowthArchive/GrowthView intent and focus diff",
+      "Independent real-hook/runtime/API-to-modal checks",
+      "URL and cancellation guards",
+      "Final one-line shared pending correction with two owner plus two integration checks"
+    ],
+    "limits": "Pre-final 6 DOM / 15 owner / 4 affected checks and frontend typecheck retain their original revision; no post-fix preview/browser/PDF claim",
+    "performed": "No branch, PR, merge or deployment by implementation task"
+  }
+}
