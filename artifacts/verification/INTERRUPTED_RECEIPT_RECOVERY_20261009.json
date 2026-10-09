@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "package": "interrupted-original-run-receipt-projection",
+  "recordedAt": "2026-10-09T19:42:47+08:00",
+  "baseCommit": "ff64e706b1833fe45513e0619358ce6e39a742a1",
+  "status": "candidate_validated_pending_root_publication",
+  "changedCodePaths": [
+    "server/product-agent-store.ts",
+    "tests/product-agent-durable-cancellation.test.ts"
+  ],
+  "fixedSource": {
+    "files": 902,
+    "manifestSha256": "708d08eb0940637c6765741ea80ff6b3808f47f5ad45bc303211959b8ed9e8d2",
+    "codeTestPatchSha256": "3202bbbfd75371473a2b26962204c0942e026cbed1408728a51f7062e84f266c",
+    "changedFiles": [
+      {
+        "path": "server/product-agent-store.ts",
+        "sha256": "2180f91aa353ea1cc94a3c158d91e162942aa45860694a34896ed2aac230a972",
+        "gitBlobSha1": "23c2f137d4faafe3940bc39df898d3871506b2c1",
+        "baseGitBlobSha1": "c1267c082210741c1504f933b5eeff722e07158f"
+      },
+      {
+        "path": "tests/product-agent-durable-cancellation.test.ts",
+        "sha256": "293fced59320c4e279402c5c38e161ac91f1457a4b868b72ee74932298975104",
+        "gitBlobSha1": "7f6743e2fcae24a5fa101ffddc8f1cee3a081743",
+        "baseGitBlobSha1": "a935c127f000526c312c24212cb4e711bb7a766c"
+      }
+    ],
+    "postValidationMismatches": []
+  },
+  "baselineReproducer": {
+    "exitCode": 1,
+    "expectedFailure": "Interrupted original run returned empty tools despite committed action, confirmation and contact references.",
+    "rawLogSha256": "ce51178852c37a4fb54a465c3113221b0c5ae2bd88d0fe7e82aa2d410ce6bd2c",
+    "rawLog": "✖ interrupted original runs recover committed references without final ciphertext or replay (6.397883ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1070.463761\n\n✖ failing tests:\n\ntest at tests/product-agent-durable-cancellation.test.ts:314:1\n✖ interrupted original runs recover committed references without final ciphertext or replay (6.397883ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n  + actual - expected\n  \n  + []\n  - [\n  -   {\n  -     name: 'save_private_instruction',\n  -     reference: '11111111-1111-4111-8111-111111111111',\n  -     status: 'succeeded'\n  -   },\n  -   {\n  -     name: 'confirmed_proposal',\n  -     reference: '33333333-3333-4333-8333-333333333333',\n  -     status: 'succeeded'\n  -   },\n  -   {\n  -     name: 'contact_caregiver',\n  -     reference: '22222222-2222-4222-8222-222222222222',\n  -     status: 'succeeded'\n  -   }\n  - ]\n  \n      at TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/durable_receipt_recovery_20261009/source/tests/product-agent-durable-cancellation.test.ts:322:10)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: [],\n    expected: [ { name: 'save_private_instruction', status: 'succeeded', reference: '11111111-1111-4111-8111-111111111111' }, { name: 'confirmed_proposal', status: 'succeeded', reference: '33333333-3333-4333-8333-333333333333' }, { name: 'contact_caregiver', status: 'succeeded', reference: '22222222-2222-4222-8222-222222222222' } ],\n    operator: 'deepStrictEqual',\n    diff: 'simple'\n  }\n"
+  },
+  "verification": {
+    "focused": {
+      "exit": 0,
+      "tests": 68,
+      "pass": 68,
+      "fail": 0,
+      "skip": 0,
+      "log": "focused-v1.log",
+      "command": "node --experimental-test-module-mocks --test tests/product-agent-durable-cancellation.test.ts tests/product-agent-document-store.test.ts tests/product-agent-document-cancellation.test.ts tests/agent-document-receipts.test.ts"
+    },
+    "typecheck": {
+      "exit": 0,
+      "command": "npm run typecheck",
+      "log": "typecheck-v1.log"
+    },
+    "npmTest": {
+      "exit": 0,
+      "command": "npm test",
+      "tests": 718,
+      "pass": 718,
+      "fail": 0,
+      "skip": 0,
+      "log": "npm-test-v1.log"
+    },
+    "environment": {
+      "node": "24.19.0",
+      "dependencies": "unchanged pinned app lock",
+      "network": "NODE_OPTIONS loads offline-guard.mjs; npm_config_update_notifier=false"
+    }
+  },
+  "network": {
+    "recordCount": 123,
+    "recordedAttempts": 0,
+    "nonempty": [],
+    "guard": "offline-guard.mjs",
+    "npmUpdateNotifierDisabled": true,
+    "scope": "Available exit audit records from scoped test, typecheck and aggregate commands; not a packet capture."
+  },
+  "checks": [
+    "Committed ordinary-action, accepted-confirmation and contact references survive expiry before finish without ciphertext.",
+    "Repeated original-run lookup and a fresh service original-message retry preserve one run; scripted provider and tool counts remain zero.",
+    "Owner, child, revocation, exact authorization-version string, storage epoch and source-message identity are checked before receipt queries.",
+    "Same-epoch data changes do not hide committed references; pending/expired proposals are never decided during lookup.",
+    "Lookup failure, overflow or invalid confirmation returns unknown with interrupted_receipt_unavailable and no partial tools.",
+    "Cancellation-only lookup does not accept interrupted runs; active, worker, other-unknown and encrypted-history paths are excluded.",
+    "Existing cancellation, document receipt, invalid-source and legacy-history assertions pass unchanged."
+  ],
+  "rawLogHashes": {
+    "focused-v1.log": "a23bc6f5a78ac2d8477a8c99ba2dbda2308636d6747532ed6899bae471af3473",
+    "typecheck-v1.log": "2c3fe674070ee89933f6d126393e151b4cbe462436d0a50b95fe3f55f4586fc8",
+    "npm-test-v1.log": "2f6da5d614323c16ca5c138f35f395f0a76d751d3af0cc3de30126bd94a05c26",
+    "offline-guard.mjs": "01d405f63e2e70a69d207f8704d17416ac828d4bcc2c268c9395519a16f83770"
+  },
+  "aggregateFooter": "ℹ tests 718\nℹ suites 0\nℹ pass 718\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 11231.480719",
+  "safety": {
+    "realModelCalls": 0,
+    "schemaOrDependencyChange": false,
+    "newResourceOrPermissionChange": false,
+    "newExternalEffect": false,
+    "deployed": false
+  },
+  "evidenceBoundaries": [
+    "Synthetic Pool models serialized transaction/savepoint behavior, not a PostgreSQL engine or real SQL races.",
+    "Fresh store/service reconstruction is not cross-process resume, takeover or Firestore recovery.",
+    "No real-model semantics, cloud, HTTP/UI, Firestore Emulator, worker bootstrap or deployment validation.",
+    "No SQL daily quota idempotency, cross-store effect fencing, schema or public wire enum changes.",
+    "Existing cancellation/history/documents behavior is covered by scoped and aggregate regression; no prior assertions were changed.",
+    "Root STATUS, append-only WORKLOG and this summary were prepared and separately reviewed after code validation; they are not additional tested code changes.",
+    "The original real-model batch remains 20/20 consumed; no additional quota or cloud authorization is implied.",
+    "The other three agents remain interface-only; earlier semantic failures and deferred production acceptance remain open.",
+    "No CI conclusion is inferred from local test results; exact-head remote checks are part of the later publication review."
+  ],
+  "review": {
+    "independentCodeReview": "allow; no must-fix findings",
+    "independentRootDocumentReview": "allow; append-only prefix, raw baseline failure, artifact hashes and evidence boundaries verified",
+    "rootFinalReview": "allow; root accepted the complete five-path code and document package for normal publication"
+  }
+}

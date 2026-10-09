@@ -5,7 +5,7 @@
 ## 目前與接手
 
 - **目前聚焦聊天 Agent 可靠辦事及 F01 接點。** 使用者已收窄本輪為單一聊天 Agent；資料收集／生成／審核三角色只保留接口。唯一工作入口及完成門檻見 [PLAN#active](PLAN.md#active)，範圍決策見 [ADR-021](docs/DECISIONS.md#adr-021)。P2-A01～A08 及 #140 等既有成果保留；原 A09 引用／同一文件修改／新對話讀回與穩定服務仍未完成。
-- #155／#157／#158／#150／#154／#159／#160 已正常合併，尚未部署。持久根預算已接回單次 runtime 的隔離候選；原 typecheck／692 項離線與 6 組本地 Emulator 通過，仍只固定受信組裝，正式 index／worker、動態本人設定、SQL 日額冪等與跨庫 effect fencing 未接，沒有 resume／全面驗收結論。#160 原始完整測試 logs 曾隨執行空間遺失，其沿用證據與本輪新實測分開。
+- 單次 runtime 的持久 session／根預算已接線，尚未部署；正式 bootstrap、動態本人設定、SQL 日額冪等、跨庫 effect fencing 及 resume 仍未完成。本輪補原互動 run 中斷後的已提交收據查回，保留 unknown／countsKnown=false 及不重跑；僅經離線合成驗收，不代表真 SQL 競爭或完整產品驗收，見[固定證據](artifacts/verification/INTERRUPTED_RECEIPT_RECOVERY_20261009.json)。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。

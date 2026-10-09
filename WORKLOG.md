@@ -1816,3 +1816,14 @@
 - reviewer指出caller可改options繞fixed組裝，已捕獲快照並補mutation案例。另查明SDK工具批次串行，原同query案例正名，再加真Promise.all准入一次測試；原證據不刪。
 - 原typecheck及原npm test692／692、Emulator v2六組通過；901檔fixedmanifest驗後零漂移，自有3listeners停止。初TS narrowing、691／692缺基線seed、npm launcher 2次被擋socket嘗試都保留；seed由固定blob恢復，未放寬斷言或guard。113測試子程序無連線嘗試，不能把launcher忽略後稱整批零嘗試。
 - [契約](docs/CHAT_AGENT_DURABLE_BUDGET.md#runtime-connection)與[摘要](artifacts/verification/DURABLE_BUDGET_RUNTIME_20261009.json)。根文件另審；無CI／真模型／部署或恢復通過結論，原批次20／20及三角色暫緩保持。
+
+
+<a id="log-20261009-interrupted-receipt-recovery"></a>
+## 2026-10-09｜原運行中斷後查回已提交收據
+
+- Recorded At：2026-10-09T19:42:47+08:00；工作日期 2026-10-09，基線 master `ff64e706b1833fe45513e0619358ce6e39a742a1`。本包只補聊天原 run 的結果查回；dot 統籌，指定 Astra xhigh 原生子代理撰寫指導、實作及合成驗收，另作獨立程式覆核。未進行新增人工驗收，不預填團隊人員貢獻。
+- 基線合成重現：action、已接受 confirmation 及 contact 已有原權威收據，但互動 run 在 finish 前中斷且過期後，查回 tools 為空。原預期失敗完整保留於[固定驗收記錄](artifacts/verification/INTERRUPTED_RECEIPT_RECOVERY_20261009.json)，沒有將失敗改寫為通過。
+- 僅 `server/product-agent-store.ts` 共用既有取消收據讀取，加上 `tests/product-agent-durable-cancellation.test.ts` 的定向測例；不改舊斷言。只處理 interactive／unknown／interrupted 且 result 密文為空的原 run，保留 owner／child／訊息作者及原 trigger、authorizationVersion 字串／storageEpoch 核對。回傳已提交參照，維持 unknown、countsKnown=false；讀取失敗不冒稱取消成功或完整結果。取消專用入口、原文件來源檢查及已有密文歷史保持原邊界。
+- 四檔 focused 68／68、原 `npm run typecheck` 及一次原 `npm test` 718／718 通過，零 fail／skip。902 個 materialized source 檔測試後無漂移，只有兩份 code/test 與基線不同。123 份現存離線 guard 退出記錄均無網絡嘗試，npm notifier 以環境選項停用；此為程序 audit，非封包擷取。根文件及本摘要在程式驗證後另審，不列入已測 code/test 變更。
+- 僅合成 Pool 的交易／savepoint 模擬及新 store／service 物件查回，未驗真 PostgreSQL 競爭、跨程序 resume、真模型語義、HTTP／UI、Firestore／Auth／Tasks、正式 worker 或部署。原 message 重試維持同一 run，scripted provider／工具皆零次；沒有 schema、依賴、權限、資源或新副作用變更，不聲稱跨庫原子 fencing。
+- 原真模型批次 20／20 已用盡、舊語義失敗與另三個 Agent 只留接口的限制維持。本紀錄為候選驗證及交付準備，dot 最終審核與正常 PR 交付尚待完成；未部署，不把本切片當完整聊天成果或恢復完成。

@@ -311,6 +311,136 @@ test("recorded confirmation lookup is read-only and never executes or retires a 
   assert.equal(decisions, 0); assert.ok(h.queries.every(({ sql }) => !/^(?:UPDATE|INSERT|DELETE)/u.test(sql)));
 });
 
+test("interrupted original runs recover committed references without final ciphertext or replay", async () => {
+  const h = harness(); h.addEffects(); h.state.runs[0].expires_at = new Date(Date.now() - 1);
+  const effects = structuredClone({ actions: h.state.actions, contacts: h.state.contacts, confirmations: h.state.confirmations });
+  const expected = [{ name: "save_private_instruction", status: "succeeded", reference: actionId },
+    { name: "confirmed_proposal", status: "succeeded", reference: proposalId },
+    { name: "contact_caregiver", status: "succeeded", reference: contactId }];
+  const first = await h.stores().get(userId, childId, runId);
+  assert.equal(first?.runId, runId); assert.equal(first?.status, "unknown"); assert.equal(first?.stopReason, "interrupted");
+  assert.deepEqual(first?.tools, expected); assert.equal(first?.countsKnown, false);
+  assert.deepEqual(first?.citations, []); assert.deepEqual(first?.privateSourceCitations, []);
+  assert.match(first!.text, /勿重複提交/u); assert.match(first!.text, /不代表送達/u);
+  assert.ok(!JSON.stringify(first).includes("PRIVATE"));
+  assert.deepEqual(await h.stores().get(userId, childId, runId), first);
+  assert.ok(h.queries.every(({ sql }) => !/^(?:INSERT|DELETE)/u.test(sql)
+    && (!sql.startsWith("UPDATE") || sql.startsWith("UPDATE agent_runs SET state='unknown'")
+      || sql.startsWith("UPDATE agent_proposals SET state='expired'"))));
+  const restarted = agentOptions(h), service = createProductAgent(restarted.options);
+  assert.deepEqual(await service.reply(userId, childId, messageId, async () => true), first);
+  assert.deepEqual(restarted.observe(), { calls: 0, toolReads: 0 });
+  assert.equal(h.state.runs.length, 1); assert.equal(h.state.runs[0].result_encrypted, null);
+  assert.equal(h.state.runs[0].state, "unknown"); assert.equal(h.state.runs[0].stop_reason, "interrupted");
+  assert.deepEqual({ actions: h.state.actions, contacts: h.state.contacts, confirmations: h.state.confirmations }, effects);
+  assert.equal(await h.stores().readCancelled(scope, runId), null);
+  assert.equal(await service.cancelReply(userId, childId, messageId, async () => true), false);
+  assert.equal(await h.stores().finish(scope, emptyResult), false);
+});
+
+test("interrupted receipt projection requires the original owner, authority and source binding", async t => {
+  for (const boundary of ["owner", "child", "revoked", "auth", "epoch", "source", "source-author", "source-role", "source-binding"]) {
+    await t.test(boundary, async () => {
+      const h = harness(); h.addEffects(); h.state.runs[0].expires_at = new Date(Date.now() - 1);
+      let actor = userId, child = childId;
+      if (boundary === "owner") { actor = "another-parent"; h.state.allowed.push(actor); }
+      if (boundary === "child") child = actionId;
+      if (boundary === "revoked") { h.state.space.owner_user_id = "another-parent"; h.state.allowed = []; }
+      if (boundary === "auth") h.state.space.access_version = "2";
+      if (boundary === "epoch") h.state.space.storage_epoch = actionId;
+      if (boundary === "source") h.state.sourceExists = false;
+      if (boundary === "source-author") h.state.sourceAuthor = "another-parent";
+      if (boundary === "source-role") h.state.sourceRole = "model";
+      if (boundary === "source-binding") h.state.runs[0].trigger_reference = actionId;
+      assert.equal(await h.stores().get(actor, child, runId), null);
+      assert.ok(h.queries.every(({ sql }) => !sql.includes("agent_action_receipts") && !sql.includes("FROM agent_confirmations c")
+        && !sql.includes("FROM contact_requests")), "Reject scope before querying committed references");
+      assert.equal(h.state.actions.length, 1); assert.equal(h.state.contacts.length, 1); assert.equal(h.state.confirmations.length, 1);
+    });
+  }
+  const h = harness(); h.addEffects(); h.state.runs[0].expires_at = new Date(Date.now() - 1);
+  h.state.runs[0].authorization_version = "9007199254740993"; h.state.space.access_version = "9007199254740993";
+  h.state.confirmations[0].authorization_version = "9007199254740993";
+  h.state.confirmations[0].proposal_authorization = "9007199254740993";
+  h.state.space.change_seq = "99";
+  assert.equal((await h.stores().get(userId, childId, runId))?.tools.length, 3, "New data in the same epoch does not hide committed references");
+  h.state.space.access_version = "9007199254740992";
+  assert.equal(await h.stores().get(userId, childId, runId), null, "Authorization versions remain exact strings");
+});
+
+test("interrupted receipt failures stay unknown and never relabel the run as cancelled", async t => {
+  for (const boundary of ["action-error", "contact-error", "confirmation-error", "document-error", "action-overflow", "confirmation-scope", "confirmation-payload"]) {
+    await t.test(boundary, async () => {
+      const h = harness(); h.addEffects(); h.state.runs[0].expires_at = new Date(Date.now() - 1);
+      if (boundary === "action-error") h.fail("SELECT id FROM agent_action_receipts");
+      if (boundary === "contact-error") h.fail("SELECT r.id FROM contact_requests");
+      if (boundary === "confirmation-error") h.fail("FROM agent_confirmations c");
+      if (boundary === "document-error") h.fail("SELECT a.op_id");
+      if (boundary === "action-overflow") while (h.state.actions.length < 9) h.state.actions.push(h.state.actions[0]);
+      if (boundary === "confirmation-scope") h.state.confirmations[0].proposal_child = actionId;
+      if (boundary === "confirmation-payload") h.state.confirmations[0].payload_encrypted = "yb1.invalid";
+      const value = await h.stores().get(userId, childId, runId);
+      assert.equal(value?.status, "unknown"); assert.equal(value?.stopReason, "interrupted_receipt_unavailable");
+      assert.equal(value?.countsKnown, false); assert.deepEqual(value?.tools, []);
+      assert.deepEqual(value?.citations, []); assert.deepEqual(value?.privateSourceCitations, []);
+      assert.match(value!.text, /運行中斷/u); assert.match(value!.text, /勿重新提交/u); assert.doesNotMatch(value!.text, /取消已接受/u);
+      assert.ok(!JSON.stringify(value).includes("PRIVATE"));
+      assert.equal(h.state.runs[0].state, "unknown"); assert.equal(h.state.runs[0].stop_reason, "interrupted");
+      assert.equal(h.state.runs[0].result_encrypted, null);
+      assert.equal(await h.stores().readCancelled(scope, runId), null);
+      if (boundary.endsWith("error")) {
+        h.fail(null);
+        const retry = await h.stores().get(userId, childId, runId);
+        assert.equal(retry?.stopReason, "interrupted"); assert.equal(retry?.tools.length, 3);
+      }
+    });
+  }
+});
+
+test("interrupted pending candidates remain undecided and expire without executing effects", async () => {
+  const h = harness(); h.state.runs[0].expires_at = new Date(Date.now() - 1);
+  h.state.proposals.push({ id: proposalId, run_id: runId, call_id: "synthetic-pending", version: 1, state: "pending",
+    created_at: new Date(), expires_at: new Date(Date.now() + 60_000),
+    payload_encrypted: cipher.encrypt(JSON.stringify({ value: { kind: "memory_fact", key: "synthetic_preference",
+      content: "SYNTHETIC PENDING CANDIDATE", intendedVisibility: "private", sourceMessageId: messageId }, result: null, targetLabel: null }),
+    `agent-run:${childId}:${userId}:${runId}:proposal:${proposalId}:1`) });
+  const pending = await h.stores().get(userId, childId, runId);
+  assert.equal(pending?.status, "unknown"); assert.equal(pending?.stopReason, "interrupted");
+  assert.equal(pending?.proposals[0].status, "pending"); assert.equal(pending?.proposals[0].result, null);
+  h.state.proposals[0].expires_at = new Date(Date.now() - 1);
+  const expired = await h.stores().get(userId, childId, runId);
+  assert.equal(expired?.proposals[0].status, "expired"); assert.equal(expired?.proposals[0].result, null);
+  assert.deepEqual(expired?.tools, []); assert.equal(h.state.proposals[0].version, 1);
+  assert.equal(h.state.actions.length, 0); assert.equal(h.state.contacts.length, 0); assert.equal(h.state.confirmations.length, 0);
+  assert.ok(h.queries.every(({ sql }) => !/^(?:INSERT|DELETE)/u.test(sql)
+    && (!sql.startsWith("UPDATE") || sql.startsWith("UPDATE agent_runs SET state='unknown'")
+      || sql.startsWith("UPDATE agent_proposals SET state='expired'"))));
+});
+
+test("interrupted recovery excludes active runs, other unknown states, worker runs and saved history", async t => {
+  for (const boundary of ["active", "other-unknown", "worker", "saved-interrupted", "saved-completed"]) {
+    await t.test(boundary, async () => {
+      const h = harness(); h.addEffects();
+      const row = h.state.runs[0];
+      if (boundary !== "active") { row.state = "unknown"; row.stop_reason = "interrupted"; }
+      if (boundary === "other-unknown") row.stop_reason = "tool_unknown";
+      if (boundary === "worker") { row.trigger_kind = "worker"; row.source_message_id = null as unknown as string; }
+      if (boundary.startsWith("saved-")) {
+        if (boundary === "saved-completed") { row.state = "completed"; row.stop_reason = null; }
+        row.result_encrypted = cipher.encrypt(JSON.stringify({ ...emptyResult, status: row.state, stopReason: row.stop_reason }),
+          `agent-run:${childId}:${userId}:${runId}`);
+      }
+      const ciphertext = row.result_encrypted;
+      const value = await h.stores().get(userId, childId, runId);
+      assert.equal(value?.status, row.state); assert.equal(value?.stopReason, row.stop_reason); assert.deepEqual(value?.tools, []);
+      assert.equal(value?.text, boundary.startsWith("saved-") ? emptyResult.text : "");
+      assert.equal(h.state.runs[0].result_encrypted, ciphertext);
+      assert.ok(h.queries.every(({ sql }) => !sql.includes("agent_action_receipts") && !sql.includes("FROM agent_confirmations c")
+        && !sql.includes("FROM contact_requests")));
+    });
+  }
+});
+
 test("local abort follows committed cancellation and a failed database cancellation is not accepted", async t => {
   for (const fail of [false, true]) await t.test(fail ? "database failure" : "local acceleration", async context => {
     const h = harness(false); let started!: () => void, release!: () => void;

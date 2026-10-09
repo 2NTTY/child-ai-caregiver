@@ -155,11 +155,14 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
       || after.dataVersion.split(":")[0] !== current.dataVersion.split(":")[0]) return null;
     return { receipts, unavailable: receipts.length !== links.length, linked: true };
   }
-  // Durable cancellation leaves the result null; legacy finish always writes ciphertext.
+  // Durable cancellation or expiry may leave the result null; legacy finish always writes ciphertext.
   // Revisit this marker before persisting in-flight progress in result_encrypted.
   const cancelled = (run: RunRow) => run.state === "stopped" && run.stop_reason === "cancelled" && run.result_encrypted === null;
-  async function cancelledResult(client: PoolClient, workspaceId: string, run: RunRow, expected?: AgentScope): Promise<ProductAgentResult | null> {
-    if (!cancelled(run)) return null;
+  const interrupted = (run: RunRow) => run.trigger_kind === "interactive" && run.state === "unknown"
+    && run.stop_reason === "interrupted" && run.result_encrypted === null;
+  async function unfinalizedResult(client: PoolClient, workspaceId: string, run: RunRow, expected?: AgentScope): Promise<ProductAgentResult | null> {
+    const wasCancelled = cancelled(run);
+    if (!wasCancelled && !interrupted(run)) return null;
     const current = await currentScope(client, workspaceId, run.owner_user_id, run.child_id);
     if (run.trigger_kind !== "interactive" || !run.source_message_id || run.trigger_reference !== run.source_message_id
       || String(run.authorization_version) !== current.authorizationVersion
@@ -202,12 +205,18 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         value.tools.push({ name: receipt.toolName, status: "succeeded", reference: receipt.documentId });
       value.text = documents.unavailable
         ? "文件操作的目前資料或來源已變，未能顯示原收據；請重新讀取目前資料，勿重複提交操作。"
+        : !wasCancelled && value.tools.length && value.tools.every(tool => documentTool(tool.name))
+          ? "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件，勿重複提交；已保存操作不代表成果完整或照護完成。"
         : value.tools.length ? "已有操作保存了 Server 收據；請查看原操作及目前結果，勿重複提交。已安排或入列不代表送達、成果完整或照護完成。" : "";
       return value;
     } catch {
-      return { ...value, status: "unknown", stopReason: "cancelled_receipt_unavailable", tools: [],
-        text: "取消已接受，但未能核對原操作收據；請查核原運行及台帳，勿重新提交同一操作。" };
+      return { ...value, status: "unknown", stopReason: wasCancelled ? "cancelled_receipt_unavailable" : "interrupted_receipt_unavailable", tools: [],
+        text: wasCancelled ? "取消已接受，但未能核對原操作收據；請查核原運行及台帳，勿重新提交同一操作。"
+          : "這次運行中斷，未能核對原操作收據；請查核原運行及台帳，勿重新提交同一操作。" };
     }
+  }
+  async function cancelledResult(client: PoolClient, workspaceId: string, run: RunRow, expected?: AgentScope): Promise<ProductAgentResult | null> {
+    return cancelled(run) ? unfinalizedResult(client, workspaceId, run, expected) : null;
   }
   return {
     ...createAgentWorkStore(pool, cipher),
@@ -309,7 +318,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
       return access(userId, childId, true, async (client, workspaceId) => {
         const row = await runFor(client, userId, childId, runId);
         await expireRun(client, row);
-        if (cancelled(row)) return cancelledResult(client, workspaceId, row);
+        if (cancelled(row) || interrupted(row)) return unfinalizedResult(client, workspaceId, row);
         await client.query("UPDATE agent_proposals SET state='expired' WHERE run_id=$1 AND state='pending' AND expires_at<=clock_timestamp()", [runId]);
         const saved = row.result_encrypted ? JSON.parse(cipher.decrypt(row.result_encrypted, aad(row))) as ProductAgentResult : empty(row);
         const value: ProductAgentResult = { ...saved, runId, status: row.state, stopReason: row.stop_reason, proposals: await proposals(client, row),
