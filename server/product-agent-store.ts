@@ -19,7 +19,8 @@ import type { StorageCipher } from "./storage-crypto.ts";
 import { documentPatchIsStructural } from "./family-document-edits.ts";
 import { createAgentWorkStore } from "./agent-work-store.ts";
 import { createAgentConfirmationStore } from "./agent-confirmation-store.ts";
-import { createAgentActionsStore } from "./agent-actions-store.ts";
+import type { AgentOriginalDocumentReceipts } from "./agent-original-receipts.ts";
+import { createPostgresAgentOriginalReceiptReader } from "./agent-original-receipts-postgres.ts";
 import { AGENT_LIMITS } from "./agent-budget.ts";
 
 interface RunRow {
@@ -119,41 +120,15 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     if (expired) { row.state = "unknown"; row.stop_reason = "interrupted"; }
   }
   const documentTool = (name: string) => name === "generate_family_document" || name === "change_family_document";
-  type DocumentReceipt = { operationId: string; documentId: string; savedVersion: number;
-    toolName: "generate_family_document" | "change_family_document" };
-  async function documentReceiptsFor(client: PoolClient, workspaceId: string, run: RunRow): Promise<{
-    receipts: DocumentReceipt[]; unavailable: boolean; linked: boolean;
-  } | null> {
-    const links = (await client.query<{ op_id: string; tool_name: DocumentReceipt["toolName"]; child_id: string; receipt_child_id: string }>(
-      `SELECT a.op_id,a.tool_name,a.child_id,o.child_id AS receipt_child_id FROM agent_document_operations a
-       LEFT JOIN family_document_operations o ON o.user_id=a.owner_user_id AND o.op_id=a.op_id
-       WHERE a.run_id=$1 AND a.owner_user_id=$2 AND a.child_id=$3 ORDER BY a.op_id LIMIT $4`,
-      [run.id, run.owner_user_id, run.child_id, AGENT_LIMITS.toolCalls + 1])).rows;
-    if (links.length > AGENT_LIMITS.toolCalls) throw new FamilyError(409, "document_receipt_limit");
-    // No new linkage means legacy/non-document behavior; do not rewrite that historical result.
-    if (!links.length) return { receipts: [], unavailable: false, linked: false };
-    const current = await currentScope(client, workspaceId, run.owner_user_id, run.child_id);
-    // Expiry stops execution, not authorized reads of an already committed operation.
-    if (run.authorization_version.toString() !== current.authorizationVersion
-      || run.data_version.split(":")[0] !== current.dataVersion.split(":")[0]) return null;
-    if (run.trigger_kind !== "interactive" || !run.source_message_id || !(await client.query(
-      "SELECT 1 FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user' FOR SHARE",
-      [run.source_message_id, run.child_id, run.owner_user_id])).rowCount) return null;
-    const borrowed = transactionPool(client), documents = createFamilyDocumentStore(borrowed.pool, cipher);
-    const receipts: DocumentReceipt[] = [];
-    try {
-      for (const link of links) {
-        if (link.child_id !== run.child_id || link.receipt_child_id !== run.child_id || !documentTool(link.tool_name))
-          throw new FamilyError(409, "document_receipt_scope_changed");
-        const receipt = await documents.operationReceipt(run.owner_user_id, run.child_id, link.op_id);
-        borrowed.assertReleased();
-        if (receipt) receipts.push({ ...receipt, toolName: link.tool_name });
-      }
-    } finally { borrowed.assertReleased(); }
-    const after = await currentScope(client, workspaceId, run.owner_user_id, run.child_id);
-    if (after.workspaceId !== current.workspaceId || after.authorizationVersion !== current.authorizationVersion
-      || after.dataVersion.split(":")[0] !== current.dataVersion.split(":")[0]) return null;
-    return { receipts, unavailable: receipts.length !== links.length, linked: true };
+  function originalReceiptsFor(client: PoolClient, workspaceId: string, run: RunRow) {
+    return createPostgresAgentOriginalReceiptReader(client, cipher, workspaceId, {
+      runId: run.id, ownerUserId: run.owner_user_id, childId: run.child_id, triggerKind: run.trigger_kind,
+      sourceMessageId: run.source_message_id, authorizationVersion: String(run.authorization_version),
+      storageEpoch: run.data_version.split(":")[0],
+    });
+  }
+  async function documentReceiptsFor(client: PoolClient, workspaceId: string, run: RunRow): Promise<AgentOriginalDocumentReceipts | null> {
+    return originalReceiptsFor(client, workspaceId, run).documentOperationReceipts();
   }
   // Durable cancellation or expiry may leave the result null; legacy finish always writes ciphertext.
   // Revisit this marker before persisting in-flight progress in result_encrypted.
@@ -176,30 +151,14 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     try {
       await client.query("UPDATE agent_proposals SET state='expired' WHERE run_id=$1 AND state='pending' AND expires_at<=clock_timestamp()", [run.id]);
       value.proposals = await proposals(client, run);
-      const actionIds = (await client.query<{ id: string }>(`SELECT id FROM agent_action_receipts
-        WHERE run_id=$1 AND owner_user_id=$2 AND child_id=$3 ORDER BY created_at,id LIMIT $4`,
-        [run.id, run.owner_user_id, run.child_id, AGENT_LIMITS.toolCalls + 1])).rows;
-      if (actionIds.length > AGENT_LIMITS.toolCalls) throw new FamilyError(409, "agent_action_limit");
-      const borrowed = transactionPool(client);
-      try {
-        const actions = await createAgentActionsStore(borrowed.pool, cipher).receipts(run.owner_user_id, run.child_id, run.id);
-        borrowed.assertReleased();
-        if (!actions || actions.length !== actionIds.length || actions.some(receipt => !actionIds.some(row => row.id === receipt.id)))
-          throw new FamilyError(409, "agent_action_receipt_changed");
-        for (const receipt of actions) value.tools.push({ name: agentActionToolNames[receipt.kind], status: "succeeded", reference: receipt.id });
-        const confirmation = await createAgentConfirmationStore(borrowed.pool, cipher, async () => {
-          throw new Error("A receipt read cannot decide a confirmation");
-        }).recordedConfirmation(run.owner_user_id, run.child_id, run.source_message_id);
-        borrowed.assertReleased();
-        if (confirmation) value.tools.push({ name: "confirmed_proposal", status: "succeeded", reference: confirmation.proposalId });
-      } finally { borrowed.assertReleased(); }
-      const contacts = (await client.query<{ id: string }>(`SELECT r.id FROM contact_requests r
-        JOIN agent_runs a ON a.id=r.run_id AND a.owner_user_id=$1 AND a.child_id=r.child_id
-        WHERE r.run_id=$2 AND r.child_id=$3 ORDER BY r.created_at,r.id LIMIT $4`,
-        [run.owner_user_id, run.id, run.child_id, AGENT_LIMITS.toolCalls + 1])).rows;
-      if (contacts.length > AGENT_LIMITS.toolCalls) throw new FamilyError(409, "contact_receipt_limit");
-      for (const receipt of contacts) value.tools.push({ name: "contact_caregiver", status: "succeeded", reference: receipt.id });
-      const documents = await documentReceiptsFor(client, workspaceId, run);
+      const original = originalReceiptsFor(client, workspaceId, run);
+      for (const receipt of await original.actionReferences())
+        value.tools.push({ name: agentActionToolNames[receipt.kind], status: "succeeded", reference: receipt.id });
+      const confirmation = await original.acceptedConfirmation();
+      if (confirmation) value.tools.push({ name: "confirmed_proposal", status: "succeeded", reference: confirmation.proposalId });
+      for (const receipt of await original.contactRequestReferences())
+        value.tools.push({ name: "contact_caregiver", status: "succeeded", reference: receipt.id });
+      const documents = await original.documentOperationReceipts();
       if (!documents) return null;
       if (!documents.unavailable) for (const receipt of documents.receipts)
         value.tools.push({ name: receipt.toolName, status: "succeeded", reference: receipt.documentId });
@@ -342,9 +301,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         return value;
       });
     },
-    async documentReceipts(scope: AgentScope, runId: string): Promise<{
-      receipts: DocumentReceipt[]; unavailable: boolean; linked: boolean;
-    } | null> {
+    async documentReceipts(scope: AgentScope, runId: string): Promise<AgentOriginalDocumentReceipts | null> {
       // Match the nested document read's authority lock, avoiding concurrent SHARE-to-UPDATE upgrades.
       return access(scope.userId, scope.childId, true, async (client, workspaceId) => {
         const run = await runFor(client, scope.userId, scope.childId, runId);
