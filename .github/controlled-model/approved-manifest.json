@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "repository": "2NTTY/child-ai-caregiver",
   "approved": true,
-  "approvalRef": "Root approved final S4 readonly preflight; user approved bounded direct CI route. No model/auth/consumption in this request.",
+  "approvalRef": "User approved bounded Gemini CI route and exact GCP trust; root reviewed S4, successful final preflight 37874308592, GCP readback 2026-10-09T02:24:38Z. One synthetic B case, medium thinking, no automatic retry, max4 model calls within remaining8 and cumulative20; stop on failure.",
   "testedSha": "94f7c7b260c46b033a970ec92d3125e31f20442c",
   "sourceTreeSha256": "1ebac6a3be95045c3e925d430c47de9bb73569a5a7d015c4e0a8bf8f16b624d0",
   "harnessTreeSha256": "c76a3328ccfd836e2467ecb19cdd968df1614b67744ae5b42c1928bae5da812d",
@@ -25,7 +25,7 @@
     "cumulativeGenerationCap": 20,
     "additionalGenerationCap": 8
   },
-  "runId": "preflight-20261009-002",
+  "runId": "live-b-medium-20261009-001",
   "case": "B",
   "gcpProject": "ai-caregivers-for-children",
   "authentication": "existing_adc",
