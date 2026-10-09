@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-10T00:49:46+08:00",
+  "baseCommit": "8eb984a793085f38853906bc0d81de5c54c0b58f",
+  "status": "root_accepted_ready_for_normal_publication",
+  "scope": "Owned user-origin work sources and cancelled-work transition guards only; no automatic work closure or new recovery/receipt format.",
+  "productionChanges": [
+    {
+      "path": "server/agent-work-store.ts",
+      "bytes": 16542,
+      "sha256": "f3a5868ccca0bc332cb8d5d74bd99e7157a957a884619beba95c574b2ad21c0e"
+    },
+    {
+      "path": "server/agent-work-tool-descriptions.ts",
+      "bytes": 9623,
+      "sha256": "b2a3efabc978591bd37cad7448e063244f735c28ec0b1d8f536822c1fa39b8e3"
+    }
+  ],
+  "testChanges": [
+    {
+      "path": "tests/agent-work-safety.test.ts",
+      "bytes": 13198,
+      "sha256": "e2cefdc150815fd1d52e85c17f8898aabd378271e7ddd62e09a7c79105bcc02f"
+    }
+  ],
+  "mechanism": {
+    "sourceMessageIds": "Require role=user and author_user_id=scope.userId in the existing owner/child/time-cutoff query. Preserve empty lists and existing not-found/null handling.",
+    "cancelled": "After exact original-operation replay and expectedVersion checks, reject new cancelled-to-non-cancelled writes with 409 work_cancelled before any mutation. Still-cancelled updates and completed policy are unchanged.",
+    "replay": "Exact original operation/run/call and payload return the stored historical result without changing the current cancelled work. Changed payload remains operation_conflict.",
+    "reuse": "Existing AgentWork/SaveAgentWork schema, encrypted payload and operation ledger, transaction/access path, native ADK FunctionTool/Runner. No dependency, migration, DTO, restore action, keyword routing or new receipt binding.",
+    "toolInstructions": "Astra maintained only save_work description to explain user-only sources, cancellation, historical receipts and no automatic new-work bypass; Prompt Pack modules/manifest remain unchanged at 0.1.37."
+  },
+  "scenarios": [
+    {
+      "id": 1,
+      "outcome": "Owned user sources accepted; model/foreign author/owner/child/future sources rejected with unchanged work, operations, change sequence and zero write statements. Empty source arrays remain allowed."
+    },
+    {
+      "id": 2,
+      "outcome": "Same work waiting v1 -> active v2 -> cancelled v3. Latest-version attempts to active/waiting/completed reject work_cancelled with zero writes. Stale version remains version_conflict; still-cancelled update retains existing behavior."
+    },
+    {
+      "id": 3,
+      "outcome": "After cancellation, exact original operation returns historical active receipt while current work remains cancelled, with zero writes. Changed payload conflicts. A separate explicit synthetic user request creates a different new work ID without changing the cancelled original."
+    }
+  ],
+  "checks": {
+    "core": {
+      "tests": 3,
+      "command": "OFFLINE_AUDIT_RUN=work-safety-green node --import ../evidence/offline-guard.mjs --test tests/agent-work-safety.test.ts",
+      "exitCode": 0,
+      "log": "green-work-safety.log"
+    },
+    "affected": {
+      "tests": 1,
+      "command": "OFFLINE_AUDIT_RUN=work-safety-native node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test --test-name-pattern=\"native Runner continues persisted work\" tests/p2-a02.test.ts",
+      "exitCode": 0,
+      "log": "native-work-continuation.log"
+    },
+    "serverTypecheck": {
+      "command": "OFFLINE_AUDIT_RUN=work-safety-server-tsc node --import ../evidence/offline-guard.mjs ./node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "exitCode": 0,
+      "log": "server-tsc-work-safety.log"
+    }
+  },
+  "retainedFailures": {
+    "tests": 2,
+    "log": "red-work-safety.log",
+    "classification": "Expected product regressions on the exact unmodified #171 work store: accepted model source and cancelled v2 -> active v3 without a reopen authorization."
+  },
+  "limitations": [
+    "Real work store/validators/encryption/access/changes with a rollback-capable synthetic Pool; not PostgreSQL or a concurrent transaction engine.",
+    "Additive continuation migration disabled in the new fixture; no background follow-up execution tested.",
+    "The existing native Runner subset is compatibility evidence only; its legacy Pool does not enforce the new source predicates.",
+    "Synthetic user intent labels are test data, not evidence of model understanding or a new Server intent classifier.",
+    "Legacy work containing model source IDs remains readable, but new saves must not carry those IDs forward as user sources. No migration or retroactive receipt rewrite.",
+    "Original #171 four-turn case remains: second-turn work active; extra user readback needed for completed. No automatic closure claim.",
+    "No true model, SQL/Firestore service, UI, background flow, full-suite, cloud or deployment acceptance."
+  ],
+  "costBoundary": {
+    "realModelCalls": 0,
+    "queryEmbeddings": 0,
+    "originalTrueModelAllowance": "20/20 exhausted",
+    "cloudChanges": 0,
+    "permissionChanges": 0,
+    "externalMessages": 0
+  },
+  "logs": [
+    {
+      "path": "red-work-safety.log",
+      "bytes": 2161,
+      "sha256": "8f855cbe21b67896e606716abbdeb82c5689e21d9a61f804540067222e4f4053"
+    },
+    {
+      "path": "green-work-safety.log",
+      "bytes": 654,
+      "sha256": "e2560ff6e56fb2a7033f08bd88336429592ad0875c603bcb28f4b2af4ed4adfc"
+    },
+    {
+      "path": "native-work-continuation.log",
+      "bytes": 447,
+      "sha256": "612b312714a973f5e34aacb631d5d37bf82e05cac9930d867d708f5cf692e6ff"
+    },
+    {
+      "path": "server-tsc-work-safety.log",
+      "bytes": 171,
+      "sha256": "931cbe994da4f4af62be6db133373a61fa76f510dbfcf378dcded32ac7d266a2"
+    }
+  ],
+  "networkGuards": {
+    "audits": [
+      {
+        "path": "network-audit-work-safety-green-12.json",
+        "bytes": 204,
+        "sha256": "5d318ee34f99ea5dbecb7aa5de692ac91d8b4819f10482460ec23be24bee3818",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-work-safety-native-12.json",
+        "bytes": 193,
+        "sha256": "f3f38c2c311d044f8b5cc51f0a5fd5197bbbe93e97227a530f4840b2e716df95",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-work-safety-red-12.json",
+        "bytes": 204,
+        "sha256": "0360ca74eb0f02f8e6dd7f18498dd5bbf571444c56bd9df407fe16e1b7466733",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-work-safety-server-tsc-5.json",
+        "bytes": 238,
+        "sha256": "7a779c2c7303e0a84c9e4bfbd47819ea56a4994bc0922e90091a6c981b795131",
+        "attempts": 0
+      }
+    ],
+    "allRetainedAttempts": 0
+  },
+  "review": {
+    "independent": "Code and documentation reviews reported no blocking findings; root reviewed the core diff, three new scenarios, one existing native subset and retained evidence.",
+    "rootFinalAcceptance": {
+      "recordedAt": "2026-10-10T00:57:07+08:00",
+      "decision": "Allow normal PR publication of the exact eight-file slice.",
+      "codeAndTestHashesUnchanged": true
+    },
+    "publication": "not performed",
+    "deployment": "not performed"
+  }
+}

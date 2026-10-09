@@ -1931,3 +1931,16 @@
 - scripted只證機械接線，不是語義理解／真雲端／真SQL競爭或UI新對話驗收；新建文件只驗單字schema，沒有假稱已驗新建執行。原A09知識引用、完整文件能力／產品成果及自動工作收尾未完成。沒有真家庭資料、外部查詢／訊息、雲端資源／權限或部署；原真模型20／20耗盡及三其他Agent只留接口維持。程式／文件獨立review與dot最終驗收待完成。
 
 - 2026-10-10 00:34 HKT 最終裁決追加：獨立 reviewer 已核精確9檔 SHA、兩產品檔的3處驗證差異、當前訊息反例、四輪狀態／原紅分類、PLAN anchors／原尾部、WORKLOG prefix及7份logs／10份零嘗試audit，無 blocking finding，未重跑測試或改碼。dot 親審核心差異、關鍵測試及review結論後，准予本精確9檔窄修正常 PR 交付；5個程式／測試檔SHA保持不變。第2輪work仍active、額外第3個查回輪才completed及真模型理解未驗界線保留；未建立PR、未部署，不解鎖完整A09／F01／自動同輪工作結案。
+
+
+<a id="log-20261010-chat-work-safety"></a>
+## 2026-10-10｜工作本人來源與取消守衛
+
+- Recorded At：2026-10-10T00:49:46+08:00；基線 master `8eb984a793085f38853906bc0d81de5c54c0b58f`（#171 已正常合併、未部署）。沿 publisher 精確9檔／tree 證據核對，另從固定 commit 全文讀回 work store，Git blob `bdda09526942a8a94b794dfb7adc5ae1004ca137` 與本機完全一致。指定 Astra xhigh 定 scope、維護工具指引／契約／根文件，Sol xhigh 承接兩個窄 guard 與必要驗證，dot 統籌與最終裁決。
+- 原四輪文件流程揭示自動 work 收尾欠缺單目標權威；沒有憑一次文件成功自動完成整個工作，也不補假 binding。先驗出兩個既有安全紅：model 訊息被接受為工作來源；已 cancelled 的同一 work 在新 run 以精確版本被改回 active，新增 operation 與 changes。保留原紅及零網絡 audit，不改寫成通過。
+- `sourceMessageIds` 新增本人撰寫的 user 原訊息條件，保留本人／孩子／時間與空陣列及不披露存在性的拒絕語義。原 work 已 cancelled 時，在任何新寫入前拒絕非 cancelled 狀態並回 work_cancelled；相同原 operation／內容仍只讀歷史結果，異參數仍衝突，不改目前 cancelled 狀態。仍 cancelled 更新及 completed 政策不擴禁。舊 model 引用仍可歷史讀回，但新保存不可原樣列作本人來源；沒有遷移／改寫舊收據。
+- 3個核心連貫場景涵蓋來源正反例／零寫入、waiting→active→cancelled與新run拒絕復活、原op歷史查回及另有明確合成新交代才建立另一work；另跑1個既有 native persisted-work 子集，共 **4／4必要定向入口**通過，Server typecheck exit0。3份新綠audit及原紅audit均零網絡嘗試，固定hash／命令／限制見[證據](artifacts/verification/CHAT_WORK_SAFETY_20261009.json)。沒有意外測試失敗、全量／無關套件或重跑 #171 四輪驗收。
+- 真store／驗證／加密／access／changes搭可回滾synthetic Pool；新fixture關閉additive continuation migration，未驗真SQL並發或背景跟進。舊native子集只證相容，不用其簡化SQL作新來源guard實證。合成原話標籤不當真模型理解或Server語義判定；工具指引只補窄語義，Prompt Pack模組／manifest維持0.1.37，沒有新schema／DTO／receipt格式／恢復協定、依賴或預算改動。
+- 沒有真家庭資料、真模型／embedding、通知、雲端／權限變更或部署；20／20真模型額度已耗盡。第2輪work active、額外查回輪才completed及完整A09／F01、bootstrap／resume／跨庫fencing等缺口保留。獨立review／dot最終驗收與正常PR待完成，不能把本包當自動結案或完整取消／恢復產品驗收。
+
+- 2026-10-10T00:57:07+08:00 最終裁決追加：dot 已親讀核心diff、3個新安全場景及1個原native子集與保留證據；程式／文件獨立review均無阻塞，准予本精確8檔窄修正常PR交付。3個程式／測試檔SHA保持不變，未重跑測試或改碼。舊model引用不遷移、歷史原receipt保持原樣、沒有同ID reopen協定；原4輪文件流程的額外查回結案缺口保留。尚未建立PR／部署，不解鎖完整A09／F01、真模型理解或自動工作結案。
