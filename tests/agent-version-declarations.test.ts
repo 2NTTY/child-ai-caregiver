@@ -10,22 +10,32 @@ test("concern and document ADK declarations use inclusive positive integer bound
   const run = { scope: {}, runId: "synthetic-schema-only" } as never;
   const tools = [...createAgentConcernTools({} as never, {} as never, run, async () => false),
     ...createAgentDocumentTools({} as never, {} as never, run, async () => false)];
-  let versions = 0;
-  function check(value: unknown): void {
+  const versionedActions = new Map<string, string[]>();
+  function check(value: unknown, toolName: string): void {
     if (!value || typeof value !== "object") return;
     assert.equal(Object.hasOwn(value, "exclusiveMinimum"), false);
-    for (const [key, child] of Object.entries(value)) {
-      if (key === "expectedVersion") {
-        assert.equal(child.type, "INTEGER"); assert.equal(child.minimum, 1); versions++;
-      }
-      check(child);
+    const schema = value as { properties?: Record<string, { type?: string; minimum?: number; enum?: string[] }>; required?: string[] };
+    const version = schema.properties?.expectedVersion;
+    if (version) {
+      assert.equal(version.type, "INTEGER", toolName);
+      assert.equal(version.minimum, 1, toolName);
+      assert.ok(schema.required?.includes("expectedVersion"), toolName);
+      assert.ok(schema.required?.includes("authorityVersion"), toolName);
+      const actions = schema.properties?.action?.enum;
+      assert.ok(actions?.length, `${toolName} version must guard a declared action`);
+      versionedActions.set(toolName, [...(versionedActions.get(toolName) ?? []), ...actions]);
     }
+    for (const child of Object.values(value)) check(child, toolName);
   }
   for (const tool of tools) {
     check(new FunctionTool({ name: tool.name, description: tool.description,
-      parameters: tool.parameters.strict(), execute: async () => ({}) })._getDeclaration());
+      parameters: tool.parameters.strict(), execute: async () => ({}) })._getDeclaration(), tool.name);
   }
-  assert.equal(versions, 7);
+  assert.deepEqual(Object.fromEntries([...versionedActions].map(([name, actions]) => [name, actions.sort()])), {
+    propose_concern_change: ["append", "archive", "restore", "schedule_followup"],
+    change_family_document: ["archive", "check_item", "patch", "refresh", "restore"],
+    propose_family_document_change: ["patch"],
+  });
 });
 
 test("version validators keep positive integer limits and strict objects", () => {

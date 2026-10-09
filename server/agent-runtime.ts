@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, setLogger } from "@google/adk";
+import type { LlmRequest } from "@google/adk";
 import { z } from "zod";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
@@ -15,6 +16,29 @@ import { createAgentObserver, type AgentDiagnostic } from "./agent-observer.ts";
 // The application owns metadata-only observability. ADK's default spans/logs may contain bodies.
 process.env.ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS = "false";
 setLogger(null);
+
+/** Replace only our literal instruction, retaining any native wrapper or other instruction parts. */
+function projectSystemInstruction(value: NonNullable<LlmRequest["config"]>["systemInstruction"], current: string, next: string) {
+  let matches = 0;
+  const text = (source: string) => {
+    if (!current) throw new AgentStopped("input_limit");
+    const parts = source.split(current);
+    matches += parts.length - 1;
+    return parts.join(next);
+  };
+  const project = (part: unknown): unknown => {
+    if (typeof part === "string") return text(part);
+    if (Array.isArray(part)) return part.map(project);
+    if (!part || typeof part !== "object") return part;
+    if ("parts" in part && Array.isArray(part.parts)) return { ...part, parts: part.parts.map(project) };
+    if ("text" in part && typeof part.text === "string") return { ...part, text: text(part.text) };
+    return part;
+  };
+  const projected = project(value);
+  // An unfamiliar native representation must not silently undercount a future request.
+  if (matches !== 1) throw new AgentStopped("input_limit");
+  return projected as typeof value;
+}
 
 export interface AgentScope {
   userId: string; workspaceId: string; childId: string; authorizationVersion: string; dataVersion: string;
@@ -148,19 +172,49 @@ export function createAgentRuntime(options: {
                 return { status: "unknown" };
               }
             } }));
-          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames });
+          const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
+            const currentPrompt = await budget.wait(() => getPrompt(ids));
+            budget.check();
+            return `${currentPrompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
+              now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: currentPrompt.packVersion,
+              recipeId: currentPrompt.recipeId, capabilities: capabilitySelection ? [...capabilitySelection.visibleToolNames(ids)] : tools.map(tool => tool.name),
+              ...(capabilitySelection ? { capabilityCatalog: capabilitySelection.metadata(ids) } : {}), limits: budget.limits })}`;
+          };
+          let currentInstruction = "";
+          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames,
+            projectCapabilityConfig: capabilitySelection && loader ? async (request, calls) => {
+              const requested: string[] = [];
+              for (const call of calls) if (call.name === loader.name) {
+                const parsed = loader.parameters.strict().safeParse(call.args ?? {});
+                if (parsed.success) requested.push(...parsed.data.capabilities as string[]);
+              }
+              const ids = capabilitySelection.projectedIds(requested);
+              if (JSON.stringify(ids) === JSON.stringify(capabilitySelection.loadedIds())) return undefined;
+              const futureNames = capabilitySelection.visibleToolNames(ids);
+              const currentNames = new Set((request.config?.tools ?? []).flatMap(tool =>
+                "functionDeclarations" in tool ? tool.functionDeclarations?.map(declaration => declaration.name) ?? [] : []));
+              const additions = tools.filter(tool => futureNames.has(tool.name) && !currentNames.has(tool.name))
+                .map(tool => tool._getDeclaration());
+              let added = false;
+              const projectedTools = (request.config?.tools ?? []).map(tool => {
+                if (!added && "functionDeclarations" in tool && tool.functionDeclarations) {
+                  added = true;
+                  return { ...tool, functionDeclarations: [...tool.functionDeclarations, ...additions] };
+                }
+                return tool;
+              });
+              if (!added) throw new AgentStopped("input_limit");
+              return { ...request.config, tools: projectedTools,
+                systemInstruction: projectSystemInstruction(request.config?.systemInstruction, currentInstruction, await renderInstruction(ids)) };
+            } : undefined });
           const runtimeTools = capabilitySelection ? [new AgentCapabilityToolset(tools, () => {
             budget.check(); return capabilitySelection.visibleToolNames();
           })] : tools;
           const agentConfig: ConstructorParameters<typeof LlmAgent>[0] = { name: "yuban_agent", model,
             // Providers return literal instructions without ADK session-state template interpolation.
             instruction: async () => {
-              const currentPrompt = await budget.wait(() => getPrompt());
-              budget.check();
-              return `${currentPrompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
-                now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: currentPrompt.packVersion,
-                recipeId: currentPrompt.recipeId, capabilities: capabilitySelection ? [...capabilitySelection.visibleToolNames()] : tools.map(tool => tool.name),
-                ...(capabilitySelection ? { capabilityCatalog: capabilitySelection.metadata() } : {}), limits: budget.limits })}`;
+              currentInstruction = await renderInstruction();
+              return currentInstruction;
             },
             tools: runtimeTools,
             beforeToolCallback: async ({ tool, args, context }) => {

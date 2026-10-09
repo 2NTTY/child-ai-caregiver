@@ -17,6 +17,7 @@ import { readAiConfig } from "../server/ai-config.ts";
 import type { AgentProposal, ProductAgentResult } from "../src/shared/product-agent.ts";
 
 const privateValue = "SYNTHETIC_PRIVATE_ASSIGNEE";
+const messageText = "請新增純合成普通待辦，分派給我本人，2026年10月12日香港時間19:30整理繪本袋。";
 const recovery = { status: "rejected", data: { code: "invalid_assignee", nextAction: "read_context", field: "values.assigneeUserId",
   message: "請先讀取 read_context 的 eligibleAssignees。指派給本人時，使用其中與 Server scope.userId 相符的 userId；若本人不在名單內，請如實說明不能指派。不得猜測 ID 或改派他人。" } };
 const task = { title: "Synthetic task", details: privateValue, kind: "ordinary" as const,
@@ -27,7 +28,7 @@ function fixture() {
   const userId = "synthetic-viewer", ownerId = "synthetic-owner", otherFamilyId = "synthetic-other-family-caregiver";
   const childId = randomUUID(), runId = randomUUID(), workspaceId = randomUUID(), messageId = randomUUID();
   const scope = { userId, childId, workspaceId, authorizationVersion: "1", dataVersion: "epoch:1" };
-  let role = "caregiver", inserts = 0, proposalReads = 0, saved: ProductAgentResult | null = null, claimed = false;
+  let role = "caregiver", inserts = 0, proposalReads = 0, confirmationChecks = 0, saved: ProductAgentResult | null = null, claimed = false;
   const rows: Record<string, unknown>[] = [];
   const run = { id: runId, child_id: childId, owner_user_id: userId, trigger_kind: "interactive", state: "running",
     authorization_version: "1", data_version: "epoch:1", expires_at: new Date(Date.now() + 90000) };
@@ -42,6 +43,18 @@ function fixture() {
       assert.deepEqual(values, [workspaceId, userId]); result = role ? [{ role }] : [];
     } else if (sql === "SELECT 1 FROM children WHERE id=$1 AND workspace_id=$2") {
       assert.deepEqual(values, [childId, workspaceId]); result = [{}];
+    } else if (sql === "SELECT * FROM agent_confirmations WHERE owner_user_id=$1 AND child_id=$2 AND response_message_id=$3 AND state='accepted' FOR UPDATE") {
+      assert.deepEqual(values, [userId, childId, messageId]); confirmationChecks++;
+    } else if (sql === "SELECT id,role,text_encrypted,created_at FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user' FOR SHARE") {
+      assert.deepEqual(values, [messageId, childId, userId]);
+      result = [{ id: messageId, role: "user", created_at: new Date("2026-10-07T00:00:00Z"),
+        text_encrypted: cipher.encrypt(messageText, `chat_messages:${messageId}:${childId}:${userId}:user::text`) }];
+    } else if (sql === "SELECT id,role FROM chat_messages WHERE child_id=$1 AND owner_user_id=$2 AND (created_at,id)<(SELECT created_at,id FROM chat_messages WHERE id=$3) ORDER BY created_at DESC,id DESC LIMIT 1") {
+      assert.deepEqual(values, [childId, userId, messageId]);
+    } else if (sql === "SELECT id FROM chat_messages WHERE child_id=$1 AND owner_user_id=$2 AND role='user' ORDER BY created_at DESC,id DESC LIMIT 1") {
+      assert.deepEqual(values, [childId, userId]); result = [{ id: messageId }];
+    } else if (sql === "UPDATE agent_confirmations SET state='invalidated' WHERE owner_user_id=$1 AND child_id=$2 AND ask_message_id=$3 AND state IN ('waiting','asked')") {
+      assert.deepEqual(values, [userId, childId, null]);
     } else if (sql.startsWith("SELECT * FROM agent_runs WHERE id=$1 AND owner_user_id=$2 AND child_id=$3")) {
       assert.deepEqual(values, [runId, userId, childId]); result = [run];
     } else if (sql.startsWith("SELECT access_version::text,storage_epoch,change_seq::text FROM workspaces")) {
@@ -81,14 +94,14 @@ function fixture() {
     truncated: { facts: false, topics: false, messages: false } }) };
   const knowledge = { createRun: () => ({ revalidateCitations: async () => true }) };
   return { userId, ownerId, otherFamilyId, childId, runId, messageId, scope, store, tasks, memory, knowledge, candidates, calls,
-    inserts: () => inserts, proposalReads: () => proposalReads, setRole: (value: string) => { role = value; } };
+    inserts: () => inserts, proposalReads: () => proposalReads, confirmationChecks: () => confirmationChecks, setRole: (value: string) => { role = value; } };
 }
 
 function response(request: LlmRequest, id: string) {
   return request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.id === id)?.functionResponse?.response;
 }
 
-test("invalid assignee recovers through read_context and one pending proposal within the original four-model/eight-tool budget", async () => {
+test("invalid assignee is rejected before using a legal assignee read in the same batch within the original four-model/eight-tool budget", async () => {
   const f = fixture(), requests: LlmRequest[] = [], diagnostics: AgentDiagnostic[] = [];
   let rejected: Record<string, unknown> | undefined;
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
@@ -97,13 +110,17 @@ test("invalid assignee recovers through read_context and one pending proposal wi
       const index = requests.length; requests.push(structuredClone({ ...request, toolsDict: {} }));
       assert.ok(index < 4, "Recovery must not start a fifth model call");
       assert.ok(JSON.stringify({ contents: request.contents, config: request.config }).length < 64000);
-      if (index === 1) {
+      assert.equal(Object.hasOwn(request.toolsDict, "propose_task"), index > 0);
+      if (index === 1) assert.equal(response(request, "task-capability")?.status, "succeeded");
+      if (index === 2) {
         rejected = response(request, "invalid-task");
         assert.equal(rejected?.status, "rejected"); assert.equal((rejected?.data as Record<string, unknown>).code, "invalid_assignee");
         assert.equal(f.inserts(), 0); assert.equal(f.proposalReads(), 0); assert.equal(f.candidates.length, 0);
       }
       let selectedUserId = "";
       if (index === 2) {
+        const batchResponses = request.contents.flatMap(content => content.parts ?? []).flatMap(part => part.functionResponse ? [part.functionResponse] : []);
+        assert.ok(batchResponses.findIndex(item => item.id === "invalid-task") < batchResponses.findIndex(item => item.id === "context"));
         const read = response(request, "context"); assert.equal(read?.status, "succeeded");
         const data = read?.data as { result: { eligibleAssignees: { userId: string }[] } };
         selectedUserId = data.result.eligibleAssignees.find(item => item.userId === f.scope.userId)!.userId;
@@ -113,22 +130,25 @@ test("invalid assignee recovers through read_context and one pending proposal wi
         assert.equal(response(request, "valid-task")?.status, "succeeded");
         assert.equal(f.inserts(), 1); assert.equal(f.candidates[0]?.status, "pending");
       }
-      const functionCall = index === 0 ? { id: "invalid-task", name: "propose_task", args: { values: task } }
-        : index === 1 ? { id: "context", name: "read_context", args: {} }
-        : index === 2 ? { id: "valid-task", name: "propose_task", args: { values: { ...task, assigneeUserId: selectedUserId } } }
-        : { id: "answer", name: "present_answer", args: { kind: "operation", paragraphs: [{ text: "已保存待確認候選，尚未建立正式待辦。", citationIds: [] }] } };
-      return { finishReason: FinishReason.STOP, content: { role: "model", parts: [{ functionCall }] } };
+      // The same batch requests rejection and context in that order; no claim
+      // that the model observed the rejection before choosing to read context.
+      const calls = index === 0 ? [{ id: "task-capability", name: "load_capabilities", args: { capabilities: ["tasks"] } }]
+        : index === 1 ? [{ id: "invalid-task", name: "propose_task", args: { values: task } }, { id: "context", name: "read_context", args: {} }]
+        : index === 2 ? [{ id: "valid-task", name: "propose_task", args: { values: { ...task, assigneeUserId: selectedUserId } } }]
+        : [{ id: "answer", name: "present_answer", args: { kind: "operation", paragraphs: [{ text: "已保存待確認候選，尚未建立正式待辦。", citationIds: [] }] } }];
+      return { finishReason: FinishReason.STOP, content: { role: "model", parts: calls.map(functionCall => ({ functionCall })) } };
     } } });
   const service = createProductAgent({ ...f, runtime, chat: { listForUser: async () => ({ messages: [{ id: f.messageId,
-    role: "user", text: "請新增純合成普通待辦，分派給我本人，2026年10月12日香港時間19:30整理繪本袋。" }] }) },
+    role: "user", text: messageText }] }) },
   } as unknown as Parameters<typeof createProductAgent>[0]);
   const result = await service.reply(f.userId, f.childId, f.messageId, async () => true);
   assert.equal(result?.status, "completed", JSON.stringify(result));
   assert.deepEqual(rejected, recovery);
   for (const value of [privateValue, f.userId, f.childId, f.scope.workspaceId, f.ownerId, task.title]) assert.ok(!JSON.stringify(rejected).includes(value));
   assert.equal(AGENT_LIMITS.modelCalls, 4); assert.equal(AGENT_LIMITS.toolCalls, 8);
-  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
+  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 5, queryEmbeddings: 0 });
   assert.deepEqual(result.tools.map(({ name, status }) => ({ name, status })), [
+    { name: "load_capabilities", status: "succeeded" },
     { name: "propose_task", status: "rejected" }, { name: "read_context", status: "succeeded" },
     { name: "propose_task", status: "succeeded" }, { name: "present_answer", status: "succeeded" },
   ]);
@@ -138,6 +158,7 @@ test("invalid assignee recovers through read_context and one pending proposal wi
   assert.equal(event?.stage, "execution"); assert.equal(event?.code, "invalid_assignee"); assert.equal(event?.hints, undefined);
   assert.ok(!JSON.stringify(diagnostics).includes(privateValue));
   assert.deepEqual(await service.reply(f.userId, f.childId, f.messageId, async () => true), result);
+  assert.equal(f.confirmationChecks(), 2, "Both original and repeated replies inspect confirmation without accepting this instruction");
   assert.equal(requests.length, 4); assert.equal(f.inserts(), 1); assert.deepEqual(f.calls, ["invalid-task", "valid-task"]);
 });
 

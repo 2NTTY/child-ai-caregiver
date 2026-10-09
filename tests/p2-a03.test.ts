@@ -21,15 +21,27 @@ function focusedTest(name: string, fn: () => Promise<void>) {
   });
 }
 const loadedByChild = new Map<string, any>();
-mock.module("../server/care.ts", { namedExports: { createCareStore: () => ({ reportSource: async (_u: string, child: string) => {
-  const loaded = loadedByChild.get(child); return { profile: loaded.profile, records: loaded.records ?? [] };
-} }) } });
-mock.module("../server/memory.ts", { namedExports: { createMemoryStore: () => ({ context: async (_u: string, child: string) => ({ profileApplicable: true,
-  facts: loadedByChild.get(child).facts ?? [], truncated: { facts: Boolean(loadedByChild.get(child).moreFacts) } }),
-  getFact: async (_u: string, child: string, id: string) => loadedByChild.get(child).extraFacts?.get(id) ?? null }) } });
-mock.module("../server/tasks.ts", { namedExports: { createTaskStore: () => ({ list: async (_u: string, child: string) => ({ items: [], eligibleAssignees: [], nextAfterId: loadedByChild.get(child).moreTasks ? randomUUID() : null }),
+const taskExports = await import("../server/tasks.ts");
+mock.module("../server/care.ts", { namedExports: { createCareStore: () => ({
+  profile: async (_u: string, child: string) => loadedByChild.get(child).profile,
+  search: async (_u: string, child: string, input: { cursor?: unknown }) => {
+    assert.equal(input.cursor, undefined, "This fixture contains one bounded record page");
+    const records = loadedByChild.get(child).records ?? [];
+    return { records, scanned: records.length, limit: 50, nextCursor: null };
+  },
+  get: async (_u: string, child: string, id: string) => loadedByChild.get(child).records?.find((item: { id: string }) => item.id === id) ?? null,
+}) } });
+mock.module("../server/memory.ts", { namedExports: { createMemoryStore: () => ({
+  reportFacts: async (_u: string, child: string, afterId?: string) => {
+    assert.equal(afterId, undefined, "This fixture contains one bounded fact page");
+    const loaded = loadedByChild.get(child);
+    return { items: loaded.facts ?? [], nextAfterId: loaded.moreFacts ? "synthetic-next-fact" : null };
+  },
+  getFact: async (_u: string, child: string, id: string) => loadedByChild.get(child).extraFacts?.get(id) ?? null,
+}) } });
+mock.module("../server/tasks.ts", { namedExports: { ...taskExports, createTaskStore: () => ({ list: async (_u: string, child: string) => ({ items: [], eligibleAssignees: [], nextAfterId: loadedByChild.get(child).moreTasks ? randomUUID() : null }),
   get: async (_u: string, child: string, id: string) => loadedByChild.get(child).extraTasks?.get(id) ?? null }) } });
-mock.module("../server/concern-store.ts", { namedExports: { createConcernStore: () => ({ list: async () => ({ items: [] }) }) } });
+mock.module("../server/concern-store.ts", { namedExports: { createConcernStore: () => ({ reportPage: async () => ({ items: [], next: null }) }) } });
 const { buildFamilyDocumentSnapshot, documentSnapshotValid, loadFamilyDocumentSources, supplementFamilyDocumentSources } = await import("../server/family-document-sources.ts");
 const { applyFamilyDocumentPatch } = await import("../server/family-document-edits.ts");
 const { createFamilyDocumentStore } = await import("../server/family-document-store.ts");
@@ -54,6 +66,7 @@ function harness(long = false) {
   const result = (items: any[] = []) => ({ rows: structuredClone(items), rowCount: items.length });
   const query = async (sql: string, params: any[] = []): Promise<any> => {
     queries.push(sql);
+    const normalized = sql.replace(/\s+/gu, " ").trim();
     if (/^(BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE SAVEPOINT|SET LOCAL)/u.test(sql)) return result();
     if (sql.startsWith("SELECT workspace_id FROM children")) return result(params[0] === childId ? [{ workspace_id: workspaceId }] : []);
     if (sql.startsWith("SELECT owner_user_id, access_version")) return result([{ owner_user_id: userId, access_version: 1 }]);
@@ -62,7 +75,10 @@ function harness(long = false) {
     if (sql.startsWith("SELECT storage_epoch")) return result([{ storage_epoch: epoch, access_version: "1" }]);
     if (sql.startsWith("SELECT access_version::text")) return result([{ storage_epoch: epoch, access_version: "1", change_seq: String(seq) }]);
     if (sql.startsWith("SELECT version FROM agent_operation_policies")) return result();
-    if (sql.includes("FROM children c JOIN workspaces")) return result([{ owner_user_id: userId, display_name_encrypted: cipher.encrypt("A03 合成孩子", `children:${childId}:${userId}:display_name`) }]);
+    if (normalized === "SELECT w.storage_epoch,w.access_version::text FROM children c JOIN workspaces w ON w.id=c.workspace_id WHERE c.id=$1")
+      return result(params[0] === childId ? [{ storage_epoch: epoch, access_version: "1" }] : []);
+    if (normalized === "SELECT c.display_name_encrypted,w.owner_user_id FROM children c JOIN workspaces w ON w.id=c.workspace_id WHERE c.id=$1")
+      return result(params[0] === childId ? [{ owner_user_id: userId, display_name_encrypted: cipher.encrypt("A03 合成孩子", `children:${childId}:${userId}:display_name`) }] : []);
     if (sql.startsWith("UPDATE agent_runs SET state=")) return result();
     if (sql.startsWith("UPDATE agent_proposals SET state=")) return result();
     if (sql.includes("FROM agent_runs") && !sql.includes("JOIN")) return result([run]);
@@ -71,12 +87,30 @@ function harness(long = false) {
     if (sql.startsWith("SELECT pg_advisory")) return result();
     if (sql.startsWith("SELECT * FROM family_document_operations")) return result(receipts.filter(item => item.user_id === params[0] && item.op_id === params[1]));
     if (sql.startsWith("SELECT count(*)")) return result([{ count: activeCount ?? rows.filter(item => item.status === "active").length }]);
-    if (sql.startsWith("SELECT id,child_id,created_by FROM family_documents WHERE dirty")) return result(rows.filter(item => item.dirty));
+    if (normalized === "SELECT id,child_id,created_by FROM family_documents WHERE auto_refresh AND status='active' AND (dirty OR report_valid_until<=now() OR report_day<(now() AT TIME ZONE 'Asia/Hong_Kong')::date) ORDER BY updated_at,id LIMIT 20")
+      return result(rows.filter(item => item.auto_refresh && item.status === "active" && item.dirty).slice(0, 20));
     if (sql.startsWith("SELECT w.owner_user_id FROM children")) return result([{ owner_user_id: userId }]);
     if (sql.startsWith("SELECT enabled,generation FROM worker_control")) return result([{ enabled: true, generation: workerGeneration }]);
+    if (normalized === "SELECT generation FROM worker_control WHERE id=1") return result([{ generation: workerGeneration }]);
     if (sql.startsWith("SELECT 1 FROM workspaces")) return result([{}]);
-    if (sql.startsWith("UPDATE family_documents SET dirty=false")) { rows.find(item => item.id === params[0]).dirty = false; return result(); }
-    if (sql.startsWith("SELECT * FROM family_documents WHERE id=")) return result(rows.filter(item => item.id === params[0] && item.child_id === params[1]));
+    if (["UPDATE family_documents SET dirty=false,dirty_epoch=NULL,dirty_generation=NULL,report_valid_until=NULL,report_day=NULL WHERE id=$1",
+      "UPDATE family_documents SET dirty=false,dirty_epoch=NULL,dirty_generation=NULL WHERE id=$1",
+      "UPDATE family_documents SET dirty=false,dirty_epoch=NULL,dirty_generation=NULL, progress_encrypted=$2,report_valid_until=NULL,report_day=NULL WHERE id=$1"].includes(normalized)) {
+      const row = rows.find(item => item.id === params[0]);
+      Object.assign(row, { dirty: false, dirty_epoch: null, dirty_generation: null });
+      if (normalized.includes("report_valid_until=NULL")) Object.assign(row, { report_valid_until: null, report_day: null });
+      if (normalized.includes("progress_encrypted=$2")) row.progress_encrypted = params[1];
+      return result();
+    }
+    if (normalized === "UPDATE family_documents d SET dirty=true,dirty_epoch=w.storage_epoch,dirty_generation=c.generation FROM children ch,workspaces w,worker_control c WHERE d.id=$1 AND ch.id=d.child_id AND w.id=ch.workspace_id AND c.id=1") {
+      assert.equal(params.length, 1);
+      const row = rows.find(item => item.id === params[0] && item.child_id === childId);
+      assert.ok(row, "Only an existing document in this child scope may be marked dirty");
+      Object.assign(row, { dirty: true, dirty_epoch: epoch, dirty_generation: workerGeneration });
+      return { rows: [], rowCount: 1 };
+    }
+    if (normalized === "SELECT *,to_char(report_day,'YYYY-MM-DD') AS report_day FROM family_documents WHERE id=$1 AND child_id=$2")
+      return result(rows.filter(item => item.id === params[0] && item.child_id === params[1]));
     if (sql.startsWith("SELECT * FROM family_documents WHERE child_id=$1 AND kind=")) return result(rows.filter(item => item.kind === "growth_report" && item.status === "active"));
     if (sql.includes("FROM family_documents WHERE child_id=$1 AND ($2=")) {
       const [child, status, highAt, highId, afterAt, afterId, limit] = params;
@@ -88,17 +122,26 @@ function harness(long = false) {
     if (sql.startsWith("SELECT id,version,payload_encrypted FROM family_document_snapshots")) {
       let found = revisions.filter(item => item.document_id === params[0]);
       if (sql.includes("AND id=$2")) found = found.filter(item => item.id === params[1] && (!params[2] || item.version === params[2]));
-      else if (sql.includes("AND id<>$2")) found = found.filter(item => item.id !== params[1]).sort((a, b) => b.version - a.version).slice(0, params[2]);
-      else found = found.filter(item => (!params[1] || item.version <= params[1]) && (!params[2] || item.version < params[2])).sort((a, b) => b.version - a.version).slice(0, 11);
+      else if (normalized === "SELECT id,version,payload_encrypted FROM family_document_snapshots WHERE document_id=$1 AND id IS DISTINCT FROM $2 ORDER BY version DESC LIMIT $3") found = found.filter(item => item.id !== params[1]).sort((a, b) => b.version - a.version).slice(0, params[2]);
+      else if (normalized === "SELECT id,version,payload_encrypted FROM family_document_snapshots WHERE document_id=$1 AND ($2::integer IS NULL OR version<=$2) AND ($3::integer IS NULL OR version<$3) ORDER BY version DESC LIMIT 11")
+        found = found.filter(item => (!params[1] || item.version <= params[1]) && (!params[2] || item.version < params[2])).sort((a, b) => b.version - a.version).slice(0, 11);
+      else assert.fail("Unexpected snapshot SQL: " + sql);
       return result(found);
     }
     if (sql.startsWith("INSERT INTO family_documents(")) { const created = new Date(Date.UTC(2026, 9, 8, 0, 0, 0, rows.length)).toISOString();
-      rows.push({ id: params[0], child_id: params[1], created_by: params[2], version: params[3], kind: params[4], status: params[5], auto_refresh: params[6], payload_encrypted: params[7], cursor_at: created.replace("Z", "000Z") }); return result(); }
-    if (sql.startsWith("UPDATE family_documents SET version=")) { Object.assign(rows.find(item => item.id === params[0]), { version: params[1], status: params[2], auto_refresh: params[3], payload_encrypted: params[4] }); return result(); }
+      rows.push({ id: params[0], child_id: params[1], created_by: params[2], version: params[3], kind: params[4], status: params[5], auto_refresh: params[6], payload_encrypted: params[7], source_revision: "0", progress_encrypted: params[8], report_valid_until: params[9], report_day: params[10],
+        dirty: params[11], dirty_epoch: params[12], dirty_generation: params[13], cursor_at: created.replace("Z", "000Z") }); return result(); }
+    if (sql.startsWith("UPDATE family_documents SET version=")) { Object.assign(rows.find(item => item.id === params[0]), { version: params[1], status: params[2], auto_refresh: params[3], payload_encrypted: params[4],
+      progress_encrypted: params[5], report_valid_until: params[6], report_day: params[7], dirty: params[8], dirty_epoch: params[9], dirty_generation: params[10] }); return result(); }
     if (sql.startsWith("INSERT INTO family_document_snapshots")) { revisions.push({ id: params[0], document_id: params[1], version: params[2], payload_encrypted: params[3] }); return result(); }
     if (sql.startsWith("INSERT INTO family_document_operations")) { receipts.push({ user_id: params[0], op_id: params[1], child_id: params[2], storage_epoch: params[3], request_encrypted: params[4], result_encrypted: params[5] }); return result(); }
     if (sql.startsWith("UPDATE workspaces SET change_seq")) { seq++; return result([{ change_seq: String(seq) }]); }
     if (sql.startsWith("INSERT INTO online_changes")) return result();
+    if (normalized === "SELECT 1 FROM app_migrations WHERE id='033-agent-work-continuation'") return result([{}]);
+    if (normalized === "UPDATE agent_work_followups f SET next_check_at=LEAST(COALESCE(f.next_check_at,now()),now()) FROM workspaces w WHERE f.workspace_id=$1 AND f.child_id=$2 AND f.enabled AND f.watch_resources AND w.id=f.workspace_id AND ($3::text IS NULL OR f.owner_user_id=$3) AND (NOT $4::boolean OR f.owner_user_id=w.owner_user_id)") {
+      assert.deepEqual(params, [workspaceId, childId, null, false]);
+      return result(); // This fixture has no previously registered work followups.
+    }
     if (sql.includes("FROM agent_proposals p JOIN")) return result(proposals.filter(item => item.id === params[0]).map(item => ({ ...item, authorization_version: "1", data_version: run.data_version })));
     if (sql.includes("FROM agent_proposals WHERE id=")) return result(proposals.filter(item => item.id === params[0] && item.run_id === params[1]));
     if (sql.includes("FROM agent_proposals WHERE run_id=")) return result(proposals.filter(item => item.run_id === params[0]));
@@ -111,7 +154,24 @@ function harness(long = false) {
   const client = { query, release() {} }, pool = { query, connect: async () => client } as unknown as Pool;
   const store = createFamilyDocumentStore(pool, cipher), agent = createProductAgentStore(pool, cipher);
   return { userId, childId, workspaceId, cipher, scope, run, rows, revisions, receipts, proposals, queries, store, agent, loaded,
-    authority: epoch + ":1", workerGeneration, client, setActiveCount(value: number | null) { activeCount = value; } };
+    authority: epoch + ":1", workerGeneration, client, setActiveCount(value: number | null) { activeCount = value; },
+    sourcesChanged() { for (const row of rows) { row.source_revision = String(Number(row.source_revision) + 1);
+      if (row.status === "active" && row.auto_refresh) Object.assign(row, { dirty: true, dirty_epoch: epoch, dirty_generation: workerGeneration }); } },
+    progress(id: string) { const row = rows.find(item => item.id === id);
+      return row.progress_encrypted ? JSON.parse(cipher.decrypt(row.progress_encrypted, `family-document:${childId}:${id}:${userId}:progress`)) : null; },
+  };
+}
+async function completeReport(h: ReturnType<typeof harness>, document: NonNullable<Awaited<ReturnType<ReturnType<typeof harness>["store"]["get"]>>>) {
+  const visited = new Set<string>();
+  while (document.report?.phase === "building") {
+    const stage = h.progress(document.id)?.stage;
+    assert.ok(stage && stage !== "done" && !visited.has(stage), "Each one-page fixture stage must advance");
+    visited.add(stage);
+    document = (await h.store.change(h.userId, h.childId, document.id,
+      { action: "refresh", expectedVersion: document.version, authorityVersion: h.authority }, randomUUID()))!;
+  }
+  assert.equal(document.report?.phase, "complete"); assert.ok(document.current);
+  return document;
 }
 const patch = (h: ReturnType<typeof harness>, version: number, edits: DocumentPatch["edits"]): DocumentPatch => ({ action: "patch", expectedVersion: version, authorityVersion: h.authority, edits });
 
@@ -194,6 +254,7 @@ focusedTest("native ADK declares document edits and saves one bound shared candi
     change: patch(h, 2, [{ op: "set_metadata", summary: "Sensitive candidate wording", eventDate: "2026-10-19" }]) }))!;
   assert.ok(!("documentSourceBasis" in candidate), "Server-only source binding must not enter public proposals");
   h.loaded.records.push({ id: randomUUID(), version: 1, text: "Synthetic newly confirmed source", details: { kind: "note", eventTime: { at: "2026-10-08T00:00:00Z", precision: "exact" } } });
+  h.sourcesChanged();
   await assert.rejects(h.agent.decide(h.userId, h.childId, h.run.id, candidate.id, { decision: "accept", expectedVersion: candidate.version, confirmShared: true }), { code: "source_changed" });
   const view = (await h.agent.get(h.userId, h.childId, h.run.id))!.proposals.find(item => item.id === candidate.id)!;
   assert.equal(view.contentState, "invalidated"); assert.equal(view.targetLabel, null); assert.ok(!JSON.stringify(view.value).includes("Sensitive candidate wording"));
@@ -230,7 +291,7 @@ focusedTest("source invalidation, atomic rejection, scope and original unknown o
   const readback = await api.getItem(h.childId, document.id, signal, h.userId); assert.equal(readback.version, 2);
   assert.equal((await api.change(h.childId, document.id, change, signal, h.userId)).version, 2); assert.equal(bodies[0], bodies[1]);
   const sourceItem = document.current!.sections.find(section => section.id === "notes")!.items.find(item => item.sourceIds[0].startsWith("record:"))!;
-  h.loaded.records.length = 0;
+  h.loaded.records.length = 0; h.sourcesChanged();
   const invalid = (await h.store.get(h.userId, h.childId, document.id))!; assert.equal(invalid.current, null); assert.equal(invalid.manifest!.invalidated, true);
   const redacted = (await h.store.readContent(h.userId, h.childId, document.id, { snapshotId: readback.current!.id, snapshotVersion: 2, offset: 0 }))!;
   assert.equal(redacted.contentKind, "redacted_manifest_json"); assert.equal(redacted.invalidated, true); assert.ok(!redacted.text.includes('"title"')); assert.ok(!redacted.text.includes('"text"'));
@@ -239,21 +300,33 @@ focusedTest("source invalidation, atomic rejection, scope and original unknown o
   assert.ok(repaired.current); assert.equal(repaired.current!.sources.some(source => source.kind === "record"), false);
   assert.ok(repaired.current!.sources.some(source => source.kind === "profile"), "Age metadata retains its original profile dependency after removing notes");
   const worker = harness(), growth = { ...request, kind: "growth_report" as const, purpose: "handoff" as const };
-  const protectedDocument = (await worker.store.create(worker.userId, worker.childId, growth, randomUUID()))!;
-  const regular = (await worker.store.create(worker.userId, worker.childId, growth, randomUUID()))!;
-  const protectedSnapshot = (await worker.store.change(worker.userId, worker.childId, protectedDocument.id, { ...patch(worker, 1, [
+  const protectedDocument = await completeReport(worker, (await worker.store.create(worker.userId, worker.childId, growth, randomUUID()))!);
+  const regular = await completeReport(worker, (await worker.store.create(worker.userId, worker.childId, growth, randomUUID()))!);
+  const protectedSnapshot = (await worker.store.change(worker.userId, worker.childId, protectedDocument.id, { ...patch(worker, protectedDocument.version, [
     { op: "upsert_item", sectionId: "profile", itemId: "profile:" + worker.childId, text: "Explicit profile wording", sourceIds: ["profile:" + worker.childId] }]), confirmShared: true }, randomUUID()))!;
-  worker.loaded.profile.version = 2;
-  worker.rows.forEach(row => { row.dirty = true; row.dirty_epoch = worker.authority.split(":")[0]; row.dirty_generation = worker.workerGeneration; });
-  assert.equal(await worker.store.refreshPending(worker.workerGeneration), 1, "A review-required document must not stop the next worker document");
+  const protectedRevision = structuredClone(worker.revisions.find(item => item.id === protectedSnapshot.current!.id));
+  worker.loaded.profile.version = 2; worker.sourcesChanged();
+  const seen = new Set<string>(); let finalBatch = 0;
+  while (worker.rows.some(row => row.dirty)) {
+    const stages = JSON.stringify(worker.rows.map(row => [row.id, worker.progress(row.id)?.stage, row.dirty]));
+    assert.ok(!seen.has(stages), "The bounded worker must advance or block each report"); seen.add(stages);
+    finalBatch = await worker.store.refreshPending(worker.workerGeneration);
+  }
+  assert.equal(finalBatch, 1, "A review-required document must not stop the next worker document");
   assert.equal(worker.rows.find(row => row.id === protectedDocument.id).dirty, false);
-  assert.equal(worker.rows.find(row => row.id === protectedDocument.id).version, protectedSnapshot.version);
-  assert.equal(worker.rows.find(row => row.id === regular.id).version, 2);
-  assert.equal((await worker.store.get(worker.userId, worker.childId, protectedDocument.id))!.current, null);
-  const transition = (await worker.store.change(worker.userId, worker.childId, protectedDocument.id, { ...patch(worker, protectedSnapshot.version,
+  assert.deepEqual(worker.revisions.find(item => item.id === protectedRevision.id), protectedRevision, "Progress must not rewrite the protected snapshot");
+  assert.equal(worker.revisions.filter(item => item.document_id === protectedDocument.id).at(-1)!.id, protectedRevision.id);
+  const regularAfter = (await worker.store.get(worker.userId, worker.childId, regular.id))!;
+  assert.equal(regularAfter.report?.phase, "complete"); assert.ok(regularAfter.version > regular.version);
+  assert.equal(regularAfter.current!.version, regularAfter.version);
+  assert.equal(regularAfter.current!.sources.find(source => source.kind === "profile")!.version, 2);
+  const protectedAfter = (await worker.store.get(worker.userId, worker.childId, protectedDocument.id))!;
+  assert.equal(protectedAfter.current, null); assert.equal(worker.progress(protectedDocument.id).blocked, true);
+  const transition = (await worker.store.change(worker.userId, worker.childId, protectedDocument.id, { ...patch(worker, protectedAfter.version,
     [{ op: "remove_section", sectionId: "profile" }]), confirmShared: true }, randomUUID()))!;
   assert.equal(transition.readState, "invalidated"); assert.equal(transition.current, null);
-  const fresh = (await worker.store.change(worker.userId, worker.childId, protectedDocument.id, { action: "refresh", expectedVersion: transition.version, authorityVersion: worker.authority }, randomUUID()))!;
+  const started = (await worker.store.change(worker.userId, worker.childId, protectedDocument.id, { action: "refresh", expectedVersion: transition.version, authorityVersion: worker.authority }, randomUUID()))!;
+  const fresh = await completeReport(worker, started);
   assert.equal(fresh.readState, "ready"); assert.equal(fresh.current!.sources.find(source => source.kind === "profile")!.version, 2);
   assert.ok(!fresh.current!.sections.some(section => section.id === "profile"));
 });

@@ -1,14 +1,29 @@
 import { BaseLlm } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
-import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { ApiError, GoogleGenAI } from "@google/genai";
+import type { FunctionCall } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
+import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
 import { decodePhoto } from "./photo-files.ts";
-import { AGENT_LIMITS, AgentBudget, AgentStopped } from "./agent-budget.ts";
+import { AGENT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped } from "./agent-budget.ts";
 import { logVertexFailure } from "./vertex-diagnostics.ts";
 
 export interface AgentModelProvider {
   generate(request: LlmRequest, signal: AbortSignal): Promise<LlmResponse>;
+}
+
+/** One logical request accounting path for both current and projected native requests. */
+export function agentRequestCharacters(request: Pick<LlmRequest, "contents" | "config">): number {
+  let images = 0;
+  const contents = request.contents.map(content => ({ ...content, parts: content.parts?.map(part => {
+    if (part.fileData) throw new AgentStopped("input_limit");
+    if (!part.inlineData) return part;
+    if (content.role !== "user" || ++images > 1) throw new AgentStopped("input_limit");
+    try { decodePhoto(part.inlineData.data ?? "", part.inlineData.mimeType ?? ""); } catch { throw new AgentStopped("input_limit"); }
+    return { ...part, inlineData: { ...part.inlineData, data: "[bounded image bytes]" } };
+  }) }));
+  return JSON.stringify({ contents, config: request.config }).length;
 }
 
 function tokenCount(value: unknown): number | null {
@@ -21,18 +36,8 @@ function readUsage(response: LlmResponse): TokenUsage {
     cachedTokens: tokenCount(response.usageMetadata?.cachedContentTokenCount) };
 }
 
-function nativeThinkingLevel(value: AiConfig["agentThinkingLevel"]): ThinkingLevel {
-  switch (value === undefined ? "minimal" : value) {
-    case "minimal": return ThinkingLevel.MINIMAL;
-    case "low": return ThinkingLevel.LOW;
-    case "medium": return ThinkingLevel.MEDIUM;
-    case "high": return ThinkingLevel.HIGH;
-    default: throw new Error("Invalid AI_AGENT_THINKING_LEVEL configuration");
-  }
-}
-
 export function createVertexAgentProvider(config: AiConfig): AgentModelProvider {
-  const thinkingLevel = nativeThinkingLevel(config.agentThinkingLevel);
+  const thinkingLevel = nativeModelThinkingLevel(config.model, config.agentThinkingLevel);
   const client = new GoogleGenAI({ enterprise: true, project: config.project, location: config.location, apiVersion: "v1",
     httpOptions: { timeout: config.timeoutMs, retryOptions: { attempts: 1 } } });
   return {
@@ -60,6 +65,7 @@ export class AgentGatewayModel extends BaseLlm {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
     terminalToolNames?: ReadonlySet<string>;
+    projectCapabilityConfig?: (request: LlmRequest, calls: readonly FunctionCall[]) => Promise<LlmRequest["config"] | undefined>;
   };
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
@@ -76,15 +82,7 @@ export class AgentGatewayModel extends BaseLlm {
     if (!config.enabled) throw new AgentStopped("unavailable");
     if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
     // Binary media has its own bounded allowance; all text, schemas and opaque protocol metadata remain counted.
-    let images = 0;
-    const contents = request.contents.map(content => ({...content,parts:content.parts?.map(part=>{
-      if(part.fileData)throw new AgentStopped("input_limit");
-      if(!part.inlineData)return part;
-      if(content.role!=="user"||++images>1)throw new AgentStopped("input_limit");
-      try{decodePhoto(part.inlineData.data??"",part.inlineData.mimeType??"");}catch{throw new AgentStopped("input_limit");}
-      return {...part,inlineData:{...part.inlineData,data:"[bounded image bytes]"}};
-    })}));
-    const requestCharacters = JSON.stringify({ contents, config: request.config }).length;
+    const requestCharacters = agentRequestCharacters(request);
     if (requestCharacters > budget.limits.inputCharacters) {
       throw new AgentStopped("input_limit");
     }
@@ -111,7 +109,14 @@ export class AgentGatewayModel extends BaseLlm {
       if (calls.length > 1 && calls.some(part => this.options.terminalToolNames?.has(part.functionCall!.name!))) {
         throw new AgentStopped("invalid_response");
       }
-      budget.prepareToolResponseBudget(requestCharacters, JSON.stringify(response.content).length);
+      const modelContentCharacters = JSON.stringify(response.content).length;
+      const projected = this.options.projectCapabilityConfig && calls.length
+        ? await budget.wait(() => this.options.projectCapabilityConfig!(request, calls.map(part => part.functionCall!))) : undefined;
+      const futureCharacters = projected ? agentRequestCharacters({ contents: request.contents, config: projected }) : requestCharacters;
+      const capabilityGrowthCharacters = Math.max(0, futureCharacters - requestCharacters);
+      if (capabilityGrowthCharacters > 0
+        && futureCharacters + modelContentCharacters + AGENT_TOOL_RESPONSE_RESERVE > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
+      budget.prepareToolResponseBudget(requestCharacters, modelContentCharacters, capabilityGrowthCharacters);
       outcome = "succeeded";
     } catch (error) {
       if (error instanceof AgentStopped) {

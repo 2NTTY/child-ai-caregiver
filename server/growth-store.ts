@@ -59,10 +59,9 @@ export function createGrowthStore(pool: Pool, cipher: StorageCipher, scheduling?
       const profile = context.profileApplicable ? context.profile.data : null;
       const regionNotice = GROWTH_KNOWLEDGE_NOTICES.region;
       const ageNotice = GROWTH_KNOWLEDGE_NOTICES.age;
-      // The Agent's broader age calculation can return null beyond 216 months.
-      // An out-of-scope exact birth date must not become an unrestricted-age query.
-      const beyondAgeScope = profile?.age.kind === "birth_date" &&
-        (now.getUTCFullYear() - Number(profile.age.date.slice(0, 4)) > 10 || (filter.age?.maxMonths ?? 0) > 120);
+      // Reuse the shared anniversary-based 0–120 month calculation. Out-of-range,
+      // invalid or future birth dates must not become unrestricted-age queries.
+      const beyondAgeScope = profile?.age.kind === "birth_date" && filter.age === null;
       if (beyondAgeScope) knowledgeNotice = ageNotice;
       else if (!profile?.region?.trim()) knowledgeNotice = regionNotice;
       else {

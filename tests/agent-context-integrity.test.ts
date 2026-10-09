@@ -27,7 +27,9 @@ for (const characters of [200, 800]) test(`native Runner keeps ${characters}-cha
       sizes.push(JSON.stringify({ contents: request.contents, config: request.config }).length);
       assert.ok(sizes.at(-1)! <= AGENT_LIMITS.inputCharacters);
       const index = calls++;
+      assert.equal(Object.hasOwn(request.toolsDict, "stage_private_summary"), index > 0);
       if (index === 1) {
+        assert.equal(request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.id === "summary-capability")?.functionResponse?.response?.status, "succeeded");
         const parts = request.contents.flatMap(content => content.parts ?? []);
         assert.ok(parts.some(part => part.thoughtSignature === "opaque-native-signature"));
         seen = (parts.find(part => part.functionResponse?.name === "read_context")?.functionResponse?.response?.data as any).result;
@@ -43,7 +45,8 @@ for (const characters of [200, 800]) test(`native Runner keeps ${characters}-cha
         : index === 1 ? { id: "summary", name: "stage_private_summary", args: { text: "僅整理已讀合成來源；沒有推斷未讀部分。" } }
         : index === 2 ? { id: "answer", name: "present_answer", args: { kind: "operation", paragraphs: [{ text: "已核對本次提供資料。", citationIds: [] }] } } : null;
       return { finishReason: FinishReason.STOP, content: { role: "model", parts: step
-        ? [{ functionCall: step, ...(index === 0 ? { thoughtSignature: "opaque-native-signature" } : {}) }] : [{ text: "unvalidated closing" }] } };
+        ? [{ functionCall: step, ...(index === 0 ? { thoughtSignature: "opaque-native-signature" } : {}) },
+          ...(index === 0 ? [{ functionCall: { id: "summary-capability", name: "load_capabilities", args: { capabilities: ["memory_summary"] } } }] : [])] : [{ text: "unvalidated closing" }] } };
     } } });
   const service = createProductAgent({ runtime, store: {
     claim: async () => { const created = !claimed; claimed = true; return { runId, scope, created, expiresAt: new Date(Date.now() + 90000).toISOString() }; },
@@ -55,6 +58,7 @@ for (const characters of [200, 800]) test(`native Runner keeps ${characters}-cha
   } as unknown as Parameters<typeof createProductAgent>[0]);
   const result = await service.reply(userId, childId, messageId, async () => true);
   assert.equal(result?.status, "completed", JSON.stringify(result));
+  assert.deepEqual(result.counts, { modelCalls: 3, toolCalls: 4, queryEmbeddings: 0 });
   assert.deepEqual(summary.coveredMessageIds, seen.privateSummaryInput.messageIds);
   assert.equal(summary.previousVersion, 0); assert.equal(summary.basis, "a".repeat(64));
   if (characters === 800) assert.ok(summary.coveredMessageIds.length < messages.length);
@@ -90,13 +94,31 @@ test("summary persistence accepts only a nonempty ordered current prefix and adv
     created_at: new Date(), text_encrypted: cipher.encrypt("合成來源", `chat_messages:${id}:${child}:${user}:user::text`) }; });
   const client = { async query(sql: string, params: any[] = []) {
     const result = (value: any[]) => ({ rows: value, rowCount: value.length });
+    const normalized = sql.replace(/\s+/gu, " ").trim();
+    const authorityQuery = `SELECT md5(jsonb_build_array(
+      (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM text_records WHERE child_id=$1),
+      (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version,status,visibility,valid_until,valid_until IS NULL OR valid_until>clock_timestamp()) ORDER BY id),'[]'::jsonb)
+        FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2)),
+      (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM memory_topics WHERE child_id=$1 AND (visibility='family' OR created_by=$2))
+      )::text) AS authority, NOT EXISTS(SELECT 1 FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed) AS metadata_complete`.replace(/\s+/gu, " ").trim();
+    if (normalized === authorityQuery) {
+      assert.deepEqual(params, [child, user]);
+      return result([{ authority: "f".repeat(32), metadata_complete: true }]);
+    }
     if (sql.includes("ORDER BY version DESC LIMIT 1")) return result(savedRow ? [savedRow] : []);
     if (sql.startsWith("SELECT profile_version")) return result([{ profile_version: profileVersion }]);
-    if (sql.includes("SELECT m.* FROM chat_messages")) return result(rows.filter(row => params[2] || !coverage.has(row.id)));
-    if (sql.startsWith("INSERT INTO conversation_summaries")) savedRow = { id: params[0], payload_encrypted: params[5], invalidated: false };
-    if (sql.startsWith("DELETE FROM summary_message_coverage")) coverage.clear();
-    if (sql.startsWith("INSERT INTO summary_message_coverage")) params[0].forEach((id: string) => coverage.add(id));
-    return result([]);
+    if (sql.includes("SELECT m.* FROM chat_messages")) return result(rows.filter(row => params[2] || !coverage.has(row.id)).slice(0, 51));
+    if (sql.startsWith("INSERT INTO conversation_summaries")) { savedRow = { id: params[0], payload_encrypted: params[5], invalidated: false }; return result([]); }
+    if (sql.startsWith("DELETE FROM summary_message_coverage")) { coverage.clear(); return result([]); }
+    if (sql.startsWith("INSERT INTO summary_message_coverage")) { params[0].forEach((id: string) => coverage.add(id)); return result([]); }
+    const emptyQueries = [
+      "SELECT id,version,payload_encrypted FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed ORDER BY id LIMIT 100",
+      "SELECT version,payload_encrypted FROM child_profile_revisions WHERE child_id=$1 AND version=$2",
+      "SELECT 1 FROM conversation_summaries s WHERE s.child_id=$1 AND s.owner_user_id=$2 AND NOT s.invalidated AND (SELECT count(*) FROM summary_message_coverage c WHERE c.summary_id=s.id) <> s.covered_count LIMIT 1",
+      "UPDATE conversation_summaries SET invalidated=true WHERE child_id=$1 AND owner_user_id=$2",
+    ];
+    if (emptyQueries.includes(normalized)) return result([]);
+    throw new Error("Unexpected synthetic summary SQL: " + sql);
   } } as unknown as PoolClient;
   const first = await summaryInput(client, cipher, user, child);
   const draft = { previousVersion: first.previousVersion, basis: first.basis, text: "只覆蓋最先兩則", coveredMessageIds: first.messages.slice(0, 2).map(message => message.id) };

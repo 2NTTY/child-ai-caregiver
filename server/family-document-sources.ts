@@ -73,10 +73,13 @@ export async function loadFamilyDocumentSources(client: PoolClient, cipher: Stor
   }
   for (const fact of memory.items) if (fact.visibility === "family" && fact.status === "confirmed" && fact.applicable && fact.sourceState === "current") add(factDocumentSource(fact), "profile");
   for (const task of tasks.items) add(taskDocumentSource(task), "changes_support");
-  for (const { concern, event } of concerns.items) {
+  const observedConcernIds = new Set(concerns.items.filter(item => item.event?.kind === "observation").map(item => item.concern.id));
+  for (const { concern, event, hasEvents } of concerns.items) {
     if (concern.status === "following") activeConcernIds.add("concern:" + concern.id);
     if (event?.kind === "observation") add(concernDocumentSource(concern, event), "concerns");
-    else if (!event && concern.status === "following") add(concernDocumentSource(concern), "concerns");
+    // The final cursor group can continue on another page; absence here is not proof of no observation.
+    else if (!event && concern.status === "following" && !observedConcernIds.has(concern.id)
+      && (hasEvents === false || concerns.next?.id !== concern.id)) add(concernDocumentSource(concern), "concerns");
   }
   return { profile, entries, domains, questions, activeConcernIds, limited: Boolean(care.nextCursor || tasks.nextAfterId || memory.nextAfterId || concerns.next) };
 }
@@ -128,7 +131,7 @@ export function buildFamilyDocumentSnapshot(loaded: FamilyDocumentSources, reque
     make("body-life", "身體與生活記錄", "body_life", known.filter(source => loaded.domains.get(source.id) === "body_life")),
     make("abilities", "能力與興趣（尚無可分類的已確認來源）", "abilities_interests", []),
     make("concerns", "持續關注", "concerns", known.filter(source => loaded.domains.get(source.id) === "concerns")),
-    make("undated-concerns", "目前持續關注背景（不計入期間觀察）", "concerns", timeless.filter(source => source.kind === "concern")),
+    make("undated-concerns", "未提供觀察日期的現行持續關注（未計入期間）", "concerns", timeless.filter(source => source.kind === "concern")),
     make("support", "共享記事與照護安排", "changes_support", known.filter(source => loaded.domains.get(source.id) === "changes_support")),
     make("unknown-time", "發生時間未確認的記錄（未計入期間）", null, unknown),
   ];

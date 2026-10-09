@@ -1,5 +1,5 @@
 // Display projections only. Formal payloads and receipts remain owned by src/shared/product-agent.ts.
-import type { ChatCitationView } from "./chat-view-model";
+import type { ChatCitationView } from "./chat-view-model.ts";
 export type AgentReadState = "idle" | "loading" | "ready" | "failed" | "denied";
 export type AgentRunStatus = "running" | "completed" | "stopped" | "unknown";
 export type AgentProposalStatus = "pending" | "accepted" | "dismissed" | "expired";
@@ -20,7 +20,7 @@ export interface AgentRunView {
   retrievalMode: "vector_keyword" | "keyword_degraded" | "not_used";
   tools: { id: string; nameLabel: string; status: "succeeded" | "rejected" | "conflict" | "failed" | "unknown"; savesCandidate: boolean }[];
   proposals: AgentProposalView[]; citations: AgentCitationView[];
-  privateSourceCitations?:import("../../src/shared/product-agent").PrivateSourceCitation[];
+  privateSourceCitations?:import("../../src/shared/product-agent.ts").PrivateSourceCitation[];
 }
 export interface AgentPendingDecision {
   runId: string; proposalId: string;

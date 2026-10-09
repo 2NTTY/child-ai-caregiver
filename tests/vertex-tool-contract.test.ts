@@ -31,13 +31,27 @@ function contractIssues(value: unknown, path: string, issues: string[] = []): st
     if (key === "enum" && (!Array.isArray(child) || child.some(item => typeof item !== "string"))) issues.push(path + ".enum(non-string)");
     if (key === "properties" || key === "defs") for (const [name, schema] of Object.entries(child)) contractIssues(schema, path + "." + key + "." + name, issues);
     if (["anyOf", "oneOf", "allOf"].includes(key)) child.forEach((schema: unknown, index: number) => contractIssues(schema, `${path}.${key}[${index}]`, issues));
-    if (key === "items") contractIssues(child, path + ".items", issues);
+    if (key === "items" || key === "additionalProperties" && child && typeof child === "object") contractIssues(child, path + "." + key, issues);
   }
   return issues;
 }
 function native(tool: AgentTool, execute: (args: Record<string, unknown>) => Promise<unknown> = async () => ({})) {
   return new FunctionTool({ name: tool.name, description: tool.description, parameters: tool.parameters.strict(), execute });
 }
+
+test("Vertex schema inspection rejects unsupported fields throughout nested declarations", () => {
+  assert.deepEqual(contractIssues({ type: "OBJECT", properties: {
+    nested: { anyOf: [{ type: "ARRAY", items: { type: "INTEGER", exclusiveMinimum: 0 } }] },
+    confirmation: { type: "BOOLEAN", enum: [true] },
+  }, defs: { unsupported: { oneOf: [{ type: "STRING", const: "forbidden" }] } },
+    additionalProperties: { type: "INTEGER", exclusiveMaximum: 1 } }, "synthetic"), [
+    "synthetic.properties.nested.anyOf[0].items.exclusiveMinimum",
+    "synthetic.properties.confirmation.enum(non-string)",
+    "synthetic.defs.unsupported.oneOf",
+    "synthetic.defs.unsupported.oneOf[0].const",
+    "synthetic.additionalProperties.exclusiveMaximum",
+  ]);
+});
 
 test("all Server capabilities serialize only documented Vertex schema fields", async context => {
   const budget = new AgentBudget();
@@ -46,11 +60,32 @@ test("all Server capabilities serialize only documented Vertex schema fields", a
       memory: {}, tasks: {}, store: {}, knowledge: { createRun: () => ({}) }, authorize: async () => false,
       actions: {}, summary: {}, contact: {}, concerns: {}, sources: {}, documents: {}, growth: {},
     } as unknown as Parameters<typeof createProductAgentTools>[0]).tools;
-    assert.equal(tools.length, 28);
+    const requiredTools = ["read_context", "search_knowledge", "read_knowledge_context", "present_answer",
+      "read_work", "read_background_result", "save_work", "search_history", "read_history", "request_confirmation",
+      "read_care_records", "save_ordinary_record", "revise_ordinary_record", "read_private_instructions",
+      "save_private_instruction", "revise_private_instruction", "propose_fact", "stage_private_summary",
+      "read_memory_facts", "propose_fact_revision", "propose_fact_deactivation", "create_ordinary_reminder",
+      "change_ordinary_reminder", "propose_task", "propose_task_change", "read_family_documents",
+      "read_family_document_content", "list_family_document_versions", "generate_family_document",
+      "change_family_document", "propose_family_document_change", "read_care_summary", "read_concerns",
+      "propose_concern", "propose_concern_change", "list_private_sources", "read_private_source",
+      "propose_private_source", "propose_private_source_change", "read_contact_options", "contact_caregiver"];
+    const names = tools.map(tool => tool.name);
+    assert.equal(new Set(names).size, names.length);
+    for (const name of requiredTools) assert.ok(names.includes(name), `Missing required product capability: ${name}`);
     assert.deepEqual(tools.map(tool => tool.name).sort(), [...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames,
       ...PRODUCT_AGENT_TOOL_CATALOG.groups.flatMap(group => group.toolNames)].sort());
     const selection = new AgentCapabilitySelection(tools, PRODUCT_AGENT_TOOL_CATALOG);
-    const declarations = [...tools, selection.loader(async () => {})!].map(tool => native(tool)._getDeclaration()!);
+    const loader = selection.loader(async () => {});
+    assert.ok(loader);
+    const declarations = [...tools, loader].map(tool => native(tool)._getDeclaration()!);
+    assert.deepEqual([...selection.visibleToolNames()].sort(),
+      [...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, PRODUCT_AGENT_TOOL_CATALOG.loader.name].sort());
+    for (const name of ["read_context", "search_knowledge", "read_knowledge_context", "present_answer", "read_work", "request_confirmation"]) {
+      assert.ok(selection.visibleToolNames().has(name), `Missing required initial capability: ${name}`);
+    }
+    assert.deepEqual(selection.loadedIds(), []);
+    assert.deepEqual(declarations.flatMap(tool => contractIssues(tool.parameters, tool.name!)), []);
     let calls = 0;
     context.mock.method(GoogleAuth.prototype, "getRequestHeaders", async () => new Headers({ authorization: "Bearer synthetic" }));
     context.mock.method(globalThis, "fetch", async (url: string | URL | Request, init: RequestInit) => {
@@ -59,7 +94,8 @@ test("all Server capabilities serialize only documented Vertex schema fields", a
       const body = JSON.parse(String(init.body));
       assert.deepEqual(Object.keys(body.generationConfig).sort(), ["candidateCount", "maxOutputTokens", "thinkingConfig"]);
       const sent = body.tools.flatMap((tool: { functionDeclarations: { name: string; parameters: unknown }[] }) => tool.functionDeclarations);
-      assert.equal(sent.length, 29);
+      assert.deepEqual(sent.map((tool: { name: string }) => tool.name).sort(),
+        [...names, PRODUCT_AGENT_TOOL_CATALOG.loader.name].sort());
       assert.deepEqual(sent.flatMap((tool: { name: string; parameters: unknown }) => contractIssues(tool.parameters, tool.name)), []);
       return Response.json({ candidates: [{ content: { role: "model", parts: [{ text: "synthetic" }] }, finishReason: "STOP" }] });
     });
@@ -106,10 +142,13 @@ test("the real product-interactive Runner request keeps its system configuration
     assert.equal(body.generationConfig.maxOutputTokens, 1024);
     assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, "MINIMAL");
     const declarations = body.tools.flatMap((tool: { functionDeclarations: { name: string; parameters: unknown }[] }) => tool.functionDeclarations);
-    assert.equal(declarations.length, 6);
-    assert.deepEqual(declarations.map((tool: { name: string }) => tool.name).sort(),
-      ["load_capabilities", "present_answer", "read_care_records", "read_context", "read_private_instructions", "search_knowledge"]);
-    assert.equal(declarations.some((tool: { name: string }) => ["read_contact_options", "contact_caregiver"].includes(tool.name)), false);
+    const declaredNames = declarations.map((tool: { name: string }) => tool.name);
+    assert.deepEqual(declaredNames.sort(),
+      [...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, PRODUCT_AGENT_TOOL_CATALOG.loader.name].sort());
+    assert.equal(new Set(declaredNames).size, declaredNames.length);
+    for (const group of PRODUCT_AGENT_TOOL_CATALOG.groups) {
+      for (const name of group.toolNames) assert.equal(declaredNames.includes(name), false, `${name} has not been loaded`);
+    }
     assert.deepEqual(declarations.flatMap((tool: { name: string; parameters: unknown }) => contractIssues(tool.parameters, tool.name)), []);
     return Response.json({ candidates: [{ content: { role: "model", parts: [{ functionCall: { id: "terminal-call", name: "present_answer",
       args: { kind: "clarification", paragraphs: [{ text: "Synthetic transport response", citationIds: [] }] } } }] }, finishReason: "STOP" }] });

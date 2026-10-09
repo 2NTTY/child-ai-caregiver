@@ -48,17 +48,22 @@ export class AgentCapabilitySelection {
 
   loadedIds() { return this.groups.filter(group => this.loaded.has(group.id)).map(group => group.id); }
 
+  /** Pure projection of a validated loader batch; no capability is activated here. */
+  projectedIds(requested: readonly string[]) {
+    return this.groups.filter(group => this.loaded.has(group.id) || requested.includes(group.id)).map(group => group.id);
+  }
+
   moduleIds(ids: readonly string[] = this.loadedIds()) {
     return [...new Set(this.groups.filter(group => ids.includes(group.id)).flatMap(group => group.promptModuleIds))];
   }
 
-  visibleToolNames() {
+  visibleToolNames(ids: readonly string[] = this.loadedIds()) {
     return new Set([...this.core, ...(this.groups.length ? [this.catalog.loader.name] : []),
-      ...this.groups.filter(group => this.loaded.has(group.id)).flatMap(group => group.toolNames)]);
+      ...this.groups.filter(group => ids.includes(group.id)).flatMap(group => group.toolNames)]);
   }
 
-  metadata() {
-    return { ...(this.groups.length ? { loader: this.catalog.loader.name } : {}), loaded: this.loadedIds(),
+  metadata(ids: readonly string[] = this.loadedIds()) {
+    return { ...(this.groups.length ? { loader: this.catalog.loader.name } : {}), loaded: [...ids],
       groups: this.groups.map(({ id, description, toolNames }) => ({ id, description, toolNames })) };
   }
 
@@ -72,7 +77,7 @@ export class AgentCapabilitySelection {
         const requested = args.capabilities as string[];
         // Native function batches may contain several loaders; serialize their monotonic union.
         const pending = this.loading.then(async () => {
-          const next = this.groups.filter(group => this.loaded.has(group.id) || requested.includes(group.id)).map(group => group.id);
+          const next = this.projectedIds(requested);
           await preparePrompt(next);
           for (const id of requested) this.loaded.add(id);
         });

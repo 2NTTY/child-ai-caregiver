@@ -1,4 +1,4 @@
-import type { PhotoOriginal } from "./photo-view-model";
+import type { PhotoOriginal } from "./photo-view-model.ts";
 
 // Transient presentation boundary, not a server attachment or upload contract.
 export type AssistantAttachment = {

@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.33",
+  "version": "0.1.36",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -33,7 +33,7 @@
     {
       "id": "core.conversation",
       "path": "core/conversation.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -76,7 +76,7 @@
     {
       "id": "module.capture-confirmation",
       "path": "modules/capture-confirmation.md",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -86,7 +86,7 @@
     {
       "id": "module.memory-maintenance",
       "path": "modules/memory-maintenance.md",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -146,7 +146,7 @@
     {
       "id": "module.authorized-contact",
       "path": "modules/authorized-contact.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -157,7 +157,7 @@
     {
       "id": "module.summary-report",
       "path": "modules/summary-report.md",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -203,7 +203,7 @@
     {
       "id": "module.product-tools",
       "path": "modules/product-tools.md",
-      "version": "0.1.17",
+      "version": "0.1.18",
       "requires": [
         "core.tool-use",
         "core.output",
@@ -226,6 +226,60 @@
       "requires": [
         "module.multimodal-input",
         "module.capture-confirmation"
+      ]
+    },
+    {
+      "id": "module.product-ordinary-actions",
+      "path": "modules/product-ordinary-actions.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.product-private-sources",
+      "path": "modules/product-private-sources.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.product-concerns",
+      "path": "modules/product-concerns.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.product-work",
+      "path": "modules/product-work.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.product-history",
+      "path": "modules/product-history.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.product-background-tools",
+      "path": "modules/product-background-tools.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.tool-use",
+        "core.output"
       ]
     }
   ],
@@ -463,7 +517,8 @@
         "domain.childcare-hk.care-workflows",
         "module.knowledge-answering",
         "module.proactive-run",
-        "module.product-tools"
+        "module.product-tools",
+        "module.product-background-tools"
       ],
       "outputModes": [
         "tool_cycle"
