@@ -1865,3 +1865,17 @@
 - 新增 PG 無關四方法 port 與現有 SQL reader，局部接回原 store 的 action／accepted confirmation／contact／document 收據。只借用原已授權、已鎖的同一 leased client；READ COMMITTED 與既有權威鎖不變。原 owner／child／authVersion 字串／epoch／來源、caller-wide opId、savedVersion、上限與 unknown 保留；get／readCancelled 的原到期更新及 cancel／finish／effect 命令未改，不把整段查回叫作純讀。
 - 最終定向 durable **91／91**（含新 reader 31 項）、文件 runtime **5／5**、文件 store **2／2**及 Server typecheck 通過；不把重跑／子集累加成更多測例。初次 tsc 的新增 harness TS2345 保留，只修已核對上限的取值型別後補驗。程式／測試四檔已獨立 review；固定 source／log hashes、network audit 的初次 PID 覆寫及六份保留 audit 均零嘗試的記錄見[驗收摘要](artifacts/verification/F01_ORIGINAL_RECEIPT_PORT_20261009.json)。
 - 916 個已有源檔對官方 blob，沒有無關改動；來源是局部 snapshot，不上傳整個目錄。PLAN／STATUS 原位收短，TECH_REUSE 更新已抽接點與原固定行號引用，本 LOG 僅追加。只驗離線合成 Pool／既有 scripted provider，未跑完整聚合、真 SQL 競爭、Firestore／Emulator、真模型、HTTP／UI、雲端或部署。原真模型 20／20 用盡、其他三角色只留接口、完整 F01／非 SQL fencing／resume 及聊天成果 gate 仍未完成。
+
+
+<a id="log-20261009-f01-daily-ai-usage"></a>
+## 2026-10-09｜F01 模型日額 attempt 台帳及 runtime 接線
+
+- Recorded At：2026-10-09T23:08:00+08:00；基線 master `e0680a47659612ed1dfc1d5e5daf48451408f8cf`（#166 已合併、開工 open PR 0）。指定 Astra xhigh 編寫程式及契約，dot 統籌／最終裁決；候選尚未建立 PR 或部署。原 #166「待 PR」短投影已按實際合併更新，不回寫其歷史 LOG。
+- 新增 `FirestoreAiUsage` 實體 adapter，並經 `durableBudget.dailyUsage` 接進現有 runtime／AgentGatewayModel。root 先扣，日額以原 root＋模型 step 綁 request/binding、本人／孩子、模型、固定 billing source 及原限額；同交易提交本人／全站 counter 和 attempt。duplicate／遺失回覆只查回，跨日不重扣，不退 root、不換 key、不落回 SQL。late record 僅补原日 accounting、原 outcome 不可矛盾覆寫，不重啟 run／工具。模型與交易仍無共同 exactly-once 保證，root／日額亦不是跨 store 原子提交；契約見[日額接線](docs/CHAT_AGENT_DURABLE_BUDGET.md#daily-usage)。
+- 既有 SDK／StorageCipher／AAD 復用，單文件 16 KiB；metadata 加密，不存模型或家庭正文，無新增 SDK、SQL schema、環境配置或資源。固定 config／native session 才可注入，正式 services／index／worker 及 dynamic routing 未啟用。embedding 日額、清理／restore、跨庫 effect fencing、真正 resume 與完整 F01 仍未完成；其他三個 Agent 內部、A09 原成果門檻與真模型 **20／20 已用盡**維持。
+- 新 adapter 9 項、真 Runner scripted 接線 7 項，連同受影響既有 gateway／budget／runtime／native-session／personal-routing 共 **75／75** 通過，Server typecheck 通過。首次舊 suite 因驗證命令漏既有 `--experimental-test-module-mocks`，`mock.module` 初始化失敗，保留 affected-01 的 51 pass／1 suite failure；只修命令，未改斷言或將未跑稱通過。獨立 reviewer 重驗新增 16 項及另補 4 項取消／撤權／root stop／record 回覆遺失邊界均通過；16 是重驗，不重複累加。程式 8 檔 SHA 已凍結及獨立 review 通過，文件及 dot 最終裁決依候選證據狀態，不把此 LOG 當完整產品驗收。
+- 921 個既有 materialized 檔與固定遠端 blob 相符；這是部分 snapshot，只交精確差異。初輪 network audit 的 PID-only 檔名曾覆寫，不能重建初輪完整稽核；最終 focused 的 8 份及 Server tsc 的 1 份使用 run＋PID，各零嘗試。原紅 log、固定檔案及 logs hash、獨立邊界驗證見[證據](artifacts/verification/F01_DAILY_AI_USAGE_20261009.json)。只用 serial 合成 transaction harness／scripted provider，未跑 Emulator、真 Firestore 競爭、真 SQL、真模型、HTTP／UI、正式重啟或部署；不以 75 項定向代替 merged baseline 765 項或整體服務完成。
+
+- 23:11 HKT 追加驗收：依 dot 指定，在同一凍結程式候選跑原 `npm test` **781／781**及完整 `npm run typecheck`（frontend／client／server）全部通過；75 定向及 reviewer 重跑16均屬子集，不重複累加。全量前補入29份按同一master核hash的未變檔案，125份full-run唯一network audit零嘗試，採明確環境allowlist不繼承憑證。程式／文件獨立review無阻塞，採納串行合成harness用語；候選待dot最終裁決及正常PR，仍非真FireStore競爭／產品E2E／正式部署。
+
+- 23:13 HKT 最終裁決追加：dot 已親審接口、Firestore transaction、gateway及根文件差異，結合781項聚合、完整typecheck與獨立review，准予本窄切片正常PR交付。程式不再修改；正式流量未啟用、未部署，完整F01、真雲端競爭／產品成果及原失敗／未驗門檻仍保留。

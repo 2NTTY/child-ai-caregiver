@@ -150,7 +150,8 @@ export function createAgentRuntime(options: {
       ...structuredClone(options.durableBudget.context.binding),
       trigger: Object.freeze({ ...options.durableBudget.context.binding.trigger }),
       limits: Object.freeze({ ...options.durableBudget.context.binding.limits }),
-    }) }), ...(options.durableBudget.runLimits ? { runLimits: Object.freeze({ ...options.durableBudget.runLimits }) } : {}) }) : undefined;
+    }) }), ...(options.durableBudget.dailyUsage ? { dailyUsage: options.durableBudget.dailyUsage } : {}),
+    ...(options.durableBudget.runLimits ? { runLimits: Object.freeze({ ...options.durableBudget.runLimits }) } : {}) }) : undefined;
   const fixedOptions = durable ? { ...options, config: Object.freeze({ ...options.config }) } : options;
   const activeUsers = new Set<string>();
   return {
@@ -247,6 +248,7 @@ export function createAgentRuntime(options: {
           const modelAnchors = new WeakMap<LlmRequest, string>();
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames,
             ...(durable ? { modelAttemptKey: (request: LlmRequest) => modelAnchors.get(request) } : {}),
+            ...(durable?.dailyUsage ? { durableDailyUsage: { adapter: durable.dailyUsage, context: durable.context } } : {}),
             ...(input.trigger.kind === "interactive" && input.recipeId === "product-interactive" ? { initialConversationSummary: input.initialConversationSummary } : {}),
             projectCapabilityConfig: capabilitySelection && loader ? async (request, calls) => {
               const requested: string[] = [];

@@ -1,0 +1,428 @@
+{
+  "schemaVersion": 1,
+  "package": "f01-durable-model-daily-usage",
+  "baseCommit": "e0680a47659612ed1dfc1d5e5daf48451408f8cf",
+  "status": "root_accepted_ready_for_normal_pr_publication_not_deployed",
+  "implementation": "Firestore model daily quota and original-attempt accounting integrated into optional fixed-config durableBudget.dailyUsage on the existing runtime and AgentGatewayModel. Formal service assembly remains unchanged.",
+  "sourceEvidence": {
+    "mismatches": [],
+    "partialSnapshot": true,
+    "codeManifestSha256": "85176bc23db4f2608f25ea3c93ecf30f79e75fa6969204cebd74d238108711cb",
+    "files": [
+      {
+        "path": "server/durable-ai-usage.ts",
+        "bytes": 1807,
+        "sha256": "07d95b6642e609944319fd16aaefb8faaea5a50c3f9d4e7ccc9a26d25714def3",
+        "gitBlobSha1": "fd6d31d95eb51ce780809ae030c21be559f979a6",
+        "baseGitBlobSha1": null
+      },
+      {
+        "path": "server/firestore-ai-usage.ts",
+        "bytes": 11502,
+        "sha256": "1d6ea555b18ea23959f9ecb68dd86e82c06a491f6f285af7101e7583e49a36cc",
+        "gitBlobSha1": "e2eed8ce88a2de8005c2371f57629fea0f91f5b7",
+        "baseGitBlobSha1": null
+      },
+      {
+        "path": "server/agent-budget.ts",
+        "bytes": 9504,
+        "sha256": "adcf67affa43d1536bf4e50ffbc8777684e26bafbc7175292ceeef789bbf0994",
+        "gitBlobSha1": "5b41d2abf9372191689e00629fc5930fab74058e",
+        "baseGitBlobSha1": "330f6770d66744d81aba77be61718cfc302576c0"
+      },
+      {
+        "path": "server/agent-model-gateway.ts",
+        "bytes": 13027,
+        "sha256": "9bf5eeb9ca2a5d2886a6a585c01d66e09ea0f96ab6e69c7456490d051a0631a1",
+        "gitBlobSha1": "0370489951a7ea1a8c6359afe324b0ecf5837e50",
+        "baseGitBlobSha1": "c38d05ddd05fe79810f152307840f68d7a57734a"
+      },
+      {
+        "path": "server/agent-runtime.ts",
+        "bytes": 30603,
+        "sha256": "ee2cbe477d07cff66d21c98892f8a8a6b0849a1908464620f3ad6ef881b53b31",
+        "gitBlobSha1": "d4e1752a28787a658e2f9bc9be81d4b6cafb192c",
+        "baseGitBlobSha1": "dd537d739827a4e533b50d6fbd9bef2b1a8dc20e"
+      },
+      {
+        "path": "tests/helpers/firestore-ai-usage.ts",
+        "bytes": 2872,
+        "sha256": "ffa2e73d865226009d2f80dac24dc0e80aa42c523d6d2850395ab771267c1859",
+        "gitBlobSha1": "86166db3200815077b9e4c8fe427cce171be5e91",
+        "baseGitBlobSha1": null
+      },
+      {
+        "path": "tests/firestore-ai-usage.test.ts",
+        "bytes": 9508,
+        "sha256": "a361bc4800c57909a793785707a97490d002745bbd4361f44673d9afe41b4a38",
+        "gitBlobSha1": "88f421c3d0f7d50f6ae362a3419576337e3bdd4c",
+        "baseGitBlobSha1": null
+      },
+      {
+        "path": "tests/agent-durable-ai-usage.test.ts",
+        "bytes": 9501,
+        "sha256": "5807cef00c073fa5652c4b4197d7a9ee1764aa6732fadb84c633cda35f152689",
+        "gitBlobSha1": "7e84ef9fbca43f04af48f2c6d07d75d94ebe7225",
+        "baseGitBlobSha1": null
+      }
+    ],
+    "additionalUnchangedFilesMaterializedForFullChecks": 29,
+    "initialExistingFilesCompared": 921
+  },
+  "environment": {
+    "node": "24.19.0",
+    "typescript": "6.0.3",
+    "firestore": "9.3.1",
+    "adk": "2.1.0",
+    "dependencies": "Reused existing node_modules; no install, lock, migration or environment changes."
+  },
+  "validation": {
+    "newAdapterTests": 9,
+    "newRuntimeTests": 7,
+    "focusedTotal": 75,
+    "focusedPass": 75,
+    "focusedFail": 0,
+    "serverTypecheck": "passed",
+    "candidateFullAggregate": {
+      "command": "npm test",
+      "tests": 781,
+      "passed": 781,
+      "failed": 0,
+      "skipped": 0,
+      "exit": 0,
+      "initialMergedBaselineTests": 765,
+      "newTests": 16,
+      "focusedTestsAreSubset": true
+    },
+    "finalCommand": "OFFLINE_AUDIT_RUN=focused-02 node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test tests/firestore-ai-usage.test.ts tests/agent-durable-ai-usage.test.ts tests/agent-model-gateway.test.ts tests/agent-durable-budget.test.ts tests/agent-budget.test.ts tests/agent-runtime.test.ts tests/agent-native-session.test.ts tests/personal-agent-routing.test.ts",
+    "finalTypecheckCommand": "OFFLINE_AUDIT_RUN=server-tsc-02 node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json",
+    "candidateFullTypecheck": {
+      "command": "npm run typecheck",
+      "stages": [
+        "frontend tsc --noEmit",
+        "root client tsc --noEmit",
+        "server tsc --project tsconfig.server.json"
+      ],
+      "exit": 0
+    },
+    "fullCheckEnvironment": "Allowlisted PATH/HOME/TMPDIR/CI/NO_COLOR/ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS/NODE_OPTIONS only; existing credentials/environment not inherited; network denied by preload."
+  },
+  "failuresPreserved": [
+    {
+      "run": "affected-01",
+      "result": "51 passed, 1 suite failed before test registration",
+      "cause": "Missing the existing package script flag --experimental-test-module-mocks; mock.module was unavailable.",
+      "correction": "Corrected verification invocation only. No implementation, expectations or assertions weakened."
+    }
+  ],
+  "network": {
+    "guardSha256": "f23398a3fd247e61bb2ea66fab6eca017dc054e015e867328debfeb2b03c8b96",
+    "finalFocusedAuditFiles": 8,
+    "finalTypecheckAuditFiles": 1,
+    "attemptsInRetainedAudits": 0,
+    "initialLimit": "The reused initial PID-only audit filenames were overwritten across exec processes; initial coverage cannot be reconstructed. Final focused and typecheck runs use unique run+PID names and retained complete audit sets. The final suite does not rely on the initial audit files.",
+    "fullRuns": {
+      "auditFiles": 125,
+      "attempts": 0,
+      "uniqueFilenames": "PID plus random UUID",
+      "guardSha256": "751135cb0b59d0bef0b5c917f5c31480be2bae2845919718e33d54a4fc45bf25",
+      "runnerSha256": "a992f2101756e2de1182d31d66b44ada9ee5c298e1ac52da86874f609165fff9",
+      "auditManifest": {
+        "filename": "full-network-audit-manifest.json",
+        "sha256": "93fc842522b05d4cb0fde2f87497f274ab06d5c02b4335882e4d470ee8a1072c"
+      }
+    }
+  },
+  "logs": [
+    {
+      "name": "adapter-01",
+      "exit": 0,
+      "logSha256": "552838da4d01c29918a82105d4f9c2f163c9725a8a1da709af6b98a7ba6eb923"
+    },
+    {
+      "name": "runtime-01",
+      "exit": 0,
+      "logSha256": "0d7862797322b42955b47b9f47eea1c8930fd1f124d3164ec449371ddb393f0e"
+    },
+    {
+      "name": "server-tsc-01",
+      "exit": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "affected-01",
+      "exit": 1,
+      "logSha256": "4a731dcbb6ce362cbabbc10fffbcf4e2bc6d257d3e60e71abfb65bc61e62df43"
+    },
+    {
+      "name": "focused-02",
+      "exit": 0,
+      "logSha256": "c8ab258fe13ce6949740cf131ba59d680cfabd1ce99fab2e5e90729eab27fa50"
+    },
+    {
+      "name": "server-tsc-02",
+      "exit": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "full-npm-test",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source",
+      "exit": 0,
+      "stoppedAtFirstFailure": false,
+      "elapsedSeconds": 13.16867733001709,
+      "externalNetwork": "denied via NODE_OPTIONS preload",
+      "environment": "allowlisted PATH/HOME/TMPDIR/CI/NO_COLOR/ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS/NODE_OPTIONS only",
+      "logSha256": "2ab824c327cd1a564b90cae536cfe34a1727aa78546c8517acbe6aab4e868e30",
+      "resultSha256": "ded9f244b68afc94c08ec1d9ba943315e898421efef67c22eb45c63c5f6a2c13"
+    },
+    {
+      "name": "full-typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source",
+      "exit": 0,
+      "stoppedAtFirstFailure": false,
+      "elapsedSeconds": 19.752753019332886,
+      "externalNetwork": "denied via NODE_OPTIONS preload",
+      "environment": "allowlisted PATH/HOME/TMPDIR/CI/NO_COLOR/ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS/NODE_OPTIONS only",
+      "logSha256": "1cfe8aff9cb9fe99d81edc6889b83d6ab3373b4c031d2df7c57e76d743879fd4",
+      "resultSha256": "60d80e2cc6911badd621cace6a9430f2661564b49e25cdb99f575606c25d962c"
+    }
+  ],
+  "audits": [
+    {
+      "file": "network-audit-12.json",
+      "sha256": "76fd6ad2685be6984448ba3b7786c1008c7185ff0e4a4d59c67a017b9476effd",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-durable-ai-usage.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-7.json",
+      "sha256": "c288c5a1f115906ab507bdbf41e2c55720e0f391b57c009cb83c3662102e4a43",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/node_modules/typescript/bin/tsc",
+        "--project",
+        "tsconfig.server.json"
+      ]
+    },
+    {
+      "file": "network-audit-affected-01-12.json",
+      "sha256": "42ccc9f010e28ea4c3ace04720db955a8767ada2d20dfa8c60de1995cc95f740",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-budget.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-affected-01-13.json",
+      "sha256": "c1deb639fa62edbf92b25ab8257f7757b5f57611af49e8a3bc48645327b0fe80",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-durable-budget.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-affected-01-14.json",
+      "sha256": "e2df2d6e79c81ab1436370ad2b97109a3091c4c70c22bf80ba98797a5b9a4b2e",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-model-gateway.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-affected-01-15.json",
+      "sha256": "932c276efea92ef6ed81a76a821f5078df2d79e7d81ca1f231c8a472d6c7acc5",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-native-session.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-affected-01-21.json",
+      "sha256": "cd62a35f18dcd4b5cfb21ee27fc5fbd2845dd4f78b39fe82f417bb7a6e8b90f9",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-runtime.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-affected-01-27.json",
+      "sha256": "ed6a1daa9de401388fa13cb032db928f599be49d4600eaa91bc4bf01190875a3",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/personal-agent-routing.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-focused-02-12.json",
+      "sha256": "42ccc9f010e28ea4c3ace04720db955a8767ada2d20dfa8c60de1995cc95f740",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-budget.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-focused-02-13.json",
+      "sha256": "635bd2607863a02218c5ffd2dc9f43e47a9c144accd3c54624b28817e4bf251b",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-durable-ai-usage.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-focused-02-14.json",
+      "sha256": "6dfca1f1840026b16c05892e512286a9210e12c08cb602f460570bbdb224a8ae",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-durable-budget.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-focused-02-15.json",
+      "sha256": "ec5683d8940ee9b589facc083701368846077b66ad7a324a8a9f55bc2c51463e",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-model-gateway.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-focused-02-21.json",
+      "sha256": "1ed52a79a7df333dc02461e995e99795a2d2bae92b3319ddd467f5033a27d298",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-native-session.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-focused-02-31.json",
+      "sha256": "b7456976c8e492651086cb84b78ea77b89d047418473e6a514f557cafe54b045",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/agent-runtime.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-focused-02-33.json",
+      "sha256": "d602879604f1023e6ab20863663485246c386b2e69911fd237c08ea8be9461a4",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/firestore-ai-usage.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-focused-02-39.json",
+      "sha256": "ecf6a89bdb761cf5e5e218894b011c4174cf517213b6f6fef8742227b76b1861",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/tests/personal-agent-routing.test.ts"
+      ]
+    },
+    {
+      "file": "network-audit-server-tsc-02-6.json",
+      "sha256": "15f19d5a20dc944a463d861d7caaf1f4a340a312f30b4daeebedd78db914d60c",
+      "attempts": 0,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/workspace/scratch/c112a98a8be9/f01_daily_usage_20261009/source/node_modules/typescript/bin/tsc",
+        "--project",
+        "tsconfig.server.json"
+      ]
+    }
+  ],
+  "semantics": {
+    "quotaAuthority": "The existing root is admitted first. Model daily counter and attempt receipt share one separate Firestore transaction. Failures never refund or re-key the root.",
+    "replay": "Original root+attempt key is independent of day and billing source. Duplicates only return lookup, including lost acknowledgement and process re-creation.",
+    "metadata": "Encrypted fixed binding, outgoing fingerprint and allowlisted token/outcome metadata; no request/response bodies, prompts, secrets or household content.",
+    "lateResults": "Accounting may settle late against the reservation day; does not change root/run state or grant execution. Same settlement is idempotent; conflicting outcomes rejected.",
+    "externalCalls": "No provider, tool, SQL or notification inside transaction callbacks. No exactly-once guarantee for external provider execution."
+  },
+  "review": {
+    "independent": "approved scoped code and document candidate without blocking findings",
+    "rootFinalAcceptance": {
+      "status": "passed",
+      "recordedAt": "2026-10-09T23:13:26+08:00",
+      "scope": "Root reviewed durable interfaces, Firestore transactions, gateway changes and authoritative-document diffs, with full 781 tests and all three typechecks plus independent review. Normal PR publication authorized; no production activation or deployment."
+    },
+    "reviewSummarySha256": "bf260901a7f78b2bf6fe6a86481180187eb20306cf3d312d406152caf1c48bd6",
+    "independentNewTestsRerun": 16,
+    "independentAdditionalTests": 4,
+    "newTestsRerunNotDoubleCounted": true,
+    "extraBoundaries": [
+      "Abort immediately after the original daily reservation commits: root/daily counts stay one, record remains unknown, provider remains uncalled.",
+      "Revocation immediately after reservation: unauthorized metadata only, unknown tokens, no provider.",
+      "Root stopped during daily admission: accounting stays metadata-only; original root remains stopped, original attempt is lookup-only.",
+      "Accounting commit reply lost after provider success: original known receipt and token totals preserved, retry cannot dispatch provider again."
+    ],
+    "proofFiles": [
+      {
+        "path": "/workspace/scratch/c112a98a8be9/verify_merged_baseline_20261009/evidence/daily-candidate-review/boundaries.test.ts",
+        "sha256": "00a9335e111d303a767c7ca0072fe33717d78e176992185719ca132b7a398f27"
+      },
+      {
+        "path": "/workspace/scratch/c112a98a8be9/verify_merged_baseline_20261009/evidence/daily-candidate-review/boundaries.log",
+        "sha256": "6daf43256dd52fc150c0db288892b53cbf927ee3ed77bc83f654bdc56fa5b743"
+      },
+      {
+        "path": "/workspace/scratch/c112a98a8be9/verify_merged_baseline_20261009/evidence/daily-candidate-review/boundaries.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      },
+      {
+        "path": "/workspace/scratch/c112a98a8be9/verify_merged_baseline_20261009/evidence/daily-candidate-review/new-suites.log",
+        "sha256": "2794bde6d7476a7cc58791f7d9899a7ea0a4ee97a4407c75290f1ccd87944588"
+      },
+      {
+        "path": "/workspace/scratch/c112a98a8be9/verify_merged_baseline_20261009/evidence/daily-candidate-review/new-suites.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      }
+    ],
+    "finalDocumentChangesAfterReview": "Applied reviewer wording: serial synthetic transaction harness with Promise.all callers. Updated test/review status and append-only WORKLOG; no code changes."
+  },
+  "notClaimed": [
+    "Real Firestore contention, Emulator or live Google model calls",
+    "Formal bootstrap/index/worker or dynamic personal routing enabled",
+    "Embedding daily attempt idempotency",
+    "SQL daily attempt idempotency",
+    "Cross-store cancellation/effect fencing or atomic model delivery",
+    "True process-resume, full product UI/E2E, deployment or F01 completion",
+    "Account/child erasure, retention, restoration and day-counter governance completed"
+  ],
+  "constraints": {
+    "realModelCalls": 0,
+    "originalModelBudget": "20/20 exhausted, no increase",
+    "cloudChanges": false,
+    "permissionChanges": false,
+    "productionDataUsed": false,
+    "otherAgentInternals": "collect/generate/review remain deferred"
+  },
+  "sources": [
+    "https://github.com/2NTTY/child-ai-caregiver/commit/e0680a47659612ed1dfc1d5e5daf48451408f8cf",
+    "https://docs.cloud.google.com/firestore/native/docs/manage-data/transactions"
+  ],
+  "recordedAt": "2026-10-09T23:11:00+08:00"
+}
