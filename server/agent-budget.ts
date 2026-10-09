@@ -21,7 +21,7 @@ export const agentBudgetFingerprint = (value: unknown) => createHash("sha256").u
 export interface AgentDurableBudget {
   adapter: DurableRootBudget;
   context: RootBudgetContext;
-  /** Optional non-SQL model daily quota. Separate authority; never refunds root reservations. */
+  /** Optional shared non-SQL model/query daily quota. Never refunds root reservations. */
   dailyUsage?: import("./durable-ai-usage.ts").DurableAiUsage;
   /** Fixed, trusted settings only. Dynamic personal routing is not wired in this slice. */
   runLimits?: { modelCalls: number; queryEmbeddings: number };
@@ -57,6 +57,13 @@ export class AgentBudget {
     if (this.signal.aborted) throw this.signal.reason;
   }
   get durable() { return this.durableBudget !== undefined; }
+  /** Trusted per-call metadata after the retriever has obtained the original root permit. */
+  queryEmbeddingDailyUsage(attemptKey: string) {
+    const durable = this.durableBudget;
+    if (!durable?.dailyUsage) return undefined;
+    if (!attemptKey.startsWith('embedding:')) throw new AgentStopped('unavailable');
+    return { adapter: durable.dailyUsage, context: durable.context, attemptKey, revalidate: () => this.checkDurable() };
+  }
   get remainingModelCalls() { return this.selectedLimits.modelCalls - this.used.modelCalls; }
   private applySnapshot(snapshot: RootBudgetSnapshot) {
     const context = this.durableBudget!.context;

@@ -1959,3 +1959,18 @@
 - 2026-10-10T01:38:00+08:00 review 修正追加：原「同批跟進事件」通用 prefix 會把仍 queued 同批中的單項 cancelled 投影誤說整批取消。保留第3項 render 原紅；按 dot 裁決，僅 cancelled 關聯用「此工作關聯接續」，其他狀態仍用同批事件，工作本身的取消提示仍只看 work.status。第3項亦覆蓋 work 仍 waiting 但舊 link 失效，沒有將其說成工作取消。最後3項 render 通過；API紅及原台帳不變。4項核心／兩項 typecheck 復用前一精確候選證據，最後文字分支與契約修訂後未重跑，待 reviewer 續審與 dot 最終驗收。
 
 - 2026-10-10T01:40:43+08:00 最終裁決追加：獨立 reviewer 已覆核精確11檔、13份零網絡 audit、原API紅與最後 queued-overlay 文案修正，無剩餘 blocking finding；dot 親讀 UI／工具指引 diff、最後3項 render 及驗收限制，准予這11檔正常 PR 交付。4個產品／測試檔維持續審 freeze SHA；最後3項 render 為末次版本實測，4項核心與兩項 typecheck 保留文字分支修訂前證據，不冒稱最後重跑。API per-work outcome 無權威的原紅、preview可重建來源阻塞、真SQL並發／hard-kill／雲端與真模型未驗、原20／20耗盡均保留。尚未建立PR，未發布／部署，不解鎖完整A09／F01或持久bootstrap／resume／restore／跨庫fencing。
+
+
+<a id="log-20261010-f01-shared-embedding-usage"></a>
+## 2026-10-10｜Model／query embedding 共用日額切片
+
+- Recorded At：2026-10-10T02:01:33+08:00；Work Date：2026-10-10 HKT；基線 master `e26bf75c58494c0c879b673c4c6396347daea4be`（#174 已合併、未部署）。指定 Astra xhigh 按 dot 窄 scope 實作／必要驗證，另一指定 Astra xhigh 依固定基線維護必要契約及根文件；dot 統籌與最終裁決，人工驗收未進行。
+- 原 claimed services 的真 search 工具仍讓 query embedding 進 SQL quota，原紅為 sql=1、預期0（runner 計2個失敗，含parent）。首次失敗停批後只修七個產品檔；首個原場景轉綠後補顯式 receipt.kind 與兩份新測試的必要情境，最終核心8項（1parent＋7實際測試）、受影響6項及Server typecheck全部通過。五份原log／退出碼來源及8份零network audit見[固定證據](artifacts/verification/F01_SHARED_EMBEDDING_USAGE_20261010.json)，沒有把空tsc log單獨當成功，也沒有重跑全量套件。
+- 沿用 Firestore 9.3.1、ADK 2.1、StorageCipher 及原V1 envelope／AAD／attempt與counter定址；新kind區分model／embedding但共原日counter，不另開池或加額。舊missing-kind只比較為model，lookup／相同已存record不改原payload／ciphertext；embedding保留nullable inputTokens／billableCharacters，不虛構output／cached，known按該kind必要用量判定。原日lookup／late accounting不授dispatch，root／daily非跨store原子且不退款。
+- 真services／ProductAgent／Runner／search工具／root與cache接線，搭合成domain stores、provider及串行Firestore harness；同query兩工具呼叫只生成一次embedding，與兩次model共扣3attempts，兩種上限、lookup／回覆遺失、取消／撤權／到期均有必要反例，零SQL fallback。舊未注入路徑及provider-unavailable明示keyword degradation的受影響檢查保留。未做真SQL／Firestore競爭、真模型、Emulator、HTTP／UI、真雲端或部署。
+- 本切片只涵蓋受信可選固定平台run；語料maintenance、未注入及其他SQL路徑仍未整合為同一global權威，非完整F01／F02或restore／resume／正式bootstrap完成。account／child清理、restore epoch／獨立journal、跨庫fencing、原A09引用／文件成果及同輪自動結案缺口保留；其他三Agent只留接口，20／20真模型額度耗盡不重置。沒有新增依賴、SQL migration、正式資料／權限變更、資源或部署。
+- 九份code／tests維持固定manifest，契約／PLAN僅更新本範圍，原PLAN anchors／其餘驗收與暫緩全文、WORKLOG完整prefix保留。獨立review及dot最終驗收待完成；下一步只處理具體review finding及必要補驗，最終publication manifest由dot裁決後另凍結，尚未建立本切片PR，不能以此記錄代替批准或完成。
+
+- 2026-10-10T02:12:02+08:00 review 修正追加：獨立 reviewer 以原候選證明 daily execute 後 authorize() reject 被當成 provider unavailable，仍返回 keyword_degraded 並讀 candidates；原review紅與新增回歸原紅均保留。只修 embedding gateway 的受信 root／授權錯誤分類，並在既有新測試加入 provider 前授權異常、root讀錯、provider後授權異常及真正provider unavailable四個情境；前述權威異常均停止，只有provider問題維持明示降級。修後3／3必要定向（含2項舊行為）與Server typecheck exit0；上文8／8核心及6／6受影響是修前證據，沒有在修後重跑，不改稱末版全通過。12份本任務audit零網絡，review原紅另1份零嘗試audit。新code manifest SHA-256為492a07d8ea997c569fba58f431ea9168a32c01a14e19d71f749badfece4d66b0，舊99ff6e7c快照亦保留。dot已轉交修後程式review無剩餘阻塞的結論；文件覆核及dot最終验收仍待完成，未凍結publication manifest、建立PR或部署。
+
+- 2026-10-10T02:15:38+08:00 最終裁決追加：dot 已親讀 gateway／quota／services 核心diff及STATUS，核對修前8＋6與修後3／3、Server typecheck時序及原SQL／review紅；程式／文件獨立覆核均無剩餘阻塞，最終驗收Allow此精確9份code／tests（manifest SHA-256 492a07d8ea997c569fba58f431ea9168a32c01a14e19d71f749badfece4d66b0）＋5份必要文件／artifact，准正常PR交付。此追加僅更新裁決／狀態，九份code／tests hash不變，未重跑產品測試；14檔publication manifest已凍結，其他檔不納入。原失敗、修前／修後證據層級、真雲端／競爭／Emulator／HTTP／UI與完整F01／F02／restore／resume未驗、20／20用盡及未全平台SQL共額的界線完整保留。尚未建立本切片PR、合併／發布／部署或啟用正式流量。

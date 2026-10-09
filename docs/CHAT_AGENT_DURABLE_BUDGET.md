@@ -1,6 +1,6 @@
 # 聊天根預算與 attempt 准入
 
-本契約定義根預算 adapter、[可選單次 runtime 接線](#runtime-connection)、[模型日額 attempt 台帳](#daily-usage)及[已 claim run 的 services 組裝](#claimed-services)的不變量。沿用 Firestore 9.3.1 及現有 StorageCipher，不另建 workflow 或取代業務台帳；正式 Auth／index／worker 與恢復尚未啟用。各批基線及驗證範圍見[固定證據](#本輪證據)。
+本契約定義根預算 adapter、[可選單次 runtime 接線](#runtime-connection)、[model／query embedding 共用日額 attempt 台帳](#daily-usage)及[已 claim run 的 services 組裝](#claimed-services)的不變量。沿用 Firestore 9.3.1 及現有 StorageCipher，不另建 workflow 或取代業務台帳；正式 Auth／index／worker 與恢復尚未啟用。各批基線及驗證範圍見[固定證據](#本輪證據)。
 
 ## 身份、額度與期限
 
@@ -13,7 +13,7 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 - open／read／reserve／settle／stop均核原binding及generation。root保存在單一原子有界Firestore document，沒有自動takeover／generation遞增、delete或TTL。
 - reserve前核終態、期限與剩餘額。預留即耗、無退款，model／embedding每次一格，工具batch全有或全無。僅新提交reservation回execute；同key同fingerprint重投只回lookup，不再扣或授予執行。samekey異內容conflict。lost reply也不能重新發execute。
 - attempt key必須由外層已持久受理鏈提供；不得用新invocationId或程序從零ordinal偽裝同attempt。unknown不退款、不重播。settle只能記known reference或unknown；reference不證明業務已提交或現在可讀，仍須原receipt與即時授權。矛盾settle拒絕，terminal後late completion不覆寫。
-- stop只終止本budget域，不能當現有SQL cancel或effect transaction fencing。既有SQL日額reserve／record仍無attempt冪等；可選非SQL模型日額接線見下節，兩者均不彌補root與業務的跨庫原子裂縫。
+- stop只終止本budget域，不能當現有SQL cancel或effect transaction fencing。既有SQL日額reserve／record仍無attempt冪等；可選非SQL model／query embedding 日額接線見下節，兩者均不彌補root與業務的跨庫原子裂縫。
 
 ## 儲存與未完成接線
 
@@ -29,7 +29,7 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 <a id="runtime-connection"></a>
 ## 2026-10-09：單次 runtime 持久扣額接線
 
-受信 constructor `{adapter, context, runLimits?, dailyUsage?}` 提供可選局部接線；`dailyUsage` 的模型日額行為見[下節](#daily-usage)。僅 fixed config、無 resolve 組裝；default memory不變，正式index／worker未啟用；services 的受信可選接點見[下節](#claimed-services)。context與config複製凍結，後改caller options不能切換resolver/session。scope／原run／trigger／pack／effective limits／絕對deadline由runtime比對；workflow/settings/billing/storageEpoch的來源仍由受信組裝者負責，不以重複同值或key hash假裝獨立核實。
+受信 constructor `{adapter, context, runLimits?, dailyUsage?}` 提供可選局部接線；`dailyUsage` 的 model／query embedding 共用日額行為見[下節](#daily-usage)。僅 fixed config、無 resolve 組裝；default memory不變，正式index／worker未啟用；services 的受信可選接點見[下節](#claimed-services)。context與config複製凍結，後改caller options不能切換resolver/session。scope／原run／trigger／pack／effective limits／絕對deadline由runtime比對；workflow/settings/billing/storageEpoch的來源仍由受信組裝者負責，不以重複同值或key hash假裝獨立核實。
 
 - ADK2.1公開beforeModel context已保存session events提供anchor。first用原business message/trigger＋固定step，不用新Runner user event；next只用當前agent/branch已提交實際event。保留PresentationRepair callbacks，不用私有hook或一般allocator。
 - 整批工具身份沿已committed model attempt固定子步，先原子扣batch再由SDK補call ID／保存event；不誤稱當前call event已在扣額前保存。embedding沿已保存call event＋callId唯一對應；缺失／重複即停止。
@@ -43,19 +43,19 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 <a id="daily-usage"></a>
 ## 模型日額 attempt 台帳及實際 gateway 接線
 
-`FirestoreAiUsage` 實作 `DurableAiUsage`，沿用已鎖定的 Firestore 9.3.1、StorageCipher 及現有 daily attempts 上限，不引入新 SDK／SQL migration。受信組裝者在 `createAgentRuntime` 的 `durableBudget.dailyUsage` 注入 adapter；實際 `AgentGatewayModel` 使用它取代該 run 的舊 `usage.reserve/record`，不雙扣 SQL。未注入時完全沿用舊路徑。仍只容許既有 fixed-config＋native session 組裝，不能混入 dynamic routing；正式 index／worker 尚未啟用，services 僅有[受信固定平台可選組裝](#claimed-services)。
+`FirestoreAiUsage` 實作 `DurableAiUsage`，沿用已鎖定的 Firestore 9.3.1、StorageCipher 及現有 daily attempts 上限，不引入新 SDK／SQL migration。受信組裝者在 `createAgentRuntime` 的 `durableBudget.dailyUsage` 注入 adapter；實際 `AgentGatewayModel` 及[受信 query embedding 接線](#shared-query-embedding)使用同一 adapter 取代該 run 的舊 `usage.reserve/record`，不雙扣 SQL。未注入時完全沿用舊路徑。仍只容許既有 fixed-config＋native session 組裝，不能混入 dynamic routing；正式 index／worker 尚未啟用，services 僅有[受信固定平台可選組裝](#claimed-services)。
 
 ### 權威及執行界線
 
-- **root 與日額分工：**root 管原工作所有 model／tool／embedding 次數、binding／generation 及絕對期限；日額只管 model attempt 的本人／全站 UTC 日額及必要 accounting metadata。先取得原 root execute，再取得日額 execute，之後重查 root 與授權才可調 provider。日額 quota／lookup／儲存錯誤、遺失或過期回覆都不退 root 額、不換 key、不退回 SQL。
+- **root 與日額分工：**root 管原工作所有 model／tool／embedding 次數、binding／generation 及絕對期限；日額管已注入此 adapter 的 model／query embedding attempts 共用本人／全站 UTC 日額及必要 accounting metadata；沒有把其他 SQL 路徑併入同一權威。先取得原 root execute，再取得日額 execute，之後重查 root 與授權才可調 provider。日額 quota／lookup／儲存錯誤、遺失或過期回覆都不退 root 額、不換 key、不退回 SQL。
 - **不冒稱跨 store 原子：**root 與日額是兩筆交易。root 已扣而日額未完成時保守停止，可能消耗額度而未呼叫 provider。日額不擁有 run/cancel、業務 effect 或原收據權威，不能取代 transaction fencing。模型請求和 Firestore 也無共同交易；只對遵循此准入協定的同 attempt 發出一次新的 dispatch permission，不保證外部模型 exactly-once，未取得可證實回覆一律保留 unknown。
-- **固定身份：**attempt 文件由原 rootRunId＋已持久模型 step key 定址；不含 UTC 日期、billing source 或新 ADK invocationId，所以跨日、換來源或重建程序都不能另建同 attempt。加密 request 綁完整 root context 的 fingerprint（含 authorizationVersion 原字串、epoch、generation、版本及原期限），另綁本人／孩子、模型、最終 outgoing fingerprint 與原 daily limits。任一項變動即 conflict。runtime 的原 scope／trigger／pack／limits 檢查保留；版本及 client/project 的真實來源仍由受信組裝者負責。
+- **固定身份：**attempt 文件由原 rootRunId＋已持久模型 step／query embedding call key 定址；不含 kind、UTC 日期、billing source 或新 ADK invocationId，所以跨日、換來源或重建程序都不能另建同 attempt。加密 request 綁完整 root context 的 fingerprint（含 authorizationVersion 原字串、epoch、generation、版本及原期限），另綁本人／孩子、模型、最終 outgoing fingerprint 與原 daily limits。任一項變動即 conflict。runtime 的原 scope／trigger／pack／limits 檢查保留；版本及 client/project 的真實來源仍由受信組裝者負責。
 - **billing 及限額：**platform／personal 由 Server constructor 固定選擇，不能由 HTTP、模型或聊天內容選擇。兩組 counters 分開；原同 attempt 改 billing source 亦拒絕。沿現有 AiConfig 範圍驗證 user 1–1000、global 1–10000，實際使用該 run 既有設定值，沒有提高預設或給額外呼叫。
 
 ### 交易、查回及晚到結果
 
 1. reserve 先讀原 attempt；存在只回 lookup 及原 metadata，永不再發 execute。新 attempt 在同一 transaction 讀本人與全站 counter、核原期限及兩個上限，才一次提交兩 counter＋reserved attempt。所有讀先於寫，最多三個點讀／三個文件寫入；回調重試沒有 provider、SQL、工具、通知或其他外部副作用。reserve 的 UTC day／reservedAt 取該成功回調的受信 Server clock，不由 caller 傳入。此為日額台帳時間，不聲稱 Firestore commit timestamp。
-2. 遺失 commit 回覆時可能已扣額。重建 adapter 的 read／reserve 只查原 receipt；record=null 代表用量／結果未保存，不代表未執行。未知或部分 token 保留 `unknownUsageAttempts`，已耗 attempt 不退款；所有 metadata 沿同一 user／global counter 原子加總。
+2. 遺失 commit 回覆時可能已扣額。重建 adapter 的 read／reserve 只查原 receipt；record=null 代表用量／結果未保存，不代表未執行。未知或部分必要用量欄位保留 `unknownUsageAttempts`，已耗 attempt 不退款；可聚合的已知 token 用量沿同一 user／global counter 原子加總。
 3. record 必須已有同 request reservation，使用原 reservation day。期限後或 root 已停止仍可補該次必要 accounting，但不讀寫 root/run 終態、不授予新模型或工具執行。已保存 record 只接受完全相同重送，矛盾晚到結果拒絕；同 record 重投及 commit 回覆遺失不重加 tokens。取消期間 provider 的 late promise 不自動把已保存 timeout／unknown 改為成功。
 4. getForUser 僅投影當前 UTC 日、固定 billing source 的合計。原日 token 晚到不算進今天；查回不是對家庭資料的授權入口，caller 仍須依產品身份／准入閘使用。沒有 query／scan 或複合索引要求；實體 index exemption、讀費、真競爭及雲端驗收仍待 F02。
 
@@ -70,15 +70,27 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 
 單文件上限 16 KiB；attempt、counters 都使用既有 AES-GCM 應用加密，AAD 綁格式／版本／project／namespace／hashed document identity。路徑只有固定類別及 hash，外層僅 format/version/ciphertext；不存 request/response 正文、prompt、工具資料、圖片、密鑰或原模型內容。request fingerprint 是原 payload 的 hash，仍作私人 metadata 加密，不放公共索引。
 
-此 adapter 不讀 ADC、不建資源、不接管 caller client、不刪資料、不加 TTL。account／child erasure、retention、restore epoch 與日額不能退款的協調仍未完成，故不能直接啟用正式流量。embedding 日額、動態本人設定、持久受理／outbox、跨庫 effect fencing、真正重啟 resume 與服務 bootstrap 均未因本切片完成；另外三個 Agent 內部仍暫緩。
+此 adapter 不讀 ADC、不建資源、不接管 caller client、不刪資料、不加 TTL。account／child erasure、retention、restore epoch 與日額不能退款的協調仍未完成，故不能直接啟用正式流量。query embedding 僅有下述受信可選日額接線；語料維護及其他 SQL 路徑的跨後端共額、動態本人設定、持久受理／outbox、跨庫 effect fencing、真正重啟 resume 與服務 bootstrap 均未因本切片完成；另外三個 Agent 內部仍暫緩。
 
 固定證據見 [F01 模型日額驗證](../artifacts/verification/F01_DAILY_AI_USAGE_20261009.json)。合成串行 transaction harness（Promise.all 同時提交）覆蓋重跑回調、並行 caller 防重、跨 instance 重建、回覆遺失及日界線，真 Runner 只搭 scripted provider；不能代替 Firestore 真競爭、真模型或產品 E2E。SDK 方法沿已安裝 9.3.1 公開型別，交易語義已再核[官方 transactions](https://docs.cloud.google.com/firestore/native/docs/manage-data/transactions)的全讀後寫、回調可能重跑及 atomic commit。
+
+
+<a id="shared-query-embedding"></a>
+### Query embedding 共用日額與 V1 相容
+
+- **同一權威及格式：**同一 adapter／namespace／billing source 下，model 與 query embedding 共用原本人及全站 UTC counter，不按 kind 分池或另給額度。Firestore V1 envelope、AAD、hashed attempt／counter 定址、counter 五欄及既有一致性守衛不變；新 request／record 明示 `kind: model | embedding`。同 attempt 改 kind 是 conflict，record 必須與 reservation 同 kind。舊 missing-kind 只在比較時視為 model；lookup／相同已保存 record 重送不正規化原 request、receipt 或 ciphertext。舊未記錄 attempt 可新增 accounting，但保留其原 request 表示，不是批量遷移。
+- **用量不是結果：**model 沿原 input／output／cached tokens；embedding 只保存可為 null 的 inputTokens／billableCharacters，沒有 outputTokens／cachedTokens，字元不換算 tokens。共用 counter 的 inputTokens 加已知值，output／cached 僅由 model 累加；billableCharacters 留在 attempt record，不新增 counter 欄。known 代表該 kind 所需用量全部已知：model 三項 tokens、embedding 的 inputTokens 與 billableCharacters 均非 null；不等同 outcome 成功。部分／null 仍屬 unknownUsageAttempts，不能以假零掩蓋缺失。
+- **沿原工具及 cache：**真 services／ProductAgent／ADK Runner 的 search 工具沿已保存 tool call event／callId 取得原 embedding attempt key。retriever 先取原 root execute，將整個准入 promise 在第一個 await 前放入本 run 的同 query cache，再把 root context／原 key／重查函數傳給 gateway；相同 query 共用一次 embedding，後續 candidates 仍重新讀取。只准 platform、query_embedding actor／RETRIEVAL_QUERY，actor owner／operationId 必須對原 root；daily request 綁原 scope／generation、模型／維度／最終 input fingerprint、原期限及原限額，不能由工具或 HTTP 自選。
+- **失敗不繞過准入：**日額 execute 後，在 provider 前再核 root、授權、原 deadline 及 abort。quota、lookup、遺失回覆、授權重查異常、日額儲存／accounting 失敗均停止，不退 root、不再 provider、不改 key、不退 SQL，也不偽裝成關鍵字降級。provider 前 root／授權重查及 provider 後授權重查的異常屬權威不確定，必須停止；只有 provider 本身 unavailable 仍可明示 keyword degradation。reserve／record 沿原 UTC day；跨日 lookup 與晚到 accounting 不授 dispatch、不改 root/run 終態，不將 unknown 說成未執行。
+- **接線邊界：**claimedRunPersistence 的可選 embeddingProvider 是受信測試接點，省略時沿原 Vertex provider；正式 index／worker 未啟用。只有注入共同 dailyUsage 的固定平台 run 共額，未注入的模型、語料 maintenance、dynamic personal 與其他 SQL 呼叫仍沿舊路徑。這不是全平台所有 SQL 路徑的 global 共額、跨 store 原子 fencing、restore 或 resume 完成，不改模型／每日／root 上限。
+
+本切片的原 SQL quota 紅、真 services／Runner／工具搭合成 provider／domain store／串行 Firestore harness 的必要定向及相容證據，見[固定驗證](../artifacts/verification/F01_SHARED_EMBEDDING_USAGE_20261010.json)。不能替代真模型理解、Firestore 競爭、Emulator、HTTP／UI 或真雲端驗收，亦不解鎖 F01／F02 或正式流量。
 
 
 <a id="claimed-services"></a>
 ## 已 claim run 的固定平台 services 組裝
 
-`createProductAgentServices` 的既有第十一個 `ports` 可注入 `claimedRunPersistence`：已建好的 native Session／root budget／daily usage adapter、固定平台 profile，及可選受信 provider。保留原十個位置參數及 SQL／memory／dynamic routing 路徑；正式 index／worker 不傳此選項。此接點只供隔離、受信組裝，不是正式啟用開關，也沒有新 Firestore client、ADC、資源或 client 關閉權。
+`createProductAgentServices` 的既有第十一個 `ports` 可注入 `claimedRunPersistence`：已建好的 native Session／root budget／daily usage adapter、固定平台 profile，及可選受信 model／embedding provider。保留原十個位置參數及 SQL／memory／dynamic routing 路徑；正式 index／worker 不傳此選項。此接點只供隔離、受信組裝，不是正式啟用開關，也沒有新 Firestore client、ADC、資源或 client 關閉權。
 
 - **單次固定 profile：**constructor 比對傳入 AiConfig 與 profile 的完整配置 fingerprint，複製凍結配置及 workflow／pack／settings／billing 版本；要求 enabled、platform billing 及對應 daily adapter。settingsVersion 綁明確版本字串加完整 config hash。缺失／不一致或同時傳 routing 一律拒絕，不能略過本人的停用／personal 選擇而偷偷改用平台。真實 provider 沿既有 gateway；測試只注入 scripted provider。這些版本是受信 Server 的宣告，不代表已獨立核實本人動態設定。
 - **沿原 claim：**SQL store 明確投影原 storageEpoch、trigger、recipeId；authorizationVersion 保留原字串，不經 Number。ProductAgent.reply 傳原 claim、scope、runId 及 `Date.parse(expiresAt)` 絕對期限。只有 created=true、running、原 sourceMessageId／interactive trigger 與 product-interactive recipe 相符的新 claim 才可綁定。服務層核 epoch 與原 SQL dataVersion 投影一致；runtime 核原 scope／run／trigger／pack／effective limits。期限必須有效且未過期；local deadline 取原 expiry 與既有 90 秒上限較早者，root 綁原 expiry，沒有重新起 90 秒。
@@ -86,4 +98,4 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 - **持久化與中斷：**fresh claim 的 generation 固定為 1，沒有 lease／接管／遞增。provider 前 root.open 保存 bindingFingerprint、generation、原期限／限額及計數；不保存可讀回的完整 profile 或受理快照。Session 僅 create-only，root → daily → root／授權重查 → provider 次序不變。SQL claim 與 root／Session／daily 各自有交易權威，並非跨 store 原子提交。
 - **重投只查回：**claim.created=false 沿既有 get 原 run／收據，零 binder、Session create、root open、日額 reserve、provider 或 effect。SQL claim 後、root.open 前失聯亦不補建 profile 或執行；尚未完成的原 run 依既有業務狀態／到期投影保留 unknown。已提交文件仍用原 documentId／expectedVersion／opId 與原收據查回；取消／失聯不升格完成、不重做副作用，root.stop 不等於 SQL cancel。
 
-本切片的 services → ProductAgent.reply → 共用 runtime → 真 ADK Runner／gateway 使用三個實際 Firestore adapters，底層為串行合成 transaction harness；業務 store factories 及 provider 用合成替身。已合併的 SQL 收據／取消測試另作定向回歸，並不把新 harness 當真 SQL／Firestore 競爭。固定證據見 [services 驗證](../artifacts/verification/F01_CLAIMED_SERVICES_20261009.json)。尚未驗真模型理解、HTTP／UI、Emulator、真雲端、正式重啟或部署；原真模型 20／20 已用盡。動態本人設定、embedding 日額、清理／restore、完整持久受理／outbox、跨庫 effect fencing、跨 instance 限流及 resume 仍未完成；其他三個 Agent 只留接口。
+本切片的 services → ProductAgent.reply → 共用 runtime → 真 ADK Runner／gateway 使用三個實際 Firestore adapters，底層為串行合成 transaction harness；業務 store factories 及 provider 用合成替身。已合併的 SQL 收據／取消測試另作定向回歸，並不把新 harness 當真 SQL／Firestore 競爭。固定證據見 [services 驗證](../artifacts/verification/F01_CLAIMED_SERVICES_20261009.json)。尚未驗真模型理解、HTTP／UI、Emulator、真雲端、正式重啟或部署；原真模型 20／20 已用盡。動態本人設定、其他 SQL 路徑的跨後端日額統一、清理／restore、完整持久受理／outbox、跨庫 effect fencing、跨 instance 限流及 resume 仍未完成；其他三個 Agent 只留接口。

@@ -127,7 +127,7 @@ export class AgentGatewayModel extends BaseLlm {
       if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
       const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
       await budget.admit({ key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });
-      if (daily) dailyRequest = { rootRunId: daily.context.binding.rootRunId, attemptKey: modelKey,
+      if (daily) dailyRequest = { kind: 'model', rootRunId: daily.context.binding.rootRunId, attemptKey: modelKey,
         bindingFingerprint: agentBudgetFingerprint(daily.context), requestFingerprint, userId, childId, model: config.model,
         deadlineAtMs: daily.context.binding.deadlineAtMs, userLimit: config.dailyUserAttempts, globalLimit: config.dailyGlobalAttempts };
     } else budget.take("modelCalls");
@@ -198,7 +198,7 @@ export class AgentGatewayModel extends BaseLlm {
       throw new AgentStopped("unavailable");
     } finally {
       const record = { outcome, ...tokens, durationMs: Math.max(0, Date.now() - start) };
-      if (daily && dailyRequest) await daily.adapter.record(dailyRequest, record);
+      if (daily && dailyRequest) await daily.adapter.record(dailyRequest, { kind: 'model', ...record });
       else await usage.record({ userId, childId, model: config.model, ...record });
     }
     budget.check();

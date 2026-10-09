@@ -3,6 +3,8 @@ import type { ModelBillingSource } from '../src/shared/model-settings.ts';
 
 /** Fixed by the trusted runtime after root admission, never supplied by HTTP/model input. */
 export interface DurableAiUsageRequest {
+  /** Missing kind is accepted only as the legacy model representation. New callers set it explicitly. */
+  kind?: 'model' | 'embedding';
   rootRunId: string;
   attemptKey: string;
   /** Hash of the original complete root binding and generation. */
@@ -15,11 +17,22 @@ export interface DurableAiUsageRequest {
   userLimit: number;
   globalLimit: number;
 }
-export interface DurableAiUsageRecord extends TokenUsage {
+export interface DurableModelUsageRecord extends TokenUsage {
+  kind?: 'model';
   outcome: AttemptOutcome;
   durationMs: number;
 }
+export interface DurableEmbeddingUsageRecord {
+  kind: 'embedding';
+  outcome: 'succeeded' | 'unavailable' | 'invalid_response' | 'invalid_input' | 'unauthorized' | 'timeout' | 'cancelled';
+  inputTokens: number | null;
+  billableCharacters: number | null;
+  durationMs: number;
+}
+export type DurableAiUsageRecord = DurableModelUsageRecord | DurableEmbeddingUsageRecord;
 export interface DurableAiUsageReceipt {
+  /** Absent on legacy model receipts; new attempts expose their persisted kind. */
+  kind?: 'model' | 'embedding';
   /** UTC day of the original committed reservation, including after midnight. */
   day: string;
   reservedAtMs: number;
