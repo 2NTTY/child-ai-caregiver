@@ -268,13 +268,19 @@ export function createProductAgentTools(options: {
       const citations = ids.filter(id=>evidence.has(id)).map(id => evidence.get(id)!);
       const privateSourceCitations=ids.filter(id=>privateSources?.evidence.has(id)).map(id=>privateSources!.evidence.get(id)!);
       for(const citation of privateSourceCitations)if(!await privateSources!.revalidate(citation))throw new AgentStopped("invalid_response");
+      const reviewedText = new Map<string, string>();
       for (const { chunk, filter } of citations) {
-        if (!await retrieval.revalidateCitations([chunk], filter)) throw new AgentStopped("invalid_response");
+        if (options.reviewedGrowthPresentation) {
+          const current = await retrieval.readReviewedCitations([chunk], filter);
+          const text = current?.[0]?.text;
+          if (typeof text !== "string" || !text.trim()) throw new AgentStopped("invalid_response");
+          reviewedText.set(chunk.chunkId, text);
+        } else if (!await retrieval.revalidateCitations([chunk], filter)) throw new AgentStopped("invalid_response");
       }
       if (!await authorize()) throw new AgentStopped("unauthorized");
       // Growth advice uses the reviewed source wording; model labels cannot bypass this policy.
       const paragraphs = options.reviewedGrowthPresentation
-        ? (citations.length ? citations.map(({ chunk }) => ({ text: chunk.text, citationIds: [chunk.chunkId] }))
+        ? (citations.length ? citations.map(({ chunk }) => ({ text: reviewedText.get(chunk.chunkId)!, citationIds: [chunk.chunkId] }))
           : [{ text: "暫時未有可引用的補充說明。請查看關注卡片的適用依據及來源。", citationIds: [] }])
         : answer.paragraphs;
       const rendered = paragraphs.map(paragraph => paragraph.text + (paragraph.citationIds.length

@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-10T03:09:00+08:00",
+  "baseCommit": "bc8868203316965be69d443dcf6e4d9f26637c97",
+  "originalRedBase": "c48b2eb41ee5f19c914ab6bee07b39d9cdd939a7",
+  "status": "root_accepted_ready_for_normal_publication",
+  "scope": "Separate current reviewed growth wording from original-context read coverage, reusing the same live citation authority check.",
+  "code": [
+    {
+      "path": "server/knowledge-retriever.ts",
+      "bytes": 10830,
+      "sha256": "b2addf821730f0e67e726154d36623bc9d1c002eb7486c45b7a776c624360d8c",
+      "gitBlob": "1a9f26a4c1a9e5c9065146ab685604cdb913e9de"
+    },
+    {
+      "path": "server/product-agent-tools.ts",
+      "bytes": 27506,
+      "sha256": "6c5415ed008e2d401303820b1724d26d3a7b001326febccce9ad2f1c5d5b7769",
+      "gitBlob": "909ec694ddd5c684ff2af41bbb60b60cc788c06c"
+    },
+    {
+      "path": "tests/product-agent.test.ts",
+      "bytes": 14616,
+      "sha256": "8f2034499b6cebf397fe701fec785dff2089ee59b519bb3a5f2f4172674a5a16",
+      "gitBlob": "3a52c81b1e416ce518991f4e7e0a541283eac9ef"
+    },
+    {
+      "path": "tests/product-agent-reviewed-growth.test.ts",
+      "bytes": 11449,
+      "sha256": "20a97b0bc49decf6e8099ebbfd9183b5aef1375f0201679eab39750fd8be8cdc",
+      "gitBlob": "a897bf31978b9d610db8c1ac12f095ec26b6fa8b"
+    }
+  ],
+  "observedRed": {
+    "originalCharacters": 3583,
+    "returnedCharacters": 1250,
+    "complete": false,
+    "presentationUsedPartialOriginal": true,
+    "requiredEndConditionMissing": true,
+    "actualOnlineOccurrenceVerified": false
+  },
+  "mechanism": {
+    "internalMethod": "readReviewedCitations",
+    "source": "existing store.candidates, ID/version/contentHash and original applicability plus pre/post authorization",
+    "extraCandidateReads": 0,
+    "publicDtoChanges": false,
+    "newModelTools": false,
+    "coverageChanged": false,
+    "modelOrRawOriginalFallback": false
+  },
+  "checks": [
+    {
+      "log": "focused.log",
+      "passed": 4,
+      "exitCode": 0,
+      "command": "node --import ../evidence/offline-guard.mjs --test tests/product-agent-reviewed-growth.test.ts",
+      "bytes": 536,
+      "sha256": "e12ee24ddc0d48aa5c625c29f26f03add683f39fdf243b062d85e5fa184b9f75",
+      "stage": "before growth-only malformed-text guard"
+    },
+    {
+      "log": "existing-product.log",
+      "passed": 5,
+      "exitCode": 0,
+      "command": "node --import ../evidence/offline-guard.mjs --test tests/product-agent.test.ts",
+      "bytes": 681,
+      "sha256": "2c30ed8b336f791017a017a6d5d7e6a034419687f20921898de027147cb23105",
+      "stage": "before growth-only malformed-text guard"
+    },
+    {
+      "log": "existing-coverage.log",
+      "passed": 1,
+      "exitCode": 0,
+      "command": "node --import ../evidence/offline-guard.mjs --test --test-name-pattern 'SQL selection is bounded' tests/knowledge-a04.test.ts",
+      "bytes": 234,
+      "sha256": "f53ce92abf7b6afa4653b623153b1fbe7d2986707ebea56327c3ebed13565dca",
+      "stage": "before growth-only malformed-text guard"
+    },
+    {
+      "log": "server-tsc.log",
+      "passed": null,
+      "exitCode": 0,
+      "command": "node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stage": "before growth-only malformed-text guard"
+    },
+    {
+      "stage": "after growth-only malformed-text guard",
+      "log": "review-fix-focused.log",
+      "passed": 3,
+      "exitCode": 0,
+      "command": "node --import ../evidence/offline-guard.mjs --test --test-name-pattern 'empty, missing|reviewed growth keeps|ordinary presentation' tests/product-agent-reviewed-growth.test.ts",
+      "bytes": 438,
+      "sha256": "568bf5c1d270b93aab4baaf42e256f02dfa4414e5b57c753eaaa93158df2bab4"
+    },
+    {
+      "stage": "after growth-only malformed-text guard",
+      "log": "final-server-tsc.log",
+      "passed": null,
+      "exitCode": 0,
+      "command": "node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "stage": "reviewer after growth-only malformed-text guard",
+      "log": "reviewer-boundaries-after-fix.log",
+      "passedScenarios": 4,
+      "exitCode": 0,
+      "command": "node --import ../evidence/offline-guard.mjs ../evidence/reviewer-boundaries.ts",
+      "bytes": 449,
+      "sha256": "a801646b662fb2da02d9cf9385e7f2bf6c9a191e94524fb52d598d8d7924f4ff"
+    }
+  ],
+  "retainedFailures": [
+    {
+      "file": "probe.log",
+      "kind": "product regression",
+      "bytes": 3757,
+      "sha256": "21c90275603226e7c20ed15278f28d9d8d306fb8368db1785b4fb51d323c3ff4"
+    },
+    {
+      "file": "focused-path-error.log",
+      "kind": "test invocation path error; no test started",
+      "bytes": 61,
+      "sha256": "3a3ccf422be059f8a77dde8fb484965c22813d85e990a85bbaeb31596bab16ab"
+    },
+    {
+      "file": "reviewer-boundaries.log",
+      "kind": "Reviewer product regression: empty reviewed text accepted; original version/hash/revocation checks passed before first failure",
+      "bytes": 840,
+      "sha256": "dd9f8a238314582f43e0270bddab9fc063e5d7e37a505bfbac37b7223c8d8780"
+    },
+    {
+      "file": "review-fix-not-applied.log",
+      "kind": "Patch path error; this one old test passed on unchanged code, not final-code evidence",
+      "bytes": 225,
+      "sha256": "5ef3a9da0d449450dfad19095cd46b770e77fc3eccfea9eadea16ed65f2b0371"
+    },
+    {
+      "file": "review-fix-not-applied-tsc.log",
+      "kind": "Patch path error; this typecheck passed on unchanged code, not final-code evidence",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "networkAudits": [
+    {
+      "file": "network-audit-reviewed-evidence-probe-8.json",
+      "role": "author",
+      "attempts": 0,
+      "sha256": "e85262e382c92b8250bba6518722839e2252db29be586eaf435e3504a8c62c71"
+    },
+    {
+      "file": "network-audit-reviewed-growth-coverage-31.json",
+      "role": "author",
+      "attempts": 0,
+      "sha256": "d93de8538714274ee625cea2af34c2b8d509a764794ea1c8e410fd9fb99911e9"
+    },
+    {
+      "file": "network-audit-reviewed-growth-empty-fix-18.json",
+      "role": "author",
+      "attempts": 0,
+      "sha256": "bec9d18568bce6707ec2a681b3f0aeae9f57cc9c7843d15daba1fc30018e5776"
+    },
+    {
+      "file": "network-audit-reviewed-growth-empty-fix-applied-18.json",
+      "role": "author",
+      "attempts": 0,
+      "sha256": "bec9d18568bce6707ec2a681b3f0aeae9f57cc9c7843d15daba1fc30018e5776"
+    },
+    {
+      "file": "network-audit-reviewed-growth-existing-12.json",
+      "role": "author",
+      "attempts": 0,
+      "sha256": "48472cc0451a5e766729a8b332aeee405f33cb39dc5ffa8a24ed482123a97e65"
+    },
+    {
+      "file": "network-audit-reviewed-growth-final-types-26.json",
+      "role": "author",
+      "attempts": 0,
+      "sha256": "b43afcb6e32e4f705c9e1756e34a4fb0af40dbd49bb607c68cde0e292b685888"
+    },
+    {
+      "file": "network-audit-reviewed-growth-final-types-applied-26.json",
+      "role": "author",
+      "attempts": 0,
+      "sha256": "b43afcb6e32e4f705c9e1756e34a4fb0af40dbd49bb607c68cde0e292b685888"
+    },
+    {
+      "file": "network-audit-reviewed-growth-focused-14.json",
+      "role": "author",
+      "attempts": 0,
+      "sha256": "8146d77742d517f158711f947ef2ba15015a4063ac82dbe95c1e3b299d9283fb"
+    },
+    {
+      "file": "network-audit-reviewed-growth-types-39.json",
+      "role": "author",
+      "attempts": 0,
+      "sha256": "6b1ab7137a4886e4a8081e485d3a4aaa26fee1ff37fc4521a8f098213f6ceafb"
+    },
+    {
+      "file": "network-audit-reviewer-boundaries-6.json",
+      "role": "reviewer",
+      "attempts": 0,
+      "sha256": "1428ae803a065537503254f643efa79ab8f5d8c39bf6503a7de583bab509e329"
+    },
+    {
+      "file": "network-audit-reviewer-boundaries-after-fix-10.json",
+      "role": "reviewer",
+      "attempts": 0,
+      "sha256": "3323d57ffeb86cc607fb6de801e08c06bff709feff8ddf2b44923763e2e45864"
+    }
+  ],
+  "networkAttempts": 0,
+  "runtimeAcceptance": {
+    "realProductAgent": true,
+    "realAdkRunner": true,
+    "realKnowledgeRetriever": true,
+    "storage": "synthetic candidate reader and ProductAgentStore",
+    "provider": "scripted",
+    "scriptedModelCalls": 3,
+    "toolCalls": 3,
+    "syntheticEmbeddings": 1,
+    "budgetRaised": false,
+    "stage": "before growth-only malformed-text guard; not rerun afterward"
+  },
+  "baseVerification": {
+    "verifiedExistingUnmodifiedFiles": 858,
+    "mismatches": 0,
+    "note": "Partial local source tree, not a claim of full repository materialization. All three modified pre-existing base blobs match master. #177 affects frontend only; server/test dependency bytes unchanged."
+  },
+  "notVerified": [
+    "True model understanding or provider integration",
+    "Live SQL/Firestore, concurrency or cloud",
+    "HTTP/UI/preview or deployment",
+    "Full repository suite",
+    "A09/F01 completion, per-work outcomes, automatic work closure, restore/resume/fencing"
+  ],
+  "costBoundary": {
+    "trueModelCalls": 0,
+    "trueEmbeddings": 0,
+    "originalTrueModelAllowance": "20/20 exhausted, zero remaining",
+    "cloudPermissionChanges": 0,
+    "realFamilyData": false
+  },
+  "acceptance": {
+    "independentReview": "No remaining code or documentation blocker. Final documentation corrections only fixed the reviewer command relative path and removed detailed counts from STATUS.",
+    "rootFinalDecision": "Allow exactly eight source files for normal PR publication after reviewing both Server diffs, original and review failures, growth-only repair, author post-fix 3 tests/typecheck and reviewer 4 rejection cases.",
+    "prCreated": false,
+    "deployment": false,
+    "independentCodeReview": "No remaining blocker after growth-only guard. Reviewer verified all four code hashes and reran the same version/hash/post-read-revocation/empty-text cases; all four reject.",
+    "recordedAt": "2026-10-10T03:15:36+08:00",
+    "codeHashesUnchangedAfterFinalReview": true,
+    "nativeRunnerRerunAfterGuard": false
+  },
+  "codeBeforeReview": [
+    {
+      "path": "server/knowledge-retriever.ts",
+      "bytes": 10830,
+      "sha256": "b2addf821730f0e67e726154d36623bc9d1c002eb7486c45b7a776c624360d8c",
+      "gitBlob": "1a9f26a4c1a9e5c9065146ab685604cdb913e9de"
+    },
+    {
+      "path": "server/product-agent-tools.ts",
+      "bytes": 27442,
+      "sha256": "60cf880a5cd29c3c2fce5bb38d051cc8ad46b9c206b911b34418e30296b0df32",
+      "gitBlob": "4c8639f3d1b83df2d7b897b8ede4d43d48b75c48"
+    },
+    {
+      "path": "tests/product-agent.test.ts",
+      "bytes": 14616,
+      "sha256": "8f2034499b6cebf397fe701fec785dff2089ee59b519bb3a5f2f4172674a5a16",
+      "gitBlob": "3a52c81b1e416ce518991f4e7e0a541283eac9ef"
+    },
+    {
+      "path": "tests/product-agent-reviewed-growth.test.ts",
+      "bytes": 10543,
+      "sha256": "b0f5ab9e47b8bc30c94b1008b7cd70d74875c90de031eb34e0b17327c0179a39",
+      "gitBlob": "de24d8c880173ac39cbdbabe5e959a2869693319"
+    }
+  ],
+  "reviewCorrection": {
+    "runtimeGuard": "Only reviewedGrowthPresentation consumer rejects non-string or trim-empty live text, retaining valid original bytes.",
+    "ordinaryRevalidationChanged": false,
+    "originalReviewRedPreserved": true,
+    "postFixFocusedEntrypoints": 3,
+    "postFixTypecheckExit": 0,
+    "initialFourPlusFivePlusOneRerun": false,
+    "nativeRunnerRerunAfterGuard": false
+  }
+}
