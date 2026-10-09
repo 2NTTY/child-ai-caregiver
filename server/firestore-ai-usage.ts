@@ -110,6 +110,12 @@ export class FirestoreAiUsage implements DurableAiUsage {
     if (state.known > state.attempts) reject('invalid_stored_usage');
     return state;
   }
+  #consistent(global: Counter, user: Counter) {
+    // Both aggregates are updated in the same transaction. Each user's known
+    // totals must remain a subset, including independently nullable token counts.
+    for (const key of ['attempts', 'known', 'inputTokens', 'outputTokens', 'cachedTokens'] as const)
+      if (user[key] > global[key]) reject('counter_inconsistent');
+  }
   async reserve(input: DurableAiUsageRequest): Promise<DurableAiUsageAdmission> {
     const request = parse(requestSchema, input, 'invalid_request'), attemptId = this.#attemptId(request), attemptRef = this.#ref(attemptId);
     return this.#database.runTransaction(async transaction => {
@@ -119,7 +125,11 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const now = this.#now(); if (now >= request.deadlineAtMs) reject('deadline_exceeded');
       const day = this.#day(now), globalId = this.#counterId(day, null), userId = this.#counterId(day, request.userId);
       const globalRef = this.#ref(globalId), userRef = this.#ref(userId);
-      const global = this.#counter(globalId, await transaction.get(globalRef)), user = this.#counter(userId, await transaction.get(userRef));
+      const globalSnapshot = await transaction.get(globalRef), userSnapshot = await transaction.get(userRef);
+      // A new user/day may be absent. An existing user counter proves that its
+      // global counter was committed too; absence cannot be treated as zero.
+      const global = this.#counter(globalId, globalSnapshot, userSnapshot.exists), user = this.#counter(userId, userSnapshot);
+      this.#consistent(global, user);
       if (this.#now() >= request.deadlineAtMs) reject('deadline_exceeded');
       if (global.attempts >= request.globalLimit || user.attempts >= request.userLimit) return { decision: 'quota_exceeded' };
       global.attempts++; user.attempts++;
@@ -150,6 +160,7 @@ export class FirestoreAiUsage implements DurableAiUsage {
       const globalId = this.#counterId(state.day, null), userId = this.#counterId(state.day, request.userId);
       const globalRef = this.#ref(globalId), userRef = this.#ref(userId);
       const global = this.#counter(globalId, await transaction.get(globalRef), true), user = this.#counter(userId, await transaction.get(userRef), true);
+      this.#consistent(global, user);
       for (const counter of [global, user]) {
         if (counter.attempts < 1) reject('invalid_stored_usage');
         for (const key of ['inputTokens', 'outputTokens', 'cachedTokens'] as const) counter[key] += record[key] ?? 0;

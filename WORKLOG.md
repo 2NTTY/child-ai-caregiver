@@ -1907,3 +1907,14 @@
 - 2026-10-10 00:01 HKT 追加：獨立 reviewer 完成六程式／測試與五文件／證據唯讀覆核，無 blocking finding；核 code/document/log/guard hashes 與原 WORKLOG prefix，未重跑相同測試。dot 最終裁決仍待完成，程式 hash 未變。
 
 - 2026-10-10 00:01 HKT 最終裁決追加：dot 已親讀 runtime／Firestore cleanup 核心差異，結合32項必要定向、Server tsc、獨立程式／文件 review 與原紅證據／原文保留，准予精確11檔切片正常 PR 交付。六個程式／測試 hash 不變，不跑全量；尚未建立 PR／部署或啟用正式流量，帳戶／孩子 erasure 與 restore／日額協調 gate 保留。
+
+
+<a id="log-20261010-f01-daily-counter-consistency"></a>
+## 2026-10-10｜F01 日額可證實不一致拒絕
+
+- Recorded At：2026-10-10T00:16:00+08:00；基線 master `afc4f15f2d8f20d1347bca0398545bb2f7d230ac`（#169 已正常合併、未部署）。指定 Astra xhigh 按 dot 批准的窄 scope 實作；沿 publisher 合併證據逐一核對原11檔 SHA，未修改前包候選。
+- 既有 reserve 會把缺失全站 counter 當零，即使本人 counter 證明全站原已提交。先以原碼 red-01 重現錯誤准入，再於原 transaction 核存在關係及 attempts／known／三項 tokens 的獨立包含關係；reserve 與新 accounting 違反時零寫入，真 Runner scripted 接線零 provider、不退 root、不 fallback SQL。原 attempt lookup／read／相同已保存 record 保留；不改格式、API、epoch、limits 或 root/cancel 終態。
+- 5 項新增關鍵測試加原日額／Runner 共 **21／21 定向**通過，外層零寫入斷言、原 known 查回及新 UTC 日對照的3項局部重驗通過，均為21的子集；Server typecheck 通過。只跑關鍵有用檢查，未跑792全量、前端或無關 suite。復用 Firestore9.3.1 transaction、既有 cipher 與串行合成 harness，不增加依賴／雲端資源；原紅、最終 hash 與離線 guard 範圍見[證據](artifacts/verification/F01_DAILY_COUNTER_CONSISTENCY_20261009.json)。
+- 本人 counter 單獨遺失、兩者同失或一致回退仍無法分辨；現行 epoch／獨立 cloud journal 完整度／配對 manifest 權威未有共同正式閘。不以假布林值聲稱 restore 已安全，不啟用正式持久流量。無真模型、家庭資料、真刪除／restore、Emulator、雲端／權限變更或部署；真模型20／20用盡及其他三 Agent 只留接口維持。程式／文件獨立 review 及 dot 最終驗收待完成。
+
+- 2026-10-10 00:19 HKT 最終裁決追加：獨立 reviewer 已核三程式／測試及五文件／證據的 SHA、原 WORKLOG prefix／PLAN anchors，無 blocking finding，未重跑套件。dot 親審核心 diff，結合21項必要定向、Server typecheck與獨立 review，准予精確8檔小修正常 PR 交付。三程式／測試 hash 不變；未建立 PR、未部署或啟用正式持久流量，真正 restore／epoch gate 及不可辨識回退界線保留。

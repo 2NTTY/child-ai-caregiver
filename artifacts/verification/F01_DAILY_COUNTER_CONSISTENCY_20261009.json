@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-09T16:17:36.069626+00:00",
+  "repository": "2NTTY/child-ai-caregiver",
+  "baseCommit": "afc4f15f2d8f20d1347bca0398545bb2f7d230ac",
+  "status": "root_accepted_ready_for_normal_publication",
+  "scope": "Reject provable daily aggregate inconsistency in the existing transaction; not a restore/epoch admission gate",
+  "files": [
+    {
+      "path": "server/firestore-ai-usage.ts",
+      "bytes": 12212,
+      "sha256": "e3dcde8295b938a8ad1fe0523cfa8595bac3b38947d97d2dd7b1efa4b0d2b02b"
+    },
+    {
+      "path": "tests/firestore-ai-usage.test.ts",
+      "bytes": 14256,
+      "sha256": "aeb1879e45ba318fc48158b45219c8bf94dade979b04c46e6a449453c3146e89"
+    },
+    {
+      "path": "tests/agent-durable-ai-usage.test.ts",
+      "bytes": 11298,
+      "sha256": "4001a7e02cf1f0b57e25ec223680e7f40d12d7b89d870ddf54f7e110f1b0a058"
+    }
+  ],
+  "checks": {
+    "baselineRed": {
+      "file": "red-01.log",
+      "tests": 1,
+      "failed": 1,
+      "reason": "Original reserve granted execute despite an existing user counter and missing global counter; expected rejection was absent."
+    },
+    "focused": {
+      "command": "node --import offline-guard.mjs --experimental-test-module-mocks --test tests/firestore-ai-usage.test.ts tests/agent-durable-ai-usage.test.ts",
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "newTests": 5
+    },
+    "finalAffectedReruns": {
+      "runner-final.log": {
+        "tests": 1,
+        "passed": 1,
+        "change": "Move zero-write assertions outside runtime error handling."
+      },
+      "controls-final.log": {
+        "tests": 2,
+        "passed": 2,
+        "change": "Check original known lookup/record and successful new UTC day reservation."
+      },
+      "subsetOfFocused": true
+    },
+    "serverTypecheck": {
+      "command": "node --import offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "exitCode": 0,
+      "finalLog": "server-tsc-final.log"
+    },
+    "fullAggregate": false,
+    "frontendTypecheck": false
+  },
+  "safety": {
+    "environment": "Explicit env allowlist PATH/HOME/LANG/TZ/OFFLINE_AUDIT_RUN; no inherited credentials. Existing node_modules reused.",
+    "networkGuard": "Existing net/tls/dns/fetch deny guard; data: fetch retained for installed ADK/Yoga WASM.",
+    "networkAuditFiles": [
+      {
+        "file": "network-audit-controls-final-11.json",
+        "sha256": "f2ff2018c4e9aaeb01866ffba561a9371cb8cbc2cc246f424789a1930a934edd",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-green-01-11.json",
+        "sha256": "fff84d8a1486cc922a6d8b156af91b40134e58d7f164d77fd58f8d235004638e",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-green-01-12.json",
+        "sha256": "8a96d2459d967be23bda87f6ebf60d18df05bd6a9b70bd0ab07a7b30ff14fd80",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-red-01-11.json",
+        "sha256": "f2ff2018c4e9aaeb01866ffba561a9371cb8cbc2cc246f424789a1930a934edd",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-runner-final-11.json",
+        "sha256": "fff84d8a1486cc922a6d8b156af91b40134e58d7f164d77fd58f8d235004638e",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-server-tsc-01-23.json",
+        "sha256": "c80d789bc6acdb04e3a220770c8e11b33d5f2afedbfbbc1a33b4b12f78f51b13",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-server-tsc-final-19.json",
+        "sha256": "24970bfdade10961ee46abb3261eaa2ec52b3247ddf199a24347de0224b75f26",
+        "attempts": 0
+      }
+    ],
+    "allRecordedNetworkAttempts": 0,
+    "realModelCalls": 0,
+    "realFamilyData": false,
+    "productionActivation": false,
+    "deployment": false,
+    "permissionsOrCloudResourcesChanged": false
+  },
+  "coverage": [
+    "Existing user plus missing global: rejects with 3 reads / 0 writes; original unknown receipt remains readable.",
+    "Each user attempts/known/inputTokens/outputTokens/cachedTokens exceeding global: rejects with no writes; prior known result remains queryable.",
+    "Late record over partially accounted inconsistent counters: atomic rejection and original unknown receipt preserved.",
+    "Different user, next UTC day and independently nullable/partial token metadata remain valid.",
+    "Actual ADK Runner: zero provider calls or SQL fallback, consumed root model attempt retained.",
+    "Existing duplicate/unknown/lost-commit/billing-isolation/limits/midnight/cancellation tests retained."
+  ],
+  "limits": [
+    "Synthetic serial transaction harness is not Firestore concurrency, emulator, IAM or cloud evidence.",
+    "Missing user alone, both counters absent, or consistent rollback are not detected; legitimate new user/day behavior remains.",
+    "No independent current epoch, Cloud Storage journal completeness or paired-manifest authority is implemented.",
+    "No new persisted format/floor, migration, dependency, initialization or automatic repair.",
+    "Root and daily stores remain separate; no cross-store fencing or external exactly-once guarantee.",
+    "No full-suite rerun, frontend/UI, real SQL/Firestore, real model, real deletion/restore, production bootstrap or deployment."
+  ],
+  "logs": [
+    {
+      "file": "controls-final.log",
+      "bytes": 331,
+      "sha256": "295cf1bddaf289013cf7b49d7b4cfd02b5e856650c6cd1b415f1b2cd13bcdccb"
+    },
+    {
+      "file": "green-01.log",
+      "bytes": 2442,
+      "sha256": "81e6138ff8a3cc20fabe1f1b2e681d434a619f9173227239199b3a8aa1ac9f3a"
+    },
+    {
+      "file": "red-01.log",
+      "bytes": 909,
+      "sha256": "a3e71baf621462bc9407a5fea7999af2322cc2fd7c34a8b6d449bce3b3023c77"
+    },
+    {
+      "file": "runner-final.log",
+      "bytes": 234,
+      "sha256": "c0ffef77982e1cef1cbc5cd61b064500fd29247af97f29b097485ebe9154ac83"
+    },
+    {
+      "file": "server-tsc-01.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "server-tsc-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "preservation": {
+    "worklogPrefixBytes": 294896,
+    "worklogPrefixSha256": "50cea70ba92c9c226c68b5960c32b72aa1bd009853d703c5236cc3a89acaaa4f",
+    "worklogPrefixByteIdentical": true,
+    "planAnchorsPreserved": true
+  },
+  "acceptance": {
+    "recordedAt": "2026-10-09T16:19:55.843011+00:00",
+    "independentReview": "Passed with no blocking finding; reviewed all three code/test and five document/evidence files, manifests, logs, WORKLOG prefix and PLAN anchors. No suites rerun.",
+    "rootFinal": "Root inspected the complete core diff and accepted the exact eight-file slice for normal PR delivery based on 21 targeted tests, Server typecheck and independent review.",
+    "codeManifestSha256": "cf334f03d7baa30cab6c9a26b7109430de8d3b193481077a82e8660039c09c1a",
+    "codeUnchangedAfterReview": true,
+    "prCreated": false,
+    "deployed": false
+  }
+}

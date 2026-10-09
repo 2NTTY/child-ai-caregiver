@@ -8,6 +8,7 @@ import { createAgentRuntime, type AgentRunInput } from '../server/agent-runtime.
 import { readAiConfig } from '../server/ai-config.ts';
 import { FirestoreRootBudget } from '../server/firestore-root-budget.ts';
 import { FirestoreAiUsage } from '../server/firestore-ai-usage.ts';
+import { agentBudgetFingerprint } from '../server/agent-budget.ts';
 import type { DurableAiUsage, DurableAiUsageRequest } from '../server/durable-ai-usage.ts';
 import type { RootBudgetContext } from '../server/durable-root-budget.ts';
 import { loadAgentPrompt } from '../server/agent-prompt.ts';
@@ -87,6 +88,37 @@ test('daily quota rejection preserves the consumed root attempt and never dispat
   const result = await createAgentRuntime(s.options).run(s.input);
   assert.equal(result.stopReason, 'quota_exceeded'); assert.equal(s.providerCalls(), 0);
   assert.equal((await s.root.read(s.context)).used.modelCalls, 1);
+  assert.equal((await s.daily.getForUser(s.input.scope.userId)).attempts, 1);
+  assert.equal(await s.daily.read(s.requests[0]), null);
+});
+
+test('inconsistent daily storage stops the actual Runner before dispatch without refund or legacy fallback', async () => {
+  const s = await fixture(), reserve = s.daily.reserve;
+  let seeded = false;
+  let admissionSnapshot: unknown, afterAdmissionSnapshot: unknown;
+  let admissionTransactions: { reads: number; writes: number }[] = [];
+  s.daily.reserve = async request => {
+    if (!seeded) {
+      seeded = true;
+      const admission = await s.f.service.reserve({ ...request, rootRunId: 'earlier-synthetic-root' });
+      assert.equal(admission.decision, 'execute');
+      if (admission.decision !== 'execute') throw new Error('Expected synthetic reservation');
+      const globalId = 'daily_' + agentBudgetFingerprint(['platform', admission.receipt.day, null]);
+      s.f.records.delete(`${s.f.options.namespace}/${globalId}`);
+    }
+    admissionSnapshot = structuredClone([...s.f.records]);
+    const transactionStart = s.f.transactions.length;
+    try { return await reserve(request); }
+    finally {
+      afterAdmissionSnapshot = structuredClone([...s.f.records]);
+      admissionTransactions = s.f.transactions.slice(transactionStart);
+    }
+  };
+  const result = await createAgentRuntime(s.options).run(s.input);
+  assert.equal(result.status, 'stopped'); assert.equal(result.stopReason, 'unavailable'); assert.equal(s.providerCalls(), 0);
+  assert.deepEqual(afterAdmissionSnapshot, admissionSnapshot);
+  assert.deepEqual(admissionTransactions, [{ reads: 3, writes: 0 }]);
+  assert.equal(s.requests.length, 1); assert.equal((await s.root.read(s.context)).used.modelCalls, 1);
   assert.equal((await s.daily.getForUser(s.input.scope.userId)).attempts, 1);
   assert.equal(await s.daily.read(s.requests[0]), null);
 });
