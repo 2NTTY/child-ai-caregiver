@@ -7,6 +7,7 @@ import { createSharedInputStore } from "./shared-input-store.ts";
 import { createSharedInputService } from "./shared-input-service.ts";
 import { createPhotoFiles } from "./photo-files.ts";
 import { createPhotoStore } from "./photo-store.ts";
+import { createPhotoCleanup } from "./photo-cleanup.ts";
 import { createPhotoAgent } from "./photo-agent.ts";
 import { createCareSummaryStore } from "./care-summary-store.ts";
 import { createContactStore } from "./contact-store.ts";
@@ -47,7 +48,7 @@ import { readTelegramConfig } from "./telegram-config.ts";
 import { createTelegramStore } from "./telegram-store.ts";
 import { createTelegramGateway } from "./telegram-gateway.ts";
 import { telegramQueue } from "./telegram-worker.ts";
-let photoCleanupTimer:ReturnType<typeof setInterval>|undefined;
+let photoCleanup: ReturnType<typeof createPhotoCleanup> | undefined;
 let startupCleanup: (() => Promise<void>) | undefined;
 
 try {
@@ -58,7 +59,7 @@ try {
   const provider = aiConfig.enabled ? createVertexProvider(aiConfig) : undefined;
   const cipher = createStorageCipher(await readSecretKey(process.env.STORAGE_KEY_FILE));
   const pool = createPool(config);
-  startupCleanup = () => pool.end();
+  startupCleanup = async () => { try { await photoCleanup?.stop(); } finally { await pool.end(); } };
   await verifyEncryptedStorage(pool, cipher);
   if (!(await pool.query("SELECT 1 FROM app_migrations WHERE id='024-personal-model-settings'")).rowCount) throw new Error("model_settings_migration_required");
   const account = await openAccountRuntime(pool, cipher, process.env);
@@ -67,7 +68,7 @@ try {
   // migration has completed. Never make ordinary writes depend on missing tables.
   const onlineEnabled = (await pool.query<{ ready: boolean }>("SELECT EXISTS(SELECT 1 FROM app_migrations WHERE id='010-online-operations') AS ready")).rows[0].ready;
   const queue = (await pool.query("SELECT 1 FROM app_migrations WHERE id='013-task-worker'")).rowCount ? createWorkerQueue(pool, "producer") : undefined;
-  startupCleanup = async () => { try { await queue?.stop(); } finally { await pool.end(); } };
+  startupCleanup = async () => { try { await photoCleanup?.stop(); } finally { try { await queue?.stop(); } finally { await pool.end(); } } };
   await queue?.start();
   const taskScheduling = queue ? createTaskScheduling(cipher, queue.queue) : undefined;
   const pushConfig = await readWebPushConfig(process.env);
@@ -106,9 +107,8 @@ try {
   const inputStore=inputsEnabled?createSharedInputStore(pool,cipher):undefined;
   const inputs=inputStore&&productServices?{store:inputStore,service:createSharedInputService(inputStore,productServices.runtime)}:undefined;
   if(photoStore){
-    let purging=false;
-    const purge=async()=>{if(purging)return;purging=true;try{await photoStore.purgeDeleted();}catch{console.warn("attachment_cleanup_pending");}finally{purging=false;}};
-    await purge();photoCleanupTimer=setInterval(()=>{void purge();},30000);photoCleanupTimer.unref();
+    photoCleanup = createPhotoCleanup(photoStore);
+    await photoCleanup.start();
   }
   if (account && !photoFiles) throw new Error("account_photo_storage_required");
   const exporter = account && photoFiles ? createAccountExportStore(pool, cipher, { photoFiles }) : undefined;
@@ -140,7 +140,7 @@ try {
   server.requestTimeout = 15000;
   server.headersTimeout = 10000;
   let poolClosing: Promise<void> | undefined;
-  const closePool = () => { clearInterval(photoCleanupTimer); poolClosing ??= (async () => { try { await queue?.stop(); } finally { await pool.end(); } })().catch(() => { process.exitCode = 1; }); return poolClosing; };
+  const closePool = () => { poolClosing ??= (async () => { try { await photoCleanup?.stop(); } finally { try { await queue?.stop(); } finally { await pool.end(); } } })().catch(() => { process.exitCode = 1; }); return poolClosing; };
   server.on("error", () => { console.error("server_start_failed"); void closePool(); process.exitCode = 1; });
   server.listen(config.port, config.host, () => { console.info("server_started"); });
   let stopping = false;
@@ -153,7 +153,6 @@ try {
   process.once("SIGTERM", stop);
   process.once("SIGINT", stop);
 } catch {
-  clearInterval(photoCleanupTimer);
   console.error("server_configuration_failed");
   await startupCleanup?.().catch(() => {});
   process.exitCode = 1;

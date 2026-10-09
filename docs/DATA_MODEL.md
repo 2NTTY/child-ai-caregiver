@@ -558,6 +558,22 @@ A02 使用 `agent_work`（目前版本及加密工作內容）、`agent_work_ope
 - F01 對每個查詢列出權威集合、授權範圍、等值／範圍／排序欄位、複合索引、投影來源／重建、page limit／cursor 及成本。加密正文不另建明文私人索引，沿授權頁掃描並標 complete／nextCursor；公共候選索引另計 posting 容量。query constraints 不足以表達現有語義時明示調整並以 F02 驗證，不刪功能。
 - FK／cascade／trigger 由建立／引用檢查與持久清理取代；parent tombstone 先阻止新讀寫／子項新增，再按固定 cursor 清理所有附屬記憶、文件、工作、通知、key 及附件。歷史版本不能繞過目前權限或恢復已刪資料。
 
+<a id="firestore-chat-transaction-boundary"></a>
+### 聊天 work／confirmation／原收據的交易邊界
+
+此為 F01 待實作的最小約束；逐 store／query／index 對照在 [TECH_REUSE](TECH_REUSE.md#firestore-chat-store-audit)，不另建收據或工作主庫。
+
+1. **識別與歷史授權分開。** 原 trigger claim、runId、callId、work operationId、proposalId／version、asking run、ask／response message 及 domain opId 各沿原 scope。work operation 的唯一鍵為本人＋孩子＋operationId，document operation 為本人＋opId；不得統一縮成較窄鍵。索引／claim 只保存必要非正文 metadata；原正文／request fingerprint／結果沿既有 cipher、AAD、ID 及版本，不能以新路徑或新 owner 靜默解密再重綁。
+2. **讀集必須覆蓋授權和完整條件。** 新效果的 transaction 讀 account／device session 准入證據、workspace／membership／child 可用性、accessVersion／storageEpoch／刪除閘、原 trigger／run 狀態／期限、policy、來源訊息、目標版本、必要 work／proposal／confirmation 及原 claim／receipt；非適用項不虛構讀集。Auth provider 的外部狀態不能納入 Firestore 原子性，逐裝置 ledger／即時檢查是另需接線的前置，HTTP 薄 port 不代表已具備。查詢投影帶原來源版本並在本交易核權；無效／缺失索引資料 fail closed，不回退無 scope 全掃。
+3. **全讀後写、一次 commit。** 完成全部 domain／source／版本驗證，才排入業務、修訂、原 receipt／call／link、changes、必要 outbox 及 run dataVersion 寫集。Firestore 回調可重跑，不能在其內調模型、發訊息、派 Tasks 或寫外部 Storage；穩定的新 ID／操作身份在回調外固定，期限／權限於每次 attempt 重核。回傳給 caller 的成功結果只能來自已 commit 的 attempt，不從丟棄回調泄出。
+4. **沒有 nested SQL savepoint 的替身。** 原 consumeConfirmation 會調原 proposal decide，業務衝突時只 retire 快捷確認並保留候選；SQL 能 rollback nested store。Firestore 必須在首個 write 前得出可提交的 domain 結果，或整筆失敗後以另一次重新核 scope／版本的交易處理失效。不得捕捉已排入部分 writes 的錯誤後，照樣 commit「invalidated」而留下半份 domain effect。transaction 內也不能靠重新 get 看見本 attempt 先前排入的 writes。
+5. **跨 run 確認。** 新 asking run 須 running；被確認的是原 proposal run／proposal version，不能要求原 run 仍 running。只接受 Server 已保存並綁定的問句、目前最新本人訊息及相鄰提問、明確同意、恰好一項有效候選／asked binding、原 hash、policy/access/epoch 及可選 workVersion／active-or-waiting 全部一致。consume 原確認與 domain effect 同 commit；response run 可在其後才 claim，不能以新 run failure 重做已接受效果。named proposal 決定及快捷文字同意分開，不能因快捷失效便自動略過或接受原 proposal。
+6. **三種取消與原結果。** run cancel 只將目前 running 原互動 run 置 stopped／cancelled，finish 不得覆寫；已提交效果／候選保留。work cancel／改版立即使舊 workVersion 的確認及跟進失效，不等同取消已建 task／document；proposal dismiss 沿原 version 只退候選。被取消 run 的新 runtime／tool effect 與 cancel 讀寫同一交易權威；cancel 先提交便阻止該 run 後續 runtime／tool effect，effect 先提交則保留原 receipt。這不禁止本人其後依原 proposal 作新的明確決定；該決定仍按上一項重核候選／scope／版本／同意，不要求原 proposal run 仍 running。不得跨 SQL／Firestore 分拆兩端後聲稱已 fence。查回只核既有 receipt，run 維持 stopped／unknown，未保存用量仍 countsKnown=false；查詢失敗不得當作沒有副作用或自動重試。
+7. **有界失效與刪除。** workVersion、policy/accessVersion、epoch 及 parent tombstone 讀時即生效；原 SQL 全量 UPDATE／cascade 可轉分批整理，但不能讓權限等待清理完才失效。每個 query／cleanup page 都保留 scope、精確 cursor 及 complete／未完成狀態；原訊息刪除亦涵蓋引用它的 note／revision／receipt／confirmation／summary，不能只清 work。原收據讀回期限與新決定期限分開，accepted receipt 不因 proposal 過期隱藏已提交效果，也不因此永久保留已刪正文。
+
+原生 [transactions](https://docs.cloud.google.com/firestore/native/docs/manage-data/transactions)及[transaction isolation](https://docs.cloud.google.com/firestore/native/docs/transaction-data-contention)文件已核：原子提交、全讀後寫、回調重跑、commit-time serializable 與交易內讀不見自身尚未提交的寫入。本項目仍須以固定 Node SDK／實際 schema 核對 latest-message／唯一 pending、並行新候選及撤權／刪除的 query read-set；不能以「先 limit 2 再 transaction 點讀」冒充對整個條件的原子檢查，亦不以未實測為由否定原生 serializable。Fake／Emulator 不代替 F02 真雲端競爭證據。
+
+
 ### Auth、附件與恢復關聯
 
 Auth 用戶並非 Firestore 子文件，匯入／刪除無法跨兩服務交易；保存穩定 mapping、pending／active／deleting 狀態及原操作，外部步驟按原 ID 查核恢復。STANDARD_SCRYPT 的 salt bytes／雜湊參數／NFKC 相容證據先取得；不把舊 session 搬成有效 Firebase session。
