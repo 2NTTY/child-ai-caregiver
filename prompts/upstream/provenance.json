@@ -13,7 +13,8 @@
       "OpenClaw Memory Recall and Runtime Context; adaptation: server-scoped data, no global memory files"
     ],
     "4": [
-      "Gemini clarification principle; existing child/task ambiguity rules"
+      "Gemini clarification principle; existing child/task ambiguity rules",
+      "Pack 0.1.37 product-specific adaptation: resolve consequential ambiguity before proposing an operation; partial pages do not establish uniqueness; clarification is distinct from approval"
     ],
     "5": [
       "OpenClaw Tool Call Style and Execution Bias; existing server limits"

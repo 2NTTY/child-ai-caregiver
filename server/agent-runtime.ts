@@ -67,7 +67,7 @@ export interface AgentRunInput {
   deadlineMs?: number;
   availableInputs?: readonly string[];
   context?: Record<string, unknown>;
-  finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext) => Promise<string | null>;
+  finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext, reason: "normal" | "model_limit") => Promise<string | null>;
   /** Opt-in Server presentation after a confirmed model limit; never retries tools. */
   finalizeOnModelLimit?: boolean;
   /** Internal product opt-in; never accepted from HTTP input or inferred from model text. */
@@ -305,7 +305,7 @@ export function createAgentRuntime(options: {
             }
             if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
             // Keep finalize outside the Runner catch so its errors can never invoke it twice.
-            if (input.finalize) result.text = await budget.wait(() => input.finalize!(result, runContext));
+            if (input.finalize) result.text = await budget.wait(() => input.finalize!(result, runContext, finalizeAfterModelLimit ? "model_limit" : "normal"));
             if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
             if (!result.text || finalizeAfterModelLimit && !result.text.trim()) throw new AgentStopped("invalid_response");
             if (finalizeAfterModelLimit) {

@@ -1,0 +1,84 @@
+{
+  "baseline": "11ae4655b676ae09d587cfadfe69eb853e8f930a",
+  "scope": "Bounded Server finalization of one pending confirmation at the confirmed model-call limit; no quota increase or operation execution.",
+  "characterization": {
+    "passed": 3,
+    "model": "scripted provider with real ADK Runner",
+    "observed_original": "Four successful tool steps reach the native 4-call limit; null presentation finalizer produces invalid_response.",
+    "control": "A fixture-only 5-call control can present_answer; production limits were not changed.",
+    "invalid_provider_guard": "True provider invalid_response does not invoke the confirmed-limit finalizer."
+  },
+  "selected_regression": {
+    "passed": 45,
+    "failed": 0,
+    "new_cases": 21,
+    "scoped_typecheck_exit": 0
+  },
+  "prior_failures": [
+    {
+      "check": "existing product presentation repair fixtures",
+      "baseline_result": "2 of 4 failed with invalid_tool; tasks capability loader absent",
+      "change": "Only add tasks loader and matching step/count expectations; rejected and pending assertions preserved.",
+      "final_result": "4 of 4 pass within selected aggregate."
+    },
+    {
+      "check": "full-server typecheck",
+      "result": "Blocked by missing packages in the partial dependency environment; not reported as passed."
+    }
+  ],
+  "files": [
+    {
+      "path": "server/agent-runtime.ts",
+      "baselineBlobSha": "8a8312365018c1d192b1a294e5dfa3b852db0c4a",
+      "finalBlobSha": "27a03db6547cc26ce4f4bbd8f8afd0a0525f2df4"
+    },
+    {
+      "path": "server/product-agent.ts",
+      "baselineBlobSha": "84cde2a009fd5daadfc62e494b626e9e7e87dc00",
+      "finalBlobSha": "21e322fc349ee77f2e1523113b57434b40fb8c51"
+    },
+    {
+      "path": "server/agent-work-tool-descriptions.ts",
+      "baselineBlobSha": "c5bfcb87aacfaff99e25e7755cb7393059c97f7d",
+      "finalBlobSha": "48bcfa18fa14f06ec3e6dfaaf3cf14bfa1d5dd2f"
+    },
+    {
+      "path": "tests/agent-runtime.test.ts",
+      "baselineBlobSha": "83404a6de40d23d0ed4b4663d743db16e578dc6f",
+      "finalBlobSha": "5750ea184e28550a9cb203585cf9c5a23c65c7fb"
+    },
+    {
+      "path": "tests/product-agent-presentation-repair.test.ts",
+      "baselineBlobSha": "343c21dc7c520d21eaaa757e529fa7f49ebc4bfa",
+      "finalBlobSha": "49a80f1cd1ff0cefee6f9ea84cdea6365e3f95fd"
+    },
+    {
+      "path": "tests/product-agent-confirmation-budget.test.ts",
+      "baselineBlobSha": null,
+      "finalBlobSha": "38ea9a53f4e60018bc994f668ea0ef918d7afb80"
+    },
+    {
+      "path": "docs/CHAT_AGENT_INTEGRATION_CONTRACT.md",
+      "baselineBlobSha": "28e46623623058a71b287aae4d88198d879e4edc",
+      "finalBlobSha": "c6d161a0596cc0305b074eaf6e45c490de3bcb62"
+    }
+  ],
+  "preserved": [
+    "AGENT_LIMITS 4 model calls / 8 tools / 2 embeddings",
+    "daily quota",
+    "SDK dependencies",
+    "request_confirmation nonterminal",
+    "PromptPack",
+    "AGENTS",
+    "PLAN",
+    "other product agents"
+  ],
+  "not_verified": [
+    "real model",
+    "database/SQL confirmation store",
+    "cloud deployment",
+    "full repository checks"
+  ],
+  "semantic_limit": "Scripted checks prove state and guard behavior, not model intent understanding. Original real-model case A remains a historical failed run; B/C have not yet run.",
+  "privacy": "Only synthetic fixtures; no credentials, real household inputs, external notifications, deployment or production data changes."
+}
