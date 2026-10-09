@@ -3,6 +3,16 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## QA：搜尋名稱與準備單鍵盤焦點（原碼驗收通過，預覽發布受阻）
+
+2026-10-09 UTC，固定基線 master `d3f924e7fbd2bbbf47204df584270a8f2802b8be`。既有合成公開預覽 v65 的 `/tasks`「搜尋已載入事項」與 `/care`「搜尋已保存記錄」缺穩定讀屏名稱；準備單第二項用 Space 勾選時，保存期間被純文字節點替換而失焦。
+
+- 兩個搜尋 consumer 沿既有 `accessibilityLabel` 配方補名稱；不改共用元件、樣式、比例或搜尋回調。
+- 只在原已可勾選的準備單項目提交後，於仍可讀且同文件的 pending 期間保留該 checkbox 並停用。原權限／版本／unknown 守衛不變；沒有自動聚焦，使用者移走焦點後不搶回。歸檔、失權及失效來源仍不能操作。
+- 安裝版 Paper／RN Web 搜尋 DOM 的 2 項定向測試、準備單 React DOM 的焦點／拒重入／unknown／移焦／撤權核查及最後前端 typecheck 通過；新測試 harness 的初次錯誤及修正保留於[結果](verification/search-preparation-a11y-2026-10-09/checks.json)。DOM runner 明確使用外置既有 jsdom，不新增產品依賴。
+- 獨立 review 無阻塞；另補 11 個最小 DOM 反例，來源失效／唯讀／離線、換文件及權威等均未留下可寫控制。dot 已准精確 8 檔正常 PR 交付，產品程式及測試 freeze 不變；尚未建立 PR。
+- 既有 v65 可重建源包及原 publisher 的本地 staging／合成 adapter 均不可用，預覽發布及兩點真瀏覽器回歸受阻。未以倉庫合成 fixture 替代重建或聲稱相同 v65。原碼驗收與此發布阻塞分開；未部署、未重跑全量 Server、真模型、正式家庭資料或 Android。下列首屏工作保留原狀態，本包不替其結案。
+
 ## QA：孩子首屏與切換動效（修復及覆核中）
 
 2026-10-07 UTC，基線 master 9d1024c。使用者回報尚未載好孩子便退出首屏，只有一個孩子也播放切換幕布。讀碼確認原 FirstScreenGate 只等 hydration／插畫，沒有業務資料 readiness；首次 fallback identity → child scope 被誤當切換。

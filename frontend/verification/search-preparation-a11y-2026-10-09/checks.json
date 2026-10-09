@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "baseCommit": "d3f924e7fbd2bbbf47204df584270a8f2802b8be",
+  "status": "source_accepted_ready_for_normal_pr_preview_blocked",
+  "reproducedPreview": {
+    "version": "v65",
+    "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+    "bundle": "/_expo/static/js/web/index-87312b4ec557a0e4502631f387892284.js",
+    "sourceByteIdentity": "not established"
+  },
+  "scope": [
+    "Tasks loaded-item search accessible name",
+    "Care saved-record search accessible name",
+    "Preparation checkbox focus during its existing save operation"
+  ],
+  "implementation": {
+    "search": "Add explicit accessibilityLabel to the two existing consumers only.",
+    "preparation": "Remember the submitted checklist item locally and retain its existing keyed AppCheckbox while pending and still readable. Disable it under the unchanged canCheck guard; never call focus().",
+    "unchanged": [
+      "Shared AppCheckbox and AppTextField implementations",
+      "All source styles, typography ratios and artwork",
+      "Owner callbacks and authority/unknown/recovery policy",
+      "Server and dependency files"
+    ]
+  },
+  "checks": {
+    "search": {
+      "command": "node --test frontend/scripts/search-accessibility.test.mjs",
+      "passed": 2,
+      "failed": 0,
+      "covers": [
+        "Real consumer props through AppTextField and installed Paper/RN Web to input aria-label",
+        "Stable names before input, after input and after clearing",
+        "Unchanged task filter, clear callback and saved-record query/kind callback"
+      ]
+    },
+    "preparationDom": {
+      "command": "JSDOM_MODULE=<existing jsdom package directory> node frontend/verification/search-preparation-a11y-2026-10-09/preparation-focus-dom.cjs",
+      "status": "passed",
+      "cases": 4,
+      "covers": [
+        "Second-item Space preserves the same focused DOM node during saving and success and blocks re-entry",
+        "Unknown failed-save recovery preserves disabled state and rejects writes",
+        "Moving focus elsewhere while saving is respected on success",
+        "Changing role to viewer removes the retained checkbox"
+      ],
+      "dependencies": {
+        "React": "19.2.3",
+        "react-native-web": "0.21.2",
+        "react-native-paper": "5.15.3",
+        "jsdom": "30.1.2"
+      },
+      "externalTooling": "Existing jsdom reused read-only; no dependency added.",
+      "nonBlockingWarning": "jsdom has no ResizeObserver; no layout assertions were made."
+    },
+    "frontendTypecheck": {
+      "command": "cd frontend && node ../node_modules/typescript/bin/tsc --noEmit",
+      "exitCode": 0
+    },
+    "network": {
+      "guardedProcesses": 9,
+      "attempts": 0
+    }
+  },
+  "initialHarnessFailures": [
+    {
+      "check": "search DOM",
+      "error": "fontFamily stub was an object; RN Web expected a string",
+      "correction": "Set test-only fontFamily to sans-serif; no product code or expected accessible name changed."
+    },
+    {
+      "check": "preparation DOM bootstrap",
+      "error": "ShadowRoot was absent from the test global",
+      "correction": "Expose the jsdom ShadowRoot constructor."
+    },
+    {
+      "check": "preparation DOM success",
+      "error": "Test expected aria-disabled=\"false\", but RN Web removes the false attribute",
+      "correction": "Assert absence of aria-disabled after success; original node identity and activeElement assertions retained."
+    }
+  ],
+  "verificationLimits": [
+    "Source review and root acceptance passed; PR delivery not yet performed",
+    "Preview publication and real-browser regression blocked on reproducible v65 source",
+    "DOM runtime focus checks do not establish actual-browser layout, physical keyboard, assistive-technology or native-device behavior",
+    "No Server full suite, true model, real family data, GCP resources or production deployment",
+    "Baseline source is a verified subset; unrelated missing archived/bulk test files were not materialized"
+  ],
+  "recordedAt": "2026-10-09T17:12:00Z",
+  "independentReview": {
+    "result": "no blocking findings",
+    "additionalDomCasesPassed": 11,
+    "boundaries": [
+      "stale source",
+      "invalidated source",
+      "historical revision",
+      "archived document",
+      "offline",
+      "mismatched child",
+      "read_only condition",
+      "lost condition",
+      "changed document",
+      "changed authority",
+      "invalid selection"
+    ],
+    "networkAttempts": 0,
+    "reviewEvidenceSha256": "be048daf5fc7e7da17340e0c375938c789b09b74ef0e4922d87c446acc42c3b3",
+    "reviewedManifestSha256": "e795dbdcdc879d3d8f96364ce973ee7a2e084931889a574d4a83037c493279eb"
+  },
+  "rootAcceptance": {
+    "result": "finalAllow exact eight-file source slice for normal PR delivery",
+    "at": "2026-10-09T17:15:32Z",
+    "productAndTestHashesUnchanged": true
+  },
+  "previewPublication": {
+    "status": "blocked",
+    "reason": "The reproducible v65 source package is unavailable and its previous publisher has no recoverable local staging or fixture adapter.",
+    "existingPublicPreview": "unchanged v65",
+    "repositoryFixtures": "Available but not equivalent to the v65 adapter; no substitute deployment attempted.",
+    "browserRegression": "Pending source availability and authorized publication."
+  },
+  "updatedAt": "2026-10-09T17:17:54Z"
+}

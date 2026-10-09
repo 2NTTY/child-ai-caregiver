@@ -57,6 +57,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
   document: PreparationDocumentView; workspace: PreparationWorkspaceValue; onClose(): void; onHistory?(): void; onPrepareQuestion?: (question: string) => void;
 }) {
   const [sourceOpen, setSourceOpen] = useState(false), [archiveAsked, setArchiveAsked] = useState(false);
+  const [checkingItem, setCheckingItem] = useState<{ sectionId: string; itemId: string } | null>(null);
   const revision = document.revision, state = stateLabels[document.readState], archived = document.status === "archived";
   const reading = workspace.model.reading, index = reading?.indexes.find(value => value.documentId === document.id);
   const content = reading?.content?.documentId === document.id ? reading.content : null;
@@ -64,9 +65,13 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
     (["saving", "unknown"].includes(workspace.model.operation.state) || !!workspace.model.operation.recovery);
   const editable = canChangePreparation(document, workspace.model.scope) && !pending;
   const canCheck = editable && workspace.model.capabilities?.checkItem === true;
+  const keepCheckingControl = pending && !document.historical && document.readState === "ready"
+    && document.childId === workspace.model.scope.childId && workspace.model.scope.online
+    && workspace.model.scope.role !== "viewer" && ["ready", "unknown"].includes(workspace.model.scope.condition);
   const canArchive = canArchivePreparation(document, workspace.model.scope) && !pending && workspace.model.capabilities?.archive === true;
   const checked = revision?.sections.flatMap(section => section.kind === "checklist" ? section.items : []) ?? [];
   useLayoutEffect(() => { setArchiveAsked(false); setSourceOpen(false); }, [document.id, document.version, document.readState, workspace.scopeKey]);
+  useLayoutEffect(() => { if (!pending) setCheckingItem(null); }, [pending]);
   return <View testID="preparation-document-detail" style={styles.document}>
     <AppButton label={archived ? "返回歸檔清單" : "返回準備單清單"} variant="secondary" density="compact" onPress={onClose} />
     <View style={styles.documentHeader}>
@@ -89,8 +94,12 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
     {revision?.sections.map(section => <View key={section.id} style={styles.section}>
       <View style={styles.row}><Text accessibilityRole="header" style={styles.sectionTitle}>{section.title}</Text>{section.kind === "checklist" ? <Text style={styles.meta}>{checked.filter(item => item.checked).length}／{checked.length} 項已核對</Text> : null}</View>
       {section.items.map((item, index) => section.kind === "checklist"
-        ? archived || !canCheck ? <View key={item.id} style={styles.textRow}><Text style={styles.checkMark}>{item.checked ? "☑" : "☐"}</Text><Text style={styles.reading}>{item.text}</Text></View>
-          : <AppCheckbox key={item.id} label={item.text} checked={!!item.checked} onChange={value => workspace.actions.checkItem(document.id, document.version, section.id, item.id, value)} />
+        ? archived || !canCheck && !(keepCheckingControl && checkingItem?.sectionId === section.id && checkingItem.itemId === item.id) ? <View key={item.id} style={styles.textRow}><Text style={styles.checkMark}>{item.checked ? "☑" : "☐"}</Text><Text style={styles.reading}>{item.text}</Text></View>
+          : <AppCheckbox key={item.id} label={item.text} checked={!!item.checked} disabled={!canCheck} onChange={value => {
+            if (!canCheck) return;
+            setCheckingItem({ sectionId: section.id, itemId: item.id });
+            workspace.actions.checkItem(document.id, document.version, section.id, item.id, value);
+          }} />
         : <View key={item.id} style={styles.textRow}><Text style={styles.bullet}>{section.kind === "questions" ? `${index + 1}.` : "·"}</Text><Text style={styles.reading}>{item.text}</Text></View>)}
     </View>)}
     {revision ? <View style={styles.section}>
