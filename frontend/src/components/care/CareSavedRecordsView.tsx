@@ -28,7 +28,7 @@ function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel;
   if (model.draft) return <CareRecordForm key={model.draft.key} model={model} actions={actions} />;
   if (model.detail) return <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} />;
   return <View style={s.workspace}>
-    {showSearch ? <><AppTextField label="搜尋已保存記錄" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} />
+    {showSearch ? <><AppTextField label="搜尋已保存記錄" accessibilityLabel="搜尋已保存記錄" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} />
     <View style={s.controls}><View style={s.filter}><AppSelect<CareFilter> label="種類" value={kind} options={[{ value: "all", label: "全部" }, ...careKindOptions]} onChange={setKind} disabled={occupied} /></View>
       <AppButton label="搜尋" density="compact" disabled={occupied || loading || !model.online} onPress={() => actions.search(query, kind)} /></View></> : null}
     <ReadStateNotice state={readState} message={readMessage}>
