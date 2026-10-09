@@ -13,7 +13,7 @@ import { createContactStore } from "./contact-store.ts";
 import { contactQueue } from "./contact-worker.ts";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { createAuth } from "./auth.ts";
+import { createAuth, createBetterAuthPort } from "./auth.ts";
 import { createRequestHandler } from "./app.ts";
 import { readServerConfig } from "./config.ts";
 import { createPool } from "./database.ts";
@@ -113,7 +113,7 @@ try {
   if (account && !photoFiles) throw new Error("account_photo_storage_required");
   const exporter = account && photoFiles ? createAccountExportStore(pool, cipher, { photoFiles }) : undefined;
   const handler = createRequestHandler({
-    config, auth, workspaces: createWorkspaceStore(pool),
+    config, auth: createBetterAuthPort(auth), workspaces: createWorkspaceStore(pool),
     account: account && exporter ? { admission: account.admission,
       handleData: (request, userId) => handleAccountDataRequest(request, userId, { data: account.data,
         exporter,

@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "package": "f01-provider-neutral-http-auth-session-port",
+  "recordedAt": "2026-10-09T20:50:08+08:00",
+  "baseCommit": "b4874bb473bc0b18f4a54b277d3f9530f271c9c6",
+  "status": "local_candidate_validated_and_reviewed_pending_normal_publication",
+  "changedCodePaths": [
+    "server/auth-port.ts",
+    "server/auth.ts",
+    "server/app.ts",
+    "server/index.ts",
+    "tests/auth-port.test.ts",
+    "tests/server-runtime.test.ts"
+  ],
+  "fixedSource": {
+    "changedFiles": [
+      {
+        "path": "server/auth-port.ts",
+        "sha256": "db2b261c775a1d0d69205740181c6d6ec747cbc2734abb53ebda6bfc2c2a3dc8",
+        "gitBlobSha1": "ed81cbdee39940d2723381a1f42b373a9e93d3fb",
+        "baseGitBlobSha1": null
+      },
+      {
+        "path": "server/auth.ts",
+        "sha256": "27bae60f87f5b0643bf26feccad567c824c58ea4a6696f1b4978256b012db50a",
+        "gitBlobSha1": "ea2359b34f54aaf4e6813c4bd903ace126f94cbd",
+        "baseGitBlobSha1": "b92d5bf6d71790d486d901397ce58d9ea24cad56"
+      },
+      {
+        "path": "server/app.ts",
+        "sha256": "3579b9b169ab11ea66d2bcd9feaf24d29691fb1dc226df4c0c8826420e0067d9",
+        "gitBlobSha1": "541624da20042cd1d3f14f07e3e6a099fcd9f541",
+        "baseGitBlobSha1": "8811e444e95e592710809f57550ade9f52c6bbd6"
+      },
+      {
+        "path": "server/index.ts",
+        "sha256": "c10541cd5bcc722e1b1fd74e2939389cce30bc5c717dfbae776bca0b5302e9a6",
+        "gitBlobSha1": "c5cd8101b06a8b4d5e4cdc5b252abb348f617a90",
+        "baseGitBlobSha1": "719e1ded41da78aed00a29e19d6970f0af2f64ce"
+      },
+      {
+        "path": "tests/auth-port.test.ts",
+        "sha256": "5a43a3cddf92d937e4f66974d6e04f9ddf2045fe6369906cca621c22552e47d6",
+        "gitBlobSha1": "122621dd785bc2771cd24fa832fedd6d9522f992",
+        "baseGitBlobSha1": null
+      },
+      {
+        "path": "tests/server-runtime.test.ts",
+        "sha256": "020c97d4a27e8f1a4c02c0518a5e9990124b5f3a11a21b69fc5a82d552238e79",
+        "gitBlobSha1": "195cd560ef7935c9473c1d83becba0a47d00ae1c",
+        "baseGitBlobSha1": "33f9acb6fffdb2582e31e6b60bad254757a77177"
+      }
+    ],
+    "postValidationMismatches": []
+  },
+  "verification": {
+    "environment": {
+      "node": "24.19.0",
+      "betterAuth": "1.7.5",
+      "dependencies": "Existing pinned package-lock; no install or lockfile change.",
+      "mode": "Offline synthetic provider/request fixtures; no listening server."
+    },
+    "baseline": {
+      "serverRuntime": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "skip": 0,
+        "exit": 0,
+        "log": "baseline-server-runtime.log"
+      },
+      "serverTypecheck": {
+        "exit": 0,
+        "log": "baseline-server-tsc.log"
+      }
+    },
+    "candidateV1": {
+      "focused": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0,
+        "skip": 0,
+        "exit": 0,
+        "log": "candidate-auth-runtime.log"
+      },
+      "serverTypecheck": {
+        "exit": 2,
+        "log": "candidate-server-tsc.log",
+        "rawDiagnostics": "tests/auth-port.test.ts(25,12): error TS2394: This overload signature is not compatible with its implementation signature.\ntests/auth-port.test.ts(62,12): error TS2394: This overload signature is not compatible with its implementation signature.\n"
+      },
+      "response": "Stopped after first failing stage. Retained diagnostics and first-failure-auth-port.test.ts. Only the two test implementations received an explicit union return type; assertions and product payloads were unchanged."
+    },
+    "candidateV2": {
+      "focused": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0,
+        "skip": 0,
+        "exit": 0,
+        "log": "candidate-v2-auth-runtime.log",
+        "breakdown": {
+          "authPort": 4,
+          "serverRuntime": 15
+        }
+      },
+      "serverTypecheck": {
+        "exit": 0,
+        "log": "candidate-v2-server-tsc.log"
+      }
+    },
+    "commands": {
+      "baseline": "node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test tests/server-runtime.test.ts",
+      "candidate": "node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test tests/auth-port.test.ts tests/server-runtime.test.ts",
+      "serverTypecheck": "node --import ../evidence/offline-guard.mjs ./node_modules/typescript/bin/tsc --project tsconfig.server.json"
+    }
+  },
+  "checks": [
+    "Raw session, wrapped response, Request, Headers and Response object identity are preserved, including additional provider fields and multiple Set-Cookie values.",
+    "Missing/false returnHeaders and true returnHeaders retain their distinct overloads; expiry cookies survive null sessions.",
+    "The native Better Auth Node header helper is delegated by the adapter; the generic port has no Better Auth type dependency.",
+    "Original provider errors propagate without retry or null conversion; existing HTTP 503 responses do not expose private details or enter domain storage.",
+    "Fresh same-request identity reads reject revocation before private reads and account switches before returning a private result.",
+    "Invitation rejection and expected-user mismatch stop domain access and native other-session revocation; origin/CSRF and sanitized proxy checks remain.",
+    "The original createAuth function/configuration and raw verifyPassword closure are byte-identical. App edits are limited to auth import/type/header/getSession delegation; index only injects the adapter."
+  ],
+  "network": {
+    "guard": "offline-guard.mjs",
+    "guardSha256": "01d405f63e2e70a69d207f8704d17416ac828d4bcc2c268c9395519a16f83770",
+    "attributableCandidateRecords": [
+      {
+        "file": "v1-network-audit-13.json",
+        "sha256": "f0857665ddb1c31e0a8ebc2380abab237f69c521839d5a323c1e0dc52ccf4062",
+        "commandTarget": "tests/auth-port.test.ts",
+        "recordedAttempts": 0
+      },
+      {
+        "file": "v1-network-audit-14.json",
+        "sha256": "cc8153107a69bd20cc40dacf2a98998987aa81e3df78c4609b430565a25cb03c",
+        "commandTarget": "tests/server-runtime.test.ts",
+        "recordedAttempts": 0
+      },
+      {
+        "file": "v1-network-audit-5.json",
+        "sha256": "8cb7cdd4c0bfdfedaa3540109b8f26d46c022ba2b7de31dce8091bc37f57081e",
+        "commandTarget": "node_modules/typescript/bin/tsc",
+        "recordedAttempts": 0
+      },
+      {
+        "file": "v2-tests-network-audit-12.json",
+        "sha256": "b45295de1c6f1d3e404dbf3381d42f4452975818bf3b54cc2e829578ddf26c02",
+        "commandTarget": "tests/auth-port.test.ts",
+        "recordedAttempts": 0
+      },
+      {
+        "file": "v2-tests-network-audit-13.json",
+        "sha256": "2337dc57937d22f326847871bbd5c20f2242e9ea9ab335abe9694fd912885aae",
+        "commandTarget": "tests/server-runtime.test.ts",
+        "recordedAttempts": 0
+      },
+      {
+        "file": "v2-tsc-network-audit-5.json",
+        "sha256": "8cb7cdd4c0bfdfedaa3540109b8f26d46c022ba2b7de31dce8091bc37f57081e",
+        "commandTarget": "node_modules/typescript/bin/tsc",
+        "recordedAttempts": 0
+      }
+    ],
+    "recordedAttempts": 0,
+    "limitations": [
+      "Audit filenames use process IDs that can be reused across shell invocations. Phase snapshots contain overlapping or prior records; they are not added together as a unique process count.",
+      "The six listed files are attributable v1/v2 test-worker and compiler observations. Baseline and complete launcher history cannot be reconstructed from current filenames.",
+      "The guard records Node socket/TLS/DNS/fetch attempts, not packet capture or proof covering unobserved programs. No npm launcher, cloud or model command was used."
+    ]
+  },
+  "rawLogHashes": {
+    "baseline-server-runtime.log": "76f89ac2c4303b139fdfbec863801e08cf1c2712ff984c66df2a1bc3ddfe98a2",
+    "baseline-server-tsc.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidate-auth-runtime.log": "439ac233d6c938d171ef68a7b4670be1fc7cef3a2faef7d1454abf732754589c",
+    "candidate-server-tsc.log": "869e908f717380498bbd7fbc13baceed109e7179191d6d3d66f7b6fe781f0c13",
+    "candidate-v2-auth-runtime.log": "9172de6019ff7efac6423969e0503711e45a83213e205dcb85f38aaceac1ab80",
+    "candidate-v2-server-tsc.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "offline-guard.mjs": "01d405f63e2e70a69d207f8704d17416ac828d4bcc2c268c9395519a16f83770",
+    "first-failure-auth-port.test.ts": "a2b726c6981117126712ac5a22ea402ecd30ee34eb000b88b6990b9c39f375c4",
+    "candidate-v2.diff": "344ae3e4f09f268855f6c2843b9fef3cc1458109a7cbe2478b1686de99f0a986",
+    "candidate-v2-scope-review.log": "09aacf65fc6e74667106f9647535695569e9cbda598c8072c1f53181b048f9f4"
+  },
+  "documents": {
+    "worklogBaseBytes": 276990,
+    "worklogBaseSha256": "a5f88fbae7dfba47cde31e9864fc94e524422059b0781434fa7c7ec94656bfc1",
+    "worklogPrefixUnchanged": true,
+    "worklogAppendSha256": "3291cd39bb0b98aa6a2ab02544f56eff2ff4651ed601f87174c27f3f343ed12b",
+    "scope": "Only a current-work sentence in PLAN, a short STATUS sentence, this artifact, and an appended WORKLOG entry. No historical TECH_REUSE baseline, SDK notice, architecture or API target text was changed."
+  },
+  "safety": {
+    "realModelCalls": 0,
+    "databaseOrCloudCalls": 0,
+    "newResourceOrPermissionChange": false,
+    "schemaOrDependencyChange": false,
+    "authConfigurationChange": false,
+    "newExternalEffect": false,
+    "deployed": false
+  },
+  "evidenceBoundaries": [
+    "This is the HTTP Auth/session dependency port only. Better Auth remains the actual provider; Firebase Authentication, token exchange, device-session ledger and recent-reauthentication migration are not implemented.",
+    "No real login, real session refresh/revocation, database, Firebase, Emulator, browser, cloud or deployment validation.",
+    "The 19 focused tests and server TypeScript project check are not a rerun of the historical 718-test aggregate or the complete npm run typecheck command.",
+    "Daily quota attempt idempotency, cross-store cancellation/effect fencing, persistent session cleanup/restore, worker/bootstrap, outbox and resume remain incomplete.",
+    "The original real-model budget remains 20/20 consumed; three other agents remain interface-only; all previous semantic failures and deferred gates remain.",
+    "No branch or PR was created by the implementation worker. Independent code/root-document reviews and normal publication are separate gates.",
+    "Root documents were authored after code validation and are not part of the tested six-file code manifest."
+  ],
+  "review": {
+    "independentCodeReview": "allow; six code/test files reviewed independently, no must-fix findings",
+    "independentRootDocumentReview": "allow; four root files, append-only prefix, source/log/audit hashes and limited evidence claims verified",
+    "rootFinalReview": "allow; root reviewed the actual code/doc patch and accepted the ten-file package conditional on independent document allow, now satisfied"
+  }
+}

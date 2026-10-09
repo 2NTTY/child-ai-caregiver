@@ -1836,3 +1836,12 @@
 - [取消 API](docs/API.md#p1-chat-http) 對齊 SQL 持久取消及 local Abort 加速，保留在途／已提交效果與跨庫 fencing 限制；[Session 採用條件](docs/ARCHITECTURE.md#p2-adk-native-reuse) 對齊可選單次 Firestore 接點、default memory 及未交付 resume。[Migration 016](docs/DATA_MODEL.md#agent-run-implementation) 改按環境日期證據判斷；README 的 runtime／VM stop 改指 [STATUS 日期觀察](STATUS.md#deployment)，不作新現場探測。[前端 STATUS](frontend/STATUS.md) 對齊本域首屏活動包，沒有將未驗首屏改稱已驗。
 - [持久預算](docs/CHAT_AGENT_DURABLE_BUDGET.md#本輪證據)及[Session 契約](docs/CHAT_AGENT_FIRESTORE_SESSION.md#已核可行性與下一步-gate)保留不變量、限制及固定驗證入口，以原證據取代一次性測試／程序清理流水；舊 aggregate 失敗、guard 嘗試、unknown、真模型 20／20 已用盡與未部署邊界保留。[原 WORKLOG](https://github.com/2NTTY/child-ai-caregiver/blob/09c2470cf50a75fcbfb392615f104ad379497d22/WORKLOG.md) 的 274888 bytes 完整保留，本節僅追加；沒有回寫歷史分工或原失敗。
 - 文件保留及連結核查：PLAN 224 個、八份文件 304 個相對連結／錨點可解析；未把外部網址可達性當已驗。此次未改產品程式、依賴或測試，未重跑產品測試、真模型、HTTP／UI、雲端或部署；文件一致性不等於新增產品驗收。
+
+
+<a id="log-20261009-auth-http-port"></a>
+## 2026-10-09｜F01 HTTP Auth/session 薄接點
+
+- 基線 master `b4874bb473bc0b18f4a54b277d3f9530f271c9c6`；指定 Astra xhigh 撰寫指導及本記錄，Sol xhigh 實作六份 code/test，dot 統籌與裁決。只抽出 `ServerAuthPort` 及 Better Auth 薄 adapter，HTTP 組裝沿原 provider；完整 F01、Firebase Auth／裝置台帳與其他接點仍未完成。
+- 原 session／response／Headers 與多個 Set-Cookie 原樣傳遞，每次身份重查仍呼叫 provider；不加快取、不吞錯或重試。createAuth 配置、origin／CSRF、准入、逐裝置撤銷、原 verifyPassword closure 及刪除收據／journal 未改。
+- 基線 server-runtime 10／10、Server typecheck 通過；候選首輪定向 19／19，但新增測試替身有兩項 TS2394，已停批保存。只補兩個 implementation 回傳型別後，同範圍 v2 19／19 及 Server typecheck 通過，未改斷言；失敗原文、固定 source／log hashes 與 audit 範圍見[驗收記錄](artifacts/verification/F01_AUTH_HTTP_PORT_20261009.json)。這不是原聚合 718 的重跑或完整 typecheck／CI。
+- 只用合成 request／provider 替身；現存可歸屬候選兩輪的 test-worker／tsc guard 記錄沒有網絡嘗試，PID 重用及快照重疊限制分列，不當封包擷取。未驗真登入／刷新／撤銷、DB、Firebase、Emulator、瀏覽器、雲端或部署；原模型 20／20 用盡、其他三角色只留接口及既有未驗門檻不變。程式／根文件獨立 review 與正常 PR 交付由後續裁決，不把此記錄當已合併。

@@ -1,9 +1,24 @@
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
+import { fromNodeHeaders } from "better-auth/node";
 import type { Pool } from "pg";
 import type { ServerConfig } from "./config.ts";
 import { AccountServiceError, type AccountAdmission } from "./account-admission.ts";
 import { accountAuthCallbackUrls, validateAuthCallback, type AuthMail } from "./auth-mail.ts";
+import type { ServerAuthPort, ServerAuthSession, ServerAuthSessionWithHeaders } from "./auth-port.ts";
+
+export function createBetterAuthPort(rawAuth: {
+  handler: ServerAuthPort["handler"];
+  api: Pick<ServerAuthPort, "getSession">;
+}): ServerAuthPort {
+  function getSession(options: { headers: Headers; returnHeaders?: false }): Promise<ServerAuthSession | null>;
+  function getSession(options: { headers: Headers; returnHeaders: true }): Promise<ServerAuthSessionWithHeaders>;
+  function getSession(options: { headers: Headers; returnHeaders?: false } | { headers: Headers; returnHeaders: true }) {
+    if (options.returnHeaders === true) return rawAuth.api.getSession(options);
+    return rawAuth.api.getSession(options);
+  }
+  return { handler: request => rawAuth.handler(request), getSession, fromNodeHeaders };
+}
 
 export function createAuth(config: ServerConfig, pool: Pool, services: { admission?: AccountAdmission; mail?: AuthMail } = {}) {
   const invited = services.admission?.enabled === true;
