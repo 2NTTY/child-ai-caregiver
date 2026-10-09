@@ -22,4 +22,4 @@ jobs:
       actions: read
       id-token: write
     # Publication must replace this placeholder with the reviewed immutable commit SHA.
-    uses: 2NTTY/child-ai-caregiver/.github/workflows/run-controlled-model-acceptance.yml@a0934a5f2d1cb1cfc5cad6c91d8b1b6a5fdc24c2
+    uses: 2NTTY/child-ai-caregiver/.github/workflows/run-controlled-model-acceptance.yml@f93dfb8f200c427867c4a02b803f4453681b0c75
