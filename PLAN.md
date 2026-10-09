@@ -13,7 +13,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 - **成果目標：**理解不完整交代；只就會影響結果、對象或授權的歧義補問，回答後沿同一工作接續。完成適用知識查證、文件／任務操作、記憶更正及授權內提醒，保留取消、版本、原操作收據與結果未知狀態。原 A09 未通過的引用、同一文件修改及新對話讀回仍待完成，不能以新計劃抹除。
 - **復用與適配：**保留 ADK 的原生 Runner／工具循環及既有業務服務。成熟開源提示詞須按固定來源、授權與實際移植段落記錄；研究過不等於已採用。先核現有原生能力，再只補產品所需的身份／孩子／資料／收據及介面適配；不另造通用 agent runtime 或多角色平台。
-- **目前證據：**#155／#157／#158／#150／#154 已合併，預覽與正式服務分開。#154 原 typecheck／646 項離線回歸為合併前證據；其後 Firestore 單次會話接點候選原 typecheck／676 項離線回歸及本地 Emulator 5 項通過，見[接線契約](docs/CHAT_AGENT_FIRESTORE_SESSION.md#runtime-port)與[驗證摘要](artifacts/verification/FIRESTORE_RUNTIME_INTEGRATION_20261009.json)。正式 index／worker 未啟用，不讀既存 session 續跑；持久根預算、lease／generation、原 run／work／interrupt 及業務收據的恢復協調仍未完成。原真模型 A／B／B2 失敗、medium B／C 單例界線及 Firestore 模組舊失敗證據保留。
+- **目前證據：**#155／#157／#158／#150／#154／#159 已合併，預覽與正式服務分開。#159 的單次會話接點尚未正式啟用／恢復。新持久根預算 adapter 候選採原 business run、原绝對期限及受信有效上限，原 typecheck／688 項離線與 5 組 Emulator 通過，見[准入契約](docs/CHAT_AGENT_DURABLE_BUDGET.md)及[本輪證據](artifacts/verification/DURABLE_BUDGET_ADMISSION_20261009.json)。尚未接原 runtime 扣額點、SQL 日額、Auth、effect fencing 或 resume；不能以查詢成功替代跨庫原子提交。原語義失敗、單例與所有舊失敗界線保留。
 - **當前可執行工作：**收束已界定的上下文／能力容量、來源分類／收據及模型設定相容性修正；通過局部驗收及主模型 review 後整合，保留原失敗。同步完成 F01 所需的現有 store／Auth／session／背景工作接點對照，不實作另外三個 Agent 內部。
 - **接續順序：**先對齊工作意圖、待答／待確認及工具結果契約，再走完整合成工作：不完整交代 → 必要補問 → 原工作接續 → 查證 → 保存／同 ID 局部修改 → 中斷後查原收據 → 新對話讀回 → 授權提醒及取消。獨立的小型修正可並行；依賴新接口或儲存的接線要等相應候選 review／合併。
 - **可恢復服務：**已有持久 work、取消及收據不等於跨程序恢復完成。F01–F03 必須對照非 SQL 交易、持久受理／outbox、跨 instance 限額、重啟後剩餘工作、unknown 查原結果及撤權；保留舊實作作遷移對照，不新增 SQL 後續依賴。

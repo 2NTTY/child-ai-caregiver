@@ -1,0 +1,49 @@
+{
+  "checkedDate": "2026-10-09",
+  "baselineCommit": "754f88160ec7bbd7cf865148dfb156af09505e04",
+  "candidateVersion": 2,
+  "patchSha256": "2430957061f78c5a390882f967877f546aff2268c5b3f7a3c4c911cb098f794c",
+  "codeTestAddedPaths": 5,
+  "materializedBaselineFiles": 2273,
+  "candidateFiles": 2278,
+  "typecheck": "passed",
+  "unitPassed": 12,
+  "originalNpmTest": {
+    "tests": 688,
+    "pass": 688,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0
+  },
+  "emulator": {
+    "groups": 5,
+    "passed": 5,
+    "childrenStopped": 9,
+    "listenersStopped": 4,
+    "nonLoopbackAttempts": 0
+  },
+  "sourceUnchangedDuringTests": true,
+  "history": [
+    "v1 candidate/manifest/patch and 688+5 results preserved separately",
+    "Initial TS narrowing failure preserved",
+    "v2 aligns authorizationVersion with domain string without numeric coercion"
+  ],
+  "limits": [
+    "Adapter only; runtime/SQL/Auth/index/worker not wired",
+    "No resume or SQL business-effect atomic fencing claim",
+    "No live-model/UI/cloud/deployment/CI pass claim",
+    "Model batch20/20 exhausted; other Agent internals deferred"
+  ],
+  "rootDocuments": "Separately reviewed after code tests",
+  "logs": [
+    {
+      "command": "npm run typecheck",
+      "sha256": "1cfe8aff9cb9fe99d81edc6889b83d6ab3373b4c031d2df7c57e76d743879fd4"
+    },
+    {
+      "command": "npm test",
+      "sha256": "26401953f097fb1e7403cb7470726339f1d890535efa95239b23efc2b88690a1"
+    }
+  ]
+}
