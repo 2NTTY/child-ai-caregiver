@@ -1,3 +1,4 @@
+export const AGENT_CONFIRMATION_PENDING_TEXT = "已準備待確認事項，所列操作尚未執行。請核對下方確認問題；如仍有其他問題，本輪尚未完成回答。";
 export const AGENT_CONFIRMATION_SAVED_TEXT = "已按你確認的事項保存操作結果；本輪後續文字整理未完成。請查看下方實際收據，不需重做已成功的操作。";
 
 /* Trusted product tool instructions, maintained by the primary model. */
@@ -10,7 +11,7 @@ export const AGENT_WORK_TOOL_DESCRIPTIONS = {
   "read_memory_facts": "分頁讀取可見的孩子記憶事實及目前 version、有效性與來源；更正或停用前讀回原項，不能只憑摘要猜 ID。私人資料不因讀取而得到共享授權。",
   "propose_fact_revision": "就已讀回的事實提出更正候選，指定 factId／expectedVersion、原文來源及理由。沿原記憶保留歷史，重要健康事實仍待本人明確確認，不自行升格推測或扩大可見範圍。",
   "propose_fact_deactivation": "提出停用某項已讀回事實的候選，指定 factId／expectedVersion 及原因。停用保留歷史，仍待本人明確確認；不是永久刪除或停用其他相似事實。",
-  "request_confirmation": "為一項現有候選請求具體對話確認。指定原 runId、proposalId 及 version，Server 綁定操作、目標、授權與期限並提供完整問題；你不能把 confirmed:true 當成同意。不要一次請家長用一句好確認多個候選。用具名入口或重新列明處理歧義／失效；外發與永久刪除不可藉此擴權。"
+  "request_confirmation": "只為對象及意圖已清楚的一項現有候選請求操作批准；此工具不是消歧工具。若仍不知道本人指哪項，先以自然問題列清選擇，不先猜一項候選再請批准。指定原 runId、proposalId 及 version，Server 綁定操作、目標、授權與期限並提供完整問題；你不能把 confirmed:true 當成同意。不要一次請家長用一句好確認多個候選。用具名入口或重新列明處理歧義／失效；外發與永久刪除不可藉此擴權。"
 } as const;
 
 /** Full-message consent is a safety precondition, never a tool capability router. */

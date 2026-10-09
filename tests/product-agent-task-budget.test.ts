@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { FinishReason } from "@google/genai";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import { createProductAgent } from "../server/product-agent.ts";
+import { PRODUCT_AGENT_TOOL_CATALOG } from "../server/product-agent-capabilities.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import type { AgentProposal, ProductAgentResult } from "../src/shared/product-agent.ts";
 
@@ -35,15 +36,19 @@ for (const policy of [observedPolicy, null]) for (const inputLimit of [32000, 64
     usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async request => {
       const size = JSON.stringify({ contents: request.contents, config: request.config }).length;
       sizes.push(size); assert.ok(size < inputLimit, String(size));
+      const index = calls++;
       const tools = Object.keys(request.toolsDict);
-      for (const required of ["read_context", "propose_task", "propose_task_change", "create_ordinary_reminder", "change_ordinary_reminder", "present_answer"])
+      const taskTools = PRODUCT_AGENT_TOOL_CATALOG.groups.find(group => group.id === "tasks")!.toolNames;
+      assert.deepEqual(tools.sort(), [...PRODUCT_AGENT_TOOL_CATALOG.coreToolNames, PRODUCT_AGENT_TOOL_CATALOG.loader.name,
+        ...(index > 0 ? taskTools : [])].sort());
+      if (index > 0) for (const required of ["read_context", "propose_task", "propose_task_change", "create_ordinary_reminder", "change_ordinary_reminder", "present_answer"])
         assert.ok(tools.includes(required), required);
       for (const unrelated of ["read_family_documents", "generate_family_document", "change_family_document", "save_ordinary_record", "revise_ordinary_record"])
         assert.ok(!tools.includes(unrelated), unrelated);
       const texts = request.contents.flatMap(content => content.parts ?? []).flatMap(part => typeof part.text === "string" ? [part.text] : []);
       for (const original of conversation) assert.ok(texts.includes(original.text), "The full original user/model text must reach the model unchanged");
-      const index = calls++;
       assert.ok(index < 4, "Terminal presentation must not start a fifth model call");
+      if (index === 1) assert.equal(request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.id === "task-capability")?.functionResponse?.response?.status, "succeeded");
       if (index === 2) {
         const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.id === "invalid-task")?.functionResponse?.response;
         assert.equal(response?.status, "rejected"); assert.equal((response?.data as any)?.code, "invalid_parameters");
@@ -54,7 +59,8 @@ for (const policy of [observedPolicy, null]) for (const inputLimit of [32000, 64
         responseSizes.push(JSON.stringify(response).length); assert.ok(responseSizes[0] < 800, "Only bounded public schema repair hints are returned");
         assert.equal(proposalsWritten, 0, "Invalid parameters must not execute a proposal write");
       }
-      const parts = index === 0 ? [{ functionCall: { id: "context", name: "read_context", args: {} } }]
+      const parts = index === 0 ? [{ functionCall: { id: "context", name: "read_context", args: {} } },
+        { functionCall: { id: "task-capability", name: "load_capabilities", args: { capabilities: ["tasks"] } } }]
         : index === 1 ? [{ functionCall: { id: "invalid-task", name: "propose_task", args: { values: { ...task, dueAt: "2026-10-12T19:30" } } } }]
         : index === 2 ? [{ functionCall: { id: "repair-task", name: "propose_task", args: { values: task } } }]
         : [{ functionCall: { id: "answer", name: "present_answer", args: { kind: "operation", paragraphs: [{ text: "已整理待確認候選，尚未建立正式待辦。", citationIds: [] }] } } }];
@@ -76,6 +82,7 @@ for (const policy of [observedPolicy, null]) for (const inputLimit of [32000, 64
   } as unknown as Parameters<typeof createProductAgent>[0]);
   const result = await service.reply(userId, childId, messageId, async () => true);
   assert.equal(result?.status, "completed", JSON.stringify(result)); assert.equal(calls, 4); assert.equal(proposalsWritten, 1);
+  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 5, queryEmbeddings: 0 });
   assert.equal(result.proposals[0].status, "pending"); assert.equal(result.proposals[0].result, null);
   assert.equal(result.tools.find(tool => tool.name === "propose_task")?.status, "rejected");
   context.diagnostic(JSON.stringify({ policy: policy ? "observed_v1_controls_mapped_to_contract" : "none", logicalCharacters: sizes, rejectedResponseCharacters: responseSizes[0], limit: inputLimit }));

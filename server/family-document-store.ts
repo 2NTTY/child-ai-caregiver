@@ -10,7 +10,7 @@ import { appendOnlineChange } from "./online-change.ts";
 import { buildFamilyDocumentSnapshot, emptyFamilyDocumentSources, documentSnapshotValid, documentSourceBasis, loadFamilyDocumentSources, supplementFamilyDocumentSources, type FamilyDocumentSources } from "./family-document-sources.ts";
 
 import { applyFamilyDocumentPatch } from "./family-document-edits.ts";
-import { advanceReportBatch, completeReportSnapshot, effectiveReportRequest, newReportAccumulator, reportPeriodKind, reportToday, type ReportAccumulator } from "./family-document-reports.ts";
+import { advanceReportBatch, completeReportSnapshot, currentConcernScan, effectiveReportRequest, newReportAccumulator, reportPeriodKind, reportToday, type ReportAccumulator } from "./family-document-reports.ts";
 import { decodeDocumentCursor, encodeDocumentCursor, documentManifest, sliceDocumentContent } from "./family-document-reading.ts";
 
 interface Row { kind: DocumentRequest["kind"]; id: string; child_id: string; created_by: string; version: number; payload_encrypted: string;
@@ -58,17 +58,17 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
     const valid = item.current && documentSnapshotValid(item.current, loaded);
     let report: ReportProgress | undefined;
     if (stored.request.kind === "growth_report") {
-      const matching = state !== null && state.sourceRevision === loaded.sourceRevision && (state.validUntil === null || Date.parse(state.validUntil) > Date.now());
+      const matching = state !== null && currentConcernScan(state) && state.sourceRevision === loaded.sourceRevision && (state.validUntil === null || Date.parse(state.validUntil) > Date.now());
       const effective = effectiveReportRequest(stored.request), period = matching ? state.request.period : effective.period;
       const due = stored.request.reportMode === "living" && period.to !== effective.period.to;
       report = { mode: stored.request.reportMode ?? "fixed", phase: matching && state.stage !== "done" && !state.blocked && !due ? "building"
-        : valid && item.current?.reportCoverage && !state?.blocked && !due ? "complete" : "needs_update",
+        : valid && item.current?.reportCoverage && currentConcernScan(state) && !state?.blocked && !due ? "complete" : "needs_update",
         processedSources: matching && !due ? state.processedSources : 0, sourceRevision: loaded.sourceRevision!,
         periodKind: reportPeriodKind(period), period, title: valid ? item.current!.title : stored.request.title };
     }
     return { ...item, ...(report ? { report } : {}), current: valid ? item.current : null, ...(item.current ? { manifest: documentManifest(item.current, !valid) } : {}),
       history: item.history.filter(snapshot => documentSnapshotValid(snapshot, loaded)).slice(0, MAX_HISTORY),
-      readState: !valid ? "invalidated" : item.current!.reportCoverage ? report?.phase === "needs_update" ? "stale" : "ready" : item.current!.sourceBasis !== documentSourceBasis(loaded, stored.request) ? "stale" : "ready" };
+      readState: !valid ? "invalidated" : item.current!.reportCoverage ? report?.phase === "complete" ? "ready" : "stale" : item.current!.sourceBasis !== documentSourceBasis(loaded, stored.request) ? "stale" : "ready" };
   }
   async function result(client: PoolClient, row: Row, loaded: FamilyDocumentSources, userId: string): Promise<FamilyDocument> {
     const stored = decode(row), revisions = await snapshots(client, row, stored.currentId), scoped = await scopedSources(client, row, loaded);
@@ -83,7 +83,7 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
     if (!eligible) throw new FamilyError(409, "source_changed");
     const scoped = await scopedSources(client, row, loaded), request = effectiveReportRequest(stored.request);
     let state = progress(row);
-    if (!state || state.blocked || state.stage === "done" || state.sourceRevision !== scoped.sourceRevision || state.request.period.to !== request.period.to
+    if (!state || !currentConcernScan(state) || state.blocked || state.stage === "done" || state.sourceRevision !== scoped.sourceRevision || state.request.period.to !== request.period.to
       || state.validUntil !== null && Date.parse(state.validUntil) <= Date.now()) state = newReportAccumulator(stored.request, scoped.sourceRevision!);
     await advanceReportBatch(client, cipher, userId, row.child_id, state);
     let snapshot: DocumentSnapshot | undefined;
@@ -129,6 +129,11 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
     }))
       throw new FamilyError(409, "standard_report_exists");
   }
+  function originalReportFresh(original: FamilyDocument, stored: Stored, loaded: FamilyDocumentSources, state: ReportAccumulator | null): boolean {
+    return original.report !== undefined && currentConcernScan(state) && original.report.sourceRevision === loaded.sourceRevision
+      && original.report.period.to === effectiveReportRequest(stored.request).period.to
+      && (state?.validUntil === null || state?.validUntil !== undefined && Date.parse(state.validUntil) > Date.now());
+  }
   async function receipt(client: PoolClient, workspaceId: string, userId: string, childId: string, opId: string, request: unknown,
     loaded: FamilyDocumentSources, operation: () => Promise<FamilyDocument>): Promise<FamilyDocument> {
     z.uuid().parse(opId);
@@ -147,9 +152,8 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
       const stored = decode(row), scoped = await scopedSources(client, row, loaded), state = progress(row);
       const replay = safe(original, stored, scoped, state);
       // An unchanged original building receipt retains its own batch progress; replay never performs a later batch.
-      if ((original.report?.phase === "building" || original.report?.phase === "complete" && replay.current !== null) && original.report.sourceRevision === scoped.sourceRevision
-        && original.report.period.to === effectiveReportRequest(stored.request).period.to
-        && (state?.validUntil === null || state?.validUntil !== undefined && Date.parse(state.validUntil) > Date.now())) replay.report = original.report;
+      if ((original.report?.phase === "building" || original.report?.phase === "complete" && replay.report?.phase === "complete" && replay.current !== null)
+        && originalReportFresh(original, stored, scoped, state)) replay.report = original.report;
       return replay;
     }
     const item = await operation();
@@ -176,11 +180,12 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
           ? emptyFamilyDocumentSources(childId) : await loadFamilyDocumentSources(client, cipher, userId, childId));
         await supplementFamilyDocumentSources(client, cipher, userId, childId, loaded,
           original.current && !original.current.reportCoverage ? [original.current] : []);
-        const stored = decode(row), checked = safe(original, stored, loaded, progress(row));
+        const stored = decode(row), state = progress(row), checked = safe(original, stored, loaded, state);
         const current = await result(client, row, loaded, userId);
         const readable = (item: FamilyDocument) => item.current !== null && item.readState === "ready"
           || item.report?.phase === "building" && item.report.sourceRevision === loaded.sourceRevision;
-        if (!readable(checked) || !readable(current)) return null;
+        const originalBuilding = original.report?.phase === "building" && originalReportFresh(original, stored, loaded, state);
+        if ((!readable(checked) && !originalBuilding) || !readable(current)) return null;
         // Only committed metadata is projected. Historical bodies never leave this read path.
         return { operationId: opId, documentId: original.id, savedVersion: original.version };
       });
@@ -377,7 +382,7 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
           const loaded = await scopedSources(client, row, emptyFamilyDocumentSources(row.child_id));
           const prior = await snapshots(client, row, stored.currentId);
           if (prior.current?.reportCoverage && documentSnapshotValid(prior.current, loaded) && !timeDue
-            && progress(row)?.stage === "done") {
+            && progress(row)?.stage === "done" && currentConcernScan(progress(row))) {
             await client.query("UPDATE family_documents SET dirty=false,dirty_epoch=NULL,dirty_generation=NULL WHERE id=$1", [row.id]); return false;
           }
           row.version++;

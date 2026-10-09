@@ -26,9 +26,18 @@ function fixture(options: { now?: string; factUntil?: string | null; profileUnti
     if (sql.includes("AND NOT validity_indexed ORDER BY id LIMIT 100")) return { rows: [] };
     if (sql.startsWith("SELECT profile_version")) return { rows: profile };
     if (sql.startsWith("SELECT version,payload_encrypted FROM child_profile_revisions")) return { rows: [{ version: 1, payload_encrypted: JSON.stringify({ data }) }] };
-    if (sql.startsWith("WITH checked AS MATERIALIZED")) {
+    const authorityQuery = `WITH checked AS MATERIALIZED (SELECT clock_timestamp() AS at)
+    SELECT md5(jsonb_build_array(
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM text_records WHERE child_id=$1),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version,status,visibility,valid_until,valid_until IS NULL OR valid_until>checked.at) ORDER BY id),'[]'::jsonb)
+      FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2)),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM memory_topics WHERE child_id=$1 AND (visibility='family' OR created_by=$2))
+    )::text) AS authority, NOT EXISTS(SELECT 1 FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed) AS metadata_complete,
+    checked.at AS checked_at, (SELECT min(valid_until) FROM memory_facts WHERE child_id=$1
+      AND (visibility='family' OR created_by=$2) AND valid_until>checked.at) AS fact_valid_until FROM checked`.replace(/\s+/gu, " ").trim();
+    if (sql.replace(/\s+/gu, " ").trim() === authorityQuery) {
       assert.deepEqual(parameters, [childId, userId]);
-      assert.ok(sql.includes("valid_until>checked.at")); assert.ok(sql.includes("min(valid_until)"));
+      assert.equal(sql.match(/clock_timestamp\(\)/gu)?.length, 1);
       return { rows: [{ authority: options.changed ? "changed-authority" : "synthetic-authority", metadata_complete: options.complete ?? true,
         checked_at: options.unknownClock ? new Date(NaN) : now, fact_valid_until: options.factUntil ? new Date(options.factUntil) : null }] };
     }

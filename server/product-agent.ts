@@ -8,7 +8,7 @@ import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
-import { AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
+import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
 import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./product-agent-capabilities.ts";
 
 export function createProductAgent(options: {
@@ -100,6 +100,7 @@ export function createProductAgent(options: {
       }
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
+      let confirmationPendingFallbackUsed = false;
       const result = await options.runtime.run({
         scope: claim.scope, runId: claim.runId, deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
@@ -108,7 +109,7 @@ export function createProductAgent(options: {
           earlierMessagesNotFullySummarized: context.truncated.messages },
           confirmationPolicy: options.actions ? "ordinary_instructions_with_current_preauthorization_otherwise_explicit_confirmation" : "explicit_selection_only",
           operationPolicy,
-          instructionPolicy: options.actions ? "本次清楚的普通交代可按 operationPolicy 使用對應普通操作工具。政策不足或重要健康資料、AI 主動建議、含糊指向、刪除及擴大共享仍用候選或補問。需要孩子資料、原任務或舊版本時先 read_context；每次執行由 Server 重查政策。結果依收據，不把站內安排稱為外發通知。" : null,
+          instructionPolicy: options.actions ? "本次清楚的普通交代可按 operationPolicy 使用對應普通操作工具。政策不足、重要健康資料、AI 主動建議、刪除及擴大共享依原確認流程；含糊指向先補問，未消歧前不得任選目標建立候選或要求批准該猜測。需要孩子資料、原任務或舊版本時先 read_context；每次執行由 Server 重查政策。結果依收據，不把站內安排稱為外發通知。" : null,
           outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions" },
         // A bounded recent window is distinct from the coverage-tracked summary and confirmed facts.
         messages: page.messages.slice(Math.max(0, index - 5), index + 1).map(item => ({ role: item.role, text: item.text })),
@@ -117,8 +118,19 @@ export function createProductAgent(options: {
           tools = createProductAgentTools({ ...options, includeDocuments: true, run, authorize });
           return tools.tools;
         }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
-        finalize: async () => {
+        finalize: async (result, _context, reason) => {
           rendered.value = await tools!.presentation();
+          if (!rendered.value && reason === "model_limit" && result.tools.length > 0
+            && result.tools.every(tool => tool.status === "succeeded")
+            && result.tools.at(-1)?.name === "request_confirmation") {
+            if (!await authorize()) throw new AgentStopped("unauthorized");
+            const questions = await options.store.confirmationQuestions?.(userId, childId, claim.runId) ?? [];
+            if (!await authorize()) throw new AgentStopped("unauthorized");
+            if (questions.length === 1 && typeof questions[0] === "string" && questions[0].trim()) {
+              rendered.value = { text: AGENT_CONFIRMATION_PENDING_TEXT, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+              confirmationPendingFallbackUsed = true;
+            }
+          }
           if (!rendered.value) throw new AgentStopped("invalid_response");
           return rendered.value.text;
         },
@@ -161,7 +173,7 @@ export function createProductAgent(options: {
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         countsKnown: true, counts: result.counts, proposals: [] };
       if (!await isCurrentUser()) return null;
-      if (!await options.store.finish(claim.scope, value, value.status === "completed" ? tools?.summaryDraft() : undefined)) {
+      if (!await options.store.finish(claim.scope, value, value.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined)) {
         const cancelled = await options.store.readCancelled(claim.scope, claim.runId);
         return await isCurrentUser() ? cancelled : null;
       }

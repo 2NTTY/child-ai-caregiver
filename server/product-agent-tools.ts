@@ -180,7 +180,7 @@ export function createProductAgentTools(options: {
           message: "請先讀取 read_context 的 eligibleAssignees。指派給本人時，使用其中與 Server scope.userId 相符的 userId；若本人不在名單內，請如實說明不能指派。不得猜測 ID 或改派他人。" } };
         return response;
       } },
-    { name: "propose_task_change", description: "提出改期、完成或取消既有家庭任務的候選；必須指向 read_context 的原任務及版本，使用者明確確認後才執行。「收到」不代表完成。",
+    { name: "propose_task_change", description: "只為使用者意圖已唯一指向的既有家庭任務提出改期、完成或取消候選；先讀 read_context 的原任務及版本。多個合理對象或未讀完而不能確定時先澄清，不任選清單首項再請批准。note 只記本人實際要求，不捏造已確認。候選仍待本人明確確認後才執行；「收到」不代表完成。",
       parameters: z.object({ taskId: z.uuid(), expectedVersion: z.number().int().min(1),
         action: z.enum(["complete", "cancel", "reschedule"]), note: z.string().max(1000),
         dueAt: z.string().nullable(), timeZone: z.string().nullable(), assigneeUserId: z.string().nullable() }),

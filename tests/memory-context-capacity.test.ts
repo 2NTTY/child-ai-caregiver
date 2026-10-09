@@ -42,8 +42,21 @@ function harness(facts: MemoryFact[], topics: MemoryTopic[] = [], sourceVersions
       return result(version === undefined ? [] : [{ version }]);
     }
     if (sql.startsWith("SELECT id,version FROM text_records")) return result([]);
-    if (sql.startsWith("WITH checked AS MATERIALIZED")) return result([{ authority: "synthetic-authority", metadata_complete: true,
-      checked_at: new Date("2026-10-07T00:00:00.000Z"), fact_valid_until: null }]);
+    const authorityQuery = `WITH checked AS MATERIALIZED (SELECT clock_timestamp() AS at)
+    SELECT md5(jsonb_build_array(
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM text_records WHERE child_id=$1),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version,status,visibility,valid_until,valid_until IS NULL OR valid_until>checked.at) ORDER BY id),'[]'::jsonb)
+      FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2)),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM memory_topics WHERE child_id=$1 AND (visibility='family' OR created_by=$2))
+    )::text) AS authority, NOT EXISTS(SELECT 1 FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed) AS metadata_complete,
+    checked.at AS checked_at, (SELECT min(valid_until) FROM memory_facts WHERE child_id=$1
+      AND (visibility='family' OR created_by=$2) AND valid_until>checked.at) AS fact_valid_until FROM checked`.replace(/\s+/gu, " ").trim();
+    if (sql.replace(/\s+/gu, " ").trim() === authorityQuery) {
+      assert.deepEqual(params, [childId, userId]);
+      return result([{ authority: "synthetic-authority", metadata_complete: true,
+        checked_at: new Date("2026-10-09T09:00:00.000Z"), fact_valid_until: null }]);
+    }
+    if (sql.startsWith("WITH checked")) throw new Error("Unexpected synthetic authority query: " + sql);
     if (sql.includes("FROM conversation_summaries") || sql.includes("FROM chat_messages")) return result([]);
     if (sql.includes("FROM memory_facts") || sql.includes("FROM memory_topics")) {
       const source = sql.includes("FROM memory_facts") ? factRows : topicRows;

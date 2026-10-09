@@ -203,7 +203,7 @@ test("record storage maps an empty owned child separately from an unavailable ch
     query: async () => ({ rows: accessible ? [{ workspace_id: child.workspaceId }] : [] }),
     connect: async () => ({
       query: async (sql: string) => {
-        if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rows: [] };
+        if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK" || sql === "SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='5s'") return { rows: [] };
         if (sql.includes("FROM workspaces WHERE id=$1 FOR SHARE")) return { rows: [{ owner_user_id: "owner", access_version: 1 }] };
         if (sql.includes("SELECT 1 FROM children")) return { rowCount: accessible ? 1 : 0, rows: [] };
         if (sql.includes("FROM text_records")) return { rows };
@@ -228,7 +228,7 @@ test("record storage encrypts SQL payloads and returns authenticated server valu
       query: async (sql: string, values: unknown[] = []) => {
         assert.ok(!sql.includes(record.text));
         assert.ok(!values.includes(record.text));
-        if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rows: [] };
+        if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK" || sql === "SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='5s'") return { rows: [] };
         if (sql.includes("FROM workspaces WHERE id=$1 FOR SHARE")) return { rows: [{ owner_user_id: "owner", access_version: 1 }] };
         if (sql.includes("SELECT 1 FROM children")) return { rowCount: 1, rows: [] };
         if (sql.includes("INSERT INTO text_records")) {
@@ -253,7 +253,7 @@ test("storage failures propagate without retrying a potentially committed record
     query: async () => ({ rows: [{ workspace_id: child.workspaceId }] }),
     connect: async () => ({
       query: async (sql: string) => {
-        if (sql === "BEGIN" || sql === "ROLLBACK") return { rows: [] };
+        if (sql === "BEGIN" || sql === "ROLLBACK" || sql === "SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='5s'") return { rows: [] };
         if (sql.includes("FROM workspaces WHERE id=$1 FOR SHARE")) return { rows: [{ owner_user_id: "owner", access_version: 1 }] };
         if (sql.includes("SELECT 1 FROM children")) return { rowCount: 1, rows: [] };
         if (sql.includes("INSERT INTO text_records")) { attempts++; throw failure; }

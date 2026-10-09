@@ -1,0 +1,100 @@
+{
+  "checkedAt": "2026-10-08T18:29:21.443000+00:00",
+  "parentHead": "71b5d75a54ee45fde12c460a5c6066a0c78ae658",
+  "packVersion": "0.1.34",
+  "scope": "Clarification before choosing an operation target; clarification and approval are separate.",
+  "sourceIsPartialComposition": true,
+  "fullRepositoryBaselineVerified": false,
+  "files": [
+    {
+      "path": "prompts/core/conversation.md",
+      "baselineBlobSha": "970731fbae149c9505f9e8620f9e40c08f98e20b",
+      "finalBlobSha": "6053ca76e2613be561e61545502f6048f9bf446f",
+      "sha256": "99458e95ab3b0f602498135db1e86815392a060dc0ed53f103c3881edeb996dc"
+    },
+    {
+      "path": "prompts/modules/task-intents.md",
+      "baselineBlobSha": "48fe1719352935b0827179d07d7d16e2178d4a5d",
+      "finalBlobSha": "46faa9aeac7cc7234dc8d398ec05607e20b77244",
+      "sha256": "d73ed3e617e43717905b85acd250fc444c6c992be102fd429ec409fc6c14517c"
+    },
+    {
+      "path": "prompts/manifest.json",
+      "baselineBlobSha": "f6f42737b7d511db89aad2905cba063278a79cb8",
+      "finalBlobSha": "060a206e5fd82f1c6a9855555e865993c4b67a11",
+      "sha256": "4d6ad3fa088f6d63c94ed860a152b0d9f3c0621602e577e25bfb331c842517bc"
+    },
+    {
+      "path": "prompts/README.md",
+      "baselineBlobSha": "aedac2ca8753da4aa8c1dfc7be816775badcdc66",
+      "finalBlobSha": "3520630ca14ac8af9883bf9c5535aed73854f3b5",
+      "sha256": "35f83135ceab63bb863e52885e88df6514dfde6731495935aeb5bd0be26d1422"
+    },
+    {
+      "path": "prompts/CHANGELOG.md",
+      "baselineBlobSha": "d661dc773fd9a19c993785416e495c33ca748ccf",
+      "finalBlobSha": "4c810e3245de931070a67ff72486c3a08dafdcd8",
+      "sha256": "9d531e95e458576f23d6f925e456ed8cc2ad1697890e35078ac6781e84ff47ab"
+    },
+    {
+      "path": "prompts/review/conversations.md",
+      "baselineBlobSha": "45e7d9f01a208c55dcf4d32bd7a96d320bfa1247",
+      "finalBlobSha": "a059b343c141e3f5d78644755e48c38d623ac6d3",
+      "sha256": "a970daec7b9135b1de1a6073809d39026ed65275b971d8ff14ccb6a5f8b8a787"
+    },
+    {
+      "path": "server/product-agent.ts",
+      "baselineBlobSha": "21e322fc349ee77f2e1523113b57434b40fb8c51",
+      "finalBlobSha": "162bb826eb2a8c27553d2b92018ffabe2f9535a3",
+      "sha256": "beddf185b8b64c50560eaae57937d6fd7d529fe1503db292a49483f6b24ff0b9"
+    },
+    {
+      "path": "server/product-agent-tools.ts",
+      "baselineBlobSha": "5ccdd652900cfdabed61423e1559b20810fbdc54",
+      "finalBlobSha": "46933f8b790bf18f5123c911516c3abc5630b388",
+      "sha256": "2da93b4b0e9f40bdf1564942850641c9711335ad98b0fe643d572a0f9a0c0096"
+    },
+    {
+      "path": "server/agent-work-tool-descriptions.ts",
+      "baselineBlobSha": "48bcfa18fa14f06ec3e6dfaaf3cf14bfa1d5dd2f",
+      "finalBlobSha": "0e0aa6b8e541079de206487732680d7d19a8f4da",
+      "sha256": "524a562c02b38bcaafb4d6b5425e73e4f77ffee023858b73d8999c05b0b2a6a4"
+    }
+  ],
+  "assembly": {
+    "moduleCount": 22,
+    "recipeCount": 13,
+    "recipeModeCombinationsPassed": 21,
+    "tasksCapability": {
+      "id": "tasks",
+      "moduleIds": [
+        "module.task-intents"
+      ],
+      "coreBodyInsideActualPrompt": true,
+      "taskBodyInsideActualPrompt": true,
+      "characters": 16484,
+      "sha256": "7f036e0321d3ebe64a74785e6ccec5d8d618a2e6d713b4c6ed79af877abe30c7"
+    },
+    "allManifestModuleVersionsAligned": true,
+    "readmeVersionAndCountsAligned": true,
+    "missingOrUnknownModuleOrPath": false,
+    "rootBodyRulesInsideActualAssembledPrompt": true
+  },
+  "selectedTests": {
+    "passed": 45,
+    "failed": 0,
+    "scopedTypecheckExit": 0
+  },
+  "executableTokensAndSchemasUnchanged": true,
+  "priorPendingConfirmationFixPreserved": true,
+  "productionLimitsAndQuotaUnchanged": true,
+  "semanticAcceptance": false,
+  "priorEvidence": "The original A completion failure and B ambiguity failure are preserved; C was not run after the B failure.",
+  "limitation": "Static assembly and scripted tests do not prove model behavior. Historical B tool-result payloads were not retained, so capacity effects were not fully excluded.",
+  "notRun": [
+    "real-model validation of this prompt revision",
+    "SQL validation of this prompt revision",
+    "cloud deployment",
+    "full repository checks"
+  ]
+}

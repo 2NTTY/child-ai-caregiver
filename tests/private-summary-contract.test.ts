@@ -105,15 +105,34 @@ test("persistence advances only an ordered prefix while more history remains and
     created_at: new Date(Date.UTC(2026, 9, 7, 0, 0, index)), text_encrypted: cipher.encrypt(`Synthetic source ${index}`, `chat_messages:${id}:${child}:${user}:user::text`) }; });
   const client = { async query(sql: string, params: any[] = []) {
     const result = (value: any[]) => ({ rows: value, rowCount: value.length });
+    const normalized = sql.replace(/\s+/gu, " ").trim();
+    const authorityQuery = `WITH checked AS MATERIALIZED (SELECT clock_timestamp() AS at)
+    SELECT md5(jsonb_build_array(
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM text_records WHERE child_id=$1),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version,status,visibility,valid_until,valid_until IS NULL OR valid_until>checked.at) ORDER BY id),'[]'::jsonb)
+      FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2)),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM memory_topics WHERE child_id=$1 AND (visibility='family' OR created_by=$2))
+    )::text) AS authority, NOT EXISTS(SELECT 1 FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed) AS metadata_complete,
+    checked.at AS checked_at, (SELECT min(valid_until) FROM memory_facts WHERE child_id=$1
+      AND (visibility='family' OR created_by=$2) AND valid_until>checked.at) AS fact_valid_until FROM checked`.replace(/\s+/gu, " ").trim();
+    if (normalized === authorityQuery) {
+      assert.deepEqual(params, [child, user]);
+      return result([{ authority: "f".repeat(32), metadata_complete: true, checked_at: new Date("2026-10-09T09:00:00.000Z"), fact_valid_until: null }]);
+    }
     if (sql.includes("ORDER BY version DESC LIMIT 1")) return result(savedRow ? [savedRow] : []);
     if (sql.startsWith("SELECT profile_version")) return result([{ profile_version: profileVersion }]);
-    if (sql.startsWith("WITH checked AS MATERIALIZED")) return result([{ authority: "synthetic-authority", metadata_complete: true,
-      checked_at: new Date("2026-10-07T00:00:00.000Z"), fact_valid_until: null }]);
     if (sql.includes("SELECT m.* FROM chat_messages")) return result(rows.filter(row => params[2] || !coverage.has(row.id)).slice(0, 51));
-    if (sql.startsWith("INSERT INTO conversation_summaries")) savedRow = { id: params[0], payload_encrypted: params[5], invalidated: false };
-    if (sql.startsWith("DELETE FROM summary_message_coverage")) coverage.clear();
-    if (sql.startsWith("INSERT INTO summary_message_coverage")) params[0].forEach((id: string) => coverage.add(id));
-    return result([]);
+    if (sql.startsWith("INSERT INTO conversation_summaries")) { savedRow = { id: params[0], payload_encrypted: params[5], invalidated: false }; return result([]); }
+    if (sql.startsWith("DELETE FROM summary_message_coverage")) { coverage.clear(); return result([]); }
+    if (sql.startsWith("INSERT INTO summary_message_coverage")) { params[0].forEach((id: string) => coverage.add(id)); return result([]); }
+    const emptyQueries = [
+      "SELECT id,version,payload_encrypted FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed ORDER BY id LIMIT 100",
+      "SELECT version,payload_encrypted FROM child_profile_revisions WHERE child_id=$1 AND version=$2",
+      "SELECT 1 FROM conversation_summaries s WHERE s.child_id=$1 AND s.owner_user_id=$2 AND NOT s.invalidated AND (SELECT count(*) FROM summary_message_coverage c WHERE c.summary_id=s.id) <> s.covered_count LIMIT 1",
+      "UPDATE conversation_summaries SET invalidated=true WHERE child_id=$1 AND owner_user_id=$2",
+    ];
+    if (emptyQueries.includes(normalized)) return result([]);
+    throw new Error("Unexpected synthetic summary SQL: " + sql);
   } } as unknown as PoolClient;
   const first = await summaryInput(client, cipher, user, child);
   assert.equal(first.moreUncovered, true); assert.equal(first.messages.length, 50);

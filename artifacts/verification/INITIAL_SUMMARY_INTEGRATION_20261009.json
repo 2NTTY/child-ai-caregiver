@@ -1,0 +1,39 @@
+{
+  "checkedDate": "2026-10-09",
+  "baselineCommit": "74159e5cd8d69e349ce48120e025ccff6e1b0714",
+  "candidatePatchSha256": "9f9f6f1a1f4847f6f2745de9d0660a67980d4daaf8c09591b3c1cbbf62bd9581",
+  "codeAndTestDeltaPaths": 12,
+  "materializedBaselineFiles": 2257,
+  "officialTreeBlobs": 3694,
+  "candidateFiles": 2259,
+  "typecheck": "passed",
+  "originalNpmTest": {
+    "tests": 646,
+    "pass": 646,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0
+  },
+  "candidateFilesUnchangedDuringTests": true,
+  "networkAttempts": 0,
+  "allowedPinnedInlineWasmFetches": 1,
+  "rootDocuments": "Separately reviewed after code tests, outside tested source manifest",
+  "historicalEvidence": "INITIAL_CONVERSATION_SUMMARY_20261009.json preserved unchanged; its 22 local and 6 SQL checks were not rerun in this integration",
+  "limitations": [
+    "Offline synthetic runtime integration only; not live-model semantic acceptance",
+    "Live-model batch exhausted 20/20, zero remaining; historical semantic failures retained",
+    "No actual SQL rerun, UI, cloud, deployment or CI pass claim",
+    "Collection, generation and review Agent internals not implemented"
+  ],
+  "logs": [
+    {
+      "command": "npm run typecheck",
+      "sha256": "1cfe8aff9cb9fe99d81edc6889b83d6ab3373b4c031d2df7c57e76d743879fd4"
+    },
+    {
+      "command": "npm test",
+      "sha256": "80bfca32d3f17889193f4c7cc516f1536256dfeb16ad5bdb5bf117f7fbde7bcf"
+    }
+  ]
+}

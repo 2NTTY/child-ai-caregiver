@@ -34,7 +34,14 @@ function setup(generate: (request: LlmRequest, index: number, signal: AbortSigna
 
 test("real ADK Runner performs two tool steps, preserves native signatures and returns text only", async () => {
   const s = setup(async (_, index) => index < 2 ? call("read_context", { key: index ? "region" : "age" }) : answer("已讀取兩項合成資料。"));
+  let finalized = 0;
+  s.input.finalize = async (result, _context, reason) => {
+    finalized++;
+    assert.equal(reason, "normal");
+    return result.text;
+  };
   const result = await s.runtime.run(s.input);
+  assert.equal(finalized, 1);
   assert.equal(result.status, "completed", JSON.stringify(result));
   assert.equal(result.text, "已讀取兩項合成資料。");
   assert.equal(s.executions(), 2);
@@ -96,8 +103,9 @@ test("model limit finalizes four successful tool steps once without a fifth prov
     executed.push(name); return s.tool.execute(args, context);
   } }));
   s.input.finalizeOnModelLimit = true;
-  s.input.finalize = async (result, context) => {
+  s.input.finalize = async (result, context, reason) => {
     finalized++;
+    assert.equal(reason, "model_limit");
     assert.deepEqual(result.tools.map(tool => tool.status), names.map(() => "succeeded"));
     assert.deepEqual(context.budget.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
     return "Server validated presentation.";

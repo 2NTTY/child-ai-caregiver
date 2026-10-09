@@ -1,5 +1,5 @@
-import type { HomeDestination, HomeViewModel } from "./view-model";
-import type { AgentProposalStatus, AgentRunStatus } from "./agent-view-model";
+import type { HomeDestination, HomeViewModel } from "./view-model.ts";
+import type { AgentProposalStatus, AgentRunStatus } from "./agent-view-model.ts";
 
 // Presentation only: the owning adapter supplies authorized items in display order.
 // Neither timestamps nor record counts imply urgency, task completion or health risk.

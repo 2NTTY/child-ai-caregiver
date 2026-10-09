@@ -18,6 +18,13 @@ export interface ReportAccumulator {
   processedSources: number; counts: ReportCoverage["counts"]; validUntil: string | null;
   careCursor?: CareCursor; factAfterId?: string; taskAfterId?: string; concernAfter?: { id: string; sequence: number };
   profile: FamilyDocumentSources["profile"] | null; selected: ReportInput[]; blocked?: boolean;
+  concernScanVersion?: 1;
+  pendingConcern?: { id: string; header: DocumentSource | null; sawObservation: boolean };
+}
+export function currentConcernScan(state: ReportAccumulator | null): boolean {
+  if (state?.concernScanVersion !== 1) return false;
+  if (state.stage !== "concerns" || !state.concernAfter) return state.pendingConcern === undefined;
+  return state.pendingConcern?.id === state.concernAfter.id;
 }
 export interface ReportInput { source: DocumentSource; domain: DocumentSection["domain"]; recordKind?: string; validUntil?: string | null; activeConcern?: boolean }
 export const reportToday = () => hkDay(new Date().toISOString());
@@ -39,7 +46,7 @@ export function effectiveReportRequest(request: DocumentRequest): DocumentReques
   return effective;
 }
 export function newReportAccumulator(request: DocumentRequest, sourceRevision: string): ReportAccumulator {
-  return { request: effectiveReportRequest(request), sourceRevision, stage: "profile", processedSources: 0, profile: null, selected: [], validUntil: null,
+  return { request: effectiveReportRequest(request), sourceRevision, stage: "profile", processedSources: 0, profile: null, selected: [], validUntil: null, concernScanVersion: 1,
     counts: { recordsInPeriod: 0, recordsUnknownTime: 0, tasksInPeriod: 0, observationsInPeriod: 0, confirmedFacts: 0, recordKinds: {} } };
 }
 /** Counts cover every scanned page; only the selected wording remains in the encrypted accumulator. */
@@ -96,12 +103,24 @@ export async function advanceReportBatch(client: PoolClient, cipher: StorageCiph
     const page = await createConcernStore(borrowed.pool, cipher).reportPage(userId, childId, state.concernAfter); borrowed.assertReleased();
     if (!page) throw new FamilyError(404, "not_found");
     const inputs: ReportInput[] = [];
+    const finishConcern = () => {
+      const pending = state.pendingConcern;
+      if (pending?.header && !pending.sawObservation) inputs.push({ source: pending.header, domain: "concerns", activeConcern: true });
+      delete state.pendingConcern;
+    };
     for (const { concern, event } of page.items) {
-      if (event?.kind === "observation") inputs.push({ source: concernDocumentSource(concern, event), domain: "concerns" });
-      else if (!event && concern.status === "following") inputs.push({ source: concernDocumentSource(concern), domain: "concerns", activeConcern: true });
+      if (state.pendingConcern?.id !== concern.id) finishConcern();
+      state.pendingConcern ??= { id: concern.id, header: null, sawObservation: false };
+      if (!event) state.pendingConcern.header = concern.status === "following" ? concernDocumentSource(concern) : null;
+      else if (event.kind === "observation") {
+        state.pendingConcern.sawObservation = true;
+        inputs.push({ source: concernDocumentSource(concern, event), domain: "concerns" });
+      }
     }
+    if (page.next) state.concernAfter = page.next;
+    else { finishConcern(); delete state.concernAfter; state.stage = "done"; }
+    // Deferred headers were already scanned on an earlier page and must not increment coverage twice.
     accumulateReportInputs(state, inputs, page.items.length);
-    if (page.next) state.concernAfter = page.next; else state.stage = "done";
   }
 }
 export function completeReportSnapshot(state: ReportAccumulator, version: number, previous: DocumentSnapshot | null, referenceSources?: FamilyDocumentSources): DocumentSnapshot {
