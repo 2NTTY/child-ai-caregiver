@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "package": "f01-original-run-receipt-reader",
+  "recordedAt": "2026-10-09T22:24:57+08:00",
+  "baseCommit": "24cac82066fb95fb6e83d9ed9b55587a552a8697",
+  "status": "local_candidate_accepted_ready_for_normal_publication_not_deployed",
+  "scope": "Extract only original action, accepted confirmation, contact and document receipt reads into a PG-independent port and a short-lived SQL reader on the already authorized and locked caller lease. Existing get/readCancelled expiry updates remain outside the read-only reader.",
+  "repositoryObservation": {
+    "master": "24cac82066fb95fb6e83d9ed9b55587a552a8697",
+    "pr165": "merged",
+    "openPullRequests": 0,
+    "lastChecked": "2026-10-09T14:23:56Z",
+    "branchOrPullRequestCreated": false
+  },
+  "environment": {
+    "node": "24.19.0",
+    "typescript": "6.0.3",
+    "dependencies": "Existing offline node_modules reused; no install or lock changes."
+  },
+  "sourceEvidence": {
+    "materializedBaseFilesCompared": 916,
+    "initialMismatches": [],
+    "partialSnapshot": true,
+    "notMaterialized": 2813,
+    "allTrackedServerSharedAndTestTypeScriptPresent": true,
+    "codeManifestSha256": "234bd71ded0f9a668ab8874b91b573bebaaccd33d0f603cc0f32e8e120defdd0",
+    "files": [
+      {
+        "path": "server/agent-original-receipts.ts",
+        "bytes": 1391,
+        "sha256": "422b9080319dd3b940806c1089a2e681aa64b31c8dc32344e65cc8caf0dffcd9",
+        "gitBlobSha1": "bba85e042a2e1a7260ccc6a060c107b24cecbe5e",
+        "baseGitBlobSha1": null
+      },
+      {
+        "path": "server/agent-original-receipts-postgres.ts",
+        "bytes": 5785,
+        "sha256": "0b168e684c4827bd30cc0d5f3301771a8d28e27e1892cc35c1117d86010fb7a8",
+        "gitBlobSha1": "3a8ea3e75e9931a1b017cd81d256c0a8bcd440fc",
+        "baseGitBlobSha1": null
+      },
+      {
+        "path": "server/product-agent-store.ts",
+        "bytes": 45986,
+        "sha256": "aeac067550cd1932f33b93c6ef1c766598ae8e6fb56844d72d3479424785c0c6",
+        "gitBlobSha1": "b97323f82c34522c8dd138e4bf11736d80763e04",
+        "baseGitBlobSha1": "23c2f137d4faafe3940bc39df898d3871506b2c1"
+      },
+      {
+        "path": "tests/product-agent-durable-cancellation.test.ts",
+        "bytes": 46741,
+        "sha256": "7d241735b8400f12abacd9056677082f3048e18037eaadb1c0799e1e49aa3c7c",
+        "gitBlobSha1": "07bba3ad03142947ccbd51c8d159d0942c8d35ae",
+        "baseGitBlobSha1": "7f6743e2fcae24a5fa101ffddc8f1cee3a081743"
+      }
+    ]
+  },
+  "runs": [
+    {
+      "name": "reader-narrow-01",
+      "tests": 31,
+      "exit": 0,
+      "command": "node --import ../evidence/offline-guard.mjs --test --test-name-pattern='original receipt reader' tests/product-agent-durable-cancellation.test.ts",
+      "logSha256": "c081012286a13dd07d7ef00d5264336ae38c0ff5d1d04e9f6aaa1edc064a8ead",
+      "exitFileSha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "durable-cancellation-01",
+      "tests": 91,
+      "exit": 0,
+      "command": "node --import ../evidence/offline-guard.mjs --test tests/product-agent-durable-cancellation.test.ts",
+      "logSha256": "253d15d2cf9dd5a7c7fbe43a0130102ba44eff07f0bbbc9b6e30cab571982782",
+      "exitFileSha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "document-cancellation-01",
+      "tests": 5,
+      "exit": 0,
+      "command": "CHAT_CHARACTERIZATION_EVIDENCE_DIR=../evidence/document-characterization-01 node --import ../evidence/offline-guard.mjs --test tests/product-agent-document-cancellation.test.ts",
+      "logSha256": "41d582498a1a3e403b964762fc95eb7b6e744f52d66d4fd36cb0af5f1d254b86",
+      "exitFileSha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "document-store-01",
+      "tests": 2,
+      "exit": 0,
+      "command": "node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test tests/product-agent-document-store.test.ts",
+      "logSha256": "6b8ad86e66b244a1a43e061cabbb88b9e0ad93cb45cac1905873435439a9669d",
+      "exitFileSha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "server-typecheck-01",
+      "exit": 2,
+      "failure": "TS2345 in new test harness after deepEqual narrowed values[3] to string | number",
+      "command": "node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "logSha256": "c264b73618f6004bedd68b491a4d8aac0a0531922e9340e95b8215bbe925d715",
+      "exitFileSha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3"
+    },
+    {
+      "name": "reader-narrow-02",
+      "tests": 31,
+      "exit": 0,
+      "command": "node --import ../evidence/offline-guard.mjs --test --test-name-pattern='original receipt reader' tests/product-agent-durable-cancellation.test.ts",
+      "logSha256": "885badd7dcf4fee7cb1085bca9ea88cc6e1dd59c9d1f1df26cba7f05402be108",
+      "exitFileSha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "server-typecheck-02",
+      "exit": 0,
+      "command": "node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exitFileSha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "name": "durable-cancellation-02",
+      "tests": 91,
+      "exit": 0,
+      "command": "node --import ../evidence/offline-guard.mjs --test tests/product-agent-durable-cancellation.test.ts",
+      "logSha256": "0467946a7bdfcec647aeaa59da728c8d4d0d245e0a7c77776b0b8485f573c404",
+      "exitFileSha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    }
+  ],
+  "finalDirectedTests": {
+    "durableCancellation": 91,
+    "documentRuntimeCancellation": 5,
+    "documentStore": 2,
+    "totalDistinctTestEntries": 98,
+    "readerSubsetIncludedInDurable": 31,
+    "serverTypecheck": "passed",
+    "fullRepositorySuiteRerun": false
+  },
+  "failureAndRepair": {
+    "initial": "New synthetic harness TS2345 after assert.deepEqual narrowed values[3] to string | number; acceptance stopped before further work.",
+    "originalDiagnostic": "tests/product-agent-durable-cancellation.test.ts(116,50): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'number | undefined'.\n  Type 'string' is not assignable to type 'number'.\n",
+    "repair": "Use the already asserted fixed bound 9 for the synthetic slice. No product code, assertions or tsconfig relaxed.",
+    "revalidated": [
+      "reader-narrow-02",
+      "durable-cancellation-02",
+      "server-typecheck-02"
+    ],
+    "unchangedDocumentRegressionsRerun": false
+  },
+  "network": {
+    "offlineGuardSha256": "01d405f63e2e70a69d207f8704d17416ac828d4bcc2c268c9395519a16f83770",
+    "preservedAudits": [
+      {
+        "path": "network-audit-snapshots-01/network-audit-12.json",
+        "sha256": "2020ec3058738ab139b8b3169a3c7a554230720d869f2fe3438f696b69b177d1",
+        "program": "/workspace/scratch/c112a98a8be9/f01_original_receipts_20261009/source/tests/product-agent-document-store.test.ts",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-snapshots-01/network-audit-13.json",
+        "sha256": "317887196a920a6642170ad64e37d09fffed893458c796926011f587723c1ff7",
+        "program": "/workspace/scratch/c112a98a8be9/f01_original_receipts_20261009/source/tests/product-agent-document-cancellation.test.ts",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-snapshots-01/network-audit-5.json",
+        "sha256": "a6199b917c387796493b8897cdbc1a7b9f61f82792c268a90c4617ec3808be44",
+        "program": "typescript/bin/tsc --project tsconfig.server.json",
+        "attempts": 0
+      },
+      {
+        "path": "network-durable-cancellation-02/network-audit-12.json",
+        "sha256": "91f60f472625e1649460e23ae7e5ee22302a519c33159759d570d9704d923b7f",
+        "program": "/workspace/scratch/c112a98a8be9/f01_original_receipts_20261009/source/tests/product-agent-durable-cancellation.test.ts",
+        "attempts": 0
+      },
+      {
+        "path": "network-reader-narrow-02/network-audit-14.json",
+        "sha256": "addef7d9e98fca87e1e1e214bdfa9f189a498fb810a0e27a3a9865f1e2902e7c",
+        "program": "/workspace/scratch/c112a98a8be9/f01_original_receipts_20261009/source/tests/product-agent-durable-cancellation.test.ts",
+        "attempts": 0
+      },
+      {
+        "path": "network-server-typecheck-02/network-audit-5.json",
+        "sha256": "a6199b917c387796493b8897cdbc1a7b9f61f82792c268a90c4617ec3808be44",
+        "program": "typescript/bin/tsc --project tsconfig.server.json",
+        "attempts": 0
+      }
+    ],
+    "initialAuditLimit": "Initial reader and first durable network audit filenames were overwritten by PID reuse before snapshots. The localized type fix was followed by independently snapshotted reader-narrow-02 and durable-cancellation-02 audits. Document regressions and both typecheck audits are preserved.",
+    "observationType": "Node process guard audit, not packet capture."
+  },
+  "review": {
+    "code": "Implementation independently reviewed against the frozen four-path manifest and original source; no new blocking finding.",
+    "invariants": [
+      "Original owner/child and exact authorizationVersion strings; epoch comparison does not reject same-epoch data changes.",
+      "Caller-wide owner+document opId, original savedVersion and current/original source checks remain in the existing domain store.",
+      "Same leased client and sequential savepoints; no new pool connection or outer transaction ownership.",
+      "Bounds, missing/linked/unavailable/overflow and unknown/countsKnown=false projections retained.",
+      "Run cancellation, finish, new effects and proposal expiry remain the original outer-store responsibilities."
+    ],
+    "rootAcceptance": "approved",
+    "documentation": "Independent read-only review passed: original WORKLOG prefix, PLAN anchors, exact hashes, failure/audit limits, non-duplicated counts and unverified boundaries checked.",
+    "rootAcceptedAt": "2026-10-09T22:28:30+08:00"
+  },
+  "limitations": [
+    "Offline synthetic Pool and existing scripted local providers only.",
+    "Existing SQL READ COMMITTED plus authority locks retained; no fixed-snapshot or Firestore atomicity claim.",
+    "No real PostgreSQL contention, Firestore/Emulator, real model, HTTP/UI, cloud, permission, deployment, or private-family-data validation.",
+    "Reader callback lifetime and sequential use are maintained by the current internal callers, not a new transaction framework.",
+    "Model budget remains 20/20 exhausted; other three agents remain interface-only. No resume, new SQL feature, schema, dependency or API change.",
+    "Documentation was edited after code checks and reviewed separately; code verification does not automatically certify documentation."
+  ]
+}

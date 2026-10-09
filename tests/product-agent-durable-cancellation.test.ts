@@ -7,6 +7,9 @@ import type { AgentScope } from "../server/agent-runtime.ts";
 import { createProductAgent } from "../server/product-agent.ts";
 import { createProductAgentStore } from "../server/product-agent-store.ts";
 import { createAgentConfirmationStore } from "../server/agent-confirmation-store.ts";
+import { createPostgresAgentOriginalReceiptReader } from "../server/agent-original-receipts-postgres.ts";
+import type { AgentOriginalReceiptReader } from "../server/agent-original-receipts.ts";
+import { READ_ROLES, withChildAccess } from "../server/family-access.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import type { ProductAgentResult } from "../src/shared/product-agent.ts";
@@ -34,12 +37,15 @@ function harness(seed = true) {
     allowed: [userId], sourceExists: true, sourceOwner: userId, sourceAuthor: userId, sourceRole: "user",
     runs: seed ? [run] : [] as typeof run[], actions: [] as { id: string; run_id: string; child_id: string; owner_user_id: string; payload_encrypted: string }[],
     contacts: [] as { id: string }[], confirmations: [] as Record<string, unknown>[],
+    documentLinks: [] as { op_id: string; tool_name: string; child_id: string; receipt_child_id: string }[],
     proposals: [] as { id: string; run_id: string; call_id: string; version: number; state: string; payload_encrypted: string; created_at: Date; expires_at: Date }[] };
-  const queries: { sql: string; values: unknown[] }[] = [];
+  const queries: { sql: string; values: unknown[]; connectionId?: number }[] = [];
+  let connections = 0, releases = 0, actionReferenceIds: string[] | null = null;
+  let authorityAfterDocumentRead: { access_version?: string; storage_epoch?: string; change_seq?: string } | null = null;
   let fail: string | null = null, tail = Promise.resolve();
   const rows = (items: unknown[] = []) => ({ rows: structuredClone(items), rowCount: items.length });
-  function query(sql: string, values: any[], current: typeof state): any {
-    queries.push({ sql, values: structuredClone(values) });
+  function query(sql: string, values: any[], current: typeof state, connectionId?: number): any {
+    queries.push({ sql, values: structuredClone(values), connectionId });
     if (fail && sql.includes(fail)) throw new Error("synthetic-query-failure");
     if (sql.startsWith("SET LOCAL")) return rows();
     if (sql.startsWith("UPDATE agent_proposals SET state='expired'")) {
@@ -92,6 +98,7 @@ function harness(seed = true) {
     if (sql.startsWith("SELECT 1 FROM agent_runs")) return rows(current.runs.filter(row => row.id === values[0] && row.child_id === values[1] && row.owner_user_id === values[2]).map(() => ({})));
     if (sql.startsWith("SELECT id FROM agent_action_receipts") || sql.startsWith("SELECT * FROM agent_action_receipts")) {
       assert.equal(values[0], current.runs[0]?.id); assert.equal(values[1], userId); assert.equal(values[2], childId);
+      if (sql.startsWith("SELECT id ") && actionReferenceIds) return rows(actionReferenceIds.map(id => ({ id })).slice(0, values[3]));
       return rows(current.actions.slice(0, sql.includes("LIMIT $4") ? values[3] : 8));
     }
     if (sql.includes("SELECT c.*") && sql.includes("FROM agent_confirmations c")) {
@@ -102,7 +109,18 @@ function harness(seed = true) {
       assert.deepEqual(values.slice(0, 3), [userId, current.runs[0]?.id, childId]); assert.equal(values[3], 9);
       return rows(current.contacts.slice(0, values[3]));
     }
-    if (sql.startsWith("SELECT a.op_id")) { assert.equal(values[3], 9); return rows(); }
+    if (sql.startsWith("SELECT a.op_id")) {
+      assert.deepEqual(values, [current.runs[0]?.id, userId, childId, 9]);
+      assert.match(sql, /ON o.user_id=a.owner_user_id AND o.op_id=a.op_id/u);
+      assert.doesNotMatch(sql, /ON[^\n]+o.child_id=/u);
+      return rows(current.documentLinks.slice(0, 9));
+    }
+    if (sql.startsWith("SELECT * FROM family_document_operations")) {
+      assert.deepEqual(values, [userId, actionId]);
+      assert.match(sql, /WHERE user_id=\$1 AND op_id=\$2/u);
+      if (authorityAfterDocumentRead) Object.assign(current.space, authorityAfterDocumentRead);
+      return rows();
+    }
     if (sql.startsWith("SELECT * FROM agent_proposals WHERE run_id=$1 ORDER BY created_at,id LIMIT $2")) {
       assert.equal(values.length, 2); assert.equal(values[1], 9);
       return rows(current.proposals.filter(row => row.run_id === values[0]).slice(0, values[1]));
@@ -110,23 +128,24 @@ function harness(seed = true) {
     throw new Error("Unhandled synthetic query: " + sql);
   }
   const pool = { query: async (sql: string, values: any[] = []) => query(sql, values, state), connect: async () => {
+    const connectionId = ++connections;
     let transaction: typeof state | null = null, unlock: (() => void) | null = null;
     const savepoints = new Map<string, typeof state>();
     return { query: async (sql: string, values: any[] = []) => {
       if (sql === "BEGIN") {
         const previous = tail; tail = new Promise<void>(resolve => { unlock = resolve; }); await previous;
-        transaction = structuredClone(state); queries.push({ sql, values }); return rows();
+        transaction = structuredClone(state); queries.push({ sql, values, connectionId }); return rows();
       }
       if (sql === "COMMIT" || sql === "ROLLBACK") {
         assert.ok(transaction); if (sql === "COMMIT") state = transaction;
-        transaction = null; queries.push({ sql, values }); unlock!(); return rows();
+        transaction = null; queries.push({ sql, values, connectionId }); unlock!(); return rows();
       }
       assert.ok(transaction);
-      if (sql.startsWith("SAVEPOINT ")) { savepoints.set(sql.slice(10), structuredClone(transaction)); return rows(); }
-      if (sql.startsWith("ROLLBACK TO SAVEPOINT ")) { transaction = structuredClone(savepoints.get(sql.slice(22))!); return rows(); }
-      if (sql.startsWith("RELEASE SAVEPOINT ")) { savepoints.delete(sql.slice(18)); return rows(); }
-      return query(sql, values, transaction);
-    }, release() { assert.equal(transaction, null); assert.equal(savepoints.size, 0); } };
+      if (sql.startsWith("SAVEPOINT ")) { queries.push({ sql, values, connectionId }); savepoints.set(sql.slice(10), structuredClone(transaction)); return rows(); }
+      if (sql.startsWith("ROLLBACK TO SAVEPOINT ")) { queries.push({ sql, values, connectionId }); transaction = structuredClone(savepoints.get(sql.slice(22))!); return rows(); }
+      if (sql.startsWith("RELEASE SAVEPOINT ")) { queries.push({ sql, values, connectionId }); savepoints.delete(sql.slice(18)); return rows(); }
+      return query(sql, values, transaction, connectionId);
+    }, release() { releases++; assert.equal(transaction, null); assert.equal(savepoints.size, 0); } };
   } } as unknown as Pool;
   const stores = () => createProductAgentStore(pool, cipher);
   function addEffects() {
@@ -144,8 +163,124 @@ function harness(seed = true) {
         value: { content: "PRIVATE CONFIRMATION BODY" }, result: { kind: "task", id: actionId, version: 1 } } }),
       `agent-confirmation:${childId}:${userId}:${confirmationId}`) });
   }
-  return { pool, stores, queries, addEffects, get state() { return state; }, fail(value: string | null) { fail = value; } };
+  async function readOriginal<T>(operation: (reader: AgentOriginalReceiptReader) => Promise<T>) {
+    return withChildAccess(pool, userId, childId, READ_ROLES, async (client, _role, workspace) => {
+      const original = (await client.query<typeof run>("SELECT * FROM agent_runs WHERE id=$1 AND owner_user_id=$2 AND child_id=$3 FOR UPDATE",
+        [runId, userId, childId])).rows[0];
+      assert.ok(original);
+      return operation(createPostgresAgentOriginalReceiptReader(client, cipher, workspace, {
+        runId: original.id, ownerUserId: original.owner_user_id, childId: original.child_id, triggerKind: original.trigger_kind as "interactive" | "worker",
+        sourceMessageId: original.source_message_id, authorizationVersion: original.authorization_version,
+        storageEpoch: original.data_version.split(":")[0],
+      }));
+    }, true);
+  }
+  return { pool, stores, queries, addEffects, readOriginal, get state() { return state; }, fail(value: string | null) { fail = value; },
+    connectionCounts: () => ({ connections, releases }), actionRefs(ids: string[]) { actionReferenceIds = ids; },
+    afterDocumentRead(value: NonNullable<typeof authorityAfterDocumentRead>) { authorityAfterDocumentRead = value; } };
 }
+
+test("original receipt reader uses only the authorized leased client and projects original references", async () => {
+  const h = harness(); h.addEffects();
+  h.state.runs[0].authorization_version = h.state.space.access_version = "9007199254740993";
+  h.state.confirmations[0].authorization_version = h.state.confirmations[0].proposal_authorization = "9007199254740993";
+  h.state.space.change_seq = "99";
+  const original = structuredClone(h.state);
+  await h.readOriginal(async reader => {
+    const start = h.queries.length;
+    assert.deepEqual(await reader.actionReferences(), [{ id: actionId, kind: "save_private_note" }]);
+    assert.deepEqual(await reader.acceptedConfirmation(), { proposalId });
+    assert.deepEqual(await reader.contactRequestReferences(), [{ id: contactId }]);
+    assert.deepEqual(await reader.documentOperationReceipts(), { receipts: [], unavailable: false, linked: false });
+    const reads = h.queries.slice(start);
+    assert.ok(reads.length > 0 && reads.every(row => row.connectionId === 1), "Nested stores query the actual outer lease");
+    assert.ok(reads.every(({ sql }) => !/^(?:INSERT|UPDATE|DELETE|BEGIN|COMMIT|ROLLBACK$)/u.test(sql)), "Only the reader boundary is read-only");
+    assert.equal(reads.filter(({ sql }) => sql.startsWith("SAVEPOINT ")).length, 2);
+    assert.equal(reads.filter(({ sql }) => sql.startsWith("RELEASE SAVEPOINT ")).length, 2);
+    assert.deepEqual(h.connectionCounts(), { connections: 1, releases: 0 }, "No new connection or outer release");
+    assert.ok(!JSON.stringify([await reader.actionReferences(), await reader.acceptedConfirmation()]).includes("PRIVATE"));
+    assert.notEqual(h.state.confirmations[0].proposal_run_id, runId, "Accepted original proposal and response run remain distinct");
+  });
+  assert.deepEqual(h.connectionCounts(), { connections: 1, releases: 1 });
+  assert.deepEqual(h.state, original);
+  assert.equal(h.queries.filter(({ sql }) => sql === "BEGIN").length, 1);
+  assert.equal(h.queries.filter(({ sql }) => sql === "COMMIT").length, 1);
+  const lock = h.queries.findIndex(({ sql }) => sql.startsWith("SELECT owner_user_id, access_version"));
+  assert.ok(lock >= 0 && lock < h.queries.findIndex(({ sql }) => sql.startsWith("SELECT id FROM agent_action_receipts")));
+});
+
+test("original receipt reader distinguishes empty results from errors, changed references and overflow", async t => {
+  const empty = harness();
+  await empty.readOriginal(async reader => {
+    assert.deepEqual(await reader.actionReferences(), []);
+    assert.equal(await reader.acceptedConfirmation(), null);
+    assert.deepEqual(await reader.contactRequestReferences(), []);
+    assert.deepEqual(await reader.documentOperationReceipts(), { receipts: [], unavailable: false, linked: false });
+  });
+  for (const boundary of ["action-error", "action-body-error", "contact-error", "confirmation-error", "document-error", "action-overflow",
+    "contact-overflow", "confirmation-overflow", "document-overflow", "action-reference-changed", "confirmation-scope", "confirmation-payload"]) {
+    await t.test(boundary, async () => {
+      const h = harness(); h.addEffects();
+      if (boundary === "action-error") h.fail("SELECT id FROM agent_action_receipts");
+      if (boundary === "action-body-error") h.fail("SELECT * FROM agent_action_receipts");
+      if (boundary === "contact-error") h.fail("SELECT r.id FROM contact_requests");
+      if (boundary === "confirmation-error") h.fail("FROM agent_confirmations c");
+      if (boundary === "document-error") h.fail("SELECT a.op_id");
+      if (boundary === "action-overflow") while (h.state.actions.length < 9) h.state.actions.push(h.state.actions[0]);
+      if (boundary === "contact-overflow") while (h.state.contacts.length < 9) h.state.contacts.push(h.state.contacts[0]);
+      if (boundary === "confirmation-overflow") h.state.confirmations.push(h.state.confirmations[0]);
+      if (boundary === "document-overflow") while (h.state.documentLinks.length < 9) h.state.documentLinks.push({
+        op_id: actionId, tool_name: "change_family_document", child_id: childId, receipt_child_id: childId });
+      if (boundary === "action-reference-changed") h.actionRefs([contactId]);
+      if (boundary === "confirmation-scope") h.state.confirmations[0].proposal_child = actionId;
+      if (boundary === "confirmation-payload") h.state.confirmations[0].payload_encrypted = "yb1.invalid";
+      await assert.rejects(() => h.readOriginal(async reader => {
+        if (boundary.startsWith("action")) return reader.actionReferences();
+        if (boundary.startsWith("contact")) return reader.contactRequestReferences();
+        if (boundary.startsWith("confirmation")) return reader.acceptedConfirmation();
+        return reader.documentOperationReceipts();
+      }));
+      assert.ok(h.queries.every(({ sql }) => !/^(?:INSERT|UPDATE|DELETE)/u.test(sql)));
+      assert.equal(h.queries.filter(({ sql }) => sql === "COMMIT").length, 0);
+      assert.deepEqual(h.connectionCounts(), { connections: 1, releases: 1 });
+    });
+  }
+});
+
+test("original receipt reader preserves document linkage, owner-wide operations and authority changes", async t => {
+  for (const boundary of ["missing-operation", "wrong-child", "wrong-receipt-child", "wrong-tool", "auth", "epoch", "missing-source",
+    "source-owner", "source-author", "source-role", "worker", "missing-source-id", "after-auth", "after-epoch", "same-epoch-data", "exact-auth"]) {
+    await t.test(boundary, async () => {
+      const h = harness();
+      const link = { op_id: actionId, tool_name: "change_family_document", child_id: childId, receipt_child_id: childId };
+      h.state.documentLinks.push(link);
+      if (boundary === "wrong-child") link.child_id = contactId;
+      if (boundary === "wrong-receipt-child") link.receipt_child_id = contactId;
+      if (boundary === "wrong-tool") link.tool_name = "contact_caregiver";
+      if (boundary === "auth") h.state.space.access_version = "2";
+      if (boundary === "epoch") h.state.space.storage_epoch = contactId;
+      if (boundary === "missing-source") h.state.sourceExists = false;
+      if (boundary === "source-owner") h.state.sourceOwner = "other-parent";
+      if (boundary === "source-author") h.state.sourceAuthor = "other-parent";
+      if (boundary === "source-role") h.state.sourceRole = "model";
+      if (boundary === "worker") h.state.runs[0].trigger_kind = "worker";
+      if (boundary === "missing-source-id") h.state.runs[0].source_message_id = null as unknown as string;
+      if (boundary === "after-auth") h.afterDocumentRead({ access_version: "2" });
+      if (boundary === "after-epoch") h.afterDocumentRead({ storage_epoch: contactId });
+      if (boundary === "same-epoch-data") h.afterDocumentRead({ change_seq: "99" });
+      if (boundary === "exact-auth") h.state.runs[0].authorization_version = h.state.space.access_version = "9007199254740993";
+      if (boundary.startsWith("wrong-")) await assert.rejects(() => h.readOriginal(reader => reader.documentOperationReceipts()), { code: "document_receipt_scope_changed" });
+      else {
+        const result = await h.readOriginal(reader => reader.documentOperationReceipts());
+        if (["missing-operation", "same-epoch-data", "exact-auth"].includes(boundary))
+          assert.deepEqual(result, { receipts: [], unavailable: true, linked: true });
+        else assert.equal(result, null);
+      }
+      assert.ok(h.queries.every(({ sql }) => !/^(?:INSERT|UPDATE|DELETE)/u.test(sql)));
+      assert.deepEqual(h.connectionCounts(), { connections: 1, releases: 1 });
+    });
+  }
+});
 
 function agentOptions(h: ReturnType<typeof harness>, onModel: () => Promise<void> = async () => {}) {
   let calls = 0, toolReads = 0; const signals: AbortSignal[] = [];

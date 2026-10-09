@@ -1856,3 +1856,12 @@
 - [授權清單](licenses/manifest.json)及[notices](THIRD_PARTY_NOTICES.md)補 Firestore 9.3.1：既有 npm cache tarball 的 SHA-512 符 lock，130 個套件檔逐 byte 相符，原 Apache-2.0 LICENSE 已保存，包內無獨立 NOTICE。既有非 Firestore 條目保留；這不是完整直接／間接依賴或發佈授權審核，既有清單缺項明示保留，沒有下載／安裝或改 lock。
 - 照片首輪 5／5 後 Server typecheck 因測試 Promise.withResolvers 對現有 lib 的 3 個 TS2550 停批保存；只換測試 gate 為 new Promise，斷言／tsconfig 不變。修正後 5／5 及 tsc 通過；同一原碼片段驗證保留 baseline red，候選正常／server error／startup failure／queue rejection 四路徑 green，原 DELETE 先於 queue／pool 關閉。license 原 2／2 及兩個負向控制拒絕證據保留；整合後照片＋license **7／7**、Server tsc exit 0。固定來源、失敗、log hashes 與 guard 限制見[驗收記錄](artifacts/verification/F01_PHOTO_CLEANUP_20261009.json)，未重跑完整聚合或 Auth 19 項。
 - 僅離線合成 pool／files／timer 及檔案清單核查；精確 index 片段不冒充完整 HTTP／真 process signal。沒有真 DB／Emulator／照片／外發、模型、雲端資源、權限或部署。原 20／20 模型額用盡、A09 引用／同文件修改／新對話讀回未完成、其他三角色只留接口，以及非 SQL outbox／取消／effect fencing／resume 等門檻不變。
+
+
+<a id="log-20261009-f01-original-receipt-port"></a>
+## 2026-10-09｜F01 原收據唯讀 reader 接點
+
+- Recorded At：2026-10-09T22:23:07+08:00；工作日期 2026-10-09，基線 master `24cac82066fb95fb6e83d9ed9b55587a552a8697`（#165 已合併、開工 open PR 0）。只交付 F01 窄接點；未進行新增人工驗收，候選已通過 dot 最終驗收，待正常 PR 交付，未部署。
+- 新增 PG 無關四方法 port 與現有 SQL reader，局部接回原 store 的 action／accepted confirmation／contact／document 收據。只借用原已授權、已鎖的同一 leased client；READ COMMITTED 與既有權威鎖不變。原 owner／child／authVersion 字串／epoch／來源、caller-wide opId、savedVersion、上限與 unknown 保留；get／readCancelled 的原到期更新及 cancel／finish／effect 命令未改，不把整段查回叫作純讀。
+- 最終定向 durable **91／91**（含新 reader 31 項）、文件 runtime **5／5**、文件 store **2／2**及 Server typecheck 通過；不把重跑／子集累加成更多測例。初次 tsc 的新增 harness TS2345 保留，只修已核對上限的取值型別後補驗。程式／測試四檔已獨立 review；固定 source／log hashes、network audit 的初次 PID 覆寫及六份保留 audit 均零嘗試的記錄見[驗收摘要](artifacts/verification/F01_ORIGINAL_RECEIPT_PORT_20261009.json)。
+- 916 個已有源檔對官方 blob，沒有無關改動；來源是局部 snapshot，不上傳整個目錄。PLAN／STATUS 原位收短，TECH_REUSE 更新已抽接點與原固定行號引用，本 LOG 僅追加。只驗離線合成 Pool／既有 scripted provider，未跑完整聚合、真 SQL 競爭、Firestore／Emulator、真模型、HTTP／UI、雲端或部署。原真模型 20／20 用盡、其他三角色只留接口、完整 F01／非 SQL fencing／resume 及聊天成果 gate 仍未完成。
