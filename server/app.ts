@@ -10,8 +10,7 @@ import { handleContactRequest } from "./contact-api.ts";
 import { handleWebPushRequest } from "./web-push-api.ts";
 import { isIP } from "node:net";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { fromNodeHeaders } from "better-auth/node";
-import type { createAuth } from "./auth.ts";
+import type { ServerAuthPort } from "./auth-port.ts";
 import type { ServerConfig } from "./config.ts";
 import { apiError, handleWorkspaceRequest, jsonResponse } from "./workspace-api.ts";
 import type { WorkspaceStore } from "./workspaces.ts";
@@ -88,7 +87,7 @@ async function writeResponse(response: Response, target: ServerResponse, origin:
 
 export function createRequestHandler(options: {
   config: ServerConfig;
-  auth: ReturnType<typeof createAuth>;
+  auth: ServerAuthPort;
   workspaces: WorkspaceStore;
   account?: AccountServiceApi;
   records: RecordStore;
@@ -124,7 +123,7 @@ export function createRequestHandler(options: {
     let permittedOrigin: string | null = null;
     let photoSlot = false;
     try {
-      const headers = fromNodeHeaders(request.headers);
+      const headers = options.auth.fromNodeHeaders(request.headers);
       // Only the explicitly configured ingress peer may supply a single sanitized client IP.
       const peerIp = request.socket.remoteAddress?.replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/u, "");
       const forwardedIp = headers.get("x-forwarded-for")?.trim();
@@ -173,12 +172,12 @@ export function createRequestHandler(options: {
       const accountPath = url.pathname === "/api/account" || url.pathname.startsWith("/api/account/");
       if (options.account?.admission.enabled && !accountPath && !telegramWebhook
         && !url.pathname.startsWith("/api/auth/") && url.pathname !== "/api/health") {
-        const session = await options.auth.api.getSession({ headers });
+        const session = await options.auth.getSession({ headers });
         if (!session?.user.id) throw new AccountAdmissionError(401, "unauthorized");
         await options.account.admission.assertUsable(session.user.id);
       }
       if (url.pathname === "/api/auth/revoke-other-sessions") {
-        const session = await options.auth.api.getSession({ headers });
+        const session = await options.auth.getSession({ headers });
         if (!session?.user.id) throw new AccountAdmissionError(401, "unauthorized");
         if (headers.get("x-expected-user-id") !== session.user.id) throw new AccountAdmissionError(409, "session_changed");
       }
@@ -186,7 +185,7 @@ export function createRequestHandler(options: {
       if (url.pathname.startsWith("/api/ai/settings")) bodyLimit = 2048;
       const upload=method==="POST" ? /^\/api\/children\/([a-f0-9-]{36})\/photos\/([a-f0-9-]{36})\/content$/u.exec(url.pathname):null;
       if(upload&&options.photos){
-        const session=await options.auth.api.getSession({headers});
+        const session=await options.auth.getSession({headers});
         const id=session?.user.id;
         const photo=id&&headers.get("x-expected-user-id")===id?await options.photos.store.get(id,upload[1],upload[2]):null;
         if(!photo||photo.ownerUserId!==id||!photo.canManage||photoUploads>=2){
@@ -214,15 +213,15 @@ export function createRequestHandler(options: {
         await options.checkDatabase();
         result = jsonResponse({ status: "ok" });
       } else if (accountPath && options.account) {
-        const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
+        const sessionResult = await options.auth.getSession({ headers, returnHeaders: true });
         result = await handleAccountServiceRequest(webRequest, sessionResult.response?.user.id ?? null, options.account);
         for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (["/api/ai/settings", "/api/ai/settings/check"].includes(url.pathname) && options.modelRouting) {
-        const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
+        const sessionResult = await options.auth.getSession({ headers, returnHeaders: true });
         result = await handleModelSettingsRequest(webRequest, sessionResult.response?.user.id ?? null, options.modelRouting);
         for (const cookie of sessionResult.headers.getSetCookie()) result.headers.append("set-cookie", cookie);
       } else if (["/api/ai/status", "/api/ai/usage"].includes(url.pathname) && method === "GET") {
-        const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
+        const sessionResult = await options.auth.getSession({ headers, returnHeaders: true });
         result = sessionResult.response?.user.id
           ? url.pathname.endsWith("/usage") && options.aiUsage
             ? jsonResponse(options.modelRouting ? await options.modelRouting.currentUsage(sessionResult.response.user.id) : await options.aiUsage.getForUser(sessionResult.response.user.id))
@@ -233,17 +232,17 @@ export function createRequestHandler(options: {
         || url.pathname === "/api/children" || url.pathname.startsWith("/api/children/")
         || url.pathname === "/api/families" || url.pathname.startsWith("/api/families/") || url.pathname === "/api/notification-preferences"
         || url.pathname.startsWith("/api/online/") || url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/") || url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) {
-        const sessionResult = await options.auth.api.getSession({ headers, returnHeaders: true });
+        const sessionResult = await options.auth.getSession({ headers, returnHeaders: true });
         const userId = sessionResult.response?.user.id ?? null;
         result = /^\/api\/children\/[^/]+\/library$/u.test(url.pathname) && options.personalLibrary
           ? await handlePersonalLibraryRequest(webRequest, userId, { library: options.personalLibrary,
-            isCurrentUser: async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected })
+            isCurrentUser: async expected => (await options.auth.getSession({ headers }))?.user.id === expected })
           : /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(url.pathname)&&options.inputs
           ? await handleSharedInputRequest(webRequest,userId,options.inputs.store,{service:options.inputs.service,
-              isCurrentUser:async()=>Boolean(userId)&&(await options.auth.api.getSession({headers}))?.user.id===userId})
+              isCurrentUser:async()=>Boolean(userId)&&(await options.auth.getSession({headers}))?.user.id===userId})
           : /^\/api\/children\/[^/]+\/photos(?:\/|$)/u.test(url.pathname)&&options.photos
           ? await handlePhotoRequest(webRequest,userId,options.photos.store,{agent:options.photos.agent,
-              isCurrentUser:async()=>Boolean(userId)&&(await options.auth.api.getSession({headers}))?.user.id===userId})
+              isCurrentUser:async()=>Boolean(userId)&&(await options.auth.getSession({headers}))?.user.id===userId})
           : /^\/api\/children\/[^/]+\/(summary|visit-preparation)$/u.test(url.pathname) && options.summary
           ? await handleCareSummaryRequest(webRequest,userId,options.summary)
           : /\/api\/children\/[^/]+\/contact(\/|$)/u.test(url.pathname) && options.contact
@@ -251,17 +250,17 @@ export function createRequestHandler(options: {
           : (url.pathname === "/api/telegram" || url.pathname.startsWith("/api/telegram/")) && options.telegram
           ? await handleTelegramRequest(webRequest,userId,options.telegram.store)
           : /^\/api\/children\/[^/]+\/documents(\/|$)/u.test(url.pathname) && options.documents
-          ? await handleFamilyDocumentRequest(webRequest,userId,options.documents,async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)
+          ? await handleFamilyDocumentRequest(webRequest,userId,options.documents,async expected => (await options.auth.getSession({ headers }))?.user.id === expected)
           : /^\/api\/children\/[^/]+\/concerns(\/|$)/u.test(url.pathname) && options.concerns
-          ? await handleConcernRequest(webRequest,userId,options.concerns,async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)
+          ? await handleConcernRequest(webRequest,userId,options.concerns,async expected => (await options.auth.getSession({ headers }))?.user.id === expected)
           : /^\/api\/children\/[^/]+\/growth(\/|$)/u.test(url.pathname) && options.growth
-          ? await handleGrowthRequest(webRequest,userId,options.growth,async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)
+          ? await handleGrowthRequest(webRequest,userId,options.growth,async expected => (await options.auth.getSession({ headers }))?.user.id === expected)
           : options.agentActions && /^\/api\/children\/[^/]+\/agent\/(policy|notes|actions)(\/|$)/u.test(url.pathname)
-          ? await handleAgentActionsRequest(webRequest, userId, options.agentActions, async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected)
+          ? await handleAgentActionsRequest(webRequest, userId, options.agentActions, async expected => (await options.auth.getSession({ headers }))?.user.id === expected)
           : options.productAgent && options.productAgentStore && options.chat
           && (/^\/api\/children\/[^/]+\/agent\//u.test(url.pathname) || /^\/api\/children\/[^/]+\/messages\/[^/]+\/reply(?:\/cancel)?$/u.test(url.pathname))
           ? await handleProductAgentRequest(webRequest, userId, { agent: options.productAgent, store: options.productAgentStore, chat: options.chat,
-            isCurrentUser: async expected => (await options.auth.api.getSession({ headers }))?.user.id === expected })
+            isCurrentUser: async expected => (await options.auth.getSession({ headers }))?.user.id === expected })
           : url.pathname.startsWith("/api/online/") && options.online
           ? await handleOnlineRequest(webRequest, userId, options.online)
           : (url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/")) && options.webPush
@@ -278,7 +277,7 @@ export function createRequestHandler(options: {
           ? await handleChatReply(webRequest, userId, {
             chat: options.chat, records: options.records, gateway: options.modelGateway,
             prompt: options.chatPrompt, maxInputCharacters: options.aiMaxInputCharacters ?? 10000,
-            isCurrentUser: async expectedId => (await options.auth.api.getSession({ headers }))?.user.id === expectedId,
+            isCurrentUser: async expectedId => (await options.auth.getSession({ headers }))?.user.id === expectedId,
           })
           : url.pathname.endsWith("/messages") && options.chat
           ? await handleChatRequest(webRequest, userId, options.chat)

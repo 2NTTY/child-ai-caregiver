@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import type { IncomingMessage, ServerResponse } from "node:http";
+import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from "node:http";
 import test from "node:test";
 import type { PoolClient } from "pg";
 import { createRequestHandler } from "../server/app.ts";
+import { AccountAdmissionError } from "../server/account-admission.ts";
+import type { ServerAuthPort, ServerAuthSession, ServerAuthSessionWithHeaders } from "../server/auth-port.ts";
 import type { ServerConfig } from "../server/config.ts";
 import { createPool } from "../server/database.ts";
 import type { WorkspaceStore } from "../server/workspaces.ts";
@@ -19,7 +21,7 @@ const config: ServerConfig = {
 };
 
 type HandlerOptions = Parameters<typeof createRequestHandler>[0];
-type SessionLookup = (options: { headers: Headers; returnHeaders?: boolean }) => Promise<unknown>;
+type SessionLookup = ServerAuthPort["getSession"];
 
 const unusedStore = new Proxy({} as WorkspaceStore, {
   get() { throw new Error("Storage must not be accessed"); },
@@ -29,12 +31,14 @@ async function dispatch(path: string, auth: {
   handler?: (request: Request) => Promise<Response>;
   getSession?: SessionLookup;
 }, workspaces: WorkspaceStore = unusedStore, chat?: HandlerOptions["chat"],
-  proxy: { peer?: string; forwarded?: string; trusted?: string } = {}) {
+  proxy: { peer?: string; forwarded?: string; trusted?: string; expectedUserId?: string; origin?: string | null; method?: "GET" | "POST" } = {},
+  services: Pick<HandlerOptions, "account" | "personalLibrary"> = {}) {
   const headers = new Map<string, string | number | readonly string[]>();
   let body: Buffer = Buffer.alloc(0);
   const request = {
-    method: "GET", url: path,
-    headers: { origin: config.webOrigin, cookie: "better-auth.session_token=synthetic-session", "x-forwarded-for": proxy.forwarded },
+    method: proxy.method ?? "GET", url: path,
+    headers: { origin: proxy.origin === null ? undefined : proxy.origin ?? config.webOrigin,
+      cookie: "better-auth.session_token=synthetic-session", "x-forwarded-for": proxy.forwarded, "x-expected-user-id": proxy.expectedUserId },
     socket: { remoteAddress: proxy.peer ?? "127.0.0.1" },
     resume() {},
   } as unknown as IncomingMessage;
@@ -43,14 +47,23 @@ async function dispatch(path: string, auth: {
     setHeader(name: string, value: string | number | readonly string[]) { headers.set(name.toLowerCase(), value); },
     end(value: Buffer) { body = value; this.writableEnded = true; },
   });
-  const unusedAuth = async () => { throw new Error("Unexpected authentication call"); };
+  const unusedAuth = async (): Promise<never> => { throw new Error("Unexpected authentication call"); };
+  const fromNodeHeaders = (nodeHeaders: IncomingHttpHeaders) => {
+    const converted = new Headers();
+    for (const [name, value] of Object.entries(nodeHeaders)) {
+      if (Array.isArray(value)) for (const item of value) converted.append(name, item);
+      else if (value !== undefined) converted.set(name, value);
+    }
+    return converted;
+  };
   await createRequestHandler({
     config: { ...config, trustedProxyIp: proxy.trusted },
     auth: {
       handler: auth.handler ?? unusedAuth,
-      api: { getSession: auth.getSession ?? unusedAuth },
-    } as unknown as HandlerOptions["auth"],
-    workspaces, chat,
+      getSession: auth.getSession ?? unusedAuth,
+      fromNodeHeaders,
+    },
+    workspaces, chat, ...services,
     records: new Proxy({} as HandlerOptions["records"], {
       get() { throw new Error("Record storage must not be accessed"); },
     }),
@@ -59,10 +72,16 @@ async function dispatch(path: string, auth: {
   return { status: response.statusCode, headers, body: body.toString("utf8") };
 }
 
-function sessionLookup(session: { user: { id: string } } | null, cookies: string[]): SessionLookup {
+function sessionLookup(session: ServerAuthSession | null | (() => ServerAuthSession | null), cookies: string[]): SessionLookup {
   const headers = new Headers();
   for (const cookie of cookies) headers.append("set-cookie", cookie);
-  return async (options) => options.returnHeaders ? { headers, response: session } : session;
+  function getSession(options: { headers: Headers; returnHeaders?: false }): Promise<ServerAuthSession | null>;
+  function getSession(options: { headers: Headers; returnHeaders: true }): Promise<ServerAuthSessionWithHeaders>;
+  async function getSession(options: { headers: Headers; returnHeaders?: boolean }) {
+    const response = typeof session === "function" ? session() : session;
+    return options.returnHeaders === true ? { headers, response } : response;
+  }
+  return getSession;
 }
 
 test("workspace responses forward every refreshed session cookie without merging them", async () => {
@@ -114,6 +133,97 @@ test("authentication client errors retain their response and cookies", async () 
   assert.equal(response.status, 401);
   assert.deepEqual(JSON.parse(response.body), { code: "SESSION_EXPIRED" });
   assert.deepEqual(response.headers.get("set-cookie"), [cookie]);
+});
+
+test("thrown authentication provider errors fail closed without private details or downstream access", async () => {
+  const providerError = new Error("synthetic-private-provider-error");
+  let calls = 0;
+  const fail = async (): Promise<never> => { calls += 1; throw providerError; };
+  for (const path of ["/api/auth/get-session", "/api/workspaces"]) {
+    const response = await dispatch(path, { handler: fail, getSession: fail });
+    assert.equal(response.status, 503);
+    assert.deepEqual(JSON.parse(response.body), {
+      error: { code: "service_unavailable", message: "服務暫時未能處理，請稍後重試。" },
+    });
+    assert.doesNotMatch(response.body, /synthetic-private/u);
+  }
+  assert.equal(calls, 2);
+});
+
+test("fresh same-request session checks block revocation before reads and account switches before private returns", async () => {
+  const owner = { user: { id: "owner" } };
+  for (const scenario of [
+    { next: null, ownerReads: 1, expectedPages: 0 },
+    { next: { user: { id: "other" } }, ownerReads: 2, expectedPages: 1 },
+  ]) {
+    let reads = 0, pages = 0;
+    const response = await dispatch("/api/children/79081f55-9e30-4ee5-91fb-71982b20d6f7/library", {
+      getSession: sessionLookup(() => ++reads <= scenario.ownerReads ? owner : scenario.next, []),
+    }, unusedStore, undefined, { expectedUserId: "owner" }, {
+      personalLibrary: { page: async userId => {
+        assert.equal(userId, "owner");
+        pages += 1;
+        return { items: [], nextCursor: "synthetic-private-library-cursor", complete: false };
+      } },
+    });
+    assert.equal(response.status, 409);
+    assert.equal(JSON.parse(response.body).error.code, "session_changed");
+    assert.doesNotMatch(response.body, /synthetic-private/u);
+    assert.equal(reads, scenario.ownerReads + 1);
+    assert.equal(pages, scenario.expectedPages);
+  }
+});
+
+test("invited account rejection stops before domain actions", async () => {
+  let reads = 0, admissionChecks = 0;
+  const unused = async (): Promise<never> => { throw new Error("Unexpected account action"); };
+  const response = await dispatch("/api/workspaces", {
+    getSession: sessionLookup(() => { reads += 1; return { user: { id: "owner" } }; }, []),
+  }, unusedStore, undefined, {}, {
+    account: { admission: {
+      enabled: true, assertCanRegister: unused, admit: unused, assertSessionAdmission: unused,
+      status: unused, acknowledge: unused,
+      assertUsable: async userId => {
+        assert.equal(userId, "owner");
+        admissionChecks += 1;
+        throw new AccountAdmissionError(403, "invitation_required");
+      },
+    } },
+  });
+  assert.equal(response.status, 403);
+  assert.equal(JSON.parse(response.body).error.code, "invitation_required");
+  assert.equal(reads, 1);
+  assert.equal(admissionChecks, 1);
+});
+
+test("expected-user mismatches stop library access and native session revocation", async () => {
+  let pages = 0, revocations = 0, reads = 0;
+  const auth = {
+    handler: async () => { revocations += 1; return Response.json({ revoked: true }); },
+    getSession: sessionLookup(() => { reads += 1; return { user: { id: "owner" } }; }, []),
+  };
+  const library = await dispatch("/api/children/79081f55-9e30-4ee5-91fb-71982b20d6f7/library",
+    auth, unusedStore, undefined, { expectedUserId: "other" }, {
+      personalLibrary: { page: async () => { pages += 1; return { items: [], nextCursor: null, complete: true }; } },
+    });
+  const revoke = await dispatch("/api/auth/revoke-other-sessions", auth, unusedStore, undefined,
+    { expectedUserId: "other", method: "POST" });
+  for (const response of [library, revoke]) {
+    assert.equal(response.status, 409);
+    assert.equal(JSON.parse(response.body).error.code, "session_changed");
+  }
+  assert.equal(pages, 0);
+  assert.equal(revocations, 0);
+  assert.equal(reads, 2);
+});
+
+test("origin and CSRF checks reject requests before authentication or domain actions", async () => {
+  const forbidden = await dispatch("/api/workspaces", {}, unusedStore, undefined, { origin: "https://synthetic.invalid" });
+  const missing = await dispatch("/api/workspaces", {}, unusedStore, undefined, { origin: null, method: "POST" });
+  for (const response of [forbidden, missing]) {
+    assert.equal(response.status, 403);
+    assert.equal(JSON.parse(response.body).error.code, "forbidden_origin");
+  }
 });
 
 test("database socket errors stay handled for checked-out and idle connections without leaking details", async (context) => {
