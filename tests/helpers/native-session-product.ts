@@ -5,11 +5,16 @@ import type { BaseSessionService } from "@google/adk";
 import { createAgentRuntime, type AgentScope } from "../../server/agent-runtime.ts";
 import { createProductAgent } from "../../server/product-agent.ts";
 import { readAiConfig } from "../../server/ai-config.ts";
+import type { AgentDurableBudget } from "../../server/agent-budget.ts";
+import { createKnowledgeRetriever } from "../../server/knowledge-retriever.ts";
+import { createEmbeddingGateway } from "../../server/embedding-gateway.ts";
 import type { DocumentChange, FamilyDocument } from "../../src/shared/family-documents.ts";
 import type { ProductAgentResult } from "../../src/shared/product-agent.ts";
 
 /** Synthetic domain ledger only; native storage may be memory or the isolated emulator. */
-export function nativeSessionProductFixture(nativeSessionService: BaseSessionService, runId: string) {
+export function nativeSessionProductFixture(nativeSessionService: BaseSessionService, runId: string, overrides: {
+  durableBudget?: AgentDurableBudget; searchKnowledge?: boolean;
+} = {}) {
   const userId = "synthetic-native-user", childId = "1ebcb39d-a2db-4b8c-a432-7ffcb3de5808";
   const messageId = "7de5a0e8-e106-4485-b7d2-3b572741da39";
   const scope: AgentScope = { userId, childId, workspaceId: "synthetic-workspace", authorizationVersion: "1", dataVersion: "epoch:1" };
@@ -26,16 +31,22 @@ export function nativeSessionProductFixture(nativeSessionService: BaseSessionSer
   const hash = createHash("sha256").update(`family-document:${runId}:check-bag`).digest("hex");
   const operationId = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
   const ledger = new Map<string, { runId: string; documentId: string; savedVersion: number; toolName: "change_family_document" }>();
-  let calls = 0, writes = 0, claimed = false, authorized = true, saved: ProductAgentResult | null = null;
-  const runtime = createAgentRuntime({ nativeSessionService,
-    config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
-    usage: { reserve: async () => true, record: async () => {} },
+  let calls = 0, dailyReserves = 0, embeddingCalls = 0, embeddingReserves = 0, writes = 0, claimed = false, authorized = true, saved: ProductAgentResult | null = null;
+  const config = readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" });
+  const knowledge = overrides.searchKnowledge ? createKnowledgeRetriever({ candidates: async () => [] }, createEmbeddingGateway({ config,
+    usage: { reserve: async () => { embeddingReserves++; return true; }, record: async () => {} },
+    provider: { embed: async () => { embeddingCalls++; return { values: Array(1024).fill(0.25), inputTokens: 3, billableCharacters: 12 }; } },
+  })) : undefined;
+  const runtime = createAgentRuntime({ nativeSessionService, ...(overrides.durableBudget ? { durableBudget: overrides.durableBudget } : {}),
+    config,
+    usage: { reserve: async () => { dailyReserves++; return true; }, record: async () => {} },
     provider: { generate: async request => {
       assert.equal(authorized, true);
-      const index = calls++;
+      const index = calls++ - (overrides.searchKnowledge ? 1 : 0);
       assert.ok(index < 3, "No provider retry or extra closing generation is permitted");
       if (index > 0) assert.ok(request.contents.some(content => content.parts?.some(part => part.functionResponse)));
-      const functionCall = index === 0 ? { id: "load-documents", name: "load_capabilities", args: { capabilities: ["document_edit"] } }
+      const functionCall = index === -1 ? { id: "knowledge-query", name: "search_knowledge", args: { query: "合成書包準備", classification: "official_guidance" } }
+        : index === 0 ? { id: "load-documents", name: "load_capabilities", args: { capabilities: ["document_edit"] } }
         : index === 1 ? { id: "check-bag", name: "change_family_document", args: { sourceQuote, documentId: document.id, change } }
         : { id: "answer", name: "present_answer", args: { kind: "operation", paragraphs: [{ text: "合成文件項目已按原操作收據更新。", citationIds: [] }] } };
       assert.ok(Object.hasOwn(request.toolsDict, functionCall.name));
@@ -72,11 +83,11 @@ export function nativeSessionProductFixture(nativeSessionService: BaseSessionSer
       recentMessages: [], conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } }) },
     chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: sourceQuote }] }) },
     tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
-    knowledge: { createRun: () => ({ search: async () => { throw new Error("No knowledge call permitted"); }, revalidateCitations: async () => true }) },
+    knowledge: knowledge ?? { createRun: () => ({ search: async () => { throw new Error("No knowledge call permitted"); }, revalidateCitations: async () => true }) },
   } as unknown as Parameters<typeof createProductAgent>[0];
   const agent = createProductAgent(options);
   return { key: { appName: "yuban_hk", userId, sessionId: runId }, operationId, documentId: document.id,
     reply: (signal?: AbortSignal) => agent.reply(userId, childId, messageId, async () => authorized, signal),
     revoke: () => { authorized = false; },
-    observe: () => ({ calls, writes, documentVersion: document.version, ledger: [...ledger].map(([operationId, receipt]) => ({ operationId, ...receipt })) }) };
+    observe: () => ({ calls, dailyReserves, embeddingCalls, embeddingReserves, writes, documentVersion: document.version, ledger: [...ledger].map(([operationId, receipt]) => ({ operationId, ...receipt })) }) };
 }

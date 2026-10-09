@@ -1808,3 +1808,11 @@
 - root review指出authorizationVersion與現有AgentScope字串不符，v2保留原字串並補numeric／空／超界拒絕，沒有猜轉型。v1結果及首次TS narrowing失敗保留，不用舊結果代替v2。
 - v2 unit12／12，原typecheck與原npm test688／688，Emulator5組通過；2278候選檔案測試前後不變，零非loopback服務呼叫，固定inline WASM只一次；9child及4listener停止。
 - [准入契約](docs/CHAT_AGENT_DURABLE_BUDGET.md)及[驗證摘要](artifacts/verification/DURABLE_BUDGET_ADMISSION_20261009.json)。根文件在程式驗證後另審；無CI／真模型／部署或resume通過宣稱，原真模型20／20、三角色內部暫緩及舊失敗保持。
+
+
+## 2026-10-09：持久預算接回單次聊天 runtime
+
+- #160已合併，基線48571cef；九份必要code/tests接回公開ADK event anchors、原三處扣額、固定受信配置快照與絕對deadline。defaultmemory／prompt.37／nativeparts／能力reserve／summary／pendingfallback保留，無SQL／Auth／indexworker／resume啟用。
+- reviewer指出caller可改options繞fixed組裝，已捕獲快照並補mutation案例。另查明SDK工具批次串行，原同query案例正名，再加真Promise.all准入一次測試；原證據不刪。
+- 原typecheck及原npm test692／692、Emulator v2六組通過；901檔fixedmanifest驗後零漂移，自有3listeners停止。初TS narrowing、691／692缺基線seed、npm launcher 2次被擋socket嘗試都保留；seed由固定blob恢復，未放寬斷言或guard。113測試子程序無連線嘗試，不能把launcher忽略後稱整批零嘗試。
+- [契約](docs/CHAT_AGENT_DURABLE_BUDGET.md#runtime-connection)與[摘要](artifacts/verification/DURABLE_BUDGET_RUNTIME_20261009.json)。根文件另審；無CI／真模型／部署或恢復通過結論，原批次20／20及三角色暫緩保持。
