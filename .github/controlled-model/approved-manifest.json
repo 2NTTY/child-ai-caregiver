@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "repository": "2NTTY/child-ai-caregiver",
+  "approved": true,
+  "approvalRef": "Root reviewed readonly preflight; user approved direct CI route 2026-10-08; no model/auth/consumption authorized by this preflight request.",
+  "testedSha": "94f7c7b260c46b033a970ec92d3125e31f20442c",
+  "sourceTreeSha256": "1ebac6a3be95045c3e925d430c47de9bb73569a5a7d015c4e0a8bf8f16b624d0",
+  "harnessTreeSha256": "b10cf2c9c6a12a5d1de5c00c9d45a537df81998eeb7ce825191c084769993651",
+  "ledgerSha256": "362234b5ec21080e53220d35b00f1dc70f29098aa66e16ad43ae9944b0b95106",
+  "ledgerId": "2NTTY/child-ai-caregiver:chat-intent:20261008",
+  "ledgerPath": "workflow-workspace:.controlled-model-state/live-ledger.json",
+  "model": "gemini-3.1-flash-lite",
+  "location": "global",
+  "serverThinkingLevel": "medium",
+  "limits": {
+    "modelCalls": 4,
+    "toolCalls": 8,
+    "deadlineMs": 90000,
+    "outputTokens": 1024,
+    "candidateCount": 1,
+    "sdkAttempts": 1,
+    "queryEmbeddings": 0,
+    "historicalCalls": 12,
+    "historicalEstimatedUsd": "0.0464555",
+    "cumulativeGenerationCap": 20,
+    "additionalGenerationCap": 8
+  },
+  "runId": "preflight-20261009-001",
+  "case": "B",
+  "gcpProject": "ai-caregivers-for-children",
+  "authentication": "existing_adc",
+  "bContext": null,
+  "harnessSha": "a0934a5f2d1cb1cfc5cad6c91d8b1b6a5fdc24c2",
+  "expectedWorkflowContext": {
+    "repository": "2NTTY/child-ai-caregiver",
+    "repositoryId": "1377602504",
+    "ownerId": "119132090",
+    "actorId": "119132090",
+    "expectedBranch": "refs/heads/ci/controlled-model-acceptance",
+    "pinnedWorkflowSha": "a0934a5f2d1cb1cfc5cad6c91d8b1b6a5fdc24c2",
+    "eventName": "push",
+    "runAttempt": 1
+  },
+  "packageLockSha256": "19166f104ccd939f6d47bacb7f5e80c6c822764f81d727bcf67f45406aa75f97",
+  "expiresAt": "2026-10-10T00:00:00Z",
+  "checkpointSource": {
+    "type": "initial",
+    "path": ".github/controlled-model/initial-live-ledger.json",
+    "sha256": "362234b5ec21080e53220d35b00f1dc70f29098aa66e16ad43ae9944b0b95106"
+  },
+  "requiredReceipts": []
+}
