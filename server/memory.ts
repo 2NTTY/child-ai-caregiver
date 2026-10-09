@@ -7,7 +7,7 @@ import type { StorageCipher } from "./storage-crypto.ts";
 import { FamilyError, READ_ROLES, WRITE_ROLES, requireFamilyVersion, withChildAccess } from "./family-access.ts";
 import { factIsApplicable, normalizedFactKey, profileIsApplicable, requireTopicTransition, topicMayAsk } from "./memory-policy.ts";
 import { factCreateSchema, factConfirmSchema, factReviseSchema, factDeactivateSchema, topicCreateSchema, topicChangeSchema, topicReopenSchema } from "./memory-validation.ts";
-import { readSummary, summaryInput, saveSummary } from "./memory-summary.ts";
+import { readSummary, readInitialConversationSummary, summaryInput, saveSummary } from "./memory-summary.ts";
 import { appendOnlineChange } from "./online-change.ts";
 
 interface Row { id: string; child_id: string; created_by: string; visibility: "private" | "family"; version: number; payload_encrypted: string }
@@ -105,6 +105,8 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChange
     }),
     topics: (userId: string, childId: string, after?: string) => transaction(userId, childId, false, client => topics(client, userId, childId, after)),
     summary: (userId: string, childId: string) => transaction(userId, childId, false, async client => ({ summary: await readSummary(client, cipher, userId, childId) })),
+    initialConversationSummary: (userId: string, childId: string) => transaction(userId, childId, false,
+      client => readInitialConversationSummary(client, cipher, userId, childId)),
     prepareSummary: (userId: string, childId: string) => transaction(userId, childId, false, client => summaryInput(client, cipher, userId, childId)),
     saveSummary: (userId: string, childId: string, input: unknown) => transaction(userId, childId, true, async client => {
       const value = await saveSummary(client, cipher, userId, childId, input);

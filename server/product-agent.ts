@@ -93,11 +93,17 @@ export function createProductAgent(options: {
       activeReplies.set(key, cancellation);
       try {
       const authorize = async () => await isCurrentUser() && await options.store.authorize(claim.scope,claim.runId);
+      let initialConversationSummary: import("./memory-summary.ts").InitialConversationSummary | undefined;
+      if (options.memory.initialConversationSummary && await authorize()) {
+        const current = await options.memory.initialConversationSummary(userId, childId);
+        if (await authorize()) initialConversationSummary = current ?? undefined;
+      }
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
       const result = await options.runtime.run({
         scope: claim.scope, runId: claim.runId, deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
+        initialConversationSummary,
         context: { confirmationResult, currentMessageId: messageId, serverNow: new Date().toISOString(), timeZone: "Asia/Hong_Kong", memoryAvailability: { hasSummary: Boolean(context.summary),
           earlierMessagesNotFullySummarized: context.truncated.messages },
           confirmationPolicy: options.actions ? "ordinary_instructions_with_current_preauthorization_otherwise_explicit_confirmation" : "explicit_selection_only",

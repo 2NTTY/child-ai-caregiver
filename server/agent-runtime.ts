@@ -43,6 +43,8 @@ export interface AgentRunInput {
   deadlineMs?: number;
   availableInputs?: readonly string[];
   context?: Record<string, unknown>;
+  /** Trusted private summary for the first provider request only; never persisted in the session. */
+  initialConversationSummary?: import("./memory-summary.ts").InitialConversationSummary;
   finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext) => Promise<string | null>;
   /** Opt-in Server presentation after a confirmed model limit; never retries tools. */
   finalizeOnModelLimit?: boolean;
@@ -148,7 +150,8 @@ export function createAgentRuntime(options: {
                 return { status: "unknown" };
               }
             } }));
-          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames });
+          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames,
+            ...(input.trigger.kind === "interactive" && input.recipeId === "product-interactive" ? { initialConversationSummary: input.initialConversationSummary } : {}) });
           const runtimeTools = capabilitySelection ? [new AgentCapabilityToolset(tools, () => {
             budget.check(); return capabilitySelection.visibleToolNames();
           })] : tools;

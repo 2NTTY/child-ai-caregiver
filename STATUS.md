@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **P2-A01～A08 已合併；#140 有效修正收束，下一包 P2-F01。** 本 PR 合併後解除修正前置，Prompt Pack 版本及文件成功收據已接回；[PLAN#active](PLAN.md#active) 是唯一入口，收束範圍及後續順序以該處為準。Firestore 遷移及四角色 Agent 均未開始；資料編製不限文件，背景知識維護獨立於聊天。原 A09 的完整 Agent 引用／文件修改／新對話讀回及穩定服務仍未完成，由 F07／F08 承接；原失敗／未驗證據保留，不把此次離線檢查當真服務完成。原 P1／P2／INT 證據保留，P3 未啟動。
+- **現有聊天 Agent 改進並行推進；遷移線仍以 P2-F01 為下一入口。** 首輪私人歷史摘要投影已完成局部實作與有界驗證，尚未合併／部署／真模型品質驗收；詳見 [PLAN 當前入口](PLAN.md#active)。另有 PR #150 的歧義／跨輪接續驗收尚未完成。Firestore／Firebase Auth／Cloud Run 遷移與其他三角色內部實作不在本包；原 A09、F07／F08 未完成門檻及失敗證據保留，P3 未啟動。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。

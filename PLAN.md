@@ -7,11 +7,26 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ## 當前任務入口
 
-### #140 有效修正收束；下一包 P2-F01
+### 聊天 Agent 改進與必要驗收（使用者已批准並行）
+
+- 在保留 F01～F08 遷移依賴的前提下，先改善現有聊天 Agent；資料收集／資料編製／審核角色內部由其他工作負責，本線只保留必要消費接口。
+- **當前獨立包：[首輪歷史摘要投影](#chat-initial-summary)**：基線 master `69da307`，局部實作及有界驗證完成，尚待 PR 交付、合併、部署與真模型品質核對；不以離線通過代表語義驗收。
+- 另一條受控模型驗收線仍處理有歧義交代的追問／跨輪接續；PR #150 未合併，既有失敗和未測保持原紀錄。本包不混入其未合併產品程式。
+
+<a id="chat-initial-summary"></a>
+#### 首輪歷史摘要投影
+
+- 目的：讓聊天在第一個模型請求取得已有效核對的既有私人摘要，減少單純為讀摘要的一輪工具往返；保留原文續讀、最新交代優先及真正有歧義時追問。
+- 範圍：claim 後按原使用者／孩子授權讀摘要；沿用 basis、coverage、metadata 檢查並計算最早 facts／香港日期 profile 時間失效點。僅私人互動首個實際 provider 請求加入 request-local 資料塊，不寫入 ADK session，不增加模型呼叫或新記憶框架。
+- 投影完整計入原 inputCharacters 並額外限制 4000 字符；超限或過期整塊省略，撤權停止；原生 parts、opaque signatures 與普通工具後續流程保留。摘要不是使用者原話、已確認事實、操作批准或來源證據。
+- 已驗：22 項合成 provider／既有摘要局部測試、scoped types；本地 PostgreSQL 17.11 最小合成表 6 項真 SQL 驗證。[固定版本證據](artifacts/verification/INITIAL_CONVERSATION_SUMMARY_20261009.json)。首次型別 fixture 缺項及 Unix socket 啟動失敗已保留，再以最終 fixture／本包 TCP 窄補驗；沒有改低斷言。
+- 未驗：真模型對話品質、完整 migration／正式 PostgreSQL 18.6、正式 UI／服務或部署。新增投影只核對送出當次；後續模型衍生歷史仍可能含摘要內容，授權檢查與外部請求不是原子交易。完成門檻仍須 review、正常 PR 流程與相應部署／實測，不標完整 Agent 完成。
+
+### #140 有效修正收束；遷移線下一包 P2-F01
 
 - 基線 master `c175eb9`；[PR #140](https://github.com/2NTTY/child-ai-caregiver/pull/140) 收束為「Prompt Pack 版本對齊及可靠文件收據」，隨本 PR 合併解除 F01 的修正前置。保留原 A09 失敗／未驗證據，並以 [收束證據](artifacts/verification/P2_A09_CLOSEOUT_CHECKS.json) 區分本次離線核對；不把原 A09 穩定服務交付標為完成。
 - P2-A01～A08 已合併，#130 已接回，#111 已由 #137／#142 收束；本包保留最新主線，不重做已有功能或驗收。舊 VM／SMTP 專用的未部署 overlay 不納入現行方案，原始版本仍可從 #140 的 `93c64e4` 追溯。既有行政 CLI 映像接點保留作目前 PostgreSQL 維護用途，沒有建置或部署新映像。
-- **唯一下一實作入口：[P2-F01](#p2-f01)**（本 PR 合併後 Ready）：資料／查詢／交易／清理對照、Auth／session 接點及四角色契約。Firestore／Firebase Auth／Cloud Run／四角色 Agent 均未開始實作；不把計劃或合併修正視為已上線。
+- **遷移線下一實作入口：[P2-F01](#p2-f01)**（本 PR 合併後 Ready）：資料／查詢／交易／清理對照、Auth／session 接點及四角色契約。Firestore／Firebase Auth／Cloud Run／四角色 Agent 均未開始實作；不把計劃或合併修正視為已上線。
 - A09 尚欠的真 Agent「官方引用 → 同一文件修改 → 新對話讀回」、正式帳號流程、配對恢復及穩定交付，由 F07／F08 承接。舊 SMTP 部署不再是 F01 的前置；新 Firebase Auth 的電郵／找回與准入仍須實際驗證。原合成現場及使用量限制保留，不能新開 run 繞過限制。
 - 後續順序：**F01 → F02 → F03 → F04／F05 → F06 → F07 → F08**；F04 與 F05 同在 F03 合併後可按獨立範圍安排，F06 等 F05，F07 等 F04 與 F06。細項以[依賴表](#p2-firestore-migration)為準，每包 review／必要驗收／合併後才解鎖依賴。
 - 交給其他聊天前先 fetch 最新 master、讀 AGENTS → STATUS → 本入口及所需契約；不從 #140 舊 head 開發。F02 真雲端切片建資源／費用上限另批，F08 維護窗口／實測預算另批；VM 期限不因本次收束延長。

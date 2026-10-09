@@ -42,7 +42,8 @@ function harness(facts: MemoryFact[], topics: MemoryTopic[] = [], sourceVersions
       return result(version === undefined ? [] : [{ version }]);
     }
     if (sql.startsWith("SELECT id,version FROM text_records")) return result([]);
-    if (sql.startsWith("SELECT md5(jsonb_build_array")) return result([{ authority: "synthetic-authority", metadata_complete: true }]);
+    if (sql.startsWith("WITH checked AS MATERIALIZED")) return result([{ authority: "synthetic-authority", metadata_complete: true,
+      checked_at: new Date("2026-10-07T00:00:00.000Z"), fact_valid_until: null }]);
     if (sql.includes("FROM conversation_summaries") || sql.includes("FROM chat_messages")) return result([]);
     if (sql.includes("FROM memory_facts") || sql.includes("FROM memory_topics")) {
       const source = sql.includes("FROM memory_facts") ? factRows : topicRows;

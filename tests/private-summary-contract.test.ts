@@ -107,6 +107,8 @@ test("persistence advances only an ordered prefix while more history remains and
     const result = (value: any[]) => ({ rows: value, rowCount: value.length });
     if (sql.includes("ORDER BY version DESC LIMIT 1")) return result(savedRow ? [savedRow] : []);
     if (sql.startsWith("SELECT profile_version")) return result([{ profile_version: profileVersion }]);
+    if (sql.startsWith("WITH checked AS MATERIALIZED")) return result([{ authority: "synthetic-authority", metadata_complete: true,
+      checked_at: new Date("2026-10-07T00:00:00.000Z"), fact_valid_until: null }]);
     if (sql.includes("SELECT m.* FROM chat_messages")) return result(rows.filter(row => params[2] || !coverage.has(row.id)).slice(0, 51));
     if (sql.startsWith("INSERT INTO conversation_summaries")) savedRow = { id: params[0], payload_encrypted: params[5], invalidated: false };
     if (sql.startsWith("DELETE FROM summary_message_coverage")) coverage.clear();

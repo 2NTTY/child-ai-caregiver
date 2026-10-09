@@ -8,6 +8,12 @@ import { summarySaveSchema } from "./memory-validation.ts";
 import { profileIsApplicable } from "./memory-policy.ts";
 
 interface SavedSummary extends ConversationSummary { basis: string; invalidated?: boolean }
+/** Server-only snapshot for one provider request; not a saved summary or public wire contract. */
+export interface InitialConversationSummary {
+  summary: Pick<ConversationSummary, "id" | "version" | "text" | "createdAt" | "lastCoveredMessageId">;
+  basis: string;
+  validUntil: string | null;
+}
 const aad = (childId: string, userId: string, id: string) => `memory-summary:${childId}:${userId}:${id}`;
 
 // Current authority versions invalidate derived text. The digest never grants access.
@@ -21,15 +27,30 @@ async function basis(client: PoolClient, cipher: StorageCipher, userId: string, 
   }
   const profile = (await client.query("SELECT profile_version FROM children WHERE id=$1", [childId])).rows;
   const profileRow = (await client.query("SELECT version,payload_encrypted FROM child_profile_revisions WHERE child_id=$1 AND version=$2", [childId, profile[0]?.profile_version ?? 0])).rows[0];
-  const profileValid = profileRow ? profileIsApplicable(JSON.parse(cipher.decrypt(profileRow.payload_encrypted, `child-profile:${childId}:${profileRow.version}`)).data) : false;
-  const row = (await client.query<{ authority: unknown; metadata_complete: boolean }>(`SELECT md5(jsonb_build_array(
+  const profileData = profileRow ? JSON.parse(cipher.decrypt(profileRow.payload_encrypted, `child-profile:${childId}:${profileRow.version}`)).data : null;
+  const row = (await client.query<{ authority: unknown; metadata_complete: boolean; checked_at: Date; fact_valid_until: Date | null }>(`WITH checked AS MATERIALIZED (SELECT clock_timestamp() AS at)
+    SELECT md5(jsonb_build_array(
     (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM text_records WHERE child_id=$1),
-    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version,status,visibility,valid_until,valid_until IS NULL OR valid_until>clock_timestamp()) ORDER BY id),'[]'::jsonb)
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version,status,visibility,valid_until,valid_until IS NULL OR valid_until>checked.at) ORDER BY id),'[]'::jsonb)
       FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2)),
     (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM memory_topics WHERE child_id=$1 AND (visibility='family' OR created_by=$2))
-    )::text) AS authority, NOT EXISTS(SELECT 1 FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed) AS metadata_complete`,
+    )::text) AS authority, NOT EXISTS(SELECT 1 FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed) AS metadata_complete,
+    checked.at AS checked_at, (SELECT min(valid_until) FROM memory_facts WHERE child_id=$1
+      AND (visibility='family' OR created_by=$2) AND valid_until>checked.at) AS fact_valid_until FROM checked`,
     [childId, userId])).rows[0];
-  return { digest: createHash("sha256").update(JSON.stringify(["v2", profile, profileValid, row.authority])).digest("hex"), complete: row.metadata_complete };
+  const checkedAt = row.checked_at instanceof Date ? row.checked_at.getTime() : NaN, timeKnown = Number.isFinite(checkedAt);
+  const profileValid = profileIsApplicable(profileData, timeKnown ? row.checked_at : new Date());
+  let expiresAt = row.fact_valid_until === null ? Infinity : row.fact_valid_until instanceof Date ? row.fact_valid_until.getTime() : NaN;
+  if (profileValid && profileData.validUntil !== null) {
+    // Profile dates are inclusive in Hong Kong. Midnight of the next day is 16:00 UTC.
+    const date = profileData.validUntil;
+    const midnight = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(date) ? Date.parse(date + "T00:00:00.000Z") : NaN;
+    const validDate = Number.isFinite(midnight) && new Date(midnight).toISOString().slice(0, 10) === date;
+    expiresAt = validDate ? Math.min(expiresAt, midnight + 16 * 60 * 60 * 1000) : NaN;
+  }
+  const validityKnown = timeKnown && (expiresAt === Infinity || Number.isFinite(expiresAt) && expiresAt > checkedAt);
+  return { digest: createHash("sha256").update(JSON.stringify(["v2", profile, profileValid, row.authority])).digest("hex"), complete: row.metadata_complete,
+    validityKnown, validUntil: validityKnown && expiresAt !== Infinity ? new Date(expiresAt).toISOString() : null };
 }
 async function latest(client: PoolClient, cipher: StorageCipher, userId: string, childId: string) {
   const row = (await client.query<{ id: string; payload_encrypted: string; invalidated: boolean }>("SELECT id,payload_encrypted,invalidated FROM conversation_summaries WHERE child_id=$1 AND owner_user_id=$2 ORDER BY version DESC LIMIT 1", [childId, userId])).rows[0];
@@ -40,11 +61,20 @@ async function intact(client: PoolClient, userId: string, childId: string) {
     AND (SELECT count(*) FROM summary_message_coverage c WHERE c.summary_id=s.id) <> s.covered_count LIMIT 1`, [childId, userId]);
   return !result.rowCount;
 }
-export async function readSummary(client: PoolClient, cipher: StorageCipher, userId: string, childId: string): Promise<ConversationSummary | null> {
+async function checkedSummary(client: PoolClient, cipher: StorageCipher, userId: string, childId: string) {
   const value = await latest(client, cipher, userId, childId);
   const current = await basis(client, cipher, userId, childId);
   if (!value || value.invalidated || !current.complete || value.basis !== current.digest || !await intact(client, userId, childId)) return null;
-  const { basis: _basis, invalidated: _invalidated, ...publicValue } = value; return publicValue;
+  const { basis: _basis, invalidated: _invalidated, ...summary } = value; return { summary, current };
+}
+export async function readSummary(client: PoolClient, cipher: StorageCipher, userId: string, childId: string): Promise<ConversationSummary | null> {
+  return (await checkedSummary(client, cipher, userId, childId))?.summary ?? null;
+}
+export async function readInitialConversationSummary(client: PoolClient, cipher: StorageCipher, userId: string, childId: string): Promise<InitialConversationSummary | null> {
+  const value = await checkedSummary(client, cipher, userId, childId);
+  if (!value?.current.validityKnown) return null;
+  const { id, version, text, createdAt, lastCoveredMessageId } = value.summary;
+  return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: value.current.digest, validUntil: value.current.validUntil };
 }
 export async function summaryInput(client: PoolClient, cipher: StorageCipher, userId: string, childId: string): Promise<SummaryInput> {
   const value = await latest(client, cipher, userId, childId), currentBasis = await basis(client, cipher, userId, childId);

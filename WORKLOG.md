@@ -1742,3 +1742,13 @@
 - 主模型 review 原 diff、授權／版本／budget／收據及錯誤路徑；只重跑既有 prompt 版本聚合及文件 adapter 聚合，各 1 項通過，Node 24.11.0。[本次證據](artifacts/verification/P2_A09_CLOSEOUT_CHECKS.json)與[原失敗／未驗](artifacts/verification/P2_A09_CHECKS.json)分開。文件差異／衝突標記／連結及 WORKLOG 追加完整性核對；不跑全倉 build／typecheck／測試。
 - 零真模型／embedding／資料庫／瀏覽器／通知／新映像／雲端或部署。原 A09 的完整引用、指定修改、新對話讀回及正式帳號／恢復／服務交付仍待 F07／F08；本 PR 只收束已 review 的修正，不宣稱 A09 或 P2 完成。
 - PLAN／STATUS 原位改為修正合併後 F01 Ready；列 F01 → F02 → F03 → F04／F05 → F06 → F07 → F08 及各依賴。F02 資源／費用與 F08 切換／預算仍另批，未續期 VM。本次按 C 已登入帳號推送／合併；實際 Author／共同作者／Committer／簽署在遠端交付時核對，不預先宣稱 Verified。
+
+
+<a id="log-20261009-initial-summary"></a>
+## 2026-10-09｜聊天首輪歷史摘要投影
+
+- 基線 master `69da307`；按使用者持續改進聊天 Agent 的要求獨立實作，不混入未合併 PR #150。root 親定資料標籤、範圍與驗收邊界並 review 最終差異。
+- 私人互動 claim 後核對既有 summary basis／coverage／metadata及最早時間失效點；僅首個實際 provider 請求加入 request-local 有界資料，原 session、user/model/tool parts 與 opaque signatures 保留。超限／過期整塊省略，撤權停止，模型／工具次數上限不變。
+- 最終 22 項局部合成測試及 scoped types 通過；本地 PostgreSQL 17.11 最小合成表 6 項真 SQL 通過，測試 cluster 已停止。首次 cipher fixture 型別缺項、Unix socket 啟動拒絕保留，再按原範圍補驗，沒有修改既有斷言。[驗證摘要](artifacts/verification/INITIAL_CONVERSATION_SUMMARY_20261009.json)。
+- 未呼真模型、未部署或修改其他角色／wire／migration。後續模型衍生歷史可能保留摘要資訊；當次投影檢查不等於所有來源持續有效，DB 授權與外部請求不具原子性。此記錄為 PR 交付準備，並非已合併或完整 Agent 驗收；PLAN／STATUS 已原位反映待交付界線。
+
