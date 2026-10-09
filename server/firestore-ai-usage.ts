@@ -14,13 +14,18 @@ const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const fingerprint = z.string().regex(/^[a-f0-9]{64}$/u);
 const sourceSchema = z.enum(['platform', 'personal']);
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u);
-const requestSchema = z.object({ rootRunId: id, attemptKey: id, bindingFingerprint: fingerprint,
+const requestSchema = z.object({ kind: z.enum(['model', 'embedding']).optional(), rootRunId: id, attemptKey: id, bindingFingerprint: fingerprint,
   requestFingerprint: fingerprint, userId: id, childId: id, model: id, deadlineAtMs: integer.min(1),
   userLimit: integer.min(1).max(1000), globalLimit: integer.min(1).max(10000) }).strict();
-const recordSchema = z.object({ outcome: z.enum(['succeeded', 'rate_limited', 'timeout', 'unavailable', 'invalid_response', 'unauthorized']),
-  inputTokens: integer.nullable(), outputTokens: integer.nullable(), cachedTokens: integer.nullable(), durationMs: integer }).strict();
+const recordSchema = z.union([
+  z.object({ kind: z.literal('model').optional(), outcome: z.enum(['succeeded', 'rate_limited', 'timeout', 'unavailable', 'invalid_response', 'unauthorized']),
+    inputTokens: integer.nullable(), outputTokens: integer.nullable(), cachedTokens: integer.nullable(), durationMs: integer }).strict(),
+  z.object({ kind: z.literal('embedding'), outcome: z.enum(['succeeded', 'unavailable', 'invalid_response', 'invalid_input', 'unauthorized', 'timeout', 'cancelled']),
+    inputTokens: integer.nullable(), billableCharacters: integer.nullable(), durationMs: integer }).strict(),
+]);
 const attemptSchema = z.object({ request: requestSchema, billingSource: sourceSchema, day: daySchema,
-  reservedAtMs: integer, record: recordSchema.nullable() }).strict();
+  reservedAtMs: integer, record: recordSchema.nullable() }).strict().refine(value => value.record === null
+    || (value.request.kind ?? 'model') === (value.record.kind ?? 'model'));
 const counterSchema = z.object({ attempts: integer, inputTokens: integer, outputTokens: integer, cachedTokens: integer, known: integer }).strict();
 type Counter = z.infer<typeof counterSchema>;
 type SavedAttempt = z.infer<typeof attemptSchema>;
@@ -31,7 +36,11 @@ function parse<T>(schema: z.ZodType<T>, value: unknown, code: string): T {
   const result = schema.safeParse(value); if (!result.success) reject(code); return result.data;
 }
 function receipt(state: SavedAttempt): DurableAiUsageReceipt {
-  return { day: state.day, reservedAtMs: state.reservedAtMs, record: state.record ? { ...state.record } : null };
+  return { ...(state.request.kind ? { kind: state.request.kind } : {}), day: state.day, reservedAtMs: state.reservedAtMs, record: state.record ? { ...state.record } : null };
+}
+/** Compare legacy model representations without changing saved payloads or ciphertext. */
+function comparable<T extends { kind?: 'model' | 'embedding' }>(value: T) {
+  return { ...value, kind: value.kind ?? 'model' };
 }
 
 export interface FirestoreAiUsageOptions {
@@ -46,7 +55,7 @@ export interface FirestoreAiUsageOptions {
 }
 
 /**
- * Model-attempt daily quota and metadata accounting. Root limits and business
+ * Model and query-embedding daily quota and metadata accounting. Root limits and business
  * authority remain separate. No provider execution, refunds, cleanup or TTL.
  * Duplicate or lost acknowledgements never permit another dispatch.
  */
@@ -100,7 +109,7 @@ export class FirestoreAiUsage implements DurableAiUsage {
   }
   #attempt(id: string, snapshot: DocumentSnapshot, request: DurableAiUsageRequest) {
     const state = this.#open(id, snapshot, attemptSchema);
-    if (canonical(state.request) !== canonical(request) || state.billingSource !== this.#source) reject('attempt_conflict');
+    if (canonical(comparable(state.request)) !== canonical(comparable(request)) || state.billingSource !== this.#source) reject('attempt_conflict');
     if (state.day !== this.#day(state.reservedAtMs) || state.reservedAtMs >= request.deadlineAtMs) reject('invalid_stored_usage');
     return state;
   }
@@ -148,12 +157,13 @@ export class FirestoreAiUsage implements DurableAiUsage {
   }
   async record(input: DurableAiUsageRequest, result: DurableAiUsageRecord): Promise<DurableAiUsageReceipt> {
     const request = parse(requestSchema, input, 'invalid_request'), record = parse(recordSchema, result, 'invalid_record');
+    if ((request.kind ?? 'model') !== (record.kind ?? 'model')) reject('record_kind_conflict');
     const id = this.#attemptId(request), ref = this.#ref(id);
     return this.#database.runTransaction(async transaction => {
       const saved = await transaction.get(ref); if (!saved.exists) reject('attempt_not_found');
       const state = this.#attempt(id, saved, request);
       if (state.record) {
-        if (canonical(state.record) !== canonical(record)) reject('record_conflict');
+        if (canonical(comparable(state.record)) !== canonical(comparable(record))) reject('record_conflict');
         return receipt(state);
       }
       // Late accounting uses the reservation day, never today's quota or the root's terminal state.
@@ -163,8 +173,14 @@ export class FirestoreAiUsage implements DurableAiUsage {
       this.#consistent(global, user);
       for (const counter of [global, user]) {
         if (counter.attempts < 1) reject('invalid_stored_usage');
-        for (const key of ['inputTokens', 'outputTokens', 'cachedTokens'] as const) counter[key] += record[key] ?? 0;
-        if (record.inputTokens !== null && record.outputTokens !== null && record.cachedTokens !== null) counter.known++;
+        counter.inputTokens += record.inputTokens ?? 0;
+        if (record.kind === 'embedding') {
+          // Characters are not tokens. Embeddings have no output or cached-token fields.
+          if (record.inputTokens !== null && record.billableCharacters !== null) counter.known++;
+        } else {
+          counter.outputTokens += record.outputTokens ?? 0; counter.cachedTokens += record.cachedTokens ?? 0;
+          if (record.inputTokens !== null && record.outputTokens !== null && record.cachedTokens !== null) counter.known++;
+        }
         parse(counterSchema, counter, 'usage_overflow');
         if (counter.known > counter.attempts) reject('invalid_stored_usage');
       }

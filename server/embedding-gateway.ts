@@ -6,6 +6,9 @@ import type { AiConfig } from "./ai-config.ts";
 import { createAiUsageStore } from "./ai-usage.ts";
 import { vectorLiteral } from "./knowledge-store.ts";
 import { knowledgeHash } from "./knowledge-inputs.ts";
+import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
+import type { DurableAiUsage, DurableAiUsageRequest } from "./durable-ai-usage.ts";
+import type { RootBudgetContext } from "./durable-root-budget.ts";
 
 export interface EmbeddingInput { text: string; task: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY"; title?: string }
 export interface EmbeddingReply { values: number[]; inputTokens: number | null; billableCharacters: number | null }
@@ -27,6 +30,13 @@ interface EmbeddingAttempt extends EmbeddingActor {
 export interface EmbeddingUsage {
   reserve(actor: EmbeddingActor, userLimit: number, globalLimit: number): Promise<boolean>;
   record(attempt: EmbeddingAttempt): Promise<void>;
+}
+/** Internal only: supplied from the initialized root budget, never from tool/HTTP arguments. */
+export interface DurableQueryEmbeddingUsage {
+  adapter: DurableAiUsage;
+  context: RootBudgetContext;
+  attemptKey: string;
+  revalidate: () => Promise<void>;
 }
 export function createEmbeddingUsage(pool: Pool, source: ModelBillingSource = "platform"): EmbeddingUsage {
   const counters = createAiUsageStore(pool, source);
@@ -51,10 +61,26 @@ export function createEmbeddingUsage(pool: Pool, source: ModelBillingSource = "p
 }
 export function createEmbeddingGateway(options: { config: AiConfig; provider?: EmbeddingProvider; usage: EmbeddingUsage }) {
   return {
-    async embed(input: EmbeddingInput, actor: EmbeddingActor, signal: AbortSignal, authorize: () => Promise<boolean>): Promise<number[]> {
-      const { config, provider, usage } = options;
+    async embed(input: EmbeddingInput, actor: EmbeddingActor, signal: AbortSignal, authorize: () => Promise<boolean>, durable?: DurableQueryEmbeddingUsage): Promise<number[]> {
+      const { provider, usage } = options;
+      const config = durable ? Object.freeze({ ...options.config }) : options.config;
+      const daily = durable ? { ...durable, context: structuredClone(durable.context) } : undefined;
+      const authority = async <T>(operation: () => Promise<T>): Promise<T> => {
+        try { return await operation(); }
+        catch (error) {
+          // Authority storage failures cannot masquerade as provider unavailability.
+          if (daily) throw error instanceof AgentStopped ? error : new AgentStopped('unavailable');
+          throw error;
+        }
+      };
+      if (daily) {
+        input = Object.freeze({ ...input }); actor = Object.freeze({ ...actor });
+        if (daily.adapter.billingSource !== 'platform' || actor.kind !== 'query_embedding' || input.task !== 'RETRIEVAL_QUERY'
+          || actor.actorId !== daily.context.binding.ownerId || actor.operationId !== daily.context.binding.rootRunId
+          || !daily.attemptKey.startsWith('embedding:')) throw new AgentStopped('unavailable');
+      }
       if (signal.aborted) throw new EmbeddingFailure("cancelled");
-      if (!await authorize()) throw new EmbeddingFailure("unauthorized");
+      if (!await authority(authorize)) throw new EmbeddingFailure("unauthorized");
       if (!config.enabled || !provider) throw new EmbeddingFailure("disabled");
       if (!input.text.trim() || input.text.length > (input.task === "RETRIEVAL_QUERY" ? 2000 : 4000)
         || /[\u0000\uD800-\uDFFF]/u.test(input.text) || (input.title?.length ?? 0) > 600 || /[\u0000\uD800-\uDFFF]/u.test(input.title ?? "")
@@ -66,7 +92,22 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
         || (actor.kind === "query_embedding") !== (input.task === "RETRIEVAL_QUERY")) throw new EmbeddingFailure("invalid_input");
       // Maintenance has its own finite per-day counter but cannot increase the shared global limit.
       const limit = actor.kind === "corpus_maintenance" ? Math.min(16, config.dailyGlobalAttempts) : config.dailyUserAttempts;
-      if (!await usage.reserve(actor, limit, config.dailyGlobalAttempts)) throw new EmbeddingFailure("quota_exceeded");
+      let dailyRequest: DurableAiUsageRequest | undefined;
+      if (daily) {
+        dailyRequest = { kind: 'embedding', rootRunId: daily.context.binding.rootRunId, attemptKey: daily.attemptKey,
+          bindingFingerprint: agentBudgetFingerprint(daily.context),
+          requestFingerprint: agentBudgetFingerprint({ model: KNOWLEDGE_EMBEDDING.model, dimensions: KNOWLEDGE_EMBEDDING.dimensions, input }),
+          userId: actor.actorId, childId: daily.context.binding.childId, model: KNOWLEDGE_EMBEDDING.model,
+          deadlineAtMs: daily.context.binding.deadlineAtMs, userLimit: limit, globalLimit: config.dailyGlobalAttempts };
+        try {
+          const admission = await daily.adapter.reserve(dailyRequest);
+          if (admission.decision === 'quota_exceeded') throw new AgentStopped('quota_exceeded');
+          if (admission.decision !== 'execute') throw new AgentStopped('unavailable');
+        } catch (error) {
+          // Missing or uncertain durable permission is never a SQL or keyword fallback.
+          throw error instanceof AgentStopped ? error : new AgentStopped('unavailable');
+        }
+      } else if (!await usage.reserve(actor, limit, config.dailyGlobalAttempts)) throw new EmbeddingFailure("quota_exceeded");
       const started = Date.now();
       const controller = new AbortController();
       const onAbort = () => controller.abort(new EmbeddingFailure("cancelled"));
@@ -78,6 +119,12 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
       let inputTokens: number | null = null, billableCharacters: number | null = null;
       try {
         if (controller.signal.aborted) throw controller.signal.reason;
+        if (daily) {
+          await authority(daily.revalidate);
+          if (!await authority(authorize)) throw new AgentStopped('unauthorized');
+          if (Date.now() >= daily.context.binding.deadlineAtMs) throw new AgentStopped('deadline');
+          if (controller.signal.aborted) throw controller.signal.reason;
+        }
         const reply = await Promise.race([provider.embed(input, controller.signal), new Promise<never>((_, reject) => {
           onStop = () => reject(controller.signal.reason);
           controller.signal.addEventListener("abort", onStop, { once: true });
@@ -86,13 +133,14 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
         inputTokens = reply.inputTokens; billableCharacters = reply.billableCharacters;
         if (![inputTokens, billableCharacters].every(value => value === null || (Number.isSafeInteger(value) && value >= 0))) throw new EmbeddingFailure("invalid_response");
         try { vectorLiteral(reply.values); } catch { throw new EmbeddingFailure("invalid_response"); }
-        if (!await authorize()) throw new EmbeddingFailure("unauthorized");
+        if (!await authority(authorize)) throw new EmbeddingFailure("unauthorized");
         if (controller.signal.aborted) throw controller.signal.reason;
         outcome = "succeeded";
         return reply.values;
       } catch (error) {
-        const failure = error instanceof EmbeddingFailure ? error : new EmbeddingFailure("unavailable");
+        const failure = error instanceof EmbeddingFailure || error instanceof AgentStopped ? error : new EmbeddingFailure("unavailable");
         outcome = signal.aborted ? "cancelled" : controller.signal.aborted ? "timeout"
+          : failure instanceof AgentStopped ? failure.reason === 'unauthorized' ? 'unauthorized' : failure.reason === 'deadline' ? 'timeout' : 'unavailable'
           : failure.code === "invalid_response" || failure.code === "invalid_input" || failure.code === "unauthorized" ? failure.code : "unavailable";
         // Do not persist invalid provider statistics as believable usage.
         if (!Number.isSafeInteger(inputTokens) || (inputTokens ?? -1) < 0) inputTokens = null;
@@ -101,7 +149,11 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
       } finally {
         clearTimeout(timer); signal.removeEventListener("abort", onAbort);
         if (onStop) controller.signal.removeEventListener("abort", onStop);
-        await usage.record({ ...actor, outcome, inputTokens, billableCharacters, durationMs: Math.max(0, Date.now() - started),
+        const durationMs = Math.max(0, Date.now() - started);
+        if (daily && dailyRequest) {
+          try { await daily.adapter.record(dailyRequest, { kind: 'embedding', outcome, inputTokens, billableCharacters, durationMs }); }
+          catch { throw new AgentStopped('unavailable'); }
+        } else await usage.record({ ...actor, outcome, inputTokens, billableCharacters, durationMs,
           documentHash: input.task === "RETRIEVAL_DOCUMENT" ? knowledgeHash([input.title, input.text]) : null });
       }
     },

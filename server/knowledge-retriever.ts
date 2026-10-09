@@ -24,7 +24,8 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
           let pending = cache.get(query);
           if (!pending) {
-            const embed = () => (options.embeddings ?? embeddings).embed({ task: "RETRIEVAL_QUERY", text: query }, actor, budget.signal, authorize)
+            const embed = () => (options.embeddings ?? embeddings).embed({ task: "RETRIEVAL_QUERY", text: query }, actor, budget.signal, authorize,
+              queryEmbeddingAttemptKey ? budget.queryEmbeddingDailyUsage(queryEmbeddingAttemptKey) : undefined)
               .catch(error => { if (error instanceof EmbeddingFailure && error.code === "unavailable") return null; throw error; });
             if (budget.durable) {
               // Cache the whole admission before it can yield to a parallel identical query.

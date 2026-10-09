@@ -13,7 +13,7 @@ import { createProductAgent } from "./product-agent.ts";
 import { createKnowledgeStore } from "./knowledge-store.ts";
 import { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { KnowledgeStore } from "./knowledge-store.ts";
-import { createEmbeddingGateway, createEmbeddingUsage } from "./embedding-gateway.ts";
+import { createEmbeddingGateway, createEmbeddingUsage, type EmbeddingProvider } from "./embedding-gateway.ts";
 import { createVertexEmbeddingProvider } from "./vertex-embedding.ts";
 import { createAiUsageStore } from "./ai-usage.ts";
 import type { TaskScheduling } from "./tasks.ts";
@@ -48,11 +48,12 @@ export interface ProductAgentServicePorts {
     profile: ProductAgentDurableProfile;
     /** Trusted provider seam, including scripted offline providers; never request-selected. */
     provider?: AgentModelProvider;
+    embeddingProvider?: EmbeddingProvider;
   };
 }
 
 function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAgentServicePorts["claimedRunPersistence"]>, routing: unknown) {
-  const { nativeSessionService, rootBudget, dailyUsage, provider } = persistence;
+  const { nativeSessionService, rootBudget, dailyUsage, provider, embeddingProvider } = persistence;
   const profile = persistence.profile ? Object.freeze({ ...persistence.profile, config: Object.freeze({ ...persistence.profile.config }) }) : undefined;
   const version = (value: unknown): value is string => typeof value === "string" && value.length > 0
     && value.length <= 128 && value === value.trim() && value.isWellFormed();
@@ -79,7 +80,7 @@ function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAg
       limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings }, deadlineAtMs: expiry,
     } } };
   };
-  return { config: profile.config, nativeSessionService, bindDurableRun, provider };
+  return { config: profile.config, nativeSessionService, bindDurableRun, provider, embeddingProvider };
 }
 
 export function createProductAgentServices(pool: Pool, cipher: StorageCipher, config: AiConfig, scheduling?: TaskScheduling, diagnostics = false, growth?: GrowthStore,contact?:import("./contact-store.ts").ContactStore,summary?:import("./care-summary-store.ts").CareSummaryStore, routing?:import("./model-routing.ts").ModelRouting, actions?:import("./agent-actions-store.ts").AgentActionsStore, ports: ProductAgentServicePorts = {}) {
@@ -95,7 +96,7 @@ export function createProductAgentServices(pool: Pool, cipher: StorageCipher, co
     tasks: createTaskStore(pool, cipher, scheduling), chat: createChatStore(pool, cipher, true, true),
     runtime,
     knowledge: createKnowledgeRetriever(ports.publishedKnowledgeReader ?? createKnowledgeStore(pool), createEmbeddingGateway({ config: selectedConfig,
-      usage: createEmbeddingUsage(pool), provider: selectedConfig.enabled ? createVertexEmbeddingProvider(selectedConfig) : undefined })),
+      usage: createEmbeddingUsage(pool), provider: durable?.embeddingProvider ?? (selectedConfig.enabled ? createVertexEmbeddingProvider(selectedConfig) : undefined) })),
   });
   return { store, agent, runtime };
 }

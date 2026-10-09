@@ -1,0 +1,1079 @@
+{
+  "artifact": "F01 shared model/query-embedding daily usage",
+  "recordedAtUtc": "2026-10-09T18:12:02.737865+00:00",
+  "repository": "2NTTY/child-ai-caregiver",
+  "baseCommit": "e26bf75c58494c0c879b673c4c6396347daea4be",
+  "baseTree": "54a3803481a1556850883a159e2434387fc03673",
+  "baseVerification": {
+    "method": "Document Git blobs matched the verified fixed base-tree; official GitHub connector confirmed the base commit is merge PR #174 and returned the same STATUS.md blob.",
+    "commitUrl": "https://github.com/2NTTY/child-ai-caregiver/commit/e26bf75c58494c0c879b673c4c6396347daea4be",
+    "documents": [
+      {
+        "path": "PLAN.md",
+        "gitBlob": "7ed7ca067439665c52a4802bea8ab6f6ab2397f7",
+        "sha256": "c9a1aeb5c830ffb0333bd81a9c51c3096d5053d8083eb2fa92c6fde209635854",
+        "bytes": 104041
+      },
+      {
+        "path": "STATUS.md",
+        "gitBlob": "3644dfef0034f884a8839ef635a0ba767ecc9012",
+        "sha256": "5669df82d6baf027139586386546b72a21f1373af2185981a9ed61471679a3a0",
+        "bytes": 3494
+      },
+      {
+        "path": "WORKLOG.md",
+        "gitBlob": "1fafd1a4aaaaddb359ed346e32b5ff7657514224",
+        "sha256": "47b586ffd3bda59925c35a96aa1f02549b0ceec273cde5049cf1d732a7334b35",
+        "bytes": 308274
+      },
+      {
+        "path": "docs/CHAT_AGENT_DURABLE_BUDGET.md",
+        "gitBlob": "dd9b8e79467837fb71e44c94a2405c88aaa3967f",
+        "sha256": "11eca3b431cf322015229d1550eb9e39ee8f1e72f3aacd44337c6b028ca42d43",
+        "bytes": 16700
+      }
+    ]
+  },
+  "scope": {
+    "productFiles": 7,
+    "newTestFiles": 2,
+    "documents": [
+      "docs/CHAT_AGENT_DURABLE_BUDGET.md",
+      "PLAN.md",
+      "STATUS.md",
+      "WORKLOG.md"
+    ],
+    "authority": "Optional trusted fixed-platform claimed-run model and query-embedding paths share the same durable daily adapter.",
+    "unchanged": [
+      "Firestore V1 envelope and AAD",
+      "attempt and counter addressing",
+      "five counter fields",
+      "SQL/default-memory/uninjected and corpus-maintenance paths",
+      "root/model/daily limits",
+      "production bootstrap and deployment"
+    ],
+    "legacyCompatibility": "Missing kind compares as model only. Read/lookup/idempotent stored accounting preserves original payload representation and ciphertext; settling an unrecorded legacy attempt preserves its original request."
+  },
+  "codeSnapshots": {
+    "initial": {
+      "manifestSha256": "99ff6e7cf2f3fae36d4412e3617c31d036f61a7b3ef1f4774397c54c32e1472b",
+      "manifest": {
+        "baseCommit": "e26bf75c58494c0c879b673c4c6396347daea4be",
+        "baseTree": "54a3803481a1556850883a159e2434387fc03673",
+        "sourceRoot": "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source",
+        "frozenAtUtc": "2026-10-09T17:56:55.928912+00:00",
+        "files": [
+          {
+            "path": "server/durable-ai-usage.ts",
+            "sha256": "e369ee001ab4066bb04d5a779351ab068334b3666b4cdc4b077d340769d94b40",
+            "gitBlob": "8817f5f8a1c5768f14af0751eae0242a1a378580",
+            "bytes": 2453,
+            "baseBlob": "fd6d31d95eb51ce780809ae030c21be559f979a6",
+            "patch": "evidence/server_durable-ai-usage.ts.patch"
+          },
+          {
+            "path": "server/firestore-ai-usage.ts",
+            "sha256": "d9e40c329273e422d54ac6be7f8ffd4ff33bab394d82015feff7cf590e3c26af",
+            "gitBlob": "e18d020df763bc8e859ba1ef0700d99228e67965",
+            "bytes": 13452,
+            "baseBlob": "7dba362e69cd1ec5653145bb7e7545555988ca76",
+            "patch": "evidence/server_firestore-ai-usage.ts.patch"
+          },
+          {
+            "path": "server/agent-budget.ts",
+            "sha256": "34aeba679c28cb06e3a8ca3c1f24aaef44ea273048c8248579483b43c6f97a26",
+            "gitBlob": "74f1da80dd0752bddd27a390d26174c52fe362ca",
+            "bytes": 9938,
+            "baseBlob": "5b41d2abf9372191689e00629fc5930fab74058e",
+            "patch": "evidence/server_agent-budget.ts.patch"
+          },
+          {
+            "path": "server/agent-model-gateway.ts",
+            "sha256": "1a001e653d06709e041721751fb2a78afaaac4bdd570d448f1ff88efbdd66508",
+            "gitBlob": "ea0ffeef2f70688ebce151aa7c4c93deb297c564",
+            "bytes": 13064,
+            "baseBlob": "0370489951a7ea1a8c6359afe324b0ecf5837e50",
+            "patch": "evidence/server_agent-model-gateway.ts.patch"
+          },
+          {
+            "path": "server/embedding-gateway.ts",
+            "sha256": "0b50adbf1ea42b1ae4cc45bb7dc79c069015bcc9d37bc1d7990c35401bae2e58",
+            "gitBlob": "2d457cfd45290ac33fb7da67e3c450c42ca07f30",
+            "bytes": 10468,
+            "baseBlob": "d5be05f0a69e04694baa83528143a6b3459aa3ba",
+            "patch": "evidence/server_embedding-gateway.ts.patch"
+          },
+          {
+            "path": "server/knowledge-retriever.ts",
+            "sha256": "7f23483a9224af52821e84a079fba607d86db73ae7147519709bea0f2b689082",
+            "gitBlob": "db6c300f321cf062f287544bd0c98084c9425cbe",
+            "bytes": 10122,
+            "baseBlob": "53449c1141d13b4dde62c08ccb22ae6b4e601aad",
+            "patch": "evidence/server_knowledge-retriever.ts.patch"
+          },
+          {
+            "path": "server/product-agent-services.ts",
+            "sha256": "072518aca35fc886b4473f6d5bce3d209c2efa852809ffb099e103ae542ab2c2",
+            "gitBlob": "74925e542cdc3be8296f1e959d024bf2dbef4935",
+            "bytes": 7560,
+            "baseBlob": "9c464c20660bbe5ec28610629b30d0ff4ce9295e",
+            "patch": "evidence/server_product-agent-services.ts.patch"
+          },
+          {
+            "path": "tests/product-agent-durable-embedding.test.ts",
+            "sha256": "3c6396faa31d9c576dca5deb63bc222723e0a09076ccae889ed3f75a67ea249e",
+            "gitBlob": "8cacec9c5f359948c1887767f9e957cf8aa727ff",
+            "bytes": 13573,
+            "baseBlob": null,
+            "patch": "evidence/tests_product-agent-durable-embedding.test.ts.patch"
+          },
+          {
+            "path": "tests/firestore-embedding-usage.test.ts",
+            "sha256": "e95c6b8c6f9dd75d21919f736530dde0e2c46c842f380149d7a092f82a35ff02",
+            "gitBlob": "4fc23e81ab6dde5bdb99f57a6dcb8729ca89a418",
+            "bytes": 6181,
+            "baseBlob": null,
+            "patch": "evidence/tests_firestore-embedding-usage.test.ts.patch"
+          }
+        ],
+        "logs": [
+          {
+            "path": "evidence/01-sql-red.log",
+            "sha256": "1c0201cf57c97d41caa26466343c38add5ffb7994a1b1b00942c3245a6287bda",
+            "gitBlob": "8029e217a6a43ff6354d4e804a939e18ba308f51",
+            "bytes": 1714
+          },
+          {
+            "path": "evidence/02-first-green.log",
+            "sha256": "e21016e3b97b7b5d9b23d9e87ac5b536380dc4dceaaab21561ec61d953f43c45",
+            "gitBlob": "6843bb713d8c3f218aca2d79aee027e1d67acec4",
+            "bytes": 726
+          },
+          {
+            "path": "evidence/03-core.log",
+            "sha256": "8479a61f26809096e2d2d2c8d15485ea96fe4d0974dbb0bdabbfd45c98e511ee",
+            "gitBlob": "5026f692d13bf0ef2bd35bd99c1cea568336fda2",
+            "bytes": 1477
+          },
+          {
+            "path": "evidence/04-affected.log",
+            "sha256": "027304f49d3e791f79a03f5724ecb05406e89cb101d111faf10746e3d4cd1085",
+            "gitBlob": "db392345cc1f48e98ef988766ff1f2eb41201709",
+            "bytes": 773
+          },
+          {
+            "path": "evidence/05-server-tsc.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+            "bytes": 0
+          }
+        ],
+        "networkAudits": [
+          {
+            "path": "evidence/network-audit-embedding-affected-12.json",
+            "sha256": "662b181bc8e2a8ae8a6620bcb05e8dca46a15c7a466e3c72795f0b1194b0613b",
+            "gitBlob": "e597ea6c8e8411741e2464a21786604318b353bf",
+            "bytes": 211,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-affected-13.json",
+            "sha256": "b5c4e12cb437aa9e774f70b0761e1d8008a9f547827e34adae8c10e0326d6b5e",
+            "gitBlob": "46ab62dc720a3e0f9788a4b246e57e9e888f1ca5",
+            "bytes": 207,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-affected-14.json",
+            "sha256": "fe3c12dbe63ebd49570042bba3c703ab29476ca612ed6966ff5a598aa36b2d5c",
+            "gitBlob": "3f06dc4ab285859c43d3831a38e84abfbf61099c",
+            "bytes": 206,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-core-14.json",
+            "sha256": "76362194b3094829aa9c8b1211f06498f2d16ada9eca24fea3cd65969cb17927",
+            "gitBlob": "4b26e0009114ae70f96da3ca48e79b27ef5ff7b3",
+            "bytes": 214,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-core-15.json",
+            "sha256": "06ac02caf71855987e1b894262d3691ee3f982980d680d87022d62434309c093",
+            "gitBlob": "6247fd66f7533ffa4fe0df7b279d0174d78ea701",
+            "bytes": 220,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-first-green-12.json",
+            "sha256": "094d213c5e99334c50d942398847eb18b486bbe1480af1932f9ec254f8b052e0",
+            "gitBlob": "cbac5743700ce1803e898665a703edbb4c599534",
+            "bytes": 220,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-server-tsc-5.json",
+            "sha256": "80018bd2410f1a3008921e881b6ff04921f87926d286ba1eab3840affec32b68",
+            "gitBlob": "ae5feb489db220ea7882bb6a4631ba9b2de472d8",
+            "bytes": 240,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-sql-red-20.json",
+            "sha256": "9544506a156a3a2a840cc6731a77ebd4b93bfd7b68c36d36ee5072f05d7efef4",
+            "gitBlob": "40c1c9869b36e1ef118627fa30dce541fa170ccc",
+            "bytes": 220,
+            "attempts": 0
+          }
+        ],
+        "validation": {
+          "baseServerBlobsMatch": true,
+          "sourceFiles": 9,
+          "networkAttempts": 0
+        },
+        "results": {
+          "baselineRed": "Original claimed services entered SQL quota once; expected zero. Two tests fail (one parent, one concrete assertion).",
+          "firstGreen": "2/2, including parent, same original scenario.",
+          "core": "8/8, including one parent and seven concrete tests.",
+          "affected": "6/6 selected legacy tests.",
+          "serverTypecheck": "exit 0"
+        },
+        "notRun": [
+          "real model",
+          "real database/Firestore concurrency",
+          "Emulator",
+          "cloud",
+          "HTTP/UI",
+          "production deployment",
+          "full repository suite"
+        ],
+        "setupNotes": [
+          "The initial base-copy used a redundant relative prefix; no files were changed and the copy was corrected before implementation. The red test itself ran successfully and failed at the intended assertion.",
+          "An attempt to persist the complete remote tree exceeded the process argument length. A small verified base-tree subset was saved instead. No product test or source was affected."
+        ]
+      }
+    },
+    "current": {
+      "manifestSha256": "492a07d8ea997c569fba58f431ea9168a32c01a14e19d71f749badfece4d66b0",
+      "manifest": {
+        "baseCommit": "e26bf75c58494c0c879b673c4c6396347daea4be",
+        "baseTree": "54a3803481a1556850883a159e2434387fc03673",
+        "sourceRoot": "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source",
+        "frozenAtUtc": "2026-10-09T18:03:07.899684+00:00",
+        "files": [
+          {
+            "path": "server/durable-ai-usage.ts",
+            "sha256": "e369ee001ab4066bb04d5a779351ab068334b3666b4cdc4b077d340769d94b40",
+            "gitBlob": "8817f5f8a1c5768f14af0751eae0242a1a378580",
+            "bytes": 2453,
+            "baseBlob": "fd6d31d95eb51ce780809ae030c21be559f979a6",
+            "patch": "evidence/server_durable-ai-usage.ts.patch"
+          },
+          {
+            "path": "server/firestore-ai-usage.ts",
+            "sha256": "d9e40c329273e422d54ac6be7f8ffd4ff33bab394d82015feff7cf590e3c26af",
+            "gitBlob": "e18d020df763bc8e859ba1ef0700d99228e67965",
+            "bytes": 13452,
+            "baseBlob": "7dba362e69cd1ec5653145bb7e7545555988ca76",
+            "patch": "evidence/server_firestore-ai-usage.ts.patch"
+          },
+          {
+            "path": "server/agent-budget.ts",
+            "sha256": "34aeba679c28cb06e3a8ca3c1f24aaef44ea273048c8248579483b43c6f97a26",
+            "gitBlob": "74f1da80dd0752bddd27a390d26174c52fe362ca",
+            "bytes": 9938,
+            "baseBlob": "5b41d2abf9372191689e00629fc5930fab74058e",
+            "patch": "evidence/server_agent-budget.ts.patch"
+          },
+          {
+            "path": "server/agent-model-gateway.ts",
+            "sha256": "1a001e653d06709e041721751fb2a78afaaac4bdd570d448f1ff88efbdd66508",
+            "gitBlob": "ea0ffeef2f70688ebce151aa7c4c93deb297c564",
+            "bytes": 13064,
+            "baseBlob": "0370489951a7ea1a8c6359afe324b0ecf5837e50",
+            "patch": "evidence/server_agent-model-gateway.ts.patch"
+          },
+          {
+            "path": "server/embedding-gateway.ts",
+            "sha256": "328a9456f1c2dd4ac830b719f4acebedb2cb1ea1588dd746668641c648a88c5b",
+            "gitBlob": "2de96659b3dd43e61e99b93f4c2d4c2de087fefb",
+            "bytes": 10878,
+            "baseBlob": "d5be05f0a69e04694baa83528143a6b3459aa3ba",
+            "patch": "evidence/server_embedding-gateway.ts.patch"
+          },
+          {
+            "path": "server/knowledge-retriever.ts",
+            "sha256": "7f23483a9224af52821e84a079fba607d86db73ae7147519709bea0f2b689082",
+            "gitBlob": "db6c300f321cf062f287544bd0c98084c9425cbe",
+            "bytes": 10122,
+            "baseBlob": "53449c1141d13b4dde62c08ccb22ae6b4e601aad",
+            "patch": "evidence/server_knowledge-retriever.ts.patch"
+          },
+          {
+            "path": "server/product-agent-services.ts",
+            "sha256": "072518aca35fc886b4473f6d5bce3d209c2efa852809ffb099e103ae542ab2c2",
+            "gitBlob": "74925e542cdc3be8296f1e959d024bf2dbef4935",
+            "bytes": 7560,
+            "baseBlob": "9c464c20660bbe5ec28610629b30d0ff4ce9295e",
+            "patch": "evidence/server_product-agent-services.ts.patch"
+          },
+          {
+            "path": "tests/product-agent-durable-embedding.test.ts",
+            "sha256": "3c6396faa31d9c576dca5deb63bc222723e0a09076ccae889ed3f75a67ea249e",
+            "gitBlob": "8cacec9c5f359948c1887767f9e957cf8aa727ff",
+            "bytes": 13573,
+            "baseBlob": null,
+            "patch": "evidence/tests_product-agent-durable-embedding.test.ts.patch"
+          },
+          {
+            "path": "tests/firestore-embedding-usage.test.ts",
+            "sha256": "6f6db9e006a56c505e6b7bdf622fa929893485ad4d0f07e544143061f4d5b62a",
+            "gitBlob": "1467a17b59d01e8adef88996b0cc88c03875c192",
+            "bytes": 9856,
+            "baseBlob": null,
+            "patch": "evidence/tests_firestore-embedding-usage.test.ts.patch"
+          }
+        ],
+        "logs": [
+          {
+            "path": "evidence/01-sql-red.log",
+            "sha256": "1c0201cf57c97d41caa26466343c38add5ffb7994a1b1b00942c3245a6287bda",
+            "gitBlob": "8029e217a6a43ff6354d4e804a939e18ba308f51",
+            "bytes": 1714
+          },
+          {
+            "path": "evidence/02-first-green.log",
+            "sha256": "e21016e3b97b7b5d9b23d9e87ac5b536380dc4dceaaab21561ec61d953f43c45",
+            "gitBlob": "6843bb713d8c3f218aca2d79aee027e1d67acec4",
+            "bytes": 726
+          },
+          {
+            "path": "evidence/03-core.log",
+            "sha256": "8479a61f26809096e2d2d2c8d15485ea96fe4d0974dbb0bdabbfd45c98e511ee",
+            "gitBlob": "5026f692d13bf0ef2bd35bd99c1cea568336fda2",
+            "bytes": 1477
+          },
+          {
+            "path": "evidence/04-affected.log",
+            "sha256": "027304f49d3e791f79a03f5724ecb05406e89cb101d111faf10746e3d4cd1085",
+            "gitBlob": "db392345cc1f48e98ef988766ff1f2eb41201709",
+            "bytes": 773
+          },
+          {
+            "path": "evidence/05-server-tsc.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+            "bytes": 0
+          },
+          {
+            "path": "evidence/06-review-auth-red.log",
+            "sha256": "c9783f7a52ca1cd4445f3339c15e6de57edb46d5e76123634f387e6f89c59cd1",
+            "gitBlob": "2e87cd95711d66c53d47e8d121ce083e07330edf",
+            "bytes": 760
+          },
+          {
+            "path": "evidence/07-authority-red.log",
+            "sha256": "4582df86db5b7fdf27aac52074a8ab624291a2fbda4c5228dc00cddb10be3bad",
+            "gitBlob": "493ba0f7d64825825bf62dbc6b25e3f85ed84b90",
+            "bytes": 886
+          },
+          {
+            "path": "evidence/08-authority-green.log",
+            "sha256": "44b237d3cabb0d49f9d61a78fa581d39d583345f737e81494e863345ea7d7e6c",
+            "gitBlob": "c21fcda3d355d6fbf331b42b8b6a2ef8ecda3408",
+            "bytes": 409
+          },
+          {
+            "path": "evidence/09-final-server-tsc.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+            "bytes": 0
+          }
+        ],
+        "networkAudits": [
+          {
+            "path": "evidence/network-audit-embedding-affected-12.json",
+            "sha256": "662b181bc8e2a8ae8a6620bcb05e8dca46a15c7a466e3c72795f0b1194b0613b",
+            "gitBlob": "e597ea6c8e8411741e2464a21786604318b353bf",
+            "bytes": 211,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-affected-13.json",
+            "sha256": "b5c4e12cb437aa9e774f70b0761e1d8008a9f547827e34adae8c10e0326d6b5e",
+            "gitBlob": "46ab62dc720a3e0f9788a4b246e57e9e888f1ca5",
+            "bytes": 207,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-affected-14.json",
+            "sha256": "fe3c12dbe63ebd49570042bba3c703ab29476ca612ed6966ff5a598aa36b2d5c",
+            "gitBlob": "3f06dc4ab285859c43d3831a38e84abfbf61099c",
+            "bytes": 206,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-authority-green-12.json",
+            "sha256": "5f777f7168f89dd82c72ed647a8643be4bceccb381c37b0eb0511be98e83c401",
+            "gitBlob": "5d05cd1bb672e17d95c988191ec52a7f3ab42e7c",
+            "bytes": 214,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-authority-green-13.json",
+            "sha256": "71704fbf8297d4d47abf494cd69a26fb870d7021da769cdf58c0d43d68da5a5f",
+            "gitBlob": "e8ce722b178cd3f7b96c984c6d414fd30fff05c9",
+            "bytes": 206,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-authority-red-16.json",
+            "sha256": "13e1c6a3d820fb542b427e53c8341262d6c46a2fbdfa5867ec74a176638cab2c",
+            "gitBlob": "02da66311403d131defb36a6c05da4582a5887c5",
+            "bytes": 214,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-core-14.json",
+            "sha256": "76362194b3094829aa9c8b1211f06498f2d16ada9eca24fea3cd65969cb17927",
+            "gitBlob": "4b26e0009114ae70f96da3ca48e79b27ef5ff7b3",
+            "bytes": 214,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-core-15.json",
+            "sha256": "06ac02caf71855987e1b894262d3691ee3f982980d680d87022d62434309c093",
+            "gitBlob": "6247fd66f7533ffa4fe0df7b279d0174d78ea701",
+            "bytes": 220,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-final-server-tsc-5.json",
+            "sha256": "80018bd2410f1a3008921e881b6ff04921f87926d286ba1eab3840affec32b68",
+            "gitBlob": "ae5feb489db220ea7882bb6a4631ba9b2de472d8",
+            "bytes": 240,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-first-green-12.json",
+            "sha256": "094d213c5e99334c50d942398847eb18b486bbe1480af1932f9ec254f8b052e0",
+            "gitBlob": "cbac5743700ce1803e898665a703edbb4c599534",
+            "bytes": 220,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-server-tsc-5.json",
+            "sha256": "80018bd2410f1a3008921e881b6ff04921f87926d286ba1eab3840affec32b68",
+            "gitBlob": "ae5feb489db220ea7882bb6a4631ba9b2de472d8",
+            "bytes": 240,
+            "attempts": 0
+          },
+          {
+            "path": "evidence/network-audit-embedding-sql-red-20.json",
+            "sha256": "9544506a156a3a2a840cc6731a77ebd4b93bfd7b68c36d36ee5072f05d7efef4",
+            "gitBlob": "40c1c9869b36e1ef118627fa30dce541fa170ccc",
+            "bytes": 220,
+            "attempts": 0
+          }
+        ],
+        "validation": {
+          "baseServerBlobsMatch": true,
+          "sourceFiles": 9,
+          "networkAttempts": 0
+        },
+        "results": {
+          "baselineRed": "Original claimed services entered SQL quota once; expected zero. Two tests fail (one parent, one concrete assertion).",
+          "firstGreen": "2/2, including parent, same original scenario.",
+          "core": "8/8, including one parent and seven concrete tests.",
+          "affected": "6/6 selected legacy tests.",
+          "serverTypecheck": "exit 0"
+        },
+        "notRun": [
+          "real model",
+          "real database/Firestore concurrency",
+          "Emulator",
+          "cloud",
+          "HTTP/UI",
+          "production deployment",
+          "full repository suite"
+        ],
+        "setupNotes": [
+          "The initial base-copy used a redundant relative prefix; no files were changed and the copy was corrected before implementation. The red test itself ran successfully and failed at the intended assertion.",
+          "An attempt to persist the complete remote tree exceeded the process argument length. A small verified base-tree subset was saved instead. No product test or source was affected."
+        ],
+        "reviewCorrection": {
+          "originalManifest": "evidence/code-manifest-initial.json",
+          "originalManifestSha256": "99ff6e7cf2f3fae36d4412e3617c31d036f61a7b3ef1f4774397c54c32e1472b",
+          "finding": "Post-admission authorization storage failure was incorrectly classified as provider unavailable, allowing keyword degradation.",
+          "changedFiles": [
+            "server/embedding-gateway.ts",
+            "tests/firestore-embedding-usage.test.ts"
+          ],
+          "fix": "Wrap trusted root and authorization checks as AgentStopped in the durable path, before and after the provider; genuine provider unavailability retains existing degradation.",
+          "originalReviewerRed": "evidence/06-review-auth-red.log",
+          "newRegressionRed": "evidence/07-authority-red.log (exit 1)",
+          "targetedGreen": "evidence/08-authority-green.log (3/3, exit 0; the new test has four scoped cases)",
+          "finalTypecheck": "evidence/09-final-server-tsc.log (empty stdout, exec_command exit 0, chunk 3dd5f7)",
+          "earlierResults": "The 8/8 core and 6/6 affected batches precede this review correction and were not rerun. The final revision has the targeted 3/3 and Server typecheck above."
+        }
+      }
+    }
+  },
+  "initialVerification": {
+    "cwd": "source",
+    "runs": [
+      {
+        "filename": "01-sql-red.log",
+        "sha256": "1c0201cf57c97d41caa26466343c38add5ffb7994a1b1b00942c3245a6287bda",
+        "bytes": 1714,
+        "raw": "(node:20) ExperimentalWarning: Module mocking is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:20) DeprecationWarning: mock.module(): options.namedExports is deprecated. Use options.exports instead.\n▶ claimed services share model and query embedding daily quota through the actual knowledge tool\n  ✖ two same-query calls charge one embedding and combine it with both model attempts without SQL (62.008249ms)\n✖ claimed services share model and query embedding daily quota through the actual knowledge tool (161.720896ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 930.463329\n\n✖ failing tests:\n\ntest at tests/product-agent-durable-embedding.test.ts:99:11\n✖ two same-query calls charge one embedding and combine it with both model attempts without SQL (62.008249ms)\n  AssertionError [ERR_ASSERTION]: query embeddings must share the injected durable daily quota\n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/product-agent-durable-embedding.test.ts:101:12)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/product-agent-durable-embedding.test.ts:99:3)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+        "command": "OFFLINE_AUDIT_RUN=embedding-sql-red node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test tests/product-agent-durable-embedding.test.ts > ../evidence/01-sql-red.log 2>&1; result=$?; cat ../evidence/01-sql-red.log; exit $result",
+        "exitCode": 1,
+        "executionResultChunk": "e2805a",
+        "result": "Expected baseline SQL quota assertion failed; 2 failures include the parent.",
+        "commandEvidence": "Executing worker supplied exact commands and tool-result exit codes to the document author."
+      },
+      {
+        "filename": "02-first-green.log",
+        "sha256": "e21016e3b97b7b5d9b23d9e87ac5b536380dc4dceaaab21561ec61d953f43c45",
+        "bytes": 726,
+        "raw": "(node:12) ExperimentalWarning: Module mocking is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:12) DeprecationWarning: mock.module(): options.namedExports is deprecated. Use options.exports instead.\n▶ claimed services share model and query embedding daily quota through the actual knowledge tool\n  ✔ two same-query calls charge one embedding and combine it with both model attempts without SQL (76.729503ms)\n✔ claimed services share model and query embedding daily quota through the actual knowledge tool (178.307895ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 927.285164\n",
+        "command": "OFFLINE_AUDIT_RUN=embedding-first-green node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test tests/product-agent-durable-embedding.test.ts > ../evidence/02-first-green.log 2>&1; result=$?; cat ../evidence/02-first-green.log; exit $result",
+        "exitCode": 0,
+        "executionResultChunk": "8dd124",
+        "result": "2 passed include the parent. Before explicit receipt.kind and expanded scenarios.",
+        "commandEvidence": "Executing worker supplied exact commands and tool-result exit codes to the document author."
+      },
+      {
+        "filename": "03-core.log",
+        "sha256": "8479a61f26809096e2d2d2c8d15485ea96fe4d0974dbb0bdabbfd45c98e511ee",
+        "bytes": 1477,
+        "raw": "✔ shared daily kinds use the same counters without invented token fields and reject crossed records or attempt identities (24.107197ms)\n✔ legacy model lookup and idempotent accounting preserve original request payloads and ciphertext without kind normalization (4.72441ms)\n✔ embedding replay after a lost acknowledgement and UTC rollover only reads or settles the original attempt (3.245923ms)\n(node:15) ExperimentalWarning: Module mocking is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:15) DeprecationWarning: mock.module(): options.namedExports is deprecated. Use options.exports instead.\n▶ claimed services share model and query embedding daily quota through the actual knowledge tool\n  ✔ two same-query calls charge one embedding and combine it with both model attempts without SQL (77.861358ms)\n  ✔ model and query attempts share both user and global limits before either provider can overspend (74.489051ms)\n  ✔ embedding lookup and lost daily acknowledgement stop without SQL, provider, keyword fallback or replay (35.836471ms)\n  ✔ cancellation, revoked scope and deadline after daily reservation prevent embedding dispatch (49.55794ms)\n✔ claimed services share model and query embedding daily quota through the actual knowledge tool (337.505432ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1144.209804\n",
+        "command": "OFFLINE_AUDIT_RUN=embedding-core node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test tests/product-agent-durable-embedding.test.ts tests/firestore-embedding-usage.test.ts > ../evidence/03-core.log 2>&1; result=$?; cat ../evidence/03-core.log; exit $result",
+        "exitCode": 0,
+        "executionResultChunk": "72e86d",
+        "result": "8 passed include one parent and seven concrete tests. Before review correction.",
+        "commandEvidence": "Executing worker supplied exact commands and tool-result exit codes to the document author."
+      },
+      {
+        "filename": "04-affected.log",
+        "sha256": "027304f49d3e791f79a03f5724ecb05406e89cb101d111faf10746e3d4cd1085",
+        "bytes": 773,
+        "raw": "✔ actual Runner uses the injected daily adapter and re-created runtimes cannot replay the original model attempt (70.336959ms)\n✔ two native model steps each charge once while a tool batch uses only the root tool allowance (20.926704ms)\n✔ both user and global limits are atomic and platform/personal counters stay separate (13.943815ms)\n✔ cross-midnight retry cannot charge a new day and late records update only the original day (8.823445ms)\n✔ only provider unavailability becomes an explicit keyword degradation (19.418342ms)\n✔ gateway uses shared quotas, a bounded maintenance counter, one provider call and metadata-only records (3.301848ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1070.560214\n",
+        "command": "OFFLINE_AUDIT_RUN=embedding-affected node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test --test-name-pattern='actual Runner uses|two native model steps|both user and global limits|cross-midnight retry|gateway uses shared quotas|only provider unavailability' tests/agent-durable-ai-usage.test.ts tests/firestore-ai-usage.test.ts tests/knowledge-runtime.test.ts > ../evidence/04-affected.log 2>&1; result=$?; cat ../evidence/04-affected.log; exit $result",
+        "exitCode": 0,
+        "executionResultChunk": "844169",
+        "result": "6 selected existing tests passed. Before review correction.",
+        "commandEvidence": "Executing worker supplied exact commands and tool-result exit codes to the document author."
+      },
+      {
+        "filename": "05-server-tsc.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0,
+        "raw": "",
+        "command": "OFFLINE_AUDIT_RUN=embedding-server-tsc node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json > ../evidence/05-server-tsc.log 2>&1; result=$?; cat ../evidence/05-server-tsc.log; exit $result",
+        "exitCode": 0,
+        "executionResultChunk": "de9c6c",
+        "result": "No diagnostics; exit 0 verified by executing worker tool result, not inferred from an empty log. Before review correction.",
+        "commandEvidence": "Executing worker supplied exact commands and tool-result exit codes to the document author."
+      }
+    ],
+    "networkGuard": {
+      "filename": "offline-guard.mjs",
+      "sha256": "f23398a3fd247e61bb2ea66fab6eca017dc054e015e867328debfeb2b03c8b96",
+      "bytes": 1015,
+      "raw": "import net from 'node:net';\nimport tls from 'node:tls';\nimport dns from 'node:dns';\nimport { writeFileSync } from 'node:fs';\nconst attempts = [];\nfunction deny(kind, details = null) { attempts.push({ kind, details, stack: new Error().stack }); throw new Error('External network denied during offline regression'); }\nnet.Socket.prototype.connect = function () { return deny('socket'); };\ntls.connect = () => deny('tls');\ndns.lookup = () => deny('dns'); dns.promises.lookup = async () => deny('dns');\nconst originalFetch = globalThis.fetch;\nglobalThis.fetch = (input, ...args) => { const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;\n  if (url.startsWith('data:')) return originalFetch(input, ...args);\n  return deny('fetch', url.split(':', 1)[0]); };\nprocess.once('exit', () => writeFileSync(new URL(`./network-audit-${process.env.OFFLINE_AUDIT_RUN ?? 'initial'}-${process.pid}.json`, import.meta.url), JSON.stringify({ pid: process.pid, argv: process.argv, attempts })));\n"
+    },
+    "networkAudits": [
+      {
+        "filename": "network-audit-embedding-affected-12.json",
+        "sha256": "662b181bc8e2a8ae8a6620bcb05e8dca46a15c7a466e3c72795f0b1194b0613b",
+        "bytes": 211,
+        "audit": {
+          "pid": 12,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/agent-durable-ai-usage.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-affected-13.json",
+        "sha256": "b5c4e12cb437aa9e774f70b0761e1d8008a9f547827e34adae8c10e0326d6b5e",
+        "bytes": 207,
+        "audit": {
+          "pid": 13,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/firestore-ai-usage.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-affected-14.json",
+        "sha256": "fe3c12dbe63ebd49570042bba3c703ab29476ca612ed6966ff5a598aa36b2d5c",
+        "bytes": 206,
+        "audit": {
+          "pid": 14,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/knowledge-runtime.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-core-14.json",
+        "sha256": "76362194b3094829aa9c8b1211f06498f2d16ada9eca24fea3cd65969cb17927",
+        "bytes": 214,
+        "audit": {
+          "pid": 14,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/firestore-embedding-usage.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-core-15.json",
+        "sha256": "06ac02caf71855987e1b894262d3691ee3f982980d680d87022d62434309c093",
+        "bytes": 220,
+        "audit": {
+          "pid": 15,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/product-agent-durable-embedding.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-first-green-12.json",
+        "sha256": "094d213c5e99334c50d942398847eb18b486bbe1480af1932f9ec254f8b052e0",
+        "bytes": 220,
+        "audit": {
+          "pid": 12,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/product-agent-durable-embedding.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-server-tsc-5.json",
+        "sha256": "80018bd2410f1a3008921e881b6ff04921f87926d286ba1eab3840affec32b68",
+        "bytes": 240,
+        "audit": {
+          "pid": 5,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/node_modules/typescript/bin/tsc",
+            "--project",
+            "tsconfig.server.json"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-sql-red-20.json",
+        "sha256": "9544506a156a3a2a840cc6731a77ebd4b93bfd7b68c36d36ee5072f05d7efef4",
+        "bytes": 220,
+        "audit": {
+          "pid": 20,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/product-agent-durable-embedding.test.ts"
+          ],
+          "attempts": []
+        }
+      }
+    ],
+    "networkAttempts": 0,
+    "guardLimit": "Audit covers these Node processes; it is not an OS-level packet capture or evidence of real cloud execution."
+  },
+  "reviewFinding": {
+    "status": "fixed in the current code snapshot; independent code/document review and parent final acceptance passed",
+    "summary": "After daily execute, an authorization recheck rejection was incorrectly converted to provider unavailability, allowing keyword degradation and a candidates read. This must fail closed without provider, SQL or keyword fallback.",
+    "rawFailure": {
+      "filename": "auth-recheck.log",
+      "sha256": "c9783f7a52ca1cd4445f3339c15e6de57edb46d5e76123634f387e6f89c59cd1",
+      "bytes": 760,
+      "raw": "{\"result\":{\"mode\":\"keyword_degraded\",\"degradationReason\":\"embedding_unavailable\",\"chunks\":[]},\"providers\":0,\"sql\":0,\"candidates\":1,\"authorizations\":4,\"usage\":{\"day\":\"2026-10-09\",\"attempts\":1,\"inputTokens\":0,\"outputTokens\":0,\"cachedTokens\":0,\"unknownUsageAttempts\":1,\"billingSource\":\"platform\"}}\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Authorization recheck failure after daily execute must stop; returned keyword degradation instead\n    at file:///workspace/scratch/c112a98a8be9/review_shared_embedding_budget_20261009/auth-recheck.mjs:22:9 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: undefined,\n  expected: undefined,\n  operator: 'fail',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n"
+    },
+    "reproduction": {
+      "filename": "auth-recheck.mjs",
+      "sha256": "f35639bab50327e1a5108d7b775c9a1f8e73ac962092a83df937de1e70cff086",
+      "bytes": 2869,
+      "raw": "import assert from 'node:assert/strict';\nimport { AgentBudget } from '../f01_embedding_daily_20261009/source/server/agent-budget.ts';\nimport { readAiConfig } from '../f01_embedding_daily_20261009/source/server/ai-config.ts';\nimport { createEmbeddingGateway } from '../f01_embedding_daily_20261009/source/server/embedding-gateway.ts';\nimport { createKnowledgeRetriever } from '../f01_embedding_daily_20261009/source/server/knowledge-retriever.ts';\nimport { FirestoreRootBudget } from '../f01_embedding_daily_20261009/source/server/firestore-root-budget.ts';\nimport { firestoreUsageFixture } from '../f01_embedding_daily_20261009/source/tests/helpers/firestore-ai-usage.ts';\nconst f = firestoreUsageFixture(Date.now());\nconst context = { generation: 1, binding: { rootRunId: '00000000-0000-4000-8000-000000000001', ownerId: 'synthetic-user', workspaceId: 'synthetic-workspace', childId: 'synthetic-child', authorizationVersion: '1', storageEpoch: 'synthetic-epoch', trigger: { kind: 'interactive', reference: 'synthetic-message' }, workflowVersion: 'synthetic-workflow', promptPackVersion: 'synthetic-pack', settingsVersion: 'synthetic-settings', billingVersion: 'synthetic-platform', limits: { modelCalls: 4, toolCalls: 8, queryEmbeddings: 2 }, deadlineAtMs: Date.now() + 90000 } };\nconst root = new FirestoreRootBudget({ ...f.options, namespace: 'synthetic_root' });\nconst budget = new AgentBudget(undefined, 90000, context.binding.deadlineAtMs);\nlet providers = 0, sql = 0, candidates = 0, authorizations = 0;\nawait budget.initializeDurable({ adapter: root, context, dailyUsage: f.service });\nconst authorize = async () => { if (++authorizations === 3) throw new Error('Synthetic authorization store unavailable after daily execute'); return true; };\nconst gateway = createEmbeddingGateway({ config: readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' }),\n usage: { reserve: async () => { sql++; throw new Error('SQL forbidden'); }, record: async () => { sql++; throw new Error('SQL forbidden'); } },\n provider: { embed: async () => { providers++; return { values: [1, ...Array(1023).fill(0)], inputTokens: null, billableCharacters: null }; } } });\nconst run = createKnowledgeRetriever({ candidates: async () => { candidates++; return []; } }, gateway).createRun({ actor: { kind: 'query_embedding', actorId: context.binding.ownerId, operationId: context.binding.rootRunId }, budget, authorize });\ntry {\n const result = await run.search('合成知識', { region: 'HK', classification: 'official_guidance', age: null, topics: [] }, 'embedding:original-call');\n console.log(JSON.stringify({ result, providers, sql, candidates, authorizations, usage: await f.service.getForUser(context.binding.ownerId) }));\n assert.fail('Authorization recheck failure after daily execute must stop; returned keyword degradation instead');\n} finally { budget.close(); }\n"
+    },
+    "networkGuard": {
+      "filename": "offline-guard.mjs",
+      "sha256": "f23398a3fd247e61bb2ea66fab6eca017dc054e015e867328debfeb2b03c8b96",
+      "bytes": 1015,
+      "raw": "import net from 'node:net';\nimport tls from 'node:tls';\nimport dns from 'node:dns';\nimport { writeFileSync } from 'node:fs';\nconst attempts = [];\nfunction deny(kind, details = null) { attempts.push({ kind, details, stack: new Error().stack }); throw new Error('External network denied during offline regression'); }\nnet.Socket.prototype.connect = function () { return deny('socket'); };\ntls.connect = () => deny('tls');\ndns.lookup = () => deny('dns'); dns.promises.lookup = async () => deny('dns');\nconst originalFetch = globalThis.fetch;\nglobalThis.fetch = (input, ...args) => { const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;\n  if (url.startsWith('data:')) return originalFetch(input, ...args);\n  return deny('fetch', url.split(':', 1)[0]); };\nprocess.once('exit', () => writeFileSync(new URL(`./network-audit-${process.env.OFFLINE_AUDIT_RUN ?? 'initial'}-${process.pid}.json`, import.meta.url), JSON.stringify({ pid: process.pid, argv: process.argv, attempts })));\n"
+    },
+    "networkAudit": {
+      "file": {
+        "filename": "network-audit-review-auth-recheck-8.json",
+        "sha256": "4e3d7063403de2d1391ca1821c6c9b7a0f6a921f03e9a3398a7f0c12ec17418f",
+        "bytes": 194
+      },
+      "audit": {
+        "pid": 8,
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/review_shared_embedding_budget_20261009/auth-recheck.mjs"
+        ],
+        "attempts": []
+      }
+    }
+  },
+  "verificationModel": {
+    "real": [
+      "createProductAgentServices",
+      "ProductAgent.reply",
+      "ADK Runner and actual knowledge tool",
+      "AgentBudget root admission and same-query cache",
+      "Firestore Session/RootBudget/AiUsage adapters",
+      "query embedding gateway"
+    ],
+    "synthetic": [
+      "domain store factories",
+      "model and embedding providers",
+      "published-knowledge candidates",
+      "serial Firestore transaction harness"
+    ],
+    "initialHappyPath": {
+      "modelCalls": 2,
+      "embeddingCalls": 1,
+      "sameQueryToolCalls": 2,
+      "rootToolCallsIncludingPresentation": 3,
+      "dailyAttempts": 3,
+      "SQLQuotaCalls": 0
+    },
+    "notProofOf": [
+      "model semantic understanding",
+      "real SQL or Firestore concurrency",
+      "full product acceptance",
+      "provider exactly-once",
+      "all SQL paths sharing a global quota",
+      "restore safety or native resume"
+    ]
+  },
+  "notRun": [
+    "real model",
+    "real database/Firestore concurrency",
+    "Emulator",
+    "cloud",
+    "HTTP/UI",
+    "production deployment",
+    "full repository suite"
+  ],
+  "budgetAndExternalEffects": {
+    "realModelBatchUsed": 20,
+    "realModelBatchLimit": 20,
+    "remainingAuthorizedCalls": 0,
+    "realModelOrEmbeddingCallsInThisSlice": 0,
+    "realFamilyData": false,
+    "externalMessages": false,
+    "newDependencies": false,
+    "resourcesCreated": false,
+    "permissionsChanged": false,
+    "productionDataChanged": false,
+    "deployed": false
+  },
+  "documentChecks": {
+    "worklogPrefixUnchanged": true,
+    "worklogPrefixBytes": 308274,
+    "worklogPrefixSha256": "47b586ffd3bda59925c35a96aa1f02549b0ceec273cde5049cf1d732a7334b35",
+    "planExistingAnchorsUnchanged": true,
+    "planExistingAnchorCount": 140,
+    "planRemainderFromFirestoreMigrationUnchanged": true,
+    "oldFailuresAcceptanceAndDeferredScopesPreserved": true,
+    "productTestsRerunByDocumentAuthor": false
+  },
+  "gates": {
+    "rootFinalAcceptance": "Allow: exact 9 code/tests and 5 documents/artifact; normal PR delivery only within the recorded scope and limits",
+    "publicationManifest": "frozen after parent final acceptance; exact 14 files; manifest is a separate delivery control artifact",
+    "pullRequest": "not created for this slice",
+    "merge": "not performed for this slice",
+    "deployment": "not performed",
+    "F01": "in progress",
+    "F02": "not started; resource/cost approval and real-cloud validation still required",
+    "independentCodeReview": "passed with no remaining blocking finding, per parent-relayed reviewer result for manifest 492a07d8ea997c569fba58f431ea9168a32c01a14e19d71f749badfece4d66b0",
+    "documentReview": "passed with no remaining blocking finding, per parent confirmation"
+  },
+  "reviewCorrection": {
+    "changedFiles": [
+      "server/embedding-gateway.ts",
+      "tests/firestore-embedding-usage.test.ts"
+    ],
+    "runs": [
+      {
+        "filename": "07-authority-red.log",
+        "command": "OFFLINE_AUDIT_RUN=embedding-authority-red node --import ../evidence/offline-guard.mjs --test --test-name-pattern='durable authority failures' tests/firestore-embedding-usage.test.ts > ../evidence/07-authority-red.log 2>&1; result=$?; cat ../evidence/07-authority-red.log; exit $result",
+        "exitCode": 1,
+        "executionResultChunk": "2a39f5",
+        "sha256": "4582df86db5b7fdf27aac52074a8ab624291a2fbda4c5228dc00cddb10be3bad",
+        "bytes": 886,
+        "raw": "✖ durable authority failures never become provider keyword degradation (19.062223ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 296.862301\n\n✖ failing tests:\n\ntest at tests/firestore-embedding-usage.test.ts:76:1\n✖ durable authority failures never become provider keyword degradation (19.062223ms)\n  AssertionError [ERR_ASSERTION]: Missing expected rejection: before-provider-auth\n      at async TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/firestore-embedding-usage.test.ts:104:12)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'rejects',\n    diff: 'simple'\n  }\n",
+        "commandEvidence": "Exact commands and exec_command exit codes supplied by the executing worker; no product tests rerun by document author."
+      },
+      {
+        "filename": "08-authority-green.log",
+        "command": "OFFLINE_AUDIT_RUN=embedding-authority-green node --import ../evidence/offline-guard.mjs --test --test-name-pattern='durable authority failures|only provider unavailability|gateway uses shared quotas' tests/firestore-embedding-usage.test.ts tests/knowledge-runtime.test.ts > ../evidence/08-authority-green.log 2>&1; result=$?; cat ../evidence/08-authority-green.log; exit $result",
+        "exitCode": 0,
+        "executionResultChunk": "0a6c21",
+        "sha256": "44b237d3cabb0d49f9d61a78fa581d39d583345f737e81494e863345ea7d7e6c",
+        "bytes": 409,
+        "raw": "✔ durable authority failures never become provider keyword degradation (38.289701ms)\n✔ only provider unavailability becomes an explicit keyword degradation (25.741282ms)\n✔ gateway uses shared quotas, a bounded maintenance counter, one provider call and metadata-only records (2.445283ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 411.342482\n",
+        "commandEvidence": "Exact commands and exec_command exit codes supplied by the executing worker; no product tests rerun by document author."
+      },
+      {
+        "filename": "09-final-server-tsc.log",
+        "command": "OFFLINE_AUDIT_RUN=embedding-final-server-tsc node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json > ../evidence/09-final-server-tsc.log 2>&1; result=$?; cat ../evidence/09-final-server-tsc.log; exit $result",
+        "exitCode": 0,
+        "executionResultChunk": "3dd5f7",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0,
+        "raw": "",
+        "commandEvidence": "Exact commands and exec_command exit codes supplied by the executing worker; no product tests rerun by document author."
+      }
+    ],
+    "targetedResult": "3/3 passed; new regression test contains four cases, not four separately reported tests.",
+    "finalTypecheck": "exit 0, confirmed by tool result; stdout is empty.",
+    "earlierResults": "Initial 8/8 core and 6/6 affected batches were not rerun after this correction.",
+    "independentCodeReview": {
+      "status": "passed with no remaining blocking finding",
+      "source": "Parent relayed independent reviewer completion on 2026-10-09 at 18:11 UTC.",
+      "reviewedManifestSha256": "492a07d8ea997c569fba58f431ea9168a32c01a14e19d71f749badfece4d66b0"
+    },
+    "documentReview": "passed, per parent confirmation",
+    "rootFinalAcceptance": "Allow; see finalAcceptance"
+  },
+  "currentVerification": {
+    "networkAudits": [
+      {
+        "filename": "network-audit-embedding-affected-12.json",
+        "sha256": "662b181bc8e2a8ae8a6620bcb05e8dca46a15c7a466e3c72795f0b1194b0613b",
+        "bytes": 211,
+        "audit": {
+          "pid": 12,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/agent-durable-ai-usage.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-affected-13.json",
+        "sha256": "b5c4e12cb437aa9e774f70b0761e1d8008a9f547827e34adae8c10e0326d6b5e",
+        "bytes": 207,
+        "audit": {
+          "pid": 13,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/firestore-ai-usage.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-affected-14.json",
+        "sha256": "fe3c12dbe63ebd49570042bba3c703ab29476ca612ed6966ff5a598aa36b2d5c",
+        "bytes": 206,
+        "audit": {
+          "pid": 14,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/knowledge-runtime.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-authority-green-12.json",
+        "sha256": "5f777f7168f89dd82c72ed647a8643be4bceccb381c37b0eb0511be98e83c401",
+        "bytes": 214,
+        "audit": {
+          "pid": 12,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/firestore-embedding-usage.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-authority-green-13.json",
+        "sha256": "71704fbf8297d4d47abf494cd69a26fb870d7021da769cdf58c0d43d68da5a5f",
+        "bytes": 206,
+        "audit": {
+          "pid": 13,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/knowledge-runtime.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-authority-red-16.json",
+        "sha256": "13e1c6a3d820fb542b427e53c8341262d6c46a2fbdfa5867ec74a176638cab2c",
+        "bytes": 214,
+        "audit": {
+          "pid": 16,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/firestore-embedding-usage.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-core-14.json",
+        "sha256": "76362194b3094829aa9c8b1211f06498f2d16ada9eca24fea3cd65969cb17927",
+        "bytes": 214,
+        "audit": {
+          "pid": 14,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/firestore-embedding-usage.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-core-15.json",
+        "sha256": "06ac02caf71855987e1b894262d3691ee3f982980d680d87022d62434309c093",
+        "bytes": 220,
+        "audit": {
+          "pid": 15,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/product-agent-durable-embedding.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-final-server-tsc-5.json",
+        "sha256": "80018bd2410f1a3008921e881b6ff04921f87926d286ba1eab3840affec32b68",
+        "bytes": 240,
+        "audit": {
+          "pid": 5,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/node_modules/typescript/bin/tsc",
+            "--project",
+            "tsconfig.server.json"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-first-green-12.json",
+        "sha256": "094d213c5e99334c50d942398847eb18b486bbe1480af1932f9ec254f8b052e0",
+        "bytes": 220,
+        "audit": {
+          "pid": 12,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/product-agent-durable-embedding.test.ts"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-server-tsc-5.json",
+        "sha256": "80018bd2410f1a3008921e881b6ff04921f87926d286ba1eab3840affec32b68",
+        "bytes": 240,
+        "audit": {
+          "pid": 5,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/node_modules/typescript/bin/tsc",
+            "--project",
+            "tsconfig.server.json"
+          ],
+          "attempts": []
+        }
+      },
+      {
+        "filename": "network-audit-embedding-sql-red-20.json",
+        "sha256": "9544506a156a3a2a840cc6731a77ebd4b93bfd7b68c36d36ee5072f05d7efef4",
+        "bytes": 220,
+        "audit": {
+          "pid": 20,
+          "argv": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/workspace/scratch/c112a98a8be9/f01_embedding_daily_20261009/source/tests/product-agent-durable-embedding.test.ts"
+          ],
+          "attempts": []
+        }
+      }
+    ],
+    "networkAttempts": 0,
+    "auditCount": 12,
+    "reviewerAuditSeparate": true,
+    "testTiming": "Final corrected revision ran only targeted 3/3 and Server typecheck. Initial 8/8 core and 6/6 affected remain evidence for the pre-correction snapshot, not reruns of the final revision."
+  },
+  "finalAcceptance": {
+    "recordedAtUtc": "2026-10-09T18:15:38+00:00",
+    "recordedAtHongKong": "2026-10-10T02:15:38+08:00",
+    "decision": "Allow",
+    "authority": "Parent dot final acceptance after independent code and document review.",
+    "reviewedProductEvidence": "Parent read gateway/quota/services core diff and STATUS; accepted the explicit pre-correction versus final verification boundaries.",
+    "acceptedCodeManifestSha256": "492a07d8ea997c569fba58f431ea9168a32c01a14e19d71f749badfece4d66b0",
+    "acceptedDocumentSnapshot": [
+      {
+        "path": "docs/CHAT_AGENT_DURABLE_BUDGET.md",
+        "sha256": "07bd8255c07008b5828c75dd947b667c74bd71a823b7116db0d59eef80924835",
+        "gitBlob": "640c31e1a91a521c23ee2e5338b73aa8b49b3f22",
+        "bytes": 20584
+      },
+      {
+        "path": "PLAN.md",
+        "sha256": "e944df676cf6750a46ccd502044f48006ebff5e7132f1afd416b2b9008958335",
+        "gitBlob": "6083b8509e7e021e96e924d7f72864a526cb9303",
+        "bytes": 105761
+      },
+      {
+        "path": "STATUS.md",
+        "sha256": "4cf96a08b40012945e9dc46bba32c04f385f7d1ac738fbd61fd2c64b3607fb13",
+        "gitBlob": "ddede598d118c14404180093a16d6825c21d661b",
+        "bytes": 3452
+      },
+      {
+        "path": "WORKLOG.md",
+        "sha256": "a6073d27df78d7cbd048d0884124decc3c25f1f6beac1595ea2c5192048fe478",
+        "gitBlob": "b20b5bca6af852221adac6a386204a2b5d645f25",
+        "bytes": 312207
+      },
+      {
+        "path": "artifacts/verification/F01_SHARED_EMBEDDING_USAGE_20261010.json",
+        "sha256": "905e67c75f6c9b725ed469e77f7a744514cbfb09e0a464fad534558f76603b63",
+        "gitBlob": "f0e024e4e6147f85ab8859b0193679be47733a7e",
+        "bytes": 57934
+      }
+    ],
+    "finalStatusOnlyChanges": [
+      "PLAN.md",
+      "STATUS.md",
+      "WORKLOG.md",
+      "artifacts/verification/F01_SHARED_EMBEDDING_USAGE_20261010.json"
+    ],
+    "unchangedCodeFiles": 9,
+    "publicationFiles": 14,
+    "scope": "Normal PR delivery of the exact slice; not full-platform shared SQL quota, F01/F02 completion, restore, production activation or deployment.",
+    "productTestsRerunAfterAcceptance": false,
+    "pullRequestCreated": false,
+    "merged": false,
+    "deployed": false
+  }
+}
