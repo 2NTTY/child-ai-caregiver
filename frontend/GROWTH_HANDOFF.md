@@ -32,6 +32,7 @@
 - 未生成、生成中、可讀、有新資料待整理、資料不足、失敗及來源失效分開。只有仍有權讀的舊版可保留閱讀；既有 Server worker 分批整理並由 changes 刷新 owner，前端不另開生成計時器。手動備援可接續一批，原操作結果未知時先查收據
 - 導出視窗保留家庭成長、就診溝通、照護交接、入園認識四種用途，已取得期間，以及「原始記錄與依據」「本版更新說明」選項。這是意圖選擇，不是產物
 - [growthReportExportRequest](src/components/growth/growth-archive-view.ts) 綁 scope／child／authority、snapshot ID／version、period／用途及選項。正式 owner 已注入同版 PDF callback；只有 Server 回傳實際 PDF 才交瀏覽器下載，不能把選項可操作稱為已生成／收到
+- `GrowthReportExportHandler(request, isCurrent)` 回傳本次 `ready`／`error` 訊息；`ready` 只表示交給瀏覽器下載，沒有回傳結果不作成功。視窗管理意圖生命週期，owner 同時核原身份／孩子／權威／快照及 `isCurrent()`，失效意圖不得下載或發佈晚到訊息；撤權仍清除 owner。導出 pending 只在視窗內呈現，避免取消後污染共享 notice；視窗內同一 live region 呈現該次結果，關閉／換選項及 scope 清理，不解析其他 owner 的 notice 作導出狀態。
 
 P2-A05 以 reportMode=fixed／living 區分固定期間與日常延展；report.phase 的 building／complete／needs_update 投影至既有 generating／ready／needs_update。進度保存於 Server，跨頁共用 owner；完整季度／年度分類及 coverage 只採 reportCoverage，不把舊 partial 快照升格。正常頁面沒有模型呼叫，一處注入同版能力供 Web／PDF 使用；生成／下載前重新驗權限與來源，不靜默換版本、不自動外發。較廣的已採納導出需求包括按用途重用有效內容及必要補寫、選擇授權照片／量測／詳細記錄／關注歷史／可匯出對話、排除個別項目；這些較廣選項目前未實作。排除敏感來源時亦移除洩露其內容的衍生敘事，不能只藏連結。年度版不只是串接季度，沒有真產物不得回報成功。
 

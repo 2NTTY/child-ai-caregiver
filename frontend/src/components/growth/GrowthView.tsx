@@ -11,14 +11,14 @@ import { EmptyListCard } from "../EmptyListCard";
 import { AppButton,AppSelect,AppTabPanel,SectionCard,UnderlineTabs } from "../ui";
 import { GrowthConcernIndex, GrowthConcernTimeline } from "./GrowthConcernTimeline";
 import { GrowthArchive } from "./GrowthArchive";
-import type { GrowthReportExportRequest } from "./growth-archive-view";
+import type { GrowthReportExportHandler } from "./growth-archive-view";
 import { GrowthConcernChangeNotice } from "./GrowthConcernChangeNotice";
 import { GrowthConcernManualFallback } from "./GrowthConcernManualFallback";
 import { GrowthOperationRecovery } from "./GrowthOperationRecovery";
 import { growthRefreshNotice } from "../../growth-view-model";
 import { growthStyles as s } from "./growth-styles";
 
-export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onExportReport,exportBusy,reportTools,previewTools,initialTab="concerns"}:{model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onRecord?:(id?:string)=>void;onHistory?:()=>void;onChat?:()=>void;onExportReport?:(request:GrowthReportExportRequest)=>void;exportBusy?:boolean;reportTools?:React.ReactNode;previewTools?:React.ReactNode;initialTab?:"concerns"|"archive"}){
+export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onExportReport,exportBusy,reportTools,previewTools,initialTab="concerns"}:{model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onRecord?:(id?:string)=>void;onHistory?:()=>void;onChat?:()=>void;onExportReport?:GrowthReportExportHandler;exportBusy?:boolean;reportTools?:React.ReactNode;previewTools?:React.ReactNode;initialTab?:"concerns"|"archive"}){
   const containerLayout = useContainerWidth();
   const wide = containerLayout.width >= 880;
   const scrollRef = useRef<ScrollView>(null);
@@ -95,7 +95,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onExp
         {previewTools}
       </AppTabPanel>
       <AppTabPanel tabsId="growth-workspace" tabKey="archive" active={tab === "archive"} style={s.stack}>
-        <GrowthArchive key={model.scopeKey} model={model} wide={wide} scrollRef={scrollRef} onRecord={onRecord} onExportReport={onExportReport} exportBusy={exportBusy} footerActions={footerActions} />
+        <GrowthArchive key={model.scopeKey} model={model} wide={wide} scrollRef={scrollRef} onRecord={onRecord} onExportReport={onExportReport} exportBusy={exportBusy} active={tab === "archive"} footerActions={footerActions} />
         {reportTools}
       </AppTabPanel>
     </View>

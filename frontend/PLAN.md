@@ -3,6 +3,15 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## QA：報告導出視窗回饋（原碼驗收通過，預覽發布受阻）
+
+2026-10-09 UTC，固定 master `c48b2eb41ee5f19c914ab6bee07b39d9cdd939a7`。既有合成公開預覽 v65 三次導出嘗試均未取得 PDF；可確定的 P2 缺陷是失敗只出現在背景頁底，導出視窗仍開着而沒有錯誤，焦點回到整頁。合成 transport 未支援下載，不把此結果判作正式 PDF endpoint 故障。
+
+- 導出視窗在操作列上方呈現該次 pending／失敗／瀏覽器下載交接結果，失敗用 assertive live region。只於原下載控制仍持有焦點時，在禁用前移到同窗回饋區；結果返回不搶回已移走的焦點，關閉仍可操作。
+- 回呼綁定本次導出意圖及原 scope／child／authority／精確 snapshot。關閉、換用途／選項／版本、切孩子、切頁籤及卸載令舊意圖失效；owner 在下載及錯誤／409 重讀回應前再核對，不只把舊訊息藏起來。保留原 single-flight／撤權守衛；實際下載交接及失敗都清理 object URL，沒有 PDF 不回報成功。導出 pending 只由視窗持有，不污染共享文件 notice，避免取消後頁底永久顯示「正在準備」。
+- 真 GrowthArchive／AppDialog／Paper Button／RN Web Modal 的 6 項 React DOM 檢查、真 owner＋真 client API 的 15 項合成 HTTP 定向檢查、4 項既有導出／期間選擇檢查，以及 frontend typecheck 通過。[證據及限制](verification/export-dialog-feedback-2026-10-09/checks.json)保留修前元件紅、取消後晚回應紅、DOM harness 載入錯誤與舊測試缺 online 的修正；不以測試數量代表全量驗收。
+- 獨立 review 補驗真 React hook／runtime／client API → modal 的 2 條合成路徑。覆核另以紅證確認取消後共享 notice 殘留 pending，最後只移除 owner 起始 pending notice；修後 2 項 owner 及同 2 項真 React 整合補驗通過，舊 15／6／4 項與 typecheck 沒有因這行刪除而全數重跑，兩段證據不混記。獨立程式／測試／文件覆核均無剩餘阻塞，dot 最終原碼驗收 Allow 精確 11 檔正常 PR 交付；程式已再次 freeze，尚未建立分支／PR、未發布／部署。既有 v65 可重建來源被拒且原 staging 不可用，沒有另路下載、改 fixture 或重建替代預覽。修後真瀏覽器、四尺寸／讀屏實機、實際 PDF bytes／版面／敏感來源遮蔽及跨孩子檔案隔離仍未驗；既有首屏、原紅及暫緩工作保持原狀。
+
 ## QA：取消工作與同批跟進事件（原碼驗收通過，預覽發布受阻）
 
 2026-10-10 HKT，固定 master `6ef63e8a70db014a68a79baee7fab85fa2d836c8`。兩項工作合併同一背景事件時，取消的工作可能仍帶同批 completed；現行資料沒有逐成員 outcome／取消時間，不能猜先後或改寫真正已完成的歷史。

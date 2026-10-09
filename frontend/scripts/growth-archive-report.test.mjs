@@ -228,7 +228,7 @@ test('export selections are local and PDF stays disabled without an adapter', ()
 });
 
 test('typed export intent carries exact scope and version and rejects stale callbacks after close or revocation', () => {
-  const calls = [], p = props(model(), {onExportReport: request => calls.push(request)}), h = harness(p); let tree = h.render();
+  const calls = [], p = props({...model(), online: true}, {onExportReport: request => { calls.push(request); }}), h = harness(p); let tree = h.render();
   button(tree, '導出報告').props.onPress(); tree = h.render();
   control(tree, '入園認識版').props.onPress(); tree = h.render();
   find(tree, node => node.type === 'AppCheckbox' && node.props.label === '本版更新說明').props.onChange(true); tree = h.render();

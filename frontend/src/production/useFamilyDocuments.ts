@@ -3,7 +3,7 @@ import { createFamilyDocumentsApi, parseFamilyDocumentSnapshot, FamilyDocumentAp
 import { documentChangeSchema, documentRequestSchema, type DocumentChange, type DocumentPage, type DocumentRequest,
   type DocumentSnapshot, type DocumentVersionPage, type FamilyDocument } from "../../../src/shared/family-documents";
 import type { GrowthArchiveProjection, GrowthArchiveSnapshot } from "../growth-view-model";
-import type { GrowthReportExportRequest } from "../components/growth/growth-archive-view";
+import type { GrowthReportExportRequest, GrowthReportExportResult } from "../components/growth/growth-archive-view";
 import type { FamilyDocumentReadingPort, PreparationDocumentView, PreparationPurpose } from "../preparation-view-model";
 import type { PreparationWorkspaceValue } from "../workspaces/PreparationWorkspace";
 import type { WriteOperationView, WriteRecoveryActions } from "../view-model";
@@ -51,6 +51,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const [selectedId, setSelectedId] = useState<string | null>(null), [justArchivedId, setJustArchivedId] = useState<string | null>(null);
   const [refreshQueued, setRefreshQueued] = useState(false);
   const original = useRef<Pending | null>(null), inFlight = useRef(false), latest = useRef({ page, load, dirty });
+  const exporting = useRef<object | null>(null);
   const selection = useRef({ id: null as string | null, generation: 0 });
   const readingNeedsRecheck = useRef(false);
   const [listPages, setListPages] = useState({ active: { cursor: null as string | null, more: false }, archived: { started: false, ready: false, cursor: null as string | null, more: false } });
@@ -80,7 +81,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   latest.current = { page, load, dirty };
   const canManage = env.role === "owner" || env.role === "caregiver";
   useDomainWriteGuard(!runtime.lost && dirty, !runtime.lost && !!pending);
-  useEffect(() => () => { api.reset(); inFlight.current = false; }, [api]);
+  useEffect(() => () => { api.reset(); inFlight.current = false; exporting.current = null; }, [api]);
   const clearAccess = (error: unknown) => {
     if (!runtime.accessError(error)) return false;
     api.reset(); original.current = null; setPending(null); setPage(null); setDirty(false); setSelectedId(null); setJustArchivedId(null);
@@ -362,34 +363,45 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
       from: snapshot.period.from, to: snapshot.period.to, label: snapshot.title + " · " + snapshot.period.from + " 至 " + snapshot.period.to,
       snapshotId: snapshot.id, snapshotVersion: snapshot.version, currentAnnual: snapshot.reportCoverage?.mode === "living" && standard?.current?.id === snapshot.id,
       coverage: snapshot.reportCoverage?.status === "complete" ? "complete" : "partial", coverageLabel: snapshot.coverageNote })) };
-  const exportReport = async (request: GrowthReportExportRequest) => {
+  const exportReport = async (request: GrowthReportExportRequest, isCurrent: () => boolean = () => true): Promise<GrowthReportExportResult | undefined> => {
     const actualPage = latest.current.page;
     const findSnapshot = (item: FamilyDocument) => item.readState !== "invalidated" && [item.current, ...item.history].some(snapshot => snapshot?.id === request.snapshotId && snapshot.version === request.snapshotVersion);
     const target = actualPage?.items.find(item => item.kind === "growth_report" && findSnapshot(item));
-    if (inFlight.current || !runtime.live() || !env.online || typeof document === "undefined" || !actualPage || !target
+    if (inFlight.current || !runtime.live() || !isCurrent() || !env.online || typeof document === "undefined" || !actualPage || !target
       || request.scopeKey !== env.scopeKey || request.childId !== env.childId || request.authorityVersion !== actualPage.authorityVersion
       || request.periodId !== null && request.periodId !== request.snapshotId + ":" + request.snapshotVersion) return;
-    inFlight.current = true; setExportBusy(true); setNotice("正在核對這個版本並準備 PDF。");
-    await runtime.request(async (signal, current) => {
+    const token = {}; exporting.current = token;
+    inFlight.current = true; setExportBusy(true);
+    return await runtime.request(async (signal, current): Promise<GrowthReportExportResult | undefined> => {
       let url: string | null = null;
+      const valid = () => current() && isCurrent() && env.online && request.scopeKey === env.scopeKey && request.childId === env.childId
+        && latest.current.page?.authorityVersion === request.authorityVersion
+        && latest.current.page.items.some(item => item.id === target.id && findSnapshot(item));
       try {
         const blob = await api.exportPdf(env.childId!, target.id, { snapshotId: request.snapshotId, snapshotVersion: request.snapshotVersion,
           authorityVersion: request.authorityVersion, purpose: request.purpose === "care_handoff" ? "handoff" : request.purpose,
           includeSources: request.includeSources, includeRevision: request.includeRevision }, signal, env.userId!);
-        if (!current() || latest.current.page?.authorityVersion !== request.authorityVersion
-          || !latest.current.page.items.some(item => item.id === target.id && findSnapshot(item))) return;
+        if (!valid()) return;
         url = URL.createObjectURL(blob); const link = document.createElement("a");
         link.href = url; link.download = `growth-report-${request.snapshotId}-v${request.snapshotVersion}.pdf`;
         document.body.appendChild(link); try { link.click(); } finally { link.remove(); }
-        setNotice("已準備所選版本的 PDF 並交給瀏覽器下載；Web 與 PDF 使用同一份正文。");
+        const message = "已準備所選版本的 PDF 並交給瀏覽器下載；Web 與 PDF 使用同一份正文。";
+        setNotice(message); return { state: "ready", message };
       } catch (error) {
-        if (!current() || clearAccess(error)) return;
-        setNotice("PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。");
+        // Revocation still clears this owner after the dialog is canceled.
+        if (!current() || clearAccess(error) || !valid()) return;
         if (error instanceof FamilyDocumentApiError && error.status === 409) {
-          try { const next = await read(signal); if (current()) { applyFreshPage(next); } }
-          catch (readError) { if (current() && !clearAccess(readError)) setLoad("error"); }
+          try { const next = await read(signal); if (!valid()) return; applyFreshPage(next); }
+          catch (readError) { if (!current() || clearAccess(readError) || !valid()) return; setLoad("error"); }
         }
-      } finally { if (url) URL.revokeObjectURL(url); if (current()) { inFlight.current = false; setExportBusy(false); } }
+        if (!current() || !isCurrent()) return;
+        const message = "PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。";
+        setNotice(message); return { state: "error", message };
+      } finally {
+        if (url) URL.revokeObjectURL(url);
+        // Only this request can release its lock, including after access loss.
+        if (exporting.current === token) { exporting.current = null; inFlight.current = false; setExportBusy(false); }
+      }
     });
   };
   return { readState: load, preparation, archive, operation, recovery, busy, exportBusy, locked, dirty, epoch, notice, standard,
