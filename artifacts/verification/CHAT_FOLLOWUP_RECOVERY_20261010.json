@@ -1,0 +1,213 @@
+{
+  "recordedAt": "2026-10-10T01:39:00+08:00",
+  "baseCommit": "6ef63e8a70db014a68a79baee7fab85fa2d836c8",
+  "status": "source_final_accepted_for_normal_pr_unpublished",
+  "scope": "Authorized follow-up cancellation, stale retry and original-result recovery; truthful batch-event presentation.",
+  "productionChanges": {
+    "ui": "Cancellation notice is based only on current work.status. latestFollowUp.state=cancelled is labelled as the work-associated continuation; other states identify the shared batch event. No styles, dates, callbacks, ownership, DTOs or ledger changes.",
+    "instructions": "read_work and read_background_result distinguish batch completion from individual execution; cancelled can also be a stale-constituent overlay on a still-queued batch.",
+    "backendBusinessLogicChanged": false
+  },
+  "verified": {
+    "coreFinal": {
+      "command": "node --experimental-test-module-mocks --test tests/agent-work-continuation-recovery.test.ts tests/p2-a06-background-scope.test.ts",
+      "passed": 4,
+      "revision": "Passed before the final cancelled-overlay text branch and short instruction/contract clarification. Reused by explicit root direction; these checks were not rerun after that text-only review revision."
+    },
+    "uiFinal": {
+      "command": "node --test frontend/scripts/work-followup-status.test.mjs",
+      "passed": 3
+    },
+    "serverTypecheck": {
+      "command": "node node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "exitCode": 0,
+      "revision": "Passed before the final cancelled-overlay text branch and short instruction/contract clarification. Reused by explicit root direction; these checks were not rerun after that text-only review revision."
+    },
+    "frontendTypecheck": {
+      "command": "node node_modules/typescript/bin/tsc --project frontend/tsconfig.json",
+      "exitCode": 0,
+      "revision": "Passed before the final cancelled-overlay text branch and short instruction/contract clarification. Reused by explicit root direction; these checks were not rerun after that text-only review revision."
+    }
+  },
+  "coverage": [
+    "Real saveWork/syncFollowUp/checkDue records and queues due work; cancellation disables it. Recreated stores/worker, two original-job redeliveries and next-day scheduler check produce no worker run or generation.",
+    "Two works in one event; one cancelled before generation is absent from current input and provider context. Remaining work generates once, original run and receipt retained on redelivery.",
+    "Completed run result persisted before event settlement is reconciled after worker recreation. An expired original claim becomes unknown on redelivery. Neither path creates another run or generates again.",
+    "React static render of real work card and view models shows current cancellation before separately labelled batch status, preserves the original event object and cannot infer the cancellation order. Active work also receives batch-event labelling.",
+    "The cancelled-overlay render case preserves the underlying queued batch, separately labels the work-associated continuation and tests both cancelled work and waiting work with an obsolete link; neither becomes a claim that the batch or waiting work itself is cancelled."
+  ],
+  "boundaries": {
+    "real": "Work and continuation stores, run claim/get/finish, family access, encryption, online changes, worker, ProductAgent, ADK Runner/runtime and AI usage store.",
+    "synthetic": "Exact-query rollback-capable Pool, scheduler/job state, Date clock and model provider. UI native-control primitives are stand-ins.",
+    "noExternalNetworkAttempts": true,
+    "networkAudits": [
+      {
+        "file": "network-audit-followup-cancel-13.json",
+        "sha256": "04430ad3c9c303b472a1e0593ec03c837ed8da78146c4bd5bdeb03234744bf28",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-final-core-13.json",
+        "sha256": "04430ad3c9c303b472a1e0593ec03c837ed8da78146c4bd5bdeb03234744bf28",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-final-core-14.json",
+        "sha256": "80b50c2f82e82e1b78af0b95fc0362fe36f724ea6252e2d39c511a0806bd8dfa",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-final-server-tsc-5.json",
+        "sha256": "2df2cc79cce4028f9dbdb169a20942a47332c3f243633289da4d50d18473b3a2",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-frontend-tsc-5.json",
+        "sha256": "8a7c1155a986c157c496b93d6dda094f56c569d3959901e82791e6c2007e0945",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-partial-13.json",
+        "sha256": "04430ad3c9c303b472a1e0593ec03c837ed8da78146c4bd5bdeb03234744bf28",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-projection-red-14.json",
+        "sha256": "675c3983a358de03e5f1b1b4ea3451ede7a15506fe9480c9c93e11a97f4a52c9",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-receipts-13.json",
+        "sha256": "04430ad3c9c303b472a1e0593ec03c837ed8da78146c4bd5bdeb03234744bf28",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-server-tsc-5.json",
+        "sha256": "2df2cc79cce4028f9dbdb169a20942a47332c3f243633289da4d50d18473b3a2",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-ui-green-14.json",
+        "sha256": "0f76f9fd24c5d8711b15ed8e4ba12e6b4117eaf30f6e7032172767ff7b7f1b11",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-ui-overlay-green-14.json",
+        "sha256": "0f76f9fd24c5d8711b15ed8e4ba12e6b4117eaf30f6e7032172767ff7b7f1b11",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-ui-overlay-red-14.json",
+        "sha256": "0f76f9fd24c5d8711b15ed8e4ba12e6b4117eaf30f6e7032172767ff7b7f1b11",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-followup-ui-red-16.json",
+        "sha256": "b7a9860a0bb818da8c9e3415395d70846bd195aab45ae007d5d42e131e51ff0c",
+        "attempts": 0
+      }
+    ],
+    "modelBudget": "No real model or embedding requests. Existing authorized real-model batch remains 20/20 consumed; no reset."
+  },
+  "retainedApiCounterexample": {
+    "status": "unresolved_per_constituent_outcome_not_provided",
+    "assertionExpected": "cancelled",
+    "assertionActual": "completed",
+    "scenario": "A is cancelled before provider generation; only B executes; completed batch event is then projected to A.latestFollowUp.state.",
+    "cause": "latestAgentWorkFollowUps only projects stale constituents to cancelled while the event is queued. Terminal state remains the original batch outcome.",
+    "reproduction": "After the completed result text assertion in the merged-event test, readWork(cancelledWork.id) and assert latestFollowUp.state === cancelled. This intentionally fails against unchanged server logic.",
+    "redTestSnapshotSha256": "fc5944393b5688d6fa95902fd82508a874498ed0aca953181de3e96fd81f6b75",
+    "redLog": "04-projection-red.log",
+    "decision": "Preserve original API/event values and disclose batch identity in UI and tool contract. There is no durable per-constituent execution/cancellation outcome; do not infer timing from mutable work.updatedAt or rewrite prior completed history. UI green does not resolve or supersede this API counterexample."
+  },
+  "retainedUiRed": {
+    "log": "05-ui-red.log",
+    "failure": "The baseline cancelled work card lacks the explicit cancellation notice. The UI-only fix makes both render cases pass."
+  },
+  "setupNotes": [
+    "An initial typecheck launch used the parent cwd, so its guard and output paths were unresolved and TypeScript did not run. Correct source-cwd Server and frontend commands subsequently passed. This is a launch error, not a product regression."
+  ],
+  "notVerified": [
+    "Real PostgreSQL locking/concurrency, dual processes, actual hard-kill or restart persistence",
+    "Cloud Tasks, Scheduler, Firestore, scale-to-zero, cross-store fencing or production bootstrap",
+    "Real model understanding, semantic authorization or outside notifications",
+    "Browser geometry, screen-reader behavior, live preview, Android or production deployment",
+    "Per-constituent executed/omitted outcome or cancellation ordering"
+  ],
+  "publication": "Existing v65 reproducible preview source is unavailable; no replacement preview, publish, deployment, PR or merge performed.",
+  "codeSha256": {
+    "frontend/src/components/history/PersistentWorkCards.tsx": "e79ba8aa13b68b258371a2a743ef8de14c21321371ab84a9a23b03b71185d399",
+    "server/agent-work-tool-descriptions.ts": "4e984503e6f064fad1c3ca4cc953e1ef26f8313bbc72fefb62e31de220b97af7",
+    "tests/agent-work-continuation-recovery.test.ts": "6546b964e8de140c3add532a47f29be3962e5b07b5335f8a2a7aab1398ba3056",
+    "frontend/scripts/work-followup-status.test.mjs": "663045fa4e9610ea6c37cd0e8b386ef9abfa2cf716c67df9a8f538c349d37301"
+  },
+  "logs": {
+    "01-cancel.log": {
+      "sha256": "6e55e18b3be172f5ead20229df2b6e36cfbad03924eb8da2887ea055bd53598e",
+      "text": "✔ authorized due work cancelled before delivery remains inert across worker restart and stale redelivery (23.507717ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 870.280434\n"
+    },
+    "02-partial.log": {
+      "sha256": "003783a86a1e76e85a628cc24ba75a6341abb60046048fa47bd785afef2929a3",
+      "text": "✔ a merged event drops its cancelled work and runs only its remaining live constituent once (77.122056ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 952.702413\n"
+    },
+    "03-receipts.log": {
+      "sha256": "6d7c098fac6a0182a50e2e78e81cc3d8febad9dfa959df04c1f069aaa7025caf",
+      "text": "✔ restart recovers the original completed receipt or expired unknown run without another generation (66.733521ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 985.102004\n"
+    },
+    "04-projection-red.log": {
+      "sha256": "6d62de8ed2158fd96aa2a62fa4d34a4abd14d99ee3f2a333eec2d3a987ba8959",
+      "text": "✖ a merged event drops its cancelled work and runs only its remaining live constituent once (79.445014ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1131.966557\n\n✖ failing tests:\n\ntest at tests/agent-work-continuation-recovery.test.ts:253:1\n✖ a merged event drops its cancelled work and runs only its remaining live constituent once (79.445014ms)\n  AssertionError [ERR_ASSERTION]: A constituent cancelled before generation must not inherit the other work's completed status\n  + actual - expected\n  \n  + 'completed'\n  - 'cancelled'\n  \n      at TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/followup_cancellation_recovery_20261009/source/tests/agent-work-continuation-recovery.test.ts:272:10)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 'completed',\n    expected: 'cancelled',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n"
+    },
+    "05-ui-red.log": {
+      "sha256": "7e94586f36b076ad05252afafbdb76ba60be4d30cd28651e5a36e5236c33c9c4",
+      "text": "✖ cancellation before another constituent completes stays primary without relabelling the original batch receipt (25.604912ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 576.758266\n\n✖ failing tests:\n\ntest at frontend/scripts/work-followup-status.test.mjs:53:1\n✖ cancellation before another constituent completes stays primary without relabelling the original batch receipt (25.604912ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(html.includes('此工作已取消，不再接續。'))\n  \n      at assertCancelled (file:///workspace/scratch/c112a98a8be9/followup_cancellation_recovery_20261009/source/frontend/scripts/work-followup-status.test.mjs:44:10)\n      at TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/followup_cancellation_recovery_20261009/source/frontend/scripts/work-followup-status.test.mjs:55:3)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.start (node:internal/test_runner/test:1242:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+    },
+    "06-ui-green.log": {
+      "sha256": "4d84e083f6862980ce6c88b64ad0f3e2990a8399696b3395937c635215773fc8",
+      "text": "✔ cancellation before another constituent completes stays primary without relabelling the original batch receipt (21.048771ms)\n✔ cancellation after an earlier completion preserves historical batch status and never infers timing from work dates (1.590123ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 502.89052\n"
+    },
+    "07-final-core.log": {
+      "sha256": "15aaf38b42c096ae2b56872cfb588ba675b5bfa8d69acc2369529c8b1879ec25",
+      "text": "✔ authorized due work cancelled before delivery remains inert across worker restart and stale redelivery (24.489631ms)\n✔ a merged event drops its cancelled work and runs only its remaining live constituent once (66.569912ms)\n✔ restart recovers the original completed receipt or expired unknown run without another generation (31.208605ms)\n✔ private continuation reads owned work and prior result without mutation or external tools (80.99019ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1134.374393\n"
+    },
+    "server-tsc.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "text": ""
+    },
+    "final-server-tsc.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "text": ""
+    },
+    "frontend-tsc.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "text": ""
+    },
+    "08-ui-overlay-red.log": {
+      "sha256": "93884131ed64ec600773cb8523706c171c71e265833f716bfc2ef01bee32bc43",
+      "text": "✖ one cancelled constituent does not label the still-queued shared event as cancelled (24.089402ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 554.698679\n\n✖ failing tests:\n\ntest at frontend/scripts/work-followup-status.test.mjs:67:1\n✖ one cancelled constituent does not label the still-queued shared event as cancelled (24.089402ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(html.includes('此工作關聯接續：接續已取消'))\n  \n      at TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/followup_cancellation_recovery_20261009/source/frontend/scripts/work-followup-status.test.mjs:75:12)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.start (node:internal/test_runner/test:1242:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+    },
+    "09-ui-overlay-green.log": {
+      "sha256": "3cc5241a467210aa489d6e667d5ccf2c5f2878c2b32fefc3b21748c37bfc9d77",
+      "text": "✔ cancellation before another constituent completes stays primary without relabelling the original batch receipt (19.730956ms)\n✔ cancellation after an earlier completion preserves historical batch status and never infers timing from work dates (1.4329ms)\n✔ one cancelled constituent does not label the still-queued shared event as cancelled (1.486219ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 502.045749\n"
+    }
+  },
+  "priorVerifiedCodeSha256": {
+    "frontend/src/components/history/PersistentWorkCards.tsx": "63d1a1b7a8aecd910211793d44ab01c5a9f136bd6a64fdb31179e492b7eac600",
+    "server/agent-work-tool-descriptions.ts": "25add6b47d5d21e2074d81c1cfbd31b9e8f38ca1c80914b6b81af79fc4d88027",
+    "tests/agent-work-continuation-recovery.test.ts": "6546b964e8de140c3add532a47f29be3962e5b07b5335f8a2a7aab1398ba3056",
+    "frontend/scripts/work-followup-status.test.mjs": "f1283d00b565974ab417cbfe444bb66bb16678e897e2240e93a736b86d78f2ca"
+  },
+  "retainedUiOverlayRed": {
+    "log": "08-ui-overlay-red.log",
+    "failure": "The first all-state batch prefix mislabelled a cancelled work association as a cancelled batch while another constituent kept the batch queued.",
+    "fix": "Only cancelled uses the work-associated continuation prefix; all other states retain batch-event prefix. Third render case passes in 09-ui-overlay-green.log. No ledger or API changes."
+  },
+  "finalAcceptance": {
+    "acceptedAt": "2026-10-10T01:40:43+08:00",
+    "reviewedManifestSha256": "c585b300d2078279006e661770c7a69a7dad5d98bbb107832eac3fd4cb2b458f",
+    "independentReview": "No remaining blocking finding after the queued-overlay presentation correction. Exact 11 paths, evidence and unchanged core/DTO baseline verified read-only.",
+    "rootDecision": "Root reviewed UI/tool-description diffs and final three-render evidence with limitations; normal PR publication allowed for these exact 11 files. No business/DTO edits, deployment or broadened acceptance.",
+    "codeAndTestsUnchangedSinceReview": true,
+    "verificationTiming": "Final three static render cases were executed after the last text-branch fix. Four core cases and both typechecks remain explicitly earlier-candidate evidence; no final rerun is claimed."
+  }
+}

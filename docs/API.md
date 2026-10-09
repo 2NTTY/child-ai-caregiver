@@ -697,6 +697,8 @@ save_work 的可選 followUp 包含 reason、dueAt（可空）、watchResources 
 
 read_work 可附 latestFollowUp 的 eventId、runId、state、createdAt；read_background_result 透過既有本人 run 讀取入口回傳有界結果／引用，不將模型回覆當成新的同意或已確認事實。queued、completed、stopped、unknown、cancelled 分開，未知不能重新生成。私人變更事件只通知本人 owner；正式頁面由 A07 接回同一工作及結果。
 
+`latestFollowUp` 的 `eventId／runId` 可能連到合併多項工作的同批跟進事件，並非逐工作執行收據。現有 queued 事件會按目前工作版本／有效性投影 cancelled；事件終態仍保留原同批結果，completed 不能證明每項工作均曾執行或完成。取消後的工作卡優先顯示「此工作已取消，不再接續」，關聯狀態為 cancelled 時列明「此工作關聯接續」，其餘列明「同批跟進事件」，Agent 讀取亦遵守這個分界。cancelled 可能只是仍排隊同批內本項的失效投影，不代表整批已取消；亦不代表仍 active／waiting 的工作本身已取消。沒有逐成員 outcome／取消時間權威，不能用目前 status 或 updatedAt 推斷取消先後、改寫取消前已完成的歷史事件，或將另一工作成果冒稱為本項成果。本次只更正呈現與讀取指引，不改 DTO、事件台帳、排程／取消策略；精確逐工作 outcome 仍未提供。
+
 關注容量沿 draft #111 的受檢邊界：普通事件200、另兩格只供結束跟進／歸檔；029遷移收據成立才寫201–202。到頂仍可取消／結束，不能刪歷史騰位；滿額恢復／新增普通事件仍拒絕。部署须先更新相容 API／worker／Web，已有保留格資料後不可回退200讀取器或縮窄SQL限制。
 
 

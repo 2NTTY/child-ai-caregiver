@@ -1944,3 +1944,18 @@
 - 沒有真家庭資料、真模型／embedding、通知、雲端／權限變更或部署；20／20真模型額度已耗盡。第2輪work active、額外查回輪才completed及完整A09／F01、bootstrap／resume／跨庫fencing等缺口保留。獨立review／dot最終驗收與正常PR待完成，不能把本包當自動結案或完整取消／恢復產品驗收。
 
 - 2026-10-10T00:57:07+08:00 最終裁決追加：dot 已親讀核心diff、3個新安全場景及1個原native子集與保留證據；程式／文件獨立review均無阻塞，准予本精確8檔窄修正常PR交付。3個程式／測試檔SHA保持不變，未重跑測試或改碼。舊model引用不遷移、歷史原receipt保持原樣、沒有同ID reopen協定；原4輪文件流程的額外查回結案缺口保留。尚未建立PR／部署，不解鎖完整A09／F01、真模型理解或自動工作結案。
+
+
+<a id="log-20261010-chat-followup-recovery"></a>
+## 2026-10-10｜跟進取消、原結果查回與同批呈現
+
+- Recorded At：2026-10-10T01:35:00+08:00；基線 master `6ef63e8a70db014a68a79baee7fab85fa2d836c8`，#171～#173 已正常合併、未部署。相關原碼逐 Git blob 對上固定 tree；不修改其他工作目錄。指定 Astra xhigh 按 dot 批准的三場景實作測試、最小呈現／工具指引與契約，dot 統籌與最終裁決。
+- 現有 #172 fixture 刻意關閉 continuation migration，舊 A06 worker 測試以替身 store／Agent 驗重試，缺真業務連貫證據。本次真 saveWork／syncFollowUp／checkDue／backgroundInput／finish／reconcile、ProductAgent／run store 與 ADK 串接，只有 Pool／scheduler／clock／model provider 合成；沒有新 production adapter／framework／SQL migration。
+- 三場景：已授權排程取消後重建 store／worker及原job兩次重投零生成；同批兩 work 取消一項後 context只含有效項且只生成一次；成功run已保存但event未確認可查原收據，過期原claim則回unknown，重建及重投都沒有新run／生成。真實SQL鎖、雙程序、hard-kill、Cloud Tasks／Firestore及真模型理解未驗，不能當完整跨程序恢復或正式持久bootstrap完成。
+- 場景2追加讀回揭示已取消 constituent 會沿另一項完成後的 event.state 顯示 completed，原per-work斷言紅保留。link 沒有逐成員 outcome／取消時間，updatedAt可再被修改；dot裁決不推斷先後、不改DTO／台帳／取消策略。只將工作卡優先說明取消、原事件列明示同批跟進事件，並澄清read_work／read_background_result及既有API契約。這是呈現修正，沒有把API紅改稱綠。
+- 4項核心／受影響Agent入口及2項React 靜態render通過，Server／frontend typecheck exit0；UI取消提示原紅及修正後綠分開。render使用真元件／view model，native controls是替身，只驗文字優先及不改輸入，不當畫面／真機證據。命令、hash、原紅／logs及零network attempts見[固定證據](artifacts/verification/CHAT_FOLLOWUP_RECOVERY_20261010.json)。未跑792全量或無關套件。
+- 既有預覽v65可重建來源受阻，沒有另造fixture網站替代，未發布／部署。無真家庭資料、模型／embedding、外部通知、雲端／權限變更；真模型20／20耗盡不重置。其他三Agent只留接口；原A09／F01、同輪自動結案及非SQLbootstrap／resume／restore／跨庫fencing缺口保留。獨立review／dot最終驗收及正常PR待完成。
+
+- 2026-10-10T01:38:00+08:00 review 修正追加：原「同批跟進事件」通用 prefix 會把仍 queued 同批中的單項 cancelled 投影誤說整批取消。保留第3項 render 原紅；按 dot 裁決，僅 cancelled 關聯用「此工作關聯接續」，其他狀態仍用同批事件，工作本身的取消提示仍只看 work.status。第3項亦覆蓋 work 仍 waiting 但舊 link 失效，沒有將其說成工作取消。最後3項 render 通過；API紅及原台帳不變。4項核心／兩項 typecheck 復用前一精確候選證據，最後文字分支與契約修訂後未重跑，待 reviewer 續審與 dot 最終驗收。
+
+- 2026-10-10T01:40:43+08:00 最終裁決追加：獨立 reviewer 已覆核精確11檔、13份零網絡 audit、原API紅與最後 queued-overlay 文案修正，無剩餘 blocking finding；dot 親讀 UI／工具指引 diff、最後3項 render 及驗收限制，准予這11檔正常 PR 交付。4個產品／測試檔維持續審 freeze SHA；最後3項 render 為末次版本實測，4項核心與兩項 typecheck 保留文字分支修訂前證據，不冒稱最後重跑。API per-work outcome 無權威的原紅、preview可重建來源阻塞、真SQL並發／hard-kill／雲端與真模型未驗、原20／20耗盡均保留。尚未建立PR，未發布／部署，不解鎖完整A09／F01或持久bootstrap／resume／restore／跨庫fencing。
