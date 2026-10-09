@@ -1780,3 +1780,23 @@
 - 三份既有 SQL 測試替身精確對齊摘要核對查詢，保留參數、私隱隔離及未知 SQL 拒絕；補首輪摘要加 loader／read_context 的 32k／64k 交叉覆蓋及待確認不保存 staged summary。未以放寬斷言、刪除原測試或跳過換取通過。
 - 原 npm run typecheck 及一次原 npm test 實測 646／646，零 fail／skip／cancel／todo；2259 個候選檔案測試前後不變，零網絡嘗試，只放行一次固定 hash inline WASM。根文件及本摘要在程式驗證後另審，不在該測試 manifest 內。
 - [本輪驗證摘要](artifacts/verification/INITIAL_SUMMARY_INTEGRATION_20261009.json)。本輪未重跑真 SQL、未呼真模型、未驗 UI／雲端／部署，亦未宣稱 CI 或全產品通過。原真模型批次 20／20 用盡、零餘額及舊語義失敗維持；另外三個 Agent 只保留接口。
+
+
+## 2026-10-09：Firestore 原生聊天 Session 局部模組候選
+
+- 依使用者非 SQL 完成品方向，停止 PostgreSQL Session 候選交付，保留原研究證據。以 master `69da307` 抽取可注入既有 trusted client／StorageCipher 的兩個 server TypeScript 模組，固定 Firestore 9.3.1、ADK 2.1.0及GenAI 2.24.0；未接 runtime／HTTP／bootstrap或其他三個Agent。
+- root 審核完整source及凍結證據：81檔hash／size全部吻合。scoped typecheck及3 unit通過；提議app lock的Firestore精確120-entry閉包與186條宣告依賴解析核對後，26 CRUD及24兩程序workflow合成檢查通過。原批次、診斷失敗及其限制保留，不聲稱full build或整套app安裝。
+- 正向恢復保留同一call及一次effect／receipt，根剩餘預算2→1→0。儲存失敗仍可有背景NodeTool繼續，必須依durable domain gate攔截；response保存失敗不撤銷既成效果。沒有真模型、雲端或部署，Emulator listeners已停。
+- Firestore private projectId getter已移除；client／project配對由可信組裝者負責。限制每Session 64 events及每outgoing document 900 KiB；owner list超過100 active headers即拒絕而非截斷，create沒有相同數量上限。完整Firestore產品遷移、原權威接線及真雲端驗收仍待完成。詳見 `docs/CHAT_AGENT_FIRESTORE_SESSION.md` 及 `artifacts/verification/CHAT_AGENT_FIRESTORE_SESSION_CHECKS.json`。
+
+### 同日追加：全倉離線對照
+
+隔離還原固定master及候選的現行程式／測試／TS配置，使用同一精確app lock安裝依賴並執行原版命令。typecheck兩者均20相同錯誤；npm test基線572項（528 pass／44 fail），候選575項（531 pass／44 fail）。44失敗的名稱及次數全相同，含41直接／檔級記錄及3失敗父節點；新增3unit通過。原guard擋住Yoga內嵌WASM而得到45fail的首輪保留，後只准固定data:本機資源再作成對對照，無網絡嘗試或真模型。這是無新增已觀察失敗的限定證據，並非全倉通過；正式GitHub required checks仍讀取403未知，尚不具全面驗收／合併結論。
+
+
+## 2026-10-09：Firestore 單次 runtime 接點整合
+
+- 原模組舊失敗／未知及 scoped 證據如上原文保留，不當即時主線狀態。基線 9544b3cc 已包含 #154；逐 byte 接回八個程式／依賴／測試路徑，新增 runtime guard 及三份合成測試。沒有啟用正式 index／worker 或 resume。
+- 原 typecheck、一次實際原 npm test 676／676、Emulator 最小接線 5／5 通過；2270 候選檔案測試前後不變。原 focused 52／58 失敗保留，spy 改 composition 後27／27；ES2023 deferred fixture 型別修正與前置 guard 失敗亦保留。
+- create collision／回應不確定不盲刪；已提交收據一次、取消與撤權後無新 provider／runtime cleanup。fixture 清理自有資料另列，四個自有 listener 已停止。零非 loopback 服務呼叫及真模型；全量只放行固定 inline WASM。
+- [固定記錄](artifacts/verification/FIRESTORE_RUNTIME_INTEGRATION_20261009.json)。權威文件在測試後另審；沒有 CI／HTTP／UI／雲端／部署或完整恢復通過結論。真模型20／20已用盡，其他三個 Agent 內部暫緩。

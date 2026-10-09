@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "baseCommit": "69da307b7c99945581b75122fba69d0769185d61",
+  "status": "reviewed_bounded_module_candidate",
+  "scopedTypecheck": "passed",
+  "unitTests": 3,
+  "emulatorCrudChecks": 26,
+  "emulatorWorkflowChecks": 24,
+  "firestoreVersion": "9.3.1",
+  "adkVersion": "2.1.0",
+  "genaiVersion": "2.24.0",
+  "firestoreClosure": {
+    "exactAppLockEntries": 120,
+    "declaredResolutionEdges": 186,
+    "nodeBuiltinsSeparatelyIdentified": true,
+    "wholeAppInstallClaimed": false
+  },
+  "freezeManifestSha256": "4c77cceca8c8f2ab740df18444d0e97a814eed700e27bccf31854c2e20b3e673",
+  "freezeFilesVerified": 81,
+  "freezeMismatches": 0,
+  "twoProcessResume": true,
+  "rootBudgetProgression": [
+    2,
+    1,
+    0
+  ],
+  "syntheticEffectReceiptCount": 1,
+  "realModelCalls": 0,
+  "cloudRequests": 0,
+  "emulatorListenersStopped": true,
+  "fullBuild": false,
+  "runtimeWired": false,
+  "productionDeployed": false,
+  "otherThreeAgentInternalsImplemented": false,
+  "limitations": [
+    "Emulator evidence does not replace real Firestore indexes/IAM/quota/cross-instance or complete product acceptance.",
+    "Runner storage failure can leave a background NodeTool continuing; durable domain cancellation and transaction authority remain required.",
+    "A committed effect can survive functionResponse persistence failure; receipt lookup and same-operation idempotency remain required.",
+    "Client and explicit project pairing is trusted server composition responsibility; no private SDK getter is read.",
+    "64 events per session and 900 KiB outgoing JSON document; owner list rejects more than 100 active headers, without imposing a create-session count limit."
+  ],
+  "preservedEarlierResults": [
+    "Initial scoped typing/configuration and builtin-resolution diagnostic failures preserved.",
+    "First integration batch passed using a different transitive Firestore closure and is not exact-app-lock evidence.",
+    "Original JavaScript fixture evidence remains distinct from this TypeScript module validation."
+  ],
+  "aggregateOffline": {
+    "baselineCommit": "69da307b7c99945581b75122fba69d0769185d61",
+    "typecheck": {
+      "baselineErrors": 20,
+      "candidateErrors": 20,
+      "diagnosticsIdentical": true,
+      "status": "failed"
+    },
+    "npmTest": {
+      "baseline": {
+        "tests": 572,
+        "pass": 528,
+        "fail": 44
+      },
+      "candidate": {
+        "tests": 575,
+        "pass": 531,
+        "fail": 44
+      },
+      "directFailureRecords": 41,
+      "failedParentNodes": 3,
+      "allFailureNamesAndCountsIdentical": true,
+      "candidateOnlyFailures": 0,
+      "status": "failed"
+    },
+    "originalGuardRun": {
+      "tests": 575,
+      "pass": 530,
+      "fail": 45,
+      "limitation": "Guard blocked pinned inline Yoga WASM; original result preserved."
+    },
+    "correctedGuard": "Only exact pinned local data: WASM allowed; no network attempts in paired tests.",
+    "requiredGithubChecks": "unknown: integration returned403",
+    "readyToMerge": false,
+    "checkedAt": "2026-10-09T05:41:33Z"
+  },
+  "moduleReviewCheckedAt": "2026-10-09T05:20:55Z"
+}

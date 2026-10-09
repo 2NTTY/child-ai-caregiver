@@ -114,3 +114,8 @@ Server 決定必審成果並調度審核，生成者不能自行免審。接收�
 取消結果以持久台帳的最小參照重建已保存的普通操作、聯絡請求、文件及明確確認結果，不依賴記憶體內工具進度，也不重放 mutation／consumeConfirmation。聯絡入列不等於送達，待確認不是已執行。查詢錯誤或超界須回報無法核對，不能偽裝沒有操作或重新執行；底層已取消狀態不因此復活。沒有可靠用量紀錄時 countsKnown=false，不捏造零消耗。
 
 本次沿現有儲存不變量區分新持久取消：原 finish 寫入結果密文，新取消只對 running 且尚無結果密文的原運行保存 stopped／cancelled。僅該組合啟用新取消台帳投影；已有結果密文的歷史取消沿原 get 行為，不在此包重寫。未來若加入運行中結果／進度持久化，必須同步調整此辨識方式與相容測試，不能沿用空值標記而改變語義。
+
+
+## 2026-10-09：原生會話接點範圍
+
+Firestore 已提供受信 constructor 的單次、create-only runtime 接點候選，生命周期與注入者 atomic collision 契約見 [會話接線](CHAT_AGENT_FIRESTORE_SESSION.md#runtime-port)。正式 HTTP／index／worker 未啟用；session 不是 Auth、家庭權限、持久根預算或 domain receipt。跨程序恢復未交付，不以已有本地原生 workflow 可行性取代產品權威接線。資料收集／生成／審核三角色內部仍暫緩。
