@@ -1742,3 +1742,11 @@
 - 主模型 review 原 diff、授權／版本／budget／收據及錯誤路徑；只重跑既有 prompt 版本聚合及文件 adapter 聚合，各 1 項通過，Node 24.11.0。[本次證據](artifacts/verification/P2_A09_CLOSEOUT_CHECKS.json)與[原失敗／未驗](artifacts/verification/P2_A09_CHECKS.json)分開。文件差異／衝突標記／連結及 WORKLOG 追加完整性核對；不跑全倉 build／typecheck／測試。
 - 零真模型／embedding／資料庫／瀏覽器／通知／新映像／雲端或部署。原 A09 的完整引用、指定修改、新對話讀回及正式帳號／恢復／服務交付仍待 F07／F08；本 PR 只收束已 review 的修正，不宣稱 A09 或 P2 完成。
 - PLAN／STATUS 原位改為修正合併後 F01 Ready；列 F01 → F02 → F03 → F04／F05 → F06 → F07 → F08 及各依賴。F02 資源／費用與 F08 切換／預算仍另批，未續期 VM。本次按 C 已登入帳號推送／合併；實際 Author／共同作者／Committer／簽署在遠端交付時核對，不預先宣稱 Verified。
+
+
+<a id="log-20261009-chat-scope-alignment"></a>
+## 2026-10-09｜聊天 Agent 當前範圍與完成門檻校準
+
+- 主模型親讀遠端 master 的 AGENTS、PLAN、STATUS，核對現行文件仍將四角色內部列作依賴，與使用者只完成聊天 Agent、另三留接口的最新要求不一致；按 ADR-021 收窄當前實作及驗收範圍，不回寫歷史決策或已完成成果。
+- PLAN 當前入口改為聊天可靠辦事及 F01 接點；保留 Firestore 方向、成熟元件復用、原 A09 失敗、正式切換與資源批准邊界。STATUS 原位清理過時「四角色均未開始／唯一下一包」敘述，明分本地候選、草稿 PR、合併、預覽和正式服務。
+- 本批只文件；沒有改產品程式、提高預算、調真模型、建資源、遷移、部署或實作其他三個 Agent。WORKLOG 保留基線全部 bytes，只追加本段。文件候選的差異、連結與範圍檢查另記交付證據；不把文件校準當整體功能驗收。
