@@ -25,7 +25,13 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
   const { kind: _revisionKind, ...revisionShape } = revision.shape;
   const { kind: _deactivationKind, ...deactivationShape } = deactivation.shape;
   return [
-    make("read_work", readAgentWorkSchema, args => guard(() => store.readWork(userId, childId, readAgentWorkSchema.parse(args)))),
+    make("read_work", readAgentWorkSchema, async args => {
+      const result = await guard(() => store.readWork(userId, childId, readAgentWorkSchema.parse(args)));
+      if (result.status === "succeeded"
+        && JSON.stringify(result).length > Math.max(0, run.budget.toolResponseCharacters - 512))
+        return { status: "rejected", data: { code: "response_limit" } };
+      return result;
+    }),
     make("read_background_result", z.object({ runId: z.uuid(), offset: z.number().int().min(0).max(1000000),
       limit: z.number().int().min(1).max(4000) }).strict(), args => guard(async () => {
       const input = args as { runId: string; offset: number; limit: number };
