@@ -1,6 +1,6 @@
 # 聊天 Agent 的 Firestore 會話適配
 
-2026-10-09；基線 `69da307`。這是局部模組候選及准入契約，不代表正式 Firestore 遷移、跨輪產品接線或全面驗收完成。
+本契約定義 Firestore Session 儲存適配及[可選單次 runtime 接點](#runtime-port)。預設每 run InMemory 不變；正式 Firestore 遷移、跨輪產品接線與全面驗收尚未完成。各批基線及原失敗見下列固定證據。
 
 ## 選擇與復用
 
@@ -14,7 +14,7 @@
 
 - 只接受受信 Server 組裝者提供的既有 Firestore client、明確 project／namespace 及現有 StorageCipher；不建立 client、讀 ADC、建資源、取得身份或由 HTTP／模型指定配置。client 生命週期仍由建立它的組裝者管理。
 - Firestore 9.3.1 沒有公開 typed projectId getter；client與明確project的配對由組裝者負責，本模組只驗project字串及用作AAD，不宣稱同步核實遠端project。不得cast／反射讀取private getter。先前JS fixture的該配置讀取已另記補正，原測試結果未改寫。
-- 本候選未接 product runtime、HTTP、正式 index 或 worker；存在此模組不表示前端已能跨程序追問。身份 ID 的儲存路徑隔離不等於產品已做 Firebase／家庭授權。
+- 儲存適配只經下列[受信單次 runtime 接點](#runtime-port)可選注入，HTTP、正式 index／worker 未啟用；存在此模組不表示前端已能跨程序追問。身份 ID 的儲存路徑隔離不等於產品已做 Firebase／家庭授權。
 - 原生事件為執行進度，業務 operation receipt 才是提交證據。使用者回答追問不代表批准副作用；不得把 ResumeInputs 或 functionResponse 當確認、保存或送達證據。
 
 ## 持久化不變量
@@ -30,13 +30,11 @@
 
 每 Session 最多64個 event documents、每 outgoing document 保守上限900 KiB UTF-8 JSON；超界拒絕而非截斷。owner list 最多讀101筆以辨識超過100筆的範圍，超界明確拒絕，不捏造完整列表或總數。這是本候選的有限範圍，並非完整長期歷史／分段／附件或大型清理方案。
 
-app/user shared documents 不隨單 Session 刪除。產品准入仍須沿帳戶／孩子刪除、家庭撤權、獨立刪除 journal、備份還原及 storage epoch 固定生命週期；不能假定 Firestore 子集合會自動 cascade。
+app/user shared documents 不隨單 Session 刪除。產品准入仍須沿帳戶／孩子刪除、家庭撤權、獨立刪除 journal、備份還原及 storage epoch 固定生命週期；不能假定 Firestore 子集合會自動 cascade。Emulator fixtures 須明確參數、在載入 SDK 前拒絕非 demo 配置並安裝 loopback 網路 guard；不得把本地測試接到正式服務。
 
 ## 已核可行性與下一步 gate
 
-隔離 `.mjs` fixture 已在官方 Emulator 1.22.0 驗 CRUD／加密24項，以及兩個獨立 Node processes 的原生追問恢復24項。正向合成案例保留原 call、已完成節點不重跑、effect／receipt一次、根剩餘額度2→1→0。原始失敗／覆蓋盲點與修訂後證據分開保留。這些不是本 TypeScript 模組重測、真模型語意或正式雲端驗收的替代品。
-
-本 TypeScript 候選亦已獨立通過 scoped typecheck、3項 unit、26項 CRUD及24項原生 workflow 檢查。最終第二批按提議 app lock 精確安裝 Firestore 的120個 dependency entries，核對186條宣告依賴解析（Node內建模組另列）；ADK及GenAI沿固定版本。這不是整套 app npm ci 或 full build。首次採用既有 Emulator SDK 閉包的批次因transitive版本不同，不作精確鎖檔驗證；原初次typecheck與診斷失敗、修正及兩批結果均保留。預設 unit命令僅收集 tests/*.test.ts；Emulator fixtures須明確參數且在載入SDK前拒絕非demo配置並安裝loopback網路guard。
+隔離 JavaScript fixture、69da307 上的 TypeScript 模組及其精確 app lock 驗證，依[模組固定證據](../artifacts/verification/CHAT_AGENT_FIRESTORE_SESSION_CHECKS.json)區分。原生跨 process 追問、原 call／effect receipt 及根剩餘額度的合成結果不等於產品 resume、真模型語意或正式雲端驗收；原 typing／依賴閉包／診斷失敗及修正保留，不能把局部通過稱為整套 app 安裝或 full build 通過。
 
 特別已觀察到：NodeTool 的背景函式可能在 Runner 儲存失敗後繼續。合成安全 gate 由外層 abort、持久 stopped/cancelled 及 mutation 交易內重驗共同提供；不能聲稱 SDK 已 kill 工具。functionResponse 保存失敗時，已提交 receipt 仍須可查且同 op 不重寫。停止 ledger 本身不可用或工具繞過領域提交邊界時，這份證據不提供通用保證。
 
@@ -44,9 +42,7 @@ app/user shared documents 不隨單 Session 刪除。產品准入仍須沿帳戶
 
 ## 全倉離線回歸的額外核對
 
-在隔離還原的固定 master `69da307` 及候選上，以同一精確 app lock 安裝依賴，另外執行原版聚合命令。`npm run typecheck` 兩者同樣20项相同diagnostics；`npm test` 基線572項為528 pass／44 fail，候選575項為531 pass／44 fail。全部44失敗名稱／次數相同（41直接或檔級失敗加3失敗父節點），候選新增3項unit通過。這支持本候選在此離線環境沒有新增已觀察的aggregate失敗，不能說全倉通過或可合併。
-
-第一輪安全guard誤擋固定Yoga內嵌WASM，造成候選45 fail；該原結果保留。僅允許固定data:本機資源後才作上述成對對照，HTTP／網絡仍被禁用且沒有網絡嘗試。未跑正式服務／真模型／UI建置；GitHub required checks讀取仍為403未知，不能繞過保護或以本地結果代替它。
+69da307 基線與候選的原聚合 typecheck 均有 20 項相同 diagnostics，npm test 均有 44 項失敗；首輪 guard 誤擋固定 Yoga 內嵌 WASM 的 45 fail 亦保留。完整成對結果、修正範圍及當時 required checks 的 403 未知記錄見[固定證據 aggregateOffline](../artifacts/verification/CHAT_AGENT_FIRESTORE_SESSION_CHECKS.json)。這些是歷史失敗／觀察，不能改稱全倉通過；後續接線批次另有證據，不能回填覆蓋舊結果。
 
 ## 官方依據
 
@@ -59,12 +55,11 @@ app/user shared documents 不隨單 Session 刪除。產品准入仍須沿帳戶
 <a id="runtime-port"></a>
 ## 2026-10-09：可選單次 runtime 接線
 
-以上為原 69da307 隔離候選歷史。本輪在已合併 #154 的 9544b3cc 基線整合原八個程式／依賴／測試路徑，再加入 createAgentRuntime 的受信 nativeSessionService 公開 BaseSessionService 接點；預設每 run InMemory 不變。尚未在正式 index／worker 或共用 services 工廠啟用，避免改動照片、私人來源及背景其他配方。
+`createAgentRuntime` 接受受信的 `nativeSessionService` 公開 BaseSessionService 接點；預設每 run InMemory 不變。尚未在正式 index／worker 或共用 services 工廠啟用，不改照片、私人來源及背景其他配方。
 
 - 注入實作須原子拒絕已存在的 app/user/session；公開 BaseSessionService 型別本身不保證 create-only。原生 InMemory 的覆寫語義不可當作已符合此注入契約；本 Firestore 實作以交易拒絕 collision，並有本地實測。
 - 本輪 create-only，使用原 runId，不恢復舊 session、不 fallback 或重做工具。只對成功確認本次建立的 session 擁有清理責任；create 回應不確定／collision 不盲刪，seed 也在同一生命週期管理內。公開方法 guard 沿現有 budget／authorize，不複製 SDK private write-order；native Session/Event 原物件保留。
 - 取消／撤權／deadline 後無法安全執行 cleanup 時，不能稱已清除。清理錯誤不覆蓋原主要錯誤；無主要錯誤但清理失敗則保守 stopped/unavailable。已提交業務效果仍查原 receipt，不宣稱 storage error 能撤銷效果或殺死背景工具。測試組裝者另清自己的合成資料不等於 runtime 已清理。
-- 原 typecheck、676／676 離線測試及 Emulator 5／5 接線通過；不是先前 26 CRUD／24 workflow 的重跑。四個自有 listener 已停止。保留首輪 focused 52／58、ES2023 fixture 五個型別錯誤、前置 guard 停止及原依賴探針缺陷，不放寬斷言。
 - 未驗真模型、HTTP／UI、正式 Firestore／Auth、雲端及部署。跨程序恢復還須 owner／child／auth／epoch 與原 run/work/message/interrupt 綁定、持久根 budget、lease/generation、取消和 domain receipt/changes/outbox 協調；原生事件不替代業務 authority。現有取消已 SQL 持久化，process Map 只是 Abort 加速。
 
-本轮記錄：[FIRESTORE_RUNTIME_INTEGRATION_20261009.json](../artifacts/verification/FIRESTORE_RUNTIME_INTEGRATION_20261009.json)。根文件及摘要在程式驗證後另審，不包含在程式 test manifest。
+9544b3cc 上的[單次接線固定證據](../artifacts/verification/FIRESTORE_RUNTIME_INTEGRATION_20261009.json)記錄原 typecheck、離線及 Emulator 結果，並保留 focused 52／58、ES2023 型別錯誤、前置 guard 停止及依賴探針缺陷；不是早期 CRUD／workflow 的重跑。根文件及摘要另審，不包含在程式 test manifest。

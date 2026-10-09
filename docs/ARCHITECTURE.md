@@ -168,7 +168,7 @@ ADK session 首版只保存單次運行協定上下文；Server 保存已確認�
 <a id="p2-adk-native-reuse"></a>
 ### ADK 原生能力的採用條件
 
-已核對 TypeScript 2.1.0 的 DatabaseSessionService／PostgreSQL 支援，現時仍沿用已實測的單次 InMemorySession：持久 Session 會增加 ORM driver、另一組 JSON 表及加密／刪除／備份責任，尚無必需使用情境。SkillToolset 已調查但屬 experimental，維持現有 Prompt Pack／受限工具，不重建技能平台。
+已核對 TypeScript 2.1.0 的 DatabaseSessionService／PostgreSQL 支援；後續持久會話採既有 Firestore 方向，在公開 BaseSessionService 補加密儲存適配，不再交付 SQL 專用 Session 候選。`createAgentRuntime` 已有可選、受信的 `nativeSessionService` 單次 create-only 接點，預設每 run InMemory 不變；正式 index／worker 未啟用、尚未部署，也未交付跨程序 resume。會話事件不取代業務收據、授權或根預算；儲存、清理及恢復邊界依[會話契約](CHAT_AGENT_FIRESTORE_SESSION.md#runtime-port)。SkillToolset 已調查但屬 experimental，維持現有 Prompt Pack／受限工具，不重建技能平台。
 
 S11-W02 優先以 BasePlugin 及 ADK 原生 spans 接最小 metadata 診斷，可用單一標準 OpenTelemetry provider／本地 OTLP；不預設開啟會記正文的 LoggingPlugin、通用自動重試或 GCP exporter。observer 不得短路／改寫業務結果，診斷 sink 失敗不阻斷業務；保留 content capture 關閉，另驗 exporter allowlist。TS devtools 已有 conformance 工具，但不能直接充當產品品質評測；S16-W02 復用現有 scripted Runner 與有限真 Gemini 情境。官方原碼、版本、實驗性範圍及未驗證項見 [ADK 研究](TECH_REUSE.md#adk)。
 
