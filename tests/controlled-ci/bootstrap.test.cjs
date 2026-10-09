@@ -98,7 +98,7 @@ test('live request only prepares a byte-pinned control plan and never authentica
   assert.deepEqual(f.state.failed, []);
   assert.equal(f.read('result.json').status, 'identity_recorded_preparation_required');
   assert.equal(f.read('result.json').modelCallsPerformed, 0);
-  assert.equal(f.read('result.json').liveEnabled, false);
+  assert.equal(f.read('result.json').liveEnabled, true);
   assert.equal(f.read('bootstrap.json').request.mode, 'live');
   const plan = JSON.parse(fs.readFileSync(path.join(f.temp, 'controlled-model-control', 'plan.json')));
   assert.equal(plan.request.mode, 'live');

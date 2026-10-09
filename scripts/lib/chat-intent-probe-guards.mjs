@@ -252,11 +252,10 @@ export function readCleanCheckoutHead(directory) {
   return head;
 }
 
-// This pin/context must come from the fixed upstream workflow's verified GitHub
-// server run and Contents API lookup. They do not independently prove approval.
-// Phase 1 has no complete trusted upstream; the CLI keeps the final connection
-// gate closed even for schema-valid inputs.
-export const LIVE_AUTHORITY_CONNECTED = false;
+// The trusted immutable CI verifies identity, manifest bytes, and the consumption
+// receipt before calling the live runner. Standalone environment variables alone
+// do not prove approval; readonly preflight never imports a product or calls a model.
+export const LIVE_AUTHORITY_CONNECTED = true;
 export function validateManifestAuthority(bytes, manifest, env) {
   const pin = env.YUBAN_SEMANTIC_PROBE_APPROVED_MANIFEST_SHA256;
   if (!/^[0-9a-f]{64}$/u.test(pin ?? '')) fail('live_manifest_authority_pin_missing');

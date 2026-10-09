@@ -87,11 +87,14 @@ test('previous checkpoint and every required receipt must match server provenanc
     { category: 'checkpoint_already_consumed' });
 });
 
-test('live and authentication gates are hard-disabled before any metadata query, file read, or claim creation', async () => {
+test('release enablement alone cannot authorize a missing manifest or runner origin', async () => {
+  assert.equal(POLICY.liveEnabled, true);
   for (const action of [reserveConsumption, authorizeAfterReceipt]) {
-    const failures = [];
-    await action({ github: new Proxy({}, { get() { throw new Error('Should not query'); } }), core: { setFailed: v => failures.push(v) }, env: {} });
-    assert.deepEqual(failures, ['live_disabled_pending_root_review']);
+    const failures = [], outputs = {};
+    await action({ github: new Proxy({}, { get() { throw new Error('Should not query'); } }),
+      core: { setFailed: v => failures.push(v), setOutput: (k, v) => { outputs[k] = v; } }, env: {} });
+    assert.equal(failures.length, 1); assert.equal(outputs['auth-authorized'], undefined);
+    assert.equal(outputs['live-enabled'], undefined);
   }
 });
 

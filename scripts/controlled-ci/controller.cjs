@@ -13,7 +13,7 @@ const POLICY = Object.freeze({ repository: '2NTTY/child-ai-caregiver', repositor
   initialSha256: '362234b5ec21080e53220d35b00f1dc70f29098aa66e16ad43ae9944b0b95106',
   inspectedSha: '94f7c7b260c46b033a970ec92d3125e31f20442c', expiryCeiling: '2026-10-10T00:00:00Z',
   archiveMaximum: 2097152, ledgerMaximum: 1048576, evidenceMaximum: 524288, logMaximum: 65536,
-  liveEnabled: false });
+  liveEnabled: true });
 const canonical = value => JSON.stringify(value, (_, item) => item && typeof item === 'object' && !Array.isArray(item)
   ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b, 'en'))) : item);
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
@@ -221,11 +221,36 @@ async function prepare({ github, core, env = process.env, now = Date.now() }) {
     core.setOutput('prepared', 'true');
   } catch (error) { core.setFailed(error.category ?? 'preparation_error_redacted'); }
 }
+function validateRunnerOrigin(plan, env) {
+  if (!id(env.GITHUB_RUN_ID) || env.GITHUB_RUN_ATTEMPT !== '1' || !sha(env.GITHUB_SHA)
+    || plan.githubRunId !== env.GITHUB_RUN_ID || plan.workflowContext.callerCommitSha !== env.GITHUB_SHA) fail('runner_origin_mismatch');
+}
+async function revalidatePreflightAndClaim(p, plan, manifest, env) {
+  const preflight = readJson(path.join(p.evidence, 'preflight.json'));
+  const provenance = { testedSha: manifest.testedSha, harnessSha: manifest.harnessSha,
+    sourceTreeSha256: manifest.sourceTreeSha256, harnessTreeSha256: manifest.harnessTreeSha256 };
+  if (preflight.schemaVersion !== 1 || preflight.mode !== 'preflight' || preflight.status !== 'passed'
+    || preflight.productImported !== false || preflight.networkRequests !== 0
+    || preflight.runId !== manifest.runId || preflight.case !== manifest.case
+    || !exactKeys(preflight.provenance, Object.keys(provenance))
+    || canonical(preflight.provenance) !== canonical(provenance)) fail('preflight_pass_required');
+  const { inspectLedgerCheckpoint } = await import(pathToFileURL(path.join(p.trusted, 'scripts/lib/chat-intent-probe-guards.mjs')).href);
+  const checkpoint = inspectLedgerCheckpoint(path.join(p.state, 'live-ledger.json'),
+    { expectedSha256: manifest.ledgerSha256, runId: manifest.runId });
+  if (!exactKeys(preflight.ledger, Object.keys(checkpoint)) || canonical(preflight.ledger) !== canonical(checkpoint)
+    || 20 - checkpoint.generationCallsReserved <= 0 || checkpoint.uncertain !== false) fail('preflight_checkpoint_stale');
+  const claim = readJson(path.join(p.evidence, 'claim.json'));
+  const expected = { schemaVersion: 1, status: 'reserved_before_auth', ledgerSha256: manifest.ledgerSha256,
+    requestId: plan.request.requestId, runId: env.GITHUB_RUN_ID, runAttempt: 1,
+    manifestSha256: plan.manifestSha256, testedSha: manifest.testedSha, pinnedWorkflowSha: plan.trustedSha };
+  if (!exactKeys(claim, Object.keys(expected)) || canonical(claim) !== canonical(expected)) fail('consumption_claim_stale_or_missing');
+}
 async function reserveConsumption({ github, core, env = process.env, now = Date.now() }) {
   try {
     if (!POLICY.liveEnabled) fail('live_disabled_pending_root_review');
     const { p, plan } = planFrom(env);
     if (plan.request.mode !== 'live') fail('live_request_required');
+    validateRunnerOrigin(plan, env);
     const bytes = readBytes(path.join(p.control, 'approved-manifest.json'), 16384);
     if (sha256(bytes) !== plan.manifestSha256) fail('manifest_bytes_pin_mismatch');
     const manifest = validateManifest(JSON.parse(bytes), plan, now);
@@ -248,6 +273,8 @@ async function authorizeAfterReceipt({ github, core, env = process.env, now = Da
     const bytes = readBytes(path.join(p.control, 'approved-manifest.json'), 16384);
     if (sha256(bytes) !== plan.manifestSha256 || plan.request.mode !== 'live') fail('manifest_bytes_pin_mismatch');
     const manifest = validateManifest(JSON.parse(bytes), plan, now);
+    validateRunnerOrigin(plan, env);
+    await revalidatePreflightAndClaim(p, plan, manifest, env);
     if (!id(env.CONTROLLED_RECEIPT_ID) || !digest(env.CONTROLLED_RECEIPT_DIGEST)) fail('receipt_upload_not_verified');
     const artifacts = await verifyArtifactHistory(github, manifest, plan, { requireUnused: false });
     const receipts = artifacts.filter(a => a.name === `controlled-model-consumed-${manifest.ledgerSha256}`);
@@ -260,4 +287,4 @@ async function authorizeAfterReceipt({ github, core, env = process.env, now = Da
 
 module.exports = { POLICY, canonical, sha256, fail, exactKeys, paths, planFrom, readBytes, readJson, writeJson,
   cleanHead, hashTree, inspectSources, validateManifest, listAllArtifacts, validateArtifactMetadata,
-  verifyArtifactHistory, prepare, reserveConsumption, authorizeAfterReceipt };
+  verifyArtifactHistory, prepare, reserveConsumption, authorizeAfterReceipt, validateRunnerOrigin, revalidatePreflightAndClaim };

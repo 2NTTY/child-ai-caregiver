@@ -55,7 +55,7 @@ jobs:
                 callerPath: '.github/workflows/controlled-model-acceptance.yml',
                 reusablePath: '2NTTY/child-ai-caregiver/.github/workflows/run-controlled-model-acceptance.yml',
                 audience: 'projects/1064034424208/locations/global/workloadIdentityPools/github-model-tests/providers/child-ai-caregiver-ci',
-                maximumFileBytes: 16384, liveEnabled: false,
+                maximumFileBytes: 16384, liveEnabled: true,
                 manifestPath: '.github/controlled-model/approved-manifest.json',
                 inspectedSha: '94f7c7b260c46b033a970ec92d3125e31f20442c',
               });
@@ -171,7 +171,7 @@ jobs:
                 const control = path.join(env.RUNNER_TEMP, 'controlled-model-control');
                 fs.mkdirSync(control, { mode: 0o700 });
                 const writeControl = (name, bytes) => fs.writeFileSync(path.join(control, name), bytes, { flag: 'wx', mode: 0o600 });
-                const plan = { schemaVersion: 1, request, workflowContext, trustedSha, manifestSha256: null };
+                const plan = { schemaVersion: 1, request, workflowContext, trustedSha, githubRunId: env.CONTROLLED_RUN_ID, manifestSha256: null };
                 if (['preflight', 'live'].includes(request.mode)) {
                   let manifestContent;
                   try { manifestContent = (await github.rest.repos.getContent({ owner: '2NTTY', repo: 'child-ai-caregiver',

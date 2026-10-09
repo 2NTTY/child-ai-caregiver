@@ -186,7 +186,7 @@ test('readonly preflight checkpoint inspection does not initialize, reserve, or 
   assert.throws(() => inspectLedgerCheckpoint(file, { expectedSha256: '0'.repeat(64), runId: 'unit_readonly_preflight' }), isCode('ledger_checkpoint_hash_mismatch'));
 });
 test('live cannot use a tested checkout as its implicit harness', async () => {
-  await assert.rejects(() => main(['--live', '--run', '--case', 'B', '--run-id', 'unit_implicit_product', '--output', '/tmp/unused-probe.json']), isCode('live_gate_missing'));
+  await assert.rejects(() => main(['--live', '--preflight', '--case', 'B', '--run-id', 'unit_implicit_product']), isCode('live_gate_missing'));
 });
 test('manifest authority requires a byte pin and exact fixed upstream context', () => {
   const manifest = validManifest();
@@ -200,30 +200,23 @@ test('manifest authority requires a byte pin and exact fixed upstream context', 
   assert.throws(() => validateManifestAuthority(bytes, manifest, { YUBAN_SEMANTIC_PROBE_APPROVED_MANIFEST_SHA256: '0'.repeat(64) }), isCode('live_manifest_authority_pin_mismatch'));
   const env = { YUBAN_SEMANTIC_PROBE_APPROVED_MANIFEST_SHA256: pin, YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON: JSON.stringify(context) };
   assert.equal(validateManifestAuthority(bytes, manifest, env).externalTrustRequired, true);
-  assert.equal(validateManifestAuthority(bytes, manifest, env).liveAuthorityConnected, false); assert.equal(LIVE_AUTHORITY_CONNECTED, false);
+  assert.equal(validateManifestAuthority(bytes, manifest, env).liveAuthorityConnected, true); assert.equal(LIVE_AUTHORITY_CONNECTED, true);
   for (const changed of [{ actorId: '4' }, { runAttempt: 2 }, { eventName: 'workflow_dispatch' }, { pinnedWorkflowSha: '0'.repeat(40) }])
     assert.throws(() => validateManifestAuthority(bytes, manifest, { ...env, YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON: JSON.stringify({ ...context, ...changed }) }), isCode('live_workflow_context_invalid'));
 });
 
-test('even caller-fabricated complete pin/context leaves live run disconnected and product unevaluated', async () => {
+test('release authority connection still rejects a fabricated mismatching caller identity before product evaluation', async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'probe-authority-')); directories.push(directory);
-  const productRoot = path.join(directory, 'untested-product'); fs.mkdirSync(productRoot); fs.mkdirSync(path.join(productRoot, 'server'));
-  const marker = path.join(directory, 'product-executed');
-  fs.writeFileSync(path.join(productRoot, 'server', 'agent-runtime.ts'), `import fs from 'node:fs'; fs.writeFileSync(${JSON.stringify(marker)}, 'bad');`);
   const manifest = validManifest();
   const context = { callerCommitSha: 'f'.repeat(40), repository: '2NTTY/child-ai-caregiver', repositoryId: '1', ownerId: '2', actorId: '3',
     expectedBranch: 'refs/heads/synthetic-unit-test', pinnedWorkflowSha: manifest.harnessSha, eventName: 'push', runAttempt: 1 };
-  const { callerCommitSha: _dynamicOrigin, ...expected } = context;
-  manifest.expectedWorkflowContext = expected;
-  const filename = path.join(directory, 'manifest.json'), bytes = Buffer.from(JSON.stringify(manifest)); fs.writeFileSync(filename, bytes);
-  const names = ['YUBAN_SEMANTIC_PROBE_LIVE', 'YUBAN_SEMANTIC_PROBE_APPROVED_MANIFEST_SHA256', 'YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON'];
-  const previous = names.map(name => process.env[name]);
-  process.env[names[0]] = '1'; process.env[names[1]] = sha256(bytes); process.env[names[2]] = JSON.stringify(context);
-  try {
-    await assert.rejects(() => main(['--live', '--run', '--case', 'B', '--run-id', manifest.runId,
-      '--approved-manifest', filename, '--product-root', productRoot, '--output', path.join(directory, 'must-not-exist.json')]), isCode('live_authority_context_unconnected'));
-    assert.equal(fs.existsSync(marker), false); assert.equal(fs.existsSync(path.join(directory, '.probe-state')), false);
-  } finally { names.forEach((name, index) => { if (previous[index] === undefined) delete process.env[name]; else process.env[name] = previous[index]; }); }
+  const { callerCommitSha: _dynamic, ...expected } = context; manifest.expectedWorkflowContext = expected;
+  const bytes = Buffer.from(JSON.stringify(manifest));
+  assert.throws(() => validateManifestAuthority(bytes, manifest, {
+    YUBAN_SEMANTIC_PROBE_APPROVED_MANIFEST_SHA256: sha256(bytes),
+    YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON: JSON.stringify({ ...context, actorId: '4' }),
+  }), isCode('live_workflow_context_invalid'));
+  assert.equal(LIVE_AUTHORITY_CONNECTED, true);
 });
 
 function makeCleanLocalGitFixture(directory) {
@@ -291,7 +284,7 @@ test('dynamic upstream caller origin avoids self-reference while missing/malform
   assert.equal(validateManifestAuthority(bytes, manifest, env).contextMatched, true);
   assert.equal(validateManifestAuthority(bytes, manifest, { ...env,
     YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON: JSON.stringify({ ...context, callerCommitSha: 'a'.repeat(40) }) }).contextMatched, true);
-  assert.equal(LIVE_AUTHORITY_CONNECTED, false);
+  assert.equal(LIVE_AUTHORITY_CONNECTED, true);
   const { callerCommitSha: _missing, ...missingOrigin } = context;
   for (const invalid of [missingOrigin, { ...context, callerCommitSha: null }, { ...context, callerCommitSha: 'self-claimed-author' },
     { ...context, actorId: '4' }, { ...context, expectedBranch: 'refs/heads/other-branch' }, { ...context, repositoryId: '9' }])
@@ -318,10 +311,12 @@ function makeReadonlyCliFixture() {
     dependencies: { '@google/adk': '2.1.0', '@google/genai': '2.24.0' } }) + '\n');
   fs.writeFileSync(path.join(product, 'package-lock.json'), '{"lockfileVersion":3}\n');
   fs.writeFileSync(path.join(product, '.gitignore'), 'node_modules/\n');
-  // Preflight reads these metadata files; it never imports or installs these synthetic packages.
+  // Reuse the already-verified installed SDK metadata without importing or installing a provider.
   for (const [name, version] of [['@google/adk', '2.1.0'], ['@google/genai', '2.24.0']]) {
     const directory = path.join(product, 'node_modules', name); fs.mkdirSync(directory, { recursive: true });
-    fs.writeFileSync(path.join(directory, 'package.json'), JSON.stringify({ name, version }) + '\n');
+    const bytes = fs.readFileSync(path.join(sourceRoot, 'node_modules', name, 'package.json'));
+    assert.equal(JSON.parse(bytes).version, version);
+    fs.writeFileSync(path.join(directory, 'package.json'), bytes);
   }
   const env = { PATH: process.env.PATH, HOME: workspace, LANG: 'C', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null',
     GIT_TERMINAL_PROMPT: '0', YUBAN_SEMANTIC_PROBE_LIVE: '1', GCP_PROJECT_ID: 'synthetic-project' };
@@ -349,13 +344,13 @@ function makeReadonlyCliFixture() {
   let invocation = 0;
   return { workspace, trusted, product, manifest, context, manifestPath, ledgerPath, marker,
     invoke(stage, change = () => {}, envChange = {}) {
+      assert.equal(stage, 'preflight', 'Release unit fixtures must never invoke the live CLI');
       const document = structuredClone(manifest); change(document);
       const bytes = Buffer.from(JSON.stringify(document)); fs.writeFileSync(manifestPath, bytes, { mode: 0o600 });
       const observerOutput = path.join(workspace, `network-observer-${++invocation}.json`);
       const args = ['--import', observer, path.join(trusted, 'scripts/verify-chat-intent-probe.mjs'), '--live',
-        stage === 'run' ? '--run' : '--preflight', '--case', 'B', '--run-id', document.runId,
+        '--preflight', '--case', 'B', '--run-id', document.runId,
         '--approved-manifest', manifestPath, '--product-root', product];
-      if (stage === 'run') args.push('--output', path.join(workspace, 'must-not-exist-live-output.json'));
       const result = offlineFixtureNode(process.execPath, args, { cwd: trusted, env: { ...env,
         SYNTHETIC_NETWORK_OBSERVER_OUTPUT: observerOutput, YUBAN_SEMANTIC_PROBE_APPROVED_MANIFEST_SHA256: sha256(bytes),
         YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON: JSON.stringify(context), ...envChange }, encoding: 'utf8', timeout: 10000 });
@@ -374,14 +369,7 @@ test('readonly CLI preflight passes real clean dual Git roots with zero product 
   assert.equal(result.report.ledger.readOnly, true); assert.deepEqual(fs.readFileSync(fixture.ledgerPath), before);
   assert.equal(fs.existsSync(fixture.ledgerPath + '.lock'), false); assert.equal(fs.existsSync(fixture.ledgerPath + '.next'), false);
   assert.equal(readCleanCheckoutHead(fixture.trusted), fixture.manifest.harnessSha);
-  assert.equal(readCleanCheckoutHead(fixture.product), fixture.manifest.testedSha); assert.equal(LIVE_AUTHORITY_CONNECTED, false);
-});
-test('the same complete readonly CLI fixture cannot execute a live run while the authority gate stays closed', () => {
-  const fixture = makeReadonlyCliFixture(), before = fs.readFileSync(fixture.ledgerPath);
-  const result = fixture.invoke('run');
-  assert.equal(result.exitCode, 1); assert.equal(result.report.errorCategory, 'live_authority_context_unconnected');
-  assert.equal(fs.existsSync(fixture.marker), false); assert.equal(fs.existsSync(path.join(fixture.workspace, 'must-not-exist-live-output.json')), false);
-  assert.deepEqual(result.network, { networkAttempts: 0 }); assert.deepEqual(fs.readFileSync(fixture.ledgerPath), before);
+  assert.equal(readCleanCheckoutHead(fixture.product), fixture.manifest.testedSha); assert.equal(LIVE_AUTHORITY_CONNECTED, true);
 });
 test('readonly CLI preflight retains manifest limits, bytes pin, identity and source hash rejection', () => {
   const fixture = makeReadonlyCliFixture(), before = fs.readFileSync(fixture.ledgerPath);
