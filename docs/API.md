@@ -309,7 +309,7 @@ Vertex generate 失敗可在既有 Server 日誌記錄一次受限診斷：固�
 
 `GET /api/children/:childId/messages?before=:messageId` 返回 `{messages, limit:100, nextCursor}`，每則有 `id/childId/authorUserId/role/text/inReplyTo/createdAt`。首次省略 before，後續使用 nextCursor（最舊訊息 ID）；按 Server `(created_at,id)` 穩定排序，游標查詢也限定本人／孩子。每頁按時間正序呈現，沒有更多時 nextCursor=null。只返回當前帳號在該孩子的私人聊天；無權或不存在都 404，未登入 401。
 
-INT-W03 的 `POST /api/children/:childId/messages/:messageId/reply/cancel` 接受 `{}` 及相同 `x-expected-user-id`，重新核對 session／孩子權限，只停止目前 API 程序中屬於本人原訊息的互動運行。`accepted:true` 表示取消訊號已送入真正 runtime；仍須讀取最後運行與收據，不代表撤銷已提交操作。`false` 不聲稱運行已取消；程序重啟後按原台帳核對，不重建或重跑模型。取消不增加生成呼叫；背景 worker 不由這個入口控制。
+INT-W03 的 `POST /api/children/:childId/messages/:messageId/reply/cancel` 接受 `{}` 及相同 `x-expected-user-id`，重新核對 session、孩子、原訊息、授權版本及儲存 epoch，將本人原互動 run 的取消狀態持久保存於 SQL 台帳。`accepted:true` 表示原 run 已保存為 stopped／cancelled，或冪等確認同一仍獲授權的 cancelled run；同程序 AbortController 只作及時中止的加速。其他程序在下一次 Server 授權檢查停止後續操作，不保證立即停止在途模型／工具，也沒有跨庫副作用的原子 fencing。仍須讀取原運行與業務收據；取消不撤銷已提交效果，不把 unknown 改成未執行。`false` 不聲稱運行已取消；重啟後查原台帳，不重建或重跑模型。取消不增加生成呼叫；背景 worker 不由這個入口控制。持久狀態、終態與結果查回邊界見[取消契約](CHAT_AGENT_INTEGRATION_CONTRACT.md#原運行的持久取消)。
 
 `POST /api/children/:childId/messages` 只接受 `{text}`，保存 1–10,000 Unicode 字元原文；拒絕額外欄位、空白、NUL 或無效 surrogate。須有符合 session 的 `x-expected-user-id`，缺失 428／不同 409；成功回 `{message}` 及 201。作者、角色、ID 和時間由 Server 決定，不能提交模型訊息。訊息本身不是已確認照護記錄，不觸發模型或工具。
 

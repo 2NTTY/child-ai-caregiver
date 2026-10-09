@@ -198,7 +198,7 @@ ADK session 只供單次工具循環使用，不取代已確認事實、摘要�
 恢復先關聯原邏輯工作及操作結果，重建 run 不重設有限重試／跟進或通知計數。呼叫取消、逾時及最終文字失敗與業務操作結果分開；已成功副作用保留成功、未知投遞保留 unknown，不因 Agent 運行失敗而回退成未執行。完整表名及 schema 隨工作包落實。
 
 <a id="agent-run-implementation"></a>
-S11-W02 的 migration 016（尚未執行）新增 `agent_runs／agent_proposals`。運行按本人、孩子、觸發類型及原訊息／提醒 ID 唯一；候選按 run／call ID 唯一，同 run 的等價候選透過解密內容比較去重，不另存私人內容 hash。結果、引用、候選、對象標籤及已執行結果以既有 AES-GCM 保存；只留必要身份／版本／狀態 metadata。孩子／來源訊息刪除沿外鍵清理，備份沿用全庫加密及停用 worker 的還原規則。
+S11-W02 的 migration 016 定義新增 `agent_runs／agent_proposals`。運行按本人、孩子、觸發類型及原訊息／提醒 ID 唯一；候選按 run／call ID 唯一，同 run 的等價候選透過解密內容比較去重，不另存私人內容 hash。結果、引用、候選、對象標籤及已執行結果以既有 AES-GCM 保存；只留必要身份／版本／狀態 metadata。孩子／來源訊息刪除沿外鍵清理，備份沿用全庫加密及停用 worker 的還原規則。各環境是否已套用須依該環境的日期／版本證據核對；2026-09-30 P2 交付環境的遷移紀錄見 [P2 交付](P2_DELIVERY.md#上線邊界)及[固定驗證](../artifacts/verification/S17_W02_CHECKS.json)，不代表其他環境已套用。
 
 運行狀態為 running／completed／stopped／unknown；90 秒未結束的紀錄按中斷處理，未保存用量不可當零。候選 pending／accepted／dismissed／expired 與業務任務終態分開；24 小時期限及原授權版本／storage epoch 校驗不取代目標任務版本。接受或略過按原版本交易更新，失去回應後先 GET 原結果；新 session 不重建候選或重設期限。背景結果維持原接收者私有，但輸入只可使用家庭共享資料。
 

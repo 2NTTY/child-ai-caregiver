@@ -1827,3 +1827,12 @@
 - 四檔 focused 68／68、原 `npm run typecheck` 及一次原 `npm test` 718／718 通過，零 fail／skip。902 個 materialized source 檔測試後無漂移，只有兩份 code/test 與基線不同。123 份現存離線 guard 退出記錄均無網絡嘗試，npm notifier 以環境選項停用；此為程序 audit，非封包擷取。根文件及本摘要在程式驗證後另審，不列入已測 code/test 變更。
 - 僅合成 Pool 的交易／savepoint 模擬及新 store／service 物件查回，未驗真 PostgreSQL 競爭、跨程序 resume、真模型語義、HTTP／UI、Firestore／Auth／Tasks、正式 worker 或部署。原 message 重試維持同一 run，scripted provider／工具皆零次；沒有 schema、依賴、權限、資源或新副作用變更，不聲稱跨庫原子 fencing。
 - 原真模型批次 20／20 已用盡、舊語義失敗與另三個 Agent 只留接口的限制維持。本紀錄為候選驗證及交付準備，dot 最終審核與正常 PR 交付尚待完成；未部署，不把本切片當完整聊天成果或恢復完成。
+
+
+<a id="log-20261009-document-maintenance"></a>
+## 2026-10-09｜計劃保留與現行文件校正
+
+- 基線 master `09c2470cf50a75fcbfb392615f104ad379497d22`；本包統一整理 PLAN 及八份現行文件。[PLAN](PLAN.md#active) 對齊 #161／#162 已合併、未部署及 F01 下一步；相對於[固定原 PLAN](https://github.com/2NTTY/child-ai-caregiver/blob/09c2470cf50a75fcbfb392615f104ad379497d22/PLAN.md)，全部 137 個原顯式錨點、89 個原工作包／AC 識別及 75 列依賴保留。五階段、各 Sxx、四角色長期要求、成本情景及原未完成 gate 未刪；[ADR-021](docs/DECISIONS.md#adr-021) 只收窄本輪。
+- [取消 API](docs/API.md#p1-chat-http) 對齊 SQL 持久取消及 local Abort 加速，保留在途／已提交效果與跨庫 fencing 限制；[Session 採用條件](docs/ARCHITECTURE.md#p2-adk-native-reuse) 對齊可選單次 Firestore 接點、default memory 及未交付 resume。[Migration 016](docs/DATA_MODEL.md#agent-run-implementation) 改按環境日期證據判斷；README 的 runtime／VM stop 改指 [STATUS 日期觀察](STATUS.md#deployment)，不作新現場探測。[前端 STATUS](frontend/STATUS.md) 對齊本域首屏活動包，沒有將未驗首屏改稱已驗。
+- [持久預算](docs/CHAT_AGENT_DURABLE_BUDGET.md#本輪證據)及[Session 契約](docs/CHAT_AGENT_FIRESTORE_SESSION.md#已核可行性與下一步-gate)保留不變量、限制及固定驗證入口，以原證據取代一次性測試／程序清理流水；舊 aggregate 失敗、guard 嘗試、unknown、真模型 20／20 已用盡與未部署邊界保留。[原 WORKLOG](https://github.com/2NTTY/child-ai-caregiver/blob/09c2470cf50a75fcbfb392615f104ad379497d22/WORKLOG.md) 的 274888 bytes 完整保留，本節僅追加；沒有回寫歷史分工或原失敗。
+- 文件保留及連結核查：PLAN 224 個、八份文件 304 個相對連結／錨點可解析；未把外部網址可達性當已驗。此次未改產品程式、依賴或測試，未重跑產品測試、真模型、HTTP／UI、雲端或部署；文件一致性不等於新增產品驗收。
