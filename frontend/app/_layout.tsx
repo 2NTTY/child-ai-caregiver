@@ -16,7 +16,13 @@ export default function RootLayout() {
   const { width } = useWindowDimensions();
   return (
     <SafeAreaProvider><MotionProvider><MotionPaperProvider>
-      <Head><title>{brand.name}</title></Head>
+      <Head>
+        <title>{brand.name}</title>
+        <style id="app-default-scale">{`html { zoom: 1.4; }
+@media (width < 900px) {
+  html { zoom: 1.2; }
+}`}</style>
+      </Head>
       <PreviewNavigationGuard><ProductionProvider><ProductionFirstScreenGate width={width} launch={<View style={styles.launch}>
           <BrandLogo style={styles.logo} decorative />
           <StartupLoadingLabel label={`正在開啟${brand.name}`} />
