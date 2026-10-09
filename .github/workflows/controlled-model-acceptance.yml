@@ -1,0 +1,25 @@
+name: Controlled model acceptance request
+
+on:
+  push:
+    branches:
+      - ci/controlled-model-acceptance
+    paths:
+      - .github/controlled-model/request.json
+
+permissions: {}
+
+jobs:
+  controlled-model-acceptance:
+    if: >-
+      github.repository_id == '1377602504' &&
+      github.repository_owner_id == '119132090' &&
+      github.ref == 'refs/heads/ci/controlled-model-acceptance' &&
+      github.event_name == 'push' &&
+      github.run_attempt == 1
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    # Publication must replace this placeholder with the reviewed immutable commit SHA.
+    uses: 2NTTY/child-ai-caregiver/.github/workflows/run-controlled-model-acceptance.yml@954e2b4cd68cfe4f297091b19b46c48990bbe667
