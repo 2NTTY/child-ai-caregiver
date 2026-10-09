@@ -103,7 +103,8 @@ function harness(seed = true) {
     }
     if (sql.includes("SELECT c.*") && sql.includes("FROM agent_confirmations c")) {
       assert.deepEqual(values, [userId, childId, messageId]); assert.match(sql, /LIMIT 2/u);
-      return rows(current.confirmations.slice(0, 2));
+      return rows(current.confirmations.slice(0, 2).map(row => ({ ...row, verified_response_id:
+        current.sourceExists && current.sourceOwner === userId && current.sourceAuthor === userId && current.sourceRole === "user" ? messageId : null })));
     }
     if (sql.startsWith("SELECT r.id FROM contact_requests")) {
       assert.deepEqual(values.slice(0, 3), [userId, current.runs[0]?.id, childId]); assert.equal(values[3], 9);
