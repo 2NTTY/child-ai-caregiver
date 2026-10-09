@@ -1879,3 +1879,16 @@
 - 23:11 HKT 追加驗收：依 dot 指定，在同一凍結程式候選跑原 `npm test` **781／781**及完整 `npm run typecheck`（frontend／client／server）全部通過；75 定向及 reviewer 重跑16均屬子集，不重複累加。全量前補入29份按同一master核hash的未變檔案，125份full-run唯一network audit零嘗試，採明確環境allowlist不繼承憑證。程式／文件獨立review無阻塞，採納串行合成harness用語；候選待dot最終裁決及正常PR，仍非真FireStore競爭／產品E2E／正式部署。
 
 - 23:13 HKT 最終裁決追加：dot 已親審接口、Firestore transaction、gateway及根文件差異，結合781項聚合、完整typecheck與獨立review，准予本窄切片正常PR交付。程式不再修改；正式流量未啟用、未部署，完整F01、真雲端競爭／產品成果及原失敗／未驗門檻仍保留。
+
+
+<a id="log-20261009-f01-claimed-services"></a>
+## 2026-10-09｜F01 已 claim run 的固定平台 services 組裝
+
+- Recorded At：2026-10-09T23:32:00+08:00；基線 master `495f2cdf430830c768442923c2cc8a6b5bb55b16`（#167 已正常合併、開工 open PR 0）。指定 Astra xhigh 實作程式、測試及既有契約，dot 統籌／最終裁決。沿 publisher 的 merge/tree/13 檔全文 SHA-256 回讀核對本地基線；本候選未建立 PR 或部署，沒有把前置候選當 master。
+- 實際 createProductAgentServices → ProductAgent.reply → 同一 runtime → 原 ADK Runner／gateway，以受信可選 port 接既有 Session／root／daily adapters。只限 fixed platform profile、fresh product-interactive claim、create-only、generation 1；完整 config fingerprint 及版本固定，dynamic routing／worker／其他 recipe／缺失或矛盾 profile fail closed。原十個位置參數、default SQL／memory 及 index／worker 正式 bootstrap 不變；不建 client、ADC、資源或其他三個 Agent 內部。
+- SQL claim 明確投影 storageEpoch／原 trigger／recipe；保留 runId、scope、authorizationVersion 原字串及原 expiresAt。reply 傳絕對期限，root 綁原 expiry，local 只可更早停止；services 不逐 run 重建 runtime，同 user 排他及 instance 四 slots 保留並在 finally 釋放。root 持久的是 binding fingerprint、generation、原期限／限額及計數，不是完整可讀回的 profile／持久受理快照。claim 已存在只查原 run／收據，連 root.open 前失聯亦不補建或重跑。契約見[services 接線](docs/CHAT_AGENT_DURABLE_BUDGET.md#claimed-services)。
+- 新增 11 項含父測試／子情景的連貫合成檢查：真四層鏈路及三個實際 Firestore adapters，兩訊息／不同 root 累積同日額、load_capabilities → 同 documentId／expectedVersion／opId 修改 → 原收據、重建 services 重投零新增執行；提交後取消／finish 回覆遺失保留原收據與 stopped／unknown／countsKnown=false。另驗 scope／大整数字串 auth／epoch／expiry／profile 拒絕、daily quota／unknown 不退 root 或 SQL fallback、同 user／第五個並行拒絕和釋放，以及 SQL claim 原資料投影。
+- 定向 **160／160**、根聚合 `npm test` **792／792**及完整 `npm run typecheck`（frontend／client／server）通過，七個程式／測試檔的獨立只讀 review 無阻塞；160 及新增11均屬792子集，不重複累加。最終全量採明確環境 allowlist，不繼承憑證；126 份 run 唯一 network guard 程序記錄零嘗試。固定源碼／log hash 與限制見[證據](artifacts/verification/F01_CLAIMED_SERVICES_20261009.json)。本輪候選未有測試失敗；原批次的紅證據、A09 未完成 gate、真模型 **20／20 已用盡**原樣保留。
+- 底層為 serial 合成 transaction harness（不建模 Firestore 真競爭、batch precondition 或真 updateTime）；provider／業務 store factories 為合成替身，既有 SQL 原收據／取消另做定向回歸。沒有跨 store 原子、正式 resume、動態本人設定、跨 instance 限流或完整 F01 的新結論；embedding 日額、清理／restore、持久受理／outbox、跨庫 effect fencing 仍待完成。未跑 Emulator、真 SQL／Firestore、真模型、HTTP／UI、真雲端、正式重啟或部署。文件獨立 review 已通過，dot 最終驗收另行裁決，不能以此 LOG 自行解鎖正式流量。
+
+- 23:42 HKT 最終裁決追加：dot 已親審四個核心差異、連貫測試與獨立程式／文件 review，結合 792 項聚合、完整 typecheck、126 份零嘗試 guard 及原文保留核查，准予本精確 12 檔切片正常 PR 交付。七個程式／測試檔保持凍結，未建立 PR、未部署或啟用正式流量；原真模型額度、unknown／原收據及全部未完成門檻不變。

@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict';
+import type { Firestore } from '@google-cloud/firestore';
+
+/** Serial synthetic transactions for native Session/root/daily composition, not an emulator. */
+export function serialFirestoreFixture() {
+  const records = new Map<string, any>();
+  let tail = Promise.resolve(), revision = 0;
+  type Ref = { path: string; collection: (name: string) => Query };
+  type Query = { path: string; query: true; filters: [string, string, unknown][]; orders: [string, string][]; count: number;
+    doc: (id: string) => Ref; where: (key: string, op: string, value: unknown) => Query;
+    orderBy: (key: string, direction?: string) => Query; limit: (value: number) => Query };
+  const ref = (path: string): Ref => ({ path, collection: name => query(path + '/' + name) });
+  const query = (path: string, filters: Query['filters'] = [], orders: Query['orders'] = [], count = Infinity): Query => ({
+    path, query: true, filters, orders, count, doc: id => ref(path + '/' + id),
+    where: (key, op, value) => query(path, [...filters, [key, op, value]], orders, count),
+    orderBy: (key, direction = 'asc') => query(path, filters, [...orders, [key, direction]], count),
+    limit: value => query(path, filters, orders, value),
+  });
+  const snapshot = (path: string) => ({ exists: records.has(path), id: path.split('/').at(-1), ref: ref(path), updateTime: revision,
+    data: () => structuredClone(records.get(path)), get: (key: string) => structuredClone(records.get(path)?.[key]) });
+  const read = (target: Ref | Query): any => {
+    if (!('query' in target)) return snapshot(target.path);
+    const docs = [...records.keys()].filter(path => path.startsWith(target.path + '/')
+      && path.slice(target.path.length + 1).indexOf('/') === -1).map(snapshot).filter(row => target.filters.every(([key, op, value]) => {
+        if (op === '==') return row.get(key) === value;
+        if (op === '>=') return row.get(key) >= (value as number);
+        throw new Error('Unsupported synthetic query');
+      })).sort((a, b) => { for (const [key, direction] of target.orders) {
+        const x = a.get(key), y = b.get(key), delta = x < y ? -1 : x > y ? 1 : 0;
+        if (delta) return direction === 'desc' ? -delta : delta;
+      } return 0; }).slice(0, target.count);
+    return { docs, size: docs.length };
+  };
+  async function runTransaction(callback: (tx: any) => Promise<any>, options?: { readOnly?: boolean }) {
+    let release!: () => void; const previous = tail; tail = new Promise<void>(resolve => { release = resolve; }); await previous;
+    const writes = new Map<string, any>();
+    const write = (target: Ref, value: any) => { assert.equal(options?.readOnly, undefined); writes.set(target.path, structuredClone(value)); };
+    const get = async (target: Ref | Query) => { assert.equal(writes.size, 0); return read(target); };
+    try {
+      const result = await callback({ get, getAll: (...refs: Ref[]) => Promise.all(refs.map(get)),
+        create: (target: Ref, value: any) => { assert.equal(records.has(target.path), false); write(target, value); },
+        set: write, update: (target: Ref, value: any) => { assert.equal(records.has(target.path), true); write(target, { ...records.get(target.path), ...value }); },
+        delete: (target: Ref) => write(target, undefined),
+      });
+      for (const [path, value] of writes) { if (value === undefined) records.delete(path); else records.set(path, value); }
+      if (writes.size) revision++;
+      return result;
+    } finally { release(); }
+  }
+  const database = { collection: query, runTransaction, batch() {
+    const deletes: Ref[] = [];
+    return { delete(target: Ref) { deletes.push(target); }, commit: () => runTransaction(async tx => { for (const target of deletes) tx.delete(target); }) };
+  } } as unknown as Firestore;
+  return { database, records };
+}

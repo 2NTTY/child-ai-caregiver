@@ -102,7 +102,7 @@ export function createProductAgent(options: {
       const rendered: { value: AgentPresentation | null } = { value: null };
       let confirmationPendingFallbackUsed = false;
       const result = await options.runtime.run({
-        scope: claim.scope, runId: claim.runId, deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
+        scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt), deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
         initialConversationSummary,
         context: { confirmationResult, currentMessageId: messageId, serverNow: new Date().toISOString(), timeZone: "Asia/Hong_Kong", memoryAvailability: { hasSummary: Boolean(context.summary),

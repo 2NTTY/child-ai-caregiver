@@ -53,6 +53,10 @@ interface ProposalPayload { value: AgentProposalValue; result: AgentProposal["re
 export interface AgentRunClaim {
   runId: string; scope: AgentScope; created: boolean; sourceMessageId: string | null;
   state: ProductAgentResult["status"]; expiresAt: string;
+  /** Original SQL authority, explicitly projected for fixed-profile server assembly. */
+  storageEpoch?: string;
+  trigger?: { kind: "interactive" | "worker"; reference: string };
+  recipeId?: string;
 }
 const missing = () => new FamilyError(404, "not_found");
 const aad = (run: Pick<RunRow, "id" | "child_id" | "owner_user_id">) => "agent-run:" + run.child_id + ":" + run.owner_user_id + ":" + run.id;
@@ -238,7 +242,8 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           [userId, childId, trigger.kind, trigger.reference])).rows[0];
         await expireRun(client, row);
         return { runId: row.id, scope: { ...scope, authorizationVersion: row.authorization_version.toString(), dataVersion: row.data_version },
-          created: Boolean(inserted.rowCount), sourceMessageId: row.source_message_id, state: row.state, expiresAt: row.expires_at.toISOString() };
+          created: Boolean(inserted.rowCount), sourceMessageId: row.source_message_id, state: row.state, expiresAt: row.expires_at.toISOString(),
+          storageEpoch: row.data_version.split(":")[0], trigger: { kind: row.trigger_kind, reference: row.trigger_reference }, recipeId: row.recipe_id };
       });
     },
     async authorize(scope: AgentScope, runId?:string): Promise<boolean> {
