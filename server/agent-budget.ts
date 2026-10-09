@@ -21,6 +21,8 @@ export const agentBudgetFingerprint = (value: unknown) => createHash("sha256").u
 export interface AgentDurableBudget {
   adapter: DurableRootBudget;
   context: RootBudgetContext;
+  /** Optional non-SQL model daily quota. Separate authority; never refunds root reservations. */
+  dailyUsage?: import("./durable-ai-usage.ts").DurableAiUsage;
   /** Fixed, trusted settings only. Dynamic personal routing is not wired in this slice. */
   runLimits?: { modelCalls: number; queryEmbeddings: number };
 }

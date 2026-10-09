@@ -1,6 +1,6 @@
 # 聊天根預算與 attempt 准入
 
-本契約定義根預算 adapter 及[可選單次 runtime 接線](#runtime-connection)的不變量。沿用 Firestore 9.3.1 及現有 StorageCipher，不另建 workflow 或取代業務台帳；正式 Auth／index／worker 與恢復尚未啟用。各批基線及驗證範圍見[固定證據](#本輪證據)。
+本契約定義根預算 adapter、[可選單次 runtime 接線](#runtime-connection)及[模型日額 attempt 台帳](#daily-usage)的不變量。沿用 Firestore 9.3.1 及現有 StorageCipher，不另建 workflow 或取代業務台帳；正式 Auth／index／worker 與恢復尚未啟用。各批基線及驗證範圍見[固定證據](#本輪證據)。
 
 ## 身份、額度與期限
 
@@ -13,7 +13,7 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 - open／read／reserve／settle／stop均核原binding及generation。root保存在單一原子有界Firestore document，沒有自動takeover／generation遞增、delete或TTL。
 - reserve前核終態、期限與剩餘額。預留即耗、無退款，model／embedding每次一格，工具batch全有或全無。僅新提交reservation回execute；同key同fingerprint重投只回lookup，不再扣或授予執行。samekey異內容conflict。lost reply也不能重新發execute。
 - attempt key必須由外層已持久受理鏈提供；不得用新invocationId或程序從零ordinal偽裝同attempt。unknown不退款、不重播。settle只能記known reference或unknown；reference不證明業務已提交或現在可讀，仍須原receipt與即時授權。矛盾settle拒絕，terminal後late completion不覆寫。
-- stop只終止本budget域，不能當現有SQL cancel或effect transaction fencing。SQL日額reserve／record尚無attempt冪等，本adapter不彌補跨庫原子裂縫。
+- stop只終止本budget域，不能當現有SQL cancel或effect transaction fencing。既有SQL日額reserve／record仍無attempt冪等；可選非SQL模型日額接線見下節，兩者均不彌補root與業務的跨庫原子裂縫。
 
 ## 儲存與未完成接線
 
@@ -29,7 +29,7 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 <a id="runtime-connection"></a>
 ## 2026-10-09：單次 runtime 持久扣額接線
 
-受信 constructor `{adapter, context, runLimits?}` 提供可選局部接線。僅 fixed config、無 resolve 組裝；default memory不變，正式index／worker／services未啟用。context與config複製凍結，後改caller options不能切換resolver/session。scope／原run／trigger／pack／effective limits／絕對deadline由runtime比對；workflow/settings/billing/storageEpoch的來源仍由受信組裝者負責，不以重複同值或key hash假裝獨立核實。
+受信 constructor `{adapter, context, runLimits?, dailyUsage?}` 提供可選局部接線；`dailyUsage` 的模型日額行為見[下節](#daily-usage)。僅 fixed config、無 resolve 組裝；default memory不變，正式index／worker／services未啟用。context與config複製凍結，後改caller options不能切換resolver/session。scope／原run／trigger／pack／effective limits／絕對deadline由runtime比對；workflow/settings/billing/storageEpoch的來源仍由受信組裝者負責，不以重複同值或key hash假裝獨立核實。
 
 - ADK2.1公開beforeModel context已保存session events提供anchor。first用原business message/trigger＋固定step，不用新Runner user event；next只用當前agent/branch已提交實際event。保留PresentationRepair callbacks，不用私有hook或一般allocator。
 - 整批工具身份沿已committed model attempt固定子步，先原子扣batch再由SDK補call ID／保存event；不誤稱當前call event已在扣額前保存。embedding沿已保存call event＋callId唯一對應；缺失／重複即停止。
@@ -38,3 +38,31 @@ rootRunId 是原 business run，不是長期work或每次新建的ADK invocation
 - 新runtime用同root重投只停止，不恢復provider或tool結果；原deadline不續命。已提交domain receipt依舊查原權威，SQL日額仍非冪等，跨庫取消／副作用沒有原子fencing。
 
 原 TS／snapshot／缺 seed 失敗、串行案例正名及真正 Promise.all 補驗均保留於[固定記錄](../artifacts/verification/DURABLE_BUDGET_RUNTIME_20261009.json)；npm launcher 曾有兩次被 guard 擋下的 socket 嘗試，不能描述為整批零網絡嘗試。未驗真模型語義、HTTP／UI、production、resume、dynamic setting 或其他三 Agent 內部，尚未部署。真模型批次 20／20 已用盡，不因離線結果增加。
+
+
+<a id="daily-usage"></a>
+## 模型日額 attempt 台帳及實際 gateway 接線
+
+`FirestoreAiUsage` 實作 `DurableAiUsage`，沿用已鎖定的 Firestore 9.3.1、StorageCipher 及現有 daily attempts 上限，不引入新 SDK／SQL migration。受信組裝者在 `createAgentRuntime` 的 `durableBudget.dailyUsage` 注入 adapter；實際 `AgentGatewayModel` 使用它取代該 run 的舊 `usage.reserve/record`，不雙扣 SQL。未注入時完全沿用舊路徑。仍只容許既有 fixed-config＋native session 組裝，不能混入 dynamic routing；正式 services／index／worker 尚未啟用。
+
+### 權威及執行界線
+
+- **root 與日額分工：**root 管原工作所有 model／tool／embedding 次數、binding／generation 及絕對期限；日額只管 model attempt 的本人／全站 UTC 日額及必要 accounting metadata。先取得原 root execute，再取得日額 execute，之後重查 root 與授權才可調 provider。日額 quota／lookup／儲存錯誤、遺失或過期回覆都不退 root 額、不換 key、不退回 SQL。
+- **不冒稱跨 store 原子：**root 與日額是兩筆交易。root 已扣而日額未完成時保守停止，可能消耗額度而未呼叫 provider。日額不擁有 run/cancel、業務 effect 或原收據權威，不能取代 transaction fencing。模型請求和 Firestore 也無共同交易；只對遵循此准入協定的同 attempt 發出一次新的 dispatch permission，不保證外部模型 exactly-once，未取得可證實回覆一律保留 unknown。
+- **固定身份：**attempt 文件由原 rootRunId＋已持久模型 step key 定址；不含 UTC 日期、billing source 或新 ADK invocationId，所以跨日、換來源或重建程序都不能另建同 attempt。加密 request 綁完整 root context 的 fingerprint（含 authorizationVersion 原字串、epoch、generation、版本及原期限），另綁本人／孩子、模型、最終 outgoing fingerprint 與原 daily limits。任一項變動即 conflict。runtime 的原 scope／trigger／pack／limits 檢查保留；版本及 client/project 的真實來源仍由受信組裝者負責。
+- **billing 及限額：**platform／personal 由 Server constructor 固定選擇，不能由 HTTP、模型或聊天內容選擇。兩組 counters 分開；原同 attempt 改 billing source 亦拒絕。沿現有 AiConfig 範圍驗證 user 1–1000、global 1–10000，實際使用該 run 既有設定值，沒有提高預設或給額外呼叫。
+
+### 交易、查回及晚到結果
+
+1. reserve 先讀原 attempt；存在只回 lookup 及原 metadata，永不再發 execute。新 attempt 在同一 transaction 讀本人與全站 counter、核原期限及兩個上限，才一次提交兩 counter＋reserved attempt。所有讀先於寫，最多三個點讀／三個文件寫入；回調重試沒有 provider、SQL、工具、通知或其他外部副作用。reserve 的 UTC day／reservedAt 取該成功回調的受信 Server clock，不由 caller 傳入。此為日額台帳時間，不聲稱 Firestore commit timestamp。
+2. 遺失 commit 回覆時可能已扣額。重建 adapter 的 read／reserve 只查原 receipt；record=null 代表用量／結果未保存，不代表未執行。未知或部分 token 保留 `unknownUsageAttempts`，已耗 attempt 不退款；所有 metadata 沿同一 user／global counter 原子加總。
+3. record 必須已有同 request reservation，使用原 reservation day。期限後或 root 已停止仍可補該次必要 accounting，但不讀寫 root/run 終態、不授予新模型或工具執行。已保存 record 只接受完全相同重送，矛盾晚到結果拒絕；同 record 重投及 commit 回覆遺失不重加 tokens。取消期間 provider 的 late promise 不自動把已保存 timeout／unknown 改為成功。
+4. getForUser 僅投影當前 UTC 日、固定 billing source 的合計。原日 token 晚到不算進今天；查回不是對家庭資料的授權入口，caller 仍須依產品身份／准入閘使用。沒有 query／scan 或複合索引要求；實體 index exemption、讀費、真競爭及雲端驗收仍待 F02。
+
+### 私隱、保留及未完成範圍
+
+單文件上限 16 KiB；attempt、counters 都使用既有 AES-GCM 應用加密，AAD 綁格式／版本／project／namespace／hashed document identity。路徑只有固定類別及 hash，外層僅 format/version/ciphertext；不存 request/response 正文、prompt、工具資料、圖片、密鑰或原模型內容。request fingerprint 是原 payload 的 hash，仍作私人 metadata 加密，不放公共索引。
+
+此 adapter 不讀 ADC、不建資源、不接管 caller client、不刪資料、不加 TTL。account／child erasure、retention、restore epoch 與日額不能退款的協調仍未完成，故不能直接啟用正式流量。embedding 日額、動態本人設定、持久受理／outbox、跨庫 effect fencing、真正重啟 resume 與服務 bootstrap 均未因本切片完成；另外三個 Agent 內部仍暫緩。
+
+固定證據見 [F01 模型日額驗證](../artifacts/verification/F01_DAILY_AI_USAGE_20261009.json)。合成串行 transaction harness（Promise.all 同時提交）覆蓋重跑回調、並行 caller 防重、跨 instance 重建、回覆遺失及日界線，真 Runner 只搭 scripted provider；不能代替 Firestore 真競爭、真模型或產品 E2E。SDK 方法沿已安裝 9.3.1 公開型別，交易語義已再核[官方 transactions](https://docs.cloud.google.com/firestore/native/docs/manage-data/transactions)的全讀後寫、回調可能重跑及 atomic commit。
