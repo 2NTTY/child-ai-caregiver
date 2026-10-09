@@ -6,7 +6,7 @@ import type { AiConfig } from "./ai-config.ts";
 import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
 import { decodePhoto } from "./photo-files.ts";
-import { AGENT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped } from "./agent-budget.ts";
+import { AGENT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { logVertexFailure } from "./vertex-diagnostics.ts";
 import type { InitialConversationSummary } from "./memory-summary.ts";
 
@@ -69,6 +69,7 @@ export class AgentGatewayModel extends BaseLlm {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
     terminalToolNames?: ReadonlySet<string>;
+    modelAttemptKey?: (request: LlmRequest) => string | undefined;
     initialConversationSummary?: InitialConversationSummary;
     projectCapabilityConfig?: (request: LlmRequest, calls: readonly FunctionCall[]) => Promise<LlmRequest["config"] | undefined>;
   };
@@ -87,7 +88,7 @@ export class AgentGatewayModel extends BaseLlm {
     if (!config.enabled) throw new AgentStopped("unavailable");
     if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
     // Binary media has its own bounded allowance; all text, schemas and opaque protocol metadata remain counted.
-    const requestCharacters = agentRequestCharacters(request);
+    let requestCharacters = agentRequestCharacters(request);
     if (requestCharacters > budget.limits.inputCharacters) {
       throw new AgentStopped("input_limit");
     }
@@ -104,7 +105,21 @@ export class AgentGatewayModel extends BaseLlm {
         }
       }
     }
-    budget.take("modelCalls");
+    const includesSummary = outgoing !== request;
+    // Keep the exact provider payload fixed after durable admission, including a first-call summary.
+    const modelKey = budget.durable ? this.options.modelAttemptKey?.(request) : undefined;
+    if (budget.durable) {
+      if (!modelKey) throw new AgentStopped("unavailable");
+      outgoing = { ...outgoing, contents: structuredClone(outgoing.contents), config: {
+        ...structuredClone(outgoing.config), candidateCount: 1,
+        maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
+        thinkingConfig: { thinkingLevel: nativeModelThinkingLevel(config.model, config.agentThinkingLevel) },
+      } };
+      if (agentRequestCharacters(outgoing) > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
+      requestCharacters = agentRequestCharacters({ contents: request.contents, config: outgoing.config });
+      if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
+      await budget.admit({ key: modelKey, fingerprint: agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config }), kind: "model", units: 1 });
+    } else budget.take("modelCalls");
     if (!await budget.wait(() => usage.reserve(userId, config.dailyUserAttempts, config.dailyGlobalAttempts))) {
       throw new AgentStopped("quota_exceeded");
     }
@@ -113,9 +128,17 @@ export class AgentGatewayModel extends BaseLlm {
     let tokens: TokenUsage = { inputTokens: null, outputTokens: null, cachedTokens: null };
     let response: LlmResponse;
     try {
-      if (outgoing !== request) {
+      if (includesSummary) {
         if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
-        if (Date.now() >= validUntil) outgoing = request;
+        if (Date.now() >= validUntil) {
+          if (budget.durable) throw new AgentStopped("unavailable");
+          outgoing = request;
+        }
+      }
+      if (budget.durable) {
+        await budget.checkDurable();
+        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
       }
       response = await budget.wait(() => {
         // Preparation, rejected quota and input checks do not consume the first-call opportunity.
@@ -127,7 +150,11 @@ export class AgentGatewayModel extends BaseLlm {
         || response.content?.role !== "model" || !response.content.parts?.length) throw new AgentStopped("invalid_response");
       if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
       const calls = response.content.parts.filter(part => part.functionCall);
-      if (calls.length) budget.take("toolCalls", calls.length);
+      if (calls.length) {
+        if (budget.durable) await budget.admit({ key: modelKey! + ":tool-batch", kind: "tool_batch", units: calls.length,
+          fingerprint: agentBudgetFingerprint({ calls: calls.map(part => part.functionCall), units: calls.length }) });
+        else budget.take("toolCalls", calls.length);
+      }
       if (calls.some(part => !part.functionCall?.name || !Object.hasOwn(request.toolsDict, part.functionCall.name))) {
         throw new AgentStopped("invalid_tool");
       }
@@ -138,7 +165,8 @@ export class AgentGatewayModel extends BaseLlm {
       const modelContentCharacters = JSON.stringify(response.content).length;
       const projected = this.options.projectCapabilityConfig && calls.length
         ? await budget.wait(() => this.options.projectCapabilityConfig!(request, calls.map(part => part.functionCall!))) : undefined;
-      const futureCharacters = projected ? agentRequestCharacters({ contents: request.contents, config: projected }) : requestCharacters;
+      const futureCharacters = projected ? agentRequestCharacters({ contents: request.contents, config: budget.durable ? { ...projected,
+          candidateCount: outgoing.config?.candidateCount, maxOutputTokens: outgoing.config?.maxOutputTokens, thinkingConfig: outgoing.config?.thinkingConfig } : projected }) : requestCharacters;
       const capabilityGrowthCharacters = Math.max(0, futureCharacters - requestCharacters);
       if (capabilityGrowthCharacters > 0
         && futureCharacters + modelContentCharacters + AGENT_TOOL_RESPONSE_RESERVE > budget.limits.inputCharacters) throw new AgentStopped("input_limit");

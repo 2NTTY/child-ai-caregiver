@@ -22,10 +22,12 @@ export class PresentationRepairAgent extends LlmAgent {
   private repairStarted = false;
   private repairRequestStarted = false;
 
-  constructor(config: Omit<LlmAgentConfig, "beforeModelCallback" | "afterModelCallback">, repair: PresentationRepair) {
+  constructor(config: Omit<LlmAgentConfig, "afterModelCallback">, repair: PresentationRepair) {
     super(config);
     this.repair = repair;
-    this.beforeModelCallback = ({ request }) => { this.prepareRepairRequest(request); };
+    const beforeModel = config.beforeModelCallback;
+    this.beforeModelCallback = [({ request }) => { this.prepareRepairRequest(request); },
+      ...(Array.isArray(beforeModel) ? beforeModel : beforeModel ? [beforeModel] : [])];
     this.afterModelCallback = ({ response }) => { this.observePrimaryResponse(response); };
   }
 

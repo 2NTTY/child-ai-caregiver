@@ -137,14 +137,14 @@ export function createProductAgentTools(options: {
     { name: "search_knowledge", description: AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS.search_knowledge,
       parameters: z.object({ query: shortText(300), classification: z.enum(["official_guidance", "recent_information"]),
         queryAge: knowledgeQueryAgeSchema.optional() }).strict(), authorize: permitted,
-      execute: args => guard(async () => {
+      execute: (args, context) => guard(async () => {
         const query = args.query as string;
         if (/@|https?:|[0-9a-f]{8}-[0-9a-f-]{27}|(?:\d[ -]?){8}/iu.test(query)) throw new FamilyError(400, "public_query_required");
         const resolved = await resolveKnowledgeQueryContext(await current(), args.queryAge as import("../src/shared/knowledge.ts").KnowledgeQueryAge | undefined,
           { childId: scope.childId, visibility: options.visibility ?? "private", readHistory: (messageId, offset) =>
             budget.wait(() => store.readHistory(scope.userId, scope.childId, { messageId, offset, limit: 4000 })) });
         const filter = { ...resolved.filter, classification: args.classification as KnowledgeFilter["classification"] };
-        const result = { ...await retrieval.search(query, filter), queryContext: resolved.queryContext, complete: true, omittedChunks: 0, returned: 0, hasMore: false };
+        const result = { ...await retrieval.search(query, filter, context.queryEmbeddingAttemptKey), queryContext: resolved.queryContext, complete: true, omittedChunks: 0, returned: 0, hasMore: false };
         result.returned = result.chunks.length;
         if (result.mode === "keyword_degraded" || mode === "not_used") mode = result.mode;
         const allowance = Math.max(0, budget.toolResponseCharacters - 512);

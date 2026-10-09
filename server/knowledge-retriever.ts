@@ -1,5 +1,5 @@
 import type { KnowledgeFilter, KnowledgeResult, KnowledgeEvidence, KnowledgeContextCursor, KnowledgeContextResult, KnowledgeContextChunk } from "../src/shared/knowledge.ts";
-import type { AgentBudget } from "./agent-budget.ts";
+import { AgentStopped, agentBudgetFingerprint, type AgentBudget } from "./agent-budget.ts";
 import { FamilyError } from "./family-access.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
 import type { EmbeddingActor, EmbeddingGateway } from "./embedding-gateway.ts";
@@ -17,16 +17,27 @@ export function createKnowledgeRetriever(store: Pick<KnowledgeStore, "candidates
       const issuedCursors = new Set<string>();
       const cache = new Map<string, Promise<number[] | null>>();
       return {
-        async search(input: string, applicability: KnowledgeFilter): Promise<KnowledgeResult> {
+        async search(input: string, applicability: KnowledgeFilter, queryEmbeddingAttemptKey?: string): Promise<KnowledgeResult> {
           const query = parseKnowledgeQuery(input);
           const filter = parseKnowledgeFilter(applicability);
           budget.check();
           if (!await budget.wait(authorize)) throw new EmbeddingFailure("unauthorized");
           let pending = cache.get(query);
           if (!pending) {
-            budget.take("queryEmbeddings");
-            pending = (options.embeddings ?? embeddings).embed({ task: "RETRIEVAL_QUERY", text: query }, actor, budget.signal, authorize)
+            const embed = () => (options.embeddings ?? embeddings).embed({ task: "RETRIEVAL_QUERY", text: query }, actor, budget.signal, authorize)
               .catch(error => { if (error instanceof EmbeddingFailure && error.code === "unavailable") return null; throw error; });
+            if (budget.durable) {
+              // Cache the whole admission before it can yield to a parallel identical query.
+              pending = (async () => {
+                if (!queryEmbeddingAttemptKey) throw new AgentStopped("unavailable");
+                await budget.admit({ key: queryEmbeddingAttemptKey, fingerprint: agentBudgetFingerprint({ task: "RETRIEVAL_QUERY", text: query }), kind: "embedding", units: 1 });
+                await budget.checkDurable();
+                return embed();
+              })();
+            } else {
+              budget.take("queryEmbeddings");
+              pending = embed();
+            }
             cache.set(query, pending);
           }
           const vector = await budget.wait(() => pending!);

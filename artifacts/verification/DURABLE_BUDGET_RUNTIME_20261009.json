@@ -1,0 +1,61 @@
+{
+  "checkedDate": "2026-10-09",
+  "baselineCommit": "48571cef76d70dd78e97c689becb92a25f36b2a3",
+  "patchSha256": "1fbe2a42c9c356ea5aa67c7cac5c3b5140d312374e8d72281dbe1159fa6cb567",
+  "sourceManifestSha256": "d15a2a7ee0e54c63cbaf363ffb104b0c03e4e31d71350aa97005b40022b40722",
+  "materializedSourceFiles": 901,
+  "changedCodeTestPaths": 9,
+  "typecheck": "passed",
+  "originalNpmTest": {
+    "total": 692,
+    "pass": 692,
+    "fail": 0,
+    "skip": 0
+  },
+  "emulatorGroupsPassed": 6,
+  "ownedListenersStopped": 3,
+  "trueConcurrentQuery": {
+    "test": "simultaneous identical queries cache the admission promise before its first asynchronous yield",
+    "admissions": 1,
+    "gatewayCalls": 1,
+    "sameReplies": true
+  },
+  "network": {
+    "npmLauncherAttemptsBlocked": 2,
+    "testChildAttempts": 0,
+    "monitoredChildren": 113,
+    "nonLoopbackEmulatorConnections": 0,
+    "attribution": "npm CLI notifier/manifest source inference; destination not captured"
+  },
+  "historicalFailures": [
+    "Two TypeScript optional-narrowing diagnostics",
+    "Caller-options mutation review finding fixed and tested",
+    "Serial ADK same-query case renamed; true Promise.all probe added",
+    "First aggregate 691/692: missing baseline seed, restored exact official blob"
+  ],
+  "limitations": [
+    "Trusted composer owns workflow/settings/billing/storageEpoch provenance; runtime checks only observable scope/run/trigger/pack/effective limits/deadline.",
+    "Fresh runtime redelivery stops; no provider or tool result replay and no resume.",
+    "Existing SQL daily reserve is non-idempotent; committed budget debit can be conservatively wasted on later failure.",
+    "Cancellation retains original domain receipt authority; no atomic cross-store cancellation fence."
+  ],
+  "notRun": [
+    "real model or semantics acceptance",
+    "production Firestore/Auth/cloud/index/worker",
+    "HTTP/UI or deployment",
+    "SQL quota idempotency or cross-store effect fencing",
+    "resume or process takeover",
+    "other three agent internals"
+  ],
+  "rootDocuments": "Separately reviewed after code tests",
+  "logs": [
+    {
+      "name": "final-typecheck-v2.log",
+      "sha256": "ae7a51f0c42547c3b5e6948f8164a6eea8b72b5f11a3d739c6ff119bdc021441"
+    },
+    {
+      "name": "final-npm-test-v2.log",
+      "sha256": "6d7251192a14f3c4c16d9b00bb9c671440364deddc98c13de46746c5ba86e734"
+    }
+  ]
+}

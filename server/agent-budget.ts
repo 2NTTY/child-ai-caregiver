@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { canonical } from "./firestore-session-codec.ts";
+import { RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
 import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
 
 export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: 8, queryEmbeddings: 2,
@@ -12,6 +15,16 @@ export class AgentStopped extends Error {
   constructor(reason: AgentStopReason) { super(reason); this.reason = reason; }
 }
 
+/** Hash only the fixed outgoing request; no request body is stored in the budget. */
+export const agentBudgetFingerprint = (value: unknown) => createHash("sha256").update(canonical(value)).digest("hex");
+
+export interface AgentDurableBudget {
+  adapter: DurableRootBudget;
+  context: RootBudgetContext;
+  /** Fixed, trusted settings only. Dynamic personal routing is not wired in this slice. */
+  runLimits?: { modelCalls: number; queryEmbeddings: number };
+}
+
 export class AgentBudget {
   readonly signal: AbortSignal;
   private readonly used = { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 };
@@ -20,24 +33,74 @@ export class AgentBudget {
   private responseCharacters: number | null = null;
   private selectedLimits: { [K in keyof typeof AGENT_LIMITS]: number } = { ...AGENT_LIMITS };
   private readonly expiresAt: number;
+  private durableBudget?: AgentDurableBudget;
   private readonly controller = new AbortController();
   private readonly timer: ReturnType<typeof setTimeout>;
   private readonly parent?: AbortSignal;
   private readonly onAbort = () => this.controller.abort(new AgentStopped("cancelled"));
 
-  constructor(parent?: AbortSignal, deadlineMs: number = AGENT_LIMITS.deadlineMs) {
+  constructor(parent?: AbortSignal, deadlineMs: number = AGENT_LIMITS.deadlineMs, deadlineAtMs?: number) {
     if (!Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > AGENT_LIMITS.deadlineMs) throw new Error("Invalid agent deadline");
     this.parent = parent;
-    this.expiresAt = Date.now() + deadlineMs;
+    if (deadlineAtMs !== undefined && (!Number.isSafeInteger(deadlineAtMs) || deadlineAtMs < 1)) throw new Error("Invalid absolute agent deadline");
+    this.expiresAt = Math.min(Date.now() + deadlineMs, deadlineAtMs ?? Infinity);
     this.signal = this.controller.signal;
     if (parent?.aborted) this.onAbort();
     else parent?.addEventListener("abort", this.onAbort, { once: true });
-    this.timer = setTimeout(() => this.controller.abort(new AgentStopped("deadline")), deadlineMs);
+    this.timer = setTimeout(() => this.controller.abort(new AgentStopped("deadline")), Math.max(0, this.expiresAt - Date.now()));
   }
 
   check() {
     if (!this.signal.aborted && Date.now() >= this.expiresAt) this.controller.abort(new AgentStopped("deadline"));
     if (this.signal.aborted) throw this.signal.reason;
+  }
+  get durable() { return this.durableBudget !== undefined; }
+  get remainingModelCalls() { return this.selectedLimits.modelCalls - this.used.modelCalls; }
+  private applySnapshot(snapshot: RootBudgetSnapshot) {
+    const context = this.durableBudget!.context;
+    if (snapshot.generation !== context.generation || snapshot.deadlineAtMs !== context.binding.deadlineAtMs
+      || canonical(snapshot.limits) !== canonical(context.binding.limits)) throw new AgentStopped("unavailable");
+    for (const key of ["modelCalls", "toolCalls", "queryEmbeddings"] as const) {
+      if (!Number.isSafeInteger(snapshot.used[key]) || snapshot.used[key] < 0 || snapshot.used[key] > this.selectedLimits[key]) throw new AgentStopped("unavailable");
+      // Parallel callbacks may acknowledge older snapshots after a newer one.
+      this.used[key] = Math.max(this.used[key], snapshot.used[key]);
+    }
+    if (snapshot.status !== "active") throw new AgentStopped(snapshot.status === "expired" ? "deadline" : "unavailable");
+    this.check();
+  }
+  async initializeDurable(durable: AgentDurableBudget) {
+    if (this.durableBudget || Object.values(this.used).some(value => value !== 0)) throw new AgentStopped("unavailable");
+    this.durableBudget = durable;
+    try { this.applySnapshot(await this.wait(() => durable.adapter.open(durable.context))); }
+    catch (error) { throw this.durableFailure(error); }
+  }
+  private durableFailure(error: unknown, kind?: BudgetAttempt["kind"]): AgentStopped {
+    if (error instanceof AgentStopped) return error;
+    if (error instanceof RootBudgetError && error.code === "deadline_exceeded") return new AgentStopped("deadline");
+    if (error instanceof RootBudgetError && error.code === "budget_exhausted") return new AgentStopped(
+      kind === "model" ? "model_limit" : kind === "tool_batch" ? "tool_limit" : "embedding_limit");
+    return new AgentStopped("unavailable");
+  }
+  async checkDurable() {
+    this.check();
+    if (!this.durableBudget) return;
+    const { adapter, context } = this.durableBudget;
+    try { this.applySnapshot(await this.wait(() => adapter.read(context))); }
+    catch (error) { throw this.durableFailure(error); }
+  }
+  async admit(attempt: BudgetAttempt) {
+    this.check();
+    if (!this.durableBudget || !attempt.key) throw new AgentStopped("unavailable");
+    const { adapter, context } = this.durableBudget;
+    try {
+      const admission = await this.wait(() => adapter.reserve(context, attempt));
+      this.applySnapshot(admission.snapshot);
+      if (admission.decision !== "execute") throw new AgentStopped("unavailable");
+    } catch (error) {
+      // A lost acknowledgement can have committed. Read counters only, never retry execution.
+      try { this.applySnapshot(await this.wait(() => adapter.read(context))); } catch { /* Keep the original refusal. */ }
+      throw this.durableFailure(error, attempt.kind);
+    }
   }
   get counts() { return { ...this.used }; }
   get limits() { return { ...this.selectedLimits }; }
@@ -70,6 +133,7 @@ export class AgentBudget {
   }
   take(kind: keyof AgentBudget["counts"], amount = 1) {
     this.check();
+    if (this.durableBudget) throw new AgentStopped("unavailable");
     if (!Number.isSafeInteger(amount) || amount < 1) throw new Error("Invalid attempt count");
     if (this.used[kind] + amount > this.selectedLimits[kind]) {
       throw new AgentStopped(kind === "modelCalls" ? "model_limit" : kind === "toolCalls" ? "tool_limit" : "embedding_limit");
