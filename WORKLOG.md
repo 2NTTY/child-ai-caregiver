@@ -1800,3 +1800,11 @@
 - 原 typecheck、一次實際原 npm test 676／676、Emulator 最小接線 5／5 通過；2270 候選檔案測試前後不變。原 focused 52／58 失敗保留，spy 改 composition 後27／27；ES2023 deferred fixture 型別修正與前置 guard 失敗亦保留。
 - create collision／回應不確定不盲刪；已提交收據一次、取消與撤權後無新 provider／runtime cleanup。fixture 清理自有資料另列，四個自有 listener 已停止。零非 loopback 服務呼叫及真模型；全量只放行固定 inline WASM。
 - [固定記錄](artifacts/verification/FIRESTORE_RUNTIME_INTEGRATION_20261009.json)。權威文件在測試後另審；沒有 CI／HTTP／UI／雲端／部署或完整恢復通過結論。真模型20／20已用盡，其他三個 Agent 內部暫緩。
+
+
+## 2026-10-09：持久根預算 adapter 限定驗證
+
+- #159 已合併，基線754f8816；新增五份code/test，未改runtime／SQL／Auth／index／worker。原root immutable binding、絕對期限、effective limits、atomic debit、same-key lookup-only、unknown無退款、terminal／generation拒絕均以受信adapter保存。
+- root review指出authorizationVersion與現有AgentScope字串不符，v2保留原字串並補numeric／空／超界拒絕，沒有猜轉型。v1結果及首次TS narrowing失敗保留，不用舊結果代替v2。
+- v2 unit12／12，原typecheck與原npm test688／688，Emulator5組通過；2278候選檔案測試前後不變，零非loopback服務呼叫，固定inline WASM只一次；9child及4listener停止。
+- [准入契約](docs/CHAT_AGENT_DURABLE_BUDGET.md)及[驗證摘要](artifacts/verification/DURABLE_BUDGET_ADMISSION_20261009.json)。根文件在程式驗證後另審；無CI／真模型／部署或resume通過宣稱，原真模型20／20、三角色內部暫緩及舊失敗保持。
