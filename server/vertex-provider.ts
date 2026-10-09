@@ -1,6 +1,7 @@
-import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { ApiError, GoogleGenAI } from "@google/genai";
 import type { GenerateContentResponse } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
+import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import { ProviderFailure } from "./model-gateway.ts";
 import type { ModelProvider } from "./model-gateway.ts";
 import { logVertexFailure } from "./vertex-diagnostics.ts";
@@ -28,6 +29,7 @@ export function readVertexReply(response: GenerateContentResponse) {
   } };
 }
 export function createVertexProvider(config: AiConfig): ModelProvider {
+  const thinkingLevel = nativeModelThinkingLevel(config.model);
   const client = new GoogleGenAI({
     enterprise: true, project: config.project, location: config.location, apiVersion: "v1",
     httpOptions: { timeout: config.timeoutMs, retryOptions: { attempts: 1 } },
@@ -42,7 +44,7 @@ export function createVertexProvider(config: AiConfig): ModelProvider {
             systemInstruction: input.systemInstruction,
             maxOutputTokens: options.maxOutputTokens,
             candidateCount: 1,
-            thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
+            thinkingConfig: { thinkingLevel },
             abortSignal: options.signal,
           },
         });

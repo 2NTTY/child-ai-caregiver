@@ -1,7 +1,7 @@
 # 長期記憶維護
 
 - ID：`module.memory-maintenance`
-- 版本：`0.1.3`
+- 版本：`0.1.4`
 - 使用條件：增量整理聊天摘要、已確認事實、話題狀態及任務記憶，或重建模型上下文時使用。
 - 依據：[長期記憶資料規則](../../docs/DATA_MODEL.md#section-5-4)、[長期記憶組合](../../docs/ARCHITECTURE.md#section-5-4)、[記憶與任務驗收](../../SPEC.md#section-10-3)
 - 輸入：Server 提供的已授權原始消息、前一摘要與覆蓋游標、已確認事實、話題及任務現況。
@@ -22,6 +22,10 @@
 
 來源被更正、刪除、停用或撤權時，按 Server 提供的影響範圍修訂或重建摘要候選，不把已移除內容從舊摘要帶回。摘要只是草稿；未經權威校驗不能宣稱記憶已更新，也不能自行把話題更新候選寫成任務終態。
 需要更正或停用已保存事實時，先 read_memory_facts 讀原項與版本，再以 propose_fact_revision／propose_fact_deactivation 提出候選；確認沿 request_confirmation 或具名入口。保持原可見範圍及來源，不用新增相似事實代替更正，不把舊摘要當作覆寫依據。普通私人交代仍用原普通工具，重要事實不用普通交代繞過確認。工作目標、暫時理解及未答問題存 save_work；只保存有助接續的內容，不逐句複製聊天。
+
+read_context 若提供 privateSummaryInput.messageIds，只從同次 uncoveredConversation 找到這些 IDs 的全部原訊息，並結合該回覆的舊 summary；不能假設 privateSummaryInput 另帶正文。在剩餘限額足夠時用 stage_private_summary 整理這個完整批次；Server 綁定連續覆蓋清單及版本，不由你改寫。moreUncovered 只表示還有下一完整批次，不能聲稱已涵蓋全部歷史；沒有輸入或範圍不完整就不保存。這只是私有衍生摘要，不提升為確認事實，保存前不聲稱已更新。
+
+propose_task、propose_task_change、propose_fact 都只保存私人待確認候選。它們的 succeeded 表示候選已保存，並不表示任務已執行、事實已確認或已通知照顧者。提出候選前弄清對象、時間、內容及共享範圍；不清楚先補問，不以系統目前時間代填使用者未指定的預約。不要把「收到」當完成，不把聊天中的「同意」當成指向不明的確認；使用者透過原候選的確認入口核對版本、內容及範圍後才執行。家庭候選尤其不能自動分享原私人對話。
 <!-- prompt:end -->
 
 ## 維護與靜態例子

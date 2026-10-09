@@ -1,5 +1,7 @@
-import type { ImageSourcePropType } from "react-native";
-import type { CareKind } from "./care-view-model";
+import type { ImageRequireSource, ImageURISource } from "react-native/Libraries/Image/ImageSource";
+import type { CareKind } from "./care-view-model.ts";
+
+type ImageSourcePropType = ImageURISource | ImageURISource[] | ImageRequireSource;
 
 // Display projections of src/shared/photos.ts at master 5098d64, not a second API contract.
 export const photoLimits = { bytes: 4 * 1024 * 1024, childBytes: 100 * 1024 * 1024, childCount: 100 } as const;

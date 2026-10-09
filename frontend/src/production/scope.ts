@@ -1,4 +1,4 @@
-import type { RecordsState } from "../../../src/client/records-controller";
+import type { RecordsState } from "../../../src/client/records-controller.ts";
 
 export function confirmedUserId(state: RecordsState): string | null {
   return state.auth === "signedIn" && state.busy !== "logout" ? state.user?.id ?? null : null;

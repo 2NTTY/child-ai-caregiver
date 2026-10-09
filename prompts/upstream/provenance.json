@@ -1,0 +1,121 @@
+{
+  "checkedDate": "2026-10-09",
+  "adaptation": "Translated and modified for childcare-hk; not an unmodified upstream runtime or policy",
+  "module": "core.conversation",
+  "paragraphSources": {
+    "1": [
+      "OpenClaw SOUL Core Truths/Vibe"
+    ],
+    "2": [
+      "Gemini Expertise & Intent Alignment; adaptation: contextual requests are not rejected by grammar"
+    ],
+    "3": [
+      "OpenClaw Memory Recall and Runtime Context; adaptation: server-scoped data, no global memory files"
+    ],
+    "4": [
+      "Gemini clarification principle; existing child/task ambiguity rules"
+    ],
+    "5": [
+      "OpenClaw Tool Call Style and Execution Bias; existing server limits"
+    ],
+    "6": [
+      "OpenClaw Promised Work; Gemini User Hints"
+    ],
+    "7": [
+      "Existing product authorization and identity rules override upstream autonomy"
+    ],
+    "8": [
+      "Gemini Tool Execution Response Rules; adaptation: present_answer accepted is terminal"
+    ],
+    "9": [
+      "OpenClaw Promised Work; existing receipts and scheduling permissions"
+    ],
+    "10": [
+      "Existing childcare conversation/privacy/proactive boundaries"
+    ]
+  },
+  "sources": [
+    {
+      "project": "openclaw",
+      "revision": "175146de74ad5103aa97f2a04c4d06423a84df56",
+      "sourceFile": "system-prompt.ts",
+      "sourceSha256": "32ad77af2e0465e88da63c66e7983285001e9b0d511368bbf037b919a3afcb5f",
+      "ranges": [
+        [
+          692,
+          721
+        ]
+      ],
+      "excerpt": "openclaw-system-prompt.ts.excerpt.txt",
+      "excerptSha256": "4d3b17172d13efac98e069836cf526bcd51d0a4337f95029e95184790abadca1"
+    },
+    {
+      "project": "openclaw",
+      "revision": "175146de74ad5103aa97f2a04c4d06423a84df56",
+      "sourceFile": "promised-work-prompt.ts",
+      "sourceSha256": "66b5390d09ab47284abe51c613d010b8e4445e7282565cea12073a87c081acf8",
+      "ranges": [
+        [
+          1,
+          15
+        ]
+      ],
+      "excerpt": "openclaw-promised-work-prompt.ts.excerpt.txt",
+      "excerptSha256": "6737737acaad671c1cfc4aa2ae7ef066c854fc0f5a0ae9aab7faae75627a5d31"
+    },
+    {
+      "project": "openclaw",
+      "revision": "175146de74ad5103aa97f2a04c4d06423a84df56",
+      "sourceFile": "memory-tool-contract.ts",
+      "sourceSha256": "782a5b0887647dc14547ed3fbabc06b2ce2f033accfb69c2572b7797405bf1ea",
+      "ranges": [
+        [
+          131,
+          168
+        ]
+      ],
+      "excerpt": "openclaw-memory-tool-contract.ts.excerpt.txt",
+      "excerptSha256": "2d52df6127c0cc327ed408da3712d4d3cf2c8c0c09431ef32d269dc7569310e4"
+    },
+    {
+      "project": "openclaw",
+      "revision": "175146de74ad5103aa97f2a04c4d06423a84df56",
+      "sourceFile": "SOUL.md",
+      "sourceSha256": "3e7fb8303d4778dab2200a635ca2a3d937c11f4a467aa366be2ac48081cbf528",
+      "ranges": [
+        [
+          14,
+          34
+        ]
+      ],
+      "excerpt": "openclaw-SOUL.md.excerpt.txt",
+      "excerptSha256": "4c29d6837435afe2b3b6d70e93121aedfcac2fea0839d17a567dd999cd2644c8"
+    },
+    {
+      "project": "gemini",
+      "revision": "2ce1a6963e9e53a04afaf76111e4527cfa7c5dd7",
+      "sourceFile": "snippets.ts",
+      "sourceSha256": "d5e3bd8b4621a1d1aeee71964e984c631bc4b70eef82998c136da4c06263d994",
+      "ranges": [
+        [
+          1,
+          5
+        ],
+        [
+          258,
+          261
+        ],
+        [
+          416,
+          420
+        ],
+        [
+          675,
+          678
+        ]
+      ],
+      "excerpt": "gemini-snippets.ts.excerpt.txt",
+      "excerptSha256": "64e4a614c2dca5c053a7a85e5f0d6ab3c475f04372ba8ee538cf7aa27c577801"
+    }
+  ]
+}

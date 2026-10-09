@@ -56,10 +56,10 @@ function fixture(revokeAtCommit: boolean, mode: "abort" | "source-invalid" | "pa
         assert.ok(request.contents.some(content => content.parts?.some(part => part.functionResponse?.name === "load_capabilities")));
       }
       const steps = mode === "abort" ? [
-        [{ id: "load-documents", name: "load_capabilities", args: { capabilities: ["documents"] } }],
+        [{ id: "load-documents", name: "load_capabilities", args: { capabilities: ["document_edit"] } }],
         [{ id: "check-bag", name: "change_family_document", args: { sourceQuote, documentId: original.id, change } }],
       ] : [
-        [{ id: "load-documents", name: "load_capabilities", args: { capabilities: ["documents", "memory"] } },
+        [{ id: "load-documents", name: "load_capabilities", args: { capabilities: ["document_edit", "memory_summary"] } },
           { id: "read-context", name: "read_context", args: {} }],
         [{ id: "check-bag", name: "change_family_document", args: { sourceQuote, documentId: original.id, change } },
           ...(mode === "partial-invalid" ? [{ id: "check-other-bag", name: "change_family_document", args: { sourceQuote, documentId: otherDocumentId, change } }] : []),

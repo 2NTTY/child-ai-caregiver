@@ -26,8 +26,13 @@ export class ProductAgentOwner {
   private readonly listeners = new Set<() => void>();
   private readonly rawRuns = new Map<string, ProductAgentResult>();
   private selectedRunId: string | null = null;
-  constructor(private readonly baseUrl: string, online: boolean,
-    private readonly onAccessLost: (error: ProductAgentApiError) => void, private readonly onSaved: () => void, private readonly createApi = () => createProductAgentApi(baseUrl)) {
+  private readonly baseUrl: string;
+  private readonly onAccessLost: (error: ProductAgentApiError) => void;
+  private readonly onSaved: () => void;
+  private readonly createApi: () => ProductAgentApi;
+  constructor(baseUrl: string, online: boolean,
+    onAccessLost: (error: ProductAgentApiError) => void, onSaved: () => void, createApi = () => createProductAgentApi(baseUrl)) {
+    this.baseUrl = baseUrl; this.onAccessLost = onAccessLost; this.onSaved = onSaved; this.createApi = createApi;
     this.api = this.createApi(); this.snapshot = initial(online);
   }
   getSnapshot = () => this.snapshot;

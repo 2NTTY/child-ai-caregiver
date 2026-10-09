@@ -131,3 +131,28 @@ test("abort reaches the native request and failures are rethrown once without pr
   assert.equal(clients[0]!.httpOptions!.retryOptions!.attempts, 1);
   assert.deepEqual(warnings, [[JSON.stringify({ event: "vertex_generate_failure", httpStatus: null, category: "aborted" })]]);
 });
+
+test("legacy typed 3.8 config defaults to LOW and valid explicit settings retain their native enum", async () => {
+  const { config, request, controller } = setup();
+  config.model = "gemini-3.8-flash";
+  delete config.agentThinkingLevel;
+  const levels = [[undefined, genai.ThinkingLevel.LOW], ["low", genai.ThinkingLevel.LOW],
+    ["medium", genai.ThinkingLevel.MEDIUM], ["high", genai.ThinkingLevel.HIGH]] as const;
+  for (const [level, expected] of levels) {
+    await createVertexAgentProvider({ ...config, agentThinkingLevel: level }).generate(request, controller.signal);
+    assert.deepEqual(requests.at(-1), { model: "gemini-3.8-flash", contents: request.contents, config: {
+      candidateCount: 1, maxOutputTokens: 1024, thinkingConfig: { thinkingLevel: expected }, abortSignal: controller.signal,
+    } });
+  }
+  assert.equal(clients.length, 4);
+  assert.equal(requests.length, 4);
+});
+
+test("explicit MINIMAL on a typed 3.8 config fails before client construction or network activity", () => {
+  const { config } = setup();
+  assert.throws(() => createVertexAgentProvider({ ...config, model: "gemini-3.8-flash", agentThinkingLevel: "minimal" }), {
+    message: "Invalid AI_AGENT_THINKING_LEVEL configuration",
+  });
+  assert.equal(clients.length, 0);
+  assert.equal(requests.length, 0);
+});

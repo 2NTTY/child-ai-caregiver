@@ -21,7 +21,7 @@
 
 整包版本、各模組版本及合成案例格式版本各自維護；只要求語法有效、模組檔頭與 manifest 該項一致，不能要求它們全部等於整包版本。沒有 PowerShell 時，可跑 `node --test tests/agent-prompt.test.ts` 及本包新增定向檢查；不把 Node 局部通過聲稱為 PowerShell 全腳本已通過。
 
-檢查範圍：manifest／JSON 解析、ID 唯一、版本、模組路徑／正文標記／依賴、manifest 全部十二個配方的閉包、必要對話核心與領域安全、來源錨點／本地連結、範例共同欄位、語義 fixture 的明確標記與七類場景覆蓋。檢查只對文件和人工指定的 expected 資料斷言，不把文字 keyword 比對當模型行為測試。
+檢查範圍：manifest／JSON 解析、ID 唯一、版本、模組路徑／正文標記／依賴、manifest 全部配方的閉包（以當前清單為準）、必要對話核心與領域安全、來源錨點／本地連結、範例共同欄位、語義 fixture 的明確標記與七類場景覆蓋。檢查只對文件和人工指定的 expected 資料斷言，不把文字 keyword 比對當模型行為測試。
 
 人工靜態閱讀另外檢查：
 
@@ -43,3 +43,6 @@
 | 報告與恢復 | 程式統計、PDF及更正版本、相容Server、單主切換與unknown台帳 | S14、S15、S06-W04 |
 
 上表列的是需查驗的範圍，不宣稱全部已通過或全部未執行；按相應工作包固定版本證據核對。不把現時未開始的產品包改成已完成或待驗收；當產品實作準備完成但缺必需證據時，才按 [PLAN 驗證制度](../../PLAN.md#verification) 使用待驗收狀態。沒有以 mock 或本包案例代替實際投遞／真機證據。
+
+
+0.1.36 候選靜態核對另指出既有 check.ps1 的兩個檢查限制：structured fixture 的 contractVersion 不應與 packVersion 比較；unused 檢查亦須納入 capability catalog 的動態引用。此候選未改該腳本，不能把純 assembler 的配方／能力檢查通過稱為整份 PowerShell 腳本通過。

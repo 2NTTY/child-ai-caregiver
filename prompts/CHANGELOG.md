@@ -92,3 +92,9 @@
 
 - 主模型補 knowledge-answering 0.1.3／knowledge-maintenance 0.1.2：多輪問題改寫、條件性年齡假設、同版原文續讀及含義換版核對；引用與政策由 Server 執行，不解析思考文字。
 - 沿原 Prompt Pack、ADK 及成本限額；模組版本不代表全部官方內容或真模型行為已驗，實際結果見 P2-A04 證據。
+
+
+## 0.1.36 — 2026-10-09
+
+- core.conversation 0.1.2 改為可追溯 OpenClaw 助理底稿及 Gemini CLI 局部意圖／澄清／收尾衍生文本，保留產品授權、資料及 terminal 契約。來源與授權不注入模型。
+- 其他工具、runtime、限額及三角色接口範圍不變。候選尚待靜態／協定驗證，沒有新真模型呼叫或部署。

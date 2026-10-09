@@ -102,3 +102,19 @@ test("agent thinking level accepts only explicit server-owned native levels", ()
     });
   }
 });
+
+test("thinking defaults and explicit levels are compatible with the exact configured model", () => {
+  assert.equal(readAiConfig({ GEMINI_MODEL: "gemini-3.8-flash" }).agentThinkingLevel, "low");
+  assert.equal(readAiConfig({ GEMINI_MODEL: "gemini-3.1-flash-lite" }).agentThinkingLevel, "minimal");
+  assert.equal(readAiConfig({ GEMINI_MODEL: "gemini-3.1-flash-lite", AI_AGENT_THINKING_LEVEL: "minimal" }).agentThinkingLevel, "minimal");
+  for (const level of ["low", "medium", "high"] as const) {
+    assert.equal(readAiConfig({ GEMINI_MODEL: "gemini-3.8-flash", AI_AGENT_THINKING_LEVEL: level }).agentThinkingLevel, level);
+  }
+  for (const value of ["minimal", "", " low", "LOW", "medium\n", "auto"]) {
+    assert.throws(() => readAiConfig({ GEMINI_MODEL: "gemini-3.8-flash", AI_AGENT_THINKING_LEVEL: value }), {
+      message: "Invalid AI_AGENT_THINKING_LEVEL configuration",
+    });
+  }
+  // Do not infer compatibility for unverified model aliases or future versions.
+  assert.equal(readAiConfig({ GEMINI_MODEL: "gemini-3.8-flash-preview" }).agentThinkingLevel, "minimal");
+});

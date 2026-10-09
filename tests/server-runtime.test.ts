@@ -38,11 +38,11 @@ async function dispatch(path: string, auth: {
     socket: { remoteAddress: proxy.peer ?? "127.0.0.1" },
     resume() {},
   } as unknown as IncomingMessage;
-  const response = {
-    statusCode: 200, headersSent: false, destroyed: false,
+  const response = Object.assign(new EventEmitter(), {
+    statusCode: 200, headersSent: false, destroyed: false, writableEnded: false,
     setHeader(name: string, value: string | number | readonly string[]) { headers.set(name.toLowerCase(), value); },
-    end(value: Buffer) { body = value; },
-  };
+    end(value: Buffer) { body = value; this.writableEnded = true; },
+  });
   const unusedAuth = async () => { throw new Error("Unexpected authentication call"); };
   await createRequestHandler({
     config: { ...config, trustedProxyIp: proxy.trusted },
