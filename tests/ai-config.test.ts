@@ -15,6 +15,7 @@ test("AI configuration defaults to a disabled server-only setup", () => {
     timeoutMs: 30000,
     maxInputCharacters: 10000,
     agentMaxInputCharacters: 64000,
+    agentThinkingLevel: "minimal",
     maxOutputTokens: 1024,
   });
   assert.equal(readAiConfig({ GCP_PROJECT_ID: "" }).project, "");
@@ -44,6 +45,7 @@ test("AI configuration accepts safe identifiers and numeric boundaries", () => {
     timeoutMs: 60000,
     maxInputCharacters: 20000,
     agentMaxInputCharacters: 64000,
+    agentThinkingLevel: "minimal",
     maxOutputTokens: 4096,
   });
 });
@@ -85,4 +87,18 @@ test("AI configuration enforces integer ranges without leaking values", () => {
 
 test("AI configuration accepts documented multi-region locations", () => {
   for (const location of ["global", "us", "eu"]) assert.equal(readAiConfig({ VERTEX_LOCATION: location }).location, location);
+});
+
+test("agent thinking level accepts only explicit server-owned native levels", () => {
+  for (const level of ["minimal", "low", "medium", "high"] as const) {
+    const config = readAiConfig({ AI_AGENT_THINKING_LEVEL: level });
+    assert.equal(config.agentThinkingLevel, level);
+    assert.deepEqual({ ...config, agentThinkingLevel: "minimal" }, readAiConfig({}));
+  }
+  for (const value of ["", " ", "minimal ", " low", "medium\n", "HIGH", "MINIMAL", "auto", "none", "1024",
+    "https://private.example/secret"]) {
+    assert.throws(() => readAiConfig({ AI_AGENT_THINKING_LEVEL: value }), {
+      message: "Invalid AI_AGENT_THINKING_LEVEL configuration",
+    });
+  }
 });
