@@ -15,16 +15,16 @@ test("document workflow integrity with synthetic sources and a serialized fake P
   const profile = { childId, version: 1, data: null, confirmedBy: null, confirmedAt: null, reason: null };
   let records: unknown[] = [], concerns: unknown[] = [], allowed = true;
   const scopes: string[] = [];
-  t.mock.module("../server/care.ts", { exports: { createCareStore: () => ({ reportSource: async () => ({ profile, records }) }) } });
-  t.mock.module("../server/memory.ts", { exports: { createMemoryStore: () => ({ context: async (_user: string, _child: string, scope: string) => {
+  t.mock.module("../server/care.ts", { namedExports: { createCareStore: () => ({ reportSource: async () => ({ profile, records }) }) } });
+  t.mock.module("../server/memory.ts", { namedExports: { createMemoryStore: () => ({ context: async (_user: string, _child: string, scope: string) => {
     scopes.push(scope); return { profileApplicable: true, facts: [] };
   } }) } });
-  t.mock.module("../server/tasks.ts", { exports: { createTaskStore: () => ({ list: async () => ({ items: [] }) }) } });
-  t.mock.module("../server/concern-store.ts", { exports: { createConcernStore: () => ({ list: async () => ({ items: concerns }) }) } });
+  t.mock.module("../server/tasks.ts", { namedExports: { createTaskStore: () => ({ list: async () => ({ items: [] }) }) } });
+  t.mock.module("../server/concern-store.ts", { namedExports: { createConcernStore: () => ({ list: async () => ({ items: concerns }) }) } });
   const { buildFamilyDocumentSnapshot, documentSnapshotValid, documentSourceBasis, loadFamilyDocumentSources } = await import("../server/family-document-sources.ts");
   const { createFamilyDocumentStore } = await import("../server/family-document-store.ts");
   let renderedSnapshot: DocumentSnapshot | null = null, afterRender = () => {};
-  t.mock.module("../server/family-document-pdf.ts", { exports: { renderFamilyDocumentPdf: async (snapshot: DocumentSnapshot) => {
+  t.mock.module("../server/family-document-pdf.ts", { namedExports: { renderFamilyDocumentPdf: async (snapshot: DocumentSnapshot) => {
     renderedSnapshot = structuredClone(snapshot); afterRender(); return Buffer.from("synthetic-renderer");
   } } });
   const { handleFamilyDocumentRequest } = await import("../server/family-document-api.ts");

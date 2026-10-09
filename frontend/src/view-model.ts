@@ -1,5 +1,5 @@
-import type { HomeOverviewView } from "./home-overview";
-import type { PhotoOriginal } from "./photo-view-model";
+import type { HomeOverviewView } from "./home-overview.ts";
+import type { PhotoOriginal } from "./photo-view-model.ts";
 
 // Presentation-only types. They are not an API or a replacement for shared domain contracts.
 export type ConnectionState = "online" | "offline" | "checking";

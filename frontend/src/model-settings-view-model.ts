@@ -1,4 +1,4 @@
-import type { OperationState } from "./view-model";
+import type { OperationState } from "./view-model.ts";
 
 // Frontend projection of ce87370 src/shared/model-settings.ts and docs/API.md.
 export type ModelMode = "platform" | "personal" | "disabled";
