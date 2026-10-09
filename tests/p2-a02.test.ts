@@ -85,7 +85,14 @@ function harness() {
       names.forEach((key, i) => { row[key] = key === "expires_at" ? new Date(params[i]) : params[i]; }); confirmations.push(row); return result();
     }
     if (sql.includes("FROM agent_confirmations")) {
-      if (sql.includes("response_message_id=$3")) return result(confirmations.filter(item => item.response_message_id === params[2] && item.state === "accepted"));
+      if (sql.includes("response_message_id=$3")) return result(confirmations.filter(item => item.response_message_id === params[2] && item.state === "accepted").map(item => {
+        const proposal = proposals.find(value => value.id === item.proposal_id);
+        const response = messages.find(value => value.id === item.response_message_id && value.owner_user_id === item.owner_user_id
+          && value.child_id === item.child_id && value.author_user_id === item.owner_user_id && value.role === "user");
+        return { ...item, proposal_owner: userId, proposal_child: childId, proposal_authorization: run.authorization_version,
+          proposal_epoch: run.data_version.split(":")[0], proposal_state: proposal?.state, saved_proposal_version: proposal?.version,
+          verified_response_id: response?.id ?? null };
+      }).slice(0, 2));
       if (sql.includes("asking_run_id=$1")) return result(confirmations.filter(item => item.asking_run_id === params[0] && item.proposal_id === params[1] && item.proposal_version === params[2]));
       if (sql.includes("JOIN agent_runs")) return result(confirmations.filter(item => item.state === "waiting" && run.trigger_reference === params[2]));
       if (sql.includes("ask_message_id=$3")) return result(confirmations.filter(item => item.state === "asked" && item.ask_message_id === params[2]).slice(0, 2));
@@ -165,6 +172,7 @@ test("persisted specific question accepts once and rejects ambiguity, mixed cons
     const first = h.addProposal(); let effects = 0;
     const store = createAgentConfirmationStore(h.pool, h.cipher, async (_client, _user, _child, _run, _proposal, input) => {
       if (mode === "conflict") throw new FamilyError(409, "version_conflict");
+      Object.assign(h.proposals.find(row => row.id === first.id), { state: "accepted", version: 2 });
       effects++; assert.equal(input.confirmShared, false); return { ...first, status: "accepted", version: 2, result: { kind: "memory_fact", id: randomUUID(), version: 2 } };
     });
     const confirmation = await store.requestConfirmation(h.scope, h.run.id, { runId: h.run.id, proposalId: first.id, expectedVersion: 1, workId: null });

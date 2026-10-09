@@ -1,0 +1,265 @@
+{
+  "artifact": "CHAT_CONFIRMATION_RETRY_20261010",
+  "recordedAtUtc": "2026-10-09T18:26:55.191961+00:00",
+  "repository": "2NTTY/child-ai-caregiver",
+  "baseCommit": "eda25a4218da1de0ea6eae3064e5868081addeb5",
+  "baseTree": "440dda254973ec9c127267e563698c9bfa5fe966",
+  "baselineVerification": {
+    "originalRedCommit": "e26bf75c58494c0c879b673c4c6396347daea4be",
+    "rebase": "All 14 #175 files verified against remote Git blobs and overlaid before final checks; this slice's three existing code/test base blobs are unchanged.",
+    "codeManifestSha256": "32b3745056ff2138c3c95fb3ae9db4b1e14e51f48410956bf7085f16d9abc0b0"
+  },
+  "scope": {
+    "productFiles": 1,
+    "newTests": 1,
+    "existingFixtureAdapters": 2,
+    "contract": "Same authorized client/lock validates existing accepted receipts for both consume and read-only paths; no migration/DTO/new SQL dependency.",
+    "notExpanded": "No current fact/document body-source redaction, work completion binding, receipt framework, durable resume or production activation."
+  },
+  "files": [
+    {
+      "path": "server/agent-confirmation-store.ts",
+      "baseBlob": "c1b5fb0c2133a5fd85f4c2534453869be3dbcca0",
+      "sha256": "9cfc3f1320c780e75e27dbe205441c4558b8f72fc284682661e70b95ccfed9bb",
+      "gitBlob": "535d01df45750424efdd16b3ba35f6befe3dd0ad",
+      "bytes": 18782,
+      "patch": "evidence/server_agent-confirmation-store.ts.patch"
+    },
+    {
+      "path": "tests/agent-confirmation-retry.test.ts",
+      "baseBlob": null,
+      "sha256": "3a6d3d81a615541484b38985a67079ec1ec8251d83bbdfb3b3de0c0d7f100346",
+      "gitBlob": "bd09e9df259b845f0a7c0f6a80d392946097df61",
+      "bytes": 9199,
+      "patch": "evidence/tests_agent-confirmation-retry.test.ts.patch"
+    },
+    {
+      "path": "tests/p2-a02.test.ts",
+      "baseBlob": "29f6c68cd404436f5983e78f6aa2b7f410cdf744",
+      "sha256": "4eec7034c13d67828134a4f53cb6f8e639c8ab527a521226fbf87806a917536c",
+      "gitBlob": "cd4453aa5eaa0891ae214a90a2b8d014a9930e76",
+      "bytes": 20002,
+      "patch": "evidence/tests_p2-a02.test.ts.patch"
+    },
+    {
+      "path": "tests/product-agent-durable-cancellation.test.ts",
+      "baseBlob": "07bba3ad03142947ccbd51c8d159d0942c8d35ae",
+      "sha256": "b8c8d1aeb62a42f225528be06e74fa05490bc6c42768334ed3395cb8bb9c9bf9",
+      "gitBlob": "9a260957221ada31872c4d761dfcb3e974ee88b5",
+      "bytes": 46939,
+      "patch": "evidence/tests_product-agent-durable-cancellation.test.ts.patch"
+    }
+  ],
+  "verification": [
+    {
+      "log": "01-original-red.log",
+      "exitCode": 1,
+      "chunkId": "a3ba69",
+      "note": "Original read-only diagnosis on #174; copied byte-for-byte, script imports original source path.",
+      "cwd": "/workspace/scratch/c112a98a8be9",
+      "command": "OFFLINE_AUDIT_RUN=confirmation-accepted-retry-red node --import ./confirmation_receipt_diagnosis_20261009/offline-guard.mjs ./confirmation_receipt_diagnosis_20261009/accepted-retry.mjs",
+      "sha256": "853b62171b7ad9b15fe8c1cbb9800d7cfdc570f7197673783c56f978110578e1",
+      "output": "{\"control\":\"unchanged authority permits the historical receipt without replay\",\"currentAuthorization\":\"2\",\"guardedReader\":\"confirmation_receipt_changed\",\"shortcutReturnedOldResult\":true,\"originalProposalRunId\":\"00000000-0000-4000-8000-000000000004\",\"runtimeCalls\":1,\"oldConfirmationSentIntoFreshRuntime\":true,\"decisions\":0,\"businessWrites\":0,\"realModelCalls\":0}\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: An accepted confirmation from an old authorization version must not enter a newly claimed runtime\n+ actual - expected\n\n+ {\n+   childId: '00000000-0000-4000-8000-000000000001',\n+   createdAt: '2026-10-09T00:00:00Z',\n+   expiresAt: '2026-10-09T00:01:00Z',\n+   id: '00000000-0000-4000-8000-000000000003',\n+   result: {\n+     id: '00000000-0000-4000-8000-000000000007',\n+     kind: 'memory_fact',\n+     version: 2\n+   },\n+   runId: '00000000-0000-4000-8000-000000000004',\n+   status: 'accepted',\n+   targetLabel: null,\n+   value: {\n+     content: 'Synthetic historical content from prior authority',\n+     intendedVisibility: 'private',\n+     key: 'Synthetic confirmed value',\n+     kind: 'memory_fact',\n+     validUntil: null\n+   },\n+   version: 2\n+ }\n- null\n\n    at file:///workspace/scratch/c112a98a8be9/confirmation_receipt_diagnosis_20261009/accepted-retry.mjs:50:8 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: {\n    id: '00000000-0000-4000-8000-000000000003',\n    runId: '00000000-0000-4000-8000-000000000004',\n    childId: '00000000-0000-4000-8000-000000000001',\n    version: 2,\n    status: 'accepted',\n    createdAt: '2026-10-09T00:00:00Z',\n    expiresAt: '2026-10-09T00:01:00Z',\n    value: {\n      kind: 'memory_fact',\n      key: 'Synthetic confirmed value',\n      content: 'Synthetic historical content from prior authority',\n      validUntil: null,\n      intendedVisibility: 'private'\n    },\n    result: {\n      kind: 'memory_fact',\n      id: '00000000-0000-4000-8000-000000000007',\n      version: 2\n    },\n    targetLabel: null\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n",
+      "exitCodeSource": "exec_command result, identified by chunkId; empty tsc stdout is not itself success"
+    },
+    {
+      "log": "02-focused-red.log",
+      "exitCode": 1,
+      "chunkId": "268fd3",
+      "note": "New real-store/ProductAgent regression before the fix, e26 baseline.",
+      "cwd": "/workspace/scratch/c112a98a8be9/confirmation_retry_authority_20261009/source",
+      "command": "OFFLINE_AUDIT_RUN=confirmation-retry-red node --import ../evidence/offline-guard.mjs --test --test-name-pattern='accepted confirmation retry rejects' tests/agent-confirmation-retry.test.ts",
+      "sha256": "e88e074f09d3e12e20eeb183f68cea2bba8ee4bfae22342aac74f18a1cd7b719",
+      "output": "✖ accepted confirmation retry rejects changed authority before a fresh ProductAgent run (5.821401ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 287.986062\n\n✖ failing tests:\n\ntest at tests/agent-confirmation-retry.test.ts:79:1\n✖ accepted confirmation retry rejects changed authority before a fresh ProductAgent run (5.821401ms)\n  AssertionError [ERR_ASSERTION]: Missing expected rejection.\n      at async TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/confirmation_retry_authority_20261009/source/tests/agent-confirmation-retry.test.ts:83:3)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    expected: { code: 'confirmation_receipt_changed' },\n    operator: 'rejects',\n    diff: 'simple'\n  }\n",
+      "exitCodeSource": "exec_command result, identified by chunkId; empty tsc stdout is not itself success"
+    },
+    {
+      "log": "03-focused-green.log",
+      "exitCode": 0,
+      "chunkId": "c7c239",
+      "tests": 6,
+      "note": "Initial fix on e26 baseline.",
+      "cwd": "/workspace/scratch/c112a98a8be9/confirmation_retry_authority_20261009/source",
+      "command": "OFFLINE_AUDIT_RUN=confirmation-retry-focused node --import ../evidence/offline-guard.mjs --test --test-name-pattern='accepted confirmation retry|accepted receipt readers|accepted receipt mismatches|persisted specific question|recorded confirmation lookup|original receipt reader uses only' tests/agent-confirmation-retry.test.ts tests/p2-a02.test.ts tests/product-agent-durable-cancellation.test.ts",
+      "sha256": "32e9e348323137bf5a675bf18f73eb3b6207521b4f8ee9708912db3e87478261",
+      "output": "✔ accepted confirmation retry rejects changed authority before a fresh ProductAgent run (6.02456ms)\n✔ accepted receipt readers preserve valid expired results and genuinely absent receipts (2.002665ms)\n✔ accepted receipt mismatches and lookup failures never become absence or replay (4.022857ms)\n✔ persisted specific question accepts once and rejects ambiguity, mixed consent and original decision conflict (15.839462ms)\n✔ original receipt reader uses only the authorized leased client and projects original references (10.378119ms)\n✔ recorded confirmation lookup is read-only and never executes or retires a decision (1.370176ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 912.610609\n",
+      "exitCodeSource": "exec_command result, identified by chunkId; empty tsc stdout is not itself success"
+    },
+    {
+      "log": "04-server-tsc.log",
+      "exitCode": 0,
+      "chunkId": "2b1043",
+      "note": "No stdout; exit code from exec response; e26 baseline.",
+      "cwd": "/workspace/scratch/c112a98a8be9/confirmation_retry_authority_20261009/source",
+      "command": "OFFLINE_AUDIT_RUN=confirmation-retry-server-tsc node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output": "",
+      "exitCodeSource": "exec_command result, identified by chunkId; empty tsc stdout is not itself success"
+    },
+    {
+      "log": "05-rebased-focused-green.log",
+      "exitCode": 0,
+      "chunkId": "1622ef",
+      "tests": 6,
+      "note": "Final code, #175 14-file overlay hash verified against eda Git tree.",
+      "cwd": "/workspace/scratch/c112a98a8be9/confirmation_retry_authority_20261009/source",
+      "command": "OFFLINE_AUDIT_RUN=confirmation-retry-rebased node --import ../evidence/offline-guard.mjs --test --test-name-pattern='accepted confirmation retry|accepted receipt readers|accepted receipt mismatches|persisted specific question|recorded confirmation lookup|original receipt reader uses only' tests/agent-confirmation-retry.test.ts tests/p2-a02.test.ts tests/product-agent-durable-cancellation.test.ts",
+      "sha256": "b7b00d29dfce4c9ba7ed8734db936330858f686d4b42af27aca9816f5f39d2ff",
+      "output": "✔ accepted confirmation retry rejects changed authority before a fresh ProductAgent run (4.556147ms)\n✔ accepted receipt readers preserve valid expired results and genuinely absent receipts (1.593917ms)\n✔ accepted receipt mismatches and lookup failures never become absence or replay (3.127034ms)\n✔ persisted specific question accepts once and rejects ambiguity, mixed consent and original decision conflict (14.05149ms)\n✔ original receipt reader uses only the authorized leased client and projects original references (8.134762ms)\n✔ recorded confirmation lookup is read-only and never executes or retires a decision (1.268954ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 878.914005\n",
+      "exitCodeSource": "exec_command result, identified by chunkId; empty tsc stdout is not itself success"
+    },
+    {
+      "log": "06-final-server-tsc.log",
+      "exitCode": 0,
+      "chunkId": "8aa53d",
+      "note": "No stdout; exit code from exec response; eda baseline.",
+      "cwd": "/workspace/scratch/c112a98a8be9/confirmation_retry_authority_20261009/source",
+      "command": "OFFLINE_AUDIT_RUN=confirmation-retry-final-tsc node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output": "",
+      "exitCodeSource": "exec_command result, identified by chunkId; empty tsc stdout is not itself success"
+    }
+  ],
+  "originalRed": {
+    "scriptSha256": "638edd7dcb00c5f703ee7a0f1c67471502bde35874fd8a3e7a6ed86be6d8996d",
+    "script": "import assert from 'node:assert/strict';\nimport { createAgentConfirmationStore } from '../followup_cancellation_recovery_20261009/source/server/agent-confirmation-store.ts';\nimport { createProductAgent } from '../followup_cancellation_recovery_20261009/source/server/product-agent.ts';\nimport { createStorageCipher } from '../followup_cancellation_recovery_20261009/source/server/storage-crypto.ts';\nconst userId='synthetic-user',childId='00000000-0000-4000-8000-000000000001',workspaceId='synthetic-workspace';\nconst confirmationId='00000000-0000-4000-8000-000000000002',proposalId='00000000-0000-4000-8000-000000000003';\nconst originalRunId='00000000-0000-4000-8000-000000000004',responseId='00000000-0000-4000-8000-000000000005';\nconst newRunId='00000000-0000-4000-8000-000000000006',factId='00000000-0000-4000-8000-000000000007';\nconst cipher=createStorageCipher(Buffer.alloc(32,73));\nconst result={id:proposalId,runId:originalRunId,childId,version:2,status:'accepted',createdAt:'2026-10-09T00:00:00Z',expiresAt:'2026-10-09T00:01:00Z',\n value:{kind:'memory_fact',key:'Synthetic confirmed value',content:'Synthetic historical content from prior authority',validUntil:null,intendedVisibility:'private'},\n result:{kind:'memory_fact',id:factId,version:2},targetLabel:null};\nconst row={id:confirmationId,owner_user_id:userId,child_id:childId,asking_run_id:originalRunId,proposal_run_id:originalRunId,proposal_id:proposalId,\n proposal_version:1,authorization_version:'1',storage_epoch:'synthetic-epoch',policy_version:1,work_id:null,work_version:null,state:'accepted',\n ask_message_id:'00000000-0000-4000-8000-000000000008',response_message_id:responseId,expires_at:new Date('2026-10-09T00:01:00Z'),\n payload_encrypted:cipher.encrypt(JSON.stringify({hash:'synthetic-hash',question:'Synthetic specific confirmation',shared:false,result}),`agent-confirmation:${childId}:${userId}:${confirmationId}`),\n proposal_owner:userId,proposal_child:childId,proposal_authorization:'1',proposal_epoch:'synthetic-epoch',proposal_state:'accepted',saved_proposal_version:2};\nlet currentAuthorization='1',decisions=0,businessWrites=0;const queries=[];\nconst rows=(values=[])=>({rows:values,rowCount:values.length});\nconst query=async(sql,parameters=[])=>{\n queries.push(sql);if(/^(INSERT|UPDATE|DELETE)/u.test(sql)){businessWrites++;throw new Error('No business writes permitted');}\n if(['BEGIN','COMMIT','ROLLBACK'].includes(sql)||sql.startsWith('SET LOCAL'))return rows();\n if(sql==='SELECT workspace_id FROM children WHERE id=$1')return rows([{workspace_id:workspaceId}]);\n if(sql.startsWith('SELECT owner_user_id, access_version'))return rows([{owner_user_id:userId,access_version:currentAuthorization}]);\n if(sql.startsWith('SELECT 1 FROM children'))return rows([{}]);\n if(sql.startsWith('SELECT access_version::text,storage_epoch::text FROM workspaces'))return rows([{access_version:currentAuthorization,storage_epoch:'synthetic-epoch'}]);\n if(sql.startsWith('SELECT * FROM agent_confirmations WHERE owner_user_id=$1'))return rows([structuredClone(row)]);\n if(sql.includes('FROM agent_confirmations c'))return rows([structuredClone(row)]);\n throw new Error('Unexpected synthetic query: '+sql);\n};\nconst pool={query,connect:async()=>({query,release(){}})};\nconst confirmations=createAgentConfirmationStore(pool,cipher,async()=>{decisions++;throw new Error('No decision may replay');});\nassert.deepEqual(await confirmations.recordedConfirmation(userId,childId,responseId),{proposalId});\nassert.deepEqual(await confirmations.consumeConfirmation(userId,childId,responseId),result);\ncurrentAuthorization='2';\nawait assert.rejects(confirmations.recordedConfirmation(userId,childId,responseId),error=>error.code==='confirmation_receipt_changed');\nconst stale=await confirmations.consumeConfirmation(userId,childId,responseId);\nlet receivedConfirmation=null,storedResult=null,runtimeCalls=0;\nconst store={consumeConfirmation:confirmations.consumeConfirmation,claim:async()=>({runId:newRunId,scope:{userId,childId,workspaceId,authorizationVersion:'2',dataVersion:'synthetic-epoch:8'},\n created:true,sourceMessageId:responseId,state:'running',expiresAt:new Date(Date.now()+60000).toISOString()}),authorize:async()=>true,\n finish:async(_scope,value)=>{storedResult=value;return true;},get:async()=>storedResult};\nconst agent=createProductAgent({store,runtime:{run:async input=>{runtimeCalls++;receivedConfirmation=input.context.confirmationResult;return {runId:newRunId,status:'stopped',stopReason:'unavailable',text:null,tools:[],counts:{modelCalls:0,toolCalls:0,queryEmbeddings:0}};}},\n memory:{context:async()=>({summary:null,truncated:{messages:false}})},chat:{listForUser:async()=>({messages:[{id:responseId,role:'user',text:'確認'}]})},tasks:{},knowledge:{}});\nawait agent.reply(userId,childId,responseId,async()=>true);\nconsole.log(JSON.stringify({control:'unchanged authority permits the historical receipt without replay',currentAuthorization,\n guardedReader:'confirmation_receipt_changed',shortcutReturnedOldResult:stale?.value?.content===result.value.content,\n originalProposalRunId:stale?.runId,runtimeCalls,oldConfirmationSentIntoFreshRuntime:receivedConfirmation?.runId===originalRunId,\n decisions,businessWrites,realModelCalls:0}));\nassert.equal(decisions,0);assert.equal(businessWrites,0);\nassert.equal(receivedConfirmation,null,'An accepted confirmation from an old authorization version must not enter a newly claimed runtime');\n",
+    "note": "Exact original script/log preserved. The script still imports the original #174 source; it is not represented as a runnable current-source green."
+  },
+  "networkAudit": {
+    "auditCount": 10,
+    "attempts": 0,
+    "guardSha256": "f23398a3fd247e61bb2ea66fab6eca017dc054e015e867328debfeb2b03c8b96",
+    "files": [
+      {
+        "path": "network-audit-confirmation-accepted-retry-red-8.json",
+        "sha256": "e76e1649e740c9cb326964525a53bd228ecb5540ff0e1580d8890552cca6f587",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-confirmation-retry-final-tsc-5.json",
+        "sha256": "11284ec7c87751aeb8d0e4ec806d5133d32eac9e291e22afd26535ce20e4eef0",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-confirmation-retry-focused-12.json",
+        "sha256": "9fee5027b2d0b5a5a844ea0bd4085a9232d17422bf77a20d3263ada706c06ff6",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-confirmation-retry-focused-13.json",
+        "sha256": "aa507775b900843f5bc0343f84b2fa745cd4a6c71ca68e6ccc83f6c07706ccbe",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-confirmation-retry-focused-14.json",
+        "sha256": "155ae5403d94c7054d9ae2b25afc1a8598d3b7e5464640806c86f30d4df8ce3e",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-confirmation-retry-rebased-12.json",
+        "sha256": "9fee5027b2d0b5a5a844ea0bd4085a9232d17422bf77a20d3263ada706c06ff6",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-confirmation-retry-rebased-13.json",
+        "sha256": "aa507775b900843f5bc0343f84b2fa745cd4a6c71ca68e6ccc83f6c07706ccbe",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-confirmation-retry-rebased-14.json",
+        "sha256": "155ae5403d94c7054d9ae2b25afc1a8598d3b7e5464640806c86f30d4df8ce3e",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-confirmation-retry-red-12.json",
+        "sha256": "9fee5027b2d0b5a5a844ea0bd4085a9232d17422bf77a20d3263ada706c06ff6",
+        "attempts": 0
+      },
+      {
+        "path": "network-audit-confirmation-retry-server-tsc-5.json",
+        "sha256": "11284ec7c87751aeb8d0e4ec806d5133d32eac9e291e22afd26535ce20e4eef0",
+        "attempts": 0
+      }
+    ]
+  },
+  "verificationModel": "Real confirmation store and ProductAgent; synthetic encrypted rows, Pool and runtime spy. Existing pending confirmation and original receipt reader tests use synthetic SQL responses. This does not test SQL parsing, database locks or concurrent PostgreSQL.",
+  "notRun": [
+    "Live PostgreSQL/lock/concurrency",
+    "Real model/embedding",
+    "Cloud/Firestore/Emulator",
+    "Browser/UI/preview/deployment",
+    "Full repository tests"
+  ],
+  "externalEffects": {
+    "realModelCalls": 0,
+    "newResources": 0,
+    "permissionsChanged": false,
+    "realFamilyData": false,
+    "deployment": false,
+    "quota": "Existing 20/20 true-model limit remains exhausted."
+  },
+  "documentChecks": {
+    "worklogPrefixBytes": 313045,
+    "worklogPrefixSha256": "3e21b770e7f5378bf213744a609d68978cdc8821f40a43e980a274e1b22fc971",
+    "appendOnly": true,
+    "codeFrozen": true,
+    "finalWorklogPrefixBytes": 315790,
+    "finalWorklogPrefixSha256": "c4eb75b4951af8f11687a11ab4cd2eb7201a5c4880a540494490f00d723e3dd2"
+  },
+  "gates": {
+    "independentReview": "pass; no blocking findings",
+    "rootFinalAcceptance": "Allow exact 9 files",
+    "pullRequest": "not created",
+    "deployed": false
+  },
+  "independentReview": {
+    "decision": "pass",
+    "blockingFindings": [],
+    "reportSha256": "84e8c53aff0427d6afec9c51a3e4513a6992ab7edf9d26292d817270515810ee",
+    "reviewedCodeManifestSha256": "32b3745056ff2138c3c95fb3ae9db4b1e14e51f48410956bf7085f16d9abc0b0",
+    "reviewedDocsManifestSha256": "b1670a446fe5babfe14b9514904f21ae2e82b10400d9c83a46376a43724d2d65",
+    "reviewerSupplement": {
+      "command": "OFFLINE_AUDIT_RUN=review-supplement node --import ../review/offline-guard.mjs --test ../review/supplemental-review.test.ts",
+      "cwd": "/workspace/scratch/c112a98a8be9/confirmation_retry_authority_20261009/source",
+      "exitCode": 0,
+      "execChunkId": "d7a83b",
+      "tests": 1,
+      "pass": 1,
+      "files": [
+        {
+          "path": "network-audit-review-supplement-15.json",
+          "sha256": "c42c7c0d77dfa344d41e25e43ac23ee3f29a0be260af4c9625d2390df9c61b9a"
+        },
+        {
+          "path": "offline-guard.mjs",
+          "sha256": "f23398a3fd247e61bb2ea66fab6eca017dc054e015e867328debfeb2b03c8b96"
+        },
+        {
+          "path": "supplemental-review.log",
+          "sha256": "d9ca1a6da7d94f615d9157481f552b37c037ca479603b3cca10ce22a6b5e3a64"
+        },
+        {
+          "path": "supplemental-review.test.ts",
+          "sha256": "dddfa2e6fa994ce736a6e5498374419da8695640d939e12624fa0d8cd0e1f885"
+        }
+      ],
+      "networkAttempts": 0,
+      "output": "✔ review: exact bigint authority, integer proposal versions and bounded metadata query (5.093597ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 307.200197\n"
+    },
+    "note": "Reviewer read-only evidence; this one supplemental synthetic test is separate from the six author tests. Final documentation status changes follow root Allow."
+  },
+  "finalAcceptance": {
+    "decision": "Allow",
+    "recordedAtUtc": "2026-10-09T18:29:50.903181+00:00",
+    "scope": "Exact 4 code/test files plus 5 document/artifact files; normal PR only after publication freeze.",
+    "basis": [
+      "Root read the store diff, original red, final eda six focused passes and Server typecheck evidence.",
+      "Independent code/document review and one bigint/int-version/SQL-shape supplement passed.",
+      "Committed effects, valid expired idempotency, original ciphertext and all verification limits are retained."
+    ],
+    "codeChangedAfterReview": false,
+    "productTestsRerunAfterReview": false,
+    "pullRequestCreated": false,
+    "deployed": false
+  }
+}

@@ -39,35 +39,42 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
     const policy = (await client.query<{ version: number }>("SELECT version FROM agent_operation_policies WHERE user_id=$1 AND child_id=$2", [userId, childId])).rows[0];
     return { ...row, policyVersion: policy?.version ?? 0 };
   }
+  async function acceptedReceipt(client: PoolClient, workspaceId: string, userId: string, childId: string, responseMessageId: string, lock: boolean): Promise<AgentProposal | null> {
+    // Both read paths share the caller's authorized transaction, never a second connection.
+    const current = (await client.query<{ access_version: string; storage_epoch: string }>(
+      "SELECT access_version::text,storage_epoch::text FROM workspaces WHERE id=$1", [workspaceId])).rows[0];
+    const rows = (await client.query<Row & { proposal_owner: string; proposal_child: string;
+      proposal_authorization: string; proposal_epoch: string; proposal_state: string; saved_proposal_version: number; verified_response_id: string | null }>(`SELECT c.*,
+        r.owner_user_id AS proposal_owner,r.child_id AS proposal_child,r.authorization_version::text AS proposal_authorization,
+        split_part(r.data_version,':',1) AS proposal_epoch,p.state AS proposal_state,p.version AS saved_proposal_version,
+        m.id AS verified_response_id
+      FROM agent_confirmations c
+      LEFT JOIN agent_runs r ON r.id=c.proposal_run_id
+      LEFT JOIN agent_proposals p ON p.id=c.proposal_id AND p.run_id=r.id
+      LEFT JOIN chat_messages m ON m.id=c.response_message_id AND m.owner_user_id=c.owner_user_id
+        AND m.child_id=c.child_id AND m.author_user_id=c.owner_user_id AND m.role='user'
+      WHERE c.owner_user_id=$1 AND c.child_id=$2 AND c.response_message_id=$3 AND c.state='accepted'
+      ORDER BY c.id LIMIT 2${lock ? " FOR UPDATE OF c" : ""}`, [userId, childId, responseMessageId])).rows;
+    if (rows.length > 1) throw conflict("confirmation_receipt_limit");
+    const row = rows[0];
+    if (!row) return null;
+    if (!current || row.verified_response_id !== responseMessageId
+      || String(row.authorization_version) !== current.access_version || row.storage_epoch !== current.storage_epoch
+      || row.proposal_owner !== userId || row.proposal_child !== childId || row.proposal_state !== "accepted"
+      || row.proposal_authorization !== current.access_version || row.proposal_epoch !== current.storage_epoch)
+      throw conflict("confirmation_receipt_changed");
+    // Expiration limits a new decision, never hides an already committed effect.
+    const result = decode(row).result;
+    if (!result?.result || result.id !== row.proposal_id || result.runId !== row.proposal_run_id
+      || result.childId !== childId || result.status !== "accepted" || result.version !== row.saved_proposal_version)
+      throw conflict("confirmation_receipt_changed");
+    return result;
+  }
   return {
     async recordedConfirmation(userId: string, childId: string, responseMessageId: string): Promise<{ proposalId: string } | null> {
       return access(userId, childId, async (client, workspaceId) => {
-        const current = (await client.query<{ access_version: string; storage_epoch: string }>(
-          "SELECT access_version::text,storage_epoch::text FROM workspaces WHERE id=$1", [workspaceId])).rows[0];
-        const rows = (await client.query<Row & { proposal_owner: string; proposal_child: string;
-          proposal_authorization: string; proposal_epoch: string; proposal_state: string; saved_proposal_version: number }>(`SELECT c.*,
-            r.owner_user_id AS proposal_owner,r.child_id AS proposal_child,r.authorization_version::text AS proposal_authorization,
-            split_part(r.data_version,':',1) AS proposal_epoch,p.state AS proposal_state,p.version AS saved_proposal_version
-          FROM agent_confirmations c
-          LEFT JOIN agent_runs r ON r.id=c.proposal_run_id
-          LEFT JOIN agent_proposals p ON p.id=c.proposal_id AND p.run_id=r.id
-          JOIN chat_messages m ON m.id=c.response_message_id AND m.owner_user_id=c.owner_user_id
-            AND m.child_id=c.child_id AND m.author_user_id=c.owner_user_id AND m.role='user'
-          WHERE c.owner_user_id=$1 AND c.child_id=$2 AND c.response_message_id=$3 AND c.state='accepted'
-          ORDER BY c.id LIMIT 2`, [userId, childId, responseMessageId])).rows;
-        if (rows.length > 1) throw conflict("confirmation_receipt_limit");
-        const row = rows[0];
-        if (!row) return null;
-        if (String(row.authorization_version) !== current.access_version || row.storage_epoch !== current.storage_epoch
-          || row.proposal_owner !== userId || row.proposal_child !== childId || row.proposal_state !== "accepted"
-          || row.proposal_authorization !== current.access_version || row.proposal_epoch !== current.storage_epoch)
-          throw conflict("confirmation_receipt_changed");
-        // Expiration limits a new decision, never hides an already committed effect.
-        const result = decode(row).result;
-        if (!result?.result || result.id !== row.proposal_id || result.runId !== row.proposal_run_id
-          || result.childId !== childId || result.status !== "accepted" || result.version !== row.saved_proposal_version)
-          throw conflict("confirmation_receipt_changed");
-        return { proposalId: result.id };
+        const result = await acceptedReceipt(client, workspaceId, userId, childId, responseMessageId, false);
+        return result ? { proposalId: result.id } : null;
       });
     },
     async requestConfirmation(agentScope: AgentScope, askingRunId: string, raw: z.infer<typeof requestAgentConfirmationSchema>): Promise<AgentConfirmation | null> {
@@ -134,8 +141,8 @@ export function createAgentConfirmationStore(pool: Pool, cipher: StorageCipher, 
     },
     async consumeConfirmation(userId: string, childId: string, responseMessageId: string): Promise<AgentProposal | null> {
       return access(userId, childId, async (client, workspaceId) => {
-        const recorded = (await client.query<Row>("SELECT * FROM agent_confirmations WHERE owner_user_id=$1 AND child_id=$2 AND response_message_id=$3 AND state='accepted' FOR UPDATE", [userId, childId, responseMessageId])).rows[0];
-        if (recorded) return decode(recorded).result;
+        const recorded = await acceptedReceipt(client, workspaceId, userId, childId, responseMessageId, true);
+        if (recorded) return recorded;
         const message = (await client.query<{ id: string; role: string; text_encrypted: string; created_at: Date }>("SELECT id,role,text_encrypted,created_at FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND author_user_id=$3 AND role='user' FOR SHARE", [responseMessageId, childId, userId])).rows[0];
         if (!message) return null;
         const previous = (await client.query<{ id: string; role: string }>("SELECT id,role FROM chat_messages WHERE child_id=$1 AND owner_user_id=$2 AND (created_at,id)<(SELECT created_at,id FROM chat_messages WHERE id=$3) ORDER BY created_at DESC,id DESC LIMIT 1", [childId, userId, responseMessageId])).rows[0];

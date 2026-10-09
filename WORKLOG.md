@@ -1974,3 +1974,16 @@
 - 2026-10-10T02:12:02+08:00 review 修正追加：獨立 reviewer 以原候選證明 daily execute 後 authorize() reject 被當成 provider unavailable，仍返回 keyword_degraded 並讀 candidates；原review紅與新增回歸原紅均保留。只修 embedding gateway 的受信 root／授權錯誤分類，並在既有新測試加入 provider 前授權異常、root讀錯、provider後授權異常及真正provider unavailable四個情境；前述權威異常均停止，只有provider問題維持明示降級。修後3／3必要定向（含2項舊行為）與Server typecheck exit0；上文8／8核心及6／6受影響是修前證據，沒有在修後重跑，不改稱末版全通過。12份本任務audit零網絡，review原紅另1份零嘗試audit。新code manifest SHA-256為492a07d8ea997c569fba58f431ea9168a32c01a14e19d71f749badfece4d66b0，舊99ff6e7c快照亦保留。dot已轉交修後程式review無剩餘阻塞的結論；文件覆核及dot最終验收仍待完成，未凍結publication manifest、建立PR或部署。
 
 - 2026-10-10T02:15:38+08:00 最終裁決追加：dot 已親讀 gateway／quota／services 核心diff及STATUS，核對修前8＋6與修後3／3、Server typecheck時序及原SQL／review紅；程式／文件獨立覆核均無剩餘阻塞，最終驗收Allow此精確9份code／tests（manifest SHA-256 492a07d8ea997c569fba58f431ea9168a32c01a14e19d71f749badfece4d66b0）＋5份必要文件／artifact，准正常PR交付。此追加僅更新裁決／狀態，九份code／tests hash不變，未重跑產品測試；14檔publication manifest已凍結，其他檔不納入。原失敗、修前／修後證據層級、真雲端／競爭／Emulator／HTTP／UI與完整F01／F02／restore／resume未驗、20／20用盡及未全平台SQL共額的界線完整保留。尚未建立本切片PR、合併／發布／部署或啟用正式流量。
+
+
+<a id="log-20261010-confirmation-retry-authority"></a>
+## 2026-10-10｜已接受確認重試共用原收據權威
+
+- Recorded At：2026-10-10T02:26:55.193375+08:00；基線 master `eda25a4218da1de0ea6eae3064e5868081addeb5`（#175 已合併、未部署），tree `440dda254973ec9c127267e563698c9bfa5fe966`。指定 Astra xhigh 按 dot 核准的窄 scope 實作、必要測試及文件；dot 統籌、獨立 review 及最終裁決另行進行。人工驗收未進行。
+- 原 consumeConfirmation 對 accepted 直接解密返回，繞過既有 recordedConfirmation 的 auth／epoch／proposal／result 驗證。真 store＋ProductAgent 搭合成 Pool／runtime spy 證明，原效果提交但 response run 未 claim 的重试，在 accessVersion 改變後仍把舊內容交新 runtime；原診斷及新回歸兩份紅原樣保留，無真模型、外發或業務重做。
+- 局部抽取 acceptedReceipt，兩路徑共原已授權 client／workspace 鎖，consume 保留 confirmation 行鎖；本人 user 回覆 join 失效仍留作已存在的失效收據，不回 null 進入新決定。核目前權威、原 proposal owner／child／accepted version、原 result ID／run／child／version；overflow、lookup failure、綁定失效均停止。不改原密文／效果／終態、不調 decide，有效過期 accepted 保持原結果冪等。
+- e26 基線原紅 exit1；修後6项定向及 Server typecheck exit0。#175 合併後按 remote blob 核全部14檔並覆入隔離 source，確認本切片3份既有檔基線不變；最終 eda 基線同6項定向及 Server typecheck 再次 exit0。新測試覆蓋舊結果不進新 run、有效過期／真 absence、epoch／response／proposal／payload／lookup／overflow；3個受影響既有測試覆蓋 pending 確認、純讀原收據及同 leased client。10份 audit 零 network attempts；命令、原輸出／退出碼與hash見[固定證據](artifacts/verification/CHAT_CONFIRMATION_RETRY_20261010.json)。
+- 新增測試替身不代替真 PostgreSQL、row lock／並發或跨程序故障；未跑全量、真模型／Emulator／雲端／UI，沒有 migration、DTO、新依賴、資源、權限／正式資料變更或部署。此修只統一 accepted receipt 權威，不把歷史正文稱為目前來源重驗、整個工作完成或 durable resume；per-work outcome／同輪自動結案／完整 F01、Auth／restore／outbox／fencing 門檻維持，三其他 Agent 仍只接口，20／20 真模型額度耗盡不重置。
+- 四份 code／tests 已 freeze，原紅逐 byte 保留；必要契約／PLAN／STATUS 更新且本 LOG 嚴格 append-only。獨立 review／dot 最終驗收待完成，尚未建立本切片 PR，未合併／部署，不以測試通過代替最終裁決。
+
+- 2026-10-10T02:29:50.903194+08:00 最終裁決追加：dot 已親審 store 核心 diff、原紅、eda 基線6項定向／Server typecheck 及文件界線，獨立 reviewer 程式／5份文件覆核無 blocking；另1項 bigint 精確授權版本、proposal int 版本及 SQL 形狀補驗 exit0、零網絡。review report SHA-256 84e8c53aff0427d6afec9c51a3e4513a6992ab7edf9d26292d817270515810ee；此為合成／靜態邊界補驗，不冒稱真 PostgreSQL parser／鎖競爭。dot 最終 Allow 精確4份 code／tests＋5份 docs／artifact正常 PR 交付，9檔 publication manifest 已凍結。四份程式hash不变、未重跑產品測試；原紅、10份作者 audit＋1份 reviewer audit、舊 ciphertext及有效過期冪等證據保留，WORKLOG既有完整prefix不變。尚未建立本切片PR，未合併／發布／部署，不解鎖全流程／真模型／F01／resume／restore／outbox／fencing。
