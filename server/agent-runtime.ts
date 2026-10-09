@@ -67,6 +67,8 @@ export interface AgentRunInput {
   deadlineMs?: number;
   availableInputs?: readonly string[];
   context?: Record<string, unknown>;
+  /** Trusted private summary for the first provider request only; never persisted in the session. */
+  initialConversationSummary?: import("./memory-summary.ts").InitialConversationSummary;
   finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext, reason: "normal" | "model_limit") => Promise<string | null>;
   /** Opt-in Server presentation after a confirmed model limit; never retries tools. */
   finalizeOnModelLimit?: boolean;
@@ -182,6 +184,7 @@ export function createAgentRuntime(options: {
           };
           let currentInstruction = "";
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames,
+            ...(input.trigger.kind === "interactive" && input.recipeId === "product-interactive" ? { initialConversationSummary: input.initialConversationSummary } : {}),
             projectCapabilityConfig: capabilitySelection && loader ? async (request, calls) => {
               const requested: string[] = [];
               for (const call of calls) if (call.name === loader.name) {

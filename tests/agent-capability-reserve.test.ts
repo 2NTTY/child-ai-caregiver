@@ -17,7 +17,7 @@ const catalog = { coreToolNames: ["read_context"], loader, groups: [
   { id: "beta", description: "Synthetic beta.", toolNames: ["write_beta"], promptModuleIds: ["module.memory-maintenance"] },
 ] };
 
-function fixture(mode: "growth" | "same_batch" | "overflow" | "terminal" | "invalid" | "boundary", limit = 32000, boundaryCharacters = 1) {
+function fixture(mode: "growth" | "same_batch" | "overflow" | "terminal" | "invalid" | "boundary", limit = 32000, boundaryCharacters = 1, initialSummary = false) {
   let budget: AgentBudget, accepted = false, reads = 0, writes = 0, records = 0;
   const requests: LlmRequest[] = [], modelSizes: number[] = [], allowances: number[] = [], providerErrors: string[] = [];
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project", AI_AGENT_MAX_INPUT_CHARACTERS: String(limit) }),
@@ -48,6 +48,9 @@ function fixture(mode: "growth" | "same_batch" | "overflow" | "terminal" | "inva
     recipeId: "product-interactive", trigger: { kind: "interactive" as const, reference: "synthetic" },
     availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
     messages: [{ role: "user" as const, text: "Synthetic capability-reserve check" }], toolCatalog: catalog, authorize: async () => true,
+    ...(initialSummary ? { initialConversationSummary: { summary: { id: "synthetic-summary", version: 1,
+      text: "Synthetic first-request-only history", createdAt: "2026-10-09T00:00:00.000Z", lastCoveredMessageId: "synthetic-message" },
+      basis: "a".repeat(64), validUntil: null } } : {}),
     tools: (run: { budget: AgentBudget }): AgentTool[] => {
       budget = run.budget;
       return [{ name: "read_context", description: "Read synthetic context.", parameters: z.object({}), authorize: async () => true,
@@ -115,4 +118,27 @@ test("capability growth at the exact input boundary stops before any handler wit
   assert.equal(boundary.reads(), 0); assert.equal(boundary.writes(), 0); assert.equal(boundary.records(), 1);
   assert.equal(boundary.requests.length, 1); assert.deepEqual(boundary.providerErrors, []);
   assert.deepEqual(result.counts, { modelCalls: 1, toolCalls: 2, queryEmbeddings: 0 });
+});
+
+
+test("first-request summary keeps the full prospective loader and read_context reserve without entering later history", async () => {
+  for (const limit of [32000, 64000]) {
+    const f = fixture("growth", limit, 1, true), result = await f.run();
+    assert.equal(result.status, "completed", JSON.stringify({ result, errors: f.providerErrors }));
+    const initial = f.requests[0], projection = initial.contents.at(-1)!;
+    assert.ok(projection.parts?.[0]?.text?.includes("Synthetic first-request-only history"));
+    assert.ok(JSON.stringify(projection).length <= 4000);
+    const persistent = { ...initial, contents: initial.contents.slice(0, -1) };
+    const configDelta = JSON.stringify(f.requests[1].config).length - JSON.stringify(initial.config).length;
+    assert.ok(configDelta > AGENT_TOOL_RESPONSE_RESERVE);
+    assert.equal(f.allowances[0], Math.max(0, limit - agentRequestCharacters(persistent) - f.modelSizes[0] - AGENT_TOOL_RESPONSE_RESERVE - configDelta));
+    for (const request of f.requests.slice(1)) {
+      assert.equal(JSON.stringify(request.contents).includes("Synthetic first-request-only history"), false);
+      assert.ok(agentRequestCharacters(request) <= limit);
+    }
+    assert.equal(f.allowances[1], Math.max(0, limit - agentRequestCharacters(f.requests[1]) - f.modelSizes[1] - AGENT_TOOL_RESPONSE_RESERVE));
+    assert.deepEqual(result.counts, { modelCalls: 3, toolCalls: 7, queryEmbeddings: 0 });
+    assert.equal(f.reads(), 2); assert.equal(f.writes(), 0); assert.equal(f.records(), 3);
+    assert.deepEqual(f.providerErrors, []);
+  }
 });

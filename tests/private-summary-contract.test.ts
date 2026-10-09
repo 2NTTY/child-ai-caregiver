@@ -106,15 +106,18 @@ test("persistence advances only an ordered prefix while more history remains and
   const client = { async query(sql: string, params: any[] = []) {
     const result = (value: any[]) => ({ rows: value, rowCount: value.length });
     const normalized = sql.replace(/\s+/gu, " ").trim();
-    const authorityQuery = `SELECT md5(jsonb_build_array(
-      (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM text_records WHERE child_id=$1),
-      (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version,status,visibility,valid_until,valid_until IS NULL OR valid_until>clock_timestamp()) ORDER BY id),'[]'::jsonb)
-        FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2)),
-      (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM memory_topics WHERE child_id=$1 AND (visibility='family' OR created_by=$2))
-      )::text) AS authority, NOT EXISTS(SELECT 1 FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed) AS metadata_complete`.replace(/\s+/gu, " ").trim();
+    const authorityQuery = `WITH checked AS MATERIALIZED (SELECT clock_timestamp() AS at)
+    SELECT md5(jsonb_build_array(
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM text_records WHERE child_id=$1),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version,status,visibility,valid_until,valid_until IS NULL OR valid_until>checked.at) ORDER BY id),'[]'::jsonb)
+      FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2)),
+    (SELECT coalesce(jsonb_agg(jsonb_build_array(id,version) ORDER BY id),'[]'::jsonb) FROM memory_topics WHERE child_id=$1 AND (visibility='family' OR created_by=$2))
+    )::text) AS authority, NOT EXISTS(SELECT 1 FROM memory_facts WHERE child_id=$1 AND (visibility='family' OR created_by=$2) AND NOT validity_indexed) AS metadata_complete,
+    checked.at AS checked_at, (SELECT min(valid_until) FROM memory_facts WHERE child_id=$1
+      AND (visibility='family' OR created_by=$2) AND valid_until>checked.at) AS fact_valid_until FROM checked`.replace(/\s+/gu, " ").trim();
     if (normalized === authorityQuery) {
       assert.deepEqual(params, [child, user]);
-      return result([{ authority: "f".repeat(32), metadata_complete: true }]);
+      return result([{ authority: "f".repeat(32), metadata_complete: true, checked_at: new Date("2026-10-09T09:00:00.000Z"), fact_valid_until: null }]);
     }
     if (sql.includes("ORDER BY version DESC LIMIT 1")) return result(savedRow ? [savedRow] : []);
     if (sql.startsWith("SELECT profile_version")) return result([{ profile_version: profileVersion }]);

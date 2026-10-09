@@ -1760,3 +1760,23 @@
 - Prompt Pack 0.1.37 延續固定來源移植，補上先消歧再請批准、部分結果不推定唯一、順序不等於使用者選擇，以及補充後沿同一工作接續；更新三處 Server 指引與 D13 靜態審核案例。靜態內容及合成 runtime 通過不等於真模型語義通過。
 - 2252 個基線 Git blob 已與官方 tree 核對；62 項 focused、scoped／Server TypeScript 及原 npm run typecheck 通過。一次原 npm test 實測 635／635，零 fail／skip／cancel／todo；2254 個候選檔案測試前後不變，零網絡嘗試，只放行一次固定 hash inline WASM。根文件與本驗證摘要在程式測試後另外審核，不冒稱已包含在該次測試 manifest。
 - 固定記錄：[CHAT_CONFIRMATION_INTEGRATION_20261009.json](artifacts/verification/CHAT_CONFIRMATION_INTEGRATION_20261009.json)。未執行真模型、資料庫、畫面、雲端或部署驗收，亦沒有 CI 通過結論。原 A／B／B2 失敗、medium B／C 單例限制及真模型批次 20／20 用盡、零餘額全部保留。#154 首輪摘要投影仍待接回，不包含在本候選。
+
+
+<a id="log-20261009-initial-summary"></a>
+## 2026-10-09｜聊天首輪歷史摘要投影
+
+- 基線 master `69da307`；按使用者持續改進聊天 Agent 的要求獨立實作，不混入未合併 PR #150。root 親定資料標籤、範圍與驗收邊界並 review 最終差異。
+- 私人互動 claim 後核對既有 summary basis／coverage／metadata及最早時間失效點；僅首個實際 provider 請求加入 request-local 有界資料，原 session、user/model/tool parts 與 opaque signatures 保留。超限／過期整塊省略，撤權停止，模型／工具次數上限不變。
+- 最終 22 項局部合成測試及 scoped types 通過；本地 PostgreSQL 17.11 最小合成表 6 項真 SQL 通過，測試 cluster 已停止。首次 cipher fixture 型別缺項、Unix socket 啟動拒絕保留，再按原範圍補驗，沒有修改既有斷言。[驗證摘要](artifacts/verification/INITIAL_CONVERSATION_SUMMARY_20261009.json)。
+- 未呼真模型、未部署或修改其他角色／wire／migration。後續模型衍生歷史可能保留摘要資訊；當次投影檢查不等於所有來源持續有效，DB 授權與外部請求不具原子性。此記錄為 PR 交付準備，並非已合併或完整 Agent 驗收；PLAN／STATUS 已原位反映待交付界線。
+
+
+
+<a id="log-20261009-initial-summary-integration"></a>
+## 2026-10-09｜首輪摘要接回聊天主線
+
+- #150 已正常合併，基線為 74159e5cd8d69e349ce48120e025ccff6e1b0714。以上 #154 原局部／SQL 證據按原文保留，不當作本輪重跑，也不改寫其原失敗及交付時態。
+- 本輪逐項接回首輪 request-local 摘要，保留當前能力載入、thinking、4096 預留及 #150 待確認收尾；摘要仍須先核 Server 的版本、basis／coverage、期限及授權，不進持久 session。首次實際 provider 請求的摘要容量與後續工具容量分開核算。
+- 三份既有 SQL 測試替身精確對齊摘要核對查詢，保留參數、私隱隔離及未知 SQL 拒絕；補首輪摘要加 loader／read_context 的 32k／64k 交叉覆蓋及待確認不保存 staged summary。未以放寬斷言、刪除原測試或跳過換取通過。
+- 原 npm run typecheck 及一次原 npm test 實測 646／646，零 fail／skip／cancel／todo；2259 個候選檔案測試前後不變，零網絡嘗試，只放行一次固定 hash inline WASM。根文件及本摘要在程式驗證後另審，不在該測試 manifest 內。
+- [本輪驗證摘要](artifacts/verification/INITIAL_SUMMARY_INTEGRATION_20261009.json)。本輪未重跑真 SQL、未呼真模型、未驗 UI／雲端／部署，亦未宣稱 CI 或全產品通過。原真模型批次 20／20 用盡、零餘額及舊語義失敗維持；另外三個 Agent 只保留接口。

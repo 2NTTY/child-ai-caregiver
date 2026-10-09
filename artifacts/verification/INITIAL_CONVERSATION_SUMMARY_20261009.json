@@ -1,0 +1,86 @@
+{
+  "baseCommit": "69da307b7c99945581b75122fba69d0769185d61",
+  "checkedAt": "2026-10-09T01:46:23.409606+00:00",
+  "scope": "Private interactive first-provider-request historical-summary projection",
+  "tests": {
+    "command": "node --experimental-test-module-mocks --test --test-concurrency=1 --test-reporter=tap tests/memory-summary-projection.test.ts tests/initial-conversation-summary.test.ts tests/private-summary-contract.test.ts tests/memory-context-capacity.test.ts",
+    "passed": 22,
+    "failed": 0,
+    "evidence": "Retained local fixed-version TAP evidence"
+  },
+  "types": {
+    "command": "./node_modules/.bin/tsc --project ../evidence/scoped.tsconfig.json --pretty false",
+    "exitCode": 0,
+    "evidence": "Retained local fixed-version typecheck result"
+  },
+  "sql": {
+    "emptyProfileAndFactsKeepStableBasis": "passed",
+    "authorizedScopeAndEarliestExpiry": "passed",
+    "expiryWithoutDataVersionWrite": "passed",
+    "profileInclusiveHongKongBoundary": "passed",
+    "brokenCoverageRejected": "passed",
+    "pendingMetadataRejected": "passed",
+    "environment": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "listen_addresses": "127.0.0.1",
+      "unix_socket_directories": "",
+      "network_address": "127.0.0.1",
+      "port": 56483
+    }
+  },
+  "knownLimits": [
+    "Synthetic provider only; no real model or semantic quality validation.",
+    "New projection validity applies only to its single provider request; model-derived history may remain.",
+    "Authorization checks and external requests are not atomic.",
+    "Initial Unix socket start attempt was denied and shut down; authorized TCP run used its own cluster and stopped.",
+    "Not merged or deployed at verification time; no true-model semantic acceptance.",
+    "Minimal synthetic PostgreSQL parent tables, not the full application migrations or deployed PostgreSQL 18.6."
+  ],
+  "sourceFiles": [
+    {
+      "path": "server/agent-model-gateway.ts",
+      "sha256": "90303fdd9eb5a412bea185af553e50d6f9d7684241d5c1a7c248378e8de3ec0b",
+      "bytes": 8978
+    },
+    {
+      "path": "server/agent-runtime.ts",
+      "sha256": "55f13b91c7f09e922b8c0e814399acf1252c85620b3f4bcfa818210e95b3c7a5",
+      "bytes": 18879
+    },
+    {
+      "path": "server/memory-summary.ts",
+      "sha256": "2a565861c1f39b5566c8c8a179161084777a699ab3ab2ac4df90545d6b9826c8",
+      "bytes": 10180
+    },
+    {
+      "path": "server/memory.ts",
+      "sha256": "7d777154aa8a596a4b01f5c0cfffe3e75637d0a423cc3f4daf96cbac454bd6b2",
+      "bytes": 22040
+    },
+    {
+      "path": "server/product-agent.ts",
+      "sha256": "0ac0f3aa186bb10eb83e6ae0f611387bd16e1e35a24cfbdf31051a12ca65e54e",
+      "bytes": 16557
+    },
+    {
+      "path": "tests/initial-conversation-summary.test.ts",
+      "sha256": "11f18e04d7f7d745016ed37124026b7490e343fd0d0443dff86089c0d7985c58",
+      "bytes": 11196
+    },
+    {
+      "path": "tests/memory-context-capacity.test.ts",
+      "sha256": "1883e59df9cf08d062e8c2ee252033ffb8f1e89af614b1141df74f1e14e42893",
+      "bytes": 10894
+    },
+    {
+      "path": "tests/memory-summary-projection.test.ts",
+      "sha256": "58d1f3add9bdb22c46cbaae5b3a796165717f139e7e5d780bd2ac73d5f6e5f75",
+      "bytes": 4915
+    },
+    {
+      "path": "tests/private-summary-contract.test.ts",
+      "sha256": "14360bd2be6a924969f4548ea1b1e1834d6e54129ca37b64f3c67770792f36f3",
+      "bytes": 10326
+    }
+  ]
+}

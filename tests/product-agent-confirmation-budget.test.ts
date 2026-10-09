@@ -19,7 +19,7 @@ const userId = "synthetic-caregiver", question = "是否將合成任務標記為
 const answerText = "完成候選尚待你確認；另外的已核對內容仍可在本輪呈現。";
 type Fault = "invalid_response" | "unavailable" | "unknown" | "failed" | "rejected" | "conflict" | "last_read" | "citation_revalidation";
 interface FixtureOptions { normal?: boolean; fault?: Fault; questions?: "empty" | "expired" | "multiple" | "blank" | "missing_getter";
-  revokeAfterRead?: boolean; cancelAfterRead?: boolean; deadlineDuringRead?: boolean; stageSummary?: boolean }
+  revokeAfterRead?: boolean; cancelAfterRead?: boolean; deadlineDuringRead?: boolean; stageSummary?: boolean; initialSummary?: boolean }
 
 // Business stores and provider are synthetic. ADK Runner, runtime, product tools,
 // finalizer and HTTP handler remain the actual implementation.
@@ -27,6 +27,7 @@ function fixture(options: FixtureOptions = {}) {
   const scope = { userId, childId: ids.child, workspaceId: "synthetic-workspace", authorizationVersion: "1", dataVersion: "epoch:1" };
   const controller = new AbortController(), proposals: AgentProposal[] = [], attempts: string[] = [], calls: string[][] = [];
   const finalizations: { reason: string; error?: string }[] = [], summaryInputs: unknown[] = [], modelMessages: ChatMessage[] = [];
+  const requests: LlmRequest[] = []; let initialSummaryReads = 0;
   let claimed = false, authorized = true, saved: ProductAgentResult | null = null;
   let candidateWrites = 0, taskWrites = 0, confirmationWrites = 0, questionReads = 0, bindings = 0;
   const now = new Date().toISOString();
@@ -57,6 +58,7 @@ function fixture(options: FixtureOptions = {}) {
     provider: { generate: async (request: LlmRequest): Promise<LlmResponse> => {
       const index = calls.length, batch = sequence[index]; assert.ok(batch, "A fifth provider call is forbidden");
       calls.push(batch.map(call => call.name));
+      requests.push(structuredClone({ ...request, toolsDict: {} }));
       for (const call of batch) assert.ok(Object.hasOwn(request.toolsDict, call.name));
       if (index === 3 && options.fault === "unavailable") throw new Error("Synthetic provider unavailable");
       if (index === 3 && options.fault === "invalid_response") return { content: { role: "model", parts: [{ text: "Unvalidated closing text" }] }, finishReason: FinishReason.MAX_TOKENS };
@@ -111,6 +113,11 @@ function fixture(options: FixtureOptions = {}) {
       modelMessages.push(message); return message;
     } };
   const agentOptions = { runtime, store, chat, memory: { context: async () => structuredClone(context),
+    ...(options.initialSummary ? { initialConversationSummary: async () => {
+      initialSummaryReads++;
+      return { summary: { id: "old-synthetic-summary", version: 1, text: "Synthetic initial private history", createdAt: now,
+        lastCoveredMessageId: ids.message }, basis: "a".repeat(64), validUntil: null };
+    } } : {}),
     prepareSummary: async () => ({ previous: null, previousVersion: 0, basis: "synthetic-basis", messages: sourceMessages, moreUncovered: false }) },
     tasks: { list: async () => ({ items: [task], eligibleAssignees: [{ userId, name: "Synthetic caregiver" }], nextAfterId: null }),
       change: async () => { taskWrites++; throw new Error("Unexpected task write"); }, create: async () => { taskWrites++; throw new Error("Unexpected task write"); } },
@@ -118,7 +125,7 @@ function fixture(options: FixtureOptions = {}) {
       revalidateCitations: async () => options.fault !== "citation_revalidation" }) },
   } as unknown as Parameters<typeof createProductAgent>[0];
   const service = createProductAgent(agentOptions);
-  return { calls, attempts, proposals, summaryInputs, finalizations, modelMessages,
+  return { calls, attempts, proposals, summaryInputs, finalizations, modelMessages, requests, initialSummaryReads: () => initialSummaryReads,
     ledger: () => ({ candidateWrites, taskWrites, confirmationWrites, questionReads, bindings, taskState: task.occurrence.state, taskVersion: task.version }),
     reply: () => service.reply(userId, ids.child, ids.message, async () => true, controller.signal),
     apiReply: () => handleProductAgentRequest(new Request(`https://synthetic.invalid/api/children/${ids.child}/messages/${ids.message}/reply`,
@@ -197,4 +204,18 @@ for (const condition of ["revokeAfterRead", "cancelAfterRead", "deadlineDuringRe
   assert.equal(result.status, "stopped"); assert.equal(result.text, ""); assert.deepEqual(result.tools, []);
   assert.equal(result.stopReason, condition === "revokeAfterRead" ? "unauthorized" : condition === "cancelAfterRead" ? "cancelled" : "deadline");
   assert.equal(s.ledger().questionReads, 1); assert.equal(s.calls.length, 4); assert.deepEqual(s.summaryInputs, [undefined]);
+});
+
+
+test("initial private summary survives first-call loading while pending fallback discards the newly staged summary", async () => {
+  const s = fixture({ stageSummary: true, initialSummary: true }), result = assertPending(s, await s.reply());
+  assert.equal(result.status, "completed"); assert.equal(result.text, AGENT_CONFIRMATION_PENDING_TEXT);
+  assert.ok(s.requests[0].contents.at(-1)?.parts?.[0]?.text?.includes("Synthetic initial private history"));
+  for (const request of s.requests.slice(1)) assert.equal(JSON.stringify(request.contents).includes("Synthetic initial private history"), false);
+  assert.ok(result.tools.some(tool => tool.name === "read_context" && tool.status === "succeeded"));
+  assert.ok(result.tools.some(tool => tool.name === "load_capabilities" && tool.status === "succeeded"));
+  assert.ok(result.tools.some(tool => tool.name === "stage_private_summary" && tool.status === "succeeded"));
+  assert.deepEqual(s.summaryInputs, [undefined]); assert.equal(s.calls.length, 4); assert.equal(s.initialSummaryReads(), 1);
+  assert.deepEqual(await s.reply(), result); assert.equal(s.calls.length, 4); assert.equal(s.initialSummaryReads(), 1);
+  assert.deepEqual(s.finalizations, [{ reason: "model_limit" }]);
 });
