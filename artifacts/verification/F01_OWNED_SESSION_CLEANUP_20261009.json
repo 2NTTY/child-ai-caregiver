@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-09T15:59:42.597619+00:00",
+  "repository": "2NTTY/child-ai-caregiver",
+  "baseCommit": "0fcddee37659d49478c6aeeeeeb2aa78ea4ad85c",
+  "status": "root_accepted_ready_for_normal_publication",
+  "scope": "Acknowledged per-create incarnation cleanup through optional services/runtime capability; no production activation",
+  "files": [
+    {
+      "path": "server/agent-runtime.ts",
+      "bytes": 34362,
+      "sha256": "ae7384ba9f09f791b1bfcc6a096c7aa04fa6a704e093f37f228c859eaac20898"
+    },
+    {
+      "path": "server/firestore-session-service.ts",
+      "bytes": 17909,
+      "sha256": "a28bb7afe8d6e5093d0fba0aba772edf10127486e45bb4fd317d7d4b26e872af"
+    },
+    {
+      "path": "server/product-agent-services.ts",
+      "bytes": 7423,
+      "sha256": "7b016929d06606362bda2183db0065dec6e457a6a7793a3188b79882dcce000c"
+    },
+    {
+      "path": "tests/agent-owned-session-cleanup.test.ts",
+      "bytes": 11704,
+      "sha256": "fd57f8d65db33a2bfad89caadc21ea0667ae79e60b32c29f341eec5b099014f0"
+    },
+    {
+      "path": "tests/product-agent-claimed-services.test.ts",
+      "bytes": 25891,
+      "sha256": "9bcc12c25a9bece426a11243dcf67a672ad944945189f57339a1fa511c87fadc"
+    },
+    {
+      "path": "tests/helpers/firestore-session-memory.ts",
+      "bytes": 4775,
+      "sha256": "d78b0cb0207e5bebf89140497b3cf76662e184beecff11e75b6b71107f95b74e"
+    }
+  ],
+  "checks": {
+    "focused": {
+      "command": "node --import offline-guard.mjs --experimental-test-module-mocks --test tests/agent-owned-session-cleanup.test.ts tests/product-agent-claimed-services.test.ts",
+      "tests": 21,
+      "passed": 21,
+      "failed": 0
+    },
+    "originalFailurePreservation": {
+      "command": "node --import offline-guard.mjs --experimental-test-module-mocks --test --test-name-pattern=\"cleanup failure does not replace\" tests/agent-owned-session-cleanup.test.ts",
+      "tests": 1,
+      "passed": 1
+    },
+    "legacyRiskSelection": {
+      "command": "node --import offline-guard.mjs --experimental-test-module-mocks --test --test-name-pattern=\"injected native session|failed create|create collision|cancelled during response|unauthorized during response|late create|cleanup failure preserves|product receipt\" tests/agent-native-session.test.ts",
+      "tests": 10,
+      "passed": 10
+    },
+    "typeFixRerun": {
+      "tests": 2,
+      "passed": 2,
+      "subsetOfAbove": true,
+      "scope": "lost-create annotation and ES2023-compatible deferred helper; assertions unchanged"
+    },
+    "distinctReportedTestsIncludingParents": 32,
+    "newTests": 11,
+    "serverTypecheck": {
+      "command": "node --import offline-guard.mjs node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "exitCode": 0
+    },
+    "notRun": [
+      "full 792-test aggregate",
+      "frontend/client typecheck",
+      "Emulator",
+      "real Firestore competition",
+      "real model",
+      "HTTP/UI",
+      "cloud restore",
+      "production deployment"
+    ]
+  },
+  "failuresPreserved": [
+    {
+      "log": "red-01.log",
+      "reason": "Baseline cancelled run retains acknowledged native session",
+      "tests": 1,
+      "failed": 1
+    },
+    {
+      "log": "green-01.log",
+      "reason": "Initial inner-finally fix still returns before cleanup because outer budget.wait wins cancellation race",
+      "tests": 1,
+      "failed": 1,
+      "resolution": "Register only confirmed create ownership and run bounded teardown in outer finally after closing run budget"
+    },
+    {
+      "log": "server-tsc-01.log",
+      "diagnostics": 5,
+      "reason": "Test override inferred Promise<void>; Promise.withResolvers unavailable under existing ES2023 lib",
+      "resolution": "Explicit Promise<Session> and new Promise deferred; no tsconfig or assertion relaxation"
+    }
+  ],
+  "logs": [
+    {
+      "file": "../evidence/red-01.log",
+      "bytes": 9891,
+      "sha256": "6517108deba5989753a7115dcdff854f66f9999bd91e78eac9a98e5a40a65974"
+    },
+    {
+      "file": "../evidence/green-01.log",
+      "bytes": 9888,
+      "sha256": "be16f967503bbd5569fd3108d36d661c7220407f675933fb8d2fbb8e69a46acb"
+    },
+    {
+      "file": "../evidence/green-02.log",
+      "bytes": 243,
+      "sha256": "89214226ff02d56d4191e1cbe7cb55d733448f0e74e61d0994142066e4f4585b"
+    },
+    {
+      "file": "../evidence/focused-01.log",
+      "bytes": 2850,
+      "sha256": "58fddda2d4d90c1588b60b5b845f98621bae0a0dc8adc236c243053454ccc0b1"
+    },
+    {
+      "file": "../evidence/targeted-02.log",
+      "bytes": 216,
+      "sha256": "81cb7dbde2a608d877bc6d0b2f75be5b337165fd7ed761f305658a34de528ce5"
+    },
+    {
+      "file": "../evidence/legacy-01.log",
+      "bytes": 1095,
+      "sha256": "0da5ca8c42a0d6990a33a7400b42e392bde79ce20021827d5b071c386ad28db2"
+    },
+    {
+      "file": "../evidence/server-tsc-01.log",
+      "bytes": 1582,
+      "sha256": "69bfcec34bde0bd65bf7d75af853bde3381163bc64fcc5fc1e4692b580039975"
+    },
+    {
+      "file": "../evidence/type-fix-01.log",
+      "bytes": 306,
+      "sha256": "99e8613b0f7d3cf7ca01d69ddb47433234204f54da54774657a9ce15d327c942"
+    },
+    {
+      "file": "../evidence/server-tsc-02.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "networkGuard": {
+    "environment": "Explicit allowlist env; no inherited credentials",
+    "processReports": 10,
+    "attempts": 0,
+    "reports": [
+      {
+        "file": "network-audit-focused-01-11.json",
+        "sha256": "b8d3b7d2ef9bf452e4e9bd9ed681e6dbb288164d3541f2c6ba53bbc57354d9da",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-focused-01-12.json",
+        "sha256": "18b7e87cf74dc3270bfeca9189b38e7d7ea597b68d38da185d8b6789c9543809",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-green-01-11.json",
+        "sha256": "b8d3b7d2ef9bf452e4e9bd9ed681e6dbb288164d3541f2c6ba53bbc57354d9da",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-green-02-11.json",
+        "sha256": "b8d3b7d2ef9bf452e4e9bd9ed681e6dbb288164d3541f2c6ba53bbc57354d9da",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-legacy-01-29.json",
+        "sha256": "52b2df29d7f6e0dc8efef699b2a44b0a887a39ff0e46f577f86101d70b63ab87",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-red-01-11.json",
+        "sha256": "b8d3b7d2ef9bf452e4e9bd9ed681e6dbb288164d3541f2c6ba53bbc57354d9da",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-server-tsc-01-41.json",
+        "sha256": "3c4fd59bbf8f9a73c0a32ac7cc2b186b864da3efe1964b04665d237c4c12bd3f",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-server-tsc-02-23.json",
+        "sha256": "ba731b63718ff4ad618143ff8f26309b2723b5dc41e4b93f5e94666de488adb5",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-targeted-02-11.json",
+        "sha256": "b8d3b7d2ef9bf452e4e9bd9ed681e6dbb288164d3541f2c6ba53bbc57354d9da",
+        "attempts": 0
+      },
+      {
+        "file": "network-audit-type-fix-01-11.json",
+        "sha256": "b8d3b7d2ef9bf452e4e9bd9ed681e6dbb288164d3541f2c6ba53bbc57354d9da",
+        "attempts": 0
+      }
+    ],
+    "limits": "Process-level Node socket/TLS/DNS/fetch guard, not packet capture"
+  },
+  "invariants": [
+    "Only exact original create-returned Session object has private ownership; get/list/cloned/foreign-instance object cannot clean",
+    "Original tuple and random incarnation captured in private WeakMap; no caller-selected cleanup identity",
+    "Matching incarnation marked deleting; final batch atomically checks parent updateTime before deleting session and event documents",
+    "Five-second limit bounds waiting only; late database operation still uses incarnation/precondition fence",
+    "Lost/failed/timed-out create never triggers cleanup; lost cleanup acknowledgement remains unavailable or preserves original stop",
+    "Shared app/user state, root budget, daily attempts/counters and domain receipts are outside cleanup write set",
+    "Same original claim is lookup-only after cancellation/unknown; no quota refund or replay"
+  ],
+  "frameworkReuse": {
+    "versions": {
+      "adk": "2.1.0",
+      "firestore": "9.3.1"
+    },
+    "newDependencies": false,
+    "sources": [
+      "https://firebase.google.com/docs/firestore/ttl",
+      "https://docs.cloud.google.com/firestore/native/docs/manage-data/transactions",
+      "https://docs.cloud.google.com/firestore/native/docs/backups"
+    ],
+    "finding": "Native transaction/batch fencing is reused; TTL is not transactional and does not delete subcollections. Independent journal and restore admission remain separate gates."
+  },
+  "limitations": [
+    "Serial synthetic harness models per-document updateTime and atomic batch preconditions; not actual Firestore competition or cloud timestamp behavior",
+    "No account/child scope cleanup indexes or tombstones, independent cloud erasure journal, restore completeness/current epoch/daily counter anti-rollback gate",
+    "No durable resume, cross-store effect fencing, production bootstrap, new resources, real data deletion or other three-agent internals"
+  ],
+  "review": {
+    "reviewer": "review_owned_session_cleanup",
+    "code": "passed: no blocking findings at six frozen code hashes",
+    "documents": "passed: contract, scope, test/failure accounting, log/guard hashes and append-only WORKLOG reviewed",
+    "rootAcceptance": {
+      "result": "approved for exact eleven-path normal PR publication",
+      "recordedAt": "2026-10-09T16:01:30Z",
+      "basis": "Root inspected runtime/Firestore service diff, 32 targeted checks, Server typecheck, independent code/document review and preserved baseline/failure evidence",
+      "productionActivation": false
+    },
+    "testsRerunByReviewer": false
+  },
+  "modelBudget": {
+    "realCallsThisSlice": 0,
+    "previousAuthorizedBatchUsed": 20,
+    "previousAuthorizedBatchLimit": 20
+  }
+}

@@ -33,6 +33,8 @@ export interface FirestoreSessionServiceOptions {
 }
 interface SessionHeader {
   version: 1;
+  /** Per-create nonce; absent only on sessions written before owned cleanup. */
+  incarnation?: string;
   status: 'active' | 'deleting';
   revision: number;
   lastUpdateTime: number;
@@ -54,6 +56,7 @@ export class FirestoreSessionService extends BaseSessionService {
   #codec: ReturnType<typeof createCodec>;
   #namespace: string;
   #markers = new WeakMap<Session, SessionMarker>();
+  #created = new WeakMap<Session, { key: SessionKey; incarnation: string }>();
   constructor({ database, cipher, projectId, namespace }: FirestoreSessionServiceOptions) {
     super();
     if (typeof projectId !== 'string' || !projectId || projectId !== projectId.trim() || !projectId.isWellFormed()
@@ -74,7 +77,9 @@ export class FirestoreSessionService extends BaseSessionService {
     if (!snapshot.exists) reject('session_not_found');
     const header = snapshot.data() as SessionHeader;
     if (header.version !== 1 || !Number.isSafeInteger(header.revision) || header.revision < 0
-      || !['active', 'deleting'].includes(header.status) || !Number.isFinite(header.lastUpdateTime)) reject('invalid_session_header');
+      || !['active', 'deleting'].includes(header.status) || !Number.isFinite(header.lastUpdateTime)
+      || header.incarnation !== undefined && (typeof header.incarnation !== 'string'
+        || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/u.test(header.incarnation))) reject('invalid_session_header');
     return header;
   }
   #active(snapshot: DocumentSnapshot): SessionHeader {
@@ -93,20 +98,22 @@ export class FirestoreSessionService extends BaseSessionService {
   async createSession({ appName, userId, sessionId = randomUUID(), state = {} }: CreateSessionRequest): Promise<Session> {
     const key = identity({ appName, userId, sessionId });
     if (!isRecord(state)) reject('invalid_state');
-    const initial = split(JSON.parse(canonical(state))), paths = this.#paths(key), now = Date.now();
+    const initial = split(JSON.parse(canonical(state))), paths = this.#paths(key), now = Date.now(), incarnation = randomUUID();
     const saved = await this.#database.runTransaction(async transaction => {
       const [session, app, user] = await transaction.getAll(paths.session, paths.app, paths.user);
       if (session.exists) reject('session_exists');
       const appState = { ...this.#state(app, 'app', key), ...initial.app };
       const userState = { ...this.#state(user, 'user', key), ...initial.user };
-      const header = limitDocument<SessionHeader>({ version: 1, status: 'active', revision: 0, lastUpdateTime: now,
+      const header = limitDocument<SessionHeader>({ version: 1, incarnation, status: 'active', revision: 0, lastUpdateTime: now,
         state: this.#codec.seal('session', key, initial.session) });
       transaction.set(paths.app, limitDocument({ version: 1, state: this.#codec.seal('app', key, appState) }));
       transaction.set(paths.user, limitDocument({ version: 1, state: this.#codec.seal('user', key, userState) }));
       transaction.create(paths.session, header);
       return { header, appState, userState };
     });
-    return this.#make(key, saved.header, saved.appState, saved.userState, []);
+    const session = this.#make(key, saved.header, saved.appState, saved.userState, []);
+    this.#created.set(session, { key, incarnation });
+    return session;
   }
 
   async getSession({ appName, userId, sessionId, config }: GetSessionRequest): Promise<Session | undefined> {
@@ -231,11 +238,28 @@ export class FirestoreSessionService extends BaseSessionService {
   }
 
   async deleteSession(request: DeleteSessionRequest): Promise<void> {
-    const key = identity(request), paths = this.#paths(key);
+    return this.#delete(identity(request));
+  }
+
+  /**
+   * Teardown only for the exact object returned by this instance's confirmed
+   * create. Read/list/forged objects grant no ownership. A stale cleanup cannot
+   * remove a newer incarnation, even if it runs after the caller's timeout.
+   * This never touches shared state, budget/usage ledgers or business receipts.
+   */
+  async cleanupCreatedSession(session: Session): Promise<void> {
+    const owned = this.#created.get(session);
+    if (!owned) reject('session_cleanup_not_owned');
+    await this.#delete(owned.key, owned.incarnation);
+  }
+
+  async #delete(key: SessionKey, incarnation?: string): Promise<void> {
+    const paths = this.#paths(key);
     const exists = await this.#database.runTransaction(async transaction => {
       const snapshot = await transaction.get(paths.session);
       if (!snapshot.exists) return false;
       const header = this.#readHeader(snapshot);
+      if (incarnation !== undefined && header.incarnation !== incarnation) return false;
       if (header.status === 'active') transaction.update(paths.session, { status: 'deleting', revision: header.revision + 1 });
       return true;
     });
@@ -243,7 +267,9 @@ export class FirestoreSessionService extends BaseSessionService {
     const deleting = await this.#database.runTransaction(async transaction => {
       const snapshot = await transaction.get(paths.session);
       if (!snapshot.exists) return undefined;
-      if (this.#readHeader(snapshot).status !== 'deleting') reject('delete_conflict');
+      const header = this.#readHeader(snapshot);
+      if (incarnation !== undefined && header.incarnation !== incarnation) return undefined;
+      if (header.status !== 'deleting') reject('delete_conflict');
       const events = await transaction.get(paths.events.limit(MAX_EVENTS + 1));
       if (events.size > MAX_EVENTS) reject('event_capacity');
       return { updateTime: snapshot.updateTime, events: events.docs.map(event => event.ref) };

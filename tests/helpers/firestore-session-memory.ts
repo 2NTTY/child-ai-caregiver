@@ -4,7 +4,9 @@ import type { Firestore } from '@google-cloud/firestore';
 /** Serial synthetic transactions for native Session/root/daily composition, not an emulator. */
 export function serialFirestoreFixture() {
   const records = new Map<string, any>();
+  const versions = new Map<string, number>();
   let tail = Promise.resolve(), revision = 0;
+  let beforeBatchCommit: (() => Promise<void>) | undefined, loseBatchReply = false;
   type Ref = { path: string; collection: (name: string) => Query };
   type Query = { path: string; query: true; filters: [string, string, unknown][]; orders: [string, string][]; count: number;
     doc: (id: string) => Ref; where: (key: string, op: string, value: unknown) => Query;
@@ -16,7 +18,7 @@ export function serialFirestoreFixture() {
     orderBy: (key, direction = 'asc') => query(path, filters, [...orders, [key, direction]], count),
     limit: value => query(path, filters, orders, value),
   });
-  const snapshot = (path: string) => ({ exists: records.has(path), id: path.split('/').at(-1), ref: ref(path), updateTime: revision,
+  const snapshot = (path: string) => ({ exists: records.has(path), id: path.split('/').at(-1), ref: ref(path), updateTime: versions.get(path),
     data: () => structuredClone(records.get(path)), get: (key: string) => structuredClone(records.get(path)?.[key]) });
   const read = (target: Ref | Query): any => {
     if (!('query' in target)) return snapshot(target.path);
@@ -42,14 +44,29 @@ export function serialFirestoreFixture() {
         set: write, update: (target: Ref, value: any) => { assert.equal(records.has(target.path), true); write(target, { ...records.get(target.path), ...value }); },
         delete: (target: Ref) => write(target, undefined),
       });
-      for (const [path, value] of writes) { if (value === undefined) records.delete(path); else records.set(path, value); }
       if (writes.size) revision++;
+      for (const [path, value] of writes) {
+        if (value === undefined) { records.delete(path); versions.delete(path); }
+        else { records.set(path, value); versions.set(path, revision); }
+      }
       return result;
     } finally { release(); }
   }
   const database = { collection: query, runTransaction, batch() {
-    const deletes: Ref[] = [];
-    return { delete(target: Ref) { deletes.push(target); }, commit: () => runTransaction(async tx => { for (const target of deletes) tx.delete(target); }) };
+    const deletes: { target: Ref; lastUpdateTime?: number }[] = [];
+    return { delete(target: Ref, precondition?: { lastUpdateTime?: number }) { deletes.push({ target, ...precondition }); },
+      async commit() {
+        await beforeBatchCommit?.();
+        await runTransaction(async tx => {
+          for (const item of deletes) if (item.lastUpdateTime !== undefined) {
+            const current = await tx.get(item.target);
+            assert.equal(current.updateTime, item.lastUpdateTime, 'Synthetic batch precondition conflict');
+          }
+          for (const { target } of deletes) tx.delete(target);
+        });
+        if (loseBatchReply) { loseBatchReply = false; throw new Error('Synthetic lost batch acknowledgement'); }
+      } };
   } } as unknown as Firestore;
-  return { database, records };
+  return { database, records, beforeBatch: (callback?: () => Promise<void>) => { beforeBatchCommit = callback; },
+    loseBatchReply: () => { loseBatchReply = true; } };
 }

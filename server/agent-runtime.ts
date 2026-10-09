@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { BaseSessionService, FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, setLogger } from "@google/adk";
-import type { AppendEventRequest, CreateSessionRequest, DeleteSessionRequest, GetSessionRequest, ListSessionsRequest, LlmRequest, Context, Event } from "@google/adk";
+import type { AppendEventRequest, CreateSessionRequest, DeleteSessionRequest, GetSessionRequest, ListSessionsRequest, LlmRequest, Context, Event, Session } from "@google/adk";
 import { z } from "zod";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
@@ -140,6 +140,21 @@ export interface AgentRunResult {
 export type AgentDurableRunInput = Readonly<Pick<AgentRunInput, "runId" | "scope" | "trigger" | "recipeId" | "deadlineAtMs" | "claimedRun">>;
 export type AgentDurableRunBinder = (input: AgentDurableRunInput, promptPackVersion: string, limits: Readonly<RootBudgetLimits>) => AgentDurableBudget;
 
+/** Optional trusted capability; it must fence teardown to the exact acknowledged create incarnation. */
+export type NativeAgentSessionService = BaseSessionService & { cleanupCreatedSession?: (session: Session) => Promise<void> };
+export const NATIVE_SESSION_CLEANUP_TIMEOUT_MS = 5000;
+async function cleanupCreatedSession(service: NativeAgentSessionService, session: Session): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    // Bound caller waiting, not the database operation. Late cleanup still has
+    // to compare its saved incarnation; it cannot become a tuple-only delete.
+    await Promise.race([
+      Promise.resolve().then(() => service.cleanupCreatedSession!(session)),
+      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new AgentStopped("unavailable")), NATIVE_SESSION_CLEANUP_TIMEOUT_MS); }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
+
 function freezeDurable(durable: AgentDurableBudget): AgentDurableBudget {
   return Object.freeze({ adapter: durable.adapter,
     context: Object.freeze({ generation: durable.context.generation, binding: Object.freeze({
@@ -157,7 +172,7 @@ export function createAgentRuntime(options: {
   resolve?: import("./model-routing.ts").ModelRouting["resolve"];
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
   /** Trusted, preconfigured native storage. Single-run create-only; the caller owns its client. */
-  nativeSessionService?: BaseSessionService;
+  nativeSessionService?: NativeAgentSessionService;
   /** Isolated fixed-config assembly only; version/epoch provenance remains the trusted caller's responsibility. */
   durableBudget?: AgentDurableBudget;
   /** Binds an already claimed run, never selects a provider or dynamic account settings. */
@@ -185,6 +200,7 @@ export function createAgentRuntime(options: {
       const scope = bindingInput.scope;
       let acquired = false;
       let toolFailure: AgentStopped | undefined;
+      let cleanupOwnedSession: (() => Promise<void>) | undefined;
       let authorize = input.authorize;
       try {
         await budget.wait(async () => {
@@ -369,17 +385,21 @@ export function createAgentRuntime(options: {
             if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
             budget.check();
           };
-          const storageWait = async <T>(operation: () => Promise<T>, created = false): Promise<T> => {
+          const storageWait = async <T>(operation: () => Promise<T>, onConfirmed?: (value: T) => void): Promise<T> => {
             await storageGate();
             const value = await budget.wait(operation);
             // A timed-out/failed create never grants cleanup ownership, even if it later commits.
-            if (created) sessionCreated = true;
+            onConfirmed?.(value);
             await storageGate();
             return value;
           };
           // Guard only the public storage boundary; preserve ADK's original Session/Event objects.
           const sessionService = nativeSessionService ? new class extends BaseSessionService {
-            createSession(request: CreateSessionRequest) { return storageWait(() => nativeSessionService.createSession(request), true); }
+            createSession(request: CreateSessionRequest) { return storageWait(() => nativeSessionService.createSession(request), session => {
+              sessionCreated = true;
+              if (typeof nativeSessionService.cleanupCreatedSession === "function")
+                cleanupOwnedSession = () => cleanupCreatedSession(nativeSessionService, session);
+            }); }
             getSession(request: GetSessionRequest) { return storageWait(() => nativeSessionService.getSession(request)); }
             listSessions(request: ListSessionsRequest) { return storageWait(() => nativeSessionService.listSessions(request)); }
             appendEvent(request: AppendEventRequest) { return storageWait(() => nativeSessionService.appendEvent(request)); }
@@ -442,9 +462,9 @@ export function createAgentRuntime(options: {
             primaryFailure = true;
             throw error;
           } finally {
-            if (sessionCreated) {
+            if (sessionCreated && !cleanupOwnedSession) {
               try {
-                // Cancellation/revocation may prevent cleanup; never delete an unacknowledged create.
+                // Legacy stores have no fenced capability; retain their guard.
                 await sessionService.deleteSession({ appName, userId: scope.userId, sessionId: runId });
               } catch (error) {
                 // Preserve the main failure and committed tool receipts. Cleanup alone is unavailable.
@@ -467,6 +487,15 @@ export function createAgentRuntime(options: {
         }
       } finally {
         budget.close();
+        // The outer budget wait can finish before Runner unwinds. Teardown must
+        // live outside that aborted wait, using only already confirmed ownership.
+        if (cleanupOwnedSession) {
+          try { await cleanupOwnedSession(); }
+          catch {
+            // Failed/unknown cleanup cannot replace an original stop or receipt.
+            if (result.status === "completed") { result.status = "stopped"; result.stopReason = "unavailable"; result.text = null; }
+          }
+        }
         if (acquired) activeUsers.delete(scope.userId);
         result.counts = budget.counts;
       }

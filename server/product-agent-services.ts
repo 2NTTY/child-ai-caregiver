@@ -1,12 +1,11 @@
 import type { Pool } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
 import type { AiConfig } from "./ai-config.ts";
-import type { BaseSessionService } from "@google/adk";
 import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import type { DurableRootBudget } from "./durable-root-budget.ts";
 import type { DurableAiUsage } from "./durable-ai-usage.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
-import type { AgentDurableRunBinder } from "./agent-runtime.ts";
+import type { AgentDurableRunBinder, NativeAgentSessionService } from "./agent-runtime.ts";
 import { createAgentRuntime } from "./agent-runtime.ts";
 import { createVertexAgentProvider } from "./agent-model-gateway.ts";
 import { createProductAgentStore } from "./product-agent-store.ts";
@@ -43,7 +42,7 @@ export interface ProductAgentServicePorts {
   publishedKnowledgeReader?: PublishedKnowledgeReader;
   /** Trusted isolated assembly; production bootstrap intentionally does not select this mode. */
   claimedRunPersistence?: {
-    nativeSessionService: BaseSessionService;
+    nativeSessionService: NativeAgentSessionService;
     rootBudget: DurableRootBudget;
     dailyUsage: DurableAiUsage;
     profile: ProductAgentDurableProfile;
