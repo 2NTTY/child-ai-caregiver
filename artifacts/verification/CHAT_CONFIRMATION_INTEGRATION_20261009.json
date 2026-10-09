@@ -1,0 +1,38 @@
+{
+  "checkedDate": "2026-10-09",
+  "baselineCommit": "922707fd6010aab57a0a8a1009bcc216b01cdf2a",
+  "promptPack": "0.1.37",
+  "candidatePatchSha256": "61e1ef2fc35dad51af8c89e308d3e7531d92765da9912ce97c070f6dfdd6309c",
+  "focusedTestsPassed": 62,
+  "typecheck": "passed",
+  "originalNpmTest": {
+    "tests": 635,
+    "pass": 635,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "candidateFiles": 2254,
+  "candidateFilesUnchangedDuringTests": true,
+  "networkAttempts": 0,
+  "allowedPinnedInlineWasmFetches": 1,
+  "scope": "Offline runtime, synthetic protocol and static prompt integration only",
+  "rootDocuments": "Separately reviewed after code tests; outside tested source manifest",
+  "limitations": [
+    "No live-model semantic acceptance; original A/B/B2 failures and medium B/C single-case limits retained",
+    "Live-model batch exhausted: 20/20, zero remaining",
+    "No DB, UI, cloud, deployment or CI pass claim",
+    "PR154 initial summary projection not included"
+  ],
+  "logs": [
+    {
+      "command": "npm run typecheck",
+      "sha256": "1cfe8aff9cb9fe99d81edc6889b83d6ab3373b4c031d2df7c57e76d743879fd4"
+    },
+    {
+      "command": "npm test",
+      "sha256": "1e380a09d2febd3256fe2dc7fd88bb770c658121eb2fac01fed5e493c70e35b2"
+    }
+  ]
+}

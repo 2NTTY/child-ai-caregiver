@@ -1,6 +1,8 @@
 import { AGENT_INTERACTIVE_INPUT } from "./agent-budget.ts";
 
-export type AgentThinkingLevel = "minimal" | "low" | "medium" | "high";
+import { resolveModelThinkingLevel } from "./model-thinking.ts";
+import type { AgentThinkingLevel } from "./model-thinking.ts";
+export type { AgentThinkingLevel } from "./model-thinking.ts";
 
 export interface AiConfig {
   enabled: boolean;
@@ -43,14 +45,6 @@ function readInteger(value: string | undefined, key: string, fallback: number, m
   return result;
 }
 
-function readAgentThinkingLevel(value: string | undefined): AgentThinkingLevel {
-  if (value === undefined) return "minimal";
-  switch (value) {
-    case "minimal": case "low": case "medium": case "high": return value;
-    default: return invalidConfig("AI_AGENT_THINKING_LEVEL");
-  }
-}
-
 export function readAiConfig(env: Record<string, string | undefined>): AiConfig {
   const enabled = readBoolean(env.AI_ENABLED, "AI_ENABLED", false);
   const project = env.GCP_PROJECT_ID === undefined || env.GCP_PROJECT_ID === ""
@@ -58,11 +52,13 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
     : readIdentifier(env.GCP_PROJECT_ID, "GCP_PROJECT_ID", "", /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/u, 30);
   if (enabled && !project) invalidConfig("GCP_PROJECT_ID");
 
+  const model = readIdentifier(env.GEMINI_MODEL, "GEMINI_MODEL", "gemini-3.1-flash-lite", /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/u, 128);
+
   return {
     enabled,
     project,
     location: readIdentifier(env.VERTEX_LOCATION, "VERTEX_LOCATION", "global", /^(?:global|us|eu|[a-z]+(?:-[a-z]+)+[0-9])$/u, 64),
-    model: readIdentifier(env.GEMINI_MODEL, "GEMINI_MODEL", "gemini-3.1-flash-lite", /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/u, 128),
+    model,
     dailyUserAttempts: readInteger(env.AI_DAILY_USER_ATTEMPTS, "AI_DAILY_USER_ATTEMPTS", 20, 1, 1000),
     dailyGlobalAttempts: readInteger(env.AI_DAILY_GLOBAL_ATTEMPTS, "AI_DAILY_GLOBAL_ATTEMPTS", 100, 1, 10000),
     personalDailyGlobalAttempts: readInteger(env.AI_PERSONAL_DAILY_GLOBAL_ATTEMPTS, "AI_PERSONAL_DAILY_GLOBAL_ATTEMPTS", 1000, 1, 10000),
@@ -71,7 +67,7 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
     maxInputCharacters: readInteger(env.AI_MAX_INPUT_CHARACTERS, "AI_MAX_INPUT_CHARACTERS", 10000, 1, 20000),
     agentMaxInputCharacters: readInteger(env.AI_AGENT_MAX_INPUT_CHARACTERS, "AI_AGENT_MAX_INPUT_CHARACTERS",
       AGENT_INTERACTIVE_INPUT.default, AGENT_INTERACTIVE_INPUT.min, AGENT_INTERACTIVE_INPUT.max),
-    agentThinkingLevel: readAgentThinkingLevel(env.AI_AGENT_THINKING_LEVEL),
+    agentThinkingLevel: resolveModelThinkingLevel(model, env.AI_AGENT_THINKING_LEVEL),
     maxOutputTokens: readInteger(env.AI_MAX_OUTPUT_TOKENS, "AI_MAX_OUTPUT_TOKENS", 1024, 1, 4096),
   };
 }

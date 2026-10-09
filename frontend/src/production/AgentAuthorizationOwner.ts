@@ -48,8 +48,11 @@ export class AgentAuthorizationOwner {
   private readonly receiptRequests = new Map<string, AbortController>();
   private snapshot: AgentAuthorizationSnapshot;
   private readonly listeners = new Set<() => void>();
-  constructor(baseUrl: string, online: boolean, private readonly onAccessLost: (identity: boolean) => void,
-    private readonly onSaved: () => void) {
+  private readonly onAccessLost: (identity: boolean) => void;
+  private readonly onSaved: () => void;
+  constructor(baseUrl: string, online: boolean, onAccessLost: (identity: boolean) => void,
+    onSaved: () => void) {
+    this.onAccessLost = onAccessLost; this.onSaved = onSaved;
     this.api = createAgentActionsApi(baseUrl); this.contactApi = createContactApi(baseUrl); this.snapshot = initial(online);
   }
   getSnapshot = () => this.snapshot;

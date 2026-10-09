@@ -54,7 +54,10 @@ export function growthProposals(context: MemoryContext, sources: KnowledgeEviden
   const filter = agentKnowledgeFilter(context, now), months = filter.age?.minMonths;
   const proposals: Omit<GrowthAttention, "id" | "childId" | "version" | "state" | "createdAt" | "updatedAt" | "snoozeUntil" | "previousId" | "newReason" | "taskId" | "taskState" | "lastAction" | "actorUserId" | "note">[] = [];
   const notices: string[] = [];
-  if (months === undefined) return { proposals, notices: ["需要有效的出生日期才可套用本批年齡規則；約數年齡會保留，沒有推算精準提醒窗口。"] };
+  // Discovery age hints must not establish eligibility for exact growth windows.
+  if (!context.profileApplicable || context.profile.data?.age.kind !== "birth_date"
+    || months === undefined || !Number.isFinite(months) || months < 0 || months > 120)
+    return { proposals, notices: ["需要有效的出生日期才可套用本批年齡規則；約數年齡會保留，沒有推算精準提醒窗口。"] };
   if (filter.region !== "HK") return { proposals, notices: ["首批關注只適用香港；沒有把香港時程套用至其他地區。"] };
   for (const rule of GROWTH_RULES) {
     if (months < rule.start || months >= rule.end) continue;

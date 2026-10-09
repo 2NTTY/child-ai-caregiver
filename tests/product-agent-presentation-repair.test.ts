@@ -22,14 +22,21 @@ for (const { kind, proposal } of [
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
     usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async request => {
       const index = requests.length; requests.push(structuredClone({ ...request, toolsDict: {} }));
-      if (!index && proposal !== "none") return { finishReason: FinishReason.STOP, content: { role: "model", parts: [{
-        functionCall: { id: "synthetic-loader", name: "load_capabilities", args: { capabilities: ["tasks"] } },
-      }] } };
-      if (index === 1 && proposal !== "none") return { finishReason: FinishReason.STOP, content: { role: "model", parts: [{
+      if (!index && proposal !== "none") {
+        assert.equal(Object.hasOwn(request.toolsDict, "propose_task"), false);
+        return { finishReason: FinishReason.STOP, content: { role: "model", parts: [{
+          functionCall: { id: "task-capability", name: "load_capabilities", args: { capabilities: ["tasks"] } },
+        }] } };
+      }
+      if (index === 1 && proposal !== "none") {
+        assert.equal(Object.hasOwn(request.toolsDict, "propose_task"), true);
+        assert.equal(request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.id === "task-capability")?.functionResponse?.response?.status, "succeeded");
+        return { finishReason: FinishReason.STOP, content: { role: "model", parts: [{
         functionCall: { id: "synthetic-proposal", name: "propose_task", args: { values: { title: "Synthetic task", details: "Synthetic details",
           kind: "ordinary", assigneeUserId: userId, dueAt: proposal === "invalid" ? "2026-10-12" : "2026-10-12T11:30:00Z", timeZone: "Asia/Hong_Kong" } } },
         thoughtSignature: "synthetic-proposal-signature",
       }] } };
+      }
       if (index === (proposal === "none" ? 0 : 2)) {
         if (proposal !== "none") {
           const response = request.contents.flatMap(content => content.parts ?? []).find(part => part.functionResponse?.name === "propose_task")!.functionResponse!.response!;
@@ -67,7 +74,8 @@ for (const { kind, proposal } of [
   assert.equal(result?.status, "completed", JSON.stringify(result)); assert.equal(result.text, proposal === "pending" ? "已保存待確認候選；尚未建立正式待辦。" : "未完成操作；請補充要處理的事項。");
   assert.deepEqual(result.counts, { modelCalls: proposal === "none" ? 2 : 4, toolCalls: proposal === "none" ? 1 : 3, queryEmbeddings: 0 });
   assert.deepEqual(result.tools.map(tool => ({ name: tool.name, status: tool.status })), [
-    ...(proposal === "none" ? [] : [{ name: "load_capabilities", status: "succeeded" }, { name: "propose_task", status: proposal === "invalid" ? "rejected" : "succeeded" }]),
+    ...(proposal === "none" ? [] : [{ name: "load_capabilities", status: "succeeded" },
+      { name: "propose_task", status: proposal === "invalid" ? "rejected" : "succeeded" }]),
     { name: "present_answer", status: "succeeded" },
   ]);
   assert.equal(requests.length, proposal === "none" ? 2 : 4); assert.equal(finalized, 1); assert.equal(proposals, proposal === "pending" ? 1 : 0);

@@ -61,7 +61,10 @@ function setup(generate: (request: LlmRequest, index: number, signal: AbortSigna
 
 test("semantic continuation loads actual services and trusted modules before the real action handler", async () => {
   const initial = await loadAgentPrompt("product-interactive", "tool_cycle", inputs);
-  const expanded = await loadAgentPrompt("product-interactive", "tool_cycle", inputs, ["module.task-intents", "module.summary-report", "module.task-intents"]);
+  const selectedModuleIds = PRODUCT_AGENT_TOOL_CATALOG.groups
+    .filter(group => group.id === "tasks" || group.id === "documents")
+    .flatMap(group => [...group.promptModuleIds]);
+  const expanded = await loadAgentPrompt("product-interactive", "tool_cycle", inputs, [...selectedModuleIds, ...selectedModuleIds]);
   assert.equal(expanded.moduleIds.filter(id => id === "module.task-intents").length, 1);
   assert.ok(!initial.moduleIds.includes("module.task-intents"));
   await assert.rejects(loadAgentPrompt("product-interactive", "tool_cycle", inputs, ["../../AGENTS.md"]));

@@ -6,6 +6,8 @@ import type { Child } from "../src/shared/records.ts";
 import type { ChildSelectionPreferences } from "../src/client/child-selection.ts";
 import { createWebChildSelectionPreferences } from "../frontend/src/production/child-selection.ts";
 import { ProductionOwner } from "../frontend/src/production/ProductionOwner.ts";
+import { createAccountApi } from "../src/client/account-api.ts";
+import { SERVICE_POLICY_VERSION } from "../src/shared/account-service.ts";
 import type { ChatApi } from "../src/client/chat-api.ts";
 
 const alice = { id: "alice", name: "A", email: "a@example.invalid" };
@@ -42,7 +44,15 @@ test("ProductionOwner's first non-null child scope is B, never A", async () => {
     listMessages: async id => { messageReads.push(id); return { messages: [], limit: 100 }; },
     getStatus: async () => true, getUsage: async () => ({ day: "2026-10-07", attempts: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, unknownUsageAttempts: 0 }),
     saveMessage: async () => { throw Error("No writes"); }, requestReply: async () => { throw Error("No models"); } };
-  const owner = new ProductionOwner("/api", true, f.api, chat, pref);
+  const account = createAccountApi("/api", async (input, init) => {
+    assert.equal(input, "/api/account"); assert.equal(init?.method, "GET");
+    const expectedUserId = new Headers(init?.headers).get("x-expected-user-id");
+    assert.ok(expectedUserId === null || expectedUserId === alice.id);
+    return Response.json({ enabled: true, registration: "invite", mailConfigured: false,
+      policyVersion: SERVICE_POLICY_VERSION, notice: "Synthetic account status",
+      user: expectedUserId === null ? null : { id: alice.id, emailVerified: true, acknowledged: true, acknowledgementVersion: SERVICE_POLICY_VERSION } });
+  });
+  const owner = new ProductionOwner("/api", true, f.api, chat, pref, { api: account });
   owner.subscribe(() => { const s = owner.getSnapshot(); if (s.scopeKey && s.records.selectedChildId) selected.push(s.records.selectedChildId); });
   await owner.controller.restoreSession(); await new Promise<void>(done => setImmediate(done));
   assert.equal(owner.getSnapshot().records.selectedChildId, "B"); assert.ok(selected.length);

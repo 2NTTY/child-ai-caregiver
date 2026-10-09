@@ -1742,3 +1742,21 @@
 - 主模型 review 原 diff、授權／版本／budget／收據及錯誤路徑；只重跑既有 prompt 版本聚合及文件 adapter 聚合，各 1 項通過，Node 24.11.0。[本次證據](artifacts/verification/P2_A09_CLOSEOUT_CHECKS.json)與[原失敗／未驗](artifacts/verification/P2_A09_CHECKS.json)分開。文件差異／衝突標記／連結及 WORKLOG 追加完整性核對；不跑全倉 build／typecheck／測試。
 - 零真模型／embedding／資料庫／瀏覽器／通知／新映像／雲端或部署。原 A09 的完整引用、指定修改、新對話讀回及正式帳號／恢復／服務交付仍待 F07／F08；本 PR 只收束已 review 的修正，不宣稱 A09 或 P2 完成。
 - PLAN／STATUS 原位改為修正合併後 F01 Ready；列 F01 → F02 → F03 → F04／F05 → F06 → F07 → F08 及各依賴。F02 資源／費用與 F08 切換／預算仍另批，未續期 VM。本次按 C 已登入帳號推送／合併；實際 Author／共同作者／Committer／簽署在遠端交付時核對，不預先宣稱 Verified。
+
+
+<a id="log-20261009-chat-scope-alignment"></a>
+## 2026-10-09｜聊天 Agent 當前範圍與完成門檻校準
+
+- 主模型親讀遠端 master 的 AGENTS、PLAN、STATUS，核對現行文件仍將四角色內部列作依賴，與使用者只完成聊天 Agent、另三留接口的最新要求不一致；按 ADR-021 收窄當前實作及驗收範圍，不回寫歷史決策或已完成成果。
+- PLAN 當前入口改為聊天可靠辦事及 F01 接點；保留 Firestore 方向、成熟元件復用、原 A09 失敗、正式切換與資源批准邊界。STATUS 原位清理過時「四角色均未開始／唯一下一包」敘述，明分本地候選、草稿 PR、合併、預覽和正式服務。
+- 本批只文件；沒有改產品程式、提高預算、調真模型、建資源、遷移、部署或實作其他三個 Agent。WORKLOG 保留基線全部 bytes，只追加本段。文件候選的差異、連結與範圍檢查另記交付證據；不把文件校準當整體功能驗收。
+
+
+<a id="log-20261009-chat-confirmation-integration"></a>
+## 2026-10-09｜聊天整合修復收束與待確認接續
+
+- #157、#155、#158 已正常合併；本輪基線為 922707fd6010aab57a0a8a1009bcc216b01cdf2a。#158 原 613／611／2 失敗證據保留；CLI 接口測試補正完整有效參數及獨立負例後為 614／614，未實作另外三個 Agent 內部。#156 修正已包含於 #158，原 PR 以重複工作關閉而未合併。
+- #150 候選只於已確認 model_limit、沒有正常 presentation、工具成功且最後為 request_confirmation、恰有一個有效待確認問題時提供未執行提示。正常 presentation 優先；授權前後重查，錯誤／取消／期限／未知不補成功結果；待確認不保存 staged summary。保留新版 catalog、thinking、reserve 及限額。
+- Prompt Pack 0.1.37 延續固定來源移植，補上先消歧再請批准、部分結果不推定唯一、順序不等於使用者選擇，以及補充後沿同一工作接續；更新三處 Server 指引與 D13 靜態審核案例。靜態內容及合成 runtime 通過不等於真模型語義通過。
+- 2252 個基線 Git blob 已與官方 tree 核對；62 項 focused、scoped／Server TypeScript 及原 npm run typecheck 通過。一次原 npm test 實測 635／635，零 fail／skip／cancel／todo；2254 個候選檔案測試前後不變，零網絡嘗試，只放行一次固定 hash inline WASM。根文件與本驗證摘要在程式測試後另外審核，不冒稱已包含在該次測試 manifest。
+- 固定記錄：[CHAT_CONFIRMATION_INTEGRATION_20261009.json](artifacts/verification/CHAT_CONFIRMATION_INTEGRATION_20261009.json)。未執行真模型、資料庫、畫面、雲端或部署驗收，亦沒有 CI 通過結論。原 A／B／B2 失敗、medium B／C 單例限制及真模型批次 20／20 用盡、零餘額全部保留。#154 首輪摘要投影仍待接回，不包含在本候選。

@@ -26,17 +26,18 @@ P1 尚不需要組裝時可改用 [獨立文字入口](../p1/README.md)，不用
 | `knowledge-review` | 公共來源、候選版本／hash／日期／錯誤、發布狀態 | 結構化差異／無變／待審建議；不自動發布或建立家庭任務 | S10-W02／W03 |
 | `summary-visit` | 對象／期間、已確認事件、更正、程式統計、預約、缺項與來源 | 對話或結構化正文；無計算值不編總量，報告／PDF成功須另有工具證據 | S14-W01／W02 |
 
-另外四個 manifest 配方如下，合共十二個；上表的「預計接入」是原設計對照，不表示各有獨立正式呼叫點。
+另外五個 manifest 配方如下；上表的「預計接入」是原設計對照，不表示各有獨立正式呼叫點。完整清單以 manifest 為準。
 
 | Recipe ID | 正式使用 |
 |---|---|
 | `product-interactive` | `server/product-agent.ts` 的本人對話工具循環 |
-| `product-background` | 同一服務的已授權背景事件 |
+| `product-background` | 同一服務的已授權家庭背景事件 |
+| `product-work-followup` | 同一服務的本人站內工作跟進；只讀能力目錄，不提供互動寫入或外部聯絡 |
 | `photo-capture` | `server/photo-agent.ts` 的照片處理入口 |
 | `shared-capture` | `server/shared-input-service.ts` 的分享文字處理入口 |
 
 <a id="runtime-entry-map"></a>
-目前以上四種加 `summary-visit`（同一 product-agent 的摘要意圖）是五個直接產品入口，合共引用二十個模組。`knowledge-maintenance`、`authorized-contact` 模組未被這五種配方引用；不得因此宣稱所有知識維護／聯絡功能都不存在，實際能力以 Server 工具及 product-tools 指引為準。其餘七個配方仍保留作可驗證的定義；P1 adapter 的獨立文字提示不是把每個宣告配方都啟用。
+目前以上五種是直接產品入口。`summary-visit` 仍是已定義配方，不能把它當作現行 product-agent 的獨立意圖入口。互動入口先載必要核心工具，其餘依 Server capability catalog 按需載入工具及對應 prompt modules；不能以初始模組聯集判定全部可用能力。家庭背景入口只用自己的白名單與背景指引；本人工作跟進使用獨立只讀目錄，不能取得互動寫入能力。各配方的有效指引須按 base／domain／recipe 及當次已載能力的完整聯集核對，不用固定模組數量代替覆蓋檢查。其餘配方保留作可驗證定義；P1 adapter 的獨立文字提示不是把每個宣告配方都啟用。
 
 人機互動始終套用對話核心，即使選用結構化輸出亦要有可讀收尾。`memory-refresh`、`knowledge-review` 是背景維護時可不外發，不因有 `replyText` 就自動通知。
 

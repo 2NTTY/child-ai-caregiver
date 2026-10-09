@@ -27,6 +27,7 @@ test("free-text profiles reproduce the strict knowledge contract mismatch withou
 });
 
 test("Growth GET degrades only unsupported profile filters and keeps writes strict",async t=>{
+  t.mock.timers.enable({apis:["Date"],now:new Date("2026-10-07T00:00:00Z")});
   let profile=context("HK"), fault: "knowledge" | "records" | "memory" | "decrypt" | null=null;
   let records: {payload_encrypted:string}[]=[];
   const queries: {sql:string;values:unknown[]}[]=[], scopes:string[]=[];
@@ -92,7 +93,9 @@ test("Growth GET degrades only unsupported profile filters and keeps writes stri
     }
     const exact=context("HK");exact.profile.data!.age={kind:"birth_date",date:"2016-10-07"};
     assert.equal(parseKnowledgeFilter(agentKnowledgeFilter(exact,new Date("2026-10-07T00:00:00Z"))).age!.minMonths,120);
-    assert.throws(()=>parseKnowledgeFilter(agentKnowledgeFilter(exact,new Date("2026-10-08T00:00:00Z"))),z.ZodError);
+    // The shared Agent filter marks out-of-range ages unknown; the Growth GET boundary must suppress that query.
+    const outside=parseKnowledgeFilter(agentKnowledgeFilter(exact,new Date("2026-10-08T00:00:00Z")));
+    assert.equal(outside.age,null);assert.equal(outside.ageMatch,"unknown");
   });
   const saved: GrowthAttention = {id:"00000000-0000-4000-8000-000000000002",childId,topicId:"solid_food",version:3,state:"proposed",
     title:"Synthetic saved attention",kind:"observe",whyNow:"Synthetic prior basis",advice:"Synthetic advice",limits:"Synthetic limits",
@@ -124,5 +127,53 @@ test("Growth GET degrades only unsupported profile filters and keeps writes stri
     await assert.rejects(()=>store.evaluate(userId,childId,{workerGeneration:"synthetic-generation",storageEpoch:"synthetic-epoch"}),z.ZodError);
     assert.equal(mutations().length,0);
     assert.equal(knowledgeQueries().length,0);
+  });
+  await t.test("unknown and approximate ages retain the shared Agent filter behavior",async()=>{
+    for(const age of [{kind:"unknown"},
+      {kind:"approximate",rawValue:"119",unit:"months",asOf:"2026-10-07"},
+      {kind:"approximate",rawValue:"121",unit:"months",asOf:"2026-10-07"}] as const){
+      reset("HK");profile.profile.data!.age=age;
+      const before=structuredClone(profile),filter=agentKnowledgeFilter(profile),response=await get();
+      assert.equal(response.status,200);assert.equal(knowledgeQueries().length,1);
+      assert.equal((await response.json()).page.notices.some((notice:string)=>notice.includes("0–10")),false);
+      assert.deepEqual(knowledgeQueries()[0].values.slice(6,9),[filter.age?.basis??null,filter.age?.minMonths??null,filter.age?.maxMonths??null]);
+      assert.equal(knowledgeQueries()[0].values[11],filter.ageMatch);
+      assert.equal(mutations().length,0);assert.deepEqual(profile,before);
+    }
+  });
+  await t.test("confirmed birth-date reads respect the inclusive 120-month anniversary",async()=>{
+    const cases=[
+      {name:"birth date",birth:"2026-10-07",at:"2026-10-07T00:00:00Z",months:0},
+      {name:"future birth date",birth:"2026-10-08",at:"2026-10-07T00:00:00Z",months:null},
+      {name:"invalid birth date",birth:"invalid",at:"2026-10-07T00:00:00Z",months:null},
+      {name:"below ten years",birth:"2016-10-07",at:"2026-10-06T00:00:00Z",months:119+29/30},
+      {name:"exactly ten years",birth:"2016-10-07",at:"2026-10-07T00:00:00Z",months:120},
+      {name:"one millisecond beyond ten years",birth:"2016-10-07",at:"2026-10-07T00:00:00.001Z",months:null},
+      {name:"one day beyond ten years in the same year",birth:"2016-10-07",at:"2026-10-08T00:00:00Z",months:null},
+      {name:"before clamped leap-day anniversary",birth:"2016-02-29",at:"2026-02-27T00:00:00Z",months:119+29/30},
+      {name:"at clamped leap-day anniversary",birth:"2016-02-29",at:"2026-02-28T00:00:00Z",months:120},
+      {name:"after clamped leap-day anniversary",birth:"2016-02-29",at:"2026-03-01T00:00:00Z",months:null},
+      {name:"before month-end anniversary",birth:"2016-01-31",at:"2026-01-30T00:00:00Z",months:119+30/31},
+      {name:"at month-end anniversary",birth:"2016-01-31",at:"2026-01-31T00:00:00Z",months:120},
+      {name:"after month-end anniversary",birth:"2016-01-31",at:"2026-02-01T00:00:00Z",months:null},
+    ];
+    const observed=[];
+    for(const example of cases){
+      reset("HK");t.mock.timers.setTime(Date.parse(example.at));
+      profile.profile.data!.age={kind:"birth_date",date:example.birth};
+      records=[{payload_encrypted:JSON.stringify({item:saved,lastRequest:null})}];
+      const before=structuredClone({profile,records}),response=await get();
+      assert.equal(response.status,200,example.name);
+      const {page}=await response.json(),query=knowledgeQueries()[0];
+      assert.deepEqual(page.items,[{...saved,sourceAvailable:false}],example.name);
+      assert.deepEqual({profile,records},before,example.name);
+      assert.equal(mutations().length,0,example.name);assert.deepEqual(scopes,["family"],example.name);
+      observed.push({name:example.name,queries:knowledgeQueries().length,
+        ageNotice:page.notices.some((notice:string)=>notice.includes("0–10")),
+        age:query?{basis:query.values[6],minMonths:query.values[7],maxMonths:query.values[8],match:query.values[11]}:null});
+    }
+    assert.deepEqual(observed,cases.map(example=>({name:example.name,queries:example.months===null?0:1,
+      ageNotice:example.months===null,age:example.months===null?null:
+        {basis:"actual",minMonths:example.months,maxMonths:example.months,match:"contained"}})));
   });
 });

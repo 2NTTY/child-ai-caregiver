@@ -1,7 +1,8 @@
-import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { ApiError, GoogleGenAI } from "@google/genai";
 import type { EmbedContentResponse } from "@google/genai";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { AiConfig } from "./ai-config.ts";
+import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import { AGENT_LIMITS } from "./agent-budget.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
@@ -43,6 +44,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string): {
   check: (signal: AbortSignal) => Promise<boolean>;
 } {
   if (typeof apiKey !== "string" || !apiKey.trim()) throw new ProviderFailure("unavailable");
+  const thinkingLevel = nativeModelThinkingLevel(config.model);
   const httpOptions = { baseUrl: "https://generativelanguage.googleapis.com", apiVersion: "v1beta",
     timeout: config.timeoutMs, retryOptions: { attempts: 1 } };
   let client: GoogleGenAI;
@@ -61,7 +63,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string): {
           const response = await client.models.generateContent({ model: config.model, contents: request.contents,
             config: { ...request.config, httpOptions, candidateCount: 1,
               maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
-              thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }, abortSignal: signal } });
+              thinkingConfig: { thinkingLevel }, abortSignal: signal } });
           const candidate = response.candidates?.[0];
           // Preserve native parts and opaque signatures for the next ADK turn.
           return { content: response.candidates?.length === 1 ? candidate?.content : undefined,
@@ -79,7 +81,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string): {
             contents: input.messages.map(message => ({ role: message.role, parts: [{ text: message.text }] })),
             config: { systemInstruction: input.systemInstruction, httpOptions,
               maxOutputTokens: Math.min(options.maxOutputTokens, config.maxOutputTokens, AGENT_LIMITS.outputTokens),
-              candidateCount: 1, thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }, abortSignal: options.signal } });
+              candidateCount: 1, thinkingConfig: { thinkingLevel }, abortSignal: options.signal } });
           return readVertexReply(response);
         } catch (error) {
           if (error instanceof ProviderFailure) throw error;

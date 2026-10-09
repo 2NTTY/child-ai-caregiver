@@ -40,7 +40,7 @@ function fixture(options: FixtureOptions = {}) {
   const context = { profile: { childId: ids.child, version: 0, data: null }, profileApplicable: false, facts: [], topics: [], summary: null,
     recentMessages: sourceMessages, conflictingKeys: [], unavailableFactKeys: [], truncated: { facts: false, topics: false, messages: false } };
   const step = (name: string, args: Record<string, unknown> = {}) => ({ name, args });
-  const read = step("read_context"), load = step("load_capabilities", { capabilities: ["tasks", ...(options.stageSummary ? ["memory"] : [])] });
+  const read = step("read_context"), load = step("load_capabilities", { capabilities: ["tasks", ...(options.stageSummary ? ["memory_summary"] : [])] });
   const propose = step("propose_task_change", { taskId: ids.task, expectedVersion: 1, action: "complete", note: "Synthetic pending candidate",
     dueAt: null, timeZone: null, assigneeUserId: null });
   const confirm = step("request_confirmation", { runId: ids.run, proposalId: ids.proposal, expectedVersion: 1, workId: null });

@@ -3,6 +3,7 @@ import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
 export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: 8, queryEmbeddings: 2,
   deadlineMs: 90000, outputTokens: 1024, inputCharacters: 32000 });
 export const AGENT_INTERACTIVE_INPUT = Object.freeze({ default: 64000, min: 32000, max: 64000 });
+export const AGENT_TOOL_RESPONSE_RESERVE = 4096;
 
 export type AgentStopReason = "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
   | "input_limit" | "unauthorized" | "quota_exceeded" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown";
@@ -49,8 +50,9 @@ export class AgentBudget {
     this.selectedLimits = { ...this.selectedLimits, inputCharacters: value };
   }
   /** Latest complete request plus the model's native response; leave room for the next tool/presentation turn. */
-  prepareToolResponseBudget(requestCharacters: number, modelContentCharacters: number) {
-    this.responseCharacters = Math.max(0, this.selectedLimits.inputCharacters - requestCharacters - modelContentCharacters - 4096);
+  prepareToolResponseBudget(requestCharacters: number, modelContentCharacters: number, capabilityGrowthCharacters = 0) {
+    if (!Number.isSafeInteger(capabilityGrowthCharacters) || capabilityGrowthCharacters < 0) throw new Error("Invalid capability growth reserve");
+    this.responseCharacters = Math.max(0, this.selectedLimits.inputCharacters - requestCharacters - modelContentCharacters - AGENT_TOOL_RESPONSE_RESERVE - capabilityGrowthCharacters);
   }
   get toolResponseCharacters() { return this.responseCharacters ?? 8000; }
   accountToolResponse(characters: number) {

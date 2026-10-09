@@ -51,7 +51,8 @@ test("public source transport bounds DNS, redirects, response size and cancellat
   let calls = 0, parses = 0, contentType = "text/html; charset=utf-8";
   const moduleOptions = (exports: Record<string, unknown>) => ({ cache: false, exports });
   t.mock.module("node:dns/promises", moduleOptions({ lookup: async () => addresses.map(address => ({ address, family: 4 })) }));
-  t.mock.module("../server/knowledge-source-parser.ts", moduleOptions({ parseSourceContent: () => { parses++; return [item]; } }));
+  t.mock.module("../server/knowledge-source-parser.ts", moduleOptions({ parseSourceContent: () => { parses++; return [item]; },
+    parsedKnowledgePdfContent: () => assert.fail("The HTML transport fixture must not parse PDF content") }));
   t.mock.module("node:https", moduleOptions({ request: (_url: URL, options: { signal: AbortSignal; lookup: Function; family: number }, handle: Function) => {
     calls++;
     assert.equal(options.family, 4);

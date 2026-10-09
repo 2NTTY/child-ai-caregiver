@@ -34,7 +34,14 @@ function setup(generate: (request: LlmRequest, index: number, signal: AbortSigna
 
 test("real ADK Runner performs two tool steps, preserves native signatures and returns text only", async () => {
   const s = setup(async (_, index) => index < 2 ? call("read_context", { key: index ? "region" : "age" }) : answer("已讀取兩項合成資料。"));
+  let finalized = 0;
+  s.input.finalize = async (result, _context, reason) => {
+    finalized++;
+    assert.equal(reason, "normal");
+    return result.text;
+  };
   const result = await s.runtime.run(s.input);
+  assert.equal(finalized, 1);
   assert.equal(result.status, "completed", JSON.stringify(result));
   assert.equal(result.text, "已讀取兩項合成資料。");
   assert.equal(s.executions(), 2);

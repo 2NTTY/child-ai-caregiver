@@ -22,7 +22,8 @@ function harness() {
   const space = { access_version: "1", storage_epoch: epoch, change_seq: "1" };
   const messages: any[] = [], works: any[] = [], operations: any[] = [], confirmations: any[] = [], proposals: any[] = [], facts: any[] = [], revisions: any[] = [];
   const queries: string[] = [];
-  let run = { id: randomUUID(), source_message_id: null as string | null, authorization_version: "1", data_version: epoch + ":1", trigger_reference: "" };
+  let run: { id: string; source_message_id: string | null; authorization_version: string; data_version: string; trigger_reference: string }
+    = { id: randomUUID(), source_message_id: null, authorization_version: "1", data_version: epoch + ":1", trigger_reference: "" };
   const message = (role: "user" | "model", text: string, inReplyTo: string | null = null) => {
     const id = randomUUID(), created_at = new Date(Date.UTC(2026, 9, 8, 0, 0, 0, messages.length));
     const row = { id, role, child_id: childId, owner_user_id: userId, author_user_id: role === "user" ? userId : null,
@@ -167,7 +168,8 @@ test("persisted specific question accepts once and rejects ambiguity, mixed cons
       effects++; assert.equal(input.confirmShared, false); return { ...first, status: "accepted", version: 2, result: { kind: "memory_fact", id: randomUUID(), version: 2 } };
     });
     const confirmation = await store.requestConfirmation(h.scope, h.run.id, { runId: h.run.id, proposalId: first.id, expectedVersion: 1, workId: null });
-    assert.ok(confirmation?.question.includes("合成孩子")); assert.ok(confirmation.question.includes("synthetic-value"));
+    assert.ok(confirmation);
+    assert.ok(confirmation.question.includes("合成孩子")); assert.ok(confirmation.question.includes("synthetic-value"));
     let text = confirmation.question;
     if (mode === "multiple") {
       const other = h.addProposal(), another = await store.requestConfirmation(h.scope, h.run.id, { runId: h.run.id, proposalId: other.id, expectedVersion: 1, workId: null });
