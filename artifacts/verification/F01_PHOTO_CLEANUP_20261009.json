@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "package": "f01-photo-cleanup-dependency-port-and-shutdown-drain",
+  "recordedAt": "2026-10-09T21:28:29.873978+08:00",
+  "baseCommit": "09224a1539974125dcb7ec5487fc204680c55401",
+  "status": "local_candidate_validated_and_independently_reviewed_pending_normal_publication",
+  "changedPaths": [
+    "server/photo-cleanup.ts",
+    "server/index.ts",
+    "tests/photo-cleanup.test.ts"
+  ],
+  "fixedSource": [
+    {
+      "path": "server/photo-cleanup.ts",
+      "sha256": "373455488cc61273a6eef2c379f5d99e87882217bc35b59d4acfc30e4f2c31de",
+      "baseSha256": null
+    },
+    {
+      "path": "server/index.ts",
+      "sha256": "5861c1ad3c7f1964efb1ea1034f30f2488745290002e0b282b8c01802c1f0544",
+      "baseSha256": "c10541cd5bcc722e1b1fd74e2939389cce30bc5c717dfbae776bca0b5302e9a6"
+    },
+    {
+      "path": "tests/photo-cleanup.test.ts",
+      "sha256": "cda2ed1298427143a5e040bff0f9cff848a52e51b6ae432de04690e337dd910e",
+      "baseSha256": null
+    }
+  ],
+  "verification": {
+    "environment": {
+      "node": "24.19.0",
+      "dependencies": "Existing pinned lock and node_modules; no install or dependency changes",
+      "mode": "Offline synthetic timer, pool and file-removal fixtures"
+    },
+    "baseline": {
+      "raceReproduction": {
+        "exit": 0,
+        "status": "race reproduced with original index snippets and actual PhotoStore"
+      },
+      "desiredOrdering": {
+        "exit": 1,
+        "status": "expected red: pool closes before the in-flight removal and original receipt acknowledgement"
+      }
+    },
+    "candidateV1": {
+      "tests": {
+        "passed": 5,
+        "failed": 0,
+        "exit": 0
+      },
+      "serverTypecheck": {
+        "exit": 2,
+        "diagnostic": "Three TS2550 at tests/photo-cleanup.test.ts:32,33,92: Promise.withResolvers is outside the unchanged compiler lib.",
+        "response": "Stopped the batch, saved exact failing source/logs; replaced only test deferred gate syntax with new Promise. No assertion or compiler configuration change."
+      }
+    },
+    "candidateV2": {
+      "tests": {
+        "passed": 5,
+        "failed": 0,
+        "exit": 0
+      },
+      "serverTypecheck": {
+        "exit": 0
+      },
+      "exactIndexSnippets": {
+        "normal": {
+          "exit": 0,
+          "status": "green"
+        },
+        "server-error": {
+          "exit": 0,
+          "status": "green"
+        },
+        "startup-failure": {
+          "exit": 0,
+          "status": "green"
+        },
+        "queue-rejection": {
+          "exit": 0,
+          "status": "green"
+        }
+      }
+    }
+  },
+  "invariants": [
+    "Initial purge, 30 second unref timer, one in-flight pass, fixed warning and later retry remain unchanged.",
+    "Start and stop are idempotent; a stop during initial purge cannot install a later timer.",
+    "Drain the current real PhotoStore purge and its original deletion receipt before queue/pool close.",
+    "Normal/server error/startup failure close paths drain; repeated closePool shares one promise; queue rejection still closes pool and sets exitCode=1.",
+    "PhotoStore SQL, immutable file deletion behavior, delete receipts, permissions, generation/epoch and retention are unchanged."
+  ],
+  "limitations": [
+    "Exact index snippets were exercised rather than a full HTTP bootstrap or real process signal.",
+    "A permanently hung purge still blocks graceful storage cleanup; no new timeout, forced exit or business decision was added.",
+    "No real DB/files/HTTP/browser/cloud/Emulator/model/external communication; no deployment or Git publication.",
+    "F01 overall, durable outbox, Cloud Tasks/Storage adapters, non-SQL fencing, remaining services and other three Agent internals remain incomplete.",
+    "Prior 19 Auth/runtime tests were not rerun; their unchanged behavior evidence is reused."
+  ],
+  "network": {
+    "guardSha256": "01d405f63e2e70a69d207f8704d17416ac828d4bcc2c268c9395519a16f83770",
+    "records": [
+      {
+        "file": "candidate-v2-index-normal-network-audit-5.json",
+        "sha256": "85d80c6e4f9d5c636980a2cef04ba1af96f56a68de4674e014a2d3c6f0b7b72d",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/f01_background_ports_20261009/evidence/check-index-photo-cleanup.mjs",
+          "f01_background_ports_20261009/source",
+          "normal"
+        ],
+        "attempts": 0
+      },
+      {
+        "file": "candidate-v2-index-queue-rejection-network-audit-47.json",
+        "sha256": "d589fb392f635621bc057680eac12e72e95eebaea41201e2a2a6158a2488339a",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/f01_background_ports_20261009/evidence/check-index-photo-cleanup.mjs",
+          "f01_background_ports_20261009/source",
+          "queue-rejection"
+        ],
+        "attempts": 0
+      },
+      {
+        "file": "candidate-v2-index-server-error-network-audit-18.json",
+        "sha256": "c7add3134b00188f32370c49af0f8298540c7d04311fce9cc50cb9c4cb8e7867",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/f01_background_ports_20261009/evidence/check-index-photo-cleanup.mjs",
+          "f01_background_ports_20261009/source",
+          "server-error"
+        ],
+        "attempts": 0
+      },
+      {
+        "file": "candidate-v2-index-startup-failure-network-audit-32.json",
+        "sha256": "5e45fc2e19ee8c0f5a2f0cd15d7666c722f3461bd521ebc40439843ec98c8942",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/f01_background_ports_20261009/evidence/check-index-photo-cleanup.mjs",
+          "f01_background_ports_20261009/source",
+          "startup-failure"
+        ],
+        "attempts": 0
+      },
+      {
+        "file": "candidate-v2-tests-network-audit-12.json",
+        "sha256": "ff3878790205250c9f149c653a21e82be80337716695dc0f18e907c10ce92940",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/f01_background_ports_20261009/source/tests/photo-cleanup.test.ts"
+        ],
+        "attempts": 0
+      },
+      {
+        "file": "candidate-v2-tsc-network-audit-5.json",
+        "sha256": "11db2264dd2a5483692578cf9a9a957210a2202c669317b846655d08c7a9a4aa",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/f01_background_ports_20261009/source/node_modules/typescript/bin/tsc",
+          "--project",
+          "tsconfig.server.json"
+        ],
+        "attempts": 0
+      }
+    ],
+    "limitations": "Guard records selected Node socket/TLS/DNS/fetch attempts, not packet capture. PID files can be reused; per-phase snapshots are not added as unique process counts."
+  },
+  "rawEvidenceHashes": {
+    "baseline-photo-purge-stop.log": "ee686752c9c9314822ea758e2e79c89fd02b62f6e0cc714fca2bbfd27b4cd275",
+    "baseline-desired-order-red.log": "c0793359586940743f4ec3ceea52a251bb1da7769adce90ea62863b6d70bcd1d",
+    "candidate-photo-cleanup.log": "7fc88649c7dc100cb96df3c8f05f3a5b0a7b1bbe424f88f232df68485d7ae570",
+    "candidate-server-tsc.log": "796348d2a3d5c8774e92394bead3a1c9fec68ad193e2e0a68e2e99ef62bc4fad",
+    "candidate-v2-photo-cleanup.log": "527609f897e04738105e9f15b1dd6bb6b34255b357019150361291d88058228b",
+    "candidate-v2-server-tsc.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidate-v2-index-normal.log": "6683490240f73c0e66cc5f4298e74da5449d86af300e50cde772b62bb77d2b64",
+    "candidate-v2-index-server-error.log": "bf48d1b539d3e5bf576afb05e167cb91dd7dc139d3cb745e77ab153176c7db7d",
+    "candidate-v2-index-startup-failure.log": "a5a3ce7461d12642cde7cc62e3fa14941adfa74feca5c648313ee73bc5a5e97f",
+    "candidate-v2-index-queue-rejection.log": "8724f5f8fd5c78257ac73bc31bb829f147e3972ed1c0997180fc7c42090b8078",
+    "candidate-v2.diff": "be161b1e3bfdb61ac7e3fb35ebfa5a045906d5bd4e0b716047c9b2cbafa44cd2",
+    "first-failure-photo-cleanup.test.ts": "085ecfc6f309e3c2bc5a66e7854c2fdce5b76a2fcf79b247d574c906fd89ed2d",
+    "check-index-photo-cleanup.mjs": "b9392af5011e65bc41e81968e01e7b01550d998c013b08e14da430f6eb075b57",
+    "reproduce-photo-purge-stop.mjs": "0881c7324b60f5d8c65d05d71d98b221c0028825a19f4c4675d3a7067a14bdb9",
+    "source-baseline-audit.json": "4f1594dd54f51c8a640c5ac7f7b2a3b92aba4a2bcf20005ae1ec28801284dad4"
+  },
+  "integrationChecks": {
+    "baseCommit": "09224a1539974125dcb7ec5487fc204680c55401",
+    "recordedAt": "2026-10-09T21:37:11.677999+08:00",
+    "scope": "One F01 package combining the independently reviewed photo shutdown fix, six-store transaction documentation and existing Firestore dependency license inventory. No new dependency or runtime adapter.",
+    "focusedTests": {
+      "command": "node --import ../evidence/offline-guard.mjs --test tests/photo-cleanup.test.ts tests/license-inventory.test.ts",
+      "pass": 7,
+      "fail": 0,
+      "skip": 0,
+      "exit": 0,
+      "logSha256": "7fb777b4f70020250e41adb619d8e918ced74bc5ddf3c85027d017a334f0a948"
+    },
+    "serverTypecheck": {
+      "command": "node --import ../evidence/offline-guard.mjs ./node_modules/typescript/bin/tsc --project tsconfig.server.json",
+      "exit": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "reviewedCodeAndDocumentHashes": {
+      "server/index.ts": "5861c1ad3c7f1964efb1ea1034f30f2488745290002e0b282b8c01802c1f0544",
+      "server/photo-cleanup.ts": "373455488cc61273a6eef2c379f5d99e87882217bc35b59d4acfc30e4f2c31de",
+      "tests/photo-cleanup.test.ts": "cda2ed1298427143a5e040bff0f9cff848a52e51b6ae432de04690e337dd910e",
+      "THIRD_PARTY_NOTICES.md": "4f533a7006c55a7218f6688610b94d063f54aedc2c5ebc9da8b83b9bc0f99a0e",
+      "licenses/google-cloud-firestore/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "licenses/manifest.json": "39315239698d7b9ce296c5e71853911855c76b18faef7b856d3d5cb99a7c47af",
+      "tests/license-inventory.test.ts": "9305981792364b4e342eec16016fc4a5bec1ef86ad1785808622978dd7a0bacf",
+      "docs/TECH_REUSE.md": "bc92f714e2502188e9d6d31e10335848e6594daa8a1ce9a85749098da64341f1",
+      "docs/DATA_MODEL.md": "febf79fc111483bb3bcdd9b3d6ebfcda5f1fe15102e7f72d8a22efaa0682b295"
+    },
+    "storeDocumentation": {
+      "sourceBlobsVerified": 207,
+      "migrationFiles": 36,
+      "createTableDefinitions": 98,
+      "codeLineLinksValidated": 7,
+      "historicalAuditPreserved": "35 migrations / 97 CREATE TABLE definitions / 27 factories at 0c22180 remain a dated historical snapshot.",
+      "validationSha256": "ab5142ed835bcadf7117823436b62c5eff1c630a35e054ae66fad833a3da667a",
+      "sourceAuditSha256": "6568fce53aaff93f54cca331132d708cc22c94a4afb6ba38869151b923509c8e",
+      "validationScope": "Read-only fixed source / documentation review; query/index shapes and native cloud contention remain unimplemented or untested."
+    },
+    "licenseInventory": {
+      "package": "@google-cloud/firestore",
+      "version": "9.3.1",
+      "license": "Apache-2.0",
+      "packageFilesCompared": 130,
+      "separateNoticePresent": false,
+      "provenanceSha256": "746d01d093bc21d46683d95d06a21457161cd68ac317b34f7976cefa04ced4cd",
+      "originalVerificationSha256": "22e2b9abb8ee90398b50ff0974f81a41692e542cdc3faf381f4ae3f3670d3ea0",
+      "reusedNegativeControls": [
+        "Omitted Firestore inventory entry was rejected (exit 1).",
+        "Changed preserved LICENSE bytes were rejected (exit 1)."
+      ],
+      "negativeControlsRerun": false,
+      "unchangedDirectInventoryGaps": {
+        "root": [
+          "@react-pdf/renderer",
+          "nodemailer",
+          "@types/nodemailer"
+        ],
+        "frontend": [
+          "@types/luxon",
+          "culori",
+          "playwright-core"
+        ]
+      },
+      "fullDependencyLicenseAudit": false
+    },
+    "networkRecords": [
+      {
+        "file": "integrated-tests-network-audit-15.json",
+        "sha256": "3c79e5a5e15bc33745c3e67b521e14aa57aa88158aa15d4f8ae9dd3679db577d",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/f01_background_ports_20261009/source/tests/license-inventory.test.ts"
+        ],
+        "attempts": 0
+      },
+      {
+        "file": "integrated-tests-network-audit-16.json",
+        "sha256": "9302ded308551e2e4872ab18c1e5c861814978346c67d521eda5c36bfcd4a6a5",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/f01_background_ports_20261009/source/tests/photo-cleanup.test.ts"
+        ],
+        "attempts": 0
+      },
+      {
+        "file": "integrated-tsc-network-audit-5.json",
+        "sha256": "11db2264dd2a5483692578cf9a9a957210a2202c669317b846655d08c7a9a4aa",
+        "argv": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/workspace/scratch/c112a98a8be9/f01_background_ports_20261009/source/node_modules/typescript/bin/tsc",
+          "--project",
+          "tsconfig.server.json"
+        ],
+        "attempts": 0
+      }
+    ],
+    "limitations": [
+      "Root PLAN/STATUS/WORKLOG changes are documentation and are reviewed separately; product checks ran against final code, dependency metadata and added tests.",
+      "Earlier photo TS2550 failure and expected-red baseline logs are retained above.",
+      "Integrated test-worker files 15 and 16 are new relative to the pre-integration snapshot; old photo-worker 12 is excluded. The compiler uses a reused PID; snapshots are not counted as unique processes.",
+      "Native APIs and all unchanged prior test suites were not rerun without a relevant change.",
+      "No real model, SQL/Emulator/cloud/browser verification, Git mutation or deployment."
+    ]
+  }
+}

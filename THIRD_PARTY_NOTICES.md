@@ -24,6 +24,7 @@ The exact dependency tree and registry integrity values are recorded in [package
 | typescript (development) | 6.0.3 | Apache-2.0 | [LICENSE](licenses/typescript/LICENSE.txt), [Third-party notice](licenses/typescript/ThirdPartyNoticeText.txt) |
 | @google/genai | 2.24.0 | Apache-2.0 | [LICENSE](licenses/google-genai/LICENSE) |
 | @google/adk | 2.1.0 | Apache-2.0 | [LICENSE](licenses/google-adk/LICENSE) |
+| @google-cloud/firestore | 9.3.1 | Apache-2.0 | [LICENSE](licenses/google-cloud-firestore/LICENSE) |
 | zod | 4.5.4 | MIT | [LICENSE](licenses/zod/LICENSE) |
 | react-hook-form | 7.88.0 | MIT | [LICENSE](licenses/react-hook-form/LICENSE) |
 | @hookform/resolvers | 5.9.1 | MIT | [LICENSE](licenses/hookform-resolvers/LICENSE) |
@@ -62,7 +63,7 @@ After that repair, `npm ls --all --json` reported zero problems, `npx expo insta
 
 ## Transitive dependencies and distribution
 
-S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. S10-W02 adds unmodified Cheerio 1.2.0 for bounded Server-side HTML/RSS parsing. S13-W05 adds unmodified web-push 3.6.7 (MPL-2.0) and its development types 3.6.4 (MIT). S13-W06 adds unmodified grammY 1.46.0 and @grammyjs/types 5.0.0 (MIT), without an auto-retry plugin. The current manifest covers 32 direct packages and 36 original license/notice file entries; earlier verification artifacts retain their historical lockfile hashes.
+S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. S10-W02 adds unmodified Cheerio 1.2.0 for bounded Server-side HTML/RSS parsing. S13-W05 adds unmodified web-push 3.6.7 (MPL-2.0) and its development types 3.6.4 (MIT). S13-W06 adds unmodified grammY 1.46.0 and @grammyjs/types 5.0.0 (MIT), without an auto-retry plugin. The current selected-package manifest contains 42 direct packages, 2 explicitly inventoried transitive packages, and 47 original license/notice file entries. This is not complete coverage of every direct or transitive dependency; earlier verification artifacts retain their historical lockfile hashes.
 
 Transitive packages and their individual license files remain in the installed `node_modules` tree. They are not all reproduced in this document, and `node_modules` is not committed. The inventory records every lockfile license declaration, including build tools and optional platform packages; declared metadata is not proof that every file or distribution obligation has been reviewed.
 
@@ -94,3 +95,7 @@ Server PDF rendering uses unmodified @react-pdf/renderer 4.9.0 (MIT), by Diego M
 ## Official knowledge PDF extraction
 
 P2-A04 uses unmodified Mozilla PDF.js (`pdfjs-dist` 6.4.299, Apache-2.0) for bounded Server-side text extraction. Its original [license](licenses/pdfjs-dist/LICENSE) and package integrity are preserved in the [manifest](licenses/manifest.json). The official Node legacy build provides runtime compatibility; package CMaps and standard-font resources retain upstream notices in the installed distribution. This reader is separate from the existing report renderer. The selected Family Health Service passages and booklet page remain attributed government content, available here only within the stated non-commercial reuse scope; they are not relicensed as application code.
+
+## Firestore SDK inventory
+
+P2-F01 records the already installed, unmodified Server dependency `@google-cloud/firestore` 9.3.1 (Apache-2.0). The original [LICENSE](licenses/google-cloud-firestore/LICENSE) was preserved from the installed package and byte-verified against the existing npm cache tarball whose SHA-512 matches [package-lock.json](package-lock.json). That exact tarball contains no separate NOTICE file. Its transitive dependencies remain within the inventory and distribution boundaries above; this entry does not assess managed-service terms or establish cloud acceptance.

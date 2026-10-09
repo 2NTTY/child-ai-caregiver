@@ -1845,3 +1845,14 @@
 - 原 session／response／Headers 與多個 Set-Cookie 原樣傳遞，每次身份重查仍呼叫 provider；不加快取、不吞錯或重試。createAuth 配置、origin／CSRF、准入、逐裝置撤銷、原 verifyPassword closure 及刪除收據／journal 未改。
 - 基線 server-runtime 10／10、Server typecheck 通過；候選首輪定向 19／19，但新增測試替身有兩項 TS2394，已停批保存。只補兩個 implementation 回傳型別後，同範圍 v2 19／19 及 Server typecheck 通過，未改斷言；失敗原文、固定 source／log hashes 與 audit 範圍見[驗收記錄](artifacts/verification/F01_AUTH_HTTP_PORT_20261009.json)。這不是原聚合 718 的重跑或完整 typecheck／CI。
 - 只用合成 request／provider 替身；現存可歸屬候選兩輪的 test-worker／tsc guard 記錄沒有網絡嘗試，PID 重用及快照重疊限制分列，不當封包擷取。未驗真登入／刷新／撤銷、DB、Firebase、Emulator、瀏覽器、雲端或部署；原模型 20／20 用盡、其他三角色只留接口及既有未驗門檻不變。程式／根文件獨立 review 與正常 PR 交付由後續裁決，不把此記錄當已合併。
+
+
+<a id="log-20261009-f01-connections-closeout"></a>
+## 2026-10-09｜F01 聊天交易對照、背景清理與授權清單
+
+- 基線 master `09224a1539974125dcb7ec5487fc204680c55401`（#164）；dot 統籌並裁決，指定 Astra xhigh 原生子代理編寫契約、窄方案及本記錄，三項成果各經獨立覆核後合成同一窄包。只補既有 F01 缺項，沒有新框架、依賴升級或其他三個 Agent 內部實作；正常 PR 交付另行確認，不把本記錄當已合併／部署。
+- [首批六組 store 對照](docs/TECH_REUSE.md#firestore-chat-store-audit)列聊天、原 run、持久 work、confirmation、actions 及文件收據的 query／上限／讀寫集／清理；[交易邊界](docs/DATA_MODEL.md#firestore-chat-transaction-boundary)保留 caller-wide opId、跨 run 明確決定、取消、accepted／unknown 原收據，以及業務拒絕時不可提交半份 writes。原碼核對 207 個 blob、7 個行號連結；36 份 migration／98 個 CREATE TABLE 是本次口徑，不覆寫歷史 35／97／27。collection／實體索引、其餘 store、真競爭及讀費未驗。
+- 照片清理基線可重現：在途 files.remove 未完成，index 已關 pool，之後原 photo_file_deletions 收據 DELETE 失敗。新增僅含 purgeDeleted 的 PhotoCleanupPort；啟動、30 秒 unref、單 flight、固定 warning 及下一輪重試不變，startup failure／server error／正常關閉先 drain 再關 queue／pool，重複 stop 共用 promise。PhotoStore／Files、原刪除收據及資料保留政策不變；永久 hung 的 purge 仍會等待，本包沒有新 timeout／強殺決策。
+- [授權清單](licenses/manifest.json)及[notices](THIRD_PARTY_NOTICES.md)補 Firestore 9.3.1：既有 npm cache tarball 的 SHA-512 符 lock，130 個套件檔逐 byte 相符，原 Apache-2.0 LICENSE 已保存，包內無獨立 NOTICE。既有非 Firestore 條目保留；這不是完整直接／間接依賴或發佈授權審核，既有清單缺項明示保留，沒有下載／安裝或改 lock。
+- 照片首輪 5／5 後 Server typecheck 因測試 Promise.withResolvers 對現有 lib 的 3 個 TS2550 停批保存；只換測試 gate 為 new Promise，斷言／tsconfig 不變。修正後 5／5 及 tsc 通過；同一原碼片段驗證保留 baseline red，候選正常／server error／startup failure／queue rejection 四路徑 green，原 DELETE 先於 queue／pool 關閉。license 原 2／2 及兩個負向控制拒絕證據保留；整合後照片＋license **7／7**、Server tsc exit 0。固定來源、失敗、log hashes 與 guard 限制見[驗收記錄](artifacts/verification/F01_PHOTO_CLEANUP_20261009.json)，未重跑完整聚合或 Auth 19 項。
+- 僅離線合成 pool／files／timer 及檔案清單核查；精確 index 片段不冒充完整 HTTP／真 process signal。沒有真 DB／Emulator／照片／外發、模型、雲端資源、權限或部署。原 20／20 模型額用盡、A09 引用／同文件修改／新對話讀回未完成、其他三角色只留接口，以及非 SQL outbox／取消／effect fencing／resume 等門檻不變。

@@ -4,8 +4,8 @@
 
 ## 目前與接手
 
-- **目前聚焦聊天 Agent 可靠辦事及 F01 接點。** 使用者已收窄本輪為單一聊天 Agent；資料收集／生成／審核三角色只保留接口。唯一工作入口及完成門檻見 [PLAN#active](PLAN.md#active)，範圍決策見 [ADR-021](docs/DECISIONS.md#adr-021)。P2-A01～A08 及 #140 等既有成果保留；原 A09 引用／同一文件修改／新對話讀回與穩定服務仍未完成。 F01 的 HTTP Auth/session 薄接點已有[限定離線證據](artifacts/verification/F01_AUTH_HTTP_PORT_20261009.json)，仍沿用 Better Auth，未部署；Firebase 身份／裝置 session 及完整 F01 尚未完成。
-- 持久 session／根預算的可選單次 runtime 接點及中斷 run 收據查回已合併，尚未部署（2026-10-09 核對 master `09c2470c`）。default memory 不變；正式 bootstrap／index／worker、動態本人設定、SQL 日額冪等、跨庫 effect fencing 及 resume 仍未完成。查回只讀原互動 run 的已提交收據，保留 unknown／countsKnown=false 及不重跑；僅經離線合成驗收，不代表真 SQL 競爭或完整產品驗收，見[固定證據](artifacts/verification/INTERRUPTED_RECEIPT_RECOVERY_20261009.json)。
+- **目前聚焦聊天 Agent 可靠辦事及 F01 接點。** 使用者已收窄本輪為單一聊天 Agent；資料收集／生成／審核三角色只保留接口。唯一工作入口及完成門檻見 [PLAN#active](PLAN.md#active)，範圍決策見 [ADR-021](docs/DECISIONS.md#adr-021)。P2-A01～A08 及 #140 等既有成果保留；原 A09 引用／同一文件修改／新對話讀回與穩定服務仍未完成。 F01 的 HTTP Auth/session 薄接點已合併，仍沿用 Better Auth；最新窄包補聊天 store／交易對照、Firestore 授權清單及照片清理停機，7 項離線檢查與 Server typecheck 通過、未部署，見[窄包記錄](WORKLOG.md#log-20261009-f01-connections-closeout)。Firebase 身份／裝置 session 及完整 F01 尚未完成。
+- 持久 session／根預算的可選單次 runtime 接點及中斷 run 收據查回已合併，尚未部署（本輪開工基線 master `09224a15`）。default memory 不變；正式 bootstrap／index／worker、動態本人設定、SQL 日額冪等、跨庫 effect fencing 及 resume 仍未完成。查回只讀原互動 run 的已提交收據，保留 unknown／countsKnown=false 及不重跑；僅經離線合成驗收，不代表真 SQL 競爭或完整產品驗收，見[固定證據](artifacts/verification/INTERRUPTED_RECEIPT_RECOVERY_20261009.json)。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。
