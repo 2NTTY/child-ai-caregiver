@@ -675,6 +675,8 @@ Agent 透過 read_family_documents／generate_family_document／change_family_do
 
 `save_work` 使用 `operationId／workId／expectedVersion`，每個 run／call 與原操作皆防重；`request_confirmation` 指向既有 `runId／proposalId／expectedVersion`，可綁 `workId`。新 `memory_fact_revise／memory_fact_deactivate` 候選由 Server 讀出 `targetVisibility`，前端不可猜測分享範圍。確認成功的實際收據加入當輪結果；後续模型或文字收尾失敗仍保留已成功操作，不重做。
 
+工作來源與取消的窄守衛補充：`sourceMessageIds` 只接受同本人／孩子、`role=user` 且 `author_user_id` 為本人的原訊息，仍受目前 run 原訊息的時間截止限制；模型訊息可按原 role 查閱作上下文，不能列為本人來源。空來源陣列的既有規則不改，亦不以歷史來源取得新操作授權。原工作已 `cancelled` 時，新寫入不得改為其他狀態，返回 `409 work_cancelled` 並保持原版本、收據及 changes；仍為 cancelled 的既有更新不因此新增限制，completed 的轉換政策不在本次擴改。相同原操作／內容的查回仍返回歷史結果，不能解讀成當前工作已恢復；不同內容仍衝突。沒有同 ID 的恢復協定；只有本人明確的新交代才可另建工作，不自動以新 ID 繞過取消，原取消紀錄保留。
+
 完整前端呈現由 A07 接回同一 owner，不在 A02 重做介面。
 
 <a id="p2-a05-reports"></a>

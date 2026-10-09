@@ -14,7 +14,7 @@ const conflict = (code: string) => new FamilyError(409, code);
 const digest = (value: unknown) => createHash("sha256").update(canonicalJson(value)).digest("hex");
 const aad = (userId: string, childId: string, id: string, version: number) => `agent-work:${childId}:${userId}:${id}:${version}`;
 const operationAad = (userId: string, childId: string, operationId: string) => `agent-work-operation:${childId}:${userId}:${operationId}`;
-interface WorkRow { id: string; child_id: string; owner_user_id: string; version: number; payload_encrypted: string; created_at: Date; updated_at: Date; cursor_at: string }
+interface WorkRow { id: string; child_id: string; owner_user_id: string; version: number; status: AgentWork["status"]; payload_encrypted: string; created_at: Date; updated_at: Date; cursor_at: string }
 interface ScanRow { id: string; version: number; role: "user" | "model" | null; payload_encrypted: string; created_at: Date; cursor_at: string; in_reply_to: string | null; created_by?: string; source_record_id?: string; source_record_version?: number }
 const cursorSchema = z.object({
   v: z.literal(1), userId: z.string(), childId: z.uuid(), kind: z.string(), queryHash: z.string(),
@@ -95,8 +95,9 @@ export function createAgentWorkStore(pool: Pool, cipher: StorageCipher) {
         const old = input.workId ? (await client.query<WorkRow>("SELECT * FROM agent_work WHERE id=$1 AND owner_user_id=$2 AND child_id=$3 FOR UPDATE", [input.workId, scope.userId, scope.childId])).rows[0] : null;
         if (input.workId && !old) throw missing();
         if ((old?.version ?? 0) !== input.expectedVersion) throw conflict("version_conflict");
+        if (old?.status === "cancelled" && input.values.status !== "cancelled") throw conflict("work_cancelled");
         for (const id of input.values.sourceMessageIds) {
-          if (!(await client.query("SELECT 1 FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND (created_at,id)<=(SELECT created_at,id FROM chat_messages WHERE id=$4 AND child_id=$2 AND owner_user_id=$3) FOR SHARE",
+          if (!(await client.query("SELECT 1 FROM chat_messages WHERE id=$1 AND child_id=$2 AND owner_user_id=$3 AND role='user' AND author_user_id=$3 AND (created_at,id)<=(SELECT created_at,id FROM chat_messages WHERE id=$4 AND child_id=$2 AND owner_user_id=$3) FOR SHARE",
             [id, scope.childId, scope.userId, run.source_message_id])).rowCount) throw missing();
         }
         for (const ref of input.values.resources) await resource(client, scope.userId, scope.childId, ref);
