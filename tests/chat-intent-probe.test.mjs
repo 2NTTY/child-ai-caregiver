@@ -9,9 +9,11 @@ import childProcess from 'node:child_process';
 // Captured exclusively for root-authorized temporary local Git fixture setup.
 // Commands below are fixed init/add/commit operations without network or hooks.
 const offlineFixtureGit = childProcess.execFileSync;
+// Captured only for the fixed local Node CLI below; its preload and preflight deny networking.
+const offlineFixtureNode = childProcess.spawnSync;
 import { ProbeError, LIMITS, LEDGER_ID, LIVE_LEDGER_RELATIVE_PATH, sha256, denyOfflineNetwork,
   validateManifest, newOfflineLedger, validateLedger, openLedger, readVerifiedB, inspectLedgerCheckpoint, verifySeparatedRoots,
-  validateManifestAuthority, LIVE_AUTHORITY_CONNECTED, deriveLiveLedgerPath, readCleanCheckoutHead } from '../scripts/lib/chat-intent-probe-guards.mjs';
+  validateManifestAuthority, LIVE_AUTHORITY_CONNECTED, deriveLiveLedgerPath, readCleanCheckoutHead, hashTree } from '../scripts/lib/chat-intent-probe-guards.mjs';
 
 // No test below starts a genuine live provider. The guard is installed before
 // importing the actual production runtime/tools and stays installed throughout.
@@ -203,7 +205,7 @@ test('manifest authority requires a byte pin and exact fixed upstream context', 
     assert.throws(() => validateManifestAuthority(bytes, manifest, { ...env, YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON: JSON.stringify({ ...context, ...changed }) }), isCode('live_workflow_context_invalid'));
 });
 
-test('even caller-fabricated complete pin/context leaves preflight disconnected and product unevaluated', async () => {
+test('even caller-fabricated complete pin/context leaves live run disconnected and product unevaluated', async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'probe-authority-')); directories.push(directory);
   const productRoot = path.join(directory, 'untested-product'); fs.mkdirSync(productRoot); fs.mkdirSync(path.join(productRoot, 'server'));
   const marker = path.join(directory, 'product-executed');
@@ -218,8 +220,8 @@ test('even caller-fabricated complete pin/context leaves preflight disconnected 
   const previous = names.map(name => process.env[name]);
   process.env[names[0]] = '1'; process.env[names[1]] = sha256(bytes); process.env[names[2]] = JSON.stringify(context);
   try {
-    await assert.rejects(() => main(['--live', '--preflight', '--case', 'B', '--run-id', manifest.runId,
-      '--approved-manifest', filename, '--product-root', productRoot]), isCode('live_authority_context_unconnected'));
+    await assert.rejects(() => main(['--live', '--run', '--case', 'B', '--run-id', manifest.runId,
+      '--approved-manifest', filename, '--product-root', productRoot, '--output', path.join(directory, 'must-not-exist.json')]), isCode('live_authority_context_unconnected'));
     assert.equal(fs.existsSync(marker), false); assert.equal(fs.existsSync(path.join(directory, '.probe-state')), false);
   } finally { names.forEach((name, index) => { if (previous[index] === undefined) delete process.env[name]; else process.env[name] = previous[index]; }); }
 });
@@ -295,4 +297,104 @@ test('dynamic upstream caller origin avoids self-reference while missing/malform
     { ...context, actorId: '4' }, { ...context, expectedBranch: 'refs/heads/other-branch' }, { ...context, repositoryId: '9' }])
     assert.throws(() => validateManifestAuthority(bytes, manifest, { ...env,
       YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON: JSON.stringify(invalid) }), isCode('live_workflow_context_invalid'));
+});
+
+function makeReadonlyCliFixture() {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'probe-readonly-cli-')); directories.push(workspace);
+  const trusted = path.join(workspace, 'trusted'), product = path.join(workspace, 'product');
+  makeCleanLocalGitFixture(trusted); makeCleanLocalGitFixture(product);
+  const sourceRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+  fs.mkdirSync(path.join(trusted, 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(trusted, 'tests'));
+  fs.copyFileSync(path.join(sourceRoot, 'scripts/verify-chat-intent-probe.mjs'), path.join(trusted, 'scripts/verify-chat-intent-probe.mjs'));
+  fs.cpSync(path.join(sourceRoot, 'scripts/lib'), path.join(trusted, 'scripts/lib'), { recursive: true });
+  fs.copyFileSync(path.join(sourceRoot, 'tests/chat-intent-probe.test.mjs'), path.join(trusted, 'tests/chat-intent-probe.test.mjs'));
+  const marker = path.join(workspace, 'product-import-marker');
+  for (const directory of ['server', 'src', 'prompts']) fs.mkdirSync(path.join(product, directory));
+  for (const filename of ['agent-runtime.ts', 'product-agent.ts', 'product-agent-api.ts', 'family-access.ts', 'ai-config.ts', 'agent-model-gateway.ts'])
+    fs.writeFileSync(path.join(product, 'server', filename), `import fs from 'node:fs'; fs.writeFileSync(${JSON.stringify(marker)}, 'unexpected-product-import'); throw new Error('Product import forbidden in readonly preflight');\n`);
+  for (const directory of ['src', 'prompts']) fs.writeFileSync(path.join(product, directory, 'synthetic.json'), '{}\n');
+  fs.writeFileSync(path.join(product, 'package.json'), JSON.stringify({ name: 'synthetic-readonly-preflight', type: 'module',
+    dependencies: { '@google/adk': '2.1.0', '@google/genai': '2.24.0' } }) + '\n');
+  fs.writeFileSync(path.join(product, 'package-lock.json'), '{"lockfileVersion":3}\n');
+  fs.writeFileSync(path.join(product, '.gitignore'), 'node_modules/\n');
+  // Preflight reads these metadata files; it never imports or installs these synthetic packages.
+  for (const [name, version] of [['@google/adk', '2.1.0'], ['@google/genai', '2.24.0']]) {
+    const directory = path.join(product, 'node_modules', name); fs.mkdirSync(directory, { recursive: true });
+    fs.writeFileSync(path.join(directory, 'package.json'), JSON.stringify({ name, version }) + '\n');
+  }
+  const env = { PATH: process.env.PATH, HOME: workspace, LANG: 'C', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_TERMINAL_PROMPT: '0', YUBAN_SEMANTIC_PROBE_LIVE: '1', GCP_PROJECT_ID: 'synthetic-project' };
+  for (const directory of [trusted, product]) {
+    const git = args => offlineFixtureGit('git', ['-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false', ...args],
+      { cwd: directory, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    git(['add', '--', '.']);
+    git(['-c', 'user.name=Offline synthetic fixture', '-c', 'user.email=fixture@synthetic.invalid',
+      '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Readonly preflight fixture']);
+  }
+  const stateDirectory = path.join(workspace, '.controlled-model-state'); fs.mkdirSync(stateDirectory, { mode: 0o700 });
+  const ledgerPath = path.join(stateDirectory, 'live-ledger.json'), ledgerSha256 = initialCheckpoint(ledgerPath);
+  const manifest = { ...validManifest(), testedSha: readCleanCheckoutHead(product), harnessSha: readCleanCheckoutHead(trusted),
+    sourceTreeSha256: hashTree(product, ['server', 'src', 'prompts', 'package.json', 'package-lock.json']).sha256,
+    harnessTreeSha256: hashTree(trusted, ['scripts/verify-chat-intent-probe.mjs', 'scripts/lib', 'tests/chat-intent-probe.test.mjs']).sha256,
+    ledgerSha256, runId: 'unit_readonly_cli_preflight', gcpProject: 'synthetic-project', authentication: 'existing_adc' };
+  const context = { callerCommitSha: 'f'.repeat(40), repository: '2NTTY/child-ai-caregiver', repositoryId: '1377602504',
+    ownerId: '119132090', actorId: '119132090', expectedBranch: 'refs/heads/ci/controlled-model-acceptance',
+    pinnedWorkflowSha: manifest.harnessSha, eventName: 'push', runAttempt: 1 };
+  const { callerCommitSha: _origin, ...expected } = context; manifest.expectedWorkflowContext = expected;
+  const manifestPath = path.join(workspace, 'synthetic-manifest.json');
+  const observer = path.join(workspace, 'network-observer.mjs');
+  // Property setters retain counters even when denyOfflineNetwork replaces native functions.
+  fs.writeFileSync(observer, `import fs from 'node:fs';\nimport http from 'node:http';\nimport https from 'node:https';\nimport net from 'node:net';\nimport tls from 'node:tls';\nimport dns from 'node:dns';\nimport dgram from 'node:dgram';\nlet networkAttempts=0;\nconst observe=(object,key)=>{let current=object[key];if(typeof current!=='function')return;Object.defineProperty(object,key,{configurable:true,get(){return function(...args){networkAttempts++;return current.apply(this,args)}},set(value){current=value}})};\nobserve(globalThis,'fetch');for(const object of [http,https])for(const key of ['request','get'])observe(object,key);for(const key of ['connect','createConnection'])observe(net,key);observe(net.Socket.prototype,'connect');observe(tls,'connect');observe(dgram,'createSocket');for(const key of ['lookup','resolve','reverse'])observe(dns,key);\nprocess.on('exit',()=>fs.writeFileSync(process.env.SYNTHETIC_NETWORK_OBSERVER_OUTPUT,JSON.stringify({networkAttempts})));\n`);
+  let invocation = 0;
+  return { workspace, trusted, product, manifest, context, manifestPath, ledgerPath, marker,
+    invoke(stage, change = () => {}, envChange = {}) {
+      const document = structuredClone(manifest); change(document);
+      const bytes = Buffer.from(JSON.stringify(document)); fs.writeFileSync(manifestPath, bytes, { mode: 0o600 });
+      const observerOutput = path.join(workspace, `network-observer-${++invocation}.json`);
+      const args = ['--import', observer, path.join(trusted, 'scripts/verify-chat-intent-probe.mjs'), '--live',
+        stage === 'run' ? '--run' : '--preflight', '--case', 'B', '--run-id', document.runId,
+        '--approved-manifest', manifestPath, '--product-root', product];
+      if (stage === 'run') args.push('--output', path.join(workspace, 'must-not-exist-live-output.json'));
+      const result = offlineFixtureNode(process.execPath, args, { cwd: trusted, env: { ...env,
+        SYNTHETIC_NETWORK_OBSERVER_OUTPUT: observerOutput, YUBAN_SEMANTIC_PROBE_APPROVED_MANIFEST_SHA256: sha256(bytes),
+        YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON: JSON.stringify(context), ...envChange }, encoding: 'utf8', timeout: 10000 });
+      assert.equal(result.error, undefined); assert.equal(result.stderr, '');
+      return { exitCode: result.status, report: JSON.parse(result.stdout), network: JSON.parse(fs.readFileSync(observerOutput)) };
+    } };
+}
+
+test('readonly CLI preflight passes real clean dual Git roots with zero product imports/network and unchanged ledger', () => {
+  const fixture = makeReadonlyCliFixture(), before = fs.readFileSync(fixture.ledgerPath);
+  const result = fixture.invoke('preflight');
+  assert.equal(result.exitCode, 0); assert.equal(result.report.status, 'passed'); assert.equal(result.report.mode, 'preflight');
+  assert.equal(result.report.productImported, false); assert.equal(result.report.networkRequests, 0);
+  assert.deepEqual(result.network, { networkAttempts: 0 }); assert.equal(fs.existsSync(fixture.marker), false);
+  assert.equal(result.report.ledger.generationCallsReserved, 12); assert.equal(result.report.ledger.additionalCallsReserved, 0);
+  assert.equal(result.report.ledger.readOnly, true); assert.deepEqual(fs.readFileSync(fixture.ledgerPath), before);
+  assert.equal(fs.existsSync(fixture.ledgerPath + '.lock'), false); assert.equal(fs.existsSync(fixture.ledgerPath + '.next'), false);
+  assert.equal(readCleanCheckoutHead(fixture.trusted), fixture.manifest.harnessSha);
+  assert.equal(readCleanCheckoutHead(fixture.product), fixture.manifest.testedSha); assert.equal(LIVE_AUTHORITY_CONNECTED, false);
+});
+test('the same complete readonly CLI fixture cannot execute a live run while the authority gate stays closed', () => {
+  const fixture = makeReadonlyCliFixture(), before = fs.readFileSync(fixture.ledgerPath);
+  const result = fixture.invoke('run');
+  assert.equal(result.exitCode, 1); assert.equal(result.report.errorCategory, 'live_authority_context_unconnected');
+  assert.equal(fs.existsSync(fixture.marker), false); assert.equal(fs.existsSync(path.join(fixture.workspace, 'must-not-exist-live-output.json')), false);
+  assert.deepEqual(result.network, { networkAttempts: 0 }); assert.deepEqual(fs.readFileSync(fixture.ledgerPath), before);
+});
+test('readonly CLI preflight retains manifest limits, bytes pin, identity and source hash rejection', () => {
+  const fixture = makeReadonlyCliFixture(), before = fs.readFileSync(fixture.ledgerPath);
+  const cases = [
+    [document => { document.limits.modelCalls = 5; }, {}, 'live_manifest_invalid'],
+    [() => {}, { YUBAN_SEMANTIC_PROBE_APPROVED_MANIFEST_SHA256: '0'.repeat(64) }, 'live_manifest_authority_pin_mismatch'],
+    [() => {}, { YUBAN_SEMANTIC_PROBE_WORKFLOW_CONTEXT_JSON: JSON.stringify({ ...fixture.context, actorId: '1' }) }, 'live_workflow_context_invalid'],
+    [document => { document.sourceTreeSha256 = '0'.repeat(64); }, {}, 'live_source_provenance_mismatch'],
+  ];
+  for (const [change, env, category] of cases) {
+    const result = fixture.invoke('preflight', change, env);
+    assert.equal(result.exitCode, 1); assert.equal(result.report.errorCategory, category);
+    assert.deepEqual(result.network, { networkAttempts: 0 }); assert.equal(fs.existsSync(fixture.marker), false);
+    assert.deepEqual(fs.readFileSync(fixture.ledgerPath), before);
+  }
 });

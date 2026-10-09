@@ -67,7 +67,7 @@ export async function main(argv = process.argv.slice(2)) {
     } catch { fail('manifest_unreadable'); }
     manifest = validateManifest(manifestDocument, options, process.env);
     validateManifestAuthority(manifestBytes, manifest, process.env);
-    if (!LIVE_AUTHORITY_CONNECTED) fail('live_authority_context_unconnected');
+    if (!options.preflight && !LIVE_AUTHORITY_CONNECTED) fail('live_authority_context_unconnected');
   }
   else if (options.case === 'C') fail('offline_case_c_requires_verified_live_context');
   const roots = options.live ? verifySeparatedRoots(root, options.productRoot) : { trustedRoot: root, productRoot: root };
