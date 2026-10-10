@@ -3,7 +3,7 @@ import type { TaskStore } from "./tasks.ts";
 import type { ChatStore } from "./chat.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { createAgentRuntime } from "./agent-runtime.ts";
-import { createProductAgentTools } from "./product-agent-tools.ts";
+import { createProductAgentTools, createDueWorkContinuationTools } from "./product-agent-tools.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
 import { AgentStopped } from "./agent-budget.ts";
@@ -11,7 +11,10 @@ import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
 import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./product-agent-capabilities.ts";
 
+import type { FirestoreWorkContinuationStore, ClaimedWorkContinuation } from "./firestore-work-continuation-store.ts";
+
 export function createProductAgent(options: {
+  workContinuationAuthority?: FirestoreWorkContinuationStore;
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   concerns?: import("./concern-store.ts").ConcernStore;
   sources?: import("./shared-input-store.ts").SharedInputStore;
@@ -25,6 +28,29 @@ export function createProductAgent(options: {
   const activeReplies = new Map<string, AbortController>();
   const replyKey = (userId: string, childId: string, messageId: string) => JSON.stringify([userId, childId, messageId]);
   return {
+    async backgroundClaimed(input: ClaimedWorkContinuation, currentWorker: () => boolean, signal?: AbortSignal): Promise<ProductAgentResult | null> {
+      const authority = options.workContinuationAuthority;
+      if (!authority || input.decision !== "execute") throw new Error("work_continuation_assembly_required");
+      const { claim, job, context } = input;
+      const authorize = async () => currentWorker() && !signal?.aborted && await authority.authorizeBackground(job, claim);
+      if (!await authorize()) return null;
+      let tools: ReturnType<typeof createDueWorkContinuationTools> | undefined;
+      let presentation: AgentPresentation | null = null;
+      const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim,
+        deadlineAtMs: Date.parse(claim.expiresAt), trigger: { kind: "worker", reference: job.eventId }, recipeId: "product-work-followup",
+        availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context,
+        messages: [{ role: "user", text: "這是 Server 已提交的純到期工作。只按原 context 及 read_work 作必要補問或記錄回述；不能給照護建議、讀其他資料、修改、外發或聲稱工作完成。" }],
+        tools: run => { tools = createDueWorkContinuationTools(run, authorize, id => authority.readWork(job, claim, id)); return tools.tools; },
+        authorize, signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
+        finalize: async () => { presentation = await tools!.presentation(); if (!presentation) throw new AgentStopped("invalid_response"); return presentation.text; },
+      });
+      if (!await authorize()) return null;
+      const rendered = presentation as AgentPresentation | null;
+      return { runId: claim.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
+        text: result.status === "completed" ? rendered?.text ?? "" : "", citations: [], privateSourceCitations: [], retrievalMode: "not_used",
+        tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
+        countsKnown: true, counts: result.counts, proposals: [] };
+    },
     async cancelReply(userId: string, childId: string, messageId: string, isCurrentUser: () => Promise<boolean>) {
       if (!await isCurrentUser()) return false;
       const accepted = await options.store.cancelReply(userId, childId, messageId);

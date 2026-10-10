@@ -59,17 +59,17 @@ function size(value: unknown) { if (Buffer.byteLength(JSON.stringify(value) ?? '
 const same = (left: unknown, right: unknown) => canonical(left) === canonical(right);
 
 /** Point-read identities; account and control have one canonical identity in a namespace. */
-export function workRecoveryDocumentId(kind: WorkRecoveryKind, originalId: string): string {
+export function workRecoveryDocumentId(kind: WorkRecoveryKind | 'daily', originalId: string): string {
   return createHash('sha256').update(JSON.stringify([kind, originalId])).digest('hex');
 }
 export function workRecoveryClaimId(scope: WorkRecoveryScope, eventId: string): string {
   return JSON.stringify([scope.ownerUserId, scope.childId, 'worker', eventId]);
 }
 /** Stable storage format shared with the synthetic fixture writer; no production seed API. */
-export function workRecoveryAad(projectId: string, namespace: string, kind: WorkRecoveryKind, originalId: string, scope: WorkRecoveryScope): string {
+export function workRecoveryAad(projectId: string, namespace: string, kind: WorkRecoveryKind | 'daily', originalId: string, scope: WorkRecoveryScope, version: 1 | 2 = 1): string {
   const binding = kind === 'control' ? null : kind === 'account' ? { ownerUserId: scope.ownerUserId }
     : kind === 'workspace' ? { workspaceId: scope.workspaceId } : scope;
-  return JSON.stringify([FORMAT, 1, projectId, namespace, kind, originalId, binding]);
+  return JSON.stringify([FORMAT, version, projectId, namespace, kind, originalId, binding]);
 }
 export interface FirestoreWorkRecoveryOptions {
   database: Firestore; cipher: StorageCipher; projectId: string; namespace: string;
@@ -84,45 +84,46 @@ export interface FirestoreWorkRecoveryOptions {
  * Authority documents currently require synthetic seeding; not selected by bootstrap.
  */
 export class FirestoreWorkContinuationRecovery implements WorkContinuationRecovery {
-  #options: FirestoreWorkRecoveryOptions;
+  #options: Readonly<FirestoreWorkRecoveryOptions>;
+  protected get options() { return this.#options; }
   constructor(options: FirestoreWorkRecoveryOptions) {
     if (!options || typeof options.database?.runTransaction !== 'function' || typeof options.database?.collection !== 'function'
       || typeof options.cipher?.encrypt !== 'function' || typeof options.cipher?.decrypt !== 'function'
       || !id.safeParse(options.projectId).success || options.projectId !== options.projectId.trim()
       || !/^[a-z][a-z0-9_]{0,60}$/u.test(options.namespace)
       || options.serverClock !== undefined && typeof options.serverClock !== 'function') reject('configuration');
-    this.#options = { ...options, scope: Object.freeze(parse(scopeSchema, options.scope)) };
+    this.#options = Object.freeze({ ...options, scope: Object.freeze(parse(scopeSchema, options.scope)) });
   }
-  #ref(kind: WorkRecoveryKind, originalId: string) {
-    return this.#options.database.collection(this.#options.namespace).doc(workRecoveryDocumentId(kind, originalId));
+  protected ref(kind: WorkRecoveryKind | 'daily', originalId: string) {
+    return this.options.database.collection(this.options.namespace).doc(workRecoveryDocumentId(kind, originalId));
   }
-  #aad(kind: WorkRecoveryKind, originalId: string) {
-    const { projectId, namespace, scope } = this.#options; return workRecoveryAad(projectId, namespace, kind, originalId, scope);
+  protected aad(kind: WorkRecoveryKind | 'daily', originalId: string, version: 1 | 2 = 1) {
+    const { projectId, namespace, scope } = this.options; return workRecoveryAad(projectId, namespace, kind, originalId, scope, version);
   }
-  #seal(kind: WorkRecoveryKind, originalId: string, value: unknown) {
+  protected seal(kind: WorkRecoveryKind | 'daily', originalId: string, value: unknown, version: 1 | 2 = 1) {
     size(value);
-    const envelope = { format: FORMAT, version: 1, ciphertext: this.#options.cipher.encrypt(canonical(value), this.#aad(kind, originalId)) };
+    const envelope = { format: FORMAT, version, ciphertext: this.options.cipher.encrypt(canonical(value), this.aad(kind, originalId, version)) };
     size(envelope); return envelope;
   }
-  #open<T>(kind: WorkRecoveryKind, originalId: string, snapshot: DocumentSnapshot, schema: z.ZodType<T>): T {
+  protected open<T>(kind: WorkRecoveryKind | 'daily', originalId: string, snapshot: DocumentSnapshot, schema: z.ZodType<T>, version: 1 | 2 = 1): T {
     if (!snapshot.exists) reject('missing_document');
-    const envelope = parse(z.object({ format: z.literal(FORMAT), version: z.literal(1), ciphertext: bounded(MAX_BYTES) }).strict(), snapshot.data());
+    const envelope = parse(z.object({ format: z.literal(FORMAT), version: z.literal(version), ciphertext: bounded(MAX_BYTES) }).strict(), snapshot.data());
     size(envelope);
-    return this.#decrypt(envelope.ciphertext, this.#aad(kind, originalId), schema);
+    return this.decrypt(envelope.ciphertext, this.aad(kind, originalId, version), schema);
   }
-  #decrypt<T>(ciphertext: string, aad: string, schema: z.ZodType<T>): T {
+  protected decrypt<T>(ciphertext: string, aad: string, schema: z.ZodType<T>): T {
     let value: unknown;
-    try { const text = this.#options.cipher.decrypt(ciphertext, aad); if (Buffer.byteLength(text) > MAX_BYTES) reject('document_too_large'); value = JSON.parse(text); }
+    try { const text = this.options.cipher.decrypt(ciphertext, aad); if (Buffer.byteLength(text) > MAX_BYTES) reject('document_too_large'); value = JSON.parse(text); }
     catch { reject('ciphertext'); }
     return parse(schema, value);
   }
-  async recoverBackground(raw: WorkContinuationJob) {
-    const job = parse(jobSchema, raw), { database, scope } = this.#options;
+  async recoverBackground(raw: WorkContinuationJob): ReturnType<WorkContinuationRecovery["recoverBackground"]> {
+    const job = parse(jobSchema, raw), { database, scope } = this.options;
     if (job.storageEpoch !== scope.storageEpoch) reject('scope');
     const claimId = workRecoveryClaimId(scope, job.eventId);
     return database.runTransaction(async transaction => {
-      const read = async <T>(kind: WorkRecoveryKind, originalId: string, schema: z.ZodType<T>) =>
-        this.#open(kind, originalId, await transaction.get(this.#ref(kind, originalId)), schema);
+      const read = async <T>(kind: WorkRecoveryKind | 'daily', originalId: string, schema: z.ZodType<T>) =>
+        this.open(kind, originalId, await transaction.get(this.ref(kind, originalId)), schema);
       const control = await read('control', 'current', schemas.control);
       const account = await read('account', scope.ownerUserId, schemas.account);
       const workspace = await read('workspace', scope.workspaceId, schemas.workspace);
@@ -130,7 +131,7 @@ export class FirestoreWorkContinuationRecovery implements WorkContinuationRecove
       const event = await read('event', job.eventId, schemas.event);
       const claim = await read('claim', claimId, schemas.claim);
       const run = await read('run', event.runId, schemas.run);
-      const now = (this.#options.serverClock ?? Date.now)();
+      const now = (this.options.serverClock ?? Date.now)();
       if (!Number.isSafeInteger(now) || now < 0) reject('clock');
       if (!control.enabled || control.generation !== job.workerGeneration || account.userId !== scope.ownerUserId
         || account.status !== 'active' || !account.admitted || !account.invitationLive || !account.emailVerified
@@ -144,13 +145,13 @@ export class FirestoreWorkContinuationRecovery implements WorkContinuationRecove
         || event.workerGeneration !== job.workerGeneration || claim.runId !== event.runId || claim.triggerReference !== event.id
         || run.id !== event.runId || run.triggerReference !== event.id
         || !run.dataVersion.startsWith(scope.storageEpoch + ':') || !decimal.safeParse(run.dataVersion.slice(scope.storageEpoch.length + 1)).success) reject('binding');
-      const payload = this.#decrypt(event.payloadEncrypted, `agent-work-continuation:${scope.childId}:${scope.ownerUserId}:${event.id}`, eventPayloadSchema);
+      const payload = this.decrypt(event.payloadEncrypted, `agent-work-continuation:${scope.childId}:${scope.ownerUserId}:${event.id}`, eventPayloadSchema);
       let active = 0;
       for (const candidate of payload.works) {
         const work = await read('work', candidate.workId, schemas.work), followup = await read('followup', candidate.workId, schemas.followup);
         if (!same(scope, { ownerUserId: work.ownerUserId, workspaceId: work.workspaceId, childId: work.childId, storageEpoch: work.storageEpoch })
           || work.id !== candidate.workId || !bound(followup) || followup.workId !== work.id || followup.workVersion !== work.version) reject('binding');
-        const values = this.#decrypt(work.payloadEncrypted, `agent-work:${scope.childId}:${scope.ownerUserId}:${work.id}:${work.version}`, agentWorkValuesSchema);
+        const values = this.decrypt(work.payloadEncrypted, `agent-work:${scope.childId}:${scope.ownerUserId}:${work.id}:${work.version}`, agentWorkValuesSchema);
         if (values.status !== work.status) reject('binding');
         if (work.version !== candidate.workVersion || !followup.enabled || !['active', 'waiting'].includes(work.status)) continue;
         if (values.resources.length || !values.followUp || values.followUp.watchResources || values.followUp.knowledgeSourceIds.length
@@ -158,7 +159,7 @@ export class FirestoreWorkContinuationRecovery implements WorkContinuationRecove
           || Date.parse(followup.dueAt) > now) reject('unsupported_event');
         active++;
       }
-      const receipt = run.resultEncrypted === null ? null : this.#decrypt(run.resultEncrypted,
+      const receipt = run.resultEncrypted === null ? null : this.decrypt(run.resultEncrypted,
         `agent-run:${scope.childId}:${scope.ownerUserId}:${run.id}`, receiptSchema);
       if (receipt && (receipt.runId !== run.id || receipt.status !== run.state || receipt.stopReason !== run.stopReason)) reject('receipt_binding');
       if (run.state === 'completed' && !receipt || run.state === 'stopped' && !receipt
@@ -171,17 +172,20 @@ export class FirestoreWorkContinuationRecovery implements WorkContinuationRecove
       const nextSequence = (BigInt(workspace.changeSeq) + 1n).toString();
       if (!decimal.safeParse(nextSequence).success) reject('sequence_exhausted');
       const changeId = JSON.stringify([scope.workspaceId, scope.storageEpoch, event.id]);
-      const changeRef = this.#ref('change', changeId);
+      const changeRef = this.ref('change', changeId);
       if ((await transaction.get(changeRef)).exists) reject('change_conflict');
       // All reads precede all writes; the callback may be discarded and rerun by the SDK.
-      transaction.set(this.#ref('event', event.id), this.#seal('event', event.id, { ...event, state: nextState }));
+      transaction.set(this.ref('event', event.id), this.seal('event', event.id, { ...event, state: nextState }));
       if (run.state === 'running' && run.expiresAtMs <= now)
-        transaction.set(this.#ref('run', run.id), this.#seal('run', run.id, { ...run, state: 'unknown', stopReason: 'interrupted' }));
-      transaction.set(this.#ref('workspace', workspace.id), this.#seal('workspace', workspace.id, { ...workspace, changeSeq: nextSequence }));
-      transaction.create(changeRef, this.#seal('change', changeId, { workspaceId: scope.workspaceId, storageEpoch: scope.storageEpoch,
+        transaction.set(this.ref('run', run.id), this.seal('run', run.id, { ...run, state: 'unknown', stopReason: 'interrupted' }));
+      transaction.set(this.ref('workspace', workspace.id), this.seal('workspace', workspace.id, { ...workspace, changeSeq: nextSequence }));
+      transaction.create(changeRef, this.seal('change', changeId, { workspaceId: scope.workspaceId, storageEpoch: scope.storageEpoch,
         changeSeq: nextSequence, kind: 'memory', childId: scope.childId, privateUserId: scope.ownerUserId,
         ownerOnly: false, deleted: false, suppressWorkWake: true, eventId: event.id, runId: run.id }));
       return { state: 'settled' as const, runId: run.id };
     });
   }
 }
+
+export { schemas as workRecoverySchemas, eventPayloadSchema as workRecoveryPayloadSchema, receiptSchema as workRecoveryReceiptSchema,
+  scopeSchema as workRecoveryScopeSchema, parse as parseWorkRecovery, same as sameWorkRecovery };

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { summaryQuery } from "../src/shared/care-summary.ts";
 import type { MemoryContext, SummaryInput } from "../src/shared/memory.ts";
+import { readAgentWorkSchema } from "../src/shared/agent-work.ts";
 import { agentAnswerSchema } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation } from "../src/shared/product-agent.ts";
 import type { KnowledgeEvidence, KnowledgeFilter, KnowledgeContextCursor } from "../src/shared/knowledge.ts";
@@ -22,6 +23,41 @@ import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
 import { createAgentConcernTools } from "./agent-concern-tools.ts";
 import { createAgentWorkTools } from "./agent-work-tools.ts";
+
+function validateAnswerText(answer: AgentAnswer) {
+  for (const paragraph of answer.paragraphs)
+    if (/https?:\/\/|www\./iu.test(paragraph.text)) throw new FamilyError(400, "use_citation_ids");
+}
+
+/** Same bounded presentation schema; this pure-due capability cannot cite, advise or mutate. */
+export function createDueWorkContinuationTools(run: AgentRunContext, authorize: () => Promise<boolean>,
+  readWork: (id: string | null) => Promise<unknown>) {
+  let answer: AgentAnswer | undefined;
+  const tools: AgentTool[] = [
+    { name: "read_work", description: "讀取本次已選入而且目前仍有效的工作。只回本人此孩子的到期工作；不讀其他資料或修改工作。",
+      parameters: readAgentWorkSchema, authorize, execute: async args => {
+        const input = readAgentWorkSchema.parse(args);
+        if (input.cursor !== null) return { status: "rejected", data: { code: "invalid_cursor" } };
+        const result = await readWork(input.workId); if (result === null) throw new AgentStopped("unauthorized");
+        if (JSON.stringify(result).length > run.budget.toolResponseCharacters - 512) return { status: "rejected", data: { code: "response_limit" } };
+        return { status: "succeeded", data: { result } };
+      } },
+    { name: "present_answer", description: "只提交此到期工作的必要補問或已核工作記錄回述。不可提供照護建議、執行操作、引用其他資料或聲稱工作已完成。",
+      parameters: agentAnswerSchema, authorize, terminal: true, execute: async args => {
+        const parsed = agentAnswerSchema.parse(args);
+        if (!["clarification", "record_restatement"].includes(parsed.kind) || parsed.paragraphs.some(item => item.citationIds.length))
+          return { status: "rejected", data: { code: "work_continuation_presentation_scope" } };
+        try { validateAnswerText(parsed); } catch (error) {
+          if (error instanceof FamilyError) return { status: "rejected", data: { code: error.code } }; throw error;
+        }
+        answer = parsed; return { status: "succeeded", data: { acceptedForValidation: true } };
+      } },
+  ];
+  return { tools, async presentation(): Promise<AgentPresentation | null> {
+    if (!answer) return null; if (!await authorize()) throw new AgentStopped("unauthorized");
+    return { text: answer.paragraphs.map(item => item.text).join("\n\n"), citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+  } };
+}
 
 type Retriever = ReturnType<typeof createKnowledgeRetriever>;
 const shortText = (length: number) => z.string().min(1).max(length).refine(value => value.trim().length > 0);
@@ -209,12 +245,11 @@ export function createProductAgentTools(options: {
         ? " 本次是成長關注：選取支持此關注的官方 chunkId；Server 只呈現片段的已核對正文，不使用你改寫的 text。沒有可用片段時呈現固定限制說明。" : ""),
       parameters: agentAnswerSchema, authorize: permitted, terminal: true,
       execute: args => guard(async () => {
-        const parsed = agentAnswerSchema.parse(args);
+        const parsed = agentAnswerSchema.parse(args); validateAnswerText(parsed);
         const official = options.reviewedGrowthPresentation || parsed.kind === "caregiving" || parsed.kind === "safety_help";
         for (const paragraph of parsed.paragraphs) {
           if ((parsed.kind === "caregiving" || parsed.kind === "safety_help") && !paragraph.citationIds.some(id=>evidence.get(id)?.chunk.classification==="official_guidance")) throw new FamilyError(400, "citation_required");
           if(parsed.kind === "private_reference"&&!paragraph.citationIds.some(id=>privateSources?.evidence.has(id)))throw new FamilyError(400,"citation_required");
-          if (/https?:\/\/|www\./iu.test(paragraph.text)) throw new FamilyError(400, "use_citation_ids");
           for (const id of paragraph.citationIds) {
             if(privateSources?.evidence.has(id)&&!options.reviewedGrowthPresentation)continue;
             const item = evidence.get(id);

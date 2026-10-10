@@ -55,6 +55,8 @@ export interface AgentRunClaim {
   state: ProductAgentResult["status"]; expiresAt: string;
   /** Original SQL authority, explicitly projected for fixed-profile server assembly. */
   storageEpoch?: string;
+  /** Original Server worker generation, only for the opt-in Firestore continuation claim. */
+  workerGeneration?: string;
   trigger?: { kind: "interactive" | "worker"; reference: string };
   recipeId?: string;
 }

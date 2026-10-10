@@ -24,6 +24,9 @@ import { createSharedInputStore } from "./shared-input-store.ts";
 import { createFamilyDocumentStore } from "./family-document-store.ts";
 import { createConcernStore } from "./concern-store.ts";
 
+import { createAgentWorkContinuationProcessor, workContinuationJobSchema } from "./agent-work-continuation-worker.ts";
+import type { FirestoreWorkContinuationStore } from "./firestore-work-continuation-store.ts";
+
 import type { GrowthStore } from "./growth-store.ts";
 
 /** Trusted Server reader of current, eligible published public knowledge only. */
@@ -42,6 +45,8 @@ export interface ProductAgentDurableProfile {
 }
 export interface ProductAgentServicePorts {
   publishedKnowledgeReader?: PublishedKnowledgeReader;
+  /** Unenabled pure-due assembly; canonical prerequisites must already exist in the same database. */
+  workContinuationAuthority?: FirestoreWorkContinuationStore;
   /** Trusted isolated assembly; production bootstrap intentionally does not select this mode. */
   claimedRunPersistence?: {
     nativeSessionService: NativeAgentSessionService;
@@ -54,7 +59,7 @@ export interface ProductAgentServicePorts {
   };
 }
 
-function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAgentServicePorts["claimedRunPersistence"]>, routing: unknown) {
+function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAgentServicePorts["claimedRunPersistence"]>, routing: unknown, allowWorkContinuation = false) {
   const { nativeSessionService, rootBudget, dailyUsage, provider, embeddingProvider } = persistence;
   const profile = persistence.profile ? Object.freeze({ ...persistence.profile, config: Object.freeze({ ...persistence.profile.config }),
     ...(persistence.profile.runLimits === undefined ? {} : { runLimits: freezeAgentRunLimits(persistence.profile.runLimits) }) }) : undefined;
@@ -67,9 +72,12 @@ function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAg
   const fingerprint = agentBudgetFingerprint(profile.config);
   const bindDurableRun: AgentDurableRunBinder = (input, packVersion, limits) => {
     const claim = input.claimedRun, expiry = Date.parse(claim?.expiresAt ?? "");
-    if (!claim || claim.created !== true || claim.state !== "running" || input.recipeId !== "product-interactive"
-      || claim.recipeId !== input.recipeId || input.trigger.kind !== "interactive" || claim.trigger?.kind !== input.trigger.kind
-      || claim.trigger.reference !== input.trigger.reference || claim.sourceMessageId !== input.trigger.reference
+    const interactive = input.recipeId === "product-interactive" && input.trigger.kind === "interactive" && claim?.sourceMessageId === input.trigger.reference;
+    const continuation = allowWorkContinuation && input.recipeId === "product-work-followup" && input.trigger.kind === "worker"
+      && claim?.sourceMessageId === null && workContinuationJobSchema.shape.workerGeneration.safeParse(claim.workerGeneration).success;
+    if (!claim || claim.created !== true || claim.state !== "running" || !(interactive || continuation)
+      || claim.recipeId !== input.recipeId || claim.trigger?.kind !== input.trigger.kind
+      || claim.trigger.reference !== input.trigger.reference
       || claim.runId !== input.runId || agentBudgetFingerprint(claim.scope) !== agentBudgetFingerprint(input.scope)
       || !version(claim.storageEpoch) || !claim.scope.dataVersion.startsWith(claim.storageEpoch + ":")
       || !/^\d+$/u.test(claim.scope.dataVersion.slice(claim.storageEpoch.length + 1))
@@ -78,7 +86,7 @@ function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAg
     return { adapter: rootBudget, dailyUsage, context: { generation: 1, binding: {
       rootRunId: claim.runId, ownerId: claim.scope.userId, workspaceId: claim.scope.workspaceId, childId: claim.scope.childId,
       authorizationVersion: claim.scope.authorizationVersion, storageEpoch: claim.storageEpoch,
-      trigger: { ...claim.trigger }, workflowVersion: profile.workflowVersion, promptPackVersion: packVersion,
+      trigger: { ...claim.trigger }, workflowVersion: profile.workflowVersion + (continuation ? ":worker:" + claim.workerGeneration : ""), promptPackVersion: packVersion,
       settingsVersion: profile.settingsVersion + ":" + fingerprint, billingVersion: profile.billingVersion,
       limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings }, deadlineAtMs: expiry,
     } } };
@@ -87,7 +95,9 @@ function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAg
 }
 
 export function createProductAgentServices(pool: Pool, cipher: StorageCipher, config: AiConfig, scheduling?: TaskScheduling, diagnostics = false, growth?: GrowthStore,contact?:import("./contact-store.ts").ContactStore,summary?:import("./care-summary-store.ts").CareSummaryStore, routing?:import("./model-routing.ts").ModelRouting, actions?:import("./agent-actions-store.ts").AgentActionsStore, ports: ProductAgentServicePorts = {}) {
-  const durable = ports.claimedRunPersistence ? claimedRunAssembly(config, ports.claimedRunPersistence, routing) : undefined;
+  if (ports.workContinuationAuthority && (!ports.claimedRunPersistence || !ports.claimedRunPersistence.provider))
+    throw new Error("work_continuation_persistence_required");
+  const durable = ports.claimedRunPersistence ? claimedRunAssembly(config, ports.claimedRunPersistence, routing, Boolean(ports.workContinuationAuthority)) : undefined;
   const selectedConfig = durable?.config ?? config;
   const store = createProductAgentStore(pool, cipher, scheduling);
   const runtime = createAgentRuntime({ config: selectedConfig, usage: createAiUsageStore(pool),
@@ -95,11 +105,12 @@ export function createProductAgentServices(pool: Pool, cipher: StorageCipher, co
     provider: durable?.provider ?? (selectedConfig.enabled ? createVertexAgentProvider(selectedConfig) : { generate: async () => { throw new Error("ai_disabled"); } }),
     resolve: routing?.resolve,
     diagnostics: diagnostics ? event => { console.info("agent_diagnostic", JSON.stringify(event)); } : undefined });
-  const agent = createProductAgent({ store, growth, contact, summary, actions, documents:createFamilyDocumentStore(pool,cipher), concerns:createConcernStore(pool,cipher), sources:createSharedInputStore(pool,cipher), memory: createMemoryStore(pool, cipher, true),
+  const agent = createProductAgent({ workContinuationAuthority: ports.workContinuationAuthority, store, growth, contact, summary, actions, documents:createFamilyDocumentStore(pool,cipher), concerns:createConcernStore(pool,cipher), sources:createSharedInputStore(pool,cipher), memory: createMemoryStore(pool, cipher, true),
     tasks: createTaskStore(pool, cipher, scheduling), chat: createChatStore(pool, cipher, true, true),
     runtime,
     knowledge: createKnowledgeRetriever(ports.publishedKnowledgeReader ?? createKnowledgeStore(pool), createEmbeddingGateway({ config: selectedConfig,
       usage: createEmbeddingUsage(pool), provider: durable?.embeddingProvider ?? (selectedConfig.enabled ? createVertexEmbeddingProvider(selectedConfig) : undefined) })),
   });
-  return { store, agent, runtime };
+  return { store, agent, runtime, continuation: ports.workContinuationAuthority
+    ? createAgentWorkContinuationProcessor({ mode: "durable", store: ports.workContinuationAuthority, agent }) : undefined };
 }
