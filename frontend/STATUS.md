@@ -1,7 +1,7 @@
 # 育伴港前端現況
 
-同批載入／切換／路由、PDF守衛及家庭選項修補，31檔產品／測試已freeze，連原3份文件共34檔。既有公開合成預覽v68於2026-10-10 17:35:39 UTC發布成功，Sites source `c5063f5ef7827d6856646da0888a311328973912`，bundle c98fec8；不是GitHub合併或正式後端部署。實作、分段驗證、原紅及下一步見 [PLAN#active](PLAN.md#active)。
+R01檔案歷史重試及Summary文件名稱修補已隨既有公開合成預覽v69於2026-10-10 18:50:59 UTC發布，Sites source `b47344b0a4b3f94a2322c1218f41c90255b3216c`。雲端Chrome 1180×757的兩項原紅定向重驗通過；不是GitHub合併或正式後端部署。固定master仍為 [#187](https://github.com/2NTTY/child-ai-caregiver/pull/187) 的 `fddd32deaa04fea8db39553ea6b3e050769b6a5d`。
 
-v68在雲端Chromium完成1180×757的5個有界桌面流程，以及既有iframe工具1024×900／390×900的受影響畫面smoke與少量焦點／根節點overflow抽查。原390×844／768×1024及完整四尺寸／a11y／FPS未驗；Home助手提醒顯示暫時不可用；後續2項窄核確認是既有未接權威提醒投影，非fixture缺GET，不列全讀集通過。PDF真下載／自然race、照片原檔／草稿生命週期、完整權限及native仍未驗；缺名字／孩子同名也仍可造成家庭選項歧義。
+4檔程式／測試、組合typecheck／clear產物及原3文件同批共7檔，正準備單一英文PR，待主對話裁決。原7檔發布前freeze、R01階段與v68反例保留；實際結果及限制見 [PLAN#active](PLAN.md#active)。
 
-正本地準備同一34檔單一PR，主對話裁決待完成，尚未建立PR。17:41 UTC已核master仍 `ae5d3e01b11632a62a54db68b77c7ed20e323471`、open PR空；31檔產品不變。後端收尾由Codex承接，不改根文件、API或正式資料；舊失敗及各版本證據保留，未將FE／P2全部標完。正式服務的最後日期觀察見[根STATUS](../STATUS.md#deployment)，不能當即時主機狀態。
+v69的32份證據不是32項測試；只核history失敗→重讀→手動retry及準備單空title名稱。account gate／失權原地恢復、aria-invalid／錯誤關聯、growth-report browser、完整四尺寸／讀屏／FPS、分頁race及正式服務未因此通過；inline焦點與捨棄前dirty觀察保留。後端由Codex承接，FE／P2未全數完成；正式服務最後觀察見[根STATUS](../STATUS.md#deployment)。

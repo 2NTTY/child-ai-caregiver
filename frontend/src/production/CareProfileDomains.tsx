@@ -398,12 +398,12 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     if (!current() || !envRef.current.online || profileRef.current.reading || !profileRef.current.current || more && !profileRef.current.hasMoreHistory) return;
     const before = more ? profileHistoryCursor.current : profileRef.current.current.version;
     const generation = ++profileGeneration.current, control = controller();
-    setProfile(previous => ({ ...previous, reading: true, historyOpen: true }));
+    setProfile(previous => ({ ...previous, reading: true, notice: null }));
     try {
       const page = await read([...profileKey, "history", before], control, signal => api.profileHistory(childId, before, signal));
       if (!current() || generation !== profileGeneration.current) return;
       profileHistoryCursor.current = page.nextBeforeVersion;
-      setProfile(previous => ({ ...previous, reading: false, history: [...(more ? previous.history : []), ...page.revisions.map(value => profileRevisionView(value, userId))], hasMoreHistory: page.nextBeforeVersion !== null }));
+      setProfile(previous => ({ ...previous, reading: false, historyOpen: true, history: [...(more ? previous.history : []), ...page.revisions.map(value => profileRevisionView(value, userId))], hasMoreHistory: page.nextBeforeVersion !== null }));
     } catch (error) { if (current() && generation === profileGeneration.current && !accessError(error, true)) setProfile(previous => ({ ...previous, reading: false, notice: "未能讀取檔案歷史，請稍後重試。" })); }
     finally { released(control); }
   }
