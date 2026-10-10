@@ -8,6 +8,17 @@ export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: 8, queryEm
 export const AGENT_INTERACTIVE_INPUT = Object.freeze({ default: 64000, min: 32000, max: 64000 });
 export const AGENT_TOOL_RESPONSE_RESERVE = 4096;
 
+export type AgentRunLimits = Readonly<{ modelCalls: number; queryEmbeddings: number }>;
+/** Copy only the existing bounded counts from trusted Server configuration. */
+export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
+  const selected = { modelCalls: limits?.modelCalls, queryEmbeddings: limits?.queryEmbeddings };
+  for (const key of ["modelCalls", "queryEmbeddings"] as const) {
+    const value = selected[key], range = PERSONAL_RUN_LIMITS[key];
+    if (!Number.isSafeInteger(value) || value < range.min || value > range.max) throw new Error("Invalid agent run limits");
+  }
+  return Object.freeze(selected);
+}
+
 export type AgentStopReason = "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
   | "input_limit" | "unauthorized" | "quota_exceeded" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown";
 export class AgentStopped extends Error {
@@ -130,14 +141,10 @@ export class AgentBudget {
   accountToolResponse(characters: number) {
     if (this.responseCharacters !== null) this.responseCharacters = Math.max(0, this.responseCharacters - characters);
   }
-  /** Only the Server-resolved, versioned personal settings may raise the default counts. */
-  configurePersonal(limits: { modelCalls: number; queryEmbeddings: number }) {
+  /** Server-resolved personal settings or an explicitly fixed trusted profile; never model/request args. */
+  configurePersonal(limits: AgentRunLimits) {
     if (this.configured || Object.values(this.used).some(count => count !== 0)) throw new Error("Agent limits already selected");
-    for (const key of ["modelCalls", "queryEmbeddings"] as const) {
-      const value = limits[key], range = PERSONAL_RUN_LIMITS[key];
-      if (!Number.isSafeInteger(value) || value < range.min || value > range.max) throw new Error("Invalid personal agent limits");
-    }
-    this.selectedLimits = { ...this.selectedLimits, modelCalls: limits.modelCalls, queryEmbeddings: limits.queryEmbeddings };
+    this.selectedLimits = { ...this.selectedLimits, ...freezeAgentRunLimits(limits) };
     this.configured = true;
   }
   take(kind: keyof AgentBudget["counts"], amount = 1) {

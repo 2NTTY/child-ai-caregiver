@@ -27,7 +27,7 @@ type AgentModelRequest = Parameters<AgentModelProvider['generate']>[0];
 type Call = { id: string; name: string; args: Record<string, unknown> };
 
 /** Synthetic domain persistence only. All capability loading, tool schemas, runtime and native ADK calls are real. */
-function domainFixture() {
+function domainFixture(completeOnClarification = false) {
   const entries: Entry[] = [], messages: { id: string; role: 'user' | 'model'; text: string }[] = [];
   const works = new Map<string, AgentWork>(), workWrites: AgentWork[] = [];
   const ledger = new Map<string, { runId: string; documentId: string; savedVersion: number; toolName: 'change_family_document' }>();
@@ -110,8 +110,8 @@ function domainFixture() {
     const value = part.functionResponse.response; assert.equal(value?.status, 'succeeded', JSON.stringify(value)); return value?.data;
   };
   const provider: AgentModelProvider = { generate: async request => {
-    const entry = entries.at(-1)!; const turn = entries.length - 1, step = entry.calls++;
-    assert.ok(step < (turn === 3 ? 3 : 4));
+    const entry = entries.at(-1)!; const index = entries.length - 1, turn = completeOnClarification && index === 2 ? 3 : index, step = entry.calls++;
+    assert.ok(step < (turn === 3 ? 3 : completeOnClarification && turn === 1 ? 5 : 4));
     const call = (name: string, args: Record<string, unknown>): Call => ({ id: `turn-${turn}-step-${step}-${name}`, name, args });
     const answer = (text: string) => call('present_answer', { kind: turn === 0 ? 'clarification' : 'operation', paragraphs: [{ text, citationIds: [] }] });
     let calls: Call[];
@@ -162,6 +162,18 @@ function domainFixture() {
         action: 'check_item', expectedVersion: read.document.version, authorityVersion: read.authorityVersion,
         sectionId: read.snapshot.sections[0].id, itemId: item.id, checked: true,
       } })];
+    } else if (turn === 1 && completeOnClarification && step === 3) {
+      const changed = response(request, 'change_family_document'), work = response(request, 'save_work').result;
+      assert.equal(changed.document.id, documentIds[1]); assert.equal(changed.document.version, 4);
+      assert.equal([...ledger.values()].filter(item => item.runId === entry.claim.runId && item.savedVersion === 4).length, 1);
+      const { id, childId: _child, version, createdAt: _created, updatedAt: _updated, ...values } = work;
+      calls = [call('save_work', { operationId: randomUUID(), workId: id, expectedVersion: version, values: {
+        ...values, focus: '已按本輪原成功收據核對同一份文件保存結果。', questions: [],
+        resources: [{ kind: 'family_document', id: changed.document.id, version: changed.document.version }], status: 'completed', followUp: null,
+      } })];
+    } else if (turn === 1 && completeOnClarification) {
+      const work = response(request, 'save_work').result; assert.equal(work.status, 'completed');
+      calls = [answer('已保存同一份旅行準備第4版，只勾選書包；這項文件整理工作已完成。')];
     } else if (turn === 1) {
       const changed = response(request, 'change_family_document'); assert.equal(changed.document.id, documentIds[1]); assert.equal(changed.document.version, 4);
       calls = [answer(`已保存同一份旅行準備第${changed.document.version}版，只勾選書包；工作進度仍待查回核對。`)];
@@ -229,4 +241,56 @@ test('real services continue one clarification work, edit the same document, and
     const hash = createHash('sha256').update(`family-document:${receipt.runId}:turn-${turn}-step-2-change_family_document`).digest('hex');
     assert.equal(opId, `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`);
   }
+});
+
+test('fixed 4/6/4 profiles complete one clarified document work in the same turn and read it without rewriting', async t => {
+  type Domain = ReturnType<typeof domainFixture>;
+  for (const [file, factory, key] of [
+    ['product-agent-store', 'createProductAgentStore', 'store'], ['memory', 'createMemoryStore', 'memory'],
+    ['chat', 'createChatStore', 'chat'], ['tasks', 'createTaskStore', 'tasks'], ['family-document-store', 'createFamilyDocumentStore', 'documents'],
+    ['shared-input-store', 'createSharedInputStore', 'sources'], ['concern-store', 'createConcernStore', 'concerns'],
+  ]) t.mock.module(`../server/${file}.ts`, { namedExports: { [factory]: (pool: { domain: Domain }) => (pool.domain as any)[key] ?? {} } });
+  const { createProductAgentServices } = await import('../server/product-agent-services.ts');
+  const domain = domainFixture(true), original = structuredClone(domain.actualDocuments), f = serialFirestoreFixture();
+  const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project' });
+  const packVersion = (await loadAgentPrompt('product-interactive', 'tool_cycle', ['run', 'scope', 'conversation', 'context', 'evidence', 'capabilities'])).packVersion;
+  const storage = { database: f.database, cipher, projectId: 'synthetic-project' };
+  const daily = new FirestoreAiUsage({ ...storage, namespace: 'bounded_continuity_daily', billingSource: 'platform' });
+  const root = new FirestoreRootBudget({ ...storage, namespace: 'bounded_continuity_roots' });
+  const contexts: Parameters<FirestoreRootBudget['open']>[0][] = [];
+  const rootBudget = { open: async (c: Parameters<FirestoreRootBudget['open']>[0]) => { contexts.push(structuredClone(c)); return root.open(c); },
+    read: root.read.bind(root), reserve: root.reserve.bind(root), settle: root.settle.bind(root), stop: root.stop.bind(root) };
+  const pool = { domain, query: async () => { throw new Error('Unexpected SQL fallback'); }, connect: async () => { throw new Error('Unexpected SQL'); } } as unknown as Pool;
+  const limits = [4, 6, 4], expectedCalls = [4, 5, 3];
+  const texts = ['請把準備單的書包勾好。', '二', '查回我之前改過的準備單。'];
+  for (const [turn, text] of texts.entries()) {
+    const runLimits = { modelCalls: limits[turn], queryEmbeddings: 2 };
+    const persistence: NonNullable<ProductAgentServicePorts['claimedRunPersistence']> = {
+      nativeSessionService: new FirestoreSessionService({ ...storage, namespace: 'bounded_continuity_sessions' }), rootBudget, dailyUsage: daily,
+      profile: { config, billingSource: 'platform', workflowVersion: 'product-interactive-v1', promptPackVersion: packVersion,
+        settingsVersion: 'fixed-profile-v1', billingVersion: 'platform-v1', runLimits }, provider: domain.provider,
+    };
+    const service = createProductAgentServices(pool, cipher, config, undefined, false, undefined, undefined, undefined, undefined, undefined,
+      { publishedKnowledgeReader: { candidates: async () => [] }, claimedRunPersistence: persistence });
+    runLimits.modelCalls = 12; // Mutating the caller after construction cannot change the bound profile.
+    const entry = domain.add(text, turn === 2), result = await service.agent.reply(userId, childId, entry.messageId, async () => true);
+    assert.equal(result?.status, 'completed', JSON.stringify(result));
+    assert.ok(result.tools.every(tool => tool.status === 'succeeded'), JSON.stringify(result.tools));
+    assert.equal(result.counts.modelCalls, expectedCalls[turn]);
+    assert.equal(contexts[turn].binding.limits.modelCalls, limits[turn]);
+    assert.equal((await root.read(contexts[turn])).used.modelCalls, expectedCalls[turn]);
+    assert.deepEqual(domain.actualDocuments[0], original[0]);
+    assert.equal(domain.stats().documentWrites, turn === 0 ? 0 : 1);
+    assert.equal(domain.works.size, 1);
+    assert.equal([...domain.works.values()][0].status, turn === 0 ? 'waiting' : 'completed');
+    if (turn === 1) assert.ok(result.tools.some(tool => tool.name === 'present_answer' && tool.status === 'succeeded'));
+    if (turn === 2) assert.match(result.text, /同一份合成旅行準備第4版/u);
+  }
+  assert.deepEqual(domain.workWrites.map(work => work.version), [1, 2, 3]);
+  assert.deepEqual(domain.workWrites.map(work => work.status), ['waiting', 'active', 'completed']);
+  assert.equal(new Set(domain.workWrites.map(work => work.id)).size, 1);
+  assert.equal(domain.ledger.size, 1); assert.equal(domain.stats().documentWrites, 1);
+  assert.equal(domain.stats().calls, 12); assert.equal((await daily.getForUser(userId)).attempts, 12);
+  assert.equal(domain.actualDocuments[1].version, 4);
+  assert.deepEqual(domain.actualDocuments[1].current!.sections[0].items.map(item => item.checked), [true, false]);
 });

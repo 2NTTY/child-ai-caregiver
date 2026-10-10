@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createHash, randomUUID } from 'node:crypto';
 import { FinishReason } from '@google/genai';
+import { z } from 'zod';
+import { AGENT_LIMITS, freezeAgentRunLimits } from '../server/agent-budget.ts';
 import type { Pool } from 'pg';
 import type { AgentRunInput, AgentScope } from '../server/agent-runtime.ts';
 import { createProductAgentStore as createSqlProductAgentStore, type AgentRunClaim } from '../server/product-agent-store.ts';
@@ -174,6 +176,55 @@ test('claimed services compose real ProductAgent, shared runtime, Runner and all
   const input = (entry: Entry): AgentRunInput => ({ runId: entry.claim.runId, scope: entry.claim.scope, claimedRun: structuredClone(entry.claim),
     deadlineAtMs: Date.parse(entry.claim.expiresAt), trigger: entry.claim.trigger!, recipeId: 'product-interactive',
     messages: [{ role: 'user', text: entry.text }], tools: [], authorize: async () => true });
+
+  await t.test('fixed profile counts reach durable binding, real Runner and gateway without changing defaults', async () => {
+    for (const cap of [undefined, 6]) {
+      const s = fixture(), entry = s.domain.add(), runLimits = { modelCalls: cap ?? 4, queryEmbeddings: 2 };
+      let calls = 0, tools = 0;
+      s.persistence.provider = { generate: async () => { calls++; return { content: { role: 'model', parts: [{ functionCall: {
+        id: 'count-' + calls, name: 'count_probe', args: {},
+      } }] }, finishReason: FinishReason.STOP, usageMetadata: { promptTokenCount: 10, totalTokenCount: 15 } }; } };
+      if (cap !== undefined) s.persistence.profile.runLimits = runLimits;
+      const service = s.build(); runLimits.modelCalls = 12;
+      const request = input(entry);
+      request.availableInputs = ['run', 'scope', 'conversation', 'context', 'evidence', 'capabilities'];
+      (request as any).runLimits = { modelCalls: 12, queryEmbeddings: 6 };
+      request.tools = [{ name: 'count_probe', description: 'Synthetic bounded loop.', parameters: z.object({}),
+        authorize: async () => true, execute: async () => { tools++; return { status: 'succeeded', data: {} }; } }];
+      const result = await service.runtime.run(request);
+      assert.equal(result.stopReason, 'model_limit', JSON.stringify(result));
+      assert.equal(calls, cap ?? 4); assert.equal(tools, cap ?? 4); assert.equal(result.counts.modelCalls, cap ?? 4);
+      assert.equal(s.opens[0].binding.limits.modelCalls, cap ?? 4);
+      assert.equal((await s.root.read(s.opens[0])).used.modelCalls, cap ?? 4);
+      assert.equal((await s.daily.getForUser(entry.claim.scope.userId)).attempts, cap ?? 4);
+      await assert.rejects(s.root.reserve(s.opens[0], { key: 'model:one-beyond-cap', kind: 'model', units: 1,
+        fingerprint: 'f'.repeat(64) }), { code: 'budget_exhausted' });
+      assert.equal(calls, cap ?? 4);
+    }
+    assert.equal(AGENT_LIMITS.modelCalls, 4);
+  });
+
+  await t.test('invalid fixed limits and returned durable limit mismatches refuse before provider dispatch', async () => {
+    let reads = 0;
+    const snapshot = freezeAgentRunLimits({ get modelCalls() { reads++; return reads === 1 ? 6 : 99; }, queryEmbeddings: 2 });
+    assert.equal(reads, 1); assert.equal(snapshot.modelCalls, 6); assert.equal(Object.isFrozen(snapshot), true);
+    for (const runLimits of [0, 13, 6.5, NaN].map(modelCalls => ({ modelCalls, queryEmbeddings: 2 }))
+      .concat([{ modelCalls: 6, queryEmbeddings: 0 }, { modelCalls: 6, queryEmbeddings: 7 }])) {
+      const s = fixture();
+      assert.throws(() => s.build({ ...s.persistence, profile: { ...s.persistence.profile,
+        runLimits } }), /Invalid agent run limits/u);
+      assert.equal(s.opens.length, 0); assert.equal(s.stats().calls, 0);
+    }
+    const s = fixture(), entry = s.domain.add();
+    const original = s.persistence.rootBudget;
+    s.persistence.profile.runLimits = { modelCalls: 6, queryEmbeddings: 2 };
+    s.persistence.rootBudget = { ...original, open: async context => {
+      const snapshot = await original.open(context);
+      return { ...snapshot, limits: { ...snapshot.limits, modelCalls: 4 } };
+    } };
+    const result = await reply(s.build(), entry);
+    assert.equal(result?.stopReason, 'unavailable'); assert.equal(s.stats().calls, 0); assert.equal(s.stats().dailyReserves, 0);
+  });
 
   await t.test('two claimed roots accumulate daily attempts; same document/version/opId survives services reconstruction without replay', async () => {
     const s = fixture(), first = s.domain.add('synthetic-user', true), service = s.build();
