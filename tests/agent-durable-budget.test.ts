@@ -66,6 +66,21 @@ test("durable assembly cannot omit native storage or mix dynamic routing and the
   assert.throws(() => createAgentRuntime({ ...options, durableBudget: durable }), /Invalid durable budget assembly/);
   assert.throws(() => createAgentRuntime({ ...options, nativeSessionService: new InMemorySessionService(), durableBudget: durable,
     resolve: async () => { throw new Error("Dynamic route must not run"); } }), /Invalid durable budget assembly/);
+  assert.throws(() => createAgentRuntime({ ...options, boundRunLimits: { modelCalls: 6, queryEmbeddings: 2 } }), /Invalid bound run limits assembly/);
+  assert.throws(() => createAgentRuntime({ ...options, nativeSessionService: new InMemorySessionService(),
+    bindDurableRun: () => durable, boundRunLimits: { modelCalls: 6, queryEmbeddings: 2 },
+    resolve: async () => { throw new Error("Dynamic route must not run"); } }), /Invalid durable budget assembly/);
+  let opens = 0, providers = 0, binds = 0;
+  const runtime = createAgentRuntime({ ...options, nativeSessionService: new InMemorySessionService(),
+    boundRunLimits: { modelCalls: 6, queryEmbeddings: 2 }, provider: { generate: async () => { providers++; throw new Error("No provider"); } },
+    bindDurableRun: (_input, _pack, limits) => { binds++; assert.equal(limits.modelCalls, 6);
+      return { ...durable, adapter: { ...durable.adapter, open: async context => { opens++; return durable.adapter.open(context); } } }; } });
+  const stopped = await runtime.run({ runId: durable.context.binding.rootRunId, deadlineAtMs: durable.context.binding.deadlineAtMs,
+    scope: { userId: 'synthetic-user', workspaceId: 'workspace', childId: 'child', authorizationVersion: '1', dataVersion: 'epoch:1' },
+    trigger: { kind: 'interactive', reference: 'message' }, recipeId: 'product-interactive',
+    availableInputs: ['run', 'scope', 'conversation', 'context', 'evidence', 'capabilities'],
+    messages: [{ role: 'user', text: 'Synthetic binding mismatch.' }], tools: [], authorize: async () => true });
+  assert.equal(stopped.stopReason, 'unavailable'); assert.equal(binds, 1); assert.equal(opens, 0); assert.equal(providers, 0);
   const budget = new AgentBudget(undefined, 90000, Date.now() + 10);
   try { await assert.rejects(budget.wait(() => new Promise(() => {})), { reason: "deadline" }); } finally { budget.close(); }
 });

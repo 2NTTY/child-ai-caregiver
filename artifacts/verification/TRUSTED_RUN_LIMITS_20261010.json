@@ -1,0 +1,374 @@
+{
+  "recordedAt": "2026-10-10T07:59:24Z",
+  "status": "candidate_ready_for_review_not_published",
+  "scope": "Fixed trusted run-limit snapshot reaches claimed services, binding, AgentBudget, native Runner and existing gateway. Synthetic business stores and scripted provider only.",
+  "baseline": "26c27d88b7781cd3fe5a8ea3b5ede578b2947403",
+  "costBoundary": "US$30 total including earlier spend. Coverage remains unverified; no paid execution, authentication, workflow dispatch or cloud changes.",
+  "stages": [
+    {
+      "name": "baseline_red",
+      "log": "red-profile.log",
+      "exitCode": 1,
+      "result": "Original production code ignores new profile; second turn stops after four model calls with saved document but no independent presentation. Expected reproduction, retained."
+    },
+    {
+      "name": "initial_fixed_continuity",
+      "log": "fixed-continuity.log",
+      "exitCode": 0,
+      "tests": 1,
+      "result": "Scripted 4/6/4 profile; actual model steps 4/5/3. Same work completed and independently presented in turn 2; new conversation readback has zero rewrite."
+    },
+    {
+      "name": "initial_claimed_suite_input_failure",
+      "log": "claimed-services.log",
+      "exitCode": 1,
+      "tests": 12,
+      "passed": 10,
+      "failed": 2,
+      "result": "New direct-runtime loop fixture omitted required availableInputs and stopped before provider. Parent failure is counted in failed=2. Node nested suite continued 10 remaining child tests before process failure; not described as immediate whole-suite stop. Product code was not changed for this fixture failure."
+    },
+    {
+      "name": "fixed_cap",
+      "log": "fixed-cap.log",
+      "exitCode": 0,
+      "testsIncludingParent": 2,
+      "result": "Required prompt inputs restored; default4 and fixed6, seventh attempt refused, mutable caller/request cannot raise limits."
+    },
+    {
+      "name": "fixed_range_and_snapshot",
+      "log": "fixed-profile-rejections.log",
+      "exitCode": 0,
+      "testsIncludingParent": 2
+    },
+    {
+      "name": "bind_mismatch",
+      "log": "bind-mismatch.log",
+      "exitCode": 0,
+      "tests": 1,
+      "result": "Binding6 versus returned4 refused before root open/provider; resolver/fixed assembly conflicts refused."
+    },
+    {
+      "name": "original_continuity_regression",
+      "log": "original-continuity.log",
+      "exitCode": 0,
+      "tests": 1,
+      "result": "Original four-turn/default4 proof retained; does not replace historical failure."
+    },
+    {
+      "name": "input_invariant",
+      "log": "input-invariant.log",
+      "exitCode": 0,
+      "tests": 1
+    },
+    {
+      "name": "initial_server_types",
+      "log": "server-types.log",
+      "exitCode": 0
+    },
+    {
+      "name": "snapshot_read_once_hardening",
+      "result": "Helper now copies values once before validation, avoiding mutable accessor check/use differences; no default/range change."
+    },
+    {
+      "name": "final_profile",
+      "log": "final-profile.log",
+      "exitCode": 0,
+      "testsIncludingParent": 3,
+      "result": "Final helper: default4/fixed6 and seventh rejection, caller mutation/request override ignored, range checks, single-read frozen snapshot and returned snapshot mismatch refused."
+    },
+    {
+      "name": "final_continuity",
+      "log": "final-continuity.log",
+      "exitCode": 0,
+      "tests": 1
+    },
+    {
+      "name": "final_server_types",
+      "log": "final-types.log",
+      "exitCode": 0,
+      "scope": "Existing tsconfig.server.json: server/shared/test type checking, no frontend build or full regression."
+    }
+  ],
+  "networkAuditCount": 12,
+  "networkAttempts": 0,
+  "networkAudits": [
+    {
+      "file": "network-audit-bind-mismatch-33.json",
+      "sha256": "1e69f453be853731c1fdc7e04ea61d295cedb58c545bbd5ac86cfd842baaff8f",
+      "bytes": 208,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-claimed-services-12.json",
+      "sha256": "174a051b735dc64d9bbae314e62b2b3157d940e0c2d028feb2a71766a2847895",
+      "bytes": 218,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-final-continuity-32.json",
+      "sha256": "8503cafe9cfc09d47b876b23398588d3f28cdb9a76574d71fe0d41ab4bcf95ca",
+      "bytes": 217,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-final-profile-12.json",
+      "sha256": "174a051b735dc64d9bbae314e62b2b3157d940e0c2d028feb2a71766a2847895",
+      "bytes": 218,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-final-types-45.json",
+      "sha256": "b1f3a449d8268b7de6a2ef0b8bed6eeb751e670860970c0e7ebdeaf49d0eaffb",
+      "bytes": 240,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-fixed-cap-12.json",
+      "sha256": "174a051b735dc64d9bbae314e62b2b3157d940e0c2d028feb2a71766a2847895",
+      "bytes": 218,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-fixed-continuity-12.json",
+      "sha256": "d712d1b5334020344d2a2357602e94b0a1178564808209fe91e62ae59bdd8ae7",
+      "bytes": 217,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-fixed-profile-rejections-13.json",
+      "sha256": "602ea9008eccfb406c5f33d21eaa2b25d3d248194169369eb7e954bdd831117d",
+      "bytes": 218,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-input-invariant-32.json",
+      "sha256": "c3f6798d1068490e380bc5174457e68147dce77f6c6153b105ce1814e62c78e1",
+      "bytes": 205,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-original-continuity-12.json",
+      "sha256": "d712d1b5334020344d2a2357602e94b0a1178564808209fe91e62ae59bdd8ae7",
+      "bytes": 217,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-red-profile-14.json",
+      "sha256": "eebc4eab0a3d6501558ea5328879f04428330cff8452edade1fb9e3ba344314e",
+      "bytes": 214,
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-server-types-41.json",
+      "sha256": "6c06f804e1271ead193943a93c31c6133b6ae856514997850d73985b6982fb2a",
+      "bytes": 240,
+      "attempts": 0
+    }
+  ],
+  "logs": [
+    {
+      "file": "bind-mismatch.log",
+      "sha256": "7d1e8ddd93af5d31c8d8e806a6f16e5e82e8649a81e6a12818ae4f6e87f9cea2",
+      "bytes": 237
+    },
+    {
+      "file": "claimed-services.log",
+      "sha256": "1bf29b9342241b63ac016c88fe71db65e63e930cc07d3312d430c81326cb75bb",
+      "bytes": 3044
+    },
+    {
+      "file": "final-continuity.log",
+      "sha256": "00987ffac59e19f98a441fa51a354a3e646680293238a57251b67990ee595d77",
+      "bytes": 523
+    },
+    {
+      "file": "final-profile.log",
+      "sha256": "900e8c44c1ef275242815026b1d216e0aed0aae4fc09d711bceceea66028223c",
+      "bytes": 842
+    },
+    {
+      "file": "final-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "fixed-cap.log",
+      "sha256": "47f296ee4f58491b7d9063f46825c9b539de6ab596bfc0e2197c7db10e0e3f35",
+      "bytes": 732
+    },
+    {
+      "file": "fixed-continuity.log",
+      "sha256": "94c065cd6fcfc17819f31f27985a083acb51915e6352df554f87139f805223fc",
+      "bytes": 523
+    },
+    {
+      "file": "fixed-profile-rejections.log",
+      "sha256": "8b239af00c97dc76aa753fe783c4cf5e614eccb3d3e268cf5b0e9338e5d289ce",
+      "bytes": 728
+    },
+    {
+      "file": "input-invariant.log",
+      "sha256": "6d0ccda1c257f05d22fe6dc0ef04c2f89fcb23d20e8c659ed12772b0d4e36001",
+      "bytes": 219
+    },
+    {
+      "file": "original-continuity.log",
+      "sha256": "6d836dca6ef961433fc6a0bc3adae4a5833f52b38a63d49b6b85f1f5811b6b22",
+      "bytes": 526
+    },
+    {
+      "file": "red-profile.log",
+      "sha256": "0acd9cd62a9013d79bb1a9af1b726ee5deeaca7c07b95708c2a62014b434ecbf",
+      "bytes": 2174
+    },
+    {
+      "file": "server-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ],
+  "unchanged": [
+    "AGENT_LIMITS default4/tool8/embedding2/deadline90s/output1024",
+    "Production bootstrap and dynamic personal settings",
+    "Root attempt identity, unknown receipts, cancellation/authorization and no replay contracts",
+    "Historical 20/20 ledger and frozen evidence",
+    "All live manifests, workflows, permissions and credentials"
+  ],
+  "notImplementedOrNotClaimed": [
+    "True-model semantic success, whole-work automatic completion authority, A09 or full acceptance.",
+    "Global US$30 cost coverage and attempt-15 chain admission gate; no live successor/harness entry was created.",
+    "New controlled batch ledger revision/historical linkage or workflow/manifest authorization.",
+    "Real SQL/Firestore/Emulator, browser/UI, GCP resources, paid execution or deployment.",
+    "Earlier safety regressions/binding/input tests were run before final read-once helper tweak; final profile/continuity/types were rerun after it."
+  ],
+  "authorization": "2026-10-10: related work authorized within a cumulative US$30 cap including earlier spend; no private conversation or billing records included.",
+  "review": {
+    "status": "independent_11_files_allow_root_final_allow_normal_publication",
+    "prCreated": false,
+    "deployed": false,
+    "rootVerdictAt": "2026-10-10T08:07:55Z",
+    "rootVerdict": "Allow exact 11 files through normal draft, required checks, ready and merge workflow without force or bypass.",
+    "reviewedPublicationManifestSha256": "7b8586e5afbe949d4d8ae4032714d59a6a7d928c526a3c2175115a81daac65fc",
+    "technicalSevenFilesUnchanged": true,
+    "additionalProductTestsAfterReview": 0,
+    "files": [
+      {
+        "file": "bind-legacy.log",
+        "bytes": 238,
+        "sha256": "01f05c5e1a63a8189e06b315f4525369f9ba7770ef3084bf4ba7f22b57d2ce90"
+      },
+      {
+        "file": "boundaries.log",
+        "bytes": 745,
+        "sha256": "43eb17e07c8336ea1579df97499762afdc5becff74307dd1e67210dc3c452839"
+      },
+      {
+        "file": "independent-boundaries.test.ts",
+        "bytes": 20220,
+        "sha256": "e231d4cd5841435f64b5b1d331155698238062784bc5063a3d9730eed6be5483"
+      },
+      {
+        "file": "network-audit-independent-bind-legacy-22.json",
+        "bytes": 208,
+        "sha256": "5fbf3f45066706b1dcbc37be9c35d13c746ac024c2e81b48fb47be814a7be535"
+      },
+      {
+        "file": "network-audit-independent-boundaries-14.json",
+        "bytes": 200,
+        "sha256": "f38ab4e8ef6c3898f4e91b8a8f38b818c17232b751ac532d9b3bf24de52d96a3"
+      },
+      {
+        "file": "network-audit-independent-profile-15.json",
+        "bytes": 218,
+        "sha256": "1212c4a949828ddf97a97c3b7f89155a54834cf6879b8a266d81b171910b92cb"
+      },
+      {
+        "file": "profile.log",
+        "bytes": 842,
+        "sha256": "b42a6cb230734156f948f860aa0e39ede9886a370e5697234d6ce192d1b5cde8"
+      },
+      {
+        "file": "publication-review.json",
+        "bytes": 2175,
+        "sha256": "c4cf2e1e2f4c660d49cfb27e5d39d8b7394307066b2d004f3c15a977395b50eb"
+      },
+      {
+        "file": "review-report.json",
+        "bytes": 5833,
+        "sha256": "0d8c8243eb8886d0899cb05bf4defb600400f56d9d00318ed77d630eef5258c8"
+      },
+      {
+        "file": "verified-manifest.json",
+        "bytes": 1732,
+        "sha256": "62a1fc08fdfc5211599a9103b5fdc4fbf0219acccf25d0bc0756337d7c9903ea"
+      }
+    ],
+    "networkAudits": 3,
+    "networkAttempts": 0,
+    "verified": [
+      "Frozen 7-file hashes and baseline blobs match.",
+      "Two profile guards and one bind assembly focused test pass.",
+      "Independent valid-input positive control: constructor mutation cannot change config/counts; epoch is refused before root/provider; shared slot remains reusable; reopening the same root with 12 instead of 6 conflicts without new daily attempts or snapshot changes."
+    ],
+    "historicalEvidenceCaveat": "Some existing direct-runtime claim identity negative fixtures omitted required availableInputs and may stop during prompt preparation; their passing results do not independently prove each binder branch. The reviewer separately proved only the explicitly listed valid-input controls. Original logs are preserved."
+  },
+  "previewSourceStatus": {
+    "current": "Recovered through the official source workflow. Separate Sites preview v66 published at 2026-10-10T08:11:10.490148Z; browser acceptance pending, not a deployment of this Server candidate.",
+    "previewSourceCommit": "151b13770374969ff6696de6dacbf5dd55e724d6",
+    "previewDeploymentId": "appgdep_6ac9f311fba0819189f5cf4e48452d12",
+    "previewUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+    "serverCandidateDeployed": false,
+    "historicalCorrection": "The prior source retrieval failed for an undetermined reason. The available error only said file could not be authorized or resolved, without the complete original call/ID. Permission denial was not established. Earlier logs remain historical and are corrected by the appended WORKLOG entry."
+  },
+  "sourceFiles": [
+    {
+      "path": "docs/CHAT_AGENT_DURABLE_BUDGET.md",
+      "baseBlob": "640c31e1a91a521c23ee2e5338b73aa8b49b3f22",
+      "gitBlob": "6f2dfad3e0b4c1a7239af357ec9c108682e85446",
+      "sha256": "74c1b68251bb5031b2837aad6861a1d5a00f795160805cb819ed30a8ad5ed1a3",
+      "bytes": 21292
+    },
+    {
+      "path": "server/agent-budget.ts",
+      "baseBlob": "74f1da80dd0752bddd27a390d26174c52fe362ca",
+      "gitBlob": "960fca75aaed718831d5f332d29cbf011d679ade",
+      "sha256": "406f6e389ee3da0b4e3e917cdbda5d470d645ed01ff1dc019adc48ee0bcb484a",
+      "bytes": 10252
+    },
+    {
+      "path": "server/agent-runtime.ts",
+      "baseBlob": "88538e37135c282ecb063b6f543bf64effc29911",
+      "gitBlob": "12111327672dec61a5210e15feb45b54848442a9",
+      "sha256": "5df2f0c7edd201c7d5ff1bc3baa531ef2bb5cb716f939bf871070c1634ddc00b",
+      "bytes": 34864
+    },
+    {
+      "path": "server/product-agent-services.ts",
+      "baseBlob": "74925e542cdc3be8296f1e959d024bf2dbef4935",
+      "gitBlob": "a2338d22511bc2aa4c139b94bd049b9afec02385",
+      "sha256": "0a82439bd2603da62376d7449aed6bcb081f798410bf875a729cbd7c0630a4bc",
+      "bytes": 7923
+    },
+    {
+      "path": "tests/agent-durable-budget.test.ts",
+      "baseBlob": "da3aaec7d3d8ac7d7189ffd3dfb7eede6fa57b87",
+      "gitBlob": "6a9f2a26efaf604569fd46bb6045d599ba069c21",
+      "sha256": "6a079747ff7db51c55f7e4236476ec42a0041ae57fcfb762489bdfc4cc7f3ce3",
+      "bytes": 9293
+    },
+    {
+      "path": "tests/product-agent-claimed-services.test.ts",
+      "baseBlob": "245fec9b824dd9108b9c034ec4e23d10b9dfbb72",
+      "gitBlob": "3f423952f96b9a0f31e536ba9633600d5ad2122f",
+      "sha256": "ebdaf1744fd42ac92f3699029059155c1dcde706e0ac7f526acde3c909362dbb",
+      "bytes": 29357
+    },
+    {
+      "path": "tests/product-agent-task-continuity.test.ts",
+      "baseBlob": "92963e27e162c4d56a2fab42b9e01df1875bd047",
+      "gitBlob": "75c41c0abe7c830ef73427bb55a1c897c1f8d36e",
+      "sha256": "65eb1c6ef7cf6133afe97cf99cdebd1a2f1cd6944286c792c14cc3addde6c32f",
+      "bytes": 25959
+    }
+  ]
+}

@@ -4,8 +4,8 @@ import type { AppendEventRequest, CreateSessionRequest, DeleteSessionRequest, Ge
 import { z } from "zod";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
-import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
-import type { AgentStopReason, AgentDurableBudget } from "./agent-budget.ts";
+import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits } from "./agent-budget.ts";
+import type { AgentStopReason, AgentDurableBudget, AgentRunLimits } from "./agent-budget.ts";
 import { AgentGatewayModel } from "./agent-model-gateway.ts";
 import type { AgentRunClaim } from "./product-agent-store.ts";
 import type { RootBudgetLimits } from "./durable-root-budget.ts";
@@ -177,12 +177,16 @@ export function createAgentRuntime(options: {
   durableBudget?: AgentDurableBudget;
   /** Binds an already claimed run, never selects a provider or dynamic account settings. */
   bindDurableRun?: AgentDurableRunBinder;
+  /** Fixed trusted constructor snapshot selected before binding; no per-request override. */
+  boundRunLimits?: AgentRunLimits;
 }) {
+  if (options.boundRunLimits !== undefined && !options.bindDurableRun) throw new Error("Invalid bound run limits assembly");
   if ((options.durableBudget || options.bindDurableRun) && (options.resolve || !options.nativeSessionService
     || options.durableBudget && options.bindDurableRun
     || options.durableBudget && (!options.durableBudget.adapter || !options.durableBudget.context))) throw new Error("Invalid durable budget assembly");
   const fixedDurable = options.durableBudget ? freezeDurable(options.durableBudget) : undefined;
-  const fixedOptions = fixedDurable || options.bindDurableRun ? { ...options, config: Object.freeze({ ...options.config }) } : options;
+  const boundRunLimits = options.boundRunLimits === undefined ? undefined : freezeAgentRunLimits(options.boundRunLimits);
+  const fixedOptions = fixedDurable || options.bindDurableRun ? { ...options, config: Object.freeze({ ...options.config }), boundRunLimits } : options;
   const activeUsers = new Set<string>();
   return {
     async run(input: AgentRunInput): Promise<AgentRunResult> {
@@ -209,6 +213,7 @@ export function createAgentRuntime(options: {
           budget.configureInputCharacters(input.trigger.kind === "interactive"
             ? selected.config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default : AGENT_LIMITS.inputCharacters);
           if ("runLimits" in selected && selected.runLimits) budget.configurePersonal(selected.runLimits);
+          if (boundRunLimits) budget.configurePersonal(boundRunLimits);
           if (durable?.runLimits) budget.configurePersonal(durable.runLimits);
           if ("authorize" in selected) authorize = async () => await input.authorize() && await selected.authorize();
           budget.check();

@@ -2026,3 +2026,22 @@
 - Recorded At：2026-10-10T08:27:07+08:00；基線 master `eb25dad5efb411fe1c5f38c03789bc815ea7cf1e`／tree `6652749ee8f9f26f398902f0b3588e3cead578ed`。GitHub [#179](https://github.com/2NTTY/child-ai-caregiver/pull/179) 的 merged=true、合併時間2026-10-10T03:48:50+08:00及merge_commit_sha均已核對；當時根PLAN／STATUS仍把該窄修列為「當前可執行／尚未建立PR」，故作實質狀態更正。開工時open PR為0，沒有同項待合併文件修正。
 - PLAN將該段改為#179已合併驗收界線並移除失效的待PR下一步；STATUS同步短摘要。只承接[原renderer證據](artifacts/verification/QA_PDF_FOOTER_20261010.json)所覆蓋的局部PDF抽字、兩頁畫面、正文不變及範圍typecheck，不重做產品驗收；原紅、被拒候選、工具／CLI錯誤及未驗項全部保留。本次只核對文件diff、Git blob、PLAN錨點及WORKLOG原326255-byte前綴，未改產品程式或凍結證據。
 - #179已合併不代表已發布／部署或全面驗收。v65既有來源授權阻塞及下載／跨孩子bytes／取消晚到／HTTP驗收仍未解除；原A09、F01／F02與後續store依賴、per-work outcome／同輪自動結案、restore／resume／fencing門檻及三其他Agent只保留接口的範圍不變。真模型20／20已耗盡，不新增呼叫或重置；GCP資源、身份、權限及費用批准邊界不變，本次沒有相關操作。上文「尚未PR」保留為當時記錄，以本條已核合併狀態更正，不回寫歷史。
+
+
+<a id="log-20261010-trusted-run-limits"></a>
+## 2026-10-10｜受信固定限額接點及同輪合成接續
+
+- Recorded At：2026-10-10T16:01:43+08:00；基線master `26c27d88b7781cd3fe5a8ea3b5ede578b2947403`／tree `494f5fe5d0011d01bb0c4c9085a568dbd6413960`，869份已materialize原檔按Git blob核對無差異，非完整checkout。復用既有Server可選固定profile、AgentBudget範圍及原生ADK Runner，不另建runtime／通用成果框架，不改正式bootstrap。
+- 本次新增受信profile的可選runLimits快照：constructor按原model1–12／embedding1–6範圍核整數並單次讀取、複製凍結，bind前送入原budget；binding、Runner剩餘maxLlmCalls及gateway root reserve共用同值。未提供仍default4／2，工具8及90秒不變；外部request／model args無入口，dynamic resolver及舊單一durableBudget混用仍拒絕。同root身份／generation／原期限／used、取消、來源授權與unknown原收據不變。
+- 原baseline以同一合成三輪反例在第2輪4次模型呼叫後stopped／invalid_response：文件已保存但缺獨立呈現，原log保留。候選4／6／4經真services、ProductAgent、ADK Runner及三個Firestore adapters搭串行合成transaction／業務stores與scripted provider，實際4／5／3步；第2輪沿同work及原成功收據只改同文件一次、保存completed後獨立present，第3輪重建services及新對話只讀原結果。這是機械接點證據，不代表真Firestore、模型理解、通用成果權威或A09完成。
+- 首次新增上限fixture缺product-interactive必需availableInputs，provider前unavailable，斷言失敗；Node巢狀suite仍繼續其餘10項，不能稱整批立即停。原失敗及suite結果保留，補真契約必需輸入後定向重跑，沒有放寬斷言或改產品來迎合測試。default4／profile6及第7次拒絕、caller mutation、錯誤範圍、binding／snapshot錯配provider=0，原default4連貫流程、input ceiling及Server typecheck通過。最後再將helper改成單次讀取後驗證，定稿只重跑2項profile守衛（含parent報表3項）、1項4／6／4流程及Server typecheck；此前binding／input／取消／unknown等證據未冒稱全部重跑。12份本任務audit均零網絡嘗試；命令、hash、時序及限制見[固定證據](artifacts/verification/TRUSTED_RUN_LIMITS_20261010.json)。
+- 使用者本日允許相關工作累計最多US$30，包含既有支出；原20／20批次台帳與失敗全部保留，不把次數耗盡解讀為費用耗盡，也不藉新run重置。完整歷史費用、未入帳／在途預留及新批上界尚未總核，本次沒有付費、真模型／embedding、authenticate、workflow dispatch、GCP／雲資源或新憑據操作。新live successor台帳、第15次全鏈准入與費用gate仍未實作，不能由本限額接點直接放行付費。
+- 本輪交接已確認先前未能取得來源，原因未明；本輪經官方來源流程恢復，可重建候選驗收中。先前取回失敗及下載／跨孩子bytes／取消晚到／HTTP未驗紀錄作歷史保留，尚未發布，不將來源恢復當作產品驗收完成。PLAN／STATUS只同步上述現況，既有PLAN140個錨點及WORKLOG327863-byte原前綴逐byte保留；F01／F02、per-work outcome、restore／resume／fencing及三其他Agent只留接口等gate不變。本候選仍待獨立review／dot最終裁決，未PR／部署。
+
+- 2026-10-10T16:03:52+08:00 獨立核心review追加：凍結7檔已Allow，未改產品碼。reviewer重驗2項profile守衛、1項bind assembly，另以有效availableInputs及正向control驗證constructor後config／counts mutation不生效、epoch在root／provider前拒絕且slot可復用、同root改用12／6的新constructor發生binding衝突且不增加日額或改snapshot。另揭示既有claim identity等直接runtime負例未提供完整availableInputs，可提早在prompt階段拒絕；原passed只保留實際觀察，不能逐項當作binder守衛已驗。獨立補驗只證明列明邊界，沒有聲稱補驗所有舊identity反例。reviewer3份audit零網絡；根文件review及dot最終裁決仍待完成。
+
+- 2026-10-10T16:06:12+08:00 來源故障定性更正：舊LOG曾稱來源授權拒絕／阻塞；現有可讀錯誤僅為「file could not be authorized or resolved」，且未保留完整原call／ID，不能據此證明permission deny。先前未能取得來源，原因未明；本輪經官方來源流程恢復。原staging路徑不存在及active／public／owner讀取正常亦不構成前次拒權證據；舊原文保留作歷史，本條更正其定性，不冒稱已查明原故障根因。
+
+- 2026-10-10T16:07:55+08:00 最終裁決追加：獨立review已Allow精確11檔，dot親審核心及根文件來源定性更正後最終Allow正常draft→必要核對→ready→merge流程。review時publication manifest SHA256為7b8586e5afbe949d4d8ae4032714d59a6a7d928c526a3c2175115a81daac65fc；本追加僅更新根文件／artifact的review裁決狀態，原7份程式／測試／契約hash不變，沒有新增產品測試。140個PLAN錨點及WORKLOG327863-byte原前綴保留，舊失敗／未驗界線不變。記錄時尚未PR／部署；既有預覽發布屬獨立產物，不能據此宣稱Server部署；新live費用gate、successor台帳及全鏈准入仍未實作。
+
+- 2026-10-10T16:14:46+08:00 獨立預覽發布狀態追加：已核官方發布收據，既有公開Sites的v66於2026-10-10T08:11:10.490148Z發布成功，source151b13770374969ff6696de6dacbf5dd55e724d6，deployment appgdep_6ac9f311fba0819189f5cf4e48452d12；原公開範圍及v65保留，瀏覽器驗收由另一項驗收工作接續，尚未宣稱通過。這是獨立預覽產物，並非本Server限額候選的部署或正式GCP後端更新。此前來源恢復／尚未發布文字保留為當時記錄，PLAN／STATUS同步目前可證實現況。

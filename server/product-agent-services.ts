@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import type { StorageCipher } from "./storage-crypto.ts";
 import type { AiConfig } from "./ai-config.ts";
-import { AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
+import { AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits, type AgentRunLimits } from "./agent-budget.ts";
 import type { DurableRootBudget } from "./durable-root-budget.ts";
 import type { DurableAiUsage } from "./durable-ai-usage.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
@@ -37,6 +37,8 @@ export interface ProductAgentDurableProfile {
   settingsVersion: string;
   billingVersion: string;
   billingSource: "platform";
+  /** Optional fixed Server-selected counts; omitted profiles retain the production defaults. */
+  runLimits?: AgentRunLimits;
 }
 export interface ProductAgentServicePorts {
   publishedKnowledgeReader?: PublishedKnowledgeReader;
@@ -54,7 +56,8 @@ export interface ProductAgentServicePorts {
 
 function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAgentServicePorts["claimedRunPersistence"]>, routing: unknown) {
   const { nativeSessionService, rootBudget, dailyUsage, provider, embeddingProvider } = persistence;
-  const profile = persistence.profile ? Object.freeze({ ...persistence.profile, config: Object.freeze({ ...persistence.profile.config }) }) : undefined;
+  const profile = persistence.profile ? Object.freeze({ ...persistence.profile, config: Object.freeze({ ...persistence.profile.config }),
+    ...(persistence.profile.runLimits === undefined ? {} : { runLimits: freezeAgentRunLimits(persistence.profile.runLimits) }) }) : undefined;
   const version = (value: unknown): value is string => typeof value === "string" && value.length > 0
     && value.length <= 128 && value === value.trim() && value.isWellFormed();
   if (routing || !profile || !profile.config.enabled || profile.billingSource !== "platform" || dailyUsage?.billingSource !== "platform"
@@ -80,7 +83,7 @@ function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAg
       limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings }, deadlineAtMs: expiry,
     } } };
   };
-  return { config: profile.config, nativeSessionService, bindDurableRun, provider, embeddingProvider };
+  return { config: profile.config, runLimits: profile.runLimits, nativeSessionService, bindDurableRun, provider, embeddingProvider };
 }
 
 export function createProductAgentServices(pool: Pool, cipher: StorageCipher, config: AiConfig, scheduling?: TaskScheduling, diagnostics = false, growth?: GrowthStore,contact?:import("./contact-store.ts").ContactStore,summary?:import("./care-summary-store.ts").CareSummaryStore, routing?:import("./model-routing.ts").ModelRouting, actions?:import("./agent-actions-store.ts").AgentActionsStore, ports: ProductAgentServicePorts = {}) {
@@ -88,7 +91,7 @@ export function createProductAgentServices(pool: Pool, cipher: StorageCipher, co
   const selectedConfig = durable?.config ?? config;
   const store = createProductAgentStore(pool, cipher, scheduling);
   const runtime = createAgentRuntime({ config: selectedConfig, usage: createAiUsageStore(pool),
-    ...(durable ? { nativeSessionService: durable.nativeSessionService, bindDurableRun: durable.bindDurableRun } : {}),
+    ...(durable ? { nativeSessionService: durable.nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: durable.runLimits } : {}),
     provider: durable?.provider ?? (selectedConfig.enabled ? createVertexAgentProvider(selectedConfig) : { generate: async () => { throw new Error("ai_disabled"); } }),
     resolve: routing?.resolve,
     diagnostics: diagnostics ? event => { console.info("agent_diagnostic", JSON.stringify(event)); } : undefined });

@@ -5,7 +5,7 @@
 ## 目前與接手
 
 - **目前聚焦聊天 Agent 可靠辦事及 F01 接點。** 本輪只有家長聊天 Agent；其他三角色只保留接口，唯一工作入口及 gate 見 [PLAN#active](PLAN.md#active)／[ADR-021](docs/DECISIONS.md#adr-021)。原 A09 引用、同文件修改、新對話讀回與穩定服務仍未完成。#164～#166 的 HTTP Auth、交易對照／授權／照片停機及原收據 reader 均已合併、未部署；Firebase 身份／裝置 session 及完整 F01 尚未完成。
-- 本輪已核 master `eb25dad5`（#171～#179 已正常合併、未部署）。家庭文件 PDF 頁尾／頁碼 renderer 窄修已由 [#179](https://github.com/2NTTY/child-ai-caregiver/pull/179) 交付；局部 PDF 抽字、逐頁畫面及正文不變檢查通過，原紅及被拒候選保留，未作全面驗收。既有預覽來源及實際匯出驗收阻塞仍在，renderer 證據不能代替下載或正式 API；接續及完整限制見 [PLAN](PLAN.md#active)。全平台 SQL 共額、正式 bootstrap／resume／restore／跨庫 fencing、per-work outcome 與同輪自動結案仍未完成，未啟用正式持久流量。
+- 本輪已核 master `26c27d88`；#179 PDF頁尾窄修及#180狀態更正已合併，產品未部署／未全面驗收。當前受信固定runLimits候選保留正式default4，合成澄清後同work接續／同文件修改及新對話讀回通過必要窄驗證，程式／文件審核及最終裁決已通過，准正常PR交付；不能當真模型理解或通用工作成果已驗。既有預覽來源已經官方流程恢復，獨立Sites預覽v66於2026-10-10T08:11:10Z發布、瀏覽器驗收待完成，不能代表本後端候選已部署；接續及完整限制見 [PLAN](PLAN.md#active)。累計US$30授權包含先前支出，原20／20歷史台帳不重置，完整成本核對未成立前不執行新付費批次。全平台共額、正式bootstrap／resume／restore／跨庫fencing及per-work outcome仍未完成，未啟用正式持久流量。
 - 新前端已是正式入口，設計與互動保留；後續以單人對話辦事、真正文件修改、跨輪接續及 GCP 真實資料服務補齊能力。PR #118 的舊測試前端歸檔已合併，不能仍當待合併；master 新修正不等於已部署，未部署內容及其他聊天 draft 由 PLAN 記錄。
 - 前端工作讀 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；Server／Agent／正式整合讀根 PLAN，再按包讀契約與 [UI 接點](docs/P2_UI_HANDOFF.md#chat-handoff)。既有真流程的失敗／未驗界線保留在原包證據，不由新計劃抹除。
 - 本人模型 key／限額已接線；Gemini Developer API 地區限制仍在，見 [S06-W05](PLAN.md#s06-w05)。新服務預設提供平台 AI，不要求家長自備 key。
