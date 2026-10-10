@@ -9,10 +9,13 @@ const checkSchema = z.object({ generation: z.uuid() }).strict();
 export const workContinuationJobSchema = z.object({ eventId: z.uuid(), jobId: z.uuid(), workerGeneration: z.uuid(), storageEpoch: z.uuid() }).strict();
 
 export interface WorkContinuationRecovery {
-  recoverBackground(job: WorkContinuationJob): Promise<{ state: "pending" | "settled" | "already_terminal"; runId: string }>;
+  recoverBackground(job: WorkContinuationJob): Promise<{ state: "pending" | "settled" | "already_terminal"; runId: string | null }>;
 }
+import type { FirestoreWorkContinuationStore } from "./firestore-work-continuation-store.ts";
+
 type ProcessorOptions = { mode: "execute"; store: Pick<AgentWorkContinuationStore, "backgroundInput" | "finishBackground">;
-  agent: Pick<ProductAgent, "background"> } | { mode: "recover"; store: WorkContinuationRecovery };
+  agent: Pick<ProductAgent, "background"> } | { mode: "recover"; store: WorkContinuationRecovery }
+  | { mode: "durable"; store: FirestoreWorkContinuationStore; agent: Pick<ProductAgent, "backgroundClaimed"> };
 
 /** One consumer with mutually exclusive execution and original-result recovery paths. */
 export function createAgentWorkContinuationProcessor(options: ProcessorOptions) {
@@ -22,6 +25,17 @@ export function createAgentWorkContinuationProcessor(options: ProcessorOptions) 
     if (frameworkJobId !== job.jobId) throw new Error("work_continuation_job_invalid");
     if (stopping) return;
     if (options.mode === "recover") {
+      const recovered = await options.store.recoverBackground(job);
+      if (recovered.state === "pending") throw new Error("work_continuation_run_pending");
+      return;
+    }
+    if (options.mode === "durable") {
+      const admission = await options.store.beginBackground(job);
+      if (admission.decision === "lookup" && admission.runId === null) return;
+      if (admission.decision === "execute" && !stopping) {
+        const result = await options.agent.backgroundClaimed(admission, () => !stopping, controller.signal);
+        if (result && !stopping) await options.store.finishBackground(job, admission.claim, result);
+      }
       const recovered = await options.store.recoverBackground(job);
       if (recovered.state === "pending") throw new Error("work_continuation_run_pending");
       return;

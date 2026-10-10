@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 1,
+  "base": "5b832f68aa5c6f50321b73e824bb0773890420fc",
+  "status": "independent_review_allow_root_accepted_for_unenabled_pr_delivery_not_published_or_deployed",
+  "candidateManifest": {
+    "base": "5b832f68aa5c6f50321b73e824bb0773890420fc",
+    "files": [
+      {
+        "path": "server/firestore-work-continuation-store.ts",
+        "sha256": "824f1b4492ad725b3cdd524c8a65b07d3b5e37bdbc7e25fc583b3a0649803f90"
+      },
+      {
+        "path": "server/firestore-work-continuation-recovery.ts",
+        "sha256": "7d941ce8f1bbc29d881861155e3b9f4b26df4f8832767cfb5b1a15354cecef03"
+      },
+      {
+        "path": "server/agent-work-continuation-worker.ts",
+        "sha256": "c527ff4a6ae310a1e956b9acc5d709e6892f110bc1574dca71e00e44c0403ef7"
+      },
+      {
+        "path": "server/product-agent-services.ts",
+        "sha256": "16494f9bad2c8e224a5c9e698c8a5f24334cdc86f4c9d2b8651232f700b1b95c"
+      },
+      {
+        "path": "server/product-agent-store.ts",
+        "sha256": "a687dda075a3d6960081c9bef9a8545081f8ab5fdcbc5e79b5098871ee7a9c61"
+      },
+      {
+        "path": "server/product-agent-tools.ts",
+        "sha256": "c4c6c1e8e71c9a50c71b69bd7ba56212d458622caf7229af51e633e07271f452"
+      },
+      {
+        "path": "server/product-agent.ts",
+        "sha256": "756a58c815ae78a8458cb7315cc4187a388f834d448631c21d9ae04d7bebbef0"
+      },
+      {
+        "path": "tests/firestore-work-authority.test.ts",
+        "sha256": "a50b767eadb0e8360d4019780c7e68ea398ec2bae6514b4fa86b1de0f9440996"
+      },
+      {
+        "path": "docs/CHAT_AGENT_FIRESTORE_RECOVERY.md",
+        "sha256": "c717cd7805f3902efe1f3cd660f29649ea8e39146c76068d3877f5a11ab74455"
+      }
+    ],
+    "manifestSha256": "68b07c22b15ac4e9b9ddbd9791c07cc351ace1f68d652bc4c9b5fcd0f8fd843a"
+  },
+  "scope": "Unenabled owner-only pure-due event writer, atomic claim and initial-input snapshot, restricted existing ProductAgent consumer and immutable receipt finalization. Existing canonical account/control/workspace/child/work prerequisites are synthetic-seeded only; not a production migration.",
+  "environment": {
+    "node": "24.19.0",
+    "firestoreSdk": "9.3.1",
+    "adk": "2.1.0",
+    "zod": "4.5.4",
+    "typescript": "6.0.3",
+    "database": "serial synthetic Firestore transaction harness, not emulator",
+    "provider": "deterministic stub, no real model",
+    "materialization": "157 fixed-master source files matched exact Git blob SHA; one existing recovery contract subsequently materialized. Not a full checkout."
+  },
+  "finalVerification": {
+    "focusedTests": 17,
+    "testExit": 0,
+    "typecheckExit": 0,
+    "tests": {
+      "path": "artifacts/local-only/verified-final.log",
+      "sha256": "9d360de386d31ed8c82d947043ce72ecf81113dec6117954b8f171a4d9678c13",
+      "text": "✔ authorized due work cancelled before delivery remains inert across worker restart and stale redelivery (46.53094ms)\n✔ a merged event drops its cancelled work and runs only its remaining live constituent once (144.628293ms)\n✔ restart recovers the original completed receipt or expired unknown run without another generation (40.84177ms)\n✔ committed same-database due claim feeds the real consumer and ProductAgent once, with original durable budgets (284.913636ms)\n✔ discarded claim context never escapes; cancellation before the committed retry excludes the complete original candidate (29.782551ms)\n✔ lost original claim commit stays lookup-only through reconstruction and becomes unknown at the original deadline (30.556953ms)\n✔ current cancellation after claim prevents finish without rewriting the original input selection (24.614189ms)\n✔ missing authority, corrupt evidence, wrong generation and missing budget refuse without SQL or provider fallback (40.795711ms)\n✔ mixed candidates use only the committed live work and concurrent consumers cannot start another run (155.638532ms)\n✔ lost finish acknowledgement preserves the completed original ciphertext and forbids late overwrite (118.543596ms)\n✔ the worker branch stops at the original daily quota and rejects advisory presentation (126.387433ms)\n✔ new durable consumer reads an existing V1 original result without upgrading evidence or creating another claim (15.249908ms)\n✔ real recovery consumer preserves the original receipt, retries discarded callbacks, and replays without another change (60.866521ms)\n✔ pending original run cannot execute, and lost expiry commit remains unknown after reconstruction (17.987632ms)\n✔ transaction replay rechecks revocation, restored epoch and cancelled work without rewriting original receipts (45.949201ms)\n✔ missing or invalid authorities, claims and receipts fail closed with no SQL/provider fallback (83.898649ms)\n✔ unsupported non-due constituents and a failed commit never leave partial terminal writes (19.502933ms)\nℹ tests 17\nℹ suites 0\nℹ pass 17\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2587.41621\n"
+    },
+    "typecheck": {
+      "path": "artifacts/local-only/verified-tsc.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "text": ""
+    },
+    "testCommand": "NETWORK_AUDIT=<unique-prefix> node --import ./artifacts/local-only/network-guard.mjs --experimental-test-module-mocks --test tests/firestore-work-authority.test.ts tests/firestore-work-continuation-recovery.test.ts tests/agent-work-continuation-recovery.test.ts",
+    "typecheckCommand": "node --import ./artifacts/local-only/network-guard.mjs node_modules/typescript/bin/tsc -p artifacts/local-only/tsconfig.json",
+    "typecheckConfig": {
+      "extends": "../../tsconfig.server.json",
+      "include": [
+        "../../server/firestore-work-continuation-store.ts",
+        "../../server/firestore-work-continuation-recovery.ts",
+        "../../server/agent-work-continuation-worker.ts",
+        "../../server/product-agent.ts",
+        "../../server/product-agent-services.ts",
+        "../../server/product-agent-tools.ts",
+        "../../tests/firestore-work-authority.test.ts"
+      ],
+      "compilerOptions": {
+        "target": "ES2024"
+      }
+    },
+    "networkGuard": {
+      "path": "artifacts/local-only/network-guard.mjs",
+      "sha256": "6c499425044f4ac7c6bd2ed2ee461c7e737a69955ee43961a135500869988363",
+      "text": "import net from 'node:net'; import tls from 'node:tls'; import http from 'node:http'; import https from 'node:https'; import dns from 'node:dns';\nimport { syncBuiltinESMExports } from 'node:module'; import { writeFileSync } from 'node:fs';\nconst blocked=[]; const deny=name=>(...args)=>{blocked.push(name);throw new Error('Network forbidden: '+name);};\nnet.Socket.prototype.connect=deny('socket'); tls.connect=deny('tls'); http.request=deny('http'); http.get=deny('http.get'); https.request=deny('https'); https.get=deny('https.get');\ndns.lookup=deny('dns'); dns.promises.lookup=deny('dns.promises'); globalThis.fetch=deny('fetch');syncBuiltinESMExports();\nprocess.on('exit',()=>writeFileSync((process.env.NETWORK_AUDIT ?? '/tmp/authority-network.json') + '.' + process.pid + '.json',JSON.stringify({blocked,attempts:blocked.length})+'\\n'));\n"
+    },
+    "network": [
+      {
+        "file": "verified-final-network.13.json",
+        "blocked": [],
+        "attempts": 0
+      },
+      {
+        "file": "verified-final-network.14.json",
+        "blocked": [],
+        "attempts": 0
+      },
+      {
+        "file": "verified-final-network.15.json",
+        "blocked": [],
+        "attempts": 0
+      },
+      {
+        "file": "verified-tsc-network.46.json",
+        "blocked": [],
+        "attempts": 0
+      }
+    ],
+    "networkAttempts": 0
+  },
+  "failureEvidence": [
+    {
+      "kind": "new_adapter_absent",
+      "classification": "expected new-entry-point absence; not an existing business regression",
+      "log": {
+        "path": "artifacts/local-only/red.log",
+        "sha256": "04367e4d8ff36f4b3dd357e34fe05aea3196cf13ddc0790d406393756c8d1ed5",
+        "text": "node:internal/modules/esm/resolve:271\n    throw new ERR_MODULE_NOT_FOUND(\n          ^\n\nError [ERR_MODULE_NOT_FOUND]: Cannot find module '/workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/firestore-work-continuation-store.ts' imported from /workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/tests/firestore-work-authority.test.ts\n    at finalizeResolution (node:internal/modules/esm/resolve:271:11)\n    at moduleResolve (node:internal/modules/esm/resolve:865:10)\n    at defaultResolve (node:internal/modules/esm/resolve:992:11)\n    at #cachedDefaultResolve (node:internal/modules/esm/loader:701:20)\n    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)\n    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)\n    at #resolve (node:internal/modules/esm/loader:683:17)\n    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:603:35)\n    at ModuleJob.syncLink (node:internal/modules/esm/module_job:163:33)\n    at ModuleJob.link (node:internal/modules/esm/module_job:253:17) {\n  code: 'ERR_MODULE_NOT_FOUND',\n  url: 'file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/firestore-work-continuation-store.ts'\n}\n\nNode.js v24.19.0\n✖ tests/firestore-work-authority.test.ts (301.297463ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 313.739467\n\n✖ failing tests:\n\ntest at tests/firestore-work-authority.test.ts:1:1\n✖ tests/firestore-work-authority.test.ts (301.297463ms)\n  'test failed'\n"
+      }
+    },
+    {
+      "kind": "initial_syntax_error",
+      "classification": "implementation typo corrected before behavior execution",
+      "log": {
+        "path": "artifacts/local-only/first-green.log",
+        "sha256": "d490328c980e90e74bd23342f5bbc51d4b86d9285b1524f17b33a4e8cd824e7e",
+        "text": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nfile:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/firestore-work-continuation-store.ts:90\n        workerGeneration: evidence.workerGeneration, authorizationVersion: evidence.authorizationVersion })\n        || !same(payload.works.map(({ workId, workVersion }) => ({ workId, workVersion })), evidence.works.map(({ workId, workVersion }) => ({ workId, workVersion }))) fail('input_binding');\n                                                                                                                                                                        ^^^^\n      const included = evidence.works.filter(item => item.selection === 'included');\n\nSyntaxError [ERR_INVALID_TYPESCRIPT_SYNTAX]: Expected ')', got 'ident'\n    at parseTypeScript (node:internal/modules/typescript:72:36)\n    at processTypeScriptCode (node:internal/modules/typescript:146:42)\n    at stripTypeScriptModuleTypes (node:internal/modules/typescript:215:22)\n    at ModuleLoader.<anonymous> (node:internal/modules/esm/translators:680:29)\n    at #translate (node:internal/modules/esm/loader:434:20)\n    at afterLoad (node:internal/modules/esm/loader:502:29)\n    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:507:12)\n    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:560:36)\n    at afterResolve (node:internal/modules/esm/loader:607:52)\n    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:613:12) {\n  code: 'ERR_INVALID_TYPESCRIPT_SYNTAX'\n}\n\nNode.js v24.19.0\n✖ tests/firestore-work-authority.test.ts (307.313575ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 319.491843\n\n✖ failing tests:\n\ntest at tests/firestore-work-authority.test.ts:1:1\n✖ tests/firestore-work-authority.test.ts (307.313575ms)\n  'test failed'\n"
+      }
+    },
+    {
+      "kind": "initial_typecheck_errors",
+      "classification": "structural bound type, never-return narrowing and synthetic receipt literal types; corrected",
+      "log": {
+        "path": "artifacts/local-only/typecheck-first.log",
+        "sha256": "02fdcade3359d771ce307a0114f112d55f5d76d08f862264b98cfd6000c4e54d",
+        "text": "server/firestore-work-continuation-store.ts(101,58): error TS2345: Argument of type '{ id: string; triggerKind: \"worker\"; triggerReference: string; sourceMessageId: null; recipeId: \"product-work-followup\"; dataVersion: string; state: \"unknown\" | \"completed\" | \"stopped\" | \"running\"; ... 7 more ...; storageEpoch: string; }' is not assignable to parameter of type '{ id: string; jobId: string; workerGeneration: string; state: \"unknown\" | \"queued\" | \"completed\" | \"stopped\" | \"cancelled\"; payloadEncrypted: string; authorizationVersion: string; ownerUserId: string; ... 6 more ...; localDay: string; } | { ...; } | { ...; }'.\n  Property 'runId' is missing in type '{ id: string; triggerKind: \"worker\"; triggerReference: string; sourceMessageId: null; recipeId: \"product-work-followup\"; dataVersion: string; state: \"unknown\" | \"completed\" | \"stopped\" | \"running\"; ... 7 more ...; storageEpoch: string; }' but required in type '{ runId: string; triggerKind: \"worker\"; triggerReference: string; authorizationVersion: string; ownerUserId: string; workspaceId: string; childId: string; storageEpoch: string; }'.\nserver/firestore-work-continuation-store.ts(240,29): error TS18047: 'run' is possibly 'null'.\nserver/firestore-work-continuation-store.ts(240,56): error TS18047: 'run' is possibly 'null'.\nserver/firestore-work-continuation-store.ts(240,120): error TS18047: 'run' is possibly 'null'.\nserver/firestore-work-continuation-store.ts(241,23): error TS18047: 'run' is possibly 'null'.\nserver/firestore-work-continuation-store.ts(241,50): error TS18047: 'run' is possibly 'null'.\nserver/firestore-work-continuation-store.ts(242,52): error TS18047: 'run' is possibly 'null'.\nserver/firestore-work-continuation-store.ts(242,90): error TS18047: 'run' is possibly 'null'.\nserver/firestore-work-continuation-store.ts(244,43): error TS18047: 'run' is possibly 'null'.\nserver/firestore-work-continuation-store.ts(244,69): error TS18047: 'run' is possibly 'null'.\nserver/firestore-work-continuation-store.ts(245,41): error TS18047: 'run' is possibly 'null'.\ntests/firestore-work-authority.test.ts(105,72): error TS2345: Argument of type '{ runId: string; status: string; stopReason: null; provenance: null; countsKnown: boolean; text: string; citations: never[]; privateSourceCitations: never[]; retrievalMode: string; tools: never[]; counts: { ...; }; proposals: never[]; }' is not assignable to parameter of type 'ProductAgentResult'.\n  Types of property 'status' are incompatible.\n    Type 'string' is not assignable to type '\"unknown\" | \"completed\" | \"stopped\" | \"running\"'.\n"
+      }
+    },
+    {
+      "kind": "mixed_retry_race_bad_assertion",
+      "classification": "another consumer could commit first before injected cancellation; both correctly stayed pending, so expecting a successful provider was invalid. The repaired test commits cancellation before the successful retry and redelivers during provider execution. Original failure retained, not called a product regression.",
+      "log": {
+        "path": "artifacts/local-only/mixed.log",
+        "sha256": "8809af08a99507d1d50599487103e2c9938af6205381f29d2f40f58d08ef71dc",
+        "text": "✖ mixed candidates use only the committed live work and concurrent consumers cannot start another run (103.899833ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1930.536288\n\n✖ failing tests:\n\ntest at tests/firestore-work-authority.test.ts:133:1\n✖ mixed candidates use only the committed live work and concurrent consumers cannot start another run (103.899833ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(outcomes.some(result => result.status === 'fulfilled'))\n  \n      at TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/tests/firestore-work-authority.test.ts:150:10)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+      },
+      "diagnostic": {
+        "path": "artifacts/local-only/mixed-diagnostic.log",
+        "sha256": "34c6a7411f796eb978dc8165eba6d10ac06d827e7d592858edf6de91e5475ee8",
+        "text": "✖ mixed candidates use only the committed live work and concurrent consumers cannot start another run (102.842168ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1758.219892\n\n✖ failing tests:\n\ntest at tests/firestore-work-authority.test.ts:133:1\n✖ mixed candidates use only the committed live work and concurrent consumers cannot start another run (102.842168ms)\n  AssertionError [ERR_ASSERTION]: Error: work_continuation_run_pending\n      at Object.process (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/agent-work-continuation-worker.ts:40:48)\n      at async Promise.allSettled (index 0)\n      at async TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/tests/firestore-work-authority.test.ts:149:20)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n  Error: work_continuation_run_pending\n      at Object.process (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/agent-work-continuation-worker.ts:40:48)\n      at async Promise.allSettled (index 1)\n      at async TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/tests/firestore-work-authority.test.ts:149:20)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n      at TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/tests/firestore-work-authority.test.ts:150:10)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+      }
+    },
+    {
+      "kind": "v1_new_consumer_integration",
+      "classification": "independent review found new durable consumer could not reach V1 lookup/recovery. Fixed by authenticated, same-transaction V1 original job/claim/run validation and lookup-only return; no V2 snapshot or execution permission.",
+      "red": {
+        "path": "artifacts/local-only/v1-consumer-red.log",
+        "sha256": "c84a585586669841301f41f97ef5f9ace8d95391bf235f6b69e379948386b8ae",
+        "text": "✖ new durable consumer reads an existing V1 original result without upgrading evidence or creating another claim (63.898246ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1666.341406\n\n✖ failing tests:\n\ntest at tests/firestore-work-authority.test.ts:191:1\n✖ new durable consumer reads an existing V1 original result without upgrading evidence or creating another claim (63.898246ms)\n  Error: work_recovery_invalid_document\n      at reject (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/firestore-work-continuation-recovery.ts:54:46)\n      at parse (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/firestore-work-continuation-recovery.ts:56:64)\n      at FirestoreWorkContinuationStore.open (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/firestore-work-continuation-recovery.ts:109:22)\n      at FirestoreWorkContinuationStore.event (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/firestore-work-continuation-store.ts:80:24)\n      at async file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/firestore-work-continuation-store.ts:166:94\n      at async Object.runTransaction (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/tests/helpers/firestore-session-memory.ts:42:22)\n      at async Object.runTransaction (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/tests/firestore-work-authority.test.ts:28:21)\n      at async Object.process (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/server/agent-work-continuation-worker.ts:33:25)\n      at async TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/firestore_authority_writer_20261010/tests/firestore-work-authority.test.ts:197:3)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n"
+      },
+      "green": {
+        "path": "artifacts/local-only/v1-consumer-green.log",
+        "sha256": "745a8852d003e7840718d39572f21f39ea2b9c71d39bb31be3925db12746ce87",
+        "text": "✔ new durable consumer reads an existing V1 original result without upgrading evidence or creating another claim (77.386691ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2407.079722\n"
+      }
+    }
+  ],
+  "auditCorrection": "Earlier test audit files used one filename shared by parent/child processes and were not aggregated as final proof. The final scoped 17 tests and typecheck use one audit file per PID; all observed process audits are retained above.",
+  "unchanged": [
+    "No PLAN/STATUS/WORKLOG edits; root integration owns them.",
+    "No HTTP/DTO query opt-in, production bootstrap, deployment, credentials, permission, resources, model call or SQL schema changes.",
+    "No work completion outcome, SQL-to-Firestore dual write or fallback.",
+    "Existing PG execution and original V1 recovery branches retained."
+  ],
+  "remaining": [
+    "Canonical admission/consent/revocation/deletion/work lifecycle writers and trusted bootstrap remain absent.",
+    "Cloud Tasks/Scheduler/outbox publication, discovery indexes and cleanup/restore closure remain absent.",
+    "No emulator, native contention, real cloud, live provider, browser/UI or full-suite acceptance in this slice.",
+    "Existing session/root/daily protocols are separate transactions; no cross-store atomicity claim.",
+    "Pure-due presentation validates allowed tools/types and citations mechanically, not true model factual quality."
+  ],
+  "review": {
+    "independentReviewer": "Allow",
+    "reviewResultSha256": "6616fe38c268247f1084462e69f81d0f43af12cb5113729ca5989d429d207545",
+    "result": {
+      "decision": "Allow",
+      "scope": "Unenabled pure-due writer/consumer using pre-existing complete canonical same-database authority; deterministic provider, real ADK runtime; no production migration or deployment.",
+      "base": "5b832f68aa5c6f50321b73e824bb0773890420fc",
+      "manifestSha256": "68b07c22b15ac4e9b9ddbd9791c07cc351ace1f68d652bc4c9b5fcd0f8fd843a",
+      "verifiedSourceFiles": [
+        {
+          "path": "server/firestore-work-continuation-store.ts",
+          "sha256": "824f1b4492ad725b3cdd524c8a65b07d3b5e37bdbc7e25fc583b3a0649803f90"
+        },
+        {
+          "path": "server/firestore-work-continuation-recovery.ts",
+          "sha256": "7d941ce8f1bbc29d881861155e3b9f4b26df4f8832767cfb5b1a15354cecef03"
+        },
+        {
+          "path": "server/agent-work-continuation-worker.ts",
+          "sha256": "c527ff4a6ae310a1e956b9acc5d709e6892f110bc1574dca71e00e44c0403ef7"
+        },
+        {
+          "path": "server/product-agent-services.ts",
+          "sha256": "16494f9bad2c8e224a5c9e698c8a5f24334cdc86f4c9d2b8651232f700b1b95c"
+        },
+        {
+          "path": "server/product-agent-store.ts",
+          "sha256": "a687dda075a3d6960081c9bef9a8545081f8ab5fdcbc5e79b5098871ee7a9c61"
+        },
+        {
+          "path": "server/product-agent-tools.ts",
+          "sha256": "c4c6c1e8e71c9a50c71b69bd7ba56212d458622caf7229af51e633e07271f452"
+        },
+        {
+          "path": "server/product-agent.ts",
+          "sha256": "756a58c815ae78a8458cb7315cc4187a388f834d448631c21d9ae04d7bebbef0"
+        },
+        {
+          "path": "tests/firestore-work-authority.test.ts",
+          "sha256": "a50b767eadb0e8360d4019780c7e68ea398ec2bae6514b4fa86b1de0f9440996"
+        },
+        {
+          "path": "docs/CHAT_AGENT_FIRESTORE_RECOVERY.md",
+          "sha256": "c717cd7805f3902efe1f3cd660f29649ea8e39146c76068d3877f5a11ab74455"
+        }
+      ],
+      "remainingP1P2": [],
+      "resolvedFinding": {
+        "priority": "P2",
+        "issue": "New durable consumer rejected existing V1 event before reaching recovery.",
+        "initialLocation": "server/firestore-work-continuation-store.ts:80,166; server/agent-work-continuation-worker.ts:33",
+        "fixedLocation": "server/firestore-work-continuation-store.ts:166-178",
+        "evidence": "Same reviewer V1 test failed before fix and passed after fix without assertion edits."
+      },
+      "tests": {
+        "final": {
+          "passed": 23,
+          "failed": 0,
+          "authorExistingAndNew": 17,
+          "reviewerIndependent": 6
+        },
+        "scopedTypecheckExit": 0,
+        "networkAudits": [
+          {
+            "path": "evidence/final-network.13.json",
+            "blocked": [],
+            "attempts": 0
+          },
+          {
+            "path": "evidence/final-network.14.json",
+            "blocked": [],
+            "attempts": 0
+          },
+          {
+            "path": "evidence/final-network.15.json",
+            "blocked": [],
+            "attempts": 0
+          },
+          {
+            "path": "evidence/final-network.16.json",
+            "blocked": [],
+            "attempts": 0
+          },
+          {
+            "path": "evidence/final-network.27.json",
+            "blocked": [],
+            "attempts": 0
+          },
+          {
+            "path": "evidence/tsc-network.70.json",
+            "blocked": [],
+            "attempts": 0
+          }
+        ],
+        "realFirestoreEmulator": false,
+        "liveProvider": false
+      },
+      "independentCoverage": [
+        "discarded transaction attempt followed by account revocation, deleting account, deleted child, changed epoch, access version and worker generation",
+        "real ADK read_work then present_answer with exact original work ID and durable root/day counters; replay immutable receipt",
+        "revocation/deletion/epoch during provider forbids finish and replay",
+        "consumer stop during provider stays pending until original expiry then unknown; no replay",
+        "forged run/worker generation/epoch/trigger/scope cannot invoke provider or budget",
+        "V1 event flows through new durable services consumer as lookup only, preserving original ciphertext and absence of input evidence"
+      ],
+      "evidence": {
+        "tests/reviewer-counterexamples.test.ts": {
+          "sha256": "13d2e2e50e26cfd41338803fc2b57012f0b68ab66f050956e324d66733c6eb27"
+        },
+        "tests/reviewer-v1-consumer.test.ts": {
+          "sha256": "c0ca2741c2d684a64c26629739a90b67af146e2a5bd00e0f189f95e42f0c95eb"
+        },
+        "evidence/v1-initial-red.log": {
+          "sha256": "1411662b0ac3b623312f521e473bc2de1d1479a8acc2735c7617222f443c1a8e"
+        },
+        "evidence/final-tests.log": {
+          "sha256": "d5381e0b606cfdd62f35fd82bb2ea80ec54b9a65ace20a1de24c5ce2c8bd3f43"
+        },
+        "evidence/final-tsc.log": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "limits": [
+        "Synthetic serial Firestore fixture, not SDK contention, emulator or cloud verification.",
+        "Canonical authority/lifecycle/migration writers remain absent; fixture is not production admission.",
+        "No Cloud Tasks/Scheduler/outbox, bootstrap, cleanup/restore, query/DTO, true provider quality or per-work execution/completion outcome acceptance.",
+        "Initial 16-test baseline shared audit path could overwrite process outputs; final per-PID audits supersede it."
+      ]
+    },
+    "rootAcceptance": "Accepted reviewed fixed manifest for normal unenabled PR delivery; production enablement and deployment prohibited.",
+    "evidenceArtifacts": [
+      {
+        "path": "tests/reviewer-counterexamples.test.ts",
+        "sha256": "13d2e2e50e26cfd41338803fc2b57012f0b68ab66f050956e324d66733c6eb27",
+        "content": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { randomUUID } from 'node:crypto';\nimport { FinishReason } from '@google/genai';\nimport { FirestoreWorkContinuationStore } from '../server/firestore-work-continuation-store.ts';\nimport { FirestoreSessionService } from '../server/firestore-session-service.ts';\nimport { FirestoreRootBudget } from '../server/firestore-root-budget.ts';\nimport { FirestoreAiUsage } from '../server/firestore-ai-usage.ts';\nimport { createProductAgentServices } from '../server/product-agent-services.ts';\nimport { createAgentWorkContinuationProcessor } from '../server/agent-work-continuation-worker.ts';\nimport { workRecoveryAad, workRecoveryDocumentId } from '../server/firestore-work-continuation-recovery.ts';\nimport { readAiConfig } from '../server/ai-config.ts';\nimport { loadAgentPrompt } from '../server/agent-prompt.ts';\nimport { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';\nimport { workRecoveryFixture } from './helpers/firestore-work-recovery.ts';\n\nasync function fixture(dailyLimit = 20) {\n  const fake = serialFirestoreFixture();\n  const original = fake.database.runTransaction.bind(fake.database);\n  let discard = false, lost = false, onRetry: (() => Promise<void>) | undefined;\n  const database = { collection: fake.database.collection.bind(fake.database), batch: fake.database.batch.bind(fake.database),\n    async runTransaction(callback: any, options: any) {\n      if (discard) { discard = false;\n        const sentinel = new Error('discarded callback');\n        await assert.rejects(original(async tx => { await callback(tx); throw sentinel; }, options), error => error === sentinel);\n        await onRetry?.(); onRetry = undefined;\n      }\n      const value = await original(callback, options);\n      if (lost) { lost = false; throw new Error('Synthetic lost commit acknowledgement'); }\n      return value;\n    } } as typeof fake.database;\n  const f = workRecoveryFixture(database); f.setNow(Date.now());\n  f.rows.followup.dueAt = f.values.followUp.dueAt = new Date(f.now() - 1000).toISOString();\n  f.rows.followup.dueConsumed = false;\n  f.rows.work.payloadEncrypted = f.options.cipher.encrypt(JSON.stringify(f.values), `agent-work:${f.scope.childId}:${f.scope.ownerUserId}:${f.rows.work.id}:1`);\n  await f.seed(); for (const kind of ['event', 'claim', 'run'] as const) fake.records.delete(f.ref(kind).path);\n  const authority = new FirestoreWorkContinuationStore(f.options);\n  const enqueue = () => authority.enqueueDue({ workerGeneration: f.job.workerGeneration, workIds: [f.rows.work.id] });\n  const open = (kind: 'event' | 'run' | 'claim', id: string) => {\n    const value = fake.records.get(database.collection(f.options.namespace).doc(workRecoveryDocumentId(kind, id)).path);\n    return value && JSON.parse(f.options.cipher.decrypt(value.ciphertext,\n      workRecoveryAad(f.options.projectId, f.options.namespace, kind, id, f.scope, value.version)));\n  };\n  const providerInputs: unknown[] = [], opens: any[] = [];\n  let calls = 0, sql = 0, beforeProvider: (() => Promise<void>) | undefined;\n  const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project', AI_DAILY_USER_ATTEMPTS: String(dailyLimit) });\n  const pack = (await loadAgentPrompt('product-work-followup', 'tool_cycle', ['run', 'scope', 'conversation', 'context', 'evidence', 'capabilities'])).packVersion;\n  const storage = { database, cipher: f.options.cipher, projectId: f.options.projectId };\n  const daily = new FirestoreAiUsage({ ...storage, namespace: 'authority_daily_usage', billingSource: 'platform' });\n  const roots = new FirestoreRootBudget({ ...storage, namespace: 'authority_root_budget' });\n  const openRoot = roots.open.bind(roots); roots.open = async context => { opens.push(structuredClone(context)); return openRoot(context); };\n  const persistence = { nativeSessionService: new FirestoreSessionService({ ...storage, namespace: 'authority_sessions' }),\n    rootBudget: roots, dailyUsage: daily,\n    profile: { config, workflowVersion: 'due-v1', promptPackVersion: pack, settingsVersion: 'fixed-v1', billingVersion: 'fixed-v1', billingSource: 'platform' as const },\n    provider: { async generate(input: unknown) { providerInputs.push(input); calls++; await beforeProvider?.(); return { content: { role: 'model' as const, parts: [{ functionCall: {\n      id: 'present-' + calls, name: 'present_answer', args: { kind: 'clarification', paragraphs: [{ text: '這項跟進已有新進展嗎？', citationIds: [] }] },\n    } }] }, finishReason: FinishReason.STOP, usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5, totalTokenCount: 15 } }; } } };\n  const build = () => createProductAgentServices({ query() { sql++; throw new Error('SQL forbidden'); }, connect() { sql++; throw new Error('SQL forbidden'); } } as any,\n    f.options.cipher, config, undefined, false, undefined, undefined, undefined, undefined, undefined,\n    { claimedRunPersistence: persistence, workContinuationAuthority: authority });\n  return { ...f, fake, database, authority, enqueue, open, build, daily, roots, persistence, providerInputs, opens,\n    retry(callback?: () => Promise<void>) { discard = true; onRetry = callback; }, lose() { lost = true; },\n    beforeProvider(callback: () => Promise<void>) { beforeProvider = callback; }, stats: () => ({ calls, sql }) };\n}\n\n\ntest('review: transaction retry revocation, deletion, epoch and worker gates never commit a claim or leak context', async () => {\n  for (const kind of ['revocation', 'account_delete', 'child_delete', 'epoch', 'access', 'generation'] as const) {\n    const f = await fixture(), job = await f.enqueue(); assert.ok(job);\n    f.retry(async () => {\n      if (kind === 'revocation') { f.rows.account.invitationLive = false; await f.write('account'); }\n      if (kind === 'account_delete') { f.rows.account.status = 'deleting'; await f.write('account'); }\n      if (kind === 'child_delete') { f.rows.child.status = 'deleted'; await f.write('child'); }\n      if (kind === 'epoch') { const w = await f.read('workspace'); w.storageEpoch = randomUUID(); f.rows.workspace = w; await f.write('workspace'); }\n      if (kind === 'access') { const w = await f.read('workspace'); w.accessVersion = '2'; f.rows.workspace = w; await f.write('workspace'); }\n      if (kind === 'generation') { f.rows.control.generation = randomUUID(); await f.write('control'); }\n    });\n    await assert.rejects(f.build().continuation!.process(job, job.jobId), /work_continuation_(authority|binding)/, kind);\n    const event = f.open('event', job.eventId);\n    assert.equal(event.runId, null, kind); assert.equal(event.inputEvidence, null, kind);\n    assert.deepEqual(f.stats(), { calls: 0, sql: 0 }, kind); assert.equal(f.opens.length, 0, kind);\n  }\n});\n\ntest('review: read_work goes through real ADK, original selected ID and original durable root/day counters', async () => {\n  const f = await fixture(), job = await f.enqueue(); assert.ok(job); let calls = 0;\n  f.persistence.provider.generate = async input => {\n    calls++;\n    assert.deepEqual(Object.keys((input as any).toolsDict).sort(), ['present_answer', 'read_work']);\n    if (calls === 2) {\n      const responses = (input as any).contents.flatMap((item: any) => item.parts ?? []).filter((part: any) => part.functionResponse);\n      const result = responses.find((part: any) => part.functionResponse.name === 'read_work')?.functionResponse.response;\n      assert.equal(result.status, 'succeeded');\n      assert.equal(result.data.result.items.length, 1);\n      assert.equal(result.data.result.items[0].id, f.rows.work.id);\n    }\n    const functionCall = calls === 1 ? { id: 'read-original', name: 'read_work', args: { workId: f.rows.work.id, cursor: null } }\n      : { id: 'present-original', name: 'present_answer', args: { kind: 'record_restatement', paragraphs: [{ text: 'Synthetic follow-up', citationIds: [] }] } };\n    return { content: { role: 'model' as const, parts: [{ functionCall }] }, finishReason: FinishReason.STOP,\n      usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5, totalTokenCount: 15 } };\n  };\n  await f.build().continuation!.process(job, job.jobId);\n  const event = f.open('event', job.eventId), run = f.open('run', event.runId);\n  assert.equal(event.state, 'completed'); assert.equal(calls, 2);\n  assert.equal((await f.daily.getForUser(f.scope.ownerUserId)).attempts, 2);\n  assert.equal((await f.roots.read(f.opens[0])).used.modelCalls, 2);\n  assert.equal((await f.roots.read(f.opens[0])).used.toolCalls, 2);\n  const ciphertext = run.resultEncrypted;\n  await f.build().continuation!.process(job, job.jobId);\n  assert.equal(calls, 2); assert.equal(f.open('run', run.id).resultEncrypted, ciphertext); assert.equal(f.stats().sql, 0);\n});\n\ntest('review: authority loss during provider cannot finish, overwrite evidence or replay provider', async () => {\n  for (const kind of ['revocation', 'delete', 'epoch'] as const) {\n    const f = await fixture(), job = await f.enqueue(); assert.ok(job);\n    f.beforeProvider(async () => {\n      if (kind === 'revocation') { f.rows.account.admitted = false; await f.write('account'); }\n      if (kind === 'delete') { f.rows.child.status = 'deleting'; await f.write('child'); }\n      if (kind === 'epoch') { const w = await f.read('workspace'); w.storageEpoch = randomUUID(); f.rows.workspace = w; await f.write('workspace'); }\n    });\n    await assert.rejects(f.build().continuation!.process(job, job.jobId), /work_continuation_authority/, kind);\n    const event = f.open('event', job.eventId), run = f.open('run', event.runId);\n    assert.equal(run.state, 'running'); assert.equal(run.resultEncrypted, null);\n    assert.equal(event.inputEvidence.works[0].selection, 'included');\n    const before = structuredClone(f.fake.records);\n    await assert.rejects(f.build().continuation!.process(job, job.jobId), /work_continuation_authority/, kind);\n    assert.deepEqual(f.fake.records, before); assert.deepEqual(f.stats(), { calls: 1, sql: 0 });\n  }\n});\n\ntest('review: consumer stop during provider remains original pending then unknown without replay', async () => {\n  const f = await fixture(), job = await f.enqueue(); assert.ok(job);\n  const consumer = f.build().continuation!; f.beforeProvider(async () => consumer.stop());\n  await assert.rejects(consumer.process(job, job.jobId), /work_continuation_run_pending/);\n  const event = f.open('event', job.eventId), run = f.open('run', event.runId);\n  assert.equal(run.state, 'running'); assert.equal(run.resultEncrypted, null);\n  f.setNow(run.expiresAtMs); await f.build().continuation!.process(job, job.jobId);\n  assert.equal(f.open('run', run.id).state, 'unknown');\n  await f.build().continuation!.process(job, job.jobId); assert.deepEqual(f.stats(), { calls: 1, sql: 0 });\n});\n\ntest('review: forged original claim identity fails before any provider or budget activity', async () => {\n  for (const field of ['runId', 'workerGeneration', 'storageEpoch', 'trigger', 'scope'] as const) {\n    const f = await fixture(), job = await f.enqueue(); assert.ok(job);\n    const input = await f.authority.beginBackground(job); assert.equal(input.decision, 'execute'); if (input.decision !== 'execute') return;\n    if (field === 'scope') input.claim.scope = { ...input.claim.scope, userId: 'foreign-owner' };\n    else if (field === 'trigger') input.claim.trigger = { kind: 'worker', reference: randomUUID() };\n    else input.claim[field] = randomUUID();\n    const before = structuredClone(f.fake.records);\n    await assert.rejects(f.build().agent.backgroundClaimed(input, () => true), /work_continuation_claim_binding/);\n    assert.deepEqual(f.fake.records, before); assert.deepEqual(f.stats(), { calls: 0, sql: 0 }); assert.equal(f.opens.length, 0);\n  }\n});\n"
+      },
+      {
+        "path": "tests/reviewer-v1-consumer.test.ts",
+        "sha256": "c0ca2741c2d684a64c26629739a90b67af146e2a5bd00e0f189f95e42f0c95eb",
+        "content": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { randomUUID } from 'node:crypto';\nimport { FinishReason } from '@google/genai';\nimport { FirestoreWorkContinuationStore } from '../server/firestore-work-continuation-store.ts';\nimport { FirestoreSessionService } from '../server/firestore-session-service.ts';\nimport { FirestoreRootBudget } from '../server/firestore-root-budget.ts';\nimport { FirestoreAiUsage } from '../server/firestore-ai-usage.ts';\nimport { createProductAgentServices } from '../server/product-agent-services.ts';\nimport { createAgentWorkContinuationProcessor } from '../server/agent-work-continuation-worker.ts';\nimport { workRecoveryAad, workRecoveryDocumentId } from '../server/firestore-work-continuation-recovery.ts';\nimport { readAiConfig } from '../server/ai-config.ts';\nimport { loadAgentPrompt } from '../server/agent-prompt.ts';\nimport { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';\nimport { workRecoveryFixture } from './helpers/firestore-work-recovery.ts';\n\nasync function fixture(dailyLimit = 20) {\n  const fake = serialFirestoreFixture();\n  const original = fake.database.runTransaction.bind(fake.database);\n  let discard = false, lost = false, onRetry: (() => Promise<void>) | undefined;\n  const database = { collection: fake.database.collection.bind(fake.database), batch: fake.database.batch.bind(fake.database),\n    async runTransaction(callback: any, options: any) {\n      if (discard) { discard = false;\n        const sentinel = new Error('discarded callback');\n        await assert.rejects(original(async tx => { await callback(tx); throw sentinel; }, options), error => error === sentinel);\n        await onRetry?.(); onRetry = undefined;\n      }\n      const value = await original(callback, options);\n      if (lost) { lost = false; throw new Error('Synthetic lost commit acknowledgement'); }\n      return value;\n    } } as typeof fake.database;\n  const f = workRecoveryFixture(database); f.setNow(Date.now());\n  f.rows.followup.dueAt = f.values.followUp.dueAt = new Date(f.now() - 1000).toISOString();\n  f.rows.followup.dueConsumed = false;\n  f.rows.work.payloadEncrypted = f.options.cipher.encrypt(JSON.stringify(f.values), `agent-work:${f.scope.childId}:${f.scope.ownerUserId}:${f.rows.work.id}:1`);\n  await f.seed(); for (const kind of ['event', 'claim', 'run'] as const) fake.records.delete(f.ref(kind).path);\n  const authority = new FirestoreWorkContinuationStore(f.options);\n  const enqueue = () => authority.enqueueDue({ workerGeneration: f.job.workerGeneration, workIds: [f.rows.work.id] });\n  const open = (kind: 'event' | 'run' | 'claim', id: string) => {\n    const value = fake.records.get(database.collection(f.options.namespace).doc(workRecoveryDocumentId(kind, id)).path);\n    return value && JSON.parse(f.options.cipher.decrypt(value.ciphertext,\n      workRecoveryAad(f.options.projectId, f.options.namespace, kind, id, f.scope, value.version)));\n  };\n  const providerInputs: unknown[] = [], opens: any[] = [];\n  let calls = 0, sql = 0, beforeProvider: (() => Promise<void>) | undefined;\n  const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-project', AI_DAILY_USER_ATTEMPTS: String(dailyLimit) });\n  const pack = (await loadAgentPrompt('product-work-followup', 'tool_cycle', ['run', 'scope', 'conversation', 'context', 'evidence', 'capabilities'])).packVersion;\n  const storage = { database, cipher: f.options.cipher, projectId: f.options.projectId };\n  const daily = new FirestoreAiUsage({ ...storage, namespace: 'authority_daily_usage', billingSource: 'platform' });\n  const roots = new FirestoreRootBudget({ ...storage, namespace: 'authority_root_budget' });\n  const openRoot = roots.open.bind(roots); roots.open = async context => { opens.push(structuredClone(context)); return openRoot(context); };\n  const persistence = { nativeSessionService: new FirestoreSessionService({ ...storage, namespace: 'authority_sessions' }),\n    rootBudget: roots, dailyUsage: daily,\n    profile: { config, workflowVersion: 'due-v1', promptPackVersion: pack, settingsVersion: 'fixed-v1', billingVersion: 'fixed-v1', billingSource: 'platform' as const },\n    provider: { async generate(input: unknown) { providerInputs.push(input); calls++; await beforeProvider?.(); return { content: { role: 'model' as const, parts: [{ functionCall: {\n      id: 'present-' + calls, name: 'present_answer', args: { kind: 'clarification', paragraphs: [{ text: '這項跟進已有新進展嗎？', citationIds: [] }] },\n    } }] }, finishReason: FinishReason.STOP, usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5, totalTokenCount: 15 } }; } } };\n  const build = () => createProductAgentServices({ query() { sql++; throw new Error('SQL forbidden'); }, connect() { sql++; throw new Error('SQL forbidden'); } } as any,\n    f.options.cipher, config, undefined, false, undefined, undefined, undefined, undefined, undefined,\n    { claimedRunPersistence: persistence, workContinuationAuthority: authority });\n  return { ...f, fake, database, authority, enqueue, open, build, daily, roots, persistence, providerInputs, opens,\n    retry(callback?: () => Promise<void>) { discard = true; onRetry = callback; }, lose() { lost = true; },\n    beforeProvider(callback: () => Promise<void>) { beforeProvider = callback; }, stats: () => ({ calls, sql }) };\n}\n\n\ntest('review: durable services consumer recovers existing V1 original receipt without new claim or generation', async () => {\n  const f = await fixture(); f.rows.followup.dueConsumed = true; await f.seed();\n  const originalReceipt = f.rows.run.resultEncrypted;\n  await f.build().continuation!.process(f.job, f.job.jobId);\n  assert.equal((await f.read('event')).state, 'completed');\n  assert.equal((await f.read('run')).resultEncrypted, originalReceipt);\n  assert.equal((await f.read('event')).inputEvidence, undefined);\n  assert.deepEqual(f.stats(), { calls: 0, sql: 0 }); assert.equal(f.opens.length, 0);\n  await f.build().continuation!.process(f.job, f.job.jobId);\n  assert.deepEqual(f.stats(), { calls: 0, sql: 0 });\n});\n"
+      },
+      {
+        "path": "evidence/v1-initial-red.log",
+        "sha256": "1411662b0ac3b623312f521e473bc2de1d1479a8acc2735c7617222f443c1a8e",
+        "content": "✖ review: durable services consumer recovers existing V1 original receipt without new claim or generation (47.020883ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1731.036919\n\n✖ failing tests:\n\ntest at tests/reviewer-v1-consumer.test.ts:67:1\n✖ review: durable services consumer recovers existing V1 original receipt without new claim or generation (47.020883ms)\n  Error: work_recovery_invalid_document\n      at reject (file:///workspace/scratch/c112a98a8be9/review_firestore_due_consumer_20261010/server/firestore-work-continuation-recovery.ts:54:46)\n      at parse (file:///workspace/scratch/c112a98a8be9/review_firestore_due_consumer_20261010/server/firestore-work-continuation-recovery.ts:56:64)\n      at FirestoreWorkContinuationStore.open (file:///workspace/scratch/c112a98a8be9/review_firestore_due_consumer_20261010/server/firestore-work-continuation-recovery.ts:109:22)\n      at FirestoreWorkContinuationStore.event (file:///workspace/scratch/c112a98a8be9/review_firestore_due_consumer_20261010/server/firestore-work-continuation-store.ts:80:24)\n      at async file:///workspace/scratch/c112a98a8be9/review_firestore_due_consumer_20261010/server/firestore-work-continuation-store.ts:166:94\n      at async Object.runTransaction (file:///workspace/scratch/c112a98a8be9/review_firestore_due_consumer_20261010/tests/helpers/firestore-session-memory.ts:42:22)\n      at async Object.runTransaction (file:///workspace/scratch/c112a98a8be9/review_firestore_due_consumer_20261010/tests/reviewer-v1-consumer.test.ts:28:21)\n      at async Object.process (file:///workspace/scratch/c112a98a8be9/review_firestore_due_consumer_20261010/server/agent-work-continuation-worker.ts:33:25)\n      at async TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/review_firestore_due_consumer_20261010/tests/reviewer-v1-consumer.test.ts:70:3)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n"
+      },
+      {
+        "path": "evidence/final-tests.log",
+        "sha256": "d5381e0b606cfdd62f35fd82bb2ea80ec54b9a65ace20a1de24c5ce2c8bd3f43",
+        "content": "✔ authorized due work cancelled before delivery remains inert across worker restart and stale redelivery (39.649417ms)\n✔ a merged event drops its cancelled work and runs only its remaining live constituent once (201.958225ms)\n✔ restart recovers the original completed receipt or expired unknown run without another generation (42.284775ms)\n✔ committed same-database due claim feeds the real consumer and ProductAgent once, with original durable budgets (291.011083ms)\n✔ discarded claim context never escapes; cancellation before the committed retry excludes the complete original candidate (29.352922ms)\n✔ lost original claim commit stays lookup-only through reconstruction and becomes unknown at the original deadline (27.844172ms)\n✔ current cancellation after claim prevents finish without rewriting the original input selection (29.41118ms)\n✔ missing authority, corrupt evidence, wrong generation and missing budget refuse without SQL or provider fallback (45.368412ms)\n✔ mixed candidates use only the committed live work and concurrent consumers cannot start another run (157.036587ms)\n✔ lost finish acknowledgement preserves the completed original ciphertext and forbids late overwrite (126.643583ms)\n✔ the worker branch stops at the original daily quota and rejects advisory presentation (142.235994ms)\n✔ new durable consumer reads an existing V1 original result without upgrading evidence or creating another claim (24.069795ms)\n✔ real recovery consumer preserves the original receipt, retries discarded callbacks, and replays without another change (72.118414ms)\n✔ pending original run cannot execute, and lost expiry commit remains unknown after reconstruction (23.313873ms)\n✔ transaction replay rechecks revocation, restored epoch and cancelled work without rewriting original receipts (43.568451ms)\n✔ missing or invalid authorities, claims and receipts fail closed with no SQL/provider fallback (84.626397ms)\n✔ unsupported non-due constituents and a failed commit never leave partial terminal writes (21.557939ms)\n✔ review: transaction retry revocation, deletion, epoch and worker gates never commit a claim or leak context (218.577081ms)\n✔ review: read_work goes through real ADK, original selected ID and original durable root/day counters (251.308857ms)\n✔ review: authority loss during provider cannot finish, overwrite evidence or replay provider (260.003911ms)\n✔ review: consumer stop during provider remains original pending then unknown without replay (100.880368ms)\n✔ review: forged original claim identity fails before any provider or budget activity (103.956172ms)\n✔ review: durable services consumer recovers existing V1 original receipt without new claim or generation (114.38025ms)\nℹ tests 23\nℹ suites 0\nℹ pass 23\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3307.746608\n"
+      },
+      {
+        "path": "evidence/final-tsc.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      },
+      {
+        "path": "evidence/final-network.13.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "content": "{\"blocked\":[],\"attempts\":0}\n"
+      },
+      {
+        "path": "evidence/final-network.14.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "content": "{\"blocked\":[],\"attempts\":0}\n"
+      },
+      {
+        "path": "evidence/final-network.15.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "content": "{\"blocked\":[],\"attempts\":0}\n"
+      },
+      {
+        "path": "evidence/final-network.16.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "content": "{\"blocked\":[],\"attempts\":0}\n"
+      },
+      {
+        "path": "evidence/final-network.27.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "content": "{\"blocked\":[],\"attempts\":0}\n"
+      },
+      {
+        "path": "evidence/tsc-network.70.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "content": "{\"blocked\":[],\"attempts\":0}\n"
+      }
+    ]
+  }
+}
