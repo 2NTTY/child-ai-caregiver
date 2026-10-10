@@ -63,6 +63,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   const [exportFeedback, setExportFeedback] = useState<{ key: string; state: "pending" | GrowthReportExportResult["state"]; message: string } | null>(null);
   const exportAttempt = useRef({ generation: 0, pending: false });
   const exportButton = useRef<View>(null), exportFeedbackRef = useRef<View>(null);
+  const purposeControls = useRef(new Map<GrowthReportPurpose, View>());
   const [chapter, setChapter] = useState("profile");
   const contextKey = JSON.stringify([model.scopeKey, model.childId]);
   const previousContext = useRef(contextKey);
@@ -78,6 +79,10 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
   const latest = useRef({model, archive, contextKey, exportOpen, exportKey, exportIntentKey, active});
   latest.current = {model, archive, contextKey, exportOpen, exportKey, exportIntentKey, active};
   function clearExportFeedback() { exportAttempt.current.generation++; exportAttempt.current.pending = false; setExportFeedback(null); }
+  function selectPurpose(next: GrowthReportPurpose) {
+    if (next === purpose) return;
+    clearExportFeedback(); setPurpose(next);
+  }
   function closeExport() { clearExportFeedback(); setExportOpen(false); }
   useLayoutEffect(() => { clearExportFeedback(); }, [exportIntentKey, exportOpen]);
   useEffect(() => () => { exportAttempt.current.generation++; exportAttempt.current.pending = false; }, []);
@@ -287,8 +292,24 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
       <AppDialog.ScrollArea style={a.exportScrollArea}><AppScrollView contentContainerStyle={a.exportContent}>
         <Text style={s.body}>按用途整理同一份成長記錄</Text>
         <View style={s.smallStack} accessibilityRole="radiogroup" accessibilityLabel="報告用途">
-          {growthReportPurposes.map(option => <Pressable key={option.id} accessibilityRole="radio" accessibilityLabel={option.label}
-            accessibilityState={{checked: purpose === option.id}} aria-checked={purpose === option.id} onPress={() => {clearExportFeedback(); setPurpose(option.id);}}
+          {growthReportPurposes.map((option, index) => <Pressable key={option.id} accessibilityRole="radio" accessibilityLabel={option.label}
+            ref={node => { if (node) purposeControls.current.set(option.id, node); else purposeControls.current.delete(option.id); }}
+            accessibilityState={{checked: purpose === option.id}} aria-checked={purpose === option.id} onPress={() => selectPurpose(option.id)}
+            {...(Platform.OS === "web" ? { tabIndex: purpose === option.id ? 0 : -1,
+              onKeyDown: (event: { key?: string; nativeEvent?: { key?: string; repeat?: boolean }; repeat?: boolean; preventDefault(): void }) => {
+                const key = event.nativeEvent?.key ?? event.key;
+                if (key === " " || key === "Spacebar") {
+                  event.preventDefault();
+                  // RN Web handles Enter for radio roles, but Space only for buttons.
+                  if (!(event.nativeEvent?.repeat ?? event.repeat)) selectPurpose(option.id);
+                } else if (key === "ArrowRight" || key === "ArrowDown" || key === "ArrowLeft" || key === "ArrowUp") {
+                  event.preventDefault();
+                  const direction = key === "ArrowRight" || key === "ArrowDown" ? 1 : -1;
+                  const next = growthReportPurposes[(index + direction + growthReportPurposes.length) % growthReportPurposes.length].id;
+                  selectPurpose(next);
+                  (purposeControls.current.get(next) as unknown as HTMLElement | undefined)?.focus();
+                }
+              } } : {})}
             style={[a.purpose, purpose === option.id && a.purposeSelected]}>
             <AppIcon name={purpose === option.id ? "radiobox-marked" : "radiobox-blank"} size={20} />
             <View style={a.cardCopy}><Text style={s.title}>{option.label}</Text><Text style={s.body}>{option.detail}</Text></View>

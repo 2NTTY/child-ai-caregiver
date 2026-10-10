@@ -81,7 +81,77 @@ async function start() {
   await React.act(async () => render()); await click(byLabel('導出報告'));
 }
 async function submit() { await click(byLabel('下載這個版本的 PDF')); assert.equal(calls.length, 1); return calls[0]; }
+async function key(node, value, repeat = false) {
+  assert.ok(node, 'Keyboard target exists');
+  const down = new window.KeyboardEvent('keydown', { key: value, bubbles: true, cancelable: true, repeat });
+  await React.act(async () => { node.focus(); node.dispatchEvent(down); });
+  await React.act(async () => node.dispatchEvent(new window.KeyboardEvent('keyup', { key: value, bubbles: true, cancelable: true })));
+  return down;
+}
+function checkedPurpose(label) {
+  const group = dialog().querySelector('[role="radiogroup"][aria-label="報告用途"]');
+  const checked = [...group.querySelectorAll('[role="radio"][aria-checked="true"]')];
+  assert.equal(checked.length, 1, 'Exactly one purpose is checked');
+  assert.equal(checked[0].getAttribute('aria-label'), label);
+  return [...group.querySelectorAll('[role="radio"]')];
+}
 test.after(async () => { await React.act(async () => reactRoot.unmount()); Module._load = originalLoad; dom.window.close(); });
+
+test('Space checks the focused export purpose without exporting or losing focus', async () => {
+  await start(); checkedPurpose('家庭成長版');
+  for (const label of ['就診溝通版', '照護交接版', '入園認識版']) {
+    const target = byLabel(label), down = await key(target, ' ');
+    checkedPurpose(label);
+    assert.equal(document.activeElement, target);
+    assert.equal(down.defaultPrevented, true, 'Space cannot scroll the export dialog');
+    assert.equal(calls.length, 0, 'Purpose selection alone cannot request a PDF');
+  }
+  await key(byLabel('家庭成長版'), 'Spacebar'); checkedPurpose('家庭成長版');
+});
+
+test('Space on the checked purpose and repeated Space preserve the current export feedback and intent', async () => {
+  await start(); const first = await submit();
+  const pending = status().textContent;
+  await key(byLabel('家庭成長版'), ' ');
+  assert.equal(first.isCurrent(), true); assert.equal(status().textContent, pending);
+  await key(byLabel('就診溝通版'), ' ', true);
+  checkedPurpose('家庭成長版'); assert.equal(first.isCurrent(), true);
+  await React.act(async () => first.resolve({ state: 'error', message: failure }));
+  await key(byLabel('家庭成長版'), ' ');
+  assert.equal(status().textContent, failure); assert.equal(calls.length, 1);
+});
+
+test('export purpose arrows wrap selection and focus with one Tab entry while Enter and pointer still work', async () => {
+  await start();
+  for (const [from, value, to] of [
+    ['家庭成長版', 'ArrowLeft', '入園認識版'],
+    ['入園認識版', 'ArrowRight', '家庭成長版'],
+    ['家庭成長版', 'ArrowDown', '就診溝通版'],
+    ['就診溝通版', 'ArrowUp', '家庭成長版'],
+  ]) {
+    const down = await key(byLabel(from), value), radios = checkedPurpose(to);
+    assert.equal(down.defaultPrevented, true);
+    assert.equal(document.activeElement, byLabel(to));
+    assert.deepEqual(radios.filter(radio => radio.tabIndex === 0).map(radio => radio.getAttribute('aria-label')), [to]);
+    assert.ok(radios.filter(radio => radio.getAttribute('aria-label') !== to).every(radio => radio.tabIndex === -1));
+  }
+  await key(byLabel('照護交接版'), 'Enter'); checkedPurpose('照護交接版');
+  await click(byLabel('就診溝通版')); checkedPurpose('就診溝通版');
+  const tab = await key(byLabel('就診溝通版'), 'Tab');
+  assert.equal(tab.defaultPrevented, false, 'Tab remains browser-owned');
+  assert.equal(calls.length, 0);
+});
+
+test('changing purpose with Space invalidates pending export and rejects late feedback without another download', async () => {
+  await start(); const first = await submit();
+  await key(byLabel('照護交接版'), ' '); checkedPurpose('照護交接版');
+  assert.equal(first.isCurrent(), false); assert.equal(status().textContent, '');
+  await React.act(async () => first.resolve({ state: 'error', message: failure }));
+  assert.equal(status().textContent, ''); assert.equal(calls.length, 1);
+  await click(byLabel('下載這個版本的 PDF'));
+  assert.equal(calls.length, 2); assert.equal(calls[1].request.purpose, 'care_handoff');
+  await React.act(async () => calls[1].resolve({ state: 'error', message: failure }));
+});
 
 test('failed export announces inside the real modal, preserves modal focus and permits an explicit retry', async () => {
   await start(); const first = await submit();
