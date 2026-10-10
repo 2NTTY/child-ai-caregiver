@@ -225,6 +225,7 @@ export interface CareRecordsViewModel {
   online: boolean;
   dataLabel: string;
   scopeKey?: string;
+  detailRead?: { id: string; state: "loading" | "ready" | "error" } | null;
   review?: CareReviewProjection;
   list: {
     state: CareListState;

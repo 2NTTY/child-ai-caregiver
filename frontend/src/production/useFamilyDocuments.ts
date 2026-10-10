@@ -45,13 +45,14 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const api = useMemo(() => createFamilyDocumentsApi(env.apiBaseUrl), [env.apiBaseUrl]);
   const runtime = useTaskKnowledgeRuntime(env, "documents");
   const [page, setPage] = useState<DocumentPage | null>(null), [load, setLoad] = useState<"loading" | "ready" | "error">("loading");
+  const [pageReadGeneration, setPageReadGeneration] = useState(-1);
   const [busy, setBusy] = useState(false), [exportBusy, setExportBusy] = useState(false), [pending, setPending] = useState<Pending | null>(null);
   const [operation, setOperation] = useState<WriteOperationView>({ state: "none", message: "", reference: null });
   const [notice, setNotice] = useState(""), [dirty, setDirty] = useState(false), [epoch, setEpoch] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null), [justArchivedId, setJustArchivedId] = useState<string | null>(null);
   const [refreshQueued, setRefreshQueued] = useState(false);
   const original = useRef<Pending | null>(null), inFlight = useRef(false), latest = useRef({ page, load, dirty });
-  const exporting = useRef<object | null>(null);
+  const exporting = useRef<{ documentId: string; snapshotId: string; invalidated: boolean } | null>(null);
   const selection = useRef({ id: null as string | null, generation: 0 });
   const readingNeedsRecheck = useRef(false);
   const [listPages, setListPages] = useState({ active: { cursor: null as string | null, more: false }, archived: { started: false, ready: false, cursor: null as string | null, more: false } });
@@ -62,7 +63,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const listState = useRef(listPages); listState.current = listPages;
   reads.current.versions = versionReads; reads.current.content = content;
   const clearContent = () => { reads.current.contentGeneration++; reads.current.content = null; setContent(null); };
-  const clearReading = () => { reads.current.generation++; reads.current.versions = {}; setVersionReads({}); clearContent(); };
+  // Reject pending PDF handoff synchronously, before React commits the invalidated projection.
+  const clearReading = () => { if (exporting.current) exporting.current.invalidated = true; reads.current.generation++; reads.current.versions = {}; setVersionReads({}); clearContent(); };
   const applyFreshPage = (value: DocumentPage, preserveUnchangedReading = false) => {
     const before = latest.current.page;
     if (!preserveUnchangedReading || before?.authorityVersion !== value.authorityVersion) clearReading();
@@ -75,7 +77,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
       const selected = reads.current.content;
       if (selected && !unchanged(selected.documentId, selected.documentVersion)) clearContent();
     }
-    setPage(value); setLoad("ready"); setPageError(false);
+    setPage(value); setPageReadGeneration(reads.current.generation); setLoad("ready"); setPageError(false);
     setListPages({ active: { cursor: value.nextCursor ?? null, more: value.hasMore }, archived: { started: false, ready: false, cursor: null, more: false } });
   };
   latest.current = { page, load, dirty };
@@ -256,6 +258,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         }
         if (offset > 0 && value.totalCharacters !== target.totalCharacters) throw new FamilyDocumentApiError();
         if (value.invalidated) {
+          if (exporting.current?.documentId === target.documentId && (exporting.current.snapshotId === target.snapshotId
+            || latest.current.page?.items.find(item => item.id === target.documentId)?.current?.id === target.snapshotId)) exporting.current.invalidated = true;
           update({ ...target, text: "", busy: false, invalidated: true, complete: false, snapshot: null });
           setPage(before => before ? { ...before, items: before.items.map(item => item.id !== target.documentId ? item : {
             ...item, history: item.history.filter(snapshot => snapshot.id !== target.snapshotId),
@@ -367,14 +371,15 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     const actualPage = latest.current.page;
     const findSnapshot = (item: FamilyDocument) => item.readState !== "invalidated" && [item.current, ...item.history].some(snapshot => snapshot?.id === request.snapshotId && snapshot.version === request.snapshotVersion);
     const target = actualPage?.items.find(item => item.kind === "growth_report" && findSnapshot(item));
-    if (inFlight.current || !runtime.live() || !isCurrent() || !env.online || typeof document === "undefined" || !actualPage || !target
+    // Admit only the rendered page paired with its last successful authoritative read.
+    if (pageReadGeneration !== reads.current.generation || inFlight.current || !runtime.live() || !isCurrent() || !env.online || typeof document === "undefined" || !actualPage || !target
       || request.scopeKey !== env.scopeKey || request.childId !== env.childId || request.authorityVersion !== actualPage.authorityVersion
       || request.periodId !== null && request.periodId !== request.snapshotId + ":" + request.snapshotVersion) return;
-    const token = {}; exporting.current = token;
+    const token = { documentId: target.id, snapshotId: request.snapshotId, invalidated: false }; exporting.current = token;
     inFlight.current = true; setExportBusy(true);
     return await runtime.request(async (signal, current): Promise<GrowthReportExportResult | undefined> => {
       let url: string | null = null;
-      const valid = () => current() && isCurrent() && env.online && request.scopeKey === env.scopeKey && request.childId === env.childId
+      const valid = () => !token.invalidated && current() && isCurrent() && env.online && request.scopeKey === env.scopeKey && request.childId === env.childId
         && latest.current.page?.authorityVersion === request.authorityVersion
         && latest.current.page.items.some(item => item.id === target.id && findSnapshot(item));
       try {

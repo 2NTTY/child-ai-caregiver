@@ -170,6 +170,9 @@ function useProductionValue(owner: ProductionOwner) {
 
 export type ProductionContextValue = ReturnType<typeof useProductionValue>;
 const ProductionContext = createContext<ProductionContextValue | null>(null);
+// Owner-only guards do not need route, draft or read-projection notifications.
+// Identity and child consumers must continue using the reactive production value.
+const ProductionOwnerContext = createContext<ProductionOwner | null>(null);
 
 export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || "/api" }: { children: ReactNode; apiBaseUrl?: string }) {
   const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }));
@@ -197,7 +200,7 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
     window.addEventListener("beforeunload", beforeUnload); window.addEventListener("online", connection); window.addEventListener("offline", connection); window.addEventListener("focus", focus);
     return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
   }, [owner]);
-  return <QueryClientProvider client={owner.queryClient}><ProductionContext.Provider value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
+  return <QueryClientProvider client={owner.queryClient}><ProductionOwnerContext.Provider value={owner}><ProductionContext.Provider value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
     <AppDialog visible={value.recordsState.deletion !== null} onDismiss={() => owner.controller.cancelDeleteChild()}>
       <AppDialog.Title>永久刪除這位孩子及附屬資料？</AppDialog.Title>
       <AppDialog.Content><Text>這會刪除所選孩子、照護記錄、私人聊天、記憶、任務及附屬資料。此操作不能撤銷。</Text>
@@ -214,7 +217,13 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
       <AppDialog.Content><Text>這次登出會清除本頁的文字及照片草稿。已提交但結果未知的操作仍須沿原操作查核。</Text></AppDialog.Content>
       <AppDialog.Actions><AppButton label="繼續編輯" variant="quiet" onPress={value.cancelLogout} /><AppButton label="確認登出" variant="danger" onPress={() => { void value.signOut(true); }} /></AppDialog.Actions>
     </AppDialog>
-  </ProductionContext.Provider></QueryClientProvider>;
+  </ProductionContext.Provider></ProductionOwnerContext.Provider></QueryClientProvider>;
+}
+
+export function useProductionOwner() {
+  const owner = useContext(ProductionOwnerContext);
+  if (!owner) throw new Error("ProductionProvider is required for production owners");
+  return owner;
 }
 
 export function useProduction() {

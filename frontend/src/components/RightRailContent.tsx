@@ -9,11 +9,12 @@ import { AppTabPanel, SectionCard, SectionHeader, TextLink, UnderlineTabs } from
 import { HomeFocus } from "./HomeFocus";
 import { ReadStateNotice } from "./ReadStateNotice";
 
-type RailTab = "attention" | "context";
+export type RailTab = "attention" | "context";
 // Pure rail content. AppShell owns desktop layout, modal geometry and motion.
-export function RightRailContent({ model, actions, home = false, contextPath = "/" }: { model: HomeViewModel; actions: HomeActions; home?: boolean; contextPath?: string }) {
+export function RightRailContent({ model, actions, home = false, contextPath = "/", selectedTab, onTabChange }: { selectedTab?: RailTab; onTabChange?: (tab: RailTab) => void; model: HomeViewModel; actions: HomeActions; home?: boolean; contextPath?: string }) {
   const tabsId = useId();
-  const [tab, setTab] = useState<RailTab>("attention");
+  const [localTab, setLocalTab] = useState<RailTab>("attention");
+  const tab = selectedTab ?? localTab, setTab = onTabChange ?? setLocalTab;
   const child = model.children.find(item => item.id === model.selectedChildId);
   const routeContext = contextPath === "/chat" ? { title: "目前對話", label: "記憶與參考", destination: "memory" as const }
     : contextPath === "/growth" ? { title: "成長與關注", label: "孩子概況與準備", destination: "summary" as const }

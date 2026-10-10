@@ -1,0 +1,1719 @@
+{
+  "schemaVersion": 1,
+  "package": "frontend-loading-switch-readiness-2026-10-10",
+  "baseCommit": "ae5d3e01b11632a62a54db68b77c7ed20e323471",
+  "state": "source34_frozen_v68_published_limited_browser_passed_single_pr_preparation_pending_root_review",
+  "scope": [
+    "account admission loading presentation",
+    "child-switch privacy curtain and current-scope readiness",
+    "Care first-value view query consistency",
+    "navigation-only domain bridge render and publication isolation",
+    "current-visible pending, URL exact-target detail and actual settings-tab first reads",
+    "PhotoInput first-value route recognition and original/draft retention",
+    "synchronous invalidation of already pending PDF results before the next React commit",
+    "new PDF admission after whole read-set invalidation before the next owner render, through the real bridge and rendered export button",
+    "Disambiguate duplicate owner-derived family option labels using only already-readable child names for that family."
+  ],
+  "scopeBoundary": "frontend/** only; no root documents, server code, shared/client contracts, real family data, live model calls, cloud resources or backend deployment.",
+  "productAndTestFiles": [
+    {
+      "path": "frontend/src/motion/MotionScopeBoundary.tsx",
+      "sha256": "be926381ccb9eb486b4c5e11a35a35d7654a97a90df6ea86ac1fe63a52b7b130",
+      "baseSha256": "5b17d08245ccd10fa07be0cde179e89be39c1654f3608f78f765627c9ab81c49"
+    },
+    {
+      "path": "frontend/src/production/ProductionFirstScreenGate.tsx",
+      "sha256": "2a421a3220372e185e2337b49dbed2bf47a94b01bd375fb11e21985b8829fd85",
+      "baseSha256": "22311003a8ab45bb8baedaa81f79d289e433599c126c485f8145e1365a5a5c81"
+    },
+    {
+      "path": "frontend/src/production/ProductionStartupReadiness.tsx",
+      "sha256": "2ad4930fdebcd1ca8791e41872b527b2bf75e1d0298254fc7516b4bad184afb7",
+      "baseSha256": "ea92caa7f57e64bdf7e2a9bf17d7af938b5943d200ba28eef2c02e523fd63cf7"
+    },
+    {
+      "path": "frontend/src/startup/dataReadiness.ts",
+      "sha256": "9f0a90151f314e627bdb92d3aab17ae50beb1b030a881aae2a3b7c7b6d0f10bb",
+      "baseSha256": "0b4820e89cb89851f63f0efc38ec06c5b84ada56f642f2767b2040c497377099"
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "sha256": "e585770b6e2c173cd40e0630606e5680ebde343dae36678c409745d40a664bd5",
+      "baseSha256": "463326e3f9cc284164b85152af0101100cc64d3eb7c627d04c5e3f4e9db37f5a"
+    },
+    {
+      "path": "frontend/src/components/RightRailContent.tsx",
+      "sha256": "4c33e6b3e0f82941aee9fc11d80fe78d53a9bf4a6617deeeaadffa9deed62b4c",
+      "baseSha256": "c0fd61f88b7d9cc1a1b8f0e156ec6e3e45abca76d30abb78e6a3d1135d67ca19"
+    },
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "sha256": "63f218c51c703178f5abdf0de3c0976c16ffe7f4dc42d321db7304657f1fc867",
+      "baseSha256": "bd2c6c98489e98c5d1b4aa3071a3a971928d68f5a975bc38a3dffdc1420f8bd6"
+    },
+    {
+      "path": "frontend/scripts/child-switch-readiness.test.mjs",
+      "sha256": "e4fe287d66cecc9c45ddbb6cd18e7476dd715279d8d895531667aae1d5776658",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/scripts/scope-transition-harness.mjs",
+      "sha256": "144fff21e28594c38bdfe2fc422ffe4fcdd8f82ebd06f76efc2fb2dc9b806192",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/src/components/account/AccountCallbackGate.tsx",
+      "sha256": "20eb24130ed118adada1c72de58c3866bb5658b98ad45d296d84ad10ccfab520",
+      "baseSha256": "95e10e917569646c907ed98e44c6486c813ef82d8c5f588c6961150acd728b79"
+    },
+    {
+      "path": "frontend/scripts/account-loading-presentation.test.mjs",
+      "sha256": "746d3b04525ae11d940cd410bb301dc84b4a61fb292429675d6bde4910fccb31",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/src/screens/careScreen.tsx",
+      "sha256": "a9a40f17c1fa12f0930bb84216abcadeee93460e87a3e2fff36707ac37faecf8",
+      "baseSha256": "814d6c17183f792879ce897ba85c8e79e77fe0f47e0a711ba7e26320af2f791b"
+    },
+    {
+      "path": "frontend/scripts/care-query-normalization.test.mjs",
+      "sha256": "4bc8192b53483091f002924c4e612cf8275663ec962cd2490dfd9781a5ce5839",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/src/production/ProductionProvider.tsx",
+      "sha256": "138d7018f0ffc50ba7d1e7a42b9a2bac77f6ffb254c7779605474c4188cdba5c",
+      "baseSha256": "dfc06c968ed1ae23dbf31fa9240d29498432d8cf69ccd7eaac91e6af8d533715"
+    },
+    {
+      "path": "frontend/src/production/useDomainEnvironment.ts",
+      "sha256": "c159d6d3410bf51da6f8aeaa8fca1e03e94fb304d7ebf140fecae7f314525b51",
+      "baseSha256": "a00ac851a2cf0a9ebf9157fd840b8691552c8b5e46ebe9459af407b325945f1b"
+    },
+    {
+      "path": "frontend/scripts/production-owner-fanout.test.mjs",
+      "sha256": "ce58dfe2ae26c89e108fa9480a25674f7362fda8e1e9e85c18bde3827a57fc95",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/src/care-view-model.ts",
+      "sha256": "ebd45d85b9d6a48531d5e6ee6c9111b2d43c13039371d21473c1fd385a50a26b",
+      "baseSha256": "ead1313795e4ce94038480e495c37ac8f2334c0fd37a5b6b62ac9afaaefb2e99"
+    },
+    {
+      "path": "frontend/src/task-view-model.ts",
+      "sha256": "c241e4efb2b05aa3b882127193b3833764c5ef90c0b39374b469b27670a81091",
+      "baseSha256": "c399393b853b83d2594f6d54ce63f1fbed04041b5d05eea60b8eecbc9ca92caf"
+    },
+    {
+      "path": "frontend/src/production/task-knowledge-tasks.ts",
+      "sha256": "599fba127a3a0a15315e95b561a6c5d46b50e05dfa0097b6468acac6b5a8f861",
+      "baseSha256": "17b690f2ba4ac181590413d0ce35ec5ff53e6898e27fb6fcd489b4c209dc696a"
+    },
+    {
+      "path": "frontend/src/production/CareProfileDomains.tsx",
+      "sha256": "af15e78f4ddad8e731a14ef5afccb2e9e9b20ee8bf038d60d62dab816fd52d60",
+      "baseSha256": "ffdc9dc98e3d857a64467de37c7b02095716e8581bbe06768e28e3bc2413f714"
+    },
+    {
+      "path": "frontend/src/screens/settingsScreen.tsx",
+      "sha256": "0e60600d5a8a0bdc714adbac1b390e3dd4422f88d1efe98e0e09181ede356cec",
+      "baseSha256": "18fd2be4a9a16e04fd04f48a6b7ecbab59ca2b72864c7e80596cc09c4d85759f"
+    },
+    {
+      "path": "frontend/scripts/visible-startup-readiness.test.mjs",
+      "sha256": "9dce85894bfa098269f0ad55701c116ec823a1b3ac248933719c1a91b07c2092",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/src/production/PhotoInputDomains.tsx",
+      "sha256": "70584a0a4e51c36f4555fd7cf3e6f40fda42c75ea50f66bb2f11c01e6c03525c",
+      "baseSha256": "6e02f17bc0bbcf2a4a79c13b359c967018240b261da5b4ce710f2cf55886ade2"
+    },
+    {
+      "path": "frontend/scripts/photo-route-retention.test.mjs",
+      "sha256": "4ae897867b587f4809e62c863f75732ffdb8624132f07120786f672d30f4bbcd",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/src/production/useFamilyDocuments.ts",
+      "baseSha256": "3847f848b3164af078a0326359be3b8609605d4235c575965f975a078feb1f12",
+      "sha256": "00d1a285e0aceef69c82774beff8c62a1f99d4bd294a68d72cf49f31cc2169d1"
+    },
+    {
+      "path": "frontend/scripts/pdf-owner-invalidation.test.cjs",
+      "baseSha256": null,
+      "sha256": "586d833055c0b861b8bf3e9eae0f9aa87c21e210c8b9b1ab5a5b15fde022dfb4"
+    },
+    {
+      "path": "frontend/scripts/pdf-export-admission-dom.test.cjs",
+      "baseSha256": null,
+      "sha256": "d9d5f5a05c90e5b2ed1c9af9f75a2a7f7a21bfd00ceed720177b57ec0b21adc4"
+    },
+    {
+      "path": "frontend/src/family-view-model.ts",
+      "sha256": "12c3ce7bb710a2a5bb6940d643388c63acd127c5d057008b174ac4bed6f39987",
+      "baseSha256": "0a012ba56d085b1f81d621920464b75c90947baa1aed8fc57b12d5f8c929bdcd"
+    },
+    {
+      "path": "frontend/src/production/useProductionFamily.ts",
+      "sha256": "bfe772d69d92c8aea3512a092d7832b0688f20f452c43c441e5d8bb6db3317be",
+      "baseSha256": "3905d66b198b4a3eff1dae5ec8f608317f927841b7a1a69fb1dd9ffa33e5303b"
+    },
+    {
+      "path": "frontend/src/components/family/FamilyView.tsx",
+      "sha256": "adf938639743c8e0a21c00935128d05e8ead51dca0ef6bbd91ff9f79b26ae035",
+      "baseSha256": "15886493847a3eaec18c331602727fab205154d9038707916eb91abcb83b495b"
+    },
+    {
+      "path": "frontend/scripts/family-option-labels-dom.test.cjs",
+      "sha256": "a4e46bffa3b154709fa60c933b7522bc01716097d23a0778e8374d6c1344b29c",
+      "baseSha256": null
+    }
+  ],
+  "verification": [
+    {
+      "stage": "original account and child combination",
+      "files": 11,
+      "sourceMode": "real source components with synthetic hook/native/animation hosts",
+      "checks": [
+        {
+          "name": "combined presentation and switch",
+          "passed": 23,
+          "failed": 0
+        },
+        {
+          "name": "existing startup selected checks",
+          "passed": 15,
+          "failed": 0
+        },
+        {
+          "name": "independent API timeout and recovery checks",
+          "passed": 4,
+          "failed": 0
+        }
+      ],
+      "typecheck": "passed",
+      "build": {
+        "kind": "ordinary Expo web export",
+        "routes": 35,
+        "appliesTo": "original eleven files only"
+      }
+    },
+    {
+      "stage": "Care query addition",
+      "files": 2,
+      "checks": [
+        {
+          "name": "unchanged original source counterexample after repair",
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "name": "portable first-value query checks",
+          "passed": 2,
+          "failed": 0
+        }
+      ],
+      "typecheck": "passed",
+      "doesNotProve": "browser duplicate URL query conversion to Expo array parameters"
+    },
+    {
+      "stage": "navigation addition",
+      "files": 3,
+      "sourceMode": "real React DOM with existing jsdom and synthetic domain owners",
+      "authorChecks": {
+        "passed": 25,
+        "failed": 0,
+        "overlap": "2 navigation checks plus the same 23 account/child checks"
+      },
+      "typecheck": "passed",
+      "renderProbe": {
+        "routeUpdates": 4,
+        "baseline": {
+          "bridge": "1 to 5",
+          "summaryPublications": "2 to 6"
+        },
+        "candidate": {
+          "bridge": "1 to 1",
+          "summaryPublications": "2 to 2"
+        }
+      },
+      "doesNotProve": "browser FPS or measured visual smoothness"
+    },
+    {
+      "stage": "independent navigation and query review",
+      "checks": [
+        {
+          "name": "navigation and query",
+          "passed": 4,
+          "failed": 0
+        },
+        {
+          "name": "online role session and identity environment guard",
+          "passed": 1,
+          "failed": 0
+        }
+      ],
+      "review": "no blocking issue reported for the five-file increment"
+    },
+    {
+      "stage": "preceding frozen twenty-two-file batch including fixed current-visible first-read additions",
+      "tests": [
+        {
+          "name": "account child query and visible-first-read source checks",
+          "passed": 34,
+          "failed": 0
+        },
+        {
+          "name": "real React DOM navigation checks with synthetic owners",
+          "passed": 2,
+          "failed": 0
+        }
+      ],
+      "typecheck": "passed",
+      "build": {
+        "kind": "ordinary Expo Web static export",
+        "exitCode": 0,
+        "staticRoutes": 35,
+        "webModules": 1922,
+        "serverRenderModules": 2012,
+        "mainBundle": "_expo/static/js/web/index-6506fd2f12e0d752dac5c96116ab343d.js",
+        "mainBundleSha256": "1b570cbbc93aa52553e8f77f05b4176e84df6b6e0e45eb8a916d6b71b02bfdec",
+        "mainBundleBytes": 5149913,
+        "terminalLogSha256": "94759324d7381dfd43865e6f00218cf939f6088c93a7c26b358a8047d4540112",
+        "sourceScope": "exact frozen twenty-two-file source; hashes rechecked after build",
+        "previewReady": false,
+        "previewBoundary": "This is an ordinary production export. Existing public synthetic preview fixture/transport and publication access must be verified separately; do not publish the bare output as a verified synthetic preview.",
+        "currentReadbackLimit": "Original bundle hash and logs retained; original bundle bytes are not currently available for fresh content inspection. This report neither invalidates nor re-certifies earlier contents beyond the original evidence."
+      },
+      "note": "Tests and typecheck apply to the exact final author twenty-two-file manifest. Earlier stages are not summed as distinct cases. Its final build is not claimed as the subsequent twenty-four-file combination build.",
+      "files": 22,
+      "independentReview": {
+        "result": "no confirmed blocking defect in the frozen 22-file source batch",
+        "hashes": "all 22 match",
+        "checks": [
+          {
+            "name": "visible Gate reporter and actual ProductAgentOwner",
+            "passed": 9,
+            "failed": 0,
+            "counting": "independent rerun of the author cases"
+          },
+          {
+            "name": "actual Task and Care owner detail states",
+            "passed": 9,
+            "failed": 0,
+            "counting": "additional reviewer cases"
+          }
+        ],
+        "fixtureBoundary": "Real React DOM and real source owners with synthetic API/cache/transport/form hosts. Existing external jsdom 30.1.1, not a declared repository dependency. No new dependency install.",
+        "coverage": [
+          "loading-error-same-target-retry-ready",
+          "old child result rejection",
+          "newer target while old completes",
+          "403/404/400 terminal errors",
+          "invalid Task UUID without API call"
+        ]
+      }
+    },
+    {
+      "stage": "PhotoInput first-value query and original retention increment",
+      "files": 2,
+      "productScope": "Only view string-array typing and first-value photoRoute normalization. Existing pending/busy/direct/scope cleanup code remains unchanged.",
+      "originalRed": {
+        "passed": 0,
+        "failed": 3,
+        "counterexamples": [
+          "Unsaved original and edited draft wrongly released when entering a photos-first array alias",
+          "Cold-mounted photos-first alias wrongly retained draft after records-first departure",
+          "Actual chat-received independent original bytes wrongly disposed entering photo alias"
+        ]
+      },
+      "authorTests": {
+        "passed": 6,
+        "failed": 0
+      },
+      "authorTypecheck": "passed",
+      "independentReview": {
+        "result": "allow narrow increment to the same batch",
+        "passed": 9,
+        "failed": 0,
+        "authorCasesRerun": 6,
+        "additionalCases": 3,
+        "additionalBoundaries": [
+          "records-first/empty/absent query are real departures",
+          "identity change with same child disposes unresolved bytes",
+          "unmount clears pending original outside the owner"
+        ]
+      },
+      "fixtureBoundary": "Actual useProductionPhotos and real React DOM; synthetic router/API/cache/native/schema ports. Existing external jsdom 30.1.1, not declared in repository; no package installed.",
+      "notProven": [
+        "Expo actual query parsing",
+        "candidate browser or pixel/focus behaviour",
+        "real photo upload or model execution"
+      ]
+    },
+    {
+      "stage": "preceding twenty-four-file product/test combination, archived before PDF invalidation increment",
+      "tests": {
+        "name": "photo six-case regression rerun on integrated source",
+        "passed": 6,
+        "failed": 0,
+        "terminalLogSha256": "b710f67a7f2c6a8c1703538994d691806313b5a5f4332904a4fb8e308690add6",
+        "priorScope": "The unchanged preceding 22-source tests were not rerun or recounted as new cases."
+      },
+      "typecheck": {
+        "exitCode": 0,
+        "terminalLogSha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19"
+      },
+      "build": {
+        "command": "CI=1 EXPO_DEBUG=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npm run build:web --workspace frontend -- --clear --output-dir ../dist",
+        "exitCode": 0,
+        "staticRoutes": 35,
+        "artifactFiles": 61,
+        "artifactBytes": 10083714,
+        "mainBundle": "_expo/static/js/web/index-3842d5fdaa32b1b1590a26fe7e355318.js",
+        "mainBundleSha256": "066cbee7ce98f44f5ccec00c084626187d410a6273cb0aab42fbbe51ff8d1831",
+        "mainBundleBytes": 5157651,
+        "sourceHashesUnchangedAfterBuild": true,
+        "terminalLogSha256": "04b819e5a5961a43b6cbb87fb50be05be78325685aaed56fc69e7cc5e70dd574",
+        "summarySha256": "031e5607859330e1861d28c76ebfb93d7f95d030500be23fbbcb4364210423ac",
+        "artifactContentChecks": {
+          "ProductionProvider is required for production owners": 1,
+          "detailRead": 7,
+          "registerSection": 3,
+          "targetStartupReadiness": 3
+        },
+        "photoContentSnippetSha256": "61c10888c1e00362430110665f2bda07fa92a6e54115f32208895a3eab5db704",
+        "photoContentChecks": [
+          "first value Array.isArray(G)?G[0]:G",
+          "photoRoute uses normalized first value",
+          "original busy/pending/direct guard present"
+        ],
+        "resolution": "Non-cleared export reused stale output; official --clear rebuild emitted the current-source features without product or configuration changes. The exact cache-key cause is unconfirmed.",
+        "previewReady": false,
+        "fixtureInjection": "Not applied. Bare production export, not a verified publishable synthetic Sites preview.",
+        "independentArtifactReview": {
+          "recordedAt": "2026-10-10T14:13:00Z",
+          "method": "read-only minified actual module inspection and exact frozen source hash cross-check; no new build or browser",
+          "reportSha256": "376f66c17c4caca137a83d793c48e9826cbc3fb2e714c30a370bc7b152bd86eb",
+          "contentEvidenceSha256": "0006278c84f4ccc38c78dc383f04697b8d660dd6cc3fb58af657f204532b0c6c",
+          "moduleSnippetsSha256": "b6d7682677fd21f27462e802bb499d94f803ac0cf2a5b1b5777da78ead0d6531",
+          "decision": "No confirmed blocker in this bounded source/build artifact scope.",
+          "artifacts": [
+            {
+              "label": "clear",
+              "sha256": "066cbee7ce98f44f5ccec00c084626187d410a6273cb0aab42fbbe51ff8d1831",
+              "bytes": 5157651,
+              "markers": {
+                "ownerContext": 1,
+                "ownerGuardUse": 1,
+                "detailProjection": 5,
+                "settingsRegistration": 1,
+                "settingsActualTab": 1,
+                "photoFirstValue": 1,
+                "photoNormalizedPredicate": 1,
+                "photoPendingGuard": 4,
+                "detailExactTarget": 1
+              }
+            },
+            {
+              "label": "staleNoClear",
+              "sha256": "aa6c9e0898f394fb0b315d4cd4c7914a9fa79b9b8bf5a193bd3058b67a80a241",
+              "bytes": 5151420,
+              "markers": {
+                "ownerContext": 0,
+                "ownerGuardUse": 0,
+                "detailProjection": 0,
+                "settingsRegistration": 0,
+                "settingsActualTab": 0,
+                "photoFirstValue": 0,
+                "photoNormalizedPredicate": 0,
+                "photoPendingGuard": 4,
+                "detailExactTarget": 0
+              }
+            }
+          ],
+          "sourceFileCountAtArtifactReview": 27,
+          "codeTestCount": 24,
+          "documentHashBoundary": "The artifact review checked 24 frozen product/test files plus the three preceding document hashes. This final three-file documentation refresh is subsequent and is not represented as part of that earlier hash match.",
+          "old22Boundary": "Old 22-file 1b570c… bundle bytes are not present in the retained archive. Earlier log/hash observations remain historical; its content is not reverified now.",
+          "doesNotProve": "No new build or browser was run by this reviewer; selected real minified modules were inspected, not every module behavior."
+        }
+      },
+      "note": "This result applies only to the preceding twenty-four-file product/test combination and is not build evidence for the current twenty-six-file combination.",
+      "rejectedBuildAttempt": {
+        "commandExitCode": 0,
+        "acceptance": "not passed; output artifact does not establish the current source",
+        "observedMainBundle": "index-52c5a64f1459d754e493b95e73bd5763.js",
+        "observedMainBundleSha256": "aa6c9e0898f394fb0b315d4cd4c7914a9fa79b9b8bf5a193bd3058b67a80a241",
+        "observation": "Matches the earlier eleven-file output and lacks the expected newer context/detailRead source features. Current source manifest matches alone do not prove bundle correctness.",
+        "cause": "Confirmed stale output reuse was resolved by official --clear without product or configuration changes. The exact cache-key cause remains unconfirmed.",
+        "terminalLogSha256": "733d0a9f30de76b787646c9ee7f922d08b30a122bf3e5bd0f6129078956d4cb5"
+      }
+    },
+    {
+      "stage": "PDF pending-result invalidation increment",
+      "files": 2,
+      "sourceMode": "Actual React, QueryClient, useFamilyDocuments, task-knowledge runtime, client API and parser; synthetic environment/write guard, fetch responses, object URL and anchor observers.",
+      "scope": "Synchronously invalidate an already pending export token when its reading set or selected snapshot becomes invalid; keep single-flight and busy until the original finally; late 403 still clears authority.",
+      "originalRed": {
+        "name": "same-batch document-version invalidation before React commit creates an object URL",
+        "expected": 0,
+        "actual": 1,
+        "logSha256": "a6bbc04a8f2b39d16ad8c2325d6df788dfc6a1d0411952444f268c20cc892099"
+      },
+      "authorTests": {
+        "passed": 7,
+        "failed": 0,
+        "terminalLogSha256": "1b87a18bc838c6f9f81b482a2d10e368a9802620bdaadfcfa7e81e3d91dd9340",
+        "note": "Named subscenarios belong to these seven cases and are not counted again."
+      },
+      "authorTypecheck": {
+        "exitCode": 0,
+        "terminalLogSha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19"
+      },
+      "independentReview": {
+        "decision": "Allow this two-file increment for integration into the same frontend candidate, limited to pending PDF result invalidation. No integration performed.",
+        "reviewedAt": "2026-10-10T15:40:00Z",
+        "frozenAuthorRerun": {
+          "passed": 7,
+          "failed": 0
+        },
+        "additionalCases": {
+          "passed": 2,
+          "failed": 0,
+          "cases": [
+            "Synchronously invalidated token still processes current-scope late 403 revocation.",
+            "Pending lock persists until settlement; authoritative reread permits a fresh explicit export without automatic retry."
+          ]
+        },
+        "originalRedIndependentlyReproduced": {
+          "passed": 0,
+          "failed": 1,
+          "assertion": "Object URL count 1 != 0"
+        },
+        "typecheckRerunByReviewer": false,
+        "earlierFullSuiteRerun": false,
+        "reportSha256": "c1ca958dc45c828bc18689bd0b19765d702ba24802b805e6b3077da9f5d9e3b7",
+        "manifestSha256": "256a59793b392ee0a8f887e118a4fa2ff62620b7bac632c4ae7fb43217b08e50",
+        "artifacts": [
+          {
+            "name": "original-same-batch-red.log",
+            "sha256": "a77bb930ad98e7510743f9aa5e5f6f4081310ac2880bcc5dd85c52b106d3e105"
+          },
+          {
+            "name": "frozen-author-seven-independent.log",
+            "sha256": "372e3583093efa8c72065acee7fd7ed8be1f8b54c5093a7657d25ef366b4785a"
+          },
+          {
+            "name": "independent-boundaries.log",
+            "sha256": "b7ad249fe8dc2b86afde73fbc0500816d68e9c02576a0bd87e2d11f953522424"
+          },
+          {
+            "name": "independent-boundaries.test.cjs",
+            "sha256": "56df5836b8342fee065ea3f2e8081fb12eb847a0f83238453cf7ca655efdf627"
+          },
+          {
+            "name": "patch-reverse-check.log",
+            "sha256": "19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061"
+          }
+        ]
+      },
+      "testDependency": "Existing external jsdom 30.1.1 supplied via TEST_JSDOM_PATH; undeclared by the repository, no dependency installed; not claimed clean-CI portable.",
+      "notProven": [
+        "Real browser scheduling or download",
+        "Valid PDF bytes, pagination or production endpoint",
+        "All same-batch new-export admission windows before React commit"
+      ],
+      "patchSha256": "1d7ae1e331db57f2038b98cfef3f51d4bec4cee8e4806370606b849b76a68892",
+      "authorManifestSha256": "f24cf9424cfb425f4467b4c2ac1433185b10a99c1b161994ed9567e744d041ce",
+      "authorReportSha256": "c8467968beab4d1449ed353ca7af14f21eadf5ea46a8a5710cefe9d2b1fe2fa6"
+    },
+    {
+      "stage": "preceding twenty-six-file product/test combination, archived before new PDF admission increment",
+      "tests": {
+        "name": "seven-case PDF invalidation regression on integrated twenty-six-file source",
+        "passed": 7,
+        "failed": 0,
+        "terminalLogSha256": "5e0235b08a87f4bcb8e50b2f387a37bdfd4f3542d53af11b496ed1bbf4c539cd",
+        "priorScope": "Earlier 24-product/test cases were not rerun or recounted as new cases."
+      },
+      "typecheck": {
+        "exitCode": 0,
+        "terminalLogSha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19"
+      },
+      "build": {
+        "command": "CI=1 EXPO_DEBUG=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npm run build:web --workspace frontend -- --clear --output-dir ../dist",
+        "exitCode": 0,
+        "staticRoutes": 35,
+        "artifactFiles": 61,
+        "artifactBytes": 10084004,
+        "mainBundle": "_expo/static/js/web/index-dee89a7b89ec7261d33bff06eb27bc76.js",
+        "mainBundleSha256": "0e1b210731348cf052fd9ff94a36d091f5bc4a4a2ac23bdb5f841288db263910",
+        "mainBundleBytes": 5157941,
+        "sourceHashesUnchangedAfterBuild": true,
+        "terminalLogSha256": "7d48ef9aa411e8bfaa2f411deca913226a7ef2aa1a288dba836e205aa1d61dc8",
+        "summarySha256": "d714ba5859341fb3298ca585b8388a3b9f0827ba2ed493ab5c0f599f5a7921aa",
+        "pdfContentSnippetSha256": "2c5238de46f958574b94164896c0373de2b7cde826c83ab8f1a14211f9f35de7",
+        "pdfSourceContentChecks": [
+          "synchronousReadInvalidation",
+          "pendingValidity",
+          "handoffAfterValidity",
+          "specificSnapshotInvalidation",
+          "currentSnapshotInvalidation",
+          "accessErrorBeforeValidity",
+          "originalTokenOnlyLockRelease"
+        ],
+        "priorSourceMarkersRetained": {
+          "ProductionProvider is required for production owners": 1,
+          "detailRead": 7,
+          "registerSection": 3,
+          "targetStartupReadiness": 3
+        },
+        "documentationAuthorReadback": {
+          "productTestHashMatches": 26,
+          "artifactHashAndSizeMatches": 61,
+          "newTokenInvalidationAndFinallyGuardPresent": true,
+          "testsOrBuildRerun": false
+        },
+        "independentArtifactReview": {
+          "recordedAt": "2026-10-10T15:44:00Z",
+          "method": "Independent read-only actual artifact/source inspection, no test/build/browser execution",
+          "roleBoundary": "PDF increment authored by this worker and independently source-reviewed by fix_child_switch_transition; this verification independently inspects the integrator-built artifact, not an independent review of own source",
+          "reportSha256": "7c8b648df3fa68b0f5039b9c58dceebc90ee8359006ffc4c624f8920599679d5",
+          "contentEvidenceSha256": "5d8d128324472d5afe5a8f56c57054d7f3eef3854a2952e81be30efe205f63cd",
+          "moduleSnippetsSha256": "4e63e05851ecf17e023b3b2f3768cbfec47c20ca0d4ea34c6e0d1a187d1ac9e1",
+          "codeTestCount": 26,
+          "sourceManifestSha256": "98ad05f5322fe33b0a9d9130639a8451c3cbe2c9607f53e131e4df886d481a6b",
+          "currentBundle": {
+            "bytes": 5157941,
+            "sha256": "0e1b210731348cf052fd9ff94a36d091f5bc4a4a2ac23bdb5f841288db263910"
+          },
+          "allBuildArtifacts": {
+            "count": 61,
+            "exactHashesAndSizesMatch": true,
+            "summarySha256": "d714ba5859341fb3298ca585b8388a3b9f0827ba2ed493ab5c0f599f5a7921aa"
+          },
+          "checks": {
+            "synchronousInvalidation": true,
+            "specificAndCurrentInvalidation": true,
+            "attemptToken": true,
+            "validity": true,
+            "validBeforeUrl": true,
+            "revokeBeforeValidity": true,
+            "onlyOriginalReleases": true
+          },
+          "existingNineSnippetChecks": {
+            "ownerContext": true,
+            "ownerGuardUse": true,
+            "detailProjection": true,
+            "settingsRegistration": true,
+            "settingsActualTab": true,
+            "photoFirstValue": true,
+            "photoNormalizedPredicate": true,
+            "photoPendingGuard": true,
+            "detailExactTarget": true
+          },
+          "original24CodeTestsUnchanged": true,
+          "twoPdfIncrementHashesMatchIndependentReviewedCandidate": true,
+          "retainedPrior27Bundle": {
+            "sha256": "066cbee7ce98f44f5ccec00c084626187d410a6273cb0aab42fbbe51ff8d1831",
+            "missingNewTokenAndValidityMarkers": true
+          },
+          "documentHashBoundary": "The artifact report verifies 26 frozen code/test files, not these final three refreshed documents; final delivery-file verification is separate and must not change that report hash.",
+          "notVerified": [
+            "candidate browser/UI/real download",
+            "valid PDF bytes/layout/pagination",
+            "real API/model/family data",
+            "all possible pre-commit new-export admission windows"
+          ]
+        },
+        "previewReady": false,
+        "fixtureInjection": "Not applied; bare production export must not be published as the synthetic Sites preview."
+      },
+      "note": "This build and regression evidence belongs to the preceding 26-product/test version. It does not establish the latest 27-product/test combination."
+    },
+    {
+      "stage": "PDF new-export admission increment",
+      "files": 2,
+      "changedExistingOwner": true,
+      "newTestFile": 1,
+      "scope": "New export admission through the current GrowthArchive button after a whole read-set invalidation and before the next owner render",
+      "implementation": "Capture the last successful authoritative read generation alongside rendered page state; compare it with the existing synchronous reads generation at export entry. No new cache or owner; original pending-token/finally guards unchanged.",
+      "sourceMode": "Actual React/RN Web/Paper/AppDialog/GrowthArchive + ProductionTaskKnowledgeDomains layout publish + GrowthWorkspace + useFamilyDocuments/runtime/QueryClient/API/parser. Synthetic unrelated domain hooks and environment, intercepted fetch, existing motion/select/icon ports, URL/anchor observers.",
+      "originalRed": {
+        "observed": {
+          "post": 1,
+          "objectUrls": 0,
+          "downloads": 0
+        },
+        "logSha256": "08a95686c309ac02afffac4a46ba67516710228737d5ce94aa10fc2378e2791e",
+        "note": "Actual bridge, GrowthWorkspace and GrowthArchive DOM callback under controlled React act scheduling. The earlier direct-owner reproduction is the same defect, not a second bug."
+      },
+      "authorTests": {
+        "passed": 4,
+        "failed": 0,
+        "terminalLogSha256": "5c1647abeb042e28744f543d419323e18a9f3e34d4b7fd2405c84e22ecb54893"
+      },
+      "authorTypecheck": {
+        "exitCode": 0,
+        "terminalLogSha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19"
+      },
+      "independentReview": {
+        "decision": "Allow the two-file increment for the same frontend batch, limited to new-export admission after whole read-set invalidation. No integration performed.",
+        "reviewedAt": "2026-10-10T16:10:00Z",
+        "authorCasesRerun": {
+          "passed": 4,
+          "failed": 0
+        },
+        "newCases": {
+          "passed": 1,
+          "failed": 0,
+          "scope": "Old captured callback cannot be rehabilitated using current authority; current callback still honors cancellation/scope/child and current real button can export."
+        },
+        "pendingTokenAndFinallySuffixByteIdentical": true,
+        "typecheckRerunByReviewer": false,
+        "reportSha256": "37678ffc684f2f9bda79c37864773bc71d3bd7436cd246461a832881dc8f6a3c",
+        "manifestSha256": "138a9d219f32beb9afb31d64b628e0cecf18e6981520050d2431799efe7cdc26",
+        "artifacts": [
+          {
+            "file": "original-ui-red.log",
+            "sha256": "922a8473d79f90776d569809b1e6495a94f68b9715113b4926aef306c6a1bf88"
+          },
+          {
+            "file": "frozen-bridge-original-red.log",
+            "sha256": "dca1f39ad2f1e9a846e6ea1e224e65d1a08af12d9acd5d9a9b6543c07dff50ae"
+          },
+          {
+            "file": "frozen-four-independent.log",
+            "sha256": "781445c0b1db1531e4fc5e42072d7233487ce944fd0581781209f6d9ad5e7899"
+          },
+          {
+            "file": "independent-generation.log",
+            "sha256": "78d033c71becc8b03e684145f1f9cdfde71e3174d97dc7a36f76b717ddc49c7a"
+          },
+          {
+            "file": "independent-generation.test.cjs",
+            "sha256": "bf74757051fcfb38f7047773aa5dcb6abf3cbd741828e963e0bbc22da4b85a35"
+          },
+          {
+            "file": "patch-reverse-check.log",
+            "sha256": "19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061"
+          }
+        ]
+      },
+      "patchSha256": "600ce9e0755be5f0b4cb80a7043aaca38c47c45dd43854d6cb548682820a60a2",
+      "authorManifestSha256": "8229715db05da56a6a9182972778e0d6936ec2f6e63df67f3bf7c47dc741c8f0",
+      "authorReportSha256": "605e6c622c88ca2b72ac310b681415b09a147abbf40a9e80f22ce10d26682eb2",
+      "testDependency": "Existing external jsdom30.1.1 via JSDOM_MODULE; no repository dependency added or clean-CI claim.",
+      "notProven": [
+        "Natural trusted-browser timing",
+        "Real PDF bytes, pagination or download",
+        "All possible document-state transitions or admission windows"
+      ],
+      "priorPendingSuiteRerunByAuthorOrSourceReviewer": false
+    },
+    {
+      "stage": "preceding twenty-seven-file product/test combination, archived before family-label increment",
+      "tests": {
+        "name": "four-case new-admission regression on integrated twenty-seven-file product/test source",
+        "passed": 4,
+        "failed": 0,
+        "terminalLogSha256": "a3c5ea5f479df6da939aec62d4ee440a020c819f2e8291f4af322a093927c472",
+        "priorPendingSevenRerun": false,
+        "priorSuites": "Earlier pending seven-case, GrowthArchive/radio and unrelated suites remain historical; no additional passes inferred from unchanged code."
+      },
+      "typecheck": {
+        "exitCode": 0,
+        "terminalLogSha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19"
+      },
+      "build": {
+        "command": "CI=1 EXPO_DEBUG=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npm run build:web --workspace frontend -- --clear --output-dir ../dist",
+        "exitCode": 0,
+        "staticRoutes": 35,
+        "artifactFiles": 61,
+        "artifactBytes": 10084091,
+        "mainBundle": "_expo/static/js/web/index-5c744efb8f2b24bd38cf731ba856f2fb.js",
+        "mainBundleSha256": "53a65f3bcf5ea9fe40574419b211ee806fae7299e2cd814cdc7da7c5721f5b1d",
+        "mainBundleBytes": 5158028,
+        "sourceHashesUnchangedAfterBuild": true,
+        "terminalLogSha256": "9abd7714c62e7832ca500cd224e94f93de6ec1e72bb958e080fb4b2be55e9bbc",
+        "summarySha256": "291591a4423857dbe7755120959e9539da87d620953b18e48be64957e8251375",
+        "admissionContentSnippetSha256": "d6f137f298e745c42c95fb1eebfbb116faf353311bdfadd53af1458aa169a7c1",
+        "sourceContentChecks": [
+          "initialGenerationUnadmitted",
+          "freshPageAndGenerationPaired",
+          "synchronousReadGenerationAdvance",
+          "generationGuardBeforeAdmission",
+          "oldScopeCancelAuthorityGuards",
+          "pendingTokenRetained",
+          "pendingValidityRetained",
+          "validBeforeUrl",
+          "revocationBeforeValidity",
+          "originalTokenOnlyLockRelease"
+        ],
+        "priorSourceMarkersRetained": {
+          "ProductionProvider is required for production owners": 1,
+          "detailRead": 7,
+          "registerSection": 3,
+          "targetStartupReadiness": 3
+        },
+        "documentationAuthorReadback": {
+          "productTestHashMatches": 27,
+          "artifactHashAndSizeMatches": 61,
+          "testsOrBuildRerun": false
+        },
+        "artifactReview": {
+          "recordedAt": "2026-10-10T16:15:00Z",
+          "method": "Independent read-only inspection of integrator actual clear artifact plus exact reviewed-source hashes; no tests/build/browser run",
+          "roleBoundary": "Increment was authored by this worker and independently source-reviewed by another worker; this is artifact inspection, not independent self-source-review",
+          "reportSha256": "65bac2a8efc9b09f3cd57de47e5d595608c9947fa1b84dc44460bf247693a5db",
+          "contentEvidenceSha256": "040b9ebfdd924b7ef91ad74f7e0c99ae6abe090b45686ef9ece9bb74b3dd3e8d",
+          "moduleSnippetsSha256": "2ebe90231620a02d65900b3eeb70d17737ab244ee12e429de53a432cd736089a",
+          "sourceManifestSha256": "ea05bb81f38cb71ddb822d63aca6b4d644a64b69e07b36bec2c1a8ea48a849b8",
+          "codeTestFiles": 27,
+          "all27SourceHashesMatch": true,
+          "all61ArtifactSizesAndHashesMatch": true,
+          "currentBundle": {
+            "sha256": "53a65f3bcf5ea9fe40574419b211ee806fae7299e2cd814cdc7da7c5721f5b1d",
+            "bytes": 5158028
+          },
+          "checks": {
+            "initialUnadmittedGeneration": true,
+            "freshProjectionPairsGeneration": true,
+            "synchronousReadInvalidation": true,
+            "generationBeforeAdmission": true,
+            "retainedScopeAuthority": true,
+            "retainedToken": true,
+            "retainedPendingValid": true,
+            "validBeforeUrl": true,
+            "revocationBeforeValidity": true,
+            "originalTokenOnlyLockRelease": true,
+            "generationBeforePdfPostCall": true
+          },
+          "existingNineSnippetChecks": {
+            "ownerContext": true,
+            "ownerGuardUse": true,
+            "detailProjection": true,
+            "settingsRegistration": true,
+            "settingsActualTab": true,
+            "photoFirstValue": true,
+            "photoNormalizedPredicate": true,
+            "photoPendingGuard": true,
+            "detailExactTarget": true
+          },
+          "prior26ChangedPaths": [
+            "frontend/src/production/useFamilyDocuments.ts"
+          ],
+          "twoAdmissionFilesMatchReviewedIncrement": true,
+          "sourcePendingSuffixByteIdentical": true,
+          "retainedPrior29Bundle": {
+            "sha256": "0e1b210731348cf052fd9ff94a36d091f5bc4a4a2ac23bdb5f841288db263910",
+            "newAdmissionMarkerAbsent": true
+          },
+          "documentHashBoundary": "This report verifies 27 code/test files and the actual output, not these three refreshed documents. Final30 delivery hashes are verified separately without changing the artifact report.",
+          "notVerified": [
+            "Natural trusted-browser event timing",
+            "Real PDF bytes/layout/download",
+            "Real HTTP/model/household data",
+            "All possible document-state transitions",
+            "Whole frontend acceptance"
+          ]
+        },
+        "previewReady": false,
+        "fixtureInjection": "Not applied; bare production export must not be published as the synthetic Sites preview."
+      },
+      "note": "This source/build and regression evidence belongs to the preceding27 product/test files, not the latest31-file combination."
+    },
+    {
+      "stage": "Family option label increment",
+      "files": 4,
+      "productFiles": 3,
+      "testFiles": 1,
+      "scope": "Only duplicate final owner-derived labels gain trimmed nonempty unique display names from already-readable records.children filtered by workspaceId===family.id; original familyId values, selection and access semantics remain unchanged.",
+      "sourceMode": "Actual React/RN Web/Paper FamilyView/AppSelect/AppRadioItem, useProductionFamily/SettingsDomainSupport/QueryClient/family API parser with synthetic environment/transport and simplified motion/layout/icon ports.",
+      "authorTests": {
+        "passed": 5,
+        "failed": 0,
+        "terminalLogSha256": "4677c82dc14967a6e79344624dda9387b76343a889bedeb52ce938b4d6afa1f5"
+      },
+      "authorTypecheck": {
+        "exitCode": 0,
+        "terminalLogSha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19"
+      },
+      "originalRed": {
+        "logSha256": "205af2192a2fd18758bb085878b0116239e68e193ad02a8f2a61149163e3c6b9",
+        "note": "Two actual selector radios retained equal visible/accessibility labels. Initial draft expected suffix 已載孩子：; final label is 孩子：. This wording refinement does not change the duplicate-label counterexample."
+      },
+      "independentReview": {
+        "decision": "Allow the four-file bounded label improvement in the same frontend batch; incomplete data and identical names remain an explicit contract limitation.",
+        "reviewedAt": "2026-10-10T17:12:00Z",
+        "authorCasesRerun": {
+          "passed": 5,
+          "failed": 0
+        },
+        "newCases": {
+          "passed": 1,
+          "failed": 0,
+          "scope": "Removing a readable child clears its hint and selected-family child projection, preserves familyId, borrows no other workspace names and issues no additional read."
+        },
+        "finalUnchangedAssertionOnOriginal30": {
+          "passed": 0,
+          "failed": 1
+        },
+        "businessOwnerPrefixAndGuardSuffixByteIdentical": true,
+        "typecheckRerunByReviewer": false,
+        "reportSha256": "ae9e7e716e6832873be32c8204e45158cc062f50761e9539c9e448fb969f736e",
+        "manifestSha256": "325ac2d2463b7b606515c15aa6502047c33265a6d530c23476e5bcf1938dc326",
+        "artifacts": [
+          {
+            "file": "frozen-five-independent.log",
+            "sha256": "93b4cb1d711e47b436179d26dc713c04464364f6acdd99eb374ed2b0a367654b"
+          },
+          {
+            "file": "final-test-original-red.log",
+            "sha256": "57b93ed851c69aeaa9a7f5f3d6da84ad7f35c96031d8076fa255180c485aa432"
+          },
+          {
+            "file": "independent-removal.log",
+            "sha256": "f262652b796f577f886e8efde664dc0c34520f853482981a5e492ef09bd656f8"
+          },
+          {
+            "file": "independent-removal.test.cjs",
+            "sha256": "264897cb1b76bb4262b8f251bbe6d1d06f32bc505f4b87ea734d3bd79c6c58cf"
+          },
+          {
+            "file": "patch-reverse-check.log",
+            "sha256": "19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061"
+          }
+        ]
+      },
+      "patchSha256": "6d18a1ceedc8a1382192c8d00d98cc159247a9e1dd7a263d657f24fa871a8fd6",
+      "authorManifestSha256": "cf25740db601932b7c50071556926df56475c09850438d73a9d39fe5f2874421",
+      "authorReportSha256": "00e92a1c420265483cf77b896ee6a9097b17da85f3e00a28939ffdc406d6b5c1",
+      "testDependency": "Existing external jsdom30.1.1 via JSDOM_MODULE; not declared repository dependency; no install or clean-CI claim.",
+      "limits": [
+        "Missing loaded child names or identical name sets can still leave equal labels; no invented family identity or no-children assertion.",
+        "Only already-readable current-identity records are used; no new API, child reload, schema/access change or ID/email/ordinal display.",
+        "No new candidate browser typography/wrapping, screen-reader device, full permission matrix or native acceptance.",
+        "Existing scope suite not rerun by author."
+      ],
+      "observedHarnessLimits": [
+        "ResizeObserver warning",
+        "RN Web deprecated props",
+        "Native-driver fallback warning; no claim these warnings are fixed."
+      ]
+    },
+    {
+      "stage": "current thirty-one-file product/test combination",
+      "tests": {
+        "name": "five-case Family option regression on integrated31-product/test source",
+        "passed": 5,
+        "failed": 0,
+        "terminalLogSha256": "78fa959cacf3553357470f434c7d6f5b4dc8ed809b5967e21992c506b9e4be66",
+        "priorSuitesRerun": false,
+        "note": "Earlier PDF, child/scope and unrelated suites remain historical; source/module continuity is not a rerun."
+      },
+      "typecheck": {
+        "exitCode": 0,
+        "terminalLogSha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19"
+      },
+      "build": {
+        "command": "CI=1 EXPO_DEBUG=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npm run build:web --workspace frontend -- --clear --output-dir ../dist",
+        "exitCode": 0,
+        "staticRoutes": 35,
+        "artifactFiles": 61,
+        "artifactBytes": 10084398,
+        "mainBundle": "_expo/static/js/web/index-c98fec8b5d1c583f91a50a25e4bbe36f.js",
+        "mainBundleSha256": "c76cd7255b011da6827d324dcf3a2f57b33e6ab5913133829cacb21f4509ba88",
+        "mainBundleBytes": 5158335,
+        "sourceHashesUnchangedAfterBuild": true,
+        "terminalLogSha256": "313ed33b6b48ea712cf941b3bd5e32499412f6efa914979719ea0aa6ee8a7434",
+        "summarySha256": "62dbc9ee0a90e32e38f7be6e1bfc73f46be303669be434cffc0a59c9c2d77e93",
+        "familyContentSnippetSha256": "b4c66387964b6755def81603315eb3e6e08fffedb1601d9469b3de9a5236c6e6",
+        "familySourceContentChecks": [
+          "alreadyReadableRecordsSnapshot",
+          "exactWorkspaceJoin",
+          "selectedChildFilterRetained",
+          "duplicateBaseLabelOnly",
+          "namesTrimFilterDeduplicate",
+          "stableFamilyOptionId",
+          "missingNamesFallback",
+          "sameSelectTarget",
+          "sameSelectAction",
+          "familyIdActionGuard"
+        ],
+        "documentationAuthorReadback": {
+          "productTestHashMatches": 31,
+          "artifactHashAndSizeMatches": 61,
+          "testsOrBuildRerun": false
+        },
+        "artifactReview": {
+          "recordedAt": "2026-10-10T17:17:47.023287+00:00",
+          "method": "Independent read-only verification of integrator actual clear build bytes and reviewed-source hashes; no tests/build/browser rerun",
+          "roleBoundary": "This worker authored Family label code; another worker independently reviewed 5+1 cases. This is separate artifact inspection, not independent self-source-review.",
+          "reportSha256": "557ea0567cbe65af093d2905f19303457a8600bf8066457619dc271fc732ff6c",
+          "contentEvidenceSha256": "5b0a42ca6332e1bfa95f7012720e30114e34f176f64c364e1b3d789d141ab883",
+          "moduleSnippetsSha256": "c97af1ce6f4fd6201115df5492761cdbb736d00121ae1633758072c1e14b9da2",
+          "sourceManifestSha256": "52155dbd49d2c26df430d0e2fa4e185fd53c6026097111b34778382f4e42fc36",
+          "codeTestFiles": 31,
+          "all31SourceHashesMatch": true,
+          "allPrior27CodeTestHashesUnchanged": true,
+          "all4FamilyIncrementHashesMatch": true,
+          "all61ArtifactSizesAndHashesMatch": true,
+          "currentBundle": {
+            "sha256": "c76cd7255b011da6827d324dcf3a2f57b33e6ab5913133829cacb21f4509ba88",
+            "bytes": 5158335
+          },
+          "familyModuleChecks": {
+            "alreadyReadableRecordsSnapshot": true,
+            "exactWorkspaceDisplayNameProjection": true,
+            "selectedChildProjectionRetained": true,
+            "duplicateBaseLabelsOnly": true,
+            "loadedNameTrimFilterDeduplicate": true,
+            "stableOptionValueId": true,
+            "childHintOrOriginalLabel": true,
+            "selectValueAndDisabled": true,
+            "sameSelectionAction": true,
+            "ownerStableSelectionGuard": true
+          },
+          "loadedChildNamesOccurrences": 2,
+          "methodReferencesBoundary": "Unchanged references are static continuity corroboration; no-added-read execution evidence comes from the synthetic tests, not reference counts.",
+          "pdfOwnerActualModuleByteIdenticalToPrior30": true,
+          "pdfOwnerModuleSha256": "c5610d39de2ee40eeea689cf13d866ecc3e2b28206c9f6530c71d9f8629c7769",
+          "pdfOwnerModuleBytes": 22860,
+          "allPreviousPdfSnippetChecks": {
+            "initialUnadmittedGeneration": true,
+            "freshProjectionPairsGeneration": true,
+            "synchronousReadInvalidation": true,
+            "generationBeforeAdmission": true,
+            "retainedScopeAuthority": true,
+            "retainedToken": true,
+            "retainedPendingValid": true,
+            "validBeforeUrl": true,
+            "revocationBeforeValidity": true,
+            "originalTokenOnlyLockRelease": true,
+            "accessErrorHelper": true,
+            "exportFlow": true,
+            "actualApiExport": true,
+            "apiTransport": true
+          },
+          "existingNineSnippetChecks": {
+            "ownerContext": true,
+            "ownerGuardUse": true,
+            "detailProjection": true,
+            "settingsRegistration": true,
+            "settingsActualTab": true,
+            "photoFirstValue": true,
+            "photoNormalizedPredicate": true,
+            "photoPendingGuard": true,
+            "detailExactTarget": true
+          },
+          "retainedPrior30": {
+            "sourceFiles": 30,
+            "allSourceHashesMatch": true,
+            "bundleSha256": "53a65f3bcf5ea9fe40574419b211ee806fae7299e2cd814cdc7da7c5721f5b1d",
+            "loadedChildNamesAbsent": true
+          },
+          "documentHashBoundary": "Artifact report checks31 frozen code/test files and actual build output, not these three refreshed documents. Final34 delivery hashes are separate; artifact report remains immutable.",
+          "notVerified": [
+            "Candidate browser layout or real screen-reader/native",
+            "Universal family-name disambiguation when names missing/identical",
+            "Complete role/access matrix",
+            "Natural trusted-browser PDF event timing or all document transitions",
+            "Real PDF bytes/download, real HTTP/model/household data",
+            "Whole frontend acceptance"
+          ]
+        },
+        "previewReady": false,
+        "fixtureInjection": "Not applied; bare production export must not be published as the synthetic Sites preview."
+      },
+      "note": "Current31-product/test clear build and artifact inspection are distinct from the preserved30-file version. Family labels remain a bounded presentation improvement; absent or same child names can still be ambiguous."
+    }
+  ],
+  "preservedFailures": [
+    {
+      "kind": "product counterexample",
+      "area": "child switch",
+      "observation": "Slow selected child was revealed after cover animation callbacks despite missing data readiness. Original focused test: 0 passed, 1 failed. Assertion: animation completion must not substitute for data readiness."
+    },
+    {
+      "kind": "review findings",
+      "area": "readiness recovery",
+      "observation": "Shared children list retry, conversation/notification history reads and visible information rail requirements were missing in earlier candidates; final eleven-file review records their correction."
+    },
+    {
+      "kind": "product source counterexample",
+      "area": "Care query",
+      "observation": "For view=[photos,records], readiness selected photos while real CarePage mounted CareWorkspace instead of PhotoWorkspace. Original source assertion failed; the same assertion passed after the first-value correction."
+    },
+    {
+      "kind": "render counterexample",
+      "area": "navigation owner guard",
+      "observation": "Four unrelated route updates increased bridge renders 1 to 5 and summary publications 2 to 6. The unchanged counter assertion passes with candidate counts remaining 1 and 2."
+    },
+    {
+      "kind": "harness limitation",
+      "area": "existing startup suite",
+      "observation": "One ProductionGate case encountered the existing native dependency SyntaxError. The other fifteen selected checks passed; this is not a claimed pass for the blocked case."
+    },
+    {
+      "kind": "execution interruption",
+      "area": "typecheck",
+      "observation": "One earlier combined typecheck invocation was cancelled by approval review with no terminal result; the authorized same-step retry and later post-rail typecheck passed. The cancelled invocation is not a pass."
+    },
+    {
+      "kind": "product source counterexamples",
+      "area": "fixed visible first reads",
+      "observation": "Care pending first-read original group 0/2; Chat visible pending label 0/1; explicit task/care URL target 0/1; actual local settings section and target-key invalidation 0/2. The final author 34-case group passes these repaired boundaries."
+    },
+    {
+      "kind": "harness error",
+      "area": "new gate regression",
+      "observation": "The first gate probe missed an import. That harness failure is retained separately and is not the product counterexample."
+    },
+    {
+      "kind": "state-projection counterexample",
+      "area": "reviewer owner detail",
+      "observation": "Six initial real-owner cases on the older sixteen-file snapshot failed because detailRead did not exist. Three failure-shape cases were added before the final 9/9 pass. This does not claim browser reproduction."
+    },
+    {
+      "kind": "read-only helper error",
+      "area": "review manifest hash check",
+      "observation": "An initial helper read files instead of exactDeliveryFiles and failed before checking. Corrected helper verified all twenty-two hashes; no product or assertions changed."
+    },
+    {
+      "kind": "PhotoInput owner source counterexamples",
+      "area": "original and draft retention",
+      "observation": "Three actual-owner cases originally failed, then the same assertions passed in the six-case author result. This is local source/React DOM evidence, not browser byte-lifecycle acceptance."
+    },
+    {
+      "kind": "command path error",
+      "area": "PhotoInput green test invocation",
+      "observation": "The first green command used the wrong relative output-log path and failed before Node started. It is retained separately; no product or assertions changed."
+    },
+    {
+      "kind": "build artifact mismatch despite process exit 0",
+      "area": "current twenty-four-file combination",
+      "observation": "The non-cleared export output matched the earlier eleven-file bundle rather than expected current source features. That attempt is not accepted. Source hashes, command exit and artifact correctness are separate evidence.",
+      "resolution": "The failed identity check is preserved; a later official --clear build produced the current-source markers and verified photo first-value/pending code. Specific stale cache-key cause is still unconfirmed."
+    },
+    {
+      "kind": "actual React/runtime source counterexample",
+      "area": "PDF same-microtask document-version invalidation",
+      "observation": "An already pending PDF created one object URL after the reading set was invalidated but before React committed; expected zero. Same assertion passes after synchronous token invalidation."
+    },
+    {
+      "kind": "editing command cwd error",
+      "area": "PDF increment",
+      "observation": "One Python edit used the wrong relative cwd and did not edit product code; its shell then tested the preceding candidate. That seven-pass result is not the final-source evidence; later final-source seven tests and typecheck are recorded separately.",
+      "logSha256": "0f85c33665966714d990089af59bed6a8400e8b242de54211eebfb563a212756"
+    },
+    {
+      "kind": "real bridge and rendered DOM source counterexample",
+      "area": "new PDF export admission before next owner render",
+      "observation": "After version-index authority invalidated the whole read set, clicking the actual rendered export button admitted one synthetic PDF read POST, with zero object URLs and zero downloads. Controlled act/microtask scheduling, not a naturally observed trusted-browser event.",
+      "logSha256": "08a95686c309ac02afffac4a46ba67516710228737d5ce94aa10fc2378e2791e"
+    },
+    {
+      "kind": "test preparation cwd/path error",
+      "area": "PDF new-admission increment",
+      "observation": "Incorrect relative preparation paths failed before product edit, test or typecheck; corrected verified paths were used for the final four-case run. No assertion weakening.",
+      "logSha256": "1be67394439e5ae07dbc1bc1cc9a2d80881b3917cc5ef6bea1239fb432cbc03e"
+    },
+    {
+      "kind": "actual selector visible and accessibility-label counterexample",
+      "area": "duplicate owner-derived family option labels",
+      "observation": "Old v67 real-browser controls and original-source React DOM showed identical option labels for distinct selectable families. This is display ambiguity, not an observed authorization bypass; original failed DOM assertion retained.",
+      "logSha256": "205af2192a2fd18758bb085878b0116239e68e193ad02a8f2a61149163e3c6b9"
+    },
+    {
+      "kind": "diagnostic read-path error",
+      "area": "Home reminder characterization",
+      "observation": "Initial shell read used two relative paths from Sites cwd and returned missing-file errors; corrected reads did not modify product. This is not a product assertion failure."
+    }
+  ],
+  "coverageInventory": {
+    "businessRoutes": 17,
+    "crossCuttingStateGroups": 12,
+    "status": "inventory only, not completed acceptance",
+    "exportRouteCountIsDifferent": "35 generated routes include route/layout/export artifacts and are not 35 individually browser-tested business pages"
+  },
+  "notRun": [
+    "Full17-route/state/viewport matrix;1440/320 and requested390x844/768x1024 for this candidate",
+    "Complete keyboard containment/return/order, screen-reader devices,200%zoom or touch/native/mobileOS",
+    "True timing/FPS/every-frame atomicity and individually released domains/rapid A-B-A browser races",
+    "Retained original-photo bytes/objectURL/draft lifecycle",
+    "PDF bytes/layout/download and natural trusted-browser PDF races",
+    "Real API/models/messages/photos/family data or production service integration",
+    "Complete family role/access matrix and universal missing/identical-name disambiguation",
+    "Whole frontend/P2 acceptance",
+    "Authoritative Home assistant-reminder projection remains unwired; this batch does not implement it."
+  ],
+  "delivery": {
+    "pullRequest": null,
+    "previewPublished": true,
+    "productionDeployed": false,
+    "rootFinalAcceptance": "Source/build and bounded v68 browser evidence are available. Final documentation and one-PR preparation await root review; no PR or merge performed.",
+    "documentReview": "Only the original three frontend documents refreshed for publication/browser evidence; product31 hashes unchanged. Pending final independent documentation review.",
+    "codeReview": "No confirmed blocker in independent five-rerun plus one-removal Family source review. Code author separately checked integrator output; this is artifact inspection, not independent review of own source.",
+    "finalOrdinaryBuild": "Current31-product/test official clear export passed with35 static routes,61 artifacts,10 Family module checks, byte-identical prior PDF owner and retained9 older snippets. Preserved30/29/27 builds and original stale/missing-byte limitations remain versioned.",
+    "singlePRPreparation": {
+      "masterCheckedAt": "2026-10-10T17:41:30Z",
+      "master": "ae5d3e01b11632a62a54db68b77c7ed20e323471",
+      "openPRs": [],
+      "original34PatchCleanApply": true,
+      "original34PatchSha256": "d86aef0f662e778fb998ae660bc4aa2a1588e22f4440db475081415aeba62778",
+      "verifiedBaselineFiles": 457,
+      "unchangedBaselineFiles": 436,
+      "intendedFrontendProductChanges": 21,
+      "unexpectedChanges": 0,
+      "chatApiAndControllerOverlaysMatchMaster": true,
+      "noBranchCommitPushOrPR": true,
+      "finalDocumentPatchVerification": "Recorded separately in the local one-PR delivery manifest, avoiding a self-referential checks-file hash."
+    }
+  },
+  "countingNote": "Do not sum overlapping tests or count reviewer reruns as additional distinct cases. Scripted/source/DOM/build/browser/service evidence remains separated.",
+  "sourceManifestBoundary": "Published v68 uses the immutable final31-product/test c98fec8 build plus reviewed synthetic Sites packaging. Only the same three frontend documents are now refreshed;34 repository paths stay frontend-only. The pre-publication source/docs freeze and all staged evidence are preserved. No product rebuild was run for this document-only refresh.",
+  "earlierSixteenFileSnapshot": [
+    {
+      "path": "frontend/src/motion/MotionScopeBoundary.tsx",
+      "sha256": "be926381ccb9eb486b4c5e11a35a35d7654a97a90df6ea86ac1fe63a52b7b130",
+      "baseSha256": "5b17d08245ccd10fa07be0cde179e89be39c1654f3608f78f765627c9ab81c49"
+    },
+    {
+      "path": "frontend/src/production/ProductionFirstScreenGate.tsx",
+      "sha256": "f05782f975c6507d29c4c609b1d312ee4fd6df5d8bf5d70e199a2fd74056a136",
+      "baseSha256": "22311003a8ab45bb8baedaa81f79d289e433599c126c485f8145e1365a5a5c81"
+    },
+    {
+      "path": "frontend/src/production/ProductionStartupReadiness.tsx",
+      "sha256": "3b7c9ef5408752b1ff051d43b172a7fdb0e2353ca70832af558d16c9337637ad",
+      "baseSha256": "ea92caa7f57e64bdf7e2a9bf17d7af938b5943d200ba28eef2c02e523fd63cf7"
+    },
+    {
+      "path": "frontend/src/startup/dataReadiness.ts",
+      "sha256": "a3ced34705f106ada98d45e47c363b6648c26b8d306b9d5ee0b90329c18876a6",
+      "baseSha256": "0b4820e89cb89851f63f0efc38ec06c5b84ada56f642f2767b2040c497377099"
+    },
+    {
+      "path": "frontend/src/components/AppShell.tsx",
+      "sha256": "e585770b6e2c173cd40e0630606e5680ebde343dae36678c409745d40a664bd5",
+      "baseSha256": "463326e3f9cc284164b85152af0101100cc64d3eb7c627d04c5e3f4e9db37f5a"
+    },
+    {
+      "path": "frontend/src/components/RightRailContent.tsx",
+      "sha256": "4c33e6b3e0f82941aee9fc11d80fe78d53a9bf4a6617deeeaadffa9deed62b4c",
+      "baseSha256": "c0fd61f88b7d9cc1a1b8f0e156ec6e3e45abca76d30abb78e6a3d1135d67ca19"
+    },
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "sha256": "63f218c51c703178f5abdf0de3c0976c16ffe7f4dc42d321db7304657f1fc867",
+      "baseSha256": "bd2c6c98489e98c5d1b4aa3071a3a971928d68f5a975bc38a3dffdc1420f8bd6"
+    },
+    {
+      "path": "frontend/scripts/child-switch-readiness.test.mjs",
+      "sha256": "8a9f8fb7fe9139542bcb740fa6e631a9335c8313b131a61352f6561012525f34",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/scripts/scope-transition-harness.mjs",
+      "sha256": "144fff21e28594c38bdfe2fc422ffe4fcdd8f82ebd06f76efc2fb2dc9b806192",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/src/components/account/AccountCallbackGate.tsx",
+      "sha256": "20eb24130ed118adada1c72de58c3866bb5658b98ad45d296d84ad10ccfab520"
+    },
+    {
+      "path": "frontend/scripts/account-loading-presentation.test.mjs",
+      "sha256": "746d3b04525ae11d940cd410bb301dc84b4a61fb292429675d6bde4910fccb31"
+    },
+    {
+      "path": "frontend/src/screens/careScreen.tsx",
+      "sha256": "a9a40f17c1fa12f0930bb84216abcadeee93460e87a3e2fff36707ac37faecf8",
+      "baseSha256": "814d6c17183f792879ce897ba85c8e79e77fe0f47e0a711ba7e26320af2f791b"
+    },
+    {
+      "path": "frontend/scripts/care-query-normalization.test.mjs",
+      "sha256": "4bc8192b53483091f002924c4e612cf8275663ec962cd2490dfd9781a5ce5839",
+      "baseSha256": null
+    },
+    {
+      "path": "frontend/src/production/ProductionProvider.tsx",
+      "sha256": "138d7018f0ffc50ba7d1e7a42b9a2bac77f6ffb254c7779605474c4188cdba5c",
+      "baseSha256": "dfc06c968ed1ae23dbf31fa9240d29498432d8cf69ccd7eaac91e6af8d533715"
+    },
+    {
+      "path": "frontend/src/production/useDomainEnvironment.ts",
+      "sha256": "c159d6d3410bf51da6f8aeaa8fca1e03e94fb304d7ebf140fecae7f314525b51",
+      "baseSha256": "a00ac851a2cf0a9ebf9157fd840b8691552c8b5e46ebe9459af407b325945f1b"
+    },
+    {
+      "path": "frontend/scripts/production-owner-fanout.test.mjs",
+      "sha256": "ce58dfe2ae26c89e108fa9480a25674f7362fda8e1e9e85c18bde3827a57fc95",
+      "baseSha256": null
+    }
+  ],
+  "visibleFirstReadScope": {
+    "sourceSweep": "All 17 business routes reviewed for currently visible first reads, not browser-tested.",
+    "included": [
+      "Care non-photos and Chat visible agentPending first read",
+      "Tasks explicit URL taskId detail",
+      "Care explicit URL record or recordId detail",
+      "Settings actual locally selected visible section, without changing URL navigation semantics"
+    ],
+    "excluded": [
+      "hidden tabs",
+      "unopened dialogs",
+      "manual selected-run/history/detail reads without an explicit URL target",
+      "ongoing report or other background builds",
+      "explicitly unavailable/not-connected content without an in-flight read"
+    ],
+    "status": "implemented and independently reviewed; no confirmed blocker in fixed source scope"
+  },
+  "reviewReportSha256": "30277d0f98b156e57183776b43507a628b2b2b40b8321e853868e3fed4f788f1",
+  "snapshotAt": "2026-10-10T17:55:06.815453+00:00",
+  "precedingTwentyTwoSourcePatchSha256": "9c465cb711a0341dc502f9e7909d3d6072503c9955310e3bbeb5a31d322a6465",
+  "photoIncrementPatchSha256": "2859d8cc707205e312cacee3e6cb25c0e05fcc450fd9ccfceaec35947a04f41a",
+  "photoFindingLifecycle": {
+    "earlierState": {
+      "path": "frontend/src/production/PhotoInputDomains.tsx",
+      "lines": "230-242",
+      "description": "Repeated view array classification with retained photo editor state across route transition. Explicitly deferred to the wider interaction matrix; not fixed or browser-reproduced in this batch."
+    },
+    "currentState": "Reproduced with three actual-owner red cases and repaired by the reviewed two-file first-value normalization increment. Candidate browser lifecycle acceptance remains not run."
+  },
+  "photoReviewReportSha256": "af5467a97a7b4ec8cf8a605a94b3d7357df67e849176f1997af96e5f480640a6",
+  "precedingTwentySevenPatchSha256": "e19bcec5ebe9a628b652d910cf5413eece4457b71203a976e332fb1ab1eb9fe6",
+  "pdfIncrementPatchSha256": "1d7ae1e331db57f2038b98cfef3f51d4bec4cee8e4806370606b849b76a68892",
+  "pdfReviewReportSha256": "c1ca958dc45c828bc18689bd0b19765d702ba24802b805e6b3077da9f5d9e3b7",
+  "pdfArtifactReviewReportSha256": "7c8b648df3fa68b0f5039b9c58dceebc90ee8359006ffc4c624f8920599679d5",
+  "precedingTwentyNinePatchSha256": "2b0f247011fb021883cb902b959d5c19660589337e8f159a704e3750f71e705c",
+  "pdfNewAdmissionPatchSha256": "600ce9e0755be5f0b4cb80a7043aaca38c47c45dd43854d6cb548682820a60a2",
+  "pdfNewAdmissionReviewReportSha256": "37678ffc684f2f9bda79c37864773bc71d3bd7436cd246461a832881dc8f6a3c",
+  "pdfNewAdmissionArtifactReviewReportSha256": "65bac2a8efc9b09f3cd57de47e5d595608c9947fa1b84dc44460bf247693a5db",
+  "precedingThirtyPatchSha256": "2439873c39f316b48e7a77da7fe2fc5933722319c5e1e61f7f256cf329dd7a54",
+  "familyLabelPatchSha256": "6d18a1ceedc8a1382192c8d00d98cc159247a9e1dd7a263d657f24fa871a8fd6",
+  "familyLabelReviewReportSha256": "ae9e7e716e6832873be32c8204e45158cc062f50761e9539c9e448fb969f736e",
+  "familyLabelArtifactReviewReportSha256": "557ea0567cbe65af093d2905f19303457a8600bf8066457619dc271fc732ff6c",
+  "previousPublishedPreview": {
+    "version": "v67",
+    "publishedAt": "2026-10-10T08:45:53Z",
+    "source": "b77c79bf17dca00c1a5f35393c6b4b941e8ab473",
+    "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+    "provenance": "Existing root STATUS at the fixed base commit; not a new publication by this package.",
+    "existingScope": "PR #182 radio keyboard candidate has 31 reported browser observations across 1440/1024/390/320 CSS px; #173/#177 previous preview fixes remain.",
+    "includesThisCandidate": false,
+    "additionalNavigationObservations": {
+      "observedAt": "2026-10-10T14:02:00Z/2026-10-10T14:05:00Z",
+      "baseline": {
+        "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+        "version": 67,
+        "source": "b77c79bf17dca00c1a5f35393c6b4b941e8ab473",
+        "bundle": "/_expo/static/js/web/index-b1f16936bd24159549694c22e3d790a5.js",
+        "viewport": {
+          "width": 1180,
+          "height": 757
+        },
+        "browser": "dot cloud Chromium"
+      },
+      "flows": [
+        {
+          "id": "N01",
+          "matrix": [
+            "X01",
+            "/growth",
+            "/history"
+          ],
+          "status": "passed_with_observation",
+          "steps": [
+            "Home → sidebar 成長與關注",
+            "查看關注歷史 → /history?category=growth",
+            "browser Back → /growth",
+            "browser Forward → /history?category=growth"
+          ],
+          "assertions": [
+            "Back restored Growth concerns screen",
+            "Forward ultimately restored History and selected 關注與成長 category"
+          ],
+          "observation": "First AX capture immediately after Forward briefly contained only an image and empty heading; next AX+screenshot was normal. Duration and cause unmeasured; not classified as a persistent failure or FPS result."
+        },
+        {
+          "id": "N02",
+          "matrix": [
+            "X01",
+            "X09",
+            "/tasks"
+          ],
+          "status": "passed",
+          "steps": [
+            "From /history?category=growth, dblclick visible sidebar 待辦與預約 link",
+            "Arrive /tasks",
+            "Browser Back once"
+          ],
+          "assertions": [
+            "Tasks page rendered with 待處理 selected",
+            "One Back returned to original /history?category=growth; no extra same-page Back was needed"
+          ],
+          "limits": "Only one bounded double-click navigation sample, not every repeated-control race."
+        },
+        {
+          "id": "N03",
+          "matrix": [
+            "F01",
+            "X07",
+            "/care"
+          ],
+          "status": "failed_known_v67_query_branch",
+          "steps": [
+            "Open /care?view=photos",
+            "Observe 記錄 · 原始照片 and synthetic photo list",
+            "Open /care?view=photos&view=records",
+            "Observe 記錄與核對 and care list instead of photos"
+          ],
+          "expected": "Photos-first repeated query should select the same photo route under the first-value normalization used by the pending candidate.",
+          "actual": "Repeated value landed on records UI. This is a browser confirmation of the older v67 CarePage branching defect, not a failure of the unpublished 25-file candidate or the later Photo owner increment.",
+          "evidence": [
+            "evidence/care-single-view.ax.txt",
+            "evidence/care-single-view.png",
+            "evidence/care-duplicate-view.ax.txt",
+            "evidence/care-duplicate-view.png"
+          ]
+        }
+      ],
+      "stop": "Stopped after the third bounded flow and first confirmed product failure; no broader interaction sweep.",
+      "notRun": [
+        "Unpublished 25-file candidate or Photo owner increment",
+        "Retained photo/editor byte lifecycle",
+        "Uploads, models, real account or family data",
+        "Performance/FPS/long-task API retry",
+        "Four-size radio coverage, which already has prior evidence",
+        "All other matrix flows"
+      ],
+      "evidenceHashes": {
+        "care-single-view.png": "0926aa2b8110b7ba151acce5ef3c86d936db6e32231719dca29b702c4ecb7760",
+        "care-duplicate-view.ax.txt": "1d6961d35e1c90395d6bc521d60bd7ece78d3bbb2b66efe67f069a1c340be71d",
+        "care-single-view.ax.txt": "6e294a0713cc092249ccaeef55099bfeb6aaca9ff718257f5728a88f16db31e5",
+        "care-duplicate-view.png": "5f6a5008b6715f3cc37ddbe8b08e6ccaa856c4b004d05925d23c5875f35104a5"
+      },
+      "resultBoundary": "Existing v67 only. The repeat-query wrong page confirms the old CarePage branch; it is not proof of Expo internal array shape, new candidate success/failure, or actual PhotoInput byte-retention behaviour."
+    },
+    "additionalFamilyObservations": {
+      "version": 67,
+      "sitesSource": "b77c79bf17dca00c1a5f35393c6b4b941e8ab473",
+      "observedAt": "2026-10-10T17:00:57Z/2026-10-10T17:02:49Z",
+      "purpose": "Resolve whether selected family and header child are independent; inspect actual synthetic display mapping.",
+      "reportSha256": "e492f70d7c7c0fc73ff7be50cef667917dd3c32b2da10a80b023767613ee40b7",
+      "scope": "Family round trip and header-child transition using existing synthetic data only.",
+      "conclusion": "Sampled family selection is independent of header child; visible member/child sets switch with family choice and selected family survives child change, consistent with inspected master contract. No mixed-set or unauthorized-access conclusion established.",
+      "finding": {
+        "id": "batch4-family-label-F03",
+        "kind": "family option display/accessibility ambiguity",
+        "impact": "Two distinct selectable family targets cannot be distinguished by option text or accessible name before selection. This is not an authorization bypass finding."
+      },
+      "sourceContractBoundary": "source-contracts.json: five files match fixed master Git blobs; v67 visible behavior checked separately, no assertion that v67 source bytes equal master",
+      "limitations": [
+        "No live API response bytes/family IDs were inspected; visible associations are based on actual UI option position and resulting distinct collections, plus source filtering contract.",
+        "Both synthetic families expose owner role; no viewer/revocation/denied or real authorization testing.",
+        "Initial fallback timing was not instrumented; no assertion why first family was initially chosen.",
+        "No write/save/permission/invitation/model/real data/API action; no 30-file candidate browser test."
+      ],
+      "evidence": [
+        {
+          "name": "family-options.ax.txt",
+          "sha256": "78dcc89287e08243dd1842cb8abfb40618dabc6a2fa5dfe72577544139475fc9"
+        },
+        {
+          "name": "family-options.png",
+          "sha256": "110cbe8bf8c260771ab084f6fc8d17de6399eb8c218404525fbec9a75f0c488a"
+        }
+      ],
+      "notCandidateAcceptance": true
+    }
+  },
+  "publishedPreview": {
+    "version": 68,
+    "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+    "sitesSource": "c5063f5ef7827d6856646da0888a311328973912",
+    "productSource": "ae5d3e01b11632a62a54db68b77c7ed20e323471 + independently reviewed final34 files; Sites source is separate from GitHub master",
+    "publication": {
+      "status": "succeeded",
+      "updatedAt": "2026-10-10T17:35:39.324868+00:00",
+      "receiptCheckedAt": "2026-10-10T17:36:07Z",
+      "receiptSha256": "e6e27d764678510782254c3fcab55f0e9b295e5ffe56407991aa4a5ce2ea2433"
+    },
+    "bundle": {
+      "name": "index-c98fec8b5d1c583f91a50a25e4bbe36f.js",
+      "sha256": "c76cd7255b011da6827d324dcf3a2f57b33e6ab5913133829cacb21f4509ba88",
+      "hashProvenance": "reviewed build/deployment package; browser observed script name only"
+    },
+    "integration": {
+      "reportSha256": "dff96b12a06aa4d4d5ade8aaa8b3b131221b05e31dcf92d44b2bc3d8599b7e00",
+      "manifestSha256": "2ecb0fef39e9df70b6c355f9f33ca7e157ea5dae0d99536369768d9d19e9462b",
+      "original34SourceUnchanged": true,
+      "fixtureReadOnlyAdditions": [
+        "GET /api/notification-preferences",
+        "GET /api/ai/settings",
+        "GET /api/web-push",
+        "GET /api/telegram",
+        "GET /api/children/:knownChildId/contact"
+      ],
+      "fixtureWritesAdded": false,
+      "fixturePatchSha256": "da2c85affb103d53e1d4463649b6e568207a97d94f1638e264dbc1e05c9acefd",
+      "hostingAndQaAssetsUnchanged": true,
+      "boundary": "Five synthetic GET adaptations live only in Sites fixture packaging, outside the34 repository paths. No real-service availability or newly enabled writes."
+    },
+    "browser": {
+      "observedAt": "2026-10-10T17:36:11Z/2026-10-10T17:48:20Z",
+      "browser": "dot cloud Chromium",
+      "desktopViewport": {
+        "width": 1180,
+        "height": 757
+      },
+      "plannedDesktopFlowCount": 5,
+      "flows": [
+        {
+          "id": "V68-01",
+          "name": "Cold startup and ordinary navigation",
+          "status": "bounded sample passed",
+          "actions": "Cold root -> Home -> Tasks -> Care -> Back",
+          "observed": "Startup snapshot showed 正在開啟育有方… without account recovery controls; ready Home and requested navigation headings/Back were correct."
+        },
+        {
+          "id": "V68-02",
+          "name": "Child/current-page/open-rail readiness",
+          "status": "bounded slow-refresh sample passed",
+          "actions": "Care; rail 待辦／提醒; visible slow-refresh; Ming -> Sunny; rail 照顧上下文; Sunny -> Ming; restore normal.",
+          "observed": "Both observed cover snapshots had 正在載入孩子及本頁資料… and removed old child header/page/rail from AX. Settled header, Care record/pending and selected rail agreed on new child; rail selection preserved."
+        },
+        {
+          "id": "V68-03",
+          "name": "Family duplicate labels",
+          "status": "bounded sample passed; F03 observed fixed",
+          "actions": "Open independent Family selector; select Ming family then Sunny family.",
+          "observed": "Visible/AX labels distinguish 合成小晴 and 合成小明 beneath same owner name. Members/children followed family selection, header child remained independently selected."
+        },
+        {
+          "id": "V68-04",
+          "name": "Repeated care view query",
+          "status": "bounded sample passed; F01 surface observed fixed",
+          "actions": "/care?view=photos; /care?view=photos&view=records; /care?view=records&view=photos",
+          "observed": "Single and photos-first repeated query both showed photos; records-first showed records. No retained file/draft test."
+        },
+        {
+          "id": "V68-05",
+          "name": "Settings four synthetic read surfaces",
+          "status": "bounded UI sample passed; O01 preview read state recovered",
+          "actions": "Settings preferences -> model -> notification channels; no edits/saves.",
+          "observed": [
+            "Preferences version1, 22:00–08:00, 目前通知偏好已讀取。",
+            "Model 目前設定及版本已讀取。; version1停用AI; no saved key. Displayed zero usage is synthetic data, not an observed call count.",
+            "Push 目前本人瀏覽器狀態已讀取。; unavailable, worker paused, no subscriptions/deliveries.",
+            "Telegram 目前本人 Telegram 狀態已讀取。; unavailable/unconfigured, unbound, no deliveries."
+          ]
+        }
+      ],
+      "responsive": {
+        "tool": "dot cloud Chromium, existing visible /qa-viewport harness, #app-frame; no new viewport controls",
+        "actualViewports": [
+          {
+            "width": 1024,
+            "height": 900
+          },
+          {
+            "width": 390,
+            "height": 900
+          }
+        ],
+        "requestedButNotRun": [
+          {
+            "width": 390,
+            "height": 844
+          },
+          {
+            "width": 768,
+            "height": 1024
+          }
+        ],
+        "status": "changed-surface bounded smoke passed; not full responsive/a11y acceptance",
+        "observations": [
+          {
+            "id": "R1024",
+            "viewport": "1024x900",
+            "navigation": "Home -> Care -> Home -> Family -> Settings/preferences. Sidebar settings pointer attempt produced no change; Enter reached Settings.",
+            "child": "Ming -> Sunny using visible slow-refresh: cover captured, settled correct Sunny header/Care/pending.",
+            "family": "Distinct child-hint labels fully visible; Enter opens, Tab reaches radio with visible focus outline; Cancel returns trigger.",
+            "settings": "Preferences version1 and ready text; fields re-enabled after slow read; focused preferences tab outline visible.",
+            "geometry": "Care, Family modal and preferences documentElement clientWidth=scrollWidth=1024.",
+            "evidence": [
+              "responsive/evidence/06-1024-cover.png",
+              "responsive/evidence/07-1024-ready.png",
+              "responsive/evidence/12-1024-family-radio-focus.png",
+              "responsive/evidence/16-1024-prefs-focus.png",
+              "responsive/evidence/17-1024-prefs-ready.png"
+            ]
+          },
+          {
+            "id": "R390",
+            "viewport": "390x900",
+            "navigation": "Settings/preferences -> Care -> Home; bottom Records+Up -> More -> Family by Enter.",
+            "child": "Sunny -> Ming slow-refresh: cover captured, one intermediate curtain reveal snapshot, later settled fully with correct Ming header/Care/pending.",
+            "family": "Child-hint labels wrap and remain distinguishable inside modal; Tab reaches radio with visible outline; Cancel.",
+            "settings": "Preferences read-ready/version1 visible, form stacks, selected preferences tab visible keyboard outline.",
+            "geometry": "Preferences, Care and Family modal documentElement clientWidth=scrollWidth=390.",
+            "evidence": [
+              "responsive/evidence/20-390-prefs.png",
+              "responsive/evidence/21-390-prefs-focus.png",
+              "responsive/evidence/24-390-cover.png",
+              "responsive/evidence/25-390-mid-reveal.png",
+              "responsive/evidence/26-390-settled.png",
+              "responsive/evidence/30-390-family-labels.png",
+              "responsive/evidence/31-390-family-focus.png"
+            ]
+          }
+        ],
+        "cautions": [
+          "Root-width equality only excludes root horizontal overflow at sampled states; nested panels and all content not exhaustively measured.",
+          "Family first Tab may focus group container before the radio; tested radio outline after subsequent Tab, not complete tab order.",
+          "Harness recovery overlay remains visible and may overlap product header; it was not hidden or modified.",
+          "The 390 intermediate screenshot shows curtain animation underway. AX is not every-frame visual evidence; no stronger atomicity/timing claim."
+        ]
+      },
+      "reportSha256": "cf871fc31afcfbb8a66122f75606b15775f3176f428f82db508241464e7d945c",
+      "humanReportSha256": "3c11a64d5fb649b76a527867c6150986bc9fdebc8c4f95191901dbbf6cb3e75c",
+      "responsiveReportSha256": "1abbfe59796af9a3d8f29ed3f03e30a443c9c79ee90a28e4f38efd86da3b0a51",
+      "evidenceRecordCounts": {
+        "desktopAXRecords": 29,
+        "desktopPNGs": 11,
+        "responsiveAXRecords": 33,
+        "responsivePNGs": 14,
+        "note": "Evidence record counts include intermediate, tool selector-limit and cleanup records; these are not independent test-pass counts."
+      },
+      "selectedEvidence": [
+        {
+          "file": "evidence/11-switch-b-cover.png",
+          "sha256": "94782dff2bf20fba2437ad795d4e6bdd22cc032b70309dbb37aa67b42c794048",
+          "bytes": 65719
+        },
+        {
+          "file": "evidence/12-switch-b-ready.png",
+          "sha256": "6e9635b1863347e0e276fffd975831d81db02b3235c460b6cc4a6d1162c9bf7c",
+          "bytes": 114695
+        },
+        {
+          "file": "evidence/20-family-labels.png",
+          "sha256": "06dc820a00b307545b83b1f30a4ce29be871c984081d19456f52d767ab6b71ac",
+          "bytes": 85788
+        },
+        {
+          "file": "evidence/25-photos-duplicate.png",
+          "sha256": "b4176424893d65b40deaecbcbb951b3eef7342cec7b05256059b568ff5f4c5d3",
+          "bytes": 83079
+        },
+        {
+          "file": "responsive/evidence/25-390-mid-reveal.png",
+          "sha256": "bfbc21aa6830811d33885177545f68b4534f81faa37359373bcb1455011ff217",
+          "bytes": 41236
+        },
+        {
+          "file": "responsive/evidence/26-390-settled.png",
+          "sha256": "bc7b103cd3ac388fbfea17051acf679aa36aac7e4055bc8b349579708adde32e",
+          "bytes": 61597
+        },
+        {
+          "file": "responsive/evidence/30-390-family-labels.png",
+          "sha256": "7658447a3b9eebe71984267c3a4def868afd08136d0c9fee65e57bf4526b67e8",
+          "bytes": 43421
+        },
+        {
+          "file": "responsive/evidence/31-390-family-focus.png",
+          "sha256": "ba977c751ec0c56aab07649ec4fad53ddc94abe6021aa000897cbb604a9c1f8d",
+          "bytes": 42707
+        }
+      ],
+      "allEvidenceHashesAndSizesChecked": 87,
+      "limitations": [
+        "Full 17-route/state/viewport matrix; original requested 390x844 and 768x1024 unsupported by existing visible controls and not tested.",
+        "FPS, longtasks, Performance/network inspection or exact timing; no every-frame/no-flash proof.",
+        "Individually released profile/pending/rail requests, exact timeout, rapid A-B-A or late-response browser races.",
+        "Retained original photo bytes, object URL, draft lifecycle (F02); repeated query checks prove surface routing only.",
+        "PDF export/download/delayed races, real models/messages/photos/family data or production API integration.",
+        "Complete keyboard containment/return/focus order, screen readers, 200% zoom, touch/native/mobile OS tests.",
+        "All four settings reads across all responsive sizes; responsive settings sampling covered preferences only.",
+        "Live served script byte hashes or browser GET traces; hashes are reviewed package provenance and script names were observed in DOM."
+      ],
+      "incidentalObservations": [
+        "Home assistant reminder says 暫時無法顯示助手提醒 in responsive navigation snapshots; that surface was outside targeted read contract checks, cause not diagnosed and not counted as data-ready success.",
+        "Browser notification permission already showed 已拒絕通知; no permission request/change was made."
+      ],
+      "toolObservations": [
+        "Desktop rail pointer attempt showed no change; keyboard Enter opened it.",
+        "Responsive offscreen sidebar Settings pointer attempt showed no change; Enter reached it.",
+        "Playwright role selectors for a QA summary and width checkbox produced no_matches, not policy denials; fresh numeric AX controls worked. No denied performance/loopback retried."
+      ],
+      "cleanup": "Desktop tab16 and responsive tab17 closed, slow-refresh restored through visible normal control before closing.",
+      "safety": "Only synthetic preview read/navigation/selection/visible harness controls; no settings edits/saves, upload, credential, role/invitation, message/notification/model action. Reviewed fail-closed fixture/CSP supports isolation; no claim that displayed usage or browser network trace measured zero real calls."
+    },
+    "boundary": "Limited synthetic browser acceptance after actual publication; no whole-frontend, complete a11y, FPS, real service or production deployment claim.",
+    "homeReminderFollowup": {
+      "observedUtc": "2026-10-10T17:54:08.107394+00:00",
+      "siteVersion": 68,
+      "siteSource": "c5063f5ef7827d6856646da0888a311328973912",
+      "siteCheckoutClean": true,
+      "productBase": "ae5d3e01b11632a62a54db68b77c7ed20e323471",
+      "contract": "HomeOverviewView.agentImportant supplied by authorized owning adapter; no reminder-read endpoint wired in current production projection/composition",
+      "result": "Original browser text reproduced from explicit unavailable state, not a failing fixture request",
+      "newRequestsFromProjection": 0,
+      "nativeNetworkCalls": 0,
+      "tests": {
+        "pass": 2,
+        "fail": 0,
+        "scope": "Real ProductionOwner/account+records+chat clients against exact v68 fixture, real projectProductionHome, real useProductionHome composition with synthetic ready workspace context ports; source assertion for unavailable/error UI distinction"
+      },
+      "originalSymptom": {
+        "state": "unavailable",
+        "items": [],
+        "loadedAt": null,
+        "detail": "暫時無法顯示助手提醒"
+      },
+      "sourceContinuity": [
+        {
+          "path": "frontend/src/production/home-projection.ts",
+          "sha256": "f3f5e89ecd8378b85f4609a0a723363bb4ee4526dd2eaf968d7ca3fe25a78b9a",
+          "baselineSha256": "f3f5e89ecd8378b85f4609a0a723363bb4ee4526dd2eaf968d7ca3fe25a78b9a",
+          "unchangedFromBaseline": true
+        },
+        {
+          "path": "frontend/src/production/useProductionHome.ts",
+          "sha256": "671a6984f99e89040900ee99c560b3950ef1af6dda4b92820bc89b796e0cdde2",
+          "baselineSha256": "671a6984f99e89040900ee99c560b3950ef1af6dda4b92820bc89b796e0cdde2",
+          "unchangedFromBaseline": true
+        },
+        {
+          "path": "frontend/src/home-overview.ts",
+          "sha256": "e2a7716876d8eb08112a28b5242526db48c7a956bdf819c5a8dbd7965027c55c",
+          "baselineSha256": "e2a7716876d8eb08112a28b5242526db48c7a956bdf819c5a8dbd7965027c55c",
+          "unchangedFromBaseline": true
+        },
+        {
+          "path": "frontend/src/components/HomeAgentImportant.tsx",
+          "sha256": "8442da4fcc05109733c5c5055d79107af147757954015807afbaa3b3fbc8a9c4",
+          "baselineSha256": "8442da4fcc05109733c5c5055d79107af147757954015807afbaa3b3fbc8a9c4",
+          "unchangedFromBaseline": true
+        }
+      ],
+      "testSha256": "dc29052d973d7c738d6eadef5cd43d780205d57006c31c66cdd963a0f10ae4a7",
+      "logSha256": "29aae4c1845481dfc6ff1576b71c4e671065b4fda598db96353831c7f3b054ca",
+      "browserResultsSha256": "cf871fc31afcfbb8a66122f75606b15775f3176f428f82db508241464e7d945c",
+      "classification": "Existing unwired product feature, outside final34 repair scope. Do not invent an API or synthesize reminders to conceal it.",
+      "changes": "No product, fixture, backend, build, PR or publication changes",
+      "reportSha256": "446092920b5e3a831e74d082273dbcc10510fd0695c2390bb3f323d8998f0e17",
+      "diagnosisSha256": "57be8b3218da3a03997415e25ae1e8c850add35fb3935945102985d9c2f92a80",
+      "browserObservationPreserved": "Original browser report remains unchanged: cause was undiagnosed at observation time. This later bounded diagnosis does not convert the reminder into a successful ready surface.",
+      "diagnosticLimit": "Characterization of the existing explicit-unavailable projection, not a repaired readiness failure or a real-backend reminder test."
+    }
+  }
+}

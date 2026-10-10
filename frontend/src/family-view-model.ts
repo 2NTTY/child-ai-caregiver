@@ -20,7 +20,7 @@ export type FamilyManagementDraft =
 export type FamilyDraft = FamilyManagementDraft | { kind: "accept"; invitation: IncomingInvitationView; scopeConfirmed: boolean };
 
 export interface FamilyViewModel {
-  families: { id: string; ownerName: string; role: FamilyRole }[];
+  families: { id: string; ownerName: string; role: FamilyRole; loadedChildNames?: readonly string[] }[];
   family: FamilySpace | null;
   selfUserId: string;
   children: { id: string; displayName: string; ageLabel: string }[];

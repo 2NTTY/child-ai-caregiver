@@ -418,16 +418,16 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       if (record && careRef.current.detail?.record.id === id && careRef.current.detail.record.current.version === record.version) return;
       historyGeneration.current++;
       if (!record) {
-        if (!envRef.current.online) { setCare(previous => ({ ...previous, detail: null, list: { ...previous.list, message: "所指定記錄未載入或已過期；連線恢復後才可核對。" } })); return; }
-        setCare(previous => ({ ...previous, detail: null, operation: { ...careOperation(), message: "正在核對所指定記錄的目前版本。" } }));
+        if (!envRef.current.online) { setCare(previous => ({ ...previous, detail: null, detailRead: { id, state: "error" }, list: { ...previous.list, message: "所指定記錄未載入或已過期；連線恢復後才可核對。" } })); return; }
+        setCare(previous => ({ ...previous, detail: null, detailRead: { id, state: "loading" }, operation: { ...careOperation(), message: "正在核對所指定記錄的目前版本。" } }));
         void latestCare(id).then(latest => {
           if (!current() || generation !== openGeneration.current || attempt.current || careRef.current.draft || careRef.current.deletion) return;
-          setCare(previous => ({ ...previous, detail: latest ? { record: careRecordView(latest, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : null,
+          setCare(previous => ({ ...previous, detailRead: { id, state: latest ? "ready" : "error" }, detail: latest ? { record: careRecordView(latest, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : null,
             operation: latest ? careOperation() : { ...careOperation(), message: "所指定記錄目前不可讀或未能核對；沒有顯示舊記錄或其他孩子資料。" } }));
         });
         return;
       }
-      setCare(previous => ({ ...previous, detail: { record: careRecordView(record, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false }, operation: careOperation() }));
+      setCare(previous => ({ ...previous, detailRead: { id, state: "ready" }, detail: { record: careRecordView(record, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false }, operation: careOperation() }));
     },
     closePanel() { if (attempt.current) return; draftBasis.current = null; historyGeneration.current++; openGeneration.current++; setCare(previous => ({ ...previous, detail: null, draft: null, deletion: null, operation: careOperation() })); },
     startCreate(kind = "note") { if (!canWrite()) return; draftBasis.current = null; setCare(previous => ({ ...previous, detail: null, deletion: null,

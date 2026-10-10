@@ -227,13 +227,14 @@ function useProductionPhotos() {
     const listener = () => refreshRef.current(); window.addEventListener(ONLINE_REFRESH_EVENT, listener);
     return () => window.removeEventListener(ONLINE_REFRESH_EVENT, listener);
   }, []);
-  const pathname = usePathname(), { view } = useGlobalSearchParams<{ view?: string }>();
+  const pathname = usePathname(), { view } = useGlobalSearchParams<{ view?: string | string[] }>();
+  const requestedView = Array.isArray(view) ? view[0] : view;
   const routeRef = useRef(pathname); routeRef.current = pathname;
   const composerOwns = (original: PhotoOriginal) => {
     const draft = envRef.current.owner.draftOwner.getSnapshot();
     return draft.scope === envRef.current.scopeKey && draft.attachments.some(item => item.photo === original);
   };
-  const photoRoute = pathname === "/photos" || pathname === "/care" && view === "photos";
+  const photoRoute = pathname === "/photos" || pathname === "/care" && requestedView === "photos";
   const routeKey = `${pathname}:${photoRoute}`, previousRoute = useRef(routeKey);
   useEffect(() => {
     const previous = previousRoute.current; previousRoute.current = routeKey;

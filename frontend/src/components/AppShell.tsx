@@ -14,7 +14,7 @@ import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
 import { RecordsNavButton } from "./navigation/RecordsNavButton";
 import { MobileNavSelection } from "./navigation/MobileNavSelection";
 import { desktopNavigationGroups, navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
-import { RightRailContent } from "./RightRailContent";
+import { RightRailContent, type RailTab } from "./RightRailContent";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
@@ -22,6 +22,10 @@ import { NotificationBell } from "./NotificationBell";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 
+import { useCareWorkspace } from "../workspaces/CareWorkspace";
+import { useTasksWorkspace } from "../workspaces/TasksWorkspace";
+import { combineStartupReadiness, startupReadState, visibleRailStartupReadiness, visibleRailStartupRequirements } from "../startup/dataReadiness";
+import { useProductionSwitchReadiness } from "../production/ProductionFirstScreenGate";
 import { useProductionHome as useProduction } from "../production/useProductionHome";
 import type { HomeActions, HomeViewModel } from "../view-model";
 
@@ -39,32 +43,36 @@ function NavItem({ item, active, compact = false }: { item: NavigationItem; acti
   </Pressable></PreviewLink>;
 }
 
-export function RightRail({ model, actions, home = false, contextPath = "/", overlay = false, onClose }: {
+export function RightRail({ model, actions, home = false, contextPath = "/", overlay = false, onClose, selectedTab, onTabChange }: {
   model: HomeViewModel;
   actions: HomeActions;
   home?: boolean;
   contextPath?: string;
   overlay?: boolean;
   onClose?: () => void;
+  selectedTab?: RailTab; onTabChange?: (tab: RailTab) => void;
 }) {
   return <View testID="context-rail" style={[styles.rail, overlay && styles.railFill]}>
     <View style={styles.railHeader}>
       <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>照顧資訊</Text></View>
       {onClose ? <ToolbarIconButton icon="close" label="關閉資訊側欄" onPress={onClose} /> : null}
     </View>
-    <RightRailContent model={model} actions={actions} home={home} contextPath={contextPath} />
+    <RightRailContent model={model} actions={actions} home={home} contextPath={contextPath} selectedTab={selectedTab} onTabChange={onTabChange} />
   </View>;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const switchReadiness = useProductionSwitchReadiness();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const compact = width < 900;
   const tiny = width < 390;
   const wide = !compact;
   const { model, actions, notice, dismissNotice, scopeKey, identityKey } = useProduction();
-  const railProps = { model, actions, home: pathname === "/", contextPath: pathname };
+  const [railTab, setRailTab] = useState<RailTab>("attention");
+  const railCare = useCareWorkspace(), railTasks = useTasksWorkspace();
+  const railProps = { model, actions, home: pathname === "/", contextPath: pathname, selectedTab: railTab, onTabChange: setRailTab };
   // The docked context rail is shell state, not a separate choice for every route.
   const [railOpen, setRailOpen] = useState(false);
   const shell = useRef<View>(null);
@@ -90,6 +98,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const sameRailContext = railContext.current.path === pathname && railContext.current.scope === motionScope;
   const overlayOpen = railModal && !wide && sameRailContext;
   const railExpanded = wide ? railOpen : overlayOpen;
+  const railRequirements = visibleRailStartupRequirements(railExpanded, railTab, pathname === "/");
+  const railReadiness = visibleRailStartupReadiness(railExpanded, railTab, {
+    care: startupReadState(railCare?.scopeKey === scopeKey ? railCare.model.list.state : undefined),
+    tasks: startupReadState(railTasks?.scopeKey === scopeKey ? railTasks.model.access === "lost" ? "error" : railTasks.model.readState : undefined),
+  }, pathname === "/");
+  const screenReadiness = combineStartupReadiness([switchReadiness.state, railReadiness]);
+  const screenReadinessKey = `${switchReadiness.key}:rail:${railExpanded ? railTab : "closed"}`;
   useEffect(() => { setRailModal(false); }, [motionScope]);
 
   return <View ref={shell} style={styles.root}>
@@ -110,7 +125,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <NavItem item={navigationItems.settings} active={active("/settings")} />
     </View> : null}
     <View style={styles.stage}>
-      <MotionScopeBoundary scopeKey={motionScope} resetKey={`${identityKey}:${pathname}`} childKey={model.selectedChildId} eligible={model.selectedChildId !== null} style={styles.scopePane}>
+      <MotionScopeBoundary scopeKey={motionScope} resetKey={identityKey ?? "signed-out"} readiness={screenReadiness} readinessKey={screenReadinessKey} onRetry={switchReadiness.retry ? () => switchReadiness.retry?.(railRequirements) : undefined} onReturn={actions.selectChild} canReturn={id => model.children.some(child => child.id === id)} childKey={model.selectedChildId} eligible={model.selectedChildId !== null} style={styles.scopePane}>
       <View style={[styles.topbar, compact && styles.topbarCompact, tiny && styles.topbarTiny]}>
         {compact ? <CompactHeaderIdentity showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
           brand={<PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={StyleSheet.flatten([styles.topBrandLink, tiny && styles.topBrandLinkTiny])}><BrandLogo style={[styles.topLogo, tiny && styles.topLogoTiny]} decorative /></Pressable></PreviewLink>} /> : null}
