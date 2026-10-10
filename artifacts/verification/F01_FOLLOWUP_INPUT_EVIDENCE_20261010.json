@@ -1,0 +1,315 @@
+{
+  "format_version": 1,
+  "package": "F01 follow-up original-input evidence contract preparation",
+  "observed_utc": "2026-10-10T09:16:37Z",
+  "base": {
+    "repository": "2NTTY/child-ai-caregiver",
+    "master": "3df12d3aa62eedaf1f93c53d13cada603a6f61e8",
+    "tree": "408cfa30259fb77b511ff5729a604c0be88facd0",
+    "open_prs_at_start": 0
+  },
+  "delivery_status": "Independent review allowed the eight-file contract/specification candidate. Root reviewed the main contract/status/log changes and conditionally allowed normal PR delivery after the final active-preview-status clarification is independently confirmed. No PR exists at this record.",
+  "product_status": "The per-work input-evidence authority/adapter/consumer is NOT implemented. Existing batch-state behavior and the original diagnostic red remain unchanged.",
+  "design": {
+    "states": [
+      "included",
+      "not_included",
+      "unknown"
+    ],
+    "meaning": "Whether the original committed run input snapshot contains the original work/version, never executed, addressed, successful, or completed work.",
+    "boundaries": [
+      "Complete original candidate set of at most five members, bound to original event/run/workVersion and scope.",
+      "Same successful commit attempt produces the immutable snapshot and its initial context; no outside reselection.",
+      "Denied access, failed reads/decryption, incomplete sets, unknown format or invalid binding fail closed; only verified legacy absence is ordinary unknown.",
+      "Claim-after-cancel excludes; cancel-after-claim preserves historical inclusion but invalidates current context under existing guards.",
+      "Existing cipher/AAD, owner/child isolation, tombstones, bounded cleanup and journal/restore epoch closure remain prerequisites.",
+      "Future optional projection requires followUpEvidence=1; the default legacy strict DTO shape is unchanged.",
+      "No SQL schema, dual write, empty port, new worker authority, cloud resources or background mutation capability."
+    ]
+  },
+  "baseline_diagnostic": {
+    "command": "OFFLINE_AUDIT_RUN=per-work-red node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test ../evidence/per-work-outcome-red.test.ts",
+    "exit_code": 1,
+    "pass": 0,
+    "fail": 1,
+    "expected": "cancelled latestFollowUp for cancelled constituent",
+    "actual": "completed same-batch latestFollowUp for both cancelled and waiting works",
+    "interpretation": "This is a known missing stronger per-work guarantee, not a violation of the current explicit batch-state API contract.",
+    "preconditions_passed": [
+      "Only live constituent enters the initial background context",
+      "One synthetic provider call across delivery plus redelivery",
+      "Cancelled work remains cancelled",
+      "Live work remains waiting",
+      "Original completed receipt contains a clarification, not a completed work result"
+    ],
+    "test_sha256": "1627c1154212962beddbbbbdfaa985785fad71c22c63bed7a85401157f9eda23",
+    "log_sha256": "9b5f5eb5cde27cdaac173c8688af2ad2ae69111701ea62cad012acd767139bc2"
+  },
+  "baseline_source_manifest": [
+    {
+      "path": "AGENTS.md",
+      "remote_blob": "1fa898356061813755174fd4b4f5383873a26e69",
+      "local_blob": "1fa898356061813755174fd4b4f5383873a26e69",
+      "sha256": "f82914eb9f164378ad6296b3369af514fbd464a60ed24d4322d6d2736fb1fe85",
+      "match": true
+    },
+    {
+      "path": "PLAN.md",
+      "remote_blob": "138e95e83d9ecc36a5e2987460eb85676add600b",
+      "local_blob": "138e95e83d9ecc36a5e2987460eb85676add600b",
+      "sha256": "8e83b84b8babb4ed35e02e7cd82ac83cb7c9b7d0b319bac622a2714fcdcffc1b",
+      "match": true
+    },
+    {
+      "path": "STATUS.md",
+      "remote_blob": "8b0f0668520580f2f826f8c7946a5afc31514eda",
+      "local_blob": "8b0f0668520580f2f826f8c7946a5afc31514eda",
+      "sha256": "453b558b2e72365fc1fc8a3f2ea6de140616b39ea85a2eba9516f6d3930d910a",
+      "match": true
+    },
+    {
+      "path": "docs/API.md",
+      "remote_blob": "a08c5026a033c4298bee168388677ffef6bf7901",
+      "local_blob": "a08c5026a033c4298bee168388677ffef6bf7901",
+      "sha256": "2103a0e1d7dc590bb1ede0821afcf82045086a4788e1c0c1a0c99be81b3e9a7b",
+      "match": true
+    },
+    {
+      "path": "docs/DATA_MODEL.md",
+      "remote_blob": "4280d6dc3aaf27b1c1dfe6f7daf086d4004187fa",
+      "local_blob": "4280d6dc3aaf27b1c1dfe6f7daf086d4004187fa",
+      "sha256": "8a43d56751dbcde5a832557797914404338e4d29eb1ee7d1b8eb0a1bbf9748b3",
+      "match": true
+    },
+    {
+      "path": "server/agent-work-continuation.ts",
+      "remote_blob": "7483d3234599ee827b2bb026b5965665a42e9e60",
+      "local_blob": "7483d3234599ee827b2bb026b5965665a42e9e60",
+      "sha256": "0d0afbe912b5116c2267008e95c48aec012c351c818c577311fe1e7fab363473",
+      "match": true
+    },
+    {
+      "path": "server/agent-work-continuation-worker.ts",
+      "remote_blob": "ac9962e0a52af18d64c29fa24e621a5671539280",
+      "local_blob": "ac9962e0a52af18d64c29fa24e621a5671539280",
+      "sha256": "9ad876e8956376f95a169b1dd07be72162086ef235342d45f8d0fee6f20fdfc2",
+      "match": true
+    },
+    {
+      "path": "server/product-agent.ts",
+      "remote_blob": "8f3254f329a0eeeb567c67f1c1a20fb33a4a4ee8",
+      "local_blob": "8f3254f329a0eeeb567c67f1c1a20fb33a4a4ee8",
+      "sha256": "e3757920754442f99290640b0143de1b17e3995af6263b1088de9b2cc1ae20dd",
+      "match": true
+    },
+    {
+      "path": "server/product-agent-store.ts",
+      "remote_blob": "d4bb0f03887c55ca9536bd3f92dad0e4a1bc54fb",
+      "local_blob": "d4bb0f03887c55ca9536bd3f92dad0e4a1bc54fb",
+      "sha256": "357b0e8f790d035da15506464d8c730fcca66bfb91c5433e511605cf06715ffc",
+      "match": true
+    },
+    {
+      "path": "server/agent-work-store.ts",
+      "remote_blob": "fc4030e6d83ea1015abd978b9f74c4fe0c2dbdfe",
+      "local_blob": "fc4030e6d83ea1015abd978b9f74c4fe0c2dbdfe",
+      "sha256": "f3a5868ccca0bc332cb8d5d74bd99e7157a957a884619beba95c574b2ad21c0e",
+      "match": true
+    },
+    {
+      "path": "server/migrations/033-agent-work-continuation.sql",
+      "remote_blob": "1a0dd8d93508b6b954088b353b4e0ed9abedc5eb",
+      "local_blob": "1a0dd8d93508b6b954088b353b4e0ed9abedc5eb",
+      "sha256": "d61197b64912785f69348a747872b285444437f148defef253eb9cf894e6bb0e",
+      "match": true
+    },
+    {
+      "path": "src/shared/agent-work.ts",
+      "remote_blob": "5495bbf80de7222ba55bd71057c359c7f83ac3d0",
+      "local_blob": "5495bbf80de7222ba55bd71057c359c7f83ac3d0",
+      "sha256": "d41d354cc6e8793193901f9682786d4d96119d286fe1d2c27d52bd758dfccd62",
+      "match": true
+    },
+    {
+      "path": "src/shared/product-agent.ts",
+      "remote_blob": "48f5756acd35281e04fbd30ad1d3d5ee025d2350",
+      "local_blob": "48f5756acd35281e04fbd30ad1d3d5ee025d2350",
+      "sha256": "3eea979b7a3330b49d2ca32221818ee379a20643d8b5ef1e62595766850adf77",
+      "match": true
+    },
+    {
+      "path": "tests/agent-work-continuation-recovery.test.ts",
+      "remote_blob": "1048cab414622f316db092b211699ea6d895e450",
+      "local_blob": "1048cab414622f316db092b211699ea6d895e450",
+      "sha256": "6546b964e8de140c3add532a47f29be3962e5b07b5335f8a2a7aab1398ba3056",
+      "match": true
+    }
+  ],
+  "final_checks": {
+    "command": "OFFLINE_AUDIT_RUN=input-contract-reviewed node --import ../evidence/offline-guard.mjs --experimental-test-module-mocks --test tests/work-continuation-input-contract.test.ts",
+    "exit_code": 0,
+    "tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "synthetic_specification_examples": 6,
+    "synthetic_method": "Test-only validator checks hand-authored transaction/cancellation/replay observations and deliberately contradictory traces. It is an executable specification, not an implementation of Firestore, claim, cancellation, storage or retries. Passing proves examples meet these test assertions; it does not prove production behavior.",
+    "synthetic_scenarios": [
+      "Pre-claim cancellation with mixed included/excluded members; copied batch completion and wrong workVersion rejected.",
+      "Cancellation before/after the sample provider start preserves inclusion; stale next call, late saved result and history rewrite rejected.",
+      "Aborted callback context cannot escape into the committed attempt; failed commit cannot publish a snapshot.",
+      "Restart after claim or lost acknowledgement after original receipt uses the same run and records no new generation.",
+      "All-excluded/no-run distinguished from incomplete, missing, duplicate and over-five candidate sets.",
+      "Verified legacy absence, unclaimed omission, denied/read-error/bad-binding/new-claim-missing cases distinguished; scope/event/run mismatches rejected."
+    ],
+    "actual_product_compatibility_checks": {
+      "count": 1,
+      "method": "Real workContinuationSchema and handleProductAgentRequest; synthetic readWork stub and in-memory Request, no HTTP server or network.",
+      "observed": [
+        "Legacy continuation DTO parses.",
+        "Adding proposed participation makes the current strict DTO reject it.",
+        "Current work HTTP route ignores one followUpEvidence=1 query, passes unchanged readWork input and returns the unchanged legacy shape."
+      ],
+      "not_proven": "The future opt-in reader/client/DTO does not exist; no new client-to-server negotiation was implemented or tested."
+    },
+    "typecheck": {
+      "command": "OFFLINE_AUDIT_RUN=input-contract-types-reviewed node --import ../evidence/offline-guard.mjs node_modules/typescript/bin/tsc --ignoreConfig --noEmit --skipLibCheck --allowImportingTsExtensions --module nodenext --target es2023 --types node tests/work-continuation-input-contract.test.ts",
+      "exit_code": 0,
+      "scope": "New specification test and its backend imports only; not aggregate product typecheck."
+    }
+  },
+  "published_test": {
+    "path": "tests/work-continuation-input-contract.test.ts",
+    "sha256": "bf57903490459368a94e4976bd5787cf38beb95991b7111d462554142beebdef"
+  },
+  "evidence_files": [
+    {
+      "evidence_name": "per-work-red.log",
+      "sha256": "9b5f5eb5cde27cdaac173c8688af2ad2ae69111701ea62cad012acd767139bc2",
+      "status": "expected_red",
+      "meaning": "Original stronger per-work assertion fails on unchanged real product stores/worker/ADK with synthetic Pool/scheduler/provider."
+    },
+    {
+      "evidence_name": "input-contract.log",
+      "sha256": "5acd912526286cf568e8c14459d2d70473b30e9215858ff946e343802cafc307",
+      "status": "pass",
+      "meaning": "Initial seven executable contract examples, not an adapter implementation."
+    },
+    {
+      "evidence_name": "input-contract-types.log",
+      "sha256": "5b766b55df5bc15c215149742c8fe88d72a584cb45f5422c7edca1594b6d0cb5",
+      "status": "command_error",
+      "meaning": "TS5112: TypeScript 6 requires --ignoreConfig for the scoped file command."
+    },
+    {
+      "evidence_name": "input-contract-types-fixed.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status": "pass",
+      "meaning": "Corrected scoped TypeScript command before final read-observation negative controls."
+    },
+    {
+      "evidence_name": "input-contract-final.log",
+      "sha256": "bd35e5b4128f6bc9dbd75cac09aa9102cb6883d2661bb65d9aae5cc4c654ae29",
+      "status": "pass",
+      "meaning": "Seven examples after removing redundant constant-status assertions."
+    },
+    {
+      "evidence_name": "input-contract-reviewed.log",
+      "sha256": "90bc2975dea29569b0ec1cc686b899c06a9a388f1dda98d064bc21061d8ec43d",
+      "status": "pass",
+      "meaning": "Final seven examples, including read-observation negative controls."
+    },
+    {
+      "evidence_name": "input-contract-types-reviewed.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status": "pass",
+      "meaning": "Final scoped test file and backend import-closure TypeScript check."
+    }
+  ],
+  "offline_guard": {
+    "sha256": "f23398a3fd247e61bb2ea66fab6eca017dc054e015e867328debfeb2b03c8b96",
+    "audits": [
+      {
+        "evidence_name": "network-audit-input-contract-12.json",
+        "sha256": "11cb47668ee0bf479b59991c1b40a38e9f174b0c539fd4a270fab4276608516e",
+        "attempts": []
+      },
+      {
+        "evidence_name": "network-audit-input-contract-final-12.json",
+        "sha256": "11cb47668ee0bf479b59991c1b40a38e9f174b0c539fd4a270fab4276608516e",
+        "attempts": []
+      },
+      {
+        "evidence_name": "network-audit-input-contract-reviewed-12.json",
+        "sha256": "11cb47668ee0bf479b59991c1b40a38e9f174b0c539fd4a270fab4276608516e",
+        "attempts": []
+      },
+      {
+        "evidence_name": "network-audit-input-contract-types-5.json",
+        "sha256": "38e3734a1f2e89c42d7949b1ae488367dfbed781d5f9b016f2f58161bf691cec",
+        "attempts": []
+      },
+      {
+        "evidence_name": "network-audit-input-contract-types-fixed-5.json",
+        "sha256": "7d50719c64ab5f53e74c19ef7e14a980e4b84cb4ab4783a12f14d50386257ae0",
+        "attempts": []
+      },
+      {
+        "evidence_name": "network-audit-input-contract-types-reviewed-20.json",
+        "sha256": "754fd8bd5754bd7bde4be546306360bb0e299d982ca326a6b7236e872bd24681",
+        "attempts": []
+      },
+      {
+        "evidence_name": "network-audit-per-work-red-17.json",
+        "sha256": "79c638f490d0acab239c1ab58a02817457a48e42696d9a1482622dd88b1908e5",
+        "attempts": []
+      }
+    ],
+    "attempts_total": 0
+  },
+  "not_performed": [
+    "New production runtime/DTO/worker/store implementation",
+    "SQL migration or dual write",
+    "Firestore or PostgreSQL service/emulator",
+    "Concurrent database or cloud transaction test",
+    "Encryption/AAD runtime change or lifecycle acceptance",
+    "Full regression, frontend render or build",
+    "Real model/embedding call",
+    "Cloud resource/credential/permission action",
+    "Deployment, push, PR or merge"
+  ],
+  "next_gate": "Implement the same-authority Firestore work/event/run command and actual consumer, then validate real cancellation, original receipt recovery and cleanup/restore. Synthetic specification is not adapter, integration, F02 or overall per-work completion.",
+  "review": {
+    "independent": "Allow",
+    "reviewed_manifest_sha256": "64f83e1faf1344fe2f72a815894fec5a1f14fe4c1f5ffe46aabafc0a46054581",
+    "scope": "Contract and executable synthetic specification only, not product per-work capability.",
+    "root": "Conditional Allow; only active preview status and this acceptance record changed afterward; final document-only readback pending."
+  },
+  "independent_preview_observation": {
+    "scope": "Existing separate frontend preview observation only. This backend contract package has not been deployed.",
+    "github_pr": 182,
+    "github_merge_sha": "3df12d3aa62eedaf1f93c53d13cada603a6f61e8",
+    "version": 67,
+    "source_commit": "b77c79bf17dca00c1a5f35393c6b4b941e8ab473",
+    "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+    "access_mode": "public",
+    "published_at": "2026-10-10T08:45:53.908022+00:00",
+    "deployment_status": "succeeded",
+    "browser_review": "Allow",
+    "tested_widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "observation_count": 31,
+    "browser_scope": "Targeted export-purpose radio keyboard and display acceptance only.",
+    "not_covered": [
+      "Real PDF download or PDF bytes/layout; original fixture still rejects unlisted PDF POST. Error is not download success.",
+      "Pending/ready export intent and late-response races; unchanged fixture does not provide those states. Prior DOM/source tests remain distinct.",
+      "Long key hold/repeat behavior, native mobile OS/touch gestures, screen-reader sessions, whole-site accessibility or unrelated regression suite."
+    ],
+    "existing_receipt_sha256": "1557023ba9b42332f261b47006f721234fac385df018b59d6f9108731ea1aebc",
+    "existing_browser_report_sha256": "8114eaf8fffe56bfb30cf82fa317dadb01eaafc17642bef06b4f1743da89f29a",
+    "actions_this_package": "Read existing receipts only; no Sites credential, publish, browser run or GCP action."
+  }
+}
