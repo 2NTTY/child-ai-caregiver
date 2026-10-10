@@ -1,0 +1,222 @@
+{
+  "package": "Growth export purpose keyboard selection",
+  "recordedAt": "2026-10-10T08:31:50Z",
+  "baseCommit": "69bc0693951490d3b5a2b30b6abda99b745a4785",
+  "masterAtFinalCheck": "69bc0693951490d3b5a2b30b6abda99b745a4785",
+  "openPullRequestsAtFinalCheck": [],
+  "implementation": "Local purpose selector handles Space/legacy Spacebar without repeats, preserves already-selected intent, adds APG arrow wrapping/focus and a single roving Tab entry. Pointer and RN Web native Enter use the same selection function; no new adapter or download behavior.",
+  "rootCause": "Installed RN Web 0.21.2 PressResponder handles Enter for any pressable role but Space only for button-like controls. This custom radio lacked the existing AppRadioItem Space fix.",
+  "files": [
+    {
+      "path": "frontend/src/components/growth/GrowthArchive.tsx",
+      "baseGitBlob": "ef7a68f9ab99d37155f0768b9dccc46ecc2cd92e",
+      "baseSha256": "fb8c732d2e071f01ed9f6d0994946908848360f99122dc6b867e90d4b04f6ebe",
+      "candidateGitBlob": "3abf0ac686b8d4d8890056d89c27cf849000d349",
+      "candidateSha256": "082efa9f1a4e75c9644b8f1f02146fbddcd5992e03b388779678fe16147dc2aa"
+    },
+    {
+      "path": "frontend/scripts/growth-export-feedback-dom.test.cjs",
+      "baseGitBlob": "f8e7a05726f100e77031210134896427250b5c1a",
+      "baseSha256": "937bffcb6a78a7dad62708491c5edd428caf9c8e4fd52a45366e91abdb2700ff",
+      "candidateGitBlob": "8f30187fedc440b49bbf5d4253d86ff4b72146a5",
+      "candidateSha256": "5af30553031deb63c9e01ce10b5a13193514434382dcc05e0b3a8fa677b93a5a"
+    }
+  ],
+  "frozenTwoFilePatchSha256": "bc1dc89e438f2259c831d2f261b3651e01fede844e00c3cb09178b01dcee226f",
+  "environment": {
+    "node": "24.19.0",
+    "react": "19.2.3",
+    "reactNativeWeb": "0.21.2",
+    "reactNativePaper": "5.15.3",
+    "dom": "Externally supplied existing jsdom; no dependency changes. True React/GrowthArchive/RN Web/Paper/AppDialog with synthetic model/export promises and existing icon/motion/select substitutes. This is not a browser run.",
+    "source": "Isolated partial snapshot copied from the verified v66 candidate; modified files and relevant instructions/contracts matched fixed master. Existing dependencies reused read-only. Not a fresh whole-repository checkout.",
+    "offlineGuard": "Existing guard rejects socket/tls/dns/fetch attempts; six author audit files each recorded zero attempts."
+  },
+  "authorChecks": [
+    {
+      "stage": "original product regression",
+      "passed": 0,
+      "failed": 1,
+      "command": "JSDOM_MODULE=\"$EXISTING_JSDOM_MODULE\" OFFLINE_AUDIT_RUN=space-red node --import \"$OFFLINE_GUARD\" --test --test-name-pattern=\"Space checks the focused\" frontend/scripts/growth-export-feedback-dom.test.cjs",
+      "finding": "Space left the checked purpose as family instead of appointment.",
+      "logSha256": "7d268707c77a5bb7faf0531d682bffe617f31fba52b3c770a2673db6b35d2e20",
+      "originalLog": "onLayout relies on ResizeObserver which is not supported by your browser. Please include a polyfill, e.g., https://github.com/que-etc/resize-observer-polyfill.\nprops.pointerEvents is deprecated. Use style.pointerEvents\n\"shadow*\" style props are deprecated. Use \"boxShadow\".\n✖ Space checks the focused export purpose without exporting or losing focus (277.168143ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1532.776091\n\n✖ failing tests:\n\ntest at export_radio_keyboard_20261010/source/frontend/scripts/growth-export-feedback-dom.test.cjs:100:1\n✖ Space checks the focused export purpose without exporting or losing focus (277.168143ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  '家庭成長版' !== '就診溝通版'\n  \n      at checkedPurpose (/workspace/scratch/c112a98a8be9/export_radio_keyboard_20261010/source/frontend/scripts/growth-export-feedback-dom.test.cjs:95:10)\n      at TestContext.<anonymous> (/workspace/scratch/c112a98a8be9/export_radio_keyboard_20261010/source/frontend/scripts/growth-export-feedback-dom.test.cjs:104:5)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: '家庭成長版',\n    expected: '就診溝通版',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n"
+    },
+    {
+      "stage": "first candidate focused keyboard",
+      "passed": 3,
+      "failed": 1,
+      "finding": "New test expected handoff, but the pre-existing contract is care_handoff. Test string corrected to the established exact id; production unchanged.",
+      "logSha256": "be74f923b2e6cd04868c31341f1deef8d9936f6d749dc7d5564bfbc3aa8c2816",
+      "originalLog": "onLayout relies on ResizeObserver which is not supported by your browser. Please include a polyfill, e.g., https://github.com/que-etc/resize-observer-polyfill.\nprops.pointerEvents is deprecated. Use style.pointerEvents\n\"shadow*\" style props are deprecated. Use \"boxShadow\".\n✔ Space checks the focused export purpose without exporting or losing focus (427.079204ms)\n✔ Space on the checked purpose and repeated Space preserve the current export feedback and intent (240.364189ms)\n✔ export purpose arrows wrap selection and focus with one Tab entry while Enter and pointer still work (363.117659ms)\n✖ changing purpose with Space invalidates pending export and rejects late feedback without another download (226.88603ms)\nℹ tests 4\nℹ suites 0\nℹ pass 3\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2464.048789\n\n✖ failing tests:\n\ntest at export_radio_keyboard_20261010/source/frontend/scripts/growth-export-feedback-dom.test.cjs:145:1\n✖ changing purpose with Space invalidates pending export and rejects late feedback without another download (226.88603ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  + actual - expected\n  \n  + 'care_handoff'\n  - 'handoff'\n  \n      at TestContext.<anonymous> (/workspace/scratch/c112a98a8be9/export_radio_keyboard_20261010/source/frontend/scripts/growth-export-feedback-dom.test.cjs:152:41)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'care_handoff',\n    expected: 'handoff',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n"
+    },
+    {
+      "stage": "final true React/RN Web DOM suite",
+      "passed": 10,
+      "failed": 0,
+      "command": "JSDOM_MODULE=\"$EXISTING_JSDOM_MODULE\" OFFLINE_AUDIT_RUN=feedback-final node --import \"$OFFLINE_GUARD\" --test frontend/scripts/growth-export-feedback-dom.test.cjs",
+      "logSha256": "44bd5260c717dc16b2e0e43cc83f279cc945d16acc425389cbd2d7f2ef0b9b2b",
+      "originalLog": "onLayout relies on ResizeObserver which is not supported by your browser. Please include a polyfill, e.g., https://github.com/que-etc/resize-observer-polyfill.\nprops.pointerEvents is deprecated. Use style.pointerEvents\n\"shadow*\" style props are deprecated. Use \"boxShadow\".\n✔ Space checks the focused export purpose without exporting or losing focus (439.293906ms)\n✔ Space on the checked purpose and repeated Space preserve the current export feedback and intent (245.491088ms)\n✔ export purpose arrows wrap selection and focus with one Tab entry while Enter and pointer still work (382.778608ms)\n✔ changing purpose with Space invalidates pending export and rejects late feedback without another download (243.22914ms)\n✔ failed export announces inside the real modal, preserves modal focus and permits an explicit retry (197.38993ms)\n✔ pending export stays single-flight and settling does not steal focus from the close button (151.958785ms)\nAnimated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md\n✔ close and reopen reject the previous request and its late failure (212.929776ms)\n✔ changing export version or purpose clears errors and permanently invalidates the old attempt (223.401907ms)\n✔ newer navigation, child, authority and snapshot replacement reject pending feedback (523.944906ms)\n✔ unmount invalidates the attempt and rejected adapters never manufacture success (240.439382ms)\nℹ tests 10\nℹ suites 0\nℹ pass 10\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 4123.841843\n"
+    },
+    {
+      "stage": "affected archive and dialog semantics",
+      "passed": 23,
+      "failed": 0,
+      "command": "OFFLINE_AUDIT_RUN=archive-affected node --import \"$OFFLINE_GUARD\" --test frontend/scripts/growth-archive-report.test.mjs frontend/scripts/growth-dialog-accessibility.test.mjs",
+      "logSha256": "2daac52ba4de82833920e8d000b2ef8cad2b0cb3f569c9cb8f43befbcf7964c1",
+      "originalLog": "✔ same-period history cards show their actual versions and Hong Kong preparation times in text and accessible names (236.259225ms)\n✔ history card selection closes the library, keeps the exact version through refresh, and returns to current (98.640727ms)\n✔ history cards use truthful fallbacks for absent or invalid metadata instead of positions or the current clock (328.600969ms)\n✔ history metadata retains natural wrapping styles at narrow and wide presentation widths (172.438804ms)\n✔ installed RN Web renders history cards as focusable native buttons with distinct labels and explicit selected state (55.398765ms)\n✔ default is the current full report and export is a distinct action; periods stay secondary (45.379486ms)\n✔ period filtering and selection retain canonical references without inventing unavailable years (0.510177ms)\n✔ loaded period choice survives ordinary refresh; switching child clears it and export choices (43.494057ms)\n✔ export selections are local and PDF stays disabled without an adapter (40.419121ms)\n✔ typed export intent carries exact scope and version and rejects stale callbacks after close or revocation (49.286138ms)\n✔ source disclosure uses current authorized source and does not replay a record callback after invalidation (31.974462ms)\n✔ wrong owner, authority, source version, missing evidence, and invalidated projection never expose narration (168.142812ms)\n✔ mobile chapter selection waits for the shared modal to close before scrolling (45.58223ms)\n✔ missing selected period offers a route back to the available current report instead of silently replacing it (31.599386ms)\n✔ entry tools center the badge independently and use a compact outlined disclosure on desktop (29.541219ms)\n✔ narrow screens and coarse pointers retain the shared touch target instead of the desktop height override (104.459201ms)\n✔ report footer shares one wrapping action row and keeps coverage and versions in one disclosure (30.328789ms)\n✔ available parent footer actions remain reachable when no report is available (29.270276ms)\n✔ standard report uses fixed domains with original entry references and omits empty sections (43.125511ms)\n✔ legacy unclassified content stays neutral and does not infer a domain from wording (0.313696ms)\n✔ standard report follows current authoritative content rather than storing a second report (0.171595ms)\n✔ AppDialog gives the actual native modal its accessible name without changing Paper/default props (57.733212ms)\n✔ installed RN Web ModalContent preserves the name and sends Escape to cancellation only while active (13.594988ms)\nℹ tests 23\nℹ suites 0\nℹ pass 23\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2078.638717\n"
+    },
+    {
+      "stage": "frontend typecheck",
+      "exitCode": 0,
+      "cwd": "source",
+      "command": "OFFLINE_AUDIT_RUN=frontend-typecheck node --import \"$OFFLINE_GUARD\" node_modules/typescript/bin/tsc -p frontend/tsconfig.json --noEmit",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalLog": ""
+    }
+  ],
+  "independentReview": {
+    "decision": "Allow on frozen two-file code/test patch",
+    "evidenceSha256": "e3026b17968f696c1900114fb6c91ba914ef01e03dd2d84ccb142c34b3d3f398",
+    "domLogSha256": "b9511944e73cd1e3e283ef9e162883f81afe0464c3cf9e285fa5aa59a0e5c89f",
+    "passed": 11,
+    "failed": 0,
+    "scope": "Independent rerun of the same 10 author DOM tests plus one added held-key/selected-purpose check; not 11 additional distinct cases. The added check preserves pending intent/feedback after Enter/pointer on selected purpose, then changes purpose with one Space keydown, three repeat keydowns and keyup without new export; late feedback stays rejected.",
+    "networkAttempts": 0,
+    "notBrowser": true
+  },
+  "priorPreviewV66": {
+    "site": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+    "observedUrl": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport",
+    "version": 66,
+    "versionId": "appgprj_6ac1e7c965308191bc2c599951348a51~appgver_53e59bd6992c81918bafe763e7750bf5",
+    "sourceCommit": "151b13770374969ff6696de6dacbf5dd55e724d6",
+    "publishedAt": "2026-10-10T08:11:10.490148Z",
+    "bundleSha256": "d3480cd85c34ee2623b030fd939e552a81d46a3530e1770b8af150f27abba076",
+    "originalReviewSha256": "4260099f8f4095253884b0cfb973fa31a04640094d0bd070f7f3c59aa0628665",
+    "decision": "ALLOW_SCOPED_V66_FIXES_WITH_KNOWN_EXISTING_P2; NO_ROLLBACK_RECOMMENDED",
+    "coverage": [
+      {
+        "area": "Dimensions",
+        "result": "Actual existing viewport wrapper controls and measured outputs confirmed 1440,1024,390,320 by 900 CSS px. Not device-emulated touch/mobile OS testing. Export error layout visually checked at all four widths."
+      },
+      {
+        "area": "Search names",
+        "result": "1440 task input named 搜尋已載入事項 before entry, after 圖畫書 entry, and after 清除搜尋. Care input named 搜尋已保存記錄 before/after 圖畫書 entry and search submission. Tab from care input moved to 種類：全部; Enter submitted search. 1024 care screenshot confirms visible field and result."
+      },
+      {
+        "area": "Preparation pending focus",
+        "result": "1024 opened synthetic preparation A by Enter; recovery UI armed 下一次文件寫入延遲; Space on 合成清單：準備水樽 produced pending save. Real browser :focus remained DIV role=checkbox aria-disabled=true aria-checked=false with same label and visible focus outline. No simulated DOM test substituted."
+      },
+      {
+        "area": "Preparation navigation cancellation",
+        "result": "During held save, Enter on 成長與關注 link opened 先處理原操作 dialog. Enter on 留在此頁查核 dismissed it without navigation, preserved preparation, and restored focus to 成長與關注 link. Recovery UI 釋放最早等待 settled synthetic write and later checkbox showed checked, 1/2 count. At390 Space checked second item; 2/2 shown. Immediate navigation remained guarded until settling, then worked."
+      },
+      {
+        "area": "Export error feedback",
+        "result": "390 and320 keyboard Enter submission, and1440 pointer retry, were blocked by original synthetic adapter. Error visibly appeared inside same open modal: PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。 Feedback had role=alert and actual focus at data-testid=growth-export-feedback. All four widths showed readable feedback plus close and retry actions."
+      },
+      {
+        "area": "Export keyboard/dismiss/retry",
+        "result": "Tab from feedback moved to 關閉. Enter close and Escape dismiss removed modal and restored focus to 導出報告. Reopening cleared previous feedback. Explicit retry produced same expected adapter error without fabricated success. Enter selection of 照護交接版 changed aria-checked and cleared feedback."
+      },
+      {
+        "area": "Child switch after error",
+        "result": "320 closed prior export modal, selected 合成小晴 via child picker using Enter; growth reset to concerns, reopened archive and export. New modal period belonged to 合成小晴, old feedback was empty, default purpose reset. New attempt produced own expected adapter error. This is settled-error child switching, not pending late-response race."
+      },
+      {
+        "area": "Scale and containment",
+        "result": "Browser DOM read confirmed html computed zoom=1.4 at1440 and1.2 at320, respective scrollWidth/clientWidth equal 1440/1440 and320/320. No outer horizontal page overflow at these endpoints. Visually checked modal containment at all four widths."
+      },
+      {
+        "area": "Isolation",
+        "result": "Deployed page scripts included original qa-fixture.js, qa-recovery-fixture.js and exact candidate bundle filename. Browser-read CSP retains connect-src none; other network isolation established separately by independent static/VM checks. No fixture edits, model calls, real family inputs, permission changes or publication by reviewer."
+      }
+    ],
+    "knownUnfinished": [
+      {
+        "severity": "P2",
+        "status": "pre-existing keyboard accessibility gap; not introduced by scoped v66 change",
+        "subject": "Export-purpose radios do not activate with Space",
+        "reproduce": [
+          "Open 成長與關注 → 成長檔案 → 導出報告",
+          "Focus non-selected role=radio 照護交接版 or 就診溝通版",
+          "Press Space: aria-checked remains false and purpose unchanged",
+          "Press Enter: aria-checked becomes true and old export error clears"
+        ],
+        "candidateSource": "frontend/src/components/growth/GrowthArchive.tsx:290-295",
+        "baselineSource": "v65 sourcemap frontend/src/components/growth/GrowthArchive.tsx:261-264",
+        "sourceComparison": "Both versions use Pressable role=radio and onPress with no Space/arrow handler; v66 adds clearExportFeedback to existing onPress only. Not independently browsed against v65 after deployment."
+      }
+    ],
+    "notCovered": [
+      "Real PDF download/bytes/layout: original adapter rejects unlisted PDF POST immediately; expected error is not download success.",
+      "Stable export pending and ready UI, repeated in-flight click, close-while-pending late response, pending child/authority/snapshot race: not triggerable with original unchanged PDF fixture; source and focused automated tests remain separate evidence.",
+      "Full screen-reader sessions, touch gestures, native mobile OS/device keyboard, all routes and full regression suite.",
+      "Preparation focus after every settlement/re-read transition: scoped observed guarantee is held saving focus, not all future state transitions."
+    ],
+    "distinction": "These browser results are the already-published v66, including the original Space failure, not the new keyboard candidate. No GCP/backend deployment is represented."
+  },
+  "preservation": {
+    "originalProductSourceGitBlob": "ef7a68f9ab99d37155f0768b9dccc46ecc2cd92e",
+    "originalProductSourceSha256": "fb8c732d2e071f01ed9f6d0994946908848360f99122dc6b867e90d4b04f6ebe",
+    "originalRedTestSha256": "0e2602cdf9f2018819da75c9dc4a30a5606b2cec1379b7bedf3f3210495cd04d",
+    "originalRedAndFixtureError": "Original Space failure and the first candidate handoff/care_handoff test-value failure are preserved above. Only the test string was corrected to the pre-existing exact purpose id; no assertion was weakened.",
+    "existingAssertions": "The original six export feedback tests are unchanged.",
+    "toolErrors": [
+      "Initial combined snapshot shell request rejected before execution for argument list too long; succeeded with individual apply_patch saves.",
+      "First git apply --check used the wrong cwd and did not find the patch; rerun from base passed against both unchanged original files."
+    ]
+  },
+  "networkAudits": [
+    {
+      "name": "network-audit-archive-affected-13.json",
+      "attempts": 0,
+      "sha256": "1470dd89b3782bb646125eabab30aff86b3b4129e531a0ed2de24f0359be5801"
+    },
+    {
+      "name": "network-audit-archive-affected-14.json",
+      "attempts": 0,
+      "sha256": "076dddfc0b9c826b29fea070fc0af5ce4426c237b4e0a5316cb53df26d0e8b9c"
+    },
+    {
+      "name": "network-audit-feedback-final-13.json",
+      "attempts": 0,
+      "sha256": "e6940d754e18c0a5fed59cd451e897d79bfc505c73f7c5107fbf6edaf2b4026b"
+    },
+    {
+      "name": "network-audit-frontend-typecheck-5.json",
+      "attempts": 0,
+      "sha256": "95446daf05d2f9b5cf003113a8a3cae94e19bbea1586cd3dda32aa923d2c9c72"
+    },
+    {
+      "name": "network-audit-keyboard-green-13.json",
+      "attempts": 0,
+      "sha256": "e6940d754e18c0a5fed59cd451e897d79bfc505c73f7c5107fbf6edaf2b4026b"
+    },
+    {
+      "name": "network-audit-space-red-13.json",
+      "attempts": 0,
+      "sha256": "e6940d754e18c0a5fed59cd451e897d79bfc505c73f7c5107fbf6edaf2b4026b"
+    }
+  ],
+  "references": [
+    "https://www.w3.org/WAI/ARIA/apg/patterns/radio/",
+    "frontend/src/components/AppRadioItem.tsx",
+    "frontend/GROWTH_HANDOFF.md:24-35"
+  ],
+  "notRun": [
+    "Real-browser candidate QA and 1440/1024/390/320 viewport inspection",
+    "Actual PDF bytes/download, real HTTP API or true model",
+    "Screen reader/native Android",
+    "Production build or whole-repository tests/typecheck"
+  ],
+  "boundaries": {
+    "branchPrMergePublishDeploy": false,
+    "realModelOrFamilyData": false,
+    "cloudResourcesOrPermissionsChanged": false,
+    "fullRepositoryVerification": false,
+    "candidateBrowserPending": true
+  },
+  "next": "Document review and root decision remain pending. Candidate browser/viewport acceptance is separate from v66 and DOM evidence; no all-pass or deployment claim."
+}

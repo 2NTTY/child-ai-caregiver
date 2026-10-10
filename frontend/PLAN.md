@@ -3,6 +3,18 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## QA：報告用途鍵盤選擇（局部原碼通過，候選瀏覽器待驗）
+
+2026-10-10 UTC，固定 master `69bc0693951490d3b5a2b30b6abda99b745a4785`；開工及交付前重核 master 未變、open PR 為空。本包只修既有導出視窗的用途 radio，不改版型、合成 adapter、PDF 契約或 Server。
+
+- **既有預覽現況：**先前未能取得 v65 可重建來源，原因未明；本輪已經官方來源流程恢復。沿原公開範圍的 [Sites v66](https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site/qa-viewport) 已於 2026-10-10T08:11:10Z 發布，來源 `151b13770374969ff6696de6dacbf5dd55e724d6`，包含 #173 搜尋／準備單及 #177 導出回饋修正；這不是 GCP 或 #181 後端部署。
+- **v66 已驗界線：**dot 雲端 Chromium 以原合成 fixture 實測 1440／1024／390／320 CSS px，四尺寸皆看過導出失敗同窗回饋及關閉／重試操作。搜尋名稱、準備單保存中焦點／導航守衛、導出 Enter／Escape／重開／重試及錯誤結束後切孩子按各自指定尺寸完成定向檢查，並非每項跑遍四尺寸；只有端點 1440／320 核量外層沒有橫向溢出。PDF POST 仍由原合成 adapter 即時拒絕，沒有實際下載或 pending late-response 瀏覽器證據。來源恢復及本輪局部驗收不改寫原失敗、未驗或暫緩事項。
+- **新候選：**v66 發現未選用途按 Space 仍為 unchecked，同項按 Enter 可選；v65 原碼已有同一缺口。真 GrowthArchive／RN Web DOM 在 master 原碼先重現相同紅例，再局部補 Space／Spacebar、方向鍵環繞與焦點、單一 Tab 入口。已選項及長按 Space 不清除有效導出意圖／回饋；換用途仍失效原意圖並拒晚到回饋。只選用途不請求 PDF，原 pointer／Enter 及 scope／child／authority／snapshot 守衛保留。
+- **原碼證據：**定稿 10 項真 React／RN Web DOM（4 新增＋6 既有）、23 項既有 archive／dialog 定向檢查及 frontend typecheck 通過；6 份作者 network audit 為零外聯。首次候選新測試把既有 `care_handoff` 誤寫成 `handoff` 的 3 通過／1 失敗原結果保留，只按原契約更正測試值，沒有放寬斷言。原2份程式／測試已 freeze，獨立程式 review Allow；[固定證據](verification/export-radio-keyboard-2026-10-10/checks.json)分開作者／reviewer 結果及 v66／新候選版本，不把 jsdom 當真瀏覽器。
+- **下一步及未驗：**文件附錄及 dot 最終裁決待完成；本候選尚未建立 PR、發布或部署。須在獲准的既有預覽按候選重驗實際鍵盤／四尺寸；目前沒有候選 browser、build、全倉、真 PDF bytes／下載／版面、pending 關閉／切孩子／撤權後晚到 race、讀屏實機或 Android 證據。本包沒有真模型、真家庭資料、GCP／資源／權限操作，不解鎖其他包。
+
+以下報告回饋、同批跟進呈現及搜尋／準備單三節保留各包當時的交付快照；其中「尚未 PR／來源受阻／未瀏覽器驗收」不是目前狀態。#173／#174／#177 已合併；#173／#177 的獨立預覽發布及定向 browser 結果以本節為準，不據此推定 #174 或其他後端已部署。
+
 ## QA：報告導出視窗回饋（原碼驗收通過，預覽發布受阻）
 
 2026-10-09 UTC，固定 master `c48b2eb41ee5f19c914ab6bee07b39d9cdd939a7`。既有合成公開預覽 v65 三次導出嘗試均未取得 PDF；可確定的 P2 缺陷是失敗只出現在背景頁底，導出視窗仍開着而沒有錯誤，焦點回到整頁。合成 transport 未支援下載，不把此結果判作正式 PDF endpoint 故障。
