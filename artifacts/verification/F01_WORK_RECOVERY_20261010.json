@@ -1,0 +1,219 @@
+{
+  "package": "F01 recovery-only Firestore continuation settlement",
+  "recordedAt": "2026-10-10T09:56:00Z",
+  "baseCommit": "3df12d3aa62eedaf1f93c53d13cada603a6f61e8",
+  "remoteMasterAtHandoff": "3df12d3aa62eedaf1f93c53d13cada603a6f61e8",
+  "sourceVerification": {
+    "kind": "isolated partial snapshot",
+    "remoteBlobComparisons": 470,
+    "mismatches": 0
+  },
+  "openPrerequisite": {
+    "number": 183,
+    "head": "36131ac4be304ae2eb63d8390d602dfbabd2df27",
+    "merged": false,
+    "dependsOnItsInputEvidenceContract": false,
+    "filesModified": false
+  },
+  "scope": {
+    "recipe": "product-work-followup",
+    "ownerOnly": true,
+    "pureDueOnly": true,
+    "maximumConstituents": 5,
+    "alreadyClaimedOnly": true,
+    "authorityCreation": "synthetic fixture writer only",
+    "productionBootstrapSelected": false,
+    "newClaims": 0,
+    "modelCalls": 0,
+    "sqlFallback": false,
+    "writes": "Existing event terminal, expired existing run unknown, workspace sequence and deterministic private change marker; max 4 documents",
+    "reads": "Same native read-write transaction; canonical control/account/workspace, child/event/trigger claim/run and up to 5 work/followup pairs; max 18 point reads",
+    "receiptDisclosure": false,
+    "perWorkCompletionClaim": false
+  },
+  "files": [
+    {
+      "path": "server/agent-work-continuation-worker.ts",
+      "sha256": "6b1a9d534a7f562c37ab8694f43bf318690f3d090b74d933e673b3da8b9001c4",
+      "gitBlob": "ceeb816ec3975dd6c3e8fdf3a46d13cac03081aa"
+    },
+    {
+      "path": "server/firestore-work-continuation-recovery.ts",
+      "sha256": "1ef72c25ad83198b4959443ae490c3c75f4234f5336ca3549b240c352b48aa40",
+      "gitBlob": "b43abf0d172f3f92d94b7a758e9b0e2fbfba63b3"
+    },
+    {
+      "path": "tests/helpers/firestore-work-recovery.ts",
+      "sha256": "9449f806d3ec6dcfbdd89781bfcb18192ba89162832f72dfe320b973d962b4a6",
+      "gitBlob": "8ab8418f81ae6f2696d3fdba7d74c08140266d32"
+    },
+    {
+      "path": "tests/firestore-work-continuation-recovery.test.ts",
+      "sha256": "28f97681d77502a789ea8f148ec787080678ccbb85f6764b34f7059c8fd44bdb",
+      "gitBlob": "f7eecd66f074fd110e3e4f318f4ba5e7cdef1f33"
+    },
+    {
+      "path": "tests/firestore-work-recovery-emulator.mjs",
+      "sha256": "68f295629f8a7154a8f73202139b6bc9c143c94d3c20617d8c4a429570a3d1de",
+      "gitBlob": "3c5bc34fcd5ea40d1ffca869595700e327b91b4a"
+    },
+    {
+      "path": "docs/CHAT_AGENT_FIRESTORE_RECOVERY.md",
+      "sha256": "de2f0076e870248551a52bb940d0ce06fa284299107ef04f169f810e006f824a",
+      "gitBlob": "ec3db5f2a2c055c3afc3a5e5c33cdefc7a9543d3"
+    }
+  ],
+  "authorChecks": [
+    {
+      "stage": "proposed recovery-only consumer compatibility red",
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "finding": "Existing process requires store.backgroundInput; no recovery-only consumer seam. Proposed interface gap, not a production regression.",
+      "log": "✖ the existing continuation processor can consume recovery without acquiring new execution (1.977728ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 216.23882\n\n✖ failing tests:\n\ntest at firestore_work_authority_20261010/evidence/recovery-only-consumer-red.test.ts:7:1\n✖ the existing continuation processor can consume recovery without acquiring new execution (1.977728ms)\n  TypeError: store.backgroundInput is not a function\n      at current (file:///workspace/scratch/c112a98a8be9/firestore_work_authority_20261010/source/server/agent-work-continuation-worker.ts:36:33)\n      at Object.process (file:///workspace/scratch/c112a98a8be9/firestore_work_authority_20261010/source/server/agent-work-continuation-worker.ts:37:25)\n      at TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/firestore_work_authority_20261010/evidence/recovery-only-consumer-red.test.ts:14:16)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.start (node:internal/test_runner/test:1242:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)\n"
+    },
+    {
+      "stage": "first synthetic candidate",
+      "tests": 5,
+      "passed": 4,
+      "failed": 1,
+      "finding": "Test counted the 9 fixture seed writes against max 4 recovery writes. Changed measurement start only; product assertions not weakened.",
+      "log": "✖ real recovery consumer preserves the original receipt, retries discarded callbacks, and replays without another change (35.377418ms)\n✔ pending original run cannot execute, and lost expiry commit remains unknown after reconstruction (9.440442ms)\n✔ transaction replay rechecks revocation, restored epoch and cancelled work without rewriting original receipts (23.481278ms)\n✔ missing or invalid authorities, claims and receipts fail closed with no SQL/provider fallback (30.957983ms)\n✔ unsupported non-due constituents and a failed commit never leave partial terminal writes (9.885423ms)\nℹ tests 5\nℹ suites 0\nℹ pass 4\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 377.507411\n\n✖ failing tests:\n\ntest at firestore_work_authority_20261010/source/tests/firestore-work-continuation-recovery.test.ts:14:1\n✖ real recovery consumer preserves the original receipt, retries discarded callbacks, and replays without another change (35.377418ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(f.fake.transactions.every(tx => tx.writes <= 4 && tx.reads <= 18))\n  \n      at TestContext.<anonymous> (file:///workspace/scratch/c112a98a8be9/firestore_work_authority_20261010/source/tests/firestore-work-continuation-recovery.test.ts:23:10)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+    },
+    {
+      "stage": "synthetic after measurement fix, before future-due review correction",
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "log": "✔ real recovery consumer preserves the original receipt, retries discarded callbacks, and replays without another change (25.246111ms)\n✔ pending original run cannot execute, and lost expiry commit remains unknown after reconstruction (12.564143ms)\n✔ transaction replay rechecks revocation, restored epoch and cancelled work without rewriting original receipts (23.103318ms)\n✔ missing or invalid authorities, claims and receipts fail closed with no SQL/provider fallback (19.303383ms)\n✔ unsupported non-due constituents and a failed commit never leave partial terminal writes (6.49686ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 333.853614\n"
+    },
+    {
+      "stage": "existing original SQL store/worker/ProductAgent/ADK recovery regression",
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "environment": "Real repository implementations with existing synthetic Pool/scheduler/provider; no SQL server or real model. Worker file unchanged thereafter.",
+      "log": "✔ authorized due work cancelled before delivery remains inert across worker restart and stale redelivery (17.825017ms)\n✔ a merged event drops its cancelled work and runs only its remaining live constituent once (61.973706ms)\n✔ restart recovers the original completed receipt or expired unknown run without another generation (19.837767ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 901.860555\n"
+    },
+    {
+      "stage": "scoped TypeScript before future-due review correction",
+      "passed": true,
+      "command": "node node_modules/typescript/bin/tsc --ignoreConfig --noEmit --target ES2023 --module NodeNext --moduleResolution NodeNext --strict --erasableSyntaxOnly --allowImportingTsExtensions --skipLibCheck --types node server/firestore-work-continuation-recovery.ts server/agent-work-continuation-worker.ts tests/firestore-work-continuation-recovery.test.ts"
+    },
+    {
+      "stage": "final future-due negative group",
+      "tests": 1,
+      "passed": 1,
+      "failed": 0,
+      "finding": "Review statically identified that a future due date was treated as cancellation. Final candidate refuses before writes. No pre-fix dynamic red was run for this finding.",
+      "log": "✔ missing or invalid authorities, claims and receipts fail closed with no SQL/provider fallback (47.440648ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 273.303327\n"
+    },
+    {
+      "stage": "final scoped TypeScript",
+      "passed": true,
+      "sameCommandAsEarlier": true
+    }
+  ],
+  "nativeEmulator": {
+    "provenance": {
+      "source": "https://github.com/firebase/firebase-tools/blob/v15.30.2/src/emulator/downloadableEmulatorInfo.json",
+      "version": "1.22.0",
+      "expectedSize": 136707194,
+      "expectedChecksum": "5d74cc6bee9e18560d2eae2c6440fd13",
+      "expectedChecksumSHA256": "9b6498b7f62714d67f48f59b3818883cd682dbcd46b9f59511de81c97bb5166c",
+      "remoteUrl": "https://storage.googleapis.com/firebase-preview-drop/emulator/cloud-firestore-emulator-v1.22.0.jar",
+      "downloadPathRelativeToCacheDir": "cloud-firestore-emulator-v1.22.0.jar",
+      "localPath": "/tmp/cloud-firestore-emulator-v1.22.0.jar",
+      "allThreeChecksMatched": true,
+      "downloaded": false
+    },
+    "summary": {
+      "projectId": "demo-yuban-session-validation",
+      "host": "127.0.0.1:8786",
+      "sdkVersion": "9.3.1",
+      "results": [
+        {
+          "name": "native transaction concurrent consumers and reconstructed replay retain one terminal change and original ciphertext",
+          "passed": true
+        },
+        {
+          "name": "native pending then expired original run and deliberately lost commit acknowledgement recover without execution",
+          "passed": true
+        },
+        {
+          "name": "native current cancellation settles event only and preserves prior completed run receipt",
+          "passed": true
+        }
+      ],
+      "syntheticSeedOnly": true,
+      "networkConnections": 1,
+      "blocked": [],
+      "forbiddenSqlOrProviderCalls": 0,
+      "productionBootstrap": false,
+      "realCloudAcceptance": false,
+      "limits": [
+        "Callback invalidation races were synthetic-only; this script does not claim cloud contention semantics.",
+        "Lost acknowledgement was injected after an actual emulator transaction commit.",
+        "Authority creation, new run claim, scheduler, account/device migration and production writers remain unimplemented."
+      ]
+    },
+    "testedFileHashes": [
+      "2f320787fd0435b17c874995216bb7679b77e227d6057b568b16fbf4a2ad0510  source/server/firestore-work-continuation-recovery.ts",
+      "6b1a9d534a7f562c37ab8694f43bf318690f3d090b74d933e673b3da8b9001c4  source/server/agent-work-continuation-worker.ts",
+      "68f295629f8a7154a8f73202139b6bc9c143c94d3c20617d8c4a429570a3d1de  source/tests/firestore-work-recovery-emulator.mjs",
+      "9449f806d3ec6dcfbdd89781bfcb18192ba89162832f72dfe320b973d962b4a6  source/tests/helpers/firestore-work-recovery.ts"
+    ],
+    "versionBoundary": "Three native SDK/emulator stages passed before the final future-due rejection guard and terminal-no-op comment. The final rejection guard was checked with the targeted synthetic negative group and final scoped typing; native smoke was not rerun. Reviewer considered another native pass unnecessary.",
+    "firstAttempt": "Emulator and client were started in separate exec process/network namespaces; client could not reach that listener. Both sessions were interrupted (exit 130) without test results. Retried once in a single exec namespace with original loopback guard, no network expansion.",
+    "cleanup": "Synthetic documents removed, SDK terminated, shell EXIT trap stopped emulator; JVM logged server shut down.",
+    "expectedSdkRetry": "Emulator logged a transaction lock timeout while concurrent consumers ran; native SDK retry completed successfully with one terminal change. Not real-cloud contention evidence."
+  },
+  "reviewerSupplement": {
+    "stage": "one two-work serial-synthetic scenario",
+    "result": "Cancelled first constituent plus active second constituent settled the event completed; both work ciphertexts unchanged; reconstructed processor replay left the complete database unchanged.",
+    "assertionGroups": 3,
+    "networkAttempts": 0,
+    "executionChunk": "ed76a6",
+    "separateFromEmulator": true
+  },
+  "networkAudits": [
+    {
+      "file": "network-audit-continuation-regression-12.json",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-recovery-consumer-red-12.json",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-recovery-focused-12.json",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-recovery-focused-fixed-13.json",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-recovery-future-due-14.json",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-recovery-types-5.json",
+      "attempts": 0
+    },
+    {
+      "file": "network-audit-recovery-types-final-5.json",
+      "attempts": 0
+    }
+  ],
+  "preservedToolingFailure": "One Python patch attempt had a doubled workdir-relative prefix and exited FileNotFoundError before source modification (chunk 033049). Same command still ran the prior-candidate emulator smoke; subsequent patch used correct paths.",
+  "notRun": [
+    "Whole-repository build/lint/test suite",
+    "Real Firestore service/IAM/indexes/Tasks/scale-to-zero",
+    "New claim or authority-creation writer",
+    "Provider calls or real family data",
+    "Production bootstrap, migration, restore or deletion closure",
+    "UI, per-work outcomes or original-input evidence implementation"
+  ],
+  "delivery": "Local candidate only; independent review and root final acceptance pending. No PR, merge, preview publication or GCP deployment."
+}
