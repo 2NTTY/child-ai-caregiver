@@ -2018,3 +2018,11 @@
 - 2份code／script freeze，獨立review與dot最終驗收待完成，尚未PR／部署。根PLAN／STATUS只更新當前窄包及#178已合併基線，WORKLOG既有321566-byte前綴逐byte保留。既有v65的36項觀察及另3次匯出被synthetic transport攔截仍不能驗PDF下載、跨孩子bytes或取消晚到；新renderer證據不冒稱這些結果。原A09、20／20真模型用盡、F01／F02、per-work outcome／同輪自動結案、restore／resume／fencing等gate不變，三其他Agent僅接口。
 
 - 2026-10-10T03:43:04+08:00 最終裁決追加：獨立 reviewer 已親看定稿兩頁PNG並覆核程式／4份文件，6檔hash及58項stage evidence／audit bytes與SHA全部吻合，無blocking。dot親看定稿第2頁完整非診斷提示及2/2、無遮擋，結合雙頁review、10.656pt實際字高、82正文word／bbox及正文像素不變證據，最終Allow精確2份code／script＋4份根文件／artifact正常PR交付。此次只追加review／裁決及更新狀態，2份程式hash不變、未重跑產品測試；publication manifest保留baseBlob／hash／Git blob／bytes、PLAN140anchors及WORKLOG321566-byte原prefix。原紅、minHeight與3頁候選拒絕、診斷工具及CLI錯誤、offline測試與合法字型下載區分完整保留；尚未建立本切片PR、發布／部署，renderer通過不代表v65下載／跨孩子／取消晚到／HTTP或整體完成。
+
+
+<a id="log-20261010-pdf-footer-status"></a>
+## 2026-10-10｜PDF 頁尾已合併狀態更正
+
+- Recorded At：2026-10-10T08:27:07+08:00；基線 master `eb25dad5efb411fe1c5f38c03789bc815ea7cf1e`／tree `6652749ee8f9f26f398902f0b3588e3cead578ed`。GitHub [#179](https://github.com/2NTTY/child-ai-caregiver/pull/179) 的 merged=true、合併時間2026-10-10T03:48:50+08:00及merge_commit_sha均已核對；當時根PLAN／STATUS仍把該窄修列為「當前可執行／尚未建立PR」，故作實質狀態更正。開工時open PR為0，沒有同項待合併文件修正。
+- PLAN將該段改為#179已合併驗收界線並移除失效的待PR下一步；STATUS同步短摘要。只承接[原renderer證據](artifacts/verification/QA_PDF_FOOTER_20261010.json)所覆蓋的局部PDF抽字、兩頁畫面、正文不變及範圍typecheck，不重做產品驗收；原紅、被拒候選、工具／CLI錯誤及未驗項全部保留。本次只核對文件diff、Git blob、PLAN錨點及WORKLOG原326255-byte前綴，未改產品程式或凍結證據。
+- #179已合併不代表已發布／部署或全面驗收。v65既有來源授權阻塞及下載／跨孩子bytes／取消晚到／HTTP驗收仍未解除；原A09、F01／F02與後續store依賴、per-work outcome／同輪自動結案、restore／resume／fencing門檻及三其他Agent只保留接口的範圍不變。真模型20／20已耗盡，不新增呼叫或重置；GCP資源、身份、權限及費用批准邊界不變，本次沒有相關操作。上文「尚未PR」保留為當時記錄，以本條已核合併狀態更正，不回寫歷史。
