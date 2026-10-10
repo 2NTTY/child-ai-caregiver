@@ -1,0 +1,391 @@
+{
+  "recordedAt": "2026-10-10T11:38:19Z",
+  "status": "root_approved_offline_normal_pr_pending_publication",
+  "productCommit": "04fb3f3ef7aa70cb63451b1229d8936241e389f1",
+  "historicalHarnessCommit": "f93dfb8f200c427867c4a02b803f4453681b0c75",
+  "liveEnabled": false,
+  "scope": {
+    "productFilesModified": [
+      "server/agent-model-gateway.ts"
+    ],
+    "workflowOrAuthorizationFilesModified": [],
+    "masterMissingUnchangedDependency": {
+      "path": "scripts/lib/chat-intent-probe-guards.mjs",
+      "gitBlob": "3349ce6b6ece6b3564a48326a5466c3a661562e7",
+      "sha256": "f883a786473da2ad7b16b9da9b33a4627051acb752f424e1d14f9c6db33606e8"
+    }
+  },
+  "codeFreeze": {
+    "base": "04fb3f3ef7aa70cb63451b1229d8936241e389f1",
+    "live": false,
+    "originalCandidateUntouched": true,
+    "files": [
+      {
+        "path": "scripts/lib/chat-document-batch-guards.mjs",
+        "sha256": "bd31314d57a6da5b8ceb79426f7c5421411068add3a4f8736c78853b7f5dd9bb"
+      },
+      {
+        "path": "scripts/lib/chat-document-batch-consumer.mjs",
+        "sha256": "7b2738111212f39b4bd04d7a25a51cba3087aa4a641a5ce2d23ba48beb0484cb"
+      },
+      {
+        "path": "server/agent-model-gateway.ts",
+        "sha256": "811732f445ed5e6cfa3b2feec62814476902e81b737d07c3476f7ea7840451d6"
+      },
+      {
+        "path": "tests/chat-document-batch-consumer.test.mjs",
+        "sha256": "88c3e11913ec5fed2527d5a43da092da811a3bd589210ca10e4055e83d6c87f8"
+      },
+      {
+        "path": "tests/chat-document-batch-product.test.ts",
+        "sha256": "6048fe7161315b1b7c3e459eef00255d0670be223311adc6f782c32efe7eee9d"
+      }
+    ]
+  },
+  "originalReviewedGuard": {
+    "guardSha256": "ca720a342c3d8daf66847c9a1ae3050d057bd4a321b22327acc439d40f027183",
+    "testsSha256": "66c2f5d33ee767c6e9e7ce80b512c6f5a45875333c6603c6d45e9ae22275ff66",
+    "status": "independent_allow_offline_only",
+    "filesAndFailuresPreserved": true,
+    "allowExtendsToNewSlice": false
+  },
+  "newEvidence": [
+    {
+      "log": "serialize-first.log",
+      "result": "passed",
+      "scope": "Representative real GenAI serializer retains history/system/tools/toolConfig/labels/thought signatures/summary and 429 fake fetch uses one attempt; earlier shared builder version, fixed-profile equivalent."
+    },
+    {
+      "log": "wire-admission.log",
+      "result": "passed",
+      "scope": "Exact native body/url freeze and counter/send identity; reject stream/query/project/model/location changes, missing caps, nested media and forged handles."
+    },
+    {
+      "log": "search-stop.log",
+      "result": "passed",
+      "scope": "Forbidden search withheld from ADK, second provider attempt rejected before counter/send; earlier shared builder version, fixed-profile equivalent."
+    },
+    {
+      "log": "terminal-final.log",
+      "result": "passed",
+      "scope": "Final consumer rejects preparation, final unknown tool and forged passed/approved semantics, stops following roots; live factory cannot be enabled by caller."
+    },
+    {
+      "log": "product-wire-final.log",
+      "result": "passed",
+      "scope": "Final source real ProductAgent/ADK plus GenAI serializer, synthetic domain and zero-network fetch; root steps 4/5/3,12 wire calls,0 embeddings,1 selected-original write,unchanged other doc,completed same work and fresh readback/original receipt."
+    },
+    {
+      "log": "gateway-regression.log",
+      "result": "3 passed,1 failed; original red retained",
+      "scope": "Default thinking, invalid thinking and abort/no-retry passed; mutable max output downgrade regressed."
+    },
+    {
+      "log": "gateway-override-fixed.log",
+      "result": "passed",
+      "scope": "Restored original model/maxOutput read timing; unchanged original downgrade-to-512 assertion passes. Other three cases not rerun after fix."
+    },
+    {
+      "log": "gateway-typecheck.log",
+      "result": "passed",
+      "scope": "Scoped gateway TypeScript and imported dependencies, not full server/frontend typecheck."
+    },
+    {
+      "log": "guard-compatibility.log",
+      "result": "2 passed",
+      "scope": "Final private contents shape retains full frozen payload and prior failed/unknown rejection; no full old-suite rerun."
+    },
+    {
+      "log": "credential-presence.log",
+      "result": "passed",
+      "scope": "Synthetic GOOGLE_API_KEY/GEMINI_API_KEY presence denied before SDK/counter/send/execution/checkpoint mutation; test verifies absence before adding its placeholder and removes only that placeholder."
+    },
+    {
+      "log": "duplicate-reference.log",
+      "result": "passed",
+      "scope": "Two valid-kind copies of one original ID/version cannot pass first root; one send,zero root_passed,sticky failed."
+    },
+    {
+      "log": "product-review-fixed.log",
+      "result": "passed",
+      "scope": "After both review corrections, same complete real SDK/ProductAgent synthetic scenario passes 4/5/3,12 calls,0 embeddings,1 original-document write,original receipt/fresh readback."
+    }
+  ],
+  "preservedNewFailures": [
+    {
+      "logs": [
+        "product-sdk-first.log",
+        "product-sdk-diagnostic.log",
+        "product-sdk-send-diagnostic.log"
+      ],
+      "finding": "GenAI tTool mutates declaration.parameters and rejects frozen pre-SDK schema before fake auth/fetch. Resolve by private clone and admission at final custom fetch wire boundary."
+    },
+    {
+      "logs": [
+        "gateway-regression.log"
+      ],
+      "finding": "Captured output cap changed existing dynamic downgrade behavior. Restored original read timing; no assertion weakened."
+    },
+    {
+      "logs": [
+        "review_bounded_batch_20261010/consumer_review/duplicate-resource-red.log"
+      ],
+      "finding": "Reviewer proved duplicate references to one document passed root1 and started root2. Tightened distinct original kind/ID/version membership; original assertion/probe preserved."
+    },
+    {
+      "evidence": "independent review of installed GenAI 2.24 dist/node/index.mjs:27615",
+      "finding": "SDK constructor reads GOOGLE_API_KEY/GEMINI_API_KEY before ignoring keys for explicit project/location. Added presence-only fail-closed guard without reading values. No real environment secret was inspected."
+    }
+  ],
+  "baselineVerification": {
+    "evidence": "consumer_evidence/product-baseline-185-verification.json",
+    "importFiles": 125,
+    "candidateExceptions": 5,
+    "unintendedMismatches": 0,
+    "oldCandidateProductClosure": 108
+  },
+  "networkAudit": {
+    "files": 18,
+    "attempts": 0,
+    "evidence": "consumer_evidence/network-audit-summary.json",
+    "terminalWireAuditNote": "First terminal-wire test set the wrong output environment variable; recovered exact /tmp audit copied to terminal-wire-network.recovered.json. Final terminal test uses correct NETWORK_AUDIT."
+  },
+  "plan": {
+    "roots": [
+      4,
+      5,
+      3
+    ],
+    "generationCalls": 12,
+    "inputTokensPerCall": 32768,
+    "maxOutputTokens": 1024,
+    "candidateCount": 1,
+    "sdkAttempts": 1,
+    "applicationAttempts": 1,
+    "embeddingCalls": 0,
+    "historicalGenerationCallsPreserved": 20,
+    "conditionalEstimateUsd": 0.116736,
+    "wholeBatchReservedUsd": 0.25,
+    "fakeCounterIsTokenProof": false
+  },
+  "remainingBlockers": [
+    "Official reliable complete-payload token upper bound and counter authorization/cost; no character heuristic.",
+    "Vertex model output/thinking cap semantics and complete pricing remain unverified.",
+    "Cumulative USD30 cost reconciliation, authoritative successor/checkpoint across workflow and fresh explicit batch authorization absent.",
+    "Only offline execution/inspect/fake counter/fake send dependencies are connected; live factory always throws.",
+    "No model,countTokens,workflow,real Firestore,HTTP integration,cloud writes,credential files,PR,merge,deployment or full regression.",
+    "No new immediate mid-batch multi-tool failure hook inside one ADK response. Guards stop before the next model request and at root terminal adjudication; existing product runtime unchanged.",
+    "A new root actually reading the original operation receipt through product tools remains unverified. Adding that tool step requires a separately reviewed scenario/call budget; current 4/5/3 freeze does not cover it."
+  ],
+  "review": {
+    "status": "independent_allow_offline_code_only",
+    "finalCodeFreezeSha256": "5be20d5841abcfd13124db31dfcdbf5e0cc8f44e4f8c5a02df636a9318f2ba21",
+    "coveredFiles": [
+      {
+        "path": "scripts/lib/chat-document-batch-guards.mjs",
+        "sha256": "bd31314d57a6da5b8ceb79426f7c5421411068add3a4f8736c78853b7f5dd9bb"
+      },
+      {
+        "path": "scripts/lib/chat-document-batch-consumer.mjs",
+        "sha256": "7b2738111212f39b4bd04d7a25a51cba3087aa4a641a5ce2d23ba48beb0484cb"
+      },
+      {
+        "path": "server/agent-model-gateway.ts",
+        "sha256": "811732f445ed5e6cfa3b2feec62814476902e81b737d07c3476f7ea7840451d6"
+      },
+      {
+        "path": "tests/chat-document-batch-consumer.test.mjs",
+        "sha256": "88c3e11913ec5fed2527d5a43da092da811a3bd589210ca10e4055e83d6c87f8"
+      },
+      {
+        "path": "tests/chat-document-batch-product.test.ts",
+        "sha256": "6048fe7161315b1b7c3e459eef00255d0670be223311adc6f782c32efe7eee9d"
+      }
+    ],
+    "documentsAndFinalDeliveryAuthority": "root_approved_exact_12_file_normal_pr",
+    "noLiveAuthorization": true,
+    "baseline": {
+      "base": "04fb3f3ef7aa70cb63451b1229d8936241e389f1",
+      "unchangedProductImportFilesIndependentlyMatched": 120,
+      "productOverlayExecutionFilesExactlyMatched": 4
+    },
+    "cases": [
+      {
+        "name": "final-serializer.log",
+        "scope": "Real SDK representative full-payload serialization plus one fake HTTP attempt on 429; presence guard checked before both constructors.",
+        "result": "passed",
+        "logSha256": "b53920a2dd1c6824750dd41ed51ddd85401a0b5d5f5d6157d7079b2d3acbe768",
+        "output": "✔ the real GenAI 2.24 serializer preserves the entire admitted request and performs one HTTP attempt (20.424716ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2145.070756"
+      },
+      {
+        "name": "final-terminal.log",
+        "scope": "Preparation failure, final unknown tool and semantic forged passed/approved cannot advance; live caller proof remains blocked.",
+        "result": "passed",
+        "logSha256": "0d12322fa5bf0135366b2aa6b40b2326737a0d1cbc4e798b6aa9247964cd8a25",
+        "output": "✔ consumer preparation, terminal tool failure and forged completed result stop before any next root (122.104011ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1268.313005"
+      },
+      {
+        "name": "final-wire.log",
+        "scope": "Final bytes/object identity and fixed target; streams/query/project/location/model changes, missing caps, nested media and forged handle rejected.",
+        "result": "passed",
+        "logSha256": "50a0ad90b751bf7914da4c13e4e3abb2b4a2b5434a82af661daa3da8c125ffa9",
+        "output": "✔ wire admission binds exact native bytes and rejects target, defaults, hidden media and forged handles (57.349614ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1376.804269"
+      },
+      {
+        "name": "final-credentials.log",
+        "scope": "Synthetic API-key environment presence rejected before SDK/counter/send/execution/checkpoint mutation.",
+        "result": "passed",
+        "logSha256": "fc07557d55a499fb1b9fc88794d4b17c328f4e474ed8bc82008b0ceeb750ba06",
+        "output": "✔ credential environment presence is rejected without reading its value or touching counter and transport (20.726049ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1136.305734"
+      },
+      {
+        "name": "final-product.log",
+        "scope": "Real ProductAgent+ADK+SDK serialization with synthetic auth/domain/counter/fetch; all scenario assertions below pass.",
+        "result": "passed",
+        "logSha256": "87409f1a5325b47191a15caca6535e214cde2e5b83f9e943e8be7a1be5f85113",
+        "output": "✔ fixed offline consumer owns three real ProductAgent roots and adjudicates their terminal outcomes (985.17633ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2410.802464"
+      },
+      {
+        "name": "duplicate-resource-valid.mjs",
+        "scope": "Independent valid-kind duplicate original-resource rejection",
+        "result": "passed",
+        "redLogSha256": "e51400e81b2352dc31690369cc4c3ab32cb13b1340b6fc5ecc62533da5cb17db",
+        "greenLogSha256": "a4034d6a2a122df7aa847360aca4479ac0a9bf2e396f50703785f18bec8fa3cb",
+        "observed": {
+          "roots": 1,
+          "sends": 1,
+          "state": "failed",
+          "rootPassed": 0
+        }
+      }
+    ],
+    "networkAudits": [
+      {
+        "name": "duplicate-green-network.71.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "attempts": 0,
+        "blocked": []
+      },
+      {
+        "name": "duplicate-network.8.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "attempts": 0,
+        "blocked": []
+      },
+      {
+        "name": "final-credentials-network.62.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "attempts": 0,
+        "blocked": []
+      },
+      {
+        "name": "final-product-network.88.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "attempts": 0,
+        "blocked": []
+      },
+      {
+        "name": "final-serializer-network.14.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "attempts": 0,
+        "blocked": []
+      },
+      {
+        "name": "final-terminal-network.30.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "attempts": 0,
+        "blocked": []
+      },
+      {
+        "name": "final-wire-network.46.json",
+        "sha256": "2e85912cf4eed7ff7aeb24266e36952c0beda0790f3c6d74cc0c2fad0fbe983a",
+        "attempts": 0,
+        "blocked": []
+      }
+    ],
+    "findings": [
+      {
+        "id": "ambient_sdk_credentials",
+        "evidenceKind": "installed SDK source review",
+        "source": "@google/genai 2.24.0 dist/node/index.mjs:27615 constructor calls getApiKeyFromEnv before honoring explicit project/location",
+        "originalProblem": "Fake authClient alone does not prevent reading GOOGLE_API_KEY/GEMINI_API_KEY environment values.",
+        "fix": "Before each real SDK constructor, presence-only Object.hasOwn checks reject either key. Values are never read or removed by the guard. Tests create/delete only their own synthetic placeholder after confirming absence.",
+        "result": "Final consumer and direct serializer test have the guard; independent synthetic presence test passes before counter/send/execution/checkpoint mutation."
+      },
+      {
+        "id": "duplicate_original_resource",
+        "evidenceKind": "independent synthetic red and green",
+        "originalProblem": "Length two and every(reference exists) accepted two references to the same original document; first root passed and second root began.",
+        "red": {
+          "roots": 2,
+          "rootPassed": 1,
+          "sends": 1,
+          "finalState": "failed",
+          "assertion": "A duplicated source reference must fail the first-root asserter before root 2",
+          "actual": 2,
+          "expected": 1
+        },
+        "fix": "Require two distinct fixture IDs and exactly one family_document reference with each original ID/version; selected completed work also verifies kind.",
+        "green": {
+          "fixture": "Two references with valid family_document kind but duplicated original ID/version",
+          "roots": 1,
+          "rootPassed": 0,
+          "sends": 1,
+          "finalState": "failed"
+        },
+        "authorRegression": "tests/chat-document-batch-consumer.test.mjs: clarification cannot advance using two copies of only one original document reference"
+      }
+    ],
+    "networkAuditCount": 7,
+    "networkAttempts": 0,
+    "trueProductScenarioAssertions": {
+      "modelCallsPerRoot": [
+        4,
+        5,
+        3
+      ],
+      "totalNativeWireCalls": 12,
+      "embeddingCalls": 0,
+      "historicalGenerationCalls": 20,
+      "selectedOriginalDocumentWrites": 1,
+      "selectedDocumentVersionBefore": 3,
+      "selectedDocumentVersionAfter": 4,
+      "otherDocument": "deep equal to original",
+      "work": "same ID waiting v1 then completed v3",
+      "receipt": "Trusted consumer inspect verifies same original operationId/documentId/savedVersion and edit root runId; this is not a third-root receipt-tool read.",
+      "thirdRoot": "Fresh conversation; read_work + read_family_documents original source; no write/save_work. Receipt preservation verified by inspect only."
+    }
+  },
+  "embeddedAuthorFailures": [
+    {
+      "source": "product-sdk-send-diagnostic.log",
+      "sourceSha256": "56431027c5eb44e4a45412bde852179b066827f8e9d3e0e75959fe6bf8e6de8d",
+      "failure": "TypeError: Cannot assign to read only property parameters; SDK normalizer attempted mutation before fake auth/fetch.",
+      "resolution": "Private SDK clone, followed by admission on the exact final URL and JSON body bytes."
+    },
+    {
+      "source": "gateway-regression.log",
+      "sourceSha256": "fe26ece5779b50b943324a133168cc53c83f2c1c1d5536c4c0df6e22303760f8",
+      "assertion": "requests[1].config.maxOutputTokens === 512",
+      "actual": 1024,
+      "expected": 512,
+      "resolution": "Restore per-call config.model/maxOutput read timing; original assertion passes."
+    }
+  ],
+  "receiptReadbackScope": {
+    "agentThirdRootActuallyRead": [
+      "read_work",
+      "read_family_documents"
+    ],
+    "receiptPreservationCheck": "Trusted consumer inspect verifies the same original operationId/documentId/savedVersion receipt remains and no rewrite occurs.",
+    "agentThirdRootReadReceiptBody": false,
+    "remainingAcceptance": "A new root actually reading the original operation receipt through product tools remains unverified. Adding that tool step requires a separately reviewed scenario/call budget; current 4/5/3 freeze does not cover it."
+  },
+  "rootDecision": {
+    "at": "2026-10-10T11:37:45Z",
+    "scope": "Normal branch/commit/draft PR for the nine reviewed candidate files plus PLAN/STATUS/append-only WORKLOG; no workflow/manifest/actions trigger,live or deployment.",
+    "publication": "not_yet_created",
+    "merge": "not_yet_performed",
+    "receiptGapAcceptedAsPartialScope": true
+  }
+}
