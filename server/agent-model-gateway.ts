@@ -1,7 +1,7 @@
 import { BaseLlm } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
 import { ApiError, GoogleGenAI } from "@google/genai";
-import type { FunctionCall } from "@google/genai";
+import type { FunctionCall, GenerateContentParameters, GoogleGenAIOptions } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import { nativeModelThinkingLevel } from "./model-thinking.ts";
 import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
@@ -41,16 +41,29 @@ function readUsage(response: LlmResponse): TokenUsage {
     cachedTokens: tokenCount(response.usageMetadata?.cachedContentTokenCount) };
 }
 
-export function createVertexAgentProvider(config: AiConfig): AgentModelProvider {
+/** Shared by the production provider and the isolated controlled-test adapter. */
+export function vertexAgentClientOptions(config: AiConfig): GoogleGenAIOptions {
+  return { enterprise: true, project: config.project, location: config.location, apiVersion: "v1",
+    httpOptions: { timeout: config.timeoutMs, retryOptions: { attempts: 1 } } };
+}
+
+/** Share native payload construction; the AbortSignal is transport-only. */
+export function createVertexAgentPayloadBuilder(config: AiConfig) {
   const thinkingLevel = nativeModelThinkingLevel(config.model, config.agentThinkingLevel);
-  const client = new GoogleGenAI({ enterprise: true, project: config.project, location: config.location, apiVersion: "v1",
-    httpOptions: { timeout: config.timeoutMs, retryOptions: { attempts: 1 } } });
+  return (request: Pick<LlmRequest, "contents" | "config">): GenerateContentParameters => ({ model: config.model, contents: request.contents,
+    config: { ...request.config, candidateCount: 1, maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
+      thinkingConfig: { thinkingLevel } } });
+}
+
+export function createVertexAgentProvider(config: AiConfig): AgentModelProvider {
+  const buildPayload = createVertexAgentPayloadBuilder(config);
+  const client = new GoogleGenAI(vertexAgentClientOptions(config));
   return {
     async generate(request, signal) {
       try {
-        const response = await client.models.generateContent({ model: config.model, contents: request.contents,
-          config: { ...request.config, candidateCount: 1, maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
-            thinkingConfig: { thinkingLevel }, abortSignal: signal } });
+        const payload = buildPayload(request);
+        const response = await client.models.generateContent({ ...payload,
+          config: { ...payload.config, abortSignal: signal } });
         const candidate = response.candidates?.[0];
         // Preserve all native parts, including opaque signatures. Only presentation filters thoughts.
         return { content: response.candidates?.length === 1 ? candidate?.content : undefined,
