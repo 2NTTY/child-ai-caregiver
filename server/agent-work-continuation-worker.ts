@@ -8,9 +8,43 @@ import { WORK_CONTINUATION_CHECK_QUEUE, WORK_CONTINUATION_QUEUE, WORK_CONTINUATI
 const checkSchema = z.object({ generation: z.uuid() }).strict();
 export const workContinuationJobSchema = z.object({ eventId: z.uuid(), jobId: z.uuid(), workerGeneration: z.uuid(), storageEpoch: z.uuid() }).strict();
 
+export interface WorkContinuationRecovery {
+  recoverBackground(job: WorkContinuationJob): Promise<{ state: "pending" | "settled" | "already_terminal"; runId: string }>;
+}
+type ProcessorOptions = { mode: "execute"; store: Pick<AgentWorkContinuationStore, "backgroundInput" | "finishBackground">;
+  agent: Pick<ProductAgent, "background"> } | { mode: "recover"; store: WorkContinuationRecovery };
+
+/** One consumer with mutually exclusive execution and original-result recovery paths. */
+export function createAgentWorkContinuationProcessor(options: ProcessorOptions) {
+  const controller = new AbortController(); let stopping = false;
+  async function process(raw: WorkContinuationJob, frameworkJobId: string) {
+    const job = workContinuationJobSchema.parse(raw);
+    if (frameworkJobId !== job.jobId) throw new Error("work_continuation_job_invalid");
+    if (stopping) return;
+    if (options.mode === "recover") {
+      const recovered = await options.store.recoverBackground(job);
+      if (recovered.state === "pending") throw new Error("work_continuation_run_pending");
+      return;
+    }
+    const { store, agent } = options;
+    const current = () => store.backgroundInput(job);
+    const input = await current();
+    if (!input || stopping) return;
+    try {
+      const receipt = await agent.background({ userId: input.userId, childId: input.childId, reference: job.eventId,
+        context: input.context, authorize: async () => !stopping && Boolean(await current()), signal: controller.signal });
+      if (await store.finishBackground(job, receipt) === "running") throw new Error("work_continuation_run_pending");
+    } catch {
+      // Retry the original reference only. The persisted Agent claim prevents a second generation.
+      if (await store.finishBackground(job, null) === "running") throw new Error("work_continuation_run_unconfirmed");
+    }
+  }
+  return { process, stop() { stopping = true; controller.abort(); } };
+}
+
 /** Native cron and retries carry references only; private model context is rebuilt by the store. */
 export function createAgentWorkContinuationWorker(pool: Pool, boss: PgBoss, store: AgentWorkContinuationStore, agent: Pick<ProductAgent, "background">) {
-  const controller = new AbortController();
+  const processor = createAgentWorkContinuationProcessor({ mode: "execute", store, agent });
   let timer: ReturnType<typeof setInterval> | undefined, pending: Promise<void> | undefined, stopping = false;
   const enqueue: WorkContinuationEnqueue = async (client, job) => {
     const data = workContinuationJobSchema.parse(job);
@@ -29,24 +63,9 @@ export function createAgentWorkContinuationWorker(pool: Pool, boss: PgBoss, stor
     if (!stopping) await store.reconcile(control.generation);
   }
   const sync = () => pending ??= reconcile().finally(() => { pending = undefined; });
-  async function process(raw: WorkContinuationJob, frameworkJobId: string) {
-    const job = workContinuationJobSchema.parse(raw);
-    if (frameworkJobId !== job.jobId) throw new Error("work_continuation_job_invalid");
-    if (stopping) return;
-    const current = () => store.backgroundInput(job);
-    const input = await current();
-    if (!input || stopping) return;
-    try {
-      const receipt = await agent.background({ userId: input.userId, childId: input.childId, reference: job.eventId,
-        context: input.context, authorize: async () => !stopping && Boolean(await current()), signal: controller.signal });
-      if (await store.finishBackground(job, receipt) === "running") throw new Error("work_continuation_run_pending");
-    } catch {
-      // Retry the original reference only. The persisted Agent claim prevents a second generation.
-      if (await store.finishBackground(job, null) === "running") throw new Error("work_continuation_run_unconfirmed");
-    }
-  }
+
   return {
-    process,
+    process: processor.process,
     async start() {
       if (!await boss.getQueue(WORK_CONTINUATION_CHECK_QUEUE) || !await boss.getQueue(WORK_CONTINUATION_QUEUE)) throw new Error("work_continuation_queue_missing");
       await sync();
@@ -58,10 +77,10 @@ export function createAgentWorkContinuationWorker(pool: Pool, boss: PgBoss, stor
         }
       });
       await boss.work<WorkContinuationJob>(WORK_CONTINUATION_QUEUE, { batchSize: 1, localConcurrency: 1, pollingIntervalSeconds: 2 }, async jobs => {
-        for (const job of jobs) await process(job.data, job.id);
+        for (const job of jobs) await processor.process(job.data, job.id);
       });
       timer = setInterval(() => { void sync().catch(() => console.error("work_continuation_schedule_sync_failed")); }, 60000).unref();
     },
-    async stop() { stopping = true; clearInterval(timer); controller.abort(); await pending; },
+    async stop() { stopping = true; clearInterval(timer); processor.stop(); await pending; },
   };
 }
