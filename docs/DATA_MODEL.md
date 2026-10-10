@@ -525,6 +525,14 @@ A02 使用 `agent_work`（目前版本及加密工作內容）、`agent_work_ope
 
 合併站內事件以本人／孩子／香港日期防重，最多5項工作版本及變更依據加密保存；原 pg-boss 入列與台帳同交易。payload 只放事件及世代參照，執行時重查權限／版本／終態並由原業務資源重建上下文。Agent run 沿穩定 triggerReference唯一，回應丟失及重啟不重複生成；結果／停止／未知及runID可追溯，資料隨孩子／本人刪除及原備份處理。
 
+**F01 起始輸入證據契約，尚未有 adapter／consumer。** 在原 Firestore continuation event 權威內只保存一份有界快照，涵蓋該 event 完整且最多 5 個候選 work／version 的 included／not_included 分類；不能只保存選入者，再將未出現的項目推定為排除。快照綁 `eventId`、原 `runId`、`ownerUserId／childId`、`storageEpoch／generation` 及每項 `workId／workVersion`；`unknown` 只在原 event 已驗證的持久格式／版本證明為舊格式且缺快照時作讀投影，不依建立時間或目前工作終態猜測／補造舊快照。它只證明已提交的起始輸入選擇，不證明 provider 接收、後續工具讀取、run 成功或 work 完成；公開相容性見 [API](API.md#p2-a06-continuation)。
+
+- **同庫、同次 claim 提交。** 在 work／event／run 的同一 Firestore 交易權威內，全讀原 event 完整候選、deterministic trigger claim／run、目前授權／tombstone／epoch／generation、各候選原 workVersion 及有效性，才一次寫入原 run claim 與 event 快照。回調可重跑，只能從成功 commit 的 attempt 產生起始 context；丟棄 attempt 不洩出 context，提交後不能重新選工作、換版本或用另一份查詢結果組裝。若原子確認全部排除且原 claim／run 不存在，可提交全排除快照及 `runId:null`，不能把交易外查不到或讀取失敗當成無 run。重投／失去回覆只查同一原 claim／快照，不重選、補建 run 或重新生成。
+- **取消先後及讀取失敗。** claim 前取消先 commit，該原版本必須排除；claim 後取消不回寫 included 歷史，但原 dataVersion／授權／版本失效守衛仍阻止使用失效 context。快照不擴大背景唯讀能力，不把晚到結果當工作完成，也不保證撤回已在途 provider。缺權、讀取／解密錯誤、未知格式或 event／run／scope／epoch／generation／workVersion 綁定失配均 fail closed；完整候選缺項／超界／重複亦是錯誤，不退成 unknown／not_included。
+- **單份加密及清理。** 沿既有 StorageCipher 與格式版本校驗；新／舊格式辨識標記須屬原 event 受加密完整性保護的已驗證格式／版本，不能只靠可缺失的快照欄判斷，已 claim 新格式缺快照為錯誤。目標 AAD 必須綁格式／project／namespace／event／owner／child／version，內層核上述完整身份，不靜默換 scope 重加密。新 AAD 要求只適用新的證據格式；合法舊 event 仍按原格式／AAD 讀取，不因缺新欄位而拒絕、回填或重新加密。只留查詢／清理所需最小非正文索引，不保存整 prompt、工作正文或結果副本，不建第二份 per-work outcome 主庫。owner／child／event／run／work 附屬清理須覆蓋此快照；parent tombstone 先阻止讀寫，再按原有界 cursor 清理。備份／獨立刪除 journal／隔離 restore 換 epoch 的閉包照原契約，不能以 TTL 或舊快照復活已刪／撤權資料。
+
+此契約以前述同庫權威為實作前置；現有 Firestore session／root budget／usage 切片不具 work／event／run 的同交易 claim 能力。不得在 SQL 與 Firestore 分拆寫入後聲稱原子，亦不新增 SQL schema、長期雙寫或空 port。離線合成 trace 只驗語義及先後，不代表保存、SDK 交易競爭或正式流程已接通。
+
 
 <a id="p2-a08-service"></a>
 ### P2-A08：註冊資格及刪除恢復邊界
@@ -570,6 +578,7 @@ A02 使用 `agent_work`（目前版本及加密工作內容）、`agent_work_ope
 5. **跨 run 確認。** 新 asking run 須 running；被確認的是原 proposal run／proposal version，不能要求原 run 仍 running。只接受 Server 已保存並綁定的問句、目前最新本人訊息及相鄰提問、明確同意、恰好一項有效候選／asked binding、原 hash、policy/access/epoch 及可選 workVersion／active-or-waiting 全部一致。consume 原確認與 domain effect 同 commit；response run 可在其後才 claim，不能以新 run failure 重做已接受效果。 已有 accepted 的同訊息重試與唯讀原收據查回，共用目前本人／孩子、accessVersion／storageEpoch、原 proposal 的 owner／child／accepted version、本人 user 回覆及加密 result 的 ID／原 run／孩子／版本綁定驗證；原結果通過後才可交後續 response run。有效已提交收據不因提案過期失效；已存在但綁定失效、超出有界唯一性或讀取失敗須停止，不當作 not found 或重做 decide，也不改寫原密文／已提交效果。此驗證不代表歷史正文已按目前 fact／document 來源重新投影，亦不表示整個工作已完成。named proposal 決定及快捷文字同意分開，不能因快捷失效便自動略過或接受原 proposal。
 6. **三種取消與原結果。** run cancel 只將目前 running 原互動 run 置 stopped／cancelled，finish 不得覆寫；已提交效果／候選保留。work cancel／改版立即使舊 workVersion 的確認及跟進失效，不等同取消已建 task／document；proposal dismiss 沿原 version 只退候選。被取消 run 的新 runtime／tool effect 與 cancel 讀寫同一交易權威；cancel 先提交便阻止該 run 後續 runtime／tool effect，effect 先提交則保留原 receipt。這不禁止本人其後依原 proposal 作新的明確決定；該決定仍按上一項重核候選／scope／版本／同意，不要求原 proposal run 仍 running。不得跨 SQL／Firestore 分拆兩端後聲稱已 fence。查回只核既有 receipt，run 維持 stopped／unknown，未保存用量仍 countsKnown=false；查詢失敗不得當作沒有副作用或自動重試。
 7. **有界失效與刪除。** workVersion、policy/accessVersion、epoch 及 parent tombstone 讀時即生效；原 SQL 全量 UPDATE／cascade 可轉分批整理，但不能讓權限等待清理完才失效。每個 query／cleanup page 都保留 scope、精確 cursor 及 complete／未完成狀態；原訊息刪除亦涵蓋引用它的 note／revision／receipt／confirmation／summary，不能只清 work。原收據讀回期限與新決定期限分開，accepted receipt 不因 proposal 過期隱藏已提交效果，也不因此永久保留已刪正文。
+8. **背景起始輸入與 claim。** [原 event 有界快照](#p2-a06-continuation)須與 deterministic run claim 共用本節的同庫讀集、全讀後寫及成功 attempt 規則；不能用 ADK session／root budget／usage 的獨立提交代替。起始選入不提升為 per-work 執行或完成權威。
 
 原生 [transactions](https://docs.cloud.google.com/firestore/native/docs/manage-data/transactions)及[transaction isolation](https://docs.cloud.google.com/firestore/native/docs/transaction-data-contention)文件已核：原子提交、全讀後寫、回調重跑、commit-time serializable 與交易內讀不見自身尚未提交的寫入。本項目仍須以固定 Node SDK／實際 schema 核對 latest-message／唯一 pending、並行新候選及撤權／刪除的 query read-set；不能以「先 limit 2 再 transaction 點讀」冒充對整個條件的原子檢查，亦不以未實測為由否定原生 serializable。Fake／Emulator 不代替 F02 真雲端競爭證據。
 

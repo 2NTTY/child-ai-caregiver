@@ -697,7 +697,15 @@ save_work 的可選 followUp 包含 reason、dueAt（可空）、watchResources 
 
 read_work 可附 latestFollowUp 的 eventId、runId、state、createdAt；read_background_result 透過既有本人 run 讀取入口回傳有界結果／引用，不將模型回覆當成新的同意或已確認事實。queued、completed、stopped、unknown、cancelled 分開，未知不能重新生成。私人變更事件只通知本人 owner；正式頁面由 A07 接回同一工作及結果。
 
-`latestFollowUp` 的 `eventId／runId` 可能連到合併多項工作的同批跟進事件，並非逐工作執行收據。現有 queued 事件會按目前工作版本／有效性投影 cancelled；事件終態仍保留原同批結果，completed 不能證明每項工作均曾執行或完成。取消後的工作卡優先顯示「此工作已取消，不再接續」，關聯狀態為 cancelled 時列明「此工作關聯接續」，其餘列明「同批跟進事件」，Agent 讀取亦遵守這個分界。cancelled 可能只是仍排隊同批內本項的失效投影，不代表整批已取消；亦不代表仍 active／waiting 的工作本身已取消。沒有逐成員 outcome／取消時間權威，不能用目前 status 或 updatedAt 推斷取消先後、改寫取消前已完成的歷史事件，或將另一工作成果冒稱為本項成果。本次只更正呈現與讀取指引，不改 DTO、事件台帳、排程／取消策略；精確逐工作 outcome 仍未提供。
+`latestFollowUp` 的 `eventId／runId` 可能連到合併多項工作的同批跟進事件，並非逐工作執行收據。現有 queued 事件會按目前工作版本／有效性投影 cancelled；事件終態仍保留原同批結果，completed 不能證明每項工作均曾執行或完成。取消後的工作卡優先顯示「此工作已取消，不再接續」，關聯狀態為 cancelled 時列明「此工作關聯接續」，其餘列明「同批跟進事件」，Agent 讀取亦遵守這個分界。cancelled 可能只是仍排隊同批內本項的失效投影，不代表整批已取消；亦不代表仍 active／waiting 的工作本身已取消。沒有逐成員 outcome／取消時間權威，不能用目前 status 或 updatedAt 推斷取消先後、改寫取消前已完成的歷史事件，或將另一工作成果冒稱為本項成果。上述已交付切片只更正呈現與讀取指引，不改 DTO、事件台帳、排程／取消策略；精確逐工作 outcome 仍未提供。
+
+**F01 待實作：逐工作起始輸入證據。** 只回答「原背景 run 已提交的起始輸入快照是否包含此 work 的原版本」，不是執行／完成收據。`included` 不證明 provider 已收到、模型已讀取或工作已完成；`not_included` 只指未進起始快照，不排除其後經授權的唯讀工具讀到該工作。run 的 completed／stopped／unknown、目前 work 終態及原業務收據繼續各自為權威；本證據不新增背景寫入能力、不重播未知結果。
+
+擬以 `GET /api/children/:childId/agent/work` 及 `/work/:workId` 的 `followUpEvidence=1` 明確 opt-in，在同一 `latestFollowUp` 加可選 `participation={state,workVersion}`；`state` 為 `included | not_included | unknown`，`workVersion` 是該 event 的原候選版本，不能偷換成目前工作版本。證據沿同物件的 `eventId／runId` 綁定，不另找最新 run 或跨事件拼接。省略 opt-in 仍回原 shape；既有 strict DTO 不可直接加欄位，新 client 必須可處理舊 Server／未回欄位並顯示未知，不從 batch completed 或 cancelled 補猜。`read_work`／前端消費者須在相應 reader 與相容解析接好後才使用；本段 query、欄位及消費接線目前均未實作。
+
+Server 只有已授權、成功讀取，並從原 event 已驗證的持久格式／版本確認為舊格式且缺起始快照，才正常回 `unknown`；不能依建立時間、目前 status 或單純缺欄位猜測。新／舊格式辨識須受原 event 的加密完整性及格式驗證保護，移除快照欄不能把新格式降格成歷史資料。缺欄位的 client 未知顯示不是新的持久證據。無權、讀取／解密失敗、未知格式、壞綁定或不完整證據均 fail closed，沿原錯誤路徑停止，不當作 `unknown`／`not_included`。`not_included` 必須來自原完整有界快照的明確排除；若同一原子提交確認全部候選排除且未建立 run，才可伴隨 `runId:null`。新事件仍排隊、尚未 claim 時不捏造分類，保留原排隊狀態及省略欄位；已 claim 的新格式事件缺快照則屬錯誤。
+
+取消先於 claim 提交的版本不能 included；claim 先提交則保留 included 歷史，後續取消／改版／撤權仍使舊 context 依原 dataVersion／授權守衛停止，不能拿歷史證據繼續生成。晚到結果不能把 work 改為完成，也不承諾撤回已在途 provider 請求。原子選入、加密及清理閉包見[資料契約](DATA_MODEL.md#p2-a06-continuation)；不得以現時 status／updatedAt 重建歷史。
 
 關注容量沿 draft #111 的受檢邊界：普通事件200、另兩格只供結束跟進／歸檔；029遷移收據成立才寫201–202。到頂仍可取消／結束，不能刪歷史騰位；滿額恢復／新增普通事件仍拒絕。部署须先更新相容 API／worker／Web，已有保留格資料後不可回退200讀取器或縮窄SQL限制。
 
