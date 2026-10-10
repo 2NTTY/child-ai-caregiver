@@ -21,15 +21,40 @@ export function productionStartupReadiness(state: Pick<RecordsState, "auth" | "o
   return route;
 }
 
-export function routeStartupReadiness(pathname: string, params: { tab?: string; category?: string; section?: string; view?: string }, reads: Readonly<Record<string, StartupReadiness>>, hasChild = true): StartupReadiness {
+type StartupRouteParams = { tab?: string; category?: string; section?: string; view?: string; taskId?: string; recordId?: string };
+
+export function routeStartupRequirements(pathname: string, params: StartupRouteParams, hasChild = true, includeShell = false): readonly string[] {
   const requirements: Record<string, readonly string[]> = {
-    "/": ["profile", "care", "tasks", "growth"], "/chat": ["chat"], "/care": params.view === "photos" ? ["photos"] : ["care"], "/profile": ["profile"],
-    "/tasks": ["tasks"], "/growth": params.tab === "archive" ? ["growth", "documents"] : ["growth"], "/memory": ["memory"], "/history": params.category === "preparations" ? ["documents"] : params.category === "growth" ? ["growth"] : params.category === "care" || params.category === "review" ? ["care"] : params.category === "conversations" || params.category === "notifications" ? [] : ["tasks"],
+    "/": ["profile", "care", "tasks", "growth"], "/chat": ["chat", "agentPending"], "/care": params.view === "photos" ? ["photos"] : ["care", "agentPending", ...(params.recordId ? ["careDetail"] : [])], "/profile": ["profile"],
+    "/tasks": ["tasks", ...(params.taskId ? ["taskDetail"] : [])], "/growth": params.tab === "archive" ? ["growth", "documents"] : ["growth"], "/memory": ["memory"], "/history": params.category === "preparations" ? ["documents"] : params.category === "growth" ? ["growth"] : params.category === "care" || params.category === "review" ? ["care"] : params.category === "conversations" ? ["conversations"] : params.category === "notifications" ? ["notifications"] : ["tasks"],
     "/photos": ["photos"], "/sources": ["sources"], "/family": ["family"], "/contact": ["contact"],
     "/summary": params.tab === "preparation" ? ["documents"] : ["profile", "summary"],
     "/settings": params.section === "model" ? ["model"] : params.section === "notifications" ? ["push", "telegram"] : params.section === "preferences" ? ["preferences"] : [],
   };
   // Empty child pages can show onboarding, but identity-scoped pages must still finish their own reads.
   const identityReads = new Set(["family", "model", "push", "telegram", "preferences"]);
-  return combineStartupReadiness((requirements[pathname] ?? []).filter(key => hasChild || identityReads.has(key)).map(key => reads[key] ?? "loading"));
+  return [...new Set([...(includeShell && hasChild ? ["profile"] : []), ...(requirements[pathname] ?? [])])]
+    .filter(key => hasChild || identityReads.has(key));
+}
+
+export function routeStartupReadiness(pathname: string, params: StartupRouteParams, reads: Readonly<Record<string, StartupReadiness>>, hasChild = true, includeShell = false): StartupReadiness {
+  return combineStartupReadiness(routeStartupRequirements(pathname, params, hasChild, includeShell).map(key => reads[key] ?? "loading"));
+}
+
+export const startupReadState = (value: string | undefined): StartupReadiness => value === undefined || ["loading", "loading_more", "idle", "unread"].includes(value) ? "loading"
+  : ["ready", "available"].includes(value) ? "ready" : "error";
+
+/** A list snapshot cannot complete an explicit URL target's independent first read. */
+export function targetStartupReadiness(target: string | undefined, loadedId: string | undefined, read: { id: string; state: StartupReadiness } | null | undefined): StartupReadiness {
+  if (!target || loadedId === target) return "ready";
+  if (read?.id !== target) return "loading";
+  return read.state === "ready" ? "error" : read.state;
+}
+
+/** The header already requires profile; closed and hidden rail tabs add no reads. */
+export function visibleRailStartupRequirements(visible: boolean, tab: "attention" | "context", home = false): readonly string[] {
+  return !visible ? [] : tab === "attention" ? ["tasks"] : home ? [] : ["care"];
+}
+export function visibleRailStartupReadiness(visible: boolean, tab: "attention" | "context", reads: Readonly<Record<string, StartupReadiness>>, home = false): StartupReadiness {
+  return combineStartupReadiness(visibleRailStartupRequirements(visible, tab, home).map(key => reads[key] ?? "loading"));
 }

@@ -3,6 +3,7 @@ import { useContainerWidth } from "../components/useContainerWidth";
 import { brand } from "../branding";
 import { useEffect, useId, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
+import { useProductionVisibleSettingsSection } from "../production/ProductionFirstScreenGate";
 import { usePreviewNavigation, usePreviewLeaveGuard } from "../preview/PreviewNavigationGuard";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Divider, Text } from "react-native-paper";
@@ -41,6 +42,7 @@ export default function SettingsPage() {
   const requestedSection = Array.isArray(section) ? section[0] : section;
   const initialTab = tabs.find(item => item.key === requestedSection)?.key ?? "account";
   const [tab, setTab] = useState<SettingsTab>(initialTab);
+  useProductionVisibleSettingsSection(tab);
   useEffect(() => { setTab(initialTab); }, [initialTab]);
   useEffect(() => { if (authorization.pending) setTab("assistant"); }, [authorization.pending]);
   const tabsId = useId();

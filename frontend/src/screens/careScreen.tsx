@@ -71,12 +71,13 @@ function CareWorkspace({ initialKind, initialRecordId }: { initialKind?: CareKin
 
 export default function CarePage() {
   const pathname = usePathname(), { model, actions, scopeKey } = useProduction();
-  const { compose, view, record, recordId } = useLocalSearchParams<{ compose?: string; view?: string; record?: string; recordId?: string }>();
+  const { compose, view, record, recordId } = useLocalSearchParams<{ compose?: string; view?: string | string[]; record?: string; recordId?: string }>();
+  const requestedView = Array.isArray(view) ? view[0] : view;
   const initialKind = careKindOptions.find(item => item.value === compose)?.value;
   const child = model.children.find(item => item.id === model.selectedChildId);
   const router = useRouter(), navigate = usePreviewNavigation();
   if (pathname !== "/care") return null;
-  if (child && view === "photos") return <PhotoWorkspace key={scopeKey ?? "no-child"} capturePreferred={false} onCare={() => navigate(() => router.push("/care"))} />;
+  if (child && requestedView === "photos") return <PhotoWorkspace key={scopeKey ?? "no-child"} capturePreferred={false} onCare={() => navigate(() => router.push("/care"))} />;
   const initialRecordId = typeof recordId === "string" ? recordId : typeof record === "string" ? record : undefined;
   return child && scopeKey ? <CareWorkspace key={scopeKey} initialKind={initialKind} initialRecordId={initialRecordId} />
     : <PageFrame density="compact" title="記錄與核對" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;

@@ -13,11 +13,18 @@ import { useProduction } from "../../production/ProductionProvider";
 import { parseAccountCallback } from "../../production/AccountServiceOwner";
 import { chineseFont, colors, spacing, typeScale } from "../../theme";
 import { AppScrollView } from "../AppScrollView";
+import { brand } from "../../branding";
+import { StartupLoadingLabel } from "../../startup/StartupLoadingLabel";
 
 export function AccountAccessPanel() {
   const { account, owner, user, signOut, online, identityKey } = useProduction();
   const [accepted, setAccepted] = useState(false);
   useLayoutEffect(() => setAccepted(false), [identityKey, account.status?.policyVersion]);
+  // Admission is still closed while checking; normal startup has no recovery actions.
+  if (account.gate === "checking" && online) return <View style={styles.loading} testID="production-account-loading" accessibilityLiveRegion="polite" aria-busy>
+    <BrandLogo style={styles.logo} decorative />
+    <StartupLoadingLabel label={`正在開啟${brand.name}`} />
+  </View>;
   return <AppScrollView contentContainerStyle={styles.gate} testID="production-account-gate"><View style={styles.panel}>
     <BrandLogo style={styles.logo} />
     <Text accessibilityRole="header" style={styles.title}>{account.gate === "consent" ? "開始前，了解資料的使用方式" : account.gate === "verification" ? "請先完成電郵驗證" : "確認帳戶服務"}</Text>
@@ -98,4 +105,4 @@ export function AccountCallbackGate({ children }: { children: ReactNode }) {
     {blocked ? <View style={styles.accountPanel}>{deletionRecovery ? <AccountDeletionRecoveryPanel /> : <AccountAccessPanel />}</View> : null}
   </View>;
 }
-const styles = StyleSheet.create({ root: { flex: 1, minHeight: 0, backgroundColor: colors.canvas }, routes: { flex: 1, minHeight: 0 }, hidden: { opacity: 0 }, accountPanel: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.canvas }, gate: { flexGrow: 1, backgroundColor: colors.canvas, alignItems: "center", justifyContent: "center", padding: spacing.xl }, panel: { width: "100%", maxWidth: 540, gap: spacing.lg }, logo: { width: 164, height: 53 }, title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, fontWeight: "800" }, body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 24 } });
+const styles = StyleSheet.create({ root: { flex: 1, minHeight: 0, backgroundColor: colors.canvas }, routes: { flex: 1, minHeight: 0 }, hidden: { opacity: 0 }, accountPanel: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.canvas }, loading: { flex: 1, backgroundColor: colors.canvas, alignItems: "center", justifyContent: "center", padding: spacing.xl, gap: spacing.lg }, gate: { flexGrow: 1, backgroundColor: colors.canvas, alignItems: "center", justifyContent: "center", padding: spacing.xl }, panel: { width: "100%", maxWidth: 540, gap: spacing.lg }, logo: { width: 164, height: 53 }, title: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, fontWeight: "800" }, body: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 24 } });

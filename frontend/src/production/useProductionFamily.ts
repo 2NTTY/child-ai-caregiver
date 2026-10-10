@@ -149,7 +149,10 @@ export function useProductionFamily(env: SettingsEnvironment) {
   useSettingsRefresh(env, () => { void refresh(false); }, !requests.busy && !original && !draft && !incoming && !oneTimeCode, true);
   useDomainWriteGuard(!!draft || !!incoming || !!oneTimeCode, !!original || requests.busy, "account");
   const recordChildren = env.owner.getSnapshot().records.children;
-  const model: Omit<FamilyViewModel, "families"> & { families: FamilySpace[] } = { families, family, selfUserId: env.userId ?? "", children: recordChildren.filter(child => child.workspaceId === familyId).map(child => ({ id: child.id, displayName: child.displayName, ageLabel: "年齡資料未載入" })),
+  const model: Omit<FamilyViewModel, "families"> & { families: (FamilySpace & { loadedChildNames: string[] })[] } = {
+    // Presentation only: reuse children already visible in this identity's records snapshot.
+    families: families.map(value => ({ ...value, loadedChildNames: recordChildren.filter(child => child.workspaceId === value.id).map(child => child.displayName) })),
+    family, selfUserId: env.userId ?? "", children: recordChildren.filter(child => child.workspaceId === familyId).map(child => ({ id: child.id, displayName: child.displayName, ageLabel: "年齡資料未載入" })),
     online: env.online, loadState: lost || !env.currentIdentity() ? "lost" : requests.busy && !loaded ? "loading" : "ready", canManage: family?.role === "owner" && loaded,
     canStartAction: loaded && env.online && !requests.busy && !original, locked: requests.busy || !!original || !loaded || !env.currentIdentity(), draft, latest: latestFamily, incoming, incomingError, oneTimeCode,
     inviteFormKey: formKey, operation, notice };

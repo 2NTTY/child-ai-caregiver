@@ -18,6 +18,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const [page, setPage] = useState<TaskPage | null>(null), [reading, setReading] = useState(false);
   const [readState, setReadState] = useState<NonNullable<TasksViewModel["readState"]>>("loading");
   const [linkedTask, setLinkedTask] = useState<TaskView | null>(null);
+  const [detailRead, setDetailRead] = useState<TasksViewModel["detailRead"]>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null), [draft, setDraft] = useState<TaskDraft | null>(null);
   const [latest, setLatest] = useState<TaskView | null>(null), [operation, setOperation] = useState(none);
   const [histories, setHistories] = useState<Record<string, { items: TaskRevisionView[]; cursor: number | null }>>({});
@@ -136,20 +137,23 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const selectTask = (id: string, intent: TaskSelectionIntent = "open") => {
       if (pending || draft || operation.state === "conflict" || !runtime.live()) return;
       if (id.length > 36 || !z.uuid().safeParse(id).success) {
+        setDetailRead({ id, state: "error" });
         queuedSelection.current = null; setSelectedId(null); setLinkedTask(null); setHistoryOpen(false);
         setOperation({ state: "failed", message: "事項連結識別無效，沒有套用其他事項或孩子資料。", reference: null });
         return;
       }
-      if (busy.current) { queuedSelection.current = { id, intent }; return; }
-      if (items.some(item => item.id === id)) { setSelectedId(previous => intent === "toggle" && previous === id ? null : id); setHistoryOpen(false); return; }
-      if (!env.online) return;
+      if (busy.current) { setDetailRead({ id, state: "loading" }); queuedSelection.current = { id, intent }; return; }
+      if (items.some(item => item.id === id)) { setDetailRead({ id, state: "ready" }); setSelectedId(previous => intent === "toggle" && previous === id ? null : id); setHistoryOpen(false); return; }
+      if (!env.online) { setDetailRead({ id, state: "error" }); return; }
+      setDetailRead({ id, state: "loading" });
       busy.current = true; setReading(true);
       void runtime.request(async (signal, current) => {
         try {
           const value = await runtime.read(["task", id], next => verified(inner => api.task(env.childId!, id, inner), next), signal);
-          if (current()) { setLinkedTask(value); setSelectedId(value.id); setHistoryOpen(false); }
+          if (current()) { setDetailRead({ id, state: "ready" }); setLinkedTask(value); setSelectedId(value.id); setHistoryOpen(false); }
         } catch (error) {
           if (!current()) return;
+          setDetailRead({ id, state: "error" });
           if (domainFailure(error).status === 404) {
             setSelectedId(null); setLinkedTask(null); setPage(null); setReadState("error"); setHistories({});
             env.queryClient.removeQueries({ queryKey: ["production", env.scopeKey, "tasks"] });
@@ -164,7 +168,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
     child: { id: env.childId!, name: env.childName }, access: runtime.lost ? "lost" : canManage ? "editable" : "read_only",
     online: env.online, reading, readState: runtime.lost || !env.online && !page ? "error" : !env.online && page ? "stale" : readState, dataLabel: "家庭共享事項",
     scheduleContext: { asOf: clock.current, timeZone: "Asia/Hong_Kong" }, items,
-    eligibleAssignees: runtime.lost ? [] : page?.eligibleAssignees ?? [], selected,
+    eligibleAssignees: runtime.lost ? [] : page?.eligibleAssignees ?? [], selected, detailRead,
     hasMoreTasks: !!page?.nextAfterId && !runtime.lost, loadingMoreTasks: loadingMore,
     workerEnabled: page?.workerEnabled, work: runtime.lost ? [] : page?.work ?? [], reminders: runtime.lost ? [] : page?.reminders ?? [],
     history: runtime.lost || !selected ? [] : histories[selected.id]?.items ?? [], historyOpen,

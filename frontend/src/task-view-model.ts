@@ -43,6 +43,7 @@ export interface TasksViewModel {
   online: boolean; reading: boolean; dataLabel: string;
   // List read state is independent of mutations; omitted by older preview adapters.
   readState?: "loading" | "ready" | "error" | "stale";
+  detailRead?: { id: string; state: "loading" | "ready" | "error" } | null;
   scheduleContext: { asOf: string; timeZone: string };
   items: TaskView[]; eligibleAssignees: TaskAssigneeView[]; selected: TaskView | null;
   hasMoreTasks: boolean; loadingMoreTasks: boolean;

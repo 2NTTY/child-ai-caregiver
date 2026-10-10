@@ -140,6 +140,13 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
   model: FamilyViewModel; actions: FamilyActions; writeNotice: ReactNode; previewControls: ReactNode;
   onTasks?: () => void; onContact?: () => void; production?: boolean;
 }) {
+  const familyLabels = model.families.map(family => `${production ? family.ownerName : family.ownerName.replace("（合成）", "")}的家庭`);
+  const familyOptions = model.families.map((family, index) => {
+    const label = familyLabels[index];
+    const duplicate = familyLabels.some((other, otherIndex) => otherIndex !== index && other === label);
+    const names = [...new Set((family.loadedChildNames ?? []).map(name => name.trim()).filter(Boolean))];
+    return { value: family.id, label: duplicate && names.length ? `${label} · 孩子：${names.join("、")}` : label };
+  });
   const containerLayout = useContainerWidth();
   const stacked = containerLayout.width < 760;
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -161,7 +168,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
           <View style={styles.flexCopy}><Text accessibilityRole="header" style={styles.familyTitle}>{model.family ? `${model.family.ownerName}的家庭` : "我的家庭"}</Text>
             {model.family ? <Text style={styles.meta}>本人是{familyRoleLabels[model.family.role]} · {model.family.members.length} 位已載入成員 · 權限版本 {model.family.version}</Text> : null}</View>
           {model.families.length > 1 && model.family ? <AppSelect label="家庭" value={model.family.id}
-            options={model.families.map(family => ({ value: family.id, label: `${(production ? family.ownerName : family.ownerName.replace("（合成）", ""))}的家庭` }))}
+            options={familyOptions}
             disabled={model.operation.state === "saving" || model.operation.state === "unknown"} onChange={actions.selectFamily} /> : null}
           <AppButton label="重新讀取家庭清單" density="compact" variant="quiet" onPress={actions.refresh} disabled={production ? !model.online || model.operation.state === "saving" : !model.canStartAction} />
         </View>
